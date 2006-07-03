@@ -1441,6 +1441,10 @@ bool ro_gui_toolbar_click(wimp_pointer *pointer)
 		  	ro_gui_menu_handle_action(g->window,
 		  			BROWSER_PRINT, true);
 			break;
+		case ICON_TOOLBAR_UP:
+		  	ro_gui_menu_handle_action(g->window,
+		  			BROWSER_NAVIGATE_UP, true);
+			break;
 		case ICON_TOOLBAR_URL:
 			if (pointer->buttons & (wimp_DRAG_SELECT | wimp_DRAG_ADJUST)) {
 				if (g->bw->current_content) {

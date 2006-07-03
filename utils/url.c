@@ -534,14 +534,14 @@ url_func_result url_canonical_root(const char *url, char **result)
 
 
 /**
- * Strip leafname, query and fragment segments from an URL
+ * Strip the topmost segment of the path
  *
  * \param url	  an absolute URL
  * \param result  pointer to pointer to buffer to hold result
  * \return URL_FUNC_OK on success
  */
 
-url_func_result url_strip_lqf(const char *url, char **result)
+url_func_result url_parent(const char *url, char **result)
 {
 	url_func_result status;
 	struct url_components components;

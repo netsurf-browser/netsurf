@@ -49,7 +49,7 @@ static bool theme_toolbar_editor_drag = false;
 /* these order of the icons must match the numbers defined in riscos/gui.h */
 static const char * theme_browser_icons[] = {"back", "forward", "stop",
 		"reload", "home", "history", "save", "print", "hotlist",
-		"scale", "search", NULL};
+		"scale", "search", "up", NULL};
 static const char * theme_hotlist_icons[] = {"delete", "expand", "open",
 		"launch", "create", NULL};
 static const char * theme_history_icons[] = {"delete", "expand", "open",
@@ -782,7 +782,7 @@ struct toolbar *ro_gui_theme_create_toolbar(struct theme_descriptor *descriptor,
 		case THEME_BROWSER_EDIT_TOOLBAR:
 			ro_gui_theme_add_toolbar_icons(toolbar,
 					theme_browser_icons,
-					"0123456789a|");
+					"0123456789ab|");
 			break;
 		case THEME_HOTLIST_EDIT_TOOLBAR:
 			ro_gui_theme_add_toolbar_icons(toolbar,

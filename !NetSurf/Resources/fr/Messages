@@ -86,6 +86,7 @@ Sprite:Sprite
 Home:Page d'accueil
 Back:Retour
 Forward:Avancer
+UpLevel:Up one level
 Reload:Recharger cette page  ^F5
 Stop:Arrêter le chargement de la page
 
@@ -530,9 +531,10 @@ HelpToolbar7:\Tle bouton d'impression.|M\Simprimer cette page.|MOuvre une bo�te 
 HelpToolbar8:\Tle bouton de favoris.|M\Souvrir la \w de gestion des favoris.|M\Aajouter cette adresse aux favoris.
 HelpToolbar9:\Tle bouton de changement d'échelle.|M\Sredimensionner la page, texte et images comprises.
 HelpToolbar10:\Tle bouton de recherche.|M\Sfind instances of a string of text on the page.
-HelpToolbar13:\Tla barre d'URL.|MTapez l'adresse d'un site à visiter et appuyez sur Return pour y aller.
-HelpToolbar14:\Tl'icône de suggestion d'URL.|M\Souvrir une liste d'URLs tapées récemment.
-HelpToolbar15:\Tle pulseur.|MIl s'anime lorsque cette \w est active.
+HelpToolbar11:\Tup button.|M\Straverse up one level on the current website
+HelpToolbar14:\Tla barre d'URL.|MTapez l'adresse d'un site à visiter et appuyez sur Return pour y aller.
+HelpToolbar15:\Tl'icône de suggestion d'URL.|M\Souvrir une liste d'URLs tapées récemment.
+HelpToolbar16:\Tle pulseur.|MIl s'anime lorsque cette \w est active.
 
 HelpStatus0:\Tla glissière de la barre d'état.|MDéplacez-la pour changer la taille de la barre d'état.
 HelpStatus1:\Tla barre d'état.|MElle affiche des informations sur ce que fait la \w de navigateur.

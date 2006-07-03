@@ -86,6 +86,7 @@ Sprite:Sprite
 Home:Startpagina
 Back:Vorige pagina
 Forward:Volgende pagina
+UpLevel:Up one level
 Reload:Pagina opnieuw laden  ^F5
 Stop:Pagina ophalen afbreken
 
@@ -530,9 +531,10 @@ HelpToolbar7:\Tprint button.|M\Sopen the print dialogue box.
 HelpToolbar8:\Thotlist button.|M\Sopen the hotlist management \w.|M\Aadd this address to the hotlist.
 HelpToolbar9:\Tscale view button.|M\Sscale the page, affecting both text and images.
 HelpToolbar10:\Tsearch button.|M\Sfind instances of a string of text on the page.
-HelpToolbar13:\TURL bar.|MType in the address of a site to visit and press Return to go there.
+HelpToolbar11:\Tup button.|M\Straverse up one level on the current website
+HelpToolbar14:\TURL bar.|MType in the address of a site to visit and press Return to go there.
 HelpToolbar15:\TURL suggestion icon.|M\Sopen a list of recently typed URLs.
-HelpToolbar14:\Tthrobber.|MIt animates while this \w is active.
+HelpToolbar16:\Tthrobber.|MIt animates while this \w is active.
 
 HelpStatus0:\Tstatus bar resizer.|MDrag to alter the size of the status bar.
 HelpStatus1:\Tstatus bar.|MIt displays information on what the browser \w is doing.

@@ -86,6 +86,7 @@ Sprite:Sprite
 Home:Homepage
 Back:Eine Seite zurück
 Forward:Eine Seite vor
+UpLevel:Up one level
 Reload:Seite erneut laden  ^F5
 Stop:Ladevorgang abbrechen
 
@@ -530,9 +531,10 @@ HelpToolbar7:Drucken der aktuellen Seite.|MAnklicken öffnet den 'Drucken' Dialo
 HelpToolbar8:Das ist der Hotlist Schaltknopf.|MKlicken mit AUSWAHL öffnet die Hotlist.|MKlicken mit SPEZIAL trägt die aktuelle Seite in die Hotlist ein.
 HelpToolbar9:Anklicken öffnet den Vergrößerungs-Dialog.|MDie Vergrößerung betrifft Text und Bilder.
 HelpToolbar10:Anklicken öffnet das Fenster zur Textsuche.
-HelpToolbar13:Das ist die Adressleiste.|MHier die Adresse (URL) eingeben und Entertaste drücken, um eine neue Seite zu laden.
-HelpToolbar14:Das ist das URL-Schnellwahl Symbol.|MKlicken mit AUSWAHL öffnet eine Liste der zuletzt eingegebenen Web-Adressen.
-HelpToolbar15:Das ist die Ladeaktivitätsanzeige.|MSie wird animiert, wenn NetSurf aktiv ist.
+HelpToolbar11:\Tup button.|M\Straverse up one level on the current website
+HelpToolbar14:Das ist die Adressleiste.|MHier die Adresse (URL) eingeben und Entertaste drücken, um eine neue Seite zu laden.
+HelpToolbar15:Das ist das URL-Schnellwahl Symbol.|MKlicken mit AUSWAHL öffnet eine Liste der zuletzt eingegebenen Web-Adressen.
+HelpToolbar16:Das ist die Ladeaktivitätsanzeige.|MSie wird animiert, wenn NetSurf aktiv ist.
 
 HelpStatus0:Das ist die Begrenzung der Statusanzeige.|MKlicken und Ziehen verändert die Länge der Statusanzeige.
 HelpStatus1:Das ist die Statusanzeige|MSie zeigt an, was gerade im Browserfenster geschieht.

@@ -26,12 +26,13 @@
 #define ICON_TOOLBAR_BOOKMARK 8
 #define ICON_TOOLBAR_SCALE 9
 #define ICON_TOOLBAR_SEARCH 10
-#define ICON_TOOLBAR_LAST 11
-#define ICON_TOOLBAR_SURROUND 11  // Must be after highest toolbar icon
-#define ICON_TOOLBAR_FAVICON 12
-#define ICON_TOOLBAR_URL 13
-#define ICON_TOOLBAR_SUGGEST 14
-#define ICON_TOOLBAR_THROBBER 15
+#define ICON_TOOLBAR_UP 11
+#define ICON_TOOLBAR_LAST 12
+#define ICON_TOOLBAR_SURROUND 12  // Must be after highest toolbar icon
+#define ICON_TOOLBAR_FAVICON 13
+#define ICON_TOOLBAR_URL 14
+#define ICON_TOOLBAR_SUGGEST 15
+#define ICON_TOOLBAR_THROBBER 16
 
 /* icon numbers for hotlist/history toolbars */
 #define ICON_TOOLBAR_DELETE 0

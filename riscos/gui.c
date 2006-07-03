@@ -1103,7 +1103,9 @@ void ro_gui_close_window_request(wimp_close *close)
 				}
 				free(filename);
 			} else {
-				/* todo: go 'up' */
+			  	/* this is pointless if we are about to close the window */
+			  	if (ro_gui_shift_pressed())
+			  	  	ro_gui_menu_handle_action(close->w, BROWSER_NAVIGATE_UP, true);
 			}
 		}
 		if (ro_gui_shift_pressed())

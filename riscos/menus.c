@@ -194,7 +194,8 @@ void ro_gui_menu_init(void)
 			{ "Navigate", NO_ACTION, 0 },
 			{ "Navigate.Home", BROWSER_NAVIGATE_HOME, 0 },
 			{ "Navigate.Back", BROWSER_NAVIGATE_BACK, 0 },
-			{ "_Navigate.Forward", BROWSER_NAVIGATE_FORWARD, 0 },
+			{ "Navigate.Forward", BROWSER_NAVIGATE_FORWARD, 0 },
+			{ "_Navigate.UpLevel", BROWSER_NAVIGATE_UP, 0 },
 			{ "Navigate.Reload", BROWSER_NAVIGATE_RELOAD_ALL, 0 },
 			{ "Navigate.Stop", BROWSER_NAVIGATE_STOP, 0 },
 			{ "View", NO_ACTION, 0 },
@@ -809,6 +810,7 @@ void ro_gui_prepare_navigate(struct gui_window *gui) {
 	ro_gui_menu_prepare_action(gui->window, BROWSER_NAVIGATE_BACK, false);
 	ro_gui_menu_prepare_action(gui->window, BROWSER_NAVIGATE_FORWARD,
 			false);
+	ro_gui_menu_prepare_action(gui->window, BROWSER_NAVIGATE_UP, false);
 	ro_gui_menu_prepare_action(gui->window, HOTLIST_SHOW, false);
 	ro_gui_menu_prepare_action(gui->window, BROWSER_SAVE, false);
 	ro_gui_menu_prepare_action(gui->window, BROWSER_PRINT, false);
@@ -1370,6 +1372,9 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 	os_error *error;
 	char url[80];
 	const struct url_data *data;
+	char *parent;
+	url_func_result res;
+	bool compare;
 
 	ro_gui_menu_get_window_details(owner, &g, &bw, &c, &t, &tree);
 
@@ -1517,6 +1522,17 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 			if ((!bw) || (!bw->history))
 				return false;
 			history_forward(bw, bw->history);
+			return true;
+		case BROWSER_NAVIGATE_UP:
+			if ((!bw) || (!c))
+				return false;
+			res = url_parent(c->url, &parent);
+			if (res == URL_FUNC_OK) {
+			  	res = url_compare(c->url, parent, &compare);
+			  	if (!compare && (res == URL_FUNC_OK))
+			  		browser_window_go(g->bw, parent, 0, true);
+			  	free(parent);
+                        }
 			return true;
 		case BROWSER_NAVIGATE_RELOAD:
 		case BROWSER_NAVIGATE_RELOAD_ALL:
@@ -1734,6 +1750,9 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 	bool result = false;
 	int checksum = 0;
 	os_error *error;
+	char *parent;
+	url_func_result res;
+	bool compare;
 
 	ro_gui_menu_get_window_details(owner, &g, &bw, &c, &t, &tree);
 	if (current_menu_open)
@@ -1929,6 +1948,27 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 				ro_gui_set_icon_shaded_state(
 						t->toolbar_handle,
 						ICON_TOOLBAR_FORWARD, result);
+			break;
+		case BROWSER_NAVIGATE_UP:
+			result = (bw && c);
+			if (result) {
+				res = url_parent(c->url, &parent);
+				if (res == URL_FUNC_OK) {
+				  	res = url_compare(c->url, parent, &compare);
+				  	result = !compare;
+				  	free(parent);
+       	                	} else {
+       	                	  	result = false;
+       	                	}
+			}
+			ro_gui_menu_set_entry_shaded(current_menu,
+					action, !result);
+			if ((t) && (!t->editor) &&
+					(t->type == THEME_BROWSER_TOOLBAR))
+				ro_gui_set_icon_shaded_state(
+						t->toolbar_handle,
+						ICON_TOOLBAR_UP, !result);
+			result = true;
 			break;
 		case BROWSER_NAVIGATE_RELOAD:
 		case BROWSER_NAVIGATE_RELOAD_ALL:
