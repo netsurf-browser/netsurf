@@ -168,6 +168,7 @@ bool textplain_convert(struct content *c, int width, int height)
 
 	textplain_reformat(c, width, height);
 	c->status = CONTENT_STATUS_DONE;
+	content_set_status(c, messages_get("Done"));
 
 	return true;
 }
