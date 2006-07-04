@@ -1115,6 +1115,8 @@ void ro_gui_window_open(struct gui_window *g, wimp_open *open)
 	os_error *error;
 	int key_down = 0;
 	int inset = 0;
+	int iconbar_cmos = 0;
+	bool iconbar_clear;
 
 	if (open->next == wimp_TOP && g->iconise_icon >= 0) {
 		/* window is no longer iconised, release its sprite number */
@@ -1142,7 +1144,11 @@ void ro_gui_window_open(struct gui_window *g, wimp_open *open)
 		 * such we do the really horrible thing of testing for Shift directly and
 		 * decreasing the value accordingly. Yuck. */
 		xosbyte1(osbyte_SCAN_KEYBOARD, 0 ^ 0x80, 0, &key_down);
-		if (key_down != 0)
+		iconbar_clear = (key_down != 0);
+		xosbyte2(osbyte_READ_CMOS, 28, 0, &iconbar_cmos);
+		if (iconbar_cmos & (1 << 4))
+			iconbar_clear = !iconbar_clear;
+		if (iconbar_clear)
 			inset = 160 + ro_get_hscroll_height(0);
 		if ((content->height * 2 * g->option.scale) < screen_height - inset) {
 			open->visible.y0 = inset;
