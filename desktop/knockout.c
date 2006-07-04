@@ -9,14 +9,14 @@
  * Knockout rendering (implementation).
  */
 
+#define NDEBUG
+
 #include <assert.h>
 #include <string.h>
 #include "netsurf/desktop/knockout.h"
 #include "netsurf/desktop/plotters.h"
 #include "netsurf/image/bitmap.h"
 #include "netsurf/utils/log.h"
-
-#define NDEBUG
 
 #define KNOCKOUT_ENTRIES 3072	/* 40 bytes each */
 #define KNOCKOUT_BOXES 768	/* 28 bytes each */
