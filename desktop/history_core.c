@@ -87,15 +87,13 @@ struct history *history_create(void)
 {
 	struct history *history;
 
-	history = malloc(sizeof *history);
+	history = calloc(1, sizeof *history);
 	if (!history) {
 		warn_user("NoMemory", 0);
 		return 0;
 	}
-
-	history->start = 0;
-	history->current = 0;
-
+	history->width = RIGHT_MARGIN / 2;
+	history->height = BOTTOM_MARGIN / 2;
 	return history;
 }
 
@@ -440,8 +438,12 @@ void history_layout(struct history *history)
 	bool shuffle = tp->tm_mon == 3 && tp->tm_mday == 1;
 
 	history->width = 0;
-	history->height = history_layout_subtree(history, history->start,
-			RIGHT_MARGIN / 2, BOTTOM_MARGIN / 2, shuffle);
+	if (history->start)
+		history->height = history_layout_subtree(history,
+			history->start, RIGHT_MARGIN / 2, BOTTOM_MARGIN / 2,
+			shuffle);
+	else
+		history->height = 0;
 	if (shuffle) {
 		history->width = 600 + WIDTH;
 		history->height = 400 + HEIGHT;
@@ -470,7 +472,7 @@ int history_layout_subtree(struct history *history,
 
 	if (history->width < x + WIDTH)
 		history->width = x + WIDTH;
-
+	
 	if (!entry->forward) {
 		entry->x = x;
 		entry->y = y;
