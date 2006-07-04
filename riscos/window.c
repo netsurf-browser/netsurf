@@ -46,6 +46,7 @@
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/menus.h"
 #include "netsurf/riscos/options.h"
+#include "netsurf/riscos/save.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/thumbnail.h"
 #include "netsurf/riscos/ucstables.h"
@@ -379,6 +380,22 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 	}
 
 	ro_gui_set_window_title(g->window, g->title);
+}
+
+
+/**
+ * Save the specified content as a link.
+ *
+ * \param  g  gui_window containing the content
+ * \param  c  the content to save
+ */
+
+void gui_window_save_as_link(struct gui_window *g, struct content *c)
+{
+  	if (!c)
+  		return;
+  	ro_gui_save_prepare(GUI_SAVE_LINK_URL, c);
+	ro_gui_dialog_open_persistent(g->window, dialog_saveas, true);
 }
 
 

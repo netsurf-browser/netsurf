@@ -80,6 +80,7 @@ void gui_window_new_content(struct gui_window *g);
 bool gui_window_scroll_start(struct gui_window *g);
 bool gui_window_box_scroll_start(struct gui_window *g,
 		int x0, int y0, int x1, int y1);
+void gui_window_save_as_link(struct gui_window *g, struct content *c);
 
 struct gui_download_window *gui_download_window_create(const char *url,
 		const char *mime_type, struct fetch *fetch,

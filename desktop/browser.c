@@ -52,6 +52,9 @@
 /** browser window which is being redrawn. Valid only during redraw. */
 struct browser_window *current_redraw_browser;
 
+/** fake content for <a> being saved as a link */
+struct content browser_window_href_content;
+
 
 static void browser_window_callback(content_msg msg, struct content *c,
 		intptr_t p1, intptr_t p2, union content_msg_data data);
@@ -200,7 +203,8 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 		free(url2);
 		return;
 	}
-	gui_window_set_url(bw->window, url2);
+	if (!download)
+		gui_window_set_url(bw->window, url2);
 
 	/* find any fragment identifier on end of URL */
 	hash = strchr(url2, '#');
@@ -1093,9 +1097,12 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 
 		} else if (mouse & BROWSER_MOUSE_CLICK_2 &&
 				mouse & BROWSER_MOUSE_MOD_1) {
-			/* \todo saving of links as URL files */
-			//ro_gui_save_prepare(GUI_SAVE_LINK_URL, c);
-
+			free(browser_window_href_content.url);
+			browser_window_href_content.url = strdup(url);
+			if (!browser_window_href_content.url)
+				warn_user("NoMemory", 0);
+			else
+				gui_window_save_as_link(bw->window, &browser_window_href_content);
 		} else if (mouse & BROWSER_MOUSE_CLICK_2) {
 			/* open link in new window */
 			browser_window_create(url, bw, c->url, true);

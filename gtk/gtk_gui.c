@@ -251,6 +251,9 @@ void gui_create_form_select_menu(struct browser_window *bw,
 {
 }
 
+void gui_window_save_as_link(struct gui_window *g, struct content *c)
+{
+}
 
 void gui_launch_url(const char *url)
 {
