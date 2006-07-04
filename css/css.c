@@ -914,6 +914,9 @@ void css_atimport_callback(content_msg msg, struct content *css,
 			c->active--;
 			break;
 
+		case CONTENT_MSG_AUTH:
+		case CONTENT_MSG_SSL:
+			/* todo: handle AUTH and SSL */
 		case CONTENT_MSG_ERROR:
 			c->data.css.import_content[i] = 0;
 			c->active--;
