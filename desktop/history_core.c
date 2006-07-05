@@ -436,6 +436,9 @@ void history_layout(struct history *history)
 	time_t t = time(0);
 	struct tm *tp = localtime(&t);
 	bool shuffle = tp->tm_mon == 3 && tp->tm_mday == 1;
+	
+	if (!history)
+		return;
 
 	history->width = 0;
 	if (history->start)
@@ -650,6 +653,9 @@ struct history_entry *history_find_position(struct history_entry *entry,
 {
 	struct history_entry *child;
 	struct history_entry *found;
+	
+	if (!entry)
+		return 0;
 
 	if (entry->x <= x && x <= entry->x + WIDTH &&
 			entry->y <= y && y <= entry->y + HEIGHT)
