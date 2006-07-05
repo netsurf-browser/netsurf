@@ -806,8 +806,8 @@ struct css_style * box_get_style(struct content *c,
 	}
 
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "height"))) {
-		float value = atof(s);
-		if (value < 0 || strlen(s) == 0) {
+		float value = isdigit(s[0]) ? atof(s) : -1;
+		if (value <= 0 || strlen(s) == 0) {
 			/* ignore negative values and height="" */
 		} else if (strrchr(s, '%')) {
 			/* the specification doesn't make clear what
@@ -822,7 +822,7 @@ struct css_style * box_get_style(struct content *c,
 
 	if (strcmp((const char *) n->name, "input") == 0) {
 		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "size"))) {
-			int size = atoi(s);
+			int size = isdigit(s[0]) ? atoi(s): -1;
 			if (0 < size) {
 				char *type = (char *) xmlGetProp(n,
 						(const xmlChar *) "type");
@@ -859,7 +859,7 @@ struct css_style * box_get_style(struct content *c,
 	}
 
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "width"))) {
-		float value = atof(s);
+		float value = isdigit(s[0]) ? atof(s) : -1;
 		if (value < 0 || strlen(s) == 0) {
 			/* ignore negative values and width="" */
 		} else if (strrchr(s, '%')) {
@@ -875,7 +875,7 @@ struct css_style * box_get_style(struct content *c,
 
 	if (strcmp((const char *) n->name, "textarea") == 0) {
 		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "rows"))) {
-			int value = atoi(s);
+			int value = isdigit(s[0]) ? atoi(s): -1;
 			if (0 < value) {
 				style->height.height = CSS_HEIGHT_LENGTH;
 				style->height.length.unit = CSS_UNIT_EM;
@@ -884,7 +884,7 @@ struct css_style * box_get_style(struct content *c,
 			xmlFree(s);
 		}
 		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "cols"))) {
-			int value = atoi(s);
+			int value = isdigit(s[0]) ? atoi(s): -1;
 			if (0 < value) {
 				style->width.width = CSS_WIDTH_LENGTH;
 				style->width.value.length.unit = CSS_UNIT_EX;
@@ -898,7 +898,7 @@ struct css_style * box_get_style(struct content *c,
 		if ((s = (char *) xmlGetProp(n,
 				(const xmlChar *) "cellspacing"))) {
 			if (!strrchr(s, '%')) {		/* % not implemented */
-				int value = atoi(s);
+				int value = isdigit(s[0]) ? atoi(s): -1;
 				if (0 <= value) {
 					style->border_spacing.border_spacing =
 						CSS_BORDER_SPACING_LENGTH;
@@ -919,7 +919,7 @@ struct css_style * box_get_style(struct content *c,
 		if ((s = (char *) xmlGetProp(n,
 				(const xmlChar *) "hspace"))) {
 			if (!strrchr(s, '%')) {		/* % not implemented */
-				int value = atoi(s);
+				int value = isdigit(s[0]) ? atoi(s): -1;
 				if (0 <= value) {
 					style->margin[LEFT].margin =
 							CSS_MARGIN_LENGTH;
@@ -940,7 +940,7 @@ struct css_style * box_get_style(struct content *c,
 		if ((s = (char *) xmlGetProp(n,
 				(const xmlChar *) "vspace"))) {
 			if (!strrchr(s, '%')) {		/* % not implemented */
-				int value = atoi(s);
+				int value = isdigit(s[0]) ? atoi(s): -1;
 				if (0 <= value) {
 					style->margin[TOP].margin =
 							CSS_MARGIN_LENGTH;
