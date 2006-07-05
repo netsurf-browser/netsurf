@@ -123,8 +123,8 @@ typedef enum {
 
 extern struct browser_window *current_redraw_browser;
 
-void browser_window_create(const char *url, struct browser_window *clone,
-		char *referer, bool history_add);
+struct browser_window * browser_window_create(const char *url,
+		struct browser_window *clone, char *referer, bool history_add);
 void browser_window_go(struct browser_window *bw, const char *url,
 		char *referer, bool history_add);
 void browser_window_go_post(struct browser_window *bw, const char *url,
@@ -150,7 +150,7 @@ void browser_window_form_select(struct browser_window *bw,
 		struct form_control *control, int item);
 void browser_redraw_box(struct content *c, struct box *box);
 void browser_form_submit(struct browser_window *bw, struct form *form,
-		struct form_control *submit_button);
+		struct form_control *submit_button, bool new_window);
 
 void browser_window_redraw_rect(struct browser_window *bw, int x, int y,
 		int width, int height);

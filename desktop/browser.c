@@ -100,7 +100,7 @@ static void browser_window_scroll_box(struct browser_window *bw,
  * \param  referer  The referring uri
  */
 
-void browser_window_create(const char *url, struct browser_window *clone,
+struct browser_window *browser_window_create(const char *url, struct browser_window *clone,
 		char *referer, bool history_add)
 {
 	struct browser_window *bw;
@@ -109,7 +109,7 @@ void browser_window_create(const char *url, struct browser_window *clone,
 
 	if ((bw = malloc(sizeof *bw)) == NULL) {
 		warn_user("NoMemory", 0);
-		return;
+		return NULL;
 	}
 
 	bw->current_content = NULL;
@@ -133,10 +133,12 @@ void browser_window_create(const char *url, struct browser_window *clone,
 	bw->download = false;
 	if ((bw->window = gui_create_browser_window(bw, clone)) == NULL) {
 		free(bw);
-		return;
+		return NULL;
 	}
 	bw->refresh_interval = -1;
-	browser_window_go(bw, url, referer, history_add);
+	if (url)
+		browser_window_go(bw, url, referer, history_add);
+	return bw;
 }
 
 
@@ -966,7 +968,10 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 				pointer = GUI_POINTER_POINT;
 				if (mouse & BROWSER_MOUSE_CLICK_1)
 					browser_form_submit(bw, gadget->form,
-							gadget);
+							gadget, false);
+				else if (mouse & BROWSER_MOUSE_CLICK_2)
+					browser_form_submit(bw, gadget->form,
+							gadget, true);
 			} else {
 				status = messages_get("FormBadSubmit");
 			}
@@ -1887,10 +1892,11 @@ gui_pointer_shape get_pointer_shape(css_cursor cursor)
  */
 
 void browser_form_submit(struct browser_window *bw, struct form *form,
-		struct form_control *submit_button)
+		struct form_control *submit_button, bool new_window)
 {
 	char *data = 0, *url = 0;
 	struct form_successful_control *success;
+	struct browser_window *target;
 
 	assert(form);
 	assert(bw->current_content->type == CONTENT_HTML);
@@ -1898,6 +1904,15 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 	if (!form_successful_controls(form, submit_button, &success)) {
 		warn_user("NoMemory", 0);
 		return;
+	}
+	
+	if (new_window) {
+		target = browser_window_create(NULL, bw, NULL, true);
+		/* any error has already been reported */
+		if (!target)
+			return;
+	} else {
+	  	target = bw;
 	}
 
 	switch (form->method) {
@@ -1911,6 +1926,7 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 			url = calloc(1, strlen(form->action) + strlen(data) + 2);
 			if (!url) {
 				form_free_successful(success);
+			  	free(data);
 				warn_user("NoMemory", 0);
 				return;
 			}
@@ -1920,7 +1936,7 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 			else {
 				sprintf(url, "%s?%s", form->action, data);
 			}
-			browser_window_go(bw, url, bw->current_content->url,
+			browser_window_go(target, url, bw->current_content->url,
 					true);
 			break;
 
@@ -1931,13 +1947,13 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 				warn_user("NoMemory", 0);
 				return;
 			}
-			browser_window_go_post(bw, form->action, data, 0,
+			browser_window_go_post(target, form->action, data, 0,
 					true, bw->current_content->url,
 					false);
 			break;
 
 		case method_POST_MULTIPART:
-			browser_window_go_post(bw, form->action, 0, success,
+			browser_window_go_post(target, form->action, 0, success,
 					true, bw->current_content->url,
 					false);
 			break;

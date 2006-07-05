@@ -922,7 +922,7 @@ void browser_window_input_callback(struct browser_window *bw,
 	case 10:
 	case 13:	/* Return/Enter hit */
 		if (form)
-			browser_form_submit(bw, form, 0);
+			browser_form_submit(bw, form, 0, false);
 		return;
 
 	case 11: {	/* Shift + Tab */

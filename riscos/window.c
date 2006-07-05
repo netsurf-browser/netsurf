@@ -1352,8 +1352,12 @@ void ro_gui_window_mouse_at(struct gui_window *g, wimp_pointer *pointer)
 	if (error) {
 		LOG(("xwimp_get_window_state: 0x%x: %s",
 				error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-		return;
+/*
+ * the WIMP sometimes fails to realise the pointer has left a NetSurf window
+ * so we get an error -- there is no gain from telling the user about this
+ *
+ *		warn_user("WimpError", error->errmess);
+*/		return;
 	}
 
 	x = window_x_units(pointer->pos.x, &state) / 2 / g->option.scale;
