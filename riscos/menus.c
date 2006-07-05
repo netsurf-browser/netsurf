@@ -1372,9 +1372,6 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 	os_error *error;
 	char url[80];
 	const struct url_data *data;
-	char *parent;
-	url_func_result res;
-	bool compare;
 
 	ro_gui_menu_get_window_details(owner, &g, &bw, &c, &t, &tree);
 
@@ -1526,14 +1523,7 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 		case BROWSER_NAVIGATE_UP:
 			if ((!bw) || (!c))
 				return false;
-			res = url_parent(c->url, &parent);
-			if (res == URL_FUNC_OK) {
-			  	res = url_compare(c->url, parent, &compare);
-			  	if (!compare && (res == URL_FUNC_OK))
-			  		browser_window_go(g->bw, parent, 0, true);
-			  	free(parent);
-                        }
-			return true;
+			return ro_gui_window_navigate_up(bw->window, c->url);
 		case BROWSER_NAVIGATE_RELOAD:
 		case BROWSER_NAVIGATE_RELOAD_ALL:
 			if (!bw)

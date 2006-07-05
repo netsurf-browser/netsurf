@@ -1374,6 +1374,7 @@ void ro_gui_window_mouse_at(struct gui_window *g, wimp_pointer *pointer)
 bool ro_gui_toolbar_click(wimp_pointer *pointer)
 {
 	struct gui_window *g = ro_gui_toolbar_lookup(pointer->w);
+	struct browser_window *new_bw;
 
 	/* toolbars in the options window have no gui_window */
 	if (!g)
@@ -1401,13 +1402,27 @@ bool ro_gui_toolbar_click(wimp_pointer *pointer)
 	*/
 	switch (pointer->i) {
 		case ICON_TOOLBAR_BACK:
-		  	ro_gui_menu_handle_action(g->window,
-		  			BROWSER_NAVIGATE_BACK, true);
+			if (pointer->buttons == wimp_CLICK_ADJUST) {
+				new_bw = browser_window_create(NULL,
+						g->bw, NULL, false);
+		  		ro_gui_menu_handle_action(new_bw->window->window,
+		  				BROWSER_NAVIGATE_BACK, true);		 
+			} else {
+			  	ro_gui_menu_handle_action(g->window,
+			  			BROWSER_NAVIGATE_BACK, true);
+			}
 			break;
 
 		case ICON_TOOLBAR_FORWARD:
-		  	ro_gui_menu_handle_action(g->window,
-		  			BROWSER_NAVIGATE_FORWARD, true);
+			if (pointer->buttons == wimp_CLICK_ADJUST) {
+				new_bw = browser_window_create(NULL,
+						g->bw, NULL, false);
+		  		ro_gui_menu_handle_action(new_bw->window->window,
+		  				BROWSER_NAVIGATE_FORWARD, true);		 
+			} else {
+		  		ro_gui_menu_handle_action(g->window,
+		  				BROWSER_NAVIGATE_FORWARD, true);
+		  	}
 			break;
 
 		case ICON_TOOLBAR_STOP:
@@ -1469,8 +1484,18 @@ bool ro_gui_toolbar_click(wimp_pointer *pointer)
 		  			BROWSER_PRINT, true);
 			break;
 		case ICON_TOOLBAR_UP:
-		  	ro_gui_menu_handle_action(g->window,
-		  			BROWSER_NAVIGATE_UP, true);
+			if (pointer->buttons == wimp_CLICK_ADJUST) {
+			  	if (g->bw && g->bw->current_content) {
+					new_bw = browser_window_create(NULL,
+							g->bw, NULL, false);
+			  		/* do it without loading the content into the new window */
+			  		ro_gui_window_navigate_up(new_bw->window,
+			  				g->bw->current_content->url);
+			  	}
+			} else {
+		  		ro_gui_menu_handle_action(g->window,
+		  				BROWSER_NAVIGATE_UP, true);
+		  	}
 			break;
 		case ICON_TOOLBAR_URL:
 			if (pointer->buttons & (wimp_DRAG_SELECT | wimp_DRAG_ADJUST)) {
@@ -3063,4 +3088,29 @@ void ro_gui_window_iconise(struct gui_window *g, wimp_full_message_window_info *
 	}
 
 	free(area);
+}
+
+
+/**
+ * Navigate up one level
+ *
+ * \param  g    the gui_window to open the parent link in
+ * \param  url  the URL to open the parent of
+ */
+bool ro_gui_window_navigate_up(struct gui_window *g, const char *url) {
+	char *parent;
+	url_func_result res;
+	bool compare;
+	
+	if (!g || (!g->bw))
+		return false;
+
+	res = url_parent(url, &parent);
+	if (res == URL_FUNC_OK) {
+	  	res = url_compare(url, parent, &compare);
+	  	if (!compare && (res == URL_FUNC_OK))
+	  		browser_window_go(g->bw, parent, 0, true);
+	  	free(parent);
+        }
+	return true;
 }

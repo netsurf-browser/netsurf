@@ -116,7 +116,8 @@ void ro_gui_download_drag_end(wimp_dragged *drag);
 void ro_gui_download_datasave_ack(wimp_message *message);
 bool ro_gui_download_window_destroy(struct gui_download_window *dw, bool quit);
 bool ro_gui_download_prequit(void);
-bool ro_gui_download_window_keypress(struct gui_download_window *dw, wimp_key *key);
+bool ro_gui_download_window_keypress(struct gui_download_window *dw,
+		wimp_key *key);
 
 /* in 401login.c */
 #ifdef WITH_AUTH
@@ -158,11 +159,14 @@ bool ro_gui_shift_pressed(void);
 bool ro_gui_ctrl_pressed(void);
 void ro_gui_window_scroll_end(struct gui_window *g, wimp_dragged *drag);
 void ro_gui_window_set_scale(struct gui_window *g, float scale);
-void ro_gui_window_iconise(struct gui_window *g, wimp_full_message_window_info *wi);
+void ro_gui_window_iconise(struct gui_window *g,
+		wimp_full_message_window_info *wi);
+bool ro_gui_window_navigate_up(struct gui_window *g, const char *url);
 
 /* in history.c */
 void ro_gui_history_init(void);
-void ro_gui_history_open(struct browser_window *bw, struct history *history, bool pointer);
+void ro_gui_history_open(struct browser_window *bw, struct history *history,
+		bool pointer);
 void ro_gui_history_mouse_at(wimp_pointer *pointer);
 
 /* in hotlist.c */

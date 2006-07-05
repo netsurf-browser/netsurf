@@ -1907,7 +1907,7 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 	}
 	
 	if (new_window) {
-		target = browser_window_create(NULL, bw, NULL, true);
+		target = browser_window_create(NULL, bw, NULL, false);
 		/* any error has already been reported */
 		if (!target)
 			return;
