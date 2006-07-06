@@ -1,7 +1,7 @@
 /*
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
- *                http://www.opensource.org/licenses/gpl-license
+ *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  */
 
@@ -23,8 +23,8 @@ struct type_entry {
 	char mime_type[40];
 };
 static const struct type_entry type_map[] = {
-        {0x132, "image/ico"},
-        {0x188, "application/x-shockwave-flash"},
+	{0x132, "image/ico"},
+	{0x188, "application/x-shockwave-flash"},
 	{0x695, "image/gif"},
 	{0x69c, "image/x-ms-bmp"},
 	{0xaff, "image/x-drawfile"},
@@ -51,7 +51,7 @@ static int cmp_type(const void *x, const void *y);
  *
  * \param unix_path Unix style path to file on disk
  * \return Pointer to MIME type string (should not be freed) - invalidated
- *         on next call to fetch_filetype.
+ *	   on next call to fetch_filetype.
  */
 const char *fetch_filetype(const char *unix_path)
 {
@@ -61,6 +61,7 @@ const char *fetch_filetype(const char *unix_path)
 	char *r, *slash;
 	os_error *error;
 	bits file_type, temp;
+	int objtype;
 
 	if (!path) {
 		LOG(("Insufficient memory for calloc"));
@@ -78,12 +79,18 @@ const char *fetch_filetype(const char *unix_path)
 	}
 	LOG(("riscos path '%s'", path));
 
-	error = xosfile_read_stamped_no_path(path, 0, 0, 0, 0, 0, &file_type);
+	error = xosfile_read_stamped_no_path(path, &objtype, 0, 0, 0, 0,
+			&file_type);
 	if (error) {
 		LOG(("xosfile_read_stamped_no_path failed: %s",
 				error->errmess));
 		free(path);
 		return "application/riscos";
+	}
+
+	if (objtype == osfile_IS_DIR) {
+		sprintf(type_buf, "application/x-netsurf-directory");
+		return (const char *)type_buf;
 	}
 
 	/* If filetype is text and the file has an extension, try to map the
@@ -157,6 +164,7 @@ char *fetch_mimetype(const char *ro_path)
 		return 0;
 
 	if (objtype == osfile_IS_DIR)
+		sprintf(mime, "application/x-netsurf-directory");
 		return 0; /* directories are pointless */
 
 	if ((load >> 20) & 0xFFF) {

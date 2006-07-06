@@ -25,6 +25,7 @@
 #include "netsurf/css/css.h"
 #include "netsurf/image/bitmap.h"
 #include "netsurf/desktop/options.h"
+#include "netsurf/render/directory.h"
 #include "netsurf/render/html.h"
 #include "netsurf/render/textplain.h"
 #ifdef WITH_JPEG
@@ -89,6 +90,7 @@ static const struct mime_entry mime_map[] = {
 #ifdef WITH_BMP
 	{"application/x-ico", CONTENT_ICO},
 #endif
+	{"application/x-netsurf-directory", CONTENT_DIRECTORY},
 #ifdef WITH_THEME_INSTALL
 	{"application/x-netsurf-theme", CONTENT_THEME},
 #endif
@@ -192,6 +194,7 @@ const char *content_type_name[] = {
 #ifdef WITH_PLUGIN
 	"PLUGIN",
 #endif
+	"DIRECTORY",
 #ifdef WITH_THEME_INSTALL
 	"THEME",
 #endif
@@ -285,6 +288,10 @@ static const struct handler_entry handler_map[] = {
 		plugin_open, plugin_close,
 		true},
 #endif
+	{directory_create, 0, directory_convert,
+		html_reformat, html_destroy, html_stop, html_redraw, 0,
+		html_open, html_close,
+		true},
 #ifdef WITH_THEME_INSTALL
 	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false},
 #endif

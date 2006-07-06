@@ -19,8 +19,8 @@
 
 OBJECTS_COMMON = content.o fetch.o fetchcache.o urldb.o		# content/
 OBJECTS_COMMON += css.o css_enum.o parser.o ruleset.o scanner.o	# css/
-OBJECTS_COMMON += box.o box_construct.o box_normalise.o form.o \
-	html.o html_redraw.o imagemap.o layout.o list.o \
+OBJECTS_COMMON += box.o box_construct.o box_normalise.o directory.o \
+	form.o html.o html_redraw.o imagemap.o layout.o list.o \
 	table.o textplain.o					# render/
 OBJECTS_COMMON += filename.o messages.o talloc.o url.o utf8.o \
 	utils.o							# utils/

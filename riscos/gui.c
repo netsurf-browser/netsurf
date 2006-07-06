@@ -2157,6 +2157,8 @@ void ro_gui_view_source(struct content *content)
 	char full_name[256];
 	char *temp_name, *r;
 	wimp_full_message_data_xfer message;
+	int objtype;
+	bool done = false;
 
 	if (!content || !content->source_data) {
 		warn_user("MiscError", "No document source");
@@ -2166,10 +2168,15 @@ void ro_gui_view_source(struct content *content)
 	/* try to load local files directly. */
 	temp_name = url_to_path(content->url);
 	if (temp_name) {
-		snprintf(message.file_name, 212, "%s", temp_name);
-		message.file_name[211] = '\0';
+		error = xosfile_read_no_path(temp_name, &objtype, 0, 0, 0, 0);
+		if ((!error) && (objtype == osfile_IS_FILE)) {
+			snprintf(message.file_name, 212, "%s", temp_name);
+			message.file_name[211] = '\0';
+			done = true;
+		}
 		free(temp_name);
-	} else {
+	}
+	if (!done) {
 		/* We cannot release the requested filename until after it
 		 * has finished being used. As we can't easily find out when
 		 * this is, we simply don't bother releasing it and simply
