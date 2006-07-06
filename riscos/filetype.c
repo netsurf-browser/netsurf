@@ -160,17 +160,23 @@ char *fetch_mimetype(const char *ro_path)
 	}
 
 	e = xosfile_read_no_path(ro_path, &objtype, &load, 0, 0, 0);
-	if (e)
+	if (e) {
+		LOG(("xosfile_read_no_path: 0x%x: %s",
+				e->errnum, e->errmess));
+		free(mime);
 		return 0;
+	}
 
-	if (objtype == osfile_IS_DIR)
-		sprintf(mime, "application/x-netsurf-directory");
+	if (objtype == osfile_IS_DIR) {
+		free(mime);
 		return 0; /* directories are pointless */
+	}
 
 	if ((load >> 20) & 0xFFF) {
 		filetype = (load>>8) & 0x000FFF;
 	}
 	else {
+		free(mime);
 		return 0; /* no idea */
 	}
 
@@ -188,8 +194,12 @@ char *fetch_mimetype(const char *ro_path)
 	}
 
 	e = xmimemaptranslate_filetype_to_mime_type(filetype, mime);
-	if (e)
+	if (e) {
+		LOG(("xmimemaptranslate_filetype_to_mime_type: 0x%x: %s",
+				e->errnum, e->errmess));
+		free(mime);
 		return 0;
+	}
 	/* make sure we're NULL terminated. If we're not, the MimeMap
 	 * module's probably written past the end of the buffer from
 	 * SVC mode. Short of rewriting MimeMap with an incompatible API,
