@@ -862,7 +862,8 @@ void gui_poll(bool active)
 	gui_last_poll = clock();
 	ro_gui_handle_event(event, &block);
 	schedule_run();
-
+        ro_gui_window_update_boxes();
+	
 	if (gui_reformat_pending && event == wimp_NULL_REASON_CODE)
 		ro_gui_window_process_reformats();
 	else if (bitmap_maintenance_priority ||

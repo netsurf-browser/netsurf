@@ -162,6 +162,7 @@ void ro_gui_window_set_scale(struct gui_window *g, float scale);
 void ro_gui_window_iconise(struct gui_window *g,
 		wimp_full_message_window_info *wi);
 bool ro_gui_window_navigate_up(struct gui_window *g, const char *url);
+void ro_gui_window_update_boxes(void);
 
 /* in history.c */
 void ro_gui_history_init(void);

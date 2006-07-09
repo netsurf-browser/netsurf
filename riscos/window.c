@@ -86,7 +86,19 @@ static browser_mouse_state ro_gui_mouse_drag_state(wimp_mouse_state buttons);
 static bool ro_gui_window_import_text(struct gui_window *g, const char *filename,
 		bool toolbar);
 
+struct update_box {
+  	int x0;
+  	int y0;
+  	int x1;
+  	int y1;
+  	bool use_buffer;
+  	struct gui_window *g;
+  	union content_msg_data data;
+  	struct update_box *next;
+};
 
+struct update_box *pending_updates;
+#define MARGIN 4
 
 /**
  * Create and open a new browser window.
@@ -561,6 +573,133 @@ void ro_gui_window_redraw(struct gui_window *g, wimp_draw *redraw)
 
 
 /**
+ * Redraw any pending update boxes.
+ */
+void ro_gui_window_update_boxes(void) {
+	struct content *c;
+	osbool more;
+	bool clear_background = false;
+	bool use_buffer;
+	wimp_draw update;
+	int clip_x0, clip_y0, clip_x1, clip_y1;
+	os_error *error;
+	struct update_box *cur;
+	struct gui_window *g;
+	const union content_msg_data *data;
+	
+	for (cur = pending_updates; cur != NULL; cur = cur->next) {
+	 	g = cur->g;
+	  	c = g->bw->current_content;
+	 	data = &cur->data;
+	 	use_buffer = cur->use_buffer;
+		if (!c)
+			continue;
+
+		update.w = g->window;
+		update.box.x0 = cur->x0;
+		update.box.y0 = cur->y0;
+		update.box.x1 = cur->x1;
+		update.box.y1 = cur->y1;
+
+		error = xwimp_update_window(&update, &more);
+		if (error) {
+			LOG(("xwimp_update_window: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+			continue;
+		}
+
+		/*	Set the current redraw gui_window to get options from
+		*/
+		ro_gui_current_redraw_gui = g;
+		current_redraw_browser = g->bw;
+
+		plot = ro_plotters;
+		ro_plot_origin_x = update.box.x0 - update.xscroll;
+		ro_plot_origin_y = update.box.y1 - update.yscroll;
+		ro_plot_set_scale(g->option.scale);
+
+		/*	We should clear the background, except for HTML.
+		*/
+		if (c->type != CONTENT_HTML)
+			clear_background = true;
+
+		while (more) {
+			clip_x0 = (update.clip.x0 - ro_plot_origin_x) / 2;
+			clip_y0 = (ro_plot_origin_y - update.clip.y1) / 2;
+			clip_x1 = (update.clip.x1 - ro_plot_origin_x) / 2;
+			clip_y1 = (ro_plot_origin_y - update.clip.y0) / 2;
+
+			if (use_buffer)
+				ro_gui_buffer_open(&update);
+			if (data->redraw.full_redraw) {
+				if (clear_background) {
+					error = xcolourtrans_set_gcol(os_COLOUR_WHITE,
+							colourtrans_SET_BG,
+							os_ACTION_OVERWRITE, 0, 0);
+					if (error) {
+						LOG(("xcolourtrans_set_gcol: 0x%x: %s",
+								error->errnum,
+								error->errmess));
+						warn_user("MiscError", error->errmess);
+					}
+					os_clg();
+				}
+
+				content_redraw(c, 0, 0,
+						c->width, c->height,
+						clip_x0, clip_y0, clip_x1, clip_y1,
+						g->option.scale,
+						0xFFFFFF);
+			} else {
+				assert(data->redraw.object);
+				content_redraw(data->redraw.object,
+						floorf(data->redraw.object_x *
+							g->option.scale),
+						ceilf(data->redraw.object_y *
+							g->option.scale),
+						data->redraw.object_width *
+							g->option.scale,
+						data->redraw.object_height *
+							g->option.scale,
+						clip_x0, clip_y0, clip_x1, clip_y1,
+						g->option.scale,
+						0xFFFFFF);
+			}
+
+			if (use_buffer)
+				ro_gui_buffer_close();
+			error = xwimp_get_rectangle(&update, &more);
+			/* RISC OS 3.7 returns an error here if enough buffer was
+			   claimed to cause a new dynamic area to be created. It
+			   doesn't actually stop anything working, so we mask it out
+			   for now until a better fix is found. This appears to be a
+			   bug in RISC OS. */
+			if (error && !(use_buffer &&
+					error->errnum == error_WIMP_GET_RECT)) {
+				LOG(("xwimp_get_rectangle: 0x%x: %s",
+						error->errnum, error->errmess));
+				warn_user("WimpError", error->errmess);
+				ro_gui_current_redraw_gui = NULL;
+				current_redraw_browser = NULL;
+				continue;
+			}
+		}
+
+		/*	Reset the current redraw gui_window to prevent thumbnails from
+			retaining options
+		*/
+		ro_gui_current_redraw_gui = NULL;
+		current_redraw_browser = NULL;
+	}
+	while (pending_updates) {
+	  	cur = pending_updates;
+	  	pending_updates = pending_updates->next;
+	  	free(cur);
+	}
+	  	
+}
+/**
  * Redraw an area of a window.
  *
  * \param  g   gui_window
@@ -571,118 +710,51 @@ void gui_window_update_box(struct gui_window *g,
 		const union content_msg_data *data)
 {
 	struct content *c = g->bw->current_content;
-	osbool more;
-	bool clear_background = false;
 	bool use_buffer;
-	wimp_draw update;
-	int clip_x0, clip_y0, clip_x1, clip_y1;
-	os_error *error;
+	int x0, y0, x1, y1;
+	struct update_box *cur;
 
-	/* in some cases an update can be triggered before a content has fully
-	 * loaded, so current_content is 0 */
 	if (!c)
 		return;
 
-	update.w = g->window;
-	update.box.x0 = floorf(data->redraw.x * 2 * g->option.scale);
-	update.box.y0 = -ceilf((data->redraw.y + data->redraw.height) * 2 *
-			g->option.scale);
-	update.box.x1 = ceilf((data->redraw.x + data->redraw.width) * 2 *
-			g->option.scale) + 1;
-	update.box.y1 = -floorf(data->redraw.y * 2 * g->option.scale) + 1;
-
-	error = xwimp_update_window(&update, &more);
-	if (error) {
-		LOG(("xwimp_update_window: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-		return;
-	}
-
-	/*	Set the current redraw gui_window to get options from
-	*/
-	ro_gui_current_redraw_gui = g;
-	current_redraw_browser = g->bw;
+	x0 = floorf(data->redraw.x * 2 * g->option.scale);
+	y0 = -ceilf((data->redraw.y + data->redraw.height) * 2 * g->option.scale);
+	x1 = ceilf((data->redraw.x + data->redraw.width) * 2 * g->option.scale) + 1;
+	y1 = -floorf(data->redraw.y * 2 * g->option.scale) + 1;
 	use_buffer = (data->redraw.full_redraw) &&
-			(g->option.buffer_everything || g->option.buffer_animations);
-
-	plot = ro_plotters;
-	ro_plot_origin_x = update.box.x0 - update.xscroll;
-	ro_plot_origin_y = update.box.y1 - update.yscroll;
-	ro_plot_set_scale(g->option.scale);
-
-	/*	We should clear the background, except for HTML.
-	*/
-	if (c->type != CONTENT_HTML)
-		clear_background = true;
-
-	while (more) {
-		clip_x0 = (update.clip.x0 - ro_plot_origin_x) / 2;
-		clip_y0 = (ro_plot_origin_y - update.clip.y1) / 2;
-		clip_x1 = (update.clip.x1 - ro_plot_origin_x) / 2;
-		clip_y1 = (ro_plot_origin_y - update.clip.y0) / 2;
-
-		if (use_buffer)
-			ro_gui_buffer_open(&update);
-		if (data->redraw.full_redraw) {
-			if (clear_background) {
-				error = xcolourtrans_set_gcol(os_COLOUR_WHITE,
-						colourtrans_SET_BG,
-						os_ACTION_OVERWRITE, 0, 0);
-				if (error) {
-					LOG(("xcolourtrans_set_gcol: 0x%x: %s",
-							error->errnum,
-							error->errmess));
-					warn_user("MiscError", error->errmess);
-				}
-				os_clg();
-			}
-
-			content_redraw(c, 0, 0,
-					c->width, c->height,
-					clip_x0, clip_y0, clip_x1, clip_y1,
-					g->option.scale,
-					0xFFFFFF);
-		} else {
-			assert(data->redraw.object);
-			content_redraw(data->redraw.object,
-					floorf(data->redraw.object_x *
-						g->option.scale),
-					ceilf(data->redraw.object_y *
-						g->option.scale),
-					data->redraw.object_width *
-						g->option.scale,
-					data->redraw.object_height *
-						g->option.scale,
-					clip_x0, clip_y0, clip_x1, clip_y1,
-					g->option.scale,
-					0xFFFFFF);
-		}
-
-		if (use_buffer)
-			ro_gui_buffer_close();
-		error = xwimp_get_rectangle(&update, &more);
-		/* RISC OS 3.7 returns an error here if enough buffer was
-		   claimed to cause a new dynamic area to be created. It
-		   doesn't actually stop anything working, so we mask it out
-		   for now until a better fix is found. This appears to be a
-		   bug in RISC OS. */
-		if (error && !(use_buffer &&
-				error->errnum == error_WIMP_GET_RECT)) {
-			LOG(("xwimp_get_rectangle: 0x%x: %s",
-					error->errnum, error->errmess));
-			warn_user("WimpError", error->errmess);
-			ro_gui_current_redraw_gui = NULL;
-			current_redraw_browser = NULL;
-			return;
-		}
+		(g->option.buffer_everything || g->option.buffer_animations);
+	
+	/* try to optimise buffered redraws */
+	if (use_buffer) {
+		for (cur = pending_updates; cur != NULL; cur = cur->next) {
+	  		if ((cur->g != g) || (!cur->use_buffer))
+	  			continue;
+	  		if ((((cur->x0 - x1) < MARGIN) || ((cur->x1 - x0) < MARGIN)) &&
+	  				(((cur->y0 - y1) < MARGIN) || ((cur->y1 - y0) < MARGIN))) {
+	  			cur->x0 = min(cur->x0, x0);
+	  			cur->y0 = min(cur->y0, y0);
+	  			cur->x1 = max(cur->x1, x1);
+	  			cur->y1 = max(cur->y1, y1);
+	  			return;	  
+	  		}
+	  		
+	  	}                      
 	}
-
-	/*	Reset the current redraw gui_window to prevent thumbnails from
-		retaining options
-	*/
-	ro_gui_current_redraw_gui = NULL;
-	current_redraw_browser = NULL;
+	cur = malloc(sizeof(struct update_box));
+	if (!cur) {
+	  	LOG(("No memory for malloc."));
+	  	warn_user("NoMemory", 0);
+	  	return;
+	}
+	cur->x0 = x0;
+	cur->y0 = y0;
+	cur->x1 = x1;
+	cur->y1 = y1;
+	cur->next = pending_updates;
+	pending_updates = cur;
+	cur->g = g;
+	cur->use_buffer = use_buffer;
+	cur->data = *data;
 }
 
 
