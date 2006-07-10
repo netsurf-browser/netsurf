@@ -731,6 +731,7 @@ bool ro_gui_save_complete(struct content *c, char *path)
 	os_error *error;
 	size_t len;
 	char *dot;
+	int i;
 
         /* Create dir */
 	error = xosfile_create_dir(path, 0);
@@ -773,6 +774,9 @@ bool ro_gui_save_complete(struct content *c, char *path)
 	memcpy(name, sprite->name, 12);  /* remember original name */
 	memcpy(sprite->name, dot, len);
 	memset(sprite->name + len, 0, 12 - len);
+	for (i = 0; i < 12; i++) /* convert to lower case */
+	  	if (sprite->name[i] != '\0')
+	  		sprite->name[i] = tolower(sprite->name[i]);
 
 	/* Create !Sprites */
 	snprintf(buf, sizeof buf, "%s.!Sprites", path);
@@ -1035,6 +1039,7 @@ bool ro_gui_save_create_thumbnail(struct content *c, const char *name)
 
 	sprite_header = (osspriteop_header *)(area + 1);
 	strncpy(sprite_header->name, name, 12);
+
 
 	/* we can't resize the saveas sprite area because it may move and we have
 	   no elegant way to update the window definition on all OS versions */
