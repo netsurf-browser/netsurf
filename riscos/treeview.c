@@ -727,6 +727,9 @@ bool ro_gui_tree_click(wimp_pointer *pointer, struct tree *tree) {
 			scroll.w = (wimp_w)tree->handle;
 			scroll.pause_zone_sizes.y0 = 80;
 			scroll.pause_zone_sizes.y1 = 80;
+			if (tree->toolbar)
+				scroll.pause_zone_sizes.y1 +=
+						ro_gui_theme_toolbar_height(tree->toolbar);	
 			scroll.pause_duration = 0;
 			scroll.state_change = (void *)0;
 			error = xwimp_auto_scroll(wimp_AUTO_SCROLL_ENABLE_VERTICAL,
@@ -852,6 +855,9 @@ bool ro_gui_tree_click(wimp_pointer *pointer, struct tree *tree) {
 		scroll.w = (wimp_w)tree->handle;
 		scroll.pause_zone_sizes.y0 = 80;
 		scroll.pause_zone_sizes.y1 = 80;
+		if (tree->toolbar)
+			scroll.pause_zone_sizes.y1 +=
+					ro_gui_theme_toolbar_height(tree->toolbar);	
 		scroll.pause_duration = -1;
 		scroll.state_change = (void *)0;
 		error = xwimp_auto_scroll(wimp_AUTO_SCROLL_ENABLE_VERTICAL,
