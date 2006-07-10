@@ -44,8 +44,6 @@ static bool nsgtk_plot_bitmap(int x, int y, int width, int height,
 static bool nsgtk_plot_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
 		bool repeat_x, bool repeat_y);
-static bool nsgtk_plot_group_start(const char *name);
-static bool nsgtk_plot_group_end(void);
 static void nsgtk_set_solid(void);	/**< Set for drawing solid lines */
 static void nsgtk_set_dotted(void);	/**< Set for drawing dotted lines */
 static void nsgtk_set_dashed(void);	/**< Set for drawing dashed lines */
@@ -67,8 +65,8 @@ const struct plotter_table nsgtk_plotters = {
 	nsgtk_plot_arc,
 	nsgtk_plot_bitmap,
 	nsgtk_plot_bitmap_tile,
-	nsgtk_plot_group_start,
-	nsgtk_plot_group_end
+	NULL,
+	NULL
 };
 
 
@@ -318,16 +316,6 @@ bool nsgtk_plot_bitmap_tile(int x, int y, int width, int height,
 	}
 
 	
-	return true;
-}
-
-bool nsgtk_plot_group_start(const char *name)
-{
-	return true;
-}
-
-bool nsgtk_plot_group_end(void)
-{
 	return true;
 }
 

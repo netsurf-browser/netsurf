@@ -42,8 +42,6 @@ static bool ro_plot_bitmap(int x, int y, int width, int height,
 static bool ro_plot_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
 		bool repeat_x, bool repeat_y);
-static bool ro_plot_group_start(const char *name);
-static bool ro_plot_group_end(void);
 
 
 struct plotter_table plot;
@@ -60,8 +58,8 @@ const struct plotter_table ro_plotters = {
 	ro_plot_arc,
 	ro_plot_bitmap,
 	ro_plot_bitmap_tile,
-	ro_plot_group_start,
-	ro_plot_group_end
+	NULL,
+	NULL
 };
 
 int ro_plot_origin_x = 0;
@@ -402,16 +400,6 @@ bool ro_plot_bitmap_tile(int x, int y, int width, int height,
 			repeat_x, repeat_y, true,
 			bitmap_get_opaque(bitmap) ? IMAGE_PLOT_TINCT_OPAQUE :
 			IMAGE_PLOT_TINCT_ALPHA);
-}
-
-bool ro_plot_group_start(const char *name)
-{
-	return true;
-}
-
-bool ro_plot_group_end(void)
-{
-	return true;
 }
 
 /**

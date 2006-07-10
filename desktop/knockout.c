@@ -27,6 +27,7 @@ struct knockout_box;
 struct knockout_entry;
 
 
+static void knockout_set_plotters(void);
 static bool knockout_plot_flush(void);
 static void knockout_calculate(int x0, int y0, int x1, int y1, struct knockout_box *box);
 static bool knockout_plot_fill_recursive(struct knockout_box *box, colour c);
@@ -235,7 +236,7 @@ bool knockout_plot_start(struct plotter_table *plotter)
 
 	/* take over the plotter */
 	real_plot = *plotter;
-	plot = knockout_plotters;
+	knockout_set_plotters();
 	return true;
 }
 
@@ -408,8 +409,21 @@ bool knockout_plot_flush(void)
 	
 	/* re-instate knockout plotters if we are still active */
 	if (nested_depth > 0)
-		plot = knockout_plotters;
+		knockout_set_plotters();
 	return success;
+}
+
+
+/**
+ * Override the current plotters with the knockout plotters
+ */
+void knockout_set_plotters(void)
+{
+	plot = knockout_plotters;
+	if (!real_plot.group_start)
+		plot.group_start = NULL;
+	if (!real_plot.group_end)
+		plot.group_end = NULL;
 }
 
 
@@ -704,7 +718,7 @@ bool knockout_plot_clip(int clip_x0, int clip_y0,
 				clip_x0, clip_y0, clip_x1, clip_y1));
 		return false;
 	}
-
+	
 	/* memorise clip for bitmap tiling */
 	clip_x0_cur = clip_x0;
 	clip_y0_cur = clip_y0;
