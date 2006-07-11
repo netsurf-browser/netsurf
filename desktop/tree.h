@@ -34,7 +34,6 @@ struct toolbar;
 typedef enum {
   	NODE_ELEMENT_TEXT,		/* <-- Text only */
   	NODE_ELEMENT_TEXT_PLUS_SPRITE,	/* <-- Text and sprite */
-  	NODE_ELEMENT_SPRITE,		/* <-- Sprite only */
   	NODE_ELEMENT_THUMBNAIL,		/* <-- Bitmap only */
 } node_element_type;
 
