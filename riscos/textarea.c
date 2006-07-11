@@ -30,6 +30,9 @@
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utf8.h"
 
+#define MARGIN_LEFT 8
+#define MARGIN_RIGHT 8
+
 struct line_info {
 	unsigned int b_start;		/**< Byte offset of line start */
 	unsigned int b_length;		/**< Byte length of line */
@@ -56,7 +59,8 @@ static struct text_area {
 
 	char *font_family;		/**< Font family of text */
 	unsigned int font_size;		/**< Font size (16ths/pt) */
-	int line_height;		/**< Height of a line, given font size */
+	int line_height;		/**< Total height of a line, given font size */
+	int line_spacing;		/**< Height of line spacing, given font size */
 
 	unsigned int line_count;	/**< Count of lines */
 #define LINE_CHUNK_SIZE 256
@@ -148,11 +152,16 @@ uintptr_t textarea_create(wimp_w parent, wimp_i icon, unsigned int flags,
 	ret->font_size = font_size ? font_size : 192 /* 12pt */;
 
 	/** \todo Better line height calculation */
-	ret->line_height = (int)(((ret->font_size * 1.25) / 16) * 2.0) + 1;
+	ret->line_height = (int)(((ret->font_size * 1.3) / 16) * 2.0) + 1;
+	ret->line_spacing = ret->line_height / 8;
 
 	ret->line_count = 0;
 	ret->lines = 0;
 
+	if (flags & TEXTAREA_READONLY)
+		text_area_definition.title_fg = 0xff;
+	else
+		text_area_definition.title_fg = wimp_COLOUR_BLACK;
 	error = xwimp_create_window(&text_area_definition, &ret->window);
 	if (error) {
 		LOG(("xwimp_create_window: 0x%x: %s",
@@ -188,11 +197,18 @@ uintptr_t textarea_create(wimp_w parent, wimp_i icon, unsigned int flags,
 
 	state.w = ret->window;
 	state.visible.x1 = state.visible.x0 + istate.icon.extent.x1 -
-			ro_get_vscroll_width(ret->window);
-	state.visible.x0 += istate.icon.extent.x0;
+			ro_get_vscroll_width(ret->window) - state.xscroll;
+	state.visible.x0 += istate.icon.extent.x0 + 2 - state.xscroll;
 	state.visible.y0 = state.visible.y1 + istate.icon.extent.y0 +
-			ro_get_hscroll_height(ret->window);
-	state.visible.y1 += istate.icon.extent.y1;
+			ro_get_hscroll_height(ret->window) - state.yscroll;
+	state.visible.y1 += istate.icon.extent.y1 - 2 - state.yscroll;
+
+	if (flags & TEXTAREA_READONLY) {
+		state.visible.x0 += 2;
+		state.visible.x1 -= 4; 
+		state.visible.y0 += 4;
+		state.visible.y1 -= 2; 
+	}
 
 	/* set our width/height */
 	ret->vis_width = state.visible.x1 - state.visible.x0;
@@ -222,12 +238,8 @@ uintptr_t textarea_create(wimp_w parent, wimp_i icon, unsigned int flags,
 					<< wimp_CHILD_YORIGIN_SHIFT |
 			wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
 					<< wimp_CHILD_LS_EDGE_SHIFT |
-			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
-					<< wimp_CHILD_BS_EDGE_SHIFT |
-			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
-					<< wimp_CHILD_RS_EDGE_SHIFT |
-			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
-					<< wimp_CHILD_TS_EDGE_SHIFT);
+			wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
+					<< wimp_CHILD_RS_EDGE_SHIFT);
 	if (error) {
 		LOG(("xwimp_open_window_nested: 0x%x: %s",
 				error->errnum, error->errmess));
@@ -243,6 +255,9 @@ uintptr_t textarea_create(wimp_w parent, wimp_i icon, unsigned int flags,
 	if (text_areas)
 		text_areas->prev = ret;
 	text_areas = ret;
+
+	/* make available for immediate use */
+	textarea_reflow(ret, 0);
 
 	/* and register our event handlers */
 	ro_gui_wimp_event_register_mouse_click(ret->window,
@@ -498,6 +513,11 @@ void textarea_set_caret(uintptr_t self, unsigned int caret)
 	struct text_area *ta;
 	size_t c_len, b_off;
 	unsigned int i;
+	size_t index;
+	int x;
+	os_coord os_line_height;
+	rufl_code code;
+	os_error *error;
 
 	ta = (struct text_area *)self;
 	if (!ta || ta->magic != MAGIC) {
@@ -521,12 +541,115 @@ void textarea_set_caret(uintptr_t self, unsigned int caret)
 
 	ta->caret_pos.line = i;
 
-	/* Finally, calculate the char. offset of the caret in this line */
+	/* Now calculate the char. offset of the caret in this line */
 	for (c_len = 0, ta->caret_pos.char_off = 0;
 			c_len < b_off - ta->lines[i].b_start;
 			c_len = utf8_next(ta->text + ta->lines[i].b_start,
 					ta->lines[i].b_length, c_len))
 		ta->caret_pos.char_off++;
+
+
+	/* Finally, redraw the WIMP caret */
+	index = textarea_get_caret(self);
+	os_line_height.x = 0;
+	os_line_height.y = (int)((float)(ta->line_height - ta->line_spacing) * 0.62) + 1;
+	ro_convert_pixels_to_os_units(&os_line_height, (os_mode)-1);
+
+	for (b_off = 0; index-- > 0; b_off = utf8_next(ta->text, ta->text_len, b_off))
+				; /* do nothing */
+
+	code = rufl_width(ta->font_family, rufl_WEIGHT_400, ta->font_size,
+			ta->text + ta->lines[ta->caret_pos.line].b_start,
+			b_off - ta->lines[ta->caret_pos.line].b_start, &x);
+	if (code != rufl_OK) {
+		if (code == rufl_FONT_MANAGER_ERROR)
+			LOG(("rufl_width: 0x%x: %s",
+				rufl_fm_error->errnum,
+				rufl_fm_error->errmess));
+		else
+			LOG(("rufl_width: 0x%x", code));
+		return;
+	}
+
+	error = xwimp_set_caret_position(ta->window, -1, x + MARGIN_LEFT,
+			-((ta->caret_pos.line + 1) * ta->line_height) -
+				ta->line_height / 4 + ta->line_spacing,
+			os_line_height.y, -1);
+	if (error) {
+		LOG(("xwimp_set_caret_position: 0x%x: %s",
+				error->errnum, error->errmess));
+		return;
+	}
+}
+
+/**
+ * Set the caret's position
+ *
+ * \param self Text area
+ * \param x X position of caret on the screen
+ * \param y Y position of caret on the screen
+ */
+void textarea_set_caret_xy(uintptr_t self, int x, int y)
+{
+	struct text_area *ta;
+	wimp_window_state state;
+	size_t b_off, c_off, temp;
+	int line;
+	os_coord os_line_height;
+	rufl_code code;
+	os_error *error;
+
+	ta = (struct text_area *)self;
+	if (!ta || ta->magic != MAGIC) {
+		LOG(("magic doesn't match"));
+		return;
+	}
+
+	if (ta->flags & TEXTAREA_READONLY)
+		return;
+
+	os_line_height.x = 0;
+	os_line_height.y = (int)((float)(ta->line_height - ta->line_spacing) * 0.62) + 1;
+	ro_convert_pixels_to_os_units(&os_line_height, (os_mode)-1);
+
+	state.w = ta->window;
+	error = xwimp_get_window_state(&state);
+	if (error) {
+		LOG(("xwimp_get_window_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		return;
+	}
+
+	x = x - (state.visible.x0 - state.xscroll) - MARGIN_LEFT;
+	y = (state.visible.y1 - state.yscroll) - y;
+
+	line = y / ta->line_height;
+
+	if (line < 0)
+		line = 0;
+	if (ta->line_count - 1 < (unsigned)line)
+		line = ta->line_count - 1;
+
+	code = rufl_x_to_offset(ta->font_family, rufl_WEIGHT_400,
+			ta->font_size,
+			ta->text + ta->lines[line].b_start,
+			ta->lines[line].b_length,
+			x, &b_off, &x);
+	if (code != rufl_OK) {
+		if (code == rufl_FONT_MANAGER_ERROR)
+			LOG(("rufl_x_to_offset: 0x%x: %s",
+					rufl_fm_error->errnum,
+					rufl_fm_error->errmess));
+		else
+			LOG(("rufl_x_to_offset: 0x%x", code));
+		return;
+	}
+
+	for (temp = 0, c_off = 0; temp < b_off + ta->lines[line].b_start;
+			temp = utf8_next(ta->text, ta->text_len, temp))
+		c_off++;
+
+	textarea_set_caret((uintptr_t)ta, c_off);
 }
 
 /**
@@ -608,7 +731,7 @@ void textarea_reflow(struct text_area *ta, unsigned int line)
 	if (!(ta->flags & TEXTAREA_MULTILINE)) {
 		/* Single line */
 		ta->lines[line_count].b_start = 0;
-		ta->lines[line_count++].b_length = ta->text_len;
+		ta->lines[line_count++].b_length = ta->text_len - 1;
 
 		ta->line_count = line_count;
 
@@ -618,7 +741,8 @@ void textarea_reflow(struct text_area *ta, unsigned int line)
 	for (len = ta->text_len - 1, text = ta->text; len > 0;
 			len -= b_off, text += b_off) {
 		code = rufl_split(ta->font_family, rufl_WEIGHT_400,
-				ta->font_size, text, len, ta->vis_width,
+				ta->font_size, text, len,
+				ta->vis_width - MARGIN_LEFT - MARGIN_RIGHT,
 				&b_off, &x);
 		if (code != rufl_OK) {
 			if (code == rufl_FONT_MANAGER_ERROR)
@@ -691,7 +815,7 @@ void textarea_reflow(struct text_area *ta, unsigned int line)
 	extent.x0 = 0;
 	extent.y1 = 0;
 	extent.x1 = ta->vis_width;
-	extent.y0 = -ta->line_height * (line_count + 1);
+	extent.y0 = -ta->line_height * line_count - ta->line_spacing;
 
 	if (extent.y0 > (int)-ta->vis_height)
 		/* haven't filled window yet */
@@ -789,75 +913,12 @@ void textarea_reflow(struct text_area *ta, unsigned int line)
 bool textarea_mouse_click(wimp_pointer *pointer)
 {
 	struct text_area *ta;
-	wimp_window_state state;
-	size_t b_off, c_off, temp;
-	int x, y, line;
-	os_coord os_line_height;
-	rufl_code code;
-	os_error *error;
-
+	
 	ta = textarea_from_w(pointer->w);
 	if (!ta)
 		return false;
 
-	/** \todo modify for selection model */
-	if (ta->flags & TEXTAREA_READONLY)
-		return true;
-
-	os_line_height.x = 0;
-	os_line_height.y = (int)((float)ta->line_height * 0.6) + 1;
-	ro_convert_pixels_to_os_units(&os_line_height, (os_mode)-1);
-
-	state.w = pointer->w;
-	error = xwimp_get_window_state(&state);
-	if (error) {
-		LOG(("xwimp_get_window_state: 0x%x: %s",
-				error->errnum, error->errmess));
-		return false;
-	}
-
-	x = pointer->pos.x - (state.visible.x0 - state.xscroll);
-	y = (state.visible.y1 - state.yscroll) - pointer->pos.y;
-
-	line = y / ta->line_height;
-
-	if (line < 0)
-		line = 0;
-	if (ta->line_count - 1 < (unsigned)line)
-		line = ta->line_count - 1;
-
-	code = rufl_x_to_offset(ta->font_family, rufl_WEIGHT_400,
-			ta->font_size,
-			ta->text + ta->lines[line].b_start,
-			ta->lines[line].b_length,
-			x, &b_off, &x);
-	if (code != rufl_OK) {
-		if (code == rufl_FONT_MANAGER_ERROR)
-			LOG(("rufl_x_to_offset: 0x%x: %s",
-					rufl_fm_error->errnum,
-					rufl_fm_error->errmess));
-		else
-			LOG(("rufl_x_to_offset: 0x%x", code));
-		return false;
-	}
-
-	for (temp = 0, c_off = 0; temp < b_off + ta->lines[line].b_start;
-			temp = utf8_next(ta->text, ta->text_len, temp))
-		c_off++;
-
-	textarea_set_caret((uintptr_t)ta, c_off);
-
-	error = xwimp_set_caret_position(state.w, -1,
-			x,
-			-((ta->caret_pos.line + 1) * ta->line_height) -
-					ta->line_height / 4,
-			os_line_height.y, -1);
-	if (error) {
-		LOG(("xwimp_set_caret_position: 0x%x: %s",
-				error->errnum, error->errmess));
-		return false;
-	}
-
+	textarea_set_caret_xy((uintptr_t)ta, pointer->pos.x, pointer->pos.y);
 	return true;
 }
 
@@ -1020,74 +1081,16 @@ bool textarea_key_press(wimp_key *key)
 
 		{
 			wimp_draw update;
-			wimp_window_state state;
-			size_t b_off, index;
-			int x;
-			os_coord os_line_height;
-			rufl_code code;
 			unsigned int c_pos =
 					textarea_get_caret((uintptr_t)ta);
 			textarea_insert_text((uintptr_t)ta, c_pos, utf8);
 			textarea_set_caret((uintptr_t)ta, ++c_pos);
 
-			index = c_pos;
-
-			os_line_height.x = 0;
-			os_line_height.y =
-				(int)((float)ta->line_height * 0.6) + 1;
-			ro_convert_pixels_to_os_units(&os_line_height,
-					(os_mode)-1);
-
-			for (b_off = 0; index-- > 0;
-					b_off = utf8_next(ta->text,
-						ta->text_len, b_off))
-				; /* do nothing */
-
-			code = rufl_width(ta->font_family, rufl_WEIGHT_400,
-					ta->font_size,
-					ta->text + ta->lines[ta->caret_pos.
-							line].b_start,
-					b_off - ta->lines[ta->caret_pos.
-							line].b_start,
-					&x);
-			if (code != rufl_OK) {
-				if (code == rufl_FONT_MANAGER_ERROR)
-					LOG(("rufl_width: 0x%x: %s",
-						rufl_fm_error->errnum,
-						rufl_fm_error->errmess));
-				else
-					LOG(("rufl_width: 0x%x", code));
-
-				return true;
-			}
-
-			state.w = ta->window;
-			error = xwimp_get_window_state(&state);
-			if (error) {
-				LOG(("xwimp_get_window_state: 0x%x: %s",
-					error->errnum, error->errmess));
-				return true;
-			}
-
-			error = xwimp_set_caret_position(ta->window, -1,
-					x,
-					-((ta->caret_pos.line + 1) *
-							ta->line_height) -
-							ta->line_height / 4,
-					os_line_height.y, -1);
-			if (error) {
-				LOG(("xwimp_set_caret_position: 0x%x: %s",
-					error->errnum, error->errmess));
-				return true;
-			}
-
 			update.w = ta->window;
 			update.box.x0 = 0;
 			update.box.y1 = 0;
 			update.box.x1 = ta->vis_width;
-			update.box.y0 =
-				-ta->line_height * (ta->line_count + 1);
-
+			update.box.y0 = -ta->line_height * (ta->line_count + 1);
 			textarea_redraw_internal(&update, true);
 		}
 	}
@@ -1196,10 +1199,10 @@ void textarea_redraw_internal(wimp_draw *redraw, bool update)
 					ta->font_size,
 					ta->text + ta->lines[line].b_start,
 					ta->lines[line].b_length,
-					redraw->box.x0 - redraw->xscroll,
+					redraw->box.x0 - redraw->xscroll + MARGIN_LEFT,
 					redraw->box.y1 - redraw->yscroll -
 						((line + 1) *
-						ta->line_height),
+						ta->line_height - ta->line_spacing),
 					rufl_BLEND_FONT);
 			if (code != rufl_OK) {
 				if (code == rufl_FONT_MANAGER_ERROR)

@@ -26,6 +26,7 @@ void textarea_insert_text(uintptr_t self, unsigned int index,
 void textarea_replace_text(uintptr_t self, unsigned int start,
 		unsigned int end, const char *text);
 void textarea_set_caret(uintptr_t self, unsigned int caret);
+void textarea_set_caret_xy(uintptr_t self, int x, int y);
 unsigned int textarea_get_caret(uintptr_t self);
 
 
