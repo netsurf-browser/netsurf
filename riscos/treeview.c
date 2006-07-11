@@ -229,136 +229,137 @@ void tree_draw_node_element(struct tree *tree, struct node_element *element) {
 
 
 	switch (element->type) {
-		case NODE_ELEMENT_TEXT_PLUS_SPRITE:
-			assert(element->sprite);
+	case NODE_ELEMENT_TEXT_PLUS_SPRITE:
+		assert(element->sprite);
 
-			ro_gui_tree_icon.flags = wimp_ICON_INDIRECTED | wimp_ICON_VCENTRED;
-			if (selected)
-				ro_gui_tree_icon.flags |= wimp_ICON_SELECTED;
-			ro_gui_tree_icon.extent.x0 = tree->offset_x + element->box.x;
-			ro_gui_tree_icon.extent.y1 = -tree->offset_y - element->box.y -
-					toolbar_height;
-			ro_gui_tree_icon.extent.x1 = ro_gui_tree_icon.extent.x0 +
-					NODE_INSTEP;
-			ro_gui_tree_icon.extent.y0 = -tree->offset_y - element->box.y -
-					element->box.height - toolbar_height;
-			ro_gui_tree_icon.flags |= wimp_ICON_TEXT | wimp_ICON_SPRITE;
-			ro_gui_tree_icon.data.indirected_text_and_sprite.text =
-					ro_gui_tree_icon_null;
-			ro_gui_tree_icon.data.indirected_text_and_sprite.validation =
-					ro_gui_tree_icon_validation;
-			ro_gui_tree_icon.data.indirected_text_and_sprite.size = 1;
-			if (element->parent->expanded) {
-				sprintf(ro_gui_tree_icon_validation, "S%s",
-						element->sprite->expanded_name);
-			} else {
-				sprintf(ro_gui_tree_icon_validation, "S%s",
-						element->sprite->name);
-			}
-			error = xwimp_plot_icon(&ro_gui_tree_icon);
+		ro_gui_tree_icon.flags = wimp_ICON_INDIRECTED | wimp_ICON_VCENTRED;
+		if (selected)
+			ro_gui_tree_icon.flags |= wimp_ICON_SELECTED;
+		ro_gui_tree_icon.extent.x0 = tree->offset_x + element->box.x;
+		ro_gui_tree_icon.extent.y1 = -tree->offset_y - element->box.y -
+				toolbar_height;
+		ro_gui_tree_icon.extent.x1 = ro_gui_tree_icon.extent.x0 +
+				NODE_INSTEP;
+		ro_gui_tree_icon.extent.y0 = -tree->offset_y - element->box.y -
+				element->box.height - toolbar_height;
+		ro_gui_tree_icon.flags |= wimp_ICON_TEXT | wimp_ICON_SPRITE;
+		ro_gui_tree_icon.data.indirected_text_and_sprite.text =
+				ro_gui_tree_icon_null;
+		ro_gui_tree_icon.data.indirected_text_and_sprite.validation =
+				ro_gui_tree_icon_validation;
+		ro_gui_tree_icon.data.indirected_text_and_sprite.size = 1;
+		if (element->parent->expanded) {
+			sprintf(ro_gui_tree_icon_validation, "S%s",
+					element->sprite->expanded_name);
+		} else {
+			sprintf(ro_gui_tree_icon_validation, "S%s",
+					element->sprite->name);
+		}
+		error = xwimp_plot_icon(&ro_gui_tree_icon);
+		if (error) {
+			LOG(("xwimp_plot_icon: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+		}
+		x0 += NODE_INSTEP;
+
+		/* fall through */
+	case NODE_ELEMENT_TEXT:
+		assert(element->text);
+
+		if (element == tree->editing)
+			return;
+
+		if (ro_gui_tree_icon.flags & wimp_ICON_SELECTED)
+			ro_gui_tree_icon.flags |= wimp_ICON_FILLED;
+		if (selected) {
+			error = xcolourtrans_set_gcol((os_colour)0x00000000, 0,
+					os_ACTION_OVERWRITE, 0, 0);
 			if (error) {
-				LOG(("xwimp_plot_icon: 0x%x: %s",
+				LOG(("xcolourtrans_set_gcol: 0x%x: %s",
 						error->errnum, error->errmess));
-				warn_user("WimpError", error->errmess);
-			}
-			x0 += NODE_INSTEP;
-
-		case NODE_ELEMENT_TEXT:
-			assert(element->text);
-
-			if (element == tree->editing)
-				return;
-
-			if (ro_gui_tree_icon.flags & wimp_ICON_SELECTED)
-				ro_gui_tree_icon.flags |= wimp_ICON_FILLED;
-			if (selected) {
-				error = xcolourtrans_set_gcol((os_colour)0x00000000, 0,
-						os_ACTION_OVERWRITE, 0, 0);
-				if (error) {
-					LOG(("xcolourtrans_set_gcol: 0x%x: %s",
-							error->errnum, error->errmess));
-					warn_user("MiscError", error->errmess);
-					return;
-				}
-				error = xos_plot(os_MOVE_TO, x0, y0);
-				if (!error)
-					xos_plot(os_PLOT_RECTANGLE | os_PLOT_TO, x1-1, y1-1);
-				if (error) {
-					LOG(("xos_plot: 0x%x: %s",
-							error->errnum, error->errmess));
-					warn_user("MiscError", error->errmess);
-					return;
-				}
-				bg = 0x0000000;
-				c = 0x00eeeeee;
-			} else {
-				bg = 0x00ffffff;
-				c = 0x00000000;
-			}
-			error = xcolourtrans_set_font_colours(font_CURRENT,
-					bg << 8, c << 8, 14, 0, 0, 0);
-			if (error) {
-				LOG(("xcolourtrans_set_font_colours: 0x%x: %s",
-						error->errnum, error->errmess));
+				warn_user("MiscError", error->errmess);
 				return;
 			}
-			code = rufl_paint("Homerton", rufl_WEIGHT_400, 192,
-					element->text, strlen(element->text),
-					x0 + 8, y0 + 10,
-					rufl_BLEND_FONT);
-			if (code != rufl_OK) {
-				if (code == rufl_FONT_MANAGER_ERROR)
-					LOG(("rufl_paint: rufl_FONT_MANAGER_ERROR: 0x%x: %s",
-						rufl_fm_error->errnum,
-						rufl_fm_error->errmess));
-				else
-					LOG(("rufl_paint: 0x%x", code));
+			error = xos_plot(os_MOVE_TO, x0, y0);
+			if (!error)
+				error = xos_plot(os_PLOT_RECTANGLE | os_PLOT_TO, x1-1, y1-1);
+			if (error) {
+				LOG(("xos_plot: 0x%x: %s",
+						error->errnum, error->errmess));
+				warn_user("MiscError", error->errmess);
+				return;
 			}
-			break;
-		case NODE_ELEMENT_THUMBNAIL:
-			url_element = tree_find_element(element->parent, TREE_ELEMENT_URL);
-			if (url_element)
-				bitmap = urldb_get_thumbnail(url_element->text);
-			if (bitmap) {
-				frame = bitmap_get_buffer(bitmap);
-				if (!frame)
-					urldb_set_thumbnail(url_element->text, NULL);
-				if ((!frame) || (element->box.width == 0)) {
-					update = calloc(sizeof(struct node_update), 1);
-					if (!update)
-						return;
-					update->tree = tree;
-					update->node = element->parent;
-					schedule(0, tree_handle_node_changed_callback,
-							update);
+			bg = 0x0000000;
+			c = 0x00eeeeee;
+		} else {
+			bg = 0x00ffffff;
+			c = 0x00000000;
+		}
+		error = xcolourtrans_set_font_colours(font_CURRENT,
+				bg << 8, c << 8, 14, 0, 0, 0);
+		if (error) {
+			LOG(("xcolourtrans_set_font_colours: 0x%x: %s",
+					error->errnum, error->errmess));
+			return;
+		}
+		code = rufl_paint("Homerton", rufl_WEIGHT_400, 192,
+				element->text, strlen(element->text),
+				x0 + 8, y0 + 10,
+				rufl_BLEND_FONT);
+		if (code != rufl_OK) {
+			if (code == rufl_FONT_MANAGER_ERROR)
+				LOG(("rufl_paint: rufl_FONT_MANAGER_ERROR: 0x%x: %s",
+					rufl_fm_error->errnum,
+					rufl_fm_error->errmess));
+			else
+				LOG(("rufl_paint: 0x%x", code));
+		}
+		break;
+	case NODE_ELEMENT_THUMBNAIL:
+		url_element = tree_find_element(element->parent, TREE_ELEMENT_URL);
+		if (url_element)
+			bitmap = urldb_get_thumbnail(url_element->text);
+		if (bitmap) {
+			frame = bitmap_get_buffer(bitmap);
+			if (!frame)
+				urldb_set_thumbnail(url_element->text, NULL);
+			if ((!frame) || (element->box.width == 0)) {
+				update = calloc(sizeof(struct node_update), 1);
+				if (!update)
 					return;
-				}
-				image_redraw(bitmap->sprite_area,
-						ro_gui_tree_origin_x + element->box.x + 2,
-						ro_gui_tree_origin_y - element->box.y,
-						bitmap->width, bitmap->height,
-						bitmap->width, bitmap->height,
-						0xffffff,
-						false, false, false,
-						IMAGE_PLOT_TINCT_OPAQUE);
-				tree_draw_line(element->box.x,
-						element->box.y,
-						element->box.width - 1,
-						0);
-				tree_draw_line(element->box.x,
-						element->box.y,
-						0,
-						element->box.height - 3);
-				tree_draw_line(element->box.x,
-						element->box.y + element->box.height - 3,
-						element->box.width - 1,
-						0);
-				tree_draw_line(element->box.x + element->box.width - 1,
-						element->box.y,
-						0,
-						element->box.height - 3);
+				update->tree = tree;
+				update->node = element->parent;
+				schedule(0, tree_handle_node_changed_callback,
+						update);
+				return;
 			}
-			break;
+			image_redraw(bitmap->sprite_area,
+					ro_gui_tree_origin_x + element->box.x + 2,
+					ro_gui_tree_origin_y - element->box.y,
+					bitmap->width, bitmap->height,
+					bitmap->width, bitmap->height,
+					0xffffff,
+					false, false, false,
+					IMAGE_PLOT_TINCT_OPAQUE);
+			tree_draw_line(element->box.x,
+					element->box.y,
+					element->box.width - 1,
+					0);
+			tree_draw_line(element->box.x,
+					element->box.y,
+					0,
+					element->box.height - 3);
+			tree_draw_line(element->box.x,
+					element->box.y + element->box.height - 3,
+					element->box.width - 1,
+					0);
+			tree_draw_line(element->box.x + element->box.width - 1,
+					element->box.y,
+					0,
+					element->box.height - 3);
+		}
+		break;
 	}
 }
 
