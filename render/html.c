@@ -1549,7 +1549,8 @@ bool html_find_frame(struct content *c, const char *frame,
 	assert(c->type == CONTENT_HTML);
 
 	for (j = 0; j != c->data.html.object_count; j++) {
-		if (!strcmp(c->data.html.object[j].frame, frame)) {
+		if (c->data.html.object[j].frame &&
+				!strcmp(c->data.html.object[j].frame, frame)) {
 			*page = c;
 			*i = j;
 			return true;
