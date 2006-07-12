@@ -1260,6 +1260,9 @@ void ro_gui_window_open(struct gui_window *g, wimp_open *open)
 	/* change extent if necessary */
 	if (g->old_width != width || g->old_height != height) {
 		if (content && g->old_width != width) {
+			xosbyte1(osbyte_SCAN_KEYBOARD, 1 ^ 0x80, 0, &key_down);
+			if (key_down)
+				g->option.scale = (g->option.scale * width) / g->old_width;
 			g->reformat_pending = true;
 			gui_reformat_pending = true;
 		}
