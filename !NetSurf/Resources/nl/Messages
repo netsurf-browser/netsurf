@@ -688,8 +688,8 @@ HelpHotlistMenu3:\Sdeselect all selected items.
 
 HelpGHistory:\Tglobal history window.
 HelpGHistoryToolbar0:\Tdelete button.|M\Sdelete the current selection.
-HelpGHistoryToolbar1:\Texpand entries button.|M\Sexpand all addresses in the hotlist.|M\Acollapse all addresses in the hotlist.|MExpanded addresses show additional details, such as a visit counter.
-HelpGHistoryToolbar2:\Topen directories button.|M\Sopen all directories in the hotlist.|M\Aclose all directories in the hotlist.
+HelpGHistoryToolbar1:\Texpand entries button.|M\Sexpand all entries in the history.|M\Acollapse all entries in the history.|MExpanded entries show additional details, such as a visit counter.
+HelpGHistoryToolbar2:\Topen sections button.|M\Sopen all sections in the global history.|M\Aclose all sections in the global history.
 HelpGHistoryToolbar3:\Tlaunch button.|M\Slaunch the current selection.
 
 HelpGHistoryMenu0:\Rperform an operation on global history.
@@ -711,6 +711,11 @@ HelpGHistoryMenu1-1:\Sdelete the current selection from global history.
 HelpGHistoryMenu1-2:\Sreset statistics, such as visit count, for selected items.
 HelpGHistoryMenu2:\Sselect all the items in the hotlist.
 HelpGHistoryMenu3:\Sdeselect all selected items.
+
+HelpCookies:\TCookie management window.
+HelpCookiesToolbar0:\Tdelete button.|M\Sdelete the current selection.
+HelpCookiesToolbar1:\Texpand cookies button.|M\Sexpand all cookies in the list.|M\Acollapse all cookies in the list.|MExpanded cookies show additional details.
+HelpCookiesToolbar2:\Topen directories button.|M\Sopen all directories in the list.|M\Aclose all directories in the list.
 
 HelpAppInfo:\TNetSurf information \w.|MSee the about page for the contributor list and credits.
 

@@ -712,6 +712,11 @@ HelpGHistoryMenu1-2:Setzt die Besuchsstatistik der markierten Einträge zurück.
 HelpGHistoryMenu2:Markiert alle Elemente der globalen History.
 HelpGHistoryMenu3:Deselektiert alle markierten Elemente.
 
+HelpCookies:\TCookie management window.
+HelpCookiesToolbar0:\Tdelete button.|M\Sdelete the current selection.
+HelpCookiesToolbar1:\Texpand cookies button.|M\Sexpand all cookies in the list.|M\Acollapse all cookies in the list.|MExpanded cookies show additional details.
+HelpCookiesToolbar2:\Topen directories button.|M\Sopen all directories in the list.|M\Aclose all directories in the list.
+
 HelpAppInfo:Das ist das Info-Fenster zu NetSurf.|MGenauere Angaben zu Autoren und Entwicklerteam, zu genutzten Libraries etc. gibt es bei "Über NetSurf" im Untermenü Hilfe eines Browserfensters.
 
 

@@ -712,6 +712,11 @@ HelpGHistoryMenu1-2:\Sreset statistics, such as visit count, for selected items.
 HelpGHistoryMenu2:\Sselect all the items in the hotlist.
 HelpGHistoryMenu3:\Sdeselect all selected items.
 
+HelpCookies:\TCookie management window.
+HelpCookiesToolbar0:\Tdelete button.|M\Sdelete the current selection.
+HelpCookiesToolbar1:\Texpand cookies button.|M\Sexpand all cookies in the list.|M\Acollapse all cookies in the list.|MExpanded cookies show additional details.
+HelpCookiesToolbar2:\Topen directories button.|M\Sopen all directories in the list.|M\Aclose all directories in the list.
+
 HelpAppInfo:\Tla \w d'information de NetSurf.|MVoir la page "À propos de" pour une liste des contributeurs et les remerciements.
 
 
