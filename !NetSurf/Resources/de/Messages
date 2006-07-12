@@ -39,6 +39,7 @@ Quit:Beenden
 # Iconbar -> Open menu
 #
 OpenURL:Öffne URL
+ShowCookies:Show cookies...
 
 # Main menu
 #
@@ -119,6 +120,7 @@ RenderAll:Alles zwischenspeichern
 #
 Hotlist:Hotlist
 History:History
+Cookies:Cookies
 FindText:Text suchen  F4
 Window:Fenster
 

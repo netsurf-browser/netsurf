@@ -39,6 +39,7 @@ Quit:Quitter
 # Iconbar -> Open menu
 #
 OpenURL:Ouvrir l'URL...
+ShowCookies:Show cookies...
 
 # Main menu
 #
@@ -119,6 +120,7 @@ RenderAll:Tamponner tous les rendus
 #
 Hotlist:Favoris
 History:Historique
+Cookies:Cookies
 FindText:Recherche de texte  F4
 Window:Fenêtre
 
