@@ -57,6 +57,9 @@ static struct text_area {
 //	unsigned int selection_start;	/**< Character index of sel start */
 //	unsigned int selection_end;	/**< Character index of sel end */
 
+	wimp_w parent;			/**< Parent window handle */
+	wimp_i icon;			/**< Parent icon handle */
+
 	char *font_family;		/**< Font family of text */
 	unsigned int font_size;		/**< Font size (16ths/pt) */
 	int line_height;		/**< Total height of a line, given font size */
@@ -127,7 +130,9 @@ uintptr_t textarea_create(wimp_w parent, wimp_i icon, unsigned int flags,
 		LOG(("malloc failed"));
 		return 0;
 	}
-
+	
+	ret->parent = parent;
+	ret->icon = icon;
 	ret->magic = MAGIC;
 	ret->flags = flags;
 	ret->text = malloc(64);
@@ -934,7 +939,7 @@ bool textarea_key_press(wimp_key *key)
 	static int alphabet = 0;
 	static wchar_t wc = 0;	/* buffer for UTF8 alphabet */
 	static int shift = 0;
-
+	wimp_key keypress;
 	struct text_area *ta;
 	wchar_t c = (wchar_t)key->c;
 	int t_alphabet;
@@ -1076,6 +1081,28 @@ bool textarea_key_press(wimp_key *key)
 			}
 		}
 
+		/** \todo handle command keys */
+		switch (c) {
+			/** pass on RETURN and ESCAPE to the parent icon */
+			case wimp_KEY_RETURN:
+				if (ta->flags & TEXTAREA_MULTILINE)
+					break;
+				/* fall through */
+			case wimp_KEY_ESCAPE:
+				keypress = *key;
+				keypress.w = ta->parent;
+				keypress.i = ta->icon;
+				keypress.index = 0;	/* undefined if not in an icon */
+				error = xwimp_send_message_to_window(wimp_KEY_PRESSED,
+						(wimp_message*)&keypress, ta->parent,
+						ta->icon, 0);
+				if (error) {
+					LOG(("xwimp_send_message: 0x%x:%s",
+						error->errnum, error->errmess));
+				}
+				return true;
+		}
+
 		utf8_len = utf8_from_ucs4(c, utf8);
 		utf8[utf8_len] = '\0';
 
@@ -1094,9 +1121,6 @@ bool textarea_key_press(wimp_key *key)
 			textarea_redraw_internal(&update, true);
 		}
 	}
-
-	/** \todo handle command keys */
-
 	return true;
 }
 
