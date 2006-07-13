@@ -733,6 +733,23 @@ HelpCookiesToolbar0:\Tdelete button.|M\Sdelete the current selection.
 HelpCookiesToolbar1:\Texpand cookies button.|M\Sexpand all cookies in the list.|M\Acollapse all cookies in the list.|MExpanded cookies show additional details.
 HelpCookiesToolbar2:\Topen directories button.|M\Sopen all directories in the list.|M\Aclose all directories in the list.
 
+HelpCookiesMenu0:\Rperform an operation on the cookie list.
+HelpCookiesMenu0-0:\Rexpand items within the cookie list.
+HelpCookiesMenu0-0-0:\Sopen all directories and show all cookie details.
+HelpCookiesMenu0-0-1:\Sopen all directories.
+HelpCookiesMenu0-0-2:\Sshow all cookie details.
+HelpCookiesMenu0-1:\Rcollapse items within the cookie list.
+HelpCookiesMenu0-1-0:\Sclose all directories and hide all cookie details.
+HelpCookiesMenu0-1-1:\Sclose all directories.
+HelpCookiesMenu0-1-2:\Shide all cookie details.
+HelpCookiesMenu0-2:\Rcontrol the display of NetSurf's toolbars.
+HelpCookiesMenu0-2-0:\Stoggle the display of the toolbar buttons.
+HelpCookiesMenu0-2-1:\Stoggle toolbar edit mode.
+HelpCookiesMenu1:\Roperate on the current selection.
+HelpCookiesMenu1-0:\Sdelete any selected cookies.
+HelpCookiesMenu2:\Sselect all the items in the cookie list.
+HelpCookiesMenu3:\Sdeselect all selected items.
+
 HelpAppInfo:\TNetSurf information \w.|MSee the about page for the contributor list and credits.
 
 
