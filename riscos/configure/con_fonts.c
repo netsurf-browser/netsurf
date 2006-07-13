@@ -5,6 +5,7 @@
  * Copyright 2005 Richard Wilson <info@tinct.net>
  */
 
+#include "netsurf/css/css.h"
 #include "netsurf/desktop/options.h"
 #include "netsurf/riscos/dialog.h"
 #include "netsurf/riscos/gui.h"
