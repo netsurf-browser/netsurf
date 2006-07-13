@@ -1891,20 +1891,22 @@ bool ro_gui_window_keypress(wimp_key *key)
 			if (browser_window_key_press(g->bw, c))
 				return true;
 		}
+
+		/* Reset c to incoming character / key code
+		 * as we may have corrupted it above */
+		c = (wchar_t)key->c;
 	}
 
-	c &= ~IS_WIMP_KEY;
-
 	switch (c) {
-		case wimp_KEY_F1:	/* Help. */
+		case IS_WIMP_KEY + wimp_KEY_F1:	/* Help. */
 			return ro_gui_menu_handle_action(g->window,
 					HELP_OPEN_CONTENTS, false);
 
-		case wimp_KEY_CONTROL + wimp_KEY_F1:
+		case IS_WIMP_KEY + wimp_KEY_CONTROL + wimp_KEY_F1:
 			return ro_gui_menu_handle_action(g->window,
 					BROWSER_PAGE_INFO, false);
 
-		case wimp_KEY_F2:
+		case IS_WIMP_KEY + wimp_KEY_F2:
 			if (!g->toolbar)
 				return false;
 			ro_gui_url_complete_close(NULL, 0);
@@ -1916,59 +1918,62 @@ bool ro_gui_window_keypress(wimp_key *key)
 			ro_gui_url_complete_keypress(g, wimp_KEY_DOWN);
 			return true;
 
-		case wimp_KEY_CONTROL + wimp_KEY_F2:	/* Close window. */
+		case IS_WIMP_KEY + wimp_KEY_CONTROL + wimp_KEY_F2:
+			/* Close window. */
 			ro_gui_url_complete_close(NULL, 0);
 			browser_window_destroy(g->bw);
 			return true;
 
-		case wimp_KEY_F3:
+		case IS_WIMP_KEY + wimp_KEY_F3:
 			return ro_gui_menu_handle_action(g->window,
 					BROWSER_SAVE, false);
 
-		case wimp_KEY_CONTROL + wimp_KEY_F3:
+		case IS_WIMP_KEY + wimp_KEY_CONTROL + wimp_KEY_F3:
 			return ro_gui_menu_handle_action(g->window,
 					BROWSER_EXPORT_TEXT, false);
 
-		case wimp_KEY_SHIFT + wimp_KEY_F3:
+		case IS_WIMP_KEY + wimp_KEY_SHIFT + wimp_KEY_F3:
 			return ro_gui_menu_handle_action(g->window,
 					BROWSER_SAVE_COMPLETE, false);
 
-		case wimp_KEY_CONTROL + wimp_KEY_SHIFT + wimp_KEY_F3:
+		case IS_WIMP_KEY + wimp_KEY_CONTROL + wimp_KEY_SHIFT + wimp_KEY_F3:
 			return ro_gui_menu_handle_action(g->window,
 					BROWSER_EXPORT_DRAW, false);
 
 #ifdef WITH_SEARCH
-		case wimp_KEY_F4:	/* Search */
+		case IS_WIMP_KEY + wimp_KEY_F4:	/* Search */
 			return ro_gui_menu_handle_action(g->window,
 					BROWSER_FIND_TEXT, false);
 #endif
 
-		case wimp_KEY_F5:	/* Reload */
+		case IS_WIMP_KEY + wimp_KEY_F5:	/* Reload */
 			return ro_gui_menu_handle_action(g->window,
 					BROWSER_NAVIGATE_RELOAD, false);
 
 		case 18:		/* Ctrl+R (Full reload) */
-		case wimp_KEY_CONTROL + wimp_KEY_F5:	/* Full reload */
+		case IS_WIMP_KEY + wimp_KEY_CONTROL + wimp_KEY_F5:	/* Full reload */
 			return ro_gui_menu_handle_action(g->window,
 					BROWSER_NAVIGATE_RELOAD_ALL, false);
 
-		case wimp_KEY_F6:	/* Hotlist */
+		case IS_WIMP_KEY + wimp_KEY_F6:	/* Hotlist */
 			return ro_gui_menu_handle_action(g->window,
 					HOTLIST_SHOW, false);
 
-		case wimp_KEY_F7:	/* Show local history */
+		case IS_WIMP_KEY + wimp_KEY_F7:	/* Show local history */
 			return ro_gui_menu_handle_action(g->window,
 					HISTORY_SHOW_LOCAL, false);
 
-		case wimp_KEY_CONTROL + wimp_KEY_F7:	/* Show global history */
+		case IS_WIMP_KEY + wimp_KEY_CONTROL + wimp_KEY_F7:
+			/* Show global history */
 			return ro_gui_menu_handle_action(g->window,
 					HISTORY_SHOW_GLOBAL, false);
 
-		case wimp_KEY_F8:	/* View source */
+		case IS_WIMP_KEY + wimp_KEY_F8:	/* View source */
 			ro_gui_view_source(content);
 			return true;
 
-		case wimp_KEY_F9:	/* Dump content for debugging. */
+		case IS_WIMP_KEY + wimp_KEY_F9:
+			/* Dump content for debugging. */
 			switch (content->type) {
 				case CONTENT_HTML:
 					box_dump(content->data.html.layout, 0);
@@ -1981,19 +1986,20 @@ bool ro_gui_window_keypress(wimp_key *key)
 			}
 			return true;
 
-		case wimp_KEY_CONTROL + wimp_KEY_F9:
+		case IS_WIMP_KEY + wimp_KEY_CONTROL + wimp_KEY_F9:
 			urldb_dump();
 			return true;
 
-		case wimp_KEY_CONTROL + wimp_KEY_SHIFT + wimp_KEY_F9:
+		case IS_WIMP_KEY + wimp_KEY_CONTROL + wimp_KEY_SHIFT + wimp_KEY_F9:
 			talloc_report_full(0, stderr);
 			return true;
 
-		case wimp_KEY_F11:	/* Zoom */
+		case IS_WIMP_KEY + wimp_KEY_F11:	/* Zoom */
 			return ro_gui_menu_handle_action(g->window,
 					BROWSER_SCALE_VIEW, false);
 
-		case wimp_KEY_SHIFT + wimp_KEY_F11:	/* Toggle display of box outlines. */
+		case IS_WIMP_KEY + wimp_KEY_SHIFT + wimp_KEY_F11:
+			/* Toggle display of box outlines. */
 			html_redraw_debug = !html_redraw_debug;
 			gui_window_redraw_window(g);
 			return true;
@@ -2078,17 +2084,17 @@ bool ro_gui_window_keypress(wimp_key *key)
 			return true;
 
 #ifdef WITH_PRINT
-		case wimp_KEY_PRINT:
+		case IS_WIMP_KEY + wimp_KEY_PRINT:
 			return ro_gui_menu_handle_action(g->window,
 					BROWSER_PRINT, false);
 #endif
 
-		case wimp_KEY_UP:
-		case wimp_KEY_DOWN:
-		case wimp_KEY_PAGE_UP:
-		case wimp_KEY_PAGE_DOWN:
-		case wimp_KEY_CONTROL | wimp_KEY_UP:
-		case wimp_KEY_CONTROL | wimp_KEY_DOWN:
+		case IS_WIMP_KEY + wimp_KEY_UP:
+		case IS_WIMP_KEY + wimp_KEY_DOWN:
+		case IS_WIMP_KEY + wimp_KEY_PAGE_UP:
+		case IS_WIMP_KEY + wimp_KEY_PAGE_DOWN:
+		case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_UP:
+		case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_DOWN:
 			if (toolbar)
 				return ro_gui_url_complete_keypress(g, c);
 			break;
@@ -2099,33 +2105,44 @@ bool ro_gui_window_keypress(wimp_key *key)
 	}
 
 	state.w = g->window;
-	wimp_get_window_state(&state);
+	error = xwimp_get_window_state(&state);
+	if (error) {
+		LOG(("xwimp_get_window_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		return true;
+	}
+
 	y = state.visible.y1 - state.visible.y0 - 32;
 	if (g->toolbar)
 		y -= ro_gui_theme_toolbar_full_height(g->toolbar);
 
 	switch (c) {
-		case wimp_KEY_UP:
+		case IS_WIMP_KEY | wimp_KEY_UP:
 			state.yscroll += 32;
 			break;
-		case wimp_KEY_DOWN:
+		case IS_WIMP_KEY | wimp_KEY_DOWN:
 			state.yscroll -= 32;
 			break;
-		case wimp_KEY_PAGE_UP:
+		case IS_WIMP_KEY | wimp_KEY_PAGE_UP:
 			state.yscroll += y;
 			break;
-		case wimp_KEY_PAGE_DOWN:
+		case IS_WIMP_KEY | wimp_KEY_PAGE_DOWN:
 			state.yscroll -= y;
 			break;
-		case wimp_KEY_CONTROL | wimp_KEY_UP:
+		case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_UP:
 			state.yscroll = 1000;
 			break;
-		case wimp_KEY_CONTROL | wimp_KEY_DOWN:
+		case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_DOWN:
 			state.yscroll = -0x10000000;
 			break;
 	}
 
-		wimp_open_window((wimp_open *) &state);
+	error = xwimp_open_window((wimp_open *) &state);
+	if (error) {
+		LOG(("xwimp_open_window: 0x%x: %s",
+				error->errnum, error->errmess));
+	}
+
 	return true;
 }
 
