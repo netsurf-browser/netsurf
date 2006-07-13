@@ -227,6 +227,20 @@ TreeLast:Dernière visitée: %s
 TreeVisited:Visitées: %s
 TreeVisits:Visites: %i
 TreeUnknown:Inconnu
+TreeValue:Value: %s
+TreeComment:Comment: %s
+TreeDomain:Domain: %s%s
+TreePath:Path: %s%s
+TreeExpires:Expires: %s
+TreeLastUsed:Last used: %s
+TreeSecure:Secure hosts only: %s
+TreeVersion:Version: %s
+TreePersistent:Persistent: %s
+TreeHeaders: (from headers)
+TreeVersion0:Netscape
+TreeVersion1:RFC 2109
+TreeVersion2:RFC 2965
+TreeUnused:Unused
 TreeImport:URL importée
 TreeNewFolder:Nouv. répertoire
 
