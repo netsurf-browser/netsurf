@@ -24,7 +24,7 @@
 #ifndef _NETSURF_DESKTOP_OPTIONS_H_
 #define _NETSURF_DESKTOP_OPTIONS_H_
 
-#include "netsurf/desktop/tree.h"
+struct tree;
 
 enum { OPTION_HTTP_PROXY_AUTH_NONE = 0, OPTION_HTTP_PROXY_AUTH_BASIC = 1,
 		OPTION_HTTP_PROXY_AUTH_NTLM = 2 };

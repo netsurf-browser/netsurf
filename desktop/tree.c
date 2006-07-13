@@ -18,6 +18,7 @@
 #include "netsurf/desktop/tree.h"
 #include "netsurf/desktop/options.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
 
 static void tree_draw_node(struct tree *tree, struct node *node, int clip_x,
@@ -33,6 +34,8 @@ static void tree_selected_to_processing(struct node *node);
 void tree_clear_processing(struct node *node);
 struct node *tree_move_processing_node(struct node *node, struct node *link,
 		bool before, bool first);
+struct node *tree_create_leaf_node(struct node *parent, const char *title);
+struct node *tree_create_leaf_node_shared(struct node *parent, const char *title);
 
 static int tree_initialising = 0;
 
@@ -726,6 +729,12 @@ void tree_draw_node(struct tree *tree, struct node *node, int clip_x, int clip_y
 				tree_draw_line(node->box.x + (NODE_INSTEP / 2),
 						node->data.box.y + node->data.box.height, 0,
 						(40 / 2));
+			if ((node->parent) && (node->parent != tree->root) &&
+					(node->parent->child == node))
+				tree_draw_line(node->parent->box.x + (NODE_INSTEP / 2),
+						node->parent->data.box.y +
+							node->parent->data.box.height, 0,
+						(40 / 2));
 			tree_draw_line(node->box.x - (NODE_INSTEP / 2),
 					node->data.box.y +
 					node->data.box.height - (40 / 2),
@@ -895,12 +904,17 @@ void tree_delete_node(struct tree *tree, struct node *node, bool siblings) {
 
 			if (e->text) {
 				/* we don't free non-editable titles or URLs */
-				if (node->editable)
+				if ((node->editable) || (node->folder))
 					free(e->text);
 				else {
 					if (e->data == TREE_ELEMENT_URL) {
 						/* reset URL characteristics */
 						urldb_reset_url_visit_data(e->text);
+					}
+					
+					/* if not already 'deleted' then delete cookie */
+					if (!node->deleted) {
+						/* todo: delete cookie data */ 
 					}
 
 					if (e->data != TREE_ELEMENT_TITLE &&
@@ -974,6 +988,33 @@ struct node *tree_create_leaf_node(struct node *parent, const char *title) {
 	node->data.type = NODE_ELEMENT_TEXT;
 	node->data.text = squash_whitespace(title);
 	node->data.data = TREE_ELEMENT_TITLE;
+	node->editable = true;
+	if (parent)
+		tree_link_node(parent, node, false);
+	return node;
+}
+
+
+/**
+ * Creates a leaf node with the specified title, and links it into the tree.
+ *
+ * \param parent  the parent node, or NULL not to link
+ * \param title	  the node title
+ * \return the newly created node.
+ */
+struct node *tree_create_leaf_node_shared(struct node *parent, const char *title) {
+	struct node *node;
+
+	assert(title);
+
+	node = calloc(sizeof(struct node), 1);
+	if (!node) return NULL;
+	node->folder = false;
+	node->data.parent = node;
+	node->data.type = NODE_ELEMENT_TEXT;
+	node->data.text = title;
+	node->data.data = TREE_ELEMENT_TITLE;
+	node->editable = false;
 	if (parent)
 		tree_link_node(parent, node, false);
 	return node;
@@ -1009,7 +1050,6 @@ struct node *tree_create_URL_node(struct node *parent,
 	node = tree_create_leaf_node(parent, title);
 	if (!node)
 		return NULL;
-	node->editable = true;
 
 	element = tree_create_node_element(node, TREE_ELEMENT_THUMBNAIL);
 	if (element)
@@ -1050,12 +1090,9 @@ struct node *tree_create_URL_node_shared(struct node *parent,
 		title = data->title;
 	else
 		title = url;
-	node = tree_create_leaf_node(parent, title);
+	node = tree_create_leaf_node_shared(parent, title);
 	if (!node)
 		return NULL;
-	free(node->data.text);
-	node->data.text = title;
-	node->editable = false;
 
 	element = tree_create_node_element(node, TREE_ELEMENT_THUMBNAIL);
 	if (element)
@@ -1069,6 +1106,102 @@ struct node *tree_create_URL_node_shared(struct node *parent,
 	tree_update_URL_node(node, url, data);
 	tree_recalculate_node(node, false);
 
+	return node;
+}
+
+
+/**
+ * Creates a tree entry for a cookie, and links it into the tree.
+ *
+ * All information is used directly from the url_data, and as such cannot be
+ * edited and should never be freed.
+ *
+ * \param parent      the node to link to
+ * \param url         the URL
+ * \param data	      the cookie data to use
+ * \return the node created, or NULL for failure
+ */
+struct node *tree_create_cookie_node(struct node *parent,
+		const struct cookie_data *data) {
+	struct node *node;
+	struct node_element *element;
+	char buffer[256];
+	char buffer2[16];
+
+	node = tree_create_leaf_node(parent, data->name);
+	if (!node)
+		return NULL;
+	node->data.data = TREE_ELEMENT_NAME;
+	node->editable = false;
+
+
+	element = tree_create_node_element(node, TREE_ELEMENT_PERSISTENT);
+	if (element) {
+		snprintf(buffer, 256, messages_get("TreePersistent"),	
+				data->no_destroy ? messages_get("Yes") : messages_get("No"));
+		element->text = strdup(buffer);
+	}
+	element = tree_create_node_element(node, TREE_ELEMENT_VERSION);
+	if (element) {
+	  	snprintf(buffer2, 16, "TreeVersion%i", data->version);
+		snprintf(buffer, 256, messages_get("TreeVersion"), messages_get(buffer2));
+		element->text = strdup(buffer);
+	}
+	element = tree_create_node_element(node, TREE_ELEMENT_SECURE);
+	if (element) {
+		snprintf(buffer, 256, messages_get("TreeSecure"),	
+				data->secure ? messages_get("Yes") : messages_get("No"));
+		element->text = strdup(buffer);
+	}
+	element = tree_create_node_element(node, TREE_ELEMENT_LAST_USED);
+	if (element) {
+		snprintf(buffer, 256, messages_get("TreeLastUsed"),
+				(data->last_used > 0) ?
+					ctime(&data->last_used) : messages_get("TreeUnknown"));
+		if (data->last_used > 0)
+			buffer[strlen(buffer) - 1] = '\0';
+		element->text = strdup(buffer);
+	}
+	element = tree_create_node_element(node, TREE_ELEMENT_EXPIRES);
+	if (element) {
+		snprintf(buffer, 256, messages_get("TreeExpires"),
+				(data->expires > 0) ?
+					ctime(&data->expires) : messages_get("TreeUnknown"));
+		if (data->expires > 0)
+			buffer[strlen(buffer) - 1] = '\0';
+		element->text = strdup(buffer);
+	}
+	element = tree_create_node_element(node, TREE_ELEMENT_PATH);
+	if (element) {
+		snprintf(buffer, 256, messages_get("TreePath"), data->path,
+				data->path_from_set ? messages_get("TreeHeaders") : "");
+		element->text = strdup(buffer);
+	}
+	element = tree_create_node_element(node, TREE_ELEMENT_DOMAIN);
+	if (element) {
+		snprintf(buffer, 256, messages_get("TreeDomain"), data->domain,
+				data->domain_from_set ? messages_get("TreeHeaders") : "");
+		element->text = strdup(buffer);
+	}
+	if ((data->comment) && (strcmp(data->comment, ""))) {
+	  	LOG(("Comment: '%s'", data->comment));
+		element = tree_create_node_element(node, TREE_ELEMENT_COMMENT);
+		if (element) {
+			snprintf(buffer, 256, messages_get("TreeComment"), data->comment);
+			element->text = strdup(buffer);
+		}
+	}
+	element = tree_create_node_element(node, TREE_ELEMENT_VALUE);
+	if (element) {
+		snprintf(buffer, 256, messages_get("TreeValue"),
+				data->value ? data->value : messages_get("TreeUnused"));
+		element->text = strdup(buffer);
+	}
+	
+	/* add version, last_used, expires,
+	 * path, domain, comment, value */
+	tree_set_node_sprite(node, "small_xxx", "small_xxx");
+	tree_recalculate_node(node, false);
 	return node;
 }
 

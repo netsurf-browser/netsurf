@@ -11,6 +11,7 @@
 
 #include <assert.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <swis.h>
@@ -31,6 +32,7 @@
 #include "netsurf/riscos/menus.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/tinct.h"
+#include "netsurf/riscos/textarea.h"
 #include "netsurf/riscos/treeview.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/riscos/wimp_event.h"
@@ -561,14 +563,12 @@ void tree_update_URL_node(struct node *node,
 
 	element = tree_find_element(node, TREE_ELEMENT_LAST_VISIT);
 	if (element) {
-		if (data->last_visit > 0) {
-			snprintf(buffer, 256, messages_get("TreeLast"),
-					ctime((time_t *)&data->last_visit));
-			buffer[strlen(buffer) - 1] = '\0';
-		} else {
-			snprintf(buffer, 256, messages_get("TreeLast"),
+		snprintf(buffer, 256, messages_get("TreeLast"),
+				(data->last_visit > 0) ?
+					ctime((time_t *)&data->last_visit) :
 					messages_get("TreeUnknown"));
-		}
+		if (data->last_visit > 0)
+			buffer[strlen(buffer) - 1] = '\0';
 		free(element->text);
 		element->text = strdup(buffer);
 	}
@@ -916,6 +916,7 @@ void ro_gui_tree_menu_closed(struct tree *tree) {
 		tree_handle_node_element_changed(tree, &tree->temp_selection->data);
 		tree->temp_selection = NULL;
 		ro_gui_menu_prepare_action((wimp_w)tree->handle, TREE_SELECTION, false);
+		ro_gui_menu_prepare_action((wimp_w)tree->handle, TREE_EXPAND_ALL, false);
 	}
 }
 
@@ -990,10 +991,8 @@ bool ro_gui_tree_toolbar_click(wimp_pointer* pointer) {
 void ro_gui_tree_start_edit(struct tree *tree, struct node_element *element,
 		wimp_pointer *pointer) {
 	os_error *error;
-	wimp_window_state state;
 	struct node *parent;
 	int toolbar_height = 0;
-	int caret_x, caret_height, caret_index;
 
 	assert(tree);
 	assert(element);
@@ -1014,8 +1013,6 @@ void ro_gui_tree_start_edit(struct tree *tree, struct node_element *element,
 	}
 
 	tree->editing = element;
-	snprintf(tree->edit_buffer, 256, element->text);
-	tree->edit_buffer[255] = '\0';
 	ro_gui_tree_edit_icon.w = (wimp_w)tree->handle;
 	ro_gui_tree_edit_icon.icon.extent.x0 = tree->offset_x + element->box.x - 2;
 	ro_gui_tree_edit_icon.icon.extent.x1 = tree->offset_x +
@@ -1026,32 +1023,26 @@ void ro_gui_tree_start_edit(struct tree *tree, struct node_element *element,
 			element->box.y - element->box.height;
 	if (element->type == NODE_ELEMENT_TEXT_PLUS_SPRITE)
 		ro_gui_tree_edit_icon.icon.extent.x0 += NODE_INSTEP;
-	ro_gui_tree_edit_icon.icon.data.indirected_text.text = tree->edit_buffer;
+	ro_gui_tree_edit_icon.icon.data.indirected_text.text = element->text;
 	error = xwimp_create_icon(&ro_gui_tree_edit_icon,
 			(wimp_i *)&tree->edit_handle);
 	if (error)
 		LOG(("xwimp_create_icon: 0x%x: %s",
 				error->errnum, error->errmess));
-	if (pointer) {
-		state.w = (wimp_w)tree->handle;
-		error = xwimp_get_window_state(&state);
-		if (error)
-			LOG(("xwimp_get_window_state: 0x%x: %s",
-					error->errnum, error->errmess));
-		caret_x = pointer->pos.x - state.visible.x0;
-		caret_height = element->box.height;
-		caret_index = -1;
-	} else {
-		caret_x = 0;
-		caret_height = -1;
-		caret_index = strlen(tree->edit_buffer);
+	
+	tree->textarea_handle = textarea_create((wimp_w)tree->handle,
+			(wimp_i)tree->edit_handle, 0, "Homerton", 192);
+	if (!tree->textarea_handle) {
+		ro_gui_tree_stop_edit(tree);
+		return;
 	}
-	error = xwimp_set_caret_position((wimp_w)tree->handle,
-			(wimp_i)tree->edit_handle,
-			caret_x, 0, caret_height, caret_index);
-	if (error)
-		LOG(("xwimp_set_caret_position: 0x%x: %s",
-				error->errnum, error->errmess));
+	textarea_set_text(tree->textarea_handle, element->text);
+	if (pointer)
+		textarea_set_caret_xy(tree->textarea_handle,
+				pointer->pos.x, pointer->pos.y);
+	else
+		textarea_set_caret(tree->textarea_handle, strlen(element->text));
+
 	tree_handle_node_element_changed(tree, element);
 	ro_gui_tree_scroll_visible(tree, element);
 }
@@ -1069,6 +1060,10 @@ void ro_gui_tree_stop_edit(struct tree *tree) {
 
 	if (!tree->editing) return;
 
+	if (tree->textarea_handle) {
+	  	textarea_destroy(tree->textarea_handle);
+	  	tree->textarea_handle = 0;
+	}
 	error = xwimp_delete_icon((wimp_w)tree->handle, (wimp_i)tree->edit_handle);
 	if (error)
 		LOG(("xwimp_delete_icon: 0x%x: %s",
@@ -1200,6 +1195,7 @@ void ro_gui_tree_open(wimp_open *open) {
 	if (tree->toolbar)
 		ro_gui_theme_process_toolbar(tree->toolbar, -1);
 	ro_gui_menu_prepare_action((wimp_w)tree->handle, TREE_SELECTION, false);
+	ro_gui_menu_prepare_action((wimp_w)tree->handle, TREE_EXPAND_ALL, false);
 }
 
 
@@ -1213,6 +1209,7 @@ void ro_gui_tree_open(wimp_open *open) {
 bool ro_gui_tree_keypress(wimp_key *key) {
 	char *new_string;
 	struct tree *tree;
+	int strlen;
 
 	tree = (struct tree *)ro_gui_wimp_event_get_user_data(key->w);
 	if (!tree)
@@ -1234,15 +1231,24 @@ bool ro_gui_tree_keypress(wimp_key *key) {
 					TREE_CLEAR_SELECTION, false);
 			return true;
 		case wimp_KEY_RETURN:
-			if (tree->editing) {
-				new_string = strdup(tree->edit_buffer);
-				if (new_string) {
-					if (tree->editing->text) {
-						free(tree->editing->text);
-						tree->editing->text = NULL;
-					}
-					tree->editing->text = new_string;
-				}
+			if ((tree->editing) && (tree->textarea_handle)) {
+			  	strlen = textarea_get_text(tree->textarea_handle,
+			  			NULL, 0);
+			  	if (strlen == -1) {
+					ro_gui_tree_stop_edit(tree);
+			  		return true;
+			  	}
+			  	new_string = malloc(strlen);
+			  	if (!new_string) {
+					ro_gui_tree_stop_edit(tree);
+			  	  	LOG(("No memory for malloc()"));
+			  	  	warn_user("NoMemory", 0);
+			  	  	return true;
+			  	}
+			  	textarea_get_text(tree->textarea_handle,
+			  			new_string, strlen);
+			  	free(tree->editing->text);
+			  	tree->editing->text = new_string;
 				ro_gui_tree_stop_edit(tree);
 				tree_recalculate_size(tree);
 			} else {
@@ -1304,6 +1310,8 @@ void ro_gui_tree_selection_drag_end(wimp_dragged *drag) {
 		(ro_gui_tree_current_drag_buttons == (wimp_CLICK_ADJUST << 4)));
 	ro_gui_menu_prepare_action((wimp_w)ro_gui_tree_current_drag_tree->handle,
 			TREE_SELECTION, false);
+	ro_gui_menu_prepare_action((wimp_w)ro_gui_tree_current_drag_tree->handle,
+			TREE_EXPAND_ALL, false);
 }
 
 

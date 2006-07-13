@@ -1,7 +1,7 @@
 /*
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
- *                http://www.opensource.org/licenses/gpl-license
+ *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2005 Richard Wilson <info@tinct.net>
  */
 
@@ -38,6 +38,7 @@
 #define ICON_TOOLBAR_DELETE 0
 #define ICON_TOOLBAR_EXPAND 1
 #define ICON_TOOLBAR_OPEN 2
+#define ICON_TOOLBAR_COOKIES_LAST 4
 #define ICON_TOOLBAR_LAUNCH 3
 #define ICON_TOOLBAR_HISTORY_LAST 4
 #define ICON_TOOLBAR_CREATE 4 // must be after last history icon
@@ -47,14 +48,17 @@
 #define ICON_TOOLBAR_SEPARATOR_BROWSER 11
 #define ICON_TOOLBAR_SEPARATOR_HOTLIST 5
 #define ICON_TOOLBAR_SEPARATOR_HISTORY 4
+#define ICON_TOOLBAR_SEPARATOR_COOKIES 3
 
 typedef enum {
-  	THEME_BROWSER_TOOLBAR,
-  	THEME_HOTLIST_TOOLBAR,
-  	THEME_HISTORY_TOOLBAR,
-  	THEME_BROWSER_EDIT_TOOLBAR,
-  	THEME_HOTLIST_EDIT_TOOLBAR,
-  	THEME_HISTORY_EDIT_TOOLBAR
+	THEME_BROWSER_TOOLBAR,
+	THEME_HOTLIST_TOOLBAR,
+	THEME_HISTORY_TOOLBAR,
+	THEME_COOKIES_TOOLBAR,
+	THEME_BROWSER_EDIT_TOOLBAR,
+	THEME_HOTLIST_EDIT_TOOLBAR,
+	THEME_HISTORY_EDIT_TOOLBAR,
+	THEME_COOKIES_EDIT_TOOLBAR
 } toolbar_type;
 
 struct theme_file_header {
@@ -113,13 +117,13 @@ struct toolbar {
 	char *status_buffer;			/**< buffer for status text (read only) */
 	struct toolbar_icon *icon;		/**< first toolbar icon (read only) */
 	struct toolbar_icon *suggest;		/**< suggestion toolbar icon (read only) */
-  	struct theme_descriptor *descriptor;	/**< theme descriptor (read only) */
+	struct theme_descriptor *descriptor;	/**< theme descriptor (read only) */
 	toolbar_type type;			/**< toolbar type (read only) */
 	struct toolbar *editor;			/**< toolbar editor */
 };
 
 struct theme_descriptor {
-  	char *leafname;				/**< theme leafname */
+	char *leafname;				/**< theme leafname */
 	char *filename;				/**< theme filename */
 	char name[32];				/**< theme name */
 	char author[64];			/**< theme author */

@@ -32,6 +32,7 @@
 #include "oslib/wimpspriteop.h"
 #include "netsurf/content/fetch.h"
 #include "netsurf/desktop/gui.h"
+#include "netsurf/desktop/netsurf.h"
 #include "netsurf/riscos/dialog.h"
 #include "netsurf/riscos/options.h"
 #include "netsurf/riscos/save.h"

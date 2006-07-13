@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "oslib/wimp.h"
+#include "netsurf/content/content.h"
 #include "netsurf/riscos/dialog.h"
 #include "netsurf/riscos/wimp_event.h"
 #include "netsurf/utils/log.h"

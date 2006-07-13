@@ -90,7 +90,6 @@ void ro_gui_global_history_initialise(void)
 	}
 	global_history_tree->root->expanded = true;
 	ro_gui_global_history_initialise_nodes();
-	tree_initialise(global_history_tree);
 	global_history_tree->handle = (int)global_history_window;
 	global_history_tree->movable = false;
 	ro_gui_wimp_event_set_user_data(global_history_window,
@@ -122,6 +121,7 @@ void ro_gui_global_history_initialise(void)
 	global_history_init = true;
 	urldb_iterate_entries(global_history_add_internal);
 	global_history_init = false;
+	tree_initialise(global_history_tree);
 }
 
 /**

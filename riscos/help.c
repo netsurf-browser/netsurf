@@ -17,6 +17,7 @@
 #include "oslib/taskmanager.h"
 #include "oslib/wimp.h"
 #include "netsurf/desktop/tree.h"
+#include "netsurf/riscos/cookies.h"
 #include "netsurf/riscos/global_history.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/help.h"
@@ -35,15 +36,17 @@
 	Help keys should be registered using the wimp_event system to be
 	recognised. The only special case help values are:
 
-	HelpIconbar		 Iconbar (no icon suffix is used)
-	HelpHotlist		 Hotlist window [*]
-	HelpGHistory		 Global history window [*]
-	HelpBrowser		 Browser window [*]
+	HelpIconbar		Iconbar (no icon suffix is used)
+	HelpBrowser		Browser window [*]
+	HelpHotlist		Hotlist window [*]
+	HelpGHistory		Global history window [*]
+	HelpCookies		Cookies window [*]
 
-	HelpIconMenu		 Iconbar menu
-	HelpBrowserMenu		 Browser window menu
-	HelpHotlistMenu		 Hotlist window menu
-	HelpGHistoryMenu	 Global history window menu
+	HelpIconMenu		Iconbar menu
+	HelpBrowserMenu		Browser window menu
+	HelpHotlistMenu		Hotlist window menu
+	HelpGHistoryMenu	Global history window menu
+	HelpCookiesMenu	 	Cookie window menu
 
 	The prefixes are followed by either the icon number (eg 'HelpToolbar7'),
 	or a series of numbers representing the menu structure (eg
@@ -114,6 +117,11 @@ void ro_gui_interactive_help_request(wimp_message *message) {
 		sprintf(message_token, "HelpGHistory%i",
 				ro_gui_global_history_help(message_data->pos.x,
 						message_data->pos.y));
+	else if ((cookies_tree) &&
+			(window == (wimp_w)cookies_tree->handle))
+		sprintf(message_token, "HelpGHistory%i",
+				ro_gui_cookies_help(message_data->pos.x,
+						message_data->pos.y));
 	else if ((g = ro_gui_window_lookup(window)) != NULL)
 		sprintf(message_token, "HelpBrowser%i", (int)icon);
 
@@ -153,6 +161,8 @@ void ro_gui_interactive_help_request(wimp_message *message) {
 		sprintf(message_token, "HelpHotlistMenu");
 	else if (current_menu == global_history_menu)
 		sprintf(message_token, "HelpGHistoryMenu");
+	else if (current_menu == cookies_menu)
+		sprintf(message_token, "HelpCookiesMenu");
 	else
 		return;
 

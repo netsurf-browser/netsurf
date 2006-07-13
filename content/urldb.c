@@ -82,6 +82,7 @@
 
 #include "netsurf/image/bitmap.h"
 #include "netsurf/content/urldb.h"
+#include "netsurf/desktop/cookies.h"
 #include "netsurf/desktop/options.h"
 #ifdef riscos
 /** \todo lose this */
@@ -91,7 +92,7 @@
 #include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
 
-struct cookie {
+struct cookie_internal_data {
 	char *name;		/**< Cookie name */
 	char *value;		/**< Cookie value */
 	char *comment;		/**< Cookie comment */
@@ -102,15 +103,12 @@ struct cookie {
 	time_t expires;		/**< Expiry timestamp, or 1 for session */
 	time_t last_used;	/**< Last used time */
 	bool secure;		/**< Only send for HTTPS requests */
-	enum { COOKIE_NETSCAPE = 0,
-		COOKIE_RFC2109 = 1,
-		COOKIE_RFC2965 = 2
-	} version;		/**< Specification compliance */
+	cookie_version version;	/**< Specification compliance */
 	bool no_destroy;	/**< Never destroy this cookie,
 				 * unless it's expired */
 
-	struct cookie *prev;	/**< Previous in list */
-	struct cookie *next;	/**< Next in list */
+	struct cookie_internal_data *prev;	/**< Previous in list */
+	struct cookie_internal_data *next;	/**< Next in list */
 };
 
 struct auth_data {
@@ -138,7 +136,7 @@ struct path_data {
 	struct bitmap *thumb;	/**< Thumbnail image of resource */
 	struct url_internal_data urld;	/**< URL data for resource */
 	struct auth_data auth;	/**< Authentication data for resource */
-	struct cookie *cookies;	/**< Cookies associated with resource */
+	struct cookie_internal_data *cookies;	/**< Cookies associated with resource */
 
 	struct path_data *next;	/**< Next sibling */
 	struct path_data *prev;	/**< Previous sibling */
@@ -189,11 +187,11 @@ static bool urldb_iterate_partial_path(const struct path_data *parent,
 		const char *prefix, bool (*callback)(const char *url,
 		const struct url_data *data));
 static bool urldb_iterate_entries_host(struct search_node *parent,
-		bool (*callback)(const char *url,
-		const struct url_data *data));
+		bool (*url_callback)(const char *url, const struct url_data *data),
+		bool (*cookie_callback)(const struct cookie_data *data));
 static bool urldb_iterate_entries_path(const struct path_data *parent,
-		bool (*callback)(const char *url,
-		const struct url_data *data));
+		bool (*url_callback)(const char *url, const struct url_data *data),
+		bool (*cookie_callback)(const struct cookie_data *data));
 
 /* Insertion */
 static struct host_part *urldb_add_host_node(const char *part,
@@ -239,13 +237,13 @@ static int urldb_search_match_prefix(const struct host_part *a,
 		const char *b);
 
 /* Cookies */
-static struct cookie *urldb_parse_cookie(const char *url,
+static struct cookie_internal_data *urldb_parse_cookie(const char *url,
 		const char **cookie);
-static bool urldb_parse_avpair(struct cookie *c, char *n, char *v);
-static bool urldb_insert_cookie(struct cookie *c, const char *scheme,
+static bool urldb_parse_avpair(struct cookie_internal_data *c, char *n, char *v);
+static bool urldb_insert_cookie(struct cookie_internal_data *c, const char *scheme,
 		const char *url);
-static void urldb_free_cookie(struct cookie *c);
-static bool urldb_concat_cookie(struct cookie *c, int *used,
+static void urldb_free_cookie(struct cookie_internal_data *c);
+static bool urldb_concat_cookie(struct cookie_internal_data *c, int *used,
 		int *alloc, char **buf);
 static void urldb_save_cookie_hosts(FILE *fp, struct host_part *parent);
 static void urldb_save_cookie_paths(FILE *fp, struct path_data *parent);
@@ -1225,7 +1223,7 @@ bool urldb_iterate_partial_host(struct search_node *root, const char *prefix,
 		if (root->data->paths.children) {
 			/* and extract all paths attached to this host */
 			if (!urldb_iterate_entries_path(&root->data->paths,
-					callback)) {
+					callback, NULL)) {
 				return false;
 			}
 		}
@@ -1274,7 +1272,7 @@ bool urldb_iterate_partial_path(const struct path_data *parent,
 		if (slash == end) {
 			/* we've run out of prefix, so all
 			 * paths below this one match */
-			if (!urldb_iterate_entries_path(p, callback))
+			if (!urldb_iterate_entries_path(p, callback, NULL))
 				return false;
 		} else {
 			/* more prefix to go => recurse */
@@ -1301,7 +1299,25 @@ void urldb_iterate_entries(bool (*callback)(const char *url,
 
 	for (i = 0; i < NUM_SEARCH_TREES; i++) {
 		if (!urldb_iterate_entries_host(search_trees[i],
-				callback))
+				callback, NULL))
+			break;
+	}
+}
+
+/**
+ * Iterate over all cookies in database
+ *
+ * \param callback Function to callback for each entry
+ */
+void urldb_iterate_cookies(bool (*callback)(const struct cookie_data *data))
+{
+	int i;
+
+	assert(callback);
+
+	for (i = 0; i < NUM_SEARCH_TREES; i++) {
+		if (!urldb_iterate_entries_host(search_trees[i],
+				NULL, callback))
 			break;
 	}
 }
@@ -1310,28 +1326,29 @@ void urldb_iterate_entries(bool (*callback)(const char *url,
  * Host data iterator (internal)
  *
  * \param parent Root of subtree to iterate over
- * \param callback Callback function
+ * \param url_callback Callback function
+ * \param cookie_callback Callback function
  * \return true to continue, false otherwise
  */
 bool urldb_iterate_entries_host(struct search_node *parent,
-		bool (*callback)(const char *url,
-		const struct url_data *data))
+		bool (*url_callback)(const char *url, const struct url_data *data),
+		bool (*cookie_callback)(const struct cookie_data *data))
 {
 	if (parent == &empty)
 		return true;
 
-	if (!urldb_iterate_entries_host(parent->left, callback))
+	if (!urldb_iterate_entries_host(parent->left, url_callback, cookie_callback))
 		return false;
 
-	if (parent->data->paths.children) {
-		/* We have paths, so iterate them */
+	if ((parent->data->paths.children) || ((cookie_callback) && (parent->data->paths.cookies))) {
+		/* We have paths (or domain cookies), so iterate them */
 		if (!urldb_iterate_entries_path(&parent->data->paths,
-				callback)) {
+				url_callback, cookie_callback)) {
 			return false;
 		}
 	}
 
-	if (!urldb_iterate_entries_host(parent->right, callback))
+	if (!urldb_iterate_entries_host(parent->right, url_callback, cookie_callback))
 		return false;
 
 	return true;
@@ -1341,33 +1358,36 @@ bool urldb_iterate_entries_host(struct search_node *parent,
  * Path data iterator (internal)
  *
  * \param parent Root of subtree to iterate over
- * \param callback Callback function to call
+ * \param url_callback Callback function
+ * \param cookie_callback Callback function
  * \return true to continue, false otherwise
  */
 bool urldb_iterate_entries_path(const struct path_data *parent,
-		bool (*callback)(const char *url,
-		const struct url_data *data))
+		bool (*url_callback)(const char *url, const struct url_data *data),
+		bool (*cookie_callback)(const struct cookie_data *data))
 {
 	const struct path_data *p;
 
 	if (!parent->children) {
 		/* leaf node */
 
-		/* All leaf nodes in the path tree should have an URL
+		/* All leaf nodes in the path tree should have an URL or cookies
 		 * attached to them. If this is not the case, it indicates
 		 * that there's a bug in the file loader/URL insertion code.
 		 * Therefore, assert this here. */
-		assert(parent->url);
+		assert(parent->url || parent->cookies);
 
 		/** \todo handle fragments? */
-
-		if (!callback(parent->url,
+		if (url_callback && parent->url && !url_callback(parent->url,
 				(const struct url_data *) &parent->urld))
+			return false;
+		if (cookie_callback && parent->cookies && !cookie_callback(
+				(const struct cookie_data *) parent->cookies))
 			return false;
 	}
 
 	for (p = parent->children; p; p = p->next) {
-		if (!urldb_iterate_entries_path(p, callback))
+		if (!urldb_iterate_entries_path(p, url_callback, cookie_callback))
 			return false;
 	}
 
@@ -2278,7 +2298,7 @@ char *urldb_get_cookie(const char *url, const char *referer)
 {
 	const struct path_data *p, *q;
 	const struct host_part *h;
-	struct cookie *c;
+	struct cookie_internal_data *c;
 	int count = 0, version = COOKIE_RFC2965;
 	int ret_alloc = 4096, ret_used = 1;
 	char *path;
@@ -2519,7 +2539,7 @@ bool urldb_set_cookie(const char *header, const char *url)
 	end = cur + strlen(cur) - 2 /* Trailing CRLF */;
 
 	do {
-		struct cookie *c;
+		struct cookie_internal_data *c;
 		char *dot;
 
 		c = urldb_parse_cookie(url, &cur);
@@ -2595,6 +2615,7 @@ bool urldb_set_cookie(const char *header, const char *url)
 		/* Now insert into database */
 		if (!urldb_insert_cookie(c, scheme, urlt))
 			goto error;
+		cookies_update((struct cookie_data *)c);
 	} while (cur < end);
 
 	free(host);
@@ -2620,9 +2641,9 @@ error:
  * \param cookie Pointer to cookie string (updated on exit)
  * \return Pointer to cookie structure (on heap, caller frees) or NULL
  */
-struct cookie *urldb_parse_cookie(const char *url, const char **cookie)
+struct cookie_internal_data *urldb_parse_cookie(const char *url, const char **cookie)
 {
-	struct cookie *c;
+	struct cookie_internal_data *c;
 	const char *cur;
 	char name[1024], value[4096];
 	char *n = name, *v = value;
@@ -2632,7 +2653,7 @@ struct cookie *urldb_parse_cookie(const char *url, const char **cookie)
 
 	assert(url && cookie && *cookie);
 
-	c = calloc(1, sizeof(struct cookie));
+	c = calloc(1, sizeof(struct cookie_internal_data));
 	if (!c)
 		return NULL;
 
@@ -2779,7 +2800,7 @@ struct cookie *urldb_parse_cookie(const char *url, const char **cookie)
  * \param v Value component
  * \return true on success, false on memory exhaustion
  */
-bool urldb_parse_avpair(struct cookie *c, char *n, char *v)
+bool urldb_parse_avpair(struct cookie_internal_data *c, char *n, char *v)
 {
 	int vlen;
 
@@ -2881,10 +2902,10 @@ bool urldb_parse_avpair(struct cookie *c, char *n, char *v)
  * \param url URL (sans fragment) associated with cookie
  * \return true on success, false on memory exhaustion (c will be freed)
  */
-bool urldb_insert_cookie(struct cookie *c, const char *scheme,
+bool urldb_insert_cookie(struct cookie_internal_data *c, const char *scheme,
 		const char *url)
 {
-	struct cookie *d;
+	struct cookie_internal_data *d;
 	const struct host_part *h;
 	struct path_data *p;
 
@@ -2977,7 +2998,7 @@ bool urldb_insert_cookie(struct cookie *c, const char *scheme,
  *
  * \param c The cookie to free
  */
-void urldb_free_cookie(struct cookie *c)
+void urldb_free_cookie(struct cookie_internal_data *c)
 {
 	assert(c);
 
@@ -2998,7 +3019,7 @@ void urldb_free_cookie(struct cookie *c)
  * \param buf Pointer to Pointer to buffer (updated)
  * \return true on success, false on memory exhaustion
  */
-bool urldb_concat_cookie(struct cookie *c, int *used, int *alloc, char **buf)
+bool urldb_concat_cookie(struct cookie_internal_data *c, int *used, int *alloc, char **buf)
 {
 	int clen;
 
@@ -3128,7 +3149,7 @@ void urldb_load_cookies(const char *filename)
 		assert(p <= end);
 
 		/* Now create cookie */
-		struct cookie *c = malloc(sizeof(struct cookie));
+		struct cookie_internal_data *c = malloc(sizeof(struct cookie_internal_data));
 		if (!c)
 			break;
 
@@ -3228,7 +3249,7 @@ void urldb_save_cookie_paths(FILE *fp, struct path_data *parent)
 	assert(fp && parent);
 
 	if (parent->cookies) {
-		for (struct cookie *c = parent->cookies; c; c = c->next) {
+		for (struct cookie_internal_data *c = parent->cookies; c; c = c->next) {
 
 			if (c->expires < now)
 				/* Skip expired cookies */

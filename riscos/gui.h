@@ -15,12 +15,9 @@
 #include <oslib/osspriteop.h>
 #include <oslib/wimp.h>
 #include <rufl.h>
-#include "netsurf/utils/config.h"
 #include "netsurf/desktop/browser.h"
-#include "netsurf/desktop/netsurf.h"
-#include "netsurf/desktop/gui.h"
-#include "netsurf/desktop/options.h"
-#include "netsurf/desktop/tree.h"
+#include "netsurf/content/content_type.h"
+#include "netsurf/utils/config.h"
 
 #define RISCOS5 0xAA
 
@@ -33,6 +30,11 @@ extern const char * NETSURF_DIR;
 
 struct toolbar;
 struct plotter_table;
+struct gui_window;
+struct tree;
+struct node;
+struct history;
+struct css_style;
 
 extern wimp_t task_handle;	/**< RISC OS wimp task handle. */
 
@@ -51,7 +53,7 @@ extern bool gui_redraw_debug;
 extern osspriteop_area *gui_sprites;
 extern bool dialog_folder_add, dialog_entry_add, hotlist_insert;
 extern bool print_active, print_text_black;
-extern struct tree *hotlist_tree, *global_history_tree;
+extern struct tree *hotlist_tree, *global_history_tree, *cookies_tree;
 
 typedef enum { GUI_DRAG_NONE, GUI_DRAG_SELECTION, GUI_DRAG_DOWNLOAD_SAVE,
 		GUI_DRAG_SAVE, GUI_DRAG_SCROLL, GUI_DRAG_STATUS_RESIZE,

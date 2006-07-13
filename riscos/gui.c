@@ -321,9 +321,11 @@ void gui_init(int argc, char** argv)
 	if (!option_toolbar_browser)
 		option_toolbar_browser = strdup("0123|58|9");
 	if (!option_toolbar_hotlist)
-		option_toolbar_hotlist = strdup("401|23");
+		option_toolbar_hotlist = strdup("40|12|3");
 	if (!option_toolbar_history)
-		option_toolbar_history = strdup("01|23");
+		option_toolbar_history = strdup("0|12|3");
+	if (!option_toolbar_cookies)
+		option_toolbar_cookies = strdup("0|12");
 	if (!option_ca_bundle)
 		option_ca_bundle = strdup("NetSurf:Resources.ca-bundle");
 	if (!option_cookie_file)

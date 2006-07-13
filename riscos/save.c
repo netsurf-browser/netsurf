@@ -24,6 +24,7 @@
 #include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
+#include "netsurf/desktop/netsurf.h"
 #include "netsurf/desktop/save_text.h"
 #include "netsurf/desktop/selection.h"
 #include "netsurf/image/bitmap.h"

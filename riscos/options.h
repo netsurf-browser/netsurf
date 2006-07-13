@@ -32,6 +32,7 @@ extern bool option_toolbar_show_throbber;
 extern char *option_toolbar_browser;
 extern char *option_toolbar_hotlist;
 extern char *option_toolbar_history;
+extern char *option_toolbar_cookies;
 extern int option_window_x;
 extern int option_window_y;
 extern int option_window_width;
@@ -78,6 +79,7 @@ bool option_toolbar_show_throbber = true; \
 char *option_toolbar_browser = 0; \
 char *option_toolbar_hotlist = 0; \
 char *option_toolbar_history = 0; \
+char *option_toolbar_cookies = 0; \
 int option_window_x = 0; \
 int option_window_y = 0; \
 int option_window_width = 0; \
@@ -124,6 +126,7 @@ bool option_thumbnail_iconise = true;
 { "toolbar_browser",	    OPTION_STRING,  &option_toolbar_browser }, \
 { "toolbar_hotlist",	    OPTION_STRING,  &option_toolbar_hotlist }, \
 { "toolbar_history",	    OPTION_STRING,  &option_toolbar_history }, \
+{ "toolbar_cookies",	    OPTION_STRING,  &option_toolbar_cookies }, \
 { "window_x",               OPTION_INTEGER, &option_window_x }, \
 { "window_y",               OPTION_INTEGER, &option_window_y }, \
 { "window_width",           OPTION_INTEGER, &option_window_width }, \

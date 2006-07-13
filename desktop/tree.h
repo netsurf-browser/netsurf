@@ -13,8 +13,10 @@
 #define _NETSURF_DESKTOP_TREE_H_
 
 #include <stdbool.h>
+#include <stdint.h>
 
 struct url_data;
+struct cookie_data;
 
 typedef enum {
 	TREE_ELEMENT_URL,
@@ -23,7 +25,17 @@ typedef enum {
 	TREE_ELEMENT_VISITS,
 	TREE_ELEMENT_VISITED,
 	TREE_ELEMENT_THUMBNAIL,
-	TREE_ELEMENT_TITLE
+	TREE_ELEMENT_TITLE,
+	TREE_ELEMENT_NAME,
+	TREE_ELEMENT_VALUE,
+	TREE_ELEMENT_COMMENT,
+	TREE_ELEMENT_DOMAIN,
+	TREE_ELEMENT_PATH,
+	TREE_ELEMENT_EXPIRES,
+	TREE_ELEMENT_LAST_USED,
+	TREE_ELEMENT_SECURE,
+	TREE_ELEMENT_VERSION,
+	TREE_ELEMENT_PERSISTENT
 } node_element_data;
 
 #define NODE_INSTEP 40
@@ -85,9 +97,9 @@ struct tree {
 	int window_width;		/* <-- Tree window width */
 	int window_height;		/* <-- Tree window height */
 	int edit_handle;		/* <-- Handle for editing information */
+	uintptr_t textarea_handle;	/* <-- Handle for UTF-8 textarea */
 	bool movable;			/* <-- Whether nodes can be moved */
 	struct node_element *editing;	/* <-- Node element being edited */
-	char edit_buffer[256];		/* <-- Editing buffer */
 	struct node *temp_selection;	/* <-- Temporarily selected node */
 	struct toolbar *toolbar;	/* <-- Tree toolbar */
 };
@@ -114,7 +126,6 @@ void tree_draw(struct tree *tree, int clip_x, int clip_y, int clip_width,
 void tree_link_node(struct node *link, struct node *node, bool before);
 void tree_delink_node(struct node *node);
 struct node *tree_create_folder_node(struct node *parent, const char *title);
-struct node *tree_create_leaf_node(struct node *parent, const char *title);
 void tree_set_node_sprite(struct node *node, const char *sprite,
 		const char *expanded);
 struct node *tree_create_URL_node(struct node *parent,
@@ -122,6 +133,8 @@ struct node *tree_create_URL_node(struct node *parent,
 		const char *title);
 struct node *tree_create_URL_node_shared(struct node *parent,
 		const char *url, const struct url_data *data);
+struct node *tree_create_cookie_node(struct node *parent,
+		const struct cookie_data *data);
 void tree_set_node_expanded(struct node *node, bool expanded);
 void tree_set_node_selected(struct tree *tree, struct node *node,
 		bool selected);

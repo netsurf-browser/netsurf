@@ -12,7 +12,7 @@
 #include "oslib/wimp.h"
 #include "netsurf/riscos/gui.h"
 
-extern wimp_menu *iconbar_menu, *browser_menu, *hotlist_menu,
+extern wimp_menu *iconbar_menu, *browser_menu, *hotlist_menu, *cookies_menu,
 	*global_history_menu, *image_quality_menu,
 	*browser_toolbar_menu, *tree_toolbar_menu, *proxy_type_menu;
 extern wimp_menu *languages_menu, *url_suggest_menu;
@@ -40,6 +40,9 @@ typedef enum {
 	HOTLIST_ADD_URL,
 	HOTLIST_SHOW,
 
+	/* cookie actions */
+	COOKIES_SHOW,
+	
 	/* page actions */
 	BROWSER_PAGE,
 	BROWSER_PAGE_INFO,

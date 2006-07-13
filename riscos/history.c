@@ -71,6 +71,8 @@ void ro_gui_history_open(struct browser_window *bw,
 	os_box box = {0, 0, 0, 0};
 	wimp_window_state state;
 	os_error *error;
+	
+	assert(history);
 
 	history_current = history;
 	history_bw = bw;
@@ -164,7 +166,7 @@ void ro_gui_history_mouse_at(wimp_pointer *pointer)
 	wimp_icon_state ic;
 	os_box box = {0, 0, 0, 0};
 	os_error *error;
-
+	
 	/* If the mouse hasn't moved, or if we don't want tooltips, exit */
 	if ((mouse_x == pointer->pos.x && mouse_y == pointer->pos.y) ||
 			!option_history_tooltip)

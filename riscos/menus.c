@@ -23,10 +23,12 @@
 #include "netsurf/content/urldb.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/history_core.h"
+#include "netsurf/desktop/netsurf.h"
 #include "netsurf/render/box.h"
 #include "netsurf/riscos/dialog.h"
 #include "netsurf/render/form.h"
 #include "netsurf/riscos/configure.h"
+#include "netsurf/riscos/cookies.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/global_history.h"
 #include "netsurf/riscos/help.h"
@@ -129,7 +131,7 @@ static wimp_i current_menu_icon;
 /** The height of the iconbar menu */
 int iconbar_menu_height = 5 * 44;
 /** The available menus */
-wimp_menu *iconbar_menu, *browser_menu, *hotlist_menu, *global_history_menu,
+wimp_menu *iconbar_menu, *browser_menu, *hotlist_menu, *global_history_menu, *cookies_menu,
 	*image_quality_menu, *browser_toolbar_menu,
 	*tree_toolbar_menu, *proxy_type_menu, *languages_menu;
 /** URL suggestion menu */
@@ -148,7 +150,7 @@ wimp_menu *url_suggest_menu = (wimp_menu *)&url_suggest;
 void ro_gui_menu_init(void)
 {
 	/* iconbar menu */
-	NS_MENU(9) iconbar_definition = {
+	NS_MENU(10) iconbar_definition = {
 		"NetSurf", {
 			{ "Info", NO_ACTION, dialog_info },
 			{ "AppHelp", HELP_OPEN_CONTENTS, 0 },
@@ -156,6 +158,7 @@ void ro_gui_menu_init(void)
 			{ "Open.OpenURL", BROWSER_NAVIGATE_URL, dialog_openurl },
 			{ "Open.HotlistShow", HOTLIST_SHOW, 0 },
 			{ "Open.HistGlobal", HISTORY_SHOW_GLOBAL, 0 },
+			{ "Open.ShowCookies", COOKIES_SHOW, 0 },
 			{ "Choices", CHOICES_SHOW, 0 },
 			{ "Quit", APPLICATION_QUIT, 0 },
 			{NULL, 0, 0}
@@ -165,7 +168,7 @@ void ro_gui_menu_init(void)
 			(struct ns_menu *)&iconbar_definition);
 
 	/* browser menu */
-	NS_MENU(66) browser_definition = {
+	NS_MENU(68) browser_definition = {
 		"NetSurf", {
 			{ "Page", BROWSER_PAGE, 0 },
 			{ "Page.PageInfo",BROWSER_PAGE_INFO, dialog_pageinfo },
@@ -220,6 +223,8 @@ void ro_gui_menu_init(void)
 			{ "Utilities.History", HISTORY_SHOW_GLOBAL, 0 },
 			{ "Utilities.History.HistLocal", HISTORY_SHOW_LOCAL, 0 },
 			{ "Utilities.History.HistGlobal", HISTORY_SHOW_GLOBAL, 0 },
+			{ "Utilities.Cookies", COOKIES_SHOW, 0 },
+			{ "Utilities.Cookies.ShowCookies", COOKIES_SHOW, 0 },
 			{ "Utilities.FindText", BROWSER_FIND_TEXT, dialog_search },
 			{ "Utilities.Window", NO_ACTION, 0 },
 			{ "Utilities.Window.WindowSave", BROWSER_WINDOW_DEFAULT, 0 },
@@ -296,6 +301,30 @@ void ro_gui_menu_init(void)
 	global_history_menu = ro_gui_menu_define_menu(
 			(struct ns_menu *)&global_history_definition);
 
+	/* history menu */
+	NS_MENU(17) cookies_definition = {
+		"Cookies", {
+			{ "Cookies", NO_ACTION, 0 },
+			{ "Cookies.Expand", TREE_EXPAND_ALL, 0 },
+			{ "Cookies.Expand.All", TREE_EXPAND_ALL, 0 },
+			{ "Cookies.Expand.Folders", TREE_EXPAND_FOLDERS, 0 },
+			{ "Cookies.Expand.Links", TREE_EXPAND_LINKS, 0 },
+			{ "Cookies.Collapse", TREE_COLLAPSE_ALL, 0 },
+			{ "Cookies.Collapse.All", TREE_COLLAPSE_ALL, 0 },
+			{ "Cookies.Collapse.Folders", TREE_COLLAPSE_FOLDERS, 0 },
+			{ "Cookies.Collapse.Links", TREE_COLLAPSE_LINKS, 0 },
+			{ "Cookies.Toolbars", NO_ACTION, 0 },
+			{ "_Cookies.Toolbars.ToolButtons", TOOLBAR_BUTTONS, 0 },
+			{ "Cookies.Toolbars.EditToolbar",TOOLBAR_EDIT, 0 },
+			{ "Selection", TREE_SELECTION, 0 },
+			{ "Selection.Delete", TREE_SELECTION_DELETE, 0 },
+			{ "SelectAll", TREE_SELECT_ALL, 0 },
+			{ "Clear", TREE_CLEAR_SELECTION, 0 },
+			{NULL, 0, 0}
+		}
+	};
+	cookies_menu = ro_gui_menu_define_menu(
+			(struct ns_menu *)&cookies_definition);
 	/* image quality menu */
 	NS_MENU(5) images_definition = {
 		"Display", {
@@ -1321,14 +1350,20 @@ menu_action ro_gui_menu_find_action(wimp_menu *menu, wimp_menu_entry *menu_entry
  */
 void ro_gui_menu_set_entry_shaded(wimp_menu *menu, menu_action action,
 		bool shaded) {
-	struct menu_definition_entry *entry =
-			ro_gui_menu_find_entry(menu, action);
-	if (entry) {
-		if (shaded)
-			entry->menu_entry->icon_flags |= wimp_ICON_SHADED;
-		else
-			entry->menu_entry->icon_flags &= ~wimp_ICON_SHADED;
-	}
+	struct menu_definition_entry *entry;
+	struct menu_definition *definition = ro_gui_menu_find_menu(menu);
+
+	if (!definition)
+		return;
+
+	/* we can't use find_entry as multiple actions may appear in one menu */
+	for (entry = definition->entries; entry; entry = entry->next)
+		if (entry->action == action) {
+			if (shaded)
+				entry->menu_entry->icon_flags |= wimp_ICON_SHADED;
+			else
+				entry->menu_entry->icon_flags &= ~wimp_ICON_SHADED;
+		}
 }
 
 
@@ -1428,6 +1463,11 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 			return true;
 		case HOTLIST_SHOW:
 			ro_gui_tree_show(hotlist_tree);
+			return true;
+
+		/* cookies actions */
+		case COOKIES_SHOW:
+			ro_gui_tree_show(cookies_tree);
 			return true;
 
 		/* page actions */
@@ -1787,6 +1827,12 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 						!hotlist_tree);
 			break;
 
+		/* cookies actions */
+		case COOKIES_SHOW:
+			ro_gui_menu_set_entry_shaded(current_menu, action,
+				!cookies_tree);
+			break;
+
 		/* page actions */
 		case BROWSER_PAGE_INFO:
 			ro_gui_menu_set_entry_shaded(current_menu,
@@ -2072,6 +2118,15 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 			if ((tree) && (tree->root))
 				ro_gui_menu_set_entry_shaded(current_menu,
 						action, !tree->root->child);
+			if ((t) && (!t->editor) &&
+					(t->type != THEME_BROWSER_TOOLBAR)) {
+				ro_gui_set_icon_shaded_state(
+						t->toolbar_handle,
+						ICON_TOOLBAR_EXPAND, !tree->root->child);
+				ro_gui_set_icon_shaded_state(
+						t->toolbar_handle,
+						ICON_TOOLBAR_OPEN, !tree->root->child);
+			}
 			break;
 		case TREE_SELECTION:
 			if ((!tree) || (!tree->root))
@@ -2196,6 +2251,8 @@ void ro_gui_menu_get_window_details(wimp_w w, struct gui_window **g,
 		else if ((global_history_tree) &&
 				(w == (wimp_w)global_history_tree->handle))
 			*tree = global_history_tree;
+		else if ((cookies_tree) && (w == (wimp_w)cookies_tree->handle))
+			*tree = cookies_tree;
 		else
 			*tree = NULL;
 		if (*tree)

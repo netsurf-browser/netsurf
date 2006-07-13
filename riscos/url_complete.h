@@ -13,7 +13,9 @@
 #define _NETSURF_RISCOS_URLCOMPLETE_H_
 
 #include <stdbool.h>
-#include "netsurf/riscos/gui.h"
+#include "oslib/wimp.h"
+
+struct gui_window;
 
 void ro_gui_url_complete_start(struct gui_window *g);
 bool ro_gui_url_complete_keypress(struct gui_window *g, int key);

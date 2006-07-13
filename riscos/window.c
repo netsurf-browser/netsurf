@@ -36,6 +36,7 @@
 #include "netsurf/desktop/knockout.h"
 #include "netsurf/desktop/plotters.h"
 #include "netsurf/desktop/textinput.h"
+#include "netsurf/desktop/tree.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/form.h"

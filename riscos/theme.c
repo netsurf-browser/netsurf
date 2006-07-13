@@ -25,6 +25,7 @@
 #include "oslib/wimp.h"
 #include "oslib/wimpextend.h"
 #include "oslib/wimpspriteop.h"
+#include "netsurf/desktop/gui.h"
 #include "netsurf/riscos/dialog.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/menus.h"
@@ -54,6 +55,8 @@ static const char * theme_hotlist_icons[] = {"delete", "expand", "open",
 		"launch", "create", NULL};
 static const char * theme_history_icons[] = {"delete", "expand", "open",
 		"launch", NULL};
+static const char * theme_cookies_icons[] = {"delete", "expand", "open",
+		NULL};
 
 static bool ro_gui_theme_add_descriptor(const char *folder, const char *leafname);
 static void ro_gui_theme_redraw(wimp_draw *redraw);
@@ -779,6 +782,11 @@ struct toolbar *ro_gui_theme_create_toolbar(struct theme_descriptor *descriptor,
 					theme_history_icons,
 					option_toolbar_history);
 			break;
+		case THEME_COOKIES_TOOLBAR:
+			ro_gui_theme_add_toolbar_icons(toolbar,
+					theme_cookies_icons,
+					option_toolbar_cookies);
+			break;
 		case THEME_BROWSER_EDIT_TOOLBAR:
 			ro_gui_theme_add_toolbar_icons(toolbar,
 					theme_browser_icons,
@@ -793,6 +801,11 @@ struct toolbar *ro_gui_theme_create_toolbar(struct theme_descriptor *descriptor,
 			ro_gui_theme_add_toolbar_icons(toolbar,
 					theme_history_icons,
 					"0123|");
+			break;
+		case THEME_COOKIES_EDIT_TOOLBAR:
+			ro_gui_theme_add_toolbar_icons(toolbar,
+					theme_cookies_icons,
+					"012|");
 			break;
 	}
 
@@ -877,7 +890,8 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor,
 	if ((toolbar->editor) ||
 			(toolbar->type == THEME_HOTLIST_EDIT_TOOLBAR) ||
 			(toolbar->type == THEME_HISTORY_EDIT_TOOLBAR) ||
-			(toolbar->type == THEME_BROWSER_EDIT_TOOLBAR))
+			(toolbar->type == THEME_BROWSER_EDIT_TOOLBAR) ||
+			(toolbar->type == THEME_COOKIES_EDIT_TOOLBAR))
 		theme_toolbar_window.work_flags |= (wimp_BUTTON_CLICK_DRAG <<
 				wimp_ICON_BUTTON_TYPE_SHIFT);
 	theme_toolbar_window.flags &= ~wimp_WINDOW_AUTO_REDRAW;
@@ -916,6 +930,8 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor,
 		case THEME_HOTLIST_EDIT_TOOLBAR:
 		case THEME_HISTORY_TOOLBAR:
 	  	case THEME_HISTORY_EDIT_TOOLBAR:
+		case THEME_COOKIES_TOOLBAR:
+	  	case THEME_COOKIES_EDIT_TOOLBAR:
 			ro_gui_wimp_event_register_mouse_click(toolbar->toolbar_handle,
 					ro_gui_tree_toolbar_click);
 			break;
@@ -929,6 +945,9 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor,
 	else if ((toolbar->type == THEME_HISTORY_TOOLBAR) ||
 			(toolbar->type == THEME_HISTORY_EDIT_TOOLBAR))
 		max_icon = ICON_TOOLBAR_HISTORY_LAST;
+	else if ((toolbar->type == THEME_COOKIES_TOOLBAR) ||
+			(toolbar->type == THEME_COOKIES_EDIT_TOOLBAR))
+		max_icon = ICON_TOOLBAR_COOKIES_LAST;
 	else
 		max_icon = ICON_TOOLBAR_LAST;
 	new_icon.w = toolbar->toolbar_handle;
@@ -939,6 +958,7 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor,
 	if ((toolbar->editor) ||
 			(toolbar->type == THEME_HOTLIST_EDIT_TOOLBAR) ||
 			(toolbar->type == THEME_HISTORY_EDIT_TOOLBAR) ||
+			(toolbar->type == THEME_COOKIES_EDIT_TOOLBAR) ||
 			(toolbar->type == THEME_BROWSER_EDIT_TOOLBAR))
 		new_icon.icon.flags |= (wimp_BUTTON_CLICK_DRAG <<
 				wimp_ICON_BUTTON_TYPE_SHIFT);
@@ -1174,8 +1194,11 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor,
 			break;
 		case THEME_HOTLIST_TOOLBAR:
 		case THEME_HISTORY_TOOLBAR:
+		case THEME_COOKIES_TOOLBAR:
 			ro_gui_menu_prepare_action(toolbar->parent_handle,
 					TREE_SELECTION, false);
+			ro_gui_menu_prepare_action(toolbar->parent_handle,
+					TREE_EXPAND_ALL, false);
 			break;
 		default:
 			break;
@@ -1822,6 +1845,10 @@ void ro_gui_theme_toggle_edit(struct toolbar *toolbar) {
 					free(option_toolbar_history);
 					option_toolbar_history = option;
 					break;
+				case THEME_COOKIES_TOOLBAR:
+					free(option_toolbar_cookies);
+					option_toolbar_cookies = option;
+					break;
 				default:
 					break;
 			}
@@ -1861,6 +1888,11 @@ void ro_gui_theme_toggle_edit(struct toolbar *toolbar) {
 				toolbar->editor = ro_gui_theme_create_toolbar(
 						toolbar->descriptor,
 						THEME_HISTORY_EDIT_TOOLBAR);
+				break;
+			case THEME_COOKIES_TOOLBAR:
+				toolbar->editor = ro_gui_theme_create_toolbar(
+						toolbar->descriptor,
+						THEME_COOKIES_EDIT_TOOLBAR);
 				break;
 			default:
 				return;
@@ -2385,9 +2417,14 @@ void ro_gui_theme_set_help_prefix(struct toolbar *toolbar) {
 			ro_gui_wimp_event_set_help_prefix(toolbar->toolbar_handle,
 					"HelpGHistToolbar");
 			break;
+		case THEME_COOKIES_TOOLBAR:
+			ro_gui_wimp_event_set_help_prefix(toolbar->toolbar_handle,
+					"HelpCookiesToolbar");
+			break;
 	 	case THEME_BROWSER_EDIT_TOOLBAR:
 		case THEME_HOTLIST_EDIT_TOOLBAR:
 	  	case THEME_HISTORY_EDIT_TOOLBAR:
+	  	case THEME_COOKIES_EDIT_TOOLBAR:
 			ro_gui_wimp_event_set_help_prefix(toolbar->toolbar_handle,
 					"HelpEditToolbar");
 			break;

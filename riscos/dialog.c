@@ -24,6 +24,7 @@
 #include "netsurf/desktop/netsurf.h"
 #include "netsurf/render/font.h"
 #include "netsurf/riscos/configure.h"
+#include "netsurf/riscos/cookies.h"
 #include "netsurf/riscos/dialog.h"
 #include "netsurf/riscos/global_history.h"
 #include "netsurf/riscos/gui.h"
@@ -101,6 +102,9 @@ void ro_gui_dialog_init(void)
 
 	/* global history window */
 	ro_gui_global_history_initialise();
+
+	/* cookies window */
+	ro_gui_cookies_initialise();
 
 	/* theme installation */
 	dialog_theme_install = ro_gui_dialog_create("theme_inst");

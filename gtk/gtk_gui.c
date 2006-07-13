@@ -326,3 +326,7 @@ char *url_to_path(const char *url)
 	return strdup(url + 5);
 }
 
+bool cookies_update(const char *domain, const struct cookie_data *data)
+{
+  	retutn true;
+}

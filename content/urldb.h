@@ -16,11 +16,36 @@
 #include <time.h>
 #include "netsurf/content/content_type.h"
 
+typedef enum {
+	COOKIE_NETSCAPE = 0,
+	COOKIE_RFC2109 = 1,
+	COOKIE_RFC2965 = 2
+} cookie_version;
+
 struct url_data {
 	const char *title;		/**< Resource title */
 	unsigned int visits;		/**< Visit count */
 	time_t last_visit;		/**< Last visit time */
 	content_type type;		/**< Type of resource */
+};
+
+struct cookie_data {
+	const char *name;		/**< Cookie name */
+	const char *value;		/**< Cookie value */
+	const char *comment;		/**< Cookie comment */
+	const bool domain_from_set;	/**< Domain came from Set-Cookie: header */
+	const char *domain;		/**< Domain */
+	const bool path_from_set;	/**< Path came from Set-Cookie: header */
+	const char *path;		/**< Path */
+	const time_t expires;		/**< Expiry timestamp, or 1 for session */
+	const time_t last_used;		/**< Last used time */
+	const bool secure;		/**< Only send for HTTPS requests */
+	cookie_version version;		/**< Specification compliance */
+	const bool no_destroy;		/**< Never destroy this cookie,
+				 	* unless it's expired */
+
+	const struct cookie_data *prev;	/**< Previous in list */
+	const struct cookie_data *next;	/**< Next in list */
 };
 
 struct bitmap;
@@ -62,6 +87,7 @@ void urldb_iterate_partial(const char *prefix,
 /* Iteration */
 void urldb_iterate_entries(bool (*callback)(const char *url,
 		const struct url_data *data));
+void urldb_iterate_cookies(bool (*callback)(const struct cookie_data *cookie));
 
 /* Debug */
 void urldb_dump(void);
