@@ -25,7 +25,6 @@
 #include "oslib/osbyte.h"
 #include "oslib/osfile.h"
 #include "oslib/osspriteop.h"
-#include "oslib/serviceinternational.h"
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
 #include "netsurf/utils/config.h"
@@ -50,9 +49,9 @@
 #include "netsurf/riscos/save.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/thumbnail.h"
-#include "netsurf/riscos/ucstables.h"
 #include "netsurf/riscos/url_complete.h"
 #include "netsurf/riscos/wimp.h"
+#include "netsurf/riscos/wimp_event.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/talloc.h"
 #include "netsurf/utils/url.h"
@@ -80,6 +79,8 @@ static float scale_snap_to[] = {0.10, 0.125, 0.25, 0.333, 0.5, 0.75,
 				1.5, 2.0, 3.0, 4.0, 6.0, 8.0, 12.0, 16.0};
 #define SCALE_SNAP_TO_SIZE (sizeof scale_snap_to) / (sizeof(float))
 
+static bool ro_gui_window_click(wimp_pointer *mouse);
+static bool ro_gui_window_keypress(wimp_key *key);
 static void ro_gui_window_launch_url(struct gui_window *g, const char *url);
 static void ro_gui_window_clone_options(struct browser_window *new_bw,
 		struct browser_window *old_bw);
@@ -88,14 +89,14 @@ static bool ro_gui_window_import_text(struct gui_window *g, const char *filename
 		bool toolbar);
 
 struct update_box {
-  	int x0;
-  	int y0;
-  	int x1;
-  	int y1;
-  	bool use_buffer;
-  	struct gui_window *g;
-  	union content_msg_data data;
-  	struct update_box *next;
+	int x0;
+	int y0;
+	int x1;
+	int y1;
+	bool use_buffer;
+	struct gui_window *g;
+	union content_msg_data data;
+	struct update_box *next;
 };
 
 struct update_box *pending_updates;
@@ -318,6 +319,15 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		return g;
 	}
 
+	/* and register event handlers */
+	ro_gui_wimp_event_register_keypress(g->window,
+			ro_gui_window_keypress);
+	ro_gui_wimp_event_register_keypress(g->toolbar->toolbar_handle,
+			ro_gui_window_keypress);
+
+	ro_gui_wimp_event_register_mouse_click(g->window,
+			ro_gui_window_click);
+
 	return g;
 }
 
@@ -510,7 +520,7 @@ void ro_gui_window_redraw(struct gui_window *g, wimp_draw *redraw)
 	 * slow things down. */
 	if (c->type == CONTENT_TEXTPLAIN)
 		knockout = false;
-		
+
 	/* HTML rendering handles scale itself */
 	if (c->type == CONTENT_HTML)
 		scale = 1;
@@ -587,7 +597,7 @@ void ro_gui_window_update_boxes(void) {
 	struct update_box *cur;
 	struct gui_window *g;
 	const union content_msg_data *data;
-	
+
 	for (cur = pending_updates; cur != NULL; cur = cur->next) {
 	 	g = cur->g;
 	  	c = g->bw->current_content;
@@ -698,7 +708,7 @@ void ro_gui_window_update_boxes(void) {
 	  	pending_updates = pending_updates->next;
 	  	free(cur);
 	}
-	  	
+
 }
 /**
  * Redraw an area of a window.
@@ -724,7 +734,7 @@ void gui_window_update_box(struct gui_window *g,
 	y1 = -floorf(data->redraw.y * 2 * g->option.scale) + 1;
 	use_buffer = (data->redraw.full_redraw) &&
 		(g->option.buffer_everything || g->option.buffer_animations);
-	
+
 	/* try to optimise buffered redraws */
 	if (use_buffer) {
 		for (cur = pending_updates; cur != NULL; cur = cur->next) {
@@ -736,10 +746,10 @@ void gui_window_update_box(struct gui_window *g,
 	  			cur->y0 = min(cur->y0, y0);
 	  			cur->x1 = max(cur->x1, x1);
 	  			cur->y1 = max(cur->y1, y1);
-	  			return;	  
+	  			return;
 	  		}
-	  		
-	  	}                      
+
+	  	}
 	}
 	cur = malloc(sizeof(struct update_box));
 	if (!cur) {
@@ -1482,7 +1492,7 @@ bool ro_gui_toolbar_click(wimp_pointer *pointer)
 				new_bw = browser_window_create(NULL,
 						g->bw, NULL, false);
 		  		ro_gui_menu_handle_action(new_bw->window->window,
-		  				BROWSER_NAVIGATE_BACK, true);		 
+		  				BROWSER_NAVIGATE_BACK, true);
 			} else {
 			  	ro_gui_menu_handle_action(g->window,
 			  			BROWSER_NAVIGATE_BACK, true);
@@ -1494,7 +1504,7 @@ bool ro_gui_toolbar_click(wimp_pointer *pointer)
 				new_bw = browser_window_create(NULL,
 						g->bw, NULL, false);
 		  		ro_gui_menu_handle_action(new_bw->window->window,
-		  				BROWSER_NAVIGATE_FORWARD, true);		 
+		  				BROWSER_NAVIGATE_FORWARD, true);
 			} else {
 		  		ro_gui_menu_handle_action(g->window,
 		  				BROWSER_NAVIGATE_FORWARD, true);
@@ -1638,17 +1648,20 @@ bool ro_gui_status_click(wimp_pointer *pointer)
 /**
  * Handle Mouse_Click events in a browser window.
  *
- * \param  g	    browser window
  * \param  pointer  details of mouse click
+ * \return true if click handled, false otherwise
  */
 
-void ro_gui_window_click(struct gui_window *g, wimp_pointer *pointer)
+bool ro_gui_window_click(wimp_pointer *pointer)
 {
+	struct gui_window *g;
 	wimp_window_state state;
 	os_error *error;
 	int x, y;
 
-	assert(g);
+	g = ro_gui_window_lookup(pointer->w);
+	if (!g)
+		return false;
 
 	/* try to close url-completion */
 	ro_gui_url_complete_close(g, pointer->i);
@@ -1659,7 +1672,7 @@ void ro_gui_window_click(struct gui_window *g, wimp_pointer *pointer)
 		LOG(("xwimp_get_window_state: 0x%x: %s", error->errnum,
 							 error->errmess));
 		warn_user("WimpError", error->errmess);
-		return;
+		return false;
 	}
 
 	x = window_x_units(pointer->pos.x, &state) / 2 / g->option.scale;
@@ -1674,7 +1687,7 @@ void ro_gui_window_click(struct gui_window *g, wimp_pointer *pointer)
 			LOG(("xwimp_set_caret_position: 0x%x: %s",
 					error->errnum, error->errmess));
 			warn_user("WimpError", error->errmess);
-			return;
+			return false;
 		}
 	}
 
@@ -1684,6 +1697,8 @@ void ro_gui_window_click(struct gui_window *g, wimp_pointer *pointer)
 	else
 		browser_window_mouse_click(g->bw,
 				ro_gui_mouse_click_state(pointer->buttons), x, y);
+
+	return true;
 }
 
 
@@ -1789,17 +1804,30 @@ void gui_window_remove_caret(struct gui_window *g)
  * Process Key_Pressed events in a browser window.
  */
 
-bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
+bool ro_gui_window_keypress(wimp_key *key)
 {
-	struct content *content = g->bw->current_content;
+	struct gui_window *g;
+	bool toolbar;
+	struct content *content;
 	wimp_window_state state;
-	int y, t_alphabet;
+	int y;
 	char *toolbar_url;
 	os_error *error;
 	wimp_pointer pointer;
 	float old_scale;
-	static int *ucstable = NULL;
-	static int alphabet = 0;
+	wchar_t c = (wchar_t)key->c;
+
+	/* Find gui window */
+	if ((g = ro_gui_window_lookup(key->w)) != NULL) {
+		toolbar = false;
+	} else if ((g = ro_gui_toolbar_lookup(key->w)) != NULL) {
+		toolbar = true;
+	} else {
+		/* nothing to do with us */
+		return false;
+	}
+
+	content = g->bw->current_content;
 
 	error = xwimp_get_pointer_info(&pointer);
 	if (error) {
@@ -1809,76 +1837,21 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 		return false;
 	}
 
-	/* In order to make sensible use of the 0x80->0xFF ranges specified
-	 * in the RISC OS 8bit alphabets, we must do the following:
-	 *
-	 * + Read the currently selected alphabet
-	 * + Acquire a pointer to the UCS conversion table for this alphabet:
-	 *     + Try using ServiceInternational 8 to get the table
-	 *     + If that fails, use our internal table (see ucstables.c)
-	 * + If the alphabet is not UTF8 and the conversion table exists:
-	 *     + Lookup UCS code in the conversion table
-	 *     + If code is -1 (i.e. undefined):
-	 *         + Use codepoint 0xFFFD instead
-	 * + If the alphabet is UTF8, we must buffer input, thus:
-	 *     + If the keycode is < 0x80:
-	 *         + Handle it directly
-	 *     + If the keycode is a UTF8 sequence start:
-	 *         + Initialise the buffer appropriately
-	 *     + Otherwise:
-	 *         + OR in relevant bits from keycode to buffer
-	 *         + If we've received an entire UTF8 character:
-	 *             + Handle UCS code
-	 * + Otherwise:
-	 *     + Simply handle the keycode directly, as there's no easy way
-	 *       of performing the mapping from keycode -> UCS4 codepoint.
-	 */
-	error = xosbyte1(osbyte_ALPHABET_NUMBER, 127, 0, &t_alphabet);
-	if (error) {
-		LOG(("failed reading alphabet: 0x%x: %s",
-				error->errnum, error->errmess));
-		/* prevent any corruption of ucstable */
-		t_alphabet = alphabet;
-	}
-
-	if (t_alphabet != alphabet) {
-		osbool unclaimed;
-		/* Alphabet has changed, so read UCS table location */
-		alphabet = t_alphabet;
-
-		error = xserviceinternational_get_ucs_conversion_table(
-						alphabet, &unclaimed,
-						(void**)&ucstable);
-		if (error) {
-			LOG(("failed reading UCS conversion table: 0x%x: %s",
-					error->errnum, error->errmess));
-			/* try using our own table instead */
-			ucstable = ucstable_from_alphabet(alphabet);
-		}
-		if (unclaimed)
-			/* Service wasn't claimed so use our own ucstable */
-			ucstable = ucstable_from_alphabet(alphabet);
-	}
-
 	/* First send the key to the browser window, eg. form fields. */
 	if (!toolbar) {
-		wchar_t c = (wchar_t)key;
-		static wchar_t wc = 0;	/* buffer for UTF8 alphabet */
-		static int shift = 0;
-		bool ctrl_key = true;
-
-		/* Munge cursor keys into unused control chars */
+		if ((unsigned)c < 0x20 || (0x7f <= c && c <= 0x9f) ||
+				(c & IS_WIMP_KEY)) {
+		/* Munge control keys into unused control chars */
 		/* We can't map onto 1->26 (reserved for ctrl+<qwerty>
 		   That leaves 27->31 and 128->159 */
-
-		switch (key) {
+			switch (c & ~IS_WIMP_KEY) {
 			case wimp_KEY_TAB: c = 9; break;
 			case wimp_KEY_SHIFT | wimp_KEY_TAB: c = 11; break;
 
 			/* cursor movement keys */
 			case wimp_KEY_HOME:
 			case wimp_KEY_CONTROL | wimp_KEY_LEFT:
-				c = KEY_LINE_START; break;
+				c = KEY_LINE_START;
 				break;
 			case wimp_KEY_END:
 				if (os_version >= RISCOS5)
@@ -1910,95 +1883,19 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 				break;
 
 			default:
-				ctrl_key = false;
 				break;
+			}
 		}
 
-		if (c < 256) {
-			if (ctrl_key)
-				/* do nothing, these are our control chars */;
-			else if (alphabet != 111 /* UTF8 */ &&
-							ucstable != NULL) {
-				/* defined in this alphabet? */
-				if (ucstable[c] == -1)
-					return true;
-
-				/* read UCS4 value out of table */
-				c = ucstable[c];
-			}
-			else if (alphabet == 111 /* UTF8 */) {
-				if ((c & 0x80) == 0x00 ||
-						(c & 0xC0) == 0xC0) {
-					/* UTF8 start sequence */
-					if ((c & 0xE0) == 0xC0) {
-						wc = ((c & 0x1F) << 6);
-						shift = 1;
-						return true;
-					}
-					else if ((c & 0xF0) == 0xE0) {
-						wc = ((c & 0x0F) << 12);
-						shift = 2;
-						return true;
-					}
-					else if ((c & 0xF8) == 0xF0) {
-						wc = ((c & 0x07) << 18);
-						shift = 3;
-						return true;
-					}
-					/* These next two have been removed
-					 * from RFC3629, but there's no
-					 * guarantee that RISC OS won't
-					 * generate a UCS4 value outside the
-					 * UTF16 plane, so we handle them
-					 * anyway. */
-					else if ((c & 0xFC) == 0xF8) {
-						wc = ((c & 0x03) << 24);
-						shift = 4;
-					}
-					else if ((c & 0xFE) == 0xFC) {
-						wc = ((c & 0x01) << 30);
-						shift = 5;
-					}
-					else if (c >= 0x80) {
-						/* If this ever happens,
-						 * RISC OS' UTF8 keyboard
-						 * drivers are broken */
-						LOG(("unexpected UTF8 start"
-						     " byte %x (ignoring)",
-						     c));
-						return true;
-					}
-					/* Anything else is ASCII, so just
-					 * handle it directly. */
-				}
-				else {
-					if ((c & 0xC0) != 0x80) {
-						/* If this ever happens,
-						 * RISC OS' UTF8 keyboard
-						 * drivers are broken */
-						LOG(("unexpected keycode: "
-						     "%x (ignoring)", c));
-						return true;
-					}
-
-					/* Continuation of UTF8 character */
-					wc |= ((c & 0x3F) << (6 * --shift));
-					if (shift > 0)
-						/* partial character */
-						return true;
-					else
-						/* got entire character, so
-						 * fetch from buffer and
-						 * handle it */
-						c = wc;
-				}
-			}
+		if (!(c & IS_WIMP_KEY)) {
 			if (browser_window_key_press(g->bw, c))
 				return true;
 		}
 	}
 
-	switch (key) {
+	c &= ~IS_WIMP_KEY;
+
+	switch (c) {
 		case wimp_KEY_F1:	/* Help. */
 			return ro_gui_menu_handle_action(g->window,
 					HELP_OPEN_CONTENTS, false);
@@ -2135,7 +2032,7 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 					}
 				}
 			} else {
-				return ro_gui_url_complete_keypress(g, key);
+				return ro_gui_url_complete_keypress(g, c);
 			}
 			break;
 
@@ -2148,13 +2045,13 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 			if (!content)
 				break;
 			old_scale = g->option.scale;
-			if (ro_gui_shift_pressed() && key == 17)
+			if (ro_gui_shift_pressed() && c == 17)
 				g->option.scale = ((int) (10 * g->option.scale -
 						1)) / 10.0;
-			else if (ro_gui_shift_pressed() && key == 23)
+			else if (ro_gui_shift_pressed() && c == 23)
 				g->option.scale = ((int) (10 * g->option.scale +
 						1)) / 10.0;
-			else if (key == 17) {
+			else if (c == 17) {
 				for (int i = SCALE_SNAP_TO_SIZE - 1; i >= 0; i--)
 					if (scale_snap_to[i] < old_scale) {
 						g->option.scale = scale_snap_to[i];
@@ -2182,8 +2079,8 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 
 #ifdef WITH_PRINT
 		case wimp_KEY_PRINT:
-		  	return ro_gui_menu_handle_action(g->window,
-		  			BROWSER_PRINT, false);
+			return ro_gui_menu_handle_action(g->window,
+					BROWSER_PRINT, false);
 #endif
 
 		case wimp_KEY_UP:
@@ -2193,11 +2090,11 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 		case wimp_KEY_CONTROL | wimp_KEY_UP:
 		case wimp_KEY_CONTROL | wimp_KEY_DOWN:
 			if (toolbar)
-				return ro_gui_url_complete_keypress(g, key);
+				return ro_gui_url_complete_keypress(g, c);
 			break;
 		default:
 			if (toolbar)
-				return ro_gui_url_complete_keypress(g, key);
+				return ro_gui_url_complete_keypress(g, c);
 			return false;
 	}
 
@@ -2207,7 +2104,7 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 	if (g->toolbar)
 		y -= ro_gui_theme_toolbar_full_height(g->toolbar);
 
-	switch (key) {
+	switch (c) {
 		case wimp_KEY_UP:
 			state.yscroll += 32;
 			break;
@@ -3181,7 +3078,7 @@ bool ro_gui_window_navigate_up(struct gui_window *g, const char *url) {
 	char *parent;
 	url_func_result res;
 	bool compare;
-	
+
 	if (!g || (!g->bw))
 		return false;
 

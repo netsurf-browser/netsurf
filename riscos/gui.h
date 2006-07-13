@@ -133,7 +133,6 @@ void ro_gui_cert_init(void);
 
 /* in window.c */
 void ro_gui_window_quit(void);
-void ro_gui_window_click(struct gui_window *g, wimp_pointer *mouse);
 void ro_gui_window_update_theme(void);
 void ro_gui_window_update_dimensions(struct gui_window *g, int yscroll);
 void ro_gui_window_open(struct gui_window *g, wimp_open *open);
@@ -145,7 +144,6 @@ void ro_gui_throb(void);
 struct gui_window *ro_gui_window_lookup(wimp_w window);
 struct gui_window *ro_gui_toolbar_lookup(wimp_w window);
 struct gui_window *ro_gui_status_lookup(wimp_w window);
-bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar);
 void ro_gui_scroll_request(wimp_scroll *scroll);
 int window_x_units(int x, wimp_window_state *state);
 int window_y_units(int y, wimp_window_state *state);

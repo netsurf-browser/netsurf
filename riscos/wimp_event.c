@@ -15,9 +15,12 @@
 #include <stdio.h>
 #include <string.h>
 #include "oslib/os.h"
+#include "oslib/osbyte.h"
+#include "oslib/serviceinternational.h"
 #include "oslib/wimp.h"
 #include "netsurf/riscos/dialog.h"
 #include "netsurf/riscos/menus.h"
+#include "netsurf/riscos/ucstables.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/riscos/wimp_event.h"
 #include "netsurf/utils/log.h"
@@ -629,17 +632,159 @@ void ro_gui_wimp_event_ok_click(struct event_window *window, wimp_mouse_state st
  * Handle any registered keypresses, and the standard RISC OS ones
  *
  * \param key	the key state
+ * \return true if keypress handled, false otherwise
  */
 bool ro_gui_wimp_event_keypress(wimp_key *key) {
+	static int *ucstable = NULL;
+	static int alphabet = 0;
+	static wchar_t wc = 0;	/* buffer for UTF8 alphabet */
+	static int shift = 0;
 	struct event_window *window;
+	wimp_key k;
+	wchar_t c = (wchar_t)key->c;
+	int t_alphabet;
+	os_error *error;
 
 	window = ro_gui_wimp_event_find_window(key->w);
 	if (!window)
 		return false;
 
+	/* copy key state so we can corrupt it safely */
+	memcpy(&k, key, sizeof(wimp_key));
+
+	/* In order to make sensible use of the 0x80->0xFF ranges specified
+	 * in the RISC OS 8bit alphabets, we must do the following:
+	 *
+	 * + Read the currently selected alphabet
+	 * + Acquire a pointer to the UCS conversion table for this alphabet:
+	 *     + Try using ServiceInternational 8 to get the table
+	 *     + If that fails, use our internal table (see ucstables.c)
+	 * + If the alphabet is not UTF8 and the conversion table exists:
+	 *     + Lookup UCS code in the conversion table
+	 *     + If code is -1 (i.e. undefined):
+	 *         + Use codepoint 0xFFFD instead
+	 * + If the alphabet is UTF8, we must buffer input, thus:
+	 *     + If the keycode is < 0x80:
+	 *         + Handle it directly
+	 *     + If the keycode is a UTF8 sequence start:
+	 *         + Initialise the buffer appropriately
+	 *     + Otherwise:
+	 *         + OR in relevant bits from keycode to buffer
+	 *         + If we've received an entire UTF8 character:
+	 *             + Handle UCS code
+	 * + Otherwise:
+	 *     + Simply handle the keycode directly, as there's no easy way
+	 *       of performing the mapping from keycode -> UCS4 codepoint.
+	 */
+	error = xosbyte1(osbyte_ALPHABET_NUMBER, 127, 0, &t_alphabet);
+	if (error) {
+		LOG(("failed reading alphabet: 0x%x: %s",
+				error->errnum, error->errmess));
+		/* prevent any corruption of ucstable */
+		t_alphabet = alphabet;
+	}
+
+	if (t_alphabet != alphabet) {
+		osbool unclaimed;
+		/* Alphabet has changed, so read UCS table location */
+		alphabet = t_alphabet;
+
+		error = xserviceinternational_get_ucs_conversion_table(
+						alphabet, &unclaimed,
+						(void**)&ucstable);
+		if (error) {
+			LOG(("failed reading UCS conversion table: 0x%x: %s",
+					error->errnum, error->errmess));
+			/* try using our own table instead */
+			ucstable = ucstable_from_alphabet(alphabet);
+		}
+		if (unclaimed)
+			/* Service wasn't claimed so use our own ucstable */
+			ucstable = ucstable_from_alphabet(alphabet);
+	}
+
+	if (c < 256) {
+		if (alphabet != 111 /* UTF8 */ && ucstable != NULL) {
+			/* defined in this alphabet? */
+			if (ucstable[c] == -1)
+				return true;
+
+			/* read UCS4 value out of table */
+			k.c = ucstable[c];
+		}
+		else if (alphabet == 111 /* UTF8 */) {
+			if ((c & 0x80) == 0x00 || (c & 0xC0) == 0xC0) {
+				/* UTF8 start sequence */
+				if ((c & 0xE0) == 0xC0) {
+					wc = ((c & 0x1F) << 6);
+					shift = 1;
+					return true;
+				}
+				else if ((c & 0xF0) == 0xE0) {
+					wc = ((c & 0x0F) << 12);
+					shift = 2;
+					return true;
+				}
+				else if ((c & 0xF8) == 0xF0) {
+					wc = ((c & 0x07) << 18);
+					shift = 3;
+					return true;
+				}
+				/* These next two have been removed
+				 * from RFC3629, but there's no
+				 * guarantee that RISC OS won't
+				 * generate a UCS4 value outside the
+				 * UTF16 plane, so we handle them
+				 * anyway. */
+				else if ((c & 0xFC) == 0xF8) {
+					wc = ((c & 0x03) << 24);
+					shift = 4;
+				}
+				else if ((c & 0xFE) == 0xFC) {
+					wc = ((c & 0x01) << 30);
+					shift = 5;
+				}
+				else if (c >= 0x80) {
+					/* If this ever happens,
+					 * RISC OS' UTF8 keyboard
+					 * drivers are broken */
+					LOG(("unexpected UTF8 start"
+					     " byte %x (ignoring)",
+					     c));
+					return true;
+				}
+				/* Anything else is ASCII, so just
+				 * handle it directly. */
+			}
+			else {
+				if ((c & 0xC0) != 0x80) {
+					/* If this ever happens,
+					 * RISC OS' UTF8 keyboard
+					 * drivers are broken */
+					LOG(("unexpected keycode: "
+					     "%x (ignoring)", c));
+					return true;
+				}
+
+				/* Continuation of UTF8 character */
+				wc |= ((c & 0x3F) << (6 * --shift));
+				if (shift > 0)
+					/* partial character */
+					return true;
+				else
+					/* got entire character, so
+					 * fetch from buffer and
+					 * handle it */
+					k.c = wc;
+			}
+		}
+	} else {
+		k.c |= (1u<<31);
+	}
+
 	/* registered routines take priority */
 	if (window->keypress)
-		if (window->keypress(key))
+		if (window->keypress(&k))
 			return true;
 
 	switch (key->c) {
@@ -882,6 +1027,11 @@ bool ro_gui_wimp_event_register_mouse_click(wimp_w w,
 /**
  * Register a function to be called for all keypresses within a
  * particular window.
+ *
+ * Important: the character code passed to the callback in key->c
+ * is UTF-32 (i.e. in the range [0, &10ffff]). WIMP keys (e.g. F1)
+ * will have bit 31 set.
+ *
  */
 bool ro_gui_wimp_event_register_keypress(wimp_w w,
 		bool (*callback)(wimp_key *key)) {

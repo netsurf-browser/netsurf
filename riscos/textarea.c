@@ -130,7 +130,7 @@ uintptr_t textarea_create(wimp_w parent, wimp_i icon, unsigned int flags,
 		LOG(("malloc failed"));
 		return 0;
 	}
-	
+
 	ret->parent = parent;
 	ret->icon = icon;
 	ret->magic = MAGIC;
@@ -210,9 +210,9 @@ uintptr_t textarea_create(wimp_w parent, wimp_i icon, unsigned int flags,
 
 	if (flags & TEXTAREA_READONLY) {
 		state.visible.x0 += 2;
-		state.visible.x1 -= 4; 
+		state.visible.x1 -= 4;
 		state.visible.y0 += 4;
-		state.visible.y1 -= 2; 
+		state.visible.y1 -= 2;
 	}
 
 	/* set our width/height */
@@ -918,7 +918,7 @@ void textarea_reflow(struct text_area *ta, unsigned int line)
 bool textarea_mouse_click(wimp_pointer *pointer)
 {
 	struct text_area *ta;
-	
+
 	ta = textarea_from_w(pointer->w);
 	if (!ta)
 		return false;
@@ -935,16 +935,13 @@ bool textarea_mouse_click(wimp_pointer *pointer)
  */
 bool textarea_key_press(wimp_key *key)
 {
-	static int *ucstable = NULL;
-	static int alphabet = 0;
-	static wchar_t wc = 0;	/* buffer for UTF8 alphabet */
-	static int shift = 0;
+	wchar_t c = (wchar_t)key->c;
 	wimp_key keypress;
 	struct text_area *ta;
-	wchar_t c = (wchar_t)key->c;
-	int t_alphabet;
 	char utf8[7];
 	size_t utf8_len;
+	bool redraw = false;
+	unsigned int c_pos;
 	os_error *error;
 
 	ta = textarea_from_w(key->w);
@@ -954,139 +951,33 @@ bool textarea_key_press(wimp_key *key)
 	if (ta->flags & TEXTAREA_READONLY)
 		return true;
 
-	/* In order to make sensible use of the 0x80->0xFF ranges specified
-	 * in the RISC OS 8bit alphabets, we must do the following:
-	 *
-	 * + Read the currently selected alphabet
-	 * + Acquire a pointer to the UCS conversion table for this alphabet:
-	 *     + Try using ServiceInternational 8 to get the table
-	 *     + If that fails, use our internal table (see ucstables.c)
-	 * + If the alphabet is not UTF8 and the conversion table exists:
-	 *     + Lookup UCS code in the conversion table
-	 *     + If code is -1 (i.e. undefined):
-	 *         + Use codepoint 0xFFFD instead
-	 * + If the alphabet is UTF8, we must buffer input, thus:
-	 *     + If the keycode is < 0x80:
-	 *         + Handle it directly
-	 *     + If the keycode is a UTF8 sequence start:
-	 *         + Initialise the buffer appropriately
-	 *     + Otherwise:
-	 *         + OR in relevant bits from keycode to buffer
-	 *         + If we've received an entire UTF8 character:
-	 *             + Handle UCS code
-	 * + Otherwise:
-	 *     + Simply handle the keycode directly, as there's no easy way
-	 *       of performing the mapping from keycode -> UCS4 codepoint.
-	 */
-	error = xosbyte1(osbyte_ALPHABET_NUMBER, 127, 0, &t_alphabet);
-	if (error) {
-		LOG(("failed reading alphabet: 0x%x: %s",
-				error->errnum, error->errmess));
-		/* prevent any corruption of ucstable */
-		t_alphabet = alphabet;
-	}
+	if (!(c & IS_WIMP_KEY ||
+			(c <= 0x001f || (0x007f <= c && c <= 0x009f)))) {
+		/* normal character - insert */
+		utf8_len = utf8_from_ucs4(c, utf8);
+		utf8[utf8_len] = '\0';
 
-	if (t_alphabet != alphabet) {
-		osbool unclaimed;
-		/* Alphabet has changed, so read UCS table location */
-		alphabet = t_alphabet;
+		c_pos = textarea_get_caret((uintptr_t)ta);
+		textarea_insert_text((uintptr_t)ta, c_pos, utf8);
+		textarea_set_caret((uintptr_t)ta, ++c_pos);
 
-		error = xserviceinternational_get_ucs_conversion_table(
-						alphabet, &unclaimed,
-						(void**)&ucstable);
-		if (error) {
-			LOG(("failed reading UCS conversion table: 0x%x: %s",
-					error->errnum, error->errmess));
-			/* try using our own table instead */
-			ucstable = ucstable_from_alphabet(alphabet);
-		}
-		if (unclaimed)
-			/* Service wasn't claimed so use our own ucstable */
-			ucstable = ucstable_from_alphabet(alphabet);
-	}
-
-	if (c < 256) {
-		if (alphabet != 111 /* UTF8 */ && ucstable != NULL) {
-			/* defined in this alphabet? */
-			if (ucstable[c] == -1)
-				return true;
-
-			/* read UCS4 value out of table */
-			c = ucstable[c];
-		}
-		else if (alphabet == 111 /* UTF8 */) {
-			if ((c & 0x80) == 0x00 || (c & 0xC0) == 0xC0) {
-				/* UTF8 start sequence */
-				if ((c & 0xE0) == 0xC0) {
-					wc = ((c & 0x1F) << 6);
-					shift = 1;
-					return true;
-				}
-				else if ((c & 0xF0) == 0xE0) {
-					wc = ((c & 0x0F) << 12);
-					shift = 2;
-					return true;
-				}
-				else if ((c & 0xF8) == 0xF0) {
-					wc = ((c & 0x07) << 18);
-					shift = 3;
-					return true;
-				}
-				/* These next two have been removed
-				 * from RFC3629, but there's no
-				 * guarantee that RISC OS won't
-				 * generate a UCS4 value outside the
-				 * UTF16 plane, so we handle them
-				 * anyway. */
-				else if ((c & 0xFC) == 0xF8) {
-					wc = ((c & 0x03) << 24);
-					shift = 4;
-				}
-				else if ((c & 0xFE) == 0xFC) {
-					wc = ((c & 0x01) << 30);
-					shift = 5;
-				}
-				else if (c >= 0x80) {
-					/* If this ever happens,
-					 * RISC OS' UTF8 keyboard
-					 * drivers are broken */
-					LOG(("unexpected UTF8 start"
-					     " byte %x (ignoring)",
-					     c));
-					return true;
-				}
-				/* Anything else is ASCII, so just
-				 * handle it directly. */
-			}
-			else {
-				if ((c & 0xC0) != 0x80) {
-					/* If this ever happens,
-					 * RISC OS' UTF8 keyboard
-					 * drivers are broken */
-					LOG(("unexpected keycode: "
-					     "%x (ignoring)", c));
-					return true;
-				}
-
-				/* Continuation of UTF8 character */
-				wc |= ((c & 0x3F) << (6 * --shift));
-				if (shift > 0)
-					/* partial character */
-					return true;
-				else
-					/* got entire character, so
-					 * fetch from buffer and
-					 * handle it */
-					c = wc;
-			}
-		}
-
+		redraw = true;
+	} else {
 		/** \todo handle command keys */
-		switch (c) {
+		switch (c & ~IS_WIMP_KEY) {
 			/** pass on RETURN and ESCAPE to the parent icon */
 			case wimp_KEY_RETURN:
-				if (ta->flags & TEXTAREA_MULTILINE)
+				if (ta->flags & TEXTAREA_MULTILINE) {
+					/* Insert newline */
+					c_pos = textarea_get_caret(
+							(uintptr_t)ta);
+					textarea_insert_text(
+							(uintptr_t)ta, c_pos,
+							"\n");
+					textarea_set_caret((uintptr_t)ta,
+							++c_pos);
 					break;
+				}
 				/* fall through */
 			case wimp_KEY_ESCAPE:
 				keypress = *key;
@@ -1100,27 +991,21 @@ bool textarea_key_press(wimp_key *key)
 					LOG(("xwimp_send_message: 0x%x:%s",
 						error->errnum, error->errmess));
 				}
-				return true;
-		}
-
-		utf8_len = utf8_from_ucs4(c, utf8);
-		utf8[utf8_len] = '\0';
-
-		{
-			wimp_draw update;
-			unsigned int c_pos =
-					textarea_get_caret((uintptr_t)ta);
-			textarea_insert_text((uintptr_t)ta, c_pos, utf8);
-			textarea_set_caret((uintptr_t)ta, ++c_pos);
-
-			update.w = ta->window;
-			update.box.x0 = 0;
-			update.box.y1 = 0;
-			update.box.x1 = ta->vis_width;
-			update.box.y0 = -ta->line_height * (ta->line_count + 1);
-			textarea_redraw_internal(&update, true);
+				break;
 		}
 	}
+
+	if (redraw) {
+		wimp_draw update;
+
+		update.w = ta->window;
+		update.box.x0 = 0;
+		update.box.y1 = 0;
+		update.box.x1 = ta->vis_width;
+		update.box.y0 = -ta->line_height * (ta->line_count + 1);
+		textarea_redraw_internal(&update, true);
+	}
+
 	return true;
 }
 

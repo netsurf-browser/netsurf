@@ -785,6 +785,8 @@ void browser_window_mouse_click(struct browser_window *bw,
 	if (!c)
 		return;
 
+	browser_window_remove_caret(bw);
+
 	switch (c->type) {
 	case CONTENT_HTML:
 		browser_window_mouse_action_html(bw, mouse, x, y);
@@ -1905,7 +1907,7 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 		warn_user("NoMemory", 0);
 		return;
 	}
-	
+
 	if (new_window) {
 		target = browser_window_create(NULL, bw, NULL, false);
 		/* any error has already been reported */

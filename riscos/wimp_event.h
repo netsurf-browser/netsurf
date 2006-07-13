@@ -21,6 +21,8 @@
 #include "oslib/os.h"
 #include "oslib/wimp.h"
 
+#define IS_WIMP_KEY (1u<<31)
+
 bool ro_gui_wimp_event_memorise(wimp_w w);
 bool ro_gui_wimp_event_restore(wimp_w w);
 bool ro_gui_wimp_event_validate(wimp_w w);

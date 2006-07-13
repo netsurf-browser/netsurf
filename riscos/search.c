@@ -3,7 +3,7 @@
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2004 John M Bell <jmb202@ecs.soton.ac.uk>
- * Copyright 2005 Adrian Lees <adrianl@users.sourceforge.net> 
+ * Copyright 2005 Adrian Lees <adrianl@users.sourceforge.net>
  */
 
 /** \file
@@ -152,7 +152,7 @@ void ro_gui_search_add_recent(char *search) {
 
 	if ((recent_search[0] != NULL) &&
 			(!strcmp(recent_search[0], search)))
-		return;	  
+		return;
 
 	tmp = strdup(search);
 	if (!tmp) {
@@ -164,7 +164,7 @@ void ro_gui_search_add_recent(char *search) {
 		recent_search[i] = recent_search[i - 1];
 	recent_search[0] = tmp;
 	search_insert = false;
-	
+
 	ro_gui_set_icon_shaded_state(dialog_search, ICON_SEARCH_MENU, false);
 	ro_gui_search_prepare_menu();
 }
@@ -173,7 +173,7 @@ bool ro_gui_search_prepare_menu(void) {
 	os_error *error;
 	int i;
 	int suggestions = 0;
-	
+
 	for (i = 0; i < RECENT_SEARCHES; i++)
 		if (recent_search[i] != NULL)
 			suggestions++;
@@ -260,11 +260,11 @@ bool ro_gui_search_keypress(wimp_key *key)
 			ro_gui_set_icon_selected_state(dialog_search, ICON_SEARCH_CASE_SENSITIVE, !state);
 			start_search(true);
 			return true;
-		case wimp_KEY_UP:
+		case IS_WIMP_KEY | wimp_KEY_UP:
 			search_insert = true;
 			start_search(false);
 			return true;
-		case wimp_KEY_DOWN:
+		case IS_WIMP_KEY | wimp_KEY_DOWN:
 			search_insert = true;
 			start_search(true);
 			return true;
@@ -533,7 +533,7 @@ const char *find_pattern(const char *string, int s_len, const char *pattern,
 			/* anything matches a # so continue matching from
 			   here, and stack a context that will try to match
 			   the wildcard against the next character */
-			
+
 			ch = *p;
 			if (ch != '#') {
 				/* scan forwards until we find a match for this char */
@@ -592,7 +592,7 @@ const char *find_pattern(const char *string, int s_len, const char *pattern,
 		else {
 			/* doesn't match, resume with stacked context if we have one */
 			if (--top < 0) return NULL;  /* no match, give up */
-			
+
 			ss = context[top].ss;
 			s  = context[top].s;
 			p  = context[top].p;
@@ -689,7 +689,7 @@ bool find_occurrences_text(const char *pattern, int p_len,
 				const char *pos = find_pattern(text, length,
 						pattern, p_len, case_sens, &match_length);
 				if (!pos) break;
-	
+
 				/* found string in line => add to list */
 				start_idx = offset + (pos - text);
 				entry = add_entry(start_idx, start_idx + match_length);

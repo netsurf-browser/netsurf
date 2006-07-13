@@ -865,7 +865,7 @@ void gui_poll(bool active)
 	ro_gui_handle_event(event, &block);
 	schedule_run();
         ro_gui_window_update_boxes();
-	
+
 	if (gui_reformat_pending && event == wimp_NULL_REASON_CODE)
 		ro_gui_window_process_reformats();
 	else if (bitmap_maintenance_priority ||
@@ -1180,14 +1180,11 @@ void ro_gui_pointer_entering_window(wimp_entering *entering)
 
 void ro_gui_mouse_click(wimp_pointer *pointer)
 {
-	struct gui_window *g;
 	struct gui_download_window *dw;
 	struct gui_query_window *qw;
 
 	if (ro_gui_wimp_event_mouse_click(pointer))
 		return;
-	else if ((g = ro_gui_window_lookup(pointer->w)) != NULL)
-		ro_gui_window_click(g, pointer);
 	else if ((dw = ro_gui_download_window_lookup(pointer->w)) != NULL)
 		ro_gui_download_window_click(dw, pointer);
 	else if ((qw = ro_gui_query_window_lookup(pointer->w)) != NULL)
@@ -1284,15 +1281,10 @@ void ro_gui_keypress(wimp_key *key)
 	struct gui_download_window *dw;
 	struct gui_query_window *qw;
 	bool handled = false;
-	struct gui_window *g;
 	os_error *error;
 
 	if (ro_gui_wimp_event_keypress(key))
 		handled = true;
-	else if ((g = ro_gui_window_lookup(key->w)) != NULL)
-		handled = ro_gui_window_keypress(g, key->c, false);
-	else if ((g = ro_gui_toolbar_lookup(key->w)) != NULL)
-		handled = ro_gui_window_keypress(g, key->c, true);
 	else if ((qw = ro_gui_query_window_lookup(key->w)) != NULL)
 		handled = ro_gui_query_window_keypress(qw, key);
 	else if ((dw = ro_gui_download_window_lookup(key->w)) != NULL)
@@ -1996,7 +1988,7 @@ void ro_msg_window_info(wimp_message *message)
 	/* allow the user to turn off thumbnail icons */
 	if (!option_thumbnail_iconise)
 		return;
-		
+
 	wi = (wimp_full_message_window_info*)message;
 	g = ro_gui_window_lookup(wi->w);
 
