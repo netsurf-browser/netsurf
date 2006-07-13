@@ -75,6 +75,26 @@ void tree_draw_node_expansion(struct tree *tree, struct node *node) {
 void tree_recalculate_node_element(struct node_element *element) {
 }
 
+/**
+ * Sets a node element as having a specific sprite.
+ *
+ * \param node      the node to update
+ * \param sprite    the sprite to use
+ * \param selected  the expanded sprite name to use
+ */
+void tree_set_node_sprite(struct node *node, const char *sprite,
+                const char *expanded) {
+
+}
+
+/**
+ * Sets a node element as having a folder sprite
+ *
+ * \param node  the node to update
+ */
+void tree_set_node_sprite_folder(struct node *node) {
+
+}
 
 /**
  * Updates the node details for a URL node.
@@ -96,10 +116,3 @@ void tree_resized(struct tree *tree) {
 }
 
 
-/**
- * Sets a node element as having a folder sprite
- *
- * \param node  the node to update
- */
-void tree_set_node_sprite_folder(struct node *node) {
-}
