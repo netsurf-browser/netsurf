@@ -328,5 +328,5 @@ char *url_to_path(const char *url)
 
 bool cookies_update(const char *domain, const struct cookie_data *data)
 {
-  	retutn true;
+  	return true;
 }
