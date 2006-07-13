@@ -2118,20 +2118,24 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 					BROWSER_NAVIGATE_STOP, false);
 
 		case  8:	/* CTRL+H / Backspace */
-			if (!ro_gui_ctrl_pressed() && !toolbar) {
-				/* Backspace */
-				if (ro_gui_shift_pressed()) {
-					return ro_gui_menu_handle_action(
-						g->window,
-						BROWSER_NAVIGATE_FORWARD,
-						false);
+			if (!toolbar) {
+				if (!ro_gui_ctrl_pressed()) {
+					/* Backspace */
+					if (ro_gui_shift_pressed()) {
+						return ro_gui_menu_handle_action(
+							g->window,
+							BROWSER_NAVIGATE_FORWARD,
+							false);
+					}
+					else {
+						return ro_gui_menu_handle_action(
+							g->window,
+							BROWSER_NAVIGATE_BACK,
+							false);
+					}
 				}
-				else {
-					return ro_gui_menu_handle_action(
-						g->window,
-						BROWSER_NAVIGATE_BACK,
-						false);
-				}
+			} else {
+				return ro_gui_url_complete_keypress(g, key);
 			}
 			break;
 

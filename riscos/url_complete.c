@@ -86,7 +86,6 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, int key)
 	char *url;
 	int i, lines;
 	int old_selection;
-	bool ignore_changes = false;
 	int height;
 	os_error *error;
 	bool currently_open;
@@ -126,15 +125,9 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, int key)
 		return false;
 	}
 
-	/* check if we should ignore text changes */
-	if ((url_complete_keypress_selection >= 0) && (url_complete_matches))
-		ignore_changes = !strcmp(url,
-				url_complete_matches[
-					url_complete_keypress_selection]);
-
 	/* if the text to match has changed then update it */
-	if (!ignore_changes && ((!url_complete_matched_string) ||
-			(strcmp(match_url, url_complete_matched_string)))) {
+	if ((!url_complete_matched_string) ||
+			(strcmp(match_url, url_complete_matched_string))) {
 
 		/* memorize the current matches */
 		lines = MAXIMUM_VISIBLE_LINES;
@@ -181,7 +174,8 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, int key)
 			urldb_iterate_entries(url_complete_callback);
 		else
 			urldb_iterate_partial(match_url, url_complete_callback);
-		if (url_complete_memory_exhausted) {
+		if ((url_complete_memory_exhausted) ||
+				(url_complete_matches_available == 0)) {
 			ro_gui_url_complete_close(NULL, 0);
 			return false;
 		}
@@ -294,6 +288,9 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, int key)
 		ro_gui_set_icon_string(g->toolbar->toolbar_handle,
 				ICON_TOOLBAR_URL,
 				url_complete_matches[
+					url_complete_matches_selection]);
+		free(url_complete_matched_string);
+		url_complete_matched_string = strdup(url_complete_matches[
 					url_complete_matches_selection]);
 	}
 	url_complete_keypress_selection = url_complete_matches_selection;

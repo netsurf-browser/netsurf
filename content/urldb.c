@@ -1265,8 +1265,8 @@ bool urldb_iterate_partial_path(const struct path_data *parent,
 			/* didn't match, but may be more */
 			continue;
 		else if (c > 0)
-			/* no more possible matches */
-			break;
+			/* still possible matches in a different case */
+			continue;
 
 		/* prefix matches so far */
 		if (slash == end) {
