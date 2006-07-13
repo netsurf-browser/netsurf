@@ -1375,15 +1375,19 @@ bool urldb_iterate_entries_path(const struct path_data *parent,
 		 * attached to them. If this is not the case, it indicates
 		 * that there's a bug in the file loader/URL insertion code.
 		 * Therefore, assert this here. */
-		assert(parent->url || parent->cookies);
+		assert(url_callback || cookie_callback);
 
 		/** \todo handle fragments? */
-		if (url_callback && parent->url && !url_callback(parent->url,
-				(const struct url_data *) &parent->urld))
-			return false;
-		if (cookie_callback && parent->cookies && !cookie_callback(
-				(const struct cookie_data *) parent->cookies))
-			return false;
+		if (url_callback) {
+		  	assert(parent->url);
+			if (!url_callback(parent->url,
+					(const struct url_data *) &parent->urld))
+				return false;
+		} else {
+			if (parent->cookies && !cookie_callback(
+					(const struct cookie_data *) parent->cookies))
+				return false;
+		}
 	}
 
 	for (p = parent->children; p; p = p->next) {

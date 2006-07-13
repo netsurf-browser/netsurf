@@ -177,7 +177,10 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, int key)
 
 		/* find matches */
 		url_complete_memory_exhausted = false;
-		urldb_iterate_partial(match_url, url_complete_callback);
+		if (strlen(match_url) == 0)
+			urldb_iterate_entries(url_complete_callback);
+		else
+			urldb_iterate_partial(match_url, url_complete_callback);
 		if (url_complete_memory_exhausted) {
 			ro_gui_url_complete_close(NULL, 0);
 			return false;
