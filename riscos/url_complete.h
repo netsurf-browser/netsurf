@@ -13,12 +13,13 @@
 #define _NETSURF_RISCOS_URLCOMPLETE_H_
 
 #include <stdbool.h>
+#include <wchar.h>
 #include "oslib/wimp.h"
 
 struct gui_window;
 
 void ro_gui_url_complete_start(struct gui_window *g);
-bool ro_gui_url_complete_keypress(struct gui_window *g, int key);
+bool ro_gui_url_complete_keypress(struct gui_window *g, wchar_t key);
 void ro_gui_url_complete_resize(struct gui_window *g, wimp_open *open);
 bool ro_gui_url_complete_close(struct gui_window *g, wimp_i i);
 void ro_gui_url_complete_redraw(wimp_draw *redraw);

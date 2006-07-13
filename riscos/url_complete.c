@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <wchar.h>
 #include "oslib/wimp.h"
 #include "netsurf/content/urldb.h"
 #include "netsurf/utils/log.h"
@@ -23,6 +24,7 @@
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/url_complete.h"
 #include "netsurf/riscos/wimp.h"
+#include "netsurf/riscos/wimp_event.h"
 #include "netsurf/utils/utils.h"
 
 #define MAXIMUM_VISIBLE_LINES 7
@@ -76,10 +78,10 @@ void ro_gui_url_complete_start(struct gui_window *g)
  * Handles a keypress for URL completion
  *
  * \param g    the gui_window to update
- * \param key  the key pressed
+ * \param key  the key pressed (as UTF32 code or wimp key + bit31 set)
  * \return true to indicate keypress handled, false otherwise
  */
-bool ro_gui_url_complete_keypress(struct gui_window *g, int key)
+bool ro_gui_url_complete_keypress(struct gui_window *g, wchar_t key)
 {
 	wimp_window_state state;
 	char *match_url;
@@ -106,9 +108,9 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, int key)
 	/* forcibly open on down keys */
 	if ((!currently_open) && (url_complete_matched_string)) {
 		switch (key) {
-			case wimp_KEY_DOWN:
-			case wimp_KEY_PAGE_DOWN:
-			case wimp_KEY_CONTROL | wimp_KEY_DOWN:
+			case IS_WIMP_KEY | wimp_KEY_DOWN:
+			case IS_WIMP_KEY | wimp_KEY_PAGE_DOWN:
+			case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_DOWN:
 				free(url_complete_matched_string);
 				url_complete_matched_string = NULL;
 		}
@@ -222,24 +224,24 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, int key)
 	old_selection = url_complete_matches_selection;
 
 	switch (key) {
-		case wimp_KEY_UP:
+		case IS_WIMP_KEY | wimp_KEY_UP:
 			url_complete_matches_selection--;
 			break;
-		case wimp_KEY_DOWN:
+		case IS_WIMP_KEY | wimp_KEY_DOWN:
 			url_complete_matches_selection++;
 			break;
-		case wimp_KEY_PAGE_UP:
+		case IS_WIMP_KEY | wimp_KEY_PAGE_UP:
 			url_complete_matches_selection -=
 					MAXIMUM_VISIBLE_LINES;
 			break;
-		case wimp_KEY_PAGE_DOWN:
+		case IS_WIMP_KEY | wimp_KEY_PAGE_DOWN:
 			url_complete_matches_selection +=
 					MAXIMUM_VISIBLE_LINES;
 			break;
-		case wimp_KEY_CONTROL | wimp_KEY_UP:
+		case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_UP:
 			url_complete_matches_selection = 0;
 			break;
-		case wimp_KEY_CONTROL | wimp_KEY_DOWN:
+		case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_DOWN:
 			url_complete_matches_selection = 65536;
 			break;
 	}
