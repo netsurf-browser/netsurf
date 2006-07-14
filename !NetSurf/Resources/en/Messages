@@ -561,6 +561,7 @@ HelpIconMenu2:\Ropen a window.
 HelpIconMenu2-0:\Renter an address to visit.
 HelpIconMenu2-1:\Sopen the hotlist management \w.
 HelpIconMenu2-2:\Sopen the global history \w.
+HelpIconMenu2-3:\Sopen the cookie management \w.
 HelpIconMenu3:\Sopen the Choices dialogue box.
 HelpIconMenu4:\Squit NetSurf.
 
@@ -617,12 +618,14 @@ HelpBrowserMenu4-0-1:\Sopen the hotlist management \w.
 HelpBrowserMenu4-1:\Rview the history options.
 HelpBrowserMenu4-1-0:\Sopen the local history \w.
 HelpBrowserMenu4-1-1:\Sopen the global history \w.
-HelpBrowserMenu4-2:\Rsearch for instances of a string of text on the page.
-HelpBrowserMenu4-3:\Rcontrol the default \w positioning.
-HelpBrowserMenu4-3-0:\Sto make the current \w position the default.
-HelpBrowserMenu4-3-1:\Sto toggle whether subsequent windows are staggered down the screen.
-HelpBrowserMenu4-3-2:\Sto toggle whether child windows copy the size and position of their parent.|MWhen off, all new windows open in the default position.
-HelpBrowserMenu4-3-3:\Sto return to the default \w positioning.
+HelpBrowserMenu4-2:\Rmanage your cookies.
+HelpBrowserMenu4-2-0:\Sopen the cookie management \w.
+HelpBrowserMenu4-3:\Rsearch for instances of a string of text on the page.
+HelpBrowserMenu4-4:\Rcontrol the default \w positioning.
+HelpBrowserMenu4-4-0:\Sto make the current \w position the default.
+HelpBrowserMenu4-4-1:\Sto toggle whether subsequent windows are staggered down the screen.
+HelpBrowserMenu4-4-2:\Sto toggle whether child windows copy the size and position of their parent.|MWhen off, all new windows open in the default position.
+HelpBrowserMenu4-4-3:\Sto return to the default \w positioning.
 HelpBrowserMenu5:\Rsee the help resources available.
 HelpBrowserMenu5-0:\Sopen the documentation contents page in a new \w.
 HelpBrowserMenu5-1:\Sopen the user guide in a new \w.

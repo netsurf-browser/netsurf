@@ -561,6 +561,7 @@ HelpIconMenu2:Mauszeiger nach rechts bewegen, um ein Fenster zu öffnen.
 HelpIconMenu2-0:Erlaubt die Eingabe einer Web-Adresse.
 HelpIconMenu2-1:Klicken mit AUSWAHL öffnet die Hotlist.
 HelpIconMenu2-2:Klicken mit AUSWAHL öffnet das Fenster mit der globalen History.
+HelpIconMenu2-3:\Sopen the cookie management \w.
 HelpIconMenu3:Öffnet einen Dialog mit Einstellungen für NetSurf.
 HelpIconMenu4:Beendet das Programm.|MAlle Browserfenster werden geschlossen. Downloads werden abgebrochen.
 
@@ -617,12 +618,14 @@ HelpBrowserMenu4-0-1:Öffnet die Hotlist.
 HelpBrowserMenu4-1:Zugriff auf die History Funktionen.|MIn die History werden bereits besuchte Webseiten eingetragen. Dies erlaubt das einfache Wiederfinden einmal gesehener Web-Inhalte.
 HelpBrowserMenu4-1-0:Anklicken mit AUSWAHL öffnet das Fenster mit der lokalen History.|MIn der lokalen History werden alle Webseiten notiert, die mit dem aktuellen Browserfenster bereits besucht worden waren.
 HelpBrowserMenu4-1-1:Anklicken mit AUSWAHL öffnet das Fenster mit der globalen History.|MIn der globalen History werden alle mit NetSurf besuchten Webseiten notiert.
-HelpBrowserMenu4-2:Erlaubt das Suchen einer Zeichenkette im Text des aktuellen Browserfensters.
-HelpBrowserMenu4-3:Kontrolle über Anordnung und Positionierung neuer Fenster.
-HelpBrowserMenu4-3-0:Die Position des aktuellen Fensters wird als globaler Standardwert übernommen. Alle nachfolgend neu geöffneten Fenster werden an dieser Position plaziert.
-HelpBrowserMenu4-3-1:Neu geöffnete Fenster werden nicht alle an der Standardposition sondern zueinander leicht versetzt plaziert.
-HelpBrowserMenu4-3-2:Neue Fenster behalten die Größe des Fensters, aus dem heraus sie geöffnet werden, bei.
-HelpBrowserMenu4-3-3:Setzt die festgelegte Standardposition für Fenster auf einen in NetSurf voreingestellten Wert zurück.
+HelpBrowserMenu4-2:\Rmanage your cookies.
+HelpBrowserMenu4-2-0:\Sopen the cookie management \w.
+HelpBrowserMenu4-3:Erlaubt das Suchen einer Zeichenkette im Text des aktuellen Browserfensters.
+HelpBrowserMenu4-4:Kontrolle über Anordnung und Positionierung neuer Fenster.
+HelpBrowserMenu4-4-0:Die Position des aktuellen Fensters wird als globaler Standardwert übernommen. Alle nachfolgend neu geöffneten Fenster werden an dieser Position plaziert.
+HelpBrowserMenu4-4-1:Neu geöffnete Fenster werden nicht alle an der Standardposition sondern zueinander leicht versetzt plaziert.
+HelpBrowserMenu4-4-2:Neue Fenster behalten die Größe des Fensters, aus dem heraus sie geöffnet werden, bei.
+HelpBrowserMenu4-4-3:Setzt die festgelegte Standardposition für Fenster auf einen in NetSurf voreingestellten Wert zurück.
 HelpBrowserMenu5:Untermenü Hilfe.|MZeigt Informationen zu und über NetSurf.
 HelpBrowserMenu5-0:Öffnet die NetSurf Dokumentation in einem neuen Browserfenster.
 HelpBrowserMenu5-1:Öffnet das NetSurf Handbuch in einem neuen Browserfenster.
