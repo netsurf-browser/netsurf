@@ -64,6 +64,7 @@ GdkGC *current_gc;
 #ifdef CAIRO_VERSION
 cairo_t *current_cr;
 #endif
+static open_windows = 0;
 
 static void gui_window_zoomin_button_event(GtkWidget *widget, gpointer data);
 static void gui_window_zoom100_button_event(GtkWidget *widget, gpointer data);
@@ -332,7 +333,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
           gesture_recogniser_set_count_threshold(gr, 20);
           schedule(5, gtk_pass_mouse_position, g);
         }
-        
+	
+	open_windows++;
 	return g;
 }
 
@@ -376,7 +378,8 @@ void gui_window_destroy_event(GtkWidget *widget, gpointer data)
 {
 	struct gui_window *g = data;
 	gui_window_destroy(g);
-	netsurf_quit = true;
+	if (--open_windows == 0)
+		netsurf_quit = true;
 }
 
 void gui_window_back_button_event(GtkWidget *widget, gpointer data)
@@ -611,8 +614,16 @@ gboolean gui_window_button_press_event(GtkWidget *widget,
 		GdkEventButton *event, gpointer data)
 {
 	struct gui_window *g = data;
+	int button = BROWSER_MOUSE_CLICK_1;
 
-	browser_window_mouse_click(g->bw, BROWSER_MOUSE_CLICK_1,
+	LOG(("BUTTON PRESS: %d", event->button));
+	
+	if (event->button == 2) /* 2 == middle button on X */
+		button = BROWSER_MOUSE_CLICK_2;
+	if (event->button == 3) /* 3 == right button on X */
+		return TRUE; /* Do nothing for right click for now */
+	
+	browser_window_mouse_click(g->bw, button,
 			event->x, event->y);
 
 	return TRUE;
