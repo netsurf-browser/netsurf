@@ -64,8 +64,8 @@ GdkGC *current_gc;
 #ifdef CAIRO_VERSION
 cairo_t *current_cr;
 #endif
-static open_windows = 0;
-
+static int open_windows = 0;
+static void gui_window_change_scale(struct gui_window *g, float scale);
 static void gui_window_zoomin_button_event(GtkWidget *widget, gpointer data);
 static void gui_window_zoom100_button_event(GtkWidget *widget, gpointer data);
 static void gui_window_zoomout_button_event(GtkWidget *widget, gpointer data);
@@ -347,25 +347,31 @@ void gtk_pass_mouse_position(void *p)
   schedule(5, gtk_pass_mouse_position, p);
 }
 
+void gui_window_change_scale(struct gui_window *g, float scale)
+{
+	g->scale = scale;
+	if (g->bw->current_content != NULL)
+		gui_window_set_extent(g, g->bw->current_content->width,
+				g->bw->current_content->height);
+	gtk_widget_queue_draw(g->drawing_area);
+}
+
 void gui_window_zoomin_button_event(GtkWidget *widget, gpointer data)
 {
 	struct gui_window *g = data;
-	g->scale += 0.05;
-	gtk_widget_queue_draw(g->drawing_area);
+	gui_window_change_scale(g, g->scale + 0.05);
 }
 
 void gui_window_zoom100_button_event(GtkWidget *widget, gpointer data)
 {
 	struct gui_window *g = data;
-	g->scale = 1.0;
-	gtk_widget_queue_draw(g->drawing_area);
+	gui_window_change_scale(g, 1.00);
 }
 
 void gui_window_zoomout_button_event(GtkWidget *widget, gpointer data)
 {
 	struct gui_window *g = data;
-	g->scale -= 0.05;
-	gtk_widget_queue_draw(g->drawing_area);
+	gui_window_change_scale(g, g->scale - 0.05);
 }
 
 void gui_window_stop_button_event(GtkWidget *widget, gpointer data)
@@ -603,7 +609,8 @@ gboolean gui_window_motion_notify_event(GtkWidget *widget,
 {
 	struct gui_window *g = data;
 
-	browser_window_mouse_track(g->bw, 0, event->x, event->y);
+	browser_window_mouse_track(g->bw, 0, event->x / g->scale,
+			event->y / g->scale);
 	g->last_x = event->x;
         g->last_y = event->y;
 	return TRUE;
@@ -624,7 +631,7 @@ gboolean gui_window_button_press_event(GtkWidget *widget,
 		return TRUE; /* Do nothing for right click for now */
 	
 	browser_window_mouse_click(g->bw, button,
-			event->x, event->y);
+			event->x / g->scale, event->y / g->scale);
 
 	return TRUE;
 }
@@ -692,7 +699,8 @@ int gui_window_get_height(struct gui_window* g)
 
 void gui_window_set_extent(struct gui_window *g, int width, int height)
 {
-	gtk_widget_set_size_request(g->drawing_area, width, height);
+	gtk_widget_set_size_request(g->drawing_area, width * g->scale,
+			height * g->scale);
 }
 
 
