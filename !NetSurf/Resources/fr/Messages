@@ -240,6 +240,7 @@ TreeHeaders: (from headers)
 TreeVersion0:Netscape
 TreeVersion1:RFC 2109
 TreeVersion2:RFC 2965
+TreeSession:Session end
 TreeUnused:Unused
 TreeImport:URL importée
 TreeNewFolder:Nouv. répertoire

@@ -21,6 +21,7 @@
 #include "netsurf/content/urldb.h"
 #include "netsurf/desktop/401login.h"
 #include "netsurf/desktop/browser.h"
+#include "netsurf/desktop/cookies.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/netsurf.h"
 #include "netsurf/desktop/options.h"
@@ -30,6 +31,7 @@
 #include "netsurf/render/html.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
+#include "netsurf/utils/url.h"
 #include "netsurf/utils/utf8.h"
 #include "netsurf/utils/utils.h"
 
@@ -85,16 +87,6 @@ static char *find_resource(char *buf, const char *filename, const char *def)
 
 	strcpy(buf, def);
 	return buf;
-}
-
-static char *path_to_url(const char *path)
-{
-	char *r = malloc(strlen(path) + 7 + 1);
-
-	strcpy(r, "file://");
-	strcat(r, path);
-
-	return r;
 }
 
 void gui_init(int argc, char** argv)
@@ -321,12 +313,22 @@ utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 	return UTF8_CONVERT_OK;
 }
 
+char *path_to_url(const char *path)
+{
+	char *r = malloc(strlen(path) + 7 + 1);
+
+	strcpy(r, "file://");
+	strcat(r, path);
+
+	return r;
+}
+
 char *url_to_path(const char *url)
 {
 	return strdup(url + 5);
 }
 
-bool cookies_update(const char *domain, const struct cookie_data *data)
+bool cookies_update(const struct cookie_data *data)
 {
-  	return true;
+	return true;
 }

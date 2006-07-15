@@ -3281,6 +3281,11 @@ void urldb_save_cookie_paths(FILE *fp, struct path_data *parent)
 #ifdef TEST_URLDB
 int option_expire_url = 0;
 
+bool cookies_update(const struct cookie_data *data)
+{
+	return true;
+}
+
 void die(const char *error)
 {
 	printf("die: %s\n", error);

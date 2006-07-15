@@ -911,10 +911,10 @@ void tree_delete_node(struct tree *tree, struct node *node, bool siblings) {
 						/* reset URL characteristics */
 						urldb_reset_url_visit_data(e->text);
 					}
-					
+
 					/* if not already 'deleted' then delete cookie */
 					if (!node->deleted) {
-						/* todo: delete cookie data */ 
+						/* todo: delete cookie data */
 					}
 
 					if (e->data != TREE_ELEMENT_TITLE &&
@@ -1113,8 +1113,8 @@ struct node *tree_create_URL_node_shared(struct node *parent,
 /**
  * Creates a tree entry for a cookie, and links it into the tree.
  *
- * All information is used directly from the url_data, and as such cannot be
- * edited and should never be freed.
+ * All information is used directly from the cookie_data, and as such cannot
+ * be edited and should never be freed.
  *
  * \param parent      the node to link to
  * \param url         the URL
@@ -1137,7 +1137,7 @@ struct node *tree_create_cookie_node(struct node *parent,
 
 	element = tree_create_node_element(node, TREE_ELEMENT_PERSISTENT);
 	if (element) {
-		snprintf(buffer, 256, messages_get("TreePersistent"),	
+		snprintf(buffer, 256, messages_get("TreePersistent"),
 				data->no_destroy ? messages_get("Yes") : messages_get("No"));
 		element->text = strdup(buffer);
 	}
@@ -1149,7 +1149,7 @@ struct node *tree_create_cookie_node(struct node *parent,
 	}
 	element = tree_create_node_element(node, TREE_ELEMENT_SECURE);
 	if (element) {
-		snprintf(buffer, 256, messages_get("TreeSecure"),	
+		snprintf(buffer, 256, messages_get("TreeSecure"),
 				data->secure ? messages_get("Yes") : messages_get("No"));
 		element->text = strdup(buffer);
 	}
@@ -1165,9 +1165,12 @@ struct node *tree_create_cookie_node(struct node *parent,
 	element = tree_create_node_element(node, TREE_ELEMENT_EXPIRES);
 	if (element) {
 		snprintf(buffer, 256, messages_get("TreeExpires"),
-				(data->expires > 0) ?
-					ctime(&data->expires) : messages_get("TreeUnknown"));
-		if (data->expires > 0)
+				(data->expires > 0)
+					? (data->expires == 1)
+						? messages_get("TreeSession")
+						: ctime(&data->expires)
+					: messages_get("TreeUnknown"));
+		if (data->expires > 0 && data->expires != 1)
 			buffer[strlen(buffer) - 1] = '\0';
 		element->text = strdup(buffer);
 	}
@@ -1197,7 +1200,7 @@ struct node *tree_create_cookie_node(struct node *parent,
 				data->value ? data->value : messages_get("TreeUnused"));
 		element->text = strdup(buffer);
 	}
-	
+
 	/* add version, last_used, expires,
 	 * path, domain, comment, value */
 	tree_set_node_sprite(node, "small_xxx", "small_xxx");
