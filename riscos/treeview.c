@@ -344,23 +344,25 @@ void tree_draw_node_element(struct tree *tree, struct node_element *element) {
 					0xffffff,
 					false, false, false,
 					IMAGE_PLOT_TINCT_OPAQUE);
-			tree_draw_line(element->box.x,
-					element->box.y,
-					element->box.width - 1,
-					0);
-			tree_draw_line(element->box.x,
-					element->box.y,
-					0,
-					element->box.height - 3);
-			tree_draw_line(element->box.x,
-					element->box.y + element->box.height - 3,
-					element->box.width - 1,
-					0);
-			tree_draw_line(element->box.x + element->box.width - 1,
-					element->box.y,
-					0,
-					element->box.height - 3);
-		}
+			if (!tree->no_furniture) {
+				tree_draw_line(element->box.x,
+						element->box.y,
+						element->box.width - 1,
+						0);
+				tree_draw_line(element->box.x,
+						element->box.y,
+						0,
+						element->box.height - 3);
+				tree_draw_line(element->box.x,
+						element->box.y + element->box.height - 3,
+						element->box.width - 1,
+						0);
+				tree_draw_line(element->box.x + element->box.width - 1,
+						element->box.y,
+						0,
+						element->box.height - 3);
+			}
+		}	
 		break;
 	}
 }
@@ -716,6 +718,10 @@ bool ro_gui_tree_click(wimp_pointer *pointer, struct tree *tree) {
 
 	/* no item either means cancel selection on (select) click or a drag */
 	if (!element) {
+	  	if (tree->single_selection) {
+			tree_set_node_selected(tree, tree->root->child, false);
+	  		return true;
+	  	}
 		if ((pointer->buttons == (wimp_CLICK_SELECT << 4)) ||
 				(pointer->buttons == (wimp_CLICK_SELECT << 8)))
 			tree_set_node_selected(tree, tree->root->child, false);
@@ -824,7 +830,9 @@ bool ro_gui_tree_click(wimp_pointer *pointer, struct tree *tree) {
 	}
 
 	/* single click (select) cancels current selection and selects item */
-	if (pointer->buttons == (wimp_CLICK_SELECT << 8)) {
+	if ((pointer->buttons == (wimp_CLICK_SELECT << 8)) ||
+			((pointer->buttons == (wimp_CLICK_ADJUST << 8)) &&
+				(tree->single_selection))) {
 		if (!node->selected) {
 			tree_set_node_selected(tree, tree->root->child, false);
 			node->selected = true;
@@ -843,6 +851,8 @@ bool ro_gui_tree_click(wimp_pointer *pointer, struct tree *tree) {
 	/* drag starts a drag operation */
 	if ((!tree->editing) && ((pointer->buttons == (wimp_CLICK_SELECT << 4)) ||
 			(pointer->buttons == (wimp_CLICK_ADJUST << 4)))) {
+		if (tree->single_selection)
+			return true;
 
 		if (!node->selected) {
 			node->selected = true;
@@ -1159,6 +1169,7 @@ void ro_gui_tree_open(wimp_open *open) {
 	int width;
 	int height;
 	int toolbar_height = 0;
+	bool vscroll;
 
 	tree = (struct tree *)ro_gui_wimp_event_get_user_data(open->w);
 
@@ -1182,6 +1193,21 @@ void ro_gui_tree_open(wimp_open *open) {
 					error->errnum, error->errmess));
 			warn_user("WimpError", error->errmess);
 		}
+		
+		/* hide the scroll bar? */
+		if ((tree->no_vscroll) && (height != tree->window_height)) {
+		  	vscroll = (tree->height > height);
+			if (ro_gui_wimp_check_window_furniture(open->w,
+					wimp_WINDOW_VSCROLL) != vscroll) {
+				ro_gui_wimp_update_window_furniture(open->w,
+					0, wimp_WINDOW_VSCROLL);
+				if (vscroll)
+					open->visible.x1 -= ro_get_vscroll_width(open->w);
+				else
+					open->visible.x1 += ro_get_vscroll_width(open->w);
+			}
+		}
+		
 		tree->window_width = width;
 		tree->window_height = height;
 	}

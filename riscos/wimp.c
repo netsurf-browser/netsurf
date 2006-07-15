@@ -868,11 +868,13 @@ void ro_gui_user_redraw(wimp_draw *redraw, bool user_fill,
 void ro_gui_wimp_update_window_furniture(wimp_w w, wimp_window_flags bic_mask,
 		wimp_window_flags xor_mask) {
 	wimp_window_state state;
+	wimp_w parent;
+	bits linkage;
 	os_error *error;
 	bool open;
 
 	state.w = w;
-	error = xwimp_get_window_state(&state);
+	error = xwimp_get_window_state_and_nesting(&state, &parent, &linkage);
 	if (error) {
 		LOG(("xwimp_get_window_state: 0x%x: %s",
 				error->errnum, error->errmess));
@@ -886,7 +888,7 @@ void ro_gui_wimp_update_window_furniture(wimp_w w, wimp_window_flags bic_mask,
 	state.flags ^= xor_mask;
 	if (!open)
 		state.next = wimp_HIDDEN;
-	error = xwimp_open_window_nested_with_flags(&state, (wimp_w)-1, 0);
+	error = xwimp_open_window_nested_with_flags(&state, parent, linkage);
 	if (error) {
 		LOG(("xwimp_open_window: 0x%x: %s",
 				error->errnum, error->errmess));

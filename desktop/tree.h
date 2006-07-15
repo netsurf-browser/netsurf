@@ -96,6 +96,9 @@ struct tree {
 	int height;			/* <-- Tree height */
 	int window_width;		/* <-- Tree window width */
 	int window_height;		/* <-- Tree window height */
+	bool no_vscroll;		/* <-- Tree has a vertical scroll only when needed */
+	bool no_furniture;		/* <-- Tree does not have connecting lines */
+	bool single_selection;		/* <-- There can only be one item selected */
 	int edit_handle;		/* <-- Handle for editing information */
 	uintptr_t textarea_handle;	/* <-- Handle for UTF-8 textarea */
 	bool movable;			/* <-- Whether nodes can be moved */
@@ -107,13 +110,13 @@ struct tree {
 
 /* Non-platform specific code */
 void tree_initialise(struct tree *tree);
-void tree_initialise_nodes(struct node *root);
+void tree_initialise_nodes(struct tree *tree, struct node *root);
 void tree_handle_node_changed(struct tree *tree, struct node *node,
 		bool recalculate_sizes, bool expansion);
 void tree_handle_node_element_changed(struct tree *tree,
 		struct node_element *element);
-void tree_recalculate_node(struct node *node, bool recalculate_sizes);
-void tree_recalculate_node_positions(struct node *root);
+void tree_recalculate_node(struct tree *tree, struct node *node, bool recalculate_sizes);
+void tree_recalculate_node_positions(struct tree *tree, struct node *root);
 struct node *tree_get_node_at(struct node *root, int x, int y, bool *furniture);
 struct node_element *tree_get_node_element_at(struct node *node, int x, int y,
 		bool *furniture);
@@ -135,7 +138,7 @@ struct node *tree_create_URL_node_shared(struct node *parent,
 		const char *url, const struct url_data *data);
 struct node *tree_create_cookie_node(struct node *parent,
 		const struct cookie_data *data);
-void tree_set_node_expanded(struct node *node, bool expanded);
+void tree_set_node_expanded(struct tree *tree, struct node *node, bool expanded);
 void tree_set_node_selected(struct tree *tree, struct node *node,
 		bool selected);
 void tree_handle_selection_area(struct tree *tree, int x, int y, int width,

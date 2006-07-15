@@ -314,7 +314,7 @@ bool global_history_add_internal(const char *url,
 		tree_link_node(link, parent, before);
 
 		if (!global_history_init) {
-			tree_recalculate_node_positions(
+			tree_recalculate_node_positions(global_history_tree,
 					global_history_tree->root);
 			tree_redraw_area(global_history_tree,
 					0, 0, 16384, 16384);

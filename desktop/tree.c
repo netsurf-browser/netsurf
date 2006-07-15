@@ -49,12 +49,12 @@ void tree_initialise(struct tree *tree) {
 
 	assert(tree);
 
-	tree_set_node_expanded(tree->root, true);
-	tree_initialise_nodes(tree->root);
-	tree_recalculate_node_positions(tree->root);
-	tree_set_node_expanded(tree->root, false);
+	tree_set_node_expanded(tree, tree->root, true);
+	tree_initialise_nodes(tree, tree->root);
+	tree_recalculate_node_positions(tree, tree->root);
+	tree_set_node_expanded(tree, tree->root, false);
 	tree->root->expanded = true;
-	tree_recalculate_node_positions(tree->root);
+	tree_recalculate_node_positions(tree, tree->root);
 	tree_recalculate_size(tree);
 }
 
@@ -64,22 +64,22 @@ void tree_initialise(struct tree *tree) {
  *
  * \param root  the root node to update from
  */
-void tree_initialise_nodes(struct node *root) {
+void tree_initialise_nodes(struct tree *tree, struct node *root) {
 	struct node *node;
 
 	assert(root);
 
 	tree_initialising++;
 	for (node = root; node; node = node->next) {
-		tree_recalculate_node(node, true);
+		tree_recalculate_node(tree, node, true);
 		if (node->child) {
-			tree_initialise_nodes(node->child);
+			tree_initialise_nodes(tree, node->child);
 		}
 	}
 	tree_initialising--;
 
 	if (tree_initialising == 0)
-		tree_recalculate_node_positions(root);
+		tree_recalculate_node_positions(tree, root);
 }
 
 
@@ -98,16 +98,16 @@ void tree_handle_node_changed(struct tree *tree, struct node *node,
 	assert(node);
 
 	if ((expansion) && (node->expanded) && (node->child)) {
-		tree_set_node_expanded(node->child, false);
+		tree_set_node_expanded(tree, node->child, false);
 		tree_set_node_selected(tree, node->child, false);
 	}
 
 	width = node->box.width;
 	height = node->box.height;
 	if ((recalculate_sizes) || (expansion))
-		tree_recalculate_node(node, true);
+		tree_recalculate_node(tree, node, true);
 	if ((node->box.height != height) || (expansion)) {
-		tree_recalculate_node_positions(tree->root);
+		tree_recalculate_node_positions(tree, tree->root);
 		tree_redraw_area(tree, 0, node->box.y, 16384, 16384);
 	} else {
 		width = (width > node->box.width) ? width : node->box.width;
@@ -135,11 +135,11 @@ void tree_handle_node_element_changed(struct tree *tree, struct node_element *el
 	tree_recalculate_node_element(element);
 
 	if (element->box.height != height) {
-		tree_recalculate_node(element->parent, false);
+		tree_recalculate_node(tree, element->parent, false);
 		tree_redraw_area(tree, 0, element->box.y, 16384, 16384);
 	} else {
 		if (element->box.width != width)
-			tree_recalculate_node(element->parent, false);
+			tree_recalculate_node(tree, element->parent, false);
 		width = (width > element->box.width) ? width :
 				element->box.width;
 		tree_redraw_area(tree, element->box.x, element->box.y, width, element->box.height);
@@ -153,7 +153,7 @@ void tree_handle_node_element_changed(struct tree *tree, struct node_element *el
  * \param node		     the node to update
  * \param recalculate_sizes  whether the node elements have changed
  */
-void tree_recalculate_node(struct node *node, bool recalculate_sizes) {
+void tree_recalculate_node(struct tree *tree, struct node *node, bool recalculate_sizes) {
 	struct node_element *element;
 	int width, height;
 
@@ -186,7 +186,7 @@ void tree_recalculate_node(struct node *node, bool recalculate_sizes) {
 	if (height != node->box.height) {
 		for (; node->parent; node = node->parent);
 		if (tree_initialising == 0)
-			tree_recalculate_node_positions(node);
+			tree_recalculate_node_positions(tree, node);
 	}
 }
 
@@ -196,7 +196,7 @@ void tree_recalculate_node(struct node *node, bool recalculate_sizes) {
  *
  * \param root  the root node to update from
  */
-void tree_recalculate_node_positions(struct node *root) {
+void tree_recalculate_node_positions(struct tree *tree, struct node *root) {
 	struct node *parent;
 	struct node *node;
 	struct node *child;
@@ -216,14 +216,14 @@ void tree_recalculate_node_positions(struct node *root) {
 					child = child->next)
 				node->box.y += child->box.height;
 		} else {
-			node->box.x = 0;
+			node->box.x = tree->no_furniture ? -NODE_INSTEP + 8 : 0;
 			node->box.y = -40;
 		}
 		if (node->expanded) {
 			if (node->folder) {
 				node->data.box.x = node->box.x;
 				node->data.box.y = node->box.y;
-				tree_recalculate_node_positions(node->child);
+				tree_recalculate_node_positions(tree, node->child);
 			} else {
 				y = node->box.y;
 				for (element = &node->data; element;
@@ -305,14 +305,14 @@ int tree_get_node_height(struct node *node) {
  * \param node	    the node to set all siblings and descendants of
  * \param expanded  the expansion state to set
  */
-void tree_set_node_expanded(struct node *node, bool expanded) {
+void tree_set_node_expanded(struct tree *tree, struct node *node, bool expanded) {
 	for (; node; node = node->next) {
 		if (node->expanded != expanded) {
 			node->expanded = expanded;
-			tree_recalculate_node(node, false);
+			tree_recalculate_node(tree, node, false);
 		}
 		if ((node->child) && (node->expanded))
-			tree_set_node_expanded(node->child, expanded);
+			tree_set_node_expanded(tree, node->child, expanded);
 	}
 }
 
@@ -337,18 +337,18 @@ bool tree_handle_expansion(struct tree *tree, struct node *node, bool expanded, 
 				((folder && (node->folder)) || (leaf && (!node->folder)))) {
 			node->expanded = expanded;
 			if (node->child)
-				tree_set_node_expanded(node->child, false);
+				tree_set_node_expanded(tree, node->child, false);
 			if ((node->data.next) && (node->data.next->box.height == 0))
-				tree_recalculate_node(node, true);
+				tree_recalculate_node(tree, node, true);
 			else
-				tree_recalculate_node(node, false);
+				tree_recalculate_node(tree, node, false);
 			redraw = true;
 		}
 		if ((node->child) && (node->expanded))
 			redraw |= tree_handle_expansion(tree, node->child, expanded, folder, leaf);
 	}
 	if ((entry == tree->root) && (redraw)) {
-		tree_recalculate_node_positions(tree->root);
+		tree_recalculate_node_positions(tree, tree->root);
 		tree_redraw_area(tree, 0, 0, 16384, 16384);
 		tree_recalculate_size(tree);
 	}
@@ -493,7 +493,7 @@ void tree_move_selected_nodes(struct tree *tree, struct node *destination, bool 
 		link = tree_move_processing_node(tree->root, link, false, false);
 
 	tree_clear_processing(tree->root);
-	tree_recalculate_node_positions(tree->root);
+	tree_recalculate_node_positions(tree, tree->root);
 	tree_redraw_area(tree, 0, 0, 16384, 16384);
 }
 
@@ -718,28 +718,30 @@ void tree_draw_node(struct tree *tree, struct node *node, int clip_x, int clip_y
 
 	for (; node; node = node->next) {
 		if (node->box.y > y_max) return;
-		if (node->next)
+		if ((node->next) && (!tree->no_furniture))
 			tree_draw_line(node->box.x - (NODE_INSTEP / 2),
 					node->box.y + (40 / 2), 0,
 					node->next->box.y - node->box.y);
 		if ((node->box.x < x_max) && (node->box.y < y_max) &&
 				(node->box.x + node->box.width + NODE_INSTEP >= clip_x) &&
 				(node->box.y + node->box.height >= clip_y)) {
-			if ((node->expanded) && (node->child))
-				tree_draw_line(node->box.x + (NODE_INSTEP / 2),
-						node->data.box.y + node->data.box.height, 0,
-						(40 / 2));
-			if ((node->parent) && (node->parent != tree->root) &&
-					(node->parent->child == node))
-				tree_draw_line(node->parent->box.x + (NODE_INSTEP / 2),
+			if (!tree->no_furniture) {
+				if ((node->expanded) && (node->child))
+					tree_draw_line(node->box.x + (NODE_INSTEP / 2),
+							node->data.box.y + node->data.box.height, 0,
+							(40 / 2));
+				if ((node->parent) && (node->parent != tree->root) &&
+						(node->parent->child == node))
+					tree_draw_line(node->parent->box.x + (NODE_INSTEP / 2),
 						node->parent->data.box.y +
 							node->parent->data.box.height, 0,
-						(40 / 2));
-			tree_draw_line(node->box.x - (NODE_INSTEP / 2),
-					node->data.box.y +
-					node->data.box.height - (40 / 2),
-					(NODE_INSTEP / 2) - 4, 0);
-			tree_draw_node_expansion(tree, node);
+							(40 / 2));
+				tree_draw_line(node->box.x - (NODE_INSTEP / 2),
+						node->data.box.y +
+						node->data.box.height - (40 / 2),
+						(NODE_INSTEP / 2) - 4, 0);
+				tree_draw_node_expansion(tree, node);
+			}
 			if (node->expanded)
 				for (element = &node->data; element;
 						element = element->next)
@@ -935,7 +937,7 @@ void tree_delete_node(struct tree *tree, struct node *node, bool siblings) {
 	if (siblings && next)
 		tree_delete_node(tree, next, true);
 
-	tree_recalculate_node_positions(tree->root);
+	tree_recalculate_node_positions(tree, tree->root);
 	tree_redraw_area(tree, 0, 0, 16384, 16384);	/* \todo correct area */
 	tree_recalculate_size(tree);
 }
@@ -964,7 +966,6 @@ struct node *tree_create_folder_node(struct node *parent, const char *title) {
 	tree_set_node_sprite_folder(node);
 	if (parent)
 		tree_link_node(parent, node, false);
-	tree_recalculate_node(node, true);
 	return node;
 }
 
@@ -1061,7 +1062,6 @@ struct node *tree_create_URL_node(struct node *parent,
 		element->text = strdup(url);
 
 	tree_update_URL_node(node, url, NULL);
-	tree_recalculate_node(node, false);
 
 	return node;
 }
@@ -1104,7 +1104,6 @@ struct node *tree_create_URL_node_shared(struct node *parent,
 		element->text = url;
 
 	tree_update_URL_node(node, url, data);
-	tree_recalculate_node(node, false);
 
 	return node;
 }
@@ -1113,8 +1112,8 @@ struct node *tree_create_URL_node_shared(struct node *parent,
 /**
  * Creates a tree entry for a cookie, and links it into the tree.
  *
- * All information is used directly from the cookie_data, and as such cannot
- * be edited and should never be freed.
+ * All information is copied from the cookie_data, and as such can
+ * be edited and should be freed.
  *
  * \param parent      the node to link to
  * \param url         the URL
@@ -1201,10 +1200,7 @@ struct node *tree_create_cookie_node(struct node *parent,
 		element->text = strdup(buffer);
 	}
 
-	/* add version, last_used, expires,
-	 * path, domain, comment, value */
 	tree_set_node_sprite(node, "small_xxx", "small_xxx");
-	tree_recalculate_node(node, false);
 	return node;
 }
 
