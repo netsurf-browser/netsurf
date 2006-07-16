@@ -14,6 +14,7 @@
 #include "netsurf/content/content.h"
 #include "netsurf/content/fetchcache.h"
 #include "netsurf/content/urldb.h"
+#include "netsurf/desktop/cookies.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/options.h"
 #include "netsurf/desktop/textinput.h"
@@ -201,3 +202,14 @@ bool gui_search_term_highlighted(struct gui_window *g,
 const char *local_encoding_name(void) { return "ISO-8859-1"; }
 
 struct caret ghost_caret;
+
+bool cookies_update(const struct cookie_data *data) { return true; }
+
+char *url_to_path(const char *url)
+{
+	return strdup(url + 5);
+}
+
+void tree_set_node_sprite(struct node *node, const char *sprite,
+                const char *expanded) { }
+
