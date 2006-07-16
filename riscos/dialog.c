@@ -42,7 +42,7 @@
 
 /*	The maximum number of persistent dialogues
 */
-#define MAX_PERSISTENT 16
+#define MAX_PERSISTENT 64
 
 
 wimp_w dialog_info, dialog_saveas,
@@ -355,10 +355,16 @@ void ro_gui_dialog_close(wimp_w close)
 	for (i = 0; i < MAX_PERSISTENT; i++) {
 		if (persistent_dialog[i].dialog == close) {
 			/* We are => invalidate record */
+			persistent_dialog[i].parent = NULL;
 			persistent_dialog[i].dialog = NULL;
 			break;
 		}
 	}
+
+	/* Close any child windows */
+	for (i = 0; i < MAX_PERSISTENT; i++) 
+		if (persistent_dialog[i].parent == close)
+		  	ro_gui_dialog_close(persistent_dialog[i].dialog);
 
 	/*	Give the caret back to the parent window. This code relies on
 		the fact that only tree windows and browser windows open

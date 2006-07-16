@@ -25,6 +25,7 @@ static void tree_draw_node(struct tree *tree, struct node *node, int clip_x,
 		int clip_y, int clip_width, int clip_height);
 static struct node_element *tree_create_node_element(struct node *parent,
 		node_element_data data);
+static void tree_delete_node_internal(struct tree *tree, struct node *node, bool siblings);
 static int tree_get_node_width(struct node *node);
 static int tree_get_node_height(struct node *node);
 static void tree_handle_selection_area_node(struct tree *tree,
@@ -34,7 +35,6 @@ static void tree_selected_to_processing(struct node *node);
 void tree_clear_processing(struct node *node);
 struct node *tree_move_processing_node(struct node *node, struct node *link,
 		bool before, bool first);
-struct node *tree_create_leaf_node(struct node *parent, const char *title);
 struct node *tree_create_leaf_node_shared(struct node *parent, const char *title);
 
 static int tree_initialising = 0;
@@ -884,6 +884,24 @@ void tree_delete_selected_nodes(struct tree *tree, struct node *node) {
  * \param siblings  whether to delete all siblings
  */
 void tree_delete_node(struct tree *tree, struct node *node, bool siblings) {
+
+	tree_delete_node_internal(tree, node, siblings);
+
+	if (tree->root)
+		tree_recalculate_node_positions(tree, tree->root);
+	tree_redraw_area(tree, 0, 0, 16384, 16384);	/* \todo correct area */
+	tree_recalculate_size(tree);
+}
+
+
+/**
+ * Deletes a node from the tree.
+ *
+ * \param tree	    the tree to delete from
+ * \param node	    the node to delete
+ * \param siblings  whether to delete all siblings
+ */
+void tree_delete_node_internal(struct tree *tree, struct node *node, bool siblings) {
 	struct node *next;
 	struct node *parent;
 	struct node_element *e, *f;
@@ -892,10 +910,12 @@ void tree_delete_node(struct tree *tree, struct node *node, bool siblings) {
 
 	if (tree->temp_selection == node)
 		tree->temp_selection = NULL;
+	if (tree->root == node)
+		tree->root = NULL;
 
 	next = node->next;
 	if (node->child)
-		tree_delete_node(tree, node->child, true);
+		tree_delete_node_internal(tree, node->child, true);
 	node->child = NULL;
 	parent = node->parent;
 	tree_delink_node(node);
@@ -935,13 +955,8 @@ void tree_delete_node(struct tree *tree, struct node *node, bool siblings) {
 		node->deleted = true;
 	}
 	if (siblings && next)
-		tree_delete_node(tree, next, true);
-
-	tree_recalculate_node_positions(tree, tree->root);
-	tree_redraw_area(tree, 0, 0, 16384, 16384);	/* \todo correct area */
-	tree_recalculate_size(tree);
+		tree_delete_node_internal(tree, next, true);
 }
-
 
 /**
  * Creates a folder node with the specified title, and links it into the tree.
@@ -1240,8 +1255,13 @@ void tree_recalculate_size(struct tree *tree) {
 		return;
 	width = tree->width;
 	height = tree->height;
-	tree->width = tree_get_node_width(tree->root);
-	tree->height = tree_get_node_height(tree->root);
+	if (tree->root) {
+		tree->width = tree_get_node_width(tree->root);
+		tree->height = tree_get_node_height(tree->root);
+	} else {
+	  	tree->width = 0;
+	  	tree->height = 0;
+	}
 	if ((width != tree->width) || (height != tree->height))
 		tree_resized(tree);
 }

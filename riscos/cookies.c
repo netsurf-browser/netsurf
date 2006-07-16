@@ -110,19 +110,6 @@ bool ro_gui_cookies_click(wimp_pointer *pointer)
 
 
 /**
- * Attempts to process an interactive help message request
- *
- * \param x  the x co-ordinate to give help for
- * \param y  the x co-ordinate to give help for
- * \return the message code index
- */
-int ro_gui_cookies_help(int x, int y)
-{
-	return -1;
-}
-
-
-/**
  * Perform cookie addition
  *
  * \param data Cookie data for a domain

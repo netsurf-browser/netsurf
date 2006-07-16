@@ -17,12 +17,11 @@
 #include "oslib/taskmanager.h"
 #include "oslib/wimp.h"
 #include "netsurf/desktop/tree.h"
-#include "netsurf/riscos/cookies.h"
-#include "netsurf/riscos/global_history.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/help.h"
 #include "netsurf/riscos/menus.h"
 #include "netsurf/riscos/theme.h"
+#include "netsurf/riscos/treeview.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/riscos/wimp_event.h"
 #include "netsurf/utils/messages.h"
@@ -46,7 +45,7 @@
 	HelpBrowserMenu		Browser window menu
 	HelpHotlistMenu		Hotlist window menu
 	HelpGHistoryMenu	Global history window menu
-	HelpCookiesMenu	 	Cookie window menu
+	HelpCookiesMenu		Cookie window menu
 
 	The prefixes are followed by either the icon number (eg 'HelpToolbar7'),
 	or a series of numbers representing the menu structure (eg
@@ -88,6 +87,7 @@ void ro_gui_interactive_help_request(wimp_message *message) {
 	wimp_menu *test_menu;
 	os_error *error;
 	const char *auto_text;
+	int i;
 
 	/* only accept help requests */
 	if ((!message) || (message->action != message_HELP_REQUEST))
@@ -105,24 +105,24 @@ void ro_gui_interactive_help_request(wimp_message *message) {
 	/* do the basic window checks */
 	auto_text = ro_gui_wimp_event_get_help_prefix(window);
 	if (auto_text)
-	  	sprintf(message_token, "%s%i", auto_text, (int)icon);
+		sprintf(message_token, "%s%i", auto_text, (int)icon);
 	else if (window == wimp_ICON_BAR)
 		sprintf(message_token, "HelpIconbar");
-	else if ((hotlist_tree) && (window == (wimp_w)hotlist_tree->handle))
-		sprintf(message_token, "HelpHotlist%i",
-				ro_gui_hotlist_help(message_data->pos.x,
-						message_data->pos.y));
-	else if ((global_history_tree) &&
-			(window == (wimp_w)global_history_tree->handle))
-		sprintf(message_token, "HelpGHistory%i",
-				ro_gui_global_history_help(message_data->pos.x,
-						message_data->pos.y));
-	else if ((cookies_tree) &&
-			(window == (wimp_w)cookies_tree->handle))
-		sprintf(message_token, "HelpGHistory%i",
-				ro_gui_cookies_help(message_data->pos.x,
-						message_data->pos.y));
-	else if ((g = ro_gui_window_lookup(window)) != NULL)
+	else if ((hotlist_tree) && (window == (wimp_w)hotlist_tree->handle)) {
+		i = ro_gui_tree_help(message_data->pos.x, message_data->pos.y);
+		sprintf(message_token,
+				(i >= 0) ? "HelpTree%i" :"HelpHotlist%i", i);
+	} else if ((global_history_tree) &&
+			(window == (wimp_w)global_history_tree->handle)) {
+		i = ro_gui_tree_help(message_data->pos.x, message_data->pos.y);
+		sprintf(message_token,
+				(i >= 0) ? "HelpTree%i" :"HelpGHistory%i", i);
+	} else if ((cookies_tree) &&
+			(window == (wimp_w)cookies_tree->handle)) {
+		i = ro_gui_tree_help(message_data->pos.x, message_data->pos.y);
+		sprintf(message_token,
+				(i >= 0) ? "HelpTree%i" :"HelpCookies%i", i);
+	} else if ((g = ro_gui_window_lookup(window)) != NULL)
 		sprintf(message_token, "HelpBrowser%i", (int)icon);
 
 	/* if we've managed to find something so far then we broadcast it */

@@ -45,8 +45,8 @@
 
 
 static bool ro_gui_tree_initialise_sprite(const char *name, int number);
-static void ro_gui_tree_launch_selected_node(struct node *node, bool all);
-static bool ro_gui_tree_launch_node(struct node *node);
+static void ro_gui_tree_launch_selected_node(struct tree *tree, struct node *node, bool all);
+static bool ro_gui_tree_launch_node(struct tree *tree, struct node *node);
 static void tree_handle_node_changed_callback(void *p);
 
 /* an array of sprite addresses for Tinct */
@@ -822,7 +822,7 @@ bool ro_gui_tree_click(wimp_pointer *pointer, struct tree *tree) {
 	/* double click starts launches the leaf */
 	if ((pointer->buttons == wimp_CLICK_SELECT) ||
 			(pointer->buttons == wimp_CLICK_ADJUST)) {
-		if (!ro_gui_tree_launch_node(node))
+		if (!ro_gui_tree_launch_node(tree, node))
 			return false;
 		if (pointer->buttons == wimp_CLICK_ADJUST)
 			ro_gui_dialog_close((wimp_w)tree->handle);
@@ -1435,7 +1435,7 @@ void ro_gui_tree_launch_selected(struct tree *tree) {
 	assert(tree);
 
 	if (tree->root->child)
-		ro_gui_tree_launch_selected_node(tree->root->child, false);
+		ro_gui_tree_launch_selected_node(tree, tree->root->child, false);
 }
 
 
@@ -1444,12 +1444,12 @@ void ro_gui_tree_launch_selected(struct tree *tree) {
  *
  * \param node  the node to launch all selected nodes for
  */
-void ro_gui_tree_launch_selected_node(struct node *node, bool all) {
+void ro_gui_tree_launch_selected_node(struct tree *tree, struct node *node, bool all) {
 	for (; node; node = node->next) {
 		if (((node->selected) || (all)) && (!node->folder))
-			ro_gui_tree_launch_node(node);
+			ro_gui_tree_launch_node(tree, node);
 		if ((node->child) && ((node->expanded) || (node->selected) | (all)))
-			ro_gui_tree_launch_selected_node(node->child,
+			ro_gui_tree_launch_selected_node(tree, node->child,
 				(node->selected) | (all));
 	}
 }
@@ -1461,7 +1461,7 @@ void ro_gui_tree_launch_selected_node(struct node *node, bool all) {
  * \param node  the node to launch
  * \return whether the node could be launched
  */
-bool ro_gui_tree_launch_node(struct node *node) {
+bool ro_gui_tree_launch_node(struct tree *tree, struct node *node) {
 	struct node_element *element;
 
 	assert(node);
@@ -1471,6 +1471,15 @@ bool ro_gui_tree_launch_node(struct node *node) {
 		browser_window_create(element->text, NULL, 0, true);
 		return true;
 	}
+	element = tree_find_element(node, TREE_ELEMENT_SSL);
+	if (element) {
+		ro_gui_cert_open(tree, node);
+		return true;
+	}
 
 	return false;
+}
+
+int ro_gui_tree_help(int x, int y) {
+	return -1;
 }

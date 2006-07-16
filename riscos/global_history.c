@@ -236,19 +236,6 @@ bool ro_gui_global_history_click(wimp_pointer *pointer)
 
 
 /**
- * Attempts to process an interactive help message request
- *
- * \param x  the x co-ordinate to give help for
- * \param y  the x co-ordinate to give help for
- * \return the message code index
- */
-int ro_gui_global_history_help(int x, int y)
-{
-	return -1;
-}
-
-
-/**
  * Adds to the global history
  *
  * \param url The URL to add

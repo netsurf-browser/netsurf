@@ -355,15 +355,3 @@ bool ro_gui_hotlist_dialog_apply(wimp_w w) {
 	}
 	return true;
 }
-
-
-/**
- * Attempts to process an interactive help message request
- *
- * \param x  the x co-ordinate to give help for
- * \param y  the x co-ordinate to give help for
- * \return the message code index
- */
-int ro_gui_hotlist_help(int x, int y) {
-	return -1;
-}

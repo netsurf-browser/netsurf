@@ -30,7 +30,6 @@
 #include "netsurf/utils/utils.h"
 
 static void ro_gui_wimp_cache_furniture_sizes(wimp_w w);
-static bool ro_gui_wimp_read_eig_factors(os_mode mode, int *xeig, int *yeig);
 
 static wimpextend_furniture_sizes furniture_sizes;
 static wimp_w furniture_window = NULL;
