@@ -208,8 +208,6 @@ uintptr_t textarea_create(wimp_w parent, wimp_i icon, unsigned int flags,
 			ro_get_hscroll_height(ret->window) - state.yscroll;
 	state.visible.y1 += istate.icon.extent.y1 - 2 - state.yscroll;
 
-	LOG(("%i, %i, %i, %i", state.visible.x0, state.visible.y0,
-			state.visible.x1, state.visible.y1));
 	if (flags & TEXTAREA_READONLY) {
 		state.visible.x0 += 2;
 		state.visible.x1 -= 4;
