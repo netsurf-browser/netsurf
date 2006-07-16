@@ -216,7 +216,7 @@ void tree_recalculate_node_positions(struct tree *tree, struct node *root) {
 					child = child->next)
 				node->box.y += child->box.height;
 		} else {
-			node->box.x = tree->no_furniture ? -NODE_INSTEP + 8 : 0;
+			node->box.x = tree->no_furniture ? -NODE_INSTEP + 4 : 0;
 			node->box.y = -40;
 		}
 		if (node->expanded) {
