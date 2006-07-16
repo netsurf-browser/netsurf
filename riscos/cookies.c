@@ -112,23 +112,25 @@ bool ro_gui_cookies_click(wimp_pointer *pointer)
 /**
  * Perform cookie addition
  *
- * \param data Cookie data for a domain
+ * \param data Cookie data for a domain, or NULL
  * \return true (for urldb_iterate_entries)
  */
-bool cookies_update(const struct cookie_data *data)
+bool cookies_update(const char *domain, const struct cookie_data *data)
 {
 	struct node *parent;
 	struct node *node = NULL;
 	struct node *child;
-	const struct cookie_data *cookie;
+	struct node *add;
+	const struct cookie_data *cookie = NULL;
 
-	assert(data);
+	assert(domain);
 	
 	/* check if we're a domain, and add get the first cookie */
-	for (cookie = data; cookie->prev; cookie = cookie->prev);
+	if (data)
+		for (cookie = data; cookie->prev; cookie = cookie->prev);
 
 	if (!cookies_init) {
-		node = ro_gui_cookies_find(data->domain);
+		node = ro_gui_cookies_find(domain);
 		if (node) {
 			/* mark as deleted so we don't remove the cookies */
 			for (child = node->child; child; child = child->next)
@@ -137,19 +139,27 @@ bool cookies_update(const struct cookie_data *data)
 				tree_delete_node(cookies_tree, node->child,
 						true);
 		}
+		if (!data) {
+		  	if (!node)
+		  		return true;
+		  	tree_delete_node(cookies_tree, node, false);
+			tree_handle_node_changed(cookies_tree,
+					cookies_tree->root, true, false);
+			return true;
+		}
 	}
 
 	if (!node) {
 		for (parent = cookies_tree->root->child; parent;
 				parent = parent->next) {
-			if (strcmp(cookie->domain, parent->data.text) < 0)
+			if (strcmp(domain, parent->data.text) < 0)
 				break;	  
 		}
 		if (!parent) {
 			node = tree_create_folder_node(cookies_tree->root,
-					cookie->domain);
+					domain);
 		} else {
-			node = tree_create_folder_node(NULL, data->domain);
+			node = tree_create_folder_node(NULL, domain);
 			if (node)
 				tree_link_node(parent, node, true);
 		}
@@ -158,8 +168,12 @@ bool cookies_update(const struct cookie_data *data)
 		return true;
 	node->editable = false;
 	
-	for (; cookie; cookie = cookie->next)
-		tree_create_cookie_node(node, cookie);
+	for (; cookie; cookie = cookie->next) {
+		add = tree_create_cookie_node(node, cookie);
+		if (!cookies_init)
+			tree_handle_node_changed(cookies_tree, add,
+					true, false);
+	}
 	if (!cookies_init) {
 		tree_handle_node_changed(cookies_tree, node,
 				true, false);

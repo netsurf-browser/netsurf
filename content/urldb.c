@@ -188,10 +188,10 @@ static bool urldb_iterate_partial_path(const struct path_data *parent,
 		const struct url_data *data));
 static bool urldb_iterate_entries_host(struct search_node *parent,
 		bool (*url_callback)(const char *url, const struct url_data *data),
-		bool (*cookie_callback)(const struct cookie_data *data));
+		bool (*cookie_callback)(const char *domain, const struct cookie_data *data));
 static bool urldb_iterate_entries_path(const struct path_data *parent,
 		bool (*url_callback)(const char *url, const struct url_data *data),
-		bool (*cookie_callback)(const struct cookie_data *data));
+		bool (*cookie_callback)(const char *domain, const struct cookie_data *data));
 
 /* Insertion */
 static struct host_part *urldb_add_host_node(const char *part,
@@ -1309,7 +1309,7 @@ void urldb_iterate_entries(bool (*callback)(const char *url,
  *
  * \param callback Function to callback for each entry
  */
-void urldb_iterate_cookies(bool (*callback)(const struct cookie_data *data))
+void urldb_iterate_cookies(bool (*callback)(const char *domain, const struct cookie_data *data))
 {
 	int i;
 
@@ -1332,7 +1332,7 @@ void urldb_iterate_cookies(bool (*callback)(const struct cookie_data *data))
  */
 bool urldb_iterate_entries_host(struct search_node *parent,
 		bool (*url_callback)(const char *url, const struct url_data *data),
-		bool (*cookie_callback)(const struct cookie_data *data))
+		bool (*cookie_callback)(const char *domain, const struct cookie_data *data))
 {
 	if (parent == &empty)
 		return true;
@@ -1364,7 +1364,7 @@ bool urldb_iterate_entries_host(struct search_node *parent,
  */
 bool urldb_iterate_entries_path(const struct path_data *parent,
 		bool (*url_callback)(const char *url, const struct url_data *data),
-		bool (*cookie_callback)(const struct cookie_data *data))
+		bool (*cookie_callback)(const char *domain, const struct cookie_data *data))
 {
 	const struct path_data *p;
 
@@ -1384,7 +1384,7 @@ bool urldb_iterate_entries_path(const struct path_data *parent,
 					(const struct url_data *) &parent->urld))
 				return false;
 		} else {
-			if (parent->cookies && !cookie_callback(
+			if (parent->cookies && !cookie_callback(parent->cookies->domain,
 					(const struct cookie_data *) parent->cookies))
 				return false;
 		}
@@ -2619,7 +2619,7 @@ bool urldb_set_cookie(const char *header, const char *url)
 		/* Now insert into database */
 		if (!urldb_insert_cookie(c, scheme, urlt))
 			goto error;
-		cookies_update((struct cookie_data *)c);
+		cookies_update(c->domain, (struct cookie_data *)c);
 	} while (cur < end);
 
 	free(host);

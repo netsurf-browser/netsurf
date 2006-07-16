@@ -87,7 +87,8 @@ void urldb_iterate_partial(const char *prefix,
 /* Iteration */
 void urldb_iterate_entries(bool (*callback)(const char *url,
 		const struct url_data *data));
-void urldb_iterate_cookies(bool (*callback)(const struct cookie_data *cookie));
+void urldb_iterate_cookies(bool (*callback)(const char *domain,
+		const struct cookie_data *cookie));
 
 /* Debug */
 void urldb_dump(void);

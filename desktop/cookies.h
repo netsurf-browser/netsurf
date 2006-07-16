@@ -16,6 +16,6 @@
 
 struct cookie_data;
 
-bool cookies_update(const struct cookie_data *data);
+bool cookies_update(const char *domain, const struct cookie_data *data);
 
 #endif
