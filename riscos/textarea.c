@@ -78,7 +78,7 @@ static wimp_window text_area_definition = {
 	0,
 	0,
 	wimp_TOP,
-	wimp_WINDOW_NEW_FORMAT,
+	wimp_WINDOW_NEW_FORMAT | wimp_WINDOW_NO_BOUNDS,
 	wimp_COLOUR_BLACK,
 	wimp_COLOUR_LIGHT_GREY,
 	wimp_COLOUR_LIGHT_GREY,
@@ -208,6 +208,8 @@ uintptr_t textarea_create(wimp_w parent, wimp_i icon, unsigned int flags,
 			ro_get_hscroll_height(ret->window) - state.yscroll;
 	state.visible.y1 += istate.icon.extent.y1 - 2 - state.yscroll;
 
+	LOG(("%i, %i, %i, %i", state.visible.x0, state.visible.y0,
+			state.visible.x1, state.visible.y1));
 	if (flags & TEXTAREA_READONLY) {
 		state.visible.x0 += 2;
 		state.visible.x1 -= 4;
@@ -836,11 +838,10 @@ void textarea_reflow(struct text_area *ta, unsigned int line)
 	/* Create vertical scrollbar if we don't already have one */
 	if (!ro_gui_wimp_check_window_furniture(ta->window,
 			wimp_WINDOW_VSCROLL)) {
-		wimp_outline outline;
 		wimp_window_state state;
 		wimp_w parent;
 		bits linkage;
-		unsigned int old_w;
+		unsigned int vscroll_width;
 
 		/* Save window parent & linkage flags */
 		state.w = ta->window;
@@ -852,33 +853,9 @@ void textarea_reflow(struct text_area *ta, unsigned int line)
 			return;
 		}
 
-		/* Read existing window outline */
-		outline.w = ta->window;
-		error = xwimp_get_window_outline(&outline);
-		if (error) {
-			LOG(("xwimp_get_window_outline: 0x%x: %s",
-					error->errnum, error->errmess));
-			return;
-		}
-
-		/* Save width */
-		old_w = outline.outline.x1 - outline.outline.x0;
-
 		/* Now, attempt to create vertical scrollbar */
-		ro_gui_wimp_update_window_furniture(ta->window, 0,
+		ro_gui_wimp_update_window_furniture(ta->window, wimp_WINDOW_VSCROLL,
 				wimp_WINDOW_VSCROLL);
-
-		/* Read new window outline */
-		outline.w = ta->window;
-		error = xwimp_get_window_outline(&outline);
-		if (error) {
-			LOG(("xwimp_get_window_outline: 0x%x: %s",
-					error->errnum, error->errmess));
-			return;
-		}
-
-		/* Calculate difference in widths */
-		old_w = (outline.outline.x1 - outline.outline.x0) - old_w;
 
 		/* Get new window state */
 		state.w = ta->window;
@@ -889,8 +866,11 @@ void textarea_reflow(struct text_area *ta, unsigned int line)
 			return;
 		}
 
+		/* Get scroll width */
+		vscroll_width = ro_get_vscroll_width(NULL);
+
 		/* Shrink width by difference */
-		state.visible.x1 -= old_w;
+		state.visible.x1 -= vscroll_width;
 
 		/* and reopen window */
 		error = xwimp_open_window_nested((wimp_open *)&state,
@@ -902,7 +882,7 @@ void textarea_reflow(struct text_area *ta, unsigned int line)
 		}
 
 		/* finally, update visible width */
-		ta->vis_width -= old_w;
+		ta->vis_width -= vscroll_width;
 
 		/* Now we've done that, we have to reflow the text area */
 		textarea_reflow(ta, 0);
