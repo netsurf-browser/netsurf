@@ -18,6 +18,7 @@
 #include "oslib/osbyte.h"
 #include "oslib/serviceinternational.h"
 #include "oslib/wimp.h"
+#include "netsurf/desktop/gui.h"
 #include "netsurf/riscos/dialog.h"
 #include "netsurf/riscos/menus.h"
 #include "netsurf/riscos/ucstables.h"
