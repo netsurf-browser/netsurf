@@ -362,7 +362,7 @@ void tree_draw_node_element(struct tree *tree, struct node_element *element) {
 						0,
 						element->box.height - 3);
 			}
-		}	
+		}
 		break;
 	}
 }
@@ -1039,7 +1039,7 @@ void ro_gui_tree_start_edit(struct tree *tree, struct node_element *element,
 	if (error)
 		LOG(("xwimp_create_icon: 0x%x: %s",
 				error->errnum, error->errmess));
-	
+
 	tree->textarea_handle = textarea_create((wimp_w)tree->handle,
 			(wimp_i)tree->edit_handle, 0, "Homerton", 192);
 	if (!tree->textarea_handle) {
@@ -1193,7 +1193,7 @@ void ro_gui_tree_open(wimp_open *open) {
 					error->errnum, error->errmess));
 			warn_user("WimpError", error->errmess);
 		}
-		
+
 		/* hide the scroll bar? */
 		if ((tree->no_vscroll) && (height != tree->window_height)) {
 		  	vscroll = (tree->height > height);
@@ -1207,7 +1207,7 @@ void ro_gui_tree_open(wimp_open *open) {
 					open->visible.x1 += ro_get_vscroll_width(open->w);
 			}
 		}
-		
+
 		tree->window_width = width;
 		tree->window_height = height;
 	}
@@ -1471,11 +1471,14 @@ bool ro_gui_tree_launch_node(struct tree *tree, struct node *node) {
 		browser_window_create(element->text, NULL, 0, true);
 		return true;
 	}
+
+#ifdef WITH_SSL
 	element = tree_find_element(node, TREE_ELEMENT_SSL);
 	if (element) {
 		ro_gui_cert_open(tree, node);
 		return true;
 	}
+#endif
 
 	return false;
 }
