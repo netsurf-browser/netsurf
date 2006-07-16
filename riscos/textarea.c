@@ -23,6 +23,7 @@
 
 #include "rufl.h"
 
+#include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/textarea.h"
 #include "netsurf/riscos/ucstables.h"
 #include "netsurf/riscos/wimp.h"
@@ -450,7 +451,7 @@ void textarea_replace_text(uintptr_t self, unsigned int start,
 {
 	struct text_area *ta;
 	int b_len = strlen(text);
-	size_t b_start, b_end, c_len;
+	size_t b_start, b_end, c_len, diff;
 
 	ta = (struct text_area *)self;
 	if (!ta || ta->magic != MAGIC) {
@@ -474,11 +475,13 @@ void textarea_replace_text(uintptr_t self, unsigned int start,
 		start = temp;
 	}
 
+	diff = end - start;
+
 	for (b_start = 0; start-- > 0;
 			b_start = utf8_next(ta->text, ta->text_len, b_start))
 		; /* do nothing */
 
-	for (b_end = b_start; end-- > 0;
+	for (b_end = b_start; diff-- > 0;
 			b_end = utf8_next(ta->text, ta->text_len, b_end))
 		; /* do nothing */
 
@@ -498,6 +501,7 @@ void textarea_replace_text(uintptr_t self, unsigned int start,
 	/* Shift text following to new position */
 	memmove(ta->text + b_start + b_len, ta->text + b_end,
 			ta->text_len - b_end);
+
 	/* Insert new text */
 	memcpy(ta->text + b_start, text, b_len);
 
@@ -943,33 +947,95 @@ bool textarea_key_press(wimp_key *key)
 	} else {
 		/** \todo handle command keys */
 		switch (c & ~IS_WIMP_KEY) {
-			/** pass on RETURN and ESCAPE to the parent icon */
-			case wimp_KEY_RETURN:
-				if (ta->flags & TEXTAREA_MULTILINE) {
-					/* Insert newline */
-					c_pos = textarea_get_caret(
-							(uintptr_t)ta);
-					textarea_insert_text(
-							(uintptr_t)ta, c_pos,
-							"\n");
-					textarea_set_caret((uintptr_t)ta,
-							++c_pos);
-					break;
-				}
-				/* fall through */
-			case wimp_KEY_ESCAPE:
-				keypress = *key;
-				keypress.w = ta->parent;
-				keypress.i = ta->icon;
-				keypress.index = 0;	/* undefined if not in an icon */
-				error = xwimp_send_message_to_window(wimp_KEY_PRESSED,
-						(wimp_message*)&keypress, ta->parent,
-						ta->icon, 0);
-				if (error) {
-					LOG(("xwimp_send_message: 0x%x:%s",
-						error->errnum, error->errmess));
-				}
+		case 8: /* Backspace */
+			c_pos = textarea_get_caret((uintptr_t)ta);
+			if (c_pos > 0) {
+				textarea_replace_text((uintptr_t)ta,
+					c_pos - 1, c_pos, "");
+				textarea_set_caret((uintptr_t)ta, c_pos - 1);
+				redraw = true;
+			}
+			break;
+		case wimp_KEY_DELETE:
+			c_pos = textarea_get_caret((uintptr_t)ta);
+			if (os_version < RISCOS5 && c_pos > 0) {
+				textarea_replace_text((uintptr_t)ta,
+						c_pos - 1, c_pos, "");
+				textarea_set_caret((uintptr_t)ta, c_pos - 1);
+			} else {
+				textarea_replace_text((uintptr_t)ta, c_pos,
+						c_pos + 1, "");
+			}
+			redraw = true;
+			break;
+
+		case wimp_KEY_LEFT:
+			c_pos = textarea_get_caret((uintptr_t)ta);
+			if (c_pos > 0)
+				textarea_set_caret((uintptr_t)ta, c_pos - 1);
+			break;
+		case wimp_KEY_RIGHT:
+			c_pos = textarea_get_caret((uintptr_t)ta);
+			textarea_set_caret((uintptr_t)ta, c_pos + 1);
+			break;
+		case wimp_KEY_UP:
+			/** \todo Move caret up a line */
+			break;
+		case wimp_KEY_DOWN:
+			/** \todo Move caret down a line */
+			break;
+
+		case wimp_KEY_HOME:
+		case wimp_KEY_CONTROL | wimp_KEY_LEFT:
+			/** \todo line start */
+			break;
+		case wimp_KEY_CONTROL | wimp_KEY_RIGHT:
+			/** \todo line end */
+			break;
+		case wimp_KEY_CONTROL | wimp_KEY_UP:
+			/** \todo area start */
+			break;
+		case wimp_KEY_CONTROL | wimp_KEY_DOWN:
+			/** \todo area end */
+			break;
+
+		case wimp_KEY_COPY:
+			if (os_version < RISCOS5) {
+				c_pos = textarea_get_caret((uintptr_t)ta);
+				textarea_replace_text((uintptr_t)ta, c_pos,
+						c_pos + 1, "");
+			} else {
+				/** \todo line end */
+			}
+			break;
+
+		/** pass on RETURN and ESCAPE to the parent icon */
+		case wimp_KEY_RETURN:
+			if (ta->flags & TEXTAREA_MULTILINE) {
+				/* Insert newline */
+				c_pos = textarea_get_caret((uintptr_t)ta);
+				textarea_insert_text((uintptr_t)ta, c_pos,
+						"\n");
+				textarea_set_caret((uintptr_t)ta, ++c_pos);
+
+				redraw = true;
+
 				break;
+			}
+			/* fall through */
+		case wimp_KEY_ESCAPE:
+			keypress = *key;
+			keypress.w = ta->parent;
+			keypress.i = ta->icon;
+			keypress.index = 0; /* undefined if not in an icon */
+			error = xwimp_send_message_to_window(wimp_KEY_PRESSED,
+					(wimp_message*)&keypress, ta->parent,
+					ta->icon, 0);
+			if (error) {
+				LOG(("xwimp_send_message: 0x%x:%s",
+					error->errnum, error->errmess));
+			}
+			break;
 		}
 	}
 
