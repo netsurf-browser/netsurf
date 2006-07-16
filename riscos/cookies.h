@@ -13,7 +13,5 @@
 #define _NETSURF_RISCOS_COOKIES_H_
 
 void ro_gui_cookies_initialise(void);
-int ro_gui_cookies_help(int x, int y);
-
 
 #endif

@@ -35,7 +35,8 @@ typedef enum {
 	TREE_ELEMENT_LAST_USED,
 	TREE_ELEMENT_SECURE,
 	TREE_ELEMENT_VERSION,
-	TREE_ELEMENT_PERSISTENT
+	TREE_ELEMENT_PERSISTENT,
+	TREE_ELEMENT_SSL
 } node_element_data;
 
 #define NODE_INSTEP 40
@@ -129,8 +130,7 @@ void tree_draw(struct tree *tree, int clip_x, int clip_y, int clip_width,
 void tree_link_node(struct node *link, struct node *node, bool before);
 void tree_delink_node(struct node *node);
 struct node *tree_create_folder_node(struct node *parent, const char *title);
-void tree_set_node_sprite(struct node *node, const char *sprite,
-		const char *expanded);
+struct node *tree_create_leaf_node(struct node *parent, const char *title);
 struct node *tree_create_URL_node(struct node *parent,
 		const char *url, const struct url_data *data,
 		const char *title);
@@ -138,6 +138,8 @@ struct node *tree_create_URL_node_shared(struct node *parent,
 		const char *url, const struct url_data *data);
 struct node *tree_create_cookie_node(struct node *parent,
 		const struct cookie_data *data);
+void tree_set_node_sprite(struct node *node, const char *sprite,
+		const char *expanded);
 void tree_set_node_expanded(struct tree *tree, struct node *node, bool expanded);
 void tree_set_node_selected(struct tree *tree, struct node *node,
 		bool selected);
