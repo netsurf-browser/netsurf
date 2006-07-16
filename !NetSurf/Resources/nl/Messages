@@ -39,7 +39,6 @@ Quit:Stop
 # Iconbar -> Open menu
 #
 OpenURL:Open URL
-ShowCookies:Show cookies...
 
 # Main menu
 #
@@ -140,6 +139,10 @@ WindowSave:Als standaard positie opslaan
 WindowStagr:Nieuw venster verplaatsen
 WindowSize:Copieer venster positie
 WindowReset:Venster positie terugzetten
+
+# Main -> Utilities -> Cookies menu
+ShowCookies:Show cookies...
+DeleteCookies:Delete all cookies
 
 # Main -> Help menu
 #

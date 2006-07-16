@@ -39,7 +39,6 @@ Quit:Quitter
 # Iconbar -> Open menu
 #
 OpenURL:Ouvrir l'URL...
-ShowCookies:Show cookies...
 
 # Main menu
 #
@@ -133,6 +132,10 @@ HotlistShow:Montrer les favoris...  F6
 #
 HistLocal:Montrer l'historique local... F7
 HistGlobal:Montrer l'historique global... ^F7
+
+# Main -> Utilities -> Cookies menu
+ShowCookies:Show cookies...
+DeleteCookies:Delete all cookies
 
 # Main -> Utilities -> Window menu
 #

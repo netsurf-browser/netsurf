@@ -168,7 +168,7 @@ void ro_gui_menu_init(void)
 			(struct ns_menu *)&iconbar_definition);
 
 	/* browser menu */
-	NS_MENU(68) browser_definition = {
+	NS_MENU(69) browser_definition = {
 		"NetSurf", {
 			{ "Page", BROWSER_PAGE, 0 },
 			{ "Page.PageInfo",BROWSER_PAGE_INFO, dialog_pageinfo },
@@ -225,6 +225,7 @@ void ro_gui_menu_init(void)
 			{ "Utilities.History.HistGlobal", HISTORY_SHOW_GLOBAL, 0 },
 			{ "Utilities.Cookies", COOKIES_SHOW, 0 },
 			{ "Utilities.Cookies.ShowCookies", COOKIES_SHOW, 0 },
+			{ "Utilities.Cookies.DeleteCookies", COOKIES_DELETE, 0 },
 			{ "Utilities.FindText", BROWSER_FIND_TEXT, dialog_search },
 			{ "Utilities.Window", NO_ACTION, 0 },
 			{ "Utilities.Window.WindowSave", BROWSER_WINDOW_DEFAULT, 0 },
@@ -1470,6 +1471,11 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 			ro_gui_tree_show(cookies_tree);
 			return true;
 
+		case COOKIES_DELETE:
+			if (cookies_tree->root->child)
+				tree_delete_node(cookies_tree, cookies_tree->root->child, true);
+			return true;
+
 		/* page actions */
 		case BROWSER_PAGE_INFO:
 			if (!c)
@@ -1831,6 +1837,10 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 		case COOKIES_SHOW:
 			ro_gui_menu_set_entry_shaded(current_menu, action,
 				!cookies_tree);
+			break;
+		case COOKIES_DELETE:
+			ro_gui_menu_set_entry_shaded(current_menu, action,
+				!(cookies_tree && cookies_tree->root->child));
 			break;
 
 		/* page actions */

@@ -843,8 +843,11 @@ void tree_delink_node(struct node *node) {
 			node->parent->child = node->next;
 		if (node->parent->last_child == node)
 			node->parent->last_child = node->previous;
-		if (node->parent->child == NULL)
-			node->parent->expanded = false;
+		if (node->parent->child == NULL) {
+		  	/* don't contract top-level node */
+		  	if (node->parent->parent)
+				node->parent->expanded = false;
+		}
 		node->parent = NULL;
 	}
 	if (node->previous)
@@ -884,9 +887,7 @@ void tree_delete_selected_nodes(struct tree *tree, struct node *node) {
  * \param siblings  whether to delete all siblings
  */
 void tree_delete_node(struct tree *tree, struct node *node, bool siblings) {
-
 	tree_delete_node_internal(tree, node, siblings);
-
 	if (tree->root)
 		tree_recalculate_node_positions(tree, tree->root);
 	tree_redraw_area(tree, 0, 0, 16384, 16384);	/* \todo correct area */
@@ -902,51 +903,78 @@ void tree_delete_node(struct tree *tree, struct node *node, bool siblings) {
  * \param siblings  whether to delete all siblings
  */
 void tree_delete_node_internal(struct tree *tree, struct node *node, bool siblings) {
-	struct node *next;
-	struct node *parent;
-	struct node_element *e, *f;
+	struct node *next, *child;
+	struct node_element *e, *f, *domain, *path;
+	char *domain_t, *path_t, name_t;
+	char *space;
 
 	assert(node);
-
+	
 	if (tree->temp_selection == node)
 		tree->temp_selection = NULL;
 	if (tree->root == node)
 		tree->root = NULL;
 
 	next = node->next;
-	if (node->child)
-		tree_delete_node_internal(tree, node->child, true);
-	node->child = NULL;
-	parent = node->parent;
 	tree_delink_node(node);
+	child = node->child;
+	node->child = NULL;
+	if (child)
+		tree_delete_node_internal(tree, child, true);
 
 	if (!node->retain_in_memory) {
+	  	node->retain_in_memory = true;
 		for (e = &node->data; e; e = f) {
-			f = e->next;
-
 			if (e->text) {
 				/* we don't free non-editable titles or URLs */
 				if ((node->editable) || (node->folder))
 					free(e->text);
 				else {
-					if (e->data == TREE_ELEMENT_URL) {
-						/* reset URL characteristics */
-						urldb_reset_url_visit_data(e->text);
-					}
-
-					/* if not already 'deleted' then delete cookie */
+				  	/* only reset non-deleted items */
 					if (!node->deleted) {
-						/* todo: delete cookie data */
+						if (e->data == TREE_ELEMENT_URL) {
+							/* reset URL characteristics */
+							urldb_reset_url_visit_data(e->text);
+						} else if (e->data == TREE_ELEMENT_NAME) {
+						  	/* get the rest of the cookie data */
+						  	domain = tree_find_element(node,
+						  			TREE_ELEMENT_DOMAIN);
+						  	path = tree_find_element(node,
+						  			TREE_ELEMENT_PATH);
+						  	if (domain && path) {
+						  	  	domain_t = domain->text +
+						  	  		strlen(messages_get(
+						  	  			"TreeDomain")) - 4;
+						  	 	space = strchr(domain_t, ' ');
+						  	 	if (space)
+						  	 		*space = '\0';
+						  	  	path_t = path->text +
+						  	  		strlen(messages_get(
+						  	  			"TreePath")) - 4;
+						  	 	space = strchr(path_t, ' ');
+						  	 	if (space)
+						  	 		*space = '\0';
+						  	 	name_t = e->text;
+						  		urldb_delete_cookie(
+						  				domain_t,
+						  				path_t,
+						  				e->text);
+						  	}
+						}
 					}
 
 					if (e->data != TREE_ELEMENT_TITLE &&
-						e->data != TREE_ELEMENT_URL)
+							e->data != TREE_ELEMENT_URL) {
 						free(e->text);
+						e->text = NULL;
+					}
 				}
 			}
-			if (e->sprite)
+			if (e->sprite) {
 				free(e->sprite);	/* \todo platform specific bits */
-
+				e->sprite = NULL;
+			}
+			f = e->next;
 			if (e != &node->data)
 				free(e);
 		}
@@ -1002,7 +1030,7 @@ struct node *tree_create_leaf_node(struct node *parent, const char *title) {
 	node->folder = false;
 	node->data.parent = node;
 	node->data.type = NODE_ELEMENT_TEXT;
-	node->data.text = squash_whitespace(title);
+	node->data.text = strdup(squash_whitespace(title));
 	node->data.data = TREE_ELEMENT_TITLE;
 	node->editable = true;
 	if (parent)
@@ -1055,15 +1083,7 @@ struct node *tree_create_URL_node(struct node *parent,
 
 	assert(data);
 
-	if (!title) {
-		if (data->title)
-			title = strdup(data->title);
-		else
-			title = strdup(url);
-		if (!title)
-			return NULL;
-	}
-	node = tree_create_leaf_node(parent, title);
+	node = tree_create_leaf_node(parent, title ? title : url);
 	if (!node)
 		return NULL;
 
@@ -1077,7 +1097,6 @@ struct node *tree_create_URL_node(struct node *parent,
 		element->text = strdup(url);
 
 	tree_update_URL_node(node, url, NULL);
-
 	return node;
 }
 
@@ -1119,7 +1138,6 @@ struct node *tree_create_URL_node_shared(struct node *parent,
 		element->text = url;
 
 	tree_update_URL_node(node, url, data);
-
 	return node;
 }
 
@@ -1201,7 +1219,6 @@ struct node *tree_create_cookie_node(struct node *parent,
 		element->text = strdup(buffer);
 	}
 	if ((data->comment) && (strcmp(data->comment, ""))) {
-	  	LOG(("Comment: '%s'", data->comment));
 		element = tree_create_node_element(node, TREE_ELEMENT_COMMENT);
 		if (element) {
 			snprintf(buffer, 256, messages_get("TreeComment"), data->comment);

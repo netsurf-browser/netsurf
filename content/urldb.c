@@ -245,6 +245,8 @@ static bool urldb_insert_cookie(struct cookie_internal_data *c, const char *sche
 static void urldb_free_cookie(struct cookie_internal_data *c);
 static bool urldb_concat_cookie(struct cookie_internal_data *c, int *used,
 		int *alloc, char **buf);
+static void urldb_delete_cookie_hosts(const char *domain, const char *path, const char *name, struct host_part *parent);
+static void urldb_delete_cookie_paths(const char *domain, const char *path, const char *name, struct path_data *parent);
 static void urldb_save_cookie_hosts(FILE *fp, struct host_part *parent);
 static void urldb_save_cookie_paths(FILE *fp, struct path_data *parent);
 
@@ -2372,6 +2374,7 @@ char *urldb_get_cookie(const char *url, const char *referer)
 					version = c->version;
 
 				c->last_used = now;
+				cookies_update(c->domain, (struct cookie_data *)c);
 
 				count++;
 			}
@@ -2411,7 +2414,7 @@ char *urldb_get_cookie(const char *url, const char *referer)
 					version = c->version;
 
 				c->last_used = now;
-
+				cookies_update(c->domain, (struct cookie_data *)c);
 				count++;
 			}
 		}
@@ -2454,6 +2457,7 @@ char *urldb_get_cookie(const char *url, const char *referer)
 				version = c->version;
 
 			c->last_used = now;
+			cookies_update(c->domain, (struct cookie_data *)c);
 
 			count++;
 		}
@@ -3187,6 +3191,54 @@ void urldb_load_cookies(const char *filename)
 #undef FIND_WS
 
 	fclose(fp);
+}
+
+/**
+ * Delete a cookie
+ *
+ * \param domain The cookie's domain
+ * \param path The cookie's path
+ * \param name The cookie's name
+ */
+void urldb_delete_cookie(const char *domain, const char *path, const char *name)
+{
+	urldb_delete_cookie_hosts(domain, path, name, &db_root);
+}
+
+void urldb_delete_cookie_hosts(const char *domain, const char *path, const char *name, struct host_part *parent)
+{
+	assert(parent);
+
+	urldb_delete_cookie_paths(domain, path, name, &parent->paths);
+
+	for (struct host_part *h = parent->children; h; h = h->next)
+		urldb_delete_cookie_hosts(domain, path, name, h);
+}
+
+void urldb_delete_cookie_paths(const char *domain, const char *path, const char *name, struct path_data *parent)
+{
+  	struct cookie_internal_data *c;
+   
+	assert(parent);
+	
+	for (c = parent->cookies; c; c = c->next) {
+		if (!strcmp(c->domain, domain) && !strcmp(c->path, path) &&
+				!strcmp(c->name, name)) {
+			if (c->prev)
+				c->prev->next = c->next; 
+			else
+			  	parent->cookies = c->next;
+			if (c->next)
+				c->next->prev = c->prev;
+			if (!parent->cookies)
+				cookies_update(domain, NULL);
+			urldb_free_cookie(c);
+			return;
+		}
+	}
+
+	for (struct path_data *p = parent->children; p; p = p->next)
+		urldb_delete_cookie_paths(domain, path, name, p);
 }
 
 /**

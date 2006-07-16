@@ -96,6 +96,7 @@ void urldb_dump(void);
 /* Cookies */
 bool urldb_set_cookie(const char *header, const char *url);
 char *urldb_get_cookie(const char *url, const char *referer);
+void urldb_delete_cookie(const char *domain, const char *path, const char *name);
 void urldb_load_cookies(const char *filename);
 void urldb_save_cookies(const char *filename);
 

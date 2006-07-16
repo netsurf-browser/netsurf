@@ -197,6 +197,7 @@ void gui_cert_verify(struct browser_window *bw, struct content *c,
 	tree->root->expanded = true;
 	tree->handle = (int)w;
 	tree->movable = false;
+	tree->no_drag = true;
 	tree->no_vscroll = true;
 	tree->no_furniture = true;
 	tree->single_selection = true;

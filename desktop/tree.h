@@ -97,6 +97,7 @@ struct tree {
 	int height;			/* <-- Tree height */
 	int window_width;		/* <-- Tree window width */
 	int window_height;		/* <-- Tree window height */
+	bool no_drag;			/* <-- Tree items can't be dragged out */
 	bool no_vscroll;		/* <-- Tree has a vertical scroll only when needed */
 	bool no_furniture;		/* <-- Tree does not have connecting lines */
 	bool single_selection;		/* <-- There can only be one item selected */

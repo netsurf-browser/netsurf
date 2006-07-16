@@ -42,6 +42,7 @@ typedef enum {
 
 	/* cookie actions */
 	COOKIES_SHOW,
+	COOKIES_DELETE,
 	
 	/* page actions */
 	BROWSER_PAGE,

@@ -851,7 +851,7 @@ bool ro_gui_tree_click(wimp_pointer *pointer, struct tree *tree) {
 	/* drag starts a drag operation */
 	if ((!tree->editing) && ((pointer->buttons == (wimp_CLICK_SELECT << 4)) ||
 			(pointer->buttons == (wimp_CLICK_ADJUST << 4)))) {
-		if (tree->single_selection)
+		if (tree->no_drag)
 			return true;
 
 		if (!node->selected) {

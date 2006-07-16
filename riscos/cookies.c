@@ -72,6 +72,7 @@ void ro_gui_cookies_initialise(void)
 	cookies_tree->root->expanded = true;
 	cookies_tree->handle = (int)cookies_window;
 	cookies_tree->movable = false;
+	cookies_tree->no_drag = true;
 	ro_gui_wimp_event_set_user_data(cookies_window,
 			cookies_tree);
 	ro_gui_wimp_event_register_keypress(cookies_window,
@@ -122,9 +123,10 @@ bool cookies_update(const char *domain, const struct cookie_data *data)
 	struct node *child;
 	struct node *add;
 	const struct cookie_data *cookie = NULL;
+	bool expanded;
 
 	assert(domain);
-	
+		
 	/* check if we're a domain, and add get the first cookie */
 	if (data)
 		for (cookie = data; cookie->prev; cookie = cookie->prev);
@@ -133,11 +135,14 @@ bool cookies_update(const char *domain, const struct cookie_data *data)
 		node = ro_gui_cookies_find(domain);
 		if (node) {
 			/* mark as deleted so we don't remove the cookies */
+			expanded = node->expanded;
 			for (child = node->child; child; child = child->next)
 				child->deleted = true;
 			if (node->child)
 				tree_delete_node(cookies_tree, node->child,
 						true);
+			/* deleting will have contracted our node */
+			node->expanded = expanded;
 		}
 		if (!data) {
 		  	if (!node)
@@ -148,7 +153,7 @@ bool cookies_update(const char *domain, const struct cookie_data *data)
 			return true;
 		}
 	}
-
+	
 	if (!node) {
 		for (parent = cookies_tree->root->child; parent;
 				parent = parent->next) {
@@ -170,7 +175,7 @@ bool cookies_update(const char *domain, const struct cookie_data *data)
 	
 	for (; cookie; cookie = cookie->next) {
 		add = tree_create_cookie_node(node, cookie);
-		if (!cookies_init)
+		if (add && !cookies_init)
 			tree_handle_node_changed(cookies_tree, add,
 					true, false);
 	}
