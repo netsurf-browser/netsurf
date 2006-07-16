@@ -66,6 +66,9 @@ int ro_plot_origin_x = 0;
 int ro_plot_origin_y = 0;
 float ro_plot_scale = 1.0;
 
+/** One version of the A9home OS is incapable of drawing patterned lines */
+bool ro_plot_patterned_lines = true;
+
 
 bool ro_plot_clg(colour c)
 {
@@ -140,12 +143,14 @@ bool ro_plot_path(const draw_path * const path, int width,
 	if (width < 1)
 		width = 1;
 
-	if (dotted) {
-		dash.elements[0] = 512 * width;
-		dash_pattern = &dash;
-	} else if (dashed) {
-		dash.elements[0] = 1536 * width;
-		dash_pattern = &dash;
+	if (ro_plot_patterned_lines) {
+		if (dotted) {
+			dash.elements[0] = 512 * width;
+			dash_pattern = &dash;
+		} else if (dashed) {
+			dash.elements[0] = 1536 * width;
+			dash_pattern = &dash;
+		}
 	}
 
 	error = xcolourtrans_set_gcol(c << 8, 0, os_ACTION_OVERWRITE, 0, 0);

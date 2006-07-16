@@ -30,6 +30,7 @@
 #include "oslib/osfile.h"
 #include "oslib/osfscontrol.h"
 #include "oslib/osgbpb.h"
+#include "oslib/osmodule.h"
 #include "oslib/osspriteop.h"
 #include "oslib/pdriver.h"
 #include "oslib/plugin.h"
@@ -124,6 +125,8 @@
 #ifndef FILETYPE_ARTWORKS
 #define FILETYPE_ARTWORKS 0xd94
 #endif
+
+extern bool ro_plot_patterned_lines;
 
 int os_version = 0;
 
@@ -276,6 +279,7 @@ void gui_init(int argc, char** argv)
 	os_error *error;
 	int length;
 	char *nsdir_temp;
+	byte *base;
 
 	/* re-enable all FPU exceptions/traps except inexact operations,
 	 * which we're not interested in, and underflow which is incorrectly
@@ -291,6 +295,16 @@ void gui_init(int argc, char** argv)
 	 * (remember that it's preferable to check for specific features
 	 * being present) */
 	xos_byte(osbyte_IN_KEY, 0, 0xff, &os_version, NULL);
+
+	/* the first release version of the A9home OS is incapable of
+	   plotting patterned lines (presumably a fault in the hw acceleration) */
+	if (!xosmodule_lookup("VideoHWSMI", NULL, NULL, &base, NULL, NULL)) {
+		const char *help = (char*)base + ((int*)base)[5];
+		while (*help > 9) help++;
+		while (*help == 9) help++;
+		if (!memcmp(help, "0.55", 4))
+			ro_plot_patterned_lines = false;
+	}
 
 	atexit(ro_gui_cleanup);
 	prev_sigs.sigabrt = signal(SIGABRT, ro_gui_signal);
