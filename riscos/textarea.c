@@ -956,6 +956,11 @@ bool textarea_key_press(wimp_key *key)
 				redraw = true;
 			}
 			break;
+		case 21: /* Ctrl + U */
+			textarea_set_text((uintptr_t)ta, "");
+			textarea_set_caret((uintptr_t)ta, 0);
+			redraw = true;
+			break;
 		case wimp_KEY_DELETE:
 			c_pos = textarea_get_caret((uintptr_t)ta);
 			if (os_version < RISCOS5 && c_pos > 0) {
@@ -993,10 +998,10 @@ bool textarea_key_press(wimp_key *key)
 			/** \todo line end */
 			break;
 		case wimp_KEY_CONTROL | wimp_KEY_UP:
-			/** \todo area start */
+			textarea_set_caret((uintptr_t)ta, 0);
 			break;
 		case wimp_KEY_CONTROL | wimp_KEY_DOWN:
-			/** \todo area end */
+			textarea_set_caret((uintptr_t)ta, ta->text_len);
 			break;
 
 		case wimp_KEY_COPY:
