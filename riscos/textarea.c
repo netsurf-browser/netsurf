@@ -1001,7 +1001,7 @@ bool textarea_key_press(wimp_key *key)
 			textarea_set_caret((uintptr_t)ta, 0);
 			break;
 		case wimp_KEY_CONTROL | wimp_KEY_DOWN:
-			textarea_set_caret((uintptr_t)ta, ta->text_len);
+			textarea_set_caret((uintptr_t)ta, utf8_length(ta->text));
 			break;
 
 		case wimp_KEY_COPY:
