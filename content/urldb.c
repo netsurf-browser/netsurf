@@ -2419,6 +2419,37 @@ char *urldb_get_cookie(const char *url, const char *referer)
 			}
 		}
 
+		/* Consider p itself - may be the result of Path=/foo */
+		for (c = p->cookies; c; c = c->next) {
+			if (c->expires != 1 && c->expires < now)
+				/* cookie has expired => ignore */
+				continue;
+
+			/* Ensure cookie path is a prefix of the resource */
+			if (strncmp(c->path, path, strlen(c->path)) != 0)
+				/* paths don't match => ignore */
+				continue;
+
+			if (c->secure && strcasecmp(p->scheme, "https"))
+				/* Secure cookie for insecure server
+				 * => ignore */
+				continue;
+
+			if (!urldb_concat_cookie(c, &ret_used,
+					&ret_alloc, &ret)) {
+				free(path);
+				free(ret);
+				return NULL;
+			}
+
+			if (c->version < (unsigned int) version)
+				version = c->version;
+
+			c->last_used = now;
+			cookies_update(c->domain, (struct cookie_data *)c);
+			count++;
+		}
+
 		if (!p->parent) {
 			/* No parent, so bail here. This can't go in the
 			 * loop exit condition as we want to process the
@@ -3218,14 +3249,14 @@ void urldb_delete_cookie_hosts(const char *domain, const char *path, const char 
 void urldb_delete_cookie_paths(const char *domain, const char *path, const char *name, struct path_data *parent)
 {
   	struct cookie_internal_data *c;
-   
+
 	assert(parent);
-	
+
 	for (c = parent->cookies; c; c = c->next) {
 		if (!strcmp(c->domain, domain) && !strcmp(c->path, path) &&
 				!strcmp(c->name, name)) {
 			if (c->prev)
-				c->prev->next = c->next; 
+				c->prev->next = c->next;
 			else
 			  	parent->cookies = c->next;
 			if (c->next)
@@ -3333,7 +3364,7 @@ void urldb_save_cookie_paths(FILE *fp, struct path_data *parent)
 #ifdef TEST_URLDB
 int option_expire_url = 0;
 
-bool cookies_update(const struct cookie_data *data)
+bool cookies_update(const char *domain, const struct cookie_data *data)
 {
 	return true;
 }
@@ -3404,6 +3435,10 @@ int main(void)
 	urldb_set_cookie("test=foo, bar, baz; path=/, quux=blah; path=/", "http://www.bbc.co.uk/");
 
 	urldb_set_cookie("a=b; path=/; domain=.a.com", "http://a.com/");
+
+	urldb_set_cookie("foo=bar;Path=/blah;Secure", "https://www.foo.com/blah/moose");
+
+	urldb_get_cookie("https://www.foo.com/blah/wxyzabc", "https://www.foo.com/blah/moose");
 
 	urldb_dump();
 
