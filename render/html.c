@@ -428,12 +428,21 @@ bool html_meta_refresh(struct content *c, xmlNode *head)
 			content_broadcast(c, CONTENT_MSG_REFRESH, msg_data);
 			break;
 		}
-
+		
 		for ( ; url <= end - 4; url++) {
 			if (!strncasecmp(url, "url=", 4))
 				break;
 		}
 
+		/* mail.google.com sends out the broken format "<n>, url='<url>'", so
+		 * special case this */
+		if (url <= end - 4) {
+			if ((url[4] == '\'') && (end[-1] == '\'')) {
+			  	*--end = '\0';
+			  	url++;
+			}
+		}
+		
 		if (url <= end - 4) {
 			res = url_join(url + 4, c->data.html.base_url,
 					&refresh);
