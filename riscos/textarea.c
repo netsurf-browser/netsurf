@@ -63,6 +63,7 @@ static struct text_area {
 
 	char *font_family;		/**< Font family of text */
 	unsigned int font_size;		/**< Font size (16ths/pt) */
+	rufl_style font_style;		/**< Font style (rufl) */
 	int line_height;		/**< Total height of a line, given font size */
 	int line_spacing;		/**< Height of line spacing, given font size */
 
@@ -115,10 +116,12 @@ static void textarea_open(wimp_open *open);
  * \param flags Text area flags
  * \param font_family RUfl font family to use, or NULL for default
  * \param font_size Font size to use (pt * 16), or 0 for default
+ * \param font_style Font style to use, or 0 for default
  * \return Opaque handle for textarea or 0 on error
  */
 uintptr_t textarea_create(wimp_w parent, wimp_i icon, unsigned int flags,
-		const char *font_family, unsigned int font_size)
+		const char *font_family, unsigned int font_size,
+		rufl_style font_style)
 {
 	struct text_area *ret;
 	wimp_window_state state;
@@ -156,6 +159,7 @@ uintptr_t textarea_create(wimp_w parent, wimp_i icon, unsigned int flags,
 		return 0;
 	}
 	ret->font_size = font_size ? font_size : 192 /* 12pt */;
+	ret->font_style = font_style ? font_style : rufl_WEIGHT_400;
 
 	/** \todo Better line height calculation */
 	ret->line_height = (int)(((ret->font_size * 1.3) / 16) * 2.0) + 1;
@@ -567,7 +571,7 @@ void textarea_set_caret(uintptr_t self, unsigned int caret)
 	for (b_off = 0; index-- > 0; b_off = utf8_next(ta->text, ta->text_len, b_off))
 				; /* do nothing */
 
-	code = rufl_width(ta->font_family, rufl_WEIGHT_400, ta->font_size,
+	code = rufl_width(ta->font_family, ta->font_style, ta->font_size,
 			ta->text + ta->lines[ta->caret_pos.line].b_start,
 			b_off - ta->lines[ta->caret_pos.line].b_start, &x);
 	if (code != rufl_OK) {
@@ -639,7 +643,7 @@ void textarea_set_caret_xy(uintptr_t self, int x, int y)
 	if (ta->line_count - 1 < (unsigned)line)
 		line = ta->line_count - 1;
 
-	code = rufl_x_to_offset(ta->font_family, rufl_WEIGHT_400,
+	code = rufl_x_to_offset(ta->font_family, ta->font_style,
 			ta->font_size,
 			ta->text + ta->lines[line].b_start,
 			ta->lines[line].b_length,
@@ -749,7 +753,7 @@ void textarea_reflow(struct text_area *ta, unsigned int line)
 
 	for (len = ta->text_len - 1, text = ta->text; len > 0;
 			len -= b_off, text += b_off) {
-		code = rufl_split(ta->font_family, rufl_WEIGHT_400,
+		code = rufl_split(ta->font_family, ta->font_style,
 				ta->font_size, text, len,
 				ta->vis_width - MARGIN_LEFT - MARGIN_RIGHT,
 				&b_off, &x);
@@ -1153,7 +1157,7 @@ void textarea_redraw_internal(wimp_draw *redraw, bool update)
 				return;
 			}
 
-			code = rufl_paint(ta->font_family, rufl_WEIGHT_400,
+			code = rufl_paint(ta->font_family, ta->font_style,
 					ta->font_size,
 					ta->text + ta->lines[line].b_start,
 					ta->lines[line].b_length,

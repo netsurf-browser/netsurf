@@ -49,6 +49,7 @@ static void ro_gui_tree_launch_selected_node(struct tree *tree, struct node *nod
 static bool ro_gui_tree_launch_node(struct tree *tree, struct node *node);
 static void tree_handle_node_changed_callback(void *p);
 
+
 /* an array of sprite addresses for Tinct */
 static char *ro_gui_tree_sprites[2];
 
@@ -305,7 +306,8 @@ void tree_draw_node_element(struct tree *tree, struct node_element *element) {
 					error->errnum, error->errmess));
 			return;
 		}
-		code = rufl_paint("Homerton", rufl_WEIGHT_400, 192,
+		code = rufl_paint(ro_gui_desktop_font_family, ro_gui_desktop_font_style,
+				ro_gui_desktop_font_size,
 				element->text, strlen(element->text),
 				x0 + 8, y0 + 10,
 				rufl_BLEND_FONT);
@@ -449,8 +451,8 @@ void tree_recalculate_node_element(struct node_element *element) {
 			assert(element->sprite);
 		case NODE_ELEMENT_TEXT:
 			assert(element->text);
-
-			code = rufl_width("Homerton", rufl_WEIGHT_400, 192,
+			code = rufl_width(ro_gui_desktop_font_family, ro_gui_desktop_font_style,
+					ro_gui_desktop_font_size,
 					element->text, strlen(element->text),
 					&element->box.width);
 			if (code != rufl_OK) {
@@ -1041,7 +1043,9 @@ void ro_gui_tree_start_edit(struct tree *tree, struct node_element *element,
 				error->errnum, error->errmess));
 
 	tree->textarea_handle = textarea_create((wimp_w)tree->handle,
-			(wimp_i)tree->edit_handle, 0, "Homerton", 192);
+			(wimp_i)tree->edit_handle, 0, ro_gui_desktop_font_family,
+			ro_gui_desktop_font_size,
+			ro_gui_desktop_font_style);
 	if (!tree->textarea_handle) {
 		ro_gui_tree_stop_edit(tree);
 		return;

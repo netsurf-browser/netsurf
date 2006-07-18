@@ -177,7 +177,7 @@ static struct {
 } prev_sigs;
 
 /** Accepted wimp user messages. */
-static wimp_MESSAGE_LIST(41) task_messages = { {
+static wimp_MESSAGE_LIST(42) task_messages = { {
 	message_HELP_REQUEST,
 	message_DATA_SAVE,
 	message_DATA_SAVE_ACK,
@@ -189,11 +189,12 @@ static wimp_MESSAGE_LIST(41) task_messages = { {
 	message_MENU_WARNING,
 	message_MENUS_DELETED,
 	message_WINDOW_INFO,
-	message_MODE_CHANGE,
 	message_CLAIM_ENTITY,
 	message_DATA_REQUEST,
 	message_DRAGGING,
 	message_DRAG_CLAIM,
+	message_MODE_CHANGE,
+	message_FONT_CHANGED,
 #ifdef WITH_URI
 	message_URI_PROCESS,
 	message_URI_RETURN_RESULT,
@@ -435,6 +436,7 @@ void gui_init(int argc, char** argv)
 
 	nsfont_init();
 	ro_gui_get_screen_properties();
+	ro_gui_wimp_get_desktop_font();
 
 	/* Issue a *Desktop to poke AcornURI into life */
 	if (getenv("NetSurf$Start_URI_Handler"))
@@ -1354,17 +1356,21 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 			ro_gui_menu_closed(true);
 			break;
 
-		case message_MODE_CHANGE:
-			ro_gui_get_screen_properties();
-			rufl_invalidate_cache();
-			break;
-
 		case message_CLAIM_ENTITY:
 			ro_gui_selection_claim_entity((wimp_full_message_claim_entity*)message);
 			break;
 
 		case message_DATA_REQUEST:
 			ro_gui_selection_data_request((wimp_full_message_data_request*)message);
+			break;
+
+		case message_MODE_CHANGE:
+			ro_gui_get_screen_properties();
+			rufl_invalidate_cache();
+			break;
+
+		case message_FONT_CHANGED:
+			ro_gui_wimp_get_desktop_font();
 			break;
 
 #ifdef WITH_URI

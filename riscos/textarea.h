@@ -11,13 +11,15 @@
 
 #ifndef _NETSURF_RISCOS_TEXTAREA_H_
 #define _NETSURF_RISCOS_TEXTAREA_H_
+#include "rufl.h"
 
 /* Text area flags */
 #define TEXTAREA_MULTILINE	0x01	/**< Text area is multiline */
 #define TEXTAREA_READONLY	0x02	/**< Text area is read only */
 
 uintptr_t textarea_create(wimp_w parent, wimp_i icon, unsigned int flags,
-		const char *font_family, unsigned int font_size);
+		const char *font_family, unsigned int font_size,
+		rufl_style font_style);
 void textarea_destroy(uintptr_t self);
 bool textarea_set_text(uintptr_t self, const char *text);
 int textarea_get_text(uintptr_t self, char *buf, unsigned int len);

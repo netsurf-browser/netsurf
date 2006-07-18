@@ -10,6 +10,7 @@
  */
 
 #include <assert.h>
+#include <ctype.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -29,7 +30,15 @@
 #include "netsurf/utils/utf8.h"
 #include "netsurf/utils/utils.h"
 
+
+/** desktop font, size and style being used */
+char ro_gui_desktop_font_family[48];
+int ro_gui_desktop_font_size = 12;
+rufl_style ro_gui_desktop_font_style = rufl_WEIGHT_400;
+
+
 static void ro_gui_wimp_cache_furniture_sizes(wimp_w w);
+static void ro_gui_wimp_desktop_font(char *family, size_t bufsize, int *psize, rufl_style *pstyle);
 
 static wimpextend_furniture_sizes furniture_sizes;
 static wimp_w furniture_window = NULL;
@@ -926,4 +935,142 @@ bool ro_gui_wimp_check_window_furniture(wimp_w w, wimp_window_flags mask) {
 		return false;
 	}
 	return state.flags & mask;
+}
+
+
+/**
+ * Looks up the current desktop font and converts that to a family name,
+ * font size and style flags suitable for passing directly to rufl
+ *
+ * \param  family	buffer to receive font family
+ * \param  bufsize	buffer size
+ * \param  psize	receives the font size in points
+ * \param  pstyle	receives the style settings to be passed to rufl
+ * \return pointer to family name
+ */
+
+void ro_gui_wimp_desktop_font(char *family, size_t bufsize, int *psize, rufl_style *pstyle) {
+	rufl_style style = rufl_WEIGHT_400;
+	bool got_family = false;
+	char *buf = NULL;
+	os_error *error;
+	int ptx, pty;
+	char *p, *ep;
+	font_f fh;
+	int used;
+
+	error = xwimpreadsysinfo_font(&fh, NULL);
+	if (error) {
+		LOG(("xwimpreadsysinfo_font: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		goto failsafe;
+	}
+
+	error = xfont_read_identifier(fh, NULL, &used);
+	if (error) {
+		LOG(("xfont_read_identifier: 0x%x: %s",
+			error->errnum, error->errmess));
+		goto failsafe;
+	}
+
+	buf = malloc(used+1);
+	if (!buf) {
+		warn_user("NoMemory", NULL);
+		goto failsafe;
+	}
+
+	if (psize) {
+		error = xfont_read_defn(fh, buf, &ptx, &pty, NULL, NULL, NULL, NULL);
+		if (error) {
+			LOG(("xfont_read_defn: 0x%x: %s",
+				error->errnum, error->errmess));
+			goto failsafe;
+		}
+		*psize = max(ptx, pty);
+	}
+
+	error = xfont_read_identifier(fh, buf, &used);
+	if (error) {
+		LOG(("xfont_read_identifier: 0x%x: %s",
+			error->errnum, error->errmess));
+		goto failsafe;
+	}
+
+	ep = buf + used;
+	p = buf;
+	*ep = '\0';
+
+	while (p < ep) {
+		if (*p++ != '\\') continue;
+
+		if (toupper(*p) == 'F') {
+			/* find the end of the family name */
+			const char *match[] = { "Bold", "Italic", "Oblique" };
+			const int match_len[] = { 4, 6, 7 };
+			char *q = ++p;
+			size_t len;
+			while (*q > ' ' && *q != '\\' && *q != '.') q++;
+			len = q - p;
+			if (len >= bufsize) {
+				LOG(("font family name too long"));
+				goto failsafe;
+			}
+			memmove(family, p, len);
+			family[len] = '\0';
+			got_family = true;
+			p = q;
+			while (*p > ' ' && *p != '\\') {
+				char *q;
+				int m = 0;
+				if (*p == '.') p++;
+				q = p; while (*q > ' ' && *q != '.' && *q != '\\') q++;
+
+				while (m < NOF_ELEMENTS(match) &&
+					(q - p != match_len[m] ||
+						strncasecmp(p, match[m], match_len[m])))
+					m++;
+
+				switch (m) {
+					case 0: style = (style & ~rufl_WEIGHT_400) |
+							rufl_WEIGHT_700;
+						break;
+					case 1: /* no break */
+					case 2: style |= rufl_SLANTED; break;
+				}
+				p = q;
+			}
+		}
+		else
+			while (*p > ' ' && *p != '\\') p++;
+	}
+
+	free(buf);
+
+	if (got_family) {
+		if (pstyle) *pstyle = style;
+		return;
+	}
+
+failsafe:
+	free(buf);
+
+	memcpy(family, "Homerton", 9);
+
+	if (psize) *psize = 12*16;
+	if (pstyle) *pstyle = rufl_WEIGHT_400;
+}
+
+
+/**
+ * Retrieve the current desktop font family, size and style from
+ * the WindowManager in a form suitable for passing to rufl
+ */
+
+void ro_gui_wimp_get_desktop_font(void)
+{
+	ro_gui_wimp_desktop_font(ro_gui_desktop_font_family,
+		sizeof(ro_gui_desktop_font_family),
+		&ro_gui_desktop_font_size,
+		&ro_gui_desktop_font_style);
 }

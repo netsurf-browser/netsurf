@@ -329,7 +329,9 @@ void ro_gui_cert_open(struct tree *tree, struct node *node)
 	if (session->issuer)
 		textarea_destroy(session->issuer);
 	session->issuer = textarea_create(w, ICON_CERT_ISSUER,
-			TEXTAREA_MULTILINE | TEXTAREA_READONLY, NULL, 0);
+			TEXTAREA_MULTILINE | TEXTAREA_READONLY,
+			ro_gui_desktop_font_family, ro_gui_desktop_font_size,
+			ro_gui_desktop_font_style);
 	if (!session->issuer) {
 		xwimp_delete_window(w);
 		warn_user("NoMemory", 0);
@@ -345,7 +347,9 @@ void ro_gui_cert_open(struct tree *tree, struct node *node)
 	if (session->subject)
 		textarea_destroy(session->subject);
 	session->subject = textarea_create(w, ICON_CERT_SUBJECT,
-			TEXTAREA_MULTILINE | TEXTAREA_READONLY, NULL, 0);
+			TEXTAREA_MULTILINE | TEXTAREA_READONLY,
+			ro_gui_desktop_font_family, ro_gui_desktop_font_size,
+			ro_gui_desktop_font_style);
 	if (!session->subject) {
 		textarea_destroy(session->issuer);
 		xwimp_delete_window(w);
