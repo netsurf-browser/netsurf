@@ -146,7 +146,7 @@
 			      <property name="editable">True</property>
 			      <property name="visibility">True</property>
 			      <property name="max_length">0</property>
-			      <property name="text" translatable="yes"></property>
+			      <property name="text" translatable="yes">http://netsurf.sourceforge.net/</property>
 			      <property name="has_frame">True</property>
 			      <property name="invisible_char">●</property>
 			      <property name="activates_default">False</property>
@@ -221,7 +221,7 @@
 			  <child>
 			    <widget class="GtkCheckButton" id="checkHideAdverts">
 			      <property name="visible">True</property>
-			      <property name="tooltip" translatable="yes">Attempt to hide images from known advertisement servers</property>
+			      <property name="tooltip" translatable="yes">Attempt to hide images from known advertisement servers.</property>
 			      <property name="can_focus">True</property>
 			      <property name="label" translatable="yes">Hide advertisements</property>
 			      <property name="use_underline">True</property>
@@ -241,7 +241,7 @@
 			  <child>
 			    <widget class="GtkCheckButton" id="checkDisablePopups">
 			      <property name="visible">True</property>
-			      <property name="tooltip" translatable="yes">Stop pop-up windows normally containing adverts appearing</property>
+			      <property name="tooltip" translatable="yes">Stop pop-up windows normally containing adverts appearing.</property>
 			      <property name="can_focus">True</property>
 			      <property name="label" translatable="yes">Disable pop-up windows</property>
 			      <property name="use_underline">True</property>
@@ -261,13 +261,13 @@
 			  <child>
 			    <widget class="GtkCheckButton" id="checkDisablePlugins">
 			      <property name="visible">True</property>
-			      <property name="tooltip" translatable="yes">Do not allow the embedded of applets and plugins</property>
+			      <property name="tooltip" translatable="yes">Do not allow the embedded of applets and plugins.</property>
 			      <property name="can_focus">True</property>
 			      <property name="label" translatable="yes">Disable plug-ins</property>
 			      <property name="use_underline">True</property>
 			      <property name="relief">GTK_RELIEF_NORMAL</property>
 			      <property name="focus_on_click">True</property>
-			      <property name="active">False</property>
+			      <property name="active">True</property>
 			      <property name="inconsistent">False</property>
 			      <property name="draw_indicator">True</property>
 			    </widget>
@@ -426,13 +426,13 @@
 			  <child>
 			    <widget class="GtkCheckButton" id="checkHoverURLs">
 			      <property name="visible">True</property>
-			      <property name="tooltip" translatable="yes">Show a tooltip showing the URL of a page in the local history tree</property>
+			      <property name="tooltip" translatable="yes">Show a tooltip showing the URL of a page in the local history tree.</property>
 			      <property name="can_focus">True</property>
 			      <property name="label" translatable="yes">Hover URLs by pointer in local history</property>
 			      <property name="use_underline">True</property>
 			      <property name="relief">GTK_RELIEF_NORMAL</property>
 			      <property name="focus_on_click">True</property>
-			      <property name="active">False</property>
+			      <property name="active">True</property>
 			      <property name="inconsistent">False</property>
 			      <property name="draw_indicator">True</property>
 			    </widget>
@@ -506,13 +506,13 @@
 			  <child>
 			    <widget class="GtkCheckButton" id="checkRequestOverwrite">
 			      <property name="visible">True</property>
-			      <property name="tooltip" translatable="yes">Ask before overwriting files when downloading</property>
+			      <property name="tooltip" translatable="yes">Ask before overwriting files when downloading.</property>
 			      <property name="can_focus">True</property>
 			      <property name="label" translatable="yes">Request confirmation before overwriting files</property>
 			      <property name="use_underline">True</property>
 			      <property name="relief">GTK_RELIEF_NORMAL</property>
 			      <property name="focus_on_click">True</property>
-			      <property name="active">False</property>
+			      <property name="active">True</property>
 			      <property name="inconsistent">False</property>
 			      <property name="draw_indicator">True</property>
 			    </widget>
@@ -532,7 +532,7 @@
 			      <property name="use_underline">True</property>
 			      <property name="relief">GTK_RELIEF_NORMAL</property>
 			      <property name="focus_on_click">True</property>
-			      <property name="active">False</property>
+			      <property name="active">True</property>
 			      <property name="inconsistent">False</property>
 			      <property name="draw_indicator">True</property>
 			    </widget>
@@ -552,7 +552,7 @@
 			      <property name="use_underline">True</property>
 			      <property name="relief">GTK_RELIEF_NORMAL</property>
 			      <property name="focus_on_click">True</property>
-			      <property name="active">False</property>
+			      <property name="active">True</property>
 			      <property name="inconsistent">False</property>
 			      <property name="draw_indicator">True</property>
 			    </widget>
@@ -664,6 +664,7 @@
 			  <child>
 			    <widget class="GtkEntry" id="entryProxyUser">
 			      <property name="visible">True</property>
+			      <property name="tooltip" translatable="yes">If your proxy server requires authentication, enter your username here.</property>
 			      <property name="can_focus">True</property>
 			      <property name="editable">True</property>
 			      <property name="visibility">True</property>
@@ -678,27 +679,6 @@
 			      <property name="right_attach">2</property>
 			      <property name="top_attach">2</property>
 			      <property name="bottom_attach">3</property>
-			      <property name="y_options"></property>
-			    </packing>
-			  </child>
-
-			  <child>
-			    <widget class="GtkEntry" id="entryProxyPassword">
-			      <property name="visible">True</property>
-			      <property name="can_focus">True</property>
-			      <property name="editable">True</property>
-			      <property name="visibility">False</property>
-			      <property name="max_length">0</property>
-			      <property name="text" translatable="yes"></property>
-			      <property name="has_frame">True</property>
-			      <property name="invisible_char">●</property>
-			      <property name="activates_default">False</property>
-			    </widget>
-			    <packing>
-			      <property name="left_attach">1</property>
-			      <property name="right_attach">2</property>
-			      <property name="top_attach">3</property>
-			      <property name="bottom_attach">4</property>
 			      <property name="y_options"></property>
 			    </packing>
 			  </child>
@@ -731,6 +711,7 @@ NTML authentication</property>
 			      <child>
 				<widget class="GtkEntry" id="entryProxyHost">
 				  <property name="visible">True</property>
+				  <property name="tooltip" translatable="yes">Host name of your proxy server.</property>
 				  <property name="can_focus">True</property>
 				  <property name="editable">True</property>
 				  <property name="visibility">True</property>
@@ -776,6 +757,7 @@ NTML authentication</property>
 				<widget class="GtkEntry" id="entryProxyPort">
 				  <property name="width_request">64</property>
 				  <property name="visible">True</property>
+				  <property name="tooltip" translatable="yes">Port number to connect to on proxy server.</property>
 				  <property name="can_focus">True</property>
 				  <property name="editable">True</property>
 				  <property name="visibility">True</property>
@@ -911,6 +893,28 @@ NTML authentication</property>
 			      <property name="bottom_attach">1</property>
 			      <property name="x_options"></property>
 			      <property name="y_options">expand</property>
+			    </packing>
+			  </child>
+
+			  <child>
+			    <widget class="GtkEntry" id="entry1">
+			      <property name="visible">True</property>
+			      <property name="tooltip" translatable="yes">If your proxy server requires authentication, enter your password here.</property>
+			      <property name="can_focus">True</property>
+			      <property name="editable">True</property>
+			      <property name="visibility">True</property>
+			      <property name="max_length">0</property>
+			      <property name="text" translatable="yes"></property>
+			      <property name="has_frame">True</property>
+			      <property name="invisible_char">●</property>
+			      <property name="activates_default">False</property>
+			    </widget>
+			    <packing>
+			      <property name="left_attach">1</property>
+			      <property name="right_attach">2</property>
+			      <property name="top_attach">3</property>
+			      <property name="bottom_attach">4</property>
+			      <property name="y_options"></property>
 			    </packing>
 			  </child>
 			</widget>
@@ -1062,6 +1066,7 @@ NTML authentication</property>
 			  <child>
 			    <widget class="GtkSpinButton" id="spinCachedConnections">
 			      <property name="visible">True</property>
+			      <property name="tooltip" translatable="yes">Number of connections to keep incase they are needed again.</property>
 			      <property name="can_focus">True</property>
 			      <property name="climb_rate">1</property>
 			      <property name="digits">0</property>
@@ -1083,6 +1088,7 @@ NTML authentication</property>
 			  <child>
 			    <widget class="GtkSpinButton" id="spinFetchesPerHost">
 			      <property name="visible">True</property>
+			      <property name="tooltip" translatable="yes">Maximum number of item fetches per web server.</property>
 			      <property name="can_focus">True</property>
 			      <property name="climb_rate">1</property>
 			      <property name="digits">0</property>
@@ -1104,6 +1110,7 @@ NTML authentication</property>
 			  <child>
 			    <widget class="GtkSpinButton" id="spinMaxFetchers">
 			      <property name="visible">True</property>
+			      <property name="tooltip" translatable="yes">Maximum number of concurrent items to fetch at once.</property>
 			      <property name="can_focus">True</property>
 			      <property name="climb_rate">1</property>
 			      <property name="digits">0</property>
@@ -1220,6 +1227,7 @@ NTML authentication</property>
 			  <child>
 			    <widget class="GtkCheckButton" id="checkUseCairo">
 			      <property name="visible">True</property>
+			      <property name="tooltip" translatable="yes">Enable the use of Cairo, which provides better looking results at the cost of speed.</property>
 			      <property name="can_focus">True</property>
 			      <property name="label" translatable="yes">Use Cairo for anti-aliased drawing</property>
 			      <property name="use_underline">True</property>
@@ -1239,6 +1247,7 @@ NTML authentication</property>
 			  <child>
 			    <widget class="GtkCheckButton" id="checkResampleImages">
 			      <property name="visible">True</property>
+			      <property name="tooltip" translatable="yes">Smoothly resize images when zooming in and out.</property>
 			      <property name="can_focus">True</property>
 			      <property name="label" translatable="yes">Resample images when not at natural size</property>
 			      <property name="use_underline">True</property>
@@ -1349,6 +1358,7 @@ NTML authentication</property>
 			      <child>
 				<widget class="GtkSpinButton" id="spinAnimationSpeed">
 				  <property name="visible">True</property>
+				  <property name="tooltip" translatable="yes">Do not update animations any more often than this.</property>
 				  <property name="can_focus">True</property>
 				  <property name="climb_rate">1</property>
 				  <property name="digits">0</property>
@@ -1400,6 +1410,7 @@ NTML authentication</property>
 			  <child>
 			    <widget class="GtkCheckButton" id="checkDisableAnimations">
 			      <property name="visible">True</property>
+			      <property name="tooltip" translatable="yes">Display only the first frame of animated images.</property>
 			      <property name="can_focus">True</property>
 			      <property name="label" translatable="yes">Disable animations</property>
 			      <property name="use_underline">True</property>
@@ -1684,24 +1695,13 @@ NTML authentication</property>
 			  </child>
 
 			  <child>
-			    <widget class="GtkComboBox" id="comboSansSerif">
+			    <widget class="GtkFontButton" id="fontSerif">
 			      <property name="visible">True</property>
-			      <property name="add_tearoffs">False</property>
-			      <property name="focus_on_click">True</property>
-			    </widget>
-			    <packing>
-			      <property name="left_attach">1</property>
-			      <property name="right_attach">2</property>
-			      <property name="top_attach">0</property>
-			      <property name="bottom_attach">1</property>
-			      <property name="y_options">fill</property>
-			    </packing>
-			  </child>
-
-			  <child>
-			    <widget class="GtkComboBox" id="comboSerif">
-			      <property name="visible">True</property>
-			      <property name="add_tearoffs">False</property>
+			      <property name="can_focus">True</property>
+			      <property name="show_style">False</property>
+			      <property name="show_size">False</property>
+			      <property name="use_font">False</property>
+			      <property name="use_size">False</property>
 			      <property name="focus_on_click">True</property>
 			    </widget>
 			    <packing>
@@ -1710,14 +1710,18 @@ NTML authentication</property>
 			      <property name="top_attach">1</property>
 			      <property name="bottom_attach">2</property>
 			      <property name="x_options">fill</property>
-			      <property name="y_options">fill</property>
+			      <property name="y_options"></property>
 			    </packing>
 			  </child>
 
 			  <child>
-			    <widget class="GtkComboBox" id="comboMonospace">
+			    <widget class="GtkFontButton" id="fontMonospace">
 			      <property name="visible">True</property>
-			      <property name="add_tearoffs">False</property>
+			      <property name="can_focus">True</property>
+			      <property name="show_style">False</property>
+			      <property name="show_size">False</property>
+			      <property name="use_font">False</property>
+			      <property name="use_size">False</property>
 			      <property name="focus_on_click">True</property>
 			    </widget>
 			    <packing>
@@ -1726,14 +1730,18 @@ NTML authentication</property>
 			      <property name="top_attach">2</property>
 			      <property name="bottom_attach">3</property>
 			      <property name="x_options">fill</property>
-			      <property name="y_options">fill</property>
+			      <property name="y_options"></property>
 			    </packing>
 			  </child>
 
 			  <child>
-			    <widget class="GtkComboBox" id="comboCursive">
+			    <widget class="GtkFontButton" id="fontCursive">
 			      <property name="visible">True</property>
-			      <property name="add_tearoffs">False</property>
+			      <property name="can_focus">True</property>
+			      <property name="show_style">False</property>
+			      <property name="show_size">False</property>
+			      <property name="use_font">False</property>
+			      <property name="use_size">False</property>
 			      <property name="focus_on_click">True</property>
 			    </widget>
 			    <packing>
@@ -1742,14 +1750,18 @@ NTML authentication</property>
 			      <property name="top_attach">3</property>
 			      <property name="bottom_attach">4</property>
 			      <property name="x_options">fill</property>
-			      <property name="y_options">fill</property>
+			      <property name="y_options"></property>
 			    </packing>
 			  </child>
 
 			  <child>
-			    <widget class="GtkComboBox" id="comboFantasy">
+			    <widget class="GtkFontButton" id="fontFantasy">
 			      <property name="visible">True</property>
-			      <property name="add_tearoffs">False</property>
+			      <property name="can_focus">True</property>
+			      <property name="show_style">False</property>
+			      <property name="show_size">False</property>
+			      <property name="use_font">False</property>
+			      <property name="use_size">False</property>
 			      <property name="focus_on_click">True</property>
 			    </widget>
 			    <packing>
@@ -1758,15 +1770,15 @@ NTML authentication</property>
 			      <property name="top_attach">4</property>
 			      <property name="bottom_attach">5</property>
 			      <property name="x_options">fill</property>
-			      <property name="y_options">fill</property>
+			      <property name="y_options"></property>
 			    </packing>
 			  </child>
 
 			  <child>
-			    <widget class="GtkComboBox" id="comboDefaultFont">
+			    <widget class="GtkComboBox" id="comboDefault">
 			      <property name="visible">True</property>
 			      <property name="items" translatable="yes">Sans-serif
-Serif
+Sans
 Monospace
 Cursive
 Fantasy</property>
@@ -1780,6 +1792,25 @@ Fantasy</property>
 			      <property name="bottom_attach">6</property>
 			      <property name="x_options">fill</property>
 			      <property name="y_options">fill</property>
+			    </packing>
+			  </child>
+
+			  <child>
+			    <widget class="GtkFontButton" id="fontSansSerif">
+			      <property name="visible">True</property>
+			      <property name="can_focus">True</property>
+			      <property name="show_style">False</property>
+			      <property name="show_size">False</property>
+			      <property name="use_font">False</property>
+			      <property name="use_size">False</property>
+			      <property name="focus_on_click">True</property>
+			    </widget>
+			    <packing>
+			      <property name="left_attach">1</property>
+			      <property name="right_attach">2</property>
+			      <property name="top_attach">0</property>
+			      <property name="bottom_attach">1</property>
+			      <property name="y_options"></property>
 			    </packing>
 			  </child>
 			</widget>
@@ -1905,6 +1936,7 @@ Fantasy</property>
 			  <child>
 			    <widget class="GtkSpinButton" id="spinDefaultSize">
 			      <property name="visible">True</property>
+			      <property name="tooltip" translatable="yes">The base-line font size to use.</property>
 			      <property name="can_focus">True</property>
 			      <property name="climb_rate">1</property>
 			      <property name="digits">0</property>
@@ -1927,6 +1959,7 @@ Fantasy</property>
 			  <child>
 			    <widget class="GtkSpinButton" id="spinMinimumSize">
 			      <property name="visible">True</property>
+			      <property name="tooltip" translatable="yes">Do not allow text to be displayed any smaller than this.</property>
 			      <property name="can_focus">True</property>
 			      <property name="climb_rate">1</property>
 			      <property name="digits">0</property>
@@ -2123,6 +2156,7 @@ Fantasy</property>
 			  <child>
 			    <widget class="GtkSpinButton" id="spinMemoryCacheSize">
 			      <property name="visible">True</property>
+			      <property name="tooltip" translatable="yes">How much memory to use for caching recently viewed objects in memory.</property>
 			      <property name="can_focus">True</property>
 			      <property name="climb_rate">1</property>
 			      <property name="digits">0</property>
@@ -2258,6 +2292,7 @@ Fantasy</property>
 			      <child>
 				<widget class="GtkSpinButton" id="spinDiscCacheAge">
 				  <property name="visible">True</property>
+				  <property name="tooltip" translatable="yes">How long to keep cached items around on disc.</property>
 				  <property name="can_focus">True</property>
 				  <property name="climb_rate">1</property>
 				  <property name="digits">0</property>
@@ -2320,6 +2355,7 @@ Fantasy</property>
 			      <child>
 				<widget class="GtkButton" id="button1">
 				  <property name="visible">True</property>
+				  <property name="tooltip" translatable="yes">Flush cached items that are older than the maximum permitted age.</property>
 				  <property name="can_focus">True</property>
 				  <property name="relief">GTK_RELIEF_NORMAL</property>
 				  <property name="focus_on_click">True</property>
