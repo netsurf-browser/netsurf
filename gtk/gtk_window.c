@@ -70,6 +70,7 @@ static void gui_window_zoomin_button_event(GtkWidget *widget, gpointer data);
 static void gui_window_zoom100_button_event(GtkWidget *widget, gpointer data);
 static void gui_window_zoomout_button_event(GtkWidget *widget, gpointer data);
 static void gui_window_history_button_event(GtkWidget *widget, gpointer data);
+static void gui_window_choices_button_event(GtkWidget *widget, gpointer data);
 static void gui_window_reload_button_event(GtkWidget *widget, gpointer data);
 static void gui_window_home_button_event(GtkWidget *widget, gpointer data);
 
@@ -115,7 +116,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	GtkWidget *toolbar;
 	GtkToolItem *back_button, *forward_button, *stop_button, *reload_button;
 	GtkToolItem *zoomin_button, *zoomout_button, *zoom100_button;
-	GtkToolItem *home_button, *history_button;
+	GtkToolItem *home_button, *history_button, *choices_button;
 	GtkToolItem *url_item;
 	GtkWidget *url_bar;
 	GtkWidget *scrolled, *history_scrolled;
@@ -203,6 +204,10 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	history_button = gtk_tool_button_new_from_stock(GTK_STOCK_OPEN);
 	gtk_toolbar_insert(GTK_TOOLBAR(toolbar), history_button, -1);
 	gtk_widget_show(GTK_WIDGET(history_button));
+
+	choices_button = gtk_tool_button_new_from_stock(GTK_STOCK_PREFERENCES);
+	gtk_toolbar_insert(GTK_TOOLBAR(toolbar), choices_button, -1);
+	gtk_widget_show(GTK_WIDGET(choices_button));
 
 	url_item = gtk_tool_item_new();
 	gtk_tool_item_set_expand(url_item, TRUE);
@@ -310,6 +315,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	NS_SIGNAL_CONNECT(g->reload_button, "clicked", gui_window_reload_button_event, g);
 
 	NS_SIGNAL_CONNECT(history_button, "clicked", gui_window_history_button_event, g);
+	NS_SIGNAL_CONNECT(choices_button, "clicked", gui_window_choices_button_event, g);
 	NS_SIGNAL_CONNECT(home_button, "clicked", gui_window_home_button_event, g);
 
 	/* History window events */
@@ -422,6 +428,12 @@ void gui_window_history_button_event(GtkWidget *widget, gpointer data)
 	struct gui_window *g = data;
 	gtk_widget_show(GTK_WIDGET(g->history_window_widget));
 	gdk_window_raise(g->history_window_widget->window);
+}
+
+void gui_window_choices_button_event(GtkWidget *widget, gpointer data)
+{
+	gtk_widget_show(GTK_WIDGET(wndChoices));
+	gdk_window_raise(wndChoices);
 }
 
 void gui_window_reload_button_event(GtkWidget *widget, gpointer data)

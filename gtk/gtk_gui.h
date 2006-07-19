@@ -6,7 +6,7 @@
  */
 
 #include <stdbool.h>
-
+#include <gtk/gtk.h>
 
 extern bool gui_in_multitask;
-
+extern GtkWindow *wndChoices;

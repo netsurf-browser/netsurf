@@ -122,7 +122,7 @@ CFLAGS_DEBUG = -std=c9x -D_BSD_SOURCE -DDEBUG_BUILD $(WARNFLAGS) -I.. \
 	$(PLATFORM_CFLAGS_DEBUG) -g
 CFLAGS_GTK = -std=c9x -D_BSD_SOURCE -D_POSIX_C_SOURCE -Dgtk \
 	$(WARNFLAGS) -I.. -g -O0 -Wformat=2 \
-	`pkg-config --cflags gtk+-2.0` `xml2-config --cflags`
+	`pkg-config --cflags libglade-2.0 gtk+-2.0` `xml2-config --cflags`
 
 # Stop GCC under Cygwin throwing a fit
 # If you pass -std=<whatever> it appears to define __STRICT_ANSI__
@@ -156,9 +156,9 @@ riscos_debug: nsrodebug,ff8
 nsrodebug,ff8: $(OBJS_DEBUGRO)
 	$(CC) -o $@ $(LDFLAGS_RISCOS) $^
 
-gtk: nsgtk
+gt:k nsgtk
 nsgtk: $(OBJS_GTK)
-	/usr/bin/gcc -o nsgtk $^ `pkg-config --cflags --libs gtk+-2.0 gthread-2.0` \
+	/usr/bin/gcc -o nsgtk $^ `pkg-config --cflags --libs libglade-2.0 gtk+-2.0 gthread-2.0 gmodule-2.0` \
 	$(LDFLAGS_DEBUG)
 
 netsurf.zip: $(RUNIMAGE)

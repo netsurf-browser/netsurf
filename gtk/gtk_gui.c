@@ -16,6 +16,7 @@
 #include <curl/curl.h>
 #include <gdk/gdkkeysyms.h>
 #include <gtk/gtk.h>
+#include <glade/glade.h>
 #include "netsurf/content/content.h"
 #include "netsurf/content/fetch.h"
 #include "netsurf/content/urldb.h"
@@ -44,6 +45,9 @@ char *default_stylesheet_url;
 char *adblock_stylesheet_url;
 
 struct gui_window *search_current_window = 0;
+
+GladeXML *gladeWindows;
+GtkWindow *wndChoices;
 
 /**
  * Locate a shared resource file by searching known places in order.
@@ -94,6 +98,11 @@ void gui_init(int argc, char** argv)
 	char buf[PATH_MAX];
 
 	gtk_init(&argc, &argv);
+
+	gladeWindows = glade_xml_new("./gtk/netsurf.glade", NULL, NULL);
+	wndChoices = glade_xml_get_widget(gladeWindows, "wndChoices");
+
+	glade_xml_signal_autoconnect(gladeWindows);
 
 	find_resource(buf, "Choices", "Choices");
 	LOG(("Using '%s' as Choices file", buf));
@@ -332,3 +341,8 @@ bool cookies_update(const char *domain, const struct cookie_data *data)
 {
 	return true;
 }
+
+void nsgtk_choices_apply_clicked(GtkWidget *widget) {
+  LOG(("Apply button clicked!"));
+}
+
