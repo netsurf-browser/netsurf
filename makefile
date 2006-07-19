@@ -156,7 +156,7 @@ riscos_debug: nsrodebug,ff8
 nsrodebug,ff8: $(OBJS_DEBUGRO)
 	$(CC) -o $@ $(LDFLAGS_RISCOS) $^
 
-gt:k nsgtk
+gtk: nsgtk
 nsgtk: $(OBJS_GTK)
 	/usr/bin/gcc -o nsgtk $^ `pkg-config --cflags --libs libglade-2.0 gtk+-2.0 gthread-2.0 gmodule-2.0` \
 	$(LDFLAGS_DEBUG)
