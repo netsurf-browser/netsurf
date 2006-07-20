@@ -65,47 +65,54 @@ GdkGC *current_gc;
 cairo_t *current_cr;
 #endif
 static int open_windows = 0;
-static void gui_window_change_scale(struct gui_window *g, float scale);
-static void gui_window_zoomin_button_event(GtkWidget *widget, gpointer data);
-static void gui_window_zoom100_button_event(GtkWidget *widget, gpointer data);
-static void gui_window_zoomout_button_event(GtkWidget *widget, gpointer data);
-static void gui_window_history_button_event(GtkWidget *widget, gpointer data);
-static void gui_window_choices_button_event(GtkWidget *widget, gpointer data);
-static void gui_window_reload_button_event(GtkWidget *widget, gpointer data);
-static void gui_window_home_button_event(GtkWidget *widget, gpointer data);
 
-static void gui_window_stop_button_event(GtkWidget *widget, gpointer data);
-static void gui_window_back_button_event(GtkWidget *widget, gpointer data);
-static void gui_window_forward_button_event(GtkWidget *widget, gpointer data);
-static void gui_window_update_back_forward(struct gui_window *g);
+/* functions used by below event handlers */
+static void nsgtk_window_change_scale(struct gui_window *g, float scale);
+static void nsgtk_window_update_back_forward(struct gui_window *g);
 
-static gboolean gui_history_expose_event(GtkWidget *widget,
-				     GdkEventExpose *event, gpointer data);
-static gboolean gui_history_motion_notify_event(GtkWidget *widget,
-					    GdkEventMotion *event, gpointer data);
-static gboolean gui_history_button_press_event(GtkWidget *widget,
-					   GdkEventButton *event, gpointer data);
+/* main browser window toolbar event handlers */
+void nsgtk_window_back_button_clicked(GtkWidget *widget, gpointer data);
+void nsgtk_window_forward_button_clicked(GtkWidget *widget, gpointer data);
+void nsgtk_window_stop_button_clicked(GtkWidget *widget, gpointer data);
+void nsgtk_window_reload_button_clicked(GtkWidget *widget, gpointer data);
+void nsgtk_window_home_button_clicked(GtkWidget *widget, gpointer data);
+void nsgtk_window_zoomin_button_clicked(GtkWidget *widget, gpointer data);
+void nsgtk_window_zoom100_button_clicked(GtkWidget *widget, gpointer data);
+void nsgtk_window_zoomout_button_clicked(GtkWidget *widget, gpointer data);
+void nsgtk_window_history_button_clicked(GtkWidget *widget, gpointer data);
+void nsgtk_window_choices_button_clicked(GtkWidget *widget, gpointer data);
 
-static void gui_window_destroy_event(GtkWidget *widget, gpointer data);
-static gboolean gui_window_expose_event(GtkWidget *widget,
-		GdkEventExpose *event, gpointer data);
-static gboolean gui_window_url_key_press_event(GtkWidget *widget,
-		GdkEventKey *event, gpointer data);
-static gboolean gui_window_configure_event(GtkWidget *widget,
-		GdkEventConfigure *event, gpointer data);
-static gboolean gui_window_motion_notify_event(GtkWidget *widget,
-		GdkEventMotion *event, gpointer data);
-static gboolean gui_window_button_press_event(GtkWidget *widget,
-		GdkEventButton *event, gpointer data);
-static void gui_window_size_allocate_event(GtkWidget *widget,
-		GtkAllocation *allocation, gpointer data);
-static gboolean gui_window_key_press_event(GtkWidget *widget,
-			GdkEventKey *event, gpointer data);
-static void gtk_perform_deferred_resize(void *p);
+/* main browser window event handlers */
+void nsgtk_window_destroy_event(GtkWidget *widget, gpointer data);
+gboolean nsgtk_window_expose_event(GtkWidget *widget,
+					GdkEventExpose *event, gpointer data);
+gboolean nsgtk_window_url_keypress_event(GtkWidget *widget,
+					GdkEventKey *event, gpointer data);
+gboolean nsgtk_window_configure_event(GtkWidget *widget,
+					GdkEventConfigure *event, gpointer data);
+gboolean nsgtk_window_motion_notify_event(GtkWidget *widget,
+					GdkEventMotion *event, gpointer data);
+gboolean nsgtk_window_button_press_event(GtkWidget *widget,
+					GdkEventButton *event, gpointer data);
+void nsgtk_window_size_allocate_event(GtkWidget *widget,
+					GtkAllocation *allocation, gpointer data);
+gboolean nsgtk_window_keypress_event(GtkWidget *widget,
+					GdkEventKey *event, gpointer data);
 
+
+/* local history window event handlers */
+gboolean nsgtk_history_expose_event(GtkWidget *widget,
+					GdkEventExpose *event, gpointer data);
+gboolean nsgtk_history_motion_notify_event(GtkWidget *widget,
+					GdkEventMotion *event, gpointer data);
+gboolean nsgtk_history_button_press_event(GtkWidget *widget,
+					GdkEventButton *event, gpointer data);
+
+
+/* misc support functions */
+static void nsgtk_perform_deferred_resize(void *p);
 static wchar_t gdkkey_to_nskey(GdkEventKey *key);
-
-static void gtk_pass_mouse_position(void *p);
+static void nsgtk_pass_mouse_position(void *p);
 
 struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		struct browser_window *clone)
@@ -218,7 +225,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	gtk_container_add(GTK_CONTAINER(url_item), url_bar);
 	gtk_widget_show(url_bar);
 	g_signal_connect(G_OBJECT(url_bar), "key_press_event",
-			G_CALLBACK(gui_window_url_key_press_event), g);
+			G_CALLBACK(nsgtk_window_url_keypress_event), g);
 
 	scrolled = gtk_scrolled_window_new(0, 0);
 	gtk_box_pack_start(GTK_BOX(vbox), scrolled, TRUE, TRUE, 0);
@@ -286,45 +293,45 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 #define NS_SIGNAL_CONNECT(obj, sig, callback, ptr) \
 	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))
 
-	NS_SIGNAL_CONNECT(window, "destroy", gui_window_destroy_event, g);
+	NS_SIGNAL_CONNECT(window, "destroy", nsgtk_window_destroy_event, g);
 
 	g_signal_connect(G_OBJECT(drawing_area), "expose_event",
-			G_CALLBACK(gui_window_expose_event), g);
+			G_CALLBACK(nsgtk_window_expose_event), g);
 	g_signal_connect(G_OBJECT(drawing_area), "configure_event",
-			G_CALLBACK(gui_window_configure_event), g);
+			G_CALLBACK(nsgtk_window_configure_event), g);
 	g_signal_connect(G_OBJECT(drawing_area), "motion_notify_event",
-			G_CALLBACK(gui_window_motion_notify_event), g);
+			G_CALLBACK(nsgtk_window_motion_notify_event), g);
 	g_signal_connect(G_OBJECT(drawing_area), "button_press_event",
-			G_CALLBACK(gui_window_button_press_event), g);
+			G_CALLBACK(nsgtk_window_button_press_event), g);
 	g_signal_connect(G_OBJECT(scrolled), "size_allocate",
-			G_CALLBACK(gui_window_size_allocate_event), g);
+			G_CALLBACK(nsgtk_window_size_allocate_event), g);
 	g_signal_connect(G_OBJECT(drawing_area), "key_press_event",
-		G_CALLBACK(gui_window_key_press_event), g);
+		G_CALLBACK(nsgtk_window_keypress_event), g);
 
 	g_signal_connect(G_OBJECT(zoomin_button), "clicked",
-			G_CALLBACK(gui_window_zoomin_button_event), g);
+			G_CALLBACK(nsgtk_window_zoomin_button_clicked), g);
 	g_signal_connect(G_OBJECT(zoom100_button), "clicked",
-			G_CALLBACK(gui_window_zoom100_button_event), g);
+			G_CALLBACK(nsgtk_window_zoom100_button_clicked), g);
 	g_signal_connect(G_OBJECT(zoomout_button), "clicked",
-			G_CALLBACK(gui_window_zoomout_button_event), g);
+			G_CALLBACK(nsgtk_window_zoomout_button_clicked), g);
 	g_signal_connect(G_OBJECT(g->stop_button), "clicked",
-			G_CALLBACK(gui_window_stop_button_event), g);
+			G_CALLBACK(nsgtk_window_stop_button_clicked), g);
 
-	NS_SIGNAL_CONNECT(g->back_button, "clicked", gui_window_back_button_event, g);
-	NS_SIGNAL_CONNECT(g->forward_button, "clicked", gui_window_forward_button_event, g);
-	NS_SIGNAL_CONNECT(g->reload_button, "clicked", gui_window_reload_button_event, g);
+	NS_SIGNAL_CONNECT(g->back_button, "clicked", nsgtk_window_back_button_clicked, g);
+	NS_SIGNAL_CONNECT(g->forward_button, "clicked", nsgtk_window_forward_button_clicked, g);
+	NS_SIGNAL_CONNECT(g->reload_button, "clicked", nsgtk_window_reload_button_clicked, g);
 
-	NS_SIGNAL_CONNECT(history_button, "clicked", gui_window_history_button_event, g);
-	NS_SIGNAL_CONNECT(choices_button, "clicked", gui_window_choices_button_event, g);
-	NS_SIGNAL_CONNECT(home_button, "clicked", gui_window_home_button_event, g);
+	NS_SIGNAL_CONNECT(history_button, "clicked", nsgtk_window_history_button_clicked, g);
+	NS_SIGNAL_CONNECT(choices_button, "clicked", nsgtk_window_choices_button_clicked, g);
+	NS_SIGNAL_CONNECT(home_button, "clicked", nsgtk_window_home_button_clicked, g);
 
 	/* History window events */
 	NS_SIGNAL_CONNECT(history_area, "expose_event",
-			  gui_history_expose_event, g->history_window);
+			  nsgtk_history_expose_event, g->history_window);
 	NS_SIGNAL_CONNECT(history_area, "motion_notify_event",
-			  gui_history_motion_notify_event, g->history_window);
+			  nsgtk_history_motion_notify_event, g->history_window);
 	NS_SIGNAL_CONNECT(history_area, "button_press_event",
-			  gui_history_button_press_event, g->history_window);
+			  nsgtk_history_button_press_event, g->history_window);
 	NS_SIGNAL_CONNECT(g->history_window_widget, "delete_event",
 			  gtk_widget_hide_on_delete, NULL);
 
@@ -337,23 +344,23 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
           gesture_recogniser_add(gr, "732187", 100);
           gesture_recogniser_set_distance_threshold(gr, 50);
           gesture_recogniser_set_count_threshold(gr, 20);
-          schedule(5, gtk_pass_mouse_position, g);
+          schedule(5, nsgtk_pass_mouse_position, g);
         }
 	
 	open_windows++;
 	return g;
 }
 
-void gtk_pass_mouse_position(void *p)
+void nsgtk_pass_mouse_position(void *p)
 {
   struct gui_window *g = (struct gui_window*)p;
   if( g->bw->gesturer )
     if( gesturer_add_point(g->bw->gesturer, g->last_x, g->last_y) == 100 )
       exit(0);
-  schedule(5, gtk_pass_mouse_position, p);
+  schedule(5, nsgtk_pass_mouse_position, p);
 }
 
-void gui_window_change_scale(struct gui_window *g, float scale)
+void nsgtk_window_change_scale(struct gui_window *g, float scale)
 {
 	g->scale = scale;
 	if (g->bw->current_content != NULL)
@@ -362,31 +369,31 @@ void gui_window_change_scale(struct gui_window *g, float scale)
 	gtk_widget_queue_draw(g->drawing_area);
 }
 
-void gui_window_zoomin_button_event(GtkWidget *widget, gpointer data)
+void nsgtk_window_zoomin_button_clicked(GtkWidget *widget, gpointer data)
 {
 	struct gui_window *g = data;
-	gui_window_change_scale(g, g->scale + 0.05);
+	nsgtk_window_change_scale(g, g->scale + 0.05);
 }
 
-void gui_window_zoom100_button_event(GtkWidget *widget, gpointer data)
+void nsgtk_window_zoom100_button_clicked(GtkWidget *widget, gpointer data)
 {
 	struct gui_window *g = data;
-	gui_window_change_scale(g, 1.00);
+	nsgtk_window_change_scale(g, 1.00);
 }
 
-void gui_window_zoomout_button_event(GtkWidget *widget, gpointer data)
+void nsgtk_window_zoomout_button_clicked(GtkWidget *widget, gpointer data)
 {
 	struct gui_window *g = data;
-	gui_window_change_scale(g, g->scale - 0.05);
+	nsgtk_window_change_scale(g, g->scale - 0.05);
 }
 
-void gui_window_stop_button_event(GtkWidget *widget, gpointer data)
+void nsgtk_window_stop_button_clicked(GtkWidget *widget, gpointer data)
 {
 	struct gui_window *g = data;
 	browser_window_stop(g->bw);
 }
 
-void gui_window_destroy_event(GtkWidget *widget, gpointer data)
+void nsgtk_window_destroy_event(GtkWidget *widget, gpointer data)
 {
 	struct gui_window *g = data;
 	gui_window_destroy(g);
@@ -394,23 +401,23 @@ void gui_window_destroy_event(GtkWidget *widget, gpointer data)
 		netsurf_quit = true;
 }
 
-void gui_window_back_button_event(GtkWidget *widget, gpointer data)
+void nsgtk_window_back_button_clicked(GtkWidget *widget, gpointer data)
 {
 	struct gui_window *g = data;
 	if (!history_back_available(g->bw->history)) return;
 	history_back(g->bw, g->bw->history);
-	gui_window_update_back_forward(g);
+	nsgtk_window_update_back_forward(g);
 }
 
-void gui_window_forward_button_event(GtkWidget *widget, gpointer data)
+void nsgtk_window_forward_button_clicked(GtkWidget *widget, gpointer data)
 {
 	struct gui_window *g = data;
 	if (!history_forward_available(g->bw->history)) return;
 	history_forward(g->bw, g->bw->history);
-	gui_window_update_back_forward(g);
+	nsgtk_window_update_back_forward(g);
 }
 
-void gui_window_update_back_forward(struct gui_window *g)
+void nsgtk_window_update_back_forward(struct gui_window *g)
 {
 	int width, height;
 	gtk_widget_set_sensitive(g->back_button,
@@ -423,26 +430,26 @@ void gui_window_update_back_forward(struct gui_window *g)
 	gtk_widget_queue_draw(GTK_WIDGET(g->history_window_widget));
 }
 
-void gui_window_history_button_event(GtkWidget *widget, gpointer data)
+void nsgtk_window_history_button_clicked(GtkWidget *widget, gpointer data)
 {
 	struct gui_window *g = data;
 	gtk_widget_show(GTK_WIDGET(g->history_window_widget));
 	gdk_window_raise(g->history_window_widget->window);
 }
 
-void gui_window_choices_button_event(GtkWidget *widget, gpointer data)
+void nsgtk_window_choices_button_clicked(GtkWidget *widget, gpointer data)
 {
 	gtk_widget_show(GTK_WIDGET(wndChoices));
 	gdk_window_raise(wndChoices);
 }
 
-void gui_window_reload_button_event(GtkWidget *widget, gpointer data)
+void nsgtk_window_reload_button_clicked(GtkWidget *widget, gpointer data)
 {
         struct gui_window *g = data;
         browser_window_reload(g->bw, true);
 }
 
-void gui_window_home_button_event(GtkWidget *widget, gpointer data)
+void nsgtk_window_home_button_clicked(GtkWidget *widget, gpointer data)
 {
         struct gui_window *g = data;
         char *referer = 0;
@@ -457,7 +464,7 @@ void gui_window_home_button_event(GtkWidget *widget, gpointer data)
         browser_window_go(g->bw, addr, referer, true);
 }
 
-gboolean gui_window_expose_event(GtkWidget *widget,
+gboolean nsgtk_window_expose_event(GtkWidget *widget,
 		GdkEventExpose *event, gpointer data)
 {
 	struct gui_window *g = data;
@@ -497,7 +504,7 @@ gboolean gui_window_expose_event(GtkWidget *widget,
 	return FALSE;
 }
 
-gboolean gui_history_expose_event(GtkWidget *widget,
+gboolean nsgtk_history_expose_event(GtkWidget *widget,
 				  GdkEventExpose *event,
 				  gpointer data)
 {
@@ -520,7 +527,7 @@ gboolean gui_history_expose_event(GtkWidget *widget,
 	return FALSE;
 }
 
-gboolean gui_history_motion_notify_event(GtkWidget *widget,
+gboolean nsgtk_history_motion_notify_event(GtkWidget *widget,
 		GdkEventMotion *event, gpointer data)
 {
 	/* Not sure what to do here */
@@ -528,7 +535,7 @@ gboolean gui_history_motion_notify_event(GtkWidget *widget,
 	return TRUE;
 }
 
-gboolean gui_history_button_press_event(GtkWidget *widget,
+gboolean nsgtk_history_button_press_event(GtkWidget *widget,
 					GdkEventButton *event,
 					gpointer data)
 {
@@ -540,7 +547,7 @@ gboolean gui_history_button_press_event(GtkWidget *widget,
 	return TRUE;
 }
 
-gboolean gui_window_url_key_press_event(GtkWidget *widget,
+gboolean nsgtk_window_url_keypress_event(GtkWidget *widget,
 		GdkEventKey *event, gpointer data)
 {
 	struct gui_window *g = data;
@@ -558,7 +565,7 @@ gboolean gui_window_url_key_press_event(GtkWidget *widget,
 	return TRUE;
 }
 
-gboolean gui_window_key_press_event(GtkWidget *widget,
+gboolean nsgtk_window_keypress_event(GtkWidget *widget,
 					GdkEventKey *event,
 					gpointer data)
 {
@@ -569,7 +576,7 @@ gboolean gui_window_key_press_event(GtkWidget *widget,
 	return TRUE;
 }
 
-gboolean gui_window_configure_event(GtkWidget *widget,
+gboolean nsgtk_window_configure_event(GtkWidget *widget,
 		GdkEventConfigure *event, gpointer data)
 {
 	struct gui_window *g = data;
@@ -588,7 +595,7 @@ gboolean gui_window_configure_event(GtkWidget *widget,
 	return FALSE;
 }
 
-void gtk_perform_deferred_resize(void *p)
+void nsgtk_perform_deferred_resize(void *p)
 {
 	struct gui_window *g = p;
 	if (gui_in_multitask) return;
@@ -598,11 +605,11 @@ void gtk_perform_deferred_resize(void *p)
 		return;
 	content_reformat(g->bw->current_content, g->target_width, g->target_height);
 	if (GTK_WIDGET_SENSITIVE (g->stop_button)) {
-		schedule(100, gtk_perform_deferred_resize, g);
+		schedule(100, nsgtk_perform_deferred_resize, g);
 	}
 }
 
-void gui_window_size_allocate_event(GtkWidget *widget,
+void nsgtk_window_size_allocate_event(GtkWidget *widget,
 		GtkAllocation *allocation, gpointer data)
 {
 	struct gui_window *g = data;
@@ -613,10 +620,10 @@ void gui_window_size_allocate_event(GtkWidget *widget,
 	g->target_width = viewport->allocation.width - 2;
 	g->target_height = viewport->allocation.height;
 	/* Schedule a callback to perform the resize for 1/10s from now */
-	schedule(5, gtk_perform_deferred_resize, g);
+	schedule(5, nsgtk_perform_deferred_resize, g);
 }
 
-gboolean gui_window_motion_notify_event(GtkWidget *widget,
+gboolean nsgtk_window_motion_notify_event(GtkWidget *widget,
 		GdkEventMotion *event, gpointer data)
 {
 	struct gui_window *g = data;
@@ -629,7 +636,7 @@ gboolean gui_window_motion_notify_event(GtkWidget *widget,
 }
 
 
-gboolean gui_window_button_press_event(GtkWidget *widget,
+gboolean nsgtk_window_button_press_event(GtkWidget *widget,
 		GdkEventButton *event, gpointer data)
 {
 	struct gui_window *g = data;
@@ -817,8 +824,8 @@ void gui_window_start_throbber(struct gui_window* g)
 	gtk_widget_set_sensitive(g->stop_button, TRUE);
 	gtk_widget_set_sensitive(g->reload_button, FALSE);
 	gtk_widget_show(g->progress_bar);
-	schedule(100, gtk_perform_deferred_resize, g);
-	gui_window_update_back_forward(g);
+	schedule(100, nsgtk_perform_deferred_resize, g);
+	nsgtk_window_update_back_forward(g);
 	schedule(10, nsgtk_throb, g);
 }
 
@@ -827,7 +834,7 @@ void gui_window_stop_throbber(struct gui_window* g)
 {
 	gtk_widget_set_sensitive(g->stop_button, FALSE);
 	gtk_widget_set_sensitive(g->reload_button, TRUE);
-	gui_window_update_back_forward(g);
+	nsgtk_window_update_back_forward(g);
 	gtk_widget_hide(g->progress_bar);
 	schedule_remove(nsgtk_throb, g);
 }
