@@ -51,6 +51,9 @@ struct gui_window {
 	GtkWidget *history_window_widget;
 	int caretx, carety, careth;
 	int last_x, last_y;
+
+	struct gui_window *prev;
+	struct gui_window *next;
 };
 
 struct gtk_history_window {
@@ -64,6 +67,8 @@ GdkGC *current_gc;
 #ifdef CAIRO_VERSION
 cairo_t *current_cr;
 #endif
+
+struct gui_window *window_list = 0;
 static int open_windows = 0;
 
 /* functions used by below event handlers */
@@ -98,7 +103,6 @@ void nsgtk_window_size_allocate_event(GtkWidget *widget,
 					GtkAllocation *allocation, gpointer data);
 gboolean nsgtk_window_keypress_event(GtkWidget *widget,
 					GdkEventKey *event, gpointer data);
-
 
 /* local history window event handlers */
 gboolean nsgtk_history_expose_event(GtkWidget *widget,
@@ -135,6 +139,13 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		warn_user("NoMemory", 0);
 		return 0;
 	}
+
+	g->prev = 0;
+	g->next = window_list;
+	if (window_list)
+		window_list->prev = g;
+	window_list = g;
+	open_windows++;
 
 	/* a height of zero means no caret */
 	g->careth = 0;
@@ -347,7 +358,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
           schedule(5, nsgtk_pass_mouse_position, g);
         }
 	
-	open_windows++;
 	return g;
 }
 
@@ -655,9 +665,19 @@ gboolean nsgtk_window_button_press_event(GtkWidget *widget,
 	return TRUE;
 }
 
-void gui_window_destroy(struct gui_window *g)
+void gui_window_destroy(struct gui_window *data)
 {
 	/* XXX: Destroy history window etc here */
+  
+        struct gui_window *g = data;
+
+        if (g->prev)
+                g->prev->next = g->next;
+        else
+                window_list = g->next;
+
+        if (g->next)
+                g->next->prev = g->prev;
 }
 
 
