@@ -2103,6 +2103,9 @@ bool layout_table(struct box *table, int available_width,
 	table->width = table_width;
 	table->height = table_height;
 
+	if (!layout_absolute_children(table, content))
+		return false;
+
 	return true;
 }
 
