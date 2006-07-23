@@ -120,7 +120,7 @@ CFLAGS_RISCOS_SMALL = $(CFLAGS_RISCOS) -Dsmall
 CFLAGS_NCOS = $(CFLAGS_RISCOS) -Dncos
 CFLAGS_DEBUG = -std=c9x -D_BSD_SOURCE -DDEBUG_BUILD $(WARNFLAGS) -I.. \
 	$(PLATFORM_CFLAGS_DEBUG) -g
-CFLAGS_GTK = -std=c9x -D_BSD_SOURCE -D_POSIX_C_SOURCE -Dgtk \
+CFLAGS_GTK = -Dnsgtk -std=c9x -D_BSD_SOURCE -D_POSIX_C_SOURCE -Dgtk \
 	$(WARNFLAGS) -I.. -g -O0 -Wformat=2 \
 	`pkg-config --cflags libglade-2.0 gtk+-2.0` `xml2-config --cflags`
 

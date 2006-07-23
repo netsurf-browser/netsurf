@@ -1235,7 +1235,6 @@ NTML authentication</property>
 			  <child>
 			    <widget class="GtkCheckButton" id="checkUseCairo">
 			      <property name="visible">True</property>
-			      <property name="sensitive">False</property>
 			      <property name="tooltip" translatable="yes">Enable the use of Cairo, which provides better looking results at the cost of speed.</property>
 			      <property name="can_focus">True</property>
 			      <property name="label" translatable="yes">Use Cairo for anti-aliased drawing</property>

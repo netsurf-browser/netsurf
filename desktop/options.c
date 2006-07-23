@@ -29,8 +29,10 @@
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
 
-#ifdef riscos
+#if defined(riscos)
 #include "netsurf/riscos/options.h"
+#elif defined(nsgtk)
+#include "netsurf/gtk/options.h"
 #else
 #define EXTRA_OPTION_DEFINE
 #define EXTRA_OPTION_TABLE

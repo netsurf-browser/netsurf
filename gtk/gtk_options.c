@@ -12,8 +12,8 @@
 #include <glade/glade.h>
 #include "netsurf/utils/log.h"
 #include "netsurf/desktop/options.h"
+#include "netsurf/gtk/options.h"
 #include "netsurf/gtk/gtk_gui.h"
-#include "netsurf/desktop/options.h"
 #include "netsurf/gtk/gtk_options.h"
 
 GtkWindow *wndChoices;
@@ -102,8 +102,8 @@ void nsgtk_options_init(void) {
 }
 
 #define SET_ENTRY(x, y) gtk_entry_set_text(GTK_ENTRY((x)), (y))
-#define SET_SPIN(x, y) gtk_spin_button_set_value((x), (y))
-#define SET_CHECK(x, y) gtk_toggle_button_set_active((x), (y))
+#define SET_SPIN(x, y) gtk_spin_button_set_value(GTK_SPIN_BUTTON((x)), (y))
+#define SET_CHECK(x, y) gtk_toggle_button_set_active(GTK_CHECK_BUTTON((x)), (y))
 
 void nsgtk_options_load(void) {
 	char *b[20];
@@ -122,7 +122,8 @@ void nsgtk_options_load(void) {
 	SET_SPIN(spinFetchesPerHost, option_max_fetchers_per_host);
 	SET_SPIN(spinCachedConnections, option_max_cached_fetch_handles);
 
-	/* TODO: set checkUseCairo and checkReampleImages here */
+	/* TODO: set checkResampleImages here */
+	SET_CHECK(checkUseCairo, option_render_cairo);
 	SET_SPIN(spinAnimationSpeed, option_minimum_gif_delay);
 	SET_CHECK(checkDisableAnimations, !option_animate_images);
 
@@ -136,10 +137,12 @@ void nsgtk_options_load(void) {
 
 #define GET_ENTRY(x, y) if ((y)) free((y)); \
 	(y) = strdup(gtk_entry_get_text(GTK_ENTRY((x))))
+#define GET_CHECK(x, y) (y) = gtk_toggle_button_get_active(GTK_CHECK_BUTTON((x)))
 
 void nsgtk_options_save(void) {
 	GET_ENTRY(entryHomePageURL, option_homepage_url);
 
+	GET_CHECK(checkUseCairo, option_render_cairo);
 	/* TODO: save the other options */
 
 	options_write(options_file_location);
