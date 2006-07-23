@@ -203,7 +203,8 @@ const char *local_encoding_name(void) { return "ISO-8859-1"; }
 
 struct caret ghost_caret;
 
-bool cookies_update(const struct cookie_data *data) { return true; }
+bool cookies_update(const char *domain, const struct cookie_data *data)
+{ return true; }
 
 char *url_to_path(const char *url)
 {
