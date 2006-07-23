@@ -23,6 +23,7 @@
 #include "netsurf/gtk/gtk_gui.h"
 #include "netsurf/gtk/gtk_plotters.h"
 #include "netsurf/gtk/gtk_window.h"
+#include "netsurf/gtk/gtk_options.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/font.h"
 #include "netsurf/render/form.h"

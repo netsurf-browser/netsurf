@@ -27,6 +27,7 @@
 #include "netsurf/desktop/netsurf.h"
 #include "netsurf/desktop/options.h"
 #include "netsurf/gtk/gtk_gui.h"
+#include "netsurf/gtk/gtk_options.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/form.h"
 #include "netsurf/render/html.h"
@@ -43,11 +44,12 @@ bool gui_in_multitask = false;
 
 char *default_stylesheet_url;
 char *adblock_stylesheet_url;
+char *options_file_location;
+char *glade_file_location;
 
 struct gui_window *search_current_window = 0;
 
 GladeXML *gladeWindows;
-GtkWindow *wndChoices;
 
 /**
  * Locate a shared resource file by searching known places in order.
@@ -98,15 +100,23 @@ void gui_init(int argc, char** argv)
 	char buf[PATH_MAX];
 
 	gtk_init(&argc, &argv);
-
-	gladeWindows = glade_xml_new("./gtk/netsurf.glade", NULL, NULL);
-	wndChoices = glade_xml_get_widget(gladeWindows, "wndChoices");
+	
+	/* TODO: make this search for the file using the resource finding
+	 * function above
+	 */
+	glade_file_location = strdup("./gtk/netsurf.glade");
+	
+	glade_init();
+	gladeWindows = glade_xml_new(glade_file_location, NULL, NULL);
 
 	glade_xml_signal_autoconnect(gladeWindows);
 
 	find_resource(buf, "Choices", "Choices");
 	LOG(("Using '%s' as Choices file", buf));
+	options_file_location = strdup(buf);
 	options_read(buf);
+
+	nsgtk_options_init();
 
 	if (!option_cookie_file) {
 		find_resource(buf, "Cookies", "Cookies");

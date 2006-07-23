@@ -7,6 +7,9 @@
 
 #include <stdbool.h>
 #include <gtk/gtk.h>
+#include <glade/glade.h>
 
 extern bool gui_in_multitask;
-extern GtkWindow *wndChoices;
+extern GladeXML *gladeWindows;
+extern char *options_file_location;
+
