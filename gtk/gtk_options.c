@@ -143,6 +143,7 @@ void nsgtk_options_save(void) {
 	GET_ENTRY(entryHomePageURL, option_homepage_url);
 
 	GET_CHECK(checkUseCairo, option_render_cairo);
+	GET_CHECK(checkResampleImages, option_render_resample);
 	/* TODO: save the other options */
 
 	options_write(options_file_location);

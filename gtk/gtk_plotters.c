@@ -280,7 +280,8 @@ bool nsgtk_plot_bitmap(int x, int y, int width, int height,
 		GdkPixbuf *scaled;
 		scaled = gdk_pixbuf_scale_simple(pixbuf,
 				width, height,
-				GDK_INTERP_BILINEAR);
+				option_render_resample ? GDK_INTERP_BILINEAR
+							: GDK_INTERP_NEAREST);
 		if (!scaled)
 			return false;
 
