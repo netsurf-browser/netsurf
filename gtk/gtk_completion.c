@@ -46,8 +46,11 @@ void nsgtk_completion_empty(void)
 bool nsgtk_completion_udb_callback(const char *url, const struct url_data *data)
 {
 	GtkTreeIter iter;
-	gtk_list_store_append(nsgtk_completion_list, &iter);
-	gtk_list_store_set(nsgtk_completion_list, &iter, 0, url, -1);
+	
+	if (data->visits != 0) {
+		gtk_list_store_append(nsgtk_completion_list, &iter);
+		gtk_list_store_set(nsgtk_completion_list, &iter, 0, url, -1);
+	}
 	return true;
 }
 
