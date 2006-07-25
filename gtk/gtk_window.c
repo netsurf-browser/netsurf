@@ -24,6 +24,7 @@
 #include "netsurf/gtk/gtk_plotters.h"
 #include "netsurf/gtk/gtk_window.h"
 #include "netsurf/gtk/gtk_options.h"
+#include "netsurf/gtk/gtk_completion.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/font.h"
 #include "netsurf/render/form.h"
@@ -94,6 +95,8 @@ gboolean nsgtk_window_expose_event(GtkWidget *widget,
 					GdkEventExpose *event, gpointer data);
 gboolean nsgtk_window_url_keypress_event(GtkWidget *widget,
 					GdkEventKey *event, gpointer data);
+gboolean nsgtk_window_url_changed(GtkWidget *widget, GdkEventKey *event,
+ 					gpointer data);
 gboolean nsgtk_window_configure_event(GtkWidget *widget,
 					GdkEventConfigure *event, gpointer data);
 gboolean nsgtk_window_motion_notify_event(GtkWidget *widget,
@@ -134,6 +137,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	GtkWidget *scrolled, *history_scrolled;
 	GtkWidget *drawing_area, *history_area;
 	GtkWidget *status_box;
+	GtkEntryCompletion *url_bar_completion;
 
 	g = malloc(sizeof *g);
 	if (!g) {
@@ -289,9 +293,9 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	gtk_widget_set_size_request(g->progress_bar, 64, 0);
 	gtk_box_pack_end(GTK_BOX(status_box), g->progress_bar, FALSE, FALSE, 0);
 
+	g->window = window;
 	gtk_widget_show(window);
 
-	g->window = window;
 	g->url_bar = url_bar;
 	g->drawing_area = drawing_area;
 	g->bw = bw;
@@ -302,11 +306,30 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	else
 	  g->scale = 1.0;
 
+        /* set up URL bar completion */
+
+        url_bar_completion = gtk_entry_completion_new();
+        gtk_entry_set_completion(GTK_ENTRY(url_bar), url_bar_completion);
+	gtk_entry_completion_set_match_func(url_bar_completion,
+		nsgtk_completion_match, NULL, NULL);
+        gtk_entry_completion_set_model(url_bar_completion,
+                GTK_TREE_MODEL(nsgtk_completion_list));
+        gtk_entry_completion_set_text_column(url_bar_completion, 0);
+        gtk_entry_completion_set_minimum_key_length(url_bar_completion, 1);
+        gtk_entry_completion_set_popup_completion(url_bar_completion, TRUE);
+        gtk_entry_completion_set_popup_set_width(url_bar_completion, TRUE);
+        gtk_entry_completion_set_popup_single_match(url_bar_completion, TRUE);
+
+
 #define NS_SIGNAL_CONNECT(obj, sig, callback, ptr) \
 	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))
 
 	NS_SIGNAL_CONNECT(window, "destroy", nsgtk_window_destroy_event, g);
-
+        
+	g_signal_connect(G_OBJECT(url_bar), "changed",
+			G_CALLBACK(nsgtk_window_url_changed), g);
+//	g_signal_connect(G_OBJECT(url_bar_completion), "match-selected",
+//			G_CALLBACK(nsgtk_window_completion_selected), g);
 	g_signal_connect(G_OBJECT(drawing_area), "expose_event",
 			G_CALLBACK(nsgtk_window_expose_event), g);
 	g_signal_connect(G_OBJECT(drawing_area), "configure_event",
@@ -574,6 +597,15 @@ gboolean nsgtk_window_url_keypress_event(GtkWidget *widget,
 				referer, true);
 
 	return TRUE;
+}
+
+gboolean nsgtk_window_url_changed(GtkWidget *widget, GdkEventKey *event,
+                                            gpointer data)
+{
+  	struct gui_window *g = data;
+	const char *prefix;
+	prefix = gtk_entry_get_text(GTK_ENTRY(widget));
+	nsgtk_completion_update(prefix);
 }
 
 gboolean nsgtk_window_keypress_event(GtkWidget *widget,

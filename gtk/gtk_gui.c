@@ -28,6 +28,7 @@
 #include "netsurf/desktop/options.h"
 #include "netsurf/gtk/gtk_gui.h"
 #include "netsurf/gtk/gtk_options.h"
+#include "netsurf/gtk/gtk_completion.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/form.h"
 #include "netsurf/render/html.h"
@@ -110,6 +111,8 @@ void gui_init(int argc, char** argv)
 	gladeWindows = glade_xml_new(glade_file_location, NULL, NULL);
 
 	glade_xml_signal_autoconnect(gladeWindows);
+
+	nsgtk_completion_init();	
 
 	find_resource(buf, "Choices", "Choices");
 	LOG(("Using '%s' as Choices file", buf));
