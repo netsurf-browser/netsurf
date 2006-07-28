@@ -9,6 +9,7 @@
 #include "netsurf/gtk/gtk_completion.h"
 #include "netsurf/content/urldb.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/desktop/options.h"
 
 GtkListStore *nsgtk_completion_list;
 
@@ -57,6 +58,7 @@ bool nsgtk_completion_udb_callback(const char *url, const struct url_data *data)
 void nsgtk_completion_update(const char *prefix)
 {
 	nsgtk_completion_empty();
-	urldb_iterate_partial(prefix, nsgtk_completion_udb_callback);
+	if (option_url_suggestion == true)
+		urldb_iterate_partial(prefix, nsgtk_completion_udb_callback);
 }
 

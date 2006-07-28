@@ -111,6 +111,7 @@ void nsgtk_options_load(void) {
 	SET_ENTRY(entryHomePageURL, option_homepage_url);
 	SET_CHECK(checkHideAdverts, option_block_ads);
 	/* TODO: rest of "General" tab here */
+	SET_CHECK(checkDisplayRecentURLs, option_url_suggestion);
 	SET_CHECK(checkSendReferer, option_send_referer);
 
 	SET_ENTRY(entryProxyHost, option_http_proxy_host);
@@ -141,6 +142,7 @@ void nsgtk_options_load(void) {
 
 void nsgtk_options_save(void) {
 	GET_ENTRY(entryHomePageURL, option_homepage_url);
+	GET_CHECK(checkDisplayRecentURLs, option_url_suggestion);
 
 	GET_CHECK(checkUseCairo, option_render_cairo);
 	GET_CHECK(checkResampleImages, option_render_resample);

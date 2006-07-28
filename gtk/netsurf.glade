@@ -532,7 +532,6 @@
 			  <child>
 			    <widget class="GtkCheckButton" id="checkDisplayRecentURLs">
 			      <property name="visible">True</property>
-			      <property name="sensitive">False</property>
 			      <property name="tooltip" translatable="yes">Show a drop-down list of recent addresses when typing into the address bar.</property>
 			      <property name="can_focus">True</property>
 			      <property name="label" translatable="yes">Display recently visited URLs as you type</property>
