@@ -93,8 +93,7 @@ void nsgtk_window_choices_button_clicked(GtkWidget *widget, gpointer data);
 void nsgtk_window_destroy_event(GtkWidget *widget, gpointer data);
 gboolean nsgtk_window_expose_event(GtkWidget *widget,
 					GdkEventExpose *event, gpointer data);
-gboolean nsgtk_window_url_keypress_event(GtkWidget *widget,
-					GdkEventKey *event, gpointer data);
+gboolean nsgtk_window_url_activate_event(GtkWidget *widget, gpointer data);
 gboolean nsgtk_window_url_changed(GtkWidget *widget, GdkEventKey *event,
  					gpointer data);
 gboolean nsgtk_window_configure_event(GtkWidget *widget,
@@ -240,8 +239,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	url_bar = gtk_entry_new();
 	gtk_container_add(GTK_CONTAINER(url_item), url_bar);
 	gtk_widget_show(url_bar);
-	g_signal_connect(G_OBJECT(url_bar), "key_press_event",
-			G_CALLBACK(nsgtk_window_url_keypress_event), g);
+	g_signal_connect(G_OBJECT(url_bar), "activate",
+			G_CALLBACK(nsgtk_window_url_activate_event), g);
 
 	scrolled = gtk_scrolled_window_new(0, 0);
 	gtk_box_pack_start(GTK_BOX(vbox), scrolled, TRUE, TRUE, 0);
@@ -340,7 +339,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			G_CALLBACK(nsgtk_window_button_press_event), g);
 	g_signal_connect(G_OBJECT(scrolled), "size_allocate",
 			G_CALLBACK(nsgtk_window_size_allocate_event), g);
-	g_signal_connect(G_OBJECT(drawing_area), "key_press_event",
+	g_signal_connect(G_OBJECT(drawing_area), "activate",
 		G_CALLBACK(nsgtk_window_keypress_event), g);
 
 	g_signal_connect(G_OBJECT(zoomin_button), "clicked",
@@ -581,14 +580,10 @@ gboolean nsgtk_history_button_press_event(GtkWidget *widget,
 	return TRUE;
 }
 
-gboolean nsgtk_window_url_keypress_event(GtkWidget *widget,
-		GdkEventKey *event, gpointer data)
+gboolean nsgtk_window_url_activate_event(GtkWidget *widget, gpointer data)
 {
 	struct gui_window *g = data;
 	char *referer = 0;
-
-	if (event->keyval != GDK_Return)
-		return FALSE;
 
 	if (g->bw->current_content && g->bw->current_content->url)
 		referer = g->bw->current_content->url;
