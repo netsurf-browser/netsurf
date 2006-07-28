@@ -102,14 +102,12 @@ void gui_init(int argc, char** argv)
 
 	gtk_init(&argc, &argv);
 	
-	/* TODO: make this search for the file using the resource finding
-	 * function above
-	 */
-	glade_file_location = strdup("./gtk/netsurf.glade");
+	find_resource(buf, "netsurf.glade", "./gtk/netsurf.glade");
+	LOG(("Using '%s' as Glade template file", buf));
+	glade_file_location = strdup(buf);
 	
 	glade_init();
 	gladeWindows = glade_xml_new(glade_file_location, NULL, NULL);
-
 	glade_xml_signal_autoconnect(gladeWindows);
 
 	nsgtk_completion_init();	
