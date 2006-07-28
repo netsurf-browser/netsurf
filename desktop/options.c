@@ -91,6 +91,8 @@ char *option_cookie_file = 0;
 char *option_cookie_jar = 0;
 /** Home page location */
 char *option_homepage_url = 0;
+/** URL completion in url bar */
+bool option_url_suggestion = true;
 /* Fetcher configuration */
 /** Maximum simultaneous active fetchers */
 int option_max_fetchers = 24;
@@ -139,6 +141,7 @@ struct {
 	{ "cookie_file",     OPTION_STRING,  &option_cookie_file },
 	{ "cookie_jar",      OPTION_STRING,  &option_cookie_jar },
         { "homepage_url",    OPTION_STRING,  &option_homepage_url },
+	{ "url_suggestion",  OPTION_BOOL,    &option_url_suggestion },
 	/* Fetcher options */
 	{ "max_fetchers",    OPTION_INTEGER, &option_max_fetchers },
 	{ "max_fetchers_per_host",

@@ -47,7 +47,6 @@ extern bool option_buffer_everything;
 extern bool option_open_browser_at_startup;
 extern bool option_no_plugins;
 extern bool option_block_popups;
-extern bool option_url_suggestion;
 extern int option_image_memory_direct;	/* -1 means auto-detect */
 extern int option_image_memory_compressed;	/* -1 means auto-detect */
 extern bool option_strip_extensions;
@@ -94,7 +93,6 @@ bool option_buffer_everything = false; \
 bool option_open_browser_at_startup = false; \
 bool option_no_plugins = false; \
 bool option_block_popups = false; \
-bool option_url_suggestion = true; \
 int option_image_memory_direct = -1; \
 int option_image_memory_compressed = -1; \
 bool option_strip_extensions = true; \
@@ -141,7 +139,6 @@ bool option_thumbnail_iconise = true;
 { "open_browser_at_startup",OPTION_BOOL,    &option_open_browser_at_startup }, \
 { "no_plugins",             OPTION_BOOL,    &option_no_plugins }, \
 { "block_popups",           OPTION_BOOL,    &option_block_popups }, \
-{ "url_suggestion",         OPTION_BOOL,    &option_url_suggestion }, \
 { "image_memory_direct",    OPTION_INTEGER, &option_image_memory_direct }, \
 { "image_memory_compressed",OPTION_INTEGER, &option_image_memory_compressed }, \
 { "strip_extensions",       OPTION_BOOL,    &option_strip_extensions }, \
