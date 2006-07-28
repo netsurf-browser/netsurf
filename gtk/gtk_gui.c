@@ -29,6 +29,7 @@
 #include "netsurf/gtk/gtk_gui.h"
 #include "netsurf/gtk/gtk_options.h"
 #include "netsurf/gtk/gtk_completion.h"
+#include "netsurf/gtk/options.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/form.h"
 #include "netsurf/render/html.h"
@@ -132,6 +133,12 @@ void gui_init(int argc, char** argv)
 	if (!option_cookie_file || !option_cookie_jar)
 		die("Failed initialising cookie options");
 
+	if (!option_url_file) {
+		find_resource(buf, "URLs", "URLs");
+		LOG(("Using '%s' as URL file", buf));
+		option_url_file = strdup(buf);
+	}
+
 	find_resource(buf, "messages", "messages");
 	LOG(("Using '%s' as Messages file", buf));
 	messages_load(buf);
@@ -145,7 +152,7 @@ void gui_init(int argc, char** argv)
 	adblock_stylesheet_url = path_to_url(buf);
 	LOG(("Using '%s' as AdBlock CSS URL", adblock_stylesheet_url));
 
-
+	urldb_load(option_url_file);
 	urldb_load_cookies(option_cookie_file);
 }
 
@@ -225,6 +232,7 @@ void gui_multitask(void)
 void gui_quit(void)
 {
 	urldb_save_cookies(option_cookie_jar);
+	urldb_save(option_url_file);
 	free(default_stylesheet_url);
 	free(adblock_stylesheet_url);
 	free(option_cookie_file);
