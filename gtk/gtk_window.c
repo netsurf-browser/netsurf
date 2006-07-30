@@ -339,7 +339,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			G_CALLBACK(nsgtk_window_button_press_event), g);
 	g_signal_connect(G_OBJECT(scrolled), "size_allocate",
 			G_CALLBACK(nsgtk_window_size_allocate_event), g);
-	g_signal_connect(G_OBJECT(drawing_area), "activate",
+	g_signal_connect(G_OBJECT(drawing_area), "key_press_event",
 		G_CALLBACK(nsgtk_window_keypress_event), g);
 
 	g_signal_connect(G_OBJECT(zoomin_button), "clicked",
