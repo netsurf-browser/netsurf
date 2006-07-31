@@ -316,9 +316,10 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
         gtk_entry_completion_set_text_column(url_bar_completion, 0);
         gtk_entry_completion_set_minimum_key_length(url_bar_completion, 1);
         gtk_entry_completion_set_popup_completion(url_bar_completion, TRUE);
-        gtk_entry_completion_set_popup_set_width(url_bar_completion, TRUE);
-        gtk_entry_completion_set_popup_single_match(url_bar_completion, TRUE);
-
+        g_object_set(G_OBJECT(url_bar_completion),
+			"popup-set-width", TRUE,
+			"popup-single-match", TRUE,
+			NULL);
 
 #define NS_SIGNAL_CONNECT(obj, sig, callback, ptr) \
 	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))
