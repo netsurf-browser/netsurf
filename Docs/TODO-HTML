@@ -15,20 +15,16 @@ Text Formatting:
 Lists:
 	<LI>
 	<OL>,<UL>
-	
-Tables: 
-	Borders, 
 
 Objects:
 	Alt text
 
 Forms:
-       "disabled" attribute
-       A few textarea rendering issues
+	"disabled" attribute
+	A few textarea rendering issues
 
 Frames:
-	Actually support them. NetSurf passes the test suite's 
-	single test for non-frames-supporting browsers.
+	Currently messy. Change to use nested windows.
 	
 General:
 	height="some%" - 13.7.1
