@@ -33,7 +33,7 @@
 #include "netsurf/utils/utils.h"
 
 /** Colour in the overlay sprite that allows the bitmap to show through */
-#define OVERLAY_KEY 0xff0000U
+#define OVERLAY_INDEX 0xfe
 
 #define MAINTENANCE_THRESHOLD 32
 
@@ -263,22 +263,25 @@ void bitmap_overlay_sprite(struct bitmap *bitmap, const osspriteop_header *s)
 				error->errnum, error->errmess));
 		return;
 	}
-
 	sp_offset = ((s->width + 1) * 4) - w;
 
-	if (w > bitmap->width)  w = bitmap->width;
-	if (h > bitmap->height) h = bitmap->height;
+	if (w > bitmap->width)
+		w = bitmap->width;
+	if (h > bitmap->height)
+		h = bitmap->height;
 
-	dp_offset = bitmap_get_rowstride(bitmap)/4;
+	dp_offset = bitmap_get_rowstride(bitmap) / 4;
 
 	dp = (unsigned*)bitmap_get_buffer(bitmap);
+	if (!dp)
+		return;
 	sp = (byte*)s + s->image;
 	mp = (byte*)s + s->mask;
 
 	sp += s->left_bit / 8;
 	mp += s->left_bit / 8;
 
-	if (s->image > sizeof(*s))
+	if (s->image > (int)sizeof(*s))
 		palette = (os_colour*)(s + 1);
 	else
 		palette = default_palette8;
@@ -291,14 +294,15 @@ void bitmap_overlay_sprite(struct bitmap *bitmap, const osspriteop_header *s)
 	/* (partially-)transparent pixels in the overlayed sprite retain
 	   their transparency in the output bitmap; opaque sprite pixels
 	   are also propagated to the bitmap, except those which are the
-	   OVERLAY_KEY colour which allow the original bitmap contents to
+	   OVERLAY_INDEX colour which allow the original bitmap contents to
 	   show through */
 
-	for(y = 0; y < h; y++) {
+	for (y = 0; y < h; y++) {
 		unsigned *sdp = dp;
 		for(x = 0; x < w; x++) {
-			os_colour d = ((unsigned)palette[(*sp++) << 1]) >> 8;
-			if (d == OVERLAY_KEY) d = *dp;
+			os_colour d = ((unsigned)palette[(*sp) << 1]) >> 8;
+			if (*sp++ == OVERLAY_INDEX)
+				d = *dp;
 			if (masked) {
 				if (alpha)
 					d |= ((*mp << 24) ^ 0xff000000U);
