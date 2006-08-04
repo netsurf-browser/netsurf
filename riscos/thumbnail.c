@@ -178,9 +178,11 @@ osspriteop_area *thumbnail_convert_8bpp(struct bitmap *bitmap)
 	if (sprite_header->image != sprite_header->mask) {
 		/* build the sprite mask from the alpha channel */
 		unsigned *dp = (unsigned*)bitmap_get_buffer(bitmap);
-		int h = bitmap_get_width(bitmap);
-		int w = bitmap_get_height(bitmap);
-		int dp_offset = bitmap_get_rowstride(bitmap)/4 - w;
+		if (!dp)
+			return sprite_area;
+		int w = bitmap_get_width(bitmap);
+		int h = bitmap_get_height(bitmap);
+		int dp_offset = bitmap_get_rowstride(bitmap) / 4 - w;
 		int mp_offset = ((sprite_header->width + 1) * 4) - w;
 		byte *mp = (byte*)sprite_header + sprite_header->mask;
 		bool alpha = ((unsigned)sprite_header->mode & 0x80000000U) != 0;
