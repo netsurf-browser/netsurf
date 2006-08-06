@@ -69,7 +69,7 @@ OBJECTS_GTK += browser.o history_core.o netsurf.o selection.o textinput.o \
 OBJECTS_GTK += font_pango.o gtk_bitmap.o gtk_gui.o \
         gtk_schedule.o gtk_thumbnail.o gtk_options.o \
 	gtk_plotters.o gtk_treeview.o gtk_window.o \
-	gtk_completion.o					# gtk/
+	gtk_completion.o gtk_login.o				# gtk/
 
 
 OBJDIR_RISCOS = arm-riscos-aof
