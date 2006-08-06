@@ -845,7 +845,7 @@ void gui_poll(bool active)
 {
 	wimp_event_no event;
 	wimp_block block;
-	const wimp_poll_flags mask = wimp_MASK_LOSE | wimp_MASK_GAIN;
+	const wimp_poll_flags mask = wimp_MASK_LOSE | wimp_MASK_GAIN | wimp_SAVE_FP;
 
 	/* Poll wimp. */
 	xhourglass_off();
@@ -968,7 +968,7 @@ void gui_multitask(void)
 		return;
 
 	xhourglass_off();
-	event = wimp_poll(wimp_MASK_LOSE | wimp_MASK_GAIN, &block, 0);
+	event = wimp_poll(wimp_MASK_LOSE | wimp_MASK_GAIN | wimp_SAVE_FP, &block, 0);
 	xhourglass_on();
 	gui_last_poll = clock();
 
