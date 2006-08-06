@@ -222,7 +222,39 @@ void fetchcache_go(struct content *content, char *referer,
 	LOG(("url %s, status %s", content->url,
 			content_status_name[content->status]));
 
-	if (content->status == CONTENT_STATUS_TYPE_UNKNOWN && content->fetch) {
+	/* We may well have been asked to fetch an URL using a protocol
+	 * that we can't support. Check for this here and, if we can't
+	 * perform the fetch, notify the caller and exit */
+	if (!fetch_can_fetch(content->url)) {
+
+		/* The only case where this should fail is if we're a
+		 * brand new content with no active fetch. If we're not,
+		 * another content with the same URL somehow got through
+		 * the fetch_can_fetch check. That should be impossible.
+		 */
+		assert(content->status == CONTENT_STATUS_TYPE_UNKNOWN &&
+				!content->fetch);
+
+		snprintf(error_message, sizeof error_message,
+				messages_get("InvalidURL"),
+				content->url);
+
+		if (content->no_error_pages) {
+			/* Mark as in error so content is destroyed
+			 * on cache clean */
+			content->status = CONTENT_STATUS_ERROR;
+			msg_data.error = error_message;
+			callback(CONTENT_MSG_ERROR,
+					content, p1, p2, msg_data);
+		} else {
+			fetchcache_error_page(content, error_message);
+		}
+
+		return;
+	}
+
+	if (content->status == CONTENT_STATUS_TYPE_UNKNOWN &&
+			content->fetch) {
 		/* fetching, but not yet received any response:
 		 * no action required */
 
@@ -236,7 +268,7 @@ void fetchcache_go(struct content *content, char *referer,
 		content->cache_data->date = 0;
 		headers = malloc(3 * sizeof(char *));
 		if (!headers) {
-			talloc_free(etag);
+			content->status = CONTENT_STATUS_ERROR;
 			msg_data.error = messages_get("NoMemory");
 			callback(CONTENT_MSG_ERROR, content, p1, p2,
 					msg_data);
@@ -246,7 +278,7 @@ void fetchcache_go(struct content *content, char *referer,
 			headers[i] = malloc(15 + strlen(etag) + 1);
 			if (!headers[i]) {
 				free(headers);
-				talloc_free(etag);
+				content->status = CONTENT_STATUS_ERROR;
 				msg_data.error = messages_get("NoMemory");
 				callback(CONTENT_MSG_ERROR, content, p1, p2,
 						msg_data);
@@ -262,6 +294,7 @@ void fetchcache_go(struct content *content, char *referer,
 					free(headers[i]);
 				}
 				free(headers);
+				content->status = CONTENT_STATUS_ERROR;
 				msg_data.error = messages_get("NoMemory");
 				callback(CONTENT_MSG_ERROR, content, p1, p2,
 						msg_data);
@@ -318,7 +351,6 @@ void fetchcache_go(struct content *content, char *referer,
 		/* shouldn't usually occur */
 		msg_data.error = messages_get("MiscError");
 		callback(CONTENT_MSG_ERROR, content, p1, p2, msg_data);
-
 	}
 }
 
