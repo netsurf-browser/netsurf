@@ -486,16 +486,12 @@ void nsgtk_window_reload_button_clicked(GtkWidget *widget, gpointer data)
 void nsgtk_window_home_button_clicked(GtkWidget *widget, gpointer data)
 {
         struct gui_window *g = data;
-        char *referer = 0;
         const char *addr = "http://netsurf.sourceforge.net/";
 
         if (option_homepage_url != NULL)
                 addr = option_homepage_url;
 
-        if (g->bw->current_content && g->bw->current_content->url)
-                referer = g->bw->current_content->url;
-
-        browser_window_go(g->bw, addr, referer, true);
+        browser_window_go(g->bw, addr, 0, true);
 }
 
 gboolean nsgtk_window_expose_event(GtkWidget *widget,
@@ -598,10 +594,11 @@ gboolean nsgtk_window_url_activate_event(GtkWidget *widget, gpointer data)
 gboolean nsgtk_window_url_changed(GtkWidget *widget, GdkEventKey *event,
                                             gpointer data)
 {
-  	struct gui_window *g = data;
 	const char *prefix;
 	prefix = gtk_entry_get_text(GTK_ENTRY(widget));
 	nsgtk_completion_update(prefix);
+
+	return TRUE;
 }
 
 gboolean nsgtk_window_keypress_event(GtkWidget *widget,
