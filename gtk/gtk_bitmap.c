@@ -19,9 +19,18 @@
 #include "netsurf/content/content.h"
 #include "netsurf/gtk/gtk_window.h"
 #include "netsurf/image/bitmap.h"
+#include "netsurf/utils/log.h"
 
 
-struct bitmap;
+struct bitmap {
+  GdkPixbuf *primary;
+  GdkPixbuf *pretile_x;
+  GdkPixbuf *pretile_y;
+  GdkPixbuf *pretile_xy;
+};
+
+#define MIN_PRETILE_WIDTH 256
+#define MIN_PRETILE_HEIGHT 256
 
 
 /**
@@ -35,9 +44,11 @@ struct bitmap;
 
 struct bitmap *bitmap_create(int width, int height, unsigned int state)
 {
-	GdkPixbuf *pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, true, 8,
-			width, height);
-	return (struct bitmap *) pixbuf;
+        struct bitmap *bmp = malloc(sizeof(struct bitmap));
+	bmp->primary = gdk_pixbuf_new(GDK_COLORSPACE_RGB, true, 8,
+                                      width, height);
+        bmp->pretile_x = bmp->pretile_y = bmp->pretile_xy = NULL;
+	return bmp;
 }
 
 
@@ -94,7 +105,7 @@ bool bitmap_get_opaque(struct bitmap *bitmap)
 char *bitmap_get_buffer(struct bitmap *bitmap)
 {
 	assert(bitmap);
-	return (char *)gdk_pixbuf_get_pixels((GdkPixbuf *) bitmap);
+	return (char *)gdk_pixbuf_get_pixels(bitmap->primary);
 }
 
 
@@ -108,9 +119,19 @@ char *bitmap_get_buffer(struct bitmap *bitmap)
 size_t bitmap_get_rowstride(struct bitmap *bitmap)
 {
 	assert(bitmap);
-	return gdk_pixbuf_get_rowstride((GdkPixbuf *) bitmap);
+	return gdk_pixbuf_get_rowstride(bitmap->primary);
 }
 
+
+static void
+gtk_bitmap_free_pretiles(struct bitmap *bitmap)
+{
+#define FREE_TILE(XY) if (bitmap->pretile_##XY) g_object_unref(bitmap->pretile_##XY); bitmap->pretile_##XY = NULL
+        FREE_TILE(x);
+        FREE_TILE(y);
+        FREE_TILE(xy);
+#undef FREE_TILE
+}
 
 /**
  * Free a bitmap.
@@ -121,7 +142,9 @@ size_t bitmap_get_rowstride(struct bitmap *bitmap)
 void bitmap_destroy(struct bitmap *bitmap)
 {
 	assert(bitmap);
-	g_object_unref((GdkPixbuf *) bitmap);
+        gtk_bitmap_free_pretiles(bitmap);
+	g_object_unref(bitmap->primary);
+        free(bitmap);
 }
 
 
@@ -145,6 +168,7 @@ bool bitmap_save(struct bitmap *bitmap, const char *path)
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  */
 void bitmap_modified(struct bitmap *bitmap) {
+        gtk_bitmap_free_pretiles(bitmap);
 }
 
 
@@ -159,3 +183,104 @@ void bitmap_modified(struct bitmap *bitmap) {
 void bitmap_set_suspendable(struct bitmap *bitmap, void *private_word,
 		void (*invalidate)(struct bitmap *bitmap, void *private_word)) {
 }	
+
+static GdkPixbuf *
+gtk_bitmap_generate_pretile(GdkPixbuf *primary, int repeat_x, int repeat_y)
+{
+        int width = gdk_pixbuf_get_width(primary);
+        int height = gdk_pixbuf_get_height(primary);
+        size_t primary_stride = gdk_pixbuf_get_rowstride(primary);
+        GdkPixbuf *result = gdk_pixbuf_new(GDK_COLORSPACE_RGB, true, 8,
+                                           width * repeat_x, height * repeat_y);
+        char *target_buffer = (char *)gdk_pixbuf_get_pixels(result);
+        size_t target_stride = gdk_pixbuf_get_rowstride(result);
+        int x,y,row;
+        /* This algorithm won't work if the strides are not multiples */
+        assert(target_stride == (primary_stride * repeat_x));
+        
+        if (repeat_x == 1 && repeat_y == 1) {
+                g_object_ref(primary);
+                g_object_unref(result);
+                return primary;
+        }
+        
+        for (y = 0; y < repeat_y; ++y) {
+                char *primary_buffer = (char *)gdk_pixbuf_get_pixels(primary);
+                for (row = 0; row < height; ++row) {
+                        for (x = 0; x < repeat_x; ++x) {
+                                memcpy(target_buffer, 
+                                       primary_buffer, primary_stride);
+                                target_buffer += primary_stride;
+                        }
+                        primary_buffer += primary_stride;
+                }
+        }
+        return result;
+}
+
+/**
+ * The primary image associated with this bitmap object.
+ *
+ * \param  bitmap  a bitmap, as returned by bitmap_create()
+ */
+GdkPixbuf *
+gtk_bitmap_get_primary(struct bitmap* bitmap)
+{
+  return bitmap->primary;
+}
+
+/**
+ * The X-pretiled image associated with this bitmap object.
+ *
+ * \param  bitmap  a bitmap, as returned by bitmap_create()
+ */
+GdkPixbuf *
+gtk_bitmap_get_pretile_x(struct bitmap* bitmap)
+{
+        if (!bitmap->pretile_x) {
+                int width = gdk_pixbuf_get_width(bitmap->primary);
+                int height = gdk_pixbuf_get_height(bitmap->primary);
+                int xmult = (MIN_PRETILE_WIDTH + width - 1)/width;
+                LOG(("Pretiling %p for X*%d", bitmap, xmult));
+                bitmap->pretile_x = gtk_bitmap_generate_pretile(bitmap->primary, xmult, 1);
+        }
+        return bitmap->pretile_x;
+                
+}
+
+/**
+ * The Y-pretiled image associated with this bitmap object.
+ *
+ * \param  bitmap  a bitmap, as returned by bitmap_create()
+ */
+GdkPixbuf *
+gtk_bitmap_get_pretile_y(struct bitmap* bitmap)
+{
+        if (!bitmap->pretile_y) {
+                int width = gdk_pixbuf_get_width(bitmap->primary);
+                int height = gdk_pixbuf_get_height(bitmap->primary);
+                int ymult = (MIN_PRETILE_HEIGHT + height - 1)/height;
+                LOG(("Pretiling %p for Y*%d", bitmap, ymult));
+                bitmap->pretile_y = gtk_bitmap_generate_pretile(bitmap->primary, 1, ymult);
+        }
+  return bitmap->pretile_y;
+}
+
+/**
+ * The XY-pretiled image associated with this bitmap object.
+ *
+ * \param  bitmap  a bitmap, as returned by bitmap_create()
+ */
+GdkPixbuf *
+gtk_bitmap_get_pretile_xy(struct bitmap* bitmap)
+{
+        if (!bitmap->pretile_xy) {
+                int width = gdk_pixbuf_get_width(bitmap->primary);
+                int height = gdk_pixbuf_get_height(bitmap->primary);
+                int xmult = (MIN_PRETILE_WIDTH + width - 1)/width;
+                int ymult = (MIN_PRETILE_HEIGHT + height - 1)/height;
+                LOG(("Pretiling %p for X*%d Y*%d", bitmap, xmult, ymult));
+                bitmap->pretile_xy = gtk_bitmap_generate_pretile(bitmap->primary, xmult, ymult);
+        }
+  return bitmap->pretile_xy;
+}

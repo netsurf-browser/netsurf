@@ -26,6 +26,7 @@
 #include "netsurf/utils/log.h"
 #include "netsurf/desktop/options.h"
 #include "netsurf/gtk/options.h"
+#include "netsurf/gtk/gtk_bitmap.h"
 
 static bool nsgtk_plot_clg(colour c);
 static bool nsgtk_plot_rectangle(int x0, int y0, int width, int height,
@@ -256,13 +257,12 @@ bool nsgtk_plot_arc(int x, int y, int radius, int angle1, int angle2, colour c)
 	return true;
 }
 
-bool nsgtk_plot_bitmap(int x, int y, int width, int height,
-		struct bitmap *bitmap, colour bg)
+static bool nsgtk_plot_pixbuf(int x, int y, int width, int height,
+                              GdkPixbuf *pixbuf, colour bg)
 {
 	/* XXX: This currently ignores the background colour supplied.
 	 * Does this matter?
 	 */
-	GdkPixbuf *pixbuf = (GdkPixbuf *) bitmap;
 
 	if (width == 0 || height == 0)
 		return true;
@@ -298,18 +298,39 @@ bool nsgtk_plot_bitmap(int x, int y, int width, int height,
 	return true;
 }
 
+bool nsgtk_plot_bitmap(int x, int y, int width, int height,
+		struct bitmap *bitmap, colour bg)
+{
+	GdkPixbuf *pixbuf = gtk_bitmap_get_primary(bitmap);
+	nsgtk_plot_pixbuf(x, y, width, height, pixbuf, bg);  
+}
 
 bool nsgtk_plot_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
 		bool repeat_x, bool repeat_y)
 {
 	int doneheight = 0, donewidth = 0;
-	
+        GdkPixbuf *primary;
+	GdkPixbuf *pretiled;
+        
 	if (!(repeat_x || repeat_y)) {
 		/* Not repeating at all, so just pass it on */
 		return nsgtk_plot_bitmap(x,y,width,height,bitmap,bg);
 	}
-
+        
+        if (repeat_x && !repeat_y)
+                pretiled = gtk_bitmap_get_pretile_x(bitmap);
+        if (repeat_x && repeat_y)
+                pretiled = gtk_bitmap_get_pretile_xy(bitmap);
+        if (!repeat_x && repeat_y)
+                pretiled = gtk_bitmap_get_pretile_y(bitmap);
+        primary = gtk_bitmap_get_primary(bitmap);
+        /* use the primary and pretiled widths to scale the w/h provided */
+        width *= gdk_pixbuf_get_width(pretiled);
+        width /= gdk_pixbuf_get_width(primary);
+        height *= gdk_pixbuf_get_height(pretiled);
+        height /= gdk_pixbuf_get_height(primary);
+        
 	if (y > cliprect.y)	
 		doneheight = (cliprect.y - height) + ((y - cliprect.y) % height);
 	else
@@ -321,8 +342,8 @@ bool nsgtk_plot_bitmap_tile(int x, int y, int width, int height,
 		else
 			donewidth = x;
 		while (donewidth < (cliprect.x + cliprect.width)) {
-			nsgtk_plot_bitmap(donewidth, doneheight,
-					width, height, bitmap, bg);
+			nsgtk_plot_pixbuf(donewidth, doneheight,
+                                          width, height, pretiled, bg);
 			donewidth += width;
 			if (!repeat_x) break;
 		}

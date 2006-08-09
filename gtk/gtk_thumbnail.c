@@ -24,6 +24,7 @@
 #include "netsurf/utils/log.h"
 #include "netsurf/gtk/gtk_window.h"
 #include "netsurf/gtk/gtk_plotters.h"
+#include "netsurf/gtk/gtk_bitmap.h"
 
 /**
  * Create a thumbnail of a page.
@@ -35,7 +36,7 @@
 bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 		const char *url)
 {
-	GdkPixbuf *pixbuf = (GdkPixbuf *) bitmap;
+        GdkPixbuf *pixbuf = gtk_bitmap_get_primary(bitmap);
 	gint width = gdk_pixbuf_get_width(pixbuf);
 	gint height = gdk_pixbuf_get_height(pixbuf);
 	gint depth = (gdk_screen_get_system_visual(gdk_screen_get_default()))->depth;
