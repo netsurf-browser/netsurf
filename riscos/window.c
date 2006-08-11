@@ -2093,7 +2093,9 @@ bool ro_gui_window_keypress(wimp_key *key)
 		case IS_WIMP_KEY + wimp_KEY_DOWN:
 		case IS_WIMP_KEY + wimp_KEY_PAGE_UP:
 		case IS_WIMP_KEY + wimp_KEY_PAGE_DOWN:
+		case wimp_KEY_HOME:
 		case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_UP:
+		case IS_WIMP_KEY + wimp_KEY_END:
 		case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_DOWN:
 			if (toolbar)
 				return ro_gui_url_complete_keypress(g, c);
@@ -2129,9 +2131,11 @@ bool ro_gui_window_keypress(wimp_key *key)
 		case IS_WIMP_KEY | wimp_KEY_PAGE_DOWN:
 			state.yscroll -= y;
 			break;
+		case wimp_KEY_HOME:
 		case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_UP:
 			state.yscroll = 1000;
 			break;
+		case IS_WIMP_KEY | wimp_KEY_END:
 		case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_DOWN:
 			state.yscroll = -0x10000000;
 			break;
