@@ -122,10 +122,11 @@ struct browser_window *browser_window_create(const char *url, struct browser_win
 		bw->gesturer = NULL;
 	else
 		bw->gesturer = gesturer_clone(clone->gesturer);
-        bw->sel = selection_create(bw);
+	bw->sel = selection_create(bw);
 	bw->throbbing = false;
 	bw->caret_callback = NULL;
 	bw->paste_callback = NULL;
+	bw->move_callback = NULL;
 	bw->frag_id = NULL;
 	bw->drag_type = DRAGGING_NONE;
 	bw->scrolling_box = NULL;
@@ -327,6 +328,7 @@ void browser_window_callback(content_msg msg, struct content *c,
 			bw->loading_content = NULL;
 			bw->caret_callback = NULL;
 			bw->paste_callback = NULL;
+			bw->move_callback = NULL;
 			bw->scrolling_box = NULL;
 			gui_window_new_content(bw->window);
 			if (bw->frag_id)
@@ -392,6 +394,7 @@ void browser_window_callback(content_msg msg, struct content *c,
 				bw->current_content = 0;
 				bw->caret_callback = NULL;
 				bw->paste_callback = NULL;
+				bw->move_callback = NULL;
 				bw->scrolling_box = NULL;
 				selection_init(bw->sel, NULL);
 			}
@@ -422,6 +425,8 @@ void browser_window_callback(content_msg msg, struct content *c,
 				/* box tree may have changed, need to relabel */
 				selection_reinit(bw->sel, c->data.html.layout);
 			}
+			if (bw->move_callback)
+				bw->move_callback(bw, bw->caret_p);
 			browser_window_update(bw, false);
 			break;
 
@@ -442,6 +447,7 @@ void browser_window_callback(content_msg msg, struct content *c,
 				bw->current_content = 0;
 				bw->caret_callback = NULL;
 				bw->paste_callback = NULL;
+				bw->move_callback = NULL;
 				bw->scrolling_box = NULL;
 				selection_init(bw->sel, NULL);
 			}
@@ -460,6 +466,7 @@ void browser_window_callback(content_msg msg, struct content *c,
 				bw->current_content = 0;
 				bw->caret_callback = NULL;
 				bw->paste_callback = NULL;
+				bw->move_callback = NULL;
 				bw->scrolling_box = NULL;
 				selection_init(bw->sel, NULL);
 			}
@@ -1138,8 +1145,9 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 			if (selection_click(bw->sel, mouse, text_box->byte_offset + idx)) {
 				/* key presses must be directed at the main browser
 				 * window, paste text operations ignored */
-				if (bw->caret_callback) bw->caret_callback = NULL;
-				if (bw->paste_callback) bw->paste_callback = NULL;
+				bw->caret_callback = NULL;
+				bw->paste_callback = NULL;
+				bw->move_callback = NULL;
 
 				if (selection_dragging(bw->sel)) {
 					bw->drag_type = DRAGGING_SELECTION;

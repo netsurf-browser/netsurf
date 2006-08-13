@@ -35,6 +35,8 @@ typedef void (*browser_caret_callback)(struct browser_window *bw,
 	wchar_t key, void *p);
 typedef bool (*browser_paste_callback)(struct browser_window *bw,
 	const char *utf8, unsigned utf8_len, bool last, void *p);
+typedef void (*browser_move_callback)(struct browser_window *bw,
+	void *p);
 
 /** Browser window data. */
 struct browser_window {
@@ -56,6 +58,8 @@ struct browser_window {
 	browser_caret_callback caret_callback;
 	/** Handler for pasting text, or 0. */
 	browser_paste_callback paste_callback;
+	/** Handler for repositioning caret, or 0. */
+	browser_move_callback move_callback;
 
 	/** User parameter for caret_callback and paste_callback */
 	void *caret_p;

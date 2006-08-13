@@ -45,11 +45,14 @@ static void browser_window_place_caret(struct browser_window *bw,
 		int x, int y, int height,
 		browser_caret_callback caret_cb,
 		browser_paste_callback paste_cb,
+		browser_move_callback move_cb,
 		void *p);
 static bool browser_window_textarea_paste_text(struct browser_window *bw,
 		const char *utf8, unsigned utf8_len, bool last, void *handle);
 static bool browser_window_input_paste_text(struct browser_window *bw,
 		const char *utf8, unsigned utf8_len, bool last, void *handle);
+static void browser_window_textarea_move_caret(struct browser_window *bw, void *p);
+static void browser_window_input_move_caret(struct browser_window *bw, void *p);
 static void input_update_display(struct browser_window *bw, struct box *input,
 		unsigned form_offset, unsigned box_offset, bool to_textarea,
 		bool redraw);
@@ -268,6 +271,7 @@ void browser_window_textarea_click(struct browser_window *bw,
 			text_box->height,
 			browser_window_textarea_callback,
 			browser_window_textarea_paste_text,
+			browser_window_textarea_move_caret,
 			textarea);
 
 	if (new_scroll_y != textarea->scroll_y) {
@@ -687,6 +691,7 @@ void browser_window_textarea_callback(struct browser_window *bw,
 			text_box->height,
 			browser_window_textarea_callback,
 			browser_window_textarea_paste_text,
+			browser_window_textarea_move_caret,
 			textarea);
 
 	if (new_scroll_y != textarea->scroll_y || reflow) {
@@ -769,6 +774,7 @@ void browser_window_input_click(struct browser_window* bw,
 			text_box->height,
 			browser_window_input_callback,
 			browser_window_input_paste_text,
+			browser_window_input_move_caret,
 			input);
 
 	if (dx)
@@ -1072,17 +1078,20 @@ void browser_window_input_callback(struct browser_window *bw,
  * \param height    Height of caret
  * \param caret_cb  Callback function for keypresses
  * \param paste_cb  Callback function for pasting text
+ * \param move_cb   Callback function for caret movement
  * \param p  Callback private data pointer, passed to callback function
  */
 void browser_window_place_caret(struct browser_window *bw,
 		int x, int y, int height,
 		browser_caret_callback caret_cb,
 		browser_paste_callback paste_cb,
+		browser_move_callback move_cb,
 		void *p)
 {
 	gui_window_place_caret(bw->window, x, y, height);
 	bw->caret_callback = caret_cb;
 	bw->paste_callback = paste_cb;
+	bw->move_callback = move_cb;
 	bw->caret_p = p;
 }
 
@@ -1239,6 +1248,7 @@ bool browser_window_textarea_paste_text(struct browser_window *bw,
 				text_box->height,
 				browser_window_textarea_callback,
 				browser_window_textarea_paste_text,
+				browser_window_textarea_move_caret,
 				textarea);
 
 		textarea->gadget->caret_pixel_offset = pixel_offset;
@@ -1356,6 +1366,75 @@ bool browser_window_input_paste_text(struct browser_window *bw,
 
 
 /**
+ * Move caret to new position after reformatting
+ *
+ * \param  bw   browser window
+ * \param  p    pointer textarea box
+ * \return none
+ */
+
+void browser_window_textarea_move_caret(struct browser_window *bw, void *p)
+{
+	struct box *textarea = p;
+	struct box *inline_container = textarea->gadget->caret_inline_container;
+	struct box *text_box = textarea->gadget->caret_text_box;
+	size_t char_offset = textarea->gadget->caret_box_offset;
+	int pixel_offset;
+	int box_x, box_y;
+
+	box_coords(textarea, &box_x, &box_y);
+	box_x -= textarea->scroll_x;
+	box_y -= textarea->scroll_y;
+
+	nsfont_width(text_box->style, text_box->text,
+			char_offset, &pixel_offset);
+
+	browser_window_place_caret(bw,
+			box_x + inline_container->x + text_box->x +
+			pixel_offset,
+			box_y + inline_container->y + text_box->y,
+			text_box->height,
+			browser_window_textarea_callback,
+			browser_window_textarea_paste_text,
+			browser_window_textarea_move_caret,
+			textarea);
+}
+
+
+/**
+ * Move caret to new position after reformatting
+ *
+ * \param  bw   browser window
+ * \param  p    pointer to text input box
+ * \return none
+ */
+
+void browser_window_input_move_caret(struct browser_window *bw, void *p)
+{
+	struct box *input = (struct box *)p;
+	struct box *text_box = input->children->children;
+	unsigned int box_offset = input->gadget->caret_box_offset;
+	int pixel_offset;
+	int box_x, box_y;
+
+	box_coords(input, &box_x, &box_y);
+
+	nsfont_width(text_box->style, text_box->text, box_offset,
+			&pixel_offset);
+
+	browser_window_place_caret(bw,
+			box_x + input->children->x +
+					text_box->x + pixel_offset,
+			box_y + input->children->y + text_box->y,
+			text_box->height,
+			browser_window_input_callback,
+			browser_window_input_paste_text,
+			browser_window_input_move_caret,
+			input);
+}
+
+
+/**
  * Update display to reflect modified input field
  *
  * \param  bw           browser window
@@ -1413,6 +1492,8 @@ void input_update_display(struct browser_window *bw, struct box *input,
 					: browser_window_input_callback,
 			to_textarea ? browser_window_textarea_paste_text
 					: browser_window_input_paste_text,
+			to_textarea ? browser_window_textarea_move_caret
+					: browser_window_input_move_caret,
 			input);
 
 	if (dx || redraw)
