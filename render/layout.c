@@ -62,6 +62,7 @@ static void layout_minmax_inline_container(struct box *inline_container);
 static int line_height(struct css_style *style);
 static bool layout_line(struct box *first, int width, int *y,
 		int cx, int cy, struct box *cont, bool indent,
+		bool has_text_children,
 		struct content *content, struct box **next_box);
 static struct box *layout_minmax_line(struct box *first, int *min, int *max);
 static int layout_text_indent(struct css_style *style, int width);
@@ -805,6 +806,7 @@ bool layout_inline_container(struct box *inline_container, int width,
 		struct box *cont, int cx, int cy, struct content *content)
 {
 	bool first_line = true;
+	bool has_text_children;
 	struct box *c, *next;
 	int y = 0;
 
@@ -813,10 +815,15 @@ bool layout_inline_container(struct box *inline_container, int width,
 	LOG(("inline_container %p, width %i, cont %p, cx %i, cy %i",
 			inline_container, width, cont, cx, cy));
 
+	has_text_children = false;
+	for (c = inline_container->children; c; c = c->next)
+		if (!c->object && c->text && c->length)
+			has_text_children = true;
+	
 	for (c = inline_container->children; c; ) {
 		LOG(("c %p", c));
 		if (!layout_line(c, width, &y, cx, cy + y, cont, first_line,
-				content, &next))
+				has_text_children, content, &next))
 			return false;
 		c = next;
 		first_line = false;
@@ -910,6 +917,7 @@ int line_height(struct css_style *style)
  * \param  cy	   coordinate of top of line relative to cont
  * \param  cont	   ancestor box which defines horizontal space, for floats
  * \param  indent  apply any first-line indent
+ * \param  has_text_children  at least one TEXT in the inline_container
  * \param  next_box  updated to first box for next line, or 0 at end
  * \param  content  memory pool for any new boxes
  * \return  true on success, false on memory exhaustion
@@ -917,6 +925,7 @@ int line_height(struct css_style *style)
 
 bool layout_line(struct box *first, int width, int *y,
 		int cx, int cy, struct box *cont, bool indent,
+		bool has_text_children,
 		struct content *content, struct box **next_box)
 {
 	int height, used_height;
@@ -952,7 +961,12 @@ bool layout_line(struct box *first, int width, int *y,
 		x1 = x0;
 
 	/* get minimum line height from containing block */
-	used_height = height = line_height(first->parent->parent->style);
+	if (has_text_children)
+		used_height = height = line_height(first->parent->parent->style);
+	else
+		/* inline containers with no text are usually for layout and
+		 * look better with no minimum line-height */
+		used_height = height = 0;
 
 	/* pass 1: find height of line assuming sides at top of line: loop
 	 * body executed at least once
