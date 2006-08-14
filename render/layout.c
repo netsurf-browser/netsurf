@@ -817,7 +817,7 @@ bool layout_inline_container(struct box *inline_container, int width,
 
 	has_text_children = false;
 	for (c = inline_container->children; c; c = c->next)
-		if (!c->object && c->text && c->length)
+		if ((!c->object && c->text && c->length) || c->type == BOX_BR)
 			has_text_children = true;
 	
 	for (c = inline_container->children; c; ) {
