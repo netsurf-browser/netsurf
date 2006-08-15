@@ -625,7 +625,7 @@ int parse_length(struct css_length * const length,
 	if ((v->type != CSS_NODE_DIMENSION) && (v->type != CSS_NODE_NUMBER))
 		return 1;
 	num_length = strspn(v->data, "0123456789+-.");
-	if (v->type == CSS_NODE_DIMENSION)
+	if (v->type == CSS_NODE_DIMENSION) {
 		u = css_unit_parse(v->data + num_length, v->data_length - num_length);
 		if (u == CSS_UNIT_UNKNOWN) {
 			return 1;
