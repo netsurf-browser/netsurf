@@ -622,12 +622,17 @@ int parse_length(struct css_length * const length,
 		length->value = 0;
 		return 0;
 	}
-	if (v->type != CSS_NODE_DIMENSION)
+	if ((v->type != CSS_NODE_DIMENSION) && (v->type != CSS_NODE_NUMBER))
 		return 1;
 	num_length = strspn(v->data, "0123456789+-.");
-	u = css_unit_parse(v->data + num_length, v->data_length - num_length);
-	if (u == CSS_UNIT_UNKNOWN)
-		return 1;
+	if (v->type == CSS_NODE_DIMENSION)
+		u = css_unit_parse(v->data + num_length, v->data_length - num_length);
+		if (u == CSS_UNIT_UNKNOWN) {
+			return 1;
+		}
+	} else {
+	  	u = CSS_UNIT_PX;
+	}
 	value = atof(v->data);
 	if (non_negative && value < 0)
 		return 1;
