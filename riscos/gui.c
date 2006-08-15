@@ -779,6 +779,7 @@ void ro_gui_signal(int sig)
 				box_dump(c->data.html.layout, 0);
 			}
 		options_dump();
+		rufl_dump_state();
 		xhourglass_colours(old_sand, old_glass, 0, 0);
 		xhourglass_off();
 	}
