@@ -30,6 +30,7 @@
 #include "netsurf/gtk/gtk_options.h"
 #include "netsurf/gtk/gtk_completion.h"
 #include "netsurf/gtk/options.h"
+#include "netsurf/gtk/gtk_throbber.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/form.h"
 #include "netsurf/render/html.h"
@@ -112,6 +113,11 @@ void gui_init(int argc, char** argv)
 	glade_xml_signal_autoconnect(gladeWindows);
 
 	nsgtk_completion_init();	
+
+	nsgtk_throbber_initialise("./gtk/throbber.gif");
+
+	gladeWindows = glade_xml_new("./gtk/netsurf.glade", NULL, NULL);
+	wndChoices = glade_xml_get_widget(gladeWindows, "wndChoices");
 
 	find_resource(buf, "Choices", "Choices");
 	LOG(("Using '%s' as Choices file", buf));
