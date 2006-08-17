@@ -254,7 +254,25 @@ PangoFontDescription *nsfont_style_to_description(
 
 	assert(style->font_size.size == CSS_FONT_SIZE_LENGTH);
 	
-	desc = pango_font_description_new();
+	switch (style->font_family) {
+	case CSS_FONT_FAMILY_SERIF:
+		desc = pango_font_description_from_string(option_font_serif);
+		break;
+	case CSS_FONT_FAMILY_MONOSPACE:
+		desc = pango_font_description_from_string(option_font_mono);
+		break;
+	case CSS_FONT_FAMILY_CURSIVE:
+		desc = pango_font_description_from_string(option_font_cursive);
+		break;
+	case CSS_FONT_FAMILY_FANTASY:
+		desc = pango_font_description_from_string(option_font_fantasy);
+		break;
+	case CSS_FONT_FAMILY_SANS_SERIF:
+	default:
+		desc = pango_font_description_from_string(option_font_sans);
+		break;
+	}
+	
 	
 	if (style->font_size.value.length.unit == CSS_UNIT_PX)
 		size = style->font_size.value.length.value;
@@ -302,25 +320,6 @@ PangoFontDescription *nsfont_style_to_description(
 		pango_font_description_set_absolute_size(desc, size);
 	else
 		pango_font_description_set_size(desc, size);
-	
-	switch (style->font_family) {
-	case CSS_FONT_FAMILY_SERIF:
-		pango_font_description_set_family_static(desc, "Serif");
-		break;
-	case CSS_FONT_FAMILY_MONOSPACE:
-		pango_font_description_set_family_static(desc, "Monospace");
-		break;
-	case CSS_FONT_FAMILY_CURSIVE:
-		pango_font_description_set_family_static(desc, "Cursive");
-		break;
-	case CSS_FONT_FAMILY_FANTASY:
-		pango_font_description_set_family_static(desc, "Fantasy");
-		break;
-	case CSS_FONT_FAMILY_SANS_SERIF:
-	default:
-		pango_font_description_set_family_static(desc, "Sans");
-		break;
-	}
 	
 	switch (style->font_variant) {
 	case CSS_FONT_VARIANT_SMALL_CAPS:
