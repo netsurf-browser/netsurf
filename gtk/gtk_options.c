@@ -14,6 +14,7 @@
 #include "netsurf/desktop/options.h"
 #include "netsurf/gtk/options.h"
 #include "netsurf/gtk/gtk_gui.h"
+#include "netsurf/gtk/gtk_window.h"
 #include "netsurf/gtk/gtk_options.h"
 
 GtkWindow *wndChoices;
@@ -156,5 +157,6 @@ void nsgtk_options_save(void) {
 	/* TODO: save the other options */
 
 	options_write(options_file_location);
+	nsgtk_reflow_all_windows();
 }
 

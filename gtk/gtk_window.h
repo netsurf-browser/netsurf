@@ -6,7 +6,7 @@
  */
 
 #include <gtk/gtk.h>
-
+#include "netsurf/desktop/plotters.h"
 
 extern GtkWidget *current_widget;
 extern GdkDrawable *current_drawable;
@@ -18,3 +18,4 @@ extern cairo_t *current_cr;
 void nsgtk_plot_set_scale(float s);
 float nsgtk_plot_get_scale(void);
 void nsgtk_set_colour(colour c);
+void nsgtk_reflow_all_windows(void);

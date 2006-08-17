@@ -65,6 +65,8 @@ struct gui_window {
 	struct gtk_history_window *history_window;
 
 	int			last_x, last_y;
+	
+	struct gui_window	*next, *prev;
 };
 
 struct gtk_history_window {
@@ -87,6 +89,7 @@ struct menu_events {
 };
 
 static int open_windows = 0;		/**< current number of open browsers */
+static struct gui_window *window_list = 0;	/**< first entry in win list*/
 
 static wchar_t gdkkey_to_nskey(GdkEventKey *);
 static void nsgtk_window_destroy_event(GtkWidget *, gpointer);
@@ -184,6 +187,16 @@ static struct menu_events menu_events[] = {
 	{ NULL, NULL }
 };
 
+void nsgtk_reflow_all_windows(void)
+{
+	struct gui_window *g = window_list;
+	
+	while (g != NULL) {
+		nsgtk_perform_deferred_resize(g);
+		g = g->next;
+	}
+}
+
 void nsgtk_attach_menu_handlers(GladeXML *xml, gpointer g)
 {
 	struct menu_events *event = menu_events;
@@ -240,10 +253,7 @@ void nsgtk_window_destroy_event(GtkWidget *widget, gpointer data)
 {
 	struct gui_window *g = data;
 	
-	gtk_widget_destroy(GTK_WIDGET(g->history_window->window));
 	gui_window_destroy(g);
-	if (--open_windows == 0)
-		netsurf_quit = true;
 }
 
 gboolean nsgtk_window_expose_event(GtkWidget *widget,
@@ -663,6 +673,16 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		
 	g->careth = 0;
 
+	/* add the window to the list of open windows. */	
+	g->prev = 0;
+	g->next = window_list;
+	
+	if (window_list)
+		window_list->prev = g;
+	window_list = g;
+	
+	open_windows++;
+
 	/* load the window template from the glade xml file, and extract
 	 * widget references from it for later use.
 	 */
@@ -807,9 +827,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 	/* set up the menu signal handlers */
 	nsgtk_attach_menu_handlers(g->xml, g);
-	
-	/* increase the number of open windows. */
-	open_windows++;
 
 	/* finally, show the window. */
 	gtk_widget_show(GTK_WIDGET(g->window));
@@ -819,7 +836,21 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 void gui_window_destroy(struct gui_window *g)
 {
+	if (g->prev)
+		g->prev->next = g->next;
+	else
+		window_list = g->next;
 
+	if (g->next)
+		g->next->prev = g->prev;
+
+	gtk_widget_destroy(GTK_WIDGET(g->history_window->window));
+	gtk_widget_destroy(GTK_WIDGET(g->window));
+	
+	free(g);
+
+	if (--open_windows == 0)
+		netsurf_quit = true;
 }
 
 void gui_window_set_title(struct gui_window *g, const char *title)
