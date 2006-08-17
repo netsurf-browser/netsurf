@@ -3550,9 +3550,8 @@ NTML authentication</property>
 			  <child>
 			    <widget class="GtkComboBox" id="comboDefault">
 			      <property name="visible">True</property>
-			      <property name="sensitive">False</property>
 			      <property name="items" translatable="yes">Sans-serif
-Sans
+Serif
 Monospace
 Cursive
 Fantasy</property>
