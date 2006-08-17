@@ -103,11 +103,11 @@ void nsgtk_options_init(void) {
 
 #define SET_ENTRY(x, y) gtk_entry_set_text(GTK_ENTRY((x)), (y))
 #define SET_SPIN(x, y) gtk_spin_button_set_value(GTK_SPIN_BUTTON((x)), (y))
-#define SET_CHECK(x, y) gtk_toggle_button_set_active(GTK_CHECK_BUTTON((x)), (y))
+#define SET_CHECK(x, y) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON((x)), (y))
 
 void nsgtk_options_load(void) {
-	char *b[20];
-
+	char b[20];
+	
 	SET_ENTRY(entryHomePageURL, option_homepage_url);
 	SET_CHECK(checkHideAdverts, option_block_ads);
 	/* TODO: rest of "General" tab here */
@@ -138,7 +138,7 @@ void nsgtk_options_load(void) {
 
 #define GET_ENTRY(x, y) if ((y)) free((y)); \
 	(y) = strdup(gtk_entry_get_text(GTK_ENTRY((x))))
-#define GET_CHECK(x, y) (y) = gtk_toggle_button_get_active(GTK_CHECK_BUTTON((x)))
+#define GET_CHECK(x, y) (y) = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON((x)))
 
 void nsgtk_options_save(void) {
 	GET_ENTRY(entryHomePageURL, option_homepage_url);

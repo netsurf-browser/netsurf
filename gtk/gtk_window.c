@@ -522,7 +522,6 @@ MENUHANDLER(quit)
 MENUHANDLER(choices)
 {
 	gtk_widget_show(GTK_WIDGET(wndChoices));
-	gdk_window_raise(GDK_WINDOW(wndChoices));
 	
 	return TRUE;
 }

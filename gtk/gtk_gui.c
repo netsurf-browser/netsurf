@@ -116,9 +116,6 @@ void gui_init(int argc, char** argv)
 
 	nsgtk_throbber_initialise("./gtk/throbber.gif");
 
-	gladeWindows = glade_xml_new("./gtk/netsurf.glade", NULL, NULL);
-	wndChoices = glade_xml_get_widget(gladeWindows, "wndChoices");
-
 	find_resource(buf, "Choices", "Choices");
 	LOG(("Using '%s' as Choices file", buf));
 	options_file_location = strdup(buf);
