@@ -949,7 +949,9 @@ bool ro_gui_wimp_check_window_furniture(wimp_w w, wimp_window_flags mask) {
  * \return pointer to family name
  */
 
-void ro_gui_wimp_desktop_font(char *family, size_t bufsize, int *psize, rufl_style *pstyle) {
+void ro_gui_wimp_desktop_font(char *family, size_t bufsize,
+		int *psize, rufl_style *pstyle)
+{
 	rufl_style style = rufl_WEIGHT_400;
 	bool got_family = false;
 	char *buf = NULL;
@@ -981,7 +983,8 @@ void ro_gui_wimp_desktop_font(char *family, size_t bufsize, int *psize, rufl_sty
 	}
 
 	if (psize) {
-		error = xfont_read_defn(fh, buf, &ptx, &pty, NULL, NULL, NULL, NULL);
+		error = xfont_read_defn(fh, buf,
+				&ptx, &pty, NULL, NULL, NULL, NULL);
 		if (error) {
 			LOG(("xfont_read_defn: 0x%x: %s",
 				error->errnum, error->errmess));
@@ -990,7 +993,7 @@ void ro_gui_wimp_desktop_font(char *family, size_t bufsize, int *psize, rufl_sty
 		*psize = max(ptx, pty);
 	}
 
-	error = xfont_read_identifier(fh, buf, &used);
+	error = xfont_read_identifier(fh, buf, NULL);
 	if (error) {
 		LOG(("xfont_read_identifier: 0x%x: %s",
 			error->errnum, error->errmess));
@@ -1022,7 +1025,7 @@ void ro_gui_wimp_desktop_font(char *family, size_t bufsize, int *psize, rufl_sty
 			p = q;
 			while (*p > ' ' && *p != '\\') {
 				char *q;
-				int m = 0;
+				unsigned int m = 0;
 				if (*p == '.') p++;
 				q = p; while (*q > ' ' && *q != '.' && *q != '\\') q++;
 
@@ -1045,9 +1048,8 @@ void ro_gui_wimp_desktop_font(char *family, size_t bufsize, int *psize, rufl_sty
 			while (*p > ' ' && *p != '\\') p++;
 	}
 
-	free(buf);
-
 	if (got_family) {
+		free(buf);
 		if (pstyle) *pstyle = style;
 		return;
 	}
@@ -1055,7 +1057,12 @@ void ro_gui_wimp_desktop_font(char *family, size_t bufsize, int *psize, rufl_sty
 failsafe:
 	free(buf);
 
-	memcpy(family, "Homerton", 9);
+	if (bufsize >= 9) {
+		memcpy(family, "Homerton", 9);
+	} else {
+		/** \todo what to do here? */
+		assert(0);
+	}
 
 	if (psize) *psize = 12*16;
 	if (pstyle) *pstyle = rufl_WEIGHT_400;
