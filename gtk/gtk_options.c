@@ -139,6 +139,7 @@ void nsgtk_options_load(void) {
 #define GET_ENTRY(x, y) if ((y)) free((y)); \
 	(y) = strdup(gtk_entry_get_text(GTK_ENTRY((x))))
 #define GET_CHECK(x, y) (y) = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON((x)))
+#define GET_SPIN(x, y) (y) = gtk_spin_button_get_value(GTK_SPIN_BUTTON((x)));
 
 void nsgtk_options_save(void) {
 	GET_ENTRY(entryHomePageURL, option_homepage_url);
@@ -146,6 +147,12 @@ void nsgtk_options_save(void) {
 
 	GET_CHECK(checkUseCairo, option_render_cairo);
 	GET_CHECK(checkResampleImages, option_render_resample);
+	
+	GET_SPIN(spinDefaultSize, option_font_size);
+	option_font_size *= 10;
+	GET_SPIN(spinMinimumSize, option_font_min_size);
+	option_font_min_size *= 10;
+		
 	/* TODO: save the other options */
 
 	options_write(options_file_location);

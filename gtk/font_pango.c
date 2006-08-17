@@ -21,6 +21,7 @@
 #include "netsurf/render/font.h"
 #include "netsurf/utils/utils.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/desktop/options.h"
 
 /* Until we can consider the descenders etc, we need to not render using cairo */
 #undef CAIRO_VERSION
@@ -256,9 +257,14 @@ PangoFontDescription *nsfont_style_to_description(
 	desc = pango_font_description_new();
 	
 	if (style->font_size.value.length.unit == CSS_UNIT_PX)
-		size = style->font_size.value.length.value * PANGO_SCALE;
+		size = style->font_size.value.length.value;
 	else
-		size = css_len2pt(&style->font_size.value.length, style) * PANGO_SCALE;
+		size = css_len2pt(&style->font_size.value.length, style);
+	
+	if (size < abs(option_font_min_size / 10))
+		size = option_font_min_size / 10;
+	
+	size *= PANGO_SCALE;
 
 	switch (style->font_style) {
 	case CSS_FONT_STYLE_ITALIC:
