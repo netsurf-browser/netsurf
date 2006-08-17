@@ -106,6 +106,7 @@ void nsgtk_options_init(void) {
 #define SET_SPIN(x, y) gtk_spin_button_set_value(GTK_SPIN_BUTTON((x)), (y))
 #define SET_CHECK(x, y) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON((x)), (y))
 #define SET_COMBO(x, y) gtk_combo_box_set_active(GTK_COMBO_BOX((x)), (y))
+#define SET_FONT(x, y) gtk_font_button_set_font_name(GTK_FONT_BUTTON((x)), (y))
 
 void nsgtk_options_load(void) {
 	char b[20];
@@ -131,6 +132,11 @@ void nsgtk_options_load(void) {
 	SET_CHECK(checkDisableAnimations, !option_animate_images);
 
 	/* TODO: set all font name widgets here */
+	SET_FONT(fontSansSerif, option_font_sans);
+	SET_FONT(fontSerif, option_font_serif);
+	SET_FONT(fontMonospace, option_font_mono);
+	SET_FONT(fontCursive, option_font_cursive);
+	SET_FONT(fontFantasy, option_font_fantasy);
 	SET_COMBO(comboDefault, option_font_default - 1);
 	SET_SPIN(spinDefaultSize, option_font_size / 10);
 	SET_SPIN(spinMinimumSize, option_font_min_size / 10);
@@ -144,6 +150,8 @@ void nsgtk_options_load(void) {
 #define GET_CHECK(x, y) (y) = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON((x)))
 #define GET_SPIN(x, y) (y) = gtk_spin_button_get_value(GTK_SPIN_BUTTON((x)))
 #define GET_COMBO(x, y) (y) = gtk_combo_box_get_active(GTK_COMBO_BOX((x)))
+#define GET_FONT(x, y) if ((y)) free((y)); \
+	(y) = strdup(gtk_font_button_get_font_name(GTK_FONT_BUTTON((x))))
 
 void nsgtk_options_save(void) {
 	GET_ENTRY(entryHomePageURL, option_homepage_url);
@@ -152,6 +160,11 @@ void nsgtk_options_save(void) {
 	GET_CHECK(checkUseCairo, option_render_cairo);
 	GET_CHECK(checkResampleImages, option_render_resample);
 	
+	GET_FONT(fontSansSerif, option_font_sans);
+	GET_FONT(fontSerif, option_font_serif);
+	GET_FONT(fontMonospace, option_font_mono);
+	GET_FONT(fontCursive, option_font_cursive);
+	GET_FONT(fontFantasy, option_font_fantasy);
 	GET_COMBO(comboDefault, option_font_default);
 	option_font_default++;
 	

@@ -3466,7 +3466,6 @@ NTML authentication</property>
 			  <child>
 			    <widget class="GtkFontButton" id="fontSerif">
 			      <property name="visible">True</property>
-			      <property name="sensitive">False</property>
 			      <property name="can_focus">True</property>
 			      <property name="show_style">False</property>
 			      <property name="show_size">False</property>
@@ -3487,7 +3486,6 @@ NTML authentication</property>
 			  <child>
 			    <widget class="GtkFontButton" id="fontMonospace">
 			      <property name="visible">True</property>
-			      <property name="sensitive">False</property>
 			      <property name="can_focus">True</property>
 			      <property name="show_style">False</property>
 			      <property name="show_size">False</property>
@@ -3508,7 +3506,6 @@ NTML authentication</property>
 			  <child>
 			    <widget class="GtkFontButton" id="fontCursive">
 			      <property name="visible">True</property>
-			      <property name="sensitive">False</property>
 			      <property name="can_focus">True</property>
 			      <property name="show_style">False</property>
 			      <property name="show_size">False</property>
@@ -3529,7 +3526,6 @@ NTML authentication</property>
 			  <child>
 			    <widget class="GtkFontButton" id="fontFantasy">
 			      <property name="visible">True</property>
-			      <property name="sensitive">False</property>
 			      <property name="can_focus">True</property>
 			      <property name="show_style">False</property>
 			      <property name="show_size">False</property>
@@ -3571,7 +3567,6 @@ Fantasy</property>
 			  <child>
 			    <widget class="GtkFontButton" id="fontSansSerif">
 			      <property name="visible">True</property>
-			      <property name="sensitive">False</property>
 			      <property name="can_focus">True</property>
 			      <property name="show_style">False</property>
 			      <property name="show_size">False</property>
