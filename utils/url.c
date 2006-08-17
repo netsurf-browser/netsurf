@@ -24,10 +24,7 @@
 #include "netsurf/utils/utils.h"
 
 struct url_components {
-	union {
-		char *storage;	/* buffer used for all the following data */
-		int *users;
-	} internal;
+	char *buffer;	/* buffer used for all the following data */
 	char *scheme;
 	char *authority;
 	char *path;
@@ -36,12 +33,9 @@ struct url_components {
 };
 
 url_func_result url_get_components(const char *url,
-		struct url_components *result, bool cache);
+		struct url_components *result);
 char *url_reform_components(struct url_components *components);
 void url_destroy_components(struct url_components *components);
-
-char *cached_url = NULL;
-struct url_components cached_components;
 
 regex_t url_re, url_up_re;
 
@@ -234,22 +228,22 @@ url_func_result url_normalize(const char *url, char **result)
 
 url_func_result url_join(const char *rel, const char *base, char **result)
 {
-
 	url_func_result status = URL_FUNC_NOMEM;
-	struct url_components base_components = {{0},0,0,0,0,0};
-	struct url_components rel_components = {{0},0,0,0,0,0};
-	struct url_components merged_components = {{0},0,0,0,0,0};
+	struct url_components base_components = {0,0,0,0,0,0};
+	struct url_components rel_components = {0,0,0,0,0,0};
+	struct url_components merged_components = {0,0,0,0,0,0};
 	char *merge_path = NULL, *split_point;
-	char *input, *output = NULL, *start;
+	char *input, *output, *start = NULL;
 	int len, buf_len;
 
 	(*result) = 0;
 
 	assert(base);
 	assert(rel);
-
+	
+	
 	/* break down the relative URL (not cached, corruptable) */
-	status = url_get_components(rel, &rel_components, false);
+	status = url_get_components(rel, &rel_components);
 	if (status != URL_FUNC_OK) {
 		LOG(("relative url '%s' failed to get components", rel));
 		return URL_FUNC_FAILED;
@@ -261,8 +255,9 @@ url_func_result url_join(const char *rel, const char *base, char **result)
 		goto url_join_reform_url;
 
 	/* break down the base URL (possibly cached, not corruptable) */
-	status = url_get_components(base, &base_components, true);
+	status = url_get_components(base, &base_components);
 	if (status != URL_FUNC_OK) {
+		url_destroy_components(&rel_components);
 		LOG(("base url '%s' failed to get components", base));
 		return URL_FUNC_FAILED;
 	}
@@ -275,15 +270,7 @@ url_func_result url_join(const char *rel, const char *base, char **result)
 	/* [3] handle empty paths */
 	merged_components.authority = base_components.authority;
 	if (!rel_components.path) {
-	  	/* we cannot refer directly to base_components.path as it
-	  	 * may be in the cache and could get altered during dot
-	  	 * removal in url_join_reform_url */
-	  	merge_path = strdup(base_components.path);
-	  	if (!merge_path) {
-	  	  	LOG(("malloc failed"));
-	  	  	goto url_join_no_mem;
-	  	}
-		merged_components.path = merge_path;
+	  	merged_components.path = base_components.path;
 		if (!rel_components.query)
 			merged_components.query = base_components.query;
 		goto url_join_reform_url;
@@ -303,7 +290,9 @@ url_func_result url_join(const char *rel, const char *base, char **result)
 			sprintf(merge_path, "/%s", rel_components.path);
 			merged_components.path = merge_path;
 		} else {
-			split_point = strrchr(base_components.path, '/');
+			split_point = base_components.path ?
+					strrchr(base_components.path, '/') :
+					NULL;
 			if (!split_point) {
 				merged_components.path = rel_components.path;
 			} else {
@@ -405,19 +394,18 @@ url_join_reform_url:
                 }
                 /* [3] */
       		merged_components.path = start;
-		output = start;
 	}
 
 	/* 5.3 */
 	*result = url_reform_components(&merged_components);
-	if (!(*result))
+  	if (!(*result))
 		goto url_join_no_mem;
 
 	/* return success */
 	status = URL_FUNC_OK;
 
 url_join_no_mem:
-	free(output);
+	free(start);
 	free(merge_path);
 	url_destroy_components(&base_components);
 	url_destroy_components(&rel_components);
@@ -441,7 +429,7 @@ url_func_result url_host(const char *url, char **result)
 
 	assert(url);
 
-	status = url_get_components(url, &components, true);
+	status = url_get_components(url, &components);
 	if (status == URL_FUNC_OK) {
 		if (!components.authority) {
 			url_destroy_components(&components);
@@ -484,7 +472,7 @@ url_func_result url_scheme(const char *url, char **result)
 
 	assert(url);
 
-	status = url_get_components(url, &components, true);
+	status = url_get_components(url, &components);
 	if (status == URL_FUNC_OK) {
 		if (!components.scheme) {
 			status = URL_FUNC_FAILED;
@@ -514,7 +502,7 @@ url_func_result url_canonical_root(const char *url, char **result)
 
 	assert(url);
 
-	status = url_get_components(url, &components, true);
+	status = url_get_components(url, &components);
 	if (status == URL_FUNC_OK) {
 		if ((!components.scheme) || (!components.authority)) {
 			status = URL_FUNC_FAILED;
@@ -549,7 +537,7 @@ url_func_result url_parent(const char *url, char **result)
 
 	assert(url);
 
-	status = url_get_components(url, &components, true);
+	status = url_get_components(url, &components);
 	if (status == URL_FUNC_OK) {
 		if ((!components.scheme) || (!components.authority) ||
 				(!components.path)) {
@@ -597,7 +585,7 @@ url_func_result url_plq(const char *url, char **result)
 
 	assert(url);
 
-	status = url_get_components(url, &components, true);
+	status = url_get_components(url, &components);
 	if (status == URL_FUNC_OK) {
 		if (!components.path) {
 			status = URL_FUNC_FAILED;
@@ -637,7 +625,7 @@ url_func_result url_path(const char *url, char **result)
 
 	assert(url);
 
-	status = url_get_components(url, &components, true);
+	status = url_get_components(url, &components);
 	if (status == URL_FUNC_OK) {
 		if (!components.path) {
 			status = URL_FUNC_FAILED;
@@ -840,13 +828,13 @@ url_func_result url_compare(const char *url1, const char *url2, bool *result)
 	assert(url1 && url2 && result);
 
 	/* Decompose URLs */
-	status = url_get_components(url1, &c1, false);
+	status = url_get_components(url1, &c1);
 	if (status != URL_FUNC_OK) {
 		url_destroy_components(&c1);
 		return status;
 	}
 
-	status = url_get_components(url2, &c2, false);
+	status = url_get_components(url2, &c2);
 	if (status != URL_FUNC_OK) {
 		url_destroy_components(&c2);
 		url_destroy_components(&c1);
@@ -900,13 +888,13 @@ url_func_result url_compare(const char *url1, const char *url2, bool *result)
  *
  * \param  url	     a valid absolute or relative URL
  * \param  result    pointer to buffer to hold components
- * \param  cache     cache this result for subsequent calls
  * \return  URL_FUNC_OK on success
  */
 
 url_func_result url_get_components(const char *url,
-		struct url_components *result, bool cache)
+		struct url_components *result)
 {
+  	int storage_length;
 	char *storage_end;
 	const char *scheme;
 	const char *authority;
@@ -916,29 +904,15 @@ url_func_result url_get_components(const char *url,
 
 	assert(url);
 
-	/* used cached components as a preference */
-	if (!cache) {
-		if (cached_url && !strcmp(url, cached_url)) {
-			*result = cached_components;
-			result->internal.users[0]++;
-			return URL_FUNC_OK;
-		}
-
-		/* clear the cache */
-		free(cached_url);
-		cached_url = NULL;
-		url_destroy_components(&cached_components);
-	}
+	/* clear our return value */
 	memset(result, 0x00, sizeof(struct url_components));
 
-
 	/* get enough storage space for a URL with termination at each node */
-	result->internal.storage = malloc(strlen(url) + sizeof(int *) + 8);
-	if (!result->internal.storage)
+	storage_length = strlen(url) + 8;
+	result->buffer = malloc(storage_length);
+	if (!result->buffer)
 		return URL_FUNC_NOMEM;
-	result->internal.users[0] = 1;
-	storage_end = (char *)(result->internal.users + 1);
-
+	storage_end = result->buffer;
 
 	/* look for a valid scheme */
 	scheme = url;
@@ -1009,19 +983,10 @@ url_func_result url_get_components(const char *url,
 		memcpy(storage_end, query + 1, fragment - query - 1);
 		storage_end[fragment - query - 1] = '\0';
 		result->fragment = storage_end;
-//		storage_end += fragment - query;
+		storage_end += fragment - query;
 	}
 
-
-	/* cache our values */
-	if (cache) {
-		cached_url = strdup(url);
-		if (cached_url) {
-			result->internal.users[0]++;
-			cached_components = *result;
-		}
-	}
-
+	assert((result->buffer + storage_length) >= storage_end);
 	return URL_FUNC_OK;
 }
 
@@ -1093,13 +1058,9 @@ void url_destroy_components(struct url_components *components)
 {
 	assert(components);
 
-	if (components->internal.storage) {
-		components->internal.users[0]--;
-		if (components->internal.users[0] == 0) {
-			free(components->internal.storage);
-			components->internal.storage = NULL;
-		}
-	}
+	if (components->buffer)
+		free(components->buffer);
+	components->buffer = NULL;
 }
 
 
