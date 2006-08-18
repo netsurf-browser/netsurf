@@ -113,25 +113,25 @@ void nsgtk_options_load(void) {
 	
 	SET_ENTRY(entryHomePageURL, option_homepage_url);
 	SET_CHECK(checkHideAdverts, option_block_ads);
-	/* TODO: rest of "General" tab here */
 	SET_CHECK(checkDisplayRecentURLs, option_url_suggestion);
 	SET_CHECK(checkSendReferer, option_send_referer);
 
+	SET_COMBO(comboProxyType, option_http_proxy_auth);
 	SET_ENTRY(entryProxyHost, option_http_proxy_host);
 	snprintf(b, 20, "%d", option_http_proxy_port);
 	SET_ENTRY(entryProxyPort, b);
 	SET_ENTRY(entryProxyUser, option_http_proxy_auth_user);
 	SET_ENTRY(entryProxyPassword, option_http_proxy_auth_pass);
+	
 	SET_SPIN(spinMaxFetchers, option_max_fetchers);
 	SET_SPIN(spinFetchesPerHost, option_max_fetchers_per_host);
 	SET_SPIN(spinCachedConnections, option_max_cached_fetch_handles);
 
-	/* TODO: set checkResampleImages here */
 	SET_CHECK(checkUseCairo, option_render_cairo);
+	SET_CHECK(checkResampleImages, option_render_resample);
 	SET_SPIN(spinAnimationSpeed, option_minimum_gif_delay);
 	SET_CHECK(checkDisableAnimations, !option_animate_images);
 
-	/* TODO: set all font name widgets here */
 	SET_FONT(fontSansSerif, option_font_sans);
 	SET_FONT(fontSerif, option_font_serif);
 	SET_FONT(fontMonospace, option_font_mono);
@@ -154,11 +154,46 @@ void nsgtk_options_load(void) {
 	(y) = strdup(gtk_font_button_get_font_name(GTK_FONT_BUTTON((x))))
 
 void nsgtk_options_save(void) {
+	char *b = NULL;
+	int i;
+	
 	GET_ENTRY(entryHomePageURL, option_homepage_url);
 	GET_CHECK(checkDisplayRecentURLs, option_url_suggestion);
 
+	GET_COMBO(comboProxyType, i);
+	option_http_proxy = (i > 0) ? true : false;
+	switch (i)
+	{
+		case 0:
+		case 1:
+			option_http_proxy_auth = OPTION_HTTP_PROXY_AUTH_NONE;
+			break;
+		case 2:
+			option_http_proxy_auth = OPTION_HTTP_PROXY_AUTH_BASIC;
+			break;
+		case 3:
+			option_http_proxy_auth = OPTION_HTTP_PROXY_AUTH_NTLM;
+			break;
+		default:
+			option_http_proxy_auth = OPTION_HTTP_PROXY_AUTH_NONE;
+			break;
+	}
+	
+	GET_ENTRY(entryProxyHost, option_http_proxy_host);
+	GET_ENTRY(entryProxyPort, b);
+	option_http_proxy_port = atoi(b);
+	free(b);
+	GET_ENTRY(entryProxyUser, option_http_proxy_auth_user);
+	GET_ENTRY(entryProxyPassword, option_http_proxy_auth_pass);
+	
+	GET_SPIN(spinMaxFetchers, option_max_fetchers);
+	GET_SPIN(spinFetchesPerHost, option_max_fetchers_per_host);
+	GET_SPIN(spinCachedConnections, option_max_cached_fetch_handles);	
+
 	GET_CHECK(checkUseCairo, option_render_cairo);
 	GET_CHECK(checkResampleImages, option_render_resample);
+	GET_SPIN(spinAnimationSpeed, option_minimum_gif_delay);
+	option_minimum_gif_delay *= 10;
 	
 	GET_FONT(fontSansSerif, option_font_sans);
 	GET_FONT(fontSerif, option_font_serif);
@@ -172,8 +207,6 @@ void nsgtk_options_save(void) {
 	option_font_size *= 10;
 	GET_SPIN(spinMinimumSize, option_font_min_size);
 	option_font_min_size *= 10;
-		
-	/* TODO: save the other options */
 
 	options_write(options_file_location);
 	nsgtk_reflow_all_windows();
