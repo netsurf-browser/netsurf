@@ -27,6 +27,7 @@
 #include "netsurf/gtk/gtk_options.h"
 #include "netsurf/gtk/gtk_completion.h"
 #include "netsurf/gtk/gtk_throbber.h"
+#include "netsurf/gtk/gtk_history.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/font.h"
 #include "netsurf/render/form.h"
@@ -151,6 +152,7 @@ MENUPROTO(back);
 MENUPROTO(forward);
 MENUPROTO(home);
 MENUPROTO(local_history);
+MENUPROTO(global_history);
 
 /* help menu */
 MENUPROTO(about);
@@ -179,6 +181,7 @@ static struct menu_events menu_events[] = {
 	MENUEVENT(forward),
 	MENUEVENT(home),
 	MENUEVENT(local_history),
+	MENUEVENT(global_history),
 	
 	/* help menu */
 	MENUEVENT(about),
@@ -605,6 +608,14 @@ MENUHANDLER(local_history)
 	
 	gtk_widget_show(GTK_WIDGET(gw->history_window->window));
 	gdk_window_raise(GDK_WINDOW(gw->history_window->window));
+	
+	return TRUE;
+}
+
+MENUHANDLER(global_history)
+{
+	gtk_widget_show(GTK_WIDGET(wndHistory));
+	gdk_window_raise(GDK_WINDOW(wndHistory));
 	
 	return TRUE;
 }

@@ -31,6 +31,7 @@
 #include "netsurf/gtk/gtk_completion.h"
 #include "netsurf/gtk/options.h"
 #include "netsurf/gtk/gtk_throbber.h"
+#include "netsurf/gtk/gtk_history.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/form.h"
 #include "netsurf/render/html.h"
@@ -157,6 +158,8 @@ void gui_init(int argc, char** argv)
 
 	urldb_load(option_url_file);
 	urldb_load_cookies(option_cookie_file);
+	
+	nsgtk_history_init();
 }
 
 
@@ -308,8 +311,6 @@ void hotlist_visited(struct content *content)
 
 void gui_cert_verify(struct browser_window *bw, struct content *c,
 		const struct ssl_cert_info *certs, unsigned long num) {}
-
-void global_history_add(const char *url) {}
 
 utf8_convert_ret utf8_to_local_encoding(const char *string, size_t len,
 		char **result)
