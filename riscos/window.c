@@ -1924,6 +1924,7 @@ bool ro_gui_window_keypress(wimp_key *key)
 			browser_window_destroy(g->bw);
 			return true;
 
+		case 19:		/* Ctrl + S */
 		case IS_WIMP_KEY + wimp_KEY_F3:
 			return ro_gui_menu_handle_action(g->window,
 					BROWSER_SAVE, false);
@@ -1941,6 +1942,7 @@ bool ro_gui_window_keypress(wimp_key *key)
 					BROWSER_EXPORT_DRAW, false);
 
 #ifdef WITH_SEARCH
+		case 6:			/* Ctrl + F */
 		case IS_WIMP_KEY + wimp_KEY_F4:	/* Search */
 			return ro_gui_menu_handle_action(g->window,
 					BROWSER_FIND_TEXT, false);
