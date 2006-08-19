@@ -1565,10 +1565,10 @@ const char *browser_window_scrollbar_click(struct browser_window *bw,
 	/* find icon in scrollbar and calculate scroll */
 	if (z < w) {
 		status = messages_get(vert ? "ScrollUp" : "ScrollLeft");
-		if (mouse & but1)
-			scroll -= 16;
-		else if (mouse & but2)
+		if (mouse & but2)
 			scroll += 16;
+		else if (mouse & but1)
+			scroll -= 16;
 	} else if (z < w + bar_start + w / 4) {
 		status = messages_get(vert ? "ScrollPUp" : "ScrollPLeft");
 		if (mouse & BROWSER_MOUSE_CLICK_1)
@@ -1611,10 +1611,10 @@ const char *browser_window_scrollbar_click(struct browser_window *bw,
 			scroll -= page;
 	} else {
 		status = messages_get(vert ? "ScrollDown" : "ScrollRight");
-		if (mouse & but1)
-			scroll += 16;
-		else if (mouse & but2)
+		if (mouse & but2)
 			scroll -= 16;
+		else if (mouse & but1)
+			scroll += 16;
 	}
 
 	/* update box and redraw */
