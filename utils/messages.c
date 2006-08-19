@@ -21,7 +21,7 @@
 #include "netsurf/utils/utils.h"
 
 /** We store the messages in a fixed-size hash table. */
-#define HASH_SIZE 77
+#define HASH_SIZE 101
 
 /** Maximum length of a key. */
 #define MAX_KEY_LENGTH 24
@@ -126,13 +126,22 @@ const char *messages_get(const char *key)
  * Hash function for keys.
  */
 
+/* This is Fowler Noll Vo - a very fast and simple hash ideal for short
+ * strings.  See http://en.wikipedia.org/wiki/Fowler_Noll_Vo_hash for more
+ * details.
+ */
 unsigned int messages_hash(const char *s)
 {
-	unsigned int i, z = 0;
-	if (!s)
+	unsigned int z = 0x01000193, i;
+	
+	if (s == NULL)
 		return 0;
-	for (i = 0; i != MAX_KEY_LENGTH && s[i]; i++)
-		z += s[i] & 0x1f;  /* lower 5 bits, case insensitive */
+		
+	for (i = 0; i != MAX_KEY_LENGTH && s[i]; i++) {
+		z *= 0x01000193;
+		z ^= (s[i] & 0x1f); /* lower 5 bits, case insensitive */
+	}
+	
 	return z % HASH_SIZE;
 }
 
