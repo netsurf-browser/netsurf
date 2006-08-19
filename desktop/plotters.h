@@ -41,6 +41,7 @@ struct plotter_table {
 			bool repeat_x, bool repeat_y);
 	bool (*group_start)(const char *name);	/** optional */
 	bool (*group_end)(void);	/** optional */
+	bool (*flush)(void);
 };
 
 /** Current plotters, must be assigned before use. */

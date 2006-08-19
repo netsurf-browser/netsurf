@@ -63,7 +63,8 @@ const struct plotter_table ro_save_draw_plotters = {
 	ro_save_draw_bitmap,
 	ro_save_draw_bitmap_tile,
 	ro_save_draw_group_start,
-	ro_save_draw_group_end
+	ro_save_draw_group_end,
+	NULL
 };
 
 struct pencil_diagram *ro_save_draw_diagram;

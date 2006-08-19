@@ -129,7 +129,8 @@ static const struct plotter_table print_fonts_plotters = {
 	print_fonts_plot_bitmap,
 	print_fonts_plot_bitmap_tile,
 	print_fonts_plot_group_start,
-	print_fonts_plot_group_end
+	print_fonts_plot_group_end,
+	NULL
 };
 
 

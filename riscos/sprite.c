@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include "oslib/osspriteop.h"
 #include "netsurf/utils/config.h"
+#include "netsurf/desktop/plotters.h"
 #include "netsurf/content/content.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/image.h"
@@ -98,6 +99,9 @@ bool sprite_redraw(struct content *c, int x, int y,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale, colour background_colour)
 {
+	if (plot.flush && !plot.flush())
+		return false;
+
 	return image_redraw(c->data.sprite.data,
 			ro_plot_origin_x + x * 2,
 			ro_plot_origin_y - y * 2,

@@ -18,6 +18,7 @@
 #include "oslib/os.h"
 #include "oslib/wimp.h"
 #include "netsurf/utils/config.h"
+#include "netsurf/desktop/plotters.h"
 #include "netsurf/content/content.h"
 #include "netsurf/riscos/artworks.h"
 #include "netsurf/riscos/gui.h"
@@ -213,6 +214,9 @@ bool artworks_redraw(struct content *c, int x, int y,
 	os_error *error;
 	os_trfm matrix;
 	int vals[24];
+
+	if (plot.flush && !plot.flush())
+		return false;
 
 	/* Scaled image. Transform units (65536*OS units) */
 	matrix.entries[0][0] = width * 65536 / c->width;

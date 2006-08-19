@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include "oslib/drawfile.h"
 #include "netsurf/utils/config.h"
+#include "netsurf/desktop/plotters.h"
 #include "netsurf/content/content.h"
 #include "netsurf/riscos/draw.h"
 #include "netsurf/riscos/gui.h"
@@ -85,6 +86,9 @@ bool draw_redraw(struct content *c, int x, int y,
 {
 	os_error *error;
 	os_trfm matrix;
+
+	if (plot.flush && !plot.flush())
+		return false;
 
 	/* Scaled image. Transform units (65536*OS units) */
 	matrix.entries[0][0] = width * 65536 / c->width;

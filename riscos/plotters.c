@@ -21,6 +21,7 @@
 #include "netsurf/utils/log.h"
 
 
+
 static bool ro_plot_clg(colour c);
 static bool ro_plot_rectangle(int x0, int y0, int width, int height,
 		int line_width, colour c, bool dotted, bool dashed);
@@ -58,6 +59,7 @@ const struct plotter_table ro_plotters = {
 	ro_plot_arc,
 	ro_plot_bitmap,
 	ro_plot_bitmap_tile,
+	NULL,
 	NULL,
 	NULL
 };

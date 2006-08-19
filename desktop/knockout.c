@@ -70,7 +70,8 @@ const struct plotter_table knockout_plotters = {
 	knockout_plot_bitmap,
 	knockout_plot_bitmap_tile,
 	knockout_plot_group_start,
-	knockout_plot_group_end
+	knockout_plot_group_end,
+	knockout_plot_flush
 };
 
 
