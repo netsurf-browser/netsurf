@@ -5,10 +5,11 @@
  * Copyright 2006 Rob Kendrick <rjek@rjek.com>
  */
 
-/** Write-Once hash table for string to string mappings */
+/** \file
+ * Write-Once hash table for string to string mappings */
 
-#ifndef _NETSURF_HASH_H_
-#define _NETSURF_HASH_H_
+#ifndef _NETSURF_UTILS_HASHTABLE_H_
+#define _NETSURF_UTILS_HASHTABLE_H_
 
 #include <stdbool.h>
 

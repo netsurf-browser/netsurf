@@ -5,7 +5,8 @@
  * Copyright 2006 Rob Kendrick <rjek@rjek.com>
  */
 
-/** Write-Once hash table for string to string mappings */
+/** \file
+ * Write-Once hash table for string to string mappings */
 
 #include <stdlib.h>
 #include <string.h>
@@ -19,8 +20,7 @@
 
 struct hash_table *hash_create(unsigned int chains)
 {
-	struct hash_table *r = (struct hash_table *)malloc(
-						sizeof(struct hash_table));
+	struct hash_table *r = malloc(sizeof(struct hash_table));
 
 	if (r == NULL) {
 		LOG(("Not enough memory for hash table."));
@@ -28,8 +28,7 @@ struct hash_table *hash_create(unsigned int chains)
 	}
 
 	r->nchains = chains;
-	r->chain = (struct hash_entry **)
-	  calloc(chains, sizeof(struct hash_entry));
+	r->chain = calloc(chains, sizeof(struct hash_entry));
 
 	if (r->chain == NULL) {
 		LOG(("Not enough memory for %d hash table chains.", chains));
@@ -42,7 +41,7 @@ struct hash_table *hash_create(unsigned int chains)
 
 void hash_destroy(struct hash_table *ht)
 {
-	int i;
+	unsigned int i;
 
 	for (i = 0; i < ht->nchains; i++) {
 		if (ht->chain[i] != NULL) {
@@ -65,8 +64,11 @@ bool hash_add(struct hash_table *ht, const char *key, const char *value)
 {
 	unsigned int h = hash_string_fnv(key);
 	unsigned int c = h % ht->nchains;
-	struct hash_entry *e = (struct hash_entry *)malloc(
-						sizeof(struct hash_entry));
+	struct hash_entry *e = malloc(sizeof(struct hash_entry));
+	if (e == NULL) {
+		LOG(("Not enough memory for hash entry."));
+		return false;
+	}
 
 	e->key = strdup(key);
 	if (e->key == NULL) {
