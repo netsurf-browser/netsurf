@@ -10,6 +10,8 @@
 #ifndef _NETSURF_HASH_H_
 #define _NETSURF_HASH_H_
 
+#include <stdbool.h>
+
 struct hash_entry {
 	char *key;
 	char *value;
@@ -23,7 +25,7 @@ struct hash_table {
 
 struct hash_table *hash_create(unsigned int chains);
 void hash_destroy(struct hash_table *ht);
-void hash_add(struct hash_table *ht, const char *key, const char *value);
+bool hash_add(struct hash_table *ht, const char *key, const char *value);
 const char *hash_get(struct hash_table *ht, const char *key);
 unsigned int hash_string_fnv(const char *datum);
 

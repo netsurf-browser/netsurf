@@ -9,6 +9,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #ifdef TEST_RIG
 #include <assert.h>
 #include <stdio.h>
@@ -60,7 +61,7 @@ void hash_destroy(struct hash_table *ht)
 	free(ht);
 }
 
-void hash_add(struct hash_table *ht, const char *key, const char *value)
+bool hash_add(struct hash_table *ht, const char *key, const char *value)
 {
 	unsigned int h = hash_string_fnv(key);
 	unsigned int c = h % ht->nchains;
@@ -68,9 +69,24 @@ void hash_add(struct hash_table *ht, const char *key, const char *value)
 						sizeof(struct hash_entry));
 
 	e->key = strdup(key);
+	if (e->key == NULL) {
+		LOG(("Unable to strdup() key for hash table."));
+		free(e);
+		return false;
+	}
+	
 	e->value = strdup(value);
+	if (e->value == NULL) {
+		LOG(("Unable to strdup() value for hash table."));
+		free(e->key);
+		free(e);
+		return false;
+	}
+
 	e->next = ht->chain[c];
 	ht->chain[c] = e;
+
+	return true;
 }
 
 const char *hash_get(struct hash_table *ht, const char *key)
