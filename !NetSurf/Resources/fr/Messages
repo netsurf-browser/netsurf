@@ -31,8 +31,8 @@
 #
 NetSurf:NetSurf
 Info:Info
+AppHelp:Aide...  F1
 Open:Ouvrir
-AppHelp:Aide...
 Choices:Préférences...
 Quit:Quitter
 
@@ -86,7 +86,7 @@ Sprite:Sprite
 Home:Page d'accueil
 Back:Retour
 Forward:Avancer
-UpLevel:Up one level
+UpLevel:Remonter d'un niveau
 Reload:Recharger cette page  ^F5
 Stop:Arrêter le chargement de la page
 
@@ -134,8 +134,8 @@ HistLocal:Montrer l'historique local... F7
 HistGlobal:Montrer l'historique global... ^F7
 
 # Main -> Utilities -> Cookies menu
-ShowCookies:Show cookies...
-DeleteCookies:Delete all cookies
+ShowCookies:Montrer les cookies...
+DeleteCookies:Supprimer tous les cookies
 
 # Main -> Utilities -> Window menu
 #
@@ -198,15 +198,15 @@ URLSuggest:URLs récentes
 Languages:Langue
 #
 # Network pane
-ProxyType:Proxy type
-ProxyNone:No proxy
-ProxyNoAuth:Simple proxy
-ProxyBasic:Basic authentication
-ProxyNTLM:NTLM authentication
+ProxyType:Type de proxy
+ProxyNone:Pas de proxy
+ProxyNoAuth:Proxy simple
+ProxyBasic:Authentification de base
+ProxyNTLM:Authentification NTLM
 #
 # Fonts pane
 Fonts:Fontes
-DefaultFonts:Font Families
+DefaultFonts:Familles de fontes
 #
 # Images pane
 Display:Affichage
@@ -230,21 +230,21 @@ TreeLast:Dernière visitée: %s
 TreeVisited:Visitées: %s
 TreeVisits:Visites: %i
 TreeUnknown:Inconnu
-TreeValue:Value: %s
-TreeComment:Comment: %s
-TreeDomain:Domain: %s%s
-TreePath:Path: %s%s
-TreeExpires:Expires: %s
-TreeLastUsed:Last used: %s
-TreeSecure:Secure hosts only: %s
+TreeValue:Valeur: %s
+TreeComment:Commentaire: %s
+TreeDomain:Domaine: %s%s
+TreePath:Chemin: %s%s
+TreeExpires:Expire: %s
+TreeLastUsed:Dernière utilisation: %s
+TreeSecure:Uniquement des sites sécurisés: %s
 TreeVersion:Version: %s
 TreePersistent:Persistent: %s
-TreeHeaders: (from headers)
+TreeHeaders: (à partir des entêtes)
 TreeVersion0:Netscape
 TreeVersion1:RFC 2109
 TreeVersion2:RFC 2965
-TreeSession:Session end
-TreeUnused:Unused
+TreeSession:Fin de session
+TreeUnused:Inutilisé
 TreeImport:URL importée
 TreeNewFolder:Nouv. répertoire
 
@@ -267,9 +267,9 @@ EditFolder:Éditer le dossier
 #
 HotlistHomepage:Page d'accueil de NetSurf
 HotlistTestBuild:Versions test de NetSurf
-HotlistDocumentation:NetSurf documentation
-HotlistBugTracker:NetSurf bug tracker
-HotlistFeatureRequest:NetSurf feature requests
+HotlistDocumentation:Documentatio de NetSurf
+HotlistBugTracker:Le traqueur de bogues de NetSurf
+HotlistFeatureRequest:Demandes de nouvelles fonctions de Netsurf
 
 
 # Global history user interface tokens
@@ -391,12 +391,12 @@ LoadError:Le fichier n'a pas pu être chargé à cause d'une erreur:
 MenuError:Une erreur s'est produite lors de l'ouverture du menu:
 DragError:Une erreur s'est produite lors du déplacement d'icône:
 TbarError:Une erreur s'est produite lors de la construction de la barre d'outils:
-WimpError:Une erreur inattendue du Window Manager s'est produite:
-DownloadWarn:This download may not complete:
+WimpError:Une erreur inattendue du Gestionnaire de Fenêtres s'est produite:
+DownloadWarn:Ce téléchargement ne peut pas se terminer:
 MiscError:Une erreur inattendue s'est produite:
 FileError:Le fichier n'existe pas:
 PrintError:Une erreur s'est produite lors de l'impression:
-AWNotSeen:Please locate the AWViewer application and try again.
+AWNotSeen:Localisez l'application AMViewer SVP puis réessayez.
 
 # Specific errors - displayed in a dialog box
 #
@@ -404,7 +404,7 @@ NoMemory:NetSurf a besoin de plus de mémoire. Veuillez libérer de la mémoire 
 FontBadInst:Une erreur s'est produite lors de l'initialisation des fontes à cause de la présence de copies obsolètes de fontes ROM sur disque. NetSurf va sortir et lancer un programme qui va tenter de réparer cela.
 FontError:Échec d'ouverture de la fonte "Homerton.Medium" (%s).
 Resolvers:Aucun nom de domaine n'étant configuré, seul la consultation de fichiers locaux est possible. Utilisez Configure pour définir les serveurs de noms.
-NoDiscSpace:Not enough space available on disc.
+NoDiscSpace:Pas assez d'espace disque disponible.
 Template:Un modèle de fenêtre est absent du fichier Templates. Réinstallez NetSurf SVP.
 HotlistSaveError:Les favoris n'ont pas pu être sauvés correctement.
 HotlistLoadError:Les favoris n'ont pas pu être chargés correctement.
@@ -414,7 +414,7 @@ NoURLError:Entrez une URL SVP
 URIError:NetSurf est incapable de traiter ce fichier URI à cause d'une erreur de syntaxe.
 EmptyError:Le fichier est vide.
 PrintErrorRO2:Il semble que l'imprimante soit occupée.
-AWNotSeen:Please locate the AWViewer application and try again.
+AWNotSeen:Localisez l'application AMViewer SVP puis réessayez.
 
 # Queries
 # =======
@@ -424,7 +424,7 @@ AWNotSeen:Please locate the AWViewer application and try again.
 
 AbortDownload:Étes-vous sûr de vouloir interrompre ce téléchargement ?
 QuitDownload:Un ou plusieurs téléchargements sont en cours. Êtes-vous sûr de vouloir quitter ?
-OverwriteFile:A file with that name already exists and would be lost.
+OverwriteFile:Un fichier portant ce nom existe déjà et serait perdu.
 
 # Page fetching
 # =============
@@ -528,8 +528,8 @@ GBytes: GO
 
 Yes:Oui
 No:Non
-Replace:Replace file
-DontReplace:Don't replace
+Replace:Remplacer le fichier
+DontReplace:Ne pas remplacer le fichier
 obj:objet
 objs:objets
 styl:feuille de styles
@@ -551,7 +551,7 @@ HelpToolbar7:\Tle bouton d'impression.|M\Simprimer cette page.|MOuvre une bo�te 
 HelpToolbar8:\Tle bouton de favoris.|M\Souvrir la \w de gestion des favoris.|M\Aajouter cette adresse aux favoris.
 HelpToolbar9:\Tle bouton de changement d'échelle.|M\Sredimensionner la page, texte et images comprises.
 HelpToolbar10:\Tle bouton de recherche.|M\Sfind instances of a string of text on the page.
-HelpToolbar11:\Tup button.|M\Straverse up one level on the current website
+HelpToolbar11:\Tle bouton haut.|M\Sremonte d'un niveau sur le site web en cours.
 HelpToolbar14:\Tla barre d'URL.|MTapez l'adresse d'un site à visiter et appuyez sur Return pour y aller.
 HelpToolbar15:\Tl'icône de suggestion d'URL.|M\Souvrir une liste d'URLs tapées récemment.
 HelpToolbar16:\Tle pulseur.|MIl s'anime lorsque cette \w est active.
@@ -561,12 +561,12 @@ HelpStatus1:\Tla barre d'état.|MElle affiche des informations sur ce que fait l
 
 HelpIconMenu0:\Rvoir des informations sur ce logiciel.
 HelpIconMenu1:\Svoir la documentation de NetSurf.
-HelpIconMenu2:\Ropen a window.
-HelpIconMenu2-0:\Renter an address to visit.
-HelpIconMenu2-1:\Sopen the hotlist management \w.
-HelpIconMenu2-2:\Sopen the global history \w.
-HelpIconMenu2-3:\Sopen the cookie management \w.
-HelpIconMenu3:\Souvrir la bo�te de dialogue des Préférences.
+HelpIconMenu2:\Rouvrir une fenêtre.
+HelpIconMenu2-0:\Rentrer une adresse à visiter.
+HelpIconMenu2-1:\Souvrir la fenêtre de gestion des favoris.
+HelpIconMenu2-2:\Souvrir la fenêtre d'historique global.
+HelpIconMenu2-3:\Souvrir la fenêtre de gestion des cookies.
+HelpIconMenu3:\Souvrir la boîte de dialogue des Préférences.
 HelpIconMenu4:\Squitter NetSurf.
 
 HelpBrowserMenu0:\Rvoir les options en rapport avec la page en cours.
@@ -580,7 +580,7 @@ HelpBrowserMenu0-4:\Rsauver l'adresse de la page courante.
 HelpBrowserMenu0-4-0:\Rsauver l'adresse en cours au format Acorn URI.
 HelpBrowserMenu0-4-1:\Rsauver l'adresse en cours au format Ant URL.
 HelpBrowserMenu0-4-2:\Rsauver l'adresse courante en simple texte.
-HelpBrowserMenu0-5:\Souvrir la bo�te de dialogue d'impression.
+HelpBrowserMenu0-5:\Souvrir la boîte de dialogue d'impression.
 HelpBrowserMenu0-6:\Souvrir la page courante dans une nouvelle fenêtre.
 HelpBrowserMenu0-7:\Svoir le code source de la page courante dans un éditeur de texte.
 HelpBrowserMenu1:\Rvoir les options correspondant à l'objet courant.
@@ -610,7 +610,7 @@ HelpBrowserMenu3-2-0:\Safficher ou pas les boutons de la barre d'outil.|MLa barr
 HelpBrowserMenu3-2-1:\Safficher ou pas la barre d'adresse (URL).
 HelpBrowserMenu3-2-2:\Safficher le pulseur ou pas.|MLa barre d'URL utilise l'espace restant.
 HelpBrowserMenu3-2-3:\Safficher la barre d'état ou pas.|MLa barre de défilement horizontal utilise la largeur restante.
-HelpBrowserMenu3-2-4:\Stoggle toolbar edit mode.
+HelpBrowserMenu3-2-4:\Schanger le mode d'édition de barre d'outils.
 HelpBrowserMenu3-3:\Scontroler la façon d'afficher.
 HelpBrowserMenu3-3-0:\Sdécider si les animations sont affichées quand tous les calculs sont terminés (ou avant).
 HelpBrowserMenu3-3-1:\Sdécider si tout doit être affiché quand tous les calculs sont terminés (ou avant).
@@ -622,8 +622,8 @@ HelpBrowserMenu4-0-1:\Souvrir la \w de gestion des favoris.
 HelpBrowserMenu4-1:\Rview the history options.
 HelpBrowserMenu4-1-0:\Souvrir la \w d'historique local.
 HelpBrowserMenu4-1-1:\Souvrir la fenêtre d'historique global.
-HelpBrowserMenu4-2:\Rmanage your cookies.
-HelpBrowserMenu4-2-0:\Sopen the cookie management \w.
+HelpBrowserMenu4-2:\Rgérer vos favoris.
+HelpBrowserMenu4-2-0:\Souvrir la fenêtre de gestion des cookies.
 HelpBrowserMenu4-3:\Rchercher un fragment de texte sur la page.
 HelpBrowserMenu4-4:\Rcontroler le positionnement de fenêtre par défaut.
 HelpBrowserMenu4-4-0:\Spromouvoir la position de fenêtre courante en celle par défault.
@@ -642,7 +642,7 @@ HelpBrowser-1:Cliquer \s sur un lien pour le suivre.|MCliquer \a sur un lien pou
 HelpIconbar:\Tl'icône de NetSurf.|M\Souvrir une nouvelle \w de navigateur.|M\Aouvrir la fenêtre de gestion des favoris.
 HelpHistory:Utiliser cette \w pour naviguer dans l'historique arborescent local.|M\Ssur une vignette pour revenir à cette page.
 
-HelpPrint:Use this \w to print the page.
+HelpPrint:Utiliser cette fenêtre pour imprimer cette page.
 
 HelpSaveAs0:Déposer cette icône dans le repertoire où vous voulez sauver le fichier.
 HelpSaveAs1:Ceci est le nom de fichier sous lequel le document sera sauvé.
@@ -660,12 +660,12 @@ HelpScaleView8:\Sdirectement choisir une échelle de 200%.
 HelpScaleView9:\Sannuler les changements.|ML'échelle en cours ne sera pas modifiée.
 HelpScaleView10:\Svalider le changement d'échelle.
 
-HelpSearch:Use this \w to search for text within the page.
-HelpSearch0:Enter the search text. # matches any single character, * matches 0 or more characters.
-HelpSearch1:Choose whether the search should regard upper and lower case characters as different.
-HelpSearch2:\Smove to the next match.
-HelpSearch3:\Smove to the previous match.
-HelpSearch4:\Sstop searching and close this \w.
+HelpSearch:Utiliser cette fenêtre pour faire une recherche textuelle sur cette page.
+HelpSearch0:Entrer la chaîne de recherche. # remplace n'importe quel caractère, * correspond à 0 ou plus caractères.
+HelpSearch1:Choisir si la recherche accorde de l'importance à la casse (minuscules/MAJUSCULES).
+HelpSearch2:\Schercher l'occurence suivante.
+HelpSearch3:\Schercher l'occurence précédente.
+HelpSearch4:\Sarrêter la recherche et fermer cette fenêtre.
 
 HelpHotFolder:Utiliser cette \w pour définir le nom de répertoire.
 HelpHotEntry:Utiliser cette \w pour définir les détails de cette entrée.
@@ -698,9 +698,9 @@ HelpHotlistMenu0-3:\Rregrouper les items dans la liste des favoris.
 HelpHotlistMenu0-3-0:\Sfermer tous les répertoires et cacher les détails sur les entrées.
 HelpHotlistMenu0-3-1:\Sfermer tous les répertoires.
 HelpHotlistMenu0-3-2:\Scacher tous les détails sur les entrées.
-HelpHotlistMenu0-4:\Rcontrol the display of NetSurf's toolbars.
-HelpHotlistMenu0-4-0:\Stoggle the display of the toolbar buttons.
-HelpHotlistMenu0-4-1:\Stoggle toolbar edit mode.
+HelpHotlistMenu0-4:\Rcontroler l'affichage des barres d'outils de Netsurf.
+HelpHotlistMenu0-4-0:\Sbasculer l'affichage des boutons de la barre d'outils.
+HelpHotlistMenu0-4-1:\Sbasculer le mode d'édition de barre d'outils.
 HelpHotlistMenu1:\Ragir sur la sélection en cours.
 HelpHotlistMenu1-0:\Rééditer l'item en cours.
 HelpHotlistMenu1-1:\Slancer la sélection courante.
@@ -715,196 +715,196 @@ HelpGHistoryToolbar1:\Tle bouton de déploiement des entrées.|M\Sdéployer tout
 HelpGHistoryToolbar2:\Tle bouton d'ouverture de répertoires.|M\Souvrir tous les répertoires des favoris.|M\Afermer tous les répertoires des favoris.
 HelpGHistoryToolbar3:\Tle bouton de lancement.|M\Slancer la sélection en cours.
 
-HelpGHistoryMenu0:\Rperform an operation on global history.
-HelpGHistoryMenu0-0:\Rexport global history as an HTML file.
-HelpGHistoryMenu0-1:\Rexpand items within global history.
-HelpGHistoryMenu0-1-0:\Sopen all directories and show all entry details.
-HelpGHistoryMenu0-1-1:\Sopen all directories.
-HelpGHistoryMenu0-1-2:\Sshow all entry details.
-HelpGHistoryMenu0-2:\Rcollapse items within global history.
-HelpGHistoryMenu0-2-0:\Sclose all directories and hide all entry details.
-HelpGHistoryMenu0-2-1:\Sclose all directories.
-HelpGHistoryMenu0-2-2:\Shide all entry details.
-HelpGHistoryMenu0-3:\Rcontrol the display of NetSurf's toolbars.
-HelpGHistoryMenu0-3-0:\Stoggle the display of the toolbar buttons.
-HelpGHistoryMenu0-3-1:\Stoggle toolbar edit mode.
-HelpGHistoryMenu1:\Roperate on the current selection.
-HelpGHistoryMenu1-0:\Slaunch the current selection.
-HelpGHistoryMenu1-1:\Sdelete the current selection from global history.
-HelpGHistoryMenu1-2:\Sreset statistics, such as visit count, for selected items.
-HelpGHistoryMenu2:\Sselect all the items in the hotlist.
-HelpGHistoryMenu3:\Sdeselect all selected items.
+HelpGHistoryMenu0:\Reffectuer une opération sur l'historique global.
+HelpGHistoryMenu0-0:\Rexporter l'historique global en fichier HTML.
+HelpGHistoryMenu0-1:\Rdéployer les items de l'historique global.
+HelpGHistoryMenu0-1-0:\Souvrir tous les répertoires et donner le détail de toutes les entrées.
+HelpGHistoryMenu0-1-1:\Souvrir tous les répertoires.
+HelpGHistoryMenu0-1-2:\Smontrer le détail de toutes les entrées.
+HelpGHistoryMenu0-2:\Rregrouper les items de l'historique global.
+HelpGHistoryMenu0-2-0:\Sfermer tous les répertoires et cacher le détail de toutes les entrées.
+HelpGHistoryMenu0-2-1:\Sfermer tous les répertoires.
+HelpGHistoryMenu0-2-2:\Scacher le détail de toutes les entrées.
+HelpGHistoryMenu0-3:\Rcontroler l'affichage des barre d'outils de NetSurf.
+HelpGHistoryMenu0-3-0:\Sbasculer l'affichage des boutons de la barre d'outils.
+HelpGHistoryMenu0-3-1:\Sbasculer le mode d'édition de la barre d'outils.
+HelpGHistoryMenu1:\Reffectuer une opération sur la sélection courante.
+HelpGHistoryMenu1-0:\Slancer la sélection courante.
+HelpGHistoryMenu1-1:\Ssupprimer la sélection courante de l'historique global.
+HelpGHistoryMenu1-2:\Sremettre à zéro les statistiques, comme le compteur de visites, pour les items sélectionnés.
+HelpGHistoryMenu2:\Ssélectionner tous les items des favoris.
+HelpGHistoryMenu3:\Sdéselectionner tous les items sélectionnés.
 
-HelpCookies:\TCookie management window.
-HelpCookiesToolbar0:\Tdelete button.|M\Sdelete the current selection.
-HelpCookiesToolbar1:\Texpand cookies button.|M\Sexpand all cookies in the list.|M\Acollapse all cookies in the list.|MExpanded cookies show additional details.
-HelpCookiesToolbar2:\Topen directories button.|M\Sopen all directories in the list.|M\Aclose all directories in the list.
+HelpCookies:\TFenêtre de gestion des cookies.
+HelpCookiesToolbar0:\Tbouton de suppression.|M\Ssupprimer la sélection en cours.
+HelpCookiesToolbar1:\Tdéployer le bouton de cookies.|M\Sdéployer tous les cookies de la liste.|M\Aregrouper tous les cookies de la liste.|MDéployer les cookies permet l'affichage d'informations supplémentaires.
+HelpCookiesToolbar2:\Touvrir le bouton de répertoires.|M\Souvrir tous les répertoires de la liste.|M\Afermer tous les répertoires de la liste.
 
-HelpCookiesMenu0:\Rperform an operation on the cookie list.
-HelpCookiesMenu0-0:\Rexpand items within the cookie list.
-HelpCookiesMenu0-0-0:\Sopen all directories and show all cookie details.
-HelpCookiesMenu0-0-1:\Sopen all directories.
-HelpCookiesMenu0-0-2:\Sshow all cookie details.
-HelpCookiesMenu0-1:\Rcollapse items within the cookie list.
-HelpCookiesMenu0-1-0:\Sclose all directories and hide all cookie details.
-HelpCookiesMenu0-1-1:\Sclose all directories.
-HelpCookiesMenu0-1-2:\Shide all cookie details.
-HelpCookiesMenu0-2:\Rcontrol the display of NetSurf's toolbars.
-HelpCookiesMenu0-2-0:\Stoggle the display of the toolbar buttons.
-HelpCookiesMenu0-2-1:\Stoggle toolbar edit mode.
-HelpCookiesMenu1:\Roperate on the current selection.
-HelpCookiesMenu1-0:\Sdelete any selected cookies.
-HelpCookiesMenu2:\Sselect all the items in the cookie list.
-HelpCookiesMenu3:\Sdeselect all selected items.
+HelpCookiesMenu0:\Raccomplir une opération sur la liste de cookies.
+HelpCookiesMenu0-0:\Rdéployer les items dans la liste de cookies.
+HelpCookiesMenu0-0-0:\Souvrir tous les répertoires et montrer le détail de tous les cookies.
+HelpCookiesMenu0-0-1:\Souvrir tous les répertoires.
+HelpCookiesMenu0-0-2:\Smontrer le détail de tous les cookies.
+HelpCookiesMenu0-1:\Rregrouper les items dans la liste de cookies.
+HelpCookiesMenu0-1-0:\Sfermer tous les répertoires et cacher le détail de tous les cookies.
+HelpCookiesMenu0-1-1:\Sfermer tous les répertoires.
+HelpCookiesMenu0-1-2:\Scacher le détail de tous les cookies.
+HelpCookiesMenu0-2:\Rcontroler l'affichage des barres d'outils de Netsurf.
+HelpCookiesMenu0-2-0:\Sbasculer l'affichage des boutons de la barre d'outils.
+HelpCookiesMenu0-2-1:\Sbasculer le mode d'édition de la barre d'outils.
+HelpCookiesMenu1:\Rfaire une opération sur la sélection courante.
+HelpCookiesMenu1-0:\Ssupprimer tous les cookies sélectionnés.
+HelpCookiesMenu2:\Ssélectionner tous les items dans la liste de cookies.
+HelpCookiesMenu3:\Sdéselectionner tous les items.
 
 HelpAppInfo:\Tla \w d'information de NetSurf.|MVoir la page "À propos de" pour une liste des contributeurs et les remerciements.
 
 
-HelpConfigure:\Tconfiguration \w for NetSurf
-HelpConfigure0:Cache configuration tool
-HelpConfigure1:Connection configuration tool
-HelpConfigure2:Content configuration tool
-HelpConfigure3:Font configuration tool
-HelpConfigure4:Home page configuration tool
-HelpConfigure5:Image configuration tool
-HelpConfigure6:Interface configuration tool
-HelpConfigure7:Language configuration tool
-HelpConfigure8:Memory configuration tool
-HelpConfigure9:Theme configuration tool
-HelpConfigure10:Security and Privacy configuration tool
+HelpConfigure:\Tla fenêtre de configuration pour Netsurf
+HelpConfigure0:Outil de configuration de cache
+HelpConfigure1:Outil de configuration de connexion
+HelpConfigure2:Outil de configuration de contenu
+HelpConfigure3:Outil de configuration de fontes
+HelpConfigure4:Outil de configuration de la page d'accueil
+HelpConfigure5:Outil de configuration d'image
+HelpConfigure6:Outil de configuration d'interface
+HelpConfigure7:Outil de configuration de langue
+HelpConfigure8:Outil de configuration de la mémoire
+HelpConfigure9:Outil de configuration de thème
+HelpConfigure10:Outil de configuration de la sécurité et de la confidentialité
 
-HelpCacheConfig:\Tcache configuration \w.
-HelpCacheConfig3:\Tamount of memory to be used for caching content.
-HelpCacheConfig4:\Sreduce the amount of memory.
-HelpCacheConfig5:\Sincrease the amount of memory.
-HelpCacheConfig10:\Tlength of time items are kept in the cache.
-HelpCacheConfig11:\Sreduce the cache duration.
-HelpCacheConfig12:\Sincrease the cache duration.
-HelpCacheConfig14:\Sdelete any redundant files from NetSurf's disc cache.
-HelpCacheConfig15:\Sreset the Cache options back to their default values.
-HelpCacheConfig16:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
-HelpCacheConfig17:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
+HelpCacheConfig:\Tla fenêtre de configuration du cache.
+HelpCacheConfig3:\Tla quantité de mémoire à utiliser pour le contenu du cache.
+HelpCacheConfig4:\Sréduire la quantité de mémoire.
+HelpCacheConfig5:\Saugmenter la quantité de mémoire.
+HelpCacheConfig10:\Tla durée de rétention dans le cache.
+HelpCacheConfig11:\Sréduire la durée du cache.
+HelpCacheConfig12:\Saugmenter la durée du cache.
+HelpCacheConfig14:\Ssupprimer tout fichier redondant du cache-disque de Netsurf.
+HelpCacheConfig15:\Srevenir aux valeurs par défaut des options du Cache.
+HelpCacheConfig16:\Sfermer cette fenêtre sans sauver les changements.|M\Arevenir aux options de Cache précédemment sauvegardées.
+HelpCacheConfig17:\Ssauver ces réglages et fermer la fenêtre.|M\Asauver ces réglages sans fermer la fenêtre.
 
-HelpConnectConfig:\Tconnection configuration \w
-HelpConnectConfig3:\Tcurrently selected proxy type.|MUse the menu to select a proxy type.
-HelpConnectConfig4:\Sselect a proxy type.
-HelpConnectConfig6:You can enter the proxy's host name here.
-HelpConnectConfig8:You can enter the proxy's port number here.
-HelpConnectConfig10:You can enter a username for proxies that require authentication here.
-HelpConnectConfig12:You can enter a password for proxies that require authentication here.
-HelpConnectConfig16:\Tmaximum number of simultanious fetches that NetSurf will perform.
-HelpConnectConfig17:\Sreduce the maximum number of simultanious fetches.
-HelpConnectConfig18:\Sincrease the maximum number of simultanious fetches.
-HelpConnectConfig20:\Tmaximum number of simultanious fetches that NetSurf will perform per host.
-HelpConnectConfig21:\Sreduce the maximum number of simultanious fetches per host.
-HelpConnectConfig22:\Sincrease the maximum number of simultanious fetches per host.
-HelpConnectConfig24:\Tmaximum number of persistent connections.
-HelpConnectConfig25:\Sreduce the maximum number of persistent connections.
-HelpConnectConfig26:\Sincrease the maximum number of persistent connections.
-HelpConnectConfig27:\Sreset the Connection options back to their default values.
-HelpConnectConfig28:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
-HelpConnectConfig29:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
+HelpConnectConfig:\Tla fenêtre de configuration de connexion.
+HelpConnectConfig3:\Tle type de proxy sélectionné en ce moment.|MUtiliser le menu pour choisir un type de proxy.
+HelpConnectConfig4:\Schoisir un type de proxy.
+HelpConnectConfig6:Vous pouvez entrer ici le nom d'hôte du proxy.
+HelpConnectConfig8:Vous pouvez entrer ici le numéro de port du proxy.
+HelpConnectConfig10:Vous pouvez entrer ici un nom d'utilisateur pour les proxies nécessitant une authentification.
+HelpConnectConfig12:Vous pouvez entrer ici un mot de passe pour les proxies nécessitant une authentification.
+HelpConnectConfig16:\Tle nombre maximum de télechargements simultanés que NetSurf peut effectuer.
+HelpConnectConfig17:\Sréduire le nombre de téléchargements simultanés.
+HelpConnectConfig18:\Saugmenter le nombre de téléchargements simultanés.
+HelpConnectConfig20:\Tle nombre maximum de téléchargements simultanés que Netsurf peut effectuer par hôte.
+HelpConnectConfig21:\Sréduire le nombre maximum de téléchargements simultanés par hôte.
+HelpConnectConfig22:\Saugmenter le nombre maximum de téléchargements simultanés par hôte.
+HelpConnectConfig24:\Tle nombre maximum de connexions persistantes.
+HelpConnectConfig25:\Sréduire le nombre maximum de connexions persistantes.
+HelpConnectConfig26:\Saugmenter le nombre maximum de connexions persistantes.
+HelpConnectConfig27:\Srevenir aux valeurs par défaut des options de Connexion.
+HelpConnectConfig28:\Sfermer cette fenêtre sans sauvegarder les changements.|M\Arevenir aux options de Connexion précédemment sauvegardées.
+HelpConnectConfig29:\Ssauver ces réglages et fermer la fenêtre.|M\Asauver ces réglages sans fermer la fenêtre.
 
-HelpContentConfig:\Tcontent configuration \w
-HelpContentConfig2:This indicates whether NetSurf will atempt to block advertisements on web pages|MIn rare circumstances, this option may cause valid content to be blocked too.
-HelpContentConfig3:This indicates whether NetSurf will stop web sites from automatically opening new windows on your desktop.
-HelpContentConfig4:This indicates whether NetSurf will allow external plug-ins to handle additional types of content, such as Flash.
-HelpContentConfig5:\Sreset the Content options back to their default values.
-HelpContentConfig6:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
-HelpContentConfig7:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
+HelpContentConfig:\Tla fenêtre de configuration du Contenu
+HelpContentConfig2:Ceci indique si Netsurf doit essayer de bloquer les pubs sur les pages web.|MEn de rares circonstances, cette option peut également bloquer du contenu valide. 
+HelpContentConfig3:Ceci indique si Netsurf doit empêcher les sites web d'ouvrir automatiquement de nouvelles fenêtres sur votre Bureau.
+HelpContentConfig4:Ceci indique si Netsurf doit autoriser les plug-ins externes à manipuler des types de contenu supplémentaires, comme le Flash.
+HelpContentConfig5:\Srevenir aux valeurs par défaut des options du Contenu.
+HelpContentConfig6:\Sfermer cette fenêtre sans sauver les changements|M\Arevenir aux options de Contenu précédemment sauvegardées.
+HelpContentConfig7:\Ssauver ces réglages et fermer la fenêtre.|M\Asauver ces réglages sans fermer la fenêtre.
 
-HelpFontConfig:\font configuration \w
-HelpFontConfig3:\Tcurrently selected sans-serif font.|MNetSurf will use this font wherever a web page specifies a sans-serif typeface.
-HelpFontConfig4:\Sselect a sans-serif font.
-HelpFontConfig6:\Tcurrently selected serif font.|MNetSurf will use this font wherever a web page specifies a serif typeface.
-HelpFontConfig7:\Sselect a sans-serif font.
-HelpFontConfig9:\Tcurrently selected monospace font.|MNetSurf will use this font wherever a web page specifies a monospace typeface.
-HelpFontConfig10:\Sselect a monospace font.
-HelpFontConfig12:\Tcurrently selected cursive font.|MNetSurf will use this font wherever a web page specifies a cursive typeface.
-HelpFontConfig13:\Sselect a cursive font.
-HelpFontConfig15:\Tcurrently selected fantasy font.|MNetSurf will use this font wherever a web page specifies a fantasy typeface.
-HelpFontConfig16:\Sselect a fantasy font.
-HelpFontConfig18:\Tcurrently selected font family.|MNetSurf will use this wherever a web page does not specify a typeface.
-HelpFontConfig19:\Sselect a default font family.
-HelpFontConfig23:You can enter a default font size here.|MNetSurf will use this wherever a web page does not specify a font size of its own.
-HelpFontConfig24:\Sreduce the default font size.
-HelpFontConfig25:\Sincrease the default font size.
-HelpFontConfig28:You can enter a minimum font size here.|MNetSurf will not allow web pages to display smaller text than this.
-HelpFontConfig29:\Sreduce the minimum font size.
-HelpFontConfig30:\Sincrease the minimum font size.
-HelpFontConfig32:\Sreset the Font options back to their default values.
-HelpFontConfig33:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
-HelpFontConfig34:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
+HelpFontConfig:\Tla fenêtre de configuration de Fontes
+HelpFontConfig3:\Tla fonte sans-sérif actuellement sélectionnée.|MNetsurf utilisera cette fonte à chaque fois qu'une page web spécifiera une police sans-sérif.
+HelpFontConfig4:\Ssélectionner une fonte sans-sérif.
+HelpFontConfig6:\Tla fonte sérif actuellement sélectionnée.|MNetsurf utilisera cette fonte à chaque fois qu'une page web spécifiera une police sérif.
+HelpFontConfig7:\Ssélectionner une fonte sérif.
+HelpFontConfig9:\Tla fonte sérif actuellement sélectionnée.|MNetsurf utilisera cette fonte à chaque fois qu'une page web spécifiera une police monospace.
+HelpFontConfig10:\Ssélectionner une fonte monospace.
+HelpFontConfig12:\Tla fonte cursive actuellement sélectionnée.|MNetsurf utilisera cette fonte à chaque fois qu'une page web spécifiera une police cursive.
+HelpFontConfig13:\Ssélectionner une fonte cursive.
+HelpFontConfig15:\Tla fonte fantaisie actuellement sélectionnée.|MNetsurf utilisera cette fonte à chaque fois qu'une page web spécifiera une police fantaisie.
+HelpFontConfig16:\Ssélectionner une fonte fantaisie.
+HelpFontConfig18:\Tla famille de fontes actuellement sélectionnée.|MNetsurf utilisera cette fonte à chaque fois qu'une page web ne spécifiera aucune police.
+HelpFontConfig19:\Ssélectionner une famille de fontes par défaut.
+HelpFontConfig23:Vous pouvez entrer ici une taille par défaut.|MNetsurf l'utilisera chaque fois qu'une page web ne spécifiera pas de taille de fonte.
+HelpFontConfig24:\Sréduire la taille de fonte.
+HelpFontConfig25:\Saugmenter la taille de fonte.
+HelpFontConfig28:Vous pouvez entrer ici une taille de fonte minimum.|MNetsurf ne permettra pas aux pages web d'afficher un texte ayant une taille plus petite.
+HelpFontConfig29:\Sréduire la taille de fonte minimum.
+HelpFontConfig30:\Saugmenter la taille de fonte minimum.
+HelpFontConfig32:\Srevenir aux valeurs par défaut des options de Fontes.
+HelpFontConfig33:\Sfermer cette fenêtre sans sauver les changements|M\Arevenir aux options de Fontes précédemment sauvegardées.
+HelpFontConfig34:\Ssauver ces réglages et fermer la fenêtre.|M\Asauver ces réglages sans fermer la fenêtre.
 
-HelpHomeConfig:\Thome page configuration \w
-HelpHomeConfig3:You can enter a default home page address here.
-HelpHomeConfig4:\Sselect a recently typed URL.|MThese addresses have recently been typed into a NetSurf browser \w's URL bar.
-HelpHomeConfig5:This indicates whether NetSurf will open a browser \w on start-up.
-HelpHomeConfig6:\Sreset the Home page options back to their default values.
-HelpHomeConfig7:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
-HelpHomeConfig8:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
+HelpHomeConfig:\Tla fenêtre de configuration de Page d'accueil
+HelpHomeConfig3:Vous pouvez entrer ici une page d'accueil par défaut.
+HelpHomeConfig4:\Ssélectionner une URL récemment tapée.|MCes adresses ont été récemment tapées dans la barre d'URL du navigateur Netsurf.
+HelpHomeConfig5:Ceci indique si Netsurf doit ouvrir une fenêtre de navigation au démarrage.
+HelpHomeConfig6:\Srevenir aux valeurs par défaut des options de Page d'accueil.
+HelpHomeConfig7:\Sfermer cette fenêtre sans sauver les changements|M\Arevenir aux options de Page d'accueil précédemment sauvegardées.
+HelpHomeConfig8:\Ssauver ces réglages et fermer la fenêtre.|M\Asauver ces réglages sans fermer la fenêtre.
 
-HelpImageConfig:\Timage configuration \w
-HelpImageConfig3:\Tcurrently selected foreground image quality.
-HelpImageConfig4:\Sselect a foreground image quality setting.|MError diffused provides the highest quality.
-HelpImageConfig6:\Tcurrently selected background image quality.
-HelpImageConfig7:\Sselect a background image quality setting.|MError diffused provides the highest quality.
-HelpImageConfig8:\Timage quality preview image.|MThe optimum results are achived with both foreground and background image quality set to error diffused.|MThe user guide provides more information on the implications of these options.
-HelpImageConfig12:You can enter the minimum time between animation frames here.|MA very low setting can cause your computer to slow down when rapid animations are displayed and is not suitable for slow computers.
-HelpImageConfig13:\Sreduce the minimum time between animation frames.
-HelpImageConfig14:\Sincrease the minimum time between animation frames.
-HelpImageConfig16:This indicates whether NetSurf will disable animations on web pages.|MWhen animations are disabled, NetSurf will show the first frame as a static image.
-HelpImageConfig17:\Sreset the Image options back to their default values.
-HelpImageConfig18:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
-HelpImageConfig19:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
+HelpImageConfig:\Tla fenêtre de configuration d'Image
+HelpImageConfig3:\Tla qualité d'image de premier plan sélectionnée actuellement.
+HelpImageConfig4:\Schoisir un réglage de qualité pour les images de premier plan.|MAvec diffusion d'erreur correspond à la meilleure qualité.
+HelpImageConfig6:\Tla qualité d'image de fond sélectionnée actuellement.
+HelpImageConfig7:\Schoisir un réglage de qualité pour les images de fond.|MAvec diffusion d'erreur correspond à la meilleure qualité.
+HelpImageConfig8:\Timage de prévisualisation de qualité d'image.|MLes résultats optimaux sont obtenus avec des images de premier plan et de fond avec diffusion d'erreur.|MLe guide utilisateur fournit plus d'informations quant aux implications de cette option.
+HelpImageConfig12:Vous pouvez entrer ici le temps minimum entre deux images d'animation.|MUn réglage trop bas peut ralentir les animations affichées et ne convient pas à des ordinateurs lents.
+HelpImageConfig13:\Sréduire le temps minimum entre deux images d'animation.
+HelpImageConfig14:\Saugmenter le temps minimum entre deux images d'animation.
+HelpImageConfig16:Ceci indique si Netsurf doit annuler les animations des pages web.|MLorsque les animations sont désactivées, Netsurf utilisera la première image comme image statique.
+HelpImageConfig17:\Srevenir aux valeurs par défaut des options d'Image.
+HelpImageConfig18:\Sfermer cette fenêtre sans sauver les changements|M\Arevenir aux options d'Image précédemment sauvegardées.
+HelpImageConfig19:\Ssauver ces réglages et fermer la fenêtre.|M\Asauver ces réglages sans fermer la fenêtre.
 
-HelpInterfaceConfig:\Tinterface configuration \w
-HelpInterfaceConfig2:This indicates whether NetSurf will strip file extensions when saving files to disc.
-HelpInterfaceConfig3:This indicates whether NetSurf will ask for confirmation before overwriting files of the same name.
-HelpInterfaceConfig6:This indicates whether NetSurf's URL suggestion feature is enabled.|MURL suggestion shows options for completing URLs as you type into NetSurf's URL bar.
-HelpInterfaceConfig7:This indicates whether the URL for the item under the pointer in NetSurf's local history \w will be displayed.
-HelpInterfaceConfig10:This indicates whether NetSurf will use a thumbnail when iconising windows to the Pinboard.
-HelpInterfaceConfig11:\Sreset the Interface options back to their default values.
-HelpInterfaceConfig12:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
-HelpInterfaceConfig13:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
+HelpInterfaceConfig:\Tla fenêtre de configuration d'interface
+HelpInterfaceConfig2:Ceci indique si Netsurf supprime les extensions de fichiers lors d'une sauvegarde sur disque.
+HelpInterfaceConfig3:Ceci indique si Netsurf doit demander confirmation avant d'écraser des fichiers portant le même nom.
+HelpInterfaceConfig6:Ceci indique si la fontion de suggestion d'URL de Netsurf est activée.|MLa suggestion d'URL montre les possibilités de complétion d'URL au fur et à mesure où elles sont tapées dans la barre.
+HelpInterfaceConfig7:Ceci indique si l'URL de l'item sous le pointeur dans la fenêtre d'historique local doit être affiché.
+HelpInterfaceConfig10:Ceci indique si Netsurf doit utiliser une miniature lors de l'iconisation vers le Punaiseur (Pinboard).
+HelpInterfaceConfig11:\Srevenir aux valeurs par défaut des options d'Interface.
+HelpInterfaceConfig12:\Sfermer cette fenêtre sans sauver les changements|M\Arevenir aux options d'Interface précédemment sauvegardées.
+HelpInterfaceConfig13:\Ssauver ces réglages et fermer la fenêtre.|M\Asauver ces réglages sans fermer la fenêtre.
 
-HelpLanguageConfig:\Tlanguage configuration \w
-HelpLanguageConfig3:\Tcurrently selected interface language.|MThe interface language is the language used for NetSurf's messages and dialogue boxes.
-HelpLanguageConfig4:\Sselect an interface language.
-HelpLanguageConfig6:\Tcurrently selected web page language.|MIf a web site provides a choice of languages, NetSurf will request the page in your preferred language.
-HelpLanguageConfig7:\Sselect a preferred web page language.
-HelpLanguageConfig8:\Sreset the Language options back to their default values.
-HelpLanguageConfig9:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
-HelpLanguageConfig10:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
+HelpLanguageConfig:\Tfenêtre de configuration de langue.
+HelpLanguageConfig3:\Tla langue d'interface sélectionnée actuellement.|MLa langue d'interface est la langue utilisée pour les messages et les boîtes de dialogue de Netsurf.
+HelpLanguageConfig4:\Schoisir une langue d'interface.
+HelpLanguageConfig6:\Tla langue de page web sélectionnée actuellement.|MSi un site web fournit un choix de langues, Netsurf demandera la page dans votre langue favorite.
+HelpLanguageConfig7:\Schoisir une langue de page web préférée.
+HelpLanguageConfig8:\Srevenir aux valeurs par défaut des options de Langue.
+HelpLanguageConfig9:\Sfermer cette fenêtre sans sauver les changements|M\Arevenir aux options de Langue précédemment sauvegardées.
+HelpLanguageConfig10:\Ssauver ces réglages et fermer la fenêtre.|M\Asauver ces réglages sans fermer la fenêtre.
 
-HelpMemoryConfig:\Tmemory configuration \w
-HelpMemoryConfig3:You can enter the maximum amount of memory NetSurf will use for storing uncompressed images here.
-HelpMemoryConfig4:\Sreduce the amount of memory used for storing uncompressed images.
-HelpMemoryConfig5:\Sincrease the amount of memory used for storing uncompressed images.
-HelpMemoryConfig7:This indicates whether NetSurf will try to make an intelligent guess at the most suitable amount of memory to use for storing uncompressed images.
-HelpMemoryConfig9:You can enter the maximum amount of memory NetSurf will use for storing compressed images here.
-HelpMemoryConfig10:\Sreduce the amount of memory used for storing compressed images.
-HelpMemoryConfig11:\Sincrease the amount of memory used for storing compressed images.
-HelpMemoryConfig13:This indicates whether NetSurf will try to make an intelligent guess at the most suitable amount of memory to use for storing uncompressed images.
-HelpMemoryConfig14:\Sreset the Memory options back to their default values.
-HelpMemoryConfig15:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
-HelpMemoryConfig16:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
+HelpMemoryConfig:\Tla fenêtre de configuration de mémoire
+HelpMemoryConfig3:Vous pouvez entrer ici la quantité maximum de mémoire que Netsurf utilisera pour stocker les images non-compressées.
+HelpMemoryConfig4:\Sréduire la quantité de mémoire utilisée pour stocker les images non-compressées.
+HelpMemoryConfig5:\Saugmenter la quantité de mémoire utilisée pour stocker les images non-compressées.
+HelpMemoryConfig7:Ceci indiquera si Netsurf doit essayer de deviner intelligemment la quantité de mémoire la plus appropriée à utiliser pour le stockage d'images non-compressées.
+HelpMemoryConfig9:Vous pouvez entrer ici la quantité de mémoire maximum que Netsurf utilisera pour le stockage d'images compressées.
+HelpMemoryConfig10:\Sréduire la quantité de mémoire utilisée pour le stockage d'images compressées.
+HelpMemoryConfig11:\Saugmenter la quantité de mémoire utilisée pour le stockage d'images compressées.
+HelpMemoryConfig13:Ceci indiquera si Netsurf doit essayer de deviner intelligemment la quantité de mémoire la plus appropriée à utiliser pour le stockage d'images compressées.
+HelpMemoryConfig14:\Srevenir aux valeurs par défaut des options de Mémoire.
+HelpMemoryConfig15:\Sfermer cette fenêtre sans sauver les changements|M\Arevenir aux options de Mémoire précédemment sauvegardées.
+HelpMemoryConfig16:\Ssauver ces réglages et fermer la fenêtre.|M\Asauver ces réglages sans fermer la fenêtre.
 
-HelpSecurityConfig:\Tsecurity configuration \w
-HelpSecurityConfig2:This indicates whether NetSurf will send site referral information to web servers.|MWhen this is enabled NetSurf will tell the web server of a new page the address of the site you came from, after following a link.
-HelpSecurityConfig6:You can enter the length of time that items are stored in global history here.
-HelpSecurityConfig7:\Sreduce the global history duration.
-HelpSecurityConfig8:\Sincrease the global history duration.
-HelpSecurityConfig10:\Sreset the Security options back to their default values.
-HelpSecurityConfig11:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
-HelpSecurityConfig12:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
+HelpSecurityConfig:\Tla fenêtre de configuration de sécurité
+HelpSecurityConfig2:Ceci indique si Netsurf doit envoyer l'information de renvoi de site aux serveurs web.|MLorsque ceci est activé Netsurf signalera au serveur web d'une nouvelle page l'adresse du site d'où vous venez, après avoir suivi un lien.
+HelpSecurityConfig6:Vous pouvez entrer ici la durée de stockage des items dans l'historique global.
+HelpSecurityConfig7:\Sréduire la durée de l'historique global.
+HelpSecurityConfig8:\Saugmenter la durée de l'historique global.
+HelpSecurityConfig10:\Srevenir aux valeurs par défaut des options de Sécurité.
+HelpSecurityConfig11:\Sfermer cette fenêtre sans sauver les changements|M\Arevenir aux options de Sécurité précédemment sauvegardées.
+HelpSecurityConfig12:\Ssauver ces réglages et fermer la fenêtre.|M\Asauver ces réglages sans fermer la fenêtre.
 
-HelpThemeConfig:\Ttheme configuration \w
-HelpThemeConfig2:\Sreset the Theme options back to their default values.
-HelpThemeConfig3:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
-HelpThemeConfig4:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
+HelpThemeConfig:\Tla fenêtre de configuration de thème
+HelpThemeConfig2:\Srevenir aux valeurs par défaut des options de Thème.
+HelpThemeConfig3:\Sfermer cette fenêtre sans sauver les changements|M\Arevenir aux options de Thème précédemment sauvegardées.
+HelpThemeConfig4:\Ssauver ces réglages et fermer la fenêtre.|M\Asauver ces réglages sans fermer la fenêtre.
 
-HelpThemePConfig:This pane shows the available themes.|MThe selected icon theme is used for NetSurf browser \ws, the hotlist and global history.
+HelpThemePConfig:Cette fenêtre indique les thèmes disponibles.|MLe thème de l'icône sélectionnée est utilisée pour les fenêtres de navigation de Netsurf, la liste des favoris et l'historique global.
 
 
 # Configuration tokens
@@ -914,16 +914,16 @@ HelpThemePConfig:This pane shows the available themes.|MThe selected icon theme 
 #
 
 con_cache:Cache
-con_connect:Connection
-con_content:Content
-con_fonts:Fonts
-con_home:Home page
+con_connect:Connexion
+con_content:Contenu
+con_fonts:Fontes
+con_home:Page d'accueil
 con_image:Images
 con_inter:Interface
-con_lang:Language
-con_memory:Memory
-con_secure:Security
-con_theme:Themes
+con_lang:Langue
+con_memory:Mémoire
+con_secure:Sécurité
+con_theme:Thèmes
 
 
 # Unused tokens
