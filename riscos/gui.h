@@ -62,6 +62,11 @@ typedef enum { GUI_DRAG_NONE, GUI_DRAG_SELECTION, GUI_DRAG_DOWNLOAD_SAVE,
 
 extern gui_drag_type gui_current_drag_type;
 
+/** desktop font, size and style being used */
+extern char ro_gui_desktop_font_family[];
+extern int ro_gui_desktop_font_size;
+extern rufl_style ro_gui_desktop_font_style;
+
 
 /** RISC OS data for a browser window. */
 struct gui_window {
@@ -208,6 +213,7 @@ bool nsfont_paint(struct css_style *style, const char *string,
 void nsfont_read_style(const struct css_style *style,
 		const char **font_family, unsigned int *font_size,
 		rufl_style *font_style);
+void ro_gui_wimp_get_desktop_font(void);
 
 /* in plotters.c */
 extern const struct plotter_table ro_plotters;

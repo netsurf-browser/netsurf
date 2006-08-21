@@ -14,6 +14,7 @@
 #include <assert.h>
 #include <string.h>
 #include "oslib/wimp.h"
+#include "oslib/wimpreadsysinfo.h"
 #include "rufl.h"
 #include "netsurf/css/css.h"
 #include "netsurf/render/font.h"
@@ -26,12 +27,19 @@
 
 wimp_menu *font_menu;
 
+/** desktop font, size and style being used */
+char ro_gui_desktop_font_family[80];
+int ro_gui_desktop_font_size = 12;
+rufl_style ro_gui_desktop_font_style = rufl_WEIGHT_400;
+
 
 static void nsfont_check_option(char **option, const char *family,
 		const char *fallback);
 static int nsfont_list_cmp(const void *keyval, const void *datum);
 static void nsfont_check_fonts(void);
 static void nsfont_init_menu(void);
+static void ro_gui_wimp_desktop_font(char *family, size_t bufsize, int *psize,
+		rufl_style *pstyle);
 
 
 /**
@@ -505,4 +513,104 @@ void nsfont_read_style(const struct css_style *style,
 		*font_style |= rufl_WEIGHT_400;
 		break;
 	}
+}
+
+
+/**
+ * Looks up the current desktop font and converts that to a family name,
+ * font size and style flags suitable for passing directly to rufl
+ *
+ * \param  family	buffer to receive font family
+ * \param  family_size	buffer size
+ * \param  psize	receives the font size in 1/16 points
+ * \param  pstyle	receives the style settings to be passed to rufl
+ */
+
+void ro_gui_wimp_desktop_font(char *family, size_t family_size, int *psize,
+		rufl_style *pstyle)
+{
+	rufl_style style = rufl_WEIGHT_400;
+	os_error *error;
+	int ptx, pty;
+	font_f font_handle;
+	int used;
+
+	assert(family);
+	assert(20 < family_size);
+	assert(psize);
+	assert(pstyle);
+
+	error = xwimpreadsysinfo_font(&font_handle, NULL);
+	if (error) {
+		LOG(("xwimpreadsysinfo_font: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		goto failsafe;
+	}
+
+	error = xfont_read_identifier(font_handle, NULL, &used);
+	if (error) {
+		LOG(("xfont_read_identifier: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("MiscError", error->errmess);
+		goto failsafe;
+	}
+
+	if (family_size < (size_t) used + 1) {
+		LOG(("desktop font name too long"));
+		goto failsafe;
+	}
+
+	error = xfont_read_defn(font_handle, family,
+			&ptx, &pty, NULL, NULL, NULL, NULL);
+	if (error) {
+		LOG(("xfont_read_defn: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("MiscError", error->errmess);
+		goto failsafe;
+	}
+
+	for (size_t i = 0; i != (size_t) used; i++) {
+		if (family[i] < ' ') {
+			family[i] = 0;
+			break;
+		}
+	}
+
+	LOG(("desktop font \"%s\"", family));
+
+	if (strstr(family, ".Bold"))
+		style = rufl_WEIGHT_700;
+	if (strstr(family, ".Italic") || strstr(family, ".Oblique"))
+		style |= rufl_SLANTED;
+
+	char *dot = strchr(family, '.');
+	if (dot)
+		*dot = 0;
+
+	*psize = max(ptx, pty);
+	*pstyle = style;
+
+	LOG(("family \"%s\", size %i, style %i", family, *psize, style));
+
+	return;
+
+failsafe:
+	strcpy(family, "Homerton");
+	*psize = 12*16;
+	*pstyle = rufl_WEIGHT_400;
+}
+
+
+/**
+ * Retrieve the current desktop font family, size and style from
+ * the WindowManager in a form suitable for passing to rufl
+ */
+
+void ro_gui_wimp_get_desktop_font(void)
+{
+	ro_gui_wimp_desktop_font(ro_gui_desktop_font_family,
+		sizeof(ro_gui_desktop_font_family),
+		&ro_gui_desktop_font_size,
+		&ro_gui_desktop_font_style);
 }
