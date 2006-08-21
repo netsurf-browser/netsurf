@@ -18,6 +18,17 @@
 #include "netsurf/utils/hashtable.h"
 #include "netsurf/utils/log.h"
 
+/**
+ * Create a new hash table, and return a context for it.  The memory consumption
+ * of a hash table is approximately 8 + (nchains * 12) bytes if it is empty.
+ *
+ * \param  chains Number of chains/buckets this hash table will have.  This
+ *                should be a prime number, and ideally a prime number just
+ *                over a power of two, for best performance and distribution.
+ * \return struct hash_table containing the context of this hash table or NULL
+ *         if there is insufficent memory to create it and its chains.
+ */
+ 
 struct hash_table *hash_create(unsigned int chains)
 {
 	struct hash_table *r = malloc(sizeof(struct hash_table));
@@ -38,6 +49,13 @@ struct hash_table *hash_create(unsigned int chains)
 
 	return r;
 }
+
+/**
+ * Destroys a hash table, freeing all memory associated with it.
+ *
+ * \param  ht    Hash table to destroy.  After the function returns, this
+ *               will nolonger be valid.
+ */
 
 void hash_destroy(struct hash_table *ht)
 {
@@ -60,11 +78,25 @@ void hash_destroy(struct hash_table *ht)
 	free(ht);
 }
 
+/**
+ * Adds a key/value pair to a hash table.  If the key you're adding is already
+ * in the hash table, it does not replace it, but it does take precedent over
+ * it.  The old key/value pair will be inaccessable but still in memory until
+ * hash_destroy() is called on the hash table.
+ *
+ * \param  ht     The hash table context to add the key/value pair to.
+ * \param  key    The key to associate the value with.  A copy is made.
+ * \param  value  The value to associate the key with.  A copy is made.
+ * \return true if the add succeeded, false otherwise.  (Failure most likely
+ *         indicates insufficent memory to make copies of the key and value.
+ */
+
 bool hash_add(struct hash_table *ht, const char *key, const char *value)
 {
 	unsigned int h = hash_string_fnv(key);
 	unsigned int c = h % ht->nchains;
 	struct hash_entry *e = malloc(sizeof(struct hash_entry));
+	
 	if (e == NULL) {
 		LOG(("Not enough memory for hash entry."));
 		return false;
@@ -91,6 +123,14 @@ bool hash_add(struct hash_table *ht, const char *key, const char *value)
 	return true;
 }
 
+/**
+ * Looks up a the value associated with with a key from a specific hash table.
+ *
+ * \param  ht     The hash table context to look up the key in.
+ * \param  key    The key to search for.
+ * \return The value associated with the key, or NULL if it was not found.
+ */
+
 const char *hash_get(struct hash_table *ht, const char *key)
 {
 	unsigned int h = hash_string_fnv(key);
@@ -107,6 +147,15 @@ const char *hash_get(struct hash_table *ht, const char *key)
 
 }
 
+/**
+ * Hash a string, returning a 32bit value.  The hash algorithm used is
+ * Fowler Noll Vo - a very fast and simple hash, ideal for short strings.
+ * See http://en.wikipedia.org/wiki/Fowler_Noll_Vo_hash for more details.
+ *
+ * \param  datum   The string to hash.
+ * \return The calculated hash value for the datum.
+ */
+
 unsigned int hash_string_fnv(const char *datum)
 {
 	unsigned int z = 0x01000193, i = 0;
@@ -119,6 +168,15 @@ unsigned int hash_string_fnv(const char *datum)
 
 	return z;
 }
+
+/* A simple test rig.  To compile, use:
+ * gcc -o hashtest -I../ -DTEST_RIG utils/hashtable.c
+ *
+ * If you make changes to this hash table implementation, please rerun this
+ * test, and if possible, through valgrind to make sure there are no memory
+ * leaks or invalid memory accesses..  If you add new functionality, please
+ * include a test for it that has good coverage along side the other tests.
+ */
 
 #ifdef TEST_RIG
 
