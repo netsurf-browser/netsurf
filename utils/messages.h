@@ -14,15 +14,19 @@
  * messages_load() to read the file into memory. To lookup a key, use
  * messages_get("key").
  *
- * Only the first MAX_KEY_LENGTH (currently 24) characters of the key are
- * significant.
+ * It can also load additional messages files into different contexts and allow
+ * you to look up values in it independantly from the standard shared Messages
+ * file table.  Use the _ctx versions of the functions to do this.
  */
 
 #ifndef _NETSURF_UTILS_MESSAGES_H_
 #define _NETSURF_UTILS_MESSAGES_H_
 
+#include "netsurf/utils/hashtable.h"
+
 void messages_load(const char *path);
+struct hash_table *messages_load_ctx(const char *path, struct hash_table *ctx);
+const char *messages_get_ctx(const char *key, struct hash_table *ctx);
 const char *messages_get(const char *key);
-void messages_dump(void);
 
 #endif

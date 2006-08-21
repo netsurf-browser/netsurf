@@ -3,6 +3,7 @@
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2006 Rob Kendrick <rjek@rjek.com>
  */
 
 /** \file
@@ -15,33 +16,76 @@
 #include <assert.h>
 #include <errno.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <string.h>
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
+#include "netsurf/utils/hashtable.h"
 
 /** We store the messages in a fixed-size hash table. */
 #define HASH_SIZE 101
 
-/** Maximum length of a key. */
-#define MAX_KEY_LENGTH 24
-
-/** Entry in the messages hash table. */
-struct messages_entry {
-	struct messages_entry *next;  /**< Next entry in this hash chain. */
-	char key[MAX_KEY_LENGTH];
-	char value[1];
-};
-
-/** Localised messages hash table. */
-static struct messages_entry *messages_table[HASH_SIZE];
-
-
-static unsigned int messages_hash(const char *s);
-
+/** The hash table used to store the standard Messages file for the old API */
+static struct hash_table *messages_hash = NULL;
 
 /**
  * Read keys and values from messages file.
+ *
+ * \param  path  pathname of messages file
+ * \param  ctx   struct hash_table to merge with, or NULL for a new one.
+ * \return struct hash_table containing the context or NULL in case of error.
+ */
+
+struct hash_table *messages_load_ctx(const char *path, struct hash_table *ctx)
+{
+	char s[400];
+	FILE *fp;
+	
+	ctx = (ctx != NULL) ? ctx : hash_create(HASH_SIZE);
+	
+	if (ctx == NULL) {
+		LOG(("Unable to create hash table for messages file %s", path));
+		return NULL;
+	}
+
+	fp = fopen(path, "r");
+	if (!fp) {
+		snprintf(s, sizeof s, "Unable to open messages file "
+				"\"%.100s\": %s", path, strerror(errno));
+		s[sizeof s - 1] = 0;
+		LOG(("%s", s));
+		return NULL;
+	}
+
+	while (fgets(s, sizeof s, fp)) {
+		char *colon, *value;
+
+		if (s[0] == 0 || s[0] == '#')
+			continue;
+
+		s[strlen(s) - 1] = 0;  /* remove \n at end */
+		colon = strchr(s, ':');
+		if (!colon)
+			continue;
+		*colon = 0;  /* terminate key */
+		value = colon + 1;
+		
+		if (hash_add(ctx, s, value) == false) {
+			LOG(("Unable to add %s:%s to hash table of %s",
+				s, value, path));
+			fclose(fp);
+			return NULL;
+		}
+	}
+
+	fclose(fp);
+	
+	return ctx;
+}
+
+/**
+ * Read keys and values from messages file into the standard Messages hash.
  *
  * \param  path  pathname of messages file
  *
@@ -53,109 +97,43 @@ static unsigned int messages_hash(const char *s);
 
 void messages_load(const char *path)
 {
+	struct hash_table *m;
 	char s[400];
-	FILE *fp;
-
-	fp = fopen(path, "r");
-	if (!fp) {
-		snprintf(s, sizeof s, "Unable to open messages file "
-				"\"%.100s\": %s", path, strerror(errno));
-		s[sizeof s - 1] = 0;
-		LOG(("%s", s));
+	
+	m = messages_load_ctx(path, messages_hash);
+	if (m == NULL) {
+		LOG(("Unable to open Messages file '%s'.  Possible reason: %s",
+				path, strerror(errno)));
+		snprintf(s, 400, "Unable to open Messages file '%s'.", path);
 		die(s);
 	}
-
-	while (fgets(s, sizeof s, fp)) {
-		char *colon, *value;
-		unsigned int slot;
-		struct messages_entry *entry;
-		size_t length;
-
-		if (s[0] == 0 || s[0] == '#')
-			continue;
-
-		s[strlen(s) - 1] = 0;  /* remove \n at end */
-		colon = strchr(s, ':');
-		if (!colon)
-			continue;
-		*colon = 0;  /* terminate key */
-		value = colon + 1;
-		length = strlen(value);
-
-		entry = malloc(sizeof *entry + length + 1);
-		if (!entry) {
-			snprintf(s, sizeof s, "Not enough memory to load "
-					"messages file \"%.100s\".", path);
-			s[sizeof s - 1] = 0;
-			LOG(("%s", s));
-			die(s);
-		}
-		strncpy(entry->key, s, MAX_KEY_LENGTH);
-		strcpy(entry->value, value);
-		slot = messages_hash(entry->key);
-		entry->next = messages_table[slot];
-		messages_table[slot] = entry;
-	}
-
-	fclose(fp);
+	
+	messages_hash = m;
 }
-
 
 /**
  * Fast lookup of a message by key.
  *
  * \param  key  key of message
- * \return  value of message, or key if not found
+ * \param  ctx  context of messages file to look up in
+ * \return value of message, or key if not found
+ */
+
+const char *messages_get_ctx(const char *key, struct hash_table *ctx)
+{
+	const char *r = hash_get(ctx, key);
+	
+	return r ? r : key;
+}
+
+/**
+ * Fast lookup of a message by key from the standard Messages hash.
+ *
+ * \param  key  key of message
+ * \return value of message, or key if not found
  */
 
 const char *messages_get(const char *key)
 {
-	struct messages_entry *entry;
-
-	for (entry = messages_table[messages_hash(key)];
-			entry && strcasecmp(entry->key, key) != 0;
-			entry = entry->next)
-		;
-	if (!entry)
-		return key;
-	return entry->value;
-}
-
-
-/**
- * Hash function for keys.
- */
-
-/* This is Fowler Noll Vo - a very fast and simple hash ideal for short
- * strings.  See http://en.wikipedia.org/wiki/Fowler_Noll_Vo_hash for more
- * details.
- */
-unsigned int messages_hash(const char *s)
-{
-	unsigned int z = 0x01000193, i;
-	
-	if (s == NULL)
-		return 0;
-		
-	for (i = 0; i != MAX_KEY_LENGTH && s[i]; i++) {
-		z *= 0x01000193;
-		z ^= (s[i] & 0x1f); /* lower 5 bits, case insensitive */
-	}
-	
-	return z % HASH_SIZE;
-}
-
-
-/**
- * Dump set of loaded messages.
- */
-
-void messages_dump(void)
-{
-	unsigned int i;
-	for (i = 0; i != HASH_SIZE; i++) {
-		struct messages_entry *entry;
-		for (entry = messages_table[i]; entry; entry = entry->next)
-			printf("%.20s:%s\n", entry->key, entry->value);
-	}
+	return messages_get_ctx(key, messages_hash);
 }
