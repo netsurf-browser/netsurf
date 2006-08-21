@@ -38,15 +38,4 @@ bool nsfont_split(const struct css_style *style,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x);
 
-
-
-
-void nsfont_txtenum(void *font, const char *text,
-		size_t length,
-		unsigned int *width,
-		const char **rofontname,
-		const char **rotext,
-		size_t *rolength,
-		size_t *consumed);
-
 #endif

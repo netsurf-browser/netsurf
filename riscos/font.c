@@ -506,15 +506,3 @@ void nsfont_read_style(const struct css_style *style,
 		break;
 	}
 }
-
-
-
-
-
-void nsfont_txtenum(void *font, const char *text,
-		size_t length,
-		unsigned int *width,
-		const char **rofontname,
-		const char **rotext,
-		size_t *rolength,
-		size_t *consumed) { }
