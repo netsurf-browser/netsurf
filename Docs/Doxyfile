@@ -369,6 +369,7 @@ INPUT                  = content \
                          image \
                          render \
                          riscos \
+                         riscos/configure \
                          utils \
                          Docs/developer
 
