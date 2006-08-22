@@ -111,11 +111,16 @@ void gui_init(int argc, char** argv)
 	
 	glade_init();
 	gladeWindows = glade_xml_new(glade_file_location, NULL, NULL);
+	if (gladeWindows == NULL)
+		die("Unable to load Glade window definitions.\n");
 	glade_xml_signal_autoconnect(gladeWindows);
 
 	nsgtk_completion_init();	
 
-	nsgtk_throbber_initialise("./gtk/throbber.gif");
+	find_resource(buf, "throbber.gif", "./gtk/throbber.gif");
+	nsgtk_throbber_initialise(buf);
+	if (nsgtk_throbber == NULL)
+		die("Unable to load throbber image.\n");
 
 	find_resource(buf, "Choices", "Choices");
 	LOG(("Using '%s' as Choices file", buf));
