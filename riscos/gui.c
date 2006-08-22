@@ -300,11 +300,13 @@ void gui_init(int argc, char** argv)
 	/* the first release version of the A9home OS is incapable of
 	   plotting patterned lines (presumably a fault in the hw acceleration) */
 	if (!xosmodule_lookup("VideoHWSMI", NULL, NULL, &base, NULL, NULL)) {
+#if 0   // this fault still hasn't been fixed, so disable patterned lines for all versions until it has
 		const char *help = (char*)base + ((int*)base)[5];
 		while (*help > 9) help++;
 		while (*help == 9) help++;
 		if (!memcmp(help, "0.55", 4))
-			ro_plot_patterned_lines = false;
+#endif
+        		ro_plot_patterned_lines = false;
 	}
 
 	atexit(ro_gui_cleanup);
