@@ -3175,7 +3175,7 @@ NTLM authentication</property>
 			  </child>
 
 			  <child>
-			    <widget class="GtkCheckButton" id="checkDusableAnimations">
+			    <widget class="GtkCheckButton" id="checkDisableAnimations">
 			      <property name="visible">True</property>
 			      <property name="tooltip" translatable="yes">Display only the first frame of animated images.</property>
 			      <property name="can_focus">True</property>
