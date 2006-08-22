@@ -579,9 +579,11 @@ void ro_gui_wimp_desktop_font(char *family, size_t family_size, int *psize,
 
 	LOG(("desktop font \"%s\"", family));
 
-	if (strstr(family, ".Bold"))
+	if (strcasestr(family, ".Medium"))
+		style = rufl_WEIGHT_500;
+	else if (strcasestr(family, ".Bold"))
 		style = rufl_WEIGHT_700;
-	if (strstr(family, ".Italic") || strstr(family, ".Oblique"))
+	if (strcasestr(family, ".Italic") || strcasestr(family, ".Oblique"))
 		style |= rufl_SLANTED;
 
 	char *dot = strchr(family, '.');
