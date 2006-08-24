@@ -1771,6 +1771,9 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 			content->available_width, 0, false, 0);
 
 	free(url);
+
+	*convert_children = false;
+
 	return ok;
 }
 
