@@ -1,3 +1,9 @@
 #!/bin/sh
+if [ -d ~/.netsurf ]; then
+  LOG=~/.netsurf/log.txt
+else
+  LOG=/tmp/netsurf-log.txt
+fi
+
 export NETSURFRES=`dirname $0`/gtk/res/
-exec `dirname $0`/nsgtk "$@"
+exec `dirname $0`/nsgtk "$@" 2>$LOG
