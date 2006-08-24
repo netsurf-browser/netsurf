@@ -697,7 +697,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	/* load the window template from the glade xml file, and extract
 	 * widget references from it for later use.
 	 */
-	g->xml = glade_xml_new("./gtk/netsurf.glade", "wndBrowser", NULL);
+	g->xml = glade_xml_new(glade_file_location, "wndBrowser", NULL);
 	glade_xml_signal_autoconnect(g->xml);
 	g->window = GTK_WINDOW(GET_WIDGET("wndBrowser"));
 	g->url_bar = GTK_ENTRY(GET_WIDGET("URLBar"));

@@ -1,0 +1,3 @@
+#!/bin/sh
+export NETSURFRES=`dirname $0`/gtk/res/
+exec `dirname $0`/nsgtk "$@"

@@ -13,6 +13,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <limits.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <curl/curl.h>
 #include <gdk/gdkkeysyms.h>
 #include <gtk/gtk.h>
@@ -71,11 +73,13 @@ GladeXML *gladeWindows;
 static char *find_resource(char *buf, const char *filename, const char *def)
 {
 	char *cdir = getenv("HOME");
+	char t[PATH_MAX];
 
 	if (cdir != NULL) {
-		strcpy(buf, cdir);
-		strcat(buf, "/.netsurf/");
-		strcat(buf, filename);
+		strcpy(t, cdir);
+		strcat(t, "/.netsurf/");
+		strcat(t, filename);
+		realpath(t, buf);
 		if (access(buf, R_OK) == 0)
 			return buf;
 	}
@@ -83,20 +87,52 @@ static char *find_resource(char *buf, const char *filename, const char *def)
 	cdir = getenv("NETSURFRES");
 
 	if (cdir != NULL) {
-		strcpy(buf, cdir);
+		realpath(cdir, buf);
 		strcat(buf, "/");
 		strcat(buf, filename);
 		if (access(buf, R_OK) == 0)
 			return buf;
 	}
 
-	strcpy(buf, RESPATH);
-	strcat(buf, filename);
+	strcpy(t, RESPATH);
+	strcat(t, filename);
+	realpath(t, buf);
 	if (access(buf, R_OK) == 0)
 		return buf;
 
-	strcpy(buf, def);
+	if (def[0] == '~') {
+		snprintf(t, PATH_MAX, "%s%s", getenv("HOME"), def + 1);
+		realpath(t, buf);
+	} else {
+		realpath(def, buf);
+	}
+	
 	return buf;
+}
+
+/**
+ * Check that ~/.netsurf/ exists, and if it doesn't, create it.
+ */
+static void check_homedir(void)
+{
+	char *hdir = getenv("HOME");
+	char buf[BUFSIZ];
+	
+	if (hdir == NULL) {
+		/* we really can't continue without a home directory. */
+		LOG(("HOME is not set - nowhere to store state!"));
+		die("NetSurf requires HOME to be set in order to run.\n");
+		
+	}
+	
+	snprintf(buf, BUFSIZ, "%s/.netsurf", hdir);
+	if (access(buf, F_OK) != 0) {
+		LOG(("You don't have a ~/.netsurf - creating one for you."));
+		if (mkdir(buf, 0777) == -1) {
+			LOG(("Unable to create ~/.netsurf!"));
+			die("NetSurf requires ~/.netsurf to exist, but it cannot be created.\n");
+		}
+	}
 }
 
 void gui_init(int argc, char** argv)
@@ -104,6 +140,8 @@ void gui_init(int argc, char** argv)
 	char buf[PATH_MAX];
 
 	gtk_init(&argc, &argv);
+	
+	check_homedir();
 	
 	find_resource(buf, "netsurf.glade", "./gtk/netsurf.glade");
 	LOG(("Using '%s' as Glade template file", buf));
@@ -122,7 +160,7 @@ void gui_init(int argc, char** argv)
 	if (nsgtk_throbber == NULL)
 		die("Unable to load throbber image.\n");
 
-	find_resource(buf, "Choices", "Choices");
+	find_resource(buf, "Choices", "~/.netsurf/Choices");
 	LOG(("Using '%s' as Choices file", buf));
 	options_file_location = strdup(buf);
 	options_read(buf);
@@ -130,12 +168,12 @@ void gui_init(int argc, char** argv)
 	nsgtk_options_init();
 
 	if (!option_cookie_file) {
-		find_resource(buf, "Cookies", "Cookies");
+		find_resource(buf, "Cookies", "~/.netsurf/Cookies");
 		LOG(("Using '%s' as Cookies file", buf));
 		option_cookie_file = strdup(buf);
 	}
 	if (!option_cookie_jar) {
-		find_resource(buf, "Cookies", "Cookies");
+		find_resource(buf, "Cookies", "~/.netsurf/Cookies");
 		LOG(("Using '%s' as Cookie Jar file", buf));
 		option_cookie_jar = strdup(buf);
 	}
@@ -143,7 +181,7 @@ void gui_init(int argc, char** argv)
 		die("Failed initialising cookie options");
 
 	if (!option_url_file) {
-		find_resource(buf, "URLs", "URLs");
+		find_resource(buf, "URLs", "~/.netsurf/URLs");
 		LOG(("Using '%s' as URL file", buf));
 		option_url_file = strdup(buf);
 	}
@@ -153,11 +191,11 @@ void gui_init(int argc, char** argv)
 	messages_load(buf);
 
 	/* set up stylesheet urls */
-	find_resource(buf, "Default.css", "Default.css");
+	find_resource(buf, "default.css", "default.css");
 	default_stylesheet_url = path_to_url(buf);
 	LOG(("Using '%s' as Default CSS URL", default_stylesheet_url));
 
-	find_resource(buf, "AdBlock.css", "AdBlock.css");
+	find_resource(buf, "adblock.css", "adblock.css");
 	adblock_stylesheet_url = path_to_url(buf);
 	LOG(("Using '%s' as AdBlock CSS URL", adblock_stylesheet_url));
 
