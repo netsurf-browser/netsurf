@@ -165,6 +165,16 @@ void gui_init(int argc, char** argv)
 	options_file_location = strdup(buf);
 	options_read(buf);
 
+	/* check what the font settings are, setting them to a default font
+	 * if they're not set - stops Pango whinging
+	 */
+#define SETFONTDEFAULT(x,y) (x) = ((x) != NULL) ? (x) : strdup((y))
+	SETFONTDEFAULT(option_font_sans, "Sans");
+	SETFONTDEFAULT(option_font_serif, "Serif");
+	SETFONTDEFAULT(option_font_mono, "Monospace");
+	SETFONTDEFAULT(option_font_cursive, "Serif");
+	SETFONTDEFAULT(option_font_fantasy, "Serif");
+
 	nsgtk_options_init();
 
 	if (!option_cookie_file) {
