@@ -181,4 +181,4 @@ fieldset { display: block; border: thin solid #888; }
 [align=right] { text-align: right; }
 
 /* Temporary hack to distinguish list items */
-li { margin-left: 0; padding-left: 14px; background: url(file:/<NetSurf$Dir>/Resources/b) no-repeat top left; }
+li { margin-left: 0; padding-left: 14px; background: url(b) no-repeat top left; }
