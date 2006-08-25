@@ -152,6 +152,7 @@ char *fetch_mimetype(const char *ro_path)
 	int objtype;
 	char *mime = calloc(BUF_SIZE, sizeof(char));
 	char *slash;
+	struct type_entry *t;
 
 	if (!mime) {
 		LOG(("Insufficient memory for calloc"));
@@ -193,6 +194,16 @@ char *fetch_mimetype(const char *ro_path)
 			filetype = load;
 	}
 
+	/* search for MIME type in our internal table */
+	t = bsearch(&filetype, type_map, TYPE_MAP_COUNT,
+				sizeof(type_map[0]), cmp_type);
+	if (t) {
+		/* found, so return it */
+		strncpy(mime, t->mime_type, BUF_SIZE);
+		return mime;
+	}
+
+	/* not in internal table, so ask MimeMap */
 	e = xmimemaptranslate_filetype_to_mime_type(filetype, mime);
 	if (e) {
 		LOG(("xmimemaptranslate_filetype_to_mime_type: 0x%x: %s",
