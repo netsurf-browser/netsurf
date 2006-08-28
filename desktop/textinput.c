@@ -1105,6 +1105,8 @@ void browser_window_remove_caret(struct browser_window *bw)
 {
 	gui_window_remove_caret(bw->window);
 	bw->caret_callback = NULL;
+	bw->paste_callback = NULL;
+	bw->move_callback = NULL;
 	bw->caret_p = NULL;
 }
 
