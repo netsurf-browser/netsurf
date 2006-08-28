@@ -1093,11 +1093,15 @@ void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
 
 void gui_window_remove_caret(struct gui_window *g)
 {
-	if (g->careth == 0)
+	int oh = g->careth;
+	
+	if (oh == 0)
 		return;
 
+	g->careth = 0;
+
 	gui_window_redraw(g, g->caretx, g->carety,
-				g->caretx, g->carety + g->careth);
+				g->caretx, g->carety + oh);
 }
 
 void gui_window_new_content(struct gui_window *g)
