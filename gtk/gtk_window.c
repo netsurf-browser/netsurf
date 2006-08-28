@@ -1048,6 +1048,7 @@ void gui_window_hide_pointer(struct gui_window *g)
 void gui_window_set_url(struct gui_window *g, const char *url)
 {
 	gtk_entry_set_text(g->url_bar, url);
+	gtk_editable_set_position(GTK_EDITABLE(g->url_bar),  -1);
 }
 
 void gui_window_start_throbber(struct gui_window* g)
