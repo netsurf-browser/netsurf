@@ -94,6 +94,7 @@ static struct gui_window *window_list = 0;	/**< first entry in win list*/
 
 static wchar_t gdkkey_to_nskey(GdkEventKey *);
 static void nsgtk_window_destroy_event(GtkWidget *, gpointer);
+static void nsgtk_plot_caret(int x, int y, int h);
 static gboolean nsgtk_window_expose_event(GtkWidget *, GdkEventExpose *,
     						gpointer);
 static gboolean nsgtk_window_motion_notify_event(GtkWidget *, GdkEventMotion *,
@@ -259,6 +260,24 @@ void nsgtk_window_destroy_event(GtkWidget *widget, gpointer data)
 	gui_window_destroy(g);
 }
 
+/** Plot a caret.  It is assumed that the plotters have been set up. */
+void nsgtk_plot_caret(int x, int y, int h)
+{
+	GdkColor colour;
+	
+	colour.red = 0;
+	colour.green = 0;
+	colour.blue = 0;
+	colour.pixel = 0;
+	gdk_color_alloc(gdk_colormap_get_system(),
+			&colour);
+	gdk_gc_set_foreground(current_gc, &colour);
+	
+	gdk_draw_line(current_drawable, current_gc,
+			x, y,
+			x, y + h - 1);
+}
+
 gboolean nsgtk_window_expose_event(GtkWidget *widget,
 					GdkEventExpose *event, gpointer data)
 {
@@ -287,8 +306,7 @@ gboolean nsgtk_window_expose_event(GtkWidget *widget,
 			g->scale, 0xFFFFFF);
 
 	if (g->careth != 0)
-		plot.line(g->caretx, g->carety,
-			g->caretx, g->carety + g->careth, 1, 0, false, false);
+		nsgtk_plot_caret(g->caretx, g->carety, g->careth);
 
 	g_object_unref(current_gc);
 #ifdef CAIRO_VERSION
