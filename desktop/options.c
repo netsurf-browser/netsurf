@@ -107,7 +107,7 @@ int option_window_screen_width = 0;
 int option_window_screen_height = 0;
 /** default size of status bar vs. h scroll bar */
 #ifdef nsgtk
-int option_toolbar_status_width = 5;
+int option_toolbar_status_width = 400;
 #else
 int option_toolbar_status_width = 6667;
 #endif

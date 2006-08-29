@@ -53,6 +53,7 @@ struct gui_window {
 	GtkMenuItem		*stop_menu;
 	GtkMenuItem		*reload_menu;
 	GtkImage		*throbber;
+	GtkPaned		*status_pane;
 
 	GladeXML		*xml;
 
@@ -147,6 +148,7 @@ MENUPROTO(reload);
 MENUPROTO(zoom_in);
 MENUPROTO(normal_size);
 MENUPROTO(zoom_out);
+MENUPROTO(save_window_size);
 
 /* navigate menu */
 MENUPROTO(back);
@@ -176,6 +178,7 @@ static struct menu_events menu_events[] = {
 	MENUEVENT(zoom_in),
 	MENUEVENT(normal_size),
 	MENUEVENT(zoom_out),
+	MENUEVENT(save_window_size),
 	
 	/* navigate menu */
 	MENUEVENT(back),
@@ -595,6 +598,21 @@ MENUHANDLER(zoom_out)
 	return TRUE;
 }
 
+MENUHANDLER(save_window_size)
+{
+	struct gui_window *gw = g;
+	
+	option_toolbar_status_width = gtk_paned_get_position(gw->status_pane);
+	gtk_window_get_position(gw->window, &option_window_x, &option_window_y);
+	gtk_window_get_size(gw->window, &option_window_width,
+					&option_window_height);
+	
+	
+	options_write(options_file_location);
+	
+	return TRUE;
+}
+
 MENUHANDLER(stop)
 {
 	return nsgtk_window_stop_button_clicked(GTK_WIDGET(widget), g);
@@ -731,6 +749,21 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	g->reload_menu = GTK_MENU_ITEM(GET_WIDGET("reload"));
 	g->throbber = GTK_IMAGE(GET_WIDGET("throbber"));
 	g->viewport = GTK_VIEWPORT(GET_WIDGET("viewport1"));
+	g->status_pane = GTK_PANED(GET_WIDGET("hpaned1"));
+	
+	/* set this window's size and position to what's in the options, or
+	 * or some sensible default if they're not set yet.
+	 */
+	if (option_window_width > 0) {
+		gtk_window_move(g->window, option_window_x, option_window_y);
+		gtk_window_resize(g->window, option_window_width,
+						option_window_height);
+	} else {
+		gtk_window_set_default_size(g->window, 600, 600);
+	}
+	
+	/* set the size of the hpane with status bar and h scrollbar */
+	gtk_paned_set_position(g->status_pane, option_toolbar_status_width);
 	
 	/* connect our scrollbars to the viewport */
 	gtk_viewport_set_hadjustment(g->viewport,
@@ -743,9 +776,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	 * glade because of the way it emulates toolbars.
 	 */
 	gtk_tool_item_set_expand(GTK_TOOL_ITEM(GET_WIDGET("toolURLBar")), TRUE);
-
-	/* set the initial size of the browser window */
-	gtk_window_set_default_size(g->window, 600, 600);
 
 	/* set the events we're interested in receiving from the browser's
 	 * drawing area.
