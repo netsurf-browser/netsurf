@@ -93,6 +93,25 @@ char *option_cookie_jar = 0;
 char *option_homepage_url = 0;
 /** URL completion in url bar */
 bool option_url_suggestion = true;
+/** default x position of new windows */
+int option_window_x = 0;
+/** default y position of new windows */
+int option_window_y = 0;
+/** default width of new windows */
+int option_window_width = 0;
+/** default height of new windows */
+int option_window_height = 0;
+/** width of screen when above options were saved */
+int option_window_screen_width = 0;
+/** height of screen when above options were saved */
+int option_window_screen_height = 0;
+/** default size of status bar vs. h scroll bar */
+#ifdef nsgtk
+int option_toolbar_status_width = 5;
+#else
+int option_toolbar_status_width = 6667;
+#endif
+
 /* Fetcher configuration */
 /** Maximum simultaneous active fetchers */
 int option_max_fetchers = 24;
@@ -142,6 +161,13 @@ struct {
 	{ "cookie_jar",      OPTION_STRING,  &option_cookie_jar },
         { "homepage_url",    OPTION_STRING,  &option_homepage_url },
 	{ "url_suggestion",  OPTION_BOOL,    &option_url_suggestion },
+	{ "window_x",               OPTION_INTEGER, &option_window_x },
+	{ "window_y",               OPTION_INTEGER, &option_window_y },
+	{ "window_width",           OPTION_INTEGER, &option_window_width },
+	{ "window_height",          OPTION_INTEGER, &option_window_height },
+	{ "window_screen_width",    OPTION_INTEGER, &option_window_screen_width },
+	{ "window_screen_height",   OPTION_INTEGER, &option_window_screen_height },
+	{ "toolbar_status_size",    OPTION_INTEGER, &option_toolbar_status_width },
 	/* Fetcher options */
 	{ "max_fetchers",    OPTION_INTEGER, &option_max_fetchers },
 	{ "max_fetchers_per_host",

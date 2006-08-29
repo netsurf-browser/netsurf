@@ -24,7 +24,6 @@ extern int option_fg_plot_style;	/* tinct flagword */
 extern int option_bg_plot_style;	/* tinct flagword */
 extern bool option_history_tooltip;
 extern int option_scale;
-extern int option_toolbar_status_width;
 extern bool option_toolbar_show_status;
 extern bool option_toolbar_show_buttons;
 extern bool option_toolbar_show_address;
@@ -33,12 +32,6 @@ extern char *option_toolbar_browser;
 extern char *option_toolbar_hotlist;
 extern char *option_toolbar_history;
 extern char *option_toolbar_cookies;
-extern int option_window_x;
-extern int option_window_y;
-extern int option_window_width;
-extern int option_window_height;
-extern int option_window_screen_width;
-extern int option_window_screen_height;
 extern bool option_window_stagger;
 extern bool option_window_size_clone;
 extern bool option_background_images;
@@ -70,7 +63,6 @@ int option_fg_plot_style = tinct_ERROR_DIFFUSE;\
 int option_bg_plot_style = tinct_DITHER;\
 bool option_history_tooltip = true; \
 int option_scale = 100; \
-int option_toolbar_status_width = 6667; \
 bool option_toolbar_show_status = true; \
 bool option_toolbar_show_buttons = true; \
 bool option_toolbar_show_address = true; \
@@ -79,12 +71,6 @@ char *option_toolbar_browser = 0; \
 char *option_toolbar_hotlist = 0; \
 char *option_toolbar_history = 0; \
 char *option_toolbar_cookies = 0; \
-int option_window_x = 0; \
-int option_window_y = 0; \
-int option_window_width = 0; \
-int option_window_height = 0; \
-int option_window_screen_width = 0; \
-int option_window_screen_height = 0; \
 bool option_window_stagger = true; \
 bool option_window_size_clone = true; \
 bool option_background_images = true; \
@@ -125,12 +111,6 @@ bool option_thumbnail_iconise = true;
 { "toolbar_hotlist",	    OPTION_STRING,  &option_toolbar_hotlist }, \
 { "toolbar_history",	    OPTION_STRING,  &option_toolbar_history }, \
 { "toolbar_cookies",	    OPTION_STRING,  &option_toolbar_cookies }, \
-{ "window_x",               OPTION_INTEGER, &option_window_x }, \
-{ "window_y",               OPTION_INTEGER, &option_window_y }, \
-{ "window_width",           OPTION_INTEGER, &option_window_width }, \
-{ "window_height",          OPTION_INTEGER, &option_window_height }, \
-{ "window_screen_width",    OPTION_INTEGER, &option_window_screen_width }, \
-{ "window_screen_height",   OPTION_INTEGER, &option_window_screen_height }, \
 { "window_stagger",         OPTION_BOOL,    &option_window_stagger }, \
 { "window_size_clone",      OPTION_BOOL,    &option_window_size_clone }, \
 { "background_images",      OPTION_BOOL,    &option_background_images }, \

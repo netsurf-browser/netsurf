@@ -58,6 +58,13 @@ extern char *option_cookie_file;
 extern char *option_cookie_jar;
 extern char *option_homepage_url;
 extern bool option_url_suggestion;
+extern int option_window_x;
+extern int option_window_y;
+extern int option_window_width;
+extern int option_window_height;
+extern int option_window_screen_width;
+extern int option_window_screen_height;
+extern int option_toolbar_status_width;
 
 /* Fetcher configuration. */
 extern int option_max_fetchers;
