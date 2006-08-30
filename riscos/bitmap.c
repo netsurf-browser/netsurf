@@ -942,7 +942,8 @@ void bitmap_save_file(struct bitmap *bitmap)
 	}
 
 	if (error) {
-		LOG(("File save error"));
+		LOG(("xosfile_save_stamped: 0x%x: %s",
+				error->errnum, error->errmess));
 		bitmap->filename[0] = 0;
 	} else {
 		if (bitmap->sprite_area) {
