@@ -1375,6 +1375,7 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
 	int xeig, yeig;
 	os_coord pixel = {1, 1};
 	int top, bottom, right;
+	bool parent_hscroll;
 
 	/* calculate 1px in OS units */
 	ro_convert_pixels_to_os_units(&pixel, (os_mode)-1);
@@ -1411,7 +1412,7 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
 			warn_user("WimpError", error->errmess);
 			return false;
 		}
-
+		parent_hscroll = state.flags & wimp_WINDOW_HSCROLL;
 		height = state.visible.y1 - state.visible.y0 + 2;
 
 		/*	We can't obscure the height of the scroll bar as we
@@ -1677,7 +1678,7 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
 
 		/*	Open or close the window
 		*/
-		if (!toolbar->display_status) {
+		if ((!toolbar->display_status) || (!parent_hscroll)) {
 			if (state.flags & wimp_WINDOW_OPEN)
 				xwimp_close_window(toolbar->status_handle);
 		} else {

@@ -16,6 +16,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <time.h>
+#include "netsurf/render/html.h"
 
 struct box;
 struct content;
@@ -37,6 +38,8 @@ typedef bool (*browser_paste_callback)(struct browser_window *bw,
 	const char *utf8, unsigned utf8_len, bool last, void *p);
 typedef void (*browser_move_callback)(struct browser_window *bw,
 	void *p);
+
+
 
 /** Browser window data. */
 struct browser_window {
@@ -84,20 +87,26 @@ struct browser_window {
 		DRAGGING_HSCROLL,
 		DRAGGING_SELECTION,
 		DRAGGING_PAGE_SCROLL,
-		DRAGGING_2DSCROLL
+		DRAGGING_2DSCROLL,
+		DRAGGING_FRAME
 	} drag_type;
 
 	/** Box currently being scrolled, or 0. */
 	struct box *scrolling_box;
 	/** Mouse position at start of current scroll drag. */
-	int scrolling_start_x;
-	int scrolling_start_y;
+	int drag_start_x;
+	int drag_start_y;
 	/** Scroll offsets at start of current scroll draw. */
-	int scrolling_start_scroll_x;
-	int scrolling_start_scroll_y;
+	int drag_start_scroll_x;
+	int drag_start_scroll_y;
 	/** Well dimensions for current scroll drag. */
-	int scrolling_well_width;
-	int scrolling_well_height;
+	int drag_well_width;
+	int drag_well_height;
+	/** Frame resize directions for current frame resize drag. */
+	unsigned int drag_resize_left : 1;
+	unsigned int drag_resize_right : 1;
+	unsigned int drag_resize_up : 1;
+	unsigned int drag_resize_down : 1;
 
 	/** Referer for current fetch, or 0. */
 	char *referer;
@@ -107,6 +116,50 @@ struct browser_window {
 
 	/** Refresh interval (-1 if undefined) */
 	int refresh_interval;
+	
+	/** Window dimensions */
+	int x0;
+	int y0;
+	int x1;
+	int y1;
+	
+	/** Window characteristics */
+	enum {
+	  	BROWSER_WINDOW_NORMAL,
+  		BROWSER_WINDOW_IFRAME,
+  		BROWSER_WINDOW_FRAME,
+  		BROWSER_WINDOW_FRAMESET,
+  	} browser_window_type;
+	
+	/** frameset characteristics */
+	int rows;
+	int cols;
+	
+	/** frame dimensions */
+	struct frame_dimension frame_width;
+	struct frame_dimension frame_height;
+	int margin_width;
+	int margin_height;
+	
+	/** frame name for targetting */
+	char *name;
+	
+	/** frame characteristics */
+	bool no_resize;
+	frame_scrolling scrolling;
+	bool border;
+	colour border_colour;
+	
+	/** iframe parent box */
+	struct box *box;
+
+	/** [cols * rows] children */
+	struct browser_window *children;
+	struct browser_window *parent;
+	
+	/** [iframe_count] iframes */
+	int iframe_count;
+	struct browser_window *iframes;
 };
 
 
@@ -129,6 +182,7 @@ extern struct browser_window *current_redraw_browser;
 
 struct browser_window * browser_window_create(const char *url,
 		struct browser_window *clone, char *referer, bool history_add);
+struct browser_window * browser_window_owner(struct browser_window *bw);
 void browser_window_go(struct browser_window *bw, const char *url,
 		char *referer, bool history_add);
 void browser_window_go_post(struct browser_window *bw, const char *url,
@@ -139,6 +193,12 @@ void browser_window_stop(struct browser_window *bw);
 void browser_window_reload(struct browser_window *bw, bool all);
 void browser_window_destroy(struct browser_window *bw);
 void browser_window_update(struct browser_window *bw, bool scroll_to_top);
+void browser_window_create_iframes(struct browser_window *bw,
+		struct content_html_iframe *iframe);
+void browser_window_recalculate_iframes(struct browser_window *bw);
+void browser_window_create_frameset(struct browser_window *bw,
+		struct content_html_frames *frameset);
+void browser_window_recalculate_frameset(struct browser_window *bw);
 
 void browser_window_mouse_click(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y);

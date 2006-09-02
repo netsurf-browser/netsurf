@@ -81,6 +81,7 @@
 #include <curl/curl.h>
 
 #include "netsurf/image/bitmap.h"
+#include "netsurf/content/content.h"
 #include "netsurf/content/urldb.h"
 #include "netsurf/desktop/cookies.h"
 #include "netsurf/desktop/options.h"
@@ -89,6 +90,7 @@
 #include "netsurf/riscos/bitmap.h"
 #endif
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/filename.h"
 #include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
 
@@ -117,6 +119,10 @@ struct auth_data {
 				 * username:password */
 };
 
+struct cache_internal_data {
+  	char filename[12];	/**< Cached filename, or first byte 0 for none */
+};
+
 struct url_internal_data {
 	char *title;		/**< Resource title */
 	unsigned int visits;	/**< Visit count */
@@ -135,6 +141,7 @@ struct path_data {
 
 	struct bitmap *thumb;	/**< Thumbnail image of resource */
 	struct url_internal_data urld;	/**< URL data for resource */
+	struct cache_internal_data cache;	/**< Cache data for resource */
 	struct auth_data auth;	/**< Authentication data for resource */
 	struct cookie_internal_data *cookies;	/**< Cookies associated with resource */
 
@@ -3358,6 +3365,60 @@ void urldb_save_cookie_paths(FILE *fp, struct path_data *parent)
 
 	for (struct path_data *p = parent->children; p; p = p->next)
 		urldb_save_cookie_paths(fp, p);
+}
+
+
+/**
+ * Sets the content data associated with a particular URL
+ *
+ * \param url the URL to associate content with
+ * \param content the content to associate
+ * \return true on success, false otherwise
+ */
+bool urldb_set_cache_data(const char *url, const struct content *content) {
+	struct path_data *p;
+	char *filename;
+
+	assert(url && content);
+
+	p = urldb_find_url(url);
+	if (!p)
+		return false;
+	
+	/* new filename needed */
+	if (p->cache.filename[0] == 0) {
+	  	filename = filename_request();
+	  	if (!filename)
+	  		return false;
+	  	sprintf(p->cache.filename, filename);
+	}
+	
+	/* todo: save content, set cache data etc */
+  	return true;
+}
+
+
+/**
+ * Gets a file:// URL for the cached data associated with a URL
+ *
+ * \param url the URL to get the associated content for
+ * \return a local URL allocated on heap, or NULL
+ */
+char *urldb_get_cache_data(const char *url) {
+	struct path_data *p;
+
+	assert(url);
+
+	p = urldb_find_url(url);
+	if (!p)
+		return NULL;
+	
+	/* no file cache */
+	if (p->cache.filename[0] == 0)
+		return NULL;
+
+	/* todo: handle cache expiry etc */
+	return filename_as_url(p->cache.filename);
 }
 
 

@@ -53,8 +53,8 @@ static void html_object_failed(struct box *box, struct content *content,
 static bool html_object_type_permitted(const content_type type,
 		const content_type *permitted_types);
 static void html_object_refresh(void *p);
-static bool html_find_frame(struct content *c, const char *frame,
-		struct content **page, unsigned int *i);
+static void html_destroy_frameset(struct content_html_frames *frameset);
+static void html_destroy_iframe(struct content_html_iframe *iframe);
 
 
 /**
@@ -75,6 +75,7 @@ bool html_create(struct content *c, const char *params[])
 	html->encoding = 0;
 	html->getenc = true;
 	html->base_url = c->url;
+	html->base_target = NULL;
 	html->layout = 0;
 	html->background_colour = TRANSPARENT;
 	html->stylesheet_count = 0;
@@ -86,6 +87,8 @@ bool html_create(struct content *c, const char *params[])
 	html->forms = 0;
 	html->imagemaps = 0;
 	html->bw = 0;
+	html->frameset = 0;
+	html->iframe = 0;
 	html->page = 0;
 	html->index = 0;
 	html->box = 0;
@@ -494,6 +497,7 @@ bool html_meta_refresh(struct content *c, xmlNode *head)
 bool html_head(struct content *c, xmlNode *head)
 {
 	xmlNode *node;
+	xmlChar *s;
 
 	c->title = 0;
 
@@ -527,6 +531,21 @@ bool html_head(struct content *c, xmlNode *head)
 					free(url);
 				}
 				xmlFree(href);
+			}
+			/* don't use the central values to ease freeing later on */
+			if ((s = xmlGetProp(node, (const xmlChar *) "target"))) {
+				if ((!strcasecmp(s, "_blank")) || (!strcasecmp(s, "_top")) ||
+						(!strcasecmp(s, "_parent")) ||
+						(!strcasecmp(s, "_self")) ||
+						('a' <= s[0] && s[0] <= 'z') ||
+						('A' <= s[0] && s[0] <= 'Z')) {  /* [6.16] */
+					c->data.html.base_target = talloc_strdup(c, s);
+					if (!c->data.html.base_target) {
+						xmlFree(s);
+						return false;
+					}
+				}
+				xmlFree(s);
 			}
 		}
 	}
@@ -903,7 +922,7 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 bool html_fetch_object(struct content *c, char *url, struct box *box,
 		const content_type *permitted_types,
 		int available_width, int available_height,
-		bool background, char *frame)
+		bool background)
 {
 	unsigned int i = c->data.html.object_count;
 	struct content_html_object *object;
@@ -935,9 +954,6 @@ bool html_fetch_object(struct content *c, char *url, struct box *box,
 	c->data.html.object[i].permitted_types = permitted_types;
        	c->data.html.object[i].background = background;
 	c->data.html.object[i].content = c_fetch;
-	c->data.html.object[i].frame = 0;
-	if (frame)
-		c->data.html.object[i].frame = talloc_strdup(c, frame);
 	c->data.html.object_count++;
 	c->active++;
 
@@ -1388,6 +1404,7 @@ void html_stop(struct content *c)
 void html_reformat(struct content *c, int width, int height)
 {
 	struct box *doc;
+	
 	layout_document(c, width, height);
 	doc = c->data.html.layout;
 
@@ -1396,6 +1413,11 @@ void html_reformat(struct content *c, int width, int height)
 
 	c->height = doc->descendant_y1 +
 		doc->margin[TOP] + doc->margin[BOTTOM];
+	
+	if ((c->data.html.frameset) && (c->data.html.bw))
+		browser_window_recalculate_frameset(c->data.html.bw);
+	if ((c->data.html.iframe) && (c->data.html.bw))
+		browser_window_recalculate_iframes(c->data.html.bw);
 }
 
 
@@ -1418,6 +1440,25 @@ void html_destroy(struct content *c)
 	if (c->data.html.parser)
 		htmlFreeParserCtxt(c->data.html.parser);
 
+	/* Free base target */
+	if (c->data.html.base_target) {
+	 	talloc_free(c->data.html.base_target);
+	 	c->data.html.base_target = NULL; 
+	}
+
+	/* Free frameset */
+	if (c->data.html.frameset) {
+		html_destroy_frameset(c->data.html.frameset);
+		talloc_free(c->data.html.frameset);
+		c->data.html.frameset = NULL;
+	}
+
+	/* Free iframes */
+	if (c->data.html.iframe) {
+		html_destroy_iframe(c->data.html.iframe);
+		c->data.html.iframe = NULL;
+	}
+
 	/* Free stylesheets */
 	if (c->data.html.stylesheet_count) {
 		for (i = 0; i != c->data.html.stylesheet_count; i++) {
@@ -1430,7 +1471,7 @@ void html_destroy(struct content *c)
 	}
 
 	talloc_free(c->data.html.working_stylesheet);
-
+	
 	/*if (c->data.html.style)
 		css_free_style(c->data.html.style);*/
 
@@ -1444,6 +1485,48 @@ void html_destroy(struct content *c)
 				schedule_remove(html_object_refresh,
 					c->data.html.object[i].content);
 		}
+	}
+}
+
+void html_destroy_frameset(struct content_html_frames *frameset) {
+	int i;
+	
+	if (frameset->name) {
+		talloc_free(frameset->name);
+		frameset->name = NULL;
+	}
+	if (frameset->url) {
+		talloc_free(frameset->url);
+		frameset->url = NULL;
+	}
+	if (frameset->children) {
+		for (i = 0; i < (frameset->rows * frameset->cols); i++) {
+			if (frameset->children[i].name) {
+				talloc_free(frameset->children[i].name);
+				frameset->children[i].name = NULL;
+			}
+			if (frameset->children[i].url) {
+				talloc_free(frameset->children[i].url);
+				frameset->children[i].url = NULL;
+			}
+		  	if (frameset->children[i].children)
+		  		html_destroy_frameset(&frameset->children[i]);
+		}
+		talloc_free(frameset->children);
+		frameset->children = NULL;
+	}
+}
+
+void html_destroy_iframe(struct content_html_iframe *iframe) {
+	struct content_html_iframe *next;
+	next = iframe;
+	while ((iframe = next) != NULL) {
+		next = iframe->next;
+		if (iframe->name)
+			talloc_free(iframe->name);
+		if (iframe->url)
+			talloc_free(iframe->url);
+		talloc_free(iframe); 
 	}
 }
 
@@ -1471,6 +1554,11 @@ void html_open(struct content *c, struct browser_window *bw,
 				c->data.html.object[i].box,
 				c->data.html.object[i].box->object_params);
 	}
+	
+	if (c->data.html.frameset)
+		browser_window_create_frameset(bw, c->data.html.frameset);
+	if (c->data.html.iframe)
+		browser_window_create_iframes(bw, c->data.html.iframe);
 }
 
 
@@ -1490,88 +1578,4 @@ void html_close(struct content *c)
 			continue;
                	content_close(c->data.html.object[i].content);
 	}
-}
-
-
-/**
- * Find the target frame for a link.
- *
- * \param  c       content containing the link, of type CONTENT_HTML
- * \param  target  target frame
- * \retval  page   updated to content containing target object, or 0 if the
- *                 target should replace the top-level content
- * \retval  i      updated to index of target object in page->data.html.object
- */
-
-void html_find_target(struct content *c, const char *target,
-		struct content **page, unsigned int *i)
-{
-	*page = 0;
-
-	assert(c->type == CONTENT_HTML);
-
-	if (!target) {
-		/** \todo  get target from <base target=...> */
-		*page = c->data.html.page;
-		*i = c->data.html.index;
-		return;
-	}
-
-	if (target == TARGET_SELF) {
-		*page = c->data.html.page;
-		*i = c->data.html.index;
-		return;
-	} else if (target == TARGET_PARENT) {
-		if (c->data.html.page && c->data.html.page->data.html.page) {
-			*page = c->data.html.page->data.html.page;
-			*i = c->data.html.page->data.html.index;
-		}
-		return;
-	} else if (target == TARGET_TOP) {
-		return;
-	}
-
-	/* recursively search for a frame named target, starting with the
-	 * top-level content in the frameset */
-	while (c->data.html.page)
-		c = c->data.html.page;
-
-	html_find_frame(c, target, page, i);
-}
-
-
-/**
- * Recursively search a frameset for a frame.
- *
- * \param  c      frameset page, of type CONTENT_HTML
- * \param  frame  name of frame
- * \retval  page  updated to content containing the frame, if true returned
- * \retval  i     updated to index of target frame in page->data.html.object
- * \return  true iff the frame was found
- */
-
-bool html_find_frame(struct content *c, const char *frame,
-		struct content **page, unsigned int *i)
-{
-	unsigned int j;
-
-	assert(c->type == CONTENT_HTML);
-
-	for (j = 0; j != c->data.html.object_count; j++) {
-		if (c->data.html.object[j].frame &&
-				!strcmp(c->data.html.object[j].frame, frame)) {
-			*page = c;
-			*i = j;
-			return true;
-		}
-		if (c->data.html.object[j].content &&
-				c->data.html.object[j].content->type ==
-				CONTENT_HTML) {
-			if (html_find_frame(c->data.html.object[j].content,
-					frame, page, i))
-				return true;
-		}
-	}
-
-	return false;
 }

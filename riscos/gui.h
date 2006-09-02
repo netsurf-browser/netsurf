@@ -42,6 +42,7 @@ extern wimp_w dialog_info, dialog_saveas, dialog_zoom, dialog_pageinfo,
 	dialog_objinfo, dialog_tooltip, dialog_warning, dialog_openurl,
 	dialog_debug, dialog_folder, dialog_entry, dialog_url_complete,
 	dialog_search, dialog_print, dialog_theme_install;
+extern struct gui_window *gui_track_gui_window;
 extern wimp_w current_menu_window;
 extern bool current_menu_open;
 extern wimp_menu *font_menu;	/* font.c */
@@ -58,7 +59,7 @@ extern struct tree *hotlist_tree, *global_history_tree, *cookies_tree;
 typedef enum { GUI_DRAG_NONE, GUI_DRAG_SELECTION, GUI_DRAG_DOWNLOAD_SAVE,
 		GUI_DRAG_SAVE, GUI_DRAG_SCROLL, GUI_DRAG_STATUS_RESIZE,
 		GUI_DRAG_TREE_SELECT, GUI_DRAG_TREE_MOVE,
-		GUI_DRAG_TOOLBAR_CONFIG } gui_drag_type;
+		GUI_DRAG_TOOLBAR_CONFIG, GUI_DRAG_FRAME } gui_drag_type;
 
 extern gui_drag_type gui_current_drag_type;
 
@@ -88,6 +89,8 @@ struct gui_window {
 	int throbtime;		/**< Time of last throbber frame. */
 
 	int iconise_icon;	/**< ID number of icon when window is iconised */
+	
+	char validation[12];	/**< Validation string for colours */
 
 	/** Options. */
 	struct {
@@ -164,6 +167,7 @@ browser_mouse_state ro_gui_mouse_click_state(wimp_mouse_state buttons);
 bool ro_gui_shift_pressed(void);
 bool ro_gui_ctrl_pressed(void);
 void ro_gui_window_scroll_end(struct gui_window *g, wimp_dragged *drag);
+void ro_gui_window_frame_resize_end(struct gui_window *g, wimp_dragged *drag);
 void ro_gui_window_set_scale(struct gui_window *g, float scale);
 void ro_gui_window_iconise(struct gui_window *g,
 		wimp_full_message_window_info *wi);

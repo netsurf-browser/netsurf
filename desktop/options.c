@@ -124,7 +124,8 @@ int option_max_fetchers_per_host = 2;
  * is this plus option_max_fetchers.
  */
 int option_max_cached_fetch_handles = 6;
-/** Whether to use knockout rendering */
+/** Whether to allow target="_blank" */
+bool option_target_blank = true;
 
 EXTRA_OPTION_DEFINE
 
@@ -174,6 +175,8 @@ struct {
 		             OPTION_INTEGER, &option_max_fetchers_per_host },
 	{ "max_cached_fetch_handles",
 		             OPTION_INTEGER, &option_max_cached_fetch_handles },
+	{ "target_blank",
+		             OPTION_BOOL,    &option_target_blank },
 	EXTRA_OPTION_TABLE
 };
 

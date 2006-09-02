@@ -33,12 +33,15 @@
 #define RIGHT_MARGIN 50
 #define BOTTOM_MARGIN 30
 
-
-/** A node in the history tree. */
-struct history_entry {
+struct history_page {
 	char *url;    /**< Page URL. */
 	char *frag_id; /** Fragment identifier */
 	char *title;  /**< Page title. */
+};
+
+/** A node in the history tree. */
+struct history_entry {
+  	struct history_page page;
 	struct history_entry *back;  /**< Parent. */
 	struct history_entry *next;  /**< Next sibling. */
 	struct history_entry *forward;  /**< First child. */
@@ -153,16 +156,16 @@ struct history_entry *history_clone_entry(struct history *history,
 	if (!new_entry)
 		return 0;
 	memcpy(new_entry, entry, sizeof *entry);
-	new_entry->url = strdup(entry->url);
-	if (entry->frag_id)
-		new_entry->frag_id = strdup(entry->frag_id);
-	new_entry->title = strdup(entry->title);
-	if (((entry->url) && (!new_entry->url)) ||
-			((entry->title) && (!new_entry->title)) ||
-			((entry->frag_id) && (!new_entry->frag_id))) {
-		free(new_entry->url);
-		free(new_entry->title);
-		free(new_entry->frag_id);
+	new_entry->page.url = strdup(entry->page.url);
+	if (entry->page.frag_id)
+		new_entry->page.frag_id = strdup(entry->page.frag_id);
+	new_entry->page.title = strdup(entry->page.title);
+	if (((entry->page.url) && (!new_entry->page.url)) ||
+			((entry->page.title) && (!new_entry->page.title)) ||
+			((entry->page.frag_id) && (!new_entry->page.frag_id))) {
+		free(new_entry->page.url);
+		free(new_entry->page.title);
+		free(new_entry->page.frag_id);
 		free(new_entry);
 		return 0;
 	}
@@ -230,9 +233,9 @@ void history_add(struct history *history, struct content *content,
 		return;
 	}
 
-	entry->url = url;
-	entry->frag_id = frag_id ? strdup(frag_id) : 0;
-	entry->title = title;
+	entry->page.url = url;
+	entry->page.frag_id = frag_id ? strdup(frag_id) : 0;
+	entry->page.title = title;
 	entry->back = history->current;
 	entry->next = 0;
 	entry->forward = entry->forward_pref = entry->forward_last = 0;
@@ -282,12 +285,12 @@ void history_update(struct history *history, struct content *content)
 	if (!history || !history->current || !history->current->bitmap)
 		return;
 
-	if (history->current->title)
-		free(history->current->title);
+	if (history->current->page.title)
+		free(history->current->page.title);
 	if (content->title)
-		history->current->title = strdup(content->title);
+		history->current->page.title = strdup(content->title);
 	else
-		history->current->title = 0;
+		history->current->page.title = 0;
 	
 	thumbnail_create(content, history->current->bitmap, 0);
 }
@@ -318,10 +321,10 @@ void history_free_entry(struct history_entry *entry)
 		return;
 	history_free_entry(entry->forward);
 	history_free_entry(entry->next);
-	free(entry->url);
-	if (entry->frag_id)
-		free(entry->frag_id);
-	free(entry->title);
+	free(entry->page.url);
+	if (entry->page.frag_id)
+		free(entry->page.frag_id);
+	free(entry->page.title);
 	free(entry);
 }
 
@@ -397,16 +400,17 @@ void history_go(struct browser_window *bw, struct history *history,
 	char *url;
 	struct history_entry *current;
 
-	if (entry->frag_id) {
-		url = malloc(strlen(entry->url) + strlen(entry->frag_id) + 5);
+	if (entry->page.frag_id) {
+		url = malloc(strlen(entry->page.url) +
+				strlen(entry->page.frag_id) + 5);
 		if (!url) {
 			warn_user("NoMemory", 0);
 			return;
 		}
-		sprintf(url, "%s#%s", entry->url, entry->frag_id);
+		sprintf(url, "%s#%s", entry->page.url, entry->page.frag_id);
 	}
 	else
-		url = entry->url;
+		url = entry->page.url;
 
 	if (new_window) {
 		current = history->current;
@@ -418,7 +422,7 @@ void history_go(struct browser_window *bw, struct history *history,
 		browser_window_go(bw, url, 0, false);
 	}
 
-	if (entry->frag_id)
+	if (entry->page.frag_id)
 		free(url);
 }
 
@@ -552,19 +556,19 @@ bool history_redraw_entry(struct history *history,
 	struct history_entry *child;
 	colour c = entry == history->current ? 0x0000ff : 0x333333;
 	int tailsize = 5;
-
-	if (!plot.bitmap(entry->x, entry->y, WIDTH, HEIGHT, entry->bitmap,
-			0xffffff))
+	
+	if (!plot.bitmap(entry->x, entry->y, WIDTH, HEIGHT,
+			entry->bitmap, 0xffffff))
 		return false;
 	if (!plot.rectangle(entry->x - 1, entry->y - 1, WIDTH + 1, HEIGHT + 1,
 			entry == history->current ? 2 : 1, c, false, false))
 		return false;
 
-	if (!nsfont_position_in_string(&css_base_style, entry->title,
-			strlen(entry->title), WIDTH, &char_offset, &actual_x))
+	if (!nsfont_position_in_string(&css_base_style, entry->page.title,
+			strlen(entry->page.title), WIDTH, &char_offset, &actual_x))
 		return false;
 	if (!plot.text(entry->x, entry->y + HEIGHT + 12, &css_base_style,
-			entry->title, char_offset, 0xffffff, c))
+			entry->page.title, char_offset, 0xffffff, c))
 		return false;
 
 	for (child = entry->forward; child; child = child->next) {
@@ -635,7 +639,7 @@ const char *history_position_url(struct history *history, int x, int y)
 	if (!entry)
 		return 0;
 
-	return entry->url;
+	return entry->page.url;
 }
 
 

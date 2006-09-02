@@ -1,10 +1,11 @@
 /*
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
- *                http://www.opensource.org/licenses/gpl-license
+ *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  * Copyright 2005 John M Bell <jmb202@ecs.soton.ac.uk>
+ * Copyright 2006 Richard Wilson <info@tinct.net>
  */
 
 /** \file
@@ -22,6 +23,7 @@
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
 #include "netsurf/css/css.h"
+#include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/options.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/form.h"
@@ -35,13 +37,6 @@
 #include "netsurf/utils/talloc.h"
 #include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
-
-
-/** MultiLength, as defined by HTML 4.01. */
-struct box_multi_length {
-	enum { LENGTH_PX, LENGTH_PERCENT, LENGTH_RELATIVE } type;
-	float value;
-};
 
 
 static const content_type image_types[] = {
@@ -77,6 +72,7 @@ static const content_type image_types[] = {
 const char *TARGET_SELF = "_self";
 const char *TARGET_PARENT = "_parent";
 const char *TARGET_TOP = "_top";
+const char *TARGET_BLANK = "_blank";
 
 
 static bool convert_xml_to_box(xmlNode *n, struct content *content,
@@ -114,6 +110,8 @@ static bool box_input(BOX_SPECIAL_PARAMS);
 static bool box_input_text(BOX_SPECIAL_PARAMS, bool password);
 static bool box_button(BOX_SPECIAL_PARAMS);
 static bool box_frameset(BOX_SPECIAL_PARAMS);
+static bool box_create_frameset(struct content_html_frames *f, xmlNode *n,
+		struct content *content);
 static bool box_select_add_option(struct form_control *control, xmlNode *n);
 static bool box_object(BOX_SPECIAL_PARAMS);
 static bool box_embed(BOX_SPECIAL_PARAMS);
@@ -122,13 +120,13 @@ static bool box_pre(BOX_SPECIAL_PARAMS);
 static bool box_iframe(BOX_SPECIAL_PARAMS);
 static bool box_get_attribute(xmlNode *n, const char *attribute,
 		void *context, char **value);
-static struct box_multi_length *box_parse_multi_lengths(const char *s,
-		unsigned int *count, void *context);
+static struct frame_dimension *box_parse_multi_lengths(const char *s,
+		unsigned int *count);
 
 
 /* element_table must be sorted by name */
 struct element_entry {
-	char name[10];   /* element type */
+	char name[10];	 /* element type */
 	bool (*convert)(BOX_SPECIAL_PARAMS);
 };
 static const struct element_entry element_table[] = {
@@ -228,17 +226,17 @@ static const box_type box_map[] = {
 /**
  * Recursively construct a box tree from an xml tree and stylesheets.
  *
- * \param  n             fragment of xml tree
- * \param  content       content of type CONTENT_HTML that is being processed
+ * \param  n		 fragment of xml tree
+ * \param  content	 content of type CONTENT_HTML that is being processed
  * \param  parent_style  style at this point in xml tree
- * \param  parent        parent in box tree
+ * \param  parent	 parent in box tree
  * \param  inline_container  current inline container box, or 0, updated to
- *                       new current inline container on exit
+ *			 new current inline container on exit
  * \param  containing_block  current containing block for absolutes, as defined
- *                       by CSS 2.1 10.1 4
- * \param  href          current link URL, or 0 if not in a link
- * \param  target        current link target, or 0 if none
- * \param  title         current title, or 0 if none
+ *			 by CSS 2.1 10.1 4
+ * \param  href		 current link URL, or 0 if not in a link
+ * \param  target	 current link target, or 0 if none
+ * \param  title	 current title, or 0 if none
  * \return  true on success, false on memory exhaustion
  */
 
@@ -266,17 +264,17 @@ bool convert_xml_to_box(xmlNode *n, struct content *content,
 /**
  * Construct the box tree for an XML element.
  *
- * \param  n             XML node of type XML_ELEMENT_NODE
- * \param  content       content of type CONTENT_HTML that is being processed
+ * \param  n		 XML node of type XML_ELEMENT_NODE
+ * \param  content	 content of type CONTENT_HTML that is being processed
  * \param  parent_style  style at this point in xml tree
- * \param  parent        parent in box tree
+ * \param  parent	 parent in box tree
  * \param  inline_container  current inline container box, or 0, updated to
- *                       new current inline container on exit
+ *			 new current inline container on exit
  * \param  containing_block  current containing block for absolutes, as defined
- *                       by CSS 2.1 10.1 4
- * \param  href          current link URL, or 0 if not in a link
- * \param  target        current link target, or 0 if none
- * \param  title         current title, or 0 if none
+ *			 by CSS 2.1 10.1 4
+ * \param  href		 current link URL, or 0 if not in a link
+ * \param  target	 current link target, or 0 if none
+ * \param  title	 current title, or 0 if none
  * \return  true on success, false on memory exhaustion
  */
 
@@ -471,8 +469,8 @@ bool box_construct_element(xmlNode *n, struct content *content,
 		xmlFree(s);
 	}
 	if (strcmp((const char *) n->name, "table") == 0) {
-	  	border_color = 0x888888;	/* default colour */
-	  	if ((s = (char *) xmlGetProp(n,
+		border_color = 0x888888;	/* default colour */
+		if ((s = (char *) xmlGetProp(n,
 				(const xmlChar *) "cellpadding"))) {
 			char *endp;
 			long value = strtol(s, &endp, 10);
@@ -481,7 +479,7 @@ bool box_construct_element(xmlNode *n, struct content *content,
 				box_set_cellpadding(box, value);
 			xmlFree(s);
 		}
-	  	if ((s = (char *) xmlGetProp(n,
+		if ((s = (char *) xmlGetProp(n,
 					(const xmlChar *) "bordercolor"))) {
 			unsigned int r, g, b;
 			if (s[0] == '#' && sscanf(s + 1, "%2x%2x%2x", &r, &g, &b) == 3)
@@ -490,7 +488,7 @@ bool box_construct_element(xmlNode *n, struct content *content,
 				border_color = named_colour(s);
 			xmlFree(s);
 		}
-	  	if ((s = (char *) xmlGetProp(n,
+		if ((s = (char *) xmlGetProp(n,
 				(const xmlChar *) "border"))) {
 			int value = atoi(s);
 			if (!strrchr(s, '%') && 0 < value)	/* % not implemented */
@@ -501,7 +499,7 @@ bool box_construct_element(xmlNode *n, struct content *content,
 
 	/* transfer <tr height="n"> down to the <td> elements */
 	if (strcmp((const char *) n->name, "tr") == 0) {
-	  	if ((s = (char *) xmlGetProp(n,
+		if ((s = (char *) xmlGetProp(n,
 				(const xmlChar *) "height"))) {
 			float value = atof(s);
 			if (value < 0 || strlen(s) == 0) {
@@ -515,12 +513,12 @@ bool box_construct_element(xmlNode *n, struct content *content,
 				struct box *child;
 				float current;
 				for (child = box->children; child; child = child->next) {
-				  	if (child->type == BOX_TABLE_CELL) {
-					  	current = css_len2px(
-					  			&child->style->height.length,
-					  			child->style);
-					  	value = (value > current) ?
-					  			value : current;
+					if (child->type == BOX_TABLE_CELL) {
+						current = css_len2px(
+								&child->style->height.length,
+								child->style);
+						value = (value > current) ?
+								value : current;
 						child->style->height.height =
 								CSS_HEIGHT_LENGTH;
 						child->style->height.length.unit =
@@ -538,7 +536,7 @@ bool box_construct_element(xmlNode *n, struct content *content,
 	if (style->background_image.type == CSS_BACKGROUND_IMAGE_URI) {
 		if (!html_fetch_object(content, style->background_image.uri,
 				box, image_types, content->available_width,
-				1000, true, 0))
+				1000, true))
 			return false;
 	}
 
@@ -549,15 +547,15 @@ bool box_construct_element(xmlNode *n, struct content *content,
 /**
  * Construct the box tree for an XML text node.
  *
- * \param  n             XML node of type XML_TEXT_NODE
- * \param  content       content of type CONTENT_HTML that is being processed
+ * \param  n		 XML node of type XML_TEXT_NODE
+ * \param  content	 content of type CONTENT_HTML that is being processed
  * \param  parent_style  style at this point in xml tree
- * \param  parent        parent in box tree
+ * \param  parent	 parent in box tree
  * \param  inline_container  current inline container box, or 0, updated to
- *                       new current inline container on exit
- * \param  href          current link URL, or 0 if not in a link
- * \param  target        current link target, or 0 if none
- * \param  title         current title, or 0 if none
+ *			 new current inline container on exit
+ * \param  href		 current link URL, or 0 if not in a link
+ * \param  target	 current link target, or 0 if none
+ * \param  title	 current title, or 0 if none
  * \return  true on success, false on memory exhaustion
  */
 
@@ -726,9 +724,9 @@ bool box_construct_text(xmlNode *n, struct content *content,
 /**
  * Get the style for an element.
  *
- * \param  c             content of type CONTENT_HTML that is being processed
+ * \param  c		 content of type CONTENT_HTML that is being processed
  * \param  parent_style  style at this point in xml tree
- * \param  n             node in xml tree
+ * \param  n		 node in xml tree
  * \return  the new style, or 0 on memory exhaustion
  *
  * The style is collected from three sources:
@@ -985,7 +983,7 @@ struct css_style * box_get_style(struct content *c,
  * by CSS 2.1 9.7.
  *
  * \param  style  style to update
- * \param  root   this is the root element
+ * \param  root	  this is the root element
  */
 
 void box_solve_display(struct css_style *style, bool root)
@@ -1016,7 +1014,7 @@ void box_solve_display(struct css_style *style, bool root)
 /**
  * Set the cellpadding on a table.
  *
- * \param  box    box to set cellpadding on
+ * \param  box	  box to set cellpadding on
  * \param  value  padding in pixels
  *
  * The descendants of the box are searched for table cells, and the padding is
@@ -1046,7 +1044,7 @@ void box_set_cellpadding(struct box *box, int value)
 			break;
 		default:
 			break;
-	        }
+		}
 	}
 }
 
@@ -1054,7 +1052,7 @@ void box_set_cellpadding(struct box *box, int value)
 /**
  * Set the borders on a table.
  *
- * \param  box    box to set cellpadding on
+ * \param  box	  box to set cellpadding on
  * \param  value  border in pixels
  *
  * The descendants of the box are searched for table cells, and the border is
@@ -1067,8 +1065,8 @@ void box_set_table_border(struct box *box, int value, colour color)
 
 	if (box->type == BOX_TABLE) {
 		for (unsigned int i = 0; i != 4; i++) {
-		  	if (box->style->border[i].style ==
-		  			CSS_BORDER_STYLE_NONE) {
+			if (box->style->border[i].style ==
+					CSS_BORDER_STYLE_NONE) {
 				box->style->border[i].color = color;
 				box->style->border[i].width.width =
 						CSS_BORDER_WIDTH_LENGTH;
@@ -1092,8 +1090,8 @@ void box_set_table_border(struct box *box, int value, colour color)
 			break;
 		case BOX_TABLE_CELL:
 			for (unsigned int i = 0; i != 4; i++) {
-			  	if (child->style->border[i].style ==
-		  			CSS_BORDER_STYLE_NONE) {
+				if (child->style->border[i].style ==
+					CSS_BORDER_STYLE_NONE) {
 					child->style->border[i].color = color;
 					child->style->border[i].width.width =
 							CSS_BORDER_WIDTH_LENGTH;
@@ -1108,7 +1106,7 @@ void box_set_table_border(struct box *box, int value, colour color)
 			break;
 		default:
 			break;
-	        }
+		}
 	}
 }
 
@@ -1116,9 +1114,9 @@ void box_set_table_border(struct box *box, int value, colour color)
 /**
  * Apply the CSS text-transform property to given text for its ASCII chars.
  *
- * \param  s    string to transform
+ * \param  s	string to transform
  * \param  len  length of s
- * \param  tt   transform type
+ * \param  tt	transform type
  */
 
 void box_text_transform(char *s, unsigned int len,
@@ -1231,11 +1229,13 @@ bool box_a(BOX_SPECIAL_PARAMS)
 
 	/* target frame [16.3] */
 	if ((s = xmlGetProp(n, (const xmlChar *) "target"))) {
-		if (!strcmp(s, "_blank") || !strcmp(s, "_top"))
+		if (!strcasecmp(s, "_blank"))
+			box->target = TARGET_BLANK;
+		else if (!strcasecmp(s, "_top"))
 			box->target = TARGET_TOP;
-		else if (!strcmp(s, "_parent"))
+		else if (!strcasecmp(s, "_parent"))
 			box->target = TARGET_PARENT;
-		else if (!strcmp(s, "_self"))
+		else if (!strcasecmp(s, "_self"))
 			/* the default may have been overridden by a
 			 * <base target=...>, so this is different to 0 */
 			box->target = TARGET_SELF;
@@ -1246,7 +1246,7 @@ bool box_a(BOX_SPECIAL_PARAMS)
 				xmlFree(s);
 				return false;
 			}
-	        }
+		}
 		xmlFree(s);
 	}
 
@@ -1294,7 +1294,7 @@ bool box_image(BOX_SPECIAL_PARAMS)
 
 	/* start fetch */
 	ok = html_fetch_object(content, url, box, image_types,
-			content->available_width, 1000, false, 0);
+			content->available_width, 1000, false);
 	free(url);
 	return ok;
 }
@@ -1406,7 +1406,7 @@ bool box_object(BOX_SPECIAL_PARAMS)
 
 	/* start fetch (MIME type is ok or not specified) */
 	if (!html_fetch_object(content, params->data, box, 0,
-			content->available_width, 1000, false, 0))
+			content->available_width, 1000, false))
 		return false;
 
 	/* convert children and place into fallback */
@@ -1563,96 +1563,117 @@ no_memory:
 
 bool box_frameset(BOX_SPECIAL_PARAMS)
 {
-	unsigned int row, col;
-	unsigned int rows = 1, cols = 1;
-	int object_width, object_height;
-	char *s, *s1, *url, *name;
-	struct box *row_box;
-	struct box *cell_box;
-	struct box *frameset_box;
-	struct css_style *style = box->style;
-	struct css_style *row_style;
-	struct css_style *cell_style;
-	struct box_multi_length *row_height = 0, *col_width = 0;
-	xmlNode *c;
-	url_func_result res;
+	bool ok;
 
-	box->type = BOX_TABLE;
+	if (content->data.html.frameset) {
+		LOG(("Error: multiple framesets in document."));
+		return false;
+	}
+ 	
+	content->data.html.frameset = talloc_zero(content, struct content_html_frames);
+	if (!content->data.html.frameset)
+		return false;
+ 
+	ok = box_create_frameset(content->data.html.frameset, n, content);
+	if (ok)
+		box->style->display = CSS_DISPLAY_NONE;
+
+	if (convert_children)
+		*convert_children = false;
+	return ok;
+}
+
+bool box_create_frameset(struct content_html_frames *f, xmlNode *n,
+		struct content *content) {
+	unsigned int row, col, index, i;
+	unsigned int rows = 1, cols = 1;
+	char *s, *url;
+	struct frame_dimension *row_height = 0, *col_width = 0;
+	xmlNode *c;
+	struct content_html_frames *frame;
+	bool default_border = true;
+	colour default_border_colour = 0x000000;
 
 	/* parse rows and columns */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "rows"))) {
-		row_height = box_parse_multi_lengths(s, &rows, content);
+		row_height = box_parse_multi_lengths(s, &rows);
 		xmlFree(s);
 		if (!row_height)
 			return false;
+	} else {
+		row_height = calloc(1, sizeof(struct frame_dimension));
+		if (!row_height)
+			return false;
+		row_height->value = 100;
+		row_height->unit = FRAME_DIMENSION_PERCENT;
 	}
 
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "cols"))) {
-		col_width = box_parse_multi_lengths(s, &cols, content);
+		col_width = box_parse_multi_lengths(s, &cols);
 		xmlFree(s);
 		if (!col_width)
 			return false;
-	}
-
-	LOG(("rows %u, cols %u", rows, cols));
-
-	box->min_width = 1;
-	box->max_width = 10000;
-	box->col = talloc_array(content, struct column, cols);
-	if (!box->col)
-		return false;
-
-	if (col_width) {
-		for (col = 0; col != cols; col++) {
-			if (col_width[col].type == LENGTH_PX) {
-				box->col[col].type = COLUMN_WIDTH_FIXED;
-				box->col[col].width = col_width[col].value;
-			} else if (col_width[col].type == LENGTH_PERCENT) {
-				box->col[col].type = COLUMN_WIDTH_PERCENT;
-				box->col[col].width = col_width[col].value;
-			} else {
-				box->col[col].type = COLUMN_WIDTH_RELATIVE;
-				box->col[col].width = col_width[col].value;
-			}
-			box->col[col].min = 1;
-			box->col[col].max = 10000;
-		}
 	} else {
-		box->col[0].type = COLUMN_WIDTH_RELATIVE;
-		box->col[0].width = 1;
-		box->col[0].min = 1;
-		box->col[0].max = 10000;
+		col_width = calloc(1, sizeof(struct frame_dimension));
+		if (!col_width)
+			return false;
+		col_width->value = 100;
+		col_width->unit = FRAME_DIMENSION_PERCENT;
 	}
 
-	/* create the frameset table */
+	/* common extension: border="0|1" to control all children */
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "border"))) {
+		if ((s[0] == '0') && (s[1] == '\0'))
+			default_border = false;
+		xmlFree(s);
+	}
+	/* common extension: frameborder="yes|no" to control all children */
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "frameborder"))) {
+	  	if (!strcasecmp(s, "no"))
+	  		default_border = false;
+		xmlFree(s);
+	}
+	/* common extension: bordercolor="#RRGGBB|<named colour>" to control all children */
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "bordercolor"))) {
+		unsigned int r, g, b;
+		if (s[0] == '#' && sscanf(s + 1, "%2x%2x%2x", &r, &g, &b) == 3)
+			default_border_colour = (b << 16) | (g << 8) | r;
+		else if (s[0] != '#')
+			default_border_colour = named_colour(s);
+		xmlFree(s);
+	}
+	
+	/* update frameset and create default children */
+	f->cols = cols;
+	f->rows = rows;
+	f->scrolling = SCROLLING_NO;
+	f->children = talloc_array(content, struct content_html_frames, (rows * cols));
+	for (row = 0; row < rows; row++) {
+		for (col = 0; col < cols; col++) {
+			index = (row * cols) + col;
+			frame = &f->children[index];
+			frame->cols = 0;
+			frame->rows = 0;
+			frame->width = col_width[col];
+			frame->height = row_height[row];
+			frame->margin_width = -1;
+			frame->margin_height = -1;
+			frame->name = NULL;
+			frame->url = NULL;
+			frame->no_resize = false;
+			frame->scrolling = SCROLLING_AUTO;
+			frame->border = default_border;
+			frame->border_colour = default_border_colour;
+			frame->children = NULL;
+		}
+	}
+	free(col_width);
+	free(row_height);
+
+	/* create the frameset windows */
 	c = n->children;
-	for (row = 0; c && row != rows; row++) {
-		row_style = talloc_memdup(content, style, sizeof *style);
-		if (!row_style)
-			return false;
-		object_height = 1000;  /** \todo  get available height */
-	/*	if (row_height) {
-			row_style->height.height = CSS_HEIGHT_LENGTH;
-			row_style->height.length.unit = CSS_UNIT_PX;
-			if (row_height[row].type == LENGTH_PERCENT)
-				row_style->height.length.value = 1000 *
-						row_height[row].value / 100;
-			else if (row_height[row].type == LENGTH_RELATIVE)
-				row_style->height.length.value = 100 *
-						row_height[row].value;
-			else
-				row_style->height.length.value =
-						row_height[row].value;
-			object_height = row_style->height.length.value;
-		}*/
-		row_box = box_create(row_style, 0, 0, 0, 0, content);
-		if (!row_box)
-			return false;
-
-		row_box->type = BOX_TABLE_ROW;
-		box_add_child(box, row_box);
-
-		for (col = 0; c && col != cols; col++) {
+	for (row = 0; c && row < rows; row++) {
+		for (col = 0; c && col < cols; col++) {
 			while (c && !(c->type == XML_ELEMENT_NODE && (
 				strcmp((const char *) c->name, "frame") == 0 ||
 				strcmp((const char *) c->name, "frameset") == 0
@@ -1661,83 +1682,91 @@ bool box_frameset(BOX_SPECIAL_PARAMS)
 			if (!c)
 				break;
 
-			/* estimate frame width */
-			object_width = content->available_width;
-			if (col_width && col_width[col].type == LENGTH_PX)
-				object_width = col_width[col].value;
+			/* get current frame */
+			index = (row * cols) + col;
+			frame = &f->children[index];
 
-			cell_style = talloc_memdup(content, style,
-					sizeof *style);
-			if (!cell_style)
-				return false;
-			cell_style->overflow = CSS_OVERFLOW_AUTO;
-
-			cell_box = box_create(cell_style, 0, 0, 0, 0, content);
-			if (!cell_box)
-				return false;
-			cell_box->type = BOX_TABLE_CELL;
-			box_add_child(row_box, cell_box);
-
+			/* nest framesets */
 			if (strcmp((const char *) c->name, "frameset") == 0) {
-				LOG(("frameset"));
-				frameset_box = box_create(cell_style, 0, 0, 0,
-						0, content);
-				if (!frameset_box)
+				frame->border = 0;
+				if (!box_create_frameset(frame, c, content))
 					return false;
-				if (!box_frameset(c, content, frameset_box, 0))
-					return false;
-				box_add_child(cell_box, frameset_box);
-
 				c = c->next;
 				continue;
 			}
 
+			/* get frame URL */
 			if (!(s = (char *) xmlGetProp(c,
 					(const xmlChar *) "src"))) {
 				c = c->next;
 				continue;
 			}
-
-			s1 = strip(s);
-			res = url_join(s1, content->data.html.base_url, &url);
+			if (!box_extract_link(s, content->data.html.base_url, &url)) {
+				xmlFree(s);
+				c = c->next;
+				continue;
+			}
 			xmlFree(s);
-			/* if url is equivalent to the parent's url,
-			 * we've got infinite inclusion. stop it here.
-			 * also bail if url_join failed.
-			 */
-			if (res != URL_FUNC_OK || strcasecmp(url,
-					content->data.html.base_url) == 0) {
-				LOG(("url_join failed"));
+			if (!url) {
 				c = c->next;
 				continue;
 			}
 
-			name = xmlGetProp(c, (const xmlChar *) "name");
+			/* don't include ourself */
+			if (strcmp(content->data.html.base_url, url) == 0) {
+				free(url);
+				c = c->next;
+				continue;
+			}
 
-			LOG(("frame, url '%s', name '%s'", url, name));
+			/* fill in specified values */
+			frame->url = talloc_strdup(content, url);
+			if ((s = (char *) xmlGetProp(c,
+					(const xmlChar *) "name"))) {
+				frame->name = talloc_strdup(content, s);
+				xmlFree(s);
+			}
+			frame->no_resize = xmlHasProp(c,
+					(const xmlChar *) "noresize");
+			if ((s = (char *) xmlGetProp(c,
+					(const xmlChar *) "frameborder"))) {
+				i = atoi(s);
+				frame->border = (i != 0);
+				xmlFree(s);
+			}
+			if ((s = (char *) xmlGetProp(c,
+					(const xmlChar *) "scrolling"))) {
+				if (!strcasecmp(s, "yes"))
+					frame->scrolling = SCROLLING_YES;
+				else if (!strcasecmp(s, "no"))
+					frame->scrolling = SCROLLING_NO;
+				xmlFree(s);
+			}
+			if ((s = (char *) xmlGetProp(c,
+					(const xmlChar *) "marginwidth"))) {
+				frame->margin_width = atoi(s);
+				xmlFree(s);
+			}
+			if ((s = (char *) xmlGetProp(c,
+					(const xmlChar *) "marginheight"))) {
+				frame->margin_width = atoi(s);
+				xmlFree(s);
+			}
+			if ((s = (char *) xmlGetProp(c, (const xmlChar *) "bordercolor"))) {
+				unsigned int r, g, b;
+				if (s[0] == '#' && sscanf(s + 1, "%2x%2x%2x", &r, &g, &b) == 3)
+					frame->border_colour = (b << 16) | (g << 8) | r;
+				else if (s[0] != '#')
+					frame->border_colour = named_colour(s);
+				xmlFree(s);
+			}
 
-			if (!html_fetch_object(content, url,
-					cell_box, 0,
-					object_width, object_height, false,
-					name))
-				return false;
+			/* release temporary memory */
 			free(url);
-
-			if (name)
-				xmlFree(name);
-
 			c = c->next;
 		}
 	}
 
-	talloc_free(row_height);
-	talloc_free(col_width);
-
-	style->width.width = CSS_WIDTH_PERCENT;
-	style->width.value.percent = 100;
-
-	if (convert_children)
-		*convert_children = false;
 	return true;
 }
 
@@ -1748,33 +1777,93 @@ bool box_frameset(BOX_SPECIAL_PARAMS)
 
 bool box_iframe(BOX_SPECIAL_PARAMS)
 {
-	bool ok;
-	char *url;
-	xmlChar *src;
+	char *url, *s;
+	struct content_html_iframe *iframe;
+	int i;
 
 	/* get frame URL */
-	if (!(src = xmlGetProp(n, (const xmlChar *) "src")))
+	if (!(s = (char *) xmlGetProp(n,
+			(const xmlChar *) "src")))
 		return true;
-	if (!box_extract_link((char *) src, content->data.html.base_url, &url))
+	if (!box_extract_link(s, content->data.html.base_url, &url)) {
+		xmlFree(s);
 		return false;
+	}
+	xmlFree(s);
 	if (!url)
 		return true;
 
-	/* Don't include ourself */
+	/* don't include ourself */
 	if (strcmp(content->data.html.base_url, url) == 0) {
 		free(url);
 		return true;
 	}
 
-	/* start fetch */
-	ok = html_fetch_object(content, url, box, 0,
-			content->available_width, 0, false, 0);
+	/* create a new iframe */
+	iframe = talloc(content, struct content_html_iframe);
+	if (!iframe) {
+		free(url);
+		return false;
+	}
+	iframe->box = box;
+	iframe->margin_width = -1;
+	iframe->margin_height = -1;
+	iframe->name = NULL;
+	iframe->url = talloc_strdup(content, url);
+	iframe->scrolling = SCROLLING_AUTO;
+	iframe->border = true;
+	iframe->next = content->data.html.iframe;
+	content->data.html.iframe = iframe;
 
+	/* fill in specified values */
+	if ((s = (char *) xmlGetProp(n,
+			(const xmlChar *) "name"))) {
+		iframe->name = talloc_strdup(content, s);
+		xmlFree(s);		  
+	}
+	if ((s = (char *) xmlGetProp(n,
+			(const xmlChar *) "frameborder"))) {
+		i = atoi(s);
+		iframe->border = (i != 0);
+		xmlFree(s);
+	}
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "bordercolor"))) {
+		unsigned int r, g, b;
+		if (s[0] == '#' && sscanf(s + 1, "%2x%2x%2x", &r, &g, &b) == 3)
+			iframe->border_colour = (b << 16) | (g << 8) | r;
+		else if (s[0] != '#')
+			iframe->border_colour = named_colour(s);
+		xmlFree(s);
+	}
+	if ((s = (char *) xmlGetProp(n,
+			(const xmlChar *) "scrolling"))) {
+		if (!strcasecmp(s, "yes"))
+			iframe->scrolling = SCROLLING_YES;
+		else if (!strcasecmp(s, "no"))
+			iframe->scrolling = SCROLLING_NO;
+		xmlFree(s);
+	}
+	if ((s = (char *) xmlGetProp(n,
+			(const xmlChar *) "marginwidth"))) {
+		iframe->margin_width = atoi(s);
+		xmlFree(s);
+	}
+	if ((s = (char *) xmlGetProp(n,
+			(const xmlChar *) "marginheight"))) {
+		iframe->margin_width = atoi(s);
+		xmlFree(s);
+	}
+	
+	/* release temporary memory */
 	free(url);
 
-	*convert_children = false;
+	/* box */
+	box->type = BOX_INLINE_BLOCK;
+	assert(box->style);
 
-	return ok;
+	if (convert_children)
+		*convert_children = false;
+	return true;
 }
 
 
@@ -1976,12 +2065,12 @@ bool box_input(BOX_SPECIAL_PARAMS)
 				if (!html_fetch_object(content, url,
 						box, image_types,
 						content->available_width,
-						1000, false, 0)) {
+						1000, false)) {
 					free(url);
 					goto no_memory;
-			        }
-	                }
-	                free(url);
+				}
+			}
+			free(url);
 		}
 
 	} else {
@@ -2244,7 +2333,7 @@ no_memory:
  * Add an option to a form select control (helper function for box_select()).
  *
  * \param  control  select containing the option
- * \param  n        xml element node for <option>
+ * \param  n	    xml element node for <option>
  * \return  true on success, false on memory exhaustion
  */
 
@@ -2432,7 +2521,7 @@ bool box_embed(BOX_SPECIAL_PARAMS)
 
 	/* start fetch */
 	return html_fetch_object(content, params->data, box, 0,
-			content->available_width, 1000, false, 0);
+			content->available_width, 1000, false);
 }
 
 /**
@@ -2443,7 +2532,7 @@ bool box_embed(BOX_SPECIAL_PARAMS)
 /**
  * Get the value of an XML element's attribute.
  *
- * \param  n          xmlNode, of type XML_ELEMENT_NODE
+ * \param  n	      xmlNode, of type XML_ELEMENT_NODE
  * \param  attribute  name of attribute
  * \param  context    talloc context for result buffer
  * \param  value      updated to value, if the attribute is present
@@ -2471,8 +2560,8 @@ bool box_get_attribute(xmlNode *n, const char *attribute,
  * Extract a URL from a relative link, handling junk like whitespace and
  * attempting to read a real URL from "javascript:" links.
  *
- * \param  rel     relative URL taken from page
- * \param  base    base for relative URLs
+ * \param  rel	   relative URL taken from page
+ * \param  base	   base for relative URLs
  * \param  result  updated to target URL on heap, unchanged if extract failed
  * \return  true on success, false on memory exhaustion
  */
@@ -2537,24 +2626,23 @@ bool box_extract_link(const char *rel, const char *base, char **result)
 /**
  * Parse a multi-length-list, as defined by HTML 4.01.
  *
- * \param  s        string to parse
+ * \param  s	    string to parse
  * \param  count    updated to number of entries
- * \param  context  talloc context block
  * \return  array of struct box_multi_length, or 0 on memory exhaustion
  */
 
-struct box_multi_length *box_parse_multi_lengths(const char *s,
-		unsigned int *count, void *context)
+struct frame_dimension *box_parse_multi_lengths(const char *s,
+		unsigned int *count)
 {
 	char *end;
 	unsigned int i, n;
-	struct box_multi_length *length;
+	struct frame_dimension *length;
 
 	for (i = 0, n = 1; s[i]; i++)
 		if (s[i] == ',')
 			n++;
 
-	length = talloc_array(context, struct box_multi_length, n);
+	length = calloc(n, sizeof(struct frame_dimension));
 	if (!length)
 		return NULL;
 
@@ -2566,9 +2654,15 @@ struct box_multi_length *box_parse_multi_lengths(const char *s,
 			length[i].value = 1;
 		s = end;
 		switch (*s) {
-			case '%': length[i].type = LENGTH_PERCENT; break;
-			case '*': length[i].type = LENGTH_RELATIVE; break;
-			default:  length[i].type = LENGTH_PX; break;
+			case '%':
+				length[i].unit = FRAME_DIMENSION_PERCENT;
+				break;
+			case '*':
+				length[i].unit = FRAME_DIMENSION_RELATIVE;
+				break;
+			default:
+				length[i].unit = FRAME_DIMENSION_PIXELS;
+				break;
 		}
 		while (*s && *s != ',')
 			s++;

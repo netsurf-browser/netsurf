@@ -363,6 +363,11 @@ Encoding1:detected
 Encoding2:from <meta>
 EncodingUnk:Unknown
 
+# Misc
+#
+Selecting:Selecting
+FrameDrag:Resizing frames
+
 
 # Errors
 # ======
@@ -809,9 +814,10 @@ HelpContentConfig:\Tcontent configuration \w
 HelpContentConfig2:This indicates whether NetSurf will atempt to block advertisements on web pages|MIn rare circumstances, this option may cause valid content to be blocked too.
 HelpContentConfig3:This indicates whether NetSurf will stop web sites from automatically opening new windows on your desktop.
 HelpContentConfig4:This indicates whether NetSurf will allow external plug-ins to handle additional types of content, such as Flash.
-HelpContentConfig5:\Sreset the Content options back to their default values.
-HelpContentConfig6:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
-HelpContentConfig7:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
+HelpContentConfig7:This indicates whether NetSurf will allow links to open in new windows.
+HelpContentConfig8:\Sreset the Content options back to their default values.
+HelpContentConfig9:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
+HelpContentConfig10:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
 
 HelpFontConfig:\font configuration \w
 HelpFontConfig3:\Tcurrently selected sans-serif font.|MNetSurf will use this font wherever a web page specifies a sans-serif typeface.

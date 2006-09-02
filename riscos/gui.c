@@ -156,7 +156,7 @@ static bool gui_track = false;
 /** Handle of window which the pointer is over. */
 static wimp_w gui_track_wimp_w;
 /** Browser window which the pointer is over, or 0 if none. */
-static struct gui_window *gui_track_gui_window;
+struct gui_window *gui_track_gui_window;
 
 /** Some windows have been resized, and should be reformatted. */
 bool gui_reformat_pending = false;
@@ -727,10 +727,6 @@ void gui_init2(int argc, char** argv)
 			option_language);
 	}
 
-#ifdef WITH_KIOSK_BROWSING
-	open_window = true;
-#endif
-
 	if (open_window)
 			browser_window_create(url, NULL, 0, true);
 
@@ -754,7 +750,7 @@ void gui_quit(void)
 	rufl_quit();
 	free(gui_sprites);
 	xwimp_close_down(task_handle);
-	free(default_stylesheet_url);
+ 	free(default_stylesheet_url);
 	free(adblock_stylesheet_url);
 	xhourglass_off();
 }
@@ -1008,6 +1004,7 @@ void ro_gui_null_reason_code(void)
 
 		case GUI_DRAG_SELECTION:
 		case GUI_DRAG_SCROLL:
+		case GUI_DRAG_FRAME:
 			assert(gui_track_gui_window);
 			ro_gui_window_mouse_at(gui_track_gui_window, &pointer);
 			break;
@@ -1168,6 +1165,7 @@ void ro_gui_pointer_leaving_window(wimp_leaving *leaving)
 		case GUI_DRAG_SELECTION:
 		case GUI_DRAG_SCROLL:
 		case GUI_DRAG_SAVE:
+		case GUI_DRAG_FRAME:
 			/* ignore Pointer_Leaving_Window event that the Wimp mysteriously
 				issues when a Wimp_DragBox drag operation is started */
 			break;
@@ -1186,10 +1184,20 @@ void ro_gui_pointer_leaving_window(wimp_leaving *leaving)
 
 void ro_gui_pointer_entering_window(wimp_entering *entering)
 {
-	gui_track_wimp_w = entering->w;
-	gui_track_gui_window = ro_gui_window_lookup(entering->w);
-	gui_track = gui_track_gui_window || gui_track_wimp_w == history_window ||
-			gui_track_wimp_w == dialog_url_complete;
+	switch (gui_current_drag_type) {
+		case GUI_DRAG_SELECTION:
+		case GUI_DRAG_SCROLL:
+		case GUI_DRAG_SAVE:
+		case GUI_DRAG_FRAME:
+			/* ignore entering new windows/frames */
+			break;
+		default:
+			gui_track_wimp_w = entering->w;
+			gui_track_gui_window = ro_gui_window_lookup(entering->w);
+			gui_track = gui_track_gui_window || gui_track_wimp_w == history_window ||
+					gui_track_wimp_w == dialog_url_complete;
+			break;
+	}
 }
 
 
@@ -1282,6 +1290,10 @@ void ro_gui_drag_end(wimp_dragged *drag)
 
 		case GUI_DRAG_TOOLBAR_CONFIG:
 			ro_gui_theme_toolbar_editor_drag_end(drag);
+			break;
+
+		case GUI_DRAG_FRAME:
+			ro_gui_window_frame_resize_end(gui_track_gui_window, drag);
 			break;
 
 		default:
@@ -1500,6 +1512,8 @@ void ro_msg_dataload(wimp_message *message)
 
 	g = ro_gui_window_lookup(message->data.data_xfer.w);
 	if (g) {
+	  	while (g->bw->parent)
+	  		g = g->bw->parent->window;
 		if (ro_gui_window_dataload(g, message))
 			return;
 	}

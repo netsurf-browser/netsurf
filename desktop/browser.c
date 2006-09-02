@@ -1,7 +1,7 @@
 /*
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
- *                http://www.opensource.org/licenses/gpl-license
+ *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2004 Andrew Timmins <atimmins@blueyonder.co.uk>
@@ -48,6 +48,8 @@
 #include "netsurf/utils/utils.h"
 #include "netsurf/utils/utf8.h"
 
+/** maximum frame resize margin */
+#define FRAME_RESIZE 6
 
 /** browser window which is being redrawn. Valid only during redraw. */
 struct browser_window *current_redraw_browser;
@@ -55,10 +57,13 @@ struct browser_window *current_redraw_browser;
 /** fake content for <a> being saved as a link */
 struct content browser_window_href_content;
 
-
+static void browser_window_resize_frame(struct browser_window *bw, int x, int y);
+static bool browser_window_resolve_frame_dimension(struct browser_window *bw,
+		struct browser_window *sibling, int x, int y, bool width, bool height);
 static void browser_window_callback(content_msg msg, struct content *c,
 		intptr_t p1, intptr_t p2, union content_msg_data data);
 static void browser_window_refresh(void *p);
+static bool browser_window_check_throbber(struct browser_window *bw);
 static void browser_window_convert_to_download(struct browser_window *bw);
 static void browser_window_start_throbber(struct browser_window *bw);
 static void browser_window_stop_throbber(struct browser_window *bw);
@@ -67,8 +72,15 @@ static void browser_window_set_status(struct browser_window *bw,
 static void browser_window_set_pointer(struct gui_window *g, gui_pointer_shape shape);
 static void download_window_callback(fetch_msg msg, void *p, const void *data,
 		unsigned long size);
+static void browser_window_destroy_children(struct browser_window *bw);
+static void browser_window_destroy_internal(struct browser_window *bw);
+static struct browser_window *browser_window_find_target(struct browser_window *bw, const char *target);
+static void browser_window_find_target_internal(struct browser_window *bw, const char *target, 
+		int depth, struct browser_window *page, int *rdepth, struct browser_window **bw_target);
 static void browser_window_mouse_action_html(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y);
+static bool browser_window_resize_frames(struct browser_window *bw, browser_mouse_state mouse,
+		int x, int y, gui_pointer_shape *pointer, const char **status, bool *action);
 static void browser_window_mouse_action_text(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y);
 static void browser_window_mouse_track_html(struct browser_window *bw,
@@ -95,7 +107,7 @@ static void browser_window_scroll_box(struct browser_window *bw,
 /**
  * Create and open a new browser window with the given page.
  *
- * \param  url      URL to start fetching in the new window (copied)
+ * \param  url	    URL to start fetching in the new window (copied)
  * \param  clone    The browser window to clone
  * \param  referer  The referring uri
  */
@@ -107,13 +119,12 @@ struct browser_window *browser_window_create(const char *url, struct browser_win
 
 	assert(clone || history_add);
 
-	if ((bw = malloc(sizeof *bw)) == NULL) {
+	if ((bw = calloc(1, sizeof *bw)) == NULL) {
 		warn_user("NoMemory", 0);
 		return NULL;
 	}
 
-	bw->current_content = NULL;
-	bw->loading_content = NULL;
+	/* content */
 	if (!clone)
 		bw->history = history_create();
 	else
@@ -122,21 +133,21 @@ struct browser_window *browser_window_create(const char *url, struct browser_win
 		bw->gesturer = NULL;
 	else
 		bw->gesturer = gesturer_clone(clone->gesturer);
+
+	/* window characteristics */
 	bw->sel = selection_create(bw);
-	bw->throbbing = false;
-	bw->caret_callback = NULL;
-	bw->paste_callback = NULL;
-	bw->move_callback = NULL;
-	bw->frag_id = NULL;
+	bw->refresh_interval = -1;
 	bw->drag_type = DRAGGING_NONE;
-	bw->scrolling_box = NULL;
-	bw->referer = NULL;
-	bw->download = false;
+	bw->browser_window_type = BROWSER_WINDOW_NORMAL;
+	bw->scrolling = SCROLLING_YES;
+	bw->border = true;
+	bw->no_resize = true;
+	
+	/* gui window */
 	if ((bw->window = gui_create_browser_window(bw, clone)) == NULL) {
-		free(bw);
+		browser_window_destroy(bw);
 		return NULL;
 	}
-	bw->refresh_interval = -1;
 	if (url)
 		browser_window_go(bw, url, referer, history_add);
 	return bw;
@@ -144,10 +155,544 @@ struct browser_window *browser_window_create(const char *url, struct browser_win
 
 
 /**
+ * Returns the browser window that is responsible for the child.
+ *
+ * \param  bw	The browser window to find the owner of
+ * \return the browser window's owner
+ */
+
+struct browser_window *browser_window_owner(struct browser_window *bw) {
+  	/* an iframe's parent is just the parent window */
+  	if (bw->browser_window_type == BROWSER_WINDOW_IFRAME)
+  		return bw->parent;
+  	
+  	/* the parent of a frameset is either a NORMAL window or an IFRAME */
+	while (bw->parent) {
+		switch (bw->browser_window_type) { 
+	  		case BROWSER_WINDOW_NORMAL:
+  			case BROWSER_WINDOW_IFRAME:
+	  			return bw;
+  			case BROWSER_WINDOW_FRAME:
+  			case BROWSER_WINDOW_FRAMESET:
+  				bw = bw->parent;
+				break;
+		}
+	}
+	return bw;
+}
+
+
+/**
+ * Create and open a iframes for a browser window.
+ *
+ * \param  bw	    The browser window to create iframes for
+ * \param  iframe   The iframes to create
+ */
+
+void browser_window_create_iframes(struct browser_window *bw,
+		struct content_html_iframe *iframe) {
+	struct browser_window *window;
+	struct content_html_iframe *cur;
+	int iframes = 0;
+	int index;
+	
+	for (cur = iframe; cur; cur = cur->next)
+		iframes++;
+	bw->iframes = calloc(iframes, sizeof(*bw));
+	if (!bw->iframes)
+		return;
+	bw->iframe_count = iframes;
+
+	index = 0;
+	for (cur = iframe; cur; cur = cur->next) {
+		window = &(bw->iframes[index++]);
+
+		/* content */
+		window->history = history_create();
+		window->sel = selection_create(window);
+		window->refresh_interval = -1;
+		
+		/* window characteristics */
+		window->drag_type = DRAGGING_NONE;
+		window->browser_window_type = BROWSER_WINDOW_IFRAME;
+		window->scrolling = cur->scrolling;
+		window->border = cur->border;
+		window->border_colour = cur->border_colour;
+		window->no_resize = true;
+		window->margin_width = cur->margin_width;
+		window->margin_height = cur->margin_height;
+		if (cur->name)
+			window->name = strdup(cur->name);
+		
+		/* linking */
+		window->box = cur->box;
+		window->parent = bw;
+		
+		/* gui window */
+		window->window = gui_create_browser_window(window, bw);
+	}
+
+	/* calculate dimensions */
+	gui_window_update_extent(bw->window);
+	browser_window_recalculate_iframes(bw);
+
+	index = 0;
+	for (cur = iframe; cur; cur = cur->next) {
+		window = &(bw->iframes[index++]);
+		if (iframe->url)
+			browser_window_go(window, iframe->url, NULL, true);
+	}
+}
+
+
+/**
+ * Recalculate iframe positions following a resize.
+ *
+ * \param  bw	    The browser window to reposition iframes for
+ */
+ 
+void browser_window_recalculate_iframes(struct browser_window *bw) {
+	struct browser_window *window;
+	struct rect rect;
+	int bw_width, bw_height;
+	int index;
+
+	assert(bw);
+	
+	/* update window dimensions */
+	gui_window_get_dimensions(bw->window, &bw_width, &bw_height);
+	if (!bw->parent) {
+		bw->x0 = 0;
+		bw->y0 = 0;
+		bw->x1 = bw_width;
+		bw->y1 = bw_height;
+	}
+	
+	for (index = 0; index < bw->iframe_count; index++) {
+		window = &(bw->iframes[index]);
+		box_bounds(window->box, &rect);
+		gui_window_position_frame(window->window, rect.x0, rect.y0,
+				rect.x1, rect.y1);			  
+	} 	
+}
+
+
+/**
+ * Create and open aframeset for a browser window.
+ *
+ * \param  bw	    The browser window to create the frameset for
+ * \param  iframe   The frameset to create
+ */
+
+void browser_window_create_frameset(struct browser_window *bw,
+		struct content_html_frames *frameset) {
+	int row, col, index;
+	struct content_html_frames *frame;
+	struct browser_window *window;
+
+	/* we use a 3 stage approach such that the content is initially formatted to the
+	 * correct frameset dimensions */
+	assert(bw && frameset);
+
+	/* create children */
+	assert(bw->children == NULL);
+	assert(frameset->cols + frameset->rows != 0);
+	
+	bw->children = calloc((frameset->cols * frameset->rows), sizeof(*bw));
+	if (!bw->children)
+		return;
+	bw->cols = frameset->cols;
+	bw->rows = frameset->rows;
+	for (row = 0; row < bw->rows; row++) {
+		for (col = 0; col < bw->cols; col++) {
+			index = (row * bw->cols) + col;
+			frame = &frameset->children[index];
+			window = &bw->children[index];
+			
+			/* content */
+			window->history = history_create();
+			window->sel = selection_create(window);
+			window->refresh_interval = -1;
+
+			/* window characteristics */
+			window->drag_type = DRAGGING_NONE;
+			if (frame->children)
+				window->browser_window_type = BROWSER_WINDOW_FRAMESET;
+			else
+				window->browser_window_type = BROWSER_WINDOW_FRAME;
+			window->scrolling = frame->scrolling;
+			window->border = frame->border;
+			window->border_colour = frame->border_colour;
+			window->no_resize = frame->no_resize;
+			window->frame_width = frame->width;
+			window->frame_height = frame->height;
+			window->margin_width = frame->margin_width;
+			window->margin_height = frame->margin_height;
+			if (frame->name)
+				window->name = strdup(frame->name);
+
+			/* linking */
+			window->parent = bw;
+		
+			/* gui window */
+			window->window = gui_create_browser_window(window, bw);
+			if (frame->children)
+				browser_window_create_frameset(window, frame);
+		}
+	}
+	
+	/* calculate dimensions */
+	gui_window_update_extent(bw->window);
+	browser_window_recalculate_frameset(bw);
+	
+	/* launch content */
+	for (row = 0; row < bw->rows; row++) {
+		for (col = 0; col < bw->cols; col++) {
+			index = (row * bw->cols) + col;
+			frame = &frameset->children[index];
+			window = &bw->children[index];
+
+			if (frame->url)
+				browser_window_go(window, frame->url, NULL, true);
+		}
+	}
+}
+
+
+/**
+ * Recalculate frameset positions following a resize.
+ *
+ * \param  bw	    The browser window to reposition framesets for
+ */
+ 
+void browser_window_recalculate_frameset(struct browser_window *bw) {
+	int widths[bw->cols][bw->rows];
+	int heights[bw->cols][bw->rows];
+	int bw_width, bw_height;
+	int avail_width, avail_height;
+	int row, row2, col, index;
+	struct browser_window *window;
+	float relative;
+	int size, extent;
+	int x, y;
+
+	assert(bw);
+	
+	/* window dimensions */
+	if (!bw->parent) {
+		gui_window_get_dimensions(bw->window, &bw_width, &bw_height);
+		bw->x0 = 0;
+		bw->y0 = 0;
+		bw->x1 = bw_width;
+		bw->y1 = bw_height;
+	} else {
+		bw_width = bw->x1 - bw->x0;
+		bw_height = bw->y1 - bw->y0;
+	}
+	bw_width++;
+	bw_height++;
+
+	/* widths */
+	for (row = 0; row < bw->rows; row++) {
+		avail_width = bw_width;
+		relative = 0;
+		for (col = 0; col < bw->cols; col++) {
+			index = (row * bw->cols) + col;
+			window = &bw->children[index];
+
+			switch (window->frame_width.unit) {
+				case FRAME_DIMENSION_PIXELS:
+					widths[col][row] = window->frame_width.value;
+					break;
+				case FRAME_DIMENSION_PERCENT:
+					widths[col][row] = bw_width * window->frame_width.value / 100;
+					break;
+				case FRAME_DIMENSION_RELATIVE:
+					widths[col][row] = 0;
+					relative += window->frame_width.value;
+					break;
+			}
+			avail_width -= widths[col][row];
+		}
+				
+		/* try to distribute remainder to relative values in preference */
+		if ((relative > 0) && (avail_width > 0)) {
+			for (col = 0; col < bw->cols; col++) {
+				index = (row * bw->cols) + col;
+				window = &bw->children[index];
+
+				if (window->frame_width.unit == FRAME_DIMENSION_RELATIVE) {
+					size = avail_width * window->frame_width.value / relative;
+					avail_width -= size;
+					relative -= window->frame_width.value;
+					widths[col][row] += size;
+				}
+			}
+		} else {
+			/* proportionally distribute error */
+			extent = bw_width - avail_width;
+			for (col = 0; col < bw->cols; col++) {
+				index = (row * bw->cols) + col;
+				window = &bw->children[index];
+				
+				if (col == bw->cols - 1) {
+					widths[col][row] = bw_width;
+				} else {
+					size = bw_width * widths[col][row] / extent;
+					bw_width -= size;
+					extent -= widths[col][row];
+					widths[col][row] = size;
+				}
+			}
+		}
+	}
+
+	/* heights */
+	for (col = 0; col < bw->cols; col++) {
+		avail_height = bw_height;
+		relative = 0;
+		for (row = 0; row < bw->rows; row++) {
+			index = (row * bw->cols) + col;
+			window = &bw->children[index];
+
+			switch (window->frame_height.unit) {
+				case FRAME_DIMENSION_PIXELS:
+					heights[col][row] = window->frame_height.value;
+					break;
+				case FRAME_DIMENSION_PERCENT:
+					heights[col][row] = bw_height *
+							window->frame_height.value / 100;
+					break;
+				case FRAME_DIMENSION_RELATIVE:
+					heights[col][row] = 0;
+					relative += window->frame_height.value;
+					break;
+			}
+			avail_height -= heights[col][row];
+		}
+
+		if (avail_height == 0)
+			continue;
+
+		/* try to distribute remainder to relative values in preference */
+		if ((relative > 0) && (avail_height > 0)) {
+			for (row = 0; row < bw->rows; row++) {
+				index = (row * bw->cols) + col;
+				window = &bw->children[index];
+
+				if (window->frame_height.unit == FRAME_DIMENSION_RELATIVE) {
+					size = avail_height * window->frame_height.value / relative;
+					avail_height -= size;
+					relative -= window->frame_height.value;
+					heights[col][row] += size;
+				}
+			}
+		} else {
+			/* proportionally distribute error */
+			extent = bw_height - avail_height;
+			for (row = 0; row < bw->rows; row++) {
+				index = (row * bw->cols) + col;
+				window = &bw->children[index];
+				
+				if (row == bw->rows - 1) {
+					heights[col][row] = bw_height;
+				} else {
+					size = bw_height * heights[col][row] / extent;
+					bw_height -= size;
+					extent -= heights[col][row];
+					heights[col][row] = size;
+				}
+			}
+		}
+	}
+
+	/* position frames and calculate children */
+	for (row = 0; row < bw->rows; row++) {
+		x = 0;
+		for (col = 0; col < bw->cols; col++) {
+			index = (row * bw->cols) + col;
+			window = &bw->children[index];
+
+			y = 0;
+			for (row2 = 0; row2 < row; row2++)
+				y+= heights[col][row2];
+			gui_window_position_frame(window->window, x, y,
+					x + widths[col][row] - 1,
+					y + heights[col][row] - 1);			  
+			x += widths[col][row];
+			if (window->children)
+				browser_window_recalculate_frameset(window);
+		}
+	}
+}
+
+
+/**
+ * Resize a browser window that is a frame.
+ *
+ * \param  bw	    The browser window to resize
+ */
+ 
+void browser_window_resize_frame(struct browser_window *bw, int x, int y) {
+	struct browser_window *parent;
+	struct browser_window *sibling;
+	int col = -1, row = -1, i;
+	bool change = false;
+	
+	parent = bw->parent;
+	assert(parent);
+
+	/* get frame location */
+	for (i = 0; i < (parent->cols * parent->rows); i++) {
+		if (&parent->children[i] == bw) {
+			col = i % parent->cols;
+			row = i / parent->cols;
+		 }
+	}
+	assert((col >= 0) && (row >= 0));
+	
+	sibling = NULL;
+	if (bw->drag_resize_left)
+		sibling = &parent->children[row * parent->cols + (col - 1)];
+	else if (bw->drag_resize_right)
+		sibling = &parent->children[row * parent->cols + (col + 1)];
+	if (sibling)
+		change |= browser_window_resolve_frame_dimension(bw, sibling, x, y, true, false);
+	
+	sibling = NULL;
+	if (bw->drag_resize_up)
+		sibling = &parent->children[(row - 1) * parent->cols + col];
+	else if (bw->drag_resize_down)
+		sibling = &parent->children[(row + 1) * parent->cols + col];
+	if (sibling)
+		change |= browser_window_resolve_frame_dimension(bw, sibling, x, y, false, true);
+
+	if (change)
+		browser_window_recalculate_frameset(parent);
+}
+
+
+bool browser_window_resolve_frame_dimension(struct browser_window *bw, struct browser_window *sibling,
+		int x, int y, bool width, bool height) {
+	int bw_dimension, sibling_dimension;
+	int bw_pixels, sibling_pixels;
+	struct frame_dimension *bw_d, *sibling_d;
+	float total_new;
+	int frame_size;
+
+	assert(!(width && height));
+        
+	/* extend/shrink the box to the pointer */
+	if (width) {
+	  	if (bw->drag_resize_left)
+	  		bw_dimension = bw->x1 - x;
+	  	else
+	  		bw_dimension = x - bw->x0;
+		bw_pixels = (bw->x1 - bw->x0);
+		sibling_pixels = (sibling->x1 - sibling->x0);
+		bw_d = &bw->frame_width;
+		sibling_d = &sibling->frame_width;
+		frame_size = bw->parent->x1 - bw->parent->x0;
+	} else {
+	  	if (bw->drag_resize_up)
+	  		bw_dimension = bw->y1 - y;
+	  	else
+	  		bw_dimension = y - bw->y0;
+		bw_pixels = (bw->y1 - bw->y0);
+		sibling_pixels = (sibling->y1 - sibling->y0);
+		bw_d = &bw->frame_height;
+		sibling_d = &sibling->frame_height;
+		frame_size = bw->parent->y1 - bw->parent->y0;
+	}
+	sibling_dimension = bw_pixels + sibling_pixels - bw_dimension;
+	
+	/* check for no change or no frame size*/
+	if ((bw_dimension == bw_pixels) || (frame_size == 0))
+		return false;
+	/* check for both being 0 */
+	total_new = bw_dimension + sibling_dimension;
+	if ((bw_dimension + sibling_dimension) == 0)
+		return false;
+
+	/* our frame dimensions are now known to be:
+	 *
+	 * <--              frame_size              --> [VISIBLE PIXELS]
+	 * |<--  bw_pixels -->|<--  sibling_pixels -->|	[VISIBLE PIXELS, BEFORE RESIZE]
+	 * |<-- bw_d->value-->|<-- sibling_d->value-->| [SPECIFIED UNITS, BEFORE RESIZE]
+	 * |<--bw_dimension-->|<--sibling_dimension-->|	[VISIBLE PIXELS, AFTER RESIZE]
+	 * |<--              total_new             -->|	[VISIBLE PIXELS, AFTER RESIZE]
+	 *
+	 * when we resize, we must retain the original unit specification such that any
+	 * subsequent resizing of the parent window will recalculate the page as the
+	 * author specified.
+	 *
+	 * if the units of both frames are the same then we can resize the values simply
+	 * by updating the values to be a percentage of the original widths.
+	 */
+	if (bw_d->unit == sibling_d->unit) {
+		float total_specified = bw_d->value + sibling_d->value;
+		bw_d->value = (total_specified * bw_dimension) / total_new;
+		sibling_d->value = total_specified - bw_d->value;
+		return true;
+	}
+
+	/* if one of the sizes is relative then we don't alter the relative width and
+	 * just let it reflow across. the non-relative (pixel/percentage) value can
+	 * simply be resolved to the specified width that will result in the required
+	 * dimension.
+	 */
+	if (bw_d->unit == FRAME_DIMENSION_RELATIVE) {
+	  	if ((sibling_pixels == 0) && (bw_dimension == 0))
+	  		return false;
+	  	if (sibling_d->value == 0)
+	  		bw_d->value = 1;
+	  	if (sibling_pixels == 0)
+	  	  	sibling_d->value = (sibling_d->value * bw_pixels) / bw_dimension;
+	  	else
+	  		sibling_d->value =
+	  				(sibling_d->value * sibling_dimension) / sibling_pixels;
+
+		/* todo: the availble resize may have changed, update the drag box */
+		return true;
+	} else if (sibling_d->unit == FRAME_DIMENSION_RELATIVE) {
+	  	if ((bw_pixels == 0) && (sibling_dimension == 0))
+	  		return false;
+	  	if (bw_d->value == 0)
+	  		bw_d->value = 1;
+	  	if (bw_pixels == 0)
+	  	  	bw_d->value = (bw_d->value * sibling_pixels) / sibling_dimension;
+	  	else
+	  		bw_d->value = (bw_d->value * bw_dimension) / bw_pixels;
+		
+		/* todo: the availble resize may have changed, update the drag box */
+		return true;
+	}
+	
+	/* finally we have a pixel/percentage mix. unlike relative values, percentages
+	 * can easily be backwards-calculated as they can simply be scaled like pixel
+	 * values
+	 */
+	if (bw_d->unit == FRAME_DIMENSION_PIXELS) {
+		float total_specified = bw_d->value + frame_size * sibling_d->value / 100;
+		bw_d->value = (total_specified * bw_dimension) / total_new;
+		sibling_d->value = (total_specified - bw_d->value) * 100 / frame_size;
+		return true;
+	} else if (sibling_d->unit == FRAME_DIMENSION_PIXELS) {
+		float total_specified = bw_d->value * frame_size / 100 + sibling_d->value;
+		sibling_d->value = (total_specified * sibling_dimension) / total_new;
+		bw_d->value = (total_specified - sibling_d->value) * 100 / frame_size;
+		return true;
+	}
+	assert(!"Invalid frame dimension unit");
+      	return false;
+}
+
+
+/**
  * Start fetching a page in a browser window.
  *
- * \param  bw       browser window
- * \param  url      URL to start fetching (copied)
+ * \param  bw	    browser window
+ * \param  url	    URL to start fetching (copied)
  * \param  referer  the referring uri
  *
  * Any existing fetches in the window are aborted.
@@ -163,13 +708,13 @@ void browser_window_go(struct browser_window *bw, const char *url,
 /**
  * Start fetching a page in a browser window, POSTing form data.
  *
- * \param  bw              browser window
- * \param  url             URL to start fetching (copied)
- * \param  post_urlenc     url encoded post data, or 0 if none
+ * \param  bw		   browser window
+ * \param  url		   URL to start fetching (copied)
+ * \param  post_urlenc	   url encoded post data, or 0 if none
  * \param  post_multipart  multipart post data, or 0 if none
- * \param  history_add     add to window history
- * \param  referer         the referring uri
- * \param  download        download, rather than render the uri
+ * \param  history_add	   add to window history
+ * \param  referer	   the referring uri
+ * \param  download	   download, rather than render the uri
  *
  * Any existing fetches in the window are aborted.
  *
@@ -238,6 +783,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 
 	browser_window_stop(bw);
 	browser_window_remove_caret(bw);
+	browser_window_destroy_children(bw);
 
 	browser_window_set_status(bw, messages_get("Loading"));
 	bw->history_add = history_add;
@@ -263,7 +809,6 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	}
 
 	bw->download = download;
-
 	fetchcache_go(c, option_send_referer ? referer : 0,
 			browser_window_callback, (intptr_t) bw, 0,
 			gui_window_get_width(bw->window),
@@ -282,6 +827,7 @@ void browser_window_callback(content_msg msg, struct content *c,
 	struct browser_window *bw = (struct browser_window *) p1;
 	char status[40];
 	char url[256];
+
 
 	switch (msg) {
 		case CONTENT_MSG_LOADING:
@@ -339,7 +885,7 @@ void browser_window_callback(content_msg msg, struct content *c,
 			browser_window_update(bw, true);
 			content_open(c, bw, 0, 0, 0, 0);
 			browser_window_set_status(bw, c->status_message);
-			if (bw->history_add) {
+			if ((bw->history_add) && (bw->history)) {
 				history_add(bw->history, c, bw->frag_id);
 				if (urldb_add_url(c->url)) {
 					urldb_set_url_title(c->url,
@@ -550,6 +1096,9 @@ void browser_window_convert_to_download(struct browser_window *bw)
 void browser_window_start_throbber(struct browser_window *bw)
 {
 	bw->throbbing = true;
+
+	while (bw->parent)
+		bw = bw->parent;
 	gui_window_start_throbber(bw->window);
 }
 
@@ -563,14 +1112,42 @@ void browser_window_start_throbber(struct browser_window *bw)
 void browser_window_stop_throbber(struct browser_window *bw)
 {
 	bw->throbbing = false;
-	gui_window_stop_throbber(bw->window);
+	
+	while (bw->parent)
+		bw = bw->parent;
+	
+	if (!browser_window_check_throbber(bw))
+		gui_window_stop_throbber(bw->window);
+}
+
+bool browser_window_check_throbber(struct browser_window *bw)
+{
+	int children, index;
+	
+	if (bw->throbbing)
+		return true;
+	
+	if (bw->children) {
+		children = bw->rows * bw->cols;
+		for (index = 0; index < children; index++) {
+			if (browser_window_check_throbber(&bw->children[index]))
+				return true;
+		}
+	}
+	if (bw->iframes) {
+		for (index = 0; index < bw->iframe_count; index++) {
+			if (browser_window_check_throbber(&bw->iframes[index]))
+				return true;
+		}
+	}
+	return false;
 }
 
 
 /**
  * Redraw browser window, set extent to content, and update title.
  *
- * \param  bw             browser_window
+ * \param  bw		  browser_window
  * \param  scroll_to_top  move view to top of page
  */
 
@@ -588,8 +1165,7 @@ void browser_window_update(struct browser_window *bw,
 	} else
 		gui_window_set_title(bw->window, bw->current_content->url);
 
-	gui_window_set_extent(bw->window, bw->current_content->width,
-			bw->current_content->height);
+	gui_window_update_extent(bw->window);
 
 	if (scroll_to_top)
 		gui_window_set_scroll(bw->window, 0, 0);
@@ -614,6 +1190,8 @@ void browser_window_update(struct browser_window *bw,
 
 void browser_window_stop(struct browser_window *bw)
 {
+	int children, index;
+  	
 	if (bw->loading_content) {
 		content_remove_user(bw->loading_content,
 				browser_window_callback, (intptr_t) bw, 0);
@@ -628,6 +1206,17 @@ void browser_window_stop(struct browser_window *bw)
 	}
 
 	schedule_remove(browser_window_refresh, bw);
+	
+	if (bw->children) {
+		children = bw->rows * bw->cols;
+		for (index = 0; index < children; index++)
+			browser_window_stop(&bw->children[index]);
+	}
+	if (bw->iframes) {
+		children = bw->iframe_count;
+		for (index = 0; index < children; index++)
+			browser_window_stop(&bw->iframes[index]);
+	}
 
 	browser_window_stop_throbber(bw);
 }
@@ -672,12 +1261,14 @@ void browser_window_reload(struct browser_window *bw, bool all)
 /**
  * Change the status bar of a browser window.
  *
- * \param  bw    browser window
+ * \param  bw	 browser window
  * \param  text  new status text (copied)
  */
 
 void browser_window_set_status(struct browser_window *bw, const char *text)
 {
+	while (bw->parent)
+		bw = bw->parent;
 	gui_window_set_status(bw->window, text);
 }
 
@@ -702,12 +1293,61 @@ void browser_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 
 void browser_window_destroy(struct browser_window *bw)
 {
+
+	/* can't destoy child windows on their own */
+	assert(!bw->parent);
+
+	/* destroy */
+	browser_window_destroy_internal(bw);
+	free(bw);
+}
+
+
+/**
+ * Close and destroy all child browser window.
+ *
+ * \param  bw  browser window
+ */
+
+void browser_window_destroy_children(struct browser_window *bw)
+{
+	int i;
+
+	if (bw->children) {
+		for (i = 0; i < (bw->rows * bw->cols); i++)
+			browser_window_destroy_internal(&bw->children[i]);
+		free(bw->children);
+		bw->children = NULL;
+		bw->rows = 0;
+		bw->cols = 0;
+	}
+	if (bw->iframes) {
+		for (i = 0; i < bw->iframe_count; i++)
+			browser_window_destroy_internal(&bw->iframes[i]);
+		free(bw->iframes);
+		bw->iframes = NULL;
+		bw->iframe_count = 0;
+	}
+}
+
+
+/**
+ * Release all memory associated with a browser window.
+ *
+ * \param  bw  browser window
+ */
+
+void browser_window_destroy_internal(struct browser_window *bw)
+{
+	assert(bw);
+
+	if ((bw->children) || (bw->iframes))
+		browser_window_destroy_children(bw);
 	if (bw->loading_content) {
 		content_remove_user(bw->loading_content,
 				browser_window_callback, (intptr_t) bw, 0);
 		bw->loading_content = 0;
 	}
-
 	if (bw->current_content) {
 		if (bw->current_content->status == CONTENT_STATUS_READY ||
 				bw->current_content->status ==
@@ -715,6 +1355,7 @@ void browser_window_destroy(struct browser_window *bw)
 			content_close(bw->current_content);
 		content_remove_user(bw->current_content,
 				browser_window_callback, (intptr_t) bw, 0);
+		bw->current_content = 0;
 	}
 
 	schedule_remove(browser_window_refresh, bw);
@@ -723,8 +1364,99 @@ void browser_window_destroy(struct browser_window *bw)
 	history_destroy(bw->history);
 	gui_window_destroy(bw->window);
 
+	free(bw->name);
 	free(bw->frag_id);
-	free(bw);
+}
+
+
+/**
+ * Locate a browser window in the specified stack according.
+ *
+ * \param bw  the browser_window to search all relatives of
+ * \param target  the target to locate
+ */
+ 
+struct browser_window *browser_window_find_target(struct browser_window *bw, const char *target)
+{
+	struct browser_window *bw_target;
+	struct browser_window *top;
+	struct content *c;
+	int rdepth;
+ 	
+	/* use the base target if we don't have one */
+	c = bw->current_content;
+	if (!target && c && c->data.html.base_target)
+		target = c->data.html.base_target;
+
+	/* allow target="_blank" to be ignored so zamez, tlsa and jmb don't lynch me */
+	if (!option_target_blank) {
+		if ((target == TARGET_BLANK) || (!strcasecmp(target, "_blank")))
+			target = TARGET_SELF;
+	}
+
+	/* todo: correctly follow B.8
+	 * http://www.w3.org/TR/REC-html40/appendix/notes.html#notes-frames
+	 */
+	if ((!target) || (target == TARGET_SELF) || (!strcasecmp(target, "_self")))
+		return bw;
+	else if ((target == TARGET_PARENT) || (!strcasecmp(target, "_parent"))) {
+		if (bw->parent)
+			return bw->parent;
+		return bw;
+	} else if ((target == TARGET_TOP) || (!strcasecmp(target, "_top"))) {
+		while (bw->parent)
+			bw = bw->parent;
+		return bw;
+	} else if ((target == TARGET_BLANK) || (!strcasecmp(target, "_blank"))) {
+		bw_target = browser_window_create(NULL, bw, NULL, false);
+		if (!bw_target)
+			return bw;
+		return bw_target;
+	}
+  	
+	/* find frame according to B.8, ie using the following priorities:
+	 *
+	 *  1) current frame
+	 *  2) closest to front
+	 */
+  	
+	rdepth = -1;
+	bw_target = bw;
+	for (top = bw; top->parent; top = top->parent);
+	browser_window_find_target_internal(top, target, 0, bw, &rdepth, &bw_target);
+	return bw_target;
+}
+
+void browser_window_find_target_internal(struct browser_window *bw, const char *target, 
+		int depth, struct browser_window *page, int *rdepth, struct browser_window **bw_target)
+{
+	int i;
+  	
+	if ((bw->name) && (!strcasecmp(bw->name, target))) {
+		if ((bw == page) || (depth > *rdepth)) {
+			*rdepth = depth;
+			*bw_target = bw;
+		}
+	}
+
+	if ((!bw->children) && (!bw->iframes))
+		return;
+  	
+	depth++;
+	for (i = 0; i < (bw->cols * bw->rows); i++) {
+		if ((bw->children[i].name) && (!strcasecmp(bw->children[i].name, target))) {
+			if ((page == &bw->children[i]) || (depth > *rdepth)) {
+				*rdepth = depth;
+				*bw_target = &bw->children[i];
+			}
+		}
+		if (bw->children[i].children)
+			browser_window_find_target_internal(&bw->children[i], target, depth,
+					page, rdepth, bw_target);
+	}
+	for (i = 0; i < bw->iframe_count; i++)
+		browser_window_find_target_internal(&bw->iframes[i], target, depth, page,
+				rdepth, bw_target);
 }
 
 
@@ -770,10 +1502,10 @@ void download_window_callback(fetch_msg msg, void *p, const void *data,
 /**
  * Handle mouse clicks in a browser window.
  *
- * \param  bw     browser window
+ * \param  bw	  browser window
  * \param  mouse  state of mouse buttons and modifier keys
- * \param  x      coordinate of mouse
- * \param  y      coordinate of mouse
+ * \param  x	  coordinate of mouse
+ * \param  y	  coordinate of mouse
  */
 
 void browser_window_mouse_click(struct browser_window *bw,
@@ -817,10 +1549,10 @@ void browser_window_mouse_click(struct browser_window *bw,
 /**
  * Handle mouse clicks and movements in an HTML content window.
  *
- * \param  bw     browser window
+ * \param  bw	  browser window
  * \param  mouse  state of mouse buttons and modifier keys
- * \param  x      coordinate of mouse
- * \param  y      coordinate of mouse
+ * \param  x	  coordinate of mouse
+ * \param  y	  coordinate of mouse
  *
  * This function handles both hovering and clicking. It is important that the
  * code path is identical (except that hovering doesn't carry out the action),
@@ -1089,18 +1821,9 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 					c->url, true);
 
 		} else if (mouse & BROWSER_MOUSE_CLICK_1) {
-			struct content *page = 0;
-			unsigned int i = 0;
-
-			html_find_target(url_content, target, &page, &i);
-
-			if (page) {
-				if (!html_replace_object(page, i, url, 0, 0))
-					warn_user("NoMemory", 0);
-			} else {
-				browser_window_go(bw, url, c->url, true);
-                        }
-
+			bw = browser_window_find_target(bw, target);
+			assert(bw);
+			browser_window_go(bw, url, c->url, true);
 		} else if (mouse & BROWSER_MOUSE_CLICK_2 &&
 				mouse & BROWSER_MOUSE_MOD_1) {
 			free(browser_window_href_content.url);
@@ -1116,39 +1839,49 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 
 	} else {
 		bool done = false;
+		
+		/* frame resizing */
+		if (bw->parent) {
+			struct browser_window *parent;
+			for (parent = bw->parent; parent->parent; parent = parent->parent);
+			browser_window_resize_frames(parent, mouse, x + bw->x0, y + bw->y0,
+					&pointer, &status, &done);
+		}		
 
 		/* if clicking in the main page, remove the selection from any text areas */
-		if (text_box &&
-			(mouse & (BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2)) &&
-			selection_root(bw->sel) != c->data.html.layout)
-			selection_init(bw->sel, c->data.html.layout);
+		if (!done) {
+			if (text_box &&
+				(mouse & (BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2)) &&
+				selection_root(bw->sel) != c->data.html.layout)
+				selection_init(bw->sel, c->data.html.layout);
 
-		if (text_box) {
-			int pixel_offset;
-			int idx;
+			if (text_box) {
+				int pixel_offset;
+				int idx;
 
-			nsfont_position_in_string(text_box->style,
-				text_box->text,
-				text_box->length,
-				x - text_box_x,
-				&idx,
-				&pixel_offset);
+				nsfont_position_in_string(text_box->style,
+					text_box->text,
+					text_box->length,
+					x - text_box_x,
+					&idx,
+					&pixel_offset);
 
-			if (selection_click(bw->sel, mouse, text_box->byte_offset + idx)) {
-				/* key presses must be directed at the main browser
-				 * window, paste text operations ignored */
-				browser_window_remove_caret(bw);
+				if (selection_click(bw->sel, mouse, text_box->byte_offset + idx)) {
+					/* key presses must be directed at the main browser
+					 * window, paste text operations ignored */
+					browser_window_remove_caret(bw);
 
-				if (selection_dragging(bw->sel)) {
-					bw->drag_type = DRAGGING_SELECTION;
-					status = messages_get("Selecting");
-				} else
-					status = c->status_message;
+					if (selection_dragging(bw->sel)) {
+						bw->drag_type = DRAGGING_SELECTION;
+						status = messages_get("Selecting");
+					} else
+						status = c->status_message;
 
-				done = true;
+					done = true;
+				}
 			}
 		}
-
+		
 		if (!done) {
 			if (title)
 				status = title;
@@ -1186,14 +1919,115 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 	browser_window_set_pointer(bw->window, pointer);
 }
 
+bool browser_window_resize_frames(struct browser_window *bw, browser_mouse_state mouse, int x, int y,
+		gui_pointer_shape *pointer, const char **status, bool *action) {
+	bool left, right, up, down;
+	int i, resize_margin;
+	
+	if ((x < bw->x0) || (x > bw->x1) || (y < bw->y0) || (y > bw->y1))
+		return false;
+	
+	if ((!bw->no_resize) && (bw->parent)) {
+		resize_margin = FRAME_RESIZE;
+		if (resize_margin * 2 > (bw->x1 - bw->x0))
+			resize_margin = (bw->x1 - bw->x0) / 2;
+		left = (x < bw->x0 + resize_margin);
+		right = (x > bw->x1 - resize_margin);
+		resize_margin = FRAME_RESIZE;
+		if (resize_margin * 2 > (bw->y1 - bw->y0))
+			resize_margin = (bw->y1 - bw->y0) / 2;
+		up = (y < bw->y0 + resize_margin);
+		down = (y > bw->y1 - resize_margin);
+		
+		/* check if the edges can actually be moved */
+		if (left || right || up || down) {
+			int row = -1, col = -1;
+			switch (bw->browser_window_type) {
+				case BROWSER_WINDOW_NORMAL:
+				case BROWSER_WINDOW_IFRAME:
+					assert(0);
+					break;
+				case BROWSER_WINDOW_FRAME:
+				case BROWSER_WINDOW_FRAMESET:
+					assert(bw->parent);
+					break;
+			}
+			for (i = 0; i < (bw->parent->cols * bw->parent->rows); i++) {
+				if (&bw->parent->children[i] == bw) {
+					col = i % bw->parent->cols;
+					row = i / bw->parent->cols;
+				}
+			}
+			assert((row >= 0) && (col >= 0));
+		  	
+			left &= (col > 0);
+			right &= (col < bw->parent->cols - 1) & (!left);
+			up &= (row > 0);
+			down &= (row < bw->parent->rows - 1) & (!up);
+		}
+
+		if (left || right || up || down) {
+			if (left) {
+				if (down)
+					*pointer = GUI_POINTER_LD;
+				else if (up)
+					*pointer = GUI_POINTER_LU;
+				else
+					*pointer = GUI_POINTER_LEFT;
+			} else if (right) {
+				if (down)
+					*pointer = GUI_POINTER_RD;
+				else if (up)
+					*pointer = GUI_POINTER_RU;
+				else
+					*pointer = GUI_POINTER_RIGHT;
+			} else if (up) {
+				*pointer = GUI_POINTER_UP;
+			} else {
+				*pointer = GUI_POINTER_DOWN;
+			}
+			if (mouse & (BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_2)) {
+				bw->drag_type = DRAGGING_FRAME;
+				bw->drag_start_x = x;
+				bw->drag_start_y = y;
+				bw->drag_resize_left = left;
+				bw->drag_resize_right = right;
+				bw->drag_resize_up = up;
+				bw->drag_resize_down = down;
+				gui_window_frame_resize_start(bw->window);
+
+				*status = messages_get("FrameDrag");
+				*action = true;
+			}
+			return true;
+		}
+	}
+
+	if (bw->children) {
+		for (i = 0; i < (bw->cols * bw->rows); i++)
+			if (browser_window_resize_frames(&bw->children[i], mouse, x, y, pointer, status,
+					action))
+				return true;
+	}
+	if (bw->iframes) {
+		for (i = 0; i < bw->iframe_count; i++)
+			if (browser_window_resize_frames(&bw->iframes[i], mouse, x, y, pointer, status,
+					action))
+				return true;
+	}
+	return false;
+}
+	
+
+
 
 /**
  * Handle mouse clicks and movements in a TEXTPLAIN content window.
  *
- * \param  bw     browser window
+ * \param  bw	  browser window
  * \param  click  type of mouse click
- * \param  x      coordinate of mouse
- * \param  y      coordinate of mouse
+ * \param  x	  coordinate of mouse
+ * \param  y	  coordinate of mouse
  *
  * This function handles both hovering and clicking. It is important that the
  * code path is identical (except that hovering doesn't carry out the action),
@@ -1247,17 +2081,17 @@ void browser_window_mouse_action_text(struct browser_window *bw,
 /**
  * Handle mouse movements in a browser window.
  *
- * \param  bw     browser window
+ * \param  bw	  browser window
  * \param  mouse  state of mouse buttons and modifier keys
- * \param  x      coordinate of mouse
- * \param  y      coordinate of mouse
+ * \param  x	  coordinate of mouse
+ * \param  y	  coordinate of mouse
  */
 
 void browser_window_mouse_track(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y)
 {
 	struct content *c = bw->current_content;
-	if (!c)
+	if ((!c) && (bw->drag_type != DRAGGING_FRAME))
 		return;
 
 	/* detect end of drag operation in case the platform-specific code
@@ -1266,18 +2100,19 @@ void browser_window_mouse_track(struct browser_window *bw,
 	if (bw->drag_type != DRAGGING_NONE && !mouse) {
 		browser_window_mouse_drag_end(bw, mouse, x, y);
 	}
-
-	if (bw->drag_type == DRAGGING_PAGE_SCROLL) {
+	if (bw->drag_type == DRAGGING_FRAME) {
+		browser_window_resize_frame(bw, bw->x0 + x, bw->y0 + y);
+	} else if (bw->drag_type == DRAGGING_PAGE_SCROLL) {
 		/* mouse movement since drag started */
-		int scrollx = bw->scrolling_start_x - x;
-		int scrolly = bw->scrolling_start_y - y;
+		int scrollx = bw->drag_start_x - x;
+		int scrolly = bw->drag_start_y - y;
 
 		/* new scroll offsets */
-		scrollx += bw->scrolling_start_scroll_x;
-		scrolly += bw->scrolling_start_scroll_y;
+		scrollx += bw->drag_start_scroll_x;
+		scrolly += bw->drag_start_scroll_y;
 
-		bw->scrolling_start_scroll_x = scrollx;
-		bw->scrolling_start_scroll_y = scrolly;
+		bw->drag_start_scroll_x = scrollx;
+		bw->drag_start_scroll_y = scrolly;
 
 		gui_window_set_scroll(bw->window, scrollx, scrolly);
 
@@ -1299,17 +2134,16 @@ void browser_window_mouse_track(struct browser_window *bw,
 /**
  * Handle mouse tracking (including drags) in an HTML content window.
  *
- * \param  bw     browser window
+ * \param  bw	  browser window
  * \param  mouse  state of mouse buttons and modifier keys
- * \param  x      coordinate of mouse
- * \param  y      coordinate of mouse
+ * \param  x	  coordinate of mouse
+ * \param  y	  coordinate of mouse
  */
 
 void browser_window_mouse_track_html(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y)
 {
 	switch (bw->drag_type) {
-
 		case DRAGGING_HSCROLL:
 		case DRAGGING_VSCROLL:
 		case DRAGGING_2DSCROLL: {
@@ -1322,9 +2156,9 @@ void browser_window_mouse_track_html(struct browser_window *bw,
 			if (bw->drag_type == DRAGGING_HSCROLL) {
 				scroll_y = box->scroll_y;
 			} else {
-				scroll_y = bw->scrolling_start_scroll_y +
-						(float) (y - bw->scrolling_start_y) /
-						(float) bw->scrolling_well_height *
+				scroll_y = bw->drag_start_scroll_y +
+						(float) (y - bw->drag_start_y) /
+						(float) bw->drag_well_height *
 						(float) (box->descendant_y1 -
 						box->descendant_y0);
 				if (scroll_y < box->descendant_y0)
@@ -1338,9 +2172,9 @@ void browser_window_mouse_track_html(struct browser_window *bw,
 			if (bw->drag_type == DRAGGING_VSCROLL) {
 				scroll_x = box->scroll_x;
 			} else {
-				scroll_x = bw->scrolling_start_scroll_x +
-						(float) (x - bw->scrolling_start_x) /
-						(float) bw->scrolling_well_width *
+				scroll_x = bw->drag_start_scroll_x +
+						(float) (x - bw->drag_start_x) /
+						(float) bw->drag_well_width *
 						(float) (box->descendant_x1 -
 						box->descendant_x0);
 				if (scroll_x < box->descendant_x0)
@@ -1388,10 +2222,10 @@ void browser_window_mouse_track_html(struct browser_window *bw,
 /**
  * Handle mouse tracking (including drags) in a TEXTPLAIN content window.
  *
- * \param  bw     browser window
+ * \param  bw	  browser window
  * \param  mouse  state of mouse buttons and modifier keys
- * \param  x      coordinate of mouse
- * \param  y      coordinate of mouse
+ * \param  x	  coordinate of mouse
+ * \param  y	  coordinate of mouse
  */
 
 void browser_window_mouse_track_text(struct browser_window *bw,
@@ -1421,10 +2255,10 @@ void browser_window_mouse_track_text(struct browser_window *bw,
 /**
  * Handles the end of a drag operation in a browser window.
  *
- * \param  bw     browser window
+ * \param  bw	  browser window
  * \param  mouse  state of mouse buttons and modifier keys
- * \param  x      coordinate of mouse
- * \param  y      coordinate of mouse
+ * \param  x	  coordinate of mouse
+ * \param  y	  coordinate of mouse
  */
 
 void browser_window_mouse_drag_end(struct browser_window *bw,
@@ -1475,6 +2309,7 @@ void browser_window_mouse_drag_end(struct browser_window *bw,
 
 		case DRAGGING_2DSCROLL:
 		case DRAGGING_PAGE_SCROLL:
+		case DRAGGING_FRAME:
 			browser_window_set_pointer(bw->window, GUI_POINTER_DEFAULT);
 			break;
 
@@ -1489,13 +2324,13 @@ void browser_window_mouse_drag_end(struct browser_window *bw,
 /**
  * Handle mouse clicks in a box scrollbar.
  *
- * \param  bw     browser window
+ * \param  bw	  browser window
  * \param  mouse  state of mouse buttons and modifier keys
- * \param  box    scrolling box
+ * \param  box	  scrolling box
  * \param  box_x  position of box in global document coordinates
  * \param  box_y  position of box in global document coordinates
- * \param  x      coordinate of click relative to box position
- * \param  y      coordinate of click relative to box position
+ * \param  x	  coordinate of click relative to box position
+ * \param  y	  coordinate of click relative to box position
  * \return status bar message
  */
 
@@ -1525,12 +2360,12 @@ const char *browser_window_scrollbar_click(struct browser_window *bw,
 
 	/* store some data for scroll drags */
 	bw->scrolling_box = box;
-	bw->scrolling_start_x = box_x + x;
-	bw->scrolling_start_y = box_y + y;
-	bw->scrolling_start_scroll_x = box->scroll_x;
-	bw->scrolling_start_scroll_y = box->scroll_y;
-	bw->scrolling_well_width = well_width;
-	bw->scrolling_well_height = well_height;
+	bw->drag_start_x = box_x + x;
+	bw->drag_start_y = box_y + y;
+	bw->drag_start_scroll_x = box->scroll_x;
+	bw->drag_start_scroll_y = box->scroll_y;
+	bw->drag_well_width = well_width;
+	bw->drag_well_height = well_height;
 
 	/* determine which scrollbar was clicked */
 	if (box_vscrollbar_present(box) &&
@@ -1672,9 +2507,9 @@ void browser_radio_set(struct content *content,
 /**
  * Redraw a rectangular region of a browser window
  *
- * \param  bw     browser window to be redrawn
- * \param  x      x co-ord of top-left
- * \param  y      y co-ord of top-left
+ * \param  bw	  browser window to be redrawn
+ * \param  x	  x co-ord of top-left
+ * \param  y	  y co-ord of top-left
  * \param  width  width of rectangle
  * \param  height height of rectangle
  */
@@ -1708,7 +2543,7 @@ void browser_window_redraw_rect(struct browser_window *bw, int x, int y,
 /**
  * Redraw a box.
  *
- * \param  c    content containing the box, of type CONTENT_HTML
+ * \param  c	content containing the box, of type CONTENT_HTML
  * \param  box  box to redraw
  */
 
@@ -1742,8 +2577,8 @@ void browser_redraw_box(struct content *c, struct box *box)
  * Update the scroll offsets of a box within a browser window
  * (In future, copying where possible, rather than redrawing the entire box)
  *
- * \param  bw        browser window
- * \param  box       box to be updated
+ * \param  bw	     browser window
+ * \param  box	     box to be updated
  * \param  scroll_x  new horizontal scroll offset
  * \param  scroll_y  new vertical scroll offset
  */
@@ -1762,9 +2597,9 @@ void browser_window_scroll_box(struct browser_window *bw, struct box *box,
 /**
  * Process a selection from a form select menu.
  *
- * \param  bw       browser window with menu
+ * \param  bw	    browser window with menu
  * \param  control  form control with menu
- * \param  item     index of item selected from the menu
+ * \param  item	    index of item selected from the menu
  */
 
 void browser_window_form_select(struct browser_window *bw,
@@ -1912,7 +2747,7 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 		if (!target)
 			return;
 	} else {
-	  	target = bw;
+		target = bw;
 	}
 
 	switch (form->method) {
@@ -1926,7 +2761,7 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 			url = calloc(1, strlen(form->action) + strlen(data) + 2);
 			if (!url) {
 				form_free_successful(success);
-			  	free(data);
+				free(data);
 				warn_user("NoMemory", 0);
 				return;
 			}
@@ -1973,8 +2808,8 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
  * (dir -ve) or below-right (dir +ve) of the point 'x,y'
  *
  * \param  box  parent box
- * \param  x    x ordinate relative to parent box
- * \param  y    y ordinate relative to parent box
+ * \param  x	x ordinate relative to parent box
+ * \param  y	y ordinate relative to parent box
  * \param  dir  direction in which to search (-1 = above-left, +1 = below-right)
  * \return ptr to the nearest box, or NULL if none found
  */
@@ -2030,13 +2865,13 @@ struct box *browser_window_nearest_text_box(struct box *box, int x, int y, int d
  * the mouse pointer, or nearest in the given direction if the pointer is
  * not over a text box.
  *
- * \param bw    browser window
+ * \param bw	browser window
  * \param mouse state of mouse buttons and modifier keys
- * \param x     coordinate of mouse
- * \param y     coordinate of mouse
- * \param dx    receives x ordinate of mouse relative to innermost containing box
- * \param dy    receives y ordinate
- * \param dir   direction to search (-1 = above-left, +1 = below-right)
+ * \param x	coordinate of mouse
+ * \param y	coordinate of mouse
+ * \param dx	receives x ordinate of mouse relative to innermost containing box
+ * \param dy	receives y ordinate
+ * \param dir	direction to search (-1 = above-left, +1 = below-right)
  */
 
 struct box *browser_window_pick_text_box(struct browser_window *bw,
@@ -2111,10 +2946,10 @@ void browser_window_page_drag_start(struct browser_window *bw, int x, int y)
 {
 	bw->drag_type = DRAGGING_PAGE_SCROLL;
 
-	bw->scrolling_start_x = x;
-	bw->scrolling_start_y = y;
+	bw->drag_start_x = x;
+	bw->drag_start_y = y;
 
-	gui_window_get_scroll(bw->window, &bw->scrolling_start_scroll_x, &bw->scrolling_start_scroll_y);
+	gui_window_get_scroll(bw->window, &bw->drag_start_scroll_x, &bw->drag_start_scroll_y);
 
 	gui_window_scroll_start(bw->window);
 }

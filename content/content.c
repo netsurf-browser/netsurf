@@ -816,7 +816,6 @@ void content_destroy(struct content *c)
 
 	if (c->type < HANDLER_MAP_COUNT && handler_map[c->type].destroy)
 		handler_map[c->type].destroy(c);
-
 	talloc_free(c);
 }
 
@@ -855,6 +854,7 @@ void content_quit(void)
 	while (content_list && progress) {
 		progress = false;
 		for (c = content_list; c; c = next) {
+		  	assert(c->next != c);
 			next = c->next;
 
 			if (c->user_list->next &&

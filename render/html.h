@@ -37,6 +37,22 @@ struct plotters;
 extern char *default_stylesheet_url;
 extern char *adblock_stylesheet_url;
 
+struct frame_dimension {
+  	float value;
+	enum {
+	  	FRAME_DIMENSION_PIXELS,		/* '100', '200' */
+	  	FRAME_DIMENSION_PERCENT, 	/* '5%', '20%' */
+	  	FRAME_DIMENSION_RELATIVE	/* '*', '2*' */
+	} unit;
+};
+
+typedef enum {
+  	SCROLLING_AUTO,
+  	SCROLLING_YES,
+  	SCROLLING_NO
+} frame_scrolling;
+
+
 /** An object (<img>, <object>, etc.) in a CONTENT_HTML document. */
 struct content_html_object {
 	char *url;  /**< URL of this object. */
@@ -46,7 +62,44 @@ struct content_html_object {
 	 *  CONTENT_UNKNOWN, or 0 if any type is acceptable. */
 	const content_type *permitted_types;
 	bool background;  /**< This object is a background image. */
-	char *frame;      /**< Name of frame, or 0 if not a frame. */
+};
+
+/** Frame tree (<frameset>, <frame>) */
+struct content_html_frames {
+	int cols;	/** number of columns in frameset */
+	int rows;	/** number of rows in frameset */
+	
+	struct frame_dimension width;	/** frame width */
+	struct frame_dimension height;	/** frame width */
+	int margin_width;	/** frame margin width */
+	int margin_height;	/** frame margin height */
+	
+	char *name;	/** frame name (for targetting) */
+	char *url;	/** frame url */
+	
+	bool no_resize;	/** frame is not resizable */
+	frame_scrolling scrolling;	/** scrolling characteristics */
+	bool border;	/** frame has a border */
+	colour border_colour;	/** frame border colour */
+	
+	struct content_html_frames *children; /** [cols * rows] children */
+};
+
+/** Inline frame list (<iframe>) */
+struct content_html_iframe {
+  	struct box *box;
+
+	int margin_width;	/** frame margin width */
+	int margin_height;	/** frame margin height */
+	
+	char *name;	/** frame name (for targetting) */
+	char *url;	/** frame url */
+	
+	frame_scrolling scrolling;	/** scrolling characteristics */
+	bool border;	/** frame has a border */
+	colour border_colour;	/** frame border colour */
+
+ 	struct content_html_iframe *next;
 };
 
 /** Data specific to CONTENT_HTML. */
@@ -63,6 +116,7 @@ struct content_html_data {
 	              * wasn't specified in the Content-Type header. */
 
 	char *base_url;	/**< Base URL (may be a copy of content->url). */
+	char *base_target;	/**< Base target */
 
 	struct box *layout;  /**< Box tree, or 0. */
 	colour background_colour;  /**< Document background colour. */
@@ -87,6 +141,12 @@ struct content_html_data {
 	/** Browser window containing this document, or 0 if not open. */
 	struct browser_window *bw;
 
+	/** Frameset information */
+	struct content_html_frames *frameset;
+
+	/** Inline frame information */
+	struct content_html_iframe *iframe;
+
 	/** Content of type CONTENT_HTML containing this, or 0 if not an object
 	 * within a page. */
 	struct content *page;
@@ -108,7 +168,7 @@ void html_destroy(struct content *c);
 bool html_fetch_object(struct content *c, char *url, struct box *box,
 		const content_type *permitted_types,
 		int available_width, int available_height,
-		bool background, char *frame);
+		bool background);
 bool html_replace_object(struct content *c, unsigned int i, char *url,
 		char *post_urlenc,
 		struct form_successful_control *post_multipart);
@@ -117,8 +177,6 @@ void html_open(struct content *c, struct browser_window *bw,
 		struct content *page, unsigned int index, struct box *box,
 		struct object_params *params);
 void html_close(struct content *c);
-void html_find_target(struct content *c, const char *target,
-		struct content **page, unsigned int *i);
 
 /* in render/html_redraw.c */
 bool html_redraw(struct content *c, int x, int y,

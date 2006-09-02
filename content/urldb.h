@@ -14,6 +14,7 @@
 
 #include <stdbool.h>
 #include <time.h>
+#include "netsurf/content/content.h"
 #include "netsurf/content/content_type.h"
 
 typedef enum {
@@ -99,5 +100,9 @@ char *urldb_get_cookie(const char *url, const char *referer);
 void urldb_delete_cookie(const char *domain, const char *path, const char *name);
 void urldb_load_cookies(const char *filename);
 void urldb_save_cookies(const char *filename);
+
+/* Cache */
+bool urldb_set_cache_data(const char *url, const struct content *content);
+char *urldb_get_cache_data(const char *url);
 
 #endif

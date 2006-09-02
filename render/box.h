@@ -253,6 +253,7 @@ struct object_param {
 extern const char *TARGET_SELF;
 extern const char *TARGET_PARENT;
 extern const char *TARGET_TOP;
+extern const char *TARGET_BLANK;
 
 
 #define UNKNOWN_WIDTH INT_MAX

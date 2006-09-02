@@ -363,6 +363,11 @@ Encoding1:détecté
 Encoding2:de <meta>
 EncodingUnk:Inconnu
 
+# Misc
+#
+Selecting:Selecting
+FrameDrag:Resizing frames
+
 
 # Errors
 # ======
@@ -806,12 +811,13 @@ HelpConnectConfig28:\Sfermer cette fenêtre sans sauvegarder les changements.|M\
 HelpConnectConfig29:\Ssauver ces réglages et fermer la fenêtre.|M\Asauver ces réglages sans fermer la fenêtre.
 
 HelpContentConfig:\Tla fenêtre de configuration du Contenu
-HelpContentConfig2:Ceci indique si Netsurf doit essayer de bloquer les pubs sur les pages web.|MEn de rares circonstances, cette option peut également bloquer du contenu valide. 
+HelpContentConfig2:Ceci indique si Netsurf doit essayer de bloquer les pubs sur les pages web.|MEn de rares circonstances, cette option peut également bloquer du contenu valide.
 HelpContentConfig3:Ceci indique si Netsurf doit empêcher les sites web d'ouvrir automatiquement de nouvelles fenêtres sur votre Bureau.
 HelpContentConfig4:Ceci indique si Netsurf doit autoriser les plug-ins externes à manipuler des types de contenu supplémentaires, comme le Flash.
-HelpContentConfig5:\Srevenir aux valeurs par défaut des options du Contenu.
-HelpContentConfig6:\Sfermer cette fenêtre sans sauver les changements|M\Arevenir aux options de Contenu précédemment sauvegardées.
-HelpContentConfig7:\Ssauver ces réglages et fermer la fenêtre.|M\Asauver ces réglages sans fermer la fenêtre.
+HelpContentConfig7:This indicates whether NetSurf will allow links to open in new windows.
+HelpContentConfig8:\Srevenir aux valeurs par défaut des options du Contenu.
+HelpContentConfig9:\Sfermer cette fenêtre sans sauver les changements|M\Arevenir aux options de Contenu précédemment sauvegardées.
+HelpContentConfig10:\Ssauver ces réglages et fermer la fenêtre.|M\Asauver ces réglages sans fermer la fenêtre.
 
 HelpFontConfig:\Tla fenêtre de configuration de Fontes
 HelpFontConfig3:\Tla fonte sans-sérif actuellement sélectionnée.|MNetsurf utilisera cette fonte à chaque fois qu'une page web spécifiera une police sans-sérif.

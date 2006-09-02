@@ -102,10 +102,15 @@ void netsurf_poll(void)
 
 void netsurf_exit(void)
 {
+	LOG(("Closing GUI"));
 	gui_quit();
+	LOG(("Closing content"));
 	content_quit();
+	LOG(("Closing fetches"));
 	fetch_quit();
+	LOG(("Closing utf8"));
 	utf8_finalise();
+	LOG(("Exited successfully"));
 }
 
 

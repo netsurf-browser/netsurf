@@ -20,9 +20,10 @@
 #define CONTENT_BLOCK_ADVERTISEMENTS 2
 #define CONTENT_BLOCK_POPUPS 3
 #define CONTENT_NO_PLUGINS 4
-#define CONTENT_DEFAULT_BUTTON 5
-#define CONTENT_CANCEL_BUTTON 6
-#define CONTENT_OK_BUTTON 7
+#define CONTENT_TARGET_BLANK 7
+#define CONTENT_DEFAULT_BUTTON 8
+#define CONTENT_CANCEL_BUTTON 9
+#define CONTENT_OK_BUTTON 10
 
 static void ro_gui_options_content_default(wimp_pointer *pointer);
 static bool ro_gui_options_content_ok(wimp_w w);
@@ -35,11 +36,14 @@ bool ro_gui_options_content_initialise(wimp_w w) {
 			option_block_popups);
 	ro_gui_set_icon_selected_state(w, CONTENT_NO_PLUGINS, 
 			option_no_plugins);
+	ro_gui_set_icon_selected_state(w, CONTENT_TARGET_BLANK, 
+			option_target_blank);
 
 	/* initialise all functions for a newly created window */
 	ro_gui_wimp_event_register_checkbox(w, CONTENT_BLOCK_ADVERTISEMENTS);
 	ro_gui_wimp_event_register_checkbox(w, CONTENT_BLOCK_POPUPS);
 	ro_gui_wimp_event_register_checkbox(w, CONTENT_NO_PLUGINS);
+	ro_gui_wimp_event_register_checkbox(w, CONTENT_TARGET_BLANK);
 	ro_gui_wimp_event_register_button(w, CONTENT_DEFAULT_BUTTON,
 			ro_gui_options_content_default);
 	ro_gui_wimp_event_register_cancel(w, CONTENT_CANCEL_BUTTON);
@@ -59,6 +63,8 @@ void ro_gui_options_content_default(wimp_pointer *pointer) {
 			false);
 	ro_gui_set_icon_selected_state(pointer->w, CONTENT_NO_PLUGINS,
 			false);
+	ro_gui_set_icon_selected_state(pointer->w, CONTENT_TARGET_BLANK,
+			true);
 }
 
 bool ro_gui_options_content_ok(wimp_w w) {
@@ -68,6 +74,8 @@ bool ro_gui_options_content_ok(wimp_w w) {
 			CONTENT_BLOCK_POPUPS);
 	option_no_plugins = ro_gui_get_icon_selected_state(w,
 			CONTENT_NO_PLUGINS);
+	option_target_blank = ro_gui_get_icon_selected_state(w,
+			CONTENT_TARGET_BLANK);
 
 	ro_gui_save_options();
   	return true;
