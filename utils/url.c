@@ -23,7 +23,7 @@
 #include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
 
-struct url_components {
+struct url_components_internal {
 	char *buffer;	/* buffer used for all the following data */
 	char *scheme;
 	char *authority;
@@ -32,10 +32,6 @@ struct url_components {
 	char *fragment;
 };
 
-url_func_result url_get_components(const char *url,
-		struct url_components *result);
-char *url_reform_components(struct url_components *components);
-void url_destroy_components(struct url_components *components);
 
 regex_t url_re, url_up_re;
 
@@ -229,9 +225,9 @@ url_func_result url_normalize(const char *url, char **result)
 url_func_result url_join(const char *rel, const char *base, char **result)
 {
 	url_func_result status = URL_FUNC_NOMEM;
-	struct url_components base_components = {0,0,0,0,0,0};
-	struct url_components rel_components = {0,0,0,0,0,0};
-	struct url_components merged_components = {0,0,0,0,0,0};
+	struct url_components_internal base_components = {0,0,0,0,0,0};
+	struct url_components_internal rel_components = {0,0,0,0,0,0};
+	struct url_components_internal merged_components = {0,0,0,0,0,0};
 	char *merge_path = NULL, *split_point;
 	char *input, *output, *start = NULL;
 	int len, buf_len;
@@ -243,7 +239,8 @@ url_func_result url_join(const char *rel, const char *base, char **result)
 	
 	
 	/* break down the relative URL (not cached, corruptable) */
-	status = url_get_components(rel, &rel_components);
+	status = url_get_components(rel,
+			(struct url_components *)&rel_components);
 	if (status != URL_FUNC_OK) {
 		LOG(("relative url '%s' failed to get components", rel));
 		return URL_FUNC_FAILED;
@@ -255,9 +252,11 @@ url_func_result url_join(const char *rel, const char *base, char **result)
 		goto url_join_reform_url;
 
 	/* break down the base URL (possibly cached, not corruptable) */
-	status = url_get_components(base, &base_components);
+	status = url_get_components(base,
+			(struct url_components *)&base_components);
 	if (status != URL_FUNC_OK) {
-		url_destroy_components(&rel_components);
+		url_destroy_components(
+				(struct url_components *)&rel_components);
 		LOG(("base url '%s' failed to get components", base));
 		return URL_FUNC_FAILED;
 	}
@@ -397,7 +396,8 @@ url_join_reform_url:
 	}
 
 	/* 5.3 */
-	*result = url_reform_components(&merged_components);
+	*result = url_reform_components(
+			(struct url_components *)&merged_components);
   	if (!(*result))
 		goto url_join_no_mem;
 
@@ -407,8 +407,8 @@ url_join_reform_url:
 url_join_no_mem:
 	free(start);
 	free(merge_path);
-	url_destroy_components(&base_components);
-	url_destroy_components(&rel_components);
+	url_destroy_components((struct url_components *)&base_components);
+	url_destroy_components((struct url_components *)&rel_components);
 	return status;
 }
 
@@ -425,7 +425,7 @@ url_func_result url_host(const char *url, char **result)
 {
 	url_func_result status;
 	struct url_components components;
-	char *host_start, *host_end;
+	const char *host_start, *host_end;
 
 	assert(url);
 
@@ -901,18 +901,20 @@ url_func_result url_get_components(const char *url,
 	const char *path;
 	const char *query;
 	const char *fragment;
+	struct url_components_internal *internal;
 
 	assert(url);
 
 	/* clear our return value */
+	internal = (struct url_components_internal *)result;
 	memset(result, 0x00, sizeof(struct url_components));
 
 	/* get enough storage space for a URL with termination at each node */
 	storage_length = strlen(url) + 8;
-	result->buffer = malloc(storage_length);
-	if (!result->buffer)
+	internal->buffer = malloc(storage_length);
+	if (!internal->buffer)
 		return URL_FUNC_NOMEM;
-	storage_end = result->buffer;
+	storage_end = internal->buffer;
 
 	/* look for a valid scheme */
 	scheme = url;
@@ -1000,7 +1002,7 @@ url_func_result url_get_components(const char *url,
  * \return  a new URL allocated on the stack, or NULL on failure
  */
 
-char *url_reform_components(struct url_components *components)
+char *url_reform_components(const struct url_components *components)
 {
 	int scheme_len = 0, authority_len = 0, path_len = 0, query_len = 0,
 			fragment_len = 0;
@@ -1054,13 +1056,15 @@ char *url_reform_components(struct url_components *components)
  *
  * \param  result  pointer to buffer containing components
  */
-void url_destroy_components(struct url_components *components)
+void url_destroy_components(const struct url_components *components)
 {
+	const struct url_components_internal *internal;
+
 	assert(components);
 
-	if (components->buffer)
-		free(components->buffer);
-	components->buffer = NULL;
+	internal = (const struct url_components_internal *)components;
+	if (internal->buffer)
+		free(internal->buffer);
 }
 
 

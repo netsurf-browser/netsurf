@@ -19,6 +19,15 @@ typedef enum {
 	URL_FUNC_FAILED  /**< Non fatal error (eg failed to match regex) */
 } url_func_result;
 
+struct url_components {
+  	const char *buffer;
+	const char *scheme;
+	const char *authority;
+	const char *path;
+	const char *query;
+	const char *fragment;
+};
+
 void url_init(void);
 url_func_result url_normalize(const char *url, char **result);
 url_func_result url_join(const char *rel, const char *base, char **result);
@@ -33,6 +42,11 @@ url_func_result url_plq(const char *url, char **result);
 url_func_result url_path(const char *url, char **result);
 url_func_result url_compare(const char *url1, const char *url2,
 		bool *result);
+
+url_func_result url_get_components(const char *url,
+		struct url_components *result);
+char *url_reform_components(const struct url_components *components);
+void url_destroy_components(const struct url_components *components);
 
 char *path_to_url(const char *path);
 char *url_to_path(const char *url);
