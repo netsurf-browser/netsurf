@@ -209,8 +209,8 @@ static struct path_data *urldb_add_path_node(const char *scheme,
 		struct path_data *parent);
 static struct path_data *urldb_add_path(const char *scheme,
 		unsigned int port, const struct host_part *host,
-		const char *path, const char *fragment,
-		const char *url_no_frag);
+		const char *path, const char *query, const char *fragment,
+		const char *url);
 static int urldb_add_path_fragment_cmp(const void *a, const void *b);
 static struct path_data *urldb_add_path_fragment(struct path_data *segment,
 		const char *fragment);
@@ -376,7 +376,7 @@ void urldb_load(const char *filename)
 							"file://%s", s + 5);
 
 					p = urldb_add_path("file", 0, h,
-							s + 5, NULL, url);
+							s + 5, NULL, NULL, url);
 					if (!p) {
 						LOG(("Failed inserting '%s'",
 								url));
@@ -425,7 +425,7 @@ void urldb_load(const char *filename)
 						(port ? ports : ""),
 						s);
 
-				p = urldb_add_path(scheme, port, h, s, NULL,
+				p = urldb_add_path(scheme, port, h, s, NULL, NULL, 
 						url);
 				if (!p) {
 					LOG(("Failed inserting '%s'", url));
@@ -709,54 +709,20 @@ bool urldb_add_url(const char *url)
 {
 	struct host_part *h;
 	struct path_data *p;
-	char *fragment = NULL, *host, *plq, *scheme, *colon, *urlt;
+	char *colon;
 	unsigned short port;
 	url_func_result ret;
+	struct url_components components;
 
 	assert(url);
 
-	urlt = strdup(url);
-	if (!urlt)
+	/* extract url components */
+	ret = url_get_components(url, &components);
+	if (ret != URL_FUNC_OK)
 		return false;
 
-	host = strchr(urlt, '#');
-	if (host) {
-		*host = '\0';
-		fragment = strdup(host+1);
-		if (!fragment) {
-			free(urlt);
-			return false;
-		}
-	}
-
-	/* extract host */
-	ret = url_host(url, &host);
-	if (ret != URL_FUNC_OK) {
-		free(fragment);
-		free(urlt);
-		return false;
-	}
-
-	/* extract path, leafname, query */
-	ret = url_plq(url, &plq);
-	if (ret != URL_FUNC_OK) {
-		free(host);
-		free(fragment);
-		free(urlt);
-		return false;
-	}
-
-	/* extract scheme */
-	ret = url_scheme(url, &scheme);
-	if (ret != URL_FUNC_OK) {
-		free(plq);
-		free(host);
-		free(fragment);
-		free(urlt);
-		return false;
-	}
-
-	colon = strrchr(host, ':');
+	/* get port and remove from authority */
+	colon = strrchr(components.authority, ':');
 	if (!colon) {
 		port = 0;
 	} else {
@@ -765,31 +731,24 @@ bool urldb_add_url(const char *url)
 	}
 
 	/* Get host entry */
-	if (strcasecmp(scheme, "file") == 0)
+	if (strcasecmp(components.scheme, "file") == 0)
 		h = urldb_add_host("localhost");
 	else
-		h = urldb_add_host(host);
+		h = urldb_add_host(components.authority);
 	if (!h) {
-		free(scheme);
-		free(plq);
-		free(host);
-		free(fragment);
-		free(urlt);
+		url_destroy_components(&components);
 		return false;
 	}
 
 	/* Get path entry */
-	p = urldb_add_path(scheme, port, h, plq, fragment, urlt);
+	p = urldb_add_path(components.scheme, port, h, components.path,
+			components.query, components.fragment, url);
 	if (!p) {
 		return false;
 	}
 
-	free(scheme);
-	free(plq);
-	free(host);
-	free(fragment);
-	free(urlt);
-
+	url_destroy_components(&components);
+        
 	return true;
 }
 
@@ -1613,31 +1572,47 @@ struct path_data *urldb_add_path_node(const char *scheme, unsigned int port,
  * \param port Port number on host associated with path
  * \param host Host tree node to attach to
  * \param path Absolute path to add
+ * \param query Path query to add
  * \param fragment URL fragment, or NULL
- * \param url_no_frag URL, without fragment
+ * \param url URL (fragment ignored)
  * \return Pointer to leaf node, or NULL on memory exhaustion
  */
 struct path_data *urldb_add_path(const char *scheme, unsigned int port,
-		const struct host_part *host, const char *path,
-		const char *fragment, const char *url_no_frag)
+		const struct host_part *host, const char *path, const char *query,
+		const char *fragment, const char *url)
 {
 	struct path_data *d, *e;
-	char *buf;
+	char *buf, *copy;
 	char *segment, *slash;
+	int len = 0;
 
-	assert(scheme && host && path && url_no_frag);
+	assert(scheme && host && url);
+	assert(path || query);
 
 	d = (struct path_data *) &host->paths;
 
-	/* Copy path string, so we can corrupt it */
-	buf = malloc(strlen(path) + 1);
+	/* Copy and merge path/query strings, so we can corrupt them */
+	if (path)
+		len += strlen(path);
+	if (query)
+		len += strlen(query) + 1;
+	buf = malloc(len + 1);
 	if (!buf)
 		return NULL;
-
-	/* + 1 to strip leading '/' */
-	strcpy(buf, path + 1);
-
+	copy = buf;
+	if (path) {
+		strcpy(copy, path);
+		copy += strlen(path);
+	}
+	if (query) {
+	  	*copy++ = '?';
+	  	strcpy(copy, query);
+	}
+	
+	/* skip leading '/' */
 	segment = buf;
+	if (*segment == '/')
+		segment++;
 
 	/* Process path segments */
 	do {
@@ -1679,9 +1654,13 @@ struct path_data *urldb_add_path(const char *scheme, unsigned int port,
 
 	if (d && !d->url) {
 		/* Insert URL */
-		d->url = strdup(url_no_frag);
+		d->url = strdup(url);
 		if (!d->url)
 			return NULL;
+		/** remove fragment */
+		segment = strrchr(d->url, '#');
+		if (segment)
+			*segment = '\0';
 	}
 
 	return d;
@@ -1748,34 +1727,22 @@ struct path_data *urldb_find_url(const char *url)
 	const struct host_part *h;
 	struct path_data *p;
 	struct search_node *tree;
-	char *host, *plq, *scheme, *colon;
+	char *plq, *copy, *colon;
 	const char *domain;
 	unsigned short port;
 	url_func_result ret;
+	struct url_components components;
+	int len = 0;
 
 	assert(url);
 
-	/* extract host */
-	ret = url_host(url, &host);
+	/* extract url components */
+	ret = url_get_components(url, &components);
 	if (ret != URL_FUNC_OK)
-		return NULL;
+		return false;
 
-	/* extract path, leafname, query */
-	ret = url_plq(url, &plq);
-	if (ret != URL_FUNC_OK) {
-		free(host);
-		return NULL;
-	}
-
-	/* extract scheme */
-	ret = url_scheme(url, &scheme);
-	if (ret != URL_FUNC_OK) {
-		free(plq);
-		free(host);
-		return NULL;
-	}
-
-	colon = strrchr(host, ':');
+	/* get port and remove from authority */
+	colon = strrchr(components.authority, ':');
 	if (!colon) {
 		port = 0;
 	} else {
@@ -1784,35 +1751,48 @@ struct path_data *urldb_find_url(const char *url)
 	}
 
 	/* file urls have no host, so manufacture one */
-	if (strcasecmp(scheme, "file") == 0)
+	if (strcasecmp(components.scheme, "file") == 0)
 		domain = "localhost";
 	else
-		domain = host;
+		domain = components.authority;
 
 	if (*domain >= '0' && *domain <= '9')
 		tree = search_trees[ST_IP];
 	else if (isalpha(*domain))
 		tree = search_trees[ST_DN + tolower(*domain) - 'a'];
 	else {
-		free(plq);
-		free(host);
-		free(scheme);
+		url_destroy_components(&components);
 		return NULL;
 	}
 
 	h = urldb_search_find(tree, domain);
 	if (!h) {
-		free(plq);
-		free(host);
-		free(scheme);
+		url_destroy_components(&components);
 		return NULL;
 	}
 
-	p = urldb_match_path(&h->paths, plq, scheme, port);
+	/* generate plq */
+	if (components.path)
+		len += strlen(components.path);
+	if (components.query)
+		len += strlen(components.query) + 1;
+	plq = malloc(len + 1);
+	if (!plq)
+		return NULL;
+	copy = plq;
+	if (components.path) {
+		strcpy(copy, components.path);
+		copy += strlen(components.path);
+	}
+	if (components.query) {
+	  	*copy++ = '?';
+	  	strcpy(copy, components.query);
+	}
 
+	p = urldb_match_path(&h->paths, plq, components.scheme, port);
+
+	url_destroy_components(&components);
 	free(plq);
-	free(host);
-	free(scheme);
 
 	return p;
 }
@@ -2988,7 +2968,7 @@ bool urldb_insert_cookie(struct cookie_internal_data *c, const char *scheme,
 
 		/* find path */
 		p = urldb_add_path(scheme, 0, h,
-				c->path, NULL, url);
+				c->path, NULL, NULL, url);
 		if (!p) {
 			urldb_free_cookie(c);
 			return false;
@@ -3377,7 +3357,7 @@ void urldb_save_cookie_paths(FILE *fp, struct path_data *parent)
  */
 bool urldb_set_cache_data(const char *url, const struct content *content) {
 	struct path_data *p;
-	char *filename;
+	const char *filename;
 
 	assert(url && content);
 
