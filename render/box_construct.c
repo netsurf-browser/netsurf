@@ -457,15 +457,19 @@ bool box_construct_element(xmlNode *n, struct content *content,
 
 	/* misc. attributes that can't be handled in box_get_style() */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "colspan"))) {
-		box->columns = strtol(s, NULL, 10);
-		if (MAX_SPAN < box->columns)
-			box->columns = 1;
+	  	if (isdigit(s[0])) {
+			box->columns = strtol(s, NULL, 10);
+			if ((MAX_SPAN < box->columns) || (box->columns < 1))
+				box->columns = 1;
+		}
 		xmlFree(s);
 	}
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "rowspan"))) {
-		box->rows = strtol(s, NULL, 10);
-		if (MAX_SPAN < box->rows)
-			box->rows = 1;
+	  	if (isdigit(s[0])) {
+			box->rows = strtol(s, NULL, 10);
+			if ((MAX_SPAN < box->rows) || (box->rows < 1))
+				box->rows = 1;
+		}
 		xmlFree(s);
 	}
 	if (strcmp((const char *) n->name, "table") == 0) {
