@@ -1414,8 +1414,10 @@ void ro_gui_window_open(struct gui_window *g, wimp_open *open)
 		if (state.flags & wimp_WINDOW_HSCROLL)
 			fheight += size;
 		if ((!no_hscroll) &&
-				((fheight > size) && ((g->bw->scrolling == SCROLLING_YES) ||
-				(content && width < content->width * 2 * g->option.scale)))) {
+				((fheight > size) ||
+					(g->bw->browser_window_type == BROWSER_WINDOW_NORMAL)) &&
+				((content && width < content->width * 2 * g->option.scale) ||
+					(g->bw->scrolling == SCROLLING_YES))) {
 			if (!(state.flags & wimp_WINDOW_HSCROLL)) {
 				height -= size;
 				state.visible.y0 += size;
@@ -1436,7 +1438,7 @@ void ro_gui_window_open(struct gui_window *g, wimp_open *open)
 			}
 			state.flags &= ~wimp_WINDOW_HSCROLL;
 		}
-
+  
 		/* vscroll */
 		size = ro_get_vscroll_width(NULL);
 		if (g->bw->border)
@@ -1445,8 +1447,10 @@ void ro_gui_window_open(struct gui_window *g, wimp_open *open)
 		if (state.flags & wimp_WINDOW_VSCROLL)
 			fwidth += size;
 		if ((!no_vscroll) &&
-				((fwidth >= size) && ((g->bw->scrolling == SCROLLING_YES) ||
-				(content && height < content->height * 2 * g->option.scale)))) {
+				((fwidth > size) ||
+					(g->bw->browser_window_type == BROWSER_WINDOW_NORMAL)) &&
+				((content && height < content->height * 2 * g->option.scale) ||
+					(g->bw->scrolling == SCROLLING_YES))) {
 			if (!(state.flags & wimp_WINDOW_VSCROLL)) {
 				width -= size;
 				state.visible.x1 -= size;
