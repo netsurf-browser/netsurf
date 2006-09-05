@@ -395,6 +395,9 @@ void gui_window_destroy(struct gui_window *g)
 
 	if (g->toolbar)
 		ro_gui_theme_destroy_toolbar(g->toolbar);
+	
+	/* remove our wimp event bindings */
+	ro_gui_wimp_event_finalise(g->window);
 
 	/* delete window */
 	error = xwimp_delete_window(g->window);
