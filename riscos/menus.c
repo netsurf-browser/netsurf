@@ -1449,7 +1449,7 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 				return false;
 			data = urldb_get_url_data(c->url);
 			if (data) {
-				node = tree_create_URL_node(hotlist_tree->root, c->url, data, NULL);
+				node = tree_create_URL_node(hotlist_tree->root, c->url, data, data->title);
 				if (node) {
 					tree_redraw_area(hotlist_tree,
 							node->box.x - NODE_INSTEP, 0,
