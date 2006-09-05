@@ -339,25 +339,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	}
 	ro_gui_window_open(g, (wimp_open*)&state);
 
-	/*	Set the caret position to the URL bar
-	*/
-	if (g->toolbar && g->toolbar->display_url) {
-		error = xwimp_set_caret_position(
-				g->toolbar->toolbar_handle,
-				ICON_TOOLBAR_URL, -1, -1, -1, 0);
-		ro_gui_url_complete_start(g);
-	} else
-		error = xwimp_set_caret_position(g->window,
-				wimp_ICON_WINDOW, -100, -100, 32, -1);
-
-	if (error) {
-		LOG(("xwimp_set_caret_position: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-		return g;
-	}
-
-	/* and register event handlers */
+	/* Register event handlers */
 	ro_gui_wimp_event_register_keypress(g->window,
 			ro_gui_window_keypress);
 	if (g->toolbar)
@@ -366,6 +348,21 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	ro_gui_wimp_event_register_mouse_click(g->window,
 			ro_gui_window_click);
 
+	/* Claim the caret position for top-level windows */
+	if (bw->browser_window_type == BROWSER_WINDOW_NORMAL) {
+		if (g->toolbar && g->toolbar->display_url) {
+			error = xwimp_set_caret_position(
+					g->toolbar->toolbar_handle,
+					ICON_TOOLBAR_URL, -1, -1, -1, 0);
+			ro_gui_url_complete_start(g);
+			if (error) {
+				LOG(("xwimp_set_caret_position: 0x%x: %s",
+						error->errnum, error->errmess));
+				warn_user("WimpError", error->errmess);
+			}
+		} else
+			gui_window_place_caret(g, -100, -100, 0);
+	}
 	return g;
 }
 
@@ -1878,16 +1875,8 @@ bool ro_gui_window_click(wimp_pointer *pointer)
 
 	/* set input focus */
 	if (pointer->buttons == wimp_CLICK_SELECT ||
-			pointer->buttons == wimp_CLICK_ADJUST) {
-		error = xwimp_set_caret_position(state.w, -1,
-				-100, -100, 32, -1);
-		if (error) {
-			LOG(("xwimp_set_caret_position: 0x%x: %s",
-					error->errnum, error->errmess));
-			warn_user("WimpError", error->errmess);
-			return false;
-		}
-	}
+			pointer->buttons == wimp_CLICK_ADJUST)
+		gui_window_place_caret(g, -100, -100, 0);
 
 	if (pointer->buttons == wimp_CLICK_MENU)
 		ro_gui_menu_create(browser_menu, pointer->pos.x,
@@ -1987,14 +1976,7 @@ void gui_window_remove_caret(struct gui_window *g)
 		return;
 
 	/* hide caret, but keep input focus */
-	error = xwimp_set_caret_position(g->window, -1,
-			-100, -100, 32, -1);
-	if (error) {
-		LOG(("xwimp_set_caret_position: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-		return;
-	}
+	gui_window_place_caret(g, -100, -100, 0);
 }
 
 
