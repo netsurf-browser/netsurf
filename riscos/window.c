@@ -328,10 +328,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 	/*	Open the window at the top/back of the stack
 	*/
-	if (bw->browser_window_type == BROWSER_WINDOW_NORMAL)
-		state.next = wimp_TOP;
-	else
-		state.next = wimp_HIDDEN;
+	state.next = wimp_TOP;
 	if (bw->parent) {
 	  	top = browser_window_owner(bw);
 		error = xwimp_open_window_nested((wimp_open *)&state, top->window->window,
