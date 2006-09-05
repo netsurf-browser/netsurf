@@ -253,8 +253,9 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 					wimp_WINDOW_HSCROLL);
 			window.title_fg = 0xff;
 			break;
-		case BROWSER_WINDOW_FRAME:
 		case BROWSER_WINDOW_IFRAME:
+			window.flags |= wimp_WINDOW_NO_BOUNDS;
+		case BROWSER_WINDOW_FRAME:
 			if (bw->scrolling == SCROLLING_NO)
 				window.flags &= ~(wimp_WINDOW_VSCROLL |
 						wimp_WINDOW_HSCROLL);
@@ -1002,15 +1003,15 @@ void gui_window_position_frame(struct gui_window *g, int x0, int y0, int x1, int
 	
 	/* store position for children */
 	if (parent->browser_window_type == BROWSER_WINDOW_IFRAME) {
-		x0 = bw->x0 = x0;
-		y0 = bw->y0 = y0;
-		x1 = bw->x1 = x1;
-		y1 = bw->y1 = y1;
+		bw->x0 = x0;
+		bw->y0 = y0;
+		bw->x1 = x1;
+		bw->y1 = y1;
 	} else {
-		x0 = bw->x0 = parent->x0 + x0;
-		y0 = bw->y0 = parent->y0 + y0;
-		x1 = bw->x1 = parent->x0 + x1;
-		y1 = bw->y1 = parent->y0 + y1;
+		bw->x0 = x0 = parent->x0 + x0;
+		bw->y0 = y0 = parent->y0 + y0;
+		bw->x1 = x1 = parent->x0 + x1;
+		bw->y1 = y1 = parent->y0 + y1;
 	}
 
 	/* get the position of the top level window */
@@ -1060,8 +1061,7 @@ void gui_window_position_frame(struct gui_window *g, int x0, int y0, int x1, int
 	state.visible.x0 = px0 + x0 * 2;
 	state.visible.y0 = py1 - y1;
 	state.visible.x1 = px0 + x1;
-	state.visible.y1 = py1 - y0 * 2; 
-
+	state.visible.y1 = py1 - y0 * 2;
 	ro_gui_window_open(g, (wimp_open *)&state);
 }
 
