@@ -51,6 +51,9 @@
 /** maximum frame resize margin */
 #define FRAME_RESIZE 6
 
+/** maximum frame depth */
+#define FRAME_DEPTH 8
+
 /** browser window which is being redrawn. Valid only during redraw. */
 struct browser_window *current_redraw_browser;
 
@@ -746,10 +749,20 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	char *hash;
 	url_func_result res;
 	char url_buf[256];
+	int depth = 0;
+	struct browser_window *cur;
 
 	LOG(("bw %p, url %s", bw, url));
 	assert(bw);
 	assert(url);
+	
+	/* don't allow massively nested framesets */
+	for (cur = bw; cur->parent; cur = cur->parent)
+		depth++;
+	if (depth > FRAME_DEPTH) {
+	  	LOG(("frame depth too high."));
+		return;
+	}
 
 	res = url_normalize(url, &url2);
 	if (res != URL_FUNC_OK) {
