@@ -385,6 +385,12 @@ void gui_window_destroy(struct gui_window *g)
 
 	assert(g);
 
+	/* stop any tracking */
+	if (gui_track_gui_window == g) {
+		gui_track_gui_window = NULL;
+		gui_current_drag_type = GUI_DRAG_NONE;
+	}
+
 	/* remove from list */
 	if (g->prev)
 		g->prev->next = g->next;
