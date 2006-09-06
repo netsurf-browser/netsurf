@@ -26,6 +26,13 @@
 
 #ifdef WITH_AUTH
 
+#define ICON_401LOGIN_LOGIN 0
+#define ICON_401LOGIN_CANCEL 1
+#define ICON_401LOGIN_HOST 2
+#define ICON_401LOGIN_REALM 3
+#define ICON_401LOGIN_USERNAME 4
+#define ICON_401LOGIN_PASSWORD 5
+
 static void ro_gui_401login_close(wimp_w w);
 static bool ro_gui_401login_apply(wimp_w w);
 static void ro_gui_401login_open(struct browser_window *bw, const char *host,
@@ -157,12 +164,14 @@ void ro_gui_401login_close(wimp_w w)
 	free(session->url);
 	free(session);
 
-	ro_gui_wimp_event_finalise(w);
-
+	ro_gui_dialog_close(w);
 	error = xwimp_delete_window(w);
-	if (error)
-		LOG(("xwimp_delete_window: 0x%x: %s",
-				error->errnum, error->errmess));
+	if (error) {
+		LOG(("xwimp_delete_window: 0x%x:%s",
+			error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+	}
+	ro_gui_wimp_event_finalise(w);
 }
 
 

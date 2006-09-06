@@ -154,7 +154,6 @@ void ro_gui_theme_close(struct theme_descriptor *descriptor, bool list);
 struct toolbar *ro_gui_theme_create_toolbar(struct theme_descriptor *descriptor, toolbar_type type);
 bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor, struct toolbar *toolbar);
 bool ro_gui_theme_attach_toolbar(struct toolbar *toolbar, wimp_w parent);
-void ro_gui_theme_resize_toolbar_status(struct toolbar *toolbar);
 bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width);
 void ro_gui_theme_destroy_toolbar(struct toolbar *toolbar);
 

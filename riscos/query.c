@@ -11,10 +11,15 @@
 #include "netsurf/riscos/dialog.h"
 #include "netsurf/riscos/query.h"
 #include "netsurf/riscos/wimp.h"
+#include "netsurf/riscos/wimp_event.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
 
+#define ICON_QUERY_MESSAGE 0
+#define ICON_QUERY_YES 1
+#define ICON_QUERY_NO 2
+#define ICON_QUERY_HELP 3
 
 /** Data for a query window */
 struct gui_query_window
@@ -45,29 +50,16 @@ static struct wimp_window *query_template;
 static int query_yes_width = 0;
 static int query_no_width  = 0;
 
-static void ro_gui_query_window_destroy(struct gui_query_window *qw);
 static struct gui_query_window *ro_gui_query_window_lookup_id(query_id id);
+
+static bool ro_gui_query_click(wimp_pointer *pointer);
+static void ro_gui_query_close(wimp_w w);
+static bool ro_gui_query_apply(wimp_w w);
 
 
 void ro_gui_query_init(void)
 {
 	query_template = ro_gui_dialog_load_template("query");
-}
-
-
-/**
- * Lookup a query window using its RISC OS window handle
- *
- * \param  w  RISC OS window handle
- * \return pointer to query window or NULL
- */
-
-struct gui_query_window *ro_gui_query_window_lookup(wimp_w w)
-{
-	struct gui_query_window *qw = gui_query_window_list;
-	while (qw && qw->window != w)
-		qw = qw->next;
-	return qw;
 }
 
 
@@ -128,10 +120,10 @@ query_id query_user(const char *query, const char *detail,
 	if (!yes) yes = messages_get("Yes");
 	if (!no) no = messages_get("No");
 
-	/* set the text of the 'No' button and size accordingly */
-	icn = &query_template->icons[ICON_QUERY_NO];
-	len = strnlen(no, icn->data.indirected_text.size - 1);
-	memcpy(icn->data.indirected_text.text, no, len);
+	/* set the text of the 'Yes' button and size accordingly */
+	icn = &query_template->icons[ICON_QUERY_YES];
+	len = strnlen(yes, icn->data.indirected_text.size - 1);
+	memcpy(icn->data.indirected_text.text, yes, len);
 	icn->data.indirected_text.text[len] = '\0';
 
 	error = xwimptextop_string_width(icn->data.indirected_text.text, len, &width);
@@ -140,20 +132,20 @@ query_id query_user(const char *query, const char *detail,
 			error->errnum, error->errmess));
 		width = len * 16;
 	}
-	if (!query_no_width) query_no_width = icn->extent.x1 - icn->extent.x0;
-	if (width < query_no_width)
-		width = query_no_width;
+	if (!query_yes_width) query_yes_width = icn->extent.x1 - icn->extent.x0;
+	if (width < query_yes_width)
+		width = query_yes_width;
 	else
 		width += 44;
 	icn->extent.x0 = x = icn->extent.x1 - width;
 
-	/* set the text of the 'Yes' button and size accordingly */
-	icn = &query_template->icons[ICON_QUERY_YES];
-	len = strnlen(yes, icn->data.indirected_text.size - 1);
-	memcpy(icn->data.indirected_text.text, yes, len);
+	/* set the text of the 'No' button and size accordingly */
+	icn = &query_template->icons[ICON_QUERY_NO];
+	len = strnlen(no, icn->data.indirected_text.size - 1);
+	memcpy(icn->data.indirected_text.text, no, len);
 	icn->data.indirected_text.text[len] = '\0';
 
-	if (!query_yes_width) query_yes_width = icn->extent.x1 - icn->extent.x0;
+	if (!query_no_width) query_no_width = icn->extent.x1 - icn->extent.x0;
 	icn->extent.x1 = x - 16;
 	error = xwimptextop_string_width(icn->data.indirected_text.text, len, &width);
 	if (error) {
@@ -161,8 +153,8 @@ query_id query_user(const char *query, const char *detail,
 			error->errnum, error->errmess));
 		width = len * 16;
 	}
-	if (width < query_yes_width)
-		width = query_yes_width;
+	if (width < query_no_width)
+		width = query_no_width;
 	else
 		width += 28;
 	icn->extent.x0 = icn->extent.x1 - width;
@@ -185,6 +177,12 @@ query_id query_user(const char *query, const char *detail,
 
 	ro_gui_dialog_open(qw->window);
 
+	ro_gui_wimp_event_set_user_data(qw->window, qw);
+	ro_gui_wimp_event_register_mouse_click(qw->window, ro_gui_query_click);
+	ro_gui_wimp_event_register_cancel(qw->window, ICON_QUERY_NO);
+	ro_gui_wimp_event_register_ok(qw->window, ICON_QUERY_YES, ro_gui_query_apply);
+	ro_gui_wimp_event_register_close_window(qw->window, ro_gui_query_close);
+
 	error = xwimp_set_caret_position(qw->window, (wimp_i)-1, 0, 0, 1 << 25, -1);
 	if (error) {
 		LOG(("xwimp_get_caret_position: 0x%x : %s",
@@ -205,34 +203,6 @@ query_id query_user(const char *query, const char *detail,
 
 
 /**
- * Close and destroy a query window, releasing all resources
- *
- * \param  qw  query window
- */
-
-void ro_gui_query_window_destroy(struct gui_query_window *qw)
-{
-	os_error *error = xwimp_delete_window(qw->window);
-	if (error) {
-		LOG(("xwimp_delete_window: 0x%x:%s",
-			error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-	}
-
-	/* remove from linked-list of query windows and release memory */
-	if (qw->prev)
-		qw->prev->next = qw->next;
-	else
-		gui_query_window_list = qw->next;
-
-	if (qw->next)
-		qw->next->prev = qw->prev;
-
-	free(qw);
-}
-
-
-/**
  * Close a query window without waiting for a response from the user.
  * (should normally only be called if the user has responded in some other
  *  way of which the query window in unaware.)
@@ -243,7 +213,10 @@ void ro_gui_query_window_destroy(struct gui_query_window *qw)
 void query_close(query_id id)
 {
 	struct gui_query_window *qw = ro_gui_query_window_lookup_id(id);
-	if (qw) ro_gui_query_window_destroy(qw);
+	if (!qw)
+		return;
+	ro_gui_query_close(qw->window);
+
 }
 
 
@@ -266,59 +239,68 @@ void ro_gui_query_window_bring_to_front(query_id id)
 
 
 /**
- * Handle mouse clicks in a query window.
- *
- * \param  qw   query window
- * \param  key  key press info from the Wimp
+ * Handle closing of query dialog
  */
-
-void ro_gui_query_window_click(struct gui_query_window *qw, wimp_pointer *pointer)
+void ro_gui_query_close(wimp_w w)
 {
-	const query_callback *cb = qw->cb;
-	switch (pointer->i) {
-		case ICON_QUERY_YES:
-			cb->confirm(qw->id, QUERY_YES, qw->pw);
-			ro_gui_query_window_destroy(qw);
-			break;
+	struct gui_query_window *qw;
+	os_error *error;
 
-		case ICON_QUERY_NO:
-			cb->cancel(qw->id, QUERY_NO, qw->pw);
-			ro_gui_query_window_destroy(qw);
-			break;
+	qw = (struct gui_query_window *)ro_gui_wimp_event_get_user_data(w);
 
-		case ICON_QUERY_HELP:
-			/* \todo */
-			break;
+	ro_gui_dialog_close(w);
+	error = xwimp_delete_window(qw->window);
+	if (error) {
+		LOG(("xwimp_delete_window: 0x%x:%s",
+			error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
 	}
+	ro_gui_wimp_event_finalise(w);
+
+	/* remove from linked-list of query windows and release memory */
+	if (qw->prev)
+		qw->prev->next = qw->next;
+	else
+		gui_query_window_list = qw->next;
+
+	if (qw->next)
+		qw->next->prev = qw->prev;
+	free(qw);
 }
 
 
 /**
- * Handle keypresses in a query window.
- *
- * \param  qw       query window
- * \param  pointer  mouse pointer state from Wimp.
- * \return true iff the key press is the key press has been handled
+ * Handle acceptance of query dialog
  */
-
-bool ro_gui_query_window_keypress(struct gui_query_window *qw, wimp_key *key)
+bool ro_gui_query_apply(wimp_w w)
 {
-	const query_callback *cb = qw->cb;
-	switch (key->c) {
-
-		case wimp_KEY_ESCAPE:
-			cb->escape(qw->id, QUERY_ESCAPE, qw->pw);
-			ro_gui_query_window_destroy(qw);
-			return true;
-
-		case wimp_KEY_RETURN:
-			if (qw->default_confirm)
-				cb->confirm(qw->id, QUERY_YES, qw->pw);
-			else
-				cb->cancel(qw->id, QUERY_NO, qw->pw);
-			ro_gui_query_window_destroy(qw);
-			return true;
-	}
-
+	struct gui_query_window *qw;
+	const query_callback *cb;
+	
+	qw = (struct gui_query_window *)ro_gui_wimp_event_get_user_data(w);
+	cb = qw->cb;
+	cb->confirm(qw->id, QUERY_YES, qw->pw);
 	return true;
+}
+
+
+/**
+ * Handle clicks in query dialog
+ */
+bool ro_gui_query_click(wimp_pointer *pointer)
+{
+	struct gui_query_window *qw;
+	const query_callback *cb;
+	
+	qw = (struct gui_query_window *)ro_gui_wimp_event_get_user_data(pointer->w);
+	cb = qw->cb;
+
+	switch (pointer->i) {
+		case ICON_QUERY_NO:
+			cb->cancel(qw->id, QUERY_NO, qw->pw);
+			break;
+		default:
+			return false;
+	}
+	return false;
 }

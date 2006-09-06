@@ -373,6 +373,7 @@ void ro_gui_cert_open(struct tree *tree, struct node *node)
 void ro_gui_cert_close(wimp_w w)
 {
 	struct session_data *data;
+	os_error *error;
 	unsigned long i;
 
 	data = (struct session_data *)ro_gui_wimp_event_get_user_data(w);
@@ -390,12 +391,24 @@ void ro_gui_cert_close(wimp_w w)
 
 	if (data->tree) {
 		tree_delete_node(data->tree, data->tree->root, false);
-		xwimp_delete_window((wimp_w)data->tree->handle);
+		ro_gui_dialog_close((wimp_w)data->tree->handle);
+		error = xwimp_delete_window((wimp_w)data->tree->handle);
+		if (error) {
+			LOG(("xwimp_delete_window: 0x%x:%s",
+				error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+		}
+		ro_gui_wimp_event_finalise((wimp_w)data->tree->handle);
 		free(data->tree);
 	}
-	xwimp_delete_window(w);
 
-	ro_gui_wimp_event_finalise(w);
+	ro_gui_dialog_close(w);
+	error = xwimp_delete_window(w);
+	if (error) {
+		LOG(("xwimp_delete_window: 0x%x:%s",
+			error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+	}
 
 }
 

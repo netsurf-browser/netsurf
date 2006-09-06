@@ -119,15 +119,9 @@ const char *ro_gui_default_language(void);
 
 /* in download.c */
 void ro_gui_download_init(void);
-struct gui_download_window * ro_gui_download_window_lookup(wimp_w w);
-void ro_gui_download_window_click(struct gui_download_window *dw,
-		wimp_pointer *pointer);
 void ro_gui_download_drag_end(wimp_dragged *drag);
 void ro_gui_download_datasave_ack(wimp_message *message);
-bool ro_gui_download_window_destroy(struct gui_download_window *dw, bool quit);
 bool ro_gui_download_prequit(void);
-bool ro_gui_download_window_keypress(struct gui_download_window *dw,
-		wimp_key *key);
 
 /* in 401login.c */
 #ifdef WITH_AUTH
@@ -144,8 +138,6 @@ void ro_gui_cert_open(struct tree *tree, struct node *node);
 void ro_gui_window_quit(void);
 void ro_gui_window_update_theme(void);
 void ro_gui_window_update_dimensions(struct gui_window *g, int yscroll);
-void ro_gui_window_open(struct gui_window *g, wimp_open *open);
-void ro_gui_window_redraw(struct gui_window *g, wimp_draw *redraw);
 void ro_gui_window_mouse_at(struct gui_window *g, wimp_pointer *pointer);
 bool ro_gui_toolbar_click(wimp_pointer *pointer);
 bool ro_gui_status_click(wimp_pointer *pointer);
@@ -232,20 +224,6 @@ bool ro_gui_theme_install_apply(wimp_w w);
 #define ICON_STATUS_RESIZE 0
 #define ICON_STATUS_TEXT 1
 
-#define ICON_DOWNLOAD_ICON 0
-#define ICON_DOWNLOAD_URL 1
-#define ICON_DOWNLOAD_PATH 2
-#define ICON_DOWNLOAD_DESTINATION 3
-#define ICON_DOWNLOAD_PROGRESS 5
-#define ICON_DOWNLOAD_STATUS 6
-
-#define ICON_401LOGIN_LOGIN 0
-#define ICON_401LOGIN_CANCEL 1
-#define ICON_401LOGIN_HOST 2
-#define ICON_401LOGIN_REALM 3
-#define ICON_401LOGIN_USERNAME 4
-#define ICON_401LOGIN_PASSWORD 5
-
 #define ICON_ZOOM_VALUE 1
 #define ICON_ZOOM_DEC 2
 #define ICON_ZOOM_INC 3
@@ -275,11 +253,6 @@ bool ro_gui_theme_install_apply(wimp_w w);
 #define ICON_WARNING_MESSAGE 0
 #define ICON_WARNING_CONTINUE 1
 #define ICON_WARNING_HELP 2
-
-#define ICON_QUERY_MESSAGE 0
-#define ICON_QUERY_YES 1
-#define ICON_QUERY_NO 2
-#define ICON_QUERY_HELP 3
 
 #define ICON_SEARCH_TEXT 0
 #define ICON_SEARCH_CASE_SENSITIVE 1

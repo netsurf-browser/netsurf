@@ -38,12 +38,19 @@
 #include "netsurf/riscos/save.h"
 #include "netsurf/riscos/query.h"
 #include "netsurf/riscos/wimp.h"
+#include "netsurf/riscos/wimp_event.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/url.h"
 #include "netsurf/utils/utf8.h"
 #include "netsurf/utils/utils.h"
 
+#define ICON_DOWNLOAD_ICON 0
+#define ICON_DOWNLOAD_URL 1
+#define ICON_DOWNLOAD_PATH 2
+#define ICON_DOWNLOAD_DESTINATION 3
+#define ICON_DOWNLOAD_PROGRESS 5
+#define ICON_DOWNLOAD_STATUS 6
 
 typedef enum
 {
@@ -122,22 +129,25 @@ static bool ro_gui_download_save(struct gui_download_window *dw,
 		const char *file_name, bool force_overwrite);
 static void ro_gui_download_send_dataload(struct gui_download_window *dw);
 static void ro_gui_download_window_destroy_wrapper(void *p);
+static bool ro_gui_download_window_destroy(struct gui_download_window *dw, bool quit);
 static void ro_gui_download_close_confirmed(query_id, enum query_response res, void *p);
 static void ro_gui_download_close_cancelled(query_id, enum query_response res, void *p);
 static void ro_gui_download_overwrite_confirmed(query_id, enum query_response res, void *p);
 static void ro_gui_download_overwrite_cancelled(query_id, enum query_response res, void *p);
 
+static bool ro_gui_download_click(wimp_pointer *pointer);
+static bool ro_gui_download_keypress(wimp_key *key);
+static void ro_gui_download_close(wimp_w w);
+
 static const query_callback close_funcs =
 {
 	ro_gui_download_close_confirmed,
-	ro_gui_download_close_cancelled,
 	ro_gui_download_close_cancelled
 };
 
 static const query_callback overwrite_funcs =
 {
 	ro_gui_download_overwrite_confirmed,
-	ro_gui_download_overwrite_cancelled,
 	ro_gui_download_overwrite_cancelled
 };
 
@@ -327,6 +337,11 @@ struct gui_download_window *gui_download_window_create(const char *url,
 	ro_gui_download_update_status(dw);
 
 	ro_gui_dialog_open(dw->window);
+
+	ro_gui_wimp_event_set_user_data(dw->window, dw);
+	ro_gui_wimp_event_register_mouse_click(dw->window, ro_gui_download_click);
+	ro_gui_wimp_event_register_keypress(dw->window, ro_gui_download_keypress);
+	ro_gui_wimp_event_register_close_window(dw->window, ro_gui_download_close);
 
 	/* issue the warning now, so that it appears in front of the download
 	 * window! */
@@ -687,36 +702,20 @@ void gui_download_window_done(struct gui_download_window *dw)
 
 
 /**
- * Convert a RISC OS window handle to a gui_download_window.
- *
- * \param  w  RISC OS window handle
- * \return  pointer to a structure if found, 0 otherwise
- */
-
-struct gui_download_window * ro_gui_download_window_lookup(wimp_w w)
-{
-	struct gui_download_window *dw;
-	for (dw = download_window_list; dw; dw = dw->next)
-		if (dw->window == w)
-			return dw;
-	return 0;
-}
-
-
-/**
  * Handle Mouse_Click events in a download window.
  *
  * \param  dw       download window
  * \param  pointer  block returned by Wimp_Poll
  */
 
-void ro_gui_download_window_click(struct gui_download_window *dw,
-		wimp_pointer *pointer)
+bool ro_gui_download_click(wimp_pointer *pointer)
 {
+  	struct gui_download_window *dw;
 	char command[256] = "Filer_OpenDir ";
 	char *dot;
 	os_error *error;
 
+	dw = (struct gui_download_window *)ro_gui_wimp_event_get_user_data(pointer->w);
 	if (pointer->i == ICON_DOWNLOAD_ICON && !dw->error &&
 			!dw->saved) {
 		const char *sprite = ro_gui_get_icon_string(pointer->w, pointer->i);
@@ -738,6 +737,7 @@ void ro_gui_download_window_click(struct gui_download_window *dw,
 			}
 		}
 	}
+	return true;
 }
 
 
@@ -749,8 +749,11 @@ void ro_gui_download_window_click(struct gui_download_window *dw,
  * \return true iff key press handled
  */
 
-bool ro_gui_download_window_keypress(struct gui_download_window *dw, wimp_key *key)
+bool ro_gui_download_keypress(wimp_key *key)
 {
+  	struct gui_download_window *dw;
+
+	dw = (struct gui_download_window *)ro_gui_wimp_event_get_user_data(key->w);
 	switch (key->c)
 	{
 		case wimp_KEY_ESCAPE:
@@ -1262,11 +1265,23 @@ void ro_gui_download_send_dataload(struct gui_download_window *dw)
 
 
 /**
+ * Handle closing of download window
+ */
+void ro_gui_download_close(wimp_w w)
+{
+	struct gui_download_window *dw;
+
+	dw = (struct gui_download_window *)ro_gui_wimp_event_get_user_data(w);
+	ro_gui_download_window_destroy(dw, false);
+}
+
+
+/**
  * Close a download window and free any related resources.
  *
  * \param  dw   download window
  * \param  quit destroying because we're quitting the whole app
- * \return true iff window destroyed, not waiting for user confirmation
+ * \return true if window destroyed, not waiting for user confirmation
  */
 
 bool ro_gui_download_window_destroy(struct gui_download_window *dw, bool quit)
@@ -1320,12 +1335,14 @@ bool ro_gui_download_window_destroy(struct gui_download_window *dw, bool quit)
 		dw->next->prev = dw->prev;
 
 	/* delete window */
+	ro_gui_dialog_close(dw->window);
 	error = xwimp_delete_window(dw->window);
 	if (error) {
 		LOG(("xwimp_delete_window: 0x%x: %s",
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
 	}
+	ro_gui_wimp_event_finalise(dw->window);
 
 	/* close download file */
 	if (dw->file) {
@@ -1447,7 +1464,7 @@ void ro_gui_download_overwrite_confirmed(query_id id, enum query_response res, v
  * Respond to PreQuit message, displaying a prompt message if we need
  * the user to confirm the shutdown.
  *
- * \return true iff we can shutdown straightaway
+ * \return true if we can shutdown straightaway
  */
 
 bool ro_gui_download_prequit(void)

@@ -14,9 +14,6 @@
 struct gui_query_window;
 
 void ro_gui_query_init(void);
-struct gui_query_window *ro_gui_query_window_lookup(wimp_w w);
 void ro_gui_query_window_bring_to_front(query_id id);
-void ro_gui_query_window_click(struct gui_query_window *qw, wimp_pointer *pointer);
-bool ro_gui_query_window_keypress(struct gui_query_window *qw, wimp_key *key);
 
 #endif

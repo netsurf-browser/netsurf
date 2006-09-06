@@ -43,7 +43,6 @@ typedef struct
 {
 	void (*confirm)(query_id id, enum query_response res, void *pw);
 	void (*cancel)(query_id, enum query_response res, void *pw);
-	void (*escape)(query_id, enum query_response res, void *pw);
 } query_callback;
 
 

@@ -142,14 +142,8 @@ const char * NETSURF_DIR;
 char *default_stylesheet_url;
 char *adblock_stylesheet_url;
 
-#ifndef ncos
 static const char *task_name = "NetSurf";
 #define CHOICES_PREFIX "<Choices$Write>.WWW.NetSurf."
-#else
-static const char *task_name = "NCNetSurf";
-#define CHOICES_PREFIX "<User$Path>.Choices.NetSurf."
-#endif
-
 
 /** The pointer is over a window which is tracking mouse movement. */
 static bool gui_track = false;
@@ -238,17 +232,16 @@ static struct
 } screen_info;
 
 static void ro_gui_create_dirs(void);
+static void ro_gui_create_dir(char *path);
 static void ro_gui_choose_language(void);
 static void ro_gui_icon_bar_create(void);
 static void ro_gui_signal(int sig);
 static void ro_gui_cleanup(void);
 static void ro_gui_handle_event(wimp_event_no event, wimp_block *block);
 static void ro_gui_null_reason_code(void);
-static void ro_gui_redraw_window_request(wimp_draw *redraw);
 static void ro_gui_close_window_request(wimp_close *close);
 static void ro_gui_pointer_leaving_window(wimp_leaving *leaving);
 static void ro_gui_pointer_entering_window(wimp_entering *entering);
-static void ro_gui_mouse_click(wimp_pointer *pointer);
 static bool ro_gui_icon_bar_click(wimp_pointer *pointer);
 static void ro_gui_check_resolvers(void);
 static void ro_gui_drag_end(wimp_dragged *drag);
@@ -475,8 +468,8 @@ void gui_init(int argc, char** argv)
  */
 void ro_gui_create_dirs(void)
 {
-	char *path;
 	char buf[256];
+	char *path;
 
 	/* Choices */
 	path = getenv("NetSurf$ChoicesSave");
@@ -484,57 +477,45 @@ void ro_gui_create_dirs(void)
 		die("Failed to find NetSurf Choices save path");
 
 	snprintf(buf, sizeof(buf), "%s", path);
-	path = buf;
-
-	/* Given a path x.y.z, this will try to create x, x.y */
-	while ((path = strchr(path, '.'))) {
-		*path = '\0';
-		xosfile_create_dir(buf, 0);
-		*path++ = '.';
-	}
+	ro_gui_create_dir(buf);
 
 	/* URL */
 	snprintf(buf, sizeof(buf), "%s", option_url_save);
-	path = buf;
-
-	while ((path = strchr(path, '.'))) {
-		*path = '\0';
-		xosfile_create_dir(buf, 0);
-		*path++ = '.';
-	}
+	ro_gui_create_dir(buf);
 
 	/* Hotlist */
 	snprintf(buf, sizeof(buf), "%s", option_hotlist_save);
-	path = buf;
-
-	while ((path = strchr(path, '.'))) {
-		*path = '\0';
-		xosfile_create_dir(buf, 0);
-		*path++ = '.';
-	}
+	ro_gui_create_dir(buf);
 
 	/* Recent */
 	snprintf(buf, sizeof(buf), "%s", option_recent_save);
-	path = buf;
-
-	while ((path = strchr(path, '.'))) {
-		*path = '\0';
-		xosfile_create_dir(buf, 0);
-		*path++ = '.';
-	}
+	ro_gui_create_dir(buf);
 
 	/* Theme */
 	snprintf(buf, sizeof(buf), "%s", option_theme_save);
-	path = buf;
-
-	while ((path = strchr(path, '.'))) {
-		*path = '\0';
-		xosfile_create_dir(buf, 0);
-		*path++ = '.';
-	}
+	ro_gui_create_dir(buf);
 	/* and the final directory part (as theme_save is a directory) */
 	xosfile_create_dir(buf, 0);
 }
+
+
+/**
+ * Create directory structure for a path
+ *
+ * Given a path of x.y.z directories x and x.y will be created
+ *
+ * \param path the directory path to create
+ */
+void ro_gui_create_dir(char *path)
+{
+  	char *cur = path;
+	while ((cur = strchr(cur, '.'))) {
+		*cur = '\0';
+		xosfile_create_dir(path, 0);
+		*cur++ = '.';
+	}
+}
+
 
 /**
  * Choose the language to use.
@@ -618,7 +599,6 @@ const char *ro_gui_default_language(void) {
 
 void ro_gui_icon_bar_create(void)
 {
-#ifndef ncos
 	os_error *error;
 
 	wimp_icon_create icon = {
@@ -635,7 +615,6 @@ void ro_gui_icon_bar_create(void)
 	}
 	ro_gui_wimp_event_register_mouse_click(wimp_ICON_BAR,
 			ro_gui_icon_bar_click);
-#endif
 }
 
 
@@ -904,7 +883,7 @@ void ro_gui_handle_event(wimp_event_no event, wimp_block *block)
 			break;
 
 		case wimp_REDRAW_WINDOW_REQUEST:
-			ro_gui_redraw_window_request(&block->redraw);
+			ro_gui_wimp_event_redraw_window(&block->redraw);
 			break;
 
 		case wimp_OPEN_WINDOW_REQUEST:
@@ -924,7 +903,7 @@ void ro_gui_handle_event(wimp_event_no event, wimp_block *block)
 			break;
 
 		case wimp_MOUSE_CLICK:
-			ro_gui_mouse_click(&block->pointer);
+			ro_gui_wimp_event_mouse_click(&block->pointer);
 			break;
 
 		case wimp_USER_DRAG_BOX:
@@ -1026,49 +1005,22 @@ void ro_gui_null_reason_code(void)
 
 
 /**
- * Handle Redraw_Window_Request events.
- */
-
-void ro_gui_redraw_window_request(wimp_draw *redraw)
-{
-	struct gui_window *g;
-
-	if (ro_gui_wimp_event_redraw_window(redraw))
-		return;
-
-	g = ro_gui_window_lookup(redraw->w);
-	if (g)
-		ro_gui_window_redraw(g, redraw);
-}
-
-
-/**
  * Handle Open_Window_Request events.
  */
 
 void ro_gui_open_window_request(wimp_open *open)
 {
-	struct gui_window *g;
 	os_error *error;
 
 	if (ro_gui_wimp_event_open_window(open))
 		return;
 
-	g = ro_gui_window_lookup(open->w);
-	if (g) {
-		ro_gui_window_open(g, open);
-	} else {
-		error = xwimp_open_window(open);
-		if (error) {
-			LOG(("xwimp_open_window: 0x%x: %s",
-					error->errnum, error->errmess));
-			warn_user("WimpError", error->errmess);
-			return;
-		}
-
-		g = ro_gui_status_lookup(open->w);
-		if (g && g->toolbar)
-			ro_gui_theme_resize_toolbar_status(g->toolbar);
+	error = xwimp_open_window(open);
+	if (error) {
+		LOG(("xwimp_open_window: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
 	}
 }
 
@@ -1079,70 +1031,9 @@ void ro_gui_open_window_request(wimp_open *open)
 
 void ro_gui_close_window_request(wimp_close *close)
 {
-	struct gui_window *g;
-	struct gui_download_window *dw;
-	wimp_pointer pointer;
-	os_error *error;
-	char *temp_name, *r;
-	char *filename;
-	struct content *content = NULL;
-
-	if ((g = ro_gui_window_lookup(close->w)) != NULL) {
-		error = xwimp_get_pointer_info(&pointer);
-		if (error) {
-			LOG(("xwimp_get_pointer_info: 0x%x: %s",
-					error->errnum, error->errmess));
-			warn_user("WimpError", error->errmess);
-			return;
-		}
-		if (g->bw)
-			content = g->bw->current_content;
-		if (pointer.buttons & wimp_CLICK_ADJUST) {
-			filename = url_to_path(content->url);
-			if (filename) {
-				temp_name = malloc(strlen(filename) + 32);
-				if (temp_name) {
-					sprintf(temp_name, "Filer_OpenDir %s", filename);
-					r = temp_name + strlen(temp_name);
-					while (r > temp_name) {
-						if (*r == '.') {
-							*r = '\0';
-							break;
-						}
-						*r--;
-					}
-					error = xos_cli(temp_name);
-					if (error) {
-						LOG(("xos_cli: 0x%x: %s",
-								error->errnum, error->errmess));
-						warn_user("MiscError", error->errmess);
-						return;
-					}
-					free(temp_name);
-				}
-				free(filename);
-			} else {
-			  	/* this is pointless if we are about to close the window */
-			  	if (ro_gui_shift_pressed())
-			  	  	ro_gui_menu_handle_action(close->w, BROWSER_NAVIGATE_UP, true);
-			}
-		}
-		if (ro_gui_shift_pressed())
-			return;
-		ro_gui_url_complete_close(NULL, 0);
-
-		/* search must be closed before the main window so that
-		   the content still exists */
-		ro_gui_dialog_close_persistent(close->w);
-		browser_window_destroy(g->bw);
+	if (ro_gui_wimp_event_close_window(close->w))
 		return;
-
-	} else if ((dw = ro_gui_download_window_lookup(close->w)) != NULL) {
-		ro_gui_download_window_destroy(dw, false);
-	} else {
-		ro_gui_dialog_close(close->w);
-	}
-	ro_gui_dialog_close_persistent(close->w);
+	ro_gui_dialog_close(close->w);
 }
 
 
@@ -1152,14 +1043,8 @@ void ro_gui_close_window_request(wimp_close *close)
 
 void ro_gui_pointer_leaving_window(wimp_leaving *leaving)
 {
-	if (gui_track_wimp_w == history_window) {
-		os_error *error = xwimp_close_window(dialog_tooltip);
-		if (error) {
-			LOG(("xwimp_close_window: 0x%x: %s",
-					error->errnum, error->errmess));
-			warn_user("WimpError", error->errmess);
-		}
-	}
+	if (gui_track_wimp_w == history_window)
+		ro_gui_dialog_close(dialog_tooltip);
 
 	switch (gui_current_drag_type) {
 		case GUI_DRAG_SELECTION:
@@ -1198,24 +1083,6 @@ void ro_gui_pointer_entering_window(wimp_entering *entering)
 					gui_track_wimp_w == dialog_url_complete;
 			break;
 	}
-}
-
-
-/**
- * Handle Mouse_Click events.
- */
-
-void ro_gui_mouse_click(wimp_pointer *pointer)
-{
-	struct gui_download_window *dw;
-	struct gui_query_window *qw;
-
-	if (ro_gui_wimp_event_mouse_click(pointer))
-		return;
-	else if ((dw = ro_gui_download_window_lookup(pointer->w)) != NULL)
-		ro_gui_download_window_click(dw, pointer);
-	else if ((qw = ro_gui_query_window_lookup(pointer->w)) != NULL)
-		ro_gui_query_window_click(qw, pointer);
 }
 
 
@@ -1309,19 +1176,9 @@ void ro_gui_drag_end(wimp_dragged *drag)
 
 void ro_gui_keypress(wimp_key *key)
 {
-	struct gui_download_window *dw;
-	struct gui_query_window *qw;
-	bool handled = false;
 	os_error *error;
 
-	if (ro_gui_wimp_event_keypress(key))
-		handled = true;
-	else if ((qw = ro_gui_query_window_lookup(key->w)) != NULL)
-		handled = ro_gui_query_window_keypress(qw, key);
-	else if ((dw = ro_gui_download_window_lookup(key->w)) != NULL)
-		handled = ro_gui_download_window_keypress(dw, key);
-
-	if (!handled) {
+	if (!ro_gui_wimp_event_keypress(key)) {
 		error = xwimp_process_key(key->c);
 		if (error) {
 			LOG(("xwimp_process_key: 0x%x: %s",

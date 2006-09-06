@@ -398,7 +398,6 @@ void ro_gui_dialog_close(wimp_w close)
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
 	}
-	ro_gui_wimp_event_close_window(close);
 }
 
 

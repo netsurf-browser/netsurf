@@ -78,6 +78,7 @@ static void ro_gui_theme_add_toolbar_icons(struct toolbar *toolbar,
 		const char* icons[], const char* ident);
 static void ro_gui_theme_set_help_prefix(struct toolbar *toolbar);
 
+static void ro_gui_theme_status_open(wimp_open *open);
 
 /*	A basic window for the toolbar and status
 */
@@ -1119,8 +1120,11 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor,
 			warn_user("WimpError", error->errmess);
 			return false;
 		}
+ 		ro_gui_wimp_event_set_user_data(toolbar->status_handle, toolbar);
  		ro_gui_wimp_event_register_mouse_click(toolbar->status_handle,
  				ro_gui_status_click);
+ 		ro_gui_wimp_event_register_open_window(toolbar->status_handle,
+ 				ro_gui_theme_status_open);
  		ro_gui_wimp_event_set_help_prefix(toolbar->status_handle, "HelpStatus");
 
 		/*	Create the status resize icon
@@ -1298,55 +1302,6 @@ bool ro_gui_theme_attach_toolbar(struct toolbar *toolbar, wimp_w parent) {
 
 
 /**
- * Updates the toolbars status bar settings to reflect the current size
- *
- * \param toolbar     the toolbar to update
- */
-void ro_gui_theme_resize_toolbar_status(struct toolbar *toolbar) {
-	os_error *error;
-	wimp_outline outline;
-	wimp_window_state state;
-	wimp_w parent = NULL;
-	int parent_size, status_size;
-	if ((!toolbar) || (!toolbar->parent_handle)) return;
-
-	/*	Get the width to scale to
-	*/
-	parent = toolbar->parent_handle;
-	outline.w = toolbar->parent_handle;
-	error = xwimp_get_window_outline(&outline);
-	if (error) {
-		LOG(("xwimp_get_window_outline: 0x%x: %s",
-			error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-		return;
-	}
-	parent_size = outline.outline.x1 - outline.outline.x0 -
-			ro_get_vscroll_width(parent) - 2;
-
-	/*	Get the current size
-	*/
-	state.w = toolbar->status_handle;
-	error = xwimp_get_window_state(&state);
-	if (error) {
-		LOG(("xwimp_get_window_state: 0x%x: %s",
-			error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-		return;
-	}
-	status_size = state.visible.x1 - state.visible.x0;
-	if (status_size <= 12)
-		status_size = 0;
-
-	/*	Store the new size
-	*/
-	toolbar->status_width = (10000 * status_size) / parent_size;
-	if (toolbar->status_width > 10000) toolbar->status_width = 10000;
-	ro_gui_theme_process_toolbar(toolbar, -1);
-}
-
-
-/**
  * Updates the toolbar to reflect changes to the icon flags and any reformatting
  * required due to the change in parent window size.
  *
@@ -1375,7 +1330,7 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
 	int xeig, yeig;
 	os_coord pixel = {1, 1};
 	int top, bottom, right;
-	bool parent_hscroll;
+	bool parent_hscroll = false;
 
 	/* calculate 1px in OS units */
 	ro_convert_pixels_to_os_units(&pixel, (os_mode)-1);
@@ -2430,4 +2385,44 @@ void ro_gui_theme_set_help_prefix(struct toolbar *toolbar) {
 					"HelpEditToolbar");
 			break;
 	}
+}
+
+void ro_gui_theme_status_open(wimp_open *open) {
+	struct toolbar *toolbar = (struct toolbar *)ro_gui_wimp_event_get_user_data(open->w);
+	os_error *error;
+	wimp_outline outline;
+	wimp_w parent = NULL;
+	int parent_size, status_size;
+
+	/* update the window size */
+	error = xwimp_open_window(open);
+	if (error) {
+		LOG(("xwimp_open_window: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+	}
+
+	/* get the width to scale to */
+	parent = toolbar->parent_handle;
+	outline.w = toolbar->parent_handle;
+	error = xwimp_get_window_outline(&outline);
+	if (error) {
+		LOG(("xwimp_get_window_outline: 0x%x: %s",
+			error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+	parent_size = outline.outline.x1 - outline.outline.x0 -
+			ro_get_vscroll_width(parent) - 2;
+
+	/* get the current size */
+	status_size = open->visible.x1 - open->visible.x0;
+	if (status_size <= 12)
+		status_size = 0;
+
+	/*	Store the new size
+	*/
+	toolbar->status_width = (10000 * status_size) / parent_size;
+	if (toolbar->status_width > 10000) toolbar->status_width = 10000;
+	ro_gui_theme_process_toolbar(toolbar, -1);
 }

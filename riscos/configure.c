@@ -138,7 +138,6 @@ bool ro_gui_configure_click(wimp_pointer *pointer)
 				ro_gui_wimp_event_register_close_window(
 						tool->w,
 						ro_gui_configure_close);
-
 			} else {
 				ro_gui_dialog_open_top(tool->w, NULL, 0, 0);
 			}
@@ -157,6 +156,7 @@ void ro_gui_configure_close(wimp_w w)
 			tool->open = false;
 			if (tool->finalise)
 				tool->finalise(w);
+			ro_gui_dialog_close(w);
 			break;
 		}
 	}
