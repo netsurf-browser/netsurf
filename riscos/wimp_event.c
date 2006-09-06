@@ -641,6 +641,8 @@ bool ro_gui_wimp_event_keypress(wimp_key *key) {
 	static wchar_t wc = 0;	/* buffer for UTF8 alphabet */
 	static int shift = 0;
 	struct event_window *window;
+	struct icon_event *event;
+	wimp_pointer pointer;
 	wimp_key k;
 	wchar_t c = (wchar_t)key->c;
 	int t_alphabet;
@@ -789,13 +791,21 @@ bool ro_gui_wimp_event_keypress(wimp_key *key) {
 			return true;
 
 	switch (key->c) {
-		/* Escape closes a dialog with a registered OK button */
+		/* Escape performs the CANCEL action (simulated click) */
 		case wimp_KEY_ESCAPE:
-			if (!window->ok_click)
-				return false;
-			ro_gui_dialog_close(key->w);
-			ro_gui_menu_closed(true);
-			return true;
+			for (event = window->first; event; event = event->next) {
+				switch (event->type) {
+					case EVENT_CANCEL:
+						pointer.w = key->w;
+						pointer.i = event->i;
+						pointer.buttons = wimp_CLICK_SELECT;
+						ro_gui_wimp_event_mouse_click(&pointer);
+						return true;
+					default:
+						break;
+				}
+			}
+			return false;
 		/* CTRL+F2 closes a window with a close icon */
 		case wimp_KEY_CONTROL + wimp_KEY_F2:
 			if (!ro_gui_wimp_check_window_furniture(key->w,
