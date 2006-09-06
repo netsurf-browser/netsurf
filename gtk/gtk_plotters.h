@@ -11,5 +11,5 @@
 
 struct plotter_table;
 
-const struct plotter_table nsgtk_plotters;
+extern const struct plotter_table nsgtk_plotters;
 

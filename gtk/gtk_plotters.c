@@ -69,6 +69,7 @@ const struct plotter_table nsgtk_plotters = {
 	nsgtk_plot_bitmap,
 	nsgtk_plot_bitmap_tile,
 	NULL,
+	NULL,
 	NULL
 };
 
@@ -82,7 +83,7 @@ bool nsgtk_plot_rectangle(int x0, int y0, int width, int height,
 		int line_width, colour c, bool dotted, bool dashed)
 {
 	nsgtk_set_colour(c);
-        if (dotted) 
+        if (dotted)
                 nsgtk_set_dotted();
         else if (dashed)
                 nsgtk_set_dashed();
@@ -187,7 +188,7 @@ bool nsgtk_plot_clip(int clip_x0, int clip_y0,
 #ifdef CAIRO_VERSION
   	if (option_render_cairo) {
 		cairo_reset_clip(current_cr);
-		cairo_rectangle(current_cr, clip_x0 - 1, clip_y0 - 1, 
+		cairo_rectangle(current_cr, clip_x0 - 1, clip_y0 - 1,
 			clip_x1 - clip_x0 + 1, clip_y1 - clip_y0 + 1);
 		cairo_clip(current_cr);
 	}
@@ -220,19 +221,19 @@ bool nsgtk_plot_disc(int x, int y, int radius, colour c, bool filled)
 			cairo_set_line_width(current_cr, 1);
 
 		cairo_arc(current_cr, x, y, radius, 0, M_PI * 2);
-        
+
 		if (filled)
 			cairo_fill(current_cr);
-        
+
 		cairo_stroke(current_cr);
 	} else
 #endif
 	gdk_draw_arc(current_drawable, current_gc,
-		filled ? TRUE : FALSE, x - (radius), y - radius, 
+		filled ? TRUE : FALSE, x - (radius), y - radius,
 		radius * 2, radius * 2,
 		0,
 		360 * 64);
-	
+
 	return true;
 }
 
@@ -243,8 +244,8 @@ bool nsgtk_plot_arc(int x, int y, int radius, int angle1, int angle2, colour c)
 #ifdef CAIRO_VERSION
 	if (option_render_cairo) {
 		cairo_set_line_width(current_cr, 1);
-		cairo_arc(current_cr, x, y, radius, 
-		    (angle1 + 90) * (M_PI / 180), 
+		cairo_arc(current_cr, x, y, radius,
+		    (angle1 + 90) * (M_PI / 180),
 		    (angle2 + 90) * (M_PI / 180));
 		cairo_stroke(current_cr);
 	} else
@@ -253,7 +254,7 @@ bool nsgtk_plot_arc(int x, int y, int radius, int angle1, int angle2, colour c)
 		FALSE, x - (radius), y - radius,
 		radius * 2, radius * 2,
 		angle1 * 64, angle2 * 64);
-	
+
 	return true;
 }
 
@@ -266,7 +267,7 @@ static bool nsgtk_plot_pixbuf(int x, int y, int width, int height,
 
 	if (width == 0 || height == 0)
 		return true;
-	
+
 	if (gdk_pixbuf_get_width(pixbuf) == width &&
 			gdk_pixbuf_get_height(pixbuf) == height) {
 		gdk_draw_pixbuf(current_drawable, current_gc,
@@ -302,7 +303,7 @@ bool nsgtk_plot_bitmap(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg)
 {
 	GdkPixbuf *pixbuf = gtk_bitmap_get_primary(bitmap);
-	nsgtk_plot_pixbuf(x, y, width, height, pixbuf, bg);  
+	return nsgtk_plot_pixbuf(x, y, width, height, pixbuf, bg);
 }
 
 bool nsgtk_plot_bitmap_tile(int x, int y, int width, int height,
@@ -312,12 +313,12 @@ bool nsgtk_plot_bitmap_tile(int x, int y, int width, int height,
 	int doneheight = 0, donewidth = 0;
         GdkPixbuf *primary;
 	GdkPixbuf *pretiled;
-        
+
 	if (!(repeat_x || repeat_y)) {
 		/* Not repeating at all, so just pass it on */
 		return nsgtk_plot_bitmap(x,y,width,height,bitmap,bg);
 	}
-        
+
         if (repeat_x && !repeat_y)
                 pretiled = gtk_bitmap_get_pretile_x(bitmap);
         if (repeat_x && repeat_y)
@@ -330,12 +331,12 @@ bool nsgtk_plot_bitmap_tile(int x, int y, int width, int height,
         width /= gdk_pixbuf_get_width(primary);
         height *= gdk_pixbuf_get_height(pretiled);
         height /= gdk_pixbuf_get_height(primary);
-        
-	if (y > cliprect.y)	
+
+	if (y > cliprect.y)
 		doneheight = (cliprect.y - height) + ((y - cliprect.y) % height);
 	else
 		doneheight = y;
-	
+
 	while (doneheight < (cliprect.y + cliprect.height)) {
 		if (x > cliprect.x)
 			donewidth = (cliprect.x - width) + ((x - cliprect.x) % width);
@@ -351,7 +352,7 @@ bool nsgtk_plot_bitmap_tile(int x, int y, int width, int height,
 		if (!repeat_y) break;
 	}
 
-	
+
 	return true;
 }
 

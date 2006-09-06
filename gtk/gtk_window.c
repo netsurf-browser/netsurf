@@ -67,7 +67,7 @@ struct gui_window {
 	struct gtk_history_window *history_window;
 
 	int			last_x, last_y;
-	
+
 	struct gui_window	*next, *prev;
 };
 
@@ -168,10 +168,10 @@ static struct menu_events menu_events[] = {
 	MENUEVENT(new_window),
 	MENUEVENT(close_window),
 	MENUEVENT(quit),
-	
+
 	/* edit menu */
 	MENUEVENT(choices),
-	
+
 	/* view menu */
 	MENUEVENT(stop),
 	MENUEVENT(reload),
@@ -179,17 +179,17 @@ static struct menu_events menu_events[] = {
 	MENUEVENT(normal_size),
 	MENUEVENT(zoom_out),
 	MENUEVENT(save_window_size),
-	
+
 	/* navigate menu */
 	MENUEVENT(back),
 	MENUEVENT(forward),
 	MENUEVENT(home),
 	MENUEVENT(local_history),
 	MENUEVENT(global_history),
-	
+
 	/* help menu */
 	MENUEVENT(about),
-	
+
 	/* sentinel */
 	{ NULL, NULL }
 };
@@ -197,7 +197,7 @@ static struct menu_events menu_events[] = {
 void nsgtk_reflow_all_windows(void)
 {
 	struct gui_window *g = window_list;
-	
+
 	while (g != NULL) {
 		nsgtk_perform_deferred_resize(g);
 		g = g->next;
@@ -207,7 +207,7 @@ void nsgtk_reflow_all_windows(void)
 void nsgtk_attach_menu_handlers(GladeXML *xml, gpointer g)
 {
 	struct menu_events *event = menu_events;
-	
+
 	while (event->widget != NULL)
 	{
 		GtkWidget *w = glade_xml_get_widget(xml, event->widget);
@@ -259,7 +259,7 @@ wchar_t gdkkey_to_nskey(GdkEventKey *key)
 void nsgtk_window_destroy_event(GtkWidget *widget, gpointer data)
 {
 	struct gui_window *g = data;
-	
+
 	gui_window_destroy(g);
 }
 
@@ -267,7 +267,7 @@ void nsgtk_window_destroy_event(GtkWidget *widget, gpointer data)
 void nsgtk_plot_caret(int x, int y, int h)
 {
 	GdkColor colour;
-	
+
 	colour.red = 0;
 	colour.green = 0;
 	colour.blue = 0;
@@ -275,7 +275,7 @@ void nsgtk_plot_caret(int x, int y, int h)
 	gdk_color_alloc(gdk_colormap_get_system(),
 			&colour);
 	gdk_gc_set_foreground(current_gc, &colour);
-	
+
 	gdk_draw_line(current_drawable, current_gc,
 			x, y,
 			x, y + h - 1);
@@ -338,7 +338,7 @@ gboolean nsgtk_window_button_press_event(GtkWidget *widget,
 {
 	struct gui_window *g = data;
 	int button = BROWSER_MOUSE_CLICK_1;
-        
+
 	if (event->button == 2) /* 2 == middle button on X */
 		button = BROWSER_MOUSE_CLICK_2;
 
@@ -400,17 +400,17 @@ void nsgtk_perform_deferred_resize(void *p)
 void nsgtk_window_update_back_forward(struct gui_window *g)
 {
 	int width, height;
-	
+
 	gtk_widget_set_sensitive(GTK_WIDGET(g->back_button),
 			history_back_available(g->bw->history));
 	gtk_widget_set_sensitive(GTK_WIDGET(g->forward_button),
 			history_forward_available(g->bw->history));
-			
+
 	gtk_widget_set_sensitive(GTK_WIDGET(g->back_menu),
 			history_back_available(g->bw->history));
 	gtk_widget_set_sensitive(GTK_WIDGET(g->forward_menu),
 			history_forward_available(g->bw->history));
-	
+
 	/* update the local history window, as well as queuing a redraw
 	 * for it.
 	 */
@@ -428,7 +428,7 @@ void nsgtk_throb(void *p)
 		g->throb_frame = 1;
 	else
 		g->throb_frame++;
-		
+
 	gtk_image_set_from_pixbuf(g->throbber, nsgtk_throbber->framedata[
 							g->throb_frame]);
 
@@ -449,43 +449,43 @@ gboolean nsgtk_window_back_button_clicked(GtkWidget *widget, gpointer data)
 {
 	struct gui_window *g = data;
 
-	if (!history_back_available(g->bw->history)) 
+	if (!history_back_available(g->bw->history))
 		return TRUE;
-		
+
 	history_back(g->bw, g->bw->history);
 	nsgtk_window_update_back_forward(g);
-	
+
 	return TRUE;
 }
 
 gboolean nsgtk_window_forward_button_clicked(GtkWidget *widget, gpointer data)
 {
 	struct gui_window *g = data;
-	
+
 	if (!history_forward_available(g->bw->history))
 		return TRUE;
 
 	history_forward(g->bw, g->bw->history);
 	nsgtk_window_update_back_forward(g);
-	
+
 	return TRUE;
 }
 
 gboolean nsgtk_window_stop_button_clicked(GtkWidget *widget, gpointer data)
 {
 	struct gui_window *g = data;
-	
+
 	browser_window_stop(g->bw);
-	
+
 	return TRUE;
 }
 
 gboolean nsgtk_window_reload_button_clicked(GtkWidget *widget, gpointer data)
 {
         struct gui_window *g = data;
-        
+
         browser_window_reload(g->bw, true);
-        
+
         return TRUE;
 }
 
@@ -498,7 +498,7 @@ gboolean nsgtk_window_home_button_clicked(GtkWidget *widget, gpointer data)
                 addr = option_homepage_url;
 
         browser_window_go(g->bw, addr, 0, true);
-        
+
         return TRUE;
 }
 
@@ -521,7 +521,7 @@ gboolean nsgtk_window_url_changed(GtkWidget *widget, GdkEventKey *event,
                                             gpointer data)
 {
 	const char *prefix;
-	
+
 	prefix = gtk_entry_get_text(GTK_ENTRY(widget));
 	nsgtk_completion_update(prefix);
 
@@ -543,7 +543,7 @@ MENUHANDLER(close_window)
 	struct gui_window *gw = (struct gui_window *)g;
 
 	gtk_widget_destroy(GTK_WIDGET(gw->window));
-	
+
 	return TRUE;
 }
 
@@ -556,17 +556,16 @@ MENUHANDLER(quit)
 MENUHANDLER(choices)
 {
 	gtk_widget_show(GTK_WIDGET(wndChoices));
-	
+
 	return TRUE;
 }
 
 void nsgtk_window_change_scale(struct gui_window *g, float scale)
 {
 	g->scale = scale;
-	
+
 	if (g->bw->current_content != NULL)
-		gui_window_set_extent(g, g->bw->current_content->width,
-				g->bw->current_content->height);
+		gui_window_update_extent(g);
 
 	gtk_widget_queue_draw(GTK_WIDGET(g->drawing_area));
 }
@@ -576,40 +575,40 @@ MENUHANDLER(zoom_in)
 	struct gui_window *gw = g;
 
 	nsgtk_window_change_scale(gw, gw->scale + 0.05);
-	
+
 	return TRUE;
 }
 
 MENUHANDLER(normal_size)
 {
 	struct gui_window *gw = g;
-	
+
 	nsgtk_window_change_scale(gw, 1.00);
-	
+
 	return TRUE;
 }
 
 MENUHANDLER(zoom_out)
 {
 	struct gui_window *gw = g;
-	
+
 	nsgtk_window_change_scale(gw, gw->scale - 0.05);
-	
+
 	return TRUE;
 }
 
 MENUHANDLER(save_window_size)
 {
 	struct gui_window *gw = g;
-	
+
 	option_toolbar_status_width = gtk_paned_get_position(gw->status_pane);
 	gtk_window_get_position(gw->window, &option_window_x, &option_window_y);
 	gtk_window_get_size(gw->window, &option_window_width,
 					&option_window_height);
-	
-	
+
+
 	options_write(options_file_location);
-	
+
 	return TRUE;
 }
 
@@ -641,10 +640,10 @@ MENUHANDLER(home)
 MENUHANDLER(local_history)
 {
 	struct gui_window *gw = (struct gui_window *)g;
-	
+
 	gtk_widget_show(GTK_WIDGET(gw->history_window->window));
 	gdk_window_raise(GDK_WINDOW(gw->history_window->window));
-	
+
 	return TRUE;
 }
 
@@ -652,7 +651,7 @@ MENUHANDLER(global_history)
 {
 	gtk_widget_show(GTK_WIDGET(wndHistory));
 	gdk_window_raise(GDK_WINDOW(wndHistory));
-	
+
 	return TRUE;
 }
 
@@ -666,7 +665,7 @@ gboolean nsgtk_history_expose_event(GtkWidget *widget,
 				  	GdkEventExpose *event, gpointer g)
 {
 	struct gtk_history_window *hw = g;
-	
+
 	current_widget = widget;
 	current_drawable = widget->window;
 	current_gc = gdk_gc_new(current_drawable);
@@ -708,7 +707,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 						struct browser_window *clone)
 {
 	struct gui_window *g;		/**< what we're creating to return */
-	
+
 	g = malloc(sizeof(*g));
 
 	g->bw = bw;
@@ -717,17 +716,17 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		g->scale = clone->window->scale;
 	else
 		g->scale = 1.0;
-		
+
 	g->careth = 0;
 
-	/* add the window to the list of open windows. */	
+	/* add the window to the list of open windows. */
 	g->prev = 0;
 	g->next = window_list;
-	
+
 	if (window_list)
 		window_list->prev = g;
 	window_list = g;
-	
+
 	open_windows++;
 
 	/* load the window template from the glade xml file, and extract
@@ -750,7 +749,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	g->throbber = GTK_IMAGE(GET_WIDGET("throbber"));
 	g->viewport = GTK_VIEWPORT(GET_WIDGET("viewport1"));
 	g->status_pane = GTK_PANED(GET_WIDGET("hpaned1"));
-	
+
 	/* set this window's size and position to what's in the options, or
 	 * or some sensible default if they're not set yet.
 	 */
@@ -761,10 +760,10 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	} else {
 		gtk_window_set_default_size(g->window, 600, 600);
 	}
-	
+
 	/* set the size of the hpane with status bar and h scrollbar */
 	gtk_paned_set_position(g->status_pane, option_toolbar_status_width);
-	
+
 	/* connect our scrollbars to the viewport */
 	gtk_viewport_set_hadjustment(g->viewport,
 		gtk_range_get_adjustment(GTK_RANGE(GET_WIDGET("hscrollbar1"))));
@@ -792,7 +791,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	/* set the default background colour of the drawing area to white. */
 	gtk_widget_modify_bg(GTK_WIDGET(g->drawing_area), GTK_STATE_NORMAL,
 				&((GdkColor) { 0, 0xffff, 0xffff, 0xffff } ));
-				
+
 	/* disable toolbar buttons that make no sense initially. */
 	gtk_widget_set_sensitive(GTK_WIDGET(g->back_button), FALSE);
 	gtk_widget_set_sensitive(GTK_WIDGET(g->forward_button), FALSE);
@@ -816,7 +815,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	gtk_widget_show(GTK_WIDGET(g->history_window->scrolled));
 	g->history_window->drawing_area = GTK_DRAWING_AREA(
 					gtk_drawing_area_new());
-					
+
 	gtk_widget_set_events(GTK_WIDGET(g->history_window->drawing_area),
 				GDK_EXPOSURE_MASK |
 				GDK_POINTER_MOTION_MASK |
@@ -827,7 +826,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	gtk_scrolled_window_add_with_viewport(g->history_window->scrolled,
 				GTK_WIDGET(g->history_window->drawing_area));
 	gtk_widget_show(GTK_WIDGET(g->history_window->drawing_area));
-	
+
 	/* set up URL bar completion */
 	g->url_bar_completion = gtk_entry_completion_new();
 	gtk_entry_set_completion(g->url_bar, g->url_bar_completion);
@@ -842,13 +841,13 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			"popup-set-width", TRUE,
 			"popup-single-match", TRUE,
 			NULL);
-	
+
 	/* set up the throbber. */
 	gtk_image_set_from_pixbuf(g->throbber, nsgtk_throbber->framedata[0]);
 	g->throb_frame = 0;
 
 #define CONNECT(obj, sig, callback, ptr) \
-	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))	
+	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))
 
 	/* connect history window signals to their handlers */
 	CONNECT(g->history_window->drawing_area, "expose_event",
@@ -871,7 +870,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		nsgtk_window_keypress_event, g);
 	CONNECT(GET_WIDGET("viewport1"), "size_allocate",
 		nsgtk_window_size_allocate_event, g);
-		
+
 	/* toolbar and URL bar signal handlers */
 	CONNECT(g->back_button, "clicked", nsgtk_window_back_button_clicked, g);
 	CONNECT(g->forward_button, "clicked",
@@ -905,7 +904,7 @@ void gui_window_destroy(struct gui_window *g)
 
 	gtk_widget_destroy(GTK_WIDGET(g->history_window->window));
 	gtk_widget_destroy(GTK_WIDGET(g->window));
-	
+
 	free(g);
 
 	if (--open_windows == 0)
@@ -916,11 +915,11 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 {
 	static char suffix[] = " - NetSurf";
   	char nt[strlen(title) + strlen(suffix) + 1];
-	
+
 	if (title == NULL || title[0] == '\0')
 	{
 		gtk_window_set_title(g->window, "NetSurf");
-	
+
 	}
 	else
 	{
@@ -976,10 +975,14 @@ int gui_window_get_height(struct gui_window* g)
 	return GTK_WIDGET(g->drawing_area)->allocation.height;
 }
 
-void gui_window_set_extent(struct gui_window *g, int width, int height)
+void gui_window_update_extent(struct gui_window *g)
 {
+	if (!g->bw->current_content)
+		return;
+
 	gtk_widget_set_size_request(GTK_WIDGET(g->drawing_area),
-                                    width * g->scale, height * g->scale);
+				g->bw->current_content->width * g->scale,
+				g->bw->current_content->height * g->scale);
 	gtk_widget_set_size_request(GTK_WIDGET(g->viewport), 0, 0);
 }
 
@@ -993,12 +996,12 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
         GdkCursor *cursor = NULL;
         GdkCursorType cursortype;
         bool nullcursor = false;
-        
+
 	if (g->current_pointer == shape)
 		return;
-        
+
 	g->current_pointer = shape;
-        
+
 	switch (shape) {
         case GUI_POINTER_POINT:
                 cursortype = GDK_HAND1;
@@ -1062,10 +1065,10 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
         if (!nullcursor)
                 cursor = gdk_cursor_new_for_display(
 				gtk_widget_get_display(
-					GTK_WIDGET(g->drawing_area)), 
+					GTK_WIDGET(g->drawing_area)),
 					cursortype);
         gdk_window_set_cursor(GTK_WIDGET(g->drawing_area)->window, cursor);
-        
+
 	if (!nullcursor)
                 gdk_cursor_unref(cursor);
 }
@@ -1087,9 +1090,9 @@ void gui_window_start_throbber(struct gui_window* g)
 	gtk_widget_set_sensitive(GTK_WIDGET(g->reload_button), FALSE);
 	gtk_widget_set_sensitive(GTK_WIDGET(g->stop_menu), TRUE);
 	gtk_widget_set_sensitive(GTK_WIDGET(g->reload_button), FALSE);
-	
+
 	nsgtk_window_update_back_forward(g);
-	
+
 	schedule(10, nsgtk_throb, g);
 }
 
@@ -1099,11 +1102,11 @@ void gui_window_stop_throbber(struct gui_window* g)
 	gtk_widget_set_sensitive(GTK_WIDGET(g->reload_button), TRUE);
 	gtk_widget_set_sensitive(GTK_WIDGET(g->stop_menu), FALSE);
 	gtk_widget_set_sensitive(GTK_WIDGET(g->reload_menu), TRUE);
-	
+
 	nsgtk_window_update_back_forward(g);
-	
+
 	schedule_remove(nsgtk_throb, g);
-	
+
 	gtk_image_set_from_pixbuf(g->throbber, nsgtk_throbber->framedata[0]);
         // Issue a final reflow so that the content object reports its size correctly
         schedule(5, nsgtk_perform_deferred_resize, g);
@@ -1125,7 +1128,7 @@ void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
 void gui_window_remove_caret(struct gui_window *g)
 {
 	int oh = g->careth;
-	
+
 	if (oh == 0)
 		return;
 
@@ -1194,3 +1197,17 @@ bool gui_copy_to_clipboard(struct selection *s)
 }
 
 
+void gui_window_get_dimensions(struct gui_window *g, int *width, int *height)
+{
+	*width = 1;
+	*height = 1;
+}
+
+void gui_window_position_frame(struct gui_window *g, int x0, int y0, int x1, int y1)
+{
+}
+
+bool gui_window_frame_resize_start(struct gui_window *g)
+{
+	return true;
+}
