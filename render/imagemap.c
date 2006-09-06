@@ -28,6 +28,7 @@ typedef enum {
 struct mapentry {
 	imagemap_entry_type type;	/**< type of shape */
 	char *url;			/**< absolute url to go to */
+	char *target;			/**< target frame (if any) */
 	union {
 		struct {
 			int x;		/**< x coordinate of centre */
@@ -71,9 +72,9 @@ static int imagemap_point_in_poly(int num, float *xpt, float *ypt,
 /**
  * Add an imagemap to the hashtable, creating it if it doesn't exist
  *
- * @param c The containing content
- * @param key The name of the imagemap
- * @param list List of map regions
+ * \param c The containing content
+ * \param key The name of the imagemap
+ * \param list List of map regions
  * \return true on succes, false otherwise
  */
 bool imagemap_add(struct content *c, const char *key, struct mapentry *list)
@@ -108,7 +109,7 @@ bool imagemap_add(struct content *c, const char *key, struct mapentry *list)
 /**
  * Create hashtable of imagemaps
  *
- * @param c The containing content
+ * \param c The containing content
  * \return true on success, false otherwise
  */
 bool imagemap_create(struct content *c)
@@ -130,7 +131,7 @@ bool imagemap_create(struct content *c)
 /**
  * Destroy hashtable of imagemaps
  *
- * @param c The containing content
+ * \param c The containing content
  */
 void imagemap_destroy(struct content *c)
 {
@@ -160,7 +161,7 @@ void imagemap_destroy(struct content *c)
 /**
  * Dump imagemap data to the log
  *
- * @param c The containing content
+ * \param c The containing content
  */
 void imagemap_dump(struct content *c)
 {
@@ -219,8 +220,8 @@ void imagemap_dump(struct content *c)
 /**
  * Extract all imagemaps from a document tree
  *
- * @param node Root node of tree
- * @param c The containing content
+ * \param node Root node of tree
+ * \param c The containing content
  * \return false on memory exhaustion, true otherwise
  */
 bool imagemap_extract(xmlNode *node, struct content *c)
@@ -314,7 +315,7 @@ bool imagemap_extract_map(xmlNode *node, struct content *c,
  */
 bool imagemap_addtolist(xmlNode *n, char *base_url, struct mapentry **entry)
 {
-	char *shape, *coords = 0, *href, *val;
+	char *shape, *coords = 0, *href, *val, *target = 0;
 	int num;
 	struct mapentry *new_map, *temp;
 
@@ -332,6 +333,9 @@ bool imagemap_addtolist(xmlNode *n, char *base_url, struct mapentry **entry)
 	if ((href = (char*)xmlGetProp(n, (const xmlChar*)"href")) == NULL) {
 		return true;
 	}
+
+	target = (char *)xmlGetProp(n, (const xmlChar *)"target");
+
 	/* no shape -> shape is a rectangle */
 	if ((shape = (char*)xmlGetProp(n, (const xmlChar*)"shape")) == NULL) {
 		shape = (char*)xmlMemStrdup("rect");
@@ -339,6 +343,8 @@ bool imagemap_addtolist(xmlNode *n, char *base_url, struct mapentry **entry)
 	if (strcasecmp(shape, "default") != 0) {
 		/* no coords -> ignore */
 		if ((coords = (char*)xmlGetProp(n, (const xmlChar*)"coords")) == NULL) {
+			if (target)
+				xmlFree(target);
 			xmlFree(href);
 			xmlFree(shape);
 			return true;
@@ -347,6 +353,12 @@ bool imagemap_addtolist(xmlNode *n, char *base_url, struct mapentry **entry)
 
 	new_map = calloc(1, sizeof(*new_map));
 	if (!new_map) {
+		if (target)
+			xmlFree(target);
+		xmlFree(href);
+		xmlFree(shape);
+		if (coords)
+			xmlFree(coords);
 		return false;
 	}
 
@@ -367,27 +379,53 @@ bool imagemap_addtolist(xmlNode *n, char *base_url, struct mapentry **entry)
 	}
 	else { /* unknown shape -> bail */
 		free(new_map);
+		if (target)
+			xmlFree(target);
 		xmlFree(href);
 		xmlFree(shape);
-		xmlFree(coords);
+		if (coords)
+			xmlFree(coords);
 		return true;
 	}
 
 	if (!box_extract_link(href, base_url, &new_map->url)) {
 		free(new_map);
+		if (target)
+			xmlFree(target);
 		xmlFree(href);
 		xmlFree(shape);
-		xmlFree(coords);
+		if (coords)
+			xmlFree(coords);
 		return false;
 	}
 
 	if (!new_map->url) {
 		/* non-fatal error -> ignore this entry */
 		free(new_map);
+		if (target)
+			xmlFree(target);
 		xmlFree(href);
 		xmlFree(shape);
-		xmlFree(coords);
+		if (coords)
+			xmlFree(coords);
 		return true;
+	}
+
+	if (target) {
+		new_map->target = strdup(target);
+		if (!new_map->target) {
+			free(new_map->url);
+			free(new_map);
+			xmlFree(target);
+			xmlFree(href);
+			xmlFree(shape);
+			if (coords)
+				xmlFree(coords);
+			return false;
+		}
+
+		/* no longer needed */
+		xmlFree(target);
 	}
 
 	if (new_map->type != IMAGEMAP_DEFAULT) {
@@ -439,17 +477,20 @@ bool imagemap_addtolist(xmlNode *n, char *base_url, struct mapentry **entry)
 			new_map->bounds.poly.xcoords =
 					calloc(0, sizeof(*new_map->bounds.poly.xcoords));
 			if (!new_map->bounds.poly.xcoords) {
+				free(new_map->target);
 				free(new_map->url);
 				free(new_map);
 				xmlFree(href);
 				xmlFree(shape);
-				xmlFree(coords);
+				if (coords)
+					xmlFree(coords);
 				return false;
 			}
 			new_map->bounds.poly.ycoords =
 					 calloc(0, sizeof(*new_map->bounds.poly.ycoords));
 			if (!new_map->bounds.poly.ycoords) {
 				free(new_map->bounds.poly.xcoords);
+				free(new_map->target);
 				free(new_map->url);
 				free(new_map);
 				xmlFree(href);
@@ -471,6 +512,7 @@ bool imagemap_addtolist(xmlNode *n, char *base_url, struct mapentry **entry)
 				if (!xcoords) {
 					free(new_map->bounds.poly.ycoords);
 					free(new_map->bounds.poly.xcoords);
+					free(new_map->target);
 					free(new_map->url);
 					free(new_map);
 					xmlFree(href);
@@ -483,6 +525,7 @@ bool imagemap_addtolist(xmlNode *n, char *base_url, struct mapentry **entry)
 				if (!ycoords) {
 					free(new_map->bounds.poly.ycoords);
 					free(new_map->bounds.poly.xcoords);
+					free(new_map->target);
 					free(new_map->url);
 					free(new_map);
 					xmlFree(href);
@@ -522,7 +565,8 @@ bool imagemap_addtolist(xmlNode *n, char *base_url, struct mapentry **entry)
 
 	xmlFree(href);
 	xmlFree(shape);
-	xmlFree(coords);
+	if (coords)
+		xmlFree(coords);
 
 	return true;
 }
@@ -530,7 +574,7 @@ bool imagemap_addtolist(xmlNode *n, char *base_url, struct mapentry **entry)
 /**
  * Free list of imagemap entries
  *
- * @param list Pointer to head of list
+ * \param list Pointer to head of list
  */
 void imagemap_freelist(struct mapentry *list)
 {
@@ -543,6 +587,8 @@ void imagemap_freelist(struct mapentry *list)
 	while (entry != 0) {
 		prev = entry;
 		free(entry->url);
+		if (entry->target)
+			free(entry->target);
 		if (entry->type == IMAGEMAP_POLY) {
 			free(entry->bounds.poly.xcoords);
 			free(entry->bounds.poly.ycoords);
@@ -555,17 +601,19 @@ void imagemap_freelist(struct mapentry *list)
 /**
  * Retrieve url associated with imagemap entry
  *
- * @param c The containing content
- * @param key The map name to search for
- * @param x The left edge of the containing box
- * @param y The top edge of the containing box
- * @param click_x The horizontal location of the click
- * @param click_y The vertical location of the click
- * @return The url associated with this area, or NULL if not found
+ * \param c The containing content
+ * \param key The map name to search for
+ * \param x The left edge of the containing box
+ * \param y The top edge of the containing box
+ * \param click_x The horizontal location of the click
+ * \param click_y The vertical location of the click
+ * \param target Pointer to location to receive target pointer (if any)
+ * \return The url associated with this area, or NULL if not found
  */
-char *imagemap_get(struct content *c, const char *key, unsigned long x,
-		unsigned long y, unsigned long click_x,
-		unsigned long click_y)
+const char *imagemap_get(struct content *c, const char *key,
+		unsigned long x, unsigned long y,
+		unsigned long click_x, unsigned long click_y,
+		const char **target)
 {
 	unsigned int slot = 0;
 	struct imagemap *map;
@@ -590,6 +638,8 @@ char *imagemap_get(struct content *c, const char *key, unsigned long x,
 		switch (entry->type) {
 		case IMAGEMAP_DEFAULT:
 			/* just return the URL. no checks required */
+			if (target)
+				*target = entry->target;
 			return entry->url;
 			break;
 		case IMAGEMAP_RECT:
@@ -597,6 +647,8 @@ char *imagemap_get(struct content *c, const char *key, unsigned long x,
 				    click_x <= x + entry->bounds.rect.x1 &&
 				    click_y >= y + entry->bounds.rect.y0 &&
 				    click_y <= y + entry->bounds.rect.y1) {
+				if (target)
+					*target = entry->target;
 				return entry->url;
 			}
 			break;
@@ -606,6 +658,8 @@ char *imagemap_get(struct content *c, const char *key, unsigned long x,
 			if ((cx * cx + cy * cy) <=
 				(unsigned long)(entry->bounds.circle.r *
 					entry->bounds.circle.r)) {
+				if (target)
+					*target = entry->target;
 				return entry->url;
 			}
 			break;
@@ -614,11 +668,16 @@ char *imagemap_get(struct content *c, const char *key, unsigned long x,
 					entry->bounds.poly.xcoords,
 					entry->bounds.poly.ycoords, x, y,
 					click_x, click_y)) {
+				if (target)
+					*target = entry->target;
 				return entry->url;
 			}
 			break;
 		}
 	}
+
+	if (target)
+		*target = NULL;
 
 	return NULL;
 }
@@ -626,8 +685,8 @@ char *imagemap_get(struct content *c, const char *key, unsigned long x,
 /**
  * Hash function
  *
- * @param key The key to hash
- * @return The hashed value
+ * \param key The key to hash
+ * \return The hashed value
  */
 unsigned int imagemap_hash(const char *key)
 {
@@ -646,14 +705,14 @@ unsigned int imagemap_hash(const char *key)
  * Test if a point lies within an arbitrary polygon
  * Modified from comp.graphics.algorithms FAQ 2.03
  *
- * @param num Number of vertices
- * @param xpt Array of x coordinates
- * @param ypt Array of y coordinates
- * @param x Left hand edge of containing box
- * @param y Top edge of containing box
- * @param click_x X coordinate of click
- * @param click_y Y coordinate of click
- * @return 1 if point is in polygon, 0 if outside. 0 or 1 if on boundary
+ * \param num Number of vertices
+ * \param xpt Array of x coordinates
+ * \param ypt Array of y coordinates
+ * \param x Left hand edge of containing box
+ * \param y Top edge of containing box
+ * \param click_x X coordinate of click
+ * \param click_y Y coordinate of click
+ * \return 1 if point is in polygon, 0 if outside. 0 or 1 if on boundary
  */
 int imagemap_point_in_poly(int num, float *xpt, float *ypt, unsigned long x,
 		unsigned long y, unsigned long click_x,
