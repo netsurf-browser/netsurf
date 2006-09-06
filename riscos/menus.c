@@ -447,10 +447,9 @@ void ro_gui_menu_init(void)
  * Display a menu.
  */
 void ro_gui_menu_create(wimp_menu *menu, int x, int y, wimp_w w) {
-	int doc_x, doc_y;
-	wimp_window_state state;
 	struct gui_window *g;
 	os_error *error;
+	os_coord pos;
 	int i;
 	menu_action action;
 	struct menu_definition *definition;
@@ -467,26 +466,14 @@ void ro_gui_menu_create(wimp_menu *menu, int x, int y, wimp_w w) {
 
 	/* read the object under the pointer for a new gui_window menu */
 	if ((!current_menu) && (menu == browser_menu)) {
-		state.w = w;
-		error = xwimp_get_window_state(&state);
-		if (error) {
-			LOG(("xwimp_get_window_state: 0x%x: %s",
-					error->errnum, error->errmess));
-			warn_user("WimpError", error->errmess);
-			return;
-		}
-
 		g = ro_gui_window_lookup(w);
-		assert(g);
-
-		doc_x = window_x_units(x, &state) / 2 / g->option.scale;
-		doc_y = -window_y_units(y, &state) / 2 / g->option.scale;
-
+		
+		if (!ro_gui_window_to_window_pos(g, x, y, &pos))
+			return;
 		current_menu_object_box = NULL;
 		if (g->bw->current_content &&
 				g->bw->current_content->type == CONTENT_HTML)
-			current_menu_object_box = box_object_at_point(
-					g->bw->current_content, doc_x, doc_y);
+			current_menu_object_box = box_object_at_point(g->bw->current_content, pos.x, pos.y);
 	}
 
 	/* store the menu characteristics */
@@ -776,17 +763,13 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning) {
  * \param toolbar  the toolbar to update
  */
 void ro_gui_menu_refresh_toolbar(struct toolbar *toolbar) {
-	int height;
 
 	assert(toolbar);
 
 	toolbar->reformat_buttons = true;
-	height = toolbar->height;
 	ro_gui_theme_process_toolbar(toolbar, -1);
 	if (toolbar->type == THEME_BROWSER_TOOLBAR) {
-		ro_gui_window_update_dimensions(
-				ro_gui_window_lookup(current_menu_window),
-				height - toolbar->height);
+		gui_window_update_extent(ro_gui_window_lookup(current_menu_window));
 	} else if (toolbar->type == THEME_HOTLIST_TOOLBAR) {
 		tree_resized(hotlist_tree);
 		xwimp_force_redraw((wimp_w)hotlist_tree->handle,
@@ -794,6 +777,10 @@ void ro_gui_menu_refresh_toolbar(struct toolbar *toolbar) {
 	} else if (toolbar->type == THEME_HISTORY_TOOLBAR) {
 		tree_resized(global_history_tree);
 		xwimp_force_redraw((wimp_w)global_history_tree->handle,
+				0,-16384, 16384, 16384);
+	} else if (toolbar->type == THEME_COOKIES_TOOLBAR) {
+		tree_resized(cookies_tree);
+		xwimp_force_redraw((wimp_w)cookies_tree->handle,
 				0,-16384, 16384, 16384);
 	}
 }

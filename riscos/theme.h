@@ -108,6 +108,7 @@ struct toolbar {
 	int toolbar_current;			/**< the size of the toolbar window in OS units */
 	int height;				/**< vertical extent of the toolbar (read only) */
 	int max_height;				/**< allowed vertical extent (read only) */
+	int old_height;				/**< height on last test (read only) */
 	wimp_w toolbar_handle;			/**< toolbar window handle */
 	wimp_w status_handle;			/**< status window handle (if applicable) */
 	wimp_w parent_handle;			/**< parent window handle (read only) */
@@ -161,6 +162,8 @@ void ro_gui_theme_toggle_edit(struct toolbar *toolbar);
 void ro_gui_theme_toolbar_editor_sync(struct toolbar *toolbar);
 void ro_gui_theme_toolbar_editor_click(struct toolbar *toolbar, wimp_pointer *pointer);
 void ro_gui_theme_toolbar_editor_drag_end(wimp_dragged *drag);
+
+int ro_gui_theme_height_change(struct toolbar *toolbar);
 
 struct toolbar_icon *ro_gui_theme_toolbar_get_icon(struct toolbar *toolbar, int x, int y);
 

@@ -568,6 +568,9 @@ bool ro_gui_theme_apply(struct theme_descriptor *descriptor) {
 
 	/* apply the theme to all the current windows */
 	ro_gui_window_update_theme();
+	ro_gui_tree_update_theme(hotlist_tree);
+	ro_gui_tree_update_theme(global_history_tree);
+	ro_gui_tree_update_theme(cookies_tree);
 	ro_gui_theme_close(theme_previous, false);
 	return true;
 }
@@ -833,6 +836,7 @@ struct toolbar *ro_gui_theme_create_toolbar(struct theme_descriptor *descriptor,
 		ro_gui_theme_destroy_toolbar(toolbar);
 		return NULL;
 	}
+	toolbar->old_height = ro_gui_theme_toolbar_full_height(toolbar);
 	return toolbar;
 }
 
@@ -1751,7 +1755,6 @@ void ro_gui_theme_destroy_toolbar(struct toolbar *toolbar) {
  * \param toolbar      the toolbar to toggle editing for
  */
 void ro_gui_theme_toggle_edit(struct toolbar *toolbar) {
-	int height;
 	int icons = 0;
 	struct toolbar_icon *icon;
 	struct gui_window *g = NULL;
@@ -1812,14 +1815,13 @@ void ro_gui_theme_toggle_edit(struct toolbar *toolbar) {
 		}
 
 		/* turn off editing */
-		height = toolbar->editor->height;
 		ro_gui_theme_destroy_toolbar(toolbar->editor);
 		toolbar->editor = NULL;
 		ro_gui_theme_update_toolbar(toolbar->descriptor, toolbar);
 		switch (toolbar->type) {
 			case THEME_BROWSER_TOOLBAR:
 				if (g)
-					ro_gui_window_update_dimensions(g, height);
+					gui_window_update_extent(g);
 				break;
 			default:
 				if (toolbar->parent_handle)
@@ -1863,8 +1865,7 @@ void ro_gui_theme_toggle_edit(struct toolbar *toolbar) {
 		switch (toolbar->type) {
 			case THEME_BROWSER_TOOLBAR:
 				if (g)
-					ro_gui_window_update_dimensions(g,
-							-toolbar->editor->height);
+					gui_window_update_extent(g);
 				break;
 			default:
 				if (toolbar->parent_handle) {
@@ -2425,4 +2426,13 @@ void ro_gui_theme_status_open(wimp_open *open) {
 	toolbar->status_width = (10000 * status_size) / parent_size;
 	if (toolbar->status_width > 10000) toolbar->status_width = 10000;
 	ro_gui_theme_process_toolbar(toolbar, -1);
+}
+
+int ro_gui_theme_height_change(struct toolbar *toolbar) {
+  	int height, cur_height;
+  	
+  	cur_height = ro_gui_theme_toolbar_full_height(toolbar);
+  	height = toolbar->old_height - cur_height;
+  	toolbar->old_height = cur_height;
+	return height;
 }

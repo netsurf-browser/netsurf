@@ -67,9 +67,8 @@ void gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
 		int x1, int y1);
 void gui_window_position_frame(struct gui_window *g, int x0, int y0,
 		int x1, int y1);
-void gui_window_get_dimensions(struct gui_window *g, int *width, int *height);
-int gui_window_get_width(struct gui_window *g);
-int gui_window_get_height(struct gui_window *g);
+void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
+		bool scaled);
 void gui_window_update_extent(struct gui_window *g);
 void gui_window_set_status(struct gui_window *g, const char *text);
 void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape);
@@ -83,8 +82,8 @@ void gui_window_new_content(struct gui_window *g);
 bool gui_window_scroll_start(struct gui_window *g);
 bool gui_window_box_scroll_start(struct gui_window *g,
 		int x0, int y0, int x1, int y1);
-void gui_window_save_as_link(struct gui_window *g, struct content *c);
 bool gui_window_frame_resize_start(struct gui_window *g);
+void gui_window_save_as_link(struct gui_window *g, struct content *c);
 
 struct gui_download_window *gui_download_window_create(const char *url,
 		const char *mime_type, struct fetch *fetch,

@@ -45,5 +45,6 @@ void ro_gui_tree_scroll_visible(struct tree *tree, struct node_element *element)
 void ro_gui_tree_get_tree_coordinates(struct tree *tree, int x, int y,
 		int *tree_x, int *tree_y);
 int ro_gui_tree_help(int x, int y);
+void ro_gui_tree_update_theme(struct tree *tree);
 
 #endif

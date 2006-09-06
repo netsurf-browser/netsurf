@@ -263,7 +263,7 @@ void browser_window_recalculate_iframes(struct browser_window *bw) {
 	assert(bw);
 
 	/* update window dimensions */
-	gui_window_get_dimensions(bw->window, &bw_width, &bw_height);
+	gui_window_get_dimensions(bw->window, &bw_width, &bw_height, false);
 	if (!bw->parent) {
 		bw->x0 = 0;
 		bw->y0 = 0;
@@ -383,7 +383,7 @@ void browser_window_recalculate_frameset(struct browser_window *bw) {
 
 	/* window dimensions */
 	if (!bw->parent) {
-		gui_window_get_dimensions(bw->window, &bw_width, &bw_height);
+		gui_window_get_dimensions(bw->window, &bw_width, &bw_height, false);
 		bw->x0 = 0;
 		bw->y0 = 0;
 		bw->x1 = bw_width;
@@ -751,6 +751,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	char url_buf[256];
 	int depth = 0;
 	struct browser_window *cur;
+	int width, height;
 
 	LOG(("bw %p, url %s", bw, url));
 	assert(bw);
@@ -810,13 +811,13 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	browser_window_remove_caret(bw);
 	browser_window_destroy_children(bw);
 
+	gui_window_get_dimensions(bw->window, &width, &height, true);
+
 	browser_window_set_status(bw, messages_get("Loading"));
 	bw->history_add = history_add;
 	bw->time0 = clock();
 	c = fetchcache(url2, browser_window_callback, (intptr_t) bw, 0,
-			gui_window_get_width(bw->window),
-			gui_window_get_height(bw->window),
-			false,
+			width, height, false,
 			post_urlenc, post_multipart, true, download);
 	free(url2);
 	if (!c) {
@@ -835,9 +836,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 
 	bw->download = download;
 	fetchcache_go(c, option_send_referer ? referer : 0,
-			browser_window_callback, (intptr_t) bw, 0,
-			gui_window_get_width(bw->window),
-			gui_window_get_height(bw->window),
+			browser_window_callback, (intptr_t) bw, 0, width, height,
 			post_urlenc, post_multipart, true);
 }
 

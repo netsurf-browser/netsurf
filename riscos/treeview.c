@@ -1490,3 +1490,20 @@ bool ro_gui_tree_launch_node(struct tree *tree, struct node *node) {
 int ro_gui_tree_help(int x, int y) {
 	return -1;
 }
+
+
+void ro_gui_tree_update_theme(struct tree *tree) {
+	if ((tree) && (tree->toolbar)) {
+		if (tree->toolbar->editor)
+			if (!ro_gui_theme_update_toolbar(NULL, tree->toolbar->editor))
+				tree->toolbar->editor = NULL;
+		if (!ro_gui_theme_update_toolbar(NULL, tree->toolbar)) {
+			ro_gui_theme_destroy_toolbar(tree->toolbar);
+			tree->toolbar = NULL;
+		}
+		ro_gui_theme_toolbar_editor_sync(tree->toolbar);
+		ro_gui_theme_attach_toolbar(tree->toolbar, (wimp_w)tree->handle);
+		tree_resized(tree);
+		xwimp_force_redraw((wimp_w)tree->handle, 0, -16384, 16384, 16384);
+	} 
+}

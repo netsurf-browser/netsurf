@@ -137,10 +137,9 @@ void gui_start_selection(struct gui_window *g)
 void ro_gui_selection_drag_end(struct gui_window *g, wimp_dragged *drag)
 {
 	wimp_auto_scroll_info scroll;
-	wimp_window_state state;
 	wimp_pointer pointer;
 	os_error *error;
-	int x, y;
+	os_coord pos;
 
 	LOG(("ending text selection drag"));
 
@@ -167,20 +166,10 @@ void ro_gui_selection_drag_end(struct gui_window *g, wimp_dragged *drag)
 		return;
 	}
 
-	state.w = g->window;
-	error = xwimp_get_window_state(&state);
-	if (error) {
-		LOG(("xwimp_get_window_state 0x%x : %s",
-				error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-		return;
-	}
-
-	x = window_x_units(drag->final.x0, &state) / 2 / g->option.scale;
-	y = -window_y_units(drag->final.y0, &state) / 2 / g->option.scale;
-
-	browser_window_mouse_drag_end(g->bw,
-		ro_gui_mouse_click_state(pointer.buttons), x, y);
+	if (ro_gui_window_to_window_pos(g, drag->final.x0, drag->final.y0, &pos))
+		browser_window_mouse_drag_end(g->bw,
+				ro_gui_mouse_click_state(pointer.buttons),
+				pos.x, pos.y);
 }
 
 
@@ -369,7 +358,7 @@ void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
 		os_error *error;
 		os_coord pos;
 
-		if (!window_screen_pos(g, x, y, &pos))
+		if (!ro_gui_window_to_screen_pos(g, x, y, &pos))
 			return;
 
 		msg.size = sizeof(msg);
@@ -510,15 +499,13 @@ void ro_gui_selection_dragging(wimp_message *message)
 	struct box *textarea = NULL;
 	struct box *text_box = NULL;
 	struct browser_window *bw;
-	wimp_window_state state;
 	struct content *content;
 	int gadget_box_x = 0;
 	int gadget_box_y = 0;
 	struct gui_window *g;
-	os_error *error;
+	os_coord pos;
 	int box_x = 0;
 	int box_y = 0;
-	int x, y;
 
 /* with autoscrolling, we will probably need to remember the gui_window and
    override the drag->w window handle which could be any window on the desktop */
@@ -535,20 +522,8 @@ void ro_gui_selection_dragging(wimp_message *message)
 		return;
 	}
 
-	state.w = drag->w;
-	error = xwimp_get_window_state(&state);
-	if (error) {
-		LOG(("xwimp_get_window_state: 0x%x: %s\n",
-				error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-		drag_claimed = false;
+	if (!ro_gui_window_to_window_pos(g, drag->pos.x, drag->pos.y, &pos))
 		return;
-	}
-
-	x = window_x_units(drag->pos.x, &state) / 2 /
-			g->option.scale;
-	y = -window_y_units(drag->pos.y, &state) / 2 /
-			g->option.scale;
 
 	bw = g->bw;
 	content = bw->current_content;
@@ -557,7 +532,7 @@ void ro_gui_selection_dragging(wimp_message *message)
 
 		struct box *box = content->data.html.layout;
 
-		while ((box = box_at_point(box, x, y, &box_x, &box_y, &content))) {
+		while ((box = box_at_point(box, pos.x, pos.y, &box_x, &box_y, &content))) {
 			if (box->style &&
 					box->style->visibility == CSS_VISIBILITY_HIDDEN)
 				continue;
@@ -591,8 +566,8 @@ void ro_gui_selection_dragging(wimp_message *message)
 		else
 			gui_window_set_pointer(g, GUI_POINTER_CARET);
 
-		text_box = textarea_get_position(textarea, x - gadget_box_x,
-					y - gadget_box_y, &char_offset, &pixel_offset);
+		text_box = textarea_get_position(textarea, pos.x - gadget_box_x,
+					pos.y - gadget_box_y, &char_offset, &pixel_offset);
 
 		caret_set_position(&ghost_caret, bw, text_box, char_offset, pixel_offset);
 		drag_claimed = true;
