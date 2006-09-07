@@ -548,6 +548,11 @@ void ro_gui_wimp_desktop_font(char *family, size_t family_size, int *psize,
 		goto failsafe;
 	}
 
+	if (font_handle == font_SYSTEM) {
+		/* Er, yeah; like that's ever gonna work with RUfl */
+		goto failsafe;
+	}
+
 	error = xfont_read_identifier(font_handle, NULL, &used);
 	if (error) {
 		LOG(("xfont_read_identifier: 0x%x: %s",
