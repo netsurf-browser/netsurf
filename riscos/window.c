@@ -2719,7 +2719,7 @@ bool ro_gui_window_dataload(struct gui_window *g, wimp_message *message)
 		return false;
 
 	if (!ro_gui_window_to_window_pos(g, message->data.data_xfer.pos.x,
-			message->data.data_xfer.pos.x, &pos))
+			message->data.data_xfer.pos.y, &pos))
 		return false;
 
 	content = bw->current_content;
