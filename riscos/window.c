@@ -1990,7 +1990,6 @@ void ro_gui_window_mouse_at(struct gui_window *g, wimp_pointer *pointer)
 		browser_window_mouse_track(g->bw,
 				ro_gui_mouse_drag_state(pointer->buttons),
 				pos.x, pos.y);
-	LOG(("(%i, %i) -> (%i, %i)", pointer->pos.x, pointer->pos.y, pos.x, pos.y));
 }
 
 
