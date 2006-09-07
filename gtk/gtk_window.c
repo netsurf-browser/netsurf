@@ -965,16 +965,6 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 
 }
 
-int gui_window_get_width(struct gui_window* g)
-{
-	return GTK_WIDGET(g->drawing_area)->allocation.width;
-}
-
-int gui_window_get_height(struct gui_window* g)
-{
-	return GTK_WIDGET(g->drawing_area)->allocation.height;
-}
-
 void gui_window_update_extent(struct gui_window *g)
 {
 	if (!g->bw->current_content)
@@ -1197,10 +1187,16 @@ bool gui_copy_to_clipboard(struct selection *s)
 }
 
 
-void gui_window_get_dimensions(struct gui_window *g, int *width, int *height)
+void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
+		bool scaled)
 {
-	*width = 1;
-	*height = 1;
+	*width = GTK_WIDGET(g->drawing_area)->allocation.width;
+	*height = GTK_WIDGET(g->drawing_area)->allocation.height;
+
+	if (scaled) {
+		*width /= g->scale;
+		*height /= g->scale;
+	}
 }
 
 void gui_window_position_frame(struct gui_window *g, int x0, int y0, int x1, int y1)
