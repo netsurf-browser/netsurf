@@ -752,7 +752,6 @@ void gui_window_position_frame(struct gui_window *g, int x0, int y0, int x1, int
 	wimp_window_state state;
 	os_error *error;
 	int px0, py1;
-	int toolbar_height = 0;
 	struct browser_window *bw;
 	struct browser_window *parent;
 	struct browser_window *top;
@@ -786,10 +785,8 @@ void gui_window_position_frame(struct gui_window *g, int x0, int y0, int x1, int
 		warn_user("WimpError", error->errmess);
 		return;
 	}
-	if (top->window->toolbar)
-		toolbar_height = ro_gui_theme_toolbar_full_height(top->window->toolbar);
 	px0 = state.visible.x0 - state.xscroll;
-	py1 = state.visible.y1 - state.yscroll - toolbar_height;
+	py1 = state.visible.y1 - state.yscroll;
 
 	/* get our current window state */
 	state.w = g->window;
@@ -1388,11 +1385,14 @@ void gui_window_set_scale(struct gui_window *g, float scale)
 	if (g->option.scale == scale)
 		return;
 	g->option.scale = scale;
-	g->reformat_pending = true;
 	c = g->bw->current_content;
-	if ((c) && (c->type != CONTENT_HTML))
+	if (c) {
+	  	/* todo: we should only call _update for contents that don't have a
+	  	 * reformat function and thus don't redraw themselves */
 		browser_window_update(g->bw, false);
-	gui_reformat_pending = true;
+		g->reformat_pending = true;
+		gui_reformat_pending = true;
+	}
 }
 
 
