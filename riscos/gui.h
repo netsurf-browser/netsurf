@@ -158,7 +158,6 @@ bool ro_gui_shift_pressed(void);
 bool ro_gui_ctrl_pressed(void);
 void ro_gui_window_scroll_end(struct gui_window *g, wimp_dragged *drag);
 void ro_gui_window_frame_resize_end(struct gui_window *g, wimp_dragged *drag);
-void ro_gui_window_set_scale(struct gui_window *g, float scale);
 void ro_gui_window_iconise(struct gui_window *g,
 		wimp_full_message_window_info *wi);
 bool ro_gui_window_navigate_up(struct gui_window *g, const char *url);
@@ -221,16 +220,6 @@ bool ro_gui_theme_install_apply(wimp_w w);
 /* icon numbers */
 #define ICON_STATUS_RESIZE 0
 #define ICON_STATUS_TEXT 1
-
-#define ICON_ZOOM_VALUE 1
-#define ICON_ZOOM_DEC 2
-#define ICON_ZOOM_INC 3
-#define ICON_ZOOM_75 5
-#define ICON_ZOOM_100 6
-#define ICON_ZOOM_150 7
-#define ICON_ZOOM_200 8
-#define ICON_ZOOM_CANCEL 9
-#define ICON_ZOOM_OK 10
 
 #define ICON_SAVE_ICON 0
 #define ICON_SAVE_PATH 1

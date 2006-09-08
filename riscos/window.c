@@ -1350,6 +1350,57 @@ bool gui_window_frame_resize_start(struct gui_window *g)
 
 
 /**
+ * Save the specified content as a link.
+ *
+ * \param  g  gui_window containing the content
+ * \param  c  the content to save
+ */
+
+void gui_window_save_as_link(struct gui_window *g, struct content *c)
+{
+	if (!c)
+		return;
+	ro_gui_save_prepare(GUI_SAVE_LINK_URL, c);
+	ro_gui_dialog_open_persistent(g->window, dialog_saveas, true);
+}
+
+
+/**
+ * Get the scale setting of a window
+ *
+ * \param  g	  gui window
+ * \return scale value (1.0 == normal scale)
+ */
+
+float gui_window_get_scale(struct gui_window *g)
+{
+  	return g->option.scale;
+}
+
+
+/**
+ * Set the scale setting of a window
+ *
+ * \param  g	  gui window
+ * \param  scale  scale value (1.0 == normal scale)
+ */
+
+void gui_window_set_scale(struct gui_window *g, float scale)
+{
+	struct content *c;
+	
+	if (g->option.scale == scale)
+		return;
+	g->option.scale = scale;
+	g->reformat_pending = true;
+	c = g->bw->current_content;
+	if ((c) && (c->type != CONTENT_HTML))
+		browser_window_update(g->bw, false);
+	gui_reformat_pending = true;
+}
+
+
+/**
  * Redraws the content for all windows.
  */
 
@@ -1635,16 +1686,14 @@ void ro_gui_window_open(wimp_open *open)
 	struct gui_window *g = (struct gui_window *)ro_gui_wimp_event_get_user_data(open->w);
 	int width = open->visible.x1 - open->visible.x0;
 	int height = open->visible.y1 - open->visible.y0;
-	int toolbar_height = 0;
+	int size, fheight, fwidth, toolbar_height = 0;
+	bool no_vscroll, no_hscroll;
+	float new_scale = 0;
 	struct content *content;
 	wimp_window_state state;
 	os_error *error;
-	int key_down = 0;
 	wimp_w parent;
 	bits linkage;
-	int size;
-	bool no_vscroll, no_hscroll;
-	int fheight, fwidth;
 
 	if (open->next == wimp_TOP && g->iconise_icon >= 0) {
 		/* window is no longer iconised, release its sprite number */
@@ -1759,15 +1808,13 @@ void ro_gui_window_open(wimp_open *open)
 	/* change extent if necessary */
 	if (g->old_width != width || g->old_height != height) {
 		if (content) {
-			if (g->old_width != width) {
-				xosbyte1(osbyte_SCAN_KEYBOARD, 1 ^ 0x80, 0, &key_down);
-				if (key_down)
-					g->option.scale = (g->option.scale * width) / g->old_width;
-			};
+		  	/* Ctrl-resize of a top-level window scales the content size */
+			if ((g->old_width > 0) && (g->old_width != width) && (!g->bw->parent) &&
+					(ro_gui_ctrl_pressed()))
+				new_scale = (g->option.scale * width) / g->old_width;
 			g->reformat_pending = true;
 			gui_reformat_pending = true;
 		}
-
 		g->old_width = width;
 		g->old_height = height;
 
@@ -1797,11 +1844,17 @@ void ro_gui_window_open(wimp_open *open)
 		return;
 	}
 
+	/* update the toolbar */
 	if (g->toolbar) {
 		ro_gui_theme_process_toolbar(g->toolbar, -1);
 		/* second resize updates to the new URL bar width */
 		ro_gui_url_complete_resize(g, open);
 	}
+	
+	/* set the new scale from a ctrl-resize. this must be done at the end as
+	 * it may cause a frameset recalculation based on the new window size. */
+	if (new_scale > 0)
+		browser_window_set_scale(g->bw, new_scale, true);
 }
 
 
@@ -3063,22 +3116,6 @@ void ro_gui_window_scroll_end(struct gui_window *g, wimp_dragged *drag)
 
 
 /**
- * Save the specified content as a link.
- *
- * \param  g  gui_window containing the content
- * \param  c  the content to save
- */
-
-void gui_window_save_as_link(struct gui_window *g, struct content *c)
-{
-	if (!c)
-		return;
-	ro_gui_save_prepare(GUI_SAVE_LINK_URL, c);
-	ro_gui_dialog_open_persistent(g->window, dialog_saveas, true);
-}
-
-
-/**
  * Completes resizing of a browser frame
  *
  * \param g  gui window
@@ -3089,26 +3126,6 @@ void ro_gui_window_frame_resize_end(struct gui_window *g, wimp_dragged *drag)
 	/* our clean-up is the same as for page scrolling */
 	ro_gui_window_scroll_end(g, drag);
 }
-
-
-/**
- * Alter the scale setting of a window
- *
- * \param  g	  gui window
- * \param  scale  scale value (1.0 == normal scale)
- */
-
-void ro_gui_window_set_scale(struct gui_window *g, float scale)
-{
-	struct content *c;
-	g->option.scale = scale;
-	g->reformat_pending = true;
-	c = g->bw->current_content;
-	if ((c) && (c->type != CONTENT_HTML))
-		browser_window_update(g->bw, false);
-	gui_reformat_pending = true;
-}
-
 
 /**
  * Import text file into window or its toolbar

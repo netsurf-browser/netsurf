@@ -60,6 +60,7 @@ struct browser_window *current_redraw_browser;
 /** fake content for <a> being saved as a link */
 struct content browser_window_href_content;
 
+static void browser_window_set_scale_internal(struct browser_window *bw, float scale);
 static void browser_window_resize_frame(struct browser_window *bw, int x, int y);
 static bool browser_window_resolve_frame_dimension(struct browser_window *bw,
 		struct browser_window *sibling, int x, int y, bool width, bool height);
@@ -405,7 +406,8 @@ void browser_window_recalculate_frameset(struct browser_window *bw) {
 
 			switch (window->frame_width.unit) {
 				case FRAME_DIMENSION_PIXELS:
-					widths[col][row] = window->frame_width.value;
+					widths[col][row] = window->frame_width.value *
+							gui_window_get_scale(window->window);
 					if (window->border) {
 						if (col != 0)
 							widths[col][row] += 1;
@@ -466,7 +468,8 @@ void browser_window_recalculate_frameset(struct browser_window *bw) {
 
 			switch (window->frame_height.unit) {
 				case FRAME_DIMENSION_PIXELS:
-					heights[col][row] = window->frame_height.value;
+					heights[col][row] = window->frame_height.value *
+							gui_window_get_scale(window->window);
 					if (window->border) {
 						if (row != 0)
 							heights[col][row] += 1;
@@ -539,6 +542,33 @@ void browser_window_recalculate_frameset(struct browser_window *bw) {
 				browser_window_recalculate_frameset(window);
 		}
 	}
+}
+
+
+/**
+ * Sets the scale of a browser window
+ *
+ * \param bw	The browser window to scale
+ * \param scale	The new scale
+ * \param all	Scale all windows in the tree (ie work up aswell as down)
+ */
+void browser_window_set_scale(struct browser_window *bw, float scale, bool all) {
+	while (bw->parent && all)
+		bw = bw->parent; 
+	browser_window_set_scale_internal(bw, scale);	
+}
+
+void browser_window_set_scale_internal(struct browser_window *bw, float scale) {
+  	int i;
+ 	
+  	gui_window_set_scale(bw->window, scale);
+  	
+	for (i = 0; i < (bw->cols * bw->rows); i++)
+		browser_window_set_scale_internal(&bw->children[i], scale);
+	for (i = 0; i < bw->iframe_count; i++)
+		browser_window_set_scale_internal(&bw->iframes[i], scale);
+	if (bw->children)
+		browser_window_recalculate_frameset(bw);
 }
 
 

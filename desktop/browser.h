@@ -199,6 +199,7 @@ void browser_window_recalculate_iframes(struct browser_window *bw);
 void browser_window_create_frameset(struct browser_window *bw,
 		struct content_html_frames *frameset);
 void browser_window_recalculate_frameset(struct browser_window *bw);
+void browser_window_set_scale(struct browser_window *bw, float scale, bool all);
 
 void browser_window_mouse_click(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y);

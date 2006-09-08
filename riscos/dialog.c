@@ -40,6 +40,13 @@
 #include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
 
+#define ICON_ZOOM_VALUE 1
+#define ICON_ZOOM_DEC 2
+#define ICON_ZOOM_INC 3
+#define ICON_ZOOM_FRAMES 5
+#define ICON_ZOOM_CANCEL 7
+#define ICON_ZOOM_OK 8
+
 /*	The maximum number of persistent dialogues
 */
 #define MAX_PERSISTENT 64
@@ -66,7 +73,6 @@ static struct {
 
 
 static bool ro_gui_dialog_openurl_apply(wimp_w w);
-static bool ro_gui_dialog_zoom_click(wimp_pointer *pointer);
 static bool ro_gui_dialog_zoom_apply(wimp_w w);
 
 /**
@@ -193,8 +199,7 @@ void ro_gui_dialog_init(void)
 	dialog_zoom = ro_gui_dialog_create("zoom");
 	ro_gui_wimp_event_register_numeric_field(dialog_zoom, ICON_ZOOM_VALUE,
 			ICON_ZOOM_INC, ICON_ZOOM_DEC, 10, 1600, 10, 0);
-	ro_gui_wimp_event_register_mouse_click(dialog_zoom,
-			ro_gui_dialog_zoom_click);
+	ro_gui_wimp_event_register_checkbox(dialog_zoom, ICON_ZOOM_FRAMES);
 	ro_gui_wimp_event_register_cancel(dialog_zoom, ICON_ZOOM_CANCEL);
 	ro_gui_wimp_event_register_ok(dialog_zoom, ICON_ZOOM_OK,
 			ro_gui_dialog_zoom_apply);
@@ -654,39 +659,13 @@ void ro_gui_save_options(void)
 	options_write("<NetSurf$ChoicesSave>");
 }
 
-
-/**
- * Handle clicks in the Scale view dialog.
- */
-
-bool ro_gui_dialog_zoom_click(wimp_pointer *pointer)
-{
-	switch (pointer->i) {
-		case ICON_ZOOM_75:
-			ro_gui_set_icon_integer(dialog_zoom,
-					ICON_ZOOM_VALUE, 75);
-			return true;
-		case ICON_ZOOM_100:
-			ro_gui_set_icon_integer(dialog_zoom,
-					ICON_ZOOM_VALUE, 100);
-			return true;
-		case ICON_ZOOM_150:
-			ro_gui_set_icon_integer(dialog_zoom,
-					ICON_ZOOM_VALUE, 150);
-			return true;
-		case ICON_ZOOM_200:
-			ro_gui_set_icon_integer(dialog_zoom,
-					ICON_ZOOM_VALUE, 200);
-			return true;
-	}
-	return false;
-}
-
 bool ro_gui_dialog_zoom_apply(wimp_w w) {
 	unsigned int scale;
+	bool all;
 
 	scale = atoi(ro_gui_get_icon_string(w, ICON_ZOOM_VALUE));
-	ro_gui_window_set_scale(ro_gui_current_zoom_gui, scale * 0.01);
+	all = ro_gui_get_icon_selected_state(w, ICON_ZOOM_FRAMES);
+	browser_window_set_scale(ro_gui_current_zoom_gui->bw, scale * 0.01, all);
 	return true;
 }
 
@@ -700,7 +679,9 @@ void ro_gui_dialog_prepare_zoom(struct gui_window *g)
 	char scale_buffer[8];
 	sprintf(scale_buffer, "%.0f", g->option.scale * 100);
 	ro_gui_set_icon_string(dialog_zoom, ICON_ZOOM_VALUE, scale_buffer);
-
+	ro_gui_set_icon_selected_state(dialog_zoom, ICON_ZOOM_FRAMES, true);
+	ro_gui_set_icon_shaded_state(dialog_zoom, ICON_ZOOM_FRAMES,
+			!(g->bw->parent));
 	ro_gui_current_zoom_gui = g;
 	ro_gui_wimp_event_memorise(dialog_zoom);
 }
