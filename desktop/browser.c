@@ -243,8 +243,8 @@ void browser_window_create_iframes(struct browser_window *bw,
 	index = 0;
 	for (cur = iframe; cur; cur = cur->next) {
 		window = &(bw->iframes[index++]);
-		if (iframe->url)
-			browser_window_go(window, iframe->url, NULL, true);
+		if (cur->url)
+			browser_window_go(window, cur->url, NULL, true);
 	}
 }
 
