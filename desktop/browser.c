@@ -555,7 +555,10 @@ void browser_window_recalculate_frameset(struct browser_window *bw) {
 void browser_window_set_scale(struct browser_window *bw, float scale, bool all) {
 	while (bw->parent && all)
 		bw = bw->parent; 
-	browser_window_set_scale_internal(bw, scale);	
+	browser_window_set_scale_internal(bw, scale);
+	if (bw->parent)
+		bw = bw->parent;
+	browser_window_recalculate_frameset(bw); 
 }
 
 void browser_window_set_scale_internal(struct browser_window *bw, float scale) {
@@ -567,8 +570,6 @@ void browser_window_set_scale_internal(struct browser_window *bw, float scale) {
 		browser_window_set_scale_internal(&bw->children[i], scale);
 	for (i = 0; i < bw->iframe_count; i++)
 		browser_window_set_scale_internal(&bw->iframes[i], scale);
-	if (bw->children)
-		browser_window_recalculate_frameset(bw);
 }
 
 
