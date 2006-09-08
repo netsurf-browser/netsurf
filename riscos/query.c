@@ -5,6 +5,7 @@
  * Copyright 2005 Adrian Lees <adrianl@users.sourceforge.net>
  */
 
+#define _GNU_SOURCE	/* for strnlen */
 #include <stdlib.h>
 #include <string.h>
 
@@ -274,7 +275,7 @@ bool ro_gui_query_apply(wimp_w w)
 {
 	struct gui_query_window *qw;
 	const query_callback *cb;
-	
+
 	qw = (struct gui_query_window *)ro_gui_wimp_event_get_user_data(w);
 	cb = qw->cb;
 	cb->confirm(qw->id, QUERY_YES, qw->pw);
@@ -289,7 +290,7 @@ bool ro_gui_query_click(wimp_pointer *pointer)
 {
 	struct gui_query_window *qw;
 	const query_callback *cb;
-	
+
 	qw = (struct gui_query_window *)ro_gui_wimp_event_get_user_data(pointer->w);
 	cb = qw->cb;
 
