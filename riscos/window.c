@@ -788,8 +788,8 @@ void gui_window_position_frame(struct gui_window *g, int x0, int y0, int x1, int
 	}
 	if (top->window->toolbar)
 		toolbar_height = ro_gui_theme_toolbar_full_height(top->window->toolbar);
-	px0 = state.visible.x0;
-	py1 = state.visible.y1 - toolbar_height;
+	px0 = state.visible.x0 - state.xscroll;
+	py1 = state.visible.y1 - state.yscroll - toolbar_height;
 
 	/* get our current window state */
 	state.w = g->window;
@@ -892,12 +892,8 @@ void gui_window_update_extent(struct gui_window *g)
 	g->old_height = -1;
 
 	/* scroll on toolbar height change */
-	if (g->toolbar) {
-		scroll = ro_gui_theme_height_change(g->toolbar);
-		state.yscroll -= scroll;
-		if (state.yscroll < 0)
-			state.yscroll = 0;
-	}
+	if (g->toolbar)
+		state.yscroll -= ro_gui_theme_height_change(g->toolbar);
 
 	/* only allow a further reformat if we've gained/lost scrollbars */
 	flags = state.flags & (wimp_WINDOW_HSCROLL | wimp_WINDOW_VSCROLL);
@@ -1749,7 +1745,7 @@ void ro_gui_window_open(wimp_open *open)
 				((fheight > size) ||
 					(g->bw->browser_window_type == BROWSER_WINDOW_NORMAL)) &&
 				((content && width < content->width * 2 * g->option.scale) ||
-					(g->bw->scrolling == SCROLLING_YES))) {
+					(g->bw->browser_window_type == BROWSER_WINDOW_NORMAL))) {
 			if (!(state.flags & wimp_WINDOW_HSCROLL)) {
 				height -= size;
 				state.visible.y0 += size;
