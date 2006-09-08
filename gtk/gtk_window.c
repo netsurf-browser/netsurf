@@ -128,7 +128,6 @@ static gboolean nsgtk_history_button_press_event(GtkWidget *, GdkEventButton *,
 						gpointer);
 
 static void nsgtk_attach_menu_handlers(GladeXML *, gpointer);
-static void nsgtk_window_change_scale(struct gui_window *, float);
 
 #define MENUEVENT(x) { #x, G_CALLBACK(nsgtk_on_##x##_activate) }
 #define MENUPROTO(x) static gboolean nsgtk_on_##x##_activate( \
@@ -560,39 +559,23 @@ MENUHANDLER(choices)
 	return TRUE;
 }
 
-void nsgtk_window_change_scale(struct gui_window *g, float scale)
-{
-	g->scale = scale;
-
-	if (g->bw->current_content != NULL)
-		gui_window_update_extent(g);
-
-	gtk_widget_queue_draw(GTK_WIDGET(g->drawing_area));
-}
-
 MENUHANDLER(zoom_in)
 {
-	struct gui_window *gw = g;
-
-	nsgtk_window_change_scale(gw, gw->scale + 0.05);
+	browser_window_set_scale(g->bw, g->scale + 0.05, true);
 
 	return TRUE;
 }
 
 MENUHANDLER(normal_size)
 {
-	struct gui_window *gw = g;
-
-	nsgtk_window_change_scale(gw, 1.00);
+	browser_window_set_scale(g->bw, 1.0, true);
 
 	return TRUE;
 }
 
 MENUHANDLER(zoom_out)
 {
-	struct gui_window *gw = g;
-
-	nsgtk_window_change_scale(gw, gw->scale - 0.05);
+	browser_window_set_scale(g->bw, g->scale - 0.05, true);
 
 	return TRUE;
 }
@@ -962,6 +945,24 @@ bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 
 void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 {
+
+}
+
+float gui_window_get_scale(struct gui_window *g)
+{
+  	return g->scale;
+}
+
+void gui_window_set_scale(struct gui_window *g, float scale)
+{
+	if (g->scale == scale)
+		return;
+	g->scale = scale;
+
+	if (g->bw->current_content != NULL)
+		gui_window_update_extent(g);
+
+	gtk_widget_queue_draw(GTK_WIDGET(g->drawing_area));
 
 }
 
