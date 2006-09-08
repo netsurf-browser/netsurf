@@ -133,10 +133,9 @@ query_id query_user(const char *query, const char *detail,
 		width = len * 16;
 	}
 	if (!query_yes_width) query_yes_width = icn->extent.x1 - icn->extent.x0;
+	width += 44;
 	if (width < query_yes_width)
 		width = query_yes_width;
-	else
-		width += 44;
 	icn->extent.x0 = x = icn->extent.x1 - width;
 
 	/* set the text of the 'No' button and size accordingly */
@@ -153,10 +152,9 @@ query_id query_user(const char *query, const char *detail,
 			error->errnum, error->errmess));
 		width = len * 16;
 	}
+	width += 28;
 	if (width < query_no_width)
 		width = query_no_width;
-	else
-		width += 28;
 	icn->extent.x0 = icn->extent.x1 - width;
 
 	error = xwimp_create_window(query_template, &qw->window);
