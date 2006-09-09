@@ -1381,7 +1381,7 @@ float gui_window_get_scale(struct gui_window *g)
 void gui_window_set_scale(struct gui_window *g, float scale)
 {
 	struct content *c;
-	
+
 	if (g->option.scale == scale)
 		return;
 	g->option.scale = scale;
@@ -1846,7 +1846,7 @@ void ro_gui_window_open(wimp_open *open)
 		/* second resize updates to the new URL bar width */
 		ro_gui_url_complete_resize(g, open);
 	}
-	
+
 	/* set the new scale from a ctrl-resize. this must be done at the end as
 	 * it may cause a frameset recalculation based on the new window size. */
 	if (new_scale > 0)
@@ -2282,7 +2282,7 @@ bool ro_gui_window_keypress(wimp_key *key)
 	char *toolbar_url;
 	os_error *error;
 	wimp_pointer pointer;
-	float old_scale;
+	float scale;
 	wchar_t c = (wchar_t)key->c;
 
 	/* Find gui window */
@@ -2520,36 +2520,38 @@ bool ro_gui_window_keypress(wimp_key *key)
 		case 23:       /* CTRL+W (Zoom in) */
 			if (!content)
 				break;
-			old_scale = g->option.scale;
+			scale = g->option.scale;
 			if (ro_gui_shift_pressed() && c == 17)
-				g->option.scale = ((int) (10 * g->option.scale -
-						1)) / 10.0;
+				scale = g->option.scale - 0.1;
 			else if (ro_gui_shift_pressed() && c == 23)
-				g->option.scale = ((int) (10 * g->option.scale +
-						1)) / 10.0;
+				scale = g->option.scale + 0.1;
 			else if (c == 17) {
-				for (int i = SCALE_SNAP_TO_SIZE - 1; i >= 0; i--)
-					if (scale_snap_to[i] < old_scale) {
-						g->option.scale = scale_snap_to[i];
+				for (int i = SCALE_SNAP_TO_SIZE - 1;
+						i >= 0; i--)
+					if (scale_snap_to[i] <
+							g->option.scale) {
+						scale = scale_snap_to[i];
 						break;
 					}
 			} else {
-				for (unsigned int i = 0; i < SCALE_SNAP_TO_SIZE; i++)
-					if (scale_snap_to[i] > old_scale) {
-						g->option.scale = scale_snap_to[i];
+				for (unsigned int i = 0;
+						i < SCALE_SNAP_TO_SIZE; i++)
+					if (scale_snap_to[i] >
+							g->option.scale) {
+						scale = scale_snap_to[i];
 						break;
 					}
 			}
-			if (g->option.scale < scale_snap_to[0])
-				g->option.scale = scale_snap_to[0];
-			if (g->option.scale > scale_snap_to[SCALE_SNAP_TO_SIZE - 1])
-				g->option.scale =
-						scale_snap_to[SCALE_SNAP_TO_SIZE - 1];
-			if (old_scale != g->option.scale) {
-				g->reformat_pending = true;
-				if ((content) && (content->type != CONTENT_HTML))
-					browser_window_update(g->bw, false);
-				gui_reformat_pending = true;
+			if (scale < scale_snap_to[0])
+				scale = scale_snap_to[0];
+			if (scale > scale_snap_to[SCALE_SNAP_TO_SIZE - 1])
+				scale = scale_snap_to[SCALE_SNAP_TO_SIZE - 1];
+			if (g->option.scale != scale) {
+				browser_window_set_scale(g->bw, scale, true);
+//				g->reformat_pending = true;
+//				if ((content) && (content->type != CONTENT_HTML))
+//					browser_window_update(g->bw, false);
+//				gui_reformat_pending = true;
 			}
 			return true;
 
