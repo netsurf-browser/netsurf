@@ -2391,7 +2391,9 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 	 * Consecutive BR may not be present. These constraints are satisfied
 	 * by using a 0-length TEXT for blank lines. */
 
-	xmlChar *text, *current;
+	xmlChar *current;
+	xmlNode *n2;
+	xmlBufferPtr buf;
 	struct box *inline_container, *inline_box, *br_box;
 	char *s;
 	size_t len;
@@ -2415,20 +2417,32 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 	inline_container->type = BOX_INLINE_CONTAINER;
 	box_add_child(box, inline_container);
 
-	current = text = xmlNodeGetContent(n);
+	n2 = n->children;
+	buf = xmlBufferCreate();
+	while(n2) {
+		int ret = xmlNodeDump(buf,n2->doc,n2,0,0);
+		if (ret == -1) {
+			xmlBufferFree(buf);
+			return false;
+		}
+		n2 = n2->next;
+	}
+	current = buf->content;
 	while (1) {
 		/* BOX_TEXT */
 		len = strcspn(current, "\r\n");
 		s = talloc_strndup(content, current, len);
 		if (!s) {
-			xmlFree(content);
+			xmlBufferFree(buf);
 			return false;
 		}
 
 		inline_box = box_create(box->style, 0, 0, box->title, 0,
 				content);
-		if (!inline_box)
+		if (!inline_box) {
+			xmlBufferFree(buf);
 			return false;
+		}
 		inline_box->type = BOX_TEXT;
 		inline_box->text = s;
 		inline_box->length = len;
@@ -2441,8 +2455,10 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 
 		/* BOX_BR */
 		br_box = box_create(box->style, 0, 0, box->title, 0, content);
-		if (!br_box)
+		if (!br_box) {
+			xmlBufferFree(buf);
 			return false;
+		}
 		br_box->type = BOX_BR;
 		box_add_child(inline_container, br_box);
 
@@ -2451,7 +2467,7 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 		else
 			current++;
 	}
-	xmlFree(text);
+	xmlBufferFree(buf);
 
 	if (content->data.html.forms)
 		form_add_control(content->data.html.forms, box->gadget);

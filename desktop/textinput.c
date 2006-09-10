@@ -75,7 +75,7 @@ static void textarea_reflow(struct browser_window *bw, struct box *textarea,
 		struct box *inline_container);
 static bool word_left(const char *text, int *poffset, int *pchars);
 static bool word_right(const char *text, int len, int *poffset, int *pchars);
-
+static bool ensure_caret_visible(struct box *textarea);
 
 /**
  * Remove the given text caret from the window by invalidating it
@@ -243,27 +243,25 @@ void browser_window_textarea_click(struct browser_window *bw,
 	 * constraints are satisfied by using a 0-length INLINE for blank
 	 * lines. */
 
-	int char_offset = 0, pixel_offset = 0, new_scroll_y;
+	int char_offset = 0, pixel_offset = 0;
 	struct box *inline_container = textarea->children;
 	struct box *text_box;
+	bool scrolled;
 
 	text_box = textarea_get_position(textarea, x, y,
 			&char_offset, &pixel_offset);
-
-	/* scroll to place the caret in the centre of the visible region */
-	new_scroll_y = inline_container->y + text_box->y +
-			text_box->height / 2 -
-			textarea->height / 2;
-	if (textarea->descendant_y1 - textarea->height < new_scroll_y)
-		new_scroll_y = textarea->descendant_y1 - textarea->height;
-	if (new_scroll_y < 0)
-		new_scroll_y = 0;
-	box_y += textarea->scroll_y - new_scroll_y;
 
 	textarea->gadget->caret_inline_container = inline_container;
 	textarea->gadget->caret_text_box = text_box;
 	textarea->gadget->caret_box_offset = char_offset;
 	textarea->gadget->caret_pixel_offset = pixel_offset;
+
+	box_x += textarea->scroll_x;
+	box_y += textarea->scroll_y;
+	scrolled = ensure_caret_visible(textarea);
+	box_x -= textarea->scroll_x;
+	box_y -= textarea->scroll_y;
+
 	browser_window_place_caret(bw,
 			box_x + inline_container->x + text_box->x +
 			pixel_offset,
@@ -274,10 +272,8 @@ void browser_window_textarea_click(struct browser_window *bw,
 			browser_window_textarea_move_caret,
 			textarea);
 
-	if (new_scroll_y != textarea->scroll_y) {
-		textarea->scroll_y = new_scroll_y;
+	if (scrolled)
 		browser_redraw_box(bw->current_content, textarea);
-	}
 }
 
 
@@ -298,11 +294,10 @@ void browser_window_textarea_callback(struct browser_window *bw,
 	struct box *new_text;
 	size_t char_offset = textarea->gadget->caret_box_offset;
 	int pixel_offset = textarea->gadget->caret_pixel_offset;
-	int new_scroll_y;
 	int box_x, box_y;
 	char utf8[6];
 	unsigned int utf8_len;
-	bool reflow = false;
+	bool scrolled,reflow = false;
 
 	/* box_dump(textarea, 0); */
 	LOG(("key %i at %i in '%.*s'", key, char_offset,
@@ -674,15 +669,11 @@ void browser_window_textarea_callback(struct browser_window *bw,
 	textarea->gadget->caret_box_offset = char_offset;
 	textarea->gadget->caret_pixel_offset = pixel_offset;
 
-	/* scroll to place the caret in the centre of the visible region */
-	new_scroll_y = inline_container->y + text_box->y +
-			text_box->height / 2 -
-			textarea->height / 2;
-	if (textarea->descendant_y1 - textarea->height < new_scroll_y)
-		new_scroll_y = textarea->descendant_y1 - textarea->height;
-	if (new_scroll_y < 0)
-		new_scroll_y = 0;
-	box_y += textarea->scroll_y - new_scroll_y;
+	box_x += textarea->scroll_x;
+	box_y += textarea->scroll_y;
+	scrolled = ensure_caret_visible(textarea);
+	box_x -= textarea->scroll_x;
+	box_y -= textarea->scroll_y;
 
 	browser_window_place_caret(bw,
 			box_x + inline_container->x + text_box->x +
@@ -694,10 +685,8 @@ void browser_window_textarea_callback(struct browser_window *bw,
 			browser_window_textarea_move_caret,
 			textarea);
 
-	if (new_scroll_y != textarea->scroll_y || reflow) {
-		textarea->scroll_y = new_scroll_y;
+	if (scrolled || reflow)
 		browser_redraw_box(bw->current_content, textarea);
-	}
 }
 
 
@@ -1904,5 +1893,41 @@ bool word_right(const char *text, int len, int *poffset, int *pchars)
 	if (pchars) *pchars = nchars;
 
 	return success;
+}
+
+/**
+ * Adjust scroll offsets so that the caret is visible
+ * \param textarea  textarea box
+ * \return true if a change in scroll offsets has occured
+*/
+
+bool ensure_caret_visible(struct box *textarea)
+{
+	int cx,cy;
+	int scrollx,scrolly;
+	scrollx = textarea->scroll_x;
+	scrolly = textarea->scroll_y;
+	assert(textarea->gadget);
+	/* Calculate the caret coordinates */
+	cx = textarea->gadget->caret_pixel_offset;
+	cy = textarea->gadget->caret_text_box->y;
+	/* Ensure they are visible */
+	if (!box_hscrollbar_present(textarea))
+		scrollx = 0;
+	else if (cx-textarea->scroll_x < 0)
+		scrollx = cx;
+	else if (cx > textarea->scroll_x+textarea->width)
+		scrollx = cx-textarea->width;
+	if (!box_vscrollbar_present(textarea))
+		scrolly = 0;
+	else if (cy-textarea->scroll_y < 0)
+		scrolly = cy;
+	else if (cy+textarea->gadget->caret_text_box->height > textarea->scroll_y+textarea->height)
+		scrolly = (cy+textarea->gadget->caret_text_box->height)-textarea->height;
+	if ((scrollx == textarea->scroll_x) && (scrolly == textarea->scroll_y))
+		return false;
+	textarea->scroll_x = scrollx;
+	textarea->scroll_y = scrolly;
+	return true;
 }
 

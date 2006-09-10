@@ -60,7 +60,7 @@ static void find_sides(struct box *fl, int y0, int y1,
 		int *x0, int *x1, struct box **left, struct box **right);
 static void layout_minmax_inline_container(struct box *inline_container);
 static int line_height(struct css_style *style);
-static bool layout_line(struct box *first, int width, int *y,
+static bool layout_line(struct box *first, int *width, int *y,
 		int cx, int cy, struct box *cont, bool indent,
 		bool has_text_children,
 		struct content *content, struct box **next_box);
@@ -523,9 +523,14 @@ void layout_block_find_dimensions(int available_width, struct box *box)
 	if (style->overflow == CSS_OVERFLOW_SCROLL ||
 			style->overflow == CSS_OVERFLOW_AUTO) {
 		/* make space for scrollbars */
-		box->width -= SCROLLBAR_WIDTH;
-		box->padding[RIGHT] += SCROLLBAR_WIDTH;
-		box->padding[BOTTOM] += SCROLLBAR_WIDTH;
+		if ((style->overflow == CSS_OVERFLOW_SCROLL) || box_hscrollbar_present(box)) {
+			box->height -= SCROLLBAR_WIDTH;
+			box->padding[BOTTOM] += SCROLLBAR_WIDTH;
+		}
+		if ((style->overflow == CSS_OVERFLOW_SCROLL) || box_vscrollbar_present(box)) {
+			box->width -= SCROLLBAR_WIDTH;
+			box->padding[RIGHT] += SCROLLBAR_WIDTH;
+		}
 	}
 
 	if (margin[TOP] == AUTO)
@@ -809,6 +814,7 @@ bool layout_inline_container(struct box *inline_container, int width,
 	bool has_text_children;
 	struct box *c, *next;
 	int y = 0;
+	int curwidth,maxwidth = width;
 
 	assert(inline_container->type == BOX_INLINE_CONTAINER);
 
@@ -819,17 +825,20 @@ bool layout_inline_container(struct box *inline_container, int width,
 	for (c = inline_container->children; c; c = c->next)
 		if ((!c->object && c->text && c->length) || c->type == BOX_BR)
 			has_text_children = true;
-	
+
+	/** \todo fix wrapping so that a box with horizontal scrollbar will shrink back to 'width' if no word is wider than 'width' (Or just set curwidth = width and have the multiword lines wrap to the min width) */
 	for (c = inline_container->children; c; ) {
 		LOG(("c %p", c));
-		if (!layout_line(c, width, &y, cx, cy + y, cont, first_line,
+		curwidth = inline_container->width;
+		if (!layout_line(c, &curwidth, &y, cx, cy + y, cont, first_line,
 				has_text_children, content, &next))
 			return false;
+		maxwidth = max(maxwidth,curwidth);
 		c = next;
 		first_line = false;
 	}
 
-	inline_container->width = width;
+	inline_container->width = maxwidth;
 	inline_container->height = y;
 
 	return true;
@@ -911,7 +920,8 @@ int line_height(struct css_style *style)
  * Position a line of boxes in inline formatting context.
  *
  * \param  first   box at start of line
- * \param  width   available width
+ * \param  width   available width on input, updated with actual width on output
+ *                 (may be incorrect if the line gets split?)
  * \param  y	   coordinate of top of line, updated on exit to bottom
  * \param  cx	   coordinate of left of line relative to cont
  * \param  cy	   coordinate of top of line relative to cont
@@ -923,14 +933,14 @@ int line_height(struct css_style *style)
  * \return  true on success, false on memory exhaustion
  */
 
-bool layout_line(struct box *first, int width, int *y,
+bool layout_line(struct box *first, int *width, int *y,
 		int cx, int cy, struct box *cont, bool indent,
 		bool has_text_children,
 		struct content *content, struct box **next_box)
 {
 	int height, used_height;
 	int x0 = 0;
-	int x1 = width;
+	int x1 = *width;
 	int x, h, x_previous;
 	struct box *left;
 	struct box *right;
@@ -944,7 +954,7 @@ bool layout_line(struct box *first, int width, int *y,
 	unsigned int i;
 
 	LOG(("first %p, first->text '%.*s', width %i, y %i, cx %i, cy %i",
-			first, (int) first->length, first->text, width,
+			first, (int) first->length, first->text, *width,
 			*y, cx, cy));
 
 	/* find sides at top of line */
@@ -955,7 +965,7 @@ bool layout_line(struct box *first, int width, int *y,
 	x1 -= cx;
 
 	if (indent)
-		x0 += layout_text_indent(first->parent->parent->style, width);
+		x0 += layout_text_indent(first->parent->parent->style, *width);
 
 	if (x1 < x0)
 		x1 = x0;
@@ -990,7 +1000,7 @@ bool layout_line(struct box *first, int width, int *y,
 
 		if (b->type == BOX_INLINE_BLOCK) {
 			if (b->width == UNKNOWN_WIDTH)
-				if (!layout_float(b, width, content))
+				if (!layout_float(b, *width, content))
 					return false;
 			/** \todo  should margin be included? spec unclear */
 			h = b->border[TOP] + b->padding[TOP] + b->height +
@@ -1007,7 +1017,7 @@ bool layout_line(struct box *first, int width, int *y,
 
 		if (b->type == BOX_INLINE) {
 			/* calculate borders, margins, and padding */
-			layout_find_dimensions(width, b->style,
+			layout_find_dimensions(*width, b->style,
 					0, 0, b->margin, b->padding, b->border);
 			for (i = 0; i != 4; i++)
 				if (b->margin[i] == AUTO)
@@ -1076,7 +1086,7 @@ bool layout_line(struct box *first, int width, int *y,
 						length, b->style);
 				break;
 			case CSS_WIDTH_PERCENT:
-				b->width = width *
+				b->width = *width *
 						b->style->width.value.percent /
 						100;
 				break;
@@ -1141,14 +1151,14 @@ bool layout_line(struct box *first, int width, int *y,
 
 	/* find new sides using this height */
 	x0 = cx;
-	x1 = cx + width;
+	x1 = cx + *width;
 	find_sides(cont->float_children, cy, cy + height, &x0, &x1,
 			&left, &right);
 	x0 -= cx;
 	x1 -= cx;
 
 	if (indent)
-		x0 += layout_text_indent(first->parent->parent->style, width);
+		x0 += layout_text_indent(first->parent->parent->style, *width);
 
 	if (x1 < x0)
 		x1 = x0;
@@ -1214,7 +1224,7 @@ bool layout_line(struct box *first, int width, int *y,
 			d = b->children;
 			d->float_children = 0;
 
-			if (!layout_float(d, width, content))
+			if (!layout_float(d, *width, content))
 				return false;
 			d->x = d->margin[LEFT] + d->border[LEFT];
 			d->y = d->margin[TOP] + d->border[TOP];
@@ -1242,7 +1252,7 @@ bool layout_line(struct box *first, int width, int *y,
 				b->y = cy;
 			} else {
 				/* doesn't fit: place below */
-				place_float_below(b, width,
+				place_float_below(b, *width,
 						cx, cy + height + 1, cont);
 			}
 			if (cont->float_children == b) {
@@ -1427,6 +1437,7 @@ bool layout_line(struct box *first, int width, int *y,
 	if (move_y)
 		*y += used_height;
 	*next_box = b;
+	*width = x; /* return actual width */
 	return true;
 }
 
