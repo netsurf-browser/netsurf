@@ -97,6 +97,10 @@ OBJDIR_GTK = $(shell $(SYSTEM_CC) -dumpmachine)-gtk
 SOURCES_GTK=$(OBJECTS_GTK:.o=.c)
 OBJS_GTK=$(OBJECTS_GTK:%.o=$(OBJDIR_GTK)/%.o)
 
+# Default target - platform specific files may specify special-case rules for
+# various files.
+default: riscos
+
 # Inclusion of platform specific files has to occur after the OBJDIR stuff as
 # that is referred to in the files
 
@@ -132,8 +136,10 @@ CFLAGS_GTK = -Dnsgtk -std=c9x -D_BSD_SOURCE -D_POSIX_C_SOURCE -Dgtk \
 # If you pass -std=<whatever> it appears to define __STRICT_ANSI__
 # This causes use of functions such as vsnprintf to fail (as Cygwin's header
 # files surround declarations of such things with #ifndef __STRICT_ANSI__)
+ifneq ($(OS),riscos)
 ifeq ($(shell echo $$OS),Windows_NT)
 CFLAGS_GTK += -U__STRICT_ANSI__
+endif
 endif
 
 AFLAGS_RISCOS = -I..,. $(PLATFORM_AFLAGS_RISCOS)
@@ -196,16 +202,6 @@ $(OBJDIR_NCOS)/%.o : %.s
 	@echo "==> $<"
 	$(ASM) -o $@ -c $(AFLAGS_NCOS) $<
 
-# special cases
-css/css_enum.c css/css_enum.h: css/css_enums css/makeenum
-	cd ..; perl netsurf/css/makeenum netsurf/css/css_enum < netsurf/css/css_enums
-css/parser.c css/parser.h: css/parser.y
-	-cd css; lemon parser.y
-css/scanner.c: css/scanner.l
-	cd css; re2c -s scanner.l > scanner.c
-utils/translit.c: transtab
-	cd utils; perl tt2code < transtab > translit.c
-
 # Generate dependencies.
 # To disable automatic regeneration of dependencies (eg. if perl is not
 # available), remove */*.[ch] from the line below.
@@ -218,10 +214,3 @@ depend: */*.[ch]
 	@perl scandeps netsurf $(OBJDIR_RISCOS) $(OBJDIR_RISCOS_SMALL) $(OBJDIR_NCOS) $(OBJDIR_DEBUG) $(OBJDIR_GTK) -- $^ > depend
 
 include depend
-
-# remove generated files
-clean:
-	-rm $(OBJDIR_RISCOS)/* $(OBJDIR_RISCOS_SMALL)/* $(OBJDIR_NCOS)/* \
-		$(OBJDIR_DEBUG)/* $(OBJDIR_GTK)/* \
-		css/css_enum.c css/css_enum.h \
-		css/parser.c css/parser.h css/scanner.c css/scanner.h

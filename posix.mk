@@ -27,3 +27,20 @@ endif
 
 RUNIMAGE = !NetSurf/!RunImage,ff8
 NCRUNIMAGE = !NCNetSurf/!RunImage,ff8
+
+# special cases - in here, cos RISC OS can't cope :(
+css/css_enum.c css/css_enum.h: css/css_enums css/makeenum
+	cd ..; perl netsurf/css/makeenum netsurf/css/css_enum < netsurf/css/css_enums
+css/parser.c css/parser.h: css/parser.y
+	-cd css; lemon parser.y
+css/scanner.c: css/scanner.l
+	cd css; re2c -s scanner.l > scanner.c
+utils/translit.c: transtab
+	cd utils; perl tt2code < transtab > translit.c
+
+# remove generated files - again, RISC OS fails it
+clean:
+	-rm $(OBJDIR_RISCOS)/* $(OBJDIR_RISCOS_SMALL)/* $(OBJDIR_NCOS)/* \
+		$(OBJDIR_DEBUG)/* $(OBJDIR_GTK)/* \
+		css/css_enum.c css/css_enum.h \
+		css/parser.c css/parser.h css/scanner.c
