@@ -1220,19 +1220,30 @@ bool browser_window_textarea_paste_text(struct browser_window *bw,
 		utf8 = ++p;
 	}
 
+//	textarea->gadget->caret_inline_container = inline_container;
+	textarea->gadget->caret_text_box = text_box;
+	textarea->gadget->caret_box_offset = char_offset;
+
 	if (update) {
 		int box_x, box_y;
 
 		/* reflow textarea preserving width and height */
 		textarea_reflow(bw, textarea, inline_container);
+		/* reflowing may have broken our caret offset */
+		if(textarea->gadget->caret_box_offset > text_box->length)
+			char_offset = textarea->gadget->caret_box_offset = text_box->length;
 
 		nsfont_width(text_box->style, text_box->text,
 				char_offset, &pixel_offset);
 
-		box_x -= textarea->scroll_x;
-		box_y -= textarea->scroll_y;
+		textarea->gadget->caret_pixel_offset = pixel_offset;
 
 		box_coords(textarea, &box_x, &box_y);
+		box_x += textarea->scroll_x;
+		box_y += textarea->scroll_y;
+		ensure_caret_visible(textarea);
+		box_x -= textarea->scroll_x;
+		box_y -= textarea->scroll_y;
 
 		browser_window_place_caret(bw,
 				box_x + inline_container->x + text_box->x +
@@ -1244,14 +1255,9 @@ bool browser_window_textarea_paste_text(struct browser_window *bw,
 				browser_window_textarea_move_caret,
 				textarea);
 
-		textarea->gadget->caret_pixel_offset = pixel_offset;
-
 		browser_redraw_box(bw->current_content, textarea);
-	}
 
-//	textarea->gadget->caret_inline_container = inline_container;
-	textarea->gadget->caret_text_box = text_box;
-	textarea->gadget->caret_box_offset = char_offset;
+	}
 
 	return success;
 }
