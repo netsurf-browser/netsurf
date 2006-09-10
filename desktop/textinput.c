@@ -1199,6 +1199,8 @@ bool browser_window_textarea_paste_text(struct browser_window *bw,
 			return false;
 
 		char_offset += utf8_len;
+		if (p == ep)
+			break;
 
 		new_text = textarea_insert_break(bw, text_box, char_offset);
 		if (!new_text) {

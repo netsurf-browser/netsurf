@@ -43,7 +43,8 @@
 /** check whether the given text box is in the same number space as the
     current selection; number spaces are identified by their uppermost nybble */
 
-#define SAME_SPACE(s, offset) (((s)->max_idx & 0xF0000000U) == ((offset) & 0xF0000000U))
+#define NUMBER_SPACE(x) ((x) & 0xF0000000U)
+#define SAME_SPACE(s, offset) (NUMBER_SPACE((s)->max_idx) == NUMBER_SPACE(offset))
 
 
 struct rdw_info {
@@ -69,7 +70,8 @@ static bool save_handler(const char *text, size_t length, bool space,
 static bool selected_part(struct box *box, unsigned start_idx, unsigned end_idx,
 		unsigned *start_offset, unsigned *end_offset);
 static bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
-		seln_traverse_handler handler, void *handle);
+		unsigned int num_space, seln_traverse_handler handler,
+		void *handle);
 static struct box *get_box(struct box *b, unsigned offset, int *pidx);
 
 
@@ -409,13 +411,15 @@ bool selected_part(struct box *box, unsigned start_idx, unsigned end_idx,
  * \param  box        box subtree
  * \param  start_idx  start of range within textual representation (bytes)
  * \param  end_idx    end of range
+ * \param  num_space  number space of the selection
  * \param  handler    handler function to call
  * \param  handle     handle to pass
  * \return false iff traversal abandoned part-way through
  */
 
 bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
-		seln_traverse_handler handler, void *handle)
+		unsigned int num_space, seln_traverse_handler handler,
+		void *handle)
 {
 	struct box *child;
 	size_t box_length;
@@ -429,7 +433,7 @@ bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 	child = box->children;
 
 	box_length = box->length + box->space;  /* include trailing space */
-	if (IS_TEXT(box)) {
+	if (IS_TEXT(box) && (num_space == NUMBER_SPACE(box->byte_offset))) {
 		unsigned start_offset;
 		unsigned end_offset;
 
@@ -465,7 +469,7 @@ bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 			/* read before calling the handler in case it modifies the tree */
 			struct box *next = child->next;
 
-			if (!traverse_tree(child, start_idx, end_idx, handler, handle))
+			if (!traverse_tree(child, start_idx, end_idx, num_space, handler, handle))
 				return false;
 
 			child = next;
@@ -493,7 +497,7 @@ bool selection_traverse(struct selection *s, seln_traverse_handler handler, void
 		return true;	/* easy case, nothing to do */
 
 	if (s->root)
-		return traverse_tree(s->root, s->start_idx, s->end_idx, handler, handle);
+		return traverse_tree(s->root, s->start_idx, s->end_idx, NUMBER_SPACE(s->max_idx), handler, handle);
 
 	c = s->bw->current_content;
 	if (!c) return true;
@@ -569,7 +573,7 @@ void selection_redraw(struct selection *s, unsigned start_idx, unsigned end_idx)
 	rdw.inited = false;
 
 	if (s->root) {
-		if (!traverse_tree(s->root, start_idx, end_idx, redraw_handler, &rdw))
+		if (!traverse_tree(s->root, start_idx, end_idx, NUMBER_SPACE(s->max_idx), redraw_handler, &rdw))
 			return;
 	}
 	else {
