@@ -17,6 +17,8 @@
 # "riscos", "riscos_small", "ncos", and "riscos_debug" can be compiled under
 # RISC OS, or cross-compiled using GCCSDK.
 
+SYSTEM_CC ?= gcc
+
 OBJECTS_COMMON = content.o fetch.o fetchcache.o urldb.o		# content/
 OBJECTS_COMMON += css.o css_enum.o parser.o ruleset.o scanner.o	# css/
 OBJECTS_COMMON += box.o box_construct.o box_normalise.o directory.o \
@@ -85,20 +87,20 @@ OBJDIR_NCOS = arm-ncos-aof
 SOURCES_NCOS=$(OBJECTS_NCOS:.o=.c)
 OBJS_NCOS=$(OBJECTS_NCOS:%.o=$(OBJDIR_NCOS)/%.o)
 
-OBJDIR_DEBUG = $(shell $(CC_DEBUG) -dumpmachine)-debug
+OBJDIR_DEBUG = $(shell $(SYSTEM_CC) -dumpmachine)-debug
 SOURCES_DEBUG=$(OBJECTS_DEBUG:.o=.c)
 OBJS_DEBUG=$(OBJECTS_DEBUG:%.o=$(OBJDIR_DEBUG)/%.o)
 
 OBJS_DEBUGRO=$(OBJECTS_DEBUGRO:%.o=$(OBJDIR_RISCOS)/%.o)
 
-OBJDIR_GTK = $(shell /usr/bin/gcc -dumpmachine)-gtk
+OBJDIR_GTK = $(shell $(SYSTEM_CC) -dumpmachine)-gtk
 SOURCES_GTK=$(OBJECTS_GTK:.o=.c)
 OBJS_GTK=$(OBJECTS_GTK:%.o=$(OBJDIR_GTK)/%.o)
 
 # Inclusion of platform specific files has to occur after the OBJDIR stuff as
-# that is refered to in the files
+# that is referred to in the files
 
-OS = $(word 2,$(subst -, ,$(shell /usr/bin/gcc -dumpmachine)))
+OS = $(word 2,$(subst -, ,$(shell $(SYSTEM_CC) -dumpmachine)))
 ifeq ($(OS),riscos)
 include riscos.mk
 else
@@ -160,7 +162,7 @@ nsrodebug,ff8: $(OBJS_DEBUGRO)
 
 gtk: nsgtk
 nsgtk: $(OBJS_GTK)
-	/usr/bin/gcc -o nsgtk $^ `pkg-config --cflags --libs libglade-2.0 gtk+-2.0 gthread-2.0 gmodule-2.0` \
+	$(SYSTEM_CC) -o nsgtk $^ `pkg-config --cflags --libs libglade-2.0 gtk+-2.0 gthread-2.0 gmodule-2.0` \
 	$(LDFLAGS_DEBUG)
 
 netsurf.zip: $(RUNIMAGE)
@@ -181,7 +183,7 @@ $(OBJDIR_DEBUG)/%.o : %.c
 	@$(CC_DEBUG) -o $@ -c $(CFLAGS_DEBUG) $<
 $(OBJDIR_GTK)/%.o : %.c
 	@echo "==> $<"
-	@/usr/bin/gcc -o $@ -c $(CFLAGS_GTK) $<
+	@$(SYSTEM_CC) -o $@ -c $(CFLAGS_GTK) $<
 
 # pattern rules for asm source
 $(OBJDIR_RISCOS)/%.o : %.s
