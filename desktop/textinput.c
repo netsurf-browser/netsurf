@@ -656,6 +656,9 @@ void browser_window_textarea_callback(struct browser_window *bw,
 			text_box = text_box->next;
 			assert(text_box);
 			assert(char_offset <= text_box->length);
+			/* Scroll back to the left */
+			box_x += textarea->scroll_x;
+			textarea->scroll_x = 0;
 		}
 		else
 			char_offset = text_box->length + text_box->space;
@@ -1934,7 +1937,7 @@ bool ensure_caret_visible(struct box *textarea)
 	scrolly = textarea->scroll_y;
 	assert(textarea->gadget);
 	/* Calculate the caret coordinates */
-	cx = textarea->gadget->caret_pixel_offset;
+	cx = textarea->gadget->caret_pixel_offset+textarea->gadget->caret_text_box->x;
 	cy = textarea->gadget->caret_text_box->y;
 	/* Ensure they are visible */
 	if (!box_hscrollbar_present(textarea))
