@@ -1279,7 +1279,12 @@ bool layout_line(struct box *first, int *width, int *y,
 				split_box->type == BOX_TEXT) &&
 				!split_box->object &&
 				!split_box->gadget && split_box->text) {
+			/* skip leading spaces, otherwise code gets fooled into thinking it's all one long word */
 			for (i = 0; i != split_box->length &&
+					split_box->text[i] == ' '; i++)
+				;
+			/* find end of word */
+			for (; i != split_box->length &&
 					split_box->text[i] != ' '; i++)
 				;
 			if (i != split_box->length)
