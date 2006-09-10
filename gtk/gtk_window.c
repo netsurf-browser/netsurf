@@ -561,28 +561,34 @@ MENUHANDLER(choices)
 
 MENUHANDLER(zoom_in)
 {
-	browser_window_set_scale(g->bw, g->scale + 0.05, true);
+	struct gui_window *gw = (struct gui_window *)g;
+
+	browser_window_set_scale(gw->bw, gw->scale + 0.05, true);
 
 	return TRUE;
 }
 
 MENUHANDLER(normal_size)
 {
-	browser_window_set_scale(g->bw, 1.0, true);
+	struct gui_window *gw = (struct gui_window *)g;
+
+	browser_window_set_scale(gw->bw, 1.0, true);
 
 	return TRUE;
 }
 
 MENUHANDLER(zoom_out)
 {
-	browser_window_set_scale(g->bw, g->scale - 0.05, true);
+	struct gui_window *gw = (struct gui_window *)g;
+
+	browser_window_set_scale(gw->bw, gw->scale - 0.05, true);
 
 	return TRUE;
 }
 
 MENUHANDLER(save_window_size)
 {
-	struct gui_window *gw = g;
+	struct gui_window *gw = (struct gui_window *)g;
 
 	option_toolbar_status_width = gtk_paned_get_position(gw->status_pane);
 	gtk_window_get_position(gw->window, &option_window_x, &option_window_y);
@@ -647,7 +653,7 @@ MENUHANDLER(about)
 gboolean nsgtk_history_expose_event(GtkWidget *widget,
 				  	GdkEventExpose *event, gpointer g)
 {
-	struct gtk_history_window *hw = g;
+	struct gtk_history_window *hw = (struct gtk_history_window *)g;
 
 	current_widget = widget;
 	current_drawable = widget->window;
@@ -676,7 +682,7 @@ gboolean nsgtk_history_motion_notify_event(GtkWidget *widget,
 gboolean nsgtk_history_button_press_event(GtkWidget *widget,
 					GdkEventButton *event, gpointer g)
 {
-	struct gtk_history_window *hw = g;
+	struct gtk_history_window *hw = (struct gtk_history_window *)g;
 
 	history_click(hw->g->bw, hw->g->bw->history,
 		      event->x, event->y, false);
