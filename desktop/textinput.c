@@ -1229,9 +1229,26 @@ bool browser_window_textarea_paste_text(struct browser_window *bw,
 
 		/* reflow textarea preserving width and height */
 		textarea_reflow(bw, textarea, inline_container);
-		/* reflowing may have broken our caret offset */
-		if(textarea->gadget->caret_box_offset > text_box->length)
-			char_offset = textarea->gadget->caret_box_offset = text_box->length;
+		/* reflowing may have broken our caret offset
+		   this bit should hopefully continue to work if textarea_reflow
+		   is fixed to update the caret itself */
+		char_offset = textarea->gadget->caret_box_offset;
+		text_box = textarea->gadget->caret_text_box;
+		while((char_offset > text_box->length+text_box->space) && (text_box->next) && (text_box->next->type == BOX_TEXT))
+		{
+			LOG(("Caret out of range: Was %d in boxlen %d space %d",char_offset,text_box->length,text_box->space));
+			char_offset -= text_box->length+text_box->space;
+			text_box = text_box->next;
+		}
+		/* not sure if this will happen or not... but won't stick an assert here as we can recover from it */
+		if(char_offset > text_box->length)
+		{
+			LOG(("Caret moved beyond end of line: Was %d in boxlen %d",char_offset,text_box->length));
+			char_offset = text_box->length;
+		}
+		textarea->gadget->caret_text_box = text_box;
+		textarea->gadget->caret_box_offset = char_offset;
+
 
 		nsfont_width(text_box->style, text_box->text,
 				char_offset, &pixel_offset);
