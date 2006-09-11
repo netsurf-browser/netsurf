@@ -1400,8 +1400,11 @@ bool box_object(BOX_SPECIAL_PARAMS)
 		if (!box_get_attribute(c, "valuetype", param,
 				&param->valuetype))
 			return false;
-		if (!param->valuetype)
-			param->valuetype = "data";
+		if (!param->valuetype) {
+			param->valuetype = talloc_strdup(param, "data");
+			if (!param->valuetype)
+				return false;
+		}
 
 		param->next = params->params;
 		params->params = param;
@@ -1574,11 +1577,11 @@ bool box_frameset(BOX_SPECIAL_PARAMS)
 		LOG(("Error: multiple framesets in document."));
 		return false;
 	}
- 	
+
 	content->data.html.frameset = talloc_zero(content, struct content_html_frames);
 	if (!content->data.html.frameset)
 		return false;
- 
+
 	ok = box_create_frameset(content->data.html.frameset, n, content);
 	if (ok)
 		box->style->display = CSS_DISPLAY_NONE;
@@ -1647,7 +1650,7 @@ bool box_create_frameset(struct content_html_frames *f, xmlNode *n,
 			default_border_colour = named_colour(s);
 		xmlFree(s);
 	}
-	
+
 	/* update frameset and create default children */
 	f->cols = cols;
 	f->rows = rows;
@@ -1824,7 +1827,7 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 	if ((s = (char *) xmlGetProp(n,
 			(const xmlChar *) "name"))) {
 		iframe->name = talloc_strdup(content, s);
-		xmlFree(s);		  
+		xmlFree(s);
 	}
 	if ((s = (char *) xmlGetProp(n,
 			(const xmlChar *) "frameborder"))) {
@@ -1858,7 +1861,7 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 		iframe->margin_width = atoi(s);
 		xmlFree(s);
 	}
-	
+
 	/* release temporary memory */
 	free(url);
 
@@ -2392,9 +2395,10 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 	 * Consecutive BR may not be present. These constraints are satisfied
 	 * by using a 0-length TEXT for blank lines. */
 
-	xmlChar *current,*string,*null_string="";
+	xmlChar *current, *string;
 	xmlNode *n2;
 	xmlBufferPtr buf;
+	xmlParserCtxtPtr ctxt;
 	struct box *inline_container, *inline_box, *br_box;
 	char *s;
 	size_t len;
@@ -2421,29 +2425,42 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 	n2 = n->children;
 	buf = xmlBufferCreate();
 	while(n2) {
-		int ret = xmlNodeDump(buf,n2->doc,n2,0,0);
+		int ret = xmlNodeDump(buf, n2->doc, n2, 0, 0);
 		if (ret == -1) {
 			xmlBufferFree(buf);
 			return false;
 		}
 		n2 = n2->next;
 	}
-	xmlParserCtxtPtr ctxt = xmlCreateDocParserCtxt(buf->content);
-	string=0;
-	if(ctxt)
-	{
-		string = current = xmlStringDecodeEntities(ctxt,buf->content,XML_SUBSTITUTE_REF|XML_SUBSTITUTE_PEREF,0,0,0);
+
+	ctxt = xmlCreateDocParserCtxt(buf->content);
+	string = current = NULL;
+	if (ctxt) {
+		string = current = xmlStringDecodeEntities(ctxt,
+				buf->content,
+				XML_SUBSTITUTE_REF | XML_SUBSTITUTE_PEREF,
+				0, 0, 0);
 		xmlFreeParserCtxt(ctxt);
 	}
-	if(!string)
-		string = current = null_string;
+
+	if (!string) {
+		/* If we get here, either the parser context failed to be
+		 * created or we were unable to decode the entities in the
+		 * buffer. Therefore, try to create a blank string in order
+		 * to recover. */
+		string = current = xmlStrdup((const xmlChar *) "");
+		if (!string) {
+			xmlBufferFree(buf);
+			return false;
+		}
+	}
+
 	while (1) {
 		/* BOX_TEXT */
 		len = strcspn(current, "\r\n");
 		s = talloc_strndup(content, current, len);
 		if (!s) {
-			if(string != null_string)
-				xmlFree(string);
+			xmlFree(string);
 			xmlBufferFree(buf);
 			return false;
 		}
@@ -2451,8 +2468,7 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 		inline_box = box_create(box->style, 0, 0, box->title, 0,
 				content);
 		if (!inline_box) {
-			if(string != null_string)
-				xmlFree(string);
+			xmlFree(string);
 			xmlBufferFree(buf);
 			return false;
 		}
@@ -2469,8 +2485,7 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 		/* BOX_BR */
 		br_box = box_create(box->style, 0, 0, box->title, 0, content);
 		if (!br_box) {
-			if(string != null_string)
-				xmlFree(string);
+			xmlFree(string);
 			xmlBufferFree(buf);
 			return false;
 		}
@@ -2482,8 +2497,8 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 		else
 			current++;
 	}
-	if(string != null_string)
-		xmlFree(string);
+
+	xmlFree(string);
 	xmlBufferFree(buf);
 
 	if (content->data.html.forms)
@@ -2544,10 +2559,10 @@ bool box_embed(BOX_SPECIAL_PARAMS)
 		param->value = talloc_strdup(content,
 				(char *) a->children->content);
 		param->type = 0;
-		param->valuetype = "data";
+		param->valuetype = talloc_strdup(content, "data");
 		param->next = 0;
 
-		if (!param->name || !param->value)
+		if (!param->name || !param->value || !param->valuetype)
 			return false;
 
 		param->next = params->params;
