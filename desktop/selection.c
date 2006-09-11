@@ -916,7 +916,8 @@ void selection_update(struct selection *s, size_t byte_offset,
 		if (change > 0)
 			s->end_idx += change;
 		else
-			s->end_idx += max(change, byte_offset - s->end_idx);
+			s->end_idx +=
+				max(change, (int)(byte_offset - s->end_idx));
 	}
 }
 
