@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "libxml/HTMLparser.h"
+#include "libxml/parserInternals.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
 #include "netsurf/css/css.h"
@@ -2391,7 +2392,7 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 	 * Consecutive BR may not be present. These constraints are satisfied
 	 * by using a 0-length TEXT for blank lines. */
 
-	xmlChar *current;
+	xmlChar *current,*string,*null_string="";
 	xmlNode *n2;
 	xmlBufferPtr buf;
 	struct box *inline_container, *inline_box, *br_box;
@@ -2427,12 +2428,22 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 		}
 		n2 = n2->next;
 	}
-	current = buf->content;
+	xmlParserCtxtPtr ctxt = xmlCreateDocParserCtxt(buf->content);
+	string=0;
+	if(ctxt)
+	{
+		string = current = xmlStringDecodeEntities(ctxt,buf->content,XML_SUBSTITUTE_REF|XML_SUBSTITUTE_PEREF,0,0,0);
+		xmlFreeParserCtxt(ctxt);
+	}
+	if(!string)
+		string = current = null_string;
 	while (1) {
 		/* BOX_TEXT */
 		len = strcspn(current, "\r\n");
 		s = talloc_strndup(content, current, len);
 		if (!s) {
+			if(string != null_string)
+				xmlFree(string);
 			xmlBufferFree(buf);
 			return false;
 		}
@@ -2440,6 +2451,8 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 		inline_box = box_create(box->style, 0, 0, box->title, 0,
 				content);
 		if (!inline_box) {
+			if(string != null_string)
+				xmlFree(string);
 			xmlBufferFree(buf);
 			return false;
 		}
@@ -2456,6 +2469,8 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 		/* BOX_BR */
 		br_box = box_create(box->style, 0, 0, box->title, 0, content);
 		if (!br_box) {
+			if(string != null_string)
+				xmlFree(string);
 			xmlBufferFree(buf);
 			return false;
 		}
@@ -2467,6 +2482,8 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 		else
 			current++;
 	}
+	if(string != null_string)
+		xmlFree(string);
 	xmlBufferFree(buf);
 
 	if (content->data.html.forms)
