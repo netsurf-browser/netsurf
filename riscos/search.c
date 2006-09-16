@@ -821,7 +821,7 @@ void show_all(bool all)
 void show_status(bool found)
 {
 	ro_gui_set_icon_string(dialog_search, ICON_SEARCH_STATUS,
-			found ? "" : messages_get("Notfound"));
+			found ? "" : messages_get("NotFound"));
 }
 
 #endif
