@@ -46,6 +46,7 @@
 
 
 static void layout_minmax_block(struct box *block);
+static bool layout_block_object(struct box *block);
 static void layout_block_find_dimensions(int available_width, struct box *box);
 static int layout_solve_width(int available_width, int width,
 		int margin[4], int padding[4], int border[4]);
@@ -143,7 +144,7 @@ bool layout_document(struct content *content, int width, int height)
 /**
  * Layout a block formatting context.
  *
- * \param  block  BLOCK, INLINE_BLOCK, or TABLE_CELL to layout.
+ * \param  block    BLOCK, INLINE_BLOCK, or TABLE_CELL to layout
  * \param  content  memory pool for any new boxes
  * \return  true on success, false on memory exhaustion
  *
@@ -154,8 +155,7 @@ bool layout_document(struct content *content, int width, int height)
 bool layout_block_context(struct box *block, struct content *content)
 {
 	struct box *box;
-	int cx;
-	int cy;
+	int cx, cy;  /**< current coordinates */
 	int max_pos_margin = 0;
 	int max_neg_margin = 0;
 	int y;
@@ -169,28 +169,40 @@ bool layout_block_context(struct box *block, struct content *content)
 
 	block->float_children = 0;
 
-	if (block->object) {
-		if (block->object->type == CONTENT_HTML) {
-			box = block->object->data.html.layout;
-			box->width = block->width;
-			box->height = AUTO;
-			if (!layout_block_context(box, block->object))
-				return false;
-			block->height = box->height;
-			layout_calculate_descendant_bboxes(box);
-			block->object->width = box->descendant_x1;
-			block->object->height = box->descendant_y1;
-		} else {
-		}
-		return true;
-	}
+	/* special case if the block contains an object */
+	if (block->object)
+		return layout_block_object(block);
 
 	box = margin_box = block->children;
+	/* set current coordinates to top-left of the block */
 	cx = 0;
 	cy = block->padding[TOP];
 	if (box)
 		box->y = block->padding[TOP];
 
+	/* Step through the descendants of the block in depth-first order, but
+	 * not into the children of boxes which aren't blocks. For example, if
+	 * the tree passed to this function looks like this (box->type shown):
+	 *
+	 *  block -> BOX_BLOCK
+	 *             BOX_BLOCK * (1)
+	 *               BOX_INLINE_CONTAINER * (2)
+	 *                 BOX_INLINE
+	 *                 BOX_TEXT
+	 *                 ...
+	 *             BOX_BLOCK * (3)
+	 *               BOX_TABLE * (4)
+	 *                 BOX_TABLE_ROW
+	 *                   BOX_TABLE_CELL
+	 *                     ...
+	 *                   BOX_TABLE_CELL
+	 *                     ...
+	 *               BOX_BLOCK * (5)
+	 *                 BOX_INLINE_CONTAINER * (6)
+	 *                   BOX_TEXT
+	 *                   ...
+	 * then the while loop will visit each box marked with *, setting box
+	 * to each in the order shown. */
 	while (box) {
 		assert(box->type == BOX_BLOCK || box->type == BOX_TABLE ||
 				box->type == BOX_INLINE_CONTAINER);
@@ -248,19 +260,8 @@ bool layout_block_context(struct box *block, struct content *content)
 
 		/* Layout (except tables). */
 		if (box->object) {
-			if (box->object->type == CONTENT_HTML) {
-				box->object->data.html.layout->width =
-						box->width;
-				if (!layout_block_context(box->object->
-						data.html.layout, box->object))
-					return false;
-				box->height = box->object->
-						data.html.layout->height;
-							/* + margins etc. */
-			} else {
-				/* this case handled already in
-				 * layout_block_find_dimensions() */
-			}
+			if (!layout_block_object(box))
+				return false;
 		} else if (box->type == BOX_INLINE_CONTAINER) {
 			box->width = box->parent->width;
 			if (!layout_inline_container(box, box->width, block,
@@ -477,6 +478,37 @@ void layout_minmax_block(struct box *block)
 
 
 /**
+ * Layout a block which contains an object.
+ *
+ * \param  block  box of type BLOCK, INLINE_BLOCK, TABLE, or TABLE_CELL
+ * \return  true on success, false on memory exhaustion
+ */
+
+bool layout_block_object(struct box *block)
+{
+	assert(block);
+	assert(block->type == BOX_BLOCK ||
+			block->type == BOX_INLINE_BLOCK ||
+			block->type == BOX_TABLE ||
+			block->type == BOX_TABLE_CELL);
+	assert(block->object);
+
+	LOG(("block %p, object %s, width %i", block, block->object->url,
+			block->width));
+
+	if (block->object->type == CONTENT_HTML) {
+		content_reformat(block->object, block->width, 1);
+		block->height = block->object->height;
+	} else {
+		/* this case handled already in
+		 * layout_block_find_dimensions() */
+	}
+
+	return true;
+}
+
+
+/**
  * Compute dimensions of box, margins, paddings, and borders for a block-level
  * element.
  *
@@ -523,11 +555,13 @@ void layout_block_find_dimensions(int available_width, struct box *box)
 	if (style->overflow == CSS_OVERFLOW_SCROLL ||
 			style->overflow == CSS_OVERFLOW_AUTO) {
 		/* make space for scrollbars */
-		if ((style->overflow == CSS_OVERFLOW_SCROLL) || box_hscrollbar_present(box)) {
+		if (style->overflow == CSS_OVERFLOW_SCROLL ||
+				box_hscrollbar_present(box)) {
 			box->height -= SCROLLBAR_WIDTH;
 			box->padding[BOTTOM] += SCROLLBAR_WIDTH;
 		}
-		if ((style->overflow == CSS_OVERFLOW_SCROLL) || box_vscrollbar_present(box)) {
+		if (style->overflow == CSS_OVERFLOW_SCROLL ||
+				box_vscrollbar_present(box)) {
 			box->width -= SCROLLBAR_WIDTH;
 			box->padding[RIGHT] += SCROLLBAR_WIDTH;
 		}
