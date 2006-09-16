@@ -353,10 +353,8 @@ bool html_convert(struct content *c, int width, int height)
 	content_set_status(c, messages_get("Formatting"));
 	content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
 	LOG(("Layout document"));
-	layout_document(c, width, height);
+	html_reformat(c, width, height);
 	/*box_dump(c->data.html.layout->children, 0);*/
-	c->width = c->data.html.layout->descendant_x1;
-	c->height = c->data.html.layout->descendant_y1;
 
 	c->size = talloc_total_size(c);
 
@@ -431,7 +429,7 @@ bool html_meta_refresh(struct content *c, xmlNode *head)
 			content_broadcast(c, CONTENT_MSG_REFRESH, msg_data);
 			break;
 		}
-		
+
 		for ( ; url <= end - 4; url++) {
 			if (!strncasecmp(url, "url=", 4))
 				break;
@@ -445,7 +443,7 @@ bool html_meta_refresh(struct content *c, xmlNode *head)
 			  	url++;
 			}
 		}
-		
+
 		if (url <= end - 4) {
 			res = url_join(url + 4, c->data.html.base_url,
 					&refresh);
@@ -1403,17 +1401,25 @@ void html_stop(struct content *c)
 
 void html_reformat(struct content *c, int width, int height)
 {
-	struct box *doc;
-	
+	struct box *layout;
+
 	layout_document(c, width, height);
-	doc = c->data.html.layout;
+	layout = c->data.html.layout;
 
-	c->width = doc->descendant_x1 +
-		doc->margin[LEFT] + doc->margin[RIGHT];
+	/* width and height are at least margin box of document */
+	c->width = layout->x + layout->padding[LEFT] + layout->width +
+			layout->padding[RIGHT] + layout->border[RIGHT] +
+			layout->margin[RIGHT];
+	c->height = layout->y + layout->padding[TOP] + layout->height +
+			layout->padding[BOTTOM] + layout->border[BOTTOM] +
+			layout->margin[BOTTOM];
 
-	c->height = doc->descendant_y1 +
-		doc->margin[TOP] + doc->margin[BOTTOM];
-	
+	/* if boxes overflow right or bottom edge, expand to contain it */
+	if (c->width < layout->x + layout->descendant_x1)
+		c->width = layout->x + layout->descendant_x1;
+	if (c->height < layout->y + layout->descendant_y1)
+		c->height = layout->y + layout->descendant_y1;
+
 	if ((c->data.html.frameset) && (c->data.html.bw))
 		browser_window_recalculate_frameset(c->data.html.bw);
 	if ((c->data.html.iframe) && (c->data.html.bw))
@@ -1443,7 +1449,7 @@ void html_destroy(struct content *c)
 	/* Free base target */
 	if (c->data.html.base_target) {
 	 	talloc_free(c->data.html.base_target);
-	 	c->data.html.base_target = NULL; 
+	 	c->data.html.base_target = NULL;
 	}
 
 	/* Free frameset */
@@ -1471,7 +1477,7 @@ void html_destroy(struct content *c)
 	}
 
 	talloc_free(c->data.html.working_stylesheet);
-	
+
 	/*if (c->data.html.style)
 		css_free_style(c->data.html.style);*/
 
@@ -1490,7 +1496,7 @@ void html_destroy(struct content *c)
 
 void html_destroy_frameset(struct content_html_frames *frameset) {
 	int i;
-	
+
 	if (frameset->name) {
 		talloc_free(frameset->name);
 		frameset->name = NULL;
@@ -1526,7 +1532,7 @@ void html_destroy_iframe(struct content_html_iframe *iframe) {
 			talloc_free(iframe->name);
 		if (iframe->url)
 			talloc_free(iframe->url);
-		talloc_free(iframe); 
+		talloc_free(iframe);
 	}
 }
 
@@ -1554,7 +1560,7 @@ void html_open(struct content *c, struct browser_window *bw,
 				c->data.html.object[i].box,
 				c->data.html.object[i].box->object_params);
 	}
-	
+
 	if (c->data.html.frameset)
 		browser_window_create_frameset(bw, c->data.html.frameset);
 	if (c->data.html.iframe)
