@@ -120,7 +120,7 @@ struct auth_data {
 };
 
 struct cache_internal_data {
-  	char filename[12];	/**< Cached filename, or first byte 0 for none */
+	char filename[12];	/**< Cached filename, or first byte 0 for none */
 };
 
 struct url_internal_data {
@@ -425,7 +425,7 @@ void urldb_load(const char *filename)
 						(port ? ports : ""),
 						s);
 
-				p = urldb_add_path(scheme, port, h, s, NULL, NULL, 
+				p = urldb_add_path(scheme, port, h, s, NULL, NULL,
 						url);
 				if (!p) {
 					LOG(("Failed inserting '%s'", url));
@@ -710,6 +710,7 @@ bool urldb_add_url(const char *url)
 	struct host_part *h;
 	struct path_data *p;
 	char *colon;
+	const char *host;
 	unsigned short port;
 	url_func_result ret;
 	struct url_components components;
@@ -721,8 +722,15 @@ bool urldb_add_url(const char *url)
 	if (ret != URL_FUNC_OK)
 		return false;
 
+	/* Extract host part from authority */
+	host = strchr(components.authority, '@');
+	if (!host)
+		host = components.authority;
+	else
+		host++;
+
 	/* get port and remove from authority */
-	colon = strrchr(components.authority, ':');
+	colon = strrchr(host, ':');
 	if (!colon) {
 		port = 0;
 	} else {
@@ -734,21 +742,22 @@ bool urldb_add_url(const char *url)
 	if (strcasecmp(components.scheme, "file") == 0)
 		h = urldb_add_host("localhost");
 	else
-		h = urldb_add_host(components.authority);
+		h = urldb_add_host(host);
 	if (!h) {
 		url_destroy_components(&components);
 		return false;
 	}
 
 	/* Get path entry */
-	p = urldb_add_path(components.scheme, port, h, components.path,
+	p = urldb_add_path(components.scheme, port, h,
+			components.path ? components.path : "",
 			components.query, components.fragment, url);
 	if (!p) {
 		return false;
 	}
 
 	url_destroy_components(&components);
-        
+
 	return true;
 }
 
@@ -1578,8 +1587,8 @@ struct path_data *urldb_add_path_node(const char *scheme, unsigned int port,
  * \return Pointer to leaf node, or NULL on memory exhaustion
  */
 struct path_data *urldb_add_path(const char *scheme, unsigned int port,
-		const struct host_part *host, const char *path, const char *query,
-		const char *fragment, const char *url)
+		const struct host_part *host, const char *path,
+		const char *query, const char *fragment, const char *url)
 {
 	struct path_data *d, *e;
 	char *buf, *copy;
@@ -1605,10 +1614,10 @@ struct path_data *urldb_add_path(const char *scheme, unsigned int port,
 		copy += strlen(path);
 	}
 	if (query) {
-	  	*copy++ = '?';
-	  	strcpy(copy, query);
+		*copy++ = '?';
+		strcpy(copy, query);
 	}
-	
+
 	/* skip leading '/' */
 	segment = buf;
 	if (*segment == '/')
@@ -3364,7 +3373,7 @@ bool urldb_set_cache_data(const char *url, const struct content *content) {
 	p = urldb_find_url(url);
 	if (!p)
 		return false;
-	
+
 	/* new filename needed */
 	if (p->cache.filename[0] == 0) {
 	  	filename = filename_request();
@@ -3372,7 +3381,7 @@ bool urldb_set_cache_data(const char *url, const struct content *content) {
 	  		return false;
 	  	sprintf(p->cache.filename, filename);
 	}
-	
+
 	/* todo: save content, set cache data etc */
   	return true;
 }
@@ -3392,7 +3401,7 @@ char *urldb_get_cache_data(const char *url) {
 	p = urldb_find_url(url);
 	if (!p)
 		return NULL;
-	
+
 	/* no file cache */
 	if (p->cache.filename[0] == 0)
 		return NULL;
