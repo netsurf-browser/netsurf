@@ -235,8 +235,13 @@ bool imagemap_extract(xmlNode *node, struct content *c)
 
 	if (node->type == XML_ELEMENT_NODE) {
 		if (strcmp(node->name, "map") == 0) {
-			if ((name = (char*)xmlGetProp(node, (const xmlChar*)"name")) == NULL)
-				return true;
+			if ((name = (char *)xmlGetProp(node,
+					(const xmlChar *)"id")) == NULL) {
+				if ((name = (char *)xmlGetProp(node,
+					(const xmlChar *)"name")) ==
+						NULL)
+					return true;
+			}
 			if (!imagemap_extract_map(node, c, &entry)) {
 				xmlFree(name);
 				return false;
