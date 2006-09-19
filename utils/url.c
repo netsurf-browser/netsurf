@@ -236,8 +236,8 @@ url_func_result url_join(const char *rel, const char *base, char **result)
 
 	assert(base);
 	assert(rel);
-	
-	
+
+
 	/* break down the relative URL (not cached, corruptable) */
 	status = url_get_components(rel,
 			(struct url_components *)&rel_components);
@@ -761,11 +761,13 @@ no_path:
  * Escape a string suitable for inclusion in an URL.
  *
  * \param  unescaped  the unescaped string
+ * \param  sptoplus   true iff spaces should be converted to +
  * \param  result     pointer to pointer to buffer to hold escaped string
  * \return  URL_FUNC_OK on success
  */
 
-url_func_result url_escape(const char *unescaped, char **result)
+url_func_result url_escape(const char *unescaped, bool sptoplus,
+		char **result)
 {
 	int len;
 	char *escaped, *d;
@@ -786,9 +788,13 @@ url_func_result url_escape(const char *unescaped, char **result)
 		if (!isascii(*c) ||
 				strchr(";/?:@&=+$," "<>#%\"{}|\\^[]`", *c) ||
 				*c <= 0x20 || *c == 0x7f) {
-			*d++ = '%';
-			*d++ = "0123456789ABCDEF"[((*c >> 4) & 0xf)];
-			*d++ = "0123456789ABCDEF"[(*c & 0xf)];
+			if (*c == 0x20 && sptoplus)
+				*d++ = '+';
+			else {
+				*d++ = '%';
+				*d++ = "0123456789ABCDEF"[((*c >> 4) & 0xf)];
+				*d++ = "0123456789ABCDEF"[(*c & 0xf)];
+			}
 		}
 		else {
 			/* unreserved characters: [a-zA-Z0-9-_.!~*'()] */

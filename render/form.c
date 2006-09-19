@@ -549,7 +549,7 @@ char *form_url_encode(struct form *form,
 
 		assert(err == UTF8_CONVERT_OK);
 
-		url_err = url_escape(n_temp, &name);
+		url_err = url_escape(n_temp, true, &name);
 		if (url_err == URL_FUNC_NOMEM) {
 			free(v_temp);
 			free(n_temp);
@@ -560,7 +560,7 @@ char *form_url_encode(struct form *form,
 
 		assert(url_err == URL_FUNC_OK);
 
-		url_err = url_escape(v_temp, &value);
+		url_err = url_escape(v_temp, true, &value);
 		if (url_err == URL_FUNC_NOMEM) {
 			free(name);
 			free(v_temp);
