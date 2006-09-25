@@ -217,7 +217,7 @@ void ro_gui_set_icon_string(wimp_w w, wimp_i i, const char *text) {
 	wimp_icon_state ic;
 	os_error *error;
 	int old_len, len;
-	char *local_text;
+	char *local_text = NULL;
 	utf8_convert_ret err;
 	unsigned int button_type;
 
@@ -238,22 +238,26 @@ void ro_gui_set_icon_string(wimp_w w, wimp_i i, const char *text) {
 		/* A bad encoding should never happen, so assert this */
 		assert(err != UTF8_CONVERT_BADENC);
 		LOG(("utf8_to_enc failed"));
-		return;
+		/* Paranoia */
+		local_text = NULL;
 	}
-	len = strlen(local_text);
+	len = strlen(local_text ? local_text : text);
 
 	/* check that the existing text is not the same as the updated text
 	 * to stop flicker */
 	if (ic.icon.data.indirected_text.size &&
 			!strncmp(ic.icon.data.indirected_text.text,
-			local_text,
-			(unsigned int)ic.icon.data.indirected_text.size - 1))
+			local_text ? local_text : text,
+			(unsigned int)ic.icon.data.indirected_text.size - 1)) {
+		free(local_text);
 		return;
+	}
 
 	/* copy the text across */
 	old_len = strlen(ic.icon.data.indirected_text.text);
 	if (ic.icon.data.indirected_text.size) {
-		strncpy(ic.icon.data.indirected_text.text, local_text,
+		strncpy(ic.icon.data.indirected_text.text,
+			local_text ? local_text : text,
 			(unsigned int)ic.icon.data.indirected_text.size - 1);
 		ic.icon.data.indirected_text.text[
 				ic.icon.data.indirected_text.size - 1] = '\0';
@@ -269,6 +273,7 @@ void ro_gui_set_icon_string(wimp_w w, wimp_i i, const char *text) {
 			LOG(("xwimp_get_caret_position: 0x%x: %s",
 					error->errnum, error->errmess));
 			warn_user("WimpError", error->errmess);
+			free(local_text);
 			return;
 		}
 		if ((caret.w == w) && (caret.i == i)) {
