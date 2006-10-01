@@ -70,6 +70,7 @@ struct fetch {
 	char *host;		/**< Host part of URL. */
 	char *location;		/**< Response Location header, or 0. */
 	unsigned long content_length;	/**< Response Content-Length, or 0. */
+	long http_code;         /**< HTTP response code, or 0. */
 	char *cookie_string;	/**< Cookie string for this fetch */
 	char *realm;            /**< HTTP Auth Realm */
 	char *post_urlenc;	/**< Url encoded POST string, or 0. */
@@ -365,6 +366,7 @@ struct fetch * fetch_start(char *url, char *referer,
 	fetch->host = host;
 	fetch->location = 0;
 	fetch->content_length = 0;
+	fetch->http_code = 0;
 	fetch->cookie_string = 0;
 	fetch->realm = 0;
 	fetch->post_urlenc = 0;
@@ -1034,6 +1036,23 @@ int fetch_curl_progress(void *clientp, double dltotal, double dlnow,
 size_t fetch_curl_data(void *data, size_t size, size_t nmemb,
 		struct fetch *f)
 {
+        /* ensure we only have to get this information once */
+        if (!f->http_code)
+        {
+                CURLcode code;
+                code = curl_easy_getinfo(f->curl_handle, CURLINFO_HTTP_CODE,
+                                        &f->http_code);
+	        assert(code == CURLE_OK);
+        }
+
+        /* ignore body if this is a 401 reply by skipping it and reset
+           the HTTP response code to enable follow up fetches */
+        if (f->http_code == 401)
+        {
+                f->http_code = 0;
+                return size * nmemb;
+        }
+
 	LOG(("fetch %p, size %u", f, size * nmemb));
 
 	if (f->abort || (!f->had_headers && fetch_process_headers(f))) {
