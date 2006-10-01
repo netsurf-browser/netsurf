@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include "curl/curl.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/content/fetch.h"
 #include "netsurf/content/fetchcache.h"
@@ -554,18 +555,18 @@ void browser_window_recalculate_frameset(struct browser_window *bw) {
  */
 void browser_window_set_scale(struct browser_window *bw, float scale, bool all) {
 	while (bw->parent && all)
-		bw = bw->parent; 
+		bw = bw->parent;
 	browser_window_set_scale_internal(bw, scale);
 	if (bw->parent)
 		bw = bw->parent;
-	browser_window_recalculate_frameset(bw); 
+	browser_window_recalculate_frameset(bw);
 }
 
 void browser_window_set_scale_internal(struct browser_window *bw, float scale) {
   	int i;
- 	
+
   	gui_window_set_scale(bw->window, scale);
-  	
+
 	for (i = 0; i < (bw->cols * bw->rows); i++)
 		browser_window_set_scale_internal(&bw->children[i], scale);
 	for (i = 0; i < bw->iframe_count; i++)
@@ -818,7 +819,22 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 		bw->frag_id = 0;
 	}
 	if (hash) {
-		bw->frag_id = strdup(hash+1);
+		char *frag = curl_unescape(hash+1, strlen(hash + 1));
+		if (!frag) {
+			free(url2);
+			warn_user("NoMemory", 0);
+			return;
+		}
+
+		bw->frag_id = strdup(frag);
+		curl_free(frag);
+
+		if (!bw->frag_id) {
+			free(url2);
+			warn_user("NoMemory", 0);
+			return;
+		}
+
 		/* if we're simply moving to another ID on the same page,
 		 * don't bother to fetch, just update the window.
 		 */
