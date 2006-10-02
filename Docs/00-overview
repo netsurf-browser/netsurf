@@ -1,0 +1,58 @@
+NetSurf Documentation for Developers
+====================================
+
+The documents in this directory describe how the NetSurf code works, and any
+other information useful to developers.
+
+Directory Structure
+-------------------
+The source is split at top level as follows:
+
+content:: Fetching, managing, and converting content
+render:: HTML processing and layout
+css:: CSS parser
+image:: Image conversion
+desktop:: Non-platform specific front-end
+riscos:: RISC OS specific code
+debug:: Unix debug build specific code
+gtk:: GTK specific code
+utils:: Misc. useful functions
+
+Other Documentation
+-------------------
+RISC OS specific protocols:
+
+- Plugin	http://www.ecs.soton.ac.uk/~jmb202/riscos/acorn/funcspec.html[]
+	http://www.ecs.soton.ac.uk/~jmb202/riscos/acorn/browse-plugins.html[]
+- URI		http://www.ecs.soton.ac.uk/~jmb202/riscos/acorn/uri.html[]
+- URL		http://www.vigay.com/inet/inet_url.html[]
+- Nested WIMP	http://www.ecs.soton.ac.uk/~jmb202/riscos/acorn/nested.html[]
+
+Specifications:
+
+- HTML 4.01	http://www.w3.org/TR/html401/[]
+		(see also http://www.w3.org/MarkUp/[])
+- XHTML 1.0	http://www.w3.org/TR/xhtml1/[]
+- CSS 2.1	http://www.w3.org/TR/CSS21/[]
+- HTTP/1.1	http://www.w3.org/Protocols/rfc2616/rfc2616.html[]
+                and errata http://purl.org/NET/http-errata[]
+		(see also http://www.w3.org/Protocols/[])
+- HTTP Authentication	http://www.cis.ohio-state.edu/cgi-bin/rfc/rfc2617.html[]
+- PNG		http://www.w3.org/Graphics/PNG/[]
+- URI		http://www.cis.ohio-state.edu/cgi-bin/rfc/rfc2396.html[]
+		(see also http://www.w3.org/Addressing/[] and RFC 2616)
+- Cookies	http://wp.netscape.com/newsref/std/cookie_spec.html[] and
+		http://www.cis.ohio-state.edu/cgi-bin/rfc/rfc2109.html[]
+
+Libraries
+---------
+Get these compiled for RISC OS with headers from
+http://netsurf.strcprstskrzkrk.co.uk/developer/[]
+
+- libxml (XML and HTML parser)		http://www.xmlsoft.org/[]
+- libcurl (HTTP, FTP, etc)		http://curl.haxx.se/libcurl/[]
+- OSLib (C interface to RISC OS SWIs)	http://ro-oslib.sourceforge.net/[]
+- libmng (PNG, JNG, MNG support)	http://www.libmng.com/[]
+- libjpeg (JPEG support)		http://www.ijg.org/[]
+- zlib					http://www.gzip.org/zlib/[]
+- OpenSSL (HTTPS support)		http://www.openssl.org/[]

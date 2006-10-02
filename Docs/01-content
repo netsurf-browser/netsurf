@@ -1,0 +1,24 @@
+Fetching, managing, and converting content
+==========================================
+
+The modules in the content directory provide the infrastructure for fetching
+data, managing it in memory, and converting it for display.
+
+Struct Content
+--------------
+Each URL is stored in a struct ::content. This structure contains the
+content_type and a union with fields for each type of data (HTML, CSS,
+images). The content_* functions provide a general interface for handling these
+structures. For example, content_redraw() calls html_redraw() or
+nsjpeg_redraw(), etc., depending on the type of content. See content.h and
+content.c.
+
+Fetching
+--------
+A high-level interface to starting the process of fetching and converting an URL
+is provided by the fetchcache functions, which check the memory cache for a url
+and fetch, convert, and cache it if not present. See fetchcache.h and
+fetchcache.c.
+
+The fetch module provides a low-level URL fetching interface. See fetch.h and
+fetch.c.

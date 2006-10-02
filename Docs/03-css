@@ -1,0 +1,81 @@
+CSS parser
+==========
+
+CSS is tokenised by a re2c-generated scanner (scanner.l), and then parsed into a
+memory representation by a lemon-generated parser (parser.y, ruleset.c).
+
+Styles are retrieved using css_get_style(). They can be cascaded by
+css_cascade().
+
+Implementing a new CSS property
+-------------------------------
+In this section I go through adding a CSS property to NetSurf, using the
+'white-space' property as an example. -- James Bursa
+
+First read and understand the description of the property in the CSS
+specification (I have worked from CSS 2, but now 2.1 is probably better).
+
+Add the property to css_enums. This file is used to generate css_enum.h and
+css_enum.c:
+
+   css_white_space inherit normal nowrap pre
+
+(I'm not doing pre-wrap and pre-line for now.)
+
+Add fields to struct css_style to represent the property:
+
+   css_white_space white_space;
+
+Add a parser function for the property to ruleset.c. Declare a new function:
+
+   static void parse_white_space(struct css_style * const s, const struct css_node * const v);
+
+and add it to property_table:
+
+   { "white-space",      parse_white_space },
+
+This will cause the function to be called when the parser comes to a rule giving
+a value for white-space. The function is passed a linked list of struct
+::css_node, each of which corresponds to a token in the CSS source, and must
+update s to correspond to that rule. For white-space, the implementation is
+simply:
+
+   void parse_white_space(struct css_style * const s, const struct css_node * const v)
+   {
+	css_white_space z;
+	if (v->type != CSS_NODE_IDENT || v->next != 0)
+		return;
+	z = css_white_space_parse(v->data, v->data_length);
+	if (z != CSS_WHITE_SPACE_UNKNOWN)
+		s->white_space = z;
+   }
+
+First we check that the value consists of exactly one identifier, as described
+in the specification. If it is not, we ignore it, since it may be some future
+CSS. The css_white_space_parse() function is generated in css_enum.c, and
+converts a string giving a value to a constant. If the conversion succeeds, the
+style s is updated.
+
+Add defaults for the style to css_base_style, css_empty_style, and
+css_blank_style in css.c. The value in css_base_style should be the one given as
+'Initial' in the spec, and the value in css_empty_style should be inherit. If
+'Inherited' is yes in the spec, the value in css_blank_style should be inherit,
+otherwise it should be the one given as 'Initial'. Thus for white-space, which
+has "Initial: normal, Inherited: yes" in the spec, we use CSS_WHITE_SPACE_NORMAL
+in css_base_style and CSS_WHITE_SPACE_INHERIT in the other two.
+
+Edit css_cascade() and css_merge() in css.c to handle the property. In both
+cases for white-space this looks like:
+
+	if (apply->white_space != CSS_WHITE_SPACE_INHERIT)
+		style->white_space = apply->white_space;
+
+Add the property to css_dump_style() (not essential).
+
+Now the box, layout and / or redraw code needs to be changed to use the new
+style property. This varies much more depending on the property.
+
+For white-space, convert_xml_to_box() was changed to split text at newlines if
+white-space was pre, and to replace spaces with hard spaces for nowrap.
+Additionally, calculate_inline_container_widths() was changed to give the
+appropriate minimum width for pre and nowrap.
