@@ -158,7 +158,7 @@ bool layout_block_context(struct box *block, struct content *content)
 	int cx, cy;  /**< current coordinates */
 	int max_pos_margin = 0;
 	int max_neg_margin = 0;
-	int y;
+	int y = 0;
 	struct box *margin_box;
 
 	assert(block->type == BOX_BLOCK ||
@@ -216,7 +216,13 @@ bool layout_block_context(struct box *block, struct content *content)
 		 * correct handling of floats.
 		 */
 
-		if (box->type == BOX_BLOCK || box->object)
+		if (box->style->position == CSS_POSITION_ABSOLUTE ||
+				box->style->position == CSS_POSITION_FIXED) {
+			box->x = box->parent->padding[LEFT];
+			goto advance_to_next_box;
+	        }
+
+                if (box->type == BOX_BLOCK || box->object)
 			layout_block_find_dimensions(box->parent->width, box);
 		else if (box->type == BOX_TABLE) {
 			if (!layout_table(box, box->parent->width, content))
@@ -314,23 +320,20 @@ bool layout_block_context(struct box *block, struct content *content)
 			cy += box->padding[TOP];
 		if (box->type == BOX_BLOCK && box->height == AUTO)
 			box->height = 0;
-		/* Absolutely positioned children. */
-		if (!layout_absolute_children(box, content))
-			return false;
 		cy += box->height + box->padding[BOTTOM] + box->border[BOTTOM];
 		max_pos_margin = max_neg_margin = 0;
 		if (max_pos_margin < box->margin[BOTTOM])
 			max_pos_margin = box->margin[BOTTOM];
 		else if (max_neg_margin < -box->margin[BOTTOM])
 			max_neg_margin = -box->margin[BOTTOM];
+		cx -= box->x;
+		y = box->y + box->padding[TOP] + box->height +
+				box->padding[BOTTOM] + box->border[BOTTOM];
+	advance_to_next_box:
 		if (!box->next) {
 			/* No more siblings: up to first ancestor with a
 			   sibling. */
 			do {
-				cx -= box->x;
-				y = box->y + box->padding[TOP] + box->height +
-						box->padding[BOTTOM] +
-						box->border[BOTTOM];
 				box = box->parent;
 				if (box == block)
 					break;
@@ -339,22 +342,20 @@ bool layout_block_context(struct box *block, struct content *content)
 				else
 					cy += box->height -
 							(y - box->padding[TOP]);
-				/* Absolutely positioned children. */
-				if (!layout_absolute_children(box, content))
-					return false;
 				cy += box->padding[BOTTOM] +
 						box->border[BOTTOM];
 				if (max_pos_margin < box->margin[BOTTOM])
 					max_pos_margin = box->margin[BOTTOM];
 				else if (max_neg_margin < -box->margin[BOTTOM])
 					max_neg_margin = -box->margin[BOTTOM];
+				cx -= box->x;
+				y = box->y + box->padding[TOP] + box->height +
+						box->padding[BOTTOM] +
+						box->border[BOTTOM];
 			} while (box != block && !box->next);
 			if (box == block)
 				break;
 		}
-		cx -= box->x;
-		y = box->y + box->padding[TOP] + box->height +
-				box->padding[BOTTOM] + box->border[BOTTOM];
 		/* To next sibling. */
 		box = box->next;
 		box->y = y;
@@ -438,21 +439,6 @@ void layout_minmax_block(struct box *block)
 	if (max < min) {
 		box_dump(block, 0);
 		assert(0);
-	}
-
-	/* absolutely positioned children */
-	for (child = block->absolute_children; child; child = child->next) {
-		switch (child->type) {
-			case BOX_BLOCK:
-				layout_minmax_block(child);
-				break;
-			case BOX_TABLE:
-				layout_minmax_table(child);
-				break;
-			default:
-				assert(0);
-		}
-		assert(child->max_width != UNKNOWN_MAX_WIDTH);
 	}
 
 	/* fixed width takes priority */
@@ -2167,9 +2153,6 @@ bool layout_table(struct box *table, int available_width,
 	table->width = table_width;
 	table->height = table_height;
 
-	if (!layout_absolute_children(table, content))
-		return false;
-
 	return true;
 }
 
@@ -2422,39 +2405,6 @@ void layout_position_relative(struct box *root)
 			}
 		}
 	}
-
-	/* Absolute children */
-	for (box = root->absolute_children; box; box = box->next) {
-		int x, y;
-
-		if (box->type == BOX_TEXT)
-			continue;
-
-		/* recurse first */
-		layout_position_relative(box);
-
-		/* Ignore things we're not interested in. */
-		if (!box->style || (box->style &&
-				box->style->position != CSS_POSITION_RELATIVE))
-			continue;
-
-		layout_compute_relative_offset(box, &x, &y);
-
-		box->x += x;
-		box->y += y;
-
-		/* Handle INLINEs - their "children" are in fact
-		 * the sibling boxes between the INLINE and
-		 * INLINE_END boxes */
-		if (box->type == BOX_INLINE && box->inline_end) {
-			struct box *b;
-			for (b = box->next; b && b != box->inline_end;
-					b = b->next) {
-				b->x += x;
-				b->y += y;
-			}
-		}
-	}
 }
 
 
@@ -2517,7 +2467,7 @@ void layout_compute_relative_offset(struct box *box, int *x, int *y)
 
 
 /**
- * Layout absolutely positioned children of a box.
+ * Layout absolutely positioned boxes in a block context.
  *
  * \param  block    box to layout children of
  * \param  content  memory pool for any new boxes
@@ -2529,9 +2479,17 @@ bool layout_absolute_children(struct box *block,
 {
 	struct box *box;
 
-	for (box = block->absolute_children; box; box = box->next)
-		if (!layout_absolute(box, content))
-			return false;
+	for (box = block->children; box; box = box->next) {
+		if ((box->type == BOX_BLOCK || box->type == BOX_TABLE) &&
+				(box->style->position == CSS_POSITION_ABSOLUTE||
+				box->style->position == CSS_POSITION_FIXED)) {
+			if (!layout_absolute(box, content))
+				return false;
+		} else if (box->type == BOX_BLOCK) {
+			if (!layout_absolute_children(box, content))
+				return false;
+		}
+	}
 
 	return true;
 }
@@ -2548,6 +2506,8 @@ bool layout_absolute_children(struct box *block,
 bool layout_absolute(struct box *box, struct content *content)
 {
 	struct box *containing_block = box->parent;
+	int cx, cy;  /* position of box parent relative to containing block */
+	int static_left, static_top;  /* static position */
 	int top, right, bottom, left;
 	int width, height;
 	int *margin = box->margin;
@@ -2557,6 +2517,29 @@ bool layout_absolute(struct box *box, struct content *content)
 	int space;
 
 	assert(box->type == BOX_BLOCK || box->type == BOX_TABLE);
+
+	/* Determine containing block and compute offset of box parent from
+	 * the containing block. The absolute box is positioned relative to the
+	 * containing block, but coordinates are relative to parent, so the
+	 * offset is required to set the position. */
+	cx = 0;
+	cy = 0;
+	for (containing_block = box->parent;
+			containing_block->parent;
+			containing_block = containing_block->parent) {
+		if (containing_block->style->position == CSS_POSITION_ABSOLUTE||
+		    containing_block->style->position == CSS_POSITION_RELATIVE||
+		    containing_block->style->position == CSS_POSITION_FIXED)
+			break;
+		cx += containing_block->x;
+		cy += containing_block->y;
+	}
+
+	/* The static position is where the box would be if it was not
+	 * absolutely positioned. The x and y are filled in by
+	 * layout_block_context(). */
+	static_left = cx + box->x;
+	static_top = cy + box->y;
 
 	if (containing_block->type == BOX_BLOCK ||
 			containing_block->type == BOX_INLINE_BLOCK ||
@@ -2588,7 +2571,7 @@ bool layout_absolute(struct box *box, struct content *content)
 			margin[LEFT] = 0;
 		if (margin[RIGHT] == AUTO)
 			margin[RIGHT] = 0;
-		left = 0;
+		left = static_left;
 
 		width = min(max(box->min_width, available_width), box->max_width);
 		width -= box->margin[LEFT] + box->border[LEFT] +
@@ -2655,7 +2638,7 @@ bool layout_absolute(struct box *box, struct content *content)
 					padding[RIGHT] - border[RIGHT] - margin[RIGHT] -
 					right;
 		} else if (left == AUTO && width != AUTO && right == AUTO) {
-			left = 0;
+			left = static_left;
 			right = containing_block->width -
 					left -
 					margin[LEFT] - border[LEFT] - padding[LEFT] -
@@ -2699,7 +2682,7 @@ bool layout_absolute(struct box *box, struct content *content)
 			padding[RIGHT], border[RIGHT], margin[RIGHT], right,
 			containing_block->width));
 
-	box->x = left + margin[LEFT] + border[LEFT];
+	box->x = left + margin[LEFT] + border[LEFT] - cx;
 	if (containing_block->type == BOX_BLOCK ||
 			containing_block->type == BOX_INLINE_BLOCK ||
 			containing_block->type == BOX_TABLE_CELL) {
@@ -2729,7 +2712,7 @@ bool layout_absolute(struct box *box, struct content *content)
 			padding[BOTTOM], border[BOTTOM], margin[BOTTOM], bottom,
 			containing_block->height));
 	if (top == AUTO && height == AUTO && bottom == AUTO) {
-		top = 0;
+		top = static_top;
 		height = box->height;
 		if (margin[TOP] == AUTO)
 			margin[TOP] = 0;
@@ -2783,7 +2766,7 @@ bool layout_absolute(struct box *box, struct content *content)
 					padding[BOTTOM] - border[BOTTOM] - margin[BOTTOM] -
 					bottom;
 		} else if (top == AUTO && height != AUTO && bottom == AUTO) {
-			top = 0;
+			top = static_top;
 			bottom = containing_block->height -
 					top -
 					margin[TOP] - border[TOP] - padding[TOP] -
@@ -2821,7 +2804,7 @@ bool layout_absolute(struct box *box, struct content *content)
 			padding[BOTTOM], border[BOTTOM], margin[BOTTOM], bottom,
 			containing_block->height));
 
-	box->y = top + margin[TOP] + border[TOP];
+	box->y = top + margin[TOP] + border[TOP] - cy;
 	if (containing_block->type == BOX_BLOCK ||
 			containing_block->type == BOX_INLINE_BLOCK ||
 			containing_block->type == BOX_TABLE_CELL) {
@@ -2995,19 +2978,6 @@ void layout_calculate_descendant_bboxes(struct box *box)
 		assert(child->type == BOX_FLOAT_LEFT ||
 				child->type == BOX_FLOAT_RIGHT);
 
-		layout_calculate_descendant_bboxes(child);
-
-		if (child->x + child->descendant_x0 < box->descendant_x0)
-			box->descendant_x0 = child->x + child->descendant_x0;
-		if (box->descendant_x1 < child->x + child->descendant_x1)
-			box->descendant_x1 = child->x + child->descendant_x1;
-		if (child->y + child->descendant_y0 < box->descendant_y0)
-			box->descendant_y0 = child->y + child->descendant_y0;
-		if (box->descendant_y1 < child->y + child->descendant_y1)
-			box->descendant_y1 = child->y + child->descendant_y1;
-	}
-
-	for (child = box->absolute_children; child; child = child->next) {
 		layout_calculate_descendant_bboxes(child);
 
 		if (child->x + child->descendant_x0 < box->descendant_x0)

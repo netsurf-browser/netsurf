@@ -45,7 +45,6 @@ struct columns {
 };
 
 
-static bool box_normalise_absolute_children(struct box *box, struct content *c);
 static bool box_normalise_table(struct box *table, struct content *c);
 static void box_normalise_table_spans(struct box *table);
 static bool box_normalise_table_row_group(struct box *row_group,
@@ -164,34 +163,6 @@ bool box_normalise_block(struct box *block, struct content *c)
 		}
 	}
 
-	if (!box_normalise_absolute_children(block, c))
-		return false;
-
-	return true;
-}
-
-
-bool box_normalise_absolute_children(struct box *box, struct content *c)
-{
-	struct box *child;
-	struct box *next_child;
-
-	for (child = box->absolute_children; child != 0; child = next_child) {
-		next_child = child->next;	/* child may be destroyed */
-		switch (child->type) {
-		case BOX_BLOCK:
-			if (!box_normalise_block(child, c))
-				return false;
-			break;
-		case BOX_TABLE:
-			if (!box_normalise_table(child, c))
-				return false;
-			break;
-		default:
-			assert(0);
-		}
-	}
-
 	return true;
 }
 
@@ -299,9 +270,6 @@ bool box_normalise_table(struct box *table, struct content * c)
 	table->columns = col_info.num_columns;
 	table->rows = col_info.num_rows;
 	free(col_info.spans);
-
-	if (!box_normalise_absolute_children(table, c))
-		return false;
 
 	if (table->children == 0) {
 		LOG(("table->children == 0, removing"));
@@ -467,9 +435,6 @@ bool box_normalise_table_row_group(struct box *row_group,
 		}
 	}
 
-	if (!box_normalise_absolute_children(row_group, c))
-		return false;
-
 	if (row_group->children == 0) {
 		LOG(("row_group->children == 0, removing"));
 		if (row_group->prev == 0)
@@ -582,9 +547,6 @@ bool box_normalise_table_row(struct box *row,
 	}
 	col_info->current_column = 0;
 	col_info->extra = false;
-
-	if (!box_normalise_absolute_children(row, c))
-		return false;
 
 	if (row->children == 0) {
 		LOG(("row->children == 0, removing"));

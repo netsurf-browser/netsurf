@@ -84,7 +84,6 @@ struct box * box_create(struct css_style *style,
 	box->inline_end = NULL;
 	box->float_children = NULL;
 	box->next_float = NULL;
-	box->absolute_children = NULL;
 	box->col = NULL;
 	box->gadget = NULL;
 	box->usemap = NULL;
@@ -118,30 +117,6 @@ void box_add_child(struct box *parent, struct box *child)
 	}
 
 	parent->last = child;
-	child->parent = parent;
-}
-
-
-/**
- * Add an absolutely positioned child to a box tree node.
- *
- * \param  parent  box giving birth
- * \param  child   box to link as last child of parent
- */
-
-void box_add_absolute_child(struct box *parent, struct box *child)
-{
-	assert(parent);
-	assert(child);
-
-	if (parent->absolute_children != 0) {	/* has children already */
-		child->next = parent->absolute_children;
-		parent->absolute_children->prev = child;
-	} else {			/* this is the first child */
-		child->next = 0;
-	}
-
-	parent->absolute_children = child;
 	child->parent = parent;
 }
 
@@ -208,11 +183,6 @@ void box_free(struct box *box)
 
 	/* free children first */
 	for (child = box->children; child; child = next) {
-		next = child->next;
-		box_free(child);
-	}
-
-	for (child = box->absolute_children; child; child = next) {
 		next = child->next;
 		box_free(child);
 	}
@@ -328,15 +298,6 @@ struct box *box_at_point(struct box *box, int x, int y,
 			box = box->object->data.html.layout;
 		} else {
 			goto siblings;
-		}
-	}
-
-	/* consider absolute children first */
-	for (child = box->absolute_children; child; child = child->next) {
-		if (box_contains_point(child, x - bx, y - by)) {
-			*box_x = bx + child->x - child->scroll_x;
-			*box_y = by + child->y - child->scroll_y;
-			return child;
 		}
 	}
 
@@ -594,13 +555,6 @@ void box_dump(struct box *box, unsigned int depth)
 			fprintf(stderr, "  ");
 		fprintf(stderr, "fallback:\n");
 		for (c = box->fallback; c; c = c->next)
-			box_dump(c, depth + 1);
-	}
-	if (box->absolute_children) {
-		for (i = 0; i != depth; i++)
-			fprintf(stderr, "  ");
-		fprintf(stderr, "absolute_children:\n");
-		for (c = box->absolute_children; c; c = c->next)
 			box_dump(c, depth + 1);
 	}
 }

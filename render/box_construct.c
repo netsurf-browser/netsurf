@@ -174,7 +174,6 @@ bool xml_to_box(xmlNode *n, struct content *c)
 	root.parent = NULL;
 	root.float_children = NULL;
 	root.next_float = NULL;
-	root.absolute_children = NULL;
 
 	c->data.html.style = talloc_memdup(c, &css_base_style,
 			sizeof css_base_style);
@@ -408,18 +407,6 @@ bool box_construct_element(xmlNode *n, struct content *content,
 	} else if (box->type == BOX_INLINE_BLOCK) {
 		/* inline block box: add to tree and recurse */
 		box_add_child(*inline_container, box);
-		inline_container_c = 0;
-		for (c = n->children; convert_children && c; c = c->next)
-			if (!convert_xml_to_box(c, content, style, box,
-					&inline_container_c,
-					containing_block_c,
-					href, target, title))
-				return false;
-	} else if ((style->position == CSS_POSITION_ABSOLUTE ||
-			style->position == CSS_POSITION_FIXED) &&
-			containing_block) {
-		/* absolutely positioned */
-		box_add_absolute_child(containing_block, box);
 		inline_container_c = 0;
 		for (c = n->children; convert_children && c; c = c->next)
 			if (!convert_xml_to_box(c, content, style, box,

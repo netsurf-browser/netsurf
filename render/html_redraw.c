@@ -390,14 +390,6 @@ bool html_redraw_box_children(struct box *box,
 				scale, current_background_color))
 			return false;
 
-	for (c = box->absolute_children; c; c = c->next)
-		if (!html_redraw_box(c,
-				x_parent + box->x - box->scroll_x,
-				y_parent + box->y - box->scroll_y,
-				clip_x0, clip_y0, clip_x1, clip_y1,
-				scale, current_background_color))
-			return false;
-
 	return true;
 }
 
