@@ -216,8 +216,9 @@ bool layout_block_context(struct box *block, struct content *content)
 		 * correct handling of floats.
 		 */
 
-		if (box->style->position == CSS_POSITION_ABSOLUTE ||
-				box->style->position == CSS_POSITION_FIXED) {
+		if (box->style &&
+				(box->style->position == CSS_POSITION_ABSOLUTE||
+				 box->style->position == CSS_POSITION_FIXED)) {
 			box->x = box->parent->padding[LEFT];
 			goto advance_to_next_box;
 	        }
