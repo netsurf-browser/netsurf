@@ -78,9 +78,13 @@ static void calculate_mbp_width(struct css_style *style, unsigned int side,
 		int *fixed, float *frac);
 static void layout_position_relative(struct box *root);
 static void layout_compute_relative_offset(struct box *box, int *x, int *y);
-static bool layout_absolute_children(struct box *block,
+static bool layout_position_absolute(struct box *box,
+		struct box *containing_block,
+		int cx, int cy,
 		struct content *content);
-static bool layout_absolute(struct box *box, struct content *content);
+static bool layout_absolute(struct box *box, struct box *containing_block,
+		int cx, int cy,
+		struct content *content);
 static void layout_compute_offsets(struct box *box,
 		struct box *containing_block,
 		int *top, int *right, int *bottom, int *left);
@@ -133,6 +137,7 @@ bool layout_document(struct content *content, int width, int height)
 					 doc->children->margin[BOTTOM]);
 	}
 
+	layout_position_absolute(doc, doc, 0, 0, content);
 	layout_position_relative(doc);
 
 	layout_calculate_descendant_bboxes(doc);
@@ -373,10 +378,6 @@ bool layout_block_context(struct box *block, struct content *content)
 
 	if (block->height == AUTO)
 		block->height = cy - block->padding[TOP];
-
-	/* Absolutely positioned children. */
-	if (!layout_absolute_children(block, content))
-		return false;
 
 	return true;
 }
@@ -2371,8 +2372,7 @@ void layout_position_relative(struct box *root)
 
 	/**\todo ensure containing box is large enough after moving boxes */
 
-	if (!root)
-		return;
+	assert(root);
 
 	/* Normal children */
 	for (box = root->children; box; box = box->next) {
@@ -2475,19 +2475,29 @@ void layout_compute_relative_offset(struct box *box, int *x, int *y)
  * \return  true on success, false on memory exhaustion
  */
 
-bool layout_absolute_children(struct box *block,
+bool layout_position_absolute(struct box *box,
+		struct box *containing_block,
+		int cx, int cy,
 		struct content *content)
 {
-	struct box *box;
+	struct box *c;
 
-	for (box = block->children; box; box = box->next) {
-		if ((box->type == BOX_BLOCK || box->type == BOX_TABLE) &&
-				(box->style->position == CSS_POSITION_ABSOLUTE||
-				box->style->position == CSS_POSITION_FIXED)) {
-			if (!layout_absolute(box, content))
+	for (c = box->children; c; c = c->next) {
+		if ((c->type == BOX_BLOCK || c->type == BOX_TABLE) &&
+				(c->style->position == CSS_POSITION_ABSOLUTE ||
+				 c->style->position == CSS_POSITION_FIXED)) {
+			if (!layout_absolute(c, containing_block,
+					cx, cy, content))
 				return false;
-		} else if (box->type == BOX_BLOCK) {
-			if (!layout_absolute_children(box, content))
+			if (!layout_position_absolute(c, c, 0, 0, content))
+				return false;
+		} else if (c->style &&
+				c->style->position == CSS_POSITION_RELATIVE) {
+			if (!layout_position_absolute(c, c, 0, 0, content))
+				return false;
+		} else {
+			if (!layout_position_absolute(c, containing_block,
+					cx + c->x, cy + c->y, content))
 				return false;
 		}
 	}
@@ -2504,10 +2514,10 @@ bool layout_absolute_children(struct box *block,
  * \return  true on success, false on memory exhaustion
  */
 
-bool layout_absolute(struct box *box, struct content *content)
+bool layout_absolute(struct box *box, struct box *containing_block,
+		int cx, int cy,
+		struct content *content)
 {
-	struct box *containing_block = box->parent;
-	int cx, cy;  /* position of box parent relative to containing block */
 	int static_left, static_top;  /* static position */
 	int top, right, bottom, left;
 	int width, height;
@@ -2518,23 +2528,6 @@ bool layout_absolute(struct box *box, struct content *content)
 	int space;
 
 	assert(box->type == BOX_BLOCK || box->type == BOX_TABLE);
-
-	/* Determine containing block and compute offset of box parent from
-	 * the containing block. The absolute box is positioned relative to the
-	 * containing block, but coordinates are relative to parent, so the
-	 * offset is required to set the position. */
-	cx = 0;
-	cy = 0;
-	for (containing_block = box->parent;
-			containing_block->parent;
-			containing_block = containing_block->parent) {
-		if (containing_block->style->position == CSS_POSITION_ABSOLUTE||
-		    containing_block->style->position == CSS_POSITION_RELATIVE||
-		    containing_block->style->position == CSS_POSITION_FIXED)
-			break;
-		cx += containing_block->x;
-		cy += containing_block->y;
-	}
 
 	/* The static position is where the box would be if it was not
 	 * absolutely positioned. The x and y are filled in by
