@@ -29,5 +29,4 @@ void ro_gui_progress_bar_set_value(struct progress_bar *pb, unsigned int value);
 unsigned int ro_gui_progress_bar_get_value(struct progress_bar *pb);
 void ro_gui_progress_bar_set_range(struct progress_bar *pb, unsigned int range);
 unsigned int ro_gui_progress_bar_get_range(struct progress_bar *pb);
-void ro_gui_progress_bar_set_visible(struct progress_bar *pb, bool visible);
 #endif

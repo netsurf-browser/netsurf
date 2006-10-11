@@ -44,6 +44,8 @@ struct progress_bar {
 	int cur_height;			/**< current calculated height */
 };
 
+static char progress_animation_sprite[] = "progress\0";
+
 struct wimp_window_base progress_bar_definition = {
 	{0, 0, 1, 1},
 	0,
@@ -94,11 +96,11 @@ void ro_gui_progress_bar_init(osspriteop_area *icons) {
 	progress_icon = NULL;
 	error = xosspriteop_select_sprite(osspriteop_USER_AREA,
 			progress_bar_definition.sprite_area,
-			(osspriteop_id)"progress", &progress_icon);
+			(osspriteop_id)progress_animation_sprite, &progress_icon);
 	if (!error) {
 		xosspriteop_read_sprite_info(osspriteop_USER_AREA,
 			progress_bar_definition.sprite_area,
-			(osspriteop_id)"progress",
+			(osspriteop_id)progress_animation_sprite,
 			&progress_width, &progress_height, 0, 0);
 	}
 }
@@ -461,11 +463,11 @@ void ro_gui_progress_bar_redraw_window(wimp_draw *redraw, struct progress_bar *p
 						tinct_FILL_HORIZONTALLY);
 			}
 		} else {
-		  	plot.fill(redraw->box.x0 + pb->visible.x0,
-		  			redraw->box.y0 + pb->visible.y0,
-		  			redraw->box.x0 + pb->visible.x1,
-		  			redraw->box.y0 + pb->visible.y1,
-		  			0xff000000);
+		  	plot.fill((redraw->box.x0 + pb->visible.x0) >> 1,
+		  			-(redraw->box.y0 + pb->visible.y0) >> 1,
+		  			(redraw->box.x0 + pb->visible.x1) >> 1,
+		  			-(redraw->box.y0 + pb->visible.y1) >> 1,
+		  			0x000000ff);
 		}
 		error = xwimp_get_rectangle(redraw, &more);
 		if (error) {
