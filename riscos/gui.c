@@ -299,33 +299,24 @@ void gui_init(int argc, char** argv)
 		while (*help == 9) help++;
 		if (!memcmp(help, "0.55", 4))
 #endif
-        		ro_plot_patterned_lines = false;
+			ro_plot_patterned_lines = false;
 	}
 
-	atexit(ro_gui_cleanup);
-	prev_sigs.sigabrt = signal(SIGABRT, ro_gui_signal);
-	prev_sigs.sigfpe = signal(SIGFPE, ro_gui_signal);
-	prev_sigs.sigill = signal(SIGILL, ro_gui_signal);
-	prev_sigs.sigint = signal(SIGINT, ro_gui_signal);
-	prev_sigs.sigsegv = signal(SIGSEGV, ro_gui_signal);
-	prev_sigs.sigterm = signal(SIGTERM, ro_gui_signal);
-
-	if (prev_sigs.sigabrt == SIG_ERR || prev_sigs.sigfpe == SIG_ERR ||
-			prev_sigs.sigill == SIG_ERR ||
-			prev_sigs.sigint == SIG_ERR ||
-			prev_sigs.sigsegv == SIG_ERR ||
-			prev_sigs.sigterm == SIG_ERR)
-		die("Failed registering signal handlers");
-
-	filename_initialise();
-
-#ifdef WITH_SAVE_COMPLETE
-	save_complete_init();
-#endif
-
+	/* Read in the options */
 	options_read("NetSurf:Choices");
 
-	/* set defaults for absent strings */
+	/* Choose the interface language to use */
+	ro_gui_choose_language();
+
+	/* Load in our language-specific Messages */
+	if ((length = snprintf(path, sizeof(path),
+			"NetSurf:Resources.%s.Messages",
+			option_language)) < 0 || length >= (int)sizeof(path))
+		die("Failed to locate Messages resource.");
+	messages_load(path);
+	messages_load("NetSurf:Resources.LangNames");
+
+	/* Set defaults for absent option strings */
 	if (!option_theme)
 		option_theme = strdup("Aletheia");
 	if (!option_toolbar_browser)
@@ -369,18 +360,31 @@ void gui_init(int argc, char** argv)
 			!option_theme_save)
 		die("Failed initialising string options");
 
-	/* create our choices directories */
+	/* Create our choices directories */
 	ro_gui_create_dirs();
 
+	/* Register exit and signal handlers */
+	atexit(ro_gui_cleanup);
+	prev_sigs.sigabrt = signal(SIGABRT, ro_gui_signal);
+	prev_sigs.sigfpe = signal(SIGFPE, ro_gui_signal);
+	prev_sigs.sigill = signal(SIGILL, ro_gui_signal);
+	prev_sigs.sigint = signal(SIGINT, ro_gui_signal);
+	prev_sigs.sigsegv = signal(SIGSEGV, ro_gui_signal);
+	prev_sigs.sigterm = signal(SIGTERM, ro_gui_signal);
+
+	if (prev_sigs.sigabrt == SIG_ERR || prev_sigs.sigfpe == SIG_ERR ||
+			prev_sigs.sigill == SIG_ERR ||
+			prev_sigs.sigint == SIG_ERR ||
+			prev_sigs.sigsegv == SIG_ERR ||
+			prev_sigs.sigterm == SIG_ERR)
+		die("Failed registering signal handlers");
+
+	/* Load in UI sprites */
 	gui_sprites = ro_gui_load_sprite_file("NetSurf:Resources.Sprites");
 	if (!gui_sprites)
 		die("Unable to load Sprites.");
-	ro_gui_choose_language();
 
-	bitmap_initialise_memory();
-	urldb_load(option_url_path);
-	urldb_load_cookies(option_cookie_file);
-
+	/* Find NetSurf directory */
 	nsdir_temp = getenv("NetSurf$Dir");
 	if (!nsdir_temp)
 		die("Failed to locate NetSurf directory");
@@ -388,18 +392,28 @@ void gui_init(int argc, char** argv)
 	if (!NETSURF_DIR)
 		die("Failed duplicating NetSurf directory string");
 
-	if ((length = snprintf(path, sizeof(path),
-			"NetSurf:Resources.%s.Messages",
-			option_language)) < 0 || length >= (int)sizeof(path))
-		die("Failed to locate Messages resource.");
-	messages_load(path);
-	messages_load("NetSurf:Resources.LangNames");
-
+	/* Initialise stylesheet URLs */
 	default_stylesheet_url = strdup("file:///NetSurf:/Resources/CSS");
 	adblock_stylesheet_url = strdup("file:///NetSurf:/Resources/AdBlock");
 	if (!default_stylesheet_url || !adblock_stylesheet_url)
 		die("Failed initialising string constants.");
 
+	/* Initialise filename allocator */
+	filename_initialise();
+
+	/* Initialise save complete functionality */
+#ifdef WITH_SAVE_COMPLETE
+	save_complete_init();
+#endif
+
+	/* Initialise bitmap memory pool */
+	bitmap_initialise_memory();
+
+	/* Load in visited URLs and Cookies */
+	urldb_load(option_url_path);
+	urldb_load_cookies(option_cookie_file);
+
+	/* Initialise with the wimp */
 	error = xwimp_initialise(wimp_VERSION_RO38, task_name,
 			(const wimp_message_list *) &task_messages, 0,
 			&task_handle);
@@ -408,7 +422,7 @@ void gui_init(int argc, char** argv)
 				error->errnum, error->errmess));
 		die(error->errmess);
 	}
-	/* register our message handlers */
+	/* Register message handlers */
 	ro_message_register_route(message_HELP_REQUEST,
 			ro_gui_interactive_help_request);
 	ro_message_register_route(message_DATA_OPEN,
@@ -427,9 +441,11 @@ void gui_init(int argc, char** argv)
 			ro_gui_selection_drag_claim);
 	ro_message_register_route(message_WINDOW_INFO,
 			ro_msg_window_info);
-	/* end of handler registration */
 
+	/* Initialise the font subsystem */
 	nsfont_init();
+
+	/* Initialise global information */
 	ro_gui_get_screen_properties();
 	ro_gui_wimp_get_desktop_font();
 
@@ -437,8 +453,7 @@ void gui_init(int argc, char** argv)
 	if (getenv("NetSurf$Start_URI_Handler"))
 		xwimp_start_task("Desktop", 0);
 
-	/*	Open the templates
-	*/
+	/* Open the templates */
 	if ((length = snprintf(path, sizeof(path),
 			"NetSurf:Resources.%s.Templates",
 			option_language)) < 0 || length >= (int)sizeof(path))
@@ -449,17 +464,30 @@ void gui_init(int argc, char** argv)
 				error->errnum, error->errmess));
 		die(error->errmess);
 	}
-	ro_gui_theme_initialise(); /* initialise themes before dialogs */
-	ro_gui_dialog_init(); /* must be done after sprite loading */
+
+	/* Initialise themes before dialogs */
+	ro_gui_theme_initialise();
+	/* Initialise dialog windows (must be after UI sprites are loaded) */
+	ro_gui_dialog_init();
+	/* Initialise download window */
 	ro_gui_download_init();
+	/* Initialise menus */
 	ro_gui_menu_init();
+	/* Initialise query windows */
 	ro_gui_query_init();
+	/* Initialise the history subsystem */
 	ro_gui_history_init();
+
+	/* Done with the templates file */
 	wimp_close_template();
 
-	ro_gui_tree_initialise(); /* must be done after sprite loading */
+	/* Initialise tree views (must be after UI sprites are loaded) */
+	ro_gui_tree_initialise();
 
+	/* Create Iconbar icon */
 	ro_gui_icon_bar_create();
+
+	/* Finally, check Inet$Resolvers for sanity */
 	ro_gui_check_resolvers();
 }
 
@@ -2196,7 +2224,7 @@ void warn_user(const char *warning, const char *detail)
  * Should only be used during initialisation.
  */
 
-void die(const char *error)
+void die(const char * const error)
 {
 	os_error warn_error;
 

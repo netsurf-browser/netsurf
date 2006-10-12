@@ -41,9 +41,11 @@ struct hash_table *messages_load_ctx(const char *path, struct hash_table *ctx)
 {
 	char s[400];
 	FILE *fp;
-	
+
+	assert(path != NULL);
+
 	ctx = (ctx != NULL) ? ctx : hash_create(HASH_SIZE);
-	
+
 	if (ctx == NULL) {
 		LOG(("Unable to create hash table for messages file %s", path));
 		return NULL;
@@ -70,7 +72,7 @@ struct hash_table *messages_load_ctx(const char *path, struct hash_table *ctx)
 			continue;
 		*colon = 0;  /* terminate key */
 		value = colon + 1;
-		
+
 		if (hash_add(ctx, s, value) == false) {
 			LOG(("Unable to add %s:%s to hash table of %s",
 				s, value, path));
@@ -80,7 +82,7 @@ struct hash_table *messages_load_ctx(const char *path, struct hash_table *ctx)
 	}
 
 	fclose(fp);
-	
+
 	return ctx;
 }
 
@@ -99,15 +101,18 @@ void messages_load(const char *path)
 {
 	struct hash_table *m;
 	char s[400];
-	
+
+	assert(path != NULL);
+
 	m = messages_load_ctx(path, messages_hash);
 	if (m == NULL) {
 		LOG(("Unable to open Messages file '%s'.  Possible reason: %s",
 				path, strerror(errno)));
-		snprintf(s, 400, "Unable to open Messages file '%s'.", path);
+		snprintf(s, sizeof s,
+				"Unable to open Messages file '%s'.", path);
 		die(s);
 	}
-	
+
 	messages_hash = m;
 }
 
@@ -121,8 +126,18 @@ void messages_load(const char *path)
 
 const char *messages_get_ctx(const char *key, struct hash_table *ctx)
 {
-	const char *r = hash_get(ctx, key);
-	
+	const char *r;
+
+	assert(key != NULL);
+
+	/* If we're called with no context, it's nicer to return the
+	 * key rather than explode - this allows attempts to get messages
+	 * before messages_hash is set up to fail gracefully, for example */
+	if (ctx == NULL)
+		return key;
+
+	r = hash_get(ctx, key);
+
 	return r ? r : key;
 }
 

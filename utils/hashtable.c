@@ -28,7 +28,7 @@
  * \return struct hash_table containing the context of this hash table or NULL
  *         if there is insufficent memory to create it and its chains.
  */
- 
+
 struct hash_table *hash_create(unsigned int chains)
 {
 	struct hash_table *r = malloc(sizeof(struct hash_table));
@@ -61,11 +61,14 @@ void hash_destroy(struct hash_table *ht)
 {
 	unsigned int i;
 
+	if (ht == NULL)
+		return;
+
 	for (i = 0; i < ht->nchains; i++) {
 		if (ht->chain[i] != NULL) {
 			struct hash_entry *e = ht->chain[i];
 			while (e) {
-			  	struct hash_entry *n = e->next;
+				struct hash_entry *n = e->next;
 				free(e->key);
 				free(e->value);
 				free(e);
@@ -93,14 +96,20 @@ void hash_destroy(struct hash_table *ht)
 
 bool hash_add(struct hash_table *ht, const char *key, const char *value)
 {
-	unsigned int h = hash_string_fnv(key);
-	unsigned int c = h % ht->nchains;
+	unsigned int h;
+	unsigned int c;
 	struct hash_entry *e = malloc(sizeof(struct hash_entry));
-	
+
+	if (ht == NULL || key == NULL || value == NULL)
+		return false;
+
 	if (e == NULL) {
 		LOG(("Not enough memory for hash entry."));
 		return false;
 	}
+
+	h = hash_string_fnv(key);
+	c = h % ht->nchains;
 
 	e->key = strdup(key);
 	if (e->key == NULL) {
@@ -108,7 +117,7 @@ bool hash_add(struct hash_table *ht, const char *key, const char *value)
 		free(e);
 		return false;
 	}
-	
+
 	e->value = strdup(value);
 	if (e->value == NULL) {
 		LOG(("Unable to strdup() value for hash table."));
@@ -133,10 +142,17 @@ bool hash_add(struct hash_table *ht, const char *key, const char *value)
 
 const char *hash_get(struct hash_table *ht, const char *key)
 {
-	unsigned int h = hash_string_fnv(key);
-	unsigned int c = h % ht->nchains;
-	struct hash_entry *e = ht->chain[c];
-	
+	unsigned int h;
+	unsigned int c;
+	struct hash_entry *e;
+
+	if (ht == NULL || key == NULL)
+		return NULL;
+
+	h = hash_string_fnv(key);
+	c = h % ht->nchains;
+	e = ht->chain[c];
+
 	while (e) {
 		if (!strcmp(key, e->key))
 			return e->value;
@@ -159,6 +175,9 @@ const char *hash_get(struct hash_table *ht, const char *key)
 unsigned int hash_string_fnv(const char *datum)
 {
 	unsigned int z = 0x01000193, i = 0;
+
+	if (datum == NULL)
+		return 0;
 
 	while (datum[i]) {
 		z *= 0x01000193;
@@ -228,7 +247,7 @@ int main(int argc, char *argv[])
 
 	a = hash_create(1031);
 	b = hash_create(7919);
-	
+
 	dict = fopen("/usr/share/dict/words", "r");
 	if (dict == NULL) {
 		fprintf(stderr, "Unable to open /usr/share/dict/words - extensive testing skipped.\n");
