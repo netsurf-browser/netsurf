@@ -39,7 +39,7 @@ struct line_info {
 	unsigned int b_length;		/**< Byte length of line */
 };
 
-static struct text_area {
+struct text_area {
 #define MAGIC (('T'<<24) | ('E'<<16) | ('X'<<8) | 'T')
 	unsigned int magic;		/**< Magic word, for sanity */
 
@@ -73,7 +73,7 @@ static struct text_area {
 
 	struct text_area *next;		/**< Next text area in list */
 	struct text_area *prev;		/**< Prev text area in list */
-} *text_areas;
+};
 
 static wimp_window text_area_definition = {
 	{0, 0, 16, 16},
@@ -100,7 +100,6 @@ static wimp_window text_area_definition = {
 	{}
 };
 
-static struct text_area *textarea_from_w(wimp_w self);
 static void textarea_reflow(struct text_area *ta, unsigned int line);
 static bool textarea_mouse_click(wimp_pointer *pointer);
 static bool textarea_key_press(wimp_key *key);
@@ -259,17 +258,11 @@ uintptr_t textarea_create(wimp_w parent, wimp_i icon, unsigned int flags,
 		return 0;
 	}
 
-	/* Insert into list */
-	ret->prev = NULL;
-	ret->next = text_areas;
-	if (text_areas)
-		text_areas->prev = ret;
-	text_areas = ret;
-
 	/* make available for immediate use */
 	textarea_reflow(ret, 0);
 
 	/* and register our event handlers */
+	ro_gui_wimp_event_set_user_data(ret->window, ret);
 	ro_gui_wimp_event_register_mouse_click(ret->window,
 			textarea_mouse_click);
 	ro_gui_wimp_event_register_keypress(ret->window,
@@ -303,16 +296,6 @@ void textarea_destroy(uintptr_t self)
 	}
 
 	ro_gui_wimp_event_finalise(ta->window);
-
-	/* Remove from list */
-	if (ta->next)
-		ta->next->prev = ta->prev;
-
-	if (ta->prev)
-		ta->prev->next = ta->next;
-	else
-		text_areas = ta->next;
-
 
 	free(ta->font_family);
 	free(ta->text);
@@ -693,23 +676,6 @@ unsigned int textarea_get_caret(uintptr_t self)
 /** \todo Selection handling */
 
 /**
- * Find a text area in the list
- *
- * \param self Text area to find
- * \return Pointer to text area, or NULL if not found
- */
-struct text_area *textarea_from_w(wimp_w self)
-{
-	struct text_area *ta;
-
-	for (ta = text_areas; ta; ta = ta->next)
-		if (ta->window == self)
-			return ta;
-
-	return NULL;
-}
-
-/**
  * Reflow a text area from the given line onwards
  *
  * \param ta Text area to reflow
@@ -905,9 +871,7 @@ bool textarea_mouse_click(wimp_pointer *pointer)
 {
 	struct text_area *ta;
 
-	ta = textarea_from_w(pointer->w);
-	if (!ta)
-		return false;
+	ta = (struct text_area *)ro_gui_wimp_event_get_user_data(pointer->w);
 
 	textarea_set_caret_xy((uintptr_t)ta, pointer->pos.x, pointer->pos.y);
 	return true;
@@ -930,9 +894,7 @@ bool textarea_key_press(wimp_key *key)
 	unsigned int c_pos;
 	os_error *error;
 
-	ta = textarea_from_w(key->w);
-	if (!ta)
-		return false;
+	ta = (struct text_area *)ro_gui_wimp_event_get_user_data(key->w);
 
 	if (ta->flags & TEXTAREA_READONLY)
 		return true;
@@ -1087,9 +1049,7 @@ void textarea_redraw_internal(wimp_draw *redraw, bool update)
 	rufl_code code;
 	os_error *error;
 
-	ta = textarea_from_w(redraw->w);
-	if (!ta)
-		return;
+	ta = (struct text_area *)ro_gui_wimp_event_get_user_data(redraw->w);
 
 	if (update)
 		error = xwimp_update_window(redraw, &more);
@@ -1192,12 +1152,7 @@ void textarea_redraw_internal(wimp_draw *redraw, bool update)
  */
 void textarea_open(wimp_open *open)
 {
-	struct text_area *ta;
 	os_error *error;
-
-	ta = textarea_from_w(open->w);
-	if (!ta)
-		return;
 
 	error = xwimp_open_window(open);
 	if (error) {
