@@ -152,7 +152,7 @@ bool filename_initialise(void) {
 	if (!directory)
 		return false;
 
-	for (start = directory; *start != '\0'; *start++) {
+	for (start = directory; *start != '\0'; start++) {
 		if (*start == '/') {
 			*start = '\0';
 			mkdir(directory, S_IRWXU);
@@ -434,7 +434,7 @@ static struct directory *filename_create_directory(const char *prefix) {
 char *filename_as_url(const char *filename) {
 	char *temp, *url;
 	int length;
-	
+
 	length = strlen(TEMP_FILENAME_PREFIX) + strlen(filename) + 2;
 	temp = malloc(length);
 	if (!temp) {
