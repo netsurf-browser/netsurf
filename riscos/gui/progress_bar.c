@@ -42,9 +42,13 @@ struct progress_bar {
 	bool recalculate;		/**< recalculation required */
 	int cur_width;			/**< current calculated width */
 	int cur_height;			/**< current calculated height */
+	bool icon_obscured;		/**< icon is partially obscured */
 };
 
 static char progress_animation_sprite[] = "progress\0";
+static osspriteop_header *progress_icon;
+static unsigned int progress_width;
+static unsigned int progress_height;
 
 struct wimp_window_base progress_bar_definition = {
 	{0, 0, 1, 1},
@@ -69,12 +73,8 @@ struct wimp_window_base progress_bar_definition = {
 	{""},
 	0
 };
-static osspriteop_header *progress_icon;
-static unsigned int progress_width;
-static unsigned int progress_height;
 
 
-static void ro_gui_progress_bar_update(struct progress_bar *pb);
 static void ro_gui_progress_bar_calculate(struct progress_bar *pb, int width,
 		int height);
 static void ro_gui_progress_bar_redraw(wimp_draw *redraw);
@@ -187,7 +187,7 @@ void ro_gui_progress_bar_set_icon(struct progress_bar *pb, const char *icon) {
 	}
 	pb->recalculate = true;
 	xwimp_force_redraw(pb->w, 0, 0, 32, 32);
-	ro_gui_progress_bar_update(pb);
+	ro_gui_progress_bar_update(pb, pb->cur_width, pb->cur_height);
 }
 
 
@@ -203,7 +203,7 @@ void ro_gui_progress_bar_set_value(struct progress_bar *pb, unsigned int value) 
 	pb->value = value;
 	if (pb->value > pb->range)
 		pb->range = pb->value;
-	ro_gui_progress_bar_update(pb);
+	ro_gui_progress_bar_update(pb, pb->cur_width, pb->cur_height);
 }
 
 
@@ -232,7 +232,7 @@ void ro_gui_progress_bar_set_range(struct progress_bar *pb, unsigned int range) 
 	pb->range = range;
 	if (pb->value > pb->range)
 		pb->value = pb->range;
-	ro_gui_progress_bar_update(pb);
+	ro_gui_progress_bar_update(pb, pb->cur_width, pb->cur_height);
 }
 
 
@@ -250,15 +250,21 @@ unsigned int ro_gui_progress_bar_get_range(struct progress_bar *pb) {
 
 
 /**
- * Update the display to reflect new values
+ * Update the progress bar to a new dimension.
  *
  * \param  pb  the progress bar to update
+ * \param  width  the new progress bar width
+ * \param  height  the new progress bar height
  */
-void ro_gui_progress_bar_update(struct progress_bar *pb) {
+void ro_gui_progress_bar_update(struct progress_bar *pb, int width, int height) {
   	wimp_draw redraw;
 	os_error *error;
 	osbool more;
   	os_box cur;
+
+	/* don't allow negative dimensions */
+	width = max(width, 0);
+	height = max(height, 0);
 
  	/* update the animation state */
 	if ((pb->value == 0) || (pb->value == pb->range)) {
@@ -274,7 +280,7 @@ void ro_gui_progress_bar_update(struct progress_bar *pb) {
   	/* get old and new positions */
   	cur = pb->visible;
   	pb->recalculate = true;
-  	ro_gui_progress_bar_calculate(pb, pb->cur_width, pb->cur_height);
+  	ro_gui_progress_bar_calculate(pb, width, height);
   	
   	/* see if the progress bar hasn't moved. we don't need to consider
   	 * the left edge moving as this is handled by the icon setting
@@ -365,6 +371,7 @@ void ro_gui_progress_bar_calculate(struct progress_bar *pb, int width, int heigh
 	int icon_width, icon_height;
 	int icon_x0 = 0, icon_y0 = 0, progress_x0, progress_x1, progress_ymid = 0;
 	osspriteop_header *icon = NULL;
+	bool icon_redraw = false;
 	
 	/* try to use cached values */
 	if ((!pb->recalculate) && (pb->cur_width == width) &&
@@ -396,8 +403,20 @@ void ro_gui_progress_bar_calculate(struct progress_bar *pb, int width, int heigh
 			width -= 32;
 			icon_x0 = 16 - icon_width;
 			icon_y0 = progress_ymid - icon_height;
+			if (width < 0) {
+				icon_x0 += width;
+				icon_redraw = true;
+			}
 		}
 	}
+	
+	/* update the icon */
+	if ((pb->icon_obscured) || (icon_redraw)) {
+		if (icon_x0 != pb->icon_x0)
+			xwimp_force_redraw(pb->w, 0, 0, 32, 32);
+	}
+	pb->icon_obscured = icon_redraw;	
+	
 	progress_x1 = progress_x0;
 	if (pb->range > 0)
 		progress_x1 += (width * pb->value) / pb->range;
@@ -439,7 +458,7 @@ void ro_gui_progress_bar_redraw_window(wimp_draw *redraw, struct progress_bar *p
 	/* redraw the window */
 	while (more) {
 		if (pb->icon)
-			_swix(Tinct_Plot, _IN(2) | _IN(3) | _IN(4) | _IN(7),
+			_swix(Tinct_PlotAlpha, _IN(2) | _IN(3) | _IN(4) | _IN(7),
 					pb->icon_img,
 					redraw->box.x0 + pb->icon_x0,
 					redraw->box.y0 + pb->icon_y0,
@@ -458,7 +477,7 @@ void ro_gui_progress_bar_redraw_window(wimp_draw *redraw, struct progress_bar *p
 		  				clip_x1, clip_y1);
 				_swix(Tinct_Plot, _IN(2) | _IN(3) | _IN(4) | _IN(7),
 						progress_icon,
-						redraw->box.x0 + pb->offset,
+						redraw->box.x0 - pb->offset,
 						progress_ymid - progress_height,
 						tinct_FILL_HORIZONTALLY);
 			}

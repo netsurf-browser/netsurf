@@ -22,6 +22,7 @@ void ro_gui_progress_bar_init(osspriteop_area *icons);
 
 struct progress_bar *ro_gui_progress_bar_create(void);
 void ro_gui_progress_bar_destroy(struct progress_bar *pb);
+void ro_gui_progress_bar_update(struct progress_bar *pb, int width, int height);
 
 wimp_w ro_gui_progress_bar_get_window(struct progress_bar *pb);
 void ro_gui_progress_bar_set_icon(struct progress_bar *pb, const char *icon);
