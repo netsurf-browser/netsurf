@@ -19,7 +19,6 @@
 #include "oslib/wimpspriteop.h"
 #include "netsurf/desktop/plotters.h"
 #include "netsurf/utils/log.h"
-#include "netsurf/utils/utf8.h"
 #include "netsurf/utils/utils.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/wimp.h"
@@ -35,7 +34,6 @@ struct status_bar {
 	wimp_w w;			/**< status bar window handle */
 	wimp_w parent;			/**< parent window handle */
 	char *text;			/**< status bar text */
-	char *local;			/**< status bar text (local encoding) */
 	struct progress_bar *pb;	/**< progress bar */
 	unsigned int scale;		/**< current status bar scale */
 	int width;			/**< current status bar width */
@@ -154,6 +152,11 @@ void ro_gui_status_bar_destroy(struct status_bar *sb) {
 		LOG(("xwimp_delete_window: 0x%x:%s",
 			error->errnum, error->errmess));
 	}
+	
+	ro_gui_progress_bar_destroy(sb->pb);
+	
+	if (sb->text)
+		free(sb->text);
 
 	free(sb);
 }
@@ -289,39 +292,35 @@ void ro_gui_status_bar_set_progress_icon(struct status_bar *sb,
  * \param  text  the UTF8 text to display, or NULL for none
  */
 void ro_gui_status_bar_set_text(struct status_bar *sb, const char *text) {
-	utf8_convert_ret ret;
 
 	assert(sb);
 	
 	/* check for no change */
-	if ((sb->text) && (!strcmp(text, sb->text)))
-	  	return;
-	
+	if (sb->text) {
+	  	/* strings match */
+		if (!strcmp(text, sb->text))
+	  		return;
+	} else {
+		/* still no string */
+		if (!text)
+			return;
+	}
+
 	/* release the old text */
 	if (sb->text)
 		free(sb->text);
-	sb->text = NULL;
-	if (sb->local)
-		free(sb->local);
-	sb->local = NULL;
-	
-	/* copy the text */
-	sb->text = strdup(text);
-	if (!sb->text)
-		return;
 
-	/* get local encoding */
-	ret = utf8_to_local_encoding(text, 0, &(sb->local));
-	if (ret != UTF8_CONVERT_OK) {
-		assert(ret != UTF8_CONVERT_BADENC);
-		LOG(("utf8_to_enc failed"));
-		free(sb->text);
-		sb->text = NULL;
-		return;
-	}
+	/* copy new text if required. we don't abort on the string duplication
+	 * failing as it would just cause the visible display to be out of
+	 * sync with the (failed) text */
+	if (text)
+		sb->text = strdup(text);
+	else
+	  	sb->text = NULL;
 	
 	/* redraw the window */
-	xwimp_force_redraw(sb->w, 0, 0, sb->width - WIDGET_WIDTH, 65536);
+	if (sb->visible)
+		xwimp_force_redraw(sb->w, 0, 0, sb->width - WIDGET_WIDTH, 65536);
 }
 
 
@@ -339,7 +338,7 @@ void ro_gui_status_bar_resize(struct status_bar *sb) {
 	os_error *error;
 	os_box extent;
 
-	if (!sb)
+	if ((!sb) || (!sb->visible))
 		return;
 
 	/* get the window work area dimensions */
@@ -451,7 +450,7 @@ void ro_gui_status_bar_redraw(wimp_draw *redraw) {
 	}
 	while (more) {
 	  	/* redraw the status text */
-	  	if (sb->local) {
+	  	if (sb->text) {
 			error = xcolourtrans_set_font_colours(font_CURRENT,
 					0xeeeeee00, 0x00000000, 14, 0, 0, 0);
 			if (error) {
@@ -462,7 +461,7 @@ void ro_gui_status_bar_redraw(wimp_draw *redraw) {
 			code = rufl_paint(ro_gui_desktop_font_family,
 					ro_gui_desktop_font_style,
 					ro_gui_desktop_font_size,
-					sb->local, strlen(sb->local),
+					sb->text, strlen(sb->text),
 					redraw->box.x0 + 6, redraw->box.y0 + 8,
 					rufl_BLEND_FONT);
 			if (code != rufl_OK) {
@@ -565,6 +564,7 @@ void ro_gui_status_bar_open(wimp_open *open) {
 void ro_gui_status_position_progress_bar(struct status_bar *sb) {
 	wimp_window_state state;
 	os_error *error;
+	int left, right;
 
 	if (!sb)
 		return;
@@ -580,13 +580,17 @@ void ro_gui_status_position_progress_bar(struct status_bar *sb) {
 		return;
 	}
 
+	/* calculate the dimensions */
+	right = state.visible.x1 - WIDGET_WIDTH - 2;
+	left = max(state.visible.x0, right - PROGRESS_WIDTH);
+	
 	/* re-open the nested window */
 	state.w = ro_gui_progress_bar_get_window(sb->pb);
 	state.xscroll = 0;
 	state.yscroll = 0;
 	state.next = wimp_TOP;
-	state.visible.x0 = state.visible.x1 - PROGRESS_WIDTH;
-	state.visible.x1 -= WIDGET_WIDTH + 2;
+	state.visible.x0 = left;
+	state.visible.x1 = right;
 	error = xwimp_open_window_nested((wimp_open *)&state,
 			sb->w,
 			wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
@@ -605,4 +609,9 @@ void ro_gui_status_position_progress_bar(struct status_bar *sb) {
 		LOG(("xwimp_open_window: 0x%x: %s",
 				error->errnum, error->errmess));
 	}
+	
+	/* update the progress bar display on non-standard width */
+	if ((right - left) != PROGRESS_WIDTH)
+		ro_gui_progress_bar_update(sb->pb, right - left,
+				state.visible.y1 - state.visible.y0);
 }
