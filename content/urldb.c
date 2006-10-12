@@ -355,8 +355,10 @@ void urldb_load(const char *filename)
 		}
 
 		h = urldb_add_host(host);
-		if (!h)
+		if (!h) {
+			LOG(("Failed adding host: '%s'", host));
 			die("Memory exhausted whilst loading URL file");
+		}
 
 		/* load the non-corrupt data */
 		for (i = 0; i < urls; i++) {
