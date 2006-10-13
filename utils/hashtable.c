@@ -123,7 +123,7 @@ bool hash_add(struct hash_table *ht, const char *key, const char *value)
 		return false;
 	}
 
-	h = hash_string_fnv(key);
+	h = hash_string_fnv(key, &(e->key_length));
 	c = h % ht->nchains;
 
 	e->key = strdup(key);
@@ -141,7 +141,6 @@ bool hash_add(struct hash_table *ht, const char *key, const char *value)
 		return false;
 	}
 
-	e->key_length = strlen(key);
 	e->next = ht->chain[c];
 	ht->chain[c] = e;
 
@@ -166,12 +165,12 @@ const char *hash_get(struct hash_table *ht, const char *key)
 	if (ht == NULL || key == NULL)
 		return NULL;
 
-	h = hash_string_fnv(key);
+	h = hash_string_fnv(key, &key_length);
 	c = h % ht->nchains;
-	key_length = strlen(key);
 
 	for (e = ht->chain[c]; e; e = e->next)
-		if ((key_length == e->key_length) && (!strcmp(key, e->key)))
+		if ((key_length == e->key_length) && 
+		    (memcmp(key, e->key, key_length) == 0))
 			return e->value;
 
 	return NULL;
@@ -184,12 +183,14 @@ const char *hash_get(struct hash_table *ht, const char *key)
  * See http://en.wikipedia.org/wiki/Fowler_Noll_Vo_hash for more details.
  *
  * \param  datum   The string to hash.
+ * \param  len     Pointer to unsigned integer to record datum's length in.
  * \return The calculated hash value for the datum.
  */
 
-unsigned int hash_string_fnv(const char *datum)
+unsigned int hash_string_fnv(const char *datum, unsigned int *len)
 {
 	unsigned int z = 0x01000193;
+	*len = 0;
 
 	if (datum == NULL)
 		return 0;
@@ -197,6 +198,7 @@ unsigned int hash_string_fnv(const char *datum)
 	while (*datum) {
 		z *= 0x01000193;
 		z ^= *datum++;
+		(*len)++;
 	}
 
 	return z;
@@ -207,7 +209,7 @@ unsigned int hash_string_fnv(const char *datum)
  *
  * If you make changes to this hash table implementation, please rerun this
  * test, and if possible, through valgrind to make sure there are no memory
- * leaks or invalid memory accesses..  If you add new functionality, please
+ * leaks or invalid memory accesses.  If you add new functionality, please
  * include a test for it that has good coverage along side the other tests.
  */
 
@@ -218,6 +220,7 @@ int main(int argc, char *argv[])
 	struct hash_table *a, *b;
 	FILE *dict;
 	char keybuf[BUFSIZ], valbuf[BUFSIZ];
+	int i;
 
 	a = hash_create(79);
 	assert(a != NULL);
@@ -275,13 +278,15 @@ int main(int argc, char *argv[])
 		hash_add(b, keybuf, valbuf);
 	}
 
-	fseek(dict, 0, SEEK_SET);
+	for (i = 0; i < 5; i++) {
+		fseek(dict, 0, SEEK_SET);
 
-	while (!feof(dict)) {
-		fscanf(dict, "%s", keybuf);
-		fscanf(dict, "%s", valbuf);
-		assert(strcmp(hash_get(a, keybuf), valbuf) == 0);
-		assert(strcmp(hash_get(b, keybuf), valbuf) == 0);
+		while (!feof(dict)) {
+			fscanf(dict, "%s", keybuf);
+			fscanf(dict, "%s", valbuf);
+			assert(strcmp(hash_get(a, keybuf), valbuf) == 0);
+			assert(strcmp(hash_get(b, keybuf), valbuf) == 0);
+		}
 	}
 
 	hash_destroy(a);
