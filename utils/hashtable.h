@@ -13,16 +13,7 @@
 
 #include <stdbool.h>
 
-struct hash_entry {
-	char *key;
-	char *value;
-	struct hash_entry *next;
-};
-
-struct hash_table {
-	unsigned int nchains;
-	struct hash_entry **chain;
-};
+struct hash_table;
 
 struct hash_table *hash_create(unsigned int chains);
 void hash_destroy(struct hash_table *ht);

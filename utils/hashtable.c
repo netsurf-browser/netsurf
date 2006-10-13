@@ -3,6 +3,7 @@
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2006 Rob Kendrick <rjek@rjek.com>
+ * Copyright 2006 Richard Wilson <info@tinct.net>
  */
 
 /** \file
@@ -18,9 +19,23 @@
 #include "netsurf/utils/hashtable.h"
 #include "netsurf/utils/log.h"
 
+
+struct hash_entry {
+	char *key;
+	char *value;
+	unsigned int key_length;
+	struct hash_entry *next;
+};
+
+struct hash_table {
+	unsigned int nchains;
+	struct hash_entry **chain;
+};
+
+
 /**
  * Create a new hash table, and return a context for it.  The memory consumption
- * of a hash table is approximately 8 + (nchains * 12) bytes if it is empty.
+ * of a hash table is approximately 8 + (nchains * 16) bytes if it is empty.
  *
  * \param  chains Number of chains/buckets this hash table will have.  This
  *                should be a prime number, and ideally a prime number just
@@ -126,6 +141,7 @@ bool hash_add(struct hash_table *ht, const char *key, const char *value)
 		return false;
 	}
 
+	e->key_length = strlen(key);
 	e->next = ht->chain[c];
 	ht->chain[c] = e;
 
@@ -144,6 +160,7 @@ const char *hash_get(struct hash_table *ht, const char *key)
 {
 	unsigned int h;
 	unsigned int c;
+	unsigned int key_length;
 	struct hash_entry *e;
 
 	if (ht == NULL || key == NULL)
@@ -151,13 +168,11 @@ const char *hash_get(struct hash_table *ht, const char *key)
 
 	h = hash_string_fnv(key);
 	c = h % ht->nchains;
-	e = ht->chain[c];
+	key_length = strlen(key);
 
-	while (e) {
-		if (!strcmp(key, e->key))
+	for (e = ht->chain[c]; e; e = e->next)
+		if ((key_length == e->key_length) && (!strcmp(key, e->key)))
 			return e->value;
-		e = e->next;
-	}
 
 	return NULL;
 
@@ -174,15 +189,14 @@ const char *hash_get(struct hash_table *ht, const char *key)
 
 unsigned int hash_string_fnv(const char *datum)
 {
-	unsigned int z = 0x01000193, i = 0;
+	unsigned int z = 0x01000193;
 
 	if (datum == NULL)
 		return 0;
 
-	while (datum[i]) {
+	while (*datum) {
 		z *= 0x01000193;
-		z ^= datum[i];
-		datum++;
+		z ^= *datum++;
 	}
 
 	return z;
