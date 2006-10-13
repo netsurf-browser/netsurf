@@ -399,12 +399,12 @@ void ro_gui_progress_bar_calculate(struct progress_bar *pb, int width, int heigh
 				progress_bar_definition.sprite_area,
 				(osspriteop_id)pb->icon, &icon);
 		if (!error) {
-			progress_x0 += 32;
-			width -= 32;
-			icon_x0 = 16 - icon_width;
+			progress_x0 += 32 + MARGIN;
+			width -= 32 + MARGIN;
+			icon_x0 = MARGIN + 16 - icon_width;
 			icon_y0 = progress_ymid - icon_height;
-			if (width < 0) {
-				icon_x0 += width;
+			if (width < -MARGIN) {
+				icon_x0 += width + MARGIN;
 				icon_redraw = true;
 			}
 		}
@@ -413,12 +413,12 @@ void ro_gui_progress_bar_calculate(struct progress_bar *pb, int width, int heigh
 	/* update the icon */
 	if ((pb->icon_obscured) || (icon_redraw)) {
 		if (icon_x0 != pb->icon_x0)
-			xwimp_force_redraw(pb->w, 0, 0, 32, 32);
+			xwimp_force_redraw(pb->w, 0, 0, 32 + MARGIN, 65536);
 	}
 	pb->icon_obscured = icon_redraw;	
 	
 	progress_x1 = progress_x0;
-	if (pb->range > 0)
+	if ((pb->range > 0) && (width > 0))
 		progress_x1 += (width * pb->value) / pb->range;
 	
 	pb->visible.x0 = progress_x0;
@@ -463,30 +463,28 @@ void ro_gui_progress_bar_redraw_window(wimp_draw *redraw, struct progress_bar *p
 					redraw->box.x0 + pb->icon_x0,
 					redraw->box.y0 + pb->icon_y0,
 					tinct_ERROR_DIFFUSE);
-		if (progress_icon) {
+		if (!pb->icon_obscured) {
 		  	clip_x0 = max(redraw->clip.x0, 
-		  			redraw->box.x0 + pb->visible.x0) >> 1;
-	  		clip_y0 = -min(redraw->clip.y1,
-		  			redraw->box.y0 + pb->visible.y1) >> 1;
-		  	clip_x1 = min(redraw->clip.x1,
-		  			redraw->box.x0 + pb->visible.x1) >> 1;
-	  		clip_y1 = -max(redraw->clip.y0,
-		  			redraw->box.y0 + pb->visible.y0) >> 1;
+		  			redraw->box.x0 + pb->visible.x0) >> 1;	
+			clip_y0 = -min(redraw->clip.y1,
+		  			redraw->box.y0 + pb->visible.y1) >> 1;	
+			clip_x1 = min(redraw->clip.x1,
+					redraw->box.x0 + pb->visible.x1) >> 1;	
+		  	clip_y1 = -max(redraw->clip.y0,
+					redraw->box.y0 + pb->visible.y0) >> 1;
 		  	if ((clip_x0 < clip_x1) && (clip_y0 < clip_y1)) {
-		  		plot.clip(clip_x0, clip_y0,
-		  				clip_x1, clip_y1);
-				_swix(Tinct_Plot, _IN(2) | _IN(3) | _IN(4) | _IN(7),
-						progress_icon,
-						redraw->box.x0 - pb->offset,
-						progress_ymid - progress_height,
-						tinct_FILL_HORIZONTALLY);
+				if (progress_icon) {
+			  		plot.clip(clip_x0, clip_y0, clip_x1, clip_y1);
+					_swix(Tinct_Plot, _IN(2) | _IN(3) | _IN(4) | _IN(7),
+							progress_icon,
+							redraw->box.x0 - pb->offset,
+							progress_ymid - progress_height,	
+							tinct_FILL_HORIZONTALLY);
+				} else {
+				  	plot.fill(clip_x0, clip_y0, clip_x1, clip_y1,
+			  				0x000000ff);
+			  	}
 			}
-		} else {
-		  	plot.fill((redraw->box.x0 + pb->visible.x0) >> 1,
-		  			-(redraw->box.y0 + pb->visible.y0) >> 1,
-		  			(redraw->box.x0 + pb->visible.x1) >> 1,
-		  			-(redraw->box.y0 + pb->visible.y1) >> 1,
-		  			0x000000ff);
 		}
 		error = xwimp_get_rectangle(redraw, &more);
 		if (error) {
