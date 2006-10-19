@@ -602,8 +602,9 @@ HelpBrowserMenu2:\Rsee the navigation options.
 HelpBrowserMenu2-0:\Sreturn to the configured home page.
 HelpBrowserMenu2-1:\Sgo back a page in the local history.|MForm information is not resubmitted.
 HelpBrowserMenu2-2:\Sstep forward a page in the local history.|MForm information is not resubmitted.
-HelpBrowserMenu2-3:\Sfetch the current page again.
-HelpBrowserMenu2-4:\Sstop NetSurf from continuing to load this page.
+HelpBrowserMenu2-3:\Straverse up one level in the directory tree.
+HelpBrowserMenu2-4:\Sfetch the current page again.
+HelpBrowserMenu2-5:\Sstop NetSurf from continuing to load this page.
 HelpBrowserMenu3:\Rset the local display options.
 HelpBrowserMenu3-0:\Rscale the page, affecting both text and images.
 HelpBrowserMenu3-1:\Rset the local image options.

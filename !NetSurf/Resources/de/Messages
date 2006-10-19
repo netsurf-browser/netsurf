@@ -602,8 +602,9 @@ HelpBrowserMenu2:Untermenü Navigieren.
 HelpBrowserMenu2-0:Öffnet die Homepage im aktuellen Fenster.
 HelpBrowserMenu2-1:Schaltet zurück zur vorher dargestellten Seite.|MDie Seite wird dabei nicht aktualisiert.
 HelpBrowserMenu2-2:Schaltet zur nächsten Seite in der lokalen History Liste.|MDie Seite wird dabei nicht aktualisiert.
-HelpBrowserMenu2-3:Lädt die aktuelle Seite erneut.|MDie Seite wird aktualisiert. Ältere Informationen zu dieser Seite, die noch im lokalen Zwischenpuffer gespeichert sind, werden dabei überschrieben.
-HelpBrowserMenu2-4:Unterbricht den Ladevorgang und alle anderen Prozesse im aktuellen Browserfenster.
+HelpBrowserMenu2-3:\Straverse up one level in the directory tree.
+HelpBrowserMenu2-4:Lädt die aktuelle Seite erneut.|MDie Seite wird aktualisiert. Ältere Informationen zu dieser Seite, die noch im lokalen Zwischenpuffer gespeichert sind, werden dabei überschrieben.
+HelpBrowserMenu2-5:Unterbricht den Ladevorgang und alle anderen Prozesse im aktuellen Browserfenster.
 HelpBrowserMenu3:Untermenü Anzeige.|MFestlegen der Darstellungsparameter für das Browserfenster.
 HelpBrowserMenu3-0:Ändern der Größe der Darstellung. Beeinflußt werden Text und Bilder.
 HelpBrowserMenu3-1:Optionen zur Anzeige von Bildern.

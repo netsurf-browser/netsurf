@@ -602,8 +602,9 @@ HelpBrowserMenu2:\Rvoir les options de navigation.
 HelpBrowserMenu2-0:\Srevenir à la page d'accueil configurée.
 HelpBrowserMenu2-1:\Sreculer d'une page dans l'historique local.|ML'information du formlaire n'est pas réenvoyée.
 HelpBrowserMenu2-2:\Savancer d'une page dans l'historique local.|ML'information du formlaire n'est pas réenvoyée.
-HelpBrowserMenu2-3:\Srecommencer le chargement de la page courante.
-HelpBrowserMenu2-4:\Sarrêter le chargement de la page par NetSurf.
+HelpBrowserMenu2-3:\Straverse up one level in the directory tree.
+HelpBrowserMenu2-4:\Srecommencer le chargement de la page courante.
+HelpBrowserMenu2-5:\Sarrêter le chargement de la page par NetSurf.
 HelpBrowserMenu3:\Rdéfinir les options d'affichage locales.
 HelpBrowserMenu3-0:\Rredimensionner la page, y compris texte et images.
 HelpBrowserMenu3-1:\Rdéfinir les options d'images locales.
