@@ -130,7 +130,6 @@ struct status_bar *ro_gui_status_bar_create(wimp_w parent, unsigned int width) {
 			ro_gui_status_bar_click);
 	ro_gui_wimp_event_register_redraw_window(sb->w,
 			ro_gui_status_bar_redraw);
-	ro_gui_wimp_event_set_user_data(sb->w, sb);
 	ro_gui_wimp_event_set_help_prefix(sb->w, "HelpStatus");
 	ro_gui_status_bar_resize(sb);
 	return sb;
@@ -189,7 +188,7 @@ unsigned int ro_gui_status_bar_get_width(struct status_bar *sb) {
 
 
 /**
- * Get the visibility status of the status bar
+ * Set the visibility status of the status bar
  *
  * \param  sb  the status bar to check the visiblity of
  * \return whether the status bar is visible
