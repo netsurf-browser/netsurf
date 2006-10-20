@@ -123,9 +123,6 @@ uintptr_t textarea_create(wimp_w parent, wimp_i icon, unsigned int flags,
 		rufl_style font_style)
 {
 	struct text_area *ret;
-	wimp_window_state state;
-	wimp_icon_state istate;
-	os_box extent;
 	os_error *error;
 
 	ret = malloc(sizeof(struct text_area));
@@ -180,86 +177,12 @@ uintptr_t textarea_create(wimp_w parent, wimp_i icon, unsigned int flags,
 		free(ret);
 		return 0;
 	}
-
-	state.w = parent;
-	error = xwimp_get_window_state(&state);
-	if (error) {
-		LOG(("xwimp_get_window_state: 0x%x: %s",
-				error->errnum, error->errmess));
-		free(ret->font_family);
-		free(ret->text);
-		free(ret);
+	
+	/* set the window dimensions */
+	if (!textarea_update((uintptr_t)ret)) {
+	 	textarea_destroy((uintptr_t)ret);
 		return 0;
 	}
-
-	istate.w = parent;
-	istate.i = icon;
-	error = xwimp_get_icon_state(&istate);
-	if (error) {
-		LOG(("xwimp_get_icon_state: 0x%x: %s",
-				error->errnum, error->errmess));
-		free(ret->font_family);
-		free(ret->text);
-		free(ret);
-		return 0;
-	}
-
-	state.w = ret->window;
-	state.visible.x1 = state.visible.x0 + istate.icon.extent.x1 -
-			ro_get_vscroll_width(ret->window) - state.xscroll;
-	state.visible.x0 += istate.icon.extent.x0 + 2 - state.xscroll;
-	state.visible.y0 = state.visible.y1 + istate.icon.extent.y0 +
-			ro_get_hscroll_height(ret->window) - state.yscroll;
-	state.visible.y1 += istate.icon.extent.y1 - 2 - state.yscroll;
-
-	if (flags & TEXTAREA_READONLY) {
-		state.visible.x0 += 2;
-		state.visible.x1 -= 4;
-		state.visible.y0 += 4;
-		state.visible.y1 -= 2;
-	}
-
-	/* set our width/height */
-	ret->vis_width = state.visible.x1 - state.visible.x0;
-	ret->vis_height = state.visible.y1 - state.visible.y0;
-
-	/* Set window extent to visible area */
-	extent.x0 = 0;
-	extent.y0 = -ret->vis_height;
-	extent.x1 = ret->vis_width;
-	extent.y1 = 0;
-
-	error = xwimp_set_extent(ret->window, &extent);
-	if (error) {
-		LOG(("xwimp_set_extent: 0x%x: %s",
-				error->errnum, error->errmess));
-		free(ret->font_family);
-		free(ret->text);
-		free(ret);
-		return 0;
-	}
-
-	/* and open the window */
-	error = xwimp_open_window_nested((wimp_open *)&state, parent,
-			wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
-					<< wimp_CHILD_XORIGIN_SHIFT |
-			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
-					<< wimp_CHILD_YORIGIN_SHIFT |
-			wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
-					<< wimp_CHILD_LS_EDGE_SHIFT |
-			wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
-					<< wimp_CHILD_RS_EDGE_SHIFT);
-	if (error) {
-		LOG(("xwimp_open_window_nested: 0x%x: %s",
-				error->errnum, error->errmess));
-		free(ret->font_family);
-		free(ret->text);
-		free(ret);
-		return 0;
-	}
-
-	/* make available for immediate use */
-	textarea_reflow(ret, 0);
 
 	/* and register our event handlers */
 	ro_gui_wimp_event_set_user_data(ret->window, ret);
@@ -273,6 +196,93 @@ uintptr_t textarea_create(wimp_w parent, wimp_i icon, unsigned int flags,
 			textarea_open);
 
 	return (uintptr_t)ret;
+}
+
+/**
+ * Update the a text area following a change in the parent icon
+ *
+ * \param self Text area to update
+ */
+bool textarea_update(uintptr_t self)
+{
+	struct text_area *ta;
+	wimp_window_state state;
+	wimp_icon_state istate;
+	os_box extent;
+	os_error *error;
+
+	ta = (struct text_area *)self;
+	if (!ta || ta->magic != MAGIC)
+		return false;
+
+	state.w = ta->parent;
+	error = xwimp_get_window_state(&state);
+	if (error) {
+		LOG(("xwimp_get_window_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		return false;
+	}
+
+	istate.w = ta->parent;
+	istate.i = ta->icon;
+	error = xwimp_get_icon_state(&istate);
+	if (error) {
+		LOG(("xwimp_get_icon_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		return false;
+	}
+
+	state.w = ta->window;
+	state.visible.x1 = state.visible.x0 + istate.icon.extent.x1 -
+			ro_get_vscroll_width(ta->window) - state.xscroll;
+	state.visible.x0 += istate.icon.extent.x0 + 2 - state.xscroll;
+	state.visible.y0 = state.visible.y1 + istate.icon.extent.y0 +
+			ro_get_hscroll_height(ta->window) - state.yscroll;
+	state.visible.y1 += istate.icon.extent.y1 - 2 - state.yscroll;
+
+	if (ta->flags & TEXTAREA_READONLY) {
+		state.visible.x0 += 2;
+		state.visible.x1 -= 4;
+		state.visible.y0 += 2;
+		state.visible.y1 -= 4;
+	}
+
+	/* set our width/height */
+	ta->vis_width = state.visible.x1 - state.visible.x0;
+	ta->vis_height = state.visible.y1 - state.visible.y0;
+
+	/* Set window extent to visible area */
+	extent.x0 = 0;
+	extent.y0 = -ta->vis_height;
+	extent.x1 = ta->vis_width;
+	extent.y1 = 0;
+
+	error = xwimp_set_extent(ta->window, &extent);
+	if (error) {
+		LOG(("xwimp_set_extent: 0x%x: %s",
+				error->errnum, error->errmess));
+		return false;
+	}
+
+	/* and open the window */
+	error = xwimp_open_window_nested((wimp_open *)&state, ta->parent,
+			wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
+					<< wimp_CHILD_XORIGIN_SHIFT |
+			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
+					<< wimp_CHILD_YORIGIN_SHIFT |
+			wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
+					<< wimp_CHILD_LS_EDGE_SHIFT |
+			wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
+					<< wimp_CHILD_RS_EDGE_SHIFT);
+	if (error) {
+		LOG(("xwimp_open_window_nested: 0x%x: %s",
+				error->errnum, error->errmess));
+		return false;
+	}
+
+	/* reflow the text */
+	textarea_reflow(ta, 0);
+	return true;
 }
 
 /**
