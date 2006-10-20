@@ -1,7 +1,7 @@
 /*
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
- *                http://www.opensource.org/licenses/gpl-license
+ *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2006 Rob Kendrick <rjek@rjek.com>
  * Copyright 2006 Richard Wilson <info@tinct.net>
  */
@@ -21,10 +21,9 @@
 
 
 struct hash_entry {
-	char *key;
-	char *value;
-	unsigned int key_length;
-	struct hash_entry *next;
+	char *pairing;			/**< block containing '<key>\0<value>\0' */
+	unsigned int key_length;	/**< length of key */
+	struct hash_entry *next;	/**< next entry */
 };
 
 struct hash_table {
@@ -35,13 +34,13 @@ struct hash_table {
 
 /**
  * Create a new hash table, and return a context for it.  The memory consumption
- * of a hash table is approximately 8 + (nchains * 16) bytes if it is empty.
+ * of a hash table is approximately 8 + (nchains * 12) bytes if it is empty.
  *
  * \param  chains Number of chains/buckets this hash table will have.  This
- *                should be a prime number, and ideally a prime number just
- *                over a power of two, for best performance and distribution.
+ *		  should be a prime number, and ideally a prime number just
+ *		  over a power of two, for best performance and distribution.
  * \return struct hash_table containing the context of this hash table or NULL
- *         if there is insufficent memory to create it and its chains.
+ *	   if there is insufficent memory to create it and its chains.
  */
 
 struct hash_table *hash_create(unsigned int chains)
@@ -68,8 +67,8 @@ struct hash_table *hash_create(unsigned int chains)
 /**
  * Destroys a hash table, freeing all memory associated with it.
  *
- * \param  ht    Hash table to destroy.  After the function returns, this
- *               will nolonger be valid.
+ * \param  ht	 Hash table to destroy.  After the function returns, this
+ *		 will nolonger be valid.
  */
 
 void hash_destroy(struct hash_table *ht)
@@ -84,8 +83,7 @@ void hash_destroy(struct hash_table *ht)
 			struct hash_entry *e = ht->chain[i];
 			while (e) {
 				struct hash_entry *n = e->next;
-				free(e->key);
-				free(e->value);
+				free(e->pairing);
 				free(e);
 				e = n;
 			}
@@ -102,22 +100,22 @@ void hash_destroy(struct hash_table *ht)
  * it.  The old key/value pair will be inaccessable but still in memory until
  * hash_destroy() is called on the hash table.
  *
- * \param  ht     The hash table context to add the key/value pair to.
- * \param  key    The key to associate the value with.  A copy is made.
+ * \param  ht	  The hash table context to add the key/value pair to.
+ * \param  key	  The key to associate the value with.  A copy is made.
  * \param  value  The value to associate the key with.  A copy is made.
  * \return true if the add succeeded, false otherwise.  (Failure most likely
- *         indicates insufficent memory to make copies of the key and value.
+ *	   indicates insufficent memory to make copies of the key and value.
  */
 
 bool hash_add(struct hash_table *ht, const char *key, const char *value)
 {
-	unsigned int h;
-	unsigned int c;
-	struct hash_entry *e = malloc(sizeof(struct hash_entry));
+	unsigned int h, c, v;
+	struct hash_entry *e;
 
 	if (ht == NULL || key == NULL || value == NULL)
 		return false;
 
+	e = malloc(sizeof(struct hash_entry));
 	if (e == NULL) {
 		LOG(("Not enough memory for hash entry."));
 		return false;
@@ -125,21 +123,16 @@ bool hash_add(struct hash_table *ht, const char *key, const char *value)
 
 	h = hash_string_fnv(key, &(e->key_length));
 	c = h % ht->nchains;
-
-	e->key = strdup(key);
-	if (e->key == NULL) {
-		LOG(("Unable to strdup() key for hash table."));
+	
+	v = strlen(value) ;
+	e->pairing = malloc(v + e->key_length + 2);
+	if (e->pairing == NULL) {
+		LOG(("Not enough memory for string duplication."));
 		free(e);
 		return false;
 	}
-
-	e->value = strdup(value);
-	if (e->value == NULL) {
-		LOG(("Unable to strdup() value for hash table."));
-		free(e->key);
-		free(e);
-		return false;
-	}
+	memcpy(e->pairing, key, e->key_length + 1);
+	memcpy(e->pairing + e->key_length + 1, value, v + 1);
 
 	e->next = ht->chain[c];
 	ht->chain[c] = e;
@@ -150,16 +143,14 @@ bool hash_add(struct hash_table *ht, const char *key, const char *value)
 /**
  * Looks up a the value associated with with a key from a specific hash table.
  *
- * \param  ht     The hash table context to look up the key in.
- * \param  key    The key to search for.
+ * \param  ht	  The hash table context to look up the key in.
+ * \param  key	  The key to search for.
  * \return The value associated with the key, or NULL if it was not found.
  */
 
 const char *hash_get(struct hash_table *ht, const char *key)
 {
-	unsigned int h;
-	unsigned int c;
-	unsigned int key_length;
+	unsigned int h, c, key_length;
 	struct hash_entry *e;
 
 	if (ht == NULL || key == NULL)
@@ -169,12 +160,11 @@ const char *hash_get(struct hash_table *ht, const char *key)
 	c = h % ht->nchains;
 
 	for (e = ht->chain[c]; e; e = e->next)
-		if ((key_length == e->key_length) && 
-		    (memcmp(key, e->key, key_length) == 0))
-			return e->value;
+		if ((key_length == e->key_length) &&
+				(memcmp(key, e->pairing, key_length) == 0))
+			return e->pairing + key_length + 1;
 
 	return NULL;
-
 }
 
 /**
@@ -183,13 +173,14 @@ const char *hash_get(struct hash_table *ht, const char *key)
  * See http://en.wikipedia.org/wiki/Fowler_Noll_Vo_hash for more details.
  *
  * \param  datum   The string to hash.
- * \param  len     Pointer to unsigned integer to record datum's length in.
+ * \param  len	   Pointer to unsigned integer to record datum's length in.
  * \return The calculated hash value for the datum.
  */
 
 unsigned int hash_string_fnv(const char *datum, unsigned int *len)
 {
 	unsigned int z = 0x01000193;
+	const char *start = datum;
 	*len = 0;
 
 	if (datum == NULL)
@@ -198,10 +189,42 @@ unsigned int hash_string_fnv(const char *datum, unsigned int *len)
 	while (*datum) {
 		z *= 0x01000193;
 		z ^= *datum++;
-		(*len)++;
 	}
+	*len = datum - start;
 
 	return z;
+}
+
+/**
+ * Iterate through all available hash keys.
+ *
+ * \param  ht	The hash table context to iterate.
+ * \param  c1	Pointer to first context
+ * \param  c2	Pointer to second context (set to 0 on first call)
+ * \return The next hash key, or NULL for no more keys
+ */
+
+const char *hash_iterate(struct hash_table *ht, unsigned int *c1, unsigned int **c2) {
+	struct hash_entry **he = (struct hash_entry **)c2;
+
+	if (ht == NULL)
+		return NULL;
+
+	if (!*he)
+		*c1 = -1;
+	else
+		*he = (*he)->next;
+
+	if (*he)
+		return (*he)->pairing;
+
+	while (!*he) {
+		(*c1)++;
+		if (*c1 >= ht->nchains)
+			return NULL;
+		*he = ht->chain[*c1];
+	}
+	return (*he)->pairing;
 }
 
 /* A simple test rig.  To compile, use:
