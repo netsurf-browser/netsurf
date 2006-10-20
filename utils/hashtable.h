@@ -19,7 +19,7 @@ struct hash_table *hash_create(unsigned int chains);
 void hash_destroy(struct hash_table *ht);
 bool hash_add(struct hash_table *ht, const char *key, const char *value);
 const char *hash_get(struct hash_table *ht, const char *key);
-unsigned int hash_string_fnv(const char *datum, unsigned int *len);
+inline unsigned int hash_string_fnv(const char *datum, unsigned int *len);
 const char *hash_iterate(struct hash_table *ht, unsigned int *c1,
 		unsigned int **c2);
 
