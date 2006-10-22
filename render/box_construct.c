@@ -79,12 +79,10 @@ const char *TARGET_BLANK = "_blank";
 static bool convert_xml_to_box(xmlNode *n, struct content *content,
 		struct css_style *parent_style,
 		struct box *parent, struct box **inline_container,
-		struct box *containing_block,
 		char *href, const char *target, char *title);
 bool box_construct_element(xmlNode *n, struct content *content,
 		struct css_style *parent_style,
 		struct box *parent, struct box **inline_container,
-		struct box *containing_block,
 		char *href, const char *target, char *title);
 bool box_construct_text(xmlNode *n, struct content *content,
 		struct css_style *parent_style,
@@ -188,7 +186,7 @@ bool xml_to_box(xmlNode *n, struct content *c)
 	c->data.html.object = 0;
 
 	if (!convert_xml_to_box(n, c, c->data.html.style, &root,
-			&inline_container, 0, 0, 0, 0))
+			&inline_container, 0, 0, 0))
 		return false;
 
 	if (!box_normalise_block(&root, c))
@@ -232,8 +230,6 @@ static const box_type box_map[] = {
  * \param  parent	 parent in box tree
  * \param  inline_container  current inline container box, or 0, updated to
  *			 new current inline container on exit
- * \param  containing_block  current containing block for absolutes, as defined
- *			 by CSS 2.1 10.1 4
  * \param  href		 current link URL, or 0 if not in a link
  * \param  target	 current link target, or 0 if none
  * \param  title	 current title, or 0 if none
@@ -243,13 +239,12 @@ static const box_type box_map[] = {
 bool convert_xml_to_box(xmlNode *n, struct content *content,
 		struct css_style *parent_style,
 		struct box *parent, struct box **inline_container,
-		struct box *containing_block,
 		char *href, const char *target, char *title)
 {
 	switch (n->type) {
 	case XML_ELEMENT_NODE:
 		return box_construct_element(n, content, parent_style, parent,
-				inline_container, containing_block,
+				inline_container,
 				href, target, title);
 	case XML_TEXT_NODE:
 		return box_construct_text(n, content, parent_style, parent,
@@ -270,8 +265,6 @@ bool convert_xml_to_box(xmlNode *n, struct content *content,
  * \param  parent	 parent in box tree
  * \param  inline_container  current inline container box, or 0, updated to
  *			 new current inline container on exit
- * \param  containing_block  current containing block for absolutes, as defined
- *			 by CSS 2.1 10.1 4
  * \param  href		 current link URL, or 0 if not in a link
  * \param  target	 current link target, or 0 if none
  * \param  title	 current title, or 0 if none
@@ -281,7 +274,6 @@ bool convert_xml_to_box(xmlNode *n, struct content *content,
 bool box_construct_element(xmlNode *n, struct content *content,
 		struct css_style *parent_style,
 		struct box *parent, struct box **inline_container,
-		struct box *containing_block,
 		char *href, const char *target, char *title)
 {
 	bool convert_children = true;
@@ -289,7 +281,6 @@ bool box_construct_element(xmlNode *n, struct content *content,
 	char *s;
 	struct box *box = 0;
 	struct box *inline_container_c;
-	struct box *containing_block_c;
 	struct box *inline_end;
 	struct css_style *style = 0;
 	struct element_entry *element;
@@ -359,15 +350,6 @@ bool box_construct_element(xmlNode *n, struct content *content,
 		return true;
 	}
 
-	/* determine if this is a new containing block */
-	if (style->position == CSS_POSITION_ABSOLUTE ||
-			style->position == CSS_POSITION_RELATIVE ||
-			style->position == CSS_POSITION_FIXED ||
-			!containing_block)
-		containing_block_c = box;
-	else
-		containing_block_c = containing_block;
-
 	if (!*inline_container &&
 			(box->type == BOX_INLINE ||
 			box->type == BOX_BR ||
@@ -389,7 +371,6 @@ bool box_construct_element(xmlNode *n, struct content *content,
 			for (c = n->children; c; c = c->next)
 				if (!convert_xml_to_box(c, content, style,
 						parent, inline_container,
-						containing_block_c,
 						href, target, title))
 					return false;
 			inline_end = box_create(style, href, target, title, id,
@@ -411,7 +392,6 @@ bool box_construct_element(xmlNode *n, struct content *content,
 		for (c = n->children; convert_children && c; c = c->next)
 			if (!convert_xml_to_box(c, content, style, box,
 					&inline_container_c,
-					containing_block_c,
 					href, target, title))
 				return false;
 	} else {
@@ -435,7 +415,6 @@ bool box_construct_element(xmlNode *n, struct content *content,
 		for (c = n->children; convert_children && c; c = c->next)
 			if (!convert_xml_to_box(c, content, style, box,
 					&inline_container_c,
-					containing_block_c,
 					href, target, title))
 				return false;
 		if (style->float_ == CSS_FLOAT_NONE)
@@ -1407,7 +1386,7 @@ bool box_object(BOX_SPECIAL_PARAMS)
 	/* convert children and place into fallback */
 	for (c = n->children; c; c = c->next) {
 		if (!convert_xml_to_box(c, content, box->style, box,
-				&inline_container, 0, 0, 0, 0))
+				&inline_container, 0, 0, 0))
 			return false;
 	}
 	box->fallback = box->children;
