@@ -54,6 +54,9 @@
     #define WITH_PRINT
     /* Theme auto-install */
     #define WITH_THEME_INSTALL
+#else
+    /* We're likely to have a working mmap() */
+    #define WITH_MMAP
 #endif
 #ifdef ncos
     /* Kiosk style browsing support */

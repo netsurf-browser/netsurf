@@ -21,6 +21,10 @@
 #include <stdbool.h>
 #include <arpa/inet.h>
 #include "netsurf/utils/container.h"
+#include "netsurf/utils/config.h"
+#ifdef WITH_MMAP
+#include <sys/mman.h>
+#endif
 
 struct container_dirent {
 	unsigned char	filename[16];
@@ -119,15 +123,16 @@ static void container_process(struct container_ctx *ctx)
 {
 	unsigned char filename[16];
 	u_int32_t start, len, flags1, flags2;
-	
-	ctx->data = malloc(ctx->header.diroffset);
-	
-	/* TODO: Perhaps replace this with mmap() on UNIX? */
-	
+
+#ifdef WITH_MMAP
+	ctx->data = mmap(NULL, ctx->header.diroffset, PROT_READ, MAP_PRIVATE,
+				fileno(ctx->fh), 0);
+#else
+	ctx->data = malloc(ctx->header.diroffset);	
 	fseek(ctx->fh, 0, SEEK_SET);
 	fread(ctx->data, ctx->header.diroffset, 1, ctx->fh);
+#endif
 	fseek(ctx->fh, ctx->header.diroffset, SEEK_SET);
-	
 	/* now work through the directory structure taking it apart into
 	 * our structure */
 #define BEREAD(x) do { fread(&(x), 4, 1, ctx->fh);(x) = ntohl((x)); } while (0)	
@@ -291,7 +296,11 @@ void container_close(struct container_ctx *ctx)
 		container_write_dir(ctx);
 		
 	} else if (ctx->processed) {
+#ifdef WITH_MMAP
+		munmap(ctx->data, ctx->header.diroffset);
+#else
 		free(ctx->data);
+#endif
 	}
 
 	fclose(ctx->fh);
