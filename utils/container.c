@@ -347,6 +347,8 @@ int main(int argc, char *argv[])
 #include <sys/stat.h>
 #include <unistd.h>
 
+static bool verbose = false;
+
 static void show_usage(const char *argv0)
 {
 	fprintf(stderr, "%s [options] <theme file> <directory>\n", argv0);
@@ -355,6 +357,7 @@ static void show_usage(const char *argv0)
 	fprintf(stderr, " --extract    Extract theme file into directory\n");
 	fprintf(stderr, " --name x     Set theme's name when creating\n");
 	fprintf(stderr, " --author x   Set theme's author when creating\n");
+	fprintf(stderr, " --verbose    Print progress information\n");
 	fprintf(stderr, "\nOne and only one of --create or --extract must be specified.\n");
 }
 
@@ -384,11 +387,14 @@ static void extract_theme(const char *themefile, const char *dirname)
 		exit(1);
 	}
 	
-	printf("theme name: %s\n", container_get_name(cctx));
-	printf("theme author: %s\n", container_get_author(cctx));
+	if (verbose == true) {
+		printf("theme name: %s\n", container_get_name(cctx));
+		printf("theme author: %s\n", container_get_author(cctx));
+	}
 	
 	while ( (e = container_iterate(cctx, &state)) ) {
-		printf("extracting %s\n", e);
+		if (verbose == true) 
+			printf("extracting %s\n", e);
 		snprintf(path, PATH_MAX, "%s/%s", dirname, e);
 		fh = fopen(path, "wb");
 		if (fh == NULL) {
@@ -431,7 +437,8 @@ static void create_theme(const char *themefile, const char *dirname,
 		if (strcmp(e->d_name, ".") != 0 &&
 			strcmp(e->d_name, "..") != 0) {
 			/* not the metadirs, so we want to process this. */
-			printf("adding %s\n", e->d_name);
+			if (verbose == true)
+				printf("adding %s\n", e->d_name);
 			if (strlen(e->d_name) > 15) {
 				fprintf(stderr,
 			"warning: name truncated to 15 characters.\n");
@@ -483,11 +490,12 @@ int main(int argc, char *argv[])
 		{ "extract", 0, 0, 'x' },
 		{ "name", 1, 0, 'n' },
 		{ "author", 1, 0, 'a' },
+		{ "verbose", 0, 0, 'v' },
 		
 		{ NULL, 0, 0, 0 }
 	};
 	
-	static char *s_opts = "hcxn:a:";
+	static char *s_opts = "hcxn:a:v";
 	int optch, optidx;
 	bool creating = false, extracting = false;
 	unsigned char name[32] = { '\0' }, author[64] = { '\0' };
@@ -515,6 +523,9 @@ int main(int argc, char *argv[])
 			if (strlen(optarg) > 64)
 				fprintf(stderr, "warning: theme author truncated to 64 characters.\n");
 			break;
+		case 'v':
+			verbose = true;
+			break;
 		default:
 			show_usage(argv[0]);
 			exit(1);
@@ -541,12 +552,14 @@ int main(int argc, char *argv[])
 	themefile = strdup(argv[optind]);
 	dirname = strdup(argv[optind + 1]);
 	
-	printf("%s '%s' %s directory '%s'\n",
-		creating ? "creating" : "extracting", themefile,
-		creating ? "from" : "to", dirname);
+	if (verbose == true)
+		printf("%s '%s' %s directory '%s'\n",
+			creating ? "creating" : "extracting", themefile,
+			creating ? "from" : "to", dirname);
 	
 	if (creating) {
-		printf("name = %s, author = %s\n", name, author);
+		if (verbose == true)
+			printf("name = %s, author = %s\n", name, author);
 		create_theme(themefile, dirname, name, author);	
 	} else {
 		extract_theme(themefile, dirname);
