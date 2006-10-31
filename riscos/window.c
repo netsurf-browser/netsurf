@@ -1908,6 +1908,7 @@ void ro_gui_window_close(wimp_w w) {
 		return;
 	ro_gui_url_complete_close(NULL, 0);
 	ro_gui_dialog_close_persistent(w);
+	ro_gui_wimp_event_finalise(w);
 	browser_window_destroy(g->bw);
 	return;
 
