@@ -911,7 +911,7 @@ HelpThemeConfig2:\Sreset the Theme options back to their default values.
 HelpThemeConfig3:\Sclose this \w without saving changes.|M\Areturn the theme options to the last saved configuration.
 HelpThemeConfig4:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
 
-HelpThemePConfig:This pane shows the available themes.|MThe selected icon theme is used for NetSurf browser \ws, the hotlist and global history.
+HelpThemePConfig:This pane shows the available themes.|MThe selected icon theme is used for NetSurf browser \ws, the hotlist, global history and cookie management.
 
 
 # Configuration tokens
