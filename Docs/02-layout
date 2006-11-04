@@ -29,3 +29,19 @@ to a new width. Coordinates in the box tree are relative to the position of the
 parent node.
 
 The box tree can then be rendered using each node's coordinates.
+
+Absolute positioning
+--------------------
+Absolutely positioned boxes are constructed in the box tree in the same place as
+if they were not absolutely positioned. Inline boxes are created as
+INLINE_BLOCK, tables as TABLE, and other boxes as BLOCK (see
+box_solve_display()).
+
+During layout, absolutely positioned boxes in block context (BLOCK or TABLE) are
+given a position in layout_block_context(), but treated as having no height. In
+inline context (INLINE_BLOCK), they are given a position in layout_line(), but
+treated as having no width or height. This is done to determine the static
+position.
+
+An additional pass after main layout positions and layouts all absolutely
+positioned boxes (see layout_position_absolute()).

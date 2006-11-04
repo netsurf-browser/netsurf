@@ -1017,6 +1017,10 @@ bool layout_line(struct box *first, int *width, int *y,
 
 		if (b->type == BOX_FLOAT_LEFT || b->type == BOX_FLOAT_RIGHT)
 			continue;
+		if (b->type == BOX_INLINE_BLOCK &&
+				(b->style->position == CSS_POSITION_ABSOLUTE ||
+				 b->style->position == CSS_POSITION_FIXED))
+			continue;
 
 		x += space_after;
 
@@ -1191,7 +1195,13 @@ bool layout_line(struct box *first, int *width, int *y,
 	LOG(("x0 %i, x1 %i, x1 - x0 %i", x0, x1, x1 - x0));
 	for (x = x_previous = 0, b = first; x <= x1 - x0 && b; b = b->next) {
 		LOG(("pass 2: b %p, x %i", b, x));
-		if (b->type == BOX_INLINE || b->type == BOX_INLINE_BLOCK ||
+		if (b->type == BOX_INLINE_BLOCK &&
+				(b->style->position == CSS_POSITION_ABSOLUTE ||
+				 b->style->position == CSS_POSITION_FIXED)) {
+			b->x = x + space_after;
+
+		} else if (b->type == BOX_INLINE ||
+				b->type == BOX_INLINE_BLOCK ||
 				b->type == BOX_TEXT ||
 				b->type == BOX_INLINE_END) {
 			assert(b->width != UNKNOWN_WIDTH);
@@ -1442,6 +1452,10 @@ bool layout_line(struct box *first, int *width, int *y,
 			d->x += x0;
 			d->y = *y - d->padding[TOP];
 		}
+		if (d->type == BOX_INLINE_BLOCK &&
+				(d->style->position == CSS_POSITION_ABSOLUTE ||
+				 d->style->position == CSS_POSITION_FIXED))
+			continue;
 		if ((d->type == BOX_INLINE && (d->object || d->gadget)) ||
 				d->type == BOX_INLINE_BLOCK) {
 			h = d->border[TOP] + d->padding[TOP] + d->height +
@@ -2468,10 +2482,13 @@ void layout_compute_relative_offset(struct box *box, int *x, int *y)
 
 
 /**
- * Layout absolutely positioned boxes in a block context.
+ * Recursively layout and position absolutely positioned boxes.
  *
- * \param  block    box to layout children of
- * \param  content  memory pool for any new boxes
+ * \param  box               tree of boxes to layout
+ * \param  containing_block  current containing block
+ * \param  cx                position of box relative to containing_block
+ * \param  cy                position of box relative to containing_block
+ * \param  content           memory pool for any new boxes
  * \return  true on success, false on memory exhaustion
  */
 
@@ -2483,7 +2500,8 @@ bool layout_position_absolute(struct box *box,
 	struct box *c;
 
 	for (c = box->children; c; c = c->next) {
-		if ((c->type == BOX_BLOCK || c->type == BOX_TABLE) &&
+		if ((c->type == BOX_BLOCK || c->type == BOX_TABLE ||
+				c->type == BOX_INLINE_BLOCK) &&
 				(c->style->position == CSS_POSITION_ABSOLUTE ||
 				 c->style->position == CSS_POSITION_FIXED)) {
 			if (!layout_absolute(c, containing_block,
@@ -2509,8 +2527,11 @@ bool layout_position_absolute(struct box *box,
 /**
  * Layout and position an absolutely positioned box.
  *
- * \param  block    box to layout and position
- * \param  content  memory pool for any new boxes
+ * \param  box               absolute box to layout and position
+ * \param  containing_block  containing block
+ * \param  cx                position of box relative to containing_block
+ * \param  cy                position of box relative to containing_block
+ * \param  content           memory pool for any new boxes
  * \return  true on success, false on memory exhaustion
  */
 
@@ -2527,7 +2548,8 @@ bool layout_absolute(struct box *box, struct box *containing_block,
 	int available_width = containing_block->width;
 	int space;
 
-	assert(box->type == BOX_BLOCK || box->type == BOX_TABLE);
+	assert(box->type == BOX_BLOCK || box->type == BOX_TABLE ||
+			box->type == BOX_INLINE_BLOCK);
 
 	/* The static position is where the box would be if it was not
 	 * absolutely positioned. The x and y are filled in by
@@ -2689,7 +2711,8 @@ bool layout_absolute(struct box *box, struct box *containing_block,
 	box->width = width;
 	box->height = height;
 
-	if (box->type == BOX_BLOCK || box->object) {
+	if (box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
+			box->object) {
 		if (!layout_block_context(box, content))
 			return false;
 	} else if (box->type == BOX_TABLE) {

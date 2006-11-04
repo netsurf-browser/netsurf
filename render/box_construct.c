@@ -971,6 +971,19 @@ void box_solve_display(struct css_style *style, bool root)
 	else							/* 5. */
 		return;
 
+	/* Special case for absolute positioning: make absolute inlines into
+	 * inline block so that the boxes are constructed in an inline container
+	 * as if they were not absolutely positioned. Layout expects and
+	 * handles this. */
+	if ((style->position == CSS_POSITION_ABSOLUTE ||
+			style->position == CSS_POSITION_FIXED) &&
+			(style->display == CSS_DISPLAY_INLINE ||
+			 style->display == CSS_DISPLAY_INLINE_BLOCK ||
+			 style->display == CSS_DISPLAY_INLINE_TABLE)) {
+		style->display = CSS_DISPLAY_INLINE_BLOCK;
+		return;
+	}
+
 	/* map specified value to computed value using table given in 9.7 */
 	if (style->display == CSS_DISPLAY_INLINE_TABLE)
 		style->display = CSS_DISPLAY_TABLE;
