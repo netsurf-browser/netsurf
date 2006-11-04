@@ -15,6 +15,7 @@
 #include "netsurf/riscos/wimp_event.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
+#include "netsurf/utils/utf8.h"
 #include "netsurf/utils/utils.h"
 
 #define ICON_QUERY_MESSAGE 0
@@ -103,6 +104,8 @@ query_id query_user(const char *query, const char *detail,
 	int width;
 	int len;
 	int x;
+	char *local_text = NULL;
+	utf8_convert_ret err;
 
 	qw = malloc(sizeof(struct gui_query_window));
 	if (!qw) {
@@ -122,10 +125,22 @@ query_id query_user(const char *query, const char *detail,
 	if (!no) no = messages_get("No");
 
 	/* set the text of the 'Yes' button and size accordingly */
+	err = utf8_to_local_encoding(yes, 0, &local_text);
+	if (err != UTF8_CONVERT_OK) {
+		assert(err != UTF8_CONVERT_BADENC);
+		LOG(("utf8_to_local_encoding_failed"));
+		local_text = NULL;
+	}
+
 	icn = &query_template->icons[ICON_QUERY_YES];
-	len = strnlen(yes, icn->data.indirected_text.size - 1);
-	memcpy(icn->data.indirected_text.text, yes, len);
+	len = strnlen(local_text ? local_text : yes,
+			icn->data.indirected_text.size - 1);
+	memcpy(icn->data.indirected_text.text,
+			local_text ? local_text: yes, len);
 	icn->data.indirected_text.text[len] = '\0';
+
+	free(local_text);
+	local_text = NULL;
 
 	error = xwimptextop_string_width(icn->data.indirected_text.text, len, &width);
 	if (error) {
@@ -140,10 +155,22 @@ query_id query_user(const char *query, const char *detail,
 	icn->extent.x0 = x = icn->extent.x1 - width;
 
 	/* set the text of the 'No' button and size accordingly */
+	err = utf8_to_local_encoding(no, 0, &local_text);
+	if (err != UTF8_CONVERT_OK) {
+		assert(err != UTF8_CONVERT_BADENC);
+		LOG(("utf8_to_local_encoding_failed"));
+		local_text = NULL;
+	}
+
 	icn = &query_template->icons[ICON_QUERY_NO];
-	len = strnlen(no, icn->data.indirected_text.size - 1);
-	memcpy(icn->data.indirected_text.text, no, len);
+	len = strnlen(local_text ? local_text : no,
+			icn->data.indirected_text.size - 1);
+	memcpy(icn->data.indirected_text.text,
+			local_text ? local_text : no, len);
 	icn->data.indirected_text.text[len] = '\0';
+
+	free(local_text);
+	local_text = NULL;
 
 	if (!query_no_width) query_no_width = icn->extent.x1 - icn->extent.x0;
 	icn->extent.x1 = x - 16;
