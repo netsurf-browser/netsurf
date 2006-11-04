@@ -14,3 +14,7 @@ extern GladeXML *gladeWindows;
 extern char *glade_file_location;
 extern char *options_file_location;
 
+extern GtkWindow *wndAbout;
+
+extern GtkWindow *wndTooltip;
+extern GtkLabel *labelTooltip;

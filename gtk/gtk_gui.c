@@ -55,7 +55,11 @@ char *glade_file_location;
 
 struct gui_window *search_current_window = 0;
 
+GtkWindow *wndAbout;
+
 GladeXML *gladeWindows;
+GtkWindow *wndTooltip;
+GtkLabel *labelTooltip;
 
 /**
  * Locate a shared resource file by searching known places in order.
@@ -152,6 +156,9 @@ void gui_init(int argc, char** argv)
 	if (gladeWindows == NULL)
 		die("Unable to load Glade window definitions.\n");
 	glade_xml_signal_autoconnect(gladeWindows);
+	
+	wndTooltip = glade_xml_get_widget(gladeWindows, "wndTooltip");
+	labelTooltip = glade_xml_get_widget(gladeWindows, "tooltip");
 
 	nsgtk_completion_init();	
 
@@ -212,6 +219,13 @@ void gui_init(int argc, char** argv)
 	urldb_load(option_url_file);
 	urldb_load_cookies(option_cookie_file);
 	
+	wndAbout = GTK_WINDOW(glade_xml_get_widget(gladeWindows, "wndAbout"));
+	gtk_label_set_text(GTK_LABEL(
+		glade_xml_get_widget(gladeWindows, "labelVersion")),
+		netsurf_version);
+	gtk_image_set_from_file(GTK_IMAGE(
+		glade_xml_get_widget(gladeWindows, "imageLogo")),
+		find_resource(buf, "netsurf-logo.png", "netsurf-logo.png"));
 	nsgtk_history_init();
 }
 
@@ -328,6 +342,17 @@ void gui_download_window_done(struct gui_download_window *dw)
 void gui_create_form_select_menu(struct browser_window *bw,
 		struct form_control *control)
 {
+
+	int i;
+	struct form_option *option;
+
+	LOG(("Trying to open select menu..."));
+	
+	for (i = 0, option = control->data.select.items; option;
+		i++, option = option->next) {
+		LOG(("Option: %s", option->text));	
+	}
+
 }
 
 void gui_window_save_as_link(struct gui_window *g, struct content *c)

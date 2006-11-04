@@ -646,6 +646,8 @@ MENUHANDLER(global_history)
 
 MENUHANDLER(about)
 {
+	gtk_widget_show(GTK_WIDGET(wndAbout));
+	gdk_window_raise(GDK_WINDOW(wndAbout));
 	return TRUE;
 }
 
@@ -676,6 +678,31 @@ gboolean nsgtk_history_expose_event(GtkWidget *widget,
 gboolean nsgtk_history_motion_notify_event(GtkWidget *widget,
 					GdkEventMotion *event, gpointer g)
 {
+	/* if we're hovering over a history item, popup our tooltip bodge
+	 * describing the page.
+	 */
+	struct gtk_history_window *gw = g;
+	const char *url;
+	int winx, winy;
+	
+//	if (!option_history_tooltip)
+//		return TRUE;
+	
+	url = history_position_url(gw->g->bw->history, event->x, event->y);
+	if (url == NULL) {
+		gtk_widget_hide(wndTooltip);
+		return TRUE;
+	}
+	
+	gtk_label_set_text(labelTooltip, url);
+	gtk_window_get_position(gw->g->window, &winx, &winy);
+	
+	LOG(("winx = %d, winy = %d, event->x = %d, event->y = %d",
+		winx, winy, event->x, event->y));
+	
+	gtk_widget_show(GTK_WIDGET(wndTooltip));
+	gtk_window_move(wndTooltip, event->x + winx, event->y + winy);
+	
 	return TRUE;
 }
 
