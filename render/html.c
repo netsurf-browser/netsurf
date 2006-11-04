@@ -201,6 +201,9 @@ bool html_set_parser_encoding(struct content *c, const char *encoding)
 		return false;
 	}
 
+	/* Ensure noone else attempts to reset the encoding */
+	html->getenc = false;
+
 	return true;
 }
 
