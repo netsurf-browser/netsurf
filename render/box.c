@@ -495,6 +495,10 @@ void box_dump(struct box *box, unsigned int depth)
 	case BOX_FLOAT_RIGHT:      fprintf(stderr, "FLOAT_RIGHT "); break;
 	case BOX_BR:               fprintf(stderr, "BR "); break;
 	case BOX_TEXT:             fprintf(stderr, "TEXT "); break;
+	case BOX_LIST:             fprintf(stderr, "LIST "); break;
+	case BOX_LIST_ITEM:        fprintf(stderr, "LIST_ITEM "); break;
+	case BOX_LIST_MARKER:      fprintf(stderr, "LIST_MARKER "); break;
+	case BOX_LIST_PRINCIPAL:   fprintf(stderr, "LIST_PRINCIPAL "); break;
 	default:                   fprintf(stderr, "Unknown box type ");
 	}
 
