@@ -268,6 +268,8 @@ static bool nsgtk_plot_pixbuf(int x, int y, int width, int height,
 	if (width == 0 || height == 0)
 		return true;
 
+	width++; /* TODO: investigate why this is required */
+
 	if (gdk_pixbuf_get_width(pixbuf) == width &&
 			gdk_pixbuf_get_height(pixbuf) == height) {
 		gdk_draw_pixbuf(current_drawable, current_gc,
