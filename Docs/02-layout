@@ -30,6 +30,16 @@ parent node.
 
 The box tree can then be rendered using each node's coordinates.
 
+Lists
+-----
+Lists are one or more elements with 'display: list-item' (which is set for 'li'
+by the default CSS). A list-item is constructed as a BLOCK box and a box for the
+marker attached at block->list_marker. The marker contains the bullet, number,
+or similar, depending on the list-style-type.
+
+Layout of the block is as normal. A pass of layout after main layout places list
+marker boxes to the left of their block (see layout_lists()).
+
 Absolute positioning
 --------------------
 Absolutely positioned boxes are constructed in the box tree in the same place as
