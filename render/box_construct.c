@@ -416,8 +416,42 @@ bool box_construct_element(xmlNode *n, struct content *content,
 				return false;
 			marker->type = BOX_BLOCK;
 			/** \todo marker content (list-style-type) */
-			marker->text = "\342\200\242";
-			marker->length = 3;
+			switch (style->list_style_type) {
+			case CSS_LIST_STYLE_TYPE_DISC:
+			default:
+				/* 2022 BULLET */
+				marker->text = "\342\200\242";
+				marker->length = 3;
+				break;
+			case CSS_LIST_STYLE_TYPE_CIRCLE:
+				/* 2742 CIRCLED OPEN CENTRE EIGHT POINTED STAR*/
+				marker->text = "\342\235\202";
+				marker->length = 3;
+				break;
+			case CSS_LIST_STYLE_TYPE_SQUARE:
+				/* 25A0 BLACK SQUARE */
+				marker->text = "\342\226\240";
+				marker->length = 3;
+				break;
+			case CSS_LIST_STYLE_TYPE_DECIMAL:
+			case CSS_LIST_STYLE_TYPE_LOWER_ALPHA:
+			case CSS_LIST_STYLE_TYPE_LOWER_ROMAN:
+			case CSS_LIST_STYLE_TYPE_UPPER_ALPHA:
+			case CSS_LIST_STYLE_TYPE_UPPER_ROMAN:
+				if (parent->last && parent->last->list_marker)
+					marker->rows = parent->last->
+							list_marker->rows + 1;
+				marker->text = talloc_array(content, char, 20);
+				if (!marker->text)
+					return false;
+				snprintf(marker->text, 20, "%u.", marker->rows);
+				marker->length = strlen(marker->text);
+				break;
+			case CSS_LIST_STYLE_TYPE_NONE:
+				marker->text = 0;
+				marker->length = 0;
+				break;
+			}
 			if (style->list_style_image.type ==
 					CSS_LIST_STYLE_IMAGE_URI) {
 				if (!html_fetch_object(content,

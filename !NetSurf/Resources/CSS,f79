@@ -53,8 +53,10 @@ pre { display: block; font-family: monospace; white-space: pre; margin-bottom: 1
 ins { color: green; text-decoration: underline; }
 del { color: red; text-decoration: line-through; }
 
-ul { display: block; padding-left: 0.5em; margin-bottom: 1em; }
-ol { display: block; padding-left: 0.5em; margin-bottom: 1em; }
+ul { display: block; padding-left: 1.5em; margin-bottom: 1em;
+	list-style-type: disc; }
+ol { display: block; padding-left: 1.5em; margin-bottom: 1em;
+	list-style-type: decimal; }
 li { display: list-item; padding-left: 0.5em; margin-bottom: 0.3em; }
 
 dl { display: block; padding-left: 0.5em; margin-bottom: 1em; }
