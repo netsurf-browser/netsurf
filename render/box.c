@@ -84,6 +84,7 @@ struct box * box_create(struct css_style *style,
 	box->inline_end = NULL;
 	box->float_children = NULL;
 	box->next_float = NULL;
+	box->list_marker = NULL;
 	box->col = NULL;
 	box->gadget = NULL;
 	box->usemap = NULL;
@@ -495,10 +496,6 @@ void box_dump(struct box *box, unsigned int depth)
 	case BOX_FLOAT_RIGHT:      fprintf(stderr, "FLOAT_RIGHT "); break;
 	case BOX_BR:               fprintf(stderr, "BR "); break;
 	case BOX_TEXT:             fprintf(stderr, "TEXT "); break;
-	case BOX_LIST:             fprintf(stderr, "LIST "); break;
-	case BOX_LIST_ITEM:        fprintf(stderr, "LIST_ITEM "); break;
-	case BOX_LIST_MARKER:      fprintf(stderr, "LIST_MARKER "); break;
-	case BOX_LIST_PRINCIPAL:   fprintf(stderr, "LIST_PRINCIPAL "); break;
 	default:                   fprintf(stderr, "Unknown box type ");
 	}
 
@@ -537,6 +534,13 @@ void box_dump(struct box *box, unsigned int depth)
 		fprintf(stderr, ")");
 	}
 	fprintf(stderr, "\n");
+
+	if (box->list_marker) {
+		for (i = 0; i != depth; i++)
+			fprintf(stderr, "  ");
+		fprintf(stderr, "list_marker:\n");
+		box_dump(box->list_marker, depth + 1);
+	}
 
 	for (c = box->children; c && c->next; c = c->next)
 		;

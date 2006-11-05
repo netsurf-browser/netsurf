@@ -205,7 +205,7 @@ static const box_type box_map[] = {
 	0, /*CSS_DISPLAY_INHERIT,*/
 	BOX_INLINE, /*CSS_DISPLAY_INLINE,*/
 	BOX_BLOCK, /*CSS_DISPLAY_BLOCK,*/
-	BOX_LIST_ITEM, /*CSS_DISPLAY_LIST_ITEM,*/
+	BOX_BLOCK, /*CSS_DISPLAY_LIST_ITEM,*/
 	BOX_INLINE, /*CSS_DISPLAY_RUN_IN,*/
 	BOX_INLINE_BLOCK, /*CSS_DISPLAY_INLINE_BLOCK,*/
 	BOX_TABLE, /*CSS_DISPLAY_TABLE,*/
@@ -350,10 +350,6 @@ bool box_construct_element(xmlNode *n, struct content *content,
 		return true;
 	}
 
-	/* if this is a list item, then reset the box type */
-	if (style->display == CSS_DISPLAY_LIST_ITEM)
-		box->type = BOX_LIST_ITEM;
-
 	if (!*inline_container &&
 			(box->type == BOX_INLINE ||
 			box->type == BOX_BR ||
@@ -398,59 +394,6 @@ bool box_construct_element(xmlNode *n, struct content *content,
 					&inline_container_c,
 					href, target, title))
 				return false;
-	} else if (box->type == BOX_LIST_ITEM) {
-		/* list item: create marker box and recurse */
-		struct box *list_item;
-		struct box *marker;
-
-		/* create container box */
-		list_item = box_create(0, href, target, title, 0, content);
-		if (!list_item)
-			return false;
-		list_item->type = BOX_LIST_ITEM;
-
-		/* create marker - effectively a single INLINE */
-		/* marker style information is contained in PRINCIPAL box */
-		marker = box_create(box->style, href, target, title, 0,
-				content);
-		if (!marker)
-			return false;
-		marker->type = BOX_LIST_MARKER;
-		marker->clone = 1;
-
-		/** \todo marker content (list-style-type)
-		 * need to traverse up the tree to find containing BOX_LIST,
-		 * which contains the counter information */
-		marker->text = talloc_strdup(content, "1.");
-		if (!marker->text)
-			return false;
-		marker->space = 1;
-		marker->length = 2;
-
-		if (style->list_style_image.type ==
-				CSS_LIST_STYLE_IMAGE_URI) {
-			if (!html_fetch_object(content,
-					style->list_style_image.uri, marker,
-					0, content->available_width, 1000,
-					false))
-				return false;
-		}
-
-		/* make box into principal block for list */
-		box->type = BOX_LIST_PRINCIPAL;
-
-		box_add_child(parent, list_item);
-		box_add_child(list_item, marker);
-		box_add_child(list_item, box);
-
-		/* and recurse */
-		inline_container_c = 0;
-		for (c = n->children; convert_children && c; c = c->next) {
-			if (!convert_xml_to_box(c, content, style,
-					box, &inline_container_c,
-					href, target, title))
-				return false;
-		}
 	} else {
 		if (style->float_ == CSS_FLOAT_LEFT ||
 				style->float_ == CSS_FLOAT_RIGHT) {
@@ -464,6 +407,28 @@ bool box_construct_element(xmlNode *n, struct content *content,
 			else
 				parent->type = BOX_FLOAT_RIGHT;
 			box_add_child(*inline_container, parent);
+		}
+
+		if (style->display == CSS_DISPLAY_LIST_ITEM) {
+			struct box *marker;
+			marker = box_create(style, 0, 0, title, 0, content);
+			if (!marker)
+				return false;
+			marker->type = BOX_BLOCK;
+			/** \todo marker content (list-style-type) */
+			marker->text = "\342\200\242";
+			marker->length = 3;
+			if (style->list_style_image.type ==
+					CSS_LIST_STYLE_IMAGE_URI) {
+				if (!html_fetch_object(content,
+						style->list_style_image.uri,
+						marker,
+						0, content->available_width,
+						1000, false))
+					return false;
+			}
+			box->list_marker = marker;
+			marker->parent = box;
 		}
 
 		/* non-inline box: add to tree and recurse */
@@ -610,6 +575,14 @@ bool box_construct_text(xmlNode *n, struct content *content,
 		 * text node, if any */
 		if (text[0] == ' ' && text[1] == 0) {
 			if (*inline_container) {
+				if ((*inline_container)->last == 0) {
+					LOG(("empty inline_container %p",
+							*inline_container));
+					while (parent->parent &&
+							parent->parent->parent)
+						parent = parent->parent;
+					box_dump(parent, 0);
+				}
 				assert((*inline_container)->last != 0);
 				(*inline_container)->last->space = 1;
 			}

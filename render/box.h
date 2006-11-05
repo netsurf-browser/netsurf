@@ -60,18 +60,15 @@
  * A box tree is "normalized" if the following is satisfied:
  * \code
  * parent               permitted child nodes
- * BLOCK, INLINE_BLOCK  BLOCK, INLINE_CONTAINER, TABLE, LIST
+ * BLOCK, INLINE_BLOCK  BLOCK, INLINE_CONTAINER, TABLE
  * INLINE_CONTAINER     INLINE, INLINE_BLOCK, FLOAT_LEFT, FLOAT_RIGHT, BR, TEXT,
  *                      INLINE_END
  * INLINE               none
  * TABLE                at least 1 TABLE_ROW_GROUP
  * TABLE_ROW_GROUP      at least 1 TABLE_ROW
  * TABLE_ROW            at least 1 TABLE_CELL
- * TABLE_CELL           BLOCK, INLINE_CONTAINER, TABLE, LIST (same as BLOCK)
+ * TABLE_CELL           BLOCK, INLINE_CONTAINER, TABLE (same as BLOCK)
  * FLOAT_(LEFT|RIGHT)   exactly 1 BLOCK or TABLE
- * LIST                 at least 1 LIST_ITEM
- * LIST_ITEM            exactly 1 LIST_MARKER and exactly 1 LIST_PRINCIPAL
- * LIST_PRINCIPAL       BLOCK, INLINE_CONTAINER, TABLE, LIST (same as BLOCK)
  * \endcode
  */
 
@@ -97,8 +94,7 @@ typedef enum {
 	BOX_TABLE_ROW_GROUP,
 	BOX_FLOAT_LEFT, BOX_FLOAT_RIGHT,
 	BOX_INLINE_BLOCK, BOX_BR, BOX_TEXT,
-	BOX_INLINE_END,
-	BOX_LIST, BOX_LIST_ITEM, BOX_LIST_MARKER, BOX_LIST_PRINCIPAL
+	BOX_INLINE_END
 } box_type;
 
 struct rect {
@@ -197,6 +193,9 @@ struct box {
 	struct box *float_children;
 	/** Next sibling float box. */
 	struct box *next_float;
+
+	/** List marker box if this is a list-item, or 0. */
+	struct box *list_marker;
 
 	struct column *col;  /**< Array of table column data for TABLE only. */
 

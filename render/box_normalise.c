@@ -57,21 +57,19 @@ static bool calculate_table_row(struct columns *col_info,
 		unsigned int col_span, unsigned int row_span,
 		unsigned int *start_column);
 static bool box_normalise_inline_container(struct box *cont, struct content *c);
-static bool box_normalise_list(struct box *cont, struct content *c);
-static bool box_normalise_list_item(struct box *cont, struct content *c);
 
 
 /**
  * Ensure the box tree is correctly nested by adding and removing nodes.
  *
- * \param  block     box of type BLOCK, INLINE_BLOCK, TABLE_CELL or LIST_PRINCIPAL
+ * \param  block     box of type BLOCK, INLINE_BLOCK, or TABLE_CELL
  * \param  box_pool  pool to allocate new boxes in
  * \return  true on success, false on memory exhaustion
  *
  * The tree is modified to satisfy the following:
  * \code
  * parent               permitted child nodes
- * BLOCK, INLINE_BLOCK  BLOCK, INLINE_CONTAINER, TABLE, LIST
+ * BLOCK, INLINE_BLOCK  BLOCK, INLINE_CONTAINER, TABLE
  * INLINE_CONTAINER     INLINE, INLINE_BLOCK, FLOAT_LEFT, FLOAT_RIGHT, BR, TEXT
  * INLINE, TEXT         none
  * TABLE                at least 1 TABLE_ROW_GROUP
@@ -79,9 +77,6 @@ static bool box_normalise_list_item(struct box *cont, struct content *c);
  * TABLE_ROW            at least 1 TABLE_CELL
  * TABLE_CELL           BLOCK, INLINE_CONTAINER, TABLE (same as BLOCK)
  * FLOAT_(LEFT|RIGHT)   exactly 1 BLOCK or TABLE
- * LIST                 at least 1 LIST_ITEM
- * LIST_ITEM            exactly 1 LIST_MARKER and exactly 1 LIST_PRINCIPAL
- * LIST_PRINCIPAL       BLOCK, INLINE_CONTAINER, TABLE, LIST (same as BLOCK)
  * \endcode
  */
 
@@ -90,14 +85,12 @@ bool box_normalise_block(struct box *block, struct content *c)
 	struct box *child;
 	struct box *next_child;
 	struct box *table;
-	struct box *list;
 	struct css_style *style;
 
 	assert(block != 0);
 	LOG(("block %p, block->type %u", block, block->type));
 	assert(block->type == BOX_BLOCK || block->type == BOX_INLINE_BLOCK ||
-			block->type == BOX_TABLE_CELL ||
-			block->type == BOX_LIST_PRINCIPAL);
+			block->type == BOX_TABLE_CELL);
 	gui_multitask();
 
 	for (child = block->children; child != 0; child = next_child) {
@@ -166,48 +159,6 @@ bool box_normalise_block(struct box *block, struct content *c)
 			if (!box_normalise_table(table, c))
 				return false;
 			break;
-		case BOX_LIST:
-			if (!box_normalise_list(child, c))
-				return false;
-			break;
-		case BOX_LIST_ITEM:
-			/* Insert implied BOX_LIST */
-			style = css_duplicate_style(block->style);
-			if (!style)
-				return false;
-			css_cascade(style, &css_blank_style);
-			list = box_create(style, 0, 0, 0, 0, c);
-			if (!list) {
-				css_free_style(style);
-				return false;
-			}
-			list->type = BOX_LIST;
-			if (child->prev == 0)
-				block->children = list;
-			else
-				child->prev->next = list;
-			list->prev = child->prev;
-			while (child != 0 && child->type == BOX_LIST_ITEM) {
-				box_add_child(list, child);
-				next_child = child->next;
-				child->next = 0;
-				child = next_child;
-			}
-			list->last->next = 0;
-			list->next = next_child = child;
-			if (list->next)
-				list->next->prev = list;
-			else
-				block->last = list;
-			list->parent = block;
-			if (!box_normalise_list(list, c))
-				return false;
-			break;
-		case BOX_LIST_MARKER:
-		case BOX_LIST_PRINCIPAL:
-			/* Should be wrapped in BOX_LIST_ITEM */
-			assert(0);
-			break;
 		default:
 			assert(0);
 		}
@@ -255,8 +206,6 @@ bool box_normalise_table(struct box *table, struct content * c)
 		case BOX_TABLE:
 		case BOX_TABLE_ROW:
 		case BOX_TABLE_CELL:
-		case BOX_LIST:
-		case BOX_LIST_ITEM:
 			/* insert implied table row group */
 			assert(table->style != NULL);
 			style = css_duplicate_style(table->style);
@@ -285,9 +234,7 @@ bool box_normalise_table(struct box *table, struct content * c)
 					child->type == BOX_INLINE_CONTAINER ||
 					child->type == BOX_TABLE ||
 					child->type == BOX_TABLE_ROW ||
-					child->type == BOX_TABLE_CELL ||
-					child->type == BOX_LIST ||
-					child->type == BOX_LIST_ITEM)) {
+					child->type == BOX_TABLE_CELL)) {
 				box_add_child(row_group, child);
 				next_child = child->next;
 				child->next = 0;
@@ -314,11 +261,6 @@ bool box_normalise_table(struct box *table, struct content * c)
 		case BOX_TEXT:
 			/* should have been wrapped in inline
 			   container by convert_xml_to_box() */
-			assert(0);
-			break;
-		case BOX_LIST_MARKER:
-		case BOX_LIST_PRINCIPAL:
-			/* Should have been wrapped in BOX_LIST_ITEM */
 			assert(0);
 			break;
 		default:
@@ -441,8 +383,6 @@ bool box_normalise_table_row_group(struct box *row_group,
 		case BOX_TABLE:
 		case BOX_TABLE_ROW_GROUP:
 		case BOX_TABLE_CELL:
-		case BOX_LIST:
-		case BOX_LIST_ITEM:
 			/* insert implied table row */
 			assert(row_group->style != NULL);
 			style = css_duplicate_style(row_group->style);
@@ -466,9 +406,7 @@ bool box_normalise_table_row_group(struct box *row_group,
 					child->type == BOX_INLINE_CONTAINER ||
 					child->type == BOX_TABLE ||
 					child->type == BOX_TABLE_ROW_GROUP ||
-					child->type == BOX_TABLE_CELL ||
-					child->type == BOX_LIST ||
-					child->type == BOX_LIST_ITEM)) {
+					child->type == BOX_TABLE_CELL)) {
 				box_add_child(row, child);
 				next_child = child->next;
 				child->next = 0;
@@ -493,11 +431,6 @@ bool box_normalise_table_row_group(struct box *row_group,
 		case BOX_TEXT:
 			/* should have been wrapped in inline
 			   container by convert_xml_to_box() */
-			assert(0);
-			break;
-		case BOX_LIST_MARKER:
-		case BOX_LIST_PRINCIPAL:
-			/* should have been wrapped in LIST_ITEM */
 			assert(0);
 			break;
 		default:
@@ -550,8 +483,6 @@ bool box_normalise_table_row(struct box *row,
 		case BOX_TABLE:
 		case BOX_TABLE_ROW_GROUP:
 		case BOX_TABLE_ROW:
-		case BOX_LIST:
-		case BOX_LIST_ITEM:
 			/* insert implied table cell */
 			assert(row->style != NULL);
 			style = css_duplicate_style(row->style);
@@ -575,9 +506,7 @@ bool box_normalise_table_row(struct box *row,
 					child->type == BOX_INLINE_CONTAINER ||
 					child->type == BOX_TABLE ||
 					child->type == BOX_TABLE_ROW_GROUP ||
-					child->type == BOX_TABLE_ROW ||
-					child->type == BOX_LIST ||
-					child->type == BOX_LIST_ITEM)) {
+					child->type == BOX_TABLE_ROW)) {
 				box_add_child(cell, child);
 				next_child = child->next;
 				child->next = 0;
@@ -601,11 +530,6 @@ bool box_normalise_table_row(struct box *row,
 		case BOX_TEXT:
 			/* should have been wrapped in inline
 			   container by convert_xml_to_box() */
-			assert(0);
-			break;
-		case BOX_LIST_MARKER:
-		case BOX_LIST_PRINCIPAL:
-			/* should have been wrapped in a BOX_LIST_ITEM */
 			assert(0);
 			break;
 		default:
@@ -751,20 +675,20 @@ bool box_normalise_inline_container(struct box *cont, struct content * c)
 			/* ok */
 			assert(child->children != 0);
 			switch (child->children->type) {
-				case BOX_BLOCK:
-					if (!box_normalise_block(
-							child->children,
-							c))
-						return false;
-					break;
-				case BOX_TABLE:
-					if (!box_normalise_table(
-							child->children,
-							c))
-						return false;
-					break;
-				default:
-					assert(0);
+			case BOX_BLOCK:
+				if (!box_normalise_block(
+						child->children,
+						c))
+					return false;
+				break;
+			case BOX_TABLE:
+				if (!box_normalise_table(
+						child->children,
+						c))
+					return false;
+				break;
+			default:
+				assert(0);
 			}
 			if (child->children == 0) {
 				/* the child has destroyed itself: remove float */
@@ -783,71 +707,11 @@ bool box_normalise_inline_container(struct box *cont, struct content * c)
 		case BOX_TABLE_ROW_GROUP:
 		case BOX_TABLE_ROW:
 		case BOX_TABLE_CELL:
-		case BOX_LIST:
-		case BOX_LIST_ITEM:
-		case BOX_LIST_MARKER:
-		case BOX_LIST_PRINCIPAL:
 		default:
 			assert(0);
 		}
 	}
 	LOG(("cont %p done", cont));
-
-	return true;
-}
-
-
-bool box_normalise_list(struct box *cont, struct content *c)
-{
-	struct box *child;
-	struct box *next_child;
-
-	assert(cont != 0);
-	assert(cont->type == BOX_LIST);
-
-	for (child = cont->children; child; child = next_child) {
-		next_child = child->next;
-		switch (child->type) {
-		case BOX_LIST_ITEM:
-			/* ok */
-			if (!box_normalise_list_item(child, c))
-				return false;
-			break;
-		case BOX_LIST_MARKER:
-		case BOX_LIST_PRINCIPAL:
-			/** \todo imply LIST_ITEM here? */
-		default:
-			assert(0);
-		}
-	}
-
-	return true;
-}
-
-
-bool box_normalise_list_item(struct box *cont, struct content *c)
-{
-	struct box *child;
-	struct box *next_child;
-
-	assert(cont != 0);
-	assert(cont->type == BOX_LIST_ITEM);
-
-	for (child = cont->children; child; child = next_child) {
-		next_child = child->next;
-		switch (child->type) {
-		case BOX_LIST_MARKER:
-			/* ok */
-			break;
-		case BOX_LIST_PRINCIPAL:
-			/* ok */
-			if (!box_normalise_block(child, c))
-				return false;
-			break;
-		default:
-			assert(0);
-		}
-	}
 
 	return true;
 }

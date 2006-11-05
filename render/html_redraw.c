@@ -333,6 +333,15 @@ bool html_redraw_box(struct box *box,
 			return false;
 	}
 
+	/* list marker */
+	if (box->list_marker)
+		if (!html_redraw_box(box->list_marker,
+				x_parent + box->x - box->scroll_x,
+				y_parent + box->y - box->scroll_y,
+				clip_x0, clip_y0, clip_x1, clip_y1,
+				scale, current_background_color))
+			return false;
+
 	/* scrollbars */
 	if (box->style && box->type != BOX_BR && box->type != BOX_INLINE &&
 			(box->style->overflow == CSS_OVERFLOW_SCROLL ||

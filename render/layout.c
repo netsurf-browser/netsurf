@@ -48,7 +48,6 @@
 static void layout_minmax_block(struct box *block);
 static bool layout_block_object(struct box *block);
 static void layout_block_find_dimensions(int available_width, struct box *box);
-static void layout_list_find_dimensions(int available_width, struct box *box);
 static int layout_solve_width(int available_width, int width,
 		int margin[4], int padding[4], int border[4]);
 static void layout_float_find_dimensions(int available_width,
@@ -60,9 +59,6 @@ static void layout_find_dimensions(int available_width,
 static int layout_clear(struct box *fl, css_clear clear);
 static void find_sides(struct box *fl, int y0, int y1,
 		int *x0, int *x1, struct box **left, struct box **right);
-static void layout_minmax_list(struct box *box);
-static void layout_minmax_list_item(struct box *box);
-static bool layout_list(struct box *box, struct content *content);
 static void layout_minmax_inline_container(struct box *inline_container);
 static int line_height(struct css_style *style);
 static bool layout_line(struct box *first, int *width, int *y,
@@ -80,6 +76,7 @@ static void layout_minmax_table(struct box *table);
 static void layout_move_children(struct box *box, int x, int y);
 static void calculate_mbp_width(struct css_style *style, unsigned int side,
 		int *fixed, float *frac);
+static void layout_lists(struct box *box);
 static void layout_position_relative(struct box *root);
 static void layout_compute_relative_offset(struct box *box, int *x, int *y);
 static bool layout_position_absolute(struct box *box,
@@ -141,6 +138,7 @@ bool layout_document(struct content *content, int width, int height)
 					 doc->children->margin[BOTTOM]);
 	}
 
+	layout_lists(doc);
 	layout_position_absolute(doc, doc, 0, 0, content);
 	layout_position_relative(doc);
 
@@ -153,7 +151,7 @@ bool layout_document(struct content *content, int width, int height)
 /**
  * Layout a block formatting context.
  *
- * \param  block    BLOCK, INLINE_BLOCK, TABLE_CELL or LIST_PRINCIPAL to layout
+ * \param  block    BLOCK, INLINE_BLOCK, or TABLE_CELL to layout
  * \param  content  memory pool for any new boxes
  * \return  true on success, false on memory exhaustion
  *
@@ -172,8 +170,9 @@ bool layout_block_context(struct box *block, struct content *content)
 
 	assert(block->type == BOX_BLOCK ||
 			block->type == BOX_INLINE_BLOCK ||
-			block->type == BOX_TABLE_CELL ||
-			block->type == BOX_LIST_PRINCIPAL);
+			block->type == BOX_TABLE_CELL);
+	assert(block->width != UNKNOWN_WIDTH);
+	assert(block->width != AUTO);
 
 	gui_multitask();
 
@@ -215,8 +214,7 @@ bool layout_block_context(struct box *block, struct content *content)
 	 * to each in the order shown. */
 	while (box) {
 		assert(box->type == BOX_BLOCK || box->type == BOX_TABLE ||
-				box->type == BOX_INLINE_CONTAINER ||
-				box->type == BOX_LIST);
+				box->type == BOX_INLINE_CONTAINER);
 		assert(margin_box);
 
 		/* Tables are laid out before being positioned, because the
@@ -241,8 +239,7 @@ bool layout_block_context(struct box *block, struct content *content)
 				return false;
 			layout_solve_width(box->parent->width, box->width,
 					box->margin, box->padding, box->border);
-		} else if (box->type == BOX_LIST)
-			layout_list_find_dimensions(box->parent->width, box);
+		}
 
 		/* Position box: horizontal. */
 		box->x = box->parent->padding[LEFT] + box->margin[LEFT] +
@@ -315,9 +312,6 @@ bool layout_block_context(struct box *block, struct content *content)
 			cx = x0;
 			box->y += y - cy;
 			cy = y;
-		} else if (box->type == BOX_LIST) {
-			if (!layout_list(box, content))
-				return false;
 		}
 
 		/* Advance to next box. */
@@ -396,7 +390,7 @@ bool layout_block_context(struct box *block, struct content *content)
 /**
  * Calculate minimum and maximum width of a block.
  *
- * \param  block  box of type BLOCK, INLINE_BLOCK, TABLE_CELL, or LIST_PRINCIPAL
+ * \param  block  box of type BLOCK, INLINE_BLOCK, or TABLE_CELL
  * \post  block->min_width and block->max_width filled in,
  *        0 <= block->min_width <= block->max_width
  */
@@ -410,8 +404,7 @@ void layout_minmax_block(struct box *block)
 
 	assert(block->type == BOX_BLOCK ||
 			block->type == BOX_INLINE_BLOCK ||
-			block->type == BOX_TABLE_CELL ||
-			block->type == BOX_LIST_PRINCIPAL);
+			block->type == BOX_TABLE_CELL);
 
 	/* check if the widths have already been calculated */
 	if (block->max_width != UNKNOWN_MAX_WIDTH)
@@ -437,9 +430,6 @@ void layout_minmax_block(struct box *block)
 				break;
 			case BOX_TABLE:
 				layout_minmax_table(child);
-				break;
-			case BOX_LIST:
-				layout_minmax_list(child);
 				break;
 			default:
 				assert(0);
@@ -575,64 +565,6 @@ void layout_block_find_dimensions(int available_width, struct box *box)
 		margin[BOTTOM] = 0;
 }
 
-
-/**
- * Compute dimensions of box, margins, paddings, and borders for a list.
- *
- * Similar to layout_block_find_dimensions()
- */
-
-void layout_list_find_dimensions(int available_width, struct box *box)
-{
-	int width, height;
-	int *margin = box->margin;
-	int *padding = box->padding;
-	int *border = box->border;
-	struct css_style *style = box->style;
-	struct box *c;
-
-	layout_find_dimensions(available_width, style,
-			&width, &height, margin, padding, border);
-
-	for (c = box->children; c; c = c->next) {
-		struct box *marker, *principal;
-
-		marker = c->children;
-		principal = marker->next;
-
-		/** \todo handle marker */
-		marker->width = marker->height = 0;
-
-		layout_block_find_dimensions(available_width, principal);
-
-		if (width < principal->x + principal->width +
-				principal->padding[RIGHT] +
-				principal->border[RIGHT] +
-				principal->margin[RIGHT])
-			width = principal->x + principal->width +
-				principal->padding[RIGHT] +
-				principal->border[RIGHT] +
-				principal->margin[RIGHT];
-
-		if (height < principal->y + principal->height +
-				principal->padding[BOTTOM] +
-				principal->border[BOTTOM] +
-				principal->margin[BOTTOM])
-			height = principal->y + principal->height +
-				principal->padding[BOTTOM] +
-				principal->border[BOTTOM] +
-				principal->margin[BOTTOM];
-	}
-
-	box->width = layout_solve_width(available_width, width, margin,
-			padding, border);
-	box->height = height;
-
-	if (margin[TOP] == AUTO)
-		margin[TOP] = 0;
-	if (margin[BOTTOM] == AUTO)
-		margin[BOTTOM] = 0;
-}
 
 /**
  * Solve the width constraint as given in CSS 2.1 section 10.3.3.
@@ -886,127 +818,6 @@ void find_sides(struct box *fl, int y0, int y1,
 		}
 	}
 	LOG(("x0 %i, x1 %i, left %p, right %p", *x0, *x1, *left, *right));
-}
-
-
-/**
- * Calculate minimum and maximum widths of a list
- */
-
-void layout_minmax_list(struct box *box)
-{
-	int min = 0, max = 0;
-	struct box *c;
-
-	assert(box->type == BOX_LIST);
-
-	/* check if we've already calculated the width */
-	if (box->max_width != UNKNOWN_MAX_WIDTH)
-		return;
-
-	for (c = box->children; c; c = c->next) {
-		layout_minmax_list_item(c);
-		if (min < c->min_width)
-			min = c->min_width;
-		if (max < c->max_width)
-			max = c->max_width;
-	}
-
-	box->min_width = min;
-	box->max_width = max;
-}
-
-
-/**
- * Calculate minimum and maximum widths of a list item
- */
-
-void layout_minmax_list_item(struct box *box)
-{
-	struct box *marker, *principal;
-
-	assert(box->type == BOX_LIST_ITEM);
-
-	/* check if we've already calculated the width */
-	if (box->max_width != UNKNOWN_MAX_WIDTH)
-		return;
-
-	marker = box->children;
-	principal = marker->next;
-
-	layout_minmax_block(principal);
-
-	/** \todo what on earth are we expected to do with the marker?
-	 * AFAICS, none of Opera, Firefox nor Konqueror support
-	 * display: list-item with list-style-position: outside
-	 * In Opera/Firefox's case, they don't appear to bother to
-	 * generate the marker box (probably following the "optional"
-	 * wording of the spec - 12.5). Konqueror turns it into
-	 * list-style-position: inside. */
-	marker->min_width = marker->max_width = 0;
-
-	box->min_width = principal->min_width + marker->min_width;
-	box->max_width = principal->max_width + marker->max_width;
-}
-
-
-/**
- * Layout a list
- *
- * \param  box	  list box
- * \param  content  memory pool for any new boxes
- * \return  true on success, false on memory exhaustion
- */
-
-bool layout_list(struct box *box, struct content *content)
-{
-	struct box *c;
-	int cy = 0;
-
-	assert(box->type == BOX_LIST);
-
-	for (c = box->children; c; c = c->next) {
-		struct box *marker, *principal;
-
-		assert(c->type == BOX_LIST_ITEM);
-
-		marker = c->children;
-		principal = marker->next;
-
-		c->x = 0;
-		c->y = cy;
-
-		/** \todo handle marker */
-		marker->x = marker->y = 0;
-
-		principal->x = 0;
-		principal->y = 0;
-		/* manipulate principal box's parent pointer so
-		 * layout_block_context has a parent style to play with */
-		/** \todo is this sane? */
-		principal->parent = box;
-		layout_block_context(principal, content);
-		principal->parent = c;
-
-		if (c->width == UNKNOWN_WIDTH)
-			c->width = principal->x + principal->width +
-					principal->padding[RIGHT] +
-					principal->border[RIGHT] +
-					principal->margin[RIGHT];
-
-//		if (c->height == AUTO)
-			c->height = principal->y + principal->height +
-					principal->padding[BOTTOM] +
-					principal->border[BOTTOM] +
-					principal->margin[BOTTOM];
-
-		cy += c->height;
-	}
-
-//	if (box->height == AUTO)
-		box->height = cy - box->padding[TOP];
-
-	return true;
 }
 
 
@@ -1885,6 +1696,8 @@ int layout_text_indent(struct css_style *style, int width)
 
 bool layout_float(struct box *b, int width, struct content *content)
 {
+	assert(b->type == BOX_TABLE || b->type == BOX_BLOCK ||
+			b->type == BOX_INLINE_BLOCK);
 	layout_float_find_dimensions(width, b->style, b);
 	if (b->type == BOX_TABLE) {
 		if (!layout_table(b, width, content))
@@ -2570,6 +2383,30 @@ void calculate_mbp_width(struct css_style *style, unsigned int side,
 
 
 /**
+ * Layout list markers.
+ */
+
+void layout_lists(struct box *box)
+{
+	struct box *child;
+	struct box *marker;
+
+	for (child = box->children; child; child = child->next) {
+		if (child->list_marker) {
+			marker = child->list_marker;
+			if (marker->width == UNKNOWN_WIDTH)
+				nsfont_width(marker->style, marker->text,
+						marker->length, &marker->width);
+			marker->x = -marker->width;
+			marker->y = 0;
+			marker->height = line_height(marker->style);
+		}
+		layout_lists(child);
+	}
+}
+
+
+/**
  * Adjust positions of relatively positioned boxes.
  */
 
@@ -3188,6 +3025,20 @@ void layout_calculate_descendant_bboxes(struct box *box)
 		assert(child->type == BOX_FLOAT_LEFT ||
 				child->type == BOX_FLOAT_RIGHT);
 
+		layout_calculate_descendant_bboxes(child);
+
+		if (child->x + child->descendant_x0 < box->descendant_x0)
+			box->descendant_x0 = child->x + child->descendant_x0;
+		if (box->descendant_x1 < child->x + child->descendant_x1)
+			box->descendant_x1 = child->x + child->descendant_x1;
+		if (child->y + child->descendant_y0 < box->descendant_y0)
+			box->descendant_y0 = child->y + child->descendant_y0;
+		if (box->descendant_y1 < child->y + child->descendant_y1)
+			box->descendant_y1 = child->y + child->descendant_y1;
+	}
+
+	if (box->list_marker) {
+		child = box->list_marker;
 		layout_calculate_descendant_bboxes(child);
 
 		if (child->x + child->descendant_x0 < box->descendant_x0)
