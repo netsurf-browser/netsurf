@@ -2394,12 +2394,22 @@ void layout_lists(struct box *box)
 	for (child = box->children; child; child = child->next) {
 		if (child->list_marker) {
 			marker = child->list_marker;
-			if (marker->width == UNKNOWN_WIDTH)
-				nsfont_width(marker->style, marker->text,
-						marker->length, &marker->width);
-			marker->x = -marker->width;
-			marker->y = 0;
-			marker->height = line_height(marker->style);
+			if (marker->object) {
+				marker->width = marker->object->width;
+				marker->x = -marker->width;
+				marker->height = marker->object->height;
+				marker->y = (line_height(marker->style) -
+						marker->height) / 2;
+			} else {
+				if (marker->width == UNKNOWN_WIDTH)
+					nsfont_width(marker->style,
+							marker->text,
+							marker->length,
+							&marker->width);
+				marker->x = -marker->width;
+				marker->y = 0;
+				marker->height = line_height(marker->style);
+			}
 		}
 		layout_lists(child);
 	}
