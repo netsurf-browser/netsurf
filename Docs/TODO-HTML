@@ -11,10 +11,6 @@ See TODO-CSS for CSS related TODOs.
 Text Formatting:
 
 	<Q> tag
-	
-Lists:
-	<LI>
-	<OL>,<UL>
 
 Objects:
 	Alt text
@@ -22,9 +18,6 @@ Objects:
 Forms:
 	"disabled" attribute
 	A few textarea rendering issues
-
-Frames:
-	Currently messy. Change to use nested windows.
 	
 General:
 	height="some%" - 13.7.1

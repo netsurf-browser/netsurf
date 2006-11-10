@@ -49,10 +49,10 @@ See TODO-HTML for HTML related TODOs.
 + left
 - letter-spacing
 + line-height
-- list-style
-- list-style-image
+= list-style
++ list-style-image
 - list-style-position
-- list-style-type
+= list-style-type                       (various numbering systems are not implemented)
 = margin				(some problems with inlines)
 = margin-[top|right|left|bottom]	(some problems with inlines)
 - marker-offset
@@ -71,7 +71,7 @@ See TODO-HTML for HTML related TODOs.
 = padding-[top|right|left|bottom]	(some problems with inlines)
 - page
 - page-break-[after|before|inside]
-= position				(fixed not done. static position not implemented)
+= position				(fixed not done)
 - quotes
 + right
 - size
