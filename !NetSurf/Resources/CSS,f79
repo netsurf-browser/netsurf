@@ -57,7 +57,7 @@ ul { display: block; padding-left: 1.5em; margin-bottom: 1em;
 	list-style-type: disc; }
 ol { display: block; padding-left: 1.5em; margin-bottom: 1em;
 	list-style-type: decimal; }
-li { display: list-item; padding-left: 0.5em; margin-bottom: 0.3em; }
+li { display: list-item; margin-bottom: 0.3em; }
 
 ul ul { list-style-type: circle; }
 ul ul ul { list-style-type: square; }

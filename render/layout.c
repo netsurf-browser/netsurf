@@ -2410,6 +2410,7 @@ void layout_lists(struct box *box)
 				marker->y = 0;
 				marker->height = line_height(marker->style);
 			}
+			marker->x -= 4; // Gap between marker and content
 		}
 		layout_lists(child);
 	}
