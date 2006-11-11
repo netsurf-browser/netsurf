@@ -643,8 +643,8 @@ bool html_find_stylesheets(struct content *c, xmlNode *head)
 
 			/* media contains 'screen' or 'all' or not present */
 			if ((media = (char *) xmlGetProp(node, (const xmlChar *) "media")) != NULL) {
-				if (strstr(media, "screen") == 0 &&
-						strstr(media, "all") == 0) {
+				if (strcasestr(media, "screen") == 0 &&
+						strcasestr(media, "all") == 0) {
 					xmlFree(media);
 					continue;
 				}
@@ -699,8 +699,8 @@ bool html_find_stylesheets(struct content *c, xmlNode *head)
 
 			/* media contains 'screen' or 'all' or not present */
 			if ((media = (char *) xmlGetProp(node, (const xmlChar *) "media")) != NULL) {
-				if (strstr(media, "screen") == 0 &&
-						strstr(media, "all") == 0) {
+				if (strcasestr(media, "screen") == 0 &&
+						strcasestr(media, "all") == 0) {
 					xmlFree(media);
 					continue;
 				}
