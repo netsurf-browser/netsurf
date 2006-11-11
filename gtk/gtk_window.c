@@ -31,6 +31,7 @@
 #include "netsurf/render/box.h"
 #include "netsurf/render/font.h"
 #include "netsurf/render/form.h"
+#include "netsurf/render/html.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
 #include "netsurf/utils/log.h"
@@ -148,6 +149,7 @@ MENUPROTO(zoom_in);
 MENUPROTO(normal_size);
 MENUPROTO(zoom_out);
 MENUPROTO(save_window_size);
+MENUPROTO(toggle_debug_rendering);
 
 /* navigate menu */
 MENUPROTO(back);
@@ -178,6 +180,7 @@ static struct menu_events menu_events[] = {
 	MENUEVENT(normal_size),
 	MENUEVENT(zoom_out),
 	MENUEVENT(save_window_size),
+	MENUEVENT(toggle_debug_rendering),
 
 	/* navigate menu */
 	MENUEVENT(back),
@@ -597,6 +600,14 @@ MENUHANDLER(save_window_size)
 
 
 	options_write(options_file_location);
+
+	return TRUE;
+}
+
+MENUHANDLER(toggle_debug_rendering)
+{
+	html_redraw_debug = !html_redraw_debug;
+	gui_window_redraw_window(g);
 
 	return TRUE;
 }
