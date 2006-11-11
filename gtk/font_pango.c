@@ -135,11 +135,12 @@ bool nsfont_split(const struct css_style *style,
 		int x, size_t *char_offset, int *actual_x)
 {
 	int index = length;
-	int x_pos;
 	PangoFontDescription *desc;
 	PangoContext *context;
 	PangoLayout *layout;
 	PangoLayoutLine *line;
+	PangoLayoutIter *iter;
+	PangoRectangle rect;
 
 	desc = nsfont_style_to_description(style);
 	context = gdk_pango_context_get();
@@ -152,15 +153,17 @@ bool nsfont_split(const struct css_style *style,
 	line = pango_layout_get_line(layout, 1);
 	if (line)
 		index = line->start_index - 1;
-	pango_layout_line_index_to_x(pango_layout_get_line(layout, 0),
-			index, 0, &x_pos);
+
+	iter = pango_layout_get_iter(layout);
+	pango_layout_iter_get_line_extents(iter, NULL, &rect);
+	pango_layout_iter_free(iter);
 
 	g_object_unref(layout);
 	g_object_unref(context);
 	pango_font_description_free(desc);
 
 	*char_offset = index;
-	*actual_x = PANGO_PIXELS(x_pos);
+	*actual_x = PANGO_PIXELS(rect.width);
 	
 	return true;
 }
