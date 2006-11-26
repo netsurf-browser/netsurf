@@ -211,6 +211,16 @@ char *url_to_path(const char *url)
 	return strdup(url + 5);
 }
 
+char *path_to_url(const char *path)
+{
+	char *r = malloc(strlen(path) + 7 + 1);
+
+	strcpy(r, "file://");
+	strcat(r, path);
+
+	return r;
+}
+
 void tree_set_node_sprite(struct node *node, const char *sprite,
                 const char *expanded) { }
 
