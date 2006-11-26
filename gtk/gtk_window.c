@@ -392,7 +392,7 @@ void nsgtk_perform_deferred_resize(void *p)
 		g->bw->current_content->status != CONTENT_STATUS_DONE)
 		return;
 
-	content_reformat(g->bw->current_content,
+	browser_window_reformat(g->bw,
                          g->target_width, g->target_height);
 
 	if (GTK_WIDGET_SENSITIVE((GTK_WIDGET(g->stop_button))))

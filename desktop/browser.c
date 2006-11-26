@@ -322,7 +322,6 @@ void browser_window_callback(content_msg msg, struct content *c,
 	char status[40];
 	char url[256];
 
-
 	switch (msg) {
 	case CONTENT_MSG_LOADING:
 		assert(bw->loading_content == c);
@@ -425,7 +424,7 @@ void browser_window_callback(content_msg msg, struct content *c,
 		bw->referer = 0;
 		if (bw->refresh_interval != -1)
 			schedule(bw->refresh_interval,
-				 browser_window_refresh, bw);
+					browser_window_refresh, bw);
 		break;
 
 	case CONTENT_MSG_ERROR:
@@ -524,31 +523,6 @@ void browser_window_callback(content_msg msg, struct content *c,
 
 
 /**
- * Refresh browser window
- *
- * \param p Browser window to refresh
- */
-
-void browser_window_refresh(void *p)
-{
-	struct browser_window *bw = p;
-	bool history_add = true;
-
-	assert(bw->current_content->status == CONTENT_STATUS_READY ||
-			bw->current_content->status == CONTENT_STATUS_DONE);
-
-	/* mark this content as invalid so it gets flushed from the cache */
-	bw->current_content->fresh = false;
-	if ((bw->current_content->url) &&
-			(bw->current_content->refresh) &&
-			(!strcmp(bw->current_content->url, bw->current_content->refresh)))
-		history_add = false;
-
-	browser_window_go(bw, bw->current_content->refresh,
-			bw->current_content->url, history_add);
-}
-
-/**
  * Transfer the loading_content to a new download window.
  */
 
@@ -583,6 +557,34 @@ void browser_window_convert_to_download(struct browser_window *bw)
 	bw->loading_content = 0;
 	content_remove_user(c, browser_window_callback, (intptr_t) bw, 0);
 	browser_window_stop_throbber(bw);
+}
+
+
+/**
+ * Handle meta http-equiv refresh time elapsing by loading a new page.
+ *
+ * \param  p  browser window to refresh with new page
+ */
+
+void browser_window_refresh(void *p)
+{
+	struct browser_window *bw = p;
+	bool history_add = true;
+
+	assert(bw->current_content->status == CONTENT_STATUS_READY ||
+			bw->current_content->status == CONTENT_STATUS_DONE);
+
+	/* mark this content as invalid so it gets flushed from the cache */
+	bw->current_content->fresh = false;
+
+	if ((bw->current_content->url) &&
+			(bw->current_content->refresh) &&
+			(!strcmp(bw->current_content->url,
+				 bw->current_content->refresh)))
+		history_add = false;
+
+	browser_window_go(bw, bw->current_content->refresh,
+			bw->current_content->url, history_add);
 }
 
 
@@ -898,6 +900,30 @@ struct browser_window *browser_window_owner(struct browser_window *bw)
 
 
 /**
+ * Reformat a browser window contents to a new width or height.
+ *
+ * \param  bw      the browser window to reformat
+ * \param  width   new width
+ * \param  height  new height
+ */
+
+void browser_window_reformat(struct browser_window *bw, int width, int height)
+{
+	struct content *c = bw->current_content;
+
+	if (!c)
+		return;
+
+	content_reformat(c, width, height);
+
+	if (c->type == CONTENT_HTML && c->data.html.frameset)
+		browser_window_recalculate_frameset(bw);
+	if (c->type == CONTENT_HTML && c->data.html.iframe)
+		browser_window_recalculate_iframes(bw);
+}
+
+
+/**
  * Sets the scale of a browser window
  *
  * \param bw	The browser window to scale
@@ -905,7 +931,8 @@ struct browser_window *browser_window_owner(struct browser_window *bw)
  * \param all	Scale all windows in the tree (ie work up aswell as down)
  */
 
-void browser_window_set_scale(struct browser_window *bw, float scale, bool all) {
+void browser_window_set_scale(struct browser_window *bw, float scale, bool all) 
+{
 	while (bw->parent && all)
 		bw = bw->parent;
 	browser_window_set_scale_internal(bw, scale);
@@ -914,7 +941,8 @@ void browser_window_set_scale(struct browser_window *bw, float scale, bool all) 
 	browser_window_recalculate_frameset(bw);
 }
 
-void browser_window_set_scale_internal(struct browser_window *bw, float scale) {
+void browser_window_set_scale_internal(struct browser_window *bw, float scale)
+{
   	int i;
 
   	gui_window_set_scale(bw->window, scale);

@@ -193,6 +193,7 @@ void browser_window_stop(struct browser_window *bw);
 void browser_window_reload(struct browser_window *bw, bool all);
 void browser_window_destroy(struct browser_window *bw);
 struct browser_window * browser_window_owner(struct browser_window *bw);
+void browser_window_reformat(struct browser_window *bw, int width, int height);
 void browser_window_set_scale(struct browser_window *bw, float scale, bool all);
 
 void browser_window_mouse_click(struct browser_window *bw,

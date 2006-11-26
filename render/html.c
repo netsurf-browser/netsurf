@@ -1422,11 +1422,6 @@ void html_reformat(struct content *c, int width, int height)
 		c->width = layout->x + layout->descendant_x1;
 	if (c->height < layout->y + layout->descendant_y1)
 		c->height = layout->y + layout->descendant_y1;
-
-	if ((c->data.html.frameset) && (c->data.html.bw))
-		browser_window_recalculate_frameset(c->data.html.bw);
-	if ((c->data.html.iframe) && (c->data.html.bw))
-		browser_window_recalculate_iframes(c->data.html.bw);
 }
 
 

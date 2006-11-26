@@ -2892,7 +2892,7 @@ void ro_gui_window_process_reformats(void)
 		if (!g->reformat_pending)
 			continue;
 		g->reformat_pending = false;
-		content_reformat(g->bw->current_content,
+		browser_window_reformat(g->bw,
 				g->old_width / 2 / g->option.scale,
 				g->old_height / 2 / g->option.scale);
 	}
