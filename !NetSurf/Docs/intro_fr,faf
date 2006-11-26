@@ -22,14 +22,14 @@ NetSurf, veuillez lire la <a href="docs_fr">documentation</a>.</p>
 <h2>Liens NetSurf</h2>
 
 <dl>
-<dt><a href="http://netsurf.sourceforge.net/">Page d'accueil NetSurf</a></dt>
+<dt><a href="http://netsurf-browser.org/">Page d'accueil NetSurf</a></dt>
 <dd>Le site Web de NetSurf</dd>
 
 <dt><a href="http://sourceforge.net/projects/netsurf/">Page du Projet SourceForge</a></dt>
 <dd>SourceForge fournit la liste de diffusion, le traqueur de bogue ainsi que
 d'autres services</dd>
 
-<dt><a href="http://netsurf.sourceforge.net/builds/">Version Test</a></dt>
+<dt><a href="http://netsurf-browser.org/builds/">Version Test</a></dt>
 <dd>Versions générées automatiquement à partir du dernier code source</dd>
 
 <dt><a href="http://sourceforge.net/tracker/?atid=464312&amp;group_id=51719">Traqueur de bogue</a></dt>
@@ -39,7 +39,7 @@ diffusion</dd>
 <dt><a href="http://lists.sourceforge.net/lists/listinfo/netsurf-develop">Liste de diffusion de Développement</a></dt>
 <dd>Souscrivez à cette liste si vous comptez développer ou tester NetSurf</dd>
 
-<dt><a href="http://svn.semichrome.net/trunk/netsurf/">Interface web SVN</a></dt>
+<dt><a href="http://source.netsurf-browser.org/trunk/netsurf/">Interface web SVN</a></dt>
 <dd>Naviguez dans le code source à l'aide de l'interface Web</dd>
 </dl>
 

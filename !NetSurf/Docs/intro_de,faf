@@ -21,13 +21,13 @@ es, die Standards HTML&nbsp;4 und CSS auf der RISC OS Plattform zur Verfügung zu
 <h2>NetSurf Links</h2>
 
 <dl>
-<dt><a href="http://netsurf.sourceforge.net/">NetSurf Homepage</a></dt>
+<dt><a href="http://netsurf-browser.org/">NetSurf Homepage</a></dt>
 <dd>Die NetSurf Webseite</dd>
 
 <dt><a href="http://sourceforge.net/projects/netsurf/">SourceForge Projektseite</a></dt>
 <dd>SourceForge stellt die Mailing-Liste, den Bug-Tracker und andere Dienste zur Vefügung</dd>
 
-<dt><a href="http://netsurf.sourceforge.net/builds/">Testversionen</a></dt>
+<dt><a href="http://netsurf-browser.org/builds/">Testversionen</a></dt>
 <dd>Werden regelmäßig aus dem aktuellen Sourcecode erzeugt</dd>
 
 <dt><a href="http://sourceforge.net/tracker/?atid=464312&amp;group_id=51719">Bug-Tracker</a></dt>
@@ -36,7 +36,7 @@ es, die Standards HTML&nbsp;4 und CSS auf der RISC OS Plattform zur Verfügung zu
 <dt><a href="http://lists.sourceforge.net/lists/listinfo/netsurf-develop">Entwickler Mailing-Liste</a></dt>
 <dd>Bitte hier anmelden, um als Tester oder Entwickler mitzuarbeiten</dd>
 
-<dt><a href="http://svn.semichrome.net/trunk/netsurf/">SVN Web-Interface</a></dt>
+<dt><a href="http://source.netsurf-browser.org/trunk/netsurf/">SVN Web-Interface</a></dt>
 <dd>Den Sourcecode ansehen</dd>
 </dl>
 
