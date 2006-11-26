@@ -1563,11 +1563,6 @@ void html_open(struct content *c, struct browser_window *bw,
 				c->data.html.object[i].box,
 				c->data.html.object[i].box->object_params);
 	}
-
-	if (c->data.html.frameset)
-		browser_window_create_frameset(bw, c->data.html.frameset);
-	if (c->data.html.iframe)
-		browser_window_create_iframes(bw, c->data.html.iframe);
 }
 
 

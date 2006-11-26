@@ -182,23 +182,17 @@ extern struct browser_window *current_redraw_browser;
 
 struct browser_window * browser_window_create(const char *url,
 		struct browser_window *clone, char *referer, bool history_add);
-struct browser_window * browser_window_owner(struct browser_window *bw);
 void browser_window_go(struct browser_window *bw, const char *url,
 		char *referer, bool history_add);
 void browser_window_go_post(struct browser_window *bw, const char *url,
 		char *post_urlenc,
 		struct form_successful_control *post_multipart,
 		bool history_add, char *referer, bool download);
+void browser_window_update(struct browser_window *bw, bool scroll_to_top);
 void browser_window_stop(struct browser_window *bw);
 void browser_window_reload(struct browser_window *bw, bool all);
 void browser_window_destroy(struct browser_window *bw);
-void browser_window_update(struct browser_window *bw, bool scroll_to_top);
-void browser_window_create_iframes(struct browser_window *bw,
-		struct content_html_iframe *iframe);
-void browser_window_recalculate_iframes(struct browser_window *bw);
-void browser_window_create_frameset(struct browser_window *bw,
-		struct content_html_frames *frameset);
-void browser_window_recalculate_frameset(struct browser_window *bw);
+struct browser_window * browser_window_owner(struct browser_window *bw);
 void browser_window_set_scale(struct browser_window *bw, float scale, bool all);
 
 void browser_window_mouse_click(struct browser_window *bw,
