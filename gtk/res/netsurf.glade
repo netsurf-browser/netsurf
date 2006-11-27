@@ -984,7 +984,7 @@
       </child>
 
       <child>
-	<widget class="GtkTable" id="table6">
+	<widget class="GtkTable" id="centreTable">
 	  <property name="visible">True</property>
 	  <property name="n_rows">2</property>
 	  <property name="n_columns">2</property>
@@ -993,7 +993,7 @@
 	  <property name="column_spacing">0</property>
 
 	  <child>
-	    <widget class="GtkVScrollbar" id="vscrollbar1">
+	    <widget class="GtkVScrollbar" id="coreScrollVertical">
 	      <property name="visible">True</property>
 	      <property name="update_policy">GTK_UPDATE_CONTINUOUS</property>
 	      <property name="inverted">False</property>
@@ -1005,29 +1005,6 @@
 	      <property name="top_attach">0</property>
 	      <property name="bottom_attach">1</property>
 	      <property name="x_options">fill</property>
-	    </packing>
-	  </child>
-
-	  <child>
-	    <widget class="GtkViewport" id="viewport1">
-	      <property name="visible">True</property>
-	      <property name="shadow_type">GTK_SHADOW_IN</property>
-
-	      <child>
-		<widget class="GtkDrawingArea" id="drawingArea">
-		  <property name="visible">True</property>
-		  <property name="can_focus">True</property>
-		  <property name="has_focus">True</property>
-		</widget>
-	      </child>
-	    </widget>
-	    <packing>
-	      <property name="left_attach">0</property>
-	      <property name="right_attach">1</property>
-	      <property name="top_attach">0</property>
-	      <property name="bottom_attach">1</property>
-	      <property name="x_options">fill</property>
-	      <property name="y_options">fill</property>
 	    </packing>
 	  </child>
 
@@ -1062,7 +1039,7 @@
 	      </child>
 
 	      <child>
-		<widget class="GtkHScrollbar" id="hscrollbar1">
+		<widget class="GtkHScrollbar" id="coreScrollHorizontal">
 		  <property name="visible">True</property>
 		  <property name="update_policy">GTK_UPDATE_CONTINUOUS</property>
 		  <property name="inverted">False</property>

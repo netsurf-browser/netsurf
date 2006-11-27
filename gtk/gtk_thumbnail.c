@@ -22,7 +22,7 @@
 #include "netsurf/image/bitmap.h"
 #include "netsurf/render/font.h"
 #include "netsurf/utils/log.h"
-#include "netsurf/gtk/gtk_window.h"
+#include "netsurf/gtk/gtk_scaffolding.h"
 #include "netsurf/gtk/gtk_plotters.h"
 #include "netsurf/gtk/gtk_bitmap.h"
 

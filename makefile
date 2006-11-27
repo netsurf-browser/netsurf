@@ -70,9 +70,9 @@ OBJECTS_GTK += browser.o frames.o history_core.o netsurf.o \
 	selection.o textinput.o version.o gesture_core.o	# desktop/
 OBJECTS_GTK += font_pango.o gtk_bitmap.o gtk_gui.o \
         gtk_schedule.o gtk_thumbnail.o gtk_options.o \
-	gtk_plotters.o gtk_treeview.o gtk_window.o \
+	gtk_plotters.o gtk_treeview.o gtk_scaffolding.o \
 	gtk_completion.o gtk_login.o gtk_throbber.o \
-	gtk_history.o						# gtk/
+	gtk_history.o gtk_window.o				# gtk/
 
 
 OBJDIR_RISCOS = arm-riscos-aof
@@ -129,7 +129,7 @@ CFLAGS_NCOS = $(CFLAGS_RISCOS) -Dncos
 CFLAGS_DEBUG = -std=c9x -D_BSD_SOURCE -DDEBUG_BUILD $(WARNFLAGS) -I.. \
 	$(PLATFORM_CFLAGS_DEBUG) -g
 CFLAGS_GTK = -Dnsgtk -std=c9x -D_BSD_SOURCE -D_POSIX_C_SOURCE -Dgtk \
-	$(WARNFLAGS) -I.. -g -O0 -Wformat=2 \
+	$(WARNFLAGS) -I.. -g -O0 -Wformat=2 -DNDEBUG \
 	`pkg-config --cflags libglade-2.0 gtk+-2.0` `xml2-config --cflags`
 
 # Stop GCC under Cygwin throwing a fit

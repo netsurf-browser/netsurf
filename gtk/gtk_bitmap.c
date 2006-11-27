@@ -17,7 +17,7 @@
 #include <gdk/gdk.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
 #include "netsurf/content/content.h"
-#include "netsurf/gtk/gtk_window.h"
+#include "netsurf/gtk/gtk_scaffolding.h"
 #include "netsurf/image/bitmap.h"
 #include "netsurf/utils/log.h"
 

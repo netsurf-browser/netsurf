@@ -21,12 +21,19 @@
 #include "netsurf/desktop/plotters.h"
 #include "netsurf/gtk/font_pango.h"
 #include "netsurf/gtk/gtk_plotters.h"
-#include "netsurf/gtk/gtk_window.h"
+#include "netsurf/gtk/gtk_scaffolding.h"
 #include "netsurf/render/font.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/desktop/options.h"
 #include "netsurf/gtk/options.h"
 #include "netsurf/gtk/gtk_bitmap.h"
+
+GtkWidget *current_widget;
+GdkDrawable *current_drawable;
+GdkGC *current_gc;
+#ifdef CAIRO_VERSION
+cairo_t *current_cr;
+#endif
 
 static bool nsgtk_plot_clg(colour c);
 static bool nsgtk_plot_rectangle(int x0, int y0, int width, int height,
@@ -434,5 +441,23 @@ void nsgtk_plot_set_scale(float s)
 float nsgtk_plot_get_scale(void)
 {
 	return nsgtk_plot_scale;
+}
+
+/** Plot a caret.  It is assumed that the plotters have been set up. */
+void nsgtk_plot_caret(int x, int y, int h)
+{
+	GdkColor colour;
+
+	colour.red = 0;
+	colour.green = 0;
+	colour.blue = 0;
+	colour.pixel = 0;
+	gdk_color_alloc(gdk_colormap_get_system(),
+			&colour);
+	gdk_gc_set_foreground(current_gc, &colour);
+
+	gdk_draw_line(current_drawable, current_gc,
+			x, y,
+			x, y + h - 1);
 }
 
