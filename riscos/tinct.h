@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2005 Richard Wilson <info@tinct.net>
@@ -68,7 +68,7 @@
  * Converts a paletted sprite into its 32bpp equivalent. Sufficient memory must
  * have previously been allocated for the sprite (44 + width * height * 4).
  * As sprites with 16bpp or 32bpp do not have palettes, conversion cannot be
- * performed on these variants. All sprites must be supplied with a full palette, 
+ * performed on these variants. All sprites must be supplied with a full palette,
  * eg 8bpp must have 256 palette entries.
  *
  * ->	R2	Source sprite pointer

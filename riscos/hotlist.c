@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2004, 2005 Richard Wilson <info@tinct.net>
@@ -53,9 +53,9 @@ static const struct {
 	const char *url;
 	const char *msg_key;
 } default_entries[] = {
-	{ "http://netsurf.sourceforge.net/", "HotlistHomepage" },
-	{ "http://netsurf.sourceforge.net/builds/", "HotlistTestBuild" },
-	{ "http://netsurf.sourceforge.net/docs", "HotlistDocumentation" },
+	{ "http://netsurf-browser.org/", "HotlistHomepage" },
+	{ "http://netsurf-browser.org/builds/", "HotlistTestBuild" },
+	{ "http://netsurf-browser.org/docs", "HotlistDocumentation" },
 	{ "http://sourceforge.net/tracker/?atid=464312&group_id=51719",
 			"HotlistBugTracker" },
 	{ "http://sourceforge.net/tracker/?atid=464315&group_id=51719",

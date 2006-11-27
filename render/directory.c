@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2006 Richard Wilson <info@tinct.net>
@@ -53,7 +53,7 @@ bool directory_convert(struct content *c, int width, int height) {
 	if (!path) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-		return false; 
+		return false;
 	}
 	nice_path = malloc(strlen(path) * 4 + 1);
 	if (!nice_path) {
@@ -63,13 +63,13 @@ bool directory_convert(struct content *c, int width, int height) {
 	}
 	for (cnv = nice_path, tmp = path; *tmp != '\0'; *tmp++) {
 	 	if (*tmp == '<') {
-	 		*cnv++ = '&'; 
-	 		*cnv++ = 'l'; 
+	 		*cnv++ = '&';
+	 		*cnv++ = 'l';
 	 		*cnv++ = 't';
 	 		*cnv++ = ';';
 	 	} else if (*tmp == '>') {
-	 		*cnv++ = '&'; 
-	 		*cnv++ = 'g'; 
+	 		*cnv++ = '&';
+	 		*cnv++ = 'g';
 	 		*cnv++ = 't';
 	 		*cnv++ = ';';
 	 	} else {
@@ -104,13 +104,13 @@ bool directory_convert(struct content *c, int width, int height) {
 		if ((entry->d_ino == 0) || (!strcmp(entry->d_name, ".")) ||
 				(!strcmp(entry->d_name, "..")))
 			continue;
-			
+
 		snprintf(buffer, sizeof(buffer), "<a href=\"%s/%s\">%s</a>\n",
 				c->url, entry->d_name, entry->d_name);
 		htmlParseChunk(c->data.html.parser, buffer, strlen(buffer), 0);
 	}
 	closedir(parent);
-  	
+
 	htmlParseChunk(c->data.html.parser, footer, sizeof(footer) - 1, 0);
 	c->type = CONTENT_HTML;
 	return html_convert(c, width, height);

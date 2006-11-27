@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2006 Richard Wilson <info@tinct.net>
@@ -48,7 +48,7 @@ wimp_WINDOW(1) status_bar_definition = {
 	0,
 	0,
 	wimp_TOP,
-	wimp_WINDOW_NEW_FORMAT | wimp_WINDOW_MOVEABLE | 
+	wimp_WINDOW_NEW_FORMAT | wimp_WINDOW_MOVEABLE |
 			wimp_WINDOW_FURNITURE_WINDOW |
 			wimp_WINDOW_IGNORE_XEXTENT,
 	wimp_COLOUR_BLACK,
@@ -106,7 +106,7 @@ struct status_bar *ro_gui_status_bar_create(wimp_w parent, unsigned int width) {
 	sb = calloc(1, sizeof(*sb));
 	if (!sb)
 		return NULL;
-		
+
 	sb->pb = ro_gui_progress_bar_create();
 	if (!sb->pb)
 		return NULL;
@@ -151,9 +151,9 @@ void ro_gui_status_bar_destroy(struct status_bar *sb) {
 		LOG(("xwimp_delete_window: 0x%x:%s",
 			error->errnum, error->errmess));
 	}
-	
+
 	ro_gui_progress_bar_destroy(sb->pb);
-	
+
 	if (sb->text)
 		free(sb->text);
 
@@ -206,7 +206,7 @@ void ro_gui_status_bar_set_visible(struct status_bar *sb, bool visible) {
 		if (error) {
 			LOG(("xwimp_close_window: 0x%x:%s",
 				error->errnum, error->errmess));
-		}	  
+		}
 	}
 }
 
@@ -234,7 +234,7 @@ void ro_gui_status_bar_set_progress_value(struct status_bar *sb,
 		unsigned int value) {
 
 	assert(sb);
-	
+
 	ro_gui_status_bar_set_progress_range(sb,
 			max(value, ro_gui_progress_bar_get_range(sb->pb)));
 	ro_gui_progress_bar_set_value(sb->pb, value);
@@ -253,10 +253,10 @@ void ro_gui_status_bar_set_progress_range(struct status_bar *sb,
 	os_error *error;
 
 	assert(sb);
-	
+
 	old_range = ro_gui_progress_bar_get_range(sb->pb);
 	ro_gui_progress_bar_set_range(sb->pb, range);
-	
+
 	LOG(("Ranges are %i vs %i", old_range, range));
 	if ((old_range == 0) && (range != 0)) {
 		ro_gui_status_position_progress_bar(sb);
@@ -266,7 +266,7 @@ void ro_gui_status_bar_set_progress_range(struct status_bar *sb,
 		if (error) {
 			LOG(("xwimp_close_window: 0x%x:%s",
 				error->errnum, error->errmess));
-		}	  
+		}
 	}
 }
 
@@ -280,7 +280,7 @@ void ro_gui_status_bar_set_progress_range(struct status_bar *sb,
 void ro_gui_status_bar_set_progress_icon(struct status_bar *sb,
 		const char *icon) {
 	assert(sb);
-	
+
 	ro_gui_progress_bar_set_icon(sb->pb, icon);
 }
 
@@ -293,7 +293,7 @@ void ro_gui_status_bar_set_progress_icon(struct status_bar *sb,
 void ro_gui_status_bar_set_text(struct status_bar *sb, const char *text) {
 
 	assert(sb);
-	
+
 	/* check for no change */
 	if (sb->text) {
 	  	/* strings match */
@@ -316,7 +316,7 @@ void ro_gui_status_bar_set_text(struct status_bar *sb, const char *text) {
 		sb->text = strdup(text);
 	else
 	  	sb->text = NULL;
-	
+
 	/* redraw the window */
 	if (sb->visible)
 		xwimp_force_redraw(sb->w, 0, 0, sb->width - WIDGET_WIDTH, 65536);
@@ -409,7 +409,7 @@ void ro_gui_status_bar_resize(struct status_bar *sb) {
 				error->errnum, error->errmess));
 			return;
 		}
-		
+
 		redraw_left = min(status_width, sb->width) - WIDGET_WIDTH - 2;
 		redraw_right = max(status_width, sb->width);
 		xwimp_force_redraw(sb->w, redraw_left, 0,
@@ -472,7 +472,7 @@ void ro_gui_status_bar_redraw(wimp_draw *redraw) {
 					LOG(("rufl_paint: 0x%x", code));
 			}
 		}
-		
+
 		/* separate the widget from the text with a line */
 		plot.fill((redraw->box.x0 + sb->width - WIDGET_WIDTH - 2) >> 1,
 				-redraw->box.y0 >> 1,
@@ -529,7 +529,7 @@ void ro_gui_status_bar_open(wimp_open *open) {
 	int window_width, status_width;
 	wimp_window_state state;
 	os_error *error;
-	
+
 	/* get the parent width for scaling */
 	sb = (struct status_bar *)ro_gui_wimp_event_get_user_data(open->w);
 	state.w = sb->parent;
@@ -582,7 +582,7 @@ void ro_gui_status_position_progress_bar(struct status_bar *sb) {
 	/* calculate the dimensions */
 	right = state.visible.x1 - WIDGET_WIDTH - 2;
 	left = max(state.visible.x0, right - PROGRESS_WIDTH);
-	
+
 	/* re-open the nested window */
 	state.w = ro_gui_progress_bar_get_window(sb->pb);
 	state.xscroll = 0;
@@ -608,7 +608,7 @@ void ro_gui_status_position_progress_bar(struct status_bar *sb) {
 		LOG(("xwimp_open_window: 0x%x: %s",
 				error->errnum, error->errmess));
 	}
-	
+
 	/* update the progress bar display on non-standard width */
 	if ((right - left) != PROGRESS_WIDTH)
 		ro_gui_progress_bar_update(sb->pb, right - left,

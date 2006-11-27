@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
@@ -89,7 +89,7 @@ struct gui_window {
 	int throbtime;		/**< Time of last throbber frame. */
 
 	int iconise_icon;	/**< ID number of icon when window is iconised */
-	
+
 	char validation[12];	/**< Validation string for colours */
 
 	/** Options. */

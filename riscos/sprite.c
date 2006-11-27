@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
@@ -43,11 +43,11 @@ bool sprite_convert(struct content *c, int width, int height)
 	int w, h;
 	union content_msg_data msg_data;
 	char *source_data;
-	
+
 	source_data = ((char *)c->source_data) - 4;
 	osspriteop_area *area = (osspriteop_area*)source_data;
 	c->data.sprite.data = area;
-	
+
 	/* check for bad data */
 	if ((int)c->source_size + 4 != area->used) {
 		msg_data.error = messages_get("BadSprite");

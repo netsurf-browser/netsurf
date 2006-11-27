@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
@@ -16,9 +16,9 @@ struct osspriteop_area;
 struct bitmap {
 	int width;
 	int height;
-	
+
 	unsigned int state;
-	
+
 	void *private_word;
 	void (*invalidate)(struct bitmap *bitmap, void *private_word);
 

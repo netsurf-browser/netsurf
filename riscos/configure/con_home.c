@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2005 Richard Wilson <info@tinct.net>
@@ -34,7 +34,7 @@ bool ro_gui_options_home_initialise(wimp_w w) {
 	/* set the current values */
 	ro_gui_set_icon_string(w, HOME_URL_FIELD,
 			option_homepage_url ? option_homepage_url : "");
-	ro_gui_set_icon_selected_state(w, HOME_OPEN_STARTUP, 
+	ro_gui_set_icon_selected_state(w, HOME_OPEN_STARTUP,
 			option_open_browser_at_startup);
 	global_history_get_recent(&suggestions);
 	ro_gui_set_icon_shaded_state(w,

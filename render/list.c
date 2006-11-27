@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2005 Richard Wilson <info@tinct.net>
@@ -95,7 +95,7 @@ void render_list_destroy_counters(void) {
 	struct list_counter *next_counter;
 	struct list_counter_state *state;
 	struct list_counter_state *next_state;
-	
+
 	while (counter) {
 		next_counter = counter->next;
 		free(counter->name);
@@ -123,7 +123,7 @@ bool render_list_counter_reset(char *name, int value) {
 	struct list_counter *counter;
 	struct list_counter_state *state;
 	struct list_counter_state *link;
-	
+
 	assert(name);
 	counter = render_list_find_counter(name);
 	if (!counter)
@@ -156,7 +156,7 @@ bool render_list_counter_reset(char *name, int value) {
  */
 bool render_list_counter_increment(char *name, int value) {
 	struct list_counter *counter;
-	
+
 	assert(name);
 	counter = render_list_find_counter(name);
 	if (!counter)
@@ -186,7 +186,7 @@ bool render_list_counter_increment(char *name, int value) {
  */
 bool render_list_counter_end_scope(char *name) {
 	struct list_counter *counter;
-	
+
 	assert(name);
 	counter = render_list_find_counter(name);
 	if ((!counter) || (!counter->state))
@@ -209,7 +209,7 @@ char *render_list_counter(struct css_counter *css_counter) {
 	struct list_counter_state *state;
 	char *compound = NULL;
 	char *merge, *extend;
-	
+
 	assert(css_counter);
 	counter = render_list_find_counter(css_counter->name);
 	if (!counter) {
@@ -221,7 +221,7 @@ char *render_list_counter(struct css_counter *css_counter) {
 	if (!css_counter->separator)
 		return render_list_encode_counter(counter->state,
 				css_counter->style);
-	
+
 	/* loop through all states for counters() */
 	for (state = counter->first; state; state = state->next) {
 	  	merge = render_list_encode_counter(state,
@@ -243,7 +243,7 @@ char *render_list_counter(struct css_counter *css_counter) {
 	  		}
 	  		compound = extend;
 	  		strcat(compound, merge);
-	  	}		
+	  	}
 		if (state->next) {
 			merge = realloc(compound, strlen(compound) +
 					strlen(css_counter->separator) + 1);
@@ -332,13 +332,13 @@ static char *render_list_encode_counter(struct list_counter_state *state,
 			assert(0);
 			break;
 	}
-	
+
 	/* perform case conversion */
 	if ((style == CSS_LIST_STYLE_TYPE_LOWER_ALPHA) ||
 			(style == CSS_LIST_STYLE_TYPE_LOWER_ROMAN))
 		for (i = 0; result[i]; i++)
-			result[i] = tolower(result[i]); 
-	
+			result[i] = tolower(result[i]);
+
 	return result;
 }
 
@@ -354,7 +354,7 @@ static char *render_list_encode_roman(int value) {
 	int i, overflow, p = 0;
 	char temp[10];
 	char *result;
-	
+
 	/* zero and below is returned as an empty string and not erred as
 	 * if it is counters() will fail to complete other scopes. */
 	if (value <= 0) {
@@ -431,14 +431,14 @@ static void render_list_counter_output(char *name) {
 	struct list_counter *counter;
 	char *result;
 	struct css_counter css_counter;
-	
+
 	assert(name);
 	counter = render_list_find_counter(name);
 	if (!counter) {
 	  	fprintf(stderr, "Unable to create counter '%s'\n", name);
 		return;
 	}
-	
+
 	css_counter.name = name;
 	css_counter.style = CSS_LIST_STYLE_TYPE_LOWER_ALPHA;
 	css_counter.separator = NULL;

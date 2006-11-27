@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2004 John M Bell <jmb202@ecs.soton.ac.uk>
@@ -97,7 +97,7 @@ static bool print_fonts_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
 static bool print_fonts_plot_text(int x, int y, struct css_style *style,
 		const char *text, size_t length, colour bg, colour c);
-static bool print_fonts_plot_disc(int x, int y, int radius, colour c, 
+static bool print_fonts_plot_disc(int x, int y, int radius, colour c,
                 bool filled);
 static bool print_fonts_plot_arc(int x, int y, int radius, int angle1, int angle2,
 		colour c);

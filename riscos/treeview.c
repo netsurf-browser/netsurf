@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2005 Richard Wilson <info@tinct.net>
@@ -1505,5 +1505,5 @@ void ro_gui_tree_update_theme(struct tree *tree) {
 		ro_gui_theme_attach_toolbar(tree->toolbar, (wimp_w)tree->handle);
 		tree_resized(tree);
 		xwimp_force_redraw((wimp_w)tree->handle, 0, -16384, 16384, 16384);
-	} 
+	}
 }

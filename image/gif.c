@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
@@ -118,7 +118,7 @@ bool nsgif_convert(struct content *c, int iwidth, int iheight) {
 
 void nsgif_invalidate(struct bitmap *bitmap, void *private_word) {
 	struct gif_animation *gif = (struct gif_animation *)private_word;
-	
+
 	gif->decoded_frame = -1;
 }
 
@@ -190,7 +190,7 @@ void nsgif_animate(void *p)
 	struct gif_animation *gif;
 	int delay;
 	int f;
-	
+
 	/*	Advance by a frame, updating the loop count accordingly
 	*/
 	gif = c->data.gif.gif;

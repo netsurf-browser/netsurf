@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2006 Daniel Silverstone <dsilvers@digital-scurf.org>
@@ -71,21 +71,21 @@ GestureRecogniser gesture_recogniser_create(void)
  * \param gesture_str The gesture string to add
  * \param gesture_tag The tag to return for this gesture
  */
-void gesture_recogniser_add(GestureRecogniser recog, 
+void gesture_recogniser_add(GestureRecogniser recog,
 			    const char* gesture_str, int gesture_tag)
 {
 	InternalGesture g = malloc(sizeof(struct _internal_gesture));
 	InternalGesture g2,g3;
 	int i;
 	Gesturer gest = recog->gesture_users;
-  
+
 	g->gesture_tag = gesture_tag;
 	g->gesture_len = strlen(gesture_str);
 	g->gesture = malloc(g->gesture_len);
-  
+
 	for(i = 0; i < g->gesture_len; ++i)
 		g->gesture[i] = gesture_str[g->gesture_len - i - 1];
-  
+
 	g2 = recog->gestures; g3 = NULL;
 	while( g2 && g->gesture_len < g2->gesture_len ) g3=g3, g2 = g2->next;
 	if( g3 == NULL ) {
@@ -95,9 +95,9 @@ void gesture_recogniser_add(GestureRecogniser recog,
 		/* prev == something; we're inserting somewhere	 */
 		g3->next = g; g->next = g2;
 	}
-  
+
 	if( recog->max_len < g->gesture_len ) recog->max_len = g->gesture_len;
-  
+
 	while( gest != NULL ) {
 		gesturer_notify_recognition_change(gest);
 		gest = gest->next;
@@ -132,7 +132,7 @@ void gesture_recogniser_destroy(GestureRecogniser recog)
  * \param recog The recogniser.
  * \param min_distance The minimum distance in pixels
  */
-void gesture_recogniser_set_distance_threshold(GestureRecogniser recog, 
+void gesture_recogniser_set_distance_threshold(GestureRecogniser recog,
 					       int min_distance)
 {
 	recog->min_distance = min_distance * min_distance;
@@ -144,7 +144,7 @@ void gesture_recogniser_set_distance_threshold(GestureRecogniser recog,
  * \param recog The recogniser.
  * \param max_nonmove The maximum number of non-movement adds.
  */
-void gesture_recogniser_set_count_threshold(GestureRecogniser recog, 
+void gesture_recogniser_set_count_threshold(GestureRecogniser recog,
 					    int max_nonmove)
 {
 	recog->max_nonmove = max_nonmove;
@@ -205,7 +205,7 @@ static void gesturer_notify_recognition_change(Gesturer gesturer)
 {
 	char *new_gesture = calloc(gesturer->recogniser->max_len+1, 1);
 	int i;
-	for(i = 0; i < gesturer->elements; ++i) 
+	for(i = 0; i < gesturer->elements; ++i)
 		new_gesture[i] = gesturer->gesture[i];
 	free(gesturer->gesture);
 	gesturer->gesture = new_gesture;
@@ -260,14 +260,14 @@ static char gesturer_find_direction(Gesturer gesturer, int x, int y)
 	bool x_neg = dx < 0;
 	bool y_neg = dy < 0;
 	int i;
-  
+
 	if( x_neg ) dx = -dx;
 	if( y_neg ) dy = -dy;
 	arc = atanf(dy/dx);
 	for( i = 0; i < 12; ++i ) {
 		if( directions[i].lower > arc || directions[i].upper <= arc )
 			continue; /* Not within this entry */
-		if( directions[i].x_neg != x_neg || 
+		if( directions[i].x_neg != x_neg ||
 		    directions[i].y_neg != y_neg )
 			continue; /* Signs not matching */
 		return directions[i].direction;
@@ -293,26 +293,26 @@ int gesturer_add_point(Gesturer gesturer, int x, int y)
 {
 	int distance = ((gesturer->last_x - x) * (gesturer->last_x - x)) +
 		((gesturer->last_y - y) * (gesturer->last_y - y));
-	char last_direction = (gesturer->elements == 0) ? 0 : 
+	char last_direction = (gesturer->elements == 0) ? 0 :
 		(gesturer->gesture[0]);
 	char this_direction = gesturer_find_direction(gesturer, x, y);
 	InternalGesture ig = gesturer->recogniser->gestures;
 	int ret = GESTURE_NONE;
-  
+
 	if( distance < gesturer->recogniser->min_distance ) {
 		gesturer->bored_count++;
-		if( gesturer->elements && 
-		    (gesturer->bored_count >= 
+		if( gesturer->elements &&
+		    (gesturer->bored_count >=
 		     gesturer->recogniser->max_nonmove) ) {
 			LOG(("Bored now."));
 			gesturer_clear_points(gesturer);
 		}
-		if( gesturer->elements && 
-		    gesturer->bored_count == 
+		if( gesturer->elements &&
+		    gesturer->bored_count ==
 		    (gesturer->recogniser->max_nonmove >> 1)) {
 			LOG(("Decided to look"));
 			while( ig && ig->gesture_len <= gesturer->elements ) {
-				if( strcmp(gesturer->gesture, 
+				if( strcmp(gesturer->gesture,
 					   ig->gesture) == 0 )
 					ret = ig->gesture_tag;
 				ig = ig->next;
@@ -327,12 +327,12 @@ int gesturer_add_point(Gesturer gesturer, int x, int y)
 	if( this_direction == last_direction ) {
 		return GESTURE_NONE; /* Nothing */
 	}
-  
+
 	/* Shunt the gesture one up */
 	if( gesturer->elements ) {
-		if( gesturer->elements == gesturer->nelements ) 
+		if( gesturer->elements == gesturer->nelements )
 			gesturer->elements--;
-		memmove(gesturer->gesture+1, gesturer->gesture, 
+		memmove(gesturer->gesture+1, gesturer->gesture,
 			gesturer->elements);
 	}
 	gesturer->elements++;

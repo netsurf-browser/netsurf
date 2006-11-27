@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2006 James Bursa <bursa@users.sourceforge.net>
@@ -169,7 +169,7 @@ struct history_entry *history_clone_entry(struct history *history,
 		free(new_entry);
 		return 0;
 	}
-	
+
 	/* update references */
 	if (history->current == entry)
 		history->current = new_entry;
@@ -291,7 +291,7 @@ void history_update(struct history *history, struct content *content)
 		history->current->page.title = strdup(content->title);
 	else
 		history->current->page.title = 0;
-	
+
 	thumbnail_create(content, history->current->bitmap, 0);
 }
 
@@ -440,7 +440,7 @@ void history_layout(struct history *history)
 	time_t t = time(0);
 	struct tm *tp = localtime(&t);
 	bool shuffle = tp->tm_mon == 3 && tp->tm_mday == 1;
-	
+
 	if (!history)
 		return;
 
@@ -479,7 +479,7 @@ int history_layout_subtree(struct history *history,
 
 	if (history->width < x + WIDTH)
 		history->width = x + WIDTH;
-	
+
 	if (!entry->forward) {
 		entry->x = x;
 		entry->y = y;
@@ -556,7 +556,7 @@ bool history_redraw_entry(struct history *history,
 	struct history_entry *child;
 	colour c = entry == history->current ? 0x0000ff : 0x333333;
 	int tailsize = 5;
-	
+
 	if (!plot.bitmap(entry->x, entry->y, WIDTH, HEIGHT,
 			entry->bitmap, 0xffffff))
 		return false;
@@ -657,7 +657,7 @@ struct history_entry *history_find_position(struct history_entry *entry,
 {
 	struct history_entry *child;
 	struct history_entry *found;
-	
+
 	if (!entry)
 		return 0;
 

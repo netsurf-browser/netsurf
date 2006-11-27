@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
@@ -367,7 +367,7 @@ void ro_gui_dialog_close(wimp_w close)
 	}
 
 	/* Close any child windows */
-	for (i = 0; i < MAX_PERSISTENT; i++) 
+	for (i = 0; i < MAX_PERSISTENT; i++)
 		if (persistent_dialog[i].parent == close)
 		  	ro_gui_dialog_close(persistent_dialog[i].dialog);
 

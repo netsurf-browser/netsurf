@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2006 Daniel Silverstone <dsilvers@digital-scurf.org>
@@ -32,7 +32,7 @@ static gboolean ns_generic_gtk_callback(gpointer data)
 	return FALSE;
 }
 
-void schedule_remove(void (*callback)(void *p), void *p) 
+void schedule_remove(void (*callback)(void *p), void *p)
 {
 	_nsgtkcallback *cb;
         GList *l;
@@ -47,7 +47,7 @@ void schedule_remove(void (*callback)(void *p), void *p)
 	}
 }
 
-void schedule(int t, void (*callback)(void *p), void *p) 
+void schedule(int t, void (*callback)(void *p), void *p)
 {
 	_nsgtkcallback *cb = (_nsgtkcallback*)malloc(sizeof(_nsgtkcallback));
 	schedule_remove(callback, p);
@@ -58,7 +58,7 @@ void schedule(int t, void (*callback)(void *p), void *p)
 	g_timeout_add(t * 10, ns_generic_gtk_callback, cb);
 }
 
-void schedule_run(void) 
+void schedule_run(void)
 {
 	/* Nothing to do, the running is done via the gtk mainloop of joy */
 }

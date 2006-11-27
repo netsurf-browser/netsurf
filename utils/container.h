@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2006 Rob Kendrick <rjek@rjek.com>
@@ -7,7 +7,7 @@
 
 /** \file
  * Container format handling for themes etc. */
- 
+
 #ifndef __CONTAINER_H__
 #define __CONTAINER_H__
 
@@ -32,7 +32,7 @@ struct container_ctx *container_create(const char *filename,
 void container_add(struct container_ctx *ctx, const unsigned char *entryname,
 					const unsigned char *data,
 					const u_int32_t datalen);
-					
+
 /* common interface */
 void container_close(struct container_ctx *ctx);
 

@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2006 Rob Kendrick <rjek@rjek.com>
@@ -20,7 +20,7 @@ static bool nsgtk_completion_udb_callback(const char *url,
 void nsgtk_completion_init(void)
 {
 	nsgtk_completion_list = gtk_list_store_new(1, G_TYPE_STRING);
-	
+
 }
 
 gboolean nsgtk_completion_match(GtkEntryCompletion *completion,
@@ -34,7 +34,7 @@ gboolean nsgtk_completion_match(GtkEntryCompletion *completion,
 
 	/* TODO: work out why this works, when there's no code to implement
 	 * it.  I boggle. */
-	
+
 	return TRUE;
 
 }
@@ -47,7 +47,7 @@ void nsgtk_completion_empty(void)
 bool nsgtk_completion_udb_callback(const char *url, const struct url_data *data)
 {
 	GtkTreeIter iter;
-	
+
 	if (data->visits != 0) {
 		gtk_list_store_append(nsgtk_completion_list, &iter);
 		gtk_list_store_set(nsgtk_completion_list, &iter, 0, url, -1);

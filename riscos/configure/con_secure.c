@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2006 Richard Wilson <info@tinct.net>
@@ -31,7 +31,7 @@ static bool ro_gui_options_security_ok(wimp_w w);
 bool ro_gui_options_security_initialise(wimp_w w) {
 
 	/* set the current values */
-	ro_gui_set_icon_selected_state(w, SECURITY_REFERRER, 
+	ro_gui_set_icon_selected_state(w, SECURITY_REFERRER,
 			option_send_referer);
 	ro_gui_set_icon_integer(w, SECURITY_DURATION_FIELD,
 			option_expire_url);

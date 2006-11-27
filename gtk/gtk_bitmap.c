@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
@@ -182,7 +182,7 @@ void bitmap_modified(struct bitmap *bitmap) {
  */
 void bitmap_set_suspendable(struct bitmap *bitmap, void *private_word,
 		void (*invalidate)(struct bitmap *bitmap, void *private_word)) {
-}	
+}
 
 static GdkPixbuf *
 gtk_bitmap_generate_pretile(GdkPixbuf *primary, int repeat_x, int repeat_y)
@@ -197,18 +197,18 @@ gtk_bitmap_generate_pretile(GdkPixbuf *primary, int repeat_x, int repeat_y)
         int x,y,row;
         /* This algorithm won't work if the strides are not multiples */
         assert(target_stride == (primary_stride * repeat_x));
-        
+
         if (repeat_x == 1 && repeat_y == 1) {
                 g_object_ref(primary);
                 g_object_unref(result);
                 return primary;
         }
-        
+
         for (y = 0; y < repeat_y; ++y) {
                 char *primary_buffer = (char *)gdk_pixbuf_get_pixels(primary);
                 for (row = 0; row < height; ++row) {
                         for (x = 0; x < repeat_x; ++x) {
-                                memcpy(target_buffer, 
+                                memcpy(target_buffer,
                                        primary_buffer, primary_stride);
                                 target_buffer += primary_stride;
                         }
@@ -245,7 +245,7 @@ gtk_bitmap_get_pretile_x(struct bitmap* bitmap)
                 bitmap->pretile_x = gtk_bitmap_generate_pretile(bitmap->primary, xmult, 1);
         }
         return bitmap->pretile_x;
-                
+
 }
 
 /**

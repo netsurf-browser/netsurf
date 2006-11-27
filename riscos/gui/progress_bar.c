@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2006 Richard Wilson <info@tinct.net>
@@ -276,25 +276,25 @@ void ro_gui_progress_bar_update(struct progress_bar *pb, int width, int height) 
 			schedule(20, ro_gui_progress_bar_animate, pb);
 		pb->animating = true;
 	}
- 	
+
   	/* get old and new positions */
   	cur = pb->visible;
   	pb->recalculate = true;
   	ro_gui_progress_bar_calculate(pb, width, height);
-  	
+
   	/* see if the progress bar hasn't moved. we don't need to consider
   	 * the left edge moving as this is handled by the icon setting
   	 * function */
   	if (cur.x1 == pb->visible.x1)
   		return;
-  	
+
   	/* if size has decreased then we must force a redraw */
   	if (cur.x1 > pb->visible.x1) {
   		xwimp_force_redraw(pb->w, pb->visible.x1, pb->visible.y0,
   				cur.x1, pb->visible.y1);
   		return;
   	}
-  	
+
   	/* perform a minimal redraw update */
 	redraw.w = pb->w;
 	redraw.box = pb->visible;
@@ -342,14 +342,14 @@ void ro_gui_progress_bar_animate(void *p) {
 	struct progress_bar *pb = p;
 
 	if (!progress_icon)
-		return;	
+		return;
 	pb->offset -= 6;
 	if (pb->offset < 0)
 		pb->offset += progress_width * 2;
-	
+
 	if (pb->animating)
 		schedule(20, ro_gui_progress_bar_animate, pb);
-	
+
 	redraw.w = pb->w;
 	redraw.box = pb->visible;
 	error = xwimp_update_window(&redraw, &more);
@@ -372,12 +372,12 @@ void ro_gui_progress_bar_calculate(struct progress_bar *pb, int width, int heigh
 	int icon_x0 = 0, icon_y0 = 0, progress_x0, progress_x1, progress_ymid = 0;
 	osspriteop_header *icon = NULL;
 	bool icon_redraw = false;
-	
+
 	/* try to use cached values */
 	if ((!pb->recalculate) && (pb->cur_width == width) &&
 			(pb->cur_height == height))
 		return;
-		
+
 	/* update cache status */
 	pb->recalculate = false;
 	pb->cur_width = width;
@@ -409,18 +409,18 @@ void ro_gui_progress_bar_calculate(struct progress_bar *pb, int width, int heigh
 			}
 		}
 	}
-	
+
 	/* update the icon */
 	if ((pb->icon_obscured) || (icon_redraw)) {
 		if (icon_x0 != pb->icon_x0)
 			xwimp_force_redraw(pb->w, 0, 0, 32 + MARGIN, 65536);
 	}
-	pb->icon_obscured = icon_redraw;	
-	
+	pb->icon_obscured = icon_redraw;
+
 	progress_x1 = progress_x0;
 	if ((pb->range > 0) && (width > 0))
 		progress_x1 += (width * pb->value) / pb->range;
-	
+
 	pb->visible.x0 = progress_x0;
 	pb->visible.y0 = MARGIN;
 	pb->visible.x1 = progress_x1;
@@ -454,7 +454,7 @@ void ro_gui_progress_bar_redraw_window(wimp_draw *redraw, struct progress_bar *p
 			redraw->box.y1 - redraw->box.y0);
 	progress_ymid = redraw->box.y0 + pb->visible.y0 +
 			((pb->visible.y1 - pb->visible.y0) >> 1);
-	
+
 	/* redraw the window */
 	while (more) {
 		if (pb->icon)
@@ -464,12 +464,12 @@ void ro_gui_progress_bar_redraw_window(wimp_draw *redraw, struct progress_bar *p
 					redraw->box.y0 + pb->icon_y0,
 					tinct_ERROR_DIFFUSE);
 		if (!pb->icon_obscured) {
-		  	clip_x0 = max(redraw->clip.x0, 
-		  			redraw->box.x0 + pb->visible.x0) >> 1;	
+		  	clip_x0 = max(redraw->clip.x0,
+		  			redraw->box.x0 + pb->visible.x0) >> 1;
 			clip_y0 = -min(redraw->clip.y1,
-		  			redraw->box.y0 + pb->visible.y1) >> 1;	
+		  			redraw->box.y0 + pb->visible.y1) >> 1;
 			clip_x1 = min(redraw->clip.x1,
-					redraw->box.x0 + pb->visible.x1) >> 1;	
+					redraw->box.x0 + pb->visible.x1) >> 1;
 		  	clip_y1 = -max(redraw->clip.y0,
 					redraw->box.y0 + pb->visible.y0) >> 1;
 		  	if ((clip_x0 < clip_x1) && (clip_y0 < clip_y1)) {
@@ -478,7 +478,7 @@ void ro_gui_progress_bar_redraw_window(wimp_draw *redraw, struct progress_bar *p
 					_swix(Tinct_Plot, _IN(2) | _IN(3) | _IN(4) | _IN(7),
 							progress_icon,
 							redraw->box.x0 - pb->offset,
-							progress_ymid - progress_height,	
+							progress_ymid - progress_height,
 							tinct_FILL_HORIZONTALLY);
 				} else {
 				  	plot.fill(clip_x0, clip_y0, clip_x1, clip_y1,

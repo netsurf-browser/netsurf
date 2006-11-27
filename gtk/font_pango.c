@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
@@ -164,7 +164,7 @@ bool nsfont_split(const struct css_style *style,
 
 	*char_offset = index;
 	*actual_x = PANGO_PIXELS(rect.width);
-	
+
 	return true;
 }
 
@@ -216,10 +216,10 @@ bool nsfont_paint(const struct css_style *style,
 	context = gdk_pango_context_get();
 	layout = pango_layout_new(context);
 #endif
-	
+
 	pango_layout_set_font_description(layout, desc);
 	pango_layout_set_text(layout, string, length);
-	
+
 #ifdef CAIRO_VERSION
 	pango_layout_get_pixel_size(layout, &width, &height);
 	cairo_move_to(current_cr, x, y - height);
@@ -256,7 +256,7 @@ PangoFontDescription *nsfont_style_to_description(
 	PangoStyle styl = PANGO_STYLE_NORMAL;
 
 	assert(style->font_size.size == CSS_FONT_SIZE_LENGTH);
-	
+
 	switch (style->font_family) {
 	case CSS_FONT_FAMILY_SERIF:
 		desc = pango_font_description_from_string(option_font_serif);
@@ -275,16 +275,16 @@ PangoFontDescription *nsfont_style_to_description(
 		desc = pango_font_description_from_string(option_font_sans);
 		break;
 	}
-	
-	
+
+
 	if (style->font_size.value.length.unit == CSS_UNIT_PX)
 		size = style->font_size.value.length.value;
 	else
 		size = css_len2pt(&style->font_size.value.length, style);
-	
+
 	if (size < abs(option_font_min_size / 10))
 		size = option_font_min_size / 10;
-	
+
 	size *= PANGO_SCALE;
 
 	switch (style->font_style) {
@@ -299,7 +299,7 @@ PangoFontDescription *nsfont_style_to_description(
 	}
 
 	pango_font_description_set_style(desc, styl);
-	
+
 	switch (style->font_weight) {
 	case CSS_FONT_WEIGHT_NORMAL:
 		weight = PANGO_WEIGHT_NORMAL; break;
@@ -323,7 +323,7 @@ PangoFontDescription *nsfont_style_to_description(
 		pango_font_description_set_absolute_size(desc, size);
 	else
 		pango_font_description_set_size(desc, size);
-	
+
 	switch (style->font_variant) {
 	case CSS_FONT_VARIANT_SMALL_CAPS:
 		pango_font_description_set_variant(desc, PANGO_VARIANT_SMALL_CAPS);
@@ -332,6 +332,6 @@ PangoFontDescription *nsfont_style_to_description(
 	default:
 		pango_font_description_set_variant(desc, PANGO_VARIANT_NORMAL);
 	}
-	
+
 	return desc;
 }

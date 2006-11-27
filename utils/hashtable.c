@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2006 Rob Kendrick <rjek@rjek.com>
@@ -123,7 +123,7 @@ bool hash_add(struct hash_table *ht, const char *key, const char *value)
 
 	h = hash_string_fnv(key, &(e->key_length));
 	c = h % ht->nchains;
-	
+
 	v = strlen(value) ;
 	e->pairing = malloc(v + e->key_length + 2);
 	if (e->pairing == NULL) {

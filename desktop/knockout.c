@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2006 Richard Wilson <info@tinct.net>
@@ -230,7 +230,7 @@ bool knockout_plot_start(struct plotter_table *plotter)
   		assert(!memcmp(plotter, &knockout_plotters, sizeof(struct plotter_table)));
   		return true;
   	}
-  	
+
 	/* end any previous sessions */
 	if (knockout_entry_cur > 0)
 		knockout_plot_end();
@@ -252,7 +252,7 @@ bool knockout_plot_end(void)
 	/* only output when we've finished any nesting */
 	if (--nested_depth == 0)
 		return knockout_plot_flush();
-	
+
 	assert(nested_depth > 0);
 	return true;
 }
@@ -407,7 +407,7 @@ bool knockout_plot_flush(void)
 	knockout_box_cur = 0;
 	knockout_polygon_cur = 0;
 	knockout_list = NULL;
-	
+
 	/* re-instate knockout plotters if we are still active */
 	if (nested_depth > 0)
 		knockout_set_plotters();
@@ -443,7 +443,7 @@ void knockout_calculate(int x0, int y0, int x1, int y1, struct knockout_box *own
 	struct knockout_box *parent;
 	struct knockout_box *prev = NULL;
 	int nx0, ny0, nx1, ny1;
-	
+
 	if (owner == NULL)
 		box = knockout_list;
 	else
@@ -655,11 +655,11 @@ bool knockout_plot_polygon(int *p, unsigned int n, colour fill)
 		knockout_plot_flush();
 		return success;
 	}
-	
+
 	/* ensure we have enough room right now */
 	if (knockout_polygon_cur + n * 2 >= KNOCKOUT_POLYGONS)
 		knockout_plot_flush();
-	
+
 	/* copy our data */
 	dest = &(knockout_polygons[knockout_polygon_cur]);
 	memcpy(dest, p, n * 2 * sizeof(int));
@@ -719,7 +719,7 @@ bool knockout_plot_clip(int clip_x0, int clip_y0,
 				clip_x0, clip_y0, clip_x1, clip_y1));
 		return false;
 	}
-	
+
 	/* memorise clip for bitmap tiling */
 	clip_x0_cur = clip_x0;
 	clip_y0_cur = clip_y0;
@@ -816,7 +816,7 @@ bool knockout_plot_bitmap_tile(int x, int y, int width, int height,
 		bool repeat_x, bool repeat_y)
 {
 	int kx0, ky0, kx1, ky1;
-	
+
 	/* get our bounds */
   	kx0 = clip_x0_cur;
   	ky0 = clip_y0_cur;

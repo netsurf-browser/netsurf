@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2006 Richard Wilson <info@tinct.net>
@@ -140,7 +140,7 @@ bool ro_message_register_handler(wimp_message *message,
 bool ro_message_register_route(unsigned int message_code,
 		void (*callback)(wimp_message *message)) {
 	assert(callback);
-	
+
 	return (ro_message_add(message_code, callback) != NULL);
 }
 
@@ -159,7 +159,7 @@ struct active_message *ro_message_add(unsigned int message_code,
 	add->next = current_messages;
 	add->previous = NULL;
 	current_messages = add;
-	return add;	  
+	return add;
 }
 
 

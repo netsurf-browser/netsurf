@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
@@ -467,7 +467,7 @@ void ro_gui_menu_create(wimp_menu *menu, int x, int y, wimp_w w) {
 	/* read the object under the pointer for a new gui_window menu */
 	if ((!current_menu) && (menu == browser_menu)) {
 		g = ro_gui_window_lookup(w);
-		
+
 		if (!ro_gui_window_to_window_pos(g, x, y, &pos))
 			return;
 		current_menu_object_box = NULL;

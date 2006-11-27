@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2006 John-Mark Bell <jmb202@ecs.soton.ac.uk>
@@ -177,7 +177,7 @@ uintptr_t textarea_create(wimp_w parent, wimp_i icon, unsigned int flags,
 		free(ret);
 		return 0;
 	}
-	
+
 	/* set the window dimensions */
 	if (!textarea_update((uintptr_t)ret)) {
 	 	textarea_destroy((uintptr_t)ret);

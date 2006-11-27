@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2006 Richard Wilson <info@tinct.net>
@@ -152,7 +152,7 @@ bool ro_gui_options_theme_initialise(wimp_w w) {
 			ro_gui_options_theme_ok);
 	ro_gui_wimp_event_set_help_prefix(w, "HelpThemeConfig");
 	ro_gui_wimp_event_memorise(w);
-	
+
 	return true;
 }
 
@@ -184,7 +184,7 @@ bool ro_gui_options_theme_ok(wimp_w w) {
 		  	break;
 		}
 	}
-	
+
 	/* set the options */
 	if (option_theme)
 		free(option_theme);
@@ -194,7 +194,7 @@ bool ro_gui_options_theme_ok(wimp_w w) {
 	} else
 		option_theme = NULL;
 	ro_gui_save_options();
-		
+
 	/* store the pane status */
 	ro_gui_wimp_event_memorise(theme_pane);
 	return true;
@@ -370,7 +370,7 @@ void ro_gui_options_theme_load(void) {
 	*radio_set = -1;
 	ro_gui_wimp_event_register_radio(theme_pane, radio_icons);
 
-	/* update our display */	
+	/* update our display */
 	xwimp_force_redraw(theme_pane, 0, -16384, 16384, 16384);
 }
 

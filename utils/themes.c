@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2006 Rob Kendrick <rjek@rjek.com>
@@ -9,7 +9,7 @@
 
 struct theme_descriptor;
 
-/** 
+/**
  * Initialise the themes interface.  This must be called once only before any
  * other themes_ functions are called.  It will enumerate all the themes
  * found in the directory path names passed.  Further themes can be added at
@@ -63,7 +63,7 @@ struct theme_descriptor *themes_open(const unsigned char *themename)
  * from it.
  *
  * \param theme Theme that the caller is finished with.
- */     
+ */
 void themes_close(struct theme_descriptor *theme)
 {
 

@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2006 Daniel Silverstone <dsilvers@digital-scurf.org>
@@ -18,12 +18,12 @@ typedef struct _gesture_recogniser* GestureRecogniser;
 typedef struct _gesturer_state* Gesturer;
 
 GestureRecogniser gesture_recogniser_create(void);
-void gesture_recogniser_add(GestureRecogniser recog, 
+void gesture_recogniser_add(GestureRecogniser recog,
                             const char* gesture_str, int gesture_tag);
 void gesture_recogniser_destroy(GestureRecogniser recog);
-void gesture_recogniser_set_distance_threshold(GestureRecogniser recog, 
+void gesture_recogniser_set_distance_threshold(GestureRecogniser recog,
                                                int min_distance);
-void gesture_recogniser_set_count_threshold(GestureRecogniser recog, 
+void gesture_recogniser_set_count_threshold(GestureRecogniser recog,
                                             int max_nonmove);
 
 

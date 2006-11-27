@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2005 Adrian Lees <adrianl@users.sourceforge.net>
@@ -536,7 +536,7 @@ void ro_gui_selection_dragging(wimp_message *message)
 			if (box->style &&
 					box->style->visibility == CSS_VISIBILITY_HIDDEN)
 				continue;
-	
+
 			if (box->gadget) {
 				switch (box->gadget->type) {
 
@@ -548,7 +548,7 @@ void ro_gui_selection_dragging(wimp_message *message)
 					case GADGET_PASSWORD:
 						text_box = box;
 						break;
-	
+
 					default:	/* appease compiler */
 						break;
 				}

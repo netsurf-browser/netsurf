@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2006 Richard Wilson <info@tinct.net>
@@ -134,7 +134,7 @@ void ro_gui_options_image_redraw(wimp_draw *redraw) {
 		warn_user("MenuError", error->errmess);
 		return;
 	}
-	
+
 	/* find the sprites */
 	if (example_images) {
 		ro_gui_options_image_read(redraw->w, &bg_tinct, &fg_tinct);
@@ -165,7 +165,7 @@ void ro_gui_options_image_redraw(wimp_draw *redraw) {
 void ro_gui_options_image_read(wimp_w w, unsigned int *bg, unsigned int *fg) {
 	char *text;
 	int i;
-	
+
 	text = ro_gui_get_icon_string(w, IMAGE_FOREGROUND_FIELD);
 	for (i = 0; (i < 4); i++)
 		if (!strcmp(text, image_quality_menu->entries[i].
@@ -180,7 +180,7 @@ void ro_gui_options_image_read(wimp_w w, unsigned int *bg, unsigned int *fg) {
 
 bool ro_gui_options_image_click(wimp_pointer *pointer) {
 	unsigned int old_fg, old_bg, bg, fg;
-	
+
 	ro_gui_options_image_read(pointer->w, &old_bg, &old_fg);
 	switch (pointer->i) {
 		case IMAGE_DEFAULT_BUTTON:

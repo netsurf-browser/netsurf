@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
@@ -50,10 +50,10 @@ struct browser_window {
 
 	/** Window history structure. */
 	struct history *history;
-  
+
 	/** Gesturer for this browser window */
 	struct _gesturer_state *gesturer;
-  
+
 	/** Selection state */
 	struct selection *sel;
 
@@ -116,13 +116,13 @@ struct browser_window {
 
 	/** Refresh interval (-1 if undefined) */
 	int refresh_interval;
-	
+
 	/** Window dimensions */
 	int x0;
 	int y0;
 	int x1;
 	int y1;
-	
+
 	/** Window characteristics */
 	enum {
 	  	BROWSER_WINDOW_NORMAL,
@@ -130,33 +130,33 @@ struct browser_window {
   		BROWSER_WINDOW_FRAME,
   		BROWSER_WINDOW_FRAMESET,
   	} browser_window_type;
-	
+
 	/** frameset characteristics */
 	int rows;
 	int cols;
-	
+
 	/** frame dimensions */
 	struct frame_dimension frame_width;
 	struct frame_dimension frame_height;
 	int margin_width;
 	int margin_height;
-	
+
 	/** frame name for targetting */
 	char *name;
-	
+
 	/** frame characteristics */
 	bool no_resize;
 	frame_scrolling scrolling;
 	bool border;
 	colour border_colour;
-	
+
 	/** iframe parent box */
 	struct box *box;
 
 	/** [cols * rows] children */
 	struct browser_window *children;
 	struct browser_window *parent;
-	
+
 	/** [iframe_count] iframes */
 	int iframe_count;
 	struct browser_window *iframes;

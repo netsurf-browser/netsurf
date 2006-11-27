@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2004 Richard Wilson <not_ginger_matt@users.sourceforge.net>
@@ -925,9 +925,9 @@ static bool gif_next_LZW(struct gif_animation *gif) {
 			return false;
 		}
 	}
-	
+
 	*stack_pointer++ = firstcode = table[1][code];
-	
+
 	if ((code = max_code) < (1 << GIF_MAX_LZW)) {
 		table[0][code] = oldcode;
 		table[1][code] = firstcode;

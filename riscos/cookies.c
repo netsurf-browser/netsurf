@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2006 Richard Wilson <info@tinct.net>
@@ -126,7 +126,7 @@ bool cookies_update(const char *domain, const struct cookie_data *data)
 	bool expanded;
 
 	assert(domain);
-		
+
 	/* check if we're a domain, and add get the first cookie */
 	if (data)
 		for (cookie = data; cookie->prev; cookie = cookie->prev);
@@ -153,12 +153,12 @@ bool cookies_update(const char *domain, const struct cookie_data *data)
 			return true;
 		}
 	}
-	
+
 	if (!node) {
 		for (parent = cookies_tree->root->child; parent;
 				parent = parent->next) {
 			if (strcmp(domain, parent->data.text) < 0)
-				break;	  
+				break;
 		}
 		if (!parent) {
 			node = tree_create_folder_node(cookies_tree->root,
@@ -172,7 +172,7 @@ bool cookies_update(const char *domain, const struct cookie_data *data)
 	if (!node)
 		return true;
 	node->editable = false;
-	
+
 	for (; cookie; cookie = cookie->next) {
 		add = tree_create_cookie_node(node, cookie);
 		if (add && !cookies_init)

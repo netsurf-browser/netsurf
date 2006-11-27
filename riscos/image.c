@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2004 John M Bell <jmb202@ecs.soton.ac.uk>
@@ -49,11 +49,11 @@ bool image_redraw(osspriteop_area *area, int x, int y, int req_width,
 		bool repeatx, bool repeaty, bool background, image_type type)
 {
 	unsigned int tinct_options;
-	
+
 	/* failed decompression/loading can result in no image being present */
 	if (!area)
 		return false;
-	
+
 	osspriteop_id header = (osspriteop_id)
 			((char*) area + area->first);
 	req_width *= 2;
@@ -114,7 +114,7 @@ bool image_redraw_tinct(osspriteop_id header, int x, int y,
 	/*	Set up our flagword
 	*/
 	tinct_options |= background_colour << tinct_BACKGROUND_SHIFT;
-	if (print_active) 
+	if (print_active)
 		tinct_options |= tinct_USE_OS_SPRITE_OP;
 	if (repeatx)
 		tinct_options |= tinct_FILL_HORIZONTALLY;

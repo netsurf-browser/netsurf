@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2006 James Bursa <bursa@users.sourceforge.net>
@@ -71,7 +71,7 @@ void ro_gui_history_open(struct browser_window *bw,
 	os_box box = {0, 0, 0, 0};
 	wimp_window_state state;
 	os_error *error;
-	
+
 	assert(history);
 
 	history_current = history;
@@ -166,7 +166,7 @@ void ro_gui_history_mouse_at(wimp_pointer *pointer)
 	wimp_icon_state ic;
 	os_box box = {0, 0, 0, 0};
 	os_error *error;
-	
+
 	/* If the mouse hasn't moved, or if we don't want tooltips, exit */
 	if ((mouse_x == pointer->pos.x && mouse_y == pointer->pos.y) ||
 			!option_history_tooltip)

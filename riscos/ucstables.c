@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2005 John M Bell <jmb202@ecs.soton.ac.uk>
@@ -667,7 +667,7 @@ utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 			free(*result);
 			return UTF8_CONVERT_NOMEM;
 		}
-	
+
 		strcat((*result), temp);
 
 		free(temp);

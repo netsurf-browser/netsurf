@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
@@ -110,7 +110,7 @@ static char *find_resource(char *buf, const char *filename, const char *def)
 	} else {
 		realpath(def, buf);
 	}
-	
+
 	return buf;
 }
 
@@ -121,14 +121,14 @@ static void check_homedir(void)
 {
 	char *hdir = getenv("HOME");
 	char buf[BUFSIZ];
-	
+
 	if (hdir == NULL) {
 		/* we really can't continue without a home directory. */
 		LOG(("HOME is not set - nowhere to store state!"));
 		die("NetSurf requires HOME to be set in order to run.\n");
-		
+
 	}
-	
+
 	snprintf(buf, BUFSIZ, "%s/.netsurf", hdir);
 	if (access(buf, F_OK) != 0) {
 		LOG(("You don't have a ~/.netsurf - creating one for you."));
@@ -144,23 +144,23 @@ void gui_init(int argc, char** argv)
 	char buf[PATH_MAX];
 
 	gtk_init(&argc, &argv);
-	
+
 	check_homedir();
-	
+
 	find_resource(buf, "netsurf.glade", "./gtk/netsurf.glade");
 	LOG(("Using '%s' as Glade template file", buf));
 	glade_file_location = strdup(buf);
-	
+
 	glade_init();
 	gladeWindows = glade_xml_new(glade_file_location, NULL, NULL);
 	if (gladeWindows == NULL)
 		die("Unable to load Glade window definitions.\n");
 	glade_xml_signal_autoconnect(gladeWindows);
-	
+
 	wndTooltip = glade_xml_get_widget(gladeWindows, "wndTooltip");
 	labelTooltip = glade_xml_get_widget(gladeWindows, "tooltip");
 
-	nsgtk_completion_init();	
+	nsgtk_completion_init();
 
 	find_resource(buf, "throbber.gif", "./gtk/throbber.gif");
 	nsgtk_throbber_initialise(buf);
@@ -218,7 +218,7 @@ void gui_init(int argc, char** argv)
 
 	urldb_load(option_url_file);
 	urldb_load_cookies(option_cookie_file);
-	
+
 	wndAbout = GTK_WINDOW(glade_xml_get_widget(gladeWindows, "wndAbout"));
 	gtk_label_set_text(GTK_LABEL(
 		glade_xml_get_widget(gladeWindows, "labelVersion")),
@@ -232,7 +232,7 @@ void gui_init(int argc, char** argv)
 
 void gui_init2(int argc, char** argv)
 {
-	const char *addr = "http://netsurf.sourceforge.net/";
+	const char *addr = "http://netsurf-browser.org/";
 
         if (option_homepage_url != NULL)
                 addr = option_homepage_url;
@@ -347,10 +347,10 @@ void gui_create_form_select_menu(struct browser_window *bw,
 	struct form_option *option;
 
 	LOG(("Trying to open select menu..."));
-	
+
 	for (i = 0, option = control->data.select.items; option;
 		i++, option = option->next) {
-		LOG(("Option: %s", option->text));	
+		LOG(("Option: %s", option->text));
 	}
 
 }

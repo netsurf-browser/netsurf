@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2004, 2005 Richard Wilson <info@tinct.net>
@@ -227,7 +227,7 @@ void ro_gui_buffer_open(wimp_draw *redraw) {
 	*/
 	ro_plot_origin_x -= clipping.x0;
 	ro_plot_origin_y -= clipping.y0;
-	
+
 	/*	Update the ECF origin
 	*/
 	if ((error = xos_set_ecf_origin(-ro_plot_origin_x,

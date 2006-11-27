@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2005 Richard Wilson <info@tinct.net>
@@ -35,7 +35,7 @@ static bool ro_gui_options_cache_ok(wimp_w w);
 
 bool ro_gui_options_cache_initialise(wimp_w w) {
 	/* set the current values */
-	ro_gui_set_icon_decimal(w, CACHE_MEMORY_SIZE, 
+	ro_gui_set_icon_decimal(w, CACHE_MEMORY_SIZE,
 			(option_memory_cache_size * 10) >> 20, 1);
 	ro_gui_set_icon_decimal(w, CACHE_DURATION_SIZE, option_disc_cache_age, 0);
 

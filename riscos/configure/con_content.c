@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2006 Richard Wilson <info@tinct.net>
@@ -30,13 +30,13 @@ static bool ro_gui_options_content_ok(wimp_w w);
 
 bool ro_gui_options_content_initialise(wimp_w w) {
 	/* set the current values */
-	ro_gui_set_icon_selected_state(w, CONTENT_BLOCK_ADVERTISEMENTS, 
+	ro_gui_set_icon_selected_state(w, CONTENT_BLOCK_ADVERTISEMENTS,
 			option_block_ads);
-	ro_gui_set_icon_selected_state(w, CONTENT_BLOCK_POPUPS, 
+	ro_gui_set_icon_selected_state(w, CONTENT_BLOCK_POPUPS,
 			option_block_popups);
-	ro_gui_set_icon_selected_state(w, CONTENT_NO_PLUGINS, 
+	ro_gui_set_icon_selected_state(w, CONTENT_NO_PLUGINS,
 			option_no_plugins);
-	ro_gui_set_icon_selected_state(w, CONTENT_TARGET_BLANK, 
+	ro_gui_set_icon_selected_state(w, CONTENT_TARGET_BLANK,
 			option_target_blank);
 
 	/* initialise all functions for a newly created window */

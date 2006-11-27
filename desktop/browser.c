@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
@@ -931,7 +931,7 @@ void browser_window_reformat(struct browser_window *bw, int width, int height)
  * \param all	Scale all windows in the tree (ie work up aswell as down)
  */
 
-void browser_window_set_scale(struct browser_window *bw, float scale, bool all) 
+void browser_window_set_scale(struct browser_window *bw, float scale, bool all)
 {
 	while (bw->parent && all)
 		bw = bw->parent;

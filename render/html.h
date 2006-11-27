@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
@@ -68,20 +68,20 @@ struct content_html_object {
 struct content_html_frames {
 	int cols;	/** number of columns in frameset */
 	int rows;	/** number of rows in frameset */
-	
+
 	struct frame_dimension width;	/** frame width */
 	struct frame_dimension height;	/** frame width */
 	int margin_width;	/** frame margin width */
 	int margin_height;	/** frame margin height */
-	
+
 	char *name;	/** frame name (for targetting) */
 	char *url;	/** frame url */
-	
+
 	bool no_resize;	/** frame is not resizable */
 	frame_scrolling scrolling;	/** scrolling characteristics */
 	bool border;	/** frame has a border */
 	colour border_colour;	/** frame border colour */
-	
+
 	struct content_html_frames *children; /** [cols * rows] children */
 };
 
@@ -91,10 +91,10 @@ struct content_html_iframe {
 
 	int margin_width;	/** frame margin width */
 	int margin_height;	/** frame margin height */
-	
+
 	char *name;	/** frame name (for targetting) */
 	char *url;	/** frame url */
-	
+
 	frame_scrolling scrolling;	/** scrolling characteristics */
 	bool border;	/** frame has a border */
 	colour border_colour;	/** frame border colour */

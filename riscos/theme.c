@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2004, 2005 Richard Wilson <info@tinct.net>
@@ -628,10 +628,10 @@ void ro_gui_theme_redraw(wimp_draw *redraw) {
 	toolbar = (struct toolbar *)ro_gui_wimp_event_get_user_data(redraw->w);
 
 	assert(toolbar);
-	
+
 	/* set the content-type icon */
 	g = ro_gui_toolbar_lookup(toolbar->toolbar_handle);
-	
+
 	/* only set type for browser windows */
 	sprintf(theme_favicon_sprite, "Ssmall_xxx");
 	if (g) {
@@ -642,7 +642,7 @@ void ro_gui_theme_redraw(wimp_draw *redraw) {
 					ro_content_filetype_from_type(
 					g->bw->current_content->type));
 			if (!ro_gui_wimp_sprite_exists(theme_favicon_sprite + 1))
-				sprintf(theme_favicon_sprite, "Ssmall_xxx");  
+				sprintf(theme_favicon_sprite, "Ssmall_xxx");
 		}
 	}
 
@@ -2430,7 +2430,7 @@ void ro_gui_theme_status_open(wimp_open *open) {
 
 int ro_gui_theme_height_change(struct toolbar *toolbar) {
   	int height, cur_height;
-  	
+
   	cur_height = ro_gui_theme_toolbar_full_height(toolbar);
   	height = toolbar->old_height - cur_height;
   	toolbar->old_height = cur_height;

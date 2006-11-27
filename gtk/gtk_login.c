@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2006 Rob Kendrick <rjek@rjek.com>
@@ -65,8 +65,8 @@ void create_login_window(struct browser_window *bw, const char *host,
 
 	GladeXML *x = glade_xml_new(glade_file_location, NULL, NULL);
 	GtkWindow *wnd = GTK_WINDOW(glade_xml_get_widget(x, "wndLogin"));
-	GtkLabel *lhost, *lrealm; 
-	GtkEntry *euser, *epass; 
+	GtkLabel *lhost, *lrealm;
+	GtkEntry *euser, *epass;
 	GtkButton *bok, *bcan;
 
 	lhost = GTK_LABEL(glade_xml_get_widget(x, "labelLoginHost"));
@@ -115,7 +115,7 @@ void create_login_window(struct browser_window *bw, const char *host,
 
 	/* make sure the username entry box currently has the focus */
 	gtk_widget_grab_focus(GTK_WIDGET(euser));
-	
+
 	/* finally, show the window */
 	gtk_widget_show(GTK_WIDGET(wnd));
 }

@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
@@ -55,7 +55,7 @@ void schedule(int t, void (*callback)(void *p), void *p)
 	struct sched_entry *entry;
 	struct sched_entry *queue;
 	os_t time;
-	
+
 	schedule_remove(callback, p);
 
 	time = os_read_monotonic_time() + t;

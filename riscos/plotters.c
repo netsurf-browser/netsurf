@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
@@ -287,7 +287,7 @@ bool ro_plot_text(int x, int y, struct css_style *style,
 				error->errnum, error->errmess));
 		return false;
 	}
-	
+
 	return nsfont_paint(style, text, length,
 			ro_plot_origin_x + x * 2,
 			ro_plot_origin_y - y * 2,
@@ -336,7 +336,7 @@ bool ro_plot_arc(int x, int y, int radius, int angle1, int angle2, colour c)
 	x = ro_plot_origin_x + x * 2;
 	y = ro_plot_origin_y - y * 2;
 	radius <<= 1;
-	
+
 	error = xcolourtrans_set_gcol(c << 8, 0,
 	    		os_ACTION_OVERWRITE, 0, 0);
 

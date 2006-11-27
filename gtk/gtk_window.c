@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2006 Rob Kendrick <rjek@rjek.com>
@@ -494,7 +494,7 @@ gboolean nsgtk_window_reload_button_clicked(GtkWidget *widget, gpointer data)
 gboolean nsgtk_window_home_button_clicked(GtkWidget *widget, gpointer data)
 {
         struct gui_window *g = data;
-        static const char *addr = "http://netsurf.sourceforge.net/";
+        static const char *addr = "http://netsurf-browser.org/";
 
         if (option_homepage_url != NULL)
                 addr = option_homepage_url;
@@ -695,25 +695,25 @@ gboolean nsgtk_history_motion_notify_event(GtkWidget *widget,
 	struct gtk_history_window *gw = g;
 	const char *url;
 	int winx, winy;
-	
+
 //	if (!option_history_tooltip)
 //		return TRUE;
-	
+
 	url = history_position_url(gw->g->bw->history, event->x, event->y);
 	if (url == NULL) {
 		gtk_widget_hide(wndTooltip);
 		return TRUE;
 	}
-	
+
 	gtk_label_set_text(labelTooltip, url);
 	gtk_window_get_position(gw->g->window, &winx, &winy);
-	
+
 	LOG(("winx = %d, winy = %d, event->x = %d, event->y = %d",
 		winx, winy, event->x, event->y));
-	
+
 	gtk_widget_show(GTK_WIDGET(wndTooltip));
 	gtk_window_move(wndTooltip, event->x + winx, event->y + winy);
-	
+
 	return TRUE;
 }
 
