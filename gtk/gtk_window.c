@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2006 Daniel Silverstone <dsilvers@digital-scurf.org>
@@ -412,7 +412,7 @@ void nsgtk_window_reflow_content(struct gui_window *g)
         
         LOG(("Doing reformat"));
         
-        content_reformat(g->bw->current_content,
+        browser_window_reformat(g->bw,
                          g->target_width, g->target_height);
 
         if (nsgtk_scaffolding_is_busy(g->scaffold) || updated)

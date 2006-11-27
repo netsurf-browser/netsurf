@@ -1,5 +1,5 @@
 /*
- * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2006 Rob Kendrick <rjek@rjek.com>
@@ -297,7 +297,7 @@ gboolean nsgtk_window_reload_button_clicked(GtkWidget *widget, gpointer data)
 gboolean nsgtk_window_home_button_clicked(GtkWidget *widget, gpointer data)
 {
         struct gtk_scaffolding *g = data;
-        static const char *addr = "http://netsurf.sourceforge.net/";
+        static const char *addr = "http://netsurf-browser.org/";
         struct browser_window *bw = nsgtk_get_browser_for_gui(g->top_level);
 
         if (option_homepage_url != NULL)
