@@ -209,8 +209,7 @@ void ro_gui_menu_init(void)
 			{ "View.Toolbars", NO_ACTION, 0 },
 			{ "View.Toolbars.ToolButtons", TOOLBAR_BUTTONS, 0 },
 			{ "View.Toolbars.ToolAddress", TOOLBAR_ADDRESS_BAR, 0 },
-			{ "View.Toolbars.ToolThrob", TOOLBAR_THROBBER, 0 },
-			{ "_View.Toolbars.ToolStatus", TOOLBAR_STATUS_BAR, 0 },
+			{ "_View.Toolbars.ToolThrob", TOOLBAR_THROBBER, 0 },
 			{ "View.Toolbars.EditToolbar", TOOLBAR_EDIT, 0 },
 			{ "_View.Render", NO_ACTION, 0 },
 			{ "View.Render.RenderAnims", BROWSER_BUFFER_ANIMS, 0 },
@@ -340,13 +339,12 @@ void ro_gui_menu_init(void)
 			(struct ns_menu *)&images_definition);
 
 	/* browser toolbar menu */
-	NS_MENU(7) browser_toolbar_definition = {
+	NS_MENU(6) browser_toolbar_definition = {
 		"Toolbar", {
 			{ "Toolbars", NO_ACTION, 0 },
 			{ "Toolbars.ToolButtons", TOOLBAR_BUTTONS, 0 },
 			{ "Toolbars.ToolAddress", TOOLBAR_ADDRESS_BAR, 0 },
 			{ "Toolbars.ToolThrob", TOOLBAR_THROBBER, 0 },
-			{ "Toolbars.ToolStatus", TOOLBAR_STATUS_BAR, 0 },
 			{ "EditToolbar", TOOLBAR_EDIT, 0 },
 			{NULL, 0, 0}
 		}
@@ -1724,11 +1722,6 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 			t->display_throbber = !t->display_throbber;
 			ro_gui_menu_refresh_toolbar(t);
 			return true;
-		case TOOLBAR_STATUS_BAR:
-			assert(t);
-			t->display_status = !t->display_status;
-			ro_gui_menu_refresh_toolbar(t);
-			return true;
 		case TOOLBAR_EDIT:
 			assert(t);
 			ro_gui_theme_toggle_edit(t);
@@ -2193,12 +2186,6 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 					action, !t);
 			ro_gui_menu_set_entry_ticked(current_menu, action,
 					(t && t->display_throbber));
-			break;
-		case TOOLBAR_STATUS_BAR:
-			ro_gui_menu_set_entry_shaded(current_menu,
-					action, !t);
-			ro_gui_menu_set_entry_ticked(current_menu, action,
-					(t && t->display_status));
 			break;
 		case TOOLBAR_EDIT:
 			ro_gui_menu_set_entry_shaded(current_menu,

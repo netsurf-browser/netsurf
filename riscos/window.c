@@ -32,6 +32,7 @@
 #include "netsurf/content/urldb.h"
 #include "netsurf/css/css.h"
 #include "netsurf/desktop/browser.h"
+#include "netsurf/desktop/frames.h"
 #include "netsurf/desktop/knockout.h"
 #include "netsurf/desktop/plotters.h"
 #include "netsurf/desktop/textinput.h"
@@ -44,6 +45,7 @@
 #include "netsurf/riscos/dialog.h"
 #include "netsurf/riscos/global_history.h"
 #include "netsurf/riscos/gui.h"
+#include "netsurf/riscos/gui/status_bar.h"
 #include "netsurf/riscos/menus.h"
 #include "netsurf/riscos/options.h"
 #include "netsurf/riscos/save.h"
@@ -168,6 +170,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	}
 	g->bw = bw;
 	g->toolbar = 0;
+	g->status_bar = 0;
 	g->reformat_pending = false;
 	g->old_width = 0;
 	g->old_height = 0;
@@ -192,7 +195,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		window.visible.y1 = 64;
 		open_centred = false;
 	} else if (clone && clone->window && option_window_size_clone) {
-		state.w = clone->window->window;
+		for (top = clone; top->parent; top = top->parent);
+		state.w = top->window->window;
 		error = xwimp_get_window_state(&state);
 		if (error) {
 			LOG(("xwimp_get_window_state: 0x%x: %s",
@@ -335,8 +339,9 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	window_list = g;
 	window_count++;
 
-	/* Add in a toolbar */
+	/* Add in a toolbar and status bar */
 	if (bw->browser_window_type == BROWSER_WINDOW_NORMAL) {
+		g->status_bar = ro_gui_status_bar_create(g->window, option_toolbar_status_width);
 		g->toolbar = ro_gui_theme_create_toolbar(NULL, THEME_BROWSER_TOOLBAR);
 		ro_gui_theme_attach_toolbar(g->toolbar, g->window);
 	} else {
@@ -922,11 +927,8 @@ void gui_window_update_extent(struct gui_window *g)
 
 void gui_window_set_status(struct gui_window *g, const char *text)
 {
-	if ((!g->toolbar) || (!g->toolbar->status_handle))
-		return;
-
-	ro_gui_set_icon_string(g->toolbar->status_handle,
-				ICON_STATUS_TEXT, text);
+	if (g->status_bar)
+		ro_gui_status_bar_set_text(g->status_bar, text);
 }
 
 
@@ -1841,6 +1843,8 @@ void ro_gui_window_open(wimp_open *open)
 	}
 
 	/* update the toolbar */
+	if (g->status_bar)
+		ro_gui_status_bar_resize(g->status_bar);
 	if (g->toolbar) {
 		ro_gui_theme_process_toolbar(g->toolbar, -1);
 		/* second resize updates to the new URL bar width */
@@ -2004,23 +2008,6 @@ struct gui_window *ro_gui_toolbar_lookup(wimp_w window)
 				(g->toolbar->editor->toolbar_handle == window))))
 			return g;
 	}
-	return 0;
-}
-
-
-/**
- * Convert a status bar RISC OS window handle to a gui_window.
- *
- * \param  w  RISC OS window handle of a status bar
- * \return  pointer to a structure if found, 0 otherwise
- */
-
-struct gui_window *ro_gui_status_lookup(wimp_w window)
-{
-	struct gui_window *g;
-	for (g = window_list; g; g = g->next)
-		if (g->toolbar && g->toolbar->status_handle == window)
-			return g;
 	return 0;
 }
 
@@ -2193,42 +2180,6 @@ bool ro_gui_toolbar_click(wimp_pointer *pointer)
 			ro_gui_popup_menu(url_suggest_menu,
 					g->toolbar->toolbar_handle,
 					ICON_TOOLBAR_SUGGEST);
-			break;
-	}
-	return true;
-}
-
-
-/**
- * Handle Mouse_Click events in the status bar.
- *
- * \param  g	    browser window that owns the status bar
- * \param  pointer  details of mouse click
- */
-
-bool ro_gui_status_click(wimp_pointer *pointer)
-{
-	struct gui_window *g = ro_gui_status_lookup(pointer->w);
-	wimp_drag drag;
-	os_error *error;
-
-	assert(g);
-
-	switch (pointer->i) {
-		case ICON_STATUS_RESIZE:
-			gui_current_drag_type = GUI_DRAG_STATUS_RESIZE;
-			drag.w = pointer->w;
-			drag.type = wimp_DRAG_SYSTEM_SIZE;
-			drag.initial.x0 = pointer->pos.x;
-			drag.initial.x1 = pointer->pos.x;
-			drag.initial.y0 = pointer->pos.y;
-			drag.initial.y1 = pointer->pos.y;
-			error = xwimp_drag_box(&drag);
-			if (error) {
-				LOG(("xwimp_drag_box: 0x%x: %s",
-						error->errnum, error->errmess));
-				warn_user("WimpError", error->errmess);
-			}
 			break;
 	}
 	return true;
@@ -2934,21 +2885,16 @@ void ro_gui_window_clone_options(struct browser_window *new_bw,
 	/*	Set up the toolbar
 	*/
 	if (new_gui->toolbar) {
+		new_gui->toolbar->display_buttons = option_toolbar_show_buttons;
+		new_gui->toolbar->display_url = option_toolbar_show_address;
+		new_gui->toolbar->display_throbber = option_toolbar_show_throbber;
 		if ((old_gui) && (old_gui->toolbar)) {
-			new_gui->toolbar->status_width = old_gui->toolbar->status_width;
-			new_gui->toolbar->display_status = old_gui->toolbar->display_status;
 			new_gui->toolbar->display_buttons = old_gui->toolbar->display_buttons;
 			new_gui->toolbar->display_url = old_gui->toolbar->display_url;
 			new_gui->toolbar->display_throbber = old_gui->toolbar->display_throbber;
-		} else {
-			new_gui->toolbar->status_width = option_toolbar_status_width;
-			new_gui->toolbar->display_status = option_toolbar_show_status;
-			new_gui->toolbar->display_buttons = option_toolbar_show_buttons;
-			new_gui->toolbar->display_url = option_toolbar_show_address;
-			new_gui->toolbar->display_throbber = option_toolbar_show_throbber;
+			new_gui->toolbar->reformat_buttons = true;
+			ro_gui_theme_process_toolbar(new_gui->toolbar, -1);
 		}
-		new_gui->toolbar->reformat_buttons = true;
-		ro_gui_theme_process_toolbar(new_gui->toolbar, -1);
 	}
 }
 
@@ -2978,12 +2924,12 @@ void ro_gui_window_default_options(struct browser_window *bw) {
 	/*	Set up the toolbar
 	*/
 	if (gui->toolbar) {
-		option_toolbar_status_width = gui->toolbar->status_width;
-		option_toolbar_show_status = gui->toolbar->display_status;
 		option_toolbar_show_buttons = gui->toolbar->display_buttons;
 		option_toolbar_show_address = gui->toolbar->display_url;
 		option_toolbar_show_throbber = gui->toolbar->display_throbber;
 	}
+	if (gui->status_bar)
+		option_toolbar_status_width = ro_gui_status_bar_get_width(gui->status_bar);	  
 }
 
 

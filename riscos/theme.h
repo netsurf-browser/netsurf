@@ -99,23 +99,18 @@ struct theme {
 };
 
 struct toolbar {
-	int status_width;			/**< status width percentage * 100 */
 	bool display_buttons;			/**< display standard buttons */
 	bool display_url;			/**< display URL bar (if applicable) */
 	bool display_throbber;			/**< display throbber (if applicable) */
-	bool display_status;			/**< display status bar (if applicable) */
-	int status_current;			/**< the size of the status window in OS units */
 	int toolbar_current;			/**< the size of the toolbar window in OS units */
 	int height;				/**< vertical extent of the toolbar (read only) */
 	int max_height;				/**< allowed vertical extent (read only) */
 	int old_height;				/**< height on last test (read only) */
 	wimp_w toolbar_handle;			/**< toolbar window handle */
-	wimp_w status_handle;			/**< status window handle (if applicable) */
 	wimp_w parent_handle;			/**< parent window handle (read only) */
 	bool reformat_buttons;			/**< buttons need reformatting */
 	char *url_buffer;			/**< buffer for status text (read only) */
 	char *throbber_buffer;			/**< buffer for status text (read only) */
-	char *status_buffer;			/**< buffer for status text (read only) */
 	struct toolbar_icon *icon;		/**< first toolbar icon (read only) */
 	struct toolbar_icon *suggest;		/**< suggestion toolbar icon (read only) */
 	struct theme_descriptor *descriptor;	/**< theme descriptor (read only) */

@@ -29,6 +29,7 @@ extern int os_version;
 extern const char * NETSURF_DIR;
 
 struct toolbar;
+struct status_bar;
 struct plotter_table;
 struct gui_window;
 struct tree;
@@ -75,6 +76,7 @@ struct gui_window {
 	struct browser_window *bw;
 
 	struct toolbar *toolbar;	/**< Toolbar, or 0 if not present. */
+	struct status_bar *status_bar;	/**< Status bar, or 0 if not present. */
 
 	wimp_w window;		/**< RISC OS window handle. */
 
@@ -139,11 +141,9 @@ void ro_gui_window_quit(void);
 void ro_gui_window_update_theme(void);
 void ro_gui_window_mouse_at(struct gui_window *g, wimp_pointer *pointer);
 bool ro_gui_toolbar_click(wimp_pointer *pointer);
-bool ro_gui_status_click(wimp_pointer *pointer);
 void ro_gui_throb(void);
 struct gui_window *ro_gui_window_lookup(wimp_w window);
 struct gui_window *ro_gui_toolbar_lookup(wimp_w window);
-struct gui_window *ro_gui_status_lookup(wimp_w window);
 void ro_gui_scroll_request(wimp_scroll *scroll);
 bool ro_gui_window_to_window_pos(struct gui_window *g, int x, int y, os_coord *pos);
 bool ro_gui_window_to_screen_pos(struct gui_window *g, int x, int y, os_coord *pos);

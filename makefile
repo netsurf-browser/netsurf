@@ -47,6 +47,7 @@ OBJECTS_RISCOS += 401login.o artworks.o assert.o awrender.o bitmap.o \
 OBJECTS_RISCOS += con_cache.o con_connect.o con_content.o con_fonts.o \
 	con_home.o con_image.o con_inter.o con_language.o con_memory.o \
 	con_secure.o con_theme.o		 		# riscos/configure/
+OBJECTS_RISCOS += progress_bar.o status_bar.o	 		# riscos/gui/
 # OBJECTS_RISCOS += memdebug.o
 
 OBJECTS_RISCOS_SMALL = $(OBJECTS_RISCOS)
@@ -111,7 +112,7 @@ else
 include posix.mk
 endif
 
-VPATH = content:css:desktop:image:render:riscos:riscos/configure:utils:debug:gtk
+VPATH = content:css:desktop:image:render:riscos:riscos/configure:riscos/gui:utils:debug:gtk
 
 WARNFLAGS = -W -Wall -Wundef -Wpointer-arith -Wcast-qual \
 	-Wcast-align -Wwrite-strings -Wstrict-prototypes \

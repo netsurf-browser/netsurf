@@ -24,7 +24,6 @@ extern int option_fg_plot_style;	/* tinct flagword */
 extern int option_bg_plot_style;	/* tinct flagword */
 extern bool option_history_tooltip;
 extern int option_scale;
-extern bool option_toolbar_show_status;
 extern bool option_toolbar_show_buttons;
 extern bool option_toolbar_show_address;
 extern bool option_toolbar_show_throbber;
@@ -63,7 +62,6 @@ int option_fg_plot_style = tinct_ERROR_DIFFUSE;\
 int option_bg_plot_style = tinct_DITHER;\
 bool option_history_tooltip = true; \
 int option_scale = 100; \
-bool option_toolbar_show_status = true; \
 bool option_toolbar_show_buttons = true; \
 bool option_toolbar_show_address = true; \
 bool option_toolbar_show_throbber = true; \
@@ -102,7 +100,6 @@ bool option_thumbnail_iconise = true;
 { "plot_bg_quality",        OPTION_INTEGER, &option_bg_plot_style },\
 { "history_tooltip",        OPTION_BOOL,    &option_history_tooltip }, \
 { "scale",                  OPTION_INTEGER, &option_scale }, \
-{ "toolbar_show_status",    OPTION_BOOL,    &option_toolbar_show_status }, \
 { "toolbar_status_size",    OPTION_INTEGER, &option_toolbar_status_width }, \
 { "toolbar_show_buttons",   OPTION_BOOL,    &option_toolbar_show_buttons }, \
 { "toolbar_show_address",   OPTION_BOOL,    &option_toolbar_show_address }, \
