@@ -730,6 +730,10 @@ bool urldb_add_url(const char *url)
 		host = components.authority;
 	else
 		host++;
+	if (!host) {
+		url_destroy_components(&components);
+		return false;
+	}
 
 	/* get port and remove from authority */
 	colon = strrchr(host, ':');
@@ -754,13 +758,9 @@ bool urldb_add_url(const char *url)
 	p = urldb_add_path(components.scheme, port, h,
 			components.path ? components.path : "",
 			components.query, components.fragment, url);
-	if (!p) {
-		return false;
-	}
 
 	url_destroy_components(&components);
-
-	return true;
+	return (p != NULL);
 }
 
 /**
