@@ -85,7 +85,7 @@ void ro_gui_dialog_init(void)
 	dialog_warning = ro_gui_dialog_create("warning");
 	ro_gui_wimp_event_register_ok(dialog_warning, ICON_WARNING_CONTINUE,
 			NULL);
-	ro_gui_wimp_event_set_help_prefix(dialog_debug, "HelpWarning");
+	ro_gui_wimp_event_set_help_prefix(dialog_warning, "HelpWarning");
 
 	/* tooltip for history */
 	dialog_tooltip = ro_gui_dialog_create("tooltip");
@@ -151,8 +151,6 @@ void ro_gui_dialog_init(void)
 	/* hotlist folder editing */
 	dialog_folder = ro_gui_dialog_create("new_folder");
 	ro_gui_wimp_event_register_text_field(dialog_folder, ICON_FOLDER_NAME);
-	ro_gui_wimp_event_register_menu_gright(dialog_openurl, ICON_OPENURL_URL,
-			ICON_OPENURL_MENU, url_suggest_menu);
 	ro_gui_wimp_event_register_cancel(dialog_folder, ICON_FOLDER_CANCEL);
 	ro_gui_wimp_event_register_ok(dialog_folder, ICON_FOLDER_OK,
 			ro_gui_hotlist_dialog_apply);

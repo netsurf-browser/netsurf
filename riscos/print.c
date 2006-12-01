@@ -167,7 +167,7 @@ void ro_gui_print_init(void)
 			ro_gui_print_click);
 	ro_gui_wimp_event_register_ok(dialog_print, ICON_PRINT_PRINT,
 			ro_gui_print_apply);
-	ro_gui_wimp_event_set_help_prefix(dialog_info, "HelpPrint");
+	ro_gui_wimp_event_set_help_prefix(dialog_print, "HelpPrint");
 }
 
 
