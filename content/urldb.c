@@ -219,6 +219,8 @@ static struct path_data *urldb_add_path_fragment(struct path_data *segment,
 static struct path_data *urldb_find_url(const char *url);
 static struct path_data *urldb_match_path(const struct path_data *parent,
 		const char *path, const char *scheme, unsigned short port);
+static struct search_node **urldb_get_search_tree_direct(const char *host);
+static struct search_node *urldb_get_search_tree(const char *host);
 
 /* Dump */
 static void urldb_dump_hosts(struct host_part *parent);
@@ -260,16 +262,17 @@ static void urldb_save_cookie_paths(FILE *fp, struct path_data *parent);
 /** Root database handle */
 static struct host_part db_root;
 
-/** Search trees - one per letter + 1 for IPs */
-#define NUM_SEARCH_TREES 27
+/** Search trees - one per letter + 1 for IPs + 1 for Everything Else */
+#define NUM_SEARCH_TREES 28
 #define ST_IP 0
-#define ST_DN 1
+#define ST_EE 1
+#define ST_DN 2
 static struct search_node empty = { 0, 0, &empty, &empty };
 static struct search_node *search_trees[NUM_SEARCH_TREES] = {
 	&empty, &empty, &empty, &empty, &empty, &empty, &empty, &empty,
 	&empty, &empty, &empty, &empty, &empty, &empty, &empty, &empty,
 	&empty, &empty, &empty, &empty, &empty, &empty, &empty, &empty,
-	&empty, &empty, &empty
+	&empty, &empty, &empty, &empty
 };
 
 #define COOKIE_FILE_VERSION 100
@@ -753,6 +756,13 @@ bool urldb_add_url(const char *url)
 		url_destroy_components(&components);
 		return false;
 	}
+	
+	LOG(("Scheme: %s\nHost: %s\nPort: %i\nPath: %s\nURL: %s",
+			components.scheme,
+			host,
+			port,
+			components.path,
+			url));
 
 	/* Get path entry */
 	p = urldb_add_path(components.scheme, port, h,
@@ -1101,13 +1111,7 @@ void urldb_iterate_partial(const char *prefix,
 		prefix = scheme_sep + 3;
 
 	slash = strchr(prefix, '/');
-
-	if (*prefix >= '0' && *prefix <= '9')
-		tree = search_trees[ST_IP];
-	else if (isalpha(*prefix))
-		tree = search_trees[ST_DN + tolower(*prefix) - 'a'];
-	else
-		return;
+	tree = urldb_get_search_tree(prefix);
 
 	if (slash) {
 		/* if there's a slash in the input, then we can
@@ -1426,7 +1430,7 @@ struct host_part *urldb_add_host(const char *host)
 
 	assert(host);
 
-	if (*(host) >= '0' && *(host) <= '9') {
+	if (url_host_is_ip_address(host)) {
 		/* Host is an IP, so simply add as TLD */
 
 		/* Check for existing entry */
@@ -1472,9 +1476,8 @@ struct host_part *urldb_add_host(const char *host)
 			if (d) {
 				if (isalpha(*buf)) {
 					struct search_node **r;
-					r = &search_trees[
-						tolower(*buf) - 'a' + ST_DN];
 
+					r = urldb_get_search_tree_direct(buf);
 					s = urldb_search_insert(*r, d);
 					if (!s) {
 						/* failed */
@@ -1771,25 +1774,26 @@ struct path_data *urldb_find_url(const char *url)
 		*colon = '\0';
 		port = atoi(colon + 1);
 	}
+	
+	LOG(("Scheme: %s\nHost: %s\nPort: %i\nPath: %s\nURL: %s",
+			components.scheme,
+			host,
+			port,
+			components.path,
+			url));
 
 	/* file urls have no host, so manufacture one */
 	if (strcasecmp(components.scheme, "file") == 0)
 		host = "localhost";
 
-	if (*host >= '0' && *host <= '9')
-		tree = search_trees[ST_IP];
-	else if (isalpha(*host))
-		tree = search_trees[ST_DN + tolower(*host) - 'a'];
-	else {
-		url_destroy_components(&components);
-		return NULL;
-	}
-
+	tree = urldb_get_search_tree(host);
 	h = urldb_search_find(tree, host);
 	if (!h) {
+	  	LOG(("Failed to find host"));
 		url_destroy_components(&components);
 		return NULL;
 	}
+	LOG(("Found host"));
 
 	/* generate plq */
 	if (components.path)
@@ -1851,6 +1855,32 @@ struct path_data *urldb_match_path(const struct path_data *parent,
 	}
 
 	return NULL;
+}
+
+/**
+ * Get the search tree for a particular host
+ * 
+ * \param host  the host to lookup
+ * \return the corresponding search tree
+ */
+struct search_node **urldb_get_search_tree_direct(const char *host) {
+	assert(host);
+
+	if (url_host_is_ip_address(host))
+		return &search_trees[ST_IP];
+	else if (isalpha(*host))
+		return &search_trees[ST_DN + tolower(*host) - 'a'];
+	return &search_trees[ST_EE];
+}
+
+/**
+ * Get the search tree for a particular host
+ * 
+ * \param host  the host to lookup
+ * \return the corresponding search tree
+ */
+struct search_node *urldb_get_search_tree(const char *host) {
+  	return *urldb_get_search_tree_direct(host);
 }
 
 /**
@@ -2138,7 +2168,7 @@ int urldb_search_match_string(const struct host_part *a,
 
 	assert(a && a != &db_root && b);
 
-	if (*b >= '0' && *b <= '9') {
+	if (url_host_is_ip_address(b)) {
 		/* IP address */
 		return strcasecmp(a->part, b);
 	}
@@ -2201,7 +2231,7 @@ int urldb_search_match_prefix(const struct host_part *a,
 
 	assert(a && a != &db_root && b);
 
-	if (*b >= '0' && *b <= '9') {
+	if (url_host_is_ip_address(b)) {
 		/* IP address */
 		return strncasecmp(a->part, b, strlen(b));
 	}
@@ -2623,7 +2653,7 @@ bool urldb_set_cookie(const char *header, const char *url)
 			char *domain = c->domain;
 
 			/* 4.3.2:iii */
-			if (host[0] >= '0' && host[0] <= '9') {
+			if (url_host_is_ip_address(host)) {
 				/* IP address, so no partial match */
 				urldb_free_cookie(c);
 				goto error;
@@ -2959,7 +2989,7 @@ bool urldb_insert_cookie(struct cookie_internal_data *c, const char *scheme,
 
 	if (c->domain[0] == '.') {
 		h = urldb_search_find(
-			search_trees[tolower(c->domain[1]) - 'a' + ST_DN],
+			urldb_get_search_tree(&(c->domain[1])),
 			c->domain + 1);
 		if (!h) {
 			h = urldb_add_host(c->domain + 1);
@@ -2971,12 +3001,9 @@ bool urldb_insert_cookie(struct cookie_internal_data *c, const char *scheme,
 
 		p = &h->paths;
 	} else {
-		if (c->domain[0] >= '0' && c->domain[0] <= '9')
-			h = urldb_search_find(search_trees[ST_IP], c->domain);
-		else
-			h = urldb_search_find(search_trees[
-					tolower(c->domain[0]) - 'a' + ST_DN],
-					c->domain);
+		h = urldb_search_find(
+				urldb_get_search_tree(c->domain),
+				c->domain);
 
 		if (!h) {
 			h = urldb_add_host(c->domain);
@@ -3420,7 +3447,6 @@ char *urldb_get_cache_data(const char *url) {
 	/* todo: handle cache expiry etc */
 	return filename_as_url(p->cache.filename);
 }
-
 
 #ifdef TEST_URLDB
 int option_expire_url = 0;

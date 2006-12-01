@@ -29,6 +29,7 @@ struct url_components {
 };
 
 void url_init(void);
+bool url_host_is_ip_address(const char *host);
 url_func_result url_normalize(const char *url, char **result);
 url_func_result url_join(const char *rel, const char *base, char **result);
 url_func_result url_host(const char *url, char **result);

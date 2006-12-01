@@ -64,6 +64,42 @@ void url_init(void)
 
 
 /**
+ * Check whether a host is an IP address
+ *
+ * \param  host    a hostname terminated by '\0' or '/'
+ * \return true if the hostname is an IP address, false otherwise
+ */
+bool url_host_is_ip_address(const char *host) {
+  	int b;
+  	bool n;
+
+	assert(host);
+	
+	/* an IP address is of the format XXX.XXX.XXX.XXX, ie totally
+	 * numeric with 3 full stops between the numbers */
+	b = 0; // number of breaks
+	n = false; // number present
+	do {
+		if (*host == '.') {
+		  	if (!n)
+		  		return false;
+			b++;
+			n = false;
+		} else if ((*host == '\0') || (*host == '/')) {
+		  	if (!n)
+		  		return false;
+		  	/* todo: check the values are in 0-255 range */
+		  	return (b == 3);
+		} else if (*host < '0' || *host > '9') {
+		  	return false;
+                } else {
+                	n = true;
+                }
+                *host++;
+        } while (1);
+}
+
+/**
  * Normalize a URL.
  *
  * \param  url	   an absolute URL
