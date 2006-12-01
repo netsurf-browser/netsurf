@@ -756,13 +756,6 @@ bool urldb_add_url(const char *url)
 		url_destroy_components(&components);
 		return false;
 	}
-	
-	LOG(("Scheme: %s\nHost: %s\nPort: %i\nPath: %s\nURL: %s",
-			components.scheme,
-			host,
-			port,
-			components.path,
-			url));
 
 	/* Get path entry */
 	p = urldb_add_path(components.scheme, port, h,
@@ -1775,13 +1768,6 @@ struct path_data *urldb_find_url(const char *url)
 		port = atoi(colon + 1);
 	}
 	
-	LOG(("Scheme: %s\nHost: %s\nPort: %i\nPath: %s\nURL: %s",
-			components.scheme,
-			host,
-			port,
-			components.path,
-			url));
-
 	/* file urls have no host, so manufacture one */
 	if (strcasecmp(components.scheme, "file") == 0)
 		host = "localhost";
@@ -1789,11 +1775,9 @@ struct path_data *urldb_find_url(const char *url)
 	tree = urldb_get_search_tree(host);
 	h = urldb_search_find(tree, host);
 	if (!h) {
-	  	LOG(("Failed to find host"));
 		url_destroy_components(&components);
 		return NULL;
 	}
-	LOG(("Found host"));
 
 	/* generate plq */
 	if (components.path)
