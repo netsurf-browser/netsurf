@@ -1739,7 +1739,7 @@ struct path_data *urldb_find_url(const char *url)
 	struct path_data *p;
 	struct search_node *tree;
 	char *plq, *copy, *colon;
-	const char *domain;
+	const char *host;
 	unsigned short port;
 	url_func_result ret;
 	struct url_components components;
@@ -1752,6 +1752,17 @@ struct path_data *urldb_find_url(const char *url)
 	if (ret != URL_FUNC_OK)
 		return false;
 
+	/* Extract host part from authority */
+	host = strchr(components.authority, '@');
+	if (!host)
+		host = components.authority;
+	else
+		host++;
+	if (!host) {
+		url_destroy_components(&components);
+		return NULL;
+	}
+
 	/* get port and remove from authority */
 	colon = strrchr(components.authority, ':');
 	if (!colon) {
@@ -1763,20 +1774,18 @@ struct path_data *urldb_find_url(const char *url)
 
 	/* file urls have no host, so manufacture one */
 	if (strcasecmp(components.scheme, "file") == 0)
-		domain = "localhost";
-	else
-		domain = components.authority;
+		host = "localhost";
 
-	if (*domain >= '0' && *domain <= '9')
+	if (*host >= '0' && *host <= '9')
 		tree = search_trees[ST_IP];
-	else if (isalpha(*domain))
-		tree = search_trees[ST_DN + tolower(*domain) - 'a'];
+	else if (isalpha(*host))
+		tree = search_trees[ST_DN + tolower(*host) - 'a'];
 	else {
 		url_destroy_components(&components);
 		return NULL;
 	}
 
-	h = urldb_search_find(tree, domain);
+	h = urldb_search_find(tree, host);
 	if (!h) {
 		url_destroy_components(&components);
 		return NULL;
