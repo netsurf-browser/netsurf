@@ -1804,7 +1804,7 @@ void ro_gui_window_open(wimp_open *open)
 	}
 
 	/* change extent if necessary */
-	if (g->old_width != width || g->old_height != height) {
+	if (g->old_width != width || g->old_height != height) {	
 		if (content) {
 		  	/* Ctrl-resize of a top-level window scales the content size */
 			if ((g->old_width > 0) && (g->old_width != width) && (!g->bw->parent) &&
@@ -1815,6 +1815,11 @@ void ro_gui_window_open(wimp_open *open)
 		}
 		g->old_width = width;
 		g->old_height = height;
+
+		/* the top-level framed window is a total pain. to get it to maximise to the
+		 * top of the screen we need to fake it having a suitably large extent */
+		if (g->bw->children && (g->bw->browser_window_type == BROWSER_WINDOW_NORMAL)) 
+			height = 16384;
 
 		if (content && height < content->height * 2 * g->option.scale)
 			height = content->height * 2 * g->option.scale;
