@@ -307,6 +307,11 @@ bool nsmng_convert(struct content *c, int width, int height) {
 	c->data.mng.opaque_test_pending = (c->type == CONTENT_PNG) || (c->type == CONTENT_JNG);
 	if (c->data.mng.opaque_test_pending)
 		bitmap_set_opaque(c->bitmap, false);
+
+	/* free associated memory except for mngs where it may be subsequently needed for
+	 * animation decoding. */
+	if (c->type != CONTENT_MNG)
+		mng_cleanup(&c->data.mng.handle);
 	return true;
 }
 
@@ -432,7 +437,8 @@ void nsmng_destroy(struct content *c) {
 	/*	Cleanup the MNG structure and release the canvas memory
 	*/
 	schedule_remove(nsmng_animate, c);
-	mng_cleanup(&c->data.mng.handle);
+	if (c->type == CONTENT_MNG)
+		mng_cleanup(&c->data.mng.handle);
 	if (c->bitmap)
 		bitmap_destroy(c->bitmap);
 	free(c->title);
