@@ -154,7 +154,7 @@ void ro_gui_menu_init(void)
 		"NetSurf", {
 			{ "Info", NO_ACTION, dialog_info },
 			{ "AppHelp", HELP_OPEN_CONTENTS, 0 },
-			{ "Open", NO_ACTION, 0 },
+			{ "Open", BROWSER_NAVIGATE_URL, 0 },
 			{ "Open.OpenURL", BROWSER_NAVIGATE_URL, dialog_openurl },
 			{ "Open.HotlistShow", HOTLIST_SHOW, 0 },
 			{ "Open.HistGlobal", HISTORY_SHOW_GLOBAL, 0 },
