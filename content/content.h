@@ -180,7 +180,8 @@ struct content {
 	struct cache_data *cache_data;	/**< Cache control data */
 
 	unsigned int size;		/**< Estimated size of all data
-					  associated with this content. */
+					  associated with this content, except
+					  alloced as talloc children of this. */
 	char *title;			/**< Title for browser window. */
 	unsigned int active;		/**< Number of child fetches or
 					  conversions currently in progress. */

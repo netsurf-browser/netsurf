@@ -373,7 +373,7 @@ struct content * content_create(const char *url)
 	c->refresh = 0;
 	c->bitmap = 0;
 	c->fresh = false;
-	c->size = sizeof(struct content);
+	c->size = 0;
 	c->title = 0;
 	c->active = 0;
 	user_sentinel->callback = 0;
@@ -641,7 +641,6 @@ bool content_process_data(struct content *c, const char *data,
 	}
 	memcpy(c->source_data + c->source_size, data, size);
 	c->source_size += size;
-	c->size += size;
 
 	if (handler_map[c->type].process_data) {
 		if (!handler_map[c->type].process_data(c,
@@ -700,8 +699,6 @@ void content_convert(struct content *c, int width, int height)
 		c->status = CONTENT_STATUS_DONE;
 	}
 	c->locked = false;
-
-	c->size = talloc_total_size(c);
 
 	assert(c->status == CONTENT_STATUS_READY ||
 			c->status == CONTENT_STATUS_DONE);
@@ -779,14 +776,14 @@ void content_clean(void)
 	next = 0;
 	for (c = content_list; c; c = c->next) {
 		next = c;
-		size += c->size;
+		size += c->size + talloc_total_size(c);
 	}
 	for (c = next; c && (unsigned int) option_memory_cache_size < size;
 			c = prev) {
 		prev = c->prev;
 		if (c->user_list->next)
 			continue;
-		size -= c->size;
+		size -= c->size + talloc_total_size(c);
 		content_destroy(c);
 	}
 }
@@ -836,7 +833,7 @@ void content_reset(struct content *c)
 		handler_map[c->type].destroy(c);
 	c->type = CONTENT_UNKNOWN;
 	c->status = CONTENT_STATUS_TYPE_UNKNOWN;
-	c->size = sizeof(struct content);
+	c->size = 0;
 	talloc_free(c->mime_type);
 	c->mime_type = 0;
 }

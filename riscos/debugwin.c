@@ -2,7 +2,7 @@
  * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
- * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2006 James Bursa <bursa@users.sourceforge.net>
  */
 
 /** \file
@@ -16,6 +16,7 @@
 #include "netsurf/riscos/dialog.h"
 #include "netsurf/riscos/wimp_event.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/talloc.h"
 #include "netsurf/utils/utils.h"
 
 /** Update interval / cs. */
@@ -52,7 +53,7 @@ void ro_gui_debugwin_resize(void)
 
 	box.x0 = 0;
 	box.y0 = -count * 28;
-	box.x1 = 1200;
+	box.x1 = 1400;
 	box.y1 = 0;
 	error = xwimp_set_extent(dialog_debug, &box);
 	if (error) {
@@ -118,12 +119,13 @@ void ro_gui_debugwin_redraw(wimp_draw *redraw)
 
 void ro_gui_debugwin_redraw_plot(wimp_draw *redraw)
 {
-	char s[20];
+	char s[40];
 	int x0 = redraw->box.x0 - redraw->xscroll;
 	int y0 = redraw->box.y1 - redraw->yscroll;
 	int i = 1;
 	int y;
 	unsigned int users;
+	unsigned int talloc_size;
 	unsigned int size = 0;
 	struct content *content;
 	struct content_user *user;
@@ -156,10 +158,12 @@ void ro_gui_debugwin_redraw_plot(wimp_draw *redraw)
 		xwimptextop_paint(wimptextop_RJUSTIFY, s, x0 + 960, y);
 		xwimptextop_paint(0, content_status_name[content->status],
 				x0 + 990, y);
-		snprintf(s, sizeof s, "%u", content->size);
-		xwimptextop_paint(wimptextop_RJUSTIFY, s, x0 + 1190, y);
-		size += content->size;
+		talloc_size = talloc_total_size(content);
+		snprintf(s, sizeof s, "%u+%u=%u", content->size, talloc_size,
+				content->size + talloc_size);
+		xwimptextop_paint(wimptextop_RJUSTIFY, s, x0 + 1390, y);
+		size += content->size + talloc_size;
 	}
 	snprintf(s, sizeof s, "%u", size);
-	xwimptextop_paint(wimptextop_RJUSTIFY, s, x0 + 1190, y0 - i * 28 - 20);
+	xwimptextop_paint(wimptextop_RJUSTIFY, s, x0 + 1390, y0 - i * 28 - 20);
 }

@@ -359,8 +359,6 @@ bool html_convert(struct content *c, int width, int height)
 	html_reformat(c, width, height);
 	/*box_dump(c->data.html.layout->children, 0);*/
 
-	c->size = talloc_total_size(c);
-
 	if (c->active == 0) {
 		c->status = CONTENT_STATUS_DONE;
 		content_set_status(c, messages_get("Done"));
