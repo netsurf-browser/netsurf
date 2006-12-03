@@ -1084,8 +1084,11 @@ void ro_gui_pointer_leaving_window(wimp_leaving *leaving)
 			break;
 
 		default:
+			if (gui_track_gui_window)
+				gui_window_set_pointer(gui_track_gui_window, GUI_POINTER_DEFAULT);
+			gui_track_wimp_w = 0;
+			gui_track_gui_window = NULL;
 			gui_track = false;
-			gui_window_set_pointer(gui_track_gui_window, GUI_POINTER_DEFAULT);
 			break;
 	}
 }
@@ -1157,10 +1160,12 @@ void ro_gui_drag_end(wimp_dragged *drag)
 {
 	switch (gui_current_drag_type) {
 		case GUI_DRAG_SELECTION:
+			assert(gui_track_gui_window);
 			ro_gui_selection_drag_end(gui_track_gui_window, drag);
 			break;
 
 		case GUI_DRAG_SCROLL:
+			assert(gui_track_gui_window);
 			ro_gui_window_scroll_end(gui_track_gui_window, drag);
 			break;
 
@@ -1188,6 +1193,7 @@ void ro_gui_drag_end(wimp_dragged *drag)
 			break;
 
 		case GUI_DRAG_FRAME:
+			assert(gui_track_gui_window);
 			ro_gui_window_frame_resize_end(gui_track_gui_window, drag);
 			break;
 
