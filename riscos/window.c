@@ -2542,6 +2542,13 @@ bool ro_gui_window_keypress(wimp_key *key)
 					BROWSER_PRINT, false);
 #endif
 
+		case IS_WIMP_KEY | wimp_KEY_LEFT:
+		case IS_WIMP_KEY | wimp_KEY_RIGHT:
+		case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_LEFT:
+		case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_RIGHT:
+			if (toolbar)
+				return false;
+			break;
 		case IS_WIMP_KEY + wimp_KEY_UP:
 		case IS_WIMP_KEY + wimp_KEY_DOWN:
 		case IS_WIMP_KEY + wimp_KEY_PAGE_UP:
@@ -2572,6 +2579,18 @@ bool ro_gui_window_keypress(wimp_key *key)
 		y -= ro_gui_theme_toolbar_full_height(g->toolbar);
 
 	switch (c) {
+		case IS_WIMP_KEY | wimp_KEY_LEFT:
+			state.xscroll -= 32;
+			break;
+		case IS_WIMP_KEY | wimp_KEY_RIGHT:
+			state.xscroll += 32;
+			break;
+		case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_LEFT:
+			state.xscroll = -0x10000000;
+			break;
+		case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_RIGHT:
+			state.xscroll = 0x10000000;
+			break;
 		case IS_WIMP_KEY | wimp_KEY_UP:
 			state.yscroll += 32;
 			break;
@@ -2586,7 +2605,7 @@ bool ro_gui_window_keypress(wimp_key *key)
 			break;
 		case wimp_KEY_HOME:
 		case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_UP:
-			state.yscroll = 1000;
+			state.yscroll = 0x10000000;
 			break;
 		case IS_WIMP_KEY | wimp_KEY_END:
 		case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_DOWN:
