@@ -1273,35 +1273,38 @@ bool gui_window_frame_resize_start(struct gui_window *g)
 	os_error *error;
 	wimp_drag drag;
 	int x0, y0, x1, y1;
-	int row = -1, col = -1, i;
-	struct browser_window *top, *bw;
+	int row = -1, col = -1, i, toolbar_height = 0;
+	struct browser_window *top, *bw, *parent;
 	wimp_window_state state;
 
 	/* get the maximum drag box (collapse all surrounding frames */
 	bw = g->bw;
+	parent = bw->parent;
 	x0 = bw->x0;
 	y0 = bw->y0;
 	x1 = bw->x1;
 	y1 = bw->y1;
-	for (i = 0; i < (bw->parent->cols * bw->parent->rows); i++) {
-		  if (&bw->parent->children[i] == bw) {
-			col = i % bw->parent->cols;
-			row = i / bw->parent->cols;
+	for (i = 0; i < (parent->cols * parent->rows); i++) {
+		  if (&parent->children[i] == bw) {
+			col = i % parent->cols;
+			row = i / parent->cols;
 		  }
 	}
 	assert((row >= 0) && (col >= 0));
 
-	if (g->bw->drag_resize_left)
-		x0 = bw->parent->children[row * bw->parent->cols + (col - 1)].x0;
-	if (g->bw->drag_resize_right)
-		x1 = bw->parent->children[row * bw->parent->cols + (col + 1)].x1;
-	if (g->bw->drag_resize_up)
-		y0 = bw->parent->children[(row - 1) * bw->parent->cols + col].y0;
-	if (g->bw->drag_resize_down)
-		y1 = bw->parent->children[(row + 1) * bw->parent->cols + col].y1;
+	if (bw->drag_resize_left)
+		x0 = parent->children[row * parent->cols + (col - 1)].x0;
+	if (bw->drag_resize_right)
+		x1 = parent->children[row * parent->cols + (col + 1)].x1;
+	if (bw->drag_resize_up)
+		y0 = parent->children[(row - 1) * parent->cols + col].y0;
+	if (bw->drag_resize_down)
+		y1 = parent->children[(row + 1) * parent->cols + col].y1;
 
 	/* convert to screen co-ordinates */
 	top = browser_window_owner(bw);
+	if (top->window->toolbar)
+		toolbar_height = ro_gui_theme_toolbar_full_height(top->window->toolbar);
 	state.w = top->window->window;
 	error = xwimp_get_window_state(&state);
 	if (error) {
@@ -1311,9 +1314,9 @@ bool gui_window_frame_resize_start(struct gui_window *g)
 		return false;
 	}
 	x0 = state.visible.x0 + x0 * 2;
-	y0 = state.visible.y0 + y0 * 2;
+	y0 = state.visible.y1 - y0 * 2 - toolbar_height;
 	x1 = state.visible.x0 + x1 * 2 - 1;
-	y1 = state.visible.y0 + y1 * 2 - 1;
+	y1 = state.visible.y1 - y1 * 2 - toolbar_height - 1;
 
 	/* get the pointer position */
 	error = xwimp_get_pointer_info(&pointer);
@@ -1325,11 +1328,11 @@ bool gui_window_frame_resize_start(struct gui_window *g)
 	}
 
 	/* stop dragging in directions we can't extend */
-	if (!(g->bw->drag_resize_left || g->bw->drag_resize_right)) {
+	if (!(bw->drag_resize_left || bw->drag_resize_right)) {
 		x0 = pointer.pos.x;
 		x1 = pointer.pos.x;
 	}
-	if (!(g->bw->drag_resize_up || g->bw->drag_resize_down)) {
+	if (!(bw->drag_resize_up || bw->drag_resize_down)) {
 		y0 = pointer.pos.y;
 		y1 = pointer.pos.y;
 	}
@@ -1337,9 +1340,9 @@ bool gui_window_frame_resize_start(struct gui_window *g)
 	/* start the drag */
 	drag.type = wimp_DRAG_USER_POINT;
 	drag.bbox.x0 = x0;
-	drag.bbox.y0 = y0;
+	drag.bbox.y0 = y1;
 	drag.bbox.x1 = x1;
-	drag.bbox.y1 = y1;
+	drag.bbox.y1 = y0;
 
 	error = xwimp_drag_box(&drag);
 	if (error) {
