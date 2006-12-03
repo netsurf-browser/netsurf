@@ -1149,6 +1149,8 @@ void gui_window_remove_caret(struct gui_window *g)
 
 void gui_window_new_content(struct gui_window *g)
 {
+  	if (search_current_window == g)
+  		ro_gui_search_end(dialog_search);
 	ro_gui_menu_objects_moved();
 	ro_gui_prepare_navigate(g);
 	ro_gui_dialog_close_persistent(g->window);
