@@ -116,6 +116,7 @@ struct ro_gui_pointer_entry ro_gui_pointer_table[] = {
 };
 
 
+static void ro_gui_window_remove_update_boxes(struct gui_window *g);
 static void ro_gui_window_open(wimp_open *open);
 static void ro_gui_window_close(wimp_w w);
 static void ro_gui_window_redraw(wimp_draw *redraw);
@@ -412,6 +413,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 void gui_window_destroy(struct gui_window *g)
 {
 	os_error *error;
+	wimp_w w;
 
 	assert(g);
 
@@ -432,16 +434,24 @@ void gui_window_destroy(struct gui_window *g)
 	/* destroy toolbar */
 	if (g->toolbar)
 		ro_gui_theme_destroy_toolbar(g->toolbar);
+	if (g->status_bar)
+		ro_gui_status_bar_destroy(g->status_bar);
+
+	w = g->window;
+	ro_gui_url_complete_close(NULL, 0);
+	ro_gui_dialog_close_persistent(w);
+	if (current_menu_window == w)
+		ro_gui_menu_closed(true);
+	ro_gui_window_remove_update_boxes(g);
 
 	/* delete window */
-	ro_gui_dialog_close(g->window);
-	error = xwimp_delete_window(g->window);
+	error = xwimp_delete_window(w);
 	if (error) {
 		LOG(("xwimp_delete_window: 0x%x: %s",
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
 	}
-	ro_gui_wimp_event_finalise(g->window);
+	ro_gui_wimp_event_finalise(w);
 
 	free(g);
 }
@@ -1502,6 +1512,22 @@ void ro_gui_window_redraw(wimp_draw *redraw)
 }
 
 
+
+/**
+ * Remove all pending update boxes for a window
+ *
+ * \param  g   gui_window
+ */
+void ro_gui_window_remove_update_boxes(struct gui_window *g) {
+	struct update_box *cur;
+
+	for (cur = pending_updates; cur != NULL; cur = cur->next) {
+		if (cur->g == g)
+			cur->g = NULL;
+	}
+}
+
+
 /**
  * Redraw any pending update boxes.
  */
@@ -1519,6 +1545,8 @@ void ro_gui_window_update_boxes(void) {
 
 	for (cur = pending_updates; cur != NULL; cur = cur->next) {
 		g = cur->g;
+		if (!g)
+			continue;
 		c = g->bw->current_content;
 		data = &cur->data;
 		use_buffer = cur->use_buffer;
@@ -1913,14 +1941,8 @@ void ro_gui_window_close(wimp_w w) {
 				ro_gui_menu_handle_action(w, BROWSER_NAVIGATE_UP, true);
 		}
 	}
-	if (ro_gui_shift_pressed())
-		return;
-	ro_gui_url_complete_close(NULL, 0);
-	ro_gui_dialog_close_persistent(w);
-	ro_gui_wimp_event_finalise(w);
-	browser_window_destroy(g->bw);
-	return;
-
+	if (!ro_gui_shift_pressed())
+		browser_window_destroy(g->bw);
 }
 
 

@@ -584,6 +584,7 @@ void ro_gui_menu_closed(bool cleanup) {
 		}
 	}
 
+	ro_gui_menu_search_window_menu = false;
 	current_menu_window = NULL;
 	current_menu_icon = NULL;
 	current_menu_open = false;
