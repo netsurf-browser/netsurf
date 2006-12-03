@@ -563,13 +563,15 @@ bool browser_window_resolve_frame_dimension(struct browser_window *bw, struct br
 
 bool browser_window_resize_frames(struct browser_window *bw, browser_mouse_state mouse, int x, int y,
 		gui_pointer_shape *pointer, const char **status, bool *action) {
+	struct browser_window *parent;
 	bool left, right, up, down;
 	int i, resize_margin;
 
 	if ((x < bw->x0) || (x > bw->x1) || (y < bw->y0) || (y > bw->y1))
 		return false;
 
-	if ((!bw->no_resize) && (bw->parent)) {
+	parent = bw->parent;
+	if ((!bw->no_resize) && parent) {
 		resize_margin = FRAME_RESIZE;
 		if (resize_margin * 2 > (bw->x1 - bw->x0))
 			resize_margin = (bw->x1 - bw->x0) / 2;
@@ -591,21 +593,38 @@ bool browser_window_resize_frames(struct browser_window *bw, browser_mouse_state
 					break;
 				case BROWSER_WINDOW_FRAME:
 				case BROWSER_WINDOW_FRAMESET:
-					assert(bw->parent);
 					break;
 			}
-			for (i = 0; i < (bw->parent->cols * bw->parent->rows); i++) {
-				if (&bw->parent->children[i] == bw) {
-					col = i % bw->parent->cols;
-					row = i / bw->parent->cols;
+			for (i = 0; i < (parent->cols * parent->rows); i++) {
+				if (&parent->children[i] == bw) {
+					col = i % parent->cols;
+					row = i / parent->cols;
+					break;
 				}
 			}
 			assert((row >= 0) && (col >= 0));
 
+			/* check the sibling frame is within bounds */
 			left &= (col > 0);
-			right &= (col < bw->parent->cols - 1) & (!left);
+			right &= (col < parent->cols - 1);
 			up &= (row > 0);
-			down &= (row < bw->parent->rows - 1) & (!up);
+			down &= (row < parent->rows - 1);
+			
+			/* check the sibling frames can be resized */
+			if (left)
+				left &= !parent->children[row * parent->cols + (col - 1)].no_resize;
+			if (right)
+				right &= !parent->children[row * parent->cols + (col + 1)].no_resize;
+			if (up)
+				up &= !parent->children[(row - 1) * parent->cols + col].no_resize;
+			if (down)
+				down &= !parent->children[(row + 1) * parent->cols + col].no_resize;
+
+			/* can't have opposite directions simultaneously */
+			if (up)
+				down = false;
+			if (left)
+				right = false;
 		}
 
 		if (left || right || up || down) {
