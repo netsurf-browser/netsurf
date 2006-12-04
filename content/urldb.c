@@ -727,18 +727,20 @@ bool urldb_add_url(const char *url)
 	if (ret != URL_FUNC_OK)
 		return false;
 
+	/* Ensure scheme and authority exist */
+	if (!(components.scheme && components.authority)) {
+		url_destroy_components(&components);
+		return false;
+	}
+
 	/* Extract host part from authority */
 	host = strchr(components.authority, '@');
 	if (!host)
 		host = components.authority;
 	else
 		host++;
-	if (!host) {
-		url_destroy_components(&components);
-		return false;
-	}
 
-	/* get port and remove from authority */
+	/* get port and remove from host */
 	colon = strrchr(host, ':');
 	if (!colon) {
 		port = 0;
@@ -763,6 +765,7 @@ bool urldb_add_url(const char *url)
 			components.query, components.fragment, url);
 
 	url_destroy_components(&components);
+
 	return (p != NULL);
 }
 
@@ -1307,16 +1310,20 @@ void urldb_iterate_cookies(bool (*callback)(const char *domain, const struct coo
  * \return true to continue, false otherwise
  */
 bool urldb_iterate_entries_host(struct search_node *parent,
-		bool (*url_callback)(const char *url, const struct url_data *data),
-		bool (*cookie_callback)(const char *domain, const struct cookie_data *data))
+		bool (*url_callback)(const char *url,
+				const struct url_data *data),
+		bool (*cookie_callback)(const char *domain,
+				const struct cookie_data *data))
 {
 	if (parent == &empty)
 		return true;
 
-	if (!urldb_iterate_entries_host(parent->left, url_callback, cookie_callback))
+	if (!urldb_iterate_entries_host(parent->left,
+			url_callback, cookie_callback))
 		return false;
 
-	if ((parent->data->paths.children) || ((cookie_callback) && (parent->data->paths.cookies))) {
+	if ((parent->data->paths.children) || ((cookie_callback) &&
+			(parent->data->paths.cookies))) {
 		/* We have paths (or domain cookies), so iterate them */
 		if (!urldb_iterate_entries_path(&parent->data->paths,
 				url_callback, cookie_callback)) {
@@ -1324,7 +1331,8 @@ bool urldb_iterate_entries_host(struct search_node *parent,
 		}
 	}
 
-	if (!urldb_iterate_entries_host(parent->right, url_callback, cookie_callback))
+	if (!urldb_iterate_entries_host(parent->right,
+			url_callback, cookie_callback))
 		return false;
 
 	return true;
@@ -1339,23 +1347,25 @@ bool urldb_iterate_entries_host(struct search_node *parent,
  * \return true to continue, false otherwise
  */
 bool urldb_iterate_entries_path(const struct path_data *parent,
-		bool (*url_callback)(const char *url, const struct url_data *data),
-		bool (*cookie_callback)(const char *domain, const struct cookie_data *data))
+		bool (*url_callback)(const char *url,
+				const struct url_data *data),
+		bool (*cookie_callback)(const char *domain,
+				const struct cookie_data *data))
 {
 	const struct path_data *p;
 
 	if (!parent->children) {
 		/* leaf node */
 
-		/* All leaf nodes in the path tree should have an URL or cookies
-		 * attached to them. If this is not the case, it indicates
-		 * that there's a bug in the file loader/URL insertion code.
-		 * Therefore, assert this here. */
+		/* All leaf nodes in the path tree should have an URL or
+		 * cookies attached to them. If this is not the case, it
+		 * indicates that there's a bug in the file loader/URL
+		 * insertion code. Therefore, assert this here. */
 		assert(url_callback || cookie_callback);
 
 		/** \todo handle fragments? */
 		if (url_callback) {
-		  	assert(parent->url);
+			assert(parent->url);
 			if (!url_callback(parent->url,
 					(const struct url_data *) &parent->urld))
 				return false;
@@ -1367,7 +1377,8 @@ bool urldb_iterate_entries_path(const struct path_data *parent,
 	}
 
 	for (p = parent->children; p; p = p->next) {
-		if (!urldb_iterate_entries_path(p, url_callback, cookie_callback))
+		if (!urldb_iterate_entries_path(p,
+				url_callback, cookie_callback))
 			return false;
 	}
 
@@ -1467,19 +1478,15 @@ struct host_part *urldb_add_host(const char *host)
 
 			/* And insert into search tree */
 			if (d) {
-				if (isalpha(*buf)) {
-					struct search_node **r;
+				struct search_node **r;
 
-					r = urldb_get_search_tree_direct(buf);
-					s = urldb_search_insert(*r, d);
-					if (!s) {
-						/* failed */
-						d = NULL;
-					} else {
-						*r = s;
-					}
-				} else {
+				r = urldb_get_search_tree_direct(buf);
+				s = urldb_search_insert(*r, d);
+				if (!s) {
+					/* failed */
 					d = NULL;
+				} else {
+					*r = s;
 				}
 			}
 			break;
@@ -1743,10 +1750,16 @@ struct path_data *urldb_find_url(const char *url)
 
 	assert(url);
 
-	/* extract url components */
+	/* Extract url components */
 	ret = url_get_components(url, &components);
 	if (ret != URL_FUNC_OK)
-		return false;
+		return NULL;
+
+	/* Ensure scheme and authority exist */
+	if (!(components.scheme && components.authority)) {
+		url_destroy_components(&components);
+		return NULL;
+	}
 
 	/* Extract host part from authority */
 	host = strchr(components.authority, '@');
@@ -1754,20 +1767,16 @@ struct path_data *urldb_find_url(const char *url)
 		host = components.authority;
 	else
 		host++;
-	if (!host) {
-		url_destroy_components(&components);
-		return NULL;
-	}
 
-	/* get port and remove from authority */
-	colon = strrchr(components.authority, ':');
+	/* get port and remove from host */
+	colon = strrchr(host, ':');
 	if (!colon) {
 		port = 0;
 	} else {
 		*colon = '\0';
 		port = atoi(colon + 1);
 	}
-	
+
 	/* file urls have no host, so manufacture one */
 	if (strcasecmp(components.scheme, "file") == 0)
 		host = "localhost";
@@ -1784,17 +1793,21 @@ struct path_data *urldb_find_url(const char *url)
 		len += strlen(components.path);
 	if (components.query)
 		len += strlen(components.query) + 1;
+
 	plq = malloc(len + 1);
-	if (!plq)
+	if (!plq) {
+		url_destroy_components(&components);
 		return NULL;
+	}
+
 	copy = plq;
 	if (components.path) {
 		strcpy(copy, components.path);
 		copy += strlen(components.path);
 	}
 	if (components.query) {
-	  	*copy++ = '?';
-	  	strcpy(copy, components.query);
+		*copy++ = '?';
+		strcpy(copy, components.query);
 	}
 
 	p = urldb_match_path(&h->paths, plq, components.scheme, port);
@@ -1843,7 +1856,7 @@ struct path_data *urldb_match_path(const struct path_data *parent,
 
 /**
  * Get the search tree for a particular host
- * 
+ *
  * \param host  the host to lookup
  * \return the corresponding search tree
  */
@@ -1859,7 +1872,7 @@ struct search_node **urldb_get_search_tree_direct(const char *host) {
 
 /**
  * Get the search tree for a particular host
- * 
+ *
  * \param host  the host to lookup
  * \return the corresponding search tree
  */
@@ -3452,6 +3465,20 @@ void warn_user(const char *warning, const char *detail)
 	printf("WARNING: %s %s\n", warning, detail);
 }
 
+void bitmap_destroy(struct bitmap *bitmap)
+{
+}
+
+char *path_to_url(const char *path)
+{
+	char *r = malloc(strlen(path) + 7 + 1);
+
+	strcpy(r, "file://");
+	strcat(r, path);
+
+	return r;
+}
+
 int main(void)
 {
 	struct host_part *h;
@@ -3474,21 +3501,21 @@ int main(void)
 	}
 
 	/* Get path entry */
-	p = urldb_add_path("http", 80, h, "/path/to/resource.htm?a=b", "zz",
+	p = urldb_add_path("http", 80, h, "/path/to/resource.htm", "a=b", "zz",
 			"http://netsurf.strcprstskrzkrk.co.uk/path/to/resource.htm?a=b");
 	if (!p) {
 		LOG(("failed adding path"));
 		return 1;
 	}
 
-	p = urldb_add_path("http", 80, h, "/path/to/resource.htm?a=b", "aa",
+	p = urldb_add_path("http", 80, h, "/path/to/resource.htm", "a=b", "aa",
 			"http://netsurf.strcprstskrzkrk.co.uk/path/to/resource.htm?a=b");
 	if (!p) {
 		LOG(("failed adding path"));
 		return 1;
 	}
 
-	p = urldb_add_path("http", 80, h, "/path/to/resource.htm?a=b", "yy",
+	p = urldb_add_path("http", 80, h, "/path/to/resource.htm", "a=b", "yy",
 			"http://netsurf.strcprstskrzkrk.co.uk/path/to/resource.htm?a=b");
 	if (!p) {
 		LOG(("failed adding path"));
@@ -3505,11 +3532,29 @@ int main(void)
 
 	urldb_set_cookie("test=foo, bar, baz; path=/, quux=blah; path=/", "http://www.bbc.co.uk/");
 
-	urldb_set_cookie("a=b; path=/; domain=.a.com", "http://a.com/");
+//	urldb_set_cookie("a=b; path=/; domain=.a.com", "http://a.com/");
 
 	urldb_set_cookie("foo=bar;Path=/blah;Secure", "https://www.foo.com/blah/moose");
 
 	urldb_get_cookie("https://www.foo.com/blah/wxyzabc", "https://www.foo.com/blah/moose");
+
+	/* 1563546 */
+	assert(urldb_add_url("http:moodle.org") == false);
+	assert(urldb_get_url("http:moodle.org") == NULL);
+
+	/* also 1563546 */
+	assert(urldb_add_url("http://a_a/"));
+	assert(urldb_get_url("http://a_a/"));
+
+	/* 1597646 */
+	if (urldb_add_url("http://foo@moose.com/")) {
+		LOG(("added http://foo@moose.com/"));
+		assert(urldb_get_url("http://foo@moose.com/") != NULL);
+	}
+
+	/* 1535120 */
+	assert(urldb_add_url("http://www2.2checkout.com/"));
+	assert(urldb_get_url("http://www2.2checkout.com/"));
 
 	urldb_dump();
 
