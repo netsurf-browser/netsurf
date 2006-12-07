@@ -1837,7 +1837,7 @@ void ro_gui_window_open(wimp_open *open)
 	}
 
 	/* change extent if necessary */
-	if (g->old_width != width || g->old_height != height) {	
+	if (g->old_width != width || g->old_height != height) {
 		if (content) {
 		  	/* Ctrl-resize of a top-level window scales the content size */
 			if ((g->old_width > 0) && (g->old_width != width) && (!g->bw->parent) &&
@@ -1851,7 +1851,7 @@ void ro_gui_window_open(wimp_open *open)
 
 		/* the top-level framed window is a total pain. to get it to maximise to the
 		 * top of the screen we need to fake it having a suitably large extent */
-		if (g->bw->children && (g->bw->browser_window_type == BROWSER_WINDOW_NORMAL)) 
+		if (g->bw->children && (g->bw->browser_window_type == BROWSER_WINDOW_NORMAL))
 			height = 16384;
 
 		if (content && height < content->height * 2 * g->option.scale)
@@ -2475,26 +2475,7 @@ bool ro_gui_window_keypress(wimp_key *key)
 					BROWSER_NAVIGATE_STOP, false);
 
 		case  8:	/* CTRL+H / Backspace */
-			if (!toolbar) {
-				if (!ro_gui_ctrl_pressed()) {
-					/* Backspace */
-					if (ro_gui_shift_pressed()) {
-						return ro_gui_menu_handle_action(
-							g->window,
-							BROWSER_NAVIGATE_FORWARD,
-							false);
-					}
-					else {
-						return ro_gui_menu_handle_action(
-							g->window,
-							BROWSER_NAVIGATE_BACK,
-							false);
-					}
-				}
-			} else {
-				return ro_gui_url_complete_keypress(g, c);
-			}
-			break;
+			return ro_gui_url_complete_keypress(g, c);
 
 		case 14:	/* CTRL+N */
 			return ro_gui_menu_handle_action(g->window,
@@ -2980,7 +2961,7 @@ void ro_gui_window_default_options(struct browser_window *bw) {
 		option_toolbar_show_throbber = gui->toolbar->display_throbber;
 	}
 	if (gui->status_bar)
-		option_toolbar_status_width = ro_gui_status_bar_get_width(gui->status_bar);	  
+		option_toolbar_status_width = ro_gui_status_bar_get_width(gui->status_bar);
 }
 
 
