@@ -2475,7 +2475,8 @@ bool ro_gui_window_keypress(wimp_key *key)
 					BROWSER_NAVIGATE_STOP, false);
 
 		case  8:	/* CTRL+H / Backspace */
-			return ro_gui_url_complete_keypress(g, c);
+			if (toolbar)
+				return ro_gui_url_complete_keypress(g, c);
 
 		case 14:	/* CTRL+N */
 			return ro_gui_menu_handle_action(g->window,
