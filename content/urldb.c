@@ -178,6 +178,13 @@ struct search_node {
 	struct search_node *right;	/**< Right subtree */
 };
 
+/* Destruction */
+static void urldb_destroy_host_tree(struct host_part *root);
+static void urldb_destroy_path_tree(struct path_data *root);
+static void urldb_destroy_path_node_content(struct path_data *node);
+static void urldb_destroy_cookie(struct cookie_internal_data *c);
+static void urldb_destroy_search_tree(struct search_node *root);
+
 /* Saving */
 static void urldb_save_search_tree(struct search_node *root, FILE *fp);
 static void urldb_count_urls(const struct path_data *root, time_t expiry,
@@ -3444,6 +3451,139 @@ char *urldb_get_cache_data(const char *url) {
 	/* todo: handle cache expiry etc */
 	return filename_as_url(p->cache.filename);
 }
+
+/**
+ * Destroy urldb
+ */
+void urldb_destroy(void)
+{
+	struct host_part *a, *b;
+
+	/* Clean up search trees */
+	for (int i = 0; i < NUM_SEARCH_TREES; i++) {
+		if (search_trees[i] != &empty)
+			urldb_destroy_search_tree(search_trees[i]);
+	}
+
+	/* And database */
+	for (a = db_root.children; a; a = b) {
+		b = a->next;
+		urldb_destroy_host_tree(a);
+	}
+}
+
+/**
+ * Destroy a host tree
+ *
+ * \param root Root node of tree to destroy
+ */
+void urldb_destroy_host_tree(struct host_part *root)
+{
+	struct host_part *a, *b;
+	struct path_data *p, *q;
+
+	/* Destroy children */
+	for (a = root->children; a; a = b) {
+		b = a->next;
+		urldb_destroy_host_tree(a);
+	}
+
+	/* Now clean up paths */
+	for (p = root->paths.children; p; p = q) {
+		q = p->next;
+		urldb_destroy_path_tree(p);
+	}
+
+	/* Root path */
+	urldb_destroy_path_node_content(&root->paths);
+
+	/* An ourselves */
+	free(root->part);
+	free(root);
+}
+
+/**
+ * Destroy a path tree
+ *
+ * \param root Root node of tree to destroy
+ */
+void urldb_destroy_path_tree(struct path_data *root)
+{
+	struct path_data *p, *q;
+
+	/* Destroy children */
+	for (p = root->children; p; p = q) {
+		q = p->next;
+		urldb_destroy_path_tree(p);
+	}
+
+	/* And ourselves */
+	urldb_destroy_path_node_content(root);
+	free(root);
+}
+
+/**
+ * Destroy the contents of a path node
+ *
+ * \param node Node to destroy contents of (does not destroy node)
+ */
+void urldb_destroy_path_node_content(struct path_data *node)
+{
+	struct cookie_internal_data *a, *b;
+
+	free(node->url);
+	free(node->scheme);
+	free(node->segment);
+	for (unsigned int i = 0; i < node->frag_cnt; i++)
+		free(node->fragment[i]);
+	free(node->fragment);
+
+	if (node->thumb)
+		bitmap_destroy(node->thumb);
+
+	free(node->urld.title);
+	free(node->auth.realm);
+	free(node->auth.auth);
+
+	for (a = node->cookies; a; a = b) {
+		b = a->next;
+		urldb_destroy_cookie(a);
+	}
+}
+
+/**
+ * Destroy a cookie node
+ *
+ * \param c Cookie to destroy
+ */
+void urldb_destroy_cookie(struct cookie_internal_data *c)
+{
+	free(c->name);
+	free(c->value);
+	free(c->comment);
+	free(c->domain);
+	free(c->path);
+
+	free(c);
+}
+
+/**
+ * Destroy a search tree
+ *
+ * \param root Root node of tree to destroy
+ */
+void urldb_destroy_search_tree(struct search_node *root)
+{
+	/* Destroy children */
+	if (root->left != &empty)
+		urldb_destroy_search_tree(root->left);
+	if (root->right != &empty)
+		urldb_destroy_search_tree(root->right);
+
+	/* And destroy ourselves */
+	free(root);
+}
+
 
 #ifdef TEST_URLDB
 int option_expire_url = 0;

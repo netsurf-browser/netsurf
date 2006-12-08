@@ -15,6 +15,7 @@
 #include "netsurf/utils/config.h"
 #include "netsurf/content/fetch.h"
 #include "netsurf/content/fetchcache.h"
+#include "netsurf/content/urldb.h"
 #include "netsurf/desktop/netsurf.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/gui.h"
@@ -110,6 +111,8 @@ void netsurf_exit(void)
 	fetch_quit();
 	LOG(("Closing utf8"));
 	utf8_finalise();
+	LOG(("Destroying URLdb"));
+	urldb_destroy();
 	LOG(("Exited successfully"));
 }
 

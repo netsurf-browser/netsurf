@@ -51,6 +51,9 @@ struct cookie_data {
 
 struct bitmap;
 
+/* Destruction */
+void urldb_destroy(void);
+
 /* Persistence support */
 void urldb_load(const char *filename);
 void urldb_save(const char *filename);
