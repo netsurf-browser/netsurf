@@ -22,6 +22,7 @@
 #endif
 #define NDEBUG
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/talloc.h"
 
 
 struct span_info {
@@ -126,14 +127,14 @@ bool box_normalise_block(struct box *block, struct content *c)
 		case BOX_TABLE_ROW:
 		case BOX_TABLE_CELL:
 			/* insert implied table */
-			style = css_duplicate_style(block->style);
+			style = talloc_memdup(c, block->style, sizeof *style);
 			if (!style)
 				return false;
 			css_cascade(style, &css_blank_style);
 			table = box_create(style, block->href, block->target,
 					0, 0, c);
 			if (!table) {
-				css_free_style(style);
+				talloc_free(style);
 				return false;
 			}
 			table->type = BOX_TABLE;
@@ -208,7 +209,7 @@ bool box_normalise_table(struct box *table, struct content * c)
 		case BOX_TABLE_CELL:
 			/* insert implied table row group */
 			assert(table->style != NULL);
-			style = css_duplicate_style(table->style);
+			style = talloc_memdup(c, table->style, sizeof *style);
 			if (!style) {
 				free(col_info.spans);
 				return false;
@@ -218,7 +219,7 @@ bool box_normalise_table(struct box *table, struct content * c)
 					table->target, 0, 0, c);
 			if (!row_group) {
 				free(col_info.spans);
-				css_free_style(style);
+				talloc_free(style);
 				return false;
 			}
 			row_group->type = BOX_TABLE_ROW_GROUP;
@@ -385,14 +386,15 @@ bool box_normalise_table_row_group(struct box *row_group,
 		case BOX_TABLE_CELL:
 			/* insert implied table row */
 			assert(row_group->style != NULL);
-			style = css_duplicate_style(row_group->style);
+			style = talloc_memdup(c, row_group->style,
+					sizeof *style);
 			if (!style)
 				return false;
 			css_cascade(style, &css_blank_style);
 			row = box_create(style, row_group->href,
 					row_group->target, 0, 0, c);
 			if (!row) {
-				css_free_style(style);
+				talloc_free(style);
 				return false;
 			}
 			row->type = BOX_TABLE_ROW;
@@ -485,14 +487,14 @@ bool box_normalise_table_row(struct box *row,
 		case BOX_TABLE_ROW:
 			/* insert implied table cell */
 			assert(row->style != NULL);
-			style = css_duplicate_style(row->style);
+			style = talloc_memdup(c, row->style, sizeof *style);
 			if (!style)
 				return false;
 			css_cascade(style, &css_blank_style);
 			cell = box_create(style, row->href, row->target, 0, 0,
 					c);
 			if (!cell) {
-				css_free_style(style);
+				talloc_free(style);
 				return false;
 			}
 			cell->type = BOX_TABLE_CELL;
