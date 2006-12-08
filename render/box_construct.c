@@ -998,7 +998,6 @@ struct css_style * box_get_style(struct content *c,
 		astyle = css_duplicate_style(&css_empty_style);
 		if (!astyle) {
 			xmlFree(s);
-			css_free_style(style);
 			return 0;
 		}
 		css_parse_property_list(c, astyle, s);
