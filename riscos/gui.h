@@ -46,7 +46,6 @@ extern wimp_w dialog_info, dialog_saveas, dialog_zoom, dialog_pageinfo,
 extern struct gui_window *gui_track_gui_window;
 extern wimp_w current_menu_window;
 extern bool current_menu_open;
-extern wimp_menu *font_menu;	/* font.c */
 extern wimp_menu *recent_search_menu;	/* search.c */
 extern wimp_w history_window;
 extern struct form_control *current_gadget;

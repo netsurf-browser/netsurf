@@ -68,15 +68,15 @@ bool ro_gui_options_fonts_initialise(wimp_w w)
 
 	/* initialise all functions for a newly created window */
 	ro_gui_wimp_event_register_menu_gright(w, FONT_SANS_FIELD,
-			FONT_SANS_MENU, font_menu);
+			FONT_SANS_MENU, rufl_family_menu);
 	ro_gui_wimp_event_register_menu_gright(w, FONT_SERIF_FIELD,
-			FONT_SERIF_MENU, font_menu);
+			FONT_SERIF_MENU, rufl_family_menu);
 	ro_gui_wimp_event_register_menu_gright(w, FONT_MONOSPACE_FIELD,
-			FONT_MONOSPACE_MENU, font_menu);
+			FONT_MONOSPACE_MENU, rufl_family_menu);
 	ro_gui_wimp_event_register_menu_gright(w, FONT_CURSIVE_FIELD,
-			FONT_CURSIVE_MENU, font_menu);
+			FONT_CURSIVE_MENU, rufl_family_menu);
 	ro_gui_wimp_event_register_menu_gright(w, FONT_FANTASY_FIELD,
-			FONT_FANTASY_MENU, font_menu);
+			FONT_FANTASY_MENU, rufl_family_menu);
 	ro_gui_wimp_event_register_menu_gright(w, FONT_DEFAULT_FIELD,
 			FONT_DEFAULT_MENU, default_menu);
 	ro_gui_wimp_event_register_numeric_field(w, FONT_DEFAULT_SIZE,

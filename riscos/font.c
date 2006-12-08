@@ -25,8 +25,6 @@
 #include "netsurf/utils/utils.h"
 
 
-wimp_menu *font_menu;
-
 /** desktop font, size and style being used */
 char ro_gui_desktop_font_family[80];
 int ro_gui_desktop_font_size = 12;
@@ -37,7 +35,6 @@ static void nsfont_check_option(char **option, const char *family,
 		const char *fallback);
 static int nsfont_list_cmp(const void *keyval, const void *datum);
 static void nsfont_check_fonts(void);
-static void nsfont_init_menu(void);
 static void ro_gui_wimp_desktop_font(char *family, size_t bufsize, int *psize,
 		rufl_style *pstyle);
 
@@ -85,8 +82,6 @@ void nsfont_init(void)
 			option_font_default != CSS_FONT_FAMILY_CURSIVE &&
 			option_font_default != CSS_FONT_FAMILY_FANTASY)
 		option_font_default = CSS_FONT_FAMILY_SANS_SERIF;
-
-	nsfont_init_menu();
 }
 
 
@@ -194,44 +189,6 @@ void nsfont_check_fonts(void)
 				error->errmess);
 		die(s);
 	}
-}
-
-
-/**
- * Prepare the menu of font families.
- */
-
-void nsfont_init_menu(void)
-{
-	unsigned int i;
-
-	font_menu = malloc(wimp_SIZEOF_MENU(rufl_family_list_entries));
-	if (!font_menu)
-		die("NoMemory");
-	font_menu->title_data.indirected_text.text = messages_get("Fonts");
-	font_menu->title_fg = wimp_COLOUR_BLACK;
-	font_menu->title_bg = wimp_COLOUR_LIGHT_GREY;
-	font_menu->work_fg = wimp_COLOUR_BLACK;
-	font_menu->work_bg = wimp_COLOUR_WHITE;
-	font_menu->width = 200;
-	font_menu->height = wimp_MENU_ITEM_HEIGHT;
-	font_menu->gap = wimp_MENU_ITEM_GAP;
-	for (i = 0; i != rufl_family_list_entries; i++) {
-		font_menu->entries[i].menu_flags = 0;
-		font_menu->entries[i].sub_menu = wimp_NO_SUB_MENU;
-		font_menu->entries[i].icon_flags = wimp_ICON_TEXT |
-				wimp_ICON_INDIRECTED |
-			(wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) |
-			(wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT);
-		font_menu->entries[i].data.indirected_text.text =
-				rufl_family_list[i];
-		font_menu->entries[i].data.indirected_text.validation =
-				(char *) -1;
-		font_menu->entries[i].data.indirected_text.size =
-				strlen(rufl_family_list[i]);
-	}
-	font_menu->entries[0].menu_flags = wimp_MENU_TITLE_INDIRECTED;
-	font_menu->entries[i - 1].menu_flags |= wimp_MENU_LAST;
 }
 
 
