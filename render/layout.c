@@ -179,8 +179,19 @@ bool layout_block_context(struct box *block, struct content *content)
 	block->float_children = 0;
 
 	/* special case if the block contains an object */
-	if (block->object)
-		return layout_block_object(block);
+	if (block->object) {
+		if (!layout_block_object(block))
+			return false;
+		if (block->height == AUTO) {
+			if (block->object->width)
+				block->height = block->object->height *
+						(float) block->width /
+						block->object->width;
+			else
+				block->height = block->object->height;
+		}
+		return true;
+	}
 
 	box = margin_box = block->children;
 	/* set current coordinates to top-left of the block */
@@ -2400,7 +2411,7 @@ void layout_lists(struct box *box)
 				marker->height = marker->object->height;
 				marker->y = (line_height(marker->style) -
 						marker->height) / 2;
-			} else {
+			} else if (marker->text) {
 				if (marker->width == UNKNOWN_WIDTH)
 					nsfont_width(marker->style,
 							marker->text,
@@ -2409,6 +2420,11 @@ void layout_lists(struct box *box)
 				marker->x = -marker->width;
 				marker->y = 0;
 				marker->height = line_height(marker->style);
+			} else {
+				marker->x = 0;
+				marker->y = 0;
+				marker->width = 0;
+				marker->height = 0;
 			}
 			marker->x -= 4; // Gap between marker and content
 		}
@@ -2952,12 +2968,12 @@ void layout_calculate_descendant_bboxes(struct box *box)
 {
 	struct box *child;
 
-	if (box->width == UNKNOWN_WIDTH /*||
+	if (box->width == UNKNOWN_WIDTH || box->height == AUTO /*||
 			box->width < 0 || box->height < 0*/) {
 		LOG(("%p has bad width or height", box));
-		while (box->parent)
+		/*while (box->parent)
 			box = box->parent;
-		box_dump(box, 0);
+		box_dump(box, 0);*/
 		assert(0);
 	}
 
