@@ -67,6 +67,8 @@ char *option_font_cursive;
 char *option_font_fantasy;
 /** Accept-Language header. */
 char *option_accept_language = 0;
+/** Accept-Charset header. */
+char *option_accept_charset = 0;
 /** Preferred maximum size of memory cache / bytes. */
 int option_memory_cache_size = 2 * 1024 * 1024;
 /** Preferred expiry age of disc cache / days. */
@@ -149,6 +151,7 @@ struct {
 	{ "font_cursive",    OPTION_STRING,  &option_font_cursive },
 	{ "font_fantasy",    OPTION_STRING,  &option_font_fantasy },
 	{ "accept_language", OPTION_STRING,  &option_accept_language },
+	{ "accept_charset",  OPTION_STRING,  &option_accept_charset },
 	{ "memory_cache_size", OPTION_INTEGER, &option_memory_cache_size },
 	{ "disc_cache_age", OPTION_INTEGER, &option_disc_cache_age },
 	{ "block_advertisements", OPTION_BOOL, &option_block_ads },

@@ -431,6 +431,14 @@ struct fetch * fetch_start(char *url, char *referer,
 		APPEND(fetch->headers, s);
 	}
 
+	if (option_accept_charset) {
+		char s[80];
+		snprintf(s, sizeof s, "Accept-Charset: %s, *;q=0.1",
+				option_accept_charset);
+		s[sizeof s - 1] = 0;
+		APPEND(fetch->headers, s);
+	}
+
 	/* And add any headers specified by the caller */
 	for (i = 0; headers[i]; i++) {
 		if (strncasecmp(headers[i], "If-Modified-Since:", 18) == 0) {

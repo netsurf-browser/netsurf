@@ -40,6 +40,7 @@ extern char *option_http_proxy_auth_pass;
 extern int option_font_size;
 extern int option_font_min_size;
 extern char *option_accept_language;
+extern char *option_accept_charset;
 extern int option_memory_cache_size;
 extern int option_disc_cache_age;
 extern bool option_block_ads;
