@@ -1302,7 +1302,7 @@ bool fetch_process_headers(struct fetch *f)
 	}
 
 	if (type == 0) {
-		type = "text/html";
+		type = "text/plain";
 		if (url_path) {
 			type = fetch_filetype(url_path);
 		}

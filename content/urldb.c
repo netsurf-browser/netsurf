@@ -3497,7 +3497,7 @@ void urldb_destroy_host_tree(struct host_part *root)
 	/* Root path */
 	urldb_destroy_path_node_content(&root->paths);
 
-	/* An ourselves */
+	/* And ourselves */
 	free(root->part);
 	free(root);
 }
