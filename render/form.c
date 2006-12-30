@@ -38,7 +38,7 @@ static char *form_acceptable_charset(struct form *form);
  * \return  a new structure, or 0 on memory exhaustion
  */
 
-struct form *form_new(char *action, form_method method, char *charset,
+struct form *form_new(char *action, char *target, form_method method, char *charset,
 		char *doc_charset)
 {
 	struct form *form;
@@ -47,6 +47,7 @@ struct form *form_new(char *action, form_method method, char *charset,
 	if (!form)
 		return 0;
 	form->action = action;
+	form->target = target;
 	form->method = method;
 	form->accept_charsets = charset;
 	form->document_charset = doc_charset;

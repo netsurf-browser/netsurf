@@ -842,6 +842,8 @@ void browser_window_destroy_internal(struct browser_window *bw)
 {
 	assert(bw);
 
+	LOG(("Destroying window"));
+
 	if ((bw->children) || (bw->iframes))
 		browser_window_destroy_children(bw);
 	if (bw->loading_content) {
@@ -1212,6 +1214,8 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 			gadget_box = box;
 			gadget_box_x = box_x;
 			gadget_box_y = box_y;
+			if (gadget->form)
+				target = gadget->form->target;
 		}
 
 		if (box->title)
@@ -1285,11 +1289,11 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 				status = status_buffer;
 				pointer = GUI_POINTER_POINT;
 				if (mouse & BROWSER_MOUSE_CLICK_1)
-					browser_form_submit(bw, gadget->form,
-							gadget, false);
+					browser_form_submit(bw, target, gadget->form,
+							gadget);
 				else if (mouse & BROWSER_MOUSE_CLICK_2)
-					browser_form_submit(bw, gadget->form,
-							gadget, true);
+					browser_form_submit(bw, "_blank", gadget->form,
+							gadget);
 			} else {
 				status = messages_get("FormBadSubmit");
 			}
@@ -2210,12 +2214,12 @@ gui_pointer_shape get_pointer_shape(css_cursor cursor)
  * Collect controls and submit a form.
  */
 
-void browser_form_submit(struct browser_window *bw, struct form *form,
-		struct form_control *submit_button, bool new_window)
+void browser_form_submit(struct browser_window *bw, const char *target,
+		struct form *form, struct form_control *submit_button)
 {
 	char *data = 0, *url = 0;
 	struct form_successful_control *success;
-	struct browser_window *target;
+	struct browser_window *bw_form;
 
 	assert(form);
 	assert(bw->current_content->type == CONTENT_HTML);
@@ -2225,14 +2229,8 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 		return;
 	}
 
-	if (new_window) {
-		target = browser_window_create(NULL, bw, NULL, false);
-		/* any error has already been reported */
-		if (!target)
-			return;
-	} else {
-		target = bw;
-	}
+	bw_form = browser_window_find_target(bw, target);
+	assert(bw);
 
 	switch (form->method) {
 		case method_GET:
@@ -2255,7 +2253,7 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 			else {
 				sprintf(url, "%s?%s", form->action, data);
 			}
-			browser_window_go(target, url, bw->current_content->url,
+			browser_window_go(bw_form, url, bw->current_content->url,
 					true);
 			break;
 
@@ -2266,13 +2264,13 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 				warn_user("NoMemory", 0);
 				return;
 			}
-			browser_window_go_post(target, form->action, data, 0,
+			browser_window_go_post(bw_form, form->action, data, 0,
 					true, bw->current_content->url,
 					false);
 			break;
 
 		case method_POST_MULTIPART:
-			browser_window_go_post(target, form->action, 0, success,
+			browser_window_go_post(bw_form, form->action, 0, success,
 					true, bw->current_content->url,
 					false);
 			break;

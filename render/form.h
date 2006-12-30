@@ -30,6 +30,7 @@ typedef enum {
 /** HTML form. */
 struct form {
 	char *action;				/**< Absolute URL to submit to. */
+	char *target;				/**< Target to submit to. */
 	form_method method;			/**< Method and enctype. */
 	char *accept_charsets;			/**< Charset to submit form in */
 	char *document_charset;			/**< Charset of document containing form */
@@ -103,7 +104,7 @@ struct form_successful_control {
 	struct form_successful_control *next;	/**< Next in linked list. */
 };
 
-struct form *form_new(char *action, form_method method, char *charset,
+struct form *form_new(char *action, char *target, form_method method, char *charset,
 		char *doc_charset);
 struct form_control *form_new_control(form_control_type type);
 void form_add_control(struct form *form, struct form_control *control);
