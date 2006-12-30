@@ -462,6 +462,9 @@ void browser_window_callback(content_msg msg, struct content *c,
 	case CONTENT_MSG_REFORMAT:
 		if (c == bw->current_content &&
 			c->type == CONTENT_HTML) {
+	  		/* reflow iframe positions */
+			if (c->data.html.iframe)
+				browser_window_recalculate_iframes(bw);
 			/* box tree may have changed, need to relabel */
 			selection_reinit(bw->sel, c->data.html.layout);
 		}
@@ -671,6 +674,7 @@ void browser_window_update(struct browser_window *bw,
 	if (scroll_to_top)
 		gui_window_set_scroll(bw->window, 0, 0);
 
+	/* todo: don't do this if the user has scrolled */
 	/* if frag_id exists, then try to scroll to it */
 	if (bw->frag_id && bw->current_content->type == CONTENT_HTML) {
 		if ((pos = box_find_by_id(bw->current_content->data.html.layout, bw->frag_id)) != 0) {
@@ -920,8 +924,10 @@ void browser_window_reformat(struct browser_window *bw, int width, int height)
 
 	if (c->type == CONTENT_HTML && c->data.html.frameset)
 		browser_window_recalculate_frameset(bw);
-	if (c->type == CONTENT_HTML && c->data.html.iframe)
-		browser_window_recalculate_iframes(bw);
+
+	/* CONTENT_MSG_REFORMAT handles the repositioning of iframes */
+//	if (c->type == CONTENT_HTML && c->data.html.iframe)
+//		browser_window_recalculate_iframes(bw);
 }
 
 

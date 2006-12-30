@@ -117,6 +117,7 @@ struct ro_gui_pointer_entry ro_gui_pointer_table[] = {
 
 
 static void ro_gui_window_remove_update_boxes(struct gui_window *g);
+static void gui_window_set_extent(struct gui_window *g, int width, int height);
 static void ro_gui_window_open(wimp_open *open);
 static void ro_gui_window_close(wimp_w w);
 static void ro_gui_window_redraw(wimp_draw *redraw);
@@ -892,6 +893,10 @@ void gui_window_update_extent(struct gui_window *g)
 	int scroll = 0;
 
 	assert(g);
+
+	/* update the extent (this is only done by _open on a window
+	 * dimension change) */
+	gui_window_set_extent(g, -1, -1);
 
 	state.w = g->window;
 	error = xwimp_get_window_state(&state);
@@ -1709,6 +1714,63 @@ void ro_gui_window_update_theme(void) {
 
 
 /**
+ * Updates a windows extent.
+ *
+ * \param  g  the gui_window to update
+ * \param  width  the minimum width, or -1 to use window width
+ * \param  height  the minimum height, or -1 to use window height
+ */
+
+void gui_window_set_extent(struct gui_window *g, int width, int height)
+{
+	int toolbar_height = 0;
+	struct content *content;
+	wimp_window_state state;
+	os_error *error;
+
+	content = g->bw->current_content;
+	if (g->toolbar)
+		toolbar_height = ro_gui_theme_toolbar_full_height(g->toolbar);
+
+	/* get the current state */
+	if ((height != -1) || (width != -1)) {
+		state.w = g->window;
+		error = xwimp_get_window_state(&state);
+		if (error) {
+			LOG(("xwimp_get_window_state: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+			return;
+		}
+		if (width == -1)
+			width = state.visible.x1 - state.visible.x0;
+		if (height == -1) {
+			height = state.visible.y1 - state.visible.y0;
+			height -= toolbar_height;
+		}
+	}
+	
+	/* the top-level framed window is a total pain. to get it to maximise to the
+	 * top of the screen we need to fake it having a suitably large extent */
+	if (g->bw->children && (g->bw->browser_window_type == BROWSER_WINDOW_NORMAL))
+		height = 16384;
+
+	if (content) {
+		width = max(width, content->width * 2 * g->option.scale);
+		height = max(height, content->height * 2 * g->option.scale);
+	}
+	os_box extent = { 0, -height, width, toolbar_height };
+	error = xwimp_set_extent(g->window, &extent);
+	if (error) {
+		LOG(("xwimp_set_extent: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+}
+
+
+/**
  * Open a window using the given wimp_open, handling toolbars and resizing.
  */
 
@@ -1848,25 +1910,8 @@ void ro_gui_window_open(wimp_open *open)
 		}
 		g->old_width = width;
 		g->old_height = height;
-
-		/* the top-level framed window is a total pain. to get it to maximise to the
-		 * top of the screen we need to fake it having a suitably large extent */
-		if (g->bw->children && (g->bw->browser_window_type == BROWSER_WINDOW_NORMAL))
-			height = 16384;
-
-		if (content && height < content->height * 2 * g->option.scale)
-			height = content->height * 2 * g->option.scale;
-		if (content && width < content->width * 2 * g->option.scale)
-			width = content->width * 2 * g->option.scale;
-		os_box extent = { 0, -height, width, toolbar_height };
-		error = xwimp_set_extent(g->window, &extent);
-		if (error) {
-			LOG(("xwimp_set_extent: 0x%x: %s",
-					error->errnum, error->errmess));
-			warn_user("WimpError", error->errmess);
-			return;
-		}
-
+		
+		gui_window_set_extent(g, width, height);
 	}
 
 	/* first resize stops any flickering by making the URL window on top */

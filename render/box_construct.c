@@ -1923,7 +1923,7 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 
 bool box_form(BOX_SPECIAL_PARAMS)
 {
-	char *xmlaction, *action, *faction, *method, *enctype, *charset;
+	char *xmlaction, *action, *faction, *method, *enctype, *charset, *target;
 	form_method fmethod;
 	struct form *form;
 	url_func_result result;
@@ -1969,11 +1969,15 @@ bool box_form(BOX_SPECIAL_PARAMS)
 
 	/* acceptable encoding(s) for form data */
 	charset = (char *) xmlGetProp(n, (const xmlChar *) "accept-charset");
+	
+	/* target for form data */
+	target = (char *) xmlGetProp(n, (const xmlChar *) "target");
 
-	form = form_new(faction, fmethod, charset,
+	form = form_new(faction, target, fmethod, charset,
 				content->data.html.encoding);
 	if (!form) {
 		free(faction);
+		xmlFree(target);
 		xmlFree(charset);
 		return false;
 	}
