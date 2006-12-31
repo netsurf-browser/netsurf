@@ -459,6 +459,34 @@ struct box *box_find_by_id(struct box *box, const char *id)
 
 
 /**
+ * Determine if a box is visible when the tree is rendered.
+ *
+ * \param  box  box to check
+ * \return  true iff the box is rendered
+ */
+
+bool *box_visible(struct box *box)
+{
+	struct box *fallback;
+
+	/* visibility: hidden */
+	if (box->style && box->style->visibility == CSS_VISIBILITY_HIDDEN)
+		return false;
+
+	/* check if a fallback */
+	while (box->parent) {
+		for (fallback = box->parent->fallback; fallback;
+				fallback = fallback->next)
+			if (fallback == box)
+				return false;
+		box = box->parent;
+	}
+
+	return true;
+}
+
+
+/**
  * Print a box tree to stderr.
  */
 

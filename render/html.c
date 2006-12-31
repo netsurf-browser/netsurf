@@ -503,7 +503,7 @@ bool html_head(struct content *c, xmlNode *head)
 	for (node = head->children; node != 0; node = node->next) {
 		if (node->type != XML_ELEMENT_NODE)
 			continue;
-			
+
 		LOG(("Node: %s", node->name));
 		if (!c->title && strcmp(node->name, "title") == 0) {
 			xmlChar *title = xmlNodeGetContent(node);
@@ -1141,6 +1141,8 @@ void html_object_callback(content_msg msg, struct content *object,
 			break;
 
 		case CONTENT_MSG_REDRAW:
+			if (!box_visible(box))
+				break;
 			box_coords(box, &x, &y);
 			if (object == data.redraw.object) {
 				data.redraw.x = data.redraw.x *
