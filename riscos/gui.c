@@ -771,10 +771,20 @@ void ro_gui_signal(int sig)
 {
 	struct content *c;
 	void (*prev_handler)(int);
+	static const os_error error = { 1, "NetSurf has detected a serious "
+			"error and must exit. Please submit a bug report, "
+			"attaching the browser log file." };
 
 	if (sig == SIGFPE || sig == SIGABRT) {
 		os_colour old_sand, old_glass;
 
+		xwimp_report_error_by_category(&error,
+				wimp_ERROR_BOX_GIVEN_CATEGORY |
+				wimp_ERROR_BOX_CATEGORY_ERROR <<
+					wimp_ERROR_BOX_CATEGORY_SHIFT,
+				"NetSurf", "!netsurf",
+				(osspriteop_area *) 1, "Quit", 0);
+		xos_cli("Filer_Run <Wimp$ScrapDir>.WWW.NetSurf.Log");
 		xhourglass_on();
 		xhourglass_colours(0x0000ffff, 0x000000ff,
 				&old_sand, &old_glass);
@@ -784,7 +794,7 @@ void ro_gui_signal(int sig)
 				box_dump(c->data.html.layout, 0);
 			}
 		options_dump();
-		rufl_dump_state();
+		/*rufl_dump_state();*/
 		xhourglass_colours(old_sand, old_glass, 0, 0);
 		xhourglass_off();
 	}
@@ -2233,6 +2243,8 @@ void warn_user(const char *warning, const char *detail)
 void die(const char * const error)
 {
 	os_error warn_error;
+
+	LOG(("%s", error));
 
 	warn_error.errnum = 1; /* \todo: reasonable ? */
 	strncpy(warn_error.errmess, messages_get(error),
