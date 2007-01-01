@@ -1,0 +1,19 @@
+Memory management
+=================
+
+This section describes memory management. See Error handling for how memory
+exhaustion is handled.
+
+Finding leaks on RISC OS
+------------------------
+Memory allocation can be traced and leaks can be found using dmalloc.
+
+Install dmalloc from the riscos.info autobuilder. Set the environment variable
+TLINK_MEMCHECK=dmalloc and re-link !RunImage.
+
+On RISC OS,
+
+  *Set DMALLOC_OPTIONS debug=0x2,log=dmalloc_log
+
+set the working directory to a RAM disc, and run NetSurf. When it quits,
+dmalloc_log will contain a list of unfreed blocks.
