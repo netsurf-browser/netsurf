@@ -20,6 +20,7 @@
 #include <time.h>
 #include <features.h>
 #include <unixlib/local.h>
+#include <unixlib/sigstate.h>
 #include "curl/curl.h"
 #include "oslib/font.h"
 #include "oslib/help.h"
@@ -775,29 +776,6 @@ void ro_gui_signal(int sig)
 			"error and must exit. Please submit a bug report, "
 			"attaching the browser log file." };
 
-	if (sig == SIGFPE || sig == SIGABRT) {
-		os_colour old_sand, old_glass;
-
-		xwimp_report_error_by_category(&error,
-				wimp_ERROR_BOX_GIVEN_CATEGORY |
-				wimp_ERROR_BOX_CATEGORY_ERROR <<
-					wimp_ERROR_BOX_CATEGORY_SHIFT,
-				"NetSurf", "!netsurf",
-				(osspriteop_area *) 1, "Quit", 0);
-		xos_cli("Filer_Run <Wimp$ScrapDir>.WWW.NetSurf.Log");
-		xhourglass_on();
-		xhourglass_colours(0x0000ffff, 0x000000ff,
-				&old_sand, &old_glass);
-		for (c = content_list; c; c = c->next)
-			if (c->type == CONTENT_HTML && c->data.html.layout) {
-				LOG(("Dumping: '%s'", c->url));
-				box_dump(c->data.html.layout, 0);
-			}
-		options_dump();
-		/*rufl_dump_state();*/
-		xhourglass_colours(old_sand, old_glass, 0, 0);
-		xhourglass_off();
-	}
 	ro_gui_cleanup();
 
 	/* Get previous handler of this signal */
@@ -821,18 +799,46 @@ void ro_gui_signal(int sig)
 			prev_handler = prev_sigs.sigterm;
 			break;
 		default:
-			abort();
+			/* Unexpected signal - force to default so we exit
+			 * cleanly */
+			prev_handler = SIG_DFL;
+			break;
 	}
 
 	if (prev_handler != SIG_IGN && prev_handler != SIG_DFL) {
 		/* User-registered handler, so call it direct */
 		prev_handler(sig);
 	} else if (prev_handler == SIG_DFL) {
-		/* Default handler so set handler to that and raise() */
-		prev_handler = signal(sig, SIG_DFL);
-		if (prev_handler == SIG_ERR)
-			abort();
-		raise(sig);
+		/* Previous handler would be the default. However, if we
+		 * get here, it's going to be fatal, anyway, so bail,
+		 * after writing context to the log and informing the
+		 * user */
+
+		os_colour old_sand, old_glass;
+
+		xwimp_report_error_by_category(&error,
+				wimp_ERROR_BOX_GIVEN_CATEGORY |
+				wimp_ERROR_BOX_CATEGORY_ERROR <<
+					wimp_ERROR_BOX_CATEGORY_SHIFT,
+				"NetSurf", "!netsurf",
+				(osspriteop_area *) 1, "Quit", 0);
+		xos_cli("Filer_Run <Wimp$ScrapDir>.WWW.NetSurf.Log");
+		xhourglass_on();
+		xhourglass_colours(0x0000ffff, 0x000000ff,
+				&old_sand, &old_glass);
+		for (c = content_list; c; c = c->next)
+			if (c->type == CONTENT_HTML && c->data.html.layout) {
+				LOG(("Dumping: '%s'", c->url));
+				box_dump(c->data.html.layout, 0);
+			}
+		options_dump();
+		/*rufl_dump_state();*/
+		xhourglass_colours(old_sand, old_glass, 0, 0);
+		xhourglass_off();
+
+		__write_backtrace(sig);
+
+		abort();
 	}
 	/* If we reach here, previous handler was either SIG_IGN or
 	 * the user-defined handler returned. In either case, we have
