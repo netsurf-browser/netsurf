@@ -12,9 +12,11 @@
  *
  * This implementation uses libcurl's 'multi' interface.
  *
- * Active fetches are held in the linked list fetch_list. There may be at most
- * one fetch in progress from each host. Any further fetches are queued until
- * the previous one ends.
+ * Active fetches are held in the circular linked list ::fetch_ring. There may
+ * be at most ::option_max_fetchers_per_host active requests per Host: header.
+ * There may be at most ::option_max_fetchers active requests overall. Inactive
+ * fetchers are stored in the ::queue_ring and there are at most
+ * ::option_max_cached_fetch_handles kept in there at any one time.
  */
 
 #include <assert.h>
