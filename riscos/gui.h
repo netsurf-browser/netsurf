@@ -83,6 +83,7 @@ struct gui_window {
 	bool reformat_pending;
 	int old_width;		/**< Width when last opened / os units. */
 	int old_height;		/**< Height when last opened / os units. */
+	bool update_extent;	/**< Update the extent on next opening */
 
 	char title[256];	/**< Buffer for window title. */
 

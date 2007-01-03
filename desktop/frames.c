@@ -149,11 +149,9 @@ void browser_window_create_frameset(struct browser_window *bw,
 	struct content_html_frames *frame;
 	struct browser_window *window;
 
-	/* we use a 3 stage approach such that the content is initially formatted to the
-	 * correct frameset dimensions */
 	assert(bw && frameset);
 
-	/* create children */
+	/* 1. Create children */
 	assert(bw->children == NULL);
 	assert(frameset->cols + frameset->rows != 0);
 
@@ -195,16 +193,26 @@ void browser_window_create_frameset(struct browser_window *bw,
 
 			/* gui window */
 			window->window = gui_create_browser_window(window, bw);
+		}
+	}
+
+	/* 2. Calculate dimensions */
+	gui_window_update_extent(bw->window);
+	browser_window_recalculate_frameset(bw);
+
+	/* 3. Recurse for grandchildren */
+	for (row = 0; row < bw->rows; row++) {
+		for (col = 0; col < bw->cols; col++) {
+			index = (row * bw->cols) + col;
+			frame = &frameset->children[index];
+			window = &bw->children[index];
+
 			if (frame->children)
 				browser_window_create_frameset(window, frame);
 		}
 	}
 
-	/* calculate dimensions */
-	gui_window_update_extent(bw->window);
-	browser_window_recalculate_frameset(bw);
-
-	/* launch content */
+	/* 4. Launch content */
 	for (row = 0; row < bw->rows; row++) {
 		for (col = 0; col < bw->cols; col++) {
 			index = (row * bw->cols) + col;
@@ -457,20 +465,20 @@ bool browser_window_resolve_frame_dimension(struct browser_window *bw, struct br
 
 	/* extend/shrink the box to the pointer */
 	if (width) {
-	  	if (bw->drag_resize_left)
-	  		bw_dimension = bw->x1 - x;
-	  	else
-	  		bw_dimension = x - bw->x0;
+		if (bw->drag_resize_left)
+			bw_dimension = bw->x1 - x;
+		else
+			bw_dimension = x - bw->x0;
 		bw_pixels = (bw->x1 - bw->x0);
 		sibling_pixels = (sibling->x1 - sibling->x0);
 		bw_d = &bw->frame_width;
 		sibling_d = &sibling->frame_width;
 		frame_size = bw->parent->x1 - bw->parent->x0;
 	} else {
-	  	if (bw->drag_resize_up)
-	  		bw_dimension = bw->y1 - y;
-	  	else
-	  		bw_dimension = y - bw->y0;
+		if (bw->drag_resize_up)
+			bw_dimension = bw->y1 - y;
+		else
+			bw_dimension = y - bw->y0;
 		bw_pixels = (bw->y1 - bw->y0);
 		sibling_pixels = (sibling->y1 - sibling->y0);
 		bw_d = &bw->frame_height;
@@ -489,11 +497,11 @@ bool browser_window_resolve_frame_dimension(struct browser_window *bw, struct br
 
 	/* our frame dimensions are now known to be:
 	 *
-	 * <--              frame_size              --> [VISIBLE PIXELS]
+	 * <--		    frame_size		    --> [VISIBLE PIXELS]
 	 * |<--  bw_pixels -->|<--  sibling_pixels -->|	[VISIBLE PIXELS, BEFORE RESIZE]
 	 * |<-- bw_d->value-->|<-- sibling_d->value-->| [SPECIFIED UNITS, BEFORE RESIZE]
 	 * |<--bw_dimension-->|<--sibling_dimension-->|	[VISIBLE PIXELS, AFTER RESIZE]
-	 * |<--              total_new             -->|	[VISIBLE PIXELS, AFTER RESIZE]
+	 * |<--		     total_new		   -->|	[VISIBLE PIXELS, AFTER RESIZE]
 	 *
 	 * when we resize, we must retain the original unit specification such that any
 	 * subsequent resizing of the parent window will recalculate the page as the
@@ -515,27 +523,27 @@ bool browser_window_resolve_frame_dimension(struct browser_window *bw, struct br
 	 * dimension.
 	 */
 	if (bw_d->unit == FRAME_DIMENSION_RELATIVE) {
-	  	if ((sibling_pixels == 0) && (bw_dimension == 0))
-	  		return false;
-	  	if (sibling_d->value == 0)
-	  		bw_d->value = 1;
-	  	if (sibling_pixels == 0)
-	  	  	sibling_d->value = (sibling_d->value * bw_pixels) / bw_dimension;
-	  	else
-	  		sibling_d->value =
-	  				(sibling_d->value * sibling_dimension) / sibling_pixels;
+		if ((sibling_pixels == 0) && (bw_dimension == 0))
+			return false;
+		if (sibling_d->value == 0)
+			bw_d->value = 1;
+		if (sibling_pixels == 0)
+			sibling_d->value = (sibling_d->value * bw_pixels) / bw_dimension;
+		else
+			sibling_d->value =
+					(sibling_d->value * sibling_dimension) / sibling_pixels;
 
 		/* todo: the availble resize may have changed, update the drag box */
 		return true;
 	} else if (sibling_d->unit == FRAME_DIMENSION_RELATIVE) {
-	  	if ((bw_pixels == 0) && (sibling_dimension == 0))
-	  		return false;
-	  	if (bw_d->value == 0)
-	  		bw_d->value = 1;
-	  	if (bw_pixels == 0)
-	  	  	bw_d->value = (bw_d->value * sibling_pixels) / sibling_dimension;
-	  	else
-	  		bw_d->value = (bw_d->value * bw_dimension) / bw_pixels;
+		if ((bw_pixels == 0) && (sibling_dimension == 0))
+			return false;
+		if (bw_d->value == 0)
+			bw_d->value = 1;
+		if (bw_pixels == 0)
+			bw_d->value = (bw_d->value * sibling_pixels) / sibling_dimension;
+		else
+			bw_d->value = (bw_d->value * bw_dimension) / bw_pixels;
 
 		/* todo: the availble resize may have changed, update the drag box */
 		return true;
@@ -557,7 +565,7 @@ bool browser_window_resolve_frame_dimension(struct browser_window *bw, struct br
 		return true;
 	}
 	assert(!"Invalid frame dimension unit");
-      	return false;
+	return false;
 }
 
 
@@ -609,7 +617,7 @@ bool browser_window_resize_frames(struct browser_window *bw, browser_mouse_state
 			right &= (col < parent->cols - 1);
 			up &= (row > 0);
 			down &= (row < parent->rows - 1);
-			
+
 			/* check the sibling frames can be resized */
 			if (left)
 				left &= !parent->children[row * parent->cols + (col - 1)].no_resize;

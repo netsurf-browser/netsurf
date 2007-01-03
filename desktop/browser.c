@@ -282,6 +282,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	browser_window_destroy_children(bw);
 
 	gui_window_get_dimensions(bw->window, &width, &height, true);
+	LOG(("Loading '%s' width %i, height %i", url2, width, height));
 
 	browser_window_set_status(bw, messages_get("Loading"));
 	bw->history_add = history_add;
@@ -462,6 +463,9 @@ void browser_window_callback(content_msg msg, struct content *c,
 	case CONTENT_MSG_REFORMAT:
 		if (c == bw->current_content &&
 			c->type == CONTENT_HTML) {
+			/* reposition frames */
+			if (c->data.html.frameset)
+				browser_window_recalculate_frameset(bw);
 	  		/* reflow iframe positions */
 			if (c->data.html.iframe)
 				browser_window_recalculate_iframes(bw);
@@ -922,8 +926,8 @@ void browser_window_reformat(struct browser_window *bw, int width, int height)
 
 	content_reformat(c, width, height);
 
-	if (c->type == CONTENT_HTML && c->data.html.frameset)
-		browser_window_recalculate_frameset(bw);
+//	if (c->type == CONTENT_HTML && c->data.html.frameset)
+//		browser_window_recalculate_frameset(bw);
 
 	/* CONTENT_MSG_REFORMAT handles the repositioning of iframes */
 //	if (c->type == CONTENT_HTML && c->data.html.iframe)
