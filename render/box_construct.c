@@ -1745,32 +1745,24 @@ bool box_create_frameset(struct content_html_frames *f, xmlNode *n,
 				continue;
 			}
 
-			/* get frame URL */
-			if (!(s = (char *) xmlGetProp(c,
+			/* get frame URL (not required) */
+			url = NULL;
+			if ((s = (char *) xmlGetProp(c,
 					(const xmlChar *) "src"))) {
-				c = c->next;
-				continue;
-			}
-			if (!box_extract_link(s, content->data.html.base_url, &url)) {
+				box_extract_link(s, content->data.html.base_url, &url);
 				xmlFree(s);
-				c = c->next;
-				continue;
 			}
-			xmlFree(s);
-			if (!url) {
-				c = c->next;
-				continue;
-			}
-
-			/* don't include ourself */
-			if (strcmp(content->data.html.base_url, url) == 0) {
+			
+			/* copy url */
+			if (url) {
+			  	/* no self-references */
+			  	if (strcmp(content->data.html.base_url, url))
+					frame->url = talloc_strdup(content, url);
 				free(url);
-				c = c->next;
-				continue;
+				url = NULL;
 			}
-
+				
 			/* fill in specified values */
-			frame->url = talloc_strdup(content, url);
 			if ((s = (char *) xmlGetProp(c,
 					(const xmlChar *) "name"))) {
 				frame->name = talloc_strdup(content, s);
@@ -1811,8 +1803,7 @@ bool box_create_frameset(struct content_html_frames *f, xmlNode *n,
 				xmlFree(s);
 			}
 
-			/* release temporary memory */
-			free(url);
+			/* advance */
 			c = c->next;
 		}
 	}
