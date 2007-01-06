@@ -8,19 +8,19 @@ html { display: block; }
 
 head { display: none; }
 
-body { display: block; padding: 5px; }
+body { display: block; padding: 8px; }
 
 div { display: block; }
 div[align=left] > * { margin-right: auto; }
 div[align=center] > * { margin-left: auto; margin-right: auto; }
 div[align=right] > * { margin-left: auto; }
 
-h1 { display: block; font-size: xx-large; font-weight: bold; margin: 0.58em 0; }
-h2 { display: block; font-size: x-large; margin: 0.69em 0; }
-h3 { display: block; font-size: large; font-weight: bold; margin: 0.83em 0; }
-h4 { display: block; font-size: medium; font-weight: bold; margin: 1em 0; }
-h5 { display: block; font-size: medium; font-style: italic; margin: 1em 0; }
-h6 { display: block; font-size: medium; font-style: italic; margin: 1em 0; }
+h1 { display: block; font-size: 2em; font-weight: bold; margin: .67em 0; }
+h2 { display: block; font-size: 1.5em; font-weight: bold; margin: .69em 0; }
+h3 { display: block; font-size: 1.17em; font-weight: bold; margin: .83em 0; }
+h4 { display: block; font-weight: bold; margin: 1.12em 0; }
+h5 { display: block; font-size: .83em; font-weight: bold; margin: 1.5em 0; }
+h6 { display: block; font-size: .75em; font-weight: bold; margin: 1.67em 0; }
 
 address { display: block; font-style: italic; }
 
@@ -31,18 +31,18 @@ code { font-family: monospace; }
 samp { font-family: monospace; }
 kbd { font-family: monospace; font-weight: bold; }
 var { font-style: italic; }
-cite { font-weight: bold; }
+cite { font-style: italic; }
 abbr { font-variant: small-caps; }
 acronym { font-variant: small-caps; }
 
-blockquote { display: block; margin: 1em; }
+blockquote { display: block; margin: 1.12em 40px;}
 
 q { font-style: italic; }
 
-sub { vertical-align: sub; font-size: 0.8em; }
-sup { vertical-align: super; font-size: 0.8em; }
+sub { vertical-align: sub; font-size: .83em; }
+sup { vertical-align: super; font-size: .83em; }
 
-p { display: block; margin-top: 1em; margin-bottom: 1em; }
+p { display: block; margin: 1.12em 0; }
 
 br[clear=left] { clear: left; }
 br[clear=right] { clear: right; }
@@ -53,28 +53,30 @@ pre { display: block; font-family: monospace; white-space: pre; margin-bottom: 1
 ins { color: green; text-decoration: underline; }
 del { color: red; text-decoration: line-through; }
 
-ul { display: block; padding-left: 1.5em; margin-bottom: 1em;
+ul { display: block; padding-left: 1.5em; margin: 1.12em 0;
 	list-style-type: disc; }
-ol { display: block; padding-left: 1.5em; margin-bottom: 1em;
+ol { display: block; padding-left: 1.5em; margin: 1.12em 0;
 	list-style-type: decimal; }
-li { display: list-item; margin-bottom: 0.3em; }
+li { display: list-item; }
 
 ul ul { list-style-type: circle; }
 ul ul ul { list-style-type: square; }
 
-dl { display: block; padding-left: 0.5em; margin-bottom: 1em; }
+ol ul, ul ol, ul ul, ol ol { margin-top: 0; margin: 1.12em 0; }
+
+dl { display: block; padding-left: 1.5em; margin: 1em; }
 dt { display: block; font-weight: bold; }
 dd { display: block; padding-left: 1em; margin-bottom: 0.3em; }
 
-dir { display: block; padding-left: 0.5em; }
-menu { display: block; padding-left: 0.5em; }
+dir { display: block; padding-left: 1.5em; margin: 1.12em 0; }
+menu { display: block; padding-left: 1.5em; margin: 1.12em 0; }
 
 table { display: table; border-spacing: 2px; }
 table[align=left] { float: left; }
 table[align=center] { margin-left: auto; margin-right: auto; text-align: left; }
 table[align=right] { float: right; text-align: left; }
 
-caption { display: table-caption; }
+caption { display: table-caption; text-align: center; }
 
 thead { display: table-header-group; vertical-align: middle; }
 tfoot { display: table-footer-group; vertical-align: middle; }
@@ -120,8 +122,8 @@ center > * { margin-left: auto; margin-right: auto; }
 tt { font-family: monospace; }
 i { font-style: italic; }
 b { font-weight: bold; }
-big { font-size: larger; }
-small { font-size: smaller; }
+big { font-size: 1.17em; }
+small { font-size: .83em; }
 strike, s { text-decoration: line-through; }
 u { text-decoration: underline; }
 
@@ -136,19 +138,17 @@ font[size="-1"] { font-size: smaller; }
 font[size="+1"] { font-size: larger; }
 
 hr {	display: block; background-color: #000; height: 1px;
-	margin: 4px auto; border-top: medium #d9d9d9 ridge; }
+	margin: 4px auto; border: 1px #d9d9d9 inset; }
 hr[align=left] { margin-left: 0; }
 hr[align=right] { margin-right: 0; }
 hr[noshade] { background-color: #888; height: 2px; border: none; }
-
-frameset { border: thin solid gray; border-collapse: collapse }
 
 noframes { display: none; }
 
 iframe[align=left] { float: left; }
 iframe[align=right] { float: right; }
 
-form { display: block; }
+form { display: block; margin: 1.12em 0; }
 form > * { margin-left: inherit; margin-right: inherit; }
 
 input { background-color: #fff; color: #000; width: 10em;
@@ -179,7 +179,7 @@ textarea { background-color: #fff; color: #000; text-align: left;
 	border-width: 1px; border-color: #000; border-style: solid;
 	overflow: scroll; padding: 0 2px; }
 
-fieldset { display: block; border: thin solid #888; }
+fieldset { display: block; border: thin solid #888; margin: 1.12em 0; }
 
 [align=left] { text-align: left; }
 [align=center] { text-align: center; }
