@@ -148,7 +148,7 @@ noframes { display: none; }
 iframe[align=left] { float: left; }
 iframe[align=right] { float: right; }
 
-form { display: block; margin: 1.12em 0; }
+form { display: block; }
 form > * { margin-left: inherit; margin-right: inherit; }
 
 input { background-color: #fff; color: #000; width: 10em;
