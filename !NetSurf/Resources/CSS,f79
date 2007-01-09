@@ -62,7 +62,7 @@ li { display: list-item; }
 ul ul { list-style-type: circle; }
 ul ul ul { list-style-type: square; }
 
-ol ul, ul ol, ul ul, ol ol { margin-top: 0; margin: 1.12em 0; }
+ol ul, ul ol, ul ul, ol ol { margin-top: 0; margin-bottom: 0; }
 
 dl { display: block; padding-left: 1.5em; margin: 1em; }
 dt { display: block; font-weight: bold; }
