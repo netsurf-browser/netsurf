@@ -2,7 +2,7 @@
  * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
- * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2005-2007 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 Philip Pemberton <philpem@users.sourceforge.net>
  */
 
@@ -16,6 +16,7 @@
 #define _NETSURF_DESKTOP_CONTENT_H_
 
 #include <stdint.h>
+#include <time.h>
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content_type.h"
 #include "netsurf/css/css.h"
@@ -178,6 +179,9 @@ struct content {
 	 *  shared between users. */
 	bool fresh;
 	struct cache_data *cache_data;	/**< Cache control data */
+	clock_t time;			/**< Creation time, if TYPE_UNKNOWN,
+					  LOADING or READY,
+					  otherwise total time. */
 
 	unsigned int size;		/**< Estimated size of all data
 					  associated with this content, except
@@ -186,7 +190,8 @@ struct content {
 	unsigned int active;		/**< Number of child fetches or
 					  conversions currently in progress. */
 	struct content_user *user_list;	/**< List of users. */
-	char status_message[80];	/**< Text for status bar. */
+	char status_message[120];	/**< Full text for status bar. */
+	char sub_status[80];		/**< Status of content. */
 	/** Content is being processed: data structures may be inconsistent
 	 * and content must not be redrawn or modified. */
 	bool locked;
@@ -196,6 +201,7 @@ struct content {
 	unsigned long source_size;	/**< Amount of data fetched so far. */
 	unsigned long source_allocated;	/**< Amount of space allocated so far. */
 	unsigned long total_size;	/**< Total data size, 0 if unknown. */
+	long http_code;			/**< HTTP status code, 0 if not HTTP. */
 
 	bool no_error_pages;		/**< Used by fetchcache(). */
 	bool download;			/**< Used by fetchcache(). */
@@ -226,6 +232,7 @@ void content_set_status(struct content *c, const char *status_message, ...);
 bool content_process_data(struct content *c, const char *data,
 		unsigned int size);
 void content_convert(struct content *c, int width, int height);
+void content_set_done(struct content *c);
 void content_reformat(struct content *c, int width, int height);
 void content_clean(void);
 void content_reset(struct content *c);

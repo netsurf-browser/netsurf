@@ -55,6 +55,20 @@ static bool html_object_type_permitted(const content_type type,
 static void html_object_refresh(void *p);
 static void html_destroy_frameset(struct content_html_frames *frameset);
 static void html_destroy_iframe(struct content_html_iframe *iframe);
+static void html_set_status(struct content *c, const char *extra);
+
+static const char empty_document[] =
+	"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\""
+        "	\"http://www.w3.org/TR/html4/strict.dtd\">"
+	"<html>"
+	"<head>"
+	"<title>Empty document</title>"
+	"</head>"
+	"<body>"
+	"<h1>Empty document</h1>"
+	"<p>The document sent by the server is empty.</p>"
+	"</body>"
+	"</html>";
 
 
 /**
@@ -264,11 +278,15 @@ bool html_convert(struct content *c, int width, int height)
 	union content_msg_data msg_data;
 
 	/* finish parsing */
+	if (c->source_size == 0)
+		htmlParseChunk(c->data.html.parser, empty_document,
+				sizeof empty_document, 0);
 	htmlParseChunk(c->data.html.parser, "", 0, 1);
 	document = c->data.html.parser->myDoc;
 	/*xmlDebugDumpDocument(stderr, c->data.html.parser->myDoc);*/
 	htmlFreeParserCtxt(c->data.html.parser);
 	c->data.html.parser = 0;
+
 	if (!document) {
 		LOG(("Parsing failed"));
 		msg_data.error = messages_get("ParsingFail");
@@ -353,23 +371,91 @@ bool html_convert(struct content *c, int width, int height)
 	xmlFreeDoc(document);
 
 	/* layout the box tree */
-	content_set_status(c, messages_get("Formatting"));
+	html_set_status(c, messages_get("Formatting"));
 	content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
 	LOG(("Layout document"));
 	html_reformat(c, width, height);
 	/*box_dump(c->data.html.layout->children, 0);*/
 
-	if (c->active == 0) {
+	if (c->active == 0)
 		c->status = CONTENT_STATUS_DONE;
-		content_set_status(c, messages_get("Done"));
-	} else {
+	else
 		c->status = CONTENT_STATUS_READY;
-		content_set_status(c, messages_get("FetchObjs"), c->active,
-			messages_get((c->active == 1) ? "obj" : "objs"));
-	}
+	html_set_status(c, "");
 
 	return true;
 }
+
+
+/**
+ * Process elements in <head>.
+ *
+ * \param  c     content structure
+ * \param  head  xml node of head element
+ * \return  true on success, false on memory exhaustion
+ *
+ * The title and base href are extracted if present.
+ */
+
+bool html_head(struct content *c, xmlNode *head)
+{
+	xmlNode *node;
+	xmlChar *s;
+
+	c->title = 0;
+
+	for (node = head->children; node != 0; node = node->next) {
+		if (node->type != XML_ELEMENT_NODE)
+			continue;
+
+		LOG(("Node: %s", node->name));
+		if (!c->title && strcmp(node->name, "title") == 0) {
+			xmlChar *title = xmlNodeGetContent(node);
+			if (!title)
+				return false;
+			char *title2 = squash_whitespace(title);
+			xmlFree(title);
+			if (!title2)
+				return false;
+			c->title = talloc_strdup(c, title2);
+			free(title2);
+			if (!c->title)
+				return false;
+
+		} else if (strcmp(node->name, "base") == 0) {
+			char *href = (char *) xmlGetProp(node,
+					(const xmlChar *) "href");
+			if (href) {
+				char *url;
+				url_func_result res;
+				res = url_normalize(href, &url);
+				if (res == URL_FUNC_OK) {
+					c->data.html.base_url =
+							talloc_strdup(c, url);
+					free(url);
+				}
+				xmlFree(href);
+			}
+			/* don't use the central values to ease freeing later on */
+			if ((s = xmlGetProp(node, (const xmlChar *) "target"))) {
+				if ((!strcasecmp(s, "_blank")) || (!strcasecmp(s, "_top")) ||
+						(!strcasecmp(s, "_parent")) ||
+						(!strcasecmp(s, "_self")) ||
+						('a' <= s[0] && s[0] <= 'z') ||
+						('A' <= s[0] && s[0] <= 'Z')) {  /* [6.16] */
+					c->data.html.base_target = talloc_strdup(c, s);
+					if (!c->data.html.base_target) {
+						xmlFree(s);
+						return false;
+					}
+				}
+				xmlFree(s);
+			}
+		}
+	}
+	return true;
+}
+
 
 /**
  * Search for meta refresh
@@ -480,75 +566,6 @@ bool html_meta_refresh(struct content *c, xmlNode *head)
 		xmlFree(content);
 	}
 
-	return true;
-}
-
-/**
- * Process elements in <head>.
- *
- * \param  c     content structure
- * \param  head  xml node of head element
- * \return  true on success, false on memory exhaustion
- *
- * The title and base href are extracted if present.
- */
-
-bool html_head(struct content *c, xmlNode *head)
-{
-	xmlNode *node;
-	xmlChar *s;
-
-	c->title = 0;
-
-	for (node = head->children; node != 0; node = node->next) {
-		if (node->type != XML_ELEMENT_NODE)
-			continue;
-
-		LOG(("Node: %s", node->name));
-		if (!c->title && strcmp(node->name, "title") == 0) {
-			xmlChar *title = xmlNodeGetContent(node);
-			if (!title)
-				return false;
-			char *title2 = squash_whitespace(title);
-			xmlFree(title);
-			if (!title2)
-				return false;
-			c->title = talloc_strdup(c, title2);
-			free(title2);
-			if (!c->title)
-				return false;
-
-		} else if (strcmp(node->name, "base") == 0) {
-			char *href = (char *) xmlGetProp(node,
-					(const xmlChar *) "href");
-			if (href) {
-				char *url;
-				url_func_result res;
-				res = url_normalize(href, &url);
-				if (res == URL_FUNC_OK) {
-					c->data.html.base_url =
-							talloc_strdup(c, url);
-					free(url);
-				}
-				xmlFree(href);
-			}
-			/* don't use the central values to ease freeing later on */
-			if ((s = xmlGetProp(node, (const xmlChar *) "target"))) {
-				if ((!strcasecmp(s, "_blank")) || (!strcasecmp(s, "_top")) ||
-						(!strcasecmp(s, "_parent")) ||
-						(!strcasecmp(s, "_self")) ||
-						('a' <= s[0] && s[0] <= 'z') ||
-						('A' <= s[0] && s[0] <= 'Z')) {  /* [6.16] */
-					c->data.html.base_target = talloc_strdup(c, s);
-					if (!c->data.html.base_target) {
-						xmlFree(s);
-						return false;
-					}
-				}
-				xmlFree(s);
-			}
-		}
-	}
 	return true;
 }
 
@@ -762,9 +779,7 @@ bool html_find_stylesheets(struct content *c, xmlNode *head)
 	/* complete the fetches */
 	while (c->active != 0) {
 		if (c->active != last_active) {
-			content_set_status(c, messages_get("FetchStyle"),
-				c->active,
-				messages_get((c->active == 1) ? "styl" : "styls"));
+			html_set_status(c, "");
 			content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
 			last_active = c->active;
 		}
@@ -820,7 +835,7 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 				c->data.html.stylesheet_content[i] = 0;
 				c->active--;
 				content_add_error(c, "NotCSS", 0);
-				content_set_status(c, messages_get("NotCSS"));
+				html_set_status(c, messages_get("NotCSS"));
 				content_broadcast(c, CONTENT_MSG_STATUS, data);
 				content_remove_user(css,
 						html_convert_css_callback,
@@ -854,10 +869,7 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 			break;
 
 		case CONTENT_MSG_STATUS:
-			content_set_status(c, messages_get("FetchStyle2"),
-				c->active,
-				messages_get((c->active == 1) ? "styl" : "styls"),
-				css->status_message);
+			html_set_status(c, css->status_message);
 			content_broadcast(c, CONTENT_MSG_STATUS, data);
 			break;
 
@@ -1063,7 +1075,7 @@ void html_object_callback(content_msg msg, struct content *object,
 			c->data.html.object[i].content = 0;
 			c->active--;
 			content_add_error(c, "?", 0);
-			content_set_status(c, messages_get("BadObject"));
+			html_set_status(c, messages_get("BadObject"));
 			content_broadcast(c, CONTENT_MSG_STATUS, data);
 			content_remove_user(object, html_object_callback,
 					(intptr_t) c, i);
@@ -1094,18 +1106,14 @@ void html_object_callback(content_msg msg, struct content *object,
 			c->data.html.object[i].content = 0;
 			c->active--;
 			content_add_error(c, "?", 0);
-			content_set_status(c, messages_get("ObjError"),
-					data.error);
+			html_set_status(c, data.error);
 			content_broadcast(c, CONTENT_MSG_STATUS, data);
 			html_object_failed(box, c,
 					c->data.html.object[i].background);
 			break;
 
 		case CONTENT_MSG_STATUS:
-			content_set_status(c, messages_get("FetchObjs2"),
-				c->active,
-				messages_get((c->active == 1) ? "obj" : "objs"),
-				object->status_message);
+			html_set_status(c, object->status_message);
 			/* content_broadcast(c, CONTENT_MSG_STATUS, 0); */
 			break;
 
@@ -1202,13 +1210,11 @@ void html_object_callback(content_msg msg, struct content *object,
 			msg == CONTENT_MSG_AUTH)) {
 		/* all objects have arrived */
 		content_reformat(c, c->available_width, c->height);
-		c->status = CONTENT_STATUS_DONE;
-		content_set_status(c, messages_get("Done"));
-		content_broadcast(c, CONTENT_MSG_DONE, data);
+		html_set_status(c, "");
+		content_set_done(c);
 	}
 	if (c->status == CONTENT_STATUS_READY)
-		content_set_status(c, messages_get("FetchObjs"), c->active,
-			messages_get((c->active == 1) ? "obj" : "objs"));
+		html_set_status(c, "");
 }
 
 
@@ -1533,6 +1539,30 @@ void html_destroy_iframe(struct content_html_iframe *iframe) {
 			talloc_free(iframe->url);
 		talloc_free(iframe);
 	}
+}
+
+
+/**
+ * Set the content status.
+ */
+
+void html_set_status(struct content *c, const char *extra)
+{
+	unsigned int stylesheets = 0, objects = 0;
+	if (c->data.html.object_count == 0)
+		stylesheets = c->data.html.stylesheet_count - c->active;
+	else {
+		stylesheets = c->data.html.stylesheet_count;
+		objects = c->data.html.object_count - c->active;
+	}
+	content_set_status(c, "%u/%u %s %u/%u %s  %s",
+			stylesheets, c->data.html.stylesheet_count,
+			messages_get((c->data.html.stylesheet_count == 1) ?
+					"styl" : "styls"),
+			objects, c->data.html.object_count,
+			messages_get((c->data.html.object_count == 1) ?
+					"obj" : "objs"),
+			extra);
 }
 
 

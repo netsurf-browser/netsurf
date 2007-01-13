@@ -2,7 +2,7 @@
  * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
- * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2005-2007 James Bursa <bursa@users.sourceforge.net>
  */
 
 /** \file
@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
 #include "netsurf/content/fetch.h"
@@ -304,6 +305,7 @@ static const struct handler_entry handler_map[] = {
 #define HANDLER_MAP_COUNT (sizeof(handler_map) / sizeof(handler_map[0]))
 
 
+static void content_update_status(struct content *c);
 static void content_destroy(struct content *c);
 static void content_stop_check(struct content *c);
 
@@ -373,6 +375,7 @@ struct content * content_create(const char *url)
 	c->refresh = 0;
 	c->bitmap = 0;
 	c->fresh = false;
+	c->time = clock();
 	c->size = 0;
 	c->title = 0;
 	c->active = 0;
@@ -380,13 +383,14 @@ struct content * content_create(const char *url)
 	user_sentinel->p1 = user_sentinel->p2 = 0;
 	user_sentinel->next = 0;
 	c->user_list = user_sentinel;
-	content_set_status(c, messages_get("Loading"));
+	c->sub_status[0] = 0;
 	c->locked = false;
 	c->fetch = 0;
 	c->source_data = 0;
 	c->source_size = 0;
 	c->source_allocated = 0;
 	c->total_size = 0;
+	c->http_code = 0;
 	c->no_error_pages = false;
 	c->download = false;
 	c->error_count = 0;
@@ -399,6 +403,8 @@ struct content * content_create(const char *url)
 	c->cache_data->no_cache = false;
 	c->cache_data->etag = 0;
 	c->cache_data->last_modified = 0;
+
+	content_set_status(c, messages_get("Loading"));
 
 	c->prev = 0;
 	c->next = content_list;
@@ -592,11 +598,38 @@ void content_set_status(struct content *c, const char *status_message, ...)
 	int len;
 
 	va_start(ap, status_message);
-	if ((len = vsnprintf(c->status_message, sizeof (c->status_message),
+	if ((len = vsnprintf(c->sub_status, sizeof (c->sub_status),
 			status_message, ap)) < 0 ||
-			(int)sizeof (c->status_message) <= len)
-		c->status_message[sizeof (c->status_message) - 1] = '\0';
+			(int)sizeof (c->sub_status) <= len)
+		c->sub_status[sizeof (c->sub_status) - 1] = '\0';
 	va_end(ap);
+
+	content_update_status(c);
+}
+
+
+void content_update_status(struct content *c)
+{
+	char token[20];
+	const char *status;
+	clock_t time;
+
+	snprintf(token, sizeof token, "HTTP%li", c->http_code);
+	status = messages_get(token);
+	if (status == token)
+		status = token + 4;
+
+	if (c->status == CONTENT_STATUS_TYPE_UNKNOWN ||
+			c->status == CONTENT_STATUS_LOADING ||
+			c->status == CONTENT_STATUS_READY)
+		time = clock() - c->time;
+	else
+		time = c->time;
+
+	snprintf(c->status_message, sizeof (c->status_message),
+			"%s (%.1fs) %s", status,
+			(float) time / CLOCKS_PER_SEC, c->sub_status);
+	/* LOG(("%s", c->status_message)); */
 }
 
 
@@ -704,7 +737,22 @@ void content_convert(struct content *c, int width, int height)
 			c->status == CONTENT_STATUS_DONE);
 	content_broadcast(c, CONTENT_MSG_READY, msg_data);
 	if (c->status == CONTENT_STATUS_DONE)
-		content_broadcast(c, CONTENT_MSG_DONE, msg_data);
+		content_set_done(c);
+}
+
+
+/**
+ * Put a content in status CONTENT_STATUS_DONE.
+ */
+
+void content_set_done(struct content *c)
+{
+	union content_msg_data msg_data;
+
+	c->status = CONTENT_STATUS_DONE;
+	c->time = clock() - c->time;
+	content_update_status(c);
+	content_broadcast(c, CONTENT_MSG_DONE, msg_data);
 }
 
 

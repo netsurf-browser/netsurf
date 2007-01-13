@@ -74,8 +74,6 @@ struct browser_window {
 	bool throbbing;
 	/** Add loading_content to the window history when it loads. */
 	bool history_add;
-	/** Start time of fetching loading_content. */
-	clock_t time0;
 
 	/** Fragment identifier for current_content. */
 	char *frag_id;

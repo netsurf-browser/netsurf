@@ -20,7 +20,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 #include "curl/curl.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/content/fetch.h"
@@ -286,7 +285,6 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 
 	browser_window_set_status(bw, messages_get("Loading"));
 	bw->history_add = history_add;
-	bw->time0 = clock();
 	c = fetchcache(url2, browser_window_callback, (intptr_t) bw, 0,
 			width, height, false,
 			post_urlenc, post_multipart, true, download);
@@ -347,6 +345,7 @@ void browser_window_callback(content_msg msg, struct content *c,
 			url[sizeof url - 1] = 0;
 			gui_window_set_url(bw->window, url);
 			bw->refresh_interval = -1;
+			browser_window_set_status(bw, c->status_message);
 		}
 		break;
 
@@ -414,10 +413,7 @@ void browser_window_callback(content_msg msg, struct content *c,
 		assert(bw->current_content == c);
 
 		browser_window_update(bw, false);
-		sprintf(status, messages_get("Complete"),
-				((float) (clock() - bw->time0)) /
-				CLOCKS_PER_SEC);
-		browser_window_set_status(bw, status);
+		browser_window_set_status(bw, c->status_message);
 		browser_window_stop_throbber(bw);
 		history_update(bw->history, c);
 		hotlist_visited(c);

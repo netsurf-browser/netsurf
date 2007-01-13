@@ -376,6 +376,7 @@ void fetchcache_callback(fetch_msg msg, void *p, const void *data,
 	switch (msg) {
 		case FETCH_TYPE:
 			c->total_size = size;
+			c->http_code = fetch_http_code(c->fetch);
 			mime_type = fetchcache_parse_type(data, &params);
 			if (!mime_type) {
 				msg_data.error = messages_get("NoMemory");
