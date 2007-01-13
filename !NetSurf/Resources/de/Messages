@@ -450,11 +450,7 @@ Complete:Seite komplett (%gs)
 Redirecting:Umleiten...
 Processing:Dokument auswerten
 Formatting:Dokument formatieren
-FetchObjs:Lade %u %s
-FetchObjs2:Lade %u %s: %s
 Done:Dokument fertiggestellt
-FetchStyle:Lade %u %s
-FetchStyle2:Lade %u %s: %s
 
 # Fetch warning/error messages - displayed in status bar
 #
@@ -471,6 +467,47 @@ PNGError:PNG Library Fehler.
 MNGError:MNG Library Fehler.
 BadSprite:Ungültiges oder beschädigtes Sprite.
 
+# HTTP status codes
+#
+HTTP0:OK
+HTTP200:OK
+HTTP201:Created
+HTTP202:Accepted
+HTTP203:Non-authoritative information
+HTTP204:No content
+HTTP205:Reset content
+HTTP206:Partial content
+HTTP300:Multiple choices
+HTTP301:Moved permanently
+HTTP302:Found
+HTTP303:See other
+HTTP304:Not modified
+HTTP305:Use proxy
+HTTP307:Temporary redirect
+HTTP400:Bad request
+HTTP401:Unauthorized
+HTTP402:Payment required
+HTTP403:Forbidden
+HTTP404:Not found
+HTTP405:Method not allowed
+HTTP406:Not acceptable
+HTTP407:Proxy authentication required
+HTTP408:Request timeout
+HTTP409:Conflict
+HTTP410:Gone
+HTTP411:Length required
+HTTP412:Precondition failed
+HTTP413:Request entity too large
+HTTP414:Request-URI too long
+HTTP415:Unsupported media type
+HTTP416:Requested range not satisfiable
+HTTP417:Expectation failed
+HTTP500:Internal server error
+HTTP501:Not implemented
+HTTP502:Bad gateway
+HTTP503:Service unavailable
+HTTP504:Gateway timeout
+HTTP505:HTTP version not supported
 
 # User interface
 # ==============
