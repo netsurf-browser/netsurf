@@ -82,5 +82,6 @@ void fetch_change_callback(struct fetch *fetch,
 		void (*callback)(fetch_msg msg, void *p, const void *data,
 				unsigned long size),
 		void *p);
+long fetch_http_code(struct fetch *fetch);
 
 #endif

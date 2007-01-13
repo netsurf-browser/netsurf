@@ -1,7 +1,7 @@
 /*
  * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
- *                http://www.opensource.org/licenses/gpl-license
+ *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2006 Daniel Silverstone <dsilvers@digital-scurf.org>
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
@@ -72,9 +72,9 @@ struct fetch {
 	char *host;		/**< Host part of URL. */
 	char *location;		/**< Response Location header, or 0. */
 	unsigned long content_length;	/**< Response Content-Length, or 0. */
-	long http_code;         /**< HTTP response code, or 0. */
+	long http_code;		/**< HTTP response code, or 0. */
 	char *cookie_string;	/**< Cookie string for this fetch */
-	char *realm;            /**< HTTP Auth Realm */
+	char *realm;		/**< HTTP Auth Realm */
 	char *post_urlenc;	/**< Url encoded POST string, or 0. */
 	struct curl_httppost *post_multipart;	/**< Multipart post data, or 0. */
 	struct cache_data cachedata;	/**< Cache control data */
@@ -90,7 +90,7 @@ struct fetch {
 
 struct cache_handle {
 	CURL *handle; /**< The cached cURL handle */
-	char *host;        /**< The host for which this handle is cached */
+	char *host;	   /**< The host for which this handle is cached */
 
 	struct cache_handle *r_prev; /**< Previous cached handle in ring. */
 	struct cache_handle *r_next; /**< Next cached handle in ring. */
@@ -101,7 +101,7 @@ CURLM *fetch_curl_multi;		/**< Global cURL multi handle. */
 /** Curl handle with default options set; not used for transfers. */
 static CURL *fetch_blank_curl;
 static struct fetch *fetch_ring = 0;	/**< Ring of active fetches. */
-static struct fetch *queue_ring = 0;    /**< Ring of queued fetches */
+static struct fetch *queue_ring = 0;	/**< Ring of queued fetches */
 static struct cache_handle *handle_ring = 0; /**< Ring of cached handles */
 
 static char fetch_error_buffer[CURL_ERROR_SIZE]; /**< Error buffer for cURL. */
@@ -134,12 +134,12 @@ static int fetch_cert_verify_callback(X509_STORE_CTX *x509_ctx, void *parm);
  */
 #define RING_INSERT(ring,element) \
 	LOG(("RING_INSERT(%s, %p(%s))", #ring, element, element->host)); \
-        if (ring) { \
+	if (ring) { \
 		element->r_next = ring; \
 		element->r_prev = ring->r_prev; \
 		ring->r_prev = element; \
 		element->r_prev->r_next = element; \
-       	} else \
+	} else \
 		ring = element->r_prev = element->r_next = element
 
 /** Remove the given element from the specified ring.
@@ -1046,22 +1046,23 @@ int fetch_curl_progress(void *clientp, double dltotal, double dlnow,
 size_t fetch_curl_data(void *data, size_t size, size_t nmemb,
 		struct fetch *f)
 {
-        /* ensure we only have to get this information once */
-        if (!f->http_code)
-        {
-                CURLcode code;
-                code = curl_easy_getinfo(f->curl_handle, CURLINFO_HTTP_CODE,
-                                        &f->http_code);
-	        assert(code == CURLE_OK);
-        }
+	CURLcode code;
 
-        /* ignore body if this is a 401 reply by skipping it and reset
-           the HTTP response code to enable follow up fetches */
-        if (f->http_code == 401)
-        {
-                f->http_code = 0;
-                return size * nmemb;
-        }
+	/* ensure we only have to get this information once */
+	if (!f->http_code)
+	{
+		code = curl_easy_getinfo(f->curl_handle, CURLINFO_HTTP_CODE,
+				&f->http_code);
+		assert(code == CURLE_OK);
+	}
+
+	/* ignore body if this is a 401 reply by skipping it and reset
+	   the HTTP response code to enable follow up fetches */
+	if (f->http_code == 401)
+	{
+		f->http_code = 0;
+		return size * nmemb;
+	}
 
 	LOG(("fetch %p, size %u", f, size * nmemb));
 
@@ -1247,8 +1248,13 @@ bool fetch_process_headers(struct fetch *f)
 	if (f->cachedata.res_time == 0)
 		f->cachedata.res_time = time(0);
 
-	code = curl_easy_getinfo(f->curl_handle, CURLINFO_HTTP_CODE, &http_code);
-	assert(code == CURLE_OK);
+	if (!f->http_code)
+	{
+		code = curl_easy_getinfo(f->curl_handle, CURLINFO_HTTP_CODE,
+				&f->http_code);
+		assert(code == CURLE_OK);
+	}
+	http_code = f->http_code;
 	LOG(("HTTP status code %li", http_code));
 
 	if (http_code == 304 && !f->post_urlenc && !f->post_multipart) {
@@ -1265,7 +1271,7 @@ bool fetch_process_headers(struct fetch *f)
 		return true;
 	}
 
-        /* handle HTTP 401 (Authentication errors) */
+	/* handle HTTP 401 (Authentication errors) */
 #ifdef WITH_AUTH
 	if (http_code == 401) {
 		f->callback(FETCH_AUTH, f->p, f->realm,0);
@@ -1439,6 +1445,16 @@ void fetch_change_callback(struct fetch *fetch,
 	assert(fetch);
 	fetch->callback = callback;
 	fetch->p = p;
+}
+
+
+/**
+ * Get the HTTP response code.
+ */
+
+long fetch_http_code(struct fetch *fetch)
+{
+	return fetch->http_code;
 }
 
 
