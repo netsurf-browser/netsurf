@@ -53,7 +53,7 @@ Help:Aide
 #
 PageInfo:Info  ^F1
 Save:Sauver  F3
-SaveComp:Sauvegarde Complète  ⇑F3
+SaveComp:Sauvegarde Complète  ⇑FF3
 Export:Exporter
 SaveURL:Sauver le lieu
 Print:Imprimer  PRINT
@@ -365,8 +365,8 @@ EncodingUnk:Inconnu
 
 # Misc
 #
-Selecting:Selecting
-FrameDrag:Resizing frames
+Selecting:Sélection en cours
+FrameDrag:Redimensionnement des cadres en cours
 
 
 # Errors
@@ -471,43 +471,43 @@ BadSprite:Les données du sprite sont invalides ou corrompues.
 #
 HTTP0:OK
 HTTP200:OK
-HTTP201:Created
-HTTP202:Accepted
-HTTP203:Non-authoritative information
-HTTP204:No content
-HTTP205:Reset content
-HTTP206:Partial content
-HTTP300:Multiple choices
-HTTP301:Moved permanently
-HTTP302:Found
-HTTP303:See other
-HTTP304:Not modified
-HTTP305:Use proxy
-HTTP307:Temporary redirect
-HTTP400:Bad request
-HTTP401:Unauthorized
-HTTP402:Payment required
-HTTP403:Forbidden
-HTTP404:Not found
-HTTP405:Method not allowed
-HTTP406:Not acceptable
-HTTP407:Proxy authentication required
-HTTP408:Request timeout
-HTTP409:Conflict
-HTTP410:Gone
-HTTP411:Length required
-HTTP412:Precondition failed
-HTTP413:Request entity too large
-HTTP414:Request-URI too long
-HTTP415:Unsupported media type
-HTTP416:Requested range not satisfiable
-HTTP417:Expectation failed
-HTTP500:Internal server error
-HTTP501:Not implemented
-HTTP502:Bad gateway
-HTTP503:Service unavailable
-HTTP504:Gateway timeout
-HTTP505:HTTP version not supported
+HTTP201:Créé
+HTTP202:Accepté
+HTTP203:Information ne faisant pas autorité
+HTTP204:Pas de contenu
+HTTP205:Remise-à-Zéro du contenu
+HTTP206:Contenu partiel
+HTTP300:Choix multiples
+HTTP301:A déménagé définitivement
+HTTP302:Trouvé
+HTTP303:Voir autre
+HTTP304:Pas modifié
+HTTP305:Utilisez un proxy
+HTTP307:Redirection temporaire
+HTTP400:Mauvaise requête
+HTTP401:Sans autorisation
+HTTP402:Paiment nécessaire
+HTTP403:Interdit
+HTTP404:Pas trouvé
+HTTP405:Méthode non autorisée
+HTTP406:Pas acceptable
+HTTP407:Authentification du proxy nécessaire
+HTTP408:Délai de requête trop long
+HTTP409:Conflit
+HTTP410:Parti
+HTTP411:Longueur nécessaire
+HTTP412:Échec de précondition
+HTTP413:Demande d'entité trop grande
+HTTP414:Request-URI trop long
+HTTP415:Type de média non supporté
+HTTP416:Étendue demandée non satisfaisable
+HTTP417:Attente non satisfaite
+HTTP500:Erreur de serveur interne
+HTTP501:Non implémenté
+HTTP502:Mauvaise passerelle
+HTTP503:Service non disponible
+HTTP504:Délai de passerelle trop long
+HTTP505:version d'HTTP non supportée
 
 # User interface
 # ==============
@@ -592,7 +592,7 @@ HelpToolbar6:\Tle bouton de sauvegarde.|M\Ssauver le document en cours.
 HelpToolbar7:\Tle bouton d'impression.|M\Simprimer cette page.|MOuvre une bo�te de dialogue pour l'impression.
 HelpToolbar8:\Tle bouton de favoris.|M\Souvrir la \w de gestion des favoris.|M\Aajouter cette adresse aux favoris.
 HelpToolbar9:\Tle bouton de changement d'échelle.|M\Sredimensionner la page, texte et images comprises.
-HelpToolbar10:\Tle bouton de recherche.|M\Sfind instances of a string of text on the page.
+HelpToolbar10:\Tle bouton de recherche.|M\Strouver des occurences de fragment de texte dans une page.
 HelpToolbar11:\Tle bouton haut.|M\Sremonte d'un niveau sur le site web en cours.
 HelpToolbar14:\Tla barre d'URL.|MTapez l'adresse d'un site à visiter et appuyez sur Return pour y aller.
 HelpToolbar15:\Tl'icône de suggestion d'URL.|M\Souvrir une liste d'URLs tapées récemment.
