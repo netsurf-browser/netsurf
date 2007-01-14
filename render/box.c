@@ -465,7 +465,7 @@ struct box *box_find_by_id(struct box *box, const char *id)
  * \return  true iff the box is rendered
  */
 
-bool *box_visible(struct box *box)
+bool box_visible(struct box *box)
 {
 	struct box *fallback;
 
