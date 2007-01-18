@@ -755,12 +755,8 @@ void fetch_stop(struct fetch *f)
 		codem = curl_multi_remove_handle(fetch_curl_multi,
 				f->curl_handle);
 		assert(codem == CURLM_OK);
-		if (strncasecmp(f->url, "https:", 6)) {
-			/* Put this curl handle into the cache if wanted. */
-			fetch_cache_handle(f->curl_handle, f->host);
-		} else {
-			curl_easy_cleanup(f->curl_handle);
-		}
+		/* Put this curl handle into the cache if wanted. */
+		fetch_cache_handle(f->curl_handle, f->host);
 		f->curl_handle = 0;
 		/* Remove this from the active set of fetches (if it's still there) */
 		RING_REMOVE(fetch_ring, f);
