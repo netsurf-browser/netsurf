@@ -1706,8 +1706,8 @@ bool box_create_frameset(struct content_html_frames *f, xmlNode *n,
 			frame->rows = 0;
 			frame->width = col_width[col];
 			frame->height = row_height[row];
-			frame->margin_width = -1;
-			frame->margin_height = -1;
+			frame->margin_width = 0;
+			frame->margin_height = 0;
 			frame->name = NULL;
 			frame->url = NULL;
 			frame->no_resize = false;
@@ -1752,7 +1752,7 @@ bool box_create_frameset(struct content_html_frames *f, xmlNode *n,
 				box_extract_link(s, content->data.html.base_url, &url);
 				xmlFree(s);
 			}
-			
+
 			/* copy url */
 			if (url) {
 			  	/* no self-references */
@@ -1761,7 +1761,7 @@ bool box_create_frameset(struct content_html_frames *f, xmlNode *n,
 				free(url);
 				url = NULL;
 			}
-				
+
 			/* fill in specified values */
 			if ((s = (char *) xmlGetProp(c,
 					(const xmlChar *) "name"))) {
@@ -1791,7 +1791,7 @@ bool box_create_frameset(struct content_html_frames *f, xmlNode *n,
 			}
 			if ((s = (char *) xmlGetProp(c,
 					(const xmlChar *) "marginheight"))) {
-				frame->margin_width = atoi(s);
+				frame->margin_height = atoi(s);
 				xmlFree(s);
 			}
 			if ((s = (char *) xmlGetProp(c, (const xmlChar *) "bordercolor"))) {
@@ -1847,8 +1847,8 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 		return false;
 	}
 	iframe->box = box;
-	iframe->margin_width = -1;
-	iframe->margin_height = -1;
+	iframe->margin_width = 0;
+	iframe->margin_height = 0;
 	iframe->name = NULL;
 	iframe->url = talloc_strdup(content, url);
 	iframe->scrolling = SCROLLING_AUTO;
@@ -1891,7 +1891,7 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 	}
 	if ((s = (char *) xmlGetProp(n,
 			(const xmlChar *) "marginheight"))) {
-		iframe->margin_width = atoi(s);
+		iframe->margin_height = atoi(s);
 		xmlFree(s);
 	}
 
@@ -1960,7 +1960,7 @@ bool box_form(BOX_SPECIAL_PARAMS)
 
 	/* acceptable encoding(s) for form data */
 	charset = (char *) xmlGetProp(n, (const xmlChar *) "accept-charset");
-	
+
 	/* target for form data */
 	target = (char *) xmlGetProp(n, (const xmlChar *) "target");
 
