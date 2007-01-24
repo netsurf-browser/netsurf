@@ -56,6 +56,8 @@ static void html_object_refresh(void *p);
 static void html_destroy_frameset(struct content_html_frames *frameset);
 static void html_destroy_iframe(struct content_html_iframe *iframe);
 static void html_set_status(struct content *c, const char *extra);
+static void html_dump_frameset(struct content_html_frames *frame,
+		unsigned int depth);
 
 static const char empty_document[] =
 	"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\""
@@ -357,6 +359,8 @@ bool html_convert(struct content *c, int width, int height)
 		return false;
 	}
 	/*box_dump(c->data.html.layout->children, 0);*/
+	/*if (c->data.html.frameset)
+		html_dump_frameset(c->data.html.frameset, 0);*/
 
 	/* extract image maps - can't do this sensibly in xml_to_box */
 	if (!imagemap_extract(html, c)) {
@@ -1607,5 +1611,57 @@ void html_close(struct content *c)
 		if (c->data.html.object[i].content->type == CONTENT_UNKNOWN)
 			continue;
                	content_close(c->data.html.object[i].content);
+	}
+}
+
+
+/**
+ * Print a frameset tree to stderr.
+ */
+
+void html_dump_frameset(struct content_html_frames *frame,
+		unsigned int depth)
+{
+	unsigned int i;
+	int row, col, index;
+	const char *unit[] = {"px", "%", "*"};
+	const char *scrolling[] = {"auto", "yes", "no"};
+
+	assert(frame);
+
+	fprintf(stderr, "%p ", frame);
+
+	fprintf(stderr, "(%i %i) ", frame->rows, frame->cols);
+
+	fprintf(stderr, "w%g%s ", frame->width.value, unit[frame->width.unit]);
+	fprintf(stderr, "h%g%s ", frame->height.value,unit[frame->height.unit]);
+	fprintf(stderr, "(margin w%i h%i) ",
+			frame->margin_width, frame->margin_height);
+
+	if (frame->name)
+		fprintf(stderr, "'%s' ", frame->name);
+	if (frame->url)
+		fprintf(stderr, "<%s> ", frame->url);
+
+	if (frame->no_resize)
+		fprintf(stderr, "noresize ");
+	fprintf(stderr, "(scrolling %s) ", scrolling[frame->scrolling]);
+	if (frame->border)
+		fprintf(stderr, "border %x ",
+				(unsigned int) frame->border_colour);
+
+	fprintf(stderr, "\n");
+
+	if (frame->children) {
+		for (row = 0; row != frame->rows; row++) {
+			for (col = 0; col != frame->cols; col++) {
+				for (i = 0; i != depth; i++)
+					fprintf(stderr, "  ");
+				fprintf(stderr, "(%i %i): ", row, col);
+				index = (row * frame->cols) + col;
+				html_dump_frameset(&frame->children[index],
+						depth + 1);
+			}
+		}
 	}
 }
