@@ -1,0 +1,52 @@
+Frames
+======
+
+Frames cut across many parts of the browser.
+
+Representation in content
+-------------------------
+During box-tree construction (box_construct.c), frameset, frame, and iframe
+elements are converted into structures in the 'struct content' for the HTML
+document.
+
+Framesets and frames form a tree of 'struct content_html_frames' at
+content->data.html.frameset. For example, the source
+
+  <frameset rows="50%,50%">
+    <frameset cols="40,200">
+      <frame name="A" src="aaa">
+      <frame name="B" src="bbb">
+    </frameset>
+    <frameset cols="3*,*">
+      <frame name="C" src="ccc">
+      <frame name="D" src="ddd">
+    </frameset>
+  </frameset>
+
+results in the tree
+
+  0x6099f2f4 (2 1) w0px h0px (margin w0 h0) (scrolling no)
+  (0 0): 0x608b730c (1 2) w100% h50% (margin w0 h0) (scrolling no)
+    (0 0): 0x608dae74 (0 0) w40px h100% (margin w0 h0) 'A' <aaa> (scrolling auto) border 0
+    (0 1): 0x608daeb0 (0 0) w200px h100% (margin w0 h0) 'B' <bbb> (scrolling auto) border 0
+  (1 0): 0x608b7348 (1 2) w100% h50% (margin w0 h0) (scrolling no)
+    (0 0): 0x608d9b4c (0 0) w3* h100% (margin w0 h0) 'C' <ccc> (scrolling auto) border 0
+    (0 1): 0x608d9b88 (0 0) w1* h100% (margin w0 h0) 'D' <ddd> (scrolling auto) border 0
+
+(output from html_dump_frameset()).
+
+Creation of browser windows
+---------------------------
+When a document containing frames is displayed in a browser window, child
+windows are created for frames and iframes. This occurs when a browser window
+receives a CONTENT_MSG_READY in browser_window_callback(), which calls
+browser_window_create_frameset().
+
+browser_window_create_frameset() constructs a tree of 'struct browser_window'
+corresponding to the tree of 'struct content_html_frames'. For each new
+browser_window, it calls gui_create_browser_window() to create and open the
+actual platform-specific window (represented by a 'struct gui_window').
+
+When this is completed it calls browser_window_recalculate_frameset() which
+calculates the positions of each frame in pixels and calls
+gui_window_position_frame() to position each one.
