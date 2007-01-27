@@ -194,7 +194,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	/* set the events we're interested in receiving from the browser's
 	 * drawing area.
 	 */
-	gtk_widget_set_events(GTK_WIDGET(g->drawing_area),
+	gtk_widget_add_events(GTK_WIDGET(g->drawing_area),
 				GDK_EXPOSURE_MASK |
 				GDK_LEAVE_NOTIFY_MASK |
 				GDK_BUTTON_PRESS_MASK |

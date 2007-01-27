@@ -111,17 +111,21 @@ void nsgtk_options_init(void) {
 void nsgtk_options_load(void) {
 	char b[20];
 
-	SET_ENTRY(entryHomePageURL, option_homepage_url);
+	SET_ENTRY(entryHomePageURL,
+			option_homepage_url ? option_homepage_url : "");
 	SET_CHECK(checkHideAdverts, option_block_ads);
 	SET_CHECK(checkDisplayRecentURLs, option_url_suggestion);
 	SET_CHECK(checkSendReferer, option_send_referer);
 
 	SET_COMBO(comboProxyType, option_http_proxy_auth);
-	SET_ENTRY(entryProxyHost, option_http_proxy_host);
+	SET_ENTRY(entryProxyHost,
+			option_http_proxy_host ? option_http_proxy_host : "");
 	snprintf(b, 20, "%d", option_http_proxy_port);
 	SET_ENTRY(entryProxyPort, b);
-	SET_ENTRY(entryProxyUser, option_http_proxy_auth_user);
-	SET_ENTRY(entryProxyPassword, option_http_proxy_auth_pass);
+	SET_ENTRY(entryProxyUser, option_http_proxy_auth_user ?
+			option_http_proxy_auth_user : "");
+	SET_ENTRY(entryProxyPassword, option_http_proxy_auth_pass ?
+			option_http_proxy_auth_pass : "");
 
 	SET_SPIN(spinMaxFetchers, option_max_fetchers);
 	SET_SPIN(spinFetchesPerHost, option_max_fetchers_per_host);
