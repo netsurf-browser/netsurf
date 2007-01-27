@@ -123,11 +123,11 @@ struct browser_window {
 
 	/** Window characteristics */
 	enum {
-	  	BROWSER_WINDOW_NORMAL,
-  		BROWSER_WINDOW_IFRAME,
-  		BROWSER_WINDOW_FRAME,
-  		BROWSER_WINDOW_FRAMESET,
-  	} browser_window_type;
+		BROWSER_WINDOW_NORMAL,
+		BROWSER_WINDOW_IFRAME,
+		BROWSER_WINDOW_FRAME,
+		BROWSER_WINDOW_FRAMESET,
+	} browser_window_type;
 
 	/** frameset characteristics */
 	int rows;
@@ -179,13 +179,12 @@ typedef enum {
 extern struct browser_window *current_redraw_browser;
 
 struct browser_window * browser_window_create(const char *url,
-		struct browser_window *clone, char *referer, bool history_add);
+		struct browser_window *clone, const char *referer,
+		bool history_add);
 void browser_window_go(struct browser_window *bw, const char *url,
-		char *referer, bool history_add);
-void browser_window_go_post(struct browser_window *bw, const char *url,
-		char *post_urlenc,
-		struct form_successful_control *post_multipart,
-		bool history_add, char *referer, bool download);
+		const char *referer, bool history_add);
+void browser_window_go_unverifiable(struct browser_window *bw,
+		const char *url, const char *referer, bool history_add);
 void browser_window_update(struct browser_window *bw, bool scroll_to_top);
 void browser_window_stop(struct browser_window *bw);
 void browser_window_reload(struct browser_window *bw, bool all);

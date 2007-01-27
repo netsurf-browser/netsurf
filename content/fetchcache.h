@@ -30,15 +30,15 @@ struct content * fetchcache(const char *url,
 		bool no_error_pages,
 		char *post_urlenc,
 		struct form_successful_control *post_multipart,
-		bool cookies,
+		bool verifiable,
 		bool download);
-void fetchcache_go(struct content *content, char *referer,
+void fetchcache_go(struct content *content, const char *referer,
 		void (*callback)(content_msg msg, struct content *c,
 			intptr_t p1, intptr_t p2, union content_msg_data data),
 		intptr_t p1, intptr_t p2,
 		int width, int height,
 		char *post_urlenc,
 		struct form_successful_control *post_multipart,
-		bool cookies);
+		bool verifiable);
 
 #endif

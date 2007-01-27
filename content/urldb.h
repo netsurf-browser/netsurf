@@ -98,8 +98,9 @@ void urldb_iterate_cookies(bool (*callback)(const char *domain,
 void urldb_dump(void);
 
 /* Cookies */
-bool urldb_set_cookie(const char *header, const char *url);
-char *urldb_get_cookie(const char *url, const char *referer);
+bool urldb_set_cookie(const char *header, const char *url,
+		const char *referer);
+char *urldb_get_cookie(const char *url);
 void urldb_delete_cookie(const char *domain, const char *path, const char *name);
 void urldb_load_cookies(const char *filename);
 void urldb_save_cookies(const char *filename);

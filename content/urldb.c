@@ -2336,12 +2336,9 @@ struct search_node *urldb_search_split(struct search_node *root)
  * Retrieve cookies for an URL
  *
  * \param url URL being fetched
- * \param referer Referring resource, or NULL
  * \return Cookies string for libcurl (on heap), or NULL on error/no cookies
- *
- * \todo Handle unvalidated fetches
  */
-char *urldb_get_cookie(const char *url, const char *referer)
+char *urldb_get_cookie(const char *url)
 {
 	const struct path_data *p, *q;
 	const struct host_part *h;
@@ -2356,11 +2353,7 @@ char *urldb_get_cookie(const char *url, const char *referer)
 
 	assert(url);
 
-//	LOG(("%s : %s", url, referer));
-
-//	if (referer)
-//		/* No unvalidated fetches for now */
-//		return NULL;
+//	LOG(("%s", url));
 
 	urldb_add_url(url);
 
@@ -2455,7 +2448,8 @@ char *urldb_get_cookie(const char *url, const char *referer)
 					version = c->version;
 
 				c->last_used = now;
-				cookies_update(c->domain, (struct cookie_data *)c);
+				cookies_update(c->domain,
+						(struct cookie_data *)c);
 				count++;
 			}
 		}
@@ -2577,9 +2571,11 @@ char *urldb_get_cookie(const char *url, const char *referer)
  *
  * \param header Header to parse, with Set-Cookie: stripped
  * \param url URL being fetched
+ * \param referer Referring resource, or 0 for verifiable transaction
  * \return true on success, false otherwise
  */
-bool urldb_set_cookie(const char *header, const char *url)
+bool urldb_set_cookie(const char *header, const char *url,
+		const char *referer)
 {
 	const char *cur = header, *end;
 	char *path, *host, *scheme, *urlt;
@@ -2614,6 +2610,40 @@ bool urldb_set_cookie(const char *header, const char *url)
 		free(scheme);
 		free(urlt);
 		return false;
+	}
+
+	if (referer) {
+		char *rhost, *rscheme;
+
+		/* Ensure that url's host name domain matches
+		 * referer's (4.3.5) */
+		res = url_scheme(referer, &rscheme);
+		if (res != URL_FUNC_OK) {
+			goto error;
+		}
+
+		res = url_host(referer, &rhost);
+		if (res != URL_FUNC_OK) {
+			free(rscheme);
+			goto error;
+		}
+
+		if (strcasecmp(scheme, rscheme) != 0) {
+			/* Schemes don't match => fail */
+			free(rhost);
+			free(rscheme);
+			goto error;
+		}
+
+		/* Domain match host names (both are FQDN or IP) */
+		if (strcasecmp(host, rhost) != 0) {
+			free(rhost);
+			free(rscheme);
+			goto error;
+		}
+
+		free(rhost);
+		free(rscheme);
 	}
 
 	end = cur + strlen(cur) - 2 /* Trailing CRLF */;

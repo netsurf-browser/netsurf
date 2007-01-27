@@ -1651,7 +1651,7 @@ bool plugin_start_fetch(struct plugin_stream *p, const char *url)
 	}
 
 	c = fetchcache(url2, plugin_stream_callback, (intptr_t)p, 0,
-			100, 100, true, 0, 0, true, true);
+			100, 100, true, 0, 0, false, true);
 	free(url2);
 	if (!c) {
 		return false;
@@ -1659,7 +1659,7 @@ bool plugin_start_fetch(struct plugin_stream *p, const char *url)
 
 	p->c = c;
 	fetchcache_go(c, 0, plugin_stream_callback, (intptr_t)p, 0,
-			100, 100, 0, 0, true);
+			100, 100, 0, 0, false);
 
 	return true;
 }

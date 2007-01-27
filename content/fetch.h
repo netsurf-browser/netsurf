@@ -66,12 +66,12 @@ extern bool fetch_active;
 extern CURLM *fetch_curl_multi;
 
 void fetch_init(void);
-struct fetch * fetch_start(char *url, char *referer,
+struct fetch * fetch_start(const char *url, const char *referer,
 		void (*callback)(fetch_msg msg, void *p, const void *data,
 				unsigned long size),
-		void *p, bool only_2xx, char *post_urlenc,
+		void *p, bool only_2xx, const char *post_urlenc,
 		struct form_successful_control *post_multipart,
-		bool cookies, char *headers[]);
+		bool verifiable, char *headers[]);
 void fetch_abort(struct fetch *f);
 void fetch_poll(void);
 void fetch_quit(void);
@@ -83,5 +83,6 @@ void fetch_change_callback(struct fetch *fetch,
 				unsigned long size),
 		void *p);
 long fetch_http_code(struct fetch *fetch);
+const char *fetch_get_referer(struct fetch *fetch);
 
 #endif

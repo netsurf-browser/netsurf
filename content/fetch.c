@@ -64,9 +64,10 @@ struct fetch {
 	bool abort;		/**< Abort requested. */
 	bool stopped;		/**< Download stopped on purpose. */
 	bool only_2xx;		/**< Only HTTP 2xx responses acceptable. */
-	bool cookies;		/**< Send & accept cookies. */
+	bool verifiable;	/**< Transaction is verifiable */
 	char *url;		/**< URL. */
 	char *referer;		/**< URL for Referer header. */
+	bool send_referer;	/**< Valid to send the referer */
 	void *p;		/**< Private data for callback. */
 	struct curl_slist *headers;	/**< List of request headers. */
 	char *host;		/**< Host part of URL. */
@@ -299,12 +300,12 @@ void fetch_quit(void)
  * callbacks will contain this.
  */
 
-struct fetch * fetch_start(char *url, char *referer,
+struct fetch * fetch_start(const char *url, const char *referer,
 		void (*callback)(fetch_msg msg, void *p, const void *data,
 				unsigned long size),
-		void *p, bool only_2xx, char *post_urlenc,
-		struct form_successful_control *post_multipart, bool cookies,
-		char *headers[])
+		void *p, bool only_2xx, const char *post_urlenc,
+		struct form_successful_control *post_multipart,
+		bool verifiable, char *headers[])
 {
 	char *host;
 	struct fetch *fetch;
@@ -355,13 +356,16 @@ struct fetch * fetch_start(char *url, char *referer,
 	fetch->abort = false;
 	fetch->stopped = false;
 	fetch->only_2xx = only_2xx;
-	fetch->cookies = cookies;
+	fetch->verifiable = verifiable;
 	fetch->url = strdup(url);
 	fetch->referer = 0;
+	fetch->send_referer = false;
 	/* only send the referer if the schemes match */
 	if (referer) {
-		if (ref1 && ref2 && strcasecmp(ref1, ref2) == 0)
-			fetch->referer = strdup(referer);
+		fetch->referer = strdup(referer);
+		if (option_send_referer && ref1 && ref2 &&
+				strcasecmp(ref1, ref2) == 0)
+			fetch->send_referer = true;
 	}
 	fetch->p = p;
 	fetch->headers = 0;
@@ -394,9 +398,7 @@ struct fetch * fetch_start(char *url, char *referer,
 	fetch->r_prev = 0;
 	fetch->r_next = 0;
 
-	if (!fetch->url || (referer &&
-			(ref1 && ref2 && strcasecmp(ref1, ref2) == 0) &&
-			!fetch->referer) ||
+	if (!fetch->url || (referer && !fetch->referer) ||
 			(post_urlenc && !fetch->post_urlenc) ||
 			(post_multipart && !fetch->post_multipart))
 		goto failed;
@@ -647,7 +649,7 @@ CURLcode fetch_set_options(struct fetch *f)
 	SETOPT(CURLOPT_WRITEDATA, f);
 	SETOPT(CURLOPT_WRITEHEADER, f);
 	SETOPT(CURLOPT_PROGRESSDATA, f);
-	SETOPT(CURLOPT_REFERER, f->referer);
+	SETOPT(CURLOPT_REFERER, f->send_referer ? f->referer : 0);
 	SETOPT(CURLOPT_HTTPHEADER, f->headers);
 	if (f->post_urlenc) {
 		SETOPT(CURLOPT_POSTFIELDS, f->post_urlenc);
@@ -656,11 +658,11 @@ CURLcode fetch_set_options(struct fetch *f)
 	} else {
 		SETOPT(CURLOPT_HTTPGET, 1L);
 	}
-	if (f->cookies) {
-		f->cookie_string = urldb_get_cookie(f->url, f->referer);
-		if (f->cookie_string)
-			SETOPT(CURLOPT_COOKIE, f->cookie_string);
-	}
+
+	f->cookie_string = urldb_get_cookie(f->url);
+	if (f->cookie_string)
+		SETOPT(CURLOPT_COOKIE, f->cookie_string);
+
 #ifdef WITH_AUTH
 	if ((auth = urldb_get_auth_details(f->url)) != NULL) {
 		SETOPT(CURLOPT_HTTPAUTH, CURLAUTH_ANY);
@@ -1212,11 +1214,20 @@ size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
 			f->cachedata.last_modified =
 					curl_getdate(&data[i], NULL);
 		}
-	} else if (f->cookies && 11 < size &&
-			strncasecmp(data, "Set-Cookie:", 11) == 0) {
+	} else if (11 < size && strncasecmp(data, "Set-Cookie:", 11) == 0) {
 		/* extract Set-Cookie header */
 		SKIP_ST(11);
-		urldb_set_cookie(&data[i], f->url);
+
+		/* If the fetch is unverifiable and there's no referer,
+		 * err on the side of caution and do not set the cookie */
+
+		if (f->verifiable || f->referer) {
+			/* If the transaction's verifiable, we don't require
+			 * that the request uri and the referer domain match,
+			 * so don't pass in the referer in this case. */
+			urldb_set_cookie(&data[i], f->url,
+					f->verifiable ? 0 : f->referer);
+		}
 	}
 
 	return size;
@@ -1451,6 +1462,18 @@ void fetch_change_callback(struct fetch *fetch,
 long fetch_http_code(struct fetch *fetch)
 {
 	return fetch->http_code;
+}
+
+
+/**
+ * Get the referer
+ *
+ * \param fetch  fetch to retrieve referer from
+ * \return Pointer to referer string, or NULL if none.
+ */
+const char *fetch_get_referer(struct fetch *fetch)
+{
+	return fetch->referer;
 }
 
 

@@ -59,6 +59,11 @@ struct content browser_window_href_content;
 /** maximum frame depth */
 #define FRAME_DEPTH 8
 
+static void browser_window_go_post(struct browser_window *bw,
+		const char *url, char *post_urlenc,
+		struct form_successful_control *post_multipart,
+		bool history_add, const char *referer, bool download,
+		bool verifiable);
 static void browser_window_callback(content_msg msg, struct content *c,
 		intptr_t p1, intptr_t p2, union content_msg_data data);
 static void browser_window_refresh(void *p);
@@ -111,12 +116,12 @@ static void browser_window_scroll_box(struct browser_window *bw,
  *
  * \param  url	    URL to start fetching in the new window (copied)
  * \param  clone    The browser window to clone
- * \param  referer  The referring uri
+ * \param  referer  The referring uri (copied), or 0 if none
  */
 
 struct browser_window *browser_window_create(const char *url,
 		struct browser_window *clone,
-		char *referer, bool history_add)
+		const char *referer, bool history_add)
 {
 	struct browser_window *bw;
 
@@ -153,6 +158,7 @@ struct browser_window *browser_window_create(const char *url,
 	}
 	if (url)
 		browser_window_go(bw, url, referer, history_add);
+
 	return bw;
 }
 
@@ -162,17 +168,39 @@ struct browser_window *browser_window_create(const char *url,
  *
  * \param  bw	    browser window
  * \param  url	    URL to start fetching (copied)
- * \param  referer  the referring uri
+ * \param  referer  the referring uri (copied), or 0 if none
  *
  * Any existing fetches in the window are aborted.
  */
 
 void browser_window_go(struct browser_window *bw, const char *url,
-		char* referer, bool history_add)
+		const char* referer, bool history_add)
 {
-	browser_window_go_post(bw, url, 0, 0, history_add, referer, false);
+	/* All fetches passing through here are verifiable
+	 * (i.e are the result of user action) */
+	browser_window_go_post(bw, url, 0, 0, history_add, referer,
+			false, true);
 }
 
+
+/**
+ * Start fetching a page in a browser window.
+ *
+ * \param  bw	    browser window
+ * \param  url	    URL to start fetching (copied)
+ * \param  referer  the referring uri (copied), or 0 if none
+ *
+ * Any existing fetches in the window are aborted.
+ */
+
+void browser_window_go_unverifiable(struct browser_window *bw,
+		const char *url, const char* referer, bool history_add)
+{
+	/* All fetches passing through here are unverifiable
+	 * (i.e are not the result of user action) */
+	browser_window_go_post(bw, url, 0, 0, history_add, referer,
+			false, false);
+}
 
 /**
  * Start fetching a page in a browser window, POSTing form data.
@@ -182,8 +210,9 @@ void browser_window_go(struct browser_window *bw, const char *url,
  * \param  post_urlenc	   url encoded post data, or 0 if none
  * \param  post_multipart  multipart post data, or 0 if none
  * \param  history_add	   add to window history
- * \param  referer	   the referring uri
+ * \param  referer	   the referring uri (copied), or 0 if none
  * \param  download	   download, rather than render the uri
+ * \param  verifiable	   this transaction is verifiable
  *
  * Any existing fetches in the window are aborted.
  *
@@ -196,7 +225,8 @@ void browser_window_go(struct browser_window *bw, const char *url,
 void browser_window_go_post(struct browser_window *bw, const char *url,
 		char *post_urlenc,
 		struct form_successful_control *post_multipart,
-		bool history_add, char *referer, bool download)
+		bool history_add, const char *referer, bool download,
+		bool verifiable)
 {
 	struct content *c;
 	char *url2;
@@ -215,7 +245,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	for (cur = bw; cur->parent; cur = cur->parent)
 		depth++;
 	if (depth > FRAME_DEPTH) {
-	  	LOG(("frame depth too high."));
+		LOG(("frame depth too high."));
 		return;
 	}
 
@@ -287,7 +317,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	bw->history_add = history_add;
 	c = fetchcache(url2, browser_window_callback, (intptr_t) bw, 0,
 			width, height, false,
-			post_urlenc, post_multipart, true, download);
+			post_urlenc, post_multipart, verifiable, download);
 	free(url2);
 	if (!c) {
 		browser_window_set_status(bw, messages_get("NoMemory"));
@@ -304,9 +334,9 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	}
 
 	bw->download = download;
-	fetchcache_go(c, option_send_referer ? referer : 0,
-			browser_window_callback, (intptr_t) bw, 0, width, height,
-			post_urlenc, post_multipart, true);
+	fetchcache_go(c, referer, browser_window_callback,
+			(intptr_t) bw, 0, width, height,
+			post_urlenc, post_multipart, verifiable);
 }
 
 
@@ -318,7 +348,6 @@ void browser_window_callback(content_msg msg, struct content *c,
 		intptr_t p1, intptr_t p2, union content_msg_data data)
 {
 	struct browser_window *bw = (struct browser_window *) p1;
-	char status[40];
 	char url[256];
 
 	switch (msg) {
@@ -453,7 +482,7 @@ void browser_window_callback(content_msg msg, struct content *c,
 		 * referer across the redirect */
 		browser_window_go_post(bw, data.redirect, 0, 0,
 				bw->history_add, bw->referer,
-				bw->download);
+				bw->download, false);
 		break;
 
 	case CONTENT_MSG_REFORMAT:
@@ -462,7 +491,7 @@ void browser_window_callback(content_msg msg, struct content *c,
 			/* reposition frames */
 			if (c->data.html.frameset)
 				browser_window_recalculate_frameset(bw);
-	  		/* reflow iframe positions */
+			/* reflow iframe positions */
 			if (c->data.html.iframe)
 				browser_window_recalculate_iframes(bw);
 			/* box tree may have changed, need to relabel */
@@ -586,7 +615,7 @@ void browser_window_refresh(void *p)
 				 bw->current_content->refresh)))
 		history_add = false;
 
-	browser_window_go(bw, bw->current_content->refresh,
+	browser_window_go_unverifiable(bw, bw->current_content->refresh,
 			bw->current_content->url, history_add);
 }
 
@@ -759,7 +788,7 @@ void browser_window_reload(struct browser_window *bw, bool all)
 	}
 	bw->current_content->fresh = false;
 	browser_window_go_post(bw, bw->current_content->url, 0, 0,
-			false, 0, false);
+			false, 0, false, true);
 }
 
 
@@ -1413,7 +1442,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 				mouse & BROWSER_MOUSE_MOD_1) {
 			/* force download of link */
 			browser_window_go_post(bw, url, 0, 0, false,
-					c->url, true);
+					c->url, true, true);
 
 		} else if (mouse & BROWSER_MOUSE_CLICK_1) {
 			bw = browser_window_find_target(bw, target);
@@ -1426,7 +1455,8 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 			if (!browser_window_href_content.url)
 				warn_user("NoMemory", 0);
 			else
-				gui_window_save_as_link(bw->window, &browser_window_href_content);
+				gui_window_save_as_link(bw->window,
+					&browser_window_href_content);
 		} else if (mouse & BROWSER_MOUSE_CLICK_2) {
 			/* open link in new window */
 			browser_window_create(url, bw, c->url, true);
@@ -2246,7 +2276,8 @@ void browser_form_submit(struct browser_window *bw, const char *target,
 				warn_user("NoMemory", 0);
 				return;
 			}
-			url = calloc(1, strlen(form->action) + strlen(data) + 2);
+			url = calloc(1, strlen(form->action) +
+					strlen(data) + 2);
 			if (!url) {
 				form_free_successful(success);
 				free(data);
@@ -2259,8 +2290,8 @@ void browser_form_submit(struct browser_window *bw, const char *target,
 			else {
 				sprintf(url, "%s?%s", form->action, data);
 			}
-			browser_window_go(bw_form, url, bw->current_content->url,
-					true);
+			browser_window_go(bw_form, url,
+					bw->current_content->url, true);
 			break;
 
 		case method_POST_URLENC:
@@ -2272,13 +2303,14 @@ void browser_form_submit(struct browser_window *bw, const char *target,
 			}
 			browser_window_go_post(bw_form, form->action, data, 0,
 					true, bw->current_content->url,
-					false);
+					false, true);
 			break;
 
 		case method_POST_MULTIPART:
-			browser_window_go_post(bw_form, form->action, 0, success,
-					true, bw->current_content->url,
-					false);
+			browser_window_go_post(bw_form, form->action, 0,
+					success, true,
+					bw->current_content->url,
+					false, true);
 			break;
 
 		default:

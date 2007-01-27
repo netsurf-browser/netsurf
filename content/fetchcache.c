@@ -58,7 +58,7 @@ static void fetchcache_notmodified(struct content *c, const void *data);
  *                   of generating an error page
  * \param  post_urlenc     url encoded post data, or 0 if none
  * \param  post_multipart  multipart post data, or 0 if none
- * \param  cookies   send and accept cookies
+ * \param  verifiable   this transaction is verifiable
  * \param  download  download, rather than render content
  * \return  a new content, or 0 on memory exhaustion
  *
@@ -73,7 +73,7 @@ struct content * fetchcache(const char *url,
 		bool no_error_pages,
 		char *post_urlenc,
 		struct form_successful_control *post_multipart,
-		bool cookies,
+		bool verifiable,
 		bool download)
 {
 	struct content *c;
@@ -202,19 +202,19 @@ struct content * fetchcache(const char *url,
  * \param  height    available space
  * \param  post_urlenc     url encoded post data, or 0 if none
  * \param  post_multipart  multipart post data, or 0 if none
- * \param  cookies   send and accept cookies
+ * \param  verifiable  this transaction is verifiable
  *
  * Errors will be sent back through the callback.
  */
 
-void fetchcache_go(struct content *content, char *referer,
+void fetchcache_go(struct content *content, const char *referer,
 		void (*callback)(content_msg msg, struct content *c,
 			intptr_t p1, intptr_t p2, union content_msg_data data),
 		intptr_t p1, intptr_t p2,
 		int width, int height,
 		char *post_urlenc,
 		struct form_successful_control *post_multipart,
-		bool cookies)
+		bool verifiable)
 {
 	char error_message[500];
 	union content_msg_data msg_data;
@@ -307,7 +307,7 @@ void fetchcache_go(struct content *content, char *referer,
 		content->fetch = fetch_start(content->url, referer,
 				fetchcache_callback, content,
 				content->no_error_pages,
-				post_urlenc, post_multipart, cookies,
+				post_urlenc, post_multipart, verifiable,
 				headers);
 		for (i = 0; headers[i]; i++)
 			free(headers[i]);
@@ -745,6 +745,20 @@ void fetchcache_notmodified(struct content *c, const void *data)
 	else {
 		/* No cached content, so unconditionally refetch */
 		struct content_user *u;
+		const char *ref = fetch_get_referer(c->fetch);
+		char *referer = NULL;
+
+		if (ref) {
+			referer = strdup(ref);
+			if (!referer) {
+				c->type = CONTENT_UNKNOWN;
+				c->status = CONTENT_STATUS_ERROR;
+				msg_data.error = messages_get("NoMemory");
+				content_broadcast(c, CONTENT_MSG_ERROR,
+						msg_data);
+				return;
+			}
+		}
 
 		fetch_abort(c->fetch);
 		c->fetch = 0;
@@ -754,9 +768,12 @@ void fetchcache_notmodified(struct content *c, const void *data)
 		c->cache_data->etag = 0;
 
 		for (u = c->user_list->next; u; u = u->next) {
-			fetchcache_go(c, 0, u->callback, u->p1, u->p2,
-					c->width, c->height, 0, 0, false);
+			fetchcache_go(c, referer, u->callback, u->p1, u->p2,
+					c->width, c->height, 0, 0,
+					false);
 		}
+
+		free(referer);
 	}
 }
 

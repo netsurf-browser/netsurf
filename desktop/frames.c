@@ -99,7 +99,8 @@ void browser_window_create_iframes(struct browser_window *bw,
 	for (cur = iframe; cur; cur = cur->next) {
 		window = &(bw->iframes[index++]);
 		if (cur->url)
-			browser_window_go(window, cur->url, NULL, true);
+			browser_window_go_unverifiable(window, cur->url,
+					bw->current_content->url, true);
 	}
 }
 
@@ -148,6 +149,7 @@ void browser_window_create_frameset(struct browser_window *bw,
 	int row, col, index;
 	struct content_html_frames *frame;
 	struct browser_window *window;
+	const char *referer;
 
 	assert(bw && frameset);
 
@@ -174,9 +176,11 @@ void browser_window_create_frameset(struct browser_window *bw,
 			/* window characteristics */
 			window->drag_type = DRAGGING_NONE;
 			if (frame->children)
-				window->browser_window_type = BROWSER_WINDOW_FRAMESET;
+				window->browser_window_type =
+						BROWSER_WINDOW_FRAMESET;
 			else
-				window->browser_window_type = BROWSER_WINDOW_FRAME;
+				window->browser_window_type =
+						BROWSER_WINDOW_FRAME;
 			window->scrolling = frame->scrolling;
 			window->border = frame->border;
 			window->border_colour = frame->border_colour;
@@ -212,6 +216,18 @@ void browser_window_create_frameset(struct browser_window *bw,
 		}
 	}
 
+	/* Use the URL of the first ancestor window containing html content
+	 * as the referer */
+	for (window = bw; window->parent; window = window->parent) {
+		if (window->current_content &&
+				window->current_content->type == CONTENT_HTML)
+			break;
+	}
+	if (window->current_content)
+		referer = window->current_content->url;
+	else
+		referer = NULL;
+
 	/* 4. Launch content */
 	for (row = 0; row < bw->rows; row++) {
 		for (col = 0; col < bw->cols; col++) {
@@ -219,8 +235,12 @@ void browser_window_create_frameset(struct browser_window *bw,
 			frame = &frameset->children[index];
 			window = &bw->children[index];
 
-			if (frame->url)
-				browser_window_go(window, frame->url, NULL, true);
+			if (frame->url) {
+				browser_window_go_unverifiable(window,
+						frame->url,
+						referer,
+						true);
+			}
 		}
 	}
 }
