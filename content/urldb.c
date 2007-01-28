@@ -2613,37 +2613,48 @@ bool urldb_set_cookie(const char *header, const char *url,
 	}
 
 	if (referer) {
-		char *rhost, *rscheme;
+		char *rhost;
 
 		/* Ensure that url's host name domain matches
 		 * referer's (4.3.5) */
-		res = url_scheme(referer, &rscheme);
-		if (res != URL_FUNC_OK) {
-			goto error;
-		}
-
 		res = url_host(referer, &rhost);
 		if (res != URL_FUNC_OK) {
-			free(rscheme);
 			goto error;
 		}
 
-		if (strcasecmp(scheme, rscheme) != 0) {
-			/* Schemes don't match => fail */
-			free(rhost);
-			free(rscheme);
-			goto error;
-		}
-
-		/* Domain match host names (both are FQDN or IP) */
+		/* Domain match host names */
 		if (strcasecmp(host, rhost) != 0) {
-			free(rhost);
-			free(rscheme);
-			goto error;
+			/* Not exact match, so try the following:
+			 *
+			 * 1) host = A.B; rhost = B (i.e. strip first
+			 *    segment from host and compare against rhost)
+			 * 2) host = A.B; rhost = C.B (i.e. strip first
+			 *    segment off both hosts and compare) */
+			const char *dot = strchr(host, '.');
+			const char *rdot = strchr(host, '.');
+
+			if (!dot || !rdot) {
+				free(rhost);
+				goto error;
+			}
+
+			/* 1 */
+			if (strcasecmp(dot + 1, rhost) != 0) {
+				/* B must contain embedded dots */
+				if (strchr(rdot + 1, '.') == NULL) {
+					free(rhost);
+					goto error;
+				}
+
+				/* 2 */
+				if (strcasecmp(dot, rdot) != 0) {
+					free(rhost);
+					goto error;
+				}
+			}
 		}
 
 		free(rhost);
-		free(rscheme);
 	}
 
 	end = cur + strlen(cur) - 2 /* Trailing CRLF */;
