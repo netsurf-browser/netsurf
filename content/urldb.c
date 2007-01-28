@@ -2587,6 +2587,9 @@ bool urldb_set_cookie(const char *header, const char *url,
 
 	/* strip fragment */
 	urlt = strdup(url);
+	if (!urlt)
+		return false;
+
 	scheme = strchr(urlt, '#');
 	if (scheme)
 		*scheme = '\0';
@@ -2762,7 +2765,8 @@ error:
  * \param cookie Pointer to cookie string (updated on exit)
  * \return Pointer to cookie structure (on heap, caller frees) or NULL
  */
-struct cookie_internal_data *urldb_parse_cookie(const char *url, const char **cookie)
+struct cookie_internal_data *urldb_parse_cookie(const char *url,
+		const char **cookie)
 {
 	struct cookie_internal_data *c;
 	const char *cur;
@@ -3267,7 +3271,8 @@ void urldb_load_cookies(const char *filename)
 		assert(p <= end);
 
 		/* Now create cookie */
-		struct cookie_internal_data *c = malloc(sizeof(struct cookie_internal_data));
+		struct cookie_internal_data *c =
+				malloc(sizeof(struct cookie_internal_data));
 		if (!c)
 			break;
 
