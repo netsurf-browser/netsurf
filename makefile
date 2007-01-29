@@ -122,14 +122,14 @@ WARNFLAGS = -W -Wall -Wundef -Wpointer-arith -Wcast-qual \
 # CFLAGS have to appear after the inclusion of platform specific files as the
 # PLATFORM_CFLAGS variables are defined in them
 
-CFLAGS_RISCOS = -std=c9x -D_BSD_SOURCE -D_POSIX_C_SOURCE -Driscos -DBOOL_DEFINED -O \
+CFLAGS_RISCOS = -std=c99 -D_BSD_SOURCE -D_POSIX_C_SOURCE -Driscos -DBOOL_DEFINED -O \
 	$(WARNFLAGS) -I.. $(PLATFORM_CFLAGS_RISCOS) -mpoke-function-name \
 #	-include netsurf/utils/memdebug.h
 CFLAGS_RISCOS_SMALL = $(CFLAGS_RISCOS) -Dsmall
 CFLAGS_NCOS = $(CFLAGS_RISCOS) -Dncos
-CFLAGS_DEBUG = -std=c9x -D_BSD_SOURCE -DDEBUG_BUILD $(WARNFLAGS) -I.. \
+CFLAGS_DEBUG = -std=c99 -D_BSD_SOURCE -DDEBUG_BUILD $(WARNFLAGS) -I.. \
 	$(PLATFORM_CFLAGS_DEBUG) -g
-CFLAGS_GTK = -Dnsgtk -std=c9x -D_BSD_SOURCE -Dgtk \
+CFLAGS_GTK = -Dnsgtk -std=c99 -D_BSD_SOURCE -Dgtk \
 	$(WARNFLAGS) -I.. -g -O0 -Wformat=2 -DNDEBUG \
 	`pkg-config --cflags libglade-2.0 gtk+-2.0` `xml2-config --cflags`
 
