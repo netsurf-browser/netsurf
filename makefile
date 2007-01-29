@@ -94,7 +94,7 @@ OBJS_DEBUG=$(OBJECTS_DEBUG:%.o=$(OBJDIR_DEBUG)/%.o)
 
 OBJS_DEBUGRO=$(OBJECTS_DEBUGRO:%.o=$(OBJDIR_RISCOS)/%.o)
 
-OBJDIR_GTK = $(shell $(SYSTEM_CC) -dumpmachine)-gtk
+OBJDIR_GTK = objects-gtk
 SOURCES_GTK=$(OBJECTS_GTK:.o=.c)
 OBJS_GTK=$(OBJECTS_GTK:%.o=$(OBJDIR_GTK)/%.o)
 
@@ -129,7 +129,7 @@ CFLAGS_RISCOS_SMALL = $(CFLAGS_RISCOS) -Dsmall
 CFLAGS_NCOS = $(CFLAGS_RISCOS) -Dncos
 CFLAGS_DEBUG = -std=c9x -D_BSD_SOURCE -DDEBUG_BUILD $(WARNFLAGS) -I.. \
 	$(PLATFORM_CFLAGS_DEBUG) -g
-CFLAGS_GTK = -Dnsgtk -std=c9x -D_BSD_SOURCE -D_POSIX_C_SOURCE -Dgtk \
+CFLAGS_GTK = -Dnsgtk -std=c9x -D_BSD_SOURCE -Dgtk \
 	$(WARNFLAGS) -I.. -g -O0 -Wformat=2 -DNDEBUG \
 	`pkg-config --cflags libglade-2.0 gtk+-2.0` `xml2-config --cflags`
 

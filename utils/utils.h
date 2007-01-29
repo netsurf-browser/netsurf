@@ -2,7 +2,7 @@
  * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
- * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004-2007 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2004 John Tytgat <John.Tytgat@aaug.net>
  */
 
@@ -56,6 +56,10 @@ void unicode_transliterate(unsigned int c, char **r);
 char *human_friendly_bytesize(unsigned long bytesize);
 const char *rfc1123_date(time_t t);
 char *strcasestr(const char *haystack, const char *needle);
+#ifdef __FreeBSD__
+/* FreeBSD lacks strndup */
+char *strndup(const char *s, size_t n);
+#endif
 
 /* Platform specific functions */
 void die(const char * const error);

@@ -2,7 +2,7 @@
  * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
- * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004-2007 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
  * Copyright 2004 John Tytgat <John.Tytgat@aaug.net>
@@ -235,3 +235,30 @@ char *strcasestr(const char *haystack, const char *needle)
 
 	return NULL;
 }
+
+
+#ifdef __FreeBSD__
+
+/**
+ * Duplicate up to n characters of a string.
+ */
+
+char *strndup(const char *s, size_t n)
+{
+	size_t len;
+	char *s2;
+
+	for (len = 0; len != n && s[len]; len++)
+		continue;
+
+	s2 = malloc(len + 1);
+	if (!s2)
+		return 0;
+
+	memcpy(s2, s, len);
+	s2[len] = 0;
+	return s2;
+}
+
+#endif
+

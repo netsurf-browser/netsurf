@@ -24,14 +24,15 @@
 #include <string.h>
 #include <strings.h>
 #include <time.h>
+#include <sys/select.h>
 #include <sys/stat.h>
 #ifdef riscos
 #include <unixlib/local.h>
 #endif
-#include "curl/curl.h"
+#include <curl/curl.h>
 #include "netsurf/utils/config.h"
 #ifdef WITH_SSL
-#include "openssl/ssl.h"
+#include <openssl/ssl.h>
 #endif
 #include "netsurf/content/fetch.h"
 #include "netsurf/content/urldb.h"

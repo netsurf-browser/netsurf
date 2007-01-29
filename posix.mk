@@ -10,14 +10,14 @@ PLATFORM_CFLAGS_RISCOS = -I$(GCCSDK_INSTALL_ENV)/include \
 		-I$(GCCSDK_INSTALL_ENV)/include/libmng \
 		#-finstrument-functions
 PLATFORM_CFLAGS_DEBUG = -I/usr/include/libxml2 -I/riscos/src/OSLib \
-		-I/riscos/include/libjpeg -D_POSIX_C_SOURCE
+		-I/riscos/include/libjpeg -D_POSIX_C_SOURCE=200112
 PLATFORM_AFLAGS_RISCOS = -I$(GCCSDK_INSTALL_ENV)/include
 
 LDFLAGS_RISCOS = -L$(GCCSDK_INSTALL_ENV)/lib -lxml2 -lz -lcurl -lssl -lcrypto \
 		-lcares -lmng -lOSLib32 -ljpeg -lrufl -lpencil #-lprof
 LDFLAGS_SMALL = -L$(GCCSDK_INSTALL_ENV)/lib -lxml2 -lz -lucurl \
 		-lcares -lmng -lOSLib32 -ljpeg -lrufl -lpencil
-LDFLAGS_DEBUG = -L/usr/lib -lxml2 -lz -lm -lcurl -lssl -lcrypto -ldl -lmng \
+LDFLAGS_DEBUG = -L/usr/lib -lxml2 -lz -lm -lcurl -lssl -lcrypto -lmng \
 		-ljpeg -llcms
 
 # Hackery for Cygwin - it has no libdl, so remove it from LDFLAGS

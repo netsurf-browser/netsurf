@@ -21,6 +21,8 @@
    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
+#include <unistd.h>
+
 /* this is only needed for compatibility with the old talloc */
 typedef void TALLOC_CTX;
 

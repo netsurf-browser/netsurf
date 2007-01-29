@@ -13,7 +13,8 @@
 #define _NETSURF_DESKTOP_FETCH_H_
 
 #include <stdbool.h>
-#include "curl/curl.h"
+#include <sys/select.h>
+#include <curl/curl.h>
 #include "netsurf/utils/config.h"
 
 typedef enum {

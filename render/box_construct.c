@@ -19,6 +19,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include "libxml/HTMLparser.h"
 #include "libxml/parserInternals.h"
 #include "netsurf/utils/config.h"

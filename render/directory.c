@@ -101,8 +101,8 @@ bool directory_convert(struct content *c, int width, int height) {
 	 	return false;
 	}
 	while ((entry = readdir(parent)) != NULL) {
-		if ((entry->d_ino == 0) || (!strcmp(entry->d_name, ".")) ||
-				(!strcmp(entry->d_name, "..")))
+		if (!strcmp(entry->d_name, ".") ||
+				!strcmp(entry->d_name, ".."))
 			continue;
 
 		snprintf(buffer, sizeof(buffer), "<a href=\"%s/%s\">%s</a>\n",

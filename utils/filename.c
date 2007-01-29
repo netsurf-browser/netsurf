@@ -216,8 +216,8 @@ bool filename_flush_directory(const char *folder, int depth) {
 	parent = opendir(folder);
 
 	while ((entry = readdir(parent))) {
-		if ((entry->d_ino == 0) || (!strcmp(entry->d_name, ".")) ||
-				(!strcmp(entry->d_name, "..")))
+		if (!strcmp(entry->d_name, ".") ||
+				!strcmp(entry->d_name, ".."))
 			continue;
 
 		/* first 3 depths are directories only, then files only */

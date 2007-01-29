@@ -23,6 +23,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #define CSS_INTERNALS
 #define NDEBUG
 #include "netsurf/css/css.h"

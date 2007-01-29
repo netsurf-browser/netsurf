@@ -20,6 +20,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/select.h>
 #include "curl/curl.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/content/fetch.h"
