@@ -12,6 +12,8 @@
 
 extern bool netsurf_quit;
 extern const char * const netsurf_version;
+extern const int netsurf_version_major;
+extern const int netsurf_version_minor;
 
 #endif
 

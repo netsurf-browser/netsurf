@@ -98,7 +98,7 @@ struct cache_handle {
 	struct cache_handle *r_next; /**< Next cached handle in ring. */
 };
 
-static const char * const user_agent = "NetSurf";
+static char *user_agent = "NetSurf";
 CURLM *fetch_curl_multi;		/**< Global cURL multi handle. */
 /** Curl handle with default options set; not used for transfers. */
 static CURL *fetch_blank_curl;
@@ -212,6 +212,10 @@ static void fetch_dispatch_jobs(void);
 void fetch_init(void)
 {
 	CURLcode code;
+	char *ua = make_useragent();
+	
+	if (ua != NULL)
+		user_agent = ua;
 
 	code = curl_global_init(CURL_GLOBAL_ALL);
 	if (code != CURLE_OK)
