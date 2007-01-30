@@ -376,7 +376,7 @@ struct content * content_create(const char *url)
 	c->refresh = 0;
 	c->bitmap = 0;
 	c->fresh = false;
-	c->time = clock();
+	c->time = wallclock();
 	c->size = 0;
 	c->title = 0;
 	c->active = 0;
@@ -614,7 +614,7 @@ void content_update_status(struct content *c)
 {
 	char token[20];
 	const char *status;
-	clock_t time;
+	unsigned int time;
 
 	snprintf(token, sizeof token, "HTTP%li", c->http_code);
 	status = messages_get(token);
@@ -624,13 +624,13 @@ void content_update_status(struct content *c)
 	if (c->status == CONTENT_STATUS_TYPE_UNKNOWN ||
 			c->status == CONTENT_STATUS_LOADING ||
 			c->status == CONTENT_STATUS_READY)
-		time = clock() - c->time;
+		time = wallclock() - c->time;
 	else
 		time = c->time;
 
 	snprintf(c->status_message, sizeof (c->status_message),
 			"%s (%.1fs) %s", status,
-			(float) time / CLOCKS_PER_SEC, c->sub_status);
+			(float) time / 100, c->sub_status);
 	/* LOG(("%s", c->status_message)); */
 }
 
@@ -752,7 +752,7 @@ void content_set_done(struct content *c)
 	union content_msg_data msg_data;
 
 	c->status = CONTENT_STATUS_DONE;
-	c->time = clock() - c->time;
+	c->time = wallclock() - c->time;
 	content_update_status(c);
 	content_broadcast(c, CONTENT_MSG_DONE, msg_data);
 }

@@ -16,7 +16,6 @@
 #define _NETSURF_DESKTOP_CONTENT_H_
 
 #include <stdint.h>
-#include <time.h>
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content_type.h"
 #include "netsurf/css/css.h"
@@ -179,7 +178,7 @@ struct content {
 	 *  shared between users. */
 	bool fresh;
 	struct cache_data *cache_data;	/**< Cache control data */
-	clock_t time;			/**< Creation time, if TYPE_UNKNOWN,
+	unsigned int time;		/**< Creation time, if TYPE_UNKNOWN,
 					  LOADING or READY,
 					  otherwise total time. */
 

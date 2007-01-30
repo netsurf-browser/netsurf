@@ -236,6 +236,23 @@ char *strcasestr(const char *haystack, const char *needle)
 	return NULL;
 }
 
+/**
+ * Returns a number of centiseconds, that increases in real time, for the
+ * purposes of measuring how long something takes in wall-clock terms.  It uses
+ * gettimeofday() for this.  Should the call to gettimeofday() fail, it returns
+ * zero.
+ *
+ * \return number of centiseconds that increases monotonically
+ */
+unsigned int wallclock(void)
+{
+	struct timeval tv;
+
+	if (gettimeofday(&tv, NULL) == -1)
+		return 0;
+	
+	return ((tv.tv_sec * 100) + (tv.tv_usec / 10000));
+}
 
 #ifdef __FreeBSD__
 

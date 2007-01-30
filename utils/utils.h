@@ -56,6 +56,7 @@ void unicode_transliterate(unsigned int c, char **r);
 char *human_friendly_bytesize(unsigned long bytesize);
 const char *rfc1123_date(time_t t);
 char *strcasestr(const char *haystack, const char *needle);
+unsigned int wallclock(void);
 #ifdef __FreeBSD__
 /* FreeBSD lacks strndup */
 char *strndup(const char *s, size_t n);
