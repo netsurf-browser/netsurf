@@ -38,8 +38,8 @@ static char *form_acceptable_charset(struct form *form);
  * \return  a new structure, or 0 on memory exhaustion
  */
 
-struct form *form_new(char *action, char *target, form_method method, char *charset,
-		char *doc_charset)
+struct form *form_new(char *action, char *target, form_method method,
+		char *charset, char *doc_charset)
 {
 	struct form *form;
 
@@ -387,8 +387,14 @@ bool form_successful_controls(struct form *form,
 
 			case GADGET_FILE:
 				/* file */
-				if (!control->value)
-					continue;
+				/* Handling of blank file entries is
+				 * implementation defined - we're perfectly
+				 * within our rights to treat it as an
+				 * unsuccessful control. Unfortunately, every
+				 * other browser submits the field with
+				 * a blank filename and no content. So,
+				 * that's what we have to do, too.
+				 */
 				success_new = malloc(sizeof(*success_new));
 				if (!success_new) {
 					LOG(("malloc failed"));
@@ -396,7 +402,8 @@ bool form_successful_controls(struct form *form,
 				}
 				success_new->file = true;
 				success_new->name = strdup(control->name);
-				success_new->value = strdup(control->value);
+				success_new->value = strdup(control->value ?
+						control->value : "");
 				success_new->next = 0;
 				last_success->next = success_new;
 				last_success = success_new;

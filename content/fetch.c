@@ -213,7 +213,7 @@ void fetch_init(void)
 {
 	CURLcode code;
 	char *ua = make_useragent();
-	
+
 	if (ua != NULL)
 		user_agent = ua;
 
@@ -1354,17 +1354,15 @@ bool fetch_process_headers(struct fetch *f)
 struct curl_httppost *fetch_post_convert(struct form_successful_control *control)
 {
 	struct curl_httppost *post = 0, *last = 0;
-	char *mimetype = 0;
-	char *leafname = 0;
-#ifdef riscos
-	char *temp;
-	int leaflen;
-#endif
+	CURLFORMcode code;
 
 	for (; control; control = control->next) {
 		if (control->file) {
-			mimetype = fetch_mimetype(control->value);
+			char *leafname = 0;
 #ifdef riscos
+			char *temp;
+			int leaflen;
+
 			temp = strrchr(control->value, '.');
 			if (!temp)
 				temp = control->value; /* already leafname */
@@ -1376,7 +1374,6 @@ struct curl_httppost *fetch_post_convert(struct form_successful_control *control
 			leafname = malloc(leaflen + 1);
 			if (!leafname) {
 				LOG(("malloc failed"));
-				free(mimetype);
 				continue;
 			}
 			memcpy(leafname, temp, leaflen + 1);
@@ -1392,23 +1389,58 @@ struct curl_httppost *fetch_post_convert(struct form_successful_control *control
 			else
 				leafname += 1;
 #endif
-			curl_formadd(&post, &last,
+			/* We have to special case filenames of "", so curl
+			 * a) actually attempts the fetch and
+			 * b) doesn't attempt to open the file ""
+			 */
+			if (control->value[0] == '\0') {
+				/* dummy buffer - needs to be static so
+				 * pointer's still valid when we go out
+				 * of scope (not that libcurl should be
+				 * attempting to access it, of course). */
+				static char buf;
+
+				code = curl_formadd(&post, &last,
+					CURLFORM_COPYNAME, control->name,
+					CURLFORM_BUFFER, control->value,
+					/* needed, as basename("") == "." */
+					CURLFORM_FILENAME, "",
+					CURLFORM_BUFFERPTR, &buf,
+					CURLFORM_BUFFERLENGTH, 0,
+					CURLFORM_CONTENTTYPE,
+						"application/octet-stream",
+					CURLFORM_END);
+				if (code != CURL_FORMADD_OK)
+					LOG(("curl_formadd: %d (%s)",
+						code, control->name));
+			} else {
+				char *mimetype = fetch_mimetype(control->value);
+				code = curl_formadd(&post, &last,
 					CURLFORM_COPYNAME, control->name,
 					CURLFORM_FILE, control->value,
 					CURLFORM_FILENAME, leafname,
 					CURLFORM_CONTENTTYPE,
 					(mimetype != 0 ? mimetype : "text/plain"),
 					CURLFORM_END);
+				if (code != CURL_FORMADD_OK)
+					LOG(("curl_formadd: %d (%s=%s)",
+						code, control->name,
+						control->value));
+				free(mimetype);
+			}
 #ifdef riscos
 			free(leafname);
 #endif
-			free(mimetype);
 		}
 		else {
-			curl_formadd(&post, &last,
+			code = curl_formadd(&post, &last,
 					CURLFORM_COPYNAME, control->name,
 					CURLFORM_COPYCONTENTS, control->value,
 					CURLFORM_END);
+			if (code != CURL_FORMADD_OK)
+				LOG(("curl_formadd: %d (%s=%s)", code,
+						control->name,
+						control->value));
 		}
 	}
 
