@@ -33,9 +33,7 @@ static void netsurf_init(int argc, char** argv);
 static void netsurf_poll(void);
 static void netsurf_exit(void);
 static void lib_init(void);
-static void content_clean_wrapper(void *p);
 
-#define CONTENT_CLEAN_FREQ (500) /* cs */
 
 /**
  * Gui NetSurf main().
@@ -85,8 +83,6 @@ void netsurf_init(int argc, char** argv)
 	fetch_init();
 	fetchcache_init();
 	gui_init2(argc, argv);
-
-	schedule(CONTENT_CLEAN_FREQ, content_clean_wrapper, NULL);
 }
 
 /**
@@ -95,6 +91,7 @@ void netsurf_init(int argc, char** argv)
 
 void netsurf_poll(void)
 {
+	content_clean();
 	gui_poll(fetch_active);
 	fetch_poll();
 }
@@ -106,8 +103,6 @@ void netsurf_poll(void)
 
 void netsurf_exit(void)
 {
-	schedule_remove(content_clean_wrapper, NULL);
-
 	LOG(("Closing GUI"));
 	gui_quit();
 	LOG(("Closing content"));
@@ -135,12 +130,3 @@ static void lib_init(void)
 }
 
 
-/**
- * Wrapper for content cleaner callback
- */
-static void content_clean_wrapper(void *p)
-{
-	content_clean();
-
-	schedule(CONTENT_CLEAN_FREQ, content_clean_wrapper, NULL);
-}
