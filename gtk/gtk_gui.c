@@ -143,6 +143,7 @@ static void check_homedir(void)
 void gui_init(int argc, char** argv)
 {
 	char buf[PATH_MAX];
+	PangoFontDescription *fontdesc;
 
 	gtk_init(&argc, &argv);
 
@@ -227,6 +228,9 @@ void gui_init(int argc, char** argv)
 	gtk_image_set_from_file(GTK_IMAGE(
 		glade_xml_get_widget(gladeWindows, "imageLogo")),
 		find_resource(buf, "netsurf-logo.png", "netsurf-logo.png"));
+	fontdesc = pango_font_description_from_string("Monospace 8");
+	gtk_widget_modify_font(GTK_WIDGET(
+		glade_xml_get_widget(gladeWindows, "textviewGPL")), fontdesc);
 	nsgtk_history_init();
 }
 

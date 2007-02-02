@@ -130,7 +130,7 @@ CFLAGS_NCOS = $(CFLAGS_RISCOS) -Dncos
 CFLAGS_DEBUG = -std=c99 -D_BSD_SOURCE -DDEBUG_BUILD $(WARNFLAGS) -I.. \
 	$(PLATFORM_CFLAGS_DEBUG) -g
 CFLAGS_GTK = -Dnsgtk -std=c99 -D_BSD_SOURCE -Dgtk \
-	$(WARNFLAGS) -I.. -g -O0 -Wformat=2 -DNDEBUG \
+	$(WARNFLAGS) -I.. -g -O0 -Wformat=2 \
 	`pkg-config --cflags libglade-2.0 gtk+-2.0` `xml2-config --cflags`
 
 # Stop GCC under Cygwin throwing a fit
