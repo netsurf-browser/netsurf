@@ -64,7 +64,7 @@ static void browser_window_go_post(struct browser_window *bw,
 		const char *url, char *post_urlenc,
 		struct form_successful_control *post_multipart,
 		bool history_add, const char *referer, bool download,
-		bool verifiable);
+		bool verifiable, const char *parent_url);
 static void browser_window_callback(content_msg msg, struct content *c,
 		intptr_t p1, intptr_t p2, union content_msg_data data);
 static void browser_window_refresh(void *p);
@@ -175,12 +175,12 @@ struct browser_window *browser_window_create(const char *url,
  */
 
 void browser_window_go(struct browser_window *bw, const char *url,
-		const char* referer, bool history_add)
+		const char *referer, bool history_add)
 {
 	/* All fetches passing through here are verifiable
 	 * (i.e are the result of user action) */
 	browser_window_go_post(bw, url, 0, 0, history_add, referer,
-			false, true);
+			false, true, referer);
 }
 
 
@@ -195,12 +195,12 @@ void browser_window_go(struct browser_window *bw, const char *url,
  */
 
 void browser_window_go_unverifiable(struct browser_window *bw,
-		const char *url, const char* referer, bool history_add)
+		const char *url, const char *referer, bool history_add)
 {
 	/* All fetches passing through here are unverifiable
 	 * (i.e are not the result of user action) */
 	browser_window_go_post(bw, url, 0, 0, history_add, referer,
-			false, false);
+			false, false, referer);
 }
 
 /**
@@ -214,6 +214,8 @@ void browser_window_go_unverifiable(struct browser_window *bw,
  * \param  referer	   the referring uri (copied), or 0 if none
  * \param  download	   download, rather than render the uri
  * \param  verifiable	   this transaction is verifiable
+ * \param  parent_url	   URL of fetch which spawned this one (copied),
+ *                         or 0 if none
  *
  * Any existing fetches in the window are aborted.
  *
@@ -227,7 +229,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 		char *post_urlenc,
 		struct form_successful_control *post_multipart,
 		bool history_add, const char *referer, bool download,
-		bool verifiable)
+		bool verifiable, const char *parent_url)
 {
 	struct content *c;
 	char *url2;
@@ -337,7 +339,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	bw->download = download;
 	fetchcache_go(c, referer, browser_window_callback,
 			(intptr_t) bw, 0, width, height,
-			post_urlenc, post_multipart, verifiable);
+			post_urlenc, post_multipart, verifiable, parent_url);
 }
 
 
@@ -475,6 +477,9 @@ void browser_window_callback(content_msg msg, struct content *c,
 		break;
 
 	case CONTENT_MSG_REDIRECT:
+	{
+		const char *prev_url = bw->loading_content->url;
+
 		bw->loading_content = 0;
 		browser_window_set_status(bw,
 				messages_get("Redirecting"));
@@ -483,7 +488,9 @@ void browser_window_callback(content_msg msg, struct content *c,
 		 * referer across the redirect */
 		browser_window_go_post(bw, data.redirect, 0, 0,
 				bw->history_add, bw->referer,
-				bw->download, false);
+				bw->download, false,
+				bw->referer ? bw->referer : prev_url);
+	}
 		break;
 
 	case CONTENT_MSG_REFORMAT:
@@ -789,7 +796,7 @@ void browser_window_reload(struct browser_window *bw, bool all)
 	}
 	bw->current_content->fresh = false;
 	browser_window_go_post(bw, bw->current_content->url, 0, 0,
-			false, 0, false, true);
+			false, 0, false, true, 0);
 }
 
 
@@ -1443,7 +1450,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 				mouse & BROWSER_MOUSE_MOD_1) {
 			/* force download of link */
 			browser_window_go_post(bw, url, 0, 0, false,
-					c->url, true, true);
+					c->url, true, true, 0);
 
 		} else if (mouse & BROWSER_MOUSE_CLICK_1) {
 			bw = browser_window_find_target(bw, target);
@@ -2304,14 +2311,14 @@ void browser_form_submit(struct browser_window *bw, const char *target,
 			}
 			browser_window_go_post(bw_form, form->action, data, 0,
 					true, bw->current_content->url,
-					false, true);
+					false, true, 0);
 			break;
 
 		case method_POST_MULTIPART:
 			browser_window_go_post(bw_form, form->action, 0,
 					success, true,
 					bw->current_content->url,
-					false, true);
+					false, true, 0);
 			break;
 
 		default:

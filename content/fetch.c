@@ -69,6 +69,8 @@ struct fetch {
 	char *url;		/**< URL. */
 	char *referer;		/**< URL for Referer header. */
 	bool send_referer;	/**< Valid to send the referer */
+	char *parent_fetch_url;	/**< URL of parent fetch (not necessarily
+				 * the same as the referer) */
 	void *p;		/**< Private data for callback. */
 	struct curl_slist *headers;	/**< List of request headers. */
 	char *host;		/**< Host part of URL. */
@@ -310,7 +312,7 @@ struct fetch * fetch_start(const char *url, const char *referer,
 				unsigned long size),
 		void *p, bool only_2xx, const char *post_urlenc,
 		struct form_successful_control *post_multipart,
-		bool verifiable, char *headers[])
+		bool verifiable, const char *parent_url, char *headers[])
 {
 	char *host;
 	struct fetch *fetch;
@@ -372,6 +374,7 @@ struct fetch * fetch_start(const char *url, const char *referer,
 				strcasecmp(ref1, ref2) == 0)
 			fetch->send_referer = true;
 	}
+	fetch->parent_fetch_url = parent_url ? strdup(parent_url) : 0;
 	fetch->p = p;
 	fetch->headers = 0;
 	fetch->host = host;
@@ -404,6 +407,7 @@ struct fetch * fetch_start(const char *url, const char *referer,
 	fetch->r_next = 0;
 
 	if (!fetch->url || (referer && !fetch->referer) ||
+			(parent_url && !fetch->parent_fetch_url) ||
 			(post_urlenc && !fetch->post_urlenc) ||
 			(post_multipart && !fetch->post_multipart))
 		goto failed;
@@ -478,6 +482,7 @@ failed:
 	if (ref2)
 		free(ref2);
 	free(fetch->url);
+	free(fetch->parent_fetch_url);
 	free(fetch->referer);
 	free(fetch->post_urlenc);
 	if (fetch->post_multipart)
@@ -794,6 +799,7 @@ void fetch_free(struct fetch *f)
 		curl_easy_cleanup(f->curl_handle);
 	free(f->url);
 	free(f->host);
+	free(f->parent_fetch_url);
 	free(f->referer);
 	free(f->location);
 	free(f->cookie_string);
@@ -1223,15 +1229,17 @@ size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
 		/* extract Set-Cookie header */
 		SKIP_ST(11);
 
-		/* If the fetch is unverifiable and there's no referer,
-		 * err on the side of caution and do not set the cookie */
+		/* If the fetch is unverifiable and there's no parent fetch
+		 * url, err on the side of caution and do not set the
+		 cookie */
 
-		if (f->verifiable || f->referer) {
+		if (f->verifiable || f->parent_fetch_url) {
 			/* If the transaction's verifiable, we don't require
-			 * that the request uri and the referer domain match,
-			 * so don't pass in the referer in this case. */
+			 * that the request uri and the parent domain match,
+			 * so don't pass in the parent in this case. */
 			urldb_set_cookie(&data[i], f->url,
-					f->verifiable ? 0 : f->referer);
+					f->verifiable ? 0
+						      : f->parent_fetch_url);
 		}
 	}
 

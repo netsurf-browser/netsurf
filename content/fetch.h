@@ -72,7 +72,7 @@ struct fetch * fetch_start(const char *url, const char *referer,
 				unsigned long size),
 		void *p, bool only_2xx, const char *post_urlenc,
 		struct form_successful_control *post_multipart,
-		bool verifiable, char *headers[]);
+		bool verifiable, const char *parent_url, char *headers[]);
 void fetch_abort(struct fetch *f);
 void fetch_poll(void);
 void fetch_quit(void);

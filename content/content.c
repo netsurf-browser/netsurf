@@ -535,6 +535,8 @@ bool content_set_type(struct content *c, content_type type,
 			c->user_list->next->next) {
 		/* type not shareable, and more than one user: split into
 		 * a content per user */
+		const char *referer = fetch_get_referer(c->fetch);
+
 		while (c->user_list->next->next) {
 			clone = content_create(c->url);
 			if (!clone) {
@@ -566,10 +568,11 @@ bool content_set_type(struct content *c, content_type type,
 			}
 			content_remove_user(c, callback, p1, p2);
 			content_broadcast(clone, CONTENT_MSG_NEWPTR, msg_data);
-			fetchcache_go(clone, fetch_get_referer(c->fetch),
+			fetchcache_go(clone, referer,
 					callback, p1, p2,
 					clone->width, clone->height,
-					0, 0, false);
+					0, 0, false,
+					referer ? referer : c->url);
 		}
 	}
 

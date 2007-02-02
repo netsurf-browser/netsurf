@@ -1659,7 +1659,7 @@ bool plugin_start_fetch(struct plugin_stream *p, const char *url)
 
 	p->c = c;
 	fetchcache_go(c, 0, plugin_stream_callback, (intptr_t)p, 0,
-			100, 100, 0, 0, false);
+			100, 100, 0, 0, false, 0);
 
 	return true;
 }

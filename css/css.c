@@ -877,7 +877,7 @@ void css_atimport(struct content *c, struct css_node *node)
 		fetchcache_go(c->data.css.import_content[i], c->url,
 				css_atimport_callback, (intptr_t) c, i,
 				c->width, c->height,
-				0, 0, false);
+				0, 0, false, c->url);
 	}
 
 	free(url);
@@ -949,7 +949,7 @@ void css_atimport_callback(content_msg msg, struct content *css,
 						c->url, css_atimport_callback,
 						(intptr_t) c, i,
 						css->width, css->height,
-						0, 0, false);
+						0, 0, false, c->url);
 			}
 			break;
 

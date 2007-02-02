@@ -204,6 +204,7 @@ struct content * fetchcache(const char *url,
  * \param  post_urlenc     url encoded post data, or 0 if none
  * \param  post_multipart  multipart post data, or 0 if none
  * \param  verifiable  this transaction is verifiable
+ * \param  parent_url  URL of fetch which spawned this one, or 0 if none
  *
  * Errors will be sent back through the callback.
  */
@@ -215,7 +216,7 @@ void fetchcache_go(struct content *content, const char *referer,
 		int width, int height,
 		char *post_urlenc,
 		struct form_successful_control *post_multipart,
-		bool verifiable)
+		bool verifiable, const char *parent_url)
 {
 	char error_message[500];
 	union content_msg_data msg_data;
@@ -309,7 +310,7 @@ void fetchcache_go(struct content *content, const char *referer,
 				fetchcache_callback, content,
 				content->no_error_pages,
 				post_urlenc, post_multipart, verifiable,
-				headers);
+				parent_url, headers);
 		for (i = 0; headers[i]; i++)
 			free(headers[i]);
 		free(headers);
@@ -771,7 +772,7 @@ void fetchcache_notmodified(struct content *c, const void *data)
 		for (u = c->user_list->next; u; u = u->next) {
 			fetchcache_go(c, referer, u->callback, u->p1, u->p2,
 					c->width, c->height, 0, 0,
-					false);
+					false, ref ? referer : c->url);
 		}
 
 		free(referer);

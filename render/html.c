@@ -613,10 +613,10 @@ bool html_find_stylesheets(struct content *c, xmlNode *head)
 	if (!c->data.html.stylesheet_content[STYLESHEET_BASE])
 		return false;
 	c->active++;
-	fetchcache_go(c->data.html.stylesheet_content[STYLESHEET_BASE], 0,
-			html_convert_css_callback, (intptr_t) c,
+	fetchcache_go(c->data.html.stylesheet_content[STYLESHEET_BASE],
+			c->url, html_convert_css_callback, (intptr_t) c,
 			STYLESHEET_BASE, c->width, c->height,
-			0, 0, false);
+			0, 0, false, 0);
 
 	if (option_block_ads) {
 		c->data.html.stylesheet_content[STYLESHEET_ADBLOCK] =
@@ -629,9 +629,9 @@ bool html_find_stylesheets(struct content *c, xmlNode *head)
 		c->active++;
 		fetchcache_go(c->data.html.
 				stylesheet_content[STYLESHEET_ADBLOCK],
-				0, html_convert_css_callback, (intptr_t) c,
-				STYLESHEET_ADBLOCK, c->width,
-				c->height, 0, 0, false);
+				c->url, html_convert_css_callback,
+				(intptr_t) c, STYLESHEET_ADBLOCK, c->width,
+				c->height, 0, 0, false, 0);
 	}
 
 	for (node = head == 0 ? 0 : head->children; node; node = node->next) {
@@ -703,7 +703,7 @@ bool html_find_stylesheets(struct content *c, xmlNode *head)
 					c->url,
 					html_convert_css_callback,
 					(intptr_t) c, i, c->width, c->height,
-					0, 0, false);
+					0, 0, false, c->url);
 			free(url);
 			i++;
 
@@ -890,7 +890,8 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 						c->url,
 						html_convert_css_callback,
 						(intptr_t) c, i, css->width,
-						css->height, 0, 0, false);
+						css->height, 0, 0, false,
+						c->url);
 			}
 			break;
 
@@ -977,7 +978,7 @@ bool html_fetch_object(struct content *c, char *url, struct box *box,
 	fetchcache_go(c_fetch, c->url,
 			html_object_callback, (intptr_t) c, i,
 			available_width, available_height,
-			0, 0, false);
+			0, 0, false, c->url);
 
 	return true;
 }
@@ -1044,7 +1045,7 @@ bool html_replace_object(struct content *c, unsigned int i, char *url,
 			html_object_callback, (intptr_t) c, i,
 			c->data.html.object[i].box->width,
 			c->data.html.object[i].box->height,
-			post_urlenc, post_multipart, false);
+			post_urlenc, post_multipart, false, c->url);
 
 	return true;
 }
@@ -1144,7 +1145,8 @@ void html_object_callback(content_msg msg, struct content *object,
 							html_object_callback,
 							(intptr_t) c, i,
 							0, 0,
-							0, 0, false);
+							0, 0,
+							false, c->url);
 				}
 			}
 			break;
