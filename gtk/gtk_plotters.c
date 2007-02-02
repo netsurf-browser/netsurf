@@ -195,15 +195,15 @@ bool nsgtk_plot_clip(int clip_x0, int clip_y0,
 #ifdef CAIRO_VERSION
   	if (option_render_cairo) {
 		cairo_reset_clip(current_cr);
-		cairo_rectangle(current_cr, clip_x0 - 1, clip_y0 - 1,
-			clip_x1 - clip_x0 + 1, clip_y1 - clip_y0 + 1);
+		cairo_rectangle(current_cr, clip_x0, clip_y0,
+			clip_x1 - clip_x0, clip_y1 - clip_y0);
 		cairo_clip(current_cr);
 	}
 #endif
 	cliprect.x = clip_x0;
 	cliprect.y = clip_y0;
-	cliprect.width = clip_x1 - clip_x0 + 1;
-	cliprect.height = clip_y1 - clip_y0 + 1;
+	cliprect.width = clip_x1 - clip_x0;
+	cliprect.height = clip_y1 - clip_y0;
 	gdk_gc_set_clip_rectangle(current_gc, &cliprect);
 	return true;
 }
@@ -275,9 +275,7 @@ static bool nsgtk_plot_pixbuf(int x, int y, int width, int height,
 	if (width == 0 || height == 0)
 		return true;
 
-	width++; /* TODO: investigate why this is required */
-
-	if (gdk_pixbuf_get_width(pixbuf) == (width - 1) &&
+	if (gdk_pixbuf_get_width(pixbuf) == width &&
 			gdk_pixbuf_get_height(pixbuf) == height) {
 		gdk_draw_pixbuf(current_drawable, current_gc,
 				pixbuf,
