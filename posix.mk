@@ -43,4 +43,5 @@ clean:
 	-rm $(OBJDIR_RISCOS)/* $(OBJDIR_RISCOS_SMALL)/* $(OBJDIR_NCOS)/* \
 		$(OBJDIR_DEBUG)/* $(OBJDIR_GTK)/* \
 		css/css_enum.c css/css_enum.h \
-		css/parser.c css/parser.h css/scanner.c
+		css/parser.c css/parser.h css/scanner.c \
+		nsgtk
