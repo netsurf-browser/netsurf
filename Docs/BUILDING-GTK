@@ -1,0 +1,26 @@
+To build the GTK version of NetSurf on a UNIX-like platform (although it has
+only been tested on Debian, Ubuntu and FreeBSD), simply run "make gtk" once
+you have got the relevent build dependancies installed.  Under a Debian-like
+OS, this should suffice:
+
+	apt-get install libglade2-dev libcurl3-dev libxml2-dev lemon re2c
+
+This will pull in loads of things, like all the GTK dev libraries, the PNG and
+JPEG libraries, colour management libraries, zlib, OpenSSL etc that NetSurf
+also depends on.
+
+lemon and re2c are the parser and lexer generators used to create NetSurf's CSS
+support.  If you have trouble finding lemon for your platform, it forms part of
+the SQLite distribution, and consists of a single C file and a single runtime
+data file, and is trivial to build yourself.
+
+Type "make gtk".  Currently, this produces a huge number of warnings, mostly
+due to confused signedness.  These havn't been fixed yet but are mostly
+harmless.
+
+Once you've built NetSurf, you should have an executable called nsgtk.  You
+can't run this directly without setting up some environment variables so that
+NetSurf can find its resources (such as the window definitions, text resources,
+etc).  A small shell script called "netsurf" is provided to make it easy to run
+NetSurf from the build tree.
+
