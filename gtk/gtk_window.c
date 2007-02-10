@@ -160,6 +160,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
                 scrollpolicy = GTK_POLICY_ALWAYS;
                 break;
         case SCROLLING_AUTO:
+	default:
                 scrollpolicy = GTK_POLICY_AUTOMATIC;
                 break;
         };
