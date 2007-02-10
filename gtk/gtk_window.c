@@ -131,7 +131,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
                                                       GTK_WIDGET(g->fixed));
                 gtk_scrolled_window_set_shadow_type(g->scrolledwindow,
                                                     GTK_SHADOW_NONE);
-                g->viewport = gtk_bin_get_child(GTK_BIN(g->scrolledwindow));
+                g->viewport = GTK_VIEWPORT(gtk_bin_get_child(GTK_BIN(g->scrolledwindow)));
                 /* Attach ourselves into our parent at the right point */
                 nsgtk_gui_window_attach_child(bw->parent->window, g);
         } else {

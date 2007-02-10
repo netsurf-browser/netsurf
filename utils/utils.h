@@ -55,7 +55,9 @@ void regcomp_wrapper(regex_t *preg, const char *regex, int cflags);
 void unicode_transliterate(unsigned int c, char **r);
 char *human_friendly_bytesize(unsigned long bytesize);
 const char *rfc1123_date(time_t t);
+#ifndef _GNU_SOURCE
 char *strcasestr(const char *haystack, const char *needle);
+#endif
 unsigned int wallclock(void);
 char *make_useragent(void);
 #ifdef __FreeBSD__

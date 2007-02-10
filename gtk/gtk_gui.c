@@ -162,8 +162,8 @@ void gui_init(int argc, char** argv)
 	find_resource(buf, "netsurf.xpm", "./gtk/res/netsurf.xpm");
 	gtk_window_set_default_icon_from_file(buf, NULL);
 
-	wndTooltip = glade_xml_get_widget(gladeWindows, "wndTooltip");
-	labelTooltip = glade_xml_get_widget(gladeWindows, "tooltip");
+	wndTooltip = GTK_WINDOW(glade_xml_get_widget(gladeWindows, "wndTooltip"));
+	labelTooltip = GTK_LABEL(glade_xml_get_widget(gladeWindows, "tooltip"));
 
 	nsgtk_completion_init();
 
@@ -447,8 +447,3 @@ bool cookies_update(const char *domain, const struct cookie_data *data)
 {
 	return true;
 }
-
-void nsgtk_choices_apply_clicked(GtkWidget *widget) {
-  LOG(("Apply button clicked!"));
-}
-

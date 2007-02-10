@@ -17,6 +17,7 @@
 #include <gdk/gdk.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
 #include "netsurf/content/content.h"
+#include "netsurf/gtk/gtk_bitmap.h"
 #include "netsurf/gtk/gtk_scaffolding.h"
 #include "netsurf/image/bitmap.h"
 #include "netsurf/utils/log.h"
@@ -239,7 +240,6 @@ gtk_bitmap_get_pretile_x(struct bitmap* bitmap)
 {
         if (!bitmap->pretile_x) {
                 int width = gdk_pixbuf_get_width(bitmap->primary);
-                int height = gdk_pixbuf_get_height(bitmap->primary);
                 int xmult = (MIN_PRETILE_WIDTH + width - 1)/width;
                 LOG(("Pretiling %p for X*%d", bitmap, xmult));
                 bitmap->pretile_x = gtk_bitmap_generate_pretile(bitmap->primary, xmult, 1);
@@ -257,7 +257,6 @@ GdkPixbuf *
 gtk_bitmap_get_pretile_y(struct bitmap* bitmap)
 {
         if (!bitmap->pretile_y) {
-                int width = gdk_pixbuf_get_width(bitmap->primary);
                 int height = gdk_pixbuf_get_height(bitmap->primary);
                 int ymult = (MIN_PRETILE_HEIGHT + height - 1)/height;
                 LOG(("Pretiling %p for Y*%d", bitmap, ymult));

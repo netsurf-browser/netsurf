@@ -16,6 +16,7 @@
 #include "netsurf/gtk/gtk_gui.h"
 #include "netsurf/gtk/gtk_scaffolding.h"
 #include "netsurf/gtk/gtk_options.h"
+#include "netsurf/gtk/gtk_window.h"
 
 GtkWindow *wndChoices;
 

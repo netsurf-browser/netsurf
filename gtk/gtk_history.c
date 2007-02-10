@@ -11,6 +11,7 @@
 #include "netsurf/content/urldb.h"
 #include "netsurf/gtk/gtk_history.h"
 #include "netsurf/gtk/gtk_gui.h"
+#include "netsurf/gtk/gtk_window.h"
 
 enum
 {
@@ -89,22 +90,22 @@ bool nsgtk_history_add_internal(const char *url, const struct url_data *data)
 void nsgtk_history_selection_changed(GtkTreeSelection *treesel, gpointer g)
 {
 	GtkTreeIter iter;
-
-	if (gtk_tree_selection_get_selected(treesel, &history_tree, &iter))
+	GtkTreeModel *model = GTK_TREE_MODEL(history_tree);
+	if (gtk_tree_selection_get_selected(treesel, &model, &iter))
 	{
 		gchar *b;
 		gint i;
 		char buf[20];
 
-		gtk_tree_model_get(history_tree, &iter, COL_ADDRESS, &b, -1);
+		gtk_tree_model_get(model, &iter, COL_ADDRESS, &b, -1);
 		gtk_label_set_text(GTK_LABEL(glade_xml_get_widget(gladeWindows,
 						"labelHistoryAddress")), b);
 
-		gtk_tree_model_get(history_tree, &iter, COL_LASTVISIT, &b, -1);
+		gtk_tree_model_get(model, &iter, COL_LASTVISIT, &b, -1);
 		gtk_label_set_text(GTK_LABEL(glade_xml_get_widget(gladeWindows,
 						"labelHistoryLastVisit")), b);
 
-		gtk_tree_model_get(history_tree, &iter, COL_TOTALVISITS,
+		gtk_tree_model_get(model, &iter, COL_TOTALVISITS,
 						&i, -1);
 		snprintf(buf, 20, "%d", i);
 		gtk_label_set_text(GTK_LABEL(glade_xml_get_widget(gladeWindows,

@@ -93,8 +93,6 @@ static gboolean nsgtk_window_url_changed(GtkWidget *, GdkEventKey *, gpointer);
 
 static gboolean nsgtk_history_expose_event(GtkWidget *, GdkEventExpose *,
 						gpointer);
-static gboolean nsgtk_history_motion_notify_event(GtkWidget *, GdkEventMotion *,
-						gpointer);
 static gboolean nsgtk_history_button_press_event(GtkWidget *, GdkEventButton *,
 						gpointer);
 
@@ -497,46 +495,13 @@ gboolean nsgtk_history_expose_event(GtkWidget *widget,
 	return FALSE;
 }
 
-gboolean nsgtk_history_motion_notify_event(GtkWidget *widget,
-                                           GdkEventMotion *event, gpointer g)
-{
-	/* if we're hovering over a history item, popup our tooltip bodge
-	 * describing the page.
-	 */
-	struct gtk_history_window *gw = g;
-        struct browser_window *bw = nsgtk_get_browser_for_gui(gw->g->top_level);
-	const char *url;
-	int winx, winy;
-	
-//	if (!option_history_tooltip)
-//		return TRUE;
-	
-	url = history_position_url(bw->history, event->x, event->y);
-	if (url == NULL) {
-		gtk_widget_hide(GTK_WIDGET(wndTooltip));
-		return TRUE;
-	}
-	
-	gtk_label_set_text(labelTooltip, url);
-	gtk_window_get_position(gw->g->window, &winx, &winy);
-	
-	LOG(("winx = %d, winy = %d, event->x = %d, event->y = %d",
-		winx, winy, (int)(event->x), (int)(event->y)));
-	
-	gtk_widget_show(GTK_WIDGET(wndTooltip));
-        LOG(("Move"));
-	gtk_window_move(wndTooltip, event->x + winx, event->y + winy);
-	
-	return TRUE;
-}
-
 gboolean nsgtk_history_button_press_event(GtkWidget *widget,
 					GdkEventButton *event, gpointer g)
 {
 	struct gtk_history_window *hw = (struct gtk_history_window *)g;
         struct browser_window *bw = nsgtk_get_browser_for_gui(hw->g->top_level);
         
-        LOG(("X=%d, Y=%d", event->x, event->y));
+        LOG(("X=%g, Y=%g", event->x, event->y));
         
 	history_click(bw, bw->history,
 		      event->x, event->y, false);
