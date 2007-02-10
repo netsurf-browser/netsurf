@@ -177,6 +177,53 @@ bool html_process_data(struct content *c, char *data, unsigned int size)
 	}
 	htmlParseChunk(c->data.html.parser, data + x, (int) (size - x), 0);
 
+	if (!c->data.html.encoding && c->data.html.parser->input->encoding) {
+		/* The encoding was not in headers or detected,
+		 * and the parser found a <meta http-equiv="content-type"
+		 * content="text/html; charset=...">. */
+		c->data.html.encoding = talloc_strdup(c,
+				c->data.html.parser->input->encoding);
+		if (!c->data.html.encoding) {
+			union content_msg_data msg_data;
+
+			msg_data.error = messages_get("NoMemory");
+			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+			return false;
+		}
+		c->data.html.encoding_source = ENCODING_SOURCE_META;
+
+		/* have the encoding; don't attempt to detect it */
+		c->data.html.getenc = false;
+
+		/* now, we must reset the parser such that it reparses
+		 * using the correct charset, and then reparse any document
+		 * source we've got. we achieve this by recreating the
+		 * parser in its entirety as this is simpler than resetting
+		 * the existing one and ensuring it's still set up correctly.
+		 */
+		if (c->data.html.parser->myDoc)
+			xmlFreeDoc(c->data.html.parser->myDoc);
+		htmlFreeParserCtxt(c->data.html.parser);
+
+		c->data.html.parser = htmlCreatePushParserCtxt(0, 0, "", 0,
+				0, XML_CHAR_ENCODING_NONE);
+		if (!c->data.html.parser) {
+			union content_msg_data msg_data;
+
+			msg_data.error = messages_get("NoMemory");
+			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+			return false;
+		}
+		if (!html_set_parser_encoding(c, c->data.html.encoding))
+			return false;
+
+		/* and reparse received document source - the recursion
+		 * is safe as we've just set c->data.html.encoding so
+		 * we'll never get back in here. */
+		if (!html_process_data(c, c->source_data, c->source_size))
+			return false;
+	}
+
 	return true;
 }
 
@@ -235,7 +282,7 @@ bool html_set_parser_encoding(struct content *c, const char *encoding)
 	 */
 	if (!html->parser->input->encoding)
 		html->parser->input->encoding =
-				xmlStrdup((xmlChar *) encoding);
+				xmlStrdup((const xmlChar *) encoding);
 
 	/* Ensure noone else attempts to reset the encoding */
 	html->getenc = false;
@@ -314,19 +361,6 @@ bool html_convert(struct content *c, int width, int height)
 		msg_data.error = messages_get("ParsingFail");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
-	}
-
-	if (!c->data.html.encoding && document->encoding) {
-		/* The encoding was not in headers or detected, and the parser
-		 * found a <meta http-equiv="content-type"
-		 * content="text/html; charset=...">. */
-		c->data.html.encoding = talloc_strdup(c, document->encoding);
-		if (!c->data.html.encoding) {
-			msg_data.error = messages_get("NoMemory");
-			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-			return false;
-		}
-		c->data.html.encoding_source = ENCODING_SOURCE_META;
 	}
 
 	/* locate html and head elements */
