@@ -149,7 +149,7 @@ void gui_init(int argc, char** argv)
 
 	check_homedir();
 
-	find_resource(buf, "netsurf.glade", "./gtk/netsurf.glade");
+	find_resource(buf, "netsurf.glade", "./gtk/res/netsurf.glade");
 	LOG(("Using '%s' as Glade template file", buf));
 	glade_file_location = strdup(buf);
 
@@ -159,12 +159,15 @@ void gui_init(int argc, char** argv)
 		die("Unable to load Glade window definitions.\n");
 	glade_xml_signal_autoconnect(gladeWindows);
 
+	find_resource(buf, "netsurf.xpm", "./gtk/res/netsurf.xpm");
+	gtk_window_set_default_icon_from_file(buf, NULL);
+
 	wndTooltip = glade_xml_get_widget(gladeWindows, "wndTooltip");
 	labelTooltip = glade_xml_get_widget(gladeWindows, "tooltip");
 
 	nsgtk_completion_init();
 
-	find_resource(buf, "throbber.gif", "./gtk/throbber.gif");
+	find_resource(buf, "throbber.gif", "./gtk/res/throbber.gif");
 	nsgtk_throbber_initialise(buf);
 	if (nsgtk_throbber == NULL)
 		die("Unable to load throbber image.\n");
@@ -205,16 +208,16 @@ void gui_init(int argc, char** argv)
 		option_url_file = strdup(buf);
 	}
 
-	find_resource(buf, "messages", "messages");
+	find_resource(buf, "messages", "./gtk/res/messages");
 	LOG(("Using '%s' as Messages file", buf));
 	messages_load(buf);
 
 	/* set up stylesheet urls */
-	find_resource(buf, "default.css", "default.css");
+	find_resource(buf, "default.css", "./gtk/res/default.css");
 	default_stylesheet_url = path_to_url(buf);
 	LOG(("Using '%s' as Default CSS URL", default_stylesheet_url));
 
-	find_resource(buf, "adblock.css", "adblock.css");
+	find_resource(buf, "adblock.css", "./gtk/res/adblock.css");
 	adblock_stylesheet_url = path_to_url(buf);
 	LOG(("Using '%s' as AdBlock CSS URL", adblock_stylesheet_url));
 
