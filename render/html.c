@@ -217,6 +217,26 @@ bool html_set_parser_encoding(struct content *c, const char *encoding)
 		return false;
 	}
 
+	/* Dirty hack to get around libxml oddness:
+	 * 1) When creating a push parser context, the input flow's encoding
+	 *    string is not set (whether an encoding is specified or not)
+	 * 2) When switching encoding (as above), the input flow's encoding
+	 *    string is never changed
+	 * 3) When handling a meta charset, the input flow's encoding string
+	 *    is checked to determine if an encoding has already been set.
+	 *    If it has been set, then the meta charset is ignored.
+	 *
+	 * The upshot of this is that, if we don't explicitly set the input
+	 * flow's encoding string here, any meta charset in the document
+	 * will override our setting, which is incorrect behaviour.
+	 *
+	 * Ideally, this would be fixed in libxml, but that requires rather
+	 * more knowledge than I currently have of what libxml is doing.
+	 */
+	if (!html->parser->input->encoding)
+		html->parser->input->encoding =
+				xmlStrdup((xmlChar *) encoding);
+
 	/* Ensure noone else attempts to reset the encoding */
 	html->getenc = false;
 
