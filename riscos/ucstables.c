@@ -659,6 +659,8 @@ utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 
 		strcat((*result) + cur_off, temp);
 
+		cur_off += strlen(temp);
+
 		free(temp);
 	}
 
