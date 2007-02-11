@@ -441,13 +441,9 @@ utf8_convert_ret utf8_to_local_encoding(const char *string, size_t len,
 		char **result)
 {
 	os_error *error;
-	int alphabet, i, offset_count = 0;
-	struct {
-		const struct special *local;	/* local character */
-		size_t offset;		/* byte offset into string */
-	} offsets[CHAR_MAX];
-	size_t off;
-	char *temp;
+	int alphabet, i;
+	size_t off, prev_off;
+	char *temp, *cur_pos;
 	const char *enc;
 	utf8_convert_ret err;
 
@@ -475,8 +471,18 @@ utf8_convert_ret utf8_to_local_encoding(const char *string, size_t len,
 					localencodings[CONT_ENC_END + 1]
 						 : localencodings[0]));
 
-	/* populate offsets array with details of characters that
-	 * will be stripped by iconv */
+	/* create output buffer */
+	*(result) = malloc(len + 1);
+	if (!(*result))
+		return UTF8_CONVERT_NOMEM;
+	*(*result) = '\0';
+
+	prev_off = 0;
+	cur_pos = (*result);
+
+	/* Iterate over string, converting input between unconvertable
+	 * characters and inserting appropriate output for characters
+	 * that iconv can't handle. */
 	for (off = 0; off < len; off = utf8_next(string, len, off)) {
 		if (string[off] != 0xE2 &&
 				string[off] != 0xC5 && string[off] != 0xEF)
@@ -484,69 +490,45 @@ utf8_convert_ret utf8_to_local_encoding(const char *string, size_t len,
 
 		for (i = 0; i != NOF_ELEMENTS(special_chars); i++) {
 			if (strncmp(string + off, special_chars[i].utf,
-					special_chars[i].len) == 0) {
-				/* ensure we don't overflow our buffer */
-				assert(offset_count < CHAR_MAX - 1);
-				offsets[offset_count].local =
-							&special_chars[i];
-				offsets[offset_count].offset = off;
-				offset_count++;
-				break;
-			}
-		}
-	}
+					special_chars[i].len) != 0)
+				continue;
 
-	if (offset_count == 0) {
-		/* No substitutions are required, so exit here */
-		return utf8_to_enc(string, enc, len, result);
-	}
+			/* 0 length has a special meaning to utf8_to_enc */
+			if (off - prev_off > 0) {
+				err = utf8_to_enc(string + prev_off, enc,
+						off - prev_off, &temp);
+				if (err != UTF8_CONVERT_OK) {
+					assert(err != UTF8_CONVERT_BADENC);
+					free(*result);
+					return UTF8_CONVERT_NOMEM;
+				}
 
-	/* create output buffer */
-	*(result) = malloc(len + 1);
-	if (!(*result))
-		return UTF8_CONVERT_NOMEM;
-	*(*result) = '\0';
+				strcat(cur_pos, temp);
 
-	/* convert the chunks between offsets, then copy stripped
-	 * character into output string */
-	for (i = 0; i != offset_count; i++) {
-		off = (i > 0 ? offsets[i-1].offset + offsets[i-1].local->len
-			     : 0);
+				cur_pos += strlen(temp);
 
-		/* 0 length has a special meaning to utf8_to_enc */
-		if (offsets[i].offset > off) {
-			err = utf8_to_enc(string + off, enc,
-					offsets[i].offset - off, &temp);
-			if (err != UTF8_CONVERT_OK) {
-				assert(err != UTF8_CONVERT_BADENC);
-				free(*result);
-				return UTF8_CONVERT_NOMEM;
+				free(temp);
 			}
 
-			strcat((*result), temp);
-
-			free(temp);
+			*cur_pos = special_chars[i].local;
+			*(++cur_pos) = '\0';
+			prev_off = off + special_chars[i].len;
 		}
-
-		off = strlen(*result);
-		(*result)[off] = offsets[i].local->local;
-		(*result)[off+1] = '\0';
 	}
 
 	/* handle last chunk
 	 * NB. 0 length has a special meaning to utf8_to_enc */
 
-	off = offsets[offset_count - 1].offset +
-			offsets[offset_count - 1].local->len;
-	if (off < len) {
-		err = utf8_to_enc(string + off, enc, len - off, &temp);
+	if (prev_off < len) {
+		err = utf8_to_enc(string + prev_off, enc, len - prev_off,
+				&temp);
 		if (err != UTF8_CONVERT_OK) {
 			assert(err != UTF8_CONVERT_BADENC);
 			free(*result);
 			return UTF8_CONVERT_NOMEM;
 		}
 
-		strcat((*result), temp);
+		strcat(cur_pos, temp);
 
 		free(temp);
 	}
@@ -566,12 +548,9 @@ utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 		char **result)
 {
 	os_error *error;
-	int alphabet, i, offset_count = 0;
-	struct {
-		const struct special *local;	/* utf character */
-		size_t offset;		/* byte offset into string */
-	} offsets[CHAR_MAX];
-	size_t off;
+	int alphabet, i, num_specials = 0, result_alloc;
+#define SPECIAL_CHUNK_SIZE 255
+	size_t off, prev_off, cur_off;
 	char *temp;
 	const char *enc;
 	utf8_convert_ret err;
@@ -603,64 +582,74 @@ utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 					localencodings[CONT_ENC_END + 1]
 						 : localencodings[0]));
 
-	/* populate offsets array with details of characters that
-	 * will be stripped by iconv */
+	/* create output buffer (oversized) */
+	result_alloc = (len * 4) + (3 * SPECIAL_CHUNK_SIZE) + 1;
+
+	*(result) = malloc(result_alloc);
+	if (!(*result))
+		return UTF8_CONVERT_NOMEM;
+	*(*result) = '\0';
+
+	prev_off = 0;
+	cur_off = 0;
+
+	/* Iterate over string, converting input between unconvertable
+	 * characters and inserting appropriate output for characters
+	 * that iconv can't handle. */
 	for (off = 0; off < len; off++) {
 		if (string[off] < 0x80 || string[off] > 0x9f)
 			continue;
 
 		for (i = 0; i != NOF_ELEMENTS(special_chars); i++) {
-			if (string[off] == special_chars[i].local) {
-				/* ensure we don't overflow our buffer */
-				assert(offset_count < CHAR_MAX - 1);
-				offsets[offset_count].local =
-							&special_chars[i];
-				offsets[offset_count].offset = off;
-				offset_count++;
-				break;
-			}
-		}
-	}
+			if (string[off] != special_chars[i].local)
+				continue;
 
-	if (offset_count == 0) {
-		/* No substitutions are required, so exit here */
-		return utf8_from_enc(string, enc, len, result);
-	}
+			/* 0 length has a special meaning to utf8_from_enc */
+			if (off - prev_off > 0) {
+				err = utf8_from_enc(string + prev_off, enc,
+						off - prev_off, &temp);
+				if (err != UTF8_CONVERT_OK) {
+					assert(err != UTF8_CONVERT_BADENC);
+					LOG(("utf8_from_enc failed"));
+					free(*result);
+					return UTF8_CONVERT_NOMEM;
+				}
 
-	/* create output buffer (oversized) */
-	*(result) = malloc((len * 4) + (3 * offset_count) + 1);
-	if (!(*result))
-		return UTF8_CONVERT_NOMEM;
-	*(*result) = '\0';
+				strcat((*result) + cur_off, temp);
 
-	/* convert the chunks between offsets, then copy stripped
-	 * UTF-8 character into output string */
-	for (i = 0; i != offset_count; i++) {
-		off = (i > 0 ? offsets[i-1].offset + 1 : 0);
+				cur_off += strlen(temp);
 
-		/* 0 length has a special meaning to utf8_from_enc */
-		if (offsets[i].offset > off) {
-			err = utf8_from_enc(string + off, enc,
-					offsets[i].offset - off, &temp);
-			if (err != UTF8_CONVERT_OK) {
-				assert(err != UTF8_CONVERT_BADENC);
-				LOG(("utf8_from_enc failed"));
-				free(*result);
-				return UTF8_CONVERT_NOMEM;
+				free(temp);
 			}
 
-			strcat((*result), temp);
-			free(temp);
-		}
+			strcat((*result) + cur_off, special_chars[i].utf);
 
-		strcat((*result), offsets[i].local->utf);
+			cur_off += special_chars[i].len;
+
+			prev_off = off + 1;
+
+			num_specials++;
+			if (num_specials % SPECIAL_CHUNK_SIZE ==
+					SPECIAL_CHUNK_SIZE - 1) {
+				char *temp = realloc((*result),
+						result_alloc +
+						(3 * SPECIAL_CHUNK_SIZE));
+				if (!temp) {
+					free(*result);
+					return UTF8_CONVERT_NOMEM;
+				}
+
+				*result = temp;
+				result_alloc += (3 * SPECIAL_CHUNK_SIZE);
+			}
+		}
 	}
 
 	/* handle last chunk
 	 * NB. 0 length has a special meaning to utf8_from_enc */
-	off = offsets[offset_count - 1].offset + 1;
-	if (off < len) {
-		err = utf8_from_enc(string + off, enc, len - off, &temp);
+	if (prev_off < len) {
+		err = utf8_from_enc(string + prev_off, enc, len - prev_off,
+				&temp);
 		if (err != UTF8_CONVERT_OK) {
 			assert(err != UTF8_CONVERT_BADENC);
 			LOG(("utf8_from_enc failed"));
@@ -668,22 +657,18 @@ utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 			return UTF8_CONVERT_NOMEM;
 		}
 
-		strcat((*result), temp);
+		strcat((*result) + cur_off, temp);
 
 		free(temp);
 	}
 
 	/* and copy into more reasonably-sized buffer */
-	temp = malloc(strlen((*result)) + 1);
+	temp = realloc((*result), cur_off + 1);
 	if (!temp) {
-		LOG(("malloc failed"));
+		LOG(("realloc failed"));
 		free(*result);
 		return UTF8_CONVERT_NOMEM;
 	}
-	*temp = '\0';
-
-	strcpy(temp, (*result));
-	free(*result);
 	*result = temp;
 
 	return UTF8_CONVERT_OK;
