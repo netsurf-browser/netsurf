@@ -2476,7 +2476,7 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 	if (ctxt) {
 		string = current = xmlStringDecodeEntities(ctxt,
 				buf->content,
-				XML_SUBSTITUTE_REF | XML_SUBSTITUTE_PEREF,
+				XML_SUBSTITUTE_REF,
 				0, 0, 0);
 		xmlFreeParserCtxt(ctxt);
 	}
