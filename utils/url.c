@@ -74,7 +74,7 @@ bool url_host_is_ip_address(const char *host) {
   	bool n;
 
 	assert(host);
-	
+
 	/* an IP address is of the format XXX.XXX.XXX.XXX, ie totally
 	 * numeric with 3 full stops between the numbers */
 	b = 0; // number of breaks
@@ -821,19 +821,24 @@ url_func_result url_escape(const char *unescaped, bool sptoplus,
 		return URL_FUNC_NOMEM;
 
 	for (c = unescaped, d = escaped; *c; c++) {
-		if (!isascii(*c) ||
-				strchr(";/?:@&=+$," "<>#%\"{}|\\^[]`", *c) ||
+		/* Check if we should escape this byte.
+		 * '~' is unreserved and should not be percent encoded, if
+		 * you believe the spec; however, leaving it unescaped
+		 * breaks a bunch of websites, so we escape it anyway. */
+		if (!isascii(*c) || strchr(":/?#[]@" /* gen-delims */
+					"!$&'()*+,;=" /* sub-delims */
+					"<>%\"{}|\\^`~", /* others */
+					*c) ||
 				*c <= 0x20 || *c == 0x7f) {
-			if (*c == 0x20 && sptoplus)
+			if (*c == 0x20 && sptoplus) {
 				*d++ = '+';
-			else {
+			} else {
 				*d++ = '%';
 				*d++ = "0123456789ABCDEF"[((*c >> 4) & 0xf)];
 				*d++ = "0123456789ABCDEF"[(*c & 0xf)];
 			}
-		}
-		else {
-			/* unreserved characters: [a-zA-Z0-9-_.!~*'()] */
+		} else {
+			/* unreserved characters: [a-zA-Z0-9-._] */
 			*d++ = *c;
 		}
 	}
