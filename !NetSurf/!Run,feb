@@ -57,8 +57,8 @@ RMEnsure DrawFile 1.30 Error NetSurf requires the DrawFile module. An old verson
 
 | Ensure SharedUnixLibrary is installed
 | http://www.riscos.info/downloads/gccsdk/sharedunixlib/system.zip
-RMEnsure SharedUnixLibrary 1.02 NetSurfRMLoad System:Modules.SharedULib
-RMEnsure SharedUnixLibrary 1.02 Error NetSurf requires SharedUnixLibrary 1.02 or later. This can be downloaded from http://www.riscos.info/downloads/gccsdk/sharedunixlib/system.zip
+RMEnsure SharedUnixLibrary 1.07 NetSurfRMLoad System:Modules.SharedULib
+RMEnsure SharedUnixLibrary 1.07 Error NetSurf requires SharedUnixLibrary 1.07 or later. This can be downloaded from http://www.riscos.info/downloads/gccsdk/sharedunixlib/system.zip
 
 | Load AcornURI if it isn't already
 | http://sudden.recoil.org/
