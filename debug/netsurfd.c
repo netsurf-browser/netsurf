@@ -17,7 +17,9 @@
 #include "netsurf/desktop/cookies.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/options.h"
+#include "netsurf/desktop/selection.h"
 #include "netsurf/desktop/textinput.h"
+#include "netsurf/desktop/tree.h"
 #include "netsurf/image/bitmap.h"
 #include "netsurf/render/box.h"
 #include "netsurf/riscos/save_complete.h"
@@ -81,7 +83,7 @@ int main(int argc, char *argv[])
 				0, 0, true, false);
 		if (c) {
 			fetchcache_go(c, 0, callback, 0, 0, 1000, 1000,
-					0, 0, true);
+					0, 0, true, 0);
 			done = c->status == CONTENT_STATUS_DONE;
 			while (!done)
 				fetch_poll();
@@ -193,13 +195,11 @@ void schedule_remove(void (*callback)(void *p), void *p) {}
 void schedule_run(void) {}
 #endif
 
-bool selection_highlighted(struct selection *s, struct box *box,
+bool selection_highlighted(struct selection *s, unsigned start, unsigned end,
 		unsigned *start_idx, unsigned *end_idx) { return false; }
 bool gui_search_term_highlighted(struct gui_window *g,
 		unsigned start_offset, unsigned end_offset,
 		unsigned *start_idx, unsigned *end_idx) { return false; }
-
-const char *local_encoding_name(void) { return "ISO-8859-1"; }
 
 struct caret ghost_caret;
 
