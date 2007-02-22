@@ -168,13 +168,16 @@ static int fetch_cert_verify_callback(X509_STORE_CTX *x509_ctx, void *parm);
 #define RING_FINDBYHOST(ring, element, hostname) \
 	LOG(("RING_FINDBYHOST(%s, %s)", #ring, hostname)); \
 	if (ring) { \
+		bool found = false; \
 		element = ring; \
 		do { \
-			if (strcasecmp(element->host, hostname) == 0) \
+			if (strcasecmp(element->host, hostname) == 0) { \
+				found = true; \
 				break; \
+			} \
 			element = element->r_next; \
 		} while (element != ring); \
-		element = 0; \
+		if (!found) element = 0; \
 	} else element = 0
 
 /** Measure the size of a ring and put it in the supplied variable */
