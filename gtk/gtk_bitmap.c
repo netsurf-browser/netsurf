@@ -194,10 +194,10 @@ gtk_bitmap_generate_pretile(GdkPixbuf *primary, int repeat_x, int repeat_y)
         GdkPixbuf *result = gdk_pixbuf_new(GDK_COLORSPACE_RGB, true, 8,
                                            width * repeat_x, height * repeat_y);
         char *target_buffer = (char *)gdk_pixbuf_get_pixels(result);
-        size_t target_stride = gdk_pixbuf_get_rowstride(result);
         int x,y,row;
         /* This algorithm won't work if the strides are not multiples */
-        assert(target_stride == (primary_stride * repeat_x));
+        assert((size_t)gdk_pixbuf_get_rowstride(result) == 
+		(primary_stride * repeat_x));
 
         if (repeat_x == 1 && repeat_y == 1) {
                 g_object_ref(primary);
