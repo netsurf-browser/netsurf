@@ -652,10 +652,11 @@ CURLcode fetch_set_options(struct fetch *f)
 	const char *auth;
 
 #undef SETOPT
-#define SETOPT(option, value) \
+#define SETOPT(option, value) { \
 	code = curl_easy_setopt(f->curl_handle, option, value);	\
 	if (code != CURLE_OK)					\
-		return code;
+		return code;					\
+	}
 
 	SETOPT(CURLOPT_URL, f->url);
 	SETOPT(CURLOPT_PRIVATE, f);
@@ -665,16 +666,25 @@ CURLcode fetch_set_options(struct fetch *f)
 	SETOPT(CURLOPT_REFERER, f->send_referer ? f->referer : 0);
 	SETOPT(CURLOPT_HTTPHEADER, f->headers);
 	if (f->post_urlenc) {
+		SETOPT(CURLOPT_HTTPPOST, 0);
+		SETOPT(CURLOPT_HTTPGET, 0L);
 		SETOPT(CURLOPT_POSTFIELDS, f->post_urlenc);
 	} else if (f->post_multipart) {
+		SETOPT(CURLOPT_POSTFIELDS, 0);
+		SETOPT(CURLOPT_HTTPGET, 0L);
 		SETOPT(CURLOPT_HTTPPOST, f->post_multipart);
 	} else {
+		SETOPT(CURLOPT_POSTFIELDS, 0);
+		SETOPT(CURLOPT_HTTPPOST, 0);
 		SETOPT(CURLOPT_HTTPGET, 1L);
 	}
 
 	f->cookie_string = urldb_get_cookie(f->url);
-	if (f->cookie_string)
+	if (f->cookie_string) {
 		SETOPT(CURLOPT_COOKIE, f->cookie_string);
+	} else {
+		SETOPT(CURLOPT_COOKIE, 0);
+	}
 
 #ifdef WITH_AUTH
 	if ((auth = urldb_get_auth_details(f->url)) != NULL) {
@@ -709,8 +719,12 @@ CURLcode fetch_set_options(struct fetch *f)
 		/* Disable certificate verification */
 		SETOPT(CURLOPT_SSL_VERIFYPEER, 0L);
 		SETOPT(CURLOPT_SSL_VERIFYHOST, 0L);
+		SETOPT(CURLOPT_SSL_CTX_FUNCTION, 0);
+		SETOPT(CURLOPT_SSL_CTX_DATA, 0);
 	} else {
 		/* do verification */
+		SETOPT(CURLOPT_SSL_VERIFYPEER, 1L);
+		SETOPT(CURLOPT_SSL_VERIFYHOST, 2L);
 		SETOPT(CURLOPT_SSL_CTX_FUNCTION, fetch_sslctxfun);
 		SETOPT(CURLOPT_SSL_CTX_DATA, f);
 	}
