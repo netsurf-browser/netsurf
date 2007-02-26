@@ -4,7 +4,7 @@
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
- * Copyright 2005 John M Bell <jmb202@ecs.soton.ac.uk>
+ * Copyright 2005-7 John M Bell <jmb202@ecs.soton.ac.uk>
  */
 
 /** \file
@@ -27,6 +27,8 @@
 
 static char *form_textarea_value(struct form_control *textarea);
 static char *form_acceptable_charset(struct form *form);
+static char *form_encode_item(const char *item, const char *charset,
+		const char *fallback);
 
 /**
  * Create a struct form.
@@ -186,6 +188,13 @@ bool form_add_option(struct form_control *control, char *value, char *text,
 /**
  * Identify 'successful' controls.
  *
+ * All text strings in the successful controls list will be in the charset most
+ * appropriate for submission. Therefore, no utf8_to_* processing should be
+ * performed upon them.
+ *
+ * \todo The chosen charset needs to be made available such that it can be
+ * included in the submission request (e.g. in the fetch's Content-Type header)
+ *
  * \param  form           form to search for successful controls
  * \param  submit_button  control used to submit the form, if any
  * \param  successful_controls  updated to point to linked list of
@@ -204,9 +213,16 @@ bool form_successful_controls(struct form *form,
 	struct form_successful_control sentinel, *last_success, *success_new;
 	char *value;
 	bool had_submit = false;
+	char *charset;
 
 	last_success = &sentinel;
 	sentinel.next = 0;
+
+	charset = form_acceptable_charset(form);
+	if (!charset)
+		return false;
+
+#define ENCODE_ITEM(i) form_encode_item((i), charset, form->document_charset)
 
 	for (control = form->controls; control; control = control->next) {
 		/* ignore disabled controls */
@@ -222,9 +238,9 @@ bool form_successful_controls(struct form *form,
 			case GADGET_TEXTBOX:
 			case GADGET_PASSWORD:
 				if (control->value)
-					value = strdup(control->value);
+					value = ENCODE_ITEM(control->value);
 				else
-					value = strdup("");
+					value = ENCODE_ITEM("");
 				if (!value) {
 					LOG(("failed to duplicate value"
 						"'%s' for control %s",
@@ -241,9 +257,9 @@ bool form_successful_controls(struct form *form,
 				if (!control->selected)
 					continue;
 				if (control->value)
-					value = strdup(control->value);
+					value = ENCODE_ITEM(control->value);
 				else
-					value = strdup("on");
+					value = ENCODE_ITEM("on");
 				if (!value) {
 					LOG(("failed to duplicate"
 						"value '%s' for"
@@ -261,14 +277,17 @@ bool form_successful_controls(struct form *form,
 						option = option->next) {
 					if (!option->selected)
 						continue;
-					success_new = malloc(sizeof(*success_new));
+					success_new =
+						malloc(sizeof(*success_new));
 					if (!success_new) {
 						LOG(("malloc failed"));
 						goto no_memory;
 					}
 					success_new->file = false;
-					success_new->name = strdup(control->name);
-					success_new->value = strdup(option->value);
+					success_new->name =
+						ENCODE_ITEM(control->name);
+					success_new->value =
+						ENCODE_ITEM(option->value);
 					success_new->next = NULL;
 					last_success->next = success_new;
 					last_success = success_new;
@@ -283,6 +302,9 @@ bool form_successful_controls(struct form *form,
 				break;
 
 			case GADGET_TEXTAREA:
+				{
+				char *v2;
+
 				/* textarea */
 				value = form_textarea_value(control);
 				if (!value) {
@@ -292,6 +314,17 @@ bool form_successful_controls(struct form *form,
 				if (value[0] == 0) {
 					free(value);
 					continue;
+				}
+
+				v2 = ENCODE_ITEM(value);
+				if (!v2) {
+					LOG(("failed handling textarea"));
+					free(value);
+					goto no_memory;
+				}
+
+				free(value);
+				value = v2;
 				}
 				break;
 
@@ -368,9 +401,9 @@ bool form_successful_controls(struct form *form,
 					 * is successful */
 					continue;
 				if (control->value)
-					value = strdup(control->value);
+					value = ENCODE_ITEM(control->value);
 				else
-					value = strdup("");
+					value = ENCODE_ITEM("");
 				if (!value) {
 					LOG(("failed to duplicate value"
 						"'%s' for control %s",
@@ -401,8 +434,8 @@ bool form_successful_controls(struct form *form,
 					goto no_memory;
 				}
 				success_new->file = true;
-				success_new->name = strdup(control->name);
-				success_new->value = strdup(control->value ?
+				success_new->name = ENCODE_ITEM(control->name);
+				success_new->value = ENCODE_ITEM(control->value ?
 						control->value : "");
 				success_new->next = 0;
 				last_success->next = success_new;
@@ -427,7 +460,7 @@ bool form_successful_controls(struct form *form,
 			goto no_memory;
 		}
 		success_new->file = false;
-		success_new->name = strdup(control->name);
+		success_new->name = ENCODE_ITEM(control->name);
 		success_new->value = value;
 		success_new->next = NULL;
 		last_success->next = success_new;
@@ -446,6 +479,8 @@ no_memory:
 	warn_user("NoMemory", 0);
 	form_free_successful(sentinel.next);
 	return false;
+
+#undef ENCODE_ITEM
 }
 
 
@@ -506,74 +541,27 @@ char *form_textarea_value(struct form_control *textarea)
 char *form_url_encode(struct form *form,
 		struct form_successful_control *control)
 {
-	char *name, *value, *n_temp, *v_temp;
+	char *name, *value;
 	char *s = malloc(1), *s2;
-	char *charset;
 	unsigned int len = 0, len1;
-	utf8_convert_ret err;
 	url_func_result url_err;
 
 	if (!s)
 		return 0;
 	s[0] = 0;
 
-	charset = form_acceptable_charset(form);
-	if (!charset)
-		return 0;
-
 	for (; control; control = control->next) {
-		err = utf8_to_enc(control->name, charset, 0, &n_temp);
-		if (err == UTF8_CONVERT_BADENC) {
-			/* charset not understood, try document charset */
-			err = utf8_to_enc(control->name,
-					form->document_charset, 0, &n_temp);
-			if (err == UTF8_CONVERT_BADENC)
-				/* that also failed, use 8859-1 */
-				err = utf8_to_enc(control->name,
-						"ISO-8859-1", 0, &n_temp);
-		}
-		if (err == UTF8_CONVERT_NOMEM) {
-			free(charset);
-			free(s);
-			return 0;
-		}
-
-		assert(err == UTF8_CONVERT_OK);
-
-		err = utf8_to_enc(control->value, charset, 0, &v_temp);
-		if (err == UTF8_CONVERT_BADENC) {
-			err = utf8_to_enc(control->value,
-					form->document_charset, 0, &v_temp);
-			if (err == UTF8_CONVERT_BADENC)
-				err = utf8_to_enc(control->value,
-						"ISO-8859-1", 0, &v_temp);
-		}
-		if (err == UTF8_CONVERT_NOMEM) {
-			free(n_temp);
-			free(charset);
-			free(s);
-			return 0;
-		}
-
-		assert(err == UTF8_CONVERT_OK);
-
-		url_err = url_escape(n_temp, true, &name);
+		url_err = url_escape(control->name, true, &name);
 		if (url_err == URL_FUNC_NOMEM) {
-			free(v_temp);
-			free(n_temp);
-			free(charset);
 			free(s);
 			return 0;
 		}
 
 		assert(url_err == URL_FUNC_OK);
 
-		url_err = url_escape(v_temp, true, &value);
+		url_err = url_escape(control->value, true, &value);
 		if (url_err == URL_FUNC_NOMEM) {
 			free(name);
-			free(v_temp);
-			free(n_temp);
-			free(charset);
 			free(s);
 			return 0;
 		}
@@ -585,9 +573,6 @@ char *form_url_encode(struct form *form,
 		if (!s2) {
 			free(value);
 			free(name);
-			free(v_temp);
-			free(n_temp);
-			free(charset);
 			free(s);
 			return 0;
 		}
@@ -596,11 +581,7 @@ char *form_url_encode(struct form *form,
 		len = len1;
 		free(name);
 		free(value);
-		free(v_temp);
-		free(n_temp);
 	}
-
-	free(charset);
 
 	if (len)
 		s[len - 1] = 0;
@@ -686,3 +667,62 @@ char *form_acceptable_charset(struct form *form)
 
 	return strndup(form->accept_charsets, c - form->accept_charsets);
 }
+
+/**
+ * Convert a string from UTF-8 to the specified charset
+ * As a final fallback, this will attempt to convert to ISO-8859-1.
+ *
+ * \todo Return charset used?
+ *
+ * \param item String to convert
+ * \param charset Destination charset
+ * \param fallback Fallback charset (may be NULL),
+ *                 used iff converting to charset fails
+ * \return Pointer to converted string (on heap, caller frees), or NULL
+ */
+char *form_encode_item(const char *item, const char *charset,
+		const char *fallback)
+{
+	utf8_convert_ret err;
+	char *ret = NULL;
+
+	if (!item || !charset)
+		return NULL;
+
+	/** \todo utf8_to_enc isn't entirely helpful here, as it strips
+	 *  unrepresentable characters completely. A more correct solution
+	 *  would be for it to insert '?' or U+FFFD or a human-readable
+	 *  transliteration instead. To do this requires:
+	 *
+	 *  1) The Iconv module to take some flag or other indicating that
+	 *     transliteration / placeholder characters is / are required.
+	 *     (I suggest following libiconv's //TRANSLIT for the former and
+	 *     introducing something like //REPLACE for the latter). The
+	 *     latter maps pretty easily to using UnicodeLib's ENCODING_WRITE
+	 *     functionality (as opposed to ENCODING_WRITE_STRICT). It would
+	 *     appear there's an issue with UnicodeLib when converting to
+	 *     ISO-8859-{1,2} (at least), in that unrepresentable characters
+	 *     don't get detected - they're converted to some other garbage
+	 *     that I've not worked out yet.
+	 *     //REPLACE would break on platforms other than RO, however.
+	 *     Therefore, if libiconv's //TRANSLIT handling is any good, it'd
+	 *     probably be best to try to emulate that.
+	 *  2) Reflect these options in the utf8_* API(s)
+	 */
+
+	err = utf8_to_enc(item, charset, 0, &ret);
+	if (err == UTF8_CONVERT_BADENC) {
+		/* charset not understood, try fallback charset (if any) */
+		if (fallback)
+			err = utf8_to_enc(item,	fallback, 0, &ret);
+		if (err == UTF8_CONVERT_BADENC)
+			/* that also failed, use 8859-1 */
+			err = utf8_to_enc(item,	"ISO-8859-1", 0, &ret);
+	}
+	if (err == UTF8_CONVERT_NOMEM) {
+		return NULL;
+	}
+
+	return ret;
+}
+
