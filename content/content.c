@@ -489,6 +489,17 @@ struct content * content_get_ready(const char *url)
 
 
 /**
+ * Get whether a content can reformat
+ *
+ * \param c  content to check
+ * \return whether the content can reformat
+ */
+bool content_get_reformat(struct content *c) {
+	return (handler_map[c->type].reformat != NULL);
+}
+
+
+/**
  * Initialise the content for the specified type.
  *
  * \param c	   content structure

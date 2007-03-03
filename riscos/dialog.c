@@ -684,6 +684,16 @@ void ro_gui_dialog_prepare_zoom(struct gui_window *g)
 	ro_gui_wimp_event_memorise(dialog_zoom);
 }
 
+/**
+ * Update the Scale View dialog to reflect the current window settings
+ *
+ * \param g  the gui_window to update for
+ */
+void ro_gui_dialog_update_zoom(struct gui_window *g) {
+	if (g == ro_gui_current_zoom_gui)
+		ro_gui_dialog_prepare_zoom(g);
+}
+
 
 bool ro_gui_dialog_openurl_apply(wimp_w w) {
 	url_func_result res;

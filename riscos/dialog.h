@@ -39,6 +39,7 @@ void ro_gui_dialog_close_persistent(wimp_w parent);
 
 void ro_gui_dialog_click(wimp_pointer *pointer);
 void ro_gui_dialog_prepare_zoom(struct gui_window *g);
+void ro_gui_dialog_update_zoom(struct gui_window *g);
 void ro_gui_dialog_prepare_open_url(void);
 void ro_gui_save_options(void);
 void ro_gui_dialog_open_config(void);
