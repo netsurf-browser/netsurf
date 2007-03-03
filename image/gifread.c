@@ -166,12 +166,12 @@ int gif_initialise(struct gif_animation *gif) {
 			such, we detect for the common cases and set the sizes as 0 if they are found
 			which results in the GIF being the maximum size of the frames.
 		*/
-		if (((gif->width == 640) && (gif->width == 480)) ||
-				((gif->width == 640) && (gif->width == 512)) ||
-				((gif->width == 800) && (gif->width == 600)) ||
-				((gif->width == 1024) && (gif->width == 768)) ||
-				((gif->width == 1280) && (gif->width == 1024)) ||
-				((gif->width == 1600) && (gif->width == 1200)) ||
+		if (((gif->width == 640) && (gif->height == 480)) ||
+				((gif->width == 640) && (gif->height == 512)) ||
+				((gif->width == 800) && (gif->height == 600)) ||
+				((gif->width == 1024) && (gif->height == 768)) ||
+				((gif->width == 1280) && (gif->height == 1024)) ||
+				((gif->width == 1600) && (gif->height == 1200)) ||
 				((gif->width == 0) || (gif->height == 0)) ||
 				((gif->width > 2048) || (gif->height > 2048))) {
 			gif->width = 1;
