@@ -40,6 +40,10 @@
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
 
+#ifndef wimp_KEY_END
+#define wimp_KEY_END wimp_KEY_COPY
+#endif
+
 #define TREE_EXPAND 0
 #define TREE_COLLAPSE 1
 
@@ -1237,9 +1241,12 @@ void ro_gui_tree_open(wimp_open *open) {
  * \return whether the key was processed
  */
 bool ro_gui_tree_keypress(wimp_key *key) {
+	wimp_window_state state;
+	int y;
 	char *new_string;
 	struct tree *tree;
 	int strlen;
+	os_error *error;
 
 	tree = (struct tree *)ro_gui_wimp_event_get_user_data(key->w);
 	if (!tree)
@@ -1292,8 +1299,69 @@ bool ro_gui_tree_keypress(wimp_key *key) {
 				/* \todo cancel drags etc. */
 			}
 			return true;
+
+		case IS_WIMP_KEY | wimp_KEY_UP:
+		case IS_WIMP_KEY | wimp_KEY_DOWN:
+		case IS_WIMP_KEY | wimp_KEY_PAGE_UP:
+		case IS_WIMP_KEY | wimp_KEY_PAGE_DOWN:
+		case IS_WIMP_KEY | wimp_KEY_HOME:
+		case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_UP:
+		case IS_WIMP_KEY | wimp_KEY_END:
+		case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_DOWN:
+			break;
+		default:
+			return false;
 	}
-	return false;
+	
+	/* keyboard scrolling */
+	state.w = (wimp_w)tree->handle;
+	error = xwimp_get_window_state(&state);
+	if (error) {
+		LOG(("xwimp_get_window_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		return true;
+	}
+
+	y = state.visible.y1 - state.visible.y0 - TREE_TEXT_HEIGHT;
+	if (tree->toolbar)
+		y -= ro_gui_theme_toolbar_full_height(tree->toolbar);
+
+	switch (key->c) {
+		case IS_WIMP_KEY | wimp_KEY_UP:
+/*			if ((state.yscroll % TREE_TEXT_HEIGHT) != 0)
+				state.yscroll -= (state.yscroll % TREE_TEXT_HEIGHT);
+			else
+*/				state.yscroll += TREE_TEXT_HEIGHT;
+			break;
+		case IS_WIMP_KEY | wimp_KEY_DOWN:
+/*			if (((state.yscroll + y) % TREE_TEXT_HEIGHT) != 0)
+				state.yscroll -= ((state.yscroll + y) % TREE_TEXT_HEIGHT);
+			else
+*/				state.yscroll -= TREE_TEXT_HEIGHT;
+			break;
+		case IS_WIMP_KEY | wimp_KEY_PAGE_UP:
+			state.yscroll += y;
+			break;
+		case IS_WIMP_KEY | wimp_KEY_PAGE_DOWN:
+			state.yscroll -= y;
+			break;
+		case IS_WIMP_KEY | wimp_KEY_HOME:
+		case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_UP:
+			state.yscroll = 0x10000000;
+			break;
+		case IS_WIMP_KEY | wimp_KEY_END:
+		case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_DOWN:
+			state.yscroll = -0x10000000;
+			break;
+	}
+
+	error = xwimp_open_window((wimp_open *) &state);
+	if (error) {
+		LOG(("xwimp_open_window: 0x%x: %s",
+				error->errnum, error->errmess));
+	}
+	
+	return true;
 }
 
 
