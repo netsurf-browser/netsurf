@@ -58,6 +58,17 @@ int ro_get_vscroll_width(wimp_w w) {
 	return furniture_sizes.border_widths.x1;
 }
 
+
+/**
+ * Gets the title bar height
+ *
+ * \param  w  the window to read (or NULL to read a cached value)
+ */
+int ro_get_title_height(wimp_w w) {
+	ro_gui_wimp_cache_furniture_sizes(w);
+	return furniture_sizes.border_widths.y1;
+}
+
 /**
  * Caches window furniture information
  *

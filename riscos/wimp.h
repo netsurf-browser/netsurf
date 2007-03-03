@@ -25,6 +25,7 @@
 
 int ro_get_hscroll_height(wimp_w w);
 int ro_get_vscroll_width(wimp_w w);
+int ro_get_title_height(wimp_w w);
 bool ro_gui_wimp_read_eig_factors(os_mode mode, int *xeig, int *yeig);
 void ro_convert_os_units_to_pixels(os_coord *os_units, os_mode mode);
 void ro_convert_pixels_to_os_units(os_coord *pixels, os_mode mode);

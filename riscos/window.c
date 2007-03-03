@@ -1690,6 +1690,7 @@ void ro_gui_window_update_theme(void) {
 
 void gui_window_set_extent(struct gui_window *g, int width, int height)
 {
+  	int screen_width;
 	int toolbar_height = 0;
 	struct content *content;
 	wimp_window_state state;
@@ -1719,9 +1720,13 @@ void gui_window_set_extent(struct gui_window *g, int width, int height)
 	
 	/* the top-level framed window is a total pain. to get it to maximise to the
 	 * top of the screen we need to fake it having a suitably large extent */
-	if (g->bw->children && (g->bw->browser_window_type == BROWSER_WINDOW_NORMAL))
-		height = 16384;
-
+	if (g->bw->children && (g->bw->browser_window_type == BROWSER_WINDOW_NORMAL)) {
+		ro_gui_screen_size(&screen_width, &height);
+		if (g->toolbar)
+			height -= ro_gui_theme_toolbar_full_height(g->toolbar);
+		height -= ro_get_hscroll_height(g->window);
+		height -= ro_get_title_height(g->window);
+	}
 	if (content) {
 		width = max(width, content->width * 2 * g->option.scale);
 		height = max(height, content->height * 2 * g->option.scale);
