@@ -518,7 +518,25 @@ void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
  */
 void gui_window_redraw_window(struct gui_window *g)
 {
-  	gui_window_redraw(g, 0, -8192, 8192, 8192);
+	wimp_window_info info; 
+	os_error *error; 
+
+	assert(g);
+	info.w = g->window;
+	error = xwimp_get_window_info_header_only(&info); 
+	if (error) { 
+		LOG(("xwimp_get_window_info_header_only: 0x%x: %s", 
+				error->errnum, error->errmess)); 
+		warn_user("WimpError", error->errmess); 
+		return; 
+	} 
+	error = xwimp_force_redraw(g->window, info.extent.x0, info.extent.y0,
+			info.extent.x1, info.extent.y1);
+	if (error) {
+		LOG(("xwimp_force_redraw: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+	}
 }
 
 
