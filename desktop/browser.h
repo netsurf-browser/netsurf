@@ -32,7 +32,7 @@ struct bitmap;
 struct _gesturer_state;
 
 
-typedef void (*browser_caret_callback)(struct browser_window *bw,
+typedef bool (*browser_caret_callback)(struct browser_window *bw,
 	wchar_t key, void *p);
 typedef bool (*browser_paste_callback)(struct browser_window *bw,
 	const char *utf8, unsigned utf8_len, bool last, void *p);

@@ -37,9 +37,9 @@
 struct caret ghost_caret;
 
 
-static void browser_window_textarea_callback(struct browser_window *bw,
+static bool browser_window_textarea_callback(struct browser_window *bw,
 		wchar_t key, void *p);
-static void browser_window_input_callback(struct browser_window *bw,
+static bool browser_window_input_callback(struct browser_window *bw,
 		wchar_t key, void *p);
 static void browser_window_place_caret(struct browser_window *bw,
 		int x, int y, int height,
@@ -283,8 +283,11 @@ void browser_window_textarea_click(struct browser_window *bw,
  * \param bw   The browser window containing the text area
  * \param key  The ucs4 character codepoint
  * \param p    The text area box
+ * \return     true if the keypress is dealt with, false otherwise.  It can
+ *             return true even if it ran out of memory; this just means that
+ *             it would have claimed it if it could.
  */
-void browser_window_textarea_callback(struct browser_window *bw,
+bool browser_window_textarea_callback(struct browser_window *bw,
 		wchar_t key, void *p)
 {
 	struct box *textarea = p;
@@ -312,7 +315,7 @@ void browser_window_textarea_callback(struct browser_window *bw,
 		utf8_len = utf8_from_ucs4(key, utf8);
 
 		if (!textbox_insert(bw, text_box, char_offset, utf8, utf8_len))
-			return;
+			return true;
 
 		char_offset += utf8_len;
 		reflow = true;
@@ -330,7 +333,7 @@ void browser_window_textarea_callback(struct browser_window *bw,
 
 			if (!text_box->prev)
 				/* at very beginning of text area: ignore */
-				return;
+				return true;
 
 			/* delete space by merging with previous text box */
 			prev = text_box->prev;
@@ -341,7 +344,7 @@ void browser_window_textarea_callback(struct browser_window *bw,
 
 			if (!textbox_insert(bw, prev, prev->length,
 						text_box->text, text_box->length))
-				return;
+				return true;
 
 			box_unlink_and_free(text_box);
 
@@ -383,7 +386,7 @@ void browser_window_textarea_callback(struct browser_window *bw,
 
 			if (!text_box->next)
 				/* at very end of text area: ignore */
-				return;
+				return true;
 
 			/* delete space by merging with next text box */
 
@@ -393,7 +396,7 @@ void browser_window_textarea_callback(struct browser_window *bw,
 
 			if (!textbox_insert(bw, text_box, text_box->length,
 							next->text, next->length))
-				return;
+				return true;
 
 			box_unlink_and_free(next);
 
@@ -413,7 +416,8 @@ void browser_window_textarea_callback(struct browser_window *bw,
 	case 10:
 	case 13:	/* paragraph break */
 		new_text = textarea_insert_break(bw, text_box, char_offset);
-		if (!new_text) return;
+		if (!new_text)
+			return true;
 
 		/* place caret at start of new text box */
 		text_box = new_text;
@@ -440,7 +444,7 @@ void browser_window_textarea_callback(struct browser_window *bw,
 			box_y + inline_container->y + text_box->y);
 
 		/* screen updated and caret repositioned already */
-		return;
+		return true;
 
 	case 24: {	/* Ctrl + X */
 		int start_idx, end_idx;
@@ -464,7 +468,7 @@ void browser_window_textarea_callback(struct browser_window *bw,
 		} else {
 			if (!text_box->next)
 				/* at end of text area: ignore */
-				return;
+				return true;
 
 			text_box = text_box->next;
 			if (text_box->type == BOX_BR)
@@ -479,7 +483,7 @@ void browser_window_textarea_callback(struct browser_window *bw,
 		} else {
 			if (!text_box->prev)
 				/* at start of text area: ignore */
-				return;
+				return true;
 
 			text_box = text_box->prev;
 			if (text_box->type == BOX_BR)
@@ -494,7 +498,7 @@ void browser_window_textarea_callback(struct browser_window *bw,
 				box_x, box_y,
 				text_box->x + pixel_offset,
 				inline_container->y + text_box->y - 1);
-		return;
+		return true;
 
 	case KEY_DOWN:
 		browser_window_textarea_click(bw, BROWSER_MOUSE_CLICK_1,
@@ -503,7 +507,7 @@ void browser_window_textarea_callback(struct browser_window *bw,
 				text_box->x + pixel_offset,
 				inline_container->y + text_box->y +
 				text_box->height + 1);
-		return;
+		return true;
 
 	case KEY_LINE_START:
 		text_box = line_start(text_box);
@@ -624,7 +628,7 @@ void browser_window_textarea_callback(struct browser_window *bw,
 	break;
 
 	default:
-		return;
+		return false;
 	}
 
 	/*
@@ -690,6 +694,8 @@ void browser_window_textarea_callback(struct browser_window *bw,
 
 	if (scrolled || reflow)
 		browser_redraw_box(bw->current_content, textarea);
+
+	return true;
 }
 
 
@@ -780,8 +786,11 @@ void browser_window_input_click(struct browser_window* bw,
  * \param bw   The browser window containing the input box
  * \param key  The UCS4 character codepoint
  * \param p    The input box
+ * \return     true if the keypress is dealt with, false otherwise.  It can
+ *             return true even if it ran out of memory; this just means that
+ *             it would have claimed it if it could.
  */
-void browser_window_input_callback(struct browser_window *bw,
+bool browser_window_input_callback(struct browser_window *bw,
 		wchar_t key, void *p)
 {
 	struct box *input = (struct box *)p;
@@ -804,7 +813,7 @@ void browser_window_input_callback(struct browser_window *bw,
 		/* have we exceeded max length of input? */
 		utf8_len = utf8_length(input->gadget->value);
 		if (utf8_len >= input->gadget->maxlength)
-			return;
+			return true;
 
 		/* normal character insertion */
 
@@ -815,7 +824,7 @@ void browser_window_input_callback(struct browser_window *bw,
 				input->gadget->length + utf8_len + 1);
 		if (!value) {
 			warn_user("NoMemory", 0);
-			return;
+			return true;
 		}
 		input->gadget->value = value;
 
@@ -835,7 +844,7 @@ void browser_window_input_callback(struct browser_window *bw,
 					utf8);
 
 		if (!textbox_insert(bw, text_box, box_offset, utf8, utf8_len))
-			return;
+			return true;
 
 		box_offset += utf8_len;
 		changed = true;
@@ -844,7 +853,8 @@ void browser_window_input_callback(struct browser_window *bw,
 	case KEY_DELETE_LEFT: {
 			int prev_offset;
 
-			if (box_offset <= 0) return;
+			if (box_offset <= 0)
+				return true;
 
 			/* Gadget */
 			prev_offset = form_offset;
@@ -873,7 +883,7 @@ void browser_window_input_callback(struct browser_window *bw,
 			unsigned next_offset;
 
 			if (box_offset >= text_box->length)
-				return;
+				return true;
 
 			/* Gadget */
 			/* Go to the next valid UTF-8 character */
@@ -908,7 +918,7 @@ void browser_window_input_callback(struct browser_window *bw,
 					next_input = next_input->next)
 				;
 			if (!next_input)
-				return;
+				return true;
 
 			input = next_input->box;
 			text_box = input->children->children;
@@ -921,7 +931,7 @@ void browser_window_input_callback(struct browser_window *bw,
 	case 13:	/* Return/Enter hit */
 		if (form)
 			browser_form_submit(bw, 0, form, 0);
-		return;
+		return true;
 
 	case 11: {	/* Shift + Tab */
 			struct form_control *prev_input;
@@ -933,7 +943,7 @@ void browser_window_input_callback(struct browser_window *bw,
 					prev_input = prev_input->prev)
 				;
 			if (!prev_input)
-				return;
+				return true;
 
 			input = prev_input->box;
 			text_box = input->children->children;
@@ -959,7 +969,7 @@ void browser_window_input_callback(struct browser_window *bw,
 			box_y + input->children->y + text_box->y);
 
 		/* screen updated and caret repositioned already */
-		return;
+		return true;
 
 
 	case KEY_RIGHT:
@@ -1023,7 +1033,8 @@ void browser_window_input_callback(struct browser_window *bw,
 	break;
 
 	case KEY_DELETE_LINE_START:
-		if (box_offset <= 0) return;
+		if (box_offset <= 0)
+			return true;
 
 		/* Text box */
 		textbox_delete(bw, text_box, 0, box_offset);
@@ -1040,7 +1051,7 @@ void browser_window_input_callback(struct browser_window *bw,
 
 	case KEY_DELETE_LINE_END:
 		if (box_offset >= text_box->length)
-			return;
+			return true;
 
 		/* Text box */
 		textbox_delete(bw, text_box, box_offset, text_box->length - box_offset);
@@ -1051,13 +1062,15 @@ void browser_window_input_callback(struct browser_window *bw,
 		break;
 
 	default:
-		return;
+		return false;
 	}
 
 	input->gadget->caret_form_offset = form_offset;
 
 	input_update_display(bw, input, form_offset, box_offset,
 		to_textarea, changed);
+
+	return true;
 }
 
 
@@ -1138,8 +1151,7 @@ bool browser_window_key_press(struct browser_window *bw, wchar_t key)
 	/* pass on to the appropriate field */
 	if (!bw->caret_callback)
 		return false;
-	bw->caret_callback(bw, key, bw->caret_p);
-	return true;
+	return bw->caret_callback(bw, key, bw->caret_p);
 }
 
 
