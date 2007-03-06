@@ -100,7 +100,7 @@ void browser_window_create_iframes(struct browser_window *bw,
 		window = &(bw->iframes[index++]);
 		if (cur->url)
 			browser_window_go_unverifiable(window, cur->url,
-					bw->current_content->url, true);
+					bw->current_content->url, false);
 	}
 }
 
