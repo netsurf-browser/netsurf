@@ -104,6 +104,7 @@ static void nsgtk_attach_menu_handlers(GladeXML *, gpointer);
 /* prototypes for menu handlers */
 /* file menu */
 MENUPROTO(new_window);
+MENUPROTO(open_location);
 MENUPROTO(close_window);
 MENUPROTO(quit);
 
@@ -135,6 +136,7 @@ MENUPROTO(about);
 static struct menu_events menu_events[] = {
 	/* file menu */
 	MENUEVENT(new_window),
+	MENUEVENT(open_location),
 	MENUEVENT(close_window),
 	MENUEVENT(quit),
 
@@ -340,6 +342,15 @@ gboolean nsgtk_window_url_changed(GtkWidget *widget, GdkEventKey *event,
 
 MENUHANDLER(new_window)
 {
+	return TRUE;
+}
+
+MENUHANDLER(open_location)
+{
+	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
+
+	gtk_widget_grab_focus(gw->url_bar);
+
 	return TRUE;
 }
 

@@ -64,7 +64,7 @@
 		  <child>
 		    <widget class="GtkMenuItem" id="open_location">
 		      <property name="visible">True</property>
-		      <property name="sensitive">False</property>
+		      <property name="sensitive">True</property>
 		      <property name="tooltip" translatable="yes">Open an address into this browser window.</property>
 		      <property name="label" translatable="yes">Open _location...</property>
 		      <property name="use_underline">True</property>
