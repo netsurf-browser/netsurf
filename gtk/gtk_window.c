@@ -360,7 +360,97 @@ gboolean nsgtk_window_keypress_event(GtkWidget *widget, GdkEventKey *event,
 	struct gui_window *g = data;
 	wchar_t nskey = gdkkey_to_nskey(event);
 
-	browser_window_key_press(g->bw, nskey);
+	if (browser_window_key_press(g->bw, nskey))
+		return TRUE;
+
+	if (event->state == 0) {
+		double value;
+		GtkAdjustment *vscroll = gtk_range_get_adjustment(
+			g_object_get_data(G_OBJECT(g->viewport), "vScroll"));
+			
+		GtkAdjustment *hscroll = gtk_range_get_adjustment(
+			g_object_get_data(G_OBJECT(g->viewport), "hScroll"));
+			
+		GtkAdjustment *scroll;
+		
+		const GtkAllocation *const alloc = 
+			&GTK_WIDGET(g->viewport)->allocation;
+
+		switch (event->keyval) {
+		default:
+			return TRUE;
+
+		case GDK_Home:
+		case GDK_KP_Home:
+			scroll = vscroll;
+			value = scroll->lower;
+			break;
+
+		case GDK_End:
+		case GDK_KP_End:
+			scroll = vscroll;
+			value = scroll->upper - alloc->height;
+			if (value < scroll->lower)
+				value = scroll->lower;
+			break;
+
+		case GDK_Left:
+		case GDK_KP_Left:
+			scroll = hscroll;
+			value = gtk_adjustment_get_value(scroll) - 
+						scroll->step_increment;
+			if (value < scroll->lower)
+				value = scroll->lower;
+			break;
+
+		case GDK_Up:
+		case GDK_KP_Up:
+			scroll = vscroll;
+			value = gtk_adjustment_get_value(scroll) - 
+						scroll->step_increment;
+			if (value < scroll->lower)
+				value = scroll->lower;
+			break;
+
+		case GDK_Right:
+		case GDK_KP_Right:
+			scroll = hscroll;
+			value = gtk_adjustment_get_value(scroll) + 
+						scroll->step_increment;
+			if (value > scroll->upper - alloc->width)
+				value = scroll->upper - alloc->width;
+			break;
+
+		case GDK_Down:
+		case GDK_KP_Down:
+			scroll = vscroll;
+			value = gtk_adjustment_get_value(scroll) + 
+						scroll->step_increment;
+			if (value > scroll->upper - alloc->height)
+				value = scroll->upper - alloc->height;
+			break;
+
+		case GDK_Page_Up:
+		case GDK_KP_Page_Up:
+			scroll = vscroll;
+			value = gtk_adjustment_get_value(scroll) -
+						scroll->page_increment;
+			if (value < scroll->lower)
+				value = scroll->lower;
+			break;
+
+		case GDK_Page_Down:
+		case GDK_KP_Page_Down:
+			scroll = vscroll;
+			value = gtk_adjustment_get_value(scroll) + 
+						scroll->page_increment;
+			if (value > scroll->upper - alloc->height)
+				value = scroll->upper - alloc->height;
+			break;
+		}
+
+		gtk_adjustment_set_value(scroll, value);		
+	}
 
 	return TRUE;
 }

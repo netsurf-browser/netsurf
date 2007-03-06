@@ -511,20 +511,47 @@ gboolean nsgtk_history_button_press_event(GtkWidget *widget,
 
 #define GET_WIDGET(x) glade_xml_get_widget(g->xml, (x))
 
+static gboolean do_scroll_event(GtkWidget *widget, GdkEventScroll *ev,
+                                gpointer data)
+{
+        switch (ev->direction)
+        {
+        case GDK_SCROLL_UP:
+        case GDK_SCROLL_DOWN:
+                gtk_widget_event(g_object_get_data(
+                			G_OBJECT(widget), "vScroll"), ev);
+                break;
+        default:
+                gtk_widget_event(g_object_get_data(
+                			G_OBJECT(widget), "hScroll"), ev);
+        }
+        
+        return TRUE;
+}
+
 void nsgtk_attach_toplevel_viewport(nsgtk_scaffolding *g,
                                     GtkViewport *vp)
 {
+        GtkWidget *scrollbar;
+
         /* Insert the viewport into the right part of our table */
         GtkTable *table = GTK_TABLE(GET_WIDGET("centreTable"));
         LOG(("Attaching viewport to scaffolding %p", g));
         gtk_table_attach_defaults(table, GTK_WIDGET(vp), 0, 1, 0, 1);
 	
         /* connect our scrollbars to the viewport */
+	scrollbar = GET_WIDGET("coreScrollHorizontal");
 	gtk_viewport_set_hadjustment(vp, 
-		gtk_range_get_adjustment(GTK_RANGE(GET_WIDGET("coreScrollHorizontal"))));
+		gtk_range_get_adjustment(GTK_RANGE(scrollbar)));
+        g_object_set_data(G_OBJECT(vp), "hScroll", scrollbar);
+        scrollbar = GET_WIDGET("coreScrollVertical");
 	gtk_viewport_set_vadjustment(vp, 
-                gtk_range_get_adjustment(GTK_RANGE(GET_WIDGET("coreScrollVertical"))));
-        
+                gtk_range_get_adjustment(GTK_RANGE(scrollbar)));
+        g_object_set_data(G_OBJECT(vp), "vScroll", scrollbar);
+        g_signal_connect(G_OBJECT(vp), "scroll_event", do_scroll_event, NULL);
+
+        gdk_window_set_accept_focus (GTK_WIDGET(vp)->window, TRUE);
+
         /* And set the size-request to zero to cause it to get its act together */
 	gtk_widget_set_size_request(GTK_WIDGET(vp), 0, 0);
 
