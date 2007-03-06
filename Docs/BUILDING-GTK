@@ -3,7 +3,8 @@ only been tested on Debian, Ubuntu and FreeBSD), simply run "make gtk" once
 you have got the relevent build dependancies installed.  Under a Debian-like
 OS, this should suffice:
 
-	apt-get install libglade2-dev libcurl3-dev libxml2-dev lemon re2c
+	apt-get install libglade2-dev libcurl3-dev libxml2-dev libmng-dev 
+	apt-get install lemon re2c
 
 This will pull in loads of things, like all the GTK dev libraries, the PNG and
 JPEG libraries, colour management libraries, zlib, OpenSSL etc that NetSurf
