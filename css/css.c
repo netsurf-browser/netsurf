@@ -404,7 +404,6 @@ bool css_convert(struct content *c, int width, int height)
 
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-		warn_user("NoMemory", 0);
 		return false;
 	}
 
@@ -445,7 +444,6 @@ bool css_convert(struct content *c, int width, int height)
 	if (param.memory_error) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-		warn_user("NoMemory", 0);
 		return false;
 	}
 

@@ -76,9 +76,14 @@ bool textplain_create(struct content *c, const char *params[])
 		iconv_cd = iconv_open("utf-8", "iso-8859-1");
 	}
 	if (iconv_cd == (iconv_t)(-1)) {
-		msg_data.error = strerror(errno);
+		char buf[300];
+
+		snprintf(buf, sizeof buf, "IconvFailed %s", strerror(errno));
+		buf[sizeof buf - 1] = 0;
+
+		msg_data.error = buf;
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-		warn_user("IconvFailed", strerror(errno));
+
 		return false;
 	}
 
@@ -97,7 +102,6 @@ bool textplain_create(struct content *c, const char *params[])
 no_memory:
 	msg_data.error = messages_get("NoMemory");
 	content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-	warn_user("NoMemory", 0);
 	return false;
 }
 
@@ -137,9 +141,15 @@ bool textplain_process_data(struct content *c, char *data, unsigned int size)
 			c->data.textplain.utf8_data = utf8_data;
 			c->data.textplain.utf8_data_allocated = allocated;
 		} else if (count == (size_t)(-1) && errno != EINVAL) {
-			msg_data.error = strerror(errno);
+			char buf[300];
+
+			snprintf(buf, sizeof buf, "IconvFailed %s",
+					strerror(errno));
+			buf[sizeof buf - 1] = 0;
+
+			msg_data.error = buf;
 			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-			warn_user("IconvFailed", strerror(errno));
+
 			return false;
 		}
 
@@ -152,7 +162,6 @@ bool textplain_process_data(struct content *c, char *data, unsigned int size)
 no_memory:
 	msg_data.error = messages_get("NoMemory");
 	content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-	warn_user("NoMemory", 0);
 	return false;
 }
 
@@ -266,7 +275,6 @@ void textplain_reformat(struct content *c, int width, int height)
 
 no_memory:
 	LOG(("out of memory (line_count %lu)", line_count));
-	warn_user("NoMemory", 0);
 	return;
 }
 

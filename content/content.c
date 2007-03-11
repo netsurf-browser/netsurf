@@ -535,7 +535,6 @@ bool content_set_type(struct content *c, content_type type,
 		c->status = CONTENT_STATUS_ERROR;
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-		warn_user("NoMemory", 0);
 		return false;
 	}
 
@@ -556,7 +555,6 @@ bool content_set_type(struct content *c, content_type type,
 				msg_data.error = messages_get("NoMemory");
 				content_broadcast(c, CONTENT_MSG_ERROR,
 						msg_data);
-				warn_user("NoMemory", 0);
 				return false;
 			}
 
@@ -574,7 +572,6 @@ bool content_set_type(struct content *c, content_type type,
 				msg_data.error = messages_get("NoMemory");
 				content_broadcast(c, CONTENT_MSG_ERROR,
 						msg_data);
-				warn_user("NoMemory", 0);
 				return false;
 			}
 			content_remove_user(c, callback, p1, p2);
@@ -682,7 +679,6 @@ bool content_process_data(struct content *c, const char *data,
 			c->status = CONTENT_STATUS_ERROR;
 			msg_data.error = messages_get("NoMemory");
 			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-			warn_user("NoMemory", 0);
 			return false;
 		}
 		c->source_data = source_data;

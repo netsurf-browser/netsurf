@@ -85,8 +85,8 @@ type_close():: called when the window containing the content is closed.
                Optional.
 
 If an error occurs in type_create(), type_process_data(), type_convert(),
-CONTENT_MSG_ERROR must be broadcast and false returned. Optionally use
-warn_user() for serious errors. The _destroy function will be called soon after.
+CONTENT_MSG_ERROR must be broadcast and false returned. The _destroy function 
+will be called soon after.
 
 Memory allocation
 -----------------

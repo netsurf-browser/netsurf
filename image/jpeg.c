@@ -104,7 +104,6 @@ bool nsjpeg_convert(struct content *c, int w, int h)
 
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-		warn_user("NoMemory", 0);
 		return false;
 	}
 

@@ -28,7 +28,6 @@ bool nsico_create(struct content *c, const char *params[]) {
 	if (!c->data.ico.ico) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-		warn_user("NoMemory", 0);
 		return false;
 	}
 	return true;
@@ -54,7 +53,6 @@ bool nsico_convert(struct content *c, int iwidth, int iheight) {
 		case BMP_INSUFFICIENT_MEMORY:
 			msg_data.error = messages_get("NoMemory");
 			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-			warn_user("NoMemory", 0);
 			return false;
 		case BMP_INSUFFICIENT_DATA:
 		case BMP_DATA_ERROR:

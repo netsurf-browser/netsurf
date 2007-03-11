@@ -168,7 +168,8 @@ bool artworks_convert(struct content *c, int width, int height)
 	c->data.artworks.block = malloc(INITIAL_BLOCK_SIZE);
 	if (!c->data.artworks.block) {
 		LOG(("failed to create block for ArtworksRenderer"));
-		warn_user("NoMemory", 0);
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
 	}
 

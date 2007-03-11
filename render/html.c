@@ -136,7 +136,6 @@ bool html_create(struct content *c, const char *params[])
 no_memory:
 	msg_data.error = messages_get("NoMemory");
 	content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-	warn_user("NoMemory", 0);
 	return false;
 }
 
@@ -1358,7 +1357,13 @@ void html_object_failed(struct box *box, struct content *content,
 				 * containers */
 				ic = box_create(0, 0, 0, 0, 0, content);
 				if (!ic) {
-					warn_user("NoMemory", 0);
+					union content_msg_data msg_data;
+
+					msg_data.error =
+						messages_get("NoMemory");
+					content_broadcast(content,
+							CONTENT_MSG_ERROR,
+							msg_data);
 					return;
 				}
 				ic->type = BOX_INLINE_CONTAINER;

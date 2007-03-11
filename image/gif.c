@@ -48,7 +48,6 @@ bool nsgif_create(struct content *c, const char *params[]) {
 	if (!c->data.gif.gif) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-		warn_user("NoMemory", 0);
 		return false;
 	}
 	return true;
@@ -74,7 +73,6 @@ bool nsgif_convert(struct content *c, int iwidth, int iheight) {
 		case GIF_INSUFFICIENT_MEMORY:
 			msg_data.error = messages_get("NoMemory");
 			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-			warn_user("NoMemory", 0);
 			return false;
 		case GIF_INSUFFICIENT_DATA:
 		case GIF_DATA_ERROR:

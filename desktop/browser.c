@@ -458,7 +458,11 @@ void browser_window_callback(content_msg msg, struct content *c,
 
 	case CONTENT_MSG_ERROR:
 		browser_window_set_status(bw, data.error);
-		warn_user(data.error, 0);
+
+		/* Only warn the user about errors in top-level windows */
+		if (bw->browser_window_type == BROWSER_WINDOW_NORMAL)
+			warn_user(data.error, 0);
+
 		if (c == bw->loading_content)
 			bw->loading_content = 0;
 		else if (c == bw->current_content) {
