@@ -685,39 +685,24 @@ char *form_encode_item(const char *item, const char *charset,
 {
 	utf8_convert_ret err;
 	char *ret = NULL;
+	char cset[256];
 
 	if (!item || !charset)
 		return NULL;
 
-	/** \todo utf8_to_enc isn't entirely helpful here, as it strips
-	 *  unrepresentable characters completely. A more correct solution
-	 *  would be for it to insert '?' or U+FFFD or a human-readable
-	 *  transliteration instead. To do this requires:
-	 *
-	 *  1) The Iconv module to take some flag or other indicating that
-	 *     transliteration / placeholder characters is / are required.
-	 *     (I suggest following libiconv's //TRANSLIT for the former and
-	 *     introducing something like //REPLACE for the latter). The
-	 *     latter maps pretty easily to using UnicodeLib's ENCODING_WRITE
-	 *     functionality (as opposed to ENCODING_WRITE_STRICT). It would
-	 *     appear there's an issue with UnicodeLib when converting to
-	 *     ISO-8859-{1,2} (at least), in that unrepresentable characters
-	 *     don't get detected - they're converted to some other garbage
-	 *     that I've not worked out yet.
-	 *     //REPLACE would break on platforms other than RO, however.
-	 *     Therefore, if libiconv's //TRANSLIT handling is any good, it'd
-	 *     probably be best to try to emulate that.
-	 *  2) Reflect these options in the utf8_* API(s)
-	 */
+	snprintf(cset, sizeof cset, "%s//TRANSLIT", charset);
 
-	err = utf8_to_enc(item, charset, 0, &ret);
+	err = utf8_to_enc(item, cset, 0, &ret);
 	if (err == UTF8_CONVERT_BADENC) {
 		/* charset not understood, try fallback charset (if any) */
-		if (fallback)
-			err = utf8_to_enc(item,	fallback, 0, &ret);
+		if (fallback) {
+			snprintf(cset, sizeof cset, "%s//TRANSLIT", fallback);
+			err = utf8_to_enc(item, cset, 0, &ret);
+		}
 		if (err == UTF8_CONVERT_BADENC)
 			/* that also failed, use 8859-1 */
-			err = utf8_to_enc(item,	"ISO-8859-1", 0, &ret);
+			err = utf8_to_enc(item, "ISO-8859-1//TRANSLIT",
+					0, &ret);
 	}
 	if (err == UTF8_CONVERT_NOMEM) {
 		return NULL;

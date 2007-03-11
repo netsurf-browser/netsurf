@@ -78,9 +78,9 @@ RMEnsure Tinct 0.13 NetSurfRMLoad System:Modules.Tinct
 RMEnsure Tinct 0.13 Error NetSurf requires Tinct 0.13 or later. This can be downloaded from http://www.tinct.net/
 
 | Ensure Iconv
-| http://netsurf.sourceforge.net/iconv/
-RMEnsure Iconv 0.07 NetSurfRMLoad System:Modules.Iconv
-RMEnsure Iconv 0.07 Error NetSurf requires Iconv 0.07 or later. This can be downloaded from http://netsurf.sourceforge.net/iconv/
+| http://www.netsurf-browser.org/iconv/
+RMEnsure Iconv 0.08 NetSurfRMLoad System:Modules.Iconv
+RMEnsure Iconv 0.08 Error NetSurf requires Iconv 0.08 or later. This can be downloaded from http://www.netsurf-browser.org/iconv/
 
 | Disable SpecialFX, if present
 Set NetSurf$SpecialFX 1
