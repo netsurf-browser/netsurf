@@ -14,6 +14,7 @@
 #define _GNU_SOURCE  /* for strndup */
 #include <assert.h>
 #include <ctype.h>
+#include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
@@ -83,7 +84,8 @@ struct form_control *form_new_control(form_control_type type)
 	control->caret_inline_container = NULL;
 	control->caret_text_box = NULL;
 	control->caret_box_offset = control->caret_form_offset = 0;
-	control->length = control->maxlength = 0;
+	control->length = 0;
+	control->maxlength = UINT_MAX;
 	control->selected = false;
 	control->prev = NULL;
 	control->next = NULL;
