@@ -587,10 +587,10 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 		/* Ack successful save with message_DATA_LOAD */
 		message->action = message_DATA_LOAD;
 		message->your_ref = message->my_ref;
-		error = xwimp_send_message_to_window(wimp_USER_MESSAGE, message,
-				message->data.data_xfer.w, message->data.data_xfer.i, 0);
+		error = xwimp_send_message(wimp_USER_MESSAGE, message,
+				message->sender);
 		if (error) {
-			LOG(("xwimp_send_message_to_window: 0x%x: %s",
+			LOG(("xwimp_send_message: 0x%x: %s",
 					error->errnum, error->errmess));
 			warn_user("SaveError", error->errmess);
 		}
