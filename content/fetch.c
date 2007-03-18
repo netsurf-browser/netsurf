@@ -915,6 +915,14 @@ void fetch_done(CURL *curl_handle, CURLcode result)
 			; /* redirect with no body or similar */
 		else
 			finished = true;
+	} else if (result == CURLE_PARTIAL_FILE) {
+		/* CURLE_PARTIAL_FILE occurs if the received body of a
+		 * response is smaller than that specified in the
+		 * Content-Length header. */
+		if (!f->had_headers && fetch_process_headers(f))
+			; /* redirect with partial body, or similar */
+		else
+			error = true;
 	} else if (result == CURLE_WRITE_ERROR && f->stopped)
 		/* CURLE_WRITE_ERROR occurs when fetch_curl_data
 		 * returns 0, which we use to abort intentionally */
