@@ -347,10 +347,13 @@ struct content * content_create(const char *url)
 {
 	struct content *c;
 	struct content_user *user_sentinel;
-	LOG(("url %s", url));
+
 	c = talloc(0, struct content);
 	if (!c)
 		return 0;
+
+	LOG(("url %s -> %p", url, c));
+
 	user_sentinel = talloc(c, struct content_user);
 	if (!user_sentinel) {
 		talloc_free(c);
@@ -528,7 +531,7 @@ bool content_set_type(struct content *c, content_type type,
 	assert(c->status == CONTENT_STATUS_TYPE_UNKNOWN);
 	assert(type < CONTENT_UNKNOWN);
 
-	LOG(("content %s, type %i", c->url, type));
+	LOG(("content %s (%p), type %i", c->url, c, type));
 
 	c->mime_type = talloc_strdup(c, mime_type);
 	if (!c->mime_type) {
@@ -721,7 +724,7 @@ void content_convert(struct content *c, int width, int height)
 	assert(c->type < HANDLER_MAP_COUNT);
 	assert(c->status == CONTENT_STATUS_LOADING);
 	assert(!c->locked);
-	LOG(("content %s", c->url));
+	LOG(("content %s (%p)", c->url, c));
 
 	if (c->source_allocated != c->source_size) {
 		source_data = talloc_realloc(c, c->source_data, char,
@@ -781,6 +784,7 @@ void content_reformat(struct content *c, int width, int height)
 	assert(c->status == CONTENT_STATUS_READY ||
 			c->status == CONTENT_STATUS_DONE);
 	assert(!c->locked);
+	LOG(("%p %s", c, c->url));
 	c->locked = true;
 	c->available_width = width;
 	if (handler_map[c->type].reformat) {
@@ -943,6 +947,7 @@ bool content_redraw(struct content *c, int x, int y,
 		float scale, unsigned long background_colour)
 {
 	assert(c != 0);
+	LOG(("%p %s", c, c->url));
 	if (c->locked)
 		/* not safe to attempt redraw */
 		return true;
@@ -970,6 +975,8 @@ bool content_redraw_tiled(struct content *c, int x, int y,
 	int x0, y0, x1, y1;
 
 	assert(c != 0);
+
+	LOG(("%p %s", c, c->url));
 
 	if (c->locked)
 		/* not safe to attempt redraw */
@@ -1036,8 +1043,8 @@ bool content_add_user(struct content *c,
 {
 	struct content_user *user;
 
-	LOG(("content %s, user %p 0x%" PRIxPTR " 0x%" PRIxPTR,
-			c->url, callback, p1, p2));
+	LOG(("content %s (%p), user %p 0x%" PRIxPTR " 0x%" PRIxPTR,
+			c->url, c, callback, p1, p2));
 	user = talloc(c, struct content_user);
 	if (!user)
 		return false;
@@ -1088,8 +1095,8 @@ void content_remove_user(struct content *c,
 		intptr_t p1, intptr_t p2)
 {
 	struct content_user *user, *next;
-	LOG(("content %s, user %p 0x%" PRIxPTR " 0x%" PRIxPTR,
-			c->url, callback, p1, p2));
+	LOG(("content %s (%p), user %p 0x%" PRIxPTR " 0x%" PRIxPTR,
+			c->url, c, callback, p1, p2));
 
 	/* user_list starts with a sentinel */
 	for (user = c->user_list; user->next != 0 &&
@@ -1117,6 +1124,7 @@ void content_broadcast(struct content *c, content_msg msg,
 {
 	struct content_user *user, *next;
 	assert(c);
+	LOG(("%p %s -> %d", c, c->url, msg));
 	for (user = c->user_list->next; user != 0; user = next) {
 		next = user->next;  /* user may be destroyed during callback */
 		if (user->callback != 0)
@@ -1202,7 +1210,7 @@ void content_open(struct content *c, struct browser_window *bw,
 {
 	assert(c != 0);
 	assert(c->type < CONTENT_UNKNOWN);
-	LOG(("content %s", c->url));
+	LOG(("content %p %s", c, c->url));
 	if (handler_map[c->type].open)
 		handler_map[c->type].open(c, bw, page, index, box, params);
 }
@@ -1218,7 +1226,7 @@ void content_close(struct content *c)
 {
 	assert(c != 0);
 	assert(c->type < CONTENT_UNKNOWN);
-	LOG(("content %s", c->url));
+	LOG(("content %p %s", c, c->url));
 	if (handler_map[c->type].close)
 		handler_map[c->type].close(c);
 }
