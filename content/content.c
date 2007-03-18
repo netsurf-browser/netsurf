@@ -947,7 +947,7 @@ bool content_redraw(struct content *c, int x, int y,
 		float scale, unsigned long background_colour)
 {
 	assert(c != 0);
-	LOG(("%p %s", c, c->url));
+//	LOG(("%p %s", c, c->url));
 	if (c->locked)
 		/* not safe to attempt redraw */
 		return true;
@@ -976,7 +976,7 @@ bool content_redraw_tiled(struct content *c, int x, int y,
 
 	assert(c != 0);
 
-	LOG(("%p %s", c, c->url));
+//	LOG(("%p %s", c, c->url));
 
 	if (c->locked)
 		/* not safe to attempt redraw */
@@ -1124,7 +1124,7 @@ void content_broadcast(struct content *c, content_msg msg,
 {
 	struct content_user *user, *next;
 	assert(c);
-	LOG(("%p %s -> %d", c, c->url, msg));
+//	LOG(("%p %s -> %d", c, c->url, msg));
 	for (user = c->user_list->next; user != 0; user = next) {
 		next = user->next;  /* user may be destroyed during callback */
 		if (user->callback != 0)

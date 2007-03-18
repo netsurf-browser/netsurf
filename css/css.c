@@ -451,7 +451,6 @@ bool css_convert(struct content *c, int width, int height)
 
 	/* complete fetch of any imported stylesheets */
 	while (c->active != 0) {
-		LOG(("importing %i from '%s'", c->active, c->url));
 		fetch_poll();
 		gui_multitask();
 	}
