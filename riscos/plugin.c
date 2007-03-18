@@ -1683,7 +1683,14 @@ void plugin_stream_callback(content_msg msg, struct content *c,
 			break;
 
 		case CONTENT_MSG_ERROR:
-			plugin_destroy_stream(p, plugin_STREAM_DESTROY_ERROR);
+			/* The plugin we were fetching may have been
+			 * redirected, in that case, the object pointers
+			 * will differ, so ensure that the object that's
+			 * in error is still in use by us before destroying
+			 * the stream */
+			if (p->c == c)
+				plugin_destroy_stream(p,
+						plugin_STREAM_DESTROY_ERROR);
 			break;
 
 		case CONTENT_MSG_REDIRECT:

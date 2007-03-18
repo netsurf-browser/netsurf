@@ -919,9 +919,16 @@ void css_atimport_callback(content_msg msg, struct content *css,
 #endif
 			/* todo: handle AUTH and SSL */
 		case CONTENT_MSG_ERROR:
-			c->data.css.import_content[i] = 0;
-			c->active--;
-			content_add_error(c, "?", 0);
+			/* The stylesheet we were fetching may have been
+			 * redirected, in that case, the object pointers
+			 * will differ, so ensure that the object that's
+			 * in error is still in use by us before invalidating
+			 * the pointer */
+			if (c->data.css.import_content[i] == css) {
+				c->data.css.import_content[i] = 0;
+				c->active--;
+				content_add_error(c, "?", 0);
+			}
 			break;
 
 		case CONTENT_MSG_STATUS:

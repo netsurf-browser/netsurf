@@ -920,9 +920,16 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 			break;
 
 		case CONTENT_MSG_ERROR:
-			c->data.html.stylesheet_content[i] = 0;
-			c->active--;
-			content_add_error(c, "?", 0);
+			/* The stylesheet we were fetching may have been
+			 * redirected, in that case, the object pointers
+			 * will differ, so ensure that the object that's
+			 * in error is still in use by us before invalidating
+			 * the pointer */
+			if (c->data.html.stylesheet_content[i] == css) {
+				c->data.html.stylesheet_content[i] = 0;
+				c->active--;
+				content_add_error(c, "?", 0);
+			}
 			break;
 
 		case CONTENT_MSG_STATUS:
@@ -1161,13 +1168,21 @@ void html_object_callback(content_msg msg, struct content *object,
 			break;
 
 		case CONTENT_MSG_ERROR:
-			c->data.html.object[i].content = 0;
-			c->active--;
-			content_add_error(c, "?", 0);
-			html_set_status(c, data.error);
-			content_broadcast(c, CONTENT_MSG_STATUS, data);
-			html_object_failed(box, c,
+			/* The object we were fetching may have been
+			 * redirected, in that case, the object pointers
+			 * will differ, so ensure that the object that's
+			 * in error is still in use by us before invalidating
+			 * the pointer */
+			if (c->data.html.object[i].content == object) {
+				c->data.html.object[i].content = 0;
+				c->active--;
+				content_add_error(c, "?", 0);
+				html_set_status(c, data.error);
+				content_broadcast(c, CONTENT_MSG_STATUS,
+						data);
+				html_object_failed(box, c,
 					c->data.html.object[i].background);
+			}
 			break;
 
 		case CONTENT_MSG_STATUS:
