@@ -348,7 +348,7 @@ struct content * content_create(const char *url)
 	struct content *c;
 	struct content_user *user_sentinel;
 
-	c = talloc(0, struct content);
+	c = talloc_zero(0, struct content);
 	if (!c)
 		return 0;
 

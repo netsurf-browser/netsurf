@@ -470,13 +470,16 @@ void css_destroy(struct content *c)
 	unsigned int i;
 	struct css_selector *r;
 
-	for (i = 0; i != HASH_SIZE; i++) {
-		for (r = c->data.css.css->rule[i]; r != 0; r = r->next) {
-			css_deep_free_style(r->style);
+	if (c->data.css.css) {
+		for (i = 0; i != HASH_SIZE; i++) {
+			for (r = c->data.css.css->rule[i]; r != 0;
+					r = r->next) {
+				css_deep_free_style(r->style);
+			}
+			css_free_selector(c->data.css.css->rule[i]);
 		}
-		css_free_selector(c->data.css.css->rule[i]);
+		free(c->data.css.css);
 	}
-	free(c->data.css.css);
 
 	/* imported stylesheets */
 	for (i = 0; i != c->data.css.import_count; i++)
