@@ -897,7 +897,7 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 				content_remove_user(css,
 						html_convert_css_callback,
 						(intptr_t) c, i);
-				if (!css->user_list) {
+				if (!css->user_list->next) {
 					/* we were the only user and we
 					 * don't want this content, so
 					 * stop it fetching and mark it
@@ -1144,6 +1144,17 @@ void html_object_callback(content_msg msg, struct content *object,
 			content_broadcast(c, CONTENT_MSG_STATUS, data);
 			content_remove_user(object, html_object_callback,
 					(intptr_t) c, i);
+			if (!object->user_list->next) {
+				/* we were the only user and we
+				 * don't want this content, so
+				 * stop it fetching and mark it
+				 * as having an error so it gets
+				 * removed from the cache next time
+				 * content_clean() gets called */
+				fetch_abort(object->fetch);
+				object->fetch = 0;
+				object->status = CONTENT_STATUS_ERROR;
+			}
 			html_object_failed(box, c,
 					c->data.html.object[i].background);
 			break;
