@@ -1375,18 +1375,19 @@ bool box_object(BOX_SPECIAL_PARAMS)
 	params->classid = 0;
 	params->params = 0;
 
-	/* codebase, classid, and data are URLs (codebase is the base for the
-	 * other two) */
+	/* codebase, classid, and data are URLs
+	 * (codebase is the base for the other two) */
 	if ((codebase = xmlGetProp(n, (const xmlChar *) "codebase"))) {
 		if (!box_extract_link((char *) codebase,
-				content->data.html.base_url, &params->codebase))
+				content->data.html.base_url,
+				&params->codebase))
 			return false;
 		xmlFree(codebase);
 	}
 	if (!params->codebase)
 		params->codebase = content->data.html.base_url;
 
-	if ((classid = xmlGetProp(n, (const xmlChar *) "codebase"))) {
+	if ((classid = xmlGetProp(n, (const xmlChar *) "classid"))) {
 		if (!box_extract_link((char *) classid, params->codebase,
 				&params->classid))
 			return false;
@@ -1399,12 +1400,20 @@ bool box_object(BOX_SPECIAL_PARAMS)
 			return false;
 		xmlFree(data);
 	}
-	if (!params->data)
-		/* objects without data are ignored */
+
+	if (!params->classid && !params->data)
+		/* nothing to embed; ignore */
 		return true;
 
 	/* Don't include ourself */
-	if (strcmp(content->data.html.base_url, params->data) == 0)
+	if (params->classid &&
+			strcmp(content->data.html.base_url,
+				params->classid) == 0)
+		return true;
+
+	if (params->data &&
+			strcmp(content->data.html.base_url,
+				params->data) == 0)
 		return true;
 
 	/* codetype and type are MIME types */
@@ -1412,7 +1421,18 @@ bool box_object(BOX_SPECIAL_PARAMS)
 		return false;
 	if (!box_get_attribute(n, "type", params, &params->type))
 		return false;
-	if (params->type && content_lookup(params->type) == CONTENT_OTHER)
+
+	/* classid && !data => classid is used (consult codetype)
+	 * (classid || !classid) && data => data is used (consult type)
+	 * !classid && !data => invalid; ignored */
+
+	if (params->classid && !params->data && params->codetype &&
+			content_lookup(params->codetype) == CONTENT_OTHER)
+		/* can't handle this MIME type */
+		return true;
+
+	if (params->data && params->type &&
+			content_lookup(params->type) == CONTENT_OTHER)
 		/* can't handle this MIME type */
 		return true;
 
@@ -1456,8 +1476,9 @@ bool box_object(BOX_SPECIAL_PARAMS)
 	box->object_params = params;
 
 	/* start fetch (MIME type is ok or not specified) */
-	if (!html_fetch_object(content, params->data, box, 0,
-			content->available_width, 1000, false))
+	if (!html_fetch_object(content,
+			params->data ? params->data : params->classid,
+			box, 0, content->available_width, 1000, false))
 		return false;
 
 	/* convert children and place into fallback */
