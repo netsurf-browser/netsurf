@@ -1167,21 +1167,24 @@ size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
 		}
 		SKIP_ST(17);
 
-		while (i < (int) size && strncasecmp(data + i, "realm", 5))
+		while (i < (int) size - 5 &&
+				strncasecmp(data + i, "realm", 5))
 			i++;
-		while (i < (int)size && data[++i] != '"')
+		while (i < (int) size - 1 && data[++i] != '"')
 			/* */;
 		i++;
 
-		strncpy(f->realm, data + i, size - i);
-		f->realm[size - i] = '\0';
-		for (i = size - i - 1; i >= 0 &&
-				(f->realm[i] == ' ' ||
-				f->realm[i] == '"' ||
-				f->realm[i] == '\t' ||
-				f->realm[i] == '\r' ||
-				f->realm[i] == '\n'); --i)
-			f->realm[i] = '\0';
+		if (i < (int) size) {
+			strncpy(f->realm, data + i, size - i);
+			f->realm[size - i] = '\0';
+			for (i = size - i - 1; i >= 0 &&
+					(f->realm[i] == ' ' ||
+					f->realm[i] == '"' ||
+					f->realm[i] == '\t' ||
+					f->realm[i] == '\r' ||
+					f->realm[i] == '\n'); --i)
+				f->realm[i] = '\0';
+		}
 #endif
 	} else if (5 < size && strncasecmp(data, "Date:", 5) == 0) {
 		/* extract Date header */
