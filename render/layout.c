@@ -48,6 +48,7 @@
 static void layout_minmax_block(struct box *block);
 static bool layout_block_object(struct box *block);
 static void layout_block_find_dimensions(int available_width, struct box *box);
+static void layout_block_add_scrollbar(struct box *box, int which);
 static int layout_solve_width(int available_width, int width,
 		int margin[4], int padding[4], int border[4]);
 static void layout_float_find_dimensions(int available_width,
@@ -243,9 +244,11 @@ bool layout_block_context(struct box *block, struct content *content)
 			goto advance_to_next_box;
 	        }
 
-                if (box->type == BOX_BLOCK || box->object)
+                if (box->type == BOX_BLOCK || box->object) {
 			layout_block_find_dimensions(box->parent->width, box);
-		else if (box->type == BOX_TABLE) {
+			layout_block_add_scrollbar(box, RIGHT);
+			layout_block_add_scrollbar(box, BOTTOM);
+		} else if (box->type == BOX_TABLE) {
 			if (!layout_table(box, box->parent->width, content))
 				return false;
 			layout_solve_width(box->parent->width, box->width,
@@ -339,8 +342,12 @@ bool layout_block_context(struct box *block, struct content *content)
 			continue;
 		} else if (box->type == BOX_BLOCK || box->object)
 			cy += box->padding[TOP];
-		if (box->type == BOX_BLOCK && box->height == AUTO)
+
+		if (box->type == BOX_BLOCK && box->height == AUTO) {
 			box->height = 0;
+			layout_block_add_scrollbar(box, BOTTOM);
+		}
+
 		cy += box->height + box->padding[BOTTOM] + box->border[BOTTOM];
 		max_pos_margin = max_neg_margin = 0;
 		if (max_pos_margin < box->margin[BOTTOM])
@@ -358,9 +365,11 @@ bool layout_block_context(struct box *block, struct content *content)
 				box = box->parent;
 				if (box == block)
 					break;
-				if (box->height == AUTO)
+				if (box->height == AUTO) {
 					box->height = y - box->padding[TOP];
-				else
+					if (box->type == BOX_BLOCK)
+						layout_block_add_scrollbar(box, BOTTOM);
+				} else
 					cy += box->height -
 							(y - box->padding[TOP]);
 				cy += box->padding[BOTTOM] +
@@ -391,8 +400,11 @@ bool layout_block_context(struct box *block, struct content *content)
 			cy = y;
 	}
 
-	if (block->height == AUTO)
+	if (block->height == AUTO) {
 		block->height = cy - block->padding[TOP];
+		if (block->type == BOX_BLOCK)
+			layout_block_add_scrollbar(block, BOTTOM);
+	}
 
 	return true;
 }
@@ -555,27 +567,37 @@ void layout_block_find_dimensions(int available_width, struct box *box)
 			padding, border);
 	box->height = height;
 
-	if (style->overflow == CSS_OVERFLOW_SCROLL ||
-			style->overflow == CSS_OVERFLOW_AUTO) {
-		/* make space for scrollbars */
-		if (style->overflow == CSS_OVERFLOW_SCROLL ||
-				box_hscrollbar_present(box)) {
-			box->height -= SCROLLBAR_WIDTH;
-			box->padding[BOTTOM] += SCROLLBAR_WIDTH;
-		}
-		if (style->overflow == CSS_OVERFLOW_SCROLL ||
-				box_vscrollbar_present(box)) {
-			box->width -= SCROLLBAR_WIDTH;
-			box->padding[RIGHT] += SCROLLBAR_WIDTH;
-		}
-	}
-
 	if (margin[TOP] == AUTO)
 		margin[TOP] = 0;
 	if (margin[BOTTOM] == AUTO)
 		margin[BOTTOM] = 0;
 }
 
+/**
+ * Manipulate a block's [RB]padding/height/width to accommodate scrollbars
+ */
+
+void layout_block_add_scrollbar(struct box *box, int which)
+{
+	assert(box->type == BOX_BLOCK && (which == RIGHT || which == BOTTOM));
+
+	if (box->style && (box->style->overflow == CSS_OVERFLOW_SCROLL ||
+			box->style->overflow == CSS_OVERFLOW_AUTO)) {
+		/* make space for scrollbars, unless height/width are AUTO */
+		if (which == BOTTOM && box->height != AUTO &&
+				(box->style->overflow == CSS_OVERFLOW_SCROLL ||
+				box_hscrollbar_present(box))) {
+			box->height -= SCROLLBAR_WIDTH;
+			box->padding[BOTTOM] += SCROLLBAR_WIDTH;
+		}
+		if (which == RIGHT && box->width != AUTO &&
+				(box->style->overflow == CSS_OVERFLOW_SCROLL ||
+				box_vscrollbar_present(box))) {
+			box->width -= SCROLLBAR_WIDTH;
+			box->padding[RIGHT] += SCROLLBAR_WIDTH;
+		}
+	}
+}
 
 /**
  * Solve the width constraint as given in CSS 2.1 section 10.3.3.
