@@ -1273,6 +1273,7 @@ bool layout_line(struct box *first, int *width, int *y,
 
 			if (!layout_float(d, *width, content))
 				return false;
+			LOG(("%p : %d %d", d, d->margin[TOP], d->border[TOP]));
 			d->x = d->margin[LEFT] + d->border[LEFT];
 			d->y = d->margin[TOP] + d->border[TOP];
 			b->width = d->margin[LEFT] + d->border[LEFT] +
@@ -1717,6 +1718,10 @@ bool layout_float(struct box *b, int width, struct content *content)
 			b->margin[LEFT] = 0;
 		if (b->margin[RIGHT] == AUTO)
 			b->margin[RIGHT] = 0;
+		if (b->margin[TOP] == AUTO)
+			b->margin[TOP] = 0;
+		if (b->margin[BOTTOM] == AUTO)
+			b->margin[BOTTOM] = 0;
 	} else
 		return layout_block_context(b, content);
 	return true;
