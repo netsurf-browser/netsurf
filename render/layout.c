@@ -2358,6 +2358,10 @@ void layout_minmax_table(struct box *table)
 	/* add margins, border, padding to min, max widths */
 	calculate_mbp_width(table->style, LEFT, &extra_fixed, &extra_frac);
 	calculate_mbp_width(table->style, RIGHT, &extra_fixed, &extra_frac);
+	if (extra_fixed < 0)
+		extra_fixed = 0;
+	if (extra_frac < 0)
+		extra_frac = 0;
 	if (1.0 <= extra_frac)
 		extra_frac = 0.9;
 	table->min_width = (table_min + extra_fixed) / (1.0 - extra_frac);
