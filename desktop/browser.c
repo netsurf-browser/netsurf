@@ -962,13 +962,6 @@ void browser_window_reformat(struct browser_window *bw, int width, int height)
 		return;
 
 	content_reformat(c, width, height);
-
-//	if (c->type == CONTENT_HTML && c->data.html.frameset)
-//		browser_window_recalculate_frameset(bw);
-
-	/* CONTENT_MSG_REFORMAT handles the repositioning of iframes */
-//	if (c->type == CONTENT_HTML && c->data.html.iframe)
-//		browser_window_recalculate_iframes(bw);
 }
 
 
@@ -992,9 +985,9 @@ void browser_window_set_scale(struct browser_window *bw, float scale, bool all)
 
 void browser_window_set_scale_internal(struct browser_window *bw, float scale)
 {
-  	int i;
+	int i;
 
-  	gui_window_set_scale(bw->window, scale);
+	gui_window_set_scale(bw->window, scale);
 
 	for (i = 0; i < (bw->cols * bw->rows); i++)
 		browser_window_set_scale_internal(&bw->children[i], scale);
