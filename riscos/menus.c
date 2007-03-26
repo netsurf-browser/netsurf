@@ -574,10 +574,7 @@ void ro_gui_menu_closed(bool cleanup) {
 		current_menu = NULL;
 
 		if (cleanup) {
-			/* end any search operation that was started so that
-			   the text doesn't remain highlighted */
-			if (ro_gui_menu_search_window_menu)
-				ro_gui_search_end(dialog_search);
+		  	ro_gui_wimp_event_menus_closed();
 
 			if (tree)
 				ro_gui_tree_menu_closed(tree);
@@ -726,6 +723,7 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning) {
 				entries[warning->selection.items[i]];
 
 	if (IS_MENU(menu_entry->sub_menu)) {
+		ro_gui_wimp_event_register_submenu((wimp_w)0);
 		sub_menu = menu_entry->sub_menu;
 		i = 0;
 		do {
@@ -736,6 +734,7 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning) {
 						action, false);
 		} while (!(sub_menu->entries[i++].menu_flags & wimp_MENU_LAST));
 	} else {
+		ro_gui_wimp_event_register_submenu((wimp_w)menu_entry->sub_menu);
 		action = ro_gui_menu_find_action(current_menu, menu_entry);
 		if (action != NO_ACTION)
 			ro_gui_menu_prepare_action(current_menu_window,

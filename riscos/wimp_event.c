@@ -100,6 +100,7 @@ static struct event_window *ro_gui_wimp_event_remove_window(wimp_w w);
 
 static struct event_window *ro_gui_wimp_event_windows[WIN_HASH_SIZE];
 
+static wimp_w ro_gui_wimp_event_submenu;
 
 /**
  * Memorises the current state of any registered components in a window.
@@ -856,6 +857,8 @@ bool ro_gui_wimp_event_close_window(wimp_w w) {
 	struct event_window *window;
 
 	LOG(("Close event received for window 0x%x", (unsigned int)w));
+	if (w == ro_gui_wimp_event_submenu)
+		ro_gui_wimp_event_submenu = 0;
 	window = ro_gui_wimp_event_find_window(w);
 	if ((window) && (window->close_window)) {
 		window->close_window(w);
@@ -1215,4 +1218,20 @@ struct icon_event *ro_gui_wimp_event_get_event(wimp_w w, wimp_i i, event_type ty
 	window->first = event;
 
 	return event;
+}
+
+/**
+ * Handle menus being closed
+ */
+void ro_gui_wimp_event_menus_closed(void) {
+  	ro_gui_wimp_event_register_submenu(0);
+}
+
+/**
+ * Register a submenu as being opened
+ */
+void ro_gui_wimp_event_register_submenu(wimp_w w) {
+	if (ro_gui_wimp_event_submenu)
+		ro_gui_wimp_event_close_window(ro_gui_wimp_event_submenu);
+	ro_gui_wimp_event_submenu = w;
 }

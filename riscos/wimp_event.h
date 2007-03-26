@@ -68,4 +68,7 @@ bool ro_gui_wimp_event_register_redraw_window(wimp_w w,
 bool ro_gui_wimp_event_register_menu_selection(wimp_w w,
 		void (*callback)(wimp_w w, wimp_i i));
 
+void ro_gui_wimp_event_menus_closed(void);
+void ro_gui_wimp_event_register_submenu(wimp_w w);
+
 #endif
