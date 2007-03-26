@@ -518,18 +518,18 @@ void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
  */
 void gui_window_redraw_window(struct gui_window *g)
 {
-	wimp_window_info info; 
-	os_error *error; 
+	wimp_window_info info;
+	os_error *error;
 
 	assert(g);
 	info.w = g->window;
-	error = xwimp_get_window_info_header_only(&info); 
-	if (error) { 
-		LOG(("xwimp_get_window_info_header_only: 0x%x: %s", 
-				error->errnum, error->errmess)); 
-		warn_user("WimpError", error->errmess); 
-		return; 
-	} 
+	error = xwimp_get_window_info_header_only(&info);
+	if (error) {
+		LOG(("xwimp_get_window_info_header_only: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
 	error = xwimp_force_redraw(g->window, info.extent.x0, info.extent.y0,
 			info.extent.x1, info.extent.y1);
 	if (error) {
@@ -787,7 +787,7 @@ void gui_window_position_frame(struct gui_window *g, int x0, int y0, int x1, int
 		bw->x1 = x1 = parent->x0 + x1;
 		bw->y1 = y1 = parent->y0 + y1;
 	}
-	
+
 	/* only scale iframe locations */
 	if (bw->browser_window_type == BROWSER_WINDOW_IFRAME)
 	  	scale = g->option.scale;
@@ -1137,8 +1137,6 @@ void gui_window_remove_caret(struct gui_window *g)
 
 void gui_window_new_content(struct gui_window *g)
 {
-  	if (search_current_window == g)
-  		ro_gui_search_end(dialog_search);
 	ro_gui_menu_objects_moved();
 	ro_gui_prepare_navigate(g);
 	ro_gui_dialog_close_persistent(g->window);
@@ -1395,7 +1393,7 @@ void gui_window_set_scale(struct gui_window *g, float scale)
 	  	ro_gui_dialog_update_zoom(g);
 	  	if (!content_get_reformat(c)) {
 			browser_window_update(g->bw, false);
-	  	} else {	  
+	  	} else {
 			g->reformat_pending = true;
 			gui_reformat_pending = true;
 	 	}
@@ -1735,7 +1733,7 @@ void gui_window_set_extent(struct gui_window *g, int width, int height)
 			height -= toolbar_height;
 		}
 	}
-	
+
 	/* the top-level framed window is a total pain. to get it to maximise to the
 	 * top of the screen we need to fake it having a suitably large extent */
 	if (g->bw->children && (g->bw->browser_window_type == BROWSER_WINDOW_NORMAL)) {

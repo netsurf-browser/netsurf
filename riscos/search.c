@@ -70,11 +70,12 @@ wimp_menu *recent_search_menu = (wimp_menu *)&menu_recent;
 
 
 static void start_search(bool forwards);
-static void do_search(char *string, int string_len, bool case_sens, bool forwards);
+static void do_search(char *string, int string_len, bool case_sens,
+		bool forwards);
 static const char *find_pattern(const char *string, int s_len,
 		const char *pattern, int p_len, bool case_sens, int *m_len);
-static bool find_occurrences_html(const char *pattern, int p_len, struct box *cur,
-		bool case_sens);
+static bool find_occurrences_html(const char *pattern, int p_len,
+		struct box *cur, bool case_sens);
 static bool find_occurrences_text(const char *pattern, int p_len,
 		struct content *c, bool case_sens);
 static struct list_entry *add_entry(unsigned start_idx, unsigned end_idx);
@@ -82,21 +83,26 @@ static void free_matches(void);
 static void show_all(bool all);
 static void show_status(bool found);
 
+static void ro_gui_search_end(wimp_w w);
 static bool ro_gui_search_next(wimp_w w);
 static bool ro_gui_search_click(wimp_pointer *pointer);
 static bool ro_gui_search_keypress(wimp_key *key);
 static void ro_gui_search_add_recent(char *search);
 
-void ro_gui_search_init(void) {
+void ro_gui_search_init(void)
+{
 	dialog_search = ro_gui_dialog_create("search");
 	ro_gui_wimp_event_register_keypress(dialog_search,
 			ro_gui_search_keypress);
 	ro_gui_wimp_event_register_close_window(dialog_search,
 			ro_gui_search_end);
-	ro_gui_wimp_event_register_menu_gright(dialog_search, ICON_SEARCH_TEXT,
-			ICON_SEARCH_MENU, recent_search_menu);
-	ro_gui_wimp_event_register_text_field(dialog_search, ICON_SEARCH_STATUS);
-	ro_gui_wimp_event_register_checkbox(dialog_search, ICON_SEARCH_CASE_SENSITIVE);
+	ro_gui_wimp_event_register_menu_gright(dialog_search,
+			ICON_SEARCH_TEXT, ICON_SEARCH_MENU,
+			recent_search_menu);
+	ro_gui_wimp_event_register_text_field(dialog_search,
+			ICON_SEARCH_STATUS);
+	ro_gui_wimp_event_register_checkbox(dialog_search,
+			ICON_SEARCH_CASE_SENSITIVE);
 	ro_gui_wimp_event_register_mouse_click(dialog_search,
 			ro_gui_search_click);
 	ro_gui_wimp_event_register_ok(dialog_search, ICON_SEARCH_FIND_NEXT,
@@ -114,15 +120,17 @@ void ro_gui_search_init(void) {
  *
  * \return false, to indicate the window should not be closed
  */
-bool ro_gui_search_next(wimp_w w) {
+bool ro_gui_search_next(wimp_w w)
+{
 	search_insert = true;
 	start_search(true);
 	return false;
 }
 
-bool ro_gui_search_click(wimp_pointer *pointer) {
+bool ro_gui_search_click(wimp_pointer *pointer)
+{
 	switch (pointer->i) {
-	  	case ICON_SEARCH_FIND_PREV:
+		case ICON_SEARCH_FIND_PREV:
 			search_insert = true;
 			start_search(false);
 			return true;
@@ -130,13 +138,15 @@ bool ro_gui_search_click(wimp_pointer *pointer) {
 			start_search(true);
 			return true;
 		case ICON_SEARCH_SHOW_ALL:
-			show_all(ro_gui_get_icon_selected_state(pointer->w, pointer->i));
+			show_all(ro_gui_get_icon_selected_state(pointer->w,
+					pointer->i));
 			return true;
 	}
 	return false;
 }
 
-void ro_gui_search_add_recent(char *search) {
+void ro_gui_search_add_recent(char *search)
+{
 	char *tmp;
 	int i;
 
@@ -156,8 +166,8 @@ void ro_gui_search_add_recent(char *search) {
 
 	tmp = strdup(search);
 	if (!tmp) {
-	  	warn_user("NoMemory", 0);
-	  	return;
+		warn_user("NoMemory", 0);
+		return;
 	}
 	free(recent_search[RECENT_SEARCHES - 1]);
 	for (i = RECENT_SEARCHES - 1; i > 0; i--)
@@ -169,7 +179,8 @@ void ro_gui_search_add_recent(char *search) {
 	ro_gui_search_prepare_menu();
 }
 
-bool ro_gui_search_prepare_menu(void) {
+bool ro_gui_search_prepare_menu(void)
+{
 	os_error *error;
 	int i;
 	int suggestions = 0;
@@ -188,7 +199,8 @@ bool ro_gui_search_prepare_menu(void) {
 		recent_search_menu->entries[i].data.indirected_text.size =
 				strlen(recent_search[i]) + 1;
 	}
-	recent_search_menu->entries[suggestions - 1].menu_flags |= wimp_MENU_LAST;
+	recent_search_menu->entries[suggestions - 1].menu_flags |=
+			wimp_MENU_LAST;
 
 	if ((current_menu_open) && (current_menu == recent_search_menu)) {
 		error = xwimp_create_menu(current_menu, 0, 0);
@@ -215,7 +227,8 @@ void ro_gui_search_prepare(struct gui_window *g)
 	c = g->bw->current_content;
 
 	/* only handle html/textplain contents */
-	if ((!c) || (c->type != CONTENT_HTML && c->type != CONTENT_TEXTPLAIN))
+	if ((!c) || (c->type != CONTENT_HTML &&
+			c->type != CONTENT_TEXTPLAIN))
 		return;
 
 	/* if the search dialogue is reopened over a new window, we still
@@ -231,8 +244,10 @@ void ro_gui_search_prepare(struct gui_window *g)
 				ICON_SEARCH_SHOW_ALL, false);
 
 	show_status(true);
-	ro_gui_set_icon_shaded_state(dialog_search, ICON_SEARCH_FIND_PREV, true);
-	ro_gui_set_icon_shaded_state(dialog_search, ICON_SEARCH_FIND_NEXT, true);
+	ro_gui_set_icon_shaded_state(dialog_search,
+			ICON_SEARCH_FIND_PREV, true);
+	ro_gui_set_icon_shaded_state(dialog_search,
+			ICON_SEARCH_FIND_NEXT, true);
 
 	ro_gui_wimp_event_memorise(dialog_search);
 	search_insert = true;
@@ -250,14 +265,18 @@ bool ro_gui_search_keypress(wimp_key *key)
 
 	switch (key->c) {
 		case 1: { /* ctrl a */
-			bool sel = !ro_gui_get_icon_selected_state(key->w, ICON_SEARCH_SHOW_ALL);
-			ro_gui_set_icon_selected_state(key->w, ICON_SEARCH_SHOW_ALL, sel);
+			bool sel = !ro_gui_get_icon_selected_state(key->w,
+					ICON_SEARCH_SHOW_ALL);
+			ro_gui_set_icon_selected_state(key->w,
+					ICON_SEARCH_SHOW_ALL, sel);
 			show_all(sel);
 		}
 		break;
 		case 9: /* ctrl i */
-			state = ro_gui_get_icon_selected_state(dialog_search, ICON_SEARCH_CASE_SENSITIVE);
-			ro_gui_set_icon_selected_state(dialog_search, ICON_SEARCH_CASE_SENSITIVE, !state);
+			state = ro_gui_get_icon_selected_state(dialog_search,
+					ICON_SEARCH_CASE_SENSITIVE);
+			ro_gui_set_icon_selected_state(dialog_search,
+					ICON_SEARCH_CASE_SENSITIVE, !state);
 			start_search(true);
 			return true;
 		case IS_WIMP_KEY | wimp_KEY_UP:
@@ -270,8 +289,11 @@ bool ro_gui_search_keypress(wimp_key *key)
 			return true;
 
 		default:
-			if (key->c == 21) /* ctrl+u means the user's starting a new search */
+			if (key->c == 21) {
+				/* ctrl+u means the user's starting
+				 * a new search */
 				search_insert = true;
+			}
 			if (key->c == 8  || /* backspace */
 			    key->c == 21 || /* ctrl u */
 			    (key->c >= 0x20 && key->c <= 0x7f)) {
@@ -305,8 +327,10 @@ void start_search(bool forwards)
 	if (string_len <= 0) {
 		free_matches();
 		show_status(true);
-		ro_gui_set_icon_shaded_state(dialog_search, ICON_SEARCH_FIND_PREV, true);
-		ro_gui_set_icon_shaded_state(dialog_search, ICON_SEARCH_FIND_NEXT, true);
+		ro_gui_set_icon_shaded_state(dialog_search,
+				ICON_SEARCH_FIND_PREV, true);
+		ro_gui_set_icon_shaded_state(dialog_search,
+				ICON_SEARCH_FIND_NEXT, true);
 		gui_window_set_scroll(search_current_window, 0, 0);
 		return;
 	}
@@ -392,7 +416,8 @@ void do_search(char *string, int string_len, bool case_sens, bool forwards)
 	c = search_current_window->bw->current_content;
 
 	/* only handle html contents */
-	if ((!c) || (c->type != CONTENT_HTML && c->type != CONTENT_TEXTPLAIN))
+	if ((!c) || (c->type != CONTENT_HTML &&
+			c->type != CONTENT_TEXTPLAIN))
 		return;
 
 	box = c->data.html.layout;
@@ -425,10 +450,12 @@ void do_search(char *string, int string_len, bool case_sens, bool forwards)
 		xhourglass_on();
 
 		if (c->type == CONTENT_HTML)
-			res = find_occurrences_html(string, string_len, box, case_sens);
+			res = find_occurrences_html(string, string_len,
+					box, case_sens);
 		else {
 			assert(c->type == CONTENT_TEXTPLAIN);
-			res = find_occurrences_text(string, string_len, c, case_sens);
+			res = find_occurrences_text(string, string_len,
+					c, case_sens);
 		}
 
 		if (!res) {
@@ -462,7 +489,8 @@ void do_search(char *string, int string_len, bool case_sens, bool forwards)
 	}
 
 	show_status(search_current != NULL);
-	show_all(ro_gui_get_icon_selected_state(dialog_search, ICON_SEARCH_SHOW_ALL));
+	show_all(ro_gui_get_icon_selected_state(dialog_search,
+			ICON_SEARCH_SHOW_ALL));
 
 	ro_gui_set_icon_shaded_state(dialog_search, ICON_SEARCH_FIND_PREV,
 		!search_current || !search_current->prev);
@@ -475,9 +503,11 @@ void do_search(char *string, int string_len, bool case_sens, bool forwards)
 	switch (c->type) {
 		case CONTENT_HTML:
 			/* get box position and jump to it */
-			box_coords(search_current->start_box, &bounds.x0, &bounds.y0);
+			box_coords(search_current->start_box,
+					&bounds.x0, &bounds.y0);
 			/* \todo: move x0 in by correct idx */
-			box_coords(search_current->end_box, &bounds.x1, &bounds.y1);
+			box_coords(search_current->end_box,
+					&bounds.x1, &bounds.y1);
 			/* \todo: move x1 in by correct idx */
 			bounds.x1 += search_current->end_box->width;
 			bounds.y1 += search_current->end_box->height;
@@ -485,7 +515,8 @@ void do_search(char *string, int string_len, bool case_sens, bool forwards)
 
 		default:
 			assert(c->type == CONTENT_TEXTPLAIN);
-			textplain_coords_from_range(c, search_current->start_idx,
+			textplain_coords_from_range(c,
+					search_current->start_idx,
 					search_current->end_idx, &bounds);
 			break;
 	}
@@ -631,14 +662,17 @@ bool find_occurrences_html(const char *pattern, int p_len, struct box *cur,
 			unsigned match_offset;
 			const char *new_text;
 			const char *pos = find_pattern(text, length,
-					pattern, p_len, case_sens, &match_length);
+					pattern, p_len, case_sens,
+					&match_length);
 			if (!pos) break;
 
 			/* found string in box => add to list */
 			match_offset = pos - cur->text;
 
 			entry = add_entry(cur->byte_offset + match_offset,
-						cur->byte_offset + match_offset + match_length);
+						cur->byte_offset +
+							match_offset +
+							match_length);
 			if (!entry)
 				return false;
 
@@ -679,7 +713,8 @@ bool find_occurrences_text(const char *pattern, int p_len,
 
 	for(line = 0; line < nlines; line++) {
 		size_t offset, length;
-		const char *text = textplain_get_line(c, line, &offset, &length);
+		const char *text = textplain_get_line(c, line,
+				&offset, &length);
 		if (text) {
 			while (length > 0) {
 				struct list_entry *entry;
@@ -687,12 +722,14 @@ bool find_occurrences_text(const char *pattern, int p_len,
 				size_t start_idx;
 				const char *new_text;
 				const char *pos = find_pattern(text, length,
-						pattern, p_len, case_sens, &match_length);
+						pattern, p_len, case_sens,
+						&match_length);
 				if (!pos) break;
 
 				/* found string in line => add to list */
 				start_idx = offset + (pos - text);
-				entry = add_entry(start_idx, start_idx + match_length);
+				entry = add_entry(start_idx, start_idx +
+						match_length);
 				if (!entry)
 					return false;
 
@@ -763,7 +800,8 @@ bool gui_search_term_highlighted(struct gui_window *g,
 		struct list_entry *a;
 		for(a = search_found->next; a; a = a->next)
 			if (a->sel && selection_defined(a->sel) &&
-				selection_highlighted(a->sel, start_offset, end_offset,
+				selection_highlighted(a->sel,
+					start_offset, end_offset,
 					start_idx, end_idx))
 				return true;
 	}
@@ -797,10 +835,12 @@ void show_all(bool all)
 				struct content *c = search_current_window->bw->current_content;
 				switch (c->type) {
 					case CONTENT_HTML:
-						selection_init(a->sel, c->data.html.layout);
+						selection_init(a->sel,
+							c->data.html.layout);
 						break;
 					default:
-						assert(c->type == CONTENT_TEXTPLAIN);
+						assert(c->type ==
+							CONTENT_TEXTPLAIN);
 						selection_init(a->sel, NULL);
 						break;
 				}

@@ -110,8 +110,6 @@ static bool ro_gui_menu_translate(struct menu_definition *menu);
 		(wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) | \
 		(wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT))
 
-/** Whether the search box was opened as a sub-menu */
-static bool ro_gui_menu_search_window_menu;
 /** The currently defined menus to perform actions for */
 static struct menu_definition *ro_gui_menu_definitions;
 /** The current menu being worked with (may not be open) */
@@ -478,7 +476,6 @@ void ro_gui_menu_create(wimp_menu *menu, int x, int y, wimp_w w) {
 	current_menu = menu;
 	current_menu_window = w;
 	current_menu_icon = -1;
-	ro_gui_menu_search_window_menu = false;
 
 	/* prepare the menu state */
 	if (menu == url_suggest_menu) {
@@ -581,7 +578,6 @@ void ro_gui_menu_closed(bool cleanup) {
 		}
 	}
 
-	ro_gui_menu_search_window_menu = false;
 	current_menu_window = NULL;
 	current_menu_icon = NULL;
 	current_menu_open = false;
@@ -1585,7 +1581,6 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 			if (!c || (c->type != CONTENT_HTML && c->type != CONTENT_TEXTPLAIN))
 				return false;
 			ro_gui_menu_prepare_action(owner, action, true);
-			ro_gui_menu_search_window_menu = false;
 			ro_gui_dialog_open_persistent(g->window,
 					dialog_search, windows_at_pointer);
 			return true;
@@ -2041,7 +2036,6 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 			ro_gui_menu_set_entry_shaded(current_menu,
 					action, result);
 			if ((!result) && (windows)) {
-				ro_gui_menu_search_window_menu = true;
 				ro_gui_search_prepare(g);
 			}
 			if ((t) && (!t->editor) &&
