@@ -365,9 +365,7 @@ void ro_gui_dialog_close(wimp_w close)
 	}
 
 	/* Close any child windows */
-	for (i = 0; i < MAX_PERSISTENT; i++)
-		if (persistent_dialog[i].parent == close)
-		  	ro_gui_dialog_close(persistent_dialog[i].dialog);
+	ro_gui_dialog_close_persistent(close);
 
 	/*	Give the caret back to the parent window. This code relies on
 		the fact that only tree windows and browser windows open
@@ -642,6 +640,8 @@ void ro_gui_dialog_close_persistent(wimp_w parent) {
 		if (persistent_dialog[i].parent == parent &&
 				persistent_dialog[i].dialog != NULL) {
 			ro_gui_dialog_close(persistent_dialog[i].dialog);
+			ro_gui_wimp_event_close_window(persistent_dialog[i].dialog);
+			persistent_dialog[i].parent = NULL;
 			persistent_dialog[i].dialog = NULL;
 		}
 	}

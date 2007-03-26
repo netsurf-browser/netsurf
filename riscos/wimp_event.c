@@ -227,6 +227,7 @@ void ro_gui_wimp_event_finalise(wimp_w w) {
 	struct event_window *window;
 	struct icon_event *event;
 
+	LOG(("Removing all events for window 0x%x", (unsigned int)w));
 	window = ro_gui_wimp_event_remove_window(w);
 	if (!window)
 		return;
@@ -544,6 +545,7 @@ bool ro_gui_wimp_event_mouse_click(wimp_pointer *pointer) {
 		case EVENT_CANCEL:
 			if (pointer->buttons & wimp_CLICK_SELECT) {
 				ro_gui_dialog_close(pointer->w);
+				ro_gui_wimp_event_close_window(pointer->w);
 				ro_gui_menu_closed(true);
 			} else {
 				ro_gui_wimp_event_restore(pointer->w);
@@ -622,6 +624,7 @@ void ro_gui_wimp_event_ok_click(struct event_window *window, wimp_mouse_state st
 
 	if (state & wimp_CLICK_SELECT) {
 		ro_gui_dialog_close(window->w);
+		ro_gui_wimp_event_close_window(window->w);
 		ro_gui_menu_closed(true);
 	} else {
 		ro_gui_wimp_event_memorise(window->w);
@@ -812,6 +815,7 @@ bool ro_gui_wimp_event_keypress(wimp_key *key) {
 					wimp_WINDOW_CLOSE_ICON))
 				return false;
 			ro_gui_dialog_close(key->w);
+			ro_gui_wimp_event_close_window(key->w);
 			ro_gui_menu_closed(true);
 			return true;
 		/* Return performs the OK action */
@@ -851,6 +855,7 @@ bool ro_gui_wimp_event_open_window(wimp_open *open) {
 bool ro_gui_wimp_event_close_window(wimp_w w) {
 	struct event_window *window;
 
+	LOG(("Close event received for window 0x%x", (unsigned int)w));
 	window = ro_gui_wimp_event_find_window(w);
 	if ((window) && (window->close_window)) {
 		window->close_window(w);
@@ -1122,10 +1127,12 @@ struct event_window *ro_gui_wimp_event_get_window(wimp_w w) {
 	struct event_window *window;
 	int h;
 
+	assert((int)w != 0);
 	window = ro_gui_wimp_event_find_window(w);
 	if (window)
 		return window;
 
+	LOG(("Creating structure for window 0x%x", (unsigned int)w));
 	window = calloc(1, sizeof(struct event_window));
 	if (!window)
 		return NULL;
