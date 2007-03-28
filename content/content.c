@@ -291,9 +291,7 @@ static const struct handler_entry handler_map[] = {
 		true},
 #endif
 	{directory_create, 0, directory_convert,
-		html_reformat, html_destroy, html_stop, html_redraw, 0,
-		html_open, html_close,
-		true},
+		0, directory_destroy, 0, 0, 0, 0, 0, true},
 #ifdef WITH_THEME_INSTALL
 	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false},
 #endif

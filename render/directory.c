@@ -34,8 +34,8 @@ bool directory_create(struct content *c, const char *params[]) {
 		/* html_create() must have broadcast MSG_ERROR already, so we
 		* don't need to. */
 		return false;
- 	htmlParseChunk(c->data.html.parser, header, sizeof(header) - 1, 0);
- 	return true;
+	htmlParseChunk(c->data.html.parser, header, sizeof(header) - 1, 0);
+	return true;
 }
 
 bool directory_convert(struct content *c, int width, int height) {
@@ -59,22 +59,22 @@ bool directory_convert(struct content *c, int width, int height) {
 	if (!nice_path) {
 		msg_data.error = messages_get("MiscErr");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-	 	return false;
+		return false;
 	}
 	for (cnv = nice_path, tmp = path; *tmp != '\0'; *tmp++) {
-	 	if (*tmp == '<') {
-	 		*cnv++ = '&';
-	 		*cnv++ = 'l';
-	 		*cnv++ = 't';
-	 		*cnv++ = ';';
-	 	} else if (*tmp == '>') {
-	 		*cnv++ = '&';
-	 		*cnv++ = 'g';
-	 		*cnv++ = 't';
-	 		*cnv++ = ';';
-	 	} else {
-	 	  	*cnv++ = *tmp;
-	 	}
+		if (*tmp == '<') {
+			*cnv++ = '&';
+			*cnv++ = 'l';
+			*cnv++ = 't';
+			*cnv++ = ';';
+		} else if (*tmp == '>') {
+			*cnv++ = '&';
+			*cnv++ = 'g';
+			*cnv++ = 't';
+			*cnv++ = ';';
+		} else {
+			*cnv++ = *tmp;
+		}
 	}
 	*cnv++ = '\0';
 	snprintf(buffer, sizeof(buffer), "Index of %s</title>\n</head>\n"
@@ -85,20 +85,20 @@ bool directory_convert(struct content *c, int width, int height) {
 
 	res = url_parent(c->url, &up);
 	if (res == URL_FUNC_OK) {
-	  	res = url_compare(c->url, up, &compare);
-	  	if (!compare) {
+		res = url_compare(c->url, up, &compare);
+		if (!compare) {
 			snprintf(buffer, sizeof(buffer),
 				"<a href=\"..\">[..]</a>\n");
 			htmlParseChunk(c->data.html.parser, buffer,
 					strlen(buffer), 0);
-	  	}
-	  	free(up);
-       	}
+		}
+		free(up);
+	}
 
 	if ((parent = opendir(path)) == NULL) {
 		msg_data.error = messages_get("EmptyErr");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-	 	return false;
+		return false;
 	}
 	while ((entry = readdir(parent)) != NULL) {
 		if (!strcmp(entry->d_name, ".") ||
@@ -114,4 +114,17 @@ bool directory_convert(struct content *c, int width, int height) {
 	htmlParseChunk(c->data.html.parser, footer, sizeof(footer) - 1, 0);
 	c->type = CONTENT_HTML;
 	return html_convert(c, width, height);
+}
+
+void directory_destroy(struct content *c)
+{
+	/* This will only get called if the content is destroyed before
+	 * content_convert() is called. Simply force the type to HTML and
+	 * delegate the cleanup to html_destroy() */
+
+	c->type = CONTENT_HTML;
+
+	html_destroy(c);
+
+	return;
 }

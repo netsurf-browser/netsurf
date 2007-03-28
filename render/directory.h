@@ -20,5 +20,6 @@
 
 bool directory_create(struct content *c, const char *params[]);
 bool directory_convert(struct content *c, int width, int height);
+void directory_destroy(struct content *c);
 
 #endif
