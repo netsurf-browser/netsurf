@@ -61,7 +61,7 @@ static void html_dump_frameset(struct content_html_frames *frame,
 
 static const char empty_document[] =
 	"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\""
-        "	\"http://www.w3.org/TR/html4/strict.dtd\">"
+	"	\"http://www.w3.org/TR/html4/strict.dtd\">"
 	"<html>"
 	"<head>"
 	"<title>Empty document</title>"
@@ -575,22 +575,32 @@ bool html_meta_refresh(struct content *c, xmlNode *head)
 		}
 
 		for ( ; url <= end - 4; url++) {
-			if (!strncasecmp(url, "url=", 4))
+			if (!strncasecmp(url, "url=", 4)) {
+				url += 4;
 				break;
-		}
-
-		/* mail.google.com sends out the broken format "<n>, url='<url>'", so
-		 * special case this */
-		if (url <= end - 4) {
-			if ((url[4] == '\'') && (end[-1] == '\'')) {
-			  	*--end = '\0';
-			  	url++;
 			}
 		}
 
-		if (url <= end - 4) {
-			res = url_join(url + 4, c->data.html.base_url,
-					&refresh);
+		/* various sites contain junk meta refresh URL components,
+		 * so attempt to deal with this by stripping likely garbage
+		 * from the beginning and end of URLs */
+		while (url < end) {
+			if (isspace(*url) || *url == '\'' || *url == '"')
+				url++;
+			else
+				break;
+		}
+
+		while (end > url) {
+			if (isspace(end[-1]) || end[-1] == '\'' ||
+					end[-1] == '"')
+				*--end = '\0';
+			else
+				break;
+		}
+
+		if (url < end) {
+			res = url_join(url, c->data.html.base_url, &refresh);
 
 			xmlFree(content);
 
@@ -599,8 +609,7 @@ bool html_meta_refresh(struct content *c, xmlNode *head)
 				content_broadcast(c,
 					CONTENT_MSG_ERROR, msg_data);
 				return false;
-			}
-			else if (res == URL_FUNC_FAILED) {
+			} else if (res == URL_FUNC_FAILED) {
 				/* This isn't fatal so carry on looking */
 				continue;
 			}
