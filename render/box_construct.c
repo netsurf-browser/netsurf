@@ -139,6 +139,7 @@ static const struct element_entry element_table[] = {
 	{"form", box_form},
 	{"frameset", box_frameset},
 	{"iframe", box_iframe},
+	{"image", box_image},
 	{"img", box_image},
 	{"input", box_input},
 	{"object", box_object},
@@ -949,6 +950,7 @@ struct css_style * box_get_style(struct content *c,
 	}
 
 	if ((strcmp((const char *) n->name, "img") == 0) ||
+			(strcmp((const char *) n->name, "image") == 0) ||
 			(strcmp((const char *) n->name, "applet") == 0)) {
 		if ((s = (char *) xmlGetProp(n,
 				(const xmlChar *) "hspace"))) {
