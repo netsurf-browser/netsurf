@@ -100,7 +100,6 @@ bool option_thumbnail_iconise = true;
 { "plot_bg_quality",        OPTION_INTEGER, &option_bg_plot_style },\
 { "history_tooltip",        OPTION_BOOL,    &option_history_tooltip }, \
 { "scale",                  OPTION_INTEGER, &option_scale }, \
-{ "toolbar_status_size",    OPTION_INTEGER, &option_toolbar_status_width }, \
 { "toolbar_show_buttons",   OPTION_BOOL,    &option_toolbar_show_buttons }, \
 { "toolbar_show_address",   OPTION_BOOL,    &option_toolbar_show_address }, \
 { "toolbar_show_throbber",  OPTION_BOOL,    &option_toolbar_show_throbber }, \
