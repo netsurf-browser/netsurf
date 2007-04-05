@@ -2054,19 +2054,21 @@ struct search_node *urldb_search_remove(struct search_node *root,
 		const struct host_part *data)
 {
 	static struct search_node *last, *deleted;
+	int c;
 
 	assert(root && data);
 
-	if (root != &empty) {
-		int c = urldb_search_match_host(root->data, data);
+	if (root == &empty)
+		return root;
 
-		last = root;
-		if (c > 0) {
-			root->left = urldb_search_remove(root->left, data);
-		} else {
-			deleted = root;
-			root->right = urldb_search_remove(root->right, data);
-		}
+	c = urldb_search_match_host(root->data, data);
+
+	last = root;
+	if (c > 0) {
+		root->left = urldb_search_remove(root->left, data);
+	} else {
+		deleted = root;
+		root->right = urldb_search_remove(root->right, data);
 	}
 
 	if (root == last) {
@@ -2076,6 +2078,7 @@ struct search_node *urldb_search_remove(struct search_node *root,
 			deleted->data = last->data;
 			deleted = &empty;
 			root = root->right;
+			free(last);
 		}
 	} else {
 		if (root->left->level < root->level - 1 ||
