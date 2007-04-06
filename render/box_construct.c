@@ -1314,6 +1314,9 @@ bool box_image(BOX_SPECIAL_PARAMS)
 	char *s, *url;
 	xmlChar *alt, *src;
 
+	if (box->style && box->style->display == CSS_DISPLAY_NONE)
+		return true;
+
 	/* handle alt text */
 	if ((alt = xmlGetProp(n, (const xmlChar *) "alt"))) {
 		s = squash_whitespace(alt);
@@ -1361,6 +1364,9 @@ bool box_object(BOX_SPECIAL_PARAMS)
 	xmlChar *codebase, *classid, *data;
 	xmlNode *c;
 	struct box *inline_container = 0;
+
+	if (box->style && box->style->display == CSS_DISPLAY_NONE)
+		return true;
 
 	if (!box_get_attribute(n, "usemap", content, &box->usemap))
 		return false;
@@ -2121,25 +2127,31 @@ bool box_input(BOX_SPECIAL_PARAMS)
 			goto no_memory;
 		gadget->box = box;
 		gadget->type = GADGET_IMAGE;
-		if ((s = (char *) xmlGetProp(n, (const xmlChar*) "src"))) {
-			res = url_join(s, content->data.html.base_url, &url);
-			xmlFree(s);
-			/* if url is equivalent to the parent's url,
-			 * we've got infinite inclusion. stop it here.
-			 * also bail if url_join failed.
-			 */
-			if (res == URL_FUNC_OK &&
-					strcasecmp(url, content->data.
-					html.base_url) != 0) {
-				if (!html_fetch_object(content, url,
-						box, image_types,
-						content->available_width,
-						1000, false)) {
-					free(url);
-					goto no_memory;
+
+		if (box->style && box->style->display != CSS_DISPLAY_NONE) {
+			if ((s = (char *) xmlGetProp(n,
+					(const xmlChar*) "src"))) {
+				res = url_join(s,
+					content->data.html.base_url, &url);
+				xmlFree(s);
+				/* if url is equivalent to the parent's url,
+				 * we've got infinite inclusion. stop it here
+				 * also bail if url_join failed.
+				 */
+				if (res == URL_FUNC_OK &&
+						strcasecmp(url,
+						content->data.
+						html.base_url) != 0) {
+					if (!html_fetch_object(content, url,
+							box, image_types,
+							content->available_width,
+							1000, false)) {
+						free(url);
+						goto no_memory;
+					}
 				}
+				free(url);
 			}
-			free(url);
 		}
 
 	} else {
@@ -2580,6 +2592,9 @@ bool box_embed(BOX_SPECIAL_PARAMS)
 	struct object_param *param;
 	xmlChar *src;
 	xmlAttr *a;
+
+	if (box->style && box->style->display == CSS_DISPLAY_NONE)
+		return true;
 
 	params = talloc(content, struct object_params);
 	if (!params)
