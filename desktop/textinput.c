@@ -663,9 +663,13 @@ bool browser_window_textarea_callback(struct browser_window *bw,
 			/* Scroll back to the left */
 			box_x += textarea->scroll_x;
 			textarea->scroll_x = 0;
-		}
-		else
+		} else {
+			assert(!text_box->next ||
+					(text_box->next &&
+					text_box->next->type == BOX_BR));
+
 			char_offset = text_box->length + text_box->space;
+		}
 	}
 
 	nsfont_width(text_box->style, text_box->text,
@@ -1548,21 +1552,31 @@ bool textbox_insert(struct browser_window *bw, struct box *text_box,
 {
 	char *text;
 
-	/* code does not support appending after the optional trailing space
-	   (this would require inserting a real space and determining whether
-	   the resultant string ends in a space) */
-	assert(char_offset <= text_box->length);
-
 	text = talloc_realloc(bw->current_content, text_box->text,
-			char, text_box->length + utf8_len + 1);
+			char,
+			text_box->length + text_box->space + utf8_len + 1);
 	if (!text) {
 		warn_user("NoMemory", 0);
 		return false;
 	}
 	text_box->text = text;
-	memmove(text_box->text + char_offset + utf8_len,
-			text_box->text + char_offset,
-			text_box->length - char_offset);
+
+	if (text_box->space &&
+			char_offset == text_box->length + text_box->space) {
+		unsigned int last_off = utf8_prev(utf8, utf8_len);
+
+		if (utf8[last_off] != ' ')
+			text_box->space = 0;
+		else
+			utf8_len = last_off;
+
+		text_box->text[text_box->length++] = ' ';
+	} else {
+		memmove(text_box->text + char_offset + utf8_len,
+				text_box->text + char_offset,
+				text_box->length - char_offset);
+	}
+
 	memcpy(text_box->text + char_offset, utf8, utf8_len);
 	text_box->length += utf8_len;
 
