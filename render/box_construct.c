@@ -307,10 +307,6 @@ bool box_construct_element(xmlNode *n, struct content *content,
 	style = box_get_style(content, parent_style, n);
 	if (!style)
 		return false;
-	if (style->display == CSS_DISPLAY_NONE) {
-		talloc_free(style);
-		return true;
-	}
 
 	/* extract title attribute, if present */
 	if ((title0 = xmlGetProp(n, (const xmlChar *) "title"))) {
@@ -348,7 +344,11 @@ bool box_construct_element(xmlNode *n, struct content *content,
 	}
 	if (style->display == CSS_DISPLAY_NONE) {
 		talloc_free(style);
-		box_free_box(box);
+		/* We can't do this, as it will destroy any gadget
+		 * associated with the box, thus making any form usage
+		 * access freed memory. The box is in the talloc context,
+		 * anyway, so will get cleaned up with the content. */
+		/* box_free_box(box); */
 		return true;
 	}
 
