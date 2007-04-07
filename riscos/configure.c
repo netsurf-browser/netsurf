@@ -156,7 +156,6 @@ void ro_gui_configure_close(wimp_w w)
 			tool->open = false;
 			if (tool->finalise)
 				tool->finalise(w);
-			ro_gui_dialog_close(w);
 			break;
 		}
 	}

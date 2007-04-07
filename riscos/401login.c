@@ -164,7 +164,6 @@ void ro_gui_401login_close(wimp_w w)
 	free(session->url);
 	free(session);
 
-	ro_gui_dialog_close(w);
 	error = xwimp_delete_window(w);
 	if (error) {
 		LOG(("xwimp_delete_window: 0x%x:%s",

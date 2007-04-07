@@ -1335,7 +1335,6 @@ bool ro_gui_download_window_destroy(struct gui_download_window *dw, bool quit)
 		dw->next->prev = dw->prev;
 
 	/* delete window */
-	ro_gui_dialog_close(dw->window);
 	error = xwimp_delete_window(dw->window);
 	if (error) {
 		LOG(("xwimp_delete_window: 0x%x: %s",
