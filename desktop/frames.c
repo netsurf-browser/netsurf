@@ -82,10 +82,10 @@ void browser_window_create_iframes(struct browser_window *bw,
 		window->margin_height = cur->margin_height;
 		if (cur->name) {
 			window->name = strdup(cur->name);
-			if (!cur->name)
+			if (!window->name)
 				warn_user("NoMemory", 0);
-            	}
-                
+		}
+
 		/* linking */
 		window->box = cur->box;
 		window->parent = bw;
@@ -203,7 +203,7 @@ void browser_window_create_frameset(struct browser_window *bw,
 
 			/* gui window */
 			window->window = gui_create_browser_window(window, bw);
-			
+
 			if (window->name)
 				LOG(("Created frame '%s'", window->name));
 			else
