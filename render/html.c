@@ -557,6 +557,11 @@ bool html_meta_refresh(struct content *c, xmlNode *head)
 		end = (char *)content + strlen(content);
 
 		msg_data.delay = (int)strtol((char *) content, &url, 10);
+		/* a very small delay and self-referencing URL can cause a loop
+		 * that grinds machines to a halt. To prevent this we set a
+		 * minimum refresh delay of 1s. */
+		if (msg_data.delay < 1)
+			msg_data.delay = 1;
 
 		if (url == end) {
 			/* Just delay specified, so refresh current page */
