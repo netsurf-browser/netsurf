@@ -3015,17 +3015,6 @@ void layout_calculate_descendant_bboxes(struct box *box)
 	box->descendant_y1 = box->padding[TOP] + box->height +
 			box->padding[BOTTOM] + box->border[BOTTOM];
 
-	if (box->object) {
-		LOG(("%i %i %i %i",
-				box->descendant_x1, box->object->width,
-				box->descendant_y1, box->object->height));
-		if (box->descendant_x1 < box->object->width)
-			box->descendant_x1 = box->object->width;
-		if (box->descendant_y1 < box->object->height)
-			box->descendant_y1 = box->object->height;
-		return;
-	}
-
 	if (box->type == BOX_INLINE || box->type == BOX_TEXT)
 		return;
 
