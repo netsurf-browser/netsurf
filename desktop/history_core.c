@@ -225,12 +225,12 @@ void history_add(struct history *history, struct content *content,
 		return;
 	}
 
-	LOG(("%s => %s : %s", content->url, url, content->title));
-	LOG(("%s", frag_id));
+//	LOG(("%s => %s : %s", content->url, url, content->title));
+//	LOG(("%s", frag_id));
 
 	title = strdup(content->title ? content->title : url);
 
-	LOG(("after strdup"));
+//	LOG(("after strdup"));
 
 	if (!entry || !url || !title) {
 		warn_user("NoMemory", 0);
@@ -407,20 +407,13 @@ void history_go(struct browser_window *bw, struct history *history,
 	char *url;
 	struct history_entry *current;
 
-	LOG(("%p %p %p", bw, history, entry));
-	LOG(("%s %s %s",
-		entry->page.url, entry->page.title, entry->page.frag_id));
+//	LOG(("%p %p %p", bw, history, entry));
+//	LOG(("%s %s %s",
+//		entry->page.url, entry->page.title, entry->page.frag_id));
 
 	if (entry->page.frag_id) {
-		size_t a, b;
-
-		a = strlen(entry->page.url);
-		LOG(("after a"));
-		b = strlen(entry->page.frag_id);
-		LOG(("after b"));
-		url = malloc(a + b + 5);
-		LOG(("after malloc"));
-
+		url = malloc(strlen(entry->page.url) +
+				strlen(entry->page.frag_id) + 5);
 		if (!url) {
 			warn_user("NoMemory", 0);
 			return;
