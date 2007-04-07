@@ -1067,7 +1067,7 @@ void urldb_set_thumbnail(const char *url, struct bitmap *bitmap)
 	if (!p)
 		return;
 
-	if (p->thumb)
+	if (p->thumb && p->thumb != bitmap)
 		bitmap_destroy(p->thumb);
 
 	p->thumb = bitmap;

@@ -124,7 +124,7 @@ struct history *history_clone(struct history *history)
 	new_history->start = history_clone_entry(new_history,
 			new_history->start);
 	if (!history->start) {
-	  	LOG(("Insufficient memory to clone history"));
+		LOG(("Insufficient memory to clone history"));
 		warn_user("NoMemory", 0);
 		history_destroy(new_history);
 		return 0;
@@ -178,7 +178,7 @@ struct history_entry *history_clone_entry(struct history *history,
 	for (child = new_entry->forward; child; child = child->next) {
 		new_child = history_clone_entry(history, child);
 		if (new_child)
-			new_child->back = entry;
+			new_child->back = new_entry;
 		if (prev)
 			prev->next = new_child;
 		if (new_entry->forward == child)
