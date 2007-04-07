@@ -80,9 +80,12 @@ void browser_window_create_iframes(struct browser_window *bw,
 		window->no_resize = true;
 		window->margin_width = cur->margin_width;
 		window->margin_height = cur->margin_height;
-		if (cur->name)
+		if (cur->name) {
 			window->name = strdup(cur->name);
-
+			if (!cur->name)
+				warn_user("NoMemory", 0);
+            	}
+                
 		/* linking */
 		window->box = cur->box;
 		window->parent = bw;
@@ -189,14 +192,22 @@ void browser_window_create_frameset(struct browser_window *bw,
 			window->frame_height = frame->height;
 			window->margin_width = frame->margin_width;
 			window->margin_height = frame->margin_height;
-			if (frame->name)
+			if (frame->name) {
 				window->name = strdup(frame->name);
+				if (!window->name)
+					warn_user("NoMemory", 0);
+			}
 
 			/* linking */
 			window->parent = bw;
 
 			/* gui window */
 			window->window = gui_create_browser_window(window, bw);
+			
+			if (window->name)
+				LOG(("Created frame '%s'", window->name));
+			else
+				LOG(("Created frame (unnamed)"));
 		}
 	}
 

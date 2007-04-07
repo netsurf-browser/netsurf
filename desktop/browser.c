@@ -83,7 +83,7 @@ static void browser_window_destroy_internal(struct browser_window *bw);
 static void browser_window_set_scale_internal(struct browser_window *bw,
 		float scale);
 static struct browser_window *browser_window_find_target(
-		struct browser_window *bw, const char *target);
+		struct browser_window *bw, const char *target, bool new_window);
 static void browser_window_find_target_internal(struct browser_window *bw,
 		const char *target, int depth, struct browser_window *page,
 		int *rdepth, struct browser_window **bw_target);
@@ -1001,9 +1001,11 @@ void browser_window_set_scale_internal(struct browser_window *bw, float scale)
  *
  * \param bw  the browser_window to search all relatives of
  * \param target  the target to locate
+ * \param new_window  always return a new window (ie 'Open Link in New Window')
  */
 
-struct browser_window *browser_window_find_target(struct browser_window *bw, const char *target)
+struct browser_window *browser_window_find_target(struct browser_window *bw, const char *target,
+		bool new_window)
 {
 	struct browser_window *bw_target;
 	struct browser_window *top;
@@ -1014,19 +1016,21 @@ struct browser_window *browser_window_find_target(struct browser_window *bw, con
 	c = bw->current_content;
 	if (!target && c && c->data.html.base_target)
 		target = c->data.html.base_target;
+	if (!target)
+		target = TARGET_SELF;
 
-	/* allow target="_blank" to be ignored so zamez, tlsa and jmb don't lynch me */
-	if (!option_target_blank) {
-		if ((target == TARGET_BLANK) || (!strcasecmp(target, "_blank")))
-			target = TARGET_SELF;
-	}
+	/* allow the simple case of target="_blank" to be ignored if requested */
+	if ((!option_target_blank) && ((target == TARGET_BLANK) || (!strcasecmp(target, "_blank"))))			return bw;
 
-	/* todo: correctly follow B.8
-	 * http://www.w3.org/TR/REC-html40/appendix/notes.html#notes-frames
-	 */
-	if ((!target) || (target == TARGET_SELF) || (!strcasecmp(target, "_self")))
+	/* handle reserved keywords */
+	if ((new_window) || ((target == TARGET_BLANK) || (!strcasecmp(target, "_blank")))) {
+		bw_target = browser_window_create(NULL, bw, NULL, false);
+		if (!bw_target)
+			return bw;
+		return bw_target;
+	} else if ((target == TARGET_SELF) || (!strcasecmp(target, "_self"))) {
 		return bw;
-	else if ((target == TARGET_PARENT) || (!strcasecmp(target, "_parent"))) {
+	} else if ((target == TARGET_PARENT) || (!strcasecmp(target, "_parent"))) {
 		if (bw->parent)
 			return bw->parent;
 		return bw;
@@ -1034,11 +1038,6 @@ struct browser_window *browser_window_find_target(struct browser_window *bw, con
 		while (bw->parent)
 			bw = bw->parent;
 		return bw;
-	} else if ((target == TARGET_BLANK) || (!strcasecmp(target, "_blank"))) {
-		bw_target = browser_window_create(NULL, bw, NULL, false);
-		if (!bw_target)
-			return bw;
-		return bw_target;
 	}
 
 	/* find frame according to B.8, ie using the following priorities:
@@ -1046,11 +1045,31 @@ struct browser_window *browser_window_find_target(struct browser_window *bw, con
 	 *  1) current frame
 	 *  2) closest to front
 	 */
-
 	rdepth = -1;
-	bw_target = bw;
+	bw_target = NULL;
 	for (top = bw; top->parent; top = top->parent);
 	browser_window_find_target_internal(top, target, 0, bw, &rdepth, &bw_target);
+	if (bw_target)
+		return bw_target;
+	
+	/* we require a new window using the target name */
+	if (!option_target_blank)
+		return bw;
+	bw_target = browser_window_create(NULL, bw, NULL, false);
+	if (!bw_target)
+		return bw;
+	
+	/* frame names should begin with an alphabetic character (a-z,A-Z), however in
+	 * practice you get things such as '_new' and '2left'. The only real effect this
+	 * has is when giving out names as it can be assumed that an author intended '_new'
+	 * to create a new nameless window (ie '_blank') whereas in the case of '2left' the
+	 * intention was for a new named window. As such we merely special case windows that
+	 * begin with an underscore. */
+	if (target[0] != '_') {
+		bw_target->name = strdup(target);
+		if (!bw_target->name)
+			warn_user("NoMemory", 0);
+	}
 	return bw_target;
 }
 
@@ -1328,12 +1347,12 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 						gadget->form->action);
 				status = status_buffer;
 				pointer = GUI_POINTER_POINT;
-				if (mouse & BROWSER_MOUSE_CLICK_1)
-					browser_form_submit(bw, target, gadget->form,
-							gadget);
-				else if (mouse & BROWSER_MOUSE_CLICK_2)
-					browser_form_submit(bw, "_blank", gadget->form,
-							gadget);
+				if (mouse & (BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2)) {
+					browser_form_submit(bw,
+							browser_window_find_target(bw, target,
+									(mouse & BROWSER_MOUSE_CLICK_2)),
+							gadget->form, gadget);
+				}
 			} else {
 				status = messages_get("FormBadSubmit");
 			}
@@ -1343,7 +1362,6 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 			pointer = GUI_POINTER_CARET;
 
 			if (mouse & (BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2)) {
-
 				if (text_box && selection_root(bw->sel) != gadget_box)
 					selection_init(bw->sel, gadget_box);
 
@@ -1449,10 +1467,10 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 			browser_window_go_post(bw, url, 0, 0, false,
 					c->url, true, true, 0);
 
-		} else if (mouse & BROWSER_MOUSE_CLICK_1) {
-			bw = browser_window_find_target(bw, target);
-			assert(bw);
-			browser_window_go(bw, url, c->url, true);
+		} else if (mouse & (BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2)) {
+			browser_window_go(browser_window_find_target(bw, target,
+							(mouse & BROWSER_MOUSE_CLICK_2)),
+					url, c->url, true);
 		} else if (mouse & BROWSER_MOUSE_CLICK_2 &&
 				mouse & BROWSER_MOUSE_MOD_1) {
 			free(browser_window_href_content.url);
@@ -1462,9 +1480,6 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 			else
 				gui_window_save_as_link(bw->window,
 					&browser_window_href_content);
-		} else if (mouse & BROWSER_MOUSE_CLICK_2) {
-			/* open link in new window */
-			browser_window_create(url, bw, c->url, true);
 		}
 
 	} else {
@@ -2255,12 +2270,11 @@ gui_pointer_shape get_pointer_shape(css_cursor cursor)
  * Collect controls and submit a form.
  */
 
-void browser_form_submit(struct browser_window *bw, const char *target,
+void browser_form_submit(struct browser_window *bw, struct browser_window *target,
 		struct form *form, struct form_control *submit_button)
 {
 	char *data = 0, *url = 0;
 	struct form_successful_control *success;
-	struct browser_window *bw_form;
 
 	assert(form);
 	assert(bw->current_content->type == CONTENT_HTML);
@@ -2269,9 +2283,6 @@ void browser_form_submit(struct browser_window *bw, const char *target,
 		warn_user("NoMemory", 0);
 		return;
 	}
-
-	bw_form = browser_window_find_target(bw, target);
-	assert(bw);
 
 	switch (form->method) {
 		case method_GET:
@@ -2295,7 +2306,7 @@ void browser_form_submit(struct browser_window *bw, const char *target,
 			else {
 				sprintf(url, "%s?%s", form->action, data);
 			}
-			browser_window_go(bw_form, url,
+			browser_window_go(target, url,
 					bw->current_content->url, true);
 			break;
 
@@ -2306,13 +2317,13 @@ void browser_form_submit(struct browser_window *bw, const char *target,
 				warn_user("NoMemory", 0);
 				return;
 			}
-			browser_window_go_post(bw_form, form->action, data, 0,
+			browser_window_go_post(target, form->action, data, 0,
 					true, bw->current_content->url,
 					false, true, 0);
 			break;
 
 		case method_POST_MULTIPART:
-			browser_window_go_post(bw_form, form->action, 0,
+			browser_window_go_post(target, form->action, 0,
 					success, true,
 					bw->current_content->url,
 					false, true, 0);

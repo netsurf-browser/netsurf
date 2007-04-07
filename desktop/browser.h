@@ -206,7 +206,7 @@ bool browser_window_paste_text(struct browser_window *bw, const char *utf8,
 void browser_window_form_select(struct browser_window *bw,
 		struct form_control *control, int item);
 void browser_redraw_box(struct content *c, struct box *box);
-void browser_form_submit(struct browser_window *bw, const char *target,
+void browser_form_submit(struct browser_window *bw, struct browser_window *target,
 		struct form *form, struct form_control *submit_button);
 
 void browser_window_redraw_rect(struct browser_window *bw, int x, int y,
