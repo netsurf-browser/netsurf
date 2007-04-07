@@ -145,9 +145,9 @@ bool cookies_update(const char *domain, const struct cookie_data *data)
 			node->expanded = expanded;
 		}
 		if (!data) {
-		  	if (!node)
-		  		return true;
-		  	tree_delete_node(cookies_tree, node, false);
+			if (!node)
+				return true;
+			tree_delete_node(cookies_tree, node, false);
 			tree_handle_node_changed(cookies_tree,
 					cookies_tree->root, true, false);
 			return true;
@@ -157,16 +157,14 @@ bool cookies_update(const char *domain, const struct cookie_data *data)
 	if (!node) {
 		for (parent = cookies_tree->root->child; parent;
 				parent = parent->next) {
-			if (strcmp(domain, parent->data.text) < 0)
+			if (strcmp(domain, parent->data.text) == 0)
 				break;
 		}
 		if (!parent) {
 			node = tree_create_folder_node(cookies_tree->root,
 					domain);
 		} else {
-			node = tree_create_folder_node(NULL, domain);
-			if (node)
-				tree_link_node(parent, node, true);
+			node = parent;
 		}
 	}
 	if (!node)
