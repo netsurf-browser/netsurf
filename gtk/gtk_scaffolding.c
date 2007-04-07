@@ -349,7 +349,7 @@ MENUHANDLER(open_location)
 {
 	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
 
-	gtk_widget_grab_focus(gw->url_bar);
+	gtk_widget_grab_focus(GTK_WIDGET(gw->url_bar));
 
 	return TRUE;
 }
@@ -522,10 +522,10 @@ gboolean nsgtk_history_button_press_event(GtkWidget *widget,
 
 #define GET_WIDGET(x) glade_xml_get_widget(g->xml, (x))
 
-static gboolean do_scroll_event(GtkWidget *widget, GdkEventScroll *ev,
+static gboolean do_scroll_event(GtkWidget *widget, GdkEvent *ev,
                                 gpointer data)
 {
-        switch (ev->direction)
+        switch (((GdkEventScroll *)ev)->direction)
         {
         case GDK_SCROLL_UP:
         case GDK_SCROLL_DOWN:
@@ -559,7 +559,8 @@ void nsgtk_attach_toplevel_viewport(nsgtk_scaffolding *g,
 	gtk_viewport_set_vadjustment(vp, 
                 gtk_range_get_adjustment(GTK_RANGE(scrollbar)));
         g_object_set_data(G_OBJECT(vp), "vScroll", scrollbar);
-        g_signal_connect(G_OBJECT(vp), "scroll_event", do_scroll_event, NULL);
+        g_signal_connect(G_OBJECT(vp), "scroll_event",
+	    			G_CALLBACK(do_scroll_event), NULL);
 
         gdk_window_set_accept_focus (GTK_WIDGET(vp)->window, TRUE);
 
