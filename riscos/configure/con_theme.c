@@ -299,6 +299,7 @@ void ro_gui_options_theme_load(void) {
 		if (link->next) extent.y0 -= 16;
 		if (extent.y0 > min_extent) extent.y0 = min_extent;
 		xwimp_set_extent(theme_pane, &extent);
+LOG(("%08x (%s)", link->toolbar->toolbar_handle, link->descriptor->filename));
 		ro_gui_set_icon_button_type(link->toolbar->toolbar_handle,
 				ICON_TOOLBAR_URL, wimp_BUTTON_NEVER);
 

@@ -909,6 +909,7 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor,
 		warn_user("WimpError", error->errmess);
 		return false;
 	}
+LOG(("%08x (%s)", toolbar->toolbar_handle, descriptor->filename));
 	ro_gui_wimp_event_register_redraw_window(toolbar->toolbar_handle,
 			ro_gui_theme_redraw);
 	ro_gui_wimp_event_set_user_data(toolbar->toolbar_handle, toolbar);
