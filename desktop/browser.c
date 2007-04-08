@@ -1020,7 +1020,10 @@ struct browser_window *browser_window_find_target(struct browser_window *bw, con
 		target = TARGET_SELF;
 
 	/* allow the simple case of target="_blank" to be ignored if requested */
-	if ((!option_target_blank) && ((target == TARGET_BLANK) || (!strcasecmp(target, "_blank"))))			return bw;
+	if ((!new_window) && (!option_target_blank)) {
+		if ((target == TARGET_BLANK) || (!strcasecmp(target, "_blank")))
+			return bw;
+	}
 
 	/* handle reserved keywords */
 	if ((new_window) || ((target == TARGET_BLANK) || (!strcasecmp(target, "_blank")))) {
