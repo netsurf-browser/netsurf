@@ -34,9 +34,9 @@
 #define BOTTOM_MARGIN 30
 
 struct history_page {
-	char *url;    /**< Page URL. */
-	char *frag_id; /** Fragment identifier */
-	char *title;  /**< Page title. */
+	char *url;    /**< Page URL, never 0. */
+	char *frag_id; /** Fragment identifier, or 0. */
+	char *title;  /**< Page title, never 0. */
 };
 
 /** A node in the history tree. */
@@ -151,6 +151,9 @@ struct history_entry *history_clone_entry(struct history *history,
 	struct history_entry *prev = NULL;
 	struct history_entry *new_entry;
 
+	assert(entry->page.url);
+	assert(entry->page.title);
+
 	/* clone the entry */
 	new_entry = malloc(sizeof *entry);
 	if (!new_entry)
@@ -160,8 +163,7 @@ struct history_entry *history_clone_entry(struct history *history,
 	if (entry->page.frag_id)
 		new_entry->page.frag_id = strdup(entry->page.frag_id);
 	new_entry->page.title = strdup(entry->page.title);
-	if (((entry->page.url) && (!new_entry->page.url)) ||
-			((entry->page.title) && (!new_entry->page.title)) ||
+	if (!new_entry->page.url || !new_entry->page.title ||
 			((entry->page.frag_id) && (!new_entry->page.frag_id))) {
 		free(new_entry->page.url);
 		free(new_entry->page.title);
@@ -219,18 +221,14 @@ void history_add(struct history *history, struct content *content,
 
 	/* allocate space */
 	entry = malloc(sizeof *entry);
+
 	res = url_normalize(content->url, &url);
 	if (res != URL_FUNC_OK) {
 		warn_user("NoMemory", 0);
 		return;
 	}
 
-//	LOG(("%s => %s : %s", content->url, url, content->title));
-//	LOG(("%s", frag_id));
-
 	title = strdup(content->title ? content->title : url);
-
-//	LOG(("after strdup"));
 
 	if (!entry || !url || !title) {
 		warn_user("NoMemory", 0);
@@ -289,15 +287,34 @@ void history_add(struct history *history, struct content *content,
 
 void history_update(struct history *history, struct content *content)
 {
+	char *title;
+	char *url;
+	url_func_result res;
+
 	if (!history || !history->current || !history->current->bitmap)
 		return;
 
-	if (history->current->page.title)
-		free(history->current->page.title);
-	if (content->title)
-		history->current->page.title = strdup(content->title);
-	else
-		history->current->page.title = 0;
+	assert(history->current->page.url);
+	assert(history->current->page.title);
+
+	if (content->title) {
+		title = strdup(content->title);
+		if (!title) {
+			warn_user("NoMemory", 0);
+			return;
+		}
+	} else {
+		res = url_normalize(content->url, &url);
+		if (res != URL_FUNC_OK) {
+			warn_user("NoMemory", 0);
+			return;
+		}
+		title = url;
+	}
+
+	assert(title);
+	free(history->current->page.title);
+	history->current->page.title = title;
 
 	thumbnail_create(content, history->current->bitmap, 0);
 }
@@ -576,7 +593,8 @@ bool history_redraw_entry(struct history *history,
 		return false;
 
 	if (!nsfont_position_in_string(&css_base_style, entry->page.title,
-			strlen(entry->page.title), WIDTH, &char_offset, &actual_x))
+			strlen(entry->page.title), WIDTH,
+			&char_offset, &actual_x))
 		return false;
 	if (!plot.text(entry->x, entry->y + HEIGHT + 12, &css_base_style,
 			entry->page.title, char_offset, 0xffffff, c))
