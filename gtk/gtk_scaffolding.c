@@ -461,7 +461,7 @@ MENUHANDLER(local_history)
 	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
 
 	gtk_widget_show(GTK_WIDGET(gw->history_window->window));
-	gdk_window_raise(GDK_WINDOW(gw->history_window->window));
+	gdk_window_raise(GTK_WIDGET(gw->history_window->window)->window);
 
 	return TRUE;
 }
@@ -469,7 +469,7 @@ MENUHANDLER(local_history)
 MENUHANDLER(global_history)
 {
 	gtk_widget_show(GTK_WIDGET(wndHistory));
-	gdk_window_raise(GDK_WINDOW(wndHistory));
+	gdk_window_raise(GTK_WIDGET(wndHistory)->window);
 
 	return TRUE;
 }
@@ -477,7 +477,7 @@ MENUHANDLER(global_history)
 MENUHANDLER(about)
 {
 	gtk_widget_show(GTK_WIDGET(wndAbout));
-	gdk_window_raise(GDK_WINDOW(wndAbout));
+	gdk_window_raise(GTK_WIDGET(wndAbout)->window);
 	return TRUE;
 }
 
