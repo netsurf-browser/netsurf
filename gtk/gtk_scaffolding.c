@@ -5,6 +5,7 @@
  * Copyright 2006 Rob Kendrick <rjek@rjek.com>
  */
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -733,6 +734,8 @@ void gui_window_set_title(struct gui_window *_g, const char *title)
 void gui_window_set_status(struct gui_window *_g, const char *text)
 {
         struct gtk_scaffolding *g = nsgtk_get_scaffold(_g);
+	assert(g);
+	assert(g->status_bar);
 	gtk_label_set_text(g->status_bar, text);
 }
 

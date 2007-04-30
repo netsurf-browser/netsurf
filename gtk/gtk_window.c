@@ -91,9 +91,12 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
         GtkPolicyType scrollpolicy;
         
 	g = malloc(sizeof(*g));
-        
+       	if (!g) {
+		warn_user("NoMemory", 0);
+		return 0;
+	}
+ 
         LOG(("Creating gui window %p for browser window %p", g, bw));
-        
         
 	g->bw = bw;
 	g->current_pointer = GUI_POINTER_DEFAULT;
@@ -250,8 +253,18 @@ gboolean nsgtk_window_expose_event(GtkWidget *widget,
                                    GdkEventExpose *event, gpointer data)
 {
 	struct gui_window *g = data;
-	struct content *c = g->bw->current_content;
-        
+	struct content *c;
+
+	assert(g);
+	assert(g->bw);
+
+	struct gui_window *z;
+	for (z = window_list; z && z != g; z = z->next)
+		continue;
+	assert(z);
+	assert(g->drawing_area == widget);
+
+	c = g->bw->current_content;
 	if (c == NULL)
 		return FALSE;
 	
