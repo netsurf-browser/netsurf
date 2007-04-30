@@ -15,12 +15,8 @@
  * IF ADDING A FEATURE HERE, ADD IT TO Docs/Doxyfile LINE 892 AS WELL.
  */
 
-/* HTTP POST support */
-#define WITH_POST
 /* HTTP Auth */
 #define WITH_AUTH
-/* Cookies */
-#define WITH_COOKIES
 
 /* SSL */
 #if !defined(small)
@@ -46,8 +42,6 @@
     #define WITH_URI
     /* ANT URL protocol support */
     #define WITH_URL
-    /* Keyboard navigation support */
-    #define WITH_KEYBOARD_NAVIGATION
     /* Free text search */
     #define WITH_SEARCH
     /* Printing support */
@@ -58,12 +52,8 @@
     /* We're likely to have a working mmap() */
     #define WITH_MMAP
 #endif
-#ifdef ncos
-    /* Kiosk style browsing support */
-    #define WITH_KIOSK_BROWSING
-#endif
 
-#if defined(riscos) || defined(ncos) || defined(debug)
+#if defined(riscos) || defined(ncos) || defined(DEBUG_BUILD)
     /* Export modules */
     #define WITH_SAVE_COMPLETE
     #define WITH_DRAW_EXPORT
