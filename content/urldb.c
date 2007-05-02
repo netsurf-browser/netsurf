@@ -1123,7 +1123,8 @@ void urldb_iterate_partial(const char *prefix,
 		 * assume that we're looking for a path */
 		char *domain = host;
 
-		snprintf(host, sizeof host, "%.*s", slash - prefix, prefix);
+		snprintf(host, sizeof host, "%.*s",
+				(int) (slash - prefix), prefix);
 
 		h = urldb_search_find(tree, host);
 		if (!h) {
