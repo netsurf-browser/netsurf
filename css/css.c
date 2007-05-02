@@ -395,7 +395,7 @@ bool css_convert(struct content *c, int width, int height)
 
 	c->data.css.css = malloc(sizeof *c->data.css.css);
 	parser = css_parser_Alloc(malloc);
-	source_data = talloc_realloc(c, c->source_data, char,
+	source_data = (unsigned char *) talloc_realloc(c, c->source_data, char,
 			c->source_size + 10);
 
 	if (!c->data.css.css || !parser || !source_data) {
@@ -414,7 +414,7 @@ bool css_convert(struct content *c, int width, int height)
 	c->data.css.import_content = 0;
 	c->data.css.origin = CSS_ORIGIN_UA;
 	c->active = 0;
-	c->source_data = source_data;
+	c->source_data = (char *) source_data;
 
 	for (i = 0; i != 10; i++)
 		source_data[c->source_size + i] = 0;
@@ -424,13 +424,13 @@ bool css_convert(struct content *c, int width, int height)
 	while (current < end
 			&& (token = css_tokenise(&current, end + 10,
 			&token_text))) {
-		token_data.text = token_text;
+		token_data.text = (char *) token_text;
 		token_data.length = current - token_text;
 		css_parser_(parser, token, token_data, &param);
 		if (param.syntax_error) {
-			LOG(("syntax error near offset %i (%s)",
-					token_text - source_data,
-					c->url));
+			LOG(("syntax error near offset %li (%s)",
+				(unsigned long) (token_text - source_data),
+				c->url));
 			param.syntax_error = false;
 		} else if (param.memory_error) {
 			LOG(("out of memory"));
@@ -1524,7 +1524,7 @@ void css_parse_property_list(struct content *c, struct css_style * style,
 		return;
 	}
 
-	strcpy(source_data, str);
+	strcpy((char *) source_data, str);
 	for (i = 0; i != 10; i++)
 		source_data[length + i] = 0;
 
@@ -1535,12 +1535,12 @@ void css_parse_property_list(struct content *c, struct css_style * style,
 	while (current < end
 			&& (token = css_tokenise(&current, end + 10,
 			&token_text))) {
-		token_data.text = token_text;
+		token_data.text = (char *) token_text;
 		token_data.length = current - token_text;
 		css_parser_(parser, token, token_data, &param);
 		if (param.syntax_error) {
-			LOG(("syntax error near offset %i",
-					token_text - source_data));
+			LOG(("syntax error near offset %li",
+				(unsigned long) (token_text - source_data)));
 			param.syntax_error = false;
 		} else if (param.memory_error) {
 			LOG(("out of memory"));
@@ -2146,6 +2146,7 @@ void css_dump_style(const struct css_style * const style)
 			fprintf(stderr, " inherit");
 			break;
 		case CSS_BORDER_WIDTH_LENGTH:
+			fprintf(stderr, " ");
 			css_dump_length(&style->outline.width.value);
 			break;
 		case CSS_BORDER_WIDTH_NOT_SET:
