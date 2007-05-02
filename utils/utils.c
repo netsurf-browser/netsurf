@@ -16,7 +16,6 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <sys/utsname.h>
 #include <sys/time.h>
 #include <regex.h>
 #include <time.h>
@@ -26,7 +25,6 @@
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utf8.h"
 #include "netsurf/utils/utils.h"
-#include "netsurf/desktop/netsurf.h"
 
 
 char * strip(char * const s)
@@ -258,36 +256,6 @@ unsigned int wallclock(void)
 	return ((tv.tv_sec * 100) + (tv.tv_usec / 10000));
 }
 
-/** Generate a string suitable for use as a user agent in HTTP requests.
- *
- * \return heap-allocated result string, or NULL if the allocation failed.
- */
-#define UA_BUF_SIZE 128
-char *make_useragent(void)
-{
-	struct utsname un;
-	char ua_name[UA_BUF_SIZE];
-	char ua_machine[UA_BUF_SIZE];
-	char *r;
-	
-	snprintf(ua_name, UA_BUF_SIZE, "NetSurf/%d.%d",
-					netsurf_version_major,
-					netsurf_version_minor);
-	
-	if (uname(&un) != 0) {
-		strncpy(ua_machine, "unknown machine", UA_BUF_SIZE);
-	} else {
-		snprintf(ua_machine, UA_BUF_SIZE, "(%s; %s)", un.sysname,
-								un.machine);
-	}
-	
-	if ((r = malloc(strlen(ua_name) + strlen(ua_machine) + 2)) == NULL)
-		return NULL;
-		
-	sprintf(r, "%s %s", ua_name, ua_machine);
-	
-	return r;
-}
 
 #ifdef __FreeBSD__
 

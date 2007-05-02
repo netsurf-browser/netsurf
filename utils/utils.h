@@ -59,7 +59,6 @@ const char *rfc1123_date(time_t t);
 char *strcasestr(const char *haystack, const char *needle);
 #endif
 unsigned int wallclock(void);
-char *make_useragent(void);
 #ifdef __FreeBSD__
 /* FreeBSD lacks strndup */
 char *strndup(const char *s, size_t n);

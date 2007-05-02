@@ -3,7 +3,7 @@
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2006 Daniel Silverstone <dsilvers@digital-scurf.org>
- * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2007 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  */
 
@@ -20,12 +20,14 @@
  */
 
 #include <assert.h>
+#include <errno.h>
 #include <stdbool.h>
 #include <string.h>
 #include <strings.h>
 #include <time.h>
 #include <sys/select.h>
 #include <sys/stat.h>
+#include <sys/utsname.h>
 #ifdef riscos
 #include <unixlib/local.h>
 #endif
@@ -36,6 +38,7 @@
 #endif
 #include "netsurf/content/fetch.h"
 #include "netsurf/content/urldb.h"
+#include "netsurf/desktop/netsurf.h"
 #include "netsurf/desktop/options.h"
 #include "netsurf/render/form.h"
 #define NDEBUG
@@ -100,7 +103,6 @@ struct cache_handle {
 	struct cache_handle *r_next; /**< Next cached handle in ring. */
 };
 
-static char *user_agent = "NetSurf";
 CURLM *fetch_curl_multi;		/**< Global cURL multi handle. */
 /** Curl handle with default options set; not used for transfers. */
 static CURL *fetch_blank_curl;
@@ -111,7 +113,9 @@ static struct cache_handle *handle_ring = 0; /**< Ring of cached handles */
 static char fetch_error_buffer[CURL_ERROR_SIZE]; /**< Error buffer for cURL. */
 static char fetch_progress_buffer[256]; /**< Progress buffer for cURL */
 static char fetch_proxy_userpwd[100];	/**< Proxy authentication details. */
+static char fetch_user_agent[100] = "NetSurf";
 
+static void fetch_init_user_agent(void);
 static CURLcode fetch_set_options(struct fetch *f);
 #ifdef WITH_SSL
 static CURLcode fetch_sslctxfun(CURL *curl_handle, SSL_CTX *sslctx, void *p);
@@ -217,10 +221,6 @@ static void fetch_dispatch_jobs(void);
 void fetch_init(void)
 {
 	CURLcode code;
-	char *ua = make_useragent();
-
-	if (ua != NULL)
-		user_agent = ua;
 
 	code = curl_global_init(CURL_GLOBAL_ALL);
 	if (code != CURLE_OK)
@@ -231,6 +231,8 @@ void fetch_init(void)
 	if (!fetch_curl_multi)
 		die("Failed to initialise the fetch module "
 				"(curl_multi_init failed).");
+
+	fetch_init_user_agent();
 
 	/* Create a curl easy handle with the options that are common to all
 	   fetches. */
@@ -250,7 +252,7 @@ void fetch_init(void)
 	SETOPT(CURLOPT_HEADERFUNCTION, fetch_curl_header);
 	SETOPT(CURLOPT_PROGRESSFUNCTION, fetch_curl_progress);
 	SETOPT(CURLOPT_NOPROGRESS, 0);
-	SETOPT(CURLOPT_USERAGENT, user_agent);
+	SETOPT(CURLOPT_USERAGENT, fetch_user_agent);
 	SETOPT(CURLOPT_ENCODING, "gzip");
 	SETOPT(CURLOPT_LOW_SPEED_LIMIT, 1L);
 	SETOPT(CURLOPT_LOW_SPEED_TIME, 180L);
@@ -265,6 +267,33 @@ void fetch_init(void)
 curl_easy_setopt_failed:
 	die("Failed to initialise the fetch module "
 			"(curl_easy_setopt failed).");
+}
+
+
+/**
+ * Fill fetch_user_agent with a string suitable for use as a user agent in
+ * HTTP requests.
+ */
+
+void fetch_init_user_agent(void)
+{
+	struct utsname un;
+
+	if (uname(&un) != 0) {
+		LOG(("uname: %i %s", errno, strerror(errno)));
+		die("Failed to initialise the fetch module "
+				"(uname failed).");
+	}
+
+	snprintf(fetch_user_agent, sizeof fetch_user_agent,
+			"NetSurf/%d.%d (%s; %s)",
+			netsurf_version_major,
+			netsurf_version_minor,
+			un.sysname,
+			un.machine);
+	fetch_user_agent[sizeof fetch_user_agent - 1] = 0;
+
+	LOG(("fetch_user_agent \"%s\"", fetch_user_agent));
 }
 
 
@@ -1098,7 +1127,7 @@ size_t fetch_curl_data(void *data, size_t size, size_t nmemb,
 		return size * nmemb;
 	}
 
-	LOG(("fetch %p, size %u", f, size * nmemb));
+	LOG(("fetch %p, size %lu", f, size * nmemb));
 
 	if (f->abort || (!f->had_headers && fetch_process_headers(f))) {
 		f->stopped = true;
