@@ -998,7 +998,7 @@ void fetch_done(CURL *curl_handle, CURLcode result)
 			ASN1_TIME_print(mem,
 					X509_get_notBefore(certs[i].cert));
 			BIO_get_mem_ptr(mem, &buf);
-			BIO_set_close(mem, BIO_NOCLOSE);
+			(void) BIO_set_close(mem, BIO_NOCLOSE);
 			BIO_free(mem);
 			snprintf(ssl_certs[i].not_before,
 					min(sizeof ssl_certs[i].not_before,
@@ -1010,7 +1010,7 @@ void fetch_done(CURL *curl_handle, CURLcode result)
 			ASN1_TIME_print(mem,
 					X509_get_notAfter(certs[i].cert));
 			BIO_get_mem_ptr(mem, &buf);
-			BIO_set_close(mem, BIO_NOCLOSE);
+			(void) BIO_set_close(mem, BIO_NOCLOSE);
 			BIO_free(mem);
 			snprintf(ssl_certs[i].not_after,
 					min(sizeof ssl_certs[i].not_after,
@@ -1029,7 +1029,7 @@ void fetch_done(CURL *curl_handle, CURLcode result)
 				0, XN_FLAG_SEP_CPLUS_SPC |
 					XN_FLAG_DN_REV | XN_FLAG_FN_NONE);
 			BIO_get_mem_ptr(mem, &buf);
-			BIO_set_close(mem, BIO_NOCLOSE);
+			(void) BIO_set_close(mem, BIO_NOCLOSE);
 			BIO_free(mem);
 			snprintf(ssl_certs[i].issuer,
 					min(sizeof ssl_certs[i].issuer,
@@ -1043,7 +1043,7 @@ void fetch_done(CURL *curl_handle, CURLcode result)
 				0, XN_FLAG_SEP_CPLUS_SPC |
 					XN_FLAG_DN_REV | XN_FLAG_FN_NONE);
 			BIO_get_mem_ptr(mem, &buf);
-			BIO_set_close(mem, BIO_NOCLOSE);
+			(void) BIO_set_close(mem, BIO_NOCLOSE);
 			BIO_free(mem);
 			snprintf(ssl_certs[i].subject,
 					min(sizeof ssl_certs[i].subject,
