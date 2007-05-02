@@ -528,7 +528,7 @@ void box_dump(struct box *box, unsigned int depth)
 	}
 
 	if (box->text)
-		fprintf(stderr, "%u '%.*s' ", box->byte_offset,
+		fprintf(stderr, "%li '%.*s' ", (unsigned long) box->byte_offset,
 				(int) box->length, box->text);
 	if (box->space)
 		fprintf(stderr, "space ");
