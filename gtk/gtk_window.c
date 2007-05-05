@@ -97,7 +97,10 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	}
  
         LOG(("Creating gui window %p for browser window %p", g, bw));
-        
+       
+	g->target_width = 0;
+	g->target_height = 0;
+
 	g->bw = bw;
 	g->current_pointer = GUI_POINTER_DEFAULT;
 	if (clone != NULL)
