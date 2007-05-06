@@ -3,7 +3,7 @@
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
- * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2007 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2004 Andrew Timmins <atimmins@blueyonder.co.uk>
  */
 
@@ -12,6 +12,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/utsname.h>
+#include <libxml/encoding.h>
+#include <libxml/globals.h>
+#include <libxml/xmlversion.h>
 #include "netsurf/utils/config.h"
 #include "netsurf/content/fetch.h"
 #include "netsurf/content/fetchcache.h"
@@ -120,12 +123,16 @@ void netsurf_exit(void)
 /**
  * Initialises the libraries used in NetSurf.
  */
-static void lib_init(void)
+void lib_init(void)
 {
+	LOG(("xmlParserVersion %s, LIBXML_VERSION_STRING %s",
+			xmlParserVersion, LIBXML_VERSION_STRING));
+
 	/* Using encoding "X-SJIS" (unknown to libxmp2/iconv) instead as
 	 * "Shift-JIS" is rather popular.
 	 */
-	if (xmlAddEncodingAlias(xmlGetCharEncodingName(XML_CHAR_ENCODING_SHIFT_JIS), "X-SJIS") != 0)
+	if (xmlAddEncodingAlias(xmlGetCharEncodingName(
+			XML_CHAR_ENCODING_SHIFT_JIS), "X-SJIS") != 0)
 		die("Failed to add encoding alias");
 }
 
