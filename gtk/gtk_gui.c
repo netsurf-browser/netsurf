@@ -57,7 +57,7 @@ char *glade_file_location;
 struct gui_window *search_current_window = 0;
 
 GtkWindow *wndAbout;
-
+GtkWindow *wndWarning;
 GladeXML *gladeWindows;
 GtkWindow *wndTooltip;
 GtkLabel *labelTooltip;
@@ -234,6 +234,9 @@ void gui_init(int argc, char** argv)
 	fontdesc = pango_font_description_from_string("Monospace 8");
 	gtk_widget_modify_font(GTK_WIDGET(
 		glade_xml_get_widget(gladeWindows, "textviewGPL")), fontdesc);
+	
+	wndWarning = GTK_WINDOW(glade_xml_get_widget(gladeWindows, "wndWarning"));
+
 	nsgtk_history_init();
 }
 
@@ -382,6 +385,18 @@ bool gui_search_term_highlighted(struct gui_window *g,
 
 void warn_user(const char *warning, const char *detail)
 {
+	char buf[300];	/* 300 is the size the RISC OS GUI uses */
+
+  	LOG(("%s %s", warning, detail));
+	fflush(stderr);
+
+	snprintf(buf, sizeof(buf), "%s %s", messages_get(warning),
+			detail ? detail : "");
+	buf[sizeof(buf) - 1] = 0;
+
+	gtk_label_set_text(GTK_LABEL(glade_xml_get_widget(gladeWindows, "labelWarning")), buf);
+
+	gtk_widget_show_all(GTK_WIDGET(wndWarning));
 }
 
 void die(const char * const error)
