@@ -41,7 +41,7 @@
 #include "netsurf/desktop/netsurf.h"
 #include "netsurf/desktop/options.h"
 #include "netsurf/render/form.h"
-#define NDEBUG
+#undef NDEBUG
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/url.h"
@@ -141,7 +141,7 @@ static int fetch_cert_verify_callback(X509_STORE_CTX *x509_ctx, void *parm);
  * Assumes that the element is zeroed as appropriate.
  */
 #define RING_INSERT(ring,element) \
-	LOG(("RING_INSERT(%s, %p(%s))", #ring, element, element->host)); \
+	/*LOG(("RING_INSERT(%s, %p(%s))", #ring, element, element->host));*/ \
 	if (ring) { \
 		element->r_next = ring; \
 		element->r_prev = ring->r_prev; \
@@ -154,7 +154,7 @@ static int fetch_cert_verify_callback(X509_STORE_CTX *x509_ctx, void *parm);
  * Will zero the element as needed
  */
 #define RING_REMOVE(ring, element) \
-	LOG(("RING_REMOVE(%s, %p(%s)", #ring, element, element->host)); \
+	/*LOG(("RING_REMOVE(%s, %p(%s)", #ring, element, element->host));*/ \
 	if (element->r_next != element ) { \
 		/* Not the only thing in the ring */ \
 		element->r_next->r_prev = element->r_prev; \
@@ -170,7 +170,7 @@ static int fetch_cert_verify_callback(X509_STORE_CTX *x509_ctx, void *parm);
  * provided element variable
  */
 #define RING_FINDBYHOST(ring, element, hostname) \
-	LOG(("RING_FINDBYHOST(%s, %s)", #ring, hostname)); \
+	/*LOG(("RING_FINDBYHOST(%s, %s)", #ring, hostname));*/ \
 	if (ring) { \
 		bool found = false; \
 		element = ring; \
@@ -186,7 +186,7 @@ static int fetch_cert_verify_callback(X509_STORE_CTX *x509_ctx, void *parm);
 
 /** Measure the size of a ring and put it in the supplied variable */
 #define RING_GETSIZE(ringtype, ring, sizevar) \
-	LOG(("RING_GETSIZE(%s)", #ring)); \
+	/*LOG(("RING_GETSIZE(%s)", #ring));*/ \
 	if (ring) { \
 		ringtype *p = ring; \
 		sizevar = 0; \
@@ -198,7 +198,7 @@ static int fetch_cert_verify_callback(X509_STORE_CTX *x509_ctx, void *parm);
 
 /** Count the number of elements in the ring which match the provided hostname */
 #define RING_COUNTBYHOST(ringtype, ring, sizevar, hostname) \
-	LOG(("RING_COUNTBYHOST(%s, %s)", #ring, hostname)); \
+	/*LOG(("RING_COUNTBYHOST(%s, %s)", #ring, hostname));*/ \
 	if (ring) { \
 		ringtype *p = ring; \
 		sizevar = 0; \
@@ -221,6 +221,8 @@ static void fetch_dispatch_jobs(void);
 void fetch_init(void)
 {
 	CURLcode code;
+
+	LOG(("curl_version %s", curl_version()));
 
 	code = curl_global_init(CURL_GLOBAL_ALL);
 	if (code != CURLE_OK)
@@ -619,11 +621,12 @@ static void fetch_dispatch_jobs(void)
 {
 	int all_active, all_queued;
 
-	if (!queue_ring) return; /* Nothing to do, the queue is empty */
+	if (!queue_ring)
+		return; /* Nothing to do, the queue is empty */
 	RING_GETSIZE(struct fetch, queue_ring, all_queued);
 	RING_GETSIZE(struct fetch, fetch_ring, all_active);
-	while( all_queued && all_active < option_max_fetchers ) {
-		LOG(("%d queued, %d fetching", all_queued, all_active));
+	while ( all_queued && all_active < option_max_fetchers ) {
+		/*LOG(("%d queued, %d fetching", all_queued, all_active));*/
 		if (fetch_choose_and_dispatch()) {
 			all_queued--;
 			all_active++;
@@ -1127,7 +1130,7 @@ size_t fetch_curl_data(void *data, size_t size, size_t nmemb,
 		return size * nmemb;
 	}
 
-	LOG(("fetch %p, size %lu", f, size * nmemb));
+	/*LOG(("fetch %p, size %lu", f, size * nmemb));*/
 
 	if (f->abort || (!f->had_headers && fetch_process_headers(f))) {
 		f->stopped = true;
@@ -1135,7 +1138,7 @@ size_t fetch_curl_data(void *data, size_t size, size_t nmemb,
 	}
 
 	/* send data to the caller */
-	LOG(("FETCH_DATA"));
+	/*LOG(("FETCH_DATA"));*/
 	f->callback(FETCH_DATA, f->p, data, size * nmemb);
 
 	if (f->abort) {
