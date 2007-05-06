@@ -15,6 +15,7 @@
 #include "netsurf/gtk/gtk_schedule.h"
 #undef NDEBUG
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/utils.h"
 #include <gdk/gdkkeysyms.h>
 #include <assert.h>
 
@@ -265,7 +266,7 @@ gboolean nsgtk_window_expose_event(GtkWidget *widget,
 	for (z = window_list; z && z != g; z = z->next)
 		continue;
 	assert(z);
-	assert(g->drawing_area == widget);
+	assert(GTK_WIDGET(g->drawing_area) == widget);
 
 	c = g->bw->current_content;
 	if (c == NULL)
