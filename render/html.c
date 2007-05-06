@@ -2,7 +2,7 @@
  * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
- * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2007 James Bursa <bursa@users.sourceforge.net>
  */
 
 /** \file
@@ -396,11 +396,8 @@ bool html_convert(struct content *c, int width, int height)
 	}
 
 	/* get stylesheets */
-	if (!html_find_stylesheets(c, head)) {
-		msg_data.error = messages_get("NoMemory");
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+	if (!html_find_stylesheets(c, head))
 		return false;
-	}
 
 	/* convert xml tree to box tree */
 	LOG(("XML to box"));
@@ -646,7 +643,7 @@ bool html_meta_refresh(struct content *c, xmlNode *head)
  *
  * \param  c     content structure
  * \param  head  xml node of head element, or 0 if none
- * \return  true on success, false on memory exhaustion
+ * \return  true on success, false if an error occurred
  */
 
 bool html_find_stylesheets(struct content *c, xmlNode *head)
@@ -665,7 +662,7 @@ bool html_find_stylesheets(struct content *c, xmlNode *head)
 	c->data.html.stylesheet_content = talloc_array(c, struct content *,
 			STYLESHEET_START);
 	if (!c->data.html.stylesheet_content)
-		return false;
+		goto no_memory;
 	c->data.html.stylesheet_content[STYLESHEET_ADBLOCK] = 0;
 	c->data.html.stylesheet_content[STYLESHEET_STYLE] = 0;
 	c->data.html.stylesheet_count = STYLESHEET_START;
@@ -678,7 +675,7 @@ bool html_find_stylesheets(struct content *c, xmlNode *head)
 			STYLESHEET_BASE, c->width, c->height,
 			true, 0, 0, false, false);
 	if (!c->data.html.stylesheet_content[STYLESHEET_BASE])
-		return false;
+		goto no_memory;
 	c->active++;
 	fetchcache_go(c->data.html.stylesheet_content[STYLESHEET_BASE],
 			c->url, html_convert_css_callback, (intptr_t) c,
@@ -692,7 +689,7 @@ bool html_find_stylesheets(struct content *c, xmlNode *head)
 				STYLESHEET_ADBLOCK, c->width,
 				c->height, true, 0, 0, false, false);
 		if (!c->data.html.stylesheet_content[STYLESHEET_ADBLOCK])
-			return false;
+			goto no_memory;
 		c->active++;
 		fetchcache_go(c->data.html.
 				stylesheet_content[STYLESHEET_ADBLOCK],
@@ -757,14 +754,14 @@ bool html_find_stylesheets(struct content *c, xmlNode *head)
 					c->data.html.stylesheet_content,
 					struct content *, i + 1);
 			if (!stylesheet_content)
-				return false;
+				goto no_memory;
 			c->data.html.stylesheet_content = stylesheet_content;
 			c->data.html.stylesheet_content[i] = fetchcache(url,
 					html_convert_css_callback,
 					(intptr_t) c, i, c->width, c->height,
 					true, 0, 0, false, false);
 			if (!c->data.html.stylesheet_content[i])
-				return false;
+				goto no_memory;
 			c->active++;
 			fetchcache_go(c->data.html.stylesheet_content[i],
 					c->url,
@@ -802,14 +799,14 @@ bool html_find_stylesheets(struct content *c, xmlNode *head)
 						content_create(c->data.html.
 						base_url);
 				if (!c->data.html.stylesheet_content[STYLESHEET_STYLE])
-					return false;
+					goto no_memory;
 				if (!content_set_type(c->data.html.
 						stylesheet_content[STYLESHEET_STYLE],
 						CONTENT_CSS, "text/css",
 						params))
 					/** \todo  not necessarily caused by
 					 *  memory exhaustion */
-					return false;
+					goto no_memory;
 			}
 
 			/* can't just use xmlNodeGetContent(node), because that won't give
@@ -822,7 +819,7 @@ bool html_find_stylesheets(struct content *c, xmlNode *head)
 					xmlFree(data);
 					/** \todo  not necessarily caused by
 					 *  memory exhaustion */
-					return false;
+					goto no_memory;
 				}
 				xmlFree(data);
 			}
@@ -839,7 +836,7 @@ bool html_find_stylesheets(struct content *c, xmlNode *head)
 					(intptr_t) c, STYLESHEET_STYLE)) {
 				/* no memory */
 				c->data.html.stylesheet_content[STYLESHEET_STYLE] = 0;
-				return false;
+				goto no_memory;
 			}
 		} else {
 			/* conversion failed */
@@ -858,16 +855,19 @@ bool html_find_stylesheets(struct content *c, xmlNode *head)
 		gui_multitask();
 	}
 
-/* 	if (c->error) { */
-/* 		content_set_status(c, "Warning: some stylesheets failed to load"); */
-/* 		content_broadcast(c, CONTENT_MSG_STATUS, msg_data); */
-/* 	} */
+	/* check that the base stylesheet loaded; layout fails without it */
+	if (!c->data.html.stylesheet_content[STYLESHEET_BASE]) {
+		msg_data.error = "Base stylesheet failed to load";
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		return false;
+	}
 
-	/* any of our stylesheets pointers could be NULL at this point if the
-	   CSS file(s) failed to load/fetch */
-	if (c->data.html.stylesheet_content[STYLESHEET_BASE])
-		css_set_origin(c->data.html.stylesheet_content[STYLESHEET_BASE],
+	assert(c->data.html.stylesheet_content[STYLESHEET_BASE]);
+	css_set_origin(c->data.html.stylesheet_content[STYLESHEET_BASE],
 			CSS_ORIGIN_UA);
+
+	/* any of our other stylesheet pointers could be NULL at this point if
+	 * the CSS file(s) failed to load/fetch */
 	if (c->data.html.stylesheet_content[STYLESHEET_ADBLOCK])
 		css_set_origin(c->data.html.stylesheet_content[
 				STYLESHEET_ADBLOCK], CSS_ORIGIN_UA);
@@ -883,9 +883,14 @@ bool html_find_stylesheets(struct content *c, xmlNode *head)
 			c->data.html.stylesheet_content,
 			c->data.html.stylesheet_count);
 	if (!c->data.html.working_stylesheet)
-		return false;
+		goto no_memory;
 
 	return true;
+
+no_memory:
+	msg_data.error = messages_get("NoMemory");
+	content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+	return false;
 }
 
 
@@ -905,6 +910,7 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 			if (css->type != CONTENT_CSS) {
 				c->data.html.stylesheet_content[i] = 0;
 				c->active--;
+				LOG(("%s is not CSS", css->url));
 				content_add_error(c, "NotCSS", 0);
 				html_set_status(c, messages_get("NotCSS"));
 				content_broadcast(c, CONTENT_MSG_STATUS, data);
@@ -934,6 +940,7 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 			break;
 
 		case CONTENT_MSG_ERROR:
+			LOG(("stylesheet %s failed: %s", css->url, data.error));
 			/* The stylesheet we were fetching may have been
 			 * redirected, in that case, the object pointers
 			 * will differ, so ensure that the object that's
