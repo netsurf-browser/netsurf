@@ -9,7 +9,8 @@ The latest version of NetSurf is available from:
 
 
 Installation
-ииииииииииии
+------------
+
 Installation is a three step process:
 
    1.  Use the Boot Merge facility provided by Configure to merge
@@ -29,7 +30,8 @@ Double click on !NetSurf in your chosen location to launch NetSurf.
 
 
 Licences
-ииииииии
+--------
+
 NetSurf is provided under the GPL. See !NstSurf.Docs.licence_en
 
 
@@ -39,10 +41,10 @@ directory.
 
 AcornURI
   http://sudden.recoil.org/others/
-  
+
 Iconv
   http://www.netsurf-browser.org/iconv/
-  
+
 SharedUnixLibrary
   http://www.riscos.info/downloads/gccsdk/sharedunixlib/system.zip
 
