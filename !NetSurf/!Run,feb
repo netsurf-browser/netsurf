@@ -95,5 +95,12 @@ Unset Alias$NetSurfRMLoad
 CDir <Wimp$ScrapDir>.WWW
 CDir <Wimp$ScrapDir>.WWW.NetSurf
 
+| Install NetSurf-specific fonts
+| NB: trailing dot is required
+FontInstall NetSurf:Resources.Fonts.
+
 WimpSlot -min 2240k -max 2240k
 Run <NetSurf$Dir>.!RunImage %*0 2><Wimp$ScrapDir>.WWW.NetSurf.Log
+
+| Uninstall NetSurf-specific fonts
+FontRemove NetSurf:Resources.Fonts.

@@ -426,13 +426,13 @@ bool box_construct_element(xmlNode *n, struct content *content,
 				marker->length = 3;
 				break;
 			case CSS_LIST_STYLE_TYPE_CIRCLE:
-				/* 2742 CIRCLED OPEN CENTRE EIGHT POINTED STAR*/
-				marker->text = "\342\235\202";
+				/* 25CB WHITE CIRCLE */
+				marker->text = "\342\227\213";
 				marker->length = 3;
 				break;
 			case CSS_LIST_STYLE_TYPE_SQUARE:
-				/* 25A0 BLACK SQUARE */
-				marker->text = "\342\226\240";
+				/* 25AA BLACK SMALL SQUARE */
+				marker->text = "\342\226\252";
 				marker->length = 3;
 				break;
 			case CSS_LIST_STYLE_TYPE_DECIMAL:
