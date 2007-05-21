@@ -117,7 +117,7 @@ applet[align=left] { float: left; }
 applet[align=right] { float: right; }
 
 center { display: block; text-align: center; }
-center > * { margin-left: auto; margin-right: auto; }
+center * { margin-left: auto; margin-right: auto; }
 
 tt { font-family: monospace; }
 i { font-style: italic; }
