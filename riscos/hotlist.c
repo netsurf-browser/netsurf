@@ -53,9 +53,9 @@ static const struct {
 	const char *url;
 	const char *msg_key;
 } default_entries[] = {
-	{ "http://netsurf-browser.org/", "HotlistHomepage" },
-	{ "http://netsurf-browser.org/builds/", "HotlistTestBuild" },
-	{ "http://netsurf-browser.org/docs", "HotlistDocumentation" },
+	{ "http://www.netsurf-browser.org/", "HotlistHomepage" },
+	{ "http://www.netsurf-browser.org/builds/", "HotlistTestBuild" },
+	{ "http://www.netsurf-browser.org/docs/", "HotlistDocumentation" },
 	{ "http://sourceforge.net/tracker/?atid=464312&group_id=51719",
 			"HotlistBugTracker" },
 	{ "http://sourceforge.net/tracker/?atid=464315&group_id=51719",
