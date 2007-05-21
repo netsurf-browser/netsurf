@@ -92,10 +92,6 @@ th { font-weight: bold; text-align: center; }
 
 td[nowrap], th[nowrap] { white-space: nowrap; }
 
-td[align=left] > *, th[align=left] > * { margin-right: auto; }
-td[align=center] > *, th[align=center] > * { margin-left: auto; margin-right: auto; }
-td[align=right] > *, th[align=right] > * { margin-left: auto; }
-
 tr[align=left] > td, tr[align=left] > th { text-align: left; margin-right: auto; }
 tr[align=center] > td, tr[align=center] > th { text-align: center; margin-left: auto; margin-right: auto; }
 tr[align=right] > td, tr[align=right] > th { text-align: right; margin-left: auto; }
@@ -184,3 +180,7 @@ fieldset { display: block; border: thin solid #888; margin: 1.12em 0; }
 [align=left] { text-align: left; }
 [align=center] { text-align: center; }
 [align=right] { text-align: right; }
+
+[align=left] * { margin-left: 0; margin-right: auto; }
+[align=center] * { margin-left: auto; margin-right: auto; }
+[align=right] * { margin-left: auto; margin-right: 0; }
