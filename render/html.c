@@ -38,7 +38,7 @@
 
 
 static bool html_set_parser_encoding(struct content *c, const char *encoding);
-static const char *html_detect_encoding(const char *data, unsigned int size);
+static const char *html_detect_encoding(const char **data, unsigned int *size);
 static void html_convert_css_callback(content_msg msg, struct content *css,
 		intptr_t p1, intptr_t p2, union content_msg_data data);
 static bool html_meta_refresh(struct content *c, xmlNode *head);
@@ -157,7 +157,7 @@ bool html_process_data(struct content *c, char *data, unsigned int size)
 		 * searches for a <meta http-equiv="content-type"
 		 * content="text/html; charset=...">. */
 		const char *encoding;
-		encoding = html_detect_encoding(data, size);
+		encoding = html_detect_encoding((const char **) &data, &size);
 		if (encoding) {
 			if (!html_set_parser_encoding(c, encoding))
 				return false;
@@ -168,6 +168,12 @@ bool html_process_data(struct content *c, char *data, unsigned int size)
 					ENCODING_SOURCE_DETECTED;
 		}
 		c->data.html.getenc = false;
+
+		/* The data we received may have solely consisted of a BOM.
+		 * If so, it will have been stripped by html_detect_encoding.
+		 * Therefore, we'll have nothing to do in that case. */
+		if (size == 0)
+			return true;
 	}
 
 	for (x = 0; x + CHUNK <= size; x += CHUNK) {
@@ -180,8 +186,22 @@ bool html_process_data(struct content *c, char *data, unsigned int size)
 		/* The encoding was not in headers or detected,
 		 * and the parser found a <meta http-equiv="content-type"
 		 * content="text/html; charset=...">. */
-		c->data.html.encoding = talloc_strdup(c,
+
+		/* However, if that encoding is non-ASCII-compatible,
+		 * ignore it, as it can't possibly be correct */
+		if (strncasecmp(c->data.html.parser->input->encoding,
+				"UTF-16", 6) == 0 || /* UTF-16(LE|BE)? */
+			strncasecmp(c->data.html.parser->input->encoding,
+				"UTF-32", 6) == 0) { /* UTF-32(LE|BE)? */
+			c->data.html.encoding = talloc_strdup(c, "ISO-8859-1");
+			c->data.html.encoding_source =
+					ENCODING_SOURCE_DETECTED;
+		} else {
+			c->data.html.encoding = talloc_strdup(c,
 				c->data.html.parser->input->encoding);
+			c->data.html.encoding_source = ENCODING_SOURCE_META;
+		}
+
 		if (!c->data.html.encoding) {
 			union content_msg_data msg_data;
 
@@ -189,7 +209,6 @@ bool html_process_data(struct content *c, char *data, unsigned int size)
 			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 			return false;
 		}
-		c->data.html.encoding_source = ENCODING_SOURCE_META;
 
 		/* have the encoding; don't attempt to detect it */
 		c->data.html.getenc = false;
@@ -293,33 +312,60 @@ bool html_set_parser_encoding(struct content *c, const char *encoding)
 /**
  * Attempt to detect the encoding of some HTML data.
  *
- * \param  data  HTML source data
- * \param  size  length of data
+ * \param  data  Pointer to HTML source data
+ * \param  size  Pointer to length of data
  * \return  a constant string giving the encoding, or 0 if the encoding
  *          appears to be some 8-bit encoding
+ *
+ * If a BOM is encountered, *data and *size will be modified to skip over it
  */
 
-const char *html_detect_encoding(const char *data, unsigned int size)
+const char *html_detect_encoding(const char **data, unsigned int *size)
 {
+	const unsigned char *d = (const unsigned char *) *data;
+
 	/* this detection assumes that the first two characters are <= 0xff */
-	if (size < 4)
+	if (*size < 4)
 		return 0;
-	if (data[0] == 0xfe && data[1] == 0xff)	             /* BOM fe ff */
+
+	if (d[0] == 0x00 && d[1] == 0x00 &&
+			d[2] == 0xfe && d[3] == 0xff) { /* BOM 00 00 fe ff */
+		*data += 4;
+		*size -= 4;
+		return "UTF-32BE";
+	} else if (d[0] == 0xff && d[1] == 0xfe &&
+			d[2] == 0x00 && d[3] == 0x00) { /* BOM ff fe 00 00 */
+		*data += 4;
+		*size -= 4;
+		return "UTF-32LE";
+	}
+	else if (d[0] == 0x00 && d[1] != 0x00 &&
+			d[2] == 0x00 && d[3] != 0x00)   /* 00 xx 00 xx */
 		return "UTF-16BE";
-	else if (data[0] == 0xfe && data[1] == 0xff)         /* BOM ff fe */
+	else if (d[0] != 0x00 && d[1] == 0x00 &&
+			d[2] != 0x00 && d[3] == 0x00)   /* xx 00 xx 00 */
 		return "UTF-16LE";
-	else if (data[0] == 0x00 && data[1] != 0x00 &&
-			data[2] == 0x00 && data[3] != 0x00)  /* 00 xx 00 xx */
-		return "UTF-16BE";
-	else if (data[0] != 0x00 && data[1] == 0x00 &&
-			data[2] != 0x00 && data[3] == 0x00)  /* xx 00 xx 00 */
-		return "UTF-16BE";
-	else if (data[0] == 0x00 && data[1] == 0x00 &&
-			data[2] == 0x00 && data[3] != 0x00)  /* 00 00 00 xx */
+	else if (d[0] == 0x00 && d[1] == 0x00 &&
+			d[2] == 0x00 && d[3] != 0x00)   /* 00 00 00 xx */
 		return "ISO-10646-UCS-4";
-	else if (data[0] != 0x00 && data[1] == 0x00 &&
-			data[2] == 0x00 && data[3] == 0x00)  /* xx 00 00 00 */
+	else if (d[0] != 0x00 && d[1] == 0x00 &&
+			d[2] == 0x00 && d[3] == 0x00)   /* xx 00 00 00 */
 		return "ISO-10646-UCS-4";
+	else if (d[0] == 0xfe && d[1] == 0xff) {        /* BOM fe ff */
+		*data += 2;
+		*size -= 2;
+		return "UTF-16BE";
+	} else if (d[0] == 0xfe && d[1] == 0xff) {      /* BOM ff fe */
+		*data += 2;
+		*size -= 2;
+		return "UTF-16LE";
+	} else if (d[0] == 0xef && d[1] == 0xbb &&
+			d[2] == 0xbf) {                 /* BOM ef bb bf */
+		*data += 3;
+		*size -= 3;
+		return "UTF-8";
+	}
+
 	return 0;
 }
 
