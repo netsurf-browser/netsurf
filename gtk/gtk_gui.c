@@ -35,6 +35,7 @@
 #include "netsurf/gtk/options.h"
 #include "netsurf/gtk/gtk_throbber.h"
 #include "netsurf/gtk/gtk_history.h"
+#include "netsurf/gtk/gtk_filetype.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/form.h"
 #include "netsurf/render/html.h"
@@ -212,6 +213,9 @@ void gui_init(int argc, char** argv)
 	LOG(("Using '%s' as Messages file", buf));
 	messages_load(buf);
 
+	find_resource(buf, "mime.types", "/etc/mime.types");
+	gtk_fetch_filetype_init(buf);
+
 	/* set up stylesheet urls */
 	find_resource(buf, "default.css", "./gtk/res/default.css");
 	default_stylesheet_url = path_to_url(buf);
@@ -321,6 +325,7 @@ void gui_quit(void)
 	free(adblock_stylesheet_url);
 	free(option_cookie_file);
 	free(option_cookie_jar);
+	gtk_fetch_filetype_fin();
 }
 
 
