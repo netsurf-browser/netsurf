@@ -5,16 +5,16 @@
  * Copyright 2006 Richard Wilson <info@tinct.net>
  */
 
-#include "netsurf/desktop/options.h"
-#include "netsurf/riscos/dialog.h"
-#include "netsurf/riscos/gui.h"
-#include "netsurf/riscos/options.h"
-#include "netsurf/riscos/wimp.h"
-#include "netsurf/riscos/wimp_event.h"
-#include "netsurf/riscos/configure.h"
-#include "netsurf/riscos/configure/configure.h"
-#include "netsurf/utils/messages.h"
-#include "netsurf/utils/utils.h"
+#include "desktop/options.h"
+#include "riscos/dialog.h"
+#include "riscos/gui.h"
+#include "riscos/options.h"
+#include "riscos/wimp.h"
+#include "riscos/wimp_event.h"
+#include "riscos/configure.h"
+#include "riscos/configure/configure.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
 
 
 #define SECURITY_REFERRER 2

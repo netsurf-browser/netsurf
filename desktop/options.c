@@ -19,20 +19,20 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include "libxml/HTMLparser.h"
-#include "libxml/HTMLtree.h"
-#include "netsurf/content/urldb.h"
-#include "netsurf/css/css.h"
-#include "netsurf/desktop/options.h"
-#include "netsurf/desktop/tree.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/messages.h"
-#include "netsurf/utils/utils.h"
+#include <libxml/HTMLparser.h>
+#include <libxml/HTMLtree.h>
+#include "content/urldb.h"
+#include "css/css.h"
+#include "desktop/options.h"
+#include "desktop/tree.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
 
 #if defined(riscos)
-#include "netsurf/riscos/options.h"
+#include "riscos/options.h"
 #elif defined(nsgtk)
-#include "netsurf/gtk/options.h"
+#include "gtk/options.h"
 #else
 #define EXTRA_OPTION_DEFINE
 #define EXTRA_OPTION_TABLE

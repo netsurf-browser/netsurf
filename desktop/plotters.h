@@ -13,7 +13,7 @@
 #define _NETSURF_DESKTOP_PLOTTERS_H_
 
 #include <stdbool.h>
-#include "netsurf/css/css.h"
+#include "css/css.h"
 
 
 struct bitmap;

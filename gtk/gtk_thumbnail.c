@@ -15,16 +15,16 @@
 
 #include <assert.h>
 #include <gtk/gtk.h>
-#include "netsurf/content/content.h"
-#include "netsurf/content/urldb.h"
-#include "netsurf/desktop/plotters.h"
-#include "netsurf/desktop/browser.h"
-#include "netsurf/image/bitmap.h"
-#include "netsurf/render/font.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/gtk/gtk_scaffolding.h"
-#include "netsurf/gtk/gtk_plotters.h"
-#include "netsurf/gtk/gtk_bitmap.h"
+#include "content/content.h"
+#include "content/urldb.h"
+#include "desktop/plotters.h"
+#include "desktop/browser.h"
+#include "image/bitmap.h"
+#include "render/font.h"
+#include "utils/log.h"
+#include "gtk/gtk_scaffolding.h"
+#include "gtk/gtk_plotters.h"
+#include "gtk/gtk_bitmap.h"
 
 /**
  * Create a thumbnail of a page.

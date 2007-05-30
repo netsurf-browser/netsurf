@@ -11,15 +11,15 @@
 #include <string.h>
 #include "oslib/uri.h"
 #include "oslib/wimp.h"
-#include "netsurf/utils/config.h"
-#include "netsurf/content/fetch.h"
-#include "netsurf/desktop/browser.h"
-#include "netsurf/riscos/theme.h"
-#include "netsurf/desktop/gui.h"
-#include "netsurf/riscos/gui.h"
-#include "netsurf/riscos/url_protocol.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/utils.h"
+#include "utils/config.h"
+#include "content/fetch.h"
+#include "desktop/browser.h"
+#include "riscos/theme.h"
+#include "desktop/gui.h"
+#include "riscos/gui.h"
+#include "riscos/url_protocol.h"
+#include "utils/log.h"
+#include "utils/utils.h"
 
 #ifdef WITH_URI
 

@@ -9,8 +9,8 @@
 #define NETSURF_GTK_SCAFFOLDING_H 1
 
 #include <gtk/gtk.h>
-#include "netsurf/desktop/gui.h"
-#include "netsurf/desktop/plotters.h"
+#include "desktop/gui.h"
+#include "desktop/plotters.h"
 
 typedef struct gtk_scaffolding nsgtk_scaffolding;
 

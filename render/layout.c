@@ -27,19 +27,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "netsurf/css/css.h"
-#include "netsurf/content/content.h"
+#include "css/css.h"
+#include "content/content.h"
 #ifdef riscos
-#include "netsurf/desktop/gui.h"
+#include "desktop/gui.h"
 #endif
-#include "netsurf/desktop/options.h"
-#include "netsurf/render/box.h"
-#include "netsurf/render/font.h"
-#include "netsurf/render/layout.h"
+#include "desktop/options.h"
+#include "render/box.h"
+#include "render/font.h"
+#include "render/layout.h"
 #define NDEBUG
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/talloc.h"
-#include "netsurf/utils/utils.h"
+#include "utils/log.h"
+#include "utils/talloc.h"
+#include "utils/utils.h"
 
 
 #define AUTO INT_MIN

@@ -14,15 +14,15 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#include "netsurf/desktop/gui.h"
-#include "netsurf/desktop/plotters.h"
-#include "netsurf/desktop/selection.h"
-#include "netsurf/render/box.h"
-#include "netsurf/render/form.h"
-#include "netsurf/render/textplain.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/utf8.h"
-#include "netsurf/utils/utils.h"
+#include "desktop/gui.h"
+#include "desktop/plotters.h"
+#include "desktop/selection.h"
+#include "render/box.h"
+#include "render/form.h"
+#include "render/textplain.h"
+#include "utils/log.h"
+#include "utils/utf8.h"
+#include "utils/utils.h"
 
 
 /**

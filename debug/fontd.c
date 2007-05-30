@@ -6,8 +6,8 @@
  */
 
 #include <assert.h>
-#include "netsurf/css/css.h"
-#include "netsurf/render/font.h"
+#include "css/css.h"
+#include "render/font.h"
 
 
 bool nsfont_width(const struct css_style *style,

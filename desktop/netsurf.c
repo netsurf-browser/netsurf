@@ -15,20 +15,20 @@
 #include <libxml/encoding.h>
 #include <libxml/globals.h>
 #include <libxml/xmlversion.h>
-#include "netsurf/utils/config.h"
-#include "netsurf/content/fetch.h"
-#include "netsurf/content/fetchcache.h"
-#include "netsurf/content/urldb.h"
-#include "netsurf/desktop/netsurf.h"
-#include "netsurf/desktop/browser.h"
-#include "netsurf/desktop/gui.h"
+#include "utils/config.h"
+#include "content/fetch.h"
+#include "content/fetchcache.h"
+#include "content/urldb.h"
+#include "desktop/netsurf.h"
+#include "desktop/browser.h"
+#include "desktop/gui.h"
 #ifdef riscos
-#include "netsurf/riscos/buffer.h"
+#include "riscos/buffer.h"
 #endif
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/url.h"
-#include "netsurf/utils/utf8.h"
-#include "netsurf/utils/utils.h"
+#include "utils/log.h"
+#include "utils/url.h"
+#include "utils/utf8.h"
+#include "utils/utils.h"
 
 bool netsurf_quit = false;
 bool verbose_log = false;

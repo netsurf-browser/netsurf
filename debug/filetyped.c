@@ -7,9 +7,9 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "netsurf/content/fetch.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/utils.h"
+#include "content/fetch.h"
+#include "utils/log.h"
+#include "utils/utils.h"
 
 /**
  * filetype -- determine the MIME type of a local file

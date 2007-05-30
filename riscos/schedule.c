@@ -14,8 +14,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include "oslib/os.h"
-#include "netsurf/riscos/gui.h"
-#include "netsurf/utils/log.h"
+#include "riscos/gui.h"
+#include "utils/log.h"
 
 
 /** Entry in the queue of scheduled callbacks. */

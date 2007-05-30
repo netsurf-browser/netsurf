@@ -12,8 +12,8 @@
 #ifndef _NETSURF_DESKTOP_FRAMES_H_
 #define _NETSURF_DESKTOP_FRAMES_H_
 
-#include "netsurf/desktop/browser.h"
-#include "netsurf/desktop/gui.h"
+#include "desktop/browser.h"
+#include "desktop/gui.h"
 
 
 void browser_window_create_iframes(struct browser_window *bw,

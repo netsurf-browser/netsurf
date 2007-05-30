@@ -7,7 +7,7 @@
  */
 
 #include <stdio.h>
-#include "netsurf/desktop/netsurf.h"
+#include "desktop/netsurf.h"
 
 #ifndef _NETSURF_LOG_H_
 #define _NETSURF_LOG_H_

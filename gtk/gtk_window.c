@@ -6,16 +6,16 @@
  * Copyright 2006 Rob Kendrick <rjek@rjek.com>
  */
 
-#include "netsurf/gtk/gtk_window.h"
-#include "netsurf/desktop/browser.h"
-#include "netsurf/desktop/textinput.h"
-#include "netsurf/gtk/gtk_gui.h"
-#include "netsurf/gtk/gtk_scaffolding.h"
-#include "netsurf/gtk/gtk_plotters.h"
-#include "netsurf/gtk/gtk_schedule.h"
+#include "gtk/gtk_window.h"
+#include "desktop/browser.h"
+#include "desktop/textinput.h"
+#include "gtk/gtk_gui.h"
+#include "gtk/gtk_scaffolding.h"
+#include "gtk/gtk_plotters.h"
+#include "gtk/gtk_schedule.h"
 #undef NDEBUG
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/utils.h"
+#include "utils/log.h"
+#include "utils/utils.h"
 #include <gdk/gdkkeysyms.h>
 #include <assert.h>
 

@@ -14,12 +14,12 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <string.h>
-#include "netsurf/content/content.h"
-#include "netsurf/css/css.h"
-#include "netsurf/render/box.h"
-#include "netsurf/render/form.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/talloc.h"
+#include "content/content.h"
+#include "css/css.h"
+#include "render/box.h"
+#include "render/form.h"
+#include "utils/log.h"
+#include "utils/talloc.h"
 
 
 static bool box_contains_point(struct box *box, int x, int y);

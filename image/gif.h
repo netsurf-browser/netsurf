@@ -9,7 +9,7 @@
 #define _NETSURF_IMAGE_GIF_H_
 
 #include <stdbool.h>
-#include "netsurf/image/gifread.h"
+#include "image/gifread.h"
 
 struct content;
 

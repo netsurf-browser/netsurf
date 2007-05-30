@@ -17,19 +17,19 @@
 #include <ctype.h>
 #include <string.h>
 
-#include "netsurf/desktop/browser.h"
-#include "netsurf/desktop/gui.h"
-#include "netsurf/desktop/selection.h"
-#include "netsurf/desktop/textinput.h"
-#include "netsurf/render/box.h"
-#include "netsurf/render/font.h"
-#include "netsurf/render/form.h"
-#include "netsurf/render/layout.h"
+#include "desktop/browser.h"
+#include "desktop/gui.h"
+#include "desktop/selection.h"
+#include "desktop/textinput.h"
+#include "render/box.h"
+#include "render/font.h"
+#include "render/form.h"
+#include "render/layout.h"
 #define NDEBUG
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/talloc.h"
-#include "netsurf/utils/utf8.h"
-#include "netsurf/utils/utils.h"
+#include "utils/log.h"
+#include "utils/talloc.h"
+#include "utils/utf8.h"
+#include "utils/utils.h"
 
 
 /** ghost caret used to indicate the insertion point when dragging text

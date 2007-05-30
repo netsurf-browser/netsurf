@@ -23,13 +23,13 @@
 
 #include "rufl.h"
 
-#include "netsurf/riscos/gui.h"
-#include "netsurf/riscos/textarea.h"
-#include "netsurf/riscos/ucstables.h"
-#include "netsurf/riscos/wimp.h"
-#include "netsurf/riscos/wimp_event.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/utf8.h"
+#include "riscos/gui.h"
+#include "riscos/textarea.h"
+#include "riscos/ucstables.h"
+#include "riscos/wimp.h"
+#include "riscos/wimp_event.h"
+#include "utils/log.h"
+#include "utils/utf8.h"
 
 #define MARGIN_LEFT 8
 #define MARGIN_RIGHT 8

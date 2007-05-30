@@ -14,19 +14,19 @@
 #include <errno.h>
 #include <stddef.h>
 #include <iconv.h>
-#include "netsurf/content/content.h"
-#include "netsurf/css/css.h"
-#include "netsurf/desktop/gui.h"
-#include "netsurf/desktop/plotters.h"
-#include "netsurf/desktop/selection.h"
-#include "netsurf/render/box.h"
-#include "netsurf/render/font.h"
-#include "netsurf/render/textplain.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/messages.h"
-#include "netsurf/utils/talloc.h"
-#include "netsurf/utils/utils.h"
-#include "netsurf/utils/utf8.h"
+#include "content/content.h"
+#include "css/css.h"
+#include "desktop/gui.h"
+#include "desktop/plotters.h"
+#include "desktop/selection.h"
+#include "render/box.h"
+#include "render/font.h"
+#include "render/textplain.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/talloc.h"
+#include "utils/utils.h"
+#include "utils/utf8.h"
 
 
 #define CHUNK 20480

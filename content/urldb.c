@@ -82,19 +82,19 @@
 #include <sys/select.h>
 #include <curl/curl.h>
 
-#include "netsurf/image/bitmap.h"
-#include "netsurf/content/content.h"
-#include "netsurf/content/urldb.h"
-#include "netsurf/desktop/cookies.h"
-#include "netsurf/desktop/options.h"
+#include "image/bitmap.h"
+#include "content/content.h"
+#include "content/urldb.h"
+#include "desktop/cookies.h"
+#include "desktop/options.h"
 #ifdef riscos
 /** \todo lose this */
-#include "netsurf/riscos/bitmap.h"
+#include "riscos/bitmap.h"
 #endif
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/filename.h"
-#include "netsurf/utils/url.h"
-#include "netsurf/utils/utils.h"
+#include "utils/log.h"
+#include "utils/filename.h"
+#include "utils/url.h"
+#include "utils/utils.h"
 
 struct cookie_internal_data {
 	char *name;		/**< Cookie name */

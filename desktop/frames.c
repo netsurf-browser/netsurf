@@ -17,15 +17,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "netsurf/utils/config.h"
-#include "netsurf/desktop/browser.h"
-#include "netsurf/desktop/frames.h"
-#include "netsurf/desktop/history_core.h"
-#include "netsurf/desktop/gui.h"
-#include "netsurf/desktop/selection.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/messages.h"
-#include "netsurf/utils/utils.h"
+#include "utils/config.h"
+#include "desktop/browser.h"
+#include "desktop/frames.h"
+#include "desktop/history_core.h"
+#include "desktop/gui.h"
+#include "desktop/selection.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
 
 /** maximum frame resize margin */
 #define FRAME_RESIZE 6

@@ -20,25 +20,25 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include "libxml/HTMLparser.h"
-#include "libxml/parserInternals.h"
-#include "netsurf/utils/config.h"
-#include "netsurf/content/content.h"
-#include "netsurf/css/css.h"
-#include "netsurf/desktop/browser.h"
-#include "netsurf/desktop/options.h"
-#include "netsurf/render/box.h"
-#include "netsurf/render/form.h"
-#include "netsurf/render/html.h"
+#include <libxml/HTMLparser.h>
+#include <libxml/parserInternals.h>
+#include "utils/config.h"
+#include "content/content.h"
+#include "css/css.h"
+#include "desktop/browser.h"
+#include "desktop/options.h"
+#include "render/box.h"
+#include "render/form.h"
+#include "render/html.h"
 #ifdef riscos
-#include "netsurf/desktop/gui.h"
+#include "desktop/gui.h"
 #endif
 //#define NDEBUG
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/messages.h"
-#include "netsurf/utils/talloc.h"
-#include "netsurf/utils/url.h"
-#include "netsurf/utils/utils.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/talloc.h"
+#include "utils/url.h"
+#include "utils/utils.h"
 
 
 static const content_type image_types[] = {

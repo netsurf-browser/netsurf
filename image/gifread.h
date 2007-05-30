@@ -13,7 +13,7 @@
 #define _NETSURF_IMAGE_GIFREAD_H_
 
 #include <stdbool.h>
-#include "netsurf/image/bitmap.h"
+#include "image/bitmap.h"
 
 /*	Error return values
 */

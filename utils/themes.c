@@ -5,7 +5,7 @@
  * Copyright 2006 Rob Kendrick <rjek@rjek.com>
  */
 
-#include "netsurf/utils/themes.h"
+#include "utils/themes.h"
 
 struct theme_descriptor;
 

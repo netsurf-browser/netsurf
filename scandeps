@@ -2,10 +2,7 @@
 
 %include = ();
 
-die "Usage: scandeps prefix object_dirs -- sources" if (@ARGV < 4);
-
-$prefix = shift @ARGV;
-$prefix = $prefix;  # silence warning
+die "Usage: scandeps object_dirs -- sources" if (@ARGV < 3);
 
 @objdirs = ();
 while (($z = shift @ARGV) ne "--") {
@@ -16,8 +13,8 @@ while (($z = shift @ARGV) ne "--") {
 foreach my $file (@ARGV) {
 	open FILE, "<$file" or die "Failed to open $file: $!";
 	while (my $line = <FILE>) {
-		if ($line =~ m|#include "$prefix/?([^"]+)"|) {
-			$include{$file}{$1} = 1;
+		if ($line =~ m|#include "([^"]+)"|) {
+			$include{$file}{$1} = 1 if (-e $1);
 		}
 	}
 	close FILE;

@@ -14,7 +14,7 @@
 #define _NETSURF_RENDER_FORM_H_
 
 #include <stdbool.h>
-#include "netsurf/utils/config.h"
+#include "utils/config.h"
 
 struct box;
 struct form_control;

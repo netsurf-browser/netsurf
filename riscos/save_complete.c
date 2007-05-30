@@ -17,18 +17,18 @@
 #include <string.h>
 #include <sys/types.h>
 #include <regex.h>
-#include "libxml/HTMLtree.h"
-#include "libxml/parserInternals.h"
-#include "oslib/osfile.h"
-#include "netsurf/utils/config.h"
-#include "netsurf/content/content.h"
-#include "netsurf/css/css.h"
-#include "netsurf/render/box.h"
-#include "netsurf/riscos/gui.h"
-#include "netsurf/riscos/save_complete.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/url.h"
-#include "netsurf/utils/utils.h"
+#include <libxml/HTMLtree.h>
+#include <libxml/parserInternals.h>
+#include <oslib/osfile.h>
+#include "utils/config.h"
+#include "content/content.h"
+#include "css/css.h"
+#include "render/box.h"
+#include "riscos/gui.h"
+#include "riscos/save_complete.h"
+#include "utils/log.h"
+#include "utils/url.h"
+#include "utils/utils.h"
 
 #ifdef WITH_SAVE_COMPLETE
 

@@ -20,8 +20,8 @@
 #include <string.h>
 #include <stdbool.h>
 #include <arpa/inet.h>
-#include "netsurf/utils/container.h"
-#include "netsurf/utils/config.h"
+#include "utils/container.h"
+#include "utils/config.h"
 #ifdef WITH_MMAP
 #include <sys/mman.h>
 #endif

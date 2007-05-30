@@ -16,12 +16,12 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <time.h>
-#include "libxml/HTMLparser.h"
-#include "netsurf/content/content.h"
-#include "netsurf/render/directory.h"
-#include "netsurf/render/html.h"
-#include "netsurf/utils/messages.h"
-#include "netsurf/utils/url.h"
+#include <libxml/HTMLparser.h>
+#include "content/content.h"
+#include "render/directory.h"
+#include "render/html.h"
+#include "utils/messages.h"
+#include "utils/url.h"
 
 #define MAX_LENGTH 2048
 

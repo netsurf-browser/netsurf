@@ -15,9 +15,9 @@
 #define _NETSURF_RENDER_HTML_H_
 
 #include <stdbool.h>
-#include "libxml/HTMLparser.h"
-#include "netsurf/content/content_type.h"
-#include "netsurf/css/css.h"
+#include <libxml/HTMLparser.h>
+#include "content/content_type.h"
+#include "css/css.h"
 
 struct box;
 struct rect;

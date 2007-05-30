@@ -15,7 +15,7 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include "netsurf/image/bitmap.h"
+#include "image/bitmap.h"
 
 
 struct bitmap {

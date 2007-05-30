@@ -14,7 +14,7 @@
 #ifndef _NETSURF_DESKTOP_CONTENT_TYPE_H_
 #define _NETSURF_DESKTOP_CONTENT_TYPE_H_
 
-#include "netsurf/utils/config.h"
+#include "utils/config.h"
 
 
 /** The type of a content. */

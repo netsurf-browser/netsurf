@@ -16,11 +16,11 @@
 #include <string.h>
 #include <gdk/gdk.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
-#include "netsurf/content/content.h"
-#include "netsurf/gtk/gtk_bitmap.h"
-#include "netsurf/gtk/gtk_scaffolding.h"
-#include "netsurf/image/bitmap.h"
-#include "netsurf/utils/log.h"
+#include "content/content.h"
+#include "gtk/gtk_bitmap.h"
+#include "gtk/gtk_scaffolding.h"
+#include "image/bitmap.h"
+#include "utils/log.h"
 
 
 struct bitmap {

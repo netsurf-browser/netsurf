@@ -14,8 +14,8 @@
 #ifndef _NETSURF_RISCOS_OPTIONS_H_
 #define _NETSURF_RISCOS_OPTIONS_H_
 
-#include "netsurf/desktop/options.h"
-#include "netsurf/riscos/tinct.h"
+#include "desktop/options.h"
+#include "riscos/tinct.h"
 
 extern bool option_allow_text_selection;
 extern char *option_theme;

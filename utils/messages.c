@@ -18,10 +18,10 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/messages.h"
-#include "netsurf/utils/utils.h"
-#include "netsurf/utils/hashtable.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
+#include "utils/hashtable.h"
 
 /** We store the messages in a fixed-size hash table. */
 #define HASH_SIZE 101

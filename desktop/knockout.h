@@ -9,7 +9,7 @@
  * Knockout rendering (interface).
  */
 
-#include "netsurf/desktop/plotters.h"
+#include "desktop/plotters.h"
 
 
 bool knockout_plot_start(struct plotter_table *plotter);

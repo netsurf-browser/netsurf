@@ -6,10 +6,10 @@
  */
 
 #include <gtk/gtk.h>
-#include "netsurf/gtk/gtk_completion.h"
-#include "netsurf/content/urldb.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/desktop/options.h"
+#include "gtk/gtk_completion.h"
+#include "content/urldb.h"
+#include "utils/log.h"
+#include "desktop/options.h"
 
 GtkListStore *nsgtk_completion_list;
 

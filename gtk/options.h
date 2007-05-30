@@ -8,7 +8,7 @@
 #ifndef _NETSURF_GTK_OPTIONS_H_
 #define _NETSURF_GTK_OPTIONS_H_
 
-#include "netsurf/desktop/options.h"
+#include "desktop/options.h"
 
 extern bool option_render_cairo;
 extern bool option_render_resample;

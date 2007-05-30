@@ -9,7 +9,7 @@
  * Palette definitions for sprites
  */
 
-#include "netsurf/riscos/palettes.h"
+#include "riscos/palettes.h"
 
 
 const os_colour default_palette1[] =

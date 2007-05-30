@@ -20,15 +20,15 @@
 #include <sys/types.h>
 #include <regex.h>
 #include <time.h>
-#include "netsurf/utils/config.h"
-#include "netsurf/content/content.h"
-#include "netsurf/content/fetchcache.h"
-#include "netsurf/content/fetch.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/messages.h"
-#include "netsurf/utils/talloc.h"
-#include "netsurf/utils/url.h"
-#include "netsurf/utils/utils.h"
+#include "utils/config.h"
+#include "content/content.h"
+#include "content/fetchcache.h"
+#include "content/fetch.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/talloc.h"
+#include "utils/url.h"
+#include "utils/utils.h"
 
 
 static char error_page[1000];

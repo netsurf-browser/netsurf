@@ -16,8 +16,8 @@
 
 #include <stdbool.h>
 #define CSS_INTERNALS
-#include "netsurf/css/css.h"
-#include "netsurf/css/parser.h"
+#include "css/css.h"
+#include "css/parser.h"
 
 #define YYCTYPE unsigned char
 #define YYCURSOR (*buffer)

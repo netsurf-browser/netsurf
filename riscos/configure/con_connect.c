@@ -7,18 +7,18 @@
 
 #include <stdbool.h>
 #include <swis.h>
-#include "oslib/osspriteop.h"
+#include <oslib/osspriteop.h>
 #include "oslib/wimp.h"
-#include "netsurf/desktop/options.h"
-#include "netsurf/riscos/configure/configure.h"
-#include "netsurf/riscos/dialog.h"
-#include "netsurf/riscos/menus.h"
-#include "netsurf/riscos/options.h"
-#include "netsurf/riscos/tinct.h"
-#include "netsurf/riscos/wimp.h"
-#include "netsurf/riscos/wimp_event.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/utils.h"
+#include "desktop/options.h"
+#include "riscos/configure/configure.h"
+#include "riscos/dialog.h"
+#include "riscos/menus.h"
+#include "riscos/options.h"
+#include "riscos/tinct.h"
+#include "riscos/wimp.h"
+#include "riscos/wimp_event.h"
+#include "utils/log.h"
+#include "utils/utils.h"
 
 
 #define CONNECTION_PROXY_FIELD 3

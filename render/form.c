@@ -18,12 +18,12 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include "netsurf/render/box.h"
-#include "netsurf/render/form.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/url.h"
-#include "netsurf/utils/utf8.h"
-#include "netsurf/utils/utils.h"
+#include "render/box.h"
+#include "render/form.h"
+#include "utils/log.h"
+#include "utils/url.h"
+#include "utils/utf8.h"
+#include "utils/utils.h"
 
 
 static char *form_textarea_value(struct form_control *textarea);

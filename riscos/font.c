@@ -16,13 +16,13 @@
 #include "oslib/wimp.h"
 #include "oslib/wimpreadsysinfo.h"
 #include "rufl.h"
-#include "netsurf/css/css.h"
-#include "netsurf/render/font.h"
-#include "netsurf/riscos/gui.h"
-#include "netsurf/riscos/options.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/messages.h"
-#include "netsurf/utils/utils.h"
+#include "css/css.h"
+#include "render/font.h"
+#include "riscos/gui.h"
+#include "riscos/options.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
 
 
 /** desktop font, size and style being used */

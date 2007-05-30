@@ -11,12 +11,12 @@
  */
 
 #include <assert.h>
-#include "netsurf/css/css.h"
-#include "netsurf/render/box.h"
-#include "netsurf/render/table.h"
+#include "css/css.h"
+#include "render/box.h"
+#include "render/table.h"
 #define NDEBUG
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/talloc.h"
+#include "utils/log.h"
+#include "utils/talloc.h"
 
 
 static void table_collapse_borders_h(struct box *parent, struct box *child,

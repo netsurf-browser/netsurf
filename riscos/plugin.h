@@ -9,8 +9,8 @@
 #define _NETSURF_RISCOS_PLUGIN_H_
 
 #include <stdbool.h>
-#include "oslib/plugin.h"
-#include "oslib/wimp.h"
+#include <oslib/plugin.h>
+#include <oslib/wimp.h>
 
 struct box;
 struct browser_window;

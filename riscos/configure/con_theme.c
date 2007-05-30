@@ -8,22 +8,22 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
-#include "oslib/osspriteop.h"
+#include <oslib/osspriteop.h>
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
-#include "netsurf/utils/config.h"
-#include "netsurf/riscos/configure/configure.h"
-#include "netsurf/riscos/configure.h"
-#include "netsurf/riscos/dialog.h"
-#include "netsurf/riscos/menus.h"
-#include "netsurf/riscos/options.h"
-#include "netsurf/riscos/theme.h"
-#include "netsurf/riscos/url_complete.h"
-#include "netsurf/riscos/wimp.h"
-#include "netsurf/riscos/wimp_event.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/messages.h"
-#include "netsurf/utils/utils.h"
+#include "utils/config.h"
+#include "riscos/configure/configure.h"
+#include "riscos/configure.h"
+#include "riscos/dialog.h"
+#include "riscos/menus.h"
+#include "riscos/options.h"
+#include "riscos/theme.h"
+#include "riscos/url_complete.h"
+#include "riscos/wimp.h"
+#include "riscos/wimp_event.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
 
 
 #define THEME_PANE_AREA 0

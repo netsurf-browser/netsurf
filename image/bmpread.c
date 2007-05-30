@@ -10,9 +10,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "netsurf/image/bmpread.h"
-#include "netsurf/image/bitmap.h"
-#include "netsurf/utils/log.h"
+#include "image/bmpread.h"
+#include "image/bitmap.h"
+#include "utils/log.h"
 
 #define READ_SHORT(a, o) (a[o]|(a[o+1]<<8))
 #define READ_INT(a, o) (a[o]|(a[o+1]<<8)|(a[o+2]<<16)|(a[o+3]<<24))

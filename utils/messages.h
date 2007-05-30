@@ -22,7 +22,7 @@
 #ifndef _NETSURF_UTILS_MESSAGES_H_
 #define _NETSURF_UTILS_MESSAGES_H_
 
-#include "netsurf/utils/hashtable.h"
+#include "utils/hashtable.h"
 
 void messages_load(const char *path);
 struct hash_table *messages_load_ctx(const char *path, struct hash_table *ctx);

@@ -8,13 +8,13 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "libxml/HTMLtree.h"
+#include <libxml/HTMLtree.h>
 
-#include "netsurf/utils/config.h"
-#include "netsurf/content/content.h"
-#include "netsurf/desktop/save_text.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/utils.h"
+#include "utils/config.h"
+#include "content/content.h"
+#include "desktop/save_text.h"
+#include "utils/log.h"
+#include "utils/utils.h"
 
 #ifdef WITH_TEXT_EXPORT
 

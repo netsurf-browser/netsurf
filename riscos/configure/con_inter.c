@@ -5,13 +5,13 @@
  * Copyright 2006 Adrian Lees <adrianl@users.sourceforge.net>
  */
 
-#include "netsurf/riscos/dialog.h"
-#include "netsurf/riscos/gui.h"
-#include "netsurf/riscos/options.h"
-#include "netsurf/riscos/wimp.h"
-#include "netsurf/riscos/wimp_event.h"
-#include "netsurf/riscos/configure.h"
-#include "netsurf/riscos/configure/configure.h"
+#include "riscos/dialog.h"
+#include "riscos/gui.h"
+#include "riscos/options.h"
+#include "riscos/wimp.h"
+#include "riscos/wimp_event.h"
+#include "riscos/configure.h"
+#include "riscos/configure/configure.h"
 
 
 #define INTERFACE_STRIP_EXTNS_OPTION 2

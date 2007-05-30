@@ -11,8 +11,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include "gifread.h"
-#include "netsurf/image/bitmap.h"
-#include "netsurf/utils/log.h"
+#include "image/bitmap.h"
+#include "utils/log.h"
 
 /*	READING GIF FILES
 	=================

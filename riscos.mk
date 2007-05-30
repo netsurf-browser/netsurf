@@ -19,9 +19,7 @@ NCRUNIMAGE = !NCNetSurf/!RunImage
 
 # special cases
 css/css_enum.c css/css_enum.h: css/css_enums css/makeenum
-	@dir ^
-	perl netsurf/css/makeenum netsurf/css/css_enum < netsurf/css/css_enums
-	@dir netsurf
+	perl css/makeenum css/css_enum < css/css_enums
 css/parser.c css/parser.h: css/parser.y
 	@dir css
 	-lemon parser.y

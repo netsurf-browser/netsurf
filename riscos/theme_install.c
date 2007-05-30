@@ -12,18 +12,18 @@
 #include <assert.h>
 #include <stdbool.h>
 #include "oslib/osfile.h"
-#include "netsurf/content/content.h"
-#include "netsurf/desktop/browser.h"
-#include "netsurf/riscos/dialog.h"
-#include "netsurf/riscos/gui.h"
-#include "netsurf/riscos/options.h"
-#include "netsurf/riscos/theme.h"
-#include "netsurf/riscos/wimp.h"
-#include "netsurf/riscos/wimp_event.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/messages.h"
-#include "netsurf/utils/url.h"
-#include "netsurf/utils/utils.h"
+#include "content/content.h"
+#include "desktop/browser.h"
+#include "riscos/dialog.h"
+#include "riscos/gui.h"
+#include "riscos/options.h"
+#include "riscos/theme.h"
+#include "riscos/wimp.h"
+#include "riscos/wimp_event.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/url.h"
+#include "utils/utils.h"
 
 
 static struct content *theme_install_content = NULL;

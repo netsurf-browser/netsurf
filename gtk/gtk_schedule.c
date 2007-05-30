@@ -8,7 +8,7 @@
 #include <glib.h>
 #include <stdlib.h>
 
-#include "netsurf/desktop/browser.h"
+#include "desktop/browser.h"
 
 typedef struct {
 	void (*callback)(void *);

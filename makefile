@@ -121,17 +121,17 @@ WARNFLAGS = -W -Wall -Wundef -Wpointer-arith -Wcast-qual \
 # PLATFORM_CFLAGS variables are defined in them
 
 CFLAGS_RISCOS = -std=c99 -D_BSD_SOURCE -D_POSIX_C_SOURCE -Driscos -DBOOL_DEFINED -O \
-	$(WARNFLAGS) -I.. $(PLATFORM_CFLAGS_RISCOS) -mpoke-function-name \
-#	-include netsurf/utils/memdebug.h
+	$(WARNFLAGS) -I. $(PLATFORM_CFLAGS_RISCOS) -mpoke-function-name \
+#	-include utils/memdebug.h
 CFLAGS_RISCOS_SMALL = $(CFLAGS_RISCOS) -Dsmall
 CFLAGS_NCOS = $(CFLAGS_RISCOS) -Dncos
-CFLAGS_DEBUG = -std=c99 -D_BSD_SOURCE -DDEBUG_BUILD $(WARNFLAGS) -I.. \
+CFLAGS_DEBUG = -std=c99 -D_BSD_SOURCE -DDEBUG_BUILD $(WARNFLAGS) -I. \
 	$(PLATFORM_CFLAGS_DEBUG) -g
 CFLAGS_GTK = -std=c99 -Dgtk -Dnsgtk \
 	-D_BSD_SOURCE \
 	-DGTK_DISABLE_DEPRECATED \
 	-D_POSIX_C_SOURCE \
-	$(WARNFLAGS) -I.. -g -O2 -Wformat=2 \
+	$(WARNFLAGS) -I. -g -O2 -Wformat=2 \
 	`pkg-config --cflags libglade-2.0 gtk+-2.0` `xml2-config --cflags`
 
 # Stop GCC under Cygwin throwing a fit
@@ -209,10 +209,10 @@ $(OBJDIR_NCOS)/%.o : %.s
 # available), remove */*.[ch] from the line below.
 # Under RISC OS, you may require *Set UnixFS$sfix "", if perl gives
 # "No such file or directory" errors.
-depend: */*.[ch]
+depend: css/css_enum.c css/parser.c css/scanner.c utils/translit.c */*.[ch]
 	@echo "--> modified files $?"
 	@echo "--> updating dependencies"
 	@-mkdir -p $(OBJDIR_RISCOS) $(OBJDIR_RISCOS_SMALL) $(OBJDIR_NCOS) $(OBJDIR_DEBUG) $(OBJDIR_GTK)
-	@perl scandeps netsurf $(OBJDIR_RISCOS) $(OBJDIR_RISCOS_SMALL) $(OBJDIR_NCOS) $(OBJDIR_DEBUG) $(OBJDIR_GTK) -- $^ > depend
+	@perl scandeps $(OBJDIR_RISCOS) $(OBJDIR_RISCOS_SMALL) $(OBJDIR_NCOS) $(OBJDIR_DEBUG) $(OBJDIR_GTK) -- $^ > depend
 
 include depend

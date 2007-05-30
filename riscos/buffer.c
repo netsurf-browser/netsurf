@@ -11,15 +11,15 @@
 #include <swis.h>
 #include "oslib/colourtrans.h"
 #include "oslib/os.h"
-#include "oslib/osspriteop.h"
+#include <oslib/osspriteop.h>
 #include "oslib/wimp.h"
 #include "oslib/wimpreadsysinfo.h"
-#include "netsurf/riscos/buffer.h"
-#include "netsurf/riscos/gui.h"
-#include "netsurf/riscos/options.h"
-#include "netsurf/riscos/tinct.h"
-#include "netsurf/riscos/wimp.h"
-#include "netsurf/utils/log.h"
+#include "riscos/buffer.h"
+#include "riscos/gui.h"
+#include "riscos/options.h"
+#include "riscos/tinct.h"
+#include "riscos/wimp.h"
+#include "utils/log.h"
 //#define NDEBUG
 #define BUFFER_EXCLUSIVE_USER_REDRAW "Only support pure user redraw (faster)"
 //#define BUFFER_EMULATE_32BPP "Redirect to a 32bpp sprite and plot with Tinct"

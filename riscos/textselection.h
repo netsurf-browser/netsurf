@@ -13,7 +13,7 @@
 #define _NETSURF_RISCOS_TEXTSELECTION_H_
 
 #include "oslib/wimp.h"
-#include "netsurf/desktop/gui.h"
+#include "desktop/gui.h"
 
 
 void ro_gui_selection_drag_end(struct gui_window *g, wimp_dragged *drag);

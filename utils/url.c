@@ -19,9 +19,9 @@
 #include <strings.h>
 #include <sys/types.h>
 #include <regex.h>
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/url.h"
-#include "netsurf/utils/utils.h"
+#include "utils/log.h"
+#include "utils/url.h"
+#include "utils/utils.h"
 
 struct url_components_internal {
 	char *buffer;	/* buffer used for all the following data */

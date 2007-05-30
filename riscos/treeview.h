@@ -13,10 +13,10 @@
 #define _NETSURF_RISCOS_TREEVIEW_H_
 
 #include <stdbool.h>
-#include "oslib/osspriteop.h"
+#include <oslib/osspriteop.h>
 #include "oslib/wimp.h"
-#include "netsurf/desktop/tree.h"
-#include "netsurf/image/bitmap.h"
+#include "desktop/tree.h"
+#include "image/bitmap.h"
 
 #define TREE_TEXT_HEIGHT 40
 #define TREE_SPRITE_WIDTH 40	/* text plus sprite entries only */

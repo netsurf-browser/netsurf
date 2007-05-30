@@ -15,17 +15,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "netsurf/content/content.h"
-#include "netsurf/content/urldb.h"
-#include "netsurf/css/css.h"
-#include "netsurf/desktop/gui.h"
-#include "netsurf/desktop/history_core.h"
-#include "netsurf/desktop/plotters.h"
-#include "netsurf/image/bitmap.h"
-#include "netsurf/render/font.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/url.h"
-#include "netsurf/utils/utils.h"
+#include "content/content.h"
+#include "content/urldb.h"
+#include "css/css.h"
+#include "desktop/gui.h"
+#include "desktop/history_core.h"
+#include "desktop/plotters.h"
+#include "image/bitmap.h"
+#include "render/font.h"
+#include "utils/log.h"
+#include "utils/url.h"
+#include "utils/utils.h"
 
 
 #define WIDTH 100

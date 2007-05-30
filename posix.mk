@@ -30,7 +30,7 @@ NCRUNIMAGE = !NCNetSurf/!RunImage,ff8
 
 # special cases - in here, cos RISC OS can't cope :(
 css/css_enum.c css/css_enum.h: css/css_enums css/makeenum
-	cd ..; perl netsurf/css/makeenum netsurf/css/css_enum < netsurf/css/css_enums
+	perl css/makeenum css/css_enum < css/css_enums
 css/parser.c css/parser.h: css/parser.y
 	-cd css; lemon parser.y
 css/scanner.c: css/scanner.l

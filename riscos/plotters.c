@@ -13,12 +13,12 @@
 #include "oslib/colourtrans.h"
 #include "oslib/draw.h"
 #include "oslib/os.h"
-#include "netsurf/desktop/plotters.h"
-#include "netsurf/render/font.h"
-#include "netsurf/riscos/bitmap.h"
-#include "netsurf/riscos/image.h"
-#include "netsurf/riscos/gui.h"
-#include "netsurf/utils/log.h"
+#include "desktop/plotters.h"
+#include "render/font.h"
+#include "riscos/bitmap.h"
+#include "riscos/image.h"
+#include "riscos/gui.h"
+#include "utils/log.h"
 
 
 

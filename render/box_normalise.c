@@ -14,15 +14,15 @@
 
 #include <assert.h>
 #include <stdbool.h>
-#include "netsurf/css/css.h"
-#include "netsurf/render/box.h"
-#include "netsurf/render/table.h"
+#include "css/css.h"
+#include "render/box.h"
+#include "render/table.h"
 #ifdef riscos
-#include "netsurf/desktop/gui.h"
+#include "desktop/gui.h"
 #endif
 #define NDEBUG
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/talloc.h"
+#include "utils/log.h"
+#include "utils/talloc.h"
 
 
 struct span_info {

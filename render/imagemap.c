@@ -10,11 +10,11 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <string.h>
-#include "netsurf/content/content.h"
-#include "netsurf/render/box.h"
-#include "netsurf/render/imagemap.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/utils.h"
+#include "content/content.h"
+#include "render/box.h"
+#include "render/imagemap.h"
+#include "utils/log.h"
+#include "utils/utils.h"
 
 #define HASH_SIZE 31 /* fixed size hash table */
 

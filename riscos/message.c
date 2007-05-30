@@ -14,9 +14,9 @@
 #include <stdlib.h>
 #include "oslib/os.h"
 #include "oslib/wimp.h"
-#include "netsurf/riscos/message.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/utils.h"
+#include "riscos/message.h"
+#include "utils/log.h"
+#include "utils/utils.h"
 
 
 struct active_message {

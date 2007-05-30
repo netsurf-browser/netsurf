@@ -5,13 +5,13 @@
  * Copyright 2006 Richard Wilson <info@tinct.net>
  */
 
-#include "netsurf/desktop/options.h"
-#include "netsurf/riscos/bitmap.h"
-#include "netsurf/riscos/options.h"
-#include "netsurf/riscos/wimp.h"
-#include "netsurf/riscos/wimp_event.h"
-#include "netsurf/riscos/dialog.h"
-#include "netsurf/riscos/configure/configure.h"
+#include "desktop/options.h"
+#include "riscos/bitmap.h"
+#include "riscos/options.h"
+#include "riscos/wimp.h"
+#include "riscos/wimp_event.h"
+#include "riscos/dialog.h"
+#include "riscos/configure/configure.h"
 
 
 #define MEMORY_DIRECT_FIELD 3

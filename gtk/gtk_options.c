@@ -10,13 +10,13 @@
 #include <string.h>
 #include <gtk/gtk.h>
 #include <glade/glade.h>
-#include "netsurf/utils/log.h"
-#include "netsurf/desktop/options.h"
-#include "netsurf/gtk/options.h"
-#include "netsurf/gtk/gtk_gui.h"
-#include "netsurf/gtk/gtk_scaffolding.h"
-#include "netsurf/gtk/gtk_options.h"
-#include "netsurf/gtk/gtk_window.h"
+#include "utils/log.h"
+#include "desktop/options.h"
+#include "gtk/options.h"
+#include "gtk/gtk_gui.h"
+#include "gtk/gtk_scaffolding.h"
+#include "gtk/gtk_options.h"
+#include "gtk/gtk_window.h"
 
 GtkWindow *wndChoices;
 

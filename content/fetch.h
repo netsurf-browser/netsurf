@@ -15,7 +15,7 @@
 #include <stdbool.h>
 #include <sys/select.h>
 #include <curl/curl.h>
-#include "netsurf/utils/config.h"
+#include "utils/config.h"
 
 typedef enum {
               FETCH_TYPE,

@@ -15,7 +15,7 @@
 #define _NETSURF_RENDER_DIRECTORY_H_
 
 #include <stdbool.h>
-#include "netsurf/content/content_type.h"
+#include "content/content_type.h"
 
 
 bool directory_create(struct content *c, const char *params[]);

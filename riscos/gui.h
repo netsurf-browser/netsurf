@@ -15,9 +15,9 @@
 #include <oslib/osspriteop.h>
 #include <oslib/wimp.h>
 #include <rufl.h>
-#include "netsurf/desktop/browser.h"
-#include "netsurf/content/content_type.h"
-#include "netsurf/utils/config.h"
+#include "desktop/browser.h"
+#include "content/content_type.h"
+#include "utils/config.h"
 
 #define RISCOS5 0xAA
 

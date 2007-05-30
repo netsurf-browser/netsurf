@@ -12,12 +12,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "oslib/wimp.h"
-#include "netsurf/content/content.h"
-#include "netsurf/riscos/dialog.h"
-#include "netsurf/riscos/wimp_event.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/talloc.h"
-#include "netsurf/utils/utils.h"
+#include "content/content.h"
+#include "riscos/dialog.h"
+#include "riscos/wimp_event.h"
+#include "utils/log.h"
+#include "utils/talloc.h"
+#include "utils/utils.h"
 
 /** Update interval / cs. */
 #define DEBUGWIN_UPDATE 500

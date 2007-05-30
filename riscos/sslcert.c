@@ -9,7 +9,7 @@
  * SSL Certificate verification UI (implementation)
  */
 
-#include "netsurf/utils/config.h"
+#include "utils/config.h"
 
 #ifdef WITH_SSL
 
@@ -18,19 +18,19 @@
 #include <stdio.h>
 #include <string.h>
 #include "oslib/wimp.h"
-#include "netsurf/content/content.h"
-#include "netsurf/content/fetch.h"
-#include "netsurf/content/urldb.h"
-#include "netsurf/desktop/browser.h"
-#include "netsurf/desktop/gui.h"
-#include "netsurf/desktop/tree.h"
-#include "netsurf/riscos/dialog.h"
-#include "netsurf/riscos/textarea.h"
-#include "netsurf/riscos/treeview.h"
-#include "netsurf/riscos/wimp_event.h"
-#include "netsurf/riscos/wimp.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/utils.h"
+#include "content/content.h"
+#include "content/fetch.h"
+#include "content/urldb.h"
+#include "desktop/browser.h"
+#include "desktop/gui.h"
+#include "desktop/tree.h"
+#include "riscos/dialog.h"
+#include "riscos/textarea.h"
+#include "riscos/treeview.h"
+#include "riscos/wimp_event.h"
+#include "riscos/wimp.h"
+#include "utils/log.h"
+#include "utils/utils.h"
 
 #define ICON_SSL_PANE 1
 #define ICON_SSL_REJECT 3

@@ -9,7 +9,7 @@
 #define _NETSURF_RISCOS_QUERY_H
 #include <stdbool.h>
 #include "oslib/wimp.h"
-#include "netsurf/utils/utils.h"
+#include "utils/utils.h"
 
 struct gui_query_window;
 

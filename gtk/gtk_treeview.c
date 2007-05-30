@@ -10,7 +10,7 @@
  */
 
 
-#include "netsurf/desktop/tree.h"
+#include "desktop/tree.h"
 
 
 /**

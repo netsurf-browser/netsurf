@@ -12,22 +12,22 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <string.h>
-#include "netsurf/utils/config.h"
-#include "netsurf/content/content.h"
-#include "netsurf/css/css.h"
-#include "netsurf/desktop/gui.h"
-#include "netsurf/desktop/plotters.h"
-#include "netsurf/desktop/knockout.h"
-#include "netsurf/desktop/selection.h"
-#include "netsurf/desktop/textinput.h"
-#include "netsurf/desktop/options.h"
-#include "netsurf/render/box.h"
-#include "netsurf/render/font.h"
-#include "netsurf/render/form.h"
-#include "netsurf/render/layout.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/messages.h"
-#include "netsurf/utils/utils.h"
+#include "utils/config.h"
+#include "content/content.h"
+#include "css/css.h"
+#include "desktop/gui.h"
+#include "desktop/plotters.h"
+#include "desktop/knockout.h"
+#include "desktop/selection.h"
+#include "desktop/textinput.h"
+#include "desktop/options.h"
+#include "render/box.h"
+#include "render/font.h"
+#include "render/form.h"
+#include "render/layout.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
 
 
 static bool html_redraw_box(struct box *box,

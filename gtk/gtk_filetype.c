@@ -15,10 +15,10 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "netsurf/gtk/gtk_filetype.h"
-#include "netsurf/content/fetch.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/hashtable.h"
+#include "gtk/gtk_filetype.h"
+#include "content/fetch.h"
+#include "utils/log.h"
+#include "utils/hashtable.h"
 
 static struct hash_table *mime_hash = NULL;
 

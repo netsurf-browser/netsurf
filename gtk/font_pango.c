@@ -15,13 +15,13 @@
 #include <assert.h>
 #include <stdio.h>
 #include <gtk/gtk.h>
-#include "netsurf/css/css.h"
-#include "netsurf/gtk/font_pango.h"
-#include "netsurf/gtk/gtk_plotters.h"
-#include "netsurf/render/font.h"
-#include "netsurf/utils/utils.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/desktop/options.h"
+#include "css/css.h"
+#include "gtk/font_pango.h"
+#include "gtk/gtk_plotters.h"
+#include "render/font.h"
+#include "utils/utils.h"
+#include "utils/log.h"
+#include "desktop/options.h"
 
 /* Until we can consider the descenders etc, we need to not render using cairo */
 #undef CAIRO_VERSION

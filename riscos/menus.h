@@ -10,7 +10,7 @@
 
 #include <stdbool.h>
 #include "oslib/wimp.h"
-#include "netsurf/riscos/gui.h"
+#include "riscos/gui.h"
 
 extern wimp_menu *iconbar_menu, *browser_menu, *hotlist_menu, *cookies_menu,
 	*global_history_menu, *image_quality_menu,

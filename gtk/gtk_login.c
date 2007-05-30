@@ -11,16 +11,16 @@
 #include <assert.h>
 #include <gtk/gtk.h>
 #include <glade/glade.h>
-#include "netsurf/utils/log.h"
-#include "netsurf/gtk/gtk_gui.h"
-#include "netsurf/content/content.h"
-#include "netsurf/content/urldb.h"
-#include "netsurf/desktop/browser.h"
-#include "netsurf/desktop/401login.h"
-#include "netsurf/desktop/gui.h"
-#include "netsurf/utils/messages.h"
-#include "netsurf/utils/url.h"
-#include "netsurf/utils/utils.h"
+#include "utils/log.h"
+#include "gtk/gtk_gui.h"
+#include "content/content.h"
+#include "content/urldb.h"
+#include "desktop/browser.h"
+#include "desktop/401login.h"
+#include "desktop/gui.h"
+#include "utils/messages.h"
+#include "utils/url.h"
+#include "utils/utils.h"
 
 struct session_401 {
 	char *url;				/**< URL being fetched */

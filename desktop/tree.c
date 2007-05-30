@@ -14,12 +14,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "netsurf/content/urldb.h"
-#include "netsurf/desktop/tree.h"
-#include "netsurf/desktop/options.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/messages.h"
-#include "netsurf/utils/utils.h"
+#include "content/urldb.h"
+#include "desktop/tree.h"
+#include "desktop/options.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
 
 static void tree_draw_node(struct tree *tree, struct node *node, int clip_x,
 		int clip_y, int clip_width, int clip_height);

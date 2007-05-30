@@ -21,13 +21,13 @@
 #include "oslib/wimp.h"
 #include "oslib/wimpextend.h"
 #include "oslib/wimpspriteop.h"
-#include "netsurf/desktop/gui.h"
-#include "netsurf/riscos/gui.h"
-#include "netsurf/riscos/theme.h"
-#include "netsurf/riscos/wimp.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/utf8.h"
-#include "netsurf/utils/utils.h"
+#include "desktop/gui.h"
+#include "riscos/gui.h"
+#include "riscos/theme.h"
+#include "riscos/wimp.h"
+#include "utils/log.h"
+#include "utils/utf8.h"
+#include "utils/utils.h"
 
 
 static void ro_gui_wimp_cache_furniture_sizes(wimp_w w);

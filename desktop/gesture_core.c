@@ -9,8 +9,8 @@
  * Mouse gesture core (implementation)
  */
 
-#include "netsurf/utils/log.h"
-#include "netsurf/desktop/gesture_core.h"
+#include "utils/log.h"
+#include "desktop/gesture_core.h"
 #include <string.h>
 #include <math.h>
 #include <stdlib.h>

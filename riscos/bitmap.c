@@ -19,18 +19,18 @@
 #include <swis.h>
 #include <unixlib/local.h>
 #include "oslib/osfile.h"
-#include "oslib/osspriteop.h"
-#include "netsurf/content/content.h"
-#include "netsurf/image/bitmap.h"
-#include "netsurf/riscos/bitmap.h"
-#include "netsurf/riscos/image.h"
-#include "netsurf/riscos/options.h"
-#include "netsurf/riscos/palettes.h"
-#include "netsurf/riscos/sprite.h"
-#include "netsurf/riscos/tinct.h"
-#include "netsurf/utils/filename.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/utils.h"
+#include <oslib/osspriteop.h>
+#include "content/content.h"
+#include "image/bitmap.h"
+#include "riscos/bitmap.h"
+#include "riscos/image.h"
+#include "riscos/options.h"
+#include "riscos/palettes.h"
+#include "riscos/sprite.h"
+#include "riscos/tinct.h"
+#include "utils/filename.h"
+#include "utils/log.h"
+#include "utils/utils.h"
 
 /** Colour in the overlay sprite that allows the bitmap to show through */
 #define OVERLAY_INDEX 0xfe

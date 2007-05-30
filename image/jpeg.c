@@ -19,14 +19,14 @@
 #include <stdlib.h>
 #define JPEG_INTERNAL_OPTIONS
 #include "jpeglib.h"
-#include "netsurf/utils/config.h"
-#include "netsurf/content/content.h"
-#include "netsurf/desktop/plotters.h"
-#include "netsurf/image/bitmap.h"
-#include "netsurf/image/jpeg.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/messages.h"
-#include "netsurf/utils/utils.h"
+#include "utils/config.h"
+#include "content/content.h"
+#include "desktop/plotters.h"
+#include "image/bitmap.h"
+#include "image/jpeg.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
 
 
 /* We prefer the library to be configured with these options to save

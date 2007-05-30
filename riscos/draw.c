@@ -14,14 +14,14 @@
 #include <string.h>
 #include <stdlib.h>
 #include "oslib/drawfile.h"
-#include "netsurf/utils/config.h"
-#include "netsurf/desktop/plotters.h"
-#include "netsurf/content/content.h"
-#include "netsurf/riscos/draw.h"
-#include "netsurf/riscos/gui.h"
-#include "netsurf/utils/utils.h"
-#include "netsurf/utils/messages.h"
-#include "netsurf/utils/log.h"
+#include "utils/config.h"
+#include "desktop/plotters.h"
+#include "content/content.h"
+#include "riscos/draw.h"
+#include "riscos/gui.h"
+#include "utils/utils.h"
+#include "utils/messages.h"
+#include "utils/log.h"
 
 #ifdef WITH_DRAW
 

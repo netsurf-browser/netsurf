@@ -19,12 +19,12 @@
 #include <sys/time.h>
 #include <regex.h>
 #include <time.h>
-#include "netsurf/utils/config.h"
+#include "utils/config.h"
 #define NDEBUG
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/messages.h"
-#include "netsurf/utils/utf8.h"
-#include "netsurf/utils/utils.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utf8.h"
+#include "utils/utils.h"
 
 
 char * strip(char * const s)

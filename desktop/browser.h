@@ -16,7 +16,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <time.h>
-#include "netsurf/render/html.h"
+#include "render/html.h"
 
 struct box;
 struct content;

@@ -18,15 +18,15 @@
 #include <math.h>
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
-#include "netsurf/desktop/plotters.h"
-#include "netsurf/gtk/font_pango.h"
-#include "netsurf/gtk/gtk_plotters.h"
-#include "netsurf/gtk/gtk_scaffolding.h"
-#include "netsurf/render/font.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/desktop/options.h"
-#include "netsurf/gtk/options.h"
-#include "netsurf/gtk/gtk_bitmap.h"
+#include "desktop/plotters.h"
+#include "gtk/font_pango.h"
+#include "gtk/gtk_plotters.h"
+#include "gtk/gtk_scaffolding.h"
+#include "render/font.h"
+#include "utils/log.h"
+#include "desktop/options.h"
+#include "gtk/options.h"
+#include "gtk/gtk_bitmap.h"
 
 GtkWidget *current_widget;
 GdkDrawable *current_drawable;

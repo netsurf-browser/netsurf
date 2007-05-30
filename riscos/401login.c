@@ -11,18 +11,18 @@
 #include <stdbool.h>
 #include <string.h>
 #include "oslib/wimp.h"
-#include "netsurf/utils/config.h"
-#include "netsurf/content/content.h"
-#include "netsurf/content/urldb.h"
-#include "netsurf/desktop/browser.h"
-#include "netsurf/desktop/401login.h"
-#include "netsurf/desktop/gui.h"
-#include "netsurf/riscos/dialog.h"
-#include "netsurf/riscos/wimp_event.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/messages.h"
-#include "netsurf/utils/url.h"
-#include "netsurf/utils/utils.h"
+#include "utils/config.h"
+#include "content/content.h"
+#include "content/urldb.h"
+#include "desktop/browser.h"
+#include "desktop/401login.h"
+#include "desktop/gui.h"
+#include "riscos/dialog.h"
+#include "riscos/wimp_event.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/url.h"
+#include "utils/utils.h"
 
 #ifdef WITH_AUTH
 

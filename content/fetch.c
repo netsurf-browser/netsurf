@@ -32,20 +32,20 @@
 #include <unixlib/local.h>
 #endif
 #include <curl/curl.h>
-#include "netsurf/utils/config.h"
+#include "utils/config.h"
 #ifdef WITH_SSL
 #include <openssl/ssl.h>
 #endif
-#include "netsurf/content/fetch.h"
-#include "netsurf/content/urldb.h"
-#include "netsurf/desktop/netsurf.h"
-#include "netsurf/desktop/options.h"
-#include "netsurf/render/form.h"
+#include "content/fetch.h"
+#include "content/urldb.h"
+#include "desktop/netsurf.h"
+#include "desktop/options.h"
+#include "render/form.h"
 #undef NDEBUG
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/messages.h"
-#include "netsurf/utils/url.h"
-#include "netsurf/utils/utils.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/url.h"
+#include "utils/utils.h"
 
 
 bool fetch_active;	/**< Fetches in progress, please call fetch_poll(). */

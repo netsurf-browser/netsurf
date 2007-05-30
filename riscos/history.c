@@ -16,16 +16,16 @@
 #include <stdlib.h>
 #include <string.h>
 #include "oslib/wimp.h"
-#include "netsurf/desktop/history_core.h"
-#include "netsurf/desktop/plotters.h"
-#include "netsurf/riscos/dialog.h"
-#include "netsurf/riscos/options.h"
-#include "netsurf/riscos/gui.h"
-#include "netsurf/riscos/wimp.h"
-#include "netsurf/riscos/wimp_event.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/url.h"
-#include "netsurf/utils/utils.h"
+#include "desktop/history_core.h"
+#include "desktop/plotters.h"
+#include "riscos/dialog.h"
+#include "riscos/options.h"
+#include "riscos/gui.h"
+#include "riscos/wimp.h"
+#include "riscos/wimp_event.h"
+#include "utils/log.h"
+#include "utils/url.h"
+#include "utils/utils.h"
 
 
 static struct browser_window *history_bw;

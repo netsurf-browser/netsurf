@@ -8,7 +8,7 @@
 #ifndef _NETSURF_RENDER_IMAGEMAP_H_
 #define _NETSURF_RENDER_IMAGEMAP_H_
 
-#include "libxml/HTMLtree.h"
+#include <libxml/HTMLtree.h>
 
 struct content;
 

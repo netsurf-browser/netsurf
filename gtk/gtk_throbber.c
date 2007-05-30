@@ -7,10 +7,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "netsurf/utils/log.h"
-#include "netsurf/image/gifread.h"
-#include "netsurf/gtk/gtk_throbber.h"
-#include "netsurf/gtk/gtk_bitmap.h"
+#include "utils/log.h"
+#include "image/gifread.h"
+#include "gtk/gtk_throbber.h"
+#include "gtk/gtk_bitmap.h"
 
 struct nsgtk_throbber *nsgtk_throbber = NULL;
 

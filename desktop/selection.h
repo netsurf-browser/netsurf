@@ -12,8 +12,8 @@
 #ifndef _NETSURF_DESKTOP_SELECTION_H_
 #define _NETSURF_DESKTOP_SELECTION_H_
 
-#include "netsurf/desktop/browser.h"
-#include "netsurf/render/box.h"
+#include "desktop/browser.h"
+#include "render/box.h"
 
 
 typedef enum {

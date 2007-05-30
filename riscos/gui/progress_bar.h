@@ -10,7 +10,7 @@
  */
 
 #include <stdbool.h>
-#include "oslib/osspriteop.h"
+#include <oslib/osspriteop.h>
 #include "oslib/wimp.h"
 
 #ifndef _NETSURF_RISCOS_PROGRESS_BAR_H_

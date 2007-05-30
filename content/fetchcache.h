@@ -17,7 +17,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "netsurf/content/content.h"
+#include "content/content.h"
 
 struct form_successful_control;
 

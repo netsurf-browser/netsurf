@@ -9,14 +9,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "netsurf/riscos/dialog.h"
-#include "netsurf/riscos/query.h"
-#include "netsurf/riscos/wimp.h"
-#include "netsurf/riscos/wimp_event.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/messages.h"
-#include "netsurf/utils/utf8.h"
-#include "netsurf/utils/utils.h"
+#include "riscos/dialog.h"
+#include "riscos/query.h"
+#include "riscos/wimp.h"
+#include "riscos/wimp_event.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utf8.h"
+#include "utils/utils.h"
 
 #define ICON_QUERY_MESSAGE 0
 #define ICON_QUERY_YES 1

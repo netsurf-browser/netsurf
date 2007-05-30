@@ -25,8 +25,8 @@
 #define _NETSURF_CSS_CSS_H_
 
 #include <stdbool.h>
-#include "libxml/HTMLparser.h"
-#include "netsurf/css/css_enum.h"
+#include <libxml/HTMLparser.h>
+#include "css/css_enum.h"
 
 
 typedef unsigned long colour;  /* 0xbbggrr */

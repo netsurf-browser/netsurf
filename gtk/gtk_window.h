@@ -8,8 +8,8 @@
 #ifndef NETSURF_GTK_WINDOW_H
 #define NETSURF_GTK_WINDOW_H 1
 
-#include "netsurf/desktop/gui.h"
-#include "netsurf/gtk/gtk_scaffolding.h"
+#include "desktop/gui.h"
+#include "gtk/gtk_scaffolding.h"
 
 void nsgtk_window_reflow_content(struct gui_window *g);
 void nsgtk_reflow_all_windows(void);

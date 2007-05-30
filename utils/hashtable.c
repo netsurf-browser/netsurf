@@ -16,8 +16,8 @@
 #include <assert.h>
 #include <stdio.h>
 #endif
-#include "netsurf/utils/hashtable.h"
-#include "netsurf/utils/log.h"
+#include "utils/hashtable.h"
+#include "utils/log.h"
 
 
 struct hash_entry {

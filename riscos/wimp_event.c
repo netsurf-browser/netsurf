@@ -18,14 +18,14 @@
 #include "oslib/osbyte.h"
 #include "oslib/serviceinternational.h"
 #include "oslib/wimp.h"
-#include "netsurf/desktop/gui.h"
-#include "netsurf/riscos/dialog.h"
-#include "netsurf/riscos/menus.h"
-#include "netsurf/riscos/ucstables.h"
-#include "netsurf/riscos/wimp.h"
-#include "netsurf/riscos/wimp_event.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/utils.h"
+#include "desktop/gui.h"
+#include "riscos/dialog.h"
+#include "riscos/menus.h"
+#include "riscos/ucstables.h"
+#include "riscos/wimp.h"
+#include "riscos/wimp_event.h"
+#include "utils/log.h"
+#include "utils/utils.h"
 
 #define WIN_HASH_SIZE 32
 #define WIN_HASH(w) (((unsigned)(w) >> 5) % WIN_HASH_SIZE)

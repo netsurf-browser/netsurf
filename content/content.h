@@ -16,35 +16,35 @@
 #define _NETSURF_DESKTOP_CONTENT_H_
 
 #include <stdint.h>
-#include "netsurf/utils/config.h"
-#include "netsurf/content/content_type.h"
-#include "netsurf/css/css.h"
-#include "netsurf/render/html.h"
-#include "netsurf/render/textplain.h"
+#include "utils/config.h"
+#include "content/content_type.h"
+#include "css/css.h"
+#include "render/html.h"
+#include "render/textplain.h"
 #ifdef WITH_JPEG
-#include "netsurf/image/jpeg.h"
+#include "image/jpeg.h"
 #endif
 #ifdef WITH_GIF
-#include "netsurf/image/gif.h"
+#include "image/gif.h"
 #endif
 #ifdef WITH_BMP
-#include "netsurf/image/bmp.h"
-#include "netsurf/image/ico.h"
+#include "image/bmp.h"
+#include "image/ico.h"
 #endif
 #ifdef WITH_PLUGIN
-#include "netsurf/riscos/plugin.h"
+#include "riscos/plugin.h"
 #endif
 #ifdef WITH_MNG
-#include "netsurf/image/mng.h"
+#include "image/mng.h"
 #endif
 #ifdef WITH_SPRITE
-#include "netsurf/riscos/sprite.h"
+#include "riscos/sprite.h"
 #endif
 #ifdef WITH_DRAW
-#include "netsurf/riscos/draw.h"
+#include "riscos/draw.h"
 #endif
 #ifdef WITH_ARTWORKS
-#include "netsurf/riscos/artworks.h"
+#include "riscos/artworks.h"
 #endif
 
 

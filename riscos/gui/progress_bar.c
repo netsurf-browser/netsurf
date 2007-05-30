@@ -15,16 +15,16 @@
 #include <swis.h>
 #include "oslib/colourtrans.h"
 #include "oslib/os.h"
-#include "oslib/osspriteop.h"
+#include <oslib/osspriteop.h>
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
-#include "netsurf/desktop/plotters.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/utils.h"
-#include "netsurf/riscos/gui.h"
-#include "netsurf/riscos/tinct.h"
-#include "netsurf/riscos/wimp_event.h"
-#include "netsurf/riscos/gui/progress_bar.h"
+#include "desktop/plotters.h"
+#include "utils/log.h"
+#include "utils/utils.h"
+#include "riscos/gui.h"
+#include "riscos/tinct.h"
+#include "riscos/wimp_event.h"
+#include "riscos/gui/progress_bar.h"
 
 #define MARGIN 6
 

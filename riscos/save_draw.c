@@ -16,13 +16,13 @@
 #include <oslib/draw.h>
 #include <oslib/osfile.h>
 #include <pencil.h>
-#include "netsurf/content/content.h"
-#include "netsurf/desktop/plotters.h"
-#include "netsurf/riscos/bitmap.h"
-#include "netsurf/riscos/gui.h"
-#include "netsurf/riscos/save_draw.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/utils.h"
+#include "content/content.h"
+#include "desktop/plotters.h"
+#include "riscos/bitmap.h"
+#include "riscos/gui.h"
+#include "riscos/save_draw.h"
+#include "utils/log.h"
+#include "utils/utils.h"
 
 
 static bool ro_save_draw_clg(colour c);

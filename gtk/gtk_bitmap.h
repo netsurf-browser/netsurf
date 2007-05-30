@@ -10,7 +10,7 @@
 
 #include <gdk/gdk.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
-#include "netsurf/image/bitmap.h"
+#include "image/bitmap.h"
 
 GdkPixbuf *gtk_bitmap_get_primary(struct bitmap*);
 GdkPixbuf *gtk_bitmap_get_pretile_x(struct bitmap*);

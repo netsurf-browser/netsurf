@@ -17,16 +17,16 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include "oslib/osspriteop.h"
-#include "netsurf/utils/config.h"
-#include "netsurf/desktop/plotters.h"
-#include "netsurf/content/content.h"
-#include "netsurf/riscos/gui.h"
-#include "netsurf/riscos/image.h"
-#include "netsurf/riscos/sprite.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/messages.h"
-#include "netsurf/utils/utils.h"
+#include <oslib/osspriteop.h>
+#include "utils/config.h"
+#include "desktop/plotters.h"
+#include "content/content.h"
+#include "riscos/gui.h"
+#include "riscos/image.h"
+#include "riscos/sprite.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
 
 #ifdef WITH_SPRITE
 

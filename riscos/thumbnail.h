@@ -10,7 +10,7 @@
  * Page thumbnail creation (interface).
  */
 
-#include "oslib/osspriteop.h"
-#include "netsurf/image/bitmap.h"
+#include <oslib/osspriteop.h>
+#include "image/bitmap.h"
 
 osspriteop_area *thumbnail_convert_8bpp(struct bitmap *bitmap);

@@ -80,20 +80,20 @@
 #include <strings.h>
 #define CSS_INTERNALS
 #undef NDEBUG
-#include "netsurf/utils/config.h"
-#include "netsurf/content/content.h"
-#include "netsurf/content/fetch.h"
-#include "netsurf/content/fetchcache.h"
-#include "netsurf/css/css.h"
-#include "netsurf/css/parser.h"
+#include "utils/config.h"
+#include "content/content.h"
+#include "content/fetch.h"
+#include "content/fetchcache.h"
+#include "css/css.h"
+#include "css/parser.h"
 #ifdef riscos
-#include "netsurf/desktop/gui.h"
+#include "desktop/gui.h"
 #endif
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/messages.h"
-#include "netsurf/utils/talloc.h"
-#include "netsurf/utils/url.h"
-#include "netsurf/utils/utils.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/talloc.h"
+#include "utils/url.h"
+#include "utils/utils.h"
 
 
 struct css_working_stylesheet {

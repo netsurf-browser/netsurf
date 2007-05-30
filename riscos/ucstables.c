@@ -17,10 +17,10 @@
 #include "oslib/osbyte.h"
 #include "oslib/territory.h"
 
-#include "netsurf/riscos/ucstables.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/utf8.h"
-#include "netsurf/utils/utils.h"
+#include "riscos/ucstables.h"
+#include "utils/log.h"
+#include "utils/utf8.h"
+#include "utils/utils.h"
 
 /* Common values (ASCII) */
 #define common								\

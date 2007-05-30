@@ -41,9 +41,9 @@ typedef enum { GUI_POINTER_DEFAULT, GUI_POINTER_POINT, GUI_POINTER_CARET,
                GUI_POINTER_PROGRESS } gui_pointer_shape;
 
 #include <stdbool.h>
-#include "netsurf/utils/config.h"
-#include "netsurf/content/content.h"
-#include "netsurf/desktop/browser.h"
+#include "utils/config.h"
+#include "content/content.h"
+#include "desktop/browser.h"
 
 extern struct gui_window *search_current_window;
 

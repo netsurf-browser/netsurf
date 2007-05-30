@@ -7,11 +7,11 @@
 
 #include <gtk/gtk.h>
 #include <glade/glade.h>
-#include "netsurf/utils/log.h"
-#include "netsurf/content/urldb.h"
-#include "netsurf/gtk/gtk_history.h"
-#include "netsurf/gtk/gtk_gui.h"
-#include "netsurf/gtk/gtk_window.h"
+#include "utils/log.h"
+#include "content/urldb.h"
+#include "gtk/gtk_history.h"
+#include "gtk/gtk_gui.h"
+#include "gtk/gtk_window.h"
 
 enum
 {

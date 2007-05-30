@@ -9,15 +9,15 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include "netsurf/utils/config.h"
-#include "netsurf/content/content.h"
-#include "netsurf/desktop/plotters.h"
-#include "netsurf/image/bitmap.h"
-#include "netsurf/image/bmpread.h"
-#include "netsurf/image/ico.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/messages.h"
-#include "netsurf/utils/utils.h"
+#include "utils/config.h"
+#include "content/content.h"
+#include "desktop/plotters.h"
+#include "image/bitmap.h"
+#include "image/bmpread.h"
+#include "image/ico.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
 
 #ifdef WITH_BMP
 

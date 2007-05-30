@@ -8,7 +8,7 @@
 #ifndef __THEMES_H__
 #define __THEMES_H__
 
-#include "netsurf/image/bitmap.h"
+#include "image/bitmap.h"
 
 struct theme_descriptor;
 

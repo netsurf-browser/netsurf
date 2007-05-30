@@ -17,10 +17,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
-#include "netsurf/utils/filename.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/url.h"
-#include "netsurf/utils/utils.h"
+#include "utils/filename.h"
+#include "utils/log.h"
+#include "utils/url.h"
+#include "utils/utils.h"
 
 #define FULL_WORD (unsigned int)4294967295
 /* '0' + '0' * 10 */

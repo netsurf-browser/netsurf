@@ -12,9 +12,9 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
-#include "netsurf/css/css.h"
-#include "netsurf/render/list.h"
-#include "netsurf/utils/log.h"
+#include "css/css.h"
+#include "render/list.h"
+#include "utils/log.h"
 
 
 struct list_counter {

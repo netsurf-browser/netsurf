@@ -10,17 +10,17 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include "netsurf/utils/config.h"
-#include "netsurf/content/content.h"
-#include "netsurf/desktop/browser.h"
-#include "netsurf/desktop/options.h"
-#include "netsurf/desktop/plotters.h"
-#include "netsurf/image/bitmap.h"
-#include "netsurf/image/gif.h"
-#include "netsurf/image/gifread.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/messages.h"
-#include "netsurf/utils/utils.h"
+#include "utils/config.h"
+#include "content/content.h"
+#include "desktop/browser.h"
+#include "desktop/options.h"
+#include "desktop/plotters.h"
+#include "image/bitmap.h"
+#include "image/gif.h"
+#include "image/gifread.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
 
 
 /*	GIF FUNCTIONALITY

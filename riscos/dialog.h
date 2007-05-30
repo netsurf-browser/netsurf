@@ -11,10 +11,10 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <oslib/wimp.h>
-#include "netsurf/riscos/theme.h"
+#include "riscos/theme.h"
 
 
-#include "netsurf/riscos/gui.h"
+#include "riscos/gui.h"
 
 
 

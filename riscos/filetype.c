@@ -10,12 +10,12 @@
 #include <unixlib/local.h>
 #include "oslib/mimemap.h"
 #include "oslib/osfile.h"
-#include "netsurf/content/content.h"
-#include "netsurf/content/fetch.h"
-#include "netsurf/riscos/gui.h"
-#include "netsurf/utils/config.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/utils.h"
+#include "content/content.h"
+#include "content/fetch.h"
+#include "riscos/gui.h"
+#include "utils/config.h"
+#include "utils/log.h"
+#include "utils/utils.h"
 
 /* type_map must be in sorted order by file_type */
 struct type_entry {

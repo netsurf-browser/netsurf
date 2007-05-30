@@ -17,8 +17,8 @@
 
 #include <iconv.h>
 
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/utf8.h"
+#include "utils/log.h"
+#include "utils/utf8.h"
 
 static utf8_convert_ret utf8_convert(const char *string, size_t len,
 		const char *from, const char *to, char **result);

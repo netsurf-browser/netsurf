@@ -400,8 +400,8 @@ any(A) ::= ASTERISK(B).
 %include {
 #include <strings.h>
 #define CSS_INTERNALS
-#include "netsurf/css/css.h"
-#include "netsurf/utils/utils.h" }
+#include "css/css.h"
+#include "utils/utils.h" }
 %name css_parser_
 
 %token_type { struct css_parser_token }

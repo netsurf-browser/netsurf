@@ -9,14 +9,14 @@
 #include <swis.h>
 
 #include "oslib/colourtrans.h"
-#include "oslib/osspriteop.h"
+#include <oslib/osspriteop.h>
 
-#include "netsurf/riscos/image.h"
-#include "netsurf/riscos/gui.h"
-#include "netsurf/riscos/options.h"
-#include "netsurf/riscos/tinct.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/utils.h"
+#include "riscos/image.h"
+#include "riscos/gui.h"
+#include "riscos/options.h"
+#include "riscos/tinct.h"
+#include "utils/log.h"
+#include "utils/utils.h"
 
 
 static bool image_redraw_tinct(osspriteop_id header, int x, int y,

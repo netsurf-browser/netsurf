@@ -13,7 +13,7 @@
 #define _NETSURF_RISCOS_SAVE_H_
 
 #include "oslib/wimp.h"
-#include "netsurf/desktop/gui.h"
+#include "desktop/gui.h"
 
 
 wimp_w ro_gui_saveas_create(const char *template_name);

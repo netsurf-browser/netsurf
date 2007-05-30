@@ -16,16 +16,16 @@
 #include <string.h>
 #include <wchar.h>
 #include "oslib/wimp.h"
-#include "netsurf/content/urldb.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/riscos/global_history.h"
-#include "netsurf/riscos/gui.h"
-#include "netsurf/riscos/options.h"
-#include "netsurf/riscos/theme.h"
-#include "netsurf/riscos/url_complete.h"
-#include "netsurf/riscos/wimp.h"
-#include "netsurf/riscos/wimp_event.h"
-#include "netsurf/utils/utils.h"
+#include "content/urldb.h"
+#include "utils/log.h"
+#include "riscos/global_history.h"
+#include "riscos/gui.h"
+#include "riscos/options.h"
+#include "riscos/theme.h"
+#include "riscos/url_complete.h"
+#include "riscos/wimp.h"
+#include "riscos/wimp_event.h"
+#include "utils/utils.h"
 
 #define MAXIMUM_VISIBLE_LINES 7
 

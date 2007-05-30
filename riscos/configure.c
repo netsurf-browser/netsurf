@@ -18,14 +18,14 @@
 #include "oslib/osbyte.h"
 #include "oslib/territory.h"
 #include "oslib/wimp.h"
-#include "netsurf/riscos/dialog.h"
-#include "netsurf/riscos/configure.h"
-#include "netsurf/riscos/wimp.h"
-#include "netsurf/riscos/wimp_event.h"
-#include "netsurf/riscos/configure/configure.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/utils.h"
-#include "netsurf/utils/messages.h"
+#include "riscos/dialog.h"
+#include "riscos/configure.h"
+#include "riscos/wimp.h"
+#include "riscos/wimp_event.h"
+#include "riscos/configure/configure.h"
+#include "utils/log.h"
+#include "utils/utils.h"
+#include "utils/messages.h"
 
 #define CONFIGURE_ICON_PADDING_H 32
 #define CONFIGURE_ICON_PADDING_V 32

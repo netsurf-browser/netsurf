@@ -8,9 +8,9 @@
 #ifndef NETSURF_DESKTOP_401LOGIN_H
 #define NETSURF_DESKTOP_401LOGIN_H
 
-#include "netsurf/utils/config.h"
-#include "netsurf/content/content.h"
-#include "netsurf/desktop/browser.h"
+#include "utils/config.h"
+#include "content/content.h"
+#include "desktop/browser.h"
 
 #ifdef WITH_AUTH
 

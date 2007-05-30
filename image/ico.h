@@ -9,7 +9,7 @@
 #define _NETSURF_IMAGE_ICO_H_
 
 #include <stdbool.h>
-#include "netsurf/image/bmpread.h"
+#include "image/bmpread.h"
 
 struct content;
 

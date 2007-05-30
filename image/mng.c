@@ -15,17 +15,17 @@
 #include <stdlib.h>
 #include <sys/time.h>
 #include <time.h>
-#include "libmng.h"
-#include "netsurf/utils/config.h"
-#include "netsurf/content/content.h"
-#include "netsurf/desktop/browser.h"
-#include "netsurf/desktop/options.h"
-#include "netsurf/desktop/plotters.h"
-#include "netsurf/image/bitmap.h"
-#include "netsurf/image/mng.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/messages.h"
-#include "netsurf/utils/utils.h"
+#include <libmng.h>
+#include "utils/config.h"
+#include "content/content.h"
+#include "desktop/browser.h"
+#include "desktop/options.h"
+#include "desktop/plotters.h"
+#include "image/bitmap.h"
+#include "image/mng.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
 
 #ifdef WITH_MNG
 

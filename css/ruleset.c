@@ -26,12 +26,12 @@
 #include <strings.h>
 #define CSS_INTERNALS
 #define NDEBUG
-#include "netsurf/css/css.h"
-#include "netsurf/content/content.h"
-#include "netsurf/desktop/options.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/url.h"
-#include "netsurf/utils/utils.h"
+#include "css/css.h"
+#include "content/content.h"
+#include "desktop/options.h"
+#include "utils/log.h"
+#include "utils/url.h"
+#include "utils/utils.h"
 
 
 

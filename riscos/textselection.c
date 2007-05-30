@@ -14,17 +14,17 @@
 #include <string.h>
 #include "oslib/osfile.h"
 #include "oslib/wimp.h"
-#include "netsurf/desktop/gui.h"
-#include "netsurf/desktop/selection.h"
-#include "netsurf/desktop/textinput.h"
-#include "netsurf/riscos/gui.h"
-#include "netsurf/riscos/message.h"
-#include "netsurf/riscos/save.h"
-#include "netsurf/riscos/textselection.h"
-#include "netsurf/render/form.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/utf8.h"
-#include "netsurf/utils/utils.h"
+#include "desktop/gui.h"
+#include "desktop/selection.h"
+#include "desktop/textinput.h"
+#include "riscos/gui.h"
+#include "riscos/message.h"
+#include "riscos/save.h"
+#include "riscos/textselection.h"
+#include "render/form.h"
+#include "utils/log.h"
+#include "utils/utf8.h"
+#include "utils/utils.h"
 
 #ifndef wimp_DRAG_CLAIM_SUPPRESS_DRAGBOX
 #define wimp_DRAG_CLAIM_SUPPRESS_DRAGBOX ((wimp_drag_claim_flags) 0x2u)

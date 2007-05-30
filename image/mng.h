@@ -13,7 +13,7 @@
 #define _NETSURF_IMAGE_MNG_H_
 
 #include <stdbool.h>
-#include "libmng.h"
+#include <libmng.h>
 
 struct content;
 
