@@ -7,6 +7,7 @@
  */
 
 #include <stdio.h>
+#include "netsurf/desktop/netsurf.h"
 
 #ifndef _NETSURF_LOG_H_
 #define _NETSURF_LOG_H_
@@ -15,11 +16,11 @@
 #  define LOG(x) ((void) 0)
 #else
 #  ifdef __GNUC__
-#    define LOG(x) (printf(__FILE__ " %s %i: ", __PRETTY_FUNCTION__, __LINE__), printf x, fputc('\n', stdout))
+#    define LOG(x) do { if (verbose_log) (printf(__FILE__ " %s %i: ", __PRETTY_FUNCTION__, __LINE__), printf x, fputc('\n', stdout)); } while (0)
 #  elif defined(__CC_NORCROFT)
-#    define LOG(x) (printf(__FILE__ " %s %i: ", __func__, __LINE__), printf x, fputc('\n', stdout))
+#    define LOG(x) do { if (verbose_log) (printf(__FILE__ " %s %i: ", __func__, __LINE__), printf x, fputc('\n', stdout)); } while (0)
 #  else
-#    define LOG(x) (printf(__FILE__ " %i: ", __LINE__), printf x, fputc('\n', stdout))
+#    define LOG(x) do { if (verbose_log) (printf(__FILE__ " %i: ", __LINE__), printf x, fputc('\n', stdout)); } while (0)
 #  endif
 #endif
 

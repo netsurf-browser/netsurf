@@ -31,6 +31,7 @@
 #include "netsurf/utils/utils.h"
 
 bool netsurf_quit = false;
+bool verbose_log = false;
 
 static void netsurf_init(int argc, char** argv);
 static void netsurf_poll(void);
@@ -65,6 +66,15 @@ void netsurf_init(int argc, char** argv)
 	struct utsname utsname;
 
 	stdout = stderr;
+
+	if ((argc > 1) && (argv[1][0] == '-') && (argv[1][1] == 'v') && (argv[1][2] == 0)) {
+	    int argcmv;
+	    verbose_log = true;
+	    for (argcmv = 2; argcmv < argc; argcmv++) {
+		argv[argcmv - 1] = argv[argcmv];
+	    }
+	    argc--;
+	}
 
 #ifdef _MEMDEBUG_H_
 	memdebug_memdebug("memdump");

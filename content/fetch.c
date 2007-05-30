@@ -248,7 +248,11 @@ void fetch_init(void)
 	if (code != CURLE_OK)						\
 		goto curl_easy_setopt_failed;
 
-	SETOPT(CURLOPT_VERBOSE, 1);
+	if (verbose_log) {
+	    SETOPT(CURLOPT_VERBOSE, 1);
+	} else {
+	    SETOPT(CURLOPT_VERBOSE, 0);
+	}
 	SETOPT(CURLOPT_ERRORBUFFER, fetch_error_buffer);
 	SETOPT(CURLOPT_WRITEFUNCTION, fetch_curl_data);
 	SETOPT(CURLOPT_HEADERFUNCTION, fetch_curl_header);
