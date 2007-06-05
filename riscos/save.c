@@ -31,6 +31,7 @@
 #include "riscos/dialog.h"
 #include "riscos/gui.h"
 #include "riscos/menus.h"
+#include "riscos/message.h"
 #include "riscos/options.h"
 #include "riscos/save.h"
 #include "riscos/save_complete.h"
@@ -534,8 +535,6 @@ void ro_gui_save_drag_end(wimp_dragged *drag)
 
 void ro_gui_send_datasave(gui_save_type save_type, wimp_full_message_data_xfer *message, wimp_t to)
 {
-	os_error *error;
-
 	/* Close the save window because otherwise we need two contexts
 	*/
 	xwimp_create_menu(wimp_CLOSE_MENU, 0, 0);
