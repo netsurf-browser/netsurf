@@ -1198,6 +1198,7 @@ bool gui_window_scroll_start(struct gui_window *g)
 		return false;
 	}
 
+	gui_track_gui_window = g;
 	gui_current_drag_type = GUI_DRAG_SCROLL;
 	return true;
 }

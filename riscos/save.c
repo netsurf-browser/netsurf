@@ -64,6 +64,7 @@ typedef enum { LINK_ACORN, LINK_ANT, LINK_TEXT } link_format;
 
 static bool ro_gui_save_complete(struct content *c, char *path);
 static bool ro_gui_save_content(struct content *c, char *path);
+static void ro_gui_save_bounced(wimp_message *message);
 static void ro_gui_save_object_native(struct content *c, char *path);
 static bool ro_gui_save_link(struct content *c, link_format format, char *path);
 static void ro_gui_save_set_state(struct content *c, gui_save_type save_type,
@@ -518,8 +519,8 @@ void ro_gui_save_drag_end(wimp_dragged *drag)
 	message.size = 44 + ((strlen(message.data.data_xfer.file_name) + 4) &
 			(~3u));
 
-	wimp_send_message_to_window(wimp_USER_MESSAGE, &message,
-			pointer.w, pointer.i);
+	ro_message_send_message_to_window(wimp_USER_MESSAGE_RECORDED, &message,
+			pointer.w, pointer.i, ro_gui_save_bounced, NULL);
 
 	free(local_name);
 }
@@ -540,17 +541,23 @@ void ro_gui_send_datasave(gui_save_type save_type, wimp_full_message_data_xfer *
 	xwimp_create_menu(wimp_CLOSE_MENU, 0, 0);
 	ro_gui_dialog_close(dialog_saveas);
 
-	error = xwimp_send_message(wimp_USER_MESSAGE, (wimp_message*)message, to);
-	if (error) {
-		LOG(("xwimp_send_message: 0x%x: %s", error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-	}
-	else {
+	if (ro_message_send_message(wimp_USER_MESSAGE_RECORDED, (wimp_message*)message,
+			to, ro_gui_save_bounced)) {
 		gui_save_current_type = save_type;
 		gui_save_sourcew = (wimp_w)-1;
 		saving_from_dialog = false;
 		gui_current_drag_type = GUI_DRAG_SAVE;
 	}
+}
+
+
+/**
+ * Handle lack of Message_DataSaveAck for drags, saveas dialogs and clipboard code
+ */
+
+void ro_gui_save_bounced(wimp_message *message)
+{
+	gui_current_drag_type = GUI_DRAG_NONE;
 }
 
 
