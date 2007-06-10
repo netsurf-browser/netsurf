@@ -16,7 +16,9 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/types.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #include "utils/filename.h"
 #include "utils/log.h"
 #include "utils/url.h"
@@ -216,15 +218,20 @@ bool filename_flush_directory(const char *folder, int depth) {
 	parent = opendir(folder);
 
 	while ((entry = readdir(parent))) {
+	 	struct stat statbuf;
+
 		if (!strcmp(entry->d_name, ".") ||
 				!strcmp(entry->d_name, ".."))
 			continue;
 
+		snprintf(child, 256, "%s/%s", folder, entry->d_name);
+		stat(child, &statbuf);
+
 		/* first 3 depths are directories only, then files only */
 		if (depth < 3)
-			del = (entry->d_type != DT_DIR);
+			del = !S_ISDIR(statbuf.st_mode);
 		else
-			del = (entry->d_type == DT_DIR);
+		  	del = S_ISDIR(statbuf.st_mode);
 
 		/* check we are a file numbered '00' -> '63' */
 		if ((!del) && (entry->d_name[0] >= '0') &&
@@ -261,13 +268,13 @@ bool filename_flush_directory(const char *folder, int depth) {
 			del = true;
 		}
 		/* continue if we are a valid reference so far */
-		if ((!del) && (entry->d_type != DT_DIR))
-			continue;
+		if ((!del) && (!S_ISDIR(statbuf.st_mode)))
+		    	continue;
 		/* delete or recurse */
 		snprintf(child, 256, "%s/%s", folder, entry->d_name);
 		child[255] = '\0';
 		if (del) {
-			if (entry->d_type == DT_DIR)
+			if (S_ISDIR(statbuf.st_mode))
 				filename_delete_recursive(child);
 			if (remove(child))
 				LOG(("Failed to remove '%s'", child));
@@ -293,6 +300,7 @@ bool filename_delete_recursive(char *folder) {
 	DIR *parent;
 	struct dirent *entry;
 	char child[256];
+	struct stat statbuf;
 
 	parent = opendir(folder);
 
@@ -301,7 +309,8 @@ bool filename_delete_recursive(char *folder) {
 				(!strcmp(entry->d_name, "..")))
 			continue;
 		snprintf(child, 256, "%s/%s", folder, entry->d_name);
-		if (entry->d_type == DT_DIR) {
+		stat(child, &statbuf);
+		if (S_ISDIR(statbuf.st_mode)) {
 			if (!filename_delete_recursive(child)) {
 				closedir(parent);
 				return false;
