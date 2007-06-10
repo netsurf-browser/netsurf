@@ -16,6 +16,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -225,7 +226,10 @@ bool filename_flush_directory(const char *folder, int depth) {
 			continue;
 
 		snprintf(child, 256, "%s/%s", folder, entry->d_name);
-		stat(child, &statbuf);
+		if (stat(child, &statbuf) == -1) {
+			LOG(("Unable to stat %s, even though it just got returned from readdir(): %s", child, strerror(errno)));
+			continue;
+		}
 
 		/* first 3 depths are directories only, then files only */
 		if (depth < 3)
@@ -309,7 +313,11 @@ bool filename_delete_recursive(char *folder) {
 				(!strcmp(entry->d_name, "..")))
 			continue;
 		snprintf(child, 256, "%s/%s", folder, entry->d_name);
-		stat(child, &statbuf);
+		if (stat(child, &statbuf) == -1) {
+                        LOG(("Unable to stat %s, even though it just got returned from readdir(): %s", child, strerror(errno)));
+			continue;
+
+		}
 		if (S_ISDIR(statbuf.st_mode)) {
 			if (!filename_delete_recursive(child)) {
 				closedir(parent);
