@@ -427,7 +427,7 @@ void fetch_poll(void)
         if (!fetch_active)
                 return; /* No point polling, there's no fetch active. */
         while (fetcher != NULL) {
-                LOG(("Polling fetcher for %s", fetcher->scheme_name));
+                /* LOG(("Polling fetcher for %s", fetcher->scheme_name)); */
                 fetcher->poll_fetcher(fetcher->scheme_name);
                 fetcher = fetcher->next_fetcher;
         }
@@ -510,12 +510,15 @@ fetch_can_be_freed(struct fetch *fetch)
 {
         /* Go ahead and free the fetch properly now */
         LOG(("Fetch %p, fetcher %p can be freed", fetch, fetch->fetcher_handle));
+        
         if (fetch->fetch_is_active) {
                 RING_REMOVE(fetch_ring, fetch);
         } else {
                 RING_REMOVE(queue_ring, fetch);
         }
+        
         fetch_active = (fetch_ring != NULL);
+        
         fetch_free(fetch);
 }
 
