@@ -245,8 +245,22 @@ void gui_window_position_frame(struct gui_window *g, int x0, int y0, int x1, int
         assert(w);
         assert(f);
         LOG(("%s: %d,%d  %dx%d", g->bw->name, x0, y0, x1-x0+2, y1-y0+2));
-        gtk_fixed_move(f, w, x0, y0);
-        gtk_widget_set_size_request(w, x1 - x0 + 2, y1 - y0 + 2);
+        
+	/* if the window has not changed position or size, do not bother
+	 * moving/resising it.
+	 */
+
+	LOG(("  current: %d,%d  %dx%d",
+	      	w->allocation.x, w->allocation.y,
+		w->allocation.width, w->allocation.height));
+
+	if (w->allocation.x != x0 || w->allocation.y != y0 ||
+		w->allocation.width != x1 - x0 + 2 ||
+		w->allocation.height != y1 - y0 + 2) {
+	  	LOG(("  frame has moved/resized."));
+		gtk_fixed_move(f, w, x0, y0);
+	        gtk_widget_set_size_request(w, x1 - x0 + 2, y1 - y0 + 2);
+	}
 }
 
 gboolean nsgtk_window_expose_event(GtkWidget *widget,
