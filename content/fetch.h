@@ -90,7 +90,7 @@ const char *fetch_get_referer(struct fetch *fetch);
 
 typedef bool (*fetcher_initialise)(const char *);
 typedef void* (*fetcher_setup_fetch)(struct fetch *, const char *,
-                                     bool, const char *, 
+                                     bool, const char *,
                                      struct form_successful_control *, bool,
                                      const char *, const char **);
 typedef bool (*fetcher_start_fetch)(void *);
@@ -108,7 +108,8 @@ bool fetch_add_fetcher(const char *scheme,
                        fetcher_poll_fetcher poll_fetcher,
                        fetcher_finalise finaliser);
 
-void fetch_send_callback(fetch_msg msg, struct fetch *fetch, void *data, unsigned long size);
+void fetch_send_callback(fetch_msg msg, struct fetch *fetch,
+		const void *data, unsigned long size);
 void fetch_can_be_freed(struct fetch *fetch);
 void fetch_set_http_code(struct fetch *fetch, long http_code);
 const char *fetch_get_referer_to_send(struct fetch *fetch);

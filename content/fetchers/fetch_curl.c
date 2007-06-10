@@ -162,9 +162,9 @@ fetch_curl_setup(struct fetch *parent_fetch, const char *url,
 	fetch = malloc(sizeof (*fetch));
 	if (!fetch)
 		return 0;
-        
+
         fetch->fetch_handle = parent_fetch;
-        
+
 	res = url_host(url, &host);
 	if (res != URL_FUNC_OK) {
 		/* we only fail memory exhaustion */
@@ -175,7 +175,7 @@ fetch_curl_setup(struct fetch *parent_fetch, const char *url,
 		if (!host)
 			goto failed;
 	}
-	
+
         LOG(("fetch %p, url '%s'", fetch, url));
 
 	/* construct a new fetch structure */
@@ -255,13 +255,13 @@ fetch_curl_setup(struct fetch *parent_fetch, const char *url,
 	/* And add any headers specified by the caller */
 	for (i = 0; headers[i]; i++) {
 		if (strncasecmp(headers[i], "If-Modified-Since:", 18) == 0) {
-			char *d = headers[i] + 18;
+			const char *d = headers[i] + 18;
 			for (; *d && (*d == ' ' || *d == '\t'); d++)
 				/* do nothing */;
 			fetch->last_modified = curl_getdate(d, NULL);
 		}
 		else if (strncasecmp(headers[i], "If-None-Match:", 14) == 0) {
-			char *d = headers[i] + 14;
+			const char *d = headers[i] + 14;
 			for (; *d && (*d == ' ' || *d == '\t' || *d == '"');
 					d++)
 				/* do nothing */;
@@ -758,7 +758,7 @@ static void fetch_curl_done(CURL *curl_handle, CURLcode result)
 #endif
 	else if (error)
 		fetch_send_callback(FETCH_ERROR, f->fetch_handle, fetch_error_buffer, 0);
-	
+
         fetch_curl_stop(f);
 }
 
@@ -1277,13 +1277,13 @@ fetch_curl_finalise(const char *scheme)
                 /* All the fetchers have been finalised. */
                 LOG(("All cURL fetchers finalised, closing down cURL"));
                 CURLMcode codem;
-                
+
                 curl_easy_cleanup(fetch_blank_curl);
-                
+
                 codem = curl_multi_cleanup(fetch_curl_multi);
                 if (codem != CURLM_OK)
                         LOG(("curl_multi_cleanup failed: ignoring"));
-                
+
                 curl_global_cleanup();
         }
 }
@@ -1299,7 +1299,7 @@ void register_curl_fetchers(void)
 	CURLcode code;
 	curl_version_info_data *data;
         int i;
-        
+
 	LOG(("curl_version %s", curl_version()));
 
 	code = curl_global_init(CURL_GLOBAL_ALL);
@@ -1318,7 +1318,7 @@ void register_curl_fetchers(void)
 	if (!fetch_blank_curl)
 		die("Failed to initialise the fetch module "
 				"(curl_easy_init failed).");
-        
+
 #undef SETOPT
 #define SETOPT(option, value) \
 	code = curl_easy_setopt(fetch_blank_curl, option, value);	\
@@ -1344,9 +1344,9 @@ void register_curl_fetchers(void)
 
 	if (option_ca_bundle)
 		SETOPT(CURLOPT_CAINFO, option_ca_bundle);
-        
+
         /* cURL initialised okay, register the fetchers */
-        
+
         data = curl_version_info(CURLVERSION_NOW);
 
 	for (i = 0; data->protocols[i]; i++)

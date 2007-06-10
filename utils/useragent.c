@@ -8,10 +8,11 @@
 
 #include <sys/utsname.h>
 #include <stdio.h>
+#include <stdlib.h>
 
-#include "useragent.h"
 #include "desktop/netsurf.h"
 #include "utils/log.h"
+#include "utils/useragent.h"
 
 static const char *core_user_agent_string = NULL;
 
@@ -27,25 +28,32 @@ build_user_agent(void)
   struct utsname un;
   const char *sysname = "Unknown";
   const char *machine = "Unknown";
+  char *ua_string;
   int len;
-  
+
   if (uname(&un) == 0) {
     sysname = un.sysname;
     machine = un.machine;
   }
-  
+
   len = snprintf(NULL, 0, NETSURF_UA_FORMAT_STRING,
                  netsurf_version_major,
                  netsurf_version_minor,
-                 un.sysname,
-                 un.machine);
-  core_user_agent_string = malloc(len + 1);
-  snprintf(core_user_agent_string, len + 1,
+                 sysname,
+                 machine);
+  ua_string = malloc(len + 1);
+  if (!ua_string) {
+    /** \todo this needs handling better */
+    return;
+  }
+  snprintf(ua_string, len + 1,
            NETSURF_UA_FORMAT_STRING,
            netsurf_version_major,
            netsurf_version_minor,
-           un.sysname,
-           un.machine);
+           sysname,
+           machine);
+
+  core_user_agent_string = ua_string;
 
   LOG(("Built user agent \"%s\"", core_user_agent_string));
 }

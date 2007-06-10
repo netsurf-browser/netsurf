@@ -255,7 +255,7 @@ struct fetch * fetch_start(const char *url, const char *referer,
         fetch->referer = 0;
         fetch->ops = 0;
         fetch->fetch_is_active = false;
-        
+
         if (referer != NULL) {
                 fetch->referer = strdup(referer);
                 if (fetch->referer == NULL)
@@ -276,33 +276,33 @@ struct fetch * fetch_start(const char *url, const char *referer,
                 }
                 fetcher = fetcher->next_fetcher;
         }
-        
+
         if (fetch->ops == NULL)
                 goto failed;
-        
+
         /* Got a scheme fetcher, try and set up the fetch */
-        fetch->fetcher_handle = 
+        fetch->fetcher_handle =
                 fetch->ops->setup_fetch(fetch, url, only_2xx, post_urlenc,
                                         post_multipart, verifiable, parent_url,
                                         (const char **)headers);
-        
+
         if (fetch->fetcher_handle == NULL)
                 goto failed;
-        
+
         /* Rah, got it, so ref the fetcher. */
         fetch_ref_fetcher(fetch->ops);
-        
+
 	/* these aren't needed past here */
 	if (ref1) {
 		free(ref1);
 		ref1 = 0;
 	}
-        
+
         if (ref2) {
                 free(ref2);
                 ref2 = 0;
         }
-	
+
         /* Dump us in the queue and ask the queue to run. */
 	RING_INSERT(queue_ring, fetch);
 	fetch_dispatch_jobs();
@@ -446,18 +446,18 @@ bool fetch_can_fetch(const char *url)
 	const char *semi;
 	size_t len;
         scheme_fetcher *fetcher = fetchers;
-        
+
 	if ((semi = strchr(url, ':')) == NULL)
 		return false;
 	len = semi - url;
-        
+
         while (fetcher != NULL) {
                 if (strlen(fetcher->scheme_name) == len &&
                     strncmp(fetcher->scheme_name, url, len) == 0)
                         return true;
                 fetcher = fetcher->next_fetcher;
         }
-        
+
 	return false;
 }
 
@@ -498,9 +498,10 @@ const char *fetch_get_referer(struct fetch *fetch)
 }
 
 void
-fetch_send_callback(fetch_msg msg, struct fetch *fetch, void *data, unsigned long size)
+fetch_send_callback(fetch_msg msg, struct fetch *fetch, const void *data,
+		unsigned long size)
 {
-        LOG(("Fetcher sending callback. Fetch %p, fetcher %p data %p size %d",
+        LOG(("Fetcher sending callback. Fetch %p, fetcher %p data %p size %lu",
              fetch, fetch->fetcher_handle, data, size));
         fetch->callback(msg, fetch->p, data, size);
 }
@@ -525,7 +526,7 @@ fetch_can_be_freed(struct fetch *fetch)
 void
 fetch_set_http_code(struct fetch *fetch, long http_code)
 {
-        LOG(("Setting HTTP code to %d", http_code));
+        LOG(("Setting HTTP code to %ld", http_code));
         fetch->http_code = http_code;
 }
 
