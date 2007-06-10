@@ -548,8 +548,13 @@ void gui_window_destroy(struct gui_window *g)
 	if (g->next)
 		g->next->prev = g->prev;
         
-        LOG(("Destroy"));
-        
+	
+	LOG(("Destroying gui_window %p", g));
+	assert(g != NULL);
+	assert(g->bw != NULL);
+	LOG(("     Scaffolding: %p", g->scaffold));
+        LOG(("     Window name: %s", g->bw->name));
+
         /* If we're a top-level gui_window, destroy our scaffold */
         if (g->scrolledwindow == 0)
                 nsgtk_scaffolding_destroy(g->scaffold);
