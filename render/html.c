@@ -355,7 +355,7 @@ const char *html_detect_encoding(const char **data, unsigned int *size)
 		*data += 2;
 		*size -= 2;
 		return "UTF-16BE";
-	} else if (d[0] == 0xfe && d[1] == 0xff) {      /* BOM ff fe */
+	} else if (d[0] == 0xff && d[1] == 0xfe) {      /* BOM ff fe */
 		*data += 2;
 		*size -= 2;
 		return "UTF-16LE";
