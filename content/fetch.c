@@ -384,6 +384,8 @@ static void fetch_dispatch_jobs(void)
 		}
 	}
         fetch_active = (all_active > 0);
+        LOG(("Fetch ring is now %d elements.", all_active));
+        LOG(("Queue ring is now %d elements.", all_queued));
 }
 
 /**
@@ -509,6 +511,8 @@ fetch_send_callback(fetch_msg msg, struct fetch *fetch, const void *data,
 void
 fetch_can_be_freed(struct fetch *fetch)
 {
+        int all_active, all_queued;
+        
         /* Go ahead and free the fetch properly now */
         LOG(("Fetch %p, fetcher %p can be freed", fetch, fetch->fetcher_handle));
         
@@ -518,9 +522,17 @@ fetch_can_be_freed(struct fetch *fetch)
                 RING_REMOVE(queue_ring, fetch);
         }
         
-        fetch_active = (fetch_ring != NULL);
+	RING_GETSIZE(struct fetch, fetch_ring, all_active);
+	RING_GETSIZE(struct fetch, queue_ring, all_queued);
         
+        fetch_active = (all_active > 0);
+                
+        LOG(("Fetch ring is now %d elements.", all_active));
+        LOG(("Queue ring is now %d elements.", all_queued));
+
         fetch_free(fetch);
+        
+        fetch_dispatch_jobs();
 }
 
 void
