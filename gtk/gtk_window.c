@@ -27,7 +27,6 @@ struct gui_window {
         
         /* These are the storage for the rendering */
 	float			scale;
-	int			target_width, target_height;
 	int			caretx, carety, careth;
 	gui_pointer_shape	current_pointer;
 	int			last_x, last_y;
@@ -99,9 +98,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
  
         LOG(("Creating gui window %p for browser window %p", g, bw));
        
-	g->target_width = 0;
-	g->target_height = 0;
-
 	g->bw = bw;
 	g->current_pointer = GUI_POINTER_DEFAULT;
 	if (clone != NULL)
@@ -472,31 +468,12 @@ gboolean nsgtk_window_keypress_event(GtkWidget *widget, GdkEventKey *event,
 	return TRUE;
 }
 
-int nsgtk_gui_window_update_targets(struct gui_window *g)
-{
-        GtkWidget *widget = GTK_WIDGET(g->viewport);
-        int new_width, new_height;
-        int changed = 0;
-	new_width = widget->allocation.width - 2;
-	new_height = widget->allocation.height;
-        if( new_width != g->target_width ||
-            new_height != g->target_height ) {
-                changed = 1;
-                g->target_width = new_width;
-                g->target_height = new_height;
-        }
-        return changed;
-}
-
-
 gboolean nsgtk_window_size_allocate_event(GtkWidget *widget,
                                           GtkAllocation *allocation, gpointer data)
 {
 	struct gui_window *g = data;
         
-        nsgtk_gui_window_update_targets(g);
-        
-        LOG(("Size allocate for %s => %d x %d\n", g->bw->name, g->target_width, g->target_height));
+        LOG(("Size allocate for %s scheduling reflow\n", g->bw->name));
         
 	/* schedule a callback to perform the resize for 1/10s from now */
 	schedule(5, (gtk_callback)(nsgtk_window_reflow_content), g);
@@ -506,7 +483,7 @@ gboolean nsgtk_window_size_allocate_event(GtkWidget *widget,
 
 void nsgtk_window_reflow_content(struct gui_window *g)
 {
-        int updated = nsgtk_gui_window_update_targets(g);
+        GtkWidget *widget = GTK_WIDGET(g->viewport);
 
 	if (gui_in_multitask)
 		return;
@@ -521,10 +498,11 @@ void nsgtk_window_reflow_content(struct gui_window *g)
         LOG(("Doing reformat"));
         
         browser_window_reformat(g->bw,
-                         g->target_width, g->target_height);
+                         widget->allocation.width - 2,
+			 widget->allocation.height);
 
-        if (nsgtk_scaffolding_is_busy(g->scaffold) || updated)
-		schedule((updated?1:100), 
+        if (nsgtk_scaffolding_is_busy(g->scaffold))
+		schedule(100, 
                          (gtk_callback)(nsgtk_window_reflow_content), g);
 }
 

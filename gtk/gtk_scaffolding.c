@@ -774,7 +774,6 @@ void gui_window_stop_throbber(struct gui_window* _g)
 
 	gtk_image_set_from_pixbuf(g->throbber, nsgtk_throbber->framedata[0]);
         // Issue a final reflow so that the content object reports its size correctly
-        nsgtk_gui_window_update_targets(_g);
         schedule(5, (gtk_callback)(nsgtk_window_reflow_content), _g);
 }
 
