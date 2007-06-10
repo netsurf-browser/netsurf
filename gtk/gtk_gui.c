@@ -22,6 +22,7 @@
 #include <glade/glade.h>
 #include "content/content.h"
 #include "content/fetch.h"
+#include "content/fetchers/fetch_curl.h"
 #include "content/urldb.h"
 #include "desktop/401login.h"
 #include "desktop/browser.h"

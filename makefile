@@ -20,12 +20,13 @@
 SYSTEM_CC ?= gcc
 
 OBJECTS_COMMON = content.o fetch.o fetchcache.o urldb.o		# content/
+OBJECTS_COMMON += fetch_curl.o                                  # content/fetchers/
 OBJECTS_COMMON += css.o css_enum.o parser.o ruleset.o scanner.o	# css/
 OBJECTS_COMMON += box.o box_construct.o box_normalise.o directory.o \
 	form.o html.o html_redraw.o imagemap.o layout.o list.o \
 	table.o textplain.o					# render/
 OBJECTS_COMMON += filename.o hashtable.o messages.o talloc.o \
-	url.o utf8.o utils.o					# utils/
+	url.o utf8.o utils.o useragent.o			# utils/
 OBJECTS_COMMON += knockout.o options.o tree.o version.o		# desktop/
 
 OBJECTS_IMAGE = bmp.o bmpread.o gif.o gifread.o ico.o jpeg.o \
@@ -110,7 +111,7 @@ else
 include posix.mk
 endif
 
-VPATH = content:css:desktop:image:render:riscos:riscos/configure:riscos/gui:utils:debug:gtk
+VPATH = content:content/fetchers:css:desktop:image:render:riscos:riscos/configure:riscos/gui:utils:debug:gtk
 
 WARNFLAGS = -W -Wall -Wundef -Wpointer-arith -Wcast-qual \
 	-Wcast-align -Wwrite-strings -Wstrict-prototypes \
@@ -131,7 +132,7 @@ CFLAGS_GTK = -std=c99 -Dgtk -Dnsgtk \
 	-D_BSD_SOURCE \
 	-DGTK_DISABLE_DEPRECATED \
 	-D_POSIX_C_SOURCE \
-	$(WARNFLAGS) -I. -g -O2 -Wformat=2 \
+	$(WARNFLAGS) -I. -g -O0 -Wformat=2 \
 	`pkg-config --cflags libglade-2.0 gtk+-2.0` `xml2-config --cflags`
 
 # Stop GCC under Cygwin throwing a fit
@@ -209,7 +210,7 @@ $(OBJDIR_NCOS)/%.o : %.s
 # available), remove */*.[ch] from the line below.
 # Under RISC OS, you may require *Set UnixFS$sfix "", if perl gives
 # "No such file or directory" errors.
-depend: css/css_enum.c css/parser.c css/scanner.c utils/translit.c */*.[ch]
+depend: css/css_enum.c css/parser.c css/scanner.c utils/translit.c */*.[ch] */*/*.[ch]
 	@echo "--> modified files $?"
 	@echo "--> updating dependencies"
 	@-mkdir -p $(OBJDIR_RISCOS) $(OBJDIR_RISCOS_SMALL) $(OBJDIR_NCOS) $(OBJDIR_DEBUG) $(OBJDIR_GTK)
