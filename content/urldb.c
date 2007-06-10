@@ -2640,7 +2640,7 @@ bool urldb_set_cookie(const char *header, const char *url,
 			 * 2) host = A.B; rhost = C.B (i.e. strip first
 			 *    segment off both hosts and compare) */
 			const char *dot = strchr(host, '.');
-			const char *rdot = strchr(host, '.');
+			const char *rdot = strchr(rhost, '.');
 
 			if (!dot || !rdot) {
 				free(rhost);
@@ -3147,7 +3147,8 @@ void urldb_free_cookie(struct cookie_internal_data *c)
  * \param buf Pointer to Pointer to buffer (updated)
  * \return true on success, false on memory exhaustion
  */
-bool urldb_concat_cookie(struct cookie_internal_data *c, int *used, int *alloc, char **buf)
+bool urldb_concat_cookie(struct cookie_internal_data *c, int *used,
+		int *alloc, char **buf)
 {
 	int clen;
 
@@ -3308,8 +3309,8 @@ void urldb_load_cookies(const char *filename)
 		}
 	}
 
-#undef SKIP_WS
-#undef FIND_WS
+#undef SKIP_T
+#undef FIND_T
 
 	fclose(fp);
 }
@@ -3321,12 +3322,14 @@ void urldb_load_cookies(const char *filename)
  * \param path The cookie's path
  * \param name The cookie's name
  */
-void urldb_delete_cookie(const char *domain, const char *path, const char *name)
+void urldb_delete_cookie(const char *domain, const char *path,
+		const char *name)
 {
 	urldb_delete_cookie_hosts(domain, path, name, &db_root);
 }
 
-void urldb_delete_cookie_hosts(const char *domain, const char *path, const char *name, struct host_part *parent)
+void urldb_delete_cookie_hosts(const char *domain, const char *path,
+		const char *name, struct host_part *parent)
 {
 	assert(parent);
 
@@ -3336,9 +3339,10 @@ void urldb_delete_cookie_hosts(const char *domain, const char *path, const char 
 		urldb_delete_cookie_hosts(domain, path, name, h);
 }
 
-void urldb_delete_cookie_paths(const char *domain, const char *path, const char *name, struct path_data *parent)
+void urldb_delete_cookie_paths(const char *domain, const char *path,
+		const char *name, struct path_data *parent)
 {
-  	struct cookie_internal_data *c;
+	struct cookie_internal_data *c;
 
 	assert(parent);
 
@@ -3426,8 +3430,8 @@ void urldb_save_cookie_paths(FILE *fp, struct path_data *parent)
 	assert(fp && parent);
 
 	if (parent->cookies) {
-		for (struct cookie_internal_data *c = parent->cookies; c; c = c->next) {
-
+		for (struct cookie_internal_data *c = parent->cookies; c;
+				c = c->next) {
 			if (c->expires < now)
 				/* Skip expired cookies */
 				continue;
@@ -3470,14 +3474,14 @@ bool urldb_set_cache_data(const char *url, const struct content *content) {
 
 	/* new filename needed */
 	if (p->cache.filename[0] == 0) {
-	  	filename = filename_request();
-	  	if (!filename)
-	  		return false;
-	  	sprintf(p->cache.filename, filename);
+		filename = filename_request();
+		if (!filename)
+			return false;
+		sprintf(p->cache.filename, filename);
 	}
 
 	/* todo: save content, set cache data etc */
-  	return true;
+	return true;
 }
 
 
