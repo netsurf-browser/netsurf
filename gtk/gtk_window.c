@@ -555,9 +555,15 @@ void gui_window_destroy(struct gui_window *g)
 	LOG(("     Scaffolding: %p", g->scaffold));
         LOG(("     Window name: %s", g->bw->name));
 
+	nsgtk_gui_window_detach_child(g);
+
         /* If we're a top-level gui_window, destroy our scaffold */
-        if (g->scrolledwindow == 0)
+        if (g->scrolledwindow == NULL) {
+	  	gtk_widget_destroy(GTK_WIDGET(g->viewport));
                 nsgtk_scaffolding_destroy(g->scaffold);
+	} else {
+	  	gtk_widget_destroy(GTK_WIDGET(g->scrolledwindow));
+	}
         
 	free(g);
 
