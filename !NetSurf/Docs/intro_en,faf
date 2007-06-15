@@ -47,9 +47,8 @@ tracker</a></dt>
 tracker</a></dt>
 <dd>Please make feature requests on the request tracker</dd>
 
-<dt><a href="http://lists.sourceforge.net/lists/listinfo/netsurf-develop">Development
-mailing list</a></dt>
-<dd>Subscribe to the list if you plan to develop or test NetSurf</dd>
+<dt><a href="http://vlists.pepperfish.net/cgi-bin/mailman/listinfo/netsurf-users-netsurf-browser.org">User mailing list</a></dt>
+<dd>Subscribe to the list if you plan to use or test NetSurf</dd>
 
 <dt><a href="http://source.netsurf-browser.org/trunk/netsurf/">Subversion web interface</a></dt>
 <dd>Browse the source code using the web interface</dd>
