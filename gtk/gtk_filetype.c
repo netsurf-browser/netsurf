@@ -39,15 +39,21 @@ void gtk_fetch_filetype_init(const char *mimefile)
 	
 	fh = fopen(mimefile, "r");
 	
+	/* Some OSes (mentioning no Solarises) have a worthlessly tiny
+	 * /etc/mime.types that don't include essential things, so we
+	 * pre-seed our hash with the essentials.  These will get
+	 * over-ridden if they are mentioned in the mime.types file.
+	 */
+	
+	hash_add(mime_hash, "css", "text/css");
+	hash_add(mime_hash, "jpg", "image/jpeg");
+	hash_add(mime_hash, "jpeg", "image/jpeg");
+	hash_add(mime_hash, "gif", "image/gif");
+	hash_add(mime_hash, "png", "image/png");
+	hash_add(mime_hash, "jng", "image/jng");
+
 	if (fh == NULL) {
-		LOG(("Unable to open a mime.types file, so building a minimal one for you."));
-		hash_add(mime_hash, "css", "text/css");
-		hash_add(mime_hash, "jpg", "image/jpeg");
-		hash_add(mime_hash, "jpeg", "image/jpeg");
-		hash_add(mime_hash, "gif", "image/gif");
-		hash_add(mime_hash, "png", "image/png");
-		hash_add(mime_hash, "jng", "image/jng");
-		
+		LOG(("Unable to open a mime.types file, so using a minimal one for you."));
 		return;
 	}
 	
