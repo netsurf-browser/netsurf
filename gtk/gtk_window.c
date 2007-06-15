@@ -487,7 +487,8 @@ gboolean nsgtk_window_size_allocate_event(GtkWidget *widget,
 {
 	struct gui_window *g = data;
         
-        LOG(("Size allocate for %s scheduling reflow\n", g->bw->name));
+        LOG(("Size allocate for %s scheduling reflow\n", g->bw->name ?
+	      	g->bw->name : "(none"));
         
 	/* schedule a callback to perform the resize for 1/10s from now */
 	schedule(5, (gtk_callback)(nsgtk_window_reflow_content), g);

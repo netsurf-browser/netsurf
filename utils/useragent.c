@@ -31,7 +31,7 @@ user_agent_build_string(void)
         char *ua_string;
         int len;
 
-        if (uname(&un) == 0) {
+        if (uname(&un) >= 0) {
                 sysname = un.sysname;
                 machine = un.machine;
         }

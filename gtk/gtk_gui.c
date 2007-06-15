@@ -393,7 +393,7 @@ void warn_user(const char *warning, const char *detail)
 {
 	char buf[300];	/* 300 is the size the RISC OS GUI uses */
 
-  	LOG(("%s %s", warning, detail));
+  	LOG(("%s %s", warning, detail ? detail : ""));
 	fflush(stdout);
 
 	snprintf(buf, sizeof(buf), "%s %s", messages_get(warning),

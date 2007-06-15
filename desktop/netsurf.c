@@ -65,7 +65,9 @@ void netsurf_init(int argc, char** argv)
 {
 	struct utsname utsname;
 
+#if !(defined(__SVR4) && defined(__sun))
 	stdout = stderr;
+#endif
 
 	if ((argc > 1) && (argv[1][0] == '-') && (argv[1][1] == 'v') && (argv[1][2] == 0)) {
 	    int argcmv;
@@ -81,7 +83,7 @@ void netsurf_init(int argc, char** argv)
 #endif
 
 	LOG(("version '%s'", netsurf_version));
-	if (uname(&utsname) != 0)
+	if (uname(&utsname) < 0)
 		LOG(("Failed to extract machine information"));
 	else
 		LOG(("NetSurf on <%s>, node <%s>, release <%s>, version <%s>, "

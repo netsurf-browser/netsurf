@@ -257,7 +257,7 @@ unsigned int wallclock(void)
 }
 
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || (defined(__SVR4) && defined(__sun))
 
 /**
  * Duplicate up to n characters of a string.

@@ -13,6 +13,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <stddef.h>
+#define LIBICONV_PLUG
 #include <iconv.h>
 #include "content/content.h"
 #include "css/css.h"
