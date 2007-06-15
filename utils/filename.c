@@ -309,7 +309,7 @@ bool filename_delete_recursive(char *folder) {
 	parent = opendir(folder);
 
 	while ((entry = readdir(parent))) {
-		if ((entry->d_ino == 0) || (!strcmp(entry->d_name, ".")) ||
+		if ((!strcmp(entry->d_name, ".")) ||
 				(!strcmp(entry->d_name, "..")))
 			continue;
 		snprintf(child, 256, "%s/%s", folder, entry->d_name);

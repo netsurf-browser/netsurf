@@ -129,9 +129,9 @@ CFLAGS_NCOS = $(CFLAGS_RISCOS) -Dncos
 CFLAGS_DEBUG = -std=c99 -D_BSD_SOURCE -DDEBUG_BUILD $(WARNFLAGS) -I. \
 	$(PLATFORM_CFLAGS_DEBUG) -g
 CFLAGS_GTK = -std=c99 -Dgtk -Dnsgtk \
-	-D_BSD_SOURCE \
 	-DGTK_DISABLE_DEPRECATED \
-	-D_POSIX_C_SOURCE \
+	-D_XOPEN_SOURCE=600 \
+	-D_POSIX_C_SOURCE=200112L \
 	$(WARNFLAGS) -I. -g -O0 -Wformat=2 \
 	`pkg-config --cflags libglade-2.0 gtk+-2.0` `xml2-config --cflags`
 
