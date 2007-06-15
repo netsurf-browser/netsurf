@@ -594,14 +594,28 @@ void gui_window_update_box(struct gui_window *g,
 
 bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 {
-	*sx = 0;
-	*sy = 0;
-	return true;
+        GtkAdjustment *vadj = gtk_viewport_get_vadjustment(g->viewport);
+        GtkAdjustment *hadj = gtk_viewport_get_hadjustment(g->viewport);
+        
+        assert(vadj);
+        assert(hadj);
+        
+        *sy = (int)(gtk_adjustment_get_value(vadj));
+        *sx = (int)(gtk_adjustment_get_value(hadj));
+	
+        return true;
 }
 
 void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 {
-
+        GtkAdjustment *vadj = gtk_viewport_get_vadjustment(g->viewport);
+        GtkAdjustment *hadj = gtk_viewport_get_hadjustment(g->viewport);
+        
+        assert(vadj);
+        assert(hadj);
+        
+        gtk_adjustment_set_value(vadj, (double)sy);
+        gtk_adjustment_set_value(hadj, (double)sx);
 }
 
 float gui_window_get_scale(struct gui_window *g)
