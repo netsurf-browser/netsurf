@@ -9,7 +9,18 @@
 #ifndef _NETSURF_UTILS_CONFIG_H_
 #define _NETSURF_UTILS_CONFIG_H_
 
-/* This file toggles build options on and off.
+/* Try to detect which features the target OS supports */
+
+#define HAVE_STRNDUP
+#if defined(__FreeBSD__) || (defined(__SRV4) && defined(__sun))
+	/* FreeBSD and Solaris do not have this function, so
+	 * we implement it ourselves in util.c
+	 */
+#undef HAVE_STRNDUP
+char *strndup(const char *s, size_t n);
+#endif
+
+/* This section toggles build options on and off.
  * Simply undefine a symbol to turn the relevant feature off.
  *
  * IF ADDING A FEATURE HERE, ADD IT TO Docs/Doxyfile LINE 892 AS WELL.
