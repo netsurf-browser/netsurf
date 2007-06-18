@@ -825,8 +825,8 @@ bool gui_copy_to_clipboard(struct selection *s)
 void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
                                bool scaled)
 {
-	*width = GTK_WIDGET(g->drawing_area)->allocation.width;
-	*height = GTK_WIDGET(g->drawing_area)->allocation.height;
+	*width = GTK_WIDGET(g->viewport)->allocation.width;
+	*height = GTK_WIDGET(g->viewport)->allocation.height;
 
 	if (scaled) {
 		*width /= g->scale;
