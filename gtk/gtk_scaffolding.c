@@ -193,7 +193,7 @@ void nsgtk_window_destroy_event(GtkWidget *widget, gpointer data)
         
         if (!g->being_destroyed) {
                 g->being_destroyed = 1;
-                gui_window_destroy(g->top_level);
+                nsgtk_window_destroy_browser(g->top_level);
         }
 }
 

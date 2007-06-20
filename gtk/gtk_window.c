@@ -531,6 +531,11 @@ void nsgtk_reflow_all_windows(void)
 	}
 }
 
+void nsgtk_window_destroy_browser(struct gui_window *g)
+{
+	browser_window_destroy(g->bw);
+}
+
 void gui_window_destroy(struct gui_window *g)
 {
 	if (g->prev)
