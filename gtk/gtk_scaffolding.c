@@ -343,6 +343,12 @@ gboolean nsgtk_window_url_changed(GtkWidget *widget, GdkEventKey *event,
 
 MENUHANDLER(new_window)
 {
+	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
+	struct browser_window *bw = nsgtk_get_browser_for_gui(gw->top_level);
+	const char *url = gtk_entry_get_text(GTK_ENTRY(gw->url_bar));
+
+	browser_window_create(url, bw, NULL, false);
+
 	return TRUE;
 }
 
