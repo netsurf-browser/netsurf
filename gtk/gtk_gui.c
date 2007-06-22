@@ -63,6 +63,7 @@ GtkWindow *wndWarning;
 GladeXML *gladeWindows;
 GtkWindow *wndTooltip;
 GtkLabel *labelTooltip;
+GtkDialog *wndOpenFile;
 
 /**
  * Locate a shared resource file by searching known places in order.
@@ -241,6 +242,7 @@ void gui_init(int argc, char** argv)
 		glade_xml_get_widget(gladeWindows, "textviewGPL")), fontdesc);
 	
 	wndWarning = GTK_WINDOW(glade_xml_get_widget(gladeWindows, "wndWarning"));
+	wndOpenFile = GTK_DIALOG(glade_xml_get_widget(gladeWindows, "wndOpenFile"));
 
 	nsgtk_history_init();
 }

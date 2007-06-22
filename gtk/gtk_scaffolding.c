@@ -79,7 +79,7 @@ struct menu_events {
 };
 
 static int open_windows = 0;		/**< current number of open browsers */
-
+static struct gtk_scaffolding *current_model; /**< current window for model dialogue use */
 static void nsgtk_window_destroy_event(GtkWidget *, gpointer);
 
 static void nsgtk_window_update_back_forward(struct gtk_scaffolding *);
@@ -99,6 +99,8 @@ static gboolean nsgtk_history_button_press_event(GtkWidget *, GdkEventButton *,
 
 static void nsgtk_attach_menu_handlers(GladeXML *, gpointer);
 
+gboolean nsgtk_openfile_open(GtkWidget *widget, gpointer data);
+
 #define MENUEVENT(x) { #x, G_CALLBACK(nsgtk_on_##x##_activate) }
 #define MENUPROTO(x) static gboolean nsgtk_on_##x##_activate( \
 					GtkMenuItem *widget, gpointer g)
@@ -106,6 +108,7 @@ static void nsgtk_attach_menu_handlers(GladeXML *, gpointer);
 /* file menu */
 MENUPROTO(new_window);
 MENUPROTO(open_location);
+MENUPROTO(open_file);
 MENUPROTO(close_window);
 MENUPROTO(quit);
 
@@ -138,6 +141,7 @@ static struct menu_events menu_events[] = {
 	/* file menu */
 	MENUEVENT(new_window),
 	MENUEVENT(open_location),
+	MENUEVENT(open_file),
 	MENUEVENT(close_window),
 	MENUEVENT(quit),
 
@@ -337,6 +341,24 @@ gboolean nsgtk_window_url_changed(GtkWidget *widget, GdkEventKey *event,
 }
 
 
+gboolean nsgtk_openfile_open(GtkWidget *widget, gpointer data)
+{
+        struct browser_window *bw = nsgtk_get_browser_for_gui(
+						current_model->top_level);
+	char *filename = gtk_file_chooser_get_filename(
+						GTK_FILE_CHOOSER(wndOpenFile));
+	char *url = malloc(strlen(filename) + strlen("file://"));
+
+	sprintf(url, "file://%s", filename);
+	
+        browser_window_go(bw, url, 0, true);
+
+	g_free(filename);
+	free(url);
+
+        return TRUE;
+}
+
 /* signal handlers for menu entries */
 #define MENUHANDLER(x) gboolean nsgtk_on_##x##_activate(GtkMenuItem *widget, \
  gpointer g)
@@ -357,6 +379,14 @@ MENUHANDLER(open_location)
 	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
 
 	gtk_widget_grab_focus(GTK_WIDGET(gw->url_bar));
+
+	return TRUE;
+}
+
+MENUHANDLER(open_file)
+{
+	current_model = (struct gtk_scaffolding *)g;
+	gtk_dialog_run(wndOpenFile);
 
 	return TRUE;
 }

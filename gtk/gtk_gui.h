@@ -18,3 +18,5 @@ extern GtkWindow *wndAbout;
 
 extern GtkWindow *wndTooltip;
 extern GtkLabel *labelTooltip;
+
+extern GtkDialog *wndOpenFile;
