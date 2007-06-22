@@ -347,7 +347,7 @@ gboolean nsgtk_openfile_open(GtkWidget *widget, gpointer data)
 						current_model->top_level);
 	char *filename = gtk_file_chooser_get_filename(
 						GTK_FILE_CHOOSER(wndOpenFile));
-	char *url = malloc(strlen(filename) + strlen("file://"));
+	char *url = malloc(strlen(filename) + strlen("file://") + 1);
 
 	sprintf(url, "file://%s", filename);
 	
