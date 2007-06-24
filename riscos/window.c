@@ -1944,7 +1944,7 @@ void ro_gui_window_close(wimp_w w) {
 	if (g->bw)
 		content = g->bw->current_content;
 	if (pointer.buttons & wimp_CLICK_ADJUST) {
-		filename = url_to_path(content->url);
+		filename = (content && content->url) ? url_to_path(content->url) : NULL;
 		if (filename) {
 			temp_name = malloc(strlen(filename) + 32);
 			if (temp_name) {
