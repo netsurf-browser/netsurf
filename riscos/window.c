@@ -2644,12 +2644,9 @@ void ro_gui_scroll_request(wimp_scroll *scroll)
 	int x, y;
 	struct gui_window *g = ro_gui_window_lookup(scroll->w);
 
-	if (!g)
-		return;
-
 	x = scroll->visible.x1 - scroll->visible.x0 - 32;
 	y = scroll->visible.y1 - scroll->visible.y0 - 32;
-	if (g->toolbar)
+	if (g && g->toolbar)
 		y -= ro_gui_theme_toolbar_full_height(g->toolbar);
 
 	switch (scroll->xmin) {
