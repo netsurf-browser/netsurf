@@ -308,6 +308,7 @@ void gui_poll(bool active)
 		g_main_context_remove_poll(0, fd_list[i]);
 		free(fd_list[i]);
 	}
+        schedule_run();
 }
 
 
