@@ -84,7 +84,7 @@ schedule_remove(void (*callback)(void *p), void *p)
 void
 schedule(int t, void (*callback)(void *p), void *p)
 {
-        const int msec_timeout = t * 100;
+        const int msec_timeout = t * 10;
         _nsgtk_callback_t *cb = malloc(sizeof(_nsgtk_callback_t));
         /* Kill any pending schedule of this kind. */
         schedule_remove(callback, p);
