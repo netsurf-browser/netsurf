@@ -2460,6 +2460,18 @@ char *urldb_get_cookie(const char *url)
 			}
 		}
 
+		if (!p->parent) {
+			/* No parent, so bail here. This can't go in
+			 * the loop exit condition as we also want to
+			 * process the top-level node.
+                         *
+                         * If p->parent is NULL then p->cookies are
+                         * the domain cookies and thus we don't even
+                         * try matching against them.
+                         */
+			break;
+		}
+                
 		/* Consider p itself - may be the result of Path=/foo */
 		for (c = p->cookies; c; c = c->next) {
 			if (c->expires != 1 && c->expires < now)
@@ -2491,12 +2503,6 @@ char *urldb_get_cookie(const char *url)
 			count++;
 		}
 
-		if (!p->parent) {
-			/* No parent, so bail here. This can't go in the
-			 * loop exit condition as we want to process the
-			 * top-level node, too */
-			break;
-		}
 	}
 
 //	LOG(("%s", ret));
