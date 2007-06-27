@@ -210,7 +210,13 @@ void gui_init(int argc, char** argv)
 		LOG(("Using '%s' as URL file", buf));
 		option_url_file = strdup(buf);
 	}
-
+        
+        if (!option_ca_path) {
+                find_resource(buf, "certs", "/etc/ssl/certs");
+                LOG(("Using '%s' as certificate path", buf));
+                option_ca_path = strdup(buf);
+        }
+        
 	find_resource(buf, "messages", "./gtk/res/messages");
 	LOG(("Using '%s' as Messages file", buf));
 	messages_load(buf);
