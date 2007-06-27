@@ -1342,9 +1342,9 @@ void register_curl_fetchers(void)
 	SETOPT(CURLOPT_NOSIGNAL, 1L);
 	SETOPT(CURLOPT_CONNECTTIMEOUT, 30L);
 
-	if (option_ca_bundle)
+	if (option_ca_bundle && strcmp(option_ca_bundle, ""))
 		SETOPT(CURLOPT_CAINFO, option_ca_bundle);
-	if (option_ca_path)
+	if (option_ca_path && strcmp(option_ca_path, ""))
 		SETOPT(CURLOPT_CAPATH, option_ca_path);
 
         /* cURL initialised okay, register the fetchers */
