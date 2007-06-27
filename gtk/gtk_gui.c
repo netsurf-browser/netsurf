@@ -426,7 +426,17 @@ void hotlist_visited(struct content *content)
 }
 
 void gui_cert_verify(struct browser_window *bw, struct content *c,
-		const struct ssl_cert_info *certs, unsigned long num) {}
+		const struct ssl_cert_info *certs, unsigned long num)
+{
+
+	/* TODO: we should open a window showing what the certificate
+	 * problem is and offer the user the choice to reject it.  Until
+	 * we do this, we just always accept them.
+	 * */
+
+  	urldb_set_cert_permissions(c->url, true);
+	browser_window_go(bw, c->url, 0, true);
+}
 
 utf8_convert_ret utf8_to_local_encoding(const char *string, size_t len,
 		char **result)
