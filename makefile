@@ -133,7 +133,7 @@ CFLAGS_GTK = -std=c99 -Dgtk -Dnsgtk \
 	-D_BSD_SOURCE \
 	-D_XOPEN_SOURCE=600 \
 	-D_POSIX_C_SOURCE=200112L \
-	$(WARNFLAGS) -I. -g -O0 -Wformat=2 \
+	$(WARNFLAGS) -I. -g -O \
 	`pkg-config --cflags libglade-2.0 gtk+-2.0` `xml2-config --cflags`
 
 # Stop GCC under Cygwin throwing a fit
