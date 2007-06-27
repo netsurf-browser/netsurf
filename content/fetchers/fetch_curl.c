@@ -1288,6 +1288,12 @@ fetch_curl_finalise(const char *scheme)
         }
 }
 
+/** Ignore everything given to it.
+ *
+ * Used to ignore cURL debug.
+ */
+int fetch_curl_ignore(void) { return 0; }
+
 /**
  * Initialise the fetcher.
  *
@@ -1331,6 +1337,8 @@ void register_curl_fetchers(void)
 	    SETOPT(CURLOPT_VERBOSE, 0);
 	}
 	SETOPT(CURLOPT_ERRORBUFFER, fetch_error_buffer);
+        if (option_suppress_curl_debug)
+                SETOPT(CURLOPT_DEBUGFUNCTION, fetch_curl_ignore);
 	SETOPT(CURLOPT_WRITEFUNCTION, fetch_curl_data);
 	SETOPT(CURLOPT_HEADERFUNCTION, fetch_curl_header);
 	SETOPT(CURLOPT_PROGRESSFUNCTION, fetch_curl_progress);

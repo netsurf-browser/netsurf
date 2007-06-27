@@ -128,6 +128,9 @@ int option_max_fetchers_per_host = 2;
  * is this plus option_max_fetchers.
  */
 int option_max_cached_fetch_handles = 6;
+/** Suppress debug output from cURL. */
+bool option_suppress_curl_debug = true;
+
 /** Whether to allow target="_blank" */
 bool option_target_blank = true;
 
@@ -181,6 +184,7 @@ struct {
 		             OPTION_INTEGER, &option_max_fetchers_per_host },
 	{ "max_cached_fetch_handles",
 		             OPTION_INTEGER, &option_max_cached_fetch_handles },
+	{ "suppress_curl_debug", OPTION_BOOL, &option_suppress_curl_debug },
 	{ "target_blank",
 		             OPTION_BOOL,    &option_target_blank },
 	EXTRA_OPTION_TABLE

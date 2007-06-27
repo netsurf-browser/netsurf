@@ -73,6 +73,7 @@ extern int option_toolbar_status_width;
 extern int option_max_fetchers;
 extern int option_max_fetchers_per_host;
 extern int option_max_cached_fetch_handles;
+extern bool option_suppress_curl_debug;
 
 
 void options_read(const char *path);
