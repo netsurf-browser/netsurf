@@ -87,6 +87,8 @@ int option_expire_url = 28;
 int option_font_default = CSS_FONT_FAMILY_SANS_SERIF;
 /** ca-bundle location */
 char *option_ca_bundle = 0;
+/** ca-path location */
+char *option_ca_path = 0;
 /** Cookie file location */
 char *option_cookie_file = 0;
 /** Cookie jar loaction */
@@ -161,6 +163,7 @@ struct {
 	{ "expire_url",      OPTION_INTEGER, &option_expire_url },
 	{ "font_default",    OPTION_INTEGER, &option_font_default },
 	{ "ca_bundle",       OPTION_STRING,  &option_ca_bundle },
+	{ "ca_path",         OPTION_STRING,  &option_ca_path },
 	{ "cookie_file",     OPTION_STRING,  &option_cookie_file },
 	{ "cookie_jar",      OPTION_STRING,  &option_cookie_jar },
         { "homepage_url",    OPTION_STRING,  &option_homepage_url },

@@ -55,6 +55,7 @@ extern char *option_font_mono;
 extern char *option_font_cursive;
 extern char *option_font_fantasy;
 extern char *option_ca_bundle;
+extern char *option_ca_path;
 extern char *option_cookie_file;
 extern char *option_cookie_jar;
 extern char *option_homepage_url;

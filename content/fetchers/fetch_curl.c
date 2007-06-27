@@ -1344,6 +1344,8 @@ void register_curl_fetchers(void)
 
 	if (option_ca_bundle)
 		SETOPT(CURLOPT_CAINFO, option_ca_bundle);
+	if (option_ca_path)
+		SETOPT(CURLOPT_CAPATH, option_ca_path);
 
         /* cURL initialised okay, register the fetchers */
 
