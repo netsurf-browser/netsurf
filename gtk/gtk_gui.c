@@ -210,13 +210,13 @@ void gui_init(int argc, char** argv)
 		LOG(("Using '%s' as URL file", buf));
 		option_url_file = strdup(buf);
 	}
-        
+
         if (!option_ca_path) {
                 find_resource(buf, "certs", "/etc/ssl/certs");
                 LOG(("Using '%s' as certificate path", buf));
                 option_ca_path = strdup(buf);
         }
-        
+
 	find_resource(buf, "messages", "./gtk/res/messages");
 	LOG(("Using '%s' as Messages file", buf));
 	messages_load(buf);
@@ -246,7 +246,7 @@ void gui_init(int argc, char** argv)
 	fontdesc = pango_font_description_from_string("Monospace 8");
 	gtk_widget_modify_font(GTK_WIDGET(
 		glade_xml_get_widget(gladeWindows, "textviewGPL")), fontdesc);
-	
+
 	wndWarning = GTK_WINDOW(glade_xml_get_widget(gladeWindows, "wndWarning"));
 	wndOpenFile = GTK_DIALOG(glade_xml_get_widget(gladeWindows, "wndOpenFile"));
 
@@ -258,7 +258,7 @@ void gui_init2(int argc, char** argv)
 {
 	const char *addr = "http://netsurf-browser.org/";
 
-        if (option_homepage_url != NULL)
+        if (option_homepage_url != NULL && option_homepage_url[0] != '\0')
                 addr = option_homepage_url;
 
 	if (argc > 1) addr = argv[1];
