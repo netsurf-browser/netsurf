@@ -194,7 +194,7 @@ void nsgtk_window_destroy_event(GtkWidget *widget, gpointer data)
 
 	if (--open_windows == 0)
 		netsurf_quit = true;
-        
+
         if (!g->being_destroyed) {
                 g->being_destroyed = 1;
                 nsgtk_window_destroy_browser(g->top_level);
@@ -215,7 +215,7 @@ void nsgtk_window_update_back_forward(struct gtk_scaffolding *g)
 {
 	int width, height;
         struct browser_window *bw = nsgtk_get_browser_for_gui(g->top_level);
-        
+
 	gtk_widget_set_sensitive(GTK_WIDGET(g->back_button),
 			history_back_available(bw->history));
 	gtk_widget_set_sensitive(GTK_WIDGET(g->forward_button),
@@ -255,7 +255,7 @@ gboolean nsgtk_window_back_button_clicked(GtkWidget *widget, gpointer data)
 {
 	struct gtk_scaffolding *g = data;
         struct browser_window *bw = nsgtk_get_browser_for_gui(g->top_level);
-        
+
 	if (!history_back_available(bw->history))
 		return TRUE;
 
@@ -316,14 +316,10 @@ gboolean nsgtk_window_home_button_clicked(GtkWidget *widget, gpointer data)
 gboolean nsgtk_window_url_activate_event(GtkWidget *widget, gpointer data)
 {
 	struct gtk_scaffolding *g = data;
-	char *referer = 0;
         struct browser_window *bw = nsgtk_get_browser_for_gui(g->top_level);
 
-	if (bw->current_content && bw->current_content->url)
-		referer = bw->current_content->url;
-
 	browser_window_go(bw, gtk_entry_get_text(GTK_ENTRY(g->url_bar)),
-                          referer, true);
+                          0, true);
 
 	return TRUE;
 }
@@ -350,7 +346,7 @@ gboolean nsgtk_openfile_open(GtkWidget *widget, gpointer data)
 	char *url = malloc(strlen(filename) + strlen("file://") + 1);
 
 	sprintf(url, "file://%s", filename);
-	
+
         browser_window_go(bw, url, 0, true);
 
 	g_free(filename);
@@ -418,7 +414,7 @@ MENUHANDLER(zoom_in)
 	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
         struct browser_window *bw = nsgtk_get_browser_for_gui(gw->top_level);
         float old_scale = nsgtk_get_scale_for_gui(gw->top_level);
-        
+
 	browser_window_set_scale(bw, old_scale + 0.05, true);
 
 	return TRUE;
@@ -524,7 +520,7 @@ gboolean nsgtk_history_expose_event(GtkWidget *widget,
 {
 	struct gtk_history_window *hw = (struct gtk_history_window *)g;
         struct browser_window *bw = nsgtk_get_browser_for_gui(hw->g->top_level);
-        
+
 	current_widget = widget;
 	current_drawable = widget->window;
 	current_gc = gdk_gc_new(current_drawable);
@@ -548,9 +544,9 @@ gboolean nsgtk_history_button_press_event(GtkWidget *widget,
 {
 	struct gtk_history_window *hw = (struct gtk_history_window *)g;
         struct browser_window *bw = nsgtk_get_browser_for_gui(hw->g->top_level);
-        
+
         LOG(("X=%g, Y=%g", event->x, event->y));
-        
+
 	history_click(bw, bw->history,
 		      event->x, event->y, false);
 
@@ -573,7 +569,7 @@ static gboolean do_scroll_event(GtkWidget *widget, GdkEvent *ev,
                 gtk_widget_event(g_object_get_data(
                 			G_OBJECT(widget), "hScroll"), ev);
         }
-        
+
         return TRUE;
 }
 
@@ -586,14 +582,14 @@ void nsgtk_attach_toplevel_viewport(nsgtk_scaffolding *g,
         GtkTable *table = GTK_TABLE(GET_WIDGET("centreTable"));
         LOG(("Attaching viewport to scaffolding %p", g));
         gtk_table_attach_defaults(table, GTK_WIDGET(vp), 0, 1, 0, 1);
-	
+
         /* connect our scrollbars to the viewport */
 	scrollbar = GET_WIDGET("coreScrollHorizontal");
-	gtk_viewport_set_hadjustment(vp, 
+	gtk_viewport_set_hadjustment(vp,
 		gtk_range_get_adjustment(GTK_RANGE(scrollbar)));
         g_object_set_data(G_OBJECT(vp), "hScroll", scrollbar);
         scrollbar = GET_WIDGET("coreScrollVertical");
-	gtk_viewport_set_vadjustment(vp, 
+	gtk_viewport_set_vadjustment(vp,
                 gtk_range_get_adjustment(GTK_RANGE(scrollbar)));
         g_object_set_data(G_OBJECT(vp), "vScroll", scrollbar);
         g_signal_connect(G_OBJECT(vp), "scroll_event",
@@ -609,11 +605,11 @@ void nsgtk_attach_toplevel_viewport(nsgtk_scaffolding *g,
 nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 {
         struct gtk_scaffolding *g = malloc(sizeof(*g));
-        
+
         LOG(("Constructing a scaffold of %p for gui_window %p", g, toplevel));
-        
+
         g->top_level = toplevel;
-        
+
 	open_windows++;
 
 	/* load the window template from the glade xml file, and extract
@@ -738,9 +734,9 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 
 	/* set up the menu signal handlers */
 	nsgtk_attach_menu_handlers(g->xml, g);
-        
+
         g->being_destroyed = 0;
-        
+
 	/* finally, show the window. */
 	gtk_widget_show(GTK_WIDGET(g->window));
 
