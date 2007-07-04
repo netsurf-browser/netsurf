@@ -75,6 +75,6 @@ Put functions in a logical order, for example any init function first, then
 functions it calls, then the next externally available function, functions it
 calls, etc.
 
-We use K&R style, tabs for indent, 80 characters wide,
+We use K&R (2nd edition ANSI C) style, tabs for indent, 80 characters wide,
 lower_case_with_underscores.
 
