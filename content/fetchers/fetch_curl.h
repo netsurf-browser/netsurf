@@ -14,7 +14,7 @@
 
 #include <curl/curl.h>
 
-void register_curl_fetchers(void);
+void fetch_curl_register(void);
 
 /** Global cURL multi handle. */
 extern CURLM *fetch_curl_multi;

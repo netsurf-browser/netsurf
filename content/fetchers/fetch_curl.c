@@ -57,15 +57,15 @@ struct cert_info {
 
 /** Information for a single fetch. */
 struct curl_fetch_info {
-        struct fetch *fetch_handle; /**< The fetch handle we're parented by. */
+	struct fetch *fetch_handle; /**< The fetch handle we're parented by. */
 	CURL * curl_handle;	/**< cURL handle if being fetched, or 0. */
 	bool had_headers;	/**< Headers have been processed. */
 	bool abort;		/**< Abort requested. */
 	bool stopped;		/**< Download stopped on purpose. */
 	bool only_2xx;		/**< Only HTTP 2xx responses acceptable. */
 	bool verifiable;	/**< Transaction is verifiable */
-        char *url;		/**< URL of this fetch. */
-        char *host;		/**< The hostname of this fetch. */
+	char *url;		/**< URL of this fetch. */
+	char *host;		/**< The hostname of this fetch. */
 	char *parent_fetch_url;	/**< URL of parent fetch (not necessarily
 				 * the same as the referer) */
 	struct curl_slist *headers;	/**< List of request headers. */
@@ -74,7 +74,7 @@ struct curl_fetch_info {
 	char *cookie_string;	/**< Cookie string for this fetch */
 	char *realm;		/**< HTTP Auth Realm */
 	char *post_urlenc;	/**< Url encoded POST string, or 0. */
-        unsigned long http_code; /**< HTTP result code from cURL. */
+	unsigned long http_code; /**< HTTP result code from cURL. */
 	struct curl_httppost *post_multipart;	/**< Multipart post data, or 0. */
 	struct cache_data cachedata;	/**< Cache control data */
 	time_t last_modified;		/**< If-Modified-Since time */
@@ -97,20 +97,36 @@ CURLM *fetch_curl_multi;		/**< Global cURL multi handle. */
 /** Curl handle with default options set; not used for transfers. */
 static CURL *fetch_blank_curl;
 static struct cache_handle *curl_handle_ring = 0; /**< Ring of cached handles */
+static int curl_fetchers_registered = 0;
 
 static char fetch_error_buffer[CURL_ERROR_SIZE]; /**< Error buffer for cURL. */
 static char fetch_progress_buffer[256]; /**< Progress buffer for cURL */
 static char fetch_proxy_userpwd[100];	/**< Proxy authentication details. */
 
+static bool fetch_curl_initialise(const char *scheme);
+static void fetch_curl_finalise(const char *scheme);
+static void * fetch_curl_setup(struct fetch *parent_fetch, const char *url,
+		 bool only_2xx, const char *post_urlenc,
+		 struct form_successful_control *post_multipart,
+		 bool verifiable, const char *parent_url, const char **headers);
+static bool fetch_curl_start(void *vfetch);
+static bool fetch_curl_initiate_fetch(struct curl_fetch_info *fetch,
+		CURL *handle);
+static CURL *fetch_curl_get_handle(char *host);
+static void fetch_curl_cache_handle(CURL *handle, char *hostname);
 static CURLcode fetch_curl_set_options(struct curl_fetch_info *f);
 #ifdef WITH_SSL
-static CURLcode fetch_curl_sslctxfun(CURL *curl_handle, SSL_CTX *sslctx, void *p);
+static CURLcode fetch_curl_sslctxfun(CURL *curl_handle, SSL_CTX *sslctx,
+		void *p);
 #endif
-static void fetch_curl_free(void *f);
+static void fetch_curl_abort(void *vf);
 static void fetch_curl_stop(struct curl_fetch_info *f);
+static void fetch_curl_free(void *f);
+static void fetch_curl_poll(const char *scheme_ignored);
 static void fetch_curl_done(CURL *curl_handle, CURLcode result);
 static int fetch_curl_progress(void *clientp, double dltotal, double dlnow,
 		double ultotal, double ulnow);
+static int fetch_curl_ignore(void);
 static size_t fetch_curl_data(void *data, size_t size, size_t nmemb,
 		struct curl_fetch_info *f);
 static size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
@@ -119,11 +135,133 @@ static bool fetch_curl_process_headers(struct curl_fetch_info *f);
 static struct curl_httppost *fetch_curl_post_convert(
 		struct form_successful_control *control);
 #ifdef WITH_SSL
-static int fetch_curl_verify_callback(int preverify_ok, X509_STORE_CTX *x509_ctx);
-static int fetch_curl_cert_verify_callback(X509_STORE_CTX *x509_ctx, void *parm);
+static int fetch_curl_verify_callback(int preverify_ok,
+		X509_STORE_CTX *x509_ctx);
+static int fetch_curl_cert_verify_callback(X509_STORE_CTX *x509_ctx,
+		void *parm);
 #endif
 
-static void fetch_curl_cache_handle(CURL *handle, char *hostname);
+
+/**
+ * Initialise the fetcher.
+ *
+ * Must be called once before any other function.
+ */
+
+void fetch_curl_register(void)
+{
+	CURLcode code;
+	curl_version_info_data *data;
+	int i;
+
+	LOG(("curl_version %s", curl_version()));
+
+	code = curl_global_init(CURL_GLOBAL_ALL);
+	if (code != CURLE_OK)
+		die("Failed to initialise the fetch module "
+				"(curl_global_init failed).");
+
+	fetch_curl_multi = curl_multi_init();
+	if (!fetch_curl_multi)
+		die("Failed to initialise the fetch module "
+				"(curl_multi_init failed).");
+
+	/* Create a curl easy handle with the options that are common to all
+	   fetches. */
+	fetch_blank_curl = curl_easy_init();
+	if (!fetch_blank_curl)
+		die("Failed to initialise the fetch module "
+				"(curl_easy_init failed).");
+
+#undef SETOPT
+#define SETOPT(option, value) \
+	code = curl_easy_setopt(fetch_blank_curl, option, value);	\
+	if (code != CURLE_OK)						\
+		goto curl_easy_setopt_failed;
+
+	if (verbose_log) {
+	    SETOPT(CURLOPT_VERBOSE, 1);
+	} else {
+	    SETOPT(CURLOPT_VERBOSE, 0);
+	}
+	SETOPT(CURLOPT_ERRORBUFFER, fetch_error_buffer);
+	if (option_suppress_curl_debug)
+		SETOPT(CURLOPT_DEBUGFUNCTION, fetch_curl_ignore);
+	SETOPT(CURLOPT_WRITEFUNCTION, fetch_curl_data);
+	SETOPT(CURLOPT_HEADERFUNCTION, fetch_curl_header);
+	SETOPT(CURLOPT_PROGRESSFUNCTION, fetch_curl_progress);
+	SETOPT(CURLOPT_NOPROGRESS, 0);
+	SETOPT(CURLOPT_USERAGENT, user_agent_string());
+	SETOPT(CURLOPT_ENCODING, "gzip");
+	SETOPT(CURLOPT_LOW_SPEED_LIMIT, 1L);
+	SETOPT(CURLOPT_LOW_SPEED_TIME, 180L);
+	SETOPT(CURLOPT_NOSIGNAL, 1L);
+	SETOPT(CURLOPT_CONNECTTIMEOUT, 30L);
+
+	if (option_ca_bundle && strcmp(option_ca_bundle, ""))
+		SETOPT(CURLOPT_CAINFO, option_ca_bundle);
+	if (option_ca_path && strcmp(option_ca_path, ""))
+		SETOPT(CURLOPT_CAPATH, option_ca_path);
+
+	/* cURL initialised okay, register the fetchers */
+
+	data = curl_version_info(CURLVERSION_NOW);
+
+	for (i = 0; data->protocols[i]; i++)
+		if (!fetch_add_fetcher(data->protocols[i],
+				       fetch_curl_initialise,
+				       fetch_curl_setup,
+				       fetch_curl_start,
+				       fetch_curl_abort,
+				       fetch_curl_free,
+				       fetch_curl_poll,
+				       fetch_curl_finalise)) {
+			LOG(("Unable to register cURL fetcher for %s",
+					data->protocols[i]));
+		}
+	return;
+
+curl_easy_setopt_failed:
+	die("Failed to initialise the fetch module "
+			"(curl_easy_setopt failed).");
+}
+
+
+/**
+ * Initialise a cURL fetcher.
+ */
+
+bool fetch_curl_initialise(const char *scheme)
+{
+	LOG(("Initialise cURL fetcher for %s", scheme));
+	curl_fetchers_registered++;
+	return true; /* Always succeeds */
+}
+
+
+/**
+ * Finalise a cURL fetcher
+ */
+
+void fetch_curl_finalise(const char *scheme)
+{
+	curl_fetchers_registered--;
+	LOG(("Finalise cURL fetcher %s", scheme));
+	if (curl_fetchers_registered == 0) {
+		/* All the fetchers have been finalised. */
+		LOG(("All cURL fetchers finalised, closing down cURL"));
+		CURLMcode codem;
+
+		curl_easy_cleanup(fetch_blank_curl);
+
+		codem = curl_multi_cleanup(fetch_curl_multi);
+		if (codem != CURLM_OK)
+			LOG(("curl_multi_cleanup failed: ignoring"));
+
+		curl_global_cleanup();
+	}
+}
+
 
 /**
  * Start fetching data for the given URL.
@@ -147,11 +285,10 @@ static void fetch_curl_cache_handle(CURL *handle, char *hostname);
  * callbacks will contain this.
  */
 
-static void *
-fetch_curl_setup(struct fetch *parent_fetch, const char *url,
-                 bool only_2xx, const char *post_urlenc,
-                 struct form_successful_control *post_multipart,
-                 bool verifiable, const char *parent_url, const char **headers)
+void * fetch_curl_setup(struct fetch *parent_fetch, const char *url,
+		 bool only_2xx, const char *post_urlenc,
+		 struct form_successful_control *post_multipart,
+		 bool verifiable, const char *parent_url, const char **headers)
 {
 	char *host;
 	struct curl_fetch_info *fetch;
@@ -163,7 +300,7 @@ fetch_curl_setup(struct fetch *parent_fetch, const char *url,
 	if (!fetch)
 		return 0;
 
-        fetch->fetch_handle = parent_fetch;
+	fetch->fetch_handle = parent_fetch;
 
 	res = url_host(url, &host);
 	if (res != URL_FUNC_OK) {
@@ -176,7 +313,7 @@ fetch_curl_setup(struct fetch *parent_fetch, const char *url,
 			goto failed;
 	}
 
-        LOG(("fetch %p, url '%s'", fetch, url));
+	LOG(("fetch %p, url '%s'", fetch, url));
 
 	/* construct a new fetch structure */
 	fetch->curl_handle = 0;
@@ -211,15 +348,15 @@ fetch_curl_setup(struct fetch *parent_fetch, const char *url,
 	fetch->cachedata.last_modified = 0;
 	fetch->last_modified = 0;
 	fetch->file_etag = 0;
-        fetch->http_code = 0;
+	fetch->http_code = 0;
 #ifdef WITH_SSL
 	memset(fetch->cert_data, 0, sizeof(fetch->cert_data));
 #endif
 
 	if (!fetch->url ||
-            (parent_url && !fetch->parent_fetch_url) ||
-            (post_urlenc && !fetch->post_urlenc) ||
-            (post_multipart && !fetch->post_multipart))
+	    (parent_url && !fetch->parent_fetch_url) ||
+	    (post_urlenc && !fetch->post_urlenc) ||
+	    (post_multipart && !fetch->post_multipart))
 		goto failed;
 
 #define APPEND(list, value) \
@@ -284,14 +421,28 @@ failed:
 	return 0;
 }
 
+
+/**
+ * Dispatch a single job
+ */
+bool fetch_curl_start(void *vfetch)
+{
+	struct curl_fetch_info *fetch = (struct curl_fetch_info*)vfetch;
+	return fetch_curl_initiate_fetch(fetch,
+			fetch_curl_get_handle(fetch->host));
+}
+
+
 /**
  * Initiate a fetch from the queue.
  *
- * Called with a fetch structure and a CURL handle to be used to fetch the content.
+ * Called with a fetch structure and a CURL handle to be used to fetch the
+ * content.
  *
  * This will return whether or not the fetch was successfully initiated.
  */
-static bool fetch_curl_initiate_fetch(struct curl_fetch_info *fetch, CURL *handle)
+
+bool fetch_curl_initiate_fetch(struct curl_fetch_info *fetch, CURL *handle)
 {
 	CURLcode code;
 	CURLMcode codem;
@@ -312,10 +463,12 @@ static bool fetch_curl_initiate_fetch(struct curl_fetch_info *fetch, CURL *handl
 	return true;
 }
 
+
 /**
  * Find a CURL handle to use to dispatch a job
  */
-static CURL *fetch_curl_get_handle(char *host)
+
+CURL *fetch_curl_get_handle(char *host)
 {
 	struct cache_handle *h;
 	CURL *ret;
@@ -331,20 +484,12 @@ static CURL *fetch_curl_get_handle(char *host)
 	return ret;
 }
 
-/**
- * Dispatch a single job
- */
-static bool fetch_curl_start(void *vfetch)
-{
-        struct curl_fetch_info *fetch = (struct curl_fetch_info*)vfetch;
-	return fetch_curl_initiate_fetch(fetch, fetch_curl_get_handle(fetch->host));
-}
 
 /**
  * Cache a CURL handle for the provided host (if wanted)
- *
  */
-static void fetch_curl_cache_handle(CURL *handle, char *host)
+
+void fetch_curl_cache_handle(CURL *handle, char *host)
 {
 	struct cache_handle *h = 0;
 	int c;
@@ -377,11 +522,12 @@ static void fetch_curl_cache_handle(CURL *handle, char *host)
 	RING_INSERT(curl_handle_ring, h);
 }
 
+
 /**
  * Set options specific for a fetch.
  */
 
-static CURLcode
+CURLcode
 fetch_curl_set_options(struct curl_fetch_info *f)
 {
 	CURLcode code;
@@ -475,12 +621,12 @@ fetch_curl_set_options(struct curl_fetch_info *f)
  * cURL SSL setup callback
  */
 
-static CURLcode
+CURLcode
 fetch_curl_sslctxfun(CURL *curl_handle, SSL_CTX *sslctx, void *parm)
 {
 	SSL_CTX_set_verify(sslctx, SSL_VERIFY_PEER, fetch_curl_verify_callback);
 	SSL_CTX_set_cert_verify_callback(sslctx, fetch_curl_cert_verify_callback,
-                                         parm);
+					 parm);
 	return CURLE_OK;
 }
 #endif
@@ -490,15 +636,15 @@ fetch_curl_sslctxfun(CURL *curl_handle, SSL_CTX *sslctx, void *parm)
  * Abort a fetch.
  */
 
-static void fetch_curl_abort(void *vf)
+void fetch_curl_abort(void *vf)
 {
-        struct curl_fetch_info *f = (struct curl_fetch_info *)vf;
+	struct curl_fetch_info *f = (struct curl_fetch_info *)vf;
 	assert(f);
 	LOG(("fetch %p, url '%s'", f, f->url));
 	if (f->curl_handle) {
 		f->abort = true;
 	} else {
-                fetch_can_be_freed(f->fetch_handle);
+		fetch_can_be_freed(f->fetch_handle);
 	}
 }
 
@@ -509,7 +655,7 @@ static void fetch_curl_abort(void *vf)
  * Will prod the queue afterwards to allow pending requests to be initiated.
  */
 
-static void fetch_curl_stop(struct curl_fetch_info *f)
+void fetch_curl_stop(struct curl_fetch_info *f)
 {
 	CURLMcode codem;
 
@@ -534,9 +680,9 @@ static void fetch_curl_stop(struct curl_fetch_info *f)
  * Free a fetch structure and associated resources.
  */
 
-static void fetch_curl_free(void *vf)
+void fetch_curl_free(void *vf)
 {
-        struct curl_fetch_info *f = (struct curl_fetch_info *)vf;
+	struct curl_fetch_info *f = (struct curl_fetch_info *)vf;
 #ifdef WITH_SSL
 	int i;
 #endif
@@ -574,7 +720,7 @@ static void fetch_curl_free(void *vf)
  * Must be called regularly to make progress on fetches.
  */
 
-static void fetch_curl_poll(const char *scheme_ignored)
+void fetch_curl_poll(const char *scheme_ignored)
 {
 	int running, queue;
 	CURLMcode codem;
@@ -608,7 +754,7 @@ static void fetch_curl_poll(const char *scheme_ignored)
  * \param  curl_handle  curl easy handle of fetch
  */
 
-static void fetch_curl_done(CURL *curl_handle, CURLcode result)
+void fetch_curl_done(CURL *curl_handle, CURLcode result)
 {
 	bool finished = false;
 	bool error = false;
@@ -629,6 +775,7 @@ static void fetch_curl_done(CURL *curl_handle, CURLcode result)
 	assert(code == CURLE_OK);
 
 	abort = f->abort;
+	LOG(("done %s", f->url));
 
 	if (!abort && result == CURLE_OK) {
 		/* fetch completed normally */
@@ -667,11 +814,11 @@ static void fetch_curl_done(CURL *curl_handle, CURLcode result)
 		f->cachedata.etag = 0;
 	}
 
-	/* postponed until after stop so that queue fetches are started */
 	if (abort)
 		; /* fetch was aborted: no callback */
 	else if (finished) {
-		fetch_send_callback(FETCH_FINISHED, f->fetch_handle, &cachedata, 0);
+		fetch_send_callback(FETCH_FINISHED, f->fetch_handle,
+				&cachedata, 0);
 		free(cachedata.etag);
 	}
 #ifdef WITH_SSL
@@ -752,14 +899,16 @@ static void fetch_curl_done(CURL *curl_handle, CURLcode result)
 				X509_free(certs[i].cert);
 		}
 
-		fetch_send_callback(FETCH_CERT_ERR, f->fetch_handle, &ssl_certs, i);
+		fetch_send_callback(FETCH_CERT_ERR, f->fetch_handle,
+				&ssl_certs, i);
 
 	}
 #endif
 	else if (error)
-		fetch_send_callback(FETCH_ERROR, f->fetch_handle, fetch_error_buffer, 0);
+		fetch_send_callback(FETCH_ERROR, f->fetch_handle,
+				fetch_error_buffer, 0);
 
-        fetch_curl_stop(f);
+	fetch_curl_stop(f);
 }
 
 
@@ -768,7 +917,7 @@ static void fetch_curl_done(CURL *curl_handle, CURLcode result)
  */
 
 int fetch_curl_progress(void *clientp, double dltotal, double dlnow,
-                        double ultotal, double ulnow)
+			double ultotal, double ulnow)
 {
 	struct curl_fetch_info *f = (struct curl_fetch_info *) clientp;
 	double percent;
@@ -783,16 +932,29 @@ int fetch_curl_progress(void *clientp, double dltotal, double dlnow,
 				human_friendly_bytesize(dlnow),
 				human_friendly_bytesize(dltotal));
 		fetch_send_callback(FETCH_PROGRESS, f->fetch_handle,
-                                    fetch_progress_buffer,
-                                    (unsigned long) percent);
+				    fetch_progress_buffer,
+				    (unsigned long) percent);
 	} else {
 		snprintf(fetch_progress_buffer, 255,
 				messages_get("ProgressU"),
 				human_friendly_bytesize(dlnow));
 		fetch_send_callback(FETCH_PROGRESS, f->fetch_handle,
-                                    fetch_progress_buffer, 0);
+				    fetch_progress_buffer, 0);
 	}
 
+	return 0;
+}
+
+
+
+/**
+ * Ignore everything given to it.
+ *
+ * Used to ignore cURL debug.
+ */
+
+int fetch_curl_ignore(void)
+{
 	return 0;
 }
 
@@ -802,7 +964,7 @@ int fetch_curl_progress(void *clientp, double dltotal, double dlnow,
  */
 
 size_t fetch_curl_data(void *data, size_t size, size_t nmemb,
-                       struct curl_fetch_info *f)
+		       struct curl_fetch_info *f)
 {
 	CURLcode code;
 
@@ -810,8 +972,8 @@ size_t fetch_curl_data(void *data, size_t size, size_t nmemb,
 	if (!f->http_code)
 	{
 		code = curl_easy_getinfo(f->curl_handle, CURLINFO_HTTP_CODE,
-                                         &f->http_code);
-                fetch_set_http_code(f->fetch_handle, f->http_code);
+					 &f->http_code);
+		fetch_set_http_code(f->fetch_handle, f->http_code);
 		assert(code == CURLE_OK);
 	}
 
@@ -848,7 +1010,7 @@ size_t fetch_curl_data(void *data, size_t size, size_t nmemb,
  */
 
 size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
-                         struct curl_fetch_info *f)
+			 struct curl_fetch_info *f)
 {
 	int i;
 	size *= nmemb;
@@ -1024,8 +1186,8 @@ bool fetch_curl_process_headers(struct curl_fetch_info *f)
 	if (!f->http_code)
 	{
 		code = curl_easy_getinfo(f->curl_handle, CURLINFO_HTTP_CODE,
-                                         &f->http_code);
-                fetch_set_http_code(f->fetch_handle, f->http_code);
+					 &f->http_code);
+		fetch_set_http_code(f->fetch_handle, f->http_code);
 		assert(code == CURLE_OK);
 	}
 	http_code = f->http_code;
@@ -1034,7 +1196,7 @@ bool fetch_curl_process_headers(struct curl_fetch_info *f)
 	if (http_code == 304 && !f->post_urlenc && !f->post_multipart) {
 		/* Not Modified && GET request */
 		fetch_send_callback(FETCH_NOTMODIFIED, f->fetch_handle,
-                                    (const char *)&f->cachedata, 0);
+				    (const char *)&f->cachedata, 0);
 		return true;
 	}
 
@@ -1057,7 +1219,7 @@ bool fetch_curl_process_headers(struct curl_fetch_info *f)
 	if (f->only_2xx && strncmp(f->url, "http", 4) == 0 &&
 			(http_code < 200 || 299 < http_code)) {
 		fetch_send_callback(FETCH_ERROR, f->fetch_handle,
-                                    messages_get("Not2xx"), 0);
+				    messages_get("Not2xx"), 0);
 		return true;
 	}
 
@@ -1086,7 +1248,7 @@ bool fetch_curl_process_headers(struct curl_fetch_info *f)
 				f->last_modified > s.st_mtime &&
 				f->file_etag == s.st_mtime) {
 			fetch_send_callback(FETCH_NOTMODIFIED, f->fetch_handle,
-                                            (const char *)&f->cachedata, 0);
+					    (const char *)&f->cachedata, 0);
 			curl_free(url_path);
 			return true;
 		}
@@ -1257,122 +1419,3 @@ int fetch_curl_cert_verify_callback(X509_STORE_CTX *x509_ctx, void *parm)
 }
 #endif
 
-static int curl_fetchers_registered = 0;
-/** Initialise a cURL fetcher */
-static bool
-fetch_curl_initialise(const char *scheme)
-{
-        LOG(("Initialise cURL fetcher for %s", scheme));
-        curl_fetchers_registered++;
-        return true; /* Always succeeds */
-}
-
-/** Finalise a cURL fetcher */
-static void
-fetch_curl_finalise(const char *scheme)
-{
-        curl_fetchers_registered--;
-        LOG(("Finalise cURL fetcher %s", scheme));
-        if (curl_fetchers_registered == 0) {
-                /* All the fetchers have been finalised. */
-                LOG(("All cURL fetchers finalised, closing down cURL"));
-                CURLMcode codem;
-
-                curl_easy_cleanup(fetch_blank_curl);
-
-                codem = curl_multi_cleanup(fetch_curl_multi);
-                if (codem != CURLM_OK)
-                        LOG(("curl_multi_cleanup failed: ignoring"));
-
-                curl_global_cleanup();
-        }
-}
-
-/** Ignore everything given to it.
- *
- * Used to ignore cURL debug.
- */
-int fetch_curl_ignore(void) { return 0; }
-
-/**
- * Initialise the fetcher.
- *
- * Must be called once before any other function.
- */
-
-void register_curl_fetchers(void)
-{
-	CURLcode code;
-	curl_version_info_data *data;
-        int i;
-
-	LOG(("curl_version %s", curl_version()));
-
-	code = curl_global_init(CURL_GLOBAL_ALL);
-	if (code != CURLE_OK)
-		die("Failed to initialise the fetch module "
-				"(curl_global_init failed).");
-
-	fetch_curl_multi = curl_multi_init();
-	if (!fetch_curl_multi)
-		die("Failed to initialise the fetch module "
-				"(curl_multi_init failed).");
-
-	/* Create a curl easy handle with the options that are common to all
-	   fetches. */
-	fetch_blank_curl = curl_easy_init();
-	if (!fetch_blank_curl)
-		die("Failed to initialise the fetch module "
-				"(curl_easy_init failed).");
-
-#undef SETOPT
-#define SETOPT(option, value) \
-	code = curl_easy_setopt(fetch_blank_curl, option, value);	\
-	if (code != CURLE_OK)						\
-		goto curl_easy_setopt_failed;
-
-	if (verbose_log) {
-	    SETOPT(CURLOPT_VERBOSE, 1);
-	} else {
-	    SETOPT(CURLOPT_VERBOSE, 0);
-	}
-	SETOPT(CURLOPT_ERRORBUFFER, fetch_error_buffer);
-        if (option_suppress_curl_debug)
-                SETOPT(CURLOPT_DEBUGFUNCTION, fetch_curl_ignore);
-	SETOPT(CURLOPT_WRITEFUNCTION, fetch_curl_data);
-	SETOPT(CURLOPT_HEADERFUNCTION, fetch_curl_header);
-	SETOPT(CURLOPT_PROGRESSFUNCTION, fetch_curl_progress);
-	SETOPT(CURLOPT_NOPROGRESS, 0);
-	SETOPT(CURLOPT_USERAGENT, user_agent_string());
-	SETOPT(CURLOPT_ENCODING, "gzip");
-	SETOPT(CURLOPT_LOW_SPEED_LIMIT, 1L);
-	SETOPT(CURLOPT_LOW_SPEED_TIME, 180L);
-	SETOPT(CURLOPT_NOSIGNAL, 1L);
-	SETOPT(CURLOPT_CONNECTTIMEOUT, 30L);
-
-	if (option_ca_bundle && strcmp(option_ca_bundle, ""))
-		SETOPT(CURLOPT_CAINFO, option_ca_bundle);
-	if (option_ca_path && strcmp(option_ca_path, ""))
-		SETOPT(CURLOPT_CAPATH, option_ca_path);
-
-        /* cURL initialised okay, register the fetchers */
-
-        data = curl_version_info(CURLVERSION_NOW);
-
-	for (i = 0; data->protocols[i]; i++)
-                if (!fetch_add_fetcher(data->protocols[i],
-                                       fetch_curl_initialise,
-                                       fetch_curl_setup,
-                                       fetch_curl_start,
-                                       fetch_curl_abort,
-                                       fetch_curl_free,
-                                       fetch_curl_poll,
-                                       fetch_curl_finalise)) {
-                        LOG(("Unable to register cURL fetcher for %s", data->protocols[i]));
-                }
-	return;
-
-curl_easy_setopt_failed:
-	die("Failed to initialise the fetch module "
-			"(curl_easy_setopt failed).");
-}
