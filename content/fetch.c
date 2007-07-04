@@ -89,7 +89,6 @@ static void fetch_unref_fetcher(scheme_fetcher *fetcher);
 static void fetch_dispatch_jobs(void);
 static bool fetch_choose_and_dispatch(void);
 static bool fetch_dispatch_job(struct fetch *fetch);
-static void fetch_free(struct fetch *f);
 
 
 /**
@@ -544,8 +543,8 @@ fetch_send_callback(fetch_msg msg, struct fetch *fetch, const void *data,
 	fetch->callback(msg, fetch->p, data, size);
 }
 
-void
-fetch_can_be_freed(struct fetch *fetch)
+
+void fetch_remove_from_queues(struct fetch *fetch)
 {
 	int all_active, all_queued;
 
@@ -565,9 +564,8 @@ fetch_can_be_freed(struct fetch *fetch)
 
 	LOG(("Fetch ring is now %d elements.", all_active));
 	LOG(("Queue ring is now %d elements.", all_queued));
-
-	fetch_free(fetch);
 }
+
 
 void
 fetch_set_http_code(struct fetch *fetch, long http_code)

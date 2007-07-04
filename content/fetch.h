@@ -110,7 +110,8 @@ bool fetch_add_fetcher(const char *scheme,
 
 void fetch_send_callback(fetch_msg msg, struct fetch *fetch,
 		const void *data, unsigned long size);
-void fetch_can_be_freed(struct fetch *fetch);
+void fetch_remove_from_queues(struct fetch *fetch);
+void fetch_free(struct fetch *f);
 void fetch_set_http_code(struct fetch *fetch, long http_code);
 const char *fetch_get_referer_to_send(struct fetch *fetch);
 #endif

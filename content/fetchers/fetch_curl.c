@@ -644,7 +644,8 @@ void fetch_curl_abort(void *vf)
 	if (f->curl_handle) {
 		f->abort = true;
 	} else {
-		fetch_can_be_freed(f->fetch_handle);
+		fetch_remove_from_queues(f->fetch_handle);
+		fetch_free(f->fetch_handle);
 	}
 }
 
@@ -672,7 +673,7 @@ void fetch_curl_stop(struct curl_fetch_info *f)
 		f->curl_handle = 0;
 	}
 
-	fetch_can_be_freed(f->fetch_handle);
+	fetch_remove_from_queues(f->fetch_handle);
 }
 
 
@@ -808,6 +809,8 @@ void fetch_curl_done(CURL *curl_handle, CURLcode result)
 	else
 		error = true;
 
+	fetch_curl_stop(f);
+
 	/* If finished, acquire cache info to pass to callback */
 	if (finished) {
 		memcpy(&cachedata, &f->cachedata, sizeof(struct cache_data));
@@ -908,7 +911,7 @@ void fetch_curl_done(CURL *curl_handle, CURLcode result)
 		fetch_send_callback(FETCH_ERROR, f->fetch_handle,
 				fetch_error_buffer, 0);
 
-	fetch_curl_stop(f);
+	fetch_free(f->fetch_handle);
 }
 
 
