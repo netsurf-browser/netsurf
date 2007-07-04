@@ -56,3 +56,25 @@ http://netsurf.strcprstskrzkrk.co.uk/developer/[]
 - libjpeg (JPEG support)		http://www.ijg.org/[]
 - zlib					http://www.gzip.org/zlib/[]
 - OpenSSL (HTTPS support)		http://www.openssl.org/[]
+
+Coding Style
+------------
+NetSurf's source is organised in modules. A module usually consists of a .c and
+.h file. For example the html module is in html.c and html.h.
+
+All functions (including static functions) in a module should start <module>_,
+for example html_create(), html_process_data(), etc. This makes functions easy
+to find and names unique through the source, which is helpful for backtraces,
+documentation, etc.
+
+Global variables in a module (including static) should also start <module>_.
+
+Static functions should all be declared at the top.
+
+Put functions in a logical order, for example any init function first, then
+functions it calls, then the next externally available function, functions it
+calls, etc.
+
+We use K&R style, tabs for indent, 80 characters wide,
+lower_case_with_underscores.
+
