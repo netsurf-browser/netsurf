@@ -3,7 +3,7 @@
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2004 John M Bell <jmb202@ecs.soton.ac.uk>
- * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004-2007 James Bursa <bursa@users.sourceforge.net>
  */
 
 /** \file
@@ -14,6 +14,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
+#include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
 #include <regex.h>
@@ -55,6 +56,7 @@ static bool save_complete_list_add(struct content *content);
 static struct content * save_complete_list_find(const char *url);
 static bool save_complete_list_check(struct content *content);
 static void save_complete_list_dump(void);
+static bool save_complete_inventory(const char *path);
 
 /**
  * Save an HTML page with all dependencies.
@@ -69,6 +71,9 @@ bool save_complete(struct content *c, const char *path)
 	bool result;
 
 	result = save_complete_html(c, path, true);
+
+	if (result)
+		result = save_complete_inventory(path);
 
 	/* free save_complete_list */
 	while (save_complete_list) {
@@ -114,9 +119,11 @@ bool save_complete_html(struct content *c, const char *path, bool index)
 		if (save_complete_list_check(css))
 			continue;
 
-		if (!save_complete_list_add(css)) {
-			warn_user("NoMemory", 0);
-			return false;
+		if (i != STYLESHEET_STYLE) {
+			if (!save_complete_list_add(css)) {
+				warn_user("NoMemory", 0);
+				return false;
+			}
 		}
 
 		if (!save_imported_sheets(css, path))
@@ -720,5 +727,36 @@ void save_complete_list_dump(void)
 		fprintf(stderr, "%p : %s\n", entry->content,
 						entry->content->url);
 }
+
+
+/**
+ * Create the inventory file listing original URLs.
+ */
+
+bool save_complete_inventory(const char *path)
+{
+	char spath[256];
+	FILE *fp;
+
+	snprintf(spath, sizeof spath, "%s.Inventory", path);
+
+	fp = fopen(spath, "w");
+	if (!fp) {
+		LOG(("fopen(): errno = %i", errno));
+		warn_user("SaveError", strerror(errno));
+		return false;
+	}
+
+	struct save_complete_entry *entry;
+	for (entry = save_complete_list; entry; entry = entry->next)
+		fprintf(fp, "%x %s\n",
+				(unsigned int) entry->content,
+				entry->content->url);
+
+	fclose(fp);
+
+	return true;
+}
+
 
 #endif

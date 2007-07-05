@@ -2,7 +2,7 @@
  * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
- * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004-2007 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2005 Adrian Lees <adrianl@users.sourceforge.net>
  */
 
@@ -798,6 +798,11 @@ bool ro_gui_save_complete(struct content *c, char *path)
 
 	/* restore sprite name in case the save fails and we need to try again */
 	memcpy(sprite->name, name, 12);
+
+	/* save URL file with original URL */
+	snprintf(buf, sizeof buf, "%s.URL", path);
+	if (!ro_gui_save_link(c, LINK_ANT, buf))
+		return false;
 
 	return save_complete(c, path);
 }
