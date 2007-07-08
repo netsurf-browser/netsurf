@@ -261,6 +261,8 @@ struct fetch * fetch_start(const char *url, const char *referer,
 	fetch->r_prev = 0;
 	fetch->r_next = 0;
 	fetch->referer = 0;
+	fetch->send_referer = false;
+	fetch->fetcher_handle = NULL;
 	fetch->ops = 0;
 	fetch->fetch_is_active = false;
 
