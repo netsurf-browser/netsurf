@@ -334,8 +334,11 @@ gboolean nsgtk_window_button_press_event(GtkWidget *widget,
 	if (event->button == 2) /* 2 == middle button on X */
 		button = BROWSER_MOUSE_CLICK_2;
 
-	if (event->button == 3) /* 3 == right button on X */
-	 	return TRUE; /* Do nothing for right click for now */
+	if (event->button == 3) {
+		/* 3 == right button on X */
+		nsgtk_scaffolding_popup_menu(g->scaffold, event->button);
+		return TRUE;
+	}
 
 	browser_window_mouse_click(g->bw, button,
                                    event->x / g->scale, event->y / g->scale);

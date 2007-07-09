@@ -59,6 +59,9 @@ struct gtk_scaffolding {
 
 	GladeXML		*xml;
 
+	GladeXML		*popup_xml;
+	GtkMenu			*popup_menu;
+
 	struct gtk_history_window *history_window;
 
 	int			throb_frame;
@@ -757,6 +760,22 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
         g->being_destroyed = 0;
 
 	g->fullscreen = false;
+	
+	/* create the popup version of the menu */
+	g->popup_xml = glade_xml_new(glade_file_location, "menuPopup", NULL);
+	g->popup_menu = GTK_MENU(glade_xml_get_widget(g->popup_xml, "menuPopup"));
+	
+#define POPUP_ATTACH(x, y) gtk_menu_item_set_submenu( \
+			GTK_MENU_ITEM(glade_xml_get_widget(g->popup_xml, x)),\
+			GTK_WIDGET(glade_xml_get_widget(g->xml, y)))
+						
+	POPUP_ATTACH("menupopup_file", "menumain_file");
+	POPUP_ATTACH("menupopup_edit", "menumain_edit");
+	POPUP_ATTACH("menupopup_view", "menumain_view");
+	POPUP_ATTACH("menupopup_navigate", "menumain_navigate");
+	POPUP_ATTACH("menupopup_help", "menumain_help");
+	
+#undef POPUP_ATTACH
 
 	/* finally, show the window. */
 	gtk_widget_show(GTK_WIDGET(g->window));
@@ -832,4 +851,10 @@ gboolean nsgtk_scaffolding_is_busy(nsgtk_scaffolding *scaffold)
 {
         /* We are considered "busy" if the stop button is sensitive */
         return GTK_WIDGET_SENSITIVE((GTK_WIDGET(scaffold->stop_button)));
+}
+
+void nsgtk_scaffolding_popup_menu(nsgtk_scaffolding *g, guint button)
+{
+	printf("foo.\n");
+	gtk_menu_popup(g->popup_menu, NULL, NULL, NULL, NULL, button, 0);
 }

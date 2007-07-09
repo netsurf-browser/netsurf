@@ -37,7 +37,7 @@
 	      <property name="use_underline">True</property>
 
 	      <child>
-		<widget class="GtkMenu" id="menuitem4_menu">
+		<widget class="GtkMenu" id="menumain_file">
 
 		  <child>
 		    <widget class="GtkImageMenuItem" id="new_window">
@@ -262,7 +262,7 @@
 	      <property name="use_underline">True</property>
 
 	      <child>
-		<widget class="GtkMenu" id="menuitem5_menu">
+		<widget class="GtkMenu" id="menumain_edit">
 
 		  <child>
 		    <widget class="GtkImageMenuItem" id="cut">
@@ -372,7 +372,7 @@
 	      <property name="use_underline">True</property>
 
 	      <child>
-		<widget class="GtkMenu" id="menuitem6_menu">
+		<widget class="GtkMenu" id="menumain_view">
 
 		  <child>
 		    <widget class="GtkImageMenuItem" id="stop">
@@ -667,13 +667,13 @@
 	  </child>
 
 	  <child>
-	    <widget class="GtkMenuItem" id="navigate">
+	    <widget class="GtkMenuItem" id="menuitem7">
 	      <property name="visible">True</property>
 	      <property name="label" translatable="yes">_Navigate</property>
 	      <property name="use_underline">True</property>
 
 	      <child>
-		<widget class="GtkMenu" id="navigate_menu">
+		<widget class="GtkMenu" id="menumain_navigate">
 
 		  <child>
 		    <widget class="GtkImageMenuItem" id="back">
@@ -796,13 +796,13 @@
 	  </child>
 
 	  <child>
-	    <widget class="GtkMenuItem" id="help">
+	    <widget class="GtkMenuItem" id="menuitem8">
 	      <property name="visible">True</property>
 	      <property name="label" translatable="yes">_Help</property>
 	      <property name="use_underline">True</property>
 
 	      <child>
-		<widget class="GtkMenu" id="help_menu">
+		<widget class="GtkMenu" id="menumain_help">
 
 		  <child>
 		    <widget class="GtkImageMenuItem" id="contents">
@@ -5541,6 +5541,59 @@ OF THE POSSIBILITY OF SUCH DAMAGES.
 	  <property name="pack_type">GTK_PACK_END</property>
 	</packing>
       </child>
+    </widget>
+  </child>
+</widget>
+
+<widget class="GtkMenu" id="menuPopup">
+
+  <child>
+    <widget class="GtkMenuItem" id="menupopup_file">
+      <property name="visible">True</property>
+      <property name="label" translatable="yes">File</property>
+      <property name="use_underline">True</property>
+    </widget>
+  </child>
+
+  <child>
+    <widget class="GtkMenuItem" id="menupopup_object">
+      <property name="visible">True</property>
+      <property name="sensitive">False</property>
+      <property name="label" translatable="yes">Object</property>
+      <property name="use_underline">True</property>
+    </widget>
+  </child>
+
+  <child>
+    <widget class="GtkMenuItem" id="menupopup_edit">
+      <property name="visible">True</property>
+      <property name="label" translatable="yes">Edit</property>
+      <property name="use_underline">True</property>
+    </widget>
+  </child>
+
+  <child>
+    <widget class="GtkMenuItem" id="menupopup_view">
+      <property name="visible">True</property>
+      <property name="label" translatable="yes">View</property>
+      <property name="use_underline">True</property>
+    </widget>
+  </child>
+
+  <child>
+    <widget class="GtkMenuItem" id="menupopup_navigate">
+      <property name="visible">True</property>
+      <property name="label" translatable="yes">Navigate</property>
+      <property name="use_underline">True</property>
+      <signal name="activate" handler="on_menupopup_navigate_activate" last_modification_time="Mon, 09 Jul 2007 13:07:30 GMT"/>
+    </widget>
+  </child>
+
+  <child>
+    <widget class="GtkMenuItem" id="menupopup_help">
+      <property name="visible">True</property>
+      <property name="label" translatable="yes">Help</property>
+      <property name="use_underline">True</property>
     </widget>
   </child>
 </widget>

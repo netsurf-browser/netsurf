@@ -22,4 +22,6 @@ void nsgtk_attach_toplevel_viewport(nsgtk_scaffolding *g, GtkViewport *vp);
 
 void nsgtk_scaffolding_destroy(nsgtk_scaffolding *scaffold);
 
+void nsgtk_scaffolding_popup_menu(nsgtk_scaffolding *g, guint button);
+
 #endif /* NETSURF_GTK_SCAFFOLDING_H */
