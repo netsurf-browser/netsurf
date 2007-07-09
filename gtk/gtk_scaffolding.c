@@ -46,10 +46,12 @@ struct gtk_scaffolding {
 	GtkEntry		*url_bar;
 	GtkEntryCompletion	*url_bar_completion;
 	GtkLabel		*status_bar;
+	GtkToolbar		*tool_bar;
 	GtkToolButton		*back_button;
 	GtkToolButton		*forward_button;
 	GtkToolButton		*stop_button;
 	GtkToolButton		*reload_button;
+	GtkMenuBar		*menu_bar;
 	GtkMenuItem		*back_menu;
 	GtkMenuItem		*forward_menu;
 	GtkMenuItem		*stop_menu;
@@ -127,6 +129,9 @@ MENUPROTO(zoom_in);
 MENUPROTO(normal_size);
 MENUPROTO(zoom_out);
 MENUPROTO(full_screen);
+MENUPROTO(menu_bar);
+MENUPROTO(tool_bar);
+MENUPROTO(status_bar);
 MENUPROTO(save_window_size);
 MENUPROTO(toggle_debug_rendering);
 
@@ -161,6 +166,9 @@ static struct menu_events menu_events[] = {
 	MENUEVENT(normal_size),
 	MENUEVENT(zoom_out),
 	MENUEVENT(full_screen),
+	MENUEVENT(menu_bar),
+	MENUEVENT(tool_bar),
+	MENUEVENT(status_bar),
 	MENUEVENT(save_window_size),
 	MENUEVENT(toggle_debug_rendering),
 
@@ -463,6 +471,45 @@ MENUHANDLER(full_screen)
 	return TRUE;
 }
 
+MENUHANDLER(menu_bar)
+{
+	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
+	
+	if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(widget))) {
+		gtk_widget_show(GTK_WIDGET(gw->menu_bar));
+	} else {
+		gtk_widget_hide(GTK_WIDGET(gw->menu_bar));
+	}
+	
+	return TRUE;
+}
+
+MENUHANDLER(tool_bar)
+{
+	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
+	
+	if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(widget))) {
+		gtk_widget_show(GTK_WIDGET(gw->tool_bar));
+	} else {
+		gtk_widget_hide(GTK_WIDGET(gw->tool_bar));
+	}
+	
+	return TRUE;
+}
+
+MENUHANDLER(status_bar)
+{
+	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
+	
+	if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(widget))) {
+		gtk_widget_show(GTK_WIDGET(gw->status_bar));
+	} else {
+		gtk_widget_hide(GTK_WIDGET(gw->status_bar));
+	}
+	
+	return TRUE;
+}
+
 MENUHANDLER(save_window_size)
 {
 	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
@@ -641,7 +688,9 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	glade_xml_signal_autoconnect(g->xml);
 	g->window = GTK_WINDOW(GET_WIDGET("wndBrowser"));
 	g->url_bar = GTK_ENTRY(GET_WIDGET("URLBar"));
+	g->menu_bar = GTK_MENU_BAR(GET_WIDGET("menubar"));
 	g->status_bar = GTK_LABEL(GET_WIDGET("statusBar"));
+	g->tool_bar = GTK_TOOLBAR(GET_WIDGET("toolbar"));
 	g->back_button = GTK_TOOL_BUTTON(GET_WIDGET("toolBack"));
 	g->forward_button = GTK_TOOL_BUTTON(GET_WIDGET("toolForward"));
 	g->stop_button = GTK_TOOL_BUTTON(GET_WIDGET("toolStop"));
