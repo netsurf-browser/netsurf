@@ -855,6 +855,5 @@ gboolean nsgtk_scaffolding_is_busy(nsgtk_scaffolding *scaffold)
 
 void nsgtk_scaffolding_popup_menu(nsgtk_scaffolding *g, guint button)
 {
-	printf("foo.\n");
 	gtk_menu_popup(g->popup_menu, NULL, NULL, NULL, NULL, button, 0);
 }
