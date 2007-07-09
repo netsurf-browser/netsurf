@@ -64,6 +64,8 @@ struct gtk_scaffolding {
 	int			throb_frame;
         struct gui_window	*top_level;
         int			being_destroyed;
+
+	bool			fullscreen;
 };
 
 struct gtk_history_window {
@@ -121,6 +123,7 @@ MENUPROTO(reload);
 MENUPROTO(zoom_in);
 MENUPROTO(normal_size);
 MENUPROTO(zoom_out);
+MENUPROTO(full_screen);
 MENUPROTO(save_window_size);
 MENUPROTO(toggle_debug_rendering);
 
@@ -154,6 +157,7 @@ static struct menu_events menu_events[] = {
 	MENUEVENT(zoom_in),
 	MENUEVENT(normal_size),
 	MENUEVENT(zoom_out),
+	MENUEVENT(full_screen),
 	MENUEVENT(save_window_size),
 	MENUEVENT(toggle_debug_rendering),
 
@@ -437,6 +441,21 @@ MENUHANDLER(zoom_out)
         float old_scale = nsgtk_get_scale_for_gui(gw->top_level);
 
 	browser_window_set_scale(bw, old_scale - 0.05, true);
+
+	return TRUE;
+}
+
+MENUHANDLER(full_screen)
+{
+	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
+
+	if (gw->fullscreen) {
+		gtk_window_unfullscreen(gw->window);
+	} else {
+		gtk_window_fullscreen(gw->window);
+	}
+
+	gw->fullscreen = !gw->fullscreen;
 
 	return TRUE;
 }
@@ -736,6 +755,8 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	nsgtk_attach_menu_handlers(g->xml, g);
 
         g->being_destroyed = 0;
+
+	g->fullscreen = false;
 
 	/* finally, show the window. */
 	gtk_widget_show(GTK_WIDGET(g->window));
