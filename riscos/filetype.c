@@ -27,6 +27,7 @@ static const struct type_entry type_map[] = {
 	{0x188, "application/x-shockwave-flash"},
 	{0x695, "image/gif"},
 	{0x69c, "image/x-ms-bmp"},
+	{0xaad, "image/svg+xml"},
 	{0xaff, "image/x-drawfile"},
 	{0xb60, "image/png"},
 	{0xc85, "image/jpeg"},
@@ -289,6 +290,8 @@ int ro_content_filetype_from_type(content_type type) {
 #ifdef WITH_ARTWORKS
 		case CONTENT_ARTWORKS:	return 0xd94;
 #endif
+		case CONTENT_SVG:	return 0xaad;
+
 		default:		break;
 	}
 	return 0;

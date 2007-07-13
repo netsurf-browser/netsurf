@@ -126,6 +126,9 @@
 #ifndef FILETYPE_ARTWORKS
 #define FILETYPE_ARTWORKS 0xd94
 #endif
+#ifndef FILETYPE_SVG
+#define FILETYPE_SVG 0xaad
+#endif
 
 extern bool ro_plot_patterned_lines;
 
@@ -1467,6 +1470,7 @@ void ro_msg_dataload(wimp_message *message)
 		case osfile_TYPE_SPRITE:
 		case osfile_TYPE_TEXT:
 		case FILETYPE_ARTWORKS:
+		case FILETYPE_SVG:
 			/* display the actual file */
 			url = path_to_url(message->data.data_xfer.file_name);
 			break;
@@ -1760,7 +1764,8 @@ void ro_msg_datasave(wimp_message *message)
 		case FILETYPE_JPEG:
 		case osfile_TYPE_SPRITE:
 		case osfile_TYPE_TEXT:
-		case FILETYPE_ARTWORKS: {
+		case FILETYPE_ARTWORKS:
+		case FILETYPE_SVG: {
 			os_error *error;
 
 			dataxfer->your_ref = dataxfer->my_ref;
