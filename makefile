@@ -30,7 +30,7 @@ OBJECTS_COMMON += filename.o hashtable.o messages.o talloc.o \
 OBJECTS_COMMON += knockout.o options.o tree.o version.o		# desktop/
 
 OBJECTS_IMAGE = bmp.o bmpread.o gif.o gifread.o ico.o jpeg.o \
-	mng.o							# image/
+	mng.o svg.o						# image/
 
 OBJECTS_RISCOS = $(OBJECTS_COMMON) $(OBJECTS_IMAGE)
 OBJECTS_RISCOS += browser.o frames.o history_core.o netsurf.o \

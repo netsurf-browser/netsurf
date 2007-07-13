@@ -43,6 +43,7 @@
 #include "image/bmp.h"
 #include "image/ico.h"
 #endif
+#include "image/svg.h"
 #ifdef WITH_SPRITE
 #include "riscos/sprite.h"
 #endif
@@ -133,6 +134,8 @@ static const struct mime_entry mime_map[] = {
 #ifdef WITH_MNG
 	{"image/png", CONTENT_PNG},
 #endif
+	{"image/svg", CONTENT_SVG},
+	{"image/svg+xml", CONTENT_SVG},
 #ifdef WITH_BMP
 	{"image/x-bitmap", CONTENT_BMP},
 	{"image/x-bmp", CONTENT_BMP},
@@ -299,6 +302,8 @@ static const struct handler_entry handler_map[] = {
 	{0, 0, artworks_convert,
 		0, artworks_destroy, 0, artworks_redraw, 0, 0, 0, false},
 #endif
+	{svg_create, 0, svg_convert,
+		0, svg_destroy, 0, svg_redraw, 0, 0, 0, false},
 	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false}
 };
 #define HANDLER_MAP_COUNT (sizeof(handler_map) / sizeof(handler_map[0]))

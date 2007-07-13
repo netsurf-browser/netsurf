@@ -53,6 +53,7 @@ typedef enum {
 #ifdef WITH_ARTWORKS
 	CONTENT_ARTWORKS,
 #endif
+	CONTENT_SVG,
 	/* these must be the last two */
 	CONTENT_OTHER,
 	CONTENT_UNKNOWN  /**< content-type not received yet */
