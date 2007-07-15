@@ -3,7 +3,7 @@
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
- * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004-2007 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
  * Copyright 2005 Richard Wilson <info@tinct.net>
  * Copyright 2004 Andrew Timmins <atimmins@blueyonder.co.uk>
@@ -21,24 +21,24 @@
 #include <features.h>
 #include <unixlib/local.h>
 #include <unixlib/sigstate.h>
-#include "curl/curl.h"
-#include "oslib/font.h"
-#include "oslib/help.h"
-#include "oslib/hourglass.h"
-#include "oslib/inetsuite.h"
-#include "oslib/os.h"
-#include "oslib/osbyte.h"
-#include "oslib/osfile.h"
-#include "oslib/osfscontrol.h"
-#include "oslib/osgbpb.h"
-#include "oslib/osmodule.h"
+#include <curl/curl.h>
+#include <oslib/font.h>
+#include <oslib/help.h>
+#include <oslib/hourglass.h>
+#include <oslib/inetsuite.h>
+#include <oslib/os.h>
+#include <oslib/osbyte.h>
+#include <oslib/osfile.h>
+#include <oslib/osfscontrol.h>
+#include <oslib/osgbpb.h>
+#include <oslib/osmodule.h>
 #include <oslib/osspriteop.h>
-#include "oslib/pdriver.h"
-#include "oslib/plugin.h"
-#include "oslib/wimp.h"
-#include "oslib/wimpspriteop.h"
-#include "oslib/uri.h"
-#include "rufl.h"
+#include <oslib/pdriver.h>
+#include <oslib/plugin.h>
+#include <oslib/wimp.h>
+#include <oslib/wimpspriteop.h>
+#include <oslib/uri.h>
+#include <rufl.h>
 #include "utils/config.h"
 #include "content/content.h"
 #include "content/urldb.h"
@@ -579,9 +579,11 @@ void ro_gui_choose_language(void)
 	}
 
 	option_language = strdup(ro_gui_default_language());
-	assert(option_language);
+	if (!option_language)
+		die("Out of memory");
 	option_accept_language = strdup(option_language);
-	assert(option_accept_language);
+	if (!option_accept_language)
+		die("Out of memory");
 }
 
 
@@ -591,7 +593,9 @@ void ro_gui_choose_language(void)
  * RISC OS has no standard way of determining which language the user prefers.
  * We have to guess from the 'Country' setting.
  */
-const char *ro_gui_default_language(void) {
+
+const char *ro_gui_default_language(void)
+{
 	char path[40];
 	const char *lang;
 	int country;
@@ -625,10 +629,6 @@ const char *ro_gui_default_language(void) {
 	if (is_dir(path))
 		return lang;
 	return "en";
-		option_language = strdup("en");
-	assert(option_language);
-	if (!option_accept_language)
-		option_accept_language = strdup(option_language);
 }
 
 
