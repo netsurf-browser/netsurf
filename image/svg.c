@@ -50,6 +50,7 @@ struct svg_redraw_state {
 
 
 static bool svg_redraw_svg(xmlNode *svg, struct svg_redraw_state state);
+static bool svg_redraw_path(xmlNode *path, struct svg_redraw_state state);
 static bool svg_redraw_rect(xmlNode *rect, struct svg_redraw_state state);
 static bool svg_redraw_circle(xmlNode *circle, struct svg_redraw_state state);
 static bool svg_redraw_line(xmlNode *line, struct svg_redraw_state state);
@@ -100,7 +101,7 @@ bool svg_convert(struct content *c, int w, int h)
 	}
 	c->data.svg.doc = document;
 
-	xmlDebugDumpDocument(stderr, document);
+	/* xmlDebugDumpDocument(stderr, document); */
 
 	/* find root <svg> element */
 	for (svg = document->children;
@@ -169,6 +170,8 @@ bool svg_redraw(struct content *c, int x, int y,
 	state.stroke = TRANSPARENT;
 	state.stroke_width = 1;
 
+	plot.clg(0xffffff);
+
 	return svg_redraw_svg(c->data.svg.svg, state);
 }
 
@@ -211,6 +214,8 @@ bool svg_redraw_svg(xmlNode *svg, struct svg_redraw_state state)
 				ok = svg_redraw_svg(child, state);
 			else if (strcmp(child->name, "g") == 0)
 				ok = svg_redraw_svg(child, state);
+			else if (strcmp(child->name, "path") == 0)
+				ok = svg_redraw_path(child, state);
 			else if (strcmp(child->name, "rect") == 0)
 				ok = svg_redraw_rect(child, state);
 			else if (strcmp(child->name, "circle") == 0)
@@ -224,6 +229,135 @@ bool svg_redraw_svg(xmlNode *svg, struct svg_redraw_state state)
 		if (!ok)
 			return false;
 	}
+
+	return true;
+}
+
+
+/**
+ * Redraw a <path> element node.
+ */
+
+bool svg_redraw_path(xmlNode *path, struct svg_redraw_state state)
+{
+	svg_parse_paint_attributes(path, &state);
+
+	/* read d attribute */
+	char *s = (char *) xmlGetProp(path, (const xmlChar *) "d");
+	if (!s) {
+		LOG(("path missing d attribute"));
+		return false;
+	}
+
+	/* allocate space for path: it will never have more elements than d */
+	float *p = malloc(sizeof p[0] * strlen(s));
+	if (!p) {
+		LOG(("out of memory"));
+		return false;
+	}
+
+	/* parse d and build path */
+	for (unsigned int i = 0; s[i]; i++)
+		if (s[i] == ',')
+			s[i] = ' ';
+	unsigned int i = 0;
+	float last_x = 0, last_y = 0;
+	while (*s) {
+		char command[2];
+		int plot_command;
+		float x, y, x1, y1, x2, y2;
+		int n;
+
+		LOG(("s \"%s\"", s));
+
+		/* M, m, L, l (2 arguments) */
+		if (sscanf(s, " %1[MmLl] %f %f %n", command, &x, &y, &n) == 3) {
+			LOG(("moveto or lineto"));
+			if (*command == 'M' || *command == 'm')
+				plot_command = PLOTTER_PATH_MOVE;
+			else
+				plot_command = PLOTTER_PATH_LINE;
+			do {
+				p[i++] = plot_command;
+				if ('a' <= *command) {
+					x += last_x;
+					y += last_y;
+				}
+				p[i++] = last_x = x;
+				p[i++] = last_y = y;
+				s += n;
+				plot_command = PLOTTER_PATH_LINE;
+			} while (sscanf(s, "%f %f %n", &x, &y, &n) == 2);
+
+		/* Z, z (no arguments) */
+		} else if (sscanf(s, " %1[Zz] %n", command, &n) == 1) {
+			LOG(("closepath"));
+			p[i++] = PLOTTER_PATH_CLOSE;
+			s += n;
+
+		/* H, h (1 argument) */
+		} else if (sscanf(s, " %1[Hh] %f %n", command, &x, &n) == 2) {
+			LOG(("horizontal lineto"));
+			do {
+				p[i++] = PLOTTER_PATH_LINE;
+				if (*command == 'h')
+					x += last_x;
+				p[i++] = last_x = x;
+				p[i++] = last_y;
+				s += n;
+			} while (sscanf(s, "%f %n", &x, &n) == 1);
+
+		/* V, v (1 argument) */
+		} else if (sscanf(s, " %1[Vv] %f %n", command, &y, &n) == 2) {
+			LOG(("vertical lineto"));
+			do {
+				p[i++] = PLOTTER_PATH_LINE;
+				if (*command == 'v')
+					y += last_y;
+				p[i++] = last_x;
+				p[i++] = last_y = y;
+				s += n;
+			} while (sscanf(s, "%f %n", &x, &n) == 1);
+
+		/* C, c (6 arguments) */
+		} else if (sscanf(s, " %1[Cc] %f %f %f %f %f %f %n", command,
+				&x1, &y1, &x2, &y2, &x, &y, &n) == 7) {
+			LOG(("curveto"));
+			do {
+				p[i++] = PLOTTER_PATH_BEZIER;
+				if (*command == 'c') {
+					x1 += last_x;
+					y1 += last_y;
+					x2 += last_x;
+					y2 += last_y;
+					x += last_x;
+					y += last_y;
+				}
+				p[i++] = x1;
+				p[i++] = y1;
+				p[i++] = x2;
+				p[i++] = y2;
+				p[i++] = last_x = x;
+				p[i++] = last_y = y;
+				s += n;
+			} while (sscanf(s, "%f %f %f %f %f %f %n",
+					&x1, &y1, &x2, &y2, &x, &y, &n) == 7);
+
+		} else {
+			LOG(("parse failed"));
+			break;
+		}
+	}
+
+	LOG(("path:"));
+	for (unsigned int j = 0; j != i; j++) {
+		LOG(("    %f", p[j]));
+	}
+
+	bool ok = plot.path(p, i, state.fill, state.stroke_width, state.stroke,
+			&state.ctm.a);
+
+	free(p);
 
 	return true;
 }
