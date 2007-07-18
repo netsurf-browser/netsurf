@@ -58,6 +58,7 @@ content:
 
 Type functions
 --------------
+[[typefunc]]
 The type-specific functions for a content are as follows (where 'type' is
 replaced by something):
 
@@ -104,3 +105,23 @@ is provided by the fetchcache functions, which check the memory cache for a url
 and fetch, convert, and cache it if not present.
 
 The fetch module provides a low-level URL fetching interface.
+
+Adding support for a new content type
+-------------------------------------
+Addition of support for new content types is fairly simple and the process is
+as follows:
+
+- Implement, or at least stub out, the new content type handler. See the 
+  <<typefunc,Type Functions>> section above for details of the type handler API.
+- Add a type value to the 'content_type' enumeration (content_type.h)
+- Add an entry for the new type's private data in the 'data' union within 
+  'struct content' (content.h)
+- Add appropriate mappings in the 'mime_map' table from MIME type strings to 
+  the 'content_type' value created. (content.c)
+- Add a textual name for the new content type to 'content_type_name'. This 
+  array is indexed by 'content_type'. (content.c)
+- Add an entry for the new content type's handler in the 'handler_map' array.
+  This array is indexed by 'content_type'. (content.c)
+
+For examples of content type handlers, consult the image/ directory. The JPEG
+handler is fairly self-explanatory.
