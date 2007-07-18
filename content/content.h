@@ -49,6 +49,9 @@
 #ifdef WITH_NS_SVG
 #include "image/svg.h"
 #endif
+#ifdef WITH_RSVG
+#include "image/rsvg.h"
+#endif
 
 
 struct bitmap;
@@ -170,6 +173,9 @@ struct content {
 #endif
 #ifdef WITH_NS_SVG
 		struct content_svg_data svg;
+#endif
+#ifdef WITH_RSVG
+		struct content_rsvg_data rsvg;
 #endif
 	} data;
 

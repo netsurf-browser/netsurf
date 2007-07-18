@@ -53,7 +53,7 @@ typedef enum {
 #ifdef WITH_ARTWORKS
 	CONTENT_ARTWORKS,
 #endif
-#ifdef WITH_NS_SVG
+#if defined(WITH_NS_SVG) || defined(WITH_RSVG)
 	CONTENT_SVG,
 #endif
 	/* these must be the last two */

@@ -46,6 +46,9 @@
 #ifdef WITH_NS_SVG
 #include "image/svg.h"
 #endif
+#ifdef WITH_RSVG
+#include "image/rsvg.h"
+#endif
 #ifdef WITH_SPRITE
 #include "riscos/sprite.h"
 #endif
@@ -136,7 +139,7 @@ static const struct mime_entry mime_map[] = {
 #ifdef WITH_MNG
 	{"image/png", CONTENT_PNG},
 #endif
-#ifdef WITH_NS_SVG
+#if defined(WITH_NS_SVG) || defined (WITH_RSVG)
 	{"image/svg", CONTENT_SVG},
 	{"image/svg+xml", CONTENT_SVG},
 #endif
@@ -309,6 +312,10 @@ static const struct handler_entry handler_map[] = {
 #ifdef WITH_NS_SVG
 	{svg_create, 0, svg_convert,
 		0, svg_destroy, 0, svg_redraw, 0, 0, 0, false},
+#endif
+#ifdef WITH_RSVG
+	{rsvg_create, 0, rsvg_convert,
+		0, rsvg_destroy, 0, rsvg_redraw, 0, 0, 0, false},
 #endif
 	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false}
 };

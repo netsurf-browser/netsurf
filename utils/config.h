@@ -39,8 +39,8 @@ char *strndup(const char *s, size_t n);
 #define WITH_JPEG
 #define WITH_MNG
 #define WITH_GIF
-#define WITH_NS_SVG	/* internal SVG renderer */
 #if defined(riscos) || defined(ncos)
+    #define WITH_NS_SVG	/* internal SVG renderer */
     #define WITH_DRAW
     #define WITH_SPRITE
     #define WITH_ARTWORKS
@@ -63,6 +63,12 @@ char *strndup(const char *s, size_t n);
 #else
     /* We're likely to have a working mmap() */
     #define WITH_MMAP
+    /* Use librsvg and Cairo for rendering SVG */
+    #define WITH_RSVG
+#endif
+
+#if defined(WITH_NS_SVG) && defined(WITH_RSVG)
+    #error Cannot build WITH_NS_SVG and WITH_RSVG both enabled
 #endif
 
 #if defined(riscos) || defined(ncos) || defined(DEBUG_BUILD)
