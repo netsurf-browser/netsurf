@@ -17,9 +17,10 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "utils/config.h"
+#ifdef WITH_JPEG
 #define JPEG_INTERNAL_OPTIONS
 #include "jpeglib.h"
-#include "utils/config.h"
 #include "content/content.h"
 #include "desktop/plotters.h"
 #include "image/bitmap.h"
@@ -250,3 +251,5 @@ void nsjpeg_destroy(struct content *c)
 		bitmap_destroy(c->bitmap);
 	free(c->title);
 }
+
+#endif /* WITH_JPEG */
