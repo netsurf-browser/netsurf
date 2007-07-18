@@ -46,6 +46,7 @@ struct bitmap {
 struct bitmap *bitmap_create(int width, int height, unsigned int state)
 {
         struct bitmap *bmp = malloc(sizeof(struct bitmap));
+        
 	bmp->primary = gdk_pixbuf_new(GDK_COLORSPACE_RGB, true, 8,
                                       width, height);
         bmp->pretile_x = bmp->pretile_y = bmp->pretile_xy = NULL;
@@ -159,6 +160,14 @@ void bitmap_destroy(struct bitmap *bitmap)
 
 bool bitmap_save(struct bitmap *bitmap, const char *path)
 {
+	GError *err = NULL;
+	
+	gdk_pixbuf_save(bitmap->primary, path, "png", &err, NULL);
+	
+	if (err == NULL)
+		/* TODO: report an error here */
+		return false;
+	
 	return true;
 }
 
