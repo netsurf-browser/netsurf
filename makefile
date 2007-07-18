@@ -30,7 +30,7 @@ OBJECTS_COMMON += filename.o hashtable.o messages.o talloc.o \
 OBJECTS_COMMON += knockout.o options.o tree.o version.o		# desktop/
 
 OBJECTS_IMAGE = bmp.o bmpread.o gif.o gifread.o ico.o jpeg.o \
-	mng.o svg.o						# image/
+	mng.o svg.o rsvg.o					# image/
 
 OBJECTS_RISCOS = $(OBJECTS_COMMON) $(OBJECTS_IMAGE)
 OBJECTS_RISCOS += browser.o frames.o history_core.o netsurf.o \
@@ -134,7 +134,8 @@ CFLAGS_GTK = -std=c99 -Dgtk -Dnsgtk \
 	-D_XOPEN_SOURCE=600 \
 	-D_POSIX_C_SOURCE=200112L \
 	$(WARNFLAGS) -I. -g -O \
-	`pkg-config --cflags libglade-2.0 gtk+-2.0` `xml2-config --cflags`
+	`pkg-config --cflags libglade-2.0 gtk+-2.0 librsvg-2.0` \
+	`xml2-config --cflags`
 
 # Stop GCC under Cygwin throwing a fit
 # If you pass -std=<whatever> it appears to define __STRICT_ANSI__
@@ -172,7 +173,7 @@ nsrodebug,ff8: $(OBJS_DEBUGRO)
 
 gtk: nsgtk
 nsgtk: $(OBJS_GTK)
-	$(SYSTEM_CC) -o nsgtk $^ `pkg-config --cflags --libs libglade-2.0 gtk+-2.0 gthread-2.0 gmodule-2.0` \
+	$(SYSTEM_CC) -o nsgtk $^ `pkg-config --cflags --libs libglade-2.0 gtk+-2.0 gthread-2.0 gmodule-2.0 librsvg-2.0` \
 	$(LDFLAGS_DEBUG)
 
 netsurf.zip: $(RUNIMAGE)
