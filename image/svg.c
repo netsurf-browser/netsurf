@@ -14,9 +14,10 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "utils/config.h"
+#ifdef WITH_NS_SVG
 #include <libxml/parser.h>
 #include <libxml/debugXML.h>
-#include "utils/config.h"
 #include "content/content.h"
 #include "css/css.h"
 #include "desktop/plotters.h"
@@ -676,3 +677,5 @@ void svg_destroy(struct content *c)
 	if (c->data.svg.doc)
 		xmlFreeDoc(c->data.svg.doc);
 }
+
+#endif /* WITH_NS_SVG */

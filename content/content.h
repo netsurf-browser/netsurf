@@ -46,7 +46,9 @@
 #ifdef WITH_ARTWORKS
 #include "riscos/artworks.h"
 #endif
+#ifdef WITH_NS_SVG
 #include "image/svg.h"
+#endif
 
 
 struct bitmap;
@@ -166,7 +168,9 @@ struct content {
 #ifdef WITH_ARTWORKS
 		struct content_artworks_data artworks;
 #endif
+#ifdef WITH_NS_SVG
 		struct content_svg_data svg;
+#endif
 	} data;
 
 	/**< URL for refresh request, in standard form as from url_join. */

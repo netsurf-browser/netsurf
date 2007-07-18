@@ -39,6 +39,7 @@ char *strndup(const char *s, size_t n);
 #define WITH_JPEG
 #define WITH_MNG
 #define WITH_GIF
+#define WITH_NS_SVG	/* internal SVG renderer */
 #if defined(riscos) || defined(ncos)
     #define WITH_DRAW
     #define WITH_SPRITE
