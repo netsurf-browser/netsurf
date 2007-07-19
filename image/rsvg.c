@@ -58,6 +58,24 @@ bool rsvg_create(struct content *c, const char *params[])
 	return true;
 }
 
+bool rsvg_process_data(struct content *c, const char *data,
+			unsigned int size)
+{
+	struct content_rsvg_data *d = &c->data.rsvg;
+	union content_msg_data msg_data;
+	GError *err = NULL;
+	
+	if (rsvg_handle_write(d->rsvgh, (const guchar *)data, (gsize)size,
+				&err) == FALSE) {
+		LOG(("rsvg_handle_write returned an error: %s", err->message));
+		msg_data.error = err->message;
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		return false;		
+	}
+	
+	return true;
+}
+
 /** Convert Cairo's ARGB output to NetSurf's favoured ABGR format.  It converts
  * the data in-place.  Operation is endian-swap and rotate right 8 bits.
  *
@@ -92,16 +110,6 @@ bool rsvg_convert(struct content *c, int iwidth, int iheight)
 	union content_msg_data msg_data;
 	RsvgDimensionData rsvgsize;
 	GError *err = NULL;
-
-	if (rsvg_handle_write(d->rsvgh, (guchar *)c->source_data, 
-				(gsize)c->source_size, &err) == FALSE) {
-		LOG(("rsvg_handle_write returned an error: %s", err->message));
-		msg_data.error = err->message;
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-		return false;	
-	}
-	
-	assert(err == NULL);
 	
 	if (rsvg_handle_close(d->rsvgh, &err) == FALSE) {
 		LOG(("rsvg_handle_close returned an error: %s", err->message));
