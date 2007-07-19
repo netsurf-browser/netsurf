@@ -49,6 +49,11 @@ struct bitmap *bitmap_create(int width, int height, unsigned int state)
         
 	bmp->primary = gdk_pixbuf_new(GDK_COLORSPACE_RGB, true, 8,
                                       width, height);
+
+	/* fill the pixbuf in with 100% transparent black, as the memory
+	 * won't have been cleared.
+	 */
+	gdk_pixbuf_fill(bmp->primary, 0);
         bmp->pretile_x = bmp->pretile_y = bmp->pretile_xy = NULL;
 	return bmp;
 }
