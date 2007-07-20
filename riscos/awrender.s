@@ -120,13 +120,18 @@ awrender_render	MOV	ip,sp
 ;
 ; entry	R11 = reason code
 ;		0 = CallBackReason_Memory
+;		3 = CallBackReason_Interface
+;			(0 => return capabilities)
 ; exit	R0 => base of resizable block
 ;	R1 =  size of resizable block
 ;	R2 => base of fixed block (or -1 if no fixed block)
- ;	R3 =  size of fixed block (or document in resizable block)
+;	R3 =  size of fixed block (or document in resizable block)
 ;	VC if resize successful, VS and R0 => error otherwise
 
-aw_callback	TEQ	R11,#0
+aw_callback	TEQ	R11,#3
+		TEQEQ	R0,#0
+		MOVEQ	R0,#1<<10		;background colour supplied
+		TEQ	R11,#0
 		LDREQ	R11,=aw_temp
 		MOVNE	PC,R14
 

@@ -51,6 +51,9 @@ struct awinfo_block {
 	int print_lowx;
 	int print_lowy;
 	int print_handle;
+	int print_x1;
+	int print_y1;
+	int bgcolour;
 };
 
 
@@ -239,6 +242,7 @@ bool artworks_redraw(struct content *c, int x, int y,
 	info.print_lowx = 0;
 	info.print_lowy = 0;
 	info.print_handle = 0;
+	info.bgcolour = 0x20000000 | background_colour;
 
 	error = xos_read_vdu_variables((os_vdu_var_list*)&vars, vals);
 	if (error) {
