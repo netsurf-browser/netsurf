@@ -373,7 +373,7 @@ void * fetch_curl_setup(struct fetch *parent_fetch, const char *url,
 	 * which fails with lighttpd, so disable it (see bug 1429054) */
 	APPEND(fetch->headers, "Expect:");
 
-	if (option_accept_language) {
+	if (option_accept_language && option_accept_language[0] != '\0') {
 		char s[80];
 		snprintf(s, sizeof s, "Accept-Language: %s, *;q=0.1",
 				option_accept_language);
@@ -381,7 +381,7 @@ void * fetch_curl_setup(struct fetch *parent_fetch, const char *url,
 		APPEND(fetch->headers, s);
 	}
 
-	if (option_accept_charset) {
+	if (option_accept_charset && option_accept_charset[0] != '\0') {
 		char s[80];
 		snprintf(s, sizeof s, "Accept-Charset: %s, *;q=0.1",
 				option_accept_charset);
