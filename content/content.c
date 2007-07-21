@@ -213,6 +213,9 @@ const char *content_type_name[] = {
 #ifdef WITH_ARTWORKS
 	"ARTWORKS",
 #endif
+#if defined(WITH_NS_SVG) || defined(WITH_RSVG)
+	"SVG",
+#endif
 	"OTHER",
 	"UNKNOWN"
 };
