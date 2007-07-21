@@ -6,7 +6,7 @@
  */
 
 /** \file
- * Content for image/artworks (RISC OS implementation).
+ * Content for image/x-artworks (RISC OS implementation).
  *
  * Uses the ArtworksRenderer module
  */

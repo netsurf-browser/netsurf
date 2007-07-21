@@ -6,7 +6,7 @@
  */
 
 /** \file
- * Content for image/artworks (RISC OS interface).
+ * Content for image/x-artworks (RISC OS interface).
  */
 
 #ifndef _NETSURF_RISCOS_ARTWORKS_H_

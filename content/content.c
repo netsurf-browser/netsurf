@@ -78,9 +78,6 @@ struct mime_entry {
 };
 /** A map from MIME type to ::content_type. Must be sorted by mime_type. */
 static const struct mime_entry mime_map[] = {
-#ifdef WITH_ARTWORKS
-	{"application/artworks", CONTENT_ARTWORKS},
-#endif
 #ifdef WITH_BMP
 	{"application/bmp", CONTENT_BMP},
 #endif
@@ -106,9 +103,6 @@ static const struct mime_entry mime_map[] = {
 	{"application/x-win-bitmap", CONTENT_BMP},
 #endif
 	{"application/xhtml+xml", CONTENT_HTML},
-#ifdef WITH_ARTWORKS
-	{"image/artworks", CONTENT_ARTWORKS},
-#endif
 #ifdef WITH_BMP
 	{"image/bmp", CONTENT_BMP},
 #endif
@@ -142,6 +136,9 @@ static const struct mime_entry mime_map[] = {
 #if defined(WITH_NS_SVG) || defined (WITH_RSVG)
 	{"image/svg", CONTENT_SVG},
 	{"image/svg+xml", CONTENT_SVG},
+#endif
+#ifdef WITH_ARTWORKS
+	{"image/x-artworks", CONTENT_ARTWORKS},
 #endif
 #ifdef WITH_BMP
 	{"image/x-bitmap", CONTENT_BMP},
