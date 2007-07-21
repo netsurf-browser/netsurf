@@ -9,12 +9,11 @@
 #   riscos -- standard RISC OS build
 #   riscos_small -- identical to "riscos", but linked with smaller libraries
 #   		(no openssl, and libcurl without ssl support)
-#   ncos -- NCOS build (variant of RISC OS for Network Computers)
 #   debug -- command line Unix/Linux, for debugging
 #   riscos_debug -- a cross between "riscos" and "debug"
 #   gtk -- experimental gtk version
 #
-# "riscos", "riscos_small", "ncos", and "riscos_debug" can be compiled under
+# "riscos", "riscos_small", and "riscos_debug" can be compiled under
 # RISC OS, or cross-compiled using GCCSDK.
 
 SYSTEM_CC ?= gcc
@@ -53,8 +52,6 @@ OBJECTS_RISCOS += progress_bar.o status_bar.o	 		# riscos/gui/
 
 OBJECTS_RISCOS_SMALL = $(OBJECTS_RISCOS)
 
-OBJECTS_NCOS = $(OBJECTS_RISCOS)
-
 OBJECTS_DEBUG = $(OBJECTS_COMMON) $(OBJECTS_IMAGE)
 OBJECTS_DEBUG += debug_bitmap.o filetyped.o fontd.o netsurfd.o	# debug/
 
@@ -82,10 +79,6 @@ OBJS_RISCOS=$(OBJECTS_RISCOS:%.o=$(OBJDIR_RISCOS)/%.o)
 OBJDIR_RISCOS_SMALL = arm-riscos-aof-small
 SOURCES_RISCOS_SMALL=$(OBJECTS_RISCOS_SMALL:.o=.c)
 OBJS_RISCOS_SMALL=$(OBJECTS_RISCOS_SMALL:%.o=$(OBJDIR_RISCOS_SMALL)/%.o)
-
-OBJDIR_NCOS = arm-ncos-aof
-SOURCES_NCOS=$(OBJECTS_NCOS:.o=.c)
-OBJS_NCOS=$(OBJECTS_NCOS:%.o=$(OBJDIR_NCOS)/%.o)
 
 OBJDIR_DEBUG = $(shell $(SYSTEM_CC) -dumpmachine)-debug
 SOURCES_DEBUG=$(OBJECTS_DEBUG:.o=.c)
@@ -125,7 +118,6 @@ CFLAGS_RISCOS = -std=c99 -D_BSD_SOURCE -D_POSIX_C_SOURCE -Driscos -DBOOL_DEFINED
 	$(WARNFLAGS) -I. $(PLATFORM_CFLAGS_RISCOS) -mpoke-function-name \
 #	-include utils/memdebug.h
 CFLAGS_RISCOS_SMALL = $(CFLAGS_RISCOS) -Dsmall
-CFLAGS_NCOS = $(CFLAGS_RISCOS) -Dncos
 CFLAGS_DEBUG = -std=c99 -D_BSD_SOURCE -DDEBUG_BUILD $(WARNFLAGS) -I. \
 	$(PLATFORM_CFLAGS_DEBUG) -g
 CFLAGS_GTK = -std=c99 -Dgtk -Dnsgtk \
@@ -149,7 +141,6 @@ endif
 
 AFLAGS_RISCOS = -I..,. $(PLATFORM_AFLAGS_RISCOS)
 AFLAGS_RISCOS_SMALL = $(AFLAGS_RISCOS) -Dsmall
-AFLAGS_NCOS = $(AFLAGS_RISCOS) -Dncos
 
 # targets
 riscos: $(RUNIMAGE)
@@ -158,10 +149,6 @@ $(RUNIMAGE) : $(OBJS_RISCOS)
 riscos_small: u!RunImage,ff8
 u!RunImage,ff8 : $(OBJS_RISCOS_SMALL)
 	$(CC) -o $@ $(LDFLAGS_SMALL) $^
-
-ncos: $(NCRUNIMAGE)
-$(NCRUNIMAGE) : $(OBJS_NCOS)
-	$(CC) -o $@ $(LDFLAGS_RISCOS) $^
 
 debug: nsdebug
 nsdebug: $(OBJS_DEBUG)
@@ -186,9 +173,6 @@ $(OBJDIR_RISCOS)/%.o : %.c
 $(OBJDIR_RISCOS_SMALL)/%.o : %.c
 	@echo "==> $<"
 	@$(CC) -o $@ -c $(CFLAGS_RISCOS_SMALL) $<
-$(OBJDIR_NCOS)/%.o : %.c
-	@echo "==> $<"
-	@$(CC) -o $@ -c $(CFLAGS_NCOS) $<
 $(OBJDIR_DEBUG)/%.o : %.c
 	@echo "==> $<"
 	@$(CC_DEBUG) -o $@ -c $(CFLAGS_DEBUG) $<
@@ -203,9 +187,6 @@ $(OBJDIR_RISCOS)/%.o : %.s
 $(OBJDIR_RISCOS_SMALL)/%.o : %.s
 	@echo "==> $<"
 	$(ASM) -o $@ -c $(AFLAGS_RISCOS_SMALL) $<
-$(OBJDIR_NCOS)/%.o : %.s
-	@echo "==> $<"
-	$(ASM) -o $@ -c $(AFLAGS_NCOS) $<
 
 # Generate dependencies.
 # To disable automatic regeneration of dependencies (eg. if perl is not
@@ -215,7 +196,7 @@ $(OBJDIR_NCOS)/%.o : %.s
 depend: css/css_enum.c css/parser.c css/scanner.c utils/translit.c */*.[ch] */*/*.[ch]
 	@echo "--> modified files $?"
 	@echo "--> updating dependencies"
-	@-mkdir -p $(OBJDIR_RISCOS) $(OBJDIR_RISCOS_SMALL) $(OBJDIR_NCOS) $(OBJDIR_DEBUG) $(OBJDIR_GTK)
-	@perl scandeps $(OBJDIR_RISCOS) $(OBJDIR_RISCOS_SMALL) $(OBJDIR_NCOS) $(OBJDIR_DEBUG) $(OBJDIR_GTK) -- $^ > depend
+	@-mkdir -p $(OBJDIR_RISCOS) $(OBJDIR_RISCOS_SMALL) $(OBJDIR_DEBUG) $(OBJDIR_GTK)
+	@perl scandeps $(OBJDIR_RISCOS) $(OBJDIR_RISCOS_SMALL) $(OBJDIR_DEBUG) $(OBJDIR_GTK) -- $^ > depend
 
 include depend

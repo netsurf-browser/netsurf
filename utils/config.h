@@ -2,8 +2,7 @@
  * This file is part of NetSurf, http://netsurf-browser.org/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
- * Copyright 2003,4 John M Bell <jmb202@ecs.soton.ac.uk>
- * Copyright 2004 Andrew Timmins <atimmins@blueyonder.co.uk>
+ * Copyright 2003-7 John M Bell <jmb202@ecs.soton.ac.uk>
  */
 
 #ifndef _NETSURF_UTILS_CONFIG_H_
@@ -39,7 +38,7 @@ char *strndup(const char *s, size_t n);
 #define WITH_JPEG
 #define WITH_MNG
 #define WITH_GIF
-#if defined(riscos) || defined(ncos)
+#if defined(riscos)
     #define WITH_NS_SVG	/* internal SVG renderer */
     #define WITH_DRAW
     #define WITH_SPRITE
@@ -47,7 +46,7 @@ char *strndup(const char *s, size_t n);
 #endif
 
 /* Platform specific features */
-#if defined(riscos) || defined(ncos)
+#if defined(riscos)
     /* Plugin module */
     #define WITH_PLUGIN
     /* Acorn URI protocol support */
@@ -71,7 +70,7 @@ char *strndup(const char *s, size_t n);
     #error Cannot build WITH_NS_SVG and WITH_RSVG both enabled
 #endif
 
-#if defined(riscos) || defined(ncos) || defined(DEBUG_BUILD)
+#if defined(riscos) || defined(DEBUG_BUILD)
     /* Export modules */
     #define WITH_SAVE_COMPLETE
     #define WITH_DRAW_EXPORT

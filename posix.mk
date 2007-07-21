@@ -26,7 +26,6 @@ LDFLAGS_DEBUG := $(subst -ldl,,$(LDFLAGS_DEBUG))
 endif
 
 RUNIMAGE = !NetSurf/!RunImage,ff8
-NCRUNIMAGE = !NCNetSurf/!RunImage,ff8
 
 # special cases - in here, cos RISC OS can't cope :(
 css/css_enum.c css/css_enum.h: css/css_enums css/makeenum
@@ -40,7 +39,7 @@ utils/translit.c: transtab
 
 # remove generated files - again, RISC OS fails it
 clean:
-	-rm $(OBJDIR_RISCOS)/* $(OBJDIR_RISCOS_SMALL)/* $(OBJDIR_NCOS)/* \
+	-rm $(OBJDIR_RISCOS)/* $(OBJDIR_RISCOS_SMALL)/* \
 		$(OBJDIR_DEBUG)/* $(OBJDIR_GTK)/* \
 		css/css_enum.c css/css_enum.h \
 		css/parser.c css/parser.h css/scanner.c \

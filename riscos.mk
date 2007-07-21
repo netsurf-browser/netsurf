@@ -15,7 +15,6 @@ LDFLAGS_SMALL = NSLibs:lib/libxml2 NSLibs:lib/libz NSLibs:lib/libcurl \
 	NSLibs:lib/libjpeg OSLib:o.oslib32
 
 RUNIMAGE = !NetSurf/!RunImage
-NCRUNIMAGE = !NCNetSurf/!RunImage
 
 # special cases
 css/css_enum.c css/css_enum.h: css/css_enums css/makeenum
@@ -37,7 +36,6 @@ utils/translit.c: transtab
 clean:
 	-wipe $(OBJDIR_RISCOS).* ~CFR~V
 	-wipe $(OBJDIR_RISCOS_SMALL).* ~CFR~V
-	-wipe $(OBJDIR_NCOS).* ~CFR~V
 	-wipe $(OBJDIR_DEBUG).* ~CFR~V
 	-wipe $(OBJDIR_GTK).* ~CFR~V
 	-wipe css.c.css_enum ~CFR~V
