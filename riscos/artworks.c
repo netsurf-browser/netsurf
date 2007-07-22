@@ -60,7 +60,7 @@ struct awinfo_block {
 /* Assembler routines for interfacing with the ArtworksRenderer module */
 
 os_error *awrender_init(char **doc,
-		size_t *doc_size,
+		unsigned long *doc_size,
 		void *routine,
 		void *workspace);
 
@@ -114,7 +114,7 @@ bool artworks_convert(struct content *c, int width, int height)
 	}
 
 	/* lookup the addresses of the init and render routines */
-	error = _swix(AWRender_FileInitAddress, _OUT(0) | _OUT(1),
+	error = (os_error*)_swix(AWRender_FileInitAddress, _OUT(0) | _OUT(1),
 				&init_routine, &init_workspace);
 	if (error) {
 		LOG(("AWRender_FileInitAddress: 0x%x: %s",
@@ -124,7 +124,7 @@ bool artworks_convert(struct content *c, int width, int height)
 		return false;
 	}
 
-	error = _swix(AWRender_RenderAddress, _OUT(0) | _OUT(1),
+	error = (os_error*)_swix(AWRender_RenderAddress, _OUT(0) | _OUT(1),
 				&c->data.artworks.render_routine,
 				&c->data.artworks.render_workspace);
 	if (error) {
@@ -146,12 +146,13 @@ bool artworks_convert(struct content *c, int width, int height)
 		return false;
 	}
 
-	error = _swix(AWRender_DocBounds, _IN(0) | _OUT(2) | _OUT(3) | _OUT(4) | _OUT(5),
+	error = (os_error*)_swix(AWRender_DocBounds, _IN(0) | _OUT(2) | _OUT(3) | _OUT(4) | _OUT(5),
 			c->source_data,
 			&c->data.artworks.x0,
 			&c->data.artworks.y0,
 			&c->data.artworks.x1,
 			&c->data.artworks.y1);
+
 	if (error) {
 		LOG(("AWRender_DocBounds: 0x%x: %s",
 			error->errnum, error->errmess));
@@ -176,7 +177,7 @@ bool artworks_convert(struct content *c, int width, int height)
 		return false;
 	}
 
-	c->width = (c->data.artworks.x1 - c->data.artworks.x0) / 512;
+	c->width  = (c->data.artworks.x1 - c->data.artworks.x0) / 512;
 	c->height = (c->data.artworks.y1 - c->data.artworks.y0) / 512;
 
 	c->title = malloc(100);
@@ -222,6 +223,12 @@ bool artworks_redraw(struct content *c, int x, int y,
 	if (plot.flush && !plot.flush())
 		return false;
 
+	/* pick up render addresses again in case they've changed
+	   (eg. newer AWRender module loaded since we first loaded this file) */
+	(void)_swix(AWRender_RenderAddress, _OUT(0) | _OUT(1),
+				&c->data.artworks.render_routine,
+				&c->data.artworks.render_workspace);
+
 	/* Scaled image. Transform units (65536*OS units) */
 	matrix.entries[0][0] = width * 65536 / c->width;
 	matrix.entries[0][1] = 0;
@@ -235,10 +242,25 @@ bool artworks_redraw(struct content *c, int x, int y,
 
 	info.ditherx = ro_plot_origin_x;
 	info.dithery = ro_plot_origin_y;
-	info.clip_x0 = INT_MIN;
-	info.clip_y0 = INT_MIN;
-	info.clip_x1 = INT_MAX;
-	info.clip_y1 = INT_MAX;
+
+	clip_x0 -= x;
+	clip_y0 -= y;
+	clip_x1 -= x;
+	clip_y1 -= y;
+
+	if (scale == 1.0) {
+		info.clip_x0 = (clip_x0 * 512) + c->data.artworks.x0 - 511;
+		info.clip_y0 = ((c->height - clip_y1) * 512) + c->data.artworks.y0 - 511;
+		info.clip_x1 = (clip_x1 * 512) + c->data.artworks.x0 + 511;
+		info.clip_y1 = ((c->height - clip_y0) * 512) + c->data.artworks.y0 + 511;
+	}
+	else {
+		info.clip_x0 = (clip_x0 * 512 / scale) + c->data.artworks.x0 - 511;
+		info.clip_y0 = ((c->height - (clip_y1 / scale)) * 512) + c->data.artworks.y0 - 511;
+		info.clip_x1 = (clip_x1 * 512 / scale) + c->data.artworks.x0 + 511;
+		info.clip_y1 = ((c->height - (clip_y0 / scale)) * 512) + c->data.artworks.y0 + 511;
+	}
+
 	info.print_lowx = 0;
 	info.print_lowy = 0;
 	info.print_handle = 0;
