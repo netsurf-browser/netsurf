@@ -31,6 +31,7 @@
 
 
 static void ro_gui_wimp_cache_furniture_sizes(wimp_w w);
+static size_t ro_gui_strlen(const char *str);
 
 static wimpextend_furniture_sizes furniture_sizes;
 static wimp_w furniture_window = NULL;
@@ -265,7 +266,7 @@ void ro_gui_set_icon_string(wimp_w w, wimp_i i, const char *text) {
 	}
 
 	/* copy the text across */
-	old_len = strlen(ic.icon.data.indirected_text.text);
+	old_len = ro_gui_strlen(ic.icon.data.indirected_text.text);
 	if (ic.icon.data.indirected_text.size) {
 		strncpy(ic.icon.data.indirected_text.text,
 			local_text ? local_text : text,
@@ -943,4 +944,23 @@ bool ro_gui_wimp_check_window_furniture(wimp_w w, wimp_window_flags mask) {
 		return false;
 	}
 	return state.flags & mask;
+}
+
+/**
+ * RO GUI-specific strlen, for control character terminated strings
+ *
+ * \param str  The string to measure the length of
+ * \return The length of the string
+ */
+size_t ro_gui_strlen(const char *str)
+{
+	size_t len = 0;
+
+	if (str == NULL)
+		return 0;
+
+	while (*(str++) >= ' ')
+		len++;
+
+	return len;
 }
