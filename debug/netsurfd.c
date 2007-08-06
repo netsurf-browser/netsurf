@@ -29,6 +29,7 @@
 #include "utils/utils.h"
 
 int done, destroyed;
+bool verbose_log = true;
 bool print_active = false;
 void *hotlist_toolbar = NULL;
 void *hotlist_window = NULL;
