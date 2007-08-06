@@ -533,6 +533,8 @@ long fetch_http_code(struct fetch *fetch)
  */
 const char *fetch_get_referer(struct fetch *fetch)
 {
+	assert(fetch);
+
 	return fetch->referer;
 }
 

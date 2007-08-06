@@ -564,7 +564,8 @@ bool content_set_type(struct content *c, content_type type,
 			c->user_list->next->next) {
 		/* type not shareable, and more than one user: split into
 		 * a content per user */
-		const char *referer = fetch_get_referer(c->fetch);
+		const char *referer =
+			c->fetch ? fetch_get_referer(c->fetch) : NULL;
 
 		while (c->user_list->next->next) {
 			clone = content_create(c->url);
