@@ -348,7 +348,9 @@ gboolean nsgtk_window_button_press_event(GtkWidget *widget,
 	browser_window_mouse_click(g->bw, button,
                                    event->x / g->bw->scale,
 				   event->y / g->bw->scale);
-
+        
+        gtk_widget_grab_focus(widget);
+        
 	return TRUE;
 }
 
@@ -401,11 +403,9 @@ gboolean nsgtk_window_keypress_event(GtkWidget *widget, GdkEventKey *event,
 
 	if (event->state == 0) {
 		double value;
-		GtkAdjustment *vscroll = gtk_range_get_adjustment(
-			g_object_get_data(G_OBJECT(g->viewport), "vScroll"));
+		GtkAdjustment *vscroll = gtk_viewport_get_vadjustment(g->viewport);
 			
-		GtkAdjustment *hscroll = gtk_range_get_adjustment(
-			g_object_get_data(G_OBJECT(g->viewport), "hScroll"));
+		GtkAdjustment *hscroll = gtk_viewport_get_hadjustment(g->viewport);
 			
 		GtkAdjustment *scroll;
 		
