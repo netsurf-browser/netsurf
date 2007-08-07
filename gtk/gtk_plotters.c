@@ -41,6 +41,8 @@ static bool nsgtk_plot_rectangle(int x0, int y0, int width, int height,
 static bool nsgtk_plot_line(int x0, int y0, int x1, int y1, int width,
 		colour c, bool dotted, bool dashed);
 static bool nsgtk_plot_polygon(int *p, unsigned int n, colour fill);
+static bool nsgtk_plot_path(float *p, unsigned int n, colour fill, float width,
+                    colour c, float *transform);
 static bool nsgtk_plot_fill(int x0, int y0, int x1, int y1, colour c);
 static bool nsgtk_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
@@ -77,7 +79,8 @@ const struct plotter_table nsgtk_plotters = {
 	nsgtk_plot_bitmap_tile,
 	NULL,
 	NULL,
-	NULL
+	NULL,
+	nsgtk_plot_path
 };
 
 
@@ -359,6 +362,17 @@ bool nsgtk_plot_bitmap_tile(int x, int y, int width, int height,
 		if (!repeat_y) break;
 	}
 
+
+	return true;
+}
+
+bool nsgtk_plot_path(float *p, unsigned int n, colour fill, float width,
+                colour c, float *transform)
+{
+	/* Only the internal SVG renderer uses this plot call currently,
+	 * and the GTK version uses librsvg.  Thus, we ignore this complexity,
+	 * and just return true obliviously.
+	 */
 
 	return true;
 }
