@@ -27,9 +27,11 @@ static bool ro_plot_rectangle(int x0, int y0, int width, int height,
 		int line_width, colour c, bool dotted, bool dashed);
 static bool ro_plot_line(int x0, int y0, int x1, int y1, int width,
 		colour c, bool dotted, bool dashed);
-static bool ro_plot_path(const draw_path * const path, int width,
+static bool ro_plot_draw_path(const draw_path * const path, int width,
 		colour c, bool dotted, bool dashed);
 static bool ro_plot_polygon(int *p, unsigned int n, colour fill);
+static bool ro_plot_path(float *p, unsigned int n, colour fill, float width,
+		colour c, float *transform);
 static bool ro_plot_fill(int x0, int y0, int x1, int y1, colour c);
 static bool ro_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
@@ -61,7 +63,8 @@ const struct plotter_table ro_plotters = {
 	ro_plot_bitmap_tile,
 	NULL,
 	NULL,
-	NULL
+	NULL,
+	ro_plot_path,
 };
 
 int ro_plot_origin_x = 0;
@@ -112,7 +115,7 @@ bool ro_plot_rectangle(int x0, int y0, int width, int height,
 			(ro_plot_origin_y - y0 * 2 - 1) * 256,
 			draw_END_PATH };
 
-	return ro_plot_path((const draw_path *) path, line_width, c,
+	return ro_plot_draw_path((const draw_path *) path, line_width, c,
 			dotted, dashed);
 }
 
@@ -128,11 +131,11 @@ bool ro_plot_line(int x0, int y0, int x1, int y1, int width,
 			(ro_plot_origin_y - y1 * 2 - 1) * 256,
 			draw_END_PATH };
 
-	return ro_plot_path((const draw_path *) path, width, c, dotted, dashed);
+	return ro_plot_draw_path((const draw_path *) path, width, c, dotted, dashed);
 }
 
 
-bool ro_plot_path(const draw_path * const path, int width,
+bool ro_plot_draw_path(const draw_path * const path, int width,
 		colour c, bool dotted, bool dashed)
 {
 	static const draw_line_style line_style = { draw_JOIN_MITRED,
@@ -192,14 +195,120 @@ bool ro_plot_polygon(int *p, unsigned int n, colour fill)
 	error = xcolourtrans_set_gcol(fill << 8, 0, os_ACTION_OVERWRITE, 0, 0);
 	if (error) {
 		LOG(("xcolourtrans_set_gcol: 0x%x: %s",
-		     error->errnum, error->errmess));
+				error->errnum, error->errmess));
 		return false;
 	}
 	error = xdraw_fill((draw_path *) path, 0, 0, 0);
 	if (error) {
 		LOG(("xdraw_fill: 0x%x: %s",
-		     error->errnum, error->errmess));
+				error->errnum, error->errmess));
 		return false;
+	}
+
+	return true;
+}
+
+
+bool ro_plot_path(float *p, unsigned int n, colour fill, float width,
+		colour c, float *transform)
+{
+	static const draw_line_style line_style = { draw_JOIN_MITRED,
+			draw_CAP_BUTT, draw_CAP_BUTT, 0, 0x7fffffff,
+			0, 0, 0, 0 };
+	int *path;
+	unsigned int i;
+	os_trfm trfm;
+	os_error *error;
+
+	if (n == 0)
+		return true;
+
+	if (p[0] != PLOTTER_PATH_MOVE) {
+		LOG(("path doesn't start with a move"));
+		return false;
+	}
+
+	path = malloc(sizeof *path * (n + 10));
+	if (!path) {
+		LOG(("out of memory"));
+		return false;
+	}
+
+	LOG(("converting path"));
+	for (i = 0; i < n; ) {
+		if (p[i] == PLOTTER_PATH_MOVE) {
+			path[i] = draw_MOVE_TO;
+			path[i + 1] = p[i + 1] * 2 * 256;
+			path[i + 2] = -p[i + 2] * 2 * 256;
+			i += 3;
+		} else if (p[i] == PLOTTER_PATH_CLOSE) {
+			path[i] = draw_CLOSE_LINE;
+			i++;
+		} else if (p[i] == PLOTTER_PATH_LINE) {
+			path[i] = draw_LINE_TO;
+			path[i + 1] = p[i + 1] * 2 * 256;
+			path[i + 2] = -p[i + 2] * 2 * 256;
+			i += 3;
+		} else if (p[i] == PLOTTER_PATH_BEZIER) {
+			path[i] = draw_BEZIER_TO;
+			path[i + 1] = p[i + 1] * 2 * 256;
+			path[i + 2] = -p[i + 2] * 2 * 256;
+			path[i + 3] = p[i + 3] * 2 * 256;
+			path[i + 4] = -p[i + 4] * 2 * 256;
+			path[i + 5] = p[i + 5] * 2 * 256;
+			path[i + 6] = -p[i + 6] * 2 * 256;
+			i += 7;
+		} else {
+			LOG(("bad path command %f", p[i]));
+			return false;
+		}
+	}
+	path[i] = draw_END_PATH;
+	path[i + 1] = 0;
+
+	LOG(("converting matrix"));
+	trfm.entries[0][0] = transform[0] * 0x10000;
+	trfm.entries[0][1] = transform[1] * 0x10000;
+	trfm.entries[1][0] = transform[2] * 0x10000;
+	trfm.entries[1][1] = transform[3] * 0x10000;
+	trfm.entries[2][0] = (ro_plot_origin_x + transform[4] * 2) * 256;
+	trfm.entries[2][1] = (ro_plot_origin_y - transform[5] * 2) * 256;
+
+	LOG(("plotting"));
+
+	if (fill != TRANSPARENT) {
+		error = xcolourtrans_set_gcol(fill << 8, 0,
+				os_ACTION_OVERWRITE, 0, 0);
+		if (error) {
+			LOG(("xcolourtrans_set_gcol: 0x%x: %s",
+					error->errnum, error->errmess));
+			return false;
+		}
+
+		error = xdraw_fill(path, 0, &trfm, 0);
+		if (error) {
+			LOG(("xdraw_stroke: 0x%x: %s",
+					error->errnum, error->errmess));
+			return false;
+		}
+	}
+
+	if (c != TRANSPARENT) {
+		error = xcolourtrans_set_gcol(c << 8, 0,
+				os_ACTION_OVERWRITE, 0, 0);
+		if (error) {
+			LOG(("xcolourtrans_set_gcol: 0x%x: %s",
+					error->errnum, error->errmess));
+			return false;
+		}
+
+		error = xdraw_stroke(path, 0, &trfm, 0, width * 2 * 256,
+				&line_style, 0);
+		if (error) {
+			LOG(("xdraw_stroke: 0x%x: %s",
+					error->errnum, error->errmess));
+			return false;
+		}
 	}
 
 	return true;

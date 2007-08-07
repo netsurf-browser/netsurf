@@ -42,10 +42,19 @@ struct plotter_table {
 	bool (*group_start)(const char *name);	/** optional */
 	bool (*group_end)(void);	/** optional */
 	bool (*flush)(void);
+	bool (*path)(float *p, unsigned int n, colour fill, float width,
+			colour c, float *transform);
 };
 
 /** Current plotters, must be assigned before use. */
 extern struct plotter_table plot;
+
+enum path_command {
+	PLOTTER_PATH_MOVE,
+	PLOTTER_PATH_CLOSE,
+	PLOTTER_PATH_LINE,
+	PLOTTER_PATH_BEZIER,
+};
 
 
 #endif
