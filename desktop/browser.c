@@ -57,6 +57,9 @@ struct browser_window *current_redraw_browser;
 /** fake content for <a> being saved as a link */
 struct content browser_window_href_content;
 
+/** one or more windows require a reformat */
+bool browser_reformat_pending;
+
 /** maximum frame depth */
 #define FRAME_DEPTH 8
 
@@ -146,7 +149,9 @@ struct browser_window *browser_window_create(const char *url,
 	/* window characteristics */
 	bw->sel = selection_create(bw);
 	bw->refresh_interval = -1;
+	bw->reformat_pending = false;
 	bw->drag_type = DRAGGING_NONE;
+	bw->scale = (float) option_scale / 100.0;
 	bw->browser_window_type = BROWSER_WINDOW_NORMAL;
 	bw->scrolling = SCROLLING_YES;
 	bw->border = true;
@@ -961,7 +966,7 @@ void browser_window_reformat(struct browser_window *bw, int width, int height)
 	if (!c)
 		return;
 
-	content_reformat(c, width, height);
+	content_reformat(c, width / bw->scale, height / bw->scale);
 }
 
 
@@ -986,6 +991,20 @@ void browser_window_set_scale(struct browser_window *bw, float scale, bool all)
 void browser_window_set_scale_internal(struct browser_window *bw, float scale)
 {
 	int i;
+	struct content *c;
+
+	if (bw->scale == scale)
+		return;
+	bw->scale = scale;
+	c = bw->current_content;
+	if (c) {
+	  	if (!content_can_reformat(c)) {
+			browser_window_update(bw, false);
+	  	} else {
+			bw->reformat_pending = true;
+			browser_reformat_pending = true;
+	 	}
+	}
 
 	gui_window_set_scale(bw->window, scale);
 

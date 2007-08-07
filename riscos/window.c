@@ -173,7 +173,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	g->bw = bw;
 	g->toolbar = 0;
 	g->status_bar = 0;
-	g->reformat_pending = false;
 	g->old_width = 0;
 	g->old_height = 0;
 	g->update_extent = true;
@@ -469,13 +468,14 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 	assert(g);
 	assert(title);
 
-	if (g->option.scale != 1.0) {
-		scale_disp = g->option.scale * 100;
-		if (ABS((float)scale_disp - g->option.scale * 100) >= 0.05)
-			snprintf(g->title, sizeof g->title, "%s (%.1f%%)", title,
-					g->option.scale * 100);
+	if (g->bw->scale != 1.0) {
+		scale_disp = g->bw->scale * 100;
+		if (ABS((float)scale_disp - g->bw->scale * 100) >= 0.05)
+			snprintf(g->title, sizeof g->title, "%s (%.1f%%)",
+					title, g->bw->scale * 100);
 		else
-			snprintf(g->title, sizeof g->title, "%s (%i%%)", title, scale_disp);
+			snprintf(g->title, sizeof g->title, "%s (%i%%)",
+					title, scale_disp);
 	} else {
 		strncpy(g->title, title, sizeof g->title);
 	}
@@ -558,10 +558,10 @@ void gui_window_update_box(struct gui_window *g,
 	if (!c)
 		return;
 
-	x0 = floorf(data->redraw.x * 2 * g->option.scale);
-	y0 = -ceilf((data->redraw.y + data->redraw.height) * 2 * g->option.scale);
-	x1 = ceilf((data->redraw.x + data->redraw.width) * 2 * g->option.scale) + 1;
-	y1 = -floorf(data->redraw.y * 2 * g->option.scale) + 1;
+	x0 = floorf(data->redraw.x * 2 * g->bw->scale);
+	y0 = -ceilf((data->redraw.y + data->redraw.height) * 2 * g->bw->scale);
+	x1 = ceilf((data->redraw.x + data->redraw.width) * 2 * g->bw->scale) + 1;
+	y1 = -floorf(data->redraw.y * 2 * g->bw->scale) + 1;
 	use_buffer = (data->redraw.full_redraw) &&
 		(g->option.buffer_everything || g->option.buffer_animations);
 
@@ -627,8 +627,8 @@ bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 
 	if (g->toolbar)
 		toolbar_height = ro_gui_theme_toolbar_full_height(g->toolbar);
-	*sx = state.xscroll / (2 * g->option.scale);
-	*sy = -(state.yscroll - toolbar_height) / (2 * g->option.scale);
+	*sx = state.xscroll / (2 * g->bw->scale);
+	*sy = -(state.yscroll - toolbar_height) / (2 * g->bw->scale);
 	return true;
 }
 
@@ -657,8 +657,8 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 		return;
 	}
 
-	state.xscroll = sx * 2 * g->option.scale;
-	state.yscroll = -sy * 2 * g->option.scale;
+	state.xscroll = sx * 2 * g->bw->scale;
+	state.yscroll = -sy * 2 * g->bw->scale;
 	if (g->toolbar)
 		state.yscroll += ro_gui_theme_toolbar_full_height(g->toolbar);
 	ro_gui_window_open((wimp_open *)&state);
@@ -697,10 +697,10 @@ void gui_window_scroll_visible(struct gui_window *g, int x0, int y0, int x1, int
 	if (g->toolbar)
 		toolbar_height = ro_gui_theme_toolbar_full_height(g->toolbar);
 
-	x0 = x0 * 2 * g->option.scale;
-	y0 = y0 * 2 * g->option.scale;
-	x1 = x1 * 2 * g->option.scale;
-	y1 = y1 * 2 * g->option.scale;
+	x0 = x0 * 2 * g->bw->scale;
+	y0 = y0 * 2 * g->bw->scale;
+	x1 = x1 * 2 * g->bw->scale;
+	y1 = y1 * 2 * g->bw->scale;
 
 	cx0 = state.xscroll;
 	cy0 = -state.yscroll + toolbar_height;
@@ -790,7 +790,7 @@ void gui_window_position_frame(struct gui_window *g, int x0, int y0, int x1, int
 
 	/* only scale iframe locations */
 	if (bw->browser_window_type == BROWSER_WINDOW_IFRAME)
-	  	scale = g->option.scale;
+	  	scale = g->bw->scale;
 
 	/* get the position of the top level window */
 	state.w = top->window->window;
@@ -858,8 +858,8 @@ void gui_window_get_dimensions(struct gui_window *g, int *width, int *height, bo
 	*width = g->old_width / 2;
 	*height = g->old_height / 2;
 	if (scaled) {
-		*width /= g->option.scale;
-		*height /= g->option.scale;
+		*width /= g->bw->scale;
+		*height /= g->bw->scale;
 	}
 }
 
@@ -897,7 +897,7 @@ void gui_window_update_extent(struct gui_window *g)
 
 	/* only allow a further reformat if we've gained/lost scrollbars */
 	flags = state.flags & (wimp_WINDOW_HSCROLL | wimp_WINDOW_VSCROLL);
-	update = g->reformat_pending;
+	update = g->bw->reformat_pending;
 	g->update_extent = true;
 	ro_gui_window_open((wimp_open *)&state);
 
@@ -910,7 +910,7 @@ void gui_window_update_extent(struct gui_window *g)
 		return;
 	}
 	if (flags == (state.flags & (wimp_WINDOW_HSCROLL | wimp_WINDOW_VSCROLL)))
-		g->reformat_pending = update;
+		g->bw->reformat_pending = update;
 	if ((scroll != 0) && (g->bw->children))
 		browser_window_recalculate_frameset(g->bw);
 }
@@ -1090,9 +1090,9 @@ void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
 	os_error *error;
 
 	error = xwimp_set_caret_position(g->window, -1,
-			x * 2 * g->option.scale,
-			-(y + height) * 2 * g->option.scale,
-			height * 2 * g->option.scale, -1);
+			x * 2 * g->bw->scale,
+			-(y + height) * 2 * g->bw->scale,
+			height * 2 * g->bw->scale, -1);
 	if (error) {
 		LOG(("xwimp_set_caret_position: 0x%x: %s",
 				error->errnum, error->errmess));
@@ -1230,10 +1230,10 @@ bool gui_window_box_scroll_start(struct gui_window *g, int x0, int y0, int x1, i
 	}
 
 	drag.type = wimp_DRAG_USER_POINT;
-	drag.bbox.x0 = pointer.pos.x + (int)(x0 * 2 * g->option.scale);
-	drag.bbox.y0 = pointer.pos.y + (int)(y0 * 2 * g->option.scale);
-	drag.bbox.x1 = pointer.pos.x + (int)(x1 * 2 * g->option.scale);
-	drag.bbox.y1 = pointer.pos.y + (int)(y1 * 2 * g->option.scale);
+	drag.bbox.x0 = pointer.pos.x + (int)(x0 * 2 * g->bw->scale);
+	drag.bbox.y0 = pointer.pos.y + (int)(y0 * 2 * g->bw->scale);
+	drag.bbox.x1 = pointer.pos.x + (int)(x1 * 2 * g->bw->scale);
+	drag.bbox.y1 = pointer.pos.y + (int)(y1 * 2 * g->bw->scale);
 
 	error = xwimp_drag_box(&drag);
 	if (error) {
@@ -1363,19 +1363,6 @@ void gui_window_save_as_link(struct gui_window *g, struct content *c)
 
 
 /**
- * Get the scale setting of a window
- *
- * \param  g	  gui window
- * \return scale value (1.0 == normal scale)
- */
-
-float gui_window_get_scale(struct gui_window *g)
-{
-  	return g->option.scale;
-}
-
-
-/**
  * Set the scale setting of a window
  *
  * \param  g	  gui window
@@ -1384,21 +1371,7 @@ float gui_window_get_scale(struct gui_window *g)
 
 void gui_window_set_scale(struct gui_window *g, float scale)
 {
-	struct content *c;
-
-	if (g->option.scale == scale)
-		return;
-	g->option.scale = scale;
-	c = g->bw->current_content;
-	if (c) {
-	  	ro_gui_dialog_update_zoom(g);
-	  	if (!content_get_reformat(c)) {
-			browser_window_update(g->bw, false);
-	  	} else {
-			g->reformat_pending = true;
-			gui_reformat_pending = true;
-	 	}
-	}
+	ro_gui_dialog_update_zoom(g);
 }
 
 
@@ -1422,7 +1395,7 @@ void ro_gui_window_redraw(wimp_draw *redraw)
 	osbool more;
 	bool knockout = true;
 	struct gui_window *g = (struct gui_window *)ro_gui_wimp_event_get_user_data(redraw->w);
-	float scale = g->option.scale;
+	float scale = g->bw->scale;
 	struct content *c = g->bw->current_content;
 	int clip_x0, clip_y0, clip_x1, clip_y1, clear_x1, clear_y1;
 	os_error *error;
@@ -1439,9 +1412,9 @@ void ro_gui_window_redraw(wimp_draw *redraw)
 	ro_gui_current_redraw_gui = g;
 	current_redraw_browser = g->bw;
 
-	/* rendering textplain has no advantages using knockout rendering other than to
-	 * slow things down. */
-	if (c->type == CONTENT_TEXTPLAIN)
+	/* rendering textplain has no advantages using knockout rendering other
+	 * than to slow things down. */
+	if (c->type == CONTENT_TEXTPLAIN || c->type == CONTENT_SVG)
 		knockout = false;
 
 	/* HTML rendering handles scale itself */
@@ -1477,7 +1450,7 @@ void ro_gui_window_redraw(wimp_draw *redraw)
 		content_redraw(c, 0, 0,
 				c->width * scale, c->height * scale,
 				clip_x0, clip_y0, clip_x1, clip_y1,
-				g->option.scale,
+				g->bw->scale,
 				0xFFFFFF);
 		if (knockout)
 			knockout_plot_end();
@@ -1569,7 +1542,7 @@ void ro_gui_window_update_boxes(void) {
 		plot = ro_plotters;
 		ro_plot_origin_x = update.box.x0 - update.xscroll;
 		ro_plot_origin_y = update.box.y1 - update.yscroll;
-		ro_plot_set_scale(g->option.scale);
+		ro_plot_set_scale(g->bw->scale);
 
 		/*	We should clear the background, except for HTML.
 		*/
@@ -1601,21 +1574,21 @@ void ro_gui_window_update_boxes(void) {
 				content_redraw(c, 0, 0,
 						c->width, c->height,
 						clip_x0, clip_y0, clip_x1, clip_y1,
-						g->option.scale,
+						g->bw->scale,
 						0xFFFFFF);
 			} else {
 				assert(data->redraw.object);
 				content_redraw(data->redraw.object,
 						floorf(data->redraw.object_x *
-							g->option.scale),
+							g->bw->scale),
 						ceilf(data->redraw.object_y *
-							g->option.scale),
+							g->bw->scale),
 						data->redraw.object_width *
-							g->option.scale,
+							g->bw->scale,
 						data->redraw.object_height *
-							g->option.scale,
+							g->bw->scale,
 						clip_x0, clip_y0, clip_x1, clip_y1,
-						g->option.scale,
+						g->bw->scale,
 						0xFFFFFF);
 			}
 
@@ -1745,8 +1718,8 @@ void gui_window_set_extent(struct gui_window *g, int width, int height)
 		height -= ro_get_title_height(g->window);
 	}
 	if (content) {
-		width = max(width, content->width * 2 * g->option.scale);
-		height = max(height, content->height * 2 * g->option.scale);
+		width = max(width, content->width * 2 * g->bw->scale);
+		height = max(height, content->height * 2 * g->bw->scale);
 	}
 	os_box extent = { 0, -height, width, toolbar_height };
 	error = xwimp_set_extent(g->window, &extent);
@@ -1823,14 +1796,14 @@ void ro_gui_window_open(wimp_open *open)
 		if ((!no_hscroll) &&
 				((fheight > size) ||
 					(g->bw->browser_window_type == BROWSER_WINDOW_NORMAL)) &&
-				((content && width < content->width * 2 * g->option.scale) ||
+				((content && width < content->width * 2 * g->bw->scale) ||
 					(g->bw->browser_window_type == BROWSER_WINDOW_NORMAL))) {
 			if (!(state.flags & wimp_WINDOW_HSCROLL)) {
 				height -= size;
 				state.visible.y0 += size;
 				if (content) {
-					g->reformat_pending = true;
-					gui_reformat_pending = true;
+					g->bw->reformat_pending = true;
+					browser_reformat_pending = true;
 				}
 			}
 			state.flags |= wimp_WINDOW_HSCROLL;
@@ -1839,8 +1812,8 @@ void ro_gui_window_open(wimp_open *open)
 				height += size;
 				state.visible.y0 -= size;
 				if (content) {
-					g->reformat_pending = true;
-					gui_reformat_pending = true;
+					g->bw->reformat_pending = true;
+					browser_reformat_pending = true;
 				}
 			}
 			state.flags &= ~wimp_WINDOW_HSCROLL;
@@ -1856,14 +1829,14 @@ void ro_gui_window_open(wimp_open *open)
 		if ((!no_vscroll) &&
 				((fwidth > size) ||
 					(g->bw->browser_window_type == BROWSER_WINDOW_NORMAL)) &&
-				((content && height < content->height * 2 * g->option.scale) ||
+				((content && height < content->height * 2 * g->bw->scale) ||
 					(g->bw->scrolling == SCROLLING_YES))) {
 			if (!(state.flags & wimp_WINDOW_VSCROLL)) {
 				width -= size;
 				state.visible.x1 -= size;
 				if (content) {
-					g->reformat_pending = true;
-					gui_reformat_pending = true;
+					g->bw->reformat_pending = true;
+					browser_reformat_pending = true;
 				}
 			}
 			state.flags |= wimp_WINDOW_VSCROLL;
@@ -1872,8 +1845,8 @@ void ro_gui_window_open(wimp_open *open)
 				width += size;
 				state.visible.x1 += size;
 				if (content) {
-					g->reformat_pending = true;
-					gui_reformat_pending = true;
+					g->bw->reformat_pending = true;
+					browser_reformat_pending = true;
 				}
 			}
 			state.flags &= ~wimp_WINDOW_VSCROLL;
@@ -1885,9 +1858,9 @@ void ro_gui_window_open(wimp_open *open)
 	  	/* Ctrl-resize of a top-level window scales the content size */
 		if ((g->old_width > 0) && (g->old_width != width) && (!g->bw->parent) &&
 				(ro_gui_ctrl_pressed()))
-			new_scale = (g->option.scale * width) / g->old_width;
-		g->reformat_pending = true;
-		gui_reformat_pending = true;
+			new_scale = (g->bw->scale * width) / g->old_width;
+		g->bw->reformat_pending = true;
+		browser_reformat_pending = true;
 	}
 	if (g->update_extent || g->old_width != width || g->old_height != height) {
 		g->old_width = width;
@@ -2514,16 +2487,16 @@ bool ro_gui_window_keypress(wimp_key *key)
 		case 23:       /* CTRL+W (Zoom in) */
 			if (!content)
 				break;
-			scale = g->option.scale;
+			scale = g->bw->scale;
 			if (ro_gui_shift_pressed() && c == 17)
-				scale = g->option.scale - 0.1;
+				scale = g->bw->scale - 0.1;
 			else if (ro_gui_shift_pressed() && c == 23)
-				scale = g->option.scale + 0.1;
+				scale = g->bw->scale + 0.1;
 			else if (c == 17) {
 				for (int i = SCALE_SNAP_TO_SIZE - 1;
 						i >= 0; i--)
 					if (scale_snap_to[i] <
-							g->option.scale) {
+							g->bw->scale) {
 						scale = scale_snap_to[i];
 						break;
 					}
@@ -2531,7 +2504,7 @@ bool ro_gui_window_keypress(wimp_key *key)
 				for (unsigned int i = 0;
 						i < SCALE_SNAP_TO_SIZE; i++)
 					if (scale_snap_to[i] >
-							g->option.scale) {
+							g->bw->scale) {
 						scale = scale_snap_to[i];
 						break;
 					}
@@ -2540,12 +2513,12 @@ bool ro_gui_window_keypress(wimp_key *key)
 				scale = scale_snap_to[0];
 			if (scale > scale_snap_to[SCALE_SNAP_TO_SIZE - 1])
 				scale = scale_snap_to[SCALE_SNAP_TO_SIZE - 1];
-			if (g->option.scale != scale) {
+			if (g->bw->scale != scale) {
 				browser_window_set_scale(g->bw, scale, true);
 //				g->reformat_pending = true;
 //				if ((content) && (content->type != CONTENT_HTML))
 //					browser_window_update(g->bw, false);
-//				gui_reformat_pending = true;
+//				browser_reformat_pending = true;
 			}
 			return true;
 
@@ -2712,8 +2685,8 @@ bool ro_gui_window_to_window_pos(struct gui_window *g, int x, int y, os_coord *p
 		warn_user("WimpError", error->errmess);
 		return false;
 	}
-	pos->x = (x - (state.visible.x0 - state.xscroll)) / 2 / g->option.scale;
-	pos->y = ((state.visible.y1 - state.yscroll) - y) / 2 / g->option.scale;
+	pos->x = (x - (state.visible.x0 - state.xscroll)) / 2 / g->bw->scale;
+	pos->y = ((state.visible.y1 - state.yscroll) - y) / 2 / g->bw->scale;
 	return true;
 }
 
@@ -2743,8 +2716,8 @@ bool ro_gui_window_to_screen_pos(struct gui_window *g, int x, int y, os_coord *p
 		warn_user("WimpError", error->errmess);
 		return false;
 	}
-	pos->x = (x * 2 * g->option.scale) + (state.visible.x0 - state.xscroll);
-	pos->y = (state.visible.y1 - state.yscroll) - (y * 2 * g->option.scale);
+	pos->x = (x * 2 * g->bw->scale) + (state.visible.x0 - state.xscroll);
+	pos->y = (state.visible.y1 - state.yscroll) - (y * 2 * g->bw->scale);
 	return true;
 }
 
@@ -2896,14 +2869,14 @@ void ro_gui_window_process_reformats(void)
 {
 	struct gui_window *g;
 
-	gui_reformat_pending = false;
+	browser_reformat_pending = false;
 	for (g = window_list; g; g = g->next) {
-		if (!g->reformat_pending)
+		if (!g->bw->reformat_pending)
 			continue;
-		g->reformat_pending = false;
+		g->bw->reformat_pending = false;
 		browser_window_reformat(g->bw,
-				g->old_width / 2 / g->option.scale,
-				g->old_height / 2 / g->option.scale);
+				g->old_width / 2,
+				g->old_height / 2);
 	}
 }
 
@@ -2932,7 +2905,7 @@ void ro_gui_window_clone_options(struct browser_window *new_bw,
 	/*	Clone the basic options
 	*/
 	if (!old_gui) {
-		new_gui->option.scale = ((float)option_scale) / 100;
+		new_bw->scale = ((float)option_scale) / 100;
 		new_gui->option.background_images = option_background_images;
 		new_gui->option.buffer_animations = option_buffer_animations;
 		new_gui->option.buffer_everything = option_buffer_everything;
@@ -2975,7 +2948,7 @@ void ro_gui_window_default_options(struct browser_window *bw) {
 
 	/*	Save the basic options
 	*/
-	option_scale = gui->option.scale * 100;
+	option_scale = bw->scale * 100;
 	option_buffer_animations = gui->option.buffer_animations;
 	option_buffer_everything = gui->option.buffer_everything;
 

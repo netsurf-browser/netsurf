@@ -68,6 +68,7 @@ extern int option_window_height;
 extern int option_window_screen_width;
 extern int option_window_screen_height;
 extern int option_toolbar_status_width;
+extern int option_scale;
 
 /* Fetcher configuration. */
 extern int option_max_fetchers;

@@ -301,7 +301,7 @@ void browser_window_recalculate_frameset(struct browser_window *bw) {
 			switch (window->frame_width.unit) {
 				case FRAME_DIMENSION_PIXELS:
 					widths[col][row] = window->frame_width.value *
-							gui_window_get_scale(window->window);
+							window->scale;
 					if (window->border) {
 						if (col != 0)
 							widths[col][row] += 1;
@@ -363,7 +363,7 @@ void browser_window_recalculate_frameset(struct browser_window *bw) {
 			switch (window->frame_height.unit) {
 				case FRAME_DIMENSION_PIXELS:
 					heights[col][row] = window->frame_height.value *
-							gui_window_get_scale(window->window);
+							window->scale;
 					if (window->border) {
 						if (row != 0)
 							heights[col][row] += 1;

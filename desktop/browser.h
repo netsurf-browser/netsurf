@@ -115,11 +115,17 @@ struct browser_window {
 	/** Refresh interval (-1 if undefined) */
 	int refresh_interval;
 
+	/** Window has been resized, and content needs reformatting. */
+	bool reformat_pending;
+
 	/** Window dimensions */
 	int x0;
 	int y0;
 	int x1;
 	int y1;
+
+	/** scale of window contents */
+	float scale;
 
 	/** Window characteristics */
 	enum {
@@ -177,6 +183,7 @@ typedef enum {
 
 
 extern struct browser_window *current_redraw_browser;
+extern bool browser_reformat_pending;
 
 struct browser_window * browser_window_create(const char *url,
 		struct browser_window *clone, const char *referer,

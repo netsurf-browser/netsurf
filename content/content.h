@@ -237,7 +237,7 @@ content_type content_lookup(const char *mime_type);
 struct content * content_create(const char *url);
 struct content * content_get(const char *url);
 struct content * content_get_ready(const char *url);
-bool content_get_reformat(struct content *c);
+bool content_can_reformat(struct content *c);
 bool content_set_type(struct content *c, content_type type,
 		const char *mime_type, const char *params[]);
 void content_set_status(struct content *c, const char *status_message, ...);

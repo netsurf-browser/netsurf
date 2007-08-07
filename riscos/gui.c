@@ -156,9 +156,6 @@ static wimp_w gui_track_wimp_w;
 /** Browser window which the pointer is over, or 0 if none. */
 struct gui_window *gui_track_gui_window;
 
-/** Some windows have been resized, and should be reformatted. */
-bool gui_reformat_pending = false;
-
 gui_drag_type gui_current_drag_type;
 wimp_t task_handle;	/**< RISC OS wimp task handle. */
 static clock_t gui_last_poll;	/**< Time of last wimp_poll. */
@@ -883,7 +880,7 @@ void gui_poll(bool active)
 	xhourglass_off();
 	if (active) {
 		event = wimp_poll(mask, &block, 0);
-	} else if (sched_active || gui_track || gui_reformat_pending ||
+	} else if (sched_active || gui_track || browser_reformat_pending ||
 			bitmap_maintenance) {
 		os_t t = os_read_monotonic_time();
 
@@ -914,7 +911,7 @@ void gui_poll(bool active)
 	schedule_run();
         ro_gui_window_update_boxes();
 
-	if (gui_reformat_pending && event == wimp_NULL_REASON_CODE)
+	if (browser_reformat_pending && event == wimp_NULL_REASON_CODE)
 		ro_gui_window_process_reformats();
 	else if (bitmap_maintenance_priority ||
 			(bitmap_maintenance && event == wimp_NULL_REASON_CODE))

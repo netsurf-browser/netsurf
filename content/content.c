@@ -513,7 +513,8 @@ struct content * content_get_ready(const char *url)
  * \param c  content to check
  * \return whether the content can reformat
  */
-bool content_get_reformat(struct content *c) {
+bool content_can_reformat(struct content *c)
+{
 	return (handler_map[c->type].reformat != NULL);
 }
 

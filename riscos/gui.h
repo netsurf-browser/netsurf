@@ -49,7 +49,6 @@ extern bool current_menu_open;
 extern wimp_menu *recent_search_menu;	/* search.c */
 extern wimp_w history_window;
 extern struct form_control *current_gadget;
-extern bool gui_reformat_pending;
 extern bool gui_redraw_debug;
 extern osspriteop_area *gui_sprites;
 extern bool dialog_folder_add, dialog_entry_add, hotlist_insert;
@@ -79,8 +78,6 @@ struct gui_window {
 
 	wimp_w window;		/**< RISC OS window handle. */
 
-	/** Window has been resized, and content needs reformatting. */
-	bool reformat_pending;
 	int old_width;		/**< Width when last opened / os units. */
 	int old_height;		/**< Height when last opened / os units. */
 	bool update_extent;	/**< Update the extent on next opening */
@@ -96,7 +93,6 @@ struct gui_window {
 
 	/** Options. */
 	struct {
-		float scale;		/**< Scale, 1.0 = 100%. */
 		bool background_images;	/**< Display background images. */
 		bool buffer_animations;	/**< Use screen buffering for animations. */
 		bool buffer_everything;	/**< Use screen buffering for everything. */

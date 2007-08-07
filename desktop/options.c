@@ -115,6 +115,8 @@ int option_toolbar_status_width = 400;
 #else
 int option_toolbar_status_width = 6667;
 #endif
+/** default window scale */
+int option_scale = 100;
 
 /* Fetcher configuration */
 /** Maximum simultaneous active fetchers */
@@ -122,7 +124,7 @@ int option_max_fetchers = 24;
 /** Maximum simultaneous active fetchers per host.
  * (<=option_max_fetchers else it makes no sense
  */
-int option_max_fetchers_per_host = 2;
+int option_max_fetchers_per_host = 1;
 /** Maximum number of inactive fetchers cached.
  * The total number of handles netsurf will therefore have open
  * is this plus option_max_fetchers.
@@ -171,13 +173,14 @@ struct {
 	{ "cookie_jar",      OPTION_STRING,  &option_cookie_jar },
         { "homepage_url",    OPTION_STRING,  &option_homepage_url },
 	{ "url_suggestion",  OPTION_BOOL,    &option_url_suggestion },
-	{ "window_x",               OPTION_INTEGER, &option_window_x },
-	{ "window_y",               OPTION_INTEGER, &option_window_y },
-	{ "window_width",           OPTION_INTEGER, &option_window_width },
-	{ "window_height",          OPTION_INTEGER, &option_window_height },
-	{ "window_screen_width",    OPTION_INTEGER, &option_window_screen_width },
-	{ "window_screen_height",   OPTION_INTEGER, &option_window_screen_height },
-	{ "toolbar_status_size",    OPTION_INTEGER, &option_toolbar_status_width },
+	{ "window_x",        OPTION_INTEGER, &option_window_x },
+	{ "window_y",        OPTION_INTEGER, &option_window_y },
+	{ "window_width",    OPTION_INTEGER, &option_window_width },
+	{ "window_height",   OPTION_INTEGER, &option_window_height },
+	{ "window_screen_width", OPTION_INTEGER, &option_window_screen_width },
+	{ "window_screen_height",OPTION_INTEGER, &option_window_screen_height },
+	{ "toolbar_status_size", OPTION_INTEGER, &option_toolbar_status_width },
+	{ "option_scale",    OPTION_INTEGER, &option_scale },
 	/* Fetcher options */
 	{ "max_fetchers",    OPTION_INTEGER, &option_max_fetchers },
 	{ "max_fetchers_per_host",

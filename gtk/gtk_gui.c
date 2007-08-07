@@ -273,6 +273,10 @@ void gui_poll(bool active)
 	int max_fd;
 	GPollFD *fd_list[1000];
 	unsigned int fd_count = 0;
+	bool block = true;
+
+	if (browser_reformat_pending)
+		block = false;
 
 	if (active) {
 		fetch_poll();
@@ -309,12 +313,18 @@ void gui_poll(bool active)
 			}
 		}
 	}
-	gtk_main_iteration_do(true);
+
+	gtk_main_iteration_do(block);
+
 	for (unsigned int i = 0; i != fd_count; i++) {
 		g_main_context_remove_poll(0, fd_list[i]);
 		free(fd_list[i]);
 	}
-        schedule_run();
+
+	schedule_run();
+
+	if (browser_reformat_pending)
+		nsgtk_window_process_reformats();
 }
 
 

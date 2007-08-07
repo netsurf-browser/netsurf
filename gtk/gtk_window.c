@@ -8,6 +8,7 @@
 
 #include "gtk/gtk_window.h"
 #include "desktop/browser.h"
+#include "desktop/options.h"
 #include "desktop/textinput.h"
 #include "gtk/gtk_gui.h"
 #include "gtk/gtk_scaffolding.h"
@@ -26,7 +27,6 @@ struct gui_window {
         struct browser_window	*bw;
         
         /* These are the storage for the rendering */
-	float			scale;
 	int			caretx, carety, careth;
 	gui_pointer_shape	current_pointer;
 	int			last_x, last_y;
@@ -80,7 +80,7 @@ struct browser_window *nsgtk_get_browser_for_gui(struct gui_window *g)
 
 float nsgtk_get_scale_for_gui(struct gui_window *g)
 {
-        return g->scale;
+        return g->bw->scale;
 }
 
 /* Create a gui_window */
@@ -101,9 +101,9 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	g->bw = bw;
 	g->current_pointer = GUI_POINTER_DEFAULT;
 	if (clone != NULL)
-		g->scale = clone->window->scale;
+		bw->scale = clone->scale;
 	else
-		g->scale = 1.0;
+		bw->scale = (float) option_scale / 100;
 
 	g->careth = 0;
         
@@ -268,6 +268,7 @@ gboolean nsgtk_window_expose_event(GtkWidget *widget,
 {
 	struct gui_window *g = data;
 	struct content *c;
+	float scale = g->bw->scale;
 
 	assert(g);
 	assert(g->bw);
@@ -281,6 +282,10 @@ gboolean nsgtk_window_expose_event(GtkWidget *widget,
 	c = g->bw->current_content;
 	if (c == NULL)
 		return FALSE;
+
+	/* HTML rendering handles scale itself */
+	if (c->type == CONTENT_HTML)
+		scale = 1;
 	
         current_widget = widget;
 	current_drawable = widget->window;
@@ -290,15 +295,15 @@ gboolean nsgtk_window_expose_event(GtkWidget *widget,
 #endif
 
 	plot = nsgtk_plotters;
-	nsgtk_plot_set_scale(g->scale);
+	nsgtk_plot_set_scale(g->bw->scale);
 	content_redraw(c, 0, 0,
-			widget->allocation.width,
-			widget->allocation.height,
+			widget->allocation.width * scale,
+			widget->allocation.height * scale,
 			event->area.x,
 			event->area.y,
 			event->area.x + event->area.width,
 			event->area.y + event->area.height,
-			g->scale, 0xFFFFFF);
+			g->bw->scale, 0xFFFFFF);
 
 	if (g->careth != 0)
 		nsgtk_plot_caret(g->caretx, g->carety, g->careth);
@@ -316,8 +321,8 @@ gboolean nsgtk_window_motion_notify_event(GtkWidget *widget,
 {
 	struct gui_window *g = data;
 
-	browser_window_mouse_track(g->bw, 0, event->x / g->scale,
-                                   event->y / g->scale);
+	browser_window_mouse_track(g->bw, 0, event->x / g->bw->scale,
+                                   event->y / g->bw->scale);
 
 	g->last_x = event->x;
 	g->last_y = event->y;
@@ -341,7 +346,8 @@ gboolean nsgtk_window_button_press_event(GtkWidget *widget,
 	}
 
 	browser_window_mouse_click(g->bw, button,
-                                   event->x / g->scale, event->y / g->scale);
+                                   event->x / g->bw->scale,
+				   event->y / g->bw->scale);
 
 	return TRUE;
 }
@@ -489,50 +495,43 @@ gboolean nsgtk_window_size_allocate_event(GtkWidget *widget,
                                           GtkAllocation *allocation, gpointer data)
 {
 	struct gui_window *g = data;
-        
-        LOG(("Size allocate for %s scheduling reflow\n", g->bw->name ?
-	      	g->bw->name : "(none"));
-        
-	/* schedule a callback to perform the resize for 1/10s from now */
-	schedule(5, (gtk_callback)(nsgtk_window_reflow_content), g);
+       
+	g->bw->reformat_pending = true;
+	browser_reformat_pending = true;
 
 	return TRUE;
 }
 
-void nsgtk_window_reflow_content(struct gui_window *g)
-{
-        GtkWidget *widget = GTK_WIDGET(g->viewport);
-
-	if (gui_in_multitask)
-		return;
-
-	if (g->bw->current_content == NULL)
-		return;
-
-        if (g->bw->current_content->status != CONTENT_STATUS_READY &&
-		g->bw->current_content->status != CONTENT_STATUS_DONE)
-		return;
-        
-        LOG(("Doing reformat"));
-        
-        browser_window_reformat(g->bw,
-                         widget->allocation.width - 2,
-			 widget->allocation.height);
-
-        if (nsgtk_scaffolding_is_busy(g->scaffold))
-		schedule(100, 
-                         (gtk_callback)(nsgtk_window_reflow_content), g);
-}
 
 void nsgtk_reflow_all_windows(void)
 {
-	struct gui_window *g = window_list;
+	for (struct gui_window *g = window_list; g; g = g->next)
+		g->bw->reformat_pending = true;
 
-	while (g != NULL) {
-		nsgtk_window_reflow_content(g);
-		g = g->next;
+	browser_reformat_pending = true;
+}
+
+
+/**
+ * Process pending reformats
+ */
+
+void nsgtk_window_process_reformats(void)
+{
+	struct gui_window *g;
+
+	browser_reformat_pending = false;
+	for (g = window_list; g; g = g->next) {
+		GtkWidget *widget = GTK_WIDGET(g->viewport);
+		if (!g->bw->reformat_pending)
+			continue;
+		g->bw->reformat_pending = false;
+		browser_window_reformat(g->bw,
+				widget->allocation.width - 2,
+				widget->allocation.height);
 	}
 }
+
 
 void nsgtk_window_destroy_browser(struct gui_window *g)
 {
@@ -627,23 +626,18 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
         gtk_adjustment_set_value(hadj, (double)sx);
 }
 
-float gui_window_get_scale(struct gui_window *g)
-{
-  	return g->scale;
-}
+
+/**
+ * Set the scale setting of a window
+ *
+ * \param  g	  gui window
+ * \param  scale  scale value (1.0 == normal scale)
+ */
 
 void gui_window_set_scale(struct gui_window *g, float scale)
 {
-	if (g->scale == scale)
-		return;
-	g->scale = scale;
-
-	if (g->bw->current_content != NULL)
-		gui_window_update_extent(g);
-
-	gtk_widget_queue_draw(GTK_WIDGET(g->drawing_area));
-
 }
+
 
 void gui_window_update_extent(struct gui_window *g)
 {
@@ -651,8 +645,8 @@ void gui_window_update_extent(struct gui_window *g)
 		return;
 
 	gtk_widget_set_size_request(GTK_WIDGET(g->drawing_area),
-                                    g->bw->current_content->width * g->scale,
-                                    g->bw->current_content->height * g->scale);
+			g->bw->current_content->width * g->bw->scale,
+			g->bw->current_content->height * g->bw->scale);
         
 	gtk_widget_set_size_request(GTK_WIDGET(g->viewport), 0, 0);
         
@@ -837,8 +831,8 @@ void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 	*height = GTK_WIDGET(g->viewport)->allocation.height;
 
 	if (scaled) {
-		*width /= g->scale;
-		*height /= g->scale;
+		*width /= g->bw->scale;
+		*height /= g->bw->scale;
 	}
 }
 

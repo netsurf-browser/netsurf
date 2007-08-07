@@ -11,8 +11,8 @@
 #include "desktop/gui.h"
 #include "gtk/gtk_scaffolding.h"
 
-void nsgtk_window_reflow_content(struct gui_window *g);
 void nsgtk_reflow_all_windows(void);
+void nsgtk_window_process_reformats(void);
 
 nsgtk_scaffolding *nsgtk_get_scaffold(struct gui_window *g);
 struct browser_window *nsgtk_get_browser_for_gui(struct gui_window *g);
