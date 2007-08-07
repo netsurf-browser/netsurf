@@ -103,8 +103,9 @@ const char *fetch_filetype(const char *unix_path)
 					slash+1, &temp);
 			if (error)
 				/* ignore error and leave file_type alone */
-				LOG(("0x%x %s",
-					error->errnum, error->errmess));
+				LOG(("xmimemaptranslate_extension_to_filetype: "
+						"0x%x %s",
+						error->errnum, error->errmess));
 			else
 				file_type = temp;
 		}
