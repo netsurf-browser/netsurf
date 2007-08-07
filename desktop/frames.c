@@ -66,13 +66,10 @@ void browser_window_create_iframes(struct browser_window *bw,
 	for (cur = iframe; cur; cur = cur->next) {
 		window = &(bw->iframes[index++]);
 
-		/* content */
-		window->history = history_create();
-		window->sel = selection_create(window);
-		window->refresh_interval = -1;
+		/* Initialise common parts */
+		browser_window_initialise_common(window, NULL);
 
 		/* window characteristics */
-		window->drag_type = DRAGGING_NONE;
 		window->browser_window_type = BROWSER_WINDOW_IFRAME;
 		window->scrolling = cur->scrolling;
 		window->border = cur->border;
@@ -171,13 +168,10 @@ void browser_window_create_frameset(struct browser_window *bw,
 			frame = &frameset->children[index];
 			window = &bw->children[index];
 
-			/* content */
-			window->history = history_create();
-			window->sel = selection_create(window);
-			window->refresh_interval = -1;
+			/* Initialise common parts */
+			browser_window_initialise_common(window, NULL);
 
 			/* window characteristics */
-			window->drag_type = DRAGGING_NONE;
 			if (frame->children)
 				window->browser_window_type =
 						BROWSER_WINDOW_FRAMESET;

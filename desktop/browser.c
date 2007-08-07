@@ -136,22 +136,10 @@ struct browser_window *browser_window_create(const char *url,
 		return NULL;
 	}
 
-	/* content */
-	if (!clone)
-		bw->history = history_create();
-	else
-		bw->history = history_clone(clone->history);
-	if (!clone || (clone && !clone->gesturer))
-		bw->gesturer = NULL;
-	else
-		bw->gesturer = gesturer_clone(clone->gesturer);
+	/* Initialise common parts */
+	browser_window_initialise_common(bw, clone);
 
 	/* window characteristics */
-	bw->sel = selection_create(bw);
-	bw->refresh_interval = -1;
-	bw->reformat_pending = false;
-	bw->drag_type = DRAGGING_NONE;
-	bw->scale = (float) option_scale / 100.0;
 	bw->browser_window_type = BROWSER_WINDOW_NORMAL;
 	bw->scrolling = SCROLLING_YES;
 	bw->border = true;
@@ -166,6 +154,37 @@ struct browser_window *browser_window_create(const char *url,
 		browser_window_go(bw, url, referer, history_add);
 
 	return bw;
+}
+
+
+/**
+ * Initialise common parts of a browser window
+ *
+ * \param bw     The window to initialise
+ * \param clone  The window to clone, or NULL if none
+ */
+void browser_window_initialise_common(struct browser_window *bw,
+		struct browser_window *clone)
+{
+	assert(bw);
+
+	if (!clone)
+		bw->history = history_create();
+	else
+		bw->history = history_clone(clone->history);
+
+	if (!clone || (clone && !clone->gesturer))
+		bw->gesturer = NULL;
+	else
+		bw->gesturer = gesturer_clone(clone->gesturer);
+
+	/* window characteristics */
+	bw->sel = selection_create(bw);
+	bw->refresh_interval = -1;
+
+	bw->reformat_pending = false;
+	bw->drag_type = DRAGGING_NONE;
+	bw->scale = (float) option_scale / 100.0;
 }
 
 
@@ -1073,14 +1092,14 @@ struct browser_window *browser_window_find_target(struct browser_window *bw, con
 	browser_window_find_target_internal(top, target, 0, bw, &rdepth, &bw_target);
 	if (bw_target)
 		return bw_target;
-	
+
 	/* we require a new window using the target name */
 	if (!option_target_blank)
 		return bw;
 	bw_target = browser_window_create(NULL, bw, NULL, false);
 	if (!bw_target)
 		return bw;
-	
+
 	/* frame names should begin with an alphabetic character (a-z,A-Z), however in
 	 * practice you get things such as '_new' and '2left'. The only real effect this
 	 * has is when giving out names as it can be assumed that an author intended '_new'
