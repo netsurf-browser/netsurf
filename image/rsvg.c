@@ -1,8 +1,19 @@
 /*
- * This file is part of NetSurf, http://netsurf-browser.org/
- * Licensed under the GNU General Public License,
- *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2007 Rob Kendrick <rjek@netsurf-browser.org>
+ *
+ * This file is part of NetSurf, http://www.netsurf-browser.org/
+ *
+ * NetSurf is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; version 2 of the License.
+ *
+ * NetSurf is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 /** \file
@@ -54,7 +65,7 @@ bool rsvg_create(struct content *c, const char *params[])
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
 	}
-	
+
 	return true;
 }
 
@@ -64,15 +75,15 @@ bool rsvg_process_data(struct content *c, char *data,
 	struct content_rsvg_data *d = &c->data.rsvg;
 	union content_msg_data msg_data;
 	GError *err = NULL;
-	
+
 	if (rsvg_handle_write(d->rsvgh, (const guchar *)data, (gsize)size,
 				&err) == FALSE) {
 		LOG(("rsvg_handle_write returned an error: %s", err->message));
 		msg_data.error = err->message;
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-		return false;		
+		return false;
 	}
-	
+
 	return true;
 }
 
@@ -110,32 +121,32 @@ bool rsvg_convert(struct content *c, int iwidth, int iheight)
 	union content_msg_data msg_data;
 	RsvgDimensionData rsvgsize;
 	GError *err = NULL;
-	
+
 	if (rsvg_handle_close(d->rsvgh, &err) == FALSE) {
 		LOG(("rsvg_handle_close returned an error: %s", err->message));
 		msg_data.error = err->message;
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
 	}
-	
+
 	assert(err == NULL);
-	
+
 	/* we should now be able to query librsvg for the natural size of the
 	 * graphic, so we can create our bitmap.
 	 */
-	
+
 	rsvg_handle_get_dimensions(d->rsvgh, &rsvgsize);
 	c->width = rsvgsize.width;
 	c->height = rsvgsize.height;
-	
+
 	if ((d->bitmap = bitmap_create(c->width, c->height,
 			BITMAP_NEW)) == NULL) {
 		LOG(("Failed to create bitmap for rsvg render."));
 		msg_data.error = messages_get("NoMemory");
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);		
-		return false;		
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		return false;
 	}
-	
+
 	if ((d->cs = cairo_image_surface_create_for_data(
 			(unsigned char *)bitmap_get_buffer(d->bitmap),
 			CAIRO_FORMAT_ARGB32,
@@ -145,23 +156,23 @@ bool rsvg_convert(struct content *c, int iwidth, int iheight)
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
-	}	
-	
+	}
+
 	if ((d->ct = cairo_create(d->cs)) == NULL) {
 		LOG(("Failed to create Cairo drawing context for rsvg render."));
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-		return false;		
+		return false;
 	}
-	
+
 	rsvg_handle_render_cairo(d->rsvgh, d->ct);
 	rsvg_argb_to_abgr((u_int32_t *)bitmap_get_buffer(d->bitmap),
 				c->width, c->height,
 				bitmap_get_rowstride(d->bitmap));
-				
+
 	c->bitmap = d->bitmap;
 	c->status = CONTENT_STATUS_DONE;
-	
+
 	return true;
 }
 

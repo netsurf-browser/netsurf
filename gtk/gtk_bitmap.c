@@ -1,8 +1,19 @@
 /*
- * This file is part of NetSurf, http://netsurf-browser.org/
- * Licensed under the GNU General Public License,
- *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ *
+ * This file is part of NetSurf, http://www.netsurf-browser.org/
+ *
+ * NetSurf is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; version 2 of the License.
+ *
+ * NetSurf is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 /** \file
@@ -46,7 +57,7 @@ struct bitmap {
 struct bitmap *bitmap_create(int width, int height, unsigned int state)
 {
         struct bitmap *bmp = malloc(sizeof(struct bitmap));
-        
+
 	bmp->primary = gdk_pixbuf_new(GDK_COLORSPACE_RGB, true, 8,
                                       width, height);
 
@@ -166,13 +177,13 @@ void bitmap_destroy(struct bitmap *bitmap)
 bool bitmap_save(struct bitmap *bitmap, const char *path)
 {
 	GError *err = NULL;
-	
+
 	gdk_pixbuf_save(bitmap->primary, path, "png", &err, NULL);
-	
+
 	if (err == NULL)
 		/* TODO: report an error here */
 		return false;
-	
+
 	return true;
 }
 
@@ -210,7 +221,7 @@ gtk_bitmap_generate_pretile(GdkPixbuf *primary, int repeat_x, int repeat_y)
         char *target_buffer = (char *)gdk_pixbuf_get_pixels(result);
         int x,y,row;
         /* This algorithm won't work if the strides are not multiples */
-        assert((size_t)gdk_pixbuf_get_rowstride(result) == 
+        assert((size_t)gdk_pixbuf_get_rowstride(result) ==
 		(primary_stride * repeat_x));
 
         if (repeat_x == 1 && repeat_y == 1) {

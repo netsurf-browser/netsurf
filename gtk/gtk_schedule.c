@@ -1,8 +1,19 @@
 /*
- * This file is part of NetSurf, http://netsurf-browser.org/
- * Licensed under the GNU General Public License,
- *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2006-2007 Daniel Silverstone <dsilvers@digital-scurf.org>
+ *
+ * This file is part of NetSurf, http://www.netsurf-browser.org/
+ *
+ * NetSurf is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; version 2 of the License.
+ *
+ * NetSurf is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <glib.h>
@@ -72,7 +83,7 @@ schedule_remove(void (*callback)(void *p), void *p)
                 .callback = callback,
                 .context = p,
         };
-        
+
         g_list_foreach(queued_callbacks,
                        nsgtk_schedule_kill_callback, &cb_match);
         g_list_foreach(pending_callbacks,
@@ -101,15 +112,15 @@ schedule_run(void)
 {
         /* Capture this run of pending callbacks into the list. */
         this_run = pending_callbacks;
-        
+
         if (this_run == NULL)
                 return; /* Nothing to do */
-        
+
         /* Clear the pending list. */
         pending_callbacks = NULL;
-        
+
         LOG(("Captured a run of %d callbacks to fire.", g_list_length(this_run)));
-        
+
         /* Run all the callbacks which made it this far. */
         while (this_run != NULL) {
                 _nsgtk_callback_t *cb = (_nsgtk_callback_t *)(this_run->data);

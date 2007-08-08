@@ -1,11 +1,22 @@
 /*
- * This file is part of NetSurf, http://netsurf-browser.org/
- * Licensed under the GNU General Public License,
- *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2007 Rob Kendrick <rjek@netsurf-browser.org>
  * Copyright 2007 Vincent Sanders <vince@debian.org>
+ *
+ * This file is part of NetSurf, http://www.netsurf-browser.org/
+ *
+ * NetSurf is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; version 2 of the License.
+ *
+ * NetSurf is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
- 
+
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
@@ -28,23 +39,23 @@ void gtk_fetch_filetype_init(const char *mimefile)
 	FILE *fh = NULL;
 
 	mime_hash = hash_create(117);
-	
+
 	/* first, check to see if /etc/mime.types in preference */
-	
+
 	if ((stat("/etc/mime.types", &statbuf) == 0) &&
 			S_ISREG(statbuf.st_mode)) {
-		mimefile = "/etc/mime.types";	
-		
+		mimefile = "/etc/mime.types";
+
 	}
-	
+
 	fh = fopen(mimefile, "r");
-	
+
 	/* Some OSes (mentioning no Solarises) have a worthlessly tiny
 	 * /etc/mime.types that don't include essential things, so we
 	 * pre-seed our hash with the essentials.  These will get
 	 * over-ridden if they are mentioned in the mime.types file.
 	 */
-	
+
 	hash_add(mime_hash, "css", "text/css");
 	hash_add(mime_hash, "jpg", "image/jpeg");
 	hash_add(mime_hash, "jpeg", "image/jpeg");
@@ -56,52 +67,52 @@ void gtk_fetch_filetype_init(const char *mimefile)
 		LOG(("Unable to open a mime.types file, so using a minimal one for you."));
 		return;
 	}
-	
+
 	while (!feof(fh)) {
 		char line[256], *ptr, *type, *ext;
 		fgets(line, 256, fh);
 		if (!feof(fh) && line[0] != '#') {
 			ptr = line;
-			
+
 			/* search for the first non-whitespace character */
 			while (isspace(*ptr))
 				ptr++;
-				
+
 			/* is this line empty other than leading whitespace? */
 			if (*ptr == '\n' || *ptr == '\0')
 				continue;
-			
+
 			type = ptr;
-			
+
 			/* search for the first non-whitespace char or NUL or
-			 * NL */		
+			 * NL */
 			while (*ptr && (!isspace(*ptr)) && *ptr != '\n')
 				ptr++;
-			
+
 			if (*ptr == '\0' || *ptr == '\n') {
 				/* this mimetype has no extensions - read next
 				 * line.
 				 */
 				continue;
 			}
-			
+
 			*ptr++ = '\0';
-			
+
 			/* search for the first non-whitespace character which
 			 * will be the first filename extenion */
 			while (isspace(*ptr))
 				ptr++;
-			
+
 			while(true) {
 				ext = ptr;
-			
+
 				/* search for the first whitespace char or
 				 * NUL or NL which is the end of the ext.
-				 */		
+				 */
 				while (*ptr && (!isspace(*ptr)) &&
 					*ptr != '\n')
 					ptr++;
-			
+
 				if (*ptr == '\0' || *ptr == '\n') {
 					/* special case for last extension on
 					 * the line
@@ -110,19 +121,19 @@ void gtk_fetch_filetype_init(const char *mimefile)
 					hash_add(mime_hash, ext, type);
 					break;
 				}
-			
+
 				*ptr++ = '\0';
 				hash_add(mime_hash, ext, type);
-				
+
 				/* search for the first non-whitespace char or
 				 * NUL or NL, to find start of next ext.
-				 */		
+				 */
 				while (*ptr && (isspace(*ptr)) && *ptr != '\n')
-					ptr++;				
+					ptr++;
 			}
 		}
 	}
-	
+
 	fclose(fh);
 }
 
@@ -138,25 +149,25 @@ const char *fetch_filetype(const char *unix_path)
 	const char *ptr;
 	char *lowerchar;
 	const char *type;
-	
+
 	stat(unix_path, &statbuf);
 	if (S_ISDIR(statbuf.st_mode))
 		return "application/x-netsurf-directory";
-	
+
 	if (strchr(unix_path, '.') == NULL) {
 		/* no extension anywhere! */
 		return "text/plain";
 	}
-	
+
 	ptr = unix_path + strlen(unix_path);
 	while (*ptr != '.' && *ptr != '/')
 		ptr--;
-	
+
 	if (*ptr != '.')
 		return "text/plain";
-		
+
 	ext = strdup(ptr + 1);	/* skip the . */
-	
+
 	/* the hash table only contains lower-case versions - make sure this
 	 * copy is lower case too.
 	 */
@@ -165,11 +176,11 @@ const char *fetch_filetype(const char *unix_path)
 		*lowerchar = tolower(*lowerchar);
 		lowerchar++;
 	}
-	
+
 	type = hash_get(mime_hash, ext);
 	free(ext);
-	
-	return type != NULL ? type : "text/plain";		
+
+	return type != NULL ? type : "text/plain";
 }
 
 char *fetch_mimetype(const char *unix_path)
@@ -183,23 +194,22 @@ int main(int argc, char *argv[])
 {
 	unsigned int c1, *c2;
 	const char *key;
-	
+
 	gtk_fetch_filetype_init("./mime.types");
-	
+
 	c1 = 0; c2 = 0;
-	
+
 	while ( (key = hash_iterate(mime_hash, &c1, &c2)) != NULL) {
 		printf("%s ", key);
 	}
-	
+
 	printf("\n");
-	
+
 	if (argc > 1) {
 		printf("%s maps to %s\n", argv[1], fetch_filetype(argv[1]));
 	}
-	
+
 	gtk_fetch_filetype_fin();
 }
 
 #endif
-

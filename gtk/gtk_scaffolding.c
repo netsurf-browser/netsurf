@@ -1,8 +1,19 @@
 /*
- * This file is part of NetSurf, http://netsurf-browser.org/
- * Licensed under the GNU General Public License,
- *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2006 Rob Kendrick <rjek@rjek.com>
+ *
+ * This file is part of NetSurf, http://www.netsurf-browser.org/
+ *
+ * NetSurf is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; version 2 of the License.
+ *
+ * NetSurf is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <assert.h>
@@ -474,39 +485,39 @@ MENUHANDLER(full_screen)
 MENUHANDLER(menu_bar)
 {
 	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
-	
+
 	if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(widget))) {
 		gtk_widget_show(GTK_WIDGET(gw->menu_bar));
 	} else {
 		gtk_widget_hide(GTK_WIDGET(gw->menu_bar));
 	}
-	
+
 	return TRUE;
 }
 
 MENUHANDLER(tool_bar)
 {
 	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
-	
+
 	if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(widget))) {
 		gtk_widget_show(GTK_WIDGET(gw->tool_bar));
 	} else {
 		gtk_widget_hide(GTK_WIDGET(gw->tool_bar));
 	}
-	
+
 	return TRUE;
 }
 
 MENUHANDLER(status_bar)
 {
 	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
-	
+
 	if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(widget))) {
 		gtk_widget_show(GTK_WIDGET(gw->status_bar));
 	} else {
 		gtk_widget_hide(GTK_WIDGET(gw->status_bar));
 	}
-	
+
 	return TRUE;
 }
 
@@ -809,21 +820,21 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
         g->being_destroyed = 0;
 
 	g->fullscreen = false;
-	
+
 	/* create the popup version of the menu */
 	g->popup_xml = glade_xml_new(glade_file_location, "menuPopup", NULL);
 	g->popup_menu = GTK_MENU(glade_xml_get_widget(g->popup_xml, "menuPopup"));
-	
+
 #define POPUP_ATTACH(x, y) gtk_menu_item_set_submenu( \
 			GTK_MENU_ITEM(glade_xml_get_widget(g->popup_xml, x)),\
 			GTK_WIDGET(glade_xml_get_widget(g->xml, y)))
-						
+
 	POPUP_ATTACH("menupopup_file", "menumain_file");
 	POPUP_ATTACH("menupopup_edit", "menumain_edit");
 	POPUP_ATTACH("menupopup_view", "menumain_view");
 	POPUP_ATTACH("menupopup_navigate", "menumain_navigate");
 	POPUP_ATTACH("menupopup_help", "menumain_help");
-	
+
 #undef POPUP_ATTACH
 
 	/* finally, show the window. */
