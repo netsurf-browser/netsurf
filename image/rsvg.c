@@ -58,7 +58,7 @@ bool rsvg_create(struct content *c, const char *params[])
 	return true;
 }
 
-bool rsvg_process_data(struct content *c, const char *data,
+bool rsvg_process_data(struct content *c, char *data,
 			unsigned int size)
 {
 	struct content_rsvg_data *d = &c->data.rsvg;
