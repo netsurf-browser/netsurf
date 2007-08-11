@@ -77,6 +77,12 @@ GtkWindow *wndTooltip;
 GtkLabel *labelTooltip;
 GtkDialog *wndOpenFile;
 
+static void nsgtk_create_ssl_verify_window(struct browser_window *bw,
+		struct content *c, const struct ssl_cert_info *certs,
+		unsigned long num);
+static void nsgtk_ssl_accept(GtkButton *w, gpointer data);
+static void nsgtk_ssl_reject(GtkButton *w, gpointer data);
+
 /**
  * Locate a shared resource file by searching known places in order.
  *
@@ -450,14 +456,59 @@ void hotlist_visited(struct content *content)
 void gui_cert_verify(struct browser_window *bw, struct content *c,
 		const struct ssl_cert_info *certs, unsigned long num)
 {
+	nsgtk_create_ssl_verify_window(bw, c, certs, num);
+}
 
-	/* TODO: we should open a window showing what the certificate
-	 * problem is and offer the user the choice to reject it.  Until
-	 * we do this, we just always accept them.
-	 * */
+static void nsgtk_create_ssl_verify_window(struct browser_window *bw,
+		struct content *c, const struct ssl_cert_info *certs,
+		unsigned long num)
+{
+	GladeXML *x = glade_xml_new(glade_file_location, NULL, NULL);
+	GtkWindow *wnd = GTK_WINDOW(glade_xml_get_widget(x, "wndSSLProblem"));
+	GtkButton *accept, *reject;
+	void **session = calloc(sizeof(void *), 4);
+	
+	session[0] = bw;
+	session[1] = c;
+	session[2] = x;
+	session[3] = wnd;
+	
+	accept = GTK_BUTTON(glade_xml_get_widget(x, "sslaccept"));
+	reject = GTK_BUTTON(glade_xml_get_widget(x, "sslreject"));
+	
+	g_signal_connect(G_OBJECT(accept), "clicked",
+			G_CALLBACK(nsgtk_ssl_accept), (gpointer)session);
+	g_signal_connect(G_OBJECT(reject), "clicked",
+			G_CALLBACK(nsgtk_ssl_reject), (gpointer)session);
+	
+	gtk_widget_show(GTK_WIDGET(wnd));	
+}
 
+static void nsgtk_ssl_accept(GtkButton *w, gpointer data)
+{
+	void **session = data;
+	struct browser_window *bw = session[0];
+	struct content *c = session[1];
+	GladeXML *x = session[2];
+	GtkWindow *wnd = session[3];
+	
   	urldb_set_cert_permissions(c->url, true);
-	browser_window_go(bw, c->url, 0, true);
+	browser_window_go(bw, c->url, 0, true);	
+	
+	gtk_widget_destroy(GTK_WIDGET(wnd));
+	g_object_unref(G_OBJECT(x));
+	free(session);
+}
+
+static void nsgtk_ssl_reject(GtkButton *w, gpointer data)
+{
+	void **session = data;
+	GladeXML *x = session[2];
+	GtkWindow *wnd = session[3];
+		
+	gtk_widget_destroy(GTK_WIDGET(wnd));
+	g_object_unref(G_OBJECT(x));
+	free(session);
 }
 
 utf8_convert_ret utf8_to_local_encoding(const char *string, size_t len,
