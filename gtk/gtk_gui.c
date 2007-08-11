@@ -469,7 +469,7 @@ static void nsgtk_create_ssl_verify_window(struct browser_window *bw,
 	void **session = calloc(sizeof(void *), 4);
 	
 	session[0] = bw;
-	session[1] = c;
+	session[1] = strdup(c->url);
 	session[2] = x;
 	session[3] = wnd;
 	
@@ -488,15 +488,16 @@ static void nsgtk_ssl_accept(GtkButton *w, gpointer data)
 {
 	void **session = data;
 	struct browser_window *bw = session[0];
-	struct content *c = session[1];
+	char *url = session[1];
 	GladeXML *x = session[2];
 	GtkWindow *wnd = session[3];
 	
-  	urldb_set_cert_permissions(c->url, true);
-	browser_window_go(bw, c->url, 0, true);	
+  	urldb_set_cert_permissions(url, true);
+	browser_window_go(bw, url, 0, true);	
 	
 	gtk_widget_destroy(GTK_WIDGET(wnd));
 	g_object_unref(G_OBJECT(x));
+	free(url);
 	free(session);
 }
 
@@ -508,6 +509,7 @@ static void nsgtk_ssl_reject(GtkButton *w, gpointer data)
 		
 	gtk_widget_destroy(GTK_WIDGET(wnd));
 	g_object_unref(G_OBJECT(x));
+	free(session[1]);
 	free(session);
 }
 
