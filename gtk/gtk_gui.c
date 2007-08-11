@@ -44,6 +44,7 @@
 #include "gtk/gtk_gui.h"
 #include "gtk/gtk_options.h"
 #include "gtk/gtk_completion.h"
+#include "gtk/gtk_window.h"
 #include "gtk/options.h"
 #include "gtk/gtk_throbber.h"
 #include "gtk/gtk_history.h"
