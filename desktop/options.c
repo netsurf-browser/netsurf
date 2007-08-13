@@ -191,7 +191,7 @@ struct {
 	{ "window_screen_width", OPTION_INTEGER, &option_window_screen_width },
 	{ "window_screen_height",OPTION_INTEGER, &option_window_screen_height },
 	{ "toolbar_status_size", OPTION_INTEGER, &option_toolbar_status_width },
-	{ "option_scale",    OPTION_INTEGER, &option_scale },
+	{ "scale",           OPTION_INTEGER, &option_scale },
 	/* Fetcher options */
 	{ "max_fetchers",    OPTION_INTEGER, &option_max_fetchers },
 	{ "max_fetchers_per_host",
