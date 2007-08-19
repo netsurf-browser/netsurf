@@ -502,6 +502,7 @@ struct content_css_data {
 extern const struct css_style css_base_style;
 extern const struct css_style css_empty_style;
 extern const struct css_style css_blank_style;
+extern float css_screen_dpi;
 
 
 #ifdef CSS_INTERNALS

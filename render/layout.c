@@ -967,8 +967,8 @@ int line_height(struct css_style *style)
 
 	/* take account of minimum font size option */
 	if ((font_len = css_len2px(&style->font_size.value.length, 0)) <
-			option_font_min_size * 9.0 / 72.0)
-		font_len = option_font_min_size * 9.0 / 72.0;
+			option_font_min_size * css_screen_dpi / 720.0)
+		font_len = option_font_min_size * css_screen_dpi / 720.0;
 
 	switch (style->line_height.size) {
 		case CSS_LINE_HEIGHT_LENGTH:

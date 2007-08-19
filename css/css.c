@@ -388,6 +388,16 @@ const struct css_style css_blank_style = {
 	{ CSS_Z_INDEX_AUTO, 0 }
 };
 
+/** Dots per inch for the display device.
+ *
+ * This is the number of pixels per inch of the display device.
+ * This variable should be treated as constant during the runtime of
+ * the program unless the core can be persuaded to re-layout fully
+ * on change.
+ *
+ * We default to 90.0 because RISC OS defaults to 90.0 dpi.
+ */
+float css_screen_dpi = 90.0;
 
 /**
  * Convert a CONTENT_CSS for use.
@@ -3012,8 +3022,6 @@ unsigned int css_hash(const char *s, int length)
 
 /**
  * Convert a struct css_length to pixels.
- *
- * Note: This assumes 90dpi (if converting from points)
  */
 
 float css_len2px(const struct css_length *length,
@@ -3024,10 +3032,10 @@ float css_len2px(const struct css_length *length,
 		case CSS_UNIT_EM: return length->value * css_len2px(&style->font_size.value.length, 0);
 		case CSS_UNIT_EX: return length->value * css_len2px(&style->font_size.value.length, 0) * 0.6;
 		case CSS_UNIT_PX: return length->value;
-		/* RISC OS assumes 90dpi  */
-		case CSS_UNIT_IN: return length->value * 90.0;
-		case CSS_UNIT_CM: return length->value * 35.43307087;
-		case CSS_UNIT_MM: return length->value * 3.543307087;
+		/* We assume the screen and any other output has the same dpi  */
+		case CSS_UNIT_IN: return length->value * css_screen_dpi;
+		case CSS_UNIT_CM: return length->value * css_screen_dpi / 2.54;
+		case CSS_UNIT_MM: return length->value * css_screen_dpi / 25.4;
 		/* 1pt = 1in/72 */
 		case CSS_UNIT_PT: return length->value * 1.25;
 		/* 1pc = 1pt * 12 */
@@ -3039,8 +3047,6 @@ float css_len2px(const struct css_length *length,
 
 /**
  * Convert a struct css_length to points.
- *
- * Note: This assumes 90dpi (if converting a pixel size)
  */
 
 float css_len2pt(const struct css_length *length,
@@ -3050,8 +3056,8 @@ float css_len2pt(const struct css_length *length,
 	switch (length->unit) {
 		case CSS_UNIT_EM: return length->value * css_len2pt(&style->font_size.value.length, 0);
 		case CSS_UNIT_EX: return length->value * css_len2pt(&style->font_size.value.length, 0) * 0.6;
-		/* RISC OS assumes 90dpi  */
-		case CSS_UNIT_PX: return length->value / 1.25;
+		/* We assume the screen and any other output has the same dpi  */
+		case CSS_UNIT_PX: return length->value * css_screen_dpi / 72;
 		/* 1pt = 1in/72 */
 		case CSS_UNIT_IN: return length->value * 72;
 		case CSS_UNIT_CM: return length->value * 28.452756;
