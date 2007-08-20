@@ -477,7 +477,7 @@ void layout_minmax_block(struct box *block)
 	}
 
 	if (max < min) {
-		box_dump(block, 0);
+		box_dump(stderr, block, 0);
 		assert(0);
 	}
 
@@ -1338,7 +1338,7 @@ bool layout_line(struct box *first, int *width, int *y,
 			}
 			if (cont->float_children == b) {
 				LOG(("float %p already placed", b));
-				box_dump(cont, 0);
+				box_dump(stderr, cont, 0);
 				assert(0);
 			}
 			b->next_float = cont->float_children;
@@ -2349,7 +2349,7 @@ void layout_minmax_table(struct box *table)
 
 	for (i = 0; i != table->columns; i++) {
 		if (col[i].max < col[i].min) {
-			box_dump(table, 0);
+			box_dump(stderr, table, 0);
 			assert(0);
 		}
 		table_min += col[i].min;

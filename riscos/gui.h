@@ -122,6 +122,7 @@ void ro_gui_open_window_request(wimp_open *open);
 void ro_gui_open_help_page(const char *page);
 void ro_gui_screen_size(int *width, int *height);
 void ro_gui_view_source(struct content *content);
+void ro_gui_dump_content(struct content *content);
 void ro_gui_drag_box_start(wimp_pointer *pointer);
 bool ro_gui_prequit(void);
 const char *ro_gui_default_language(void);

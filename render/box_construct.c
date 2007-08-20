@@ -628,7 +628,7 @@ bool box_construct_text(xmlNode *n, struct content *content,
 					while (parent->parent &&
 							parent->parent->parent)
 						parent = parent->parent;
-					box_dump(parent, 0);
+					box_dump(stderr, parent, 0);
 				}
 				assert((*inline_container)->last != 0);
 				(*inline_container)->last->space = 1;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2005-2007 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  * Copyright 2005 John M Bell <jmb202@ecs.soton.ac.uk>
  *
@@ -24,6 +24,7 @@
 
 #include <assert.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <string.h>
 #include "content/content.h"
 #include "css/css.h"
@@ -498,110 +499,110 @@ bool box_visible(struct box *box)
 
 
 /**
- * Print a box tree to stderr.
+ * Print a box tree to a file.
  */
 
-void box_dump(struct box *box, unsigned int depth)
+void box_dump(FILE *stream, struct box *box, unsigned int depth)
 {
 	unsigned int i;
 	struct box *c, *prev;
 
 	for (i = 0; i != depth; i++)
-		fprintf(stderr, "  ");
+		fprintf(stream, "  ");
 
-	fprintf(stderr, "%p ", box);
-	fprintf(stderr, "x%i y%i w%i h%i ", box->x, box->y,
+	fprintf(stream, "%p ", box);
+	fprintf(stream, "x%i y%i w%i h%i ", box->x, box->y,
 			box->width, box->height);
 	if (box->max_width != UNKNOWN_MAX_WIDTH)
-		fprintf(stderr, "min%i max%i ", box->min_width, box->max_width);
-	fprintf(stderr, "(%i %i %i %i) ",
+		fprintf(stream, "min%i max%i ", box->min_width, box->max_width);
+	fprintf(stream, "(%i %i %i %i) ",
 			box->descendant_x0, box->descendant_y0,
 			box->descendant_x1, box->descendant_y1);
 
 	switch (box->type) {
-	case BOX_BLOCK:            fprintf(stderr, "BLOCK "); break;
-	case BOX_INLINE_CONTAINER: fprintf(stderr, "INLINE_CONTAINER "); break;
-	case BOX_INLINE:           fprintf(stderr, "INLINE "); break;
-	case BOX_INLINE_END:       fprintf(stderr, "INLINE_END "); break;
-	case BOX_INLINE_BLOCK:     fprintf(stderr, "INLINE_BLOCK "); break;
-	case BOX_TABLE:            fprintf(stderr, "TABLE [columns %i] ",
+	case BOX_BLOCK:            fprintf(stream, "BLOCK "); break;
+	case BOX_INLINE_CONTAINER: fprintf(stream, "INLINE_CONTAINER "); break;
+	case BOX_INLINE:           fprintf(stream, "INLINE "); break;
+	case BOX_INLINE_END:       fprintf(stream, "INLINE_END "); break;
+	case BOX_INLINE_BLOCK:     fprintf(stream, "INLINE_BLOCK "); break;
+	case BOX_TABLE:            fprintf(stream, "TABLE [columns %i] ",
 					   box->columns); break;
-	case BOX_TABLE_ROW:        fprintf(stderr, "TABLE_ROW "); break;
-	case BOX_TABLE_CELL:       fprintf(stderr, "TABLE_CELL [columns %i, "
+	case BOX_TABLE_ROW:        fprintf(stream, "TABLE_ROW "); break;
+	case BOX_TABLE_CELL:       fprintf(stream, "TABLE_CELL [columns %i, "
 					   "start %i, rows %i] ", box->columns,
 					   box->start_column, box->rows); break;
-	case BOX_TABLE_ROW_GROUP:  fprintf(stderr, "TABLE_ROW_GROUP "); break;
-	case BOX_FLOAT_LEFT:       fprintf(stderr, "FLOAT_LEFT "); break;
-	case BOX_FLOAT_RIGHT:      fprintf(stderr, "FLOAT_RIGHT "); break;
-	case BOX_BR:               fprintf(stderr, "BR "); break;
-	case BOX_TEXT:             fprintf(stderr, "TEXT "); break;
-	default:                   fprintf(stderr, "Unknown box type ");
+	case BOX_TABLE_ROW_GROUP:  fprintf(stream, "TABLE_ROW_GROUP "); break;
+	case BOX_FLOAT_LEFT:       fprintf(stream, "FLOAT_LEFT "); break;
+	case BOX_FLOAT_RIGHT:      fprintf(stream, "FLOAT_RIGHT "); break;
+	case BOX_BR:               fprintf(stream, "BR "); break;
+	case BOX_TEXT:             fprintf(stream, "TEXT "); break;
+	default:                   fprintf(stream, "Unknown box type ");
 	}
 
 	if (box->text)
-		fprintf(stderr, "%li '%.*s' ", (unsigned long) box->byte_offset,
+		fprintf(stream, "%li '%.*s' ", (unsigned long) box->byte_offset,
 				(int) box->length, box->text);
 	if (box->space)
-		fprintf(stderr, "space ");
+		fprintf(stream, "space ");
 	if (box->object)
-		fprintf(stderr, "(object '%s') ", box->object->url);
+		fprintf(stream, "(object '%s') ", box->object->url);
 	if (box->style)
 		css_dump_style(box->style);
 	if (box->href)
-		fprintf(stderr, " -> '%s'", box->href);
+		fprintf(stream, " -> '%s'", box->href);
 	if (box->target)
-		fprintf(stderr, " |%s|", box->target);
+		fprintf(stream, " |%s|", box->target);
 	if (box->title)
-		fprintf(stderr, " [%s]", box->title);
+		fprintf(stream, " [%s]", box->title);
 	if (box->id)
-		fprintf(stderr, " <%s>", box->id);
+		fprintf(stream, " <%s>", box->id);
 	if (box->type == BOX_INLINE || box->type == BOX_INLINE_END)
-		fprintf(stderr, " inline_end %p", box->inline_end);
+		fprintf(stream, " inline_end %p", box->inline_end);
 	if (box->float_children)
-		fprintf(stderr, " float_children %p", box->float_children);
+		fprintf(stream, " float_children %p", box->float_children);
 	if (box->next_float)
-		fprintf(stderr, " next_float %p", box->next_float);
+		fprintf(stream, " next_float %p", box->next_float);
 	if (box->col) {
-		fprintf(stderr, " (columns");
+		fprintf(stream, " (columns");
 		for (i = 0; i != box->columns; i++)
-			fprintf(stderr, " (%s %i %i %i)",
+			fprintf(stream, " (%s %i %i %i)",
 					((const char *[]) {"UNKNOWN", "FIXED",
 					"AUTO", "PERCENT", "RELATIVE"})
 					[box->col[i].type],
 					box->col[i].width,
 					box->col[i].min, box->col[i].max);
-		fprintf(stderr, ")");
+		fprintf(stream, ")");
 	}
-	fprintf(stderr, "\n");
+	fprintf(stream, "\n");
 
 	if (box->list_marker) {
 		for (i = 0; i != depth; i++)
-			fprintf(stderr, "  ");
-		fprintf(stderr, "list_marker:\n");
-		box_dump(box->list_marker, depth + 1);
+			fprintf(stream, "  ");
+		fprintf(stream, "list_marker:\n");
+		box_dump(stream, box->list_marker, depth + 1);
 	}
 
 	for (c = box->children; c && c->next; c = c->next)
 		;
 	if (box->last != c)
-		fprintf(stderr, "warning: box->last %p (should be %p) "
+		fprintf(stream, "warning: box->last %p (should be %p) "
 				"(box %p)\n", box->last, c, box);
 	for (prev = 0, c = box->children; c; prev = c, c = c->next) {
 		if (c->parent != box)
-			fprintf(stderr, "warning: box->parent %p (should be "
+			fprintf(stream, "warning: box->parent %p (should be "
 					"%p) (box on next line)\n",
 					c->parent, box);
 		if (c->prev != prev)
-			fprintf(stderr, "warning: box->prev %p (should be "
+			fprintf(stream, "warning: box->prev %p (should be "
 					"%p) (box on next line)\n",
 					c->prev, prev);
-		box_dump(c, depth + 1);
+		box_dump(stream, c, depth + 1);
 	}
 	if (box->fallback) {
 		for (i = 0; i != depth; i++)
-			fprintf(stderr, "  ");
-		fprintf(stderr, "fallback:\n");
+			fprintf(stream, "  ");
+		fprintf(stream, "fallback:\n");
 		for (c = box->fallback; c; c = c->next)
-			box_dump(c, depth + 1);
+			box_dump(stream, c, depth + 1);
 	}
 }

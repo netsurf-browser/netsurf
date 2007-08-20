@@ -847,7 +847,7 @@ void ro_gui_signal(int sig)
 		for (c = content_list; c; c = c->next)
 			if (c->type == CONTENT_HTML && c->data.html.layout) {
 				LOG(("Dumping: '%s'", c->url));
-				box_dump(c->data.html.layout, 0);
+				box_dump(stderr, c->data.html.layout, 0);
 			}
 		options_dump();
 		/*rufl_dump_state();*/
@@ -2108,6 +2108,7 @@ void ro_gui_open_help_page(const char *page)
 		browser_window_create(url, NULL, 0, true);
 }
 
+
 /**
  * Send the source of a content to a text editor.
  */
@@ -2187,7 +2188,8 @@ void ro_gui_view_source(struct content *content)
 }
 
 
-void ro_gui_view_source_bounce(wimp_message *message) {
+void ro_gui_view_source_bounce(wimp_message *message)
+{
 	char *filename;
 	os_error *error;
 	char command[256];
@@ -2196,6 +2198,47 @@ void ro_gui_view_source_bounce(wimp_message *message) {
 	filename = ((wimp_full_message_data_xfer *)message)->file_name;
 	sprintf(command, "@RunType_FFF %s", filename);
 	error = xwimp_start_task(command, 0);
+	if (error) {
+		LOG(("xwimp_start_task failed: 0x%x: %s",
+					error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+	}
+}
+
+
+/**
+ * Send the debug dump of a content to a text editor.
+ */
+
+void ro_gui_dump_content(struct content *content)
+{
+	os_error *error;
+
+	/* open file for dump */
+	FILE *stream = fopen("<Wimp$ScrapDir>.WWW.NetSurf.dump", "w");
+	if (!stream) {
+		LOG(("fopen: errno %i", errno));
+		warn_user("SaveError", strerror(errno));
+		return;
+	}
+
+	/* output debug information to file */
+	switch (content->type) {
+	case CONTENT_HTML:
+		box_dump(stream, content->data.html.layout, 0);
+		break;
+	case CONTENT_CSS:
+		css_dump_stylesheet(content->data.css.css);
+		break;
+	default:
+		break;
+        }
+
+	fclose(stream);
+
+	/* launch file in editor */
+	error = xwimp_start_task("Filer_Run <Wimp$ScrapDir>.WWW.NetSurf.dump",
+			0);
 	if (error) {
 		LOG(("xwimp_start_task failed: 0x%x: %s",
 					error->errnum, error->errmess));

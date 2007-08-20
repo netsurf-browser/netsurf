@@ -2439,16 +2439,7 @@ bool ro_gui_window_keypress(wimp_key *key)
 
 		case IS_WIMP_KEY + wimp_KEY_F9:
 			/* Dump content for debugging. */
-			switch (content->type) {
-				case CONTENT_HTML:
-					box_dump(content->data.html.layout, 0);
-					break;
-				case CONTENT_CSS:
-					css_dump_stylesheet(content->data.css.css);
-					break;
-				default:
-					break;
-			}
+			ro_gui_dump_content(content);
 			return true;
 
 		case IS_WIMP_KEY + wimp_KEY_CONTROL + wimp_KEY_F9:

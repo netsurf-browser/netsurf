@@ -97,8 +97,10 @@ int main(int argc, char *argv[])
 			fetchcache_go(c, 0, callback, 0, 0, 1000, 1000,
 					0, 0, true, 0);
 			done = c->status == CONTENT_STATUS_DONE;
-			while (!done)
+			while (!done) {
 				fetch_poll();
+				sleep(1);
+			}
 			puts("=== SUCCESS, dumping cache");
 		} else {
 			destroyed = 1;
@@ -110,7 +112,7 @@ int main(int argc, char *argv[])
 /* 			content_reformat(c, 1, 1000); */
 /*			save_complete(c, "save_complete");*/
 			if (c->type == CONTENT_HTML)
-				box_dump(c->data.html.layout, 0);
+				box_dump(stderr, c->data.html.layout, 0);
 			else if (c->type == CONTENT_CSS)
 				css_dump_stylesheet(c->data.css.css);
 			else if (c->type == CONTENT_GIF)
