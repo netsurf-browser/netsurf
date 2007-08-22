@@ -637,10 +637,14 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
         g_object_get(vadj, "page-size", &vpage, "lower", &vlower, "upper", &vupper, NULL);
         g_object_get(hadj, "page-size", &hpage, "lower", &hlower, "upper", &hupper, NULL);
         
-        if (x < hlower) x = hlower;
-        if (x > (hupper - hpage)) x = hupper - hpage;
-        if (y < vlower) y = vlower;
-        if (y > (vupper - vpage)) y = vupper - vpage;
+        if (x < hlower)
+                x = hlower;
+        if (x > (hupper - hpage))
+                x = hupper - hpage;
+        if (y < vlower)
+                y = vlower;
+        if (y > (vupper - vpage))
+                y = vupper - vpage;
         
         gtk_adjustment_set_value(vadj, y);
         gtk_adjustment_set_value(hadj, x);
