@@ -1519,10 +1519,6 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 			browser_window_go_post(bw, url, 0, 0, false,
 					c->url, true, true, 0);
 
-		} else if (mouse & (BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2)) {
-			browser_window_go(browser_window_find_target(bw, target,
-							(mouse & BROWSER_MOUSE_CLICK_2)),
-					url, c->url, true);
 		} else if (mouse & BROWSER_MOUSE_CLICK_2 &&
 				mouse & BROWSER_MOUSE_MOD_1) {
 			free(browser_window_href_content.url);
@@ -1532,6 +1528,11 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 			else
 				gui_window_save_as_link(bw->window,
 					&browser_window_href_content);
+
+		} else if (mouse & (BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2)) {
+			browser_window_go(browser_window_find_target(bw, target,
+							(mouse & BROWSER_MOUSE_CLICK_2)),
+					url, c->url, true);
 		}
 
 	} else {
