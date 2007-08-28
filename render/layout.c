@@ -3065,8 +3065,7 @@ void layout_calculate_descendant_bboxes(struct box *box)
 
 		layout_calculate_descendant_bboxes(child);
 
-		if (child->style &&
-				child->style->overflow != CSS_OVERFLOW_VISIBLE)
+		if (box->style && box->style->overflow == CSS_OVERFLOW_HIDDEN)
 			continue;
 
 		if (child->x + child->descendant_x0 < box->descendant_x0)
