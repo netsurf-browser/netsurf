@@ -356,8 +356,8 @@ mng_uint32 nsmng_gettickcount(mng_handle mng) {
 	static bool start = true;
 	static time_t t0;
 	struct timeval tv;
-#if defined(__SVR4) && defined(__sun)
-	/* Solaris doesn't have this structure, and ignores the second
+#if defined(__SVR4) && defined(__sun) || defined(__NetBSD__)
+	/* Solaris and NetBSD don't have this structure, and ignores the second
 	 * parameter to gettimeofday()
 	 */
 	int tz;
