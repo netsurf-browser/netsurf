@@ -40,7 +40,6 @@ struct selection;
 struct browser_window;
 struct url_data;
 struct bitmap;
-struct _gesturer_state;
 
 
 typedef bool (*browser_caret_callback)(struct browser_window *bw,
@@ -61,9 +60,6 @@ struct browser_window {
 
 	/** Window history structure. */
 	struct history *history;
-
-	/** Gesturer for this browser window */
-	struct _gesturer_state *gesturer;
 
 	/** Selection state */
 	struct selection *sel;

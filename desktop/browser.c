@@ -48,7 +48,6 @@
 #include "desktop/options.h"
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
-#include "desktop/gesture_core.h"
 #include "render/box.h"
 #include "render/form.h"
 #include "render/font.h"
@@ -183,11 +182,6 @@ void browser_window_initialise_common(struct browser_window *bw,
 		bw->history = history_create();
 	else
 		bw->history = history_clone(clone->history);
-
-	if (!clone || (clone && !clone->gesturer))
-		bw->gesturer = NULL;
-	else
-		bw->gesturer = gesturer_clone(clone->gesturer);
 
 	/* window characteristics */
 	bw->sel = selection_create(bw);

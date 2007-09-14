@@ -33,7 +33,7 @@ OBJECTS_IMAGE = bmp.o bmpread.o gif.o gifread.o ico.o jpeg.o \
 
 OBJECTS_RISCOS = $(OBJECTS_COMMON) $(OBJECTS_IMAGE)
 OBJECTS_RISCOS += browser.o frames.o history_core.o netsurf.o \
-	selection.o textinput.o gesture_core.o			# desktop/
+	selection.o textinput.o 				# desktop/
 OBJECTS_RISCOS += 401login.o artworks.o assert.o awrender.o bitmap.o \
 	buffer.o cookies.o configure.o debugwin.o \
 	dialog.o download.o draw.o filetype.o font.o \
@@ -64,7 +64,7 @@ OBJECTS_DEBUGRO += artworks.o awrender.o bitmap.o draw.o \
 
 OBJECTS_GTK = $(OBJECTS_COMMON) $(OBJECTS_IMAGE)
 OBJECTS_GTK += browser.o frames.o history_core.o netsurf.o \
-	selection.o textinput.o gesture_core.o			# desktop/
+	selection.o textinput.o 				# desktop/
 OBJECTS_GTK += font_pango.o gtk_bitmap.o gtk_gui.o \
         gtk_schedule.o gtk_thumbnail.o gtk_options.o \
 	gtk_plotters.o gtk_treeview.o gtk_scaffolding.o \

@@ -31,7 +31,6 @@
 #include "desktop/plotters.h"
 #include "desktop/options.h"
 #include "desktop/textinput.h"
-#include "desktop/gesture_core.h"
 #include "gtk/gtk_gui.h"
 #include "gtk/gtk_plotters.h"
 #include "gtk/gtk_scaffolding.h"
