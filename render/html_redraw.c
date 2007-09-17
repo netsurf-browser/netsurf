@@ -69,7 +69,7 @@ static bool html_redraw_file(int x, int y, int width, int height,
 		struct box *box, float scale, colour background_colour);
 static bool html_redraw_background(int x, int y, struct box *box, float scale,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-		colour *background_colour);
+		colour *background_colour, struct box *background);
 static bool html_redraw_text_decoration(struct box *box,
 		int x_parent, int y_parent, float scale,
 		colour background_colour);
@@ -159,6 +159,7 @@ bool html_redraw_box(struct box *box,
 	int padding_left, padding_top, padding_width, padding_height;
 	int x0, y0, x1, y1;
 	int x_scrolled, y_scrolled;
+	struct box *bg_box = NULL;
 
 	/* avoid trivial FP maths */
 	if (scale == 1.0) {
@@ -273,10 +274,64 @@ bool html_redraw_box(struct box *box,
 	}
 
 	/* background colour and image */
-	if ((box->style && box->type != BOX_BR && (box->type != BOX_INLINE ||
-			box->style != box->parent->parent->style)) &&
-			((box->style->background_color != TRANSPARENT) ||
-			(box->background))) {
+
+	/* Thanks to backwards compatibility, CSS defines the following:
+	 * 
+	 * + If the box is for the root element and it has a background,
+	 *   use that (and then process the body box with no special case)
+	 * + If the box is for the root element and it has no background,
+	 *   then use the background (if any) from the body element as if 
+	 *   it were specified on the root. Then, when the box for the body 
+	 *   element is processed, ignore the background.
+	 * + For any other box, just use its own styling.
+	 */
+	if (!box->parent) {
+		/* Root box */
+		if (box->style && 
+				(box->style->background_color != TRANSPARENT ||
+				box->background)) {
+			/* With its own background */
+			bg_box = box;
+		} else if (!box->style || 
+				(box->style->background_color == TRANSPARENT &&
+				!box->background)) {
+			/* Without its own background */
+			if (box->children && box->children->style &&
+				(box->children->style->background_color != 
+					TRANSPARENT || 
+					box->children->background)) {
+				/* But body has one, so use that */
+				bg_box = box->children;
+			}
+		}
+	} else if (box->parent && !box->parent->parent) {
+		/* Body box */
+		if (box->style && 
+				(box->style->background_color != TRANSPARENT || 
+				box->background)) {
+			/* With a background */
+			if (box->parent->style &&
+				(box->parent->style->background_color != 
+					TRANSPARENT || 
+					box->parent->background)) {
+				/* Root has own background; process normally */
+				bg_box = box;
+			}
+		}
+	} else {
+		/* Any other box */
+		bg_box = box;
+	}
+
+	/* bg_box == NULL implies that this box should not have 
+	 * its background rendered. Otherwise filter out linebreaks,
+	 * optimize away non-differing inlines and ensure the bg_box 
+	 * has something worth rendering */
+	if (bg_box && (bg_box->style && bg_box->type != BOX_BR && 
+			(bg_box->type != BOX_INLINE ||
+			bg_box->style != bg_box->parent->parent->style)) &&
+			((bg_box->style->background_color != TRANSPARENT) || 
+			(bg_box->background))) {
 		/* find intersection of clip box and padding box */
 		int px0 = x < x0 ? x0 : x;
 		int py0 = y < y0 ? y0 : y;
@@ -288,7 +343,7 @@ bool html_redraw_box(struct box *box,
 			/* plot background */
 			if (!html_redraw_background(x, y, box, scale,
 					px0, py0, px1, py1,
-					&current_background_color))
+					&current_background_color, bg_box))
 				return false;
 			/* restore previous graphics window */
 			if (!plot.clip(x0, y0, x1, y1))
@@ -1095,12 +1150,17 @@ bool html_redraw_file(int x, int y, int width, int height,
  * \param  box	  box to draw background image of
  * \param  scale  scale for redraw
  * \param  background_colour  current background colour
+ * \param  background  box containing background details (usually ::box)
  * \return true if successful, false otherwise
+ *
+ * The reason for the presence of ::background is the backwards compatibility
+ * mess that is backgrounds on <body>. The background will be drawn relative 
+ * to ::box, using the background information contained within ::background.
  */
 
 bool html_redraw_background(int x, int y, struct box *box, float scale,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-		colour *background_colour)
+		colour *background_colour, struct box *background)
 {
 	bool repeat_x = false;
 	bool repeat_y = false;
@@ -1112,16 +1172,18 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 	int ox = x, oy = y;
 	struct box *parent;
 
-	plot_content = (box->background != NULL);
+	plot_content = (background->background != NULL);
+
 	if (plot_content) {
 		/* handle background-repeat */
-		switch (box->style->background_repeat) {
+		switch (background->style->background_repeat) {
 			case CSS_BACKGROUND_REPEAT_REPEAT:
 				repeat_x = repeat_y = true;
-				/* optimisation: only plot the colour if bitmap is not opaque */
-				if (box->background->bitmap)
+				/* optimisation: only plot the colour if 
+				 * bitmap is not opaque */
+				if (background->background->bitmap)
 					plot_colour = !bitmap_get_opaque(
-							box->background->bitmap);
+						background->background->bitmap);
 				break;
 			case CSS_BACKGROUND_REPEAT_REPEAT_X:
 				repeat_x = true;
@@ -1136,47 +1198,53 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 		}
 
 		/* handle background-position */
-		switch (box->style->background_position.horz.pos) {
+		switch (background->style->background_position.horz.pos) {
 			case CSS_BACKGROUND_POSITION_PERCENT:
 				x += (box->padding[LEFT] + box->width +
-						box->padding[RIGHT] -
-						box->background->width) * scale *
-						box->style->background_position.horz.
-						value.percent / 100;
+					box->padding[RIGHT] -
+					background->background->width) * scale *
+					background->style->background_position.
+						horz.value.percent / 100;
 				break;
 			case CSS_BACKGROUND_POSITION_LENGTH:
-				x += (int) (css_len2px(&box->style->background_position.
-						horz.value.length, box->style) * scale);
+				x += (int) (css_len2px(&background->style->
+					background_position.horz.value.length, 
+					background->style) * scale);
 				break;
 			default:
 				break;
 		}
 
-		switch (box->style->background_position.vert.pos) {
+		switch (background->style->background_position.vert.pos) {
 			case CSS_BACKGROUND_POSITION_PERCENT:
 				y += (box->padding[TOP] + box->height +
-						box->padding[BOTTOM] -
-						box->background->height) * scale *
-						box->style->background_position.vert.
-						value.percent / 100;
+					box->padding[BOTTOM] -
+					background->background->height) * scale *
+					background->style->background_position.
+						vert.value.percent / 100;
 				break;
 			case CSS_BACKGROUND_POSITION_LENGTH:
-				y += (int) (css_len2px(&box->style->background_position.
-						vert.value.length, box->style) * scale);
+				y += (int) (css_len2px(&background->style->
+					background_position.vert.value.length, 
+					background->style) * scale);
 				break;
 			default:
 				break;
 		}
 	}
 
-	/* special case for table rows as their background needs to be clipped to
-	 * all the cells */
+	/* special case for table rows as their background needs 
+	 * to be clipped to all the cells */
 	if (box->type == BOX_TABLE_ROW) {
-		for (parent = box->parent; ((parent) && (parent->type != BOX_TABLE));
+		for (parent = box->parent; 
+			((parent) && (parent->type != BOX_TABLE));
 				parent = parent->parent);
 		assert(parent && (parent->style));
-		clip_to_children = (parent->style->border_spacing.horz.value > 0) ||
-				(parent->style->border_spacing.vert.value > 0);
+
+		clip_to_children = 
+			(parent->style->border_spacing.horz.value > 0) ||
+			(parent->style->border_spacing.vert.value > 0);
+
 		if (clip_to_children)
 			clip_box = box->children;
 	}
@@ -1190,9 +1258,12 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 	  	  	clip_x0 = ox + (clip_box->x * scale);
 	  	  	clip_y0 = oy + (clip_box->y * scale);
 	  	  	clip_x1 = clip_x0 + (clip_box->padding[LEFT] +
-	  	  			clip_box->width + clip_box->padding[RIGHT]) * scale;
+	  	  			clip_box->width + 
+					clip_box->padding[RIGHT]) * scale;
 	  	  	clip_y1 = clip_y0 + (clip_box->padding[TOP] +
-	  	  			clip_box->height + clip_box->padding[BOTTOM]) * scale;
+	  	  			clip_box->height + 
+					clip_box->padding[BOTTOM]) * scale;
+
 			if (clip_x0 < px0) clip_x0 = px0;
 			if (clip_y0 < py0) clip_y0 = py0;
 			if (clip_x1 > px1) clip_x1 = px1;
@@ -1200,31 +1271,34 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 
 			/* <td> attributes override <tr> */
 			if ((clip_x0 >= clip_x1) || (clip_y0 >= clip_y1) ||
-					(clip_box->style->background_color != TRANSPARENT) ||
+					(clip_box->style->background_color != 
+					TRANSPARENT) ||
 					(clip_box->background &&
 					 clip_box->background->bitmap &&
-					 bitmap_get_opaque(clip_box->background->bitmap)))
+					 bitmap_get_opaque(
+						 clip_box->background->bitmap)))
 				continue;
 	  	}
 
 		/* plot the background colour */
-		if (box->style->background_color != TRANSPARENT) {
-			*background_colour = box->style->background_color;
+		if (background->style->background_color != TRANSPARENT) {
+			*background_colour = 
+				background->style->background_color;
 			if (plot_colour)
-				if (!plot.fill(clip_x0, clip_y0, clip_x1, clip_y1,
-						*background_colour))
+				if (!plot.fill(clip_x0, clip_y0, 
+					clip_x1, clip_y1, *background_colour))
 				return false;
 		}
 		/* and plot the image */
 		if (plot_content) {
 			if (!plot.clip(clip_x0, clip_y0, clip_x1, clip_y1))
 					return false;
-			if (!content_redraw_tiled(box->background, x, y,
-					ceilf(box->background->width * scale),
-					ceilf(box->background->height * scale),
-					clip_x0, clip_y0, clip_x1, clip_y1, scale,
-					*background_colour,
-					repeat_x, repeat_y))
+			if (!content_redraw_tiled(background->background, x, y,
+				ceilf(background->background->width * scale),
+				ceilf(background->background->height * scale),
+				clip_x0, clip_y0, clip_x1, clip_y1, scale,
+				*background_colour,
+				repeat_x, repeat_y))
 				return false;
 		}
 
