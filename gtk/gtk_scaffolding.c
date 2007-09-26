@@ -914,5 +914,6 @@ gboolean nsgtk_scaffolding_is_busy(nsgtk_scaffolding *scaffold)
 
 void nsgtk_scaffolding_popup_menu(nsgtk_scaffolding *g, guint button)
 {
-	gtk_menu_popup(g->popup_menu, NULL, NULL, NULL, NULL, button, 0);
+	gtk_menu_popup(g->popup_menu, NULL, NULL, NULL, NULL, 0,
+			gtk_get_current_event_time());
 }
