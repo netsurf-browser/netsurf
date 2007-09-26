@@ -77,11 +77,17 @@ GtkWindow *wndTooltip;
 GtkLabel *labelTooltip;
 GtkDialog *wndOpenFile;
 
+static GtkWidget *select_menu;
+static struct browser_window *select_menu_bw;
+static struct form_control *select_menu_control;
+
 static void nsgtk_create_ssl_verify_window(struct browser_window *bw,
 		struct content *c, const struct ssl_cert_info *certs,
 		unsigned long num);
 static void nsgtk_ssl_accept(GtkButton *w, gpointer data);
 static void nsgtk_ssl_reject(GtkButton *w, gpointer data);
+static void nsgtk_select_menu_clicked(GtkCheckMenuItem *checkmenuitem,
+					gpointer user_data);
 
 /**
  * Locate a shared resource file by searching known places in order.
@@ -392,6 +398,12 @@ void gui_download_window_done(struct gui_download_window *dw)
 {
 }
 
+static void nsgtk_select_menu_clicked(GtkCheckMenuItem *checkmenuitem,
+					gpointer user_data) 
+{
+	browser_window_form_select(select_menu_bw, select_menu_control,
+					(int)user_data);
+}
 
 void gui_create_form_select_menu(struct browser_window *bw,
 		struct form_control *control)
@@ -399,13 +411,38 @@ void gui_create_form_select_menu(struct browser_window *bw,
 
 	int i;
 	struct form_option *option;
+	
+	GtkWidget *menu_item;
 
-	LOG(("Trying to open select menu..."));
+	/* control->data.select.multiple is true if multiple selections
+	 * are allowable.  We ignore this, as the core handles it for us.
+	 * Yay. \o/
+	 */
+	
+	if (select_menu != NULL)
+		gtk_widget_destroy(select_menu);
+	
+	select_menu = gtk_menu_new();
+	select_menu_bw = bw;
+	select_menu_control = control;
 
 	for (i = 0, option = control->data.select.items; option;
 		i++, option = option->next) {
-		LOG(("Option: %s", option->text));
+		menu_item = gtk_check_menu_item_new_with_label(option->text);
+		if (option->selected)
+			gtk_check_menu_item_set_active(
+				GTK_CHECK_MENU_ITEM(menu_item), TRUE);
+		
+		g_signal_connect(menu_item, "toggled",
+			G_CALLBACK(nsgtk_select_menu_clicked), (gpointer)i);
+		
+		gtk_menu_shell_append(GTK_MENU_SHELL(select_menu), menu_item);
 	}
+	
+	gtk_widget_show_all(select_menu);
+	
+	gtk_menu_popup(GTK_MENU(select_menu), NULL, NULL, NULL,
+			NULL /* data */, 0, gtk_get_current_event_time());
 
 }
 
