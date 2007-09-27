@@ -707,15 +707,36 @@ char *form_encode_item(const char *item, const char *charset,
 
 	err = utf8_to_enc(item, cset, 0, &ret);
 	if (err == UTF8_CONVERT_BADENC) {
-		/* charset not understood, try fallback charset (if any) */
-		if (fallback) {
-			snprintf(cset, sizeof cset, "%s//TRANSLIT", fallback);
-			err = utf8_to_enc(item, cset, 0, &ret);
+		/* charset not understood, try without transliteration */
+		snprintf(cset, sizeof cset, "%s", charset);
+		err = utf8_to_enc(item, cset, 0, &ret);
+
+		if (err == UTF8_CONVERT_BADENC) {
+			/* nope, try fallback charset (if any) */
+			if (fallback) {
+				snprintf(cset, sizeof cset, 
+						"%s//TRANSLIT", fallback);
+				err = utf8_to_enc(item, cset, 0, &ret);
+
+				if (err == UTF8_CONVERT_BADENC) {
+					/* and without transliteration */
+					snprintf(cset, sizeof cset,
+							"%s", fallback);
+					err = utf8_to_enc(item, cset, 0, &ret);
+				}
+			}
+
+			if (err == UTF8_CONVERT_BADENC) {
+				/* that also failed, use 8859-1 */
+				err = utf8_to_enc(item, "ISO-8859-1//TRANSLIT",
+						0, &ret);
+				if (err == UTF8_CONVERT_BADENC) {
+					/* and without transliteration */
+					err = utf8_to_enc(item, "ISO-8859-1",
+							0, &ret);
+				}
+			}
 		}
-		if (err == UTF8_CONVERT_BADENC)
-			/* that also failed, use 8859-1 */
-			err = utf8_to_enc(item, "ISO-8859-1//TRANSLIT",
-					0, &ret);
 	}
 	if (err == UTF8_CONVERT_NOMEM) {
 		return NULL;
@@ -723,3 +744,4 @@ char *form_encode_item(const char *item, const char *charset,
 
 	return ret;
 }
+
