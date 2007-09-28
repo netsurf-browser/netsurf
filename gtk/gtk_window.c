@@ -78,6 +78,7 @@ static gboolean nsgtk_window_size_allocate_event(GtkWidget *, GtkAllocation *,
 /* Other useful bits */
 static void nsgtk_redraw_caret(struct gui_window *g);
 
+static GdkCursor *nsgtk_create_menu_cursor(void);
 
 nsgtk_scaffolding *nsgtk_get_scaffold(struct gui_window *g)
 {
@@ -676,6 +677,39 @@ void gui_window_update_extent(struct gui_window *g)
 
 }
 
+static GdkCursor *nsgtk_create_menu_cursor(void)
+{
+	static char menu_cursor_bits[] = {
+	0x00, 0x00, 0x80, 0x7F, 0x88, 0x40, 0x9E, 0x5E, 0x88, 0x40, 0x80, 0x56, 
+ 	0x80, 0x40, 0x80, 0x5A, 0x80, 0x40, 0x80, 0x5E, 0x80, 0x40, 0x80, 0x56, 
+	0x80, 0x40, 0x80, 0x7F, 0x00, 0x00, 0x00, 0x00, };
+
+	static char menu_cursor_mask_bits[] = {
+	0xC0, 0xFF, 0xC8, 0xFF, 0xDF, 0xFF, 0xFF, 0xFF, 0xDF, 0xFF, 0xC8, 0xFF, 
+	0xC0, 0xFF, 0xC0, 0xFF, 0xC0, 0xFF, 0xC0, 0xFF, 0xC0, 0xFF, 0xC0, 0xFF, 
+	0xC0, 0xFF, 0xC0, 0xFF, 0xC0, 0xFF, 0x00, 0x00, };
+	
+	static GdkCursor *r;
+	static GdkColor fg = { 0, 0, 0, 0 };
+	static GdkColor bg = { 0, 65535, 65535, 65535 };
+	
+	GdkPixmap *source, *mask;
+	
+	if (r != NULL)
+		return r;
+	
+	source = gdk_bitmap_create_from_data(NULL, menu_cursor_bits,
+						16, 16);
+	mask = gdk_bitmap_create_from_data (NULL, menu_cursor_mask_bits,
+						16, 16);
+	
+	r = gdk_cursor_new_from_pixmap(source, mask, &fg, &bg, 8, 8);
+	gdk_pixmap_unref(source);
+	gdk_pixmap_unref(mask);
+	
+	return r;      
+}
+
 void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 {
         GdkCursor *cursor = NULL;
@@ -731,7 +765,8 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
                 cursortype = GDK_QUESTION_ARROW;
                 break;
         case GUI_POINTER_MENU:
-                cursortype = GDK_CENTER_PTR;
+                cursor = nsgtk_create_menu_cursor();
+                nullcursor = true;
                 break;
         case GUI_POINTER_PROGRESS:
                 /* In reality, this needs to be the funky left_ptr_watch
