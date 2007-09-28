@@ -6,6 +6,10 @@ OS, this should suffice:
 	apt-get install libglade2-dev libcurl3-dev libxml2-dev libmng-dev 
 	apt-get install librsvg2-dev lemon re2c
 
+NetSurf requires at minimum GTK 2.8.  Earlier versions will not work.  It
+also depends on Cairo for rendering, but you should have this already with
+versions of GTK 2.8 or later.
+
 This will pull in loads of things, like all the GTK dev libraries, the PNG and
 JPEG libraries, colour management libraries, zlib, OpenSSL etc that NetSurf
 also depends on.

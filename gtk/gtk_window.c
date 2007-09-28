@@ -731,7 +731,7 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
                 cursortype = GDK_QUESTION_ARROW;
                 break;
         case GUI_POINTER_MENU:
-                cursortype = GDK_RIGHTBUTTON;
+                cursortype = GDK_CENTER_PTR;
                 break;
         case GUI_POINTER_PROGRESS:
                 /* In reality, this needs to be the funky left_ptr_watch
