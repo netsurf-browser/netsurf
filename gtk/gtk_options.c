@@ -122,6 +122,7 @@ void nsgtk_options_init(void) {
 
 void nsgtk_options_load(void) {
 	char b[20];
+	int proxytype = 0;
 
 	SET_ENTRY(entryHomePageURL,
 			option_homepage_url ? option_homepage_url : "");
@@ -129,7 +130,22 @@ void nsgtk_options_load(void) {
 	SET_CHECK(checkDisplayRecentURLs, option_url_suggestion);
 	SET_CHECK(checkSendReferer, option_send_referer);
 
-	SET_COMBO(comboProxyType, option_http_proxy_auth);
+	switch (option_http_proxy_auth) {
+	case OPTION_HTTP_PROXY_AUTH_NONE:
+		proxytype = 1;
+		break;
+	case OPTION_HTTP_PROXY_AUTH_BASIC:
+		proxytype = 2;
+		break;
+	case OPTION_HTTP_PROXY_AUTH_NTLM:
+		proxytype = 3;
+		break;
+	}
+
+	if (option_http_proxy == false)
+		proxytype = 0;
+
+	SET_COMBO(comboProxyType, proxytype);
 	SET_ENTRY(entryProxyHost,
 			option_http_proxy_host ? option_http_proxy_host : "");
 	snprintf(b, 20, "%d", option_http_proxy_port);
@@ -177,20 +193,26 @@ void nsgtk_options_save(void) {
 	GET_CHECK(checkDisplayRecentURLs, option_url_suggestion);
 
 	GET_COMBO(comboProxyType, i);
-	option_http_proxy = (i > 0) ? true : false;
+	LOG(("proxy type: %d", i));
 	switch (i)
 	{
 		case 0:
+			option_http_proxy = false;
+			option_http_proxy_auth = OPTION_HTTP_PROXY_AUTH_NONE;
 		case 1:
+			option_http_proxy = true;
 			option_http_proxy_auth = OPTION_HTTP_PROXY_AUTH_NONE;
 			break;
 		case 2:
+			option_http_proxy = true;
 			option_http_proxy_auth = OPTION_HTTP_PROXY_AUTH_BASIC;
 			break;
 		case 3:
+			option_http_proxy = true;
 			option_http_proxy_auth = OPTION_HTTP_PROXY_AUTH_NTLM;
 			break;
 		default:
+			option_http_proxy = false;
 			option_http_proxy_auth = OPTION_HTTP_PROXY_AUTH_NONE;
 			break;
 	}
