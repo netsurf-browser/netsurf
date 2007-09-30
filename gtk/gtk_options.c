@@ -199,6 +199,7 @@ void nsgtk_options_save(void) {
 		case 0:
 			option_http_proxy = false;
 			option_http_proxy_auth = OPTION_HTTP_PROXY_AUTH_NONE;
+			break;
 		case 1:
 			option_http_proxy = true;
 			option_http_proxy_auth = OPTION_HTTP_PROXY_AUTH_NONE;
