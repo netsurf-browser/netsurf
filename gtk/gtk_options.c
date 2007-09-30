@@ -157,7 +157,7 @@ void nsgtk_options_load(void) {
 	SET_SPIN(spinDefaultSize, option_font_size / 10);
 	SET_SPIN(spinMinimumSize, option_font_min_size / 10);
 
-	SET_SPIN(spinMemoryCacheSize, option_memory_cache_size);
+	SET_SPIN(spinMemoryCacheSize, option_memory_cache_size >> 20);
 	SET_SPIN(spinDiscCacheAge, option_disc_cache_age);
 }
 
@@ -223,6 +223,9 @@ void nsgtk_options_save(void) {
 	option_font_size *= 10;
 	GET_SPIN(spinMinimumSize, option_font_min_size);
 	option_font_min_size *= 10;
+
+	GET_SPIN(spinMemoryCacheSize, option_memory_cache_size);
+	option_memory_cache_size <<= 20;
 
 	options_write(options_file_location);
 	nsgtk_reflow_all_windows();
