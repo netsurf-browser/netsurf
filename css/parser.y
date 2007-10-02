@@ -60,7 +60,7 @@ block_body ::= block_body SEMI ws.
 
 ruleset ::= selector_list(A) LBRACE ws declaration_list(B) RBRACE ws.
 		{ if (A && B) {
-			param->had_ruleset = true;
+			/*param->had_ruleset = true;*/
 			css_add_ruleset(param->stylesheet, A, B);
 		}
 		else
