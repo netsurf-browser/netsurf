@@ -49,6 +49,7 @@
 #include "gtk/gtk_throbber.h"
 #include "gtk/gtk_history.h"
 #include "gtk/gtk_filetype.h"
+#include "gtk/gtk_download.h"
 #include "render/box.h"
 #include "render/form.h"
 #include "render/html.h"
@@ -275,6 +276,7 @@ void gui_init(int argc, char** argv)
 	wndOpenFile = GTK_DIALOG(glade_xml_get_widget(gladeWindows, "wndOpenFile"));
 
 	nsgtk_history_init();
+	nsgtk_download_initialise();
 }
 
 
@@ -402,14 +404,14 @@ static void nsgtk_select_menu_clicked(GtkCheckMenuItem *checkmenuitem,
 					gpointer user_data) 
 {
 	browser_window_form_select(select_menu_bw, select_menu_control,
-					(int)user_data);
+					(intptr_t)user_data);
 }
 
 void gui_create_form_select_menu(struct browser_window *bw,
 		struct form_control *control)
 {
 
-	int i;
+	intptr_t i;
 	struct form_option *option;
 	
 	GtkWidget *menu_item;

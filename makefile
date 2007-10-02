@@ -69,7 +69,8 @@ OBJECTS_GTK += font_pango.o gtk_bitmap.o gtk_gui.o \
         gtk_schedule.o gtk_thumbnail.o gtk_options.o \
 	gtk_plotters.o gtk_treeview.o gtk_scaffolding.o \
 	gtk_completion.o gtk_login.o gtk_throbber.o \
-	gtk_history.o gtk_window.o gtk_filetype.o		# gtk/
+	gtk_history.o gtk_window.o gtk_filetype.o \
+	gtk_download.o						# gtk/
 
 
 OBJDIR_RISCOS = arm-riscos-aof

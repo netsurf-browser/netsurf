@@ -40,6 +40,7 @@
 #include "gtk/gtk_history.h"
 #include "gtk/gtk_window.h"
 #include "gtk/gtk_schedule.h"
+#include "gtk/gtk_download.h"
 #include "render/box.h"
 #include "render/font.h"
 #include "render/form.h"
@@ -142,6 +143,7 @@ MENUPROTO(full_screen);
 MENUPROTO(menu_bar);
 MENUPROTO(tool_bar);
 MENUPROTO(status_bar);
+MENUPROTO(downloads);
 MENUPROTO(save_window_size);
 MENUPROTO(toggle_debug_rendering);
 
@@ -179,6 +181,7 @@ static struct menu_events menu_events[] = {
 	MENUEVENT(menu_bar),
 	MENUEVENT(tool_bar),
 	MENUEVENT(status_bar),
+	MENUEVENT(downloads),
 	MENUEVENT(save_window_size),
 	MENUEVENT(toggle_debug_rendering),
 
@@ -517,6 +520,13 @@ MENUHANDLER(status_bar)
 		gtk_widget_hide(GTK_WIDGET(gw->status_bar));
 	}
 
+	return TRUE;
+}
+
+MENUHANDLER(downloads)
+{
+	nsgtk_download_show();
+	
 	return TRUE;
 }
 
