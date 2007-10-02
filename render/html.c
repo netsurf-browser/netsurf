@@ -54,7 +54,10 @@ static void html_convert_css_callback(content_msg msg, struct content *css,
 		intptr_t p1, intptr_t p2, union content_msg_data data);
 static bool html_meta_refresh(struct content *c, xmlNode *head);
 static bool html_head(struct content *c, xmlNode *head);
-static bool html_find_stylesheets(struct content *c, xmlNode *head);
+static bool html_find_stylesheets(struct content *c, xmlNode *html,
+		xmlNode *head);
+static bool html_find_inline_stylesheets(struct content *c, xmlNode *html);
+static bool html_process_style_element(struct content *c, xmlNode *style);
 static void html_object_callback(content_msg msg, struct content *object,
 		intptr_t p1, intptr_t p2, union content_msg_data data);
 static void html_object_done(struct box *box, struct content *object,
@@ -453,7 +456,7 @@ bool html_convert(struct content *c, int width, int height)
 	}
 
 	/* get stylesheets */
-	if (!html_find_stylesheets(c, head))
+	if (!html_find_stylesheets(c, html, head))
 		return false;
 
 	/* convert xml tree to box tree */
@@ -699,14 +702,16 @@ bool html_meta_refresh(struct content *c, xmlNode *head)
  * Process inline stylesheets and fetch linked stylesheets.
  *
  * \param  c     content structure
+ * \param  head  xml node of html element
  * \param  head  xml node of head element, or 0 if none
  * \return  true on success, false if an error occurred
  */
 
-bool html_find_stylesheets(struct content *c, xmlNode *head)
+bool html_find_stylesheets(struct content *c, xmlNode *html,
+		xmlNode *head)
 {
-	xmlNode *node, *node2;
-	char *rel, *type, *media, *href, *data, *url;
+	xmlNode *node;
+	char *rel, *type, *media, *href, *url;
 	unsigned int i = STYLESHEET_START;
 	unsigned int last_active = 0;
 	union content_msg_data msg_data;
@@ -759,131 +764,82 @@ bool html_find_stylesheets(struct content *c, xmlNode *head)
 		if (node->type != XML_ELEMENT_NODE)
 			continue;
 
-		if (strcmp(node->name, "link") == 0) {
-			/* rel=<space separated list, including 'stylesheet'> */
-			if ((rel = (char *) xmlGetProp(node, (const xmlChar *) "rel")) == NULL)
-				continue;
-			if (strcasestr(rel, "stylesheet") == 0) {
-				xmlFree(rel);
-				continue;
-			} else if (strcasestr(rel, "alternate")) {
-				/* Ignore alternate stylesheets */
-				xmlFree(rel);
-				continue;
-			}
+		if (strcmp(node->name, "link") != 0)
+			continue;
+
+		/* rel=<space separated list, including 'stylesheet'> */
+		if ((rel = (char *) xmlGetProp(node, (const xmlChar *) "rel")) == NULL)
+			continue;
+		if (strcasestr(rel, "stylesheet") == 0) {
 			xmlFree(rel);
-
-			/* type='text/css' or not present */
-			if ((type = (char *) xmlGetProp(node, (const xmlChar *) "type")) != NULL) {
-				if (strcmp(type, "text/css") != 0) {
-					xmlFree(type);
-					continue;
-				}
-				xmlFree(type);
-			}
-
-			/* media contains 'screen' or 'all' or not present */
-			if ((media = (char *) xmlGetProp(node, (const xmlChar *) "media")) != NULL) {
-				if (strcasestr(media, "screen") == 0 &&
-						strcasestr(media, "all") == 0) {
-					xmlFree(media);
-					continue;
-				}
-				xmlFree(media);
-			}
-
-			/* href='...' */
-			if ((href = (char *) xmlGetProp(node, (const xmlChar *) "href")) == NULL)
-				continue;
-
-			/* TODO: only the first preferred stylesheets (ie. those with a
-			 * title attribute) should be loaded (see HTML4 14.3) */
-
-			res = url_join(href, c->data.html.base_url, &url);
-			xmlFree(href);
-			if (res != URL_FUNC_OK)
-				continue;
-
-			LOG(("linked stylesheet %i '%s'", i, url));
-
-			/* start fetch */
-			stylesheet_content = talloc_realloc(c,
-					c->data.html.stylesheet_content,
-					struct content *, i + 1);
-			if (!stylesheet_content)
-				goto no_memory;
-			c->data.html.stylesheet_content = stylesheet_content;
-			c->data.html.stylesheet_content[i] = fetchcache(url,
-					html_convert_css_callback,
-					(intptr_t) c, i, c->width, c->height,
-					true, 0, 0, false, false);
-			if (!c->data.html.stylesheet_content[i])
-				goto no_memory;
-			c->active++;
-			fetchcache_go(c->data.html.stylesheet_content[i],
-					c->url,
-					html_convert_css_callback,
-					(intptr_t) c, i, c->width, c->height,
-					0, 0, false, c->url);
-			free(url);
-			i++;
-
-		} else if (strcmp(node->name, "style") == 0) {
-			/* type='text/css', or not present (invalid but common) */
-			if ((type = (char *) xmlGetProp(node, (const xmlChar *) "type")) != NULL) {
-				if (strcmp(type, "text/css") != 0) {
-					xmlFree(type);
-					continue;
-				}
-				xmlFree(type);
-			}
-
-			/* media contains 'screen' or 'all' or not present */
-			if ((media = (char *) xmlGetProp(node, (const xmlChar *) "media")) != NULL) {
-				if (strcasestr(media, "screen") == 0 &&
-						strcasestr(media, "all") == 0) {
-					xmlFree(media);
-					continue;
-				}
-				xmlFree(media);
-			}
-
-			/* create stylesheet */
-			LOG(("style element"));
-			if (c->data.html.stylesheet_content[STYLESHEET_STYLE] == 0) {
-				const char *params[] = { 0 };
-				c->data.html.stylesheet_content[STYLESHEET_STYLE] =
-						content_create(c->data.html.
-						base_url);
-				if (!c->data.html.stylesheet_content[STYLESHEET_STYLE])
-					goto no_memory;
-				if (!content_set_type(c->data.html.
-						stylesheet_content[STYLESHEET_STYLE],
-						CONTENT_CSS, "text/css",
-						params))
-					/** \todo  not necessarily caused by
-					 *  memory exhaustion */
-					goto no_memory;
-			}
-
-			/* can't just use xmlNodeGetContent(node), because that won't give
-			 * the content of comments which may be used to 'hide' the content */
-			for (node2 = node->children; node2 != 0; node2 = node2->next) {
-				data = xmlNodeGetContent(node2);
-				if (!content_process_data(c->data.html.
-						stylesheet_content[STYLESHEET_STYLE],
-						data, strlen(data))) {
-					xmlFree(data);
-					/** \todo  not necessarily caused by
-					 *  memory exhaustion */
-					goto no_memory;
-				}
-				xmlFree(data);
-			}
+			continue;
+		} else if (strcasestr(rel, "alternate")) {
+			/* Ignore alternate stylesheets */
+			xmlFree(rel);
+			continue;
 		}
+		xmlFree(rel);
+
+		/* type='text/css' or not present */
+		if ((type = (char *) xmlGetProp(node, (const xmlChar *) "type")) != NULL) {
+			if (strcmp(type, "text/css") != 0) {
+				xmlFree(type);
+				continue;
+			}
+			xmlFree(type);
+		}
+
+		/* media contains 'screen' or 'all' or not present */
+		if ((media = (char *) xmlGetProp(node, (const xmlChar *) "media")) != NULL) {
+			if (strcasestr(media, "screen") == 0 &&
+					strcasestr(media, "all") == 0) {
+				xmlFree(media);
+				continue;
+			}
+			xmlFree(media);
+		}
+
+		/* href='...' */
+		if ((href = (char *) xmlGetProp(node, (const xmlChar *) "href")) == NULL)
+			continue;
+
+		/* TODO: only the first preferred stylesheets (ie. those with a
+		 * title attribute) should be loaded (see HTML4 14.3) */
+
+		res = url_join(href, c->data.html.base_url, &url);
+		xmlFree(href);
+		if (res != URL_FUNC_OK)
+			continue;
+
+		LOG(("linked stylesheet %i '%s'", i, url));
+
+		/* start fetch */
+		stylesheet_content = talloc_realloc(c,
+				c->data.html.stylesheet_content,
+				struct content *, i + 1);
+		if (!stylesheet_content)
+			goto no_memory;
+		c->data.html.stylesheet_content = stylesheet_content;
+		c->data.html.stylesheet_content[i] = fetchcache(url,
+				html_convert_css_callback,
+				(intptr_t) c, i, c->width, c->height,
+				true, 0, 0, false, false);
+		if (!c->data.html.stylesheet_content[i])
+			goto no_memory;
+		c->active++;
+		fetchcache_go(c->data.html.stylesheet_content[i],
+				c->url,
+				html_convert_css_callback,
+				(intptr_t) c, i, c->width, c->height,
+				0, 0, false, c->url);
+		free(url);
+		i++;
 	}
 
 	c->data.html.stylesheet_count = i;
+
+	if (!html_find_inline_stylesheets(c, html))
+		return false;
 
 	if (c->data.html.stylesheet_content[STYLESHEET_STYLE] != 0) {
 		if (css_convert(c->data.html.stylesheet_content[STYLESHEET_STYLE], c->width,
@@ -941,6 +897,120 @@ bool html_find_stylesheets(struct content *c, xmlNode *head)
 			c->data.html.stylesheet_count);
 	if (!c->data.html.working_stylesheet)
 		goto no_memory;
+
+	return true;
+
+no_memory:
+	msg_data.error = messages_get("NoMemory");
+	content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+	return false;
+}
+
+
+/**
+ * Process inline stylesheets in the document.
+ *
+ * \param  c     content structure
+ * \param  head  xml node of html element
+ * \return  true on success, false if an error occurred
+ */
+
+bool html_find_inline_stylesheets(struct content *c, xmlNode *html)
+{
+	xmlNode *node = html;
+
+	/* depth-first search the tree for style elements */
+	while (node) {
+		if (node->children) {  /* 1. children */
+			node = node->children;
+		} else if (node->next) {  /* 2. siblings */
+			node = node->next;
+		} else {  /* 3. ancestor siblings */
+			while (node && !node->next)
+				node = node->parent;
+			if (!node)
+				break;
+			node = node->next;
+		}
+
+		assert(node);
+
+		if (node->type != XML_ELEMENT_NODE)
+			continue;
+		if (strcmp(node->name, "style") != 0)
+			continue;
+
+		if (!html_process_style_element(c, node))
+			return false;
+	}
+
+	return true;
+}
+
+
+/**
+ * Process an inline stylesheet in the document.
+ *
+ * \param  c      content structure
+ * \param  style  xml node of style element
+ * \return  true on success, false if an error occurred
+ */
+
+bool html_process_style_element(struct content *c, xmlNode *style)
+{
+	xmlNode *child;
+	char *type, *media, *data;
+	union content_msg_data msg_data;
+
+	/* type='text/css', or not present (invalid but common) */
+	if ((type = (char *) xmlGetProp(style, (const xmlChar *) "type"))) {
+		if (strcmp(type, "text/css") != 0) {
+			xmlFree(type);
+			return true;
+		}
+		xmlFree(type);
+	}
+
+	/* media contains 'screen' or 'all' or not present */
+	if ((media = (char *) xmlGetProp(style, (const xmlChar *) "media"))) {
+		if (strcasestr(media, "screen") == 0 &&
+				strcasestr(media, "all") == 0) {
+			xmlFree(media);
+			return true;
+		}
+		xmlFree(media);
+	}
+
+	/* create stylesheet */
+	if (c->data.html.stylesheet_content[STYLESHEET_STYLE] == 0) {
+		const char *params[] = { 0 };
+		c->data.html.stylesheet_content[STYLESHEET_STYLE] =
+				content_create(c->data.html.base_url);
+		if (!c->data.html.stylesheet_content[STYLESHEET_STYLE])
+			goto no_memory;
+		if (!content_set_type(c->data.html.
+				stylesheet_content[STYLESHEET_STYLE],
+				CONTENT_CSS, "text/css", params))
+			/** \todo  not necessarily caused by
+			 *  memory exhaustion */
+			goto no_memory;
+	}
+
+	/* can't just use xmlNodeGetContent(style), because that won't
+	 * give the content of comments which may be used to 'hide'
+	 * the content */
+	for (child = style->children; child != 0; child = child->next) {
+		data = xmlNodeGetContent(child);
+		if (!content_process_data(c->data.html.
+				stylesheet_content[STYLESHEET_STYLE],
+				data, strlen(data))) {
+			xmlFree(data);
+			/** \todo  not necessarily caused by
+			 *  memory exhaustion */
+			goto no_memory;
+		}
+		xmlFree(data);
+	}
 
 	return true;
 
