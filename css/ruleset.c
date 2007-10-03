@@ -31,6 +31,7 @@
 
 #define _GNU_SOURCE  /* for strndup */
 #include <assert.h>
+#include <ctype.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -685,13 +686,22 @@ colour parse_colour(const struct css_node * const v)
 	unsigned int r, g, b;
 	struct css_colour_entry *col;
 	char colour_name[21];
+	bool valid_hex = true;
 
 	switch (v->type) {
 		case CSS_NODE_HASH:
-			if (v->data_length == 4) {
+
+			for (unsigned int i = 1; i < v->data_length; i++) {
+				if (!isxdigit(v->data[i])) {
+					valid_hex = false;
+					break;
+				}
+			}
+
+			if (v->data_length == 4 && valid_hex == true) {
 				if (sscanf(v->data + 1, "%1x%1x%1x", &r, &g, &b) == 3)
 					c = (b << 20) | (b << 16) | (g << 12) | (g << 8) | (r << 4) | r;
-			} else if (v->data_length == 7) {
+			} else if (v->data_length == 7 && valid_hex == true) {
 				if (sscanf(v->data + 1, "%2x%2x%2x", &r, &g, &b) == 3)
 					c = (b << 16) | (g << 8) | r;
 			}
@@ -722,6 +732,28 @@ colour parse_colour(const struct css_node * const v)
 			break;
 	}
 
+	/* Hex colour vaules without a preceding # are invalid but it is a
+	 * common omission that other browsers cater for. */
+	if (c == CSS_COLOR_NONE && (v->type == CSS_NODE_DELIM ||
+		v->type == CSS_NODE_IDENT || v->type == CSS_NODE_NUMBER ||
+		v->type == CSS_NODE_DIMENSION)) {
+
+		for (unsigned int i = 0; i < v->data_length; i++) {
+			if (!isxdigit(v->data[i])) {
+				valid_hex = false;
+				break;
+			}
+		}
+
+		if (v->data_length == 3 && valid_hex == true) {
+			if (sscanf(v->data, "%1x%1x%1x", &r, &g, &b) == 3)
+				c = (b << 20) | (b << 16) | (g << 12) | (g << 8) | (r << 4) | r;
+		} else if (v->data_length == 6 && valid_hex == true) {
+			if (sscanf(v->data, "%2x%2x%2x", &r, &g, &b) == 3)
+				c = (b << 16) | (g << 8) | r;
+		}
+		LOG(("Invalid CSS colour: %.*s", v->data_length, v->data));
+	}
 	return c;
 }
 
