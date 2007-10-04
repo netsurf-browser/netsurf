@@ -723,7 +723,7 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 
 	switch (shape) {
         case GUI_POINTER_POINT:
-                cursortype = GDK_HAND1;
+                cursortype = GDK_HAND2;
                 break;
         case GUI_POINTER_CARET:
                 cursortype = GDK_XTERM;
