@@ -774,8 +774,7 @@ colour hex_colour(const char *text, int length)
 			return CSS_COLOR_NONE;
 		return c;
 	}
-
-	assert(!"Invalid hexadecimal colour length.");
+	return CSS_COLOR_NONE;
 }
 
 
