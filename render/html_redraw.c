@@ -160,6 +160,7 @@ bool html_redraw_box(struct box *box,
 	int x0, y0, x1, y1;
 	int x_scrolled, y_scrolled;
 	struct box *bg_box = NULL;
+	bool visible = true;
 
 	/* avoid trivial FP maths */
 	if (scale == 1.0) {
@@ -206,18 +207,14 @@ bool html_redraw_box(struct box *box,
 	if (box->style && box->style->visibility == CSS_VISIBILITY_HIDDEN) {
 	  	if ((plot.group_start) && (!plot.group_start("hidden box")))
 			return false;
-		if (!html_redraw_box_children(box, x_parent, y_parent,
-				x0, y0, x1, y1, scale,
-				current_background_color))
+		visible = false;
+	} else { 
+		if ((plot.group_start) && (!plot.group_start("vis box")))
 			return false;
-		return ((!plot.group_end) || (plot.group_end()));
 	}
-
-	if ((plot.group_start) && (!plot.group_start("vis box")))
-		return false;
-
+	
 	/* dotted debug outlines */
-	if (html_redraw_debug) {
+	if (html_redraw_debug && visible) {
 		if (!plot.rectangle(x, y, padding_width, padding_height,
 				1, 0x0000ff, true, false))
 			return false;
@@ -239,7 +236,7 @@ bool html_redraw_box(struct box *box,
 	}
 
 	/* borders */
-	if (box->style && box->type != BOX_TEXT && (box->border[TOP] ||
+	if (visible && box->style && box->type != BOX_TEXT && (box->border[TOP] ||
 			box->border[RIGHT] || box->border[BOTTOM] ||
 			box->border[LEFT]))
 		if (!html_redraw_borders(box, x_parent, y_parent,
@@ -260,8 +257,8 @@ bool html_redraw_box(struct box *box,
 		if (clip_y1 < y1) y1 = clip_y1;
 		/* no point trying to draw 0-width/height boxes */
 		if (x0 == x1 || y0 == y1)
-			/* not an error, so return true */
-			return true;
+			/* not an error */
+			return ((!plot.group_end) || (plot.group_end()));
 		/* clip to it */
 		if (!plot.clip(x0, y0, x1, y1))
 			return false;
@@ -272,6 +269,17 @@ bool html_redraw_box(struct box *box,
 		x1 = clip_x1;
 		y1 = clip_y1;
 	}
+	
+	/* hidden elements */
+	if (!visible) {
+		if (!html_redraw_box_children(box, x_parent, y_parent,
+				x0, y0, x1, y1, scale,
+				current_background_color))
+			return false;
+		return ((!plot.group_end) || (plot.group_end()));
+	}
+
+
 
 	/* background colour and image */
 
