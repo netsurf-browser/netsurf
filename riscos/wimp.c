@@ -834,11 +834,11 @@ os_error *ro_gui_wimp_get_sprite(const char *name, osspriteop_header **sprite)
 	if (error) return error;
 
 	error = xosspriteop_select_sprite(osspriteop_USER_AREA,
-			rom_base, (osspriteop_id)name, sprite);
+			ram_base, (osspriteop_id)name, sprite);
 
 	if (error && error->errnum == error_SPRITE_OP_DOESNT_EXIST)
 		error = xosspriteop_select_sprite(osspriteop_USER_AREA,
-				ram_base, (osspriteop_id)name, sprite);
+				rom_base, (osspriteop_id)name, sprite);
 
 	return error;
 }
