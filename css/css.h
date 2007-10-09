@@ -663,6 +663,8 @@ void css_merge(struct css_style * const style,
 void css_parse_property_list(struct content *c, struct css_style * style,
 		char * str);
 colour named_colour(const char *name);
+colour hex_colour(const char *text, int length);
+
 void css_dump_style(const struct css_style * const style);
 void css_dump_stylesheet(const struct css_stylesheet * stylesheet);
 

@@ -183,6 +183,29 @@ static css_text_decoration css_text_decoration_parse(const char * const s,
 		int length);
 
 
+/** Invalid hex */
+#define IH 0xffffffff
+/** ASCII to hexadeximal conversion */
+static const unsigned int ascii_to_hex[] = {
+	IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH,	/* 0x00 - 0x0f */
+	IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH,	/* 0x10 - 0x1f */
+	IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH,	/* 0x20 - 0x2f */
+	 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, IH, IH, IH, IH, IH, IH,	/* 0x30 - 0x3f */
+	IH, 10, 11, 12, 13, 14, 15, IH, IH, IH, IH, IH, IH, IH, IH, IH,	/* 0x40 - 0x4f */
+	IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH,	/* 0x50 - 0x5f */
+	IH, 10, 11, 12, 13, 14, 15, IH, IH, IH, IH, IH, IH, IH, IH, IH,	/* 0x60 - 0x6f */
+	IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH,	/* 0x70 - 0x7f */
+	IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH,	/* 0x80 - 0x8f */
+	IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH,	/* 0x90 - 0x9f */
+	IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH,	/* 0xa0 - 0xaf */
+	IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH,	/* 0xb0 - 0xbf */
+	IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH,	/* 0xc0 - 0xcf */
+	IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH,	/* 0xd0 - 0xdf */
+	IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH,	/* 0xe0 - 0xef */
+	IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH, IH 	/* 0xf0 - 0xff */
+};
+
+
 /** An entry in css_property_table. */
 struct css_property_entry {
 	const char name[25];
@@ -658,53 +681,35 @@ int parse_length(struct css_length * const length,
 colour named_colour(const char *name)
 {
 	struct css_colour_entry *col;
-	unsigned int r, g, b;
 
 	col = bsearch(name, css_colour_table,
 			sizeof css_colour_table / sizeof css_colour_table[0],
 			sizeof css_colour_table[0],
 			(int (*)(const void *, const void *)) strcasecmp);
-	if (col == 0) {
-		/* A common error is the omission of the '#' from the
-		 * start of a colour specified in #rrggbb format.
-		 * This attempts to detect and recover from this.
-		 */
-		if (strlen(name) == 6 &&
-		    sscanf(name, "%2x%2x%2x", &r, &g, &b) == 3) {
-			return (b << 16) | (g << 8) | r;
-		}
-		else
-			return TRANSPARENT;
-	}
-	return col->col;
+	if (col != 0)
+		return col->col;
+
+	/* A common error is the omission of the '#' from the
+	 * start of a colour specified in #rrggbb or #rgb format.
+	 * This attempts to detect and recover from this.
+	 */
+	int length = strlen(name);
+	if ((length == 3) || (length == 6))
+		return hex_colour(name, length);
+	return CSS_COLOR_NONE;
 }
 
 
 colour parse_colour(const struct css_node * const v)
 {
 	colour c = CSS_COLOR_NONE;
-	unsigned int r, g, b;
 	struct css_colour_entry *col;
 	char colour_name[21];
-	bool valid_hex = true;
 
 	switch (v->type) {
 		case CSS_NODE_HASH:
-
-			for (unsigned int i = 1; i < v->data_length; i++) {
-				if (!isxdigit(v->data[i])) {
-					valid_hex = false;
-					break;
-				}
-			}
-
-			if (v->data_length == 4 && valid_hex == true) {
-				if (sscanf(v->data + 1, "%1x%1x%1x", &r, &g, &b) == 3)
-					c = (b << 20) | (b << 16) | (g << 12) | (g << 8) | (r << 4) | r;
-			} else if (v->data_length == 7 && valid_hex == true) {
-				if (sscanf(v->data + 1, "%2x%2x%2x", &r, &g, &b) == 3)
-					c = (b << 16) | (g << 8) | r;
-			}
+			if ((v->data_length == 4) || (v->data_length == 7))
+				c = hex_colour(v->data + 1, v->data_length - 1);
 			break;
 
 		case CSS_NODE_FUNCTION:
@@ -735,26 +740,42 @@ colour parse_colour(const struct css_node * const v)
 	/* Hex colour vaules without a preceding # are invalid but it is a
 	 * common omission that other browsers cater for. */
 	if (c == CSS_COLOR_NONE && (v->type == CSS_NODE_DELIM ||
-		v->type == CSS_NODE_IDENT || v->type == CSS_NODE_NUMBER ||
-		v->type == CSS_NODE_DIMENSION)) {
-
-		for (unsigned int i = 0; i < v->data_length; i++) {
-			if (!isxdigit(v->data[i])) {
-				valid_hex = false;
-				break;
-			}
-		}
-
-		if (v->data_length == 3 && valid_hex == true) {
-			if (sscanf(v->data, "%1x%1x%1x", &r, &g, &b) == 3)
-				c = (b << 20) | (b << 16) | (g << 12) | (g << 8) | (r << 4) | r;
-		} else if (v->data_length == 6 && valid_hex == true) {
-			if (sscanf(v->data, "%2x%2x%2x", &r, &g, &b) == 3)
-				c = (b << 16) | (g << 8) | r;
-		}
-		LOG(("Invalid CSS colour: %.*s", v->data_length, v->data));
+			v->type == CSS_NODE_IDENT || v->type == CSS_NODE_NUMBER ||
+			v->type == CSS_NODE_DIMENSION)) {
+		if ((v->data_length == 3) || (v->data_length == 6))
+			return hex_colour(v->data, v->data_length);
 	}
 	return c;
+}
+
+
+/**
+ * Parse an RGB value in hexadecimal notation.
+ */
+colour hex_colour(const char *text, int length)
+{
+	colour c;
+
+	/* parse RGB */
+	if (length == 3) {
+		c = ascii_to_hex[(int)text[0]] | (ascii_to_hex[(int)text[1]] << 8) |
+				(ascii_to_hex[(int)text[2]] << 16);
+		if (c & (0xff << 24))
+			return CSS_COLOR_NONE;
+		return c | (c << 4);
+	}
+
+	/* parse RRGGBB */
+	if (length == 6) {
+		c = ascii_to_hex[(int)text[1]] | (ascii_to_hex[(int)text[0]] << 4) |
+				(ascii_to_hex[(int)text[3]] << 8) | (ascii_to_hex[(int)text[2]] << 12) |
+				(ascii_to_hex[(int)text[5]] << 16) | (ascii_to_hex[(int)text[4]] << 20);
+		if (c & (0xff << 24))
+			return CSS_COLOR_NONE;
+		return c;
+	}
+
+	assert(!"Invalid hexadecimal colour length.");
 }
 
 

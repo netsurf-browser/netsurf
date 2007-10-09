@@ -133,6 +133,7 @@ static bool box_get_attribute(xmlNode *n, const char *attribute,
 		void *context, char **value);
 static struct frame_dimension *box_parse_multi_lengths(const char *s,
 		unsigned int *count);
+static void parse_inline_colour(char *text, colour *variable);
 
 
 /* element_table must be sorted by name */
@@ -297,7 +298,7 @@ bool box_construct_element(xmlNode *n, struct content *content,
 	struct box *inline_end;
 	struct css_style *style = 0;
 	struct element_entry *element;
-	colour border_color;
+	colour border_color = 0x888888;
 	xmlChar *title0;
 	xmlNode *c;
 
@@ -509,7 +510,7 @@ bool box_construct_element(xmlNode *n, struct content *content,
 		xmlFree(s);
 	}
 	if (strcmp((const char *) n->name, "table") == 0) {
-		border_color = 0x888888;	/* default colour */
+	 	border_color = CSS_COLOR_NONE;	/* not set */
 		if ((s = (char *) xmlGetProp(n,
 				(const xmlChar *) "cellpadding"))) {
 			char *endp;
@@ -521,11 +522,7 @@ bool box_construct_element(xmlNode *n, struct content *content,
 		}
 		if ((s = (char *) xmlGetProp(n,
 					(const xmlChar *) "bordercolor"))) {
-			unsigned int r, g, b;
-			if (s[0] == '#' && sscanf(s + 1, "%2x%2x%2x", &r, &g, &b) == 3)
-				border_color = (b << 16) | (g << 8) | r;
-			else if (s[0] != '#')
-				border_color = named_colour(s);
+			parse_inline_colour(s, &border_color);
 			xmlFree(s);
 		}
 		if ((s = (char *) xmlGetProp(n,
@@ -834,20 +831,12 @@ struct css_style * box_get_style(struct content *c,
 
 	if (((s = (char *) xmlGetProp(n, (const xmlChar *) "bgcolor"))) &&
 			(style->background_color == TRANSPARENT)) {
-		unsigned int r, g, b;
-		if (s[0] == '#' && sscanf(s + 1, "%2x%2x%2x", &r, &g, &b) == 3)
-			style->background_color = (b << 16) | (g << 8) | r;
-		else if (s[0] != '#')
-			style->background_color = named_colour(s);
+		parse_inline_colour(s, &style->background_color);
 		xmlFree(s);
 	}
 
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "color"))) {
-		unsigned int r, g, b;
-		if (s[0] == '#' && sscanf(s + 1, "%2x%2x%2x", &r, &g, &b) == 3)
-			style->color = (b << 16) | (g << 8) | r;
-		else if (s[0] != '#')
-			style->color = named_colour(s);
+		parse_inline_colour(s, &style->color);
 		xmlFree(s);
 	}
 
@@ -894,12 +883,7 @@ struct css_style * box_get_style(struct content *c,
 
 	if (strcmp((const char *) n->name, "body") == 0) {
 		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "text"))) {
-			unsigned int r, g, b;
-			if (s[0] == '#' && sscanf(s + 1, "%2x%2x%2x",
-					&r, &g, &b) == 3)
-				style->color = (b << 16) | (g << 8) | r;
-			else if (s[0] != '#')
-				style->color = named_colour(s);
+		  	parse_inline_colour(s, &style->color);
 			xmlFree(s);
 		}
 	}
@@ -1726,11 +1710,7 @@ bool box_create_frameset(struct content_html_frames *f, xmlNode *n,
 	}
 	/* common extension: bordercolor="#RRGGBB|<named colour>" to control all children */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "bordercolor"))) {
-		unsigned int r, g, b;
-		if (s[0] == '#' && sscanf(s + 1, "%2x%2x%2x", &r, &g, &b) == 3)
-			default_border_colour = (b << 16) | (g << 8) | r;
-		else if (s[0] != '#')
-			default_border_colour = named_colour(s);
+	  	parse_inline_colour(s, &default_border_colour);
 		xmlFree(s);
 	}
 
@@ -1836,11 +1816,7 @@ bool box_create_frameset(struct content_html_frames *f, xmlNode *n,
 				xmlFree(s);
 			}
 			if ((s = (char *) xmlGetProp(c, (const xmlChar *) "bordercolor"))) {
-				unsigned int r, g, b;
-				if (s[0] == '#' && sscanf(s + 1, "%2x%2x%2x", &r, &g, &b) == 3)
-					frame->border_colour = (b << 16) | (g << 8) | r;
-				else if (s[0] != '#')
-					frame->border_colour = named_colour(s);
+				parse_inline_colour(s, &frame->border_colour);
 				xmlFree(s);
 			}
 
@@ -1910,11 +1886,7 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 		xmlFree(s);
 	}
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "bordercolor"))) {
-		unsigned int r, g, b;
-		if (s[0] == '#' && sscanf(s + 1, "%2x%2x%2x", &r, &g, &b) == 3)
-			iframe->border_colour = (b << 16) | (g << 8) | r;
-		else if (s[0] != '#')
-			iframe->border_colour = named_colour(s);
+	  	parse_inline_colour(s, &iframe->border_colour);
 		xmlFree(s);
 	}
 	if ((s = (char *) xmlGetProp(n,
@@ -2810,4 +2782,20 @@ struct frame_dimension *box_parse_multi_lengths(const char *s,
 
 	*count = n;
 	return length;
+}
+
+
+/**
+ * Parse an inline colour string
+ */
+static void parse_inline_colour(char *s, colour *variable) {
+	colour new_colour = CSS_COLOR_NONE;
+	if (s[0] == '#') {
+	  	if (strlen(s) == 7)
+	  		new_colour = hex_colour(s + 1, 6);
+	} else {
+	  	new_colour = named_colour(s);
+	}
+	if (new_colour != CSS_COLOR_NONE)
+		 *variable = new_colour;
 }
