@@ -565,18 +565,26 @@ bool box_normalise_table_row(struct box *row,
 	col_info->current_column = 0;
 	col_info->extra = false;
 
-	if (row->children == 0) {
-		LOG(("row->children == 0, removing"));
-		if (row->prev == 0)
-			row->parent->children = row->next;
-		else
-			row->prev->next = row->next;
-		if (row->next != 0)
-			row->next->prev = row->prev;
-		box_free(row);
-	} else {
+	/* Removing empty rows causes ill effects for HTML such as:
+	 *
+	 * <tr><td colspan="2">1</td></tr><tr></tr><tr><td>2</td></tr>
+	 *
+	 * as it breaks the colspan value. Additionally, both MSIE and FF
+	 * render in the same manner as NetSurf does with the empty row
+	 * culling commented out.
+	 */
+//	if (row->children == 0) {
+//		LOG(("row->children == 0, removing"));
+//		if (row->prev == 0)
+//			row->parent->children = row->next;
+//		else
+//			row->prev->next = row->next;
+//		if (row->next != 0)
+//			row->next->prev = row->prev;
+//		box_free(row);
+//	} else {
 		col_info->num_rows++;
-	}
+//	}
 
 	LOG(("row %p done", row));
 
