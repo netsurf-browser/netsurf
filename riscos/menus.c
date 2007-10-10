@@ -1421,7 +1421,12 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 					0, 0, true);
 			return true;
 		case HELP_LAUNCH_INTERACTIVE:
-			ro_gui_interactive_help_start();
+			if (!ro_gui_interactive_help_available()) {
+				ro_gui_interactive_help_start();
+				option_interactive_help = true;
+			} else {
+				option_interactive_help = !option_interactive_help;
+			}
 			return true;
 
 		/* history actions */
@@ -1784,11 +1789,11 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 
 		/* help actions */
 		case HELP_LAUNCH_INTERACTIVE:
-			result = ro_gui_interactive_help_available();
-			ro_gui_menu_set_entry_shaded(current_menu,
-					action, result);
+			result = ro_gui_interactive_help_available()
+					&& option_interactive_help;
 			ro_gui_menu_set_entry_ticked(current_menu,
 					action, result);
+			ro_gui_save_options();
 			break;
 
 		/* history actions */

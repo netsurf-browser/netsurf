@@ -31,6 +31,7 @@
 #include "riscos/gui.h"
 #include "riscos/help.h"
 #include "riscos/menus.h"
+#include "riscos/options.h"
 #include "riscos/theme.h"
 #include "riscos/treeview.h"
 #include "riscos/wimp.h"
@@ -99,6 +100,10 @@ void ro_gui_interactive_help_request(wimp_message *message) {
 	os_error *error;
 	const char *auto_text;
 	int i;
+	
+	/* check we aren't turned off */
+	if (!option_interactive_help)
+		return;
 
 	/* only accept help requests */
 	if ((!message) || (message->action != message_HELP_REQUEST))
@@ -315,6 +320,10 @@ void ro_gui_interactive_help_start(void) {
 	char *help_start;
 	wimp_t task = 0;
 	os_error *error;
+	
+	/* don't launch a second copy of anything */
+	if (ro_gui_interactive_help_available())
+		return;
 
 	/* launch <Help$Start> */
 	help_start = getenv("Help$Start");
