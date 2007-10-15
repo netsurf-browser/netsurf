@@ -328,6 +328,7 @@ void start_search(bool forwards)
 {
 	int string_len;
 	char *string;
+	int i = 0;
 
 	string = ro_gui_get_icon_string(dialog_search, ICON_SEARCH_TEXT);
 	assert(string);
@@ -335,7 +336,9 @@ void start_search(bool forwards)
 	ro_gui_search_add_recent(string);
 
 	string_len = strlen(string);
-	if (string_len <= 0) {
+	for(i = 0; i < string_len; i++)
+		if (string[i] != '#' && string[i] != '*') break;
+	if (i >= string_len) {
 		free_matches();
 		show_status(true);
 		ro_gui_set_icon_shaded_state(dialog_search,
@@ -643,7 +646,7 @@ const char *find_pattern(const char *string, int s_len, const char *pattern,
 	}
 
 	/* end of pattern reached */
-	*m_len = s - ss;
+	*m_len = max(s - ss, 1);
 	return ss;
 }
 
