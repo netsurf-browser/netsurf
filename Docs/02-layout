@@ -1,7 +1,7 @@
 HTML processing and layout
 ==========================
 
-The modules in the layout directory process and layout HTML pages.
+The modules in the render directory process and layout HTML pages.
 
 Overview
 --------
