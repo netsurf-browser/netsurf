@@ -1655,8 +1655,7 @@ void css_dump_style(const struct css_style * const style)
 		if (style->background_attachment ==
 				CSS_BACKGROUND_ATTACHMENT_UNKNOWN)
 			fprintf(stderr, " UNKNOWN");
-		else if (style->background_repeat ==
-				CSS_BACKGROUND_ATTACHMENT_NOT_SET)
+		else if (style->background_attachment == CSS_BACKGROUND_ATTACHMENT_NOT_SET)
 			;
 		else
 			fprintf(stderr, " %s",
@@ -1959,10 +1958,10 @@ void css_dump_style(const struct css_style * const style)
 					css_list_style_type_name[
 						style->list_style_type]);
 
-		if (style->list_style_type ==
+		if (style->list_style_position ==
 				CSS_LIST_STYLE_POSITION_UNKNOWN)
 			fprintf(stderr, " UNKNOWN");
-		else if (style->list_style_type ==
+		else if (style->list_style_position ==
 				CSS_LIST_STYLE_POSITION_NOT_SET)
 			;
 		else
@@ -2435,7 +2434,7 @@ void css_dump_style(const struct css_style * const style)
 
 void css_dump_length(const struct css_length * const length)
 {
-	if (length->value == 0)
+	if (fabs(length->value) < 0.0001)
 		fprintf(stderr, "0");
 	else
 		fprintf(stderr, "%g%s", length->value,

@@ -653,7 +653,7 @@ int parse_length(struct css_length * const length,
 	css_unit u;
 	float value;
 	int num_length;
-	if (v->type == CSS_NODE_NUMBER && atof(v->data) == 0) {
+	if (v->type == CSS_NODE_NUMBER && fabs(atof(v->data)) < 0.0001) {
 		length->unit = CSS_UNIT_PX;
 		length->value = 0;
 		return 0;
@@ -1688,9 +1688,8 @@ void parse_clip(struct css_style * const s, const struct css_node * v)
 			for (i = 0; i != 4; i++) {
 				switch (t->type) {
 				case CSS_NODE_IDENT:
-					if (t->data_length == 4 &&
-							strncasecmp(t->data, "auto", 4) == 0) {
-						rect[i].rect = CSS_CLIP_AUTO;
+					if (t->data_length == 4 && strncasecmp(t->data, "auto", 4) == 0) {
+						rect[i].rect = CSS_CLIP_RECT_AUTO;
 					}
 					else
 						return;
