@@ -1017,7 +1017,7 @@ void browser_window_set_scale_internal(struct browser_window *bw, float scale)
 	int i;
 	struct content *c;
 
-	if (bw->scale == scale)
+	if (fabs(bw->scale-scale) < 0.0001)
 		return;
 	bw->scale = scale;
 	c = bw->current_content;

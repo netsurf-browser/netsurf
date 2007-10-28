@@ -916,7 +916,7 @@ void tree_delete_node(struct tree *tree, struct node *node, bool siblings) {
 void tree_delete_node_internal(struct tree *tree, struct node *node, bool siblings) {
 	struct node *next, *child;
 	struct node_element *e, *f, *domain, *path;
-	char *domain_t, *path_t, name_t;
+	char *domain_t, *path_t, *name_t;
 	char *space;
 
 	assert(node);
@@ -982,6 +982,7 @@ void tree_delete_node_internal(struct tree *tree, struct node *node, bool siblin
 				}
 			}
 			if (e->sprite) {
+				/* TODO the type of this field is platform dependent */
 				free(e->sprite);	/* \todo platform specific bits */
 				e->sprite = NULL;
 			}

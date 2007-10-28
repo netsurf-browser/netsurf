@@ -41,12 +41,6 @@
 /** maximum frame resize margin */
 #define FRAME_RESIZE 6
 
-/** browser window which is being redrawn. Valid only during redraw. */
-struct browser_window *current_redraw_browser;
-
-/** fake content for <a> being saved as a link */
-struct content browser_window_href_content;
-
 static bool browser_window_resolve_frame_dimension(struct browser_window *bw,
 		struct browser_window *sibling, int x, int y, bool width,
 		bool height);
@@ -561,7 +555,7 @@ bool browser_window_resolve_frame_dimension(struct browser_window *bw, struct br
 	if (bw_d->unit == FRAME_DIMENSION_RELATIVE) {
 		if ((sibling_pixels == 0) && (bw_dimension == 0))
 			return false;
-		if (sibling_d->value == 0)
+		if (fabs(sibling_d->value) < 0.0001)
 			bw_d->value = 1;
 		if (sibling_pixels == 0)
 			sibling_d->value = (sibling_d->value * bw_pixels) / bw_dimension;
@@ -574,7 +568,7 @@ bool browser_window_resolve_frame_dimension(struct browser_window *bw, struct br
 	} else if (sibling_d->unit == FRAME_DIMENSION_RELATIVE) {
 		if ((bw_pixels == 0) && (sibling_dimension == 0))
 			return false;
-		if (bw_d->value == 0)
+		if (fabs(bw_d->value) < 0.0001)
 			bw_d->value = 1;
 		if (bw_pixels == 0)
 			bw_d->value = (bw_d->value * sibling_pixels) / sibling_dimension;
