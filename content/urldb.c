@@ -2751,12 +2751,27 @@ bool urldb_set_cookie(const char *header, const char *url,
 				goto error;
 			}
 
-			/* 4.3.2:iv Ensure H contains no dots */
-			for (int i = 0; i < (hlen - dlen); i++)
-				if (host[i] == '.') {
-					urldb_free_cookie(c);
-					goto error;
+			/* If you believe the spec, H should contain no
+			 * dots in _any_ cookie. Unfortunately, however,
+			 * reality differs in that many sites send domain
+			 * cookies of the form .foo.com from hosts such
+			 * as bar.bat.foo.com and then expect domain
+			 * matching to work. Thus we have to do what they
+			 * expect, regardless of any potential security
+			 * implications.
+			 *
+			 * Ensure that we're dealing with a domain cookie
+			 * here for extra paranoia.
+			 */
+			if (c->domain[0] != '.') {
+				/* 4.3.2:iv Ensure H contains no dots */
+				for (int i = 0; i < (hlen - dlen); i++) {
+					if (host[i] == '.') {
+						urldb_free_cookie(c);
+						goto error;
+					}
 				}
+			}
 		}
 
 		/* Now insert into database */
