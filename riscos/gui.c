@@ -383,13 +383,6 @@ void gui_init(int argc, char** argv)
 	prev_sigs.sigint = signal(SIGINT, ro_gui_signal);
 	prev_sigs.sigsegv = signal(SIGSEGV, ro_gui_signal);
 	prev_sigs.sigterm = signal(SIGTERM, ro_gui_signal);
-	/* Ignore SIGPIPE - this is necessary as OpenSSL can generate these
-	 * and the default action is to terminate the app. There's no easy
-	 * way of determining the cause of the SIGPIPE (other than using
-	 * sigaction() and some mechanism for getting the file descriptor
-	 * out of libcurl). However, we expect nothing else to generate a
-	 * SIGPIPE, anyway, so may as well just ignore them all. */
-	signal(SIGPIPE, SIG_IGN);
 
 	if (prev_sigs.sigabrt == SIG_ERR || prev_sigs.sigfpe == SIG_ERR ||
 			prev_sigs.sigill == SIG_ERR ||

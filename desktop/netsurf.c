@@ -19,6 +19,7 @@
  */
 
 #include <locale.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -75,6 +76,14 @@ int main(int argc, char** argv)
 void netsurf_init(int argc, char** argv)
 {
 	struct utsname utsname;
+
+	/* Ignore SIGPIPE - this is necessary as OpenSSL can generate these
+	 * and the default action is to terminate the app. There's no easy
+	 * way of determining the cause of the SIGPIPE (other than using
+	 * sigaction() and some mechanism for getting the file descriptor
+	 * out of libcurl). However, we expect nothing else to generate a
+	 * SIGPIPE, anyway, so may as well just ignore them all. */
+	signal(SIGPIPE, SIG_IGN);
 
 #if !(defined(__SVR4) && defined(__sun))
 	stdout = stderr;
