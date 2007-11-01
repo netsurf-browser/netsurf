@@ -11,6 +11,9 @@ head { display: none; }
 body { display: block; padding: 8px; }
 
 div { display: block; }
+div[align=left] { text-align: left; }
+div[align=center] { text-align: center; }
+div[align=right] { text-align: right; }
 div[align=left] * { margin-right: auto; text-align: left; }
 div[align=center] * { margin-left: auto; margin-right: auto; text-align: center; }
 div[align=right] * { margin-left: auto; text-align: right; }
@@ -49,9 +52,9 @@ sub { vertical-align: sub; font-size: .83em; }
 sup { vertical-align: super; font-size: .83em; }
 
 p { display: block; margin: 1.12em 0; }
-p[align=left] * {  text-align: left; }
-p[align=center] * { text-align: center; }
-p[align=right] * { text-align: right; }
+p[align=left] { text-align: left; }
+p[align=center] { text-align: center; }
+p[align=right] { text-align: right; }
 
 br[clear=left] { clear: left; }
 br[clear=right] { clear: right; }
@@ -101,6 +104,9 @@ th { font-weight: bold; text-align: center; }
 
 td[nowrap], th[nowrap] { white-space: nowrap; }
 
+td[align=left], th[align=left] { text-align: left; }
+td[align=center], th[align=center] { text-align: center; }
+td[align=right], th[align=right] { text-align: right; }
 tr[align=left] *, td[align=left] *, th[align=left] * { text-align: left; margin-right: auto; }
 tr[align=center] *, td[align=center] *, th[align=center] * { text-align: center; margin-left: auto; margin-right: auto; }
 tr[align=right] *, td[align=right] *, th[align=right] * { text-align: right; margin-left: auto; }
