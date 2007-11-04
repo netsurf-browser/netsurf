@@ -1608,17 +1608,19 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 	   and must therefore be done after set_status/pointer
 	*/
 	switch (action) {
-		case ACTION_SUBMIT:
-			browser_form_submit(bw,
-					browser_window_find_target(bw, target,
-							(mouse & BROWSER_MOUSE_CLICK_2)),
-					gadget->form, gadget);
-
-		case ACTION_GO:
-			browser_window_go(browser_window_find_target(bw, target,
-							(mouse & BROWSER_MOUSE_CLICK_2)),
-					url, c->url, true);
-			break;
+	case ACTION_SUBMIT:
+		browser_form_submit(bw,
+				browser_window_find_target(bw, target,
+						(mouse & BROWSER_MOUSE_CLICK_2)),
+				gadget->form, gadget);
+		break;
+	case ACTION_GO:
+		browser_window_go(browser_window_find_target(bw, target,
+						(mouse & BROWSER_MOUSE_CLICK_2)),
+				url, c->url, true);
+		break;
+	case ACTION_NONE:
+		break;
 	}
 }
 
