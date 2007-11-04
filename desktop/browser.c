@@ -1256,6 +1256,7 @@ void browser_window_mouse_click(struct browser_window *bw,
 void browser_window_mouse_action_html(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y)
 {
+	enum { ACTION_NONE, ACTION_SUBMIT, ACTION_GO } action = ACTION_NONE;
 	char *base_url = 0;
 	char *title = 0;
 	const char *url = 0;
@@ -1393,12 +1394,8 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 						gadget->form->action);
 				status = status_buffer;
 				pointer = GUI_POINTER_POINT;
-				if (mouse & (BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2)) {
-					browser_form_submit(bw,
-							browser_window_find_target(bw, target,
-									(mouse & BROWSER_MOUSE_CLICK_2)),
-							gadget->form, gadget);
-				}
+				if (mouse & (BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2))
+					action = ACTION_SUBMIT;
 			} else {
 				status = messages_get("FormBadSubmit");
 			}
@@ -1523,11 +1520,8 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 				gui_window_save_as_link(bw->window,
 					&browser_window_href_content);
 
-		} else if (mouse & (BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2)) {
-			browser_window_go(browser_window_find_target(bw, target,
-							(mouse & BROWSER_MOUSE_CLICK_2)),
-					url, c->url, true);
-		}
+		} else if (mouse & (BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2))
+			action = ACTION_GO;
 
 	} else {
 		bool done = false;
@@ -1609,6 +1603,23 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 
 	browser_window_set_status(bw, status);
 	browser_window_set_pointer(bw->window, pointer);
+
+	/* deferred actions that can cause this browser_window to be destroyed
+	   and must therefore be done after set_status/pointer
+	*/
+	switch (action) {
+		case ACTION_SUBMIT:
+			browser_form_submit(bw,
+					browser_window_find_target(bw, target,
+							(mouse & BROWSER_MOUSE_CLICK_2)),
+					gadget->form, gadget);
+
+		case ACTION_GO:
+			browser_window_go(browser_window_find_target(bw, target,
+							(mouse & BROWSER_MOUSE_CLICK_2)),
+					url, c->url, true);
+			break;
+	}
 }
 
 
