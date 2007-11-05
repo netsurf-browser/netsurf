@@ -680,7 +680,7 @@ HelpBrowserMenu5-2:Öffnet eine Seite mit allgemeinen Informationen zu NetSurf i
 HelpBrowserMenu5-3:Öffnet eine Seite mit Informationen zu Entwicklerteam und bei der Entwicklung genutzter Software in einem neuen Browserfenster.
 HelpBrowserMenu5-4:Lädt die interaktive Hilfe.
 
-HelpBrowser-1:Das ist ein Browserfenster.|MEinen Link mit AUSWAHL anklicken, um ihm zu folgen.|MEinen Link mit SPEZIAL anklicken, um ihn in einem neuen Fenster zu öffnen.
+HelpBrowser-1:Das ist ein Browserfenster.|MEinen Link mit AUSWAHL anklicken, um ihm zu folgen.|MEinen Link mit SPEZIAL anklicken, um ihn in einem neuen Fenster zu öffnen.|MShift+\s click on a link to download the link target contents.|MShift+\a click to save the link target address.
 
 HelpIconbar:Das ist das NetSurf Icon.|MKlicken mit AUSWAHL öffnet ein neues Browserfenster.|MKlicken mit SPEZIAL öffnet die Hotlist.
 HelpHistory:Die History zeigt alle in dieser Sitzung besuchten Seiten.|MKlicken mit AUSWAHL auf eine Symbolgrafik kehrt zurück zur jeweiligen Seite.

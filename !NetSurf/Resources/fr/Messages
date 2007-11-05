@@ -680,7 +680,7 @@ HelpBrowserMenu5-2:\Souvrir la page d'information de l'utilisateur dans une nouv
 HelpBrowserMenu5-3:\Souvrir la page "À propos de" de NetSurf dans une nouvelle fenêtre.
 HelpBrowserMenu5-4:\Slancer Help.
 
-HelpBrowser-1:Cliquer \s sur un lien pour le suivre.|MCliquer \a sur un lien pour l'ouvrir dans une nouvelle \w.
+HelpBrowser-1:Cliquer \s sur un lien pour le suivre.|MCliquer \a sur un lien pour l'ouvrir dans une nouvelle \w.|MShift+\s click on a link to download the link target contents.|MShift+\a click to save the link target address.
 
 HelpIconbar:\Tl'icône de NetSurf.|M\Souvrir une nouvelle \w de navigateur.|M\Aouvrir la fenêtre de gestion des favoris.
 HelpHistory:Utiliser cette \w pour naviguer dans l'historique arborescent local.|M\Ssur une vignette pour revenir à cette page.

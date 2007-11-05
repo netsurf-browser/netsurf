@@ -680,7 +680,7 @@ HelpBrowserMenu5-2:\Sopen the user information page in a new \w.
 HelpBrowserMenu5-3:\Sopen the NetSurf about page in a new \w.
 HelpBrowserMenu5-4:\Srun Help.
 
-HelpBrowser-1:Click \s on a link to follow it.|MClick \a on a link to open it in a new \w.
+HelpBrowser-1:Click \s on a link to follow it.|MClick \a on a link to open it in a new \w.|MShift+\s click on a link to download the link target contents.|MShift+\a click to save the link target address.
 
 HelpIconbar:\TNetSurf icon.|M\Sopen a new browser \w.|M\Aopen the hotlist management \w.
 HelpHistory:Use this \w to navigate around the local history tree.|M\Son a thumbnail to return to that page.
