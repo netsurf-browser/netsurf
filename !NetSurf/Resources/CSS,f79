@@ -11,12 +11,9 @@ head { display: none; }
 body { display: block; padding: 8px; }
 
 div { display: block; }
-div[align=left] { text-align: left; }
-div[align=center] { text-align: center; }
-div[align=right] { text-align: right; }
-div[align=left] * { margin-right: auto; text-align: left; }
-div[align=center] * { margin-left: auto; margin-right: auto; text-align: center; }
-div[align=right] * { margin-left: auto; text-align: right; }
+div[align=left] > * { margin-right: auto; }
+div[align=center] > * { margin-left: auto; margin-right: auto; }
+div[align=right] > * { margin-left: auto; }
 
 h1 { display: block; font-size: 2em; font-weight: bold; margin: .67em 0; }
 h2 { display: block; font-size: 1.5em; font-weight: bold; margin: .69em 0; }
@@ -24,12 +21,6 @@ h3 { display: block; font-size: 1.17em; font-weight: bold; margin: .83em 0; }
 h4 { display: block; font-weight: bold; margin: 1.12em 0; }
 h5 { display: block; font-size: .83em; font-weight: bold; margin: 1.5em 0; }
 h6 { display: block; font-size: .75em; font-weight: bold; margin: 1.67em 0; }
-h1[align=left], h2[align=left], h3[align=left],
-h4[align=left], h5[align=left], h6[align=left] { text-align: left; }
-h1[align=center], h2[align=center], h3[align=center],
-h4[align=center], h5[align=center], h6[align=center] { text-align: center; }
-h1[align=right], h2[align=right], h3[align=right],
-h4[align=right], h5[align=right], h6[align=right] { text-align: right; }
 
 address { display: block; font-style: italic; }
 
@@ -52,9 +43,6 @@ sub { vertical-align: sub; font-size: .83em; }
 sup { vertical-align: super; font-size: .83em; }
 
 p { display: block; margin: 1.12em 0; }
-p[align=left] { text-align: left; }
-p[align=center] { text-align: center; }
-p[align=right] { text-align: right; }
 
 br[clear=left] { clear: left; }
 br[clear=right] { clear: right; }
@@ -104,12 +92,13 @@ th { font-weight: bold; text-align: center; }
 
 td[nowrap], th[nowrap] { white-space: nowrap; }
 
-td[align=left], th[align=left] { text-align: left; }
-td[align=center], th[align=center] { text-align: center; }
-td[align=right], th[align=right] { text-align: right; }
-tr[align=left] *, td[align=left] *, th[align=left] * { text-align: left; margin-right: auto; }
-tr[align=center] *, td[align=center] *, th[align=center] * { text-align: center; margin-left: auto; margin-right: auto; }
-tr[align=right] *, td[align=right] *, th[align=right] * { text-align: right; margin-left: auto; }
+td[align=left] > *, th[align=left] > * { margin-right: auto; }
+td[align=center] > *, th[align=center] > * { margin-left: auto; margin-right: auto; }
+td[align=right] > *, th[align=right] > * { margin-left: auto; }
+
+tr[align=left] > td, tr[align=left] > th { text-align: left; margin-right: auto; }
+tr[align=center] > td, tr[align=center] > th { text-align: center; margin-left: auto; margin-right: auto; }
+tr[align=right] > td, tr[align=right] > th { text-align: right; margin-left: auto; }
 
 col[valign=top], colgroup[valign=top], tbody[valign=top], td[valign=top], tfoot[valign=top], th[valign=top], thead[valign=top], tr[valign=top] { vertical-align: top; }
 col[valign=middle], colgroup[valign=middle], tbody[valign=middle], td[valign=middle], tfoot[valign=middle], th[valign=middle], thead[valign=middle], tr[valign=middle] { vertical-align: middle; }
@@ -128,7 +117,7 @@ applet[align=left] { float: left; }
 applet[align=right] { float: right; }
 
 center { display: block; text-align: center; }
-center * { margin-left: auto; margin-right: auto; text-align: center; }
+center > * { margin-left: auto; margin-right: auto; }
 
 tt { font-family: monospace; }
 i { font-style: italic; }
@@ -192,3 +181,7 @@ textarea { background-color: #fff; color: #000; text-align: left;
 	overflow: scroll; padding: 0 2px; }
 
 fieldset { display: block; border: thin solid #888; margin: 1.12em 0; }
+
+[align=left] { text-align: left; }
+[align=center] { text-align: center; }
+[align=right] { text-align: right; }
