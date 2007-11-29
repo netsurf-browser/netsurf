@@ -20,6 +20,7 @@
  * Content for image/svg (implementation).
  */
 
+#define _GNU_SOURCE  /* for strndup */
 #include <assert.h>
 #include <setjmp.h>
 #include <string.h>
@@ -76,6 +77,8 @@ static void svg_parse_paint_attributes(const xmlNode *node,
 		struct svg_redraw_state *state);
 static void svg_parse_color(const char *s, colour *c);
 static void svg_parse_font_attributes(const xmlNode *node,
+		struct svg_redraw_state *state);
+static void svg_parse_transform_attributes(const xmlNode *node,
 		struct svg_redraw_state *state);
 
 
@@ -138,6 +141,7 @@ bool svg_convert(struct content *c, int w, int h)
 	struct svg_redraw_state state;
 	state.viewport_width = w;
 	state.viewport_height = h;
+	state.style = css_base_style;
 	float x, y, width, height;
 	svg_parse_position_attributes(svg, state, &x, &y, &width, &height);
 	c->width = width;
@@ -180,6 +184,8 @@ bool svg_redraw(struct content *c, int x, int y,
 	state.style.font_size.value.length.value = option_font_size * 0.1;
 	state.fill = 0x000000;
 	state.stroke = TRANSPARENT;
+	state.fill = TRANSPARENT;
+	state.stroke = 0x000000;
 	state.stroke_width = 1;
 
 	plot.clg(0xffffff);
@@ -218,6 +224,8 @@ bool svg_redraw_svg(xmlNode *svg, struct svg_redraw_state state)
 		}
 	}
 
+	svg_parse_transform_attributes(svg, &state);
+
 	for (xmlNode *child = svg->children; child; child = child->next) {
 		bool ok = true;
 
@@ -253,6 +261,7 @@ bool svg_redraw_svg(xmlNode *svg, struct svg_redraw_state state)
 bool svg_redraw_path(xmlNode *path, struct svg_redraw_state state)
 {
 	svg_parse_paint_attributes(path, &state);
+	svg_parse_transform_attributes(path, &state);
 
 	/* read d attribute */
 	char *s = (char *) xmlGetProp(path, (const xmlChar *) "d");
@@ -280,11 +289,11 @@ bool svg_redraw_path(xmlNode *path, struct svg_redraw_state state)
 		float x, y, x1, y1, x2, y2;
 		int n;
 
-		LOG(("s \"%s\"", s));
+		/*LOG(("s \"%s\"", s));*/
 
 		/* M, m, L, l (2 arguments) */
 		if (sscanf(s, " %1[MmLl] %f %f %n", command, &x, &y, &n) == 3) {
-			LOG(("moveto or lineto"));
+			/*LOG(("moveto or lineto"));*/
 			if (*command == 'M' || *command == 'm')
 				plot_command = PLOTTER_PATH_MOVE;
 			else
@@ -303,13 +312,13 @@ bool svg_redraw_path(xmlNode *path, struct svg_redraw_state state)
 
 		/* Z, z (no arguments) */
 		} else if (sscanf(s, " %1[Zz] %n", command, &n) == 1) {
-			LOG(("closepath"));
+			/*LOG(("closepath"));*/
 			p[i++] = PLOTTER_PATH_CLOSE;
 			s += n;
 
 		/* H, h (1 argument) */
 		} else if (sscanf(s, " %1[Hh] %f %n", command, &x, &n) == 2) {
-			LOG(("horizontal lineto"));
+			/*LOG(("horizontal lineto"));*/
 			do {
 				p[i++] = PLOTTER_PATH_LINE;
 				if (*command == 'h')
@@ -321,7 +330,7 @@ bool svg_redraw_path(xmlNode *path, struct svg_redraw_state state)
 
 		/* V, v (1 argument) */
 		} else if (sscanf(s, " %1[Vv] %f %n", command, &y, &n) == 2) {
-			LOG(("vertical lineto"));
+			/*LOG(("vertical lineto"));*/
 			do {
 				p[i++] = PLOTTER_PATH_LINE;
 				if (*command == 'v')
@@ -334,7 +343,7 @@ bool svg_redraw_path(xmlNode *path, struct svg_redraw_state state)
 		/* C, c (6 arguments) */
 		} else if (sscanf(s, " %1[Cc] %f %f %f %f %f %f %n", command,
 				&x1, &y1, &x2, &y2, &x, &y, &n) == 7) {
-			LOG(("curveto"));
+			/*LOG(("curveto"));*/
 			do {
 				p[i++] = PLOTTER_PATH_BEZIER;
 				if (*command == 'c') {
@@ -356,22 +365,22 @@ bool svg_redraw_path(xmlNode *path, struct svg_redraw_state state)
 					&x1, &y1, &x2, &y2, &x, &y, &n) == 7);
 
 		} else {
-			LOG(("parse failed"));
+			/*LOG(("parse failed"));*/
 			break;
 		}
 	}
 
-	LOG(("path:"));
+	/*LOG(("path:"));
 	for (unsigned int j = 0; j != i; j++) {
 		LOG(("    %f", p[j]));
-	}
+	}*/
 
 	bool ok = plot.path(p, i, state.fill, state.stroke_width, state.stroke,
 			&state.ctm.a);
 
 	free(p);
 
-	return true;
+	return ok;
 }
 
 
@@ -386,6 +395,7 @@ bool svg_redraw_rect(xmlNode *rect, struct svg_redraw_state state)
 	svg_parse_position_attributes(rect, state,
 			&x, &y, &width, &height);
 	svg_parse_paint_attributes(rect, &state);
+	svg_parse_transform_attributes(rect, &state);
 
 	int p[8] = { x, y,
 		x + width, y,
@@ -435,6 +445,7 @@ bool svg_redraw_circle(xmlNode *circle, struct svg_redraw_state state)
 					state.viewport_width, state);
         }
 	svg_parse_paint_attributes(circle, &state);
+	svg_parse_transform_attributes(circle, &state);
 
 	int px = state.origin_x + state.ctm.a * x +
 			state.ctm.c * y + state.ctm.e;
@@ -477,6 +488,7 @@ bool svg_redraw_line(xmlNode *line, struct svg_redraw_state state)
 					state.viewport_height, state);
         }
 	svg_parse_paint_attributes(line, &state);
+	svg_parse_transform_attributes(line, &state);
 
 	int px1 = state.origin_x + state.ctm.a * x1 +
 			state.ctm.c * y1 + state.ctm.e;
@@ -503,12 +515,14 @@ bool svg_redraw_text(xmlNode *text, struct svg_redraw_state state)
 	svg_parse_position_attributes(text, state,
 			&x, &y, &width, &height);
 	svg_parse_font_attributes(text, &state);
+	svg_parse_transform_attributes(text, &state);
+
 	int px = state.origin_x + state.ctm.a * x +
 			state.ctm.c * y + state.ctm.e;
 	int py = state.origin_y + state.ctm.b * x +
 			state.ctm.d * y + state.ctm.f;
-	state.ctm.e = px - state.origin_x;
-	state.ctm.f = py - state.origin_y;
+/* 	state.ctm.e = px - state.origin_x; */
+/* 	state.ctm.f = py - state.origin_y; */
 
 	struct css_style style = state.style;
 	style.font_size.value.length.value *= state.ctm.a;
@@ -620,6 +634,34 @@ void svg_parse_paint_attributes(const xmlNode *node,
 			state->stroke_width = svg_parse_length(
 					attr->children->content,
 					state->viewport_width, *state);
+		else if (strcmp(attr->name, "style") == 0) {
+			const char *style = attr->children->content;
+			const char *s;
+			char *value;
+			if ((s = strstr(style, "fill:"))) {
+				s += 5;
+				while (*s == ' ')
+					s++;
+				value = strndup(s, strcspn(s, "; "));
+				svg_parse_color(value, &state->fill);
+				free(value);
+			}
+			if ((s = strstr(style, "stroke:"))) {
+				s += 7;
+				while (*s == ' ')
+					s++;
+				value = strndup(s, strcspn(s, "; "));
+				svg_parse_color(value, &state->stroke);
+				free(value);
+			}
+			if ((s = strstr(style, "stroke-width:"))) {
+				s += 13;
+				while (*s == ' ')
+					s++;
+				state->stroke_width = svg_parse_length(s,
+						state->viewport_width, *state);
+			}
+		}
 	}
 }
 
@@ -652,8 +694,12 @@ void svg_parse_color(const char *s, colour *c)
 			r = rf * 255 / 100;
 			*c = (b << 16) | (g << 8) | r;
 		}
+	} else if (len == 4 && strcmp(s, "none") == 0) {
+		*c = TRANSPARENT;
 	} else {
-		*c = named_colour(s);
+		colour named = named_colour(s);
+		if (named != CSS_COLOR_NONE)
+			*c = named;
 	}
 }
 
@@ -676,6 +722,56 @@ void svg_parse_font_attributes(const xmlNode *node,
 			}*/
 		}
         }
+}
+
+
+/**
+ * Parse transform attributes, if present.
+ */
+
+void svg_parse_transform_attributes(const xmlNode *node,
+		struct svg_redraw_state *state)
+{
+	float a, b, c, d, e, f;
+	float ctm_a, ctm_b, ctm_c, ctm_d, ctm_e, ctm_f;
+	int n;
+
+	/* parse transform */
+	xmlAttr *transform = xmlHasProp(node, (const xmlChar *) "transform");
+	if (transform) {
+		const char *s = (const char *) transform->children->content;
+		while (*s) {
+			if (sscanf(s, "matrix(%f,%f,%f,%f,%f,%f) %n",
+					&a, &b, &c, &d, &e, &f, &n) == 6) {
+				;
+			} else if (sscanf(s, "translate(%f,%f) %n",
+					&e, &f, &n) == 2) {
+				a = d = 1;
+				b = c = 0;
+			} else if (sscanf(s, "scale(%f,%f) %n",
+					&a, &d, &n) == 2) {
+				b = c = e = f = 0;
+				s += n;
+			} else {
+				break;
+			}
+			ctm_a = state->ctm.a * a + state->ctm.c * b;
+			ctm_b = state->ctm.b * a + state->ctm.d * b;
+			ctm_c = state->ctm.a * c + state->ctm.c * d;
+			ctm_d = state->ctm.b * c + state->ctm.d * d;
+			ctm_e = state->ctm.a * e + state->ctm.c * f +
+					state->ctm.e;
+			ctm_f = state->ctm.b * e + state->ctm.d * f +
+					state->ctm.f;
+			state->ctm.a = ctm_a;
+			state->ctm.b = ctm_b;
+			state->ctm.c = ctm_c;
+			state->ctm.d = ctm_d;
+			state->ctm.e = ctm_e;
+			state->ctm.f = ctm_f;
+			s += n;
+		}
+	}
 }
 
 
