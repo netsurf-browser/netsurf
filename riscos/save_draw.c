@@ -42,6 +42,8 @@ static bool ro_save_draw_rectangle(int x0, int y0, int width, int height,
 static bool ro_save_draw_line(int x0, int y0, int x1, int y1, int width,
 		colour c, bool dotted, bool dashed);
 static bool ro_save_draw_polygon(int *p, unsigned int n, colour fill);
+static bool ro_save_draw_path(float *p, unsigned int n, colour fill,
+		float width, colour c, float *transform);
 static bool ro_save_draw_fill(int x0, int y0, int x1, int y1, colour c);
 static bool ro_save_draw_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
@@ -75,7 +77,8 @@ const struct plotter_table ro_save_draw_plotters = {
 	ro_save_draw_bitmap_tile,
 	ro_save_draw_group_start,
 	ro_save_draw_group_end,
-	NULL
+	NULL,
+	ro_save_draw_path,
 };
 
 struct pencil_diagram *ro_save_draw_diagram;
@@ -216,6 +219,13 @@ bool ro_save_draw_polygon(int *p, unsigned int n, colour fill)
 	if (code != pencil_OK)
 		return ro_save_draw_error(code);
 
+	return true;
+}
+
+
+bool ro_save_draw_path(float *p, unsigned int n, colour fill,
+		float width, colour c, float *transform)
+{
 	return true;
 }
 

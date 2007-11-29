@@ -51,6 +51,8 @@ static bool knockout_plot_rectangle(int x0, int y0, int width, int height,
 static bool knockout_plot_line(int x0, int y0, int x1, int y1, int width,
 		colour c, bool dotted, bool dashed);
 static bool knockout_plot_polygon(int *p, unsigned int n, colour fill);
+static bool knockout_plot_path(float *p, unsigned int n, colour fill,
+		float width, colour c, float *transform);
 static bool knockout_plot_fill(int x0, int y0, int x1, int y1, colour c);
 static bool knockout_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
@@ -82,7 +84,8 @@ const struct plotter_table knockout_plotters = {
 	knockout_plot_bitmap_tile,
 	knockout_plot_group_start,
 	knockout_plot_group_end,
-	knockout_plot_flush
+	knockout_plot_flush,
+	knockout_plot_path,
 };
 
 
@@ -238,7 +241,7 @@ bool knockout_plot_start(struct plotter_table *plotter)
   	/* check if we're recursing */
   	if (nested_depth++ > 0) {
   	  	/* we should already have the knockout renderer as default */
-  		assert(!memcmp(plotter, &knockout_plotters, sizeof(struct plotter_table)));
+		assert(!memcmp(plotter, &knockout_plotters, sizeof(struct plotter_table)));
   		return true;
   	}
 
@@ -682,6 +685,14 @@ bool knockout_plot_polygon(int *p, unsigned int n, colour fill)
 	if (++knockout_entry_cur >= KNOCKOUT_ENTRIES)
 		knockout_plot_flush();
 	return true;
+}
+
+
+bool knockout_plot_path(float *p, unsigned int n, colour fill,
+		float width, colour c, float *transform)
+{
+	LOG(("knockout_plot_path not implemented"));
+	return false;
 }
 
 
