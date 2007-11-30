@@ -78,7 +78,7 @@ static void svg_parse_paint_attributes(const xmlNode *node,
 static void svg_parse_color(const char *s, colour *c);
 static void svg_parse_font_attributes(const xmlNode *node,
 		struct svg_redraw_state *state);
-static void svg_parse_transform_attributes(const xmlNode *node,
+static void svg_parse_transform_attributes(xmlNode *node,
 		struct svg_redraw_state *state);
 
 
@@ -174,18 +174,16 @@ bool svg_redraw(struct content *c, int x, int y,
 	state.origin_y = y;
 	state.viewport_width = width;
 	state.viewport_height = height;
-	state.ctm.a = 1;
+	state.ctm.a = scale;
 	state.ctm.b = 0;
 	state.ctm.c = 0;
-	state.ctm.d = 1;
+	state.ctm.d = scale;
 	state.ctm.e = 0;
 	state.ctm.f = 0;
 	state.style = css_base_style;
 	state.style.font_size.value.length.value = option_font_size * 0.1;
 	state.fill = 0x000000;
 	state.stroke = TRANSPARENT;
-	state.fill = TRANSPARENT;
-	state.stroke = 0x000000;
 	state.stroke_width = 1;
 
 	plot.clg(0xffffff);
@@ -217,10 +215,10 @@ bool svg_redraw_svg(xmlNode *svg, struct svg_redraw_state state)
 				&min_x, &min_y, &width, &height) == 4 ||
 				sscanf(s, "%f %f %f %f",
 				&min_x, &min_y, &width, &height) == 4) {
-			state.ctm.a = state.viewport_width / width;
-			state.ctm.d = state.viewport_height / height;
-			state.ctm.e = -min_x;
-			state.ctm.f = -min_y;
+			state.ctm.a *= state.viewport_width / width;
+			state.ctm.d *= state.viewport_height / height;
+			state.ctm.e = -min_x * state.ctm.a;
+			state.ctm.f = -min_y * state.ctm.d;
 		}
 	}
 
@@ -233,6 +231,8 @@ bool svg_redraw_svg(xmlNode *svg, struct svg_redraw_state state)
 			if (strcmp(child->name, "svg") == 0)
 				ok = svg_redraw_svg(child, state);
 			else if (strcmp(child->name, "g") == 0)
+				ok = svg_redraw_svg(child, state);
+			else if (strcmp(child->name, "a") == 0)
 				ok = svg_redraw_svg(child, state);
 			else if (strcmp(child->name, "path") == 0)
 				ok = svg_redraw_path(child, state);
@@ -260,11 +260,13 @@ bool svg_redraw_svg(xmlNode *svg, struct svg_redraw_state state)
 
 bool svg_redraw_path(xmlNode *path, struct svg_redraw_state state)
 {
+	char *s, *path_d;
+
 	svg_parse_paint_attributes(path, &state);
 	svg_parse_transform_attributes(path, &state);
 
 	/* read d attribute */
-	char *s = (char *) xmlGetProp(path, (const xmlChar *) "d");
+	s = path_d = (char *) xmlGetProp(path, (const xmlChar *) "d");
 	if (!s) {
 		LOG(("path missing d attribute"));
 		return false;
@@ -362,13 +364,15 @@ bool svg_redraw_path(xmlNode *path, struct svg_redraw_state state)
 				p[i++] = last_y = y;
 				s += n;
 			} while (sscanf(s, "%f %f %f %f %f %f %n",
-					&x1, &y1, &x2, &y2, &x, &y, &n) == 7);
+					&x1, &y1, &x2, &y2, &x, &y, &n) == 6);
 
 		} else {
-			/*LOG(("parse failed"));*/
+			LOG(("parse failed at \"%s\"", s));
 			break;
 		}
 	}
+
+	xmlFree(path_d);
 
 	/*LOG(("path:"));
 	for (unsigned int j = 0; j != i; j++) {
@@ -729,29 +733,33 @@ void svg_parse_font_attributes(const xmlNode *node,
  * Parse transform attributes, if present.
  */
 
-void svg_parse_transform_attributes(const xmlNode *node,
+void svg_parse_transform_attributes(xmlNode *node,
 		struct svg_redraw_state *state)
 {
+	char *transform, *s;
 	float a, b, c, d, e, f;
 	float ctm_a, ctm_b, ctm_c, ctm_d, ctm_e, ctm_f;
 	int n;
 
 	/* parse transform */
-	xmlAttr *transform = xmlHasProp(node, (const xmlChar *) "transform");
+	s = transform = (char *) xmlGetProp(node,
+			(const xmlChar *) "transform");
 	if (transform) {
-		const char *s = (const char *) transform->children->content;
+		for (unsigned int i = 0; transform[i]; i++)
+			if (transform[i] == ',')
+				transform[i] = ' ';
+
 		while (*s) {
-			if (sscanf(s, "matrix(%f,%f,%f,%f,%f,%f) %n",
+			if (sscanf(s, "matrix (%f %f %f %f %f %f) %n",
 					&a, &b, &c, &d, &e, &f, &n) == 6) {
 				;
-			} else if (sscanf(s, "translate(%f,%f) %n",
+			} else if (sscanf(s, "translate (%f %f) %n",
 					&e, &f, &n) == 2) {
 				a = d = 1;
 				b = c = 0;
-			} else if (sscanf(s, "scale(%f,%f) %n",
+			} else if (sscanf(s, "scale (%f %f) %n",
 					&a, &d, &n) == 2) {
 				b = c = e = f = 0;
-				s += n;
 			} else {
 				break;
 			}
@@ -771,6 +779,8 @@ void svg_parse_transform_attributes(const xmlNode *node,
 			state->ctm.f = ctm_f;
 			s += n;
 		}
+
+		xmlFree(transform);
 	}
 }
 
