@@ -22,6 +22,7 @@
 
 #define _GNU_SOURCE  /* for strndup */
 #include <assert.h>
+#include <math.h>
 #include <setjmp.h>
 #include <string.h>
 #include <stdio.h>
@@ -67,6 +68,8 @@ static bool svg_redraw_path(xmlNode *path, struct svg_redraw_state state);
 static bool svg_redraw_rect(xmlNode *rect, struct svg_redraw_state state);
 static bool svg_redraw_circle(xmlNode *circle, struct svg_redraw_state state);
 static bool svg_redraw_line(xmlNode *line, struct svg_redraw_state state);
+static bool svg_redraw_poly(xmlNode *poly, struct svg_redraw_state state,
+		bool polygon);
 static bool svg_redraw_text(xmlNode *text, struct svg_redraw_state state);
 static void svg_parse_position_attributes(const xmlNode *node,
 		const struct svg_redraw_state state,
@@ -242,6 +245,10 @@ bool svg_redraw_svg(xmlNode *svg, struct svg_redraw_state state)
 				ok = svg_redraw_circle(child, state);
 			else if (strcmp(child->name, "line") == 0)
 				ok = svg_redraw_line(child, state);
+			else if (strcmp(child->name, "polyline") == 0)
+				ok = svg_redraw_poly(child, state, false);
+			else if (strcmp(child->name, "polygon") == 0)
+				ok = svg_redraw_poly(child, state, true);
 			else if (strcmp(child->name, "text") == 0)
 				ok = svg_redraw_text(child, state);
 		}
@@ -256,6 +263,8 @@ bool svg_redraw_svg(xmlNode *svg, struct svg_redraw_state state)
 
 /**
  * Redraw a <path> element node.
+ *
+ * http://www.w3.org/TR/SVG11/paths#PathElement
  */
 
 bool svg_redraw_path(xmlNode *path, struct svg_redraw_state state)
@@ -285,15 +294,15 @@ bool svg_redraw_path(xmlNode *path, struct svg_redraw_state state)
 			s[i] = ' ';
 	unsigned int i = 0;
 	float last_x = 0, last_y = 0;
+	float last_cubic_x = 0, last_cubic_y = 0;
+	float last_quad_x = 0, last_quad_y = 0;
 	while (*s) {
 		char command[2];
 		int plot_command;
 		float x, y, x1, y1, x2, y2;
 		int n;
 
-		/*LOG(("s \"%s\"", s));*/
-
-		/* M, m, L, l (2 arguments) */
+		/* moveto (M, m), lineto (L, l) (2 arguments) */
 		if (sscanf(s, " %1[MmLl] %f %f %n", command, &x, &y, &n) == 3) {
 			/*LOG(("moveto or lineto"));*/
 			if (*command == 'M' || *command == 'm')
@@ -306,43 +315,47 @@ bool svg_redraw_path(xmlNode *path, struct svg_redraw_state state)
 					x += last_x;
 					y += last_y;
 				}
-				p[i++] = last_x = x;
-				p[i++] = last_y = y;
+				p[i++] = last_cubic_x = last_quad_x = last_x
+						= x;
+				p[i++] = last_cubic_y = last_quad_y = last_y
+						= y;
 				s += n;
 				plot_command = PLOTTER_PATH_LINE;
 			} while (sscanf(s, "%f %f %n", &x, &y, &n) == 2);
 
-		/* Z, z (no arguments) */
+		/* closepath (Z, z) (no arguments) */
 		} else if (sscanf(s, " %1[Zz] %n", command, &n) == 1) {
 			/*LOG(("closepath"));*/
 			p[i++] = PLOTTER_PATH_CLOSE;
 			s += n;
 
-		/* H, h (1 argument) */
+		/* horizontal lineto (H, h) (1 argument) */
 		} else if (sscanf(s, " %1[Hh] %f %n", command, &x, &n) == 2) {
 			/*LOG(("horizontal lineto"));*/
 			do {
 				p[i++] = PLOTTER_PATH_LINE;
 				if (*command == 'h')
 					x += last_x;
-				p[i++] = last_x = x;
-				p[i++] = last_y;
+				p[i++] = last_cubic_x = last_quad_x = last_x
+						= x;
+				p[i++] = last_cubic_y = last_quad_y = last_y;
 				s += n;
 			} while (sscanf(s, "%f %n", &x, &n) == 1);
 
-		/* V, v (1 argument) */
+		/* vertical lineto (V, v) (1 argument) */
 		} else if (sscanf(s, " %1[Vv] %f %n", command, &y, &n) == 2) {
 			/*LOG(("vertical lineto"));*/
 			do {
 				p[i++] = PLOTTER_PATH_LINE;
 				if (*command == 'v')
 					y += last_y;
-				p[i++] = last_x;
-				p[i++] = last_y = y;
+				p[i++] = last_cubic_x = last_quad_x = last_x;
+				p[i++] = last_cubic_y = last_quad_y = last_y
+						= y;
 				s += n;
 			} while (sscanf(s, "%f %n", &x, &n) == 1);
 
-		/* C, c (6 arguments) */
+		/* curveto (C, c) (6 arguments) */
 		} else if (sscanf(s, " %1[Cc] %f %f %f %f %f %f %n", command,
 				&x1, &y1, &x2, &y2, &x, &y, &n) == 7) {
 			/*LOG(("curveto"));*/
@@ -358,13 +371,88 @@ bool svg_redraw_path(xmlNode *path, struct svg_redraw_state state)
 				}
 				p[i++] = x1;
 				p[i++] = y1;
-				p[i++] = x2;
-				p[i++] = y2;
-				p[i++] = last_x = x;
-				p[i++] = last_y = y;
+				p[i++] = last_cubic_x = x2;
+				p[i++] = last_cubic_y = y2;
+				p[i++] = last_quad_x = last_x = x;
+				p[i++] = last_quad_y = last_y = y;
 				s += n;
 			} while (sscanf(s, "%f %f %f %f %f %f %n",
 					&x1, &y1, &x2, &y2, &x, &y, &n) == 6);
+
+		/* shorthand/smooth curveto (S, s) (4 arguments) */
+		} else if (sscanf(s, " %1[Ss] %f %f %f %f %n", command,
+				&x2, &y2, &x, &y, &n) == 5) {
+			/*LOG(("shorthand/smooth curveto"));*/
+			do {
+				p[i++] = PLOTTER_PATH_BEZIER;
+				x1 = last_x + (last_x - last_cubic_x);
+				y1 = last_y + (last_y - last_cubic_y);
+				if (*command == 's') {
+					x2 += last_x;
+					y2 += last_y;
+					x += last_x;
+					y += last_y;
+				}
+				p[i++] = x1;
+				p[i++] = y1;
+				p[i++] = last_cubic_x = x2;
+				p[i++] = last_cubic_y = y2;
+				p[i++] = last_quad_x = last_x = x;
+				p[i++] = last_quad_y = last_y = y;
+				s += n;
+			} while (sscanf(s, "%f %f %f %f %n",
+					&x2, &y2, &x, &y, &n) == 4);
+
+		/* quadratic Bezier curveto (Q, q) (4 arguments) */
+		} else if (sscanf(s, " %1[Qq] %f %f %f %f %n", command,
+				&x1, &y1, &x, &y, &n) == 5) {
+			/*LOG(("quadratic Bezier curveto"));*/
+			do {
+				p[i++] = PLOTTER_PATH_BEZIER;
+				last_quad_x = x1;
+				last_quad_y = y1;
+				if (*command == 'q') {
+					x1 += last_x;
+					y1 += last_y;
+					x += last_x;
+					y += last_y;
+				}
+				p[i++] = 1./3 * last_x + 2./3 * x1;
+				p[i++] = 1./3 * last_y + 2./3 * y1;
+				p[i++] = 2./3 * x1 + 1./3 * x;
+				p[i++] = 2./3 * y1 + 1./3 * y;
+				p[i++] = last_cubic_x = last_x = x;
+				p[i++] = last_cubic_y = last_y = y;
+				s += n;
+			} while (sscanf(s, "%f %f %f %f %n",
+					&x1, &y1, &x, &y, &n) == 4);
+
+		/* shorthand/smooth quadratic Bezier curveto (T, t)
+		   (2 arguments) */
+		} else if (sscanf(s, " %1[Tt] %f %f %n", command,
+				&x, &y, &n) == 3) {
+			/*LOG(("shorthand/smooth quadratic Bezier curveto"));*/
+			do {
+				p[i++] = PLOTTER_PATH_BEZIER;
+				x1 = last_x + (last_x - last_quad_x);
+				y1 = last_y + (last_y - last_quad_y);
+				last_quad_x = x1;
+				last_quad_y = y1;
+				if (*command == 't') {
+					x1 += last_x;
+					y1 += last_y;
+					x += last_x;
+					y += last_y;
+				}
+				p[i++] = 1./3 * last_x + 2./3 * x1;
+				p[i++] = 1./3 * last_y + 2./3 * y1;
+				p[i++] = 2./3 * x1 + 1./3 * x;
+				p[i++] = 2./3 * y1 + 1./3 * y;
+				p[i++] = last_cubic_x = last_x = x;
+				p[i++] = last_cubic_y = last_y = y;
+				s += n;
+			} while (sscanf(s, "%f %f %n",
+					&x, &y, &n) == 2);
 
 		} else {
 			LOG(("parse failed at \"%s\"", s));
@@ -390,6 +478,8 @@ bool svg_redraw_path(xmlNode *path, struct svg_redraw_state state)
 
 /**
  * Redraw a <rect> element node.
+ *
+ * http://www.w3.org/TR/SVG11/shapes#RectElement
  */
 
 bool svg_redraw_rect(xmlNode *rect, struct svg_redraw_state state)
@@ -401,31 +491,14 @@ bool svg_redraw_rect(xmlNode *rect, struct svg_redraw_state state)
 	svg_parse_paint_attributes(rect, &state);
 	svg_parse_transform_attributes(rect, &state);
 
-	int p[8] = { x, y,
-		x + width, y,
-		x + width, y + height,
-		x,         y + height };
-	for (unsigned int i = 0; i != 8; i += 2) {
-		p[i] = state.origin_x + state.ctm.a * p[i] +
-				state.ctm.c * p[i+1] + state.ctm.e;
-		p[i+1] = state.origin_y + state.ctm.b * p[i] +
-				state.ctm.d * p[i+1] + state.ctm.f;
-	}
+	float p[] = { PLOTTER_PATH_MOVE, x, y,
+		PLOTTER_PATH_LINE, x + width, y,
+		PLOTTER_PATH_LINE, x + width, y + height,
+		PLOTTER_PATH_LINE, x,         y + height,
+		PLOTTER_PATH_CLOSE };
 
-	if (state.fill != TRANSPARENT)
-		if (!plot.polygon(p, 4, state.fill))
-			return false;
-
-	if (state.stroke != TRANSPARENT) {
-		for (unsigned int i = 0; i != 8; i += 2) {
-			if (!plot.line(p[i], p[i+1], p[(i+2)%8], p[(i+3)%8],
-					state.stroke_width, state.stroke,
-					false, false))
-				return false;
-		}
-	}
-
-	return true;
+	return plot.path(p, sizeof p / sizeof p[0], state.fill,
+			state.stroke_width, state.stroke, &state.ctm.a);
 }
 
 
@@ -505,6 +578,70 @@ bool svg_redraw_line(xmlNode *line, struct svg_redraw_state state)
 
 	return plot.line(px1, py1, px2, py2, state.stroke_width, state.stroke,
 			false, false);
+}
+
+
+/**
+ * Redraw a <polyline> or <polygon> element node.
+ *
+ * http://www.w3.org/TR/SVG11/shapes#PolylineElement
+ * http://www.w3.org/TR/SVG11/shapes#PolygonElement
+ */
+
+bool svg_redraw_poly(xmlNode *poly, struct svg_redraw_state state,
+		bool polygon)
+{
+	char *s, *points;
+
+	svg_parse_paint_attributes(poly, &state);
+	svg_parse_transform_attributes(poly, &state);
+
+	/* read d attribute */
+	s = points = (char *) xmlGetProp(poly, (const xmlChar *) "points");
+	if (!s) {
+		LOG(("poly missing d attribute"));
+		return false;
+	}
+
+	/* allocate space for path: it will never have more elements than s */
+	float *p = malloc(sizeof p[0] * strlen(s));
+	if (!p) {
+		LOG(("out of memory"));
+		return false;
+	}
+
+	/* parse s and build path */
+	for (unsigned int i = 0; s[i]; i++)
+		if (s[i] == ',')
+			s[i] = ' ';
+	unsigned int i = 0;
+	while (*s) {
+		float x, y;
+		int n;
+
+		if (sscanf(s, "%f %f %n", &x, &y, &n) == 2) {
+			if (i == 0)
+				p[i++] = PLOTTER_PATH_MOVE;
+			else
+				p[i++] = PLOTTER_PATH_LINE;
+			p[i++] = x;
+			p[i++] = y;
+			s += n;
+                } else {
+                	break;
+                }
+        }
+        if (polygon)
+		p[i++] = PLOTTER_PATH_CLOSE;
+
+	xmlFree(points);
+
+	bool ok = plot.path(p, i, state.fill, state.stroke_width, state.stroke,
+			&state.ctm.a);
+
+	free(p);
+
+	return ok;
 }
 
 
@@ -731,6 +868,8 @@ void svg_parse_font_attributes(const xmlNode *node,
 
 /**
  * Parse transform attributes, if present.
+ *
+ * http://www.w3.org/TR/SVG11/coords#TransformAttribute
  */
 
 void svg_parse_transform_attributes(xmlNode *node,
@@ -739,6 +878,7 @@ void svg_parse_transform_attributes(xmlNode *node,
 	char *transform, *s;
 	float a, b, c, d, e, f;
 	float ctm_a, ctm_b, ctm_c, ctm_d, ctm_e, ctm_f;
+	float angle, x, y;
 	int n;
 
 	/* parse transform */
@@ -750,19 +890,50 @@ void svg_parse_transform_attributes(xmlNode *node,
 				transform[i] = ' ';
 
 		while (*s) {
+			a = d = 1;
+			b = c = 0;
+			e = f = 0;
 			if (sscanf(s, "matrix (%f %f %f %f %f %f) %n",
-					&a, &b, &c, &d, &e, &f, &n) == 6) {
+					&a, &b, &c, &d, &e, &f, &n) == 6)
 				;
-			} else if (sscanf(s, "translate (%f %f) %n",
-					&e, &f, &n) == 2) {
-				a = d = 1;
-				b = c = 0;
-			} else if (sscanf(s, "scale (%f %f) %n",
-					&a, &d, &n) == 2) {
-				b = c = e = f = 0;
-			} else {
+			else if (sscanf(s, "translate (%f %f) %n",
+					&e, &f, &n) == 2)
+				;
+			else if (sscanf(s, "translate (%f) %n",
+					&e, &n) == 1)
+				;
+			else if (sscanf(s, "scale (%f %f) %n",
+					&a, &d, &n) == 2)
+				;
+			else if (sscanf(s, "scale (%f) %n",
+					&a, &n) == 1)
+				d = a;
+			else if (sscanf(s, "rotate (%f %f %f) %n",
+					&angle, &x, &y, &n) == 3) {
+				angle = -angle / 180 * M_PI;
+				a = cos(angle);
+				b = sin(angle);
+				c = -sin(angle);
+				d = cos(angle);
+				e = -x * cos(angle) + y * sin(angle) + x;
+				f = -x * sin(angle) - y * cos(angle) + y;
+	                } else if (sscanf(s, "rotate (%f) %n",
+					&angle, &n) == 1) {
+				angle = -angle / 180 * M_PI;
+				a = cos(angle);
+				b = sin(angle);
+				c = -sin(angle);
+				d = cos(angle);
+	                } else if (sscanf(s, "skewX (%f) %n",
+					&angle, &n) == 1) {
+				angle = angle / 180 * M_PI;
+				c = tan(angle);
+	                } else if (sscanf(s, "skewY (%f) %n",
+					&angle, &n) == 1) {
+				angle = angle / 180 * M_PI;
+				b = tan(angle);
+	                } else
 				break;
-			}
 			ctm_a = state->ctm.a * a + state->ctm.c * b;
 			ctm_b = state->ctm.b * a + state->ctm.d * b;
 			ctm_c = state->ctm.a * c + state->ctm.c * d;
