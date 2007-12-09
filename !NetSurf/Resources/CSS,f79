@@ -8,7 +8,7 @@ html { display: block; }
 
 head { display: none; }
 
-body { display: block; padding: 8px; }
+body { display: block; padding: 8px; line-height: 1.33; }
 
 div { display: block; }
 div[align=left] > * { margin-right: auto; }

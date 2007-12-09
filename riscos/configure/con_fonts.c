@@ -110,8 +110,8 @@ void ro_gui_options_fonts_default(wimp_pointer *pointer)
 	const char *fallback = nsfont_fallback_font();
 
 	/* set the default values */
-	ro_gui_set_icon_decimal(pointer->w, FONT_DEFAULT_SIZE, 100, 1);
-	ro_gui_set_icon_decimal(pointer->w, FONT_MINIMUM_SIZE, 70, 1);
+	ro_gui_set_icon_decimal(pointer->w, FONT_DEFAULT_SIZE, 128, 1);
+	ro_gui_set_icon_decimal(pointer->w, FONT_MINIMUM_SIZE, 85, 1);
 	ro_gui_set_icon_string(pointer->w, FONT_SANS_FIELD,
 			nsfont_exists("Homerton") ? "Homerton" : fallback);
 	ro_gui_set_icon_string(pointer->w, FONT_SERIF_FIELD,

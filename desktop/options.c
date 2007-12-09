@@ -63,9 +63,9 @@ char *option_http_proxy_auth_user = 0;
 /** Proxy authentication password */
 char *option_http_proxy_auth_pass = 0;
 /** Default font size / 0.1pt. */
-int option_font_size = 100;
+int option_font_size = 128;
 /** Minimum font size. */
-int option_font_min_size = 70;
+int option_font_min_size = 85;
 /** Default sans serif font */
 char *option_font_sans;
 /** Default serif font */
