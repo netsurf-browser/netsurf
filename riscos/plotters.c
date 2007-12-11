@@ -245,7 +245,6 @@ bool ro_plot_path(float *p, unsigned int n, colour fill, float width,
 		return false;
 	}
 
-	LOG(("converting path"));
 	for (i = 0; i < n; ) {
 		if (p[i] == PLOTTER_PATH_MOVE) {
 			path[i] = draw_MOVE_TO;
@@ -277,15 +276,12 @@ bool ro_plot_path(float *p, unsigned int n, colour fill, float width,
 	path[i] = draw_END_PATH;
 	path[i + 1] = 0;
 
-	LOG(("converting matrix"));
 	trfm.entries[0][0] = transform[0] * 0x10000;
 	trfm.entries[0][1] = transform[1] * 0x10000;
 	trfm.entries[1][0] = transform[2] * 0x10000;
 	trfm.entries[1][1] = transform[3] * 0x10000;
 	trfm.entries[2][0] = (ro_plot_origin_x + transform[4] * 2) * 256;
 	trfm.entries[2][1] = (ro_plot_origin_y - transform[5] * 2) * 256;
-
-	LOG(("plotting"));
 
 	if (fill != TRANSPARENT) {
 		error = xcolourtrans_set_gcol(fill << 8, 0,
@@ -296,7 +292,7 @@ bool ro_plot_path(float *p, unsigned int n, colour fill, float width,
 			return false;
 		}
 
-		error = xdraw_fill(path, 0, &trfm, 0);
+		error = xdraw_fill((draw_path *) path, 0, &trfm, 0);
 		if (error) {
 			LOG(("xdraw_stroke: 0x%x: %s",
 					error->errnum, error->errmess));
@@ -313,8 +309,8 @@ bool ro_plot_path(float *p, unsigned int n, colour fill, float width,
 			return false;
 		}
 
-		error = xdraw_stroke(path, 0, &trfm, 0, width * 2 * 256,
-				&line_style, 0);
+		error = xdraw_stroke((draw_path *) path, 0, &trfm, 0,
+				width * 2 * 256, &line_style, 0);
 		if (error) {
 			LOG(("xdraw_stroke: 0x%x: %s",
 					error->errnum, error->errmess));
