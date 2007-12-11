@@ -42,10 +42,6 @@
 
 
 struct svg_redraw_state {
-	/* screen origin */
-	int origin_x;
-	int origin_y;
-
 	float viewport_width;
 	float viewport_height;
 
@@ -173,23 +169,19 @@ bool svg_redraw(struct content *c, int x, int y,
 
 	struct svg_redraw_state state;
 
-	state.origin_x = x;
-	state.origin_y = y;
 	state.viewport_width = width;
 	state.viewport_height = height;
-	state.ctm.a = scale;
+	state.ctm.a = (float) width / (float) c->width;
 	state.ctm.b = 0;
 	state.ctm.c = 0;
-	state.ctm.d = scale;
-	state.ctm.e = 0;
-	state.ctm.f = 0;
+	state.ctm.d = (float) height / (float) c->height;
+	state.ctm.e = x;
+	state.ctm.f = y;
 	state.style = css_base_style;
 	state.style.font_size.value.length.value = option_font_size * 0.1;
 	state.fill = 0x000000;
 	state.stroke = TRANSPARENT;
 	state.stroke_width = 1;
-
-	plot.clg(0xffffff);
 
 	return svg_redraw_svg(c->data.svg.svg, state);
 }
@@ -201,11 +193,9 @@ bool svg_redraw(struct content *c, int x, int y,
 
 bool svg_redraw_svg(xmlNode *svg, struct svg_redraw_state state)
 {
-	float x, y;
+	float x, y, width, height;
 
-	svg_parse_position_attributes(svg, state,
-			&x, &y,
-			&state.viewport_width, &state.viewport_height);
+	svg_parse_position_attributes(svg, state, &x, &y, &width, &height);
 	svg_parse_paint_attributes(svg, &state);
 	svg_parse_font_attributes(svg, &state);
 
@@ -213,15 +203,15 @@ bool svg_redraw_svg(xmlNode *svg, struct svg_redraw_state state)
 	xmlAttr *view_box = xmlHasProp(svg, (const xmlChar *) "viewBox");
 	if (view_box) {
 		const char *s = (const char *) view_box->children->content;
-		float min_x, min_y, width, height;
+		float min_x, min_y, vwidth, vheight;
 		if (sscanf(s, "%f,%f,%f,%f",
-				&min_x, &min_y, &width, &height) == 4 ||
+				&min_x, &min_y, &vwidth, &vheight) == 4 ||
 				sscanf(s, "%f %f %f %f",
-				&min_x, &min_y, &width, &height) == 4) {
-			state.ctm.a *= state.viewport_width / width;
-			state.ctm.d *= state.viewport_height / height;
-			state.ctm.e = -min_x * state.ctm.a;
-			state.ctm.f = -min_y * state.ctm.d;
+				&min_x, &min_y, &vwidth, &vheight) == 4) {
+			state.ctm.a = (float) state.viewport_width / vwidth;
+			state.ctm.d = (float) state.viewport_height / vheight;
+			state.ctm.e += -min_x * state.ctm.a;
+			state.ctm.f += -min_y * state.ctm.d;
 		}
 	}
 
@@ -524,10 +514,8 @@ bool svg_redraw_circle(xmlNode *circle, struct svg_redraw_state state)
 	svg_parse_paint_attributes(circle, &state);
 	svg_parse_transform_attributes(circle, &state);
 
-	int px = state.origin_x + state.ctm.a * x +
-			state.ctm.c * y + state.ctm.e;
-	int py = state.origin_y + state.ctm.b * x +
-			state.ctm.d * y + state.ctm.f;
+	int px = state.ctm.a * x + state.ctm.c * y + state.ctm.e;
+	int py = state.ctm.b * x + state.ctm.d * y + state.ctm.f;
 	int pr = r * state.ctm.a;
 
 	if (state.fill != TRANSPARENT)
@@ -567,14 +555,10 @@ bool svg_redraw_line(xmlNode *line, struct svg_redraw_state state)
 	svg_parse_paint_attributes(line, &state);
 	svg_parse_transform_attributes(line, &state);
 
-	int px1 = state.origin_x + state.ctm.a * x1 +
-			state.ctm.c * y1 + state.ctm.e;
-	int py1 = state.origin_y + state.ctm.b * x1 +
-			state.ctm.d * y1 + state.ctm.f;
-	int px2 = state.origin_x + state.ctm.a * x2 +
-			state.ctm.c * y2 + state.ctm.e;
-	int py2 = state.origin_y + state.ctm.b * x2 +
-			state.ctm.d * y2 + state.ctm.f;
+	int px1 = state.ctm.a * x1 + state.ctm.c * y1 + state.ctm.e;
+	int py1 = state.ctm.b * x1 + state.ctm.d * y1 + state.ctm.f;
+	int px2 = state.ctm.a * x2 + state.ctm.c * y2 + state.ctm.e;
+	int py2 = state.ctm.b * x2 + state.ctm.d * y2 + state.ctm.f;
 
 	return plot.line(px1, py1, px2, py2, state.stroke_width, state.stroke,
 			false, false);
@@ -658,10 +642,8 @@ bool svg_redraw_text(xmlNode *text, struct svg_redraw_state state)
 	svg_parse_font_attributes(text, &state);
 	svg_parse_transform_attributes(text, &state);
 
-	int px = state.origin_x + state.ctm.a * x +
-			state.ctm.c * y + state.ctm.e;
-	int py = state.origin_y + state.ctm.b * x +
-			state.ctm.d * y + state.ctm.f;
+	int px = state.ctm.a * x + state.ctm.c * y + state.ctm.e;
+	int py = state.ctm.b * x + state.ctm.d * y + state.ctm.f;
 /* 	state.ctm.e = px - state.origin_x; */
 /* 	state.ctm.f = py - state.origin_y; */
 
