@@ -21,7 +21,6 @@
  */
 
 #define NDEBUG
-
 #include <assert.h>
 #include <string.h>
 #include "desktop/knockout.h"
@@ -241,7 +240,7 @@ bool knockout_plot_start(struct plotter_table *plotter)
   	/* check if we're recursing */
   	if (nested_depth++ > 0) {
   	  	/* we should already have the knockout renderer as default */
-		assert(!memcmp(plotter, &knockout_plotters, sizeof(struct plotter_table)));
+  		assert(plotter->clg == knockout_plotters.clg);
   		return true;
   	}
 
@@ -664,9 +663,8 @@ bool knockout_plot_polygon(int *p, unsigned int n, colour fill)
 
 	/* ensure we have sufficient room even when flushed */
 	if (n * 2 >= KNOCKOUT_POLYGONS) {
-		knockout_plot_end();
-		success = plot.polygon(p, n, fill);
 		knockout_plot_flush();
+		success = real_plot.polygon(p, n, fill);
 		return success;
 	}
 
@@ -691,8 +689,8 @@ bool knockout_plot_polygon(int *p, unsigned int n, colour fill)
 bool knockout_plot_path(float *p, unsigned int n, colour fill,
 		float width, colour c, float *transform)
 {
-	LOG(("knockout_plot_path not implemented"));
-	return false;
+	knockout_plot_flush();
+	return real_plot.path(p, n, fill, width, c, transform);
 }
 
 
