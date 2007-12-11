@@ -1,7 +1,7 @@
 /*
  * Copyright 2004 John M Bell <jmb202@ecs.soton.ac.uk>
  * Copyright 2004 John Tytgat <John.Tytgat@aaug.net>
- * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2007 James Bursa <bursa@users.sourceforge.net>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -226,6 +226,93 @@ bool ro_save_draw_polygon(int *p, unsigned int n, colour fill)
 bool ro_save_draw_path(float *p, unsigned int n, colour fill,
 		float width, colour c, float *transform)
 {
+	pencil_code code;
+	int *path;
+	unsigned int i;
+	bool empty_path = true;
+
+	if (n == 0)
+		return true;
+
+	if (p[0] != PLOTTER_PATH_MOVE) {
+		LOG(("path doesn't start with a move"));
+		return false;
+	}
+
+	path = malloc(sizeof *path * (n + 10));
+	if (!path) {
+		LOG(("out of memory"));
+		return false;
+	}
+
+	for (i = 0; i < n; ) {
+		if (p[i] == PLOTTER_PATH_MOVE) {
+			path[i] = draw_MOVE_TO;
+			path[i + 1] = (transform[0] * p[i + 1] +
+					transform[2] * -p[i + 2] +
+					transform[4]) * 2;
+			path[i + 2] = (transform[1] * p[i + 1] +
+					transform[3] * -p[i + 2] +
+					-transform[5]) * 2;
+			i += 3;
+		} else if (p[i] == PLOTTER_PATH_CLOSE) {
+			path[i] = draw_CLOSE_LINE;
+			i++;
+		} else if (p[i] == PLOTTER_PATH_LINE) {
+			path[i] = draw_LINE_TO;
+			path[i + 1] = (transform[0] * p[i + 1] +
+					transform[2] * -p[i + 2] +
+					transform[4]) * 2;
+			path[i + 2] = (transform[1] * p[i + 1] +
+					transform[3] * -p[i + 2] +
+					-transform[5]) * 2;
+			i += 3;
+			empty_path = false;
+		} else if (p[i] == PLOTTER_PATH_BEZIER) {
+			path[i] = draw_BEZIER_TO;
+			path[i + 1] = (transform[0] * p[i + 1] +
+					transform[2] * -p[i + 2] +
+					transform[4]) * 2;
+			path[i + 2] = (transform[1] * p[i + 1] +
+					transform[3] * -p[i + 2] +
+					-transform[5]) * 2;
+			path[i + 3] = (transform[0] * p[i + 3] +
+					transform[2] * -p[i + 4] +
+					transform[4]) * 2;
+			path[i + 4] = (transform[1] * p[i + 3] +
+					transform[3] * -p[i + 4] +
+					-transform[5]) * 2;
+			path[i + 5] = (transform[0] * p[i + 5] +
+					transform[2] * -p[i + 6] +
+					transform[4]) * 2;
+			path[i + 6] = (transform[1] * p[i + 5] +
+					transform[3] * -p[i + 6] +
+					-transform[5]) * 2;
+			i += 7;
+			empty_path = false;
+		} else {
+			LOG(("bad path command %f", p[i]));
+			free(path);
+			return false;
+		}
+	}
+	path[i] = draw_END_PATH;
+
+	if (empty_path) {
+		free(path);
+		return true;
+	}
+
+	code = pencil_path(ro_save_draw_diagram, path, i + 1,
+			fill == TRANSPARENT ? pencil_TRANSPARENT : fill << 8,
+			c == TRANSPARENT ? pencil_TRANSPARENT : c << 8,
+			width, pencil_JOIN_MITRED,
+			pencil_CAP_BUTT, pencil_CAP_BUTT, 0, 0, false,
+			pencil_SOLID);
+	free(path);
+	if (code != pencil_OK)
+		return ro_save_draw_error(code);
+
 	return true;
 }
 
