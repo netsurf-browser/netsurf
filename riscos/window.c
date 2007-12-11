@@ -97,7 +97,7 @@ static float scale_snap_to[] = {0.10, 0.125, 0.25, 0.333, 0.5, 0.75,
 /** An entry in ro_gui_pointer_table. */
 struct ro_gui_pointer_entry {
 	bool wimp_area;  /** The pointer is in the Wimp's sprite area. */
-	char sprite_name[12];
+	char sprite_name[16];
 	int xactive;
 	int yactive;
 };
@@ -1455,8 +1455,10 @@ void ro_gui_window_redraw(wimp_draw *redraw)
 		if (knockout) {
 			knockout_plot_start(&plot);
 			plot.clip(clip_x0, clip_y0, clip_x1, clip_y1);
-			plot.clg(0x00ffffff);
 		}
+
+		if (c->type != CONTENT_HTML)
+			plot.clg(0x00ffffff);
 
 		content_redraw(c, 0, 0,
 				c->width * scale, c->height * scale,
