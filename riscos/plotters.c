@@ -226,7 +226,7 @@ bool ro_plot_path(float *p, unsigned int n, colour fill, float width,
 	static const draw_line_style line_style = { draw_JOIN_MITRED,
 			draw_CAP_BUTT, draw_CAP_BUTT, 0, 0x7fffffff,
 			0, 0, 0, 0 };
-	int *path;
+	int *path = 0;
 	unsigned int i;
 	os_trfm trfm;
 	os_error *error;
@@ -236,13 +236,13 @@ bool ro_plot_path(float *p, unsigned int n, colour fill, float width,
 
 	if (p[0] != PLOTTER_PATH_MOVE) {
 		LOG(("path doesn't start with a move"));
-		return false;
+		goto error;
 	}
 
 	path = malloc(sizeof *path * (n + 10));
 	if (!path) {
 		LOG(("out of memory"));
-		return false;
+		goto error;
 	}
 
 	for (i = 0; i < n; ) {
@@ -270,7 +270,7 @@ bool ro_plot_path(float *p, unsigned int n, colour fill, float width,
 			i += 7;
 		} else {
 			LOG(("bad path command %f", p[i]));
-			return false;
+			goto error;
 		}
 	}
 	path[i] = draw_END_PATH;
@@ -289,14 +289,14 @@ bool ro_plot_path(float *p, unsigned int n, colour fill, float width,
 		if (error) {
 			LOG(("xcolourtrans_set_gcol: 0x%x: %s",
 					error->errnum, error->errmess));
-			return false;
+			goto error;
 		}
 
 		error = xdraw_fill((draw_path *) path, 0, &trfm, 0);
 		if (error) {
 			LOG(("xdraw_stroke: 0x%x: %s",
 					error->errnum, error->errmess));
-			return false;
+			goto error;
 		}
 	}
 
@@ -306,7 +306,7 @@ bool ro_plot_path(float *p, unsigned int n, colour fill, float width,
 		if (error) {
 			LOG(("xcolourtrans_set_gcol: 0x%x: %s",
 					error->errnum, error->errmess));
-			return false;
+			goto error;
 		}
 
 		error = xdraw_stroke((draw_path *) path, 0, &trfm, 0,
@@ -314,11 +314,15 @@ bool ro_plot_path(float *p, unsigned int n, colour fill, float width,
 		if (error) {
 			LOG(("xdraw_stroke: 0x%x: %s",
 					error->errnum, error->errmess));
-			return false;
+			goto error;
 		}
 	}
 
 	return true;
+
+error:
+	free(path);
+	return false;
 }
 
 
