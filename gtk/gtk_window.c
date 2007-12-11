@@ -400,7 +400,8 @@ wchar_t gdkkey_to_nskey(GdkEventKey *key)
                 case GDK_Hyper_L:
                 case GDK_Hyper_R:               return 0;
 
-                default:                        return key->keyval;
+                default:                        return gdk_keyval_to_unicode(
+								key->keyval);
         }
 }
 
