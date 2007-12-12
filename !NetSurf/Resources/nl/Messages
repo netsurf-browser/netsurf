@@ -86,7 +86,7 @@ Sprite:Sprite
 Home:Startpagina
 Back:Vorige pagina
 Forward:Volgende pagina
-UpLevel:Up one level
+UpLevel:Een niveau omhoog
 Reload:Pagina opnieuw laden  ^F5
 Stop:Pagina ophalen afbreken
 
@@ -141,8 +141,8 @@ WindowSize:Copieer venster positie
 WindowReset:Venster positie terugzetten
 
 # Main -> Utilities -> Cookies menu
-ShowCookies:Show cookies...
-DeleteCookies:Delete all cookies
+ShowCookies:Toon cookies...
+DeleteCookies:Verwijder alle cookies
 
 # Main -> Help menu
 #
@@ -199,21 +199,21 @@ Languages:Taal
 #
 # Network pane
 ProxyType:Proxy type
-ProxyNone:No proxy
-ProxyNoAuth:Simple proxy
-ProxyBasic:Basic authentication
-ProxyNTLM:NTLM authentication
+ProxyNone:Geen proxy
+ProxyNoAuth:Simpele proxy
+ProxyBasic:Basis authenticatie
+ProxyNTLM:NTLM authenticatie
 #
 # Fonts pane
 Fonts:Lettertypen
-DefaultFonts:Font Families
+DefaultFonts:Font families
 #
 # Images pane
 Display:Weergave
 ImgStyle0:RISC OS gebruiken
 ImgStyle1:Direct weergave
 ImgStyle2:Ditheren
-ImgStyle3:Error-diffusie
+ImgStyle3:Fout-spreiding
 
 
 # Treeview interface tokens
@@ -230,21 +230,21 @@ TreeLast:Laatst bezocht: %s
 TreeVisited:Bezocht: %s
 TreeVisits:Bezichtigd: %i keer
 TreeUnknown:Onbekend
-TreeValue:Value: %s
-TreeComment:Comment: %s
-TreeDomain:Domain: %s%s
-TreePath:Path: %s%s
-TreeExpires:Expires: %s
-TreeLastUsed:Last used: %s
-TreeSecure:Secure hosts only: %s
-TreeVersion:Version: %s
+TreeValue:Waarde: %s
+TreeComment:Commentaar: %s
+TreeDomain:Domein: %s%s
+TreePath:Pad: %s%s
+TreeExpires:Verloopt: %s
+TreeLastUsed:Laatst gebruikt: %s
+TreeSecure:Alleen secure sites: %s
+TreeVersion:Versie: %s
 TreePersistent:Persistent: %s
-TreeHeaders: (from headers)
+TreeHeaders: (van headers)
 TreeVersion0:Netscape
 TreeVersion1:RFC 2109
 TreeVersion2:RFC 2965
-TreeSession:Session end
-TreeUnused:Unused
+TreeSession:Sessie einde
+TreeUnused:Ongebruikt
 TreeImport:Ge-importeerde URL
 TreeNewFolder:Nieuwe map
 
@@ -265,9 +265,9 @@ EditFolder:Map hernoemen
 
 # Default hotlist page names
 #
-HotlistHomepage:NetSurf homepage
+HotlistHomepage:NetSurf thuispagina
 HotlistTestBuild:NetSurf test versie
-HotlistDocumentation:NetSurf documentation
+HotlistDocumentation:NetSurf documentatie
 HotlistBugTracker:NetSurf bug tracker
 HotlistFeatureRequest:NetSurf feature requests
 
@@ -316,7 +316,7 @@ PrintSheetsFilled:pagina's
 # This section contains tokens which are used in the find text
 # dialog box.
 #
-NotFound:Vinden niet
+NotFound:Niet gevonden
 
 
 # Content
@@ -328,10 +328,10 @@ NotFound:Vinden niet
 # Forms
 #
 Form_Submit:Versturen
-Form_Reset:Reset
+Form_Reset:Legen
 Form_None:
 Form_Many:(Veel)
-Form_Drop:Kwak bestand hier
+Form_Drop:Plaats bestand hier
 FormSelect:Klikken selekteert een form item
 FormCheckbox:Klikken selekteert deze optie
 FormRadio:Klikken kiest deze optie
@@ -379,47 +379,47 @@ FrameDrag:Resizing frames
 # Fetching errors - displayed as an HTML page
 #
 Not2xx:Server retourneert een fout
-InvalidURL:The address <em>%s</em> could not be understood.
+InvalidURL:Het adres <em>%s</em> klopt niet.
 
 # HTML error page
 #
-ErrorPage:<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Page error</title></head><body><h1>Sorry, NetSurf was unable to display this page</h1><p><strong>%s</strong></p></body></html>
+ErrorPage:<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Pagina fout</title></head><body><h1>Sorry, NetSurf kan deze pagina</h1><p><strong>%s</strong></p>niet tonen.</body></html>
 
 # General errors - displayed in a dialog box
 #
 # These may be augmented with further relevant information, which
 # is displayed after the contents of the relevant token.
 #
-PathToURL:An error occurred converting the file path to an URL:
-SaveError:The file could not be saved due to an error:
-LoadError:The file could not be loaded due to an error:
-MenuError:An error occurred when opening the menu:
-DragError:An error occurred when dragging the icon:
-TbarError:An error occurred when constructing the toolbar:
-WimpError:An unexpected Window Manager error occurred:
-DownloadWarn:This download may not complete:
-MiscError:An unexpected error occurred:
-FileError:File does not exist:
-PrintError:An error occurred when printing:
-AWNotSeen:Please locate the AWViewer application and try again.
+PathToURL:Fout tijdens het converteren van het bestandspad naar een URL:
+SaveError:Wegens een fout kan dit bestand niet opgeslagen worden:
+LoadError:Wegens een fout kan dit bestand niet geladen worden:
+MenuError:Fout bij het openen van het menu:
+DragError:Fout bij het slepen van het icoon:
+TbarError:Fout bij het construeren van de gereedschapbalk:
+WimpError:Er trad een onverwachtte Window Manager fout op:
+DownloadWarn:Dit bestand is misschien niet compleet opgehaald:
+MiscError:Er trad een onverwachtte fout op:
+FileError:Bestand bestaat niet:
+PrintError:Fout tijdens printen:
+AWNotSeen:Zoek eerst de AWViewer applicatie en probeer het dan nog eens.
 
 # Specific errors - displayed in a dialog box
 #
-NoMemory:NetSurf is running out of memory. Please free some memory and try again.
+NoMemory:NetSurf krijgt gebrek aan geheugen. Maak wat geheugen vrij en probeer het dan nog eens.
 FontBadInst:An error occurred when initialising fonts due to the presence of obsolete copies of the ROM fonts on disc. NetSurf will exit and launch a program which will attempt to fix this.
-FontError:Failed to open font "Homerton.Medium" (%s).
-Resolvers:No domain name servers are configured, so only browsing local files will be possible. Use Configure to set your name server(s).
-NoDiscSpace:Not enough space available on disc.
-Template:A window template is missing from the Templates file. Please reinstall NetSurf.
+FontError:Het lettertypenbestand "Homerton.Medium" kan niet geopend worden (%s).
+Resolvers:Er zijn geen DNS servers ingesteld, dus kunnen alleen locale bestanden bekeken worden. Gebruik Configure om uw naam server(s) in te stellen.
+NoDiscSpace:Niet genoeg ruimte beschikbaar op disk.
+Template:Er ontbreekt een venster sjabloon in het Templates bestand. Installeer NetSurf opnieuw.
 HotlistSaveError:The hotlist was unable to be correctly saved.
 HotlistLoadError:The hotlist was unable to be correctly loaded.
-NoPathError:To save, drag the icon to a directory display
-NoNameError:Please enter a name
-NoURLError:Please enter a URL
+NoPathError:Sleep het icoon naar een bestandsvenster om het op te slaan.
+NoNameError:Geef een naam op
+NoURLError:Geef een URL op
 URIError:NetSurf was unable to parse this URI file due to a syntax error.
-EmptyError:file is empty.
-PrintErrorRO2:It appears that the printer is busy.
-AWNotSeen:Please locate the AWViewer application and try again.
+EmptyError:bestand is leeg.
+PrintErrorRO2:De printer lijkt al bezig te zijn.
+# AWNotSeen:Please locate the AWViewer application and try again.
 
 # Queries
 # =======
@@ -429,7 +429,7 @@ AWNotSeen:Please locate the AWViewer application and try again.
 
 AbortDownload:Zeker weten dat u deze download af wilt breken?
 QuitDownload:Een of meer downloads zijn nog bezig. Toch afbreken?
-OverwriteFile:A file with that name already exists and would be lost.
+OverwriteFile:Een bestand met deze naam bestaat al en zal verloren gaan.
 
 # Page fetching
 # =============
@@ -536,9 +536,9 @@ ScrollRight:Click the arrow to scroll right
 # Messages used when saving
 #
 
-SaveSource:Source
-SaveDraw:Webpage
-SaveText:Webpage
+SaveSource:Bron
+SaveDraw:Webpagina
+SaveText:Webpagina
 SaveObject:Object
 SaveLink:Link
 SaveSelection:Selectie
@@ -570,12 +570,12 @@ GBytes: GB
 
 Yes:Ja
 No:Nee
-Replace:Replace file
-DontReplace:Don't replace
+Replace:Bestand vervangen
+DontReplace:Bestand niet vervangen
 obj:object
 objs:objecten
-styl:stylesheet
-styls:stylesheets
+styl:stijlblad
+styls:stijlbladen
 
 # Interactive help
 # ================
@@ -957,17 +957,17 @@ HelpThemePConfig:This pane shows the available themes.|MThe selected icon theme 
 # These tokens are used for the configuration icon text.
 #
 
-con_cache:Cache
-con_connect:Connection
-con_content:Content
-con_fonts:Fonts
-con_home:Home page
-con_image:Images
+con_cache:Voorraad
+con_connect:Connectie
+con_content:Inhoud
+con_fonts:Lettertypen
+con_home:Thuispagina
+con_image:Beelden
 con_inter:Interface
-con_lang:Language
-con_memory:Memory
-con_secure:Security
-con_theme:Themes
+con_lang:Taal
+con_memory:Geheugen
+con_secure:Veiligheid
+con_theme:Thema's
 
 
 # Unused tokens
