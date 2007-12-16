@@ -20,6 +20,7 @@ Set NetSurf$Dir <Obey$Dir>
 |
 | These get set whether they were previously set or not
 Set File$Type_695 GIF
+Set File$Type_AAD SVG
 Set File$Type_B28 URL
 Set File$Type_B60 PNG
 Set File$Type_C85 JPEG
