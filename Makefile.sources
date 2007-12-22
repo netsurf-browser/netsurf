@@ -1,0 +1,95 @@
+#
+# Makefile for NetSurf
+#
+# Included by main makefile -- indicates sources
+# for each build.
+#
+
+S_CONTENT := content.c fetch.c fetchcache.c urldb.c \
+	fetchers/fetch_curl.c
+S_CSS := css.c css_enum.c parser.c ruleset.c scanner.c
+S_RENDER := box.c box_construct.c box_normalise.c	\
+	directory.c form.c html.c html_redraw.c		\
+	imagemap.c layout.c list.c table.c textplain.c
+S_UTILS := filename.c hashtable.c messages.c talloc.c	\
+	url.c utf8.c utils.c useragent.c
+S_DESKTOP := knockout.c options.c tree.c version.c
+
+# S_COMMON are sources common to all builds
+S_COMMON := $(addprefix content/,$(S_CONTENT))	\
+	$(addprefix css/,$(S_CSS))		\
+	$(addprefix render/,$(S_RENDER))	\
+	$(addprefix utils/,$(S_UTILS))		\
+	$(addprefix desktop/,$(S_DESKTOP))
+
+S_IMAGE := bmp.c bmpread.c gif.c gifread.c ico.c jpeg.c	\
+	mng.c svg.c rsvg.c
+# S_IMAGE are sources related to image management
+S_IMAGE := $(addprefix image/,$(S_IMAGE))
+
+# S_BROWSER are sources related to full browsers but are common
+# between RO and Unix builds
+S_BROWSER := browser.c frames.c history_core.c netsurf.c selection.c textinput.c
+S_BROWSER := $(addprefix desktop/,$(S_BROWSER))
+
+# S_RISCOS are sources purely for the RISC OS build
+S_RISCOS := 401login.c artworks.c assert.c awrender.s bitmap.c buffer.c			\
+	cookies.c configure.c debugwin.c dialog.c download.c draw.c filetype.c		\
+	font.c global_history.c gui.c help.c history.c hotlist.c image.c		\
+	menus.c message.c palettes.c plotters.c plugin.c print.c query.c		\
+	save.c save_complete.c save_draw.c schedule.c search.c sprite.c	\
+	sslcert.c textarea.c textselection.c theme.c theme_install.c			\
+	thumbnail.c									\
+	treeview.c ucstables.c uri.c url_complete.c url_protocol.c wimp.c wimp_event.c	\
+	window.c gui/progress_bar.c gui/status_bar.c					\
+	$(addprefix configure/,con_cache.c con_connect.c con_content.c con_fonts.c	\
+	con_home.c con_image.c con_inter.c con_language.c con_memory.c con_secure.c	\
+	con_theme.c)
+S_RISCOS := $(addprefix riscos/,$(S_RISCOS)) desktop/save_text.c
+
+# S_GTK are sources purely for the GTK build
+S_GTK := font_pango.c gtk_bitmap.c gtk_gui.c gtk_schedule.c			\
+	gtk_thumbnail.c gtk_options.c						\
+	gtk_plotters.c gtk_treeview.c gtk_scaffolding.c gtk_completion.c	\
+	gtk_login.c gtk_throbber.c						\
+	gtk_history.c gtk_window.c gtk_filetype.c gtk_download.c
+S_GTK := $(addprefix gtk/,$(S_GTK))
+
+
+# Some extra rules for building the scanner etc.
+css/css_enum.c css/css_enum.h: css/css_enums css/makeenum
+	$(VQ)echo "MAKEENUM: css"
+	$(Q)$(PERL) css/makeenum css/css_enum < css/css_enums
+css/parser.c css/parser.h: css/parser.y
+	$(VQ)echo "   LEMON: css/parser.y"
+	$(Q)# If lemon really fails hard, we'll never know, sorry
+	$(Q)cd css; lemon parser.y || true
+css/scanner.c: css/scanner.l
+	$(VQ)echo "    RE2C: css/scanner.l"
+	$(Q)cd css; re2c -s scanner.l > scanner.c
+utils/translit.c: transtab
+	$(VQ)echo "TRANSTAB: utils/translit.c"
+	$(Q)cd utils; $(PERL) tt2code < transtab > translit.c
+
+clean-intermediates:
+	$(VQ)echo "   CLEAN: intermediates"
+	$(Q)$(RM) css/css_enum.c css/css_enum.h css/parser.c css/parser.h
+	$(Q)$(RM) css/scanner.c utils/translit.c
+
+CLEANS += clean-intermediates
+
+# Finally select the correct set of sources for this build...
+
+ifeq ($(TARGET),riscos)
+SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_RISCOS)
+EXETARGET := !NetSurf/!RunImage,ff8
+endif
+
+ifeq ($(TARGET),gtk)
+SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_GTK)
+EXETARGET := nsgtk
+endif
+
+ifeq ($(SOURCES),)
+$(error Unable to build NetSurf, could not determine set of sources to build)
+endif
