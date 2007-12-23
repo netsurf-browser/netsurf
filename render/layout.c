@@ -893,9 +893,11 @@ bool layout_inline_container(struct box *inline_container, int width,
 
 	has_text_children = false;
 	for (c = inline_container->children; c; c = c->next) {
-                bool is_pre = (c->style->white_space == CSS_WHITE_SPACE_PRE ||
-                               c->style->white_space == CSS_WHITE_SPACE_PRE_LINE ||
-                               c->style->white_space == CSS_WHITE_SPACE_PRE_WRAP);
+                bool is_pre = false;
+                if (c->style)
+                        is_pre = (c->style->white_space == CSS_WHITE_SPACE_PRE ||
+                                  c->style->white_space == CSS_WHITE_SPACE_PRE_LINE ||
+                                  c->style->white_space == CSS_WHITE_SPACE_PRE_WRAP);
 		if ((!c->object && c->text && (c->length || is_pre)) || c->type == BOX_BR)
                         has_text_children = true;
         }
