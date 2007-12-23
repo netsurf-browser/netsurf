@@ -892,9 +892,13 @@ bool layout_inline_container(struct box *inline_container, int width,
 			inline_container, width, cont, cx, cy));
 
 	has_text_children = false;
-	for (c = inline_container->children; c; c = c->next)
-		if ((!c->object && c->text && c->length) || c->type == BOX_BR)
-			has_text_children = true;
+	for (c = inline_container->children; c; c = c->next) {
+                bool is_pre = (c->style->white_space == CSS_WHITE_SPACE_PRE ||
+                               c->style->white_space == CSS_WHITE_SPACE_PRE_LINE ||
+                               c->style->white_space == CSS_WHITE_SPACE_PRE_WRAP);
+		if ((!c->object && c->text && (c->length || is_pre)) || c->type == BOX_BR)
+                        has_text_children = true;
+        }
 
 	/** \todo fix wrapping so that a box with horizontal scrollbar will shrink back to 'width' if no word is wider than 'width' (Or just set curwidth = width and have the multiword lines wrap to the min width) */
 	for (c = inline_container->children; c; ) {
