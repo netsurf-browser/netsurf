@@ -73,11 +73,11 @@ OBJECTS_GTK += font_pango.o gtk_bitmap.o gtk_gui.o \
 	gtk_download.o						# gtk/
 
 
-OBJDIR_RISCOS = arm-riscos-aof
+OBJDIR_RISCOS = $(shell $(CC) -dumpmachine)
 SOURCES_RISCOS=$(OBJECTS_RISCOS:.o=.c)
 OBJS_RISCOS=$(OBJECTS_RISCOS:%.o=$(OBJDIR_RISCOS)/%.o)
 
-OBJDIR_RISCOS_SMALL = arm-riscos-aof-small
+OBJDIR_RISCOS_SMALL = $(shell $(CC) -dumpmachine)-small
 SOURCES_RISCOS_SMALL=$(OBJECTS_RISCOS_SMALL:.o=.c)
 OBJS_RISCOS_SMALL=$(OBJECTS_RISCOS_SMALL:%.o=$(OBJDIR_RISCOS_SMALL)/%.o)
 
@@ -140,7 +140,7 @@ CFLAGS_GTK += -U__STRICT_ANSI__
 endif
 endif
 
-AFLAGS_RISCOS = -I..,. $(PLATFORM_AFLAGS_RISCOS)
+AFLAGS_RISCOS = -xassembler-with-cpp $(PLATFORM_AFLAGS_RISCOS)
 AFLAGS_RISCOS_SMALL = $(AFLAGS_RISCOS) -Dsmall
 
 # targets

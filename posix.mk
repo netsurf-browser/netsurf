@@ -1,9 +1,10 @@
 GCCSDK_INSTALL_CROSSBIN ?= /home/riscos/cross/bin
 GCCSDK_INSTALL_ENV ?= /home/riscos/env
 
-CC = $(GCCSDK_INSTALL_CROSSBIN)/gcc
 CC_DEBUG = /usr/bin/gcc
-ASM = $(GCCSDK_INSTALL_CROSSBIN)/gcc
+# The wildcard rule matches on 'gcc' (GCCSDK 3.4) or 'arm-unknown-riscos-gcc' (GCCSDK 4)
+CC = $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*gcc)
+ASM = $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*gcc)
 
 PLATFORM_CFLAGS_RISCOS = -I$(GCCSDK_INSTALL_ENV)/include \
 		-I$(GCCSDK_INSTALL_ENV)/include/libxml2 \
