@@ -106,7 +106,7 @@ bool url_host_is_ip_address(const char *host) {
                 } else {
                 	n = true;
                 }
-                *host++;
+                host++;
         } while (1);
 }
 
@@ -692,6 +692,38 @@ url_func_result url_path(const char *url, char **result)
 	return status;
 }
 
+/**
+ * Extract leafname segment from an URL
+ *
+ * \param url	  an absolute URL
+ * \param result  pointer to pointer to buffer to hold result
+ * \return URL_FUNC_OK on success
+ */
+
+url_func_result url_leafname(const char *url, char **result)
+{
+	url_func_result status;
+	struct url_components components;
+
+	assert(url);
+
+	status = url_get_components(url, &components);
+	if (status == URL_FUNC_OK) {
+		if (!components.path) {
+			status = URL_FUNC_FAILED;
+		} else {
+			char *slash = strrchr(components.path, '/');
+
+			assert (slash != NULL);
+
+			*result = strdup(slash + 1);
+			if (!(*result))
+				status = URL_FUNC_NOMEM;
+		}
+	}
+	url_destroy_components(&components);
+	return status;
+}
 
 /**
  * Attempt to find a nice filename for a URL.
