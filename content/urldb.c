@@ -1982,7 +1982,9 @@ void urldb_dump_search(struct search_node *parent, int depth)
 			fputc(' ', stderr);
 
 	for (h = parent->data; h; h = h->parent) {
-		fprintf(stderr, "%s", h->part);
+		if (h->part)
+			fprintf(stderr, "%s", h->part);
+
 		if (h->parent && h->parent->parent)
 			fputc('.', stderr);
 	}
@@ -2704,10 +2706,63 @@ bool urldb_set_cookie(const char *header, const char *url,
 		}
 
 		/* 4.3.2:i Cookie path must be a prefix of URL path */
-		if (strncmp(c->path, path, strlen(c->path)) != 0 ||
-				strlen(c->path) > strlen(path)) {
-			urldb_free_cookie(c);
-			goto error;
+		if (strlen(c->path) <= strlen(path)) {
+			/* Short enough to be prefix - check if it matches */
+			if (strncmp(c->path, path, strlen(c->path)) != 0) {
+				urldb_free_cookie(c);
+				goto error;
+			}
+		} else {
+			/* Too long to be a prefix - check if site author's
+			 * contrived to specify a cookie path containing the 
+			 * document leafname, too. This is strictly invalid,
+			 * but some sites rely on it. We simply correct the
+			 * path in this situation. */
+			char *leafname;
+			char *slash;
+
+			/* Ensure the URL's path is a prefix of the cookie's */
+			if (strncmp(path, c->path, strlen(path)) != 0) {
+				urldb_free_cookie(c);
+				goto error;
+			}
+
+			/* Get trailing part of cookie's path string */
+			slash = strrchr(c->path, '/');
+			if (slash == NULL) {
+				urldb_free_cookie(c);
+				goto error;
+			}
+
+			/* Get URL's leafname */
+			res = url_leafname(url, &leafname);
+			if (res != URL_FUNC_OK) {
+				urldb_free_cookie(c);
+				goto error;
+			}
+
+			/* Compare them -- they should be identical */
+			if (strlen(leafname) != strlen(slash + 1) ||
+					strcmp(leafname, slash + 1) != 0) {
+				free(leafname);
+				urldb_free_cookie(c);
+				goto error;
+			}
+
+			/* No longer need this */
+			free(leafname);
+
+			/* Do what the site author meant. We replace the path 
+			 * specified by the site author with the one we've 
+			 * extracted from the fetch URL. */
+
+			free(c->path);
+
+			c->path = strdup(path);
+			if (!c->path) {
+				urldb_free_cookie(c);
+				goto error;
+			}
 		}
 
 		/* 4.3.2:ii Cookie domain must contain embedded dots */
@@ -3675,6 +3730,7 @@ void urldb_destroy_search_tree(struct search_node *root)
 
 #ifdef TEST_URLDB
 int option_expire_url = 0;
+bool verbose_log = true;
 
 bool cookies_update(const char *domain, const struct cookie_data *data)
 {
@@ -3750,21 +3806,21 @@ int main(void)
 		return 1;
 	}
 
-	urldb_set_cookie("mmblah=foo; path=/; expires=Thur, 31-Dec-2099 00:00:00 GMT\r\n", "http://www.minimarcos.org.uk/cgi-bin/forum/Blah.pl?,v=login,p=2");
+	urldb_set_cookie("mmblah=foo; path=/; expires=Thur, 31-Dec-2099 00:00:00 GMT\r\n", "http://www.minimarcos.org.uk/cgi-bin/forum/Blah.pl?,v=login,p=2", NULL);
 
-	urldb_set_cookie("BlahPW=bar; path=/; expires=Thur, 31-Dec-2099 00:00:00 GMT\r\n", "http://www.minimarcos.org.uk/cgi-bin/forum/Blah.pl?,v=login,p=2");
+	urldb_set_cookie("BlahPW=bar; path=/; expires=Thur, 31-Dec-2099 00:00:00 GMT\r\n", "http://www.minimarcos.org.uk/cgi-bin/forum/Blah.pl?,v=login,p=2", NULL);
 
-	urldb_set_cookie("details=foo|bar|Sun, 03-Jun-2007;expires=Mon, 24-Jul-2006 09:53:45 GMT", "http://ccdb.cropcircleresearch.com/");
+	urldb_set_cookie("details=foo|bar|Sun, 03-Jun-2007;expires=Mon, 24-Jul-2006 09:53:45 GMT\r\n", "http://ccdb.cropcircleresearch.com/", NULL);
 
-	urldb_set_cookie("PREF=ID=a:TM=b:LM=c:S=d; path=/; domain=.google.com", "http://www.google.com/");
+	urldb_set_cookie("PREF=ID=a:TM=b:LM=c:S=d; path=/; domain=.google.com\r\n", "http://www.google.com/", NULL);
 
-	urldb_set_cookie("test=foo, bar, baz; path=/, quux=blah; path=/", "http://www.bbc.co.uk/");
+	urldb_set_cookie("test=foo, bar, baz; path=/, quux=blah; path=/", "http://www.bbc.co.uk/", NULL);
 
-//	urldb_set_cookie("a=b; path=/; domain=.a.com", "http://a.com/");
+//	urldb_set_cookie("a=b; path=/; domain=.a.com", "http://a.com/", NULL);
 
-	urldb_set_cookie("foo=bar;Path=/blah;Secure", "https://www.foo.com/blah/moose");
+	urldb_set_cookie("foo=bar;Path=/blah;Secure\r\n", "https://www.foo.com/blah/moose", "https://www.foo.com/blah/moose");
 
-	urldb_get_cookie("https://www.foo.com/blah/wxyzabc", "https://www.foo.com/blah/moose");
+	urldb_get_cookie("https://www.foo.com/blah/wxyzabc");
 
 	/* 1563546 */
 	assert(urldb_add_url("http:moodle.org") == false);
@@ -3783,6 +3839,29 @@ int main(void)
 	/* 1535120 */
 	assert(urldb_add_url("http://www2.2checkout.com/"));
 	assert(urldb_get_url("http://www2.2checkout.com/"));
+
+	/* Valid path */
+	assert(urldb_set_cookie("name=value;Path=/\r\n", "http://www.google.com/", NULL));
+
+	/* Valid path (non-root directory) */
+	assert(urldb_set_cookie("name=value;Path=/foo/bar/\r\n", "http://www.example.org/foo/bar/", NULL));
+
+	/* Invalid path (includes leafname) */
+	assert(urldb_set_cookie("name=value;Version=1;Path=/index.cgi\r\n", "http://example.org/index.cgi", NULL));
+	assert(urldb_get_cookie("http://example.org/index.cgi"));
+
+	/* Invalid path (includes leafname in non-root directory) */
+	assert(urldb_set_cookie("name=value;Path=/foo/index.html\r\n", "http://www.example.org/foo/index.html", NULL));
+	assert(urldb_get_cookie("http://www.example.org/foo/bar.html"));
+
+	/* Invalid path (contains different leafname) */
+	assert(urldb_set_cookie("name=value;Path=/index.html\r\n", "http://example.org/index.htm", NULL) == false);
+	
+	/* Invalid path (contains leafname in different directory) */
+	assert(urldb_set_cookie("name=value;Path=/foo/index.html\r\n", "http://www.example.org/bar/index.html", NULL) == false);
+
+	/* Test partial domain match with IP address failing */
+	assert(urldb_set_cookie("name=value;Domain=.foo.org\r\n", "http://192.168.0.1/", NULL) == false);
 
 	urldb_dump();
 
