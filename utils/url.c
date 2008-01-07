@@ -668,7 +668,6 @@ url_func_result url_path(const char *url, char **result)
 {
 	url_func_result status;
 	struct url_components components;
-	int len;
 
 	assert(url);
 
@@ -677,15 +676,9 @@ url_func_result url_path(const char *url, char **result)
 		if (!components.path) {
 			status = URL_FUNC_FAILED;
 		} else {
-			len = strlen(components.path);
-			while (components.path[len - 1] != '/')
-				len--;
-			*result = malloc(len + 2);
+			*result = strdup(components.path);
 			if (!(*result))
 				status = URL_FUNC_NOMEM;
-			else
-				snprintf((*result), len + 1, "%s",
-						components.path);
 		}
 	}
 	url_destroy_components(&components);
@@ -693,7 +686,7 @@ url_func_result url_path(const char *url, char **result)
 }
 
 /**
- * Extract leafname segment from an URL
+ * Extract leafname from an URL
  *
  * \param url	  an absolute URL
  * \param result  pointer to pointer to buffer to hold result

@@ -81,6 +81,7 @@
  * leaf nodes of the host tree described above.
  */
 
+#define _GNU_SOURCE /* For strndup */
 #include <assert.h>
 #include <ctype.h>
 #include <stdbool.h>
@@ -2706,63 +2707,10 @@ bool urldb_set_cookie(const char *header, const char *url,
 		}
 
 		/* 4.3.2:i Cookie path must be a prefix of URL path */
-		if (strlen(c->path) <= strlen(path)) {
-			/* Short enough to be prefix - check if it matches */
-			if (strncmp(c->path, path, strlen(c->path)) != 0) {
-				urldb_free_cookie(c);
-				goto error;
-			}
-		} else {
-			/* Too long to be a prefix - check if site author's
-			 * contrived to specify a cookie path containing the 
-			 * document leafname, too. This is strictly invalid,
-			 * but some sites rely on it. We simply correct the
-			 * path in this situation. */
-			char *leafname;
-			char *slash;
-
-			/* Ensure the URL's path is a prefix of the cookie's */
-			if (strncmp(path, c->path, strlen(path)) != 0) {
-				urldb_free_cookie(c);
-				goto error;
-			}
-
-			/* Get trailing part of cookie's path string */
-			slash = strrchr(c->path, '/');
-			if (slash == NULL) {
-				urldb_free_cookie(c);
-				goto error;
-			}
-
-			/* Get URL's leafname */
-			res = url_leafname(url, &leafname);
-			if (res != URL_FUNC_OK) {
-				urldb_free_cookie(c);
-				goto error;
-			}
-
-			/* Compare them -- they should be identical */
-			if (strlen(leafname) != strlen(slash + 1) ||
-					strcmp(leafname, slash + 1) != 0) {
-				free(leafname);
-				urldb_free_cookie(c);
-				goto error;
-			}
-
-			/* No longer need this */
-			free(leafname);
-
-			/* Do what the site author meant. We replace the path 
-			 * specified by the site author with the one we've 
-			 * extracted from the fetch URL. */
-
-			free(c->path);
-
-			c->path = strdup(path);
-			if (!c->path) {
-				urldb_free_cookie(c);
-				goto error;
-			}
+		if (strlen(c->path) > strlen(path) ||
+				strncmp(c->path, path, strlen(c->path)) != 0) {
+			urldb_free_cookie(c);
+			goto error;
 		}
 
 		/* 4.3.2:ii Cookie domain must contain embedded dots */
@@ -2994,11 +2942,31 @@ struct cookie_internal_data *urldb_parse_cookie(const char *url,
 	}
 
 	if (!c->path) {
-		res = url_path(url, &c->path);
+		char *path;
+		char *slash;
+
+		res = url_path(url, &path);
 		if (res != URL_FUNC_OK) {
 			urldb_free_cookie(c);
 			return NULL;
 		}
+
+		/* Strip leafname and trailing slash (4.3.1) */
+		slash = strrchr(path, '/');
+		if (slash) {
+			slash = strndup(path, slash - path);
+			if (slash == NULL) {
+				free(path);
+				urldb_free_cookie(c);
+				return NULL;
+			}
+
+			free(path);
+
+			path = slash;
+		}
+
+		c->path = path;
 	}
 
 	if (c->expires == -1)
@@ -3846,13 +3814,18 @@ int main(void)
 	/* Valid path (non-root directory) */
 	assert(urldb_set_cookie("name=value;Path=/foo/bar/\r\n", "http://www.example.org/foo/bar/", NULL));
 
-	/* Invalid path (includes leafname) */
+	/* Defaulted path */
+	assert(urldb_set_cookie("name=value\r\n", "http://www.example.org/foo/bar/baz/bat.html", NULL));
+	assert(urldb_get_cookie("http://www.example.org/foo/bar/baz/quux.htm"));
+
+	/* Valid path (includes leafname) */
 	assert(urldb_set_cookie("name=value;Version=1;Path=/index.cgi\r\n", "http://example.org/index.cgi", NULL));
 	assert(urldb_get_cookie("http://example.org/index.cgi"));
 
-	/* Invalid path (includes leafname in non-root directory) */
+	/* Valid path (includes leafname in non-root directory) */
 	assert(urldb_set_cookie("name=value;Path=/foo/index.html\r\n", "http://www.example.org/foo/index.html", NULL));
-	assert(urldb_get_cookie("http://www.example.org/foo/bar.html"));
+	/* Should _not_ match the above, as the leafnames differ */
+	assert(urldb_get_cookie("http://www.example.org/foo/bar.html") == NULL);
 
 	/* Invalid path (contains different leafname) */
 	assert(urldb_set_cookie("name=value;Path=/index.html\r\n", "http://example.org/index.htm", NULL) == false);
