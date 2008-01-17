@@ -111,6 +111,7 @@
 struct cookie_internal_data {
 	char *name;		/**< Cookie name */
 	char *value;		/**< Cookie value */
+	bool value_was_quoted;	/**< Value was quoted in Set-Cookie: */
 	char *comment;		/**< Cookie comment */
 	bool domain_from_set;	/**< Domain came from Set-Cookie: header */
 	char *domain;		/**< Domain */
@@ -269,14 +270,17 @@ static int urldb_search_match_prefix(const struct host_part *a,
 /* Cookies */
 static struct cookie_internal_data *urldb_parse_cookie(const char *url,
 		const char **cookie);
-static bool urldb_parse_avpair(struct cookie_internal_data *c, char *n, char *v);
-static bool urldb_insert_cookie(struct cookie_internal_data *c, const char *scheme,
-		const char *url);
+static bool urldb_parse_avpair(struct cookie_internal_data *c, char *n, 
+		char *v, bool was_quoted);
+static bool urldb_insert_cookie(struct cookie_internal_data *c, 
+		const char *scheme, const char *url);
 static void urldb_free_cookie(struct cookie_internal_data *c);
-static bool urldb_concat_cookie(struct cookie_internal_data *c, int *used,
-		int *alloc, char **buf);
-static void urldb_delete_cookie_hosts(const char *domain, const char *path, const char *name, struct host_part *parent);
-static void urldb_delete_cookie_paths(const char *domain, const char *path, const char *name, struct path_data *parent);
+static bool urldb_concat_cookie(struct cookie_internal_data *c, int version,
+		int *used, int *alloc, char **buf);
+static void urldb_delete_cookie_hosts(const char *domain, const char *path, 
+		const char *name, struct host_part *parent);
+static void urldb_delete_cookie_paths(const char *domain, const char *path, 
+		const char *name, struct path_data *parent);
 static void urldb_save_cookie_hosts(FILE *fp, struct host_part *parent);
 static void urldb_save_cookie_paths(FILE *fp, struct path_data *parent);
 
@@ -296,7 +300,7 @@ static struct search_node *search_trees[NUM_SEARCH_TREES] = {
 	&empty, &empty, &empty, &empty
 };
 
-#define COOKIE_FILE_VERSION 100
+#define COOKIE_FILE_VERSION 101
 #define URL_FILE_VERSION 106
 
 /**
@@ -2364,6 +2368,8 @@ char *urldb_get_cookie(const char *url)
 	const struct host_part *h;
 	struct cookie_internal_data *c;
 	int count = 0, version = COOKIE_RFC2965;
+	struct cookie_internal_data **matched_cookies;
+	int matched_cookies_size = 20;
 	int ret_alloc = 4096, ret_used = 1;
 	char *path;
 	char *ret;
@@ -2383,15 +2389,43 @@ char *urldb_get_cookie(const char *url)
 
 	scheme = p->scheme;
 
-	ret = malloc(ret_alloc);
-	if (!ret)
+	matched_cookies = malloc(matched_cookies_size * 
+			sizeof(struct cookie_internal_data *));
+	if (!matched_cookies)
 		return NULL;
+
+#define GROW_MATCHED_COOKIES						\
+	do {								\
+		if (count == matched_cookies_size) {			\
+			struct cookie_internal_data **temp;		\
+			temp = realloc(matched_cookies,			\
+				(matched_cookies_size + 20) *		\
+				sizeof(struct cookie_internal_data *));	\
+									\
+			if (temp == NULL) {				\
+				free(path);				\
+				free(ret);				\
+				free(matched_cookies);			\
+				return NULL;				\
+			}						\
+									\
+			matched_cookies = temp;				\
+			matched_cookies_size += 20;			\
+		}							\
+	} while(0)
+
+	ret = malloc(ret_alloc);
+	if (!ret) {
+		free(matched_cookies);
+		return NULL;
+	}
 
 	ret[0] = '\0';
 
 	res = url_path(url, &path);
 	if (res != URL_FUNC_OK) {
 		free(ret);
+		free(matched_cookies);
 		return NULL;
 	}
 
@@ -2417,20 +2451,16 @@ char *urldb_get_cookie(const char *url)
 					 * ignore */
 					continue;
 
-				if (!urldb_concat_cookie(c, &ret_used,
-						&ret_alloc, &ret)) {
-					free(path);
-					free(ret);
-					return NULL;
-				}
+				matched_cookies[count++] = c;
+
+				GROW_MATCHED_COOKIES;
 
 				if (c->version < (unsigned int)version)
 					version = c->version;
 
 				c->last_used = now;
-				cookies_update(c->domain, (struct cookie_data *)c);
-
-				count++;
+				cookies_update(c->domain, 
+						(struct cookie_data *)c);
 			}
 		}
 	}
@@ -2457,12 +2487,9 @@ char *urldb_get_cookie(const char *url)
 					 * => ignore */
 					continue;
 
-				if (!urldb_concat_cookie(c, &ret_used,
-						&ret_alloc, &ret)) {
-					free(path);
-					free(ret);
-					return NULL;
-				}
+				matched_cookies[count++] = c;
+
+				GROW_MATCHED_COOKIES;
 
 				if (c->version < (unsigned int) version)
 					version = c->version;
@@ -2470,7 +2497,6 @@ char *urldb_get_cookie(const char *url)
 				c->last_used = now;
 				cookies_update(c->domain,
 						(struct cookie_data *)c);
-				count++;
 			}
 		}
 
@@ -2502,19 +2528,15 @@ char *urldb_get_cookie(const char *url)
 				 * => ignore */
 				continue;
 
-			if (!urldb_concat_cookie(c, &ret_used,
-					&ret_alloc, &ret)) {
-				free(path);
-				free(ret);
-				return NULL;
-			}
+			matched_cookies[count++] = c;
+
+			GROW_MATCHED_COOKIES;
 
 			if (c->version < (unsigned int) version)
 				version = c->version;
 
 			c->last_used = now;
 			cookies_update(c->domain, (struct cookie_data *)c);
-			count++;
 		}
 
 	}
@@ -2538,20 +2560,15 @@ char *urldb_get_cookie(const char *url)
 				/* secure cookie for insecure host. ignore */
 				continue;
 
-			if (!urldb_concat_cookie(c, &ret_used, &ret_alloc,
-					&ret)) {
-				free(path);
-				free(ret);
-				return NULL;
-			}
+			matched_cookies[count++] = c;
+
+			GROW_MATCHED_COOKIES;
 
 			if (c->version < (unsigned int)version)
 				version = c->version;
 
 			c->last_used = now;
 			cookies_update(c->domain, (struct cookie_data *)c);
-
-			count++;
 		}
 	}
 
@@ -2561,35 +2578,51 @@ char *urldb_get_cookie(const char *url)
 		/* No cookies found */
 		free(path);
 		free(ret);
+		free(matched_cookies);
 		return NULL;
 	}
 
 	/* and build output string */
+	if (version > COOKIE_NETSCAPE) {
+		sprintf(ret, "$Version=%d", version);
+		ret_used = strlen(ret) + 1;
+	}
+
+	for (int i = 0; i < count; i++) {
+		if (!urldb_concat_cookie(matched_cookies[i], version,
+				&ret_used, &ret_alloc, &ret)) {
+			free(path);
+			free(ret);
+			free(matched_cookies);
+			return NULL;
+		}
+	}
+
+	if (version == COOKIE_NETSCAPE) {
+		/* Old-style cookies => no version & skip "; " */
+		memmove(ret, ret + 2, ret_used - 2);
+		ret_used -= 2;
+	}
+
+	/* Now, shrink the output buffer to the required size */
 	{
-		char *temp;
-		if (version > 0)
-			temp = malloc(12 + ret_used);
-		else
-			temp = malloc(ret_used);
+		char *temp = realloc(ret, ret_used);
 		if (!temp) {
 			free(path);
 			free(ret);
+			free(matched_cookies);
 			return NULL;
 		}
 
-		if (version > 0)
-			sprintf(temp, "$Version=%d%s", version, ret);
-		else {
-			/* Old-style cookies => no version & skip "; " */
-			sprintf(temp, "%s", ret + 2);
-		}
-
-		free(path);
-		free(ret);
 		ret = temp;
 	}
 
+	free(path);
+	free(matched_cookies);
+
 	return ret;
+
+#undef GROW_MATCHED_COOKIES
 }
 
 /**
@@ -2726,6 +2759,20 @@ bool urldb_set_cookie(const char *header, const char *url,
 			int hlen, dlen;
 			char *domain = c->domain;
 
+			/* c->domain must be a domain cookie here because:
+			 * c->domain is either:
+			 *   + specified in the header as a domain cookie
+			 *     (non-domain cookies in the header are ignored
+			 *      by urldb_parse_cookie / urldb_parse_avpair)
+			 *   + defaulted to the URL's host part
+			 *     (by urldb_parse_cookie if no valid domain was
+			 *      specified in the header)
+			 *
+			 * The latter will pass the strcasecmp above, which 
+			 * leaves the former (i.e. a domain cookie)
+			 */
+			assert(c->domain[0] == '.');
+
 			/* 4.3.2:iii */
 			if (url_host_is_ip_address(host)) {
 				/* IP address, so no partial match */
@@ -2754,7 +2801,9 @@ bool urldb_set_cookie(const char *header, const char *url,
 				goto error;
 			}
 
-			/* If you believe the spec, H should contain no
+			/* 4.3.2:iv Ensure H contains no dots
+			 *
+			 * If you believe the spec, H should contain no
 			 * dots in _any_ cookie. Unfortunately, however,
 			 * reality differs in that many sites send domain
 			 * cookies of the form .foo.com from hosts such
@@ -2763,18 +2812,16 @@ bool urldb_set_cookie(const char *header, const char *url,
 			 * expect, regardless of any potential security
 			 * implications.
 			 *
-			 * Ensure that we're dealing with a domain cookie
-			 * here for extra paranoia.
+			 * This is what code conforming to the spec would
+			 * look like:
+			 *
+			 * for (int i = 0; i < (hlen - dlen); i++) {
+			 *	if (host[i] == '.') {
+			 *		urldb_free_cookie(c);
+			 *		goto error;
+			 *	}
+			 * }
 			 */
-			if (c->domain[0] != '.') {
-				/* 4.3.2:iv Ensure H contains no dots */
-				for (int i = 0; i < (hlen - dlen); i++) {
-					if (host[i] == '.') {
-						urldb_free_cookie(c);
-						goto error;
-					}
-				}
-			}
 		}
 
 		/* Now insert into database */
@@ -2815,6 +2862,7 @@ struct cookie_internal_data *urldb_parse_cookie(const char *url,
 	char *n = name, *v = value;
 	bool had_equals = false;
 	bool quoted = false;
+	bool was_quoted = false;
 	url_func_result res;
 
 	assert(url && cookie && *cookie);
@@ -2831,8 +2879,12 @@ struct cookie_internal_data *urldb_parse_cookie(const char *url,
 	for (cur = *cookie; *cur && *cur != '\r' && *cur != '\n'; cur++) {
 		if (had_equals && (*cur == '"' || *cur == '\'')) {
 			/* Only values may be quoted */
-			quoted = !quoted;
-			continue;
+			if (cur == *cookie || *(cur - 1) != '\\') {
+				/* Only unescaped quotes count */
+				was_quoted = quoted;
+				quoted = !quoted;
+				continue;
+			}
 		}
 
 		if (!quoted && !had_equals && *cur == '=') {
@@ -2848,7 +2900,7 @@ struct cookie_internal_data *urldb_parse_cookie(const char *url,
 			*n = '\0';
 			*v = '\0';
 
-			if (!urldb_parse_avpair(c, name, value)) {
+			if (!urldb_parse_avpair(c, name, value, was_quoted)) {
 				/* Memory exhausted */
 				urldb_free_cookie(c);
 				return NULL;
@@ -2858,6 +2910,7 @@ struct cookie_internal_data *urldb_parse_cookie(const char *url,
 			n = name;
 			v = value;
 			had_equals = false;
+			was_quoted = false;
 			continue;
 		}
 
@@ -2877,8 +2930,8 @@ struct cookie_internal_data *urldb_parse_cookie(const char *url,
 		 *   immediately following semicolon (or end of input if none
 		 *   found). Then, consider the input characters between
 		 *   these two positions. If any of these characters is an
-		 *  '=', we must assume that the comma signified the end of
-		 *  the current cookie.
+		 *   '=', we must assume that the comma signified the end of
+		 *   the current cookie.
 		 *
 		 * This holds as the first avpair of any cookie must be
 		 * NAME=VALUE, so the '=' is guaranteed to appear in the
@@ -2913,6 +2966,7 @@ struct cookie_internal_data *urldb_parse_cookie(const char *url,
 		}
 
 		/* Accumulate into buffers, always leaving space for a NUL */
+		/** \todo is silently truncating overlong names/values wise? */
 		if (!had_equals) {
 			if (n < name + 1023)
 				*n++ = *cur;
@@ -2926,7 +2980,7 @@ struct cookie_internal_data *urldb_parse_cookie(const char *url,
 	*n = '\0';
 	*v = '\0';
 
-	if (!urldb_parse_avpair(c, name, value)) {
+	if (!urldb_parse_avpair(c, name, value, was_quoted)) {
 		/* Memory exhausted */
 		urldb_free_cookie(c);
 		return NULL;
@@ -2984,9 +3038,11 @@ struct cookie_internal_data *urldb_parse_cookie(const char *url,
  * \param c Cookie struct to populate
  * \param n Name component
  * \param v Value component
+ * \param was_quoted Whether ::v was quoted in the input
  * \return true on success, false on memory exhaustion
  */
-bool urldb_parse_avpair(struct cookie_internal_data *c, char *n, char *v)
+bool urldb_parse_avpair(struct cookie_internal_data *c, char *n, char *v,
+		bool was_quoted)
 {
 	int vlen;
 
@@ -3073,6 +3129,7 @@ bool urldb_parse_avpair(struct cookie_internal_data *c, char *n, char *v)
 	} else if (!c->name) {
 		c->name = strdup(n);
 		c->value = strdup(v);
+		c->value_was_quoted = was_quoted;
 		if (!c->name || !c->value)
 			return false;
 	}
@@ -3197,25 +3254,83 @@ void urldb_free_cookie(struct cookie_internal_data *c)
  * Concatenate a cookie into the provided buffer
  *
  * \param c Cookie to concatenate
+ * \param version The version of the cookie string to output
  * \param used Pointer to amount of buffer used (updated)
  * \param alloc Pointer to allocated size of buffer (updated)
  * \param buf Pointer to Pointer to buffer (updated)
  * \return true on success, false on memory exhaustion
  */
-bool urldb_concat_cookie(struct cookie_internal_data *c, int *used,
-		int *alloc, char **buf)
+bool urldb_concat_cookie(struct cookie_internal_data *c, int version,
+		int *used, int *alloc, char **buf)
 {
-	int clen;
+	/* Combined (A)BNF for the Cookie: request header:
+	 * 
+	 * CHAR           = <any US-ASCII character (octets 0 - 127)>
+	 * CTL            = <any US-ASCII control character
+	 *                  (octets 0 - 31) and DEL (127)>
+	 * CR             = <US-ASCII CR, carriage return (13)>
+	 * LF             = <US-ASCII LF, linefeed (10)> 
+	 * SP             = <US-ASCII SP, space (32)>
+	 * HT             = <US-ASCII HT, horizontal-tab (9)>
+	 * <">            = <US-ASCII double-quote mark (34)>
+	 *
+	 * CRLF           = CR LF
+	 *
+	 * LWS            = [CRLF] 1*( SP | HT )
+	 *
+	 * TEXT           = <any OCTET except CTLs,
+	 *                  but including LWS>
+	 *
+	 * token          = 1*<any CHAR except CTLs or separators>
+	 * separators     = "(" | ")" | "<" | ">" | "@"
+	 *                | "," | ";" | ":" | "\" | <">
+	 *                | "/" | "[" | "]" | "?" | "="
+	 *                | "{" | "}" | SP | HT
+	 *
+	 * quoted-string  = ( <"> *(qdtext | quoted-pair ) <"> )
+	 * qdtext         = <any TEXT except <">>
+	 * quoted-pair    = "\" CHAR
+	 *
+	 * attr            =       token
+	 * value           =       word
+	 * word            =       token | quoted-string
+	 *
+	 * cookie          =       "Cookie:" cookie-version
+	 *                         1*((";" | ",") cookie-value)
+	 * cookie-value    =       NAME "=" VALUE [";" path] [";" domain]
+	 * cookie-version  =       "$Version" "=" value
+	 * NAME            =       attr
+	 * VALUE           =       value
+	 * path            =       "$Path" "=" value
+	 * domain          =       "$Domain" "=" value
+	 *
+	 * A note on quoted-string handling:
+	 *   The cookie data stored in the db is verbatim (i.e. sans enclosing
+	 *   <">, if any, and with all quoted-pairs intact) thus all that we 
+	 *   need to do here is ensure that value strings which were quoted
+	 *   in Set-Cookie or which include any of the separators are quoted 
+	 *   before use.
+	 *
+	 * A note on cookie-value separation:
+	 *   We use semicolons for all separators, including between 
+	 *   cookie-values. This simplifies things and is backwards compatible.
+	 */		      
+	const char * const separators = "()<>@,;:\\\"/[]?={} \t";
+
+	int max_len;
 
 	assert(c && used && alloc && buf && *buf);
 
-	clen = 2 + strlen(c->name) + 1 + strlen(c->value) +
+	/* "; " cookie-value 
+	 * We allow for the possibility that values are quoted
+	 */
+	max_len = 2 + strlen(c->name) + 1 + strlen(c->value) + 2 +
 			(c->path_from_set ?
-				8 + strlen(c->path) : 0) +
+				8 + strlen(c->path) + 2 : 0) +
 			(c->domain_from_set ?
-				10 + strlen(c->domain) : 0);
+				10 + strlen(c->domain) + 2 : 0);
 
-	if (*used + clen >= *alloc) {
+	if (*used + max_len >= *alloc) {
 		char *temp = realloc(*buf, *alloc + 4096);
 		if (!temp) {
 			return false;
@@ -3224,17 +3339,72 @@ bool urldb_concat_cookie(struct cookie_internal_data *c, int *used,
 		*alloc += 4096;
 	}
 
-	/** \todo Quote value strings iff version > 0 */
-	sprintf(*buf + *used - 1, "; %s=%s%s%s%s%s",
-			c->name, c->value,
-			(c->path_from_set ? "; $Path=" : "" ),
-			(c->path_from_set ? c->path : "" ),
-//			(c->path_from_set ? "\"" : ""),
-			(c->domain_from_set ? "; $Domain=" : ""),
-			(c->domain_from_set ? c->domain : "")
-//			,(c->domain_from_set ? "\"" : "")
-		);
-	*used += clen;
+	if (version == COOKIE_NETSCAPE) {
+		/* Original Netscape cookie */
+		sprintf(*buf + *used - 1, "; %s=", c->name);
+		*used += 2 + strlen(c->name) + 1;
+
+		/* The Netscape spec doesn't mention quoting of cookie values.
+		 * RFC 2109 $10.1.3 indicates that values must not be quoted.
+		 *
+		 * However, other browsers preserve quoting, so we should, too
+		 */
+		if (c->value_was_quoted) {
+			sprintf(*buf + *used - 1, "\"%s\"", c->value);
+			*used += 1 + strlen(c->value) + 1;
+		} else {
+			/** \todo should we %XX-encode [;HT,SP] ? */
+			/** \todo Should we strip escaping backslashes? */
+			sprintf(*buf + *used - 1, "%s", c->value);
+			*used += strlen(c->value);
+		}
+
+		/* We don't send path/domain information -- that's what the 
+		 * Netscape spec suggests we should do, anyway. */
+	} else {
+		/* RFC2109 or RFC2965 cookie */
+		sprintf(*buf + *used - 1, "; %s=", c->name);
+		*used += 2 + strlen(c->name) + 1;
+
+		/* Value needs quoting if it contains any separator or if
+		 * it needs preserving from the Set-Cookie header */
+		if (c->value_was_quoted ||
+				strpbrk(c->value, separators) != NULL) {
+			sprintf(*buf + *used - 1, "\"%s\"", c->value);
+			*used += 1 + strlen(c->value) + 1;
+		} else {
+			sprintf(*buf + *used - 1, "%s", c->value);
+			*used += strlen(c->value);
+		}
+
+		if (c->path_from_set) {
+			/* Path, quoted if necessary */
+			sprintf(*buf + *used - 1, "; $Path=");
+			*used += 8;
+
+			if (strpbrk(c->path, separators) != NULL) {
+				sprintf(*buf + *used - 1, "\"%s\"", c->path);
+				*used += 1 + strlen(c->path) + 1;
+			} else {
+				sprintf(*buf + *used - 1, "%s", c->path);
+				*used += strlen(c->path);
+			}
+		}
+
+		if (c->domain_from_set) {
+			/* Domain, quoted if necessary */
+			sprintf(*buf + *used - 1, "; $Domain=");
+			*used += 10;
+
+			if (strpbrk(c->domain, separators) != NULL) {
+				sprintf(*buf + *used - 1, "\"%s\"", c->domain);
+				*used += 1 + strlen(c->domain) + 1;
+			} else {
+				sprintf(*buf + *used - 1, "%s", c->domain);
+				*used += strlen(c->domain);
+			}
+		}
+	}
 
 	return true;
 }
@@ -3280,7 +3450,7 @@ void urldb_load_cookies(const char *filename)
 			*domain, *path, *name, *value, *scheme, *url,
 			*comment;
 		int version, domain_specified, path_specified,
-			secure, no_destroy;
+			secure, no_destroy, value_quoted;
 		time_t expires, last_used;
 
 		if(s[0] == 0 || s[0] == '#')
@@ -3296,7 +3466,8 @@ void urldb_load_cookies(const char *filename)
 		if (strncasecmp(s, "Version:", 8) == 0) {
 			FIND_T; SKIP_T; file_version = atoi(p);
 
-			if (file_version != COOKIE_FILE_VERSION) {
+			if (file_version < 100 && 
+					file_version > COOKIE_FILE_VERSION) {
 				LOG(("Unknown Cookie file version"));
 				break;
 			}
@@ -3321,6 +3492,11 @@ void urldb_load_cookies(const char *filename)
 		SKIP_T; no_destroy = atoi(p); FIND_T;
 		SKIP_T; name = p; FIND_T;
 		SKIP_T; value = p; FIND_T;
+		if (file_version > 100) {
+			SKIP_T;	value_quoted = atoi(p); FIND_T;
+		} else {
+			value_quoted = 0;
+		}
 		SKIP_T; scheme = p; FIND_T;
 		SKIP_T; url = p; FIND_T;
 
@@ -3340,6 +3516,7 @@ void urldb_load_cookies(const char *filename)
 
 		c->name = strdup(name);
 		c->value = strdup(value);
+		c->value_was_quoted = value_quoted;
 		c->comment = strdup(comment);
 		c->domain_from_set = domain_specified;
 		c->domain = strdup(domain);
@@ -3446,10 +3623,10 @@ void urldb_save_cookies(const char *filename)
 		    "#\n"
 		    "# Version\tDomain\tDomain from Set-Cookie\tPath\t"
 			"Path from Set-Cookie\tSecure\tExpires\tLast used\t"
-			"No destroy\tName\tValue\tScheme\tURL\tComment\n",
+			"No destroy\tName\tValue\tValue was quoted\tScheme\t"
+			"URL\tComment\n",
 			COOKIE_FILE_VERSION);
 	fprintf(fp, "Version:\t%d\n", COOKIE_FILE_VERSION);
-
 
 	urldb_save_cookie_hosts(fp, &db_root);
 
@@ -3492,12 +3669,13 @@ void urldb_save_cookie_paths(FILE *fp, struct path_data *parent)
 				continue;
 
 			fprintf(fp, "%d\t%s\t%d\t%s\t%d\t%d\t%d\t%d\t%d\t"
-					"%s\t%s\t%s\t%s\t%s\n",
+					"%s\t%s\t%d\t%s\t%s\t%s\n",
 					c->version, c->domain,
 					c->domain_from_set, c->path,
 					c->path_from_set, c->secure,
 					(int)c->expires, (int)c->last_used,
 					c->no_destroy, c->name, c->value,
+					c->value_was_quoted,
 					parent->scheme  ? parent->scheme
 							: "unused",
 					parent->url ? parent->url : "unused",
@@ -3836,8 +4014,47 @@ int main(void)
 	/* Test partial domain match with IP address failing */
 	assert(urldb_set_cookie("name=value;Domain=.foo.org\r\n", "http://192.168.0.1/", NULL) == false);
 
+	/* Test handling of non-domain cookie sent by server (domain part should
+	 * be ignored) */
+	assert(urldb_set_cookie("foo=value;Domain=blah.com\r\n", "http://www.example.com/", NULL));
+	assert(strcmp(urldb_get_cookie("http://www.example.com/"), "foo=value") == 0);
+
+	/* Test handling of domain cookie from wrong host (strictly invalid but
+	 * required to support the real world) */
+	assert(urldb_set_cookie("name=value;Domain=.example.com\r\n", "http://foo.bar.example.com/", NULL));
+	assert(strcmp(urldb_get_cookie("http://www.example.com/"), "foo=value; name=value") == 0);
+
+	/* Test presence of separators in cookie value */
+	assert(urldb_set_cookie("name=\"value=foo\\\\bar\\\\\\\";\\\\baz=quux\";Version=1\r\n", "http://www.example.org/", NULL));
+	assert(strcmp(urldb_get_cookie("http://www.example.org/"), "$Version=1; name=\"value=foo\\\\bar\\\\\\\";\\\\baz=quux\"") == 0);
+
+	/* Test cookie with blank value */
+	assert(urldb_set_cookie("a=\r\n", "http://www.example.net/", NULL));
+	assert(strcmp(urldb_get_cookie("http://www.example.net/"), "a=") == 0);
+
+	/* Test specification of multiple cookies in one header */
+	assert(urldb_set_cookie("a=b, foo=bar; Path=/\r\n", "http://www.example.net/", NULL));
+	assert(strcmp(urldb_get_cookie("http://www.example.net/"), "foo=bar; a=b") == 0);
+
+	/* Test use of separators in unquoted cookie value */
+	assert(urldb_set_cookie("foo=moo@foo:blah?moar\\ text\r\n", "http://example.com/", NULL));
+	assert(strcmp(urldb_get_cookie("http://example.com/"), "foo=moo@foo:blah?moar\\ text; name=value") == 0);
+
+	/* Test use of unnecessary quotes */
+	assert(urldb_set_cookie("foo=\"hello\";Version=1,bar=bat\r\n", "http://example.com/", NULL));
+	assert(strcmp(urldb_get_cookie("http://example.com/"), "bar=bat; foo=\"hello\"; name=value") == 0);
+
 	urldb_dump();
 
 	return 0;
 }
+
+/*
+  gcc -g -o urldbtest -std=c99 -DTEST_URLDB -I. 
+  `pkg-config --cflags --libs libxml-2.0 cairo librsvg-2.0 libcurl` 
+  content/urldb.c utils/url.c utils/utils.c utils/messages.c 
+  utils/hashtable.c utils/filename.c
+ */
+
 #endif
+
