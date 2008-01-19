@@ -1407,18 +1407,16 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 
 		/* help actions */
 		case HELP_OPEN_CONTENTS:
-			ro_gui_open_help_page("docs");
+			ro_gui_open_help_page("documentation/index");
 			return true;
 		case HELP_OPEN_GUIDE:
-			ro_gui_open_help_page("guide");
+			ro_gui_open_help_page("documentation/guide");
 			return true;
 		case HELP_OPEN_INFORMATION:
-			ro_gui_open_help_page("info");
+			ro_gui_open_help_page("documentation/info");
 			return true;
 		case HELP_OPEN_ABOUT:
-			browser_window_create(
-					"file:///<NetSurf$Dir>/Docs/about",
-					0, 0, true);
+			ro_gui_open_help_page("about/index");
 			return true;
 		case HELP_LAUNCH_INTERACTIVE:
 			if (!ro_gui_interactive_help_available()) {
