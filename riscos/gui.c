@@ -742,7 +742,7 @@ void gui_init2(int argc, char** argv)
 			LOG(("malloc failed"));
 			die("Insufficient memory for URL");
 		}
-		snprintf(url, 80, "file:///<NetSurf$Dir>/Docs/intro_%s",
+		snprintf(url, 80, "file:///<NetSurf$Dir>/Docs/documentation/index_%s",
 			option_language);
 	}
 
@@ -1162,7 +1162,7 @@ bool ro_gui_icon_bar_click(wimp_pointer *pointer)
 			browser_window_create(option_homepage_url, NULL, 0, true);
 		} else {
 			snprintf(url, sizeof url,
-					"file:///<NetSurf$Dir>/Docs/intro_%s",
+					"file:///<NetSurf$Dir>/Docs/documentation/index_%s",
 					option_language);
 			browser_window_create(url, NULL, 0, true);
 		}
@@ -1844,7 +1844,7 @@ void ro_msg_dataopen(wimp_message *message)
 			url = malloc(80);
 			if (url)
 				snprintf(url, 80,
-					"file:///<NetSurf$Dir>/Docs/intro_%s",
+					"file:///<NetSurf$Dir>/Docs/documentation/index_%s",
 					option_language);
 		}
 		if (!url)
