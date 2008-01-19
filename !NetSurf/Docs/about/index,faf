@@ -1,0 +1,65 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+        "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<title>NetSurf | About NetSurf</title>
+<link rel="stylesheet" title="Standard" type="text/css" href="../netsurf">
+<link rel="alternate stylesheet" title="Unrestricted width" type="text/css" href="/netsurfur.css">
+</head>
+
+<body>
+<p class="banner"><a href="../intro_en"><img src="../netsurf_png" alt="NetSurf"></a></p>
+
+<div class="onlycontent">
+
+<p class="breadcrumbs"><a href="../intro_en">Home</a> » About NetSurf</p>
+
+<h1>NetSurf <em>VERSION</em></h1>
+
+<p>Authors and contributors:
+<em>(code)</em> Kevin Bagust, John M Bell, James Bursa, Matthew Hambley, Rob
+Jackson, Rob Kendrick, Jeffrey Lee, Adrian Lees, Phil Mellor, Philip
+Pemberton, Daniel Silverstone, Andrew Timmins, John Tytgat, Richard Wilson;
+<em>(graphics, documentation &amp; translations)</em> Sebastian Barthel,
+Bruno D'Arcangeli, Michael Drake, Andrew Duffell, Richard Hallas, Gerard van
+Katwijk, Jérôme Mathevet, Simon Voortman.</p>
+
+<h2>Libraries</h2>
+
+<table>
+<tr><th><a href="http://curl.haxx.se/libcurl/"><img src="libcurl" alt="libcurl"></a></th>
+<td>© 1996&#x2013;2004, Daniel Stenberg</td></tr>
+
+<tr><th><a href="http://www.ijg.org/">IJG JPEG library</a></th>
+<td>This software is based in part on the work of the Independent JPEG Group<br>
+© 1991&#x2013;1998, Thomas G. Lane</td></tr>
+
+<tr><th><a href="http://www.libmng.com/"><img src="libmng" alt="libmng"></a></th>
+<td>© 2000&#x2013;2002 Gerard Juyn</td></tr>
+
+<tr><th><a href="http://www.openssl.org/"><img src="openssl" alt="OpenSSL"></a></th>
+<td>© 1998&#x2013;2004 The OpenSSL Project<br>
+© 1995&#x2013;1998 Eric A. Young, Tim J. Hudson</td></tr>
+
+<tr><th><a href="http://ro-oslib.sourceforge.net/">OSLib</a></th>
+<td>© 1994&#x2013;2002 Jonathan Coxhead and OSLib maintainers</td></tr>
+
+<tr><th><a href="http://www.xmlsoft.org/"><img src="libxml2" alt="libxml2"></a></th>
+<td>© 1998&#x2013;2003 Daniel Veillard</td></tr>
+
+<tr><th><a href="http://www.gzip.org/zlib/">zlib</a></th>
+<td>© 1995&#x2013;2002 Jean-loup Gailly and Mark Adler</td></tr>
+</table>
+
+
+<div class="footer">
+<p>Copyright 2003 - 2008 The NetSurf Developers</p>
+</div>
+
+</div>
+
+
+
+
+</body>
+</html>
