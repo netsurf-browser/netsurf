@@ -1546,7 +1546,7 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 						option_homepage_url, 0, true);
 			} else {
 				snprintf(url, sizeof url,
-						"file:///<NetSurf$Dir>/Docs/intro_%s",
+						"file:///<NetSurf$Dir>/Docs/welcome/index_%s",
 						option_language);
 				browser_window_go(g->bw, url, 0, true);
 			}
