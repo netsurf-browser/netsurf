@@ -159,6 +159,7 @@ struct path_data {
 	struct cache_internal_data cache;	/**< Cache data for resource */
 	struct auth_data auth;	/**< Authentication data for resource */
 	struct cookie_internal_data *cookies;	/**< Cookies associated with resource */
+	struct cookie_internal_data *cookies_end;	/**< Last cookie in list */
 
 	struct path_data *next;	/**< Next sibling */
 	struct path_data *prev;	/**< Previous sibling */
@@ -2860,7 +2861,9 @@ struct cookie_internal_data *urldb_parse_cookie(const char *url,
 	const char *cur;
 	char name[1024], value[4096];
 	char *n = name, *v = value;
-	bool had_equals = false;
+	bool in_value = false;
+	bool had_value_data = false;
+	bool value_verbatim = false;
 	bool quoted = false;
 	bool was_quoted = false;
 	url_func_result res;
@@ -2876,25 +2879,83 @@ struct cookie_internal_data *urldb_parse_cookie(const char *url,
 	name[0] = '\0';
 	value[0] = '\0';
 
-	for (cur = *cookie; *cur && *cur != '\r' && *cur != '\n'; cur++) {
-		if (had_equals && (*cur == '"' || *cur == '\'')) {
-			/* Only values may be quoted */
+	for (cur = *cookie; *cur; cur++) {
+		if (*cur == '\r' && *(cur + 1) == '\n') {
+			/* End of header */
+			if (quoted) {
+				/* Unmatched quote encountered */
+
+				/* Match Firefox 2.0.0.11 */
+				value[0] = '\0';
+
+#if 0
+				/* This is what IE6/7 & Safari 3 do */
+				/* Opera 9.25 discards the entire cookie */
+
+				/* Shuffle value up by 1 */
+				memmove(value + 1, value, 
+					min(v - value, sizeof(value) - 2));
+				v++;
+				/* And insert " character at the start */
+				value[0] = '"';
+
+				/* Now, run forwards through the value
+				 * looking for a semicolon. If one exists,
+				 * terminate the value at this point. */
+				for (char *s = value; s < v; s++) {
+					if (*s == ';') {
+						*s = '\0';
+						v = s;
+						break;
+					}
+				}
+#endif
+			}
+
+			break;
+		} else if (*cur == '\r') {
+			/* Spurious linefeed */
+			continue;	
+		} else if (*cur == '\n') {
+			/* Spurious newline */
+			continue;
+		}
+
+		if (in_value && !had_value_data) {
+			if (*cur == ' ' || *cur == '\t') {
+				/* Strip leading whitespace from value */
+				continue;
+			} else {
+				had_value_data = true;
+
+				/* Value is taken verbatim if first non-space 
+				 * character is not a " */
+				if (*cur != '"') {
+					value_verbatim = true;
+				}
+			}
+		}
+
+		if (in_value && !value_verbatim && (*cur == '"')) {
+			/* Only non-verbatim values may be quoted */
 			if (cur == *cookie || *(cur - 1) != '\\') {
 				/* Only unescaped quotes count */
 				was_quoted = quoted;
 				quoted = !quoted;
+
 				continue;
 			}
 		}
 
-		if (!quoted && !had_equals && *cur == '=') {
+		if (!quoted && !in_value && *cur == '=') {
 			/* First equals => attr-value separator */
-			had_equals = true;
+			in_value = true;
 			continue;
 		}
 
-		if (!quoted && *cur == ';') {
-			/* Semicolon => end of current avpair */
+		if (!quoted && (was_quoted || *cur == ';')) {
+			/* Semicolon or after quoted value 
+			 * => end of current avpair */
 
 			/* NUL-terminate tokens */
 			*n = '\0';
@@ -2909,8 +2970,17 @@ struct cookie_internal_data *urldb_parse_cookie(const char *url,
 			/* And reset to start */
 			n = name;
 			v = value;
-			had_equals = false;
+			in_value = false;
+			had_value_data = false;
+			value_verbatim = false;
 			was_quoted = false;
+
+			/* Now, if the current input is anything other than a
+			 * semicolon, we must be sure to reprocess it */
+			if (*cur != ';') {
+				cur--;
+			}
+
 			continue;
 		}
 
@@ -2967,11 +3037,11 @@ struct cookie_internal_data *urldb_parse_cookie(const char *url,
 
 		/* Accumulate into buffers, always leaving space for a NUL */
 		/** \todo is silently truncating overlong names/values wise? */
-		if (!had_equals) {
-			if (n < name + 1023)
+		if (!in_value) {
+			if (n < name + (sizeof(name) - 1))
 				*n++ = *cur;
 		} else {
-			if (v < value + 4095)
+			if (v < value + (sizeof(value) - 1))
 				*v++ = *cur;
 		}
 	}
@@ -3202,6 +3272,8 @@ bool urldb_insert_cookie(struct cookie_internal_data *c, const char *scheme,
 			/* remove cookie */
 			if (d->next)
 				d->next->prev = d->prev;
+			else
+				p->cookies_end = d->prev;
 			if (d->prev)
 				d->prev->next = d->next;
 			else
@@ -3214,6 +3286,8 @@ bool urldb_insert_cookie(struct cookie_internal_data *c, const char *scheme,
 			c->next = d->next;
 			if (c->next)
 				c->next->prev = c;
+			else
+				p->cookies_end = c;
 			if (c->prev)
 				c->prev->next = c;
 			else
@@ -3222,11 +3296,13 @@ bool urldb_insert_cookie(struct cookie_internal_data *c, const char *scheme,
 //			LOG(("%p: %s=%s", c, c->name, c->value));
 		}
 	} else {
-		c->prev = NULL;
-		c->next = p->cookies;
-		if (p->cookies)
-			p->cookies->prev = c;
-		p->cookies = c;
+		c->prev = p->cookies_end;
+		c->next = NULL;
+		if (p->cookies_end)
+			p->cookies_end->next = c;
+		else
+			p->cookies = c;
+		p->cookies_end = c;
 //		LOG(("%p: %s=%s", c, c->name, c->value));
 	}
 
@@ -3587,6 +3663,8 @@ void urldb_delete_cookie_paths(const char *domain, const char *path,
 			  	parent->cookies = c->next;
 			if (c->next)
 				c->next->prev = c->prev;
+			else
+				parent->cookies_end = c->prev;
 			if (!parent->cookies)
 				cookies_update(domain, NULL);
 			urldb_free_cookie(c);
@@ -4034,7 +4112,7 @@ int main(void)
 
 	/* Test specification of multiple cookies in one header */
 	assert(urldb_set_cookie("a=b, foo=bar; Path=/\r\n", "http://www.example.net/", NULL));
-	assert(strcmp(urldb_get_cookie("http://www.example.net/"), "foo=bar; a=b") == 0);
+	assert(strcmp(urldb_get_cookie("http://www.example.net/"), "a=b; foo=bar") == 0);
 
 	/* Test use of separators in unquoted cookie value */
 	assert(urldb_set_cookie("foo=moo@foo:blah?moar\\ text\r\n", "http://example.com/", NULL));
@@ -4042,7 +4120,7 @@ int main(void)
 
 	/* Test use of unnecessary quotes */
 	assert(urldb_set_cookie("foo=\"hello\";Version=1,bar=bat\r\n", "http://example.com/", NULL));
-	assert(strcmp(urldb_get_cookie("http://example.com/"), "bar=bat; foo=\"hello\"; name=value") == 0);
+	assert(strcmp(urldb_get_cookie("http://example.com/"), "foo=\"hello\"; bar=bat; name=value") == 0);
 
 	urldb_dump();
 
