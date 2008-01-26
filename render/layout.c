@@ -598,7 +598,6 @@ void layout_block_add_scrollbar(struct box *box, int which)
 		if (which == BOTTOM && box->height != AUTO &&
 				(box->style->overflow == CSS_OVERFLOW_SCROLL ||
 				box_hscrollbar_present(box))) {
-			box->height -= SCROLLBAR_WIDTH;
 			box->padding[BOTTOM] += SCROLLBAR_WIDTH;
 		}
 		if (which == RIGHT && box->width != AUTO &&
