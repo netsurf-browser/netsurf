@@ -1199,9 +1199,13 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 				break;
 			case CSS_BACKGROUND_REPEAT_REPEAT_X:
 				repeat_x = true;
+				clip_x0 = px0 = px0 - box->border[LEFT];
+				clip_x1 = px1 = px1 + box->border[RIGHT];
 				break;
 			case CSS_BACKGROUND_REPEAT_REPEAT_Y:
 				repeat_y = true;
+				clip_y0 = py0 = py0 - box->border[TOP];
+				clip_y1 = py1 = py1 + box->border[BOTTOM];
 				break;
 			case CSS_BACKGROUND_REPEAT_NO_REPEAT:
 				break;
