@@ -1078,7 +1078,7 @@ bool layout_line(struct box *first, int *width, int *y,
 		x += space_after;
 
 		if (b->type == BOX_INLINE_BLOCK) {
-			if (b->width == UNKNOWN_WIDTH)
+			if (b->max_width != UNKNOWN_WIDTH)
 				if (!layout_float(b, *width, content))
 					return false;
 			h = b->border[TOP] + b->padding[TOP] + b->height +
