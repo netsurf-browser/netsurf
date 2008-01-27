@@ -154,7 +154,7 @@ form > * { margin-left: inherit; margin-right: inherit; }
 input { background-color: #fff; color: #000; width: 10em;
 	height: 1.5em; text-align: left; border-width: 1px;
 	border-color: #000; border-style: solid; overflow: hidden;
-	padding: 0 2px; }
+	padding: 0 2px; margin: 1px;}
 input[type=button], input[type=reset], input[type=submit], button {
 	background-color: #d9d9d9; color: #000; width: auto;
 	border-width: medium; border-color: #d9d9d9;

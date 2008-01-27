@@ -1081,7 +1081,6 @@ bool layout_line(struct box *first, int *width, int *y,
 			if (b->width == UNKNOWN_WIDTH)
 				if (!layout_float(b, *width, content))
 					return false;
-			/** \todo  should margin be included? spec unclear */
 			h = b->border[TOP] + b->padding[TOP] + b->height +
 					b->padding[BOTTOM] + b->border[BOTTOM];
 			if (height < h)
@@ -1508,7 +1507,7 @@ bool layout_line(struct box *first, int *width, int *y,
 		}
 		if (d->type == BOX_INLINE_BLOCK) {
 			d->x += x0;
-			d->y = *y + d->border[TOP];
+			d->y = *y + d->border[TOP] + d->margin[TOP];
 		}
 		if (d->type == BOX_INLINE_BLOCK &&
 				(d->style->position == CSS_POSITION_ABSOLUTE ||
@@ -1516,8 +1515,9 @@ bool layout_line(struct box *first, int *width, int *y,
 			continue;
 		if ((d->type == BOX_INLINE && (d->object || d->gadget)) ||
 				d->type == BOX_INLINE_BLOCK) {
-			h = d->border[TOP] + d->padding[TOP] + d->height +
-					d->padding[BOTTOM] + d->border[BOTTOM];
+			h = d->margin[TOP] + d->border[TOP] + d->padding[TOP] +
+					d->height + d->padding[BOTTOM] +
+					d->border[BOTTOM] + d->margin[BOTTOM];
 			if (used_height < h)
 				used_height = h;
 		}
