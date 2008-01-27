@@ -1500,11 +1500,15 @@ bool layout_line(struct box *first, int *width, int *y,
 	}
 
 	for (d = first; d != b; d = d->next) {
-		if (d->type == BOX_INLINE || d->type == BOX_INLINE_BLOCK ||
-				d->type == BOX_BR || d->type == BOX_TEXT ||
+		if (d->type == BOX_INLINE || d->type == BOX_BR ||
+				d->type == BOX_TEXT ||
 				d->type == BOX_INLINE_END) {
 			d->x += x0;
 			d->y = *y - d->padding[TOP];
+		}
+		if (d->type == BOX_INLINE_BLOCK) {
+			d->x += x0;
+			d->y = *y + d->border[TOP];
 		}
 		if (d->type == BOX_INLINE_BLOCK &&
 				(d->style->position == CSS_POSITION_ABSOLUTE ||
