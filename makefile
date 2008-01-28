@@ -72,12 +72,14 @@ OBJECTS_GTK += font_pango.o gtk_bitmap.o gtk_gui.o \
 	gtk_history.o gtk_window.o gtk_filetype.o \
 	gtk_download.o						# gtk/
 
-
-OBJDIR_RISCOS = $(shell $(CC) -dumpmachine)
+# This makes me want to vomit, but is necessary to avoid a load of
+# "make: /home/riscos/cross/bin/gcc: Command not found." if there's no GCCSDK
+# installed on the build machine. The new build system can't happen soon enough
+OBJDIR_RISCOS = $(shell $(CC) -dumpmachine 2>/dev/null || echo arm-riscos-aof)
 SOURCES_RISCOS=$(OBJECTS_RISCOS:.o=.c)
 OBJS_RISCOS=$(OBJECTS_RISCOS:%.o=$(OBJDIR_RISCOS)/%.o)
 
-OBJDIR_RISCOS_SMALL = $(shell $(CC) -dumpmachine)-small
+OBJDIR_RISCOS_SMALL = $(OBJDIR_RISCOS)-small
 SOURCES_RISCOS_SMALL=$(OBJECTS_RISCOS_SMALL:.o=.c)
 OBJS_RISCOS_SMALL=$(OBJECTS_RISCOS_SMALL:%.o=$(OBJDIR_RISCOS_SMALL)/%.o)
 

@@ -6,6 +6,12 @@ CC_DEBUG = /usr/bin/gcc
 CC = $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*gcc)
 ASM = $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*gcc)
 
+# If it's blank, then no cross-compiler was found. Set it to something sane.
+ifeq ($(CC),)
+CC = $(GCCSDK_INSTALL_CROSSBIN)/gcc
+ASM = $(GCCSDK_INSTALL_CROSSBIN)/gcc
+endif
+
 PLATFORM_CFLAGS_RISCOS = -I$(GCCSDK_INSTALL_ENV)/include \
 		-I$(GCCSDK_INSTALL_ENV)/include/libxml2 \
 		-I$(GCCSDK_INSTALL_ENV)/include/libmng \
