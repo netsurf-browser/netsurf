@@ -1305,12 +1305,6 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 		if (plot_content) {
 			if (!plot.clip(clip_x0, clip_y0, clip_x1, clip_y1))
 					return false;
-		if ((repeat_x || repeat_y) && (!(repeat_x && repeat_y))) {
-			clip_x0 += ceilf(box->border[LEFT] * scale);
-			clip_x1 -= ceilf(box->border[RIGHT] * scale);
-			clip_y0 += ceilf(box->border[TOP] * scale);
-			clip_y1 -= ceilf(box->border[BOTTOM] * scale);
-		}
 			if (!content_redraw_tiled(background->background, x, y,
 				ceilf(background->background->width * scale),
 				ceilf(background->background->height * scale),
