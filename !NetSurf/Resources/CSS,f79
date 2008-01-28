@@ -173,12 +173,12 @@ input[align=right] { float: right; }
 select { background-color: #d9d9d9; color: #000; width: 10em;
 	height: 1.5em; text-align: left; border-width: medium;
 	border-color: #d9d9d9; border-style: inset;
-	overflow: hidden; padding: 0 2px; }
+	overflow: hidden; padding: 0 2px; margin: 1px; }
 select:after { content: "\25bc"; border-left:4px ridge #d9d9d9; }
 
 textarea { background-color: #fff; color: #000; text-align: left;
 	border-width: 1px; border-color: #000; border-style: solid;
-	overflow: scroll; padding: 0 2px; }
+	overflow: scroll; padding: 0 2px; margin: 1px; }
 
 fieldset { display: block; border: thin solid #888; margin: 1.12em 0; }
 
