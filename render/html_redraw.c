@@ -1,5 +1,10 @@
 /*
- * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004-2008 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004-2007 John M Bell <jmb202@ecs.soton.ac.uk>
+ * Copyright 2004-2007 Richard Wilson <info@tinct.net>
+ * Copyright 2005-2006 Adrian Lees <adrianl@users.sourceforge.net>
+ * Copyright 2006 Rob Kendrick <rjek@netsurf-browser.org>
+ * Copyright 2008 Michael Drake <tlsa@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -157,10 +162,10 @@ bool html_redraw_box(struct box *box,
 	int x, y;
 	int width, height;
 	int padding_left, padding_top, padding_width, padding_height;
+	int border_left, border_top, border_right, border_bottom;
 	int x0, y0, x1, y1;
 	int x_scrolled, y_scrolled;
 	struct box *bg_box = NULL;
-	bool visible = true;
 
 	/* avoid trivial FP maths */
 	if (scale == 1.0) {
@@ -173,6 +178,10 @@ bool html_redraw_box(struct box *box,
 		padding_width = padding_left + box->width + box->padding[RIGHT];
 		padding_height = padding_top + box->height +
 				box->padding[BOTTOM];
+		border_left = box->border[LEFT];
+		border_top = box->border[TOP];
+		border_right = box->border[RIGHT];
+		border_bottom = box->border[BOTTOM];
 	} else {
 		x = (x_parent + box->x) * scale;
 		y = (y_parent + box->y) * scale;
@@ -188,14 +197,18 @@ bool html_redraw_box(struct box *box,
 				box->padding[RIGHT]) * scale;
 		padding_height = (box->padding[TOP] + box->height +
 				box->padding[BOTTOM]) * scale;
+		border_left = box->border[LEFT] * scale;
+		border_top = box->border[TOP] * scale;
+		border_right = box->border[RIGHT] * scale;
+		border_bottom = box->border[BOTTOM] * scale;
 	}
 
-	/* calculate clip rectangle for this box */
+	/* calculate rectangle covering this box and descendants */
 	if (box->style && box->style->overflow != CSS_OVERFLOW_VISIBLE) {
-		x0 = x;
-		y0 = y;
-		x1 = x + padding_width;
-		y1 = y + padding_height;
+		x0 = x - border_left;
+		y0 = y - border_top;
+		x1 = x + padding_width + border_right;
+		y1 = y + padding_height + border_bottom;
 	} else {
 		x0 = x + box->descendant_x0 * scale;
 		y0 = y + box->descendant_y0 * scale;
@@ -203,18 +216,26 @@ bool html_redraw_box(struct box *box,
 		y1 = y + box->descendant_y1 * scale + 1;
 	}
 
+	/* return if the rectangle is completely outside the clip rectangle */
+	if (clip_y1 < y0 || y1 < clip_y0 || clip_x1 < x0 || x1 < clip_x0)
+		return ((!plot.group_end) || (plot.group_end()));
+
 	/* if visibility is hidden render children only */
 	if (box->style && box->style->visibility == CSS_VISIBILITY_HIDDEN) {
 	  	if ((plot.group_start) && (!plot.group_start("hidden box")))
 			return false;
-		visible = false;
-	} else {
-		if ((plot.group_start) && (!plot.group_start("vis box")))
+		if (!html_redraw_box_children(box, x_parent, y_parent,
+				x0, y0, x1, y1, scale,
+				current_background_color))
 			return false;
+		return ((!plot.group_end) || (plot.group_end()));
 	}
 
+	if ((plot.group_start) && (!plot.group_start("vis box")))
+		return false;
+
 	/* dotted debug outlines */
-	if (html_redraw_debug && visible) {
+	if (html_redraw_debug) {
 		if (!plot.rectangle(x, y, padding_width, padding_height,
 				1, 0x0000ff, true, false))
 			return false;
@@ -234,19 +255,6 @@ bool html_redraw_box(struct box *box,
 				1, 0x00ffff, true, false))
 			return false;
 	}
-
-	/* borders */
-	if (visible && box->style && box->type != BOX_TEXT && (box->border[TOP] ||
-			box->border[RIGHT] || box->border[BOTTOM] ||
-			box->border[LEFT]))
-		if (!html_redraw_borders(box, x_parent, y_parent,
-				padding_width, padding_height,
-				scale))
-			return false;
-
-	/* return if the box is completely outside the clip rectangle */
-	if (clip_y1 < y0 || y1 < clip_y0 || clip_x1 < x0 || x1 < clip_x0)
-		return ((!plot.group_end) || (plot.group_end()));
 
 	if (box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
 			box->type == BOX_TABLE_CELL || box->object) {
@@ -269,18 +277,6 @@ bool html_redraw_box(struct box *box,
 		x1 = clip_x1;
 		y1 = clip_y1;
 	}
-
-	/* hidden elements */
-	if (!visible) {
-		if (!html_redraw_box_children(box, x_parent, y_parent,
-				x0, y0, x1, y1, scale,
-				current_background_color))
-			return false;
-		return ((!plot.group_end) || (plot.group_end()));
-	}
-
-
-
 	/* background colour and image */
 
 	/* Thanks to backwards compatibility, CSS defines the following:
@@ -340,15 +336,13 @@ bool html_redraw_box(struct box *box,
 			bg_box->style != bg_box->parent->parent->style)) &&
 			((bg_box->style->background_color != TRANSPARENT) ||
 			(bg_box->background))) {
-		/* find intersection of clip box and padding box */
-		int px0 = (x - box->border[LEFT]) < x0 ?
-					x0 : (x - box->border[LEFT]);
-		int py0 = (y - box->border[TOP]) < y0 ?
-					y0 : (y - box->border[TOP]);
-		int px1 = x + padding_width + box->border[RIGHT] < x1 ?
-				x + padding_width + box->border[RIGHT] : x1;
-		int py1 = y + padding_height + box->border[BOTTOM] < y1 ? y +
-				padding_height + box->border[BOTTOM] : y1;
+		/* find intersection of clip box and border edge */
+		int px0 = x - border_left < x0 ? x0 : x - border_left;
+		int py0 = y - border_top < y0 ? y0 : y - border_top;
+		int px1 = x + padding_width + border_right < x1 ?
+				x + padding_width + border_right : x1;
+		int py1 = y + padding_height + border_bottom < y1 ?
+				y + padding_height + border_bottom : y1;
 
 		/* valid clipping rectangles only */
 		if ((px0 < px1) && (py0 < py1)) {
@@ -358,6 +352,34 @@ bool html_redraw_box(struct box *box,
 					&current_background_color, bg_box))
 				return false;
 			/* restore previous graphics window */
+			if (!plot.clip(x0, y0, x1, y1))
+				return false;
+		}
+	}
+
+	/* borders */
+	if (box->style && box->type != BOX_TEXT &&
+			(border_top || border_right ||
+			 border_bottom || border_left))
+		if (!html_redraw_borders(box, x_parent, y_parent,
+				padding_width, padding_height,
+				scale))
+			return false;
+
+	/* clip to the padding edge for boxes with overflow hidden or scroll */
+	if (box->style && box->style->overflow != CSS_OVERFLOW_VISIBLE) {
+		x0 = x;
+		y0 = y;
+		x1 = x + padding_width;
+		y1 = y + padding_height;
+		if (x0 < clip_x0) x0 = clip_x0;
+		if (y0 < clip_y0) y0 = clip_y0;
+		if (clip_x1 < x1) x1 = clip_x1;
+		if (clip_y1 < y1) y1 = clip_y1;
+		if (x1 <= x0 || y1 <= y0)
+			return ((!plot.group_end) || (plot.group_end()));
+		if (box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
+				box->type == BOX_TABLE_CELL || box->object) {
 			if (!plot.clip(x0, y0, x1, y1))
 				return false;
 		}
