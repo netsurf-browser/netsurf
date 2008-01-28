@@ -1704,14 +1704,6 @@ void plugin_stream_callback(content_msg msg, struct content *c,
 						plugin_STREAM_DESTROY_ERROR);
 			break;
 
-		case CONTENT_MSG_REDIRECT:
-			/* and re-start fetch with new URL */
-			p->c = 0;
-			if (!plugin_start_fetch(p, data.redirect))
-				plugin_destroy_stream(p,
-						plugin_STREAM_DESTROY_ERROR);
-			break;
-
 		case CONTENT_MSG_NEWPTR:
 			p->c = c;
 			break;
@@ -1775,7 +1767,6 @@ void plugin_fetch_callback(fetch_msg msg, void *p, const void *data,
 			break;
 
 		case FETCH_TYPE:
-		case FETCH_REDIRECT:
 		case FETCH_NOTMODIFIED:
 		case FETCH_AUTH:
 #ifdef WITH_SSL

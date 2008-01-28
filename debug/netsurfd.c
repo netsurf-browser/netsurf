@@ -143,10 +143,6 @@ void callback(content_msg msg, struct content *c, void *p1,
 		done = destroyed = 1;
 	} else if (msg == CONTENT_MSG_STATUS)
 		printf("=== STATUS: %s\n", c->status_message);
-		else if (msg == CONTENT_MSG_REDIRECT) {
-			printf("=== REDIRECT to '%s'\n", data.redirect);
-			done = destroyed = 1;
-		}
 }
 
 

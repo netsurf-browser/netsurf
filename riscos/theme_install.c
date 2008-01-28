@@ -125,7 +125,6 @@ void theme_install_callback(content_msg msg, struct content *c,
 		break;
 
 	case CONTENT_MSG_LOADING:
-	case CONTENT_MSG_REDIRECT:
 	case CONTENT_MSG_REFORMAT:
 	case CONTENT_MSG_REDRAW:
 	case CONTENT_MSG_NEWPTR:

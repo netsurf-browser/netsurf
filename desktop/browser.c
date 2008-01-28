@@ -509,23 +509,6 @@ void browser_window_callback(content_msg msg, struct content *c,
 		browser_window_set_status(bw, c->status_message);
 		break;
 
-	case CONTENT_MSG_REDIRECT:
-	{
-		const char *prev_url = bw->loading_content->url;
-
-		bw->loading_content = 0;
-		browser_window_set_status(bw,
-				messages_get("Redirecting"));
-		/* the spec says nothing about referrers and
-		 * redirects => follow Mozilla and preserve the
-		 * referer across the redirect */
-		browser_window_go_post(bw, data.redirect, 0, 0,
-				bw->history_add, bw->referer,
-				bw->download, false,
-				bw->referer ? bw->referer : prev_url);
-	}
-		break;
-
 	case CONTENT_MSG_REFORMAT:
 		if (c == bw->current_content &&
 			c->type == CONTENT_HTML) {
@@ -1177,7 +1160,6 @@ void download_window_callback(fetch_msg msg, void *p, const void *data,
 			break;
 
 		case FETCH_TYPE:
-		case FETCH_REDIRECT:
 		case FETCH_NOTMODIFIED:
 		case FETCH_AUTH:
 #ifdef WITH_SSL

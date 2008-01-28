@@ -82,7 +82,6 @@ typedef enum {
 	CONTENT_MSG_DONE,      /**< finished */
 	CONTENT_MSG_ERROR,     /**< error occurred */
 	CONTENT_MSG_STATUS,    /**< new status string */
-	CONTENT_MSG_REDIRECT,  /**< replacement URL */
 	CONTENT_MSG_REFORMAT,  /**< content_reformat done */
 	CONTENT_MSG_REDRAW,    /**< needs redraw (eg. new animation frame) */
 	CONTENT_MSG_NEWPTR,    /**< address of structure has changed */
@@ -227,6 +226,7 @@ struct content {
 
 	bool no_error_pages;		/**< Used by fetchcache(). */
 	bool download;			/**< Used by fetchcache(). */
+	unsigned int redirect_count;	/**< Used by fetchcache(). */
 
 	/** Array of first n rendering errors or warnings. */
 	struct {

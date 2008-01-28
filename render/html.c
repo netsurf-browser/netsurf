@@ -1085,24 +1085,6 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 			content_broadcast(c, CONTENT_MSG_STATUS, data);
 			break;
 
-		case CONTENT_MSG_REDIRECT:
-			c->active--;
-			c->data.html.stylesheet_content[i] = fetchcache(
-					data.redirect,
-					html_convert_css_callback,
-					(intptr_t) c, i, css->width, css->height,
-					true, 0, 0, false, false);
-			if (c->data.html.stylesheet_content[i]) {
-				c->active++;
-				fetchcache_go(c->data.html.stylesheet_content[i],
-						c->url,
-						html_convert_css_callback,
-						(intptr_t) c, i, css->width,
-						css->height, 0, 0, false,
-						c->url);
-			}
-			break;
-
 		case CONTENT_MSG_NEWPTR:
 			c->data.html.stylesheet_content[i] = css;
 			break;
@@ -1169,12 +1151,6 @@ bool html_fetch_object(struct content *c, char *url, struct box *box,
 		return false;
 	}
 	c->data.html.object = object;
-	c->data.html.object[i].url = talloc_strdup(c, url);
-	if (!c->data.html.object[i].url) {
-		content_remove_user(c_fetch, html_object_callback,
-				(intptr_t) c, i);
-		return false;
-	}
 	c->data.html.object[i].box = box;
 	c->data.html.object[i].permitted_types = permitted_types;
        	c->data.html.object[i].background = background;
@@ -1221,8 +1197,6 @@ bool html_replace_object(struct content *c, unsigned int i, char *url,
 				html_object_callback, (intptr_t) c, i);
 		c->data.html.object[i].content = 0;
 		c->data.html.object[i].box->object = 0;
-		talloc_free(c->data.html.object[i].url);
-		c->data.html.object[i].url = 0;
 	}
 
 	/* initialise fetch */
@@ -1234,12 +1208,6 @@ bool html_replace_object(struct content *c, unsigned int i, char *url,
 	if (!c_fetch)
 		return false;
 
-	c->data.html.object[i].url = talloc_strdup(c, url);
-	if (!c->data.html.object[i].url) {
-		content_remove_user(c_fetch, html_object_callback,
-				(intptr_t) c, i);
-		return false;
-	}
 	c->data.html.object[i].content = c_fetch;
 
 	for (page = c; page; page = page->data.html.page) {
@@ -1349,35 +1317,6 @@ void html_object_callback(content_msg msg, struct content *object,
 			/* content_broadcast(c, CONTENT_MSG_STATUS, 0); */
 			break;
 
-		case CONTENT_MSG_REDIRECT:
-			c->active--;
-			talloc_free(c->data.html.object[i].url);
-			c->data.html.object[i].url = talloc_strdup(c,
-					data.redirect);
-			if (!c->data.html.object[i].url) {
-				/** \todo  report oom */
-			} else {
-				c->data.html.object[i].content = fetchcache(
-						data.redirect,
-						html_object_callback,
-						(intptr_t) c, i, 0, 0, true,
-						0, 0, false, false);
-				if (!c->data.html.object[i].content) {
-					/** \todo  report oom */
-				} else {
-					c->active++;
-					fetchcache_go(c->data.html.object[i].
-							content,
-							c->url,
-							html_object_callback,
-							(intptr_t) c, i,
-							0, 0,
-							0, 0,
-							false, c->url);
-				}
-			}
-			break;
-
 		case CONTENT_MSG_REFORMAT:
 			break;
 
@@ -1439,7 +1378,6 @@ void html_object_callback(content_msg msg, struct content *object,
 			(msg == CONTENT_MSG_LOADING ||
 			msg == CONTENT_MSG_DONE ||
 			msg == CONTENT_MSG_ERROR ||
-			msg == CONTENT_MSG_REDIRECT ||
 			msg == CONTENT_MSG_AUTH)) {
 		/* all objects have arrived */
 		content_reformat(c, c->available_width, c->height);

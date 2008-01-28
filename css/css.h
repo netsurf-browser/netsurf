@@ -493,7 +493,6 @@ typedef enum {
 struct content_css_data {
 	struct css_stylesheet *css;	/**< Opaque stylesheet data. */
 	unsigned int import_count;	/**< Number of entries in import_url. */
-	char **import_url;		/**< Imported stylesheet urls. */
 	struct content **import_content; /**< Imported stylesheet contents. */
 	css_origin origin;		/**< Origin of stylesheet. */
 };

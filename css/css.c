@@ -431,7 +431,6 @@ bool css_convert(struct content *c, int width, int height)
 	for (i = 0; i != HASH_SIZE; i++)
 		c->data.css.css->rule[i] = 0;
 	c->data.css.import_count = 0;
-	c->data.css.import_url = 0;
 	c->data.css.import_content = 0;
 	c->data.css.origin = CSS_ORIGIN_UA;
 	c->active = 0;
@@ -504,11 +503,9 @@ void css_destroy(struct content *c)
 	/* imported stylesheets */
 	for (i = 0; i != c->data.css.import_count; i++)
 		if (c->data.css.import_content[i] != 0) {
-			free(c->data.css.import_url[i]);
 			content_remove_user(c->data.css.import_content[i],
 					css_atimport_callback, (intptr_t) c, i);
 		}
-	free(c->data.css.import_url);
 	free(c->data.css.import_content);
 }
 
@@ -790,20 +787,10 @@ void css_atimport(struct content *c, struct css_node *node)
 	char *t, *url, *url1;
 	bool string = false, screen = true;
 	unsigned int i;
-	char **import_url;
 	struct content **import_content;
 	url_func_result res;
 
 	LOG(("@import rule"));
-
-	import_url = realloc(c->data.css.import_url,
-			(c->data.css.import_count + 1) *
-			sizeof(*c->data.css.import_url));
-	if (!import_url) {
-		/** \todo report to user */
-		return;
-	}
-	c->data.css.import_url = import_url;
 
 	import_content = realloc(c->data.css.import_content,
 			(c->data.css.import_count + 1) *
@@ -889,8 +876,7 @@ void css_atimport(struct content *c, struct css_node *node)
 	/* start the fetch */
 	c->data.css.import_count++;
 	i = c->data.css.import_count - 1;
-	c->data.css.import_url[i] = url1;
-	c->data.css.import_content[i] = fetchcache(c->data.css.import_url[i],
+	c->data.css.import_content[i] = fetchcache(url1,
 			css_atimport_callback, (intptr_t) c, i,
 			c->width, c->height, true, 0, 0, false, false);
 	if (c->data.css.import_content[i]) {
@@ -966,30 +952,6 @@ void css_atimport_callback(content_msg msg, struct content *css,
 			break;
 
 		case CONTENT_MSG_STATUS:
-			break;
-
-		case CONTENT_MSG_REDIRECT:
-			c->active--;
-			free(c->data.css.import_url[i]);
-			c->data.css.import_url[i] = strdup(data.redirect);
-			if (!c->data.css.import_url[i]) {
-				/** \todo report to user */
-				/* c->error = 1; */
-				return;
-			}
-			c->data.css.import_content[i] = fetchcache(
-					c->data.css.import_url[i],
-					css_atimport_callback, (intptr_t) c, i,
-					css->width, css->height, true, 0, 0,
-					false, false);
-			if (c->data.css.import_content[i]) {
-				c->active++;
-				fetchcache_go(c->data.css.import_content[i],
-						c->url, css_atimport_callback,
-						(intptr_t) c, i,
-						css->width, css->height,
-						0, 0, false, c->url);
-			}
 			break;
 
 		case CONTENT_MSG_NEWPTR:

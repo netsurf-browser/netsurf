@@ -51,6 +51,8 @@ static void fetchcache_error_page(struct content *c, const char *error);
 static void fetchcache_cache_update(struct content *c,
 		const struct cache_data *data);
 static void fetchcache_notmodified(struct content *c, const void *data);
+static void fetchcache_redirect(struct content *c, const void *data,
+		unsigned long size);
 
 
 /**
@@ -380,11 +382,10 @@ void fetchcache_callback(fetch_msg msg, void *p, const void *data,
 	bool res;
 	struct content *c = p;
 	content_type type;
-	char *mime_type, *url;
+	char *mime_type;
 	char **params;
 	unsigned int i;
 	union content_msg_data msg_data;
-	url_func_result result;
 
 	switch (msg) {
 		case FETCH_TYPE:
@@ -457,37 +458,7 @@ void fetchcache_callback(fetch_msg msg, void *p, const void *data,
 			break;
 
 		case FETCH_REDIRECT:
-			c->fetch = 0;
-			/* redirect URLs must be absolute by HTTP/1.1, but many sites send
-			 * relative ones: treat them as relative to requested URL */
-			result = url_join(data, c->url, &url);
-			/* set the status to ERROR so that the content is
-			 * destroyed in content_clean() */
-			c->status = CONTENT_STATUS_ERROR;
-			if (result == URL_FUNC_OK) {
-				bool same;
-
-				result = url_compare(c->url, url, &same);
-
-				/* check that we're not attempting to
-				 * redirect to the same URL */
-				if (result != URL_FUNC_OK || same) {
-					msg_data.error =
-						messages_get("BadRedirect");
-					content_broadcast(c,
-						CONTENT_MSG_ERROR, msg_data);
-				}
-				else {
-					msg_data.redirect = url;
-					content_broadcast(c,
-							CONTENT_MSG_REDIRECT,
-							msg_data);
-				}
-				free(url);
-			} else {
-				msg_data.error = messages_get("BadRedirect");
-				content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-			}
+			fetchcache_redirect(c, data, size);
 			break;
 
 		case FETCH_NOTMODIFIED:
@@ -788,6 +759,144 @@ void fetchcache_notmodified(struct content *c, const void *data)
 
 		free(referer);
 	}
+}
+
+/**
+ * Redirect callback handler
+ */
+
+void fetchcache_redirect(struct content *c, const void *data,
+		unsigned long size)
+{
+	char *url;
+	char *referer;
+	long http_code = fetch_http_code(c->fetch);
+	const char *ref = fetch_get_referer(c->fetch);
+	union content_msg_data msg_data;
+	url_func_result result;
+
+	/* Preconditions */
+	assert(c && data);
+	assert(c->status == CONTENT_STATUS_TYPE_UNKNOWN);
+	/* Ensure a redirect happened */
+	assert(300 <= http_code && http_code <= 399);
+	/* 304 is handled by fetch_notmodified() */
+	assert(http_code != 304);
+
+	/* Clone referer -- original is destroyed in fetch_abort() */
+	referer = ref ? strdup(ref) : NULL;
+
+	/* set the status to ERROR so that this content is
+	 * destroyed in content_clean() */
+	fetch_abort(c->fetch);
+	c->fetch = 0;
+	c->status = CONTENT_STATUS_ERROR;
+
+	/* Ensure that referer cloning succeeded 
+	 * _must_ be after content invalidation */
+	if (ref && !referer) {
+		LOG(("Failed cloning referer"));
+
+		msg_data.error = messages_get("BadRedirect");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+
+		return;
+	}
+
+	/** \todo 300, 305, 307
+	 * More specifically:
+	 *  + 300 needs to serve up the fetch body to the user
+	 *  + 305 needs to refetch using the proxy specified in ::data
+	 *  + 307 needs to refetch.
+	 * 
+	 * If the original request method was either GET or HEAD, then follow
+	 * redirect unconditionally. If the original request method was neither
+	 * GET nor HEAD, then the user MUST be asked what to do.
+	 *
+	 * Note:
+	 *  For backwards compatibility, all 301, 302 and 303 redirects are
+	 *  followed unconditionally with a GET request to the new location.
+	 */
+	if (http_code != 301 && http_code != 302 && http_code != 303) {
+		LOG(("Unsupported redirect type %ld", http_code));
+
+		msg_data.error = messages_get("BadRedirect");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+
+		free(referer);
+		return;
+	}
+
+	/* Forcibly stop redirecting if we've followed too many redirects */
+#define REDIRECT_LIMIT 10
+	if (c->redirect_count > REDIRECT_LIMIT) {
+		LOG(("Too many nested redirects"));
+
+		msg_data.error = messages_get("BadRedirect");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+
+		free(referer);
+		return;
+	}
+#undef REDIRECT_LIMIT
+
+	/* redirect URLs must be absolute by HTTP/1.1, but many
+	 * sites send relative ones: treat them as relative to 
+	 * requested URL */
+	result = url_join(data, c->url, &url);
+
+	if (result != URL_FUNC_OK) {
+		msg_data.error = messages_get("BadRedirect");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+
+		free(referer);
+		return;
+	}
+
+	/* Process users of this content */
+	while (c->user_list->next) {
+		intptr_t p1, p2;
+		void (*callback)(content_msg msg,
+			struct content *c, intptr_t p1,
+			intptr_t p2,
+			union content_msg_data data);
+		struct content *replacement;
+	
+		p1 = c->user_list->next->p1;
+		p2 = c->user_list->next->p2;
+		callback = c->user_list->next->callback;
+
+		/* Remove user */
+		content_remove_user(c, callback, p1, p2);
+
+		/* Get replacement content -- HTTP GET request */
+		replacement = fetchcache(url, callback, p1, p2, 
+				c->width, c->height, c->no_error_pages,
+				NULL, NULL, false, c->download);
+		if (!replacement) {
+			msg_data.error = messages_get("BadRedirect");
+			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+
+			free(url);
+			free(referer);
+			return;
+		}
+
+		/* Set replacement's redirect count to 1 greater than ours */
+		replacement->redirect_count = c->redirect_count + 1;
+
+		/* Notify user that content has changed */
+		callback(CONTENT_MSG_NEWPTR, replacement, p1, p2, msg_data);
+
+		/* Start fetching the replacement content */
+		fetchcache_go(replacement, referer, callback, p1, p2,
+				c->width, c->height, NULL, NULL,
+				false, referer ? referer : c->url);
+	}
+
+	/* Clean up */
+	free(url);
+	free(referer);
 }
 
 #ifdef TEST

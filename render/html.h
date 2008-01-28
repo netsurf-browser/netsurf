@@ -66,7 +66,6 @@ typedef enum {
 
 /** An object (<img>, <object>, etc.) in a CONTENT_HTML document. */
 struct content_html_object {
-	char *url;  /**< URL of this object. */
 	struct content *content;  /**< Content, or 0. */
 	struct box *box;  /**< Node in box tree containing it. */
 	/** Pointer to array of permitted content_type, terminated by
