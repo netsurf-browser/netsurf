@@ -546,6 +546,8 @@ void box_dump(FILE *stream, struct box *box, unsigned int depth)
 		fprintf(stream, "space ");
 	if (box->object)
 		fprintf(stream, "(object '%s') ", box->object->url);
+	if (box->gadget)
+		fprintf(stream, "(gadget) ");
 	if (box->style)
 		css_dump_style(box->style);
 	if (box->href)
