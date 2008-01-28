@@ -1505,7 +1505,8 @@ bool layout_line(struct box *first, int *width, int *y,
 			d->x += x0;
 			d->y = *y - d->padding[TOP];
 		}
-		if (d->type == BOX_INLINE_BLOCK) {
+		if ((d->type == BOX_INLINE && (d->object || d->gadget)) ||
+				d->type == BOX_INLINE_BLOCK) {
 			d->x += x0;
 			d->y = *y + d->border[TOP] + d->margin[TOP];
 		}
