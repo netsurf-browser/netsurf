@@ -1507,8 +1507,10 @@ bool layout_line(struct box *first, int *width, int *y,
 		}
 		if ((d->type == BOX_INLINE && (d->object || d->gadget)) ||
 				d->type == BOX_INLINE_BLOCK) {
-			d->x += x0;
 			d->y = *y + d->border[TOP] + d->margin[TOP];
+		}
+		if (d->type == BOX_INLINE_BLOCK) {
+			d->x += x0;
 		}
 		if (d->type == BOX_INLINE_BLOCK &&
 				(d->style->position == CSS_POSITION_ABSOLUTE ||
