@@ -593,8 +593,20 @@ bool html_meta_refresh(struct content *c, xmlNode *head)
 		if (n->type != XML_ELEMENT_NODE)
 			continue;
 
-		if (strcmp((const char *)n->name, "meta"))
+		/* Recurse into noscript elements */
+		if (strcmp((const char *)n->name, "noscript") == 0) {
+			if (!html_meta_refresh(c, n)) {
+				/* Some error occurred */
+				return false;
+			} else if (c->refresh) {
+				/* Meta refresh found - stop */
+				return true;
+			}
+		}
+
+		if (strcmp((const char *)n->name, "meta")) {
 			continue;
+		}
 
 		equiv = xmlGetProp(n, (const xmlChar *)"http-equiv");
 		if (!equiv)
