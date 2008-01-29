@@ -250,7 +250,7 @@ void gui_init(int argc, char** argv)
 	gtk_fetch_filetype_init(buf);
 
 	/* set up stylesheet urls */
-	find_resource(buf, "default.css", "./gtk/res/default.css");
+	find_resource(buf, "gtkdefault.css", "./gtk/res/gtkdefault.css");
 	default_stylesheet_url = path_to_url(buf);
 	LOG(("Using '%s' as Default CSS URL", default_stylesheet_url));
 

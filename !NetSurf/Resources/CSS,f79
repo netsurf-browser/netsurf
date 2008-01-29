@@ -152,7 +152,7 @@ form { display: block; }
 form > * { margin-left: inherit; margin-right: inherit; }
 
 input { background-color: #fff; color: #000; text-align: left;
-	width: 10em; height: 1.5em; overflow: hidden;
+	font-family: sans-serif; width: 10em; height: 1.5em; overflow: hidden;
 	margin: 1px; border: 1px solid #000; padding: 0 2px; }
 input[type=button], input[type=reset], input[type=submit], button {
 	background-color: #d9d9d9; color: #000; text-align: center;
@@ -169,12 +169,12 @@ input[align=left] { float: left; }
 input[align=right] { float: right; }
 
 select { background-color: #d9d9d9; color: #000; text-align: left;
-	width: 10em; height: 1.5em; overflow: hidden;
+	font-family: sans-serif; width: 10em; height: 1.5em; overflow: hidden;
 	margin: 1px; border: medium inset #d9d9d9; padding: 0 2px; }
 select:after { content: "\25bc"; border-left: 4px ridge #d9d9d9; }
 
 textarea { background-color: #fff; color: #000; text-align: left;
-	overflow: scroll;
+	font-family: monospace; overflow: scroll;
 	margin: 1px; border: 1px solid #000; padding: 0 2px; }
 
 fieldset { display: block; border: thin solid #888; margin: 1.12em 0; }
