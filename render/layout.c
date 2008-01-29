@@ -1691,7 +1691,7 @@ struct box *layout_minmax_line(struct box *first,
 					css_len2px(&b->style->width.value.
 					length, b->style);
 				if (width < 0)
-					width: 0;
+					width = 0;
 				break;
 			case CSS_WIDTH_PERCENT:
 				/*b->width = width *
