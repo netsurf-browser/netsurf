@@ -1174,14 +1174,12 @@ bool layout_line(struct box *first, int *width, int *y,
 		/* calculate box width */
 		switch (b->style->width.width) {
 			case CSS_WIDTH_LENGTH:
-				b->width = min_gadget_size ? css_screen_dpi *
-					option_font_min_size / 720.0 :
+				b->width = min_gadget_size ? min_gadget_size :
 					css_len2px(&b->style->width.value.
 					length, b->style);
 				break;
 			case CSS_WIDTH_PERCENT:
-				b->width = min_gadget_size ? css_screen_dpi *
-					option_font_min_size / 720.0 :
+				b->width = min_gadget_size ? min_gadget_size :
 					css_len2px(&b->style->width.value.
 					length, b->style);
 				break;
@@ -1194,8 +1192,7 @@ bool layout_line(struct box *first, int *width, int *y,
 		/* height */
 		switch (b->style->height.height) {
 			case CSS_HEIGHT_LENGTH:
-				b->height = min_gadget_size ? css_screen_dpi *
-					option_font_min_size / 720.0 :
+				b->height = min_gadget_size ? min_gadget_size :
 					css_len2px(&b->style->height.length,
 					b->style);
 				break;
@@ -1690,8 +1687,7 @@ struct box *layout_minmax_line(struct box *first,
 		/* calculate box width */
 		switch (b->style->width.width) {
 			case CSS_WIDTH_LENGTH:
-				width = min_gadget_size ? css_screen_dpi *
-					option_font_min_size / 720.0 :
+				width = min_gadget_size ? min_gadget_size :
 					css_len2px(&b->style->width.value.
 					length, b->style);
 				break;
@@ -1709,8 +1705,7 @@ struct box *layout_minmax_line(struct box *first,
 		/* height */
 		switch (b->style->height.height) {
 			case CSS_HEIGHT_LENGTH:
-				height = min_gadget_size ? css_screen_dpi *
-					option_font_min_size / 720.0 :
+				height = min_gadget_size ? min_gadget_size :
 					css_len2px(&b->style->height.length,
 					b->style);
 				break;
