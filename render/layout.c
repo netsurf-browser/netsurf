@@ -1179,9 +1179,9 @@ bool layout_line(struct box *first, int *width, int *y,
 					length, b->style);
 				break;
 			case CSS_WIDTH_PERCENT:
-				b->width = min_gadget_size ? min_gadget_size :
-					css_len2px(&b->style->width.value.
-					length, b->style);
+				b->width = *width *
+						b->style->width.value.percent /
+						100;
 				break;
 			case CSS_WIDTH_AUTO:
 			default:
@@ -1690,6 +1690,8 @@ struct box *layout_minmax_line(struct box *first,
 				width = min_gadget_size ? min_gadget_size :
 					css_len2px(&b->style->width.value.
 					length, b->style);
+				if (width < 0)
+					width: 0;
 				break;
 			case CSS_WIDTH_PERCENT:
 				/*b->width = width *
