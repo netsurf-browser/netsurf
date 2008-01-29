@@ -161,7 +161,7 @@ void nsgtk_options_load(void) {
 
 	SET_CHECK(checkUseCairo, option_render_cairo);
 	SET_CHECK(checkResampleImages, option_render_resample);
-	SET_SPIN(spinAnimationSpeed, option_minimum_gif_delay);
+	SET_SPIN(spinAnimationSpeed, option_minimum_gif_delay / 100);
 	SET_CHECK(checkDisableAnimations, !option_animate_images);
 
 	SET_FONT(fontSansSerif, option_font_sans);
@@ -232,7 +232,7 @@ void nsgtk_options_save(void) {
 	GET_CHECK(checkUseCairo, option_render_cairo);
 	GET_CHECK(checkResampleImages, option_render_resample);
 	GET_SPIN(spinAnimationSpeed, option_minimum_gif_delay);
-	option_minimum_gif_delay *= 10;
+	option_minimum_gif_delay *= 100;
 
 	GET_FONT(fontSansSerif, option_font_sans);
 	GET_FONT(fontSerif, option_font_serif);
