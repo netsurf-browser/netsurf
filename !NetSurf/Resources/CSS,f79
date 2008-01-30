@@ -39,10 +39,8 @@ blockquote { display: block; margin: 1.12em 40px;}
 
 q { font-style: italic; }
 
-/* sub { vertical-align: sub; font-size: .83em; } */
-/* sup { vertical-align: super; font-size: .83em; } */
-sub { position: relative; top: 0.5em; font-size: .83em; }
-sup { position: relative; bottom: 0.2em; font-size: .83em; }
+sub { vertical-align: sub; font-size: .83em; }
+sup { vertical-align: super; font-size: .83em; }
 
 p { display: block; margin: 1.12em 0; }
 
