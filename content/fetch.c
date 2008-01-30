@@ -81,6 +81,8 @@ struct fetch {
 	char *url;		/**< URL. */
 	char *referer;		/**< Referer URL. */
 	bool send_referer;	/**< Valid to send the referer */
+	bool verifiable;	/**< Transaction is verifiable */
+	char *parent_fetch_url;	/**< URL of parent fetch */
 	void *p;		/**< Private data for callback. */
 	char *host;		/**< Host part of URL. */
 	long http_code;		/**< HTTP response code, or 0. */
@@ -266,6 +268,8 @@ struct fetch * fetch_start(const char *url, const char *referer,
 	fetch->abort = false;
 	fetch->stopped = false;
 	fetch->url = strdup(url);
+	fetch->verifiable = verifiable;
+	fetch->parent_fetch_url = parent_url ? strdup(parent_url) : 0;
 	fetch->p = p;
 	fetch->host = host;
 	fetch->http_code = 0;
@@ -286,7 +290,8 @@ struct fetch * fetch_start(const char *url, const char *referer,
 			fetch->send_referer = true;
 	}
 
-	if (!fetch->url)
+	if (!fetch->url ||
+			(parent_url && !fetch->parent_fetch_url))
 		goto failed;
 
 	/* Pick the scheme ops */
@@ -304,8 +309,7 @@ struct fetch * fetch_start(const char *url, const char *referer,
 	/* Got a scheme fetcher, try and set up the fetch */
 	fetch->fetcher_handle =
 		fetch->ops->setup_fetch(fetch, url, only_2xx, post_urlenc,
-					post_multipart, verifiable, parent_url,
-					(const char **)headers);
+					post_multipart, (const char **)headers);
 
 	if (fetch->fetcher_handle == NULL)
 		goto failed;
@@ -333,6 +337,7 @@ failed:
 	free(host);
 	if (ref1)
 		free(ref1);
+	free(fetch->parent_fetch_url);
 	free(fetch->url);
 	if (fetch->referer)
 		free(fetch->referer);
@@ -454,6 +459,7 @@ void fetch_free(struct fetch *f)
 	LOG(("Freeing fetch %p, fetcher %p", f, f->fetcher_handle));
 	f->ops->free_fetch(f->fetcher_handle);
 	fetch_unref_fetcher(f->ops);
+	free(f->parent_fetch_url);
 	free(f->url);
 	free(f->host);
 	if (f->referer)
@@ -549,6 +555,20 @@ const char *fetch_get_referer(struct fetch *fetch)
 	return fetch->referer;
 }
 
+/**
+ * Get the parent URL for this fetch
+ *
+ * \param fetch  fetch to retrieve parent url from
+ * \return Pointer to parent url, or NULL if none.
+ */
+const char *fetch_get_parent_url(struct fetch *fetch)
+{
+	assert(fetch);
+
+	/* If the fetch is verifiable, then its own URL suffices */
+	return fetch->verifiable ? fetch->url : fetch->parent_fetch_url;
+}
+
 void
 fetch_send_callback(fetch_msg msg, struct fetch *fetch, const void *data,
 		unsigned long size)
@@ -596,3 +616,22 @@ fetch_get_referer_to_send(struct fetch *fetch)
 		return fetch->referer;
 	return NULL;
 }
+
+void
+fetch_set_cookie(struct fetch *fetch, const char *data)
+{
+	assert(fetch && data);
+
+	/* If the fetch is unverifiable and there's no parent fetch
+	 * url, err on the side of caution and do not set the cookie */
+
+	if (fetch->verifiable || fetch->parent_fetch_url) {
+		/* If the transaction's verifiable, we don't require
+		 * that the request uri and the parent domain match,
+		 * so don't pass in the parent in this case. */
+		urldb_set_cookie(data, fetch->url, 
+				fetch->verifiable ? 0 
+						  : fetch->parent_fetch_url);
+	}
+}
+

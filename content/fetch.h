@@ -96,14 +96,15 @@ void fetch_change_callback(struct fetch *fetch,
                            void *p);
 long fetch_http_code(struct fetch *fetch);
 const char *fetch_get_referer(struct fetch *fetch);
+const char *fetch_get_parent_url(struct fetch *fetch);
 
 /* API for fetchers themselves */
 
 typedef bool (*fetcher_initialise)(const char *);
 typedef void* (*fetcher_setup_fetch)(struct fetch *, const char *,
                                      bool, const char *,
-                                     struct form_successful_control *, bool,
-                                     const char *, const char **);
+                                     struct form_successful_control *,
+                                     const char **);
 typedef bool (*fetcher_start_fetch)(void *);
 typedef void (*fetcher_abort_fetch)(void *);
 typedef void (*fetcher_free_fetch)(void *);
@@ -125,4 +126,5 @@ void fetch_remove_from_queues(struct fetch *fetch);
 void fetch_free(struct fetch *f);
 void fetch_set_http_code(struct fetch *fetch, long http_code);
 const char *fetch_get_referer_to_send(struct fetch *fetch);
+void fetch_set_cookie(struct fetch *fetch, const char *data);
 #endif

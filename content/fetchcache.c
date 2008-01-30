@@ -730,7 +730,9 @@ void fetchcache_notmodified(struct content *c, const void *data)
 		/* No cached content, so unconditionally refetch */
 		struct content_user *u;
 		const char *ref = fetch_get_referer(c->fetch);
+		const char *parent = fetch_get_parent_url(c->fetch);
 		char *referer = NULL;
+		char *parent_url = NULL;
 
 		if (ref) {
 			referer = strdup(ref);
@@ -740,6 +742,19 @@ void fetchcache_notmodified(struct content *c, const void *data)
 				msg_data.error = messages_get("NoMemory");
 				content_broadcast(c, CONTENT_MSG_ERROR,
 						msg_data);
+				return;
+			}
+		}
+
+		if (parent) {
+			parent_url = strdup(parent);
+			if (!parent_url) {
+				c->type = CONTENT_UNKNOWN;
+				c->status = CONTENT_STATUS_ERROR;
+				msg_data.error = messages_get("NoMemory");
+				content_broadcast(c, CONTENT_MSG_ERROR,
+						msg_data);
+				free(referer);
 				return;
 			}
 		}
@@ -754,9 +769,10 @@ void fetchcache_notmodified(struct content *c, const void *data)
 		for (u = c->user_list->next; u; u = u->next) {
 			fetchcache_go(c, referer, u->callback, u->p1, u->p2,
 					c->width, c->height, 0, 0,
-					false, ref ? referer : c->url);
+					false, parent_url);
 		}
 
+		free(parent_url);
 		free(referer);
 	}
 }
@@ -769,9 +785,10 @@ void fetchcache_redirect(struct content *c, const void *data,
 		unsigned long size)
 {
 	char *url, *url1;
-	char *referer;
+	char *referer, *parent_url;
 	long http_code = fetch_http_code(c->fetch);
 	const char *ref = fetch_get_referer(c->fetch);
+	const char *parent = fetch_get_parent_url(c->fetch);
 	union content_msg_data msg_data;
 	url_func_result result;
 
@@ -783,8 +800,15 @@ void fetchcache_redirect(struct content *c, const void *data,
 	/* 304 is handled by fetch_notmodified() */
 	assert(http_code != 304);
 
-	/* Clone referer -- original is destroyed in fetch_abort() */
+	/* Extract fetch details */
+	http_code = fetch_http_code(c->fetch);
+	ref = fetch_get_referer(c->fetch);
+	parent = fetch_get_parent_url(c->fetch);
+
+	/* Clone referer and parent url
+	 * originals are destroyed in fetch_abort() */
 	referer = ref ? strdup(ref) : NULL;
+	parent_url = parent ? strdup(parent) : NULL;
 
 	/* set the status to ERROR so that this content is
 	 * destroyed in content_clean() */
@@ -800,6 +824,18 @@ void fetchcache_redirect(struct content *c, const void *data,
 		msg_data.error = messages_get("BadRedirect");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 
+		return;
+	}
+
+	/* Ensure parent url cloning succeeded
+	 * _must_ be after content invalidation */
+	if (parent && !parent_url) {
+		LOG(("Failed cloning parent url"));
+
+		msg_data.error = messages_get("BadRedirect");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+
+		free(referer);
 		return;
 	}
 
@@ -823,6 +859,7 @@ void fetchcache_redirect(struct content *c, const void *data,
 		msg_data.error = messages_get("BadRedirect");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 
+		free(parent_url);
 		free(referer);
 		return;
 	}
@@ -835,6 +872,7 @@ void fetchcache_redirect(struct content *c, const void *data,
 		msg_data.error = messages_get("BadRedirect");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 
+		free(parent_url);
 		free(referer);
 		return;
 	}
@@ -848,6 +886,7 @@ void fetchcache_redirect(struct content *c, const void *data,
 		msg_data.error = messages_get("BadRedirect");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 
+		free(parent_url);
 		free(referer);
 		return;
 	}
@@ -860,6 +899,7 @@ void fetchcache_redirect(struct content *c, const void *data,
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 
 		free(url1);
+		free(parent_url);
 		free(referer);
 		return;
 	}
@@ -892,6 +932,7 @@ void fetchcache_redirect(struct content *c, const void *data,
 			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 
 			free(url);
+			free(parent_url);
 			free(referer);
 			return;
 		}
@@ -905,11 +946,12 @@ void fetchcache_redirect(struct content *c, const void *data,
 		/* Start fetching the replacement content */
 		fetchcache_go(replacement, referer, callback, p1, p2,
 				c->width, c->height, NULL, NULL,
-				false, referer ? referer : c->url);
+				false, parent_url);
 	}
 
 	/* Clean up */
 	free(url);
+	free(parent_url);
 	free(referer);
 }
 

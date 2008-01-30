@@ -74,11 +74,8 @@ struct curl_fetch_info {
 	bool abort;		/**< Abort requested. */
 	bool stopped;		/**< Download stopped on purpose. */
 	bool only_2xx;		/**< Only HTTP 2xx responses acceptable. */
-	bool verifiable;	/**< Transaction is verifiable */
 	char *url;		/**< URL of this fetch. */
 	char *host;		/**< The hostname of this fetch. */
-	char *parent_fetch_url;	/**< URL of parent fetch (not necessarily
-				 * the same as the referer) */
 	struct curl_slist *headers;	/**< List of request headers. */
 	char *location;		/**< Response Location header, or 0. */
 	unsigned long content_length;	/**< Response Content-Length, or 0. */
@@ -119,7 +116,7 @@ static void fetch_curl_finalise(const char *scheme);
 static void * fetch_curl_setup(struct fetch *parent_fetch, const char *url,
 		 bool only_2xx, const char *post_urlenc,
 		 struct form_successful_control *post_multipart,
-		 bool verifiable, const char *parent_url, const char **headers);
+		 const char **headers);
 static bool fetch_curl_start(void *vfetch);
 static bool fetch_curl_initiate_fetch(struct curl_fetch_info *fetch,
 		CURL *handle);
@@ -299,7 +296,7 @@ void fetch_curl_finalise(const char *scheme)
 void * fetch_curl_setup(struct fetch *parent_fetch, const char *url,
 		 bool only_2xx, const char *post_urlenc,
 		 struct form_successful_control *post_multipart,
-		 bool verifiable, const char *parent_url, const char **headers)
+		 const char **headers)
 {
 	char *host;
 	struct curl_fetch_info *fetch;
@@ -332,9 +329,7 @@ void * fetch_curl_setup(struct fetch *parent_fetch, const char *url,
 	fetch->abort = false;
 	fetch->stopped = false;
 	fetch->only_2xx = only_2xx;
-	fetch->verifiable = verifiable;
 	fetch->url = strdup(url);
-	fetch->parent_fetch_url = parent_url ? strdup(parent_url) : 0;
 	fetch->headers = 0;
 	fetch->host = host;
 	fetch->location = 0;
@@ -365,7 +360,6 @@ void * fetch_curl_setup(struct fetch *parent_fetch, const char *url,
 #endif
 
 	if (!fetch->url ||
-	    (parent_url && !fetch->parent_fetch_url) ||
 	    (post_urlenc && !fetch->post_urlenc) ||
 	    (post_multipart && !fetch->post_multipart))
 		goto failed;
@@ -423,7 +417,6 @@ void * fetch_curl_setup(struct fetch *parent_fetch, const char *url,
 failed:
 	free(host);
 	free(fetch->url);
-	free(fetch->parent_fetch_url);
 	free(fetch->post_urlenc);
 	if (fetch->post_multipart)
 		curl_formfree(fetch->post_multipart);
@@ -703,7 +696,6 @@ void fetch_curl_free(void *vf)
 		curl_easy_cleanup(f->curl_handle);
 	free(f->url);
 	free(f->host);
-	free(f->parent_fetch_url);
 	free(f->location);
 	free(f->cookie_string);
 	free(f->realm);
@@ -1158,18 +1150,7 @@ size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
 		/* extract Set-Cookie header */
 		SKIP_ST(11);
 
-		/* If the fetch is unverifiable and there's no parent fetch
-		 * url, err on the side of caution and do not set the
-		 cookie */
-
-		if (f->verifiable || f->parent_fetch_url) {
-			/* If the transaction's verifiable, we don't require
-			 * that the request uri and the parent domain match,
-			 * so don't pass in the parent in this case. */
-			urldb_set_cookie(&data[i], f->url,
-					f->verifiable ? 0
-						      : f->parent_fetch_url);
-		}
+		fetch_set_cookie(f->fetch_handle, &data[i]);
 	}
 
 	return size;
