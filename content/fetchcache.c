@@ -768,7 +768,7 @@ void fetchcache_notmodified(struct content *c, const void *data)
 void fetchcache_redirect(struct content *c, const void *data,
 		unsigned long size)
 {
-	char *url;
+	char *url, *url1;
 	char *referer;
 	long http_code = fetch_http_code(c->fetch);
 	const char *ref = fetch_get_referer(c->fetch);
@@ -843,8 +843,7 @@ void fetchcache_redirect(struct content *c, const void *data,
 	/* redirect URLs must be absolute by HTTP/1.1, but many
 	 * sites send relative ones: treat them as relative to 
 	 * requested URL */
-	result = url_join(data, c->url, &url);
-
+	result = url_join(data, c->url, &url1);
 	if (result != URL_FUNC_OK) {
 		msg_data.error = messages_get("BadRedirect");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
@@ -852,6 +851,21 @@ void fetchcache_redirect(struct content *c, const void *data,
 		free(referer);
 		return;
 	}
+
+	/* Normalize redirect target -- this is vital as this URL may
+	 * be inserted into the urldb, which expects normalized URLs */
+	result = url_normalize(url1, &url);
+	if (result != URL_FUNC_OK) {
+		msg_data.error = messages_get("BadRedirect");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+
+		free(url1);
+		free(referer);
+		return;
+	}
+
+	/* No longer need url1 */
+	free(url1);
 
 	/* Process users of this content */
 	while (c->user_list->next) {

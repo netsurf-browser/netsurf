@@ -1827,6 +1827,9 @@ struct path_data *urldb_find_url(const char *url)
 		return NULL;
 	}
 
+	/* Ensure plq is terminated */
+	*plq = '\0';
+
 	copy = plq;
 	if (components.path) {
 		strcpy(copy, components.path);
