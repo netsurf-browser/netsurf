@@ -130,6 +130,8 @@ static bool css_match_first_child(const struct css_selector *detail,
 		xmlNode *element);
 static void css_dump_length(const struct css_length * const length);
 static void css_dump_selector(const struct css_selector *r);
+static void css_dump_working_stylesheet(
+		const struct css_working_stylesheet *ws);
 
 /** Default style for a document. These are the 'Initial values' from the
  *  spec. */
@@ -1011,6 +1013,8 @@ struct css_working_stylesheet *css_make_working_stylesheet(
 	}
 
 	talloc_free(rule_scratch);
+
+	/*css_dump_working_stylesheet(working_stylesheet);*/
 
 	return working_stylesheet;
 }
@@ -2403,6 +2407,24 @@ void css_dump_length(const struct css_length * const length)
 				css_unit_name[length->unit]);
 }
 
+/**
+ * Dump a complete css_working_stylesheet to stderr in CSS syntax.
+ */
+
+void css_dump_working_stylesheet(const struct css_working_stylesheet *ws)
+{
+	unsigned int i, j;
+
+	for (i = 0; i != HASH_SIZE; i++) {
+		/*fprintf(stderr, "hash %i:\n", i);*/
+		for (j = 0; ws->rule[i][j]; j++) {
+			css_dump_selector(ws->rule[i][j]);
+			fprintf(stderr, " <%lx> ", ws->rule[i][j]->specificity);
+			css_dump_style(ws->rule[i][j]->style);
+			fprintf(stderr, "\n");
+		}
+	}
+}
 
 /**
  * Dump a complete css_stylesheet to stderr in CSS syntax.
