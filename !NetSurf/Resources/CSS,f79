@@ -151,7 +151,6 @@ iframe[align=left] { float: left; }
 iframe[align=right] { float: right; }
 
 form { display: block; }
-form > * { margin-left: inherit; margin-right: inherit; }
 
 input, button { background-color: #fff; color: #000; text-align: left;
 	font-family: sans-serif; width: 10em; height: auto; overflow: hidden;
