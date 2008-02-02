@@ -99,8 +99,8 @@
 #include "css/parser.h"
 #ifdef riscos
 #include "desktop/gui.h"
-#include "desktop/options.h"
 #endif
+#include "desktop/options.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/talloc.h"
