@@ -97,9 +97,7 @@
 #include "content/fetchcache.h"
 #include "css/css.h"
 #include "css/parser.h"
-#ifdef riscos
 #include "desktop/gui.h"
-#endif
 #include "desktop/options.h"
 #include "utils/log.h"
 #include "utils/messages.h"
