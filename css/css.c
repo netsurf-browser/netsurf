@@ -99,6 +99,7 @@
 #include "css/parser.h"
 #ifdef riscos
 #include "desktop/gui.h"
+#include "desktop/options.h"
 #endif
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -3010,12 +3011,34 @@ unsigned int css_hash(const char *s, int length)
 float css_len2px(const struct css_length *length,
 		const struct css_style *style)
 {
-	assert(!((length->unit == CSS_UNIT_EM || length->unit == CSS_UNIT_EX) && style == 0));
+	struct css_length font;
+	font.unit = CSS_UNIT_PT;
+
+	assert(!((length->unit == CSS_UNIT_EM || length->unit == CSS_UNIT_EX) &&
+			style == 0));
 	switch (length->unit) {
-		case CSS_UNIT_EM: return length->value * css_len2px(&style->font_size.value.length, 0);
-		case CSS_UNIT_EX: return length->value * css_len2px(&style->font_size.value.length, 0) * 0.6;
+		case CSS_UNIT_EM:
+			if ((font.value = css_len2pt(&style->
+					font_size.value.length, style)) <
+					option_font_min_size / 10) {
+				font.value = option_font_min_size / 10;
+				return length->value * css_len2px(&font,
+					style);
+			} else
+				return length->value * css_len2px(&style->
+					font_size.value.length, 0);
+		case CSS_UNIT_EX:
+			if ((font.value = css_len2pt(&style->
+					font_size.value.length, style)) <
+					option_font_min_size / 10) {
+				font.value = option_font_min_size / 10;
+				return length->value * css_len2px(&font,
+					style) * 0.6;
+			} else
+				return length->value * css_len2px(&style->
+					font_size.value.length, 0) * 0.6;
 		case CSS_UNIT_PX: return length->value;
-		/* We assume the screen and any other output has the same dpi  */
+		/* We assume the screen and any other output has the same dpi */
 		case CSS_UNIT_IN: return length->value * css_screen_dpi;
 		case CSS_UNIT_CM: return length->value * css_screen_dpi / 2.54;
 		case CSS_UNIT_MM: return length->value * css_screen_dpi / 25.4;

@@ -46,7 +46,6 @@
 #include "desktop/options.h"
 #include "render/box.h"
 #include "render/font.h"
-#include "render/form.h"
 #include "render/layout.h"
 #define NDEBUG
 #include "utils/log.h"
@@ -1028,7 +1027,6 @@ bool layout_line(struct box *first, int *width, int *y,
 	int space_before = 0, space_after = 0;
 	unsigned int inline_count = 0;
 	unsigned int i;
-	int min_gadget_size = 0;
 
 	LOG(("first %p, first->text '%.*s', width %i, y %i, cx %i, cy %i",
 			first, (int) first->length, first->text, *width,
@@ -1047,8 +1045,10 @@ bool layout_line(struct box *first, int *width, int *y,
 	if (x1 < x0)
 		x1 = x0;
 
-	/* get minimum line height from containing block */
-	if (has_text_children)
+	/* get minimum line height from containing block.
+	 * this is the line-height if there are text children and also in the
+	 * case of an initially empty text input */
+	if (has_text_children || first->parent->parent->gadget)
 		used_height = height = line_height(first->parent->parent->style);
 	else
 		/* inline containers with no text are usually for layout and
@@ -1159,24 +1159,11 @@ bool layout_line(struct box *first, int *width, int *y,
 		/* inline replaced, 10.3.2 and 10.6.2 */
 		assert(b->style);
 
-		min_gadget_size = 0;
-		/* checkboxes and radiobuttons contain no text but need to
-		 * follow configured min font size option */
-		if (b->gadget && (b->gadget->type == GADGET_RADIO ||
-				b->gadget->type == GADGET_CHECKBOX)) {
-			min_gadget_size = option_font_min_size * css_screen_dpi
-				/ 720.0;
-			min_gadget_size = min_gadget_size > css_len2px(&b->
-				style->font_size.value.length, b->style) ?
- 				min_gadget_size : 0;
-		}
-
 		/* calculate box width */
 		switch (b->style->width.width) {
 			case CSS_WIDTH_LENGTH:
-				b->width = min_gadget_size ? min_gadget_size :
-					css_len2px(&b->style->width.value.
-					length, b->style);
+				b->width = css_len2px(&b->style->width.value.
+						length, b->style);
 				break;
 			case CSS_WIDTH_PERCENT:
 				b->width = *width *
@@ -1192,9 +1179,8 @@ bool layout_line(struct box *first, int *width, int *y,
 		/* height */
 		switch (b->style->height.height) {
 			case CSS_HEIGHT_LENGTH:
-				b->height = min_gadget_size ? min_gadget_size :
-					css_len2px(&b->style->height.length,
-					b->style);
+				b->height = css_len2px(&b->style->height.length,
+						b->style);
 				break;
 			case CSS_HEIGHT_AUTO:
 			default:
@@ -1577,7 +1563,6 @@ struct box *layout_minmax_line(struct box *first,
 	float frac;
 	size_t i, j;
 	struct box *b;
-	int min_gadget_size = 0;
 
 	/* corresponds to the pass 1 loop in layout_line() */
 	for (b = first; b; b = b->next) {
@@ -1672,24 +1657,11 @@ struct box *layout_minmax_line(struct box *first,
 		/* inline replaced, 10.3.2 and 10.6.2 */
 		assert(b->style);
 
-		min_gadget_size = 0;
-		/* checkboxes and radiobuttons contain no text but need to
-		 * follow configured min font size option */
-		if (b->gadget && (b->gadget->type == GADGET_RADIO ||
-				b->gadget->type == GADGET_CHECKBOX)) {
-			min_gadget_size = option_font_min_size * css_screen_dpi
-				/ 720.0;
-			min_gadget_size = min_gadget_size > css_len2px(&b->
-				style->font_size.value.length, b->style) ?
- 				min_gadget_size : 0;
-		}
-
 		/* calculate box width */
 		switch (b->style->width.width) {
 			case CSS_WIDTH_LENGTH:
-				width = min_gadget_size ? min_gadget_size :
-					css_len2px(&b->style->width.value.
-					length, b->style);
+				width = css_len2px(&b->style->width.value.
+						length, b->style);
 				if (width < 0)
 					width = 0;
 				break;
@@ -1707,9 +1679,8 @@ struct box *layout_minmax_line(struct box *first,
 		/* height */
 		switch (b->style->height.height) {
 			case CSS_HEIGHT_LENGTH:
-				height = min_gadget_size ? min_gadget_size :
-					css_len2px(&b->style->height.length,
-					b->style);
+				height = css_len2px(&b->style->height.length,
+						b->style);
 				break;
 			case CSS_HEIGHT_AUTO:
 			default:
