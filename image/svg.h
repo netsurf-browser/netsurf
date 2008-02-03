@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2007-2008 James Bursa <bursa@users.sourceforge.net>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -24,13 +24,12 @@
 #define _NETSURF_IMAGE_SVG_H_
 
 #include <stdbool.h>
-#include <libxml/parser.h>
 
 struct content;
+struct svgtiny_diagram;
 
 struct content_svg_data {
-	xmlDoc *doc;
-	xmlNode *svg;
+	struct svgtiny_diagram *diagram;
 };
 
 bool svg_create(struct content *c, const char *params[]);

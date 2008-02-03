@@ -110,7 +110,8 @@ CFLAGS += -I$(GCCSDK_INSTALL_ENV)/include		\
 	-I$(GCCSDK_INSTALL_ENV)/include/libxml2		\
 	-I$(GCCSDK_INSTALL_ENV)/include/libmng
 ASFLAGS += -I. -I$(GCCSDK_INSTALL_ENV)/include
-LDFLAGS += -L$(GCCSDK_INSTALL_ENV)/lib -lcares -lOSLib32 -lrufl -lpencil
+LDFLAGS += -L$(GCCSDK_INSTALL_ENV)/lib -lcares -lOSLib32 -lrufl -lpencil \
+	-lsvgtiny
 endif
 
 CLEANS := clean-target
