@@ -689,6 +689,8 @@ void fetchcache_notmodified(struct content *c, const void *data)
 			}
 
 			content_remove_user(c, callback, p1, p2);
+
+			msg_data.new_url = NULL;
 			callback(CONTENT_MSG_NEWPTR, fb, p1, p2, msg_data);
 
 			/* and catch user up with fallback's state */
@@ -786,24 +788,25 @@ void fetchcache_redirect(struct content *c, const void *data,
 {
 	char *url, *url1;
 	char *referer, *parent_url;
-	long http_code = fetch_http_code(c->fetch);
-	const char *ref = fetch_get_referer(c->fetch);
-	const char *parent = fetch_get_parent_url(c->fetch);
+	long http_code;
+	const char *ref;
+	const char *parent;
 	union content_msg_data msg_data;
 	url_func_result result;
 
 	/* Preconditions */
 	assert(c && data);
 	assert(c->status == CONTENT_STATUS_TYPE_UNKNOWN);
-	/* Ensure a redirect happened */
-	assert(300 <= http_code && http_code <= 399);
-	/* 304 is handled by fetch_notmodified() */
-	assert(http_code != 304);
 
 	/* Extract fetch details */
 	http_code = fetch_http_code(c->fetch);
 	ref = fetch_get_referer(c->fetch);
 	parent = fetch_get_parent_url(c->fetch);
+
+	/* Ensure a redirect happened */
+	assert(300 <= http_code && http_code <= 399);
+	/* 304 is handled by fetch_notmodified() */
+	assert(http_code != 304);
 
 	/* Clone referer and parent url
 	 * originals are destroyed in fetch_abort() */
@@ -941,6 +944,7 @@ void fetchcache_redirect(struct content *c, const void *data,
 		replacement->redirect_count = c->redirect_count + 1;
 
 		/* Notify user that content has changed */
+		msg_data.new_url = url;
 		callback(CONTENT_MSG_NEWPTR, replacement, p1, p2, msg_data);
 
 		/* Start fetching the replacement content */

@@ -84,7 +84,7 @@ typedef enum {
 	CONTENT_MSG_STATUS,    /**< new status string */
 	CONTENT_MSG_REFORMAT,  /**< content_reformat done */
 	CONTENT_MSG_REDRAW,    /**< needs redraw (eg. new animation frame) */
-	CONTENT_MSG_NEWPTR,    /**< address of structure has changed */
+	CONTENT_MSG_NEWPTR,    /**< structure has been replaced */
 	CONTENT_MSG_REFRESH,   /**< wants refresh */
 #ifdef WITH_AUTH
 	CONTENT_MSG_AUTH,      /**< authentication required */
@@ -97,7 +97,8 @@ typedef enum {
 /** Extra data for some content_msg messages. */
 union content_msg_data {
 	const char *error;	/**< Error message, for CONTENT_MSG_ERROR. */
-	char *redirect;	/**< Redirect URL, for CONTENT_MSG_REDIRECT. */
+	const char *new_url;	/**< Replacement URL (or NULL if the same 
+				 * as previous), for CONTENT_MSG_NEWPTR. */
 	/** Area of content which needs redrawing, for CONTENT_MSG_REDRAW. */
 	struct {
 		float x, y, width, height;

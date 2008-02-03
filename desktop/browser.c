@@ -262,7 +262,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 {
 	struct content *c;
 	char *url2;
-	char *hash;
+	char *fragment;
 	url_func_result res;
 	char url_buf[256];
 	int depth = 0;
@@ -296,38 +296,38 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	if (!download)
 		gui_window_set_url(bw->window, url2);
 
+	free(bw->frag_id);
+	bw->frag_id = NULL;
+
 	/* find any fragment identifier on end of URL */
-	hash = strchr(url2, '#');
-	if (bw->frag_id) {
-		free(bw->frag_id);
-		bw->frag_id = 0;
-	}
-	if (hash) {
-		char *frag = curl_unescape(hash+1, strlen(hash + 1));
-		if (!frag) {
-			free(url2);
-			warn_user("NoMemory", 0);
-			return;
-		}
+	res = url_fragment(url2, &fragment);
+	if (res == URL_FUNC_NOMEM) {
+		free(url2);
+		warn_user("NoMemory", 0);
+		return;
+	} else if (res == URL_FUNC_OK) {
+		bool same_url = false;
 
-		bw->frag_id = strdup(frag);
-		curl_free(frag);
+		bw->frag_id = fragment;
 
-		if (!bw->frag_id) {
-			free(url2);
-			warn_user("NoMemory", 0);
-			return;
+		/* Compare new URL with existing one (ignoring fragments) */
+		if (bw->current_content && bw->current_content->url) {
+			res = url_compare(bw->current_content->url, url2, 
+					true, &same_url);
+			if (res == URL_FUNC_NOMEM) {
+				free(url2);
+				warn_user("NoMemory", 0);
+				return;
+			} else if (res == URL_FUNC_FAILED) {
+				same_url = false;
+			}
 		}
 
 		/* if we're simply moving to another ID on the same page,
 		 * don't bother to fetch, just update the window.
 		 */
-		if (!post_urlenc && !post_multipart && !strchr(url2, '?') &&
-			bw->current_content && bw->current_content->url &&
-				strncasecmp(bw->current_content->url,
-						url2, hash - url2) == 0 &&
-				strlen(bw->current_content->url) ==
-					(unsigned int)(hash - url2)) {
+		if (same_url && !post_urlenc && !post_multipart && 
+				!strchr(url2, '?')) {
 			free(url2);
 			browser_window_update(bw, false);
 			snprintf(url_buf, sizeof url_buf, "%s#%s",
@@ -532,6 +532,27 @@ void browser_window_callback(content_msg msg, struct content *c,
 
 	case CONTENT_MSG_NEWPTR:
 		bw->loading_content = c;
+		if (data.new_url) {
+			/* Replacement URL too, so check for new fragment */
+			char *fragment;
+			url_func_result res;
+
+			/* Remove any existing fragment */
+			free(bw->frag_id);
+			bw->frag_id = NULL;
+
+			/* Extract new one, if any */
+			res = url_fragment(data.new_url, &fragment);
+			if (res == URL_FUNC_OK) {
+				/* Save for later use */
+				bw->frag_id = fragment;
+			}
+			/* Ignore memory exhaustion here -- it'll simply result
+			 * in the window being scrolled to the top rather than
+			 * to the fragment. That's acceptable, given that it's
+			 * likely that more important things will complain
+			 * about memory shortage. */
+		}
 		break;
 
 #ifdef WITH_AUTH

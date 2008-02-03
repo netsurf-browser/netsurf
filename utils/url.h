@@ -54,8 +54,9 @@ url_func_result url_parent(const char *url, char **result);
 url_func_result url_plq(const char *url, char **result);
 url_func_result url_path(const char *url, char **result);
 url_func_result url_leafname(const char *url, char **result);
+url_func_result url_fragment(const char *url, char **result);
 url_func_result url_compare(const char *url1, const char *url2,
-		bool *result);
+		bool nofrag, bool *result);
 
 url_func_result url_get_components(const char *url,
 		struct url_components *result);

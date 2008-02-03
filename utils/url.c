@@ -30,6 +30,7 @@
 #include <strings.h>
 #include <sys/types.h>
 #include <regex.h>
+#include "curl/curl.h"
 #include "utils/log.h"
 #include "utils/url.h"
 #include "utils/utils.h"
@@ -719,6 +720,44 @@ url_func_result url_leafname(const char *url, char **result)
 }
 
 /**
+ * Extract fragment from an URL
+ * This will unescape any %xx entities in the fragment
+ *
+ * \param url     an absolute URL
+ * \param result  pointer to pointer to buffer to hold result
+ * \return URL_FUNC_OK on success
+ */
+
+url_func_result url_fragment(const char *url, char **result)
+{
+	url_func_result status;
+	struct url_components components;
+
+	assert(url);
+
+	status = url_get_components(url, &components);
+	if (status == URL_FUNC_OK) {
+		if (!components.fragment) {
+			status = URL_FUNC_FAILED;
+		} else {
+			char *frag = curl_unescape(components.fragment,
+					strlen(components.fragment));
+			if (!frag) {
+				status = URL_FUNC_NOMEM;
+			} else {
+				*result = strdup(frag);
+				if (!(*result))
+					status = URL_FUNC_NOMEM;
+				curl_free(frag);
+			}
+		}
+	}
+
+	url_destroy_components(&components);
+	return status;
+}
+
+/**
  * Attempt to find a nice filename for a URL.
  *
  * \param  url	   an absolute URL
@@ -897,12 +936,14 @@ url_func_result url_escape(const char *unescaped, bool sptoplus,
 /**
  * Compare two absolute, normalized URLs
  *
- * \param url1 URL 1
- * \param url2 URL 2
- * \param result Pointer to location to store result (true if URLs match)
+ * \param url1     URL 1
+ * \param url2     URL 2
+ * \param nofrag   Ignore fragment part in comparison
+ * \param result   Pointer to location to store result (true if URLs match)
  * \return URL_FUNC_OK on success
  */
-url_func_result url_compare(const char *url1, const char *url2, bool *result)
+url_func_result url_compare(const char *url1, const char *url2,
+		bool nofrag, bool *result)
 {
 	url_func_result status;
 	struct url_components c1, c2;
@@ -930,7 +971,7 @@ url_func_result url_compare(const char *url1, const char *url2, bool *result)
 			((c1.path && c2.path) || (!c1.path && !c2.path)) &&
 			((c1.query && c2.query) ||
 					(!c1.query && !c2.query)) &&
-			((c1.fragment && c2.fragment) ||
+			(nofrag || (c1.fragment && c2.fragment) ||
 					(!c1.fragment && !c2.fragment))) {
 
 		if (c1.scheme)
@@ -946,7 +987,7 @@ url_func_result url_compare(const char *url1, const char *url2, bool *result)
 		if (c1.query)
 			res &= strcmp(c1.query, c2.query) == 0;
 
-		if (c1.fragment)
+		if (!nofrag && c1.fragment)
 			res &= strcmp(c1.fragment, c2.fragment) == 0;
 	} else {
 		/* Can't match */

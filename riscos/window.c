@@ -3329,8 +3329,8 @@ bool ro_gui_window_navigate_up(struct gui_window *g, const char *url) {
 
 	res = url_parent(url, &parent);
 	if (res == URL_FUNC_OK) {
-		res = url_compare(url, parent, &compare);
-		if (!compare && (res == URL_FUNC_OK))
+		res = url_compare(url, parent, false, &compare);
+		if ((res == URL_FUNC_OK) && !compare)
 			browser_window_go(g->bw, parent, 0, true);
 		free(parent);
 	}

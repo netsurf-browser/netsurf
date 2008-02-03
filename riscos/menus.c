@@ -1989,8 +1989,10 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 			if (result) {
 				res = url_parent(c->url, &parent);
 				if (res == URL_FUNC_OK) {
-				  	res = url_compare(c->url, parent, &compare);
-				  	result = !compare;
+				  	res = url_compare(c->url, parent, 
+							false, &compare);
+					if (res == URL_FUNC_OK)
+					  	result = !compare;
 				  	free(parent);
        	                	} else {
        	                	  	result = false;

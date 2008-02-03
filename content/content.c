@@ -608,6 +608,7 @@ bool content_set_type(struct content *c, content_type type,
 				return false;
 			}
 			content_remove_user(c, callback, p1, p2);
+			msg_data.new_url = NULL;
 			content_broadcast(clone, CONTENT_MSG_NEWPTR, msg_data);
 			fetchcache_go(clone, referer,
 					callback, p1, p2,

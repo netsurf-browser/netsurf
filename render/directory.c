@@ -96,8 +96,8 @@ bool directory_convert(struct content *c, int width, int height) {
 
 	res = url_parent(c->url, &up);
 	if (res == URL_FUNC_OK) {
-		res = url_compare(c->url, up, &compare);
-		if (!compare) {
+		res = url_compare(c->url, up, false, &compare);
+		if ((res == URL_FUNC_OK) && !compare) {
 			snprintf(buffer, sizeof(buffer),
 				"<a href=\"..\">[..]</a>\n");
 			htmlParseChunk(c->data.html.parser, buffer,
