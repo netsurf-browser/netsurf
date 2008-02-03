@@ -46,9 +46,8 @@
 #include "desktop/options.h"
 #include "render/box.h"
 #include "render/font.h"
-#include "render/form.h"
 #include "render/layout.h"
-//#define NDEBUG
+#define NDEBUG
 #include "utils/log.h"
 #include "utils/talloc.h"
 #include "utils/utils.h"
