@@ -399,6 +399,7 @@ any(A) ::= ASTERISK(B).
 %extra_argument { struct css_parser_params *param }
 %include {
 #include <assert.h>
+#include <string.h>
 #include <strings.h>
 #define CSS_INTERNALS
 #include "css/css.h"
