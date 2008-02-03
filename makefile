@@ -72,14 +72,27 @@ OBJECTS_GTK += font_pango.o gtk_bitmap.o gtk_gui.o \
 	gtk_history.o gtk_window.o gtk_filetype.o \
 	gtk_download.o						# gtk/
 
-# This makes me want to vomit, but is necessary to avoid a load of
-# "make: /home/riscos/cross/bin/gcc: Command not found." if there's no GCCSDK
-# installed on the build machine. The new build system can't happen soon enough
-OBJDIR_RISCOS = $(shell $(CC) -dumpmachine 2>/dev/null || echo arm-riscos-aof)
+# Default target - platform specific files may specify special-case rules for
+# various files.
+default: riscos
+
+
+# Inclusion of platform specific files has to occur after the OBJDIR stuff as
+# that is referred to in the files
+
+OS = riscos
+ifeq ($(OS),riscos)
+include riscos.mk
+else
+include posix.mk
+endif
+
+
+OBJDIR_RISCOS = arm-riscos-aof
 SOURCES_RISCOS=$(OBJECTS_RISCOS:.o=.c)
 OBJS_RISCOS=$(OBJECTS_RISCOS:%.o=$(OBJDIR_RISCOS)/%.o)
 
-OBJDIR_RISCOS_SMALL = $(OBJDIR_RISCOS)-small
+OBJDIR_RISCOS_SMALL = $(shell $(CC) -dumpmachine)-small
 SOURCES_RISCOS_SMALL=$(OBJECTS_RISCOS_SMALL:.o=.c)
 OBJS_RISCOS_SMALL=$(OBJECTS_RISCOS_SMALL:%.o=$(OBJDIR_RISCOS_SMALL)/%.o)
 
@@ -93,19 +106,6 @@ OBJDIR_GTK = objects-gtk
 SOURCES_GTK=$(OBJECTS_GTK:.o=.c)
 OBJS_GTK=$(OBJECTS_GTK:%.o=$(OBJDIR_GTK)/%.o)
 
-# Default target - platform specific files may specify special-case rules for
-# various files.
-default: riscos
-
-# Inclusion of platform specific files has to occur after the OBJDIR stuff as
-# that is referred to in the files
-
-OS = $(word 2,$(subst -, ,$(shell $(SYSTEM_CC) -dumpmachine)))
-ifeq ($(OS),riscos)
-include riscos.mk
-else
-include posix.mk
-endif
 
 VPATH = content:content/fetchers:css:desktop:image:render:riscos:riscos/configure:riscos/gui:utils:debug:gtk
 

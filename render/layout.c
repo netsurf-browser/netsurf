@@ -844,7 +844,7 @@ void find_sides(struct box *fl, int y0, int y1,
 	for (; fl; fl = fl->next_float) {
 		fy0 = fl->y;
 		fy1 = fl->y + fl->height;
-		if (y0 <= fy1 && fy0 <= y1) {
+		if (y0 < fy1 && fy0 <= y1) {
 			if (fl->type == BOX_FLOAT_LEFT) {
 				fx1 = fl->x + fl->width;
 				if (*x0 < fx1) {
