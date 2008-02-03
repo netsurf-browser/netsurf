@@ -46,8 +46,9 @@
 #include "desktop/options.h"
 #include "render/box.h"
 #include "render/font.h"
+#include "render/form.h"
 #include "render/layout.h"
-#define NDEBUG
+//#define NDEBUG
 #include "utils/log.h"
 #include "utils/talloc.h"
 #include "utils/utils.h"
@@ -1601,7 +1602,7 @@ struct box *layout_minmax_line(struct box *first,
 			continue;
 		}
 
-		if (b->type == BOX_INLINE) {
+		if (b->type == BOX_INLINE && !b->object) {
 			fixed = frac = 0;
 			calculate_mbp_width(b->style, LEFT, &fixed, &frac);
 			if (!b->inline_end)
@@ -1699,6 +1700,10 @@ struct box *layout_minmax_line(struct box *first,
 				else
 					width = b->object->width;
 			}
+			fixed = frac = 0;
+			calculate_mbp_width(b->style, LEFT, &fixed, &frac);
+			calculate_mbp_width(b->style, RIGHT, &fixed, &frac);
+			width += fixed;
 		} else {
 			/* form control with no object */
 			if (width == AUTO)
