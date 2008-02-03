@@ -573,8 +573,8 @@ void
 fetch_send_callback(fetch_msg msg, struct fetch *fetch, const void *data,
 		unsigned long size)
 {
-	LOG(("Fetcher sending callback. Fetch %p, fetcher %p data %p size %lu",
-	     fetch, fetch->fetcher_handle, data, size));
+	/*LOG(("Fetcher sending callback. Fetch %p, fetcher %p data %p size %lu",
+	     fetch, fetch->fetcher_handle, data, size)); */
 	fetch->callback(msg, fetch->p, data, size);
 }
 
