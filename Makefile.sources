@@ -64,6 +64,10 @@ css/parser.c css/parser.h: css/parser.y
 	$(VQ)echo "   LEMON: css/parser.y"
 	$(Q)# If lemon really fails hard, we'll never know, sorry
 	$(Q)cd css; lemon parser.y || true
+	$(Q)# Unfortunately if the output hasn't changed, lemon doesn't
+	$(Q)# alter the file and thus make gets confused.
+	$(Q)touch css/parser.c css/parser.h
+
 css/scanner.c: css/scanner.l
 	$(VQ)echo "    RE2C: css/scanner.l"
 	$(Q)cd css; re2c -s scanner.l > scanner.c
