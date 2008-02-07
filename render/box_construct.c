@@ -355,7 +355,17 @@ bool box_construct_element(xmlNode *n, struct content *content,
 		target = box->target;
 	}
 	if (style->display == CSS_DISPLAY_NONE) {
+		/* Free style and invalidate box's style pointer */
 		talloc_free(style);
+		box->style = NULL;
+
+		/* If this box has an associated gadget, invalidate the
+		 * gadget's box pointer and our pointer to the gadget. */
+		if (box->gadget) {
+			box->gadget->box = NULL;
+			box->gadget = NULL;
+		}
+
 		/* We can't do this, as it will destroy any gadget
 		 * associated with the box, thus making any form usage
 		 * access freed memory. The box is in the talloc context,

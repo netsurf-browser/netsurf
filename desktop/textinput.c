@@ -925,11 +925,14 @@ bool browser_window_input_callback(struct browser_window *bw,
 
 	case 9: {	/* Tab */
 			struct form_control *next_input;
+			/* Find next text entry field that is actually 
+			 * displayed (i.e. has an associated box) */
 			for (next_input = input->gadget->next;
 					next_input &&
-					next_input->type != GADGET_TEXTBOX &&
+					((next_input->type != GADGET_TEXTBOX &&
 					next_input->type != GADGET_TEXTAREA &&
-					next_input->type != GADGET_PASSWORD;
+					next_input->type != GADGET_PASSWORD) ||
+					!next_input->box);
 					next_input = next_input->next)
 				;
 			if (!next_input)
@@ -950,11 +953,14 @@ bool browser_window_input_callback(struct browser_window *bw,
 
 	case 11: {	/* Shift + Tab */
 			struct form_control *prev_input;
+			/* Find previous text entry field that is actually 
+			 * displayed (i.e. has an associated box) */
 			for (prev_input = input->gadget->prev;
 					prev_input &&
-					prev_input->type != GADGET_TEXTBOX &&
+					((prev_input->type != GADGET_TEXTBOX &&
 					prev_input->type != GADGET_TEXTAREA &&
-					prev_input->type != GADGET_PASSWORD;
+					prev_input->type != GADGET_PASSWORD) ||
+					!prev_input->box);
 					prev_input = prev_input->prev)
 				;
 			if (!prev_input)
