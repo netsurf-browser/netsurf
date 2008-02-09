@@ -54,10 +54,10 @@ $(DEPROOT)/created: $(OBJROOT)/created
 	$(Q)$(MKDIR) $(DEPROOT)
 	$(Q)$(TOUCH) $(DEPROOT)/created
 
-#WARNFLAGS = -W -Wall -Wundef -Wpointer-arith -Wcast-qual \
-#	-Wcast-align -Wwrite-strings -Wstrict-prototypes \
-#	-Wmissing-prototypes -Wmissing-declarations -Wredundant-decls \
-#	-Wnested-externs -Winline -Wno-unused-parameter -Wuninitialized
+WARNFLAGS = -W -Wall -Wundef -Wpointer-arith -Wcast-qual \
+	-Wcast-align -Wwrite-strings -Wstrict-prototypes \
+	-Wmissing-prototypes -Wmissing-declarations -Wredundant-decls \
+	-Wnested-externs -Winline -Wno-unused-parameter -Wuninitialized
 
 STARTGROUP := -Wl,--start-group
 ENDGROUP := -Wl,--end-group
@@ -104,7 +104,9 @@ endif
 ifeq ($(TARGET),riscos)
 GCCSDK_INSTALL_ENV := /home/riscos/env
 
-CFLAGS += -I. -O $(WARNFLAGS) -Driscos -std=c99 -D_BSD_SOURCE
+CFLAGS += -I. -O $(WARNFLAGS) -Driscos			\
+	-std=c99 -D_BSD_SOURCE -D_POSIX_C_SOURCE	\
+	-mpoke-function-name
 
 CFLAGS += -I$(GCCSDK_INSTALL_ENV)/include		\
 	-I$(GCCSDK_INSTALL_ENV)/include/libxml2		\
