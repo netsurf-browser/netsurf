@@ -235,8 +235,8 @@ int gif_initialise(struct gif_animation *gif) {
 				return GIF_INSUFFICIENT_DATA;
 			}
 			for (index = 0; index < gif->colour_table_size; index++) {
-				gif->global_colour_table[index] = gif_data[0] | (gif_data[1] << 8) |
-					(gif_data[2] << 16) | 0xff000000;
+				char colour[] = {gif_data[0], gif_data[1], gif_data[2], 0xff};
+				gif->global_colour_table[index] = *((int *) colour);
 				gif_data += 3;
 			}
 			gif->buffer_position = (gif_data - gif->gif_data);
@@ -704,8 +704,9 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 			colour_table = gif->local_colour_table;
 			if (!clear_image) {
 				for (index = 0; index < colour_table_size; index++) {
-					colour_table[index] = gif_data[0] | (gif_data[1] << 8) |
-						(gif_data[2] << 16) | 0xff000000;
+					char colour[] = {gif_data[0], gif_data[1],
+							gif_data[2], 0xff};
+					colour_table[index] = *((int *) colour);
 					gif_data += 3;
 				}
 			} else {
