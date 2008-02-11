@@ -171,7 +171,8 @@ input[align=right] { float: right; }
 
 select { background-color: #d9d9d9; color: #000; text-align: left;
 	font-family: sans-serif; width: auto; height: auto; overflow: hidden;
-	margin: 1px; border: medium inset #d9d9d9; padding: 1px 2px; }
+	margin: 1px; border: medium inset #d9d9d9; padding: 1px 3px 1px 2px;
+	white-space: nowrap; }
 select:after { content: "\25bc"; border-left: 4px ridge #d9d9d9; }
 
 textarea { background-color: #fff; color: #000; text-align: left;
