@@ -170,7 +170,7 @@ input[align=left] { float: left; }
 input[align=right] { float: right; }
 
 select { background-color: #d9d9d9; color: #000; text-align: left;
-	font-family: sans-serif; width: 10em; height: auto; overflow: hidden;
+	font-family: sans-serif; width: auto; height: auto; overflow: hidden;
 	margin: 1px; border: medium inset #d9d9d9; padding: 1px 2px; }
 select:after { content: "\25bc"; border-left: 4px ridge #d9d9d9; }
 

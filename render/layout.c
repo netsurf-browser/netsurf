@@ -46,6 +46,7 @@
 #include "desktop/options.h"
 #include "render/box.h"
 #include "render/font.h"
+#include "render/form.h"
 #include "render/layout.h"
 #define NDEBUG
 #include "utils/log.h"
@@ -1140,10 +1141,36 @@ bool layout_line(struct box *first, int *width, int *y,
 				continue;
 			}
 
-			if (b->width == UNKNOWN_WIDTH)
-				/** \todo handle errors */
-				nsfont_width(b->style, b->text, b->length,
-						&b->width);
+			if (b->width == UNKNOWN_WIDTH) {
+ 				/** \todo handle errors */
+
+				/* If it's a select element, we must use the
+				 * width of the widest option text */
+				if (b->parent->parent->gadget &&
+						b->parent->parent->gadget->type
+						== GADGET_SELECT) {
+					int opt_maxwidth = 0;
+					struct form_option *o;
+
+					for (o = b->parent->parent->gadget->
+							data.select.items; o;
+							o = o->next) {
+						int opt_width;
+						nsfont_width(b->style, o->text,
+								strlen(o->text),
+								&opt_width);
+
+						if (opt_maxwidth < opt_width)
+							opt_maxwidth =opt_width;
+					}
+
+					b->width = opt_maxwidth;
+				} else {
+					nsfont_width(b->style, b->text,
+						b->length, &b->width);
+				}
+			}
+
 			x += b->width;
 			if (b->space)
 				/** \todo optimize out */
@@ -1628,10 +1655,35 @@ struct box *layout_minmax_line(struct box *first,
 			if (!b->text)
 				continue;
 
-			if (b->width == UNKNOWN_WIDTH)
-				/** \todo handle errors */
-				nsfont_width(b->style, b->text, b->length,
-						&b->width);
+			if (b->width == UNKNOWN_WIDTH) {
+ 				/** \todo handle errors */
+
+				/* If it's a select element, we must use the
+				 * width of the widest option text */
+				if (b->parent->parent->gadget &&
+						b->parent->parent->gadget->type
+						== GADGET_SELECT) {
+					int opt_maxwidth = 0;
+					struct form_option *o;
+
+					for (o = b->parent->parent->gadget->
+							data.select.items; o;
+							o = o->next) {
+						int opt_width;
+						nsfont_width(b->style, o->text,
+								strlen(o->text),
+								&opt_width);
+
+						if (opt_maxwidth < opt_width)
+							opt_maxwidth =opt_width;
+					}
+
+					b->width = opt_maxwidth;
+				} else {
+					nsfont_width(b->style, b->text,
+						b->length, &b->width);
+				}
+			}
 			max += b->width;
 			if (b->next && b->space) {
 				nsfont_width(b->style, " ", 1, &width);
