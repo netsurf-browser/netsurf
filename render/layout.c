@@ -66,7 +66,7 @@ static int layout_solve_width(int available_width, int width,
 static void layout_float_find_dimensions(int available_width,
 		struct css_style *style, struct box *box);
 static void layout_find_dimensions(int available_width,
-		struct css_style *style,
+		struct box *box, struct css_style *style,
 		int *width, int *height,
 		int margin[4], int padding[4], int border[4]);
 static int layout_clear(struct box *fl, css_clear clear);
@@ -550,7 +550,7 @@ void layout_block_find_dimensions(int available_width, struct box *box)
 	int *border = box->border;
 	struct css_style *style = box->style;
 
-	layout_find_dimensions(available_width, style,
+	layout_find_dimensions(available_width, box, style,
 			&width, &height, margin, padding, border);
 
 	if (box->object && box->object->type != CONTENT_HTML) {
@@ -666,7 +666,7 @@ void layout_float_find_dimensions(int available_width,
 			style->overflow == CSS_OVERFLOW_AUTO) ?
 			SCROLLBAR_WIDTH : 0;
 
-	layout_find_dimensions(available_width, style,
+	layout_find_dimensions(available_width, box, style,
 			&width, &height, margin, padding, border);
 
 	if (margin[LEFT] == AUTO)
@@ -712,6 +712,7 @@ void layout_float_find_dimensions(int available_width,
  * Calculate width, height, and thickness of margins, paddings, and borders.
  *
  * \param  available_width  width of containing block
+ * \param  box		    current box
  * \param  style	    style giving width, height, margins, paddings,
  *                          and borders
  * \param  width            updated to width, may be NULL
@@ -722,11 +723,13 @@ void layout_float_find_dimensions(int available_width,
  */
 
 void layout_find_dimensions(int available_width,
-		struct css_style *style,
+		struct box *box, struct css_style *style,
 		int *width, int *height,
 		int margin[4], int padding[4], int border[4])
 {
 	unsigned int i;
+	int fixed = 0;
+	float frac = 0;
 
 	if (width) {
 		switch (style->width.width) {
@@ -737,6 +740,17 @@ void layout_find_dimensions(int available_width,
 			case CSS_WIDTH_PERCENT:
 				*width = available_width *
 					style->width.value.percent / 100;
+					/* gadget widths include margins,
+					 * borders and padding */
+					if (box->gadget) {
+						calculate_mbp_width(style,
+							LEFT, &fixed, &frac);
+						calculate_mbp_width(style,
+							RIGHT, &fixed, &frac);
+						*width -= frac + fixed;
+						*width = *width > 0 ?
+								*width : 0;
+					}
 				break;
 			case CSS_WIDTH_AUTO:
 			default:
@@ -1098,7 +1112,7 @@ bool layout_line(struct box *first, int *width, int *y,
 
 		if (b->type == BOX_INLINE) {
 			/* calculate borders, margins, and padding */
-			layout_find_dimensions(*width, b->style,
+			layout_find_dimensions(*width, b, b->style,
 					0, 0, b->margin, b->padding, b->border);
 			for (i = 0; i != 4; i++)
 				if (b->margin[i] == AUTO)
@@ -1930,15 +1944,15 @@ bool layout_table(struct box *table, int available_width,
 	memcpy(col, table->col, sizeof(col[0]) * columns);
 
 	/* find margins, paddings, and borders for table and cells */
-	layout_find_dimensions(available_width, style, 0, 0, table->margin,
-			table->padding, table->border);
+	layout_find_dimensions(available_width, table, style, 0, 0,
+			table->margin, table->padding, table->border);
 	for (row_group = table->children; row_group;
 			row_group = row_group->next) {
 		for (row = row_group->children; row; row = row->next) {
 			for (c = row->children; c; c = c->next) {
 				assert(c->style);
 				layout_find_dimensions(available_width,
-						c->style, 0, 0, 0,
+						c, c->style, 0, 0, 0,
 						c->padding, c->border);
 				if (c->style->overflow ==
 						CSS_OVERFLOW_SCROLL ||
@@ -2736,7 +2750,7 @@ bool layout_absolute(struct box *box, struct box *containing_block,
 	layout_compute_offsets(box, containing_block,
 			&top, &right, &bottom, &left);
 
-	layout_find_dimensions(available_width, box->style,
+	layout_find_dimensions(available_width, box, box->style,
 			&width, &height, margin, padding, border);
 
 	/* 10.3.7 */
