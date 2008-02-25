@@ -247,11 +247,11 @@ bool imagemap_extract(xmlNode *node, struct content *c)
 	assert(c != NULL);
 
 	if (node->type == XML_ELEMENT_NODE) {
-		if (strcmp(node->name, "map") == 0) {
-			if ((name = (char *)xmlGetProp(node,
-					(const xmlChar *)"id")) == NULL) {
-				if ((name = (char *)xmlGetProp(node,
-					(const xmlChar *)"name")) ==
+		if (strcmp((const char *) node->name, "map") == 0) {
+			if ((name = (char *) xmlGetProp(node,
+					(const xmlChar *) "id")) == NULL) {
+				if ((name = (char *) xmlGetProp(node,
+					(const xmlChar *) "name")) ==
 						NULL)
 					return true;
 			}
@@ -306,8 +306,8 @@ bool imagemap_extract_map(xmlNode *node, struct content *c,
 		/** \todo ignore <area> elements if there are other
 		 *	block-level elements present in map
 		 */
-		if (strcmp(node->name, "area") == 0 ||
-		    strcmp(node->name, "a") == 0) {
+		if (strcmp((const char *) node->name, "area") == 0 ||
+		    strcmp((const char *) node->name, "a") == 0) {
 			return imagemap_addtolist(node,
 				c->data.html.base_url, entry);
 		}
@@ -341,7 +341,7 @@ bool imagemap_addtolist(xmlNode *n, char *base_url, struct mapentry **entry)
 	assert(base_url != NULL);
 	assert(entry != NULL);
 
-	if (strcmp(n->name, "area") == 0) {
+	if (strcmp((const char *) n->name, "area") == 0) {
 		/* nohref attribute present - ignore this entry */
 		if (xmlGetProp(n, (const xmlChar*)"nohref") != 0) {
 			return true;

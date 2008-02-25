@@ -428,11 +428,11 @@ void options_load_tree_directory(xmlNode *ul, struct node *directory) {
 		if (n->type != XML_ELEMENT_NODE)
 			continue;
 
-		if (strcmp(n->name, "li") == 0) {
+		if (strcmp((const char *) n->name, "li") == 0) {
 			/* entry */
 			options_load_tree_entry(n, directory);
 
-		} else if (strcmp(n->name, "h4") == 0) {
+		} else if (strcmp((const char *) n->name, "h4") == 0) {
 			/* directory */
 			title = (char *) xmlNodeGetContent(n);
 			if (!title) {
@@ -445,7 +445,7 @@ void options_load_tree_directory(xmlNode *ul, struct node *directory) {
 					n && n->type != XML_ELEMENT_NODE;
 					n = n->next)
 				;
-			if (!n || strcmp(n->name, "ul") != 0) {
+			if (!n || strcmp((const char *) n->name, "ul") != 0) {
 				/* next element isn't expected ul */
 				free(title);
 				warn_user("HotlistLoadError", "(Expected "
@@ -478,7 +478,7 @@ void options_load_tree_entry(xmlNode *li, struct node *directory) {
 	for (n = li->children; n; n = n->next) {
 		/* The li must contain an "a" element */
 		if (n->type == XML_ELEMENT_NODE &&
-				strcmp(n->name, "a") == 0) {
+				strcmp((const char *) n->name, "a") == 0) {
 			url = (char *) xmlGetProp(n, (const xmlChar *) "href");
 			title = (char *) xmlNodeGetContent(n);
 		}
@@ -526,7 +526,7 @@ xmlNode *options_find_tree_element(xmlNode *node, const char *name) {
 		return 0;
 	for (n = node->children;
 			n && !(n->type == XML_ELEMENT_NODE &&
-			strcmp(n->name, name) == 0);
+			strcmp((const char *) n->name, name) == 0);
 			n = n->next)
 		;
 	return n;
@@ -545,14 +545,15 @@ bool options_save_tree(struct tree *tree, const char *filename, const char *page
 
 	/* Unfortunately the Browse Hotlist format is invalid HTML,
 	 * so this is a lie. */
-	doc = htmlNewDoc("http://www.w3.org/TR/html4/strict.dtd",
-			"-//W3C//DTD HTML 4.01//EN");
+	doc = htmlNewDoc(
+		(const xmlChar *) "http://www.w3.org/TR/html4/strict.dtd",
+		(const xmlChar *) "-//W3C//DTD HTML 4.01//EN");
 	if (!doc) {
 		warn_user("NoMemory", 0);
 		return false;
 	}
 
-	html = xmlNewNode(NULL, "html");
+	html = xmlNewNode(NULL, (const xmlChar *) "html");
 	if (!html) {
 		warn_user("NoMemory", 0);
 		xmlFreeDoc(doc);
@@ -560,21 +561,22 @@ bool options_save_tree(struct tree *tree, const char *filename, const char *page
 	}
 	xmlDocSetRootElement(doc, html);
 
-	head = xmlNewChild(html, NULL, "head", NULL);
+	head = xmlNewChild(html, NULL, (const xmlChar *) "head", NULL);
 	if (!head) {
 		warn_user("NoMemory", 0);
 		xmlFreeDoc(doc);
 		return false;
 	}
 
-	title  = xmlNewTextChild(head, NULL, "title", page_title);
+	title  = xmlNewTextChild(head, NULL, (const xmlChar *) "title", 
+			(const xmlChar *) page_title);
 	if (!title) {
 		warn_user("NoMemory", 0);
 		xmlFreeDoc(doc);
 		return false;
 	}
 
-	body = xmlNewChild(html, NULL, "body", NULL);
+	body = xmlNewChild(html, NULL, (const xmlChar *) "body", NULL);
 	if (!body) {
 		warn_user("NoMemory", 0);
 		xmlFreeDoc(doc);
@@ -611,7 +613,7 @@ bool options_save_tree_directory(struct node *directory, xmlNode *node) {
 	struct node *child;
 	xmlNode *ul, *h4;
 
-	ul = xmlNewChild(node, NULL, "ul", NULL);
+	ul = xmlNewChild(node, NULL, (const xmlChar *) "ul", NULL);
 	if (!ul)
 		return false;
 
@@ -623,7 +625,9 @@ bool options_save_tree_directory(struct node *directory, xmlNode *node) {
 		} else {
 			/* directory */
 			/* invalid HTML */
-			h4 = xmlNewTextChild(ul, NULL, "h4", child->data.text);
+			h4 = xmlNewTextChild(ul, NULL, 
+					(const xmlChar *) "h4", 
+					(const xmlChar *) child->data.text);
 			if (!h4)
 				return false;
 
@@ -649,18 +653,20 @@ bool options_save_tree_entry(struct node *entry, xmlNode *node) {
 	xmlAttr *href;
 	struct node_element *element;
 
-	li = xmlNewChild(node, NULL, "li", NULL);
+	li = xmlNewChild(node, NULL, (const xmlChar *) "li", NULL);
 	if (!li)
 		return false;
 
-	a = xmlNewTextChild(li, NULL, "a", entry->data.text);
+	a = xmlNewTextChild(li, NULL, (const xmlChar *) "a", 
+			(const xmlChar *) entry->data.text);
 	if (!a)
 		return false;
 
 	element = tree_find_element(entry, TREE_ELEMENT_URL);
 	if (!element)
 		return false;
-	href = xmlNewProp(a, "href", element->text);
+	href = xmlNewProp(a, (const xmlChar *) "href", 
+			(const xmlChar *) element->text);
 	if (!href)
 		return false;
 	return true;

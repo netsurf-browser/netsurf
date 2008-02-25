@@ -1422,7 +1422,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 
 			if (text_box) {
 				int pixel_offset;
-				int idx;
+				size_t idx;
 
 				nsfont_position_in_string(text_box->style,
 					text_box->text,
@@ -1431,7 +1431,8 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 					&idx,
 					&pixel_offset);
 
-				selection_click(bw->sel, mouse, text_box->byte_offset + idx);
+				selection_click(bw->sel, mouse, 
+						text_box->byte_offset + idx);
 
 				if (selection_dragging(bw->sel)) {
 					bw->drag_type = DRAGGING_SELECTION;
@@ -1456,9 +1457,10 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 			}
 			else if (text_box) {
 				int pixel_offset;
-				int idx;
+				size_t idx;
 
-				if (mouse & (BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_2))
+				if (mouse & (BROWSER_MOUSE_DRAG_1 | 
+						BROWSER_MOUSE_DRAG_2))
 					selection_init(bw->sel, gadget_box);
 
 				nsfont_position_in_string(text_box->style,
@@ -1468,7 +1470,8 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 					&idx,
 					&pixel_offset);
 
-				selection_click(bw->sel, mouse, text_box->byte_offset + idx);
+				selection_click(bw->sel, mouse, 
+						text_box->byte_offset + idx);
 
 				if (selection_dragging(bw->sel))
 					bw->drag_type = DRAGGING_SELECTION;
@@ -1546,7 +1549,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 
 			if (text_box) {
 				int pixel_offset;
-				int idx;
+				size_t idx;
 
 				nsfont_position_in_string(text_box->style,
 					text_box->text,
@@ -1555,14 +1558,18 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 					&idx,
 					&pixel_offset);
 
-				if (selection_click(bw->sel, mouse, text_box->byte_offset + idx)) {
-					/* key presses must be directed at the main browser
-					 * window, paste text operations ignored */
+				if (selection_click(bw->sel, mouse, 
+						text_box->byte_offset + idx)) {
+					/* key presses must be directed at the 
+					 * main browser window, paste text 
+					 * operations ignored */
 					browser_window_remove_caret(bw);
 
 					if (selection_dragging(bw->sel)) {
-						bw->drag_type = DRAGGING_SELECTION;
-						status = messages_get("Selecting");
+						bw->drag_type = 
+							DRAGGING_SELECTION;
+						status = 
+							messages_get("Selecting");
 					} else
 						status = c->status_message;
 
@@ -1805,7 +1812,7 @@ void browser_window_mouse_track_html(struct browser_window *bw,
 					&dx, &dy, dir);
 			if (box) {
 				int pixel_offset;
-				int idx;
+				size_t idx;
 
 				nsfont_position_in_string(box->style,
 					box->text,
@@ -1814,7 +1821,8 @@ void browser_window_mouse_track_html(struct browser_window *bw,
 					&idx,
 					&pixel_offset);
 
-				selection_track(bw->sel, mouse, box->byte_offset + idx);
+				selection_track(bw->sel, mouse, 
+						box->byte_offset + idx);
 			}
 		}
 		break;
@@ -1877,7 +1885,7 @@ void browser_window_mouse_drag_end(struct browser_window *bw,
 			if (c) {
 				bool found = true;
 				int dir = -1;
-				int idx;
+				size_t idx;
 
 				if (selection_dragging_start(bw->sel)) dir = 1;
 
@@ -1889,7 +1897,8 @@ void browser_window_mouse_drag_end(struct browser_window *bw,
 					box = browser_window_pick_text_box(bw, mouse, x, y,
 							&dx, &dy, dir);
 					if (box) {
-						nsfont_position_in_string(box->style,
+						nsfont_position_in_string(
+							box->style,
 							box->text,
 							box->length,
 							dx,
@@ -1897,7 +1906,8 @@ void browser_window_mouse_drag_end(struct browser_window *bw,
 							&pixel_offset);
 
 						idx += box->byte_offset;
-						selection_track(bw->sel, mouse, idx);
+						selection_track(bw->sel, mouse,
+								idx);
 					}
 					else
 						found = false;

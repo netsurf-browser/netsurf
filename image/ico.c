@@ -53,7 +53,7 @@ bool nsico_convert(struct content *c, int iwidth, int iheight) {
 
 	/* set our source data */
 	ico = c->data.ico.ico;
-	ico->ico_data = c->source_data;
+	ico->ico_data = (unsigned char *) c->source_data;
 	ico->buffer_size = c->source_size;
 
 	/* analyse the BMP */

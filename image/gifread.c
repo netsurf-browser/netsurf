@@ -149,7 +149,7 @@ int gif_initialise(struct gif_animation *gif) {
 
 		/*	Check we are a GIF
 		*/
-		if (strncmp(gif_data, "GIF", 3) != 0)
+		if (strncmp((const char *) gif_data, "GIF", 3) != 0)
 			return GIF_DATA_ERROR;
 		gif_data += 3;
 
@@ -410,7 +410,8 @@ int gif_initialise_frame(struct gif_animation *gif) {
 			*/
 			} else if ((gif_data[1] == 0xff) &&
 					(gif_data[2] == 0x0b) &&
-					(strncmp(gif_data + 3, "NETSCAPE2.0", 11) == 0) &&
+					(strncmp((const char *) gif_data + 3, 
+						"NETSCAPE2.0", 11) == 0) &&
 					(gif_data[14] == 0x03) &&
 					(gif_data[15] == 0x01)) {
 				gif->loop_count = gif_data[16] | (gif_data[17] << 8);

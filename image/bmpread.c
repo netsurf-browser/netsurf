@@ -50,7 +50,7 @@ void bmp_invalidate(struct bitmap *bitmap, void *private_word);
  * \return BMP_OK on success
  */
 bmp_result bmp_analyse(struct bmp_image *bmp) {
-	char *data = bmp->bmp_data;
+	char *data = (char *) bmp->bmp_data;
 
 	/* ensure we aren't already initialised */
 	if (bmp->bitmap)
@@ -87,7 +87,7 @@ bmp_result bmp_analyse(struct bmp_image *bmp) {
  * \return BMP_OK on success
  */
 bmp_result ico_analyse(struct ico_collection *ico) {
-	char *data = ico->ico_data;
+	char *data = (char *) ico->ico_data;
 	unsigned int count, i;
 	bmp_result result;
 	struct ico_image *image;
@@ -126,7 +126,8 @@ bmp_result ico_analyse(struct ico_collection *ico) {
 		image->bmp.bmp_data = ico->ico_data + READ_INT(data, 12);
 		image->bmp.ico = true;
 		data += 16;
-		result = bmp_analyse_header(&image->bmp, image->bmp.bmp_data);
+		result = bmp_analyse_header(&image->bmp, 
+				(char *) image->bmp.bmp_data);
 		if (result != BMP_OK)
 			return result;
 		area = image->bmp.width * image->bmp.height;
@@ -370,7 +371,7 @@ bmp_result bmp_decode(struct bmp_image *bmp) {
 
 	assert(bmp->bitmap);
 
-	data = bmp->bmp_data + bmp->bitmap_offset;
+	data = (char *) bmp->bmp_data + bmp->bitmap_offset;
 	bytes = bmp->buffer_size - bmp->bitmap_offset;
 
 	switch (bmp->encoding) {

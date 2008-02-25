@@ -355,7 +355,7 @@ bool box_construct_element(xmlNode *n, struct content *content,
 
 	/* extract title attribute, if present */
 	if ((title0 = xmlGetProp(n, (const xmlChar *) "title"))) {
-		char *title1 = squash_whitespace(title0);
+		char *title1 = squash_whitespace((char *) title0);
 		xmlFree(title0);
 		if (!title1)
 			return false;
@@ -638,7 +638,7 @@ bool box_construct_text(xmlNode *n, struct content *content,
 
 	if (parent_style->white_space == CSS_WHITE_SPACE_NORMAL ||
 			 parent_style->white_space == CSS_WHITE_SPACE_NOWRAP) {
-		char *text = squash_whitespace(n->content);
+		char *text = squash_whitespace((char *) n->content);
 		if (!text)
 			return false;
 
@@ -719,7 +719,7 @@ bool box_construct_text(xmlNode *n, struct content *content,
 
 	} else {
 		/* white-space: pre */
-		char *text = cnv_space2nbsp(n->content);
+		char *text = cnv_space2nbsp((char *) n->content);
 		char *current;
 		/* note: pre-wrap/pre-line are unimplemented */
 		assert(parent_style->white_space == CSS_WHITE_SPACE_PRE ||
@@ -823,14 +823,14 @@ struct css_style * box_get_style(struct content *c,
 	colour border_color = 0x888888; /* mid-grey default for tables */
 
 	/* if not in a table, switch off cellpadding and cell borders */
-	if (strcmp(n->name, "thead") != 0 &&
-			strcmp(n->name, "tbody") != 0 &&
-			strcmp(n->name, "tfoot") != 0 &&
-			strcmp(n->name, "tr") != 0 &&
-			strcmp(n->name, "td") != 0 &&
-			strcmp(n->name, "th") != 0 &&
-			strcmp(n->name, "col") != 0 &&
-			strcmp(n->name, "colgroup") != 0) {
+	if (strcmp((const char *) n->name, "thead") != 0 &&
+			strcmp((const char *) n->name, "tbody") != 0 &&
+			strcmp((const char *) n->name, "tfoot") != 0 &&
+			strcmp((const char *) n->name, "tr") != 0 &&
+			strcmp((const char *) n->name, "td") != 0 &&
+			strcmp((const char *) n->name, "th") != 0 &&
+			strcmp((const char *) n->name, "col") != 0 &&
+			strcmp((const char *) n->name, "colgroup") != 0) {
 		markup_track->cell_border = false;
 		markup_track->cell_padding = false;
 	}
@@ -1205,17 +1205,17 @@ struct css_style * box_get_style(struct content *c,
 	 * text-align for the current block can be handled in the default
 	 * CSS file.
 	 */
-	if (strcmp(n->name, "center") == 0)
+	if (strcmp((const char *) n->name, "center") == 0)
 		markup_track->align = ALIGN_CENTER;
-	else if (strcmp(n->name, "div") == 0 ||
-			strcmp(n->name, "col") == 0 ||
-			strcmp(n->name, "colgroup") == 0 ||
-			strcmp(n->name, "tbody") == 0 ||
-			strcmp(n->name, "td") == 0 ||
-			strcmp(n->name, "tfoot") == 0 ||
-			strcmp(n->name, "th") == 0 ||
-			strcmp(n->name, "thead") == 0 ||
-			strcmp(n->name, "tr") == 0) {
+	else if (strcmp((const char *) n->name, "div") == 0 ||
+			strcmp((const char *) n->name, "col") == 0 ||
+			strcmp((const char *) n->name, "colgroup") == 0 ||
+			strcmp((const char *) n->name, "tbody") == 0 ||
+			strcmp((const char *) n->name, "td") == 0 ||
+			strcmp((const char *) n->name, "tfoot") == 0 ||
+			strcmp((const char *) n->name, "th") == 0 ||
+			strcmp((const char *) n->name, "thead") == 0 ||
+			strcmp((const char *) n->name, "tr") == 0) {
 
 		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "align"))) {
 			if (strcasecmp(s, "center") == 0)
@@ -1229,13 +1229,13 @@ struct css_style * box_get_style(struct content *c,
 	}
 	/* Table cells without an align value have a default implied
 	 * alignment */
-	if (strcmp(n->name, "td") == 0) {
+	if (strcmp((const char *) n->name, "td") == 0) {
 		if (!(s = (char *) xmlGetProp(n, (const xmlChar *) "align")))
 			markup_track->align = ALIGN_LEFT;
 		else
 			xmlFree(s);
 	}
-	if (strcmp(n->name, "th") == 0) {
+	if (strcmp((const char *) n->name, "th") == 0) {
 		if (!(s = (char *) xmlGetProp(n, (const xmlChar *) "align")))
 			markup_track->align = ALIGN_CENTER;
 		else
@@ -1336,19 +1336,20 @@ void box_text_transform(char *s, unsigned int len,
 	switch (tt) {
 		case CSS_TEXT_TRANSFORM_UPPERCASE:
 			for (i = 0; i < len; ++i)
-				if (s[i] < 0x80)
+				if ((unsigned char) s[i] < 0x80)
 					s[i] = toupper(s[i]);
 			break;
 		case CSS_TEXT_TRANSFORM_LOWERCASE:
 			for (i = 0; i < len; ++i)
-				if (s[i] < 0x80)
+				if ((unsigned char) s[i] < 0x80)
 					s[i] = tolower(s[i]);
 			break;
 		case CSS_TEXT_TRANSFORM_CAPITALIZE:
-			if (s[0] < 0x80)
+			if ((unsigned char) s[0] < 0x80)
 				s[0] = toupper(s[0]);
 			for (i = 1; i < len; ++i)
-				if (s[i] < 0x80 && isspace(s[i - 1]))
+				if ((unsigned char) s[i] < 0x80 && 
+						isspace(s[i - 1]))
 					s[i] = toupper(s[i]);
 			break;
 		default:
@@ -1437,19 +1438,19 @@ bool box_a(BOX_SPECIAL_PARAMS)
 
 	/* target frame [16.3] */
 	if ((s = xmlGetProp(n, (const xmlChar *) "target"))) {
-		if (!strcasecmp(s, "_blank"))
+		if (!strcasecmp((const char *) s, "_blank"))
 			box->target = TARGET_BLANK;
-		else if (!strcasecmp(s, "_top"))
+		else if (!strcasecmp((const char *) s, "_top"))
 			box->target = TARGET_TOP;
-		else if (!strcasecmp(s, "_parent"))
+		else if (!strcasecmp((const char *) s, "_parent"))
 			box->target = TARGET_PARENT;
-		else if (!strcasecmp(s, "_self"))
+		else if (!strcasecmp((const char *) s, "_self"))
 			/* the default may have been overridden by a
 			 * <base target=...>, so this is different to 0 */
 			box->target = TARGET_SELF;
 		else if (('a' <= s[0] && s[0] <= 'z') ||
 				('A' <= s[0] && s[0] <= 'Z')) {  /* [6.16] */
-			box->target = talloc_strdup(content, s);
+			box->target = talloc_strdup(content, (const char *) s);
 			if (!box->target) {
 				xmlFree(s);
 				return false;
@@ -1477,7 +1478,7 @@ bool box_image(BOX_SPECIAL_PARAMS)
 
 	/* handle alt text */
 	if ((alt = xmlGetProp(n, (const xmlChar *) "alt"))) {
-		s = squash_whitespace(alt);
+		s = squash_whitespace((const char *) alt);
 		xmlFree(alt);
 		if (!s)
 			return false;
@@ -2589,12 +2590,12 @@ bool box_select_add_option(struct form_control *control, xmlNode *n)
 	char *text_nowrap = 0;
 	bool selected;
 	xmlChar *content;
-	xmlChar *s;
+	char *s;
 
 	content = xmlNodeGetContent(n);
 	if (!content)
 		goto no_memory;
-	text = squash_whitespace(content);
+	text = squash_whitespace((const char *) content);
 	xmlFree(content);
 	if (!text)
 		goto no_memory;
@@ -2703,8 +2704,8 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 
 	while (1) {
 		/* BOX_TEXT */
-		len = strcspn(current, "\r\n");
-		s = talloc_strndup(content, current, len);
+		len = strcspn((const char *) current, "\r\n");
+		s = talloc_strndup(content, (const char *) current, len);
 		if (!s) {
 			xmlFree(string);
 			xmlBufferFree(buf);
@@ -2849,7 +2850,7 @@ bool box_get_attribute(xmlNode *n, const char *attribute,
 	xmlChar *s = xmlGetProp(n, (const xmlChar *) attribute);
 	if (!s)
 		return true;
-	*value = talloc_strdup(context, s);
+	*value = talloc_strdup(context, (const char *) s);
 	xmlFree(s);
 	if (!*value)
 		return false;

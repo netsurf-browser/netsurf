@@ -84,8 +84,9 @@ static bool textarea_cut(struct browser_window *bw,
 		struct box *end_box, unsigned end_idx);
 static void textarea_reflow(struct browser_window *bw, struct box *textarea,
 		struct box *inline_container);
-static bool word_left(const char *text, int *poffset, int *pchars);
-static bool word_right(const char *text, int len, int *poffset, int *pchars);
+static bool word_left(const char *text, size_t *poffset, size_t *pchars);
+static bool word_right(const char *text, size_t len, size_t *poffset, 
+		size_t *pchars);
 static bool ensure_caret_visible(struct box *textarea);
 
 /**
@@ -179,7 +180,7 @@ struct box *textarea_get_position(struct box *textarea, int x, int y,
 		nsfont_position_in_string(text_box->style, text_box->text,
 				text_box->length,
 				(unsigned int)(x - text_box->x),
-				pchar_offset, ppixel_offset);
+				(size_t *) pchar_offset, ppixel_offset);
 	} else {
 		/* find the relevant text box */
 		y -= inline_container->y;
@@ -202,7 +203,8 @@ struct box *textarea_get_position(struct box *textarea, int x, int y,
 					text_box->text,
 					text_box->length,
 					textarea->width,
-					pchar_offset, ppixel_offset);
+					(size_t *) pchar_offset, 
+					ppixel_offset);
 		} else {
 			/* in a text box */
 			if (text_box->type == BOX_BR)
@@ -221,7 +223,8 @@ struct box *textarea_get_position(struct box *textarea, int x, int y,
 					text_box->text,
 					text_box->length,
 					(unsigned int)(x - text_box->x),
-					pchar_offset, ppixel_offset);
+					(size_t *) pchar_offset, 
+					ppixel_offset);
 		}
 	}
 
@@ -1023,7 +1026,7 @@ bool browser_window_input_callback(struct browser_window *bw,
 		break;
 
 	case KEY_WORD_LEFT: {
-		int nchars;
+		size_t nchars;
 		/* Text box */
 		if (word_left(input->gadget->value, &form_offset, &nchars)) {
 			/* Gadget */
@@ -1037,7 +1040,7 @@ bool browser_window_input_callback(struct browser_window *bw,
 	break;
 
 	case KEY_WORD_RIGHT: {
-		int nchars;
+		size_t nchars;
 		/* Text box */
 		if (word_right(input->gadget->value, input->gadget->length,
 				&form_offset, &nchars)) {
@@ -1513,7 +1516,7 @@ void input_update_display(struct browser_window *bw, struct box *input,
 	box_coords(input, &box_x, &box_y);
 
 	nsfont_width(text_box->style, text_box->text, box_offset,
-			&pixel_offset);
+			(int *) &pixel_offset);
 	dx = text_box->x;
 	text_box->x = 0;
 	if (input->width < text_box->width &&
@@ -1901,11 +1904,11 @@ void textarea_reflow(struct browser_window *bw, struct box *textarea,
  * \return true iff the start of a word was found before/at the string start
  */
 
-bool word_left(const char *text, int *poffset, int *pchars)
+bool word_left(const char *text, size_t *poffset, size_t *pchars)
 {
-	int offset = *poffset;
+	size_t offset = *poffset;
 	bool success = false;
-	int nchars = 0;
+	size_t nchars = 0;
 
 	while (offset > 0) {
 		offset = utf8_prev(text, offset);
@@ -1914,7 +1917,7 @@ bool word_left(const char *text, int *poffset, int *pchars)
 	}
 
 	while (offset > 0) {
-		int prev = utf8_prev(text, offset);
+		size_t prev = utf8_prev(text, offset);
 		success = true;
 		if (isspace(text[prev]))
 			break;
@@ -1939,11 +1942,11 @@ bool word_left(const char *text, int *poffset, int *pchars)
  * \return true iff the start of a word was found before the string end
  */
 
-bool word_right(const char *text, int len, int *poffset, int *pchars)
+bool word_right(const char *text, size_t len, size_t *poffset, size_t *pchars)
 {
-	int offset = *poffset;
+	size_t offset = *poffset;
 	bool success = false;
-	int nchars = 0;
+	size_t nchars = 0;
 
 	while (offset < len) {
 		if (isspace(text[offset])) break;

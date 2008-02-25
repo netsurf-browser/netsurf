@@ -44,9 +44,10 @@ static utf8_convert_ret utf8_convert(const char *string, size_t len,
  * \param l  Length of sequence
  * \return   UCS4 character
  */
-size_t utf8_to_ucs4(const char *s, size_t l)
+size_t utf8_to_ucs4(const char *s_in, size_t l)
 {
 	size_t c = 0;
+	const unsigned char *s = (const unsigned char *) s_in;
 
 	if (!s)
 		assert(0);

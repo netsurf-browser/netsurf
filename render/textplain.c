@@ -503,7 +503,7 @@ size_t textplain_offset_from_coords(struct content *c, int x, int y, int dir)
 
 		if (x <= width) {
 			int pixel_offset;
-			int char_offset;
+			size_t char_offset;
 
 			nsfont_position_in_string(&textplain_style,
 				text, next_offset, x,

@@ -203,16 +203,19 @@ bool html_process_data(struct content *c, char *data, unsigned int size)
 
 		/* However, if that encoding is non-ASCII-compatible,
 		 * ignore it, as it can't possibly be correct */
-		if (strncasecmp(c->data.html.parser->input->encoding,
+		if (strncasecmp((const char *) c->data.html.parser->
+					input->encoding,
 				"UTF-16", 6) == 0 || /* UTF-16(LE|BE)? */
-			strncasecmp(c->data.html.parser->input->encoding,
+			strncasecmp((const char *) c->data.html.parser->
+					input->encoding,
 				"UTF-32", 6) == 0) { /* UTF-32(LE|BE)? */
 			c->data.html.encoding = talloc_strdup(c, "ISO-8859-1");
 			c->data.html.encoding_source =
 					ENCODING_SOURCE_DETECTED;
 		} else {
 			c->data.html.encoding = talloc_strdup(c,
-				c->data.html.parser->input->encoding);
+				(const char *) c->data.html.parser->
+						input->encoding);
 			c->data.html.encoding_source = ENCODING_SOURCE_META;
 		}
 
@@ -523,11 +526,12 @@ bool html_head(struct content *c, xmlNode *head)
 			continue;
 
 		LOG(("Node: %s", node->name));
-		if (!c->title && strcmp(node->name, "title") == 0) {
+		if (!c->title && strcmp((const char *) node->name, 
+				"title") == 0) {
 			xmlChar *title = xmlNodeGetContent(node);
 			if (!title)
 				return false;
-			char *title2 = squash_whitespace(title);
+			char *title2 = squash_whitespace((const char *) title);
 			xmlFree(title);
 			if (!title2)
 				return false;
@@ -536,7 +540,7 @@ bool html_head(struct content *c, xmlNode *head)
 			if (!c->title)
 				return false;
 
-		} else if (strcmp(node->name, "base") == 0) {
+		} else if (strcmp((const char *) node->name, "base") == 0) {
 			char *href = (char *) xmlGetProp(node,
 					(const xmlChar *) "href");
 			if (href) {
@@ -552,12 +556,18 @@ bool html_head(struct content *c, xmlNode *head)
 			}
 			/* don't use the central values to ease freeing later on */
 			if ((s = xmlGetProp(node, (const xmlChar *) "target"))) {
-				if ((!strcasecmp(s, "_blank")) || (!strcasecmp(s, "_top")) ||
-						(!strcasecmp(s, "_parent")) ||
-						(!strcasecmp(s, "_self")) ||
+				if ((!strcasecmp((const char *) s, "_blank")) ||
+						(!strcasecmp((const char *) s, 
+								"_top")) ||
+						(!strcasecmp((const char *) s, 
+								"_parent")) ||
+						(!strcasecmp((const char *) s, 
+								"_self")) ||
 						('a' <= s[0] && s[0] <= 'z') ||
 						('A' <= s[0] && s[0] <= 'Z')) {  /* [6.16] */
-					c->data.html.base_target = talloc_strdup(c, s);
+					c->data.html.base_target = 
+						talloc_strdup(c, 
+							(const char *) s);
 					if (!c->data.html.base_target) {
 						xmlFree(s);
 						return false;
@@ -594,7 +604,7 @@ bool html_meta_refresh(struct content *c, xmlNode *head)
 			continue;
 
 		/* Recurse into noscript elements */
-		if (strcmp((const char *)n->name, "noscript") == 0) {
+		if (strcmp((const char *) n->name, "noscript") == 0) {
 			if (!html_meta_refresh(c, n)) {
 				/* Some error occurred */
 				return false;
@@ -604,26 +614,26 @@ bool html_meta_refresh(struct content *c, xmlNode *head)
 			}
 		}
 
-		if (strcmp((const char *)n->name, "meta")) {
+		if (strcmp((const char *) n->name, "meta")) {
 			continue;
 		}
 
-		equiv = xmlGetProp(n, (const xmlChar *)"http-equiv");
+		equiv = xmlGetProp(n, (const xmlChar *) "http-equiv");
 		if (!equiv)
 			continue;
 
-		if (strcasecmp((const char *)equiv, "refresh")) {
+		if (strcasecmp((const char *) equiv, "refresh")) {
 			xmlFree(equiv);
 			continue;
 		}
 
 		xmlFree(equiv);
 
-		content = xmlGetProp(n, (const xmlChar *)"content");
+		content = xmlGetProp(n, (const xmlChar *) "content");
 		if (!content)
 			continue;
 
-		end = (char *)content + strlen(content);
+		end = (char *) content + strlen((const char *) content);
 
 		msg_data.delay = (int)strtol((char *) content, &url, 10);
 		/* a very small delay and self-referencing URL can cause a loop
@@ -776,7 +786,7 @@ bool html_find_stylesheets(struct content *c, xmlNode *html,
 		if (node->type != XML_ELEMENT_NODE)
 			continue;
 
-		if (strcmp(node->name, "link") != 0)
+		if (strcmp((const char *) node->name, "link") != 0)
 			continue;
 
 		/* rel=<space separated list, including 'stylesheet'> */
@@ -949,7 +959,7 @@ bool html_find_inline_stylesheets(struct content *c, xmlNode *html)
 
 		if (node->type != XML_ELEMENT_NODE)
 			continue;
-		if (strcmp(node->name, "style") != 0)
+		if (strcmp((const char *) node->name, "style") != 0)
 			continue;
 
 		if (!html_process_style_element(c, node))
@@ -1012,7 +1022,7 @@ bool html_process_style_element(struct content *c, xmlNode *style)
 	 * give the content of comments which may be used to 'hide'
 	 * the content */
 	for (child = style->children; child != 0; child = child->next) {
-		data = xmlNodeGetContent(child);
+		data = (char *) xmlNodeGetContent(child);
 		if (!content_process_data(c->data.html.
 				stylesheet_content[STYLESHEET_STYLE],
 				data, strlen(data))) {

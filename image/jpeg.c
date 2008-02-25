@@ -95,7 +95,7 @@ bool nsjpeg_convert(struct content *c, int w, int h)
 		return false;
 	}
 	jpeg_create_decompress(&cinfo);
-	source_mgr.next_input_byte = c->source_data;
+	source_mgr.next_input_byte = (unsigned char *) c->source_data;
 	source_mgr.bytes_in_buffer = c->source_size;
 	cinfo.src = &source_mgr;
 	jpeg_read_header(&cinfo, TRUE);
@@ -180,7 +180,7 @@ void nsjpeg_init_source(j_decompress_ptr cinfo)
 }
 
 
-static char nsjpeg_eoi[] = { 0xff, JPEG_EOI };
+static unsigned char nsjpeg_eoi[] = { 0xff, JPEG_EOI };
 
 /**
  * JPEG data source manager: fill the input buffer.

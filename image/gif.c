@@ -73,7 +73,7 @@ bool nsgif_convert(struct content *c, int iwidth, int iheight) {
 	/*	Create our animation
 	*/
 	gif = c->data.gif.gif;
-	gif->gif_data = c->source_data;
+	gif->gif_data = (unsigned char *) c->source_data;
 	gif->buffer_size = c->source_size;
 	gif->buffer_position = 0;
 

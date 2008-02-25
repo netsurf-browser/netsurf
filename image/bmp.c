@@ -52,7 +52,7 @@ bool nsbmp_convert(struct content *c, int iwidth, int iheight) {
 
 	/* set our source data */
 	bmp = c->data.bmp.bmp;
-	bmp->bmp_data = c->source_data;
+	bmp->bmp_data = (unsigned char *) c->source_data;
 	bmp->buffer_size = c->source_size;
 
 	/* analyse the BMP */
