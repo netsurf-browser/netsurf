@@ -141,7 +141,7 @@ bool box_normalise_block(struct box *block, struct content *c)
 			style = talloc_memdup(c, block->style, sizeof *style);
 			if (!style)
 				return false;
-			css_cascade(style, &css_blank_style);
+			css_cascade(style, &css_blank_style, NULL);
 			table = box_create(style, block->href, block->target,
 					0, 0, c);
 			if (!table) {
@@ -225,7 +225,7 @@ bool box_normalise_table(struct box *table, struct content * c)
 				free(col_info.spans);
 				return false;
 			}
-			css_cascade(style, &css_blank_style);
+			css_cascade(style, &css_blank_style, NULL);
 			row_group = box_create(style, table->href,
 					table->target, 0, 0, c);
 			if (!row_group) {
@@ -401,7 +401,7 @@ bool box_normalise_table_row_group(struct box *row_group,
 					sizeof *style);
 			if (!style)
 				return false;
-			css_cascade(style, &css_blank_style);
+			css_cascade(style, &css_blank_style, NULL);
 			row = box_create(style, row_group->href,
 					row_group->target, 0, 0, c);
 			if (!row) {
@@ -501,7 +501,7 @@ bool box_normalise_table_row(struct box *row,
 			style = talloc_memdup(c, row->style, sizeof *style);
 			if (!style)
 				return false;
-			css_cascade(style, &css_blank_style);
+			css_cascade(style, &css_blank_style, NULL);
 			cell = box_create(style, row->href, row->target, 0, 0,
 					c);
 			if (!cell) {

@@ -481,6 +481,31 @@ struct css_style {
 	} z_index;
 };
 
+/** Author level CSS importance info for properties that may be set in HTML */
+struct css_importance {
+	/* background properties */
+	bool background_color;
+	bool background_image;
+
+	/* borders */
+	bool border_style[4];  /**< top, right, bottom, left */
+	bool border_color[4];
+	bool border_width[4];
+	bool border_spacing;
+
+	bool color;
+
+	bool height;
+
+	/* margins */
+	bool margin[4];  /**< top, right, bottom, left */
+
+	/* padding */
+	bool padding[4];  /**< top, right, bottom, left */
+
+	bool width;
+};
+
 struct css_stylesheet;
 
 typedef enum {
@@ -650,15 +675,19 @@ struct css_working_stylesheet *css_make_working_stylesheet(
 		struct content **stylesheet_content,
 		unsigned int stylesheet_count);
 void css_get_style(struct css_working_stylesheet *working_stylesheet,
-		xmlNode *element, struct css_style *style);
+		xmlNode *element, struct css_style *style,
+		struct css_importance *author);
 struct css_style *css_duplicate_style(const struct css_style * const style);
 void css_free_style(struct css_style *style);
 void css_deep_free_content(struct css_content *content);
 void css_deep_free_counter_control(struct css_counter_control *control);
 void css_cascade(struct css_style * const style,
-		const struct css_style * const apply);
+		const struct css_style * const apply,
+		struct css_importance * const author);
 void css_merge(struct css_style * const style,
-		const struct css_style * const apply);
+		const struct css_style * const apply,
+		const unsigned long specificity,
+		struct css_importance * const author);
 void css_parse_property_list(struct content *c, struct css_style * style,
 		char * str);
 colour named_colour(const char *name);

@@ -11,9 +11,6 @@ head { display: none; }
 body { display: block; padding: 8px; line-height: 1.33; }
 
 div { display: block; }
-div[align=left] > * { margin-right: auto; }
-div[align=center] > * { margin-left: auto; margin-right: auto; }
-div[align=right] > * { margin-left: auto; }
 
 h1 { display: block; font-size: 2em; font-weight: bold; margin: .67em 0; }
 h2 { display: block; font-size: 1.5em; font-weight: bold; margin: .69em 0; }
@@ -92,13 +89,9 @@ th { font-weight: bold; text-align: center; }
 
 td[nowrap], th[nowrap] { white-space: nowrap; }
 
-td[align=left] > *, th[align=left] > * { margin-right: auto; }
-td[align=center] > *, th[align=center] > * { margin-left: auto; margin-right: auto; }
-td[align=right] > *, th[align=right] > * { margin-left: auto; }
-
-tr[align=left] > td, tr[align=left] > th { text-align: left; margin-right: auto; }
-tr[align=center] > td, tr[align=center] > th { text-align: center; margin-left: auto; margin-right: auto; }
-tr[align=right] > td, tr[align=right] > th { text-align: right; margin-left: auto; }
+tr[align=left] > td, tr[align=left] > th { text-align: left; }
+tr[align=center] > td, tr[align=center] > th { text-align: center; }
+tr[align=right] > td, tr[align=right] > th { text-align: right; }
 
 col[valign=top], colgroup[valign=top], tbody[valign=top], td[valign=top], tfoot[valign=top], th[valign=top], thead[valign=top], tr[valign=top] { vertical-align: top; }
 col[valign=middle], colgroup[valign=middle], tbody[valign=middle], td[valign=middle], tfoot[valign=middle], th[valign=middle], thead[valign=middle], tr[valign=middle] { vertical-align: middle; }
@@ -117,7 +110,6 @@ applet[align=left] { float: left; }
 applet[align=right] { float: right; }
 
 center { display: block; text-align: center; }
-center > * { margin-left: auto; margin-right: auto; }
 
 tt { font-family: monospace; }
 i { font-style: italic; }

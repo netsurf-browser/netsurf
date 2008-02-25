@@ -1,6 +1,7 @@
 /*
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2004 John M Bell <jmb202@ecs.soton.ac.uk>
+ * Copyright 2008 Michael Drake <tlsa@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -131,6 +132,7 @@ static void css_dump_length(const struct css_length * const length);
 static void css_dump_selector(const struct css_selector *r);
 static void css_dump_working_stylesheet(
 		const struct css_working_stylesheet *ws);
+static void css_importance_reset(struct css_importance *i);
 
 /** Default style for a document. These are the 'Initial values' from the
  *  spec. */
@@ -1124,15 +1126,19 @@ bool css_working_merge_chains(struct css_working_stylesheet *working_stylesheet,
  * \param  working_stylesheet  working stylesheet
  * \param  element  element in xml tree to match
  * \param  style    style to update
+ * \pram   author   updated to indicate properties with author level css
+ *                  importance
  *
  * The style is updated with any rules that match the element.
  */
 
 void css_get_style(struct css_working_stylesheet *working_stylesheet,
-		xmlNode *element, struct css_style *style)
+		xmlNode *element, struct css_style *style,
+		struct css_importance *author)
 {
 	unsigned int hash, rule_0 = 0, rule_h = 0;
 	struct css_selector *rule;
+	css_importance_reset(author); /* initialise to sub-author level */
 
 	hash = css_hash((const char *) element->name,
 			strlen((const char *) element->name));
@@ -1153,7 +1159,8 @@ void css_get_style(struct css_working_stylesheet *working_stylesheet,
 			rule_h++;
 		}
 		if (css_match_rule(rule, element))
-			css_merge(style, rule->style);
+			css_merge(style, rule->style, rule->specificity,
+									author);
 	}
 
 	/* remaining rules from hash chain 0 */
@@ -1162,7 +1169,8 @@ void css_get_style(struct css_working_stylesheet *working_stylesheet,
 		rule = working_stylesheet->rule[0][rule_0];
 		rule_0++;
 		if (css_match_rule(rule, element))
-			css_merge(style, rule->style);
+			css_merge(style, rule->style, rule->specificity,
+									author);
 	}
 
 	/* remaining rules from hash chain for element name */
@@ -1171,7 +1179,8 @@ void css_get_style(struct css_working_stylesheet *working_stylesheet,
 		rule = working_stylesheet->rule[hash][rule_h];
 		rule_h++;
 		if (css_match_rule(rule, element))
-			css_merge(style, rule->style);
+			css_merge(style, rule->style, rule->specificity,
+									author);
 	}
 }
 
@@ -2426,6 +2435,27 @@ void css_dump_working_stylesheet(const struct css_working_stylesheet *ws)
 }
 
 /**
+ * Set all members to FALSE
+ */
+void css_importance_reset(struct css_importance *i) {
+	i->background_color = FALSE;
+	i->background_image = FALSE;
+	i->border_spacing = FALSE;
+	i->color = FALSE;
+	i->height = FALSE;
+	i->width = FALSE;
+
+	/**< top, right, bottom, left */
+	for (int j = 0; j < 4; j++) {
+		i->border_color[j] = FALSE;
+		i->border_style[j] = FALSE;
+		i->border_width[j] = FALSE;
+		i->margin[j] = FALSE;
+		i->padding[j] = FALSE;
+	}
+}
+
+/**
  * Dump a complete css_stylesheet to stderr in CSS syntax.
  */
 
@@ -2526,8 +2556,11 @@ void css_dump_selector(const struct css_selector *r)
 /**
  * Cascade styles.
  *
- * \param  style  css_style to modify
- * \param  apply  css_style to cascade onto style
+ * \param  style	   css_style to modify
+ * \param  apply	   css_style to cascade onto style
+ * \param  author	   updated to indicate which properties have greater
+ *			   than author level CSS importance. (NULL if
+ *			   importance isn't required.)
  *
  * Attributes which have the value 'inherit' or 'unset' in apply are
  * unchanged in style.
@@ -2536,7 +2569,8 @@ void css_dump_selector(const struct css_selector *r)
  */
 
 void css_cascade(struct css_style * const style,
-		const struct css_style * const apply)
+		const struct css_style * const apply,
+		struct css_importance * const author)
 {
 	unsigned int i;
 	float f;
@@ -2813,42 +2847,93 @@ void css_cascade(struct css_style * const style,
 				apply->pos[i].pos != CSS_POS_NOT_SET)
 			style->pos[i] = apply->pos[i];
 	}
+
+	/* Set author level CSS importance (used for HTML style attribute) */
+	if (author) {
+		if (apply->background_color != CSS_COLOR_NOT_SET)
+			author->background_color = TRUE;
+		if (apply->background_image.type !=
+					CSS_BACKGROUND_IMAGE_NOT_SET)
+			author->background_image = TRUE;
+		if (apply->border_spacing.border_spacing !=
+					CSS_BORDER_SPACING_NOT_SET)
+			author->border_spacing = TRUE;
+		if (apply->color != CSS_COLOR_NOT_SET)
+			author->color = TRUE;
+		if (apply->height.height != CSS_HEIGHT_NOT_SET)
+			author->height = TRUE;
+		if (apply->width.width != CSS_WIDTH_NOT_SET)
+			author->width = TRUE;
+
+		for (i = 0; i != 4; i++) {
+			if (apply->border[i].color != CSS_COLOR_NOT_SET)
+				author->border_color[i] = TRUE;
+			if (apply->border[i].width.width !=
+						CSS_BORDER_WIDTH_NOT_SET)
+				author->border_width[i] = TRUE;
+			if (apply->border[i].style != CSS_BORDER_STYLE_NOT_SET)
+				author->border_style[i] = TRUE;
+
+			if (apply->margin[i].margin != CSS_MARGIN_NOT_SET)
+				author->margin[i] = TRUE;
+
+			if (apply->padding[i].padding != CSS_PADDING_NOT_SET)
+				author->padding[i] = TRUE;
+		}
+	}
 }
 
 
 /**
  * Merge styles.
  *
- * \param  style  css_style to modify
- * \param  apply  css_style to merge onto style
+ * \param  style        css_style to modify
+ * \param  apply        css_style to merge onto style
+ * \param  specificity  specificity of current CSS rule
+ * \param  author       updated to indicate which properties have greater than
+ *                      author level CSS importance
  *
  * Attributes which have the value 'unset' in apply are unchanged in style.
  * Other attributes are copied to style, overwriting it.
  */
 
 void css_merge(struct css_style * const style,
-		const struct css_style * const apply)
+		const struct css_style * const apply,
+		const unsigned long specificity,
+		struct css_importance * const author)
 {
 	unsigned int i;
 
 	if (apply->background_attachment != CSS_BACKGROUND_ATTACHMENT_NOT_SET)
 		style->background_attachment = apply->background_attachment;
-	if (apply->background_color != CSS_COLOR_NOT_SET)
+	if (apply->background_color != CSS_COLOR_NOT_SET) {
 		style->background_color = apply->background_color;
-	if (apply->background_image.type != CSS_BACKGROUND_IMAGE_NOT_SET)
+		if (specificity >= CSS_SPECIFICITY_AUTHOR)
+			author->background_color = TRUE;
+	}
+	if (apply->background_image.type != CSS_BACKGROUND_IMAGE_NOT_SET) {
 		style->background_image = apply->background_image;
+		if (specificity >= CSS_SPECIFICITY_AUTHOR)
+			author->background_image = TRUE;
+	}
 	if (apply->background_repeat != CSS_BACKGROUND_REPEAT_NOT_SET)
 		style->background_repeat = apply->background_repeat;
 	if (apply->border_collapse != CSS_BORDER_COLLAPSE_NOT_SET)
 		style->border_collapse = apply->border_collapse;
-	if (apply->border_spacing.border_spacing != CSS_BORDER_SPACING_NOT_SET)
+	if (apply->border_spacing.border_spacing != CSS_BORDER_SPACING_NOT_SET){
 		style->border_spacing = apply->border_spacing;
+		if (specificity >= CSS_SPECIFICITY_AUTHOR)
+			author->border_spacing = TRUE;
+	}
 	if (apply->caption_side != CSS_CAPTION_SIDE_NOT_SET)
 		style->caption_side = apply->caption_side;
 	if (apply->clear != CSS_CLEAR_NOT_SET)
 		style->clear = apply->clear;
-	if (apply->color != CSS_COLOR_NOT_SET)
+	if (apply->color != CSS_COLOR_NOT_SET) {
 		style->color = apply->color;
+		if (specificity >= CSS_SPECIFICITY_AUTHOR)
+			author->color = TRUE;
+	}
 	if (apply->content.type != CSS_CONTENT_NOT_SET)
 		style->content = apply->content;
 	if (apply->counter_reset.type != CSS_COUNTER_RESET_NOT_SET)
@@ -2875,8 +2960,11 @@ void css_merge(struct css_style * const style,
 		style->font_variant = apply->font_variant;
 	if (apply->font_weight != CSS_FONT_WEIGHT_NOT_SET)
 		style->font_weight = apply->font_weight;
-	if (apply->height.height != CSS_HEIGHT_NOT_SET)
+	if (apply->height.height != CSS_HEIGHT_NOT_SET) {
 		style->height = apply->height;
+		if (specificity >= CSS_SPECIFICITY_AUTHOR)
+			author->height = TRUE;
+	}
 	if (apply->letter_spacing.letter_spacing != CSS_LETTER_SPACING_NOT_SET)
 		style->letter_spacing = apply->letter_spacing;
 	if (apply->line_height.size != CSS_LINE_HEIGHT_NOT_SET)
@@ -2928,8 +3016,11 @@ void css_merge(struct css_style * const style,
 		style->white_space = apply->white_space;
 	if (apply->widows.widows != CSS_WIDOWS_NOT_SET)
 		style->widows = apply->widows;
-	if (apply->width.width != CSS_WIDTH_NOT_SET)
+	if (apply->width.width != CSS_WIDTH_NOT_SET) {
 		style->width = apply->width;
+		if (specificity >= CSS_SPECIFICITY_AUTHOR)
+			author->width = TRUE;
+	}
 	if (apply->word_spacing.word_spacing != CSS_WORD_SPACING_NOT_SET)
 		style->word_spacing = apply->word_spacing;
 	if (apply->z_index.z_index != CSS_Z_INDEX_NOT_SET)
@@ -2965,18 +3056,33 @@ void css_merge(struct css_style * const style,
 
 	/* borders, margins, padding and box position */
 	for (i = 0; i != 4; i++) {
-		if (apply->border[i].color != CSS_COLOR_NOT_SET)
+		if (apply->border[i].color != CSS_COLOR_NOT_SET) {
 			style->border[i].color = apply->border[i].color;
-		if (apply->border[i].width.width != CSS_BORDER_WIDTH_NOT_SET)
+			if (specificity >= CSS_SPECIFICITY_AUTHOR)
+				author->border_color[i] = TRUE;
+		}
+		if (apply->border[i].width.width != CSS_BORDER_WIDTH_NOT_SET) {
 			style->border[i].width = apply->border[i].width;
-		if (apply->border[i].style != CSS_BORDER_STYLE_NOT_SET)
+			if (specificity >= CSS_SPECIFICITY_AUTHOR)
+				author->border_width[i] = TRUE;
+		}
+		if (apply->border[i].style != CSS_BORDER_STYLE_NOT_SET) {
 			style->border[i].style = apply->border[i].style;
+			if (specificity >= CSS_SPECIFICITY_AUTHOR)
+				author->border_style[i] = TRUE;
+		}
 
-		if (apply->margin[i].margin != CSS_MARGIN_NOT_SET)
+		if (apply->margin[i].margin != CSS_MARGIN_NOT_SET) {
 			style->margin[i] = apply->margin[i];
+			if (specificity >= CSS_SPECIFICITY_AUTHOR)
+				author->margin[i] = TRUE;
+		}
 
-		if (apply->padding[i].padding != CSS_PADDING_NOT_SET)
+		if (apply->padding[i].padding != CSS_PADDING_NOT_SET) {
 			style->padding[i] = apply->padding[i];
+			if (specificity >= CSS_SPECIFICITY_AUTHOR)
+				author->padding[i] = TRUE;
+		}
 
 		if (apply->pos[i].pos != CSS_POS_NOT_SET)
 			style->pos[i] = apply->pos[i];
