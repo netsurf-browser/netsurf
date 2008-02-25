@@ -135,7 +135,7 @@ int option_max_fetchers = 24;
 /** Maximum simultaneous active fetchers per host.
  * (<=option_max_fetchers else it makes no sense
  */
-int option_max_fetchers_per_host = 1;
+int option_max_fetchers_per_host = 2;
 /** Maximum number of inactive fetchers cached.
  * The total number of handles netsurf will therefore have open
  * is this plus option_max_fetchers.
