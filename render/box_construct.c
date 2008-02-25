@@ -1652,7 +1652,11 @@ bool box_frameset(BOX_SPECIAL_PARAMS)
 
 	if (content->data.html.frameset) {
 		LOG(("Error: multiple framesets in document."));
-		return false;
+		/* Don't convert children */
+		if (convert_children)
+			*convert_children = false;
+		/* And ignore this spurious frameset */
+		return true;
 	}
 
 	content->data.html.frameset = talloc_zero(content, struct content_html_frames);
