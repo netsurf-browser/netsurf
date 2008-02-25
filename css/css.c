@@ -2435,23 +2435,23 @@ void css_dump_working_stylesheet(const struct css_working_stylesheet *ws)
 }
 
 /**
- * Set all members to FALSE
+ * Set all members to false
  */
 void css_importance_reset(struct css_importance *i) {
-	i->background_color = FALSE;
-	i->background_image = FALSE;
-	i->border_spacing = FALSE;
-	i->color = FALSE;
-	i->height = FALSE;
-	i->width = FALSE;
+	i->background_color = false;
+	i->background_image = false;
+	i->border_spacing = false;
+	i->color = false;
+	i->height = false;
+	i->width = false;
 
 	/**< top, right, bottom, left */
 	for (int j = 0; j < 4; j++) {
-		i->border_color[j] = FALSE;
-		i->border_style[j] = FALSE;
-		i->border_width[j] = FALSE;
-		i->margin[j] = FALSE;
-		i->padding[j] = FALSE;
+		i->border_color[j] = false;
+		i->border_style[j] = false;
+		i->border_width[j] = false;
+		i->margin[j] = false;
+		i->padding[j] = false;
 	}
 }
 
@@ -2851,34 +2851,34 @@ void css_cascade(struct css_style * const style,
 	/* Set author level CSS importance (used for HTML style attribute) */
 	if (author) {
 		if (apply->background_color != CSS_COLOR_NOT_SET)
-			author->background_color = TRUE;
+			author->background_color = true;
 		if (apply->background_image.type !=
 					CSS_BACKGROUND_IMAGE_NOT_SET)
-			author->background_image = TRUE;
+			author->background_image = true;
 		if (apply->border_spacing.border_spacing !=
 					CSS_BORDER_SPACING_NOT_SET)
-			author->border_spacing = TRUE;
+			author->border_spacing = true;
 		if (apply->color != CSS_COLOR_NOT_SET)
-			author->color = TRUE;
+			author->color = true;
 		if (apply->height.height != CSS_HEIGHT_NOT_SET)
-			author->height = TRUE;
+			author->height = true;
 		if (apply->width.width != CSS_WIDTH_NOT_SET)
-			author->width = TRUE;
+			author->width = true;
 
 		for (i = 0; i != 4; i++) {
 			if (apply->border[i].color != CSS_COLOR_NOT_SET)
-				author->border_color[i] = TRUE;
+				author->border_color[i] = true;
 			if (apply->border[i].width.width !=
 						CSS_BORDER_WIDTH_NOT_SET)
-				author->border_width[i] = TRUE;
+				author->border_width[i] = true;
 			if (apply->border[i].style != CSS_BORDER_STYLE_NOT_SET)
-				author->border_style[i] = TRUE;
+				author->border_style[i] = true;
 
 			if (apply->margin[i].margin != CSS_MARGIN_NOT_SET)
-				author->margin[i] = TRUE;
+				author->margin[i] = true;
 
 			if (apply->padding[i].padding != CSS_PADDING_NOT_SET)
-				author->padding[i] = TRUE;
+				author->padding[i] = true;
 		}
 	}
 }
@@ -2909,12 +2909,12 @@ void css_merge(struct css_style * const style,
 	if (apply->background_color != CSS_COLOR_NOT_SET) {
 		style->background_color = apply->background_color;
 		if (specificity >= CSS_SPECIFICITY_AUTHOR)
-			author->background_color = TRUE;
+			author->background_color = true;
 	}
 	if (apply->background_image.type != CSS_BACKGROUND_IMAGE_NOT_SET) {
 		style->background_image = apply->background_image;
 		if (specificity >= CSS_SPECIFICITY_AUTHOR)
-			author->background_image = TRUE;
+			author->background_image = true;
 	}
 	if (apply->background_repeat != CSS_BACKGROUND_REPEAT_NOT_SET)
 		style->background_repeat = apply->background_repeat;
@@ -2923,7 +2923,7 @@ void css_merge(struct css_style * const style,
 	if (apply->border_spacing.border_spacing != CSS_BORDER_SPACING_NOT_SET){
 		style->border_spacing = apply->border_spacing;
 		if (specificity >= CSS_SPECIFICITY_AUTHOR)
-			author->border_spacing = TRUE;
+			author->border_spacing = true;
 	}
 	if (apply->caption_side != CSS_CAPTION_SIDE_NOT_SET)
 		style->caption_side = apply->caption_side;
@@ -2932,7 +2932,7 @@ void css_merge(struct css_style * const style,
 	if (apply->color != CSS_COLOR_NOT_SET) {
 		style->color = apply->color;
 		if (specificity >= CSS_SPECIFICITY_AUTHOR)
-			author->color = TRUE;
+			author->color = true;
 	}
 	if (apply->content.type != CSS_CONTENT_NOT_SET)
 		style->content = apply->content;
@@ -2963,7 +2963,7 @@ void css_merge(struct css_style * const style,
 	if (apply->height.height != CSS_HEIGHT_NOT_SET) {
 		style->height = apply->height;
 		if (specificity >= CSS_SPECIFICITY_AUTHOR)
-			author->height = TRUE;
+			author->height = true;
 	}
 	if (apply->letter_spacing.letter_spacing != CSS_LETTER_SPACING_NOT_SET)
 		style->letter_spacing = apply->letter_spacing;
@@ -3019,7 +3019,7 @@ void css_merge(struct css_style * const style,
 	if (apply->width.width != CSS_WIDTH_NOT_SET) {
 		style->width = apply->width;
 		if (specificity >= CSS_SPECIFICITY_AUTHOR)
-			author->width = TRUE;
+			author->width = true;
 	}
 	if (apply->word_spacing.word_spacing != CSS_WORD_SPACING_NOT_SET)
 		style->word_spacing = apply->word_spacing;
@@ -3059,29 +3059,29 @@ void css_merge(struct css_style * const style,
 		if (apply->border[i].color != CSS_COLOR_NOT_SET) {
 			style->border[i].color = apply->border[i].color;
 			if (specificity >= CSS_SPECIFICITY_AUTHOR)
-				author->border_color[i] = TRUE;
+				author->border_color[i] = true;
 		}
 		if (apply->border[i].width.width != CSS_BORDER_WIDTH_NOT_SET) {
 			style->border[i].width = apply->border[i].width;
 			if (specificity >= CSS_SPECIFICITY_AUTHOR)
-				author->border_width[i] = TRUE;
+				author->border_width[i] = true;
 		}
 		if (apply->border[i].style != CSS_BORDER_STYLE_NOT_SET) {
 			style->border[i].style = apply->border[i].style;
 			if (specificity >= CSS_SPECIFICITY_AUTHOR)
-				author->border_style[i] = TRUE;
+				author->border_style[i] = true;
 		}
 
 		if (apply->margin[i].margin != CSS_MARGIN_NOT_SET) {
 			style->margin[i] = apply->margin[i];
 			if (specificity >= CSS_SPECIFICITY_AUTHOR)
-				author->margin[i] = TRUE;
+				author->margin[i] = true;
 		}
 
 		if (apply->padding[i].padding != CSS_PADDING_NOT_SET) {
 			style->padding[i] = apply->padding[i];
 			if (specificity >= CSS_SPECIFICITY_AUTHOR)
-				author->padding[i] = TRUE;
+				author->padding[i] = true;
 		}
 
 		if (apply->pos[i].pos != CSS_POS_NOT_SET)
