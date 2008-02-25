@@ -1656,6 +1656,7 @@ bool box_frameset(BOX_SPECIAL_PARAMS)
 		if (convert_children)
 			*convert_children = false;
 		/* And ignore this spurious frameset */
+		box->style->display = CSS_DISPLAY_NONE;
 		return true;
 	}
 
