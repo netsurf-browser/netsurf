@@ -1164,7 +1164,8 @@ struct css_style * box_get_style(struct content *c,
 	 */
 	if (markup_track->align != ALIGN_NONE &&
 			(style->display == CSS_DISPLAY_BLOCK ||
-			 style->display == CSS_DISPLAY_TABLE)) {
+			 style->display == CSS_DISPLAY_TABLE) &&
+			(strcmp((const char *) n->name, "blockquote") != 0)) {
 		if (!author->margin[LEFT]) {
 			if (markup_track->align == ALIGN_LEFT) {
 				/* left */
@@ -1348,7 +1349,7 @@ void box_text_transform(char *s, unsigned int len,
 			if ((unsigned char) s[0] < 0x80)
 				s[0] = toupper(s[0]);
 			for (i = 1; i < len; ++i)
-				if ((unsigned char) s[i] < 0x80 && 
+				if ((unsigned char) s[i] < 0x80 &&
 						isspace(s[i - 1]))
 					s[i] = toupper(s[i]);
 			break;
