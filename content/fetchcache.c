@@ -412,6 +412,25 @@ void fetchcache_callback(fetch_msg msg, void *p, const void *data,
 				fetch_abort(c->fetch);
 				c->fetch = 0;
 			}
+
+			if (c->cache_data->date || c->cache_data->etag) {
+				/* We've just made a conditional request 
+				 * that returned with something other 
+				 * than 304. Therefore, there's a stale 
+				 * content floating around in the cache.
+				 * Hunt it down and mark it as stale, so 
+				 * it'll get cleaned when unused. We 
+				 * assume it's either READY or DONE -- 
+				 * anything else is of marginal staleness
+				 * (or in error, which will cause it to 
+				 * be flushed from the cache, anyway)
+				 */
+				struct content *stale_content = 
+						content_get_ready(c->url);
+
+				if (stale_content)
+					stale_content->fresh = false;
+			}
 			break;
 
 		case FETCH_PROGRESS:
