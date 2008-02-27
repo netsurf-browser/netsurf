@@ -1563,7 +1563,12 @@ void html_object_refresh(void *p)
 {
 	struct content *c = (struct content *)p;
 
-	assert(c->type == CONTENT_HTML && c->refresh);
+	assert(c->type == CONTENT_HTML);
+
+	/* Ignore if refresh URL has gone
+	 * (may happen if fetch errored) */
+	if (!c->refresh)
+		return;
 
 	c->fresh = false;
 

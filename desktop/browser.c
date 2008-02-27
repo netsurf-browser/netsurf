@@ -648,8 +648,14 @@ void browser_window_refresh(void *p)
 	struct browser_window *bw = p;
 	bool history_add = true;
 
-	assert(bw->current_content->status == CONTENT_STATUS_READY ||
-			bw->current_content->status == CONTENT_STATUS_DONE);
+	assert(bw->current_content &&
+			(bw->current_content->status == CONTENT_STATUS_READY ||
+			bw->current_content->status == CONTENT_STATUS_DONE));
+
+	/* Ignore if the refresh URL has gone 
+	 * (may happen if a fetch error occurred) */
+	if (!bw->current_content->refresh)
+		return;
 
 	/* mark this content as invalid so it gets flushed from the cache */
 	bw->current_content->fresh = false;

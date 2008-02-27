@@ -931,6 +931,13 @@ void content_reset(struct content *c)
 	c->size = 0;
 	talloc_free(c->mime_type);
 	c->mime_type = 0;
+	talloc_free(c->refresh);
+	c->refresh = 0;
+	talloc_free(c->title);
+	c->title = 0;
+	talloc_free(c->source_data);
+	c->source_data = 0;
+	c->source_size = c->source_allocated = 0;
 }
 
 
