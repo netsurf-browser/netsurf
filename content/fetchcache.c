@@ -605,6 +605,10 @@ void fetchcache_error_page(struct content *c, const char *error)
 	if (!content_process_data(c, error_page, length))
 		return;
 	content_convert(c, c->width, c->height);
+
+	/* Mark content as non-fresh, so it'll get cleaned from the 
+	 * cache at the earliest opportunity */
+	c->fresh = false;
 }
 
 
