@@ -101,6 +101,8 @@ struct markup_track {
 
 	bool cell_padding;
 	long padding_width;
+
+	bool table;
 };
 
 static bool convert_xml_to_box(xmlNode *n, struct content *content,
@@ -822,7 +824,8 @@ struct css_style * box_get_style(struct content *c,
 	url_func_result res;
 	colour border_color = 0x888888; /* mid-grey default for tables */
 
-	/* if not in a table, switch off cellpadding and cell borders */
+	/* if not in a table, switch off cellpadding and cell borders
+	 * and record that we're not in a table */
 	if (strcmp((const char *) n->name, "thead") != 0 &&
 			strcmp((const char *) n->name, "tbody") != 0 &&
 			strcmp((const char *) n->name, "tfoot") != 0 &&
@@ -833,6 +836,7 @@ struct css_style * box_get_style(struct content *c,
 			strcmp((const char *) n->name, "colgroup") != 0) {
 		markup_track->cell_border = false;
 		markup_track->cell_padding = false;
+		markup_track->table = false;
 	}
 
 	style = talloc_memdup(c, parent_style, sizeof *style);
@@ -1211,6 +1215,7 @@ struct css_style * box_get_style(struct content *c,
 	else if (strcmp((const char *) n->name, "div") == 0 ||
 			strcmp((const char *) n->name, "col") == 0 ||
 			strcmp((const char *) n->name, "colgroup") == 0 ||
+			strcmp((const char *) n->name, "table") == 0 ||
 			strcmp((const char *) n->name, "tbody") == 0 ||
 			strcmp((const char *) n->name, "td") == 0 ||
 			strcmp((const char *) n->name, "tfoot") == 0 ||
@@ -1227,16 +1232,22 @@ struct css_style * box_get_style(struct content *c,
 				markup_track->align = ALIGN_LEFT;
 			xmlFree(s);
 		}
+		/* Need to remember if we're in a table, so that any alignment
+		 * rules set on the table's elements won't get overridden by the
+		 * default alignment of a cell with no align attribute.
+		 * At this point, we're in a table if the element isn't a div */
+		if (strcmp((const char *) n->name, "div") != 0)
+			markup_track->table = true;
 	}
 	/* Table cells without an align value have a default implied
-	 * alignment */
-	if (strcmp((const char *) n->name, "td") == 0) {
+	 * alignment. */
+	if (strcmp((const char *) n->name, "td") == 0 && !markup_track->table) {
 		if (!(s = (char *) xmlGetProp(n, (const xmlChar *) "align")))
 			markup_track->align = ALIGN_LEFT;
 		else
 			xmlFree(s);
 	}
-	if (strcmp((const char *) n->name, "th") == 0) {
+	if (strcmp((const char *) n->name, "th") == 0 && !markup_track->table) {
 		if (!(s = (char *) xmlGetProp(n, (const xmlChar *) "align")))
 			markup_track->align = ALIGN_CENTER;
 		else
