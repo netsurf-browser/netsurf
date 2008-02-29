@@ -97,7 +97,7 @@ typedef enum {
 /** Extra data for some content_msg messages. */
 union content_msg_data {
 	const char *error;	/**< Error message, for CONTENT_MSG_ERROR. */
-	const char *new_url;	/**< Replacement URL (or NULL if the same 
+	const char *new_url;	/**< Replacement URL (or NULL if the same
 				 * as previous), for CONTENT_MSG_NEWPTR. */
 	/** Area of content which needs redrawing, for CONTENT_MSG_REDRAW. */
 	struct {
@@ -204,6 +204,10 @@ struct content {
 	unsigned int time;		/**< Creation time, if TYPE_UNKNOWN,
 					  LOADING or READY,
 					  otherwise total time. */
+
+	unsigned int reformat_time;	/**< Time the HTML content was last
+					  reformatted. Used while fetching
+					  a page's objects. */
 
 	unsigned int size;		/**< Estimated size of all data
 					  associated with this content, except

@@ -492,6 +492,7 @@ bool html_convert(struct content *c, int width, int height)
 	content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
 	LOG(("Layout document"));
 	html_reformat(c, width, height);
+	c->reformat_time = wallclock();
 	/*box_dump(c->data.html.layout->children, 0);*/
 
 	if (c->active == 0)
@@ -526,7 +527,7 @@ bool html_head(struct content *c, xmlNode *head)
 			continue;
 
 		LOG(("Node: %s", node->name));
-		if (!c->title && strcmp((const char *) node->name, 
+		if (!c->title && strcmp((const char *) node->name,
 				"title") == 0) {
 			xmlChar *title = xmlNodeGetContent(node);
 			if (!title)
@@ -557,16 +558,16 @@ bool html_head(struct content *c, xmlNode *head)
 			/* don't use the central values to ease freeing later on */
 			if ((s = xmlGetProp(node, (const xmlChar *) "target"))) {
 				if ((!strcasecmp((const char *) s, "_blank")) ||
-						(!strcasecmp((const char *) s, 
+						(!strcasecmp((const char *) s,
 								"_top")) ||
-						(!strcasecmp((const char *) s, 
+						(!strcasecmp((const char *) s,
 								"_parent")) ||
-						(!strcasecmp((const char *) s, 
+						(!strcasecmp((const char *) s,
 								"_self")) ||
 						('a' <= s[0] && s[0] <= 'z') ||
 						('A' <= s[0] && s[0] <= 'Z')) {  /* [6.16] */
-					c->data.html.base_target = 
-						talloc_strdup(c, 
+					c->data.html.base_target =
+						talloc_strdup(c,
 							(const char *) s);
 					if (!c->data.html.base_target) {
 						xmlFree(s);
@@ -1405,6 +1406,21 @@ void html_object_callback(content_msg msg, struct content *object,
 		content_reformat(c, c->available_width, c->height);
 		html_set_status(c, "");
 		content_set_done(c);
+	}
+	/* If  1) the configuration option to reflow pages while objects are
+	 *        fetched is set
+	 *     2) an object is newly fetched & converted,
+	 *     3) the object's parent HTML is ready for reformat,
+	 *     4) the time since the previous reformat is more than the
+	 *        configured minimum time between reformats
+	 * then reformat the page to display newly fetched objects */
+	else if (option_incremental_reflow && msg == CONTENT_MSG_DONE &&
+			(c->status == CONTENT_STATUS_READY ||
+			 c->status == CONTENT_STATUS_DONE) &&
+			(option_min_reflow_period <
+					(wallclock() - c->reformat_time))) {
+		content_reformat(c, c->available_width, c->height);
+		c->reformat_time = wallclock();
 	}
 	if (c->status == CONTENT_STATUS_READY)
 		html_set_status(c, "");

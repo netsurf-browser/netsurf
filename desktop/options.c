@@ -128,6 +128,14 @@ int option_toolbar_status_width = 6667;
 #endif
 /** default window scale */
 int option_scale = 100;
+/* Whether to reflow web pages while objects are fetching */
+bool option_incremental_reflow = true;
+/* Minimum time between HTML reflows while objects are fetching */
+#ifdef riscos
+int option_min_reflow_period = 100; /* time in cs */
+#else
+int option_min_reflow_period = 25; /* time in cs */
+#endif
 
 /* Fetcher configuration */
 /** Maximum simultaneous active fetchers */
@@ -192,6 +200,8 @@ struct {
 	{ "window_screen_height",OPTION_INTEGER, &option_window_screen_height },
 	{ "toolbar_status_size", OPTION_INTEGER, &option_toolbar_status_width },
 	{ "scale",           OPTION_INTEGER, &option_scale },
+	{ "incremental_reflow",  OPTION_BOOL,    &option_incremental_reflow },
+	{ "min_reflow_period",   OPTION_INTEGER, &option_min_reflow_period },
 	/* Fetcher options */
 	{ "max_fetchers",    OPTION_INTEGER, &option_max_fetchers },
 	{ "max_fetchers_per_host",
@@ -568,7 +578,7 @@ bool options_save_tree(struct tree *tree, const char *filename, const char *page
 		return false;
 	}
 
-	title  = xmlNewTextChild(head, NULL, (const xmlChar *) "title", 
+	title  = xmlNewTextChild(head, NULL, (const xmlChar *) "title",
 			(const xmlChar *) page_title);
 	if (!title) {
 		warn_user("NoMemory", 0);
@@ -625,8 +635,8 @@ bool options_save_tree_directory(struct node *directory, xmlNode *node) {
 		} else {
 			/* directory */
 			/* invalid HTML */
-			h4 = xmlNewTextChild(ul, NULL, 
-					(const xmlChar *) "h4", 
+			h4 = xmlNewTextChild(ul, NULL,
+					(const xmlChar *) "h4",
 					(const xmlChar *) child->data.text);
 			if (!h4)
 				return false;
@@ -657,7 +667,7 @@ bool options_save_tree_entry(struct node *entry, xmlNode *node) {
 	if (!li)
 		return false;
 
-	a = xmlNewTextChild(li, NULL, (const xmlChar *) "a", 
+	a = xmlNewTextChild(li, NULL, (const xmlChar *) "a",
 			(const xmlChar *) entry->data.text);
 	if (!a)
 		return false;
@@ -665,7 +675,7 @@ bool options_save_tree_entry(struct node *entry, xmlNode *node) {
 	element = tree_find_element(entry, TREE_ELEMENT_URL);
 	if (!element)
 		return false;
-	href = xmlNewProp(a, (const xmlChar *) "href", 
+	href = xmlNewProp(a, (const xmlChar *) "href",
 			(const xmlChar *) element->text);
 	if (!href)
 		return false;
