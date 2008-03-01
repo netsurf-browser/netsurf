@@ -1418,7 +1418,7 @@ void html_object_callback(content_msg msg, struct content *object,
 			(c->status == CONTENT_STATUS_READY ||
 			 c->status == CONTENT_STATUS_DONE) &&
 			(option_min_reflow_period <
-					(wallclock() - c->reformat_time))) {
+				(int)(wallclock() - c->reformat_time))) {
 		content_reformat(c, c->available_width, c->height);
 		c->reformat_time = wallclock();
 	}
