@@ -1028,7 +1028,8 @@ bool browser_window_input_callback(struct browser_window *bw,
 	case KEY_WORD_LEFT: {
 		size_t nchars;
 		/* Text box */
-		if (word_left(input->gadget->value, &form_offset, &nchars)) {
+		if (word_left(input->gadget->value,
+				(size_t*)&form_offset, &nchars)) {
 			/* Gadget */
 			while (box_offset > 0 && nchars-- > 0)
 				box_offset = utf8_prev(text_box->text, box_offset);
@@ -1043,7 +1044,7 @@ bool browser_window_input_callback(struct browser_window *bw,
 		size_t nchars;
 		/* Text box */
 		if (word_right(input->gadget->value, input->gadget->length,
-				&form_offset, &nchars)) {
+				(size_t*)&form_offset, &nchars)) {
 			/* Gadget */
 			const char *text = text_box->text;
 			unsigned len = text_box->length;
