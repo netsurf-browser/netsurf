@@ -3994,6 +3994,7 @@ int main(void)
 {
 	struct host_part *h;
 	struct path_data *p;
+	const struct url_data *u;
 	int i;
 
 	url_init();
@@ -4004,6 +4005,23 @@ int main(void)
 		return 1;
 	}
 
+	h = urldb_add_host("intranet");
+	if (!h) {
+		LOG(("failed adding host"));
+		return 1;
+	}
+
+	p = urldb_add_path("http", 0, h, "/", NULL, NULL, "http://intranet/");
+	if (!p) {
+		LOG(("failed adding path"));
+		return 1;
+	}
+
+	urldb_set_url_title("http://intranet/", "foo");
+
+	u = urldb_get_url_data("http://intranet/");
+	assert(u && strcmp(u->title, "foo") == 0);
+
 	/* Get host entry */
 	h = urldb_add_host("netsurf.strcprstskrzkrk.co.uk");
 	if (!h) {
@@ -4012,21 +4030,21 @@ int main(void)
 	}
 
 	/* Get path entry */
-	p = urldb_add_path("http", 80, h, "/path/to/resource.htm", "a=b", "zz",
+	p = urldb_add_path("http", 0, h, "/path/to/resource.htm", "a=b", "zz",
 			"http://netsurf.strcprstskrzkrk.co.uk/path/to/resource.htm?a=b");
 	if (!p) {
 		LOG(("failed adding path"));
 		return 1;
 	}
 
-	p = urldb_add_path("http", 80, h, "/path/to/resource.htm", "a=b", "aa",
+	p = urldb_add_path("http", 0, h, "/path/to/resource.htm", "a=b", "aa",
 			"http://netsurf.strcprstskrzkrk.co.uk/path/to/resource.htm?a=b");
 	if (!p) {
 		LOG(("failed adding path"));
 		return 1;
 	}
 
-	p = urldb_add_path("http", 80, h, "/path/to/resource.htm", "a=b", "yy",
+	p = urldb_add_path("http", 0, h, "/path/to/resource.htm", "a=b", "yy",
 			"http://netsurf.strcprstskrzkrk.co.uk/path/to/resource.htm?a=b");
 	if (!p) {
 		LOG(("failed adding path"));
@@ -4131,9 +4149,9 @@ int main(void)
 }
 
 /*
-  gcc -g -o urldbtest -std=c99 -DTEST_URLDB -I. 
-  `pkg-config --cflags --libs libxml-2.0 cairo librsvg-2.0 libcurl` 
-  content/urldb.c utils/url.c utils/utils.c utils/messages.c 
+  gcc -g -o urldbtest -std=c99 -DTEST_URLDB -I. \
+  `pkg-config --cflags --libs libxml-2.0 cairo librsvg-2.0 libcurl` \
+  content/urldb.c utils/url.c utils/utils.c utils/messages.c \
   utils/hashtable.c utils/filename.c
  */
 
