@@ -165,7 +165,10 @@ static void fetch_data_free(void *ctx)
 {
 	struct fetch_data_context *c = ctx;
 	free(c->url);
-	free(c->data);
+	if (c->base64)
+		free(c->data);
+	else
+		curl_free(c->data);
 	free(c->mimetype);
 	RING_REMOVE(ring, c);
 	free(ctx);
