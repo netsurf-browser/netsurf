@@ -51,21 +51,28 @@ struct fetch_data_context {
 	char *data;
 	size_t datalen;
 	bool base64;
+	bool senttype;
 	
 	struct fetch_data_context *r_next, *r_prev;
 };
 
 static struct fetch_data_context *ring = NULL;
 
+static CURL *curl;
+
 static bool fetch_data_initialise(const char *scheme)
 {
 	LOG(("fetch_data_initialise called for %s", scheme));
-	return true;
+	if ( (curl = curl_easy_init()) == NULL)
+		return false;
+	else
+		return true;
 }
 
 static void fetch_data_finalise(const char *scheme)
 {
 	LOG(("fetch_data_finalise called for %s", scheme));
+	curl_easy_cleanup(curl);
 }
 
 static void *fetch_data_setup(struct fetch *parent_fetch, const char *url,
@@ -83,14 +90,42 @@ static void *fetch_data_setup(struct fetch *parent_fetch, const char *url,
 	ctx->parent_fetch = parent_fetch;
 	ctx->url = strdup(url);
 	
+	if (ctx->url == NULL) {
+		free(ctx);
+		return NULL;
+	}
+	
 	return ctx;
 }
 
 static bool fetch_data_start(void *ctx)
 {
+	return true;
+}
+
+static void fetch_data_free(void *ctx)
+{
 	struct fetch_data_context *c = ctx;
+
+	free(c->url);
+	free(c->data);
+	free(c->mimetype);
+	RING_REMOVE(ring, c);
+	free(ctx);
+}
+
+static void fetch_data_abort(void *ctx)
+{
+	struct fetch_data_context *c = ctx;
+	fetch_remove_from_queues(c->parent_fetch);
+	fetch_data_free(ctx);
+}
+
+static bool fetch_data_process(struct fetch_data_context *c)
+{
 	char *params;
 	char *comma;
+	char *unescaped;
 	
 	/* format of a data: URL is:
 	 *   data:[<mimetype>][;base64],<data>
@@ -130,59 +165,47 @@ static bool fetch_data_start(void *ctx)
 		c->base64 = false;
 	}
 	
+	/* we URL unescape the data first, just incase some insane page
+	 * decides to nest URL and base64 encoding.  Like, say, Acid2.
+	 */
+	unescaped = curl_easy_unescape(curl, comma + 1, 0, (int *)&c->datalen);
+	if (unescaped == NULL) {
+		fetch_send_callback(FETCH_ERROR, c->parent_fetch,
+			"Unable to URL decode data: URL", 0);
+		return false;
+	}
+	
 	if (c->base64) {
-		/* content is base64-encoded.  Decode it. */
-		c->datalen = strlen(c->url); 
-		c->data = malloc(c->datalen); /* safe: gets smaller */
-
-		if (base64_decode(comma + 1, strlen(comma + 1), c->data,
-				&(c->datalen)) == false) {
+		c->data = malloc(c->datalen); /* safe: always gets smaller */
+		if (base64_decode(unescaped, c->datalen, c->data,
+			&(c->datalen)) == false) {
 			fetch_send_callback(FETCH_ERROR, c->parent_fetch,
-				"Invalid Base64 encoding in data: URL", 0);
+				"Unable to Base64 decode data: URL", 0);
+			curl_free(unescaped);
 			return false;
 		}
-		
 	} else {
-		CURL *curl = curl_easy_init();
-		c->data = curl_easy_unescape(curl, comma + 1,
-			0, (int *)&c->datalen);
-		curl_easy_cleanup(curl);
-		
+		c->data = malloc(c->datalen);
 		if (c->data == NULL) {
 			fetch_send_callback(FETCH_ERROR, c->parent_fetch,
-				"Invalid URL encoding in data: URL", 0);
+				"Unable to allocate memory for data: URL", 0);
+			curl_free(unescaped);
 			return false;
 		}
+		memcpy(c->data, unescaped, c->datalen);
 	}
+	
+	curl_free(unescaped);
 	
 	return true;
 }
 
-static void fetch_data_abort(void *ctx)
-{
-	struct fetch_data_context *c = ctx;
-	fetch_remove_from_queues(c->parent_fetch);
-}
-
-static void fetch_data_free(void *ctx)
-{
-	struct fetch_data_context *c = ctx;
-	free(c->url);
-	if (c->base64)
-		free(c->data);
-	else
-		curl_free(c->data);
-	free(c->mimetype);
-	RING_REMOVE(ring, c);
-	free(ctx);
-}
-
 static void fetch_data_poll(const char *scheme)
 {
-	struct fetch_data_context *c = ring;
+	struct fetch_data_context *c;
 	struct cache_data cachedata;
 	
-	if (c == NULL) return;
+	if (ring == NULL) return;
 	
 	cachedata.req_time = time(NULL);
 	cachedata.res_time = time(NULL);
@@ -194,14 +217,31 @@ static void fetch_data_poll(const char *scheme)
 	cachedata.etag = NULL;
 	cachedata.last_modified = 0;
 	
-	fetch_set_http_code(c->parent_fetch, 200);
-	fetch_send_callback(FETCH_TYPE, c->parent_fetch, c->mimetype,
-		c->datalen);
-	fetch_send_callback(FETCH_DATA, c->parent_fetch, 
-		c->data, c->datalen);
-	fetch_send_callback(FETCH_FINISHED, c->parent_fetch, &cachedata, 0);
-	fetch_remove_from_queues(c->parent_fetch);
-	fetch_free(c->parent_fetch);
+	while ((c = ring)) {
+		if (c->senttype == true || fetch_data_process(c) == true) {
+			if (c->senttype == false) {
+				fetch_set_http_code(c->parent_fetch, 200);
+				LOG(("setting data: MIME type to %s, length to %d",
+						c->mimetype, c->datalen));
+				c->senttype = true;
+				fetch_send_callback(FETCH_TYPE,
+					c->parent_fetch, 
+					c->mimetype, c->datalen);
+				continue;
+			} else {
+				fetch_send_callback(FETCH_DATA, 
+					c->parent_fetch, 
+					c->data, c->datalen);
+				fetch_send_callback(FETCH_FINISHED, 
+					c->parent_fetch,
+					&cachedata, 0);
+				fetch_remove_from_queues(c->parent_fetch);
+				fetch_free(c->parent_fetch);
+			}
+		} else {
+			LOG(("Processing of %s failed!", c->url));
+		}
+	}
 }
 
 void fetch_data_register(void)
