@@ -35,6 +35,7 @@ struct box;
 enum input_key {
 
 	KEY_DELETE_LEFT = 8,
+	KEY_TAB = 9,
 
 	/* cursor movement keys */
 	KEY_LEFT = 28,

@@ -44,6 +44,7 @@
 #endif
 #include "content/fetch.h"
 #include "content/fetchers/fetch_curl.h"
+#include "content/fetchers/fetch_data.h"
 #include "content/urldb.h"
 #include "desktop/netsurf.h"
 #include "desktop/options.h"
@@ -113,6 +114,7 @@ static bool fetch_dispatch_job(struct fetch *fetch);
 void fetch_init(void)
 {
 	fetch_curl_register();
+	fetch_data_register();
 	fetch_active = false;
 }
 
