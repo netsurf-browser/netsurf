@@ -1199,6 +1199,21 @@ struct css_style * box_get_style(struct content *c,
 			markup_track->align = ALIGN_NONE;
 		}
 	}
+	/* Centered tables are a special case. The align attribute only
+	 * affects the current element (table) and overrides any existing
+	 * HTML alignment rule. Tables aligned to left or right are floated
+	 * by the default CSS file. */
+	if (!author->margin[LEFT] && !author->margin[RIGHT] &&
+			strcmp((const char *) n->name, "table") == 0) {
+		if ((s = (char *) xmlGetProp(n,
+				(const xmlChar *) "align"))) {
+			if (strcasecmp(s, "center") == 0) {
+				style->margin[LEFT].margin = CSS_MARGIN_AUTO;
+				style->margin[RIGHT].margin = CSS_MARGIN_AUTO;
+			}
+			xmlFree(s);
+		}
+	}
 
 	box_solve_display(style, !n->parent);
 
@@ -1215,7 +1230,6 @@ struct css_style * box_get_style(struct content *c,
 	else if (strcmp((const char *) n->name, "div") == 0 ||
 			strcmp((const char *) n->name, "col") == 0 ||
 			strcmp((const char *) n->name, "colgroup") == 0 ||
-			strcmp((const char *) n->name, "table") == 0 ||
 			strcmp((const char *) n->name, "tbody") == 0 ||
 			strcmp((const char *) n->name, "td") == 0 ||
 			strcmp((const char *) n->name, "tfoot") == 0 ||
