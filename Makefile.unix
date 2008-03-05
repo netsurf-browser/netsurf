@@ -120,7 +120,7 @@ CLEANS := clean-target
 
 include Makefile.sources
 
-OBJECTS := $(addprefix $(OBJROOT)/,$(subst /,_,$(patsubst %.c,%.o,$(patsubst %.s,%.o,$(SOURCES)))))
+OBJECTS := $(sort $(addprefix $(OBJROOT)/,$(subst /,_,$(patsubst %.c,%.o,$(patsubst %.s,%.o,$(SOURCES))))))
 
 $(EXETARGET): $(OBJECTS)
 	$(VQ)echo "    LINK: $(EXETARGET)"
@@ -146,14 +146,14 @@ DEPFILES :=
 # 2 = dep filename, no prefix
 # 3 = obj filename, no prefix
 define dependency_generate_c
+
 DEPFILES += $(2)
+
 $$(DEPROOT)/$(2): $$(DEPROOT)/created $(1) css/css_enum.h css/parser.h
 	$$(VQ)echo "     DEP: $(1)"
-	$$(Q)( \
-		(echo -n "$$(DEPROOT)/$2 $$(OBJROOT)/$(3)"; \
-		$$(CC) -M $$(CFLAGS) $(1) | \
-		$$(PERL) -pe's/^.+(:.+)$$$$/$$$$1/') > $$(DEPROOT)/$(2) \
-	) || ($$(RM) $$(DEPROOT)/$(2) ; exit 1)
+	$$(Q)$$(RM) $$(DEPROOT)/$(2)
+	$$(Q)$$(CC) $$(CFLAGS) -M -MT '$$(DEPROOT)/$2 $$(OBJROOT)/$(3)' \
+		    -MF $$(DEPROOT)/$(2) $(1)
 
 endef
 
@@ -164,11 +164,9 @@ define dependency_generate_s
 DEPFILES += $(2)
 $$(DEPROOT)/$(2): $$(DEPROOT)/created $(1)
 	$$(VQ)echo "     DEP: $(1)"
-	$$(Q)( \
-		(echo -n "$$(DEPROOT)/$2 $$(OBJROOT)/$(3)"; \
-		$$(CC) -M $$(ASFLAGS) $(1) | \
-		$$(PERL) -pe's/^.+(:.+)$$$$/$$$$1/') > $$(DEPROOT)/$(2) \
-	) || $$(RM) $$(DEPROOT)/$(2)
+	$$(Q)$$(RM) $$(DEPROOT)/$(2)
+	$$(Q)$$(CC) $$(CFLAGS) -M -MT '$$(DEPROOT)/$2 $$(OBJROOT)/$(3)' \
+		    -MF $$(DEPROOT)/$(2) $(1)
 
 endef
 
@@ -203,7 +201,7 @@ $(eval $(foreach SOURCE,$(filter %.c,$(SOURCES)), \
 #	$(call dependency_generate_s,$(SOURCE),$(subst /,_,$(SOURCE:.s=.d)),$(subst /,_,$(SOURCE:.s=.o)))))
 
 ifneq ($(MAKECMDGOALS),clean)
--include $(addprefix $(DEPROOT)/,$(DEPFILES))
+-include $(sort $(addprefix $(DEPROOT)/,$(DEPFILES)))
 endif
 
 # And rules to build the objects themselves...
