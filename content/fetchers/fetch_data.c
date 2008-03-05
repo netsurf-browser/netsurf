@@ -133,13 +133,22 @@ static bool fetch_data_process(struct fetch_data_context *c)
 	 * data must still be there.
 	 */
 	
+	LOG(("*** Processing %s", c->url));
+	
+	if (strlen(c->url) < 6) {
+		/* 6 is the minimum possible length (data:,) */
+		fetch_send_callback(FETCH_ERROR, c->parent_fetch,
+			"Malformed data: URL", 0);
+		return false;
+	}
+	
 	/* skip the data: part */
 	params = c->url + sizeof("data:") - 1;
 	
 	/* find the comma */
 	if ( (comma = strchr(params, ',')) == NULL) {
 		fetch_send_callback(FETCH_ERROR, c->parent_fetch,
-			"Badly formed data: URL", 0);
+			"Malformed data: URL", 0);
 		return false;
 	}
 	
