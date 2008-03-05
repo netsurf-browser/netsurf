@@ -75,6 +75,9 @@ static void *fetch_data_setup(struct fetch *parent_fetch, const char *url,
 {
 	struct fetch_data_context *ctx = calloc(1, sizeof(*ctx));
 	
+	if (ctx == NULL)
+		return NULL;
+	
 	RING_INSERT(ring, ctx);
 	
 	ctx->parent_fetch = parent_fetch;
