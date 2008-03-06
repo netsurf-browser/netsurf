@@ -738,8 +738,8 @@ void layout_find_dimensions(int available_width,
 						style);
 				break;
 			case CSS_WIDTH_PERCENT:
-				*width = available_width *
-					style->width.value.percent / 100;
+				*width = 0.5 + (available_width *
+					style->width.value.percent / 100.0);
 					/* gadget widths include margins,
 					 * borders and padding */
 					if (box->gadget) {
