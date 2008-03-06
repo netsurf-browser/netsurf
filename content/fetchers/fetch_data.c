@@ -51,7 +51,9 @@ struct fetch_data_context {
 	char *data;
 	size_t datalen;
 	bool base64;
-	bool senttype;
+
+	bool aborted;
+	bool locked;
 	
 	struct fetch_data_context *r_next, *r_prev;
 };
@@ -84,9 +86,7 @@ static void *fetch_data_setup(struct fetch *parent_fetch, const char *url,
 	
 	if (ctx == NULL)
 		return NULL;
-	
-	RING_INSERT(ring, ctx);
-	
+		
 	ctx->parent_fetch = parent_fetch;
 	ctx->url = strdup(url);
 	
@@ -94,6 +94,8 @@ static void *fetch_data_setup(struct fetch *parent_fetch, const char *url,
 		free(ctx);
 		return NULL;
 	}
+
+	RING_INSERT(ring, ctx);
 	
 	return ctx;
 }
@@ -117,8 +119,21 @@ static void fetch_data_free(void *ctx)
 static void fetch_data_abort(void *ctx)
 {
 	struct fetch_data_context *c = ctx;
-	fetch_remove_from_queues(c->parent_fetch);
-	fetch_data_free(ctx);
+
+	/* To avoid the poll loop having to deal with the fetch context
+	 * disappearing from under it, we simply flag the abort here. 
+	 * The poll loop itself will perform the appropriate cleanup.
+	 */
+	c->aborted = true;
+}
+
+static void fetch_data_send_callback(fetch_msg msg, 
+		struct fetch_data_context *c, const void *data, 
+		unsigned long size)
+{
+	c->locked = true;
+	fetch_send_callback(msg, c->parent_fetch, data, size);
+	c->locked = false;
 }
 
 static bool fetch_data_process(struct fetch_data_context *c)
@@ -137,7 +152,7 @@ static bool fetch_data_process(struct fetch_data_context *c)
 	
 	if (strlen(c->url) < 6) {
 		/* 6 is the minimum possible length (data:,) */
-		fetch_send_callback(FETCH_ERROR, c->parent_fetch,
+		fetch_data_send_callback(FETCH_ERROR, c, 
 			"Malformed data: URL", 0);
 		return false;
 	}
@@ -147,7 +162,7 @@ static bool fetch_data_process(struct fetch_data_context *c)
 	
 	/* find the comma */
 	if ( (comma = strchr(params, ',')) == NULL) {
-		fetch_send_callback(FETCH_ERROR, c->parent_fetch,
+		fetch_data_send_callback(FETCH_ERROR, c,
 			"Malformed data: URL", 0);
 		return false;
 	}
@@ -161,7 +176,7 @@ static bool fetch_data_process(struct fetch_data_context *c)
 	}
 	
 	if (c->mimetype == NULL) {
-		fetch_send_callback(FETCH_ERROR, c->parent_fetch,
+		fetch_data_send_callback(FETCH_ERROR, c,
 			"Unable to allocate memory for mimetype in data: URL",
 			0);
 		return false;
@@ -179,7 +194,7 @@ static bool fetch_data_process(struct fetch_data_context *c)
 	 */
 	unescaped = curl_easy_unescape(curl, comma + 1, 0, (int *)&c->datalen);
 	if (unescaped == NULL) {
-		fetch_send_callback(FETCH_ERROR, c->parent_fetch,
+		fetch_data_send_callback(FETCH_ERROR, c,
 			"Unable to URL decode data: URL", 0);
 		return false;
 	}
@@ -187,8 +202,8 @@ static bool fetch_data_process(struct fetch_data_context *c)
 	if (c->base64) {
 		c->data = malloc(c->datalen); /* safe: always gets smaller */
 		if (base64_decode(unescaped, c->datalen, c->data,
-			&(c->datalen)) == false) {
-			fetch_send_callback(FETCH_ERROR, c->parent_fetch,
+				&(c->datalen)) == false) {
+			fetch_data_send_callback(FETCH_ERROR, c,
 				"Unable to Base64 decode data: URL", 0);
 			curl_free(unescaped);
 			return false;
@@ -196,7 +211,7 @@ static bool fetch_data_process(struct fetch_data_context *c)
 	} else {
 		c->data = malloc(c->datalen);
 		if (c->data == NULL) {
-			fetch_send_callback(FETCH_ERROR, c->parent_fetch,
+			fetch_data_send_callback(FETCH_ERROR, c,
 				"Unable to allocate memory for data: URL", 0);
 			curl_free(unescaped);
 			return false;
@@ -211,7 +226,7 @@ static bool fetch_data_process(struct fetch_data_context *c)
 
 static void fetch_data_poll(const char *scheme)
 {
-	struct fetch_data_context *c;
+	struct fetch_data_context *c, *next;
 	struct cache_data cachedata;
 	
 	if (ring == NULL) return;
@@ -225,32 +240,59 @@ static void fetch_data_poll(const char *scheme)
 	cachedata.no_cache = true;
 	cachedata.etag = NULL;
 	cachedata.last_modified = 0;
-	
-	while ((c = ring)) {
-		if (c->senttype == true || fetch_data_process(c) == true) {
-			if (c->senttype == false) {
-				fetch_set_http_code(c->parent_fetch, 200);
-				LOG(("setting data: MIME type to %s, length to %d",
-						c->mimetype, c->datalen));
-				c->senttype = true;
-				fetch_send_callback(FETCH_TYPE,
-					c->parent_fetch, 
-					c->mimetype, c->datalen);
-				continue;
-			} else {
-				fetch_send_callback(FETCH_DATA, 
-					c->parent_fetch, 
-					c->data, c->datalen);
-				fetch_send_callback(FETCH_FINISHED, 
-					c->parent_fetch,
-					&cachedata, 0);
-				fetch_remove_from_queues(c->parent_fetch);
-				fetch_free(c->parent_fetch);
+
+	/* Iterate over ring, processing each pending fetch */
+	c = ring;
+	do {
+		/* Take a copy of the next pointer as we may destroy
+		 * the ring item we're currently processing */
+		next = c->r_next;
+
+		/* Ignore fetches that have been flagged as locked.
+		 * This allows safe re-entrant calls to this function.
+		 * Re-entrancy can occur if, as a result of a callback,
+		 * the interested party causes fetch_poll() to be called 
+		 * again.
+		 */
+		if (c->locked == true) {
+			continue;
+		}
+
+		/* Only process non-aborted fetches */
+		if (!c->aborted && fetch_data_process(c) == true) {
+			fetch_set_http_code(c->parent_fetch, 200);
+			LOG(("setting data: MIME type to %s, length to %d",
+					c->mimetype, c->datalen));
+			/* Any callback can result in the fetch being aborted.
+			 * Therefore, we _must_ check for this after _every_
+			 * call to fetch_data_send_callback().
+			 */
+			fetch_data_send_callback(FETCH_TYPE,
+				c, c->mimetype, c->datalen);
+			if (!c->aborted) {
+				fetch_data_send_callback(FETCH_DATA, 
+					c, c->data, c->datalen);
+			}
+			if (!c->aborted) {
+				fetch_data_send_callback(FETCH_FINISHED, 
+					c, &cachedata, 0);
 			}
 		} else {
 			LOG(("Processing of %s failed!", c->url));
+
+			/* Ensure that we're unlocked here. If we aren't, 
+			 * then fetch_data_process() is broken.
+			 */
+			assert(c->locked == false);
 		}
-	}
+
+		fetch_remove_from_queues(c->parent_fetch);
+		fetch_free(c->parent_fetch);
+
+		/* Advance to next ring entry, exiting if we've reached
+		 * the start of the ring or the ring has become empty
+		 */
+	} while ( (c = next) != ring && ring != NULL);
 }
 
 void fetch_data_register(void)
