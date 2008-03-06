@@ -645,30 +645,31 @@ bool css_compare_selectors(const struct css_selector *n0,
  * Property parsers.
  */
 
-/* TODO: consider CSS_NODE_NUMBER whenever a value may be '0' */
-
 int parse_length(struct css_length * const length,
 		const struct css_node * const v, bool non_negative)
 {
 	css_unit u;
 	float value;
 	int num_length;
+
 	if (v->type == CSS_NODE_NUMBER && fabs(atof(v->data)) < 0.0001) {
 		length->unit = CSS_UNIT_PX;
 		length->value = 0;
 		return 0;
 	}
-	if ((v->type != CSS_NODE_DIMENSION) && (v->type != CSS_NODE_NUMBER))
+
+	if (v->type != CSS_NODE_DIMENSION)
 		return 1;
+
 	num_length = strspn(v->data, "0123456789+-.");
+	
 	if (v->type == CSS_NODE_DIMENSION) {
-		u = css_unit_parse(v->data + num_length, v->data_length - num_length);
+		u = css_unit_parse(v->data + num_length, 
+				v->data_length - num_length);
 		if (u == CSS_UNIT_UNKNOWN) {
 			return 1;
 		}
-	} else {
-	  	u = CSS_UNIT_PX;
-	}
+	} 
 	value = atof(v->data);
 	if (non_negative && value < 0)
 		return 1;
@@ -737,7 +738,7 @@ colour parse_colour(const struct css_node * const v)
 			break;
 	}
 
-	/* Hex colour vaules without a preceding # are invalid but it is a
+	/* Hex colour values without a preceding # are invalid but it is a
 	 * common omission that other browsers cater for. */
 	if (c == CSS_COLOR_NONE && (v->type == CSS_NODE_DELIM ||
 			v->type == CSS_NODE_IDENT || v->type == CSS_NODE_NUMBER ||
@@ -909,12 +910,17 @@ void parse_background(struct css_style * const s,
 	struct css_background_position vert =
 			{ CSS_BACKGROUND_POSITION_PERCENT, { 0 } };
 	struct css_background_position horz2, vert2;
+	bool had_colour = false, had_image = false, had_repeat = false,
+	     had_attachment = false, had_position = false;
 
 	while (v) {
 		switch (v->type) {
 			case CSS_NODE_URI:
 			case CSS_NODE_STRING:
 				/* background-image */
+				if (had_image)
+					goto error;
+				had_image = true;
 				if (!css_background_image_parse(v, &bi2,
 						&bi_uri))
 					goto error;
@@ -926,6 +932,9 @@ void parse_background(struct css_style * const s,
 			case CSS_NODE_NUMBER:
 			case CSS_NODE_PERCENTAGE:
 				/* background-position */
+				if (had_position)
+					goto error;
+				had_position = true;
 				if (!css_background_position_parse(&v,
 						&horz2, &vert2))
 					goto error;
@@ -938,6 +947,9 @@ void parse_background(struct css_style * const s,
 				if (v->data_length == 4 &&
 						strncasecmp(v->data, "none",
 						4) == 0) {
+					if (had_image)
+						goto error;
+					had_image = true;
 					bi = CSS_BACKGROUND_IMAGE_NONE;
 					v = v->next;
 					break;
@@ -947,6 +959,9 @@ void parse_background(struct css_style * const s,
 				br2 = css_background_repeat_parse(v->data,
 						v->data_length);
 				if (br2 != CSS_BACKGROUND_REPEAT_UNKNOWN) {
+					if (had_repeat)
+						goto error;
+					had_repeat = true;
 					br = br2;
 					v = v->next;
 					break;
@@ -956,6 +971,9 @@ void parse_background(struct css_style * const s,
 				ba2 = css_background_attachment_parse(v->data,
 						v->data_length);
 				if (ba2 != CSS_BACKGROUND_ATTACHMENT_UNKNOWN) {
+					if (had_attachment)
+						goto error;
+					had_attachment = true;
 					ba = ba2;
 					v = v->next;
 					break;
@@ -964,6 +982,9 @@ void parse_background(struct css_style * const s,
 				/* background-position */
 				if (css_background_position_parse(&v,
 						&horz2, &vert2)) {
+					if (had_position)
+						goto error;
+					had_position = true;
 					horz = horz2;
 					vert = vert2;
 					break;
@@ -973,6 +994,9 @@ void parse_background(struct css_style * const s,
 			case CSS_NODE_HASH:
 			case CSS_NODE_FUNCTION:
 				/* background-color */
+				if (had_colour)
+					goto error;
+				had_colour = true;
 				c2 = parse_colour(v);
 				if (c2 != CSS_COLOR_NONE) {
 					c = c2;

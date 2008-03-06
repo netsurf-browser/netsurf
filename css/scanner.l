@@ -46,7 +46,7 @@ start:
 /*!re2c
 nonascii	=	[\200-\377];
 unicode		=	"\\" [0-9a-f]+ ("\r\n" | [ \n\r\t\f])?;
-escape		=	unicode | "\\" [ -~\200-\377];
+escape		=	unicode | "\\" [^\n\r\f0-9a-f];
 nmchar		=	[-a-zA-Z0-9_] | nonascii | escape;
 nmstart		=	[a-zA-Z_] | nonascii | escape;
 ident		=	[-]? nmstart nmchar*;

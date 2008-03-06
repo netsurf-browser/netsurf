@@ -417,6 +417,8 @@ bool css_convert(struct content *c, int width, int height)
 	struct css_parser_token token_data;
 	union content_msg_data msg_data;
 
+	/* css_parser_Trace(stderr, "CSS: "); */
+
 	c->data.css.css = malloc(sizeof *c->data.css.css);
 	parser = css_parser_Alloc(malloc);
 	source_data = (unsigned char *) talloc_realloc(c, c->source_data, char,
