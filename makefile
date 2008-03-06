@@ -19,13 +19,13 @@
 SYSTEM_CC ?= gcc
 
 OBJECTS_COMMON = content.o fetch.o fetchcache.o urldb.o		# content/
-OBJECTS_COMMON += fetch_curl.o                                  # content/fetchers/
+OBJECTS_COMMON += fetch_curl.o fetch_data.o                     # content/fetchers/
 OBJECTS_COMMON += css.o css_enum.o parser.o ruleset.o scanner.o	# css/
 OBJECTS_COMMON += box.o box_construct.o box_normalise.o directory.o \
 	form.o html.o html_redraw.o imagemap.o layout.o list.o \
 	table.o textplain.o					# render/
-OBJECTS_COMMON += filename.o hashtable.o messages.o talloc.o \
-	url.o utf8.o utils.o useragent.o			# utils/
+OBJECTS_COMMON += base64.o filename.o hashtable.o messages.o \
+	talloc.o url.o utf8.o utils.o useragent.o		# utils/
 OBJECTS_COMMON += knockout.o options.o tree.o version.o		# desktop/
 
 OBJECTS_IMAGE = bmp.o bmpread.o gif.o gifread.o ico.o jpeg.o \
