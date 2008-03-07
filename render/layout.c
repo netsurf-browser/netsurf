@@ -1877,7 +1877,7 @@ void place_float_below(struct box *c, int width, int cx, int y,
 		} else if (left != 0 && right == 0) {
 			yy = left->y + left->height;
 		}
-	} while (!((left == 0 && right == 0) || (c->width < x1 - x0)));
+	} while (!((left == 0 && right == 0) || (c->width <= x1 - x0)));
 
 	if (c->type == BOX_FLOAT_LEFT) {
 		c->x = x0;
