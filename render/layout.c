@@ -1381,7 +1381,7 @@ bool layout_line(struct box *first, int *width, int *y,
 			} else {
 				/* doesn't fit: place below */
 				place_float_below(b, *width,
-						cx, cy + height + 1, cont);
+						cx, cy + height, cont);
 			}
 			if (cont->float_children == b) {
 				LOG(("float %p already placed", b));
@@ -1871,11 +1871,11 @@ void place_float_below(struct box *c, int width, int cx, int y,
 			yy = (left->y + left->height <
 					right->y + right->height ?
 					left->y + left->height :
-					right->y + right->height) + 1;
+					right->y + right->height);
 		} else if (left == 0 && right != 0) {
-			yy = right->y + right->height + 1;
+			yy = right->y + right->height;
 		} else if (left != 0 && right == 0) {
-			yy = left->y + left->height + 1;
+			yy = left->y + left->height;
 		}
 	} while (!((left == 0 && right == 0) || (c->width < x1 - x0)));
 
