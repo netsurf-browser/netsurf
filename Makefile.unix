@@ -16,6 +16,10 @@
 #
 # To clean, invoke as above, with the 'clean' target
 #
+# To build developer Doxygen generated documentation, invoke as above,
+# with the 'docs' target:
+#   make -f Makefile.unix docs
+#
 
 all: all-program
 
@@ -214,3 +218,6 @@ $(eval $(foreach SOURCE,$(filter %.s,$(SOURCES)), \
 
 
 clean: $(CLEANS)
+
+docs:
+	doxygen Docs/Doxyfile
