@@ -295,8 +295,8 @@ utf8_convert_ret utf8_convert(const char *string, size_t len,
 
 	/* we cache the last used conversion descriptor,
 	 * so check if we're trying to use it here */
-	if (strncasecmp(last_cd.from, from, 32) == 0 &&
-			strncasecmp(last_cd.to, to, 32) == 0) {
+	if (strncasecmp(last_cd.from, from, sizeof(last_cd.from)) == 0 &&
+			strncasecmp(last_cd.to, to, sizeof(last_cd.to)) == 0) {
 		cd = last_cd.cd;
 	}
 	else {
@@ -314,8 +314,8 @@ utf8_convert_ret utf8_convert(const char *string, size_t len,
 			iconv_close(last_cd.cd);
 
 		/* and copy the to/from/cd data into last_cd */
-		strncpy(last_cd.from, from, 32);
-		strncpy(last_cd.to, to, 32);
+		strncpy(last_cd.from, from, sizeof(last_cd.from));
+		strncpy(last_cd.to, to, sizeof(last_cd.to));
 		last_cd.cd = cd;
 	}
 
