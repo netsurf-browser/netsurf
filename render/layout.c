@@ -1,6 +1,7 @@
 /*
  * Copyright 2005 Richard Wilson <info@tinct.net>
  * Copyright 2006 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2008 Michael Drake <tlsa@netsurf-browser.org>
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
@@ -60,6 +61,7 @@
 static void layout_minmax_block(struct box *block);
 static bool layout_block_object(struct box *block);
 static void layout_block_find_dimensions(int available_width, struct box *box);
+static void layout_apply_minmax_height(struct box *box);
 static void layout_block_add_scrollbar(struct box *box, int which);
 static int layout_solve_width(int available_width, int width,
 		int margin[4], int padding[4], int border[4]);
@@ -379,8 +381,10 @@ bool layout_block_context(struct box *block, struct content *content)
 					break;
 				if (box->height == AUTO) {
 					box->height = y - box->padding[TOP];
+					layout_apply_minmax_height(box);
 					if (box->type == BOX_BLOCK)
-						layout_block_add_scrollbar(box, BOTTOM);
+						layout_block_add_scrollbar(box,
+								BOTTOM);
 				} else
 					cy += box->height -
 							(y - box->padding[TOP]);
@@ -414,6 +418,7 @@ bool layout_block_context(struct box *block, struct content *content)
 
 	if (block->height == AUTO) {
 		block->height = cy - block->padding[TOP];
+		layout_apply_minmax_height(block);
 		if (block->type == BOX_BLOCK)
 			layout_block_add_scrollbar(block, BOTTOM);
 	}
@@ -583,6 +588,46 @@ void layout_block_find_dimensions(int available_width, struct box *box)
 		margin[TOP] = 0;
 	if (margin[BOTTOM] == AUTO)
 		margin[BOTTOM] = 0;
+}
+
+/**
+ * Manimpulate box height according to CSS min-height and max-height properties
+ *
+ * \param  box		block to modify with any min-height or max-height
+ */
+
+void layout_apply_minmax_height(struct box *box) {
+	int h;
+
+	if (box->style) {
+		/* max-height */
+		switch (box->style->max_height.max_height) {
+			case CSS_MAX_HEIGHT_LENGTH:
+				h = css_len2px(&box->style->max_height.value.
+						length, box->style);
+				if (h < box->height)
+					box->height = h;
+				break;
+			case CSS_MAX_HEIGHT_PERCENT:
+				/* percentage heights not yet implemented */
+			default:
+				break;
+		}
+
+		/* min-height */
+		switch (box->style->min_height.min_height) {
+			case CSS_MIN_HEIGHT_LENGTH:
+				h = css_len2px(&box->style->min_height.value.
+						length, box->style);
+				if (h > box->height)
+					box->height = h;
+				break;
+			case CSS_MIN_HEIGHT_PERCENT:
+				/* percentage heights not yet implemented */
+			default:
+				break;
+		}
+	}
 }
 
 /**
