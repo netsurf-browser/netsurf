@@ -1033,6 +1033,7 @@ bool layout_line(struct box *first, int *width, int *y,
 	int x0 = 0;
 	int x1 = *width;
 	int x, h, x_previous;
+	int fy;
 	struct box *left;
 	struct box *right;
 	struct box *b;
@@ -1365,25 +1366,13 @@ bool layout_line(struct box *first, int *width, int *y,
 					d->padding[TOP] + d->height +
 					d->padding[BOTTOM] + d->border[BOTTOM] +
 					d->margin[BOTTOM];
-			if (d->style && d->style->clear != CSS_CLEAR_NONE) {
-				/* to be cleared below existing floats */
-				if (b->type == BOX_FLOAT_LEFT) {
-					b->x = cx;
-					x0 += b->width;
-					left = b;
-				} else {
-					b->x = cx + *width - b->width;
-					x1 -= b->width;
-					right = b;
-				}
-				b->y = layout_clear(cont->float_children,
-							d->style->clear);
-				if (b->y < cy)
-					b->y = cy;
-			} else if (b->width <= (x1 - x0) - x ||
-					(left == 0 && right == 0 && x == 0)) {
-				/* fits next to this line, or this line is empty
-				 * with no floats */
+
+			if (d->style && d->style->clear == CSS_CLEAR_NONE &&
+					(b->width <= (x1 - x0) - x ||
+					(left == 0 && right == 0 && x == 0))) {
+				/* not cleared
+				 * fits next to this line, or this line is
+				 * empty with no floats */
 				if (b->type == BOX_FLOAT_LEFT) {
 					b->x = cx + x0;
 					x0 += b->width;
@@ -1395,9 +1384,29 @@ bool layout_line(struct box *first, int *width, int *y,
 				}
 				b->y = cy;
 			} else {
-				/* doesn't fit: place below */
+				/* cleared or doesn't fit */
+				/* place below into next available space */
 				place_float_below(b, *width,
 						cx, cy + height, cont);
+				if (d->style && d->style->clear !=
+							CSS_CLEAR_NONE) {
+					/* to be cleared below existing
+					 * floats */
+					if (b->type == BOX_FLOAT_LEFT) {
+						b->x = cx;
+						x0 += b->width;
+						left = b;
+					} else {
+						b->x = cx + *width - b->width;
+						x1 -= b->width;
+						right = b;
+					}
+					fy = layout_clear(cont->float_children,
+							d->style->clear);
+					if (b->y < fy)
+						b->y = fy;
+
+				}
 			}
 			if (cont->float_children == b) {
 				LOG(("float %p already placed", b));

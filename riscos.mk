@@ -9,7 +9,7 @@ PLATFORM_AFLAGS_RISCOS = -mthrowback -IOSLib:
 LDFLAGS_RISCOS = NSLibs:lib/libxml2 NSLibs:lib/libz NSLibs:lib/libcurl \
 	NSLibs:lib/libssl NSLibs:lib/libcrypto NSLibs:lib/libcares \
 	NSLibs:lib/libmng NSLibs:lib/libjpeg NSLibs:lib/librufl NSLibs:lib/libpencil \
-	OSLib:o.OSLib32
+	OSLib:o.OSLib32 NSLibs:lib/libsvgtiny
 LDFLAGS_SMALL = NSLibs:lib/libxml2 NSLibs:lib/libz NSLibs:lib/libcurl \
 	NSLibs:lib/libares NSLibs:lib/libmng \
 	NSLibs:lib/libjpeg OSLib:o.oslib32
