@@ -828,12 +828,12 @@ int layout_clear(struct box *fl, css_clear clear)
 	for (; fl; fl = fl->next_float) {
 		if ((clear == CSS_CLEAR_LEFT || clear == CSS_CLEAR_BOTH) &&
 				fl->type == BOX_FLOAT_LEFT)
-			if (y < fl->y + fl->height + 1)
-				y = fl->y + fl->height + 1;
+			if (y < fl->y + fl->height)
+				y = fl->y + fl->height;
 		if ((clear == CSS_CLEAR_RIGHT || clear == CSS_CLEAR_BOTH) &&
 				fl->type == BOX_FLOAT_RIGHT)
-			if (y < fl->y + fl->height + 1)
-				y = fl->y + fl->height + 1;
+			if (y < fl->y + fl->height)
+				y = fl->y + fl->height;
 	}
 	return y;
 }
@@ -1365,7 +1365,22 @@ bool layout_line(struct box *first, int *width, int *y,
 					d->padding[TOP] + d->height +
 					d->padding[BOTTOM] + d->border[BOTTOM] +
 					d->margin[BOTTOM];
-			if (b->width <= (x1 - x0) - x ||
+			if (d->style && d->style->clear != CSS_CLEAR_NONE) {
+				/* to be cleared below existing floats */
+				if (b->type == BOX_FLOAT_LEFT) {
+					b->x = cx;
+					x0 += b->width;
+					left = b;
+				} else {
+					b->x = cx + *width - b->width;
+					x1 -= b->width;
+					right = b;
+				}
+				b->y = layout_clear(cont->float_children,
+							d->style->clear);
+				if (b->y < cy)
+					b->y = cy;
+			} else if (b->width <= (x1 - x0) - x ||
 					(left == 0 && right == 0 && x == 0)) {
 				/* fits next to this line, or this line is empty
 				 * with no floats */
