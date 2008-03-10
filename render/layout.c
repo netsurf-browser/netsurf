@@ -2386,7 +2386,16 @@ bool layout_table(struct box *table, int available_width,
 	free(xs);
 
 	table->width = table_width;
-	table->height = table_height;
+
+	/* Take account of any table height specified within CSS/HTML */
+	if (style->height.height == CSS_HEIGHT_LENGTH) {
+		/* This is the minimum height for the table (see 17.5.3) */
+		int min_height = css_len2px(&style->height.length, style);
+
+		table->height = max(table_height, min_height);
+	} else {
+		table->height = table_height;
+	}
 
 	return true;
 }
