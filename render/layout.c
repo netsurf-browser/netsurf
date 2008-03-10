@@ -3095,6 +3095,7 @@ bool layout_absolute(struct box *box, struct box *containing_block,
 		/** \todo Inline ancestors */
 	}
 	box->height = height;
+	layout_apply_minmax_height(box);
 
 	return true;
 }
