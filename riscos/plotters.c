@@ -29,8 +29,8 @@
 #include "riscos/bitmap.h"
 #include "riscos/image.h"
 #include "riscos/gui.h"
+#include "riscos/oslib_pre7.h"
 #include "utils/log.h"
-
 
 
 static bool ro_plot_clg(colour c);
@@ -90,7 +90,7 @@ bool ro_plot_clg(colour c)
 {
 	os_error *error;
 	error = xcolourtrans_set_gcol(c << 8,
-			colourtrans_SET_BG | colourtrans_USE_ECFS,
+			colourtrans_SET_BG_GCOL | colourtrans_USE_ECFS_GCOL,
 			os_ACTION_OVERWRITE, 0, 0);
 	if (error) {
 		LOG(("xcolourtrans_set_gcol: 0x%x: %s",
@@ -330,7 +330,7 @@ bool ro_plot_fill(int x0, int y0, int x1, int y1, colour c)
 {
 	os_error *error;
 
-	error = xcolourtrans_set_gcol(c << 8, colourtrans_USE_ECFS,
+	error = xcolourtrans_set_gcol(c << 8, colourtrans_USE_ECFS_GCOL,
 			os_ACTION_OVERWRITE, 0, 0);
 	if (error) {
 		LOG(("xcolourtrans_set_gcol: 0x%x: %s",

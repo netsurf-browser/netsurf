@@ -35,6 +35,7 @@
 #include "rufl.h"
 
 #include "riscos/gui.h"
+#include "riscos/oslib_pre7.h"
 #include "riscos/textarea.h"
 #include "riscos/ucstables.h"
 #include "riscos/wimp.h"
@@ -1091,7 +1092,7 @@ void textarea_redraw_internal(wimp_draw *redraw, bool update)
 		error = xcolourtrans_set_gcol(
 				(ta->flags & TEXTAREA_READONLY) ? 0xD9D9D900
 								: 0xFFFFFF00,
-				colourtrans_SET_BG | colourtrans_USE_ECFS,
+				colourtrans_SET_BG_GCOL | colourtrans_USE_ECFS_GCOL,
 				os_ACTION_OVERWRITE, 0, 0);
 		if (error) {
 			LOG(("xcolourtrans_set_gcol: 0x%x: %s",

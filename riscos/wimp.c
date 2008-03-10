@@ -34,6 +34,7 @@
 #include "oslib/wimpspriteop.h"
 #include "desktop/gui.h"
 #include "riscos/gui.h"
+#include "riscos/oslib_pre7.h"
 #include "riscos/theme.h"
 #include "riscos/wimp.h"
 #include "utils/log.h"
@@ -866,7 +867,7 @@ void ro_gui_user_redraw(wimp_draw *redraw, bool user_fill,
 	while (more) {
 		if (user_fill) {
 			error = xcolourtrans_set_gcol(user_colour,
-					colourtrans_SET_BG,
+					colourtrans_SET_BG_GCOL,
 					os_ACTION_OVERWRITE, 0, 0);
 			if (error) {
 				LOG(("xcolourtrans_set_gcol: 0x%x: %s",

@@ -59,6 +59,7 @@
 #include "riscos/gui/status_bar.h"
 #include "riscos/menus.h"
 #include "riscos/options.h"
+#include "riscos/oslib_pre7.h"
 #include "riscos/save.h"
 #include "riscos/theme.h"
 #include "riscos/thumbnail.h"
@@ -1580,7 +1581,7 @@ void ro_gui_window_update_boxes(void) {
 			if (data->redraw.full_redraw) {
 				if (clear_background) {
 					error = xcolourtrans_set_gcol(os_COLOUR_WHITE,
-							colourtrans_SET_BG,
+							colourtrans_SET_BG_GCOL,
 							os_ACTION_OVERWRITE, 0, 0);
 					if (error) {
 						LOG(("xcolourtrans_set_gcol: 0x%x: %s",

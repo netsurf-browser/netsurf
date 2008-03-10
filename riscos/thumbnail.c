@@ -39,6 +39,7 @@
 #include "riscos/bitmap.h"
 #include "riscos/gui.h"
 #include "riscos/options.h"
+#include "riscos/oslib_pre7.h"
 #include "riscos/thumbnail.h"
 #include "riscos/tinct.h"
 #include "utils/log.h"
@@ -124,7 +125,7 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 		return false;
 	}
 	rufl_invalidate_cache();
-	colourtrans_set_gcol(os_COLOUR_WHITE, colourtrans_SET_BG,
+	colourtrans_set_gcol(os_COLOUR_WHITE, colourtrans_SET_BG_GCOL,
 			os_ACTION_OVERWRITE, 0);
 	os_clg();
 	content_redraw(content, 0, 0, bitmap->width, bitmap->height,
