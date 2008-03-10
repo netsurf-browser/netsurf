@@ -40,13 +40,14 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 
-
+#ifdef riscos
 /* We prefer the library to be configured with these options to save
  * copying data during decoding. */
 #if RGB_RED != 0 || RGB_GREEN != 1 || RGB_BLUE != 2 || RGB_PIXELSIZE != 4
 #warning JPEG library not optimally configured. Decoding will be slower.
 #endif
-
+/* but we don't care if we're not on RISC OS */
+#endif
 
 static char nsjpeg_error_buffer[JMSG_LENGTH_MAX];
 
