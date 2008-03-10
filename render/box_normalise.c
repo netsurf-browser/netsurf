@@ -286,22 +286,53 @@ bool box_normalise_table(struct box *table, struct content * c)
 	free(col_info.spans);
 
 	if (table->children == 0) {
-		LOG(("table->children == 0, removing"));
-		if (table->prev == 0)
-			table->parent->children = table->next;
-		else
-			table->prev->next = table->next;
-		if (table->next != 0)
-			table->next->prev = table->prev;
-		box_free(table);
-	} else {
-		box_normalise_table_spans(table);
-		if (!table_calculate_column_types(table))
+		struct box *row;
+
+		LOG(("table->children == 0, creating implied row"));
+
+		assert(table->style != NULL);
+		style = talloc_memdup(c, table->style, sizeof *style);
+		if (!style) {
 			return false;
-		if (table->style->border_collapse ==
-				CSS_BORDER_COLLAPSE_COLLAPSE)
-			table_collapse_borders(table);
+		}
+		css_cascade(style, &css_blank_style, NULL);
+		row_group = box_create(style, table->href,
+				table->target, 0, 0, c);
+		if (!row_group) {
+			talloc_free(style);
+			return false;
+		}
+		row_group->type = BOX_TABLE_ROW_GROUP;
+
+		style = talloc_memdup(c, row_group->style, sizeof *style);
+		if (!style) {
+			box_free(row_group);
+			return false;
+		}
+		css_cascade(style, &css_blank_style, NULL);
+		row = box_create(style, row_group->href,
+				row_group->target, 0, 0, c);
+		if (!row) {
+			talloc_free(style);
+			box_free(row_group);
+			return false;
+		}
+		row->type = BOX_TABLE_ROW;
+
+		row->parent = row_group;
+		row_group->children = row_group->last = row;
+
+		row_group->parent = table;
+		table->children = table->last = row_group;
+
+		table->rows = 1;
 	}
+
+	box_normalise_table_spans(table);
+	if (!table_calculate_column_types(table))
+		return false;
+	if (table->style->border_collapse == CSS_BORDER_COLLAPSE_COLLAPSE)
+		table_collapse_borders(table);
 
 	LOG(("table %p done", table));
 
@@ -454,14 +485,23 @@ bool box_normalise_table_row_group(struct box *row_group,
 	}
 
 	if (row_group->children == 0) {
-		LOG(("row_group->children == 0, removing"));
-		if (row_group->prev == 0)
-			row_group->parent->children = row_group->next;
-		else
-			row_group->prev->next = row_group->next;
-		if (row_group->next != 0)
-			row_group->next->prev = row_group->prev;
-		box_free(row_group);
+		LOG(("row_group->children == 0, inserting implied row"));
+		assert(row_group->style != NULL);
+		style = talloc_memdup(c, row_group->style, sizeof *style);
+		if (!style) {
+			return false;
+		}
+		css_cascade(style, &css_blank_style, NULL);
+		row = box_create(style, row_group->href,
+				row_group->target, 0, 0, c);
+		if (!row) {
+			talloc_free(style);
+			return false;
+		}
+		row->type = BOX_TABLE_ROW;
+
+		row->parent = row_group;
+		row_group->children = row_group->last = row;
 	}
 
 	LOG(("row_group %p done", row_group));
