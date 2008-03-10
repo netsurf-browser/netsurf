@@ -73,6 +73,8 @@ bool svg_convert(struct content *c, int w, int h)
 				width, height, c->source_size);*/
 	//c->size += ?;
 	c->status = CONTENT_STATUS_DONE;
+	/* Done: update status bar */
+	content_set_status(c, "");
 
 	return true;
 }

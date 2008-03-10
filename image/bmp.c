@@ -84,6 +84,8 @@ bool nsbmp_convert(struct content *c, int iwidth, int iheight) {
 	/* exit as a success */
 	c->bitmap = bmp->bitmap;
 	c->status = CONTENT_STATUS_DONE;
+	/* Done: update status bar */
+	content_set_status(c, "");
 	return true;
 }
 

@@ -72,6 +72,8 @@ bool draw_convert(struct content *c, int width, int height)
 		snprintf(c->title, 100, messages_get("DrawTitle"), c->width,
 				c->height, c->source_size);
 	c->status = CONTENT_STATUS_DONE;
+	/* Done: update status bar */
+	content_set_status(c, "");
 	return true;
 }
 

@@ -291,6 +291,8 @@ bool nsmng_convert(struct content *c, int width, int height) {
 
 	c->size += c->width * c->height * 4 + 100;
 	c->status = CONTENT_STATUS_DONE;
+	/* Done: update status bar */
+	content_set_status(c, "");
 
 	/* jmb: I'm really not sure that this should be here.
 	 * The *_convert functions are for converting a content into a
