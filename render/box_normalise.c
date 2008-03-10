@@ -238,8 +238,6 @@ bool box_normalise_table(struct box *table, struct content * c)
 				table->children = row_group;
 			else
 				child->prev->next = row_group;
-			if (table->last == child)
-				table->last = row_group;
 			row_group->prev = child->prev;
 			while (child != 0 && (
 					child->type == BOX_BLOCK ||
@@ -257,6 +255,8 @@ bool box_normalise_table(struct box *table, struct content * c)
 			row_group->next = next_child = child;
 			if (row_group->next)
 				row_group->next->prev = row_group;
+			else
+				table->last = row_group;
 			row_group->parent = table;
 			if (!box_normalise_table_row_group(row_group,
 					&col_info, c)) {
@@ -430,6 +430,8 @@ bool box_normalise_table_row_group(struct box *row_group,
 			row->next = next_child = child;
 			if (row->next)
 				row->next->prev = row;
+			else
+				row_group->last = row;
 			row->parent = row_group;
 			if (!box_normalise_table_row(row, col_info,
 					c))
