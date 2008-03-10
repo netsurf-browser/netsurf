@@ -1418,6 +1418,13 @@ void ro_gui_window_redraw(wimp_draw *redraw)
 		return;
 	}
 
+	/* We can't render locked content as it is being in the process of
+	   being transformed.  We won't update anything (i.e. leaving
+	   window area as is) instead of showing random data in case of
+	   buffered redraw.  */
+	if (c->locked)
+		return;
+
 	plot = ro_plotters;
 	ro_plot_set_scale(scale);
 	ro_gui_current_redraw_gui = g;
