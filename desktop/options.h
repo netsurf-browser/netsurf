@@ -81,7 +81,7 @@ extern int option_window_screen_height;
 extern int option_toolbar_status_width;
 extern int option_scale;
 extern bool option_incremental_reflow;
-extern int option_min_reflow_period;
+extern unsigned int option_min_reflow_period;
 
 /* Fetcher configuration. */
 extern int option_max_fetchers;

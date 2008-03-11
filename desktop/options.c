@@ -132,9 +132,9 @@ int option_scale = 100;
 bool option_incremental_reflow = true;
 /* Minimum time between HTML reflows while objects are fetching */
 #ifdef riscos
-int option_min_reflow_period = 100; /* time in cs */
+unsigned int option_min_reflow_period = 100; /* time in cs */
 #else
-int option_min_reflow_period = 25; /* time in cs */
+unsigned int option_min_reflow_period = 25; /* time in cs */
 #endif
 
 /* Fetcher configuration */

@@ -205,9 +205,9 @@ struct content {
 					  LOADING or READY,
 					  otherwise total time. */
 
-	unsigned int reformat_time;	/**< Time the HTML content was last
-					  reformatted. Used while fetching
-					  a page's objects. */
+	unsigned int reformat_time;	/**< Earliest time to attempt a
+					  period reflow while fetching a
+					  page's objects. */
 
 	unsigned int size;		/**< Estimated size of all data
 					  associated with this content, except

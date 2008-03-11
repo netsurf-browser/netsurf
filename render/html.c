@@ -407,6 +407,7 @@ bool html_convert(struct content *c, int width, int height)
 	xmlDoc *document;
 	xmlNode *html, *head;
 	union content_msg_data msg_data;
+	unsigned int time_before, time_taken;
 
 	/* finish parsing */
 	if (c->source_size == 0)
@@ -491,8 +492,15 @@ bool html_convert(struct content *c, int width, int height)
 	html_set_status(c, messages_get("Formatting"));
 	content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
 	LOG(("Layout document"));
+	time_before = wallclock();
 	html_reformat(c, width, height);
-	c->reformat_time = wallclock();
+	time_taken = wallclock() - time_before;
+	LOG(("Layout took %dcs", time_taken));
+	c->reformat_time = wallclock() +
+		((time_taken < option_min_reflow_period ?
+		option_min_reflow_period : time_taken * 1.25));
+	LOG(("Scheduling relayout no sooner than %dcs",
+		c->reformat_time - wallclock()));
 	/*box_dump(c->data.html.layout->children, 0);*/
 
 	if (c->active == 0)
@@ -1417,10 +1425,13 @@ void html_object_callback(content_msg msg, struct content *object,
 	else if (option_incremental_reflow && msg == CONTENT_MSG_DONE &&
 			(c->status == CONTENT_STATUS_READY ||
 			 c->status == CONTENT_STATUS_DONE) &&
-			(option_min_reflow_period <
-				(int)(wallclock() - c->reformat_time))) {
+			(wallclock() > c->reformat_time)) {
+		unsigned int time_before = wallclock(), time_taken;
 		content_reformat(c, c->available_width, c->height);
-		c->reformat_time = wallclock();
+		time_taken = wallclock() - time_before;
+		c->reformat_time = wallclock() + 
+			((time_taken < option_min_reflow_period ?
+			option_min_reflow_period : time_taken * 1.25));
 	}
 	if (c->status == CONTENT_STATUS_READY)
 		html_set_status(c, "");
