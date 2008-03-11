@@ -805,7 +805,7 @@ void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
 
 	g->caretx = x;
 	g->carety = y + 1;
-	g->careth = height;
+	g->careth = height - 2;
 
 	nsgtk_redraw_caret(g);
 
