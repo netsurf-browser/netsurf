@@ -89,6 +89,7 @@ GTKCFLAGS := -std=c99 -Dgtk -Dnsgtk \
 	-D_BSD_SOURCE \
 	-D_XOPEN_SOURCE=600 \
 	-D_POSIX_C_SOURCE=200112L \
+	-D_NETBSD_SOURCE \
 	$(WARNFLAGS) -I. -g -O \
 	$(shell pkg-config --cflags libglade-2.0 gtk+-2.0 librsvg-2.0) \
 	$(shell xml2-config --cflags)
