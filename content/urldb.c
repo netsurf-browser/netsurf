@@ -301,7 +301,10 @@ static struct search_node *search_trees[NUM_SEARCH_TREES] = {
 	&empty, &empty, &empty, &empty
 };
 
+#define MIN_COOKIE_FILE_VERSION 100
 #define COOKIE_FILE_VERSION 101
+static int loaded_cookie_file_version;
+#define MIN_URL_FILE_VERSION 105
 #define URL_FILE_VERSION 106
 
 /**
@@ -334,7 +337,7 @@ void urldb_load(const char *filename)
 	if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
 		return;
 	version = atoi(s);
-	if (version < 105) {
+	if (version < MIN_URL_FILE_VERSION) {
 		LOG(("Unsupported URL file version."));
 		return;
 	}
@@ -3497,7 +3500,6 @@ void urldb_load_cookies(const char *filename)
 {
 	FILE *fp;
 	char s[16*1024];
-	int file_version = 0;
 
 	assert(filename);
 
@@ -3543,16 +3545,16 @@ void urldb_load_cookies(const char *filename)
 		 * (all input is ignored until this is read)
 		 */
 		if (strncasecmp(s, "Version:", 8) == 0) {
-			FIND_T; SKIP_T; file_version = atoi(p);
+			FIND_T; SKIP_T; loaded_cookie_file_version = atoi(p);
 
-			if (file_version < 100 && 
-					file_version > COOKIE_FILE_VERSION) {
-				LOG(("Unknown Cookie file version"));
+			if (loaded_cookie_file_version < 
+					MIN_COOKIE_FILE_VERSION) {
+				LOG(("Unsupported Cookie file version"));
 				break;
 			}
 
 			continue;
-		} else if (file_version == 0) {
+		} else if (loaded_cookie_file_version == 0) {
 			/* Haven't yet seen version; skip this input */
 			continue;
 		}
@@ -3571,7 +3573,8 @@ void urldb_load_cookies(const char *filename)
 		SKIP_T; no_destroy = atoi(p); FIND_T;
 		SKIP_T; name = p; FIND_T;
 		SKIP_T; value = p; FIND_T;
-		if (file_version > 100) {
+		if (loaded_cookie_file_version > 100) {
+			/* Introduced in version 1.01 */
 			SKIP_T;	value_quoted = atoi(p); FIND_T;
 		} else {
 			value_quoted = 0;
@@ -3687,6 +3690,8 @@ void urldb_delete_cookie_paths(const char *domain, const char *path,
 void urldb_save_cookies(const char *filename)
 {
 	FILE *fp;
+	int cookie_file_version = max(loaded_cookie_file_version, 
+			COOKIE_FILE_VERSION);
 
 	assert(filename);
 
@@ -3706,8 +3711,8 @@ void urldb_save_cookies(const char *filename)
 			"Path from Set-Cookie\tSecure\tExpires\tLast used\t"
 			"No destroy\tName\tValue\tValue was quoted\tScheme\t"
 			"URL\tComment\n",
-			COOKIE_FILE_VERSION);
-	fprintf(fp, "Version:\t%d\n", COOKIE_FILE_VERSION);
+			cookie_file_version);
+	fprintf(fp, "Version:\t%d\n", cookie_file_version);
 
 	urldb_save_cookie_hosts(fp, &db_root);
 
