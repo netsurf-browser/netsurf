@@ -304,7 +304,7 @@ static struct search_node *search_trees[NUM_SEARCH_TREES] = {
 #define MIN_COOKIE_FILE_VERSION 100
 #define COOKIE_FILE_VERSION 101
 static int loaded_cookie_file_version;
-#define MIN_URL_FILE_VERSION 105
+#define MIN_URL_FILE_VERSION 106
 #define URL_FILE_VERSION 106
 
 /**
@@ -356,23 +356,12 @@ void urldb_load(const char *filename)
 			if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
 				break;
 			urls = atoi(s);
-			for (i = 0; i < ((version == 105 ? 6 : 8) * urls);
-					i++)
+			/* Eight fields/url */
+			for (i = 0; i < (8 * urls); i++) {
 				if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
 					break;
-			continue;
-		}
-
-		if (version == 105) {
-			/* file:/ -> localhost */
-			if (strcasecmp(host, "file:/") == 0)
-				snprintf(host, sizeof host, "localhost");
-			else {
-				/* strip any port number */
-				char *colon = strrchr(host, ':');
-				if (colon)
-					*colon = '\0';
 			}
+			continue;
 		}
 
 		/* read number of URLs */
@@ -395,77 +384,45 @@ void urldb_load(const char *filename)
 		/* load the non-corrupt data */
 		for (i = 0; i < urls; i++) {
 			struct path_data *p = NULL;
+			char scheme[64], ports[10];
+			char url[64 + 3 + 256 + 6 + 4096 + 1];
+			unsigned int port;
+			bool is_file = false;
 
-			if (version == 105) {
-				if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
-					break;
-				length = strlen(s) - 1;
-				s[length] = '\0';
+			if (!fgets(scheme, sizeof scheme, fp))
+				break;
+			length = strlen(scheme) - 1;
+			scheme[length] = '\0';
 
-				if (strncasecmp(s, "file:", 5) == 0) {
-					/* local file, so fudge insertion */
-					char url[7 + 4096];
+			if (!fgets(ports, sizeof ports, fp))
+				break;
+			length = strlen(ports) - 1;
+			ports[length] = '\0';
+			port = atoi(ports);
 
-					snprintf(url, sizeof url,
-							"file://%s", s + 5);
+			if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
+				break;
+			length = strlen(s) - 1;
+			s[length] = '\0';
 
-					p = urldb_add_path("file", 0, h,
-							s + 5, NULL, NULL, url);
-					if (!p) {
-						LOG(("Failed inserting '%s'",
-								url));
-						die("Memory exhausted "
-							"whilst loading "
-							"URL file");
-					}
-				} else {
-					if (!urldb_add_url(s)) {
-						LOG(("Failed inserting '%s'",
-								s));
-					}
-					p = urldb_find_url(s);
-				}
-			} else {
-				char scheme[64], ports[10];
-				char url[64 + 3 + 256 + 6 + 4096 + 1];
-				unsigned int port;
-				bool is_file = false;
+			if (!strcasecmp(host, "localhost") &&
+					!strcasecmp(scheme, "file"))
+				is_file = true;
 
-				if (!fgets(scheme, sizeof scheme, fp))
-					break;
-				length = strlen(scheme) - 1;
-				scheme[length] = '\0';
+			snprintf(url, sizeof url, "%s://%s%s%s%s",
+					scheme,
+					/* file URLs have no host */
+					(is_file ? "" : host),
+					(port ? ":" : ""),
+					(port ? ports : ""),
+					s);
 
-				if (!fgets(ports, sizeof ports, fp))
-					break;
-				length = strlen(ports) - 1;
-				ports[length] = '\0';
-				port = atoi(ports);
-
-				if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
-					break;
-				length = strlen(s) - 1;
-				s[length] = '\0';
-
-				if (!strcasecmp(host, "localhost") &&
-						!strcasecmp(scheme, "file"))
-					is_file = true;
-
-				snprintf(url, sizeof url, "%s://%s%s%s%s",
-						scheme,
-						/* file URLs have no host */
-						(is_file ? "" : host),
-						(port ? ":" : ""),
-						(port ? ports : ""),
-						s);
-
-				p = urldb_add_path(scheme, port, h, s, NULL, NULL,
-						url);
-				if (!p) {
-					LOG(("Failed inserting '%s'", url));
-					die("Memory exhausted whilst loading "
-							"URL file");
-				}
+			p = urldb_add_path(scheme, port, h, s, NULL, NULL,
+					url);
+			if (!p) {
+				LOG(("Failed inserting '%s'", url));
+				die("Memory exhausted whilst loading "
+						"URL file");
 			}
 
 			if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
