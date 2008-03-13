@@ -1045,10 +1045,12 @@ url_func_result url_get_components(const char *url,
 	if (isalpha(*scheme)) {
 		for (scheme = url + 1;
 				((*scheme != ':') && (*scheme != '\0'));
-				*scheme++)
+				scheme++) {
 			if (!isalnum(*scheme) && (*scheme != '+') &&
 					(*scheme != '-') && (*scheme != '.'))
 				break;
+		}
+
 		if (*scheme == ':') {
 			memcpy(storage_end, url, scheme - url);
 			storage_end[scheme - url] = '\0';
