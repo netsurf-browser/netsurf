@@ -1478,8 +1478,16 @@ bool html_redraw_scrollbars(struct box *box, float scale,
 	bool vscroll, hscroll;
 	int well_height, bar_top, bar_height;
 	int well_width, bar_left, bar_width;
-	const colour vcolour = box->style->border[RIGHT].color;
-	const colour hcolour = box->style->border[BOTTOM].color;
+	colour vcolour = box->style->border[RIGHT].color;
+	colour hcolour = box->style->border[BOTTOM].color;
+
+	/** \todo We probably want to clamp to either end of the spectrum, 
+	 * rather than simply taking the inverse colour. */
+	if (vcolour == TRANSPARENT || vcolour == background_colour)
+		vcolour = background_colour ^ 0xffffff;
+
+	if (hcolour == TRANSPARENT || hcolour == background_colour)
+		hcolour = background_colour ^ 0xffffff;
 
 	box_scrollbar_dimensions(box, padding_width, padding_height, w,
 			&vscroll, &hscroll,
