@@ -107,8 +107,7 @@ css_error css_context_insert_sheet(css_context *context,
 css_error css_context_remove_sheet(css_context *context, 
 		css_stylesheet *sheet);
 
-/* Retrieve the total number of sheets in a selection context 
- * (includes imported sheets) */
+/* Retrieve the total number of top-level sheets in a selection context */
 uint32_t css_context_count_sheets(css_context *context);
 /* Get a stylesheet from a selection context given an index [0, count) */
 const css_stylesheet *css_context_get_sheet(css_context *context, 
