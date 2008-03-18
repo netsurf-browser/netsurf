@@ -1,7 +1,7 @@
 To build the GTK version of NetSurf on a UNIX-like platform (although it has
-only been tested on Debian, Ubuntu and FreeBSD), simply run "make gtk" once
-you have got the relevent build dependencies installed.  Under a Debian-like
-OS, this should suffice:
+only been tested on Debian, Ubuntu and FreeBSD), simply run
+"make -f Makefile.unix " once you have got the relevent build dependencies
+installed.  Under a Debian-like OS, this should suffice:
 
 	apt-get install libglade2-dev libcurl3-dev libxml2-dev libmng-dev 
 	apt-get install librsvg2-dev lemon re2c
