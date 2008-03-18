@@ -19,11 +19,13 @@ support.  If you have trouble finding lemon for your platform, it forms part of
 the SQLite distribution, and consists of a single C file and a single runtime
 data file, and is trivial to build yourself.
 
-Type "make gtk".  Currently, this produces a huge number of warnings, mostly
-due to confused signedness.  These haven't been fixed yet but are mostly
-harmless.
+Type "make -f Makefile.unix".  Currently, this produces a huge number of
+warnings, mostly due to confused signedness.  These haven't been fixed yet but
+are mostly harmless.
 
 Once built, NetSurf can be run by executing the shell script called "netsurf".
 This script sets up some environment variables, which enables the NetSurf
 binary to find its resources, making it easy to run the nsgtk binary from the
-build tree.
+build tree.  If you're packaging NetSurf, you can edit the RESPATH macro near
+the top of gtk/gtk_gui.c to point at a directory to search, removing much of
+the need for this starter shell script.
