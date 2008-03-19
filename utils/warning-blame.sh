@@ -40,7 +40,7 @@ if [ $# -gt 1 ]; then
   fi
 else
   make clean 2>&1 >/dev/null
-  make nsgtk 2>&1 |grep "warning:" | sort | uniq > ${WARNING_LIST}
+  make 2>&1 |grep "warning:" | sort | uniq > ${WARNING_LIST}
 fi
 
 for blamefile in $(cat ${WARNING_LIST} | cut -f 1 -d ':'  | sort | uniq ); do
