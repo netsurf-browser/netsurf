@@ -60,6 +60,24 @@ S_GTK := $(addprefix gtk/,$(S_GTK))
 css/css_enum.c css/css_enum.h: css/css_enums css/makeenum
 	$(VQ)echo "MAKEENUM: css"
 	$(Q)$(PERL) css/makeenum css/css_enum < css/css_enums
+ifeq ($(HOST),riscos)
+css/parser.c css/parser.h: css/parser.y
+	$(VQ)echo "   LEMON: css/parser.y"
+	$(Q)dir css
+	$(Q)-lemon parser.y
+	$(Q)dir ^
+	$(Q)touch css/parser.c css/parser.h
+css/scanner.c: css/scanner.l
+	$(VQ)echo "    RE2C: css/scanner.l"
+	$(Q)dir css
+	$(Q)re2c -s scanner.l > scanner.c
+	$(Q)dir ^
+utils/translit.c: transtab
+	$(VQ)echo "TRANSTAB: utils/translit.c"
+	$(Q)dir utils
+	$(Q)$(PERL) tt2code < transtab > translit.c
+	$(Q)dir ^
+else
 css/parser.c css/parser.h: css/parser.y
 	$(VQ)echo "   LEMON: css/parser.y"
 	$(Q)# If lemon really fails hard, we'll never know, sorry
@@ -67,13 +85,13 @@ css/parser.c css/parser.h: css/parser.y
 	$(Q)# Unfortunately if the output hasn't changed, lemon doesn't
 	$(Q)# alter the file and thus make gets confused.
 	$(Q)touch css/parser.c css/parser.h
-
 css/scanner.c: css/scanner.l
 	$(VQ)echo "    RE2C: css/scanner.l"
 	$(Q)cd css; re2c -s scanner.l > scanner.c
 utils/translit.c: transtab
 	$(VQ)echo "TRANSTAB: utils/translit.c"
 	$(Q)cd utils; $(PERL) tt2code < transtab > translit.c
+endif
 
 clean-intermediates:
 	$(VQ)echo "   CLEAN: intermediates"
