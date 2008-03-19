@@ -71,22 +71,32 @@ WARNFLAGS = -W -Wall -Wundef -Wpointer-arith -Wcast-qual \
 ifeq ($(TARGET),riscos)
 ifeq ($(HOST),riscos)
 # Build for RO on RO
+GCCSDK_INSTALL_ENV := <NSLibs$$Dir>
 CC := gcc
 EXEEXT :=
+PKG_CONFIG :=
 else
 # Cross-build for RO
+GCCSDK_INSTALL_ENV := /home/riscos/env
 CC := /home/riscos/cross/bin/gcc
 EXEEXT := ,ff8
+PKG_CONFIG := $(GCCSDK_INSTALL_ENV)/ro-pkg-config
 endif
 STARTGROUP :=
 ENDGROUP :=
 else
+# Building for GTK
+PKG_CONFIG := pkg-config
 STARTGROUP := -Wl,--start-group
 ENDGROUP := -Wl,--end-group
 endif
 
-LDFLAGS := -lxml2 -lz -lm -lcurl -lssl -lcrypto -lmng \
-	-ljpeg
+ifeq ($(HOST),riscos)
+LDFLAGS := -lxml2 -lz -lm -lcurl -lssl -lcrypto -lmng -ljpeg
+else
+LDFLAGS := $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl openssl)
+LDFLAGS += -lz -lm -lmng -ljpeg
+endif
 
 ifeq ($(TARGET),gtk)
 # Building for GTK, we need the GTK flags
@@ -98,12 +108,12 @@ GTKCFLAGS := -std=c99 -Dgtk -Dnsgtk \
 	-D_POSIX_C_SOURCE=200112L \
 	-D_NETBSD_SOURCE \
 	$(WARNFLAGS) -I. -g -O \
-	$(shell pkg-config --cflags libglade-2.0 gtk+-2.0 librsvg-2.0) \
+	$(shell $(PKG_CONFIG) --cflags libglade-2.0 gtk+-2.0 librsvg-2.0) \
 	$(shell xml2-config --cflags)
 
-GTKLDFLAGS := $(shell pkg-config --cflags --libs libglade-2.0 gtk+-2.0 gthread-2.0 gmodule-2.0 librsvg-2.0)
+GTKLDFLAGS := $(shell $(PKG_CONFIG) --cflags --libs libglade-2.0 gtk+-2.0 gthread-2.0 gmodule-2.0 librsvg-2.0)
 CFLAGS += $(GTKCFLAGS)
-LDFLAGS += $(GTKLDFLAGS) -llcms
+LDFLAGS += $(GTKLDFLAGS) $(shell $(PKG_CONFIG) --libs lcms)
 
 ifeq ($(HOST),Windows_NT)
 CFLAGS += -U__STRICT_ANSI__
@@ -112,12 +122,6 @@ endif
 endif
 
 ifeq ($(TARGET),riscos)
-ifeq ($(HOST),riscos)
-GCCSDK_INSTALL_ENV := <NSLibs$$Dir>
-else
-GCCSDK_INSTALL_ENV := /home/riscos/env
-endif
-
 CFLAGS += -I. -O $(WARNFLAGS) -Driscos			\
 	-std=c99 -D_BSD_SOURCE -D_POSIX_C_SOURCE	\
 	-mpoke-function-name
