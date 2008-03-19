@@ -120,13 +120,13 @@ endif
 
 CFLAGS += -I. -O $(WARNFLAGS) -Driscos			\
 	-std=c99 -D_BSD_SOURCE -D_POSIX_C_SOURCE	\
-	-mpoke-function-name -mthrowback
+	-mpoke-function-name
 
 CFLAGS += -I$(GCCSDK_INSTALL_ENV)/include		\
 	-I$(GCCSDK_INSTALL_ENV)/include/libxml2		\
 	-I$(GCCSDK_INSTALL_ENV)/include/libmng
 ifeq ($(HOST),riscos)
-CFLAGS += -I<OSLib$$Dir>
+CFLAGS += -I<OSLib$$Dir> -mthrowback
 endif
 ASFLAGS += -I. -I$(GCCSDK_INSTALL_ENV)/include
 LDFLAGS += -L$(GCCSDK_INSTALL_ENV)/lib -lcares -lrufl -lpencil \
