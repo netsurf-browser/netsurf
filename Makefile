@@ -6,9 +6,9 @@
 #
 
 # Trivially, invoke as:
-#   make -f Makefile.unix
+#   make
 # to build native, or:
-#   make -f Makefile.unix TARGET=riscos
+#   make TARGET=riscos
 # to cross-build for RO.
 #
 # Tested on unix platforms (building for GTK and cross-compiling for RO) and
@@ -18,7 +18,7 @@
 #
 # To build developer Doxygen generated documentation, invoke as above,
 # with the 'docs' target:
-#   make -f Makefile.unix docs
+#   make docs
 #
 
 all: all-program
