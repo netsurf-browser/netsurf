@@ -72,7 +72,7 @@ bool directory_convert(struct content *c, int width, int height) {
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
 	}
-	for (cnv = nice_path, tmp = path; *tmp != '\0'; *tmp++) {
+	for (cnv = nice_path, tmp = path; *tmp != '\0'; tmp++) {
 		if (*tmp == '<') {
 			*cnv++ = '&';
 			*cnv++ = 'l';
