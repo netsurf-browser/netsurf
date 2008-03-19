@@ -403,7 +403,7 @@ void fetchcache_callback(fetch_msg msg, void *p, const void *data,
 			type = content_lookup(mime_type);
 			res = content_set_type(c,
 					c->download ? CONTENT_OTHER : type,
-					mime_type, params);
+					mime_type, (const char **) params);
 			free(mime_type);
 			for (i = 0; params[i]; i++)
 				free(params[i]);
