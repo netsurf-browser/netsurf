@@ -63,7 +63,7 @@ $(DEPROOT)/created: $(OBJROOT)/created
 	$(Q)$(MKDIR) $(DEPROOT)
 	$(Q)$(TOUCH) $(DEPROOT)/created
 
-WARNFLAGS = -W -Wall -Wundef -Wpointer-arith -Wcast-qual \
+WARNFLAGS = -W -Wall -Wundef -Wpointer-arith \
 	-Wcast-align -Wwrite-strings -Wstrict-prototypes \
 	-Wmissing-prototypes -Wmissing-declarations -Wredundant-decls \
 	-Wnested-externs -Winline -Wno-unused-parameter -Wuninitialized
