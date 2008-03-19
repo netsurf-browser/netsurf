@@ -41,9 +41,7 @@
 #include <string.h>
 #include "css/css.h"
 #include "content/content.h"
-#ifdef riscos
 #include "desktop/gui.h"
-#endif
 #include "desktop/options.h"
 #include "render/box.h"
 #include "render/font.h"

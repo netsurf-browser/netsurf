@@ -28,9 +28,7 @@
 #include "css/css.h"
 #include "render/box.h"
 #include "render/table.h"
-#ifdef riscos
 #include "desktop/gui.h"
-#endif
 #define NDEBUG
 #include "utils/log.h"
 #include "utils/talloc.h"

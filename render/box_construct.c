@@ -42,9 +42,7 @@
 #include "render/box.h"
 #include "render/form.h"
 #include "render/html.h"
-#ifdef riscos
 #include "desktop/gui.h"
-#endif
 //#define NDEBUG
 #include "utils/log.h"
 #include "utils/messages.h"
