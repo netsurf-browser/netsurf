@@ -24,16 +24,15 @@
 all: all-program
 
 # Determine host type
-HOST_SYSTEM := $(shell uname -s)
+HOST := $(shell uname -s)
 
-ifeq ($(HOST_SYSTEM),riscos)
-# Native build on RO
-HOST=riscos
+ifeq ($(HOST),riscos)
+# Build happening on RO platform, default target is RO backend
 ifeq ($(TARGET),)
 TARGET := riscos
 endif
 else
-HOST=unix
+# Build happening on non-RO platform, default target is GTK backend
 ifeq ($(TARGET),)
 TARGET := gtk
 endif
@@ -63,9 +62,6 @@ WARNFLAGS = -W -Wall -Wundef -Wpointer-arith -Wcast-qual \
 	-Wmissing-prototypes -Wmissing-declarations -Wredundant-decls \
 	-Wnested-externs -Winline -Wno-unused-parameter -Wuninitialized
 
-STARTGROUP := -Wl,--start-group
-ENDGROUP := -Wl,--end-group
-
 ifeq ($(TARGET),riscos)
 ifeq ($(HOST),riscos)
 # Build for RO on RO
@@ -76,6 +72,9 @@ CC := /home/riscos/cross/bin/gcc
 endif
 STARTGROUP :=
 ENDGROUP :=
+else
+STARTGROUP := -Wl,--start-group
+ENDGROUP := -Wl,--end-group
 endif
 
 LDFLAGS := -lxml2 -lz -lm -lcurl -lssl -lcrypto -lmng \
@@ -98,10 +97,8 @@ GTKLDFLAGS := $(shell pkg-config --cflags --libs libglade-2.0 gtk+-2.0 gthread-2
 CFLAGS += $(GTKCFLAGS)
 LDFLAGS += $(GTKLDFLAGS) -llcms
 
-ifneq ($(HOST),riscos)
-ifeq ($(shell uname -s),Windows_NT)
+ifeq ($(HOST),Windows_NT)
 CFLAGS += -U__STRICT_ANSI__
-endif
 endif
 
 endif
@@ -151,13 +148,11 @@ DEPFILES :=
 # 2 = dep filename, no prefix
 # 3 = obj filename, no prefix
 define dependency_generate_c
-
 DEPFILES += $(2)
-
 $$(DEPROOT)/$(2): $$(DEPROOT)/created $(1) css/css_enum.h css/parser.h
 	$$(VQ)echo "     DEP: $(1)"
 	$$(Q)$$(RM) $$(DEPROOT)/$(2)
-	$$(Q)$$(CC) $$(CFLAGS) -M -MT '$$(DEPROOT)/$2 $$(OBJROOT)/$(3)' \
+	$$(Q)$$(CC) $$(CFLAGS) -MM -MT '$$(DEPROOT)/$2 $$(OBJROOT)/$(3)' \
 		    -MF $$(DEPROOT)/$(2) $(1)
 
 endef
@@ -170,7 +165,7 @@ DEPFILES += $(2)
 $$(DEPROOT)/$(2): $$(DEPROOT)/created $(1)
 	$$(VQ)echo "     DEP: $(1)"
 	$$(Q)$$(RM) $$(DEPROOT)/$(2)
-	$$(Q)$$(CC) $$(CFLAGS) -M -MT '$$(DEPROOT)/$2 $$(OBJROOT)/$(3)' \
+	$$(Q)$$(CC) $$(CFLAGS) -MM -MT '$$(DEPROOT)/$2 $$(OBJROOT)/$(3)' \
 		    -MF $$(DEPROOT)/$(2) $(1)
 
 endef
