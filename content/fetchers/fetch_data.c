@@ -261,7 +261,7 @@ static void fetch_data_poll(const char *scheme)
 		/* Only process non-aborted fetches */
 		if (!c->aborted && fetch_data_process(c) == true) {
 			fetch_set_http_code(c->parent_fetch, 200);
-			LOG(("setting data: MIME type to %s, length to %d",
+			LOG(("setting data: MIME type to %s, length to %zd",
 					c->mimetype, c->datalen));
 			/* Any callback can result in the fetch being aborted.
 			 * Therefore, we _must_ check for this after _every_
