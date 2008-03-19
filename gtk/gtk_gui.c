@@ -282,7 +282,7 @@ void gui_init(int argc, char** argv)
 
 void gui_init2(int argc, char** argv)
 {
-	const char *addr = "http://netsurf-browser.org/";
+	const char *addr = "http://netsurf-browser.org/welcome/";
 
         if (option_homepage_url != NULL && option_homepage_url[0] != '\0')
                 addr = option_homepage_url;
