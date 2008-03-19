@@ -3199,7 +3199,7 @@ bool urldb_insert_cookie(struct cookie_internal_data *c, const char *scheme,
 			}
 		}
 
-		p = &h->paths;
+		p = (struct path_data *) &h->paths;
 	} else {
 		h = urldb_search_find(
 				urldb_get_search_tree(c->domain),
