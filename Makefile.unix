@@ -104,7 +104,11 @@ endif
 endif
 
 ifeq ($(TARGET),riscos)
+ifeq ($(HOST),riscos)
+GCCSDK_INSTALL_ENV := <NSLibs$$Dir>
+else
 GCCSDK_INSTALL_ENV := /home/riscos/env
+endif
 
 CFLAGS += -I. -O $(WARNFLAGS) -Driscos			\
 	-std=c99 -D_BSD_SOURCE -D_POSIX_C_SOURCE	\
@@ -113,9 +117,17 @@ CFLAGS += -I. -O $(WARNFLAGS) -Driscos			\
 CFLAGS += -I$(GCCSDK_INSTALL_ENV)/include		\
 	-I$(GCCSDK_INSTALL_ENV)/include/libxml2		\
 	-I$(GCCSDK_INSTALL_ENV)/include/libmng
+ifeq ($(HOST),riscos)
+CFLAGS += -I<OSLib$$Dir>
+endif
 ASFLAGS += -I. -I$(GCCSDK_INSTALL_ENV)/include
-LDFLAGS += -L$(GCCSDK_INSTALL_ENV)/lib -lcares -lOSLib32 -lrufl -lpencil \
+LDFLAGS += -L$(GCCSDK_INSTALL_ENV)/lib -lcares -lrufl -lpencil \
 	-lsvgtiny
+ifeq ($(HOST),riscos)
+LDFLAGS += -LOSLib: -lOSLib32
+else
+LDFLAGS += -lOSLib32
+endif
 endif
 
 CLEANS := clean-target
