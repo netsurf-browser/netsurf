@@ -106,7 +106,8 @@
 #include "utils/url.h"
 #include "utils/utils.h"
 
-
+/* Define this to debug the working stylesheet */
+#undef DEBUG_WORKING_STYLESHEET
 struct css_working_stylesheet {
 	struct css_selector **rule[HASH_SIZE];
 };
@@ -130,8 +131,10 @@ static bool css_match_first_child(const struct css_selector *detail,
 		xmlNode *element);
 static void css_dump_length(const struct css_length * const length);
 static void css_dump_selector(const struct css_selector *r);
+#ifdef DEBUG_WORKING_STYLESHEET
 static void css_dump_working_stylesheet(
 		const struct css_working_stylesheet *ws);
+#endif
 static void css_importance_reset(struct css_importance *i);
 
 /** Default style for a document. These are the 'Initial values' from the
@@ -1017,7 +1020,9 @@ struct css_working_stylesheet *css_make_working_stylesheet(
 
 	talloc_free(rule_scratch);
 
-	/*css_dump_working_stylesheet(working_stylesheet);*/
+#ifdef DEBUG_WORKING_STYLESHEET
+	css_dump_working_stylesheet(working_stylesheet);
+#endif
 
 	return working_stylesheet;
 }
@@ -2417,6 +2422,7 @@ void css_dump_length(const struct css_length * const length)
 				css_unit_name[length->unit]);
 }
 
+#ifdef DEBUG_WORKING_STYLESHEET
 /**
  * Dump a complete css_working_stylesheet to stderr in CSS syntax.
  */
@@ -2435,6 +2441,7 @@ void css_dump_working_stylesheet(const struct css_working_stylesheet *ws)
 		}
 	}
 }
+#endif
 
 /**
  * Set all members to false
