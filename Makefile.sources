@@ -104,7 +104,7 @@ CLEANS += clean-intermediates
 
 ifeq ($(TARGET),riscos)
 SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_RISCOS)
-EXETARGET := !NetSurf/!RunImage,ff8
+EXETARGET := !NetSurf/!RunImage$(EXEEXT)
 endif
 
 ifeq ($(TARGET),gtk)

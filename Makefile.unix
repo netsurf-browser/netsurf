@@ -11,8 +11,8 @@
 #   make -f Makefile.unix TARGET=riscos
 # to cross-build for RO.
 #
-# Thus-far only tested on unix platforms.  on RO in theory it ought to
-# work as per the native build.
+# Tested on unix platforms (building for GTK and cross-compiling for RO) and
+# on RO (building for RO).
 #
 # To clean, invoke as above, with the 'clean' target
 #
@@ -24,6 +24,12 @@
 all: all-program
 
 # Determine host type
+# NOTE: Currently, this is broken on RISC OS due to what appear to
+#       be bugs in UnixLib's pipe()/dup2() implementations. Until these
+#       are fixed and a new build of make is available, manually hardcode 
+#       this to "riscos" (sans quotes). Please remember to change it back
+#       to "$(shell uname -s)" (sans quotes) again before committing any
+#       Makefile changes.
 HOST := $(shell uname -s)
 
 ifeq ($(HOST),riscos)
@@ -66,9 +72,11 @@ ifeq ($(TARGET),riscos)
 ifeq ($(HOST),riscos)
 # Build for RO on RO
 CC := gcc
+EXEEXT :=
 else
 # Cross-build for RO
 CC := /home/riscos/cross/bin/gcc
+EXEEXT := ,ff8
 endif
 STARTGROUP :=
 ENDGROUP :=
