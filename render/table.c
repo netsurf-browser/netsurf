@@ -372,11 +372,19 @@ struct box *table_find_cell(struct box *table, unsigned int x,
 	if (table->columns <= x || table->rows <= y)
 		return 0;
 
-	for (row_group = table->children, row = row_group->children;
-			row_num != y;
-			(row = row->next) || (row_group = row_group->next,
-			row = row_group->children), row_num++)
-		;
+	row_group = table->children;
+	row = row_group->children;
+
+	while (row_num != y) {
+		if (row->next) {
+			row = row->next;
+		} else {
+			row_group = row_group->next;
+			row = row_group->children;
+		}
+
+		row_num++;
+	}
 
 	for (cell = row->children; cell; cell = cell->next)
 		if (cell->start_column <= x &&
