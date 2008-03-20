@@ -82,13 +82,9 @@ CC := /home/riscos/cross/bin/gcc
 EXEEXT := ,ff8
 PKG_CONFIG := $(GCCSDK_INSTALL_ENV)/ro-pkg-config
 endif
-STARTGROUP :=
-ENDGROUP :=
 else
 # Building for GTK
 PKG_CONFIG := pkg-config
-STARTGROUP := -Wl,--start-group
-ENDGROUP := -Wl,--end-group
 endif
 
 ifeq ($(HOST),riscos)
@@ -150,7 +146,7 @@ OBJECTS := $(sort $(addprefix $(OBJROOT)/,$(subst /,_,$(patsubst %.c,%.o,$(patsu
 
 $(EXETARGET): $(OBJECTS)
 	$(VQ)echo "    LINK: $(EXETARGET)"
-	$(Q)$(CC) -o $(EXETARGET) $(STARTGROUP) $(OBJECTS) $(ENDGROUP) $(LDFLAGS)
+	$(Q)$(CC) -o $(EXETARGET) $(OBJECTS) $(LDFLAGS)
 
 clean-target:
 	$(VQ)echo "   CLEAN: $(EXETARGET)"
