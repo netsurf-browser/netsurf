@@ -54,8 +54,12 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 	GdkPixmap *pixmap = gdk_pixmap_new(NULL, content->width, content->width, depth);
 	GdkPixbuf *big;
 
+	LOG(("Trying to create a thumbnail pixmap for a content of %dx%d@%d",
+		content->width, content->width, depth));
+
 	assert(content);
 	assert(bitmap);
+	assert(pixmap);
 
 	gdk_drawable_set_colormap(pixmap, gdk_colormap_get_system());
 
