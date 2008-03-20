@@ -131,7 +131,7 @@ MENUPROTO(close_window);
 MENUPROTO(quit);
 
 /* edit menu */
-MENUPROTO(choices);
+MENUPROTO(preferences);
 
 /* view menu */
 MENUPROTO(stop);
@@ -169,7 +169,7 @@ static struct menu_events menu_events[] = {
 	MENUEVENT(quit),
 
 	/* edit menu */
-	MENUEVENT(choices),
+	MENUEVENT(preferences),
 
 	/* view menu */
 	MENUEVENT(stop),
@@ -430,9 +430,9 @@ MENUHANDLER(quit)
 	return TRUE;
 }
 
-MENUHANDLER(choices)
+MENUHANDLER(preferences)
 {
-	gtk_widget_show(GTK_WIDGET(wndChoices));
+	gtk_widget_show(GTK_WIDGET(wndPreferences));
 
 	return TRUE;
 }

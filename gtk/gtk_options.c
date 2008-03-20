@@ -29,7 +29,7 @@
 #include "gtk/gtk_options.h"
 #include "gtk/gtk_window.h"
 
-GtkWindow *wndChoices;
+GtkWindow *wndPreferences;
 
 static GtkWidget 	*entryHomePageURL,
 			*checkHideAdverts,
@@ -70,8 +70,8 @@ static GtkWidget 	*entryHomePageURL,
 #define FIND_WIDGET(x) (x) = glade_xml_get_widget(gladeWindows, #x); if ((x) == NULL) LOG(("Unable to find widget '%s'!", #x))
 
 void nsgtk_options_init(void) {
-	wndChoices = GTK_WINDOW(glade_xml_get_widget(gladeWindows,
-				"wndChoices"));
+	wndPreferences = GTK_WINDOW(glade_xml_get_widget(gladeWindows,
+				"wndPreferences"));
 
 	/* get widget objects */
 	FIND_WIDGET(entryHomePageURL);

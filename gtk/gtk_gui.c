@@ -201,7 +201,7 @@ void gui_init(int argc, char** argv)
 		die("Unable to load throbber image.\n");
 
 	find_resource(buf, "Choices", "~/.netsurf/Choices");
-	LOG(("Using '%s' as Choices file", buf));
+	LOG(("Using '%s' as Preferences file", buf));
 	options_file_location = strdup(buf);
 	options_read(buf);
 

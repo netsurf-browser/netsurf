@@ -21,7 +21,7 @@
 
 #include <gtk/gtk.h>
 
-extern GtkWindow *wndChoices;
+extern GtkWindow *wndPreferences;
 
 void nsgtk_options_init(void);		/** Init options and load window */
 void nsgtk_options_load(void);		/** Load current options into window */

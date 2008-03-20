@@ -22,7 +22,7 @@
                       <widget class="GtkImageMenuItem" id="new_window">
                         <property name="visible">True</property>
                         <property name="tooltip" translatable="yes">Opens a new browser window.</property>
-                        <property name="label" translatable="yes">New window</property>
+                        <property name="label" translatable="yes">_New Window</property>
                         <property name="use_underline">True</property>
                         <accelerator key="N" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                         <child internal-child="image">
@@ -35,19 +35,10 @@
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkMenuItem" id="open_location">
-                        <property name="visible">True</property>
-                        <property name="tooltip" translatable="yes">Open an address into this browser window.</property>
-                        <property name="label" translatable="yes">Open _location...</property>
-                        <property name="use_underline">True</property>
-                        <accelerator key="L" modifiers="GDK_CONTROL_MASK" signal="activate"/>
-                      </widget>
-                    </child>
-                    <child>
                       <widget class="GtkImageMenuItem" id="open_file">
                         <property name="visible">True</property>
                         <property name="tooltip" translatable="yes">Open a file on your computer into this browser window.</property>
-                        <property name="label" translatable="yes">Open _file...</property>
+                        <property name="label" translatable="yes">_Open File...</property>
                         <property name="use_underline">True</property>
                         <accelerator key="F" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                         <child internal-child="image">
@@ -63,7 +54,7 @@
                       <widget class="GtkImageMenuItem" id="close_window">
                         <property name="visible">True</property>
                         <property name="tooltip" translatable="yes">Close this browser window.</property>
-                        <property name="label" translatable="yes">_Close window</property>
+                        <property name="label" translatable="yes">_Close Window</property>
                         <property name="use_underline">True</property>
                         <accelerator key="W" modifiers="GDK_SHIFT_MASK | GDK_CONTROL_MASK" signal="activate"/>
                         <child internal-child="image">
@@ -242,7 +233,7 @@
                         <property name="visible">True</property>
                         <property name="sensitive">False</property>
                         <property name="tooltip" translatable="yes">Selects all text in the current browser window.</property>
-                        <property name="label" translatable="yes">Select _all</property>
+                        <property name="label" translatable="yes">_Select All</property>
                         <property name="use_underline">True</property>
                         <accelerator key="A" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                       </widget>
@@ -268,10 +259,10 @@
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkImageMenuItem" id="choices">
+                      <widget class="GtkImageMenuItem" id="preferences">
                         <property name="visible">True</property>
                         <property name="tooltip" translatable="yes">Change how NetSurf functions.</property>
-                        <property name="label" translatable="yes">_Choices...</property>
+                        <property name="label" translatable="yes">P_references...</property>
                         <property name="use_underline">True</property>
                         <child internal-child="image">
                           <widget class="GtkImage" id="image560">
@@ -311,7 +302,7 @@
                     <child>
                       <widget class="GtkImageMenuItem" id="reload">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Reload</property>
+                        <property name="label" translatable="yes">_Reload</property>
                         <property name="use_underline">True</property>
                         <accelerator key="F5" modifiers="" signal="activate"/>
                         <child internal-child="image">
@@ -332,7 +323,7 @@
                       <widget class="GtkImageMenuItem" id="scale_view">
                         <property name="visible">True</property>
                         <property name="tooltip" translatable="yes">Scale the page in the current browser window to be smaller or larger.</property>
-                        <property name="label" translatable="yes">Scale View...</property>
+                        <property name="label" translatable="yes">_Scale View...</property>
                         <property name="use_underline">True</property>
                         <accelerator key="F11" modifiers="" signal="activate"/>
                         <child>
@@ -396,7 +387,7 @@
                     <child>
                       <widget class="GtkImageMenuItem" id="full_screen">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Fullscreen</property>
+                        <property name="label" translatable="yes">_Fullscreen</property>
                         <property name="use_underline">True</property>
                         <accelerator key="F11" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                         <child internal-child="image">
@@ -417,7 +408,7 @@
                       <widget class="GtkMenuItem" id="images">
                         <property name="visible">True</property>
                         <property name="sensitive">False</property>
-                        <property name="label" translatable="yes">Images</property>
+                        <property name="label" translatable="yes">_Images...</property>
                         <property name="use_underline">True</property>
                         <child>
                           <widget class="GtkMenu" id="images_menu">
@@ -426,7 +417,7 @@
                                 <property name="visible">True</property>
                                 <property name="sensitive">False</property>
                                 <property name="tooltip" translatable="yes">Toggle the display of images in the foreground.</property>
-                                <property name="label" translatable="yes">Foreground images</property>
+                                <property name="label" translatable="yes">_Foreground Images</property>
                                 <property name="use_underline">True</property>
                               </widget>
                             </child>
@@ -435,7 +426,7 @@
                                 <property name="visible">True</property>
                                 <property name="sensitive">False</property>
                                 <property name="tooltip" translatable="yes">Toggle the display of images in the background.</property>
-                                <property name="label" translatable="yes">Background images</property>
+                                <property name="label" translatable="yes">_Background Images</property>
                                 <property name="use_underline">True</property>
                               </widget>
                             </child>
@@ -446,14 +437,14 @@
                     <child>
                       <widget class="GtkMenuItem" id="toolbars">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Toolbars</property>
+                        <property name="label" translatable="yes">_Toolbars...</property>
                         <property name="use_underline">True</property>
                         <child>
                           <widget class="GtkMenu" id="toolbars_menu">
                             <child>
                               <widget class="GtkCheckMenuItem" id="menu_bar">
                                 <property name="visible">True</property>
-                                <property name="label" translatable="yes">Menu bar</property>
+                                <property name="label" translatable="yes">_Menu Bar</property>
                                 <property name="use_underline">True</property>
                                 <property name="active">True</property>
                               </widget>
@@ -461,7 +452,7 @@
                             <child>
                               <widget class="GtkCheckMenuItem" id="tool_bar">
                                 <property name="visible">True</property>
-                                <property name="label" translatable="yes">Button bar</property>
+                                <property name="label" translatable="yes">_Button Bar</property>
                                 <property name="use_underline">True</property>
                                 <property name="active">True</property>
                               </widget>
@@ -469,7 +460,7 @@
                             <child>
                               <widget class="GtkCheckMenuItem" id="status_bar">
                                 <property name="visible">True</property>
-                                <property name="label" translatable="yes">Status bar</property>
+                                <property name="label" translatable="yes">_Status Bar</property>
                                 <property name="use_underline">True</property>
                                 <property name="active">True</property>
                               </widget>
@@ -488,7 +479,7 @@
                         <property name="visible">True</property>
                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
                         <property name="tooltip" translatable="yes">Shows the downloads window</property>
-                        <property name="label" translatable="yes">Downloads...</property>
+                        <property name="label" translatable="yes">_Downloads...</property>
                         <property name="use_underline">True</property>
                       </widget>
                     </child>
@@ -496,14 +487,14 @@
                       <widget class="GtkMenuItem" id="save_window_size">
                         <property name="visible">True</property>
                         <property name="tooltip" translatable="yes">Save this window's size and position for use with new windows.</property>
-                        <property name="label" translatable="yes">Save window size</property>
+                        <property name="label" translatable="yes">S_ave Window Size</property>
                         <property name="use_underline">True</property>
                       </widget>
                     </child>
                     <child>
                       <widget class="GtkMenuItem" id="toggle_debug_rendering">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Toggle debug rendering</property>
+                        <property name="label" translatable="yes">T_oggle Debug Rendering</property>
                         <property name="use_underline">True</property>
                       </widget>
                     </child>
@@ -596,7 +587,7 @@
                         <property name="visible">True</property>
                         <property name="sensitive">False</property>
                         <property name="tooltip" translatable="yes">Add the current page to your bookmarks.</property>
-                        <property name="label" translatable="yes">_Add to bookmarks</property>
+                        <property name="label" translatable="yes">_Add to Bookmarks</property>
                         <property name="use_underline">True</property>
                       </widget>
                     </child>
@@ -605,9 +596,23 @@
                         <property name="visible">True</property>
                         <property name="sensitive">False</property>
                         <property name="tooltip" translatable="yes">Open a window showing all your bookmarks.</property>
-                        <property name="label" translatable="yes">Show book_marks...</property>
+                        <property name="label" translatable="yes">_Show Bookmarks...</property>
                         <property name="use_underline">True</property>
                         <accelerator key="F6" modifiers="" signal="activate"/>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkSeparatorMenuItem" id="separator13">
+                        <property name="visible">True</property>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkMenuItem" id="open_location">
+                        <property name="visible">True</property>
+                        <property name="tooltip" translatable="yes">Open an address into this browser window.</property>
+                        <property name="label" translatable="yes">_Open location...</property>
+                        <property name="use_underline">True</property>
+                        <accelerator key="L" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                       </widget>
                     </child>
                   </widget>
@@ -1250,9 +1255,9 @@
       </widget>
     </child>
   </widget>
-  <widget class="GtkWindow" id="wndChoices">
+  <widget class="GtkWindow" id="wndPreferences">
     <property name="can_focus">True</property>
-    <property name="title" translatable="yes">NetSurf Choices</property>
+    <property name="title" translatable="yes">NetSurf Preferences</property>
     <property name="window_position">GTK_WIN_POS_CENTER</property>
     <property name="urgency_hint">True</property>
     <signal name="delete_event" handler="gtk_widget_hide"/>
@@ -2680,7 +2685,7 @@ Fantasy</property>
                 <property name="tooltip" translatable="yes">Revert any made changes.</property>
                 <property name="label">gtk-cancel</property>
                 <property name="use_stock">True</property>
-                <signal name="clicked" handler="gtk_widget_hide" object="wndChoices"/>
+                <signal name="clicked" handler="gtk_widget_hide" object="wndPreferences"/>
                 <signal name="clicked" handler="nsgtk_options_load"/>
               </widget>
               <packing>
@@ -2698,7 +2703,7 @@ Fantasy</property>
                 <property name="label">gtk-apply</property>
                 <property name="use_stock">True</property>
                 <signal name="clicked" handler="nsgtk_options_save"/>
-                <signal name="clicked" handler="gtk_widget_hide" object="wndChoices"/>
+                <signal name="clicked" handler="gtk_widget_hide" object="wndPreferences"/>
               </widget>
               <packing>
                 <property name="expand">False</property>
