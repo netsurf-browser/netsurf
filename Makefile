@@ -24,13 +24,19 @@
 all: all-program
 
 # Determine host type
-# NOTE: Currently, this is broken on RISC OS due to what appear to
-#       be bugs in UnixLib's pipe()/dup2() implementations. Until these
-#       are fixed and a new build of make is available, manually hardcode 
-#       this to "riscos" (sans quotes). Please remember to change it back
-#       to "$(shell uname -s)" (sans quotes) again before committing any
-#       Makefile changes.
+# NOTE: Currently, this is broken on RISC OS due to what appear to be bugs
+#	in UnixLib's pipe()/dup2() implementations.
+#	When you don't have 'uname' available, you will see:
+#	  File 'uname' not found
+#	but when you do, you will see:
+#	  RISC OS
+#	In both cases HOST make variable is empty and we recover from that by
+#	assuming we're building on RISC OS.
 HOST := $(shell uname -s)
+ifeq ($(HOST),)
+HOST := riscos
+$(warning Build platform determination failed but that's a known problem for RISC OS so we're assuming a native RISC OS build.)
+endif
 
 ifeq ($(HOST),riscos)
 # Build happening on RO platform, default target is RO backend
