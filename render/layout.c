@@ -380,22 +380,22 @@ bool layout_block_context(struct box *block, struct content *content)
 				if (box->height == AUTO) {
 					box->height = y - box->padding[TOP];
 
-					if (layout_apply_minmax_height(box)) {
-						/* Height altered */
-						/* Set current cy */
-						cy += box->height -
-							(y - box->padding[TOP]);
-						/* Update y for any change in
-						 * height */
-						y = box->height +
-							box->padding[TOP];
-					}
 					if (box->type == BOX_BLOCK)
 						layout_block_add_scrollbar(box,
 								BOTTOM);
 				} else
 					cy += box->height -
 							(y - box->padding[TOP]);
+
+				if (layout_apply_minmax_height(box)) {
+					/* Height altered */
+					/* Set current cy */
+					cy += box->height -
+							(y - box->padding[TOP]);
+					/* Update y for any change in height */
+					y = box->height + box->padding[TOP];
+				}
+
 				cy += box->padding[BOTTOM] +
 						box->border[BOTTOM];
 				if (max_pos_margin < box->margin[BOTTOM])
@@ -977,7 +977,10 @@ bool layout_inline_container(struct box *inline_container, int width,
                         has_text_children = true;
         }
 
-	/** \todo fix wrapping so that a box with horizontal scrollbar will shrink back to 'width' if no word is wider than 'width' (Or just set curwidth = width and have the multiword lines wrap to the min width) */
+	/** \todo fix wrapping so that a box with horizontal scrollbar will
+	 * shrink back to 'width' if no word is wider than 'width' (Or just set
+	 * curwidth = width and have the multiword lines wrap to the min width)
+	 */
 	for (c = inline_container->children; c; ) {
 		LOG(("c %p", c));
 		curwidth = inline_container->width;
@@ -1492,7 +1495,8 @@ bool layout_line(struct box *first, int *width, int *y,
 				split_box->type == BOX_TEXT) &&
 				!split_box->object &&
 				!split_box->gadget && split_box->text) {
-			/* skip leading spaces, otherwise code gets fooled into thinking it's all one long word */
+			/* skip leading spaces, otherwise code gets fooled into
+			 * thinking it's all one long word */
 			for (i = 0; i != split_box->length &&
 					split_box->text[i] == ' '; i++)
 				;
