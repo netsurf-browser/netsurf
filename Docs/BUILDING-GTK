@@ -7,7 +7,10 @@
 
       $ make
 
-  Once built, NetSurf can be run by executing the 'netsurf' shell script:
+  If that produces errors, you probably don't have some of NetSurf's build
+  dependencies installed. See "Obtaining NetSurf's dependencies" below.
+
+  Run NetSurf by executing the 'netsurf' shell script:
 
       $ ./netsurf
 
@@ -17,9 +20,7 @@
 
   Tested on Debian, Ubuntu, Fedora 8, FreeBSD, NetBSD and Solaris 10.
 
-  If you're packaging NetSurf, you can edit the RESPATH macro near the top of
-  gtk/gtk_gui.c to point at a directory to search, removing much of the need
-  for this starter shell script (and the security implications it has).
+  If you're packaging NetSurf, see the PACKAGING-GTK document.
 
 
   Obtaining NetSurf's dependencies
