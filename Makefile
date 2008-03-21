@@ -50,6 +50,12 @@ TARGET := gtk
 endif
 endif
 
+ifneq ($(TARGET),riscos)
+ifneq ($(TARGET),gtk)
+$(error Unknown TARGET "$(TARGET)", should either be "riscos" or "gtk")
+endif
+endif
+
 Q=@
 VQ=@
 PERL=perl
@@ -83,8 +89,9 @@ EXEEXT :=
 PKG_CONFIG :=
 else
 # Cross-build for RO
-GCCSDK_INSTALL_ENV := /home/riscos/env
-CC := /home/riscos/cross/bin/gcc
+GCCSDK_INSTALL_ENV ?= /home/riscos/env
+GCCSDK_INSTALL_CROSSBIN ?= /home/riscos/cross/bin
+CC := $(GCCSDK_INSTALL_CROSSBIN)/gcc
 EXEEXT := ,ff8
 PKG_CONFIG := $(GCCSDK_INSTALL_ENV)/ro-pkg-config
 endif
