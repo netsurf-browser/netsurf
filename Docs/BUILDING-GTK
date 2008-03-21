@@ -1,41 +1,57 @@
-To build the GTK version of NetSurf on a UNIX-like platform (although it has
-only been tested on Debian, Ubuntu, Fedora 8, FreeBSD, NetBSD and Solaris 10)
-, simply run "make" once you have got the relevent build dependencies
-installed.  Assuming you already have GCC and GNU Make etc install, under a
-Debian-like OS, this should suffice:
+--------------------------------------------------------------------------------
+  Bulid Instructions for GTK NetSurf                             21 March 2008
+--------------------------------------------------------------------------------
 
-$ apt-get install libglade2-dev libcurl3-dev libxml2-dev libmng-dev 
-$ apt-get install librsvg2-dev lemon re2c
+  To build GTK NetSurf on a UNIX-like platform, provided you have the relevant
+  build dependencies installed, simply run:
 
-Under Fedora, something like this:
-$ yum install libglade2-devel curl-devel libxml2-devel libmng-devel
-$ yum install librsvg2-devel lcms-devel re2c
+      $ make
 
-If your distribution does not package lemon (like Fedora doesn't) then you'll
-need to download it and build it yourself.  You may find it comes with the
-SQLite packages (SQLite's parser is build with lemon).  If not, try this:
+  Once built, NetSurf can be run by executing 'netsurf' shell script:
 
-$ mkdir -p /usr/local/share/lemon
-$ wget http://www.sqlite.org/cvstrac/getfile/sqlite/tool/lemon.c
-$ wget -O /usr/local/share/lemon/lempar.c http://www.sqlite.org/cvstrac/getfile/sqlite/tool/lempar.c
-$ sed -e's!lempar.c!/usr/local/share/lemon/lempar.c!' lemon.c > lem.c
-$ gcc -o /usr/local/bin/lemon lem.c
+      $ ./netsurf
 
-NetSurf requires at minimum GTK 2.8.  Earlier versions will not work.  It
-also depends on Cairo for rendering, but you should have this already with
-versions of GTK 2.8 or later.
+  This script makes it easy to run the nsgtk binary from the build tree. It
+  sets up some environment variables which enable the NetSurf binary to find
+  its resources.
 
-This will pull in loads of things, like all the GTK dev libraries, the PNG and
-JPEG libraries, colour management libraries, zlib, OpenSSL etc that NetSurf
-also depends on.
+  Tested on Debian, Ubuntu, Fedora 8, FreeBSD, NetBSD and Solaris 10.
 
-Type "make".  Currently, this produces a huge number of warnings, mostly due to
-confused signedness.  These haven't been fixed yet but are mostly harmless.
-Feel free to fix them and submit a patch.
+  If you're packaging NetSurf, you can edit the RESPATH macro near the top of
+  gtk/gtk_gui.c to point at a directory to search, removing much of the need
+  for this starter shell script (and the security implications it has).
 
-Once built, NetSurf can be run by executing the shell script called "netsurf".
-This script sets up some environment variables, which enables the NetSurf
-binary to find its resources, making it easy to run the nsgtk binary from the
-build tree.  If you're packaging NetSurf, you can edit the RESPATH macro near
-the top of gtk/gtk_gui.c to point at a directory to search, removing much of
-the need for this starter shell script (and the security implications it has).
+
+  Obtaining NetSurf's dependencies
+==================================
+
+  Assuming you have GCC and GNU Make etc installed install the dependencies
+  for your system. Instructions for specific systems are below:
+
+  Debian-like OS:
+
+      $ apt-get install libglade2-dev libcurl3-dev libxml2-dev libmng-dev 
+      $ apt-get install librsvg2-dev lemon re2c
+
+  Fedora:
+
+      $ yum install libglade2-devel curl-devel libxml2-devel libmng-devel
+      $ yum install librsvg2-devel lcms-devel re2c
+
+  If your distribution does not package 'lemon' (like Fedora doesn't) then
+  you'll need to download it and build it yourself. You may find it comes with
+  the SQLite packages (SQLite's parser is built with lemon). If not, try this:
+
+      $ mkdir -p /usr/local/share/lemon
+      $ wget http://www.sqlite.org/cvstrac/getfile/sqlite/tool/lemon.c
+      $ wget -O /usr/local/share/lemon/lempar.c http://www.sqlite.org/cvstrac/getfile/sqlite/tool/lempar.c
+      $ sed -e's!lempar.c!/usr/local/share/lemon/lempar.c!' lemon.c > lem.c
+      $ gcc -o /usr/local/bin/lemon lem.c
+
+  NetSurf requires at minimum GTK 2.8. Earlier versions will not work. It also
+  depends on Cairo for rendering, but you should have this already with
+  versions of GTK 2.8 or later.
+
+  This will pull in loads of things, like all the GTK dev libraries, the PNG
+  and JPEG libraries, colour management libraries, zlib, OpenSSL etc that
+  NetSurf also depends on.
