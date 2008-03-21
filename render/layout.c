@@ -463,10 +463,10 @@ bool layout_block_context(struct box *block, struct content *content)
 
 	if (block->height == AUTO) {
 		block->height = cy - block->padding[TOP];
-		layout_apply_minmax_height(block);
 		if (block->type == BOX_BLOCK)
 			layout_block_add_scrollbar(block, BOTTOM);
 	}
+	layout_apply_minmax_height(block);
 
 	return true;
 }
