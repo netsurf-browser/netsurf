@@ -62,7 +62,7 @@ PERL=perl
 MKDIR=mkdir
 TOUCH=touch
 
-OBJROOT := $(HOST)-$(TARGET)
+OBJROOT := build-$(HOST)-$(TARGET)
 
 $(OBJROOT)/created:
 	$(VQ)echo "   MKDIR: $(OBJROOT)"
