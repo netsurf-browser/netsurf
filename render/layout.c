@@ -187,7 +187,44 @@ bool layout_block_context(struct box *block, struct content *content)
 	assert(block->width != UNKNOWN_WIDTH);
 	assert(block->width != AUTO);
 
+#ifdef riscos
+	/* Why the ifdef? You don't really want to know. If you do, read on.
+	 *
+	 * So, the only way into this function is through the rest of the
+	 * layout code. The only external entry points into the layout code
+	 * are layout_document and layout_inline_container. The latter is only
+	 * ever called when editing text in form textareas, so we can ignore it
+	 * for the purposes of this discussion.
+	 *
+	 * layout_document is only ever called from html_reformat, which itself
+	 * is only ever called from content_reformat. content_reformat locks 
+	 * the content structure while reformatting is taking place.
+	 *
+	 * If we call gui_multitask here, then any pending UI events will get
+	 * processed. This includes window expose/redraw events. Upon receipt
+	 * of these events, the UI code will call content_redraw for the 
+	 * window's content. content_redraw will return immediately if the
+	 * content is currently locked (which it will be if we're still doing
+	 * layout).
+	 *
+	 * On RISC OS, this isn't a problem as the UI code's window redraw
+	 * handler explicitly checks for locked contents and does nothing
+	 * in that case. This effectively means that the window contents
+	 * aren't updated, so whatever's already in the window will remain
+	 * on-screen. On GTK, however, redraw is not direct-to-screen, but
+	 * to a pixmap which is then blitted to screen. If we perform no 
+	 * redraw, then the pixmap will be flat white. When this is 
+	 * subsequently blitted, the user gets greeted with an unsightly
+	 * flicker to white (and then back to the document when the content
+	 * is redrawn when unlocked).
+	 *
+	 * In the long term, this upcall into the GUI event dispatch code needs
+	 * to disappear. It needs to remain for the timebeing, however, as
+	 * document reflow can be fairly time consuming and we need to remain
+	 * responsive to user input.
+	 */
 	gui_multitask();
+#endif
 
 	block->float_children = 0;
 
