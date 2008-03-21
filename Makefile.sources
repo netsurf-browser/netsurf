@@ -95,7 +95,7 @@ endif
 
 clean-intermediates:
 	$(VQ)echo "   CLEAN: intermediates"
-	$(Q)$(RM) css/css_enum.c css/css_enum.h css/parser.c css/parser.h
+	$(Q)$(RM) css/css_enum.c css/css_enum.h css/parser.c css/parser.out css/parser.h
 	$(Q)$(RM) css/scanner.c utils/translit.c
 
 CLEANS += clean-intermediates
