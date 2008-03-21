@@ -49,7 +49,13 @@
   or similar.  Please don't be tempted to mention Mozilla or similar - let's
   let that lie die.
 
+  If the user hasn't specified one in their Preferences, NetSurf defaults to
+  visiting a "portal" welcome page on http://www.netsurf-browser.org/ - if you
+  wish to change this, you need to do it two places currently; in the
+  function gui_init2() in gtk/gtk_gui.c and nsgtk_window_home_button_clicked()
+  in gtk/gtk_scaffolding.c.
+
   If you make significant changes to NetSurf in your package, please ask your
-  users to report bugs to your but tracker, not ours.  We'd also be interested
+  users to report bugs to your bug tracker, not ours.  We'd also be interested
   in seeing the diffs for these changes - we may be able to integrate them
   to make your job easier in future.
