@@ -7,13 +7,13 @@
 
       $ make
 
-  Once built, NetSurf can be run by executing 'netsurf' shell script:
+  Once built, NetSurf can be run by executing the 'netsurf' shell script:
 
       $ ./netsurf
 
   This script makes it easy to run the nsgtk binary from the build tree. It
-  sets up some environment variables which enable the NetSurf binary to find
-  its resources.
+  sets up some environment variables which enable NetSurf to find its
+  resources.
 
   Tested on Debian, Ubuntu, Fedora 8, FreeBSD, NetBSD and Solaris 10.
 
@@ -38,9 +38,9 @@
       $ yum install libglade2-devel curl-devel libxml2-devel libmng-devel
       $ yum install librsvg2-devel lcms-devel re2c
 
-  If your distribution does not package 'lemon' (like Fedora doesn't) then
-  you'll need to download it and build it yourself. You may find it comes with
-  the SQLite packages (SQLite's parser is built with lemon). If not, try this:
+  If your distribution does not package 'lemon' (Fedora doesn't) then you'll
+  need to download it and build it yourself. You may find it comes with the
+  SQLite packages (SQLite's parser is built with lemon). If not, try this:
 
       $ mkdir -p /usr/local/share/lemon
       $ wget http://www.sqlite.org/cvstrac/getfile/sqlite/tool/lemon.c
