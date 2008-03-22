@@ -49,6 +49,7 @@ ifeq ($(TARGET),)
 TARGET := gtk
 endif
 endif
+SUBTARGET =
 
 ifneq ($(TARGET),riscos)
 ifneq ($(TARGET),gtk)
@@ -62,24 +63,6 @@ PERL=perl
 MKDIR=mkdir
 TOUCH=touch
 
-OBJROOT := build-$(HOST)-$(TARGET)
-
-$(OBJROOT)/created:
-	$(VQ)echo "   MKDIR: $(OBJROOT)"
-	$(Q)$(MKDIR) $(OBJROOT)
-	$(Q)$(TOUCH) $(OBJROOT)/created
-
-DEPROOT := $(OBJROOT)/deps
-$(DEPROOT)/created: $(OBJROOT)/created
-	$(VQ)echo "   MKDIR: $(DEPROOT)"
-	$(Q)$(MKDIR) $(DEPROOT)
-	$(Q)$(TOUCH) $(DEPROOT)/created
-
-WARNFLAGS = -W -Wall -Wundef -Wpointer-arith \
-	-Wcast-align -Wwrite-strings -Wstrict-prototypes \
-	-Wmissing-prototypes -Wmissing-declarations -Wredundant-decls \
-	-Wnested-externs -Winline -Wno-unused-parameter -Wuninitialized
-
 ifeq ($(TARGET),riscos)
 ifeq ($(HOST),riscos)
 # Build for RO on RO
@@ -88,11 +71,19 @@ CC := gcc
 EXEEXT :=
 PKG_CONFIG :=
 else
-# Cross-build for RO
+# Cross-build for RO (either using GCCSDK 3.4.6 - AOF,
+# either using GCCSDK 4 - ELF)
 GCCSDK_INSTALL_ENV ?= /home/riscos/env
 GCCSDK_INSTALL_CROSSBIN ?= /home/riscos/cross/bin
-CC := $(GCCSDK_INSTALL_CROSSBIN)/gcc
+CC := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*gcc)
+ifneq (,$(findstring arm-unknown-riscos-gcc,$(CC)))
+SUBTARGET := -elf
+EXEEXT := ,e1f
+ELF2AIF := $(GCCSDK_INSTALL_CROSSBIN)/elf2aif
+else
+SUBTARGET := -aof
 EXEEXT := ,ff8
+endif
 PKG_CONFIG := $(GCCSDK_INSTALL_ENV)/ro-pkg-config
 endif
 else
@@ -141,15 +132,39 @@ CFLAGS += -I$(GCCSDK_INSTALL_ENV)/include		\
 ifeq ($(HOST),riscos)
 CFLAGS += -I<OSLib$$Dir> -mthrowback
 endif
-ASFLAGS += -I. -I$(GCCSDK_INSTALL_ENV)/include
+ASFLAGS += -xassembler-with-cpp -I. -I$(GCCSDK_INSTALL_ENV)/include
 LDFLAGS += -L$(GCCSDK_INSTALL_ENV)/lib -lcares -lrufl -lpencil \
 	-lsvgtiny
 ifeq ($(HOST),riscos)
 LDFLAGS += -LOSLib: -lOSLib32
 else
 LDFLAGS += -lOSLib32
+ifeq ($(SUBTARGET),-elf)
+# Go for static builds & AIF binary at the moment:
+CFLAGS += -static
+LDFLAGS += -static
+EXEEXT := ,ff8
 endif
 endif
+endif
+
+OBJROOT := build-$(HOST)-$(TARGET)$(SUBTARGET)
+
+$(OBJROOT)/created:
+	$(VQ)echo "   MKDIR: $(OBJROOT)"
+	$(Q)$(MKDIR) $(OBJROOT)
+	$(Q)$(TOUCH) $(OBJROOT)/created
+
+DEPROOT := $(OBJROOT)/deps
+$(DEPROOT)/created: $(OBJROOT)/created
+	$(VQ)echo "   MKDIR: $(DEPROOT)"
+	$(Q)$(MKDIR) $(DEPROOT)
+	$(Q)$(TOUCH) $(DEPROOT)/created
+
+WARNFLAGS = -W -Wall -Wundef -Wpointer-arith \
+	-Wcast-align -Wwrite-strings -Wstrict-prototypes \
+	-Wmissing-prototypes -Wmissing-declarations -Wredundant-decls \
+	-Wnested-externs -Winline -Wno-unused-parameter -Wuninitialized
 
 CLEANS := clean-target
 
@@ -159,7 +174,13 @@ OBJECTS := $(sort $(addprefix $(OBJROOT)/,$(subst /,_,$(patsubst %.c,%.o,$(patsu
 
 $(EXETARGET): $(OBJECTS)
 	$(VQ)echo "    LINK: $(EXETARGET)"
+ifneq ($(TARGET)$(SUBTARGET),riscos-elf)
 	$(Q)$(CC) -o $(EXETARGET) $(OBJECTS) $(LDFLAGS)
+else
+	$(Q)$(CC) -o $(EXETARGET:,ff8=,e1f) $(OBJECTS) $(LDFLAGS)
+	$(Q)$(ELF2AIF) $(EXETARGET:,ff8=,e1f) $(EXETARGET)
+	$(Q)$(RM) $(EXETARGET:,ff8=,e1f)
+endif
 
 clean-target:
 	$(VQ)echo "   CLEAN: $(EXETARGET)"
