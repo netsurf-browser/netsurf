@@ -80,6 +80,11 @@ static void nsgtk_redraw_caret(struct gui_window *g);
 
 static GdkCursor *nsgtk_create_menu_cursor(void);
 
+struct browser_window *nsgtk_get_browser_window(struct gui_window *g)
+{
+	return g->bw;
+}
+
 nsgtk_scaffolding *nsgtk_get_scaffold(struct gui_window *g)
 {
         return g->scaffold;

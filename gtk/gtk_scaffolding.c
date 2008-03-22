@@ -146,6 +146,7 @@ MENUPROTO(status_bar);
 MENUPROTO(downloads);
 MENUPROTO(save_window_size);
 MENUPROTO(toggle_debug_rendering);
+MENUPROTO(save_box_tree);
 
 /* navigate menu */
 MENUPROTO(back);
@@ -184,6 +185,7 @@ static struct menu_events menu_events[] = {
 	MENUEVENT(downloads),
 	MENUEVENT(save_window_size),
 	MENUEVENT(toggle_debug_rendering),
+	MENUEVENT(save_box_tree),
 
 	/* navigate menu */
 	MENUEVENT(back),
@@ -548,9 +550,49 @@ MENUHANDLER(save_window_size)
 MENUHANDLER(toggle_debug_rendering)
 {
 	html_redraw_debug = !html_redraw_debug;
-	gui_window_redraw_window(g);
-
+	nsgtk_reflow_all_windows();
 	return TRUE;
+}
+
+MENUHANDLER(save_box_tree)
+{
+	GtkWidget *save_dialog;
+	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
+	
+	save_dialog = gtk_file_chooser_dialog_new("Save File", gw->window,
+		GTK_FILE_CHOOSER_ACTION_SAVE,
+		GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+		GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+		NULL);
+	
+	gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(save_dialog),
+		getenv("HOME") ? getenv("HOME") : "/");
+	
+	gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(save_dialog),
+		"boxtree.txt");
+	
+	if (gtk_dialog_run(GTK_DIALOG(save_dialog)) == GTK_RESPONSE_ACCEPT) {
+		char *filename = gtk_file_chooser_get_filename(
+			GTK_FILE_CHOOSER(save_dialog));
+		FILE *fh;
+		LOG(("Saving box tree dump to %s...\n", filename));
+		
+		fh = fopen(filename, "w");
+		if (fh == NULL) {
+			warn_user("Error saving box tree dump.",
+				"Unable to open file for writing.");
+		} else {
+			struct browser_window *bw;
+			bw = nsgtk_get_browser_window(gw->top_level);
+			box_dump(fh, bw->current_content->data.html.layout->children,
+				0);
+			fclose(fh);
+		}
+		
+		g_free(filename);
+	}
+	
+	gtk_widget_destroy(save_dialog);
 }
 
 MENUHANDLER(stop)

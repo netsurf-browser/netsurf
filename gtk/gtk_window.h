@@ -20,6 +20,7 @@
 #define NETSURF_GTK_WINDOW_H 1
 
 #include "desktop/gui.h"
+#include "desktop/browser.h"
 #include "gtk/gtk_scaffolding.h"
 
 void nsgtk_reflow_all_windows(void);
@@ -31,5 +32,7 @@ struct browser_window *nsgtk_get_browser_for_gui(struct gui_window *g);
 float nsgtk_get_scale_for_gui(struct gui_window *g);
 int nsgtk_gui_window_update_targets(struct gui_window *g);
 void nsgtk_window_destroy_browser(struct gui_window *g);
+
+struct browser_window *nsgtk_get_browser_window(struct gui_window *g);
 
 #endif /* NETSURF_GTK_WINDOW_H */
