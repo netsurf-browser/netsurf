@@ -111,13 +111,17 @@ bool nsfont_position_in_string(const struct css_style *style,
 	pango_layout_set_text(layout, string, length);
 
 	pango_layout_xy_to_index(layout, x * PANGO_SCALE, 0, &index, 0);
+	if (pango_layout_xy_to_index(layout, x * PANGO_SCALE,
+		0, &index, 0) == 0)
+		index = length;
+
 	pango_layout_index_to_pos(layout, index, &pos);
 
 	g_object_unref(layout);
 	g_object_unref(context);
 	pango_font_description_free(desc);
 
-	*char_offset = index?index+1:0;
+	*char_offset = index;
 	*actual_x = PANGO_PIXELS(pos.x);
 
 	return true;
