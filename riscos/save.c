@@ -484,8 +484,11 @@ void ro_gui_save_drag_end(wimp_dragged *drag)
 	}
 
 	/* ignore drags that remain within the source window */
-	if (gui_save_sourcew != (wimp_w)-1 && pointer.w == gui_save_sourcew)
+	if (gui_save_sourcew != (wimp_w)-1 && pointer.w == gui_save_sourcew) {
+		/* cancel the drag operation */
+		gui_current_drag_type = GUI_DRAG_NONE;
 		return;
+	}
 
 	if (!saving_from_dialog) {
 		/* saving directly from browser window, choose a
