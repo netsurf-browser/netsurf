@@ -36,6 +36,11 @@ HOST := $(shell uname -s)
 ifeq ($(HOST),)
 HOST := riscos
 $(warning Build platform determination failed but that's a known problem for RISC OS so we're assuming a native RISC OS build.)
+else
+ifeq ($(HOST),RISC OS)
+# Fixup uname -s returning "RISC OS"
+HOST := riscos
+endif
 endif
 
 ifeq ($(HOST),riscos)
