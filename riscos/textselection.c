@@ -121,6 +121,7 @@ void gui_start_selection(struct gui_window *g)
 				error->errnum, error->errmess));
 
 	gui_current_drag_type = GUI_DRAG_SELECTION;
+	gui_track_gui_window = g;
 
 	drag.type = wimp_DRAG_USER_POINT;
 	drag.bbox.x0 = state.visible.x0;
