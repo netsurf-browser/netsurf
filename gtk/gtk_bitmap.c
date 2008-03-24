@@ -171,10 +171,11 @@ void bitmap_destroy(struct bitmap *bitmap)
  *
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  * \param  path    pathname for file
+ * \param  flags   modify the behaviour of the save
  * \return true on success, false on error and error reported
  */
 
-bool bitmap_save(struct bitmap *bitmap, const char *path)
+bool bitmap_save(struct bitmap *bitmap, const char *path, unsigned flags)
 {
 	GError *err = NULL;
 

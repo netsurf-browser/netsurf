@@ -424,7 +424,7 @@ void ro_gui_set_icon_decimal(wimp_w w, wimp_i i, int value, int decimal_places) 
 			sprintf(buffer, "%.2f", (float)value / 100);
 			break;
 		default:
-			assert("Unsupported decimal format");
+			assert(!"Unsupported decimal format");
 			break;
 	}
 	ro_gui_set_icon_string(w, i, buffer);

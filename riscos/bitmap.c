@@ -1,6 +1,7 @@
 /*
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2005 Richard Wilson <info@tinct.net>
+ * Copyright 2008 Adrian Lees <adrianl@users.sourceforge.net>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -30,7 +31,9 @@
 #include <swis.h>
 #include <unixlib/local.h>
 #include "oslib/osfile.h"
-#include <oslib/osspriteop.h>
+#include "oslib/osfind.h"
+#include "oslib/osgbpb.h"
+#include "oslib/osspriteop.h"
 #include "content/content.h"
 #include "image/bitmap.h"
 #include "riscos/bitmap.h"
@@ -47,6 +50,9 @@
 #define OVERLAY_INDEX 0xfe
 
 #define MAINTENANCE_THRESHOLD 32
+
+/** Size of buffer used when constructing mask data to be saved */
+#define SAVE_CHUNK_SIZE 4096
 
 /** The head of the bitmap list
 */
@@ -96,7 +102,6 @@ struct bitmap_compressed_header {
 
 char bitmap_unixname[256];
 char bitmap_filename[256];
-
 
 static bool bitmap_initialise(struct bitmap *bitmap);
 static void bitmap_decompress(struct bitmap *bitmap);
@@ -564,25 +569,170 @@ void bitmap_destroy(struct bitmap *bitmap)
  *
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  * \param  path	   pathname for file
+ * \param  flags   modify the behaviour of the save
  * \return true on success, false on error and error reported
  */
 
-bool bitmap_save(struct bitmap *bitmap, const char *path)
+bool bitmap_save(struct bitmap *bitmap, const char *path, unsigned flags)
 {
 	os_error *error;
+
 	if (!bitmap->sprite_area)
 		bitmap_get_buffer(bitmap);
 	if (!bitmap->sprite_area)
 		return false;
-	error = xosspriteop_save_sprite_file(osspriteop_USER_AREA,
-					     (bitmap->sprite_area), path);
-	if (error) {
-		LOG(("xosspriteop_save_sprite_file: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("SaveError", error->errmess);
-		return false;
+
+	if (bitmap_get_opaque(bitmap)) {
+		error = xosspriteop_save_sprite_file(osspriteop_USER_AREA,
+						     (bitmap->sprite_area), path);
+		if (error) {
+			LOG(("xosspriteop_save_sprite_file: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("SaveError", error->errmess);
+			return false;
+		}
+		return true;
+	} else {
+		/* to make the saved sprite useful we must convert from 'Tinct'
+		   format to either a bi-level mask or a Select-style full
+		   alpha channel */
+		osspriteop_area *area = bitmap->sprite_area;
+		osspriteop_header *hdr = (osspriteop_header*)((char*)area+area->first);
+		unsigned width = hdr->width + 1, height = hdr->height + 1;
+		unsigned image_size = height * width * 4;
+		unsigned char *chunk_buf;
+		unsigned *p, *elp, *eip;
+		unsigned mask_size;
+		size_t chunk_pix;
+		struct {
+			osspriteop_area   area;
+			osspriteop_header hdr;
+		} file_hdr;
+		os_fw fw;
+
+		/* we only support 32bpp sprites */
+		if ((((unsigned)hdr->mode >> 27)&15) != 6) {
+			assert(!"Unsupported sprite format in bitmap_save");
+			return false;
+		}
+
+		chunk_buf = malloc(SAVE_CHUNK_SIZE);
+		if (!chunk_buf) {
+			warn_user("NoMemory", NULL);
+			return false;
+		}
+
+		file_hdr.area = *area;
+		file_hdr.hdr  = *hdr;
+
+		if (flags & BITMAP_SAVE_FULL_ALPHA) {
+			mask_size = ((width + 3) & ~3) * height;
+			chunk_pix = SAVE_CHUNK_SIZE;
+			file_hdr.hdr.mode = (os_mode)((unsigned)file_hdr.hdr.mode
+					| (1U<<31));
+		} else {
+			mask_size = (((width + 31) & ~31)/8) * height;
+			chunk_pix = SAVE_CHUNK_SIZE<<3;
+			file_hdr.hdr.mode = (os_mode)((unsigned)file_hdr.hdr.mode
+					& ~(1U<<31));
+		}
+
+		file_hdr.area.sprite_count = 1;
+		file_hdr.area.first = sizeof(file_hdr.area);
+		file_hdr.area.used = sizeof(file_hdr) + image_size + mask_size;
+
+		file_hdr.hdr.image = sizeof(file_hdr.hdr);
+		file_hdr.hdr.mask = file_hdr.hdr.image + image_size;
+		file_hdr.hdr.size = file_hdr.hdr.mask + mask_size;
+
+		error = xosfind_openoutw(0, path, NULL, &fw);
+		if (error) {
+			LOG(("xosfind_openoutw: 0x%x: %s",
+					error->errnum, error->errmess));
+			free(chunk_buf);
+			warn_user("SaveError", error->errmess);
+			return false;
+		}
+
+		p = (unsigned*)((char*)hdr + hdr->image);
+
+		/* write out the area header, sprite header and image data */
+		error = xosgbpb_writew(fw, (byte*)&file_hdr + 4,
+				sizeof(file_hdr)-4, NULL);
+		if (!error)
+			error = xosgbpb_writew(fw, (byte*)p, image_size, NULL);
+		if (error) {
+			LOG(("xosgbpb_writew: 0x%x: %s", error->errnum, error->errmess));
+			free(chunk_buf);
+			xosfind_closew(fw);
+			warn_user("SaveError", error->errmess);
+			return false;
+		}
+
+		/* then write out the mask data in chunks */
+		eip = p + (width * height);  /* end of image */
+		elp = p + width;  /* end of line */
+
+		while (p < eip) {
+			unsigned char *dp = chunk_buf;
+			unsigned *ep = p + chunk_pix;
+			if (ep > elp) ep = elp;
+
+			if (flags & BITMAP_SAVE_FULL_ALPHA) {
+				while (p < ep) {
+					*dp++ = ((unsigned char*)p)[3];
+					p++;
+				}
+			}
+			else {
+				unsigned char mb = 0;
+				int msh = 0;
+				while (p < ep) {
+					if (((unsigned char*)p)[3]) mb |= (1 << msh);
+					if (++msh >= 8) {
+						*dp++ = mb;
+						msh = 0;
+						mb = 0;
+					}
+					p++;
+				}
+				if (msh > 0) *dp++ = mb;
+			}
+
+			if (p >= elp) {  /* end of line yet? */
+				/* align to word boundary */
+				while ((int)dp & 3) *dp++ = 0;
+				/* advance end of line pointer */
+				elp += width;
+			}
+			error = xosgbpb_writew(fw, (byte*)chunk_buf, dp-chunk_buf, NULL);
+			if (error) {
+				LOG(("xosgbpb_writew: 0x%x: %s",
+					error->errnum, error->errmess));
+				free(chunk_buf);
+				xosfind_closew(fw);
+				warn_user("SaveError", error->errmess);
+				return false;
+			}
+		}
+
+		error = xosfind_closew(fw);
+		if (error) {
+			LOG(("xosfind_closew: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("SaveError", error->errmess);
+		}
+
+		error = xosfile_set_type(path, osfile_TYPE_SPRITE);
+		if (error) {
+			LOG(("xosfile_set_type: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("SaveError", error->errmess);
+		}
+
+		free(chunk_buf);
+		return true;
 	}
-	return true;
 }
 
 

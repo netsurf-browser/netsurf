@@ -841,8 +841,11 @@ void ro_gui_save_object_native(struct content *c, char *path)
 		case CONTENT_BMP:
 		case CONTENT_ICO:
 #endif
-			bitmap_save(c->bitmap, path);
-			break;
+		{
+			unsigned flags = (os_version == 0xA9) ? BITMAP_SAVE_FULL_ALPHA : 0;
+			bitmap_save(c->bitmap, path, flags);
+		}
+		break;
 
 #ifdef WITH_SPRITE
 		case CONTENT_SPRITE: {

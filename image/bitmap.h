@@ -39,6 +39,8 @@
 #define BITMAP_SUSPENDED	(1 << 4)	/** currently suspended */
 #define BITMAP_READY		(1 << 5)	/** fully initialised */
 
+#define BITMAP_SAVE_FULL_ALPHA	(1 << 0)	/** save with full alpha channel (if not opaque) */ 
+
 struct content;
 
 /** An opaque image. */
@@ -51,7 +53,7 @@ bool bitmap_get_opaque(struct bitmap *bitmap);
 char *bitmap_get_buffer(struct bitmap *bitmap);
 size_t bitmap_get_rowstride(struct bitmap *bitmap);
 void bitmap_destroy(struct bitmap *bitmap);
-bool bitmap_save(struct bitmap *bitmap, const char *path);
+bool bitmap_save(struct bitmap *bitmap, const char *path, unsigned flags);
 void bitmap_modified(struct bitmap *bitmap);
 void bitmap_set_suspendable(struct bitmap *bitmap, void *private_word,
 		void (*invalidate)(struct bitmap *bitmap, void *private_word));
