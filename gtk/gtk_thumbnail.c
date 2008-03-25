@@ -47,19 +47,35 @@
 bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 		const char *url)
 {
-        GdkPixbuf *pixbuf = gtk_bitmap_get_primary(bitmap);
-	gint width = gdk_pixbuf_get_width(pixbuf);
-	gint height = gdk_pixbuf_get_height(pixbuf);
-	gint depth = (gdk_screen_get_system_visual(gdk_screen_get_default()))->depth;
-	GdkPixmap *pixmap = gdk_pixmap_new(NULL, content->width, content->width, depth);
+        GdkPixbuf *pixbuf;
+	gint width;
+	gint height;
+	gint depth;
+	GdkPixmap *pixmap;
 	GdkPixbuf *big;
+
+	assert(content);
+	assert(bitmap);
+
+	pixbuf = gtk_bitmap_get_primary(bitmap);
+	width = gdk_pixbuf_get_width(pixbuf);
+	height = gdk_pixbuf_get_height(pixbuf);
+	depth = (gdk_screen_get_system_visual(gdk_screen_get_default()))->depth;
 
 	LOG(("Trying to create a thumbnail pixmap for a content of %dx%d@%d",
 		content->width, content->width, depth));
 
-	assert(content);
-	assert(bitmap);
-	assert(pixmap);
+	pixmap = gdk_pixmap_new(NULL, content->width, content->width, depth);
+	
+	if (pixmap == NULL) {
+		/* the creation failed for some reason: most likely because
+		 * we've been asked to create with with at least one dimention
+		 * as zero.  The RISC OS thumbnail generator returns false
+		 * from here when it can't create a bitmap, so we assume it's
+		 * safe to do so here too.
+		 */
+		return false;
+	}
 
 	gdk_drawable_set_colormap(pixmap, gdk_colormap_get_system());
 
