@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
-  Bulid Instructions for GTK NetSurf                             21 March 2008
+  Build Instructions for GTK NetSurf                             21 March 2008
 --------------------------------------------------------------------------------
 
   To build GTK NetSurf on a UNIX-like platform, provided you have the relevant
@@ -8,7 +8,9 @@
       $ make
 
   If that produces errors, you probably don't have some of NetSurf's build
-  dependencies installed. See "Obtaining NetSurf's dependencies" below.
+  dependencies installed. See "Obtaining NetSurf's dependencies" below. You
+  may need to "make clean" before attempting to build after installing the 
+  dependencies.
 
   Run NetSurf by executing the 'netsurf' shell script:
 
