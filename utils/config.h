@@ -73,6 +73,7 @@ char *strndup(const char *s, size_t n);
 #else
     /* We're likely to have a working mmap() */
     #define WITH_MMAP
+    #define WITH_NSSPRITE
     #if !defined(DEBUG_BUILD)
         /* Use librsvg and Cairo for rendering SVG */
         #define WITH_RSVG
@@ -81,6 +82,10 @@ char *strndup(const char *s, size_t n);
 
 #if defined(WITH_NS_SVG) && defined(WITH_RSVG)
     #error Cannot build WITH_NS_SVG and WITH_RSVG both enabled
+#endif
+
+#if defined(WITH_NSSPRITE) && defined(WITH_SPRITE)
+    #error Cannot build WITH_NSSPRITE and WITH_SPRITE both enabled
 #endif
 
 #if defined(riscos) || defined(DEBUG_BUILD)

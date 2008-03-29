@@ -112,11 +112,12 @@ GTKCFLAGS := -std=c99 -Dgtk -Dnsgtk \
 	-D_XOPEN_SOURCE=600 \
 	-D_POSIX_C_SOURCE=200112L \
 	-D_NETBSD_SOURCE \
-	$(WARNFLAGS) -I. -g -O \
+	$(WARNFLAGS) -I. -I../../libsprite/trunk/ -g -O \
 	$(shell $(PKG_CONFIG) --cflags libglade-2.0 gtk+-2.0 librsvg-2.0) \
+	$(shell $(PKG_CONFIG) --cflags librosprite) \
 	$(shell xml2-config --cflags)
 
-GTKLDFLAGS := $(shell $(PKG_CONFIG) --cflags --libs libglade-2.0 gtk+-2.0 gthread-2.0 gmodule-2.0 librsvg-2.0)
+GTKLDFLAGS := $(shell $(PKG_CONFIG) --cflags --libs libglade-2.0 gtk+-2.0 gthread-2.0 gmodule-2.0 librsvg-2.0 librosprite)
 CFLAGS += $(GTKCFLAGS)
 LDFLAGS += $(GTKLDFLAGS) $(shell $(PKG_CONFIG) --libs lcms)
 

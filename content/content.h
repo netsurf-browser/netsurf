@@ -51,6 +51,9 @@
 #ifdef WITH_SPRITE
 #include "riscos/sprite.h"
 #endif
+#ifdef WITH_NSSPRITE
+#include "image/nssprite.h"
+#endif
 #ifdef WITH_DRAW
 #include "riscos/draw.h"
 #endif
@@ -172,6 +175,9 @@ struct content {
 #endif
 #ifdef WITH_SPRITE
 		struct content_sprite_data sprite;
+#endif
+#ifdef WITH_NSSPRITE
+		struct content_nssprite_data nssprite;
 #endif
 #ifdef WITH_DRAW
 		struct content_draw_data draw;

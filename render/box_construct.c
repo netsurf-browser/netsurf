@@ -66,7 +66,7 @@ static const content_type image_types[] = {
 	CONTENT_JNG,
 	CONTENT_MNG,
 #endif
-#ifdef WITH_SPRITE
+#if defined(WITH_SPRITE) || defined(WITH_NSSPRITE)
 	CONTENT_SPRITE,
 #endif
 #ifdef WITH_DRAW

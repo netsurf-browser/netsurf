@@ -63,6 +63,9 @@
 #ifdef WITH_SPRITE
 #include "riscos/sprite.h"
 #endif
+#ifdef WITH_NSSPRITE
+#include "image/nssprite.h"
+#endif
 #ifdef WITH_DRAW
 #include "riscos/draw.h"
 #endif
@@ -168,7 +171,7 @@ static const struct mime_entry mime_map[] = {
 #ifdef WITH_BMP
 	{"image/x-ms-bmp", CONTENT_BMP},
 #endif
-#ifdef WITH_SPRITE
+#if defined(WITH_SPRITE) || defined(WITH_NSSPRITE)
 	{"image/x-riscos-sprite", CONTENT_SPRITE},
 #endif
 #ifdef WITH_BMP
@@ -205,7 +208,7 @@ const char *content_type_name[] = {
 	"JNG",
 	"MNG",
 #endif
-#ifdef WITH_SPRITE
+#if defined(WITH_SPRITE) || defined(WITH_NSSPRITE)
 	"SPRITE",
 #endif
 #ifdef WITH_DRAW
@@ -300,6 +303,10 @@ static const struct handler_entry handler_map[] = {
 #ifdef WITH_SPRITE
 	{0, 0, sprite_convert,
 		0, sprite_destroy, 0, sprite_redraw, 0, 0, 0, false},
+#endif
+#ifdef WITH_NSSPRITE
+	{0, 0, nssprite_convert,
+		0, nssprite_destroy, 0, nssprite_redraw, 0, 0, 0, false},
 #endif
 #ifdef WITH_DRAW
 	{0, 0, draw_convert,
