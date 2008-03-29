@@ -22,9 +22,9 @@
  */
 
 #include <assert.h>
-#include <librosprite.h>
 #include <string.h>
 #include <stdlib.h>
+
 #include "utils/config.h"
 #include "desktop/plotters.h"
 #include "content/content.h"
