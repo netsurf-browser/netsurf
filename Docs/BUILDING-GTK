@@ -63,7 +63,7 @@
 =======================================
   By default, sprite rendering is enabled.  This requires librosprite to be
   built and installed.  If you don't want to do this, remove the following line
-  from util/config.h:
+  from utils/config.h:
 
       #define WITH_NSSPRITE
 
