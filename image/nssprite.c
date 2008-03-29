@@ -34,6 +34,8 @@
 
 #ifdef WITH_NSSPRITE
 
+#include <librosprite.h>
+
 #define ERRCHK(x) do { \
 	rosprite_error err = x; \
 	if (err == ROSPRITE_EOF) { \
