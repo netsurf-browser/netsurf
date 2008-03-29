@@ -49,7 +49,6 @@ struct selection
 	unsigned end_idx;
 
 	bool defined;
-	bool last_was_end;
 
 	seln_drag_state drag_state;
 };

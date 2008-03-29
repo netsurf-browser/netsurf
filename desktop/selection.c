@@ -188,7 +188,6 @@ void selection_init(struct selection *s, struct box *root)
 	s->defined = false;
 	s->start_idx = 0;
 	s->end_idx = 0;
-	s->last_was_end = true;
 	s->drag_state = DRAG_NONE;
 
 	selection_reinit(s, root);
@@ -277,7 +276,7 @@ bool selection_click(struct selection *s, browser_mouse_state mouse, unsigned id
 			if (!selection_defined(s))
 				return false;	/* ignore Adjust drags */
 
-			if (pos > 0 || (!pos && s->last_was_end)) {
+			if (pos >= 0) {
 				selection_set_end(s, idx);
 
 				s->drag_state = DRAG_END;
@@ -301,7 +300,7 @@ bool selection_click(struct selection *s, browser_mouse_state mouse, unsigned id
 			if (!selection_defined(s))
 				return false;
 
-			if (pos > 0 || (!pos && s->last_was_end))
+			if (pos >= 0)
 				selection_set_end(s, idx);
 			else
 				selection_set_start(s, idx);
@@ -622,7 +621,6 @@ void selection_clear(struct selection *s, bool redraw)
 	s->defined = false;
 	s->start_idx = 0;
 	s->end_idx = 0;
-	s->last_was_end = true;
 
 	if (redraw && was_defined)
 		selection_redraw(s, old_start, old_end);
@@ -672,7 +670,6 @@ void selection_set_start(struct selection *s, unsigned offset)
 	unsigned old_start = s->start_idx;
 
 	s->start_idx = offset;
-	s->last_was_end = false;
 	s->defined = (s->start_idx < s->end_idx);
 
 	if (was_defined) {
@@ -699,7 +696,6 @@ void selection_set_end(struct selection *s, unsigned offset)
 	unsigned old_end = s->end_idx;
 
 	s->end_idx = offset;
-	s->last_was_end = true;
 	s->defined = (s->start_idx < s->end_idx);
 
 	if (was_defined) {
