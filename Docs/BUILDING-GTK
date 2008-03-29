@@ -58,3 +58,19 @@
   This will pull in loads of things, like all the GTK dev libraries, the PNG
   and JPEG libraries, colour management libraries, zlib, OpenSSL etc that
   NetSurf also depends on.
+
+  Compiling Sprite file  support for GTK
+=======================================
+  By default, Sprite rendering is enabled.  This requires librosprite to be
+  build and installed.  If you don't want to do this, sprite rendering can be
+  disabled by deleting the following line in utils/config.h:
+
+    #define WITH_NSSPRITE
+
+  To build librosprite, check out from svn://svn.rjek.com/jshaw/libsprite/trunk
+  Build and install it:
+
+      $ make install
+
+  Optionally, specify an install prefix:
+      $ PREFIX=/path/to/install make install
