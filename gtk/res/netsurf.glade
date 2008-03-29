@@ -334,6 +334,8 @@
                                 <property name="label" translatable="yes">Zoom _in</property>
                                 <property name="use_underline">True</property>
                                 <accelerator key="plus" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+                                <accelerator key="KP_Add" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+                                <accelerator key="equal" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                                 <child internal-child="image">
                                   <widget class="GtkImage" id="image564">
                                     <property name="visible">True</property>
@@ -349,6 +351,7 @@
                                 <property name="label" translatable="yes">_Normal size</property>
                                 <property name="use_underline">True</property>
                                 <accelerator key="0" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+                                <accelerator key="KP_0" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                                 <child internal-child="image">
                                   <widget class="GtkImage" id="image565">
                                     <property name="visible">True</property>
@@ -364,6 +367,7 @@
                                 <property name="label" translatable="yes">Zoom _out</property>
                                 <property name="use_underline">True</property>
                                 <accelerator key="minus" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+                                <accelerator key="KP_Subtract" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                                 <child internal-child="image">
                                   <widget class="GtkImage" id="image566">
                                     <property name="visible">True</property>
