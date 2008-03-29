@@ -61,8 +61,8 @@
 
   Compiling Sprite file  support for GTK
 =======================================
-  By default, Sprite rendering is enabled.  This requires librosprite to be
-  build and installed.  If you don't want to do this, sprite rendering can be
+  By default, sprite rendering is enabled.  This requires librosprite to be
+  built and installed.  If you don't want to do this, sprite rendering can be
   disabled by deleting the following line in utils/config.h:
 
     #define WITH_NSSPRITE
