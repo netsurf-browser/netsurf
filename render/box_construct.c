@@ -1243,13 +1243,14 @@ struct css_style * box_get_style(struct content *c,
 			else if (strcasecmp(s, "left") == 0)
 				markup_track->align = ALIGN_LEFT;
 			xmlFree(s);
+			/* Need to remember if we're in a table, so that any
+			 * alignment rules set on the table's elements won't
+			 * get overridden by the default alignment of a cell
+			 * with no align attribute. At this point, we're in a
+			 * table if the element isn't a div */
+			if (strcmp((const char *) n->name, "div") != 0)
+				markup_track->table = true;
 		}
-		/* Need to remember if we're in a table, so that any alignment
-		 * rules set on the table's elements won't get overridden by the
-		 * default alignment of a cell with no align attribute.
-		 * At this point, we're in a table if the element isn't a div */
-		if (strcmp((const char *) n->name, "div") != 0)
-			markup_track->table = true;
 	}
 	/* Table cells without an align value have a default implied
 	 * alignment. */
