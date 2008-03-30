@@ -242,7 +242,7 @@ bool selection_click(struct selection *s, browser_mouse_state mouse, unsigned id
 		return false;	/* not our problem */
 
 	if (selection_defined(s)) {
-		if (idx >= s->start_idx) {
+		if (idx > s->start_idx) {
 			if (idx < s->end_idx)
 				pos = 0;
 			else
