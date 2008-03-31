@@ -80,13 +80,15 @@ typedef enum {
 } seln_whitespace;
 
 static bool redraw_handler(const char *text, size_t length, struct box *box,
-		void *handle, const char *whitespace_text);
+		void *handle, const char *whitespace_text,
+		size_t whitespace_length);
 static void selection_redraw(struct selection *s, unsigned start_idx,
 		unsigned end_idx);
 static unsigned selection_label_subtree(struct selection *s, struct box *node,
 		unsigned idx);
 static bool save_handler(const char *text, size_t length, struct box *box,
-		void *handle, const char *whitespace_text);
+		void *handle, const char *whitespace_text,
+		size_t whitespace_length);
 static bool selected_part(struct box *box, unsigned start_idx, unsigned end_idx,
 		unsigned *start_offset, unsigned *end_offset);
 static bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
@@ -214,7 +216,7 @@ void selection_init(struct selection *s, struct box *root)
  */
 
 unsigned selection_label_subtree(struct selection *s, struct box *node,
-								unsigned idx)
+		unsigned idx)
 {
 	struct box *child = node->children;
 
@@ -244,7 +246,7 @@ unsigned selection_label_subtree(struct selection *s, struct box *node,
  */
 
 bool selection_click(struct selection *s, browser_mouse_state mouse,
-								unsigned idx)
+		unsigned idx)
 {
 	browser_mouse_state modkeys =
 			(mouse & (BROWSER_MOUSE_MOD_1 | BROWSER_MOUSE_MOD_2));
@@ -340,7 +342,8 @@ bool selection_click(struct selection *s, browser_mouse_state mouse,
  * \param  idx    byte offset within text representation
  */
 
-void selection_track(struct selection *s, browser_mouse_state mouse, unsigned idx)
+void selection_track(struct selection *s, browser_mouse_state mouse,
+		unsigned idx)
 {
 	if (!SAME_SPACE(s, idx))
 		return;
@@ -448,6 +451,7 @@ bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 	struct box *child;
 	size_t box_length;
 	const char *whitespace_text = "";
+	size_t whitespace_length = 0;
 
 	/* we can prune this subtree, it's after the selection */
 	assert(box);
@@ -486,15 +490,19 @@ bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 			switch (*before) {
 				case WHITESPACE_TWO_NEW_LINES:
 					whitespace_text = "\n\n";
+					whitespace_length = 2;
 					break;
 				case WHITESPACE_ONE_NEW_LINE:
 					whitespace_text = "\n";
+					whitespace_length = 1;
 					break;
 				case WHITESPACE_TAB:
 					whitespace_text = "\t";
+					whitespace_length = 1;
 					break;
 				case WHITESPACE_NONE:
 					whitespace_text = "";
+					break;
 				default:
 					whitespace_text = "";
 					break;
@@ -514,7 +522,8 @@ bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 				&end_offset)) {
 			if (!handler(box->text + start_offset, min(box->length,
 					end_offset) - start_offset,
-					box, handle, whitespace_text))
+					box, handle, whitespace_text,
+					whitespace_length))
 				return false;
 			if (before) {
 				*first = false;
@@ -562,7 +571,7 @@ bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
  */
 
 bool selection_traverse(struct selection *s, seln_traverse_handler handler,
-								void *handle)
+		void *handle)
 {
 	struct content *c;
 	seln_whitespace before = WHITESPACE_NONE;
@@ -583,7 +592,7 @@ bool selection_traverse(struct selection *s, seln_traverse_handler handler,
 	const char *text = textplain_get_raw_data(c, s->start_idx,
 							s->end_idx, &length);
 
-	if (text && !handler(text, length, NULL, handle, NULL))
+	if (text && !handler(text, length, NULL, handle, NULL, 0))
 		return false;
 
 	return true;
@@ -594,17 +603,19 @@ bool selection_traverse(struct selection *s, seln_traverse_handler handler,
  * Selection traversal handler for redrawing the screen when the selection
  * has been altered.
  *
- * \param  text		    pointer to text string
- * \param  length	    length of text to be appended (bytes)
- * \param  box		    pointer to text box being (partially) added
- * \param  handle	    unused handle, we don't need one
- * \param  whitespace_text  whitespace to place before text for formatting
- *                          may be NULL
+ * \param  text		pointer to text string
+ * \param  length	length of text to be appended (bytes)
+ * \param  box		pointer to text box being (partially) added
+ * \param  handle	unused handle, we don't need one
+ * \param  whitespace_text    whitespace to place before text for formatting
+ *                            may be NULL
+ * \param  whitespace_length  length of whitespace_text
  * \return true iff successful and traversal should continue
  */
 
 bool redraw_handler(const char *text, size_t length, struct box *box,
-		void *handle, const char *whitespace_text)
+		void *handle, const char *whitespace_text,
+		size_t whitespace_length)
 {
 	if (box) {
 		struct rdw_info *r = (struct rdw_info*)handle;
@@ -885,21 +896,22 @@ bool selection_highlighted(struct selection *s, unsigned start, unsigned end,
 /**
  * Selection traversal handler for saving the text to a file.
  *
- * \param  text		    pointer to text being added, or NULL for newline
- * \param  length	    length of text to be appended (bytes)
- * \param  box		    pointer to text box (or NULL for textplain content)
- * \param  handle	    our save_state workspace pointer
- * \param  whitespace_text  whitespace to place before text for formatting
- *                          may be NULL
+ * \param  text		pointer to text being added, or NULL for newline
+ * \param  length	length of text to be appended (bytes)
+ * \param  box		pointer to text box (or NULL for textplain content)
+ * \param  handle	our save_state workspace pointer
+ * \param  whitespace_text    whitespace to place before text for formatting
+ *                            may be NULL
+ * \param  whitespace_length  length of whitespace_text
  * \return true iff the file writing succeeded and traversal should continue.
  */
 
 bool save_handler(const char *text, size_t length, struct box *box,
-		void *handle, const char *whitespace_text)
+		void *handle, const char *whitespace_text,
+		size_t whitespace_length)
 {
 	struct save_state *sv = handle;
 	size_t new_length;
-	size_t whitespace_length;
 	int space = 0;
 
 	assert(sv);
@@ -907,12 +919,8 @@ bool save_handler(const char *text, size_t length, struct box *box,
 	if (box->space > 0)
 		space = 1;
 
-	if (whitespace_text) {
-		whitespace_length = strlen(whitespace_text);
+	if (whitespace_text)
 		length += whitespace_length;
-	} else {
-		whitespace_length = 0;
-	}
 
 	new_length = sv->length + whitespace_length + length + space;
 	if (new_length >= sv->alloc) {

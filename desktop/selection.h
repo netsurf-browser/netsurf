@@ -55,7 +55,8 @@ struct selection
 
 
 typedef bool (*seln_traverse_handler)(const char *text, size_t length,
-		struct box *box, void *handle, const char *whitespace_text);
+		struct box *box, void *handle, const char *whitespace_text,
+		size_t whitespace_length);
 
 
 struct selection *selection_create(struct browser_window *bw);
