@@ -1,5 +1,6 @@
 /*
  * Copyright 2005 Adrian Lees <adrianl@users.sourceforge.net>
+ * Copyright 2008 Michael Drake <tlsa@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -449,7 +450,6 @@ bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 		void *handle, seln_whitespace *before, bool *first)
 {
 	struct box *child;
-	size_t box_length;
 	const char *whitespace_text = "";
 	size_t whitespace_length = 0;
 
@@ -513,7 +513,6 @@ bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 		whitespace_text = NULL;
 	}
 
-	box_length = box->length + box->space;  /* include trailing space */
 	if (num_space == NUMBER_SPACE(box->byte_offset) &&
 			box->type != BOX_BR) {
 		unsigned start_offset;
