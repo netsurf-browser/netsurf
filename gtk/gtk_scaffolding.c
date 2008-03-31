@@ -584,8 +584,15 @@ MENUHANDLER(save_box_tree)
 		} else {
 			struct browser_window *bw;
 			bw = nsgtk_get_browser_window(gw->top_level);
-			box_dump(fh, bw->current_content->data.html.layout->children,
-				0);
+
+			if (bw->current_content && 
+					bw->current_content->type == 
+					CONTENT_HTML) {
+				box_dump(fh, 
+					bw->current_content->data.html.layout,
+					0);
+			}
+
 			fclose(fh);
 		}
 		
