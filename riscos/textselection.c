@@ -60,8 +60,8 @@ static char *clipboard = NULL;
 static size_t clip_alloc = 0;
 static size_t clip_length = 0;
 
-static bool copy_handler(const char *text, size_t length, bool space,
-		struct box *box, void *handle);
+static bool copy_handler(const char *text, size_t length, struct box *box,
+		void *handle, const char *whitespace_text);
 static void ro_gui_discard_clipboard_contents(void);
 static void ro_gui_dragging_bounced(wimp_message *message);
 
@@ -189,22 +189,30 @@ void ro_gui_selection_drag_end(struct gui_window *g, wimp_dragged *drag)
  * Selection traversal routine for appending text to the current contents
  * of the clipboard.
  *
- * \param  text    pointer to text being added, or NULL for newline
- * \param  length  length of text to be appended (bytes)
- * \param  space   trailing space required after text
- * \param  box     pointer to text box, or NULL if from textplain
- * \param  handle  unused handle, we don't need one
+ * \param  text		    pointer to text being added, or NULL for newline
+ * \param  length	    length of text to be appended (bytes)
+ * \param  box		    pointer to text box, or NULL if from textplain
+ * \param  handle	    unused handle, we don't need one
+ * \param  whitespace_text  whitespace to place before text for formatting
+ *                          may be NULL
  * \return true iff successful and traversal should continue
  */
 
-bool copy_handler(const char *text, size_t length, bool space,
-		struct box *box, void *handle)
+bool copy_handler(const char *text, size_t length, struct box *box,
+		void *handle, const char *whitespace_text)
 {
-	if (!text) {
-		text = "\n";
-		length = 1;
+	/* add any whitespace which precedes the text from this box */
+	if (whitespace_text) {
+		if (!gui_add_to_clipboard(whitespace_text,
+				strlen(whitespace_text), false)) {
+			return false;
+		}
 	}
-	return gui_add_to_clipboard(text, length, space);
+	/* add the text from this box */
+	if (!gui_add_to_clipboard(text, length, box->space))
+		return false;
+
+	return true;
 }
 
 

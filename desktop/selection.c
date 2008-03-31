@@ -17,7 +17,8 @@
  */
 
 /** \file
-  * Text selection within browser windows, (implementation, platform-independent)
+  * Text selection within browser windows,
+  * (implementation, platform independent)
   */
 
 #include <assert.h>
@@ -71,18 +72,26 @@ struct save_state {
 	size_t alloc;
 };
 
-static bool redraw_handler(const char *text, size_t length, bool space,
-		struct box *box, void *handle);
-static void selection_redraw(struct selection *s, unsigned start_idx, unsigned end_idx);
+typedef enum {
+	WHITESPACE_NONE,
+	WHITESPACE_TAB,
+	WHITESPACE_ONE_NEW_LINE,
+	WHITESPACE_TWO_NEW_LINES
+} seln_whitespace;
+
+static bool redraw_handler(const char *text, size_t length, struct box *box,
+		void *handle, const char *whitespace_text);
+static void selection_redraw(struct selection *s, unsigned start_idx,
+		unsigned end_idx);
 static unsigned selection_label_subtree(struct selection *s, struct box *node,
 		unsigned idx);
-static bool save_handler(const char *text, size_t length, bool space,
-		struct box *box, void *handle);
+static bool save_handler(const char *text, size_t length, struct box *box,
+		void *handle, const char *whitespace_text);
 static bool selected_part(struct box *box, unsigned start_idx, unsigned end_idx,
 		unsigned *start_offset, unsigned *end_offset);
 static bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 		unsigned int num_space, seln_traverse_handler handler,
-		void *handle);
+		void *handle, seln_whitespace *before, bool *first);
 static struct box *get_box(struct box *b, unsigned offset, int *pidx);
 
 
@@ -204,7 +213,8 @@ void selection_init(struct selection *s, struct box *root)
  * \return updated position
  */
 
-unsigned selection_label_subtree(struct selection *s, struct box *node, unsigned idx)
+unsigned selection_label_subtree(struct selection *s, struct box *node,
+								unsigned idx)
 {
 	struct box *child = node->children;
 
@@ -233,9 +243,11 @@ unsigned selection_label_subtree(struct selection *s, struct box *node, unsigned
  * \return true iff the click has been handled by the selection code
  */
 
-bool selection_click(struct selection *s, browser_mouse_state mouse, unsigned idx)
+bool selection_click(struct selection *s, browser_mouse_state mouse,
+								unsigned idx)
 {
-	browser_mouse_state modkeys = (mouse & (BROWSER_MOUSE_MOD_1 | BROWSER_MOUSE_MOD_2));
+	browser_mouse_state modkeys =
+			(mouse & (BROWSER_MOUSE_MOD_1 | BROWSER_MOUSE_MOD_2));
 	int pos = -1;  /* 0 = inside selection, 1 = after it */
 
 	if (!SAME_SPACE(s, idx))
@@ -424,15 +436,18 @@ bool selected_part(struct box *box, unsigned start_idx, unsigned end_idx,
  * \param  num_space  number space of the selection
  * \param  handler    handler function to call
  * \param  handle     handle to pass
+ * \param  before     type of whitespace to place before next encountered text
+ * \param  first      whether this is the first box with text
  * \return false iff traversal abandoned part-way through
  */
 
 bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 		unsigned int num_space, seln_traverse_handler handler,
-		void *handle)
+		void *handle, seln_whitespace *before, bool *first)
 {
 	struct box *child;
 	size_t box_length;
+	const char *whitespace_text = "";
 
 	/* we can prune this subtree, it's after the selection */
 	assert(box);
@@ -442,30 +457,75 @@ bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 	/* read before calling the handler in case it modifies the tree */
 	child = box->children;
 
+	/* If nicely formatted output of the selected text is required, work
+	 * out what whitespace should be placed before the next bit of text */
+	if (before) {
+		if (*before < WHITESPACE_TWO_NEW_LINES &&
+				(box->type == BOX_BLOCK ||
+				 box->type == BOX_TABLE ||
+				 box->type == BOX_FLOAT_LEFT ||
+				 box->type == BOX_FLOAT_RIGHT) &&
+				!box->list_marker) {
+			*before = WHITESPACE_TWO_NEW_LINES;
+		}
+		else if (*before < WHITESPACE_ONE_NEW_LINE &&
+				(box->type == BOX_TABLE_ROW ||
+				 box->type == BOX_BR ||
+				 (box->type != BOX_TABLE_ROW &&
+				  box->list_marker))) {
+			*before = WHITESPACE_ONE_NEW_LINE;
+		}
+		else if (*before < WHITESPACE_TAB &&
+				box->type == BOX_TABLE_CELL) {
+			*before = WHITESPACE_TAB;
+		}
+
+		if (*first) {
+			whitespace_text = "";
+		} else {
+			switch (*before) {
+				case WHITESPACE_TWO_NEW_LINES:
+					whitespace_text = "\n\n";
+					break;
+				case WHITESPACE_ONE_NEW_LINE:
+					whitespace_text = "\n";
+					break;
+				case WHITESPACE_TAB:
+					whitespace_text = "\t";
+					break;
+				case WHITESPACE_NONE:
+					whitespace_text = "";
+				default:
+					whitespace_text = "";
+					break;
+			}
+		}
+	}
+	else {
+		whitespace_text = NULL;
+	}
+
 	box_length = box->length + box->space;  /* include trailing space */
-	if (IS_TEXT(box) && (num_space == NUMBER_SPACE(box->byte_offset))) {
+	if (num_space == NUMBER_SPACE(box->byte_offset)) {
 		unsigned start_offset;
 		unsigned end_offset;
 
-		if (selected_part(box, start_idx, end_idx, &start_offset, &end_offset) &&
-			!handler(box->text + start_offset,
-					min(box->length, end_offset) - start_offset,
-					(end_offset >= box->length), box, handle))
+		if (selected_part(box, start_idx, end_idx, &start_offset,
+				&end_offset)) {
+			if (!handler(box->text + start_offset, min(box->length,
+					end_offset) - start_offset,
+					box, handle, whitespace_text))
 				return false;
-	}
-	else {
-		/* make a guess at where the newlines should go */
-		if (box->byte_offset >= start_idx &&
-			box->byte_offset < end_idx) {
-
-			if (!handler(NULL, 0, false, NULL, handle))
-				return false;
+			if (before) {
+				*first = false;
+				*before = WHITESPACE_NONE;
+			}
 		}
 	}
 
 	/* find the first child that could lie partially within the selection;
-		this is important at the top-levels of the tree for pruning subtrees
-		that lie entirely before the selection */
+	 * this is important at the top-levels of the tree for pruning subtrees
+	 * that lie entirely before the selection */
 
 	if (child) {
 		struct box *next = child->next;
@@ -476,10 +536,12 @@ bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 		}
 
 		while (child) {
-			/* read before calling the handler in case it modifies the tree */
+			/* read before calling the handler in case it modifies
+			 * the tree */
 			struct box *next = child->next;
 
-			if (!traverse_tree(child, start_idx, end_idx, num_space, handler, handle))
+			if (!traverse_tree(child, start_idx, end_idx, num_space,
+					handler, handle, before, first))
 				return false;
 
 			child = next;
@@ -491,31 +553,37 @@ bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 
 
 /**
- * Traverse the current selection, calling the handler function (with its handle)
- * for all boxes that lie (partially) within the given range
+ * Traverse the current selection, calling the handler function (with its
+ * handle) for all boxes that lie (partially) within the given range
  *
  * \param  handler  handler function to call
  * \param  handle   handle to pass
  * \return false iff traversal abandoned part-way through
  */
 
-bool selection_traverse(struct selection *s, seln_traverse_handler handler, void *handle)
+bool selection_traverse(struct selection *s, seln_traverse_handler handler,
+								void *handle)
 {
 	struct content *c;
+	seln_whitespace before = WHITESPACE_NONE;
+	bool first = true;
 
 	if (!selection_defined(s))
 		return true;	/* easy case, nothing to do */
 
 	if (s->root)
-		return traverse_tree(s->root, s->start_idx, s->end_idx, NUMBER_SPACE(s->max_idx), handler, handle);
+		return traverse_tree(s->root, s->start_idx, s->end_idx,
+				NUMBER_SPACE(s->max_idx), handler, handle,
+				&before, &first);
 
 	c = s->bw->current_content;
 	if (!c) return true;
 
 	size_t length;
-	const char *text = textplain_get_raw_data(c, s->start_idx, s->end_idx, &length);
+	const char *text = textplain_get_raw_data(c, s->start_idx,
+							s->end_idx, &length);
 
-	if (text && !handler(text, length, false, NULL, handle))
+	if (text && !handler(text, length, NULL, handle, NULL))
 		return false;
 
 	return true;
@@ -526,16 +594,17 @@ bool selection_traverse(struct selection *s, seln_traverse_handler handler, void
  * Selection traversal handler for redrawing the screen when the selection
  * has been altered.
  *
- * \param  text    pointer to text string
- * \param  length  length of text to be appended (bytes)
- * \param  space   text string should be followed by a trailing space
- * \param  box     pointer to text box being (partially) added
- * \param  handle  unused handle, we don't need one
+ * \param  text		    pointer to text string
+ * \param  length	    length of text to be appended (bytes)
+ * \param  box		    pointer to text box being (partially) added
+ * \param  handle	    unused handle, we don't need one
+ * \param  whitespace_text  whitespace to place before text for formatting
+ *                          may be NULL
  * \return true iff successful and traversal should continue
  */
 
-bool redraw_handler(const char *text, size_t length, bool space,
-		struct box *box, void *handle)
+bool redraw_handler(const char *text, size_t length, struct box *box,
+		void *handle, const char *whitespace_text)
 {
 	if (box) {
 		struct rdw_info *r = (struct rdw_info*)handle;
@@ -543,7 +612,7 @@ bool redraw_handler(const char *text, size_t length, bool space,
 		int x, y;
 
 		/* \todo - it should be possible to reduce the redrawn area by
-				considering the 'text', 'length' and 'space' parameters */
+		 * considering the 'text', 'length' and 'space' parameters */
 		box_coords(box, &x, &y);
 
 		width = box->padding[LEFT] + box->width + box->padding[RIGHT];
@@ -583,13 +652,16 @@ void selection_redraw(struct selection *s, unsigned start_idx, unsigned end_idx)
 	rdw.inited = false;
 
 	if (s->root) {
-		if (!traverse_tree(s->root, start_idx, end_idx, NUMBER_SPACE(s->max_idx), redraw_handler, &rdw))
+		if (!traverse_tree(s->root, start_idx, end_idx,
+				NUMBER_SPACE(s->max_idx), redraw_handler, &rdw,
+				NULL, NULL))
 			return;
 	}
 	else {
 		struct content *c = s->bw->current_content;
 		if (c && c->type == CONTENT_TEXTPLAIN && end_idx > start_idx) {
-			textplain_coords_from_range(c, start_idx, end_idx, &rdw.r);
+			textplain_coords_from_range(c, start_idx,
+							end_idx, &rdw.r);
 			rdw.inited = true;
 		}
 	}
@@ -813,28 +885,36 @@ bool selection_highlighted(struct selection *s, unsigned start, unsigned end,
 /**
  * Selection traversal handler for saving the text to a file.
  *
- * \param  text    pointer to text being added, or NULL for newline
- * \param  length  length of text to be appended (bytes)
- * \param  space   trailing space required after text
- * \param  box     pointer to text box (or NULL for textplain content)
- * \param  handle  our save_state workspace pointer
+ * \param  text		    pointer to text being added, or NULL for newline
+ * \param  length	    length of text to be appended (bytes)
+ * \param  box		    pointer to text box (or NULL for textplain content)
+ * \param  handle	    our save_state workspace pointer
+ * \param  whitespace_text  whitespace to place before text for formatting
+ *                          may be NULL
  * \return true iff the file writing succeeded and traversal should continue.
  */
 
-bool save_handler(const char *text, size_t length, bool space,
-		struct box *box, void *handle)
+bool save_handler(const char *text, size_t length, struct box *box,
+		void *handle, const char *whitespace_text)
 {
 	struct save_state *sv = handle;
 	size_t new_length;
+	size_t whitespace_length;
+	int space = 0;
 
 	assert(sv);
 
-	if (!text) {
-		text = "\n";
-		length = 1;
+	if (box->space > 0)
+		space = 1;
+
+	if (whitespace_text) {
+		whitespace_length = strlen(whitespace_text);
+		length += whitespace_length;
+	} else {
+		whitespace_length = 0;
 	}
 
-	new_length = sv->length + length + space;
+	new_length = sv->length + whitespace_length + length + space;
 	if (new_length >= sv->alloc) {
 		size_t new_alloc = sv->alloc + (sv->alloc / 4);
 		char *new_block;
@@ -847,11 +927,14 @@ bool save_handler(const char *text, size_t length, bool space,
 		sv->block = new_block;
 		sv->alloc = new_alloc;
 	}
-
-	memcpy(sv->block + sv->length, text, length);
+	if (whitespace_text) {
+		memcpy(sv->block + sv->length, whitespace_text,
+				whitespace_length);
+	}
+	memcpy(sv->block + sv->length + whitespace_length, text, length);
 	sv->length += length;
 
-	if (space)
+	if (space == 1)
 		sv->block[sv->length++] = ' ';
 
 	return true;
@@ -880,6 +963,19 @@ bool selection_save_text(struct selection *s, const char *path)
 		free(sv.block);
 		return false;
 	}
+
+	/* add newline at end */
+	sv.length++;
+	if (sv.length > sv.alloc) {
+		char *new_block;
+
+		new_block = realloc(sv.block, sv.length);
+		if (!new_block) return false;
+
+		sv.block = new_block;
+		sv.alloc = sv.length;
+	}
+	sv.block[sv.length - 1] = '\n';
 
 	if (!sv.block)
 		return false;

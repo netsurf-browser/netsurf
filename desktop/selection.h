@@ -55,7 +55,7 @@ struct selection
 
 
 typedef bool (*seln_traverse_handler)(const char *text, size_t length,
-		bool space, struct box *box, void *handle);
+		struct box *box, void *handle, const char *whitespace_text);
 
 
 struct selection *selection_create(struct browser_window *bw);
@@ -86,8 +86,10 @@ void selection_set_end(struct selection *s, unsigned idx);
 struct box *selection_get_start(struct selection *s, int *pidx);
 struct box *selection_get_end(struct selection *s, int *pidx);
 
-bool selection_click(struct selection *s, browser_mouse_state mouse, unsigned idx);
-void selection_track(struct selection *s, browser_mouse_state mouse, unsigned idx);
+bool selection_click(struct selection *s, browser_mouse_state mouse,
+		unsigned idx);
+void selection_track(struct selection *s, browser_mouse_state mouse,
+		unsigned idx);
 
 /** Handles completion of a drag operation */
 /* void selection_drag_end(struct selection *s); */
