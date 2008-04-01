@@ -31,7 +31,6 @@
 #include <time.h>
 #include <features.h>
 #include <unixlib/local.h>
-#include <unixlib/sigstate.h>
 #include <curl/curl.h>
 #include <oslib/font.h>
 #include <oslib/help.h>
