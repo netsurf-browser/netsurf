@@ -469,15 +469,26 @@ bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 				 box->type == BOX_TABLE ||
 				 box->type == BOX_FLOAT_LEFT ||
 				 box->type == BOX_FLOAT_RIGHT) &&
-				!box->list_marker) {
+				(!box->list_marker ||
+				 box->list_marker &&
+				 *before == WHITESPACE_TAB)) {
 			*before = WHITESPACE_TWO_NEW_LINES;
 		}
-		else if (*before < WHITESPACE_ONE_NEW_LINE &&
+		else if (*before <= WHITESPACE_ONE_NEW_LINE &&
 				(box->type == BOX_TABLE_ROW ||
 				 box->type == BOX_BR ||
-				 (box->type != BOX_TABLE_ROW &&
-				  box->list_marker))) {
-			*before = WHITESPACE_ONE_NEW_LINE;
+				 (box->type != BOX_INLINE &&
+				  box->list_marker) ||
+				 (box->parent->style &&
+				  (box->parent->style->white_space ==
+				   CSS_WHITE_SPACE_PRE ||
+				   box->parent->style->white_space ==
+				   CSS_WHITE_SPACE_PRE_WRAP) &&
+				  box->type == BOX_INLINE_CONTAINER))) {
+			if (*before == WHITESPACE_ONE_NEW_LINE)
+				*before = WHITESPACE_TWO_NEW_LINES;
+			else
+				*before = WHITESPACE_ONE_NEW_LINE;
 		}
 		else if (*before < WHITESPACE_TAB &&
 				box->type == BOX_TABLE_CELL) {
