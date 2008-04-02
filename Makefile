@@ -97,7 +97,7 @@ PKG_CONFIG := pkg-config
 endif
 
 ifeq ($(HOST),riscos)
-LDFLAGS := -lxml2 -lz -lm -lcurl -lssl -lcrypto -lmng -ljpeg
+LDFLAGS := -Xlinker -symbols=sym -lxml2 -lz -lm -lcurl -lssl -lcrypto -lmng -ljpeg
 else
 LDFLAGS := $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl openssl)
 LDFLAGS += -lz -lm -lmng -ljpeg
