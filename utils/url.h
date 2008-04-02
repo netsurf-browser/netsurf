@@ -47,8 +47,8 @@ url_func_result url_host(const char *url, char **result);
 url_func_result url_scheme(const char *url, char **result);
 url_func_result url_nice(const char *url, char **result,
 		bool remove_extensions);
-url_func_result url_escape(const char *unescaped, bool sptoplus,
-		char **result);
+url_func_result url_escape(const char *unescaped, size_t toskip,
+		bool sptoplus, const char *escexceptions, char **result);
 url_func_result url_canonical_root(const char *url, char **result);
 url_func_result url_parent(const char *url, char **result);
 url_func_result url_plq(const char *url, char **result);

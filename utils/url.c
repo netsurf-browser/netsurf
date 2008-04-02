@@ -871,17 +871,19 @@ no_path:
 /**
  * Escape a string suitable for inclusion in an URL.
  *
- * \param  unescaped  the unescaped string
- * \param  sptoplus   true iff spaces should be converted to +
- * \param  result     pointer to pointer to buffer to hold escaped string
+ * \param  unescaped      the unescaped string
+ * \param  toskip         number of bytes to skip in unescaped string
+ * \param  sptoplus       true iff spaces should be converted to +
+ * \param  escexceptions  NULL or a string of characters excluded to be escaped
+ * \param  result         pointer to pointer to buffer to hold escaped string
  * \return  URL_FUNC_OK on success
  */
 
-url_func_result url_escape(const char *unescaped, bool sptoplus,
-		char **result)
+url_func_result url_escape(const char *unescaped, size_t toskip,
+		bool sptoplus, const char *escexceptions, char **result)
 {
-	int len;
-	char *escaped, *d;
+	size_t len;
+	char *escaped, *d, *tmpres;
 	const char *c;
 
 	if (!unescaped || !result)
@@ -890,21 +892,25 @@ url_func_result url_escape(const char *unescaped, bool sptoplus,
 	*result = NULL;
 
 	len = strlen(unescaped);
+	if (len < toskip)
+		return URL_FUNC_FAILED;
+	len -= toskip;
 
 	escaped = malloc(len * 3 + 1);
 	if (!escaped)
 		return URL_FUNC_NOMEM;
 
-	for (c = unescaped, d = escaped; *c; c++) {
+	for (c = unescaped + toskip, d = escaped; *c; c++) {
 		/* Check if we should escape this byte.
 		 * '~' is unreserved and should not be percent encoded, if
 		 * you believe the spec; however, leaving it unescaped
 		 * breaks a bunch of websites, so we escape it anyway. */
-		if (!isascii(*c) || strchr(":/?#[]@" /* gen-delims */
-					"!$&'()*+,;=" /* sub-delims */
-					"<>%\"{}|\\^`~", /* others */
-					*c) ||
-				*c <= 0x20 || *c == 0x7f) {
+		if (!isascii(*c)
+			|| (strchr(":/?#[]@" /* gen-delims */
+				  "!$&'()*+,;=" /* sub-delims */
+				  "<>%\"{}|\\^`~" /* others */,	*c)
+				&& (!escexceptions || !strchr(escexceptions, *c)))
+			|| *c <= 0x20 || *c == 0x7f) {
 			if (*c == 0x20 && sptoplus) {
 				*d++ = '+';
 			} else {
@@ -917,16 +923,17 @@ url_func_result url_escape(const char *unescaped, bool sptoplus,
 			*d++ = *c;
 		}
 	}
-
 	*d++ = '\0';
 
-	(*result) = malloc(d - escaped);
-	if (!(*result)) {
+	tmpres = malloc(d - escaped + toskip);
+	if (!tmpres) {
 		free(escaped);
 		return URL_FUNC_NOMEM;
 	}
 
-	memcpy((*result), escaped, d - escaped);
+	memcpy(tmpres, unescaped, toskip); 
+	memcpy(tmpres + toskip, escaped, d - escaped);
+	*result = tmpres;
 
 	free(escaped);
 

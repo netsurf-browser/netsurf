@@ -1965,16 +1965,16 @@ void ro_msg_window_info(wimp_message *message)
 char *path_to_url(const char *path)
 {
 	int spare;
-	char *buffer = 0;
-	char *url = 0;
+	char *buffer, *url, *escurl;
 	os_error *error;
+	url_func_result url_err;
 
 	error = xosfscontrol_canonicalise_path(path, 0, 0, 0, 0, &spare);
 	if (error) {
 		LOG(("xosfscontrol_canonicalise_path failed: 0x%x: %s",
 				error->errnum, error->errmess));
 		warn_user("PathToURL", error->errmess);
-		return 0;
+		return NULL;
 	}
 
 	buffer = malloc(1 - spare);
@@ -1984,7 +1984,7 @@ char *path_to_url(const char *path)
 		warn_user("NoMemory", 0);
 		free(buffer);
 		free(url);
-		return 0;
+		return NULL;
 	}
 
 	error = xosfscontrol_canonicalise_path(path, buffer, 0, 0, 1 - spare,
@@ -1995,14 +1995,30 @@ char *path_to_url(const char *path)
 		warn_user("PathToURL", error->errmess);
 		free(buffer);
 		free(url);
-		return 0;
+		return NULL;
 	}
 
-	strcpy(url, "file://");
-	__unixify(buffer, __RISCOSIFY_NO_REVERSE_SUFFIX, url + 7,
-			1 - spare + 3 /* 10 - "file://" */, 0);
-	free(buffer);
-	return url;
+	memcpy(url, "file://", sizeof("file://")-1);
+	if (__unixify(buffer, __RISCOSIFY_NO_REVERSE_SUFFIX,
+			url + sizeof("file://")-1,
+			1 - spare + 10 - (sizeof("file://")-1),
+			0) == NULL) {
+		LOG(("__unixify failed: %s", buffer));
+		free(buffer);
+		free(url);
+		return NULL;
+	}
+	free(buffer); buffer = NULL;
+
+	/* We don't want '/' to be escaped.  */
+	url_err = url_escape(url, sizeof("file://")-1, false, "/", &escurl);
+	free(url); url = NULL;
+	if (url_err != URL_FUNC_OK) {
+		LOG(("url_escape failed: %s", url));
+		return NULL;
+	}
+
+	return escurl;
 }
 
 
