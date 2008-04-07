@@ -96,8 +96,10 @@ else
 PKG_CONFIG := pkg-config
 endif
 
+OBJROOT := build-$(HOST)-$(TARGET)$(SUBTARGET)
+
 ifeq ($(HOST),riscos)
-LDFLAGS := -Xlinker -symbols=sym -lxml2 -lz -lm -lcurl -lssl -lcrypto -lmng -ljpeg
+LDFLAGS := -Xlinker -symbols=$(OBJROOT)/sym -lxml2 -lz -lm -lcurl -lssl -lcrypto -lmng -ljpeg
 else
 LDFLAGS := $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl openssl)
 LDFLAGS += -lz -lm -lmng -ljpeg
@@ -153,8 +155,6 @@ EXEEXT := ,ff8
 endif
 endif
 endif
-
-OBJROOT := build-$(HOST)-$(TARGET)$(SUBTARGET)
 
 $(OBJROOT)/created:
 	$(VQ)echo "   MKDIR: $(OBJROOT)"
