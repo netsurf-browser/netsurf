@@ -225,7 +225,7 @@ void history_add(struct history *history, struct content *content,
 	struct history_entry *entry;
 	char *url;
 	char *title;
-	const struct bitmap *bitmap;
+	struct bitmap *bitmap;
 
 	assert(history);
 	assert(content);

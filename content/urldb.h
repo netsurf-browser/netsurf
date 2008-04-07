@@ -93,7 +93,7 @@ bool urldb_get_cert_permissions(const char *url);
 
 /* Thumbnail handling */
 void urldb_set_thumbnail(const char *url, struct bitmap *bitmap);
-const struct bitmap *urldb_get_thumbnail(const char *url);
+struct bitmap *urldb_get_thumbnail(const char *url);
 
 /* URL completion */
 void urldb_iterate_partial(const char *prefix,

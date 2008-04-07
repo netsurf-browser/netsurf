@@ -368,7 +368,7 @@ bool nsfont_split(const struct css_style *style,
  * \return  true on success, false on error and error reported
  */
 
-bool nsfont_paint(struct css_style *style, const char *string,
+bool nsfont_paint(const struct css_style *style, const char *string,
 		size_t length, int x, int y, float scale)
 {
 	const char *font_family;

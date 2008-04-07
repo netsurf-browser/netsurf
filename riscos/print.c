@@ -106,7 +106,7 @@ static bool print_fonts_plot_polygon(int *p, unsigned int n, colour fill);
 static bool print_fonts_plot_fill(int x0, int y0, int x1, int y1, colour c);
 static bool print_fonts_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
-static bool print_fonts_plot_text(int x, int y, struct css_style *style,
+static bool print_fonts_plot_text(int x, int y, const struct css_style *style,
 		const char *text, size_t length, colour bg, colour c);
 static bool print_fonts_plot_disc(int x, int y, int radius, colour c,
                 bool filled);
@@ -843,7 +843,7 @@ bool print_fonts_plot_group_end(void) { return true; }
  * Plotter for text plotting during font listing.
  */
 
-bool print_fonts_plot_text(int x, int y, struct css_style *style,
+bool print_fonts_plot_text(int x, int y, const struct css_style *style,
 		const char *text, size_t length, colour bg, colour c)
 {
 	const char *font_family;

@@ -1056,7 +1056,7 @@ void urldb_set_thumbnail(const char *url, struct bitmap *bitmap)
  * \param url Absolute URL to search for
  * \return Pointer to thumbnail data, or NULL if not found.
  */
-const struct bitmap *urldb_get_thumbnail(const char *url)
+struct bitmap *urldb_get_thumbnail(const char *url)
 {
 	struct path_data *p;
 
