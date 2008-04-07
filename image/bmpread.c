@@ -419,7 +419,7 @@ bmp_result bmp_decode_rgb24(struct bmp_image *bmp, char **start, int bytes) {
 	char *top, *bottom, *end, *data;
 	unsigned int *scanline;
 	unsigned int x, y, swidth, skip;
-	unsigned int addr;
+	intptr_t addr;
 	unsigned int i, word;
 
 	data = *start;
@@ -479,7 +479,7 @@ bmp_result bmp_decode_rgb16(struct bmp_image *bmp, char **start, int bytes) {
 	char *top, *bottom, *end, *data;
 	unsigned int *scanline;
 	unsigned int x, y, swidth;
-	unsigned int addr;
+	intptr_t addr;
 	unsigned int word, i;
 
 	data = *start;
@@ -538,7 +538,7 @@ bmp_result bmp_decode_rgb16(struct bmp_image *bmp, char **start, int bytes) {
 bmp_result bmp_decode_rgb(struct bmp_image *bmp, char **start, int bytes) {
 	char *top, *bottom, *end, *data;
 	unsigned int *scanline;
-	unsigned int addr;
+	intptr_t addr;
 	unsigned int x, y, swidth;
 	int i;
 	int bit_shifts[8];
@@ -592,7 +592,7 @@ bmp_result bmp_decode_rgb(struct bmp_image *bmp, char **start, int bytes) {
 bmp_result bmp_decode_mask(struct bmp_image *bmp, char *data, int bytes) {
 	char *top, *bottom, *end;
 	unsigned int *scanline;
-	unsigned int addr;
+	intptr_t addr;
 	unsigned int x, y, swidth;
 	int cur_byte = 0;
 
