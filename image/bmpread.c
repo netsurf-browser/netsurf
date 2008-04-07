@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include "image/bmpread.h"
 #include "image/bitmap.h"
 #include "utils/log.h"
@@ -303,7 +304,7 @@ bmp_result bmp_analyse_header(struct bmp_image *bmp, char *data) {
 		bmp->colour_table = NULL;
 		return BMP_INSUFFICIENT_MEMORY;
 	}
-	bmp->bitmap_offset = (int)data - (int)bmp->bmp_data;
+	bmp->bitmap_offset = (intptr_t)data - (intptr_t)bmp->bmp_data;
 	bitmap_set_suspendable(bmp->bitmap, bmp, bmp_invalidate);
 	return BMP_OK;
 }
@@ -401,7 +402,7 @@ bmp_result bmp_decode(struct bmp_image *bmp) {
 	if ((!bmp->ico) || (result != BMP_OK))
 		return result;
 
-	bytes = (int)bmp->bmp_data + bmp->buffer_size - (int)data;
+	bytes = (intptr_t)bmp->bmp_data + bmp->buffer_size - (intptr_t)data;
 	return bmp_decode_mask(bmp, data, bytes);
 }
 
@@ -426,12 +427,12 @@ bmp_result bmp_decode_rgb24(struct bmp_image *bmp, char **start, int bytes) {
 	top = bitmap_get_buffer(bmp->bitmap);
 	bottom = top + swidth * (bmp->height - 1);
 	end = data + bytes;
-	addr = ((unsigned int)data) & 3;
+	addr = ((intptr_t)data) & 3;
 	skip = bmp->bpp >> 3;
 	bmp->decoded = true;
 
 	for (y = 0; y < bmp->height; y++) {
-		while (addr != (((unsigned int)data) & 3))
+		while (addr != (((intptr_t)data) & 3))
 			data++;
 		if ((data + (skip * bmp->width)) > end)
 			return BMP_INSUFFICIENT_DATA;
@@ -486,11 +487,11 @@ bmp_result bmp_decode_rgb16(struct bmp_image *bmp, char **start, int bytes) {
 	top = bitmap_get_buffer(bmp->bitmap);
 	bottom = top + swidth * (bmp->height - 1);
 	end = data + bytes;
-	addr = ((unsigned int)data) & 3;
+	addr = ((intptr_t)data) & 3;
 	bmp->decoded = true;
 
 	for (y = 0; y < bmp->height; y++) {
-		if (addr != (((unsigned int)data) & 3))
+		if (addr != (((intptr_t)data) & 3))
 			data += 2;
 		if ((data + (2 * bmp->width)) > end)
 			return BMP_INSUFFICIENT_DATA;
@@ -553,11 +554,11 @@ bmp_result bmp_decode_rgb(struct bmp_image *bmp, char **start, int bytes) {
 	top = bitmap_get_buffer(bmp->bitmap);
 	bottom = top + swidth * (bmp->height - 1);
 	end = data + bytes;
-	addr = ((unsigned int)data) & 3;
+	addr = ((intptr_t)data) & 3;
 	bmp->decoded = true;
 
 	for (y = 0; y < bmp->height; y++) {
-		while (addr != (((unsigned int)data) & 3))
+		while (addr != (((intptr_t)data) & 3))
 			data++;
 		bit = 32;
 		if ((data + (bmp->width / ppb)) > end)
@@ -599,10 +600,10 @@ bmp_result bmp_decode_mask(struct bmp_image *bmp, char *data, int bytes) {
 	top = bitmap_get_buffer(bmp->bitmap);
 	bottom = top + swidth * (bmp->height - 1);
 	end = data + bytes;
-	addr = ((unsigned int)data) & 3;
+	addr = ((intptr_t)data) & 3;
 
 	for (y = 0; y < bmp->height; y++) {
-		while (addr != (((unsigned int)data) & 3))
+		while (addr != (((intptr_t)data) & 3))
 			data++;
 		if ((data + (bmp->width >> 3)) > end)
 			return BMP_INSUFFICIENT_DATA;
