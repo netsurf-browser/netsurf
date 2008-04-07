@@ -24,14 +24,17 @@
 all: all-program
 
 # Determine host type
-# NOTE: Currently, this is broken on RISC OS due to what appear to be bugs
-#	in UnixLib's pipe()/dup2() implementations.
+# NOTE: HOST determination on RISC OS could fail because of missing bug fixes
+#	in UnixLib which only got addressed in UnixLib 5 / GCCSDK 4.
 #	When you don't have 'uname' available, you will see:
 #	  File 'uname' not found
-#	but when you do, you will see:
+#	When you do and using a 'uname' compiled with a buggy UnixLib, you
+#	will see the following printed on screen:
 #	  RISC OS
 #	In both cases HOST make variable is empty and we recover from that by
 #	assuming we're building on RISC OS.
+#	In case you don't see anything printed (including the warning), you
+#	have an update to date RISC OS build sytem. ;-)
 HOST := $(shell uname -s)
 ifeq ($(HOST),)
 HOST := riscos
