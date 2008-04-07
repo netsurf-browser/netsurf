@@ -312,7 +312,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 
 		/* Compare new URL with existing one (ignoring fragments) */
 		if (bw->current_content && bw->current_content->url) {
-			res = url_compare(bw->current_content->url, url2, 
+			res = url_compare(bw->current_content->url, url2,
 					true, &same_url);
 			if (res == URL_FUNC_NOMEM) {
 				free(url2);
@@ -326,7 +326,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 		/* if we're simply moving to another ID on the same page,
 		 * don't bother to fetch, just update the window.
 		 */
-		if (same_url && !post_urlenc && !post_multipart && 
+		if (same_url && !post_urlenc && !post_multipart &&
 				!strchr(url2, '?')) {
 			free(url2);
 			browser_window_update(bw, false);
@@ -652,7 +652,7 @@ void browser_window_refresh(void *p)
 			(bw->current_content->status == CONTENT_STATUS_READY ||
 			bw->current_content->status == CONTENT_STATUS_DONE));
 
-	/* Ignore if the refresh URL has gone 
+	/* Ignore if the refresh URL has gone
 	 * (may happen if a fetch error occurred) */
 	if (!bw->current_content->refresh)
 		return;
@@ -1437,7 +1437,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 					&idx,
 					&pixel_offset);
 
-				selection_click(bw->sel, mouse, 
+				selection_click(bw->sel, mouse,
 						text_box->byte_offset + idx);
 
 				if (selection_dragging(bw->sel)) {
@@ -1465,7 +1465,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 				int pixel_offset;
 				size_t idx;
 
-				if (mouse & (BROWSER_MOUSE_DRAG_1 | 
+				if (mouse & (BROWSER_MOUSE_DRAG_1 |
 						BROWSER_MOUSE_DRAG_2))
 					selection_init(bw->sel, gadget_box);
 
@@ -1476,7 +1476,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 					&idx,
 					&pixel_offset);
 
-				selection_click(bw->sel, mouse, 
+				selection_click(bw->sel, mouse,
 						text_box->byte_offset + idx);
 
 				if (selection_dragging(bw->sel))
@@ -1564,17 +1564,17 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 					&idx,
 					&pixel_offset);
 
-				if (selection_click(bw->sel, mouse, 
+				if (selection_click(bw->sel, mouse,
 						text_box->byte_offset + idx)) {
-					/* key presses must be directed at the 
-					 * main browser window, paste text 
+					/* key presses must be directed at the
+					 * main browser window, paste text
 					 * operations ignored */
 					browser_window_remove_caret(bw);
 
 					if (selection_dragging(bw->sel)) {
-						bw->drag_type = 
+						bw->drag_type =
 							DRAGGING_SELECTION;
-						status = 
+						status =
 							messages_get("Selecting");
 					} else
 						status = c->status_message;
@@ -1582,6 +1582,8 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 					done = true;
 				}
 			}
+			else if (mouse & BROWSER_MOUSE_CLICK_1)
+				selection_clear(bw->sel, true);
 		}
 
 		if (!done) {
@@ -1827,7 +1829,7 @@ void browser_window_mouse_track_html(struct browser_window *bw,
 					&idx,
 					&pixel_offset);
 
-				selection_track(bw->sel, mouse, 
+				selection_track(bw->sel, mouse,
 						box->byte_offset + idx);
 			}
 		}

@@ -335,6 +335,17 @@ non_float_children:
 		}
 	}
 
+	/* marker boxes */
+	if (box->list_marker) {
+		if (box_contains_point(box->list_marker, x - bx, y - by)) {
+			*box_x = bx + box->list_marker->x -
+					box->list_marker->scroll_x;
+			*box_y = by + box->list_marker->y -
+					box->list_marker->scroll_y;
+			return box->list_marker;
+		}
+	}
+
 siblings:
 	/* siblings and siblings of ancestors */
 	while (box) {
@@ -405,6 +416,22 @@ bool box_contains_point(struct box *box, int x, int y)
 				y < box->y + box->padding[TOP] + box->height +
 				box->border[BOTTOM] + box->padding[BOTTOM])
 			return true;
+		if (box->list_marker && box->list_marker->x <= x +
+				box->list_marker->border[LEFT] &&
+				x < box->list_marker->x +
+				box->list_marker->padding[LEFT] +
+				box->list_marker->width +
+				box->list_marker->border[RIGHT] +
+				box->list_marker->padding[RIGHT] &&
+				box->list_marker->y <= y +
+				box->list_marker->border[TOP] &&
+				y < box->list_marker->y +
+				box->list_marker->padding[TOP] +
+				box->list_marker->height +
+				box->list_marker->border[BOTTOM] +
+				box->list_marker->padding[BOTTOM]) {
+			return true;
+		}
 	} else {
 		if (box->x + box->descendant_x0 <= x &&
 				x < box->x + box->descendant_x1 &&

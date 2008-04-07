@@ -31,6 +31,7 @@
 #include "desktop/plotters.h"
 #include "desktop/selection.h"
 #include "render/box.h"
+#include "render/font.h"
 #include "render/form.h"
 #include "render/textplain.h"
 #include "utils/log.h"
@@ -85,8 +86,7 @@ static bool redraw_handler(const char *text, size_t length, struct box *box,
 		size_t whitespace_length);
 static void selection_redraw(struct selection *s, unsigned start_idx,
 		unsigned end_idx);
-static unsigned selection_label_subtree(struct selection *s, struct box *node,
-		unsigned idx);
+static unsigned selection_label_subtree(struct box *box, unsigned idx);
 static bool save_handler(const char *text, size_t length, struct box *box,
 		void *handle, const char *whitespace_text,
 		size_t whitespace_length);
@@ -94,7 +94,8 @@ static bool selected_part(struct box *box, unsigned start_idx, unsigned end_idx,
 		unsigned *start_offset, unsigned *end_offset);
 static bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 		unsigned int num_space, seln_traverse_handler handler,
-		void *handle, seln_whitespace *before, bool *first);
+		void *handle, seln_whitespace *before, bool *first,
+		bool do_marker);
 static struct box *get_box(struct box *b, unsigned offset, int *pidx);
 
 
@@ -166,7 +167,7 @@ void selection_reinit(struct selection *s, struct box *root)
 
 	s->root = root;
 	if (root) {
-		s->max_idx = selection_label_subtree(s, root, root_idx);
+		s->max_idx = selection_label_subtree(root, root_idx);
 	}
 	else {
 		struct content *c = s->bw->current_content;
@@ -216,19 +217,23 @@ void selection_init(struct selection *s, struct box *root)
  * \return updated position
  */
 
-unsigned selection_label_subtree(struct selection *s, struct box *node,
-		unsigned idx)
+unsigned selection_label_subtree(struct box *box, unsigned idx)
 {
-	struct box *child = node->children;
+	struct box *child = box->children;
 
-	node->byte_offset = idx;
+	box->byte_offset = idx;
 
-	if (node->text && !node->object)
-		idx += node->length + node->space;
+	if (box->text && !box->object)
+		idx += box->length + box->space;
 
 	while (child) {
-		if (!IS_INPUT(child))
-			idx = selection_label_subtree(s, child, idx);
+		if (!IS_INPUT(child)) {
+			if (child->list_marker)
+				idx = selection_label_subtree(
+						child->list_marker, idx);
+
+			idx = selection_label_subtree(child, idx);
+		}
 		child = child->next;
 	}
 
@@ -258,7 +263,7 @@ bool selection_click(struct selection *s, browser_mouse_state mouse,
 
 	if (selection_defined(s)) {
 		if (idx > s->start_idx) {
-			if (idx < s->end_idx)
+			if (idx <= s->end_idx)
 				pos = 0;
 			else
 				pos = 1;
@@ -442,19 +447,38 @@ bool selected_part(struct box *box, unsigned start_idx, unsigned end_idx,
  * \param  handle     handle to pass
  * \param  before     type of whitespace to place before next encountered text
  * \param  first      whether this is the first box with text
+ * \param  do_marker  whether deal enter any marker box
  * \return false iff traversal abandoned part-way through
  */
 
 bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 		unsigned int num_space, seln_traverse_handler handler,
-		void *handle, seln_whitespace *before, bool *first)
+		void *handle, seln_whitespace *before, bool *first,
+		bool do_marker)
 {
 	struct box *child;
 	const char *whitespace_text = "";
 	size_t whitespace_length = 0;
 
-	/* we can prune this subtree, it's after the selection */
 	assert(box);
+
+	/* If selection starts inside marker */
+	if (box->parent->list_marker == box && !do_marker) {
+		/* set box to main list element */
+		box = box->parent;
+	}
+
+	/* If box has a list marker */
+	if (box->list_marker) {
+		/* do the marker box before continuing with the rest of the
+		 * list element */
+		if (!traverse_tree(box->list_marker, start_idx, end_idx,
+				num_space, handler, handle, before, first,
+				true))
+			return false;
+	}
+
+	/* we can prune this subtree, it's after the selection */
 	if (box->byte_offset >= end_idx)
 		return true;
 
@@ -465,20 +489,23 @@ bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 	 * out what whitespace should be placed before the next bit of text */
 	if (before) {
 		if (*before < WHITESPACE_TWO_NEW_LINES &&
+				/* significant box type */
 				(box->type == BOX_BLOCK ||
 				 box->type == BOX_TABLE ||
 				 box->type == BOX_FLOAT_LEFT ||
 				 box->type == BOX_FLOAT_RIGHT) &&
-				(!box->list_marker ||
-				 box->list_marker &&
-				 *before == WHITESPACE_TAB)) {
+				/* and not a list element */
+				!box->list_marker &&
+				/* and not a marker... */
+				(!do_marker ||
+				 /* ...unless marker follows WHITESPACE_TAB */
+				 (do_marker && *before == WHITESPACE_TAB))) {
 			*before = WHITESPACE_TWO_NEW_LINES;
 		}
 		else if (*before <= WHITESPACE_ONE_NEW_LINE &&
 				(box->type == BOX_TABLE_ROW ||
 				 box->type == BOX_BR ||
-				 (box->type != BOX_INLINE &&
-				  box->list_marker) ||
+				 (box->type != BOX_INLINE && do_marker) ||
 				 (box->parent->style &&
 				  (box->parent->style->white_space ==
 				   CSS_WHITE_SPACE_PRE ||
@@ -491,10 +518,10 @@ bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 				*before = WHITESPACE_ONE_NEW_LINE;
 		}
 		else if (*before < WHITESPACE_TAB &&
-				box->type == BOX_TABLE_CELL) {
+				(box->type == BOX_TABLE_CELL ||
+				 box->list_marker)) {
 			*before = WHITESPACE_TAB;
 		}
-
 		if (*first) {
 			whitespace_text = "";
 		} else {
@@ -523,7 +550,6 @@ bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 	else {
 		whitespace_text = NULL;
 	}
-
 	if (num_space == NUMBER_SPACE(box->byte_offset) &&
 			box->type != BOX_BR) {
 		unsigned start_offset;
@@ -561,7 +587,7 @@ bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 			struct box *next = child->next;
 
 			if (!traverse_tree(child, start_idx, end_idx, num_space,
-					handler, handle, before, first))
+					handler, handle, before, first, false))
 				return false;
 
 			child = next;
@@ -594,7 +620,7 @@ bool selection_traverse(struct selection *s, seln_traverse_handler handler,
 	if (s->root)
 		return traverse_tree(s->root, s->start_idx, s->end_idx,
 				NUMBER_SPACE(s->max_idx), handler, handle,
-				&before, &first);
+				&before, &first, false);
 
 	c = s->bw->current_content;
 	if (!c) return true;
@@ -630,7 +656,7 @@ bool redraw_handler(const char *text, size_t length, struct box *box,
 {
 	if (box) {
 		struct rdw_info *r = (struct rdw_info*)handle;
-		int width, height;
+		int width, height, space_width;
 		int x, y;
 
 		/* \todo - it should be possible to reduce the redrawn area by
@@ -639,6 +665,10 @@ bool redraw_handler(const char *text, size_t length, struct box *box,
 
 		width = box->padding[LEFT] + box->width + box->padding[RIGHT];
 		height = box->padding[TOP] + box->height + box->padding[BOTTOM];
+
+		if (box->type == BOX_TEXT && box->space &&
+				nsfont_width(box->style, " ", 1, &space_width))
+			width += space_width;
 
 		if (r->inited) {
 			if (x < r->r.x0) r->r.x0 = x;
@@ -676,7 +706,7 @@ void selection_redraw(struct selection *s, unsigned start_idx, unsigned end_idx)
 	if (s->root) {
 		if (!traverse_tree(s->root, start_idx, end_idx,
 				NUMBER_SPACE(s->max_idx), redraw_handler, &rdw,
-				NULL, NULL))
+				NULL, NULL, false))
 			return;
 	}
 	else {
