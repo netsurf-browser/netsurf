@@ -168,7 +168,7 @@ select { background-color: #d9d9d9; color: #000; text-align: left;
 select:after { content: "\25bc"; border-left: 4px ridge #d9d9d9; }
 
 textarea { background-color: #fff; color: #000; text-align: left;
-	font-family: monospace; overflow: scroll;
+	font-family: monospace; width: 10em; height: 4em; overflow: scroll;
 	margin: 1px; border: 2px solid #333; padding: 0 2px; }
 
 fieldset { display: block; border: thin solid #888; margin: 1.12em 0; }
