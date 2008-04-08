@@ -49,8 +49,6 @@
  * or wholly without the textarea/input box.
  */
 
-#define IS_TEXT(box) ((box)->text && !(box)->object)
-
 #define IS_INPUT(box) ((box) && (box)->gadget && \
 	((box)->gadget->type == GADGET_TEXTAREA || (box)->gadget->type == GADGET_TEXTBOX))
 
@@ -223,7 +221,7 @@ unsigned selection_label_subtree(struct box *box, unsigned idx)
 
 	box->byte_offset = idx;
 
-	if (box->text && !box->object)
+	if (box->text)
 		idx += box->length + box->space;
 
 	while (child) {
@@ -847,7 +845,7 @@ struct box *get_box(struct box *b, unsigned offset, int *pidx)
 {
 	struct box *child = b->children;
 
-	if (b->text && !b->object) {
+	if (b->text) {
 
 		if (offset >= b->byte_offset &&
 			offset < b->byte_offset + b->length + b->space) {

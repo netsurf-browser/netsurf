@@ -1446,6 +1446,8 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 				} else
 					status = c->status_message;
 			}
+			else if (mouse & BROWSER_MOUSE_CLICK_1)
+				selection_clear(bw->sel, true);
 			break;
 		case GADGET_TEXTBOX:
 		case GADGET_PASSWORD:
@@ -1461,7 +1463,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 						x - gadget_box_x,
 						y - gadget_box_y);
 			}
-			else if (text_box) {
+			if (text_box) {
 				int pixel_offset;
 				size_t idx;
 
@@ -1482,6 +1484,8 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 				if (selection_dragging(bw->sel))
 					bw->drag_type = DRAGGING_SELECTION;
 			}
+			else if (mouse & BROWSER_MOUSE_CLICK_1)
+				selection_clear(bw->sel, true);
 			break;
 		case GADGET_HIDDEN:
 			/* not possible: no box generated */
