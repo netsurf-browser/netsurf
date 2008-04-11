@@ -4,6 +4,7 @@
  * Copyright 2004 Andrew Timmins <atimmins@blueyonder.co.uk>
  * Copyright 2004 John Tytgat <John.Tytgat@aaug.net>
  * Copyright 2006 Richard Wilson <info@tinct.net>
+ * Copyright 2008 Michael Drake <tlsa@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -118,10 +119,10 @@ static bool browser_window_nearer_text_box(struct box *box, int bx, int by,
 		int x, int y, int dir, struct box **nearest, int *tx, int *ty,
 		int *nr_xd, int *nr_yd);
 static bool browser_window_nearest_text_box(struct box *box, int bx, int by,
-		int fx, int fy, int x, int y, int dir, struct box **text_box,
+		int fx, int fy, int x, int y, int dir, struct box **nearest,
 		int *tx, int *ty, int *nr_xd, int *nr_yd);
 static struct box *browser_window_pick_text_box(struct browser_window *bw,
-		int x, int y, int *dx, int *dy, int dir);
+		int x, int y, int dir, int *dx, int *dy);
 static void browser_window_page_drag_start(struct browser_window *bw,
 		int x, int y);
 static void browser_window_scroll_box(struct browser_window *bw,
@@ -1823,8 +1824,8 @@ void browser_window_mouse_track_html(struct browser_window *bw,
 
 			if (selection_dragging_start(bw->sel)) dir = 1;
 
-			box = browser_window_pick_text_box(bw, x, y,
-					&dx, &dy, dir);
+			box = browser_window_pick_text_box(bw, x, y, dir,
+					&dx, &dy);
 			if (box) {
 				int pixel_offset;
 				size_t idx;
@@ -1906,7 +1907,7 @@ void browser_window_mouse_drag_end(struct browser_window *bw,
 					int dx, dy;
 
 					box = browser_window_pick_text_box(bw,
-							x, y, &dx, &dy, dir);
+							x, y, dir, &dx, &dy);
 					if (box) {
 						nsfont_position_in_string(
 							box->style,
@@ -2435,10 +2436,15 @@ void browser_form_submit(struct browser_window *bw, struct browser_window *targe
  * \param  dir      direction in which to search (-1 = above-left,
  *						  +1 = below-right)
  * \param  nearest  nearest text box found, or NULL if none
+ *		    updated if box is nearer than existing nearest
  * \param  tx	    position of text_box, in global document coordinates
+ *		    updated if box is nearer than existing nearest
  * \param  ty	    position of text_box, in global document coordinates
+ *		    updated if box is nearer than existing nearest
  * \param  nr_xd    distance to nearest text box found
+ *		    updated if box is nearer than existing nearest
  * \param  ny_yd    distance to nearest text box found
+ *		    updated if box is nearer than existing nearest
  * \return true if mouse point is inside box
  */
 
@@ -2492,25 +2498,30 @@ bool browser_window_nearer_text_box(struct box *box, int bx, int by,
  * Pick the text box child of 'box' that is closest to and above-left
  * (dir -ve) or below-right (dir +ve) of the point 'x,y'
  *
- * \param  box       parent box
- * \param  bx	     position of box, in global document coordinates
- * \param  by	     position of box, in global document coordinates
- * \param  fx	     position of float parent, in global document coordinates
- * \param  fy	     position of float parent, in global document coordinates
- * \param  x	     mouse point, in global document coordinates
- * \param  y	     mouse point, in global document coordinates
- * \param  dir       direction in which to search (-1 = above-left,
- *						   +1 = below-right)
- * \param  text_box  nearest text box found, or NULL if none
- * \param  tx	     position of text_box, in global document coordinates
- * \param  ty	     position of text_box, in global document coordinates
- * \param  nr_xd     distance to nearest text box found
- * \param  ny_yd     distance to nearest text box found
+ * \param  box      parent box
+ * \param  bx	    position of box, in global document coordinates
+ * \param  by	    position of box, in global document coordinates
+ * \param  fx	    position of float parent, in global document coordinates
+ * \param  fy	    position of float parent, in global document coordinates
+ * \param  x	    mouse point, in global document coordinates
+ * \param  y	    mouse point, in global document coordinates
+ * \param  dir      direction in which to search (-1 = above-left,
+ *						  +1 = below-right)
+ * \param  nearest  nearest text box found, or NULL if none
+ *		    updated if a descendant of box is nearer than old nearest
+ * \param  tx	    position of nearest, in global document coordinates
+ *		    updated if a descendant of box is nearer than old nearest
+ * \param  ty	    position of nearest, in global document coordinates
+ *		    updated if a descendant of box is nearer than old nearest
+ * \param  nr_xd    distance to nearest text box found
+ *		    updated if a descendant of box is nearer than old nearest
+ * \param  ny_yd    distance to nearest text box found
+ *		    updated if a descendant of box is nearer than old nearest
  * \return true if mouse point is inside text_box
  */
 
 bool browser_window_nearest_text_box(struct box *box, int bx, int by,
-		int fx, int fy, int x, int y, int dir, struct box **text_box,
+		int fx, int fy, int x, int y, int dir, struct box **nearest,
 		int *tx, int *ty, int *nr_xd, int *nr_yd)
 {
 	struct box *child = box->children;
@@ -2518,7 +2529,7 @@ bool browser_window_nearest_text_box(struct box *box, int bx, int by,
 	int c_fx, c_fy;
 	bool in_box = false;
 
-	if (*text_box == NULL) {
+	if (*nearest == NULL) {
 		*nr_xd = INT_MAX / 2; /* displacement of 'nearest so far' */
 		*nr_yd = INT_MAX / 2;
 	}
@@ -2550,7 +2561,7 @@ bool browser_window_nearest_text_box(struct box *box, int bx, int by,
 		}
 		if (in_box && child->text && !child->object) {
 			if (browser_window_nearer_text_box(child,
-					c_bx, c_by, x, y, dir, text_box,
+					c_bx, c_by, x, y, dir, nearest,
 					tx, ty, nr_xd, nr_yd))
 				return true;
 		} else {
@@ -2559,12 +2570,12 @@ bool browser_window_nearest_text_box(struct box *box, int bx, int by,
 						child->list_marker,
 						c_bx + child->list_marker->x,
 						c_by + child->list_marker->y,
-						x, y, dir, text_box,
+						x, y, dir, nearest,
 						tx, ty, nr_xd, nr_yd))
 					return true;
 			}
 			if (browser_window_nearest_text_box(child, c_bx, c_by,
-					c_fx, c_fy, x, y, dir, text_box, tx, ty,
+					c_fx, c_fy, x, y, dir, nearest, tx, ty,
 					nr_xd, nr_yd))
 				return true;
 		}
@@ -2583,13 +2594,13 @@ bool browser_window_nearest_text_box(struct box *box, int bx, int by,
  * \param bw	browser window
  * \param x	coordinate of mouse
  * \param y	coordinate of mouse
+ * \param dir	direction to search (-1 = above-left, +1 = below-right)
  * \param dx	receives x ordinate of mouse relative to text box
  * \param dy	receives y ordinate of mouse relative to text box
- * \param dir	direction to search (-1 = above-left, +1 = below-right)
  */
 
 struct box *browser_window_pick_text_box(struct browser_window *bw,
-		int x, int y, int *dx, int *dy, int dir)
+		int x, int y, int dir, int *dx, int *dy)
 {
 	struct content *c = bw->current_content;
 	struct box *text_box = NULL;
