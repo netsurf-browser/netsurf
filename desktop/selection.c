@@ -549,7 +549,10 @@ bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 		whitespace_text = NULL;
 	}
 	if (num_space == NUMBER_SPACE(box->byte_offset) &&
-			box->type != BOX_BR) {
+			box->type != BOX_BR &&
+			!((box->type == BOX_FLOAT_LEFT ||
+			box->type == BOX_FLOAT_RIGHT) &&
+			!box->text)) {
 		unsigned start_offset;
 		unsigned end_offset;
 

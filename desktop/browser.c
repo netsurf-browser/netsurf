@@ -114,11 +114,14 @@ static const char *browser_window_scrollbar_click(struct browser_window *bw,
 static void browser_radio_set(struct content *content,
 		struct form_control *radio);
 static gui_pointer_shape get_pointer_shape(css_cursor cursor);
-static struct box *browser_window_nearest_text_box(struct box *box,
-		int x, int y, int dir);
+static bool browser_window_nearer_text_box(struct box *box, int bx, int by,
+		int x, int y, int dir, struct box **nearest, int *tx, int *ty,
+		int *nr_xd, int *nr_yd);
+static bool browser_window_nearest_text_box(struct box *box, int bx, int by,
+		int fx, int fy, int x, int y, int dir, struct box **text_box,
+		int *tx, int *ty, int *nr_xd, int *nr_yd);
 static struct box *browser_window_pick_text_box(struct browser_window *bw,
-		browser_mouse_state mouse, int x, int y, int *dx, int *dy,
-		int dir);
+		int x, int y, int *dx, int *dy, int dir);
 static void browser_window_page_drag_start(struct browser_window *bw,
 		int x, int y);
 static void browser_window_scroll_box(struct browser_window *bw,
@@ -1820,18 +1823,14 @@ void browser_window_mouse_track_html(struct browser_window *bw,
 
 			if (selection_dragging_start(bw->sel)) dir = 1;
 
-			box = browser_window_pick_text_box(bw, mouse, x, y,
+			box = browser_window_pick_text_box(bw, x, y,
 					&dx, &dy, dir);
 			if (box) {
 				int pixel_offset;
 				size_t idx;
-
 				nsfont_position_in_string(box->style,
-					box->text,
-					box->length,
-					dx,
-					&idx,
-					&pixel_offset);
+						box->text, box->length,
+						dx, &idx, &pixel_offset);
 
 				selection_track(bw->sel, mouse,
 						box->byte_offset + idx);
@@ -1906,8 +1905,8 @@ void browser_window_mouse_drag_end(struct browser_window *bw,
 					struct box *box;
 					int dx, dy;
 
-					box = browser_window_pick_text_box(bw, mouse, x, y,
-							&dx, &dy, dir);
+					box = browser_window_pick_text_box(bw,
+							x, y, &dx, &dy, dir);
 					if (box) {
 						nsfont_position_in_string(
 							box->style,
@@ -2424,60 +2423,155 @@ void browser_form_submit(struct browser_window *bw, struct browser_window *targe
 }
 
 
+
+/**
+ * Check whether box is nearer mouse coordinates than current nearest box
+ *
+ * \param  box      box to test
+ * \param  bx	    position of box, in global document coordinates
+ * \param  by	    position of box, in global document coordinates
+ * \param  x	    mouse point, in global document coordinates
+ * \param  y	    mouse point, in global document coordinates
+ * \param  dir      direction in which to search (-1 = above-left,
+ *						  +1 = below-right)
+ * \param  nearest  nearest text box found, or NULL if none
+ * \param  tx	    position of text_box, in global document coordinates
+ * \param  ty	    position of text_box, in global document coordinates
+ * \param  nr_xd    distance to nearest text box found
+ * \param  ny_yd    distance to nearest text box found
+ * \return true if mouse point is inside box
+ */
+
+bool browser_window_nearer_text_box(struct box *box, int bx, int by,
+		int x, int y, int dir, struct box **nearest, int *tx, int *ty,
+		int *nr_xd, int *nr_yd)
+{
+	int w = box->padding[LEFT] + box->width + box->padding[RIGHT];
+	int h = box->padding[TOP] + box->height + box->padding[BOTTOM];
+	int y1 = by + h;
+	int x1 = bx + w;
+	int yd = INT_MAX;
+	int xd = INT_MAX;
+
+	if (x >= bx && x1 > x && y >= by && y1 > y) {
+		*nearest = box;
+		*tx = bx;
+		*ty = by;
+		return true;
+	}
+
+	if (box->parent->list_marker != box) {
+		if (dir < 0) {
+			/* consider only those children (partly) above-left */
+			if (by <= y && bx < x) {
+				yd = y <= y1 ? 0 : y - y1;
+				xd = x <= x1 ? 0 : x - x1;
+			}
+		} else {
+			/* consider only those children (partly) below-right */
+			if (y1 > y && x1 > x) {
+				yd = y > by ? 0 : by - y;
+				xd = x > bx ? 0 : bx - x;
+			}
+		}
+
+		/* give y displacement precedence over x */
+		if (yd < *nr_yd || (yd == *nr_yd && xd <= *nr_xd)) {
+			*nr_yd = yd;
+			*nr_xd = xd;
+			*nearest = box;
+			*tx = bx;
+			*ty = by;
+		}
+	}
+	return false;
+}
+
+
 /**
  * Pick the text box child of 'box' that is closest to and above-left
  * (dir -ve) or below-right (dir +ve) of the point 'x,y'
  *
- * \param  box  parent box
- * \param  x	x ordinate relative to parent box
- * \param  y	y ordinate relative to parent box
- * \param  dir  direction in which to search (-1 = above-left, +1 = below-right)
- * \return ptr to the nearest box, or NULL if none found
+ * \param  box       parent box
+ * \param  bx	     position of box, in global document coordinates
+ * \param  by	     position of box, in global document coordinates
+ * \param  fx	     position of float parent, in global document coordinates
+ * \param  fy	     position of float parent, in global document coordinates
+ * \param  x	     mouse point, in global document coordinates
+ * \param  y	     mouse point, in global document coordinates
+ * \param  dir       direction in which to search (-1 = above-left,
+ *						   +1 = below-right)
+ * \param  text_box  nearest text box found, or NULL if none
+ * \param  tx	     position of text_box, in global document coordinates
+ * \param  ty	     position of text_box, in global document coordinates
+ * \param  nr_xd     distance to nearest text box found
+ * \param  ny_yd     distance to nearest text box found
+ * \return true if mouse point is inside text_box
  */
 
-struct box *browser_window_nearest_text_box(struct box *box, int x, int y, int dir)
+bool browser_window_nearest_text_box(struct box *box, int bx, int by,
+		int fx, int fy, int x, int y, int dir, struct box **text_box,
+		int *tx, int *ty, int *nr_xd, int *nr_yd)
 {
 	struct box *child = box->children;
-	struct box *nearest = NULL;
-	int nr_yd = INT_MAX / 2;  /* displacement of 'nearest so far' */
-	int nr_xd = INT_MAX / 2;
+	int c_bx, c_by;
+	int c_fx, c_fy;
+	bool in_box = false;
+
+	if (*text_box == NULL) {
+		*nr_xd = INT_MAX / 2; /* displacement of 'nearest so far' */
+		*nr_yd = INT_MAX / 2;
+	}
+	if (box->type == BOX_INLINE_CONTAINER) {
+		int bw = box->padding[LEFT] + box->width + box->padding[RIGHT];
+		int bh = box->padding[TOP] + box->height + box->padding[BOTTOM];
+		int b_y1 = by + bh;
+		int b_x1 = bx + bw;
+		if (x >= bx && b_x1 > x && y >= by && b_y1 > y) {
+			in_box = true;
+		}
+	}
 
 	while (child) {
-		if (child->text && !child->object) {
-			int w = child->padding[LEFT] + child->width +
-				child->padding[RIGHT];
-			int h = child->padding[TOP] + child->height +
-				child->padding[BOTTOM];
-			int child_y1 = child->y + h;
-			int child_x1 = child->x + w;
-			int yd = INT_MAX;
-			int xd = INT_MAX;
-
-			if (dir < 0) {
-				/* consider only those children (partly) above-left */
-				if (child->y <= y && child->x < x) {
-					yd = y - child_y1;
-					xd = x - child_x1;
-				}
-			} else {
-				/* consider only those children (partly) below-right */
-				if (child_y1 > y && child_x1 > x) {
-					yd = child->y - y;
-					xd = child->x - x;
-				}
+		if (child->type == BOX_FLOAT_LEFT ||
+				child->type == BOX_FLOAT_RIGHT) {
+			c_bx = fx + child->x - child->scroll_x;
+			c_by = fy + child->y - child->scroll_y;
+		} else {
+			c_bx = bx + child->x - child->scroll_x;
+			c_by = by + child->y - child->scroll_y;
+		}
+		if (child->float_children) {
+			c_fx = c_bx;
+			c_fy = c_by;
+		} else {
+			c_fx = fx;
+			c_fy = fy;
+		}
+		if (in_box && child->text && !child->object) {
+			if (browser_window_nearer_text_box(child,
+					c_bx, c_by, x, y, dir, text_box,
+					tx, ty, nr_xd, nr_yd))
+				return true;
+		} else {
+			if (child->list_marker) {
+				if (browser_window_nearer_text_box(
+						child->list_marker,
+						c_bx + child->list_marker->x,
+						c_by + child->list_marker->y,
+						x, y, dir, text_box,
+						tx, ty, nr_xd, nr_yd))
+					return true;
 			}
-
-			/* give y displacement precedence over x */
-			if (yd < nr_yd || (yd == nr_yd && xd <= nr_xd)) {
-				nr_yd = yd;
-				nr_xd = xd;
-				nearest = child;
-			}
+			if (browser_window_nearest_text_box(child, c_bx, c_by,
+					c_fx, c_fy, x, y, dir, text_box, tx, ty,
+					nr_xd, nr_yd))
+				return true;
 		}
 		child = child->next;
 	}
 
-	return nearest;
+	return false;
 }
 
 
@@ -2487,68 +2581,53 @@ struct box *browser_window_nearest_text_box(struct box *box, int x, int y, int d
  * not over a text box.
  *
  * \param bw	browser window
- * \param mouse state of mouse buttons and modifier keys
  * \param x	coordinate of mouse
  * \param y	coordinate of mouse
- * \param dx	receives x ordinate of mouse relative to innermost containing box
- * \param dy	receives y ordinate
+ * \param dx	receives x ordinate of mouse relative to text box
+ * \param dy	receives y ordinate of mouse relative to text box
  * \param dir	direction to search (-1 = above-left, +1 = below-right)
  */
 
 struct box *browser_window_pick_text_box(struct browser_window *bw,
-		browser_mouse_state mouse, int x, int y, int *dx, int *dy,
-		int dir)
+		int x, int y, int *dx, int *dy, int dir)
 {
 	struct content *c = bw->current_content;
 	struct box *text_box = NULL;
 
 	if (c && c->type == CONTENT_HTML) {
 		struct box *box = c->data.html.layout;
-		int box_x = 0, box_y = 0;
-		struct content *content;
-		struct box *next_box;
+		int nr_xd, nr_yd;
+		int bx = box->margin[LEFT];
+		int by = box->margin[TOP];
+		int fx = bx;
+		int fy = by;
+		int tx, ty;
 
-		/* Consider the margins of the html page now */
-		box_x = box->margin[LEFT];
-		box_y = box->margin[TOP];
-
-		while ((next_box = box_at_point(box, x, y, &box_x, &box_y, &content)) !=
-				NULL) {
-			box = next_box;
-
-			if (box->text && !box->object) {
-				text_box = box;
-				break;
-			}
-		}
-
-		if (!text_box) {
-			box = browser_window_nearest_text_box(box, x - box_x, y - box_y, dir);
-
-			if (box && box->text && !box->object) {
-				int w = (box->padding[LEFT] + box->width + box->padding[RIGHT]);
-				int h = (box->padding[TOP] + box->height + box->padding[BOTTOM]);
+		if (!browser_window_nearest_text_box(box, bx, by, fx, fy, x, y,
+				dir, &text_box, &tx, &ty, &nr_xd, &nr_yd)) {
+			if (text_box && text_box->text && !text_box->object) {
+				int w = (text_box->padding[LEFT] +
+						text_box->width +
+						text_box->padding[RIGHT]);
+				int h = (text_box->padding[TOP] +
+						text_box->height +
+						text_box->padding[BOTTOM]);
 				int x1, y1;
 
-				box_x += box->x - box->scroll_x;
-				box_y += box->y - box->scroll_y;
-
-				y1 = box_y + h;
-				x1 = box_x + w;
+				y1 = ty + h;
+				x1 = tx + w;
 
 				/* ensure point lies within the text box */
-				if (x < box_x) x = box_x;
-				if (y < box_y) y = box_y;
+				if (x < tx) x = tx;
+				if (y < ty) y = ty;
 				if (y > y1) y = y1;
 				if (x > x1) x = x1;
-
-				text_box = box;
 			}
 		}
 
 		/* return coordinates relative to box */
-		*dx = x - box_x;
-		*dy = y - box_y;
+		*dx = x - tx;
+		*dy = y - ty;
 	}
 
 	return text_box;
