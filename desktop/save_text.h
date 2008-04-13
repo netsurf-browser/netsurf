@@ -24,8 +24,7 @@
 #ifndef _NETSURF_DESKTOP_SAVE_TEXT_H_
 #define _NETSURF_DESKTOP_SAVE_TEXT_H_
 
-#include "render/box.h"
-
+struct box;
 struct content;
 
 /* text currently being saved */

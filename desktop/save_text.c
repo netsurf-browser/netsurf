@@ -33,8 +33,6 @@
 #include "utils/utf8.h"
 #include "utils/utils.h"
 
-#ifdef WITH_TEXT_EXPORT
-
 static void extract_text(struct box *box, bool *first,
 		save_text_whitespace *before, struct save_text_state *save);
 static bool save_text_add_to_buffer(const char *text, size_t length,
@@ -59,7 +57,7 @@ void save_as_text(struct content *c, char *path)
 	utf8_convert_ret ret;
 	char *result;
 
-	if (c && c->type != CONTENT_HTML) {
+	if (!c || c->type != CONTENT_HTML) {
 		return;
 	}
 
@@ -292,5 +290,3 @@ bool save_text_add_to_buffer(const char *text, size_t length, struct box *box,
 
 	return true;
 }
-
-#endif
