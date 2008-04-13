@@ -1,5 +1,6 @@
 /*
  * Copyright 2004 John M Bell <jmb202@ecs.soton.ac.uk>
+ * Copyright 2008 Michael Drake <tlsa@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,11 +17,34 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/** \file
+  * Text export of HTML (interface).
+  */
+
 #ifndef _NETSURF_DESKTOP_SAVE_TEXT_H_
 #define _NETSURF_DESKTOP_SAVE_TEXT_H_
 
+#include "render/box.h"
+
 struct content;
 
+/* text currently being saved */
+struct save_text_state {
+	char *block;
+	size_t length;
+	size_t alloc;
+};
+
+typedef enum {
+	WHITESPACE_NONE,
+	WHITESPACE_TAB,
+	WHITESPACE_ONE_NEW_LINE,
+	WHITESPACE_TWO_NEW_LINES
+} save_text_whitespace;
+
 void save_as_text(struct content *c, char *path);
+void save_text_solve_whitespace(struct box *box, bool *first,
+		save_text_whitespace *before, const char **whitespace_text,
+		size_t *whitespace_length);
 
 #endif

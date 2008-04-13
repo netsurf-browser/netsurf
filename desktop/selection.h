@@ -17,7 +17,7 @@
  */
 
 /** \file
-  * Text selection within browser windows, platform-independent part (interface)
+  * Text selection within browser windows (interface).
   */
 
 #ifndef _NETSURF_DESKTOP_SELECTION_H_

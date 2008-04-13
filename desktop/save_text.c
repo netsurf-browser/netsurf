@@ -1,5 +1,6 @@
 /*
  * Copyright 2004 John M Bell <jmb202@ecs.soton.ac.uk>
+ * Copyright 2008 Michael Drake <tlsa@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,111 +17,280 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/** \file
+  * Text export of HTML (implementation).
+  */
+
+#include <assert.h>
 #include <stdbool.h>
 #include <string.h>
-
-#include <libxml/HTMLtree.h>
 
 #include "utils/config.h"
 #include "content/content.h"
 #include "desktop/save_text.h"
+#include "render/box.h"
 #include "utils/log.h"
+#include "utils/utf8.h"
 #include "utils/utils.h"
 
 #ifdef WITH_TEXT_EXPORT
 
-static void extract_text(xmlDoc *doc);
-static void extract_text_from_tree(xmlNode *n);
+static void extract_text(struct box *box, bool *first,
+		save_text_whitespace *before, struct save_text_state *save);
+static bool save_text_add_to_buffer(const char *text, size_t length,
+		struct box *box, const char *whitespace_text,
+		size_t whitespace_length, struct save_text_state *save);
 
-static FILE *out;
 
-void save_as_text(struct content *c, char *path) {
+/**
+ * Extract the text from an HTML content and save it was a text file. Text is
+ * converted to local encoding.
+ *
+ * \param  c		An HTML content.
+ * \param  path		Path to save text file too.
+ */
 
-	htmlParserCtxtPtr toSave;
+void save_as_text(struct content *c, char *path)
+{
+	FILE *out;
+	struct save_text_state save = { NULL, 0, 0 };
+	save_text_whitespace before = WHITESPACE_NONE;
+	bool first = true;
+	utf8_convert_ret ret;
+	char *result;
 
-	if (c->type != CONTENT_HTML) {
+	if (c && c->type != CONTENT_HTML) {
+		return;
+	}
+
+	extract_text(c->data.html.layout, &first, &before, &save);
+	if (!save.block)
+		return;
+
+	ret = utf8_to_local_encoding(save.block, save.length, &result);
+	free(save.block);
+
+	if (ret != UTF8_CONVERT_OK) {
+		LOG(("failed to convert to local encoding, return %d", ret));
 		return;
 	}
 
 	out = fopen(path, "w");
-	if (!out) return;
-
-	toSave = htmlCreateMemoryParserCtxt(c->source_data, c->source_size);
-	htmlParseDocument(toSave);
-
-	extract_text(toSave->myDoc);
-
-	fclose(out);
-
-	xmlFreeDoc(toSave->myDoc);
-	htmlFreeParserCtxt(toSave);
+	if (out) {
+		int res = fputs(result, out);
+		res = fputs("\n", out);
+		fclose(out);
+	}
+	free(result);
 }
 
-void extract_text(xmlDoc *doc)
-{
-	xmlNode *html;
 
-	/* find the html element */
-	for (html = doc->children;
-	     html!=0 && html->type != XML_ELEMENT_NODE;
-	     html = html->next)
-		;
-	if (html == 0 || strcmp((const char*)html->name, "html") != 0) {
-		return;
+/**
+ * Decide what whitespace to place before the next bit of content-related text
+ * that is saved. Any existing whitespace is overridden with if the whitespace
+ * for this box is more "significant".
+ *
+ * \param  box		Pointer to box.
+ * \param  first	Whether this is before the first bit of content-related
+ *			text to be saved.
+ * \param  before	Type of whitespace currently intended to be placed
+ *			before the next bit of content-related text to be saved.
+ *			Updated if this box is worthy of more significant
+ *			whitespace.
+ * \param  whitespace_text    Whitespace to place before next bit of
+ *			      content-related text to be saved.
+ *			      Updated if this box is worthy of more significant
+ *			      whitespace.
+ * \param  whitespace_length  Length of whitespace_text.
+ *			      Updated if this box is worthy of more significant
+ *			      whitespace.
+ */
+
+void save_text_solve_whitespace(struct box *box, bool *first,
+		save_text_whitespace *before, const char **whitespace_text,
+		size_t *whitespace_length)
+{
+	/* work out what whitespace should be placed before the next bit of
+	 * text */
+	if (*before < WHITESPACE_TWO_NEW_LINES &&
+			/* significant box type */
+			(box->type == BOX_BLOCK ||
+			 box->type == BOX_TABLE ||
+			 box->type == BOX_FLOAT_LEFT ||
+			 box->type == BOX_FLOAT_RIGHT) &&
+			/* and not a list element */
+			!box->list_marker &&
+			/* and not a marker... */
+			(!(box->parent && box->parent->list_marker == box) ||
+			 /* ...unless marker follows WHITESPACE_TAB */
+			 ((box->parent && box->parent->list_marker == box) &&
+			  *before == WHITESPACE_TAB))) {
+		*before = WHITESPACE_TWO_NEW_LINES;
+	}
+	else if (*before <= WHITESPACE_ONE_NEW_LINE &&
+			(box->type == BOX_TABLE_ROW ||
+			 box->type == BOX_BR ||
+			 (box->type != BOX_INLINE &&
+			 (box->parent && box->parent->list_marker == box)) ||
+			 (box->parent->style &&
+			  (box->parent->style->white_space ==
+			   CSS_WHITE_SPACE_PRE ||
+			   box->parent->style->white_space ==
+			   CSS_WHITE_SPACE_PRE_WRAP) &&
+			  box->type == BOX_INLINE_CONTAINER))) {
+		if (*before == WHITESPACE_ONE_NEW_LINE)
+			*before = WHITESPACE_TWO_NEW_LINES;
+		else
+			*before = WHITESPACE_ONE_NEW_LINE;
+	}
+	else if (*before < WHITESPACE_TAB &&
+			(box->type == BOX_TABLE_CELL ||
+			 box->list_marker)) {
+		*before = WHITESPACE_TAB;
 	}
 
-	extract_text_from_tree(html);
+	if (*first) {
+		/* before the first bit of text to be saved; there is
+		 * no preceding whitespace */
+		*whitespace_text = "";
+		*whitespace_length = 0;
+	} else {
+		/* set the whitespace that has been decided on */
+		switch (*before) {
+			case WHITESPACE_TWO_NEW_LINES:
+				*whitespace_text = "\n\n";
+				*whitespace_length = 2;
+				break;
+			case WHITESPACE_ONE_NEW_LINE:
+				*whitespace_text = "\n";
+				*whitespace_length = 1;
+				break;
+			case WHITESPACE_TAB:
+				*whitespace_text = "\t";
+				*whitespace_length = 1;
+				break;
+			case WHITESPACE_NONE:
+				*whitespace_text = "";
+				*whitespace_length = 0;
+				break;
+			default:
+				*whitespace_text = "";
+				*whitespace_length = 0;
+				break;
+		}
+	}
 }
 
-void extract_text_from_tree(xmlNode *n)
+
+/**
+ * Traverse though the box tree and add all text to a save buffer.
+ *
+ * \param  box		Pointer to box.
+ * \param  first	Whether this is before the first bit of content-related
+ *			text to be saved.
+ * \param  before	Type of whitespace currently intended to be placed
+ *			before the next bit of content-related text to be saved.
+ *			Updated if this box is worthy of more significant
+ *			whitespace.
+ * \param  save		our save_text_state workspace pointer
+ * \return true iff the file writing succeeded and traversal should continue.
+ */
+
+void extract_text(struct box *box, bool *first, save_text_whitespace *before,
+		struct save_text_state *save)
 {
-	xmlNode *this_node;
-	char *text;
-	int need_nl = 0;
+	struct box *child;
+	const char *whitespace_text = "";
+	size_t whitespace_length = 0;
 
-	if (n->type == XML_ELEMENT_NODE) {
-		if (strcmp(n->name, "dl") == 0 ||
-		    strcmp(n->name, "h1") == 0 ||
-		    strcmp(n->name, "h2") == 0 ||
-		    strcmp(n->name, "h3") == 0 ||
-		    strcmp(n->name, "ol") == 0 ||
-		    strcmp(n->name, "title") == 0 ||
-		    strcmp(n->name, "ul") == 0) {
-			need_nl = 2;
-		}
-		else if (strcmp(n->name, "applet") == 0 ||
-			 strcmp(n->name, "br") == 0 ||
-			 strcmp(n->name, "div") == 0 ||
-			 strcmp(n->name, "dt") == 0 ||
-			 strcmp(n->name, "h4") == 0 ||
-			 strcmp(n->name, "h5") == 0 ||
-			 strcmp(n->name, "h6") == 0 ||
-			 strcmp(n->name, "li") == 0 ||
-			 strcmp(n->name, "object") == 0 ||
-			 strcmp(n->name, "p") == 0 ||
-			 strcmp(n->name, "tr") == 0) {
-			need_nl = 1;
-		}
-		/* do nothing, we just recurse through these nodes */
-	}
-	else if (n->type == XML_TEXT_NODE) {
-		if ((text = squash_whitespace(n->content)) != NULL) {
-			fputs(text, out);
-			free(text);
-		}
-		return;
-	}
-	else {
-		return;
+	assert(box);
+
+	/* If box has a list marker */
+	if (box->list_marker) {
+		/* do the marker box before continuing with the rest of the
+		 * list element */
+		extract_text(box->list_marker, first, before, save);
 	}
 
-	/* now recurse */
-	for (this_node = n->children; this_node != 0; this_node = this_node->next) {
-		extract_text_from_tree(this_node);
+	/* read before calling the handler in case it modifies the tree */
+	child = box->children;
+
+	save_text_solve_whitespace(box, first, before, &whitespace_text,
+			&whitespace_length);
+
+	if (box->type != BOX_BR && !((box->type == BOX_FLOAT_LEFT ||
+			box->type == BOX_FLOAT_RIGHT) && !box->text) &&
+			box->length > 0 && box->text) {
+		/* Box meets criteria for export; add text to buffer */
+		save_text_add_to_buffer(box->text, box->length, box,
+				whitespace_text, whitespace_length, save);
+		*first = false;
+		*before = WHITESPACE_NONE;
 	}
 
-	while (need_nl--)
-		fputc('\n', out);
+	/* Work though the children of this box, extracting any text */
+	while (child) {
+		extract_text(child, first, before, save);
+		child = child->next;
+	}
+
+	return;
+}
+
+
+/**
+ * Add text to save text buffer. Any preceding whitespace or following space is
+ * also added to the buffer.
+ *
+ * \param  text		Pointer to text being added.
+ * \param  length	Length of text to be appended (bytes).
+ * \param  box		Pointer to text box.
+ * \param  whitespace_text    Whitespace to place before text for formatting
+ *                            may be NULL.
+ * \param  whitespace_length  Length of whitespace_text.
+ * \param  save		Our save_text_state workspace pointer.
+ * \return true iff the file writing succeeded and traversal should continue.
+ */
+
+bool save_text_add_to_buffer(const char *text, size_t length, struct box *box,
+		const char *whitespace_text, size_t whitespace_length,
+		struct save_text_state *save)
+{
+	size_t new_length;
+	int space = 0;
+
+	assert(save);
+
+	if (box->space > 0)
+		space = 1;
+
+	if (whitespace_text)
+		length += whitespace_length;
+
+	new_length = save->length + whitespace_length + length + space;
+	if (new_length >= save->alloc) {
+		size_t new_alloc = save->alloc + (save->alloc / 4);
+		char *new_block;
+
+		if (new_alloc < new_length) new_alloc = new_length;
+
+		new_block = realloc(save->block, new_alloc);
+		if (!new_block) return false;
+
+		save->block = new_block;
+		save->alloc = new_alloc;
+	}
+	if (whitespace_text) {
+		memcpy(save->block + save->length, whitespace_text,
+				whitespace_length);
+	}
+	memcpy(save->block + save->length + whitespace_length, text, length);
+	save->length += length;
+
+	if (space == 1)
+		save->block[save->length++] = ' ';
+
+	return true;
 }
 
 #endif

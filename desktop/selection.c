@@ -18,8 +18,7 @@
  */
 
 /** \file
-  * Text selection within browser windows,
-  * (implementation, platform independent)
+  * Text selection within browser windows (implementation).
   */
 
 #include <assert.h>
@@ -29,6 +28,7 @@
 
 #include "desktop/gui.h"
 #include "desktop/plotters.h"
+#include "desktop/save_text.h"
 #include "desktop/selection.h"
 #include "render/box.h"
 #include "render/font.h"
@@ -64,21 +64,6 @@ struct rdw_info {
 	struct rect r;
 };
 
-
-/* text selection currently being saved */
-struct save_state {
-	char *block;
-	size_t length;
-	size_t alloc;
-};
-
-typedef enum {
-	WHITESPACE_NONE,
-	WHITESPACE_TAB,
-	WHITESPACE_ONE_NEW_LINE,
-	WHITESPACE_TWO_NEW_LINES
-} seln_whitespace;
-
 static bool redraw_handler(const char *text, size_t length, struct box *box,
 		void *handle, const char *whitespace_text,
 		size_t whitespace_length);
@@ -92,7 +77,7 @@ static bool selected_part(struct box *box, unsigned start_idx, unsigned end_idx,
 		unsigned *start_offset, unsigned *end_offset);
 static bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 		unsigned int num_space, seln_traverse_handler handler,
-		void *handle, seln_whitespace *before, bool *first,
+		void *handle, save_text_whitespace *before, bool *first,
 		bool do_marker);
 static struct box *get_box(struct box *b, unsigned offset, int *pidx);
 
@@ -451,7 +436,7 @@ bool selected_part(struct box *box, unsigned start_idx, unsigned end_idx,
 
 bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 		unsigned int num_space, seln_traverse_handler handler,
-		void *handle, seln_whitespace *before, bool *first,
+		void *handle, save_text_whitespace *before, bool *first,
 		bool do_marker)
 {
 	struct box *child;
@@ -486,64 +471,8 @@ bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 	/* If nicely formatted output of the selected text is required, work
 	 * out what whitespace should be placed before the next bit of text */
 	if (before) {
-		if (*before < WHITESPACE_TWO_NEW_LINES &&
-				/* significant box type */
-				(box->type == BOX_BLOCK ||
-				 box->type == BOX_TABLE ||
-				 box->type == BOX_FLOAT_LEFT ||
-				 box->type == BOX_FLOAT_RIGHT) &&
-				/* and not a list element */
-				!box->list_marker &&
-				/* and not a marker... */
-				(!do_marker ||
-				 /* ...unless marker follows WHITESPACE_TAB */
-				 (do_marker && *before == WHITESPACE_TAB))) {
-			*before = WHITESPACE_TWO_NEW_LINES;
-		}
-		else if (*before <= WHITESPACE_ONE_NEW_LINE &&
-				(box->type == BOX_TABLE_ROW ||
-				 box->type == BOX_BR ||
-				 (box->type != BOX_INLINE && do_marker) ||
-				 (box->parent->style &&
-				  (box->parent->style->white_space ==
-				   CSS_WHITE_SPACE_PRE ||
-				   box->parent->style->white_space ==
-				   CSS_WHITE_SPACE_PRE_WRAP) &&
-				  box->type == BOX_INLINE_CONTAINER))) {
-			if (*before == WHITESPACE_ONE_NEW_LINE)
-				*before = WHITESPACE_TWO_NEW_LINES;
-			else
-				*before = WHITESPACE_ONE_NEW_LINE;
-		}
-		else if (*before < WHITESPACE_TAB &&
-				(box->type == BOX_TABLE_CELL ||
-				 box->list_marker)) {
-			*before = WHITESPACE_TAB;
-		}
-		if (*first) {
-			whitespace_text = "";
-		} else {
-			switch (*before) {
-				case WHITESPACE_TWO_NEW_LINES:
-					whitespace_text = "\n\n";
-					whitespace_length = 2;
-					break;
-				case WHITESPACE_ONE_NEW_LINE:
-					whitespace_text = "\n";
-					whitespace_length = 1;
-					break;
-				case WHITESPACE_TAB:
-					whitespace_text = "\t";
-					whitespace_length = 1;
-					break;
-				case WHITESPACE_NONE:
-					whitespace_text = "";
-					break;
-				default:
-					whitespace_text = "";
-					break;
-			}
-		}
+		save_text_solve_whitespace(box, first, before, &whitespace_text,
+				&whitespace_length);
 	}
 	else {
 		whitespace_text = NULL;
@@ -612,7 +541,7 @@ bool selection_traverse(struct selection *s, seln_traverse_handler handler,
 		void *handle)
 {
 	struct content *c;
-	seln_whitespace before = WHITESPACE_NONE;
+	save_text_whitespace before = WHITESPACE_NONE;
 	bool first = true;
 
 	if (!selection_defined(s))
@@ -952,7 +881,7 @@ bool save_handler(const char *text, size_t length, struct box *box,
 		void *handle, const char *whitespace_text,
 		size_t whitespace_length)
 {
-	struct save_state *sv = handle;
+	struct save_text_state *sv = handle;
 	size_t new_length;
 	int space = 0;
 
@@ -1002,7 +931,7 @@ bool save_handler(const char *text, size_t length, struct box *box,
 bool selection_save_text(struct selection *s, const char *path)
 {
 	struct content *c = s->bw->current_content;
-	struct save_state sv = { NULL, 0, 0 };
+	struct save_text_state sv = { NULL, 0, 0 };
 	utf8_convert_ret ret;
 	char *result;
 	FILE *out;
@@ -1013,19 +942,6 @@ bool selection_save_text(struct selection *s, const char *path)
 		free(sv.block);
 		return false;
 	}
-
-	/* add newline at end */
-	sv.length++;
-	if (sv.length > sv.alloc) {
-		char *new_block;
-
-		new_block = realloc(sv.block, sv.length);
-		if (!new_block) return false;
-
-		sv.block = new_block;
-		sv.alloc = sv.length;
-	}
-	sv.block[sv.length - 1] = '\n';
 
 	if (!sv.block)
 		return false;
@@ -1041,9 +957,12 @@ bool selection_save_text(struct selection *s, const char *path)
 	out = fopen(path, "w");
 	if (out) {
 		int res = fputs(result, out);
+		res = fputs("\n", out);
 		fclose(out);
+		free(result);
 		return (res != EOF);
 	}
+	free(result);
 
 	return false;
 }
