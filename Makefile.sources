@@ -29,7 +29,9 @@ S_IMAGE := $(addprefix image/,$(S_IMAGE))
 
 # S_BROWSER are sources related to full browsers but are common
 # between RO and Unix builds
-S_BROWSER := browser.c frames.c history_core.c netsurf.c selection.c textinput.c
+S_BROWSER := browser.c frames.c history_core.c netsurf.c save_text.c selection.c	\
+	textinput.c
+	 
 S_BROWSER := $(addprefix desktop/,$(S_BROWSER))
 
 # S_RISCOS are sources purely for the RISC OS build
@@ -45,7 +47,7 @@ S_RISCOS := 401login.c artworks.c assert.c awrender.s bitmap.c buffer.c			\
 	$(addprefix configure/,con_cache.c con_connect.c con_content.c con_fonts.c	\
 	con_home.c con_image.c con_inter.c con_language.c con_memory.c con_secure.c	\
 	con_theme.c)
-S_RISCOS := $(addprefix riscos/,$(S_RISCOS)) desktop/save_text.c
+S_RISCOS := $(addprefix riscos/,$(S_RISCOS))
 
 # S_GTK are sources purely for the GTK build
 S_GTK := font_pango.c gtk_bitmap.c gtk_gui.c gtk_schedule.c			\

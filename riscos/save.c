@@ -647,12 +647,10 @@ bool ro_gui_save_content(struct content *c, char *path)
 		case GUI_SAVE_DRAW:
 			return save_as_draw(c, path);
 #endif
-#ifdef WITH_TEXT_EXPORT
 		case GUI_SAVE_TEXT:
 			save_as_text(c, path);
 			xosfile_set_type(path, 0xfff);
 			break;
-#endif
 #ifdef WITH_SAVE_COMPLETE
 		case GUI_SAVE_COMPLETE:
 			assert(c);
