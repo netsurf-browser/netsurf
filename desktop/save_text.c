@@ -41,8 +41,8 @@ static bool save_text_add_to_buffer(const char *text, size_t length,
 
 
 /**
- * Extract the text from an HTML content and save it was a text file. Text is
- * converted to local encoding.
+ * Extract the text from an HTML content and save it as a text file. Text is
+ * converted to the local encoding.
  *
  * \param  c		An HTML content.
  * \param  path		Path to save text file too.
@@ -85,8 +85,8 @@ void save_as_text(struct content *c, char *path)
 
 /**
  * Decide what whitespace to place before the next bit of content-related text
- * that is saved. Any existing whitespace is overridden with if the whitespace
- * for this box is more "significant".
+ * that is saved. Any existing whitespace is overridden if the whitespace for
+ * this box is more "significant".
  *
  * \param  box		Pointer to box.
  * \param  first	Whether this is before the first bit of content-related
