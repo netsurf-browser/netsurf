@@ -297,8 +297,6 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 		free(url2);
 		return;
 	}
-	if (!download)
-		gui_window_set_url(bw->window, url2);
 
 	free(bw->frag_id);
 	bw->frag_id = NULL;
