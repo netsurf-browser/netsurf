@@ -89,6 +89,7 @@ typedef enum {
 	CONTENT_MSG_REDRAW,    /**< needs redraw (eg. new animation frame) */
 	CONTENT_MSG_NEWPTR,    /**< structure has been replaced */
 	CONTENT_MSG_REFRESH,   /**< wants refresh */
+	CONTENT_MSG_LAUNCH,    /**< needs url launching in external program */
 #ifdef WITH_AUTH
 	CONTENT_MSG_AUTH,      /**< authentication required */
 #endif
@@ -117,6 +118,7 @@ union content_msg_data {
 	} redraw;
 	const char *auth_realm;	/**< Realm, for CONTENT_MSG_AUTH. */
 	int delay;	/**< Minimum delay, for CONTENT_MSG_REFRESH */
+	const char *launch_url; /**< URL to launch, for CONTENT_MSG_LAUNCH */
 	struct {
 		/** Certificate chain (certs[0] == server) */
 		const struct ssl_cert_info *certs;

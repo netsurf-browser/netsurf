@@ -559,6 +559,18 @@ void browser_window_callback(content_msg msg, struct content *c,
 		}
 		break;
 
+	case CONTENT_MSG_LAUNCH:
+		assert(data.launch_url != NULL);
+
+		bw->loading_content = NULL;
+
+		gui_launch_url(data.launch_url);
+
+		browser_window_stop_throbber(bw);
+		free(bw->referer);
+		bw->referer = 0;
+		break;
+
 #ifdef WITH_AUTH
 	case CONTENT_MSG_AUTH:
 		gui_401login_open(bw, c, data.auth_realm);

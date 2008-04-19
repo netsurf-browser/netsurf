@@ -814,6 +814,7 @@ void fetchcache_redirect(struct content *c, const void *data,
 	long http_code;
 	const char *ref;
 	const char *parent;
+	bool can_fetch;
 	union content_msg_data msg_data;
 	url_func_result result;
 
@@ -933,6 +934,9 @@ void fetchcache_redirect(struct content *c, const void *data,
 	/* No longer need url1 */
 	free(url1);
 
+	/* Determine if we've got a fetch handler for this url */
+	can_fetch = fetch_can_fetch(url);
+
 	/* Process users of this content */
 	while (c->user_list->next) {
 		intptr_t p1, p2;
@@ -946,34 +950,45 @@ void fetchcache_redirect(struct content *c, const void *data,
 		p2 = c->user_list->next->p2;
 		callback = c->user_list->next->callback;
 
+		/* If we can't fetch this url, attempt to launch it */
+		if (!can_fetch) {
+			msg_data.launch_url = url;
+			callback(CONTENT_MSG_LAUNCH, c, p1, p2, msg_data);
+		}
+
 		/* Remove user */
 		content_remove_user(c, callback, p1, p2);
 
-		/* Get replacement content -- HTTP GET request */
-		replacement = fetchcache(url, callback, p1, p2, 
-				c->width, c->height, c->no_error_pages,
-				NULL, NULL, false, c->download);
-		if (!replacement) {
-			msg_data.error = messages_get("BadRedirect");
-			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		if (can_fetch) {
+			/* Get replacement content -- HTTP GET request */
+			replacement = fetchcache(url, callback, p1, p2, 
+					c->width, c->height, c->no_error_pages,
+					NULL, NULL, false, c->download);
+			if (!replacement) {
+				msg_data.error = messages_get("BadRedirect");
+				content_broadcast(c, CONTENT_MSG_ERROR, 
+						msg_data);
 
-			free(url);
-			free(parent_url);
-			free(referer);
-			return;
+				free(url);
+				free(parent_url);
+				free(referer);
+				return;
+			}
+
+			/* Set replacement's redirect count to 1 greater 
+			 * than ours */
+			replacement->redirect_count = c->redirect_count + 1;
+
+			/* Notify user that content has changed */
+			msg_data.new_url = url;
+			callback(CONTENT_MSG_NEWPTR, replacement, 
+					p1, p2, msg_data);
+
+			/* Start fetching the replacement content */
+			fetchcache_go(replacement, referer, callback, p1, p2,
+					c->width, c->height, NULL, NULL,
+					false, parent_url);
 		}
-
-		/* Set replacement's redirect count to 1 greater than ours */
-		replacement->redirect_count = c->redirect_count + 1;
-
-		/* Notify user that content has changed */
-		msg_data.new_url = url;
-		callback(CONTENT_MSG_NEWPTR, replacement, p1, p2, msg_data);
-
-		/* Start fetching the replacement content */
-		fetchcache_go(replacement, referer, callback, p1, p2,
-				c->width, c->height, NULL, NULL,
-				false, parent_url);
 	}
 
 	/* Clean up */

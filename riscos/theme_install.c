@@ -128,6 +128,7 @@ void theme_install_callback(content_msg msg, struct content *c,
 	case CONTENT_MSG_REFORMAT:
 	case CONTENT_MSG_REDRAW:
 	case CONTENT_MSG_NEWPTR:
+	case CONTENT_MSG_LAUNCH:
 	case CONTENT_MSG_AUTH:
 	default:
 		assert(0);

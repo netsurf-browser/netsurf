@@ -946,6 +946,9 @@ void css_atimport_callback(content_msg msg, struct content *css,
 		case CONTENT_MSG_SSL:
 #endif
 			/* todo: handle AUTH and SSL */
+
+		case CONTENT_MSG_LAUNCH:
+			/* Fall through */
 		case CONTENT_MSG_ERROR:
 			/* The stylesheet we were fetching may have been
 			 * redirected, in that case, the object pointers

@@ -1693,6 +1693,8 @@ void plugin_stream_callback(content_msg msg, struct content *c,
 			plugin_send_stream_new(p);
 			break;
 
+		case CONTENT_MSG_LAUNCH:
+			/* Fall through */
 		case CONTENT_MSG_ERROR:
 			/* The plugin we were fetching may have been
 			 * redirected, in that case, the object pointers

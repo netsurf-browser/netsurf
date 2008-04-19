@@ -1097,6 +1097,8 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 			c->active--;
 			break;
 
+		case CONTENT_MSG_LAUNCH:
+			/* Fall through */
 		case CONTENT_MSG_ERROR:
 			LOG(("stylesheet %s failed: %s", css->url, data.error));
 			/* The stylesheet we were fetching may have been
@@ -1325,6 +1327,8 @@ void html_object_callback(content_msg msg, struct content *object,
 			c->active--;
 			break;
 
+		case CONTENT_MSG_LAUNCH:
+			/* Fall through */
 		case CONTENT_MSG_ERROR:
 			/* The object we were fetching may have been
 			 * redirected, in that case, the object pointers
