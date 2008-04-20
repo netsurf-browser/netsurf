@@ -197,12 +197,12 @@ bool layout_block_context(struct box *block, struct content *content)
 	 * for the purposes of this discussion.
 	 *
 	 * layout_document is only ever called from html_reformat, which itself
-	 * is only ever called from content_reformat. content_reformat locks 
+	 * is only ever called from content_reformat. content_reformat locks
 	 * the content structure while reformatting is taking place.
 	 *
 	 * If we call gui_multitask here, then any pending UI events will get
 	 * processed. This includes window expose/redraw events. Upon receipt
-	 * of these events, the UI code will call content_redraw for the 
+	 * of these events, the UI code will call content_redraw for the
 	 * window's content. content_redraw will return immediately if the
 	 * content is currently locked (which it will be if we're still doing
 	 * layout).
@@ -212,8 +212,8 @@ bool layout_block_context(struct box *block, struct content *content)
 	 * in that case. This effectively means that the window contents
 	 * aren't updated, so whatever's already in the window will remain
 	 * on-screen. On GTK, however, redraw is not direct-to-screen, but
-	 * to a pixmap which is then blitted to screen. If we perform no 
-	 * redraw, then the pixmap will be flat white. When this is 
+	 * to a pixmap which is then blitted to screen. If we perform no
+	 * redraw, then the pixmap will be flat white. When this is
 	 * subsequently blitted, the user gets greeted with an unsightly
 	 * flicker to white (and then back to the document when the content
 	 * is redrawn when unlocked).
@@ -408,8 +408,8 @@ bool layout_block_context(struct box *block, struct content *content)
 				box->padding[BOTTOM] + box->border[BOTTOM];
 	advance_to_next_box:
 		if (!box->next) {
-			/* No more siblings: up to first ancestor with a
-			   sibling. */
+			/* No more siblings:
+			 * up to first ancestor with a sibling. */
 			do {
 				box = box->parent;
 				if (box == block)
@@ -2040,6 +2040,7 @@ bool layout_table(struct box *table, int available_width,
 	int relative_sum = 0;
 	int border_spacing_h = 0, border_spacing_v = 0;
 	int spare_height;
+	int positioned_columns = 0;
 	struct box *c;
 	struct box *row;
 	struct box *row_group;
@@ -2132,7 +2133,10 @@ bool layout_table(struct box *table, int available_width,
 				((const char *[]) {"UNKNOWN", "FIXED", "AUTO",
 				"PERCENT", "RELATIVE"})[col[i].type],
 				col[i].width, col[i].min, col[i].max));
-		if (col[i].type == COLUMN_WIDTH_FIXED) {
+		if (col[i].positioned) {
+			positioned_columns++;
+			continue;
+		} else if (col[i].type == COLUMN_WIDTH_FIXED) {
 			if (col[i].width < col[i].min)
 				col[i].width = col[i].max = col[i].min;
 			else
@@ -2146,7 +2150,8 @@ bool layout_table(struct box *table, int available_width,
 			required_width += col[i].min;
 		LOG(("required_width %i", required_width));
 	}
-	required_width += (columns + 1) * border_spacing_h;
+	required_width += (columns + 1 - positioned_columns) *
+			border_spacing_h;
 
 	LOG(("width %i, min %i, max %i, auto %i, required %i",
 			table_width, table->min_width, table->max_width,
@@ -2271,7 +2276,8 @@ bool layout_table(struct box *table, int available_width,
 
 	xs[0] = x = border_spacing_h;
 	for (i = 0; i != columns; i++) {
-		x += col[i].width + border_spacing_h;
+		if (!col[i].positioned)
+			x += col[i].width + border_spacing_h;
 		xs[i + 1] = x;
 		row_span[i] = 0;
 		excess_y[i] = 0;
@@ -2488,6 +2494,9 @@ void layout_minmax_table(struct box *table)
 		layout_minmax_block(cell);
 		i = cell->start_column;
 
+		if (col[i].positioned)
+			continue;
+
 		/* update column min, max widths using cell widths */
 		if (col[i].min < cell->min_width)
 			col[i].min = cell->min_width;
@@ -2680,7 +2689,8 @@ void layout_lists(struct box *box)
 				marker->width = 0;
 				marker->height = 0;
 			}
-			marker->x -= 4; // Gap between marker and content
+			/* Gap between marker and content */
+			marker->x -= 4;
 		}
 		layout_lists(child);
 	}

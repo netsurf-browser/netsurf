@@ -239,6 +239,8 @@ struct column {
 	int min;
 	/** Maximum width of content. */
 	int max;
+	/** Whether all of column's cells are css positioned. */
+	bool positioned;
 };
 
 /** Parameters for <object> and similar elements. */

@@ -542,6 +542,12 @@ bool box_normalise_table_row(struct box *row,
 			if (!style)
 				return false;
 			css_cascade(style, &css_blank_style, NULL);
+			if (child->style && (child->style->position ==
+					CSS_POSITION_ABSOLUTE ||
+					child->style->position ==
+					CSS_POSITION_FIXED)) {
+				style->position = child->style->position;
+			}
 			cell = box_create(style, row->href, row->target, 0, 0,
 					c);
 			if (!cell) {

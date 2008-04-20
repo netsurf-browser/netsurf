@@ -67,6 +67,7 @@ bool table_calculate_column_types(struct box *table)
 	for (i = 0; i != table->columns; i++) {
 		col[i].type = COLUMN_WIDTH_UNKNOWN;
 		col[i].width = 0;
+		col[i].positioned = true;
 	}
 
 	/* 1st pass: cells with colspan 1 only */
@@ -79,6 +80,11 @@ bool table_calculate_column_types(struct box *table)
 		if (cell->columns != 1)
 			continue;
 		i = cell->start_column;
+
+		if (cell->style->position != CSS_POSITION_ABSOLUTE &&
+				cell->style->position != CSS_POSITION_FIXED) {
+			col[i].positioned = false;
+	        }
 
 		/* fixed width takes priority over any other width type */
 		if (col[i].type != COLUMN_WIDTH_FIXED &&
