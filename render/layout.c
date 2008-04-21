@@ -2835,8 +2835,29 @@ bool layout_position_absolute(struct box *box,
 			if (!layout_position_absolute(c, c, 0, 0, content))
 				return false;
 		} else {
+			int px, py;
+			if (c->style && (c->style->float_ == CSS_FLOAT_LEFT ||
+					c->style->float_ == CSS_FLOAT_RIGHT)) {
+				/* Float x/y coords are relative to nearest
+				 * ansestor with float_children, rather than
+				 * relative to parent. Need to get x/y relative
+				 * to parent */
+				struct box *p;
+				px = c->x;
+				py = c->y;
+				for (p = box->parent; p && !p->float_children;
+						p = p->parent) {
+					px -= p->x;
+					py -= p->y;
+				}
+			} else {
+				/* Not a float, so box x/y coords are relative
+				 * to parent */
+				px = c->x;
+				py = c->y;
+			}
 			if (!layout_position_absolute(c, containing_block,
-					cx + c->x, cy + c->y, content))
+					cx + px, cy + py, content))
 				return false;
 		}
 	}
