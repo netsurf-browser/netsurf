@@ -227,6 +227,7 @@ bool layout_block_context(struct box *block, struct content *content)
 #endif
 
 	block->float_children = 0;
+	block->clear_level = 0;
 
 	/* special case if the block contains an object */
 	if (block->object) {
@@ -1469,7 +1470,8 @@ bool layout_line(struct box *first, int *width, int *y,
 
 			if (d->style && d->style->clear == CSS_CLEAR_NONE &&
 					(b->width <= (x1 - x0) - x ||
-					(left == 0 && right == 0 && x == 0))) {
+					(left == 0 && right == 0 && x == 0)) &&
+					cy >= cont->clear_level) {
 				/* not cleared
 				 * fits next to this line, or this line is
 				 * empty with no floats */
@@ -1482,12 +1484,20 @@ bool layout_line(struct box *first, int *width, int *y,
 					x1 -= b->width;
 					right = b;
 				}
-				b->y = cy;
+				/* Heed any previous clear */
+				if (cy < cont->clear_level) {
+					b->y = cont->clear_level;
+				} else {
+					b->y = cy;
+				}
 			} else {
 				/* cleared or doesn't fit */
 				/* place below into next available space */
+				fy = (cy > cont->clear_level) ? cy :
+						cont->clear_level;
+
 				place_float_below(b, *width,
-						cx, cy + height, cont);
+						cx, fy + height, cont);
 				if (d->style && d->style->clear !=
 							CSS_CLEAR_NONE) {
 					/* to be cleared below existing
@@ -1503,9 +1513,10 @@ bool layout_line(struct box *first, int *width, int *y,
 					}
 					fy = layout_clear(cont->float_children,
 							d->style->clear);
+					if (fy > cont->clear_level)
+						cont->clear_level = fy;
 					if (b->y < fy)
 						b->y = fy;
-
 				}
 			}
 			if (cont->float_children == b) {

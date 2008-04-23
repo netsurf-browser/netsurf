@@ -205,6 +205,9 @@ struct box {
 	struct box *float_children;
 	/** Next sibling float box. */
 	struct box *next_float;
+	/** Level below which subsequent floats must be cleared.
+	 * This is used only for boxes with float_children */
+	int clear_level;
 
 	/** List marker box if this is a list-item, or 0. */
 	struct box *list_marker;
