@@ -122,6 +122,10 @@ bool table_calculate_column_types(struct box *table)
 			continue;
 		i = cell->start_column;
 
+		for (j = i; j < i + cell->columns; j++) {
+			col[j].positioned = false;
+		}
+ 
 		/* count column types in spanned cells */
 		for (j = 0; j != cell->columns; j++) {
 			if (col[i + j].type == COLUMN_WIDTH_FIXED) {
