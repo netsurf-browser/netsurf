@@ -487,6 +487,9 @@ void layout_minmax_block(struct box *block)
 	int min = 0, max = 0;
 	int extra_fixed = 0;
 	float extra_frac = 0;
+	struct css_length size;
+	size.unit = CSS_UNIT_EM;
+	size.value = 10;
 
 	assert(block->type == BOX_BLOCK ||
 			block->type == BOX_INLINE_BLOCK ||
@@ -495,6 +498,15 @@ void layout_minmax_block(struct box *block)
 	/* check if the widths have already been calculated */
 	if (block->max_width != UNKNOWN_MAX_WIDTH)
 		return;
+
+	if (block->gadget && (block->gadget->type == GADGET_TEXTBOX ||
+			block->gadget->type == GADGET_PASSWORD ||
+			block->gadget->type == GADGET_FILE ||
+			block->gadget->type == GADGET_TEXTAREA)) {
+		assert(block->style);
+
+		min = max = css_len2px(&size, block->style);
+	}
 
 	if (block->object) {
 		if (block->object->type == CONTENT_HTML) {
@@ -776,7 +788,8 @@ void layout_float_find_dimensions(int available_width,
 	padding[BOTTOM] += scrollbar_width;
 
 	if (box->object && box->object->type != CONTENT_HTML) {
-		/* floating replaced element, see 10.3.6 and 10.6.2 */
+		/* Floating replaced element, with intrinsic width or height.
+		 * See 10.3.6 and 10.6.2 */
 		if (width == AUTO && height == AUTO) {
 			width = box->object->width;
 			height = box->object->height;
@@ -786,9 +799,43 @@ void layout_float_find_dimensions(int available_width,
 		else if (height == AUTO)
 			height = box->object->height * (float) width /
 					box->object->width;
+	} else if (box->gadget && (box->gadget->type == GADGET_TEXTBOX ||
+			box->gadget->type == GADGET_PASSWORD ||
+			box->gadget->type == GADGET_FILE ||
+			box->gadget->type == GADGET_TEXTAREA)) {
+		/* Give sensible dimensions to gadgets, with auto width/height,
+		 * that don't shrink to fit contained text. */
+		assert(box->style);
+
+		struct css_length size;
+		size.unit = CSS_UNIT_EM;
+		if (box->gadget->type == GADGET_TEXTBOX ||
+				box->gadget->type == GADGET_PASSWORD ||
+				box->gadget->type == GADGET_FILE) {
+			if (width == AUTO) {
+				size.value = 10;
+				width = css_len2px(&size, box->style);
+			}
+			if (box->gadget->type == GADGET_FILE &&
+					height == AUTO) {
+				size.value = 1.5;
+				height = css_len2px(&size, box->style);
+			}
+		}
+		if (box->gadget->type == GADGET_TEXTAREA) {
+			if (width == AUTO) {
+				size.value = 10;
+				width = css_len2px(&size, box->style);
+			}
+			if (height == AUTO) {
+				size.value = 4;
+				height = css_len2px(&size, box->style);
+			}
+		}
 	} else if (width == AUTO) {
 		/* CSS 2.1 section 10.3.5 */
-		width = min(max(box->min_width, available_width), box->max_width);
+		width = min(max(box->min_width, available_width),
+				box->max_width);
 		width -= box->margin[LEFT] + box->border[LEFT] +
 				box->padding[LEFT] + box->padding[RIGHT] +
 				box->border[RIGHT] + box->margin[RIGHT];
@@ -1145,6 +1192,9 @@ bool layout_line(struct box *first, int *width, int *y,
 	int space_before = 0, space_after = 0;
 	unsigned int inline_count = 0;
 	unsigned int i;
+	struct css_length gadget_size; /* Checkbox / radio buttons */
+	gadget_size.unit = CSS_UNIT_EM;
+	gadget_size.value = 1;
 
 	LOG(("first %p, first->text '%.*s', width %i, y %i, cx %i, cy %i",
 			first, (int) first->length, first->text, *width,
@@ -1167,7 +1217,8 @@ bool layout_line(struct box *first, int *width, int *y,
 	 * this is the line-height if there are text children and also in the
 	 * case of an initially empty text input */
 	if (has_text_children || first->parent->parent->gadget)
-		used_height = height = line_height(first->parent->parent->style);
+		used_height = height =
+				line_height(first->parent->parent->style);
 	else
 		/* inline containers with no text are usually for layout and
 		 * look better with no minimum line-height */
@@ -1354,10 +1405,9 @@ bool layout_line(struct box *first, int *width, int *y,
 		} else {
 			/* form control with no object */
 			if (b->width == AUTO)
-				b->width = 0;
+				b->width = css_len2px(&gadget_size, b->style);
 			if (b->height == AUTO)
-				b->height = line_height(b->style ? b->style :
-						b->parent->parent->style);
+				b->height = css_len2px(&gadget_size, b->style);
 		}
 
 		if (b->object && b->object->type == CONTENT_HTML &&
@@ -1484,12 +1534,7 @@ bool layout_line(struct box *first, int *width, int *y,
 					x1 -= b->width;
 					right = b;
 				}
-				/* Heed any previous clear */
-				if (cy < cont->clear_level) {
-					b->y = cont->clear_level;
-				} else {
-					b->y = cy;
-				}
+				b->y = cy;
 			} else {
 				/* cleared or doesn't fit */
 				/* place below into next available space */

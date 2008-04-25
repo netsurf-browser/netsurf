@@ -145,18 +145,16 @@ iframe[align=right] { float: right; }
 form { display: block; }
 
 input, button { background-color: #fff; color: #000; text-align: left;
-	font-family: sans-serif; width: 10em; height: auto; overflow: hidden;
+	font-family: sans-serif; width: auto; height: auto; overflow: hidden;
 	margin: 1px; border: 2px solid #333; padding: 1px 2px; }
 input[type=button], input[type=reset], input[type=submit], button {
 	background-color: #d9d9d9; color: #000; text-align: center;
-	width: auto; height: auto;
 	border: medium outset #d9d9d9; padding: 1px 0.5em; }
 input[type=image] { background-color: transparent; color: #000;
-	width: auto; height: auto; border: none; padding: 0 2px; }
+	border: none; padding: 0 2px; }
 input[type=checkbox], input[type=radio] { background-color: transparent;
-	width: 1em; height: 1em; border: none; padding: 0 0.1em; }
-input[type=file] { background-color: #d9d9d9; color: #000;
-	width: 10em; height: 1.5em; font-style: italic;
+	border: none; padding: 0 0.1em; }
+input[type=file] { background-color: #d9d9d9; color: #000; font-style: italic;
 	border: medium inset #d9d9d9; padding: 1px 2px;}
 input[align=left] { float: left; }
 input[align=right] { float: right; }
@@ -168,7 +166,7 @@ select { background-color: #d9d9d9; color: #000; text-align: left;
 select:after { content: "\25bc"; border-left: 4px ridge #d9d9d9; }
 
 textarea { background-color: #fff; color: #000; text-align: left;
-	font-family: monospace; width: 10em; height: 4em; overflow: scroll;
+	font-family: monospace; width: auto; height: auto; overflow: scroll;
 	margin: 1px; border: 2px solid #333; padding: 0 2px; }
 
 fieldset { display: block; border: thin solid #888; margin: 1.12em 0; }
