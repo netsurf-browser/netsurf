@@ -502,9 +502,9 @@ void layout_minmax_block(struct box *block)
 	if (block->gadget && (block->gadget->type == GADGET_TEXTBOX ||
 			block->gadget->type == GADGET_PASSWORD ||
 			block->gadget->type == GADGET_FILE ||
-			block->gadget->type == GADGET_TEXTAREA)) {
-		assert(block->style);
-
+			block->gadget->type == GADGET_TEXTAREA) &&
+			block->style &&
+			block->style->width.width == CSS_WIDTH_AUTO) {
 		min = max = css_len2px(&size, block->style);
 	}
 
@@ -826,6 +826,8 @@ void layout_float_find_dimensions(int available_width,
 			if (width == AUTO) {
 				size.value = 10;
 				width = css_len2px(&size, box->style);
+			} else {
+				width -= scrollbar_width;
 			}
 			if (height == AUTO) {
 				size.value = 4;
@@ -1786,6 +1788,9 @@ struct box *layout_minmax_line(struct box *first,
 	float frac;
 	size_t i, j;
 	struct box *b;
+	struct css_length gadget_size; /* Checkbox / radio buttons */
+	gadget_size.unit = CSS_UNIT_EM;
+	gadget_size.value = 1;
 
 	/* corresponds to the pass 1 loop in layout_line() */
 	for (b = first; b; b = b->next) {
@@ -1954,7 +1959,7 @@ struct box *layout_minmax_line(struct box *first,
 		} else {
 			/* form control with no object */
 			if (width == AUTO)
-				width = 0;
+				width = css_len2px(&gadget_size, b->style);
 		}
 
 		if (min < width)
