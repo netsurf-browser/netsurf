@@ -57,6 +57,8 @@ void gtk_fetch_filetype_init(const char *mimefile)
 	 */
 
 	hash_add(mime_hash, "css", "text/css");
+	hash_add(mime_hash, "htm", "text/html");
+	hash_add(mime_hash, "html", "text/html");
 	hash_add(mime_hash, "jpg", "image/jpeg");
 	hash_add(mime_hash, "jpeg", "image/jpeg");
 	hash_add(mime_hash, "gif", "image/gif");
