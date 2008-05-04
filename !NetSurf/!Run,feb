@@ -44,6 +44,12 @@ If "<Inet$MimeMappings>" = "" Then Set Inet$MimeMappings InetDBase:MimeMap
 | Syntax: NetSurfRMLoad <Path to module>
 Set Alias$NetSurfRMLoad IfThere %%*0 Then RMLoad %%*0
 
+| Ensure a 32bit SharedCLibrary is installed
+| http://www.iyonix.com/32bit/
+| (5.17 == first 32bit SCL, 5.43 == C99 features)
+RMEnsure SharedCLibrary 5.17 NetSurfRMLoad System:Modules.CLib
+RMEnsure SharedCLibrary 5.43 Error NetSurf requires SharedCLibrary 5.43 or later. This can be downloaded from http://www.iyonix.com/32bit/system.shtml
+
 | Ensure CallASWI is installed
 | http://www.iyonix.com/32bit/
 RMEnsure UtilityModule 3.70 RMEnsure CallASWI 0.02 NetSurfRMLoad System:Modules.CallASWI
