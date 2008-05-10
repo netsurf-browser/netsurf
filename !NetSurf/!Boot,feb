@@ -43,12 +43,12 @@ Set NetSurf$Description "Web browser"
 | NetSurf Sprites
 |
 | The sprite file used is based on the OS and SpriteExtend versions:
-|   RO <  5 and SpriteExtend <  1.50 uses !Sprites<nn>
-|   RO <  5 and SpriteExtend >= 1.50 uses ASprites<nn>
-|   RO >= 5                          uses 5Sprites<nn>
+|   RO <> 5 and SpriteExtend <  1.50 uses !Sprites<nn>
+|   RO <> 5 and SpriteExtend >= 1.50 uses ASprites<nn>
+|   RO =  5                          uses 5Sprites<nn>
 Set NetSurf$Sprites <NetSurf$Dir>.ASprites
 RMEnsure SpriteExtend 1.50 Set NetSurf$Sprites <NetSurf$Dir>.!Sprites
-If "<Boot$OSVersion>" < "500" Then IconSprites <NetSurf$Sprites> Else IconSprites <NetSurf$Dir>.5Sprites
+If "<Boot$OSVersion>" = "500" Then IconSprites <NetSurf$Dir>.5Sprites Else IconSprites <NetSurf$Sprites>
 Unset NetSurf$Sprites
 
 | Acorn URI protocol
