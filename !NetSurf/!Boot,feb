@@ -48,7 +48,7 @@ Set NetSurf$Description "Web browser"
 |   RO =  5                          uses 5Sprites<nn>
 Set NetSurf$Sprites <NetSurf$Dir>.ASprites
 RMEnsure SpriteExtend 1.50 Set NetSurf$Sprites <NetSurf$Dir>.!Sprites
-If "<Boot$OSVersion>" = "500" Then IconSprites <NetSurf$Dir>.5Sprites Else IconSprites <NetSurf$Sprites>
+If (("<Boot$OSVersion>" >= "500") AND ("<Boot$OSVersion>" < "600")) Then IconSprites <NetSurf$Dir>.5Sprites Else IconSprites <NetSurf$Sprites>
 Unset NetSurf$Sprites
 
 | Acorn URI protocol
