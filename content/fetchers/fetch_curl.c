@@ -37,9 +37,6 @@
 #include <sys/select.h>
 #include <sys/stat.h>
 #include <sys/utsname.h>
-#ifdef riscos
-#include <unixlib/local.h>
-#endif
 #include "utils/config.h"
 #ifdef WITH_SSL
 #include <openssl/ssl.h>

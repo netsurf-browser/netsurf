@@ -34,9 +34,6 @@
 #include "desktop/netsurf.h"
 #include "desktop/browser.h"
 #include "desktop/gui.h"
-#ifdef riscos
-#include "riscos/buffer.h"
-#endif
 #include "utils/log.h"
 #include "utils/url.h"
 #include "utils/utf8.h"

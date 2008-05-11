@@ -35,9 +35,6 @@
 #include <time.h>
 #include <sys/select.h>
 #include <sys/stat.h>
-#ifdef riscos
-#include <unixlib/local.h>
-#endif
 #include "utils/config.h"
 #ifdef WITH_SSL
 #include <openssl/ssl.h>
