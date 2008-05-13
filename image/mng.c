@@ -20,6 +20,9 @@
  * Content for image/mng, image/png, and image/jng (implementation).
  */
 
+#include "utils/config.h"
+#ifdef WITH_MNG
+
 #include <assert.h>
 #include <stdbool.h>
 #include <string.h>
@@ -27,7 +30,6 @@
 #include <sys/time.h>
 #include <time.h>
 #include <libmng.h>
-#include "utils/config.h"
 #include "content/content.h"
 #include "desktop/browser.h"
 #include "desktop/options.h"
@@ -37,8 +39,6 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
-
-#ifdef WITH_MNG
 
 /*	We do not currently support any form of colour/gamma correction, nor do
 	we support dynamic MNGs.
