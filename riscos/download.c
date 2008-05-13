@@ -29,7 +29,6 @@
  */
 
 #include <assert.h>
-#include <ctype.h>
 #include <string.h>
 #include <sys/time.h>
 #include <time.h>

@@ -43,6 +43,7 @@
 #include "render/form.h"
 #include "render/html.h"
 #include "desktop/gui.h"
+#include "utils/locale.h"
 //#define NDEBUG
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -1362,20 +1363,20 @@ void box_text_transform(char *s, unsigned int len,
 		case CSS_TEXT_TRANSFORM_UPPERCASE:
 			for (i = 0; i < len; ++i)
 				if ((unsigned char) s[i] < 0x80)
-					s[i] = toupper(s[i]);
+					s[i] = ls_toupper(s[i]);
 			break;
 		case CSS_TEXT_TRANSFORM_LOWERCASE:
 			for (i = 0; i < len; ++i)
 				if ((unsigned char) s[i] < 0x80)
-					s[i] = tolower(s[i]);
+					s[i] = ls_tolower(s[i]);
 			break;
 		case CSS_TEXT_TRANSFORM_CAPITALIZE:
 			if ((unsigned char) s[0] < 0x80)
-				s[0] = toupper(s[0]);
+				s[0] = ls_toupper(s[0]);
 			for (i = 1; i < len; ++i)
 				if ((unsigned char) s[i] < 0x80 &&
-						isspace(s[i - 1]))
-					s[i] = toupper(s[i]);
+						ls_isspace(s[i - 1]))
+					s[i] = ls_toupper(s[i]);
 			break;
 		default:
 			break;

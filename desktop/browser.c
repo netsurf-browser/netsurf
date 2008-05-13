@@ -26,7 +26,6 @@
  */
 
 #include <assert.h>
-#include <ctype.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <stdint.h>

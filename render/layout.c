@@ -33,7 +33,6 @@
 
 #define _GNU_SOURCE  /* for strndup */
 #include <assert.h>
-#include <ctype.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
