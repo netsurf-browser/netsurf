@@ -19,6 +19,8 @@
 #ifndef _NETSURF_UTILS_CONFIG_H_
 #define _NETSURF_UTILS_CONFIG_H_
 
+#include <stddef.h>
+
 /* Try to detect which features the target OS supports */
 
 #define HAVE_STRNDUP
