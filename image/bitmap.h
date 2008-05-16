@@ -22,7 +22,7 @@
  * This interface wraps the native platform-specific image format, so that
  * portable image convertors can be written.
  *
- * The bitmap format is either RGBA.
+ * The bitmap format is ABGR.
  */
 
 #ifndef _NETSURF_IMAGE_BITMAP_H_
@@ -39,7 +39,7 @@
 #define BITMAP_SUSPENDED	(1 << 4)	/** currently suspended */
 #define BITMAP_READY		(1 << 5)	/** fully initialised */
 
-#define BITMAP_SAVE_FULL_ALPHA	(1 << 0)	/** save with full alpha channel (if not opaque) */ 
+#define BITMAP_SAVE_FULL_ALPHA	(1 << 0)	/** save with full alpha channel (if not opaque) */
 
 struct content;
 
