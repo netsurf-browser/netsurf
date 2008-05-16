@@ -27,6 +27,7 @@
 
 #include <assert.h>
 #include <ctype.h>
+#include <inttypes.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -2288,7 +2289,7 @@ bool ro_gui_window_keypress(wimp_key *key)
 	os_error *error;
 	wimp_pointer pointer;
 	float scale;
-	wchar_t c = (wchar_t)key->c;
+	uint32_t c = (uint32_t) key->c;
 
 	/* Find gui window */
 	if ((g = ro_gui_window_lookup(key->w)) != NULL) {
@@ -2367,7 +2368,7 @@ bool ro_gui_window_keypress(wimp_key *key)
 
 		/* Reset c to incoming character / key code
 		 * as we may have corrupted it above */
-		c = (wchar_t)key->c;
+		c = (uint32_t) key->c;
 	}
 
 	switch (c) {

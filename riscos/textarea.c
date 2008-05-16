@@ -20,6 +20,7 @@
  * Single/Multi-line UTF-8 text area (implementation)
  */
 
+#include <inttypes.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -907,7 +908,7 @@ bool textarea_mouse_click(wimp_pointer *pointer)
  */
 bool textarea_key_press(wimp_key *key)
 {
-	wchar_t c = (wchar_t)key->c;
+	uint32_t c = (uint32_t) key->c;
 	wimp_key keypress;
 	struct text_area *ta;
 	char utf8[7];

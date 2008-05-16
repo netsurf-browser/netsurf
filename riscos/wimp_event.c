@@ -21,6 +21,7 @@
  */
 
 #include <assert.h>
+#include <inttypes.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -653,13 +654,13 @@ void ro_gui_wimp_event_ok_click(struct event_window *window, wimp_mouse_state st
 bool ro_gui_wimp_event_keypress(wimp_key *key) {
 	static int *ucstable = NULL;
 	static int alphabet = 0;
-	static wchar_t wc = 0;	/* buffer for UTF8 alphabet */
+	static uint32_t wc = 0;	/* buffer for UTF8 alphabet */
 	static int shift = 0;
 	struct event_window *window;
 	struct icon_event *event;
 	wimp_pointer pointer;
 	wimp_key k;
-	wchar_t c = (wchar_t)key->c;
+	uint32_t c = (uint32_t) key->c;
 	int t_alphabet;
 	os_error *error;
 

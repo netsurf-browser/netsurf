@@ -25,7 +25,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <wchar.h>
 #include "oslib/wimp.h"
 #include "content/urldb.h"
 #include "utils/log.h"
@@ -92,7 +91,7 @@ void ro_gui_url_complete_start(struct gui_window *g)
  * \param key  the key pressed (as UTF32 code or wimp key + bit31 set)
  * \return true to indicate keypress handled, false otherwise
  */
-bool ro_gui_url_complete_keypress(struct gui_window *g, wchar_t key)
+bool ro_gui_url_complete_keypress(struct gui_window *g, uint32_t key)
 {
 	wimp_window_state state;
 	char *match_url;

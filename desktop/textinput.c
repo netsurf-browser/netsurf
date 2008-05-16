@@ -49,9 +49,9 @@ struct caret ghost_caret;
 
 
 static bool browser_window_textarea_callback(struct browser_window *bw,
-		wchar_t key, void *p);
+		uint32_t key, void *p);
 static bool browser_window_input_callback(struct browser_window *bw,
-		wchar_t key, void *p);
+		uint32_t key, void *p);
 static void browser_window_place_caret(struct browser_window *bw,
 		int x, int y, int height,
 		browser_caret_callback caret_cb,
@@ -302,7 +302,7 @@ void browser_window_textarea_click(struct browser_window *bw,
  *             it would have claimed it if it could.
  */
 bool browser_window_textarea_callback(struct browser_window *bw,
-		wchar_t key, void *p)
+		uint32_t key, void *p)
 {
 	struct box *textarea = p;
 	struct box *inline_container =
@@ -809,7 +809,7 @@ void browser_window_input_click(struct browser_window* bw,
  *             it would have claimed it if it could.
  */
 bool browser_window_input_callback(struct browser_window *bw,
-		wchar_t key, void *p)
+		uint32_t key, void *p)
 {
 	struct box *input = (struct box *)p;
 	struct box *text_box = input->children->children;
@@ -1147,7 +1147,7 @@ void browser_window_remove_caret(struct browser_window *bw)
  * \param key  The UCS4 character codepoint
  * \return true if key handled, false otherwise
  */
-bool browser_window_key_press(struct browser_window *bw, wchar_t key)
+bool browser_window_key_press(struct browser_window *bw, uint32_t key)
 {
 	/* keys that take effect wherever the caret is positioned */
 	switch (key) {

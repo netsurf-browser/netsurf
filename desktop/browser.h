@@ -24,8 +24,8 @@
 #ifndef _NETSURF_DESKTOP_BROWSER_H_
 #define _NETSURF_DESKTOP_BROWSER_H_
 
+#include <inttypes.h>
 #include <stdbool.h>
-#include <stddef.h>
 #include <time.h>
 #include "render/html.h"
 
@@ -43,7 +43,7 @@ struct bitmap;
 
 
 typedef bool (*browser_caret_callback)(struct browser_window *bw,
-	wchar_t key, void *p);
+	uint32_t key, void *p);
 typedef bool (*browser_paste_callback)(struct browser_window *bw,
 	const char *utf8, unsigned utf8_len, bool last, void *p);
 typedef void (*browser_move_callback)(struct browser_window *bw,
@@ -216,7 +216,7 @@ void browser_window_mouse_track(struct browser_window *bw,
 void browser_window_mouse_drag_end(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y);
 
-bool browser_window_key_press(struct browser_window *bw, wchar_t key);
+bool browser_window_key_press(struct browser_window *bw, uint32_t key);
 bool browser_window_paste_text(struct browser_window *bw, const char *utf8,
 		unsigned utf8_len, bool last);
 void browser_window_form_select(struct browser_window *bw,

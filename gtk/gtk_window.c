@@ -17,6 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <inttypes.h>
 #include "gtk/gtk_window.h"
 #include "desktop/browser.h"
 #include "desktop/options.h"
@@ -61,7 +62,7 @@ struct gui_window {
 
 static struct gui_window *window_list = 0;	/**< first entry in win list*/
 
-static wchar_t gdkkey_to_nskey(GdkEventKey *);
+static uint32_t gdkkey_to_nskey(GdkEventKey *);
 static void nsgtk_gui_window_attach_child(struct gui_window *parent,
                                           struct gui_window *child);
 /* Methods which apply only to a gui_window */
@@ -371,7 +372,7 @@ gboolean nsgtk_window_button_press_event(GtkWidget *widget,
 	return TRUE;
 }
 
-wchar_t gdkkey_to_nskey(GdkEventKey *key)
+uint32_t gdkkey_to_nskey(GdkEventKey *key)
 {
         /* this function will need to become much more complex to support
          * everything that the RISC OS version does.  But this will do for
@@ -414,7 +415,7 @@ gboolean nsgtk_window_keypress_event(GtkWidget *widget, GdkEventKey *event,
 					gpointer data)
 {
 	struct gui_window *g = data;
-	wchar_t nskey = gdkkey_to_nskey(event);
+	uint32_t nskey = gdkkey_to_nskey(event);
 
 	if (browser_window_key_press(g->bw, nskey))
 		return TRUE;
