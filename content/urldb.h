@@ -44,7 +44,7 @@ struct url_data {
 struct cookie_data {
 	const char *name;		/**< Cookie name */
 	const char *value;		/**< Cookie value */
-	const char value_was_quoted;	/**< Value was quoted in Set-Cookie: */
+	const bool value_was_quoted;	/**< Value was quoted in Set-Cookie: */
 	const char *comment;		/**< Cookie comment */
 	const bool domain_from_set;	/**< Domain came from Set-Cookie: header */
 	const char *domain;		/**< Domain */
