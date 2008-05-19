@@ -106,6 +106,13 @@ LDFLAGS := -Xlinker -symbols=$(OBJROOT)/sym -lxml2 -lz -lm -lcurl -lssl -lcrypto
 else
 LDFLAGS := $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl openssl)
 LDFLAGS += -lz -lm -lmng -ljpeg
+
+CCACHE := $(shell which ccache)
+
+ifneq ($(CCACHE),)
+CC := $(CCACHE) $(CC)
+endif
+
 endif
 
 ifeq ($(TARGET),gtk)
