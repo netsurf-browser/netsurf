@@ -308,3 +308,46 @@ int ro_content_filetype_from_type(content_type type) {
 	}
 	return 0;
 }
+
+/**
+ * Determine the type of a local file.
+ *
+ * \param unix_path Unix style path to file on disk
+ * \return File type
+ */
+bits ro_filetype_from_unix_path(const char *unix_path)
+{
+	unsigned int len = strlen(unix_path) + 100;
+	char *path = calloc(len, 1);
+	char *r, *slash;
+	os_error *error;
+	bits file_type;
+
+	if (!path) {
+		LOG(("Insufficient memory for calloc"));
+		warn_user("NoMemory", 0);
+		return osfile_TYPE_DATA;
+	}
+
+	/* convert path to RISC OS format and read file type */
+	r = __riscosify(unix_path, 0, __RISCOSIFY_NO_SUFFIX, path, len, 0);
+	if (r == 0) {
+		LOG(("__riscosify failed"));
+		free(path);
+		return osfile_TYPE_DATA;
+	}
+
+	error = xosfile_read_stamped_no_path(path, 0, 0, 0, 0, 0,
+			&file_type);
+	if (error) {
+		LOG(("xosfile_read_stamped_no_path failed: %s",
+				error->errmess));
+		free(path);
+		return osfile_TYPE_DATA;
+	}
+
+	free(path);
+
+	return file_type;
+}
+

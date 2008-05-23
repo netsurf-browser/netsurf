@@ -213,7 +213,7 @@ struct gui_download_window *gui_download_window_create(const char *url,
 		unsigned int total_size)
 {
 	const char *temp_name;
-	char *nice;
+	char *nice, *scheme = NULL;
 	struct gui_download_window *dw;
 	bool space_warning = false;
 	os_error *error;
@@ -241,15 +241,46 @@ struct gui_download_window *gui_download_window_create(const char *url,
 	gettimeofday(&dw->start_time, 0);
 	dw->last_time = dw->start_time;
 	dw->last_received = 0;
+	dw->file_type = 0;
 
-	/* convert MIME type to RISC OS file type */
-	error = xmimemaptranslate_mime_type_to_filetype(mime_type,
-			&(dw->file_type));
-	if (error) {
-		LOG(("xmimemaptranslate_mime_type_to_filetype: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("MiscError", error->errmess);
-		dw->file_type = 0xffd;
+	/* Get scheme from URL */
+	res = url_scheme(url, &scheme);
+	if (res == URL_FUNC_NOMEM) {
+		warn_user("NoMemory", 0);
+		free(dw);
+		return 0;
+	} else if (res == URL_FUNC_OK) {
+		/* If we have a scheme and it's "file", then 
+		 * attempt to use the local filetype directly */
+		if (strcasecmp(scheme, "file") == 0) {
+			char *path = NULL;
+			res = url_path(url, &path);
+			if (res == URL_FUNC_NOMEM) {
+				warn_user("NoMemory", 0);
+				free(scheme);
+				free(dw);
+				return 0;
+			} else if (res == URL_FUNC_OK) {
+				dw->file_type = ro_filetype_from_unix_path(path);
+				free(path);
+			}
+		}
+
+		free(scheme);
+	}
+
+	/* If we still don't have a filetype (i.e. failed reading local 
+	 * one or fetching a remote object), then use the MIME type */
+	if (dw->file_type == 0) {
+		/* convert MIME type to RISC OS file type */
+		error = xmimemaptranslate_mime_type_to_filetype(mime_type,
+				&(dw->file_type));
+		if (error) {
+			LOG(("xmimemaptranslate_mime_type_to_filetype: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("MiscError", error->errmess);
+			dw->file_type = 0xffd;
+		}
 	}
 
 	/* open temporary output file */
