@@ -319,7 +319,7 @@ bits ro_filetype_from_unix_path(const char *unix_path)
 {
 	unsigned int len = strlen(unix_path) + 100;
 	char *path = calloc(len, 1);
-	char *r, *slash;
+	char *r;
 	os_error *error;
 	bits file_type;
 
