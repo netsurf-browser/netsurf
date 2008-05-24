@@ -282,6 +282,7 @@ $(eval $(foreach SOURCE,$(filter %.c,$(SOURCES)), \
 $(eval $(foreach SOURCE,$(filter %.s,$(SOURCES)), \
 	$(call compile_target_s,$(SOURCE),$(subst /,_,$(SOURCE:.s=.o)),$(subst /,_,$(SOURCE:.s=.d)))))
 
+.PHONY: all clean docs
 
 clean: $(CLEANS)
 
