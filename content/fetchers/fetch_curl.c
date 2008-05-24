@@ -368,7 +368,6 @@ void * fetch_curl_setup(struct fetch *parent_fetch, const char *url,
 	list = slist;
 
 	/* remove curl default headers */
-	APPEND(fetch->headers, "Accept:");
 	APPEND(fetch->headers, "Pragma:");
 
 	/* when doing a POST libcurl sends Expect: 100-continue" by default
