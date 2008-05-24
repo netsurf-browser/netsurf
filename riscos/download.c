@@ -32,6 +32,7 @@
 #include <string.h>
 #include <sys/time.h>
 #include <time.h>
+#include <curl/curl.h>
 #include "oslib/mimemap.h"
 #include "oslib/osargs.h"
 #include "oslib/osfile.h"
@@ -250,7 +251,7 @@ struct gui_download_window *gui_download_window_create(const char *url,
 		free(dw);
 		return 0;
 	} else if (res == URL_FUNC_OK) {
-		/* If we have a scheme and it's "file", then 
+		/* If we have a scheme and it's "file", then
 		 * attempt to use the local filetype directly */
 		if (strcasecmp(scheme, "file") == 0) {
 			char *path = NULL;
@@ -261,7 +262,18 @@ struct gui_download_window *gui_download_window_create(const char *url,
 				free(dw);
 				return 0;
 			} else if (res == URL_FUNC_OK) {
-				dw->file_type = ro_filetype_from_unix_path(path);
+				char *raw_path = curl_unescape(path,
+						strlen(path));
+				if (raw_path == NULL) {
+					warn_user("NoMemory", 0);
+					free(path);
+					free(scheme);
+					free(dw);
+					return 0;
+				}
+				dw->file_type =
+					ro_filetype_from_unix_path(raw_path);
+				curl_free(raw_path);
 				free(path);
 			}
 		}
@@ -269,7 +281,7 @@ struct gui_download_window *gui_download_window_create(const char *url,
 		free(scheme);
 	}
 
-	/* If we still don't have a filetype (i.e. failed reading local 
+	/* If we still don't have a filetype (i.e. failed reading local
 	 * one or fetching a remote object), then use the MIME type */
 	if (dw->file_type == 0) {
 		/* convert MIME type to RISC OS file type */
