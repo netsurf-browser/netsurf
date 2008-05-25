@@ -119,7 +119,7 @@ bool bitmap_redraw(struct content *c, int x, int y,
  * \return true on success, false on error and error reported
  */
 
-bool bitmap_save(struct bitmap *bitmap, const char *path)
+bool bitmap_save(struct bitmap *bitmap, const char *path, unsigned flags)
 {
 	return true;
 }

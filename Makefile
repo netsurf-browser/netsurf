@@ -61,7 +61,9 @@ SUBTARGET =
 
 ifneq ($(TARGET),riscos)
 ifneq ($(TARGET),gtk)
-$(error Unknown TARGET "$(TARGET)", should either be "riscos" or "gtk")
+ifneq ($(TARGET),debug)
+$(error Unknown TARGET "$(TARGET)", should either be "riscos", "gtk", or "debug")
+endif
 endif
 endif
 
@@ -95,7 +97,7 @@ endif
 PKG_CONFIG := $(GCCSDK_INSTALL_ENV)/ro-pkg-config
 endif
 else
-# Building for GTK
+# Building for GTK or debug
 PKG_CONFIG := pkg-config
 endif
 
@@ -151,7 +153,7 @@ ifeq ($(HOST),riscos)
 CFLAGS += -I<OSLib$$Dir> -mthrowback
 endif
 ASFLAGS += -xassembler-with-cpp -I. -I$(GCCSDK_INSTALL_ENV)/include
-LDFLAGS += -L$(GCCSDK_INSTALL_ENV)/lib -lcares -lrufl -lpencil \
+LDFLAGS += -L$(GCCSDK_INSTALL_ENV)/lib -lrufl -lpencil \
 	-lsvgtiny
 ifeq ($(HOST),riscos)
 LDFLAGS += -LOSLib: -lOSLib32
@@ -164,6 +166,18 @@ LDFLAGS += -static
 EXEEXT := ,ff8
 endif
 endif
+endif
+
+ifeq ($(TARGET),debug)
+CFLAGS += -std=c99 \
+	-D_BSD_SOURCE \
+	-D_XOPEN_SOURCE=600 \
+	-D_POSIX_C_SOURCE=200112L \
+	-D_NETBSD_SOURCE \
+	$(WARNFLAGS) -I. -I../../libsprite/trunk/ -g -O \
+	$(shell $(PKG_CONFIG) --cflags librosprite) \
+	$(shell xml2-config --cflags)
+LDFLAGS += $(shell $(PKG_CONFIG) --libs librosprite)
 endif
 
 $(OBJROOT)/created:

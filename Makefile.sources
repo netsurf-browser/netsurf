@@ -57,6 +57,9 @@ S_GTK := font_pango.c gtk_bitmap.c gtk_gui.c gtk_schedule.c			\
 	gtk_history.c gtk_window.c gtk_filetype.c gtk_download.c
 S_GTK := $(addprefix gtk/,$(S_GTK))
 
+# S_DEBUG are sources purely for the debug build
+S_DEBUG := netsurfd.c debug_bitmap.c filetyped.c fontd.c
+S_DEBUG := $(addprefix debug/,$(S_DEBUG))
 
 # Some extra rules for building the scanner etc.
 css/css_enum.c css/css_enum.h: css/css_enums css/makeenum
@@ -112,6 +115,11 @@ endif
 ifeq ($(TARGET),gtk)
 SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_GTK)
 EXETARGET := nsgtk
+endif
+
+ifeq ($(TARGET),debug)
+SOURCES := $(S_COMMON) $(S_IMAGE) $(S_DEBUG)
+EXETARGET := nsdebug
 endif
 
 ifeq ($(SOURCES),)

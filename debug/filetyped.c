@@ -43,6 +43,8 @@ const char *fetch_filetype(const char *unix_path)
 		return "image/png";
 	if (2 < l && strcasecmp(unix_path + l - 3, "jng") == 0)
 		return "image/jng";
+	if (2 < l && strcasecmp(unix_path + l - 3, "svg") == 0)
+		return "image/svg";
 	return "text/html";
 }
 
