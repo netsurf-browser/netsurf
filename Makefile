@@ -169,12 +169,12 @@ endif
 endif
 
 ifeq ($(TARGET),debug)
-CFLAGS += -std=c99 \
+CFLAGS += -std=c99 -DDEBUG_BUILD \
 	-D_BSD_SOURCE \
 	-D_XOPEN_SOURCE=600 \
 	-D_POSIX_C_SOURCE=200112L \
 	-D_NETBSD_SOURCE \
-	$(WARNFLAGS) -I. -I../../libsprite/trunk/ -g -O \
+	$(WARNFLAGS) -I. -I../../libsprite/trunk/ -g -O0 \
 	$(shell $(PKG_CONFIG) --cflags librosprite) \
 	$(shell xml2-config --cflags)
 LDFLAGS += $(shell $(PKG_CONFIG) --libs librosprite)
