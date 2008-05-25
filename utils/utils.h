@@ -40,6 +40,14 @@
 #define max(x,y) (((x)>(y))?(x):(y))
 #endif
 
+/**
+ * Calculate length of constant C string.
+ *
+ * \param  x	   a constant C string.
+ * \return the length of C string without its terminating NUL accounted.
+ */
+#define SLEN(x) (sizeof((x)) - 1)
+
 enum query_response {
   QUERY_CONTINUE,
   QUERY_YES,

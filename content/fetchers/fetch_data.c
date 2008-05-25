@@ -158,7 +158,7 @@ static bool fetch_data_process(struct fetch_data_context *c)
 	}
 	
 	/* skip the data: part */
-	params = c->url + sizeof("data:") - 1;
+	params = c->url + SLEN("data:");
 	
 	/* find the comma */
 	if ( (comma = strchr(params, ',')) == NULL) {

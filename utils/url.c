@@ -115,7 +115,9 @@ bool url_host_is_ip_address(const char *host) {
  * Normalize a URL.
  *
  * \param  url	   an absolute URL
- * \param  result  pointer to pointer to buffer to hold cleaned up url
+ * \param  result  pointer to pointer to buffer to hold cleaned up url. Caller
+ *                 gets ownership of pointer to buffer value. On failure the
+ *                 pointer to buffer value will be NULL.
  * \return  URL_FUNC_OK on success
  *
  * If there is no scheme, http:// is added. The scheme and host are
@@ -142,7 +144,8 @@ url_func_result url_normalize(const char *url, char **result)
 
 	/* allocate sufficiently large buffer for new URL */
 	len = strlen(url);
-	bufsize = len + sizeof("http://")-1 + sizeof("/")-1 + 1; /* 'http://' + '/' + '\0' */
+	/* "+ 1" for the terminating NUL character.  */
+	bufsize = len + 1 + SLEN("http://") + SLEN("/");
 	/* work out how much extra to leave for internal whitespace */
 	for(i = 0; i < len; i++) {
 		if(isspace(url[i])) bufsize += 2; /* ' ' -> '%20' */
@@ -176,18 +179,21 @@ url_func_result url_normalize(const char *url, char **result)
 	 * (RFC regex too fussy to tolerate above WSP problems) */
 	if ((m = regexec(&url_re, norm, 10, match, 0))) {
 		LOG(("url '%s' failed to match regex", url));
+		free(norm);
+		*result = NULL;
 		return URL_FUNC_FAILED;
 	}
 
 	if (match[URL_RE_SCHEME].rm_so == -1) {
 		/* scheme missing: add http:// and reparse */
 /*		LOG(("scheme missing: using http"));*/
-		memmove(norm + sizeof("http://")-1, norm, len + 1);
-		memcpy(norm, "http://", sizeof("http://")-1); /* do NOT copy null */
-		len += 7;
+		memmove(norm + SLEN("http://"), norm, len + 1);
+		memcpy(norm, "http://", SLEN("http://")); /* do NOT copy NUL */
+		len += SLEN("http://");
 		if ((m = regexec(&url_re, norm, 10, match, 0))) {
 			LOG(("url '%s' failed to match regex", norm));
 			free(norm);
+			*result = NULL;
 			return URL_FUNC_FAILED;
 		}
 	}

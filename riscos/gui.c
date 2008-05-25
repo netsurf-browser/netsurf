@@ -1998,10 +1998,10 @@ char *path_to_url(const char *path)
 		return NULL;
 	}
 
-	memcpy(url, "file://", sizeof("file://")-1);
+	memcpy(url, "file://", SLEN("file://"));
 	if (__unixify(buffer, __RISCOSIFY_NO_REVERSE_SUFFIX,
-			url + sizeof("file://")-1,
-			1 - spare + 10 - (sizeof("file://")-1),
+			url + SLEN("file://"),
+			1 - spare + 10 - SLEN("file://"),
 			0) == NULL) {
 		LOG(("__unixify failed: %s", buffer));
 		free(buffer);
@@ -2011,7 +2011,7 @@ char *path_to_url(const char *path)
 	free(buffer); buffer = NULL;
 
 	/* We don't want '/' to be escaped.  */
-	url_err = url_escape(url, sizeof("file://")-1, false, "/", &escurl);
+	url_err = url_escape(url, SLEN("file://"), false, "/", &escurl);
 	free(url); url = NULL;
 	if (url_err != URL_FUNC_OK) {
 		LOG(("url_escape failed: %s", url));
