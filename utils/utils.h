@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <regex.h>
+#include <assert.h>
 
 #ifndef NOF_ELEMENTS
 #define NOF_ELEMENTS(array) (sizeof(array)/sizeof(*(array)))
@@ -70,6 +71,17 @@ const char *rfc1123_date(time_t t);
 char *strcasestr(const char *haystack, const char *needle);
 #endif
 unsigned int wallclock(void);
+
+/**
+ * Return a hex digit for the given numerical value.
+ *
+ * \return character in range 0-9a-f
+ */
+inline static char digit2lowcase_hex(unsigned char digit) {
+	assert(digit < 16);
+	return "0123456789abcdef"[digit];
+}
+
 
 /* Platform specific functions */
 void die(const char * const error);

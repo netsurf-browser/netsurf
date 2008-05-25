@@ -127,41 +127,69 @@ url_func_result url_normalize(const char *url, char **result)
 {
 	char c;
 	int m;
-	int i;
+	size_t i;
 	size_t len;
+	size_t bufsize;
+	char* norm;
 	bool http = false;
 	regmatch_t match[10];
 
 	*result = NULL;
 
-	if ((m = regexec(&url_re, url, 10, match, 0))) {
+	/* skip past any leading whitespace (likely if URL was copy-pasted) */
+	while (isspace(*url))
+		url++;
+
+	/* allocate sufficiently large buffer for new URL */
+	len = strlen(url);
+	bufsize = len + sizeof("http://")-1 + sizeof("/")-1 + 1; /* 'http://' + '/' + '\0' */
+	/* work out how much extra to leave for internal whitespace */
+	for(i = 0; i < len; i++) {
+		if(isspace(url[i])) bufsize += 2; /* ' ' -> '%20' */
+	}
+	if ((norm = malloc(bufsize)) == NULL) {
+		LOG(("malloc failed"));
+		return URL_FUNC_NOMEM;
+	}
+	*result = norm;
+	strcpy(norm, url);
+
+	/* truncate trailing whitespace (significant should be uriencoded) */
+	for (i = len - 1; (i > 0) && isspace(norm[i]); i--) {
+		norm[i] = '\0';
+		len--;
+	}
+
+	/* encode any remaining (internal) whitespace */
+	for (i = 0; i < len; i++) {
+		if(isspace(norm[i])) {
+			char space = norm[i];
+			memmove(norm + i + 2, norm + i, 1 + len - i);
+			len += 2;
+			norm[  i] = '%';
+			norm[++i] = digit2lowcase_hex(space >> 4);
+			norm[++i] = digit2lowcase_hex(space & 0xf);
+		}
+	}
+
+	/* finally verify that it's actually an URL we're working on
+	 * (RFC regex too fussy to tolerate above WSP problems) */
+	if ((m = regexec(&url_re, norm, 10, match, 0))) {
 		LOG(("url '%s' failed to match regex", url));
 		return URL_FUNC_FAILED;
 	}
 
-	len = strlen(url);
-
 	if (match[URL_RE_SCHEME].rm_so == -1) {
 		/* scheme missing: add http:// and reparse */
 /*		LOG(("scheme missing: using http"));*/
-		if ((*result = malloc(len + 13)) == NULL) {
-			LOG(("malloc failed"));
-			return URL_FUNC_NOMEM;
-		}
-		strcpy(*result, "http://");
-		strcpy(*result + sizeof("http://")-1, url);
-		if ((m = regexec(&url_re, *result, 10, match, 0))) {
-			LOG(("url '%s' failed to match regex", (*result)));
-			free(*result);
+		memmove(norm + sizeof("http://")-1, norm, len + 1);
+		memcpy(norm, "http://", sizeof("http://")-1); /* do NOT copy null */
+		len += 7;
+		if ((m = regexec(&url_re, norm, 10, match, 0))) {
+			LOG(("url '%s' failed to match regex", norm));
+			free(norm);
 			return URL_FUNC_FAILED;
 		}
-		len += sizeof("http://")-1;
-	} else {
-		if ((*result = malloc(len + 6)) == NULL) {
-			LOG(("malloc failed"));
-			return URL_FUNC_NOMEM;
-		}
-		strcpy(*result, url);
 	}
 
 	/*for (unsigned int i = 0; i != 10; i++) {
@@ -177,22 +205,22 @@ url_func_result url_normalize(const char *url, char **result)
 	if (match[URL_RE_SCHEME].rm_so != -1) {
 		for (i = match[URL_RE_SCHEME].rm_so;
 				i != match[URL_RE_SCHEME].rm_eo; i++)
-			(*result)[i] = tolower((*result)[i]);
+			norm[i] = tolower(norm[i]);
 		if (match[URL_RE_SCHEME].rm_eo == 4
-				&& (*result)[0] == 'h'
-				&& (*result)[1] == 't'
-				&& (*result)[2] == 't'
-				&& (*result)[3] == 'p')
+				&& norm[0] == 'h'
+				&& norm[1] == 't'
+				&& norm[2] == 't'
+				&& norm[3] == 'p')
 			http = true;
 	}
 
 	/* make empty path into "/" */
 	if (match[URL_RE_PATH].rm_so != -1 &&
 			match[URL_RE_PATH].rm_so == match[URL_RE_PATH].rm_eo) {
-		memmove((*result) + match[URL_RE_PATH].rm_so + 1,
-				(*result) + match[URL_RE_PATH].rm_so,
+		memmove(norm + match[URL_RE_PATH].rm_so + 1,
+				norm + match[URL_RE_PATH].rm_so,
 				len - match[URL_RE_PATH].rm_so + 1);
-		(*result)[match[URL_RE_PATH].rm_so] = '/';
+		norm[match[URL_RE_PATH].rm_so] = '/';
 		len++;
 	}
 
@@ -200,45 +228,45 @@ url_func_result url_normalize(const char *url, char **result)
 	if (match[URL_RE_AUTHORITY].rm_so != -1) {
 		for (i = match[URL_RE_AUTHORITY].rm_so;
 				i != match[URL_RE_AUTHORITY].rm_eo; i++) {
-			if ((*result)[i] == ':') {
-				if (http && (*result)[i + 1] == '8' &&
-						(*result)[i + 2] == '0' &&
+			if (norm[i] == ':' && (i + 3) < len) {
+				if (http && norm[i + 1] == '8' &&
+						norm[i + 2] == '0' &&
 						i + 3 ==
 						match[URL_RE_AUTHORITY].rm_eo) {
-					memmove((*result) + i,
-							(*result) + i + 3,
+					memmove(norm + i,
+							norm + i + 3,
 							len -
 							match[URL_RE_AUTHORITY].
 							rm_eo);
 					len -= 3;
-					(*result)[len] = '\0';
+					norm[len] = '\0';
 				} else if (i + 1 == match[4].rm_eo) {
-					memmove((*result) + i,
-							(*result) + i + 1,
+					memmove(norm + i,
+							norm + i + 1,
 							len -
 							match[URL_RE_AUTHORITY].
 							rm_eo);
 					len--;
-					(*result)[len] = '\0';
+					norm[len] = '\0';
 				}
 				break;
 			}
-			(*result)[i] = tolower((*result)[i]);
+			norm[i] = tolower(norm[i]);
 		}
 	}
 
 	/* unescape non-"reserved" escaped characters */
-	for (i = 0; (unsigned)i != len; i++) {
-		if ((*result)[i] != '%')
+	for (i = 0; i + 2 < len; i++) {
+		if (norm[i] != '%')
 			continue;
-		c = tolower((*result)[i + 1]);
+		c = tolower(norm[i + 1]);
 		if ('0' <= c && c <= '9')
 			m = 16 * (c - '0');
 		else if ('a' <= c && c <= 'f')
 			m = 16 * (c - 'a' + 10);
 		else
 			continue;
-		c = tolower((*result)[i + 2]);
+		c = tolower(norm[i + 2]);
 		if ('0' <= c && c <= '9')
 			m += c - '0';
 		else if ('a' <= c && c <= 'f')
@@ -252,11 +280,12 @@ url_func_result url_normalize(const char *url, char **result)
 			continue;
 		}
 
-		(*result)[i] = m;
-		memmove((*result) + i + 1, (*result) + i + 3, len - i - 2);
+		norm[i] = m;
+		memmove(norm + i + 1, norm + i + 3, len - i - 2);
 		len -= 2;
 	}
 
+	/* norm and *result point to same memory, so just return ok */
 	return URL_FUNC_OK;
 }
 
