@@ -427,10 +427,7 @@ bool html_convert(struct content *c, int width, int height)
 	}
 
 	/* locate html and head elements */
-	for (html = document->children;
-			html != 0 && html->type != XML_ELEMENT_NODE;
-			html = html->next)
-		;
+	html = xmlDocGetRootElement(document);
 	if (html == 0 || strcmp((const char *) html->name, "html") != 0) {
 		LOG(("html element not found"));
 		xmlFreeDoc(document);
