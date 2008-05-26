@@ -59,7 +59,8 @@
 bool nssprite_convert(struct content *c, int width, int height)
 {
 	struct rosprite_mem_context* ctx;
-	ERRCHK(rosprite_create_mem_context(c->source_data, c->total_size, &ctx));
+	ERRCHK(rosprite_create_mem_context((uint8_t *) c->source_data, 
+			c->total_size, &ctx));
 
 	struct rosprite_area* sprite_area;
 	ERRCHK(rosprite_load(rosprite_mem_reader, ctx, &sprite_area));
