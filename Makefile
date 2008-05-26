@@ -126,7 +126,7 @@ GTKCFLAGS := -std=c99 -Dgtk -Dnsgtk \
 	-D_XOPEN_SOURCE=600 \
 	-D_POSIX_C_SOURCE=200112L \
 	-D_NETBSD_SOURCE \
-	$(WARNFLAGS) -I. -I../../libsprite/trunk/ -g -O \
+	$(WARNFLAGS) -I. -I../../libsprite/trunk/ -g $(OPT2FLAGS) \
 	$(shell $(PKG_CONFIG) --cflags libglade-2.0 gtk+-2.0 librsvg-2.0) \
 	$(shell $(PKG_CONFIG) --cflags librosprite) \
 	$(shell xml2-config --cflags)
@@ -142,7 +142,7 @@ endif
 endif
 
 ifeq ($(TARGET),riscos)
-CFLAGS += -I. -O $(WARNFLAGS) -Driscos			\
+CFLAGS += -I. $(OPTFLAGS) $(WARNFLAGS) -Driscos		\
 	-std=c99 -D_BSD_SOURCE -D_POSIX_C_SOURCE	\
 	-mpoke-function-name
 
@@ -174,7 +174,7 @@ CFLAGS += -std=c99 -DDEBUG_BUILD \
 	-D_XOPEN_SOURCE=600 \
 	-D_POSIX_C_SOURCE=200112L \
 	-D_NETBSD_SOURCE \
-	$(WARNFLAGS) -I. -I../../libsprite/trunk/ -g -O0 \
+	$(WARNFLAGS) -I. -I../../libsprite/trunk/ -g $(OPT0FLAGS) \
 	$(shell $(PKG_CONFIG) --cflags librosprite) \
 	$(shell xml2-config --cflags)
 LDFLAGS += $(shell $(PKG_CONFIG) --libs librosprite)
@@ -194,7 +194,14 @@ $(DEPROOT)/created: $(OBJROOT)/created
 WARNFLAGS = -W -Wall -Wundef -Wpointer-arith \
 	-Wcast-align -Wwrite-strings -Wstrict-prototypes \
 	-Wmissing-prototypes -Wmissing-declarations -Wredundant-decls \
-	-Wnested-externs -Winline -Wno-unused-parameter -Wuninitialized
+	-Wnested-externs -Winline -Wno-unused-parameter
+
+OPT0FLAGS = -O0
+# -O and -O2 can use -Wuninitialized which gives us more static checking.
+# unfortunately the optimiser is what provides the hints in the code tree
+# so we cannot do it when we do -O0 (E.g. debug)
+OPTFLAGS = -O -Wuninitialized
+OPT2FLAGS = -O2 -Wuninitialized
 
 CLEANS := clean-target
 
