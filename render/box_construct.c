@@ -482,17 +482,17 @@ bool box_construct_element(xmlNode *n, struct content *content,
 			case CSS_LIST_STYLE_TYPE_DISC:
 			default:
 				/* 2022 BULLET */
-				marker->text = "\342\200\242";
+				marker->text = (char *) "\342\200\242";
 				marker->length = 3;
 				break;
 			case CSS_LIST_STYLE_TYPE_CIRCLE:
 				/* 25CB WHITE CIRCLE */
-				marker->text = "\342\227\213";
+				marker->text = (char *) "\342\227\213";
 				marker->length = 3;
 				break;
 			case CSS_LIST_STYLE_TYPE_SQUARE:
 				/* 25AA BLACK SMALL SQUARE */
-				marker->text = "\342\226\252";
+				marker->text = (char *) "\342\226\252";
 				marker->length = 3;
 				break;
 			case CSS_LIST_STYLE_TYPE_DECIMAL:
