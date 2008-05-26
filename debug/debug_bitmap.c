@@ -99,19 +99,6 @@ void bitmap_destroy(struct bitmap *bitmap)
 
 
 /**
- * Render a bitmap.
- */
-
-bool bitmap_redraw(struct content *c, int x, int y,
-		int width, int height,
-		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-		float scale, unsigned long background_colour)
-{
-	return true;
-}
-
-
-/**
  * Save a bitmap in the platform's native format.
  *
  * \param  bitmap  a bitmap, as returned by bitmap_create()
