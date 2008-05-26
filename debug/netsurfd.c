@@ -62,8 +62,8 @@ char *default_stylesheet_url = "file:///<NetSurf$Dir>/Resources/CSS";
 char *adblock_stylesheet_url = "file:///<NetSurf$Dir>/Resources/AdBlock";
 #endif
 
-static void callback(content_msg msg, struct content *c, void *p1,
-		void *p2,  union content_msg_data data);
+static void callback(content_msg msg, struct content *c, intptr_t p1,
+		intptr_t p2, union content_msg_data data);
 
 
 int main(int argc, char *argv[])
@@ -132,8 +132,8 @@ int main(int argc, char *argv[])
 }
 
 
-void callback(content_msg msg, struct content *c, void *p1,
-	      void *p2,  union content_msg_data data)
+void callback(content_msg msg, struct content *c, intptr_t p1,
+		intptr_t p2,  union content_msg_data data)
 {
 	LOG(("content %s, message %i", c->url, msg));
 	if (msg == CONTENT_MSG_DONE)
