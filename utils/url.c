@@ -210,7 +210,7 @@ url_func_result url_normalize(const char *url, char **result)
 	/* make scheme lower-case */
 	if (match[URL_RE_SCHEME].rm_so != -1) {
 		for (i = match[URL_RE_SCHEME].rm_so;
-				i != match[URL_RE_SCHEME].rm_eo; i++)
+				(regoff_t) i != match[URL_RE_SCHEME].rm_eo; i++)
 			norm[i] = tolower(norm[i]);
 		if (match[URL_RE_SCHEME].rm_eo == 4
 				&& norm[0] == 'h'
@@ -233,11 +233,12 @@ url_func_result url_normalize(const char *url, char **result)
 	/* make host lower-case */
 	if (match[URL_RE_AUTHORITY].rm_so != -1) {
 		for (i = match[URL_RE_AUTHORITY].rm_so;
-				i != match[URL_RE_AUTHORITY].rm_eo; i++) {
+				(regoff_t) i != match[URL_RE_AUTHORITY].rm_eo; 
+				i++) {
 			if (norm[i] == ':' && (i + 3) < len) {
 				if (http && norm[i + 1] == '8' &&
 						norm[i + 2] == '0' &&
-						i + 3 ==
+						(regoff_t) i + 3 ==
 						match[URL_RE_AUTHORITY].rm_eo) {
 					memmove(norm + i,
 							norm + i + 3,
@@ -246,7 +247,7 @@ url_func_result url_normalize(const char *url, char **result)
 							rm_eo);
 					len -= 3;
 					norm[len] = '\0';
-				} else if (i + 1 == match[4].rm_eo) {
+				} else if ((regoff_t) i + 1 == match[4].rm_eo) {
 					memmove(norm + i,
 							norm + i + 1,
 							len -
