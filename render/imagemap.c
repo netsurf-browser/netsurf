@@ -308,11 +308,13 @@ bool imagemap_extract_map(xmlNode *node, struct content *c,
 		 */
 		if (strcmp((const char *) node->name, "area") == 0 ||
 		    strcmp((const char *) node->name, "a") == 0) {
-			return imagemap_addtolist(node,
-				c->data.html.base_url, entry);
+			if (!imagemap_addtolist(node,
+					c->data.html.base_url, entry))
+				return false;
 		}
+	} else {
+		return true;
 	}
-	else return true;
 
 	for (this_node = node->children; this_node != 0;
 					this_node = this_node->next) {
