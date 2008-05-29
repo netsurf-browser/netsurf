@@ -943,7 +943,7 @@ void gui_window_start_throbber(struct gui_window* _g)
 	gtk_widget_set_sensitive(GTK_WIDGET(g->stop_button), TRUE);
 	gtk_widget_set_sensitive(GTK_WIDGET(g->reload_button), FALSE);
 	gtk_widget_set_sensitive(GTK_WIDGET(g->stop_menu), TRUE);
-	gtk_widget_set_sensitive(GTK_WIDGET(g->reload_button), FALSE);
+	gtk_widget_set_sensitive(GTK_WIDGET(g->reload_menu), FALSE);
 
 	nsgtk_window_update_back_forward(g);
 
