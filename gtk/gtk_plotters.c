@@ -39,12 +39,14 @@
 #include "gtk/options.h"
 #include "gtk/gtk_bitmap.h"
 
+#ifndef CAIRO_VERSION
+#error "nsgtk requires cairo"
+#endif
+
 GtkWidget *current_widget;
 GdkDrawable *current_drawable;
 GdkGC *current_gc;
-#ifdef CAIRO_VERSION
 cairo_t *current_cr;
-#endif
 
 static bool nsgtk_plot_clg(colour c);
 static bool nsgtk_plot_rectangle(int x0, int y0, int width, int height,
@@ -111,18 +113,13 @@ bool nsgtk_plot_rectangle(int x0, int y0, int width, int height,
         else
                 nsgtk_set_solid();
 
-#ifdef CAIRO_VERSION
-	if (option_render_cairo) {
-		if (line_width == 0)
-			line_width = 1;
+	if (line_width == 0)
+		line_width = 1;
 
-		cairo_set_line_width(current_cr, line_width);
-		cairo_rectangle(current_cr, x0, y0, width, height);
-		cairo_stroke(current_cr);
-	} else
-#endif
-	gdk_draw_rectangle(current_drawable, current_gc,
-			FALSE, x0, y0, width, height);
+	cairo_set_line_width(current_cr, line_width);
+	cairo_rectangle(current_cr, x0, y0, width, height);
+	cairo_stroke(current_cr);
+
 	return true;
 }
 
@@ -138,19 +135,14 @@ bool nsgtk_plot_line(int x0, int y0, int x1, int y1, int width,
 	else
 		nsgtk_set_solid();
 
-#ifdef CAIRO_VERSION
-	if (option_render_cairo) {
-		if (width == 0)
-			width = 1;
+	if (width == 0)
+		width = 1;
 
-		cairo_set_line_width(current_cr, width);
-		cairo_move_to(current_cr, x0, y0 - 0.5);
-		cairo_line_to(current_cr, x1, y1 - 0.5);
-		cairo_stroke(current_cr);
-	} else
-#endif
-	gdk_draw_line(current_drawable, current_gc,
-			x0, y0, x1, y1);
+	cairo_set_line_width(current_cr, width);
+	cairo_move_to(current_cr, x0, y0 - 0.5);
+	cairo_line_to(current_cr, x1, y1 - 0.5);
+	cairo_stroke(current_cr);
+
 	return true;
 }
 
@@ -161,26 +153,15 @@ bool nsgtk_plot_polygon(int *p, unsigned int n, colour fill)
 
 	nsgtk_set_colour(fill);
 	nsgtk_set_solid();
-#ifdef CAIRO_VERSION
-	if (option_render_cairo) {
-		cairo_set_line_width(current_cr, 0);
-		cairo_move_to(current_cr, p[0], p[1]);
-		for (i = 1; i != n; i++) {
-			cairo_line_to(current_cr, p[i * 2], p[i * 2 + 1]);
-		}
-		cairo_fill(current_cr);
-		cairo_stroke(current_cr);
-	} else
-#endif
-	{
-		GdkPoint q[n];
-		for (i = 0; i != n; i++) {
-			q[i].x = p[i * 2];
-			q[i].y = p[i * 2 + 1];
-		}
-		gdk_draw_polygon(current_drawable, current_gc,
-				TRUE, q, n);
+
+	cairo_set_line_width(current_cr, 0);
+	cairo_move_to(current_cr, p[0], p[1]);
+	for (i = 1; i != n; i++) {
+		cairo_line_to(current_cr, p[i * 2], p[i * 2 + 1]);
 	}
+	cairo_fill(current_cr);
+	cairo_stroke(current_cr);
+
 	return true;
 }
 
@@ -189,16 +170,12 @@ bool nsgtk_plot_fill(int x0, int y0, int x1, int y1, colour c)
 {
 	nsgtk_set_colour(c);
 	nsgtk_set_solid();
-#ifdef CAIRO_VERSION
-	if (option_render_cairo) {
-		cairo_set_line_width(current_cr, 0);
-		cairo_rectangle(current_cr, x0, y0, x1 - x0, y1 - y0);
-		cairo_fill(current_cr);
-		cairo_stroke(current_cr);
-	} else
-#endif
-	gdk_draw_rectangle(current_drawable, current_gc,
-			TRUE, x0, y0, x1 - x0, y1 - y0);
+
+	cairo_set_line_width(current_cr, 0);
+	cairo_rectangle(current_cr, x0, y0, x1 - x0, y1 - y0);
+	cairo_fill(current_cr);
+	cairo_stroke(current_cr);
+
 	return true;
 }
 
@@ -206,19 +183,11 @@ bool nsgtk_plot_fill(int x0, int y0, int x1, int y1, colour c)
 bool nsgtk_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1)
 {
-#ifdef CAIRO_VERSION
-  	if (option_render_cairo) {
-		cairo_reset_clip(current_cr);
-		cairo_rectangle(current_cr, clip_x0, clip_y0,
+	cairo_reset_clip(current_cr);
+	cairo_rectangle(current_cr, clip_x0, clip_y0,
 			clip_x1 - clip_x0, clip_y1 - clip_y0);
-		cairo_clip(current_cr);
-	}
-#endif
-	cliprect.x = clip_x0;
-	cliprect.y = clip_y0;
-	cliprect.width = clip_x1 - clip_x0;
-	cliprect.height = clip_y1 - clip_y0;
-	gdk_gc_set_clip_rectangle(current_gc, &cliprect);
+	cairo_clip(current_cr);
+
 	return true;
 }
 
@@ -234,26 +203,18 @@ bool nsgtk_plot_disc(int x, int y, int radius, colour c, bool filled)
 {
 	nsgtk_set_colour(c);
 	nsgtk_set_solid();
-#ifdef CAIRO_VERSION
-	if (option_render_cairo) {
-		if (filled)
-			cairo_set_line_width(current_cr, 0);
-		else
-			cairo_set_line_width(current_cr, 1);
 
-		cairo_arc(current_cr, x, y, radius, 0, M_PI * 2);
+	if (filled)
+		cairo_set_line_width(current_cr, 0);
+	else
+		cairo_set_line_width(current_cr, 1);
 
-		if (filled)
-			cairo_fill(current_cr);
+	cairo_arc(current_cr, x, y, radius, 0, M_PI * 2);
 
-		cairo_stroke(current_cr);
-	} else
-#endif
-	gdk_draw_arc(current_drawable, current_gc,
-		filled ? TRUE : FALSE, x - (radius), y - radius,
-		radius * 2, radius * 2,
-		0,
-		360 * 64);
+	if (filled)
+		cairo_fill(current_cr);
+
+	cairo_stroke(current_cr);
 
 	return true;
 }
@@ -262,19 +223,12 @@ bool nsgtk_plot_arc(int x, int y, int radius, int angle1, int angle2, colour c)
 {
 	nsgtk_set_colour(c);
 	nsgtk_set_solid();
-#ifdef CAIRO_VERSION
-	if (option_render_cairo) {
-		cairo_set_line_width(current_cr, 1);
-		cairo_arc(current_cr, x, y, radius,
-		    (angle1 + 90) * (M_PI / 180),
-		    (angle2 + 90) * (M_PI / 180));
-		cairo_stroke(current_cr);
-	} else
-#endif
-	gdk_draw_arc(current_drawable, current_gc,
-		FALSE, x - (radius), y - radius,
-		radius * 2, radius * 2,
-		angle1 * 64, angle2 * 64);
+
+	cairo_set_line_width(current_cr, 1);
+	cairo_arc(current_cr, x, y, radius,
+			(angle1 + 90) * (M_PI / 180),
+			(angle2 + 90) * (M_PI / 180));
+	cairo_stroke(current_cr);
 
 	return true;
 }
@@ -380,10 +334,80 @@ bool nsgtk_plot_bitmap_tile(int x, int y, int width, int height,
 bool nsgtk_plot_path(float *p, unsigned int n, colour fill, float width,
                 colour c, float *transform)
 {
-	/* Only the internal SVG renderer uses this plot call currently,
-	 * and the GTK version uses librsvg.  Thus, we ignore this complexity,
-	 * and just return true obliviously.
-	 */
+	unsigned int i;
+	cairo_matrix_t old_ctm, n_ctm;
+
+	if (n == 0)
+		return true;
+
+	if (p[0] != PLOTTER_PATH_MOVE) {
+		LOG(("Path does not start with move"));
+		return false;
+	}
+
+
+	/* Save CTM */
+	cairo_get_matrix(current_cr, &old_ctm);
+
+	/* Set up line style and width */
+	cairo_set_line_width(current_cr, 1);
+	nsgtk_set_solid();
+
+	/* Load new CTM */
+	n_ctm.xx = transform[0];
+	n_ctm.yx = transform[1];
+	n_ctm.xy = transform[2];
+	n_ctm.yy = transform[3];
+	n_ctm.x0 = transform[4];
+	n_ctm.y0 = transform[5];
+
+	cairo_set_matrix(current_cr, &n_ctm);
+
+	/* Construct path */
+	for (i = 0; i < n; ) {
+		if (p[i] == PLOTTER_PATH_MOVE) {
+			cairo_move_to(current_cr, p[i+1], p[i+2]);
+			i += 3;
+		} else if (p[i] == PLOTTER_PATH_CLOSE) {
+			cairo_close_path(current_cr);
+			i++;
+		} else if (p[i] == PLOTTER_PATH_LINE) {
+			cairo_line_to(current_cr, p[i+1], p[i+2]);
+			i += 3;
+		} else if (p[i] == PLOTTER_PATH_BEZIER) {
+			cairo_curve_to(current_cr, p[i+1], p[i+2],
+					p[i+3], p[i+4],
+					p[i+5], p[i+6]);
+			i += 7;
+		} else {
+			LOG(("bad path command %f", p[i]));
+			/* Reset matrix for safety */
+			cairo_set_matrix(current_cr, &old_ctm);
+			return false;
+		}
+	}
+
+	/* Restore original CTM */
+	cairo_set_matrix(current_cr, &old_ctm);
+
+	/* Now draw path */
+	if (fill != TRANSPARENT) {
+		nsgtk_set_colour(fill);
+
+		if (c != TRANSPARENT) {
+			/* Fill & Stroke */
+			cairo_fill_preserve(current_cr);
+			nsgtk_set_colour(c);
+			cairo_stroke(current_cr);
+		} else {
+			/* Fill only */
+			cairo_fill(current_cr);
+		}
+	} else if (c != TRANSPARENT) {
+		/* Stroke only */
+		nsgtk_set_colour(c);
+		cairo_stroke(current_cr);
+	}
 
 	return true;
 }
@@ -405,55 +429,32 @@ void nsgtk_set_colour(colour c)
 	gdk_color_alloc(gdk_colormap_get_system(),
 			&colour);
 	gdk_gc_set_foreground(current_gc, &colour);
-#ifdef CAIRO_VERSION
-	if (option_render_cairo)
-		cairo_set_source_rgba(current_cr, r / 255.0,
+
+	cairo_set_source_rgba(current_cr, r / 255.0,
 			g / 255.0, b / 255.0, 1.0);
-#endif
 }
 
 void nsgtk_set_solid()
 {
-#ifdef CAIRO_VERSION
 	double dashes = 0;
-	if (option_render_cairo)
-		cairo_set_dash(current_cr, &dashes, 0, 0);
-	else
-#endif
-	gdk_gc_set_line_attributes(current_gc, 1, GDK_LINE_SOLID, GDK_CAP_BUTT,
-		GDK_JOIN_MITER);
+	
+	cairo_set_dash(current_cr, &dashes, 0, 0);
 }
 
 void nsgtk_set_dotted()
 {
 	double cdashes = 1;
 	gint8 dashes[] = { 1, 1 };
-#ifdef CAIRO_VERSION
-	if (option_render_cairo)
-		cairo_set_dash(current_cr, &cdashes, 1, 0);
-	else
-#endif
-	{
-		gdk_gc_set_dashes(current_gc, 0, dashes, 2);
-		gdk_gc_set_line_attributes(current_gc, 1, GDK_LINE_ON_OFF_DASH,
-		GDK_CAP_BUTT, GDK_JOIN_MITER);
-	}
+
+	cairo_set_dash(current_cr, &cdashes, 1, 0);
 }
 
 void nsgtk_set_dashed()
 {
 	double cdashes = 3;
 	gint8 dashes[] = { 3, 3 };
-#ifdef CAIRO_VERSION
-	if (option_render_cairo)
-		cairo_set_dash(current_cr, &cdashes, 1, 0);
-	else
-#endif
-	{
-		gdk_gc_set_dashes(current_gc, 0, dashes, 2);
-		gdk_gc_set_line_attributes(current_gc, 1, GDK_LINE_ON_OFF_DASH,
-		GDK_CAP_BUTT, GDK_JOIN_MITER);
-	}
+
+	cairo_set_dash(current_cr, &cdashes, 1, 0);
 }
 
 void nsgtk_plot_set_scale(float s)
@@ -483,3 +484,4 @@ void nsgtk_plot_caret(int x, int y, int h)
 			x, y,
 			x, y + h - 1);
 }
+

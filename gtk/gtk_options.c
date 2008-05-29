@@ -159,7 +159,6 @@ void nsgtk_options_load(void) {
 	SET_SPIN(spinFetchesPerHost, option_max_fetchers_per_host);
 	SET_SPIN(spinCachedConnections, option_max_cached_fetch_handles);
 
-	SET_CHECK(checkUseCairo, option_render_cairo);
 	SET_CHECK(checkResampleImages, option_render_resample);
 	SET_SPIN(spinAnimationSpeed, option_minimum_gif_delay / 100);
 	SET_CHECK(checkDisableAnimations, !option_animate_images);
@@ -229,7 +228,6 @@ void nsgtk_options_save(void) {
 	GET_SPIN(spinFetchesPerHost, option_max_fetchers_per_host);
 	GET_SPIN(spinCachedConnections, option_max_cached_fetch_handles);
 
-	GET_CHECK(checkUseCairo, option_render_cairo);
 	GET_CHECK(checkResampleImages, option_render_resample);
 	GET_SPIN(spinAnimationSpeed, option_minimum_gif_delay);
 	option_minimum_gif_delay *= 100;
