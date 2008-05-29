@@ -188,6 +188,12 @@ bool nsgtk_plot_clip(int clip_x0, int clip_y0,
 			clip_x1 - clip_x0, clip_y1 - clip_y0);
 	cairo_clip(current_cr);
 
+	cliprect.x = clip_x0;
+	cliprect.y = clip_y0;
+	cliprect.width = clip_x1 - clip_x0;
+	cliprect.height = clip_y1 - clip_y0;
+	gdk_gc_set_clip_rectangle(current_gc, &cliprect);
+
 	return true;
 }
 
