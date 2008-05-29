@@ -53,6 +53,9 @@
 #include "utils/utils.h"
 #include "utils/ring.h"
 
+/* Define this to turn on verbose fetch logging */
+#undef DEBUG_FETCH_VERBOSE
+
 bool fetch_active;	/**< Fetches in progress, please call fetch_poll(). */
 
 /** Information about a fetcher for a given scheme. */
@@ -260,7 +263,9 @@ struct fetch * fetch_start(const char *url, const char *referer,
 		}
 	}
 
+#ifdef DEBUG_FETCH_VERBOSE
 	LOG(("fetch %p, url '%s'", fetch, url));
+#endif
 
 	/* construct a new fetch structure */
 	fetch->callback = callback;
@@ -357,19 +362,25 @@ void fetch_dispatch_jobs(void)
 	RING_GETSIZE(struct fetch, queue_ring, all_queued);
 	RING_GETSIZE(struct fetch, fetch_ring, all_active);
 
+#ifdef DEBUG_FETCH_VERBOSE
 	LOG(("queue_ring %i, fetch_ring %i", all_queued, all_active));
+#endif
 
 	struct fetch *q = queue_ring;
 	if (q) {
 		do {
+#ifdef DEBUG_FETCH_VERBOSE
 			LOG(("queue_ring: %s", q->url));
+#endif
 			q = q->r_next;
 		} while (q != queue_ring);
 	}
 	struct fetch *f = fetch_ring;
 	if (f) {
 		do {
+#ifdef DEBUG_FETCH_VERBOSE
 			LOG(("fetch_ring: %s", f->url));
+#endif
 			f = f->r_next;
 		} while (f != fetch_ring);
 	}
@@ -385,8 +396,10 @@ void fetch_dispatch_jobs(void)
 		}
 	}
 	fetch_active = (all_active > 0);
+#ifdef DEBUG_FETCH_VERBOSE
 	LOG(("Fetch ring is now %d elements.", all_active));
 	LOG(("Queue ring is now %d elements.", all_queued));
+#endif
 }
 
 
@@ -424,8 +437,10 @@ bool fetch_choose_and_dispatch(void)
 bool fetch_dispatch_job(struct fetch *fetch)
 {
 	RING_REMOVE(queue_ring, fetch);
+#ifdef DEBUG_FETCH_VERBOSE
 	LOG(("Attempting to start fetch %p, fetcher %p, url %s", fetch,
 	     fetch->fetcher_handle, fetch->url));
+#endif
 	if (!fetch->ops->start_fetch(fetch->fetcher_handle)) {
 		RING_INSERT(queue_ring, fetch); /* Put it back on the end of the queue */
 		return false;
@@ -444,7 +459,9 @@ bool fetch_dispatch_job(struct fetch *fetch)
 void fetch_abort(struct fetch *f)
 {
 	assert(f);
+#ifdef DEBUG_FETCH_VERBOSE
 	LOG(("fetch %p, fetcher %p, url '%s'", f, f->fetcher_handle, f->url));
+#endif
 	f->ops->abort_fetch(f->fetcher_handle);
 }
 
@@ -455,7 +472,9 @@ void fetch_abort(struct fetch *f)
 
 void fetch_free(struct fetch *f)
 {
+#ifdef DEBUG_FETCH_VERBOSE
 	LOG(("Freeing fetch %p, fetcher %p", f, f->fetcher_handle));
+#endif
 	f->ops->free_fetch(f->fetcher_handle);
 	fetch_unref_fetcher(f->ops);
 	free(f->parent_fetch_url);
@@ -583,7 +602,9 @@ void fetch_remove_from_queues(struct fetch *fetch)
 	int all_active, all_queued;
 
 	/* Go ahead and free the fetch properly now */
+#ifdef DEBUG_FETCH_VERBOSE
 	LOG(("Fetch %p, fetcher %p can be freed", fetch, fetch->fetcher_handle));
+#endif
 
 	if (fetch->fetch_is_active) {
 		RING_REMOVE(fetch_ring, fetch);
@@ -596,15 +617,19 @@ void fetch_remove_from_queues(struct fetch *fetch)
 
 	fetch_active = (all_active > 0);
 
+#ifdef DEBUG_FETCH_VERBOSE
 	LOG(("Fetch ring is now %d elements.", all_active));
 	LOG(("Queue ring is now %d elements.", all_queued));
+#endif
 }
 
 
 void
 fetch_set_http_code(struct fetch *fetch, long http_code)
 {
+#ifdef DEBUG_FETCH_VERBOSE
 	LOG(("Setting HTTP code to %ld", http_code));
+#endif
 	fetch->http_code = http_code;
 }
 
