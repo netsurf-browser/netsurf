@@ -1132,11 +1132,12 @@ bool fetch_curl_process_headers(struct curl_fetch_info *f)
 	if (url_path && stat(url_path, &s) == 0) {
 		/* file: URL and file exists */
 		/* create etag */
-		/*free(f->cachedata.etag);
-		f->cachedata.etag = malloc(13);
-		if (f->cachedata.etag)
-			sprintf(f->cachedata.etag,
-					"\"%10d\"", (int)s.st_mtime);*/
+		char etag_buf[20];
+		snprintf(etag_buf, sizeof etag_buf, 
+				"ETag: \"%10d\"", (int) s.st_mtime);
+		/* And send it to the header handler */
+		fetch_send_callback(FETCH_HEADER, f->fetch_handle, etag_buf,
+				strlen(etag_buf));
 
 		/* don't set last modified time so as to ensure that local
 		 * files are revalidated at all times. */

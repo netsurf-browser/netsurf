@@ -282,8 +282,17 @@ void fetchcache_go(struct content *content, const char *referer,
 		int i = 0;
 		char *etag = content->cache_data->etag;
 		time_t date = content->cache_data->date;
-		content->cache_data->etag = 0;
+
+		content->cache_data->req_time = time(NULL);
+		content->cache_data->res_time = 0;
 		content->cache_data->date = 0;
+		content->cache_data->expires = 0;
+		content->cache_data->age = INVALID_AGE;
+		content->cache_data->max_age = INVALID_AGE;
+		content->cache_data->no_cache = false;
+		content->cache_data->etag = 0;
+		content->cache_data->last_modified = 0;
+
 		headers = malloc(3 * sizeof(char *));
 		if (!headers) {
 			content->status = CONTENT_STATUS_ERROR;
@@ -626,7 +635,7 @@ void fetchcache_parse_header(struct content *c, const char *data,
 
 	/* Set fetch response time if not already set */
 	if (c->cache_data->res_time == 0)
-		c->cache_data->res_time = time(0);
+		c->cache_data->res_time = time(NULL);
 
 	if (5 < size && strncasecmp(data, "Date:", 5) == 0) {
 		/* extract Date header */
