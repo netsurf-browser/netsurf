@@ -24,7 +24,7 @@
  * This implementation uses libcurl's 'multi' interface.
  *
  *
- * The CURL handles are cached in the cache_ring. There are at most
+ * The CURL handles are cached in the curl_handle_ring. There are at most
  * ::option_max_cached_fetch_handles in this ring.
  */
 
@@ -81,7 +81,6 @@ struct curl_fetch_info {
 	char *post_urlenc;	/**< Url encoded POST string, or 0. */
 	unsigned long http_code; /**< HTTP result code from cURL. */
 	struct curl_httppost *post_multipart;	/**< Multipart post data, or 0. */
-	struct cache_data cachedata;	/**< Cache control data */
 	time_t last_modified;		/**< If-Modified-Since time */
 	time_t file_etag;		/**< ETag for local objects */
 #ifdef WITH_SSL
@@ -340,15 +339,6 @@ void * fetch_curl_setup(struct fetch *parent_fetch, const char *url,
 		fetch->post_urlenc = strdup(post_urlenc);
 	else if (post_multipart)
 		fetch->post_multipart = fetch_curl_post_convert(post_multipart);
-	fetch->cachedata.req_time = time(0);
-	fetch->cachedata.res_time = 0;
-	fetch->cachedata.date = 0;
-	fetch->cachedata.expires = 0;
-	fetch->cachedata.age = INVALID_AGE;
-	fetch->cachedata.max_age = INVALID_AGE;
-	fetch->cachedata.no_cache = false;
-	fetch->cachedata.etag = 0;
-	fetch->cachedata.last_modified = 0;
 	fetch->last_modified = 0;
 	fetch->file_etag = 0;
 	fetch->http_code = 0;
@@ -700,7 +690,6 @@ void fetch_curl_free(void *vf)
 	free(f->post_urlenc);
 	if (f->post_multipart)
 		curl_formfree(f->post_multipart);
-	free(f->cachedata.etag);
 
 #ifdef WITH_SSL
 	for (i = 0; i < MAX_CERTS && f->cert_data[i].cert; i++) {
@@ -764,7 +753,6 @@ void fetch_curl_done(CURL *curl_handle, CURLcode result)
 	bool abort;
 	struct curl_fetch_info *f;
 	CURLcode code;
-	struct cache_data cachedata;
 #ifdef WITH_SSL
 	struct cert_info certs[MAX_CERTS];
 	memset(certs, 0, sizeof(certs));
@@ -810,19 +798,10 @@ void fetch_curl_done(CURL *curl_handle, CURLcode result)
 
 	fetch_curl_stop(f);
 
-	/* If finished, acquire cache info to pass to callback */
-	if (finished) {
-		memcpy(&cachedata, &f->cachedata, sizeof(struct cache_data));
-		f->cachedata.etag = 0;
-	}
-
 	if (abort)
 		; /* fetch was aborted: no callback */
-	else if (finished) {
-		fetch_send_callback(FETCH_FINISHED, f->fetch_handle,
-				&cachedata, 0);
-		free(cachedata.etag);
-	}
+	else if (finished)
+		fetch_send_callback(FETCH_FINISHED, f->fetch_handle, 0, 0);
 #ifdef WITH_SSL
 	else if (cert) {
 		int i;
@@ -1009,6 +988,8 @@ size_t fetch_curl_data(void *data, size_t size, size_t nmemb,
 
 /**
  * Callback function for headers.
+ *
+ * See RFC 2616 4.2.
  */
 
 size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
@@ -1017,11 +998,9 @@ size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
 	int i;
 	size *= nmemb;
 
-#define SKIP_ST(o) for (i = (o); i < (int) size && (data[i] == ' ' || data[i] == '\t'); i++)
+	fetch_send_callback(FETCH_HEADER, f->fetch_handle, data, size);
 
-	/* Set fetch response time if not already set */
-	if (f->cachedata.res_time == 0)
-		f->cachedata.res_time = time(0);
+#define SKIP_ST(o) for (i = (o); i < (int) size && (data[i] == ' ' || data[i] == '\t'); i++)
 
 	if (12 < size && strncasecmp(data, "Location:", 9) == 0) {
 		/* extract Location header */
@@ -1075,73 +1054,6 @@ size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
 				f->realm[i] = '\0';
 		}
 #endif
-	} else if (5 < size && strncasecmp(data, "Date:", 5) == 0) {
-		/* extract Date header */
-		SKIP_ST(5);
-		if (i < (int) size)
-			f->cachedata.date = curl_getdate(&data[i], NULL);
-	} else if (4 < size && strncasecmp(data, "Age:", 4) == 0) {
-		/* extract Age header */
-		SKIP_ST(4);
-		if (i < (int) size && '0' <= data[i] && data[i] <= '9')
-			f->cachedata.age = atoi(data + i);
-	} else if (8 < size && strncasecmp(data, "Expires:", 8) == 0) {
-		/* extract Expires header */
-		SKIP_ST(8);
-		if (i < (int) size)
-			f->cachedata.expires = curl_getdate(&data[i], NULL);
-	} else if (14 < size && strncasecmp(data, "Cache-Control:", 14) == 0) {
-		/* extract and parse Cache-Control header */
-		int comma;
-		SKIP_ST(14);
-
-		while (i < (int) size) {
-			for (comma = i; comma < (int) size; comma++)
-				if (data[comma] == ',')
-					break;
-
-			SKIP_ST(i);
-
-			if (8 < comma - i && (strncasecmp(data + i, "no-cache", 8) == 0 || strncasecmp(data + i, "no-store", 8) == 0))
-				/* When we get a disk cache we should
-				 * distinguish between these two */
-				f->cachedata.no_cache = true;
-			else if (7 < comma - i && strncasecmp(data + i, "max-age", 7) == 0) {
-				for (; i < comma; i++)
-					if (data[i] == '=')
-						break;
-				SKIP_ST(i+1);
-				if (i < comma)
-					f->cachedata.max_age =
-							atoi(data + i);
-			}
-
-			i = comma + 1;
-		}
-	} else if (5 < size && strncasecmp(data, "ETag:", 5) == 0) {
-		/* extract ETag header */
-		free(f->cachedata.etag);
-		f->cachedata.etag = malloc(size);
-		if (!f->cachedata.etag) {
-			LOG(("malloc failed"));
-			return size;
-		}
-		SKIP_ST(5);
-		strncpy(f->cachedata.etag, data + i, size - i);
-		f->cachedata.etag[size - i] = '\0';
-		for (i = size - i - 1; i >= 0 &&
-				(f->cachedata.etag[i] == ' ' ||
-				f->cachedata.etag[i] == '\t' ||
-				f->cachedata.etag[i] == '\r' ||
-				f->cachedata.etag[i] == '\n'); --i)
-			f->cachedata.etag[i] = '\0';
-	} else if (14 < size && strncasecmp(data, "Last-Modified:", 14) == 0) {
-		/* extract Last-Modified header */
-		SKIP_ST(14);
-		if (i < (int) size) {
-			f->cachedata.last_modified =
-					curl_getdate(&data[i], NULL);
-		}
 	} else if (11 < size && strncasecmp(data, "Set-Cookie:", 11) == 0) {
 		/* extract Set-Cookie header */
 		SKIP_ST(11);
@@ -1170,10 +1082,6 @@ bool fetch_curl_process_headers(struct curl_fetch_info *f)
 
 	f->had_headers = true;
 
-	/* Set fetch response time if not already set */
-	if (f->cachedata.res_time == 0)
-		f->cachedata.res_time = time(0);
-
 	if (!f->http_code)
 	{
 		code = curl_easy_getinfo(f->curl_handle, CURLINFO_HTTP_CODE,
@@ -1186,8 +1094,7 @@ bool fetch_curl_process_headers(struct curl_fetch_info *f)
 
 	if (http_code == 304 && !f->post_urlenc && !f->post_multipart) {
 		/* Not Modified && GET request */
-		fetch_send_callback(FETCH_NOTMODIFIED, f->fetch_handle,
-				    (const char *)&f->cachedata, 0);
+		fetch_send_callback(FETCH_NOTMODIFIED, f->fetch_handle, 0, 0);
 		return true;
 	}
 
@@ -1225,11 +1132,11 @@ bool fetch_curl_process_headers(struct curl_fetch_info *f)
 	if (url_path && stat(url_path, &s) == 0) {
 		/* file: URL and file exists */
 		/* create etag */
-		free(f->cachedata.etag);
+		/*free(f->cachedata.etag);
 		f->cachedata.etag = malloc(13);
 		if (f->cachedata.etag)
 			sprintf(f->cachedata.etag,
-					"\"%10d\"", (int)s.st_mtime);
+					"\"%10d\"", (int)s.st_mtime);*/
 
 		/* don't set last modified time so as to ensure that local
 		 * files are revalidated at all times. */
@@ -1239,7 +1146,7 @@ bool fetch_curl_process_headers(struct curl_fetch_info *f)
 				f->last_modified > s.st_mtime &&
 				f->file_etag == s.st_mtime) {
 			fetch_send_callback(FETCH_NOTMODIFIED, f->fetch_handle,
-					    (const char *)&f->cachedata, 0);
+					    0, 0);
 			curl_free(url_path);
 			return true;
 		}

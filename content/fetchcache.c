@@ -31,6 +31,7 @@
 #include <sys/types.h>
 #include <regex.h>
 #include <time.h>
+#include <curl/curl.h>  /* for curl_getdate() */
 #include "utils/config.h"
 #include "content/content.h"
 #include "content/fetchcache.h"
@@ -47,6 +48,8 @@ static regex_t re_content_type;
 static void fetchcache_callback(fetch_msg msg, void *p, const void *data,
 		unsigned long size);
 static char *fetchcache_parse_type(const char *s, char **params[]);
+static void fetchcache_parse_header(struct content *c, const char *data,
+		size_t size);
 static void fetchcache_error_page(struct content *c, const char *error);
 static void fetchcache_cache_update(struct content *c,
 		const struct cache_data *data);
@@ -445,6 +448,12 @@ void fetchcache_callback(fetch_msg msg, void *p, const void *data,
 			content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
 			break;
 
+		case FETCH_HEADER:
+			LOG(("FETCH_HEADER \"%.*s\"",
+						(int) size, (char *) data));
+			fetchcache_parse_header(c, data, size);
+			break;
+
 		case FETCH_DATA:
 			if (!content_process_data(c, data, size)) {
 				fetch_abort(c->fetch);
@@ -453,8 +462,6 @@ void fetchcache_callback(fetch_msg msg, void *p, const void *data,
 			break;
 
 		case FETCH_FINISHED:
-			fetchcache_cache_update(c,
-					(const struct cache_data *)data);
 			c->fetch = 0;
 			content_set_status(c, messages_get("Converting"),
 					c->source_size);
@@ -605,6 +612,96 @@ no_memory:
 
 
 /**
+ * Parse an HTTP response header.
+ *
+ * See RFC 2616 4.2.
+ */
+
+void fetchcache_parse_header(struct content *c, const char *data,
+		size_t size)
+{
+	size_t i;
+
+#define SKIP_ST(o) for (i = (o); i < size && (data[i] == ' ' || data[i] == '\t'); i++)
+
+	/* Set fetch response time if not already set */
+	if (c->cache_data->res_time == 0)
+		c->cache_data->res_time = time(0);
+
+	if (5 < size && strncasecmp(data, "Date:", 5) == 0) {
+		/* extract Date header */
+		SKIP_ST(5);
+		if (i < size)
+			c->cache_data->date = curl_getdate(&data[i], NULL);
+	} else if (4 < size && strncasecmp(data, "Age:", 4) == 0) {
+		/* extract Age header */
+		SKIP_ST(4);
+		if (i < size && '0' <= data[i] && data[i] <= '9')
+			c->cache_data->age = atoi(data + i);
+	} else if (8 < size && strncasecmp(data, "Expires:", 8) == 0) {
+		/* extract Expires header */
+		SKIP_ST(8);
+		if (i < size)
+			c->cache_data->expires = curl_getdate(&data[i], NULL);
+	} else if (14 < size && strncasecmp(data, "Cache-Control:", 14) == 0) {
+		/* extract and parse Cache-Control header */
+		size_t comma;
+		SKIP_ST(14);
+
+		while (i < size) {
+			for (comma = i; comma < size; comma++)
+				if (data[comma] == ',')
+					break;
+
+			SKIP_ST(i);
+
+			if (8 < comma - i && (strncasecmp(data + i, "no-cache", 8) == 0 || strncasecmp(data + i, "no-store", 8) == 0))
+				/* When we get a disk cache we should
+				 * distinguish between these two */
+				c->cache_data->no_cache = true;
+			else if (7 < comma - i && strncasecmp(data + i, "max-age", 7) == 0) {
+				for (; i < comma; i++)
+					if (data[i] == '=')
+						break;
+				SKIP_ST(i+1);
+				if (i < comma)
+					c->cache_data->max_age =
+							atoi(data + i);
+			}
+
+			i = comma + 1;
+		}
+	} else if (5 < size && strncasecmp(data, "ETag:", 5) == 0) {
+		/* extract ETag header */
+		free(c->cache_data->etag);
+		c->cache_data->etag = talloc_array(c, char, size);
+		if (!c->cache_data->etag) {
+			LOG(("malloc failed"));
+			return;
+		}
+		SKIP_ST(5);
+		strncpy(c->cache_data->etag, data + i, size - i);
+		c->cache_data->etag[size - i] = '\0';
+		for (i = size - i - 1; i >= 0 &&
+				(c->cache_data->etag[i] == ' ' ||
+				c->cache_data->etag[i] == '\t' ||
+				c->cache_data->etag[i] == '\r' ||
+				c->cache_data->etag[i] == '\n'); --i)
+			c->cache_data->etag[i] = '\0';
+	} else if (14 < size && strncasecmp(data, "Last-Modified:", 14) == 0) {
+		/* extract Last-Modified header */
+		SKIP_ST(14);
+		if (i < size) {
+			c->cache_data->last_modified =
+					curl_getdate(&data[i], NULL);
+		}
+	}
+
+	return;
+}
+
+
+/**
  * Generate an error page.
  *
  * \param c empty content to generate the page in
@@ -682,7 +779,7 @@ void fetchcache_notmodified(struct content *c, const void *data)
 	struct content *fb;
 	union content_msg_data msg_data;
 
-	assert(c && data);
+	assert(c);
 	assert(c->status == CONTENT_STATUS_TYPE_UNKNOWN);
 
 	/* Look for cached content */
@@ -748,8 +845,7 @@ void fetchcache_notmodified(struct content *c, const void *data)
 		c->status = CONTENT_STATUS_ERROR;
 
 		/* and update fallback's cache control data */
-		fetchcache_cache_update(fb,
-			(const struct cache_data *)data);
+		fetchcache_cache_update(fb, c->cache_data);
 	}
 	else {
 		/* No cached content, so unconditionally refetch */
