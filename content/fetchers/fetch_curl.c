@@ -998,6 +998,11 @@ size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
 	int i;
 	size *= nmemb;
 
+	if (f->abort) {
+		f->stopped = true;
+		return 0;
+	}
+
 	fetch_send_callback(FETCH_HEADER, f->fetch_handle, data, size);
 
 #define SKIP_ST(o) for (i = (o); i < (int) size && (data[i] == ' ' || data[i] == '\t'); i++)
