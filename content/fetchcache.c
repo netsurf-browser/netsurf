@@ -682,7 +682,7 @@ void fetchcache_parse_header(struct content *c, const char *data,
 		}
 	} else if (5 < size && strncasecmp(data, "ETag:", 5) == 0) {
 		/* extract ETag header */
-		free(c->cache_data->etag);
+		talloc_free(c->cache_data->etag);
 		c->cache_data->etag = talloc_array(c, char, size);
 		if (!c->cache_data->etag) {
 			LOG(("malloc failed"));
