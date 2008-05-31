@@ -77,8 +77,6 @@ static scheme_fetcher *fetchers = NULL;
 /** Information for a single fetch. */
 struct fetch {
 	fetch_callback callback;/**< Callback function. */
-	bool abort;		/**< Abort requested. */
-	bool stopped;		/**< Download stopped on purpose. */
 	char *url;		/**< URL. */
 	char *referer;		/**< Referer URL. */
 	bool send_referer;	/**< Valid to send the referer */
@@ -269,8 +267,6 @@ struct fetch * fetch_start(const char *url, const char *referer,
 
 	/* construct a new fetch structure */
 	fetch->callback = callback;
-	fetch->abort = false;
-	fetch->stopped = false;
 	fetch->url = strdup(url);
 	fetch->verifiable = verifiable;
 	fetch->parent_fetch_url = parent_url ? strdup(parent_url) : 0;
