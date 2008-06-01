@@ -47,7 +47,7 @@ static bool ro_save_draw_path(float *p, unsigned int n, colour fill,
 static bool ro_save_draw_fill(int x0, int y0, int x1, int y1, colour c);
 static bool ro_save_draw_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
-static bool ro_save_draw_text(int x, int y, struct css_style *style,
+static bool ro_save_draw_text(int x, int y, const struct css_style *style,
 		const char *text, size_t length, colour bg, colour c);
 static bool ro_save_draw_disc(int x, int y, int radius, colour colour,
 		bool filled);
@@ -346,7 +346,7 @@ bool ro_save_draw_clip(int clip_x0, int clip_y0,
 }
 
 
-bool ro_save_draw_text(int x, int y, struct css_style *style,
+bool ro_save_draw_text(int x, int y, const struct css_style *style,
 		const char *text, size_t length, colour bg, colour c)
 {
 	pencil_code code;
@@ -380,8 +380,13 @@ bool ro_save_draw_bitmap(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg)
 {
 	pencil_code code;
+	char *buffer;
 
-	bitmap_get_buffer(bitmap);
+	buffer = bitmap_get_buffer(bitmap);
+	if (!buffer) {
+		warn_user("NoMemory", 0);
+		return false;
+	}
 
 	code = pencil_sprite(ro_save_draw_diagram, x * 2, (-y - height) * 2,
 			width * 2, height * 2,

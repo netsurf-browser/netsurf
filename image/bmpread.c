@@ -127,7 +127,7 @@ bmp_result ico_analyse(struct ico_collection *ico) {
 		image->bmp.bmp_data = ico->ico_data + READ_INT(data, 12);
 		image->bmp.ico = true;
 		data += 16;
-		result = bmp_analyse_header(&image->bmp, 
+		result = bmp_analyse_header(&image->bmp,
 				(char *) image->bmp.bmp_data);
 		if (result != BMP_OK)
 			return result;
@@ -425,6 +425,8 @@ bmp_result bmp_decode_rgb24(struct bmp_image *bmp, char **start, int bytes) {
 	data = *start;
 	swidth = bitmap_get_rowstride(bmp->bitmap);
 	top = bitmap_get_buffer(bmp->bitmap);
+	if (!top)
+		return BMP_INSUFFICIENT_MEMORY;
 	bottom = top + swidth * (bmp->height - 1);
 	end = data + bytes;
 	addr = ((intptr_t)data) & 3;
@@ -485,6 +487,8 @@ bmp_result bmp_decode_rgb16(struct bmp_image *bmp, char **start, int bytes) {
 	data = *start;
 	swidth = bitmap_get_rowstride(bmp->bitmap);
 	top = bitmap_get_buffer(bmp->bitmap);
+	if (!top)
+		return BMP_INSUFFICIENT_MEMORY;
 	bottom = top + swidth * (bmp->height - 1);
 	end = data + bytes;
 	addr = ((intptr_t)data) & 3;
@@ -552,6 +556,8 @@ bmp_result bmp_decode_rgb(struct bmp_image *bmp, char **start, int bytes) {
 	data = *start;
 	swidth = bitmap_get_rowstride(bmp->bitmap);
 	top = bitmap_get_buffer(bmp->bitmap);
+	if (!top)
+		return BMP_INSUFFICIENT_MEMORY;
 	bottom = top + swidth * (bmp->height - 1);
 	end = data + bytes;
 	addr = ((intptr_t)data) & 3;
@@ -598,6 +604,8 @@ bmp_result bmp_decode_mask(struct bmp_image *bmp, char *data, int bytes) {
 
 	swidth = bitmap_get_rowstride(bmp->bitmap);
 	top = bitmap_get_buffer(bmp->bitmap);
+	if (!top)
+		return BMP_INSUFFICIENT_MEMORY;
 	bottom = top + swidth * (bmp->height - 1);
 	end = data + bytes;
 	addr = ((intptr_t)data) & 3;
@@ -642,6 +650,8 @@ bmp_result bmp_decode_rle(struct bmp_image *bmp, char *data, int bytes, int size
 
 	swidth = bitmap_get_rowstride(bmp->bitmap);
 	top = bitmap_get_buffer(bmp->bitmap);
+	if (!top)
+		return BMP_INSUFFICIENT_MEMORY;
 	bottom = top + swidth * (bmp->height - 1);
 	end = data + bytes;
 	bmp->decoded = true;

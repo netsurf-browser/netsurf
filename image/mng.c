@@ -54,7 +54,7 @@ static mng_uint32 nsmng_gettickcount(mng_handle mng);
 static mng_bool nsmng_refresh(mng_handle mng, mng_uint32 x, mng_uint32 y, mng_uint32 w, mng_uint32 h);
 static mng_bool nsmng_settimer(mng_handle mng, mng_uint32 msecs);
 static void nsmng_animate(void *p);
-static bool nsmng_broadcast_error(struct content *c);
+static bool nsmng_broadcast_error(struct content *c, mng_retcode code);
 static mng_bool nsmng_errorproc(mng_handle mng, mng_int32 code,
 	mng_int8 severity, mng_chunkid chunktype, mng_uint32 chunkseq,
 	mng_int32 extra1, mng_int32 extra2, mng_pchar text);
@@ -65,6 +65,8 @@ static void nsmng_free(mng_ptr p, mng_size_t n);
 
 
 bool nsmng_create(struct content *c, const char *params[]) {
+	mng_retcode code;
+	union content_msg_data msg_data;
 
 	assert(c != NULL);
 	assert(params != NULL);
@@ -78,58 +80,70 @@ bool nsmng_create(struct content *c, const char *params[]) {
 #endif
 	if (c->data.mng.handle == MNG_NULL) {
 		LOG(("Unable to initialise MNG library."));
-		return nsmng_broadcast_error(c);
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		return false;
 	}
 
 	/*	We need to decode in suspension mode
 	*/
-	if (mng_set_suspensionmode(c->data.mng.handle, MNG_TRUE) != MNG_NOERROR) {
+	code = mng_set_suspensionmode(c->data.mng.handle, MNG_TRUE);
+	if (code) {
 		LOG(("Unable to set suspension mode."));
-		return nsmng_broadcast_error(c);
+		return nsmng_broadcast_error(c, code);
 	}
 
 	/*	We need to register our callbacks
 	*/
-	if (mng_setcb_openstream(c->data.mng.handle, nsmng_openstream) != MNG_NOERROR) {
+	code = mng_setcb_openstream(c->data.mng.handle, nsmng_openstream);
+	if (code) {
 		LOG(("Unable to set openstream callback."));
-		return nsmng_broadcast_error(c);
+		return nsmng_broadcast_error(c, code);
 	}
-	if (mng_setcb_readdata(c->data.mng.handle, nsmng_readdata) != MNG_NOERROR) {
+	code = mng_setcb_readdata(c->data.mng.handle, nsmng_readdata);
+	if (code) {
 		LOG(("Unable to set readdata callback."));
-		return nsmng_broadcast_error(c);
+		return nsmng_broadcast_error(c, code);
 	}
-	if (mng_setcb_closestream(c->data.mng.handle, nsmng_closestream) != MNG_NOERROR) {
+	code = mng_setcb_closestream(c->data.mng.handle, nsmng_closestream);
+	if (code) {
 		LOG(("Unable to set closestream callback."));
-		return nsmng_broadcast_error(c);
+		return nsmng_broadcast_error(c, code);
 	}
-	if (mng_setcb_processheader(c->data.mng.handle, nsmng_processheader) != MNG_NOERROR) {
+	code = mng_setcb_processheader(c->data.mng.handle, nsmng_processheader);
+	if (code) {
 		LOG(("Unable to set processheader callback."));
-		return nsmng_broadcast_error(c);
+		return nsmng_broadcast_error(c, code);
 	}
 
 	/*	Register our callbacks for displaying
 	*/
-	if (mng_setcb_getcanvasline(c->data.mng.handle, nsmng_getcanvasline) != MNG_NOERROR) {
+	code = mng_setcb_getcanvasline(c->data.mng.handle, nsmng_getcanvasline);
+	if (code) {
 		LOG(("Unable to set getcanvasline callback."));
-		return nsmng_broadcast_error(c);
+		return nsmng_broadcast_error(c, code);
 	}
-	if (mng_setcb_refresh(c->data.mng.handle, nsmng_refresh) != MNG_NOERROR) {
+	code = mng_setcb_refresh(c->data.mng.handle, nsmng_refresh);
+	if (code) {
 		LOG(("Unable to set refresh callback."));
-		return nsmng_broadcast_error(c);
+		return nsmng_broadcast_error(c, code);
 	}
-	if (mng_setcb_gettickcount(c->data.mng.handle, nsmng_gettickcount) != MNG_NOERROR) {
+	code = mng_setcb_gettickcount(c->data.mng.handle, nsmng_gettickcount);
+	if (code) {
 		LOG(("Unable to set gettickcount callback."));
-		return nsmng_broadcast_error(c);
+		return nsmng_broadcast_error(c, code);
 	}
-	if (mng_setcb_settimer(c->data.mng.handle, nsmng_settimer) != MNG_NOERROR) {
+	code = mng_setcb_settimer(c->data.mng.handle, nsmng_settimer);
+	if (code) {
 		LOG(("Unable to set settimer callback."));
-		return nsmng_broadcast_error(c);
+		return nsmng_broadcast_error(c, code);
 	}
 
 	/* register error handling function */
-	if (mng_setcb_errorproc(c->data.mng.handle, nsmng_errorproc) != MNG_NOERROR) {
+	code = mng_setcb_errorproc(c->data.mng.handle, nsmng_errorproc);
+	if (code) {
 		LOG(("Unable to set errorproc"));
-		return nsmng_broadcast_error(c);
+		return nsmng_broadcast_error(c, code);
 	}
 
 	/*	Initialise the reading
@@ -188,6 +202,7 @@ mng_bool nsmng_closestream(mng_handle mng) {
 mng_bool nsmng_processheader(mng_handle mng, mng_uint32 width, mng_uint32 height) {
 	struct content *c;
 	union content_msg_data msg_data;
+	char *buffer;
 
 	assert(mng != NULL);
 
@@ -199,6 +214,16 @@ mng_bool nsmng_processheader(mng_handle mng, mng_uint32 width, mng_uint32 height
 
 	c->bitmap = bitmap_create(width, height, BITMAP_NEW);
 	if (!c->bitmap) {
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		LOG(("Insufficient memory to create canvas."));
+		return MNG_FALSE;
+	}
+
+	/* Get the buffer to ensure that it is allocated and the calls in
+	 * nsmng_getcanvasline() succeed. */
+	buffer = bitmap_get_buffer(c->bitmap);
+	if (!buffer) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		LOG(("Insufficient memory to create canvas."));
@@ -247,7 +272,7 @@ bool nsmng_process_data(struct content *c, char *data, unsigned int size) {
 	c->data.mng.read_resume = (status == MNG_NEEDMOREDATA);
 	if ((status != MNG_NOERROR) && (status != MNG_NEEDMOREDATA)) {
 		LOG(("Failed to start/continue reading (%i).", status));
-		return nsmng_broadcast_error(c);
+		return nsmng_broadcast_error(c, status);
 	}
 
 	/*	Continue onwards
@@ -267,7 +292,7 @@ bool nsmng_convert(struct content *c, int width, int height) {
 	 * and the bitmap created, so ensure that's the case
 	 */
 	if (!c->bitmap)
-		return nsmng_broadcast_error(c);
+		return nsmng_broadcast_error(c, -1);
 
 	/*	Set the title
 	*/
@@ -311,7 +336,7 @@ bool nsmng_convert(struct content *c, int width, int height) {
 	status = mng_display(c->data.mng.handle);
 	if ((status != MNG_NOERROR) && (status != MNG_NEEDTIMERWAIT)) {
 		LOG(("Unable to start display (%i)", status));
-		return nsmng_broadcast_error(c);
+		return nsmng_broadcast_error(c, status);
 	}
 	bitmap_modified(c->bitmap);
 
@@ -550,22 +575,25 @@ void nsmng_animate(void *p) {
  * \param c the content to broadcast for
  * \return false
  */
-bool nsmng_broadcast_error(struct content *c) {
+bool nsmng_broadcast_error(struct content *c, mng_retcode code)
+{
 	union content_msg_data msg_data;
+	char error[100];
 
 	assert(c != NULL);
 
-	if (c->type == CONTENT_MNG) {
-		msg_data.error = messages_get("MNGError");
-	} else if (c->type == CONTENT_PNG) {
-		msg_data.error = messages_get("PNGError");
-	} else {
-		msg_data.error = messages_get("JNGError");
+	if (code == MNG_OUTOFMEMORY) {
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		return false;
 	}
+
+	snprintf(error, sizeof error, messages_get("MNGError"), code);
+	msg_data.error = error;
 	content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 	return false;
-
 }
+
 
 mng_bool nsmng_errorproc(mng_handle mng, mng_int32 code,
 	mng_int8 severity,

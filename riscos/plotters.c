@@ -498,7 +498,14 @@ bool ro_plot_arc(int x, int y, int radius, int angle1, int angle2, colour c)
 bool ro_plot_bitmap(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg)
 {
-	bitmap_get_buffer(bitmap);
+	char *buffer;
+
+	buffer = bitmap_get_buffer(bitmap);
+	if (!buffer) {
+		LOG(("bitmap_get_buffer failed"));
+		return false;
+	}
+
 	return image_redraw(bitmap->sprite_area,
 			ro_plot_origin_x + x * 2,
 			ro_plot_origin_y - y * 2,
@@ -516,7 +523,14 @@ bool ro_plot_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
 		bool repeat_x, bool repeat_y)
 {
-	bitmap_get_buffer(bitmap);
+	char *buffer;
+
+	buffer = bitmap_get_buffer(bitmap);
+	if (!buffer) {
+		LOG(("bitmap_get_buffer failed"));
+		return false;
+	}
+
 	return image_redraw(bitmap->sprite_area,
  			ro_plot_origin_x + x * 2,
 			ro_plot_origin_y - y * 2,

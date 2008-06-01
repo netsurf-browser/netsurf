@@ -58,8 +58,10 @@
 
 bool nssprite_convert(struct content *c, int width, int height)
 {
+	union content_msg_data msg_data;
+
 	struct rosprite_mem_context* ctx;
-	ERRCHK(rosprite_create_mem_context((uint8_t *) c->source_data, 
+	ERRCHK(rosprite_create_mem_context((uint8_t *) c->source_data,
 			c->total_size, &ctx));
 
 	struct rosprite_area* sprite_area;
@@ -73,11 +75,18 @@ bool nssprite_convert(struct content *c, int width, int height)
 
 	c->bitmap = bitmap_create(sprite->width, sprite->height, BITMAP_NEW);
 	if (!c->bitmap) {
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
 	}
 	char* imagebuf = bitmap_get_buffer(c->bitmap);
+	if (!imagebuf) {
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		return false;
+	}
 	unsigned int row_width = bitmap_get_rowstride(c->bitmap);
-	
+
 	memcpy(imagebuf, sprite->image, row_width * sprite->height); // TODO: avoid copying entire image buffer
 
 	/* reverse byte order of each word */
