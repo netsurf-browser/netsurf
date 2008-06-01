@@ -463,8 +463,7 @@ ParsingFail:Dokumentparsing ist fehlgeschlagen.
 BadGIF:Lesen einer GIF Datei fehlgeschlagen.
 BadBMP:Lesen einer BMP Datei fehlgeschlagen.
 BadICO:Lesen einer ICO Datei fehlgeschlagen.
-PNGError:PNG Library Fehler.
-MNGError:MNG Library Fehler.
+MNGError:MNG Library Fehler: %i
 BadSprite:Ungültiges oder beschädigtes Sprite.
 
 # HTTP status codes
