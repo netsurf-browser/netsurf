@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Rob Kendrick <rjek@rjek.com>
+ * Copyright 2008 Rob Kendrick <rjek@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -29,7 +29,8 @@ struct nsgtk_throbber
 
 extern struct nsgtk_throbber *nsgtk_throbber;
 
-bool nsgtk_throbber_initialise(const char *fn);
+bool nsgtk_throbber_initialise_from_gif(const char *fn);
+bool nsgtk_throbber_initialise_from_png(const int frames, ...);
 void nsgtk_throbber_finalise(void);
 
 #endif /* __GTK_THROBBER_H__ */
