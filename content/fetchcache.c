@@ -691,7 +691,7 @@ void fetchcache_parse_header(struct content *c, const char *data,
 		SKIP_ST(5);
 		strncpy(c->cache_data.etag, data + i, size - i);
 		c->cache_data.etag[size - i] = '\0';
-		for (i = size - i - 1; i >= 0 &&
+		for (i = size - i - 1; ((int) i) >= 0 &&
 				(c->cache_data.etag[i] == ' ' ||
 				c->cache_data.etag[i] == '\t' ||
 				c->cache_data.etag[i] == '\r' ||
