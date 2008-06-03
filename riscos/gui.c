@@ -848,6 +848,25 @@ void ro_gui_signal(int sig)
 
 		__write_backtrace(sig);
 
+		/* save DA to a file if NetSurf$CoreDump exists */
+		int used;
+		xos_read_var_val_size("NetSurf$CoreDump", 0, 0, &used, 0, 0);
+		if (used) {
+			extern int __dynamic_num;
+			if (__dynamic_num != -1) {
+				int size;
+				byte *base_address;
+				xosdynamicarea_read(__dynamic_num, &size,
+						&base_address, 0, 0, 0, 0, 0);
+				LOG(("saving DA %i %p %x\n", __dynamic_num,
+						base_address, size));
+				xosfile_save("$.netsurf_core",
+						(bits) base_address, 0,
+						base_address,
+						base_address + size);
+			}
+		}
+
 		abort();
 	}
 	/* If we reach here, previous handler was either SIG_IGN or
