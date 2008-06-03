@@ -446,7 +446,7 @@ bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 	assert(box);
 
 	/* If selection starts inside marker */
-	if (box->parent->list_marker == box && !do_marker) {
+	if (box->parent && box->parent->list_marker == box && !do_marker) {
 		/* set box to main list element */
 		box = box->parent;
 	}
