@@ -52,17 +52,36 @@ ifeq ($(TARGET),)
 TARGET := riscos
 endif
 else
+ifeq ($(HOST),BeOS)
+HOST := beos
+endif
+ifeq ($(HOST),Haiku)
+# Haiku implements the BeOS API
+HOST := beos
+endif
+ifeq ($(HOST),beos)
+# Build happening on BeOS platform, default target is BeOS backend
+ifeq ($(TARGET),)
+TARGET := beos
+endif
+# BeOS still uses gcc2
+GCCVER := 2
+else
 # Build happening on non-RO platform, default target is GTK backend
 ifeq ($(TARGET),)
 TARGET := gtk
 endif
 endif
+endif
 SUBTARGET =
+RESOURCES =
 
 ifneq ($(TARGET),riscos)
 ifneq ($(TARGET),gtk)
+ifneq ($(TARGET),beos)
 ifneq ($(TARGET),debug)
-$(error Unknown TARGET "$(TARGET)", should either be "riscos", "gtk", or "debug")
+$(error Unknown TARGET "$(TARGET)", should either be "riscos", "gtk", "beos" or "debug")
+endif
 endif
 endif
 endif
@@ -97,8 +116,20 @@ endif
 PKG_CONFIG := $(GCCSDK_INSTALL_ENV)/ro-pkg-config
 endif
 else
+ifeq ($(TARGET),beos)
+# Building for BeOS/Haiku
+#ifeq ($(HOST),beos)
+# Build for BeOS on BeOS
+GCCSDK_INSTALL_ENV := /boot/develop
+CC := gcc
+CXX := g++
+EXEEXT :=
+PKG_CONFIG :=
+#endif
+else
 # Building for GTK or debug
 PKG_CONFIG := pkg-config
+endif
 endif
 
 OBJROOT := build-$(HOST)-$(TARGET)$(SUBTARGET)
@@ -107,6 +138,12 @@ ifeq ($(HOST),riscos)
 LDFLAGS := -Xlinker -symbols=$(OBJROOT)/sym -lxml2 -lz -lm -lcurl -lssl -lcrypto -lmng -ljpeg \
 	-lcares
 else
+ifeq ($(HOST),beos)
+# some people do *not* have libm...
+LDFLAGS := -L/boot/home/config/lib
+LDFLAGS += -lxml2 -lz -lcurl -lssl -lcrypto -ljpeg -liconv
+#LDFLAGS += -lmng
+else
 LDFLAGS := $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl openssl)
 LDFLAGS += -lz -lm -lmng -ljpeg
 
@@ -114,6 +151,7 @@ CCACHE := $(shell which ccache)
 
 ifneq ($(CCACHE),)
 CC := $(CCACHE) $(CC)
+endif
 endif
 
 endif
@@ -169,6 +207,50 @@ endif
 endif
 endif
 
+ifeq ($(TARGET),beos)
+CFLAGS += -I. -O $(WARNFLAGS) -Dnsbeos			\
+	-D_BSD_SOURCE -D_POSIX_C_SOURCE			\
+	-Drestrict="" -Wno-multichar 
+# DEBUG
+CFLAGS += -g -O0
+# -DDEBUG=1
+
+BEOS_BERES := beres
+BEOS_XRES := xres
+BEOS_SETVER := setversion
+BEOS_MIMESET := mimeset
+VERSION_FULL := $(shell sed -n '/"/{s/.*"\(.*\)".*/\1/;p;}' desktop/version.c)
+VERSION_MAJ := $(shell sed -n '/_major/{s/.* = \([0-9]*\).*/\1/;p;}' desktop/version.c)
+VERSION_MIN := $(shell sed -n '/_minor/{s/.* = \([0-9]*\).*/\1/;p;}' desktop/version.c)
+RSRC_BEOS = $(addprefix $(OBJROOT)/,$(subst /,_,$(patsubst %.rdef,%.rsrc,$(RDEF_BEOS))))
+RESOURCES = $(RSRC_BEOS)
+ifeq ($(HOST),beos)
+CFLAGS += -I/boot/home/config/include		\
+	-I/boot/home/config/include/libxml2		\
+	-I/boot/home/config/include/libmng
+ifneq ($(wildcard /boot/develop/lib/*/libzeta.so),)
+LDFLAGS += -lzeta
+endif
+ifneq ($(wildcard /boot/develop/lib/*/libnetwork.so),)
+# Haiku
+NETLDFLAGS := -lnetwork
+else
+ifneq ($(wildcard /boot/develop/lib/*/libbind.so),)
+# BONE
+NETLDFLAGS := -lsocket -lbind
+else
+# net_server, will probably never work
+NETLDFLAGS := -lnet
+endif
+endif
+else
+# cross: Haiku ?
+NETLDFLAGS := -lnetwork
+endif
+LDFLAGS += -lbe $(NETLDFLAGS)
+endif
+
+
 ifeq ($(TARGET),debug)
 CFLAGS += -std=c99 -DDEBUG_BUILD \
 	-D_BSD_SOURCE \
@@ -195,7 +277,10 @@ $(DEPROOT)/created: $(OBJROOT)/created
 WARNFLAGS = -W -Wall -Wundef -Wpointer-arith \
 	-Wcast-align -Wwrite-strings -Wstrict-prototypes \
 	-Wmissing-prototypes -Wmissing-declarations -Wredundant-decls \
-	-Wnested-externs -Winline -Wno-unused-parameter
+	-Wnested-externs -Winline 
+ifneq ($(GCCVER),2)
+WARNFLAGS += -Wno-unused-parameter 
+endif
 
 OPT0FLAGS = -O0
 # -O and -O2 can use -Wuninitialized which gives us more static checking.
@@ -208,9 +293,9 @@ CLEANS := clean-target
 
 include Makefile.sources
 
-OBJECTS := $(sort $(addprefix $(OBJROOT)/,$(subst /,_,$(patsubst %.c,%.o,$(patsubst %.s,%.o,$(SOURCES))))))
+OBJECTS := $(sort $(addprefix $(OBJROOT)/,$(subst /,_,$(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(patsubst %.s,%.o,$(SOURCES)))))))
 
-$(EXETARGET): $(OBJECTS)
+$(EXETARGET): $(OBJECTS) $(RESOURCES)
 	$(VQ)echo "    LINK: $(EXETARGET)"
 ifneq ($(TARGET)$(SUBTARGET),riscos-elf)
 	$(Q)$(CC) -o $(EXETARGET) $(OBJECTS) $(LDFLAGS)
@@ -218,6 +303,22 @@ else
 	$(Q)$(CC) -o $(EXETARGET:,ff8=,e1f) $(OBJECTS) $(LDFLAGS)
 	$(Q)$(ELF2AIF) $(EXETARGET:,ff8=,e1f) $(EXETARGET)
 	$(Q)$(RM) $(EXETARGET:,ff8=,e1f)
+endif
+ifeq ($(TARGET),beos)
+	$(VQ)echo "    XRES: $(EXETARGET)"
+	$(Q)$(BEOS_XRES) -o $(EXETARGET) $(RSRC_BEOS)
+	$(VQ)echo "  SETVER: $(EXETARGET)"
+	$(Q)$(BEOS_SETVER) $(EXETARGET) \
+                -app $(VERSION_MAJ) $(VERSION_MIN) 0 d 0 \
+                -short "NetSurf $(VERSION_FULL)" \
+                -long "NetSurf $(VERSION_FULL) ©"
+	$(VQ)echo " MIMESET: $(EXETARGET)"
+	$(Q)$(BEOS_MIMESET) $(EXETARGET)
+endif
+
+ifeq ($(TARGET),beos)
+$(RSRC_BEOS): $(RDEF_BEOS)
+	$(Q)$(BEOS_BERES) -o $@ $<
 endif
 
 clean-target:
@@ -239,6 +340,19 @@ DEPFILES :=
 # 1 = Source file
 # 2 = dep filename, no prefix
 # 3 = obj filename, no prefix
+ifeq ($(GCCVER),2)
+# simpler deps tracking for gcc2...
+define dependency_generate_c
+DEPFILES += $(2)
+$$(DEPROOT)/$(2): $$(DEPROOT)/created $(1) css/css_enum.h css/parser.h
+	$$(VQ)echo "     DEP: $(1)"
+	$$(Q)$$(RM) $$(DEPROOT)/$(2)
+	$$(Q)$$(CC) $$(CFLAGS) -MM  \
+		    $(1) | sed 's,^.*:,$$(DEPROOT)/$2 $$(OBJROOT)/$(3):,' \
+		    > $$(DEPROOT)/$(2)
+
+endef
+else
 define dependency_generate_c
 DEPFILES += $(2)
 $$(DEPROOT)/$(2): $$(DEPROOT)/created $(1) css/css_enum.h css/parser.h
@@ -248,6 +362,7 @@ $$(DEPROOT)/$(2): $$(DEPROOT)/created $(1) css/css_enum.h css/parser.h
 		    -MF $$(DEPROOT)/$(2) $(1)
 
 endef
+endif
 
 # 1 = Source file
 # 2 = dep filename, no prefix
@@ -272,6 +387,13 @@ $$(OBJROOT)/$(2): $$(OBJROOT)/created $$(DEPROOT)/$(3)
 
 endef
 
+define compile_target_cpp
+$$(OBJROOT)/$(2): $$(OBJROOT)/created $$(DEPROOT)/$(3)
+	$$(VQ)echo " COMPILE: $(1)"
+	$$(Q)$$(CXX) $$(CFLAGS) -o $$@ -c $(1)
+
+endef
+
 # 1 = Source file
 # 2 = obj filename, no prefix
 # 3 = dep filename, no prefix
@@ -285,6 +407,9 @@ endef
 # Rules to construct dep lines for each object...
 $(eval $(foreach SOURCE,$(filter %.c,$(SOURCES)), \
 	$(call dependency_generate_c,$(SOURCE),$(subst /,_,$(SOURCE:.c=.d)),$(subst /,_,$(SOURCE:.c=.o)))))
+
+$(eval $(foreach SOURCE,$(filter %.cpp,$(SOURCES)), \
+	$(call dependency_generate_c,$(SOURCE),$(subst /,_,$(SOURCE:.cpp=.d)),$(subst /,_,$(SOURCE:.cpp=.o)))))
 
 # Cannot currently generate dep files for S files because they're objasm
 # when we move to gas format, we will be able to.
@@ -300,6 +425,9 @@ endif
 
 $(eval $(foreach SOURCE,$(filter %.c,$(SOURCES)), \
 	$(call compile_target_c,$(SOURCE),$(subst /,_,$(SOURCE:.c=.o)),$(subst /,_,$(SOURCE:.c=.d)))))
+
+$(eval $(foreach SOURCE,$(filter %.cpp,$(SOURCES)), \
+	$(call compile_target_cpp,$(SOURCE),$(subst /,_,$(SOURCE:.cpp=.o)),$(subst /,_,$(SOURCE:.cpp=.d)))))
 
 $(eval $(foreach SOURCE,$(filter %.s,$(SOURCES)), \
 	$(call compile_target_s,$(SOURCE),$(subst /,_,$(SOURCE:.s=.o)),$(subst /,_,$(SOURCE:.s=.d)))))
