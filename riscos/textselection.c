@@ -125,10 +125,11 @@ void gui_start_selection(struct gui_window *g)
 	gui_track_gui_window = g;
 
 	drag.type = wimp_DRAG_USER_POINT;
-	drag.bbox.x0 = state.visible.x0;
-	drag.bbox.y0 = state.visible.y0;
-	drag.bbox.x1 = state.visible.x1;
-	drag.bbox.y1 = state.visible.y1;
+	/* Don't constrain mouse pointer during drags */
+	drag.bbox.x0 = -16384;
+	drag.bbox.y0 = -16384;
+	drag.bbox.x1 = 16384;
+	drag.bbox.y1 = 16384;
 
 	error = xwimp_drag_box(&drag);
 	if (error) {
