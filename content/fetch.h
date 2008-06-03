@@ -48,19 +48,6 @@ struct content;
 struct fetch;
 struct form_successful_control;
 
-struct cache_data {
-	time_t req_time;	/**< Time of request */
-	time_t res_time;	/**< Time of response */
-	time_t date;		/**< Date: response header */
-	time_t expires;		/**< Expires: response header */
-#define INVALID_AGE -1
-	int age;		/**< Age: response header */
-	int max_age;		/**< Max-age Cache-control parameter */
-	bool no_cache;		/**< no-cache Cache-control parameter */
-	char *etag;		/**< Etag: response header */
-	time_t last_modified;	/**< Last-Modified: response header */
-};
-
 #ifdef WITH_SSL
 struct ssl_cert_info {
 	long version;		/**< Certificate version */

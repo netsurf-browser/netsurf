@@ -398,11 +398,6 @@ struct content * content_create(const char *url)
 		talloc_free(c);
 		return 0;
 	}
-	c->cache_data = talloc(c, struct cache_data);
-	if (!c->cache_data) {
-		talloc_free(c);
-		return 0;
-	}
 	talloc_set_name_const(c, c->url);
 	c->type = CONTENT_UNKNOWN;
 	c->mime_type = 0;
@@ -433,15 +428,15 @@ struct content * content_create(const char *url)
 	c->download = false;
 	c->redirect_count = 0;
 	c->error_count = 0;
-	c->cache_data->req_time = 0;
-	c->cache_data->res_time = 0;
-	c->cache_data->date = 0;
-	c->cache_data->expires = 0;
-	c->cache_data->age = INVALID_AGE;
-	c->cache_data->max_age = INVALID_AGE;
-	c->cache_data->no_cache = false;
-	c->cache_data->etag = 0;
-	c->cache_data->last_modified = 0;
+	c->cache_data.req_time = 0;
+	c->cache_data.res_time = 0;
+	c->cache_data.date = 0;
+	c->cache_data.expires = 0;
+	c->cache_data.age = INVALID_AGE;
+	c->cache_data.max_age = INVALID_AGE;
+	c->cache_data.no_cache = false;
+	c->cache_data.etag = 0;
+	c->cache_data.last_modified = 0;
 
 	content_set_status(c, messages_get("Loading"));
 

@@ -136,7 +136,7 @@ struct content * fetchcache(const char *url,
 
 	if (!post_urlenc && !post_multipart && !download && !query) {
 		if ((c = content_get(url1)) != NULL) {
-			struct cache_data *cd = c->cache_data;
+			struct cache_data *cd = &c->cache_data;
 			int current_age, freshness_lifetime;
 
 			/* Calculate staleness of cached content as per
@@ -171,8 +171,8 @@ struct content * fetchcache(const char *url,
 			if (cd->last_modified)
 				date = cd->last_modified;
 			else
-				date = c->cache_data->date;
-			etag = c->cache_data->etag;
+				date = c->cache_data.date;
+			etag = c->cache_data.etag;
 		}
 	}
 
@@ -183,10 +183,10 @@ struct content * fetchcache(const char *url,
 
 	/* Fill in cache validation fields (if present) */
 	if (date)
-		c->cache_data->date = date;
+		c->cache_data.date = date;
 	if (etag) {
-		c->cache_data->etag = talloc_strdup(c, etag);
-		if (!c->cache_data->etag)
+		c->cache_data.etag = talloc_strdup(c, etag);
+		if (!c->cache_data.etag)
 			return NULL;
 	}
 
@@ -280,18 +280,18 @@ void fetchcache_go(struct content *content, const char *referer,
 		/* brand new content: start fetch */
 		char **headers;
 		int i = 0;
-		char *etag = content->cache_data->etag;
-		time_t date = content->cache_data->date;
+		char *etag = content->cache_data.etag;
+		time_t date = content->cache_data.date;
 
-		content->cache_data->req_time = time(NULL);
-		content->cache_data->res_time = 0;
-		content->cache_data->date = 0;
-		content->cache_data->expires = 0;
-		content->cache_data->age = INVALID_AGE;
-		content->cache_data->max_age = INVALID_AGE;
-		content->cache_data->no_cache = false;
-		content->cache_data->etag = 0;
-		content->cache_data->last_modified = 0;
+		content->cache_data.req_time = time(NULL);
+		content->cache_data.res_time = 0;
+		content->cache_data.date = 0;
+		content->cache_data.expires = 0;
+		content->cache_data.age = INVALID_AGE;
+		content->cache_data.max_age = INVALID_AGE;
+		content->cache_data.no_cache = false;
+		content->cache_data.etag = 0;
+		content->cache_data.last_modified = 0;
 
 		headers = malloc(3 * sizeof(char *));
 		if (!headers) {
@@ -425,7 +425,7 @@ void fetchcache_callback(fetch_msg msg, void *p, const void *data,
 				c->fetch = 0;
 			}
 
-			if (c->cache_data->date || c->cache_data->etag) {
+			if (c->cache_data.date || c->cache_data.etag) {
 				/* We've just made a conditional request 
 				 * that returned with something other 
 				 * than 304. Therefore, there's a stale 
@@ -634,24 +634,24 @@ void fetchcache_parse_header(struct content *c, const char *data,
 #define SKIP_ST(o) for (i = (o); i < size && (data[i] == ' ' || data[i] == '\t'); i++)
 
 	/* Set fetch response time if not already set */
-	if (c->cache_data->res_time == 0)
-		c->cache_data->res_time = time(NULL);
+	if (c->cache_data.res_time == 0)
+		c->cache_data.res_time = time(NULL);
 
 	if (5 < size && strncasecmp(data, "Date:", 5) == 0) {
 		/* extract Date header */
 		SKIP_ST(5);
 		if (i < size)
-			c->cache_data->date = curl_getdate(&data[i], NULL);
+			c->cache_data.date = curl_getdate(&data[i], NULL);
 	} else if (4 < size && strncasecmp(data, "Age:", 4) == 0) {
 		/* extract Age header */
 		SKIP_ST(4);
 		if (i < size && '0' <= data[i] && data[i] <= '9')
-			c->cache_data->age = atoi(data + i);
+			c->cache_data.age = atoi(data + i);
 	} else if (8 < size && strncasecmp(data, "Expires:", 8) == 0) {
 		/* extract Expires header */
 		SKIP_ST(8);
 		if (i < size)
-			c->cache_data->expires = curl_getdate(&data[i], NULL);
+			c->cache_data.expires = curl_getdate(&data[i], NULL);
 	} else if (14 < size && strncasecmp(data, "Cache-Control:", 14) == 0) {
 		/* extract and parse Cache-Control header */
 		size_t comma;
@@ -667,14 +667,14 @@ void fetchcache_parse_header(struct content *c, const char *data,
 			if (8 < comma - i && (strncasecmp(data + i, "no-cache", 8) == 0 || strncasecmp(data + i, "no-store", 8) == 0))
 				/* When we get a disk cache we should
 				 * distinguish between these two */
-				c->cache_data->no_cache = true;
+				c->cache_data.no_cache = true;
 			else if (7 < comma - i && strncasecmp(data + i, "max-age", 7) == 0) {
 				for (; i < comma; i++)
 					if (data[i] == '=')
 						break;
 				SKIP_ST(i+1);
 				if (i < comma)
-					c->cache_data->max_age =
+					c->cache_data.max_age =
 							atoi(data + i);
 			}
 
@@ -682,26 +682,26 @@ void fetchcache_parse_header(struct content *c, const char *data,
 		}
 	} else if (5 < size && strncasecmp(data, "ETag:", 5) == 0) {
 		/* extract ETag header */
-		talloc_free(c->cache_data->etag);
-		c->cache_data->etag = talloc_array(c, char, size);
-		if (!c->cache_data->etag) {
+		talloc_free(c->cache_data.etag);
+		c->cache_data.etag = talloc_array(c, char, size);
+		if (!c->cache_data.etag) {
 			LOG(("malloc failed"));
 			return;
 		}
 		SKIP_ST(5);
-		strncpy(c->cache_data->etag, data + i, size - i);
-		c->cache_data->etag[size - i] = '\0';
+		strncpy(c->cache_data.etag, data + i, size - i);
+		c->cache_data.etag[size - i] = '\0';
 		for (i = size - i - 1; i >= 0 &&
-				(c->cache_data->etag[i] == ' ' ||
-				c->cache_data->etag[i] == '\t' ||
-				c->cache_data->etag[i] == '\r' ||
-				c->cache_data->etag[i] == '\n'); --i)
-			c->cache_data->etag[i] = '\0';
+				(c->cache_data.etag[i] == ' ' ||
+				c->cache_data.etag[i] == '\t' ||
+				c->cache_data.etag[i] == '\r' ||
+				c->cache_data.etag[i] == '\n'); --i)
+			c->cache_data.etag[i] = '\0';
 	} else if (14 < size && strncasecmp(data, "Last-Modified:", 14) == 0) {
 		/* extract Last-Modified header */
 		SKIP_ST(14);
 		if (i < size) {
-			c->cache_data->last_modified =
+			c->cache_data.last_modified =
 					curl_getdate(&data[i], NULL);
 		}
 	}
@@ -749,33 +749,33 @@ void fetchcache_cache_update(struct content *c,
 {
 	assert(c && data);
 
-	c->cache_data->req_time = data->req_time;
-	c->cache_data->res_time = data->res_time;
+	c->cache_data.req_time = data->req_time;
+	c->cache_data.res_time = data->res_time;
 
 	if (data->date != 0)
-		c->cache_data->date = data->date;
+		c->cache_data.date = data->date;
 	else
-		c->cache_data->date = time(0);
+		c->cache_data.date = time(0);
 
 	if (data->expires != 0)
-		c->cache_data->expires = data->expires;
+		c->cache_data.expires = data->expires;
 
 	if (data->age != INVALID_AGE)
-		c->cache_data->age = data->age;
+		c->cache_data.age = data->age;
 
 	if (data->max_age != INVALID_AGE)
-		c->cache_data->max_age = data->max_age;
+		c->cache_data.max_age = data->max_age;
 
 	if (data->no_cache)
 		c->fresh = false;
 
 	if (data->etag) {
-		talloc_free(c->cache_data->etag);
-		c->cache_data->etag = talloc_strdup(c, data->etag);
+		talloc_free(c->cache_data.etag);
+		c->cache_data.etag = talloc_strdup(c, data->etag);
 	}
 
 	if (data->last_modified)
-		c->cache_data->last_modified = data->last_modified;
+		c->cache_data.last_modified = data->last_modified;
 }
 
 
@@ -854,7 +854,7 @@ void fetchcache_notmodified(struct content *c, const void *data)
 		c->status = CONTENT_STATUS_ERROR;
 
 		/* and update fallback's cache control data */
-		fetchcache_cache_update(fb, c->cache_data);
+		fetchcache_cache_update(fb, &c->cache_data);
 	}
 	else {
 		/* No cached content, so unconditionally refetch */
@@ -892,9 +892,9 @@ void fetchcache_notmodified(struct content *c, const void *data)
 		fetch_abort(c->fetch);
 		c->fetch = 0;
 
-		c->cache_data->date = 0;
-		talloc_free(c->cache_data->etag);
-		c->cache_data->etag = 0;
+		c->cache_data.date = 0;
+		talloc_free(c->cache_data.etag);
+		c->cache_data.etag = 0;
 
 		for (u = c->user_list->next; u; u = u->next) {
 			fetchcache_go(c, referer, u->callback, u->p1, u->p2,

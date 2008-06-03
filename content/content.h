@@ -71,7 +71,6 @@
 struct bitmap;
 struct box;
 struct browser_window;
-struct cache_data;
 struct content;
 struct fetch;
 struct object_params;
@@ -124,6 +123,19 @@ union content_msg_data {
 		const struct ssl_cert_info *certs;
 		unsigned long num;	/**< Number of certs in chain */
 	} ssl;
+};
+
+struct cache_data {
+	time_t req_time;	/**< Time of request */
+	time_t res_time;	/**< Time of response */
+	time_t date;		/**< Date: response header */
+	time_t expires;		/**< Expires: response header */
+#define INVALID_AGE -1
+	int age;		/**< Age: response header */
+	int max_age;		/**< Max-age Cache-control parameter */
+	bool no_cache;		/**< no-cache Cache-control parameter */
+	char *etag;		/**< Etag: response header */
+	time_t last_modified;	/**< Last-Modified: response header */
 };
 
 /** Linked list of users of a content. */
@@ -208,7 +220,7 @@ struct content {
 	 *  was fetched using a simple GET, has not expired, and may be
 	 *  shared between users. */
 	bool fresh;
-	struct cache_data *cache_data;	/**< Cache control data */
+	struct cache_data cache_data;	/**< Cache control data */
 	unsigned int time;		/**< Creation time, if TYPE_UNKNOWN,
 					  LOADING or READY,
 					  otherwise total time. */
