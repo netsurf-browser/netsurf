@@ -527,6 +527,7 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 				url = data;
 			} else
 				url << path.Path();
+
 			browser_window_go(bw, url.String(), 0, true);
 			break;
 		}
@@ -1303,7 +1304,8 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 	toolbar->AddChild(g->throbber);
 	g->throbber->SetViewColor(toolbar->ViewColor());
 	g->throbber->SetLowColor(toolbar->ViewColor());
-	g->throbber->SetDrawingMode(B_OP_OVER);
+	g->throbber->SetDrawingMode(B_OP_ALPHA);
+	g->throbber->SetBlendingMode(B_PIXEL_ALPHA, B_ALPHA_OVERLAY);
 	/* set up the throbber. */
 	g->throbber->SetBitmap(nsbeos_throbber->framedata[0]);
 	g->throb_frame = 0;

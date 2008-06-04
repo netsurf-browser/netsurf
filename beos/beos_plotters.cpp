@@ -107,6 +107,9 @@ const struct plotter_table nsbeos_plotters = {
 };
 
 
+// #pragma mark - implementation
+
+
 BView *nsbeos_current_gc(void)
 {
 	return current_view;
@@ -158,8 +161,13 @@ bool nsbeos_plot_rectangle(int x0, int y0, int width, int height,
 
 	nsbeos_set_colour(c);
 
+	float pensize = view->PenSize();
+	view->SetPenSize(line_width);
+
 	BRect rect(x0, y0, x0 + width - 1, y0 + height - 1);
 	view->StrokeRect(rect, pat);
+
+	view->SetPenSize(pensize);
 
 	//nsbeos_current_gc_unlock();
 
@@ -200,9 +208,14 @@ bool nsbeos_plot_line(int x0, int y0, int x1, int y1, int width,
 
 	nsbeos_set_colour(c);
 
+	float pensize = view->PenSize();
+	view->SetPenSize(width);
+
 	BPoint start(x0, y0);
 	BPoint end(x1, y1);
 	view->StrokeLine(start, end, pat);
+
+	view->SetPenSize(pensize);
 
 	//nsbeos_current_gc_unlock();
 
@@ -236,8 +249,20 @@ bool nsbeos_plot_polygon(int *p, unsigned int n, colour fill)
 		return false;
 	}
 
-	rgb_color color = nsbeos_rgb_colour(fill);
+	nsbeos_set_colour(fill);
 
+	BPoint points[n];
+	
+	for (i = 0; i < n; i++) {
+		points[i] = BPoint(p[2 * i], p[2 * i + 1]);
+	}
+
+	if (fill == TRANSPARENT)
+		view->StrokePolygon(points, (int32)n);
+	else
+		view->FillPolygon(points, (int32)n);
+
+#if 0
 	view->BeginLineArray(n);
 
 	for (i = 0; i < n; i++) {
@@ -247,6 +272,7 @@ bool nsbeos_plot_polygon(int *p, unsigned int n, colour fill)
 	}
 
 	view->EndLineArray();
+#endif
 
 	//nsbeos_current_gc_unlock();
 
@@ -467,21 +493,29 @@ static bool nsbeos_plot_bbitmap(int x, int y, int width, int height,
 	}
 
 	drawing_mode oldmode = view->DrawingMode();
-	view->SetDrawingMode(B_OP_OVER);
+	source_alpha alpha;
+	alpha_function func;
+	view->GetBlendingMode(&alpha, &func);
+	//view->SetDrawingMode(B_OP_OVER);
+	view->SetDrawingMode(B_OP_ALPHA);
+	view->SetBlendingMode(B_PIXEL_ALPHA, B_ALPHA_OVERLAY);
 
 	// XXX DrawBitmap() resamples if rect doesn't match,
 	// but doesn't do any filtering
 	// XXX: use Zeta API if available ?
 
 	BRect rect(x, y, x + width - 1, y + height - 1);
+	/*
 	rgb_color old = view->LowColor();
 	if (bg != TRANSPARENT) {
 		view->SetLowColor(nsbeos_rgb_colour(bg));
 		view->FillRect(rect, B_SOLID_LOW);
 	}
+	*/
 	view->DrawBitmap(b, rect);
 	// maybe not needed?
-	view->SetLowColor(old);
+	//view->SetLowColor(old);
+	view->SetBlendingMode(alpha, func);
 	view->SetDrawingMode(oldmode);
 
 	//nsbeos_current_gc_unlock();

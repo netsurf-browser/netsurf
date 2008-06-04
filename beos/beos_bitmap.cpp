@@ -97,8 +97,10 @@ static inline void nsbeos_rgba_to_bgra(void *src, void *dst, int width, int heig
 			to[x].g = from[x].g;
 			to[x].r = from[x].r;
 			to[x].a = from[x].a;
+			/*
 			if (from[x].a == 0)
 				*(rgb_color *)&to[x] = B_TRANSPARENT_32_BIT;
+			*/
 		}
 		from += rowstride;
 		to += rowstride;
@@ -168,7 +170,7 @@ bool bitmap_test_opaque(struct bitmap *bitmap)
 {
 	assert(bitmap);
 /* todo: test if bitmap as opaque */
-	return bitmap->opaque;
+	return false;//bitmap->opaque;
 }
 
 
@@ -181,7 +183,7 @@ bool bitmap_get_opaque(struct bitmap *bitmap)
 {
 	assert(bitmap);
 /* todo: get whether bitmap is opaque */
-	return bitmap->opaque;
+	return false;//bitmap->opaque;
 }
 
 

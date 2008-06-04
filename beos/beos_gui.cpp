@@ -334,8 +334,38 @@ void gui_init(int argc, char** argv)
 
 	//nsbeos_completion_init();
 
+
+	/* This is an ugly hack to just get the new-style throbber going.
+	 * It, along with the PNG throbber loader, need making more generic.
+	 */
+	{
+#define STROF(n) #n
+#define FIND_THROB(n) find_resource(filenames[(n)], \
+				"throbber/throbber" STROF(n) ".png", \
+				"./beos/res/throbber/throbber" STROF(n) ".png")
+		char filenames[9][PATH_MAX];
+		FIND_THROB(0);
+		FIND_THROB(1);
+		FIND_THROB(2);
+		FIND_THROB(3);
+		FIND_THROB(4);
+		FIND_THROB(5);
+		FIND_THROB(6);
+		FIND_THROB(7);
+		FIND_THROB(8);
+		nsbeos_throbber_initialise_from_png(9,
+			filenames[0], filenames[1], filenames[2], filenames[3],
+			filenames[4], filenames[5], filenames[6], filenames[7], 
+			filenames[8]);
+#undef FIND_THROB
+#undef STROF
+	}
+
+#if 0
 	find_resource(buf, "throbber.gif", "./beos/res/throbber.gif");
-	nsbeos_throbber_initialise(buf);
+	nsbeos_throbber_initialise_from_gif(buf);
+#endif
+
 	if (nsbeos_throbber == NULL)
 		die("Unable to load throbber image.\n");
 

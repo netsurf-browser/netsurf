@@ -29,7 +29,8 @@ struct nsbeos_throbber
 
 extern struct nsbeos_throbber *nsbeos_throbber;
 
-bool nsbeos_throbber_initialise(const char *fn);
+bool nsbeos_throbber_initialise_from_gif(const char *fn);
+bool nsbeos_throbber_initialise_from_png(const int frames, ...);
 void nsbeos_throbber_finalise(void);
 
 #endif /* __BEOS_THROBBER_H__ */
