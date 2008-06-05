@@ -25,6 +25,7 @@
 #include "image/bmpread.h"
 #include "image/bitmap.h"
 #include "utils/log.h"
+#include "utils/config.h"
 
 #define READ_SHORT(a, o) (a[o]|(a[o+1]<<8))
 #define READ_INT(a, o) (a[o]|(a[o+1]<<8)|(a[o+2]<<16)|(a[o+3]<<24))
@@ -160,10 +161,10 @@ bmp_result bmp_analyse_header(struct bmp_image *bmp, char *data) {
 		/* the following header is for os/2 and windows 2.x and consists of:
 		 *
 		 *	+0	INT	size of this header (in bytes)
-		 *	+4	SHORT	image width (in pixels)
-		 *	+6	SHORT	image height (in pixels)
-		 *	+8	SHORT	number of color planes (always 1)
-		 *	+10	SHORT	number of bits per pixel
+		 *	+4	SHORT	image width (in pixels)
+		 *	+6	SHORT	image height (in pixels)
+		 *	+8	SHORT	number of color planes (always 1)
+		 *	+10	SHORT	number of bits per pixel
 		 */
 		width = READ_SHORT(data, 4);
 		height = READ_SHORT(data, 6);
@@ -186,34 +187,34 @@ bmp_result bmp_analyse_header(struct bmp_image *bmp, char *data) {
 		/* the following header is for windows 3.x and onwards. it is a
 		 * minimum of 40 bytes and (as of Windows 95) a maximum of 108 bytes.
 		 *
-		 *	+0	INT	size of this header (in bytes)
-		 *	+4	INT	image width (in pixels)
-		 *	+8	INT	image height (in pixels)
- 		 *	+12	SHORT	number of color planes (always 1)
-		 *	+14	SHORT	number of bits per pixel
-		 *	+16	INT	compression methods used
-		 *	+20	INT	size of bitmap (in bytes)
-		 *	+24	INT	horizontal resolution (in pixels per meter)
-		 *	+28	INT	vertical resolution (in pixels per meter)
-		 *	+32	INT	number of colors in the image
-		 *	+36	INT	number of important colors
-		 *	+40	INT	mask identifying bits of red component
-		 *	+44	INT	mask identifying bits of green component
-		 *	+48	INT	mask identifying bits of blue component
-		 *	+52	INT	mask identifying bits of alpha component
-		 *	+56	INT	color space type
-		 *	+60	INT	x coordinate of red endpoint
-		 *	+64	INT	y coordinate of red endpoint
-		 *	+68	INT	z coordinate of red endpoint
-		 *	+72	INT	x coordinate of green endpoint
-		 *	+76	INT	y coordinate of green endpoint
-		 *	+80	INT	z coordinate of green endpoint
-		 *	+84	INT	x coordinate of blue endpoint
-		 *	+88	INT	y coordinate of blue endpoint
-		 *	+92	INT	z coordinate of blue endpoint
-		 *	+96	INT	gamma red coordinate scale value
-		 *	+100	INT	gamma green coordinate scale value
-		 *	+104	INT	gamma blue coordinate scale value
+		 *	+0	INT	size of this header (in bytes)
+		 *	+4	INT	image width (in pixels)
+		 *	+8	INT	image height (in pixels)
+ 		 *	+12	SHORT	number of color planes (always 1)
+		 *	+14	SHORT	number of bits per pixel
+		 *	+16	INT	compression methods used
+		 *	+20	INT	size of bitmap (in bytes)
+		 *	+24	INT	horizontal resolution (in pixels per meter)
+		 *	+28	INT	vertical resolution (in pixels per meter)
+		 *	+32	INT	number of colors in the image
+		 *	+36	INT	number of important colors
+		 *	+40	INT	mask identifying bits of red component
+		 *	+44	INT	mask identifying bits of green component
+		 *	+48	INT	mask identifying bits of blue component
+		 *	+52	INT	mask identifying bits of alpha component
+		 *	+56	INT	color space type
+		 *	+60	INT	x coordinate of red endpoint
+		 *	+64	INT	y coordinate of red endpoint
+		 *	+68	INT	z coordinate of red endpoint
+		 *	+72	INT	x coordinate of green endpoint
+		 *	+76	INT	y coordinate of green endpoint
+		 *	+80	INT	z coordinate of green endpoint
+		 *	+84	INT	x coordinate of blue endpoint
+		 *	+88	INT	y coordinate of blue endpoint
+		 *	+92	INT	z coordinate of blue endpoint
+		 *	+96	INT	gamma red coordinate scale value
+		 *	+100	INT	gamma green coordinate scale value
+		 *	+104	INT	gamma blue coordinate scale value
 		 */
 		if (!bmp->ico) {
 			width = READ_INT(data, 4);
