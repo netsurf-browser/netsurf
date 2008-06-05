@@ -142,7 +142,7 @@ ifeq ($(HOST),beos)
 # some people do *not* have libm...
 LDFLAGS := -L/boot/home/config/lib
 LDFLAGS += -lxml2 -lz -lcurl -lssl -lcrypto -ljpeg -liconv
-#LDFLAGS += -lmng
+LDFLAGS += -lmng -ljpeg
 else
 LDFLAGS := $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl openssl)
 LDFLAGS += -lz -lm -lmng -ljpeg
@@ -216,6 +216,7 @@ CFLAGS += -g -O0
 # -DDEBUG=1
 
 BEOS_BERES := beres
+BEOS_RC := rc
 BEOS_XRES := xres
 BEOS_SETVER := setversion
 BEOS_MIMESET := mimeset
@@ -247,7 +248,7 @@ else
 # cross: Haiku ?
 NETLDFLAGS := -lnetwork
 endif
-LDFLAGS += -lbe $(NETLDFLAGS)
+LDFLAGS += -lbe -ltranslation $(NETLDFLAGS)
 endif
 
 
@@ -318,7 +319,8 @@ endif
 
 ifeq ($(TARGET),beos)
 $(RSRC_BEOS): $(RDEF_BEOS)
-	$(Q)$(BEOS_BERES) -o $@ $<
+	$(VQ)echo "      RC: $<"
+	$(Q)$(BEOS_RC) -o $@ $<
 endif
 
 clean-target:
