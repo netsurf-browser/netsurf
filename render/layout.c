@@ -290,6 +290,9 @@ bool layout_block_context(struct box *block, struct content *content)
 				(box->style->position == CSS_POSITION_ABSOLUTE||
 				 box->style->position == CSS_POSITION_FIXED)) {
 			box->x = box->parent->padding[LEFT];
+			/* absolute positioned; this element will establish
+			 * its own block context when it gets laid out later,
+			 * so no need to look at its children now. */
 			goto advance_to_next_box;
 	        }
 
@@ -334,6 +337,36 @@ bool layout_block_context(struct box *block, struct content *content)
 				cy = y;
 			}
 		}
+
+		/* Unless the box has an overflow style of visible, the box
+		 * establishes a new block context. */
+		if (box->type != BOX_INLINE_CONTAINER && box->style &&
+				box->style->overflow != CSS_OVERFLOW_VISIBLE) {
+			layout_block_context(box, content);
+
+			if (box->type == BOX_BLOCK || box->object)
+				cy += box->padding[TOP];
+
+			if (box->type == BOX_BLOCK && box->height == AUTO) {
+				box->height = 0;
+				layout_block_add_scrollbar(box, BOTTOM);
+			}
+
+			cy += box->height + box->padding[BOTTOM] +
+					box->border[BOTTOM];
+			max_pos_margin = max_neg_margin = 0;
+			if (max_pos_margin < box->margin[BOTTOM])
+				max_pos_margin = box->margin[BOTTOM];
+			else if (max_neg_margin < -box->margin[BOTTOM])
+				max_neg_margin = -box->margin[BOTTOM];
+			cx -= box->x;
+			y = box->y + box->padding[TOP] + box->height +
+					box->padding[BOTTOM] +
+					box->border[BOTTOM];
+			/* Skip children, because they are done in the new
+			 * block context */
+			goto advance_to_next_box;
+	        }
 
 		LOG(("box %p, cx %i, cy %i", box, cx, cy));
 
