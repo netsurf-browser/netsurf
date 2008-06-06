@@ -1,0 +1,13 @@
+--------------------------------------------------------------------------------
+  Build Instructions for BeOS and Haiku NetSurf                    06 June 2008
+--------------------------------------------------------------------------------
+
+  This document provides instructions for building the BeOS and Haiku version 
+  of NetSurf and provides guidance on obtaining NetSurf's build dependencies.
+
+  BeOS NetSurf has been tested on Zeta only for now. There are still some 
+  issues to sort out for other BeOs versions.
+
+
+  There are still pending fixes against SVN before it can be build from BeOS 
+  or Haiku.
