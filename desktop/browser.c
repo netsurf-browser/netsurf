@@ -1976,10 +1976,10 @@ const char *browser_window_scrollbar_click(struct browser_window *bw,
 		browser_mouse_state mouse, struct box *box,
 		int box_x, int box_y, int x, int y)
 {
-	bool but1 = (mouse & (BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_DRAG_1)) ||
+	bool but1 = ((mouse & BROWSER_MOUSE_PRESS_1) ||
 			((mouse & BROWSER_MOUSE_HOLDING_1) &&
 			 (mouse & BROWSER_MOUSE_DRAG_ON));
-	bool but2 = (mouse & (BROWSER_MOUSE_PRESS_2 | BROWSER_MOUSE_DRAG_2)) ||
+	bool but2 = ((mouse & BROWSER_MOUSE_PRESS_2) ||
 			((mouse & BROWSER_MOUSE_HOLDING_2) &&
 			 (mouse & BROWSER_MOUSE_DRAG_ON));
 	const int w = SCROLLBAR_WIDTH;
