@@ -2046,13 +2046,12 @@ const char *browser_window_scrollbar_click(struct browser_window *bw,
 		/* in scrollbar */
 		status = messages_get(vert ? "ScrollV" : "ScrollH");
 
-		/* respond on the click rather than the drag because it gives
-		   the scrollbars a more solid, RISC OS feel */
-		if (mouse & (BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_PRESS_2)) {
+		if (mouse & (BROWSER_MOUSE_HOLDING_1 |
+				BROWSER_MOUSE_HOLDING_2)) {
 			int x0 = 0, x1 = 0;
 			int y0 = 0, y1 = 0;
 
-			if (mouse & BROWSER_MOUSE_PRESS_1) {
+			if (mouse & BROWSER_MOUSE_HOLDING_1) {
 				bw->drag_type = vert ? DRAGGING_VSCROLL :
 						DRAGGING_HSCROLL;
 			} else
