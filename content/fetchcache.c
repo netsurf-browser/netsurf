@@ -51,7 +51,8 @@ static char *fetchcache_parse_type(const char *s, char **params[]);
 static void fetchcache_parse_header(struct content *c, const char *data,
 		size_t size);
 static void fetchcache_error_page(struct content *c, const char *error);
-static void fetchcache_cache_update(struct content *c,
+static void fetchcache_cache_update(struct content *c);
+static void fetchcache_cache_clone(struct content *c,
 		const struct cache_data *data);
 static void fetchcache_notmodified(struct content *c, const void *data);
 static void fetchcache_redirect(struct content *c, const void *data,
@@ -471,6 +472,7 @@ void fetchcache_callback(fetch_msg msg, void *p, const void *data,
 			break;
 
 		case FETCH_FINISHED:
+			fetchcache_cache_update(c);
 			c->fetch = 0;
 			content_set_status(c, messages_get("Converting"),
 					c->source_size);
@@ -738,13 +740,28 @@ void fetchcache_error_page(struct content *c, const char *error)
 
 
 /**
- * Update a content's cache info
+ * Update a content's cache state
  *
- * \param The content
- * \param Cache data
+ * \param c  The content
  */
 
-void fetchcache_cache_update(struct content *c,
+void fetchcache_cache_update(struct content *c)
+{
+	if (c->cache_data.date == 0)
+		c->cache_data.date = time(NULL);
+
+	if (c->cache_data.no_cache)
+		c->fresh = false;
+}
+
+/**
+ * Clone cache info into a content
+ *
+ * \param c     The content
+ * \param data  Cache data
+ */
+
+void fetchcache_cache_clone(struct content *c,
 		const struct cache_data *data)
 {
 	assert(c && data);
@@ -754,8 +771,6 @@ void fetchcache_cache_update(struct content *c,
 
 	if (data->date != 0)
 		c->cache_data.date = data->date;
-	else
-		c->cache_data.date = time(0);
 
 	if (data->expires != 0)
 		c->cache_data.expires = data->expires;
@@ -767,7 +782,7 @@ void fetchcache_cache_update(struct content *c,
 		c->cache_data.max_age = data->max_age;
 
 	if (data->no_cache)
-		c->fresh = false;
+		c->cache_data.no_cache = data->no_cache;
 
 	if (data->etag) {
 		talloc_free(c->cache_data.etag);
@@ -853,8 +868,10 @@ void fetchcache_notmodified(struct content *c, const void *data)
 		c->fetch = 0;
 		c->status = CONTENT_STATUS_ERROR;
 
-		/* and update fallback's cache control data */
-		fetchcache_cache_update(fb, &c->cache_data);
+		/* clone our cache control data into the fallback */
+		fetchcache_cache_clone(fb, &c->cache_data);
+		/* and update the fallback's cache state */
+		fetchcache_cache_update(fb);
 	}
 	else {
 		/* No cached content, so unconditionally refetch */
