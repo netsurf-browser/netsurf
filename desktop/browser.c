@@ -1981,7 +1981,7 @@ const char *browser_window_scrollbar_click(struct browser_window *bw,
 			 (mouse & BROWSER_MOUSE_DRAG_ON));
 	bool but2 = (mouse & (BROWSER_MOUSE_PRESS_2 | BROWSER_MOUSE_DRAG_2)) ||
 			((mouse & BROWSER_MOUSE_HOLDING_2) &&
-			 (mouse & BROWSER_MOUSE_DRAG_ON));;
+			 (mouse & BROWSER_MOUSE_DRAG_ON));
 	const int w = SCROLLBAR_WIDTH;
 	bool vscroll, hscroll;
 	int well_height, bar_top, bar_height;
