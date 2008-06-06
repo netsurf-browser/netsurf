@@ -153,8 +153,10 @@ void ro_gui_throb(void);
 struct gui_window *ro_gui_window_lookup(wimp_w window);
 struct gui_window *ro_gui_toolbar_lookup(wimp_w window);
 void ro_gui_scroll_request(wimp_scroll *scroll);
-bool ro_gui_window_to_window_pos(struct gui_window *g, int x, int y, os_coord *pos);
-bool ro_gui_window_to_screen_pos(struct gui_window *g, int x, int y, os_coord *pos);
+bool ro_gui_window_to_window_pos(struct gui_window *g, int x, int y,
+		os_coord *pos);
+bool ro_gui_window_to_screen_pos(struct gui_window *g, int x, int y,
+		os_coord *pos);
 bool ro_gui_window_dataload(struct gui_window *g, wimp_message *message);
 bool ro_gui_toolbar_dataload(struct gui_window *g, wimp_message *message);
 void ro_gui_window_process_reformats(void);

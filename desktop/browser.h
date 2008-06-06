@@ -174,18 +174,38 @@ struct browser_window {
 };
 
 
+/* Mouse state.	1 is    primary mouse button (e.g. Select on RISC OS).
+ *		2 is  secondary mouse button (e.g. Adjust on RISC OS). */
 typedef enum {
-	BROWSER_MOUSE_CLICK_1  = 1,  /* primary mouse button down (eg. Select) */
-	BROWSER_MOUSE_CLICK_2  = 2,
+	BROWSER_MOUSE_PRESS_1   = 1,	/* button 1 pressed */
+	BROWSER_MOUSE_PRESS_2   = 2,	/* button 2 pressed */
 
-	BROWSER_MOUSE_DRAG_1   = 8,  /* start of drag operation */
-	BROWSER_MOUSE_DRAG_2   = 16,
+					/* note: click meaning is different for
+					 * different front ends. On RISC OS, it
+					 * is standard to act on press, so a
+					 * click is fired at the same time as a
+					 * mouse button is pressed. With GTK, it
+					 * is standard to act on release, so a
+					 * click is fired when the mouse button
+					 * is released, if the operation wasn't
+					 * a drag. */
+	BROWSER_MOUSE_CLICK_1   = 4,	/* button 1 clicked. */
+	BROWSER_MOUSE_CLICK_2   = 8,	/* button 2 clicked. */
 
-	BROWSER_MOUSE_HOLDING_1 = 64,   /* whilst drag is in progress */
-	BROWSER_MOUSE_HOLDING_2 = 128,
+	BROWSER_MOUSE_DRAG_1    = 16,	/* start of button 1 drag operation */
+	BROWSER_MOUSE_DRAG_2    = 32,	/* start of button 2 drag operation */
 
-	BROWSER_MOUSE_MOD_1    = 512,  /* primary modifier key pressed (eg. Shift) */
-	BROWSER_MOUSE_MOD_2    = 1024
+	BROWSER_MOUSE_DRAG_ON   = 64,	/* a drag operation was started and
+					 * a mouse button is still pressed */
+
+	BROWSER_MOUSE_HOLDING_1 = 128,	/* while button 1 drag is in progress */
+	BROWSER_MOUSE_HOLDING_2 = 256,	/* while button 2 drag is in progress */
+
+
+	BROWSER_MOUSE_MOD_1     = 512,	/* primary modifier key pressed
+					 * (eg. Shift) */
+	BROWSER_MOUSE_MOD_2     = 1024	/* secondary modifier key pressed
+					 * (eg. Ctrl) */
 } browser_mouse_state;
 
 

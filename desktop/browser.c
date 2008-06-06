@@ -1976,10 +1976,12 @@ const char *browser_window_scrollbar_click(struct browser_window *bw,
 		browser_mouse_state mouse, struct box *box,
 		int box_x, int box_y, int x, int y)
 {
-	const browser_mouse_state but1 = (BROWSER_MOUSE_CLICK_1 |
-			BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_HOLDING_1);
-	const browser_mouse_state but2 = (BROWSER_MOUSE_CLICK_2 |
-			BROWSER_MOUSE_DRAG_2 | BROWSER_MOUSE_HOLDING_2);
+	bool but1 = (mouse & (BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_DRAG_1)) ||
+			((mouse & BROWSER_MOUSE_HOLDING_1) &&
+			 (mouse & BROWSER_MOUSE_DRAG_ON));
+	bool but2 = (mouse & (BROWSER_MOUSE_PRESS_2 | BROWSER_MOUSE_DRAG_2)) ||
+			((mouse & BROWSER_MOUSE_HOLDING_2) &&
+			 (mouse & BROWSER_MOUSE_DRAG_ON));;
 	const int w = SCROLLBAR_WIDTH;
 	bool vscroll, hscroll;
 	int well_height, bar_top, bar_height;
@@ -2027,27 +2029,30 @@ const char *browser_window_scrollbar_click(struct browser_window *bw,
 
 	/* find icon in scrollbar and calculate scroll */
 	if (z < w) {
+		/* on scrollbar bump arrow button */
 		status = messages_get(vert ? "ScrollUp" : "ScrollLeft");
-		if (mouse & but2)
-			scroll += 16;
-		else if (mouse & but1)
+		if (but1)
 			scroll -= 16;
+		else if (but2)
+			scroll += 16;
 	} else if (z < w + bar_start + w / 4) {
+		/* in scrollbar well */
 		status = messages_get(vert ? "ScrollPUp" : "ScrollPLeft");
-		if (mouse & BROWSER_MOUSE_CLICK_1)
+		if (but1)
 			scroll -= page;
-		else if (mouse & BROWSER_MOUSE_CLICK_2)
+		else if (but2)
 			scroll += page;
 	} else if (z < w + bar_start + bar_size - w / 4) {
+		/* in scrollbar */
 		status = messages_get(vert ? "ScrollV" : "ScrollH");
 
 		/* respond on the click rather than the drag because it gives
 		   the scrollbars a more solid, RISC OS feel */
-		if (mouse & (BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2)) {
+		if (mouse & (BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_PRESS_2)) {
 			int x0 = 0, x1 = 0;
 			int y0 = 0, y1 = 0;
 
-			if (mouse & BROWSER_MOUSE_CLICK_1) {
+			if (mouse & BROWSER_MOUSE_PRESS_1) {
 				bw->drag_type = vert ? DRAGGING_VSCROLL :
 						DRAGGING_HSCROLL;
 			} else
@@ -2067,17 +2072,19 @@ const char *browser_window_scrollbar_click(struct browser_window *bw,
 				gui_window_hide_pointer(bw->window);
 		}
 	} else if (z < w + well_size) {
+		/* in scrollbar well */
 		status = messages_get(vert ? "ScrollPDown" : "ScrollPRight");
-		if (mouse & BROWSER_MOUSE_CLICK_1)
+		if (but1)
 			scroll += page;
-		else if (mouse & BROWSER_MOUSE_CLICK_2)
+		else if (but2)
 			scroll -= page;
 	} else {
+		/* on scrollbar bump arrow button */
 		status = messages_get(vert ? "ScrollDown" : "ScrollRight");
-		if (mouse & but2)
-			scroll -= 16;
-		else if (mouse & but1)
+		if (but1)
 			scroll += 16;
+		else if (but2)
+			scroll -= 16;
 	}
 
 	/* update box and redraw */

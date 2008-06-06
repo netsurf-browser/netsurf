@@ -896,7 +896,8 @@ void gui_poll(bool active)
 {
 	wimp_event_no event;
 	wimp_block block;
-	const wimp_poll_flags mask = wimp_MASK_LOSE | wimp_MASK_GAIN | wimp_SAVE_FP;
+	const wimp_poll_flags mask = wimp_MASK_LOSE | wimp_MASK_GAIN |
+			wimp_SAVE_FP;
 
 	/* Poll wimp. */
 	xhourglass_off();
@@ -1019,7 +1020,8 @@ void gui_multitask(void)
 		return;
 
 	xhourglass_off();
-	event = wimp_poll(wimp_MASK_LOSE | wimp_MASK_GAIN | wimp_SAVE_FP, &block, 0);
+	event = wimp_poll(wimp_MASK_LOSE | wimp_MASK_GAIN | wimp_SAVE_FP,
+			&block, 0);
 	xhourglass_on();
 	gui_last_poll = clock();
 
@@ -1071,7 +1073,8 @@ void ro_gui_null_reason_code(void)
 			if (gui_track_wimp_w == dialog_url_complete)
 				ro_gui_url_complete_mouse_at(&pointer);
 			else if (gui_track_gui_window)
-				ro_gui_window_mouse_at(gui_track_gui_window, &pointer);
+				ro_gui_window_mouse_at(gui_track_gui_window,
+						&pointer);
 			break;
 	}
 }
