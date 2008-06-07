@@ -1,6 +1,6 @@
 /*
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
- * Copyright 2004-2007 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004-2008 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
  * Copyright 2005 Richard Wilson <info@tinct.net>
  * Copyright 2004 Andrew Timmins <atimmins@blueyonder.co.uk>
@@ -30,6 +30,7 @@
 #include <string.h>
 #include <time.h>
 #include <features.h>
+#include <unixlib/sigstate.h>
 #include <unixlib/local.h>
 #include <curl/curl.h>
 #include <oslib/font.h>
@@ -150,6 +151,7 @@ int __feature_imagefs_is_file = 1;		/**< For UnixLib. */
 /* default filename handling */
 int __riscosify_control = __RISCOSIFY_NO_SUFFIX |
 			__RISCOSIFY_NO_REVERSE_SUFFIX;
+extern int __dynamic_num;
 
 const char * NETSURF_DIR;
 
@@ -848,19 +850,26 @@ void ro_gui_signal(int sig)
 
 		__write_backtrace(sig);
 
-		/* save DA to a file if NetSurf$CoreDump exists */
+		/* save WimpSlot and DA to files if NetSurf$CoreDump exists */
 		int used;
 		xos_read_var_val_size("NetSurf$CoreDump", 0, 0, &used, 0, 0);
 		if (used) {
-			extern int __dynamic_num;
+			int curr_slot;
+			xwimp_slot_size(-1, -1, &curr_slot, 0, 0);
+			LOG(("saving WimpSlot, size 0x%x", curr_slot));
+			xosfile_save("$.NetSurf_Slot", 0x8000, 0,
+					(byte *) 0x8000,
+					(byte *) 0x8000 + curr_slot);
+
 			if (__dynamic_num != -1) {
 				int size;
 				byte *base_address;
 				xosdynamicarea_read(__dynamic_num, &size,
 						&base_address, 0, 0, 0, 0, 0);
-				LOG(("saving DA %i %p %x\n", __dynamic_num,
+				LOG(("saving DA %i, base %p, size 0x%x",
+						__dynamic_num,
 						base_address, size));
-				xosfile_save("$.netsurf_core",
+				xosfile_save("$.NetSurf_DA",
 						(bits) base_address, 0,
 						base_address,
 						base_address + size);
