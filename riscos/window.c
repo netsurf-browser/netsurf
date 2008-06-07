@@ -2630,49 +2630,69 @@ bool ro_gui_window_keypress(wimp_key *key)
  */
 void ro_gui_scroll_request(wimp_scroll *scroll)
 {
-	int x, y;
 	struct gui_window *g = ro_gui_window_lookup(scroll->w);
 
-	x = scroll->visible.x1 - scroll->visible.x0 - 32;
-	y = scroll->visible.y1 - scroll->visible.y0 - 32;
-	if (g && g->toolbar)
-		y -= ro_gui_theme_toolbar_full_height(g->toolbar);
+	if (g && ro_gui_shift_pressed() && g->bw->current_content) {
+		float scale;
+		if (scroll->ymin > 0) {
+			scale = g->bw->scale + 0.02;
+			if (scale > scale_snap_to[SCALE_SNAP_TO_SIZE - 1])
+				scale = scale_snap_to[SCALE_SNAP_TO_SIZE - 1];
+		} else {
+			scale = g->bw->scale - 0.02;
+			if (scale < scale_snap_to[0])
+				scale = scale_snap_to[0];
+		}
+		if (g->bw->scale != scale)
+			browser_window_set_scale(g->bw, scale, true);
+	} else {
+		int x = scroll->visible.x1 - scroll->visible.x0 - 32;
+		int y = scroll->visible.y1 - scroll->visible.y0 - 32;
+		os_error *error;
 
-	switch (scroll->xmin) {
-		case wimp_SCROLL_PAGE_LEFT:
-			scroll->xscroll -= x;
-			break;
-		case wimp_SCROLL_COLUMN_LEFT:
-			scroll->xscroll -= 32;
-			break;
-		case wimp_SCROLL_COLUMN_RIGHT:
-			scroll->xscroll += 32;
-			break;
-		case wimp_SCROLL_PAGE_RIGHT:
-			scroll->xscroll += x;
-			break;
-		default:
-			break;
+		if (g && g->toolbar)
+			y -= ro_gui_theme_toolbar_full_height(g->toolbar);
+	
+		switch (scroll->xmin) {
+			case wimp_SCROLL_PAGE_LEFT:
+				scroll->xscroll -= x;
+				break;
+			case wimp_SCROLL_COLUMN_LEFT:
+				scroll->xscroll -= 32;
+				break;
+			case wimp_SCROLL_COLUMN_RIGHT:
+				scroll->xscroll += 32;
+				break;
+			case wimp_SCROLL_PAGE_RIGHT:
+				scroll->xscroll += x;
+				break;
+			default:
+				break;
+		}
+	
+		switch (scroll->ymin) {
+			case wimp_SCROLL_PAGE_UP:
+				scroll->yscroll += y;
+				break;
+			case wimp_SCROLL_LINE_UP:
+				scroll->yscroll += 32;
+				break;
+			case wimp_SCROLL_LINE_DOWN:
+				scroll->yscroll -= 32;
+				break;
+			case wimp_SCROLL_PAGE_DOWN:
+				scroll->yscroll -= y;
+				break;
+			default:
+				break;
+		}
+
+		error = xwimp_open_window((wimp_open *) scroll);
+		if (error) {
+			LOG(("xwimp_open_window: 0x%x: %s",
+					error->errnum, error->errmess));
+		}
 	}
-
-	switch (scroll->ymin) {
-		case wimp_SCROLL_PAGE_UP:
-			scroll->yscroll += y;
-			break;
-		case wimp_SCROLL_LINE_UP:
-			scroll->yscroll += 32;
-			break;
-		case wimp_SCROLL_LINE_DOWN:
-			scroll->yscroll -= 32;
-			break;
-		case wimp_SCROLL_PAGE_DOWN:
-			scroll->yscroll -= y;
-			break;
-		default:
-			break;
-	}
-
-	wimp_open_window((wimp_open *) scroll);
 }
 
 
