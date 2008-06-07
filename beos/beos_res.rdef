@@ -29,10 +29,23 @@ enum {
 };
 
 
-//resource(123, "beosdefault.css") import beos/beosdefault.css;
-//resource(123, "beosdefault.css") #'PNG ' import "beos/res/beosdefault.css";
-//import(123, "beosdefault.css") "beos/beosdefault.css";
-//resource(123, "beos/beosdefault.css") #'PNG ' read("beos/beosdefault.css");
+resource(200, "default.css") #'data' import "res/default.css";
+resource(201, "beosdefault.css") #'data' import "res/beosdefault.css";
+resource(202, "adblock.css") #'data' import "res/adblock.css";
+resource(203, "ca-bundle.txt") #'data' import "res/ca-bundle.txt";
+resource(204, "messages") #'data' import "res/messages";
+/* resource(205, "netsurf.xpm") #'data' import "res/netsurf.xpm"; */
+
+/* throbber */
+resource(400, "throbber0.png") #'PNG ' import "res/throbber/throbber0.png";
+resource(401, "throbber1.png") #'PNG ' import "res/throbber/throbber1.png";
+resource(402, "throbber2.png") #'PNG ' import "res/throbber/throbber2.png";
+resource(403, "throbber3.png") #'PNG ' import "res/throbber/throbber3.png";
+resource(404, "throbber4.png") #'PNG ' import "res/throbber/throbber4.png";
+resource(405, "throbber5.png") #'PNG ' import "res/throbber/throbber5.png";
+resource(406, "throbber6.png") #'PNG ' import "res/throbber/throbber6.png";
+resource(407, "throbber7.png") #'PNG ' import "res/throbber/throbber7.png";
+resource(408, "throbber8.png") #'PNG ' import "res/throbber/throbber8.png";
 
 resource(1, "BEOS:APP_FLAGS") (#'APPF') $"01000000";
 
