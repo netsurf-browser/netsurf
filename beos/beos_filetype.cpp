@@ -1,4 +1,5 @@
 /*
+ * Copyright 2008 François Revol <mmu_man@users.sourceforge.net>
  * Copyright 2007 Rob Kendrick <rjek@netsurf-browser.org>
  * Copyright 2007 Vincent Sanders <vince@debian.org>
  *

@@ -1,4 +1,5 @@
 /*
+ * Copyright 2008 François Revol <mmu_man@users.sourceforge.net>
  * Copyright 2006 Rob Kendrick <rjek@rjek.com>
  * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
  *
@@ -27,6 +28,7 @@
 #include <GraphicsDefs.h>
 #include <Region.h>
 #include <View.h>
+#include <Shape.h>
 extern "C" {
 #include "desktop/plotters.h"
 #include "render/font.h"
@@ -687,6 +689,52 @@ bool nsbeos_plot_bitmap_tile(int x, int y, int width, int height,
 bool nsbeos_plot_path(float *p, unsigned int n, colour fill, float width,
                 colour c, float *transform)
 {
+	unsigned int i;
+
+	if (n == 0)
+		return true;
+
+	if (p[0] != PLOTTER_PATH_MOVE) {
+		LOG(("path doesn't start with a move"));
+		return false;
+	}
+
+	BShape shape;
+
+#if 0
+	for (i = 0; i < n; ) {
+		if (p[i] == PLOTTER_PATH_MOVE) {
+			path[i] = draw_MOVE_TO;
+			path[i + 1] = p[i + 1] * 2 * 256;
+			path[i + 2] = -p[i + 2] * 2 * 256;
+			i += 3;
+		} else if (p[i] == PLOTTER_PATH_CLOSE) {
+			path[i] = draw_CLOSE_LINE;
+			i++;
+		} else if (p[i] == PLOTTER_PATH_LINE) {
+			path[i] = draw_LINE_TO;
+			path[i + 1] = p[i + 1] * 2 * 256;
+			path[i + 2] = -p[i + 2] * 2 * 256;
+			i += 3;
+		} else if (p[i] == PLOTTER_PATH_BEZIER) {
+			path[i] = draw_BEZIER_TO;
+			path[i + 1] = p[i + 1] * 2 * 256;
+			path[i + 2] = -p[i + 2] * 2 * 256;
+			path[i + 3] = p[i + 3] * 2 * 256;
+			path[i + 4] = -p[i + 4] * 2 * 256;
+			path[i + 5] = p[i + 5] * 2 * 256;
+			path[i + 6] = -p[i + 6] * 2 * 256;
+			i += 7;
+		} else {
+			LOG(("bad path command %f", p[i]));
+			goto error;
+		}
+	}
+	path[i] = draw_END_PATH;
+	path[i + 1] = 0;
+#endif
+
+	//StrokeBezier
 #warning WRITEME
 #if 0 /* GTK */
 	/* Only the internal SVG renderer uses this plot call currently,

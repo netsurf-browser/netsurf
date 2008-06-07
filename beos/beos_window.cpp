@@ -1,4 +1,5 @@
 /*
+ * Copyright 2008 François Revol <mmu_man@users.sourceforge.net>
  * Copyright 2006 Daniel Silverstone <dsilvers@digital-scurf.org>
  * Copyright 2006 Rob Kendrick <rjek@rjek.com>
  *
@@ -108,7 +109,7 @@ static GdkCursor *nsbeos_create_menu_cursor(void);
 
 NSBrowserFrameView::NSBrowserFrameView(BRect frame, struct gui_window *gui)
 	: BView(frame, "NSBrowserFrameView", B_FOLLOW_ALL_SIDES, 
-		B_WILL_DRAW | B_NAVIGABLE | B_FRAME_EVENTS),
+		B_WILL_DRAW | B_NAVIGABLE | B_FRAME_EVENTS /*| B_SUBPIXEL_PRECISE*/),
 	fGuiWindow(gui)
 {
 }

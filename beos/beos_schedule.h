@@ -1,4 +1,5 @@
 /*
+ * Copyright 2008 François Revol <mmu_man@users.sourceforge.net>
  * Copyright 2006 Daniel Silverstone <dsilvers@digital-scurf.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
