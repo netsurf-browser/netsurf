@@ -341,10 +341,9 @@ void gui_init(int argc, char** argv)
 	 */
 	{
 #define STROF(n) #n
-#define FIND_THROB(n) find_resource(filenames[(n)], \
-				"throbber/throbber" STROF(n) ".png", \
-				"./beos/res/throbber/throbber" STROF(n) ".png")
-		char filenames[9][PATH_MAX];
+#define FIND_THROB(n) filenames[(n)] = \
+				"throbber" STROF(n) ".png";
+		char *filenames[9];
 		FIND_THROB(0);
 		FIND_THROB(1);
 		FIND_THROB(2);
@@ -448,13 +447,13 @@ void gui_init(int argc, char** argv)
 	beos_fetch_filetype_init(buf);
 
 	/* set up stylesheet urls */
-	find_resource(buf, "beosdefault.css", "./beos/res/beosdefault.css");
-	default_stylesheet_url = path_to_url(buf);
+	/*find_resource(buf, "beosdefault.css", "./beos/res/beosdefault.css");*/
+	default_stylesheet_url = strdup("rsrc:/beosdefault.css,text/css");
 	//default_stylesheet_url = generate_default_css();
 	LOG(("Using '%s' as Default CSS URL", default_stylesheet_url));
 
-	find_resource(buf, "adblock.css", "./beos/res/adblock.css");
-	adblock_stylesheet_url = path_to_url(buf);
+	/*find_resource(buf, "adblock.css", "./beos/res/adblock.css");*/
+	adblock_stylesheet_url = strdup("rsrc:/adblock.css,text/css");
 	LOG(("Using '%s' as AdBlock CSS URL", adblock_stylesheet_url));
 
 	urldb_load(option_url_file);

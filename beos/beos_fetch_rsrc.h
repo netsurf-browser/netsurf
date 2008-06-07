@@ -27,4 +27,7 @@
 void fetch_rsrc_register(void);
 void fetch_rsrc_unregister(void);
 
+class BResources;
+BResources *get_app_resources();
+
 #endif

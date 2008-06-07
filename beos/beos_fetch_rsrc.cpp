@@ -346,6 +346,11 @@ static int find_app_resources()
 	return err;
 }
 
+BResources *get_app_resources()
+{
+	return gAppResources;
+}
+
 void fetch_rsrc_register(void)
 {
 	int err;

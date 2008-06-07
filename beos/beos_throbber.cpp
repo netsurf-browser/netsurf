@@ -26,8 +26,10 @@ extern "C" {
 }
 #include "beos/beos_throbber.h"
 #include "beos/beos_bitmap.h"
+#include "beos/beos_fetch_rsrc.h"
 
 #include <File.h>
+#include <Resources.h>
 #include <TranslationUtils.h>
 
 struct nsbeos_throbber *nsbeos_throbber = NULL;
@@ -44,7 +46,6 @@ struct nsbeos_throbber *nsbeos_throbber = NULL;
 bool nsbeos_throbber_initialise_from_png(const int frames, ...)
 {
 	va_list filenames;
-	status_t err;
 	struct nsbeos_throbber *throb;		/**< structure we generate */
 	bool errors_when_loading = false;	/**< true if a frame failed */
 	
@@ -55,7 +56,13 @@ bool nsbeos_throbber_initialise_from_png(const int frames, ...)
 			frames));
 		return false;
 	}
-	
+
+	BResources *res = get_app_resources();
+	if (res == NULL) {
+		LOG(("Can't find resources for throbber!"));
+		return false;
+	}
+
 	throb = (struct nsbeos_throbber *)malloc(sizeof(throb));
 	throb->nframes = frames;
 	throb->framedata = (BBitmap **)malloc(sizeof(BBitmap *) * throb->nframes);
@@ -64,15 +71,17 @@ bool nsbeos_throbber_initialise_from_png(const int frames, ...)
 	
 	for (int i = 0; i < frames; i++) {
 		const char *fn = va_arg(filenames, const char *);
-		BFile file(fn, B_READ_ONLY);
+		const void *data;
+		size_t size;
+		data = res->LoadResource('data', fn, &size);
 		throb->framedata[i] = NULL;
-		err = file.InitCheck();
-		if (err < B_OK) {
-			LOG(("Error when loading %s: %s", fn, strerror(err)));
+		if (!data) {
+			LOG(("Error when loading resource %s", fn));
 			errors_when_loading = true;
 			continue;
 		}
-		throb->framedata[i] = BTranslationUtils::GetBitmap(&file);
+		BMemoryIO mem(data, size);
+		throb->framedata[i] = BTranslationUtils::GetBitmap(&mem);
 		if (throb->framedata[i] == NULL) {
 			LOG(("Error when loading %s: GetBitmap() returned NULL", fn));
 			errors_when_loading = true;
