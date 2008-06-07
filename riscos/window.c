@@ -276,7 +276,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	window.scroll_outer = wimp_COLOUR_DARK_GREY;
 	window.scroll_inner = wimp_COLOUR_MID_LIGHT_GREY;
 	window.highlight_bg = wimp_COLOUR_CREAM;
-	window.extra_flags = 0;
+	window.extra_flags = wimp_WINDOW_USE_EXTENDED_SCROLL_REQUEST;
 	window.extent.x0 = 0;
 	window.extent.y0 = -(window.visible.y1 - window.visible.y0);
 	window.extent.x1 = window.visible.x1 - window.visible.x0;
@@ -2632,14 +2632,21 @@ void ro_gui_scroll_request(wimp_scroll *scroll)
 {
 	struct gui_window *g = ro_gui_window_lookup(scroll->w);
 
-	if (g && ro_gui_shift_pressed() && g->bw->current_content) {
-		float scale;
+	if (g && g->bw->current_content && ro_gui_shift_pressed()) {
+		/* extended scroll request with shift held down; change zoom */
+		float scale, inc;
+
+		if (scroll->ymin & 3)
+			inc = 0.02;  /* RO5 sends the msg 5 times; don't ask my why */
+		else
+			inc = (1 << (ABS(scroll->ymin)>>2)) / 20.0F;
+
 		if (scroll->ymin > 0) {
-			scale = g->bw->scale + 0.02;
+			scale = g->bw->scale + inc;
 			if (scale > scale_snap_to[SCALE_SNAP_TO_SIZE - 1])
 				scale = scale_snap_to[SCALE_SNAP_TO_SIZE - 1];
 		} else {
-			scale = g->bw->scale - 0.02;
+			scale = g->bw->scale - inc;
 			if (scale < scale_snap_to[0])
 				scale = scale_snap_to[0];
 		}
@@ -2652,7 +2659,7 @@ void ro_gui_scroll_request(wimp_scroll *scroll)
 
 		if (g && g->toolbar)
 			y -= ro_gui_theme_toolbar_full_height(g->toolbar);
-	
+
 		switch (scroll->xmin) {
 			case wimp_SCROLL_PAGE_LEFT:
 				scroll->xscroll -= x;
@@ -2667,9 +2674,10 @@ void ro_gui_scroll_request(wimp_scroll *scroll)
 				scroll->xscroll += x;
 				break;
 			default:
+				scroll->xscroll += (x * (scroll->xmin>>2)) >> 2;
 				break;
 		}
-	
+
 		switch (scroll->ymin) {
 			case wimp_SCROLL_PAGE_UP:
 				scroll->yscroll += y;
@@ -2684,6 +2692,7 @@ void ro_gui_scroll_request(wimp_scroll *scroll)
 				scroll->yscroll -= y;
 				break;
 			default:
+				scroll->yscroll += (y * (scroll->ymin>>2)) >> 2;
 				break;
 		}
 
