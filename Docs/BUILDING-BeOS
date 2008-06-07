@@ -72,6 +72,26 @@
       $ cp lemon lempar.c /boot/home/config/bin/
 
 
+  RE2C
+------
+
+  BeOS doesn't come with the re2c lexer. Unfortunately it requires gcc4 
+  currently, so it cannot be built on BeOS. It might be possible on gcc4 built 
+  Haiku.
+  The workaround is currently to generate the scanner.c file from Linux, and 
+  copy it back to the source tree. Touching it in the future will make sure 
+  make won't try to rebuild it.
+
+      (on Linux)
+      $ make css/scanner.c
+
+      (copy to the BeOS box)
+
+      (on BeOS/Haiku)
+      $ cp <somewhere>/scanner.c css/
+      $ touch -t 201801010000 css/scanner.c
+
+
   cURL
 ------
 
