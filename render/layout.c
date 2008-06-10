@@ -754,6 +754,16 @@ void layout_block_add_scrollbar(struct box *box, int which)
 
 /**
  * Solve the width constraint as given in CSS 2.1 section 10.3.3.
+ *
+ * \param  available_width	Max width available in pixels
+ * \param  width		Current box width
+ * \param  margin[4]		Current box margins. Updated with new box
+ *                              	left / right margins
+ * \param  padding[4]		Current box paddings. Updated with new box
+ *					left / right paddings
+ * \param  border[4]		Current box border widths. Updated to with new
+ *					box left / right border widths
+ * \return			New box width
  */
 
 int layout_solve_width(int available_width, int width,
