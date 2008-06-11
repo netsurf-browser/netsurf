@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2006 Rob Kendrick <rjek@rjek.com>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,19 +16,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdbool.h>
+#ifndef NETSURF_GTK_OPTIONS_H
+#define NETSURF_GTK_OPTIONS_H
+
 #include <gtk/gtk.h>
-#include <glade/glade.h>
 
-extern bool gui_in_multitask;
-extern GladeXML *gladeWindows;
-extern char *glade_file_location;
-extern char *options_file_location;
-extern char *res_dir_location;
+extern GtkDialog *wndPreferences;
 
-extern GtkWindow *wndAbout;
+GtkDialog* nsgtk_options_init(struct browser_window *bw, GtkWindow *parent);		/** Init options and load window */
+void nsgtk_options_load(void);		/** Load current options into window */
+void nsgtk_options_save(void);		/** Save options from window */
 
-extern GtkWindow *wndTooltip;
-extern GtkLabel *labelTooltip;
-
-extern GtkDialog *wndOpenFile;
+/** Callbacks */
+static void dialog_response_handler (GtkDialog *dlg, gint res_id);
+static gboolean on_dialog_close (GtkDialog *dlg, gboolean stay_alive);
+#endif

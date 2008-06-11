@@ -22,6 +22,7 @@
 #include "desktop/browser.h"
 #include "desktop/options.h"
 #include "desktop/textinput.h"
+#include "desktop/selection.h"
 #include "gtk/gtk_gui.h"
 #include "gtk/gtk_scaffolding.h"
 #include "gtk/gtk_plotters.h"
@@ -31,34 +32,6 @@
 #include "utils/utils.h"
 #include <gdk/gdkkeysyms.h>
 #include <assert.h>
-
-struct gui_window {
-        /* All gui_window objects have an ultimate scaffold */
-        nsgtk_scaffolding	*scaffold;
-        /* A gui_window is the rendering of a browser_window */
-        struct browser_window	*bw;
-
-        /* These are the storage for the rendering */
-	int			caretx, carety, careth;
-	gui_pointer_shape	current_pointer;
-	int			last_x, last_y;
-
-        /* Within GTK, a gui_window is a scrolled window
-         * with a viewport inside
-         * with a gtkfixed in that
-         * with a drawing area in that
-         * The scrolled window is optional and only chosen
-         * for frames which need it. Otherwise we just use
-         * a viewport.
-         */
-        GtkScrolledWindow	*scrolledwindow;
-	GtkViewport		*viewport;
-        GtkFixed                *fixed;
-	GtkDrawingArea		*drawing_area;
-
-        /* Keep gui_windows in a list for cleanup later */
-        struct gui_window	*next, *prev;
-};
 
 static struct gui_window *window_list = 0;	/**< first entry in win list*/
 
@@ -72,10 +45,13 @@ static gboolean nsgtk_window_motion_notify_event(GtkWidget *, GdkEventMotion *,
 						gpointer);
 static gboolean nsgtk_window_button_press_event(GtkWidget *, GdkEventButton *,
 						gpointer);
+static gboolean nsgtk_window_button_release_event(GtkWidget *, GdkEventButton *,
+						gpointer);
 static gboolean nsgtk_window_keypress_event(GtkWidget *, GdkEventKey *,
 						gpointer);
 static gboolean nsgtk_window_size_allocate_event(GtkWidget *, GtkAllocation *,
 						gpointer);
+		
 /* Other useful bits */
 static void nsgtk_redraw_caret(struct gui_window *g);
 
@@ -117,6 +93,12 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
         LOG(("Creating gui window %p for browser window %p", g, bw));
 
 	g->bw = bw;
+	g->mouse = malloc(sizeof(*g->mouse));
+       	if (!g->mouse) {
+		warn_user("NoMemory", 0);
+		return 0;
+	}
+	g->mouse->state = 0;
 	g->current_pointer = GUI_POINTER_DEFAULT;
 	if (clone != NULL)
 		bw->scale = clone->scale;
@@ -220,6 +202,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 				GDK_EXPOSURE_MASK |
 				GDK_LEAVE_NOTIFY_MASK |
 				GDK_BUTTON_PRESS_MASK |
+				GDK_BUTTON_RELEASE_MASK |
 				GDK_POINTER_MOTION_MASK |
 				GDK_KEY_PRESS_MASK |
 				GDK_KEY_RELEASE_MASK);
@@ -235,7 +218,9 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	CONNECT(g->drawing_area, "motion_notify_event",
 		nsgtk_window_motion_notify_event, g);
 	CONNECT(g->drawing_area, "button_press_event",
-	    	nsgtk_window_button_press_event, g);
+		nsgtk_window_button_press_event, g);
+	CONNECT(g->drawing_area, "button_release_event",
+	    nsgtk_window_button_release_event, g);
 	CONNECT(g->drawing_area, "key_press_event",
 		nsgtk_window_keypress_event, g);
 	CONNECT(g->viewport, "size_allocate",
@@ -314,6 +299,7 @@ gboolean nsgtk_window_expose_event(GtkWidget *widget,
 
 	plot = nsgtk_plotters;
 	nsgtk_plot_set_scale(g->bw->scale);
+	current_redraw_browser = g->bw;
 	content_redraw(c, 0, 0,
 			widget->allocation.width * scale,
 			widget->allocation.height * scale,
@@ -322,7 +308,8 @@ gboolean nsgtk_window_expose_event(GtkWidget *widget,
 			event->area.x + event->area.width,
 			event->area.y + event->area.height,
 			g->bw->scale, 0xFFFFFF);
-
+	current_redraw_browser = NULL;
+	
 	if (g->careth != 0)
 		nsgtk_plot_caret(g->caretx, g->carety, g->careth);
 
@@ -338,10 +325,38 @@ gboolean nsgtk_window_motion_notify_event(GtkWidget *widget,
                                           GdkEventMotion *event, gpointer data)
 {
 	struct gui_window *g = data;
+	bool shift = event->state & GDK_SHIFT_MASK;
+	bool ctrl = event->state & GDK_CONTROL_MASK;
 
-	browser_window_mouse_track(g->bw, 0, event->x / g->bw->scale,
-                                   event->y / g->bw->scale);
-
+   	if (g->mouse->state & BROWSER_MOUSE_PRESS_1){
+		/* Start button 1 drag */
+		browser_window_mouse_click(g->bw, BROWSER_MOUSE_DRAG_1,
+				event->x / g->bw->scale,
+				event->y / g->bw->scale);
+		/* Replace PRESS with HOLDING and declare drag in progress */
+		g->mouse->state ^= (BROWSER_MOUSE_PRESS_1 |
+				BROWSER_MOUSE_HOLDING_1);
+		g->mouse->state |= BROWSER_MOUSE_DRAG_ON;
+	} 
+	else if (g->mouse->state & BROWSER_MOUSE_PRESS_2){
+		/* Start button 2 drag */
+		browser_window_mouse_click(g->bw, BROWSER_MOUSE_DRAG_2,
+				event->x / g->bw->scale,
+				event->y / g->bw->scale);
+		/* Replace PRESS with HOLDING and declare drag in progress */
+		g->mouse->state ^= (BROWSER_MOUSE_PRESS_2 |
+				BROWSER_MOUSE_HOLDING_2);
+		g->mouse->state |= BROWSER_MOUSE_DRAG_ON;
+	}
+	/* Handle modifiers being removed */
+  	if (g->mouse->state & BROWSER_MOUSE_MOD_1 && !shift)
+  		g->mouse->state ^= BROWSER_MOUSE_MOD_1;
+ 	if (g->mouse->state & BROWSER_MOUSE_MOD_2 && !ctrl)
+  		g->mouse->state ^= BROWSER_MOUSE_MOD_2;
+	
+	browser_window_mouse_track(g->bw, g->mouse->state,
+			event->x / g->bw->scale, event->y / g->bw->scale);
+	
 	g->last_x = event->x;
 	g->last_y = event->y;
 
@@ -352,23 +367,54 @@ gboolean nsgtk_window_button_press_event(GtkWidget *widget,
                                          GdkEventButton *event, gpointer data)
 {
 	struct gui_window *g = data;
-	int button = BROWSER_MOUSE_CLICK_1;
-
-	if (event->button == 2) /* 2 == middle button on X */
-		button = BROWSER_MOUSE_CLICK_2;
-
-	if (event->button == 3) {
-		/* 3 == right button on X */
+	
+	if (event->button == 3){
 		nsgtk_scaffolding_popup_menu(g->scaffold, event->button);
 		return TRUE;
 	}
+	
+	switch (event->button) {
+		case 1: g->mouse->state = BROWSER_MOUSE_PRESS_1; break;
+		case 2: g->mouse->state = BROWSER_MOUSE_PRESS_2; break;
+	}
+	/* Handle the modifiers too */
+	if (event->state & GDK_SHIFT_MASK)
+		g->mouse->state |= BROWSER_MOUSE_MOD_1;
+	if (event->state & GDK_CONTROL_MASK) 
+		g->mouse->state |= BROWSER_MOUSE_MOD_2;
+	
+	browser_window_mouse_click(g->bw, g->mouse->state, event->x / g->bw->scale,
+			event->y / g->bw->scale);
+}
 
-	browser_window_mouse_click(g->bw, button,
-                                   event->x / g->bw->scale,
-				   event->y / g->bw->scale);
-
-        gtk_widget_grab_focus(widget);
-
+gboolean nsgtk_window_button_release_event(GtkWidget *widget,
+                                         GdkEventButton *event, gpointer data)
+{
+	int button;
+	struct gui_window *g = data;
+	bool shift = event->state & GDK_SHIFT_MASK;
+	bool ctrl = event->state & GDK_CONTROL_MASK;
+	
+	/* If the mouse state is PRESS then we are waiting for a release to emit
+	 * a click event, otherwise just reset the state to nothing*/
+	if (g->mouse->state & BROWSER_MOUSE_PRESS_1) 
+		g->mouse->state ^= (BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_CLICK_1);
+	else if (g->mouse->state & BROWSER_MOUSE_PRESS_2)
+		g->mouse->state ^= (BROWSER_MOUSE_PRESS_2 | BROWSER_MOUSE_CLICK_2);
+	
+	/* Handle modifiers being removed */
+  	if (g->mouse->state & BROWSER_MOUSE_MOD_1 && !shift)
+  		g->mouse->state ^= BROWSER_MOUSE_MOD_1;
+ 	if (g->mouse->state & BROWSER_MOUSE_MOD_2 && !ctrl)
+  		g->mouse->state ^= BROWSER_MOUSE_MOD_2;
+	
+	if (g->mouse->state & (BROWSER_MOUSE_CLICK_1|BROWSER_MOUSE_CLICK_2))
+		browser_window_mouse_click(g->bw, g->mouse->state, event->x / g->bw->scale,
+			event->y / g->bw->scale);
+	else 
+		browser_window_mouse_drag_end(g->bw, 0, event->x, event->y);
+		
+	g->mouse->state = 0;
 	return TRUE;
 }
 
@@ -857,38 +903,6 @@ void gui_drag_save_selection(struct selection *s, struct gui_window *g)
 {
 
 }
-
-void gui_start_selection(struct gui_window *g)
-{
-
-}
-
-void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
-{
-
-}
-
-bool gui_empty_clipboard(void)
-{
-	return true;
-}
-
-bool gui_add_to_clipboard(const char *text, size_t length, bool space)
-{
-  	return true;
-}
-
-bool gui_commit_clipboard(void)
-{
-	return true;
-}
-
-
-bool gui_copy_to_clipboard(struct selection *s)
-{
-	return true;
-}
-
 
 void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
                                bool scaled)

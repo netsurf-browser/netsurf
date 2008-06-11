@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Rob Kendrick <rjek@rjek.com>
+ * Copyright 2008 Rob Kendrick <rjek@rjek.com>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,15 +16,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NETSURF_GTK_OPTIONS_H
-#define NETSURF_GTK_OPTIONS_H
+#ifndef NETSURF_GTK_ABOUT_H
+#define NETSURF_GTK_ABOUT_H
 
 #include <gtk/gtk.h>
 
-extern GtkWindow *wndPreferences;
+#include "gtk/gtk_gui.h"
+#include "desktop/netsurf.h"
+#include "desktop/browser.h"
 
-void nsgtk_options_init(void);		/** Init options and load window */
-void nsgtk_options_load(void);		/** Load current options into window */
-void nsgtk_options_save(void);		/** Save options from window */
+void nsgtk_about_dialog_init(GtkWindow *parent, struct browser_window *bw, const char *version);
 
 #endif

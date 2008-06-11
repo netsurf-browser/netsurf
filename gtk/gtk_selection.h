@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2008 Mike Lester <element3260@gmail.com>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -15,20 +15,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+ 
+#ifndef GTK_SELECTION_H
+#define GTK_SELECTION_H
 
-#include <stdbool.h>
 #include <gtk/gtk.h>
-#include <glade/glade.h>
+#include "desktop/gui.h"
 
-extern bool gui_in_multitask;
-extern GladeXML *gladeWindows;
-extern char *glade_file_location;
-extern char *options_file_location;
-extern char *res_dir_location;
-
-extern GtkWindow *wndAbout;
-
-extern GtkWindow *wndTooltip;
-extern GtkLabel *labelTooltip;
-
-extern GtkDialog *wndOpenFile;
+#endif

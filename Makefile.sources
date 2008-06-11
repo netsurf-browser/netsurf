@@ -49,11 +49,15 @@ S_RISCOS := 401login.c artworks.c assert.c awrender.s bitmap.c buffer.c			\
 	con_theme.c)
 S_RISCOS := $(addprefix riscos/,$(S_RISCOS))
 
+# S_DIALOGS are sources related to dialogs but required only
+# for the GTK build
+S_DIALOGS := gtk_options.c gtk_about.c
+S_DIALOGS := $(addprefix gtk/dialogs/,$(S_DIALOGS))
+
 # S_GTK are sources purely for the GTK build
 S_GTK := font_pango.c gtk_bitmap.c gtk_gui.c gtk_schedule.c			\
-	gtk_thumbnail.c gtk_options.c						\
-	gtk_plotters.c gtk_treeview.c gtk_scaffolding.c gtk_completion.c	\
-	gtk_login.c gtk_throbber.c						\
+	gtk_thumbnail.c gtk_plotters.c gtk_treeview.c gtk_scaffolding.c \
+	gtk_completion.c gtk_login.c gtk_throbber.c gtk_selection.c		\
 	gtk_history.c gtk_window.c gtk_filetype.c gtk_download.c
 S_GTK := $(addprefix gtk/,$(S_GTK))
 
@@ -123,7 +127,7 @@ EXETARGET := !NetSurf/!RunImage$(EXEEXT)
 endif
 
 ifeq ($(TARGET),gtk)
-SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_GTK)
+SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_GTK) $(S_DIALOGS)
 EXETARGET := nsgtk
 endif
 

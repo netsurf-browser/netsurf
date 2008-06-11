@@ -262,7 +262,7 @@ bool selection_click(struct selection *s, browser_mouse_state mouse,
 	}
 	else if (!modkeys) {
 		if (mouse & BROWSER_MOUSE_DRAG_1) {
-
+					
 			/* start new selection drag */
 			selection_clear(s, true);
 

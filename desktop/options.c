@@ -166,7 +166,7 @@ struct {
 	{ "http_proxy",      OPTION_BOOL,    &option_http_proxy },
 	{ "http_proxy_host", OPTION_STRING,  &option_http_proxy_host },
 	{ "http_proxy_port", OPTION_INTEGER, &option_http_proxy_port },
-	{ "http_proxy_auth", OPTION_BOOL,    &option_http_proxy_auth },
+	{ "http_proxy_auth", OPTION_INTEGER,    &option_http_proxy_auth },
 	{ "http_proxy_auth_user", OPTION_STRING, &option_http_proxy_auth_user },
 	{ "http_proxy_auth_pass", OPTION_STRING, &option_http_proxy_auth_pass },
 	{ "font_size",       OPTION_INTEGER, &option_font_size },

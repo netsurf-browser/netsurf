@@ -42,7 +42,7 @@
 #include "desktop/netsurf.h"
 #include "desktop/options.h"
 #include "gtk/gtk_gui.h"
-#include "gtk/gtk_options.h"
+#include "gtk/dialogs/gtk_options.h"
 #include "gtk/gtk_completion.h"
 #include "gtk/gtk_window.h"
 #include "gtk/options.h"
@@ -68,6 +68,7 @@ char *default_stylesheet_url;
 char *adblock_stylesheet_url;
 char *options_file_location;
 char *glade_file_location;
+char *res_dir_location;
 
 struct gui_window *search_current_window = 0;
 
@@ -76,7 +77,6 @@ GtkWindow *wndWarning;
 GladeXML *gladeWindows;
 GtkWindow *wndTooltip;
 GtkLabel *labelTooltip;
-GtkDialog *wndOpenFile;
 
 static GtkWidget *select_menu;
 static struct browser_window *select_menu_bw;
@@ -176,10 +176,14 @@ void gui_init(int argc, char** argv)
 	gtk_init(&argc, &argv);
 
 	check_homedir();
-
+	
 	find_resource(buf, "netsurf.glade", "./gtk/res/netsurf.glade");
 	LOG(("Using '%s' as Glade template file", buf));
 	glade_file_location = strdup(buf);
+	
+	buf[strlen(buf)- 13] = 0;
+	LOG(("Using '%s' as Resources directory", buf));
+	res_dir_location = strdup(buf);
 
 	glade_init();
 	gladeWindows = glade_xml_new(glade_file_location, NULL, NULL);
@@ -239,8 +243,6 @@ void gui_init(int argc, char** argv)
 	SETFONTDEFAULT(option_font_cursive, "Serif");
 	SETFONTDEFAULT(option_font_fantasy, "Serif");
 
-	nsgtk_options_init();
-
 	if (!option_cookie_file) {
 		find_resource(buf, "Cookies", "~/.netsurf/Cookies");
 		LOG(("Using '%s' as Cookies file", buf));
@@ -297,7 +299,6 @@ void gui_init(int argc, char** argv)
 		glade_xml_get_widget(gladeWindows, "textviewGPL")), fontdesc);
 
 	wndWarning = GTK_WINDOW(glade_xml_get_widget(gladeWindows, "wndWarning"));
-	wndOpenFile = GTK_DIALOG(glade_xml_get_widget(gladeWindows, "wndOpenFile"));
 
 	nsgtk_history_init();
 	nsgtk_download_initialise();
@@ -306,13 +307,14 @@ void gui_init(int argc, char** argv)
 
 void gui_init2(int argc, char** argv)
 {
+	struct browser_window *bw;
 	const char *addr = "http://netsurf-browser.org/welcome/";
 
         if (option_homepage_url != NULL && option_homepage_url[0] != '\0')
                 addr = option_homepage_url;
 
 	if (argc > 1) addr = argv[1];
-	browser_window_create(addr, 0, 0, true);
+	bw = browser_window_create(addr, 0, 0, true);
 }
 
 
