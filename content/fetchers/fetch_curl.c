@@ -718,7 +718,12 @@ void fetch_curl_poll(const char *scheme_ignored)
 	/* do any possible work on the current fetches */
 	do {
 		codem = curl_multi_perform(fetch_curl_multi, &running);
-		assert(codem == CURLM_OK || codem == CURLM_CALL_MULTI_PERFORM);
+		if (codem != CURLM_OK && codem != CURLM_CALL_MULTI_PERFORM) {
+			LOG(("curl_multi_perform: %i %s",
+					codem, curl_multi_strerror(codem)));
+			warn_user("MiscError", curl_multi_strerror(codem));
+			return;
+                }
 	} while (codem == CURLM_CALL_MULTI_PERFORM);
 
 	/* process curl results */
@@ -1138,7 +1143,7 @@ bool fetch_curl_process_headers(struct curl_fetch_info *f)
 		/* file: URL and file exists */
 		/* create etag */
 		char etag_buf[20];
-		snprintf(etag_buf, sizeof etag_buf, 
+		snprintf(etag_buf, sizeof etag_buf,
 				"ETag: \"%10d\"", (int) s.st_mtime);
 		/* And send it to the header handler */
 		fetch_send_callback(FETCH_HEADER, f->fetch_handle, etag_buf,
