@@ -1057,7 +1057,12 @@ void bitmap_save_file(struct bitmap *bitmap)
 	os_error *error;
 	struct bitmap_compressed_header *header;
 
-	assert(bitmap && (bitmap->compressed || bitmap->sprite_area));
+	assert(bitmap);
+
+	if (!bitmap->compressed && !bitmap->sprite_area) {
+		LOG(("bitmap has no data"));
+		return;
+	}
 
 	/* unmodified bitmaps will still have their file available */
 	if ((!(bitmap->state & BITMAP_MODIFIED)) && bitmap->filename[0]) {
