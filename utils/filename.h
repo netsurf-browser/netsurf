@@ -32,6 +32,5 @@ bool filename_claim(const char *filename);
 void filename_release(const char *filename);
 bool filename_initialise(void);
 void filename_flush(void);
-char *filename_as_url(const char *filename);
 
 #endif

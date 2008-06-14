@@ -451,26 +451,3 @@ static struct directory *filename_create_directory(const char *prefix) {
 
 	return new_dir;
 }
-
-
-/**
- * Converts a filename into a local URL
- *
- * \param  filename  the filename to convert
- * \return a local URL allocated on heap, or NULL on failure.
- */
-char *filename_as_url(const char *filename) {
-	char *temp, *url;
-	int length;
-
-	length = strlen(TEMP_FILENAME_PREFIX) + strlen(filename) + 2;
-	temp = malloc(length);
-	if (!temp) {
-	  	LOG(("No memory for malloc()"));
-		return NULL;
-	}
-	sprintf(temp, "%s/%s", TEMP_FILENAME_PREFIX, filename);
-	url = path_to_url(temp);
-	free(temp);
-	return url;
-}
