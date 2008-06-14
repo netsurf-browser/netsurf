@@ -819,13 +819,9 @@ HelpCacheConfig:\Tla fenêtre de configuration du cache.
 HelpCacheConfig3:\Tla quantité de mémoire à utiliser pour le contenu du cache.
 HelpCacheConfig4:\Sréduire la quantité de mémoire.
 HelpCacheConfig5:\Saugmenter la quantité de mémoire.
-HelpCacheConfig10:\Tla durée de rétention dans le cache.
-HelpCacheConfig11:\Sréduire la durée du cache.
-HelpCacheConfig12:\Saugmenter la durée du cache.
-HelpCacheConfig14:\Ssupprimer tout fichier redondant du cache-disque de Netsurf.
-HelpCacheConfig15:\Srevenir aux valeurs par défaut des options du Cache.
-HelpCacheConfig16:\Sfermer cette fenêtre sans sauver les changements.|M\Arevenir aux options de Cache précédemment sauvegardées.
-HelpCacheConfig17:\Ssauver ces réglages et fermer la fenêtre.|M\Asauver ces réglages sans fermer la fenêtre.
+HelpCacheConfig7:\Srevenir aux valeurs par défaut des options du Cache.
+HelpCacheConfig8:\Sfermer cette fenêtre sans sauver les changements.|M\Arevenir aux options de Cache précédemment sauvegardées.
+HelpCacheConfig9:\Ssauver ces réglages et fermer la fenêtre.|M\Asauver ces réglages sans fermer la fenêtre.
 
 HelpConnectConfig:\Tla fenêtre de configuration de connexion.
 HelpConnectConfig3:\Tle type de proxy sélectionné en ce moment.|MUtiliser le menu pour choisir un type de proxy.

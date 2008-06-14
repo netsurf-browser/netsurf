@@ -819,13 +819,9 @@ HelpCacheConfig:Das ist das Fenster der Cache-Konfiguration.
 HelpCacheConfig3:Speichergröße, die verwendet wird um Inhalte zwischenzuspeichern.
 HelpCacheConfig4:Klicken mit AUSWAHL verringert die Größe des Cachespeichers.
 HelpCacheConfig5:Klicken mit AUSWAHL vergrößert die Größe des Cachespeichers.
-HelpCacheConfig10:Zeitdauer für die Objekte im Cache gespeichert bleiben.
-HelpCacheConfig11:Klicken mit AUSWAHL verringert die Zeitdauer.
-HelpCacheConfig12:Klicken mit AUSWAHL vergrößert die Zeitdauer.
-HelpCacheConfig14:Löscht alle mehrfach vorhandenen Objekte aus dem Cache.
-HelpCacheConfig15:Stellt die Standardeinstellungen wieder her.
-HelpCacheConfig16:Klicken mit AUSWAHL schließt das Fenster ohne die Änderungen zu speichern.|MKlicken mit SPEZIAL stellt die zuletzt abgespeicherten Einstellungen wieder her.
-HelpCacheConfig17:Klicken mit AUSWAHL speichert die Einstellungen und schließt das Fenster.|MKlicken mit SPEZIAL speichert die Einstellungen ohne das Fenster zu schließen.
+HelpCacheConfig7:Stellt die Standardeinstellungen wieder her.
+HelpCacheConfig8:Klicken mit AUSWAHL schließt das Fenster ohne die Änderungen zu speichern.|MKlicken mit SPEZIAL stellt die zuletzt abgespeicherten Einstellungen wieder her.
+HelpCacheConfig9:Klicken mit AUSWAHL speichert die Einstellungen und schließt das Fenster.|MKlicken mit SPEZIAL speichert die Einstellungen ohne das Fenster zu schließen.
 
 HelpConnectConfig:Das ist das Fenster zur Einstellung der Parameter für die Netzanbindung.
 HelpConnectConfig3:Aktuell gewählter Proxytyp.|MMit dem Menü kann ein anderer Typ eingestellt werden.

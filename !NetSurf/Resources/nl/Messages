@@ -819,13 +819,9 @@ HelpCacheConfig:\Tcache configuration \w.
 HelpCacheConfig3:\Tamount of memory to be used for caching content.
 HelpCacheConfig4:\Sreduce the amount of memory.
 HelpCacheConfig5:\Sincrease the amount of memory.
-HelpCacheConfig10:\Tlength of time items are kept in the cache.
-HelpCacheConfig11:\Sreduce the cache duration.
-HelpCacheConfig12:\Sincrease the cache duration.
-HelpCacheConfig14:\Sdelete any redundant files from NetSurf's disc cache.
-HelpCacheConfig15:\Sreset the Cache options back to their default values.
-HelpCacheConfig16:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
-HelpCacheConfig17:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
+HelpCacheConfig7:\Sreset the Cache options back to their default values.
+HelpCacheConfig8:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
+HelpCacheConfig9:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
 
 HelpConnectConfig:\Tconnection configuration \w
 HelpConnectConfig3:\Tcurrently selected proxy type.|MUse the menu to select a proxy type.
