@@ -6,7 +6,7 @@
 
 | Set system variables and application sprites
 Set NetSurf$ForceVars 1
-<Obey$Dir>.!Boot
+/<Obey$Dir>.!Boot
 UnSet NetSurf$ForceVars
 
 | Detect if NetSurf is already running and, if so, force the 

@@ -62,9 +62,9 @@ Unset NetSurf$Sprites
 | If the launch is successful, the Message_URI_MProcess is rebroadcast.
 | The -nowin is required to ensure only one window is opened (this only has
 | an effect if the user has configured auto window opening at startup).
-If (("<Alias$Open_URI_http>" = "") OR ("<NetSurf$ForceVars>" = "1")) Then      Set Alias$Open_URI_http <NetSurf$Dir>.!Run -nowin
-If (("<Alias$Open_URI_https>" = "") OR ("<NetSurf$ForceVars>" = "1")) Then     Set Alias$Open_URI_https <NetSurf$Dir>.!Run -nowin
-If (("<Alias$Open_URI_file>" = "") OR ("<NetSurf$ForceVars>" = "1")) Then      Set Alias$Open_URI_file <NetSurf$Dir>.!Run -nowin
+If (("<Alias$Open_URI_http>" = "") OR ("<NetSurf$ForceVars>" = "1")) Then      Set Alias$Open_URI_http /<NetSurf$Dir>.!Run -nowin
+If (("<Alias$Open_URI_https>" = "") OR ("<NetSurf$ForceVars>" = "1")) Then     Set Alias$Open_URI_https /<NetSurf$Dir>.!Run -nowin
+If (("<Alias$Open_URI_file>" = "") OR ("<NetSurf$ForceVars>" = "1")) Then      Set Alias$Open_URI_file /<NetSurf$Dir>.!Run -nowin
 
 | ANT URL protocol
 |
