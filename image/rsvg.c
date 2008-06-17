@@ -46,7 +46,7 @@
 #include "utils/messages.h"
 #include "utils/talloc.h"
 
-static inline void rsvg_argb_to_abgr(u_int32_t pixels[], int width, int height,
+static inline void rsvg_argb_to_abgr(uint32_t pixels[], int width, int height,
 				size_t rowstride);
 
 bool rsvg_create(struct content *c, const char *params[])
@@ -97,15 +97,15 @@ bool rsvg_process_data(struct content *c, char *data,
  * \param rowstride	Number of bytes to skip after each row (this
  *			implementation requires this to be a multiple of 4.)
  */
-static inline void rsvg_argb_to_abgr(u_int32_t pixels[], int width, int height,
+static inline void rsvg_argb_to_abgr(uint32_t pixels[], int width, int height,
 				size_t rowstride)
 {
-	u_int32_t *p = &pixels[0];
+	uint32_t *p = &pixels[0];
 
 	for (int y = 0; y < height; y++) {
 		for (int x = 0; x < width; x++) {
-			u_int32_t e = p[x];
-			u_int32_t s = (((e & 0xff) << 24) |
+			uint32_t e = p[x];
+			uint32_t s = (((e & 0xff) << 24) |
 					((e & 0xff00) << 8) |
 					((e & 0xff0000) >> 8) |
 					((e & 0xff000000) >> 24));
@@ -166,7 +166,7 @@ bool rsvg_convert(struct content *c, int iwidth, int iheight)
 	}
 
 	rsvg_handle_render_cairo(d->rsvgh, d->ct);
-	rsvg_argb_to_abgr((u_int32_t *)bitmap_get_buffer(d->bitmap),
+	rsvg_argb_to_abgr((uint32_t *)bitmap_get_buffer(d->bitmap),
 				c->width, c->height,
 				bitmap_get_rowstride(d->bitmap));
 
