@@ -342,6 +342,9 @@ bool layout_block_context(struct box *block, struct content *content)
 		 * establishes a new block context. */
 		if (box->type != BOX_INLINE_CONTAINER && box->style &&
 				box->style->overflow != CSS_OVERFLOW_VISIBLE) {
+			cy += max_pos_margin - max_neg_margin;
+			box->y += max_pos_margin - max_neg_margin;
+
 			layout_block_context(box, content);
 
 			if (box->type == BOX_BLOCK || box->object)
