@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <gtk/gtk.h>
 #include <glade/glade.h>
 #include "utils/log.h"
@@ -309,10 +310,25 @@ COMBO_CHANGED(comboProxyType, proxy_type)
 
 ENTRY_CHANGED(entryProxyHost, option_http_proxy_host)}
 	return FALSE;}
-ENTRY_CHANGED(entryProxyPort, proxy_port)
-	option_http_proxy_port = atoi(proxy_port);
-	free(proxy_port);}
-	return FALSE;}
+
+gboolean on_entryProxyPort_changed(GtkWidget *widget, gpointer data)
+{
+	long port;
+
+	errno = 0;
+	port = strtol((char *)gtk_entry_get_text(GTK_ENTRY(entryProxyPort)),
+			NULL, 10) & 0xffff;
+	if (port != 0 && errno == 0) {
+		option_http_proxy_port = port;
+	} else {
+		char buf[32];
+		snprintf(buf, 31, "%d", option_http_proxy_port);
+		SET_ENTRY(entryProxyPort, buf);
+	}
+
+	return FALSE;
+}
+
 ENTRY_CHANGED(entryProxyUser, option_http_proxy_auth_user)}
 	return FALSE;}
 ENTRY_CHANGED(entryProxyPassword, option_http_proxy_auth_pass)}
