@@ -121,7 +121,16 @@ void netsurf_init(int argc, char** argv)
 
 void netsurf_poll(void)
 {
-	content_clean();
+	static unsigned int last_clean = 0;
+	unsigned int current_time = wallclock();
+
+	/* avoid calling content_clean() more often than once every 5
+	 * seconds.
+	 */
+	if (last_clean + 500 < current_time) {
+		last_clean = current_time;
+		content_clean();
+	}
 	gui_poll(fetch_active);
 	fetch_poll();
 }

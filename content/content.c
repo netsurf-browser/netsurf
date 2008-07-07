@@ -873,14 +873,15 @@ void content_clean(void)
 	next = 0;
 	for (c = content_list; c; c = c->next) {
 		next = c;
-		size += c->size + talloc_total_size(c);
+		c->talloc_size = talloc_total_size(c);
+		size += c->size + c->talloc_size;
 	}
 	for (c = next; c && (unsigned int) option_memory_cache_size < size;
 			c = prev) {
 		prev = c->prev;
 		if (c->user_list->next)
 			continue;
-		size -= c->size + talloc_total_size(c);
+		size -= c->size + c->talloc_size;
 		content_destroy(c);
 	}
 }
