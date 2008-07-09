@@ -693,7 +693,7 @@ void css_parse_property_list(struct content *c, struct css_style * style,
 colour named_colour(const char *name);
 colour hex_colour(const char *text, int length);
 
-void css_dump_style(const struct css_style * const style);
+void css_dump_style(FILE *stream, const struct css_style * const style);
 void css_dump_stylesheet(const struct css_stylesheet * stylesheet);
 
 float css_len2px(const struct css_length *length,

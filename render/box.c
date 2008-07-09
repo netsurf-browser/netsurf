@@ -576,7 +576,7 @@ void box_dump(FILE *stream, struct box *box, unsigned int depth)
 	if (box->gadget)
 		fprintf(stream, "(gadget) ");
 	if (box->style)
-		css_dump_style(box->style);
+		css_dump_style(stream, box->style);
 	if (box->href)
 		fprintf(stream, " -> '%s'", box->href);
 	if (box->target)

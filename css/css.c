@@ -129,7 +129,8 @@ static bool css_match_detail(const struct css_selector *detail,
 		xmlNode *element);
 static bool css_match_first_child(const struct css_selector *detail,
 		xmlNode *element);
-static void css_dump_length(const struct css_length * const length);
+static void css_dump_length(FILE *stream, 
+		const struct css_length * const length);
 static void css_dump_selector(const struct css_selector *r);
 #ifdef DEBUG_WORKING_STYLESHEET
 static void css_dump_working_stylesheet(
@@ -1574,24 +1575,24 @@ void css_parse_property_list(struct content *c, struct css_style * style,
  * Dump a css_style to stderr in CSS-like syntax.
  */
 
-void css_dump_style(const struct css_style * const style)
+void css_dump_style(FILE *stream, const struct css_style * const style)
 {
 	unsigned int i;
-	fprintf(stderr, "{ ");
+	fprintf(stream, "{ ");
 
 #define DUMP_COLOR(z, s) \
 	if (style->z != CSS_COLOR_NOT_SET) {				\
 		if (style->z == TRANSPARENT)				\
-			fprintf(stderr, s ": transparent; ");		\
+			fprintf(stream, s ": transparent; ");		\
 		else if (style->z == CSS_COLOR_NONE)			\
-			fprintf(stderr, s ": none; ");			\
+			fprintf(stream, s ": none; ");			\
 		else							\
-			fprintf(stderr, s ": #%.6lx; ", style->z);	\
+			fprintf(stream, s ": #%.6lx; ", style->z);	\
 	}
 
 #define DUMP_KEYWORD(z, s, n) \
 	if (style->z != css_empty_style.z)				\
-		fprintf(stderr, s ": %s; ", n[style->z]);
+		fprintf(stream, s ": %s; ", n[style->z]);
 
 	DUMP_COLOR(background_color, "background-color");
 	if (style->background_attachment !=
@@ -1604,16 +1605,16 @@ void css_dump_style(const struct css_style * const style)
 			css_empty_style.background_position.vert.pos ||
 			style->background_repeat !=
 			css_empty_style.background_repeat) {
-		fprintf(stderr, "background:");
+		fprintf(stream, "background:");
 		switch (style->background_image.type) {
 		case CSS_BACKGROUND_IMAGE_NONE:
-			fprintf(stderr, " none");
+			fprintf(stream, " none");
 			break;
 		case CSS_BACKGROUND_IMAGE_INHERIT:
-			fprintf(stderr, " inherit");
+			fprintf(stream, " inherit");
 			break;
 		case CSS_BACKGROUND_IMAGE_URI:
-			fprintf(stderr, " (%p) \"%s\"",
+			fprintf(stream, " (%p) \"%s\"",
 					style->background_image.uri,
 					style->background_image.uri);
 			break;
@@ -1621,72 +1622,72 @@ void css_dump_style(const struct css_style * const style)
 			;
 			break;
 		default:
-			fprintf(stderr, " UNKNOWN");
+			fprintf(stream, " UNKNOWN");
 			break;
 		}
 
 		if (style->background_repeat ==
 				CSS_BACKGROUND_REPEAT_UNKNOWN)
-			fprintf(stderr, " UNKNOWN");
+			fprintf(stream, " UNKNOWN");
 		else if (style->background_repeat ==
 				CSS_BACKGROUND_REPEAT_NOT_SET)
 			;
 		else
-			fprintf(stderr, " %s",
+			fprintf(stream, " %s",
 				css_background_repeat_name[
 						style->background_repeat]);
 
 		if (style->background_attachment ==
 				CSS_BACKGROUND_ATTACHMENT_UNKNOWN)
-			fprintf(stderr, " UNKNOWN");
+			fprintf(stream, " UNKNOWN");
 		else if (style->background_attachment == CSS_BACKGROUND_ATTACHMENT_NOT_SET)
 			;
 		else
-			fprintf(stderr, " %s",
+			fprintf(stream, " %s",
 				css_background_attachment_name[
 					style->background_attachment]);
 
 		switch (style->background_position.horz.pos) {
 		case CSS_BACKGROUND_POSITION_LENGTH:
-			fprintf(stderr, " ");
-			css_dump_length(&style->background_position.
+			fprintf(stream, " ");
+			css_dump_length(stream, &style->background_position.
 					horz.value.length);
 			break;
 		case CSS_BACKGROUND_POSITION_PERCENT:
-			fprintf(stderr, " %g%%",
+			fprintf(stream, " %g%%",
 					style->background_position.
 					horz.value.percent);
 			break;
 		case CSS_BACKGROUND_POSITION_INHERIT:
-			fprintf(stderr, " inherit");
+			fprintf(stream, " inherit");
 			break;
 		case CSS_BACKGROUND_POSITION_NOT_SET:
 			break;
 		default:
-			fprintf(stderr, " UNKNOWN");
+			fprintf(stream, " UNKNOWN");
 			break;
 		}
 		switch (style->background_position.vert.pos) {
 		case CSS_BACKGROUND_POSITION_LENGTH:
-			fprintf(stderr, " ");
-			css_dump_length(&style->background_position.
+			fprintf(stream, " ");
+			css_dump_length(stream, &style->background_position.
 					vert.value.length);
 			break;
 		case CSS_BACKGROUND_POSITION_PERCENT:
-			fprintf(stderr, " %g%%",
+			fprintf(stream, " %g%%",
 					style->background_position.
 					vert.value.percent);
 			break;
 		case CSS_BACKGROUND_POSITION_INHERIT:
-			fprintf(stderr, " inherit");
+			fprintf(stream, " inherit");
 			break;
 		case CSS_BACKGROUND_POSITION_NOT_SET:
 			break;
 		default:
-			fprintf(stderr, " UNKNOWN");
+			fprintf(stream, " UNKNOWN");
 			break;
 		}
-		fprintf(stderr, "; ");
+		fprintf(stream, "; ");
 	}
 	for (i = 0; i != 4; i++) {
 		if (style->border[i].color != CSS_COLOR_NOT_SET ||
@@ -1694,105 +1695,107 @@ void css_dump_style(const struct css_style * const style)
 				CSS_BORDER_WIDTH_NOT_SET ||
 				style->border[i].style !=
 				CSS_BORDER_STYLE_NOT_SET) {
-			fprintf(stderr, "border-");
+			fprintf(stream, "border-");
 			switch (i) {
 			case TOP:
-				fprintf(stderr, "top:");
+				fprintf(stream, "top:");
 				break;
 			case RIGHT:
-				fprintf(stderr, "right:");
+				fprintf(stream, "right:");
 				break;
 			case BOTTOM:
-				fprintf(stderr, "bottom:");
+				fprintf(stream, "bottom:");
 				break;
 			case LEFT:
-				fprintf(stderr, "left:");
+				fprintf(stream, "left:");
 				break;
 			}
 			switch (style->border[i].width.width) {
 			case CSS_BORDER_WIDTH_INHERIT:
-				fprintf(stderr, " inherit");
+				fprintf(stream, " inherit");
 				break;
 			case CSS_BORDER_WIDTH_LENGTH:
-				fprintf(stderr, " ");
-				css_dump_length(&style->border[i].width.value);
+				fprintf(stream, " ");
+				css_dump_length(stream,
+						&style->border[i].width.value);
 				break;
 			case CSS_BORDER_WIDTH_NOT_SET:
 				break;
 			default:
-				fprintf(stderr, " UNKNOWN");
+				fprintf(stream, " UNKNOWN");
 				break;
 			}
 
 			if (style->border[i].style ==
 					CSS_BORDER_STYLE_UNKNOWN)
-				fprintf(stderr, " UNKNOWN");
+				fprintf(stream, " UNKNOWN");
 			else if (style->border[i].style ==
 					CSS_BORDER_STYLE_NOT_SET)
 				;
 			else
-				fprintf(stderr, " %s",
+				fprintf(stream, " %s",
 					css_border_style_name[
 						style->border[i].style]);
 
 			if (style->border[i].color == TRANSPARENT)
-				fprintf(stderr, " transparent");
+				fprintf(stream, " transparent");
 			else if (style->border[i].color == CSS_COLOR_NONE)
-				fprintf(stderr, " none");
+				fprintf(stream, " none");
 			else if (style->border[i].color == CSS_COLOR_INHERIT)
-				fprintf(stderr, " inherit");
+				fprintf(stream, " inherit");
 			else if (style->border[i].color == CSS_COLOR_NOT_SET)
 				;
 			else
-				fprintf(stderr, " #%.6lx",
+				fprintf(stream, " #%.6lx",
 						style->border[i].color);
-			fprintf(stderr, "; ");
+			fprintf(stream, "; ");
 		}
 	}
 	DUMP_KEYWORD(border_collapse, "border-collapse",
 			css_border_collapse_name);
 	if (style->border_spacing.border_spacing !=
 			CSS_BORDER_SPACING_NOT_SET) {
-		fprintf(stderr, "border-spacing: ");
-		css_dump_length(&style->border_spacing.horz);
-		fprintf(stderr, " ");
-		css_dump_length(&style->border_spacing.vert);
-		fprintf(stderr, "; ");
+		fprintf(stream, "border-spacing: ");
+		css_dump_length(stream, &style->border_spacing.horz);
+		fprintf(stream, " ");
+		css_dump_length(stream, &style->border_spacing.vert);
+		fprintf(stream, "; ");
 	}
 
 	DUMP_KEYWORD(caption_side, "caption-side", css_caption_side_name);
 	DUMP_KEYWORD(clear, "clear", css_clear_name);
 
 	if (style->clip.clip != CSS_CLIP_NOT_SET) {
-		fprintf(stderr, "clip: ");
+		fprintf(stream, "clip: ");
 		switch (style->clip.clip) {
 		case CSS_CLIP_INHERIT:
-			fprintf(stderr, "inherit");
+			fprintf(stream, "inherit");
 			break;
 		case CSS_CLIP_AUTO:
-			fprintf(stderr, "auto");
+			fprintf(stream, "auto");
 			break;
 		case CSS_CLIP_RECT:
-			fprintf(stderr, "rect(");
+			fprintf(stream, "rect(");
 			for (i = 0; i != 4; i++) {
 				switch (style->clip.rect[i].rect) {
 				case CSS_CLIP_RECT_AUTO:
-					fprintf(stderr, "auto");
+					fprintf(stream, "auto");
 					break;
 				case CSS_CLIP_RECT_LENGTH:
-					css_dump_length(&style->clip.rect[i].value);
+					css_dump_length(stream,
+						&style->clip.rect[i].value);
 					break;
 				}
 				if (i != 3)
-					fprintf(stderr, ", ");
+					fprintf(stream, ", ");
 			}
-			fprintf(stderr, ")");
+			fprintf(stream, ")");
 			break;
 		default:
-			fprintf(stderr, "UNKNOWN");
+			fprintf(stream, "UNKNOWN");
 			break;
 		}
-		fprintf(stderr, "; ");
+		fprintf(stream, "; ");
 	}
 	DUMP_COLOR(color, "color");
 	DUMP_KEYWORD(cursor, "cursor", css_cursor_name);
@@ -1807,123 +1810,124 @@ void css_dump_style(const struct css_style * const style)
 			style->line_height.size != CSS_LINE_HEIGHT_NOT_SET ||
 			style->font_family != CSS_FONT_FAMILY_NOT_SET ||
 			style->font_variant != CSS_FONT_VARIANT_NOT_SET) {
-		fprintf(stderr, "font:");
+		fprintf(stream, "font:");
 
 		if (style->font_style == CSS_FONT_STYLE_UNKNOWN)
-			fprintf(stderr, " UNKNOWN");
+			fprintf(stream, " UNKNOWN");
 		else if (style->font_style == CSS_FONT_STYLE_NOT_SET)
 			;
 		else
-			fprintf(stderr, " %s",
+			fprintf(stream, " %s",
 				css_font_style_name[style->font_style]);
 
 		if (style->font_weight == CSS_FONT_WEIGHT_UNKNOWN)
-			fprintf(stderr, " UNKNOWN");
+			fprintf(stream, " UNKNOWN");
 		else if (style->font_weight == CSS_FONT_WEIGHT_NOT_SET)
 			;
 		else
-			fprintf(stderr, " %s",
+			fprintf(stream, " %s",
 				css_font_weight_name[style->font_weight]);
 
 		switch (style->font_size.size) {
 		case CSS_FONT_SIZE_ABSOLUTE:
-			fprintf(stderr, " [%g]",
+			fprintf(stream, " [%g]",
 				style->font_size.value.absolute);
 			break;
 		case CSS_FONT_SIZE_LENGTH:
-			fprintf(stderr, " ");
-			css_dump_length(&style->font_size.value.length);
+			fprintf(stream, " ");
+			css_dump_length(stream, &style->font_size.value.length);
 			break;
 		case CSS_FONT_SIZE_PERCENT:
-			fprintf(stderr, " %g%%",
+			fprintf(stream, " %g%%",
 				style->font_size.value.percent);
 			break;
 		case CSS_FONT_SIZE_INHERIT:
-			fprintf(stderr, " inherit");
+			fprintf(stream, " inherit");
 			break;
 		case CSS_FONT_SIZE_NOT_SET:
 			break;
 		default:
-			fprintf(stderr, " UNKNOWN");
+			fprintf(stream, " UNKNOWN");
 			break;
 		}
 		switch (style->line_height.size) {
 		case CSS_LINE_HEIGHT_ABSOLUTE:
-			fprintf(stderr, "/[%g]",
+			fprintf(stream, "/[%g]",
 				style->line_height.value.absolute);
 				break;
 		case CSS_LINE_HEIGHT_LENGTH:
-			fprintf(stderr, "/");
-			css_dump_length(&style->line_height.value.length);
+			fprintf(stream, "/");
+			css_dump_length(stream,
+					&style->line_height.value.length);
 			break;
 		case CSS_LINE_HEIGHT_PERCENT:
-			fprintf(stderr, "/%g%%",
+			fprintf(stream, "/%g%%",
 				style->line_height.value.percent);
 				break;
 		case CSS_LINE_HEIGHT_INHERIT:
-			fprintf(stderr, "/inherit");
+			fprintf(stream, "/inherit");
 			break;
 		case CSS_LINE_HEIGHT_NOT_SET:
 			break;
 		default:
-			fprintf(stderr, "/UNKNOWN");
+			fprintf(stream, "/UNKNOWN");
 			break;
 		}
 		if (style->font_family == CSS_FONT_FAMILY_UNKNOWN)
-			fprintf(stderr, " UNKNOWN");
+			fprintf(stream, " UNKNOWN");
 		else if (style->font_family == CSS_FONT_FAMILY_NOT_SET)
 			;
 		else
-			fprintf(stderr, " %s",
+			fprintf(stream, " %s",
 				css_font_family_name[style->font_family]);
 
 		if (style->font_variant == CSS_FONT_VARIANT_UNKNOWN)
-			fprintf(stderr, " UNKNOWN");
+			fprintf(stream, " UNKNOWN");
 		else if (style->font_variant == CSS_FONT_VARIANT_NOT_SET)
 			;
 		else
-			fprintf(stderr, " %s",
+			fprintf(stream, " %s",
 				css_font_variant_name[style->font_variant]);
-		fprintf(stderr, "; ");
+		fprintf(stream, "; ");
 	}
 
 	if (style->height.height != CSS_HEIGHT_NOT_SET) {
-		fprintf(stderr, "height: ");
+		fprintf(stream, "height: ");
 		switch (style->height.height) {
 		case CSS_HEIGHT_INHERIT:
-			fprintf(stderr, "inherit");
+			fprintf(stream, "inherit");
 			break;
 		case CSS_HEIGHT_AUTO:
-			fprintf(stderr, "auto");
+			fprintf(stream, "auto");
 			break;
 		case CSS_HEIGHT_LENGTH:
-			css_dump_length(&style->height.length);
+			css_dump_length(stream, &style->height.length);
 			break;
 		default:
-			fprintf(stderr, "UNKNOWN");
+			fprintf(stream, "UNKNOWN");
 			break;
 		}
-		fprintf(stderr, "; ");
+		fprintf(stream, "; ");
 	}
 
 	if (style->letter_spacing.letter_spacing !=
 			CSS_LETTER_SPACING_NOT_SET) {
-		fprintf(stderr, "letter-spacing: ");
+		fprintf(stream, "letter-spacing: ");
 		switch (style->letter_spacing.letter_spacing) {
 		case CSS_LETTER_SPACING_INHERIT:
-			fprintf(stderr, "inherit");
+			fprintf(stream, "inherit");
 			break;
 		case CSS_LETTER_SPACING_NORMAL:
-			fprintf(stderr, "normal");
+			fprintf(stream, "normal");
 			break;
 		case CSS_LETTER_SPACING_LENGTH:
-			css_dump_length(&style->letter_spacing.length);
+			css_dump_length(stream, &style->letter_spacing.length);
 			break;
 		default:
-			fprintf(stderr, "UNKNOWN");
+			fprintf(stream, "UNKNOWN");
 			break;
 		}
-		fprintf(stderr, "; ");
+		fprintf(stream, "; ");
 	}
 
 	if (style->list_style_type != CSS_LIST_STYLE_TYPE_NOT_SET ||
@@ -1931,235 +1935,238 @@ void css_dump_style(const struct css_style * const style)
 			CSS_LIST_STYLE_POSITION_NOT_SET ||
 			style->list_style_image.type !=
 			CSS_LIST_STYLE_IMAGE_NOT_SET) {
-		fprintf(stderr, "list-style:");
+		fprintf(stream, "list-style:");
 
 		if (style->list_style_type == CSS_LIST_STYLE_TYPE_UNKNOWN)
-			fprintf(stderr, " UNKNOWN");
+			fprintf(stream, " UNKNOWN");
 		else if (style->list_style_type == CSS_LIST_STYLE_TYPE_NOT_SET)
 			;
 		else
-			fprintf(stderr, " %s",
+			fprintf(stream, " %s",
 					css_list_style_type_name[
 						style->list_style_type]);
 
 		if (style->list_style_position ==
 				CSS_LIST_STYLE_POSITION_UNKNOWN)
-			fprintf(stderr, " UNKNOWN");
+			fprintf(stream, " UNKNOWN");
 		else if (style->list_style_position ==
 				CSS_LIST_STYLE_POSITION_NOT_SET)
 			;
 		else
-			fprintf(stderr, " %s",
+			fprintf(stream, " %s",
 					css_list_style_position_name[
 						style->list_style_position]);
 
 		switch (style->list_style_image.type) {
 		case CSS_LIST_STYLE_IMAGE_INHERIT:
-			fprintf(stderr, " inherit");
+			fprintf(stream, " inherit");
 			break;
 		case CSS_LIST_STYLE_IMAGE_NONE:
-			fprintf(stderr, " none");
+			fprintf(stream, " none");
 			break;
 		case CSS_LIST_STYLE_IMAGE_URI:
-			fprintf(stderr, " url('%s')",
+			fprintf(stream, " url('%s')",
 				style->list_style_image.uri);
 			break;
 		case CSS_LIST_STYLE_IMAGE_NOT_SET:
 			break;
 		default:
-			fprintf(stderr, " UNKNOWN");
+			fprintf(stream, " UNKNOWN");
 		}
-		fprintf(stderr, "; ");
+		fprintf(stream, "; ");
 	}
 
 	if (style->margin[0].margin != CSS_MARGIN_NOT_SET ||
 			style->margin[1].margin != CSS_MARGIN_NOT_SET ||
 			style->margin[2].margin != CSS_MARGIN_NOT_SET ||
 			style->margin[3].margin != CSS_MARGIN_NOT_SET) {
-		fprintf(stderr, "margin:");
+		fprintf(stream, "margin:");
 		for (i = 0; i != 4; i++) {
 			switch (style->margin[i].margin) {
 			case CSS_MARGIN_INHERIT:
-				fprintf(stderr, " inherit");
+				fprintf(stream, " inherit");
 				break;
 			case CSS_MARGIN_LENGTH:
-				fprintf(stderr, " ");
-				css_dump_length(&style->margin[i].value.length);
+				fprintf(stream, " ");
+				css_dump_length(stream,
+						&style->margin[i].value.length);
 				break;
 			case CSS_MARGIN_PERCENT:
-				fprintf(stderr, " %g%%",
+				fprintf(stream, " %g%%",
 					style->margin[i].value.percent);
 				break;
 			case CSS_MARGIN_AUTO:
-				fprintf(stderr, " auto");
+				fprintf(stream, " auto");
 				break;
 			case CSS_MARGIN_NOT_SET:
-				fprintf(stderr, " .");
+				fprintf(stream, " .");
 				break;
 			default:
-				fprintf(stderr, " UNKNOWN");
+				fprintf(stream, " UNKNOWN");
 				break;
 			}
 		}
-		fprintf(stderr, "; ");
+		fprintf(stream, "; ");
 	}
 
 	if (style->max_height.max_height != CSS_MAX_HEIGHT_NOT_SET) {
-		fprintf(stderr, "max-height: ");
+		fprintf(stream, "max-height: ");
 		switch (style->max_height.max_height) {
 		case CSS_MAX_HEIGHT_INHERIT:
-			fprintf(stderr, "inherit");
+			fprintf(stream, "inherit");
 			break;
 		case CSS_MAX_HEIGHT_NONE:
-			fprintf(stderr, "none");
+			fprintf(stream, "none");
 			break;
 		case CSS_MAX_HEIGHT_LENGTH:
-			css_dump_length(&style->max_height.value.length);
+			css_dump_length(stream,
+					&style->max_height.value.length);
 			break;
 		case CSS_MAX_HEIGHT_PERCENT:
-			fprintf(stderr, "%g%%",
+			fprintf(stream, "%g%%",
 				style->max_height.value.percent);
 			break;
 		default:
-			fprintf(stderr, "UNKNOWN");
+			fprintf(stream, "UNKNOWN");
 			break;
 		}
-		fprintf(stderr, "; ");
+		fprintf(stream, "; ");
 	}
 
 	if (style->max_width.max_width != CSS_MAX_WIDTH_NOT_SET) {
-		fprintf(stderr, "max-width: ");
+		fprintf(stream, "max-width: ");
 		switch (style->max_width.max_width) {
 		case CSS_MAX_WIDTH_INHERIT:
-			fprintf(stderr, "inherit");
+			fprintf(stream, "inherit");
 			break;
 		case CSS_MAX_WIDTH_NONE:
-			fprintf(stderr, "none");
+			fprintf(stream, "none");
 			break;
 		case CSS_MAX_WIDTH_LENGTH:
-			css_dump_length(&style->max_width.value.length);
+			css_dump_length(stream, &style->max_width.value.length);
 			break;
 		case CSS_MAX_WIDTH_PERCENT:
-			fprintf(stderr, "%g%%",
+			fprintf(stream, "%g%%",
 				style->max_width.value.percent);
 			break;
 		default:
-			fprintf(stderr, "UNKNOWN");
+			fprintf(stream, "UNKNOWN");
 			break;
 		}
-		fprintf(stderr, "; ");
+		fprintf(stream, "; ");
 	}
 
 	if (style->min_height.min_height != CSS_MIN_HEIGHT_NOT_SET) {
-		fprintf(stderr, "min-height: ");
+		fprintf(stream, "min-height: ");
 		switch (style->min_height.min_height) {
 		case CSS_MIN_HEIGHT_INHERIT:
-			fprintf(stderr, "inherit");
+			fprintf(stream, "inherit");
 			break;
 		case CSS_MIN_HEIGHT_LENGTH:
-			css_dump_length(&style->min_height.value.length);
+			css_dump_length(stream, 
+					&style->min_height.value.length);
 			break;
 		case CSS_MIN_HEIGHT_PERCENT:
-			fprintf(stderr, "%g%%",
+			fprintf(stream, "%g%%",
 				style->min_height.value.percent);
 			break;
 		default:
-			fprintf(stderr, "UNKNOWN");
+			fprintf(stream, "UNKNOWN");
 			break;
 		}
-		fprintf(stderr, "; ");
+		fprintf(stream, "; ");
 	}
 
 	if (style->min_width.min_width != CSS_MIN_WIDTH_NOT_SET) {
-		fprintf(stderr, "min-width: ");
+		fprintf(stream, "min-width: ");
 		switch (style->min_width.min_width) {
 		case CSS_MIN_WIDTH_INHERIT:
-			fprintf(stderr, "inherit");
+			fprintf(stream, "inherit");
 			break;
 		case CSS_MIN_WIDTH_LENGTH:
-			css_dump_length(&style->min_width.value.length);
+			css_dump_length(stream, &style->min_width.value.length);
 			break;
 		case CSS_MIN_WIDTH_PERCENT:
-			fprintf(stderr, "%g%%",
+			fprintf(stream, "%g%%",
 				style->min_width.value.percent);
 			break;
 		default:
-			fprintf(stderr, "UNKNOWN");
+			fprintf(stream, "UNKNOWN");
 			break;
 		}
-		fprintf(stderr, "; ");
+		fprintf(stream, "; ");
 	}
 
 	if (style->orphans.orphans != CSS_ORPHANS_NOT_SET) {
-		fprintf(stderr, "orphans: ");
+		fprintf(stream, "orphans: ");
 		switch (style->orphans.orphans) {
 		case CSS_ORPHANS_INHERIT:
-			fprintf(stderr, "inherit");
+			fprintf(stream, "inherit");
 			break;
 		case CSS_ORPHANS_INTEGER:
-			fprintf(stderr, "%d",
+			fprintf(stream, "%d",
 				style->orphans.value);
 			break;
 		default:
-			fprintf(stderr, "UNKNOWN");
+			fprintf(stream, "UNKNOWN");
 			break;
 		}
-		fprintf(stderr, "; ");
+		fprintf(stream, "; ");
 	}
 
 	if (style->outline.color.color != CSS_OUTLINE_COLOR_NOT_SET ||
 		style->outline.width.width != CSS_BORDER_WIDTH_NOT_SET ||
 		style->outline.style != CSS_BORDER_STYLE_NOT_SET) {
-		fprintf(stderr, "outline:");
+		fprintf(stream, "outline:");
 		switch (style->outline.color.color) {
 		case CSS_OUTLINE_COLOR_INHERIT:
-			fprintf(stderr, " inherit");
+			fprintf(stream, " inherit");
 			break;
 		case CSS_OUTLINE_COLOR_INVERT:
-			fprintf(stderr, " invert");
+			fprintf(stream, " invert");
 			break;
 		case CSS_OUTLINE_COLOR_COLOR:
 			if (style->outline.color.value == TRANSPARENT)
-				fprintf(stderr, " transparent");
+				fprintf(stream, " transparent");
 			else if (style->outline.color.value == CSS_COLOR_NONE)
-				fprintf(stderr, " none");
+				fprintf(stream, " none");
 			else if (style->outline.color.value == CSS_COLOR_INHERIT)
-				fprintf(stderr, " inherit");
+				fprintf(stream, " inherit");
 			else if (style->outline.color.value == CSS_COLOR_NOT_SET)
-				fprintf(stderr, " .");
+				fprintf(stream, " .");
 			else
-				fprintf(stderr, " #%.6lx", style->outline.color.value);
+				fprintf(stream, " #%.6lx", style->outline.color.value);
 			break;
 		case CSS_OUTLINE_COLOR_NOT_SET:
 			break;
 		default:
-			fprintf(stderr, " UNKNOWN");
+			fprintf(stream, " UNKNOWN");
 			break;
 		}
 
 		if (style->outline.style == CSS_BORDER_STYLE_UNKNOWN)
-			fprintf(stderr, " UNKNOWN");
+			fprintf(stream, " UNKNOWN");
 		else if (style->outline.style == CSS_BORDER_STYLE_NOT_SET)
 			;
 		else
-			fprintf(stderr, " %s",
+			fprintf(stream, " %s",
 				css_border_style_name[style->outline.style]);
 
 		switch (style->outline.width.width) {
 		case CSS_BORDER_WIDTH_INHERIT:
-			fprintf(stderr, " inherit");
+			fprintf(stream, " inherit");
 			break;
 		case CSS_BORDER_WIDTH_LENGTH:
-			fprintf(stderr, " ");
-			css_dump_length(&style->outline.width.value);
+			fprintf(stream, " ");
+			css_dump_length(stream, &style->outline.width.value);
 			break;
 		case CSS_BORDER_WIDTH_NOT_SET:
 			break;
 		default:
-			fprintf(stderr, " UNKNOWN");
+			fprintf(stream, " UNKNOWN");
 			break;
 		}
-		fprintf(stderr, "; ");
+		fprintf(stream, "; ");
 	}
 
 	DUMP_KEYWORD(overflow, "overflow", css_overflow_name);
@@ -2168,29 +2175,30 @@ void css_dump_style(const struct css_style * const style)
 			style->padding[1].padding != CSS_PADDING_NOT_SET ||
 			style->padding[2].padding != CSS_PADDING_NOT_SET ||
 			style->padding[3].padding != CSS_PADDING_NOT_SET) {
-		fprintf(stderr, "padding:");
+		fprintf(stream, "padding:");
 		for (i = 0; i != 4; i++) {
 			switch (style->padding[i].padding) {
 			case CSS_PADDING_INHERIT:
-				fprintf(stderr, " inherit");
+				fprintf(stream, " inherit");
 				break;
 			case CSS_PADDING_LENGTH:
-				fprintf(stderr, " ");
-				css_dump_length(&style->padding[i].value.length);
+				fprintf(stream, " ");
+				css_dump_length(stream,
+					&style->padding[i].value.length);
 				break;
 			case CSS_PADDING_PERCENT:
-				fprintf(stderr, " %g%%",
+				fprintf(stream, " %g%%",
 					style->padding[i].value.percent);
 				break;
 			case CSS_PADDING_NOT_SET:
-				fprintf(stderr, " .");
+				fprintf(stream, " .");
 				break;
 			default:
-				fprintf(stderr, " UNKNOWN");
+				fprintf(stream, " UNKNOWN");
 				break;
 			}
 		}
-		fprintf(stderr, "; ");
+		fprintf(stream, "; ");
 	}
 
 	DUMP_KEYWORD(page_break_after, "page-break-after",
@@ -2204,37 +2212,38 @@ void css_dump_style(const struct css_style * const style)
 		if (style->pos[i].pos != CSS_POS_NOT_SET) {
 			switch (i) {
 			case TOP:
-				fprintf(stderr, "top: ");
+				fprintf(stream, "top: ");
 				break;
 			case RIGHT:
-				fprintf(stderr, "right: ");
+				fprintf(stream, "right: ");
 				break;
 			case BOTTOM:
-				fprintf(stderr, "bottom: ");
+				fprintf(stream, "bottom: ");
 				break;
 			case LEFT:
-				fprintf(stderr, "left: ");
+				fprintf(stream, "left: ");
 				break;
 			}
 			switch (style->pos[i].pos) {
 			case CSS_POS_INHERIT:
-				fprintf(stderr, "inherit");
+				fprintf(stream, "inherit");
 				break;
 			case CSS_POS_AUTO:
-				fprintf(stderr, "auto");
+				fprintf(stream, "auto");
 				break;
 			case CSS_POS_PERCENT:
-				fprintf(stderr, "%g%%",
+				fprintf(stream, "%g%%",
 						style->pos[i].value.percent);
 				break;
 			case CSS_POS_LENGTH:
-				css_dump_length(&style->pos[i].value.length);
+				css_dump_length(stream,
+						&style->pos[i].value.length);
 				break;
 			default:
-				fprintf(stderr, "UNKNOWN");
+				fprintf(stream, "UNKNOWN");
 				break;
 			}
-			fprintf(stderr, "; ");
+			fprintf(stream, "; ");
 		}
 	}
 	DUMP_KEYWORD(position, "position", css_position_name);
@@ -2243,40 +2252,41 @@ void css_dump_style(const struct css_style * const style)
 	DUMP_KEYWORD(text_align, "text-align", css_text_align_name);
 
 	if (style->text_decoration != CSS_TEXT_DECORATION_NOT_SET) {
-		fprintf(stderr, "text-decoration:");
+		fprintf(stream, "text-decoration:");
 		if (style->text_decoration == CSS_TEXT_DECORATION_NONE)
-			fprintf(stderr, " none");
+			fprintf(stream, " none");
 		if (style->text_decoration == CSS_TEXT_DECORATION_INHERIT)
-			fprintf(stderr, " inherit");
+			fprintf(stream, " inherit");
 		if (style->text_decoration & CSS_TEXT_DECORATION_UNDERLINE)
-			fprintf(stderr, " underline");
+			fprintf(stream, " underline");
 		if (style->text_decoration & CSS_TEXT_DECORATION_OVERLINE)
-			fprintf(stderr, " overline");
+			fprintf(stream, " overline");
 		if (style->text_decoration & CSS_TEXT_DECORATION_LINE_THROUGH)
-			fprintf(stderr, " line-through");
+			fprintf(stream, " line-through");
 		if (style->text_decoration & CSS_TEXT_DECORATION_BLINK)
-			fprintf(stderr, " blink");
-		fprintf(stderr, "; ");
+			fprintf(stream, " blink");
+		fprintf(stream, "; ");
 	}
 
 	if (style->text_indent.size != CSS_TEXT_INDENT_NOT_SET) {
-		fprintf(stderr, "text-indent: ");
+		fprintf(stream, "text-indent: ");
 		switch (style->text_indent.size) {
 		case CSS_TEXT_INDENT_LENGTH:
-			css_dump_length(&style->text_indent.value.length);
+			css_dump_length(stream,
+					&style->text_indent.value.length);
 			break;
 		case CSS_TEXT_INDENT_PERCENT:
-			fprintf(stderr, "%g%%",
+			fprintf(stream, "%g%%",
 				style->text_indent.value.percent);
 			break;
 		case CSS_TEXT_INDENT_INHERIT:
-			fprintf(stderr, "inherit");
+			fprintf(stream, "inherit");
 			break;
 		default:
-			fprintf(stderr, "UNKNOWN");
+			fprintf(stream, "UNKNOWN");
 			break;
 		}
-		fprintf(stderr, "; ");
+		fprintf(stream, "; ");
 	}
 
 	DUMP_KEYWORD(text_transform, "text-transform", css_text_transform_name);
@@ -2284,144 +2294,145 @@ void css_dump_style(const struct css_style * const style)
 	DUMP_KEYWORD(unicode_bidi, "unicode-bidi", css_unicode_bidi_name);
 
 	if (style->vertical_align.type != CSS_VERTICAL_ALIGN_NOT_SET) {
-		fprintf(stderr, "vertical-align: ");
+		fprintf(stream, "vertical-align: ");
 		switch (style->vertical_align.type) {
 		case CSS_VERTICAL_ALIGN_INHERIT:
-			fprintf(stderr, "inherit");
+			fprintf(stream, "inherit");
 			break;
 		case CSS_VERTICAL_ALIGN_BASELINE:
-			fprintf(stderr, "baseline");
+			fprintf(stream, "baseline");
 			break;
 		case CSS_VERTICAL_ALIGN_SUB:
-			fprintf(stderr, "sub");
+			fprintf(stream, "sub");
 			break;
 		case CSS_VERTICAL_ALIGN_SUPER:
-			fprintf(stderr, "super");
+			fprintf(stream, "super");
 			break;
 		case CSS_VERTICAL_ALIGN_TOP:
-			fprintf(stderr, "top");
+			fprintf(stream, "top");
 			break;
 		case CSS_VERTICAL_ALIGN_TEXT_TOP:
-			fprintf(stderr, "text-top");
+			fprintf(stream, "text-top");
 			break;
 		case CSS_VERTICAL_ALIGN_MIDDLE:
-			fprintf(stderr, "middle");
+			fprintf(stream, "middle");
 			break;
 		case CSS_VERTICAL_ALIGN_BOTTOM:
-			fprintf(stderr, "bottom");
+			fprintf(stream, "bottom");
 			break;
 		case CSS_VERTICAL_ALIGN_TEXT_BOTTOM:
-			fprintf(stderr, "text-bottom");
+			fprintf(stream, "text-bottom");
 			break;
 		case CSS_VERTICAL_ALIGN_LENGTH:
-			css_dump_length(&style->vertical_align.value.length);
+			css_dump_length(stream,
+					&style->vertical_align.value.length);
 			break;
 		case CSS_VERTICAL_ALIGN_PERCENT:
-			fprintf(stderr, "%g%%",
+			fprintf(stream, "%g%%",
 				style->vertical_align.value.percent);
 			break;
 		default:
-			fprintf(stderr, "UNKNOWN");
+			fprintf(stream, "UNKNOWN");
 			break;
 		}
-		fprintf(stderr, "; ");
+		fprintf(stream, "; ");
 	}
 
 	DUMP_KEYWORD(visibility, "visibility", css_visibility_name);
 	DUMP_KEYWORD(white_space, "white-space", css_white_space_name);
 
 	if (style->widows.widows != CSS_WIDOWS_NOT_SET) {
-		fprintf(stderr, "widows: ");
+		fprintf(stream, "widows: ");
 		switch (style->widows.widows) {
 		case CSS_WIDOWS_INHERIT:
-			fprintf(stderr, "inherit");
+			fprintf(stream, "inherit");
 			break;
 		case CSS_WIDOWS_INTEGER:
-			fprintf(stderr, "%d",
+			fprintf(stream, "%d",
 				style->widows.value);
 			break;
 		default:
-			fprintf(stderr, "UNKNOWN");
+			fprintf(stream, "UNKNOWN");
 			break;
 		}
-		fprintf(stderr, "; ");
+		fprintf(stream, "; ");
 	}
 
 	if (style->width.width != CSS_WIDTH_NOT_SET) {
-		fprintf(stderr, "width: ");
+		fprintf(stream, "width: ");
 		switch (style->width.width) {
 		case CSS_WIDTH_INHERIT:
-			fprintf(stderr, "inherit");
+			fprintf(stream, "inherit");
 			break;
 		case CSS_WIDTH_AUTO:
-			fprintf(stderr, "auto");
+			fprintf(stream, "auto");
 			break;
 		case CSS_WIDTH_LENGTH:
-			css_dump_length(&style->width.value.length);
+			css_dump_length(stream, &style->width.value.length);
 			break;
 		case CSS_WIDTH_PERCENT:
-			fprintf(stderr, "%g%%", style->width.value.percent);
+			fprintf(stream, "%g%%", style->width.value.percent);
 			break;
 		default:
-			fprintf(stderr, "UNKNOWN");
+			fprintf(stream, "UNKNOWN");
 			break;
 		}
-		fprintf(stderr, "; ");
+		fprintf(stream, "; ");
 	}
 
 	if (style->word_spacing.word_spacing != CSS_WORD_SPACING_NOT_SET) {
-		fprintf(stderr, "word-spacing: ");
+		fprintf(stream, "word-spacing: ");
 		switch (style->word_spacing.word_spacing) {
 		case CSS_WORD_SPACING_INHERIT:
-			fprintf(stderr, "inherit");
+			fprintf(stream, "inherit");
 			break;
 		case CSS_WORD_SPACING_NORMAL:
-			fprintf(stderr, "normal");
+			fprintf(stream, "normal");
 			break;
 		case CSS_WORD_SPACING_LENGTH:
-			css_dump_length(&style->word_spacing.length);
+			css_dump_length(stream, &style->word_spacing.length);
 			break;
 		default:
-			fprintf(stderr, "UNKNOWN");
+			fprintf(stream, "UNKNOWN");
 			break;
 		}
-		fprintf(stderr, "; ");
+		fprintf(stream, "; ");
 	}
 
 	if (style->z_index.z_index != CSS_Z_INDEX_NOT_SET) {
-		fprintf(stderr, "z-index: ");
+		fprintf(stream, "z-index: ");
 		switch (style->z_index.z_index) {
 		case CSS_Z_INDEX_INHERIT:
-			fprintf(stderr, "inherit");
+			fprintf(stream, "inherit");
 			break;
 		case CSS_Z_INDEX_AUTO:
-			fprintf(stderr, "auto");
+			fprintf(stream, "auto");
 			break;
 		case CSS_Z_INDEX_INTEGER:
-			fprintf(stderr, "%d",
+			fprintf(stream, "%d",
 				style->z_index.value);
 			break;
 		default:
-			fprintf(stderr, "UNKNOWN");
+			fprintf(stream, "UNKNOWN");
 			break;
 		}
-		fprintf(stderr, "; ");
+		fprintf(stream, "; ");
 	}
 
-	fprintf(stderr, "}");
+	fprintf(stream, "}");
 }
 
 
 /**
- * Dump a css_length to stderr.
+ * Dump a css_length to the given stream
  */
 
-void css_dump_length(const struct css_length * const length)
+void css_dump_length(FILE *stream, const struct css_length * const length)
 {
 	if (fabs(length->value) < 0.0001)
-		fprintf(stderr, "0");
+		fprintf(stream, "0");
 	else
-		fprintf(stderr, "%g%s", length->value,
+		fprintf(stream, "%g%s", length->value,
 				css_unit_name[length->unit]);
 }
 
@@ -2480,7 +2491,7 @@ void css_dump_stylesheet(const struct css_stylesheet * stylesheet)
 		for (r = stylesheet->rule[i]; r != 0; r = r->next) {
 			css_dump_selector(r);
 			fprintf(stderr, " <%lx> ", r->specificity);
-			css_dump_style(r->style);
+			css_dump_style(stderr, r->style);
 			fprintf(stderr, "\n");
 		}
 	}
