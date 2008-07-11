@@ -78,3 +78,5 @@ calls, etc.
 We use K&R (2nd edition ANSI C) style, tabs for indent, 80 characters wide,
 lower_case_with_underscores.
 
+See http://www.netsurf-browser.org/developers/StyleGuide.pdf for further
+information and examples.
