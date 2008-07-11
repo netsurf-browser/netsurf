@@ -764,7 +764,7 @@ void layout_block_add_scrollbar(struct box *box, int which)
  *                              	left / right margins
  * \param  padding[4]		Current box paddings. Updated with new box
  *					left / right paddings
- * \param  border[4]		Current box border widths. Updated to with new
+ * \param  border[4]		Current box border widths. Updated with new
  *					box left / right border widths
  * \return			New box width
  */
