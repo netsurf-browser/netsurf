@@ -25,9 +25,10 @@
 #include "desktop/browser.h"
 #include "gtk/gtk_selection.h"
 #include "gtk/gtk_window.h"
+#include "utils/utf8.h"
  
-GString *current_selection;
-GtkClipboard *clipboard;
+static GString *current_selection = NULL;
+static GtkClipboard *clipboard;
  
 static bool copy_handler(const char *text, size_t length, struct box *box,
 		void *handle, const char *whitespace_text,
@@ -63,15 +64,19 @@ bool copy_handler(const char *text, size_t length, struct box *box,
 
 bool gui_copy_to_clipboard(struct selection *s)
 {
-	current_selection = g_string_new(NULL);
 	clipboard = gtk_clipboard_get (GDK_SELECTION_CLIPBOARD);
 	if (s->defined && selection_traverse(s, copy_handler, NULL))
-		gtk_clipboard_set_text (clipboard, current_selection->str, -1);
+		gui_commit_clipboard();
 	return TRUE;
 }
 
 void gui_start_selection(struct gui_window *g)
 {
+	if (current_selection == NULL)
+		current_selection = g_string_new(NULL);
+	else
+		g_string_set_size(current_selection, 0);
+		
 	gtk_widget_grab_focus(GTK_WIDGET(g->drawing_area));
 }
 
@@ -80,18 +85,26 @@ void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
 	char *text;
 	clipboard = gtk_clipboard_get (GDK_SELECTION_CLIPBOARD);
  	text = gtk_clipboard_wait_for_text (clipboard);
- 	if (text)
- 		browser_window_paste_text(g->bw, text,
-						strlen(text), true);
+ 	/* clipboard_wait... converts the string to utf8 for us */
+ 	if (text != NULL)
+		browser_window_paste_text(g->bw, text, strlen(text), true);
+	free(text);
 }
 
 bool gui_empty_clipboard(void)
 {
+	if (!current_selection)
+		current_selection = g_string_new(NULL);
+	else
+		g_string_set_size(current_selection, 0);
+
 	return true;
 }
 
 bool gui_commit_clipboard(void)
 {
+	clipboard = gtk_clipboard_get (GDK_SELECTION_CLIPBOARD);
+	gtk_clipboard_set_text (clipboard, current_selection->str, -1);
 	return true;
 }
  

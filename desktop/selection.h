@@ -84,8 +84,8 @@ void selection_select_all(struct selection *s);
 void selection_set_start(struct selection *s, unsigned idx);
 void selection_set_end(struct selection *s, unsigned idx);
 
-struct box *selection_get_start(struct selection *s, int *pidx);
-struct box *selection_get_end(struct selection *s, int *pidx);
+struct box *selection_get_start(struct selection *s, size_t *pidx);
+struct box *selection_get_end(struct selection *s, size_t *pidx);
 
 bool selection_click(struct selection *s, browser_mouse_state mouse,
 		unsigned idx);
@@ -105,6 +105,8 @@ bool selection_highlighted(struct selection *s, unsigned start, unsigned end,
 bool selection_save_text(struct selection *s, const char *path);
 
 void selection_update(struct selection *s, size_t byte_offset, int change,
-		bool redraw);
+		bool redraw);	
+		
+unsigned selection_label_subtree(struct box *box, unsigned idx);
 
 #endif

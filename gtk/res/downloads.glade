@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
+<!--Generated with glade3 3.4.4 on Mon Jul 14 18:30:15 2008 -->
+<glade-interface>
+  <widget class="GtkWindow" id="wndDownloads">
+    <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+    <property name="title" translatable="yes">NetSurf Downloads</property>
+    <property name="window_position">GTK_WIN_POS_CENTER_ON_PARENT</property>
+    <property name="default_width">500</property>
+    <property name="default_height">300</property>
+    <property name="destroy_with_parent">True</property>
+    <property name="type_hint">GDK_WINDOW_TYPE_HINT_DIALOG</property>
+    <child>
+      <widget class="GtkVBox" id="vbox1">
+        <property name="visible">True</property>
+        <child>
+          <widget class="GtkTreeView" id="treeDownloads">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="headers_clickable">True</property>
+          </widget>
+        </child>
+        <child>
+          <widget class="GtkHBox" id="hbox1">
+            <property name="visible">True</property>
+            <property name="border_width">2</property>
+            <child>
+              <widget class="GtkProgressBar" id="progressBar">
+                <property name="visible">True</property>
+                <property name="fraction">0.20999999344348907</property>
+                <property name="text" translatable="yes">21% of 3 files</property>
+              </widget>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="GtkToolbar" id="toolbar2">
+                <property name="visible">True</property>
+                <property name="toolbar_style">GTK_TOOLBAR_BOTH_HORIZ</property>
+                <property name="show_arrow">False</property>
+                <property name="icon_size">GTK_ICON_SIZE_MENU</property>
+                <property name="icon_size_set">True</property>
+                <child>
+                  <widget class="GtkToolButton" id="buttonPause">
+                    <property name="visible">True</property>
+                    <property name="sensitive">False</property>
+                    <property name="is_important">True</property>
+                    <property name="label"> Pause</property>
+                    <property name="use_underline">True</property>
+                    <property name="stock_id">gtk-media-pause</property>
+                    <signal name="clicked" handler="button_clear_clicked" object="NULL"/>
+                  </widget>
+                  <packing>
+                    <property name="expand">False</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkToolButton" id="buttonResume">
+                    <property name="visible">True</property>
+                    <property name="sensitive">False</property>
+                    <property name="is_important">True</property>
+                    <property name="label"> Resume</property>
+                    <property name="use_underline">True</property>
+                    <property name="stock_id">gtk-media-play</property>
+                  </widget>
+                  <packing>
+                    <property name="expand">False</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkToolButton" id="buttonCancel">
+                    <property name="visible">True</property>
+                    <property name="sensitive">False</property>
+                    <property name="is_important">True</property>
+                    <property name="label"> Cancel</property>
+                    <property name="use_underline">True</property>
+                    <property name="stock_id">gtk-cancel</property>
+                  </widget>
+                  <packing>
+                    <property name="expand">False</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkToolButton" id="buttonClear">
+                    <property name="visible">True</property>
+                    <property name="sensitive">False</property>
+                    <property name="tooltip" translatable="yes">Remove completed or cancelled downloads from the list</property>
+                    <property name="visible_vertical">False</property>
+                    <property name="is_important">True</property>
+                    <property name="label"> Clear</property>
+                    <property name="use_underline">True</property>
+                    <property name="stock_id">gtk-clear</property>
+                    <signal name="clicked" handler="button_clear_clicked"/>
+                  </widget>
+                  <packing>
+                    <property name="expand">False</property>
+                  </packing>
+                </child>
+              </widget>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+          </widget>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">False</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+      </widget>
+    </child>
+  </widget>
+</glade-interface>

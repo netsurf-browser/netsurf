@@ -331,8 +331,7 @@ gboolean nsgtk_window_motion_notify_event(GtkWidget *widget,
    	if (g->mouse->state & BROWSER_MOUSE_PRESS_1){
 		/* Start button 1 drag */
 		browser_window_mouse_click(g->bw, BROWSER_MOUSE_DRAG_1,
-				event->x / g->bw->scale,
-				event->y / g->bw->scale);
+				g->mouse->pressed_x, g->mouse->pressed_y);
 		/* Replace PRESS with HOLDING and declare drag in progress */
 		g->mouse->state ^= (BROWSER_MOUSE_PRESS_1 |
 				BROWSER_MOUSE_HOLDING_1);
@@ -341,8 +340,7 @@ gboolean nsgtk_window_motion_notify_event(GtkWidget *widget,
 	else if (g->mouse->state & BROWSER_MOUSE_PRESS_2){
 		/* Start button 2 drag */
 		browser_window_mouse_click(g->bw, BROWSER_MOUSE_DRAG_2,
-				event->x / g->bw->scale,
-				event->y / g->bw->scale);
+				g->mouse->pressed_x, g->mouse->pressed_y);
 		/* Replace PRESS with HOLDING and declare drag in progress */
 		g->mouse->state ^= (BROWSER_MOUSE_PRESS_2 |
 				BROWSER_MOUSE_HOLDING_2);
@@ -382,9 +380,12 @@ gboolean nsgtk_window_button_press_event(GtkWidget *widget,
 		g->mouse->state |= BROWSER_MOUSE_MOD_1;
 	if (event->state & GDK_CONTROL_MASK) 
 		g->mouse->state |= BROWSER_MOUSE_MOD_2;
+		
+	g->mouse->pressed_x = event->x / g->bw->scale;
+	g->mouse->pressed_y = event->y / g->bw->scale;
 	
-	browser_window_mouse_click(g->bw, g->mouse->state, event->x / g->bw->scale,
-			event->y / g->bw->scale);
+	browser_window_mouse_click(g->bw, g->mouse->state, g->mouse->pressed_x,
+			g->mouse->pressed_y);
 }
 
 gboolean nsgtk_window_button_release_event(GtkWidget *widget,
@@ -462,7 +463,6 @@ gboolean nsgtk_window_keypress_event(GtkWidget *widget, GdkEventKey *event,
 {
 	struct gui_window *g = data;
 	uint32_t nskey = gdkkey_to_nskey(event);
-
 	if (browser_window_key_press(g->bw, nskey))
 		return TRUE;
 

@@ -267,6 +267,12 @@ void gui_init(int argc, char** argv)
                 LOG(("Using '%s' as certificate path", buf));
                 option_ca_path = strdup(buf);
         }
+        
+        if (!option_downloads_directory) {
+        	char *home = getenv("HOME");
+        	LOG(("Using '%s' as download directory", home));
+        	option_downloads_directory = home;
+	}
 
 	find_resource(buf, "messages", "./gtk/res/messages");
 	LOG(("Using '%s' as Messages file", buf));
@@ -301,7 +307,7 @@ void gui_init(int argc, char** argv)
 	wndWarning = GTK_WINDOW(glade_xml_get_widget(gladeWindows, "wndWarning"));
 
 	nsgtk_history_init();
-	nsgtk_download_initialise();
+	nsgtk_download_init();
 }
 
 
@@ -391,6 +397,7 @@ void gui_multitask(void)
 
 void gui_quit(void)
 {
+	nsgtk_download_destroy();
 	urldb_save_cookies(option_cookie_jar);
 	urldb_save(option_url_file);
 	free(default_stylesheet_url);
@@ -400,31 +407,6 @@ void gui_quit(void)
 	gtk_fetch_filetype_fin();
 }
 
-
-
-struct gui_download_window *gui_download_window_create(const char *url,
-		const char *mime_type, struct fetch *fetch,
-		unsigned int total_size)
-{
-	return 0;
-}
-
-
-void gui_download_window_data(struct gui_download_window *dw, const char *data,
-		unsigned int size)
-{
-}
-
-
-void gui_download_window_error(struct gui_download_window *dw,
-		const char *error_msg)
-{
-}
-
-
-void gui_download_window_done(struct gui_download_window *dw)
-{
-}
 
 static void nsgtk_select_menu_clicked(GtkCheckMenuItem *checkmenuitem,
 					gpointer user_data) 

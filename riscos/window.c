@@ -2856,7 +2856,7 @@ bool ro_gui_window_dataload(struct gui_window *g, wimp_message *message)
 
 		const char *filename = message->data.data_xfer.file_name;
 
-		browser_window_mouse_click(g->bw, BROWSER_MOUSE_CLICK_1, pos.x, pos.y);
+		browser_window_mouse_click(g->bw, BROWSER_MOUSE_PRESS_1, pos.x, pos.y);
 
 		if (!ro_gui_window_import_text(g, filename, false))
 			return true;  /* it was for us, it just didn't work! */

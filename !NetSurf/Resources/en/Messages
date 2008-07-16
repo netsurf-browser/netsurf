@@ -298,6 +298,35 @@ DownloadU:%s of unknown  •  %s/s  •  %s total
 Downloaded:%s complete  •  average %s/s  •  %s total
 Unwritten:Writing data to file failed.
 
+# GTK download window tokens
+#
+# This section contains tokens which are used in the gtk
+# download window.
+#
+
+# Column Headers
+#
+gtkProgress:Progress
+gtkDetails:Details
+gtkSpeed:Speed
+gtkRemaining:Remaining
+
+# Status
+#
+gtkError:Error
+gtkComplete:Complete
+gtkCanceled:Canceled
+gtkWorking:Working
+
+# Dialogs
+#
+gtkStartDownload:Download file?
+gtkFailed:Download failed
+gtkFileError:File error: %s
+gtkInfo:%s from %s is %s in size
+gtkSave:Save file as...
+gtkUnknownHost:an unknown host
+gtkUnknownFile:
 
 # Printing user interface tokens
 # ==============================

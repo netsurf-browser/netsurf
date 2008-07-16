@@ -50,7 +50,9 @@
  */
 
 #define IS_INPUT(box) ((box) && (box)->gadget && \
-	((box)->gadget->type == GADGET_TEXTAREA || (box)->gadget->type == GADGET_TEXTBOX))
+	((box)->gadget->type == GADGET_TEXTAREA || \
+		(box)->gadget->type == GADGET_TEXTBOX || \
+		(box)->gadget->type == GADGET_PASSWORD))
 
 /** check whether the given text box is in the same number space as the
     current selection; number spaces are identified by their uppermost nybble */
@@ -69,7 +71,6 @@ static bool redraw_handler(const char *text, size_t length, struct box *box,
 		size_t whitespace_length);
 static void selection_redraw(struct selection *s, unsigned start_idx,
 		unsigned end_idx);
-static unsigned selection_label_subtree(struct box *box, unsigned idx);
 static bool save_handler(const char *text, size_t length, struct box *box,
 		void *handle, const char *whitespace_text,
 		size_t whitespace_length);
@@ -79,8 +80,7 @@ static bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 		unsigned int num_space, seln_traverse_handler handler,
 		void *handle, save_text_whitespace *before, bool *first,
 		bool do_marker);
-static struct box *get_box(struct box *b, unsigned offset, int *pidx);
-
+static struct box *get_box(struct box *b, unsigned offset, size_t *pidx);
 
 /**
  * Creates a new selection object associated with a browser window.
@@ -261,11 +261,14 @@ bool selection_click(struct selection *s, browser_mouse_state mouse,
 		gui_drag_save_selection(s, s->bw->window);
 	}
 	else if (!modkeys) {
-		if (mouse & BROWSER_MOUSE_DRAG_1) {
-					
+		if (pos && (mouse & BROWSER_MOUSE_PRESS_1))
+		/* Clear the selection if mouse is pressed outside the selection,
+		 * Otherwise clear on release (to allow for drags) */
+			selection_clear(s, true);
+		else if (mouse & BROWSER_MOUSE_DRAG_1) {
 			/* start new selection drag */
 			selection_clear(s, true);
-
+			
 			selection_set_start(s, idx);
 			selection_set_end(s, idx);
 
@@ -291,12 +294,13 @@ bool selection_click(struct selection *s, browser_mouse_state mouse,
 			}
 			gui_start_selection(s->bw->window);
 		}
-		else if (pos && (mouse & BROWSER_MOUSE_CLICK_1)) {
-
-			/* clear selection */
-			selection_clear(s, true);
-			s->drag_state = DRAG_NONE;
-		}
+		/* Selection should be cleared when button is released but in
+		 * the RO interface click is the same as press */
+//		else if (!pos && (mouse & BROWSER_MOUSE_CLICK_1)) {
+//			/* clear selection */
+//			selection_clear(s, true);
+//			s->drag_state = DRAG_NONE;
+//		}
 		else if (mouse & BROWSER_MOUSE_CLICK_2) {
 
 			/* ignore Adjust clicks when there's no selection */
@@ -699,15 +703,12 @@ void selection_select_all(struct selection *s)
 	old_end = s->end_idx;
 
 	s->defined = true;
-	s->start_idx = 0;
-	s->end_idx = s->max_idx;
-
-	if (was_defined) {
-		selection_redraw(s, 0, old_start);
-		selection_redraw(s, old_end, s->end_idx);
-	}
+	
+	if (IS_INPUT(s->root))
+		selection_set_start(s, s->root->children->children->byte_offset);
 	else
-		selection_redraw(s, 0, s->max_idx);
+		selection_set_start(s, 0);
+	selection_set_end(s, s->max_idx);
 }
 
 
@@ -722,9 +723,17 @@ void selection_set_start(struct selection *s, unsigned offset)
 {
 	bool was_defined = selection_defined(s);
 	unsigned old_start = s->start_idx;
-
+	
 	s->start_idx = offset;
 	s->defined = (s->start_idx < s->end_idx);
+	
+	if (s->root->gadget && s->defined) {
+		/* update the caret text_box and offset so that it stays at the 
+		 * beginning of the selection */
+		s->root->gadget->caret_text_box = selection_get_start(s, 
+				&s->root->gadget->caret_box_offset);
+		assert(s->root->gadget->caret_text_box != NULL);
+	}
 
 	if (was_defined) {
 		if (offset < old_start)
@@ -773,14 +782,14 @@ void selection_set_end(struct selection *s, unsigned offset)
  * \return ptr to box, or NULL if no selection defined
  */
 
-struct box *get_box(struct box *b, unsigned offset, int *pidx)
+struct box *get_box(struct box *b, unsigned offset, size_t *pidx)
 {
 	struct box *child = b->children;
 
 	if (b->text) {
 
 		if (offset >= b->byte_offset &&
-			offset < b->byte_offset + b->length + b->space) {
+			offset <= b->byte_offset + b->length + b->space) {
 
 			/* it's in this box */
 			*pidx = offset - b->byte_offset;
@@ -810,7 +819,7 @@ struct box *get_box(struct box *b, unsigned offset, int *pidx)
  * \return ptr to box, or NULL if no selection defined
  */
 
-struct box *selection_get_start(struct selection *s, int *pidx)
+struct box *selection_get_start(struct selection *s, size_t *pidx)
 {
 	return (s->defined ? get_box(s->root, s->start_idx, pidx) : NULL);
 }
@@ -824,7 +833,7 @@ struct box *selection_get_start(struct selection *s, int *pidx)
  * \return ptr to box, or NULL if no selection defined.
  */
 
-struct box *selection_get_end(struct selection *s, int *pidx)
+struct box *selection_get_end(struct selection *s, size_t *pidx)
 {
 	return (s->defined ? get_box(s->root, s->end_idx, pidx) : NULL);
 }

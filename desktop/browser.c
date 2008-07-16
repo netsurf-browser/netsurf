@@ -629,7 +629,8 @@ void browser_window_convert_to_download(struct browser_window *bw)
 	if (fetch) {
 		/* create download window */
 		download_window = gui_download_window_create(c->url,
-				c->mime_type, fetch, c->total_size);
+				c->mime_type, fetch, c->total_size, 
+				bw->window);
 
 		if (download_window) {
 			/* extract fetch from content */
@@ -1230,8 +1231,6 @@ void browser_window_mouse_click(struct browser_window *bw,
 	if (!c)
 		return;
 
-	browser_window_remove_caret(bw);
-
 	switch (c->type) {
 	case CONTENT_HTML:
 		browser_window_mouse_action_html(bw, mouse, x, y);
@@ -1426,7 +1425,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 			status = messages_get("FormTextarea");
 			pointer = GUI_POINTER_CARET;
 
-			if (mouse & (BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2)) {
+			if (mouse & (BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_PRESS_2)) {
 				if (text_box && selection_root(bw->sel) != gadget_box)
 					selection_init(bw->sel, gadget_box);
 
@@ -1446,7 +1445,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 				nsfont_position_in_string(text_box->style,
 					text_box->text,
 					text_box->length,
-					x - text_box_x,
+					x - gadget_box_x - text_box->x,
 					&idx,
 					&pixel_offset);
 
@@ -1459,14 +1458,14 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 				} else
 					status = c->status_message;
 			}
-			else if (mouse & BROWSER_MOUSE_CLICK_1)
+			else if (mouse & BROWSER_MOUSE_PRESS_1)
 				selection_clear(bw->sel, true);
 			break;
 		case GADGET_TEXTBOX:
 		case GADGET_PASSWORD:
 			status = messages_get("FormTextbox");
 			pointer = GUI_POINTER_CARET;
-			if ((mouse & BROWSER_MOUSE_CLICK_1) &&
+			if ((mouse & BROWSER_MOUSE_PRESS_1) &&
 					!(mouse & (BROWSER_MOUSE_MOD_1 |
 					BROWSER_MOUSE_MOD_2))) {
 				browser_window_input_click(bw,
@@ -1487,7 +1486,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 				nsfont_position_in_string(text_box->style,
 					text_box->text,
 					text_box->length,
-					x - text_box_x,
+					x - gadget_box_x - text_box->x,
 					&idx,
 					&pixel_offset);
 
@@ -1497,7 +1496,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 				if (selection_dragging(bw->sel))
 					bw->drag_type = DRAGGING_SELECTION;
 			}
-			else if (mouse & BROWSER_MOUSE_CLICK_1)
+			else if (mouse & BROWSER_MOUSE_PRESS_1)
 				selection_clear(bw->sel, true);
 			break;
 		case GADGET_HIDDEN:
@@ -1586,7 +1585,6 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 					/* key presses must be directed at the
 					 * main browser window, paste text
 					 * operations ignored */
-					browser_window_remove_caret(bw);
 
 					if (selection_dragging(bw->sel)) {
 						bw->drag_type =
@@ -1599,7 +1597,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 					done = true;
 				}
 			}
-			else if (mouse & BROWSER_MOUSE_CLICK_1)
+			else if (mouse & BROWSER_MOUSE_PRESS_1)
 				selection_clear(bw->sel, true);
 		}
 
@@ -1838,9 +1836,10 @@ void browser_window_mouse_track_html(struct browser_window *bw,
 			if (box) {
 				int pixel_offset;
 				size_t idx;
+				
 				nsfont_position_in_string(box->style,
 						box->text, box->length,
-						dx, &idx, &pixel_offset);
+						dx, &idx, &pixel_offset);	 
 
 				selection_track(bw->sel, mouse,
 						box->byte_offset + idx);
@@ -2194,7 +2193,7 @@ void browser_window_redraw_rect(struct browser_window *bw, int x, int y,
 void browser_redraw_box(struct content *c, struct box *box)
 {
 	int x, y;
-	union content_msg_data data;
+	union content_msg_data data; 
 
 	box_coords(box, &x, &y);
 

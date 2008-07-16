@@ -21,7 +21,59 @@
 
 #include <gtk/gtk.h>
 
-void nsgtk_download_initialise(void);
-void nsgtk_download_show(void);
+enum {
+	NSGTK_DOWNLOAD_PROGRESS,
+	NSGTK_DOWNLOAD_INFO,
+	NSGTK_DOWNLOAD_REMAINING,
+	NSGTK_DOWNLOAD_SPEED,
+	NSGTK_DOWNLOAD_STATUS,
+	NSGTK_DOWNLOAD,
+
+	NSGTK_DOWNLOAD_N_COLUMNS
+};
+
+typedef enum {
+	NSGTK_DOWNLOAD_WORKING,
+	NSGTK_DOWNLOAD_ERROR,
+	NSGTK_DOWNLOAD_COMPLETE,
+	NSGTK_DOWNLOAD_CANCELED,
+	NSGTK_DOWNLOAD_NONE
+} nsgtk_download_status;
+
+typedef enum {
+	NSGTK_DOWNLOAD_PAUSE 	= 1 << 0,
+	NSGTK_DOWNLOAD_RESUME	= 1 << 1,
+	NSGTK_DOWNLOAD_CANCEL 	= 1 << 2,
+	NSGTK_DOWNLOAD_CLEAR 	= 1 << 3
+} nsgtk_download_actions;
+
+struct gui_download_window {
+	struct fetch *fetch;
+	nsgtk_download_actions sensitivity;
+	nsgtk_download_status status;
+	
+	GString *name;
+	GString *time_left;
+	gint size_total;
+	gint size_downloaded;
+	gint progress;
+	gfloat last_update;
+	gfloat time_remaining;
+	gfloat speed;
+	gchar *filename;
+	
+	GtkTreeRowReference *row;
+	GTimer *timer;
+	GIOChannel *write;
+	GError *error;
+};
+
+typedef	void (*selection_action)(struct gui_download_window *dl);
+
+void nsgtk_download_init();
+void nsgtk_download_destroy (void);
+bool nsgtk_check_for_downloads(GtkWindow *parent);
+void nsgtk_download_show(GtkWindow *parent);
+void nsgtk_download_add(gchar *url, gchar *destination);
 
 #endif

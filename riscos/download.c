@@ -211,7 +211,7 @@ const char *ro_gui_download_temp_name(struct gui_download_window *dw)
 
 struct gui_download_window *gui_download_window_create(const char *url,
 		const char *mime_type, struct fetch *fetch,
-		unsigned int total_size)
+		unsigned int total_size, struct gui_window *gui)
 {
 	const char *temp_name;
 	char *nice, *scheme = NULL;

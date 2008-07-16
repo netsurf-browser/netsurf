@@ -102,6 +102,7 @@ struct menu_events {
 
 static int open_windows = 0;		/**< current number of open browsers */
 static struct gtk_scaffolding *current_model; /**< current window for model dialogue use */
+static gboolean nsgtk_window_delete_event(GtkWidget *, gpointer);
 static void nsgtk_window_destroy_event(GtkWidget *, gpointer);
 
 static void nsgtk_window_update_back_forward(struct gtk_scaffolding *);
@@ -232,6 +233,14 @@ void nsgtk_attach_menu_handlers(GladeXML *xml, gpointer g)
 }
 
 /* event handlers and support functions for them */
+
+gboolean nsgtk_window_delete_event(GtkWidget *widget, gpointer data)
+{
+	if (open_windows == 1 && nsgtk_check_for_downloads(GTK_WINDOW(widget)))
+		return TRUE;
+	else
+		return FALSE;
+}
 
 void nsgtk_window_destroy_event(GtkWidget *widget, gpointer data)
 {
@@ -469,20 +478,24 @@ MENUHANDLER(close_window)
 
 MENUHANDLER(quit)
 {
-	netsurf_quit = true;
+	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
+
+	if (!nsgtk_check_for_downloads(gw->window))
+		netsurf_quit = true;
 	return TRUE;
 }
 
 MENUHANDLER(cut)
 {
 	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
+        struct browser_window *bw = nsgtk_get_browser_for_gui(gw->top_level);
     GtkWidget *focused = gtk_window_get_focus(gw->window);
 	
 	/* If the url bar has focus, let gtk handle it */
 	if (GTK_IS_EDITABLE (focused))
 		gtk_editable_cut_clipboard (GTK_EDITABLE(gw->url_bar));
 	else
-		/* TODO: Implement Cut functionality */;
+		browser_window_key_press(bw, 24);
 }
 
 MENUHANDLER(copy)
@@ -630,7 +643,8 @@ MENUHANDLER(status_bar)
 
 MENUHANDLER(downloads)
 {
-	nsgtk_download_show();
+	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
+	nsgtk_download_show(gw->window);
 	
 	return TRUE;
 }
@@ -876,7 +890,7 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	g->status_pane = GTK_PANED(GET_WIDGET("hpaned1"));
 	
 	g->preferences_dialog = NULL;
-
+	
 	/* set this window's size and position to what's in the options, or
 	 * or some sensible default if they're not set yet.
 	 */
@@ -964,6 +978,7 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 		gtk_widget_hide_on_delete, NULL);
 
 	/* connect signals to handlers. */
+	CONNECT(g->window, "delete-event", nsgtk_window_delete_event, NULL);
 	CONNECT(g->window, "destroy", nsgtk_window_destroy_event, g);
 
 	/* toolbar, URL bar, and menu bar signal handlers */
@@ -1099,6 +1114,11 @@ gboolean nsgtk_scaffolding_is_busy(struct gtk_scaffolding *scaffold)
 {
         /* We are considered "busy" if the stop button is sensitive */
         return GTK_WIDGET_SENSITIVE((GTK_WIDGET(scaffold->stop_button)));
+}
+
+GtkWindow* nsgtk_scaffolding_get_window (struct gui_window *g)
+{
+	return g->scaffold->window;
 }
 
 void nsgtk_scaffolding_popup_menu(struct gtk_scaffolding *g, guint button)

@@ -52,7 +52,6 @@ DECLARE(checkDisablePopups);
 DECLARE(checkDisablePlugins);
 DECLARE(spinHistoryAge);
 DECLARE(checkHoverURLs);
-DECLARE(checkRequestOverwrite);
 DECLARE(checkDisplayRecentURLs);
 DECLARE(checkSendReferer);
 
@@ -81,6 +80,10 @@ DECLARE(fontPreview);
 
 DECLARE(spinMemoryCacheSize);
 DECLARE(spinDiscCacheAge);
+
+DECLARE(checkClearDownloads);
+DECLARE(checkRequestOverwrite);
+DECLARE(fileChooserDownloads);
 
 /* Used when the feature is not implemented yet */
 #define FIND_WIDGET(x) (x) = glade_xml_get_widget(gladeFile, #x); \
@@ -112,7 +115,6 @@ GtkDialog* nsgtk_options_init(struct browser_window *bw, GtkWindow *parent) {
 	//CONNECT(checkDisablePlugins, "toggled");
 	//CONNECT(spinHistoryAge, "focus-out-event");
 	//CONNECT(checkHoverURLs, "toggled");
-	//CONNECT(checkRequestOverwrite, "toggled");
 	CONNECT(checkDisplayRecentURLs, "toggled");
 	CONNECT(checkSendReferer, "toggled");
 
@@ -142,6 +144,10 @@ GtkDialog* nsgtk_options_init(struct browser_window *bw, GtkWindow *parent) {
 	CONNECT(spinMemoryCacheSize, "value-changed");
 	CONNECT(spinDiscCacheAge, "value-changed");
 	
+	CONNECT(checkClearDownloads, "toggled");
+	CONNECT(checkRequestOverwrite, "toggled");
+	CONNECT(fileChooserDownloads, "current-folder-changed");
+	
 	g_signal_connect(G_OBJECT(wndPreferences), "response",
 		G_CALLBACK (dialog_response_handler), NULL);
 	
@@ -166,7 +172,10 @@ GtkDialog* nsgtk_options_init(struct browser_window *bw, GtkWindow *parent) {
 	gtk_combo_box_set_active(GTK_COMBO_BOX((x)), (y))
 #define SET_FONT(x, y) (x) = glade_xml_get_widget(gladeFile, #x); \
 	gtk_font_button_set_font_name(GTK_FONT_BUTTON((x)), (y))
+#define SET_FILE_CHOOSER(x, y) (x) = glade_xml_get_widget(gladeFile, #x); \
+	gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER((x)), (y))
 #define SET_BUTTON(x) (x) = glade_xml_get_widget(gladeFile, #x);
+
 
 void nsgtk_options_load(void) {
 	char b[20];
@@ -219,6 +228,10 @@ void nsgtk_options_load(void) {
 
 	SET_SPIN(spinMemoryCacheSize, option_memory_cache_size >> 20);
 	SET_SPIN(spinDiscCacheAge, option_disc_cache_age);
+	
+	SET_CHECK(checkClearDownloads, option_downloads_clear);
+	SET_CHECK(checkRequestOverwrite, option_request_overwrite);
+	SET_FILE_CHOOSER(fileChooserDownloads, option_downloads_directory);
 }
 
 static void dialog_response_handler (GtkDialog *dlg, gint res_id){
@@ -261,6 +274,9 @@ static gboolean on_dialog_close (GtkDialog *dlg, gboolean stay_alive){
 	LOG(("Signal emitted on '%s'", #x)); \
 	if ((y)) free((y)); \
 	(y) = strdup(gtk_font_button_get_font_name(GTK_FONT_BUTTON((x))));
+#define FILE_CHOOSER_CHANGED(x, y) gboolean on_##x##_changed(GtkWidget *widget, gpointer data) { \
+	LOG(("Signal emitted on '%s'", #x)); \
+	(y) = gtk_file_chooser_get_current_folder(GTK_FILE_CHOOSER((x)));
 #define BUTTON_CLICKED(x) gboolean on_##x##_changed(GtkWidget *widget, gpointer data) { \
 	LOG(("Signal emitted on '%s'", #x));
 
@@ -362,3 +378,7 @@ BUTTON_CLICKED(fontPreview)
 SPIN_CHANGED(spinMemoryCacheSize, option_memory_cache_size)
 	option_memory_cache_size <<= 20;}
 SPIN_CHANGED(spinDiscCacheAge, option_disc_cache_age)}
+
+CHECK_CHANGED(checkClearDownloads, option_downloads_clear)}
+CHECK_CHANGED(checkRequestOverwrite, option_request_overwrite)}
+FILE_CHOOSER_CHANGED(fileChooserDownloads, option_downloads_directory)}

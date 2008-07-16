@@ -29,6 +29,8 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel);
 
 gboolean nsgtk_scaffolding_is_busy(nsgtk_scaffolding *scaffold);
 
+GtkWindow* nsgtk_scaffolding_get_window (struct gui_window *g);
+
 void nsgtk_attach_toplevel_viewport(nsgtk_scaffolding *g, GtkViewport *vp);
 
 void nsgtk_scaffolding_destroy(nsgtk_scaffolding *scaffold);
