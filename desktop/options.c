@@ -141,9 +141,13 @@ unsigned int option_min_reflow_period = 25; /* time in cs */
 /** Maximum simultaneous active fetchers */
 int option_max_fetchers = 24;
 /** Maximum simultaneous active fetchers per host.
- * (<=option_max_fetchers else it makes no sense
+ * (<=option_max_fetchers else it makes no sense)
+ * Note that rfc2616 section 8.1.4 says that there should be no more than
+ * two keepalive connections per host. None of the main browsers follow this
+ * as it slows page fetches down considerably.
+ * See https://bugzilla.mozilla.org/show_bug.cgi?id=423377#c4
  */
-int option_max_fetchers_per_host = 2;
+int option_max_fetchers_per_host = 5;
 /** Maximum number of inactive fetchers cached.
  * The total number of handles netsurf will therefore have open
  * is this plus option_max_fetchers.
