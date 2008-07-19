@@ -1328,16 +1328,19 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 			if (!repeat_x) {
 				if (clip_x0 < x)
 					clip_x0 = x;
-				if (clip_x1 > x + background->background->width)
+				if (clip_x1 > x +
+						background->background->width *
+						scale)
 					clip_x1 = x + background->background->
-							width;
+							width * scale;
 			} else if (!repeat_y) {
 				if (clip_y0 < y)
 					clip_y0 = y;
-				if (clip_y1 > y + background->background->
-						height)
+				if (clip_y1 > y +
+						background->background->height *
+						scale)
 					clip_y1 = y + background->background->
-							height;
+							height * scale;
 			}
 			/* valid clipping rectangles only */
 			if ((clip_x0 < clip_x1) && (clip_y0 < clip_y1)) {
