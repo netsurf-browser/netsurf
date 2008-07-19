@@ -1325,15 +1325,37 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 		}
 		/* and plot the image */
 		if (plot_content) {
-			if (!plot.clip(clip_x0, clip_y0, clip_x1, clip_y1))
+			if (!repeat_x) {
+				if (clip_x0 < x)
+					clip_x0 = x;
+				if (clip_x1 > x + background->background->width)
+					clip_x1 = x + background->background->
+							width;
+			} else if (!repeat_y) {
+				if (clip_y0 < y)
+					clip_y0 = y;
+				if (clip_y1 > y + background->background->
+						height)
+					clip_y1 = y + background->background->
+							height;
+			}
+			/* valid clipping rectangles only */
+			if ((clip_x0 < clip_x1) && (clip_y0 < clip_y1)) {
+				if (!plot.clip(clip_x0, clip_y0,
+						clip_x1, clip_y1))
 					return false;
-			if (!content_redraw_tiled(background->background, x, y,
-				ceilf(background->background->width * scale),
-				ceilf(background->background->height * scale),
-				clip_x0, clip_y0, clip_x1, clip_y1, scale,
-				*background_colour,
-				repeat_x, repeat_y))
-				return false;
+				if (!content_redraw_tiled(background->
+						background, x, y,
+						ceilf(background->background->
+						width * scale),
+						ceilf(background->background->
+						height * scale),
+						clip_x0, clip_y0,
+						clip_x1, clip_y1,
+						scale, *background_colour,
+						repeat_x, repeat_y))
+					return false;
+			}
 		}
 
 		/* only <tr> rows being clipped to child boxes loop */
@@ -1481,7 +1503,7 @@ bool html_redraw_scrollbars(struct box *box, float scale,
 	colour vcolour = box->style->border[RIGHT].color;
 	colour hcolour = box->style->border[BOTTOM].color;
 
-	/** \todo We probably want to clamp to either end of the spectrum, 
+	/** \todo We probably want to clamp to either end of the spectrum,
 	 * rather than simply taking the inverse colour. */
 	if (vcolour == TRANSPARENT || vcolour == background_colour)
 		vcolour = background_colour ^ 0xffffff;
