@@ -867,8 +867,6 @@ bool browser_window_input_callback(struct browser_window *bw,
 	struct box *input = (struct box *)p;
 	struct box *text_box = input->children->children;
 	size_t box_offset = input->gadget->caret_box_offset;
-	size_t form_offset = input->gadget->caret_form_offset = 
-			get_form_offset(input, text_box, box_offset);
 	size_t end_offset;
 	int pixel_offset = input->gadget->caret_pixel_offset;
 	int box_x, box_y;
@@ -878,7 +876,10 @@ bool browser_window_input_callback(struct browser_window *bw,
 	unsigned int utf8_len;
 	bool to_textarea = false;
 	bool selection_exists = bw->sel->defined;
-	
+
+	input->gadget->caret_form_offset = 
+			get_form_offset(input, text_box, box_offset);
+
 	selection_get_end(bw->sel, &end_offset);
 
 	box_coords(input, &box_x, &box_y);
