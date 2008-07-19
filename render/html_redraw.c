@@ -329,11 +329,15 @@ bool html_redraw_box(struct box *box,
 
 	/* bg_box == NULL implies that this box should not have
 	 * its background rendered. Otherwise filter out linebreaks,
-	 * optimize away non-differing inlines and ensure the bg_box
+	 * optimize away non-differing inlines, only plot background
+	 * for BOX_TEXT if parent is a BOX_INLINE and ensure the bg_box
 	 * has something worth rendering */
 	if (bg_box && (bg_box->style && bg_box->type != BOX_BR &&
 			(bg_box->type != BOX_INLINE ||
 			bg_box->style != bg_box->parent->parent->style)) &&
+			(!bg_box->parent || !bg_box->parent->parent ||
+			bg_box->type != BOX_TEXT || (bg_box->type == BOX_TEXT &&
+			bg_box->parent->type == BOX_INLINE)) &&
 			((bg_box->style->background_color != TRANSPARENT) ||
 			(bg_box->background))) {
 		/* find intersection of clip box and border edge */
