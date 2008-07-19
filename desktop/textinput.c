@@ -2014,8 +2014,10 @@ bool textarea_cut(struct browser_window *bw,
 
 	/* and the last box */
 	if (box) {
-		if (clipboard && gui_add_to_clipboard(box->text + start_idx, 
+		if (clipboard && !gui_add_to_clipboard(box->text + start_idx, 
 				end_idx - start_idx, end_idx > box->length)) {
+			success = false;
+		} else {
 			if (del) {
 				if (!delete_handler(bw, box, start_idx, 
 						end_idx - start_idx))
@@ -2024,8 +2026,6 @@ bool textarea_cut(struct browser_window *bw,
 				textbox_delete(bw, box, start_idx, 
 						end_idx - start_idx);
 			}
-		} else {
-			success = false;
 		}
 	}
 
