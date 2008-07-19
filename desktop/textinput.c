@@ -84,7 +84,7 @@ static struct box *line_above(struct box *text_box);
 static struct box *line_below(struct box *text_box);
 static bool textarea_cut(struct browser_window *bw,
 		struct box *start_box, unsigned start_idx,
-		struct box *end_box, unsigned end_idx);
+		struct box *end_box, unsigned end_idx, bool clipboard);
 static void textarea_reflow(struct browser_window *bw, struct box *textarea,
 		struct box *inline_container);
 static bool word_left(const char *text, size_t *poffset, size_t *pchars);
@@ -396,7 +396,7 @@ bool browser_window_textarea_callback(struct browser_window *bw,
 		if (selection_exists)
 			selection_clear(bw->sel, false);
 
-		textarea_cut(bw, start_box, 0, text_box, char_offset);
+		textarea_cut(bw, start_box, 0, text_box, char_offset, false);
 		text_box = start_box;
 		char_offset = 0;
 		reflow = true;
@@ -415,7 +415,8 @@ bool browser_window_textarea_callback(struct browser_window *bw,
 			char_offset < text_box->length + text_box->space) {
 			/* there's something at the end of the line to delete */
 			textarea_cut(bw, text_box, char_offset,
-				end_box, end_box->length + end_box->space);
+				end_box, end_box->length + end_box->space, 
+				false);
 			reflow = true;
 			break;
 		}
@@ -494,7 +495,7 @@ bool browser_window_textarea_callback(struct browser_window *bw,
 		if (selection_exists)
 			selection_clear(bw->sel, false);
 
-		textarea_cut(bw, start_box, 0, end_box, end_box->length);
+		textarea_cut(bw, start_box, 0, end_box, end_box->length, false);
 
 		text_box = start_box;
 		char_offset = 0;
@@ -521,7 +522,7 @@ bool browser_window_textarea_callback(struct browser_window *bw,
 		if (start_box && end_box) {
 			selection_clear(bw->sel, false);
 			textarea_cut(bw, start_box, start_idx, 
-					end_box, end_idx);
+					end_box, end_idx, true);
 			text_box = start_box;
 			char_offset = start_idx;
 			reflow = true;
@@ -1004,7 +1005,8 @@ bool browser_window_input_callback(struct browser_window *bw,
 		if (selection_exists)
 			selection_clear(bw->sel, false);
 
-		textarea_cut(bw, text_box, 0, text_box, text_box->length);
+		textarea_cut(bw, text_box, 0, text_box, text_box->length, 
+				false);
 		box_offset = 0;
 
 		changed = true;
@@ -1028,7 +1030,7 @@ bool browser_window_input_callback(struct browser_window *bw,
 		if (start_box && end_box) {
 			selection_clear(bw->sel, false);
 			textarea_cut(bw, start_box, start_idx, 
-					end_box, end_idx);
+					end_box, end_idx, true);
 
 			text_box = start_box;
 			box_offset = start_idx;
@@ -1094,7 +1096,7 @@ bool browser_window_input_callback(struct browser_window *bw,
 		if (box_offset == 0)
 			return true;
 
-		textarea_cut(bw, text_box, 0, text_box, box_offset);
+		textarea_cut(bw, text_box, 0, text_box, box_offset, false);
 		box_offset = 0;
 
 		changed = true;
@@ -1108,7 +1110,7 @@ bool browser_window_input_callback(struct browser_window *bw,
 			return true;
 
 		textarea_cut(bw, text_box, box_offset, 
-				text_box, text_box->length);
+				text_box, text_box->length, false);
 
 		changed = true;
 		break;
@@ -1948,25 +1950,28 @@ struct box *textarea_insert_break(struct browser_window *bw,
 
 
 /**
- * Cut a range of text to the global clipboard.
+ * Cut a range of text from a text box, 
+ * possibly placing it on the global clipboard.
  *
  * \param  bw  browser window
  * \param  start_box  text box at start of range
  * \param  start_idx  index (bytes) within start box
  * \param  end_box    text box at end of range
  * \param  end_idx    index (bytes) within end box
+ * \param  clipboard  whether to place text on the clipboard
  * \return true iff successful
  */
 
 bool textarea_cut(struct browser_window *bw,
 		struct box *start_box, unsigned start_idx,
-		struct box *end_box, unsigned end_idx)
+		struct box *end_box, unsigned end_idx,
+		bool clipboard)
 {
 	struct box *box = start_box;
 	bool success = true;
 	bool del = false;	/* caller expects start_box to persist */
 
-	if (!gui_empty_clipboard())
+	if (clipboard && !gui_empty_clipboard())
 		return false;
 
 	while (box && box != end_box) {
@@ -1974,14 +1979,16 @@ bool textarea_cut(struct browser_window *bw,
 		struct box *next = box->next;
 
 		if (box->type == BOX_BR) {
-			if (!gui_add_to_clipboard("\n", 1, false)) {
+			if (clipboard && 
+					!gui_add_to_clipboard("\n", 1, false)) {
 				gui_commit_clipboard();
 				return false;
 			}
 			box_unlink_and_free(box);
 		} else {
 			/* append box text to clipboard and then delete it */
-			if (!gui_add_to_clipboard(box->text + start_idx,
+			if (clipboard &&
+				!gui_add_to_clipboard(box->text + start_idx,
 					box->length - start_idx, box->space)) {
 				gui_commit_clipboard();
 				return false;
@@ -1989,7 +1996,8 @@ bool textarea_cut(struct browser_window *bw,
 
 			if (del) {
 				if (!delete_handler(bw, box, start_idx,
-					(box->length + box->space) - start_idx)) {
+						(box->length + box->space) - 
+						start_idx) && clipboard) {
 					gui_commit_clipboard();
 					return false;
 				}
@@ -2006,7 +2014,7 @@ bool textarea_cut(struct browser_window *bw,
 
 	/* and the last box */
 	if (box) {
-		if (gui_add_to_clipboard(box->text + start_idx, 
+		if (clipboard && gui_add_to_clipboard(box->text + start_idx, 
 				end_idx - start_idx, end_idx > box->length)) {
 			if (del) {
 				if (!delete_handler(bw, box, start_idx, 
@@ -2021,7 +2029,10 @@ bool textarea_cut(struct browser_window *bw,
 		}
 	}
 
-	return gui_commit_clipboard() ? success : false;
+	if (clipboard && !gui_commit_clipboard())
+		success = false;
+
+	return success;
 }
 
 
