@@ -49,7 +49,8 @@
 static bool html_redraw_box(struct box *box,
 		int x, int y,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-		float scale, colour current_background_color);
+		float scale, colour current_background_color,
+		int inline_depth);
 static bool html_redraw_box_children(struct box *box,
 		int x_parent, int y_parent,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
@@ -128,7 +129,7 @@ bool html_redraw(struct content *c, int x, int y,
 
 	result = html_redraw_box(box, x, y,
 			clip_x0, clip_y0, clip_x1, clip_y1,
-			scale, background_colour);
+			scale, background_colour, 0);
 
 	knockout_plot_end();
 
@@ -149,6 +150,7 @@ bool html_redraw(struct content *c, int x, int y,
  * \param  clip_y1  clip rectangle
  * \param  scale    scale for redraw
  * \param  current_background_color  background colour under this box
+ * \param  inline_depth  depth of nested inlines inside an inline container
  * \return true if successful, false otherwise
  *
  * x, y, clip_[xy][01] are in target coordinates.
@@ -157,7 +159,8 @@ bool html_redraw(struct content *c, int x, int y,
 bool html_redraw_box(struct box *box,
 		int x_parent, int y_parent,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-		float scale, colour current_background_color)
+		float scale, colour current_background_color,
+		int inline_depth)
 {
 	int x, y;
 	int width, height;
@@ -330,14 +333,13 @@ bool html_redraw_box(struct box *box,
 	/* bg_box == NULL implies that this box should not have
 	 * its background rendered. Otherwise filter out linebreaks,
 	 * optimize away non-differing inlines, only plot background
-	 * for BOX_TEXT if parent is a BOX_INLINE and ensure the bg_box
+	 * for BOX_TEXT it's in an inline and ensure the bg_box
 	 * has something worth rendering */
 	if (bg_box && (bg_box->style && bg_box->type != BOX_BR &&
 			(bg_box->type != BOX_INLINE ||
 			bg_box->style != bg_box->parent->parent->style)) &&
-			(!bg_box->parent || !bg_box->parent->parent ||
-			bg_box->type != BOX_TEXT || (bg_box->type == BOX_TEXT &&
-			bg_box->parent->type == BOX_INLINE)) &&
+			(bg_box->type != BOX_TEXT ||
+			(bg_box->type == BOX_TEXT && inline_depth > 0)) &&
 			((bg_box->style->background_color != TRANSPARENT) ||
 			(bg_box->background))) {
 		/* find intersection of clip box and border edge */
@@ -443,7 +445,7 @@ bool html_redraw_box(struct box *box,
 				x_parent + box->x - box->scroll_x,
 				y_parent + box->y - box->scroll_y,
 				clip_x0, clip_y0, clip_x1, clip_y1,
-				scale, current_background_color))
+				scale, current_background_color, 0))
 			return false;
 
 	/* scrollbars */
@@ -484,23 +486,30 @@ bool html_redraw_box_children(struct box *box,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale, colour current_background_color)
 {
+	int inline_depth = 0;
 	struct box *c;
 
-	for (c = box->children; c; c = c->next)
+	for (c = box->children; c; c = c->next) {
+		if (c->type == BOX_INLINE)
+			inline_depth++;
+		else if (c->type == BOX_INLINE_END)
+			inline_depth--;
+
 		if (c->type != BOX_FLOAT_LEFT && c->type != BOX_FLOAT_RIGHT)
 			if (!html_redraw_box(c,
 					x_parent + box->x - box->scroll_x,
 					y_parent + box->y - box->scroll_y,
 					clip_x0, clip_y0, clip_x1, clip_y1,
-					scale, current_background_color))
+					scale, current_background_color,
+					inline_depth))
 				return false;
-
+	}
 	for (c = box->float_children; c; c = c->next_float)
 		if (!html_redraw_box(c,
 				x_parent + box->x - box->scroll_x,
 				y_parent + box->y - box->scroll_y,
 				clip_x0, clip_y0, clip_x1, clip_y1,
-				scale, current_background_color))
+				scale, current_background_color, 0))
 			return false;
 
 	return true;
