@@ -1743,7 +1743,7 @@ bool textbox_delete(struct browser_window *bw, struct box *text_box,
 		memmove(form->gadget->value + form_offset,
 				form->gadget->value + next_offset,
 				form->gadget->length - next_offset);
-		form->gadget->length -= utf8_len;
+		form->gadget->length -= (next_offset - form_offset);
 		form->gadget->value[form->gadget->length] = 0;
 	}
 	
