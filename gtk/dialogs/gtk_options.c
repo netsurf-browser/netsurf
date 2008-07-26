@@ -317,7 +317,7 @@ COMBO_CHANGED(comboProxyType, proxy_type)
 			option_http_proxy_auth = OPTION_HTTP_PROXY_AUTH_NTLM;
 			break;
 	}
-	gboolean sensitive = (!proxy_type == 0);
+	gboolean sensitive = (option_http_proxy_auth);
 	gtk_widget_set_sensitive (entryProxyHost, sensitive);
 	gtk_widget_set_sensitive (entryProxyPort, sensitive);
 	gtk_widget_set_sensitive (entryProxyUser, sensitive);

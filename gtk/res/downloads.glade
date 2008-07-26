@@ -1,7 +1,6 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.4 on Mon Jul 14 18:30:15 2008 -->
+<?xml version="1.0"?>
 <glade-interface>
+  <requires-version lib="gtk+" version="2.12"/>
   <widget class="GtkWindow" id="wndDownloads">
     <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
     <property name="title" translatable="yes">NetSurf Downloads</property>
@@ -14,94 +13,136 @@
       <widget class="GtkVBox" id="vbox1">
         <property name="visible">True</property>
         <child>
-          <widget class="GtkTreeView" id="treeDownloads">
+          <widget class="GtkScrolledWindow" id="scrolledwindow1">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
-            <property name="headers_clickable">True</property>
+            <property name="hscrollbar_policy">GTK_POLICY_NEVER</property>
+            <property name="vscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
+            <child>
+              <widget class="GtkTreeView" id="treeDownloads">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="search_column">2</property>
+                <property name="show_expanders">False</property>
+                <property name="rubber_banding">True</property>
+              </widget>
+            </child>
           </widget>
+        </child>
+        <child>
+          <widget class="GtkHSeparator" id="hseparator1">
+            <property name="visible">True</property>
+          </widget>
+          <packing>
+            <property name="expand">False</property>
+            <property name="position">1</property>
+          </packing>
         </child>
         <child>
           <widget class="GtkHBox" id="hbox1">
             <property name="visible">True</property>
-            <property name="border_width">2</property>
             <child>
-              <widget class="GtkProgressBar" id="progressBar">
+              <widget class="GtkAlignment" id="alignment1">
                 <property name="visible">True</property>
-                <property name="fraction">0.20999999344348907</property>
-                <property name="text" translatable="yes">21% of 3 files</property>
+                <property name="top_padding">2</property>
+                <property name="bottom_padding">2</property>
+                <property name="left_padding">2</property>
+                <property name="right_padding">2</property>
+                <child>
+                  <widget class="GtkProgressBar" id="progressBar">
+                    <property name="visible">True</property>
+                    <property name="show_text">True</property>
+                    <property name="text" translatable="yes">0% of 0 files</property>
+                  </widget>
+                </child>
               </widget>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">False</property>
-              </packing>
             </child>
             <child>
-              <widget class="GtkToolbar" id="toolbar2">
+              <widget class="GtkHButtonBox" id="hbuttonbox1">
                 <property name="visible">True</property>
-                <property name="toolbar_style">GTK_TOOLBAR_BOTH_HORIZ</property>
-                <property name="show_arrow">False</property>
-                <property name="icon_size">GTK_ICON_SIZE_MENU</property>
-                <property name="icon_size_set">True</property>
+                <property name="homogeneous">True</property>
+                <property name="layout_style">GTK_BUTTONBOX_END</property>
                 <child>
-                  <widget class="GtkToolButton" id="buttonPause">
+                  <widget class="GtkButton" id="buttonPause">
                     <property name="visible">True</property>
                     <property name="sensitive">False</property>
-                    <property name="is_important">True</property>
-                    <property name="label"> Pause</property>
-                    <property name="use_underline">True</property>
-                    <property name="stock_id">gtk-media-pause</property>
-                    <signal name="clicked" handler="button_clear_clicked" object="NULL"/>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="label" translatable="yes">gtk-media-pause</property>
+                    <property name="relief">GTK_RELIEF_NONE</property>
+                    <property name="use_stock">True</property>
+                    <property name="response_id">0</property>
+                  </widget>
+                </child>
+                <child>
+                  <widget class="GtkButton" id="buttonPlay">
+                    <property name="visible">True</property>
+                    <property name="sensitive">False</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="relief">GTK_RELIEF_NONE</property>
+                    <property name="response_id">0</property>
+                    <child>
+                      <widget class="GtkHBox" id="hbox2">
+                        <property name="visible">True</property>
+                        <child>
+                          <widget class="GtkImage" id="image1">
+                            <property name="visible">True</property>
+                            <property name="stock">gtk-media-play</property>
+                            <property name="icon_size">2</property>
+                          </widget>
+                        </child>
+                        <child>
+                          <widget class="GtkLabel" id="label1">
+                            <property name="visible">True</property>
+                            <property name="label" translatable="yes">Resume</property>
+                          </widget>
+                          <packing>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </widget>
+                    </child>
                   </widget>
                   <packing>
-                    <property name="expand">False</property>
+                    <property name="position">1</property>
                   </packing>
                 </child>
                 <child>
-                  <widget class="GtkToolButton" id="buttonResume">
+                  <widget class="GtkButton" id="buttonCancel">
                     <property name="visible">True</property>
                     <property name="sensitive">False</property>
-                    <property name="is_important">True</property>
-                    <property name="label"> Resume</property>
-                    <property name="use_underline">True</property>
-                    <property name="stock_id">gtk-media-play</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="label" translatable="yes">gtk-cancel</property>
+                    <property name="relief">GTK_RELIEF_NONE</property>
+                    <property name="use_stock">True</property>
+                    <property name="response_id">0</property>
                   </widget>
                   <packing>
-                    <property name="expand">False</property>
+                    <property name="position">2</property>
                   </packing>
                 </child>
                 <child>
-                  <widget class="GtkToolButton" id="buttonCancel">
+                  <widget class="GtkButton" id="buttonClear">
                     <property name="visible">True</property>
                     <property name="sensitive">False</property>
-                    <property name="is_important">True</property>
-                    <property name="label"> Cancel</property>
-                    <property name="use_underline">True</property>
-                    <property name="stock_id">gtk-cancel</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="label" translatable="yes">gtk-clear</property>
+                    <property name="relief">GTK_RELIEF_NONE</property>
+                    <property name="use_stock">True</property>
+                    <property name="response_id">0</property>
                   </widget>
                   <packing>
-                    <property name="expand">False</property>
-                  </packing>
-                </child>
-                <child>
-                  <widget class="GtkToolButton" id="buttonClear">
-                    <property name="visible">True</property>
-                    <property name="sensitive">False</property>
-                    <property name="tooltip" translatable="yes">Remove completed or cancelled downloads from the list</property>
-                    <property name="visible_vertical">False</property>
-                    <property name="is_important">True</property>
-                    <property name="label"> Clear</property>
-                    <property name="use_underline">True</property>
-                    <property name="stock_id">gtk-clear</property>
-                    <signal name="clicked" handler="button_clear_clicked"/>
-                  </widget>
-                  <packing>
-                    <property name="expand">False</property>
+                    <property name="position">3</property>
                   </packing>
                 </child>
               </widget>
               <packing>
                 <property name="expand">False</property>
                 <property name="fill">False</property>
+                <property name="pack_type">GTK_PACK_END</property>
                 <property name="position">1</property>
               </packing>
             </child>
@@ -109,7 +150,7 @@
           <packing>
             <property name="expand">False</property>
             <property name="fill">False</property>
-            <property name="position">1</property>
+            <property name="position">2</property>
           </packing>
         </child>
       </widget>

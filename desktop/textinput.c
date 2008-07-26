@@ -880,6 +880,10 @@ bool browser_window_input_callback(struct browser_window *bw,
 	input->gadget->caret_form_offset = 
 			get_form_offset(input, text_box, box_offset);
 
+	/* update the form offset */
+	input->gadget->caret_form_offset = 
+			get_form_offset(input, text_box, box_offset);
+	
 	selection_get_end(bw->sel, &end_offset);
 
 	box_coords(input, &box_x, &box_y);

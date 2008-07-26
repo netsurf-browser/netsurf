@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Rob Kendrick <rjek@netsurf-browser.org>
+ * Copyright 2008 Michael Lester <element3260@gmail.com>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -26,6 +26,7 @@ enum {
 	NSGTK_DOWNLOAD_INFO,
 	NSGTK_DOWNLOAD_REMAINING,
 	NSGTK_DOWNLOAD_SPEED,
+	NSGTK_DOWNLOAD_PULSE,
 	NSGTK_DOWNLOAD_STATUS,
 	NSGTK_DOWNLOAD,
 
@@ -33,11 +34,11 @@ enum {
 };
 
 typedef enum {
+	NSGTK_DOWNLOAD_NONE,
 	NSGTK_DOWNLOAD_WORKING,
 	NSGTK_DOWNLOAD_ERROR,
 	NSGTK_DOWNLOAD_COMPLETE,
-	NSGTK_DOWNLOAD_CANCELED,
-	NSGTK_DOWNLOAD_NONE
+	NSGTK_DOWNLOAD_CANCELED
 } nsgtk_download_status;
 
 typedef enum {
@@ -57,18 +58,17 @@ struct gui_download_window {
 	gint size_total;
 	gint size_downloaded;
 	gint progress;
-	gfloat last_update;
 	gfloat time_remaining;
+	gfloat start_time;
 	gfloat speed;
 	gchar *filename;
 	
 	GtkTreeRowReference *row;
-	GTimer *timer;
 	GIOChannel *write;
 	GError *error;
 };
 
-typedef	void (*selection_action)(struct gui_download_window *dl);
+typedef	void (*nsgtk_download_selection_action)(struct gui_download_window *dl);
 
 void nsgtk_download_init();
 void nsgtk_download_destroy (void);

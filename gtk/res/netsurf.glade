@@ -1,7 +1,6 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--*- mode: xml -*-->
+<?xml version="1.0"?>
 <glade-interface>
+  <requires-version lib="gtk+" version="2.12"/>
   <widget class="GtkWindow" id="wndBrowser">
     <property name="title" translatable="yes">NetSurf</property>
     <property name="window_position">GTK_WIN_POS_CENTER</property>
@@ -24,7 +23,6 @@
                         <property name="tooltip" translatable="yes">Opens a new browser window.</property>
                         <property name="label" translatable="yes">_New Window</property>
                         <property name="use_underline">True</property>
-                        <accelerator key="N" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                         <child internal-child="image">
                           <widget class="GtkImage" id="image554">
                             <property name="visible">True</property>
@@ -32,6 +30,7 @@
                             <property name="icon_size">1</property>
                           </widget>
                         </child>
+                        <accelerator key="N" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
                     <child>
@@ -40,7 +39,6 @@
                         <property name="tooltip" translatable="yes">Open a file on your computer into this browser window.</property>
                         <property name="label" translatable="yes">_Open File...</property>
                         <property name="use_underline">True</property>
-                        <accelerator key="F" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                         <child internal-child="image">
                           <widget class="GtkImage" id="image555">
                             <property name="visible">True</property>
@@ -48,6 +46,7 @@
                             <property name="icon_size">1</property>
                           </widget>
                         </child>
+                        <accelerator key="F" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
                     <child>
@@ -56,7 +55,6 @@
                         <property name="tooltip" translatable="yes">Close this browser window.</property>
                         <property name="label" translatable="yes">_Close Window</property>
                         <property name="use_underline">True</property>
-                        <accelerator key="W" modifiers="GDK_SHIFT_MASK | GDK_CONTROL_MASK" signal="activate"/>
                         <child internal-child="image">
                           <widget class="GtkImage" id="image556">
                             <property name="visible">True</property>
@@ -64,6 +62,7 @@
                             <property name="icon_size">1</property>
                           </widget>
                         </child>
+                        <accelerator key="W" signal="activate" modifiers="GDK_SHIFT_MASK | GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
                     <child>
@@ -78,7 +77,6 @@
                         <property name="tooltip" translatable="yes">Save this page to disc, optionally including images, etc.</property>
                         <property name="label" translatable="yes">Save page...</property>
                         <property name="use_underline">True</property>
-                        <accelerator key="S" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                         <child internal-child="image">
                           <widget class="GtkImage" id="image557">
                             <property name="visible">True</property>
@@ -86,6 +84,7 @@
                             <property name="icon_size">1</property>
                           </widget>
                         </child>
+                        <accelerator key="S" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
                     <child>
@@ -166,7 +165,6 @@
                         <property name="tooltip" translatable="yes">Produce a hardcopy on your printer.</property>
                         <property name="label" translatable="yes">Print...</property>
                         <property name="use_underline">True</property>
-                        <accelerator key="P" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                         <child internal-child="image">
                           <widget class="GtkImage" id="image559">
                             <property name="visible">True</property>
@@ -174,6 +172,7 @@
                             <property name="icon_size">1</property>
                           </widget>
                         </child>
+                        <accelerator key="P" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
                     <child>
@@ -245,7 +244,7 @@
                         <property name="label">gtk-select-all</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                        <accelerator key="a" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+                        <accelerator key="a" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
                     <child>
@@ -260,7 +259,7 @@
                         <property name="tooltip" translatable="yes">Find specific text in the current browser window.</property>
                         <property name="label" translatable="yes">_Find...</property>
                         <property name="use_underline">True</property>
-                        <accelerator key="F" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+                        <accelerator key="F" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
                     <child>
@@ -299,7 +298,6 @@
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">_Stop</property>
                         <property name="use_underline">True</property>
-                        <accelerator key="Escape" modifiers="" signal="activate"/>
                         <child internal-child="image">
                           <widget class="GtkImage" id="image561">
                             <property name="visible">True</property>
@@ -307,6 +305,7 @@
                             <property name="icon_size">1</property>
                           </widget>
                         </child>
+                        <accelerator key="Escape" signal="activate"/>
                       </widget>
                     </child>
                     <child>
@@ -314,7 +313,6 @@
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">_Reload</property>
                         <property name="use_underline">True</property>
-                        <accelerator key="F5" modifiers="" signal="activate"/>
                         <child internal-child="image">
                           <widget class="GtkImage" id="image562">
                             <property name="visible">True</property>
@@ -322,6 +320,7 @@
                             <property name="icon_size">1</property>
                           </widget>
                         </child>
+                        <accelerator key="F5" signal="activate"/>
                       </widget>
                     </child>
                     <child>
@@ -335,7 +334,6 @@
                         <property name="tooltip" translatable="yes">Scale the page in the current browser window to be smaller or larger.</property>
                         <property name="label" translatable="yes">_Scale View...</property>
                         <property name="use_underline">True</property>
-                        <accelerator key="F11" modifiers="" signal="activate"/>
                         <child>
                           <widget class="GtkMenu" id="scale_view_menu">
                             <child>
@@ -343,9 +341,6 @@
                                 <property name="visible">True</property>
                                 <property name="label" translatable="yes">Zoom _in</property>
                                 <property name="use_underline">True</property>
-                                <accelerator key="equal" modifiers="GDK_CONTROL_MASK" signal="activate"/>
-                                <accelerator key="KP_Add" modifiers="GDK_CONTROL_MASK" signal="activate"/>
-                                <accelerator key="plus" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                                 <child internal-child="image">
                                   <widget class="GtkImage" id="image564">
                                     <property name="visible">True</property>
@@ -353,6 +348,9 @@
                                     <property name="icon_size">1</property>
                                   </widget>
                                 </child>
+                                <accelerator key="equal" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                                <accelerator key="KP_Add" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                                <accelerator key="plus" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                               </widget>
                             </child>
                             <child>
@@ -360,8 +358,6 @@
                                 <property name="visible">True</property>
                                 <property name="label" translatable="yes">_Normal size</property>
                                 <property name="use_underline">True</property>
-                                <accelerator key="KP_0" modifiers="GDK_CONTROL_MASK" signal="activate"/>
-                                <accelerator key="0" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                                 <child internal-child="image">
                                   <widget class="GtkImage" id="image565">
                                     <property name="visible">True</property>
@@ -369,6 +365,8 @@
                                     <property name="icon_size">1</property>
                                   </widget>
                                 </child>
+                                <accelerator key="KP_0" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                                <accelerator key="0" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                               </widget>
                             </child>
                             <child>
@@ -376,8 +374,6 @@
                                 <property name="visible">True</property>
                                 <property name="label" translatable="yes">Zoom _out</property>
                                 <property name="use_underline">True</property>
-                                <accelerator key="KP_Subtract" modifiers="GDK_CONTROL_MASK" signal="activate"/>
-                                <accelerator key="minus" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                                 <child internal-child="image">
                                   <widget class="GtkImage" id="image566">
                                     <property name="visible">True</property>
@@ -385,6 +381,8 @@
                                     <property name="icon_size">1</property>
                                   </widget>
                                 </child>
+                                <accelerator key="KP_Subtract" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                                <accelerator key="minus" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                               </widget>
                             </child>
                           </widget>
@@ -396,6 +394,7 @@
                             <property name="icon_size">1</property>
                           </widget>
                         </child>
+                        <accelerator key="F11" signal="activate"/>
                       </widget>
                     </child>
                     <child>
@@ -403,7 +402,6 @@
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">_Fullscreen</property>
                         <property name="use_underline">True</property>
-                        <accelerator key="F11" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                         <child internal-child="image">
                           <widget class="GtkImage" id="image567">
                             <property name="visible">True</property>
@@ -411,6 +409,7 @@
                             <property name="icon_size">1</property>
                           </widget>
                         </child>
+                        <accelerator key="F11" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
                     <child>
@@ -550,7 +549,6 @@
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">_Back</property>
                         <property name="use_underline">True</property>
-                        <accelerator key="Left" modifiers="GDK_MOD1_MASK" signal="activate"/>
                         <child internal-child="image">
                           <widget class="GtkImage" id="image568">
                             <property name="visible">True</property>
@@ -558,6 +556,7 @@
                             <property name="icon_size">1</property>
                           </widget>
                         </child>
+                        <accelerator key="Left" signal="activate" modifiers="GDK_MOD1_MASK"/>
                       </widget>
                     </child>
                     <child>
@@ -565,7 +564,6 @@
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">_Forward</property>
                         <property name="use_underline">True</property>
-                        <accelerator key="Right" modifiers="GDK_MOD1_MASK" signal="activate"/>
                         <child internal-child="image">
                           <widget class="GtkImage" id="image569">
                             <property name="visible">True</property>
@@ -573,6 +571,7 @@
                             <property name="icon_size">1</property>
                           </widget>
                         </child>
+                        <accelerator key="Right" signal="activate" modifiers="GDK_MOD1_MASK"/>
                       </widget>
                     </child>
                     <child>
@@ -580,7 +579,6 @@
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">_Home</property>
                         <property name="use_underline">True</property>
-                        <accelerator key="Home" modifiers="GDK_MOD1_MASK" signal="activate"/>
                         <child internal-child="image">
                           <widget class="GtkImage" id="image570">
                             <property name="visible">True</property>
@@ -588,6 +586,7 @@
                             <property name="icon_size">1</property>
                           </widget>
                         </child>
+                        <accelerator key="Home" signal="activate" modifiers="GDK_MOD1_MASK"/>
                       </widget>
                     </child>
                     <child>
@@ -601,7 +600,7 @@
                         <property name="tooltip" translatable="yes">Show the history tree for this browser window.</property>
                         <property name="label" translatable="yes">_Local history...</property>
                         <property name="use_underline">True</property>
-                        <accelerator key="F7" modifiers="" signal="activate"/>
+                        <accelerator key="F7" signal="activate"/>
                       </widget>
                     </child>
                     <child>
@@ -610,7 +609,7 @@
                         <property name="tooltip" translatable="yes">Show the history tree for all windows.</property>
                         <property name="label" translatable="yes">_Global history...</property>
                         <property name="use_underline">True</property>
-                        <accelerator key="F7" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+                        <accelerator key="F7" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
                     <child>
@@ -634,7 +633,7 @@
                         <property name="tooltip" translatable="yes">Open a window showing all your bookmarks.</property>
                         <property name="label" translatable="yes">_Show Bookmarks...</property>
                         <property name="use_underline">True</property>
-                        <accelerator key="F6" modifiers="" signal="activate"/>
+                        <accelerator key="F6" signal="activate"/>
                       </widget>
                     </child>
                     <child>
@@ -648,7 +647,7 @@
                         <property name="tooltip" translatable="yes">Open an address into this browser window.</property>
                         <property name="label" translatable="yes">_Open location...</property>
                         <property name="use_underline">True</property>
-                        <accelerator key="L" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+                        <accelerator key="L" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
                   </widget>
@@ -669,7 +668,6 @@
                         <property name="tooltip" translatable="yes">Shows the contents of the NetSurf manual.</property>
                         <property name="label" translatable="yes">_Contents...</property>
                         <property name="use_underline">True</property>
-                        <accelerator key="F1" modifiers="" signal="activate"/>
                         <child internal-child="image">
                           <widget class="GtkImage" id="image571">
                             <property name="visible">True</property>
@@ -677,6 +675,7 @@
                             <property name="icon_size">1</property>
                           </widget>
                         </child>
+                        <accelerator key="F1" signal="activate"/>
                       </widget>
                     </child>
                     <child>
@@ -839,7 +838,6 @@
                     <property name="label" translatable="yes">Status bar text goes here</property>
                     <property name="selectable">True</property>
                     <property name="ellipsize">PANGO_ELLIPSIZE_MIDDLE</property>
-                    <property name="width_chars">50</property>
                   </widget>
                   <packing>
                     <property name="resize">False</property>
@@ -1531,157 +1529,6 @@
             <property name="expand">False</property>
             <property name="fill">False</property>
             <property name="position">2</property>
-          </packing>
-        </child>
-      </widget>
-    </child>
-  </widget>
-  <widget class="GtkWindow" id="wndDownloads">
-    <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-    <property name="title" translatable="yes">NetSurf Downloads</property>
-    <property name="window_position">GTK_WIN_POS_CENTER</property>
-    <property name="default_width">500</property>
-    <property name="default_height">400</property>
-    <property name="type_hint">GDK_WINDOW_TYPE_HINT_UTILITY</property>
-    <signal name="delete_event" handler="gtk_widget_hide"/>
-    <child>
-      <widget class="GtkVBox" id="vbox1">
-        <property name="visible">True</property>
-        <child>
-          <widget class="GtkToolbar" id="toolbar1">
-            <property name="visible">True</property>
-            <property name="toolbar_style">GTK_TOOLBAR_BOTH</property>
-            <child>
-              <widget class="GtkToolButton" id="downloadPause">
-                <property name="visible">True</property>
-                <property name="label">Pause</property>
-                <property name="use_underline">True</property>
-                <property name="stock_id">gtk-media-pause</property>
-                <signal name="clicked" handler="nsgtk_downloadPause_clicked"/>
-              </widget>
-              <packing>
-                <property name="expand">False</property>
-              </packing>
-            </child>
-            <child>
-              <widget class="GtkToolButton" id="downloadResume">
-                <property name="visible">True</property>
-                <property name="label">Resume</property>
-                <property name="use_underline">True</property>
-                <property name="stock_id">gtk-media-play</property>
-              </widget>
-              <packing>
-                <property name="expand">False</property>
-              </packing>
-            </child>
-            <child>
-              <widget class="GtkToolButton" id="downloadCancel">
-                <property name="visible">True</property>
-                <property name="label">Cancel</property>
-                <property name="use_underline">True</property>
-                <property name="stock_id">gtk-cancel</property>
-              </widget>
-              <packing>
-                <property name="expand">False</property>
-              </packing>
-            </child>
-            <child>
-              <widget class="GtkToolButton" id="downloadCleanup">
-                <property name="visible">True</property>
-                <property name="tooltip" translatable="yes">Remove completed or cancelled downloads from the list</property>
-                <property name="visible_vertical">False</property>
-                <property name="is_important">True</property>
-                <property name="label">Clean up</property>
-                <property name="use_underline">True</property>
-                <property name="stock_id">gtk-clear</property>
-              </widget>
-              <packing>
-                <property name="expand">False</property>
-              </packing>
-            </child>
-            <child>
-              <widget class="GtkSeparatorToolItem" id="toolbutton2">
-                <property name="visible">True</property>
-                <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                <property name="draw">False</property>
-              </widget>
-              <packing>
-                <property name="expand">False</property>
-                <property name="homogeneous">False</property>
-              </packing>
-            </child>
-            <child>
-              <widget class="GtkToolItem" id="toolProgress">
-                <property name="visible">True</property>
-                <property name="is_important">True</property>
-                <child>
-                  <widget class="GtkHBox" id="hbox2">
-                    <property name="visible">True</property>
-                    <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                    <child>
-                      <widget class="GtkVBox" id="vbox2">
-                        <property name="visible">True</property>
-                        <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                        <child>
-                          <widget class="GtkProgressBar" id="progressbar1">
-                            <property name="visible">True</property>
-                            <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                            <property name="fraction">0.10000000149011612</property>
-                            <property name="text" translatable="yes">10% of 5 files</property>
-                            <property name="ellipsize">PANGO_ELLIPSIZE_END</property>
-                          </widget>
-                          <packing>
-                            <property name="fill">False</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <widget class="GtkLabel" id="label2">
-                            <property name="visible">True</property>
-                            <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                            <property name="label" translatable="yes">230kB/sec, 12 minutes remaining</property>
-                          </widget>
-                          <packing>
-                            <property name="position">1</property>
-                          </packing>
-                        </child>
-                      </widget>
-                    </child>
-                  </widget>
-                </child>
-              </widget>
-              <packing>
-                <property name="expand">False</property>
-                <property name="homogeneous">False</property>
-              </packing>
-            </child>
-            <child>
-              <widget class="GtkSeparatorToolItem" id="toolbutton1">
-                <property name="visible">True</property>
-                <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                <property name="draw">False</property>
-              </widget>
-              <packing>
-                <property name="expand">False</property>
-                <property name="homogeneous">False</property>
-              </packing>
-            </child>
-          </widget>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">False</property>
-          </packing>
-        </child>
-        <child>
-          <widget class="GtkTreeView" id="treeDownloads">
-            <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="events">GDK_EXPOSURE_MASK | GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_MOTION_MASK | GDK_BUTTON1_MOTION_MASK | GDK_BUTTON2_MOTION_MASK | GDK_BUTTON3_MOTION_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_KEY_PRESS_MASK | GDK_KEY_RELEASE_MASK | GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK | GDK_FOCUS_CHANGE_MASK | GDK_STRUCTURE_MASK | GDK_PROPERTY_CHANGE_MASK | GDK_VISIBILITY_NOTIFY_MASK | GDK_PROXIMITY_IN_MASK | GDK_PROXIMITY_OUT_MASK | GDK_SUBSTRUCTURE_MASK | GDK_SCROLL_MASK</property>
-            <property name="reorderable">True</property>
-            <property name="rules_hint">True</property>
-            <property name="rubber_banding">True</property>
-          </widget>
-          <packing>
-            <property name="position">1</property>
           </packing>
         </child>
       </widget>

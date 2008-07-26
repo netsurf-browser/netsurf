@@ -82,13 +82,13 @@ void gui_start_selection(struct gui_window *g)
 
 void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
 {
-	char *text;
+	gchar *text;
 	clipboard = gtk_clipboard_get (GDK_SELECTION_CLIPBOARD);
  	text = gtk_clipboard_wait_for_text (clipboard);
  	/* clipboard_wait... converts the string to utf8 for us */
  	if (text != NULL)
 		browser_window_paste_text(g->bw, text, strlen(text), true);
-	free(text);
+	g_free(text);
 }
 
 bool gui_empty_clipboard(void)
@@ -103,8 +103,8 @@ bool gui_empty_clipboard(void)
 
 bool gui_commit_clipboard(void)
 {
-	clipboard = gtk_clipboard_get (GDK_SELECTION_CLIPBOARD);
-	gtk_clipboard_set_text (clipboard, current_selection->str, -1);
+	clipboard = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
+	gtk_clipboard_set_text(clipboard, current_selection->str, -1);
 	return true;
 }
  

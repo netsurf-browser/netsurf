@@ -304,6 +304,11 @@ Unwritten:Writing data to file failed.
 # download window.
 #
 
+gtkSizeInfo:%s of %s
+gtkProgressBar:%.0f%% of %u files
+gtkProgressBarPulse:Downloading %u files
+gtkProgressBarPulseSingle:Downloading %u file
+
 # Column Headers
 #
 gtkProgress:Progress
@@ -311,22 +316,29 @@ gtkDetails:Details
 gtkSpeed:Speed
 gtkRemaining:Remaining
 
-# Status
+# Status Messages
+# spaces necessary
 #
-gtkError:Error
-gtkComplete:Complete
-gtkCanceled:Canceled
-gtkWorking:Working
+
+gtkError: Error 
+gtkComplete: Complete 
+gtkCanceled: Canceled 
+gtkWorking: Working 
 
 # Dialogs
 #
+gtkQuit:Quit NetSurf?
+gtkDownloadsRunning:There are still downloads running, if you quit now these will be canceled and the files deleted.
 gtkStartDownload:Download file?
+gtkOverwrite:A file named "%s" already exists.  Do you want to replace it?
+gtkOverwriteInfo:The file already exists in "%s".  Replacing it will overwrite its contents.
 gtkFailed:Download failed
 gtkFileError:File error: %s
 gtkInfo:%s from %s is %s in size
 gtkSave:Save file as...
 gtkUnknownHost:an unknown host
 gtkUnknownFile:
+gtkUnknownSize:unknown
 
 # Printing user interface tokens
 # ==============================
