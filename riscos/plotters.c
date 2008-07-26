@@ -20,6 +20,7 @@
  * Target independent plotting (RISC OS screen implementation).
  */
 
+#include <stdbool.h>
 #include <math.h>
 #include "oslib/colourtrans.h"
 #include "oslib/draw.h"

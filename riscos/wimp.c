@@ -55,7 +55,8 @@ unsigned char last_sprite_found[16];
  *
  * \param  w  the window to read (or NULL to read a cached value)
  */
-int ro_get_hscroll_height(wimp_w w) {
+int ro_get_hscroll_height(wimp_w w)
+{
 	ro_gui_wimp_cache_furniture_sizes(w);
 	return furniture_sizes.border_widths.y0;
 }
@@ -66,7 +67,8 @@ int ro_get_hscroll_height(wimp_w w) {
  *
  * \param  w  the window to read (or NULL to read a cached value)
  */
-int ro_get_vscroll_width(wimp_w w) {
+int ro_get_vscroll_width(wimp_w w)
+{
 	ro_gui_wimp_cache_furniture_sizes(w);
 	return furniture_sizes.border_widths.x1;
 }
@@ -77,7 +79,8 @@ int ro_get_vscroll_width(wimp_w w) {
  *
  * \param  w  the window to read (or NULL to read a cached value)
  */
-int ro_get_title_height(wimp_w w) {
+int ro_get_title_height(wimp_w w)
+{
 	ro_gui_wimp_cache_furniture_sizes(w);
 	return furniture_sizes.border_widths.y1;
 }
@@ -88,7 +91,8 @@ int ro_get_title_height(wimp_w w) {
  * \param  w  the window to cache information from
  * \return true on success, false on error (default values cached)
  */
-void ro_gui_wimp_cache_furniture_sizes(wimp_w w) {
+void ro_gui_wimp_cache_furniture_sizes(wimp_w w)
+{
 	os_error *error;
 
 	if (!w)
@@ -113,7 +117,8 @@ void ro_gui_wimp_cache_furniture_sizes(wimp_w w) {
  *
  * \param  mode  mode to read EIG factors for, or -1 for current
  */
-bool ro_gui_wimp_read_eig_factors(os_mode mode, int *xeig, int *yeig) {
+bool ro_gui_wimp_read_eig_factors(os_mode mode, int *xeig, int *yeig)
+{
 	os_error *error;
 
 	error = xos_read_mode_variable(mode, os_MODEVAR_XEIG_FACTOR, xeig, 0);
@@ -140,7 +145,8 @@ bool ro_gui_wimp_read_eig_factors(os_mode mode, int *xeig, int *yeig) {
  * \param  os_units  values to convert
  * \param  mode	     mode to use EIG factors for, or -1 for current
  */
-void ro_convert_os_units_to_pixels(os_coord *os_units, os_mode mode) {
+void ro_convert_os_units_to_pixels(os_coord *os_units, os_mode mode)
+{
 	int xeig = 1, yeig = 1;
 
 	ro_gui_wimp_read_eig_factors(mode, &xeig, &yeig);
@@ -155,7 +161,8 @@ void ro_convert_os_units_to_pixels(os_coord *os_units, os_mode mode) {
  * \param  pixels  values to convert
  * \param  mode	   mode to use EIG factors for, or -1 for current
  */
-void ro_convert_pixels_to_os_units(os_coord *pixels, os_mode mode) {
+void ro_convert_pixels_to_os_units(os_coord *pixels, os_mode mode)
+{
 	int xeig = 1, yeig = 1;
 
 	ro_gui_wimp_read_eig_factors(mode, &xeig, &yeig);
@@ -180,7 +187,8 @@ void ro_convert_pixels_to_os_units(os_coord *pixels, os_mode mode) {
  * \param  w  window handle
  * \param  i  icon handle
  */
-void ro_gui_force_redraw_icon(wimp_w w, wimp_i i) {
+void ro_gui_force_redraw_icon(wimp_w w, wimp_i i)
+{
 	wimp_icon_state ic;
 	os_error *error;
 
@@ -212,7 +220,8 @@ void ro_gui_force_redraw_icon(wimp_w w, wimp_i i) {
  * \param  i  icon handle
  * \return string in icon
  */
-char *ro_gui_get_icon_string(wimp_w w, wimp_i i) {
+char *ro_gui_get_icon_string(wimp_w w, wimp_i i)
+{
 	wimp_icon_state ic;
 	os_error *error;
 
@@ -236,7 +245,8 @@ char *ro_gui_get_icon_string(wimp_w w, wimp_i i) {
  * \param  i	 icon handle
  * \param  text  string (UTF-8 encoded) (copied)
  */
-void ro_gui_set_icon_string(wimp_w w, wimp_i i, const char *text) {
+void ro_gui_set_icon_string(wimp_w w, wimp_i i, const char *text)
+{
 	wimp_caret caret;
 	wimp_icon_state ic;
 	os_error *error;
@@ -325,7 +335,8 @@ void ro_gui_set_icon_string(wimp_w w, wimp_i i, const char *text) {
  * \param  i	 icon handle
  * \param  text  string (in local encoding) (copied)
  */
-void ro_gui_set_icon_string_le(wimp_w w, wimp_i i, const char *text) {
+void ro_gui_set_icon_string_le(wimp_w w, wimp_i i, const char *text)
+{
 	wimp_caret caret;
 	wimp_icon_state ic;
 	os_error *error;
@@ -396,7 +407,8 @@ void ro_gui_set_icon_string_le(wimp_w w, wimp_i i, const char *text) {
  * \param  i	  icon handle
  * \param  value  value
  */
-void ro_gui_set_icon_integer(wimp_w w, wimp_i i, int value) {
+void ro_gui_set_icon_integer(wimp_w w, wimp_i i, int value)
+{
 	char buffer[20]; // Big enough for 64-bit int
 
 	setlocale(LC_NUMERIC, "");
@@ -416,7 +428,8 @@ void ro_gui_set_icon_integer(wimp_w w, wimp_i i, int value) {
  * \param  i	  icon handle
  * \param  value  value
  */
-void ro_gui_set_icon_decimal(wimp_w w, wimp_i i, int value, int decimal_places) {
+void ro_gui_set_icon_decimal(wimp_w w, wimp_i i, int value, int decimal_places)
+{
 	char buffer[20]; // Big enough for 64-bit int
 
 	setlocale(LC_NUMERIC, "");
@@ -449,7 +462,8 @@ void ro_gui_set_icon_decimal(wimp_w w, wimp_i i, int value, int decimal_places) 
  * \param  i	  icon handle
  * \param  value  value
  */
-int ro_gui_get_icon_decimal(wimp_w w, wimp_i i, int decimal_places) {
+int ro_gui_get_icon_decimal(wimp_w w, wimp_i i, int decimal_places)
+{
 	double value;
 	int multiple = 1;
 
@@ -473,7 +487,8 @@ int ro_gui_get_icon_decimal(wimp_w w, wimp_i i, int decimal_places) {
  * \param  i	 icon handle
  * \param  state selected state
  */
-void ro_gui_set_icon_selected_state(wimp_w w, wimp_i i, bool state) {
+void ro_gui_set_icon_selected_state(wimp_w w, wimp_i i, bool state)
+{
 	os_error *error;
 	if (ro_gui_get_icon_selected_state(w, i) == state) return;
 	error = xwimp_set_icon_state(w, i,
@@ -491,7 +506,8 @@ void ro_gui_set_icon_selected_state(wimp_w w, wimp_i i, bool state) {
  * \param  w	 window handle
  * \param  i	 icon handle
  */
-bool ro_gui_get_icon_selected_state(wimp_w w, wimp_i i) {
+bool ro_gui_get_icon_selected_state(wimp_w w, wimp_i i)
+{
 	os_error *error;
 	wimp_icon_state ic;
 	ic.w = w;
@@ -514,7 +530,8 @@ bool ro_gui_get_icon_selected_state(wimp_w w, wimp_i i) {
  * \param  i	 icon handle
  * \param  state shaded state
  */
-void ro_gui_set_icon_shaded_state(wimp_w w, wimp_i i, bool state) {
+void ro_gui_set_icon_shaded_state(wimp_w w, wimp_i i, bool state)
+{
 	wimp_caret caret;
 	os_error *error;
 
@@ -561,7 +578,8 @@ void ro_gui_set_icon_shaded_state(wimp_w w, wimp_i i, bool state) {
  * \param  w	 window handle
  * \param  i	 icon handle
  */
-bool ro_gui_get_icon_shaded_state(wimp_w w, wimp_i i) {
+bool ro_gui_get_icon_shaded_state(wimp_w w, wimp_i i)
+{
 	wimp_icon_state ic;
 	ic.w = w;
 	ic.i = i;
@@ -577,7 +595,8 @@ bool ro_gui_get_icon_shaded_state(wimp_w w, wimp_i i) {
  * \param  i	icon handle
  * \param  type button type
  */
-void ro_gui_set_icon_button_type(wimp_w w, wimp_i i, int type) {
+void ro_gui_set_icon_button_type(wimp_w w, wimp_i i, int type)
+{
 	os_error *error;
 	error = xwimp_set_icon_state(w, i, wimp_ICON_BUTTON_TYPE,
 			(type << wimp_ICON_BUTTON_TYPE_SHIFT));
@@ -634,7 +653,8 @@ void ro_gui_set_icon_sprite(wimp_w w, wimp_i i, osspriteop_area *area,
  * \param  w	 window handle
  * \param  text  new title (copied)
  */
-void ro_gui_set_window_title(wimp_w w, const char *text) {
+void ro_gui_set_window_title(wimp_w w, const char *text)
+{
 	wimp_window_info_base window;
 	os_error *error;
 	char *title_local_enc;
@@ -689,7 +709,8 @@ void ro_gui_set_window_title(wimp_w w, const char *text) {
  * \w	the window to place the caret in
  * \return true if the caret was placed, false otherwise
  */
-bool ro_gui_set_caret_first(wimp_w w) {
+bool ro_gui_set_caret_first(wimp_w w)
+{
 	int icon, b;
 	wimp_window_state win_state;
 	wimp_window_info_base window;
@@ -869,7 +890,8 @@ os_error *ro_gui_wimp_get_sprite(const char *name, osspriteop_header **sprite)
  */
 
 void ro_gui_user_redraw(wimp_draw *redraw, bool user_fill,
-		os_colour user_colour) {
+		os_colour user_colour)
+{
 	os_error *error;
 	osbool more;
 
@@ -911,7 +933,8 @@ void ro_gui_user_redraw(wimp_draw *redraw, bool user_fill,
  * \param  xor_mask  the furniture flags to toggle
  */
 void ro_gui_wimp_update_window_furniture(wimp_w w, wimp_window_flags bic_mask,
-		wimp_window_flags xor_mask) {
+		wimp_window_flags xor_mask)
+{
 	wimp_window_state state;
 	wimp_w parent;
 	bits linkage;
@@ -959,7 +982,8 @@ void ro_gui_wimp_update_window_furniture(wimp_w w, wimp_window_flags bic_mask,
  * \param  w	     the window to modify
  * \param  mask	     the furniture flags to check
  */
-bool ro_gui_wimp_check_window_furniture(wimp_w w, wimp_window_flags mask) {
+bool ro_gui_wimp_check_window_furniture(wimp_w w, wimp_window_flags mask)
+{
 	wimp_window_state state;
 	os_error *error;
 

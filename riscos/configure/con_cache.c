@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdbool.h>
 #include "oslib/hourglass.h"
 #include "desktop/options.h"
 #include "riscos/dialog.h"
@@ -40,7 +41,8 @@
 static bool ro_gui_options_cache_click(wimp_pointer *pointer);
 static bool ro_gui_options_cache_ok(wimp_w w);
 
-bool ro_gui_options_cache_initialise(wimp_w w) {
+bool ro_gui_options_cache_initialise(wimp_w w)
+{
 	/* set the current values */
 	ro_gui_set_icon_decimal(w, CACHE_MEMORY_SIZE,
 			(option_memory_cache_size * 10) >> 20, 1);
@@ -58,7 +60,8 @@ bool ro_gui_options_cache_initialise(wimp_w w) {
 
 }
 
-bool ro_gui_options_cache_click(wimp_pointer *pointer) {
+bool ro_gui_options_cache_click(wimp_pointer *pointer)
+{
 	switch (pointer->i) {
 		case CACHE_DEFAULT_BUTTON:
 			/* set the default values */
@@ -69,7 +72,8 @@ bool ro_gui_options_cache_click(wimp_pointer *pointer) {
 	return false;
 }
 
-bool ro_gui_options_cache_ok(wimp_w w) {
+bool ro_gui_options_cache_ok(wimp_w w)
+{
 	option_memory_cache_size = (((ro_gui_get_icon_decimal(w,
 			CACHE_MEMORY_SIZE, 1) + 1) << 20) - 1) / 10;
 

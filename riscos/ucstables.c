@@ -24,10 +24,8 @@
 #include <assert.h>
 #include <limits.h>
 #include <string.h>
-
 #include "oslib/osbyte.h"
 #include "oslib/territory.h"
-
 #include "riscos/ucstables.h"
 #include "utils/log.h"
 #include "utils/utf8.h"
@@ -50,7 +48,7 @@
   0x201c, 0x201d, 0x201e, 0x2013, 0x2014, 0x2212, 0x0152, 0x0153,	\
   0x2020, 0x2021, 0xfb01, 0xfb02
 
-static int latin1_table[256] =
+static const int latin1_table[256] =
 {
   common,
   0x20ac, 0x0174, 0x0175, -1, -1, 0x0176, 0x0177, -1, -1, -1, -1, -1,
@@ -63,7 +61,7 @@ static int latin1_table[256] =
   240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255
 };
 
-static int latin2_table[256] =
+static const int latin2_table[256] =
 {
   common,
   0x20ac, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -82,7 +80,7 @@ static int latin2_table[256] =
   0x0159, 0x016F, 0x00FA, 0x0171, 0x00FC, 0x00FD, 0x0163, 0x02D9
 };
 
-static int latin3_table[256] =
+static const int latin3_table[256] =
 {
   common,
   0x20ac, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -101,7 +99,7 @@ static int latin3_table[256] =
   0x011D, 0x00F9, 0x00FA, 0x00FB, 0x00FC, 0x016D, 0x015D, 0x02D9
 };
 
-static int latin4_table[256] =
+static const int latin4_table[256] =
 {
   common,
   0x20ac, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -120,7 +118,7 @@ static int latin4_table[256] =
   0x00F8, 0x0173, 0x00FA, 0x00FB, 0x00FC, 0x0169, 0x016B, 0x02D9
 };
 
-static int latin5_table[256] =
+static const int latin5_table[256] =
 {
   common,
   0x20ac, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -139,7 +137,7 @@ static int latin5_table[256] =
   0x00F8, 0x00F9, 0x00FA, 0x00FB, 0x00FC, 0x0131, 0x015F, 0x00FF
 };
 
-static int latin6_table[256] =
+static const int latin6_table[256] =
 {
   common,
   0x20ac, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -158,7 +156,7 @@ static int latin6_table[256] =
   0x00F8, 0x0173, 0x00FA, 0x00FB, 0x00FC, 0x00FD, 0x00FE, 0x0138
 };
 
-static int latin7_table[256] =
+static const int latin7_table[256] =
 {
   common,
   0x20ac, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -179,7 +177,7 @@ static int latin7_table[256] =
   0x0173, 0x0142, 0x015B, 0x016B, 0x00FC, 0x017C, 0x017E, 0x2019
 };
 
-static int latin8_table[256] =
+static const int latin8_table[256] =
 {
   common,
   0x20ac, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -198,7 +196,7 @@ static int latin8_table[256] =
   0x00F8, 0x00F9, 0x00FA, 0x00FB, 0x00FC, 0x00FD, 0x0177, 0x00FF
 };
 
-static int latin9_table[256] =
+static const int latin9_table[256] =
 {
   common,
   -1, 0x0174, 0x0175, -1, -1, 0x0176, 0x0177, -1, -1, -1, -1, -1,
@@ -219,7 +217,7 @@ static int latin9_table[256] =
   0x00F8, 0x00F9, 0x00FA, 0x00FB, 0x00FC, 0x00FD, 0x00FE, 0x00FF
 };
 
-static int latin10_table[256] =
+static const int latin10_table[256] =
 {
   common,
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -240,7 +238,7 @@ static int latin10_table[256] =
   0x0171, 0x00F9, 0x00FA, 0x00FB, 0x00FC, 0x0119, 0x021B, 0x00FF
 };
 
-static int welsh_table[256] =
+static const int welsh_table[256] =
 {
   common,
   0x20ac, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -259,7 +257,7 @@ static int welsh_table[256] =
   0x00F8, 0x00F9, 0x00FA, 0x00FB, 0x00FC, 0x00FD, 0x0177, 0x00FF
 };
 
-static int greek_table[256] =
+static const int greek_table[256] =
 {
   common,
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -278,7 +276,7 @@ static int greek_table[256] =
   0x03C8, 0x03C9, 0x03CA, 0x03CB, 0x03CC, 0x03CD, 0x03CE, -1
 };
 
-static int cyrillic_table[256] =
+static const int cyrillic_table[256] =
 {
   common,
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -297,7 +295,7 @@ static int cyrillic_table[256] =
   0x0458, 0x0459, 0x045A, 0x045B, 0x045C, 0x00A7, 0x045E, 0x045F
 };
 
-static int hebrew_table[256] =
+static const int hebrew_table[256] =
 {
   common,
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -322,9 +320,9 @@ static int hebrew_table[256] =
  * \param alphabet  The RISC OS alphabet number
  * \return pointer to table, or NULL if not found
  */
-int *ucstable_from_alphabet(int alphabet)
+const int *ucstable_from_alphabet(int alphabet)
 {
-	int *ucstable = NULL;
+	const int *ucstable = NULL;
 
 	switch (alphabet) {
 		case territory_ALPHABET_LATIN1:

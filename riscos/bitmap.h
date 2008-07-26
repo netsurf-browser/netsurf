@@ -19,7 +19,8 @@
 #ifndef _NETSURF_RISCOS_BITMAP_H_
 #define _NETSURF_RISCOS_BITMAP_H_
 
-#include <oslib/osspriteop.h>
+#include <stdbool.h>
+#include "oslib/osspriteop.h"
 #include "image/bitmap.h"
 
 struct osspriteop_area;

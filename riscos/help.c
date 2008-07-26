@@ -86,7 +86,8 @@ static os_t help_time = 0;
  *
  * \param  message the request message
  */
-void ro_gui_interactive_help_request(wimp_message *message) {
+void ro_gui_interactive_help_request(wimp_message *message)
+{
 	char message_token[32];
 	char menu_buffer[4];
 	wimp_selection menu_tree;
@@ -209,7 +210,8 @@ void ro_gui_interactive_help_request(wimp_message *message) {
  * \param  token the token to look up
  */
 static void ro_gui_interactive_help_broadcast(wimp_message *message,
-		char *token) {
+		char *token)
+{
 	const char *translated_token;
 	help_full_message_reply *reply;
 	char *base_token;
@@ -277,7 +279,8 @@ static void ro_gui_interactive_help_broadcast(wimp_message *message,
  *
  * \return non-zero if interactive help is available, or 0 if not available
  */
-bool ro_gui_interactive_help_available(void) {
+bool ro_gui_interactive_help_available(void)
+{
 	taskmanager_task task;
 	int context = 0;
 	os_t time;
@@ -316,7 +319,8 @@ bool ro_gui_interactive_help_available(void) {
 /**
  * Launches interactive help.
  */
-void ro_gui_interactive_help_start(void) {
+void ro_gui_interactive_help_start(void)
+{
 	char *help_start;
 	wimp_t task = 0;
 	os_error *error;

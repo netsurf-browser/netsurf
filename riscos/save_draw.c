@@ -24,9 +24,9 @@
 
 #include <assert.h>
 #include <limits.h>
-#include <oslib/draw.h>
-#include <oslib/osfile.h>
-#include <pencil.h>
+#include "oslib/draw.h"
+#include "oslib/osfile.h"
+#include "pencil.h"
 #include "content/content.h"
 #include "desktop/plotters.h"
 #include "riscos/bitmap.h"

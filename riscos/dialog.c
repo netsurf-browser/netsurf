@@ -28,7 +28,7 @@
 #include "oslib/colourtrans.h"
 #include "oslib/osfile.h"
 #include "oslib/osgbpb.h"
-#include <oslib/osspriteop.h>
+#include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
 #include "rufl.h"
 #include "utils/config.h"

@@ -460,7 +460,8 @@ void ro_gui_menu_init(void)
 /**
  * Display a menu.
  */
-void ro_gui_menu_create(wimp_menu *menu, int x, int y, wimp_w w) {
+void ro_gui_menu_create(wimp_menu *menu, int x, int y, wimp_w w)
+{
 	struct gui_window *g;
 	os_error *error;
 	os_coord pos;
@@ -531,7 +532,8 @@ void ro_gui_menu_create(wimp_menu *menu, int x, int y, wimp_w w) {
  * \param  w	 window handle
  * \param  i	 icon handle
  */
-void ro_gui_popup_menu(wimp_menu *menu, wimp_w w, wimp_i i) {
+void ro_gui_popup_menu(wimp_menu *menu, wimp_w w, wimp_i i)
+{
 	wimp_window_state state;
 	wimp_icon_state icon_state;
 	os_error *error;
@@ -568,7 +570,8 @@ void ro_gui_popup_menu(wimp_menu *menu, wimp_w w, wimp_i i) {
  *
  * \param cleanup	Call any terminating functions (sub-window isn't going to be instantly re-opened)
  */
-void ro_gui_menu_closed(bool cleanup) {
+void ro_gui_menu_closed(bool cleanup)
+{
 	struct gui_window *g;
 	struct browser_window *bw;
 	struct content *c;
@@ -606,7 +609,8 @@ void ro_gui_menu_closed(bool cleanup) {
 /**
  * The content has changed, reset object references
  */
-void ro_gui_menu_objects_moved(void) {
+void ro_gui_menu_objects_moved(void)
+{
   	gui_form_select_control = NULL;
 	current_menu_object_box = NULL;
 
@@ -619,7 +623,8 @@ void ro_gui_menu_objects_moved(void) {
 /**
  * Handle menu selection.
  */
-void ro_gui_menu_selection(wimp_selection *selection) {
+void ro_gui_menu_selection(wimp_selection *selection)
+{
 	int i, j;
 	wimp_menu_entry *menu_entry;
 	menu_action action;
@@ -718,7 +723,8 @@ void ro_gui_menu_selection(wimp_selection *selection) {
 /**
  * Handle Message_MenuWarning.
  */
-void ro_gui_menu_warning(wimp_message_menu_warning *warning) {
+void ro_gui_menu_warning(wimp_message_menu_warning *warning)
+{
 	int i;
 	menu_action action;
 	wimp_menu_entry *menu_entry;
@@ -774,7 +780,8 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning) {
  *
  * \param toolbar  the toolbar to update
  */
-void ro_gui_menu_refresh_toolbar(struct toolbar *toolbar) {
+void ro_gui_menu_refresh_toolbar(struct toolbar *toolbar)
+{
 
 	assert(toolbar);
 
@@ -829,7 +836,8 @@ bool ro_gui_menu_prepare_url_suggest(void) {
  *
  * /param gui  the gui_window to update
  */
-void ro_gui_prepare_navigate(struct gui_window *gui) {
+void ro_gui_prepare_navigate(struct gui_window *gui)
+{
 	int suggestions;
 
 	ro_gui_menu_prepare_action(gui->window, HOTLIST_SHOW, false);
@@ -859,7 +867,8 @@ void ro_gui_prepare_navigate(struct gui_window *gui) {
  *
  * \param g  the gui_window to set the display icons for
  */
-void ro_gui_menu_prepare_pageinfo(struct gui_window *g) {
+void ro_gui_menu_prepare_pageinfo(struct gui_window *g)
+{
 	struct content *c = g->bw->current_content;
 	char icon_buf[20] = "file_xxx";
 	char enc_buf[40];
@@ -908,7 +917,8 @@ void ro_gui_menu_prepare_pageinfo(struct gui_window *g) {
  *
  * \param box  the box to set the display icons for
  */
-void ro_gui_menu_prepare_objectinfo(struct box *box) {
+void ro_gui_menu_prepare_objectinfo(struct box *box)
+{
 	char icon_buf[20] = "file_xxx";
 	const char *url = "-";
 	const char *target = "-";
@@ -940,7 +950,8 @@ void ro_gui_menu_prepare_objectinfo(struct box *box) {
  * \param  control  form control of type GADGET_SELECT
  */
 void gui_create_form_select_menu(struct browser_window *bw,
-		struct form_control *control) {
+		struct form_control *control)
+{
 	unsigned int i, entries;
 	char *text_convert, *temp;
 	struct form_option *option;
@@ -1063,7 +1074,8 @@ void gui_create_form_select_menu(struct browser_window *bw,
  * \param menu  the data to create the menu with
  * \return the menu created, or NULL on failure
  */
-wimp_menu *ro_gui_menu_define_menu(struct ns_menu *menu) {
+wimp_menu *ro_gui_menu_define_menu(struct ns_menu *menu)
+{
 	struct menu_definition *definition;
 	int entry;
 
@@ -1108,7 +1120,8 @@ wimp_menu *ro_gui_menu_define_menu(struct ns_menu *menu) {
 void ro_gui_menu_define_menu_add(struct menu_definition *definition,
 		struct ns_menu *menu, int depth,
 		wimp_menu_entry *parent_entry, int first, int last,
-		const char *prefix, int prefix_length) {
+		const char *prefix, int prefix_length)
+{
 	int entry, id, cur_depth;
 	int entries = 0;
 	int matches[last - first + 1];
@@ -1231,7 +1244,8 @@ void ro_gui_menu_define_menu_add(struct menu_definition *definition,
  * Initialise the basic state of a menu structure so all entries are
  * indirected text with no flags, no submenu.
  */
-void ro_gui_menu_init_structure(wimp_menu *menu, int entries) {
+void ro_gui_menu_init_structure(wimp_menu *menu, int entries)
+{
   	int i;
 
 	menu->title_fg = wimp_COLOUR_BLACK;
@@ -1261,7 +1275,8 @@ void ro_gui_menu_init_structure(wimp_menu *menu, int entries) {
  * \param menu  the menu to find the definition for
  * \return the associated definition, or NULL if one could not be found
  */
-struct menu_definition *ro_gui_menu_find_menu(wimp_menu *menu) {
+struct menu_definition *ro_gui_menu_find_menu(wimp_menu *menu)
+{
 	struct menu_definition *definition;
 
 	if (!menu)
@@ -1283,7 +1298,8 @@ struct menu_definition *ro_gui_menu_find_menu(wimp_menu *menu) {
  * \return the original message key, or NULL if one could not be found
  */
 const char *ro_gui_menu_find_menu_entry_key(wimp_menu *menu,
-		const char *translated) {
+		const char *translated)
+{
 	struct menu_definition_entry *entry;
 	struct menu_definition *definition = ro_gui_menu_find_menu(menu);
 
@@ -1305,7 +1321,8 @@ const char *ro_gui_menu_find_menu_entry_key(wimp_menu *menu,
  * \return the associated menu entry, or NULL if one could not be found
  */
 struct menu_definition_entry *ro_gui_menu_find_entry(wimp_menu *menu,
-		menu_action action) {
+		menu_action action)
+{
 	struct menu_definition_entry *entry;
 	struct menu_definition *definition = ro_gui_menu_find_menu(menu);
 
@@ -1326,7 +1343,8 @@ struct menu_definition_entry *ro_gui_menu_find_entry(wimp_menu *menu,
  * \param menu_entry  the menu_entry to find
  * \return the associated action, or 0 if one could not be found
  */
-menu_action ro_gui_menu_find_action(wimp_menu *menu, wimp_menu_entry *menu_entry) {
+menu_action ro_gui_menu_find_action(wimp_menu *menu, wimp_menu_entry *menu_entry)
+{
 	struct menu_definition_entry *entry;
 	struct menu_definition *definition = ro_gui_menu_find_menu(menu);
 
@@ -1349,7 +1367,8 @@ menu_action ro_gui_menu_find_action(wimp_menu *menu, wimp_menu_entry *menu_entry
  * \param ticked  whether to set the item as ticked
  */
 void ro_gui_menu_set_entry_shaded(wimp_menu *menu, menu_action action,
-		bool shaded) {
+		bool shaded)
+{
 	struct menu_definition_entry *entry;
 	struct menu_definition *definition = ro_gui_menu_find_menu(menu);
 
@@ -1375,7 +1394,8 @@ void ro_gui_menu_set_entry_shaded(wimp_menu *menu, menu_action action,
  * \param ticked  whether to set the item as ticked
  */
 void ro_gui_menu_set_entry_ticked(wimp_menu *menu, menu_action action,
-		bool ticked) {
+		bool ticked)
+{
 	struct menu_definition_entry *entry =
 			ro_gui_menu_find_entry(menu, action);
 	if (entry) {
@@ -2249,7 +2269,8 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
  */
 void ro_gui_menu_get_window_details(wimp_w w, struct gui_window **g,
 		struct browser_window **bw, struct content **content,
-		struct toolbar **toolbar, struct tree **tree) {
+		struct toolbar **toolbar, struct tree **tree)
+{
 	*g = ro_gui_window_lookup(w);
 	if (*g) {
 		*bw = (*g)->bw;
@@ -2280,7 +2301,8 @@ void ro_gui_menu_get_window_details(wimp_w w, struct gui_window **g,
 /**
  * Calculates a simple checksum for the current menu state
  */
-int ro_gui_menu_get_checksum(void) {
+int ro_gui_menu_get_checksum(void)
+{
 	wimp_selection menu_tree;
 	int i = 0, j, checksum = 0;
 	os_error *error;

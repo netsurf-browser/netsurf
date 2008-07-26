@@ -30,7 +30,7 @@
 #include "oslib/colourtrans.h"
 #include "oslib/dragasprite.h"
 #include "oslib/osbyte.h"
-#include <oslib/osspriteop.h>
+#include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
 #include "content/urldb.h"
 #include "desktop/browser.h"
@@ -97,7 +97,8 @@ struct node_update {
 /**
  * Performs any initialisation for tree rendering
  */
-bool ro_gui_tree_initialise(void) {
+bool ro_gui_tree_initialise(void)
+{
 	if (ro_gui_tree_initialise_sprite("expand", TREE_EXPAND) ||
 			ro_gui_tree_initialise_sprite("collapse", TREE_COLLAPSE))
 		return false;
@@ -122,7 +123,8 @@ bool ro_gui_tree_initialise(void) {
  * \param  number  the sprite cache number
  * \return whether an error occurred during initialisation
  */
-bool ro_gui_tree_initialise_sprite(const char *name, int number) {
+bool ro_gui_tree_initialise_sprite(const char *name, int number)
+{
 	char icon_name[12];
 	os_error *error;
 
@@ -148,7 +150,8 @@ bool ro_gui_tree_initialise_sprite(const char *name, int number) {
  * \param width	  the width of the redraw area
  * \param height  the height of the redraw area
  */
-void tree_redraw_area(struct tree *tree, int x, int y, int width, int height) {
+void tree_redraw_area(struct tree *tree, int x, int y, int width, int height)
+{
 	os_error *error;
 
 	assert(tree);
@@ -176,7 +179,8 @@ void tree_redraw_area(struct tree *tree, int x, int y, int width, int height) {
  * \param x	 the width of the line
  * \param x	 the height of the line
  */
-void tree_draw_line(int x, int y, int width, int height) {
+void tree_draw_line(int x, int y, int width, int height)
+{
 	os_error *error;
 	int y0, y1;
 
@@ -218,7 +222,8 @@ void tree_draw_line(int x, int y, int width, int height) {
  * \param tree	   the tree to draw an element for
  * \param element  the element to draw
  */
-void tree_draw_node_element(struct tree *tree, struct node_element *element) {
+void tree_draw_node_element(struct tree *tree, struct node_element *element)
+{
 	os_error *error;
 	int toolbar_height = 0;
 	struct node_element *url_element;
@@ -385,7 +390,8 @@ void tree_draw_node_element(struct tree *tree, struct node_element *element) {
 }
 
 
-void tree_handle_node_changed_callback(void *p) {
+void tree_handle_node_changed_callback(void *p)
+{
 	struct node_update *update = p;
 
 	tree_handle_node_changed(update->tree, update->node, true, false);
@@ -399,7 +405,8 @@ void tree_handle_node_changed_callback(void *p) {
  * \param tree	   the tree to draw the expansion for
  * \param element  the element to draw the expansion for
  */
-void tree_draw_node_expansion(struct tree *tree, struct node *node) {
+void tree_draw_node_expansion(struct tree *tree, struct node *node)
+{
 	unsigned int type;
 
 	assert(tree);
@@ -428,7 +435,8 @@ void tree_draw_node_expansion(struct tree *tree, struct node *node) {
  *
  * \param tree  the tree to set the origin for
  */
-void tree_initialise_redraw(struct tree *tree) {
+void tree_initialise_redraw(struct tree *tree)
+{
 	os_error *error;
 	wimp_window_state state;
 
@@ -454,7 +462,8 @@ void tree_initialise_redraw(struct tree *tree) {
  *
  * \param element  the element to recalculate
  */
-void tree_recalculate_node_element(struct node_element *element) {
+void tree_recalculate_node_element(struct node_element *element)
+{
 	const struct bitmap *bitmap = NULL;
 	struct node_element *url_element;
 	rufl_code code;
@@ -510,7 +519,8 @@ void tree_recalculate_node_element(struct node_element *element) {
  * \param selected  the expanded sprite name to use
  */
 void tree_set_node_sprite(struct node *node, const char *sprite,
-		const char *expanded) {
+		const char *expanded)
+{
 	assert(node);
 	assert(sprite);
 	assert(expanded);
@@ -529,7 +539,8 @@ void tree_set_node_sprite(struct node *node, const char *sprite,
  *
  * \param node  the node to update
  */
-void tree_set_node_sprite_folder(struct node *node) {
+void tree_set_node_sprite_folder(struct node *node)
+{
 	assert(node->folder);
 
 	tree_set_node_sprite(node, "small_dir", "small_diro");
@@ -545,7 +556,8 @@ void tree_set_node_sprite_folder(struct node *node) {
  * \param data  the data the node is linked to, or NULL for unlinked data
  */
 void tree_update_URL_node(struct node *node,
-		const char *url, const struct url_data *data) {
+		const char *url, const struct url_data *data)
+{
 	struct node_element *element;
 	char buffer[256];
 
@@ -588,7 +600,7 @@ void tree_update_URL_node(struct node *node,
 					messages_get("TreeUnknown"));
 		if (data->last_visit > 0)
 			buffer[strlen(buffer) - 1] = '\0';
-		free(element->text);
+		free((void *)element->text);
 		element->text = strdup(buffer);
 	}
 
@@ -596,7 +608,7 @@ void tree_update_URL_node(struct node *node,
 	if (element) {
 		snprintf(buffer, 256, messages_get("TreeVisits"),
 				data->visits);
-		free(element->text);
+		free((void *)element->text);
 		element->text = strdup(buffer);
 	}
 }
@@ -607,7 +619,8 @@ void tree_update_URL_node(struct node *node,
  *
  * \param tree  the tree to update the owner of
  */
-void tree_resized(struct tree *tree) {
+void tree_resized(struct tree *tree)
+{
 	os_error *error;
 	wimp_window_state state;
 
@@ -633,7 +646,8 @@ void tree_resized(struct tree *tree) {
  * \param redraw  the area to redraw
  * \param tree	  the tree to redraw
  */
-void ro_gui_tree_redraw(wimp_draw *redraw) {
+void ro_gui_tree_redraw(wimp_draw *redraw)
+{
 	struct tree *tree;
 	osbool more;
 	int clip_x0, clip_x1, clip_y0, clip_y1, origin_x, origin_y;
@@ -667,7 +681,8 @@ void ro_gui_tree_redraw(wimp_draw *redraw) {
  * \param tree	   the tree to handle a click for
  * \return whether the click was handled
  */
-bool ro_gui_tree_click(wimp_pointer *pointer, struct tree *tree) {
+bool ro_gui_tree_click(wimp_pointer *pointer, struct tree *tree)
+{
 	bool furniture;
 	struct node *node;
 	struct node *last;
@@ -935,7 +950,8 @@ bool ro_gui_tree_click(wimp_pointer *pointer, struct tree *tree) {
  *
  * \param tree  the tree to handle the event for
  */
-void ro_gui_tree_menu_closed(struct tree *tree) {
+void ro_gui_tree_menu_closed(struct tree *tree)
+{
 	assert(tree);
 
 	if (tree->temp_selection) {
@@ -953,7 +969,8 @@ void ro_gui_tree_menu_closed(struct tree *tree) {
  *
  * \param pointer  the pointer state
  */
-bool ro_gui_tree_toolbar_click(wimp_pointer* pointer) {
+bool ro_gui_tree_toolbar_click(wimp_pointer* pointer)
+{
 	struct node *node;
 
 	struct toolbar *toolbar =
@@ -1016,7 +1033,8 @@ bool ro_gui_tree_toolbar_click(wimp_pointer* pointer) {
  * \param pointer  the pointer data to use for caret positioning (or NULL)
  */
 void ro_gui_tree_start_edit(struct tree *tree, struct node_element *element,
-		wimp_pointer *pointer) {
+		wimp_pointer *pointer)
+{
 	os_error *error;
 	struct node *parent;
 	int toolbar_height = 0;
@@ -1082,7 +1100,8 @@ void ro_gui_tree_start_edit(struct tree *tree, struct node_element *element,
  *
  * \param tree  the tree to stop editing for
  */
-void ro_gui_tree_stop_edit(struct tree *tree) {
+void ro_gui_tree_stop_edit(struct tree *tree)
+{
 	os_error *error;
 
 	assert(tree);
@@ -1115,7 +1134,8 @@ void ro_gui_tree_stop_edit(struct tree *tree) {
  * \param tree	   the tree to scroll
  * \param element  the element to display
  */
-void ro_gui_tree_scroll_visible(struct tree *tree, struct node_element *element) {
+void ro_gui_tree_scroll_visible(struct tree *tree, struct node_element *element)
+{
 	wimp_window_state state;
 	int x0, x1, y0, y1;
 	os_error *error;
@@ -1155,7 +1175,8 @@ void ro_gui_tree_scroll_visible(struct tree *tree, struct node_element *element)
 /**
  * Shows the a tree window.
  */
-void ro_gui_tree_show(struct tree *tree) {
+void ro_gui_tree_show(struct tree *tree)
+{
 	struct toolbar *toolbar;
 
 	/* we may have failed to initialise */
@@ -1182,7 +1203,8 @@ void ro_gui_tree_show(struct tree *tree) {
  *
  * \param open  the window state
  */
-void ro_gui_tree_open(wimp_open *open) {
+void ro_gui_tree_open(wimp_open *open)
+{
 	struct tree *tree;
 	os_error *error;
 	int width;
@@ -1251,7 +1273,8 @@ void ro_gui_tree_open(wimp_open *open) {
  * \param tree  the tree to handle a keypress for
  * \return whether the key was processed
  */
-bool ro_gui_tree_keypress(wimp_key *key) {
+bool ro_gui_tree_keypress(wimp_key *key)
+{
 	wimp_window_state state;
 	int y;
 	char *new_string;
@@ -1295,7 +1318,7 @@ bool ro_gui_tree_keypress(wimp_key *key) {
 			  	}
 			  	textarea_get_text(tree->textarea_handle,
 			  			new_string, strlen);
-			  	free(tree->editing->text);
+			  	free((void *)tree->editing->text);
 			  	tree->editing->text = new_string;
 				ro_gui_tree_stop_edit(tree);
 				tree_recalculate_size(tree);
@@ -1381,7 +1404,8 @@ bool ro_gui_tree_keypress(wimp_key *key) {
  *
  * \param drag  the drag box information
  */
-void ro_gui_tree_selection_drag_end(wimp_dragged *drag) {
+void ro_gui_tree_selection_drag_end(wimp_dragged *drag)
+{
 	wimp_window_state state;
 	wimp_auto_scroll_info scroll;
 	os_error *error;
@@ -1458,7 +1482,8 @@ void ro_gui_tree_get_tree_coordinates(struct tree *tree, int x, int y,
  *
  * \param drag  the drag box information
  */
-void ro_gui_tree_move_drag_end(wimp_dragged *drag) {
+void ro_gui_tree_move_drag_end(wimp_dragged *drag)
+{
 	struct gui_window *g;
 	wimp_pointer pointer;
 	wimp_auto_scroll_info scroll;
@@ -1514,7 +1539,8 @@ void ro_gui_tree_move_drag_end(wimp_dragged *drag) {
  *
  * \param tree  the tree to launch all selected nodes for
  */
-void ro_gui_tree_launch_selected(struct tree *tree) {
+void ro_gui_tree_launch_selected(struct tree *tree)
+{
 	assert(tree);
 
 	if (tree->root->child)
@@ -1527,7 +1553,9 @@ void ro_gui_tree_launch_selected(struct tree *tree) {
  *
  * \param node  the node to launch all selected nodes for
  */
-void ro_gui_tree_launch_selected_node(struct tree *tree, struct node *node, bool all) {
+void ro_gui_tree_launch_selected_node(struct tree *tree, struct node *node,
+		bool all)
+{
 	for (; node; node = node->next) {
 		if (((node->selected) || (all)) && (!node->folder))
 			ro_gui_tree_launch_node(tree, node);
@@ -1544,7 +1572,8 @@ void ro_gui_tree_launch_selected_node(struct tree *tree, struct node *node, bool
  * \param node  the node to launch
  * \return whether the node could be launched
  */
-bool ro_gui_tree_launch_node(struct tree *tree, struct node *node) {
+bool ro_gui_tree_launch_node(struct tree *tree, struct node *node)
+{
 	struct node_element *element;
 
 	assert(node);
@@ -1566,12 +1595,14 @@ bool ro_gui_tree_launch_node(struct tree *tree, struct node *node) {
 	return false;
 }
 
-int ro_gui_tree_help(int x, int y) {
+int ro_gui_tree_help(int x, int y)
+{
 	return -1;
 }
 
 
-void ro_gui_tree_update_theme(struct tree *tree) {
+void ro_gui_tree_update_theme(struct tree *tree)
+{
 	if ((tree) && (tree->toolbar)) {
 		if (tree->toolbar->editor)
 			if (!ro_gui_theme_update_toolbar(NULL, tree->toolbar->editor))

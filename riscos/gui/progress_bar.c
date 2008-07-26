@@ -23,10 +23,10 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <string.h>
-#include <swis.h>
+#include "swis.h"
 #include "oslib/colourtrans.h"
 #include "oslib/os.h"
-#include <oslib/osspriteop.h>
+#include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
 #include "desktop/plotters.h"
@@ -99,7 +99,8 @@ static void ro_gui_progress_bar_animate(void *p);
  *
  * \param  icons  the sprite area to use for icons
  */
-void ro_gui_progress_bar_init(osspriteop_area *icons) {
+void ro_gui_progress_bar_init(osspriteop_area *icons)
+{
 	os_error *error;
 
 	progress_bar_definition.sprite_area = icons;
@@ -120,7 +121,8 @@ void ro_gui_progress_bar_init(osspriteop_area *icons) {
 /**
  * Create a new progress bar
  */
-struct progress_bar *ro_gui_progress_bar_create(void) {
+struct progress_bar *ro_gui_progress_bar_create(void)
+{
 	struct progress_bar *pb;
 	os_error *error;
 
@@ -149,7 +151,8 @@ struct progress_bar *ro_gui_progress_bar_create(void) {
  *
  * \param  pb  the progress bar to destroy
  */
-void ro_gui_progress_bar_destroy(struct progress_bar *pb) {
+void ro_gui_progress_bar_destroy(struct progress_bar *pb)
+{
 	os_error *error;
 	assert(pb);
 
@@ -172,7 +175,8 @@ void ro_gui_progress_bar_destroy(struct progress_bar *pb) {
  * \param  pb  the progress bar to get the window handle of
  * \return the progress bar's window handle
  */
-wimp_w ro_gui_progress_bar_get_window(struct progress_bar *pb) {
+wimp_w ro_gui_progress_bar_get_window(struct progress_bar *pb)
+{
 	assert(pb);
 
 	return pb->w;
@@ -185,7 +189,8 @@ wimp_w ro_gui_progress_bar_get_window(struct progress_bar *pb) {
  * \param  pb  the progress bar to set the icon for
  * \param  icon  the icon to use, or NULL for no icon
  */
-void ro_gui_progress_bar_set_icon(struct progress_bar *pb, const char *icon) {
+void ro_gui_progress_bar_set_icon(struct progress_bar *pb, const char *icon)
+{
 	assert(pb);
 
 	if (!strcmp(icon, pb->icon))
@@ -208,7 +213,8 @@ void ro_gui_progress_bar_set_icon(struct progress_bar *pb, const char *icon) {
  * \param  pb  the progress bar to set the value for
  * \param  value  the value to use
  */
-void ro_gui_progress_bar_set_value(struct progress_bar *pb, unsigned int value) {
+void ro_gui_progress_bar_set_value(struct progress_bar *pb, unsigned int value)
+{
 	assert(pb);
 
 	pb->value = value;
@@ -224,7 +230,8 @@ void ro_gui_progress_bar_set_value(struct progress_bar *pb, unsigned int value) 
  * \param  pb  the progress bar to get the value of
  * \return the current value
  */
-unsigned int ro_gui_progress_bar_get_value(struct progress_bar *pb) {
+unsigned int ro_gui_progress_bar_get_value(struct progress_bar *pb)
+{
 	assert(pb);
 
 	return pb->value;
@@ -237,7 +244,8 @@ unsigned int ro_gui_progress_bar_get_value(struct progress_bar *pb) {
  * \param  pb  the progress bar to set the range for
  * \param  range  the range to use
  */
-void ro_gui_progress_bar_set_range(struct progress_bar *pb, unsigned int range) {
+void ro_gui_progress_bar_set_range(struct progress_bar *pb, unsigned int range)
+{
 	assert(pb);
 
 	pb->range = range;
@@ -253,7 +261,8 @@ void ro_gui_progress_bar_set_range(struct progress_bar *pb, unsigned int range) 
  * \param  pb  the progress bar to get the range of
  * \return the current range
  */
-unsigned int ro_gui_progress_bar_get_range(struct progress_bar *pb) {
+unsigned int ro_gui_progress_bar_get_range(struct progress_bar *pb)
+{
 	assert(pb);
 
 	return pb->range;
@@ -267,7 +276,8 @@ unsigned int ro_gui_progress_bar_get_range(struct progress_bar *pb) {
  * \param  width  the new progress bar width
  * \param  height  the new progress bar height
  */
-void ro_gui_progress_bar_update(struct progress_bar *pb, int width, int height) {
+void ro_gui_progress_bar_update(struct progress_bar *pb, int width, int height)
+{
   	wimp_draw redraw;
 	os_error *error;
 	osbool more;
@@ -321,8 +331,8 @@ void ro_gui_progress_bar_update(struct progress_bar *pb, int width, int height) 
  *
  * \param  redraw  the redraw request to process
  */
-void ro_gui_progress_bar_redraw(wimp_draw *redraw) {
-
+void ro_gui_progress_bar_redraw(wimp_draw *redraw)
+{
 	struct progress_bar *pb;
 	os_error *error;
 	osbool more;
@@ -346,7 +356,8 @@ void ro_gui_progress_bar_redraw(wimp_draw *redraw) {
  *
  * \param  p  the progress bar to animate
  */
-void ro_gui_progress_bar_animate(void *p) {
+void ro_gui_progress_bar_animate(void *p)
+{
   	wimp_draw redraw;
 	os_error *error;
 	osbool more;
@@ -377,7 +388,9 @@ void ro_gui_progress_bar_animate(void *p) {
  * \param  height  the height of the progress bar
  * \return the address of the associated icon, or NULL
  */
-void ro_gui_progress_bar_calculate(struct progress_bar *pb, int width, int height) {
+void ro_gui_progress_bar_calculate(struct progress_bar *pb, int width,
+		int height)
+{
 	os_error *error;
 	int icon_width, icon_height;
 	int icon_x0 = 0, icon_y0 = 0, progress_x0, progress_x1, progress_ymid = 0;
@@ -448,7 +461,9 @@ void ro_gui_progress_bar_calculate(struct progress_bar *pb, int width, int heigh
  * \param  redraw  the section of the window to redraw
  * \param  pb  the progress bar to redraw
  */
-void ro_gui_progress_bar_redraw_window(wimp_draw *redraw, struct progress_bar *pb) {
+void ro_gui_progress_bar_redraw_window(wimp_draw *redraw,
+		struct progress_bar *pb)
+{
 	os_error *error;
 	osbool more = true;
 	int clip_x0 = 0, clip_y0 = 0, clip_x1 = 0, clip_y1 = 0;

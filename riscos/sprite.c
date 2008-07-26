@@ -28,7 +28,7 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <oslib/osspriteop.h>
+#include "oslib/osspriteop.h"
 #include "utils/config.h"
 #include "desktop/plotters.h"
 #include "content/content.h"

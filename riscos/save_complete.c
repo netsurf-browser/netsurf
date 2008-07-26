@@ -31,7 +31,7 @@
 #include <regex.h>
 #include <libxml/HTMLtree.h>
 #include <libxml/parserInternals.h>
-#include <oslib/osfile.h>
+#include "oslib/osfile.h"
 #include "utils/config.h"
 #include "content/content.h"
 #include "css/css.h"
@@ -66,7 +66,7 @@ static bool rewrite_url(xmlNode *n, const char *attr, const char *base);
 static bool save_complete_list_add(struct content *content);
 static struct content * save_complete_list_find(const char *url);
 static bool save_complete_list_check(struct content *content);
-static void save_complete_list_dump(void);
+/* static void save_complete_list_dump(void); */
 static bool save_complete_inventory(const char *path);
 
 /**
@@ -728,6 +728,8 @@ bool save_complete_list_check(struct content *content)
 	return false;
 }
 
+
+#if 0
 /**
  * Dump save complete list to stderr
  */
@@ -738,6 +740,7 @@ void save_complete_list_dump(void)
 		fprintf(stderr, "%p : %s\n", entry->content,
 						entry->content->url);
 }
+#endif
 
 
 /**

@@ -20,10 +20,9 @@
 #define _NETSURF_RISCOS_SAVE_PDF_H_
 
 #include "utils/config.h"
+#include "content/content.h"
 
 #ifdef WITH_PDF_EXPORT
-struct content;
-
 bool save_as_pdf(struct content *c, const char *path);
 #endif
 

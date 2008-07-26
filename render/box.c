@@ -677,7 +677,6 @@ struct box* box_duplicate_tree(struct box *root, struct content *c)
 {
 	struct box *new_root;/**< Root of the new box tree*/
 	int box_number = 0;
-	struct box *old_addr, *new_addr;
 	struct box_dict_element *box_dict, *box_dict_end;
 	
 	/* 1. Duplicate parent - children structure, list_markers*/

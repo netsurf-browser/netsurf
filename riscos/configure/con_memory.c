@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdbool.h>
 #include "desktop/options.h"
 #include "riscos/bitmap.h"
 #include "riscos/options.h"
@@ -43,7 +44,8 @@ static bool ro_gui_options_memory_click(wimp_pointer *pointer);
 static bool ro_gui_options_memory_ok(wimp_w w);
 static void ro_gui_options_update_shading(wimp_w w);
 
-bool ro_gui_options_memory_initialise(wimp_w w) {
+bool ro_gui_options_memory_initialise(wimp_w w)
+{
 	/* set the current values */
 	ro_gui_set_icon_decimal(w, MEMORY_DIRECT_FIELD,
 			(bitmap_direct_size * 10) >> 20, 1);
@@ -77,7 +79,8 @@ bool ro_gui_options_memory_initialise(wimp_w w) {
 
 }
 
-bool ro_gui_options_memory_click(wimp_pointer *pointer) {
+bool ro_gui_options_memory_click(wimp_pointer *pointer)
+{
 	switch (pointer->i) {
 		case MEMORY_DIRECT_AUTO:
 			ro_gui_options_update_shading(pointer->w);
@@ -100,7 +103,8 @@ bool ro_gui_options_memory_click(wimp_pointer *pointer) {
 	return false;
 }
 
-void ro_gui_options_update_shading(wimp_w w) {
+void ro_gui_options_update_shading(wimp_w w)
+{
 	bool shaded;
 
 	shaded = ro_gui_get_icon_selected_state(w, MEMORY_DIRECT_AUTO);
@@ -115,7 +119,8 @@ void ro_gui_options_update_shading(wimp_w w) {
 	ro_gui_set_icon_shaded_state(w, MEMORY_COMPRESSED_TEXT, shaded);
 }
 
-bool ro_gui_options_memory_ok(wimp_w w) {
+bool ro_gui_options_memory_ok(wimp_w w)
+{
 	/* set the option values */
 	if (ro_gui_get_icon_selected_state(w, MEMORY_DIRECT_AUTO))
 		option_image_memory_direct = -1;

@@ -30,7 +30,7 @@
 #include "oslib/osgbpb.h"
 #include "oslib/osfile.h"
 #include "oslib/osfind.h"
-#include <oslib/osspriteop.h>
+#include "oslib/osspriteop.h"
 #include "oslib/wimpspriteop.h"
 #include "oslib/squash.h"
 #include "oslib/wimp.h"
@@ -129,7 +129,8 @@ static char theme_favicon_sprite[12];
 /**
  * Initialise the theme handler
  */
-void ro_gui_theme_initialise(void) {
+void ro_gui_theme_initialise(void)
+{
 	struct theme_descriptor *descriptor;
 
 	theme_descriptors = ro_gui_theme_get_available();
@@ -143,7 +144,8 @@ void ro_gui_theme_initialise(void) {
 /**
  * Finalise the theme handler
  */
-void ro_gui_theme_finalise(void) {
+void ro_gui_theme_finalise(void)
+{
 	ro_gui_theme_close(theme_current, false);
 	ro_gui_theme_free(theme_descriptors);
 }
@@ -159,7 +161,8 @@ void ro_gui_theme_finalise(void) {
  * \param leafname  the filename of the theme_descriptor to return
  * \return the requested theme_descriptor, or NULL if not found
  */
-struct theme_descriptor *ro_gui_theme_find(const char *leafname) {
+struct theme_descriptor *ro_gui_theme_find(const char *leafname)
+{
 	struct theme_descriptor *descriptor;
 
 	if (!leafname)
@@ -183,7 +186,8 @@ struct theme_descriptor *ro_gui_theme_find(const char *leafname) {
  *
  * \return the requested theme_descriptor, or NULL if not found
  */
-struct theme_descriptor *ro_gui_theme_get_available(void) {
+struct theme_descriptor *ro_gui_theme_get_available(void)
+{
 	struct theme_descriptor *current;
 	struct theme_descriptor *test;
 
@@ -229,7 +233,8 @@ struct theme_descriptor *ro_gui_theme_get_available(void) {
  *
  * \param directory  the directory to scan
  */
-static void ro_gui_theme_get_available_in_dir(const char *directory) {
+static void ro_gui_theme_get_available_in_dir(const char *directory)
+{
 	int context = 0;
 	int read_count;
 	osgbpb_INFO(100) info;
@@ -263,7 +268,8 @@ static void ro_gui_theme_get_available_in_dir(const char *directory) {
  * \param leafname	the theme leafname
  * \return whether the theme was added
  */
-bool ro_gui_theme_add_descriptor(const char *folder, const char *leafname) {
+bool ro_gui_theme_add_descriptor(const char *folder, const char *leafname)
+{
 	struct theme_file_header file_header;
 	struct theme_descriptor *current;
 	struct theme_descriptor *test;
@@ -358,8 +364,8 @@ bool ro_gui_theme_add_descriptor(const char *folder, const char *leafname) {
  * \return false for a badly formed theme, true otherwise
  */
 bool ro_gui_theme_read_file_header(struct theme_descriptor *descriptor,
-		struct theme_file_header *file_header) {
-
+		struct theme_file_header *file_header)
+{
 	if ((file_header->magic_value != 0x4d54534e) ||
 			(file_header->parser_version > 2))
 		return false;
@@ -393,7 +399,8 @@ bool ro_gui_theme_read_file_header(struct theme_descriptor *descriptor,
  * \param list	      whether to open all themes in the list
  * \return whether the operation was successful
  */
-bool ro_gui_theme_open(struct theme_descriptor *descriptor, bool list) {
+bool ro_gui_theme_open(struct theme_descriptor *descriptor, bool list)
+{
 	fileswitch_object_type obj_type;
 	squash_output_status status;
 	os_coord dimensions;
@@ -560,7 +567,8 @@ bool ro_gui_theme_open(struct theme_descriptor *descriptor, bool list) {
  * \param descriptor  the theme_descriptor to open
  * \return whether the operation was successful
  */
-bool ro_gui_theme_apply(struct theme_descriptor *descriptor) {
+bool ro_gui_theme_apply(struct theme_descriptor *descriptor)
+{
 	struct theme_descriptor *theme_previous;
 
 	/* check if the theme is already applied */
@@ -590,7 +598,8 @@ bool ro_gui_theme_apply(struct theme_descriptor *descriptor) {
  * \param list	      whether to open all themes in the list
  * \return whether the operation was successful
  */
-void ro_gui_theme_close(struct theme_descriptor *descriptor, bool list) {
+void ro_gui_theme_close(struct theme_descriptor *descriptor, bool list)
+{
 
 	if (!descriptor)
 		return;
@@ -622,7 +631,8 @@ void ro_gui_theme_close(struct theme_descriptor *descriptor, bool list) {
  * \param redraw   the redraw area
  * \param toolbar  the toolbar to redraw
  */
-void ro_gui_theme_redraw(wimp_draw *redraw) {
+void ro_gui_theme_redraw(wimp_draw *redraw)
+{
 	struct toolbar *toolbar;
 	struct gui_window *g;
 
@@ -706,7 +716,8 @@ void ro_gui_theme_redraw(wimp_draw *redraw) {
  * \param list	      whether to open all themes in the list
  * \return whether the operation was successful
  */
-void ro_gui_theme_free(struct theme_descriptor *descriptor) {
+void ro_gui_theme_free(struct theme_descriptor *descriptor)
+{
 	struct theme_descriptor *next_descriptor;
 
 	if (!descriptor)
@@ -749,7 +760,8 @@ void ro_gui_theme_free(struct theme_descriptor *descriptor) {
  * \return a new toolbar, or NULL for failure
  */
 struct toolbar *ro_gui_theme_create_toolbar(struct theme_descriptor *descriptor,
-		toolbar_type type) {
+		toolbar_type type)
+{
 	struct toolbar *toolbar;
 
 	/*	Create a new toolbar
@@ -854,7 +866,8 @@ struct toolbar *ro_gui_theme_create_toolbar(struct theme_descriptor *descriptor,
  * \return whether the operation was successful
  */
 bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor,
-		struct toolbar *toolbar) {
+		struct toolbar *toolbar)
+{
 	wimp_icon_create new_icon;
 	os_error *error;
 	osspriteop_area *sprite_area;
@@ -1131,7 +1144,8 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor,
  * \param parent      the window to contain the toolbar
  * \return whether the operation was successful
  */
-bool ro_gui_theme_attach_toolbar(struct toolbar *toolbar, wimp_w parent) {
+bool ro_gui_theme_attach_toolbar(struct toolbar *toolbar, wimp_w parent)
+{
 	wimp_outline outline;
 	wimp_window_state state;
 	int height;
@@ -1222,7 +1236,8 @@ bool ro_gui_theme_attach_toolbar(struct toolbar *toolbar, wimp_w parent) {
  * \param width	      a specific width to resize to, or -1 to use parent width
  * \return whether the operation was successful
  */
-bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
+bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width)
+{
 	wimp_caret caret;
 	os_box extent = { 0, 0, 0, 0 };
 	os_error *error;
@@ -1533,7 +1548,8 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
  *
  * \param toolbar     the toolbar to destroy
  */
-void ro_gui_theme_destroy_toolbar(struct toolbar *toolbar) {
+void ro_gui_theme_destroy_toolbar(struct toolbar *toolbar)
+{
 	struct toolbar_icon *icon;
 	struct toolbar_icon *next_icon;
 	if (!toolbar) return;
@@ -1572,7 +1588,8 @@ void ro_gui_theme_destroy_toolbar(struct toolbar *toolbar) {
  *
  * \param toolbar      the toolbar to toggle editing for
  */
-void ro_gui_theme_toggle_edit(struct toolbar *toolbar) {
+void ro_gui_theme_toggle_edit(struct toolbar *toolbar)
+{
 	int icons = 0;
 	struct toolbar_icon *icon;
 	struct gui_window *g = NULL;
@@ -1713,7 +1730,8 @@ void ro_gui_theme_toggle_edit(struct toolbar *toolbar) {
  *
  * \param toolbar  the toolbar to synchronise
  */
-void ro_gui_theme_toolbar_editor_sync(struct toolbar *toolbar) {
+void ro_gui_theme_toolbar_editor_sync(struct toolbar *toolbar)
+{
 	struct toolbar_icon *icon;
 	struct toolbar_icon *icon_edit;
 
@@ -1802,7 +1820,8 @@ void ro_gui_theme_toolbar_editor_click(struct toolbar *toolbar,
  *
  * \param drag  the details for the drag end
  */
-void ro_gui_theme_toolbar_editor_drag_end(wimp_dragged *drag) {
+void ro_gui_theme_toolbar_editor_drag_end(wimp_dragged *drag)
+{
 	wimp_window_state state;
 	os_error *error;
 	wimp_pointer pointer;
@@ -1903,7 +1922,8 @@ void ro_gui_theme_toolbar_editor_drag_end(wimp_dragged *drag) {
  * \param icon_number  RISC OS wimp icon number for the icon (not separators)
  */
 struct toolbar_icon *ro_gui_theme_add_toolbar_icon(struct toolbar *toolbar,
-		const char *name, int icon_number) {
+		const char *name, int icon_number)
+{
 	struct toolbar_icon *toolbar_icon;
 	struct toolbar_icon *link_icon;
 
@@ -1948,7 +1968,8 @@ struct toolbar_icon *ro_gui_theme_add_toolbar_icon(struct toolbar *toolbar,
  * \param icon	   the toolbar icon to update
  */
 void ro_gui_theme_update_toolbar_icon(struct toolbar *toolbar,
-		struct toolbar_icon *icon) {
+		struct toolbar_icon *icon)
+{
 	os_coord dimensions = {0, 0};
 	os_mode mode;
 	os_error *error = NULL;
@@ -2002,7 +2023,8 @@ void ro_gui_theme_update_toolbar_icon(struct toolbar *toolbar,
  *
  * \param icon	   the toolbar icon to destroy
  */
-void ro_gui_theme_destroy_toolbar_icon(struct toolbar_icon *icon) {
+void ro_gui_theme_destroy_toolbar_icon(struct toolbar_icon *icon)
+{
 	free(icon);
 }
 
@@ -2014,7 +2036,8 @@ void ro_gui_theme_destroy_toolbar_icon(struct toolbar_icon *icon) {
  */
 void ro_gui_theme_link_toolbar_icon(struct toolbar *toolbar,
 		struct toolbar_icon *icon, struct toolbar_icon *link,
-		bool before) {
+		bool before)
+{
 	struct toolbar_icon *temp;
 	assert(toolbar);
 	assert(icon);
@@ -2049,7 +2072,8 @@ void ro_gui_theme_link_toolbar_icon(struct toolbar *toolbar,
  * \param icon	   the toolbar icon to delink
  */
 void ro_gui_theme_delink_toolbar_icon(struct toolbar *toolbar,
-		struct toolbar_icon *icon) {
+		struct toolbar_icon *icon)
+{
 	struct toolbar_icon *link;
 	assert(toolbar);
 	assert(icon);
@@ -2078,7 +2102,8 @@ void ro_gui_theme_delink_toolbar_icon(struct toolbar *toolbar,
  * \return the toolbar icon at the specified position, or NULL for no icon
  */
 struct toolbar_icon *ro_gui_theme_toolbar_get_icon(struct toolbar *toolbar,
-		int x, int y) {
+		int x, int y)
+{
 	struct toolbar_icon *icon;
 
 	for (icon = toolbar->icon; icon; icon = icon->next)
@@ -2101,7 +2126,8 @@ struct toolbar_icon *ro_gui_theme_toolbar_get_icon(struct toolbar *toolbar,
  * \return the toolbar icon closest to the specified position, or NULL
  */
 struct toolbar_icon *ro_gui_theme_toolbar_get_insert_icon(
-		struct toolbar *toolbar, int x, int y, bool *before) {
+		struct toolbar *toolbar, int x, int y, bool *before)
+{
 	struct toolbar_icon *match = NULL;
 	struct toolbar_icon *icon;
 	int closest = 65536;
@@ -2130,7 +2156,8 @@ struct toolbar_icon *ro_gui_theme_toolbar_get_insert_icon(
  * Sets up a toolbar with icons according to an identifier string
  */
 void ro_gui_theme_add_toolbar_icons(struct toolbar *toolbar,
-		const char* icons[], const char* ident) {
+		const char* icons[], const char* ident)
+{
 	struct toolbar_icon *icon;
 	int index = 0;
 	int number = 0;
@@ -2173,7 +2200,8 @@ void ro_gui_theme_add_toolbar_icons(struct toolbar *toolbar,
 /**
  * Sets the correct help prefix for a toolbar
  */
-void ro_gui_theme_set_help_prefix(struct toolbar *toolbar) {
+void ro_gui_theme_set_help_prefix(struct toolbar *toolbar)
+{
 	if (toolbar->editor) {
 		ro_gui_wimp_event_set_help_prefix(toolbar->toolbar_handle,
 				"HelpEditToolbar");
@@ -2206,7 +2234,8 @@ void ro_gui_theme_set_help_prefix(struct toolbar *toolbar) {
 	}
 }
 
-int ro_gui_theme_height_change(struct toolbar *toolbar) {
+int ro_gui_theme_height_change(struct toolbar *toolbar)
+{
   	int height, cur_height;
 
   	cur_height = ro_gui_theme_toolbar_full_height(toolbar);

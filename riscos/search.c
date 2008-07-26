@@ -23,10 +23,8 @@
 
 #include <ctype.h>
 #include <string.h>
-
 #include "oslib/hourglass.h"
 #include "oslib/wimp.h"
-
 #include "utils/config.h"
 #include "content/content.h"
 #include "desktop/browser.h"

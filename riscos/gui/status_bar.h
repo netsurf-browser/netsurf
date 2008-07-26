@@ -20,10 +20,10 @@
  * UTF8 status bar (interface).
  */
 
-#include <stdbool.h>
-
 #ifndef _NETSURF_RISCOS_STATUS_BAR_H_
 #define _NETSURF_RISCOS_STATUS_BAR_H_
+
+#include <stdbool.h>
 
 struct status_bar;
 

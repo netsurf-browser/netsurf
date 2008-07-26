@@ -24,11 +24,7 @@
 #ifndef _NETSURF_RISCOS_CONFIGURE_H_
 #define _NETSURF_RISCOS_CONFIGURE_H_
 
-#include <assert.h>
 #include <stdbool.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include "oslib/os.h"
 #include "oslib/wimp.h"
 

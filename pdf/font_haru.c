@@ -177,8 +177,6 @@ bool haru_nsfont_position_in_string(const struct css_style *style,
 	char *string_nt;
 	HPDF_UINT offset;
 	HPDF_REAL real_width;
-	HPDF_REAL width;
-	
 	
 	if (!haru_nsfont_init(&pdf, &page, string, &string_nt, length))
 		return false;

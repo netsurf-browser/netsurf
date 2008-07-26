@@ -17,8 +17,8 @@
  */
 
 #include <stdbool.h>
-#include <swis.h>
-#include <oslib/osspriteop.h>
+#include "swis.h"
+#include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
 #include "desktop/options.h"
 #include "riscos/configure/configure.h"
@@ -59,7 +59,8 @@ int example_users = 0;
 unsigned int tinct_options[] = {tinct_USE_OS_SPRITE_OP, 0, tinct_DITHER,
 		tinct_ERROR_DIFFUSE};
 
-bool ro_gui_options_image_initialise(wimp_w w) {
+bool ro_gui_options_image_initialise(wimp_w w)
+{
 	char pathname[256];
 	int i;
 
@@ -114,7 +115,8 @@ bool ro_gui_options_image_initialise(wimp_w w) {
 
 }
 
-void ro_gui_options_image_finalise(wimp_w w) {
+void ro_gui_options_image_finalise(wimp_w w)
+{
 	example_users--;
 	if (example_users == 0) {
 	  	free(example_images);
@@ -123,11 +125,13 @@ void ro_gui_options_image_finalise(wimp_w w) {
 	ro_gui_wimp_event_finalise(w);
 }
 
-void ro_gui_options_image_update(wimp_w w, wimp_i i) {
+void ro_gui_options_image_update(wimp_w w, wimp_i i)
+{
 	ro_gui_redraw_icon(w, IMAGE_CURRENT_DISPLAY);
 }
 
-void ro_gui_options_image_redraw(wimp_draw *redraw) {
+void ro_gui_options_image_redraw(wimp_draw *redraw)
+{
 	osbool more;
 	int origin_x, origin_y;
 	os_error *error;
@@ -173,7 +177,8 @@ void ro_gui_options_image_redraw(wimp_draw *redraw) {
 	}
 }
 
-void ro_gui_options_image_read(wimp_w w, unsigned int *bg, unsigned int *fg) {
+void ro_gui_options_image_read(wimp_w w, unsigned int *bg, unsigned int *fg)
+{
 	char *text;
 	int i;
 
@@ -189,7 +194,8 @@ void ro_gui_options_image_read(wimp_w w, unsigned int *bg, unsigned int *fg) {
 			*bg = tinct_options[i];
 }
 
-bool ro_gui_options_image_click(wimp_pointer *pointer) {
+bool ro_gui_options_image_click(wimp_pointer *pointer)
+{
 	unsigned int old_fg, old_bg, bg, fg;
 
 	ro_gui_options_image_read(pointer->w, &old_bg, &old_fg);
@@ -220,7 +226,8 @@ bool ro_gui_options_image_click(wimp_pointer *pointer) {
 	return false;
 }
 
-void ro_gui_options_update_shading(wimp_w w) {
+void ro_gui_options_update_shading(wimp_w w)
+{
 	bool shaded;
 
 	shaded = ro_gui_get_icon_selected_state(w, IMAGE_DISABLE_ANIMATION);
@@ -231,7 +238,8 @@ void ro_gui_options_update_shading(wimp_w w) {
 	ro_gui_set_icon_shaded_state(w, IMAGE_SPEED_CS, shaded);
 }
 
-bool ro_gui_options_image_ok(wimp_w w) {
+bool ro_gui_options_image_ok(wimp_w w)
+{
 	ro_gui_options_image_read(w, &option_bg_plot_style, &option_fg_plot_style);
 	option_minimum_gif_delay = ro_gui_get_icon_decimal(w,
 			IMAGE_SPEED_FIELD, 2);

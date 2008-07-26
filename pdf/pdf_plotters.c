@@ -79,7 +79,9 @@ static HPDF_Image pdf_extract_image(struct bitmap *bitmap, struct content *conte
 static void error_handler(HPDF_STATUS error_no, HPDF_STATUS detail_no,
 		void*user_data);
 
+#ifdef PDF_DEBUG
 static void pdf_plot_grid(int x_dist,int y_dist,unsigned int colour);
+#endif
 
 /*PDF Plotter - current doc,page and font*/
 static HPDF_Doc pdf_doc;

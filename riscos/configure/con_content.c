@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdbool.h>
 #include "desktop/options.h"
 #include "riscos/dialog.h"
 #include "riscos/gui.h"
@@ -39,7 +40,8 @@
 static void ro_gui_options_content_default(wimp_pointer *pointer);
 static bool ro_gui_options_content_ok(wimp_w w);
 
-bool ro_gui_options_content_initialise(wimp_w w) {
+bool ro_gui_options_content_initialise(wimp_w w)
+{
 	/* set the current values */
 	ro_gui_set_icon_selected_state(w, CONTENT_BLOCK_ADVERTISEMENTS,
 			option_block_ads);
@@ -66,7 +68,8 @@ bool ro_gui_options_content_initialise(wimp_w w) {
 
 }
 
-void ro_gui_options_content_default(wimp_pointer *pointer) {
+void ro_gui_options_content_default(wimp_pointer *pointer)
+{
 	/* set the default values */
 	ro_gui_set_icon_selected_state(pointer->w, CONTENT_BLOCK_ADVERTISEMENTS,
 			false);
@@ -78,7 +81,8 @@ void ro_gui_options_content_default(wimp_pointer *pointer) {
 			true);
 }
 
-bool ro_gui_options_content_ok(wimp_w w) {
+bool ro_gui_options_content_ok(wimp_w w)
+{
 	option_block_ads = ro_gui_get_icon_selected_state(w,
 			CONTENT_BLOCK_ADVERTISEMENTS);
 	option_block_popups = ro_gui_get_icon_selected_state(w,

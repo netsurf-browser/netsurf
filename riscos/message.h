@@ -24,6 +24,7 @@
 #ifndef _NETSURF_RISCOS_MESSAGE_H_
 #define _NETSURF_RISCOS_MESSAGE_H_
 
+#include <stdbool.h>
 #include "oslib/wimp.h"
 
 bool ro_message_send_message(wimp_event_no event, wimp_message *message,

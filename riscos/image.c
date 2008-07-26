@@ -17,11 +17,9 @@
  */
 
 #include <stdbool.h>
-#include <swis.h>
-
+#include "swis.h"
 #include "oslib/colourtrans.h"
-#include <oslib/osspriteop.h>
-
+#include "oslib/osspriteop.h"
 #include "riscos/image.h"
 #include "riscos/gui.h"
 #include "riscos/options.h"

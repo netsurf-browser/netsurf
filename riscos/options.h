@@ -25,6 +25,7 @@
 #ifndef _NETSURF_RISCOS_OPTIONS_H_
 #define _NETSURF_RISCOS_OPTIONS_H_
 
+#include <stdbool.h>
 #include "desktop/options.h"
 #include "riscos/tinct.h"
 

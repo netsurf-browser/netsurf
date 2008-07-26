@@ -19,6 +19,7 @@
 #ifndef _NETSURF_RISCOS_SAVE_DRAW_H_
 #define _NETSURF_RISCOS_SAVE_DRAW_H_
 
+#include <stdbool.h>
 struct content;
 
 bool save_as_draw(struct content *c, const char *path);

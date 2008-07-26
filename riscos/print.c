@@ -113,10 +113,11 @@ static bool print_fonts_plot_disc(int x, int y, int radius, colour c,
 static bool print_fonts_plot_arc(int x, int y, int radius, int angle1, int angle2,
 		colour c);
 static bool print_fonts_plot_bitmap(int x, int y, int width, int height,
-		struct bitmap *bitmap, colour bg);
+		struct bitmap *bitmap, colour bg,
+		struct content *content);
 static bool print_fonts_plot_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
-		bool repeat_x, bool repeat_y);
+		bool repeat_x, bool repeat_y, struct content *content);
 static bool print_fonts_plot_group_start(const char *name);
 static bool print_fonts_plot_group_end(void);
 static void print_fonts_callback(void *context,
@@ -813,30 +814,62 @@ end:
 }
 
 
-bool print_fonts_plot_clg(colour c) { return true; }
+bool print_fonts_plot_clg(colour c)
+{
+	return true;
+}
 bool print_fonts_plot_rectangle(int x0, int y0, int width, int height,
 		int line_width, colour c, bool dotted, bool dashed)
-		{ return true; }
+{
+	return true;
+}
 bool print_fonts_plot_line(int x0, int y0, int x1, int y1, int width,
-		colour c, bool dotted, bool dashed) { return true; }
+		colour c, bool dotted, bool dashed)
+{
+	return true;
+}
 bool print_fonts_plot_polygon(int *p, unsigned int n, colour fill)
-		{ return true; }
+{
+	return true;
+}
 bool print_fonts_plot_fill(int x0, int y0, int x1, int y1, colour c)
-		{ return true; }
+{
+	return true;
+}
 bool print_fonts_plot_clip(int clip_x0, int clip_y0,
-		int clip_x1, int clip_y1) { return true; }
-bool print_fonts_plot_disc(int x, int y, int radius, colour colour, bool filled)
-		{ return true; }
+		int clip_x1, int clip_y1)
+{
+	return true;
+}
+bool print_fonts_plot_disc(int x, int y, int radius, colour colour,
+		bool filled)
+{
+	return true;
+}
 bool print_fonts_plot_arc(int x, int y, int radius, int angle1, int angle2,
 		colour c)
-		{ return true; }
+{
+	return true;
+}
 bool print_fonts_plot_bitmap(int x, int y, int width, int height,
-		struct bitmap *bitmap, colour bg) { return true; }
+		struct bitmap *bitmap, colour bg, struct content *content)
+{
+	return true;
+}
 bool print_fonts_plot_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
-		bool repeat_x, bool repeat_y) { return true; }
-bool print_fonts_plot_group_start(const char *name) { return true; }
-bool print_fonts_plot_group_end(void) { return true; }
+		bool repeat_x, bool repeat_y, struct content *content)
+{
+	return true;
+}
+bool print_fonts_plot_group_start(const char *name)
+{
+	return true;
+}
+bool print_fonts_plot_group_end(void)
+{
+	return true;
+}
 
 
 /**

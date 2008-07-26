@@ -23,7 +23,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <oslib/wimp.h>
+#include "oslib/wimp.h"
 
 
 /**

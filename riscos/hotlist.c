@@ -74,7 +74,8 @@ static const struct {
 };
 #define ENTRIES_COUNT (sizeof(default_entries) / sizeof(default_entries[0]))
 
-void ro_gui_hotlist_initialise(void) {
+void ro_gui_hotlist_initialise(void)
+{
 	FILE *fp;
 	struct node *node;
 	const struct url_data *data;
@@ -153,7 +154,8 @@ void ro_gui_hotlist_initialise(void) {
 /**
  * Perform a save to the default file
  */
-void ro_gui_hotlist_save(void) {
+void ro_gui_hotlist_save(void)
+{
 	os_error *error;
 
 	if (!hotlist_tree)
@@ -175,7 +177,8 @@ void ro_gui_hotlist_save(void) {
  *
  * \param pointer  the pointer state
  */
-bool ro_gui_hotlist_click(wimp_pointer *pointer) {
+bool ro_gui_hotlist_click(wimp_pointer *pointer)
+{
 	ro_gui_tree_click(pointer, hotlist_tree);
 	if (pointer->buttons == wimp_CLICK_MENU)
 		ro_gui_menu_create(hotlist_menu, pointer->pos.x,
@@ -191,7 +194,8 @@ bool ro_gui_hotlist_click(wimp_pointer *pointer) {
  *
  * \param content  the content visited
  */
-void hotlist_visited(struct content *content) {
+void hotlist_visited(struct content *content)
+{
 	if ((!content) || (!content->url) || (!hotlist_tree))
 		return;
 	ro_gui_hotlist_visited(content, hotlist_tree, hotlist_tree->root);
@@ -206,7 +210,8 @@ void hotlist_visited(struct content *content) {
  * \param node	   the node to update siblings and children of
  */
 void ro_gui_hotlist_visited(struct content *content, struct tree *tree,
-		struct node *node) {
+		struct node *node)
+{
 	struct node_element *element;
 
 	for (; node; node = node->next) {
@@ -230,7 +235,8 @@ void ro_gui_hotlist_visited(struct content *content, struct tree *tree,
  *
  * \param node	   the node to prepare the dialogue for, or NULL
  */
-void ro_gui_hotlist_prepare_folder_dialog(struct node *node) {
+void ro_gui_hotlist_prepare_folder_dialog(struct node *node)
+{
 	const char *name;
 	const char *title;
 
@@ -253,7 +259,8 @@ void ro_gui_hotlist_prepare_folder_dialog(struct node *node) {
  *
  * \param node	   the node to prepare the dialogue for, or NULL
  */
-void ro_gui_hotlist_prepare_entry_dialog(struct node *node) {
+void ro_gui_hotlist_prepare_entry_dialog(struct node *node)
+{
 	struct node_element *element;
 	const char *name;
 	const char *title;
@@ -281,7 +288,8 @@ void ro_gui_hotlist_prepare_entry_dialog(struct node *node) {
  *
  * \param w  the window to apply
  */
-bool ro_gui_hotlist_dialog_apply(wimp_w w) {
+bool ro_gui_hotlist_dialog_apply(wimp_w w)
+{
 	struct node_element *element;
 	struct node *node;
 	char *title;
@@ -356,11 +364,11 @@ bool ro_gui_hotlist_dialog_apply(wimp_w w) {
 	} else {
 		element = tree_find_element(node, TREE_ELEMENT_URL);
 		if (element) {
-		  	free(element->text);
+		  	free((void *)element->text);
 		  	element->text = url;
 		  	ro_gui_set_icon_string(w, ICON_ENTRY_URL, url);
 		}
-		free(node->data.text);
+		free((void *)node->data.text);
 		node->data.text = title;
 		tree_handle_node_changed(hotlist_tree, node, true, false);
 	}

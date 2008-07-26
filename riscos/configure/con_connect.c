@@ -17,8 +17,8 @@
  */
 
 #include <stdbool.h>
-#include <swis.h>
-#include <oslib/osspriteop.h>
+#include "swis.h"
+#include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
 #include "desktop/options.h"
 #include "riscos/configure/configure.h"
@@ -62,7 +62,8 @@ static void ro_gui_options_connection_default(wimp_pointer *pointer);
 static bool ro_gui_options_connection_ok(wimp_w w);
 static void ro_gui_options_connection_update(wimp_w w, wimp_i i);
 
-bool ro_gui_options_connection_initialise(wimp_w w) {
+bool ro_gui_options_connection_initialise(wimp_w w)
+{
 	int proxy_type;
 
 	/* set the current values */
@@ -123,7 +124,8 @@ bool ro_gui_options_connection_initialise(wimp_w w) {
 
 }
 
-void ro_gui_options_connection_update(wimp_w w, wimp_i i) {
+void ro_gui_options_connection_update(wimp_w w, wimp_i i)
+{
 	int proxy_type;
 	bool host, user;
 
@@ -142,7 +144,8 @@ void ro_gui_options_connection_update(wimp_w w, wimp_i i) {
 	ro_gui_set_icon_shaded_state(w, CONNECTION_PROXY_PASSWORD, !user);
 }
 
-int ro_gui_options_connection_proxy_type(wimp_w w) {
+int ro_gui_options_connection_proxy_type(wimp_w w)
+{
 	char *text;
 	int i;
 
@@ -154,7 +157,8 @@ int ro_gui_options_connection_proxy_type(wimp_w w) {
 	assert(false);
 }
 
-void ro_gui_options_connection_default(wimp_pointer *pointer) {
+void ro_gui_options_connection_default(wimp_pointer *pointer)
+{
 	ro_gui_set_icon_string(pointer->w, CONNECTION_PROXY_FIELD,
 			proxy_type_menu->entries[0].
 				data.indirected_text.text);
@@ -168,7 +172,8 @@ void ro_gui_options_connection_default(wimp_pointer *pointer) {
 	ro_gui_options_connection_update(pointer->w, -1);
 }
 
-bool ro_gui_options_connection_ok(wimp_w w) {
+bool ro_gui_options_connection_ok(wimp_w w)
+{
 	int proxy_type;
 
 	proxy_type = ro_gui_options_connection_proxy_type(w);

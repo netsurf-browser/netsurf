@@ -23,9 +23,9 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
-#include <oslib/osspriteop.h>
-#include <oslib/wimp.h>
-#include <rufl.h>
+#include "oslib/osspriteop.h"
+#include "oslib/wimp.h"
+#include "rufl.h"
 #include "desktop/browser.h"
 #include "content/content_type.h"
 #include "utils/config.h"

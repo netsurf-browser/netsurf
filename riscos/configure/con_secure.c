@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdbool.h>
 #include "desktop/options.h"
 #include "riscos/dialog.h"
 #include "riscos/gui.h"
@@ -39,8 +40,8 @@
 static void ro_gui_options_security_default(wimp_pointer *pointer);
 static bool ro_gui_options_security_ok(wimp_w w);
 
-bool ro_gui_options_security_initialise(wimp_w w) {
-
+bool ro_gui_options_security_initialise(wimp_w w)
+{
 	/* set the current values */
 	ro_gui_set_icon_selected_state(w, SECURITY_REFERRER,
 			option_send_referer);
@@ -63,13 +64,15 @@ bool ro_gui_options_security_initialise(wimp_w w) {
 
 }
 
-void ro_gui_options_security_default(wimp_pointer *pointer) {
+void ro_gui_options_security_default(wimp_pointer *pointer)
+{
 	/* set the default values */
 	ro_gui_set_icon_integer(pointer->w, SECURITY_DURATION_FIELD, 28);
 	ro_gui_set_icon_selected_state(pointer->w, SECURITY_REFERRER, true);
 }
 
-bool ro_gui_options_security_ok(wimp_w w) {
+bool ro_gui_options_security_ok(wimp_w w)
+{
   	option_send_referer = ro_gui_get_icon_selected_state(w,
   			SECURITY_REFERRER);
 	option_expire_url = ro_gui_get_icon_decimal(w,

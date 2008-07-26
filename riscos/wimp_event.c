@@ -120,7 +120,8 @@ static wimp_w ro_gui_wimp_event_submenu;
  * \param w	the window to memorise
  * \return true on success, false on memory exhaustion or for an unknown window
  */
-bool ro_gui_wimp_event_memorise(wimp_w w) {
+bool ro_gui_wimp_event_memorise(wimp_w w)
+{
 	struct event_window *window;
 	struct icon_event *event;
 	bool error = false;
@@ -164,7 +165,8 @@ bool ro_gui_wimp_event_memorise(wimp_w w) {
  * \param w	the window to restore
  * \return true on success, false for an unknown window
  */
-bool ro_gui_wimp_event_restore(wimp_w w) {
+bool ro_gui_wimp_event_restore(wimp_w w)
+{
 	struct event_window *window;
 	struct icon_event *event;
 
@@ -202,7 +204,8 @@ bool ro_gui_wimp_event_restore(wimp_w w) {
  * \param w	the window to memorise
  * \return true on success, false for an unknown window
  */
-bool ro_gui_wimp_event_validate(wimp_w w) {
+bool ro_gui_wimp_event_validate(wimp_w w)
+{
 	struct event_window *window;
 	struct icon_event *event;
 	int value;
@@ -236,7 +239,8 @@ bool ro_gui_wimp_event_validate(wimp_w w) {
  *
  * \param w	the window to free resources for
  */
-void ro_gui_wimp_event_finalise(wimp_w w) {
+void ro_gui_wimp_event_finalise(wimp_w w)
+{
 	struct event_window *window;
 	struct icon_event *event;
 
@@ -272,7 +276,8 @@ void ro_gui_wimp_event_finalise(wimp_w w) {
  * \param help_prefix	the prefix to associate with the window (used directly)
  * \return true on success, or NULL for memory exhaustion
  */
-bool ro_gui_wimp_event_set_help_prefix(wimp_w w, const char *help_prefix) {
+bool ro_gui_wimp_event_set_help_prefix(wimp_w w, const char *help_prefix)
+{
 	struct event_window *window;
 
 	window = ro_gui_wimp_event_get_window(w);
@@ -289,7 +294,8 @@ bool ro_gui_wimp_event_set_help_prefix(wimp_w w, const char *help_prefix) {
  * \param w	the window to get the prefix for
  * \return the associated prefix, or NULL
  */
-const char *ro_gui_wimp_event_get_help_prefix(wimp_w w) {
+const char *ro_gui_wimp_event_get_help_prefix(wimp_w w)
+{
 	struct event_window *window;
 
 	window = ro_gui_wimp_event_find_window(w);
@@ -305,7 +311,8 @@ const char *ro_gui_wimp_event_get_help_prefix(wimp_w w) {
  * \param w	the window to associate the data with
  * \param user	the data to associate
  */
-bool ro_gui_wimp_event_set_user_data(wimp_w w, void *user) {
+bool ro_gui_wimp_event_set_user_data(wimp_w w, void *user)
+{
 	struct event_window *window;
 
 	window = ro_gui_wimp_event_get_window(w);
@@ -323,7 +330,8 @@ bool ro_gui_wimp_event_set_user_data(wimp_w w, void *user) {
  * \param w	the window to retrieve the data for
  * \return the associated data, or NULL
  */
-void *ro_gui_wimp_event_get_user_data(wimp_w w) {
+void *ro_gui_wimp_event_get_user_data(wimp_w w)
+{
 	struct event_window *window;
 
 	window = ro_gui_wimp_event_find_window(w);
@@ -343,7 +351,8 @@ void *ro_gui_wimp_event_get_user_data(wimp_w w) {
  * \return true if the event was handled, false otherwise
  */
 bool ro_gui_wimp_event_menu_selection(wimp_w w, wimp_i i, wimp_menu *menu,
-		wimp_selection *selection) {
+		wimp_selection *selection)
+{
 	struct event_window *window;
 	struct icon_event *event;
 	wimp_menu_entry *menu_entry;
@@ -432,7 +441,8 @@ bool ro_gui_wimp_event_menu_selection(wimp_w w, wimp_i i, wimp_menu *menu,
  * \param pointer	the current pointer state
  * \return true if the event was handled, false otherwise
  */
-bool ro_gui_wimp_event_mouse_click(wimp_pointer *pointer) {
+bool ro_gui_wimp_event_mouse_click(wimp_pointer *pointer)
+{
 	struct event_window *window;
 	struct icon_event *event;
 	wimp_w w;
@@ -578,7 +588,8 @@ bool ro_gui_wimp_event_mouse_click(wimp_pointer *pointer) {
  * /param w	the window owning the menu
  * /param event	the icon event owning the menu
  */
-void ro_gui_wimp_event_prepare_menu(wimp_w w, struct icon_event *event) {
+void ro_gui_wimp_event_prepare_menu(wimp_w w, struct icon_event *event)
+{
 	int i;
 	char *text;
 	unsigned int button_type;
@@ -620,7 +631,9 @@ void ro_gui_wimp_event_prepare_menu(wimp_w w, struct icon_event *event) {
  * /param window	the window to perform the action on
  * /param state		the mouse button state
  */
-void ro_gui_wimp_event_ok_click(struct event_window *window, wimp_mouse_state state) {
+void ro_gui_wimp_event_ok_click(struct event_window *window,
+		wimp_mouse_state state)
+{
 	struct icon_event *search;
 
 	for (search = window->first; search; search = search->next)
@@ -651,8 +664,9 @@ void ro_gui_wimp_event_ok_click(struct event_window *window, wimp_mouse_state st
  * \param key	the key state
  * \return true if keypress handled, false otherwise
  */
-bool ro_gui_wimp_event_keypress(wimp_key *key) {
-	static int *ucstable = NULL;
+bool ro_gui_wimp_event_keypress(wimp_key *key)
+{
+	static const int *ucstable = NULL;
 	static int alphabet = 0;
 	static uint32_t wc = 0;	/* buffer for UTF8 alphabet */
 	static int shift = 0;
@@ -848,7 +862,8 @@ bool ro_gui_wimp_event_keypress(wimp_key *key) {
  *
  * \param open	the window open request
  */
-bool ro_gui_wimp_event_open_window(wimp_open *open) {
+bool ro_gui_wimp_event_open_window(wimp_open *open)
+{
 	struct event_window *window;
 
 	window = ro_gui_wimp_event_find_window(open->w);
@@ -865,7 +880,8 @@ bool ro_gui_wimp_event_open_window(wimp_open *open) {
  *
  * \param w	the window being closed
  */
-bool ro_gui_wimp_event_close_window(wimp_w w) {
+bool ro_gui_wimp_event_close_window(wimp_w w)
+{
 	struct event_window *window;
 
 	LOG(("Close event received for window 0x%x", (unsigned int)w));
@@ -885,7 +901,8 @@ bool ro_gui_wimp_event_close_window(wimp_w w) {
  *
  * \param redraw	the window redraw request
  */
-bool ro_gui_wimp_event_redraw_window(wimp_draw *redraw) {
+bool ro_gui_wimp_event_redraw_window(wimp_draw *redraw)
+{
 	struct event_window *window;
 
 	window = ro_gui_wimp_event_find_window(redraw->w);
@@ -900,8 +917,10 @@ bool ro_gui_wimp_event_redraw_window(wimp_draw *redraw) {
 /**
  * Register a numeric field to be automatically handled
  */
-bool ro_gui_wimp_event_register_numeric_field(wimp_w w, wimp_i i, wimp_i up, wimp_i down,
-		int min, int max, int stepping, int decimal_places) {
+bool ro_gui_wimp_event_register_numeric_field(wimp_w w, wimp_i i,
+		wimp_i up, wimp_i down,
+		int min, int max, int stepping, int decimal_places)
+{
 	struct icon_event *event;
 
 	event = ro_gui_wimp_event_get_event(w, i, EVENT_NUMERIC_FIELD);
@@ -942,7 +961,9 @@ bool ro_gui_wimp_event_register_text_field(wimp_w w, wimp_i i) {
 /**
  * Register an icon menu to be automatically handled
  */
-bool ro_gui_wimp_event_register_menu_gright(wimp_w w, wimp_i i, wimp_i gright, wimp_menu *menu) {
+bool ro_gui_wimp_event_register_menu_gright(wimp_w w, wimp_i i,
+		wimp_i gright, wimp_menu *menu)
+{
 	struct icon_event *event;
 
 	event = ro_gui_wimp_event_get_event(w, gright, EVENT_MENU_GRIGHT);
@@ -958,7 +979,8 @@ bool ro_gui_wimp_event_register_menu_gright(wimp_w w, wimp_i i, wimp_i gright, w
 /**
  * Register a checkbox to be automatically handled
  */
-bool ro_gui_wimp_event_register_checkbox(wimp_w w, wimp_i i) {
+bool ro_gui_wimp_event_register_checkbox(wimp_w w, wimp_i i)
+{
 	struct icon_event *event;
 
 	event = ro_gui_wimp_event_get_event(w, i, EVENT_CHECKBOX);
@@ -971,7 +993,8 @@ bool ro_gui_wimp_event_register_checkbox(wimp_w w, wimp_i i) {
 /**
  * Register a group of radio icons to be automatically handled
  */
-bool ro_gui_wimp_event_register_radio(wimp_w w, wimp_i *i) {
+bool ro_gui_wimp_event_register_radio(wimp_w w, wimp_i *i)
+{
 	struct event_window *window;
 	struct icon_event *event;
 
@@ -995,7 +1018,8 @@ bool ro_gui_wimp_event_register_radio(wimp_w w, wimp_i *i) {
  * Register a function to be called when a particular button is pressed.
  */
 bool ro_gui_wimp_event_register_button(wimp_w w, wimp_i i,
-		void (*callback)(wimp_pointer *pointer)) {
+		void (*callback)(wimp_pointer *pointer))
+{
 	struct icon_event *event;
 
 	event = ro_gui_wimp_event_get_event(w, i, EVENT_BUTTON);
@@ -1009,7 +1033,8 @@ bool ro_gui_wimp_event_register_button(wimp_w w, wimp_i i,
 /**
  * Register a function to be called for the Cancel action on a window.
  */
-bool ro_gui_wimp_event_register_cancel(wimp_w w, wimp_i i) {
+bool ro_gui_wimp_event_register_cancel(wimp_w w, wimp_i i)
+{
 	struct icon_event *event;
 
 	event = ro_gui_wimp_event_get_event(w, i, EVENT_CANCEL);
@@ -1023,7 +1048,8 @@ bool ro_gui_wimp_event_register_cancel(wimp_w w, wimp_i i) {
  * Register a function to be called for the OK action on a window.
  */
 bool ro_gui_wimp_event_register_ok(wimp_w w, wimp_i i,
-		bool (*callback)(wimp_w w)) {
+		bool (*callback)(wimp_w w))
+{
 	struct event_window *window;
 	struct icon_event *event;
 
@@ -1044,7 +1070,8 @@ bool ro_gui_wimp_event_register_ok(wimp_w w, wimp_i i,
  * in a window that don't have registered actions.
  */
 bool ro_gui_wimp_event_register_mouse_click(wimp_w w,
-		bool (*callback)(wimp_pointer *pointer)) {
+		bool (*callback)(wimp_pointer *pointer))
+{
 	struct event_window *window;
 
 	window = ro_gui_wimp_event_get_window(w);
@@ -1065,7 +1092,8 @@ bool ro_gui_wimp_event_register_mouse_click(wimp_w w,
  *
  */
 bool ro_gui_wimp_event_register_keypress(wimp_w w,
-		bool (*callback)(wimp_key *key)) {
+		bool (*callback)(wimp_key *key))
+{
 	struct event_window *window;
 
 	window = ro_gui_wimp_event_get_window(w);
@@ -1080,7 +1108,8 @@ bool ro_gui_wimp_event_register_keypress(wimp_w w,
  * Register a function to be called for all window opening requests.
  */
 bool ro_gui_wimp_event_register_open_window(wimp_w w,
-		void (*callback)(wimp_open *open)) {
+		void (*callback)(wimp_open *open))
+{
 	struct event_window *window;
 
 	window = ro_gui_wimp_event_get_window(w);
@@ -1094,7 +1123,8 @@ bool ro_gui_wimp_event_register_open_window(wimp_w w,
  * Register a function to be called after the window has been closed.
  */
 bool ro_gui_wimp_event_register_close_window(wimp_w w,
-		void (*callback)(wimp_w w)) {
+		void (*callback)(wimp_w w))
+{
 	struct event_window *window;
 
 	window = ro_gui_wimp_event_get_window(w);
@@ -1108,7 +1138,8 @@ bool ro_gui_wimp_event_register_close_window(wimp_w w,
  * Register a function to be called for all window redraw operations.
  */
 bool ro_gui_wimp_event_register_redraw_window(wimp_w w,
-		void (*callback)(wimp_draw *redraw)) {
+		void (*callback)(wimp_draw *redraw))
+{
 	struct event_window *window;
 
 	window = ro_gui_wimp_event_get_window(w);
@@ -1122,7 +1153,8 @@ bool ro_gui_wimp_event_register_redraw_window(wimp_w w,
  * Register a function to be called following a menu selection.
  */
 bool ro_gui_wimp_event_register_menu_selection(wimp_w w,
-		void (*callback)(wimp_w w, wimp_i i)) {
+		void (*callback)(wimp_w w, wimp_i i))
+{
 	struct event_window *window;
 
 	window = ro_gui_wimp_event_get_window(w);
@@ -1138,7 +1170,8 @@ bool ro_gui_wimp_event_register_menu_selection(wimp_w w,
  *
  * \param w	the window to find data for
  */
-struct event_window *ro_gui_wimp_event_get_window(wimp_w w) {
+struct event_window *ro_gui_wimp_event_get_window(wimp_w w)
+{
 	struct event_window *window;
 	int h;
 
@@ -1168,7 +1201,8 @@ struct event_window *ro_gui_wimp_event_get_window(wimp_w w) {
  * \return  pointer to the event data or NULL if not found
  */
 
-struct event_window *ro_gui_wimp_event_remove_window(wimp_w w) {
+struct event_window *ro_gui_wimp_event_remove_window(wimp_w w)
+{
 	struct event_window **prev;
 	int h = WIN_HASH(w);
 
@@ -1194,7 +1228,8 @@ struct event_window *ro_gui_wimp_event_remove_window(wimp_w w) {
  *
  * \param w	the window to find data for
  */
-struct event_window *ro_gui_wimp_event_find_window(wimp_w w) {
+struct event_window *ro_gui_wimp_event_find_window(wimp_w w)
+{
 	struct event_window *window;
 	int h = WIN_HASH(w);
 
@@ -1206,7 +1241,9 @@ struct event_window *ro_gui_wimp_event_find_window(wimp_w w) {
 	return NULL;
 }
 
-struct icon_event *ro_gui_wimp_event_get_event(wimp_w w, wimp_i i, event_type type) {
+struct icon_event *ro_gui_wimp_event_get_event(wimp_w w, wimp_i i,
+		event_type type)
+{
 	struct event_window *window;
 	struct icon_event *event;
 
@@ -1235,14 +1272,16 @@ struct icon_event *ro_gui_wimp_event_get_event(wimp_w w, wimp_i i, event_type ty
 /**
  * Handle menus being closed
  */
-void ro_gui_wimp_event_menus_closed(void) {
+void ro_gui_wimp_event_menus_closed(void)
+{
   	ro_gui_wimp_event_register_submenu(0);
 }
 
 /**
  * Register a submenu as being opened
  */
-void ro_gui_wimp_event_register_submenu(wimp_w w) {
+void ro_gui_wimp_event_register_submenu(wimp_w w)
+{
 	if (ro_gui_wimp_event_submenu)
 		ro_gui_wimp_event_close_window(ro_gui_wimp_event_submenu);
 	ro_gui_wimp_event_submenu = w;

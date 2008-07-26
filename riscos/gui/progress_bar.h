@@ -20,12 +20,12 @@
  * Progress bar (interface).
  */
 
-#include <stdbool.h>
-#include <oslib/osspriteop.h>
-#include "oslib/wimp.h"
-
 #ifndef _NETSURF_RISCOS_PROGRESS_BAR_H_
 #define _NETSURF_RISCOS_PROGRESS_BAR_H_
+
+#include <stdbool.h>
+#include "oslib/osspriteop.h"
+#include "oslib/wimp.h"
 
 struct progress_bar;
 

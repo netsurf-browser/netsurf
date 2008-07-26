@@ -36,7 +36,7 @@
 #include "oslib/colourtrans.h"
 #include "oslib/osbyte.h"
 #include "oslib/osfile.h"
-#include <oslib/osspriteop.h>
+#include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
 #include "utils/config.h"

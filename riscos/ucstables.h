@@ -21,4 +21,4 @@
  * This is only used if nothing claims Service_International,8
  */
 
-int *ucstable_from_alphabet(int alphabet);
+const int *ucstable_from_alphabet(int alphabet);

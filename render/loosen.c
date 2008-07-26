@@ -23,6 +23,7 @@
 
 #include "render/box.h"
 #include "render/font.h"
+#include "render/loosen.h"
 
 #include "utils/log.h"
 #include "utils/talloc.h"
@@ -174,11 +175,8 @@ bool loosen_text(struct box *text, int width, struct content *content)
  */
 bool loosen_table(struct box *table, int width, struct content *content)
 {
-				 
 	struct box *row_group, *row, *cell, *br, *prev, *inline_container;
-	unsigned int row_sum;
-	bool first_cell_in_row;
-		
+
 	if (table->min_width <= width)
 		return true;	
 	
@@ -292,7 +290,6 @@ bool loosen_all_first_pass(struct box *box, int width, int cx,
 		struct content *content)
 {
 	struct box* c;
-	int got_width;
 	int x;
 	
 	for (c = box->children; c ; c = c->next) {
@@ -342,7 +339,6 @@ bool loosen_all_second_pass(struct box *box, int width, int cx,
 		struct content *content)
 {
 	struct box *c;
-	int got_width;
 	int x;
 	
 	for (c = box->children; c; c = c->next) {
@@ -378,7 +374,6 @@ bool loosen_all_third_pass(struct box *box, int width, int cx,
 		struct content *content)
 {
 	struct box *c;
-	int got_width;
 	int x;
 	
 	for (c = box->children; c; c = c->next) {

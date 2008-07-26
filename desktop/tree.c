@@ -916,7 +916,7 @@ void tree_delete_node(struct tree *tree, struct node *node, bool siblings) {
 void tree_delete_node_internal(struct tree *tree, struct node *node, bool siblings) {
 	struct node *next, *child;
 	struct node_element *e, *f, *domain, *path;
-	char *domain_t, *path_t, *name_t;
+	const char *domain_t, *path_t, *name_t;
 	char *space;
 
 	assert(node);
@@ -939,7 +939,7 @@ void tree_delete_node_internal(struct tree *tree, struct node *node, bool siblin
 			if (e->text) {
 				/* we don't free non-editable titles or URLs */
 				if ((node->editable) || (node->folder))
-					free(e->text);
+					free((void *)e->text);
 				else {
 				  	/* only reset non-deleted items */
 					if (!node->deleted) {
@@ -976,7 +976,7 @@ void tree_delete_node_internal(struct tree *tree, struct node *node, bool siblin
 
 					if (e->data != TREE_ELEMENT_TITLE &&
 							e->data != TREE_ELEMENT_URL) {
-						free(e->text);
+						free((void *)e->text);
 						e->text = NULL;
 					}
 				}
@@ -1128,7 +1128,7 @@ struct node *tree_create_URL_node_shared(struct node *parent,
 		const char *url, const struct url_data *data) {
 	struct node *node;
 	struct node_element *element;
-	char *title;
+	const char *title;
 
 	assert(url && data);
 

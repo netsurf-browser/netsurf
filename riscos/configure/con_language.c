@@ -17,6 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdbool.h>
 #include "desktop/options.h"
 #include "riscos/dialog.h"
 #include "riscos/gui.h"

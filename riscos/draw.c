@@ -36,7 +36,6 @@
 
 #ifdef WITH_DRAW
 
-
 /**
  * Convert a CONTENT_DRAW for display.
  *

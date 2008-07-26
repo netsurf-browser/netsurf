@@ -20,7 +20,8 @@
  * Export a content as a PDF file (implementation).
  */
 
-#include <oslib/osfile.h>
+#include <stdbool.h>
+#include "oslib/osfile.h"
 #include "content/content.h"
 #include "desktop/print.h"
 #include "pdf/pdf_plotters.h"

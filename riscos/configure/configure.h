@@ -25,6 +25,7 @@
 #define _NETSURF_RISCOS_OPTIONS_CONFIGURE_H_
 
 #include <stdbool.h>
+#include "oslib/wimp.h"
 
 bool ro_gui_options_cache_initialise(wimp_w w);
 bool ro_gui_options_connection_initialise(wimp_w w);

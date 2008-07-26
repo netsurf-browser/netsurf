@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdbool.h>
 #include "desktop/options.h"
 #include "riscos/dialog.h"
 #include "riscos/gui.h"
@@ -39,7 +40,8 @@
 static void ro_gui_options_home_default(wimp_pointer *pointer);
 static bool ro_gui_options_home_ok(wimp_w w);
 
-bool ro_gui_options_home_initialise(wimp_w w) {
+bool ro_gui_options_home_initialise(wimp_w w)
+{
 	int suggestions;
 
 	/* set the current values */
@@ -66,13 +68,15 @@ bool ro_gui_options_home_initialise(wimp_w w) {
 
 }
 
-void ro_gui_options_home_default(wimp_pointer *pointer) {
+void ro_gui_options_home_default(wimp_pointer *pointer)
+{
 	/* set the default values */
 	ro_gui_set_icon_string(pointer->w, HOME_URL_FIELD, "");
 	ro_gui_set_icon_selected_state(pointer->w, HOME_OPEN_STARTUP, false);
 }
 
-bool ro_gui_options_home_ok(wimp_w w) {
+bool ro_gui_options_home_ok(wimp_w w)
+{
   	if (option_homepage_url)
   		free(option_homepage_url);
   	option_homepage_url = strdup(ro_gui_get_icon_string(w, HOME_URL_FIELD));

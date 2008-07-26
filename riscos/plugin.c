@@ -42,7 +42,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include "oslib/mimemap.h"
 #include "oslib/os.h"
 #include "oslib/osfile.h"
@@ -50,7 +49,6 @@
 #include "oslib/osgbpb.h"
 #include "oslib/plugin.h"
 #include "oslib/wimp.h"
-
 #include "utils/config.h"
 #include "content/content.h"
 #include "content/fetch.h"

@@ -23,7 +23,7 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <string.h>
-#include <swis.h>
+#include "swis.h"
 #include "oslib/colourtrans.h"
 #include "oslib/os.h"
 #include "oslib/wimp.h"
@@ -110,7 +110,8 @@ static void ro_gui_status_position_progress_bar(struct status_bar *sb);
  * \param  parent  the window to contain the status bar
  * \param  width  the proportional width to use (0...10,000)
  */
-struct status_bar *ro_gui_status_bar_create(wimp_w parent, unsigned int width) {
+struct status_bar *ro_gui_status_bar_create(wimp_w parent, unsigned int width)
+{
 	struct status_bar *sb;
 	os_error *error;
 
@@ -152,7 +153,8 @@ struct status_bar *ro_gui_status_bar_create(wimp_w parent, unsigned int width) {
  *
  * \param  sb  the status bar to destroy
  */
-void ro_gui_status_bar_destroy(struct status_bar *sb) {
+void ro_gui_status_bar_destroy(struct status_bar *sb)
+{
 	os_error *error;
 	assert(sb);
 
@@ -178,7 +180,8 @@ void ro_gui_status_bar_destroy(struct status_bar *sb) {
  * \param  sb  the status bar to get the window handle of
  * \return the status bar's window handle
  */
-wimp_w ro_gui_status_bar_get_window(struct status_bar *sb) {
+wimp_w ro_gui_status_bar_get_window(struct status_bar *sb)
+{
 	assert(sb);
 
 	return sb->w;
@@ -191,7 +194,8 @@ wimp_w ro_gui_status_bar_get_window(struct status_bar *sb) {
  * \param  sb  the status bar to get the width of
  * \return the status bar's width (0...10,000)
  */
-unsigned int ro_gui_status_bar_get_width(struct status_bar *sb) {
+unsigned int ro_gui_status_bar_get_width(struct status_bar *sb)
+{
 	assert(sb);
 
 	return sb->scale;
@@ -204,7 +208,8 @@ unsigned int ro_gui_status_bar_get_width(struct status_bar *sb) {
  * \param  sb  the status bar to check the visiblity of
  * \return whether the status bar is visible
  */
-void ro_gui_status_bar_set_visible(struct status_bar *sb, bool visible) {
+void ro_gui_status_bar_set_visible(struct status_bar *sb, bool visible)
+{
 	os_error *error;
 
 	assert(sb);
@@ -228,7 +233,8 @@ void ro_gui_status_bar_set_visible(struct status_bar *sb, bool visible) {
  * \param  sb  the status bar to check the visiblity of
  * \return whether the status bar is visible
  */
-bool ro_gui_status_bar_get_visible(struct status_bar *sb) {
+bool ro_gui_status_bar_get_visible(struct status_bar *sb)
+{
 	assert(sb);
 
 	return sb->visible;
@@ -242,8 +248,8 @@ bool ro_gui_status_bar_get_visible(struct status_bar *sb) {
  * \param  value  the value to use
  */
 void ro_gui_status_bar_set_progress_value(struct status_bar *sb,
-		unsigned int value) {
-
+		unsigned int value)
+{
 	assert(sb);
 
 	ro_gui_status_bar_set_progress_range(sb,
@@ -259,7 +265,8 @@ void ro_gui_status_bar_set_progress_value(struct status_bar *sb,
  * \param  value  the value to use, or 0 to turn off the progress bar
  */
 void ro_gui_status_bar_set_progress_range(struct status_bar *sb,
-		unsigned int range) {
+		unsigned int range)
+{
 	unsigned int old_range;
 	os_error *error;
 
@@ -289,7 +296,8 @@ void ro_gui_status_bar_set_progress_range(struct status_bar *sb,
  * \param  icon  the icon to use, or NULL for no icon
  */
 void ro_gui_status_bar_set_progress_icon(struct status_bar *sb,
-		const char *icon) {
+		const char *icon)
+{
 	assert(sb);
 
 	ro_gui_progress_bar_set_icon(sb->pb, icon);
@@ -301,8 +309,8 @@ void ro_gui_status_bar_set_progress_icon(struct status_bar *sb,
  *
  * \param  text  the UTF8 text to display, or NULL for none
  */
-void ro_gui_status_bar_set_text(struct status_bar *sb, const char *text) {
-
+void ro_gui_status_bar_set_text(struct status_bar *sb, const char *text)
+{
 	assert(sb);
 
 	/* check for no change */
@@ -340,7 +348,8 @@ void ro_gui_status_bar_set_text(struct status_bar *sb, const char *text) {
  *
  * \param  sb  the status bar to resize
  */
-void ro_gui_status_bar_resize(struct status_bar *sb) {
+void ro_gui_status_bar_resize(struct status_bar *sb)
+{
 	int window_width, window_height;
 	int status_width, status_height;
 	int redraw_left, redraw_right;
@@ -435,8 +444,8 @@ void ro_gui_status_bar_resize(struct status_bar *sb) {
  *
  * \param  redraw  the redraw request to process
  */
-void ro_gui_status_bar_redraw(wimp_draw *redraw) {
-
+void ro_gui_status_bar_redraw(wimp_draw *redraw)
+{
 	struct status_bar *sb;
 	os_error *error;
 	osbool more;
@@ -506,7 +515,8 @@ void ro_gui_status_bar_redraw(wimp_draw *redraw) {
  *
  * \param  pointer  details of the mouse click
  */
-bool ro_gui_status_bar_click(wimp_pointer *pointer) {
+bool ro_gui_status_bar_click(wimp_pointer *pointer)
+{
 	wimp_drag drag;
 	os_error *error;
 
@@ -535,7 +545,8 @@ bool ro_gui_status_bar_click(wimp_pointer *pointer) {
  *
  * \param  open  the request to process
  */
-void ro_gui_status_bar_open(wimp_open *open) {
+void ro_gui_status_bar_open(wimp_open *open)
+{
 	struct status_bar *sb;
 	int window_width, status_width;
 	wimp_window_state state;
@@ -571,7 +582,8 @@ void ro_gui_status_bar_open(wimp_open *open) {
  *
  * \param  sb  the status bar to update
  */
-void ro_gui_status_position_progress_bar(struct status_bar *sb) {
+void ro_gui_status_position_progress_bar(struct status_bar *sb)
+{
 	wimp_window_state state;
 	os_error *error;
 	int left, right;

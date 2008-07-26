@@ -19,7 +19,7 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <string.h>
-#include "oslib/wimp.h"
+#include <oslib/wimp.h>
 #include "utils/config.h"
 #include "content/content.h"
 #include "content/urldb.h"

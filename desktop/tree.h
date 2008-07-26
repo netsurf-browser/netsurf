@@ -74,7 +74,7 @@ struct node_element {
   	struct node *parent;		/* <-- Parent node */
   	node_element_type type;		/* <-- Element type */
 	struct node_element_box box;	/* <-- Element bounding box */
-	char *text;			/* <-- Text for the element */
+	const char *text;		/* <-- Text for the element */
 	struct node_sprite *sprite;	/* <-- Sprite for the element */
 	struct node_element *next;	/* <-- Next node element */
 	node_element_data data;		/* <-- Data being represented */

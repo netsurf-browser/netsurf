@@ -23,9 +23,9 @@
 #ifndef _NETSURF_RISCOS_SAVE_H_
 #define _NETSURF_RISCOS_SAVE_H_
 
+#include <stdbool.h>
 #include "oslib/wimp.h"
 #include "desktop/gui.h"
-
 
 wimp_w ro_gui_saveas_create(const char *template_name);
 void ro_gui_saveas_quit(void);

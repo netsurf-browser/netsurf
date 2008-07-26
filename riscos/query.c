@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <stdbool.h>
 #include "riscos/dialog.h"
 #include "riscos/query.h"
 #include "riscos/wimp.h"

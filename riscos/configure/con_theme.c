@@ -19,7 +19,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
-#include <oslib/osspriteop.h>
+#include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
 #include "utils/config.h"
@@ -87,7 +87,8 @@ static bool ro_gui_options_theme_click(wimp_pointer *pointer);
 static void ro_gui_options_theme_load(void);
 static void ro_gui_options_theme_free(void);
 
-bool ro_gui_options_theme_initialise(wimp_w w) {
+bool ro_gui_options_theme_initialise(wimp_w w)
+{
 	wimp_window_state state;
 	wimp_icon_state icon_state;
 	os_error *error;
@@ -167,7 +168,8 @@ bool ro_gui_options_theme_initialise(wimp_w w) {
 	return true;
 }
 
-void ro_gui_options_theme_finalise(wimp_w w) {
+void ro_gui_options_theme_finalise(wimp_w w)
+{
 	os_error *error;
 
 	ro_gui_options_theme_free();
@@ -184,7 +186,8 @@ void ro_gui_options_theme_finalise(wimp_w w) {
 	ro_gui_wimp_event_finalise(w);
 }
 
-bool ro_gui_options_theme_ok(wimp_w w) {
+bool ro_gui_options_theme_ok(wimp_w w)
+{
 	struct toolbar_display *toolbar;
 	struct theme_descriptor *theme_new = NULL;
 
@@ -211,7 +214,8 @@ bool ro_gui_options_theme_ok(wimp_w w) {
 	return true;
 }
 
-bool ro_gui_options_theme_click(wimp_pointer *pointer) {
+bool ro_gui_options_theme_click(wimp_pointer *pointer)
+{
 	struct theme_descriptor *theme_default;
 	struct toolbar_display *toolbar;
 
@@ -233,7 +237,8 @@ bool ro_gui_options_theme_click(wimp_pointer *pointer) {
 	return false;
 }
 
-void ro_gui_options_theme_load(void) {
+void ro_gui_options_theme_load(void)
+{
 	os_error *error;
 	os_box extent = { 0, 0, 0, 0 };
 	struct theme_descriptor *descriptor;
@@ -385,7 +390,8 @@ void ro_gui_options_theme_load(void) {
 	xwimp_force_redraw(theme_pane, 0, -16384, 16384, 16384);
 }
 
-void ro_gui_options_theme_free(void) {
+void ro_gui_options_theme_free(void)
+{
 	struct toolbar_display *toolbar;
 	struct toolbar_display *next_toolbar;
 

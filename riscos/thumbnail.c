@@ -30,7 +30,7 @@
 #include "rufl.h"
 #include "oslib/colourtrans.h"
 #include "oslib/osfile.h"
-#include <oslib/osspriteop.h>
+#include "oslib/osspriteop.h"
 #include "content/content.h"
 #include "content/urldb.h"
 #include "desktop/plotters.h"

@@ -24,7 +24,7 @@
 #define _NETSURF_RISCOS_TREEVIEW_H_
 
 #include <stdbool.h>
-#include <oslib/osspriteop.h>
+#include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
 #include "desktop/tree.h"
 #include "image/bitmap.h"

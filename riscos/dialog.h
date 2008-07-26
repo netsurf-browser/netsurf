@@ -21,13 +21,9 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
-#include <oslib/wimp.h>
+#include "oslib/wimp.h"
 #include "riscos/theme.h"
-
-
 #include "riscos/gui.h"
-
-
 
 void ro_gui_dialog_init(void);
 wimp_w ro_gui_dialog_create(const char *template_name);

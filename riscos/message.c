@@ -54,7 +54,8 @@ static void ro_message_free(int ref);
  * \return true on success, false otherwise
  */
 bool ro_message_send_message(wimp_event_no event, wimp_message *message,
-		wimp_t task, void (*callback)(wimp_message *message)) {
+		wimp_t task, void (*callback)(wimp_message *message))
+{
 	os_error *error;
 
 	assert(message);
@@ -91,7 +92,8 @@ bool ro_message_send_message(wimp_event_no event, wimp_message *message,
  */
 bool ro_message_send_message_to_window(wimp_event_no event, wimp_message *message,
 		wimp_w to_w, wimp_i to_i, void (*callback)(wimp_message *message),
-		wimp_t *to_t) {
+		wimp_t *to_t)
+{
 	os_error *error;
 
 	assert(message);
@@ -128,7 +130,8 @@ bool ro_message_send_message_to_window(wimp_event_no event, wimp_message *messag
  */
 bool ro_message_register_handler(wimp_message *message,
 		unsigned int message_code,
-		void (*callback)(wimp_message *message)) {
+		void (*callback)(wimp_message *message))
+{
 	struct active_message *add;
 
 	assert(message);
@@ -149,14 +152,16 @@ bool ro_message_register_handler(wimp_message *message,
  * \return true on success, false on memory exhaustion
  */
 bool ro_message_register_route(unsigned int message_code,
-		void (*callback)(wimp_message *message)) {
+		void (*callback)(wimp_message *message))
+{
 	assert(callback);
 
 	return (ro_message_add(message_code, callback) != NULL);
 }
 
 struct active_message *ro_message_add(unsigned int message_code,
-		void (*callback)(wimp_message *message)) {
+		void (*callback)(wimp_message *message))
+{
 	struct active_message *add;
 
 	assert(callback);
@@ -180,7 +185,8 @@ struct active_message *ro_message_add(unsigned int message_code,
  * \param message	the message to attempt to route
  * \return true if message was routed, false otherwise
  */
-bool ro_message_handle_message(wimp_event_no event, wimp_message *message) {
+bool ro_message_handle_message(wimp_event_no event, wimp_message *message)
+{
 	struct active_message *test;
 	bool handled = false;
 	int ref;
@@ -221,7 +227,8 @@ bool ro_message_handle_message(wimp_event_no event, wimp_message *message) {
 }
 
 
-void ro_message_free(int ref) {
+void ro_message_free(int ref)
+{
 	struct active_message *test;
 	struct active_message *next = current_messages;
 

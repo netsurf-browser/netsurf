@@ -42,6 +42,34 @@ struct hash_table {
 	struct hash_entry **chain;
 };
 
+/**
+ * Hash a string, returning a 32bit value.  The hash algorithm used is
+ * Fowler Noll Vo - a very fast and simple hash, ideal for short strings.
+ * See http://en.wikipedia.org/wiki/Fowler_Noll_Vo_hash for more details.
+ *
+ * \param  datum   The string to hash.
+ * \param  len	   Pointer to unsigned integer to record datum's length in.
+ * \return The calculated hash value for the datum.
+ */
+
+static inline unsigned int hash_string_fnv(const char *datum, unsigned int *len)
+{
+	unsigned int z = 0x01000193;
+	const char *start = datum;
+	*len = 0;
+
+	if (datum == NULL)
+		return 0;
+
+	while (*datum) {
+		z *= 0x01000193;
+		z ^= *datum++;
+	}
+	*len = datum - start;
+
+	return z;
+}
+
 
 /**
  * Create a new hash table, and return a context for it.  The memory consumption
@@ -176,34 +204,6 @@ const char *hash_get(struct hash_table *ht, const char *key)
 			return e->pairing + key_length + 1;
 
 	return NULL;
-}
-
-/**
- * Hash a string, returning a 32bit value.  The hash algorithm used is
- * Fowler Noll Vo - a very fast and simple hash, ideal for short strings.
- * See http://en.wikipedia.org/wiki/Fowler_Noll_Vo_hash for more details.
- *
- * \param  datum   The string to hash.
- * \param  len	   Pointer to unsigned integer to record datum's length in.
- * \return The calculated hash value for the datum.
- */
-
-unsigned int hash_string_fnv(const char *datum, unsigned int *len)
-{
-	unsigned int z = 0x01000193;
-	const char *start = datum;
-	*len = 0;
-
-	if (datum == NULL)
-		return 0;
-
-	while (*datum) {
-		z *= 0x01000193;
-		z ^= *datum++;
-	}
-	*len = datum - start;
-
-	return z;
 }
 
 /**

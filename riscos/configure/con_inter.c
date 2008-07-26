@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdbool.h>
 #include "riscos/dialog.h"
 #include "riscos/gui.h"
 #include "riscos/options.h"
@@ -38,8 +39,8 @@
 static void ro_gui_options_interface_default(wimp_pointer *pointer);
 static bool ro_gui_options_interface_ok(wimp_w w);
 
-bool ro_gui_options_interface_initialise(wimp_w w) {
-
+bool ro_gui_options_interface_initialise(wimp_w w)
+{
 	/* set the current values */
 	ro_gui_set_icon_selected_state(w, INTERFACE_STRIP_EXTNS_OPTION,
 			option_strip_extensions);
@@ -64,8 +65,8 @@ bool ro_gui_options_interface_initialise(wimp_w w) {
 
 }
 
-void ro_gui_options_interface_default(wimp_pointer *pointer) {
-
+void ro_gui_options_interface_default(wimp_pointer *pointer)
+{
 	ro_gui_set_icon_selected_state(pointer->w,
 			INTERFACE_STRIP_EXTNS_OPTION, true);
 	ro_gui_set_icon_selected_state(pointer->w,
@@ -78,8 +79,8 @@ void ro_gui_options_interface_default(wimp_pointer *pointer) {
 			INTERFACE_THUMBNAIL_ICONISE_OPTION, true);
 }
 
-bool ro_gui_options_interface_ok(wimp_w w) {
-
+bool ro_gui_options_interface_ok(wimp_w w)
+{
 	option_strip_extensions = ro_gui_get_icon_selected_state(w,
 			INTERFACE_STRIP_EXTNS_OPTION);
 	option_confirm_overwrite = ro_gui_get_icon_selected_state(w,

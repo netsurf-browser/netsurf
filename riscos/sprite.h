@@ -24,7 +24,7 @@
 #define _NETSURF_RISCOS_SPRITE_H_
 
 #include <stdbool.h>
-#include <oslib/osspriteop.h>
+#include "oslib/osspriteop.h"
 
 struct content;
 

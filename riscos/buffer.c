@@ -19,10 +19,10 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include <swis.h>
+#include "swis.h"
 #include "oslib/colourtrans.h"
 #include "oslib/os.h"
-#include <oslib/osspriteop.h>
+#include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
 #include "oslib/wimpreadsysinfo.h"
 #include "riscos/buffer.h"
@@ -68,7 +68,8 @@ static os_mode mode;
  *
  * \param redraw the current WIMP redraw area to buffer
  */
-void ro_gui_buffer_open(wimp_draw *redraw) {
+void ro_gui_buffer_open(wimp_draw *redraw)
+{
 	int size;
 	int total_size;
 	os_coord sprite_size;
@@ -251,8 +252,8 @@ void ro_gui_buffer_open(wimp_draw *redraw) {
 /**
  * Closes any open buffer and flushes the contents to screen
  */
-void ro_gui_buffer_close(void) {
-
+void ro_gui_buffer_close(void)
+{
 	/*	Check we have an open buffer
 	*/
 	if (!buffer)
@@ -289,7 +290,8 @@ void ro_gui_buffer_close(void) {
 /**
  * Releases any buffer memory depending on cache constraints.
  */
-static void ro_gui_buffer_free(void) {
+static void ro_gui_buffer_free(void)
+{
 	free(buffer);
 	buffer = NULL;
 }

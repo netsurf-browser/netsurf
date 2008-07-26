@@ -23,6 +23,7 @@
 #ifndef _NETSURF_RISCOS_SAVE_COMPLETE_H_
 #define _NETSURF_RISCOS_SAVE_COMPLETE_H_
 
+#include <stdbool.h>
 struct content;
 
 void save_complete_init(void);

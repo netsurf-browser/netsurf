@@ -23,6 +23,8 @@
 #ifndef _NETSURF_RISCOS_DRAW_H_
 #define _NETSURF_RISCOS_DRAW_H_
 
+#include <stdbool.h>
+
 struct content;
 
 struct content_draw_data {
