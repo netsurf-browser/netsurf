@@ -101,7 +101,7 @@ bool loosen_document_layout(struct content *content, struct box *layout,
 */
 bool loosen_text(struct box *text, int width, struct content *content)
 {
-	unsigned int offset;
+	size_t offset;
 	int actual_x;
 	
 	int *breaks;
