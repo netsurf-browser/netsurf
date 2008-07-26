@@ -35,6 +35,7 @@
 #include "riscos/gui.h"
 #include "riscos/image.h"
 #include "riscos/sprite.h"
+#include "utils/config.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"

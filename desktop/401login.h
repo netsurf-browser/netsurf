@@ -20,10 +20,10 @@
 #define NETSURF_DESKTOP_401LOGIN_H
 
 #include "utils/config.h"
+#ifdef WITH_AUTH
+
 #include "content/content.h"
 #include "desktop/browser.h"
-
-#ifdef WITH_AUTH
 
 void gui_401login_open(struct browser_window *bw, struct content *c,
 		const char *realm);

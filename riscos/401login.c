@@ -16,6 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "utils/config.h"
+#ifdef WITH_AUTH
+
 #include <assert.h>
 #include <stdbool.h>
 #include <string.h>
@@ -32,8 +35,6 @@
 #include "utils/messages.h"
 #include "utils/url.h"
 #include "utils/utils.h"
-
-#ifdef WITH_AUTH
 
 #define ICON_401LOGIN_LOGIN 0
 #define ICON_401LOGIN_CANCEL 1

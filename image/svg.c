@@ -20,10 +20,11 @@
  * Content for image/svg (implementation).
  */
 
-#include <assert.h>
 #include "utils/config.h"
 #ifdef WITH_NS_SVG
-#include <svgtiny.h>
+
+#include <assert.h>
+#include "svgtiny.h"
 #include "content/content.h"
 #include "css/css.h"
 #include "desktop/plotters.h"

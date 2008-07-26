@@ -25,7 +25,9 @@
 
 #include <stdbool.h>
 #include "oslib/osspriteop.h"
+#include "utils/config.h"
 
+#ifdef WITH_SPRITE
 struct content;
 
 struct content_sprite_data {
@@ -38,6 +40,7 @@ bool sprite_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale, colour background_colour);
+#endif
 
 byte sprite_bpp(const osspriteop_header *s);
 

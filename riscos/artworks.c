@@ -22,6 +22,9 @@
  * Uses the ArtworksRenderer module
  */
 
+#include "utils/config.h"
+#ifdef WITH_ARTWORKS
+
 #include <assert.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -36,8 +39,6 @@
 #include "utils/utils.h"
 #include "utils/messages.h"
 #include "utils/log.h"
-
-#ifdef WITH_ARTWORKS
 
 #define AWRender_FileInitAddress 0x46080
 #define AWRender_RenderAddress   0x46081

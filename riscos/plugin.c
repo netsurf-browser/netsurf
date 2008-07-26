@@ -37,6 +37,9 @@
  * Helpers are not supported (system variable detection is #if 0ed out)
  */
 
+#include "utils/config.h"
+#ifdef WITH_PLUGIN
+
 #include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -66,8 +69,6 @@
 #include "utils/url.h"
 #include "utils/utils.h"
 
-
-#ifdef WITH_PLUGIN
 
 typedef enum {
 	PLUGIN_PARAMETER_DATA    = 1,

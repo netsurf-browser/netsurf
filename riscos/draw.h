@@ -23,6 +23,9 @@
 #ifndef _NETSURF_RISCOS_DRAW_H_
 #define _NETSURF_RISCOS_DRAW_H_
 
+#include "utils/config.h"
+#ifdef WITH_DRAW
+
 #include <stdbool.h>
 
 struct content;
@@ -37,5 +40,7 @@ bool draw_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale, colour background_colour);
+
+#endif /* WITH_DRAW */
 
 #endif

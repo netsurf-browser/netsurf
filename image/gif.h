@@ -19,6 +19,9 @@
 #ifndef _NETSURF_IMAGE_GIF_H_
 #define _NETSURF_IMAGE_GIF_H_
 
+#include "utils/config.h"
+#ifdef WITH_GIF
+
 #include <stdbool.h>
 #include "image/gifread.h"
 
@@ -41,5 +44,7 @@ bool nsgif_redraw_tiled(struct content *c, int x, int y,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale, unsigned long background_colour,
 		bool repeat_x, bool repeat_y);
+
+#endif /* WITH_GIF */
 
 #endif

@@ -16,6 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "utils/config.h"
+#ifdef WITH_BMP
+
 #include <assert.h>
 #include <string.h>
 #include <stdbool.h>
@@ -29,8 +32,6 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
-
-#ifdef WITH_BMP
 
 bool nsbmp_create(struct content *c, const char *params[]) {
 	union content_msg_data msg_data;

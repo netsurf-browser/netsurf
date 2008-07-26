@@ -21,6 +21,9 @@
  * Save HTML document with dependencies (implementation).
  */
 
+#include "utils/config.h"
+#ifdef WITH_SAVE_COMPLETE
+
 #define _GNU_SOURCE /* for strndup */
 #include <assert.h>
 #include <ctype.h>
@@ -41,8 +44,6 @@
 #include "utils/log.h"
 #include "utils/url.h"
 #include "utils/utils.h"
-
-#ifdef WITH_SAVE_COMPLETE
 
 regex_t save_complete_import_re;
 

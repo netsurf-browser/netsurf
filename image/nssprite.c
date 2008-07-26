@@ -21,20 +21,19 @@
  *
  */
 
+#include "utils/config.h"
+#ifdef WITH_NSSPRITE
+
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
-
+#include <librosprite.h>
 #include "utils/config.h"
 #include "desktop/plotters.h"
 #include "content/content.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
-
-#ifdef WITH_NSSPRITE
-
-#include <librosprite.h>
 
 #define ERRCHK(x) do { \
 	rosprite_error err = x; \

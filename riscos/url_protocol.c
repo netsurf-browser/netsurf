@@ -24,6 +24,9 @@
  * See http://www.vigay.com/inet/inet_url.html
  */
 
+#include "utils/config.h"
+#ifdef WITH_URL
+
 #define _GNU_SOURCE  /* for strndup */
 #include <ctype.h>
 #include <stdio.h>
@@ -39,8 +42,6 @@
 #include "riscos/url_protocol.h"
 #include "utils/log.h"
 #include "utils/utils.h"
-
-#ifdef WITH_URL
 
 /**
  * Handle a Message_InetSuiteOpenURL.

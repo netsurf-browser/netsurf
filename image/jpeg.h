@@ -23,6 +23,9 @@
 #ifndef _NETSURF_IMAGE_JPEG_H_
 #define _NETSURF_IMAGE_JPEG_H_
 
+#include "utils/config.h"
+#ifdef WITH_JPEG
+
 #include <stdbool.h>
 
 struct bitmap;
@@ -43,5 +46,7 @@ bool nsjpeg_redraw_tiled(struct content *c, int x, int y,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale, unsigned long background_colour,
 		bool repeat_x, bool repeat_y);
+
+#endif /* WITH_JPEG */
 
 #endif

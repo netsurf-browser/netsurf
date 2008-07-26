@@ -26,15 +26,14 @@
 #include "utils/config.h"
 #ifdef WITH_PDF_EXPORT
 
-#define FONT_HARU_DEBUG
+/* #define FONT_HARU_DEBUG */
  
 #include <assert.h> 
 #include <float.h> 
 #include <math.h>
 #include <string.h> 
- 
+#include "hpdf.h"  
 #include "css/css.h"
-#include "hpdf.h" 
 #include "render/font.h"
 #include "pdf/font_haru.h"
 #include "utils/log.h"

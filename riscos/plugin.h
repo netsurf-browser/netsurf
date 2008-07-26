@@ -19,6 +19,9 @@
 #ifndef _NETSURF_RISCOS_PLUGIN_H_
 #define _NETSURF_RISCOS_PLUGIN_H_
 
+#include "utils/config.h"
+#ifdef WITH_PLUGIN
+
 #include <stdbool.h>
 #include "oslib/plugin.h"
 #include "oslib/wimp.h"
@@ -73,6 +76,6 @@ void plugin_stream_new(wimp_message *message);
 void plugin_stream_written(wimp_message *message);
 void plugin_url_access(wimp_message *message);
 
-
+#endif /* WITH_PLUGIN */
 
 #endif

@@ -17,6 +17,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "utils/config.h"
+#ifdef WITH_PRINT
+
 #include <assert.h>
 #include <string.h>
 #include "oslib/font.h"
@@ -68,11 +71,9 @@
  *  \todo make use of print stylesheets
  */
 
-struct gui_window *print_current_window = 0;
+struct gui_window *print_current_window = NULL;
 bool print_text_black = false;
 bool print_active = false;
-
-#ifdef WITH_PRINT
 
 /* 1 millipoint == 1/400 OS unit == 1/800 browser units */
 

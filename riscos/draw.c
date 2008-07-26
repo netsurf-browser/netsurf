@@ -22,6 +22,9 @@
  * The DrawFile module is used to plot the DrawFile.
  */
 
+#include "utils/config.h"
+#ifdef WITH_DRAW
+
 #include <string.h>
 #include <stdlib.h>
 #include "oslib/drawfile.h"
@@ -33,8 +36,6 @@
 #include "utils/utils.h"
 #include "utils/messages.h"
 #include "utils/log.h"
-
-#ifdef WITH_DRAW
 
 /**
  * Convert a CONTENT_DRAW for display.

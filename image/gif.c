@@ -17,11 +17,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "utils/config.h"
+#ifdef WITH_GIF
+
 #include <assert.h>
 #include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include "utils/config.h"
 #include "content/content.h"
 #include "desktop/browser.h"
 #include "desktop/options.h"
@@ -43,8 +45,6 @@
 
 	[rjw] - Sun 4th April 2004
 */
-
-#ifdef WITH_GIF
 
 static void nsgif_invalidate(struct bitmap *bitmap, void *private_word);
 static void nsgif_animate(void *p);

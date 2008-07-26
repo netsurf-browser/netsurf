@@ -21,7 +21,6 @@
  */
 
 #include "utils/config.h"
-
 #ifdef WITH_SSL
 
 #include <assert.h>

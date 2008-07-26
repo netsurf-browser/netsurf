@@ -23,13 +23,14 @@
  * This implementation uses the IJG JPEG library.
  */
 
+#include "utils/config.h"
+#ifdef WITH_JPEG
+
 #include <assert.h>
 #include <setjmp.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "utils/config.h"
-#ifdef WITH_JPEG
 #define JPEG_INTERNAL_OPTIONS
 #include "jpeglib.h"
 #include "content/content.h"

@@ -16,6 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "utils/config.h"
+#ifdef WITH_URI
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,19 +31,14 @@
 #include "riscos/theme.h"
 #include "desktop/gui.h"
 #include "riscos/gui.h"
+#include "riscos/uri.h"
 #include "riscos/url_protocol.h"
 #include "utils/log.h"
 #include "utils/utils.h"
 
-#ifdef WITH_URI
-
-void ro_uri_message_received(uri_full_message_process*);
-bool ro_uri_launch(char *uri);
-void ro_uri_bounce(uri_full_message_return_result*);
-
-
-void ro_uri_message_received(uri_full_message_process* uri_message)
+void ro_uri_message_received(wimp_message *msg)
 {
+	uri_full_message_process *uri_message = (uri_full_message_process *)msg;
 	uri_h uri_handle;
 	char* uri_requested;
 	int uri_length;
@@ -57,7 +55,6 @@ void ro_uri_message_received(uri_full_message_process* uri_message)
 
 	xuri_request_uri(0, 0, 0, uri_handle, &uri_length);
 	uri_requested = calloc((unsigned int)uri_length, sizeof(char));
-
 	if (uri_requested == NULL)
 		return;
 
@@ -85,15 +82,16 @@ bool ro_uri_launch(char *uri)
 	return true;
 }
 
-void ro_uri_bounce(uri_full_message_return_result *message)
+void ro_uri_bounce(wimp_message *msg)
 {
+	uri_full_message_process *message = (uri_full_message_process *)msg;
 	char uri_buf[512];
 	os_error *e;
 
-	if ((message->flags & 1) == 0) return;
+	if ((message->flags & 1) == 0)
+		return;
 
 	e = xuri_request_uri(0, uri_buf, sizeof uri_buf, message->handle, 0);
-
 	if (e) {
 		LOG(("xuri_request_uri: %d: %s", e->errnum, e->errmess));
 		return;

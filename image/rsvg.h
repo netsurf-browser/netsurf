@@ -23,10 +23,12 @@
 #ifndef _NETSURF_IMAGE_RSVG_H_
 #define _NETSURF_IMAGE_RSVG_H_
 
+#include "utils/config.h"
+#ifdef WITH_RSVG
+
 #include <stdbool.h>
 #include <librsvg/rsvg.h>
 #include <cairo.h>
-
 #include "image/bitmap.h"
 
 struct content;
@@ -51,4 +53,7 @@ bool rsvg_redraw_tiled(struct content *c, int x, int y,
                 int clip_x0, int clip_y0, int clip_x1, int clip_y1,
                 float scale, unsigned long background_colour,
                 bool repeat_x, bool repeat_y);
+
+#endif /* WITH_RSVG */
+
 #endif

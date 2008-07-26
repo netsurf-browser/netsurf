@@ -20,7 +20,9 @@
  * Output-in-pages implementation
 */
 
+#include "utils/config.h"
 #ifdef WITH_PDF_EXPORT
+
 #include "desktop/print.h"
 #include "desktop/printer.h"
 

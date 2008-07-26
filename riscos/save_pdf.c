@@ -20,6 +20,9 @@
  * Export a content as a PDF file (implementation).
  */
 
+#include "utils/config.h"
+#ifdef WITH_PDF_EXPORT
+
 #include <stdbool.h>
 #include "oslib/osfile.h"
 #include "content/content.h"
@@ -28,8 +31,6 @@
 #include "riscos/save_pdf.h"
 #include "utils/log.h"
 #include "utils/config.h"
-
-#ifdef WITH_PDF_EXPORT
 
 /**
  * Export a content as a PDF file.

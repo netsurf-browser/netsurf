@@ -21,6 +21,9 @@
  * Free text search (implementation)
  */
 
+#include "utils/config.h"
+#ifdef WITH_SEARCH
+
 #include <ctype.h>
 #include <string.h>
 #include "oslib/hourglass.h"
@@ -40,8 +43,6 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 
-#ifdef WITH_SEARCH
-
 #ifndef NOF_ELEMENTS
 #define NOF_ELEMENTS(array) (sizeof(array)/sizeof(*(array)))
 #endif
@@ -59,13 +60,13 @@ struct list_entry {
 	struct list_entry *next;
 };
 
-struct gui_window *search_current_window = 0;
+struct gui_window *search_current_window = NULL;
 
-static char *search_string = 0;
+static char *search_string = NULL;
 static struct list_entry search_head = { 0, 0, NULL, NULL, NULL, NULL, NULL };
 static struct list_entry *search_found = &search_head;
-static struct list_entry *search_current = 0;
-static struct content *search_content = 0;
+static struct list_entry *search_current = NULL;
+static struct content *search_content = NULL;
 static bool search_prev_case_sens = false;
 
 #define RECENT_SEARCHES 8
