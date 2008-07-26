@@ -153,9 +153,9 @@ else
 LDFLAGS := $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl openssl)
 endif
 # Common libraries without pkgconfig support:
-LDFLAGS += -lz -lm -lmng -ljpeg -lpng
+LDFLAGS += -lz -lm -lmng -ljpeg
 ifeq ($(NETSURF_USE_HARU_PDF),YES)
-LDFLAGS += -lhpdf
+LDFLAGS += -lhpdf -lpng
 CFLAGS += -DWITH_PDF_EXPORT
 endif
 endif
