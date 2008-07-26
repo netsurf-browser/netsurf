@@ -388,7 +388,7 @@ ifeq ($(GCCVER),2)
 # simpler deps tracking for gcc2...
 define dependency_generate_c
 DEPFILES += $(2)
-$$(DEPROOT)/$(2): $$(DEPROOT)/created $(1) css/css_enum.h css/parser.h
+$$(DEPROOT)/$(2): $$(DEPROOT)/created $(1) css/css_enum.h css/parser.h Makefile.config
 	$$(VQ)echo "     DEP: $(1)"
 	$$(Q)$$(RM) $$(DEPROOT)/$(2)
 	$$(Q)$$(CC) $$(CFLAGS) -MM  \
@@ -399,7 +399,7 @@ endef
 else
 define dependency_generate_c
 DEPFILES += $(2)
-$$(DEPROOT)/$(2): $$(DEPROOT)/created $(1) css/css_enum.h css/parser.h
+$$(DEPROOT)/$(2): $$(DEPROOT)/created $(1) css/css_enum.h css/parser.h Makefile.config
 	$$(VQ)echo "     DEP: $(1)"
 	$$(Q)$$(RM) $$(DEPROOT)/$(2)
 	$$(Q)$$(CC) $$(CFLAGS) -MM -MT '$$(DEPROOT)/$2 $$(OBJROOT)/$(3)' \
