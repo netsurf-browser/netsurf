@@ -182,7 +182,7 @@ define pkg_config_find_and_add
    ifeq ($$(NETSURF_FEATURE_$(1)_AVAILABLE),yes)
     FEATURE_CFLAGS += $$(shell pkg-config --cflags $(2)) $$(NETSURF_FEATURE_$(1)_CFLAGS)
     FEATURE_LDFLAGS += $$(shell pkg-config --libs $(2)) $$(NETSURF_FEATURE_$(1)_LDFLAGS)
-    $$(info Auto-configuration enabled $(3) ($(2)).)
+    $$(info AUTOCONF: auto-enabled $(3) ($(2)).)
    else
     $$(error Unable to find library for: $$(3) ($(2))
    endif
