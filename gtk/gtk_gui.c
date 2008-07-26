@@ -294,15 +294,6 @@ void gui_init(int argc, char** argv)
 	urldb_load_cookies(option_cookie_file);
 
 	wndAbout = GTK_WINDOW(glade_xml_get_widget(gladeWindows, "wndAbout"));
-	gtk_label_set_text(GTK_LABEL(
-		glade_xml_get_widget(gladeWindows, "labelVersion")),
-		netsurf_version);
-	gtk_image_set_from_file(GTK_IMAGE(
-		glade_xml_get_widget(gladeWindows, "imageLogo")),
-		find_resource(buf, "netsurf-logo.png", "netsurf-logo.png"));
-	fontdesc = pango_font_description_from_string("Monospace 8");
-	gtk_widget_modify_font(GTK_WIDGET(
-		glade_xml_get_widget(gladeWindows, "textviewGPL")), fontdesc);
 
 	wndWarning = GTK_WINDOW(glade_xml_get_widget(gladeWindows, "wndWarning"));
 
