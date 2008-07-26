@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
-  Build Instructions for GTK NetSurf                             29 March 2008
+  Build Instructions for GTK NetSurf                              26 July 2008
 --------------------------------------------------------------------------------
 
   This document provides instructions for building the GTK version of NetSurf
@@ -57,11 +57,9 @@
   Librosprite
 -------------
 
-  Sprite file support is enabled by default. This requires librosprite to be
-  built and installed. If you don't want to do this, remove all references to
-  librosprite in the Makefile and remove the following line from utils/config.h:
-
-      #define WITH_NSSPRITE
+  NetSurf uses James Shaw's librosprite for rendering RISC OS Sprite files on
+  non-RISC OS platforms.  The Makefile will automatically use it if it can find
+  it.  You can disable it entirely by editing Makefile.config.
 
   To build librosprite, check out from svn://svn.rjek.com/jshaw/libsprite/trunk
   Build and install it:
@@ -72,6 +70,14 @@
 
       $ PREFIX=/path/to/install make install
 
+  Libhpdf
+---------
+
+  NetSurf can use Haru PDF to enable PDF export and printing in GTK.  This
+  is currently enabled by default, and cannot be auto-detected by the Makefile.
+  If you wish to disable it, do so by editing Makefile.config.
+
+  Haru PDF can be obtained from http://libharu.sourceforge.net/
 
   Lemon
 -------
@@ -90,9 +96,9 @@
   General requirements
 ----------------------
 
-  NetSurf requires at minimum GTK 2.8. Earlier versions will not work. It also
+  NetSurf requires at minimum GTK 2.10. Earlier versions will not work. It also
   depends on Cairo for rendering, but you should have this already with
-  versions of GTK 2.8 or later.
+  versions of GTK 2.10 or later.
 
   This will pull in loads of things, like all the GTK dev libraries, the PNG
   and JPEG libraries, colour management libraries, zlib, OpenSSL etc that
