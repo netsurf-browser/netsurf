@@ -52,10 +52,10 @@ static bool ro_plot_disc(int x, int y, int radius, colour colour, bool filled);
 static bool ro_plot_arc(int x, int y, int radius, int angle1, int angle2,
     		colour c);
 static bool ro_plot_bitmap(int x, int y, int width, int height,
-		struct bitmap *bitmap, colour bg);
+		struct bitmap *bitmap, colour bg, struct content *content);
 static bool ro_plot_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
-		bool repeat_x, bool repeat_y);
+		bool repeat_x, bool repeat_y, struct content *content);
 
 
 struct plotter_table plot;
@@ -496,7 +496,7 @@ bool ro_plot_arc(int x, int y, int radius, int angle1, int angle2, colour c)
 }
 
 bool ro_plot_bitmap(int x, int y, int width, int height,
-		struct bitmap *bitmap, colour bg)
+		struct bitmap *bitmap, colour bg, struct content *content)
 {
 	char *buffer;
 
@@ -521,7 +521,7 @@ bool ro_plot_bitmap(int x, int y, int width, int height,
 
 bool ro_plot_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
-		bool repeat_x, bool repeat_y)
+		bool repeat_x, bool repeat_y, struct content *content)
 {
 	char *buffer;
 

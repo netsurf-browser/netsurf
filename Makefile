@@ -114,6 +114,10 @@ SUBTARGET := -aof
 EXEEXT := ,ff8
 endif
 PKG_CONFIG := $(GCCSDK_INSTALL_ENV)/ro-pkg-config
+CCACHE := $(shell which ccache)
+ifneq ($(CCACHE),)
+CC := $(CCACHE) $(CC)
+endif
 endif
 else
 ifeq ($(TARGET),beos)
@@ -145,15 +149,9 @@ LDFLAGS += -lxml2 -lz -lcurl -lssl -lcrypto -ljpeg -liconv
 LDFLAGS += -lmng -ljpeg
 else
 LDFLAGS := $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl openssl)
-LDFLAGS += -lz -lm -lmng -ljpeg
-
-CCACHE := $(shell which ccache)
-
-ifneq ($(CCACHE),)
-CC := $(CCACHE) $(CC)
 endif
-endif
-
+# Common libraries without pkgconfig support:
+LDFLAGS += -lz -lm -lmng -ljpeg -lhpdf -lpng
 endif
 
 ifeq ($(TARGET),gtk)
@@ -170,7 +168,10 @@ GTKCFLAGS := -std=c99 -Dgtk -Dnsgtk \
 	$(shell $(PKG_CONFIG) --cflags librosprite) \
 	$(shell xml2-config --cflags)
 
+#GTKLDFLAGS := $(shell $(PKG_CONFIG) --cflags --libs libglade-2.0 gtk+-2.0 gthread-2.0 gmodule-2.0 librosprite)
 GTKLDFLAGS := $(shell $(PKG_CONFIG) --cflags --libs libglade-2.0 gtk+-2.0 gthread-2.0 gmodule-2.0 librsvg-2.0 librosprite)
+#CFLAGS += $(GTKCFLAGS) -g
+#LDFLAGS += $(GTKLDFLAGS) $(shell $(PKG_CONFIG) --libs lcms) -lsvgtiny
 CFLAGS += $(GTKCFLAGS)
 LDFLAGS += $(GTKLDFLAGS) $(shell $(PKG_CONFIG) --libs lcms)
 

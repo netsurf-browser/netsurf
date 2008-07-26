@@ -35,7 +35,7 @@ char *strndup(const char *s, size_t n);
 /* This section toggles build options on and off.
  * Simply undefine a symbol to turn the relevant feature off.
  *
- * IF ADDING A FEATURE HERE, ADD IT TO Docs/Doxyfile LINE 892 AS WELL.
+ * IF ADDING A FEATURE HERE, ADD IT TO Docs/Doxyfile's "PREDEFINED" DEFINITION AS WELL.
  */
 
 /* HTTP Auth */
@@ -80,19 +80,20 @@ char *strndup(const char *s, size_t n);
         #define WITH_RSVG
     #endif
 #endif
+#if defined(riscos) || defined(DEBUG_BUILD)
+    /* Export modules */
+    #define WITH_SAVE_COMPLETE
+    #define WITH_DRAW_EXPORT
+    #define WITH_PDF_EXPORT
+#endif
 
+/* Configuration sanity checks: */
 #if defined(WITH_NS_SVG) && defined(WITH_RSVG)
     #error Cannot build WITH_NS_SVG and WITH_RSVG both enabled
 #endif
 
 #if defined(WITH_NSSPRITE) && defined(WITH_SPRITE)
     #error Cannot build WITH_NSSPRITE and WITH_SPRITE both enabled
-#endif
-
-#if defined(riscos) || defined(DEBUG_BUILD)
-    /* Export modules */
-    #define WITH_SAVE_COMPLETE
-    #define WITH_DRAW_EXPORT
 #endif
 
 #endif

@@ -505,7 +505,7 @@ bool nsmng_redraw(struct content *c, int x, int y,
 	}
 
 	ret = plot.bitmap(x, y, width, height,
-			c->bitmap, background_colour);
+			c->bitmap, background_colour, c);
 
 	/*	Check if we need to restart the animation
 	*/
@@ -534,7 +534,7 @@ bool nsmng_redraw_tiled(struct content *c, int x, int y,
 
 	ret = plot.bitmap_tile(x, y, width, height,
 			c->bitmap, background_colour,
-			repeat_x, repeat_y);
+			repeat_x, repeat_y, c);
 
 	/*	Check if we need to restart the animation
 	*/

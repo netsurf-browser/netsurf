@@ -130,6 +130,7 @@ struct content_html_data {
 
 	struct box *layout;  /**< Box tree, or 0. */
 	colour background_colour;  /**< Document background colour. */
+	const struct font_functions *font_func;
 
 	/** Number of entries in stylesheet_content. */
 	unsigned int stylesheet_count;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2008 Adam Blokus <adamblokus@gmail.com>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -15,31 +15,22 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+ 
+ /** \file
+  * Font handling in Haru pdf documents (interface).
+  */
+ 
+#ifndef _NETSURF_RENDER_FONT_HARU_H_
+#define _NETSURF_RENDER_FONT_HARU_H_
+ 
+#include "render/font.h"
+#include "hpdf.h"
+ 
+bool haru_nsfont_apply_style(const struct css_style *style,
+			      	HPDF_Doc doc, HPDF_Page page,
+	  			HPDF_Font *font);
+ 
+extern const struct font_functions haru_nsfont;
 
-/** \file
- * Target independent plotting (GDK / GTK+ interface).
- */
 
-#ifndef NETSURF_GTK_PLOTTERS_H
-#define NETSURF_GTK_PLOTTERS_H 1
-
-#include <gtk/gtk.h>
-
-struct plotter_table;
-
-extern const struct plotter_table nsgtk_plotters;
-
-extern GtkWidget *current_widget;
-extern GdkDrawable *current_drawable;
-extern GdkGC *current_gc;
-#ifdef CAIRO_VERSION
-extern cairo_t *current_cr;
 #endif
-
-void nsgtk_plot_set_scale(float s);
-float nsgtk_plot_get_scale(void);
-void nsgtk_set_colour(colour c);
-void nsgtk_plot_caret(int x, int y, int h);
-
-#endif /* NETSURF_GTK_PLOTTERS_H */
-

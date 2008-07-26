@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2008 Adam Blokus <adamblokus@gmail.com>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -17,29 +17,25 @@
  */
 
 /** \file
- * Target independent plotting (GDK / GTK+ interface).
- */
+ * 	Printer interface - contains plotter to use, functions for
+ * initialization, handling pages and cleaning up.
+*/
 
-#ifndef NETSURF_GTK_PLOTTERS_H
-#define NETSURF_GTK_PLOTTERS_H 1
+#ifndef NETSURF_DESKTOP_PRINTER_H
+#define NETSURF_DESKTOP_PRINTER_H
 
-#include <gtk/gtk.h>
+#include "desktop/plotters.h"
+#include "desktop/print.h"
 
-struct plotter_table;
+/** Printer interface */
+struct printer{
+	const struct plotter_table *plotter;
 
-extern const struct plotter_table nsgtk_plotters;
+	bool (*print_begin) (struct print_settings*);
 
-extern GtkWidget *current_widget;
-extern GdkDrawable *current_drawable;
-extern GdkGC *current_gc;
-#ifdef CAIRO_VERSION
-extern cairo_t *current_cr;
+	bool (*print_next_page)(void);
+
+	void (*print_end)(void);
+};
+
 #endif
-
-void nsgtk_plot_set_scale(float s);
-float nsgtk_plot_get_scale(void);
-void nsgtk_set_colour(colour c);
-void nsgtk_plot_caret(int x, int y, int h);
-
-#endif /* NETSURF_GTK_PLOTTERS_H */
-

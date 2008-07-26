@@ -35,20 +35,32 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 
-
-/** desktop font, size and style being used */
-char ro_gui_desktop_font_family[80];
-int ro_gui_desktop_font_size = 12;
-rufl_style ro_gui_desktop_font_style = rufl_WEIGHT_400;
-
-
 static void nsfont_check_option(char **option, const char *family,
 		const char *fallback);
 static int nsfont_list_cmp(const void *keyval, const void *datum);
 static void nsfont_check_fonts(void);
 static void ro_gui_wimp_desktop_font(char *family, size_t bufsize, int *psize,
 		rufl_style *pstyle);
+static bool nsfont_width(const struct css_style *style,
+		const char *string, size_t length,
+		int *width);
+static bool nsfont_position_in_string(const struct css_style *style,
+		const char *string, size_t length,
+		int x, size_t *char_offset, int *actual_x);
+static bool nsfont_split(const struct css_style *style,
+		const char *string, size_t length,
+		int x, size_t *char_offset, int *actual_x);
 
+/** desktop font, size and style being used */
+char ro_gui_desktop_font_family[80];
+int ro_gui_desktop_font_size = 12;
+rufl_style ro_gui_desktop_font_style = rufl_WEIGHT_400;
+
+const struct font_functions nsfont = {
+	nsfont_width,
+	nsfont_position_in_string,
+	nsfont_split
+};
 
 /**
  * Initialize font handling.

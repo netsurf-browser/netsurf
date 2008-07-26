@@ -601,7 +601,7 @@ bool redraw_handler(const char *text, size_t length, struct box *box,
 		height = box->padding[TOP] + box->height + box->padding[BOTTOM];
 
 		if (box->type == BOX_TEXT && box->space &&
-				nsfont_width(box->style, " ", 1, &space_width))
+				nsfont.font_width(box->style, " ", 1, &space_width))
 			width += space_width;
 
 		if (r->inited) {

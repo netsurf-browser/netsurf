@@ -39,14 +39,19 @@
 struct css_style;
 
 
-bool nsfont_width(const struct css_style *style,
-		const char *string, size_t length,
-		int *width);
-bool nsfont_position_in_string(const struct css_style *style,
-		const char *string, size_t length,
-		int x, size_t *char_offset, int *actual_x);
-bool nsfont_split(const struct css_style *style,
-		const char *string, size_t length,
-		int x, size_t *char_offset, int *actual_x);
+struct font_functions
+{
+	bool (*font_width)(const struct css_style *style,
+			const char *string, size_t length,
+			int *width);
+	bool (*font_position_in_string)(const struct css_style *style,
+			const char *string, size_t length,
+			int x, size_t *char_offset, int *actual_x);
+	bool (*font_split)(const struct css_style *style,
+			const char *string, size_t length,
+			int x, size_t *char_offset, int *actual_x);
+};
+
+extern const struct font_functions nsfont;
 
 #endif

@@ -28,13 +28,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "oslib/dragasprite.h"
-#include "oslib/osbyte.h"
-#include "oslib/osfile.h"
-#include "oslib/osmodule.h"
+#include <oslib/dragasprite.h>
+#include <oslib/osbyte.h>
+#include <oslib/osfile.h>
+#include <oslib/osmodule.h>
 #include <oslib/osspriteop.h>
-#include "oslib/wimp.h"
-#include "oslib/wimpspriteop.h"
+#include <oslib/wimp.h>
+#include <oslib/wimpspriteop.h>
 #include "desktop/netsurf.h"
 #include "desktop/save_text.h"
 #include "desktop/selection.h"
@@ -47,6 +47,7 @@
 #include "riscos/save.h"
 #include "riscos/save_complete.h"
 #include "riscos/save_draw.h"
+#include "riscos/save_pdf.h"
 #include "riscos/textselection.h"
 #include "riscos/thumbnail.h"
 #include "riscos/wimp.h"
@@ -92,10 +93,12 @@ struct gui_save_table_entry {
 
 /** Table of filetypes and default filenames. Must be in sync with
  * gui_save_type (riscos/gui.h). A filetype of 0 indicates the content should
- * be used. */
-struct gui_save_table_entry gui_save_table[] = {
+ * be used.
+ */
+static const struct gui_save_table_entry gui_save_table[] = {
 	/* GUI_SAVE_SOURCE,              */ {     0, "SaveSource" },
 	/* GUI_SAVE_DRAW,                */ { 0xaff, "SaveDraw" },
+	/* GUI_SAVE_PDF,                 */ { 0xadf, "SavePDF" },
 	/* GUI_SAVE_TEXT,                */ { 0xfff, "SaveText" },
 	/* GUI_SAVE_COMPLETE,            */ { 0xfaf, "SaveComplete" },
 	/* GUI_SAVE_OBJECT_ORIG,         */ {     0, "SaveObject" },
@@ -633,7 +636,7 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 /**
  * Does the actual saving
  *
- * \param  c     content to save (or 0 for other)
+ * \param  c     content to save (or NULL for other)
  * \param  path  path to save as
  * \return  true on success, false on error and error reported
  */
@@ -646,6 +649,10 @@ bool ro_gui_save_content(struct content *c, char *path)
 #ifdef WITH_DRAW_EXPORT
 		case GUI_SAVE_DRAW:
 			return save_as_draw(c, path);
+#endif
+#ifdef WITH_PDF_EXPORT
+		case GUI_SAVE_PDF:
+			return save_as_pdf(c, path);
 #endif
 		case GUI_SAVE_TEXT:
 			save_as_text(c, path);

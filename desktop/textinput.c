@@ -181,7 +181,7 @@ struct box *textarea_get_position(struct box *textarea, int x, int y,
 		assert(text_box->type == BOX_TEXT);
 		assert(text_box->text);
 		/** \todo handle errors */
-		nsfont_position_in_string(text_box->style, text_box->text,
+		nsfont.font_position_in_string(text_box->style, text_box->text,
 				text_box->length,
 				(unsigned int)(x - text_box->x),
 				(size_t *) pchar_offset, ppixel_offset);
@@ -203,7 +203,7 @@ struct box *textarea_get_position(struct box *textarea, int x, int y,
 			text_box = inline_container->last;
 			assert(text_box->type == BOX_TEXT);
 			assert(text_box->text);
-			nsfont_position_in_string(text_box->style,
+			nsfont.font_position_in_string(text_box->style,
 					text_box->text,
 					text_box->length,
 					textarea->width,
@@ -223,7 +223,7 @@ struct box *textarea_get_position(struct box *textarea, int x, int y,
 			}
 			assert(text_box->type == BOX_TEXT);
 			assert(text_box->text);
-			nsfont_position_in_string(text_box->style,
+			nsfont.font_position_in_string(text_box->style,
 					text_box->text,
 					text_box->length,
 					(unsigned int)(x - text_box->x),
@@ -761,7 +761,7 @@ bool browser_window_textarea_callback(struct browser_window *bw,
 		}
 	}
 	
-	nsfont_width(text_box->style, text_box->text,
+	nsfont.font_width(text_box->style, text_box->text,
 			char_offset, &pixel_offset);
 	
 	selection_clear(bw->sel, true);
@@ -813,7 +813,7 @@ void browser_window_input_click(struct browser_window* bw,
 	int pixel_offset = 0, dx = 0;
 	struct box *text_box = input->children->children;
 
-	nsfont_position_in_string(text_box->style, text_box->text,
+	nsfont.font_position_in_string(text_box->style, text_box->text,
 			text_box->length, x - text_box->x,
 			&char_offset, &pixel_offset);
 	assert(char_offset <= text_box->length);
@@ -1375,7 +1375,7 @@ bool browser_window_textarea_paste_text(struct browser_window *bw,
 		textarea->gadget->caret_text_box = text_box;
 		textarea->gadget->caret_box_offset = char_offset;
 
-		nsfont_width(text_box->style, text_box->text,
+		nsfont.font_width(text_box->style, text_box->text,
 				char_offset, &pixel_offset);
 
 		textarea->gadget->caret_pixel_offset = pixel_offset;
@@ -1508,7 +1508,7 @@ void browser_window_textarea_move_caret(struct browser_window *bw, void *p)
 	box_x -= textarea->scroll_x;
 	box_y -= textarea->scroll_y;
 
-	nsfont_width(text_box->style, text_box->text,
+	nsfont.font_width(text_box->style, text_box->text,
 			char_offset, &pixel_offset);
 
 	browser_window_place_caret(bw,
@@ -1541,7 +1541,7 @@ void browser_window_input_move_caret(struct browser_window *bw, void *p)
 
 	box_coords(input, &box_x, &box_y);
 
-	nsfont_width(text_box->style, text_box->text, box_offset,
+	nsfont.font_width(text_box->style, text_box->text, box_offset,
 			&pixel_offset);
 
 	browser_window_place_caret(bw,
@@ -1576,12 +1576,12 @@ void input_update_display(struct browser_window *bw, struct box *input,
 	int dx;
 
 	if (redraw)
-		nsfont_width(text_box->style, text_box->text, text_box->length,
+		nsfont.font_width(text_box->style, text_box->text, text_box->length,
 			&text_box->width);
 
 	box_coords(input, &box_x, &box_y);
 
-	nsfont_width(text_box->style, text_box->text, box_offset,
+	nsfont.font_width(text_box->style, text_box->text, box_offset,
 			(int *) &pixel_offset);
 
 	/* Shift text box horizontally, so caret is visible */

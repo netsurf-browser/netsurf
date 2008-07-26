@@ -33,7 +33,6 @@
 #include "utils/log.h"
 #include "utils/talloc.h"
 
-
 static bool box_contains_point(struct box *box, int x, int y);
 
 #define box_is_float(box) (box->type == BOX_FLOAT_LEFT || \
@@ -545,6 +544,10 @@ void box_dump(FILE *stream, struct box *box, unsigned int depth)
 	fprintf(stream, "(%i %i %i %i) ",
 			box->descendant_x0, box->descendant_y0,
 			box->descendant_x1, box->descendant_y1);
+	
+	fprintf(stream, "m(%i %i %i %i) ",
+			box->margin[TOP], box->margin[LEFT],
+			box->margin[BOTTOM], box->margin[RIGHT]);
 
 	switch (box->type) {
 	case BOX_BLOCK:            fprintf(stream, "BLOCK "); break;
@@ -636,5 +639,203 @@ void box_dump(FILE *stream, struct box *box, unsigned int depth)
 		fprintf(stream, "fallback:\n");
 		for (c = box->fallback; c; c = c->next)
 			box_dump(stream, c, depth + 1);
+	}
+}
+
+/* Box tree duplication below
+*/
+
+/** structure for translating addresses in the box tree */
+struct box_dict_element{
+	struct box *old, *new;
+};
+
+static bool box_duplicate_main_tree(struct box *box, struct content *c,
+		int *count);
+static void box_duplicate_create_dict(struct box *old_box, struct box *new_box,
+		struct box_dict_element **dict);
+static void box_duplicate_update( struct box *box,
+		struct box_dict_element *dict,
+		int n);
+
+static int box_compare_dict_elements(const struct box_dict_element *a,
+		const struct box_dict_element *b);
+
+int box_compare_dict_elements(const struct box_dict_element *a,
+		const struct box_dict_element *b)
+{
+	return (a->old < b->old) ? -1 : ((a->old > b->old) ? 1 : 0);
+}
+
+/** Duplication of a box tree. We assume that all the content is fetched,
+fallbacks have been applied where necessary and we reuse a lot of content
+like strings, fetched objects etc - just replicating all we need to create
+two different layouts.
+\return true on success, false on lack of memory
+*/
+struct box* box_duplicate_tree(struct box *root, struct content *c)
+{
+	struct box *new_root;/**< Root of the new box tree*/
+	int box_number = 0;
+	struct box *old_addr, *new_addr;
+	struct box_dict_element *box_dict, *box_dict_end;
+	
+	/* 1. Duplicate parent - children structure, list_markers*/
+	new_root = talloc_memdup(c, root, sizeof (struct box));
+	if (!box_duplicate_main_tree(new_root, c, &box_number))
+		return NULL;
+
+	/* 2. Create address translation dictionary*/
+	/*TODO: dont save unnecessary addresses*/
+	
+	box_dict_end = box_dict = malloc(box_number *
+			sizeof(struct box_dict_element));
+	
+	if (box_dict == NULL)
+		return NULL;
+	box_duplicate_create_dict(root, new_root, &box_dict_end);
+	
+	assert((box_dict_end - box_dict) == box_number);
+	
+	/*3. Sort it*/
+	
+	qsort(box_dict, (box_dict_end - box_dict), sizeof(struct box_dict_element),
+	      (int (*)(const void *, const void *))box_compare_dict_elements);
+	
+	/* 4. Update inline_end and float_children pointers */
+	
+	box_duplicate_update(new_root, box_dict, (box_dict_end - box_dict));
+	
+	free(box_dict);
+	
+	return new_root;
+}
+
+/**
+ * Recursively duplicates children of an element, and also if present - its 
+ * list_marker, style and text.
+ * \param box Current box to duplicate its children
+ * \param c talloc memory pool
+ * \param count number of boxes seen so far
+ * \return true if successful, false otherwise (lack of memory)
+*/
+bool box_duplicate_main_tree(struct box *box, struct content *c, int *count)
+{
+
+	struct box *b, *prev, *copy;
+	
+	prev = NULL;
+	
+	for (b = box->children; b; b = b->next) {
+		/*Copy child*/
+		copy = talloc_memdup(c, b, sizeof (struct box));
+		if (copy == NULL)
+			return false;
+		
+		copy->parent = box;
+		
+		if (prev != NULL)
+			prev->next = copy;
+		else
+			box->children = copy;
+		
+		/* Recursively visit child */
+		box_duplicate_main_tree(copy, c, count);
+		
+		prev = copy;
+	}
+	
+	box->last = prev;
+	
+	if (box->list_marker) {
+		box->list_marker = talloc_memdup(c, box->list_marker,
+				sizeof *box->list_marker);
+		if (box->list_marker == NULL) 
+			return false;
+		box->list_marker->parent = box;
+	}
+	
+	if (box->text) {
+		box->text = talloc_memdup(c, box->text, box->length);
+		if (box->text == NULL) 
+			return false;
+	}
+	
+	if (box->style) {
+		box->style = talloc_memdup(c, box->style, sizeof *box->style);
+		if (box->style == NULL) 
+			return false;
+	}
+	
+	/*Make layout calculate the size of this element later
+	(might change because of font change etc.) */
+	box->width = UNKNOWN_WIDTH;
+	box->min_width = 0;
+	box->max_width = UNKNOWN_MAX_WIDTH;
+
+	(*count)++;
+	
+	return true;
+}
+
+/**
+ * Recursively creates a dictionary of addresses - binding the address of a box
+ * with its copy.
+ * \param old_box original box
+ * \param new_box copy of the original box
+ * \param dict pointer to a pointer to the current position in the dictionary
+ */
+void box_duplicate_create_dict(struct box *old_box, struct box *new_box,
+		struct box_dict_element **dict)
+{
+	/**Children of the old and new boxes*/
+	struct box *b_old, *b_new;
+	
+	for (b_old = old_box->children, b_new = new_box->children;
+	     b_old != NULL && b_new != NULL;
+	     b_old = b_old->next, b_new = b_new->next)
+		box_duplicate_create_dict(b_old, b_new, dict);
+	
+	/*The new tree should be a exact copy*/
+	assert(b_old == NULL && b_new == NULL);
+	
+	(*dict)->old = old_box;
+	(*dict)->new = new_box;
+	(*dict)++;
+}
+
+/**
+ * Recursively updates pointers in box tree.
+ * \param box current box in the new box tree
+ * \param box_dict box pointers dictionary
+ * \param n number of memory addresses in the dictionary
+ */
+void box_duplicate_update(struct box *box,
+		struct box_dict_element *box_dict,
+  		int n)
+{
+	struct box_dict_element *box_dict_element;
+	struct box *b;
+	struct box_dict_element element;
+	
+	for (b = box->children; b; b = b->next)
+		box_duplicate_update(b, box_dict, n);
+	
+	if (box->float_children) {
+		element.old = box->float_children;
+		box_dict_element = bsearch(&element,
+				box_dict, n,
+				sizeof(struct box_dict_element),
+				(int (*)(const void *, const void *))box_compare_dict_elements);
+		box->float_children = box_dict_element->new;
+	}
+	
+	if (box->next_float) {
+		element.old = box->next_float;
+		box_dict_element = bsearch(&element,
+				box_dict, n,
+				sizeof(struct box_dict_element),
+				(int (*)(const void *, const void *))box_compare_dict_elements);
+		box->next_float = box_dict_element->new;
 	}
 }

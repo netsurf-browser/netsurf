@@ -211,6 +211,14 @@ void bitmap_set_suspendable(struct bitmap *bitmap, void *private_word,
 		void (*invalidate)(struct bitmap *bitmap, void *private_word)) {
 }
 
+int bitmap_get_width(struct bitmap *bitmap){
+	return gdk_pixbuf_get_width(bitmap->primary);
+}
+
+int bitmap_get_height(struct bitmap *bitmap){
+	return gdk_pixbuf_get_height(bitmap->primary);
+}
+
 static GdkPixbuf *
 gtk_bitmap_generate_pretile(GdkPixbuf *primary, int repeat_x, int repeat_y)
 {

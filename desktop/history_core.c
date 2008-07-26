@@ -597,13 +597,13 @@ bool history_redraw_entry(struct history *history,
 	int tailsize = 5;
 
 	if (!plot.bitmap(entry->x, entry->y, WIDTH, HEIGHT,
-			entry->bitmap, 0xffffff))
+			entry->bitmap, 0xffffff, NULL))
 		return false;
 	if (!plot.rectangle(entry->x - 1, entry->y - 1, WIDTH + 1, HEIGHT + 1,
 			entry == history->current ? 2 : 1, c, false, false))
 		return false;
 
-	if (!nsfont_position_in_string(&css_base_style, entry->page.title,
+	if (!nsfont.font_position_in_string(&css_base_style, entry->page.title,
 			strlen(entry->page.title), WIDTH,
 			&char_offset, &actual_x))
 		return false;

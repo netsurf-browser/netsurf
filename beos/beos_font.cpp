@@ -44,6 +44,21 @@ extern "C" {
 
 static void nsfont_style_to_font(BFont &font, 
 		const struct css_style *style);
+static bool nsfont_width(const struct css_style *style,
+		const char *string, size_t length,
+		int *width);
+static bool nsfont_position_in_string(const struct css_style *style,
+		const char *string, size_t length,
+		int x, size_t *char_offset, int *actual_x);
+static bool nsfont_split(const struct css_style *style,
+		const char *string, size_t length,
+		int x, size_t *char_offset, int *actual_x);
+
+const struct font_functions nsfont = {
+	nsfont_width,
+	nsfont_position_in_string,
+	nsfont_split
+};
 
 /**
  * Measure the width of a string.

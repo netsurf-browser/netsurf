@@ -1442,7 +1442,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 				int pixel_offset;
 				size_t idx;
 
-				nsfont_position_in_string(text_box->style,
+				nsfont.font_position_in_string(text_box->style,
 					text_box->text,
 					text_box->length,
 					x - gadget_box_x - text_box->x,
@@ -1483,7 +1483,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 						BROWSER_MOUSE_DRAG_2))
 					selection_init(bw->sel, gadget_box);
 
-				nsfont_position_in_string(text_box->style,
+				nsfont.font_position_in_string(text_box->style,
 					text_box->text,
 					text_box->length,
 					x - gadget_box_x - text_box->x,
@@ -1573,7 +1573,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 				int pixel_offset;
 				size_t idx;
 
-				nsfont_position_in_string(text_box->style,
+				nsfont.font_position_in_string(text_box->style,
 					text_box->text,
 					text_box->length,
 					x - text_box_x,
@@ -1836,8 +1836,7 @@ void browser_window_mouse_track_html(struct browser_window *bw,
 			if (box) {
 				int pixel_offset;
 				size_t idx;
-				
-				nsfont_position_in_string(box->style,
+				nsfont.font_position_in_string(box->style,
 						box->text, box->length,
 						dx, &idx, &pixel_offset);	 
 
@@ -1917,7 +1916,7 @@ void browser_window_mouse_drag_end(struct browser_window *bw,
 					box = browser_window_pick_text_box(bw,
 							x, y, dir, &dx, &dy);
 					if (box) {
-						nsfont_position_in_string(
+						nsfont.font_position_in_string(
 							box->style,
 							box->text,
 							box->length,

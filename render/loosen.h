@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2008 Adam Blokus <adamblokus@gmail.com>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,30 +16,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Target independent plotting (GDK / GTK+ interface).
- */
+/**
+\file
+General idea - a set of routines working themselves recursively through
+the box tree and trying to change the layout of the document as little
+as possible to acquire the desired width ( - to make it fit in a printed
+page ), where possible - also taking the dividing height into consideration,
+to prevent objects being cut by ends of pages.
+*/
 
-#ifndef NETSURF_GTK_PLOTTERS_H
-#define NETSURF_GTK_PLOTTERS_H 1
+#ifndef NETSURF_RENDER_LOOSEN_H
+#define NETSURF_RENDER_LOOSEN_H
+#include <stdbool.h>
 
-#include <gtk/gtk.h>
+bool loosen_document_layout(struct content *content, struct box *layout,
+		int width, int height);
 
-struct plotter_table;
-
-extern const struct plotter_table nsgtk_plotters;
-
-extern GtkWidget *current_widget;
-extern GdkDrawable *current_drawable;
-extern GdkGC *current_gc;
-#ifdef CAIRO_VERSION
-extern cairo_t *current_cr;
 #endif
-
-void nsgtk_plot_set_scale(float s);
-float nsgtk_plot_get_scale(void);
-void nsgtk_set_colour(colour c);
-void nsgtk_plot_caret(int x, int y, int h);
-
-#endif /* NETSURF_GTK_PLOTTERS_H */
-

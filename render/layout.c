@@ -55,7 +55,8 @@
 #define AUTO INT_MIN
 
 
-static void layout_minmax_block(struct box *block);
+static void layout_minmax_block(struct box *block,
+		const struct font_functions *font_func);
 static bool layout_block_object(struct box *block);
 static void layout_block_find_dimensions(int available_width, struct box *box);
 static bool layout_apply_minmax_height(struct box *box);
@@ -71,24 +72,28 @@ static void layout_find_dimensions(int available_width,
 static int layout_clear(struct box *fl, css_clear clear);
 static void find_sides(struct box *fl, int y0, int y1,
 		int *x0, int *x1, struct box **left, struct box **right);
-static void layout_minmax_inline_container(struct box *inline_container);
+static void layout_minmax_inline_container(struct box *inline_container,
+		const struct font_functions *font_func);
 static int line_height(struct css_style *style);
 static bool layout_line(struct box *first, int *width, int *y,
 		int cx, int cy, struct box *cont, bool indent,
 		bool has_text_children,
 		struct content *content, struct box **next_box);
-static struct box *layout_minmax_line(struct box *first, int *min, int *max);
+static struct box *layout_minmax_line(struct box *first, int *min, int *max,
+		const struct font_functions *font_func);
 static int layout_text_indent(struct css_style *style, int width);
 static bool layout_float(struct box *b, int width, struct content *content);
 static void place_float_below(struct box *c, int width, int cx, int y,
 		struct box *cont);
 static bool layout_table(struct box *box, int available_width,
 		struct content *content);
-static void layout_minmax_table(struct box *table);
+static void layout_minmax_table(struct box *table,
+		const struct font_functions *font_func);
 static void layout_move_children(struct box *box, int x, int y);
 static void calculate_mbp_width(struct css_style *style, unsigned int side,
 		int *fixed, float *frac);
-static void layout_lists(struct box *box);
+static void layout_lists(struct box *box,
+		const struct font_functions *font_func);
 static void layout_position_relative(struct box *root);
 static void layout_compute_relative_offset(struct box *box, int *x, int *y);
 static bool layout_position_absolute(struct box *box,
@@ -116,10 +121,11 @@ bool layout_document(struct content *content, int width, int height)
 {
 	bool ret;
 	struct box *doc = content->data.html.layout;
+	const struct font_functions *font_func = content->data.html.font_func;
 
 	assert(content->type == CONTENT_HTML);
 
-	layout_minmax_block(doc);
+	layout_minmax_block(doc, font_func);
 
 	layout_block_find_dimensions(width, doc);
 	doc->x = doc->margin[LEFT] + doc->border[LEFT];
@@ -150,7 +156,7 @@ bool layout_document(struct content *content, int width, int height)
 					 doc->children->margin[BOTTOM]);
 	}
 
-	layout_lists(doc);
+	layout_lists(doc, font_func);
 	layout_position_absolute(doc, doc, 0, 0, content);
 	layout_position_relative(doc);
 
@@ -516,7 +522,7 @@ bool layout_block_context(struct box *block, struct content *content)
  *        0 <= block->min_width <= block->max_width
  */
 
-void layout_minmax_block(struct box *block)
+void layout_minmax_block(struct box *block, const struct font_functions *font_func)
 {
 	struct box *child;
 	int min = 0, max = 0;
@@ -545,7 +551,8 @@ void layout_minmax_block(struct box *block)
 
 	if (block->object) {
 		if (block->object->type == CONTENT_HTML) {
-			layout_minmax_block(block->object->data.html.layout);
+			layout_minmax_block(block->object->data.html.layout,
+					font_func);
 			min = block->object->data.html.layout->min_width;
 			max = block->object->data.html.layout->max_width;
 		} else {
@@ -556,13 +563,14 @@ void layout_minmax_block(struct box *block)
 		for (child = block->children; child; child = child->next) {
 			switch (child->type) {
 			case BOX_BLOCK:
-				layout_minmax_block(child);
+				layout_minmax_block(child, font_func);
 				break;
 			case BOX_INLINE_CONTAINER:
-				layout_minmax_inline_container(child);
+				layout_minmax_inline_container(child,
+						font_func);
 				break;
 			case BOX_TABLE:
-				layout_minmax_table(child);
+				layout_minmax_table(child, font_func);
 				break;
 			default:
 				assert(0);
@@ -1139,7 +1147,8 @@ bool layout_inline_container(struct box *inline_container, int width,
  *        0 <= inline_container->min_width <= inline_container->max_width
  */
 
-void layout_minmax_inline_container(struct box *inline_container)
+void layout_minmax_inline_container(struct box *inline_container,
+		const struct font_functions *font_func)
 {
 	struct box *child;
 	int line_min = 0, line_max = 0;
@@ -1152,7 +1161,9 @@ void layout_minmax_inline_container(struct box *inline_container)
 		return;
 
 	for (child = inline_container->children; child; ) {
-		child = layout_minmax_line(child, &line_min, &line_max);
+		child = layout_minmax_line(child,
+				&line_min, &line_max,
+				font_func);
 		if (min < line_min)
 			min = line_min;
 		if (max < line_max)
@@ -1242,6 +1253,8 @@ bool layout_line(struct box *first, int *width, int *y,
 	struct css_length gadget_size; /* Checkbox / radio buttons */
 	gadget_size.unit = CSS_UNIT_EM;
 	gadget_size.value = 1;
+	
+	const struct font_functions *font_func = content->data.html.font_func;
 
 	LOG(("first %p, first->text '%.*s', width %i, y %i, cx %i, cy %i",
 			first, (int) first->length, first->text, *width,
@@ -1334,7 +1347,8 @@ bool layout_line(struct box *first, int *width, int *y,
 			b->width = 0;
 			if (b->space) {
 				/** \todo optimize out */
-				nsfont_width(b->style, " ", 1, &space_after);
+				font_func->font_width(b->style, " ", 1,
+						&space_after);
 			} else {
 				space_after = 0;
 			}
@@ -1371,7 +1385,8 @@ bool layout_line(struct box *first, int *width, int *y,
 							data.select.items; o;
 							o = o->next) {
 						int opt_width;
-						nsfont_width(b->style, o->text,
+						font_func->font_width(b->style,
+								o->text,
 								strlen(o->text),
 								&opt_width);
 
@@ -1381,7 +1396,7 @@ bool layout_line(struct box *first, int *width, int *y,
 
 					b->width = opt_maxwidth;
 				} else {
-					nsfont_width(b->style, b->text,
+					font_func->font_width(b->style, b->text,
 						b->length, &b->width);
 				}
 			}
@@ -1389,7 +1404,8 @@ bool layout_line(struct box *first, int *width, int *y,
 			x += b->width;
 			if (b->space)
 				/** \todo optimize out */
-				nsfont_width(b->style, " ", 1, &space_after);
+				font_func->font_width(b->style, " ", 1,
+						&space_after);
 			else
 				space_after = 0;
 
@@ -1529,7 +1545,7 @@ bool layout_line(struct box *first, int *width, int *y,
 				space_after = 0;
 				if (b->space)
 					/** \todo handle errors, optimize */
-					nsfont_width(b->style, " ", 1,
+					font_func->font_width(b->style, " ", 1,
 							&space_after);
 			} else
 				space_after = 0;
@@ -1654,7 +1670,7 @@ bool layout_line(struct box *first, int *width, int *y,
 			w = split_box->width;
 		else
 			/** \todo handle errors */
-			nsfont_width(split_box->style, split_box->text,
+			font_func->font_width(split_box->style, split_box->text,
 					space, &w);
 
 		LOG(("splitting: split_box %p \"%.*s\", space %zu, w %i, "
@@ -1725,7 +1741,7 @@ bool layout_line(struct box *first, int *width, int *y,
 			/* fit as many words as possible */
 			assert(space != 0);
 			/** \todo handle errors */
-			nsfont_split(split_box->style,
+			font_func->font_split(split_box->style,
 					split_box->text, split_box->length,
 					x1 - x0 - x - space_before, &space, &w);
 			LOG(("'%.*s' %i %zu %i", (int) split_box->length,
@@ -1827,7 +1843,8 @@ bool layout_line(struct box *first, int *width, int *y,
  */
 
 struct box *layout_minmax_line(struct box *first,
-		int *line_min, int *line_max)
+		int *line_min, int *line_max,
+  		const struct font_functions *font_func)
 {
 	int min = 0, max = 0, width, height, fixed;
 	float frac;
@@ -1855,9 +1872,9 @@ struct box *layout_minmax_line(struct box *first,
 		if (b->type == BOX_FLOAT_LEFT || b->type == BOX_FLOAT_RIGHT) {
 			assert(b->children);
 			if (b->children->type == BOX_BLOCK)
-				layout_minmax_block(b->children);
+				layout_minmax_block(b->children, font_func);
 			else
-				layout_minmax_table(b->children);
+				layout_minmax_table(b->children, font_func);
 			b->min_width = b->children->min_width;
 			b->max_width = b->children->max_width;
 			if (min < b->min_width)
@@ -1867,7 +1884,7 @@ struct box *layout_minmax_line(struct box *first,
 		}
 
 		if (b->type == BOX_INLINE_BLOCK) {
-			layout_minmax_block(b);
+			layout_minmax_block(b, font_func);
 			if (min < b->min_width)
 				min = b->min_width;
 			max += b->max_width;
@@ -1890,7 +1907,7 @@ struct box *layout_minmax_line(struct box *first,
 			if (0 < fixed)
 				max += fixed;
 			if (b->next && b->space) {
-				nsfont_width(b->style, " ", 1, &width);
+				font_func->font_width(b->style, " ", 1, &width);
 				max += width;
 			}
 			continue;
@@ -1916,7 +1933,8 @@ struct box *layout_minmax_line(struct box *first,
 							data.select.items; o;
 							o = o->next) {
 						int opt_width;
-						nsfont_width(b->style, o->text,
+						font_func->font_width(b->style,
+								o->text,
 								strlen(o->text),
 								&opt_width);
 
@@ -1926,13 +1944,13 @@ struct box *layout_minmax_line(struct box *first,
 
 					b->width = opt_maxwidth;
 				} else {
-					nsfont_width(b->style, b->text,
+					font_func->font_width(b->style, b->text,
 						b->length, &b->width);
 				}
 			}
 			max += b->width;
 			if (b->next && b->space) {
-				nsfont_width(b->style, " ", 1, &width);
+				font_func->font_width(b->style, " ", 1, &width);
 				max += width;
 			}
 
@@ -1942,7 +1960,7 @@ struct box *layout_minmax_line(struct box *first,
 				for (j = i; j != b->length &&
 						b->text[j] != ' '; j++)
 					;
-				nsfont_width(b->style, b->text + i,
+				font_func->font_width(b->style, b->text + i,
 						j - i, &width);
 				if (min < width)
 					min = width;
@@ -2560,7 +2578,8 @@ bool layout_table(struct box *table, int available_width,
  *        0 <= table->min_width <= table->max_width
  */
 
-void layout_minmax_table(struct box *table)
+void layout_minmax_table(struct box *table,
+		const struct font_functions *font_func)
 {
 	unsigned int i, j;
 	int border_spacing_h = 0;
@@ -2597,7 +2616,7 @@ void layout_minmax_table(struct box *table)
 		if (cell->columns != 1)
 			continue;
 
-		layout_minmax_block(cell);
+		layout_minmax_block(cell, font_func);
 		i = cell->start_column;
 
 		if (col[i].positioned)
@@ -2620,7 +2639,7 @@ void layout_minmax_table(struct box *table)
 		if (cell->columns == 1)
 			continue;
 
-		layout_minmax_block(cell);
+		layout_minmax_block(cell, font_func);
 		i = cell->start_column;
 
 		/* find min width so far of spanned columns, and count
@@ -2766,7 +2785,8 @@ void calculate_mbp_width(struct css_style *style, unsigned int side,
  * Layout list markers.
  */
 
-void layout_lists(struct box *box)
+void layout_lists(struct box *box,
+		const struct font_functions *font_func)
 {
 	struct box *child;
 	struct box *marker;
@@ -2782,7 +2802,7 @@ void layout_lists(struct box *box)
 						marker->height) / 2;
 			} else if (marker->text) {
 				if (marker->width == UNKNOWN_WIDTH)
-					nsfont_width(marker->style,
+					font_func->font_width(marker->style,
 							marker->text,
 							marker->length,
 							&marker->width);
@@ -2798,7 +2818,7 @@ void layout_lists(struct box *box)
 			/* Gap between marker and content */
 			marker->x -= 4;
 		}
-		layout_lists(child);
+		layout_lists(child, font_func);
 	}
 }
 

@@ -182,9 +182,16 @@ void ro_gui_menu_init(void)
 			{ "Page", BROWSER_PAGE, 0 },
 			{ "Page.PageInfo",BROWSER_PAGE_INFO, dialog_pageinfo },
 			{ "Page.Save", BROWSER_SAVE, dialog_saveas },
+#ifdef WITH_SAVE_COMPLETE
 			{ "Page.SaveComp", BROWSER_SAVE_COMPLETE, dialog_saveas },
+#endif
 			{ "Page.Export", NO_ACTION, 0 },
+#ifdef WITH_DRAW_EXPORT
 			{ "Page.Export.Draw", BROWSER_EXPORT_DRAW, dialog_saveas },
+#endif
+#ifdef WITH_PDF_EXPORT
+			{ "Page.Export.PDF", BROWSER_EXPORT_PDF, dialog_saveas },
+#endif
 			{ "Page.Export.Text", BROWSER_EXPORT_TEXT, dialog_saveas },
 			{ "Page.SaveURL", NO_ACTION, 0 },
 			{ "Page.SaveURL.URI", BROWSER_SAVE_URL_URI, dialog_saveas },
@@ -1520,15 +1527,18 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 		case BROWSER_OBJECT_SAVE_URL_TEXT:
 			c = current_menu_object_box ?
 				current_menu_object_box->object : NULL;
+			/* Fall through */
 		case BROWSER_SAVE:
 		case BROWSER_SAVE_COMPLETE:
 		case BROWSER_EXPORT_DRAW:
+		case BROWSER_EXPORT_PDF:
 		case BROWSER_EXPORT_TEXT:
 		case BROWSER_SAVE_URL_URI:
 		case BROWSER_SAVE_URL_URL:
 		case BROWSER_SAVE_URL_TEXT:
 			if (!c)
 				return false;
+			/* Fall through */
 		case HOTLIST_EXPORT:
 		case HISTORY_EXPORT:
 			ro_gui_menu_prepare_action(owner, action, true);
@@ -1872,6 +1882,7 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 			if ((windows) && (current_menu_object_box))
 				ro_gui_menu_prepare_objectinfo(
 						current_menu_object_box);
+			/* Fall through */
 		case BROWSER_OBJECT_RELOAD:
 			ro_gui_menu_set_entry_shaded(current_menu, action,
 					!current_menu_object_box);
@@ -1917,6 +1928,12 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 			if ((c) && (windows))
 				ro_gui_save_prepare(GUI_SAVE_DRAW, c);
 			break;
+		case BROWSER_EXPORT_PDF:
+			ro_gui_menu_set_entry_shaded(current_menu,
+					action, !c);
+			if ((c) && (windows))
+				ro_gui_save_prepare(GUI_SAVE_PDF, c);
+			break;
 		case BROWSER_EXPORT_TEXT:
 			ro_gui_menu_set_entry_shaded(current_menu,
 					action, !c);
@@ -1926,6 +1943,7 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 		case BROWSER_OBJECT_SAVE_URL_URI:
 			c = current_menu_object_box ?
 				current_menu_object_box->object : NULL;
+			/* Fall through */
 		case BROWSER_SAVE_URL_URI:
 			ro_gui_menu_set_entry_shaded(current_menu,
 					action, !c);
@@ -1935,6 +1953,7 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 		case BROWSER_OBJECT_SAVE_URL_URL:
 			c = current_menu_object_box ?
 				current_menu_object_box->object : NULL;
+			/* Fall through */
 		case BROWSER_SAVE_URL_URL:
 			ro_gui_menu_set_entry_shaded(current_menu,
 					action, !c);
@@ -1944,6 +1963,7 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 		case BROWSER_OBJECT_SAVE_URL_TEXT:
 			c = current_menu_object_box ?
 				current_menu_object_box->object : NULL;
+			/* Fall through */
 		case BROWSER_SAVE_URL_TEXT:
 			ro_gui_menu_set_entry_shaded(current_menu,
 					action, !c);

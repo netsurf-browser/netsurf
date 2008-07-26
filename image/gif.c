@@ -141,7 +141,7 @@ bool nsgif_redraw(struct content *c, int x, int y,
 	if (c->data.gif.current_frame != c->data.gif.gif->decoded_frame)
 		nsgif_get_frame(c);
 	c->bitmap = c->data.gif.gif->frame_image;
-	return plot.bitmap(x, y, width, height,	c->bitmap, background_colour);
+	return plot.bitmap(x, y, width, height,	c->bitmap, background_colour, c);
 }
 
 
@@ -155,7 +155,7 @@ bool nsgif_redraw_tiled(struct content *c, int x, int y,
 		nsgif_get_frame(c);
 	c->bitmap = c->data.gif.gif->frame_image;
 	return plot.bitmap_tile(x, y, width, height, c->bitmap, background_colour,
-			repeat_x, repeat_y);
+			repeat_x, repeat_y, c);
 }
 
 

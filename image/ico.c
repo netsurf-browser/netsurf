@@ -101,7 +101,7 @@ bool nsico_redraw(struct content *c, int x, int y,
 	  	bmp_decode(bmp);
 	c->bitmap = bmp->bitmap;
 	return plot.bitmap(x, y, width, height, c->bitmap,
-			background_colour);
+			background_colour, c);
 }
 
 
@@ -115,7 +115,7 @@ bool nsico_redraw_tiled(struct content *c, int x, int y,
 	  	bmp_decode(bmp);
 	c->bitmap = bmp->bitmap;
 	return plot.bitmap_tile(x, y, width, height, c->bitmap,
-			background_colour, repeat_x, repeat_y);
+			background_colour, repeat_x, repeat_y, c);
 }
 
 

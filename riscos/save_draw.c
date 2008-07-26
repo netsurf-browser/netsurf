@@ -54,10 +54,10 @@ static bool ro_save_draw_disc(int x, int y, int radius, colour colour,
 static bool ro_save_draw_arc(int x, int y, int radius, int angle1, int angle2,
     		colour c);
 static bool ro_save_draw_bitmap(int x, int y, int width, int height,
-		struct bitmap *bitmap, colour bg);
+		struct bitmap *bitmap, colour bg, struct content *content);
 static bool ro_save_draw_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
-		bool repeat_x, bool repeat_y);
+		bool repeat_x, bool repeat_y, struct content *content);
 static bool ro_save_draw_group_start(const char *name);
 static bool ro_save_draw_group_end(void);
 static bool ro_save_draw_error(pencil_code code);
@@ -377,7 +377,7 @@ bool ro_save_draw_arc(int x, int y, int radius, int angle1, int angle2,
 }
 
 bool ro_save_draw_bitmap(int x, int y, int width, int height,
-		struct bitmap *bitmap, colour bg)
+		struct bitmap *bitmap, colour bg, struct content *content)
 {
 	pencil_code code;
 	char *buffer;
@@ -401,7 +401,7 @@ bool ro_save_draw_bitmap(int x, int y, int width, int height,
 
 bool ro_save_draw_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
-		bool repeat_x, bool repeat_y)
+		bool repeat_x, bool repeat_y, struct content *content)
 {
 	return true;
 }

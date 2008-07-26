@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2008 Adam Blokus <adamblokus@gmail.com>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -15,31 +15,22 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
+ 
 /** \file
- * Target independent plotting (GDK / GTK+ interface).
- */
+ * PDF Plotter and flow manipulating functions combined as a printer
+*/
 
-#ifndef NETSURF_GTK_PLOTTERS_H
-#define NETSURF_GTK_PLOTTERS_H 1
+#ifndef NETSURF_PDF_PRINTER_H
+#define NETSURF_PDF_PRINTER_H
 
-#include <gtk/gtk.h>
+#include "desktop/printer.h"
+#include "pdf/pdf_plotters.h"
 
-struct plotter_table;
+struct printer pdf_printer= {
+	&pdf_plotters,
+	pdf_begin,
+	pdf_next_page,
+	pdf_end
+};
 
-extern const struct plotter_table nsgtk_plotters;
-
-extern GtkWidget *current_widget;
-extern GdkDrawable *current_drawable;
-extern GdkGC *current_gc;
-#ifdef CAIRO_VERSION
-extern cairo_t *current_cr;
 #endif
-
-void nsgtk_plot_set_scale(float s);
-float nsgtk_plot_get_scale(void);
-void nsgtk_set_colour(colour c);
-void nsgtk_plot_caret(int x, int y, int h);
-
-#endif /* NETSURF_GTK_PLOTTERS_H */
-

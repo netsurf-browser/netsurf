@@ -98,7 +98,7 @@ bool nsbmp_redraw(struct content *c, int x, int y,
 	if (!c->data.bmp.bmp->decoded)
 	  	bmp_decode(c->data.bmp.bmp);
 	c->bitmap = c->data.bmp.bmp->bitmap;
-	return plot.bitmap(x, y, width, height,	c->bitmap, background_colour);
+ 	return plot.bitmap(x, y, width, height,	c->bitmap, background_colour, c);
 }
 
 
@@ -112,7 +112,7 @@ bool nsbmp_redraw_tiled(struct content *c, int x, int y,
 	  	bmp_decode(c->data.bmp.bmp);
 	c->bitmap = c->data.bmp.bmp->bitmap;
 	return plot.bitmap_tile(x, y, width, height, c->bitmap,
-			background_colour, repeat_x, repeat_y);
+			background_colour, repeat_x, repeat_y, c);
 }
 
 

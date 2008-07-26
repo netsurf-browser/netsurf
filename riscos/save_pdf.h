@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2008 John Tytgat <John.Tytgat@aaug.net>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,30 +16,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Target independent plotting (GDK / GTK+ interface).
- */
+#ifndef _NETSURF_RISCOS_SAVE_PDF_H_
+#define _NETSURF_RISCOS_SAVE_PDF_H_
 
-#ifndef NETSURF_GTK_PLOTTERS_H
-#define NETSURF_GTK_PLOTTERS_H 1
+#include "utils/config.h"
 
-#include <gtk/gtk.h>
+#ifdef WITH_PDF_EXPORT
+struct content;
 
-struct plotter_table;
-
-extern const struct plotter_table nsgtk_plotters;
-
-extern GtkWidget *current_widget;
-extern GdkDrawable *current_drawable;
-extern GdkGC *current_gc;
-#ifdef CAIRO_VERSION
-extern cairo_t *current_cr;
+bool save_as_pdf(struct content *c, const char *path);
 #endif
 
-void nsgtk_plot_set_scale(float s);
-float nsgtk_plot_get_scale(void);
-void nsgtk_set_colour(colour c);
-void nsgtk_plot_caret(int x, int y, int h);
-
-#endif /* NETSURF_GTK_PLOTTERS_H */
-
+#endif

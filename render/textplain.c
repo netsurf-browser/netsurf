@@ -213,7 +213,7 @@ void textplain_reformat(struct content *c, int width, int height)
 
 	/* compute available columns (assuming monospaced font) - use 8
 	 * characters for better accuracy */
-	if (!nsfont_width(&textplain_style, "ABCDEFGH", 8, &character_width))
+	if (!nsfont.font_width(&textplain_style, "ABCDEFGH", 8, &character_width))
 		return;
 	columns = (width - MARGIN - MARGIN) * 8 / character_width;
 	textplain_tab_width = (TAB_WIDTH * character_width) / 8;
@@ -402,7 +402,7 @@ bool textplain_redraw(struct content *c, int x, int y,
 				break;
 
 			/* locate end of string and align to next tab position */
-			if (nsfont_width(&textplain_style, &text[offset],
+			if (nsfont.font_width(&textplain_style, &text[offset],
 					next_offset - offset, &width))
 				tx += (int)(width * scale);
 
@@ -499,13 +499,13 @@ size_t textplain_offset_from_coords(struct content *c, int x, int y, int dir)
 			next_offset = utf8_next(text, length, next_offset);
 
 		if (next_offset < length)
-			nsfont_width(&textplain_style, text, next_offset, &width);
+			nsfont.font_width(&textplain_style, text, next_offset, &width);
 
 		if (x <= width) {
 			int pixel_offset;
 			size_t char_offset;
 
-			nsfont_position_in_string(&textplain_style,
+			nsfont.font_position_in_string(&textplain_style,
 				text, next_offset, x,
 				&char_offset, &pixel_offset);
 
@@ -584,7 +584,7 @@ int textplain_coord_from_offset(const char *text, size_t offset, size_t length)
 		while (next_offset < offset && text[next_offset] != '\t')
 			next_offset = utf8_next(text, length, next_offset);
 
-		nsfont_width(&textplain_style, text, next_offset, &tx);
+		nsfont.font_width(&textplain_style, text, next_offset, &tx);
 		x += tx;
 
 		if (next_offset >= offset)

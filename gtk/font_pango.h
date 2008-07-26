@@ -20,6 +20,9 @@
  * Font handling (GTK interface).
  */
 
+#ifndef _NETSURF_GTK_FONT_PANGO_H_
+#define _NETSURF_GTK_FONT_PANGO_H_
+
 #include <stdbool.h>
 
 
@@ -28,3 +31,9 @@ struct css_style;
 bool nsfont_paint(const struct css_style *style,
 		const char *string, size_t length,
 		int x, int y, colour c);
+
+PangoFontDescription *nsfont_style_to_description(
+		const struct css_style *style);
+		
+		
+#endif

@@ -623,17 +623,17 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 				endtxt_idx = utf8_len;
 			}
 
-			if (!nsfont_width(style, utf8_text, start_idx, &startx))
+			if (!nsfont.font_width(style, utf8_text, start_idx, &startx))
 				startx = 0;
 
-			if (!nsfont_width(style, utf8_text, endtxt_idx, &endx))
+			if (!nsfont.font_width(style, utf8_text, endtxt_idx, &endx))
 				endx = 0;
 
 			/* is there a trailing space that should be highlighted as well? */
 			if (end_idx > utf8_len) {
 				int spc_width;
 				/* \todo is there a more elegant/efficient solution? */
-				if (nsfont_width(style, " ", 1, &spc_width))
+				if (nsfont.font_width(style, " ", 1, &spc_width))
 					endx += spc_width;
 			}
 
@@ -1175,7 +1175,7 @@ bool html_redraw_file(int x, int y, int width, int height,
 		text = messages_get("Form_Drop");
 	length = strlen(text);
 
-	if (!nsfont_width(box->style, text, length, &text_width))
+	if (!nsfont.font_width(box->style, text, length, &text_width))
 		return false;
 	text_width *= scale;
 	if (width < text_width + 8)

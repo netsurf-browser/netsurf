@@ -122,6 +122,7 @@ bool html_create(struct content *c, const char *params[])
 	html->page = 0;
 	html->index = 0;
 	html->box = 0;
+	html->font_func = &nsfont;
 
 	for (i = 0; params[i]; i += 2) {
 		if (strcasecmp(params[i], "charset") == 0) {

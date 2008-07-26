@@ -37,8 +37,26 @@
 /* Until we can consider the descenders etc, we need to not render using cairo */
 #undef CAIRO_VERSION
 
-static PangoFontDescription *nsfont_style_to_description(
-		const struct css_style *style);
+static bool nsfont_width(const struct css_style *style,
+		  const char *string, size_t length,
+    int *width);
+       
+static bool nsfont_position_in_string(const struct css_style *style,
+			       const char *string, size_t length,
+	  int x, size_t *char_offset, int *actual_x);
+       
+static bool nsfont_split(const struct css_style *style,
+		  const char *string, size_t length,
+    int x, size_t *char_offset, int *actual_x);
+
+const struct font_functions nsfont = {
+	nsfont_width,
+	nsfont_position_in_string,
+	nsfont_split
+};
+
+
+
 
 
 /**
@@ -203,11 +221,11 @@ bool nsfont_paint(const struct css_style *style,
 {
 	PangoFontDescription *desc;
 	PangoLayout *layout;
+	PangoLayoutLine *line;
 	gint size;
 #ifdef CAIRO_VERSION
 	int width, height;
-#else
-	PangoLayoutLine *line;
+#else	
 	PangoContext *context;
 	GdkColor colour = { 0,
 			((c & 0xff) << 8) | (c & 0xff),
@@ -234,14 +252,13 @@ bool nsfont_paint(const struct css_style *style,
 
 	pango_layout_set_font_description(layout, desc);
 	pango_layout_set_text(layout, string, length);
-
-#ifdef CAIRO_VERSION
-	pango_layout_get_pixel_size(layout, &width, &height);
-	cairo_move_to(current_cr, x, y - height);
-	nsgtk_set_colour(c);
-	pango_cairo_show_layout(current_cr, layout);
-#else
 	line = pango_layout_get_line(layout, 0);
+	
+#ifdef CAIRO_VERSION
+	cairo_move_to(current_cr, x, y);
+	nsgtk_set_colour(c);
+	pango_cairo_show_layout_line(current_cr, layout, line);
+#else
 	gdk_draw_layout_line_with_colors(current_drawable, current_gc,
 			x, y, line, &colour, 0);
 
@@ -350,3 +367,4 @@ PangoFontDescription *nsfont_style_to_description(
 
 	return desc;
 }
+

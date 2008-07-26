@@ -25,6 +25,7 @@
 
 #include <stdbool.h>
 #include "css/css.h"
+#include "content/content.h"
 
 
 struct bitmap;
@@ -46,10 +47,11 @@ struct plotter_table {
 	bool (*arc)(int x, int y, int radius, int angle1, int angle2,
 	    		colour c);
 	bool (*bitmap)(int x, int y, int width, int height,
-			struct bitmap *bitmap, colour bg);
+			struct bitmap *bitmap, colour bg,
+			struct content *content);
 	bool (*bitmap_tile)(int x, int y, int width, int height,
 			struct bitmap *bitmap, colour bg,
-			bool repeat_x, bool repeat_y);
+			bool repeat_x, bool repeat_y, struct content *content);
 	bool (*group_start)(const char *name);	/** optional */
 	bool (*group_end)(void);	/** optional */
 	bool (*flush)(void);

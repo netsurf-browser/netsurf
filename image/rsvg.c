@@ -182,7 +182,7 @@ bool rsvg_redraw(struct content *c, int x, int y, int width, int height,
 			int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 			float scale, unsigned long background_colour)
 {
-	plot.bitmap(x, y, width, height, c->bitmap, background_colour);
+	plot.bitmap(x, y, width, height, c->bitmap, background_colour, c);
 	return true;
 }
 

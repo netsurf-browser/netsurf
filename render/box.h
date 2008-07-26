@@ -311,4 +311,6 @@ bool xml_to_box(xmlNode *n, struct content *c);
 
 bool box_normalise_block(struct box *block, struct content *c);
 
+struct box* box_duplicate_tree(struct box *root, struct content *c);
+
 #endif

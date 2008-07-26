@@ -65,10 +65,10 @@ static bool nsgtk_plot_disc(int x, int y, int radius, colour c, bool filled);
 static bool nsgtk_plot_arc(int x, int y, int radius, int angle1, int angle2,
     		colour c);
 static bool nsgtk_plot_bitmap(int x, int y, int width, int height,
-		struct bitmap *bitmap, colour bg);
+		struct bitmap *bitmap, colour bg, struct content *content);
 static bool nsgtk_plot_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
-		bool repeat_x, bool repeat_y);
+		bool repeat_x, bool repeat_y, struct content *content);
 static void nsgtk_set_solid(void);	/**< Set for drawing solid lines */
 static void nsgtk_set_dotted(void);	/**< Set for drawing dotted lines */
 static void nsgtk_set_dashed(void);	/**< Set for drawing dashed lines */
@@ -281,7 +281,7 @@ static bool nsgtk_plot_pixbuf(int x, int y, int width, int height,
 }
 
 bool nsgtk_plot_bitmap(int x, int y, int width, int height,
-		struct bitmap *bitmap, colour bg)
+		struct bitmap *bitmap, colour bg, struct content *content)
 {
 	GdkPixbuf *pixbuf = gtk_bitmap_get_primary(bitmap);
 	return nsgtk_plot_pixbuf(x, y, width, height, pixbuf, bg);
@@ -289,7 +289,7 @@ bool nsgtk_plot_bitmap(int x, int y, int width, int height,
 
 bool nsgtk_plot_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
-		bool repeat_x, bool repeat_y)
+		bool repeat_x, bool repeat_y, struct content *content)
 {
 	int doneheight = 0, donewidth = 0;
         GdkPixbuf *primary;
@@ -297,7 +297,7 @@ bool nsgtk_plot_bitmap_tile(int x, int y, int width, int height,
 
 	if (!(repeat_x || repeat_y)) {
 		/* Not repeating at all, so just pass it on */
-		return nsgtk_plot_bitmap(x,y,width,height,bitmap,bg);
+		return nsgtk_plot_bitmap(x,y,width,height,bitmap,bg,content);
 	}
 
         if (repeat_x && !repeat_y)

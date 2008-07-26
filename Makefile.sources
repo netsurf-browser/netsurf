@@ -39,7 +39,7 @@ S_RISCOS := 401login.c artworks.c assert.c awrender.s bitmap.c buffer.c			\
 	cookies.c configure.c debugwin.c dialog.c download.c draw.c filetype.c		\
 	font.c global_history.c gui.c help.c history.c hotlist.c image.c		\
 	menus.c message.c palettes.c plotters.c plugin.c print.c query.c		\
-	save.c save_complete.c save_draw.c schedule.c search.c sprite.c	\
+	save.c save_complete.c save_draw.c save_pdf.c schedule.c search.c sprite.c	\
 	sslcert.c textarea.c textselection.c theme.c theme_install.c			\
 	thumbnail.c									\
 	treeview.c ucstables.c uri.c url_complete.c url_protocol.c wimp.c wimp_event.c	\
@@ -58,8 +58,15 @@ S_DIALOGS := $(addprefix gtk/dialogs/,$(S_DIALOGS))
 S_GTK := font_pango.c gtk_bitmap.c gtk_gui.c gtk_schedule.c			\
 	gtk_thumbnail.c gtk_plotters.c gtk_treeview.c gtk_scaffolding.c \
 	gtk_completion.c gtk_login.c gtk_throbber.c gtk_selection.c		\
-	gtk_history.c gtk_window.c gtk_filetype.c gtk_download.c
+	gtk_history.c gtk_window.c gtk_filetype.c gtk_download.c gtk_print.c
 S_GTK := $(addprefix gtk/,$(S_GTK))
+
+# S_PDF are sources of the pdf plotter + the ones for paged-printing
+S_PDF := pdf_plotters.c font_haru.c
+S_PRINT := print.c 
+S_LOOSE := loosen.c
+S_PDF := $(addprefix pdf/,$(S_PDF)) $(addprefix desktop/,$(S_PRINT)) \
+	 $(addprefix render/,$(S_LOOSE))
 
 # S_BEOS are sources purely for the BeOS build
 S_BEOS := beos_bitmap.cpp beos_fetch_rsrc.cpp beos_filetype.cpp beos_font.cpp \
@@ -122,12 +129,12 @@ CLEANS += clean-intermediates
 # Finally select the correct set of sources for this build...
 
 ifeq ($(TARGET),riscos)
-SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_RISCOS)
+SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_PDF) $(S_RISCOS)
 EXETARGET := !NetSurf/!RunImage$(EXEEXT)
 endif
 
 ifeq ($(TARGET),gtk)
-SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_GTK) $(S_DIALOGS)
+SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_PDF) $(S_GTK) $(S_DIALOGS)
 EXETARGET := nsgtk
 endif
 
