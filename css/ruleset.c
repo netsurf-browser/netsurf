@@ -661,14 +661,12 @@ int parse_length(struct css_length * const length,
 		return 1;
 
 	num_length = strspn(v->data, "0123456789+-.");
-	
-	if (v->type == CSS_NODE_DIMENSION) {
-		u = css_unit_parse(v->data + num_length, 
-				v->data_length - num_length);
-		if (u == CSS_UNIT_UNKNOWN) {
-			return 1;
-		}
-	} 
+
+	u = css_unit_parse(v->data + num_length,
+			v->data_length - num_length);
+	if (u == CSS_UNIT_UNKNOWN) {
+		return 1;
+	}
 	value = atof(v->data);
 	if (non_negative && value < 0)
 		return 1;
