@@ -52,8 +52,9 @@
 
 #include "pdf/pdf_plotters.h"
 #include "desktop/print.h"
+#ifdef WITH_PDF_EXPORT
 #include "gtk/gtk_print.h"
-
+#endif
 #undef NDEBUG
 #include "utils/log.h"
 
