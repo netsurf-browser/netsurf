@@ -95,7 +95,6 @@ TOUCH=touch
 ifeq ($(TARGET),riscos)
 ifeq ($(HOST),riscos)
 # Build for RO on RO
-GCCSDK_INSTALL_ENV := <NSLibs$$Dir>
 CC := gcc
 EXEEXT :=
 PKG_CONFIG :=
@@ -476,9 +475,27 @@ $(eval $(foreach SOURCE,$(filter %.cpp,$(SOURCES)), \
 $(eval $(foreach SOURCE,$(filter %.s,$(SOURCES)), \
 	$(call compile_target_s,$(SOURCE),$(subst /,_,$(SOURCE:.s=.o)),$(subst /,_,$(SOURCE:.s=.d)))))
 
-.PHONY: all clean docs
+.PHONY: all clean docs install install-gtk
 
 clean: $(CLEANS)
+
+install-gtk:
+	mkdir -p $(DESTDIR)/usr/share/netsurf
+	mkdir -p $(DESTDIR)/usr/bin
+	@cp -v nsgtk $(DESTDIR)/usr/bin
+	@cp -vrL gtk/res/adblock.css $(DESTDIR)/usr/share/netsurf
+	@cp -vrL gtk/res/ca-bundle.txt $(DESTDIR)/usr/share/netsurf
+	@cp -vrL gtk/res/default.css $(DESTDIR)/usr/share/netsurf
+	@cp -vrL gtk/res/gtkdefault.css $(DESTDIR)/usr/share/netsurf
+	@cp -vrL gtk/res/license $(DESTDIR)/usr/share/netsurf
+	@cp -vrL gtk/res/netsurf.xpm $(DESTDIR)/usr/share/netsurf
+	@cp -vrL gtk/res/throbber $(DESTDIR)/usr/share/netsurf
+	gzip -9v < gtk/res/messages > $(DESTDIR)/usr/share/netsurf/messages
+	gzip -9v < gtk/res/downloads.glade > $(DESTDIR)/usr/share/netsurf/downloads.glade
+	gzip -9v < gtk/res/netsurf.glade > $(DESTDIR)/usr/share/netsurf/netsurf.glade
+	gzip -9v < gtk/res/options.glade > $(DESTDIR)/usr/share/netsurf/options.glade
+
+install: all-program install-$(TARGET)
 
 docs:
 	doxygen Docs/Doxyfile
