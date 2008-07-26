@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
+#include <zlib.h>
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
@@ -51,7 +52,7 @@ static struct hash_table *messages_hash = NULL;
 struct hash_table *messages_load_ctx(const char *path, struct hash_table *ctx)
 {
 	char s[400];
-	FILE *fp;
+	gzFile *fp;
 
 	assert(path != NULL);
 
@@ -62,16 +63,17 @@ struct hash_table *messages_load_ctx(const char *path, struct hash_table *ctx)
 		return NULL;
 	}
 
-	fp = fopen(path, "r");
+	fp = gzopen(path, "r");
 	if (!fp) {
 		snprintf(s, sizeof s, "Unable to open messages file "
 				"\"%.100s\": %s", path, strerror(errno));
 		s[sizeof s - 1] = 0;
 		LOG(("%s", s));
+		hash_destroy(ctx);
 		return NULL;
 	}
 
-	while (fgets(s, sizeof s, fp)) {
+	while (gzgets(fp, s, sizeof s)) {
 		char *colon, *value;
 
 		if (s[0] == 0 || s[0] == '#')
@@ -87,12 +89,13 @@ struct hash_table *messages_load_ctx(const char *path, struct hash_table *ctx)
 		if (hash_add(ctx, s, value) == false) {
 			LOG(("Unable to add %s:%s to hash table of %s",
 				s, value, path));
-			fclose(fp);
+			gzclose(fp);
+			hash_destroy(ctx);
 			return NULL;
 		}
 	}
 
-	fclose(fp);
+	gzclose(fp);
 
 	return ctx;
 }

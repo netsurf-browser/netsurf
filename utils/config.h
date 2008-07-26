@@ -75,7 +75,6 @@ char *strndup(const char *s, size_t n);
 #else
     /* We're likely to have a working mmap() */
     #define WITH_MMAP
-    #define WITH_NSSPRITE
     #if !defined(DEBUG_BUILD)
         /* Use librsvg and Cairo for rendering SVG */
         #define WITH_RSVG
