@@ -189,9 +189,11 @@ static struct menu_events menu_events[] = {
 	MENUEVENT(new_window),
 	MENUEVENT(open_location),
 	MENUEVENT(open_file),
+#ifdef WITH_PDF_EXPORT
 	MENUEVENT(export_pdf),
 	MENUEVENT(print),
 	MENUEVENT(print_preview),
+#endif
 	MENUEVENT(close_window),
 	MENUEVENT(quit),
 
@@ -478,6 +480,8 @@ MENUHANDLER(open_file)
 	return TRUE;
 }
 
+#ifdef WITH_PDF_EXPORT
+
 MENUHANDLER(export_pdf){
 
 	GtkWidget *save_dialog;
@@ -557,6 +561,8 @@ MENUHANDLER(print_preview){
 
 	return TRUE;
 }
+
+#endif /* WITH_PDF_EXPORT */
 
 MENUHANDLER(close_window)
 {
@@ -1129,8 +1135,15 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	/* hides redundant popup menu items */
 	GList *widgets = glade_xml_get_widget_prefix (g->popup_xml, "menupopup");
 	for (; widgets != NULL; widgets = widgets->next)
-		gtk_widget_hide (GTK_WIDGET(widgets->data));
-			
+		gtk_widget_hide(GTK_WIDGET(widgets->data));
+
+	/* disable PDF-requiring menu items */
+#ifndef WITH_PDF_EXPORT
+	gtk_widget_set_sensitive(GET_WIDGET("export_pdf"), FALSE);
+	gtk_widget_set_sensitive(GET_WIDGET("print"), FALSE);
+	gtk_widget_set_sensitive(GET_WIDGET("print_preview"), FALSE);
+#endif
+
 	/* finally, show the window. */
 	gtk_widget_show(GTK_WIDGET(g->window));
 

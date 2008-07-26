@@ -22,7 +22,10 @@
   * The functions were written to implement the same interface as the Pango ones
   * so that the usage of the latter wouldn't have to be modified.
   */
- 
+
+#include "utils/config.h"
+#ifdef WITH_PDF_EXPORT
+
 #define FONT_HARU_DEBUG
  
 #include <assert.h> 
@@ -371,3 +374,6 @@ bool haru_nsfont_apply_style(const struct css_style *style,
 	
 	return true;
 }
+
+#endif /* WITH_PDF_EXPORT */
+

@@ -75,16 +75,11 @@ char *strndup(const char *s, size_t n);
 #else
     /* We're likely to have a working mmap() */
     #define WITH_MMAP
-    #if !defined(DEBUG_BUILD)
-        /* Use librsvg and Cairo for rendering SVG */
-        #define WITH_RSVG
-    #endif
 #endif
 #if defined(riscos) || defined(DEBUG_BUILD)
     /* Export modules */
     #define WITH_SAVE_COMPLETE
     #define WITH_DRAW_EXPORT
-    #define WITH_PDF_EXPORT
 #endif
 
 /* Configuration sanity checks: */

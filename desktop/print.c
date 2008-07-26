@@ -20,6 +20,7 @@
  * Output-in-pages implementation
 */
 
+#ifdef WITH_PDF_EXPORT
 #include "desktop/print.h"
 #include "desktop/printer.h"
 
@@ -278,3 +279,5 @@ struct print_settings *print_make_settings(print_configuration configuration)
 	
 	return settings;	
 }
+
+#endif /* WITH_PDF_EXPORT */

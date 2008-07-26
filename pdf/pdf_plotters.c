@@ -22,6 +22,9 @@
  * boundaries a 'fuzzy' bottom margin.
   */
 
+#include "utils/config.h"
+#ifdef WITH_PDF_EXPORT
+
 #include <stdlib.h>
 #include <string.h>
 #include "hpdf.h"
@@ -770,5 +773,7 @@ void pdf_page_apply_notext_clip()
 	HPDF_Page_EndPath(pdf_page);
 #endif
 }
+
+#endif /* WITH_PDF_EXPORT */
 
 

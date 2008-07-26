@@ -34,7 +34,7 @@ all: all-program
 #	In both cases HOST make variable is empty and we recover from that by
 #	assuming we're building on RISC OS.
 #	In case you don't see anything printed (including the warning), you
-#	have an update to date RISC OS build sytem. ;-)
+#	have an update to date RISC OS build system. ;-)
 HOST := $(shell uname -s)
 ifeq ($(HOST),)
 HOST := riscos
@@ -138,6 +138,8 @@ endif
 
 OBJROOT := build-$(HOST)-$(TARGET)$(SUBTARGET)
 
+include Makefile.config
+
 ifeq ($(HOST),riscos)
 LDFLAGS := -Xlinker -symbols=$(OBJROOT)/sym -lxml2 -lz -lm -lcurl -lssl -lcrypto -lmng -ljpeg \
 	-lcares
@@ -151,11 +153,51 @@ else
 LDFLAGS := $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl openssl)
 endif
 # Common libraries without pkgconfig support:
-LDFLAGS += -lz -lm -lmng -ljpeg -lhpdf -lpng
+LDFLAGS += -lz -lm -lmng -ljpeg -lpng
+ifeq ($(NETSURF_USE_HARU_PDF),YES)
+LDFLAGS += -lhpdf
+CFLAGS += -DWITH_PDF_EXPORT
+endif
 endif
 
 ifeq ($(TARGET),gtk)
 # Building for GTK, we need the GTK flags
+
+FEATURE_CFLAGS :=
+FEATURE_LDFLAGS :=
+
+# 1: Feature name (ie, NETSURF_USE_RSVG -> RSVG)
+# 2: pkg-config required modules for feature
+# 3: Human-readable name for the feature
+define pkg_config_find_and_add
+
+ ifneq ($$(NETSURF_USE_$(1)),NO)
+  NETSURF_FEATURE_$(1)_AVAILABLE := $$(shell pkg-config --exists $(2) && echo yes)
+  ifeq ($$(NETSURF_USE_$(1)),AUTO)
+   ifeq ($$(NETSURF_FEATURE_$(1)_AVAILABLE),yes)
+    NETSURF_USE_$(1) := YES
+   endif
+  endif
+  ifeq ($$(NETSURF_USE_$(1)),YES)
+   ifeq ($$(NETSURF_FEATURE_$(1)_AVAILABLE),yes)
+    FEATURE_CFLAGS += $$(shell pkg-config --cflags $(2)) $$(NETSURF_FEATURE_$(1)_CFLAGS)
+    FEATURE_LDFLAGS += $$(shell pkg-config --libs $(2)) $$(NETSURF_FEATURE_$(1)_LDFLAGS)
+    $$(info Auto-configuration enabled $(3) ($(2)).)
+   else
+    $$(error Unable to find library for: $$(3) ($(2))
+   endif
+  endif
+ endif
+
+endef
+
+# define additional CFLAGS and LDFLAGS requirements for pkg-configed libs here
+NETSURF_FEATURE_RSVG_CFLAGS := -DWITH_RSVG
+NETSURF_FEATURE_ROSPRITE_CFLAGS := -DWITH_NSSPRITE
+
+# add a line similar to below for each optional pkg-configed lib here
+$(eval $(call pkg_config_find_and_add,RSVG,librsvg-2.0,SVG rendering))
+$(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,RISC OS sprite rendering))
 
 GTKCFLAGS := -std=c99 -Dgtk -Dnsgtk \
 	-DGTK_DISABLE_DEPRECATED \
@@ -163,17 +205,16 @@ GTKCFLAGS := -std=c99 -Dgtk -Dnsgtk \
 	-D_XOPEN_SOURCE=600 \
 	-D_POSIX_C_SOURCE=200112L \
 	-D_NETBSD_SOURCE \
-	$(WARNFLAGS) -I. -I../../libsprite/trunk/ -g $(OPT2FLAGS) \
-	$(shell $(PKG_CONFIG) --cflags libglade-2.0 gtk+-2.0 librsvg-2.0) \
-	$(shell $(PKG_CONFIG) --cflags librosprite) \
+	$(WARNFLAGS) -I. -g $(OPT2FLAGS) \
+	$(shell $(PKG_CONFIG) --cflags libglade-2.0 gtk+-2.0) \
 	$(shell xml2-config --cflags)
+GTKCFLAGS += $(FEATURE_CFLAGS)
 
-#GTKLDFLAGS := $(shell $(PKG_CONFIG) --cflags --libs libglade-2.0 gtk+-2.0 gthread-2.0 gmodule-2.0 librosprite)
-GTKLDFLAGS := $(shell $(PKG_CONFIG) --cflags --libs libglade-2.0 gtk+-2.0 gthread-2.0 gmodule-2.0 librsvg-2.0 librosprite)
-#CFLAGS += $(GTKCFLAGS) -g
-#LDFLAGS += $(GTKLDFLAGS) $(shell $(PKG_CONFIG) --libs lcms) -lsvgtiny
+GTKLDFLAGS := $(shell $(PKG_CONFIG) --cflags --libs libglade-2.0 gtk+-2.0 gthread-2.0 gmodule-2.0 lcms)
+GTKLDFLAGS += $(FEATURE_LDFLAGS)
+
 CFLAGS += $(GTKCFLAGS)
-LDFLAGS += $(GTKLDFLAGS) $(shell $(PKG_CONFIG) --libs lcms)
+LDFLAGS += $(GTKLDFLAGS)
 
 ifeq ($(HOST),Windows_NT)
 CFLAGS += -U__STRICT_ANSI__

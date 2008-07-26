@@ -23,7 +23,9 @@
   * plotters, printer) are here.
   * Most of the plotters have been copied from the gtk_plotters.c file.
   */
- 
+
+#include "utils/config.h"
+#ifdef WITH_PDF_EXPORT 
 
 #include <math.h>
 #include <gdk/gdk.h>
@@ -571,3 +573,5 @@ void gtk_print_signal_end_print(GtkPrintOperation *operation,
 	LOG(("End print"));	
 	print_cleanup(content_to_print, &gtk_printer);
 }
+
+#endif /* WITH_PDF_EXPORT */
