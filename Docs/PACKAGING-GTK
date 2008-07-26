@@ -9,6 +9,15 @@
   crib from.  They do everything right.
 
 
+  Building NetSurf
+==================
+
+  You should change Makefile.config to be specific (rather than rely on AUTO)
+  for the libraries and functionality you want to include.  This will help
+  your packages be consistent.  Also remember that you can turn off
+  functionality such as PDF export, RISC OS Sprite support, SVG rendering etc.
+  from here should you require a smaller, lighter build.
+
   Launching NetSurf
 ===================
 
