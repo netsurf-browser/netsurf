@@ -480,7 +480,7 @@ $(eval $(foreach SOURCE,$(filter %.s,$(SOURCES)), \
 clean: $(CLEANS)
 
 install-gtk:
-	mkdir -p $(DESTDIR)/usr/share/netsurf
+	mkdir -p $(DESTDIR)/usr/share/netsurf/throbber
 	mkdir -p $(DESTDIR)/usr/bin
 	@cp -v nsgtk $(DESTDIR)/usr/bin
 	@cp -vrL gtk/res/adblock.css $(DESTDIR)/usr/share/netsurf
@@ -489,7 +489,7 @@ install-gtk:
 	@cp -vrL gtk/res/gtkdefault.css $(DESTDIR)/usr/share/netsurf
 	@cp -vrL gtk/res/license $(DESTDIR)/usr/share/netsurf
 	@cp -vrL gtk/res/netsurf.xpm $(DESTDIR)/usr/share/netsurf
-	@cp -vrL gtk/res/throbber $(DESTDIR)/usr/share/netsurf
+	@cp -vrL gtk/res/throbber/*.png $(DESTDIR)/usr/share/netsurf/throbber
 	gzip -9v < gtk/res/messages > $(DESTDIR)/usr/share/netsurf/messages
 	gzip -9v < gtk/res/downloads.glade > $(DESTDIR)/usr/share/netsurf/downloads.glade
 	gzip -9v < gtk/res/netsurf.glade > $(DESTDIR)/usr/share/netsurf/netsurf.glade
