@@ -489,6 +489,7 @@ install-gtk:
 	@cp -vrL gtk/res/gtkdefault.css $(DESTDIR)/usr/share/netsurf
 	@cp -vrL gtk/res/license $(DESTDIR)/usr/share/netsurf
 	@cp -vrL gtk/res/netsurf.xpm $(DESTDIR)/usr/share/netsurf
+	@cp -vrL gtk/res/netsurf-16x16.xpm $(DESTDIR)/usr/share/netsurf
 	@cp -vrL gtk/res/throbber/*.png $(DESTDIR)/usr/share/netsurf/throbber
 	gzip -9v < gtk/res/messages > $(DESTDIR)/usr/share/netsurf/messages
 	gzip -9v < gtk/res/downloads.glade > $(DESTDIR)/usr/share/netsurf/downloads.glade
