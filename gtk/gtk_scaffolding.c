@@ -1294,8 +1294,11 @@ static void nsgtk_scaffolding_enable_edit_actions_sensitivity
 	widget = glade_xml_get_widget_prefix(xml, "paste")->data;
 	gtk_widget_set_sensitive (widget, TRUE);
 	gtk_widget_show(widget);
-	
+
+	/* This widget does not exist in the glade file.  Which
+	 * was intended?
 	widget = glade_xml_get_widget(xml, "separator");
 	gtk_widget_show(widget);
+	 */
 }
 	
