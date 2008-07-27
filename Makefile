@@ -95,6 +95,7 @@ TOUCH=touch
 ifeq ($(TARGET),riscos)
 ifeq ($(HOST),riscos)
 # Build for RO on RO
+GCCSDK_INSTALL_ENV := <NSLibs$$Dir>
 CC := gcc
 EXEEXT :=
 PKG_CONFIG :=
