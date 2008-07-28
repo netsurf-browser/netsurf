@@ -215,8 +215,8 @@ ifeq ($(TARGET),riscos)
 
   $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG rendering))
   $(eval $(call feature_enabled,DRAW,-DWITH_DRAW,-lpencil,Drawfile export))
-  $(eval $(call feature_enabled,SPRITE,-DWITH_SPRITE,RISC OS sprite rendering))
-  $(eval $(call feature_enabled,ARTWORKS,-DWITH_ARTWORKS,Artworks rendering))
+  $(eval $(call feature_enabled,SPRITE,-DWITH_SPRITE,,RISC OS sprite rendering))
+  $(eval $(call feature_enabled,ARTWORKS,-DWITH_ARTWORKS,,Artworks rendering))
 endif
 
 # ----------------------------------------------------------------------------
