@@ -2,14 +2,15 @@
 # Makefile for NetSurf
 #
 # Copyright 2007 Daniel Silverstone <dsilvers@netsurf-browser.org>
+# Copyright 2008 Rob Kendrick <rjek@netsurf-browser.org>
 #
-#
-
 # Trivially, invoke as:
 #   make
 # to build native, or:
 #   make TARGET=riscos
 # to cross-build for RO.
+#
+# Look at Makefile.config for configuration options.
 #
 # Tested on unix platforms (building for GTK and cross-compiling for RO) and
 # on RO (building for RO).
@@ -171,11 +172,15 @@ LDFLAGS += -lz
 ifeq ($(HOST),riscos)
 LDFLAGS := -Xlinker -symbols=$(OBJROOT)/sym -lxml2 -lz -lm -lcurl -lssl \
 	-lcrypto -lcares
+endif
+
+ifeq ($(TARGET),riscos)
 
 $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny))
 $(eval $(call feature_enabled,DRAW,-DWITH_DRAW,-lpencil))
 $(eval $(call feature_enabled,SPRITE,-DWITH_SPRITE,))
 $(eval $(call feature_enabled,ARTWORKS,-DWITH_ARTWORKS,))
+
 endif
 
 # ----------------------------------------------------------------------------
