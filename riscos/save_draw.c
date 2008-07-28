@@ -1,6 +1,6 @@
 /*
  * Copyright 2004 John M Bell <jmb202@ecs.soton.ac.uk>
- * Copyright 2004 John Tytgat <John.Tytgat@aaug.net>
+ * Copyright 2004-2008 John Tytgat <John.Tytgat@aaug.net>
  * Copyright 2007 James Bursa <bursa@users.sourceforge.net>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
@@ -163,7 +163,7 @@ bool ro_save_draw_rectangle(int x0, int y0, int width, int height,
 			draw_LINE_TO, (x0 + width) * 2, -y0 * 2 - 1,
 			draw_LINE_TO, (x0 + width) * 2, -(y0 + height) * 2 - 1,
 			draw_LINE_TO, x0 * 2, -(y0 + height) * 2 - 1,
-			draw_CLOSE_LINE, x0 * 2, -y0 * 2 - 1,
+			draw_CLOSE_LINE,
 			draw_END_PATH };
 
 	code = pencil_path(ro_save_draw_diagram, path,
