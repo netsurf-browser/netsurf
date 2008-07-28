@@ -35,56 +35,56 @@ all: all-program
 #	In both cases HOST make variable is empty and we recover from that by
 #	assuming we're building on RISC OS.
 #	In case you don't see anything printed (including the warning), you
-#	have an update to date RISC OS build system. ;-)
+#	have an up-to-date RISC OS build system. ;-)
 HOST := $(shell uname -s)
 ifeq ($(HOST),)
-HOST := riscos
-$(warning Build platform determination failed but that's a known problem for RISC OS so we're assuming a native RISC OS build.)
+  HOST := riscos
+  $(warning Build platform determination failed but that's a known problem for RISC OS so we're assuming a native RISC OS build.)
 else
-ifeq ($(HOST),RISC OS)
-# Fixup uname -s returning "RISC OS"
-HOST := riscos
-endif
+  ifeq ($(HOST),RISC OS)
+    # Fixup uname -s returning "RISC OS"
+    HOST := riscos
+  endif
 endif
 
 ifeq ($(HOST),riscos)
-# Build happening on RO platform, default target is RO backend
-ifeq ($(TARGET),)
-TARGET := riscos
-endif
+  # Build happening on RO platform, default target is RO backend
+  ifeq ($(TARGET),)
+    TARGET := riscos
+  endif
 else
-ifeq ($(HOST),BeOS)
-HOST := beos
-endif
-ifeq ($(HOST),Haiku)
-# Haiku implements the BeOS API
-HOST := beos
-endif
-ifeq ($(HOST),beos)
-# Build happening on BeOS platform, default target is BeOS backend
-ifeq ($(TARGET),)
-TARGET := beos
-endif
-# BeOS still uses gcc2
-GCCVER := 2
-else
-# Build happening on non-RO platform, default target is GTK backend
-ifeq ($(TARGET),)
-TARGET := gtk
-endif
-endif
+  ifeq ($(HOST),BeOS)
+    HOST := beos
+  endif
+  ifeq ($(HOST),Haiku)
+    # Haiku implements the BeOS API
+    HOST := beos
+  endif
+  ifeq ($(HOST),beos)
+    # Build happening on BeOS platform, default target is BeOS backend
+    ifeq ($(TARGET),)
+      TARGET := beos
+    endif
+    # BeOS still uses gcc2
+    GCCVER := 2
+  else
+    # Build happening on non-RO platform, default target is GTK backend
+    ifeq ($(TARGET),)
+      TARGET := gtk
+    endif
+  endif
 endif
 SUBTARGET =
 RESOURCES =
 
 ifneq ($(TARGET),riscos)
-ifneq ($(TARGET),gtk)
-ifneq ($(TARGET),beos)
-ifneq ($(TARGET),debug)
-$(error Unknown TARGET "$(TARGET)", should either be "riscos", "gtk", "beos" or "debug")
-endif
-endif
-endif
+  ifneq ($(TARGET),gtk)
+    ifneq ($(TARGET),beos)
+      ifneq ($(TARGET),debug)
+        $(error Unknown TARGET "$(TARGET)", should either be "riscos", "gtk", "beos" or "debug")
+      endif
+    endif
+  endif
 endif
 
 Q=@
@@ -94,47 +94,47 @@ MKDIR=mkdir
 TOUCH=touch
 
 ifeq ($(TARGET),riscos)
-ifeq ($(HOST),riscos)
-# Build for RO on RO
-GCCSDK_INSTALL_ENV := <NSLibs$$Dir>
-CC := gcc
-EXEEXT :=
-PKG_CONFIG :=
+  ifeq ($(HOST),riscos)
+    # Build for RO on RO
+    GCCSDK_INSTALL_ENV := <NSLibs$$Dir>
+    CC := gcc
+    EXEEXT :=
+    PKG_CONFIG :=
+  else
+    # Cross-build for RO (either using GCCSDK 3.4.6 - AOF,
+    # either using GCCSDK 4 - ELF)
+    GCCSDK_INSTALL_ENV ?= /home/riscos/env
+    GCCSDK_INSTALL_CROSSBIN ?= /home/riscos/cross/bin
+    CC := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*gcc)
+    ifneq (,$(findstring arm-unknown-riscos-gcc,$(CC)))
+      SUBTARGET := -elf
+      EXEEXT := ,e1f
+      ELF2AIF := $(GCCSDK_INSTALL_CROSSBIN)/elf2aif
+    else
+     SUBTARGET := -aof
+     EXEEXT := ,ff8
+    endif
+    PKG_CONFIG := $(GCCSDK_INSTALL_ENV)/ro-pkg-config
+    CCACHE := $(shell which ccache)
+    ifneq ($(CCACHE),)
+      CC := $(CCACHE) $(CC)
+    endif
+  endif
 else
-# Cross-build for RO (either using GCCSDK 3.4.6 - AOF,
-# either using GCCSDK 4 - ELF)
-GCCSDK_INSTALL_ENV ?= /home/riscos/env
-GCCSDK_INSTALL_CROSSBIN ?= /home/riscos/cross/bin
-CC := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*gcc)
-ifneq (,$(findstring arm-unknown-riscos-gcc,$(CC)))
-SUBTARGET := -elf
-EXEEXT := ,e1f
-ELF2AIF := $(GCCSDK_INSTALL_CROSSBIN)/elf2aif
-else
-SUBTARGET := -aof
-EXEEXT := ,ff8
-endif
-PKG_CONFIG := $(GCCSDK_INSTALL_ENV)/ro-pkg-config
-CCACHE := $(shell which ccache)
-ifneq ($(CCACHE),)
-CC := $(CCACHE) $(CC)
-endif
-endif
-else
-ifeq ($(TARGET),beos)
-# Building for BeOS/Haiku
-#ifeq ($(HOST),beos)
-# Build for BeOS on BeOS
-GCCSDK_INSTALL_ENV := /boot/develop
-CC := gcc
-CXX := g++
-EXEEXT :=
-PKG_CONFIG :=
-#endif
-else
-# Building for GTK or debug
-PKG_CONFIG := pkg-config
-endif
+  ifeq ($(TARGET),beos)
+    # Building for BeOS/Haiku
+    #ifeq ($(HOST),beos)
+      # Build for BeOS on BeOS
+      GCCSDK_INSTALL_ENV := /boot/develop
+      CC := gcc
+      CXX := g++
+      EXEEXT :=
+      PKG_CONFIG :=
+    #endif
+  else
+    # Building for GTK or debug
+    PKG_CONFIG := pkg-config
+  endif
 endif
 
 OBJROOT := build-$(HOST)-$(TARGET)$(SUBTARGET)
@@ -148,19 +148,55 @@ include Makefile.config
 # 1: Feature name (ie, NETSURF_USE_BMP -> BMP)
 # 2: Parameters to add to CFLAGS
 # 3: Parameters to add to LDFLAGS
+# 4: Human-readable name for the feature
 define feature_enabled
- ifeq ($$(NETSURF_USE_$(1)),YES)
-   CFLAGS += $(2)
-   LDFLAGS += $(3)
- endif
+  ifeq ($$(NETSURF_USE_$(1)),YES)
+    CFLAGS += $(2)
+    LDFLAGS += $(3)
+    $$(info AUTOCONF: building with $(4))
+  else
+    $$(info AUTOCONF: building without $(4))
+  endif
 endef
 
-$(eval $(call feature_enabled,BMP,-DWITH_BMP,))
-$(eval $(call feature_enabled,GIF,-DWITH_GIF,))
-$(eval $(call feature_enabled,JPEG,-DWITH_JPEG,-ljpeg))
-$(eval $(call feature_enabled,MNG,-DWITH_MNG,-lmng))
+# 1: Feature name (ie, NETSURF_USE_RSVG -> RSVG)
+# 2: pkg-config required modules for feature
+# 3: Human-readable name for the feature
+define pkg_config_find_and_add
+  ifeq ($$(PKG_CONFIG),)
+    $$(error pkg-config is required to auto-detect feature availability)
+  endif
 
-$(eval $(call feature_enabled,HARU_PDF,-DWITH_PDF_EXPORT,-lhpdf -lpng))
+  ifneq ($$(NETSURF_USE_$(1)),NO)
+    NETSURF_FEATURE_$(1)_AVAILABLE := $$(shell $$(PKG_CONFIG) --exists $(2) && echo yes)
+    ifeq ($$(NETSURF_USE_$(1)),AUTO)
+      ifeq ($$(NETSURF_FEATURE_$(1)_AVAILABLE),yes)
+        NETSURF_USE_$(1) := YES
+      endif
+    else
+      $$(info AUTOCONF: building with $(3))
+    endif
+    ifeq ($$(NETSURF_USE_$(1)),YES)
+      ifeq ($$(NETSURF_FEATURE_$(1)_AVAILABLE),yes)
+        CFLAGS += $$(shell $$(PKG_CONFIG) --cflags $(2)) $$(NETSURF_FEATURE_$(1)_CFLAGS)
+        LDFLAGS += $$(shell $$(PKG_CONFIG) --libs $(2)) $$(NETSURF_FEATURE_$(1)_LDFLAGS)
+        $$(info AUTOCONF: auto-enabled $(3) ($(2)).)
+      else
+        $$(error Unable to find library for: $(3) ($(2))
+      endif
+    endif
+  else
+    $$(info AUTOCONF: building without $(3))
+  endif
+endef
+
+
+$(eval $(call feature_enabled,BMP,-DWITH_BMP,,BMP support))
+$(eval $(call feature_enabled,GIF,-DWITH_GIF,,GIF support))
+$(eval $(call feature_enabled,JPEG,-DWITH_JPEG,-ljpeg,JPEG support))
+$(eval $(call feature_enabled,MNG,-DWITH_MNG,-lmng,PNG support))
+
+$(eval $(call feature_enabled,HARU_PDF,-DWITH_PDF_EXPORT,-lhpdf -lpng,PDF export))
 
 # common libraries without pkg-config support
 LDFLAGS += -lz
@@ -170,18 +206,17 @@ LDFLAGS += -lz
 # ----------------------------------------------------------------------------
 
 ifeq ($(TARGET),riscos)
-ifeq ($(HOST),riscos)
-LDFLAGS += -Xlinker -symbols=$(OBJROOT)/sym -lxml2 -lz -lm -lcurl -lssl \
-	-lcrypto -lcares
-else
-LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl openssl)
-endif
+  ifeq ($(HOST),riscos)
+    LDFLAGS += -Xlinker -symbols=$(OBJROOT)/sym -lxml2 -lz -lm -lcurl -lssl \
+		-lcrypto -lcares
+  else
+    LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl openssl)
+  endif
 
-$(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny))
-$(eval $(call feature_enabled,DRAW,-DWITH_DRAW,-lpencil))
-$(eval $(call feature_enabled,SPRITE,-DWITH_SPRITE,))
-$(eval $(call feature_enabled,ARTWORKS,-DWITH_ARTWORKS,))
-
+  $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG rendering))
+  $(eval $(call feature_enabled,DRAW,-DWITH_DRAW,-lpencil,Drawfile export))
+  $(eval $(call feature_enabled,SPRITE,-DWITH_SPRITE,RISC OS sprite rendering))
+  $(eval $(call feature_enabled,ARTWORKS,-DWITH_ARTWORKS,Artworks rendering))
 endif
 
 # ----------------------------------------------------------------------------
@@ -189,8 +224,8 @@ endif
 # ----------------------------------------------------------------------------
 
 ifeq ($(HOST),beos)
-LDFLAGS += -L/boot/home/config/lib
-LDFLAGS += -lxml2 -lz -lcurl -lssl -lcrypto -liconv
+  LDFLAGS += -L/boot/home/config/lib
+  LDFLAGS += -lxml2 -lz -lcurl -lssl -lcrypto -liconv
 endif
 
 # ----------------------------------------------------------------------------
@@ -198,65 +233,39 @@ endif
 # ----------------------------------------------------------------------------
 
 ifeq ($(TARGET),gtk)
-LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl openssl)
+  LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl openssl)
 
-# 1: Feature name (ie, NETSURF_USE_RSVG -> RSVG)
-# 2: pkg-config required modules for feature
-# 3: Human-readable name for the feature
-define pkg_config_find_and_add
+  # define additional CFLAGS and LDFLAGS requirements for pkg-configed libs here
+  NETSURF_FEATURE_RSVG_CFLAGS := -DWITH_RSVG
+  NETSURF_FEATURE_ROSPRITE_CFLAGS := -DWITH_NSSPRITE
 
- ifneq ($$(NETSURF_USE_$(1)),NO)
-  NETSURF_FEATURE_$(1)_AVAILABLE := $$(shell pkg-config --exists $(2) && echo yes)
-  ifeq ($$(NETSURF_USE_$(1)),AUTO)
-   ifeq ($$(NETSURF_FEATURE_$(1)_AVAILABLE),yes)
-    NETSURF_USE_$(1) := YES
-   endif
+  # add a line similar to below for each optional pkg-configed lib here
+  $(eval $(call pkg_config_find_and_add,RSVG,librsvg-2.0,SVG rendering))
+  $(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,RISC OS sprite rendering))
+
+  GTKCFLAGS := -std=c99 -Dgtk -Dnsgtk \
+		-DGTK_DISABLE_DEPRECATED \
+		-D_BSD_SOURCE \
+		-D_XOPEN_SOURCE=600 \
+		-D_POSIX_C_SOURCE=200112L \
+		-D_NETBSD_SOURCE \
+		-DGTK_RESPATH=\"$(NETSURF_GTK_RESOURCES)\" \
+		$(WARNFLAGS) -I. -g $(OPT2FLAGS) \
+		$(shell $(PKG_CONFIG) --cflags libglade-2.0 gtk+-2.0) \
+		$(shell xml2-config --cflags)
+
+  GTKLDFLAGS := $(shell $(PKG_CONFIG) --cflags --libs libglade-2.0 gtk+-2.0 gthread-2.0 gmodule-2.0 lcms)
+
+  CFLAGS += $(GTKCFLAGS)
+  LDFLAGS += $(GTKLDFLAGS)
+
+  # ----------------------------------------------------------------------------
+  # Windows flag setup
+  # ----------------------------------------------------------------------------
+
+  ifeq ($(HOST),Windows_NT)
+    CFLAGS += -U__STRICT_ANSI__
   endif
-  ifeq ($$(NETSURF_USE_$(1)),YES)
-   ifeq ($$(NETSURF_FEATURE_$(1)_AVAILABLE),yes)
-    CFLAGS += $$(shell pkg-config --cflags $(2)) $$(NETSURF_FEATURE_$(1)_CFLAGS)
-    LDFLAGS += $$(shell pkg-config --libs $(2)) $$(NETSURF_FEATURE_$(1)_LDFLAGS)
-    $$(info AUTOCONF: auto-enabled $(3) ($(2)).)
-   else
-    $$(error Unable to find library for: $$(3) ($(2))
-   endif
-  endif
- endif
-
-endef
-
-# define additional CFLAGS and LDFLAGS requirements for pkg-configed libs here
-NETSURF_FEATURE_RSVG_CFLAGS := -DWITH_RSVG
-NETSURF_FEATURE_ROSPRITE_CFLAGS := -DWITH_NSSPRITE
-
-# add a line similar to below for each optional pkg-configed lib here
-$(eval $(call pkg_config_find_and_add,RSVG,librsvg-2.0,SVG rendering))
-$(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,RISC OS sprite rendering))
-
-GTKCFLAGS := -std=c99 -Dgtk -Dnsgtk \
-	-DGTK_DISABLE_DEPRECATED \
-	-D_BSD_SOURCE \
-	-D_XOPEN_SOURCE=600 \
-	-D_POSIX_C_SOURCE=200112L \
-	-D_NETBSD_SOURCE \
-	-DGTK_RESPATH=\"$(NETSURF_GTK_RESOURCES)\" \
-	$(WARNFLAGS) -I. -g $(OPT2FLAGS) \
-	$(shell $(PKG_CONFIG) --cflags libglade-2.0 gtk+-2.0) \
-	$(shell xml2-config --cflags)
-
-GTKLDFLAGS := $(shell $(PKG_CONFIG) --cflags --libs libglade-2.0 gtk+-2.0 gthread-2.0 gmodule-2.0 lcms)
-
-CFLAGS += $(GTKCFLAGS)
-LDFLAGS += $(GTKLDFLAGS)
-
-# ----------------------------------------------------------------------------
-# Windows flag setup
-# ----------------------------------------------------------------------------
-
-ifeq ($(HOST),Windows_NT)
-CFLAGS += -U__STRICT_ANSI__
-endif
-
 endif
 
 # ----------------------------------------------------------------------------
@@ -264,29 +273,29 @@ endif
 # ----------------------------------------------------------------------------
 
 ifeq ($(TARGET),riscos)
-CFLAGS += -I. $(OPTFLAGS) $(WARNFLAGS) -Driscos		\
-	-std=c99 -D_BSD_SOURCE -D_POSIX_C_SOURCE	\
-	-mpoke-function-name
+  CFLAGS += -I. $(OPTFLAGS) $(WARNFLAGS) -Driscos		\
+		-std=c99 -D_BSD_SOURCE -D_POSIX_C_SOURCE	\
+		-mpoke-function-name
 
-CFLAGS += -I$(GCCSDK_INSTALL_ENV)/include		\
-	-I$(GCCSDK_INSTALL_ENV)/include/libxml2		\
-	-I$(GCCSDK_INSTALL_ENV)/include/libmng
-ifeq ($(HOST),riscos)
-CFLAGS += -I<OSLib$$Dir> -mthrowback
-endif
-ASFLAGS += -xassembler-with-cpp -I. -I$(GCCSDK_INSTALL_ENV)/include
-LDFLAGS += -L$(GCCSDK_INSTALL_ENV)/lib -lrufl
-ifeq ($(HOST),riscos)
-LDFLAGS += -LOSLib: -lOSLib32
-else
-LDFLAGS += -lOSLib32
-ifeq ($(SUBTARGET),-elf)
-# Go for static builds & AIF binary at the moment:
-CFLAGS += -static
-LDFLAGS += -static
-EXEEXT := ,ff8
-endif
-endif
+  CFLAGS += -I$(GCCSDK_INSTALL_ENV)/include			\
+		-I$(GCCSDK_INSTALL_ENV)/include/libxml2		\
+		-I$(GCCSDK_INSTALL_ENV)/include/libmng
+  ifeq ($(HOST),riscos)
+    CFLAGS += -I<OSLib$$Dir> -mthrowback
+  endif
+  ASFLAGS += -xassembler-with-cpp -I. -I$(GCCSDK_INSTALL_ENV)/include
+  LDFLAGS += -L$(GCCSDK_INSTALL_ENV)/lib -lrufl
+  ifeq ($(HOST),riscos)
+    LDFLAGS += -LOSLib: -lOSLib32
+  else
+    LDFLAGS += -lOSLib32
+    ifeq ($(SUBTARGET),-elf)
+      # Go for static builds & AIF binary at the moment:
+      CFLAGS += -static
+      LDFLAGS += -static
+      EXEEXT := ,ff8
+    endif
+  endif
 endif
 
 # ----------------------------------------------------------------------------
@@ -294,47 +303,47 @@ endif
 # ----------------------------------------------------------------------------
 
 ifeq ($(TARGET),beos)
-CFLAGS += -I. -O $(WARNFLAGS) -Dnsbeos			\
-	-D_BSD_SOURCE -D_POSIX_C_SOURCE			\
-	-Drestrict="" -Wno-multichar 
-# DEBUG
-CFLAGS += -g -O0
-# -DDEBUG=1
+  CFLAGS += -I. -O $(WARNFLAGS) -Dnsbeos		\
+		-D_BSD_SOURCE -D_POSIX_C_SOURCE		\
+		-Drestrict="" -Wno-multichar 
+  # DEBUG
+  CFLAGS += -g -O0
+  # -DDEBUG=1
 
-BEOS_BERES := beres
-BEOS_RC := rc
-BEOS_XRES := xres
-BEOS_SETVER := setversion
-BEOS_MIMESET := mimeset
-VERSION_FULL := $(shell sed -n '/"/{s/.*"\(.*\)".*/\1/;p;}' desktop/version.c)
-VERSION_MAJ := $(shell sed -n '/_major/{s/.* = \([0-9]*\).*/\1/;p;}' desktop/version.c)
-VERSION_MIN := $(shell sed -n '/_minor/{s/.* = \([0-9]*\).*/\1/;p;}' desktop/version.c)
-RSRC_BEOS = $(addprefix $(OBJROOT)/,$(subst /,_,$(patsubst %.rdef,%.rsrc,$(RDEF_BEOS))))
-RESOURCES = $(RSRC_BEOS)
-ifeq ($(HOST),beos)
-CFLAGS += -I/boot/home/config/include		\
-	-I/boot/home/config/include/libxml2		\
-	-I/boot/home/config/include/libmng
-ifneq ($(wildcard /boot/develop/lib/*/libzeta.so),)
-LDFLAGS += -lzeta
-endif
-ifneq ($(wildcard /boot/develop/lib/*/libnetwork.so),)
-# Haiku
-NETLDFLAGS := -lnetwork
-else
-ifneq ($(wildcard /boot/develop/lib/*/libbind.so),)
-# BONE
-NETLDFLAGS := -lsocket -lbind
-else
-# net_server, will probably never work
-NETLDFLAGS := -lnet
-endif
-endif
-else
-# cross: Haiku ?
-NETLDFLAGS := -lnetwork
-endif
-LDFLAGS += -lbe -ltranslation $(NETLDFLAGS)
+  BEOS_BERES := beres
+  BEOS_RC := rc
+  BEOS_XRES := xres
+  BEOS_SETVER := setversion
+  BEOS_MIMESET := mimeset
+  VERSION_FULL := $(shell sed -n '/"/{s/.*"\(.*\)".*/\1/;p;}' desktop/version.c)
+  VERSION_MAJ := $(shell sed -n '/_major/{s/.* = \([0-9]*\).*/\1/;p;}' desktop/version.c)
+  VERSION_MIN := $(shell sed -n '/_minor/{s/.* = \([0-9]*\).*/\1/;p;}' desktop/version.c)
+  RSRC_BEOS = $(addprefix $(OBJROOT)/,$(subst /,_,$(patsubst %.rdef,%.rsrc,$(RDEF_BEOS))))
+  RESOURCES = $(RSRC_BEOS)
+  ifeq ($(HOST),beos)
+    CFLAGS += -I/boot/home/config/include		\
+		-I/boot/home/config/include/libxml2	\
+		-I/boot/home/config/include/libmng
+    ifneq ($(wildcard /boot/develop/lib/*/libzeta.so),)
+      LDFLAGS += -lzeta
+    endif
+    ifneq ($(wildcard /boot/develop/lib/*/libnetwork.so),)
+      # Haiku
+      NETLDFLAGS := -lnetwork
+    else
+      ifneq ($(wildcard /boot/develop/lib/*/libbind.so),)
+        # BONE
+        NETLDFLAGS := -lsocket -lbind
+      else
+        # net_server, will probably never work
+        NETLDFLAGS := -lnet
+      endif
+    endif
+  else
+    # cross: Haiku ?
+    NETLDFLAGS := -lnetwork
+  endif
+  LDFLAGS += -lbe -ltranslation $(NETLDFLAGS)
 endif
 
 # ----------------------------------------------------------------------------
@@ -342,15 +351,15 @@ endif
 # ----------------------------------------------------------------------------
 
 ifeq ($(TARGET),debug)
-CFLAGS += -std=c99 -DDEBUG_BUILD \
-	-D_BSD_SOURCE \
-	-D_XOPEN_SOURCE=600 \
-	-D_POSIX_C_SOURCE=200112L \
-	-D_NETBSD_SOURCE \
-	$(WARNFLAGS) -I. -I../../libsprite/trunk/ -g $(OPT0FLAGS) \
-	$(shell $(PKG_CONFIG) --cflags librosprite) \
-	$(shell xml2-config --cflags)
-LDFLAGS += $(shell $(PKG_CONFIG) --libs librosprite)
+  CFLAGS += -std=c99 -DDEBUG_BUILD \
+		-D_BSD_SOURCE \
+		-D_XOPEN_SOURCE=600 \
+		-D_POSIX_C_SOURCE=200112L \
+		-D_NETBSD_SOURCE \
+		$(WARNFLAGS) -I. -I../../libsprite/trunk/ -g $(OPT0FLAGS) \
+		$(shell $(PKG_CONFIG) --cflags librosprite) \
+		$(shell xml2-config --cflags)
+  LDFLAGS += $(shell $(PKG_CONFIG) --libs librosprite)
 endif
 
 # ----------------------------------------------------------------------------
@@ -373,7 +382,7 @@ WARNFLAGS = -W -Wall -Wundef -Wpointer-arith \
 	-Wmissing-prototypes -Wmissing-declarations -Wredundant-decls \
 	-Wnested-externs -Winline 
 ifneq ($(GCCVER),2)
-WARNFLAGS += -Wno-unused-parameter 
+  WARNFLAGS += -Wno-unused-parameter 
 endif
 
 OPT0FLAGS = -O0
