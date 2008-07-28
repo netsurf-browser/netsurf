@@ -170,7 +170,7 @@ LDFLAGS += -lz
 # ----------------------------------------------------------------------------
 
 ifeq ($(HOST),riscos)
-LDFLAGS := -Xlinker -symbols=$(OBJROOT)/sym -lxml2 -lz -lm -lcurl -lssl \
+LDFLAGS += -Xlinker -symbols=$(OBJROOT)/sym -lxml2 -lz -lm -lcurl -lssl \
 	-lcrypto -lcares
 endif
 
@@ -188,7 +188,7 @@ endif
 # ----------------------------------------------------------------------------
 
 ifeq ($(HOST),beos)
-LDFLAGS := -L/boot/home/config/lib
+LDFLAGS += -L/boot/home/config/lib
 LDFLAGS += -lxml2 -lz -lcurl -lssl -lcrypto -liconv
 endif
 
@@ -197,7 +197,7 @@ endif
 # ----------------------------------------------------------------------------
 
 ifeq ($(TARGET),gtk)
-LDFLAGS := $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl openssl)
+LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl openssl)
 
 # 1: Feature name (ie, NETSURF_USE_RSVG -> RSVG)
 # 2: pkg-config required modules for feature
