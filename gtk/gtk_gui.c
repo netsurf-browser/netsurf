@@ -59,9 +59,6 @@
 #include "utils/utf8.h"
 #include "utils/utils.h"
 
-/* Where to search for shared resources.  Must have trailing / */
-#define RESPATH "/usr/share/netsurf/"
-
 bool gui_in_multitask = false;
 
 char *default_stylesheet_url;
@@ -127,7 +124,7 @@ static char *find_resource(char *buf, const char *filename, const char *def)
 			return buf;
 	}
 
-	strcpy(t, RESPATH);
+	strcpy(t, GTK_RESPATH);
 	strcat(t, filename);
 	realpath(t, buf);
 	if (access(buf, R_OK) == 0)

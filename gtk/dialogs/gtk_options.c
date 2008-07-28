@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <math.h>
 #include <gtk/gtk.h>
 #include <glade/glade.h>
 #include "utils/log.h"

@@ -302,8 +302,9 @@ int ro_content_filetype_from_type(content_type type) {
 #ifdef WITH_ARTWORKS
 		case CONTENT_ARTWORKS:	return 0xd94;
 #endif
+#ifdef WITH_NS_SVG
 		case CONTENT_SVG:	return 0xaad;
-
+#endif
 		default:		break;
 	}
 	return 0;

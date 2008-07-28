@@ -46,18 +46,6 @@ char *strndup(const char *s, size_t n);
 #define WITH_SSL
 #endif
 
-/* Image renderering modules */
-#define WITH_BMP
-#define WITH_JPEG
-#define WITH_MNG
-#define WITH_GIF
-#if defined(riscos)
-    #define WITH_NS_SVG	/* internal SVG renderer */
-    #define WITH_DRAW
-    #define WITH_SPRITE
-    #define WITH_ARTWORKS
-#endif
-
 /* Platform specific features */
 #if defined(riscos)
     /* Plugin module */

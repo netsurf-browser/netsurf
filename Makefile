@@ -138,33 +138,61 @@ endif
 
 OBJROOT := build-$(HOST)-$(TARGET)$(SUBTARGET)
 
+# ----------------------------------------------------------------------------
+# General flag setup
+# ----------------------------------------------------------------------------
+
 include Makefile.config
 
+# 1: Feature name (ie, NETSURF_USE_BMP -> BMP)
+# 2: Parameters to add to CFLAGS
+# 3: Parameters to add to LDFLAGS
+define feature_enabled
+ ifeq ($$(NETSURF_USE_$(1)),YES)
+   CFLAGS += $(2)
+   LDFLAGS += $(3)
+ endif
+endef
+
+$(eval $(call feature_enabled,BMP,-DWITH_BMP,))
+$(eval $(call feature_enabled,GIF,-DWITH_GIF,))
+$(eval $(call feature_enabled,JPEG,-DWITH_JPEG,-ljpeg))
+$(eval $(call feature_enabled,MNG,-DWITH_MNG,-lmng))
+
+$(eval $(call feature_enabled,HARU_PDF,-DWITH_PDF_EXPORT,-lhpdf -lpng))
+
+# common libraries without pkg-config support
+LDFLAGS += -lz
+
+# ----------------------------------------------------------------------------
+# RISC OS host flag setup
+# ----------------------------------------------------------------------------
+
 ifeq ($(HOST),riscos)
-LDFLAGS := -Xlinker -symbols=$(OBJROOT)/sym -lxml2 -lz -lm -lcurl -lssl -lcrypto -lmng -ljpeg \
-	-lcares
-else
+LDFLAGS := -Xlinker -symbols=$(OBJROOT)/sym -lxml2 -lz -lm -lcurl -lssl \
+	-lcrypto -lcares
+
+$(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny))
+$(eval $(call feature_enabled,DRAW,-DWITH_DRAW,-lpencil))
+$(eval $(call feature_enabled,SPRITE,-DWITH_SPRITE,))
+$(eval $(call feature_enabled,ARTWORKS,-DWITH_ARTWORKS,))
+endif
+
+# ----------------------------------------------------------------------------
+# BeOS flag setup
+# ----------------------------------------------------------------------------
+
 ifeq ($(HOST),beos)
-# some people do *not* have libm...
 LDFLAGS := -L/boot/home/config/lib
-LDFLAGS += -lxml2 -lz -lcurl -lssl -lcrypto -ljpeg -liconv
-LDFLAGS += -lmng -ljpeg
-else
-LDFLAGS := $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl openssl)
+LDFLAGS += -lxml2 -lz -lcurl -lssl -lcrypto -liconv
 endif
-# Common libraries without pkgconfig support:
-LDFLAGS += -lz -lm -lmng -ljpeg
-ifeq ($(NETSURF_USE_HARU_PDF),YES)
-LDFLAGS += -lhpdf -lpng
-CFLAGS += -DWITH_PDF_EXPORT
-endif
-endif
+
+# ----------------------------------------------------------------------------
+# GTK flag setup (using pkg-config)
+# ----------------------------------------------------------------------------
 
 ifeq ($(TARGET),gtk)
-# Building for GTK, we need the GTK flags
-
-FEATURE_CFLAGS :=
-FEATURE_LDFLAGS :=
+LDFLAGS := $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl openssl)
 
 # 1: Feature name (ie, NETSURF_USE_RSVG -> RSVG)
 # 2: pkg-config required modules for feature
@@ -180,8 +208,8 @@ define pkg_config_find_and_add
   endif
   ifeq ($$(NETSURF_USE_$(1)),YES)
    ifeq ($$(NETSURF_FEATURE_$(1)_AVAILABLE),yes)
-    FEATURE_CFLAGS += $$(shell pkg-config --cflags $(2)) $$(NETSURF_FEATURE_$(1)_CFLAGS)
-    FEATURE_LDFLAGS += $$(shell pkg-config --libs $(2)) $$(NETSURF_FEATURE_$(1)_LDFLAGS)
+    CFLAGS += $$(shell pkg-config --cflags $(2)) $$(NETSURF_FEATURE_$(1)_CFLAGS)
+    LDFLAGS += $$(shell pkg-config --libs $(2)) $$(NETSURF_FEATURE_$(1)_LDFLAGS)
     $$(info AUTOCONF: auto-enabled $(3) ($(2)).)
    else
     $$(error Unable to find library for: $$(3) ($(2))
@@ -205,22 +233,29 @@ GTKCFLAGS := -std=c99 -Dgtk -Dnsgtk \
 	-D_XOPEN_SOURCE=600 \
 	-D_POSIX_C_SOURCE=200112L \
 	-D_NETBSD_SOURCE \
+	-DGTK_RESPATH=\"$(NETSURF_GTK_RESOURCES)\" \
 	$(WARNFLAGS) -I. -g $(OPT2FLAGS) \
 	$(shell $(PKG_CONFIG) --cflags libglade-2.0 gtk+-2.0) \
 	$(shell xml2-config --cflags)
-GTKCFLAGS += $(FEATURE_CFLAGS)
 
 GTKLDFLAGS := $(shell $(PKG_CONFIG) --cflags --libs libglade-2.0 gtk+-2.0 gthread-2.0 gmodule-2.0 lcms)
-GTKLDFLAGS += $(FEATURE_LDFLAGS)
 
 CFLAGS += $(GTKCFLAGS)
 LDFLAGS += $(GTKLDFLAGS)
+
+# ----------------------------------------------------------------------------
+# Windows flag setup
+# ----------------------------------------------------------------------------
 
 ifeq ($(HOST),Windows_NT)
 CFLAGS += -U__STRICT_ANSI__
 endif
 
 endif
+
+# ----------------------------------------------------------------------------
+# RISC OS target flag setup
+# ----------------------------------------------------------------------------
 
 ifeq ($(TARGET),riscos)
 CFLAGS += -I. $(OPTFLAGS) $(WARNFLAGS) -Driscos		\
@@ -234,8 +269,7 @@ ifeq ($(HOST),riscos)
 CFLAGS += -I<OSLib$$Dir> -mthrowback
 endif
 ASFLAGS += -xassembler-with-cpp -I. -I$(GCCSDK_INSTALL_ENV)/include
-LDFLAGS += -L$(GCCSDK_INSTALL_ENV)/lib -lrufl -lpencil \
-	-lsvgtiny
+LDFLAGS += -L$(GCCSDK_INSTALL_ENV)/lib -lrufl
 ifeq ($(HOST),riscos)
 LDFLAGS += -LOSLib: -lOSLib32
 else
@@ -248,6 +282,10 @@ EXEEXT := ,ff8
 endif
 endif
 endif
+
+# ----------------------------------------------------------------------------
+# BeOS target flag setup
+# ----------------------------------------------------------------------------
 
 ifeq ($(TARGET),beos)
 CFLAGS += -I. -O $(WARNFLAGS) -Dnsbeos			\
@@ -293,6 +331,9 @@ endif
 LDFLAGS += -lbe -ltranslation $(NETLDFLAGS)
 endif
 
+# ----------------------------------------------------------------------------
+# Debug target setup
+# ----------------------------------------------------------------------------
 
 ifeq ($(TARGET),debug)
 CFLAGS += -std=c99 -DDEBUG_BUILD \
@@ -305,6 +346,10 @@ CFLAGS += -std=c99 -DDEBUG_BUILD \
 	$(shell xml2-config --cflags)
 LDFLAGS += $(shell $(PKG_CONFIG) --libs librosprite)
 endif
+
+# ----------------------------------------------------------------------------
+# General make rules
+# ----------------------------------------------------------------------------
 
 $(OBJROOT)/created:
 	$(VQ)echo "   MKDIR: $(OBJROOT)"

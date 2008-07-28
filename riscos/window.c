@@ -1437,7 +1437,11 @@ void ro_gui_window_redraw(wimp_draw *redraw)
 
 	/* rendering textplain has no advantages using knockout rendering other
 	 * than to slow things down. */
-	if (c->type == CONTENT_TEXTPLAIN || c->type == CONTENT_SVG)
+	if (c->type == CONTENT_TEXTPLAIN 
+#ifdef WITH_NS_SVG
+		|| c->type == CONTENT_SVG
+#endif
+	)
 		knockout = false;
 
 	/* HTML rendering handles scale itself */
