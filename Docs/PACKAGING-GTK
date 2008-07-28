@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
-  Packaging suggestions for NetSurf                              21 March 2008
+  Packaging suggestions for NetSurf                               28 July 2008
 --------------------------------------------------------------------------------
 
   This document lays out some suggestions for people interested in packaging
@@ -46,10 +46,10 @@
     3. /usr/share/netsurf/
 
   The second one is how the netsurf launcher script controls it.  The third
-  location is controlled by #define RESPATH in gtk/gtk_gui.c, and this is
-  the recommended way for packagers to change the location it searches,
-  as this still allows the user some flexibility in changing what NetSurf
-  uses.
+  location is controlled the NETSURF_GTK_RESOURCES option in Makefile.config,
+  and this is the recommended way for packagers to change the location it
+  searches, as this still allows the user some flexibility in changing what
+  NetSurf uses.
 
 
   User agent string
@@ -83,3 +83,4 @@
   users to report bugs to your bug tracker, not ours.  We'd also be interested
   in seeing the diffs for these changes - we may be able to integrate them
   to make your job easier in future.
+
