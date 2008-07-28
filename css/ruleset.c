@@ -35,6 +35,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <math.h>
 #define CSS_INTERNALS
 #define NDEBUG
 #include "css/css.h"

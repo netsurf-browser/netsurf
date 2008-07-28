@@ -28,6 +28,7 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <string.h>
+#include <math.h>
 #include "utils/config.h"
 #include "content/content.h"
 #include "css/css.h"

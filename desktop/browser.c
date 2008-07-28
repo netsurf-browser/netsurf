@@ -31,6 +31,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include <sys/select.h>
 #include "curl/curl.h"
 #include "utils/config.h"

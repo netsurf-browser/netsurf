@@ -90,6 +90,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <math.h>
+#include <limits.h>
 #define CSS_INTERNALS
 #undef NDEBUG
 #include "utils/config.h"
