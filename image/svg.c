@@ -104,13 +104,15 @@ bool svg_redraw(struct content *c, int x, int y,
 	transform[4] = x;
 	transform[5] = y;
 
+#define BGR(c) ((c) == svgtiny_TRANSPARENT ? TRANSPARENT : ((svgtiny_RED((c))) | (svgtiny_GREEN((c)) << 8) | (svgtiny_BLUE((c)) << 16)))
+
 	for (unsigned int i = 0; i != diagram->shape_count; i++) {
 		if (diagram->shape[i].path) {
 			ok = plot.path(diagram->shape[i].path,
 					diagram->shape[i].path_length,
-					diagram->shape[i].fill,
+					BGR(diagram->shape[i].fill),
 					diagram->shape[i].stroke_width,
-					diagram->shape[i].stroke,
+					BGR(diagram->shape[i].stroke),
 					transform);
 			if (!ok)
 				return false;
@@ -129,6 +131,8 @@ bool svg_redraw(struct content *c, int x, int y,
 					0xffffff, 0x000000);
 		}
         }
+
+#undef BGR
 
 	return true;
 }
