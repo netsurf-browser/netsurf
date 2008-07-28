@@ -169,12 +169,13 @@ LDFLAGS += -lz
 # RISC OS host flag setup
 # ----------------------------------------------------------------------------
 
+ifeq ($(TARGET),riscos)
 ifeq ($(HOST),riscos)
 LDFLAGS += -Xlinker -symbols=$(OBJROOT)/sym -lxml2 -lz -lm -lcurl -lssl \
 	-lcrypto -lcares
+else
+LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl openssl)
 endif
-
-ifeq ($(TARGET),riscos)
 
 $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny))
 $(eval $(call feature_enabled,DRAW,-DWITH_DRAW,-lpencil))
