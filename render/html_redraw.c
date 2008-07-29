@@ -222,7 +222,7 @@ bool html_redraw_box(struct box *box,
 
 	/* return if the rectangle is completely outside the clip rectangle */
 	if (clip_y1 < y0 || y1 < clip_y0 || clip_x1 < x0 || x1 < clip_x0)
-		return ((!plot.group_end) || (plot.group_end()));
+		return true;
 
 	/* if visibility is hidden render children only */
 	if (box->style && box->style->visibility == CSS_VISIBILITY_HIDDEN) {
