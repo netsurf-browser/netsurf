@@ -392,7 +392,7 @@ gboolean nsgtk_window_reload_button_clicked(GtkWidget *widget, gpointer data)
 gboolean nsgtk_window_home_button_clicked(GtkWidget *widget, gpointer data)
 {
         struct gtk_scaffolding *g = data;
-        static const char *addr = "http://netsurf-browser.org/welcome/";
+        static const char *addr = NETSURF_HOMEPAGE;
         struct browser_window *bw = nsgtk_get_browser_for_gui(g->top_level);
 
         if (option_homepage_url != NULL && option_homepage_url[0] != '\0')

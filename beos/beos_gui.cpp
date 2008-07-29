@@ -578,7 +578,7 @@ void gui_init(int argc, char** argv)
 void gui_init2(int argc, char** argv)
 {
 	CALLED();
-	const char *addr = "http://netsurf-browser.org/welcome/";
+	const char *addr = NETSURF_HOMEPAGE;
 
         if (option_homepage_url != NULL && option_homepage_url[0] != '\0')
                 addr = option_homepage_url;

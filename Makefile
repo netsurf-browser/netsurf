@@ -212,6 +212,9 @@ $(eval $(call feature_enabled,HARU_PDF,-DWITH_PDF_EXPORT,-lhpdf -lpng,PDF export
 # common libraries without pkg-config support
 LDFLAGS += -lz
 
+CFLAGS += -DNETSURF_UA_FORMAT_STRING=\"$(NETSURF_UA_FORMAT_STRING)\"
+CFLAGS += -DNETSURF_HOMEPAGE=\"$(NETSURF_HOMEPAGE)\"
+
 # ----------------------------------------------------------------------------
 # RISC OS host flag setup
 # ----------------------------------------------------------------------------

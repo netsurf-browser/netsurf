@@ -552,7 +552,7 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 			break;
 		case 'home':
 		{
-			static const char *addr = "http://netsurf-browser.org/welcome/";
+			static const char *addr = NETSURF_HOMEPAGE;
 
 			if (option_homepage_url != NULL && option_homepage_url[0] != '\0')
 				addr = option_homepage_url;

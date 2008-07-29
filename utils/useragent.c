@@ -27,7 +27,9 @@
 
 static const char *core_user_agent_string = NULL;
 
+#ifndef NETSURF_UA_FORMAT_STRING
 #define NETSURF_UA_FORMAT_STRING "NetSurf/%d.%d (%s; %s)"
+#endif
 
 /**
  * Prepare core_user_agent_string with a string suitable for use as a
@@ -75,5 +77,5 @@ user_agent_string(void)
 {
         if (core_user_agent_string == NULL)
                 user_agent_build_string();
-        return core_user_agent_string;
 }
+
