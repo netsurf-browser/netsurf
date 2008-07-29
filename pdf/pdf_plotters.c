@@ -77,7 +77,7 @@ static void pdf_page_apply_notext_clip(void);
 static HPDF_Image pdf_extract_image(struct bitmap *bitmap, struct content *content);
 
 static void error_handler(HPDF_STATUS error_no, HPDF_STATUS detail_no,
-		void*user_data);
+		void *user_data);
 
 #ifdef PDF_DEBUG
 static void pdf_plot_grid(int x_dist,int y_dist,unsigned int colour);
@@ -124,12 +124,14 @@ struct printer pdf_printer= {
 	pdf_end
 };
 
-bool pdf_plot_clg(colour c){
+bool pdf_plot_clg(colour c)
+{
 	return true;
 }
 
 bool pdf_plot_rectangle(int x0, int y0, int width, int height,
-		int line_width, colour c, bool dotted, bool dashed){
+		int line_width, colour c, bool dotted, bool dashed)
+{
 #ifdef PDF_DEBUG
 	LOG(("."));
 #endif		
@@ -151,7 +153,8 @@ bool pdf_plot_rectangle(int x0, int y0, int width, int height,
 }
 
 bool pdf_plot_line(int x0, int y0, int x1, int y1, int width, 
-		colour c, bool dotted, bool dashed){
+		colour c, bool dotted, bool dashed)
+{
 #ifdef PDF_DEBUG
 	LOG(("."));
 #endif				
@@ -174,7 +177,8 @@ bool pdf_plot_line(int x0, int y0, int x1, int y1, int width,
 	return true;
 }
 
-bool pdf_plot_polygon(int *p, unsigned int n, colour fill){
+bool pdf_plot_polygon(int *p, unsigned int n, colour fill)
+{
 	int i;
 #ifdef PDF_DEBUG
 	int pmaxx = p[0], pmaxy = p[1];
@@ -207,8 +211,8 @@ bool pdf_plot_polygon(int *p, unsigned int n, colour fill){
 	return true;
 }
 
-bool pdf_plot_fill(int x0, int y0, int x1, int y1, colour c){
-	
+bool pdf_plot_fill(int x0, int y0, int x1, int y1, colour c)
+{	
 #ifdef PDF_DEBUG
 	LOG(("%d %d %d %d %f %X", x0, y0, x1, y1, page_height-y0, c));
 #endif
@@ -230,9 +234,8 @@ bool pdf_plot_fill(int x0, int y0, int x1, int y1, colour c){
 	return true;
 }
 
-bool pdf_plot_clip(int clip_x0, int clip_y0, 
-		int clip_x1, int clip_y1){
-
+bool pdf_plot_clip(int clip_x0, int clip_y0, int clip_x1, int clip_y1)
+{
 #ifdef PDF_DEBUG
 	LOG(("%d %d %d %d", clip_x0, clip_y0, clip_x1, clip_y1));
 #endif
@@ -264,9 +267,10 @@ bool pdf_plot_clip(int clip_x0, int clip_y0,
 }
 
 bool pdf_plot_text(int x, int y, const struct css_style *style, 
-		const char *text, size_t length, colour bg, colour c){
+		const char *text, size_t length, colour bg, colour c)
+{
 #ifdef PDF_DEBUG
-			LOG((". %d %d %s", x, y, text));
+	LOG((". %d %d %s", x, y, text));
 #endif
 	char *word;
 	HPDF_REAL size;
@@ -320,7 +324,8 @@ bool pdf_plot_text(int x, int y, const struct css_style *style,
 	return true;
 }
 
-bool pdf_plot_disc(int x, int y, int radius, colour c, bool filled){
+bool pdf_plot_disc(int x, int y, int radius, colour c, bool filled)
+{
 #ifdef PDF_DEBUG
 	LOG(("."));
 #endif		
@@ -339,8 +344,8 @@ bool pdf_plot_disc(int x, int y, int radius, colour c, bool filled){
 	return true;
 }
 
-bool pdf_plot_arc(int x, int y, int radius, int angle1, int angle2, 
-    		colour c){
+bool pdf_plot_arc(int x, int y, int radius, int angle1, int angle2, colour c)
+{
 #ifdef PDF_DEBUG
 	LOG(("%d %d %d %d %d %X", x, y, radius, angle1, angle2, c));
 #endif		
@@ -360,8 +365,8 @@ bool pdf_plot_arc(int x, int y, int radius, int angle1, int angle2,
 }
 
 bool pdf_plot_bitmap(int x, int y, int width, int height,
-		     struct bitmap *bitmap, colour bg, struct content *content){
-
+		struct bitmap *bitmap, colour bg, struct content *content)
+{
 	HPDF_Image image;
 
 #ifdef PDF_DEBUG
@@ -386,8 +391,8 @@ bool pdf_plot_bitmap(int x, int y, int width, int height,
 
 bool pdf_plot_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
-  		bool repeat_x, bool repeat_y, struct content *content){
-
+  		bool repeat_x, bool repeat_y, struct content *content)
+{
 	HPDF_Image image;
 	
 #ifdef PDF_DEBUG
@@ -423,7 +428,8 @@ bool pdf_plot_bitmap_tile(int x, int y, int width, int height,
 	return true;
 }
 
-HPDF_Image pdf_extract_image(struct bitmap *bitmap, struct content *content){
+HPDF_Image pdf_extract_image(struct bitmap *bitmap, struct content *content)
+{
 	HPDF_Image image = NULL,smask;
 	char *img_buffer, *rgb_buffer, *alpha_buffer;
 	int img_width, img_height, img_rowstride;
@@ -456,7 +462,6 @@ HPDF_Image pdf_extract_image(struct bitmap *bitmap, struct content *content){
 	}
 	
 	if (!image) {
-	
 		/*Handle pixmaps*/
 		img_buffer = bitmap_get_buffer(bitmap);
 		img_width = bitmap_get_width(bitmap);
@@ -511,22 +516,26 @@ HPDF_Image pdf_extract_image(struct bitmap *bitmap, struct content *content){
 }
 
 
-bool pdf_plot_flush(){
+bool pdf_plot_flush(void)
+{
 	return true;
 }
 
 
-static inline float transform_x(float *transform,float x,float y){
+static inline float transform_x(float *transform,float x,float y)
+{
 	return ((transform[0] * x) + (transform[2] * (-y) ) + transform[4]) * 2;
 }
 
-static inline float transform_y(float *transform,float x,float y){
+static inline float transform_y(float *transform,float x,float y)
+{
 	return page_height - (((transform[1] * x) +
 			(transform[3] * (-y)) - transform[5]) * 2);
 }
 
 bool pdf_plot_path(float *p, unsigned int n, colour fill, float width,
-                    colour c, float *transform){
+		colour c, float *transform)
+{
 #ifdef PDF_DEBUG
 	LOG(("."));
 #endif		    
@@ -625,9 +634,8 @@ void pdf_set_dotted()
  * \param pg_width page width
  * \param pg_height page height	
  */
-bool pdf_begin(struct print_settings* print_settings)
+bool pdf_begin(struct print_settings *print_settings)
 {
-
 	pdf_doc = NULL;
 	
 	pdf_doc = HPDF_New(error_handler, NULL);
@@ -657,7 +665,7 @@ bool pdf_begin(struct print_settings* print_settings)
 }
 
 
-bool pdf_next_page()
+bool pdf_next_page(void)
 {
 #ifdef PDF_DEBUG
 	if (pdf_page != NULL) {
@@ -689,7 +697,7 @@ bool pdf_next_page()
 }
 
 
-void pdf_end()
+void pdf_end(void)
 {
 #ifdef PDF_DEBUG
 	LOG(("pdf_end begins"));
@@ -706,7 +714,6 @@ void pdf_end()
 	if (settings->output)
 		HPDF_SaveToFile(pdf_doc, settings->output);
 
-	
 	HPDF_Free(pdf_doc);
 
 #ifdef PDF_DEBUG
@@ -721,13 +728,11 @@ void pdf_end()
  * as it would otherwise flood the user with all resulting complications,
  * covering the most important error source.
 */
-static void error_handler(HPDF_STATUS error_no,
-		HPDF_STATUS detail_no,
+static void error_handler(HPDF_STATUS error_no, HPDF_STATUS detail_no,
 		void *user_data)
 {
-	LOG(("ERROR:\n\terror_no=%x\n\tdetail_no=%d\n", 
-		(HPDF_UINT)error_no, 
-		 (HPDF_UINT)detail_no));
+	LOG(("ERROR:\n\terror_no=%x\n\tdetail_no=%d\n",	(HPDF_UINT)error_no,
+			(HPDF_UINT)detail_no));
 #ifdef PDF_DEBUG	
 	exit(1);
 #endif	
@@ -755,7 +760,7 @@ void pdf_plot_grid(int x_dist, int y_dist, unsigned int colour)
  * A solution for fuzzy margins - saves the current clipping and puts the main
  * clip frame (page without margins) over it.
 */
-void pdf_page_apply_notext_clip()
+void pdf_page_apply_notext_clip(void)
 {
 	/*Save state underneath*/
 	HPDF_Page_GSave(pdf_page);

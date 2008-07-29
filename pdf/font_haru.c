@@ -68,13 +68,11 @@ const struct font_functions haru_nsfont = {
  * as it would otherwise flood the user with all resulting complications,
  * covering the most important error source.
  */
-static void error_handler(HPDF_STATUS error_no,
-		   HPDF_STATUS detail_no,
-     void *user_data)
+static void error_handler(HPDF_STATUS error_no, HPDF_STATUS detail_no,
+		void *user_data)
 {
 	LOG(("ERROR: in font_haru \n\terror_no=%x\n\tdetail_no=%d\n", 
-		(HPDF_UINT)error_no, 
-		(HPDF_UINT)detail_no));
+			(HPDF_UINT)error_no, (HPDF_UINT)detail_no));
 #ifdef FONT_HARU_DEBUG	
 	exit(1);
 #endif	
@@ -189,7 +187,7 @@ bool haru_nsfont_position_in_string(const struct css_style *style,
 
 	
 	offset = HPDF_Page_MeasureText(page, string_nt, x,
-				       HPDF_FALSE, &real_width);
+			HPDF_FALSE, &real_width);
 	
 
 	if (real_width < x)
@@ -205,7 +203,7 @@ bool haru_nsfont_position_in_string(const struct css_style *style,
 	
 #ifdef FONT_HARU_DEBUG	
 	LOG(("Position in string: %s at x: %i; Calculated position: %i",
-		string_nt, x, *char_offset));	
+			string_nt, x, *char_offset));	
 #endif	
 	free(string_nt);
 	HPDF_Free(pdf);
@@ -227,8 +225,8 @@ bool haru_nsfont_position_in_string(const struct css_style *style,
  */
 
 bool haru_nsfont_split(const struct css_style *style,
-		       const char *string, size_t length,
-	 int x, size_t *char_offset, int *actual_x)
+		const char *string, size_t length,
+		int x, size_t *char_offset, int *actual_x)
 {
 	HPDF_Doc pdf;
 	HPDF_Page page;
@@ -248,7 +246,7 @@ bool haru_nsfont_split(const struct css_style *style,
 	}
 	
 	offset = HPDF_Page_MeasureText(page, string_nt, x,
-				        HPDF_TRUE, &real_width);
+			HPDF_TRUE, &real_width);
 	
 #ifdef FONT_HARU_DEBUG	
 	LOG(("Splitting string: %s for width: %i ; Calculated position: %i Calculated real_width: %f", 
@@ -278,10 +276,8 @@ bool haru_nsfont_split(const struct css_style *style,
  */
 
 bool haru_nsfont_apply_style(const struct css_style *style,
-				     	HPDF_Doc doc, HPDF_Page page,
-	  				HPDF_Font *font)
+		HPDF_Doc doc, HPDF_Page page, HPDF_Font *font)
 {
-	
 	HPDF_Font pdf_font;
 	HPDF_REAL size;
 	char font_name[50];
@@ -320,14 +316,12 @@ bool haru_nsfont_apply_style(const struct css_style *style,
 		strcat(font_name, "-Bold");
 		bold = true;
 	}
-	
-	
-		
-		
+
 	switch (style->font_style) {
 		case CSS_FONT_STYLE_ITALIC:
 		case CSS_FONT_STYLE_OBLIQUE:
-			if (!bold) strcat(font_name,"-");
+			if (!bold)
+				strcat(font_name,"-");
 			if (roman)
 				strcat(font_name,"Italic");
 			else
@@ -353,7 +347,6 @@ bool haru_nsfont_apply_style(const struct css_style *style,
 		*font = pdf_font;
 	}
 	else {
-		
 		if (style->font_size.value.length.unit  == CSS_UNIT_PX)
 			size = style->font_size.value.length.value;
 		else
