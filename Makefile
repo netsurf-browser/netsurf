@@ -522,7 +522,7 @@ endef
 # 3 = dep filename, no prefix
 define compile_target_s
 $$(OBJROOT)/$(2): $$(OBJROOT)/created
-	$$(VQ)echo " ASSEMBLE: $(1)"
+	$$(VQ)echo "ASSEMBLE: $(1)"
 	$$(Q)$$(CC) $$(ASFLAGS) -o $$@ -c $(1)
 
 endef
