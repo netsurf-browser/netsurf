@@ -383,7 +383,8 @@ bool imagemap_addtolist(xmlNode *n, char *base_url, struct mapentry **entry)
 	}
 
 	/* extract area shape */
-	if (strcasecmp(shape, "rect") == 0) {
+	if (strcasecmp(shape, "rect") == 0 ||
+			strcasecmp(shape, "rectangle") == 0) {
 		new_map->type = IMAGEMAP_RECT;
 	}
 	else if (strcasecmp(shape, "circle") == 0) {
