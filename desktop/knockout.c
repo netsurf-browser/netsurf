@@ -214,22 +214,21 @@ struct knockout_entry {
 };
 
 
-struct knockout_entry knockout_entries[KNOCKOUT_ENTRIES];
-struct knockout_box knockout_boxes[KNOCKOUT_BOXES];
-int knockout_polygons[KNOCKOUT_POLYGONS];
-int knockout_entry_cur = 0;
-int knockout_box_cur = 0;
-int knockout_polygon_cur = 0;
-struct knockout_box *knockout_list = NULL;
+static struct knockout_entry knockout_entries[KNOCKOUT_ENTRIES];
+static struct knockout_box knockout_boxes[KNOCKOUT_BOXES];
+static int knockout_polygons[KNOCKOUT_POLYGONS];
+static int knockout_entry_cur = 0;
+static int knockout_box_cur = 0;
+static int knockout_polygon_cur = 0;
+static struct knockout_box *knockout_list = NULL;
 
-struct plotter_table real_plot;
+static struct plotter_table real_plot;
 
-int clip_x0_cur;
-int clip_y0_cur;
-int clip_x1_cur;
-int clip_y1_cur;
-int nested_depth = 0;
-
+static int clip_x0_cur;
+static int clip_y0_cur;
+static int clip_x1_cur;
+static int clip_y1_cur;
+static int nested_depth = 0;
 
 /**
  * Start a knockout plotting session

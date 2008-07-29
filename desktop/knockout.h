@@ -20,11 +20,15 @@
  * Knockout rendering (interface).
  */
 
+#ifndef _NETSURF_DESKTOP_KNOCKOUT_H_
+#define _NETSURF_DESKTOP_KNOCKOUT_H_
+
 #include "desktop/plotters.h"
 
 
 bool knockout_plot_start(struct plotter_table *plotter);
 bool knockout_plot_end(void);
 
-
 extern const struct plotter_table knockout_plotters;
+
+#endif

@@ -81,9 +81,9 @@ const struct plotter_table ro_save_draw_plotters = {
 	ro_save_draw_path,
 };
 
-struct pencil_diagram *ro_save_draw_diagram;
-int ro_save_draw_width;
-int ro_save_draw_height;
+static struct pencil_diagram *ro_save_draw_diagram;
+static int ro_save_draw_width;
+static int ro_save_draw_height;
 
 
 /**
