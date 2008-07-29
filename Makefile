@@ -549,21 +549,21 @@ $(eval $(foreach SOURCE,$(filter %.s,$(SOURCES)), \
 clean: $(CLEANS)
 
 install-gtk:
-	mkdir -p $(DESTDIR)/usr/share/netsurf/throbber
-	mkdir -p $(DESTDIR)/usr/bin
-	@cp -v nsgtk $(DESTDIR)/usr/bin
-	@cp -vrL gtk/res/adblock.css $(DESTDIR)/usr/share/netsurf
-	@cp -vrL gtk/res/ca-bundle.txt $(DESTDIR)/usr/share/netsurf
-	@cp -vrL gtk/res/default.css $(DESTDIR)/usr/share/netsurf
-	@cp -vrL gtk/res/gtkdefault.css $(DESTDIR)/usr/share/netsurf
-	@cp -vrL gtk/res/license $(DESTDIR)/usr/share/netsurf
-	@cp -vrL gtk/res/netsurf.xpm $(DESTDIR)/usr/share/netsurf
-	@cp -vrL gtk/res/netsurf-16x16.xpm $(DESTDIR)/usr/share/netsurf
-	@cp -vrL gtk/res/throbber/*.png $(DESTDIR)/usr/share/netsurf/throbber
-	gzip -9v < gtk/res/messages > $(DESTDIR)/usr/share/netsurf/messages
-	gzip -9v < gtk/res/downloads.glade > $(DESTDIR)/usr/share/netsurf/downloads.glade
-	gzip -9v < gtk/res/netsurf.glade > $(DESTDIR)/usr/share/netsurf/netsurf.glade
-	gzip -9v < gtk/res/options.glade > $(DESTDIR)/usr/share/netsurf/options.glade
+	mkdir -p $(DESTDIR)$(NETSURF_GTK_RESOURCES)throbber
+	mkdir -p $(DESTDIR)$(NETSURF_GTK_BIN)
+	@cp -v nsgtk $(DESTDIR)$(NETSURF_GTK_BIN)netsurf
+	@cp -vrL gtk/res/adblock.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -vrL gtk/res/ca-bundle.txt $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -vrL gtk/res/default.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -vrL gtk/res/gtkdefault.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -vrL gtk/res/license $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -vrL gtk/res/netsurf.xpm $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -vrL gtk/res/netsurf-16x16.xpm $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -vrL gtk/res/throbber/*.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)/throbber
+	gzip -9v < gtk/res/messages > $(DESTDIR)$(NETSURF_GTK_RESOURCES)messages
+	gzip -9v < gtk/res/downloads.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)downloads.glade
+	gzip -9v < gtk/res/netsurf.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)netsurf.glade
+	gzip -9v < gtk/res/options.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)options.glade
 
 install: all-program install-$(TARGET)
 
