@@ -77,5 +77,6 @@ user_agent_string(void)
 {
         if (core_user_agent_string == NULL)
                 user_agent_build_string();
+	return core_user_agent_string;
 }
 
