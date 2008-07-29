@@ -152,6 +152,14 @@ typedef enum {
 	CSS_VERTICAL_ALIGN_NOT_SET
 } css_vertical_align_type;
 
+typedef enum {
+	CSS_FONT_SIZE_INHERIT,
+	CSS_FONT_SIZE_ABSOLUTE,
+	CSS_FONT_SIZE_LENGTH,
+	CSS_FONT_SIZE_PERCENT,
+	CSS_FONT_SIZE_NOT_SET
+} css_font_size_type;
+
 struct css_counter_control {
 	char *name;
 	int value;
@@ -255,11 +263,7 @@ struct css_style {
 	/* font properties */
 	css_font_family font_family;
 	struct {
-		enum { CSS_FONT_SIZE_INHERIT,
-		       CSS_FONT_SIZE_ABSOLUTE,
-		       CSS_FONT_SIZE_LENGTH,
-		       CSS_FONT_SIZE_PERCENT,
-		       CSS_FONT_SIZE_NOT_SET } size;
+		css_font_size_type size;
 		union {
 			struct css_length length;
 			float absolute;
