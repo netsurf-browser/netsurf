@@ -618,11 +618,12 @@ bool browser_window_textarea_callback(struct browser_window *bw,
 
 	case KEY_WORD_LEFT:
 	{
+		bool start_of_word;
 		/* if there is a selection, caret should stay at beginning */
 		if (selection_exists)
 			break;
 			
-		bool start_of_word = (char_offset <= 0 ||
+		start_of_word = (char_offset <= 0 ||
 				isspace(text_box->text[char_offset - 1]));
 
 		while (!word_left(text_box->text, &char_offset, NULL)) {
@@ -652,13 +653,14 @@ bool browser_window_textarea_callback(struct browser_window *bw,
 
 	case KEY_WORD_RIGHT:
 	{
+		bool in_word;
 		/* if there is a selection, caret should move to the end */
 		if (selection_exists) {
 			text_box = selection_get_end(bw->sel, &char_offset);
 			break;
 		}
 
-		bool in_word = (char_offset < text_box->length &&
+		in_word = (char_offset < text_box->length &&
 				!isspace(text_box->text[char_offset]));
 
 		while (!word_right(text_box->text, text_box->length,
@@ -1822,13 +1824,13 @@ bool delete_handler(struct browser_window *bw, struct box *b,
 
 void delete_selection(struct selection *s)
 {
-	assert(s->defined);
 	size_t start_offset, end_offset;
 	struct box *text_box = selection_get_start(s, &start_offset);
 	struct box *end_box = selection_get_end(s, &end_offset);
 	struct box *next;
 	size_t sel_len = s->end_idx - s->start_idx;
 	int beginning = 0;
+	assert(s->defined);
 
 	/* Clear selection so that deletion from textboxes proceeds */
 	selection_clear(s, true);

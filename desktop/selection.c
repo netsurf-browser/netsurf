@@ -548,6 +548,8 @@ bool selection_traverse(struct selection *s, seln_traverse_handler handler,
 	struct content *c;
 	save_text_whitespace before = WHITESPACE_NONE;
 	bool first = true;
+	const char *text;
+	size_t length;
 
 	if (!selection_defined(s))
 		return true;	/* easy case, nothing to do */
@@ -560,8 +562,7 @@ bool selection_traverse(struct selection *s, seln_traverse_handler handler,
 	c = s->bw->current_content;
 	if (!c) return true;
 
-	size_t length;
-	const char *text = textplain_get_raw_data(c, s->start_idx,
+	text = textplain_get_raw_data(c, s->start_idx,
 							s->end_idx, &length);
 
 	if (text && !handler(text, length, NULL, handle, NULL, 0))

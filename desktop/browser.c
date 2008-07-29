@@ -2248,13 +2248,14 @@ void browser_window_scroll_box(struct browser_window *bw, struct box *box,
 void browser_window_form_select(struct browser_window *bw,
 		struct form_control *control, int item)
 {
+	struct box *inline_box;
 	struct form_option *o;
 	int count;
 
 	assert(bw);
 	assert(control);
 
-	struct box *inline_box = control->box->children->children;
+	inline_box = control->box->children->children;
 
 	for (count = 0, o = control->data.select.items;
 			o != NULL;
