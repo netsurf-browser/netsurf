@@ -2463,6 +2463,7 @@ void css_dump_working_stylesheet(const struct css_working_stylesheet *ws)
  * Set all members to false
  */
 void css_importance_reset(struct css_importance *i) {
+	int j;
 	i->background_color = false;
 	i->background_image = false;
 	i->border_spacing = false;
@@ -2471,7 +2472,7 @@ void css_importance_reset(struct css_importance *i) {
 	i->width = false;
 
 	/**< top, right, bottom, left */
-	for (int j = 0; j < 4; j++) {
+	for (j = 0; j < 4; j++) {
 		i->border_color[j] = false;
 		i->border_style[j] = false;
 		i->border_width[j] = false;

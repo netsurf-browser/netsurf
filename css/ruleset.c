@@ -680,6 +680,7 @@ int parse_length(struct css_length * const length,
 colour named_colour(const char *name)
 {
 	struct css_colour_entry *col;
+	int length;
 
 	col = bsearch(name, css_colour_table,
 			sizeof css_colour_table / sizeof css_colour_table[0],
@@ -692,7 +693,7 @@ colour named_colour(const char *name)
 	 * start of a colour specified in #rrggbb or #rgb format.
 	 * This attempts to detect and recover from this.
 	 */
-	int length = strlen(name);
+	length = strlen(name);
 	if ((length == 3) || (length == 6))
 		return hex_colour(name, length);
 	return CSS_COLOR_NONE;
