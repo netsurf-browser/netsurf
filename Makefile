@@ -92,6 +92,7 @@ VQ=@
 PERL=perl
 MKDIR=mkdir
 TOUCH=touch
+STRIP=strip
 
 ifeq ($(TARGET),riscos)
   ifeq ($(HOST),riscos)
@@ -227,7 +228,6 @@ ifeq ($(HOST),beos)
   LDFLAGS += -L/boot/home/config/lib
   # some people do *not* have libm...
   LDFLAGS += -lxml2 -lz -lcurl -lssl -lcrypto -liconv
-  LDFLAGS += -lmng -ljpeg
 endif
 
 # ----------------------------------------------------------------------------
@@ -386,8 +386,6 @@ WARNFLAGS = -W -Wall -Wundef -Wpointer-arith \
 ifneq ($(GCCVER),2)
   WARNFLAGS += -Wno-unused-parameter 
 endif
-
-STRIP := strip
 
 OPT0FLAGS = -O0
 # -O and -O2 can use -Wuninitialized which gives us more static checking.
