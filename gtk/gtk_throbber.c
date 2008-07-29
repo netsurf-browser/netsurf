@@ -50,7 +50,7 @@ bool nsgtk_throbber_initialise_from_png(const int frames, ...)
 		return false;
 	}
 	
-	throb = malloc(sizeof(throb));
+	throb = malloc(sizeof(*throb));
 	throb->nframes = frames;
 	throb->framedata = malloc(sizeof(GdkPixbuf *) * throb->nframes);
 	
