@@ -172,8 +172,10 @@ char *human_friendly_bytesize(unsigned long bsize) {
 	static char buffer2[BYTESIZE_BUFFER_SIZE];
 	static char buffer3[BYTESIZE_BUFFER_SIZE];
 	static char *curbuffer = buffer3;
+	enum {bytes, kilobytes, megabytes, gigabytes} unit = bytes;
+	static char units[][7] = {"Bytes", "kBytes", "MBytes", "GBytes"};
 
-        float bytesize = (float)bsize;
+	float bytesize = (float)bsize;
 
 	if (curbuffer == buffer1)
 		curbuffer = buffer2;
@@ -181,9 +183,6 @@ char *human_friendly_bytesize(unsigned long bsize) {
 		curbuffer = buffer3;
 	else
 		curbuffer = buffer1;
-
-	enum {bytes, kilobytes, megabytes, gigabytes} unit = bytes;
-	static char units[][7] = {"Bytes", "kBytes", "MBytes", "GBytes"};
 
 	if (bytesize > 1024) {
 		bytesize /= 1024;

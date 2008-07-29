@@ -362,6 +362,7 @@ static struct directory *filename_create_directory(const char *prefix) {
 	int index;
 	struct directory *old_dir, *new_dir, *prev_dir = NULL;
 	char dir_prefix[16];
+	int i;
 
 	/* get the lowest unique prefix, or use the provided one */
 	if (!prefix) {
@@ -433,7 +434,7 @@ static struct directory *filename_create_directory(const char *prefix) {
 			TEMP_FILENAME_PREFIX);
 	last_1 = filename_directory + strlen(TEMP_FILENAME_PREFIX) + 1;
 	last_2 = new_dir->prefix;
-	for (int i = 0; i < 3 && *last_2; i++) {
+	for (i = 0; i < 3 && *last_2; i++) {
 		*last_1++ = *last_2++;
 		while (*last_2 && *last_2 != '/')
 			*last_1++ = *last_2++;
