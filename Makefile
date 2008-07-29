@@ -154,9 +154,13 @@ define feature_enabled
   ifeq ($$(NETSURF_USE_$(1)),YES)
     CFLAGS += $(2)
     LDFLAGS += $(3)
-    $$(info AUTOCONF: building with $(4))
+    ifneq ($(MAKECMDGOALS),clean)
+      $$(info M.CONFIG: building with $(4))
+    endif
   else
-    $$(info AUTOCONF: building without $(4))
+    ifneq ($(MAKECMDGOALS),clean)
+      $$(info M.CONFIG: building without $(4))
+    endif
   endif
 endef
 
@@ -175,19 +179,25 @@ define pkg_config_find_and_add
         NETSURF_USE_$(1) := YES
       endif
     else
-      $$(info AUTOCONF: building with $(3))
+      ifneq ($(MAKECMDGOALS),clean)
+        $$(info M.CONFIG: building with $(3))
+      endif
     endif
     ifeq ($$(NETSURF_USE_$(1)),YES)
       ifeq ($$(NETSURF_FEATURE_$(1)_AVAILABLE),yes)
         CFLAGS += $$(shell $$(PKG_CONFIG) --cflags $(2)) $$(NETSURF_FEATURE_$(1)_CFLAGS)
         LDFLAGS += $$(shell $$(PKG_CONFIG) --libs $(2)) $$(NETSURF_FEATURE_$(1)_LDFLAGS)
-        $$(info AUTOCONF: auto-enabled $(3) ($(2)).)
+        ifneq ($(MAKECMDGOALS),clean)
+          $$(info M.CONFIG: auto-enabled $(3) ($(2)).)
+        endif
       else
         $$(error Unable to find library for: $(3) ($(2))
       endif
     endif
   else
-    $$(info AUTOCONF: building without $(3))
+    ifneq ($(MAKECMDGOALS),clean)
+      $$(info M.CONFIG: building without $(3))
+    endif
   endif
 endef
 
