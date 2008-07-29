@@ -1825,12 +1825,17 @@ bool delete_handler(struct browser_window *bw, struct box *b,
 void delete_selection(struct selection *s)
 {
 	size_t start_offset, end_offset;
-	struct box *text_box = selection_get_start(s, &start_offset);
-	struct box *end_box = selection_get_end(s, &end_offset);
+	struct box *text_box;
+	struct box *end_box;
 	struct box *next;
-	size_t sel_len = s->end_idx - s->start_idx;
+	size_t sel_len;
 	int beginning = 0;
+
 	assert(s->defined);
+
+	text_box = selection_get_start(s, &start_offset);
+	end_box = selection_get_end(s, &end_offset);
+	sel_len = s->end_idx - s->start_idx;
 
 	/* Clear selection so that deletion from textboxes proceeds */
 	selection_clear(s, true);
