@@ -574,6 +574,7 @@ char *fetchcache_parse_type(const char *s, char **params[])
 
 	r = regexec(&re_content_type, s, 2 + MAX_ATTRS * 3, pmatch, 0);
 	if (r) {
+		char *semi;
 		LOG(("failed to parse content-type '%s'", s));
 		/* The mime type must be first, so only copy up to the
 		 * first semicolon in the string. This allows us to have
@@ -581,7 +582,7 @@ char *fetchcache_parse_type(const char *s, char **params[])
 		 * Content-Type headers. Obviously, any truly broken
 		 * Content-Type headers will be unaffected by this heuristic
 		 */
-		char *semi = strchr(s, ';');
+		semi = strchr(s, ';');
 		if (semi)
 			type = strndup(s, semi - s);
 		else

@@ -2340,6 +2340,7 @@ char *urldb_get_cookie(const char *url)
 	char *scheme;
 	time_t now;
 	url_func_result res;
+	int i;
 
 	assert(url);
 
@@ -2552,7 +2553,7 @@ char *urldb_get_cookie(const char *url)
 		ret_used = strlen(ret) + 1;
 	}
 
-	for (int i = 0; i < count; i++) {
+	for (i = 0; i < count; i++) {
 		if (!urldb_concat_cookie(matched_cookies[i], version,
 				&ret_used, &ret_alloc, &ret)) {
 			free(path);
@@ -3490,6 +3491,7 @@ void urldb_load_cookies(const char *filename)
 		int version, domain_specified, path_specified,
 			secure, no_destroy, value_quoted;
 		time_t expires, last_used;
+		struct cookie_internal_data *c;
 
 		if(s[0] == 0 || s[0] == '#')
 			/* Skip blank lines or comments */
@@ -3548,8 +3550,7 @@ void urldb_load_cookies(const char *filename)
 		assert(p <= end);
 
 		/* Now create cookie */
-		struct cookie_internal_data *c =
-				malloc(sizeof(struct cookie_internal_data));
+		c = malloc(sizeof(struct cookie_internal_data));
 		if (!c)
 			break;
 
@@ -3602,11 +3603,12 @@ void urldb_delete_cookie(const char *domain, const char *path,
 void urldb_delete_cookie_hosts(const char *domain, const char *path,
 		const char *name, struct host_part *parent)
 {
+	struct host_part *h;
 	assert(parent);
 
 	urldb_delete_cookie_paths(domain, path, name, &parent->paths);
 
-	for (struct host_part *h = parent->children; h; h = h->next)
+	for (h = parent->children; h; h = h->next)
 		urldb_delete_cookie_hosts(domain, path, name, h);
 }
 
@@ -3614,6 +3616,7 @@ void urldb_delete_cookie_paths(const char *domain, const char *path,
 		const char *name, struct path_data *parent)
 {
 	struct cookie_internal_data *c;
+	struct path_data *p;
 
 	assert(parent);
 
@@ -3635,7 +3638,7 @@ void urldb_delete_cookie_paths(const char *domain, const char *path,
 		}
 	}
 
-	for (struct path_data *p = parent->children; p; p = p->next)
+	for (p = parent->children; p; p = p->next)
 		urldb_delete_cookie_paths(domain, path, name, p);
 }
 
@@ -3684,11 +3687,12 @@ void urldb_save_cookies(const char *filename)
  */
 void urldb_save_cookie_hosts(FILE *fp, struct host_part *parent)
 {
+	struct host_part *h;
 	assert(fp && parent);
 
 	urldb_save_cookie_paths(fp, &parent->paths);
 
-	for (struct host_part *h = parent->children; h; h = h->next)
+	for (h = parent->children; h; h = h->next)
 		urldb_save_cookie_hosts(fp, h);
 }
 
@@ -3700,12 +3704,14 @@ void urldb_save_cookie_hosts(FILE *fp, struct host_part *parent)
  */
 void urldb_save_cookie_paths(FILE *fp, struct path_data *parent)
 {
+	struct path_data *p;
 	time_t now = time(NULL);
 
 	assert(fp && parent);
 
 	if (parent->cookies) {
-		for (struct cookie_internal_data *c = parent->cookies; c;
+		struct cookie_internal_data *c;
+		for (c = parent->cookies; c;
 				c = c->next) {
 			if (c->expires < now)
 				/* Skip expired cookies */
@@ -3726,7 +3732,7 @@ void urldb_save_cookie_paths(FILE *fp, struct path_data *parent)
 		}
 	}
 
-	for (struct path_data *p = parent->children; p; p = p->next)
+	for (p = parent->children; p; p = p->next)
 		urldb_save_cookie_paths(fp, p);
 }
 
@@ -3737,9 +3743,10 @@ void urldb_save_cookie_paths(FILE *fp, struct path_data *parent)
 void urldb_destroy(void)
 {
 	struct host_part *a, *b;
+	int i;
 
 	/* Clean up search trees */
-	for (int i = 0; i < NUM_SEARCH_TREES; i++) {
+	for (i = 0; i < NUM_SEARCH_TREES; i++) {
 		if (search_trees[i] != &empty)
 			urldb_destroy_search_tree(search_trees[i]);
 	}
@@ -3809,11 +3816,12 @@ void urldb_destroy_path_tree(struct path_data *root)
 void urldb_destroy_path_node_content(struct path_data *node)
 {
 	struct cookie_internal_data *a, *b;
+	unsigned int i;
 
 	free(node->url);
 	free(node->scheme);
 	free(node->segment);
-	for (unsigned int i = 0; i < node->frag_cnt; i++)
+	for (i = 0; i < node->frag_cnt; i++)
 		free(node->fragment[i]);
 	free(node->fragment);
 

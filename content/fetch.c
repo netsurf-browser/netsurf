@@ -352,6 +352,8 @@ failed:
 void fetch_dispatch_jobs(void)
 {
 	int all_active, all_queued;
+	struct fetch *q;
+	struct fetch *f;
 
 	if (!queue_ring)
 		return; /* Nothing to do, the queue is empty */
@@ -362,7 +364,7 @@ void fetch_dispatch_jobs(void)
 	LOG(("queue_ring %i, fetch_ring %i", all_queued, all_active));
 #endif
 
-	struct fetch *q = queue_ring;
+	q = queue_ring;
 	if (q) {
 		do {
 #ifdef DEBUG_FETCH_VERBOSE
@@ -371,7 +373,7 @@ void fetch_dispatch_jobs(void)
 			q = q->r_next;
 		} while (q != queue_ring);
 	}
-	struct fetch *f = fetch_ring;
+	f = fetch_ring;
 	if (f) {
 		do {
 #ifdef DEBUG_FETCH_VERBOSE

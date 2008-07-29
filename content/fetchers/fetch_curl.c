@@ -252,9 +252,9 @@ void fetch_curl_finalise(const char *scheme)
 	curl_fetchers_registered--;
 	LOG(("Finalise cURL fetcher %s", scheme));
 	if (curl_fetchers_registered == 0) {
+		CURLMcode codem;
 		/* All the fetchers have been finalised. */
 		LOG(("All cURL fetchers finalised, closing down cURL"));
-		CURLMcode codem;
 
 		curl_easy_cleanup(fetch_blank_curl);
 
