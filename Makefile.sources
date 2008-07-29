@@ -77,6 +77,9 @@ S_BEOS := beos_bitmap.cpp beos_fetch_rsrc.cpp beos_filetype.cpp beos_font.cpp \
 S_BEOS := $(addprefix beos/,$(S_BEOS))
 RDEF_BEOS := beos_res.rdef
 RDEF_BEOS := $(addprefix beos/,$(RDEF_BEOS))
+RDEP_BEOS := adblock.css beosdefault.css default.css ca-bundle.txt messages
+RDEP_BEOS := $(addprefix beos/res/,$(RDEP_BEOS)) \
+	$(wildcard beos/res/throbber/throbber*.png)
 
 # S_DEBUG are sources purely for the debug build
 S_DEBUG := netsurfd.c debug_bitmap.c filetyped.c fontd.c

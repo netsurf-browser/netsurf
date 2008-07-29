@@ -225,7 +225,9 @@ endif
 
 ifeq ($(HOST),beos)
   LDFLAGS += -L/boot/home/config/lib
+  # some people do *not* have libm...
   LDFLAGS += -lxml2 -lz -lcurl -lssl -lcrypto -liconv
+  LDFLAGS += -lmng -ljpeg
 endif
 
 # ----------------------------------------------------------------------------
@@ -385,6 +387,8 @@ ifneq ($(GCCVER),2)
   WARNFLAGS += -Wno-unused-parameter 
 endif
 
+STRIP := strip
+
 OPT0FLAGS = -O0
 # -O and -O2 can use -Wuninitialized which gives us more static checking.
 # unfortunately the optimiser is what provides the hints in the code tree
@@ -407,6 +411,10 @@ else
 	$(Q)$(ELF2AIF) $(EXETARGET:,ff8=,e1f) $(EXETARGET)
 	$(Q)$(RM) $(EXETARGET:,ff8=,e1f)
 endif
+ifeq ($(NETSURF_STRIP_BINARY),YES)
+	$(VQ)echo "   STRIP: $(EXETARGET)"
+	$(Q)$(STRIP) $(EXETARGET)
+endif
 ifeq ($(TARGET),beos)
 	$(VQ)echo "    XRES: $(EXETARGET)"
 	$(Q)$(BEOS_XRES) -o $(EXETARGET) $(RSRC_BEOS)
@@ -420,7 +428,7 @@ ifeq ($(TARGET),beos)
 endif
 
 ifeq ($(TARGET),beos)
-$(RSRC_BEOS): $(RDEF_BEOS)
+$(RSRC_BEOS): $(RDEF_BEOS) $(RDEP_BEOS)
 	$(VQ)echo "      RC: $<"
 	$(Q)$(BEOS_RC) -o $@ $<
 endif
