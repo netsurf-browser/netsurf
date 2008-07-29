@@ -123,6 +123,7 @@ bool nsjpeg_convert(struct content *c, int w, int h)
 
 	rowstride = bitmap_get_rowstride(bitmap);
 	do {
+		int i;
 		JSAMPROW scanlines[1];
 		scanlines[0] = (JSAMPROW) (pixels +
 				rowstride * cinfo.output_scanline);
@@ -130,7 +131,7 @@ bool nsjpeg_convert(struct content *c, int w, int h)
 
 #if RGB_RED != 0 || RGB_GREEN != 1 || RGB_BLUE != 2 || RGB_PIXELSIZE != 4
 		/* expand to RGBA */
-		for (int i = width - 1; 0 <= i; i--) {
+		for (i = width - 1; 0 <= i; i--) {
 			int r = scanlines[0][i * RGB_PIXELSIZE + RGB_RED];
 			int g = scanlines[0][i * RGB_PIXELSIZE + RGB_GREEN];
 			int b = scanlines[0][i * RGB_PIXELSIZE + RGB_BLUE];
