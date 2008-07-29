@@ -22,51 +22,48 @@ S_COMMON := $(addprefix content/,$(S_CONTENT))	\
 	$(addprefix utils/,$(S_UTILS))		\
 	$(addprefix desktop/,$(S_DESKTOP))
 
+# S_IMAGE are sources related to image management
 S_IMAGE := bmp.c bmpread.c gif.c gifread.c ico.c jpeg.c	\
 	mng.c nssprite.c svg.c rsvg.c
-# S_IMAGE are sources related to image management
 S_IMAGE := $(addprefix image/,$(S_IMAGE))
-
-# S_BROWSER are sources related to full browsers but are common
-# between RO and Unix builds
-S_BROWSER := browser.c frames.c history_core.c netsurf.c save_text.c selection.c	\
-	textinput.c
-	 
-S_BROWSER := $(addprefix desktop/,$(S_BROWSER))
-
-# S_RISCOS are sources purely for the RISC OS build
-S_RISCOS := 401login.c artworks.c assert.c awrender.s bitmap.c buffer.c			\
-	cookies.c configure.c debugwin.c dialog.c download.c draw.c filetype.c		\
-	font.c global_history.c gui.c help.c history.c hotlist.c image.c		\
-	menus.c message.c palettes.c plotters.c plugin.c print.c query.c		\
-	save.c save_complete.c save_draw.c save_pdf.c schedule.c search.c sprite.c	\
-	sslcert.c textarea.c textselection.c theme.c theme_install.c			\
-	thumbnail.c									\
-	treeview.c ucstables.c uri.c url_complete.c url_protocol.c wimp.c wimp_event.c	\
-	window.c gui/progress_bar.c gui/status_bar.c					\
-	$(addprefix configure/,con_cache.c con_connect.c con_content.c con_fonts.c	\
-	con_home.c con_image.c con_inter.c con_language.c con_memory.c con_secure.c	\
-	con_theme.c)
-S_RISCOS := $(addprefix riscos/,$(S_RISCOS))
-
-# S_DIALOGS are sources related to dialogs but required only
-# for the GTK build
-S_DIALOGS := gtk_options.c gtk_about.c
-S_DIALOGS := $(addprefix gtk/dialogs/,$(S_DIALOGS))
-
-# S_GTK are sources purely for the GTK build
-S_GTK := font_pango.c gtk_bitmap.c gtk_gui.c gtk_schedule.c			\
-	gtk_thumbnail.c gtk_plotters.c gtk_treeview.c gtk_scaffolding.c \
-	gtk_completion.c gtk_login.c gtk_throbber.c gtk_selection.c		\
-	gtk_history.c gtk_window.c gtk_filetype.c gtk_download.c gtk_print.c
-S_GTK := $(addprefix gtk/,$(S_GTK))
 
 # S_PDF are sources of the pdf plotter + the ones for paged-printing
 S_PDF := pdf_plotters.c font_haru.c
 S_PRINT := print.c 
 S_LOOSE := loosen.c
-S_PDF := $(addprefix pdf/,$(S_PDF)) $(addprefix desktop/,$(S_PRINT)) \
+S_PDF := $(addprefix pdf/,$(S_PDF)) $(addprefix desktop/,$(S_PRINT))	\
 	 $(addprefix render/,$(S_LOOSE))
+
+# S_BROWSER are sources related to full browsers but are common
+# between RO and Unix builds
+S_BROWSER := browser.c frames.c history_core.c netsurf.c save_text.c	\
+	selection.c textinput.c
+S_BROWSER := $(addprefix desktop/,$(S_BROWSER))
+
+# S_RISCOS are sources purely for the RISC OS build
+S_RISCOS := 401login.c artworks.c assert.c awrender.s bitmap.c buffer.c	\
+	cookies.c configure.c debugwin.c dialog.c download.c draw.c	\
+	filetype.c font.c global_history.c gui.c help.c history.c	\
+	hotlist.c image.c menus.c message.c palettes.c plotters.c	\
+	plugin.c print.c query.c save.c save_complete.c save_draw.c	\
+	save_pdf.c schedule.c search.c sprite.c	sslcert.c textarea.c	\
+	textselection.c theme.c theme_install.c	thumbnail.c		\
+	treeview.c ucstables.c uri.c url_complete.c url_protocol.c	\
+	wimp.c wimp_event.c window.c gui/progress_bar.c			\
+	gui/status_bar.c						\
+	$(addprefix configure/,con_cache.c con_connect.c con_content.c	\
+	con_fonts.c con_home.c con_image.c con_inter.c con_language.c	\
+	con_memory.c con_secure.c con_theme.c)
+S_RISCOS := $(addprefix riscos/,$(S_RISCOS))
+
+# S_GTK are sources purely for the GTK build
+S_GTK := font_pango.c gtk_bitmap.c gtk_gui.c gtk_schedule.c		\
+	gtk_thumbnail.c gtk_plotters.c gtk_treeview.c gtk_scaffolding.c \
+	gtk_completion.c gtk_login.c gtk_throbber.c gtk_selection.c	\
+	gtk_history.c gtk_window.c gtk_filetype.c gtk_download.c	\
+	gtk_print.c							\
+	$(addprefix dialogs/,gtk_options.c gtk_about.c)
+S_GTK := $(addprefix gtk/,$(S_GTK))
 
 # S_BEOS are sources purely for the BeOS build
 S_BEOS := beos_bitmap.cpp beos_fetch_rsrc.cpp beos_filetype.cpp beos_font.cpp \
@@ -124,7 +121,8 @@ endif
 
 clean-intermediates:
 	$(VQ)echo "   CLEAN: intermediates"
-	$(Q)$(RM) css/css_enum.c css/css_enum.h css/parser.c css/parser.out css/parser.h
+	$(Q)$(RM) css/css_enum.c css/css_enum.h css/parser.c \
+		css/parser.out css/parser.h
 	$(Q)$(RM) css/scanner.c utils/translit.c
 
 CLEANS += clean-intermediates
@@ -137,7 +135,7 @@ EXETARGET := !NetSurf/!RunImage$(EXEEXT)
 endif
 
 ifeq ($(TARGET),gtk)
-SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_PDF) $(S_GTK) $(S_DIALOGS)
+SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_PDF) $(S_GTK)
 EXETARGET := nsgtk
 endif
 
