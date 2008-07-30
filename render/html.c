@@ -645,8 +645,8 @@ bool html_meta_refresh(struct content *c, xmlNode *head)
 		/* content  := *LWS 1*DIGIT *LWS [';' *LWS *1url *LWS]
 		 * url      := "url" *LWS '=' *LWS (url-nq | url-sq | url-dq)
 		 * url-nq   := *urlchar
-		 * url-sq   := "'" (urlchar | '"') "'"
-		 * url-dq   := '"' (urlchar | "'") '"'
+		 * url-sq   := "'" *(urlchar | '"') "'"
+		 * url-dq   := '"' *(urlchar | "'") '"'
 		 * urlchar  := [#x9#x21#x23-#x26#x28-#x7E] | nonascii
 		 * nonascii := [#x80-#xD7FF#xE000-#xFFFD#x10000-#x10FFFF]
 		 */
