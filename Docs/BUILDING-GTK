@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
-  Build Instructions for GTK NetSurf                              26 July 2008
+  Build Instructions for GTK NetSurf                              30 July 2008
 --------------------------------------------------------------------------------
 
   This document provides instructions for building the GTK version of NetSurf
@@ -16,7 +16,7 @@
   and disable relevant features as you see fit.  Some of these options can be
   automatically detected and used, and where this is the case they are set to
   such.  Others cannot be automatically detected from the Makefile, so you will
-  either need to install the dependancies, or set them to NO.
+  either need to install the dependencies, or set them to NO.
   
   Once done, to build GTK NetSurf on a UNIX-like platform, simply run:
 
@@ -86,7 +86,8 @@
   currently depend on features that the official version does not have.  You
   can obtain our patched version from the following Subversion address until
   the patches are accepted upstream;
-  	svn://svn.netsurf-browser.org/branches/adamblokus/libharu/adamblokus
+
+      svn://svn.netsurf-browser.org/branches/libharu/adamblokus
 
   Lemon
 -------

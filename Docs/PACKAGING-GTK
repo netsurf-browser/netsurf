@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
-  Packaging suggestions for NetSurf                               28 July 2008
+  Packaging suggestions for NetSurf                               30 July 2008
 --------------------------------------------------------------------------------
 
   This document lays out some suggestions for people interested in packaging
@@ -17,6 +17,7 @@
   your packages be consistent.  Also remember that you can turn off
   functionality such as PDF export, RISC OS Sprite support, SVG rendering etc.
   from here should you require a smaller, lighter build.
+
 
   Launching NetSurf
 ===================
@@ -46,10 +47,10 @@
     3. /usr/share/netsurf/
 
   The second one is how the netsurf launcher script controls it.  The third
-  location is controlled the NETSURF_GTK_RESOURCES option in Makefile.config,
-  and this is the recommended way for packagers to change the location it
-  searches, as this still allows the user some flexibility in changing what
-  NetSurf uses.
+  location is controlled by the NETSURF_GTK_RESOURCES option in
+  Makefile.config, and this is the recommended way for packagers to change
+  the location it searches, as this still allows the user some flexibility in
+  changing what NetSurf uses.
 
 
   User agent string
@@ -60,7 +61,7 @@
   kept in utils/useragent.c - you'll want to change the macro called
   NETSURF_UA_FORMAT_STRING.  It's processed via sprintf, so keep that in
   mind when changing it.  The first two printf parameters are major and minor
-  version numbers, the second two are OS name (uname -s) and architecure
+  version numbers, the second two are OS name (uname -s) and architecture
   (uname -m).  You might want change this to something like:
 
       "NetSurf/%d.%d (%s; %s; Debian GNU/Linux)"
@@ -74,9 +75,8 @@
 
   If the user hasn't specified a home page URL in their Preferences, NetSurf
   defaults to a "portal" welcome page on http://www.netsurf-browser.org/ - if
-  you wish to change this, you need to do it two places currently; in the
-  function gui_init2() in gtk/gtk_gui.c and nsgtk_window_home_button_clicked()
-  in gtk/gtk_scaffolding.c.
+  you wish to change this, you can do so by editing NETSURF_HOMEPAGE in
+  Makefile.config.
 
 
   If you make significant changes to NetSurf in your package, please ask your
