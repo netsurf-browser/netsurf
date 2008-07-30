@@ -266,8 +266,8 @@ struct content {
 };
 
 extern struct content *content_list;
-extern const char *content_type_name[];
-extern const char *content_status_name[];
+extern const char * const content_type_name[];
+extern const char * const content_status_name[];
 
 
 content_type content_lookup(const char *mime_type);

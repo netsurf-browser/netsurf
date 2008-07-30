@@ -189,7 +189,7 @@ static const struct mime_entry mime_map[] = {
 };
 #define MIME_MAP_COUNT (sizeof(mime_map) / sizeof(mime_map[0]))
 
-const char *content_type_name[] = {
+const char * const content_type_name[] = {
 	"HTML",
 	"TEXTPLAIN",
 	"CSS",
@@ -231,7 +231,7 @@ const char *content_type_name[] = {
 	"UNKNOWN"
 };
 
-const char *content_status_name[] = {
+const char * const content_status_name[] = {
 	"TYPE_UNKNOWN",
 	"LOADING",
 	"READY",
