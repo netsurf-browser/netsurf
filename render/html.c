@@ -603,7 +603,7 @@ bool html_meta_refresh(struct content *c, xmlNode *head)
 	xmlNode *n;
 	xmlChar *equiv, *content;
 	union content_msg_data msg_data;
-	char *url, *end, *refresh;
+	char *url, *end, *refresh = NULL, quote = 0;
 	url_func_result res;
 
 	for (n = head == 0 ? 0 : head->children; n; n = n->next) {
@@ -642,12 +642,36 @@ bool html_meta_refresh(struct content *c, xmlNode *head)
 
 		end = (char *) content + strlen((const char *) content);
 
+		/* content  := *LWS 1*DIGIT *LWS [';' *LWS *1url *LWS]
+		 * url      := "url" *LWS '=' *LWS (url-nq | url-sq | url-dq)
+		 * url-nq   := *urlchar
+		 * url-sq   := "'" (urlchar | '"') "'"
+		 * url-dq   := '"' (urlchar | "'") '"'
+		 * urlchar  := [#x9#x21#x23-#x26#x28-#x7E] | nonascii
+		 * nonascii := [#x80-#xD7FF#xE000-#xFFFD#x10000-#x10FFFF]
+		 */
+
+		/* *LWS 1*DIGIT */
 		msg_data.delay = (int)strtol((char *) content, &url, 10);
 		/* a very small delay and self-referencing URL can cause a loop
 		 * that grinds machines to a halt. To prevent this we set a
 		 * minimum refresh delay of 1s. */
 		if (msg_data.delay < 1)
 			msg_data.delay = 1;
+
+		/* *LWS */
+		while (url < end && isspace(*url)) {
+			url++;
+		}
+
+		/* ';' */
+		if (url < end && *url == ';')
+			url++;
+
+		/* *LWS */
+		while (url < end && isspace(*url)) {
+			url++;
+		}
 
 		if (url == end) {
 			/* Just delay specified, so refresh current page */
@@ -665,62 +689,89 @@ bool html_meta_refresh(struct content *c, xmlNode *head)
 			break;
 		}
 
-		for ( ; url <= end - 4; url++) {
-			if (!strncasecmp(url, "url=", 4)) {
-				url += 4;
-				break;
-			}
-		}
-
-		/* various sites contain junk meta refresh URL components,
-		 * so attempt to deal with this by stripping likely garbage
-		 * from the beginning and end of URLs */
-		while (url < end) {
-			if (isspace(*url) || *url == '\'' || *url == '"')
-				url++;
-			else
-				break;
-		}
-
-		while (end > url) {
-			if (isspace(end[-1]) || end[-1] == '\'' ||
-					end[-1] == '"')
-				*--end = '\0';
-			else
-				break;
-		}
-
-		if (url < end) {
-			res = url_join(url, c->data.html.base_url, &refresh);
-
-			xmlFree(content);
-
-			if (res == URL_FUNC_NOMEM) {
-				msg_data.error = messages_get("NoMemory");
-				content_broadcast(c,
-					CONTENT_MSG_ERROR, msg_data);
-				return false;
-			} else if (res == URL_FUNC_FAILED) {
-				/* This isn't fatal so carry on looking */
+		/* "url" */
+		if (url <= end - 3) {
+			if (strncasecmp(url, "url", 3) == 0) {
+				url += 3;
+			} else {
+				/* Unexpected input, ignore this header */
 				continue;
 			}
-
-			c->refresh = talloc_strdup(c, refresh);
-
-			free(refresh);
-
-			if (!c->refresh) {
-				msg_data.error = messages_get("NoMemory");
-				content_broadcast(c,
-					CONTENT_MSG_ERROR, msg_data);
-				return false;
-			}
-
-			content_broadcast(c, CONTENT_MSG_REFRESH, msg_data);
-			break;
+		} else {
+			/* Insufficient input, ignore this header */
+			continue;
 		}
 
+		/* *LWS */
+		while (url < end && isspace(*url)) {
+			url++;
+		}
+
+		/* '=' */
+		if (url < end) {
+			if (*url == '=') {
+				url++;
+			} else {
+				/* Unexpected input, ignore this header */
+				continue;
+			}
+		} else {
+			/* Insufficient input, ignore this header */
+			continue;
+		}
+
+		/* *LWS */
+		while (url < end && isspace(*url)) {
+			url++;
+		}
+
+		/* '"' or "'" */
+		if (url < end && (*url == '"' || *url == '\'')) {
+			quote = *url;
+			url++;
+		}
+
+		/* Start of URL */
+		refresh = url;
+
+		if (quote != 0) {
+			/* url-sq | url-dq */
+			while (url < end && *url != quote)
+				url++;
+		} else {
+			/* url-nq */
+			while (url < end && !isspace(*url))
+				url++;
+		}
+
+		/* '"' or "'" or *LWS (we don't care) */
+		if (url < end)
+			*url = '\0';
+
+		res = url_join(refresh, c->data.html.base_url, &refresh);
+
 		xmlFree(content);
+
+		if (res == URL_FUNC_NOMEM) {
+			msg_data.error = messages_get("NoMemory");
+			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+			return false;
+		} else if (res == URL_FUNC_FAILED) {
+			/* This isn't fatal so carry on looking */
+			continue;
+		}
+
+		c->refresh = talloc_strdup(c, refresh);
+
+		free(refresh);
+
+		if (!c->refresh) {
+			msg_data.error = messages_get("NoMemory");
+			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+			return false;
+		}
+
+		content_broadcast(c, CONTENT_MSG_REFRESH, msg_data);
 	}
 
 	return true;
