@@ -845,10 +845,6 @@ void ro_gui_signal(int sig)
 			}
 		options_dump();
 		/*rufl_dump_state();*/
-		xhourglass_colours(old_sand, old_glass, 0, 0);
-		xhourglass_off();
-
-		__write_backtrace(sig);
 
 		/* save WimpSlot and DA to files if NetSurf$CoreDump exists */
 		int used;
@@ -875,6 +871,11 @@ void ro_gui_signal(int sig)
 						base_address + size);
 			}
 		}
+
+		xhourglass_colours(old_sand, old_glass, 0, 0);
+		xhourglass_off();
+
+		__write_backtrace(sig);
 
 		abort();
 	}
