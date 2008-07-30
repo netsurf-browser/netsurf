@@ -77,6 +77,7 @@ const struct plotter_table ro_plotters = {
 	NULL,
 	NULL,
 	ro_plot_path,
+	true
 };
 
 int ro_plot_origin_x = 0;

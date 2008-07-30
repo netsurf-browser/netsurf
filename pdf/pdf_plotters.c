@@ -64,7 +64,6 @@ static bool pdf_plot_bitmap(int x, int y, int width, int height,
 static bool pdf_plot_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
 		bool repeat_x, bool repeat_y, struct content *content);
-static bool pdf_plot_flush(void);
 static bool pdf_plot_path(float *p, unsigned int n, colour fill, float width,
 		colour c, float *transform);
 
@@ -113,8 +112,9 @@ static const struct plotter_table pdf_plotters = {
 	pdf_plot_bitmap_tile,
 	NULL,
 	NULL,
-	pdf_plot_flush,
-	pdf_plot_path
+	NULL,
+	pdf_plot_path,
+	false
 };
 
 struct printer pdf_printer= {
@@ -515,19 +515,12 @@ HPDF_Image pdf_extract_image(struct bitmap *bitmap, struct content *content)
 	return image;
 }
 
-
-bool pdf_plot_flush(void)
-{
-	return true;
-}
-
-
-static inline float transform_x(float *transform,float x,float y)
+static inline float transform_x(float *transform, float x, float y)
 {
 	return ((transform[0] * x) + (transform[2] * (-y) ) + transform[4]) * 2;
 }
 
-static inline float transform_y(float *transform,float x,float y)
+static inline float transform_y(float *transform, float x, float y)
 {
 	return page_height - (((transform[1] * x) +
 			(transform[3] * (-y)) - transform[5]) * 2);

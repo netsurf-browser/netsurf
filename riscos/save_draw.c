@@ -79,6 +79,7 @@ const struct plotter_table ro_save_draw_plotters = {
 	ro_save_draw_group_end,
 	NULL,
 	ro_save_draw_path,
+	false
 };
 
 static struct pencil_diagram *ro_save_draw_diagram;

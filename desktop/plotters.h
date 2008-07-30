@@ -52,11 +52,12 @@ struct plotter_table {
 	bool (*bitmap_tile)(int x, int y, int width, int height,
 			struct bitmap *bitmap, colour bg,
 			bool repeat_x, bool repeat_y, struct content *content);
-	bool (*group_start)(const char *name);	/** optional */
-	bool (*group_end)(void);	/** optional */
-	bool (*flush)(void);
+	bool (*group_start)(const char *name); /**< optional, may be NULL */
+	bool (*group_end)(void); /**< optional, may be NULL */
+	bool (*flush)(void); /**< optional, may be NULL */
 	bool (*path)(float *p, unsigned int n, colour fill, float width,
 			colour c, float *transform);
+	bool option_knockout; /**< when set, avoid areas are replotted more than once.  */
 };
 
 /** Current plotters, must be assigned before use. */

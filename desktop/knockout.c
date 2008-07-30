@@ -38,7 +38,6 @@ struct knockout_entry;
 
 
 static void knockout_set_plotters(void);
-static bool knockout_plot_flush(void);
 static void knockout_calculate(int x0, int y0, int x1, int y1, struct knockout_box *box);
 static bool knockout_plot_fill_recursive(struct knockout_box *box, colour c);
 static bool knockout_plot_bitmap_tile_recursive(struct knockout_box *box,
@@ -50,8 +49,6 @@ static bool knockout_plot_rectangle(int x0, int y0, int width, int height,
 static bool knockout_plot_line(int x0, int y0, int x1, int y1, int width,
 		colour c, bool dotted, bool dashed);
 static bool knockout_plot_polygon(int *p, unsigned int n, colour fill);
-static bool knockout_plot_path(float *p, unsigned int n, colour fill,
-		float width, colour c, float *transform);
 static bool knockout_plot_fill(int x0, int y0, int x1, int y1, colour c);
 static bool knockout_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
@@ -65,8 +62,11 @@ static bool knockout_plot_bitmap(int x, int y, int width, int height,
 static bool knockout_plot_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
 		bool repeat_x, bool repeat_y, struct content *content);
+static bool knockout_plot_flush(void);
 static bool knockout_plot_group_start(const char *name);
 static bool knockout_plot_group_end(void);
+static bool knockout_plot_path(float *p, unsigned int n, colour fill,
+		float width, colour c, float *transform);
 
 
 const struct plotter_table knockout_plotters = {
@@ -85,6 +85,7 @@ const struct plotter_table knockout_plotters = {
 	knockout_plot_group_end,
 	knockout_plot_flush,
 	knockout_plot_path,
+	true
 };
 
 

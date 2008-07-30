@@ -92,8 +92,6 @@ static void gtk_print_end(void);
 
 static GdkRectangle cliprect;
 
-struct plotter_table plot;
-
 static const struct plotter_table nsgtk_print_plotters = {
 	nsgtk_print_plot_clg,
 	nsgtk_print_plot_rectangle,
@@ -109,7 +107,8 @@ static const struct plotter_table nsgtk_print_plotters = {
 	NULL,
 	NULL,
 	NULL,
-	nsgtk_print_plot_path
+	nsgtk_print_plot_path,
+	false
 };
 
 static const struct printer gtk_printer= {

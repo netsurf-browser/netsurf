@@ -119,8 +119,8 @@ static bool print_fonts_plot_bitmap(int x, int y, int width, int height,
 static bool print_fonts_plot_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
 		bool repeat_x, bool repeat_y, struct content *content);
-static bool print_fonts_plot_group_start(const char *name);
-static bool print_fonts_plot_group_end(void);
+static bool print_fonts_plot_path(float *p, unsigned int n, colour fill, float width,
+		colour c, float *transform);
 static void print_fonts_callback(void *context,
 		const char *font_name, unsigned int font_size,
 		const char *s8, unsigned short *s16, unsigned int n,
@@ -141,10 +141,11 @@ static const struct plotter_table print_fonts_plotters = {
 	print_fonts_plot_arc,
 	print_fonts_plot_bitmap,
 	print_fonts_plot_bitmap_tile,
-	print_fonts_plot_group_start,
-	print_fonts_plot_group_end,
 	NULL,
-	NULL
+	NULL,
+	NULL,
+	print_fonts_plot_path,
+	false
 };
 
 
@@ -629,6 +630,7 @@ bool print_document(struct gui_window *g, const char *filename)
 	}
 
 	plot = ro_plotters;
+	plot.option_knockout = false;
 	ro_plot_set_scale(print_scale);
 	ro_gui_current_redraw_gui = g;
 	current_redraw_browser = NULL;  /* we don't want to print the
@@ -863,11 +865,8 @@ bool print_fonts_plot_bitmap_tile(int x, int y, int width, int height,
 {
 	return true;
 }
-bool print_fonts_plot_group_start(const char *name)
-{
-	return true;
-}
-bool print_fonts_plot_group_end(void)
+bool print_fonts_plot_path(float *p, unsigned int n, colour fill, float width,
+		colour c, float *transform)
 {
 	return true;
 }

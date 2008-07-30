@@ -45,7 +45,6 @@
 #include "css/css.h"
 #include "desktop/browser.h"
 #include "desktop/frames.h"
-#include "desktop/knockout.h"
 #include "desktop/plotters.h"
 #include "desktop/textinput.h"
 #include "desktop/tree.h"
@@ -1409,11 +1408,9 @@ void ro_gui_window_redraw_all(void)
 void ro_gui_window_redraw(wimp_draw *redraw)
 {
 	osbool more;
-	bool knockout = true;
 	struct gui_window *g = (struct gui_window *)ro_gui_wimp_event_get_user_data(redraw->w);
 	float scale = g->bw->scale;
 	struct content *c = g->bw->current_content;
-	int clip_x0, clip_y0, clip_x1, clip_y1, clear_x1, clear_y1;
 	os_error *error;
 
 	/*	Handle no content quickly
@@ -1435,15 +1432,6 @@ void ro_gui_window_redraw(wimp_draw *redraw)
 	ro_gui_current_redraw_gui = g;
 	current_redraw_browser = g->bw;
 
-	/* rendering textplain has no advantages using knockout rendering other
-	 * than to slow things down. */
-	if (c->type == CONTENT_TEXTPLAIN 
-#ifdef WITH_NS_SVG
-		|| c->type == CONTENT_SVG
-#endif
-	)
-		knockout = false;
-
 	/* HTML rendering handles scale itself */
 	if (c->type == CONTENT_HTML)
 		scale = 1;
@@ -1456,6 +1444,8 @@ void ro_gui_window_redraw(wimp_draw *redraw)
 		return;
 	}
 	while (more) {
+		int clip_x0, clip_y0, clip_x1, clip_y1, clear_x1, clear_y1;
+
 		ro_plot_origin_x = redraw->box.x0 - redraw->xscroll;
 		ro_plot_origin_y = redraw->box.y1 - redraw->yscroll;
 		clip_x0 = (redraw->clip.x0 - ro_plot_origin_x) / 2;
@@ -1468,10 +1458,7 @@ void ro_gui_window_redraw(wimp_draw *redraw)
 		if (ro_gui_current_redraw_gui->option.buffer_everything)
 			ro_gui_buffer_open(redraw);
 
-		if (knockout) {
-			knockout_plot_start(&plot);
-			plot.clip(clip_x0, clip_y0, clip_x1, clip_y1);
-		}
+		plot.clip(clip_x0, clip_y0, clip_x1, clip_y1);
 
 		if (c->type != CONTENT_HTML)
 			plot.clg(0x00ffffff);
@@ -1481,8 +1468,7 @@ void ro_gui_window_redraw(wimp_draw *redraw)
 				clip_x0, clip_y0, clip_x1, clip_y1,
 				g->bw->scale,
 				0xFFFFFF);
-		if (knockout)
-			knockout_plot_end();
+
 		if (ro_gui_current_redraw_gui->option.buffer_everything)
 			ro_gui_buffer_close();
 

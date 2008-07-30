@@ -93,7 +93,8 @@ const struct plotter_table nsgtk_plotters = {
 	NULL,
 	NULL,
 	NULL,
-	nsgtk_plot_path
+	nsgtk_plot_path,
+	true
 };
 
 

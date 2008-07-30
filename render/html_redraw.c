@@ -115,24 +115,27 @@ bool html_redraw(struct content *c, int x, int y,
 		float scale, unsigned long background_colour)
 {
 	struct box *box;
-	bool result;
+	bool result, want_knockout;
 
 	box = c->data.html.layout;
 	assert(box);
 
-  	knockout_plot_start(&plot);
+	want_knockout = plot.option_knockout;
+	if (want_knockout)
+		knockout_plot_start(&plot);
 
 	/* clear to background colour */
-	plot.clip(clip_x0, clip_y0, clip_x1, clip_y1);
+	result = plot.clip(clip_x0, clip_y0, clip_x1, clip_y1);
 	if (c->data.html.background_colour != TRANSPARENT)
 		background_colour = c->data.html.background_colour;
-	plot.clg(background_colour);
+	result &= plot.clg(background_colour);
 
-	result = html_redraw_box(box, x, y,
+	result &= html_redraw_box(box, x, y,
 			clip_x0, clip_y0, clip_x1, clip_y1,
 			scale, background_colour, 0);
 
-	knockout_plot_end();
+	if (want_knockout)
+		knockout_plot_end();
 
 	return result;
 
