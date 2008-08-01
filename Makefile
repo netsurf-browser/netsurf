@@ -231,6 +231,7 @@ ifeq ($(TARGET),riscos)
   $(eval $(call feature_enabled,DRAW,-DWITH_DRAW,-lpencil,Drawfile export))
   $(eval $(call feature_enabled,SPRITE,-DWITH_SPRITE,,RISC OS sprite rendering))
   $(eval $(call feature_enabled,ARTWORKS,-DWITH_ARTWORKS,,ArtWorks rendering))
+  $(eval $(call feature_enabled,PLUGINS,-DWITH_PLUGIN,,Plugin protocol support))
 endif
 
 # ----------------------------------------------------------------------------
