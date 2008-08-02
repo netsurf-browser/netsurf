@@ -60,6 +60,12 @@ else
     # Haiku implements the BeOS API
     HOST := beos
   endif
+  ifeq ($(HOST),AmigaOS)
+    HOST := amiga
+    ifeq ($(TARGET),)
+      TARGET := amiga
+    endif
+  endif
   ifeq ($(HOST),beos)
     # Build happening on BeOS platform, default target is BeOS backend
     ifeq ($(TARGET),)
@@ -81,7 +87,9 @@ ifneq ($(TARGET),riscos)
   ifneq ($(TARGET),gtk)
     ifneq ($(TARGET),beos)
       ifneq ($(TARGET),debug)
-        $(error Unknown TARGET "$(TARGET)", should either be "riscos", "gtk", "beos" or "debug")
+        ifneq ($(TARGET),amiga)
+          $(error Unknown TARGET "$(TARGET)", should either be "riscos", "gtk", "beos", "amiga" or "debug")
+        endif
       endif
     endif
   endif
@@ -360,6 +368,15 @@ ifeq ($(TARGET),beos)
     NETLDFLAGS := -lnetwork
   endif
   LDFLAGS += -lbe -ltranslation $(NETLDFLAGS)
+endif
+
+# ----------------------------------------------------------------------------
+# Amiga target setup
+# ----------------------------------------------------------------------------
+
+ifeq ($(TARGET),amiga)
+  CFLAGS += -mcrt=newlib -D__USE_INLINE__ -std=c99 -I .
+  LDFLAGS += -lxml2 -lz -ljpeg -lcurl -lm -lmng -lsocket -lpthread -lrosprite -liconv -lregex -lauto -lssl -lcrypto -lamisslauto -mcrt=newlib
 endif
 
 # ----------------------------------------------------------------------------
