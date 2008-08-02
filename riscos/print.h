@@ -27,14 +27,14 @@
 
 struct gui_window;
 
-extern struct gui_window *print_current_window;
+extern struct gui_window *ro_print_current_window;
 
-void print_save_bounce(wimp_message *m);
-void print_error(wimp_message *m);
-void print_type_odd(wimp_message *m);
-bool print_ack(wimp_message *m);
-void print_dataload_bounce(wimp_message *m);
-void print_cleanup(void);
+void ro_print_save_bounce(wimp_message *m);
+void ro_print_error(wimp_message *m);
+void ro_print_type_odd(wimp_message *m);
+bool ro_print_ack(wimp_message *m);
+void ro_print_dataload_bounce(wimp_message *m);
+void ro_print_cleanup(void);
 
 #endif /* WITH_PRINT */
 

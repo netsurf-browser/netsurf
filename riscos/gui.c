@@ -1296,8 +1296,8 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 
 			if (event == wimp_USER_MESSAGE_ACKNOWLEDGE) {
 #ifdef WITH_PRINT
-				if (print_current_window)
-					print_dataload_bounce(message);
+				if (ro_print_current_window)
+					ro_print_dataload_bounce(message);
 #endif
 			}
 			else
@@ -1306,8 +1306,8 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 
 		case message_DATA_LOAD_ACK:
 #ifdef WITH_PRINT
-			if (print_current_window)
-				print_cleanup();
+			if (ro_print_current_window)
+				ro_print_cleanup();
 #endif
 			break;
 
@@ -1404,13 +1404,13 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 #ifdef WITH_PRINT
 		case message_PRINT_SAVE:
 			if (event == wimp_USER_MESSAGE_ACKNOWLEDGE)
-				print_save_bounce(message);
+				ro_print_save_bounce(message);
 			break;
 		case message_PRINT_ERROR:
-			print_error(message);
+			ro_print_error(message);
 			break;
 		case message_PRINT_TYPE_ODD:
-			print_type_odd(message);
+			ro_print_type_odd(message);
 			break;
 #endif
 
@@ -1826,7 +1826,7 @@ void ro_msg_datasave_ack(wimp_message *message)
 	ro_msg_terminate_filename((wimp_full_message_data_xfer*)message);
 
 #ifdef WITH_PRINT
-	if (print_ack(message))
+	if (ro_print_ack(message))
 		return;
 #endif
 

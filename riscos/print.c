@@ -71,7 +71,7 @@
  *  \todo make use of print stylesheets
  */
 
-struct gui_window *print_current_window = NULL;
+struct gui_window *ro_print_current_window = NULL;
 bool print_text_black = false;
 bool print_active = false;
 
@@ -200,7 +200,7 @@ void ro_gui_print_prepare(struct gui_window *g)
 
 	assert(g);
 
-	print_current_window = g;
+	ro_print_current_window = g;
 	print_prev_message = 0;
 
 	/* Read Printer Driver name */
@@ -289,11 +289,11 @@ bool ro_gui_print_apply(wimp_w w)
 		print_max_sheets = sheets;
 	else
 		print_max_sheets = -1;
-	print_current_window->option.background_images =
+	ro_print_current_window->option.background_images =
 			ro_gui_get_icon_selected_state(dialog_print,
 					ICON_PRINT_BG_IMAGES);
 
-	print_send_printsave(print_current_window->bw->current_content);
+	print_send_printsave(ro_print_current_window->bw->current_content);
 
 	return true;
 }
@@ -346,7 +346,7 @@ void print_send_printsave(struct content *c)
 		LOG(("xwimp_send_message: 0x%x: %s",
 				e->errnum, e->errmess));
 		warn_user("WimpError", e->errmess);
-		print_cleanup();
+		ro_print_cleanup();
 	}
 	print_prev_message = m.my_ref;
 }
@@ -384,16 +384,16 @@ bool print_send_printtypeknown(wimp_message *m)
  * \param m the bounced message
  */
 
-void print_save_bounce(wimp_message *m)
+void ro_print_save_bounce(wimp_message *m)
 {
 	if (m->my_ref == 0 || m->my_ref != print_prev_message)
 		return;
 
 	/* try to print anyway (we're graphics printing) */
-	if (print_current_window) {
-		print_document(print_current_window, "printer:");
+	if (ro_print_current_window) {
+		print_document(ro_print_current_window, "printer:");
 	}
-	print_cleanup();
+	ro_print_cleanup();
 }
 
 
@@ -403,7 +403,7 @@ void print_save_bounce(wimp_message *m)
  * \param m the message containing the error
  */
 
-void print_error(wimp_message *m)
+void ro_print_error(wimp_message *m)
 {
 	pdriver_message_print_error *p = (pdriver_message_print_error*)&m->data;
 	if (m->your_ref == 0 || m->your_ref != print_prev_message)
@@ -414,7 +414,7 @@ void print_error(wimp_message *m)
 	else
 		warn_user("PrintError", p->errmess);
 
-	print_cleanup();
+	ro_print_cleanup();
 }
 
 
@@ -424,15 +424,15 @@ void print_error(wimp_message *m)
  * \param m the message to handle
  */
 
-void print_type_odd(wimp_message *m)
+void ro_print_type_odd(wimp_message *m)
 {
 	if ((m->your_ref == 0 || m->your_ref == print_prev_message) &&
 						!print_in_background) {
 		/* reply to a previous message (ie printsave) */
-		if (print_current_window && print_send_printtypeknown(m)) {
-			print_document(print_current_window, "printer:");
+		if (ro_print_current_window && print_send_printtypeknown(m)) {
+			print_document(ro_print_current_window, "printer:");
 		}
-		print_cleanup();
+		ro_print_cleanup();
 	}
 	else {
 		/* broadcast message */
@@ -462,14 +462,14 @@ void print_type_odd(wimp_message *m)
  *   a fair bit)
  */
 
-bool print_ack(wimp_message *m)
+bool ro_print_ack(wimp_message *m)
 {
 	pdriver_info_type info_type;
 	pdriver_type type;
 	os_error *error;
 
 	if (m->your_ref == 0 || m->your_ref != print_prev_message ||
-			!print_current_window)
+			!ro_print_current_window)
 		return false;
 
 	/* read printer driver type */
@@ -478,15 +478,15 @@ bool print_ack(wimp_message *m)
 		LOG(("xpdriver_info: 0x%x: %s",
 				error->errnum, error->errmess));
 		warn_user("PrintError", error->errmess);
-		print_cleanup();
+		ro_print_cleanup();
 		return true;
 	}
 	type = info_type >> 16;
 
 	/* print to file */
-	if (!print_document(print_current_window,
+	if (!print_document(ro_print_current_window,
 			m->data.data_xfer.file_name)) {
-		print_cleanup();
+		ro_print_cleanup();
 		return true;
 	}
 
@@ -510,7 +510,7 @@ bool print_ack(wimp_message *m)
 	}
 	print_prev_message = m->my_ref;
 
-	print_cleanup();
+	ro_print_cleanup();
 	return true;
 }
 
@@ -521,13 +521,13 @@ bool print_ack(wimp_message *m)
  * \param m the message to handle
  */
 
-void print_dataload_bounce(wimp_message *m)
+void ro_print_dataload_bounce(wimp_message *m)
 {
 	if (m->your_ref == 0 || m->your_ref != print_prev_message)
 		return;
 
 	xosfile_delete(m->data.data_xfer.file_name, 0, 0, 0, 0, 0);
-	print_cleanup();
+	ro_print_cleanup();
 }
 
 
@@ -535,12 +535,12 @@ void print_dataload_bounce(wimp_message *m)
  * Cleanup after printing
  */
 
-void print_cleanup(void)
+void ro_print_cleanup(void)
 {
-	if (print_current_window)
-		print_current_window->option.background_images =
+	if (ro_print_current_window)
+		ro_print_current_window->option.background_images =
 							print_bg_images;
-	print_current_window = 0;
+	ro_print_current_window = NULL;
 	print_text_black = false;
 	print_prev_message = 0;
 	print_max_sheets = -1;

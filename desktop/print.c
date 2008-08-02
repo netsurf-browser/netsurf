@@ -89,7 +89,6 @@ bool print_set_up(struct content *content,
 		const struct printer *printer, struct print_settings *settings,
 		double *height)
 {
-
 	printed_content = print_init(content, settings);
 	
 	if (!printed_content)
@@ -116,7 +115,6 @@ bool print_set_up(struct content *content,
 bool print_draw_next_page(const struct printer *printer,
 			struct print_settings *settings)
 {
-	
 	/*TODO:Plotter will have to be duplicated and passed
 	as an argument - to allow simultaneous screen and
 	page plotting*/
@@ -244,7 +242,6 @@ bool print_cleanup(struct content *content,
  */
 struct print_settings *print_make_settings(print_configuration configuration)
 {
-	
 	struct print_settings *settings;
 	
 	switch (configuration){
