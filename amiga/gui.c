@@ -18,11 +18,15 @@
 
 #include "desktop/gui.h"
 #include "desktop/netsurf.h"
+#include "desktop/options.h"
 #include "utils/messages.h"
 #include <proto/exec.h>
 #include <proto/intuition.h>
 #include "amiga/gui.h"
 #include "amiga/plotters.h"
+#include "amiga/schedule.h"
+#include "amiga/object.h"
+#include <proto/timer.h>
 
 struct browser_window *curbw;
 
@@ -30,16 +34,38 @@ char *default_stylesheet_url;
 char *adblock_stylesheet_url;
 struct gui_window *search_current_window = NULL;
 
+struct MsgPort *msgport;
+struct timerequest *tioreq;
+struct Device *TimerBase;
+struct TimerIFace *ITimer;
+
 static bool gui_start = true;
 
 void gui_init(int argc, char** argv)
 {
-	verbose_log = true;
-	messages_load("amiga_temp_build/messages");
-	default_stylesheet_url = "file://netsurf/amiga_temp_build/default.css"; //"http://www.unsatisfactorysoftware.co.uk/newlook.css"; //path_to_url(buf);
-	options_read("options");
+	msgport = AllocSysObjectTags(ASOT_PORT,
+	ASO_NoTrack,FALSE,
+	TAG_DONE);
 
+	tioreq= (struct timerequest *)AllocSysObjectTags(ASOT_IOREQUEST,
+	ASOIOR_Size,sizeof(struct timerequest),
+	ASOIOR_ReplyPort,msgport,
+	ASO_NoTrack,FALSE,
+	TAG_DONE);
+
+	OpenDevice("timer.device",UNIT_VBLANK,(struct IORequest *)tioreq,0);
+
+	TimerBase = (struct Device *)tioreq->tr_node.io_Device;
+	ITimer = (struct TimerIFace *)GetInterface((struct Library *)TimerBase,"main",1,NULL);
+
+	verbose_log = true;
+	messages_load("resources/messages"); // check locale language and read appropriate file
+	default_stylesheet_url = "file://netsurf/resources/default.css"; //"http://www.unsatisfactorysoftware.co.uk/newlook.css"; //path_to_url(buf);
+	options_read("resources/options");
 	plot=amiplot;
+
+	schedule_list = NewObjList();
+
 }
 
 void gui_init2(int argc, char** argv)
@@ -104,6 +130,16 @@ void gui_poll(bool active)
 
 void gui_quit(void)
 {
+	if(ITimer)
+	{
+		DropInterface((struct Interface *)ITimer);
+	}
+
+	CloseDevice((struct IORequest *) tioreq);
+	FreeSysObject(ASOT_IOREQUEST,tioreq);
+	FreeSysObject(ASOT_PORT,msgport);
+
+	FreeObjList(schedule_list);
 }
 
 struct gui_window *gui_create_browser_window(struct browser_window *bw,
@@ -127,6 +163,10 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 					WA_Height,       600,
 					WA_IDCMP,        IDCMP_CLOSEWINDOW,
 					WA_Title,        "NetSurf",
+					WA_AutoAdjust,   TRUE,
+					WA_SizeGadget,   TRUE,
+					WA_SizeBRight,   TRUE,
+					WA_SizeBBottom,  TRUE,
 					TAG_DONE);
 
 curwin=gwin;  //test
