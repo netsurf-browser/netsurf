@@ -70,6 +70,8 @@ static bool ro_gui_configure_click(wimp_pointer *pointer);
 static void ro_gui_configure_open_window(wimp_open *open);
 static void ro_gui_configure_close(wimp_w w);
 static bool ro_gui_configure_translate(void);
+static void ro_gui_configure_register(const char *window,
+		bool (*initialise)(wimp_w w), void (*finalise)(wimp_w w));
 
 void ro_gui_configure_initialise(void)
 {
