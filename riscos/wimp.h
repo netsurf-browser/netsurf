@@ -43,9 +43,8 @@ void ro_convert_pixels_to_os_units(os_coord *pixels, os_mode mode);
 
 #define ro_gui_redraw_icon(w, i) xwimp_set_icon_state(w, i, 0, 0)
 void ro_gui_force_redraw_icon(wimp_w w, wimp_i i);
-char *ro_gui_get_icon_string(wimp_w w, wimp_i i);
-void ro_gui_set_icon_string(wimp_w w, wimp_i i, const char *text);
-void ro_gui_set_icon_string_le(wimp_w w, wimp_i i, const char *text);
+const char *ro_gui_get_icon_string(wimp_w w, wimp_i i);
+void ro_gui_set_icon_string(wimp_w w, wimp_i i, const char *text, bool is_utf8);
 
 void ro_gui_set_icon_integer(wimp_w w, wimp_i i, int value);
 void ro_gui_set_icon_decimal(wimp_w w, wimp_i i, int value, int decimal_places);

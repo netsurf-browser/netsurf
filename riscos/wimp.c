@@ -1,5 +1,6 @@
 /*
  * Copyright 2004, 2005 Richard Wilson <info@tinct.net>
+ * Copyright 2008 John Tytgat <joty@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -44,6 +45,7 @@
 
 static void ro_gui_wimp_cache_furniture_sizes(wimp_w w);
 static size_t ro_gui_strlen(const char *str);
+static int ro_gui_strncmp(const char *s1, const char *s2, size_t len);
 
 static wimpextend_furniture_sizes furniture_sizes;
 static wimp_w furniture_window = NULL;
@@ -214,16 +216,20 @@ void ro_gui_force_redraw_icon(wimp_w w, wimp_i i)
 
 
 /**
- * Read the contents of an icon.
+ * Read the contents of a text or sprite icon.
  *
  * \param  w  window handle
  * \param  i  icon handle
- * \return string in icon
+ * \return NUL terminated string in icon
+ *
+ * \todo this doesn't do local encoding -> UTF-8 to match what is done in
+ * ro_gui_set_icon_string.
  */
-char *ro_gui_get_icon_string(wimp_w w, wimp_i i)
+const char *ro_gui_get_icon_string(wimp_w w, wimp_i i)
 {
 	wimp_icon_state ic;
 	os_error *error;
+	char *itext;
 
 	ic.w = w;
 	ic.i = i;
@@ -234,26 +240,54 @@ char *ro_gui_get_icon_string(wimp_w w, wimp_i i)
 		warn_user("WimpError", error->errmess);
 		return NULL;
 	}
-	return ic.icon.data.indirected_text.text;
+	itext = (ic.icon.flags & wimp_ICON_INDIRECTED) ?
+		ic.icon.data.indirected_text.text
+		:
+		ic.icon.data.text;
+	/* Garantee NUL termination.  */
+	itext[ro_gui_strlen(itext)] = '\0';
+	return itext;
 }
 
 
 /**
- * Set the contents of an icon to a string.
+ * Set the contents of a text or sprite icon to a string.
  *
  * \param  w	 window handle
  * \param  i	 icon handle
- * \param  text  string (UTF-8 encoded) (copied)
+ * \param  text  NUL terminated string (copied)
+ * \param  is_utf8 When true, the given string is UTF-8 encoded and will be
+ * converted to local encoding currently used by the Wimp. When false, the
+ * given string is assumed to be in local encoding in use by the Wimp.
  */
-void ro_gui_set_icon_string(wimp_w w, wimp_i i, const char *text)
+void ro_gui_set_icon_string(wimp_w w, wimp_i i, const char *text, bool is_utf8)
 {
 	wimp_caret caret;
 	wimp_icon_state ic;
 	os_error *error;
-	int old_len, len;
+	size_t old_len, new_len;
 	char *local_text = NULL;
-	utf8_convert_ret err;
+	const char *text_for_icon;
+	char *dst_text;
+	size_t dst_max_len;
 	unsigned int button_type;
+
+	if (is_utf8) {
+		utf8_convert_ret err;
+		/* convert text to local encoding */
+		err = utf8_to_local_encoding(text, 0, &local_text);
+		if (err != UTF8_CONVERT_OK) {
+			/* A bad encoding should never happen, so assert this */
+			assert(err != UTF8_CONVERT_BADENC);
+			LOG(("utf8_to_enc failed"));
+			/* Paranoia */
+			local_text = NULL;
+		}
+		text_for_icon = local_text ? local_text : text;
+	}
+	else
+		text_for_icon = text;
+	new_len = strlen(text_for_icon);
 
 	/* get the icon data */
 	ic.w = w;
@@ -263,140 +297,60 @@ void ro_gui_set_icon_string(wimp_w w, wimp_i i, const char *text)
 		LOG(("xwimp_get_icon_state: 0x%x: %s",
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
-		return;
+		goto exit;
 	}
 
-	/* convert text to local encoding */
-	err = utf8_to_local_encoding(text, 0, &local_text);
-	if (err != UTF8_CONVERT_OK) {
-		/* A bad encoding should never happen, so assert this */
-		assert(err != UTF8_CONVERT_BADENC);
-		LOG(("utf8_to_enc failed"));
-		/* Paranoia */
-		local_text = NULL;
+	if (ic.icon.flags & wimp_ICON_INDIRECTED) {
+		dst_text = ic.icon.data.indirected_text.text;
+		dst_max_len = ic.icon.data.indirected_text.size;
 	}
-	len = strlen(local_text ? local_text : text);
+	else {
+		dst_text = ic.icon.data.text;
+		dst_max_len = sizeof(ic.icon.data.text);
+	}
+	old_len = ro_gui_strlen(dst_text);
+	assert(old_len < dst_max_len);
 
 	/* check that the existing text is not the same as the updated text
 	 * to stop flicker */
-	if (ic.icon.data.indirected_text.size &&
-			!strncmp(ic.icon.data.indirected_text.text,
-			local_text ? local_text : text,
-			(unsigned int)ic.icon.data.indirected_text.size - 1)) {
-		free(local_text);
-		return;
-	}
+	if (dst_max_len) {
+		if (!ro_gui_strncmp(dst_text, text_for_icon, dst_max_len))
+			goto exit;
 
-	/* copy the text across */
-	old_len = ro_gui_strlen(ic.icon.data.indirected_text.text);
-	if (ic.icon.data.indirected_text.size) {
-		strncpy(ic.icon.data.indirected_text.text,
-			local_text ? local_text : text,
-			(unsigned int)ic.icon.data.indirected_text.size - 1);
-		ic.icon.data.indirected_text.text[
-				ic.icon.data.indirected_text.size - 1] = '\0';
-	}
+		/* copy the text across */
+		strncpy(dst_text, text_for_icon, dst_max_len - 1);
+		dst_text[dst_max_len - 1] = '\0';
 
-	/* handle the caret being in the icon */
-	button_type = (ic.icon.flags & wimp_ICON_BUTTON_TYPE)
-			>> wimp_ICON_BUTTON_TYPE_SHIFT;
-	if ((button_type == wimp_BUTTON_WRITABLE) ||
-			(button_type == wimp_BUTTON_WRITE_CLICK_DRAG)) {
-		error = xwimp_get_caret_position(&caret);
-		if (error) {
-			LOG(("xwimp_get_caret_position: 0x%x: %s",
-					error->errnum, error->errmess));
-			warn_user("WimpError", error->errmess);
-			free(local_text);
-			return;
-		}
-		if ((caret.w == w) && (caret.i == i)) {
-			if ((caret.index > len) || (caret.index == old_len))
-					caret.index = len;
-			error = xwimp_set_caret_position(w, i, caret.pos.x,
-				caret.pos.y, -1, caret.index);
+		/* handle the caret being in the icon */
+		button_type = (ic.icon.flags & wimp_ICON_BUTTON_TYPE)
+				>> wimp_ICON_BUTTON_TYPE_SHIFT;
+		if ((button_type == wimp_BUTTON_WRITABLE) ||
+				(button_type == wimp_BUTTON_WRITE_CLICK_DRAG)) {
+			error = xwimp_get_caret_position(&caret);
 			if (error) {
-				LOG(("xwimp_set_caret_position: 0x%x: %s",
+				LOG(("xwimp_get_caret_position: 0x%x: %s",
 						error->errnum, error->errmess));
 				warn_user("WimpError", error->errmess);
+				goto exit;
+			}
+			if ((caret.w == w) && (caret.i == i)) {
+				if ((size_t)caret.index > new_len
+						|| (size_t)caret.index == old_len)
+					caret.index = new_len;
+				error = xwimp_set_caret_position(w, i, caret.pos.x,
+						caret.pos.y, -1, caret.index);
+				if (error) {
+					LOG(("xwimp_set_caret_position: 0x%x: %s",
+							error->errnum, error->errmess));
+					warn_user("WimpError", error->errmess);
+				}
 			}
 		}
+		ro_gui_redraw_icon(w, i);
 	}
-	ro_gui_redraw_icon(w, i);
 
+exit:
 	free(local_text);
-}
-
-
-/**
- * Set the contents of an icon to a string.
- *
- * \param  w	 window handle
- * \param  i	 icon handle
- * \param  text  string (in local encoding) (copied)
- */
-void ro_gui_set_icon_string_le(wimp_w w, wimp_i i, const char *text)
-{
-	wimp_caret caret;
-	wimp_icon_state ic;
-	os_error *error;
-	int old_len, len;
-	unsigned int button_type;
-
-	/* get the icon data */
-	ic.w = w;
-	ic.i = i;
-	error = xwimp_get_icon_state(&ic);
-	if (error) {
-		LOG(("xwimp_get_icon_state: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-		return;
-	}
-
-	/* check that the existing text is not the same as the updated text
-	 * to stop flicker */
-	if (ic.icon.data.indirected_text.size &&
-			!strncmp(ic.icon.data.indirected_text.text,
-			text,
-			(unsigned int)ic.icon.data.indirected_text.size - 1))
-		return;
-
-	/* copy the text across */
-	old_len = strlen(ic.icon.data.indirected_text.text);
-	if (ic.icon.data.indirected_text.size) {
-		strncpy(ic.icon.data.indirected_text.text, text,
-			(unsigned int)ic.icon.data.indirected_text.size - 1);
-		ic.icon.data.indirected_text.text[
-				ic.icon.data.indirected_text.size - 1] = '\0';
-	}
-
-	/* handle the caret being in the icon */
-	button_type = (ic.icon.flags & wimp_ICON_BUTTON_TYPE)
-			>> wimp_ICON_BUTTON_TYPE_SHIFT;
-	if ((button_type == wimp_BUTTON_WRITABLE) ||
-			(button_type == wimp_BUTTON_WRITE_CLICK_DRAG)) {
-		error = xwimp_get_caret_position(&caret);
-		if (error) {
-			LOG(("xwimp_get_caret_position: 0x%x: %s",
-					error->errnum, error->errmess));
-			warn_user("WimpError", error->errmess);
-			return;
-		}
-		if ((caret.w == w) && (caret.i == i)) {
-			len = strlen(text);
-			if ((caret.index > len) || (caret.index == old_len))
-					caret.index = len;
-			error = xwimp_set_caret_position(w, i, caret.pos.x,
-				caret.pos.y, -1, caret.index);
-			if (error) {
-				LOG(("xwimp_set_caret_position: 0x%x: %s",
-						error->errnum, error->errmess));
-				warn_user("WimpError", error->errmess);
-			}
-		}
-	}
-	ro_gui_redraw_icon(w, i);
 }
 
 
@@ -417,7 +371,7 @@ void ro_gui_set_icon_integer(wimp_w w, wimp_i i, int value)
 
 	setlocale(LC_NUMERIC, "C");
 
-	ro_gui_set_icon_string(w, i, buffer);
+	ro_gui_set_icon_string(w, i, buffer, true);
 }
 
 
@@ -451,7 +405,7 @@ void ro_gui_set_icon_decimal(wimp_w w, wimp_i i, int value, int decimal_places)
 
 	setlocale(LC_NUMERIC, "C");
 
-	ro_gui_set_icon_string(w, i, buffer);
+	ro_gui_set_icon_string(w, i, buffer, true);
 }
 
 
@@ -1006,13 +960,36 @@ bool ro_gui_wimp_check_window_furniture(wimp_w w, wimp_window_flags mask)
  */
 size_t ro_gui_strlen(const char *str)
 {
-	size_t len = 0;
+	const char *str_begin;
 
 	if (str == NULL)
 		return 0;
 
-	while (*(str++) >= ' ')
-		len++;
+	for (str_begin = str; *str++ >= ' '; /* */)
+		/* */;
 
-	return len;
+	return str - str_begin - 1;
+}
+
+/**
+ * RO GUI-specific strncmp, for control character terminated strings
+ *
+ * \param s1 The first string for comparison
+ * \param s2 The second string for comparison
+ * \param len Maximum number of bytes to be checked
+ * \return 0 for equal strings up to len bytes; pos for s1 being bigger than
+ * s2; neg for s1 being smaller than s2.
+ */
+int ro_gui_strncmp(const char *s1, const char *s2, size_t len)
+{
+	while (len--) {
+		char c1 = *s1++;
+		char c2 = *s2++;
+		if (c1 < ' ' || c2 < ' ')
+			return (c1 < ' ' ? 0 : c1) - (c2 < ' ' ? 0 : c2);
+		int diff = c1 - c2;
+		if (diff)
+			return diff;
+	}
+	return 0;
 }

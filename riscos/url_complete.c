@@ -68,7 +68,7 @@ static bool url_complete_callback(const char *url,
  */
 void ro_gui_url_complete_start(struct gui_window *g)
 {
-	char *url;
+	const char *url;
 
 	if ((!g->toolbar) || (!g->toolbar->display_url) ||
 			(g->window == url_complete_parent))
@@ -95,7 +95,7 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, uint32_t key)
 {
 	wimp_window_state state;
 	char *match_url;
-	char *url;
+	const char *url;
 	int i, lines;
 	int old_selection;
 	int height;
@@ -295,12 +295,12 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, uint32_t key)
 	if (url_complete_matches_selection == -1) {
 		ro_gui_set_icon_string(g->toolbar->toolbar_handle,
 				ICON_TOOLBAR_URL,
-				url_complete_original_url);
+				url_complete_original_url, true);
 	} else {
 		ro_gui_set_icon_string(g->toolbar->toolbar_handle,
 				ICON_TOOLBAR_URL,
 				url_complete_matches[
-					url_complete_matches_selection]);
+					url_complete_matches_selection], true);
 		free(url_complete_matched_string);
 		url_complete_matched_string = strdup(url_complete_matches[
 					url_complete_matches_selection]);
@@ -584,7 +584,7 @@ void ro_gui_url_complete_redraw(wimp_draw *redraw)
 			url_complete_icon.extent.y1 = -line * 44;
 			url_complete_icon.extent.y0 = -(line + 1) * 44;
 			url_complete_icon.data.indirected_text.text =
-					url_complete_matches[line];
+					(char *)url_complete_matches[line];
 			url_complete_icon.data.indirected_text.size =
 					strlen(url_complete_matches[line]);
 
@@ -653,7 +653,7 @@ bool ro_gui_url_complete_click(wimp_pointer *pointer)
 	os_error *error;
 	int selection, old_selection;
 	struct gui_window *g;
-	char *url;
+	const char *url;
 
 	if ((mouse_x == pointer->pos.x) && (mouse_y == pointer->pos.y) &&
 			(!pointer->buttons))
@@ -718,7 +718,7 @@ bool ro_gui_url_complete_click(wimp_pointer *pointer)
 		ro_gui_set_icon_string(g->toolbar->toolbar_handle,
 				ICON_TOOLBAR_URL,
 				url_complete_matches[
-					url_complete_matches_selection]);
+					url_complete_matches_selection], true);
 		global_history_add_recent(url_complete_matches[
 					url_complete_matches_selection]);
 
@@ -742,7 +742,7 @@ bool ro_gui_url_complete_click(wimp_pointer *pointer)
 		ro_gui_set_icon_string(g->toolbar->toolbar_handle,
 				ICON_TOOLBAR_URL,
 				url_complete_matches[
-					url_complete_matches_selection]);
+					url_complete_matches_selection], true);
 		ro_gui_url_complete_keypress(g, 0);
 	}
 	return true;

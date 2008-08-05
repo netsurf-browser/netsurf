@@ -180,7 +180,7 @@ bool ro_gui_wimp_event_restore(wimp_w w)
 			case EVENT_TEXT_FIELD:
 				if (event->previous_value.textual)
 					ro_gui_set_icon_string(window->w, event->i,
-						event->previous_value.textual);
+						event->previous_value.textual, true);
 				break;
 			case EVENT_CHECKBOX:
 			case EVENT_RADIO:
@@ -381,8 +381,8 @@ bool ro_gui_wimp_event_menu_selection(wimp_w w, wimp_i i, wimp_menu *menu,
 	if (menu_entry->menu_flags & wimp_MENU_TICKED)
 		return true;
 
-	ro_gui_set_icon_string_le(window->w, event->data.menu_gright.field,
-			menu_entry->data.indirected_text.text);
+	ro_gui_set_icon_string(window->w, event->data.menu_gright.field,
+			menu_entry->data.indirected_text.text, false);
 	ro_gui_wimp_event_prepare_menu(window->w, event);
 	if (window->menu_selection)
 		window->menu_selection(window->w, event->i);
@@ -591,7 +591,7 @@ bool ro_gui_wimp_event_mouse_click(wimp_pointer *pointer)
 void ro_gui_wimp_event_prepare_menu(wimp_w w, struct icon_event *event)
 {
 	int i;
-	char *text;
+	const char *text;
 	unsigned int button_type;
 	wimp_icon_state ic;
 	wimp_menu *menu;

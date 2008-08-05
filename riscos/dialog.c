@@ -148,7 +148,7 @@ void ro_gui_dialog_init(void)
 
 	/* about us */
 	dialog_info = ro_gui_dialog_create("info");
-	ro_gui_set_icon_string(dialog_info, 4, netsurf_version);
+	ro_gui_set_icon_string(dialog_info, 4, netsurf_version, true);
 	ro_gui_wimp_event_set_help_prefix(dialog_info, "HelpAppInfo");
 
 	/* page info */
@@ -687,7 +687,7 @@ void ro_gui_dialog_prepare_zoom(struct gui_window *g)
 {
 	char scale_buffer[8];
 	sprintf(scale_buffer, "%.0f", g->bw->scale * 100);
-	ro_gui_set_icon_string(dialog_zoom, ICON_ZOOM_VALUE, scale_buffer);
+	ro_gui_set_icon_string(dialog_zoom, ICON_ZOOM_VALUE, scale_buffer, true);
 	ro_gui_set_icon_selected_state(dialog_zoom, ICON_ZOOM_FRAMES, true);
 	ro_gui_set_icon_shaded_state(dialog_zoom, ICON_ZOOM_FRAMES,
 			!(g->bw->parent));
@@ -730,7 +730,7 @@ bool ro_gui_dialog_openurl_apply(wimp_w w) {
 void ro_gui_dialog_prepare_open_url(void)
 {
 	int suggestions;
-	ro_gui_set_icon_string(dialog_openurl, ICON_OPENURL_URL, "");
+	ro_gui_set_icon_string(dialog_openurl, ICON_OPENURL_URL, "", true);
 	global_history_get_recent(&suggestions);
 	ro_gui_set_icon_shaded_state(dialog_openurl,
 			ICON_OPENURL_MENU, (suggestions <= 0));

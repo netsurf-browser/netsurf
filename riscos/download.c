@@ -814,9 +814,9 @@ bool ro_gui_download_keypress(wimp_key *key)
 			return true;
 
 		case wimp_KEY_RETURN: {
-			char *name = ro_gui_get_icon_string(dw->window, ICON_DOWNLOAD_PATH);
-			if (!strrchr(name, '.'))
-			{
+			const char *name = ro_gui_get_icon_string(dw->window,
+					ICON_DOWNLOAD_PATH);
+			if (!strrchr(name, '.')) {
 				warn_user("NoPathError", NULL);
 				return true;
 			}

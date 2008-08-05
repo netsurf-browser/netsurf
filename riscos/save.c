@@ -221,7 +221,7 @@ void ro_gui_save_prepare(gui_save_type save_type, struct content *c)
 	ro_gui_set_icon_sprite(dialog_saveas, ICON_SAVE_ICON, saveas_area,
 			icon_buf);
 
-	ro_gui_set_icon_string(dialog_saveas, ICON_SAVE_PATH, name_buf);
+	ro_gui_set_icon_string(dialog_saveas, ICON_SAVE_PATH, name_buf, true);
 	ro_gui_wimp_event_memorise(dialog_saveas);
 }
 
@@ -250,7 +250,7 @@ void ro_gui_save_start_drag(wimp_pointer *pointer)
  */
 bool ro_gui_save_ok(wimp_w w)
 {
-	char *name = ro_gui_get_icon_string(w, ICON_SAVE_PATH);
+	const char *name = ro_gui_get_icon_string(w, ICON_SAVE_PATH);
 	char path[256];
 
 	if (!strrchr(name, '.')) {
@@ -602,7 +602,8 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 	}
 
 	if (saving_from_dialog)
-		ro_gui_set_icon_string(gui_save_sourcew, ICON_SAVE_PATH, path);
+		ro_gui_set_icon_string(gui_save_sourcew, ICON_SAVE_PATH,
+				path, true);
 
 	if (ro_gui_save_content(c, path)) {
 		os_error *error;

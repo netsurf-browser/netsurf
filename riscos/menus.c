@@ -904,11 +904,11 @@ void ro_gui_menu_prepare_pageinfo(struct gui_window *g)
 		}
 	}
 
-	ro_gui_set_icon_string(dialog_pageinfo, ICON_PAGEINFO_ICON, icon);
-	ro_gui_set_icon_string(dialog_pageinfo, ICON_PAGEINFO_TITLE, title);
-	ro_gui_set_icon_string(dialog_pageinfo, ICON_PAGEINFO_URL, url);
-	ro_gui_set_icon_string(dialog_pageinfo, ICON_PAGEINFO_ENC, enc);
-	ro_gui_set_icon_string(dialog_pageinfo, ICON_PAGEINFO_TYPE, mime);
+	ro_gui_set_icon_string(dialog_pageinfo, ICON_PAGEINFO_ICON, icon, true);
+	ro_gui_set_icon_string(dialog_pageinfo, ICON_PAGEINFO_TITLE, title, true);
+	ro_gui_set_icon_string(dialog_pageinfo, ICON_PAGEINFO_URL, url, true);
+	ro_gui_set_icon_string(dialog_pageinfo, ICON_PAGEINFO_ENC, enc, true);
+	ro_gui_set_icon_string(dialog_pageinfo, ICON_PAGEINFO_TYPE, mime, true);
 }
 
 
@@ -936,10 +936,10 @@ void ro_gui_menu_prepare_objectinfo(struct box *box)
 	if (box->object->mime_type)
 		mime = box->object->mime_type;
 
-	ro_gui_set_icon_string(dialog_objinfo, ICON_OBJINFO_ICON, icon_buf);
-	ro_gui_set_icon_string(dialog_objinfo, ICON_OBJINFO_URL, url);
-	ro_gui_set_icon_string(dialog_objinfo, ICON_OBJINFO_TARGET, target);
-	ro_gui_set_icon_string(dialog_objinfo, ICON_OBJINFO_TYPE, mime);
+	ro_gui_set_icon_string(dialog_objinfo, ICON_OBJINFO_ICON, icon_buf, true);
+	ro_gui_set_icon_string(dialog_objinfo, ICON_OBJINFO_URL, url, true);
+	ro_gui_set_icon_string(dialog_objinfo, ICON_OBJINFO_TARGET, target, true);
+	ro_gui_set_icon_string(dialog_objinfo, ICON_OBJINFO_TYPE, mime, true);
 }
 
 

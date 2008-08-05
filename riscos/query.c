@@ -208,7 +208,8 @@ query_id query_user(const char *query, const char *detail,
 			messages_get(query), detail ? detail : "");
 	query_buffer[sizeof query_buffer - 1] = 0;
 
-	ro_gui_set_icon_string(qw->window, ICON_QUERY_MESSAGE, query_buffer);
+	ro_gui_set_icon_string(qw->window, ICON_QUERY_MESSAGE,
+			query_buffer, true);
 
 	xwimp_set_icon_state(qw->window, ICON_QUERY_HELP,
 			wimp_ICON_DELETED, wimp_ICON_DELETED);

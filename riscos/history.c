@@ -223,7 +223,7 @@ void ro_gui_history_mouse_at(wimp_pointer *pointer)
 		return;
 	}
 
-	ro_gui_set_icon_string(dialog_tooltip, 0, url);
+	ro_gui_set_icon_string(dialog_tooltip, 0, url, true);
 
 	/* resize icon appropriately */
 	ic.w = dialog_tooltip;

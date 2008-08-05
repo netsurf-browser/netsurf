@@ -249,7 +249,7 @@ void ro_gui_hotlist_prepare_folder_dialog(struct node *node)
 	  	name = messages_get("Folder");
 	}
 	ro_gui_set_window_title(dialog_folder, title);
-	ro_gui_set_icon_string(dialog_folder, ICON_FOLDER_NAME, name);
+	ro_gui_set_icon_string(dialog_folder, ICON_FOLDER_NAME, name, true);
 	ro_gui_wimp_event_memorise(dialog_folder);
 }
 
@@ -277,8 +277,8 @@ void ro_gui_hotlist_prepare_entry_dialog(struct node *node)
 	  	name = messages_get("Link");
 	}
 	ro_gui_set_window_title(dialog_entry, title);
-	ro_gui_set_icon_string(dialog_entry, ICON_ENTRY_NAME, name);
-	ro_gui_set_icon_string(dialog_entry, ICON_ENTRY_URL, url);
+	ro_gui_set_icon_string(dialog_entry, ICON_ENTRY_NAME, name, true);
+	ro_gui_set_icon_string(dialog_entry, ICON_ENTRY_URL, url, true);
 	ro_gui_wimp_event_memorise(dialog_entry);
 }
 
@@ -326,7 +326,7 @@ bool ro_gui_hotlist_dialog_apply(wimp_w w)
 		return false;
 	}
 	ro_gui_set_icon_string(w,
-			(url ? ICON_ENTRY_NAME : ICON_FOLDER_NAME), title);
+			url ? ICON_ENTRY_NAME : ICON_FOLDER_NAME, title, true);
 
 	/* update/insert our data */
 	if (!node) {
@@ -366,7 +366,7 @@ bool ro_gui_hotlist_dialog_apply(wimp_w w)
 		if (element) {
 		  	free((void *)element->text);
 		  	element->text = url;
-		  	ro_gui_set_icon_string(w, ICON_ENTRY_URL, url);
+		  	ro_gui_set_icon_string(w, ICON_ENTRY_URL, url, true);
 		}
 		free((void *)node->data.text);
 		node->data.text = title;

@@ -247,7 +247,7 @@ void ro_gui_search_prepare(struct gui_window *g)
 
 	search_current_window = g;
 
-	ro_gui_set_icon_string(dialog_search, ICON_SEARCH_TEXT, "");
+	ro_gui_set_icon_string(dialog_search, ICON_SEARCH_TEXT, "", true);
 	ro_gui_set_icon_selected_state(dialog_search,
 				ICON_SEARCH_CASE_SENSITIVE, false);
 	ro_gui_set_icon_selected_state(dialog_search,
@@ -326,7 +326,7 @@ bool ro_gui_search_keypress(wimp_key *key)
 void start_search(bool forwards)
 {
 	int string_len;
-	char *string;
+	const char *string;
 	int i = 0;
 
 	string = ro_gui_get_icon_string(dialog_search, ICON_SEARCH_TEXT);
@@ -874,7 +874,7 @@ void show_all(bool all)
 void show_status(bool found)
 {
 	ro_gui_set_icon_string(dialog_search, ICON_SEARCH_STATUS,
-			found ? "" : messages_get("NotFound"));
+			found ? "" : messages_get("NotFound"), true);
 }
 
 #endif

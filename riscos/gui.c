@@ -2318,7 +2318,7 @@ void warn_user(const char *warning, const char *detail)
 				detail ? detail : "");
 		warn_buffer[sizeof warn_buffer - 1] = 0;
 		ro_gui_set_icon_string(dialog_warning, ICON_WARNING_MESSAGE,
-				warn_buffer);
+				warn_buffer, true);
 		xwimp_set_icon_state(dialog_warning, ICON_WARNING_HELP,
 				wimp_ICON_DELETED, wimp_ICON_DELETED);
 		ro_gui_dialog_open(dialog_warning);

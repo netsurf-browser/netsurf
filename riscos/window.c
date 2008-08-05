@@ -1017,13 +1017,13 @@ void gui_window_set_url(struct gui_window *g, const char *url)
 {
 	wimp_caret caret;
 	os_error *error;
-	char *toolbar_url;
+	const char *toolbar_url;
 
 	if (!g->toolbar)
 		return;
 
 	ro_gui_set_icon_string(g->toolbar->toolbar_handle,
-			ICON_TOOLBAR_URL, url);
+			ICON_TOOLBAR_URL, url, true);
 	ro_gui_force_redraw_icon(g->toolbar->toolbar_handle,
 			ICON_TOOLBAR_FAVICON);
 
@@ -1083,7 +1083,7 @@ void gui_window_stop_throbber(struct gui_window *g)
 	if (g->toolbar) {
 		strcpy(throb_buf, "throbber0");
 		ro_gui_set_icon_string(g->toolbar->toolbar_handle,
-				ICON_TOOLBAR_THROBBER, throb_buf);
+				ICON_TOOLBAR_THROBBER, throb_buf, true);
 		if ((g->toolbar->descriptor) && (g->toolbar->descriptor->throbber_redraw))
 			ro_gui_force_redraw_icon(g->toolbar->toolbar_handle,
 					ICON_TOOLBAR_THROBBER);
@@ -2014,7 +2014,7 @@ void ro_gui_throb(void)
 			top_g->throbber = 1;
 		sprintf(throb_buf, "throbber%i", top_g->throbber);
 		ro_gui_set_icon_string(top_g->toolbar->toolbar_handle,
-				ICON_TOOLBAR_THROBBER, throb_buf);
+				ICON_TOOLBAR_THROBBER, throb_buf, true);
 		if (top_g->toolbar->descriptor->throbber_redraw)
 			ro_gui_force_redraw_icon(top_g->toolbar->toolbar_handle,
 					ICON_TOOLBAR_THROBBER);
@@ -2278,7 +2278,7 @@ bool ro_gui_window_keypress(wimp_key *key)
 	struct content *content;
 	wimp_window_state state;
 	int y;
-	char *toolbar_url;
+	const char *toolbar_url;
 	os_error *error;
 	wimp_pointer pointer;
 	float scale;
@@ -2378,7 +2378,7 @@ bool ro_gui_window_keypress(wimp_key *key)
 				return false;
 			ro_gui_url_complete_close(NULL, 0);
 			ro_gui_set_icon_string(g->toolbar->toolbar_handle,
-					ICON_TOOLBAR_URL, "www.");
+					ICON_TOOLBAR_URL, "www.", true);
 			xwimp_set_caret_position(g->toolbar->toolbar_handle,
 					ICON_TOOLBAR_URL, 0, 0, -1, 4);
 			ro_gui_url_complete_start(g);

@@ -70,7 +70,7 @@ void theme_install_start(struct content *c)
 	}
 
 	ro_gui_set_icon_string(dialog_theme_install, ICON_THEME_INSTALL_MESSAGE,
-			messages_get("ThemeInstDown"));
+			messages_get("ThemeInstDown"), true);
 	ro_gui_set_icon_shaded_state(dialog_theme_install,
 			ICON_THEME_INSTALL_INSTALL, true);
 	ro_gui_wimp_event_register_close_window(dialog_theme_install,
@@ -111,7 +111,7 @@ void theme_install_callback(content_msg msg, struct content *c,
 		buffer[sizeof buffer - 1] = '\0';
 		ro_gui_set_icon_string(dialog_theme_install,
 				ICON_THEME_INSTALL_MESSAGE,
-				buffer);
+				buffer, true);
 		ro_gui_set_icon_shaded_state(dialog_theme_install,
 				ICON_THEME_INSTALL_INSTALL, false);
 		break;

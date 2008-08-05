@@ -320,7 +320,7 @@ void ro_gui_configure_register(const char *window,
 
 	/* Set the icon's text in current local encoding */
 	ro_gui_set_icon_string(configure_window, tool->i,
-				messages_get(tool->name));
+			messages_get(tool->name), true);
 
 	/* link into our list alphabetically */
 	if ((!configure_tools) ||
@@ -379,7 +379,7 @@ bool ro_gui_configure_translate(void)
 	for (tool = configure_tools; tool; tool = tool->next) {
 		/* re-translate the text */
 		ro_gui_set_icon_string(configure_window, tool->i,
-				messages_get(tool->name));
+				messages_get(tool->name), true);
 
 		/* update the width */
 		error = xwimptextop_string_width(tool->translated,
