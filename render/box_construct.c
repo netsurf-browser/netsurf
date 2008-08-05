@@ -2399,7 +2399,8 @@ bool box_input_text(BOX_SPECIAL_PARAMS, bool password)
 	box->gadget->box = box;
 
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "maxlength"))) {
-		box->gadget->maxlength = atoi(s);
+		if (s[0] != '\0')
+			box->gadget->maxlength = atoi(s);
 		xmlFree(s);
 	}
 
