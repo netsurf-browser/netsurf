@@ -2,7 +2,7 @@
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  * Copyright 2006 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2004 Andrew Timmins <atimmins@blueyonder.co.uk>
- * Copyright 2004 John Tytgat <John.Tytgat@aaug.net>
+ * Copyright 2004 John Tytgat <joty@netsurf-browser.org>
  * Copyright 2006 Richard Wilson <info@tinct.net>
  * Copyright 2008 Michael Drake <tlsa@netsurf-browser.org>
  *

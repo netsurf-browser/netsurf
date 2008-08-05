@@ -2,7 +2,7 @@
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2004 Andrew Timmins <atimmins@blueyonder.co.uk>
- * Copyright 2004 John Tytgat <John.Tytgat@aaug.net>
+ * Copyright 2004 John Tytgat <joty@netsurf-browser.org>
  * Copyright 2005 Adrian Lees <adrianl@users.sourceforge.net>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/

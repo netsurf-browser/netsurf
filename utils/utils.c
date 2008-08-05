@@ -3,7 +3,7 @@
  * Copyright 2004-2007 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
- * Copyright 2004 John Tytgat <John.Tytgat@aaug.net>
+ * Copyright 2004 John Tytgat <joty@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
