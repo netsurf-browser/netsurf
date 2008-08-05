@@ -49,10 +49,10 @@ bool ro_gui_options_language_initialise(wimp_w w)
 	/* set the current values */
 	ro_gui_set_icon_string(w, LANGUAGE_INTERFACE_FIELD,
 			ro_gui_options_language_name(option_language ?
-					option_language : "en"));
+					option_language : "en"), true);
 	ro_gui_set_icon_string(w, LANGUAGE_WEB_PAGES_FIELD,
 			ro_gui_options_language_name(option_accept_language ?
-					option_accept_language : "en"));
+					option_accept_language : "en"), true);
 
 	/* initialise all functions for a newly created window */
 	ro_gui_wimp_event_register_menu_gright(w, LANGUAGE_INTERFACE_FIELD,
@@ -77,10 +77,10 @@ void ro_gui_options_language_default(wimp_pointer *pointer)
 	code = ro_gui_default_language();
 	ro_gui_set_icon_string(pointer->w, LANGUAGE_INTERFACE_FIELD,
 			ro_gui_options_language_name(code ?
-					code : "en"));
+					code : "en"), true);
 	ro_gui_set_icon_string(pointer->w, LANGUAGE_WEB_PAGES_FIELD,
 			ro_gui_options_language_name(code ?
-					code : "en"));
+					code : "en"), true);
 }
 
 bool ro_gui_options_language_ok(wimp_w w)

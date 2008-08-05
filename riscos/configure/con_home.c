@@ -46,7 +46,7 @@ bool ro_gui_options_home_initialise(wimp_w w)
 
 	/* set the current values */
 	ro_gui_set_icon_string(w, HOME_URL_FIELD,
-			option_homepage_url ? option_homepage_url : "");
+			option_homepage_url ? option_homepage_url : "", true);
 	ro_gui_set_icon_selected_state(w, HOME_OPEN_STARTUP,
 			option_open_browser_at_startup);
 	global_history_get_recent(&suggestions);
@@ -71,7 +71,7 @@ bool ro_gui_options_home_initialise(wimp_w w)
 void ro_gui_options_home_default(wimp_pointer *pointer)
 {
 	/* set the default values */
-	ro_gui_set_icon_string(pointer->w, HOME_URL_FIELD, "");
+	ro_gui_set_icon_string(pointer->w, HOME_URL_FIELD, "", true);
 	ro_gui_set_icon_selected_state(pointer->w, HOME_OPEN_STARTUP, false);
 }
 

@@ -67,13 +67,13 @@ bool ro_gui_options_fonts_initialise(wimp_w w)
 	/* set the current values */
 	ro_gui_set_icon_decimal(w, FONT_DEFAULT_SIZE, option_font_size, 1);
 	ro_gui_set_icon_decimal(w, FONT_MINIMUM_SIZE, option_font_min_size, 1);
-	ro_gui_set_icon_string(w, FONT_SANS_FIELD, option_font_sans);
-	ro_gui_set_icon_string(w, FONT_SERIF_FIELD, option_font_serif);
-	ro_gui_set_icon_string(w, FONT_MONOSPACE_FIELD, option_font_mono);
-	ro_gui_set_icon_string(w, FONT_CURSIVE_FIELD, option_font_cursive);
-	ro_gui_set_icon_string(w, FONT_FANTASY_FIELD, option_font_fantasy);
+	ro_gui_set_icon_string(w, FONT_SANS_FIELD, option_font_sans, true);
+	ro_gui_set_icon_string(w, FONT_SERIF_FIELD, option_font_serif, true);
+	ro_gui_set_icon_string(w, FONT_MONOSPACE_FIELD, option_font_mono, true);
+	ro_gui_set_icon_string(w, FONT_CURSIVE_FIELD, option_font_cursive, true);
+	ro_gui_set_icon_string(w, FONT_FANTASY_FIELD, option_font_fantasy, true);
 	ro_gui_set_icon_string(w, FONT_DEFAULT_FIELD,
-			css_font_family_name[option_font_default]);
+			css_font_family_name[option_font_default], true);
 
 	if (!ro_gui_options_fonts_init_menu())
 		return false;
@@ -114,17 +114,17 @@ void ro_gui_options_fonts_default(wimp_pointer *pointer)
 	ro_gui_set_icon_decimal(pointer->w, FONT_DEFAULT_SIZE, 128, 1);
 	ro_gui_set_icon_decimal(pointer->w, FONT_MINIMUM_SIZE, 85, 1);
 	ro_gui_set_icon_string(pointer->w, FONT_SANS_FIELD,
-			nsfont_exists("Homerton") ? "Homerton" : fallback);
+			nsfont_exists("Homerton") ? "Homerton" : fallback, true);
 	ro_gui_set_icon_string(pointer->w, FONT_SERIF_FIELD,
-			nsfont_exists("Trinity") ? "Trinity" : fallback);
+			nsfont_exists("Trinity") ? "Trinity" : fallback, true);
 	ro_gui_set_icon_string(pointer->w, FONT_MONOSPACE_FIELD,
-			nsfont_exists("Corpus") ? "Corpus" : fallback);
+			nsfont_exists("Corpus") ? "Corpus" : fallback, true);
 	ro_gui_set_icon_string(pointer->w, FONT_CURSIVE_FIELD,
-			nsfont_exists("Churchill") ? "Churchill" : fallback);
+			nsfont_exists("Churchill") ? "Churchill" : fallback, true);
 	ro_gui_set_icon_string(pointer->w, FONT_FANTASY_FIELD,
-			nsfont_exists("Sassoon") ? "Sassoon" : fallback);
+			nsfont_exists("Sassoon") ? "Sassoon" : fallback, true);
 	ro_gui_set_icon_string(pointer->w, FONT_DEFAULT_FIELD,
-			css_font_family_name[1]);
+			css_font_family_name[1], true);
 }
 
 bool ro_gui_options_fonts_ok(wimp_w w)

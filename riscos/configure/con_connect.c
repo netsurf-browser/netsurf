@@ -70,18 +70,18 @@ bool ro_gui_options_connection_initialise(wimp_w w)
 	proxy_type = (option_http_proxy ? (option_http_proxy_auth + 1) : 0);
 	ro_gui_set_icon_string(w, CONNECTION_PROXY_FIELD,
 			proxy_type_menu->entries[proxy_type].
-				data.indirected_text.text);
+				data.indirected_text.text, true);
 	ro_gui_set_icon_string(w, CONNECTION_PROXY_HOST,
 			option_http_proxy_host ?
-					option_http_proxy_host : "");
+					option_http_proxy_host : "", true);
 	ro_gui_set_icon_integer(w, CONNECTION_PROXY_PORT,
 			option_http_proxy_port);
 	ro_gui_set_icon_string(w, CONNECTION_PROXY_USERNAME,
 			option_http_proxy_auth_user ?
-					option_http_proxy_auth_user : "");
+					option_http_proxy_auth_user : "", true);
 	ro_gui_set_icon_string(w, CONNECTION_PROXY_PASSWORD,
 			option_http_proxy_auth_pass ?
-					option_http_proxy_auth_pass : "");
+					option_http_proxy_auth_pass : "", true);
 	ro_gui_set_icon_integer(w, CONNECTION_MAX_FETCH_FIELD,
 			option_max_fetchers);
 	ro_gui_set_icon_integer(w, CONNECTION_HOST_FETCH_FIELD,
@@ -146,7 +146,7 @@ void ro_gui_options_connection_update(wimp_w w, wimp_i i)
 
 int ro_gui_options_connection_proxy_type(wimp_w w)
 {
-	char *text;
+	const char *text;
 	int i;
 
 	text = ro_gui_get_icon_string(w, CONNECTION_PROXY_FIELD);
@@ -161,11 +161,11 @@ void ro_gui_options_connection_default(wimp_pointer *pointer)
 {
 	ro_gui_set_icon_string(pointer->w, CONNECTION_PROXY_FIELD,
 			proxy_type_menu->entries[0].
-				data.indirected_text.text);
-	ro_gui_set_icon_string(pointer->w, CONNECTION_PROXY_HOST, "");
+				data.indirected_text.text, true);
+	ro_gui_set_icon_string(pointer->w, CONNECTION_PROXY_HOST, "", true);
 	ro_gui_set_icon_integer(pointer->w, CONNECTION_PROXY_PORT, 8080);
-	ro_gui_set_icon_string(pointer->w, CONNECTION_PROXY_USERNAME, "");
-	ro_gui_set_icon_string(pointer->w, CONNECTION_PROXY_PASSWORD, "");
+	ro_gui_set_icon_string(pointer->w, CONNECTION_PROXY_USERNAME, "", true);
+	ro_gui_set_icon_string(pointer->w, CONNECTION_PROXY_PASSWORD, "", true);
 	ro_gui_set_icon_integer(pointer->w, CONNECTION_MAX_FETCH_FIELD, 24);
 	ro_gui_set_icon_integer(pointer->w, CONNECTION_HOST_FETCH_FIELD, 5);
 	ro_gui_set_icon_integer(pointer->w, CONNECTION_CACHE_FETCH_FIELD, 6);

@@ -79,11 +79,11 @@ bool ro_gui_options_image_initialise(wimp_w w)
 		if ((unsigned int)option_fg_plot_style == tinct_options[i])
 			ro_gui_set_icon_string(w, IMAGE_FOREGROUND_FIELD,
 					image_quality_menu->entries[i].
-						data.indirected_text.text);
+						data.indirected_text.text, true);
 		if ((unsigned int)option_bg_plot_style == tinct_options[i])
 			ro_gui_set_icon_string(w, IMAGE_BACKGROUND_FIELD,
 					image_quality_menu->entries[i].
-						data.indirected_text.text);
+						data.indirected_text.text, true);
 	}
 	ro_gui_set_icon_decimal(w, IMAGE_SPEED_FIELD, option_minimum_gif_delay, 2);
 	ro_gui_set_icon_selected_state(w, IMAGE_DISABLE_ANIMATION,
@@ -179,16 +179,16 @@ void ro_gui_options_image_redraw(wimp_draw *redraw)
 
 void ro_gui_options_image_read(wimp_w w, unsigned int *bg, unsigned int *fg)
 {
-	char *text;
+	const char *text;
 	int i;
 
 	text = ro_gui_get_icon_string(w, IMAGE_FOREGROUND_FIELD);
-	for (i = 0; (i < 4); i++)
+	for (i = 0; i < 4; i++)
 		if (!strcmp(text, image_quality_menu->entries[i].
 				data.indirected_text.text))
 			*fg = tinct_options[i];
 	text = ro_gui_get_icon_string(w, IMAGE_BACKGROUND_FIELD);
-	for (i = 0; (i < 4); i++)
+	for (i = 0; i < 4; i++)
 		if (!strcmp(text, image_quality_menu->entries[i].
 				data.indirected_text.text))
 			*bg = tinct_options[i];
@@ -203,10 +203,10 @@ bool ro_gui_options_image_click(wimp_pointer *pointer)
 		case IMAGE_DEFAULT_BUTTON:
 			ro_gui_set_icon_string(pointer->w, IMAGE_FOREGROUND_FIELD,
 					image_quality_menu->entries[3].
-						data.indirected_text.text);
+						data.indirected_text.text, true);
   			ro_gui_set_icon_string(pointer->w, IMAGE_BACKGROUND_FIELD,
 					image_quality_menu->entries[2].
-						data.indirected_text.text);
+						data.indirected_text.text, true);
 			ro_gui_set_icon_decimal(pointer->w, IMAGE_SPEED_FIELD,
 					10, 2);
 			ro_gui_set_icon_selected_state(pointer->w,
