@@ -106,6 +106,8 @@ ifeq ($(TARGET),riscos)
   ifeq ($(HOST),riscos)
     # Build for RO on RO
     GCCSDK_INSTALL_ENV := <NSLibs$$Dir>
+    CCRES := ccres
+    TPLEXT :=
     CC := gcc
     EXEEXT :=
     PKG_CONFIG :=
@@ -114,6 +116,8 @@ ifeq ($(TARGET),riscos)
     # either using GCCSDK 4 - ELF)
     GCCSDK_INSTALL_ENV ?= /home/riscos/env
     GCCSDK_INSTALL_CROSSBIN ?= /home/riscos/cross/bin
+    CCRES := $(GCCSDK_INSTALL_CROSSBIN)/ccres
+    TPLEXT := ,fec
     CC := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*gcc)
     ifneq (,$(findstring arm-unknown-riscos-gcc,$(CC)))
       SUBTARGET := -elf
@@ -297,6 +301,11 @@ endif
 # ----------------------------------------------------------------------------
 
 ifeq ($(TARGET),riscos)
+  TPD_RISCOS = $(foreach TPL,$(notdir $(TPL_RISCOS)), \
+  		!NetSurf/Resources/$(TPL)/Templates$(TPLEXT))
+
+  RESOURCES = $(TPD_RISCOS)
+
   CFLAGS += -I. $(OPTFLAGS) $(WARNFLAGS) -Driscos		\
 		-std=c99 -D_BSD_SOURCE -D_POSIX_C_SOURCE	\
 		-mpoke-function-name
@@ -460,6 +469,38 @@ ifeq ($(TARGET),beos)
 $(RSRC_BEOS): $(RDEF_BEOS) $(RDEP_BEOS)
 	$(VQ)echo "      RC: $<"
 	$(Q)$(BEOS_RC) -o $@ $<
+endif
+
+ifeq ($(TARGET),riscos)
+  # Native RO build is different as 1) it can't do piping and 2) ccres on
+  # RO does not understand Unix filespec
+  ifeq ($(HOST),riscos)
+    define compile_template
+!NetSurf/Resources/$(1)/Templates$$(TPLEXT): $(2)
+	$$(VQ)echo "TEMPLATE: $(2)"
+	$$(Q)$$(CC) -x c -E -P $$(CFLAGS) $(2) > processed_template
+	$$(Q)$$(CCRES) processed_template $$(subst /,.,$$@)
+	$$(Q)$(RM) processed_template
+CLEAN_TEMPLATES += !NetSurf/Resources/$(1)/Templates$$(TPLEXT)
+
+    endef
+  else
+    define compile_template
+!NetSurf/Resources/$(1)/Templates$$(TPLEXT): $(2)
+	$$(VQ)echo "TEMPLATE: $(2)"
+	$$(Q)$$(CC) -x c -E -P $$(CFLAGS) $(2) | $$(CCRES) - $$@
+CLEAN_TEMPLATES += !NetSurf/Resources/$(1)/Templates$$(TPLEXT)
+
+    endef
+  endif
+
+clean-templates:
+	$(VQ)echo "   CLEAN: $(CLEAN_TEMPLATES)"
+	$(Q)$(RM) $(CLEAN_TEMPLATES)
+CLEANS += clean-templates
+
+$(eval $(foreach TPL,$(TPL_RISCOS), \
+	$(call compile_template,$(notdir $(TPL)),$(TPL))))
 endif
 
 clean-target:
