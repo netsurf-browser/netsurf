@@ -20,6 +20,8 @@
 #include <assert.h>
 #include "css/css.h"
 #include "render/font.h"
+#include "amiga/gui.h"
+#include <proto/graphics.h>
 
 static bool nsfont_width(const struct css_style *style,
 	  const char *string, size_t length,
@@ -43,13 +45,28 @@ bool nsfont_width(const struct css_style *style,
 		const char *string, size_t length,
 		int *width)
 {
-	assert(style);
-	assert(string);
+//	ULONG w;
 
-	*width = length * 10;
+printf("nsfont_width\n");
+
+	*width = TextLength(currp,string,length);
+
+//	*width = length*10;
 	return true;
 }
 
+/**
+ * Find the position in a string where an x coordinate falls.
+ *
+ * \param  style        css_style for this text, with style->font_size.size ==
+ *                      CSS_FONT_SIZE_LENGTH
+ * \param  string       UTF-8 string to measure
+ * \param  length       length of string
+ * \param  x            x coordinate to search for
+ * \param  char_offset  updated to offset in string of actual_x, [0..length]
+ * \param  actual_x     updated to x coordinate of character closest to x
+ * \return  true on success, false on error and error reported
+ */
 
 bool nsfont_position_in_string(const struct css_style *style,
 		const char *string, size_t length,
@@ -65,6 +82,23 @@ bool nsfont_position_in_string(const struct css_style *style,
 	return true;
 }
 
+
+/**
+ * Find where to split a string to make it fit a width.
+ *
+ * \param  style        css_style for this text, with style->font_size.size ==
+ *                      CSS_FONT_SIZE_LENGTH
+ * \param  string       UTF-8 string to measure
+ * \param  length       length of string
+ * \param  x            width available
+ * \param  char_offset  updated to offset in string of actual_x, [0..length]
+ * \param  actual_x     updated to x coordinate of character closest to x
+ * \return  true on success, false on error and error reported
+ *
+ * On exit, [char_offset == 0 ||
+ *           string[char_offset] == ' ' ||
+ *           char_offset == length]
+ */
 
 bool nsfont_split(const struct css_style *style,
 		const char *string, size_t length,

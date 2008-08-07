@@ -22,7 +22,9 @@ void ami_get_msg(void);
 
 struct gui_window {
 	struct Window *win;
+	struct browser_window *bw;
 };
 
 struct gui_window *curwin;
+struct RastPort *currp;
 #endif

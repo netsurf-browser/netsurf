@@ -71,7 +71,7 @@ void gui_init(int argc, char** argv)
 void gui_init2(int argc, char** argv)
 {
 	struct browser_window *bw;
-	const char *addr = "http://netsurf-browser.org/welcome/";
+	const char *addr = NETSURF_HOMEPAGE; //"http://netsurf-browser.org/welcome/";
 
 	curbw = browser_window_create(addr, 0, 0, true); // curbw = temp
 }
@@ -167,9 +167,17 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 					WA_SizeGadget,   TRUE,
 					WA_SizeBRight,   TRUE,
 					WA_SizeBBottom,  TRUE,
+					WA_Activate,     TRUE,
 					TAG_DONE);
 
-curwin=gwin;  //test
+	gwin->bw = bw;
+	curwin = gwin;  //test
+	currp = gwin->win->RPort;
+
+	bw->x0 = 0;
+	bw->y0 = 0;
+	bw->x1=800;
+	bw->y1=600;
 
 	return gwin;
 }
@@ -192,12 +200,31 @@ void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
 
 void gui_window_redraw_window(struct gui_window *g)
 {
-	DebugPrintF("REDRAW2\n"); // next
+	struct content *c;
+
+	DebugPrintF("REDRAW2\n");
+
+	c = g->bw->current_content;
+	current_redraw_browser = g->bw;
+
+	currp = curwin->win->RPort;
+
+	content_redraw(c, 0, 0,
+	800,
+	600,
+	0,
+	0,
+	800,
+	600,
+	g->bw->scale, 0xFFFFFF);
+
+	current_redraw_browser = NULL;
 }
 
 void gui_window_update_box(struct gui_window *g,
 		const union content_msg_data *data)
 {
+	DebugPrintF("update box\n");
 }
 
 bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
@@ -206,25 +233,41 @@ bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 
 void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 {
+	printf("set scr\n");
 }
 
 void gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
 		int x1, int y1)
 {
+	printf("scr vis\n");
 }
 
 void gui_window_position_frame(struct gui_window *g, int x0, int y0,
 		int x1, int y1)
 {
+	printf("posn frame\n");
 }
 
 void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 		bool scaled)
 {
+	printf("get dimensions\n");
+
+	*width = 800;
+	*height = 600;
+
+/*
+	if(scaled)
+	{
+		*width /= g->bw->scale;
+		*height /= g->bw->scale;
+	}
+*/
 }
 
 void gui_window_update_extent(struct gui_window *g)
 {
+	printf("upd ext\n");
 }
 
 void gui_window_set_status(struct gui_window *g, const char *text)
@@ -234,6 +277,19 @@ void gui_window_set_status(struct gui_window *g, const char *text)
 
 void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 {
+	switch(shape)
+	{
+		case GUI_POINTER_WAIT:
+			SetWindowPointer(g->win,
+				WA_BusyPointer,TRUE,
+				WA_PointerDelay,TRUE,
+				TAG_DONE);
+		break;
+
+		default:
+			SetWindowPointer(g->win,TAG_DONE);
+		break;
+	}
 }
 
 void gui_window_hide_pointer(struct gui_window *g)
@@ -262,6 +318,7 @@ void gui_window_remove_caret(struct gui_window *g)
 
 void gui_window_new_content(struct gui_window *g)
 {
+	DebugPrintF("new content\n");
 }
 
 bool gui_window_scroll_start(struct gui_window *g)
@@ -275,6 +332,7 @@ bool gui_window_box_scroll_start(struct gui_window *g,
 
 bool gui_window_frame_resize_start(struct gui_window *g)
 {
+	printf("resize frame\n");
 }
 
 void gui_window_save_as_link(struct gui_window *g, struct content *c)
@@ -283,6 +341,7 @@ void gui_window_save_as_link(struct gui_window *g, struct content *c)
 
 void gui_window_set_scale(struct gui_window *g, float scale)
 {
+	printf("set scale\n");
 }
 
 struct gui_download_window *gui_download_window_create(const char *url,
