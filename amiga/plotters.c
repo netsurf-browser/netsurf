@@ -179,7 +179,7 @@ printf("bitmap plotter\n");
 
 	ri.Memory = bitmap->pixdata;
 	ri.BytesPerRow = bitmap->width * 4;
-	ri.RGBFormat = RGBFB_A8R8G8B8;
+	ri.RGBFormat = RGBFB_R8G8B8A8;
 
 	p96WritePixelArray((struct RenderInfo *)&ri,0,0,currp,x,y,width,height);
 
