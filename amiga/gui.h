@@ -18,11 +18,15 @@
 
 #ifndef AMIGA_GUI_H
 #define AMIGA_GUI_H
+#include <graphics/rastport.h>
+
 void ami_get_msg(void);
 
 struct gui_window {
 	struct Window *win;
 	struct browser_window *bw;
+	struct BitMap *bm;
+	struct RastPort rp;
 };
 
 struct gui_window *curwin;

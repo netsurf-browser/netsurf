@@ -28,6 +28,18 @@
 #include "amiga/object.h"
 #include <proto/timer.h>
 
+#include <proto/graphics.h>
+#include <proto/picasso96api.h>
+#include <proto/window.h>
+#include <proto/layout.h>
+#include <proto/bitmap.h>
+#include <proto/string.h>
+#include <classes/window.h>
+#include <gadgets/layout.h>
+#include <gadgets/string.h>
+#include <images/bitmap.h>
+#include <reaction/reaction_macros.h>
+
 struct browser_window *curbw;
 
 char *default_stylesheet_url;
@@ -38,8 +50,34 @@ struct MsgPort *msgport;
 struct timerequest *tioreq;
 struct Device *TimerBase;
 struct TimerIFace *ITimer;
+struct Screen *scrn;
 
-static bool gui_start = true;
+/* below is temporarily global.  actually, some of it might be permanently global -
+   we'll see after implementing multiple windows! */
+enum
+{
+    GID_MAIN=0,
+	GID_BROWSER,
+	GID_STATUS,
+	GID_URL,
+    GID_LAST
+};
+
+enum
+{
+    WID_MAIN=0,
+    WID_LAST
+};
+
+enum
+{
+    OID_MAIN=0,
+    OID_LAST
+};
+
+Object *objects[OID_LAST];
+struct Gadget *gadgets[GID_LAST];
+/* end temp global */
 
 void gui_init(int argc, char** argv)
 {
@@ -73,21 +111,53 @@ void gui_init2(int argc, char** argv)
 	struct browser_window *bw;
 	const char *addr = NETSURF_HOMEPAGE; //"http://netsurf-browser.org/welcome/";
 
-	curbw = browser_window_create(addr, 0, 0, true); // curbw = temp
+	if (option_homepage_url != NULL && option_homepage_url[0] != '\0')
+    	addr = option_homepage_url;
+
+	scrn = OpenScreenTags(NULL,
+							SA_Width,1024,
+							SA_Height,768,
+							SA_Depth,32,
+							SA_Title,messages_get("NetSurf"),
+							SA_LikeWorkbench,TRUE,
+							TAG_DONE);
+
+	bw = browser_window_create(addr, 0, 0, true); // curbw = temp
 }
 
 void ami_get_msg(void)
 {
 	struct IntuiMessage *message = NULL;
-	ULONG class;
+	ULONG class,code,result,storage = 0;
+	struct Gadget *gadaddr;
 
+/*
     while(message = (struct IntuiMessage *)GetMsg(curwin->win->UserPort))
    	{
        	class = message->Class;
+*/
 
-        switch(class)
+	while((result = RA_HandleInput(objects[OID_MAIN],&code)) != WMHI_LASTMSG)
+	{
+//printf("class %ld\n",class);
+        switch(result & WMHI_CLASSMASK) // class
        	{
-           	case IDCMP_CLOSEWINDOW:
+			case WMHI_MOUSEMOVE:
+				//printf("%ld,%ld (code %ld)\n",message->MouseX,message->MouseY,message->Code);
+			break;
+
+			case WMHI_GADGETUP:
+				switch(result & WMHI_GADGETMASK)
+				{
+					case GID_URL:
+						GetAttr(STRINGA_TextVal,gadgets[GID_URL],&storage);
+						browser_window_go(curwin->bw,(char *)storage,NULL,NULL);
+						printf("%s\n",(char *)storage);
+					break;
+				}
+			break;
+
+           	case WMHI_CLOSEWINDOW:
 				gui_window_destroy(curwin);
                	gui_quit();
 				exit(0);
@@ -96,7 +166,7 @@ void ami_get_msg(void)
            	default:
            	break;
 		}
-	ReplyMsg((struct Message *)message);
+	//ReplyMsg((struct Message *)message);
 	}
 }
 
@@ -130,6 +200,8 @@ void gui_poll(bool active)
 
 void gui_quit(void)
 {
+	CloseScreen(scrn);
+
 	if(ITimer)
 	{
 		DropInterface((struct Interface *)ITimer);
@@ -149,30 +221,65 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 	gwin = AllocVec(sizeof(struct gui_window),MEMF_CLEAR);
 
+	gwin->bm = p96AllocBitMap(800,600,32,
+		BMF_CLEAR | BMF_DISPLAYABLE | BMF_INTERLEAVED,
+		NULL,RGBFB_A8R8G8B8);
+
+	InitRastPort(&gwin->rp);
+	gwin->rp.BitMap = gwin->bm;
+
 	if(!gwin)
 	{
-		printf("not enough mem");
+		printf(messages_get("NoMemory"));
 		return 0;
 	}
 
-	gwin->win = OpenWindowTags(NULL,
-					WA_CloseGadget,  TRUE,
-					WA_DragBar,      TRUE,
-					WA_DepthGadget,  TRUE,
-					WA_Width,        800,
-					WA_Height,       600,
-					WA_IDCMP,        IDCMP_CLOSEWINDOW,
-					WA_Title,        "NetSurf",
-					WA_AutoAdjust,   TRUE,
-					WA_SizeGadget,   TRUE,
-					WA_SizeBRight,   TRUE,
-					WA_SizeBBottom,  TRUE,
-					WA_Activate,     TRUE,
-					TAG_DONE);
+	objects[OID_MAIN] = WindowObject,
+            WA_ScreenTitle, messages_get("NetSurf"),
+            WA_Title, messages_get("NetSurf"),
+            WA_Activate, TRUE,
+            WA_DepthGadget, TRUE,
+            WA_DragBar, TRUE,
+            WA_CloseGadget, TRUE,
+            WA_SizeGadget, TRUE,
+			WA_CustomScreen,scrn,
+			WA_ReportMouse,TRUE,
+            WA_IDCMP,IDCMP_MENUPICK | IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS | IDCMP_CHANGEWINDOW | IDCMP_VANILLAKEY | IDCMP_GADGETUP,
+            WINDOW_IconifyGadget, TRUE,
+//            WINDOW_NewMenu, newmenu,
+			WINDOW_HorizProp,1,
+			WINDOW_VertProp,1,
+            WINDOW_Position, WPOS_CENTERSCREEN,
+            WINDOW_ParentGroup, gadgets[GID_MAIN] = VGroupObject,
+//				LAYOUT_CharSet,106,
+                LAYOUT_SpaceOuter, TRUE,
+				LAYOUT_AddChild, gadgets[GID_URL] = StringObject,
+					GA_ID,GID_URL,
+					GA_RelVerify,TRUE,
+				StringEnd,
+				LAYOUT_AddImage, gadgets[GID_BROWSER] = BitMapObject,
+					GA_ID,GID_BROWSER,
+					BITMAP_BitMap, gwin->bm,
+					BITMAP_Width,800,
+					BITMAP_Height,600,
+					BITMAP_Screen,scrn,
+					GA_RelVerify,TRUE,
+					GA_Immediate,TRUE,
+					GA_FollowMouse,TRUE,
+				BitMapEnd,
+				LAYOUT_AddChild, gadgets[GID_STATUS] = StringObject,
+					GA_ID,GID_STATUS,
+					GA_ReadOnly,TRUE,
+				StringEnd,
+				CHILD_WeightedHeight,0,
+			EndGroup,
+		EndWindow;
+
+	gwin->win = (struct Window *)RA_OpenWindow(objects[OID_MAIN]);
 
 	gwin->bw = bw;
 	curwin = gwin;  //test
-	currp = gwin->win->RPort;
+	currp = &gwin->rp; // WINDOW.CLASS: &gwin->rp; //gwin->win->RPort;
 
 	bw->x0 = 0;
 	bw->y0 = 0;
@@ -207,7 +314,7 @@ void gui_window_redraw_window(struct gui_window *g)
 	c = g->bw->current_content;
 	current_redraw_browser = g->bw;
 
-	currp = curwin->win->RPort;
+	currp = &curwin->rp; // WINDOW.CLASS: &curwin->rp; //curwin->win->RPort;
 
 	content_redraw(c, 0, 0,
 	800,
@@ -219,6 +326,13 @@ void gui_window_redraw_window(struct gui_window *g)
 	g->bw->scale, 0xFFFFFF);
 
 	current_redraw_browser = NULL;
+
+	RethinkLayout(gadgets[GID_MAIN],
+					curwin->win,NULL,TRUE);
+
+	RefreshGList(gadgets[GID_BROWSER],curwin->win,NULL,1);
+	//RefreshSetGadgetAttrs(gadgets[GID_BROWSER],curwin->win,NULL,BITMAP_BitMap,curwin->bm,TAG_DONE);
+	//RefreshGadgets(gadgets[GID_BROWSER],curwin->win,NULL);
 }
 
 void gui_window_update_box(struct gui_window *g,
@@ -272,6 +386,7 @@ void gui_window_update_extent(struct gui_window *g)
 
 void gui_window_set_status(struct gui_window *g, const char *text)
 {
+	RefreshSetGadgetAttrs(gadgets[GID_STATUS],g->win,NULL,STRINGA_TextVal,text,TAG_DONE);
 	printf("STATUS: %s\n",text);
 }
 
