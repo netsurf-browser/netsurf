@@ -26,7 +26,6 @@
 #include <stddef.h>
 #include <string.h>
 #include <math.h>
-#define LIBICONV_PLUG
 #include <iconv.h>
 #include "content/content.h"
 #include "css/css.h"

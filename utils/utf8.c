@@ -25,7 +25,6 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
-#define LIBICONV_PLUG
 #include <iconv.h>
 
 #include "utils/log.h"
