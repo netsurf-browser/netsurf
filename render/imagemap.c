@@ -450,6 +450,8 @@ bool imagemap_addtolist(xmlNode *n, char *base_url, struct mapentry **entry)
 	}
 
 	if (new_map->type != IMAGEMAP_DEFAULT) {
+		int x, y;
+		float *xcoords, *ycoords;
 		/* coordinates are a comma-separated list of values */
 		val = strtok(coords, ",");
 		num = 1;
@@ -519,8 +521,6 @@ bool imagemap_addtolist(xmlNode *n, char *base_url, struct mapentry **entry)
 				xmlFree(coords);
 				return false;
 			}
-			int x, y;
-			float *xcoords, *ycoords;
 			while (val) {
 				x = atoi(val);
 				val = strtok('\0', ",");

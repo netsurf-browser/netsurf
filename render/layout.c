@@ -857,11 +857,11 @@ void layout_float_find_dimensions(int available_width,
 			box->gadget->type == GADGET_PASSWORD ||
 			box->gadget->type == GADGET_FILE ||
 			box->gadget->type == GADGET_TEXTAREA)) {
+		struct css_length size;
 		/* Give sensible dimensions to gadgets, with auto width/height,
 		 * that don't shrink to fit contained text. */
 		assert(box->style);
 
-		struct css_length size;
 		size.unit = CSS_UNIT_EM;
 		if (box->gadget->type == GADGET_TEXTBOX ||
 				box->gadget->type == GADGET_PASSWORD ||
@@ -1252,11 +1252,11 @@ bool layout_line(struct box *first, int *width, int *y,
 	unsigned int inline_count = 0;
 	unsigned int i;
 	struct css_length gadget_size; /* Checkbox / radio buttons */
+	const struct font_functions *font_func = content->data.html.font_func;
+
 	gadget_size.unit = CSS_UNIT_EM;
 	gadget_size.value = 1;
 	
-	const struct font_functions *font_func = content->data.html.font_func;
-
 	LOG(("first %p, first->text '%.*s', width %i, y %i, cx %i, cy %i",
 			first, (int) first->length, first->text, *width,
 			*y, cx, cy));
