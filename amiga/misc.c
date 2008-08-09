@@ -19,17 +19,31 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
-//#include "utils/url.h"
 #include "desktop/cookies.h"
+#include <proto/dos.h>
+#include "utils/messages.h"
 
 void warn_user(const char *warning, const char *detail)
 {
-	printf("WARNING: %s %s\n", warning, detail);
+	TimedDosRequesterTags(TDR_ImageType,TDRIMAGE_WARNING,
+							TDR_TitleString,messages_get("NetSurf"),
+							TDR_GadgetString,messages_get("OK"),
+							TDR_CharSet,106,
+							TDR_FormatString,"%s\n%s",
+							TDR_Arg1,messages_get(warning),
+							TDR_Arg2,detail,
+							TAG_DONE);
 }
 
 void die(const char *error)
 {
-	printf("die: %s\n", error);
+	TimedDosRequesterTags(TDR_ImageType,TDRIMAGE_ERROR,
+							TDR_TitleString,messages_get("NetSurf"),
+							TDR_GadgetString,messages_get("OK"),
+							TDR_CharSet,106,
+							TDR_FormatString,"%s",
+							TDR_Arg1,error,
+							TAG_DONE);
 	exit(1);
 }
 
