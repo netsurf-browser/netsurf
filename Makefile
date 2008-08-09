@@ -386,7 +386,7 @@ endif
 
 ifeq ($(TARGET),amiga)
   CFLAGS += -mcrt=newlib -D__USE_INLINE__ -std=c99 -I .
-  LDFLAGS += -lxml2 -lz -ljpeg -lcurl -lm -lmng -lsocket -lpthread -lrosprite -liconv -lregex -lauto -lssl -lcrypto -lamisslauto -mcrt=newlib
+  LDFLAGS += -lxml2 -lz -ljpeg -lcurl -lm -lmng -lsocket -lpthread -lrosprite -lregex -lauto -lraauto -lssl -lcrypto -lamisslauto -mcrt=newlib
 endif
 
 # ----------------------------------------------------------------------------
