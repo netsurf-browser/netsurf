@@ -29,6 +29,9 @@
 #include <proto/timer.h>
 #include "content/urldb.h"
 #include <libraries/keymap.h>
+#include "desktop/history_core.h"
+#include <proto/locale.h>
+#include <proto/dos.h>
 
 #include <proto/graphics.h>
 #include <proto/picasso96api.h>
@@ -59,8 +62,16 @@ struct Device *TimerBase;
 struct TimerIFace *ITimer;
 struct Screen *scrn;
 
+void ami_update_buttons(struct gui_window *);
+
 void gui_init(int argc, char** argv)
 {
+	struct Locale *locale;
+	char lang[100];
+	bool found=FALSE;
+	int i;
+	BPTR lock=0;
+
 	msgport = AllocSysObjectTags(ASOT_PORT,
 	ASO_NoTrack,FALSE,
 	TAG_DONE);
@@ -77,26 +88,66 @@ void gui_init(int argc, char** argv)
 	ITimer = (struct TimerIFace *)GetInterface((struct Library *)TimerBase,"main",1,NULL);
 
 //	verbose_log = true;
-	messages_load("resources/messages"); // check locale language and read appropriate file
-	default_stylesheet_url = "file://netsurf/resources/default.css"; //"http://www.unsatisfactorysoftware.co.uk/newlook.css"; //path_to_url(buf);
-	adblock_stylesheet_url = "file://netsurf/resources/adblock.css";
-	options_read("resources/options");
+
+	if(lock=Lock("Resources/LangNames",ACCESS_READ))
+	{
+		UnLock(lock);
+		messages_load("Resources/LangNames");
+	}
+
+	locale = OpenLocale(NULL);
+
+	for(i=0;i<10;i++)
+	{
+		strcpy(&lang,"Resources/");
+		if(locale->loc_PrefLanguages[i])
+		{
+			strcat(&lang,messages_get(locale->loc_PrefLanguages[i]));
+		}
+		else
+		{
+			continue;
+		}
+		strcat(&lang,"/messages");
+		printf("%s\n",lang);
+		if(lock=Lock(lang,ACCESS_READ))
+		{
+			UnLock(lock);
+			found=TRUE;
+			break;
+		}
+	}
+
+	if(!found)
+	{
+		strcpy(&lang,"Resources/en/messages");
+	}
+
+	CloseLocale(locale);
+
+	messages_load(lang); // check locale language and read appropriate file
+
+	default_stylesheet_url = "file://NetSurf/Resources/default.css"; //"http://www.unsatisfactorysoftware.co.uk/newlook.css"; //path_to_url(buf);
+	adblock_stylesheet_url = "file://NetSurf/Resources/adblock.css";
+	options_read("Resources/Options");
 
 	if (!option_cookie_file)
-	{
-		option_cookie_file = strdup("resources/cookies");
-	}
+		option_cookie_file = strdup("Resources/Cookies");
+
+/*
 	if (!option_cookie_jar)
-	{
 		option_cookie_jar = strdup("resources/cookiejar");
-	}
+*/
+
+	if (!option_ca_bundle)
+	option_ca_bundle = strdup("devs:curl-ca-bundle.crt");
 
 	plot=amiplot;
 
 	schedule_list = NewObjList();
 	window_list = NewObjList();
 
-	urldb_load("resources/urls");
+	urldb_load("Resources/URLs");
 	urldb_load_cookies(option_cookie_file);
 
 }
@@ -191,12 +242,12 @@ void ami_get_msg(void)
 					{
 						case GID_URL:
 							GetAttr(STRINGA_TextVal,gwin->gadgets[GID_URL],&storage);
-							browser_window_go(gwin->bw,(char *)storage,NULL,NULL);
+							browser_window_go(gwin->bw,(char *)storage,NULL,true);
 							printf("%s\n",(char *)storage);
 						break;
 
 						case GID_HOME:
-							browser_window_go(gwin->bw,option_homepage_url,NULL,NULL);
+							browser_window_go(gwin->bw,option_homepage_url,NULL,true);
 						break;
 
 						case GID_STOP:
@@ -205,6 +256,24 @@ void ami_get_msg(void)
 
 						case GID_RELOAD:
 							browser_window_reload(gwin->bw,false);
+						break;
+
+						case GID_BACK:
+							if(history_back_available(gwin->bw->history))
+							{
+								history_back(gwin->bw,gwin->bw->history);
+							}
+
+							ami_update_buttons(gwin);
+						break;
+
+						case GID_FORWARD:
+							if(history_forward_available(gwin->bw->history))
+							{
+								history_forward(gwin->bw,gwin->bw->history);
+							}
+
+							ami_update_buttons(gwin);
 						break;
 					}
 				break;
@@ -229,7 +298,7 @@ void ami_get_msg(void)
 		node = nnode;
 		if(destroywin)
 		{
-			gui_window_destroy(destroywin);
+			browser_window_destroy(destroywin->bw);
 			destroywin=NULL;
 		}
 	}
@@ -265,7 +334,7 @@ void gui_poll(bool active)
 
 void gui_quit(void)
 {
-//	urldb_save("resources/urls");
+//	urldb_save("resources/URLs");
 	urldb_save_cookies(option_cookie_file);
 
 	CloseScreen(scrn);
@@ -280,12 +349,39 @@ void gui_quit(void)
 	FreeSysObject(ASOT_PORT,msgport);
 
 	FreeObjList(schedule_list);
+	FreeObjList(window_list);
+}
+
+void ami_update_buttons(struct gui_window *gwin)
+{
+	bool back=FALSE,forward=TRUE;
+
+	if(!history_back_available(gwin->bw->history))
+	{
+		back=TRUE;
+	}
+
+	if(history_forward_available(gwin->bw->history))
+	{
+		forward=FALSE;
+	}
+
+	RefreshSetGadgetAttrs(gwin->gadgets[GID_BACK],gwin->win,NULL,
+		GA_Disabled,back,
+		TAG_DONE);
+
+	RefreshSetGadgetAttrs(gwin->gadgets[GID_FORWARD],gwin->win,NULL,
+		GA_Disabled,forward,
+		TAG_DONE);
+
+
 }
 
 struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		struct browser_window *clone)
 {
 	struct gui_window *gwin = NULL;
+	bool closegadg=TRUE;
 
 	gwin = AllocVec(sizeof(struct gui_window),MEMF_CLEAR);
 
@@ -307,130 +403,134 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
         case BROWSER_WINDOW_FRAMESET:
         case BROWSER_WINDOW_FRAME:
         case BROWSER_WINDOW_IFRAME:
+			closegadg=FALSE;
+		break;
         case BROWSER_WINDOW_NORMAL:
-			gwin->objects[OID_MAIN] = WindowObject,
-        	    WA_ScreenTitle, messages_get("NetSurf"),
-            	WA_Title, messages_get("NetSurf"),
-            	WA_Activate, TRUE,
-            	WA_DepthGadget, TRUE,
-            	WA_DragBar, TRUE,
-            	WA_CloseGadget, TRUE,
-            	WA_SizeGadget, TRUE,
-				WA_CustomScreen,scrn,
-				WA_ReportMouse,TRUE,
-            	WA_IDCMP,IDCMP_MENUPICK | IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS |
-					 IDCMP_NEWSIZE | IDCMP_VANILLAKEY | IDCMP_GADGETUP,
-//				WINDOW_IconifyGadget, TRUE,
-//				WINDOW_NewMenu, newmenu,
-				WINDOW_HorizProp,1,
-				WINDOW_VertProp,1,
-            	WINDOW_Position, WPOS_CENTERSCREEN,
-            	WINDOW_ParentGroup, gwin->gadgets[GID_MAIN] = VGroupObject,
-//					LAYOUT_CharSet,106,
-                	LAYOUT_SpaceOuter, TRUE,
-					LAYOUT_AddChild, HGroupObject,
-						LAYOUT_AddChild, gwin->gadgets[GID_BACK] = ButtonObject,
-							GA_ID,GID_BACK,
-							GA_RelVerify,TRUE,
-							GA_Disabled,TRUE,
-							BUTTON_Transparent,TRUE,
-							BUTTON_RenderImage,BitMapObject,
-								BITMAP_SourceFile,"TBImages:nav_west",
-								BITMAP_SelectSourceFile,"TBImages:nav_west_s",
-								BITMAP_DisabledSourceFile,"TBImages:nav_west_g",
-								BITMAP_Screen,scrn,
-								BITMAP_Masking,TRUE,
-							BitMapEnd,
-						ButtonEnd,
-						CHILD_WeightedWidth,0,
-						CHILD_WeightedHeight,0,
-						LAYOUT_AddChild, gwin->gadgets[GID_FORWARD] = ButtonObject,
-							GA_ID,GID_FORWARD,
-							GA_RelVerify,TRUE,
-							GA_Disabled,TRUE,
-							BUTTON_Transparent,TRUE,
-							BUTTON_RenderImage,BitMapObject,
-								BITMAP_SourceFile,"TBImages:nav_east",
-								BITMAP_SelectSourceFile,"TBImages:nav_east_s",
-								BITMAP_DisabledSourceFile,"TBImages:nav_east_g",
-								BITMAP_Screen,scrn,
-								BITMAP_Masking,TRUE,
-							BitMapEnd,
-						ButtonEnd,
-						CHILD_WeightedWidth,0,
-						CHILD_WeightedHeight,0,
-						LAYOUT_AddChild, gwin->gadgets[GID_STOP] = ButtonObject,
-							GA_ID,GID_STOP,
-							GA_RelVerify,TRUE,
-							BUTTON_Transparent,TRUE,
-							BUTTON_RenderImage,BitMapObject,
-								BITMAP_SourceFile,"TBImages:stop",
-								BITMAP_SelectSourceFile,"TBImages:stop_s",
-								BITMAP_DisabledSourceFile,"TBImages:stop_g",
-								BITMAP_Screen,scrn,
-								BITMAP_Masking,TRUE,
-							BitMapEnd,
-						ButtonEnd,
-						CHILD_WeightedWidth,0,
-						CHILD_WeightedHeight,0,
-						LAYOUT_AddChild, gwin->gadgets[GID_RELOAD] = ButtonObject,
-							GA_ID,GID_RELOAD,
-							GA_RelVerify,TRUE,
-							BUTTON_Transparent,TRUE,
-							BUTTON_RenderImage,BitMapObject,
-								BITMAP_SourceFile,"TBImages:reload",
-								BITMAP_SelectSourceFile,"TBImages:reload_s",
-								BITMAP_DisabledSourceFile,"TBImages:reload_g",
-								BITMAP_Screen,scrn,
-								BITMAP_Masking,TRUE,
-							BitMapEnd,
-						ButtonEnd,
-						CHILD_WeightedWidth,0,
-						CHILD_WeightedHeight,0,
-						LAYOUT_AddChild, gwin->gadgets[GID_HOME] = ButtonObject,
-							GA_ID,GID_HOME,
-							GA_RelVerify,TRUE,
-							BUTTON_Transparent,TRUE,
-							BUTTON_RenderImage,BitMapObject,
-								BITMAP_SourceFile,"TBImages:home",
-								BITMAP_SelectSourceFile,"TBImages:home_s",
-								BITMAP_DisabledSourceFile,"TBImages:home_g",
-								BITMAP_Screen,scrn,
-								BITMAP_Masking,TRUE,
-							BitMapEnd,
-						ButtonEnd,
-						CHILD_WeightedWidth,0,
-						CHILD_WeightedHeight,0,
-						LAYOUT_AddChild, gwin->gadgets[GID_URL] = StringObject,
-							GA_ID,GID_URL,
-							GA_RelVerify,TRUE,
-						StringEnd,
-					LayoutEnd,
-					LAYOUT_AddImage, gwin->gadgets[GID_BROWSER] = BitMapObject,
-						GA_ID,GID_BROWSER,
-						BITMAP_BitMap, gwin->bm,
-						BITMAP_Width,800,
-						BITMAP_Height,600,
-						BITMAP_Screen,scrn,
-						GA_RelVerify,TRUE,
-						GA_Immediate,TRUE,
-						GA_FollowMouse,TRUE,
-					BitMapEnd,
-					LAYOUT_AddChild, gwin->gadgets[GID_STATUS] = StringObject,
-						GA_ID,GID_STATUS,
-						GA_ReadOnly,TRUE,
-					StringEnd,
-					CHILD_WeightedHeight,0,
-				EndGroup,
-			EndWindow;
-
-			gwin->win = (struct Window *)RA_OpenWindow(gwin->objects[OID_MAIN]);
-
-			gwin->bw = bw;
-			curwin = gwin;  //test
-			currp = &gwin->rp; // WINDOW.CLASS: &gwin->rp; //gwin->win->RPort;
+			closegadg=TRUE;
 		break;
 	}
+
+		gwin->objects[OID_MAIN] = WindowObject,
+       	    WA_ScreenTitle, messages_get("NetSurf"),
+           	WA_Title, messages_get("NetSurf"),
+           	WA_Activate, TRUE,
+           	WA_DepthGadget, TRUE,
+           	WA_DragBar, TRUE,
+           	WA_CloseGadget, closegadg,
+           	WA_SizeGadget, TRUE,
+			WA_CustomScreen,scrn,
+			WA_ReportMouse,TRUE,
+           	WA_IDCMP,IDCMP_MENUPICK | IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS |
+				 IDCMP_NEWSIZE | IDCMP_VANILLAKEY | IDCMP_GADGETUP,
+//			WINDOW_IconifyGadget, TRUE,
+//			WINDOW_NewMenu, newmenu,
+			WINDOW_HorizProp,1,
+			WINDOW_VertProp,1,
+           	WINDOW_Position, WPOS_CENTERSCREEN,
+           	WINDOW_ParentGroup, gwin->gadgets[GID_MAIN] = VGroupObject,
+//				LAYOUT_CharSet,106,
+               	LAYOUT_SpaceOuter, TRUE,
+				LAYOUT_AddChild, HGroupObject,
+					LAYOUT_AddChild, gwin->gadgets[GID_BACK] = ButtonObject,
+						GA_ID,GID_BACK,
+						GA_RelVerify,TRUE,
+						GA_Disabled,TRUE,
+						BUTTON_Transparent,TRUE,
+						BUTTON_RenderImage,BitMapObject,
+							BITMAP_SourceFile,"TBImages:nav_west",
+							BITMAP_SelectSourceFile,"TBImages:nav_west_s",
+							BITMAP_DisabledSourceFile,"TBImages:nav_west_g",
+							BITMAP_Screen,scrn,
+							BITMAP_Masking,TRUE,
+						BitMapEnd,
+					ButtonEnd,
+					CHILD_WeightedWidth,0,
+					CHILD_WeightedHeight,0,
+					LAYOUT_AddChild, gwin->gadgets[GID_FORWARD] = ButtonObject,
+						GA_ID,GID_FORWARD,
+						GA_RelVerify,TRUE,
+						GA_Disabled,TRUE,
+						BUTTON_Transparent,TRUE,
+						BUTTON_RenderImage,BitMapObject,
+							BITMAP_SourceFile,"TBImages:nav_east",
+							BITMAP_SelectSourceFile,"TBImages:nav_east_s",
+							BITMAP_DisabledSourceFile,"TBImages:nav_east_g",
+							BITMAP_Screen,scrn,
+							BITMAP_Masking,TRUE,
+						BitMapEnd,
+					ButtonEnd,
+					CHILD_WeightedWidth,0,
+					CHILD_WeightedHeight,0,
+					LAYOUT_AddChild, gwin->gadgets[GID_STOP] = ButtonObject,
+						GA_ID,GID_STOP,
+						GA_RelVerify,TRUE,
+						BUTTON_Transparent,TRUE,
+						BUTTON_RenderImage,BitMapObject,
+							BITMAP_SourceFile,"TBImages:stop",
+							BITMAP_SelectSourceFile,"TBImages:stop_s",
+							BITMAP_DisabledSourceFile,"TBImages:stop_g",
+							BITMAP_Screen,scrn,
+							BITMAP_Masking,TRUE,
+						BitMapEnd,
+					ButtonEnd,
+					CHILD_WeightedWidth,0,
+					CHILD_WeightedHeight,0,
+					LAYOUT_AddChild, gwin->gadgets[GID_RELOAD] = ButtonObject,
+						GA_ID,GID_RELOAD,
+						GA_RelVerify,TRUE,
+						BUTTON_Transparent,TRUE,
+						BUTTON_RenderImage,BitMapObject,
+							BITMAP_SourceFile,"TBImages:reload",
+							BITMAP_SelectSourceFile,"TBImages:reload_s",
+							BITMAP_DisabledSourceFile,"TBImages:reload_g",
+							BITMAP_Screen,scrn,
+							BITMAP_Masking,TRUE,
+						BitMapEnd,
+					ButtonEnd,
+					CHILD_WeightedWidth,0,
+					CHILD_WeightedHeight,0,
+					LAYOUT_AddChild, gwin->gadgets[GID_HOME] = ButtonObject,
+						GA_ID,GID_HOME,
+						GA_RelVerify,TRUE,
+						BUTTON_Transparent,TRUE,
+						BUTTON_RenderImage,BitMapObject,
+							BITMAP_SourceFile,"TBImages:home",
+							BITMAP_SelectSourceFile,"TBImages:home_s",
+							BITMAP_DisabledSourceFile,"TBImages:home_g",
+							BITMAP_Screen,scrn,
+							BITMAP_Masking,TRUE,
+						BitMapEnd,
+					ButtonEnd,
+					CHILD_WeightedWidth,0,
+					CHILD_WeightedHeight,0,
+					LAYOUT_AddChild, gwin->gadgets[GID_URL] = StringObject,
+						GA_ID,GID_URL,
+						GA_RelVerify,TRUE,
+					StringEnd,
+				LayoutEnd,
+				LAYOUT_AddImage, gwin->gadgets[GID_BROWSER] = BitMapObject,
+					GA_ID,GID_BROWSER,
+					BITMAP_BitMap, gwin->bm,
+					BITMAP_Width,800,
+					BITMAP_Height,600,
+					BITMAP_Screen,scrn,
+					GA_RelVerify,TRUE,
+					GA_Immediate,TRUE,
+					GA_FollowMouse,TRUE,
+				BitMapEnd,
+				LAYOUT_AddChild, gwin->gadgets[GID_STATUS] = StringObject,
+					GA_ID,GID_STATUS,
+					GA_ReadOnly,TRUE,
+				StringEnd,
+				CHILD_WeightedHeight,0,
+			EndGroup,
+		EndWindow;
+
+		gwin->win = (struct Window *)RA_OpenWindow(gwin->objects[OID_MAIN]);
+
+		gwin->bw = bw;
+		curwin = gwin;  //test
+		currp = &gwin->rp; // WINDOW.CLASS: &gwin->rp; //gwin->win->RPort;
 
 	gwin->node = AddObject(window_list,AMINS_WINDOW);
 	gwin->node->objstruct = gwin;
@@ -478,17 +578,25 @@ void gui_window_redraw_window(struct gui_window *g)
 	DebugPrintF("REDRAW2\n");
 
 	c = g->bw->current_content;
+
+	if(!c) return;
+
 	current_redraw_browser = g->bw;
 
 	currp = &g->rp; // WINDOW.CLASS: &curwin->rp; //curwin->win->RPort;
 
 printf("%ld,%ld hc vc\n",hcurrent,vcurrent);
 
+	if (c->locked) return;
+//	if (c->type == CONTENT_HTML) scale = 1;
+
 	content_redraw(c, 0,0,800,600,
 	0,0,800,600,
 	g->bw->scale, 0xFFFFFF);
 
 	current_redraw_browser = NULL;
+
+	ami_update_buttons(g);
 
 	RethinkLayout(g->gadgets[GID_MAIN],
 					g->win,NULL,TRUE);
@@ -497,7 +605,44 @@ printf("%ld,%ld hc vc\n",hcurrent,vcurrent);
 void gui_window_update_box(struct gui_window *g,
 		const union content_msg_data *data)
 {
-	DebugPrintF("update box\n");
+	struct content *c;
+
+	printf("update box\n");
+
+	c = g->bw->current_content;
+	if(!c) return;
+
+	current_redraw_browser = g->bw;
+	currp = &g->rp;
+
+	if (c->locked) return;
+//	if (c->type == CONTENT_HTML) scale = 1;
+
+	content_redraw(data->redraw.object,
+	floorf(data->redraw.object_x *
+	g->bw->scale),
+	ceilf(data->redraw.object_y *
+	g->bw->scale),
+	data->redraw.object_width *
+	g->bw->scale,
+	data->redraw.object_height *
+	g->bw->scale,
+	0,0,800,600,
+	g->bw->scale,
+	0xFFFFFF);
+
+/*
+data->redraw.x, data->redraw.y,
+                                   data->redraw.width, data->redraw.height);
+*/
+	content_redraw(c, 0,0,800,600,
+	0,0,800,600,
+	g->bw->scale, 0xFFFFFF);
+
+	current_redraw_browser = NULL;
+
+	RethinkLayout(g->gadgets[GID_MAIN],
+					g->win,NULL,TRUE);
 }
 
 bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)

@@ -1,0 +1,17 @@
+# LangNames file for NetSurf AmigaOS
+# 
+# Maps AmigaOS locale.library language names to the two character
+# RISC OS equivalents, enabling localised text strings files
+# shareable with the RISC OS version of NetSurf, without the
+# hassle of renaming directories.
+#
+# Format is <Locale language name>:<two character language code>
+#
+# Netsurf will use the full AmigaOS language name if it is not
+# present in this file.  If you add a translation please use the
+# RISC OS naming scheme when possible and add it to this file!
+#
+english:en
+german:de
+french:fr
+dutch:nl
