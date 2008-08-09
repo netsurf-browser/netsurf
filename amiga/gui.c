@@ -27,6 +27,8 @@
 #include "amiga/schedule.h"
 #include "amiga/object.h"
 #include <proto/timer.h>
+#include "content/urldb.h"
+#include <libraries/keymap.h>
 
 #include <proto/graphics.h>
 #include <proto/picasso96api.h>
@@ -34,9 +36,12 @@
 #include <proto/layout.h>
 #include <proto/bitmap.h>
 #include <proto/string.h>
+#include <proto/button.h>
 #include <classes/window.h>
 #include <gadgets/layout.h>
 #include <gadgets/string.h>
+#include <gadgets/scroller.h>
+#include <gadgets/button.h>
 #include <images/bitmap.h>
 #include <reaction/reaction_macros.h>
 
@@ -46,38 +51,13 @@ char *default_stylesheet_url;
 char *adblock_stylesheet_url;
 struct gui_window *search_current_window = NULL;
 
+struct MinList *window_list;
+
 struct MsgPort *msgport;
 struct timerequest *tioreq;
 struct Device *TimerBase;
 struct TimerIFace *ITimer;
 struct Screen *scrn;
-
-/* below is temporarily global.  actually, some of it might be permanently global -
-   we'll see after implementing multiple windows! */
-enum
-{
-    GID_MAIN=0,
-	GID_BROWSER,
-	GID_STATUS,
-	GID_URL,
-    GID_LAST
-};
-
-enum
-{
-    WID_MAIN=0,
-    WID_LAST
-};
-
-enum
-{
-    OID_MAIN=0,
-    OID_LAST
-};
-
-Object *objects[OID_LAST];
-struct Gadget *gadgets[GID_LAST];
-/* end temp global */
 
 void gui_init(int argc, char** argv)
 {
@@ -96,83 +76,168 @@ void gui_init(int argc, char** argv)
 	TimerBase = (struct Device *)tioreq->tr_node.io_Device;
 	ITimer = (struct TimerIFace *)GetInterface((struct Library *)TimerBase,"main",1,NULL);
 
-	verbose_log = true;
+//	verbose_log = true;
 	messages_load("resources/messages"); // check locale language and read appropriate file
 	default_stylesheet_url = "file://netsurf/resources/default.css"; //"http://www.unsatisfactorysoftware.co.uk/newlook.css"; //path_to_url(buf);
+	adblock_stylesheet_url = "file://netsurf/resources/adblock.css";
 	options_read("resources/options");
+
+	if (!option_cookie_file)
+	{
+		option_cookie_file = strdup("resources/cookies");
+	}
+	if (!option_cookie_jar)
+	{
+		option_cookie_jar = strdup("resources/cookiejar");
+	}
+
 	plot=amiplot;
 
 	schedule_list = NewObjList();
+	window_list = NewObjList();
+
+	urldb_load("resources/urls");
+	urldb_load_cookies(option_cookie_file);
 
 }
 
 void gui_init2(int argc, char** argv)
 {
 	struct browser_window *bw;
-	const char *addr = NETSURF_HOMEPAGE; //"http://netsurf-browser.org/welcome/";
+//	const char *addr = NETSURF_HOMEPAGE; //"http://netsurf-browser.org/welcome/";
 
-	if (option_homepage_url != NULL && option_homepage_url[0] != '\0')
-    	addr = option_homepage_url;
+	if ((option_homepage_url == NULL) || (option_homepage_url[0] == '\0'))
+    	option_homepage_url = strdup(NETSURF_HOMEPAGE);
+
+//	if (option_homepage_url != NULL && option_homepage_url[0] != '\0')
+//    	addr = option_homepage_url;
 
 	scrn = OpenScreenTags(NULL,
+/*
 							SA_Width,1024,
 							SA_Height,768,
+*/
 							SA_Depth,32,
 							SA_Title,messages_get("NetSurf"),
 							SA_LikeWorkbench,TRUE,
 							TAG_DONE);
 
-	bw = browser_window_create(addr, 0, 0, true); // curbw = temp
+	bw = browser_window_create(option_homepage_url, 0, 0, true); // curbw = temp
 }
 
 void ami_get_msg(void)
 {
 	struct IntuiMessage *message = NULL;
-	ULONG class,code,result,storage = 0;
-	struct Gadget *gadaddr;
+	ULONG class,code,result,storage = 0,x,y;
+	struct nsObject *node;
+	struct nsObject *nnode;
+	struct gui_window *gwin,*destroywin=NULL;
 
-/*
-    while(message = (struct IntuiMessage *)GetMsg(curwin->win->UserPort))
-   	{
-       	class = message->Class;
-*/
+	node = (struct nsObject *)window_list->mlh_Head;
 
-	while((result = RA_HandleInput(objects[OID_MAIN],&code)) != WMHI_LASTMSG)
+	while(nnode=(struct nsObject *)(node->dtz_Node.mln_Succ))
 	{
+		gwin = node->objstruct;
+
+		while((result = RA_HandleInput(gwin->objects[OID_MAIN],&code)) != WMHI_LASTMSG)
+		{
+
 //printf("class %ld\n",class);
-        switch(result & WMHI_CLASSMASK) // class
-       	{
-			case WMHI_MOUSEMOVE:
-				//printf("%ld,%ld (code %ld)\n",message->MouseX,message->MouseY,message->Code);
-			break;
+	        switch(result & WMHI_CLASSMASK) // class
+    	   	{
+				case WMHI_MOUSEMOVE:
+					GetAttr(IA_Left,gwin->gadgets[GID_BROWSER],&storage);
+					x = gwin->win->MouseX - storage;
+					GetAttr(IA_Top,gwin->gadgets[GID_BROWSER],&storage);
+					y = gwin->win->MouseY - storage;
 
-			case WMHI_GADGETUP:
-				switch(result & WMHI_GADGETMASK)
-				{
-					case GID_URL:
-						GetAttr(STRINGA_TextVal,gadgets[GID_URL],&storage);
-						browser_window_go(curwin->bw,(char *)storage,NULL,NULL);
-						printf("%s\n",(char *)storage);
-					break;
-				}
-			break;
+					if(x>=0 && y>=0 &&x<800 && y<600)
+					{
+						browser_window_mouse_track(gwin->bw,0,x,y);
+					}
+				break;
 
-           	case WMHI_CLOSEWINDOW:
-				gui_window_destroy(curwin);
-               	gui_quit();
-				exit(0);
-           	break;
+				case WMHI_MOUSEBUTTONS:
+					GetAttr(IA_Left,gwin->gadgets[GID_BROWSER],&storage);
+					x = gwin->win->MouseX - storage;
+					GetAttr(IA_Top,gwin->gadgets[GID_BROWSER],&storage);
+					y = gwin->win->MouseY - storage;
 
-           	default:
-           	break;
+					if(x>=0 && y>=0 &&x<800 && y<600)
+					{
+						code = code>>16;
+						printf("buttons: %lx\n",code);
+						switch(code)
+						{
+/* various things aren't implemented here yet, like shift-clicks, ctrl-clicks, dragging etc */
+							case SELECTDOWN:
+								browser_window_mouse_click(gwin->bw,BROWSER_MOUSE_PRESS_1,x,y);
+							break;
+							case SELECTUP:
+								browser_window_mouse_click(gwin->bw,BROWSER_MOUSE_CLICK_1,x,y);
+							break;
+							case MIDDLEDOWN:
+								browser_window_mouse_click(gwin->bw,BROWSER_MOUSE_PRESS_2,x,y);
+							break;
+							case MIDDLEUP:
+								browser_window_mouse_click(gwin->bw,BROWSER_MOUSE_CLICK_2,x,y);
+							break;
+						}
+					}
+				break;
+
+				case WMHI_GADGETUP:
+					switch(result & WMHI_GADGETMASK) //gadaddr->GadgetID) //result & WMHI_GADGETMASK)
+					{
+						case GID_URL:
+							GetAttr(STRINGA_TextVal,gwin->gadgets[GID_URL],&storage);
+							browser_window_go(gwin->bw,(char *)storage,NULL,NULL);
+							printf("%s\n",(char *)storage);
+						break;
+
+						case GID_HOME:
+							browser_window_go(gwin->bw,option_homepage_url,NULL,NULL);
+						break;
+
+						case GID_STOP:
+							browser_window_stop(gwin->bw);
+						break;
+
+						case GID_RELOAD:
+							browser_window_reload(gwin->bw,false);
+						break;
+					}
+				break;
+
+				case WMHI_VANILLAKEY:
+					storage = result & WMHI_GADGETMASK;
+
+					printf("%lx\n",storage);
+
+					browser_window_key_press(gwin->bw,storage);
+				break;
+
+	           	case WMHI_CLOSEWINDOW:
+					destroywin=gwin;
+	           	break;
+
+	           	default:
+	           	break;
+			}
+//	ReplyMsg((struct Message *)message);
 		}
-	//ReplyMsg((struct Message *)message);
+		node = nnode;
+		if(destroywin)
+		{
+			gui_window_destroy(destroywin);
+			destroywin=NULL;
+		}
 	}
 }
 
 void gui_multitask(void)
 {
-	printf("mtask\n");
+//	printf("mtask\n");
 	ami_get_msg();
 
 /* Commented out the below as we seem to have an odd concept of multitasking
@@ -200,6 +265,9 @@ void gui_poll(bool active)
 
 void gui_quit(void)
 {
+//	urldb_save("resources/urls");
+	urldb_save_cookies(option_cookie_file);
+
 	CloseScreen(scrn);
 
 	if(ITimer)
@@ -234,65 +302,155 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		return 0;
 	}
 
-	objects[OID_MAIN] = WindowObject,
-            WA_ScreenTitle, messages_get("NetSurf"),
-            WA_Title, messages_get("NetSurf"),
-            WA_Activate, TRUE,
-            WA_DepthGadget, TRUE,
-            WA_DragBar, TRUE,
-            WA_CloseGadget, TRUE,
-            WA_SizeGadget, TRUE,
-			WA_CustomScreen,scrn,
-			WA_ReportMouse,TRUE,
-            WA_IDCMP,IDCMP_MENUPICK | IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS | IDCMP_CHANGEWINDOW | IDCMP_VANILLAKEY | IDCMP_GADGETUP,
-            WINDOW_IconifyGadget, TRUE,
-//            WINDOW_NewMenu, newmenu,
-			WINDOW_HorizProp,1,
-			WINDOW_VertProp,1,
-            WINDOW_Position, WPOS_CENTERSCREEN,
-            WINDOW_ParentGroup, gadgets[GID_MAIN] = VGroupObject,
-//				LAYOUT_CharSet,106,
-                LAYOUT_SpaceOuter, TRUE,
-				LAYOUT_AddChild, gadgets[GID_URL] = StringObject,
-					GA_ID,GID_URL,
-					GA_RelVerify,TRUE,
-				StringEnd,
-				LAYOUT_AddImage, gadgets[GID_BROWSER] = BitMapObject,
-					GA_ID,GID_BROWSER,
-					BITMAP_BitMap, gwin->bm,
-					BITMAP_Width,800,
-					BITMAP_Height,600,
-					BITMAP_Screen,scrn,
-					GA_RelVerify,TRUE,
-					GA_Immediate,TRUE,
-					GA_FollowMouse,TRUE,
-				BitMapEnd,
-				LAYOUT_AddChild, gadgets[GID_STATUS] = StringObject,
-					GA_ID,GID_STATUS,
-					GA_ReadOnly,TRUE,
-				StringEnd,
-				CHILD_WeightedHeight,0,
-			EndGroup,
-		EndWindow;
+	switch(bw->browser_window_type)
+	{
+        case BROWSER_WINDOW_FRAMESET:
+        case BROWSER_WINDOW_FRAME:
+        case BROWSER_WINDOW_IFRAME:
+        case BROWSER_WINDOW_NORMAL:
+			gwin->objects[OID_MAIN] = WindowObject,
+        	    WA_ScreenTitle, messages_get("NetSurf"),
+            	WA_Title, messages_get("NetSurf"),
+            	WA_Activate, TRUE,
+            	WA_DepthGadget, TRUE,
+            	WA_DragBar, TRUE,
+            	WA_CloseGadget, TRUE,
+            	WA_SizeGadget, TRUE,
+				WA_CustomScreen,scrn,
+				WA_ReportMouse,TRUE,
+            	WA_IDCMP,IDCMP_MENUPICK | IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS |
+					 IDCMP_NEWSIZE | IDCMP_VANILLAKEY | IDCMP_GADGETUP,
+//				WINDOW_IconifyGadget, TRUE,
+//				WINDOW_NewMenu, newmenu,
+				WINDOW_HorizProp,1,
+				WINDOW_VertProp,1,
+            	WINDOW_Position, WPOS_CENTERSCREEN,
+            	WINDOW_ParentGroup, gwin->gadgets[GID_MAIN] = VGroupObject,
+//					LAYOUT_CharSet,106,
+                	LAYOUT_SpaceOuter, TRUE,
+					LAYOUT_AddChild, HGroupObject,
+						LAYOUT_AddChild, gwin->gadgets[GID_BACK] = ButtonObject,
+							GA_ID,GID_BACK,
+							GA_RelVerify,TRUE,
+							GA_Disabled,TRUE,
+							BUTTON_Transparent,TRUE,
+							BUTTON_RenderImage,BitMapObject,
+								BITMAP_SourceFile,"TBImages:nav_west",
+								BITMAP_SelectSourceFile,"TBImages:nav_west_s",
+								BITMAP_DisabledSourceFile,"TBImages:nav_west_g",
+								BITMAP_Screen,scrn,
+								BITMAP_Masking,TRUE,
+							BitMapEnd,
+						ButtonEnd,
+						CHILD_WeightedWidth,0,
+						CHILD_WeightedHeight,0,
+						LAYOUT_AddChild, gwin->gadgets[GID_FORWARD] = ButtonObject,
+							GA_ID,GID_FORWARD,
+							GA_RelVerify,TRUE,
+							GA_Disabled,TRUE,
+							BUTTON_Transparent,TRUE,
+							BUTTON_RenderImage,BitMapObject,
+								BITMAP_SourceFile,"TBImages:nav_east",
+								BITMAP_SelectSourceFile,"TBImages:nav_east_s",
+								BITMAP_DisabledSourceFile,"TBImages:nav_east_g",
+								BITMAP_Screen,scrn,
+								BITMAP_Masking,TRUE,
+							BitMapEnd,
+						ButtonEnd,
+						CHILD_WeightedWidth,0,
+						CHILD_WeightedHeight,0,
+						LAYOUT_AddChild, gwin->gadgets[GID_STOP] = ButtonObject,
+							GA_ID,GID_STOP,
+							GA_RelVerify,TRUE,
+							BUTTON_Transparent,TRUE,
+							BUTTON_RenderImage,BitMapObject,
+								BITMAP_SourceFile,"TBImages:stop",
+								BITMAP_SelectSourceFile,"TBImages:stop_s",
+								BITMAP_DisabledSourceFile,"TBImages:stop_g",
+								BITMAP_Screen,scrn,
+								BITMAP_Masking,TRUE,
+							BitMapEnd,
+						ButtonEnd,
+						CHILD_WeightedWidth,0,
+						CHILD_WeightedHeight,0,
+						LAYOUT_AddChild, gwin->gadgets[GID_RELOAD] = ButtonObject,
+							GA_ID,GID_RELOAD,
+							GA_RelVerify,TRUE,
+							BUTTON_Transparent,TRUE,
+							BUTTON_RenderImage,BitMapObject,
+								BITMAP_SourceFile,"TBImages:reload",
+								BITMAP_SelectSourceFile,"TBImages:reload_s",
+								BITMAP_DisabledSourceFile,"TBImages:reload_g",
+								BITMAP_Screen,scrn,
+								BITMAP_Masking,TRUE,
+							BitMapEnd,
+						ButtonEnd,
+						CHILD_WeightedWidth,0,
+						CHILD_WeightedHeight,0,
+						LAYOUT_AddChild, gwin->gadgets[GID_HOME] = ButtonObject,
+							GA_ID,GID_HOME,
+							GA_RelVerify,TRUE,
+							BUTTON_Transparent,TRUE,
+							BUTTON_RenderImage,BitMapObject,
+								BITMAP_SourceFile,"TBImages:home",
+								BITMAP_SelectSourceFile,"TBImages:home_s",
+								BITMAP_DisabledSourceFile,"TBImages:home_g",
+								BITMAP_Screen,scrn,
+								BITMAP_Masking,TRUE,
+							BitMapEnd,
+						ButtonEnd,
+						CHILD_WeightedWidth,0,
+						CHILD_WeightedHeight,0,
+						LAYOUT_AddChild, gwin->gadgets[GID_URL] = StringObject,
+							GA_ID,GID_URL,
+							GA_RelVerify,TRUE,
+						StringEnd,
+					LayoutEnd,
+					LAYOUT_AddImage, gwin->gadgets[GID_BROWSER] = BitMapObject,
+						GA_ID,GID_BROWSER,
+						BITMAP_BitMap, gwin->bm,
+						BITMAP_Width,800,
+						BITMAP_Height,600,
+						BITMAP_Screen,scrn,
+						GA_RelVerify,TRUE,
+						GA_Immediate,TRUE,
+						GA_FollowMouse,TRUE,
+					BitMapEnd,
+					LAYOUT_AddChild, gwin->gadgets[GID_STATUS] = StringObject,
+						GA_ID,GID_STATUS,
+						GA_ReadOnly,TRUE,
+					StringEnd,
+					CHILD_WeightedHeight,0,
+				EndGroup,
+			EndWindow;
 
-	gwin->win = (struct Window *)RA_OpenWindow(objects[OID_MAIN]);
+			gwin->win = (struct Window *)RA_OpenWindow(gwin->objects[OID_MAIN]);
 
-	gwin->bw = bw;
-	curwin = gwin;  //test
-	currp = &gwin->rp; // WINDOW.CLASS: &gwin->rp; //gwin->win->RPort;
+			gwin->bw = bw;
+			curwin = gwin;  //test
+			currp = &gwin->rp; // WINDOW.CLASS: &gwin->rp; //gwin->win->RPort;
+		break;
+	}
 
-	bw->x0 = 0;
-	bw->y0 = 0;
-	bw->x1=800;
-	bw->y1=600;
+	gwin->node = AddObject(window_list,AMINS_WINDOW);
+	gwin->node->objstruct = gwin;
 
 	return gwin;
 }
 
 void gui_window_destroy(struct gui_window *g)
 {
-	CloseWindow(g->win);
-	FreeVec(g);
+	DisposeObject(g->objects[OID_MAIN]);
+	p96FreeBitMap(g->bm);
+	DelObject(g->node);
+//	FreeVec(g); should be freed by DelObject()
+
+	if(IsMinListEmpty(window_list))
+	{
+		/* last window closed, so exit */
+		gui_quit();
+		exit(0);
+	}
 }
 
 void gui_window_set_title(struct gui_window *g, const char *title)
@@ -308,31 +466,32 @@ void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
 void gui_window_redraw_window(struct gui_window *g)
 {
 	struct content *c;
+	Object *hscroller,*vscroller;
+	ULONG hcurrent,vcurrent;
+
+	// will also need bitmap_width and bitmap_height once resizing windows is working
+	GetAttr(WINDOW_HorizObject,g->objects[OID_MAIN],(ULONG *)&hscroller);
+	GetAttr(WINDOW_VertObject,g->objects[OID_MAIN],(ULONG *)&vscroller);
+	GetAttr(SCROLLER_Top,hscroller,&hcurrent);
+	GetAttr(SCROLLER_Top,vscroller,&vcurrent);
 
 	DebugPrintF("REDRAW2\n");
 
 	c = g->bw->current_content;
 	current_redraw_browser = g->bw;
 
-	currp = &curwin->rp; // WINDOW.CLASS: &curwin->rp; //curwin->win->RPort;
+	currp = &g->rp; // WINDOW.CLASS: &curwin->rp; //curwin->win->RPort;
 
-	content_redraw(c, 0, 0,
-	800,
-	600,
-	0,
-	0,
-	800,
-	600,
+printf("%ld,%ld hc vc\n",hcurrent,vcurrent);
+
+	content_redraw(c, 0,0,800,600,
+	0,0,800,600,
 	g->bw->scale, 0xFFFFFF);
 
 	current_redraw_browser = NULL;
 
-	RethinkLayout(gadgets[GID_MAIN],
-					curwin->win,NULL,TRUE);
-
-	RefreshGList(gadgets[GID_BROWSER],curwin->win,NULL,1);
-	//RefreshSetGadgetAttrs(gadgets[GID_BROWSER],curwin->win,NULL,BITMAP_BitMap,curwin->bm,TAG_DONE);
-	//RefreshGadgets(gadgets[GID_BROWSER],curwin->win,NULL);
+	RethinkLayout(g->gadgets[GID_MAIN],
+					g->win,NULL,TRUE);
 }
 
 void gui_window_update_box(struct gui_window *g,
@@ -343,11 +502,27 @@ void gui_window_update_box(struct gui_window *g,
 
 bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 {
+	printf("get scr %ld,%ld\n",sx,sy);
 }
 
 void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 {
-	printf("set scr\n");
+	Object *hscroller,*vscroller;
+
+	printf("set scr %ld,%ld\n",sx,sy);
+
+	// will also need bitmap_width and bitmap_height once resizing windows is working
+
+	GetAttr(WINDOW_HorizObject,g->objects[OID_MAIN],(ULONG *)&hscroller);
+	GetAttr(WINDOW_VertObject,g->objects[OID_MAIN],(ULONG *)&vscroller);
+
+	RefreshSetGadgetAttrs((APTR)vscroller,g->win,NULL,
+		SCROLLER_Top,sy,
+		TAG_DONE);
+
+	RefreshSetGadgetAttrs((APTR)hscroller,g->win,NULL,
+		SCROLLER_Top,sx,
+		TAG_DONE);
 }
 
 void gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
@@ -381,13 +556,32 @@ void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 
 void gui_window_update_extent(struct gui_window *g)
 {
-	printf("upd ext\n");
+	Object *hscroller,*vscroller;
+
+	printf("upd ext %ld,%ld\n",g->bw->current_content->width, // * g->bw->scale,
+	g->bw->current_content->height); // * g->bw->scale);
+
+	// will also need bitmap_width and bitmap_height once resizing windows is working
+
+	GetAttr(WINDOW_HorizObject,g->objects[OID_MAIN],(ULONG *)&hscroller);
+	GetAttr(WINDOW_VertObject,g->objects[OID_MAIN],(ULONG *)&vscroller);
+
+	RefreshSetGadgetAttrs((APTR)vscroller,g->win,NULL,
+		SCROLLER_Total,g->bw->current_content->height,
+		SCROLLER_Visible,600,
+		SCROLLER_Top,0,
+		TAG_DONE);
+
+	RefreshSetGadgetAttrs((APTR)hscroller,g->win,NULL,
+		SCROLLER_Total,g->bw->current_content->width,
+		SCROLLER_Visible,800,
+		SCROLLER_Top,0,
+		TAG_DONE);
 }
 
 void gui_window_set_status(struct gui_window *g, const char *text)
 {
-	RefreshSetGadgetAttrs(gadgets[GID_STATUS],g->win,NULL,STRINGA_TextVal,text,TAG_DONE);
-	printf("STATUS: %s\n",text);
+	RefreshSetGadgetAttrs(g->gadgets[GID_STATUS],g->win,NULL,STRINGA_TextVal,text,TAG_DONE);
 }
 
 void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
@@ -413,6 +607,7 @@ void gui_window_hide_pointer(struct gui_window *g)
 
 void gui_window_set_url(struct gui_window *g, const char *url)
 {
+	RefreshSetGadgetAttrs(g->gadgets[GID_URL],g->win,NULL,STRINGA_TextVal,url,TAG_DONE);
 }
 
 void gui_window_start_throbber(struct gui_window *g)

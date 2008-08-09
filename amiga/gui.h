@@ -19,14 +19,46 @@
 #ifndef AMIGA_GUI_H
 #define AMIGA_GUI_H
 #include <graphics/rastport.h>
+#include "amiga/object.h"
+#include <intuition/classusr.h>
 
 void ami_get_msg(void);
+
+enum
+{
+    GID_MAIN=0,
+	GID_BROWSER,
+	GID_STATUS,
+	GID_URL,
+	GID_STOP,
+	GID_RELOAD,
+	GID_HOME,
+	GID_BACK,
+	GID_FORWARD,
+	GID_THROBBER,
+    GID_LAST
+};
+
+enum
+{
+    WID_MAIN=0,
+    WID_LAST
+};
+
+enum
+{
+    OID_MAIN=0,
+    OID_LAST
+};
 
 struct gui_window {
 	struct Window *win;
 	struct browser_window *bw;
 	struct BitMap *bm;
 	struct RastPort rp;
+	Object *objects[OID_LAST];
+	struct Gadget *gadgets[GID_LAST];
+	struct nsObject *node;
 };
 
 struct gui_window *curwin;

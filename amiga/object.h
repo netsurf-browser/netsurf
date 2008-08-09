@@ -22,6 +22,7 @@
 #include <exec/lists.h>
 
 #define AMINS_CALLBACK 0
+#define AMINS_WINDOW 1
 
 struct nsObject
 {
