@@ -45,13 +45,7 @@ bool nsfont_width(const struct css_style *style,
 		const char *string, size_t length,
 		int *width)
 {
-//	ULONG w;
-
-printf("nsfont_width\n");
-
 	*width = TextLength(currp,string,length);
-
-//	*width = length*10;
 	return true;
 }
 
@@ -72,13 +66,12 @@ bool nsfont_position_in_string(const struct css_style *style,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
-	assert(style);
-	assert(string);
+	struct TextExtent extent;
 
-	*char_offset = (x + 5) / 10;
-	if (length < *char_offset)
-		*char_offset = length;
-	*actual_x = *char_offset * 10;
+	*char_offset = TextFit(currp,string,length,
+						&extent,NULL,1,x,32767);
+
+	*actual_x = extent.te_Extent.MaxX;
 	return true;
 }
 
@@ -104,14 +97,22 @@ bool nsfont_split(const struct css_style *style,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
-	assert(style);
-	assert(string);
+	struct TextExtent extent;
+	ULONG co;
+	char *charp;
 
-	*char_offset = x / 10;
-	if (length < *char_offset)
-		*char_offset = length;
-	while (*char_offset && string[*char_offset] != ' ')
-		(*char_offset)--;
-	*actual_x = *char_offset * 10;
+	co = TextFit(currp,string,length,
+				&extent,NULL,1,x,32767);
+
+	charp = string+co;
+	while((*charp != ' ') && (charp >= string))
+	{
+		charp--;
+		co--;
+	}
+
+	*char_offset = co;
+	*actual_x = TextLength(currp,string,co);
+
 	return true;
 }
