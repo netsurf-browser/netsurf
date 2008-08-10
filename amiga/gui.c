@@ -62,6 +62,8 @@ struct Device *TimerBase;
 struct TimerIFace *ITimer;
 struct Screen *scrn;
 
+bool win_destroyed = false;
+
 void ami_update_buttons(struct gui_window *);
 
 void gui_init(int argc, char** argv)
@@ -131,16 +133,31 @@ void gui_init(int argc, char** argv)
 	adblock_stylesheet_url = "file://NetSurf/Resources/adblock.css";
 	options_read("Resources/Options");
 
-	if (!option_cookie_file)
+	if(!option_cookie_file)
 		option_cookie_file = strdup("Resources/Cookies");
 
 /*
-	if (!option_cookie_jar)
+	if(!option_cookie_jar)
 		option_cookie_jar = strdup("resources/cookiejar");
 */
 
-	if (!option_ca_bundle)
-	option_ca_bundle = strdup("devs:curl-ca-bundle.crt");
+	if(!option_ca_bundle)
+		option_ca_bundle = strdup("devs:curl-ca-bundle.crt");
+
+	if(!option_font_sans)
+		option_font_sans = strdup("DejaVu Sans.font");
+
+	if(!option_font_serif)
+		option_font_serif = strdup("DejaVu Serif.font");
+
+	if(!option_font_mono)
+		option_font_mono = strdup("DejaVu Sans Mono.font");
+
+	if(!option_font_cursive)
+		option_font_cursive = strdup("DejaVu Sans.font");
+
+	if(!option_font_fantasy)
+		option_font_fantasy = strdup("DejaVu Serif.font");
 
 	plot=amiplot;
 
@@ -160,9 +177,6 @@ void gui_init2(int argc, char** argv)
 	if ((option_homepage_url == NULL) || (option_homepage_url[0] == '\0'))
     	option_homepage_url = strdup(NETSURF_HOMEPAGE);
 
-//	if (option_homepage_url != NULL && option_homepage_url[0] != '\0')
-//    	addr = option_homepage_url;
-
 	scrn = OpenScreenTags(NULL,
 /*
 							SA_Width,1024,
@@ -179,7 +193,7 @@ void gui_init2(int argc, char** argv)
 void ami_get_msg(void)
 {
 	struct IntuiMessage *message = NULL;
-	ULONG class,code,result,storage = 0,x,y;
+	ULONG class,code,result,storage = 0,x,y,xs,ys;
 	struct nsObject *node;
 	struct nsObject *nnode;
 	struct gui_window *gwin,*destroywin=NULL;
@@ -198,11 +212,13 @@ void ami_get_msg(void)
     	   	{
 				case WMHI_MOUSEMOVE:
 					GetAttr(IA_Left,gwin->gadgets[GID_BROWSER],&storage);
-					x = gwin->win->MouseX - storage;
+					GetAttr(SCROLLER_Top,gwin->objects[OID_HSCROLL],&xs);
+					x = gwin->win->MouseX - storage+xs;
 					GetAttr(IA_Top,gwin->gadgets[GID_BROWSER],&storage);
-					y = gwin->win->MouseY - storage;
+					GetAttr(SCROLLER_Top,gwin->objects[OID_VSCROLL],&ys);
+					y = gwin->win->MouseY - storage + ys;
 
-					if(x>=0 && y>=0 &&x<800 && y<600)
+					if((x>=xs) && (y>=ys) && (x<800+xs) && y<(600+ys))
 					{
 						browser_window_mouse_track(gwin->bw,0,x,y);
 					}
@@ -210,11 +226,13 @@ void ami_get_msg(void)
 
 				case WMHI_MOUSEBUTTONS:
 					GetAttr(IA_Left,gwin->gadgets[GID_BROWSER],&storage);
-					x = gwin->win->MouseX - storage;
+					GetAttr(SCROLLER_Top,gwin->objects[OID_HSCROLL],&xs);
+					x = gwin->win->MouseX - storage+xs;
 					GetAttr(IA_Top,gwin->gadgets[GID_BROWSER],&storage);
-					y = gwin->win->MouseY - storage;
+					GetAttr(SCROLLER_Top,gwin->objects[OID_VSCROLL],&ys);
+					y = gwin->win->MouseY - storage + ys;
 
-					if(x>=0 && y>=0 &&x<800 && y<600)
+					if((x>=xs) && (y>=ys) && (x<800+xs) && y<(600+ys))
 					{
 						code = code>>16;
 						printf("buttons: %lx\n",code);
@@ -243,7 +261,7 @@ void ami_get_msg(void)
 						case GID_URL:
 							GetAttr(STRINGA_TextVal,gwin->gadgets[GID_URL],&storage);
 							browser_window_go(gwin->bw,(char *)storage,NULL,true);
-							printf("%s\n",(char *)storage);
+							//printf("%s\n",(char *)storage);
 						break;
 
 						case GID_HOME:
@@ -275,32 +293,56 @@ void ami_get_msg(void)
 
 							ami_update_buttons(gwin);
 						break;
+
+						default:
+							printf("GADGET: %ld\n",(result & WMHI_GADGETMASK));
+						break;
 					}
 				break;
 
 				case WMHI_VANILLAKEY:
 					storage = result & WMHI_GADGETMASK;
 
-					printf("%lx\n",storage);
+					//printf("%lx\n",storage);
 
 					browser_window_key_press(gwin->bw,storage);
 				break;
 
 	           	case WMHI_CLOSEWINDOW:
-					destroywin=gwin;
+					browser_window_destroy(gwin->bw);
+					//destroywin=gwin;
 	           	break;
 
 	           	default:
+					printf("class: %ld\n",(result & WMHI_CLASSMASK));
 	           	break;
 			}
 //	ReplyMsg((struct Message *)message);
 		}
-		node = nnode;
-		if(destroywin)
+
+		if(win_destroyed)
 		{
-			browser_window_destroy(destroywin->bw);
-			destroywin=NULL;
+			/* we can't be sure what state our window_list is in, so let's
+				jump out of the function and start again */
+
+			win_destroyed = false;
+			return;
 		}
+
+/*
+		while((result = RA_HandleInput(gwin->objects[OID_VSCROLL],&code)) != WMHI_LASTMSG)
+		{
+	        switch(result & WMHI_CLASSMASK) // class
+    	   	{
+				default:
+				//case WMHI_GADGETUP:
+					//switch(result & WMHI_GADGETMASK) //gadaddr->GadgetID) //result & WMHI_GADGETMASK)
+					printf("vscroller %ld %ld\n",(result & WMHI_CLASSMASK),(result & WMHI_GADGETMASK));
+				break;
+			}		
+		}
+*/
+		node = nnode;
 	}
 }
 
@@ -427,8 +469,9 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			WINDOW_HorizProp,1,
 			WINDOW_VertProp,1,
            	WINDOW_Position, WPOS_CENTERSCREEN,
+			WINDOW_CharSet,106,
            	WINDOW_ParentGroup, gwin->gadgets[GID_MAIN] = VGroupObject,
-//				LAYOUT_CharSet,106,
+				LAYOUT_CharSet,106,
                	LAYOUT_SpaceOuter, TRUE,
 				LAYOUT_AddChild, HGroupObject,
 					LAYOUT_AddChild, gwin->gadgets[GID_BACK] = ButtonObject,
@@ -526,11 +569,21 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			EndGroup,
 		EndWindow;
 
-		gwin->win = (struct Window *)RA_OpenWindow(gwin->objects[OID_MAIN]);
+	gwin->win = (struct Window *)RA_OpenWindow(gwin->objects[OID_MAIN]);
 
-		gwin->bw = bw;
-		curwin = gwin;  //test
-		currp = &gwin->rp; // WINDOW.CLASS: &gwin->rp; //gwin->win->RPort;
+	gwin->bw = bw;
+//	curwin = gwin;  //test
+	currp = &gwin->rp; // WINDOW.CLASS: &gwin->rp; //gwin->win->RPort;
+
+	GetAttr(WINDOW_HorizObject,gwin->objects[OID_MAIN],(ULONG *)&gwin->objects[OID_HSCROLL]);
+	GetAttr(WINDOW_VertObject,gwin->objects[OID_MAIN],(ULONG *)&gwin->objects[OID_VSCROLL]);
+
+
+	RefreshSetGadgetAttrs((APTR)gwin->objects[OID_VSCROLL],gwin->win,NULL,
+		GA_RelVerify,TRUE,
+		GA_Immediate,TRUE,
+		GA_ID,OID_VSCROLL,
+		TAG_DONE);
 
 	gwin->node = AddObject(window_list,AMINS_WINDOW);
 	gwin->node->objstruct = gwin;
@@ -551,6 +604,8 @@ void gui_window_destroy(struct gui_window *g)
 		gui_quit();
 		exit(0);
 	}
+
+	win_destroyed = true;
 }
 
 void gui_window_set_title(struct gui_window *g, const char *title)
@@ -566,14 +621,14 @@ void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
 void gui_window_redraw_window(struct gui_window *g)
 {
 	struct content *c;
-	Object *hscroller,*vscroller;
+//	Object *hscroller,*vscroller;
 	ULONG hcurrent,vcurrent;
 
 	// will also need bitmap_width and bitmap_height once resizing windows is working
-	GetAttr(WINDOW_HorizObject,g->objects[OID_MAIN],(ULONG *)&hscroller);
-	GetAttr(WINDOW_VertObject,g->objects[OID_MAIN],(ULONG *)&vscroller);
-	GetAttr(SCROLLER_Top,hscroller,&hcurrent);
-	GetAttr(SCROLLER_Top,vscroller,&vcurrent);
+//	GetAttr(WINDOW_HorizObject,g->objects[OID_MAIN],(ULONG *)&hscroller);
+//	GetAttr(WINDOW_VertObject,g->objects[OID_MAIN],(ULONG *)&vscroller);
+	GetAttr(SCROLLER_Top,g->objects[OID_HSCROLL],&hcurrent);
+	GetAttr(SCROLLER_Top,g->objects[OID_VSCROLL],&vcurrent);
 
 	DebugPrintF("REDRAW2\n");
 
@@ -589,10 +644,10 @@ printf("%ld,%ld hc vc\n",hcurrent,vcurrent);
 
 	if (c->locked) return;
 //	if (c->type == CONTENT_HTML) scale = 1;
-
-	content_redraw(c, 0,0,800,600,
+printf("not locked\n");
+	content_redraw(c, -hcurrent,-vcurrent,800,600,
 	0,0,800,600,
-	g->bw->scale, 0xFFFFFF);
+	g->bw->scale,0xFFFFFF);
 
 	current_redraw_browser = NULL;
 
@@ -652,20 +707,20 @@ bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 
 void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 {
-	Object *hscroller,*vscroller;
+//	Object *hscroller,*vscroller;
 
 	printf("set scr %ld,%ld\n",sx,sy);
 
 	// will also need bitmap_width and bitmap_height once resizing windows is working
 
-	GetAttr(WINDOW_HorizObject,g->objects[OID_MAIN],(ULONG *)&hscroller);
-	GetAttr(WINDOW_VertObject,g->objects[OID_MAIN],(ULONG *)&vscroller);
+//	GetAttr(WINDOW_HorizObject,g->objects[OID_MAIN],(ULONG *)&hscroller);
+//	GetAttr(WINDOW_VertObject,g->objects[OID_MAIN],(ULONG *)&vscroller);
 
-	RefreshSetGadgetAttrs((APTR)vscroller,g->win,NULL,
+	RefreshSetGadgetAttrs((APTR)g->objects[OID_VSCROLL],g->win,NULL,
 		SCROLLER_Top,sy,
 		TAG_DONE);
 
-	RefreshSetGadgetAttrs((APTR)hscroller,g->win,NULL,
+	RefreshSetGadgetAttrs((APTR)g->objects[OID_HSCROLL],g->win,NULL,
 		SCROLLER_Top,sx,
 		TAG_DONE);
 }
@@ -701,23 +756,23 @@ void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 
 void gui_window_update_extent(struct gui_window *g)
 {
-	Object *hscroller,*vscroller;
+//	Object *hscroller,*vscroller;
 
 	printf("upd ext %ld,%ld\n",g->bw->current_content->width, // * g->bw->scale,
 	g->bw->current_content->height); // * g->bw->scale);
 
 	// will also need bitmap_width and bitmap_height once resizing windows is working
 
-	GetAttr(WINDOW_HorizObject,g->objects[OID_MAIN],(ULONG *)&hscroller);
-	GetAttr(WINDOW_VertObject,g->objects[OID_MAIN],(ULONG *)&vscroller);
+//	GetAttr(WINDOW_HorizObject,g->objects[OID_MAIN],(ULONG *)&hscroller);
+//	GetAttr(WINDOW_VertObject,g->objects[OID_MAIN],(ULONG *)&vscroller);
 
-	RefreshSetGadgetAttrs((APTR)vscroller,g->win,NULL,
+	RefreshSetGadgetAttrs((APTR)g->objects[OID_VSCROLL],g->win,NULL,
 		SCROLLER_Total,g->bw->current_content->height,
 		SCROLLER_Visible,600,
 		SCROLLER_Top,0,
 		TAG_DONE);
 
-	RefreshSetGadgetAttrs((APTR)hscroller,g->win,NULL,
+	RefreshSetGadgetAttrs((APTR)g->objects[OID_HSCROLL],g->win,NULL,
 		SCROLLER_Total,g->bw->current_content->width,
 		SCROLLER_Visible,800,
 		SCROLLER_Top,0,

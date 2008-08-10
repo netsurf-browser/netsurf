@@ -19,10 +19,13 @@
 #include "amiga/plotters.h"
 #include "amiga/gui.h"
 #include "amiga/bitmap.h"
+#include "amiga/font.h"
 #include <proto/Picasso96API.h>
 #include <proto/graphics.h>
 #include <intuition/intuition.h>
 #include <graphics/rpattr.h>
+
+#include <proto/exec.h> // for debugprintf only
 
 static clipx,clipy;
 
@@ -47,7 +50,7 @@ const struct plotter_table amiplot = {
 
 bool ami_clg(colour c)
 {
-	printf("clg %lx\n",c);
+	DebugPrintF("clg %lx\n",c);
 
 	p96RectFill(currp,0,0,clipx,clipy,
 				p96EncodeColor(RGBFB_A8B8G8R8,c));
@@ -58,31 +61,39 @@ bool ami_clg(colour c)
 bool ami_rectangle(int x0, int y0, int width, int height,
 			int line_width, colour c, bool dotted, bool dashed)
 {
-	printf("rect\n");
+	SetRPAttrs(currp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),
+					TAG_DONE);
+	Move(currp,x0,y0);
+	Draw(currp,x0+width,y0);
+	Draw(currp,x0+width,y0+height);
+	Draw(currp,x0,y0+height);
+	Draw(currp,x0,y0);
+
 	return true;
 }
 
 bool ami_line(int x0, int y0, int x1, int y1, int width,
 			colour c, bool dotted, bool dashed)
 {
-	printf("line\n");
+	DebugPrintF("line\n");
 	SetRPAttrs(currp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),
 					TAG_DONE);
 	Move(currp,x0,y0);
 	Draw(currp,x1,y1); // NB: does not support width,dotted,dashed
+/*There is the line pattern in the rastport, would that help? There are macros in graphics/gfxmacros.h that do it. */
 
 	return true;
 }
 
 bool ami_polygon(int *p, unsigned int n, colour fill)
 {
-	printf("poly\n");
+	DebugPrintF("poly\n");
 	return true;
 }
 
 bool ami_fill(int x0, int y0, int x1, int y1, colour c)
 {
-	printf("fill\n");
+	DebugPrintF("fill\n");
 	p96RectFill(currp,x0,y0,x1,y1,
 		p96EncodeColor(RGBFB_A8B8G8R8,c));
 	return true;
@@ -113,39 +124,12 @@ bool ami_text(int x, int y, const struct css_style *style,
 	css_font_style font_style;
 	css_font_variant font_variant;
 	css_font_weight font_weight;
-
-	struct {
-	enum { CSS_HEIGHT_INHERIT,
-	       CSS_HEIGHT_AUTO,
-	       CSS_HEIGHT_LENGTH,
-	       CSS_HEIGHT_NOT_SET } height;
-	struct css_length length;
-	} height;
-
-	struct {
-	enum { CSS_LETTER_SPACING_INHERIT,
-	       CSS_LETTER_SPACING_NORMAL,
-	       CSS_LETTER_SPACING_LENGTH,
-	       CSS_LETTER_SPACING_NOT_SET } letter_spacing;
-	struct css_length length;
-	} letter_spacing;
-
-	struct {
-	enum { CSS_LINE_HEIGHT_INHERIT,
-	       CSS_LINE_HEIGHT_ABSOLUTE,
-	       CSS_LINE_HEIGHT_LENGTH,
-	       CSS_LINE_HEIGHT_PERCENT,
-	       CSS_LINE_HEIGHT_NOT_SET } size;
-	union {
-	float absolute;
-	struct css_length length;
-	float percent;
-	} value;
-	} line_height;
 */
+	ami_open_font(style);
 
 	SetRPAttrs(currp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),
 					RPTAG_BPenColor,p96EncodeColor(RGBFB_A8B8G8R8,bg),
+//					RPTAG_Font,tfont,
 					TAG_DONE);
 	Move(currp,x,y);
 	Text(currp,text,length);
@@ -154,7 +138,7 @@ bool ami_text(int x, int y, const struct css_style *style,
 
 bool ami_disc(int x, int y, int radius, colour c, bool filled)
 {
-	printf("disc\n");
+	DebugPrintF("disc\n");
 	SetRPAttrs(currp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),
 					TAG_DONE);
 	DrawEllipse(currp,x,y,radius,radius); // NB: does not support fill, need to use AreaCircle for that
@@ -164,7 +148,9 @@ bool ami_disc(int x, int y, int radius, colour c, bool filled)
 bool ami_arc(int x, int y, int radius, int angle1, int angle2,
 	    		colour c)
 {
-	printf("arc\n");
+/* http://www.crbond.com/primitives.htm
+CommonFuncsPPC.lha */
+	DebugPrintF("arc\n");
 	return true;
 }
 
@@ -173,7 +159,7 @@ bool ami_bitmap(int x, int y, int width, int height,
 {
 	struct RenderInfo ri;
 
-printf("bitmap plotter\n");
+DebugPrintF("bitmap plotter\n");
 
 //	ami_fill(x,y,x+width,y+height,bg);
 
@@ -190,7 +176,17 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 			struct bitmap *bitmap, colour bg,
 			bool repeat_x, bool repeat_y)
 {
-	printf("bitmap tile plotter\n");
+	struct RenderInfo ri;
+
+DebugPrintF("bitmap tile plotter\n");
+/* not implemented properly - needs to tile! */
+
+	ri.Memory = bitmap->pixdata;
+	ri.BytesPerRow = bitmap->width * 4;
+	ri.RGBFormat = RGBFB_R8G8B8A8;
+
+	p96WritePixelArray((struct RenderInfo *)&ri,0,0,currp,x,y,width,height);
+
 	return true;
 }
 
@@ -208,13 +204,13 @@ bool ami_group_end(void)
 
 bool ami_flush(void)
 {
-	printf("flush\n");
+	DebugPrintF("flush\n");
 	return true;
 }
 
 bool ami_path(float *p, unsigned int n, colour fill, float width,
 			colour c, float *transform)
 {
-	printf("path\n");
+	DebugPrintF("path\n");
 	return true;
 }

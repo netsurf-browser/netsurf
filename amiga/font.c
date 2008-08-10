@@ -22,6 +22,10 @@
 #include "render/font.h"
 #include "amiga/gui.h"
 #include <proto/graphics.h>
+#include <proto/diskfont.h>
+#include <graphics/rpattr.h>
+#include "amiga/font.h"
+#include "desktop/options.h"
 
 static bool nsfont_width(const struct css_style *style,
 	  const char *string, size_t length,
@@ -45,6 +49,7 @@ bool nsfont_width(const struct css_style *style,
 		const char *string, size_t length,
 		int *width)
 {
+	ami_open_font(style);
 	*width = TextLength(currp,string,length);
 	return true;
 }
@@ -68,6 +73,7 @@ bool nsfont_position_in_string(const struct css_style *style,
 {
 	struct TextExtent extent;
 
+	ami_open_font(style);
 	*char_offset = TextFit(currp,string,length,
 						&extent,NULL,1,x,32767);
 
@@ -101,6 +107,7 @@ bool nsfont_split(const struct css_style *style,
 	ULONG co;
 	char *charp;
 
+	ami_open_font(style);
 	co = TextFit(currp,string,length,
 				&extent,NULL,1,x,32767);
 
@@ -115,4 +122,94 @@ bool nsfont_split(const struct css_style *style,
 	*actual_x = TextLength(currp,string,co);
 
 	return true;
+}
+
+void ami_open_font(struct css_style *style)
+{
+	struct TextFont *tfont;
+	struct TextAttr tattr;
+
+/*
+	css_font_family font_family;
+	css_font_style font_style;
+	css_font_variant font_variant;
+see css_enum.h
+*/
+	switch(style->font_family)
+	{
+		case CSS_FONT_FAMILY_SANS_SERIF:
+			tattr.ta_Name = option_font_sans;
+		break;
+
+		case CSS_FONT_FAMILY_SERIF:
+			tattr.ta_Name = option_font_serif;
+		break;
+
+		case CSS_FONT_FAMILY_MONOSPACE:
+			tattr.ta_Name = option_font_mono;
+		break;
+
+		case CSS_FONT_FAMILY_CURSIVE:
+			tattr.ta_Name = option_font_cursive;
+		break;
+
+		case CSS_FONT_FAMILY_FANTASY:
+			tattr.ta_Name = option_font_fantasy;
+		break;
+
+		default:
+			tattr.ta_Name = option_font_sans;
+			//printf("font family: %ld\n",style->font_family);
+		break;
+	}
+
+	switch(style->font_style)
+	{
+		case CSS_FONT_STYLE_ITALIC:
+			tattr.ta_Style = FSB_ITALIC;
+		break;
+
+		case CSS_FONT_STYLE_OBLIQUE:
+			tattr.ta_Style = FSB_BOLD;
+		break;
+
+		default:
+			tattr.ta_Style = FS_NORMAL;
+			//printf("font style: %ld\n",style->font_style);
+		break;
+	}
+
+	switch(style->font_variant)
+	{
+		default:
+			//printf("font variant: %ld\n",style->font_variant);
+		break;
+	}
+
+	switch(style->font_size.size)
+	{
+		case CSS_FONT_SIZE_LENGTH:
+			tattr.ta_YSize = (UWORD)style->font_size.value.length.value;
+		break;
+		default:
+			printf("FONT SIZE TYPE: %ld\n",style->font_size.size);
+		break;
+	}
+		//printf("%lf  %ld\n",style->font_size.value.length.value,(UWORD)style->font_size.value.length.value);
+
+	tattr.ta_Name = "DejaVu Sans.font";
+//	tattr.ta_Style = FS_NORMAL; // | FSB_ANTIALIASED;
+	tattr.ta_Flags = 0; //FPB_PROPORTIONAL;
+// see graphics/text.h
+
+	tfont = OpenDiskFont(&tattr);
+
+	if(tfont)
+	{
+		SetRPAttrs(currp,
+				RPTAG_Font,tfont,
+				TAG_DONE);
+	}
+
+	CloseFont(tfont);
 }
