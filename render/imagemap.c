@@ -23,6 +23,7 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <string.h>
+#include <strings.h>
 #include "content/content.h"
 #include "render/box.h"
 #include "render/imagemap.h"

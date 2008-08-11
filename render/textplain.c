@@ -25,6 +25,7 @@
 #include <errno.h>
 #include <stddef.h>
 #include <string.h>
+#include <strings.h>
 #include <math.h>
 #include <iconv.h>
 #include "content/content.h"

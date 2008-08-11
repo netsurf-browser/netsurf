@@ -30,6 +30,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include <strings.h>
 #include <libxml/HTMLparser.h>
 #include <libxml/HTMLtree.h>
 #include "content/urldb.h"

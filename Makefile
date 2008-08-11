@@ -60,12 +60,6 @@ else
     # Haiku implements the BeOS API
     HOST := beos
   endif
-  ifeq ($(HOST),AmigaOS)
-    HOST := amiga
-    ifeq ($(TARGET),)
-      TARGET := amiga
-    endif
-  endif
   ifeq ($(HOST),beos)
     # Build happening on BeOS platform, default target is BeOS backend
     ifeq ($(TARGET),)
@@ -74,9 +68,21 @@ else
     # BeOS still uses gcc2
     GCCVER := 2
   else
-    # Build happening on non-RO platform, default target is GTK backend
-    ifeq ($(TARGET),)
-      TARGET := gtk
+    ifeq ($(HOST),AmigaOS)
+      HOST := amiga
+      ifeq ($(TARGET),)
+        TARGET := amiga
+      endif
+      GCCVER := 2
+    else
+      ifeq ($(HOST),Darwin)
+        HOST := macosx
+      endif
+
+      # Default target is GTK backend
+      ifeq ($(TARGET),)
+        TARGET := gtk
+      endif
     endif
   endif
 endif

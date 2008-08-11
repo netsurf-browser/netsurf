@@ -23,6 +23,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include "css/css.h"
 #include "render/list.h"
 #include "utils/log.h"

@@ -24,7 +24,8 @@
 /* Try to detect which features the target OS supports */
 
 #define HAVE_STRNDUP
-#if defined(__FreeBSD__) || (defined(__SRV4) && defined(__sun))
+#if defined(__FreeBSD__) || (defined(__SRV4) && defined(__sun)) || \
+	defined(__APPLE__)
 	/* FreeBSD and Solaris do not have this function, so
 	 * we implement it ourselves in util.c
 	 */

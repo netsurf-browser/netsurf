@@ -25,8 +25,10 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <iconv.h>
 
+#include "utils/config.h"
 #include "utils/log.h"
 #include "utils/utf8.h"
 
