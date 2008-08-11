@@ -192,9 +192,12 @@ void gui_init(int argc, char** argv)
 	LOG(("Using '%s' as Resources directory", buf));
 	res_dir_location = strdup(buf);
 
+#ifdef WITH_HUBBUB
 	find_resource(buf, "Aliases", "./gtk/res/Aliases");
 	LOG(("Using '%s' as Aliases file", buf));
-	hubbub_initialise(buf, myrealloc, NULL);
+	if (hubbub_initialise(buf, myrealloc, NULL) != HUBBUB_OK)
+		die("Unable to initialise HTML parsing library.\n");
+#endif
 
 	glade_init();
 	gladeWindows = glade_xml_new(glade_file_location, NULL, NULL);
@@ -407,6 +410,10 @@ void gui_quit(void)
 	free(option_cookie_file);
 	free(option_cookie_jar);
 	gtk_fetch_filetype_fin();
+#ifdef WITH_HUBBUB
+	/* We don't care if this fails as we're about to die, anyway */
+	hubbub_finalise(myrealloc, NULL);
+#endif
 }
 
 
