@@ -25,7 +25,7 @@
 
 #define HAVE_STRNDUP
 #if defined(__FreeBSD__) || (defined(__SRV4) && defined(__sun)) || \
-	defined(__APPLE__)
+	defined(__APPLE__) || defined(__HAIKU__) || defined(__BEOS__)
 	/* FreeBSD and Solaris do not have this function, so
 	 * we implement it ourselves in util.c
 	 */
@@ -59,6 +59,12 @@ char *strndup(const char *s, size_t n);
     #define WITH_PRINT
     /* Theme auto-install */
     #define WITH_THEME_INSTALL
+#elif defined(__HAIKU__) || defined(__BEOS__)
+    /* for intptr_t */
+    #include <inttypes.h>
+    #if defined(__HAIKU__)
+        /*not yet: #define WITH_MMAP*/
+    #endif
 #else
     /* We're likely to have a working mmap() */
     #define WITH_MMAP
