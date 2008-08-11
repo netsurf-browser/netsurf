@@ -343,12 +343,13 @@ bool form_successful_controls(struct form *form,
 
 			case GADGET_IMAGE: {
 				/* image */
+				const size_t len;
 				if (control != submit_button)
 					/* only the activated submit button
 					 * is successful */
 					continue;
 
-				const size_t len = strlen(control->name) + 3;
+				len = strlen(control->name) + 3;
 
 				/* x */
 				success_new = malloc(sizeof(*success_new));

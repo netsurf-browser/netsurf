@@ -1008,9 +1008,10 @@ bool html_head(struct content *c, xmlNode *head)
 		if (!c->title && strcmp((const char *) node->name,
 				"title") == 0) {
 			xmlChar *title = xmlNodeGetContent(node);
+			char *title2;
 			if (!title)
 				return false;
-			char *title2 = squash_whitespace((const char *) title);
+			title2 = squash_whitespace((const char *) title);
 			xmlFree(title);
 			if (!title2)
 				return false;
