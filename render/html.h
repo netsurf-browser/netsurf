@@ -43,6 +43,9 @@ struct imagemap;
 struct object_params;
 struct plotters;
 
+/* Number of namespaces we support */
+#define NUM_NAMESPACES		7
+
 /* entries in stylesheet_content */
 #define STYLESHEET_BASE		0	/* base style sheet */
 #define STYLESHEET_ADBLOCK	1	/* adblocking stylesheet */
@@ -124,6 +127,9 @@ struct content_html_data {
 	hubbub_parser *parser; /**< HTML parser context. */
 	hubbub_tree_handler tree_handler;
 	xmlDoc *document;
+
+	bool has_ns;
+	xmlNs *ns[NUM_NAMESPACES];
 #endif
 
 	/** HTML parser encoding handler. */

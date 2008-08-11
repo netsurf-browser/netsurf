@@ -98,8 +98,6 @@ static const char empty_document[] =
 
 #ifdef WITH_HUBBUB
 
-
-#define NUM_NAMESPACES 7
 const char const *ns_prefixes[NUM_NAMESPACES] =
 		{ NULL, NULL, "math", "svg", "xlink", "xml", "xmlns" };
 
@@ -113,8 +111,6 @@ const char const *ns_urls[NUM_NAMESPACES] = {
 	"http://www.w3.org/2000/xmlns/"
 };
 
-static bool had_ns;
-xmlNs *ns_ns[NUM_NAMESPACES];
 
 static int create_comment(void *ctx, const hubbub_string *data, void **result);
 static int create_doctype(void *ctx, const hubbub_doctype *doctype,
@@ -187,6 +183,9 @@ int create_doctype(void *ctx, const hubbub_doctype *doctype, void **result)
 
 int create_element(void *ctx, const hubbub_tag *tag, void **result)
 {
+	struct content *c = ctx;
+	struct content_html_data *html = &c->data.html;
+
 	char *name = strndup((const char *) tag->name.ptr,
 			tag->name.len);
 
@@ -194,16 +193,16 @@ int create_element(void *ctx, const hubbub_tag *tag, void **result)
 	node->_private = (void *)1;
 	*result = node;
 
-	if (had_ns == false) {
+	if (html->has_ns == false) {
 		for (size_t i = 1; i < NUM_NAMESPACES; i++) {
-			ns_ns[i] = xmlNewNs(node,
+			html->ns[i] = xmlNewNs(node,
 					BAD_CAST ns_urls[i],
 					BAD_CAST ns_prefixes[i]);
 		}
-		had_ns = true;
+		html->has_ns = true;
 	}
 
-	xmlSetNs(node, ns_ns[tag->ns]);
+	xmlSetNs(node, html->ns[tag->ns]);
 
 	free(name);
 
@@ -218,7 +217,7 @@ int create_element(void *ctx, const hubbub_tag *tag, void **result)
 		if (attr->ns == HUBBUB_NS_NULL) {
 			xmlNewProp(node, BAD_CAST name, BAD_CAST value);
 		} else {
-			xmlNewNsProp(node, ns_ns[attr->ns], BAD_CAST name,
+			xmlNewNsProp(node, html->ns[attr->ns], BAD_CAST name,
 					BAD_CAST value);
 		}
 
@@ -356,6 +355,9 @@ int form_associate(void *ctx, void *form, void *node)
 int add_attributes(void *ctx, void *node,
 		const hubbub_attribute *attributes, uint32_t n_attributes)
 {
+	struct content *c = ctx;
+	struct content_html_data *html = &c->data.html;
+
 	for (size_t i = 0; i < n_attributes; i++) {
 		const hubbub_attribute *attr = &attributes[i];
 
@@ -367,7 +369,7 @@ int add_attributes(void *ctx, void *node,
 		if (attr->ns == HUBBUB_NS_NULL) {
 			xmlNewProp(node, BAD_CAST name, BAD_CAST value);
 		} else {
-			xmlNewNsProp(node, ns_ns[attr->ns], BAD_CAST name,
+			xmlNewNsProp(node, html->ns[attr->ns], BAD_CAST name,
 					BAD_CAST value);
 		}
 
@@ -484,6 +486,8 @@ bool html_create(struct content *c, const char *params[])
 	html->parser = 0;
 #ifdef WITH_HUBBUB
 	html->document = 0;
+	html->has_ns = false;
+	memset(html->ns, 0, sizeof(html->ns));
 #endif
 	html->encoding_handler = 0;
 	html->encoding = 0;
