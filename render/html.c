@@ -713,6 +713,8 @@ encoding_change:
 }
 
 
+#ifndef WITH_HUBBUB
+
 /**
  * Set the HTML parser character encoding.
  *
@@ -720,10 +722,8 @@ encoding_change:
  * \param  encoding  name of encoding
  * \return  true on success, false on error and error reported
  */
-
 bool html_set_parser_encoding(struct content *c, const char *encoding)
 {
-#ifndef WITH_HUBBUB
 	struct content_html_data *html = &c->data.html;
 	xmlError *error;
 	char error_message[500];
@@ -772,7 +772,6 @@ bool html_set_parser_encoding(struct content *c, const char *encoding)
 
 	/* Ensure noone else attempts to reset the encoding */
 	html->getenc = false;
-#endif
 
 	return true;
 }
@@ -837,6 +836,9 @@ const char *html_detect_encoding(const char **data, unsigned int *size)
 
 	return 0;
 }
+
+
+#endif
 
 
 /**
