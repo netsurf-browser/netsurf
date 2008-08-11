@@ -694,6 +694,8 @@ encoding_change:
 	if (c->data.html.document) {
 		xmlFreeDoc(c->data.html.document);
 	}
+	c->data.html.has_ns = false;
+	memset(c->data.html.ns, 0, sizeof(c->data.html.ns));
 
 	/* Set up the parser, libxml2 document, and that */
 	if (html_create_parser(c) != 0) {
