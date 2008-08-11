@@ -57,8 +57,10 @@
 #define CHUNK 4096
 
 
+#ifndef WITH_HUBBUB
 static bool html_set_parser_encoding(struct content *c, const char *encoding);
 static const char *html_detect_encoding(const char **data, unsigned int *size);
+#endif
 static void html_convert_css_callback(content_msg msg, struct content *css,
 		intptr_t p1, intptr_t p2, union content_msg_data data);
 static bool html_meta_refresh(struct content *c, xmlNode *head);
