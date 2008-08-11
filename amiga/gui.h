@@ -61,6 +61,7 @@ struct gui_window {
 	Object *objects[OID_LAST];
 	struct Gadget *gadgets[GID_LAST];
 	struct nsObject *node;
+	struct Hook scrollerhook;
 };
 
 struct gui_window *curwin;
