@@ -31,6 +31,9 @@
 #include <gdk/gdkkeysyms.h>
 #include <gtk/gtk.h>
 #include <glade/glade.h>
+#ifdef WITH_HUBBUB
+#include <hubbub/hubbub.h>
+#endif
 #include "content/content.h"
 #include "content/fetch.h"
 #include "content/fetchers/fetch_curl.h"
@@ -165,6 +168,13 @@ static void check_homedir(void)
 	}
 }
 
+
+static void *myrealloc(void *ptr, size_t len, void *pw)
+{
+	return realloc(ptr, len);
+}
+
+
 void gui_init(int argc, char** argv)
 {
 	char buf[PATH_MAX];
@@ -181,6 +191,10 @@ void gui_init(int argc, char** argv)
 	buf[strlen(buf)- 13] = 0;
 	LOG(("Using '%s' as Resources directory", buf));
 	res_dir_location = strdup(buf);
+
+	find_resource(buf, "Aliases", "./gtk/res/Aliases");
+	LOG(("Using '%s' as Aliases file", buf));
+	hubbub_initialise(buf, myrealloc, NULL);
 
 	glade_init();
 	gladeWindows = glade_xml_new(glade_file_location, NULL, NULL);

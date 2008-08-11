@@ -245,6 +245,12 @@ ifeq ($(TARGET),riscos)
   $(eval $(call feature_enabled,SPRITE,-DWITH_SPRITE,,RISC OS sprite rendering))
   $(eval $(call feature_enabled,ARTWORKS,-DWITH_ARTWORKS,,ArtWorks rendering))
   $(eval $(call feature_enabled,PLUGINS,-DWITH_PLUGIN,,Plugin protocol support))
+  ifeq ($(HOST),riscos)
+    $(eval $(call feature_enabled,HUBBUB,-DWITH_HUBBUB,-lhubbub -lparserutils,Hubbub HTML parser))
+  else
+    NETSURF_FEATURE_HUBBUB_CFLAGS := -DWITH_HUBBUB
+    $(eval $(call pkg_config_find_and_add,HUBBUB,libhubbub,Hubbub HTML parser))
+  endif
 endif
 
 # ----------------------------------------------------------------------------
@@ -267,10 +273,12 @@ ifeq ($(TARGET),gtk)
   # define additional CFLAGS and LDFLAGS requirements for pkg-configed libs here
   NETSURF_FEATURE_RSVG_CFLAGS := -DWITH_RSVG
   NETSURF_FEATURE_ROSPRITE_CFLAGS := -DWITH_NSSPRITE
+  NETSURF_FEATURE_HUBBUB_CFLAGS := -DWITH_HUBBUB
 
   # add a line similar to below for each optional pkg-configed lib here
   $(eval $(call pkg_config_find_and_add,RSVG,librsvg-2.0,SVG rendering))
   $(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,RISC OS sprite rendering))
+  $(eval $(call pkg_config_find_and_add,HUBBUB,libhubbub,Hubbub HTML parser))
 
   GTKCFLAGS := -std=c99 -Dgtk -Dnsgtk \
 		-DGTK_DISABLE_DEPRECATED \
@@ -399,10 +407,14 @@ ifeq ($(TARGET),debug)
 		-D_XOPEN_SOURCE=600 \
 		-D_POSIX_C_SOURCE=200112L \
 		-D_NETBSD_SOURCE \
-		$(WARNFLAGS) -I. -I../../libsprite/trunk/ -g $(OPT0FLAGS) \
-		$(shell $(PKG_CONFIG) --cflags librosprite) \
+		$(WARNFLAGS) -I. -g $(OPT0FLAGS) \
 		$(shell xml2-config --cflags)
-  LDFLAGS += $(shell $(PKG_CONFIG) --libs librosprite)
+  LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl openssl)
+
+  $(eval $(call pkg_config_find_and_add,RSVG,librsvg-2.0,SVG rendering))
+  $(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,RISC OS sprite rendering))
+  $(eval $(call pkg_config_find_and_add,HUBBUB,libhubbub,Hubbub HTML parser))
+  $(eval $(call pkg_config_find_and_add,HUBBUB,libparserutils,Hubbub HTML parser))
 endif
 
 # ----------------------------------------------------------------------------

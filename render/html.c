@@ -20,12 +20,21 @@
  * Content for text/html (implementation).
  */
 
+#define _GNU_SOURCE /* for strndup() */
+
 #include <assert.h>
 #include <ctype.h>
 #include <stdint.h>
 #include <string.h>
 #include <strings.h>
 #include <stdlib.h>
+#ifdef WITH_HUBBUB
+#include <hubbub/hubbub.h>
+#include <hubbub/parser.h>
+#include <hubbub/tree.h>
+#endif
+#include <libxml/tree.h>
+#include <libxml/parser.h>
 #include <libxml/parserInternals.h>
 #include "utils/config.h"
 #include "content/content.h"
@@ -87,6 +96,380 @@ static const char empty_document[] =
 	"</html>";
 
 
+#ifdef WITH_HUBBUB
+
+
+#define NUM_NAMESPACES 7
+const char const *ns_prefixes[NUM_NAMESPACES] =
+		{ NULL, NULL, "math", "svg", "xlink", "xml", "xmlns" };
+
+const char const *ns_urls[NUM_NAMESPACES] = {
+	NULL,
+	"http://www.w3.org/1999/xhtml",
+	"http://www.w3.org/1998/Math/MathML",
+	"http://www.w3.org/2000/svg",
+	"http://www.w3.org/1999/xlink",
+	"http://www.w3.org/XML/1998/namespace",
+	"http://www.w3.org/2000/xmlns/"
+};
+
+xmlNs *ns_ns[NUM_NAMESPACES];
+
+static int create_comment(void *ctx, const hubbub_string *data, void **result);
+static int create_doctype(void *ctx, const hubbub_doctype *doctype,
+		void **result);
+static int create_element(void *ctx, const hubbub_tag *tag, void **result);
+static int create_text(void *ctx, const hubbub_string *data, void **result);
+static int ref_node(void *ctx, void *node);
+static int unref_node(void *ctx, void *node);
+static int append_child(void *ctx, void *parent, void *child, void **result);
+static int insert_before(void *ctx, void *parent, void *child, void *ref_child,
+		void **result);
+static int remove_child(void *ctx, void *parent, void *child, void **result);
+static int clone_node(void *ctx, void *node, bool deep, void **result);
+static int reparent_children(void *ctx, void *node, void *new_parent);
+static int get_parent(void *ctx, void *node, bool element_only, void **result);
+static int has_children(void *ctx, void *node, bool *result);
+static int form_associate(void *ctx, void *form, void *node);
+static int add_attributes(void *ctx, void *node,
+		const hubbub_attribute *attributes, uint32_t n_attributes);
+static int set_quirks_mode(void *ctx, hubbub_quirks_mode mode);
+static int change_encoding(void *ctx, const char *mibenum);
+
+static hubbub_tree_handler tree_handler = {
+	create_comment,
+	create_doctype,
+	create_element,
+	create_text,
+	ref_node,
+	unref_node,
+	append_child,
+	insert_before,
+	remove_child,
+	clone_node,
+	reparent_children,
+	get_parent,
+	has_children,
+	form_associate,
+	add_attributes,
+	set_quirks_mode,
+	change_encoding,
+	NULL
+};
+
+
+
+/*** Tree construction functions ***/
+
+int create_comment(void *ctx, const hubbub_string *data, void **result)
+{
+	xmlNode *node = xmlNewComment(NULL);
+
+	node->content = xmlStrndup(data->ptr, data->len);
+	node->_private = (void *)1;
+	*result = node;
+
+	return 0;
+}
+
+int create_doctype(void *ctx, const hubbub_doctype *doctype, void **result)
+{
+	/* Make a node that doesn't really exist, then don't append it
+	 * later. */
+	xmlNode *node = xmlNewComment(NULL);
+
+	node->_private = (void *)1;
+	*result = node;
+
+	return 0;
+}
+
+int create_element(void *ctx, const hubbub_tag *tag, void **result)
+{
+	struct content *c = ctx;
+	struct content_html_data *html = &c->data.html;
+
+	char *name = strndup((const char *) tag->name.ptr,
+			tag->name.len);
+
+	xmlNode *node = xmlNewNode(NULL, BAD_CAST name);
+	node->_private = (void *)1;
+	*result = node;
+
+	if (html->firstelem == true) {
+		for (size_t i = 1; i < NUM_NAMESPACES; i++) {
+			ns_ns[i] = xmlNewNs(node,
+					BAD_CAST ns_urls[i],
+					BAD_CAST ns_prefixes[i]);
+		}
+		html->firstelem = false;
+	}
+
+	xmlSetNs(node, ns_ns[tag->ns]);
+
+	free(name);
+
+	for (size_t i = 0; i < tag->n_attributes; i++) {
+		hubbub_attribute *attr = &tag->attributes[i];
+
+		char *name = strndup((const char *) attr->name.ptr,
+				attr->name.len);
+		char *value = strndup((const char *) attr->value.ptr,
+				attr->value.len);
+
+		if (attr->ns == HUBBUB_NS_NULL) {
+			xmlNewProp(node, BAD_CAST name, BAD_CAST value);
+		} else {
+			xmlNewNsProp(node, ns_ns[attr->ns], BAD_CAST name,
+					BAD_CAST value);
+		}
+
+		free(name);
+		free(value);
+	}
+
+	return 0;
+}
+
+int create_text(void *ctx, const hubbub_string *data, void **result)
+{
+	xmlNode *node = xmlNewTextLen(BAD_CAST data->ptr, data->len);
+	node->_private = (void *)1;
+	*result = node;
+
+	return 0;
+}
+
+int ref_node(void *ctx, void *node)
+{
+	xmlNode *n = node;
+	n->_private = (void *)((uintptr_t)n->_private + 1);
+
+	return 0;
+}
+
+int unref_node(void *ctx, void *node)
+{
+	xmlNode *n = node;
+	n->_private = (void *)((uintptr_t)n->_private - 1);
+
+	if (n->_private == (void *)0 && n->parent == NULL) {
+		xmlFreeNode(n);
+	}
+
+	return 0;
+}
+
+int append_child(void *ctx, void *parent, void *child, void **result)
+{
+	xmlNode *nparent = parent;
+	xmlNode *nchild = child;
+
+	if (nchild->type == XML_TEXT_NODE &&
+			nparent->last != NULL &&
+			nparent->last->type == XML_TEXT_NODE) {
+		xmlNode *clone;
+		clone_node(ctx, nchild, false, (void **) &clone);
+		*result = xmlAddChild(parent, clone);
+		/* node referenced by clone_node */
+	} else {
+		*result = xmlAddChild(parent, child);
+		ref_node(ctx, *result);
+	}
+
+	return 0;
+}
+
+/* insert 'child' before 'ref_child', under 'parent' */
+int insert_before(void *ctx, void *parent, void *child, void *ref_child,
+		void **result)
+{
+	*result = xmlAddPrevSibling(ref_child, child);
+	ref_node(ctx, *result);
+
+	return 0;
+}
+
+int remove_child(void *ctx, void *parent, void *child, void **result)
+{
+	xmlUnlinkNode(child);
+	*result = child;
+
+	ref_node(ctx, *result);
+
+	return 0;
+}
+
+int clone_node(void *ctx, void *node, bool deep, void **result)
+{
+	xmlNode *n = xmlCopyNode(node, deep ? 1 : 2);
+	n->_private = (void *)1;
+	*result = n;
+
+	return 0;
+}
+
+/* Take all of the child nodes of "node" and append them to "new_parent" */
+int reparent_children(void *ctx, void *node, void *new_parent)
+{
+	xmlNode *n = (xmlNode *) node;
+	xmlNode *p = (xmlNode *) new_parent;
+
+	for (xmlNode *child = n->children; child != NULL; ) {
+		xmlNode *next = child->next;
+
+		xmlUnlinkNode(child);
+
+		if (xmlAddChild(p, child) == NULL)
+			return 1;
+
+		child = next;
+	}
+
+	return 0;
+}
+
+int get_parent(void *ctx, void *node, bool element_only, void **result)
+{
+	*result = ((xmlNode *)node)->parent;
+
+	if (*result != NULL && element_only &&
+			((xmlNode *) *result)->type != XML_ELEMENT_NODE)
+		*result = NULL;
+
+	if (*result != NULL)
+		ref_node(ctx, *result);
+
+	return 0;
+}
+
+int has_children(void *ctx, void *node, bool *result)
+{
+	*result = ((xmlNode *)node)->children ? true : false;
+
+	return 0;
+}
+
+int form_associate(void *ctx, void *form, void *node)
+{
+	return 0;
+}
+
+int add_attributes(void *ctx, void *node,
+		const hubbub_attribute *attributes, uint32_t n_attributes)
+{
+	for (size_t i = 0; i < n_attributes; i++) {
+		const hubbub_attribute *attr = &attributes[i];
+
+		char *name = strndup((const char *) attr->name.ptr,
+				attr->name.len);
+		char *value = strndup((const char *) attr->value.ptr,
+				attr->value.len);
+
+		if (attr->ns == HUBBUB_NS_NULL) {
+			xmlNewProp(node, BAD_CAST name, BAD_CAST value);
+		} else {
+			xmlNewNsProp(node, ns_ns[attr->ns], BAD_CAST name,
+					BAD_CAST value);
+		}
+
+		free(name);
+		free(value);
+	}
+
+	return 0;
+}
+
+int set_quirks_mode(void *ctx, hubbub_quirks_mode mode)
+{
+	return 0;
+}
+
+int change_encoding(void *ctx, const char *name)
+{
+	struct content *c = ctx;
+	struct content_html_data *html = &c->data.html;
+
+	/* If we have an encoding here, it means we are *certain* */
+	if (html->encoding) {
+		return 0;
+	}
+
+	/* Find the confidence otherwise (can only be from a BOM) */
+	uint32_t source;
+	const char *charset = hubbub_parser_read_charset(html->parser, &source);
+
+	if (source == HUBBUB_CHARSET_CONFIDENT) {
+		html->encoding_source = ENCODING_SOURCE_DETECTED;
+		html->encoding = (char *) charset;
+		return 0;
+	}
+
+	/* So here we have something of confidence tentative... */
+	/* http://www.whatwg.org/specs/web-apps/current-work/#change */
+
+	/* 2. "If the new encoding is identical or equivalent to the encoding
+	 * that is already being used to interpret the input stream, then set
+	 * the confidence to confident and abort these steps." */
+
+	/* Whatever happens, the encoding should be set here; either for
+	 * reprocessing with a different charset, or for confirming that the
+	 * charset is in fact correct */
+	html->encoding = (char *) name;
+	html->encoding_source = ENCODING_SOURCE_META;
+
+	/* Equal encodings will have the same string pointers */
+	return (charset == name) ? 0 : 1;
+}
+
+
+/**
+ * Talloc'd-up allocation hook for Hubbub.
+ */
+static void *html_hubbub_realloc(void *ptr, size_t len, void *pw)
+{
+	return talloc_realloc_size(pw, ptr, len);
+}
+
+
+
+/**
+ * Create, set up, and whatnot, a Hubbub parser instance, along with the
+ * relevant libxml2 bits.
+ */
+static int html_create_parser(struct content *c)
+{
+	struct content_html_data *html = &c->data.html;
+	hubbub_parser_optparams param;
+
+	html->parser = hubbub_parser_create(html->encoding,
+			html_hubbub_realloc,
+			c);
+	if (!html->parser)
+		return 1;
+
+	html->document = xmlNewDoc(BAD_CAST "1.0");
+	if (!html->document)
+		return 1;
+
+	html->tree_handler = tree_handler;
+	html->tree_handler.ctx = c;
+	param.tree_handler = &html->tree_handler;
+	hubbub_parser_setopt(html->parser, HUBBUB_PARSER_TREE_HANDLER, &param);
+
+	param.document_node = html->document;
+	hubbub_parser_setopt(html->parser, HUBBUB_PARSER_DOCUMENT_NODE, &param);
+
+	return 0;
+}
+
+
+
+#endif
+
+
+
+
 /**
  * Create a CONTENT_HTML.
  *
@@ -101,6 +484,10 @@ bool html_create(struct content *c, const char *params[])
 	union content_msg_data msg_data;
 
 	html->parser = 0;
+#ifdef WITH_HUBBUB
+	html->document = 0;
+	html->firstelem = true;
+#endif
 	html->encoding_handler = 0;
 	html->encoding = 0;
 	html->getenc = true;
@@ -135,16 +522,26 @@ bool html_create(struct content *c, const char *params[])
 		}
 	}
 
+#ifndef WITH_HUBBUB
 	html->parser = htmlCreatePushParserCtxt(0, 0, "", 0, 0,
 			XML_CHAR_ENCODING_NONE);
 	if (!html->parser)
 		goto no_memory;
+#else
 
+	/* Set up the parser, libxml2 document, and that */
+	if (html_create_parser(c) != 0)
+		goto no_memory;
+
+#endif
+
+#ifndef WITH_HUBBUB
 	if (html->encoding) {
 		/* an encoding was specified in the Content-Type header */
 		if (!html_set_parser_encoding(c, html->encoding))
 			return false;
 	}
+#endif
 
 	return true;
 
@@ -165,6 +562,7 @@ bool html_process_data(struct content *c, char *data, unsigned int size)
 {
 	unsigned long x;
 
+#ifndef WITH_HUBBUB
 	if (c->data.html.getenc) {
 		/* No encoding was specified in the Content-Type header.
 		 * Attempt to detect if the encoding is not 8-bit. If the
@@ -190,13 +588,36 @@ bool html_process_data(struct content *c, char *data, unsigned int size)
 		if (size == 0)
 			return true;
 	}
+#endif
+
+#ifdef WITH_HUBBUB
+	hubbub_error err;
+#endif
 
 	for (x = 0; x + CHUNK <= size; x += CHUNK) {
+#ifdef WITH_HUBBUB
+		err = hubbub_parser_parse_chunk(
+				c->data.html.parser, data + x, CHUNK);
+		if (err == HUBBUB_ENCODINGCHANGE) {
+			goto encoding_change;
+		}
+#else
 		htmlParseChunk(c->data.html.parser, data + x, CHUNK, 0);
+#endif
 		gui_multitask();
 	}
-	htmlParseChunk(c->data.html.parser, data + x, (int) (size - x), 0);
 
+#ifdef WITH_HUBBUB
+	err = hubbub_parser_parse_chunk(
+			c->data.html.parser, data + x, (size - x));
+	if (err == HUBBUB_ENCODINGCHANGE) {
+		goto encoding_change;
+	}
+#else
+	htmlParseChunk(c->data.html.parser, data + x, (int) (size - x), 0);
+#endif
+
+#ifndef WITH_HUBBUB
 	if (!c->data.html.encoding && c->data.html.parser->input->encoding) {
 		/* The encoding was not in headers or detected,
 		 * and the parser found a <meta http-equiv="content-type"
@@ -259,8 +680,36 @@ bool html_process_data(struct content *c, char *data, unsigned int size)
 		if (!html_process_data(c, c->source_data, c->source_size))
 			return false;
 	}
+#endif
 
 	return true;
+
+#ifdef WITH_HUBBUB
+
+encoding_change:
+
+	/* Free up hubbub, libxml2 etc */
+	hubbub_parser_destroy(c->data.html.parser);
+	if (c->data.html.document) {
+		xmlFreeDoc(c->data.html.document);
+	}
+
+	/* Set up the parser, libxml2 document, and that */
+	if (html_create_parser(c) != 0) {
+		union content_msg_data msg_data;
+
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		return false;
+	}
+
+	/* Recurse to reprocess all that data.  This is safe because
+	 * the encoding is now specified at parser-start which means
+	 * it cannot be changed again. */
+	return html_process_data(c, c->source_data, c->source_size);
+
+#endif
+
 }
 
 
@@ -274,6 +723,7 @@ bool html_process_data(struct content *c, char *data, unsigned int size)
 
 bool html_set_parser_encoding(struct content *c, const char *encoding)
 {
+#ifndef WITH_HUBBUB
 	struct content_html_data *html = &c->data.html;
 	xmlError *error;
 	char error_message[500];
@@ -322,6 +772,7 @@ bool html_set_parser_encoding(struct content *c, const char *encoding)
 
 	/* Ensure noone else attempts to reset the encoding */
 	html->getenc = false;
+#endif
 
 	return true;
 }
@@ -412,14 +863,28 @@ bool html_convert(struct content *c, int width, int height)
 
 	/* finish parsing */
 	if (c->source_size == 0)
+#ifndef WITH_HUBBUB
 		htmlParseChunk(c->data.html.parser, empty_document,
 				sizeof empty_document, 0);
+#else
+		hubbub_parser_parse_chunk(c->data.html.parser,
+				(uint8_t *) empty_document,
+				sizeof empty_document);
+#endif
+
+#ifndef WITH_HUBBUB
 	htmlParseChunk(c->data.html.parser, "", 0, 1);
 	document = c->data.html.parser->myDoc;
 	/*xmlDebugDumpDocument(stderr, c->data.html.parser->myDoc);*/
 	htmlFreeParserCtxt(c->data.html.parser);
 	c->data.html.parser = 0;
-
+#else
+	hubbub_parser_completed(c->data.html.parser);
+	hubbub_parser_destroy(c->data.html.parser);
+	c->data.html.parser = 0;
+	document = c->data.html.document;
+	/*xmlDebugDumpDocument(stderr, document);*/
+#endif
 	if (!document) {
 		LOG(("Parsing failed"));
 		msg_data.error = messages_get("ParsingFail");
@@ -1733,7 +2198,11 @@ void html_destroy(struct content *c)
 	}
 
 	if (c->data.html.parser)
+#ifndef WITH_HUBBUB
 		htmlFreeParserCtxt(c->data.html.parser);
+#else
+		hubbub_parser_destroy(c->data.html.parser);
+#endif
 
 	/* Free base target */
 	if (c->data.html.base_target) {

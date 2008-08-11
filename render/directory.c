@@ -27,6 +27,9 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <time.h>
+#ifdef WITH_HUBBUB
+#include <hubbub/parser.h>
+#endif
 #include <libxml/HTMLparser.h>
 #include "content/content.h"
 #include "render/directory.h"
@@ -45,7 +48,12 @@ bool directory_create(struct content *c, const char *params[]) {
 		/* html_create() must have broadcast MSG_ERROR already, so we
 		* don't need to. */
 		return false;
+#ifndef WITH_HUBBUB
 	htmlParseChunk(c->data.html.parser, header, sizeof(header) - 1, 0);
+#else
+	hubbub_parser_parse_chunk(c->data.html.parser, 
+				(uint8_t *) header, sizeof(header) - 1);
+#endif
 	return true;
 }
 
@@ -92,7 +100,11 @@ bool directory_convert(struct content *c, int width, int height) {
 			"<body>\n<h1>\nIndex of %s</h1>\n<hr><pre>",
 			nice_path, nice_path);
 	free(nice_path);
+#ifndef WITH_HUBBUB
 	htmlParseChunk(c->data.html.parser, buffer, strlen(buffer), 0);
+#else
+	hubbub_parser_parse_chunk(c->data.html.parser, buffer, strlen(buffer));
+#endif
 
 	res = url_parent(c->url, &up);
 	if (res == URL_FUNC_OK) {
@@ -100,8 +112,13 @@ bool directory_convert(struct content *c, int width, int height) {
 		if ((res == URL_FUNC_OK) && !compare) {
 			snprintf(buffer, sizeof(buffer),
 				"<a href=\"..\">[..]</a>\n");
+#ifndef WITH_HUBBUB
 			htmlParseChunk(c->data.html.parser, buffer,
 					strlen(buffer), 0);
+#else
+			hubbub_parser_parse_chunk(c->data.html.parser, 
+					buffer, strlen(buffer));
+#endif
 		}
 		free(up);
 	}
@@ -118,11 +135,21 @@ bool directory_convert(struct content *c, int width, int height) {
 
 		snprintf(buffer, sizeof(buffer), "<a href=\"%s/%s\">%s</a>\n",
 				c->url, entry->d_name, entry->d_name);
+#ifndef WITH_HUBBUB
 		htmlParseChunk(c->data.html.parser, buffer, strlen(buffer), 0);
+#else
+		hubbub_parser_parse_chunk(c->data.html.parser,
+				buffer, strlen(buffer));
+#endif
 	}
 	closedir(parent);
 
+#ifndef WITH_HUBBUB
 	htmlParseChunk(c->data.html.parser, footer, sizeof(footer) - 1, 0);
+#else
+	hubbub_parser_parse_chunk(c->data.html.parser, 
+			(uint8_t *) footer, sizeof(footer) - 1);
+#endif
 	c->type = CONTENT_HTML;
 	return html_convert(c, width, height);
 }

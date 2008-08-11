@@ -21,6 +21,22 @@
 #include "render/font.h"
 
 
+static bool nsfont_width(const struct css_style *style, 
+		const char *string, size_t length, int *width);
+static bool nsfont_position_in_string(const struct css_style *style,
+		const char *string, size_t length,
+		int x, size_t *char_offset, int *actual_x);
+static bool nsfont_split(const struct css_style *style,
+		const char *string, size_t length,
+		int x, size_t *char_offset, int *actual_x);
+
+const struct font_functions nsfont = {
+	nsfont_width,
+	nsfont_position_in_string,
+	nsfont_split
+};
+
+
 bool nsfont_width(const struct css_style *style,
 		const char *string, size_t length,
 		int *width)
@@ -63,3 +79,4 @@ bool nsfont_split(const struct css_style *style,
 	*actual_x = *char_offset * 10;
 	return true;
 }
+

@@ -26,6 +26,10 @@
 #define _NETSURF_RENDER_HTML_H_
 
 #include <stdbool.h>
+#ifdef WITH_HUBBUB
+#include <hubbub/parser.h>
+#include <hubbub/tree.h>
+#endif
 #include <libxml/HTMLparser.h>
 #include "content/content_type.h"
 #include "css/css.h"
@@ -114,11 +118,19 @@ struct content_html_iframe {
 
 /** Data specific to CONTENT_HTML. */
 struct content_html_data {
+#ifndef WITH_HUBBUB
 	htmlParserCtxt *parser;  /**< HTML parser context. */
+#else
+	hubbub_parser *parser; /**< HTML parser context. */
+	hubbub_tree_handler tree_handler;
+	xmlDoc *document;
+	bool firstelem;
+#endif
+
 	/** HTML parser encoding handler. */
 	xmlCharEncodingHandler *encoding_handler;
 
-	char *encoding;		/**< Encoding of source, 0 if unknown. */
+	char *encoding;	/**< Encoding of source, 0 if unknown. */
 	enum { ENCODING_SOURCE_HEADER, ENCODING_SOURCE_DETECTED,
 			ENCODING_SOURCE_META } encoding_source;
 				/**< Source of encoding information. */
