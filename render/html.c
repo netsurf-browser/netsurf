@@ -113,6 +113,7 @@ const char const *ns_urls[NUM_NAMESPACES] = {
 	"http://www.w3.org/2000/xmlns/"
 };
 
+static bool had_ns;
 xmlNs *ns_ns[NUM_NAMESPACES];
 
 static int create_comment(void *ctx, const hubbub_string *data, void **result);
@@ -186,9 +187,6 @@ int create_doctype(void *ctx, const hubbub_doctype *doctype, void **result)
 
 int create_element(void *ctx, const hubbub_tag *tag, void **result)
 {
-	struct content *c = ctx;
-	struct content_html_data *html = &c->data.html;
-
 	char *name = strndup((const char *) tag->name.ptr,
 			tag->name.len);
 
@@ -196,13 +194,13 @@ int create_element(void *ctx, const hubbub_tag *tag, void **result)
 	node->_private = (void *)1;
 	*result = node;
 
-	if (html->firstelem == true) {
+	if (had_ns == false) {
 		for (size_t i = 1; i < NUM_NAMESPACES; i++) {
 			ns_ns[i] = xmlNewNs(node,
 					BAD_CAST ns_urls[i],
 					BAD_CAST ns_prefixes[i]);
 		}
-		html->firstelem = false;
+		had_ns = true;
 	}
 
 	xmlSetNs(node, ns_ns[tag->ns]);
@@ -486,7 +484,6 @@ bool html_create(struct content *c, const char *params[])
 	html->parser = 0;
 #ifdef WITH_HUBBUB
 	html->document = 0;
-	html->firstelem = true;
 #endif
 	html->encoding_handler = 0;
 	html->encoding = 0;

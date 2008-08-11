@@ -124,7 +124,6 @@ struct content_html_data {
 	hubbub_parser *parser; /**< HTML parser context. */
 	hubbub_tree_handler tree_handler;
 	xmlDoc *document;
-	bool firstelem;
 #endif
 
 	/** HTML parser encoding handler. */
