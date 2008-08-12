@@ -55,9 +55,11 @@
 #include "replace.h"
 #else
 #include <stdarg.h>
+#ifndef __BEOS__
 /* Assume we've got va_copy */
 #define HAVE_VA_COPY
 #include <string.h>
+#endif
 #endif
 #include "talloc.h"
 #endif /* not _TALLOC_SAMBA3 */
