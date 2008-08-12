@@ -127,82 +127,87 @@ bool nsfont_split(const struct css_style *style,
 void ami_open_font(struct css_style *style)
 {
 	struct TextFont *tfont;
-	struct TextAttr tattr;
+	struct TTextAttr tattr;
+	struct TagItem tattrtags[2];
 
-/*
-	css_font_family font_family;
-	css_font_style font_style;
-	css_font_variant font_variant;
-see css_enum.h
-*/
 	switch(style->font_family)
 	{
 		case CSS_FONT_FAMILY_SANS_SERIF:
-			tattr.ta_Name = option_font_sans;
+			tattr.tta_Name = option_font_sans;
 		break;
 
 		case CSS_FONT_FAMILY_SERIF:
-			tattr.ta_Name = option_font_serif;
+			tattr.tta_Name = option_font_serif;
 		break;
 
 		case CSS_FONT_FAMILY_MONOSPACE:
-			tattr.ta_Name = option_font_mono;
+			tattr.tta_Name = option_font_mono;
 		break;
 
 		case CSS_FONT_FAMILY_CURSIVE:
-			tattr.ta_Name = option_font_cursive;
+			tattr.tta_Name = option_font_cursive;
 		break;
 
 		case CSS_FONT_FAMILY_FANTASY:
-			tattr.ta_Name = option_font_fantasy;
+			tattr.tta_Name = option_font_fantasy;
 		break;
 
 		default:
-			tattr.ta_Name = option_font_sans;
-			//printf("font family: %ld\n",style->font_family);
+			tattr.tta_Name = option_font_sans;
 		break;
 	}
 
 	switch(style->font_style)
 	{
 		case CSS_FONT_STYLE_ITALIC:
-			tattr.ta_Style = FSB_ITALIC;
+			tattr.tta_Style = FSB_ITALIC;
 		break;
 
 		case CSS_FONT_STYLE_OBLIQUE:
-			tattr.ta_Style = FSB_BOLD;
+			tattr.tta_Style = FSB_BOLD;
 		break;
 
 		default:
-			tattr.ta_Style = FS_NORMAL;
-			//printf("font style: %ld\n",style->font_style);
+			tattr.tta_Style = FS_NORMAL;
 		break;
 	}
 
+/* not supported
 	switch(style->font_variant)
 	{
 		default:
 			//printf("font variant: %ld\n",style->font_variant);
 		break;
 	}
+*/
 
 	switch(style->font_size.size)
 	{
 		case CSS_FONT_SIZE_LENGTH:
-			tattr.ta_YSize = (UWORD)style->font_size.value.length.value;
+			tattr.tta_YSize = (UWORD)style->font_size.value.length.value;
 		break;
 		default:
 			printf("FONT SIZE TYPE: %ld\n",style->font_size.size);
 		break;
 	}
-		//printf("%lf  %ld\n",style->font_size.value.length.value,(UWORD)style->font_size.value.length.value);
 
-	tattr.ta_Name = "DejaVu Sans.font";
-//	tattr.ta_Style = FS_NORMAL; // | FSB_ANTIALIASED;
-	tattr.ta_Flags = 0; //FPB_PROPORTIONAL;
-// see graphics/text.h
+	if(tattr.tta_YSize < option_font_min_size)
+		tattr.tta_YSize = option_font_min_size;
 
-	tfont = OpenDiskFont(&tattr);
+	tattr.tta_Flags = 0;
+
+/* Uncommenting this changes the font's charset.
+   106 is UTF-8 but OS4 doesn't support it so this only results in a crash! 
+
+	tattrtags[0].ti_Tag = TA_CharSet;
+	tattrtags[0].ti_Data = 106;
+	tattrtags[1].ti_Tag = TAG_DONE;
+
+	tattr.tta_Flags = FSB_TAGGED;  
+	tattr.tta_Tags = &tattrtags;
+*/
+
+	tfont = OpenDiskFont((struct TextAttr *)&tattr);
 
 	if(tfont)
 	{

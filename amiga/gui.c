@@ -138,30 +138,30 @@ void gui_init(int argc, char** argv)
 	adblock_stylesheet_url = "file://NetSurf/Resources/adblock.css";
 	options_read("Resources/Options");
 
-	if(!option_cookie_file)
+	if((!option_cookie_file) || (option_cookie_file[0] == '\0'))
 		option_cookie_file = strdup("Resources/Cookies");
 
 /*
-	if(!option_cookie_jar)
+	if((!option_cookie_jar) || (option_cookie_jar[0] == '\0'))
 		option_cookie_jar = strdup("resources/cookiejar");
 */
 
-	if(!option_ca_bundle)
+	if((!option_ca_bundle) || (option_ca_bundle[0] == '\0'))
 		option_ca_bundle = strdup("devs:curl-ca-bundle.crt");
 
-	if(!option_font_sans)
+	if((!option_font_sans) || (option_font_sans[0] == '\0'))
 		option_font_sans = strdup("DejaVu Sans.font");
 
-	if(!option_font_serif)
+	if((!option_font_serif) || (option_font_serif[0] == '\0'))
 		option_font_serif = strdup("DejaVu Serif.font");
 
-	if(!option_font_mono)
+	if((!option_font_mono) || (option_font_mono[0] == '\0'))
 		option_font_mono = strdup("DejaVu Sans Mono.font");
 
-	if(!option_font_cursive)
+	if((!option_font_cursive) || (option_font_cursive[0] == '\0'))
 		option_font_cursive = strdup("DejaVu Sans.font");
 
-	if(!option_font_fantasy)
+	if((!option_font_fantasy) || (option_font_cursive[0] == '\0'))
 		option_font_fantasy = strdup("DejaVu Serif.font");
 
 	plot=amiplot;
@@ -179,7 +179,7 @@ void gui_init2(int argc, char** argv)
 	struct browser_window *bw;
 //	const char *addr = NETSURF_HOMEPAGE; //"http://netsurf-browser.org/welcome/";
 
-	if ((option_homepage_url == NULL) || (option_homepage_url[0] == '\0'))
+	if ((!option_homepage_url) || (option_homepage_url[0] == '\0'))
     	option_homepage_url = strdup(NETSURF_HOMEPAGE);
 
 	scrn = OpenScreenTags(NULL,
