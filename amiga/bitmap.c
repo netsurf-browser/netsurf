@@ -30,7 +30,7 @@
  * \return an opaque struct bitmap, or NULL on memory exhaustion
  */
 
-struct bitmap *bitmap_create(int width, int height, unsigned int state)
+void *bitmap_create(int width, int height, unsigned int state)
 {
 	struct bitmap *bitmap;
 
@@ -57,9 +57,10 @@ struct bitmap *bitmap_create(int width, int height, unsigned int state)
  * of rows. The width of a row in bytes is given by bitmap_get_rowstride().
  */
 
-char *bitmap_get_buffer(struct bitmap *bitmap)
+unsigned char *bitmap_get_buffer(void *bitmap)
 {
-	return bitmap->pixdata;
+	struct bitmap *bm = bitmap;
+	return bm->pixdata;
 }
 
 
@@ -70,9 +71,10 @@ char *bitmap_get_buffer(struct bitmap *bitmap)
  * \return width of a pixel row in the bitmap
  */
 
-size_t bitmap_get_rowstride(struct bitmap *bitmap)
+size_t bitmap_get_rowstride(void *bitmap)
 {
-	return (bitmap->width)*4;
+	struct bitmap *bm = bitmap;
+	return (bm->width)*4;
 }
 
 
@@ -82,10 +84,12 @@ size_t bitmap_get_rowstride(struct bitmap *bitmap)
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  */
 
-void bitmap_destroy(struct bitmap *bitmap)
+void bitmap_destroy(void *bitmap)
 {
-	FreeVec(bitmap->pixdata);
-	FreeVec(bitmap);
+	struct bitmap *bm = bitmap;
+
+	FreeVec(bm->pixdata);
+	FreeVec(bm);
 }
 
 
@@ -97,7 +101,7 @@ void bitmap_destroy(struct bitmap *bitmap)
  * \return true on success, false on error and error reported
  */
 
-bool bitmap_save(struct bitmap *bitmap, const char *path, unsigned flags)
+bool bitmap_save(void *bitmap, const char *path, unsigned flags)
 {
 	return true;
 }
@@ -108,7 +112,7 @@ bool bitmap_save(struct bitmap *bitmap, const char *path, unsigned flags)
  *
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  */
-void bitmap_modified(struct bitmap *bitmap) {
+void bitmap_modified(void *bitmap) {
 }
 
 
@@ -120,8 +124,8 @@ void bitmap_modified(struct bitmap *bitmap) {
  * \param  suspend	the function to be called upon suspension
  * \param  resume	the function to be called when resuming
  */
-void bitmap_set_suspendable(struct bitmap *bitmap, void *private_word,
-		void (*invalidate)(struct bitmap *bitmap, void *private_word)) {
+void bitmap_set_suspendable(void *bitmap, void *private_word,
+		void (*invalidate)(void *bitmap, void *private_word)) {
 }
 
 /**
@@ -130,7 +134,7 @@ void bitmap_set_suspendable(struct bitmap *bitmap, void *private_word,
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  * \param  opaque  whether the bitmap should be plotted opaque
  */
-void bitmap_set_opaque(struct bitmap *bitmap, bool opaque)
+void bitmap_set_opaque(void *bitmap, bool opaque)
 {
 	assert(bitmap);
 /* todo: set bitmap as opaque */
@@ -143,7 +147,7 @@ void bitmap_set_opaque(struct bitmap *bitmap, bool opaque)
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  * \return whether the bitmap is opaque
  */
-bool bitmap_test_opaque(struct bitmap *bitmap)
+bool bitmap_test_opaque(void *bitmap)
 {
 	assert(bitmap);
 /* todo: test if bitmap as opaque */
@@ -156,9 +160,28 @@ bool bitmap_test_opaque(struct bitmap *bitmap)
  *
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  */
-bool bitmap_get_opaque(struct bitmap *bitmap)
+bool bitmap_get_opaque(void *bitmap)
 {
 	assert(bitmap);
 /* todo: get whether bitmap is opaque */
 	return false;
+}
+
+int bitmap_get_width(void *bitmap)
+{
+	struct bitmap *bm = bitmap;
+
+	return(bm->width);
+}
+
+int bitmap_get_height(void *bitmap)
+{
+	struct bitmap *bm = bitmap;
+
+	return(bm->height);
+}
+
+size_t bitmap_get_bpp(void *bitmap)
+{
+	return(32);
 }
