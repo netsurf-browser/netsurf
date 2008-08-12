@@ -23,7 +23,7 @@
 #ifdef WITH_BMP
 
 #include <stdbool.h>
-#include "image/bmpread.h"
+#include <libnsbmp.h>
 
 struct content;
 

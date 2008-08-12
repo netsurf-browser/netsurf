@@ -46,19 +46,20 @@ struct content;
 /** An opaque image. */
 struct bitmap;
 
-struct bitmap *bitmap_create(int width, int height, unsigned int state);
-void bitmap_set_opaque(struct bitmap *bitmap, bool opaque);
-bool bitmap_test_opaque(struct bitmap *bitmap);
-bool bitmap_get_opaque(struct bitmap *bitmap);
-char *bitmap_get_buffer(struct bitmap *bitmap);
-size_t bitmap_get_rowstride(struct bitmap *bitmap);
-void bitmap_destroy(struct bitmap *bitmap);
-bool bitmap_save(struct bitmap *bitmap, const char *path, unsigned flags);
-void bitmap_modified(struct bitmap *bitmap);
-void bitmap_set_suspendable(struct bitmap *bitmap, void *private_word,
-		void (*invalidate)(struct bitmap *bitmap, void *private_word));
+void *bitmap_create(int width, int height, unsigned int state);
+void bitmap_set_opaque(void *bitmap, bool opaque);
+bool bitmap_test_opaque(void *bitmap);
+bool bitmap_get_opaque(void *bitmap);
+unsigned char *bitmap_get_buffer(void *bitmap);
+size_t bitmap_get_rowstride(void *bitmap);
+size_t bitmap_get_bpp(void *bitmap);
+void bitmap_destroy(void *bitmap);
+bool bitmap_save(void *bitmap, const char *path, unsigned flags);
+void bitmap_modified(void *bitmap);
+void bitmap_set_suspendable(void *bitmap, void *private_word,
+		void (*invalidate)(void *bitmap, void *private_word));
 
-int bitmap_get_width(struct bitmap *bitmap);
-int bitmap_get_height(struct bitmap *bitmap);
+int bitmap_get_width(void *bitmap);
+int bitmap_get_height(void *bitmap);
 
 #endif

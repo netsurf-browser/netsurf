@@ -1,6 +1,7 @@
 /*
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
  * Copyright 2004 Richard Wilson <not_ginger_matt@users.sourceforge.net>
+ * Copyright 2008 Sean Fox <dyntryx@gmail.com>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -24,13 +25,14 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <libnsgif.h>
+#include "utils/config.h"
 #include "content/content.h"
 #include "desktop/browser.h"
 #include "desktop/options.h"
 #include "desktop/plotters.h"
 #include "image/bitmap.h"
 #include "image/gif.h"
-#include "image/gifread.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
@@ -46,9 +48,21 @@
 	[rjw] - Sun 4th April 2004
 */
 
-static void nsgif_invalidate(struct bitmap *bitmap, void *private_word);
+static void nsgif_invalidate(void *bitmap, void *private_word);
 static void nsgif_animate(void *p);
-static void nsgif_get_frame(struct content *c);
+static gif_result nsgif_get_frame(struct content *c);
+
+/*	The Bitmap callbacks function table;
+	necessary for interaction with nsgiflib.
+*/
+gif_bitmap_callback_vt gif_bitmap_callbacks = {
+	.bitmap_create = nsgif_bitmap_create,
+	.bitmap_destroy = bitmap_destroy,
+	.bitmap_get_buffer = bitmap_get_buffer,
+	.bitmap_set_opaque = bitmap_set_opaque,
+	.bitmap_test_opaque = bitmap_test_opaque,
+	.bitmap_modified = bitmap_modified
+};
 
 
 bool nsgif_create(struct content *c, const char *params[]) {
@@ -61,6 +75,7 @@ bool nsgif_create(struct content *c, const char *params[]) {
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
 	}
+	gif_create(c->data.gif.gif, &gif_bitmap_callbacks);
 	return true;
 }
 
@@ -70,27 +85,31 @@ bool nsgif_convert(struct content *c, int iwidth, int iheight) {
 	struct gif_animation *gif;
 	union content_msg_data msg_data;
 
-	/*	Create our animation
+	/*	Get the animation
 	*/
 	gif = c->data.gif.gif;
-	gif->gif_data = (unsigned char *) c->source_data;
-	gif->buffer_size = c->source_size;
-	gif->buffer_position = 0;
 
 	/*	Initialise the GIF
 	*/
-	res = gif_initialise(gif);
-	switch (res) {
-		case GIF_INSUFFICIENT_MEMORY:
-			msg_data.error = messages_get("NoMemory");
+	do {
+		res = gif_initialise(gif, c->source_size, (unsigned char *)c->source_data);
+		if (res != GIF_OK && res != GIF_WORKING) {
+			switch (res)
+			{
+				case GIF_INSUFFICIENT_FRAME_DATA:
+				case GIF_FRAME_DATA_ERROR:
+				case GIF_INSUFFICIENT_DATA:
+				case GIF_DATA_ERROR:
+					msg_data.error = messages_get("BadGIF");
+					break;
+				case GIF_INSUFFICIENT_MEMORY:
+					msg_data.error = messages_get("NoMemory");
+					break;
+			}
 			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 			return false;
-		case GIF_INSUFFICIENT_DATA:
-		case GIF_DATA_ERROR:
-			msg_data.error = messages_get("BadGIF");
-			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-			return false;
-	}
+		}
+	} while (res != GIF_OK);
 
 	/*	Abort on bad GIFs
 	*/
@@ -127,7 +146,7 @@ bool nsgif_convert(struct content *c, int iwidth, int iheight) {
 	return true;
 }
 
-void nsgif_invalidate(struct bitmap *bitmap, void *private_word) {
+void nsgif_invalidate(void *bitmap, void *private_word) {
 	struct gif_animation *gif = (struct gif_animation *)private_word;
 
 	gif->decoded_frame = -1;
@@ -139,7 +158,8 @@ bool nsgif_redraw(struct content *c, int x, int y,
 		float scale, unsigned long background_colour) {
 
 	if (c->data.gif.current_frame != c->data.gif.gif->decoded_frame)
-		nsgif_get_frame(c);
+		if (nsgif_get_frame(c) != GIF_OK)
+			return false;
 	c->bitmap = c->data.gif.gif->frame_image;
 	return plot.bitmap(x, y, width, height,	c->bitmap, background_colour, c);
 }
@@ -151,8 +171,11 @@ bool nsgif_redraw_tiled(struct content *c, int x, int y,
 		float scale, unsigned long background_colour,
 		bool repeat_x, bool repeat_y) {
 
+	gif_result res;
+
 	if (c->data.gif.current_frame != c->data.gif.gif->decoded_frame)
-		nsgif_get_frame(c);
+		if (nsgif_get_frame(c) != GIF_OK)
+			return false;
 	c->bitmap = c->data.gif.gif->frame_image;
 	return plot.bitmap_tile(x, y, width, height, c->bitmap, background_colour,
 			repeat_x, repeat_y, c);
@@ -161,6 +184,7 @@ bool nsgif_redraw_tiled(struct content *c, int x, int y,
 
 void nsgif_destroy(struct content *c)
 {
+
 	/*	Free all the associated memory buffers
 	*/
 	schedule_remove(nsgif_animate, c);
@@ -175,7 +199,7 @@ void nsgif_destroy(struct content *c)
  *
  * \param c  the content to update
  */
-void nsgif_get_frame(struct content *c) {
+gif_result nsgif_get_frame(struct content *c) {
 	int previous_frame, current_frame, frame;
 
 	current_frame = c->data.gif.current_frame;
@@ -186,7 +210,7 @@ void nsgif_get_frame(struct content *c) {
 	else
 		previous_frame = c->data.gif.gif->decoded_frame + 1;
 	for (frame = previous_frame; frame <= current_frame; frame++)
-		gif_decode_frame(c->data.gif.gif, frame);
+		return gif_decode_frame(c->data.gif.gif, frame);
 }
 
 
@@ -229,7 +253,7 @@ void nsgif_animate(void *p)
 		schedule(delay, nsgif_animate, c);
 	}
 
-	if (!option_animate_images)
+	if ((!option_animate_images) || (!gif->frames[c->data.gif.current_frame].display))
 		return;
 
 	/* area within gif to redraw */
@@ -284,6 +308,18 @@ void nsgif_animate(void *p)
 	data.redraw.object_height = c->height;
 
 	content_broadcast(c, CONTENT_MSG_REDRAW, data);
+}
+
+
+/**
+ * Callback for libnsgif; forwards the call to bitmap_create()
+ *
+ * \param  width   width of image in pixels
+ * \param  height  width of image in pixels
+ * \return an opaque struct bitmap, or NULL on memory exhaustion
+ */
+void *nsgif_bitmap_create(int width, int height) {
+	return bitmap_create(width, height, BITMAP_NEW);
 }
 
 #endif

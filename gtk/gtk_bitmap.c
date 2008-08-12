@@ -54,12 +54,16 @@ struct bitmap {
  * \return an opaque struct bitmap, or NULL on memory exhaustion
  */
 
-struct bitmap *bitmap_create(int width, int height, unsigned int state)
+void *bitmap_create(int width, int height, unsigned int state)
 {
         struct bitmap *bmp = malloc(sizeof(struct bitmap));
 
-	bmp->primary = gdk_pixbuf_new(GDK_COLORSPACE_RGB, true, 8,
-                                      width, height);
+// 	if ((state & BITMAP_OPAQUE) != 0)
+// 		bmp->primary = gdk_pixbuf_new(GDK_COLORSPACE_RGB, false,
+// 					       8, width, height);
+// 	else
+		bmp->primary = gdk_pixbuf_new(GDK_COLORSPACE_RGB, true,
+					       8, width, height);
 
 	/* fill the pixbuf in with 100% transparent black, as the memory
 	 * won't have been cleared.
@@ -76,8 +80,9 @@ struct bitmap *bitmap_create(int width, int height, unsigned int state)
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  * \param  opaque  whether the bitmap should be plotted opaque
  */
-void bitmap_set_opaque(struct bitmap *bitmap, bool opaque)
+void bitmap_set_opaque(void *vbitmap, bool opaque)
 {
+	struct bitmap *bitmap = (struct bitmap *)vbitmap;
 	assert(bitmap);
 /* todo: set bitmap as opaque */
 }
@@ -89,8 +94,9 @@ void bitmap_set_opaque(struct bitmap *bitmap, bool opaque)
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  * \return whether the bitmap is opaque
  */
-bool bitmap_test_opaque(struct bitmap *bitmap)
+bool bitmap_test_opaque(void *vbitmap)
 {
+	struct bitmap *bitmap = (struct bitmap *)vbitmap;
 	assert(bitmap);
 /* todo: test if bitmap as opaque */
 	return false;
@@ -102,8 +108,9 @@ bool bitmap_test_opaque(struct bitmap *bitmap)
  *
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  */
-bool bitmap_get_opaque(struct bitmap *bitmap)
+bool bitmap_get_opaque(void *vbitmap)
 {
+	struct bitmap *bitmap = (struct bitmap *)vbitmap;
 	assert(bitmap);
 /* todo: get whether bitmap is opaque */
 	return false;
@@ -120,10 +127,11 @@ bool bitmap_get_opaque(struct bitmap *bitmap)
  * of rows. The width of a row in bytes is given by bitmap_get_rowstride().
  */
 
-char *bitmap_get_buffer(struct bitmap *bitmap)
+unsigned char *bitmap_get_buffer(void *vbitmap)
 {
+	struct bitmap *bitmap = (struct bitmap *)vbitmap;
 	assert(bitmap);
-	return (char *)gdk_pixbuf_get_pixels(bitmap->primary);
+	return (unsigned char *)gdk_pixbuf_get_pixels(bitmap->primary);
 }
 
 
@@ -134,10 +142,26 @@ char *bitmap_get_buffer(struct bitmap *bitmap)
  * \return width of a pixel row in the bitmap
  */
 
-size_t bitmap_get_rowstride(struct bitmap *bitmap)
+size_t bitmap_get_rowstride(void *vbitmap)
 {
+	struct bitmap *bitmap = (struct bitmap *)vbitmap;
 	assert(bitmap);
 	return gdk_pixbuf_get_rowstride(bitmap->primary);
+}
+
+
+/**
+ * Find the bytes per pixel of a bitmap
+ *
+ * \param  bitmap  a bitmap, as returned by bitmap_create()
+ * \return bytes per pixel
+ */
+
+size_t bitmap_get_bpp(void *vbitmap)
+{
+	struct bitmap *bitmap = (struct bitmap *)vbitmap;
+	assert(bitmap);
+	return 4;
 }
 
 
@@ -157,8 +181,9 @@ gtk_bitmap_free_pretiles(struct bitmap *bitmap)
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  */
 
-void bitmap_destroy(struct bitmap *bitmap)
+void bitmap_destroy(void *vbitmap)
 {
+	struct bitmap *bitmap = (struct bitmap *)vbitmap;
 	assert(bitmap);
         gtk_bitmap_free_pretiles(bitmap);
 	g_object_unref(bitmap->primary);
@@ -175,8 +200,9 @@ void bitmap_destroy(struct bitmap *bitmap)
  * \return true on success, false on error and error reported
  */
 
-bool bitmap_save(struct bitmap *bitmap, const char *path, unsigned flags)
+bool bitmap_save(void *vbitmap, const char *path, unsigned flags)
 {
+	struct bitmap *bitmap = (struct bitmap *)vbitmap;
 	GError *err = NULL;
 
 	gdk_pixbuf_save(bitmap->primary, path, "png", &err, NULL);
@@ -194,7 +220,8 @@ bool bitmap_save(struct bitmap *bitmap, const char *path, unsigned flags)
  *
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  */
-void bitmap_modified(struct bitmap *bitmap) {
+void bitmap_modified(void *vbitmap) {
+	struct bitmap *bitmap = (struct bitmap *)vbitmap;
         gtk_bitmap_free_pretiles(bitmap);
 }
 
@@ -202,20 +229,21 @@ void bitmap_modified(struct bitmap *bitmap) {
 /**
  * The bitmap image can be suspended.
  *
- * \param  bitmap  	a bitmap, as returned by bitmap_create()
- * \param  private_word	a private word to be returned later
- * \param  suspend	the function to be called upon suspension
- * \param  resume	the function to be called when resuming
+ * \param  bitmap  		a bitmap, as returned by bitmap_create()
+ * \param  private_word		a private word to be returned later
+ * \param  invalidate		the function to be called upon suspension
  */
-void bitmap_set_suspendable(struct bitmap *bitmap, void *private_word,
-		void (*invalidate)(struct bitmap *bitmap, void *private_word)) {
+void bitmap_set_suspendable(void *vbitmap, void *private_word,
+		void (*invalidate)(void *vbitmap, void *private_word)) {
 }
 
-int bitmap_get_width(struct bitmap *bitmap){
+int bitmap_get_width(void *vbitmap){
+	struct bitmap *bitmap = (struct bitmap *)vbitmap;
 	return gdk_pixbuf_get_width(bitmap->primary);
 }
 
-int bitmap_get_height(struct bitmap *bitmap){
+int bitmap_get_height(void *vbitmap){
+	struct bitmap *bitmap = (struct bitmap *)vbitmap;
 	return gdk_pixbuf_get_height(bitmap->primary);
 }
 
@@ -259,9 +287,9 @@ gtk_bitmap_generate_pretile(GdkPixbuf *primary, int repeat_x, int repeat_y)
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  */
 GdkPixbuf *
-gtk_bitmap_get_primary(struct bitmap* bitmap)
+gtk_bitmap_get_primary(struct bitmap *bitmap)
 {
-  return bitmap->primary;
+	return bitmap->primary;
 }
 
 /**

@@ -1,5 +1,6 @@
 /*
  * Copyright 2006 Richard Wilson <info@tinct.net>
+ * Copyright 2008 Sean Fox <dyntryx@gmail.com>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -23,12 +24,14 @@
 #ifdef WITH_BMP
 
 #include <stdbool.h>
-#include "image/bmpread.h"
+#include <libnsbmp.h>
+#include "image/bitmap.h"
 
 struct content;
+struct bitmap;
 
 struct content_bmp_data {
-	struct bmp_image *bmp;	/** BMP image data */
+	bmp_image *bmp;	/** BMP image data */
 };
 
 bool nsbmp_create(struct content *c, const char *params[]);
@@ -43,6 +46,7 @@ bool nsbmp_redraw_tiled(struct content *c, int x, int y,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale, unsigned long background_colour,
 		bool repeat_x, bool repeat_y);
+void *nsbmp_bitmap_create(int width, int height, unsigned int bmp_state);
 
 #endif /* WITH_BMP */
 

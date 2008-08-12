@@ -209,7 +209,7 @@ define pkg_config_find_and_add
           $$(info M.CONFIG: auto-enabled $(3) ($(2)).)
         endif
       else
-        $$(error Unable to find library for: $(3) ($(2))
+        $$(error Unable to find library for: $(3) ($(2)))
       endif
     endif
   else
@@ -220,8 +220,8 @@ define pkg_config_find_and_add
 endef
 
 
-$(eval $(call feature_enabled,BMP,-DWITH_BMP,,BMP support))
-$(eval $(call feature_enabled,GIF,-DWITH_GIF,,GIF support))
+$(eval $(call feature_enabled,BMP,-DWITH_BMP,-lnsbmp,BMP support))
+$(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif,GIF support))
 $(eval $(call feature_enabled,JPEG,-DWITH_JPEG,-ljpeg,JPEG support))
 $(eval $(call feature_enabled,MNG,-DWITH_MNG,-lmng,PNG support))
 
@@ -295,9 +295,10 @@ ifeq ($(TARGET),gtk)
 		-DGTK_RESPATH=\"$(NETSURF_GTK_RESOURCES)\" \
 		$(WARNFLAGS) -I. -g $(OPT2FLAGS) \
 		$(shell $(PKG_CONFIG) --cflags libglade-2.0 gtk+-2.0) \
+		$(shell $(PKG_CONFIG) --cflags libnsgif libnsbmp) \
 		$(shell xml2-config --cflags)
 
-  GTKLDFLAGS := $(shell $(PKG_CONFIG) --cflags --libs libglade-2.0 gtk+-2.0 gthread-2.0 gmodule-2.0 lcms)
+  GTKLDFLAGS := $(shell $(PKG_CONFIG) --cflags --libs libglade-2.0 gtk+-2.0 gthread-2.0 gmodule-2.0 lcms libnsgif libnsbmp)
 
   CFLAGS += $(GTKCFLAGS)
   LDFLAGS += $(GTKLDFLAGS)
@@ -414,6 +415,7 @@ ifeq ($(TARGET),debug)
 		-D_POSIX_C_SOURCE=200112L \
 		-D_NETBSD_SOURCE \
 		$(WARNFLAGS) -I. -g $(OPT0FLAGS) \
+		$(shell $(PKG_CONFIG) --cflags libnsgif libnsbmp) \
 		$(shell xml2-config --cflags)
   LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl openssl)
 
@@ -421,6 +423,7 @@ ifeq ($(TARGET),debug)
   $(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,RISC OS sprite rendering))
   $(eval $(call pkg_config_find_and_add,HUBBUB,libhubbub,Hubbub HTML parser))
   $(eval $(call pkg_config_find_and_add,HUBBUB,libparserutils,Hubbub HTML parser))
+LDFLAGS += $(shell $(PKG_CONFIG) --libs libnsgif libnsbmp)
 endif
 
 # ----------------------------------------------------------------------------

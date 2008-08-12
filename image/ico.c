@@ -23,11 +23,11 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <libnsbmp.h>
 #include "utils/config.h"
 #include "content/content.h"
 #include "desktop/plotters.h"
 #include "image/bitmap.h"
-#include "image/bmpread.h"
 #include "image/ico.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -35,13 +35,16 @@
 
 bool nsico_create(struct content *c, const char *params[]) {
 	union content_msg_data msg_data;
+	extern bmp_bitmap_callback_vt bmp_bitmap_callbacks;	/**< external structure containing
+								*  bitmap callback functions */
 
-	c->data.ico.ico = calloc(sizeof(struct ico_collection), 1);
+	c->data.ico.ico = calloc(sizeof(ico_collection), 1);
 	if (!c->data.ico.ico) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
 	}
+	ico_collection_create(c->data.ico.ico, &bmp_bitmap_callbacks);
 	return true;
 }
 
@@ -49,16 +52,14 @@ bool nsico_create(struct content *c, const char *params[]) {
 bool nsico_convert(struct content *c, int iwidth, int iheight) {
 	struct bmp_image *bmp;
 	bmp_result res;
-	struct ico_collection *ico;
+	ico_collection *ico;
 	union content_msg_data msg_data;
 
-	/* set our source data */
+	/* set the ico data */
 	ico = c->data.ico.ico;
-	ico->ico_data = (unsigned char *) c->source_data;
-	ico->buffer_size = c->source_size;
 
-	/* analyse the BMP */
-	res = ico_analyse(ico);
+	/* analyse the ico */
+	res = ico_analyse(ico, c->source_size, (unsigned char *) c->source_data);
 	switch (res) {
 		case BMP_OK:
 			break;
@@ -99,7 +100,8 @@ bool nsico_redraw(struct content *c, int x, int y,
 		float scale, unsigned long background_colour) {
 	struct bmp_image *bmp = ico_find(c->data.ico.ico, width, height);
 	if (!bmp->decoded)
-	  	bmp_decode(bmp);
+	  	if (bmp_decode(bmp) != BMP_OK)
+			return false;
 	c->bitmap = bmp->bitmap;
 	return plot.bitmap(x, y, width, height, c->bitmap,
 			background_colour, c);
@@ -113,7 +115,8 @@ bool nsico_redraw_tiled(struct content *c, int x, int y,
 		bool repeat_x, bool repeat_y) {
 	struct bmp_image *bmp = ico_find(c->data.ico.ico, width, height);
 	if (!bmp->decoded)
-	  	bmp_decode(bmp);
+	  	if (bmp_decode(bmp) != BMP_OK)
+			return false;
 	c->bitmap = bmp->bitmap;
 	return plot.bitmap_tile(x, y, width, height, c->bitmap,
 			background_colour, repeat_x, repeat_y, c);

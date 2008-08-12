@@ -23,7 +23,7 @@ S_COMMON := $(addprefix content/,$(S_CONTENT))	\
 	$(addprefix desktop/,$(S_DESKTOP))
 
 # S_IMAGE are sources related to image management
-S_IMAGE := bmp.c bmpread.c gif.c gifread.c ico.c jpeg.c	\
+S_IMAGE := bmp.c gif.c ico.c jpeg.c	\
 	mng.c nssprite.c svg.c rsvg.c
 S_IMAGE := $(addprefix image/,$(S_IMAGE))
 

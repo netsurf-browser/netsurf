@@ -190,7 +190,7 @@ void bitmap_quit(void)
  * \return an opaque struct bitmap, or NULL on memory exhaustion
  */
 
-struct bitmap *bitmap_create(int width, int height, unsigned int state)
+void *bitmap_create(int width, int height, unsigned int state)
 {
 	struct bitmap *bitmap;
 
@@ -305,7 +305,7 @@ void bitmap_overlay_sprite(struct bitmap *bitmap, const osspriteop_header *s)
 
 	dp_offset = bitmap_get_rowstride(bitmap) / 4;
 
-	dp = (unsigned*)bitmap_get_buffer(bitmap);
+	dp = bitmap_get_buffer(bitmap);
 	if (!dp)
 		return;
 	sp = (byte*)s + s->image;
@@ -410,8 +410,9 @@ bool bitmap_initialise(struct bitmap *bitmap)
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  * \param  opaque  whether the bitmap should be plotted opaque
  */
-void bitmap_set_opaque(struct bitmap *bitmap, bool opaque)
+void bitmap_set_opaque(void *vbitmap, bool opaque)
 {
+	struct bitmap *bitmap = (struct bitmap *) vbitmap;
 	assert(bitmap);
 
 	if (opaque)
@@ -427,10 +428,11 @@ void bitmap_set_opaque(struct bitmap *bitmap, bool opaque)
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  * \return whether the bitmap is opaque
  */
-bool bitmap_test_opaque(struct bitmap *bitmap)
+bool bitmap_test_opaque(void *vbitmap)
 {
+	struct bitmap *bitmap = (struct bitmap *) vbitmap;
 	assert(bitmap);
-	char *sprite = bitmap_get_buffer(bitmap);
+	unsigned char *sprite = bitmap_get_buffer(bitmap);
 	if (!sprite)
 		return false;
 	unsigned int width = bitmap_get_rowstride(bitmap);
@@ -464,8 +466,9 @@ bool bitmap_test_opaque(struct bitmap *bitmap)
  *
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  */
-bool bitmap_get_opaque(struct bitmap *bitmap)
+bool bitmap_get_opaque(void *vbitmap)
 {
+	struct bitmap *bitmap = (struct bitmap *) vbitmap;
 	assert(bitmap);
 	return (bitmap->state & BITMAP_OPAQUE);
 }
@@ -481,8 +484,9 @@ bool bitmap_get_opaque(struct bitmap *bitmap)
  * of rows. The width of a row in bytes is given by bitmap_get_rowstride().
  */
 
-char *bitmap_get_buffer(struct bitmap *bitmap)
+unsigned char *bitmap_get_buffer(void *vbitmap)
 {
+	struct bitmap *bitmap = (struct bitmap *) vbitmap;
 	assert(bitmap);
 
 	/* move to the head of the list */
@@ -534,8 +538,9 @@ char *bitmap_get_buffer(struct bitmap *bitmap)
  * \return width of a pixel row in the bitmap
  */
 
-size_t bitmap_get_rowstride(struct bitmap *bitmap)
+size_t bitmap_get_rowstride(void *vbitmap)
 {
+	struct bitmap *bitmap = (struct bitmap *) vbitmap;
 	return bitmap->width * 4;
 }
 
@@ -546,8 +551,9 @@ size_t bitmap_get_rowstride(struct bitmap *bitmap)
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  */
 
-void bitmap_destroy(struct bitmap *bitmap)
+void bitmap_destroy(void *vbitmap)
 {
+	struct bitmap *bitmap = (struct bitmap *) vbitmap;
 	struct bitmap_compressed_header *header;
 	unsigned int area_size;
 
@@ -590,8 +596,9 @@ void bitmap_destroy(struct bitmap *bitmap)
  * \return true on success, false on error and error reported
  */
 
-bool bitmap_save(struct bitmap *bitmap, const char *path, unsigned flags)
+bool bitmap_save(void *vbitmap, const char *path, unsigned flags)
 {
+	struct bitmap *bitmap = (struct bitmap *) vbitmap;
 	os_error *error;
 
 	if (!bitmap->sprite_area)
@@ -758,7 +765,8 @@ bool bitmap_save(struct bitmap *bitmap, const char *path, unsigned flags)
  *
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  */
-void bitmap_modified(struct bitmap *bitmap) {
+void bitmap_modified(void *vbitmap) {
+	struct bitmap *bitmap = (struct bitmap *) vbitmap;
 	bitmap->state |= BITMAP_MODIFIED;
 }
 
@@ -770,8 +778,9 @@ void bitmap_modified(struct bitmap *bitmap) {
  * \param  private_word	a private word to be returned later
  * \param  invalidate	the function to be called upon suspension
  */
-void bitmap_set_suspendable(struct bitmap *bitmap, void *private_word,
-		void (*invalidate)(struct bitmap *bitmap, void *private_word)) {
+void bitmap_set_suspendable(void *vbitmap, void *private_word,
+		void (*invalidate)(void *bitmap, void *private_word)) {
+	struct bitmap *bitmap = (struct bitmap *) vbitmap;
 	bitmap->private_word = private_word;
 	bitmap->invalidate = invalidate;
 	bitmap_suspendable++;
@@ -1153,13 +1162,31 @@ void bitmap_delete_file(struct bitmap *bitmap)
 }
 
 
-int bitmap_get_width(struct bitmap *bitmap)
+int bitmap_get_width(void *vbitmap)
 {
+	struct bitmap *bitmap = (struct bitmap *) vbitmap;
 	return bitmap->width;
 }
 
 
-int bitmap_get_height(struct bitmap *bitmap)
+int bitmap_get_height(void *vbitmap)
 {
+	struct bitmap *bitmap = (struct bitmap *) vbitmap;
 	return bitmap->height;
 }
+
+
+/**
+ * Find the bytes per pixel of a bitmap
+ *
+ * \param  bitmap  a bitmap, as returned by bitmap_create()
+ * \return bytes per pixel
+ */
+
+size_t bitmap_get_bpp(void *vbitmap)
+{
+	struct bitmap *bitmap = (struct bitmap *)vbitmap;
+	assert(bitmap);
+	return 4;
+}
+
