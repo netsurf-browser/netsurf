@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
-  Build Instructions for GTK NetSurf                              30 July 2008
+  Build Instructions for GTK NetSurf                            12 August 2008
 --------------------------------------------------------------------------------
 
   This document provides instructions for building the GTK version of NetSurf
@@ -17,6 +17,10 @@
   automatically detected and used, and where this is the case they are set to
   such.  Others cannot be automatically detected from the Makefile, so you will
   either need to install the dependencies, or set them to NO.
+  
+  You should then obtain NetSurf's dependancies, keeping in mind which options
+  you have enabled in the configuration file.  See the next section for
+  specifics.
   
   Once done, to build GTK NetSurf on a UNIX-like platform, simply run:
 
@@ -42,7 +46,9 @@
 ==================================
 
   Many of NetSurf's dependencies are packaged on various operating systems.
-  The remainder must be installed manually.
+  The remainder must be installed manually.  Hopefully the number of NetSurf-
+  related libraries required will have official releases, downloadable tarballs
+  and such.  But for now, you'll have to do with svn checkouts.
 
 
   Package installation
@@ -58,6 +64,41 @@
       $ yum install libglade2-devel curl-devel libxml2-devel libmng-devel
       $ yum install librsvg2-devel lcms-devel re2c
 
+  Libnsbmp
+----------
+
+  NetSurf has its own library for decoding and rendering BMPs, ICOs, etc.
+  You can check it out from svn://svn.netsurf-browser.org/trunk/libnsbmp
+  
+  To build and install it:
+  
+      $ sudo make install
+
+  Libnsgif
+----------
+
+  NetSurf has its own library for decoding and rendering GIFs.  You can check
+  it out from svn://svn.netsurf-browser.org/trunk/libnsgif
+  
+  To build and install it:
+
+      $ sudo make install
+
+  Hubbub
+--------
+
+  NetSurf can use Hubbub, the project's HTML parser, instead of using libxml2's
+  HTML parser.  To build this, you will also require libparserutils.  Firstly,
+  check out libparserutils from;
+  
+      svn://svn.netsurf-browser.org/trunk/libparserutils
+  
+  and do the usual "sudo make install".  Once this is built and installed, you
+  can check out and build Hubbub.  Check out hubbub from;
+  
+      svn://svn.netsurf-browser.org/trunk/hubbub
+
+  and again do the usual "sudo make install".
 
   Librosprite
 -------------
