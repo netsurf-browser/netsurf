@@ -254,6 +254,8 @@ ifeq ($(TARGET),riscos)
     $(eval $(call feature_enabled,BMP,-DWITH_GIF,-lnsgif,NetSurf GIF decoder))
   else
     NETSURF_FEATURE_HUBBUB_CFLAGS := -DWITH_HUBBUB
+    NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
+    NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
     $(eval $(call pkg_config_find_and_add,HUBBUB,libhubbub,Hubbub HTML parser))
     $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,NetSurf BMP decoder))
     $(eval $(call pkg_config_find_and_add,GIF,libnsgif,NetSurf GIF decoder))
@@ -281,6 +283,8 @@ ifeq ($(TARGET),gtk)
   NETSURF_FEATURE_RSVG_CFLAGS := -DWITH_RSVG
   NETSURF_FEATURE_ROSPRITE_CFLAGS := -DWITH_NSSPRITE
   NETSURF_FEATURE_HUBBUB_CFLAGS := -DWITH_HUBBUB
+  NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
+  NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
 
   # add a line similar to below for each optional pkg-configed lib here
   $(eval $(call pkg_config_find_and_add,RSVG,librsvg-2.0,SVG rendering))
