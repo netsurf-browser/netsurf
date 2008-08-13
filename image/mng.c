@@ -202,7 +202,7 @@ mng_bool nsmng_closestream(mng_handle mng) {
 mng_bool nsmng_processheader(mng_handle mng, mng_uint32 width, mng_uint32 height) {
 	struct content *c;
 	union content_msg_data msg_data;
-	char *buffer;
+	uint8_t *buffer;
 
 	assert(mng != NULL);
 

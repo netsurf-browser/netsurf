@@ -600,7 +600,8 @@ bool html_process_data(struct content *c, char *data, unsigned int size)
 	for (x = 0; x + CHUNK <= size; x += CHUNK) {
 #ifdef WITH_HUBBUB
 		err = hubbub_parser_parse_chunk(
-				c->data.html.parser, data + x, CHUNK);
+				c->data.html.parser, 
+				(uint8_t *) data + x, CHUNK);
 		if (err == HUBBUB_ENCODINGCHANGE) {
 			goto encoding_change;
 		}
@@ -612,7 +613,8 @@ bool html_process_data(struct content *c, char *data, unsigned int size)
 
 #ifdef WITH_HUBBUB
 	err = hubbub_parser_parse_chunk(
-			c->data.html.parser, data + x, (size - x));
+			c->data.html.parser, 
+			(uint8_t *) data + x, (size - x));
 	if (err == HUBBUB_ENCODINGCHANGE) {
 		goto encoding_change;
 	}

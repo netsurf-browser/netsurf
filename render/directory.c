@@ -103,7 +103,8 @@ bool directory_convert(struct content *c, int width, int height) {
 #ifndef WITH_HUBBUB
 	htmlParseChunk(c->data.html.parser, buffer, strlen(buffer), 0);
 #else
-	hubbub_parser_parse_chunk(c->data.html.parser, buffer, strlen(buffer));
+	hubbub_parser_parse_chunk(c->data.html.parser, 
+			(uint8_t *) buffer, strlen(buffer));
 #endif
 
 	res = url_parent(c->url, &up);
@@ -117,7 +118,8 @@ bool directory_convert(struct content *c, int width, int height) {
 					strlen(buffer), 0);
 #else
 			hubbub_parser_parse_chunk(c->data.html.parser, 
-					buffer, strlen(buffer));
+					(uint8_t *) buffer, 
+					strlen(buffer));
 #endif
 		}
 		free(up);
@@ -139,7 +141,7 @@ bool directory_convert(struct content *c, int width, int height) {
 		htmlParseChunk(c->data.html.parser, buffer, strlen(buffer), 0);
 #else
 		hubbub_parser_parse_chunk(c->data.html.parser,
-				buffer, strlen(buffer));
+				(uint8_t *) buffer, strlen(buffer));
 #endif
 	}
 	closedir(parent);
