@@ -300,7 +300,7 @@ ifeq ($(TARGET),gtk)
 		-D_POSIX_C_SOURCE=200112L \
 		-D_NETBSD_SOURCE \
 		-DGTK_RESPATH=\"$(NETSURF_GTK_RESOURCES)\" \
-		$(WARNFLAGS) -I. -g $(OPT2FLAGS) \
+		$(WARNFLAGS) -I. -g \
 		$(shell $(PKG_CONFIG) --cflags libglade-2.0 gtk+-2.0) \
 		$(shell xml2-config --cflags)
 
@@ -324,11 +324,11 @@ endif
 
 ifeq ($(TARGET),riscos)
   TPD_RISCOS = $(foreach TPL,$(notdir $(TPL_RISCOS)), \
-  		!NetSurf/Resources/$(TPL)/Templates$(TPLEXT))
+		!NetSurf/Resources/$(TPL)/Templates$(TPLEXT))
 
   RESOURCES = $(TPD_RISCOS)
 
-  CFLAGS += -I. $(OPTFLAGS) $(WARNFLAGS) -Driscos		\
+  CFLAGS += -I. $(WARNFLAGS) -Driscos		\
 		-std=c99 -D_BSD_SOURCE -D_POSIX_C_SOURCE	\
 		-mpoke-function-name
 
@@ -420,7 +420,7 @@ ifeq ($(TARGET),debug)
 		-D_XOPEN_SOURCE=600 \
 		-D_POSIX_C_SOURCE=200112L \
 		-D_NETBSD_SOURCE \
-		$(WARNFLAGS) -I. -g $(OPT0FLAGS) \
+		$(WARNFLAGS) -I. -g \
 		$(shell $(PKG_CONFIG) --cflags libnsgif libnsbmp) \
 		$(shell xml2-config --cflags)
   LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl openssl)
@@ -454,13 +454,6 @@ WARNFLAGS = -W -Wall -Wundef -Wpointer-arith \
 ifneq ($(GCCVER),2)
   WARNFLAGS += -Wno-unused-parameter 
 endif
-
-OPT0FLAGS = -O0
-# -O and -O2 can use -Wuninitialized which gives us more static checking.
-# unfortunately the optimiser is what provides the hints in the code tree
-# so we cannot do it when we do -O0 (E.g. debug)
-OPTFLAGS = -O -Wuninitialized
-OPT2FLAGS = -O2 -Wuninitialized
 
 CLEANS := clean-target
 
