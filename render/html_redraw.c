@@ -782,10 +782,12 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 			!box->text) {
 		int padding_height = (box->padding[TOP] + box->height +
 				box->padding[BOTTOM]) * scale;
-		for (struct box *c = box; c; c = c->next) {
+		struct box *c;
+		for (c = box; c; c = c->next) {
 			int x = (x_parent + c->x) * scale;
 			int y = y_parent + c->y;
 			int padding_width = c->width;
+			int p[20];
 			if (c != box)
 				y -= box->padding[TOP];
 			if (c == box)
@@ -796,19 +798,26 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 				y *= scale;
 				padding_width *= scale;
 			}
-			int p[20] = {
-				x, y,
-				x - left, y - top,
-				x + padding_width + right, y - top,
-				x + padding_width, y,
-				x + padding_width, y + padding_height,
-				x + padding_width + right,
-				y + padding_height + bottom,
-				x - left, y + padding_height + bottom,
-				x, y + padding_height,
-				x, y,
-				x - left, y - top
-			};
+			p[0] = x;
+			p[1] = y;
+			p[2] = x - left;
+			p[3] = y - top;
+			p[4] = x + padding_width + right;
+			p[5] = y - top;
+			p[6] = x + padding_width;
+			p[7] = y;
+			p[8] = x + padding_width;
+			p[9] = y + padding_height;
+			p[10] = x + padding_width + right;
+			p[11] = y + padding_height + bottom;
+			p[12] = x - left;
+			p[13] = y + padding_height + bottom;
+			p[14] = x;
+			p[15] = y + padding_height;
+			p[16] = x;
+			p[17] = y;
+			p[18] = x - left;
+			p[19] = y - top;
 			if (box->border[LEFT] && c == box)
 				html_redraw_border_plot(LEFT, p,
 						box->style->border[LEFT].color,
@@ -850,7 +859,8 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 			x, y,
 			x - left, y - top
 		};
-		for (unsigned int i = 0; i != 4; i++) {
+		unsigned int i;
+		for (i = 0; i != 4; i++) {
 			if (box->border[i] == 0)
 				continue;
 			if (!html_redraw_border_plot(i, p,
@@ -1450,7 +1460,8 @@ bool html_redraw_text_decoration(struct box *box,
 bool html_redraw_text_decoration_inline(struct box *box, int x, int y,
 		float scale, colour colour, float ratio)
 {
-	for (struct box *c = box->next;
+	struct box *c;
+	for (c = box->next;
 			c && c != box->inline_end;
 			c = c->next) {
 		if (!plot.line((x + c->x) * scale,
@@ -1479,8 +1490,9 @@ bool html_redraw_text_decoration_inline(struct box *box, int x, int y,
 bool html_redraw_text_decoration_block(struct box *box, int x, int y,
 		float scale, colour colour, float ratio)
 {
+	struct box *c;
 	/* draw through text descendants */
-	for (struct box *c = box->children; c; c = c->next) {
+	for (c = box->children; c; c = c->next) {
 		if (c->type == BOX_TEXT) {
 			if (!plot.line((x + c->x) * scale,
 					(y + c->y + c->height * ratio) * scale,
