@@ -29,7 +29,9 @@ struct nsgtk_throbber
 
 extern struct nsgtk_throbber *nsgtk_throbber;
 
+#ifdef WITH_GIF
 bool nsgtk_throbber_initialise_from_gif(const char *fn);
+#endif
 bool nsgtk_throbber_initialise_from_png(const int frames, ...);
 void nsgtk_throbber_finalise(void);
 

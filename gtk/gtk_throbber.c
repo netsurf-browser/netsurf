@@ -20,7 +20,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#ifdef WITH_GIF
 #include <libnsgif.h>
+#endif
 #include "utils/log.h"
 #include "gtk/gtk_throbber.h"
 #include "gtk/gtk_bitmap.h"
@@ -94,6 +96,7 @@ bool nsgtk_throbber_initialise_from_png(const int frames, ...)
  * \param  fn Filename of GIF to use.  It must have at least two frames.
  * \return true on success.
  */
+#ifdef WITH_GIF
 bool nsgtk_throbber_initialise_from_gif(const char *fn)
 {
 	/* disect the GIF provided by filename in *fn into a series of
@@ -212,6 +215,7 @@ bool nsgtk_throbber_initialise_from_gif(const char *fn)
 
 	return true;
 }
+#endif
 
 void nsgtk_throbber_finalise(void)
 {
@@ -225,3 +229,4 @@ void nsgtk_throbber_finalise(void)
 
 	nsgtk_throbber = NULL;
 }
+
