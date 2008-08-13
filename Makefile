@@ -300,7 +300,7 @@ ifeq ($(TARGET),gtk)
 		$(shell $(PKG_CONFIG) --cflags libglade-2.0 gtk+-2.0) \
 		$(shell xml2-config --cflags)
 
-  GTKLDFLAGS := $(shell $(PKG_CONFIG) --cflags --libs libglade-2.0 gtk+-2.0 gthread-2.0 gmodule-2.0 lcms libnsgif libnsbmp)
+  GTKLDFLAGS := $(shell $(PKG_CONFIG) --cflags --libs libglade-2.0 gtk+-2.0 gthread-2.0 gmodule-2.0 lcms)
 
   CFLAGS += $(GTKCFLAGS)
   LDFLAGS += $(GTKLDFLAGS)
