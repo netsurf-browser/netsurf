@@ -39,6 +39,13 @@
 #ifndef max
 #define max(x,y) (((x)>(y))?(x):(y))
 #endif
+#ifndef PRIxPTR
+#define PRIxPTR "x"
+#endif
+
+#if defined(__HAIKU__) || defined(__BEOS__)
+#define strtof(s,p) ((float)(strtod((s),(p))))
+#endif
 
 /**
  * Calculate length of constant C string.
