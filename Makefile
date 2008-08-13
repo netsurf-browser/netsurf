@@ -219,9 +219,6 @@ define pkg_config_find_and_add
   endif
 endef
 
-
-$(eval $(call feature_enabled,BMP,-DWITH_BMP,-lnsbmp,BMP support))
-$(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif,GIF support))
 $(eval $(call feature_enabled,JPEG,-DWITH_JPEG,-ljpeg,JPEG support))
 $(eval $(call feature_enabled,MNG,-DWITH_MNG,-lmng,PNG support))
 
@@ -253,9 +250,13 @@ ifeq ($(TARGET),riscos)
   $(eval $(call feature_enabled,PLUGINS,-DWITH_PLUGIN,,Plugin protocol support))
   ifeq ($(HOST),riscos)
     $(eval $(call feature_enabled,HUBBUB,-DWITH_HUBBUB,-lhubbub -lparserutils,Hubbub HTML parser))
+    $(eval $(call feature_enabled,BMP,-DWITH_BMP,-lnsbmp,NetSurf BMP decoder))
+    $(eval $(call feature_enabled,BMP,-DWITH_GIF,-lnsgif,NetSurf GIF decoder))
   else
     NETSURF_FEATURE_HUBBUB_CFLAGS := -DWITH_HUBBUB
     $(eval $(call pkg_config_find_and_add,HUBBUB,libhubbub,Hubbub HTML parser))
+    $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,NetSurf BMP decoder))
+    $(eval $(call pkg_config_find_and_add,GIF,libnsgif,NetSurf GIF decoder))
   endif
 endif
 
@@ -285,6 +286,8 @@ ifeq ($(TARGET),gtk)
   $(eval $(call pkg_config_find_and_add,RSVG,librsvg-2.0,SVG rendering))
   $(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,RISC OS sprite rendering))
   $(eval $(call pkg_config_find_and_add,HUBBUB,libhubbub,Hubbub HTML parser))
+  $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,NetSurf BMP decoder))
+  $(eval $(call pkg_config_find_and_add,GIF,libnsgif,NetSurf GIF decoder))
 
   GTKCFLAGS := -std=c99 -Dgtk -Dnsgtk \
 		-DGTK_DISABLE_DEPRECATED \
@@ -295,7 +298,6 @@ ifeq ($(TARGET),gtk)
 		-DGTK_RESPATH=\"$(NETSURF_GTK_RESOURCES)\" \
 		$(WARNFLAGS) -I. -g $(OPT2FLAGS) \
 		$(shell $(PKG_CONFIG) --cflags libglade-2.0 gtk+-2.0) \
-		$(shell $(PKG_CONFIG) --cflags libnsgif libnsbmp) \
 		$(shell xml2-config --cflags)
 
   GTKLDFLAGS := $(shell $(PKG_CONFIG) --cflags --libs libglade-2.0 gtk+-2.0 gthread-2.0 gmodule-2.0 lcms libnsgif libnsbmp)
