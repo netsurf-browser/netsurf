@@ -30,12 +30,13 @@
 #include "content/urldb.h"
 #include "desktop/plotters.h"
 #include "desktop/browser.h"
-#include "image/bitmap.h"
-#include "render/font.h"
-#include "utils/log.h"
 #include "gtk/gtk_scaffolding.h"
 #include "gtk/gtk_plotters.h"
 #include "gtk/gtk_bitmap.h"
+#include "image/bitmap.h"
+#include "render/font.h"
+#include "utils/log.h"
+#include "utils/utils.h"
 
 /**
  * Create a thumbnail of a page.
@@ -48,6 +49,7 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 		const char *url)
 {
         GdkPixbuf *pixbuf;
+	int cwidth, cheight;
 	gint width;
 	gint height;
 	gint depth;
@@ -57,6 +59,9 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 	assert(content);
 	assert(bitmap);
 
+	cwidth = min(content->width, 1024);
+	cheight = min(content->height, 768);
+
 	pixbuf = gtk_bitmap_get_primary(bitmap);
 	width = gdk_pixbuf_get_width(pixbuf);
 	height = gdk_pixbuf_get_height(pixbuf);
@@ -65,7 +70,7 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 	LOG(("Trying to create a thumbnail pixmap for a content of %dx%d@%d",
 		content->width, content->width, depth));
 
-	pixmap = gdk_pixmap_new(NULL, content->width, content->width, depth);
+	pixmap = gdk_pixmap_new(NULL, cwidth, cwidth, depth);
 	
 	if (pixmap == NULL) {
 		/* the creation failed for some reason: most likely because
@@ -82,7 +87,7 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 	/* set the plotting functions up */
 	plot = nsgtk_plotters;
 
-	nsgtk_plot_set_scale(1.0);
+	nsgtk_plot_set_scale((double) cwidth / (double) content->width);
 
 	/* set to plot to pixmap */
 	current_drawable = pixmap;
@@ -90,7 +95,7 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 #ifdef CAIRO_VERSION
 	current_cr = gdk_cairo_create(current_drawable);
 #endif
-	plot.fill(0, 0, content->width, content->width, 0xffffffff);
+	plot.fill(0, 0, cwidth, cwidth, 0xffffffff);
 
 	/* render the content */
 	content_redraw(content, 0, 0, content->width, content->width,
@@ -98,11 +103,11 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 
 	/* resample the large plot down to the size of our thumbnail */
 	big = gdk_pixbuf_get_from_drawable(NULL, pixmap, NULL, 0, 0, 0, 0,
-			content->width, content->width);
+			cwidth, cwidth);
 
 	gdk_pixbuf_scale(big, pixbuf, 0, 0, width, height, 0, 0,
-			(double)width / (double)content->width,
-			(double)height / (double)content->width,
+			(double)width / (double)cwidth,
+			(double)height / (double)cwidth,
 			GDK_INTERP_TILES);
 
 	/* As a debugging aid, try this to dump out a copy of the thumbnail as
