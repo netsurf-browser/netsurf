@@ -957,10 +957,11 @@ struct css_style * box_get_style(struct content *c,
 								"maxlength"))) {
 			int maxlength = isdigit(s[0]) ? atoi(s): -1;
 			if (0 < maxlength && size == -1 && maxlength < 10) {
+				char *type;
 				/* Bump up really small widths */
 				maxlength = maxlength < 5 ? maxlength + 1 :
 								maxlength;
-				char *type = (char *) xmlGetProp(n,
+				type = (char *) xmlGetProp(n,
 						(const xmlChar *) "type");
 				style->width.width = CSS_WIDTH_LENGTH;
 				if (!type || strcasecmp(type, "text") == 0 ||
@@ -1052,7 +1053,8 @@ struct css_style * box_get_style(struct content *c,
 			int border_width = atoi(s);
 			/* precentage border width not implemented */
 			if (!strrchr(s, '%') && 0 < border_width) {
-				for (unsigned int i = 0; i != 4; i++) {
+				unsigned int i;
+				for (i = 0; i != 4; i++) {
 					if (!author->border_color[i])
 						style->border[i].color =
 							border_color;
@@ -1077,7 +1079,8 @@ struct css_style * box_get_style(struct content *c,
 			strcmp((const char *) n->name, "th") == 0) {
 		/* set any cellborders stipulated by associated table */
 		if (markup_track->cell_border) {
-			for (unsigned int i = 0; i != 4; i++) {
+			unsigned int i;
+			for (i = 0; i != 4; i++) {
 				if (!author->border_color[i])
 					style->border[i].color = markup_track->
 								border_color;
@@ -1095,7 +1098,8 @@ struct css_style * box_get_style(struct content *c,
 		}
 		/* set any cellpadding stipulated by associated table */
 		if (markup_track->cell_padding) {
-			for (unsigned int i = 0; i != 4; i++) {
+			unsigned int i;
+			for (i = 0; i != 4; i++) {
 				if (!author->padding[i]) {
 					style->padding[i].padding =
 						CSS_PADDING_LENGTH;
@@ -1285,8 +1289,8 @@ struct css_style * box_get_style(struct content *c,
 		}
 		if ((s = (char *) xmlGetProp(n,
 				(const xmlChar *) "border"))) {
-			markup_track->border_color = border_color;
 			int border_width = atoi(s);
+			markup_track->border_color = border_color;
 			/* percentage border width not implemented */
 			if (!strrchr(s, '%') && 0 < border_width) {
 				markup_track->cell_border = true;
