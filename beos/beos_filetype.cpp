@@ -18,6 +18,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define __STDBOOL_H__	1
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>

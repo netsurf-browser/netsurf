@@ -25,6 +25,7 @@
  * scale.
  */
 
+#define __STDBOOL_H__	1
 #include <assert.h>
 #include <Bitmap.h>
 #include <View.h>

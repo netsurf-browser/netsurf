@@ -24,6 +24,7 @@
  */
 
 
+#define __STDBOOL_H__	1
 #include <stdbool.h>
 #include <assert.h>
 #include <stdio.h>
@@ -353,7 +354,7 @@ bool nsfont_paint(const struct css_style *style,
 	view->DrawString(line.String(), where);
 	
 	view->SetDrawingMode(oldmode);
-	if (oldbg != background)
+	if (memcmp(&oldbg, &background, sizeof(rgb_color)))
 		view->SetLowColor(oldbg);
 
 	//nsbeos_current_gc_unlock();

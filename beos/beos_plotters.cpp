@@ -22,6 +22,7 @@
  * Target independent plotting (BeOS/Haiku implementation).
  */
 
+#define __STDBOOL_H__	1
 #include <math.h>
 #include <BeBuild.h>
 #include <Bitmap.h>
@@ -72,10 +73,10 @@ static bool nsbeos_plot_disc(int x, int y, int radius, colour c, bool filled);
 static bool nsbeos_plot_arc(int x, int y, int radius, int angle1, int angle2,
     		colour c);
 static bool nsbeos_plot_bitmap(int x, int y, int width, int height,
-		struct bitmap *bitmap, colour bg);
+		struct bitmap *bitmap, colour bg, struct content *content);
 static bool nsbeos_plot_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
-		bool repeat_x, bool repeat_y);
+		bool repeat_x, bool repeat_y, struct content *content);
 
 #if 0 /* GTK */
 static GdkRectangle cliprect;
@@ -563,7 +564,7 @@ static bool nsbeos_plot_bbitmap(int x, int y, int width, int height,
 }
 
 bool nsbeos_plot_bitmap(int x, int y, int width, int height,
-		struct bitmap *bitmap, colour bg)
+		struct bitmap *bitmap, colour bg, struct content *content)
 {
 	BBitmap *b = nsbeos_bitmap_get_primary(bitmap);
 	return nsbeos_plot_bbitmap(x, y, width, height, b, bg);
@@ -575,7 +576,7 @@ bool nsbeos_plot_bitmap(int x, int y, int width, int height,
 
 bool nsbeos_plot_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
-		bool repeat_x, bool repeat_y)
+		bool repeat_x, bool repeat_y, struct content *content)
 {
 	int doneheight = 0, donewidth = 0;
 	BBitmap *primary;
@@ -583,7 +584,7 @@ bool nsbeos_plot_bitmap_tile(int x, int y, int width, int height,
 
 	if (!(repeat_x || repeat_y)) {
 		/* Not repeating at all, so just pass it on */
-		return nsbeos_plot_bitmap(x,y,width,height,bitmap,bg);
+		return nsbeos_plot_bitmap(x,y,width,height,bitmap,bg,content);
 	}
 
 	if (repeat_x && !repeat_y)

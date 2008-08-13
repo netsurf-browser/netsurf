@@ -18,6 +18,7 @@
  */
 
 #define _GNU_SOURCE  /* for strndup */
+#define __STDBOOL_H__	1
 #include <assert.h>
 #include <ctype.h>
 #include <stdbool.h>
@@ -33,7 +34,9 @@
 
 #include <Alert.h>
 #include <Application.h>
+#include <BeBuild.h>
 #include <Mime.h>
+#include <Path.h>
 #include <Roster.h>
 #include <String.h>
 
@@ -225,6 +228,20 @@ static char *generate_default_css()
 
 	return strdup(url);
 }
+
+/* realpath fallback on R5 */
+#if !defined(__HAIKU__) && !defined(B_BEOS_VERSION_DANO)
+char *realpath(const char *f, char *buf)
+{
+	BPath path(f, NULL, true);
+	if (path.InitCheck() < 0) {
+		strncpy(buf, f, MAXPATHLEN);
+		return NULL;
+	}
+	strncpy(buf, path.Path(), MAXPATHLEN);
+	return buf;
+}
+#endif
 
 /**
  * Locate a shared resource file by searching known places in order.
@@ -447,13 +464,15 @@ void gui_init(int argc, char** argv)
 	beos_fetch_filetype_init(buf);
 
 	/* set up stylesheet urls */
-	/*find_resource(buf, "beosdefault.css", "./beos/res/beosdefault.css");*/
-	default_stylesheet_url = strdup("rsrc:/beosdefault.css,text/css");
+	find_resource(buf, "beosdefault.css", "./beos/res/beosdefault.css");
+	default_stylesheet_url = path_to_url(buf);
+	//default_stylesheet_url = strdup("rsrc:/beosdefault.css,text/css");
 	//default_stylesheet_url = generate_default_css();
 	LOG(("Using '%s' as Default CSS URL", default_stylesheet_url));
 
-	/*find_resource(buf, "adblock.css", "./beos/res/adblock.css");*/
-	adblock_stylesheet_url = strdup("rsrc:/adblock.css,text/css");
+	find_resource(buf, "adblock.css", "./beos/res/adblock.css");
+	adblock_stylesheet_url = path_to_url(buf);
+	//adblock_stylesheet_url = strdup("rsrc:/adblock.css,text/css");
 	LOG(("Using '%s' as AdBlock CSS URL", adblock_stylesheet_url));
 
 	urldb_load(option_url_file);
@@ -768,7 +787,7 @@ void gui_quit(void)
 
 struct gui_download_window *gui_download_window_create(const char *url,
 		const char *mime_type, struct fetch *fetch,
-		unsigned int total_size)
+		unsigned int total_size, struct gui_window *gui)
 {
 	return 0;
 }

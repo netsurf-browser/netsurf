@@ -22,6 +22,7 @@
  */
 
 
+#define __STDBOOL_H__	1
 extern "C" {
 #include "utils/config.h"
 #include "desktop/tree.h"

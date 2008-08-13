@@ -17,6 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define __STDBOOL_H__	1
 extern "C" {
 #include "utils/log.h"
 #include "content/urldb.h"

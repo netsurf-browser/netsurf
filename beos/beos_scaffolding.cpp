@@ -17,7 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdbool.h>
+#define __STDBOOL_H__	1
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -539,7 +539,7 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 			nsbeos_window_update_back_forward(scaffold);
 			break;
 		case 'forw':
-			if (!history_back_available(bw->history))
+			if (!history_forward_available(bw->history))
 				break;
 			history_forward(bw, bw->history);
 			nsbeos_window_update_back_forward(scaffold);

@@ -23,7 +23,8 @@
  * This implements the interface given by desktop/bitmap.h using BBitmap.
  */
 
-#include <stdbool.h>
+#define __STDBOOL_H__	1
+//#include <stdbool.h>
 #include <assert.h>
 #include <string.h>
 #include <Bitmap.h>
@@ -118,7 +119,7 @@ static inline void nsbeos_rgba_to_bgra(void *src, void *dst, int width, int heig
  * \return an opaque struct bitmap, or NULL on memory exhaustion
  */
 
-struct bitmap *bitmap_create(int width, int height, unsigned int state)
+void *bitmap_create(int width, int height, unsigned int state)
 {
 	struct bitmap *bmp = (struct bitmap *)malloc(sizeof(struct bitmap));
 	if (bmp == NULL)
@@ -153,8 +154,9 @@ struct bitmap *bitmap_create(int width, int height, unsigned int state)
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  * \param  opaque  whether the bitmap should be plotted opaque
  */
-void bitmap_set_opaque(struct bitmap *bitmap, bool opaque)
+void bitmap_set_opaque(void *vbitmap, bool opaque)
 {
+	struct bitmap *bitmap = (struct bitmap *)vbitmap;
 	assert(bitmap);
 /* todo: set bitmap as opaque */
 	bitmap->opaque = true;
@@ -167,8 +169,9 @@ void bitmap_set_opaque(struct bitmap *bitmap, bool opaque)
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  * \return whether the bitmap is opaque
  */
-bool bitmap_test_opaque(struct bitmap *bitmap)
+bool bitmap_test_opaque(void *vbitmap)
 {
+	struct bitmap *bitmap = (struct bitmap *)vbitmap;
 	assert(bitmap);
 /* todo: test if bitmap as opaque */
 	return false;//bitmap->opaque;
@@ -180,8 +183,9 @@ bool bitmap_test_opaque(struct bitmap *bitmap)
  *
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  */
-bool bitmap_get_opaque(struct bitmap *bitmap)
+bool bitmap_get_opaque(void *vbitmap)
 {
+	struct bitmap *bitmap = (struct bitmap *)vbitmap;
 	assert(bitmap);
 /* todo: get whether bitmap is opaque */
 	return false;//bitmap->opaque;
@@ -198,10 +202,11 @@ bool bitmap_get_opaque(struct bitmap *bitmap)
  * of rows. The width of a row in bytes is given by bitmap_get_rowstride().
  */
 
-char *bitmap_get_buffer(struct bitmap *bitmap)
+unsigned char *bitmap_get_buffer(void *vbitmap)
 {
+	struct bitmap *bitmap = (struct bitmap *)vbitmap;
 	assert(bitmap);
-	return (char *)(bitmap->shadow->Bits());
+	return (unsigned char *)(bitmap->shadow->Bits());
 }
 
 
@@ -212,10 +217,26 @@ char *bitmap_get_buffer(struct bitmap *bitmap)
  * \return width of a pixel row in the bitmap
  */
 
-size_t bitmap_get_rowstride(struct bitmap *bitmap)
+size_t bitmap_get_rowstride(void *vbitmap)
 {
+	struct bitmap *bitmap = (struct bitmap *)vbitmap;
 	assert(bitmap);
 	return (bitmap->primary->BytesPerRow());
+}
+
+
+/**
+ * Find the bytes per pixels of a bitmap.
+ *
+ * \param  bitmap  a bitmap, as returned by bitmap_create()
+ * \return bytes per pixels of the bitmap
+ */
+
+size_t bitmap_get_bpp(void *vbitmap)
+{
+	struct bitmap *bitmap = (struct bitmap *)vbitmap;
+	assert(bitmap);
+	return 4;
 }
 
 
@@ -235,8 +256,9 @@ nsbeos_bitmap_free_pretiles(struct bitmap *bitmap)
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  */
 
-void bitmap_destroy(struct bitmap *bitmap)
+void bitmap_destroy(void *vbitmap)
 {
+	struct bitmap *bitmap = (struct bitmap *)vbitmap;
 	assert(bitmap);
 	nsbeos_bitmap_free_pretiles(bitmap);
 	delete bitmap->primary;
@@ -254,8 +276,9 @@ void bitmap_destroy(struct bitmap *bitmap)
  * \return true on success, false on error and error reported
  */
 
-bool bitmap_save(struct bitmap *bitmap, const char *path, unsigned flags)
+bool bitmap_save(void *vbitmap, const char *path, unsigned flags)
 {
+	struct bitmap *bitmap = (struct bitmap *)vbitmap;
 #warning WRITEME
 #if 0 /* GTK */
 	GError *err = NULL;
@@ -276,7 +299,8 @@ bool bitmap_save(struct bitmap *bitmap, const char *path, unsigned flags)
  *
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  */
-void bitmap_modified(struct bitmap *bitmap) {
+void bitmap_modified(void *vbitmap) {
+	struct bitmap *bitmap = (struct bitmap *)vbitmap;
 	// convert the shadow (ABGR) to into the primary bitmap
 	nsbeos_rgba_to_bgra(bitmap->shadow->Bits(), bitmap->primary->Bits(), 
 		bitmap->primary->Bounds().Width() + 1, 
@@ -294,8 +318,9 @@ void bitmap_modified(struct bitmap *bitmap) {
  * \param  suspend	the function to be called upon suspension
  * \param  resume	the function to be called when resuming
  */
-void bitmap_set_suspendable(struct bitmap *bitmap, void *private_word,
+void bitmap_set_suspendable(void *vbitmap, void *private_word,
 		void (*invalidate)(struct bitmap *bitmap, void *private_word)) {
+	struct bitmap *bitmap = (struct bitmap *)vbitmap;
 }
 
 static BBitmap *
@@ -370,7 +395,7 @@ nsbeos_bitmap_generate_pretile(BBitmap *primary, int repeat_x, int repeat_y)
 BBitmap *
 nsbeos_bitmap_get_primary(struct bitmap* bitmap)
 {
-  return bitmap->primary;
+	return bitmap->primary;
 }
 
 /**
