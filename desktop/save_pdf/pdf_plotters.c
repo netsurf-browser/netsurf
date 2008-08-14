@@ -18,9 +18,7 @@
  
  /** \file
  * Target independent PDF plotting using Haru Free PDF Library.
- * Contains also the current solution for some text being cropped over page
- * boundaries a 'fuzzy' bottom margin.
-  */
+ */
 
 #include "utils/config.h"
 #ifdef WITH_PDF_EXPORT
@@ -29,10 +27,11 @@
 #include <string.h>
 #include "hpdf.h"
 
+#include "desktop/options.h"
 #include "desktop/plotters.h"
 #include "desktop/print.h"
 #include "desktop/printer.h"
-#include "pdf/pdf_plotters.h"
+#include "desktop/save_pdf/pdf_plotters.h"
 #include "utils/log.h"
 #include "utils/utils.h"
 #include "image/bitmap.h"
@@ -71,9 +70,9 @@ static void pdf_set_solid(void);
 static void pdf_set_dashed(void);
 static void pdf_set_dotted(void);
 
-static void pdf_page_apply_notext_clip(void);
-
 static HPDF_Image pdf_extract_image(struct bitmap *bitmap, struct content *content);
+static void apply_clip_and_mode(void);
+
 
 static void error_handler(HPDF_STATUS error_no, HPDF_STATUS detail_no,
 		void *user_data);
@@ -92,11 +91,11 @@ static HPDF_REAL page_height, page_width;
 
 /*Remeber if pdf_plot_clip was invoked for current page*/
 static bool page_clipped;
+int last_clip_x0, last_clip_y0, last_clip_x1, last_clip_y1;
+
+bool in_text_mode, text_mode_request;
 
 static struct print_settings* settings;
-/*this is added to the bottom margin as a place where text can be plotted
- when it overflows just a little bit*/
-static float text_margin;
 
 static const struct plotter_table pdf_plotters = {
 	pdf_plot_clg,
@@ -124,6 +123,10 @@ struct printer pdf_printer= {
 	pdf_end
 };
 
+float pdf_scale;
+static char *owner_pass;
+static char *user_pass;
+
 bool pdf_plot_clg(colour c)
 {
 	return true;
@@ -135,6 +138,8 @@ bool pdf_plot_rectangle(int x0, int y0, int width, int height,
 #ifdef PDF_DEBUG
 	LOG(("."));
 #endif		
+	apply_clip_and_mode();
+	
 	HPDF_Page_SetLineWidth(pdf_page, line_width);		
 	
 	if (dotted)
@@ -157,7 +162,10 @@ bool pdf_plot_line(int x0, int y0, int x1, int y1, int width,
 {
 #ifdef PDF_DEBUG
 	LOG(("."));
-#endif				
+#endif			
+		
+	apply_clip_and_mode();
+	
 	HPDF_Page_SetLineWidth(pdf_page, width);
 			
 	if (dotted)
@@ -187,6 +195,8 @@ bool pdf_plot_polygon(int *p, unsigned int n, colour fill)
 #endif		
 	if (n == 0)
 		return true;
+	
+	apply_clip_and_mode();
 	
 	HPDF_Page_SetRGBFill(pdf_page, R(fill), G(fill), B(fill));	
 	HPDF_Page_MoveTo(pdf_page, p[0], page_height - p[1]);
@@ -227,6 +237,8 @@ bool pdf_plot_fill(int x0, int y0, int x1, int y1, colour c)
 	x1 = min(max(x1, 0), page_width);
 	y1 = min(max(y1, 0), page_height);
 	
+	apply_clip_and_mode();
+	
 	HPDF_Page_SetRGBFill(pdf_page, R(c), G(c), B(c));
 	HPDF_Page_Rectangle(pdf_page, x0, page_height - y1, x1-x0, y1-y0);
 	HPDF_Page_Fill(pdf_page);
@@ -234,32 +246,20 @@ bool pdf_plot_fill(int x0, int y0, int x1, int y1, colour c)
 	return true;
 }
 
+/**here the clip is only queried */
 bool pdf_plot_clip(int clip_x0, int clip_y0, int clip_x1, int clip_y1)
 {
 #ifdef PDF_DEBUG
 	LOG(("%d %d %d %d", clip_x0, clip_y0, clip_x1, clip_y1));
 #endif
 	
-	HPDF_Page_GRestore(pdf_page);
-	if (page_clipped)
-		HPDF_Page_GRestore(pdf_page);
-
 	/*Normalize cllipping area - to prevent overflows.
 	  See comment in pdf_plot_fill.
 	*/
-	clip_x0 = min(max(clip_x0, 0), page_width);
-	clip_y0 = min(max(clip_y0, 0), page_height);
-	clip_x1 = min(max(clip_x1, 0), page_width);
-	clip_y1 = min(max(clip_y1, 0), page_height);
-	
-	
-	HPDF_Page_GSave(pdf_page);
-	HPDF_Page_Rectangle(pdf_page, clip_x0, page_height-clip_y1, 
-			     clip_x1-clip_x0, clip_y1-clip_y0);
-	HPDF_Page_Clip(pdf_page);
-	HPDF_Page_EndPath(pdf_page);
-	
-	pdf_page_apply_notext_clip();
+	last_clip_x0 = min(max(clip_x0, 0), page_width);
+	last_clip_y0 = min(max(clip_y0, 0), page_height);
+	last_clip_x1 = min(max(clip_x1, 0), page_width);
+	last_clip_y1 = min(max(clip_y1, 0), page_height);
 	
 	page_clipped = true;
 	
@@ -274,33 +274,36 @@ bool pdf_plot_text(int x, int y, const struct css_style *style,
 #endif
 	char *word;
 	HPDF_REAL size;
-	bool fuzzy=false;
 	float text_bottom_position, descent;
 	
 	if (length == 0)
 		return true;
 
+	text_mode_request = true;
+	apply_clip_and_mode();
+	
 	if (style->font_size.value.length.unit  == CSS_UNIT_PX)
 		size = style->font_size.value.length.value;
 	else
 		size = css_len2pt(&style->font_size.value.length, style);
 	
+	/*this can be removed when export options get added for riscos*/
+#ifdef riscos
+	size *= DEFAULT_EXPORT_SCALE;
+#else		
+	size *= pdf_scale;
+#endif
+	
+	if (size <= 0)
+		return true;
+		
+	if (size > HPDF_MAX_FONTSIZE)
+		size = HPDF_MAX_FONTSIZE;
+	
 	haru_nsfont_apply_style(style, pdf_doc, pdf_page, &pdf_font);
 	
 	descent = size * (HPDF_Font_GetDescent(pdf_font) / 1000.0);
 	text_bottom_position = page_height - y + descent;
-	
-  	if ( (size > y) && (y - descent <= text_margin) )
-  		return true;
- 	
-	if (text_bottom_position < settings->margins[MARGINBOTTOM] + text_margin ) {
-		if ((text_bottom_position >= settings->margins[MARGINBOTTOM]) &&
-				(page_height - (y - size) >
-				settings->margins[MARGINBOTTOM] + text_margin)) {
-			fuzzy = true;
-			HPDF_Page_GRestore(pdf_page);
-		}
-	}
 	
 	word = (char*) malloc( sizeof(char) * (length+1) );
 	if (word == NULL)
@@ -311,13 +314,8 @@ bool pdf_plot_text(int x, int y, const struct css_style *style,
 	
 	HPDF_Page_SetRGBFill(pdf_page, R(c), G(c), B(c));
 	
-	HPDF_Page_BeginText(pdf_page);
 	HPDF_Page_SetFontAndSize (pdf_page, pdf_font, size);
 	HPDF_Page_TextOut (pdf_page, x, page_height - y, word);
-	HPDF_Page_EndText(pdf_page);
-	
-	if (fuzzy)
-		pdf_page_apply_notext_clip();
 	
 	free(word);
 	
@@ -329,6 +327,8 @@ bool pdf_plot_disc(int x, int y, int radius, colour c, bool filled)
 #ifdef PDF_DEBUG
 	LOG(("."));
 #endif		
+	apply_clip_and_mode();
+	
 	if (filled)
 		HPDF_Page_SetRGBFill(pdf_page, R(c), G(c), B(c));
 	else
@@ -356,6 +356,8 @@ bool pdf_plot_arc(int x, int y, int radius, int angle1, int angle2, colour c)
 	if (angle1 > angle2)
 		angle1 -= 360;
 	
+	apply_clip_and_mode();
+	
 	HPDF_Page_SetRGBStroke(pdf_page, R(c), G(c), B(c));
 	
 	HPDF_Page_Arc(pdf_page, x, page_height-y, radius, angle1, angle2);
@@ -375,6 +377,8 @@ bool pdf_plot_bitmap(int x, int y, int width, int height,
 #endif
  	if (width == 0 || height == 0)
  		return true;
+	
+	apply_clip_and_mode();
 	
 	image = pdf_extract_image(bitmap, content);	
 	
@@ -402,6 +406,8 @@ bool pdf_plot_bitmap_tile(int x, int y, int width, int height,
  	if (width == 0 || height == 0)
  		return true;	
 	
+	apply_clip_and_mode();
+		
 	image = pdf_extract_image(bitmap, content);	
 	
 	if (image) {
@@ -416,8 +422,8 @@ bool pdf_plot_bitmap_tile(int x, int y, int width, int height,
 		for (current_y=0; current_y < max_height; current_y += height)
 			for (current_x=0; current_x < max_width; current_x += width)
 				HPDF_Page_DrawImage(pdf_page, image,
-						current_x,
-      						page_height-current_y-height,
+						current_x + x,
+      						page_height-current_y - y - height,
       						width, height);
 		
 		return true;
@@ -442,15 +448,12 @@ HPDF_Image pdf_extract_image(struct bitmap *bitmap, struct content *content)
 		*/
 		switch(content->type){
 			/*Handle "embeddable" types of images*/
-			/*TODO:something seems to be wrong with HPDF_LoadJpegImageFromMem
-			  no embedding at all till I'll figure it out
-			*/			
-// 			case CONTENT_JPEG:
-// 				image = HPDF_LoadJpegImageFromMem(pdf_doc,
-// 						content->source_data,
-// 						content->total_size);
-// 				break;
-				
+			case CONTENT_JPEG:
+ 				image = HPDF_LoadJpegImageFromMem(pdf_doc,
+ 						content->source_data,
+ 						content->source_size);
+ 				break;
+			
 			/*Disabled until HARU PNG support will be more stable.
 			
 			case CONTENT_PNG:
@@ -458,6 +461,8 @@ HPDF_Image pdf_extract_image(struct bitmap *bitmap, struct content *content)
 						content->source_data,
 						content->total_size);
 				break;*/	
+			default:
+				break;
 		}	
 	}
 	
@@ -513,6 +518,39 @@ HPDF_Image pdf_extract_image(struct bitmap *bitmap, struct content *content)
 	}
 	
 	return image;
+}
+/**change the mode and clip only if it's necessary*/
+static void apply_clip_and_mode()
+{
+	
+	if (in_text_mode && (!text_mode_request || page_clipped)) {
+		HPDF_Page_EndText(pdf_page);
+		in_text_mode = false;		
+	}
+	
+	if (page_clipped) {
+		
+		HPDF_Page_GRestore(pdf_page);
+		HPDF_Page_GSave(pdf_page);
+
+		HPDF_Page_Rectangle(pdf_page, last_clip_x0,
+				page_height - last_clip_y1, 
+				last_clip_x1 - last_clip_x0,
+				last_clip_y1 - last_clip_y0);
+		HPDF_Page_Clip(pdf_page);
+		HPDF_Page_EndPath(pdf_page);
+				
+		page_clipped = false;
+	}	
+	
+	if (text_mode_request) {
+		if (!in_text_mode) {
+			HPDF_Page_BeginText(pdf_page);			
+			in_text_mode = true;
+		}
+		
+		text_mode_request = false;
+	}
 }
 
 static inline float transform_x(float *transform, float x, float y)
@@ -644,9 +682,10 @@ bool pdf_begin(struct print_settings *print_settings)
 	
 	page_height = settings->page_height - settings->margins[MARGINTOP];
 	
-	text_margin = settings->margins[MARGINTEXT];
 
-//	HPDF_SetCompressionMode(pdf_doc, HPDF_COMP_ALL); /*Compression on*/
+	if (option_enable_PDF_compression)
+		HPDF_SetCompressionMode(pdf_doc, HPDF_COMP_ALL); /*Compression on*/
+
 	pdf_font = HPDF_GetFont (pdf_doc, "Times-Roman", "StandardEncoding");
 	
 	pdf_page = NULL;
@@ -678,9 +717,11 @@ bool pdf_next_page(void)
 	
 	HPDF_Page_Concat(pdf_page,1,0,0,1,settings->margins[MARGINLEFT],0);
 	
-	pdf_page_apply_notext_clip();
-	
 	page_clipped = false;
+	HPDF_Page_GSave(pdf_page);
+	
+	text_mode_request = false;
+	in_text_mode = false;
 	
 #ifdef PDF_DEBUG
 	LOG(("%f %f", page_width, page_height));
@@ -692,6 +733,7 @@ bool pdf_next_page(void)
 
 void pdf_end(void)
 {
+	char *path;
 #ifdef PDF_DEBUG
 	LOG(("pdf_end begins"));
 	if (pdf_page != NULL) {
@@ -702,16 +744,46 @@ void pdf_end(void)
 		pdf_plot_grid(100, 100, 0xCCCCFF);
 	}
 #endif
-
-	/*TODO: if false notify user*/
-	if (settings->output)
-		HPDF_SaveToFile(pdf_doc, settings->output);
-
-	HPDF_Free(pdf_doc);
-
+	
+	if (settings->output != NULL)
+		path = strdup(settings->output);
+	else
+		path = NULL;
+	
+	/*Encryption on*/
+	if (option_enable_PDF_password)
+		PDF_Password(&owner_pass, &user_pass, path);
+	else
+		save_pdf(path);
 #ifdef PDF_DEBUG
 	LOG(("pdf_end finishes"));
 #endif
+}
+/** saves the pdf optionally encrypting it before*/
+void save_pdf(char *path)
+{
+	bool success = false;
+	
+	if (option_enable_PDF_password && owner_pass != NULL ) {
+		HPDF_SetPassword(pdf_doc, owner_pass, user_pass);
+		HPDF_SetEncryptionMode(pdf_doc, HPDF_ENCRYPT_R3, 16);
+		free(owner_pass);
+		free(user_pass);
+	}
+	
+	if (path != NULL) {
+		if (HPDF_SaveToFile(pdf_doc, path) != HPDF_OK)
+			remove(path);
+		else
+			success = true;
+		
+		free(path);		
+	}
+	
+	if (!success)
+		warn_user("Unable to save PDF file.", 0);
+	
+	HPDF_Free(pdf_doc);
 }
 
 
@@ -749,31 +821,11 @@ void pdf_plot_grid(int x_dist, int y_dist, unsigned int colour)
 }
 #endif
 
-/**
- * A solution for fuzzy margins - saves the current clipping and puts the main
- * clip frame (page without margins) over it.
-*/
-void pdf_page_apply_notext_clip(void)
+/**used to synch the text scale with the scale for the whole content*/
+void pdf_set_scale(float s)
 {
-	/*Save state underneath*/
-	HPDF_Page_GSave(pdf_page);
-	
-	/*Apply no-text clipping (stadard page)*/
-	HPDF_Page_Rectangle(pdf_page,
-			0,
-       			text_margin + settings->margins[MARGINBOTTOM],
-			page_width,
-       			page_height - settings->margins[MARGINTOP] - text_margin);
-
-	HPDF_Page_Clip(pdf_page);
-
-#ifdef PDF_DEBUG
-	HPDF_Page_Stroke(pdf_page);
-#else
-	HPDF_Page_EndPath(pdf_page);
-#endif
+	pdf_scale = s;
 }
 
 #endif /* WITH_PDF_EXPORT */
-
 

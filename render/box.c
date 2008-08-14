@@ -28,6 +28,7 @@
 #include <string.h>
 #include "content/content.h"
 #include "css/css.h"
+#include "desktop/options.h"
 #include "render/box.h"
 #include "render/form.h"
 #include "utils/log.h"
@@ -38,6 +39,12 @@ static bool box_contains_point(struct box *box, int x, int y);
 #define box_is_float(box) (box->type == BOX_FLOAT_LEFT || \
 		box->type == BOX_FLOAT_RIGHT)
 
+typedef struct box_duplicate_llist box_duplicate_llist;
+struct box_duplicate_llist {
+	struct box_duplicate_llist *prev;
+	struct box *box;
+};
+static struct box_duplicate_llist *box_duplicate_last = NULL;
 
 /**
  * Create a box tree node.
@@ -86,6 +93,7 @@ struct box * box_create(struct css_style *style,
 	box->columns = 1;
 	box->rows = 1;
 	box->start_column = 0;
+	box->printed = false;
 	box->next = NULL;
 	box->prev = NULL;
 	box->children = NULL;
@@ -106,7 +114,6 @@ struct box * box_create(struct css_style *style,
 
 	return box;
 }
-
 
 /**
  * Add a child to a box tree node.
@@ -679,6 +686,8 @@ struct box* box_duplicate_tree(struct box *root, struct content *c)
 	int box_number = 0;
 	struct box_dict_element *box_dict, *box_dict_end;
 	
+	box_duplicate_last = NULL;
+	
 	/* 1. Duplicate parent - children structure, list_markers*/
 	new_root = talloc_memdup(c, root, sizeof (struct box));
 	if (!box_duplicate_main_tree(new_root, c, &box_number))
@@ -720,12 +729,13 @@ struct box* box_duplicate_tree(struct box *root, struct content *c)
 */
 bool box_duplicate_main_tree(struct box *box, struct content *c, int *count)
 {
-
-	struct box *b, *prev, *copy;
+	struct box *b, *prev;
 	
 	prev = NULL;
 	
 	for (b = box->children; b; b = b->next) {
+		struct box *copy;
+
 		/*Copy child*/
 		copy = talloc_memdup(c, b, sizeof (struct box));
 		if (copy == NULL)
@@ -738,13 +748,73 @@ bool box_duplicate_main_tree(struct box *box, struct content *c, int *count)
 		else
 			box->children = copy;
 		
+		if (copy->type == BOX_INLINE) {
+			struct box_duplicate_llist *temp;
+
+			temp = malloc(sizeof(struct box_duplicate_llist));
+			if (temp == NULL)
+				return false;
+			temp->prev = box_duplicate_last;
+			temp->box = copy;
+			box_duplicate_last = temp;
+		}
+		else if (copy->type == BOX_INLINE_END) {
+			struct box_duplicate_llist *temp;
+
+			box_duplicate_last->box->inline_end = copy;
+			copy->inline_end = box_duplicate_last->box;
+			
+			temp = box_duplicate_last;
+			box_duplicate_last = temp->prev;
+			free(temp);
+		}
+		
 		/* Recursively visit child */
-		box_duplicate_main_tree(copy, c, count);
+		if (!box_duplicate_main_tree(copy, c, count))
+			return false;
 		
 		prev = copy;
 	}
 	
 	box->last = prev;
+	
+	if (box->object && option_suppress_images && (
+#ifdef WITH_JPEG
+			box->object->type == CONTENT_JPEG ||
+#endif
+#ifdef WITH_GIF
+			box->object->type == CONTENT_GIF ||
+#endif
+#ifdef WITH_BMP
+			box->object->type ==  CONTENT_BMP ||
+			box->object->type == CONTENT_ICO ||
+#endif
+#ifdef WITH_MNG
+			box->object->type == CONTENT_PNG ||
+			box->object->type == CONTENT_JNG ||
+			box->object->type == CONTENT_MNG ||
+#endif
+#if defined(WITH_SPRITE) || defined(WITH_NSSPRITE)
+			box->object->type == CONTENT_SPRITE ||
+#endif
+#ifdef WITH_DRAW
+			box->object->type == CONTENT_DRAW ||
+#endif
+#ifdef WITH_PLUGIN
+			box->object->type == CONTENT_PLUGIN ||
+#endif
+			box->object->type == CONTENT_DIRECTORY ||
+#ifdef WITH_THEME_INSTALL
+			box->object->type == CONTENT_THEME ||
+#endif
+#ifdef WITH_ARTWORKS
+			box->object->type == CONTENT_ARTWORKS ||
+#endif
+#if defined(WITH_NS_SVG) || defined(WITH_RSVG)
+			box->object->type == CONTENT_SVG ||
+#endif
+			false))
+		box->object = NULL;
 	
 	if (box->list_marker) {
 		box->list_marker = talloc_memdup(c, box->list_marker,

@@ -2399,3 +2399,9 @@ bool ro_gui_prequit(void)
 {
 	return ro_gui_download_prequit();
 }
+
+void PDF_Password(char **owner_pass, char **user_pass, char *path)
+{
+	/*TODO:this waits to be written, until then no PDF encryption*/
+	*owner_pass = NULL;
+}

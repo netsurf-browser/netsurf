@@ -23,13 +23,15 @@
 
 #include "render/box.h"
 #include "render/font.h"
+
+#include "render/layout.h"
 #include "render/loosen.h"
 
 #include "utils/log.h"
 #include "utils/talloc.h"
 
 #define AUTO INT_MIN
-
+#define LOOSEN_MIN_TEXT_SIZE 10
 
 static bool loosen_text(struct box *text, int width, struct content *content);
 
@@ -45,8 +47,10 @@ static bool loosen_all_first_pass(struct box *box, int width, int cx,
 		struct content *content);
 static bool loosen_all_second_pass(struct box *box, int width, int cx,
 		struct content *content);
-static bool loosen_all_third_pass(struct box *box, int width, int cx,
+static bool loosen_all_margins_paddings(struct box *box, int width, int cx,
 		struct content *content);
+		
+static bool loosen_shrink_text(struct box *box);		
 
 /**
  * Main loosing procedure
@@ -84,7 +88,7 @@ bool loosen_document_layout(struct content *content, struct box *layout,
 	}
 	
 	if (content->width > width) {
-		if (!loosen_all_third_pass(layout, width, 0, content))
+		if (!loosen_all_margins_paddings(layout, width, 0, content))
 			return false;
 		layout->min_width = 0;
 		layout->max_width = UNKNOWN_MAX_WIDTH;
@@ -166,6 +170,9 @@ bool loosen_text(struct box *text, int width, struct content *content)
 
 /**
  * Changing table layout and structure to fit the contents width.
+ * Firstly the borders are collapsed and the text is shrunken.
+ * Secondly the text is loosened( this can be helpful for all data tables which
+ * contain only text)
  * In the most extreme case - the table has no influence on the width
  * (each row is broken into one-cell rows).
  * \param table - the box that contains table to be broken
@@ -177,9 +184,66 @@ bool loosen_table(struct box *table, int width, struct content *content)
 {
 	struct box *row_group, *row, *cell, *br, *prev, *inline_container;
 
-	if (table->min_width <= width)
-		return true;	
+	struct box *text, *child;
+	unsigned int row_sum;
+	bool first_cell_in_row;
+	const struct font_functions *font_func;
+	float scale;
+	int new_width;
 	
+	if (table->min_width <= width)
+		return true;		
+	
+	if (content->type == CONTENT_HTML)
+		font_func = content->data.html.font_func;
+	else
+		return false;		
+
+	table->style->border_collapse = CSS_BORDER_COLLAPSE_COLLAPSE;
+	
+	if (!loosen_shrink_text(table))
+		return false;
+	
+	if (!loosen_all_margins_paddings(table, width, 0, content))
+		return false;
+	
+	scale = width;
+	scale /= table->min_width;
+	
+	for (row_group = table->children; row_group;
+			row_group = row_group->next) {
+		for (row = row_group->children; row; row = row->next) {
+			for (cell = row->children; cell; cell = cell->next) {
+				for (child = cell->children; child;
+						child = child->next) {
+					if (child->children)
+						text = child->children;
+					else
+						continue;
+					
+					/*text in nested boxes won't be broken*/
+					if (text->type != BOX_TEXT)
+						continue;
+					
+					
+					/*break the words propotionally to the
+					current cell width*/
+					new_width = (float)cell->width * scale * 0.9;
+					loosen_text(text, new_width, content);
+				}
+			}
+		}
+	}
+			
+	
+	/*check if the table is loosend enough...*/
+	layout_minmax_table(table, font_func);
+	if (table->min_width <= width)
+		return true;			
+	
+	
+	/*...in case it's not continue with bigger changes,
+	table cells are changed into inline containers*/
 	inline_container = box_create(0, 0, 0, 0, 0, content);
 	inline_container->type = BOX_INLINE_CONTAINER;
 	inline_container->parent = table;
@@ -229,6 +293,31 @@ bool loosen_table(struct box *table, int width, struct content *content)
 	table->children = table->last = inline_container;
 	table->col = NULL;
 
+	return true;
+}
+
+/**
+* Recursively step through the box tree applying LOOSEN_MIN_TEXT_SIZE wherever
+* text is found
+* \param box the box where the shrinking should be started
+* \return true if successful, false otherwise 
+*/
+bool loosen_shrink_text(struct box *box)
+{
+	struct box *child;
+	
+	box->max_width = UNKNOWN_MAX_WIDTH;
+	
+	if (box->type == BOX_TEXT) {
+		box->style->font_size.size = CSS_FONT_SIZE_LENGTH;
+		box->style->font_size.value.length.unit = CSS_UNIT_PX;
+		box->style->font_size.value.length.value = LOOSEN_MIN_TEXT_SIZE;
+	}
+	else if (box->children)
+		for(child = box->children; child; child = child->next)
+			if (!loosen_shrink_text(child))
+				return false;		
+	
 	return true;
 }
 
@@ -352,6 +441,8 @@ bool loosen_all_second_pass(struct box *box, int width, int cx,
 				if (!loosen_table(c, width, content))
 					return false;
 				break;
+			default:
+				break;
 		}
 		
 		c->min_width = 0;
@@ -370,7 +461,7 @@ bool loosen_all_second_pass(struct box *box, int width, int cx,
  * \param content talloc memory pool for new boxes
  * \return true if successful, false otherwise 
  */
-bool loosen_all_third_pass(struct box *box, int width, int cx,
+bool loosen_all_margins_paddings(struct box *box, int width, int cx,
 		struct content *content)
 {
 	struct box *c;
@@ -379,7 +470,7 @@ bool loosen_all_third_pass(struct box *box, int width, int cx,
 	for (c = box->children; c; c = c->next) {
 		x = cx + c->x;
 		if (c->children != NULL)
-			if (!loosen_all_third_pass(c, width, x, content))
+			if (!loosen_all_margins_paddings(c, width, x, content))
 				return false;
 
 		c->padding[LEFT] = c->padding[RIGHT] = 0;

@@ -20,7 +20,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include <math.h>
 #include <gtk/gtk.h>
 #include <glade/glade.h>
 #include "utils/log.h"
@@ -30,6 +29,8 @@
 #include "gtk/gtk_scaffolding.h"
 #include "gtk/dialogs/gtk_options.h"
 #include "gtk/gtk_window.h"
+
+#include "desktop/print.h"
 
 GtkDialog *wndPreferences;
 GladeXML *gladeFile;
@@ -85,6 +86,18 @@ DECLARE(spinDiscCacheAge);
 DECLARE(checkClearDownloads);
 DECLARE(checkRequestOverwrite);
 DECLARE(fileChooserDownloads);
+
+DECLARE(spinMarginTop);
+DECLARE(spinMarginBottom);
+DECLARE(spinMarginLeft);
+DECLARE(spinMarginRight);
+DECLARE(spinExportScale);
+DECLARE(checkSuppressImages);
+DECLARE(checkRemoveBackgrounds);
+DECLARE(checkFitPage);
+DECLARE(checkCompressPDF);
+DECLARE(checkPasswordPDF);
+DECLARE(setDefaultExportOptions);
 
 /* Used when the feature is not implemented yet */
 #define FIND_WIDGET(x) (x) = glade_xml_get_widget(gladeFile, #x); \
@@ -148,6 +161,19 @@ GtkDialog* nsgtk_options_init(struct browser_window *bw, GtkWindow *parent) {
 	CONNECT(checkClearDownloads, "toggled");
 	CONNECT(checkRequestOverwrite, "toggled");
 	CONNECT(fileChooserDownloads, "current-folder-changed");
+	
+	CONNECT(spinMarginTop, "value-changed");
+	CONNECT(spinMarginBottom, "value-changed");
+	CONNECT(spinMarginLeft, "value-changed");
+	CONNECT(spinMarginRight, "value-changed");
+	CONNECT(spinExportScale, "value-changed");
+	CONNECT(checkSuppressImages, "toggled");
+	CONNECT(checkRemoveBackgrounds, "toggled");
+	CONNECT(checkFitPage, "toggled");
+	CONNECT(checkCompressPDF, "toggled");
+	CONNECT(checkPasswordPDF, "toggled");
+	CONNECT(setDefaultExportOptions, "clicked");
+	
 	
 	g_signal_connect(G_OBJECT(wndPreferences), "response",
 		G_CALLBACK (dialog_response_handler), NULL);
@@ -233,6 +259,18 @@ void nsgtk_options_load(void) {
 	SET_CHECK(checkClearDownloads, option_downloads_clear);
 	SET_CHECK(checkRequestOverwrite, option_request_overwrite);
 	SET_FILE_CHOOSER(fileChooserDownloads, option_downloads_directory);
+	
+	SET_SPIN(spinMarginTop, option_margin_top);
+	SET_SPIN(spinMarginBottom, option_margin_bottom);
+	SET_SPIN(spinMarginLeft, option_margin_left);
+	SET_SPIN(spinMarginRight, option_margin_right);
+	SET_SPIN(spinExportScale, option_export_scale);
+	SET_CHECK(checkSuppressImages, option_suppress_images);
+	SET_CHECK(checkRemoveBackgrounds, option_remove_backgrounds);
+	SET_CHECK(checkFitPage, option_enable_loosening);
+	SET_CHECK(checkCompressPDF, option_enable_PDF_compression);
+	SET_CHECK(checkPasswordPDF, option_enable_PDF_password);
+	SET_BUTTON(setDefaultExportOptions);
 }
 
 static void dialog_response_handler (GtkDialog *dlg, gint res_id){
@@ -280,7 +318,6 @@ static gboolean on_dialog_close (GtkDialog *dlg, gboolean stay_alive){
 	(y) = gtk_file_chooser_get_current_folder(GTK_FILE_CHOOSER((x)));
 #define BUTTON_CLICKED(x) gboolean on_##x##_changed(GtkWidget *widget, gpointer data) { \
 	LOG(("Signal emitted on '%s'", #x));
-
 ENTRY_CHANGED(entryHomePageURL, option_homepage_url)}
 	return FALSE;}
 BUTTON_CLICKED(setCurrentPage)
@@ -318,7 +355,7 @@ COMBO_CHANGED(comboProxyType, proxy_type)
 			option_http_proxy_auth = OPTION_HTTP_PROXY_AUTH_NTLM;
 			break;
 	}
-	gboolean sensitive = (option_http_proxy_auth);
+	gboolean sensitive = (!proxy_type == 0);
 	gtk_widget_set_sensitive (entryProxyHost, sensitive);
 	gtk_widget_set_sensitive (entryProxyPort, sensitive);
 	gtk_widget_set_sensitive (entryProxyUser, sensitive);
@@ -383,3 +420,38 @@ SPIN_CHANGED(spinDiscCacheAge, option_disc_cache_age)}
 CHECK_CHANGED(checkClearDownloads, option_downloads_clear)}
 CHECK_CHANGED(checkRequestOverwrite, option_request_overwrite)}
 FILE_CHOOSER_CHANGED(fileChooserDownloads, option_downloads_directory)}
+
+SPIN_CHANGED(spinMarginTop, option_margin_top)}
+SPIN_CHANGED(spinMarginBottom, option_margin_bottom)}
+SPIN_CHANGED(spinMarginLeft, option_margin_left)}
+SPIN_CHANGED(spinMarginRight, option_margin_right)}
+SPIN_CHANGED(spinExportScale, option_export_scale)}
+CHECK_CHANGED(checkSuppressImages, option_suppress_images)}
+CHECK_CHANGED(checkRemoveBackgrounds, option_remove_backgrounds)}
+CHECK_CHANGED(checkFitPage, option_enable_loosening)}
+CHECK_CHANGED(checkCompressPDF, option_enable_PDF_compression)}
+CHECK_CHANGED(checkPasswordPDF, option_enable_PDF_password)}
+BUTTON_CLICKED(setDefaultExportOptions)
+	option_margin_top = DEFAULT_MARGIN_TOP_MM;
+	option_margin_bottom = DEFAULT_MARGIN_BOTTOM_MM;
+	option_margin_left = DEFAULT_MARGIN_LEFT_MM;
+	option_margin_right = DEFAULT_MARGIN_RIGHT_MM;
+	option_export_scale = DEFAULT_EXPORT_SCALE * 100;		
+	option_suppress_images = false;
+	option_remove_backgrounds = false;
+	option_enable_loosening = true;
+	option_enable_PDF_compression = true;
+	option_enable_PDF_password = false;
+			
+	SET_SPIN(spinMarginTop, option_margin_top);
+	SET_SPIN(spinMarginBottom, option_margin_bottom);
+	SET_SPIN(spinMarginLeft, option_margin_left);
+	SET_SPIN(spinMarginRight, option_margin_right);
+	SET_SPIN(spinExportScale, option_export_scale);
+	SET_CHECK(checkSuppressImages, option_suppress_images);
+	SET_CHECK(checkRemoveBackgrounds, option_remove_backgrounds);
+	SET_CHECK(checkCompressPDF, option_enable_PDF_compression);
+	SET_CHECK(checkPasswordPDF, option_enable_PDF_password);
+	SET_CHECK(checkFitPage, option_enable_loosening);
+	
+}

@@ -88,8 +88,6 @@ static void place_float_below(struct box *c, int width, int cx, int y,
 		struct box *cont);
 static bool layout_table(struct box *box, int available_width,
 		struct content *content);
-static void layout_minmax_table(struct box *table,
-		const struct font_functions *font_func);
 static void layout_move_children(struct box *box, int x, int y);
 static void calculate_mbp_width(struct css_style *style, unsigned int side,
 		int *fixed, float *frac);

@@ -38,6 +38,7 @@
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
 #include "desktop/options.h"
+#include "desktop/print.h"
 #include "render/box.h"
 #include "render/font.h"
 #include "render/form.h"
@@ -173,6 +174,9 @@ bool html_redraw_box(struct box *box,
 	int x0, y0, x1, y1;
 	int x_scrolled, y_scrolled;
 	struct box *bg_box = NULL;
+	
+	if (html_redraw_printing && box->printed)
+		return true;
 
 	/* avoid trivial FP maths */
 	if (scale == 1.0) {
@@ -227,6 +231,23 @@ bool html_redraw_box(struct box *box,
 	if (clip_y1 < y0 || y1 < clip_y0 || clip_x1 < x0 || x1 < clip_x0)
 		return true;
 
+	/*if the rectangle is under the page bottom but it can fit in a page,
+	don't print it now*/
+	if (html_redraw_printing)
+		if (y1 > html_redraw_printing_border) {
+			if (y1 - y0 <= html_redraw_printing_border &&
+					(box->type == BOX_TEXT ||
+					box->type == BOX_TABLE_CELL
+					|| box->object || box->gadget)) {
+				/*remember the highest of all points from the
+				not printed elements*/
+				if (y0 < html_redraw_printing_top_cropped)
+					html_redraw_printing_top_cropped = y0;
+				return true;
+			}
+		}
+		else box->printed = true;/*it won't be printed anymore*/
+	
 	/* if visibility is hidden render children only */
 	if (box->style && box->style->visibility == CSS_VISIBILITY_HIDDEN) {
 	  	if ((plot.group_start) && (!plot.group_start("hidden box")))
@@ -296,74 +317,78 @@ bool html_redraw_box(struct box *box,
 	 *   element is processed, ignore the background.
 	 * + For any other box, just use its own styling.
 	 */
-	if (!box->parent) {
-		/* Root box */
-		if (box->style &&
-				(box->style->background_color != TRANSPARENT ||
-				box->background)) {
-			/* With its own background */
-			bg_box = box;
-		} else if (!box->style ||
-				(box->style->background_color == TRANSPARENT &&
-				!box->background)) {
-			/* Without its own background */
-			if (box->children && box->children->style &&
-				(box->children->style->background_color !=
-					TRANSPARENT ||
-					box->children->background)) {
-				/* But body has one, so use that */
-				bg_box = box->children;
-			}
-		}
-	} else if (box->parent && !box->parent->parent) {
-		/* Body box */
-		if (box->style &&
-				(box->style->background_color != TRANSPARENT ||
-				box->background)) {
-			/* With a background */
-			if (box->parent->style &&
-				(box->parent->style->background_color !=
-					TRANSPARENT ||
-					box->parent->background)) {
-				/* Root has own background; process normally */
+	
+	if (!html_redraw_printing ||
+			(html_redraw_printing && !option_remove_backgrounds)) {
+		if (!box->parent) {
+			/* Root box */
+			if (box->style &&
+					(box->style->background_color != TRANSPARENT ||
+					box->background)) {
+				/* With its own background */
 				bg_box = box;
+			} else if (!box->style ||
+					(box->style->background_color == TRANSPARENT &&
+					!box->background)) {
+				/* Without its own background */
+				if (box->children && box->children->style &&
+					(box->children->style->background_color !=
+						TRANSPARENT ||
+						box->children->background)) {
+					/* But body has one, so use that */
+					bg_box = box->children;
+				}
 			}
+		} else if (box->parent && !box->parent->parent) {
+			/* Body box */
+			if (box->style &&
+					(box->style->background_color != TRANSPARENT ||
+					box->background)) {
+				/* With a background */
+				if (box->parent->style &&
+					(box->parent->style->background_color !=
+						TRANSPARENT ||
+						box->parent->background)) {
+					/* Root has own background; process normally */
+					bg_box = box;
+				}
+			}
+		} else {
+			/* Any other box */
+			bg_box = box;
 		}
-	} else {
-		/* Any other box */
-		bg_box = box;
-	}
-
-	/* bg_box == NULL implies that this box should not have
-	 * its background rendered. Otherwise filter out linebreaks,
-	 * optimize away non-differing inlines, only plot background
-	 * for BOX_TEXT it's in an inline and ensure the bg_box
-	 * has something worth rendering */
-	if (bg_box && (bg_box->style && bg_box->type != BOX_BR &&
-			(bg_box->type != BOX_INLINE ||
-			bg_box->style != bg_box->parent->parent->style)) &&
-			(bg_box->type != BOX_TEXT ||
-			(bg_box->type == BOX_TEXT && inline_depth > 0)) &&
-			((bg_box->style->background_color != TRANSPARENT) ||
-			(bg_box->background))) {
-		/* find intersection of clip box and border edge */
-		int px0 = x - border_left < x0 ? x0 : x - border_left;
-		int py0 = y - border_top < y0 ? y0 : y - border_top;
-		int px1 = x + padding_width + border_right < x1 ?
-				x + padding_width + border_right : x1;
-		int py1 = y + padding_height + border_bottom < y1 ?
-				y + padding_height + border_bottom : y1;
-
-		/* valid clipping rectangles only */
-		if ((px0 < px1) && (py0 < py1)) {
-			/* plot background */
-			if (!html_redraw_background(x, y, box, scale,
-					px0, py0, px1, py1,
-					&current_background_color, bg_box))
-				return false;
-			/* restore previous graphics window */
-			if (!plot.clip(x0, y0, x1, y1))
-				return false;
+	
+		/* bg_box == NULL implies that this box should not have
+		* its background rendered. Otherwise filter out linebreaks,
+		* optimize away non-differing inlines, only plot background
+		* for BOX_TEXT it's in an inline and ensure the bg_box
+		* has something worth rendering */
+		if (bg_box && (bg_box->style && bg_box->type != BOX_BR &&
+				(bg_box->type != BOX_INLINE ||
+				bg_box->style != bg_box->parent->parent->style)) &&
+				(bg_box->type != BOX_TEXT ||
+				(bg_box->type == BOX_TEXT && inline_depth > 0)) &&
+				((bg_box->style->background_color != TRANSPARENT) ||
+				(bg_box->background))) {
+			/* find intersection of clip box and border edge */
+			int px0 = x - border_left < x0 ? x0 : x - border_left;
+			int py0 = y - border_top < y0 ? y0 : y - border_top;
+			int px1 = x + padding_width + border_right < x1 ?
+					x + padding_width + border_right : x1;
+			int py1 = y + padding_height + border_bottom < y1 ?
+					y + padding_height + border_bottom : y1;
+	
+			/* valid clipping rectangles only */
+			if ((px0 < px1) && (py0 < py1)) {
+				/* plot background */
+				if (!html_redraw_background(x, y, box, scale,
+						px0, py0, px1, py1,
+						&current_background_color, bg_box))
+					return false;
+				/* restore previous graphics window */
+				if (!plot.clip(x0, y0, x1, y1))
+					return false;
+			}
 		}
 	}
 
@@ -1419,7 +1444,10 @@ bool html_redraw_text_decoration(struct box *box,
 	unsigned int i;
 
 	/* antialias colour for under/overline */
-	colour = html_redraw_aa(background_colour, box->style->color);
+	if (html_redraw_printing)
+		colour = box->style->color;
+	else
+		colour = html_redraw_aa(background_colour, box->style->color);
 
 	if (box->type == BOX_INLINE) {
 		if (!box->inline_end)

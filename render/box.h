@@ -189,6 +189,8 @@ struct box {
 	unsigned int rows;     /**< Number of rows for TABLE only. */
 	unsigned int start_column;  /**< Start column for TABLE_CELL only. */
 
+	bool printed; /** Whether this box has already been printed*/
+	
 	struct box *next;      /**< Next sibling box, or 0. */
 	struct box *prev;      /**< Previous sibling box, or 0. */
 	struct box *children;  /**< First child box, or 0. */

@@ -83,6 +83,25 @@ extern int option_scale;
 extern bool option_incremental_reflow;
 extern unsigned int option_min_reflow_period;
 
+extern int option_margin_top;
+extern int option_margin_bottom;
+extern int option_margin_left;
+extern int option_margin_right;
+extern int option_export_scale;
+extern bool option_suppress_images;
+extern bool option_remove_backgrounds;
+extern bool option_enable_loosening;
+extern bool option_enable_PDF_compression;
+extern bool option_enable_PDF_password;
+#define DEFAULT_PAGE_WIDTH 595
+#define DEFAULT_PAGE_HEIGHT 840
+#define DEFAULT_MARGIN_TOP_MM 10
+#define DEFAULT_MARGIN_BOTTOM_MM 10
+#define DEFAULT_MARGIN_LEFT_MM 10
+#define DEFAULT_MARGIN_RIGHT_MM 10
+#define DEFAULT_EXPORT_SCALE 0.7
+#define DEFAULT_COPIES 1
+
 /* Fetcher configuration. */
 extern int option_max_fetchers;
 extern int option_max_fetchers_per_host;

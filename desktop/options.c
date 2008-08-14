@@ -139,6 +139,26 @@ unsigned int option_min_reflow_period = 100; /* time in cs */
 #else
 unsigned int option_min_reflow_period = 25; /* time in cs */
 #endif
+/** top margin of exported page*/
+int option_margin_top = DEFAULT_MARGIN_TOP_MM;
+/** bottom margin of exported page*/
+int option_margin_bottom = DEFAULT_MARGIN_BOTTOM_MM;
+/** left margin of exported page*/
+int option_margin_left = DEFAULT_MARGIN_LEFT_MM;
+/** right margin of exported page*/
+int option_margin_right = DEFAULT_MARGIN_RIGHT_MM;
+/** scale of exported content*/
+int option_export_scale = DEFAULT_EXPORT_SCALE * 100;
+/**suppressing images in printed content*/
+bool option_suppress_images = false;
+/**turning off all backgrounds for printed content*/
+bool option_remove_backgrounds = false;
+/**turning on content loosening for printed content*/
+bool option_enable_loosening = true;
+/**compression of PDF documents*/
+bool option_enable_PDF_compression = true;
+/**setting a password and encoding PDF documents*/
+bool option_enable_PDF_password = false;
 
 /* Fetcher configuration */
 /** Maximum simultaneous active fetchers */
@@ -218,6 +238,16 @@ struct {
 	{ "suppress_curl_debug", OPTION_BOOL, &option_suppress_curl_debug },
 	{ "target_blank",
 		             OPTION_BOOL,    &option_target_blank },
+	{ "margin_top", OPTION_INTEGER, &option_margin_top},
+	{ "margin_bottom", OPTION_INTEGER, &option_margin_bottom},
+	{ "margin_left", OPTION_INTEGER, &option_margin_left},
+	{ "margin_right", OPTION_INTEGER, &option_margin_right},
+ 	{ "export_scale", OPTION_INTEGER, &option_export_scale},
+	{ "suppress_images", OPTION_BOOL, &option_suppress_images},
+	{ "remove_backgrounds", OPTION_BOOL, &option_remove_backgrounds},
+	{ "enable_loosening", OPTION_BOOL, &option_enable_loosening},
+ 	{ "enable_PDF_compression", OPTION_BOOL, &option_enable_PDF_compression},
+ 	{ "enable_PDF_password", OPTION_BOOL, &option_enable_PDF_password},
 	EXTRA_OPTION_TABLE
 };
 

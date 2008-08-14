@@ -242,7 +242,7 @@ bool nsgtk_print_plot_clip(int clip_x0, int clip_y0,
 	cliprect.y = clip_y0;
 	cliprect.width = clip_x1 - clip_x0;
 	cliprect.height = clip_y1 - clip_y0;
-//	gdk_gc_set_clip_rectangle(gtk_print_current_gc, &cliprect);
+	
 	return true;
 	
 }
@@ -411,7 +411,6 @@ void nsgtk_print_set_colour(colour c)
 
 	gdk_color_alloc(gdk_colormap_get_system(),
  			&colour);
-// 	gdk_gc_set_foreground(gtk_print_current_gc, &colour);
 
 	cairo_set_source_rgba(gtk_print_current_cr, r / 255.0,
 			g / 255.0, b / 255.0, 1.0);
@@ -505,28 +504,25 @@ static void gtk_print_end()
  * \param context the print context used to set up the pages
  * \param user_data nothing in here
  */
-
 void gtk_print_signal_begin_print (GtkPrintOperation *operation,
 		GtkPrintContext *context,
 		gpointer user_data)
 {
-
 	int page_number;	
 	double height_on_page, height_to_print;
 	
 	LOG(("Begin print"));
 	
 	
-	settings = print_make_settings(DEFAULT);
+	settings = user_data;
 		
-	settings->margins[MARGINTEXT] = 0;
 	settings->margins[MARGINTOP] = 0;
 	settings->margins[MARGINLEFT] = 0;
 	settings->margins[MARGINBOTTOM] = 0;
 	settings->margins[MARGINRIGHT] = 0;
 	settings->page_width = gtk_print_context_get_width(context);
 	settings->page_height = gtk_print_context_get_height(context);
-	settings->scale = 0.7;
+	settings->scale = 0.7;/*at 0.7 the pages look the best*/
 	settings->font_func = &nsfont;
 	
 	print_set_up(content_to_print, &gtk_printer, settings, &height_to_print);
@@ -542,15 +538,13 @@ void gtk_print_signal_begin_print (GtkPrintOperation *operation,
 	page_number = height_to_print / height_on_page;
 	if (height_to_print - page_number * height_on_page > 0)
 		page_number += 1;
-			
-	
+				
 	gtk_print_operation_set_n_pages(operation, page_number);
 }
   		
 /** Handle the draw_page signal from the GtkPrintOperation.
  * This function changes only the cairo context to print on.
  */  		
-  		
 void gtk_print_signal_draw_page(GtkPrintOperation *operation,
 		GtkPrintContext *context,
 		gint page_nr,
@@ -564,13 +558,12 @@ void gtk_print_signal_draw_page(GtkPrintOperation *operation,
 /** Handle the end_print signal from the GtkPrintOperation.
  * This functions calls only the print_cleanup function from the print interface
  */  	
-  			
 void gtk_print_signal_end_print(GtkPrintOperation *operation,
 		GtkPrintContext *context,
 		gpointer user_data)
 {
 	LOG(("End print"));	
-	print_cleanup(content_to_print, &gtk_printer);
+	print_cleanup(content_to_print, &gtk_printer, user_data);
 }
 
 #endif /* WITH_PDF_EXPORT */

@@ -31,7 +31,7 @@ S_IMAGE := $(addprefix image/,$(S_IMAGE))
 S_PDF := pdf_plotters.c font_haru.c
 S_PRINT := print.c 
 S_LOOSE := loosen.c
-S_PDF := $(addprefix pdf/,$(S_PDF)) $(addprefix desktop/,$(S_PRINT))	\
+S_PDF := $(addprefix desktop/save_pdf/,$(S_PDF)) $(addprefix desktop/,$(S_PRINT))	\
 	 $(addprefix render/,$(S_LOOSE))
 
 # S_BROWSER are sources related to full browsers but are common

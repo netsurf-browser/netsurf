@@ -15,26 +15,22 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+ 
+ /** \file
+  * Font handling in Haru pdf documents (interface).
+  */
+ 
+#ifndef _NETSURF_RENDER_FONT_HARU_H_
+#define _NETSURF_RENDER_FONT_HARU_H_
+ 
+#include "render/font.h"
+#include "hpdf.h"
+ 
+bool haru_nsfont_apply_style(const struct css_style *style,
+			      	HPDF_Doc doc, HPDF_Page page,
+	  			HPDF_Font *font);
+ 
+extern const struct font_functions haru_nsfont;
+extern float pdf_scale;
 
-/** \file 
-	PDF Plotting
-*/
-
-#ifndef NETSURF_PDF_PLOTTERS_H
-#define NETSURF_PDF_PLOTTERS_H
-
-#include "desktop/print.h"
-struct plotter_table;
-
-extern struct printer pdf_printer;
-
-/**Start plotting a pdf file*/
-bool pdf_begin(struct print_settings* settings);
-
-/**Finish the current page and start a new one*/
-bool pdf_next_page(void);
-
-/**Close pdf document and save changes to file*/
-void pdf_end(void);
-
-#endif /*NETSURF_PDF_PLOTTERS_H*/
+#endif

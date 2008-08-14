@@ -25,6 +25,7 @@ extern GladeXML *gladeWindows;
 extern char *glade_file_location;
 extern char *options_file_location;
 extern char *res_dir_location;
+extern char *print_options_file_location;
 
 extern GtkWindow *wndAbout;
 

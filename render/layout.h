@@ -36,5 +36,6 @@ bool layout_block_context(struct box *block, struct content *content);
 bool layout_inline_container(struct box *box, int width,
 		struct box *cont, int cx, int cy, struct content *content);
 void layout_calculate_descendant_bboxes(struct box *box);
-
+void layout_minmax_table(struct box *table,
+		const struct font_functions *font_func);
 #endif

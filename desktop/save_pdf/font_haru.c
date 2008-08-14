@@ -26,7 +26,7 @@
 #include "utils/config.h"
 #ifdef WITH_PDF_EXPORT
 
-/* #define FONT_HARU_DEBUG */
+/*#define FONT_HARU_DEBUG */
  
 #include <assert.h> 
 #include <float.h> 
@@ -34,8 +34,8 @@
 #include <string.h> 
 #include "hpdf.h"  
 #include "css/css.h"
+#include "desktop/save_pdf/font_haru.h"
 #include "render/font.h"
-#include "pdf/font_haru.h"
 #include "utils/log.h"
 
 
@@ -60,7 +60,6 @@ const struct font_functions haru_nsfont = {
  	haru_nsfont_position_in_string,
  	haru_nsfont_split
 };
-
 
 /**
  * Haru error handler
@@ -124,8 +123,9 @@ bool haru_nsfont_width(const struct css_style *style,
 	char *string_nt;
 	HPDF_REAL width_real;
 	
+	*width = 0;
+	
 	if (length == 0) {
-		*width = 0;
 		return true;
 	}
 	
@@ -178,7 +178,7 @@ bool haru_nsfont_position_in_string(const struct css_style *style,
 	if (!haru_nsfont_init(&pdf, &page, string, &string_nt, length))
 		return false;
 	
-	if (!HPDF_Page_SetWidth(page, x)
+	if (HPDF_Page_SetWidth(page, x) != HPDF_OK
 			|| !haru_nsfont_apply_style(style, pdf, page, NULL)) {
 		free(string_nt);
 		HPDF_Free(pdf);
@@ -238,7 +238,7 @@ bool haru_nsfont_split(const struct css_style *style,
 	if (!haru_nsfont_init(&pdf, &page, string, &string_nt, length))
 		return false;
 	
-	if (!HPDF_Page_SetWidth(page, x)
+	if (HPDF_Page_SetWidth(page, x) != HPDF_OK
 		    || !haru_nsfont_apply_style(style, pdf, page, NULL)) {
 		free(string_nt);
 		HPDF_Free(pdf);
@@ -274,7 +274,6 @@ bool haru_nsfont_split(const struct css_style *style,
  *			style and nothing with the page is done
  * \return true on success, false on error and error reported
  */
-
 bool haru_nsfont_apply_style(const struct css_style *style,
 		HPDF_Doc doc, HPDF_Page page, HPDF_Font *font)
 {
@@ -340,21 +339,25 @@ bool haru_nsfont_apply_style(const struct css_style *style,
 	LOG(("Setting font: %s", font_name));
 #endif		
 	
+	/*the functions was invoked only to get the proper font*/
 	if (font != NULL) {
 		pdf_font = HPDF_GetFont(doc, font_name, "StandardEncoding");
 		if (pdf_font == NULL)
 			return false;
 		*font = pdf_font;
 	}
+	/*the function was invoked to set the page parameters*/
 	else {
 		if (style->font_size.value.length.unit  == CSS_UNIT_PX)
 			size = style->font_size.value.length.value;
 		else
 			size = css_len2pt(&style->font_size.value.length, style);
 	
-		/*with 0.7 the pages look the best, this should be kept the same
-		as the scale in print settings*/
-		size = size / 0.7;
+		if (size <= 0)
+			return false;
+		
+		if (size > HPDF_MAX_FONTSIZE)
+			size = HPDF_MAX_FONTSIZE;
 		
 		pdf_font = HPDF_GetFont(doc, font_name, "StandardEncoding");
 		if (pdf_font == NULL)

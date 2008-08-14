@@ -43,15 +43,17 @@
 #include "gtk/gtk_window.h"
 #include "gtk/gtk_schedule.h"
 #include "gtk/gtk_download.h"
+#include "gtk/options.h"
 #include "render/box.h"
 #include "render/font.h"
 #include "render/form.h"
 #include "render/html.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
+#include "utils/url.h"
 
-#include "pdf/pdf_plotters.h"
 #include "desktop/print.h"
+#include "desktop/save_pdf/pdf_plotters.h"
 #ifdef WITH_PDF_EXPORT
 #include "gtk/gtk_print.h"
 #endif
@@ -146,7 +148,6 @@ MENUPROTO(open_location);
 MENUPROTO(open_file);
 MENUPROTO(export_pdf);
 MENUPROTO(print);
-MENUPROTO(print_preview);
 MENUPROTO(close_window);
 MENUPROTO(quit);
 
@@ -193,7 +194,6 @@ static struct menu_events menu_events[] = {
 #ifdef WITH_PDF_EXPORT
 	MENUEVENT(export_pdf),
 	MENUEVENT(print),
-	MENUEVENT(print_preview),
 #endif
 	MENUEVENT(close_window),
 	MENUEVENT(quit),
@@ -489,10 +489,25 @@ MENUHANDLER(export_pdf){
         struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
         struct browser_window *bw = nsgtk_get_browser_for_gui(gw->top_level);
 	struct print_settings* settings;
+	char filename[PATH_MAX];
+	char dirname[PATH_MAX];
+	char *url_name;
 	
 	LOG(("Print preview (generating PDF)  started."));
 
-	settings = print_make_settings(DEFAULT);
+	url_nice(bw->current_content->url, &url_name, true);
+	strcat(filename, url_name);
+	strcat(filename, ".pdf");
+	
+	free(url_name);	
+	
+	strcpy(dirname, option_downloads_directory);
+	strcat(dirname, "/");
+	
+	settings = print_make_settings(OPTIONS, NULL);
+	/*this way the scale used by PDF functions is synchronized with that
+	used by the all-purpose print interface*/
+	pdf_set_scale((float)option_export_scale / 100);
 
 	save_dialog = gtk_file_chooser_dialog_new("Export to PDF", gw->window,
 		GTK_FILE_CHOOSER_ACTION_SAVE,
@@ -501,10 +516,10 @@ MENUHANDLER(export_pdf){
 		NULL);
 	
 	gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(save_dialog),
-		getenv("HOME") ? getenv("HOME") : "/");
-	
+			dirname);
+
 	gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(save_dialog),
-		"out.pdf");
+			filename);
 	
 	if (gtk_dialog_run(GTK_DIALOG(save_dialog)) == GTK_RESPONSE_ACCEPT) {
 		settings->output = gtk_file_chooser_get_filename(
@@ -512,7 +527,7 @@ MENUHANDLER(export_pdf){
 	}
 	
 	gtk_widget_destroy(save_dialog);
-
+	
 	print_basic_run(bw->current_content, &pdf_printer, settings);
 
 	return TRUE;
@@ -525,41 +540,46 @@ MENUHANDLER(print){
 	
 	GtkPrintOperation* print_op;
 	GtkPageSetup* page_setup;
-	struct print_settings* settings;
-	
-	settings = print_make_settings(DEFAULT);
+	GtkPrintSettings*  gtk_print_settings;
+	GtkPrintOperationResult res;
+	struct print_settings *settings;
 	
 	print_op = gtk_print_operation_new();
 	page_setup = gtk_page_setup_new();
 	
+	/*use previously saved settings if any*/
+	gtk_print_settings = gtk_print_settings_new_from_file(print_options_file_location, NULL);
+	if (gtk_print_settings != NULL)
+		gtk_print_operation_set_print_settings(print_op,
+				gtk_print_settings);
+
 	content_to_print = bw->current_content;
 	
 	page_setup = gtk_print_run_page_setup_dialog(gw->window, page_setup, NULL);
 	gtk_print_operation_set_default_page_setup (print_op, page_setup);
 	
-	g_signal_connect(print_op, "begin_print", G_CALLBACK (gtk_print_signal_begin_print), NULL);
+	settings = print_make_settings(DEFAULT, NULL);
+	
+	g_signal_connect(print_op, "begin_print", G_CALLBACK (gtk_print_signal_begin_print), settings);
 	g_signal_connect(print_op, "draw_page", G_CALLBACK (gtk_print_signal_draw_page), NULL);
-	g_signal_connect(print_op, "end_print", G_CALLBACK (gtk_print_signal_end_print), NULL);
+	g_signal_connect(print_op, "end_print", G_CALLBACK (gtk_print_signal_end_print), settings);
 
 	
-	gtk_print_operation_run(print_op,
+	res = gtk_print_operation_run(print_op,
 				GTK_PRINT_OPERATION_ACTION_PRINT_DIALOG,
     				gw->window,
 				NULL);
 	
+	/*if the settings were used save them for future use*/	
+	if (res == GTK_PRINT_OPERATION_RESULT_APPLY) {
+		if (gtk_print_settings != NULL)
+			g_object_unref(gtk_print_settings);
+		gtk_print_settings = g_object_ref(
+				gtk_print_operation_get_print_settings(print_op));
+		gtk_print_settings_to_file(gtk_print_settings,
+				print_options_file_location ,NULL);
+	}
 	
-	return TRUE;
-}
-
-MENUHANDLER(print_preview){
-
-        struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
-        struct browser_window *bw = nsgtk_get_browser_for_gui(gw->top_level);
-	
-	LOG(("Print preview (generating PDF)  started."));
-
-	print_basic_run(bw->current_content, &pdf_printer, NULL);
-
 	return TRUE;
 }
 
@@ -1142,7 +1162,6 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 #ifndef WITH_PDF_EXPORT
 	gtk_widget_set_sensitive(GET_WIDGET("export_pdf"), FALSE);
 	gtk_widget_set_sensitive(GET_WIDGET("print"), FALSE);
-	gtk_widget_set_sensitive(GET_WIDGET("print_preview"), FALSE);
 #endif
 
 	/* finally, show the window. */

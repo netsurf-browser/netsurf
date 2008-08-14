@@ -44,6 +44,7 @@
 #include "desktop/gui.h"
 #include "desktop/netsurf.h"
 #include "desktop/options.h"
+#include "desktop/save_pdf/pdf_plotters.h"
 #include "gtk/gtk_gui.h"
 #include "gtk/dialogs/gtk_options.h"
 #include "gtk/gtk_completion.h"
@@ -69,6 +70,7 @@ char *adblock_stylesheet_url;
 char *options_file_location;
 char *glade_file_location;
 char *res_dir_location;
+char *print_options_file_location;
 
 struct gui_window *search_current_window = 0;
 
@@ -89,6 +91,8 @@ static void nsgtk_ssl_accept(GtkButton *w, gpointer data);
 static void nsgtk_ssl_reject(GtkButton *w, gpointer data);
 static void nsgtk_select_menu_clicked(GtkCheckMenuItem *checkmenuitem,
 					gpointer user_data);
+static void nsgtk_PDF_set_pass(GtkButton *w, gpointer data);
+static void nsgtk_PDF_no_pass(GtkButton *w, gpointer data);
 
 /**
  * Locate a shared resource file by searching known places in order.
@@ -287,7 +291,7 @@ void gui_init(int argc, char** argv)
         	LOG(("Using '%s' as download directory", home));
         	option_downloads_directory = home;
 	}
-
+	
 	find_resource(buf, "messages", "./gtk/res/messages");
 	LOG(("Using '%s' as Messages file", buf));
 	messages_load(buf);
@@ -304,6 +308,10 @@ void gui_init(int argc, char** argv)
 	adblock_stylesheet_url = path_to_url(buf);
 	LOG(("Using '%s' as AdBlock CSS URL", adblock_stylesheet_url));
 
+	find_resource(buf, "Print", "~/.netsurf/Print");
+	LOG(("Using '%s' as Print Settings file", buf));
+	print_options_file_location = strdup(buf);
+	
 	urldb_load(option_url_file);
 	urldb_load_cookies(option_cookie_file);
 
@@ -409,6 +417,7 @@ void gui_quit(void)
 	free(adblock_stylesheet_url);
 	free(option_cookie_file);
 	free(option_cookie_jar);
+	free(print_options_file_location);
 	gtk_fetch_filetype_fin();
 #ifdef WITH_HUBBUB
 	/* We don't care if this fails as we're about to die, anyway */
@@ -617,4 +626,105 @@ char *url_to_path(const char *url)
 bool cookies_update(const char *domain, const struct cookie_data *data)
 {
 	return true;
+}
+
+void PDF_Password(char **owner_pass, char **user_pass, char *path)
+{
+	GladeXML *x = glade_xml_new(glade_file_location, NULL, NULL);
+	GtkWindow *wnd = GTK_WINDOW(glade_xml_get_widget(x, "wndPDFPassword"));
+	GtkButton *ok, *no;
+	void **data = malloc(5 * sizeof(void *));
+	
+	*owner_pass = NULL;
+	*user_pass = NULL;
+	
+	data[0] = owner_pass;
+	data[1] = user_pass;
+	data[2] = wnd;
+	data[3] = x;
+	data[4] = path;
+	
+	ok = GTK_BUTTON(glade_xml_get_widget(x, "buttonPDFSetPassword"));
+	no = GTK_BUTTON(glade_xml_get_widget(x, "buttonPDFNoPassword"));
+	
+	g_signal_connect(G_OBJECT(ok), "clicked",
+			 G_CALLBACK(nsgtk_PDF_set_pass), (gpointer)data);
+	g_signal_connect(G_OBJECT(no), "clicked",
+			 G_CALLBACK(nsgtk_PDF_no_pass), (gpointer)data);
+	
+	gtk_widget_show(GTK_WIDGET(wnd));
+}
+
+static void nsgtk_PDF_set_pass(GtkButton *w, gpointer data)
+{
+	char **owner_pass = ((void **)data)[0];
+	char **user_pass = ((void **)data)[1];
+	GtkWindow *wnd = ((void **)data)[2];
+	GladeXML *x = ((void **)data)[3];
+	char *path = ((void **)data)[4];
+	
+	char *op, *op1;
+	char *up, *up1;
+	
+	op = strdup(gtk_entry_get_text(GTK_ENTRY(glade_xml_get_widget(x,
+			"entryPDFOwnerPassword"))));
+	op1 = strdup(gtk_entry_get_text(GTK_ENTRY(glade_xml_get_widget(x,
+			"entryPDFOwnerPassword1"))));
+	up = strdup(gtk_entry_get_text(GTK_ENTRY(glade_xml_get_widget(x,
+		    	"entryPDFUserPassword"))));
+	up1 = strdup(gtk_entry_get_text(GTK_ENTRY(glade_xml_get_widget(x,
+		     	"entryPDFUserPassword1"))));			
+	
+	
+	if (op[0] == '\0') {
+		gtk_label_set_text(GTK_LABEL(glade_xml_get_widget(x,
+				"labelInfo")),
+       				"Owner password must be at least 1 character long:");
+		free(op);
+		free(up);
+	}
+	else if (!strcmp(op, up)) {
+		gtk_label_set_text(GTK_LABEL(glade_xml_get_widget(x,
+				"labelInfo")),
+       				"User and owner passwords must be different:");
+		free(op);
+		free(up);
+	}
+	else if (!strcmp(op, op1) && !strcmp(up, up1)) {
+		
+		*owner_pass = op;
+		if (up[0] == '\0')
+			free(up);
+		else
+			*user_pass = up;
+		
+		free(data);
+		gtk_widget_destroy(GTK_WIDGET(wnd));
+		g_object_unref(G_OBJECT(x));
+		
+		save_pdf(path);
+	}
+	else {
+		gtk_label_set_text(GTK_LABEL(glade_xml_get_widget(x,
+				"labelInfo")), "Passwords not confirmed:");
+		free(op);
+		free(up);
+	}
+	
+	free(op1);
+	free(up1);
+}
+
+static void nsgtk_PDF_no_pass(GtkButton *w, gpointer data)
+{
+	GtkWindow *wnd = ((void **)data)[2];
+	GladeXML *x = ((void **)data)[3];
+	char *path = ((void **)data)[4];
+		
+	free(data);
+	
+	gtk_widget_destroy(GTK_WIDGET(wnd));
+	g_object_unref(G_OBJECT(x));
+	
+	save_pdf(path);
 }

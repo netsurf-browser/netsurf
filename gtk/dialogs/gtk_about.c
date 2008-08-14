@@ -52,9 +52,10 @@ void nsgtk_about_dialog_init(GtkWindow *parent, struct browser_window *bw, const
 	gtk_about_dialog_set_url_hook (launch_url, (gpointer) bw, NULL);
 
 	gtk_show_about_dialog(parent, "artists", artists, "authors", authors,
-	"comments", description,"copyright", copyright, 
-	"documenters", documenters, "license", licence, "program-name", name,
-	"translator-credits", translators, "version", version, "website", url,
+	"comments", description,"copyright", copyright, "documenters", documenters,
+	"license", licence,
+	"program-name", name, "translator-credits", translators,
+	"version", version, "website", url, "website-label", url_label,
 	"wrap-license", FALSE, NULL);
 }
 

@@ -27,7 +27,7 @@
 #include "oslib/osfile.h"
 #include "content/content.h"
 #include "desktop/print.h"
-#include "pdf/pdf_plotters.h"
+#include "desktop/save_pdf/pdf_plotters.h"
 #include "riscos/save_pdf.h"
 #include "utils/log.h"
 #include "utils/config.h"
@@ -42,12 +42,11 @@
 bool save_as_pdf(struct content *c, const char *path)
 {
 	struct print_settings *psettings;
-
-	psettings = print_make_settings(DEFAULT);
+	
+	psettings = print_make_settings(DEFAULT, path);
 	if (psettings == NULL)
 		return false;
 
-	psettings->output = path;
 	if (!print_basic_run(c, &pdf_printer, psettings))
 		return false;
 	xosfile_set_type(path, 0xadf);
