@@ -175,8 +175,10 @@ bool html_redraw_box(struct box *box,
 	int x_scrolled, y_scrolled;
 	struct box *bg_box = NULL;
 	
+#ifdef WITH_PDF_EXPORT
 	if (html_redraw_printing && box->printed)
 		return true;
+#endif
 
 	/* avoid trivial FP maths */
 	if (scale == 1.0) {
@@ -231,6 +233,7 @@ bool html_redraw_box(struct box *box,
 	if (clip_y1 < y0 || y1 < clip_y0 || clip_x1 < x0 || x1 < clip_x0)
 		return true;
 
+#ifdef WITH_PDF_EXPORT
 	/*if the rectangle is under the page bottom but it can fit in a page,
 	don't print it now*/
 	if (html_redraw_printing)
@@ -247,6 +250,7 @@ bool html_redraw_box(struct box *box,
 			}
 		}
 		else box->printed = true;/*it won't be printed anymore*/
+#endif
 	
 	/* if visibility is hidden render children only */
 	if (box->style && box->style->visibility == CSS_VISIBILITY_HIDDEN) {
@@ -318,8 +322,12 @@ bool html_redraw_box(struct box *box,
 	 * + For any other box, just use its own styling.
 	 */
 	
+#ifdef WITH_PDF_EXPORT
 	if (!html_redraw_printing ||
 			(html_redraw_printing && !option_remove_backgrounds)) {
+#else
+	{
+#endif
 		if (!box->parent) {
 			/* Root box */
 			if (box->style &&
@@ -1444,9 +1452,11 @@ bool html_redraw_text_decoration(struct box *box,
 	unsigned int i;
 
 	/* antialias colour for under/overline */
+#ifdef WITH_PDF_EXPORT
 	if (html_redraw_printing)
 		colour = box->style->color;
 	else
+#endif
 		colour = html_redraw_aa(background_colour, box->style->color);
 
 	if (box->type == BOX_INLINE) {
