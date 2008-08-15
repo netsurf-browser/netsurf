@@ -406,8 +406,18 @@ endif
 # ----------------------------------------------------------------------------
 
 ifeq ($(TARGET),amiga)
+  NETSURF_FEATURE_ROSPRITE_CFLAGS := -DWITH_NSSPRITE
+  NETSURF_FEATURE_HUBBUB_CFLAGS := -DWITH_HUBBUB
+  NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
+  NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
+
+    $(eval $(call feature_enabled,ROSPRITE,-DWITH_NSSPRITE,-lrosprite,RISC OS Sprite decoder))
+    $(eval $(call feature_enabled,HUBBUB,-DWITH_HUBBUB,-lhubbub -lparserutils,Hubbub HTML parser))
+    $(eval $(call feature_enabled,BMP,-DWITH_BMP,-lnsbmp,NetSurf BMP decoder))
+    $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif,NetSurf GIF decoder))
+
   CFLAGS += -mcrt=newlib -D__USE_INLINE__ -std=c99 -I .
-  LDFLAGS += -lxml2 -lz -ljpeg -lcurl -lm -lmng -lsocket -lpthread -lrosprite -lregex -lauto -lraauto -lssl -lcrypto -lamisslauto -mcrt=newlib
+  LDFLAGS += -lxml2 -lcurl -lm -lsocket -lpthread -lregex -lauto -lraauto -lssl -lcrypto -lamisslauto -mcrt=newlib
 endif
 
 # ----------------------------------------------------------------------------
