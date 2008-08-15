@@ -39,7 +39,7 @@ void *bitmap_create(int width, int height, unsigned int state)
 	bitmap = AllocVec(sizeof(struct bitmap),MEMF_CLEAR);
 	if(bitmap)
 	{
-		bitmap->pixdata = AllocVec(width*height*4,MEMF_CLEAR);
+		bitmap->pixdata = AllocVec(width*height*4*2,MEMF_CLEAR);
 		bitmap->width = width;
 		bitmap->height = height;
 	}
@@ -74,7 +74,15 @@ unsigned char *bitmap_get_buffer(void *bitmap)
 size_t bitmap_get_rowstride(void *bitmap)
 {
 	struct bitmap *bm = bitmap;
-	return (bm->width)*4;
+
+	if(bm)
+	{
+		return ((bm->width)*4);
+	}
+	else
+	{
+		return 0;
+	}
 }
 
 
@@ -88,8 +96,13 @@ void bitmap_destroy(void *bitmap)
 {
 	struct bitmap *bm = bitmap;
 
-	FreeVec(bm->pixdata);
-	FreeVec(bm);
+	if(bm)
+	{
+		FreeVec(bm->pixdata);
+		bm->pixdata = NULL;
+		FreeVec(bm);
+		bm = NULL;
+	}
 }
 
 
@@ -171,17 +184,38 @@ int bitmap_get_width(void *bitmap)
 {
 	struct bitmap *bm = bitmap;
 
-	return(bm->width);
+	if(bm)
+	{
+		return(bm->width);
+	}
+	else
+	{
+		return 0;
+	}
 }
 
 int bitmap_get_height(void *bitmap)
 {
 	struct bitmap *bm = bitmap;
 
-	return(bm->height);
+	if(bm)
+	{
+		return(bm->height);
+	}
+	else
+	{
+		return 0;
+	}
 }
 
 size_t bitmap_get_bpp(void *bitmap)
 {
-	return(32);
+	if(bitmap)
+	{
+		return 32;
+	}
+	else
+	{
+		return 0;
+	}
 }
