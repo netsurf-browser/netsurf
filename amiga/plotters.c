@@ -27,7 +27,11 @@
 
 #include <proto/exec.h> // for debugprintf only
 
-static clipx,clipy;
+static clipx0=0,clipx1=0,clipy0=0,clipy1=0;
+
+#define PATT_DOT  0xAAAA
+#define PATT_DASH 0xCCCC
+#define PATT_LINE 0xFFFF
 
 struct plotter_table plot;
 const struct plotter_table amiplot = {
@@ -45,14 +49,17 @@ const struct plotter_table amiplot = {
 	NULL, //ami_group_start,
 	NULL, //ami_group_end,
 	ami_flush, // optional
-	ami_path
+	ami_path,
+	0 // option_knockout
 };
 
 bool ami_clg(colour c)
 {
 	DebugPrintF("clg %lx\n",c);
 
-	p96RectFill(currp,0,0,clipx,clipy,
+	SetDrMd(currp,BGBACKFILL);
+
+	p96RectFill(currp,clipx0,clipy0,clipx1,clipy1,
 				p96EncodeColor(RGBFB_A8B8G8R8,c));
 
 	return true;
@@ -61,6 +68,15 @@ bool ami_clg(colour c)
 bool ami_rectangle(int x0, int y0, int width, int height,
 			int line_width, colour c, bool dotted, bool dashed)
 {
+	DebugPrintF("rect\n");
+
+	currp->PenWidth = line_width;
+	currp->PenHeight = line_width;
+
+	currp->LinePtrn = PATT_LINE;
+	if(dotted) currp->LinePtrn = PATT_DOT;
+	if(dashed) currp->LinePtrn = PATT_DASH;
+
 	SetRPAttrs(currp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),
 					TAG_DONE);
 	Move(currp,x0,y0);
@@ -76,10 +92,19 @@ bool ami_line(int x0, int y0, int x1, int y1, int width,
 			colour c, bool dotted, bool dashed)
 {
 	DebugPrintF("line\n");
+
+	currp->PenWidth = width;
+	currp->PenHeight = width;
+
+	currp->LinePtrn = PATT_LINE;
+	if(dotted) currp->LinePtrn = PATT_DOT;
+	if(dashed) currp->LinePtrn = PATT_DASH;
+
 	SetRPAttrs(currp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),
 					TAG_DONE);
 	Move(currp,x0,y0);
 	Draw(currp,x1,y1); // NB: does not support width,dotted,dashed
+
 /*There is the line pattern in the rastport, would that help? There are macros in graphics/gfxmacros.h that do it. */
 
 	return true;
@@ -87,22 +112,43 @@ bool ami_line(int x0, int y0, int x1, int y1, int width,
 
 bool ami_polygon(int *p, unsigned int n, colour fill)
 {
+	int k;
+	ULONG cx,cy;
+
 	DebugPrintF("poly\n");
+	currp->PenWidth = 1;
+	currp->PenHeight = 1;
+	currp->LinePtrn = PATT_LINE;
+
+	SetRPAttrs(currp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,fill),
+					TAG_DONE);
+
+	Move(currp,p[0],p[1]);
+
+	for(k=1;k<n;k++)
+	{
+		Draw(currp,p[k*2],p[(k*2)+1]);
+	}
+
 	return true;
 }
 
 bool ami_fill(int x0, int y0, int x1, int y1, colour c)
 {
-	DebugPrintF("fill\n");
+	DebugPrintF("fill %ld,%ld,%ld,%ld\n",x0,y0,x1,y1);
+
 	p96RectFill(currp,x0,y0,x1,y1,
 		p96EncodeColor(RGBFB_A8B8G8R8,c));
+
 	return true;
 }
 
 bool ami_clip(int x0, int y0, int x1, int y1)
 {
-	clipx=x1;
-	clipy=y1;
+	clipx0=x0;
+	clipy0=y0;
+	clipx1=x1;
+	clipy1=y1;
 
 	return true;
 }
@@ -110,38 +156,31 @@ bool ami_clip(int x0, int y0, int x1, int y1)
 bool ami_text(int x, int y, const struct css_style *style,
 			const char *text, size_t length, colour bg, colour c)
 {
-/* copied from css/css.h - need to open the correct font here
-	* font properties *
-	css_font_family font_family;
-	struct {
-	css_font_size_type size;
-	union {
-	struct css_length length;
-	float absolute;
-	float percent;
-	} value;
-	} font_size;
-	css_font_style font_style;
-	css_font_variant font_variant;
-	css_font_weight font_weight;
-*/
 	ami_open_font(style);
 
 	SetRPAttrs(currp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),
 					RPTAG_BPenColor,p96EncodeColor(RGBFB_A8B8G8R8,bg),
+					RPTAG_OPenColor,p96EncodeColor(RGBFB_A8B8G8R8,bg),
 //					RPTAG_Font,tfont,
 					TAG_DONE);
 	Move(currp,x,y);
 	Text(currp,text,length);
+
 	return true;
 }
 
 bool ami_disc(int x, int y, int radius, colour c, bool filled)
 {
 	DebugPrintF("disc\n");
+
+	currp->PenWidth = 1;
+	currp->PenHeight = 1;
+	currp->LinePtrn = PATT_LINE;
+
 	SetRPAttrs(currp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),
 					TAG_DONE);
 	DrawEllipse(currp,x,y,radius,radius); // NB: does not support fill, need to use AreaCircle for that
+
 	return true;
 }
 
@@ -151,17 +190,27 @@ bool ami_arc(int x, int y, int radius, int angle1, int angle2,
 /* http://www.crbond.com/primitives.htm
 CommonFuncsPPC.lha */
 	DebugPrintF("arc\n");
+
+	currp->PenWidth = 1;
+	currp->PenHeight = 1;
+	currp->LinePtrn = PATT_LINE;
+
 	return true;
 }
 
 bool ami_bitmap(int x, int y, int width, int height,
-			struct bitmap *bitmap, colour bg)
+			struct bitmap *bitmap, colour bg, struct content *content)
 {
 	struct RenderInfo ri;
 
-DebugPrintF("bitmap plotter\n");
+DebugPrintF("bitmap plotter %ld %ld %ld %ld (%ld %ld)\n",x,y,width,height,bitmap->width,bitmap->height);
 
 //	ami_fill(x,y,x+width,y+height,bg);
+
+	if(x<0 || y<0) DebugPrintF("NEGATIVE X,Y COORDINATES\n");
+
+	SetRPAttrs(currp,RPTAG_BPenColor,p96EncodeColor(RGBFB_A8B8G8R8,bg),
+					TAG_DONE);
 
 	ri.Memory = bitmap->pixdata;
 	ri.BytesPerRow = bitmap->width * 4;
@@ -174,12 +223,17 @@ DebugPrintF("bitmap plotter\n");
 
 bool ami_bitmap_tile(int x, int y, int width, int height,
 			struct bitmap *bitmap, colour bg,
-			bool repeat_x, bool repeat_y)
+			bool repeat_x, bool repeat_y, struct content *content)
 {
 	struct RenderInfo ri;
 
 DebugPrintF("bitmap tile plotter\n");
 /* not implemented properly - needs to tile! */
+
+	if(x<0 || y<0) DebugPrintF("NEGATIVE X,Y COORDINATES\n");
+
+	SetRPAttrs(currp,RPTAG_BPenColor,p96EncodeColor(RGBFB_A8B8G8R8,bg),
+					TAG_DONE);
 
 	ri.Memory = bitmap->pixdata;
 	ri.BytesPerRow = bitmap->width * 4;
