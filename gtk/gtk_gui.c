@@ -628,6 +628,8 @@ bool cookies_update(const char *domain, const struct cookie_data *data)
 	return true;
 }
 
+#ifdef WITH_PDF
+
 void PDF_Password(char **owner_pass, char **user_pass, char *path)
 {
 	GladeXML *x = glade_xml_new(glade_file_location, NULL, NULL);
@@ -728,3 +730,5 @@ static void nsgtk_PDF_no_pass(GtkButton *w, gpointer data)
 	
 	save_pdf(path);
 }
+#endif
+
