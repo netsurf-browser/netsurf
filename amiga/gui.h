@@ -62,6 +62,8 @@ struct gui_window {
 	struct Gadget *gadgets[GID_LAST];
 	struct nsObject *node;
 	struct Hook scrollerhook;
+	bool redraw_required;
+	union content_msg_data *redraw_data;
 };
 
 struct gui_window *curwin;

@@ -37,6 +37,10 @@
 #include <proto/graphics.h>
 #include <proto/Picasso96API.h>
 
+#ifdef WITH_HUBBUB
+#include <hubbub/hubbub.h>
+#endif
+
 #include <proto/window.h>
 #include <proto/layout.h>
 #include <proto/bitmap.h>
@@ -69,7 +73,11 @@ struct Screen *scrn;
 bool win_destroyed = false;
 
 void ami_update_buttons(struct gui_window *);
-void ami_scroller_hook(struct Hook *,Object *,struct IntuiMessage *); 
+void ami_scroller_hook(struct Hook *,Object *,struct IntuiMessage *);
+void ami_do_redraw(struct gui_window *g);
+#ifdef WITH_HUBBUB
+static void *myrealloc(void *ptr, size_t len, void *pw);
+#endif
 
 void gui_init(int argc, char** argv)
 {
@@ -94,7 +102,7 @@ void gui_init(int argc, char** argv)
 	TimerBase = (struct Device *)tioreq->tr_node.io_Device;
 	ITimer = (struct TimerIFace *)GetInterface((struct Library *)TimerBase,"main",1,NULL);
 
-//	verbose_log = true;
+	verbose_log = 1;
 
 	if(lock=Lock("Resources/LangNames",ACCESS_READ))
 	{
@@ -136,15 +144,21 @@ void gui_init(int argc, char** argv)
 
 	default_stylesheet_url = "file://NetSurf/Resources/default.css"; //"http://www.unsatisfactorysoftware.co.uk/newlook.css"; //path_to_url(buf);
 	adblock_stylesheet_url = "file://NetSurf/Resources/adblock.css";
+
 	options_read("Resources/Options");
+
+#ifdef WITH_HUBBUB
+	if(hubbub_initialise("Resources/Aliases",myrealloc,NULL) != HUBBUB_OK)
+	{
+		die(messages_get("NoMemory"));
+	}
+#endif
 
 	if((!option_cookie_file) || (option_cookie_file[0] == '\0'))
 		option_cookie_file = strdup("Resources/Cookies");
 
-/*
 	if((!option_cookie_jar) || (option_cookie_jar[0] == '\0'))
-		option_cookie_jar = strdup("resources/cookiejar");
-*/
+		option_cookie_jar = strdup("Resources/CookieJar");
 
 	if((!option_ca_bundle) || (option_ca_bundle[0] == '\0'))
 		option_ca_bundle = strdup("devs:curl-ca-bundle.crt");
@@ -209,6 +223,9 @@ void ami_get_msg(void)
 	while(nnode=(struct nsObject *)(node->dtz_Node.mln_Succ))
 	{
 		gwin = node->objstruct;
+
+		if(gwin->redraw_required)
+			ami_do_redraw(gwin);
 
 		while((result = RA_HandleInput(gwin->objects[OID_MAIN],&code)) != WMHI_LASTMSG)
 		{
@@ -335,7 +352,8 @@ void ami_get_msg(void)
 				case WMHI_NEWSIZE:
 					GetAttr(SPACE_AreaBox,gwin->gadgets[GID_BROWSER],(ULONG *)&bbox);
 					browser_window_reformat(gwin->bw,bbox->Width,bbox->Height);
-					gui_window_redraw_window(gwin);
+					gwin->redraw_required = true;
+					//gui_window_redraw_window(gwin);
 				break;
 
 		           	case WMHI_CLOSEWINDOW:
@@ -344,7 +362,7 @@ void ami_get_msg(void)
 		           	break;
 
 	      	     	default:
-						printf("class: %ld\n",(result & WMHI_CLASSMASK));
+//						printf("class: %ld\n",(result & WMHI_CLASSMASK));
 	           		break;
 			}
 //	ReplyMsg((struct Message *)message);
@@ -408,6 +426,10 @@ void gui_quit(void)
 {
 //	urldb_save("resources/URLs");
 	urldb_save_cookies(option_cookie_file);
+
+#ifdef WITH_HUBBUB
+	hubbub_finalise(myrealloc,NULL);
+#endif
 
 	CloseScreen(scrn);
 
@@ -493,15 +515,17 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			WINDOW_IDCMPHook,&gwin->scrollerhook,
 			WINDOW_IDCMPHookBits,IDCMP_IDCMPUPDATE, 
            	WINDOW_Position, WPOS_CENTERSCREEN,
-			WINDOW_CharSet,106,
+//			WINDOW_CharSet,106,
            	WINDOW_ParentGroup, gwin->gadgets[GID_MAIN] = VGroupObject,
-				LAYOUT_CharSet,106,
+//				LAYOUT_CharSet,106,
                	LAYOUT_SpaceOuter, TRUE,
 				LAYOUT_AddChild, gwin->gadgets[GID_BROWSER] = SpaceObject,
 					GA_ID,GID_BROWSER,
+/*
 					GA_RelVerify,TRUE,
 					GA_Immediate,TRUE,
 					GA_FollowMouse,TRUE,
+*/
 				SpaceEnd,
 			EndGroup,
 		EndWindow;
@@ -529,9 +553,9 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			WINDOW_IDCMPHook,&gwin->scrollerhook,
 			WINDOW_IDCMPHookBits,IDCMP_IDCMPUPDATE, 
            	WINDOW_Position, WPOS_CENTERSCREEN,
-			WINDOW_CharSet,106,
+//			WINDOW_CharSet,106,
            	WINDOW_ParentGroup, gwin->gadgets[GID_MAIN] = VGroupObject,
-				LAYOUT_CharSet,106,
+//				LAYOUT_CharSet,106,
                	LAYOUT_SpaceOuter, TRUE,
 				LAYOUT_AddChild, HGroupObject,
 					LAYOUT_AddChild, gwin->gadgets[GID_BACK] = ButtonObject,
@@ -614,9 +638,11 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 				CHILD_WeightedHeight,0,
 				LAYOUT_AddChild, gwin->gadgets[GID_BROWSER] = SpaceObject,
 					GA_ID,GID_BROWSER,
+/*
 					GA_RelVerify,TRUE,
 					GA_Immediate,TRUE,
 					GA_FollowMouse,TRUE,
+*/
 				SpaceEnd,
 				LAYOUT_AddChild, gwin->gadgets[GID_STATUS] = StringObject,
 					GA_ID,GID_STATUS,
@@ -649,15 +675,19 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 
 	RefreshSetGadgetAttrs((APTR)gwin->objects[OID_VSCROLL],gwin->win,NULL,
+/*
 		GA_RelVerify,TRUE,
 		GA_Immediate,TRUE,
+*/
 		GA_ID,OID_VSCROLL,
 		ICA_TARGET,ICTARGET_IDCMP,
 		TAG_DONE);
 
 	RefreshSetGadgetAttrs((APTR)gwin->objects[OID_HSCROLL],gwin->win,NULL,
+/*
 		GA_RelVerify,TRUE,
 		GA_Immediate,TRUE,
+*/
 		GA_ID,OID_HSCROLL,
 		ICA_TARGET,ICTARGET_IDCMP,
 		TAG_DONE);
@@ -697,17 +727,28 @@ void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
 
 void gui_window_redraw_window(struct gui_window *g)
 {
+	g->redraw_required = true;
+	g->redraw_data = NULL;
+}
+
+void gui_window_update_box(struct gui_window *g,
+		const union content_msg_data *data)
+{
+	g->redraw_required = true;
+	g->redraw_data = data;
+}
+
+void ami_do_redraw(struct gui_window *g)
+{
 	struct content *c;
-//	Object *hscroller,*vscroller;
 	ULONG hcurrent,vcurrent,xoffset,yoffset,width=800,height=600;
 	struct IBox *bbox;
 
-	// will also need bitmap_width and bitmap_height once resizing windows is working
 	GetAttr(SPACE_AreaBox,g->gadgets[GID_BROWSER],(ULONG *)&bbox);
 	GetAttr(SCROLLER_Top,g->objects[OID_HSCROLL],&hcurrent);
 	GetAttr(SCROLLER_Top,g->objects[OID_VSCROLL],&vcurrent);
 
-	DebugPrintF("REDRAW2\n");
+	DebugPrintF("DOING REDRAW\n");
 
 	c = g->bw->current_content;
 
@@ -715,105 +756,48 @@ void gui_window_redraw_window(struct gui_window *g)
 
 	current_redraw_browser = g->bw;
 
-	currp = &g->rp; // WINDOW.CLASS: &curwin->rp; //curwin->win->RPort;
-
-//	currp = &g->win->RPort;
-/*
-	GetAttr(GA_Left,gwin->gadgets[GID_BROWSER],&xoffset);
-	GetAttr(GA_Top,gwin->gadgets[GID_BROWSER],&yoffset);
-*/
+	currp = &g->rp;
 
 	width=bbox->Width;
 	height=bbox->Height;
 	xoffset=bbox->Left;
 	yoffset=bbox->Top;
 
-printf(">> %ld,%ld,%ld,%ld (%ld %ld)\n",xoffset,yoffset,width,height,hcurrent,vcurrent);
-// yoffset - height
-// height*2
-
 	if (c->locked) return;
 //	if (c->type == CONTENT_HTML) scale = 1;
 
-	content_redraw(c, -hcurrent,-vcurrent,width,height,
-	0,0,width,height,
-	g->bw->scale,0xFFFFFF);
+/* temp get it to redraw everything ***
+	if(g->redraw_data)
+	{
+		content_redraw(g->redraw_data->redraw.object,
+		floorf((g->redraw_data->redraw.object_x *
+		g->bw->scale)-hcurrent),
+		ceilf((g->redraw_data->redraw.object_y *
+		g->bw->scale)-vcurrent),
+		g->redraw_data->redraw.object_width *
+		g->bw->scale,
+		g->redraw_data->redraw.object_height *
+		g->bw->scale,
+		0,0,width,height,
+		g->bw->scale,
+		0xFFFFFF);
+	}
+	else
+	{
+*/
+		content_redraw(c, -hcurrent,-vcurrent,width,height,
+			0,0,width,height,
+			g->bw->scale,0xFFFFFF);
+//	}
 
 	current_redraw_browser = NULL;
 
 	ami_update_buttons(g);
 
 	BltBitMapRastPort(g->bm,0,0,g->win->RPort,xoffset,yoffset,width,height,0x0C0);
-/*
-	RethinkLayout(g->gadgets[GID_MAIN],
-					g->win,NULL,TRUE);
-*/
-}
 
-void gui_window_update_box(struct gui_window *g,
-		const union content_msg_data *data)
-{
-	struct content *c;
-	ULONG xoffset,yoffset,width=800,height=600,vcurrent,hcurrent;
-	struct IBox *bbox;
-
-	printf("update box\n");
-
-	c = g->bw->current_content;
-	if(!c) return;
-
-	GetAttr(SCROLLER_Top,g->objects[OID_HSCROLL],&hcurrent);
-	GetAttr(SCROLLER_Top,g->objects[OID_VSCROLL],&vcurrent);
-
-	current_redraw_browser = g->bw;
-	currp = &g->rp;
-//	currp = &g->win->RPort;
-/*
-	GetAttr(GA_Left,gwin->gadgets[GID_BROWSER],&xoffset);
-	GetAttr(GA_Top,gwin->gadgets[GID_BROWSER],&yoffset);
-*/
-	GetAttr(SPACE_AreaBox,g->gadgets[GID_BROWSER],(ULONG *)&bbox);
-
-	width=bbox->Width;
-	height=bbox->Height;
-	xoffset=bbox->Left;
-	yoffset=bbox->Top;
-
-	if (c->locked) return;
-//	if (c->type == CONTENT_HTML) scale = 1;
-
-	content_redraw(data->redraw.object,
-	floorf((data->redraw.object_x *
-	g->bw->scale)-hcurrent),
-	ceilf((data->redraw.object_y *
-	g->bw->scale)-vcurrent),
-	data->redraw.object_width *
-	g->bw->scale,
-	data->redraw.object_height *
-	g->bw->scale,
-	0,0,width,height,
-	g->bw->scale,
-	0xFFFFFF);
-
-/*
-data->redraw.x, data->redraw.y,
-                                   data->redraw.width, data->redraw.height);
-*/
-
-/*** check this - refreshes entire display!!!!! *************
-	content_redraw(c, 0,0,800,600,
-	0,0,800,600,
-	g->bw->scale, 0xFFFFFF);
-*/
-
-	current_redraw_browser = NULL;
-
-	BltBitMapRastPort(g->bm,0,0,g->win->RPort,xoffset,yoffset,width,height,0x0C0);
-
-/*
-	RethinkLayout(g->gadgets[GID_MAIN],
-					g->win,NULL,TRUE);
-*/
+	g->redraw_required = false;
+	g->redraw_data = NULL;
 }
 
 bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
@@ -1056,7 +1040,8 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
  				GetAttrs(gwin->objects[OID_HSCROLL],SCROLLER_Top,&x,TAG_DONE); 
 				printf("x: %ld\n",x);
 */
-				gui_window_redraw_window(gwin);
+				gwin->redraw_required = true;
+				//gui_window_redraw_window(gwin);
  			break; 
 
  			case OID_VSCROLL: 
@@ -1064,10 +1049,12 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
  				GetAttrs(gwin->objects[OID_VSCROLL],SCROLLER_Top,&y,TAG_DONE); 
 				printf("y: %ld\n",y);
 */
-				gui_window_redraw_window(gwin);
+				gwin->redraw_required = true;
+				//gui_window_redraw_window(gwin);
  			break; 
 		} 
-	} 
+	}
+//	ReplyMsg((struct Message *)msg);
 } 
 
 
@@ -1075,5 +1062,12 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 void gui_cert_verify(struct browser_window *bw, struct content *c,
 		const struct ssl_cert_info *certs, unsigned long num)
 {
+}
+#endif
+
+#ifdef WITH_HUBBUB
+static void *myrealloc(void *ptr, size_t len, void *pw)
+{
+	return realloc(ptr, len);
 }
 #endif
