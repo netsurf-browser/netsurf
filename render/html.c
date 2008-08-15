@@ -599,6 +599,7 @@ bool html_process_data(struct content *c, char *data, unsigned int size)
 
 	for (x = 0; x + CHUNK <= size; x += CHUNK) {
 #ifdef WITH_HUBBUB
+		LOG(("Parsing %d bytes", CHUNK));
 		err = hubbub_parser_parse_chunk(
 				c->data.html.parser, 
 				(uint8_t *) data + x, CHUNK);
@@ -612,6 +613,7 @@ bool html_process_data(struct content *c, char *data, unsigned int size)
 	}
 
 #ifdef WITH_HUBBUB
+	LOG(("Parsing %d bytes", (size - x)));
 	err = hubbub_parser_parse_chunk(
 			c->data.html.parser, 
 			(uint8_t *) data + x, (size - x));
@@ -692,6 +694,8 @@ bool html_process_data(struct content *c, char *data, unsigned int size)
 #ifdef WITH_HUBBUB
 
 encoding_change:
+
+	LOG(("Changing encoding"));
 
 	/* Free up hubbub, libxml2 etc */
 	hubbub_parser_destroy(c->data.html.parser);
