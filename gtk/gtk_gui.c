@@ -628,7 +628,7 @@ bool cookies_update(const char *domain, const struct cookie_data *data)
 	return true;
 }
 
-#ifdef WITH_PDF
+#ifdef WITH_PDF_EXPORT
 
 void PDF_Password(char **owner_pass, char **user_pass, char *path)
 {
