@@ -24,6 +24,7 @@
 #include <proto/graphics.h>
 #include <intuition/intuition.h>
 #include <graphics/rpattr.h>
+#include <graphics/gfxmacros.h>
 
 #include <proto/exec.h> // for debugprintf only
 
@@ -103,9 +104,7 @@ bool ami_line(int x0, int y0, int x1, int y1, int width,
 	SetRPAttrs(currp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),
 					TAG_DONE);
 	Move(currp,x0,y0);
-	Draw(currp,x1,y1); // NB: does not support width,dotted,dashed
-
-/*There is the line pattern in the rastport, would that help? There are macros in graphics/gfxmacros.h that do it. */
+	Draw(currp,x1,y1);
 
 	return true;
 }
@@ -156,21 +155,26 @@ bool ami_clip(int x0, int y0, int x1, int y1)
 bool ami_text(int x, int y, const struct css_style *style,
 			const char *text, size_t length, colour bg, colour c)
 {
-	ami_open_font(style);
+	struct TextFont *tfont = ami_open_font(style);
 
 	SetRPAttrs(currp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),
 					RPTAG_BPenColor,p96EncodeColor(RGBFB_A8B8G8R8,bg),
-					RPTAG_OPenColor,p96EncodeColor(RGBFB_A8B8G8R8,bg),
+//					RPTAG_OPenColor,p96EncodeColor(RGBFB_A8B8G8R8,bg),
 //					RPTAG_Font,tfont,
 					TAG_DONE);
 	Move(currp,x,y);
 	Text(currp,text,length);
+
+	ami_close_font(tfont);
 
 	return true;
 }
 
 bool ami_disc(int x, int y, int radius, colour c, bool filled)
 {
+	struct AreaInfo ai;
+	APTR buf[10];
+
 	DebugPrintF("disc\n");
 
 	currp->PenWidth = 1;
@@ -179,6 +183,16 @@ bool ami_disc(int x, int y, int radius, colour c, bool filled)
 
 	SetRPAttrs(currp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),
 					TAG_DONE);
+
+/* see rkrm
+	if(filled)
+	{
+//		InitArea(&ai,&buf,2);
+		AreaCircle(currp,x,y,radius);
+//		AreaEnd(currp);
+	}
+*/
+
 	DrawEllipse(currp,x,y,radius,radius); // NB: does not support fill, need to use AreaCircle for that
 
 	return true;

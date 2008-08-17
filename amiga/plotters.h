@@ -36,10 +36,10 @@ bool ami_disc(int x, int y, int radius, colour c, bool filled);
 bool ami_arc(int x, int y, int radius, int angle1, int angle2,
 	    		colour c);
 bool ami_bitmap(int x, int y, int width, int height,
-			struct bitmap *bitmap, colour bg);
+			struct bitmap *bitmap, colour bg,struct content *content);
 bool ami_bitmap_tile(int x, int y, int width, int height,
 			struct bitmap *bitmap, colour bg,
-			bool repeat_x, bool repeat_y);
+			bool repeat_x, bool repeat_y,struct content *content);
 bool ami_group_start(const char *name);
 bool ami_group_end(void);
 bool ami_flush(void);

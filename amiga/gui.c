@@ -36,6 +36,8 @@
 #include <proto/utility.h>
 #include <proto/graphics.h>
 #include <proto/Picasso96API.h>
+#include "render/form.h"
+#include <graphics/rpattr.h>
 
 #ifdef WITH_HUBBUB
 #include <hubbub/hubbub.h>
@@ -102,7 +104,7 @@ void gui_init(int argc, char** argv)
 	TimerBase = (struct Device *)tioreq->tr_node.io_Device;
 	ITimer = (struct TimerIFace *)GetInterface((struct Library *)TimerBase,"main",1,NULL);
 
-	verbose_log = 1;
+	verbose_log = 0;
 
 	if(lock=Lock("Resources/LangNames",ACCESS_READ))
 	{
@@ -223,9 +225,6 @@ void ami_get_msg(void)
 	while(nnode=(struct nsObject *)(node->dtz_Node.mln_Succ))
 	{
 		gwin = node->objstruct;
-
-		if(gwin->redraw_required)
-			ami_do_redraw(gwin);
 
 		while((result = RA_HandleInput(gwin->objects[OID_MAIN],&code)) != WMHI_LASTMSG)
 		{
@@ -377,19 +376,9 @@ void ami_get_msg(void)
 			return;
 		}
 
-/*
-		while((result = RA_HandleInput(gwin->objects[OID_VSCROLL],&code)) != WMHI_LASTMSG)
-		{
-	        switch(result & WMHI_CLASSMASK) // class
-    	   	{
-				default:
-				//case WMHI_GADGETUP:
-					//switch(result & WMHI_GADGETMASK) //gadaddr->GadgetID) //result & WMHI_GADGETMASK)
-					printf("vscroller %ld %ld\n",(result & WMHI_CLASSMASK),(result & WMHI_GADGETMASK));
-				break;
-			}		
-		}
-*/
+		if(gwin->redraw_required)
+			ami_do_redraw(gwin);
+
 		node = nnode;
 	}
 }
@@ -670,6 +659,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	InitRastPort(&gwin->rp);
 	gwin->rp.BitMap = gwin->bm;
 
+	GetRPAttrs(&gwin->rp,RPTAG_Font,&origrpfont,TAG_DONE);
+
 	GetAttr(WINDOW_HorizObject,gwin->objects[OID_MAIN],(ULONG *)&gwin->objects[OID_HSCROLL]);
 	GetAttr(WINDOW_VertObject,gwin->objects[OID_MAIN],(ULONG *)&gwin->objects[OID_VSCROLL]);
 
@@ -834,7 +825,7 @@ void gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
 void gui_window_position_frame(struct gui_window *g, int x0, int y0,
 		int x1, int y1)
 {
-	printf("posn frame\n");
+	ChangeWindowBox(g->win,x0,y0,x1-x0,y1-y0);
 }
 
 void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
@@ -858,7 +849,9 @@ void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 
 void gui_window_update_extent(struct gui_window *g)
 {
-//	Object *hscroller,*vscroller;
+	struct IBox *bbox;
+
+	GetAttr(SPACE_AreaBox,g->gadgets[GID_BROWSER],(ULONG *)&bbox);
 
 	printf("upd ext %ld,%ld\n",g->bw->current_content->width, // * g->bw->scale,
 	g->bw->current_content->height); // * g->bw->scale);
@@ -870,13 +863,13 @@ void gui_window_update_extent(struct gui_window *g)
 
 	RefreshSetGadgetAttrs((APTR)g->objects[OID_VSCROLL],g->win,NULL,
 		SCROLLER_Total,g->bw->current_content->height,
-		SCROLLER_Visible,600,
+		SCROLLER_Visible,bbox->Height,
 		SCROLLER_Top,0,
 		TAG_DONE);
 
 	RefreshSetGadgetAttrs((APTR)g->objects[OID_HSCROLL],g->win,NULL,
 		SCROLLER_Total,g->bw->current_content->width,
-		SCROLLER_Visible,800,
+		SCROLLER_Visible,bbox->Width,
 		SCROLLER_Top,0,
 		TAG_DONE);
 }
@@ -1012,6 +1005,7 @@ bool gui_copy_to_clipboard(struct selection *s)
 void gui_create_form_select_menu(struct browser_window *bw,
 		struct form_control *control)
 {
+	printf("FORM TYPE: %ld\n",control->type);
 }
 
 void gui_launch_url(const char *url)

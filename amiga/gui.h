@@ -66,6 +66,7 @@ struct gui_window {
 	union content_msg_data *redraw_data;
 };
 
-struct gui_window *curwin;
+//struct gui_window *curwin;
 struct RastPort *currp;
+struct TextFont *origrpfont;
 #endif

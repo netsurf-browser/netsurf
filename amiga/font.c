@@ -49,8 +49,10 @@ bool nsfont_width(const struct css_style *style,
 		const char *string, size_t length,
 		int *width)
 {
-	ami_open_font(style);
+	struct TextFont *tfont = ami_open_font(style);
 	*width = TextLength(currp,string,length);
+	ami_close_font(tfont);
+
 	return true;
 }
 
@@ -72,12 +74,13 @@ bool nsfont_position_in_string(const struct css_style *style,
 		int x, size_t *char_offset, int *actual_x)
 {
 	struct TextExtent extent;
-
-	ami_open_font(style);
+	struct TextFont *tfont = ami_open_font(style);
 	*char_offset = TextFit(currp,string,length,
 						&extent,NULL,1,x,32767);
 
 	*actual_x = extent.te_Extent.MaxX;
+
+	ami_close_font(tfont);
 	return true;
 }
 
@@ -106,8 +109,7 @@ bool nsfont_split(const struct css_style *style,
 	struct TextExtent extent;
 	ULONG co;
 	char *charp;
-
-	ami_open_font(style);
+	struct TextFont *tfont = ami_open_font(style);
 	co = TextFit(currp,string,length,
 				&extent,NULL,1,x,32767);
 
@@ -121,10 +123,11 @@ bool nsfont_split(const struct css_style *style,
 	*char_offset = co;
 	*actual_x = TextLength(currp,string,co);
 
+	ami_close_font(tfont);
 	return true;
 }
 
-void ami_open_font(struct css_style *style)
+struct TextFont *ami_open_font(struct css_style *style)
 {
 	struct TextFont *tfont;
 	struct TTextAttr tattr;
@@ -215,6 +218,15 @@ void ami_open_font(struct css_style *style)
 				RPTAG_Font,tfont,
 				TAG_DONE);
 	}
+
+	return tfont;
+}
+
+void ami_close_font(struct TextFont *tfont)
+{
+	SetRPAttrs(currp,
+			RPTAG_Font,origrpfont,
+			TAG_DONE);
 
 	CloseFont(tfont);
 }

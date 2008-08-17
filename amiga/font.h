@@ -20,7 +20,9 @@
 #define AMIGA_FONT_H
 
 #include "css/css.h"
+#include <graphics/text.h>
 
-void ami_open_font(struct css_style *);
+struct TextFont *ami_open_font(struct css_style *);
+void ami_close_font(struct TextFont *tfont);
 
 #endif
