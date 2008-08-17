@@ -39,8 +39,6 @@ void schedule(int t, void (*callback)(void *p), void *p)
 	struct nscallback *nscb;
 	struct timeval tv;
 
-	printf("adding callback %lx,%ld at %d cs\n",callback,p,t);
-
 	obj = AddObject(schedule_list,AMINS_CALLBACK);
 	obj->objstruct_size = sizeof(struct nscallback);
 	obj->objstruct = AllocVec(obj->objstruct_size,MEMF_CLEAR);
@@ -67,8 +65,6 @@ void schedule(int t, void (*callback)(void *p), void *p)
 
 void schedule_remove(void (*callback)(void *p), void *p)
 {
-	printf("remove schedule %lx,%lx\n",callback,p);
-
 	struct nsObject *node;
 	struct nsObject *nnode;
 	struct nscallback *nscb;
@@ -79,8 +75,6 @@ void schedule_remove(void (*callback)(void *p), void *p)
 
 	while(nnode=(struct nsObject *)(node->dtz_Node.mln_Succ))
 	{
-		printf("rem %lx next %lx node objtype %ld\n",node,nnode,node->Type);
-
 		nscb = node->objstruct;
 
 		if((nscb->callback == callback) && (nscb->p == p))
@@ -102,6 +96,7 @@ void schedule_run(void)
 	struct nsObject *nnode;
 	struct nscallback *nscb;
 	void (*callback)(void *p);
+	void *p;
 	struct timeval tv;
 
 	if(IsMinListEmpty(schedule_list)) return;
@@ -112,21 +107,16 @@ void schedule_run(void)
 
 	while(nnode=(struct nsObject *)(node->dtz_Node.mln_Succ))
 	{
-		printf("run %lx next %lx node objtype %ld\n",node,nnode,node->Type);
-
 		if((node->Type == AMINS_CALLBACK) && (node->objstruct))
 		{
 			nscb = node->objstruct;
 
-			printf("%ld %ld <now>\n%ld %ld\n",tv.tv_secs,tv.tv_micro,nscb->tv.tv_secs,nscb->tv.tv_micro);
-
 			if(CmpTime(&tv,&nscb->tv) <= 0)
 			{
-				printf("running callback\n");
-
 				callback = nscb->callback;
-				callback(nscb->p);
+				p = nscb->p;
 				DelObject(node);
+				callback(p);
 			}
 		}
 
