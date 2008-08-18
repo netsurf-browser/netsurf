@@ -1,0 +1,58 @@
+Adding paged output
+===================
+
+This document is supposed to be a short guide of adding paged output to Netsurf.
+Currently the two pieces of code using the print implementation are PDF export
+and GTK printing.
+
+
+printer.h
+---------
+The first thing the new paged output has to do is implementing the printer
+interface located in printer.h. It consists of four elements:
+
+- plotter. This are the plotters which will be used while redrawing the
+content.
+
+- print_begin. This function is called right after the set up and should
+manage all the remaining user-specific initialisation stuff.
+
+- print_next_page. This function is called before the actual printing of each
+page allowing to prepare the content to be printed.
+
+- print_end. This function is called right before the printing routines clean
+after themselves and should be used for saving the output to a file, freeing
+previously allocated memory, relesing document handles etc.
+
+
+print.h
+-------
+The provided print interface consists of a set of functions which can be used
+seperately and one integrating them all making the print a matter of one call.
+If it is enough you can just call print_basic_run and wait for it to return.
+However, for the case you can't accompish the printing task this way the print
+interface gives you the possiblity of calling the print steps individually.
+
+Only if you are using print_basic_run you can omit specifying the print settings.
+If this is the case the default ones will be used.
+
+As you will notice the functions correspond to those you had to implement in the
+printer. The reason for this is adding some flexibility to the system which
+occured necessary i.e in the GTK print implementation.
+
+- print_set_up. This sets the printing system up and calls print_begin
+- print_draw_next_page. Here after calling print_next_page one full page of the 
+dimensions given in the print settings is plotted
+- print_cleanup. This function is responsible for freeing all used resources
+right after calling print_end
+
+
+Settings
+--------
+This is where the besic information about the print job is held. You can use one
+of the predifined sets(DEFAULT and OPTIONS) or add your own. In order to do that
+you have to follow this steps:
+
+- add your entry to the print_configuration enum
+- add handling of it to the switch in print_make_settings
+- add the entry name to this document
