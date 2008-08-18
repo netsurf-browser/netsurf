@@ -21,6 +21,7 @@
 #include <graphics/rastport.h>
 #include "amiga/object.h"
 #include <intuition/classusr.h>
+#include "desktop/browser.h"
 
 void ami_get_msg(void);
 
@@ -50,6 +51,7 @@ enum
     OID_MAIN=0,
 	OID_VSCROLL,
 	OID_HSCROLL,
+	OID_MENU,
     OID_LAST
 };
 
@@ -62,8 +64,11 @@ struct gui_window {
 	struct Gadget *gadgets[GID_LAST];
 	struct nsObject *node;
 	struct Hook scrollerhook;
+	struct Hook popuphook;
+	struct form_control *control;
 	bool redraw_required;
 	union content_msg_data *redraw_data;
+	browser_mouse_state mouse_state;
 };
 
 //struct gui_window *curwin;
