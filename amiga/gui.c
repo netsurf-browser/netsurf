@@ -38,6 +38,7 @@
 #include <proto/Picasso96API.h>
 #include "render/form.h"
 #include <graphics/rpattr.h>
+#include <libraries/gadtools.h>
 
 #ifdef WITH_HUBBUB
 #include <hubbub/hubbub.h>
@@ -239,11 +240,13 @@ void gui_init2(int argc, char** argv)
 void ami_get_msg(void)
 {
 	struct IntuiMessage *message = NULL;
-	ULONG class,code,result,storage = 0,x,y,xs,ys,width=800,height=600;
+	ULONG class,result,storage = 0,x,y,xs,ys,width=800,height=600;
+	uint16 code;
 	struct IBox *bbox;
 	struct nsObject *node;
 	struct nsObject *nnode;
 	struct gui_window *gwin,*destroywin=NULL;
+	struct MenuItem *item;
 
 	node = (struct nsObject *)window_list->mlh_Head;
 
@@ -300,7 +303,7 @@ void ami_get_msg(void)
 
 					if((x>=xs) && (y>=ys) && (x<width+xs) && (y<height+ys))
 					{
-						code = code>>16;
+						//code = code>>16;
 						switch(code)
 						{
 /* various things aren't implemented here yet, like shift-clicks, ctrl-clicks etc */
@@ -383,6 +386,43 @@ void ami_get_msg(void)
 					}
 				break;
 
+				case WMHI_MENUPICK:
+					item = ItemAddress(gwin->win->MenuStrip,code);
+					while (code != MENUNULL)
+					{
+						ULONG menunum=0,itemnum=0,subnum=0;
+						menunum = MENUNUM(code);
+						itemnum = ITEMNUM(code);
+						subnum = SUBNUM(code);
+printf("%ld,%ld,%ld\n",menunum,itemnum,subnum);
+						switch(menunum)
+						{
+							case 0:  // project
+								switch(itemnum)
+								{
+									case 0: // close
+										browser_window_destroy(gwin->bw);
+									break;
+								}
+							break;
+
+							case 1:  // edit
+								switch(itemnum)
+								{
+									case 0: // copy
+										gui_copy_to_clipboard(gwin->bw->sel);
+									break;
+
+									case 1: // paste
+										gui_paste_from_clipboard(gwin,0,0);
+									break;
+								}
+							break;
+						}
+						code = item->NextSelect;
+					}
+				break;
+
 				case WMHI_VANILLAKEY:
 					storage = result & WMHI_GADGETMASK;
 
@@ -398,7 +438,7 @@ void ami_get_msg(void)
 					//gui_window_redraw_window(gwin);
 				break;
 
-		           	case WMHI_CLOSEWINDOW:
+				case WMHI_CLOSEWINDOW:
 					browser_window_destroy(gwin->bw);
 					//destroywin=gwin;
 		           	break;
@@ -506,11 +546,39 @@ void ami_update_buttons(struct gui_window *gwin)
 
 }
 
+struct NewMenu *ami_create_menu(ULONG type)
+{
+	ULONG menuflags = 0;
+	if(type != BROWSER_WINDOW_NORMAL)
+	{
+		menuflags = NM_ITEMDISABLED;
+	}
+
+	STATIC struct NewMenu menu[] = {
+			  {NM_TITLE,0,0,0,0,0,},
+			  { NM_ITEM,0,"K",0,0,0,},
+			  {NM_TITLE,0,0,0,0,0,},
+			  { NM_ITEM,0,"C",0,0,0,},
+			  { NM_ITEM,0,"V",0,0,0,},
+			  {  NM_END,0,0,0,0,0,},
+			 };
+
+	menu[0].nm_Label = messages_get("Project");
+	menu[1].nm_Label = messages_get("Close");
+	menu[1].nm_Flags = menuflags;
+	menu[2].nm_Label = messages_get("Edit");
+	menu[3].nm_Label = messages_get("Copy");
+	menu[4].nm_Label = messages_get("Paste");
+
+	return(menu);
+}
+
 struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		struct browser_window *clone)
 {
 	struct gui_window *gwin = NULL;
 	bool closegadg=TRUE;
+	struct NewMenu *menu = ami_create_menu(bw->browser_window_type);
 
 	gwin = AllocVec(sizeof(struct gui_window),MEMF_CLEAR);
 
@@ -544,7 +612,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
            	WA_IDCMP,IDCMP_MENUPICK | IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS |
 				 IDCMP_NEWSIZE | IDCMP_VANILLAKEY | IDCMP_GADGETUP | IDCMP_IDCMPUPDATE,
 //			WINDOW_IconifyGadget, TRUE,
-//			WINDOW_NewMenu, newmenu,
+			WINDOW_NewMenu,menu,
 			WINDOW_HorizProp,1,
 			WINDOW_VertProp,1,
 			WINDOW_IDCMPHook,&gwin->scrollerhook,
@@ -584,7 +652,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
            	WA_IDCMP,IDCMP_MENUPICK | IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS |
 				 IDCMP_NEWSIZE | IDCMP_VANILLAKEY | IDCMP_GADGETUP | IDCMP_IDCMPUPDATE,
 //			WINDOW_IconifyGadget, TRUE,
-//			WINDOW_NewMenu, newmenu,
+			WINDOW_NewMenu,menu,
 			WINDOW_HorizProp,1,
 			WINDOW_VertProp,1,
 			WINDOW_IDCMPHook,&gwin->scrollerhook,
@@ -706,6 +774,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 	InitRastPort(&gwin->rp);
 	gwin->rp.BitMap = gwin->bm;
+	SetDrMd(currp,BGBACKFILL);
 
 	GetRPAttrs(&gwin->rp,RPTAG_Font,&origrpfont,TAG_DONE);
 
@@ -888,6 +957,9 @@ void ami_do_redraw(struct gui_window *g)
 
 bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 {
+	GetAttr(SCROLLER_Top,g->objects[OID_HSCROLL],sx);
+	GetAttr(SCROLLER_Top,g->objects[OID_VSCROLL],sy);
+
 	printf("get scr %ld,%ld\n",sx,sy);
 }
 
@@ -909,6 +981,9 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 	RefreshSetGadgetAttrs((APTR)g->objects[OID_HSCROLL],g->win,NULL,
 		SCROLLER_Top,sx,
 		TAG_DONE);
+
+	g->redraw_required = true;
+	g->redraw_data = NULL;
 }
 
 void gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
@@ -1076,6 +1151,7 @@ void gui_start_selection(struct gui_window *g)
 
 void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
 {
+	printf("paste from clipboard\n");
 }
 
 bool gui_empty_clipboard(void)
@@ -1084,36 +1160,41 @@ bool gui_empty_clipboard(void)
 
 bool gui_add_to_clipboard(const char *text, size_t length, bool space)
 {
+	printf("add to clipboard\n");
 }
 
 bool gui_commit_clipboard(void)
 {
+	printf("commit clipboard\n");
 }
 
 bool gui_copy_to_clipboard(struct selection *s)
 {
+	printf("copy to clipboard\n");
 }
 
 void gui_create_form_select_menu(struct browser_window *bw,
 		struct form_control *control)
 {
 	struct gui_window *gwin = bw->window;
+	struct form_option *opt = control->data.select.items;
+	ULONG i = 0;
 
 	gwin->popuphook.h_Entry = ami_popup_hook;
 	gwin->popuphook.h_Data = gwin;
 
 	gwin->control = control;
 
-//	printf("FORM TYPE: %ld\n",control->type);
+    gwin->objects[OID_MENU] = PMMENU(messages_get("NetSurf")),
+                        PMA_MenuHandler, &gwin->popuphook,End;
 
-/* This is a temporary test menu - real thing needs to be created
- according to the form_control structure in render/form.h */
+	while(opt)
+	{
+		IDoMethod(gwin->objects[OID_MENU],PM_INSERT,NewObject( POPUPMENU_GetItemClass(), NULL, PMIA_Title, (ULONG)opt->text,PMIA_ID,i,PMIA_CheckIt,TRUE,PMIA_Checked,opt->selected,TAG_DONE),~0);
 
-    gwin->objects[OID_MENU] = PMMENU("netsurf popup"),
-                        PMA_MenuHandler, &gwin->popuphook,
-                        PMITEM("dummy"),PMIA_ID,1,End,
-                        PMBAR(),End,
-                    End;
+		opt = opt->next;
+		i++;
+	}
 
 	IDoMethod(gwin->objects[OID_MENU],PM_OPEN,gwin->win);
 
