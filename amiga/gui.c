@@ -39,6 +39,11 @@
 #include "render/form.h"
 #include <graphics/rpattr.h>
 #include <libraries/gadtools.h>
+#include <proto/layers.h>
+#include <proto/asl.h>
+#include <proto/iffparse.h>
+#include <datatypes/textclass.h>
+#include "desktop/selection.h"
 
 #ifdef WITH_HUBBUB
 #include <hubbub/hubbub.h>
@@ -78,6 +83,9 @@ struct PopupMenuIFace *IPopupMenu = NULL;
 
 struct Screen *scrn;
 bool win_destroyed = false;
+static struct RastPort dummyrp;
+struct FileRequester *filereq;
+struct IFFHandle *iffh = NULL;
 
 void ami_update_buttons(struct gui_window *);
 void ami_scroller_hook(struct Hook *,Object *,struct IntuiMessage *);
@@ -113,6 +121,16 @@ void gui_init(int argc, char** argv)
 	if(PopupMenuBase = OpenLibrary("popupmenu.class",0))
 	{
 		IPopupMenu = (struct PopupMenuIFace *)GetInterface(PopupMenuBase,"main",1,NULL);
+	}
+
+	filereq = (struct FileRequester *)AllocAslRequest(ASL_FileRequest,NULL);
+
+	if(iffh = AllocIFF())
+	{
+		if(iffh->iff_Stream = OpenClipboard(0))
+		{
+			InitIFFasClip(iffh);
+		}
 	}
 
 /* need to do some proper checking that components are opening */
@@ -213,6 +231,11 @@ void gui_init2(int argc, char** argv)
 	struct browser_window *bw;
 	ULONG id;
 //	const char *addr = NETSURF_HOMEPAGE; //"http://netsurf-browser.org/welcome/";
+
+	InitRastPort(&dummyrp);
+	dummyrp.BitMap = p96AllocBitMap(1,1,32,
+		BMF_CLEAR | BMF_DISPLAYABLE | BMF_INTERLEAVED,
+		NULL,RGBFB_A8R8G8B8);
 
 	if ((!option_homepage_url) || (option_homepage_url[0] == '\0'))
     	option_homepage_url = strdup(NETSURF_HOMEPAGE);
@@ -400,7 +423,13 @@ printf("%ld,%ld,%ld\n",menunum,itemnum,subnum);
 							case 0:  // project
 								switch(itemnum)
 								{
-									case 0: // close
+									struct browser_window *bw;
+
+									case 0: // new window
+										bw = browser_window_create(gwin->bw->current_content->url, 0, 0, true);
+									break;
+
+									case 2: // close
 										browser_window_destroy(gwin->bw);
 									break;
 								}
@@ -447,16 +476,17 @@ printf("%ld,%ld,%ld\n",menunum,itemnum,subnum);
 //						printf("class: %ld\n",(result & WMHI_CLASSMASK));
 	           		break;
 			}
+
+			if(win_destroyed)
+			{
+				/* we can't be sure what state our window_list is in, so let's
+					jump out of the function and start again */
+
+				win_destroyed = false;
+				return;
+			}
+
 //	ReplyMsg((struct Message *)message);
-		}
-
-		if(win_destroyed)
-		{
-			/* we can't be sure what state our window_list is in, so let's
-				jump out of the function and start again */
-
-			win_destroyed = false;
-			return;
 		}
 
 		if(gwin->redraw_required)
@@ -504,6 +534,12 @@ void gui_quit(void)
 #endif
 
 	CloseScreen(scrn);
+	p96FreeBitMap(dummyrp.BitMap);
+
+	if(iffh->iff_Stream) CloseClipboard((struct ClipboardHandle *)iffh->iff_Stream);
+	if(iffh) FreeIFF(iffh);
+
+	FreeAslRequest(filereq);
 
     if(IPopupMenu) DropInterface((struct Interface *)IPopupMenu);
     if(PopupMenuBase) CloseLibrary(PopupMenuBase);
@@ -556,6 +592,8 @@ struct NewMenu *ami_create_menu(ULONG type)
 
 	STATIC struct NewMenu menu[] = {
 			  {NM_TITLE,0,0,0,0,0,},
+			  { NM_ITEM,0,"N",0,0,0,},
+			  { NM_ITEM,NM_BARLABEL,0,0,0,0,},
 			  { NM_ITEM,0,"K",0,0,0,},
 			  {NM_TITLE,0,0,0,0,0,},
 			  { NM_ITEM,0,"C",0,0,0,},
@@ -564,11 +602,13 @@ struct NewMenu *ami_create_menu(ULONG type)
 			 };
 
 	menu[0].nm_Label = messages_get("Project");
-	menu[1].nm_Label = messages_get("Close");
+	menu[1].nm_Label = messages_get("NewWindow");
 	menu[1].nm_Flags = menuflags;
-	menu[2].nm_Label = messages_get("Edit");
-	menu[3].nm_Label = messages_get("Copy");
-	menu[4].nm_Label = messages_get("Paste");
+	menu[3].nm_Label = messages_get("Close");
+	menu[3].nm_Flags = menuflags;
+	menu[4].nm_Label = messages_get("Edit");
+	menu[5].nm_Label = messages_get("Copy");
+	menu[6].nm_Label = messages_get("Paste");
 
 	return(menu);
 }
@@ -882,6 +922,7 @@ void gui_window_update_box(struct gui_window *g,
 		0xFFFFFF);
 
 	current_redraw_browser = NULL;
+	currp = &dummyrp;
 
 	ami_update_buttons(g);
 
@@ -898,6 +939,7 @@ void ami_do_redraw(struct gui_window *g)
 	struct content *c;
 	ULONG hcurrent,vcurrent,xoffset,yoffset,width=800,height=600;
 	struct IBox *bbox;
+	struct Region *region;
 
 	GetAttr(SPACE_AreaBox,g->gadgets[GID_BROWSER],(ULONG *)&bbox);
 	GetAttr(SCROLLER_Top,g->objects[OID_HSCROLL],&hcurrent);
@@ -913,7 +955,14 @@ void ami_do_redraw(struct gui_window *g)
 	current_redraw_browser = g->bw;
 
 	currp = &g->rp;
-
+/*
+	layerinfo = NewLayerInfo();
+	layer = CreateLayer(layerinfo,LAYA_BitMap,&g->bm,LAYA_StayTop,TRUE,
+LAYA_MinX,0,LAYA_MinY,0,LAYA_MaxX,1024,LAYA_MaxY,768,TAG_DONE);
+	currp = layer->rp;
+//	region = NewRegion();
+//	InstallClipRegion(layer,region);
+*/
 	width=bbox->Width;
 	height=bbox->Height;
 	xoffset=bbox->Left;
@@ -946,7 +995,13 @@ void ami_do_redraw(struct gui_window *g)
 //	}
 
 	current_redraw_browser = NULL;
-
+	currp = &dummyrp;
+/*
+//	InstallClipRegion(layer,NULL);
+//	DisposeRegion(region);
+	DeleteLayer(0,layer);
+	DisposeLayerInfo(layerinfo);
+*/
 	ami_update_buttons(g);
 
 	BltBitMapRastPort(g->bm,0,0,g->win->RPort,xoffset,yoffset,width,height,0x0C0);
@@ -959,21 +1014,10 @@ bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 {
 	GetAttr(SCROLLER_Top,g->objects[OID_HSCROLL],sx);
 	GetAttr(SCROLLER_Top,g->objects[OID_VSCROLL],sy);
-
-	printf("get scr %ld,%ld\n",sx,sy);
 }
 
 void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 {
-//	Object *hscroller,*vscroller;
-
-	printf("set scr %ld,%ld\n",sx,sy);
-
-	// will also need bitmap_width and bitmap_height once resizing windows is working
-
-//	GetAttr(WINDOW_HorizObject,g->objects[OID_MAIN],(ULONG *)&hscroller);
-//	GetAttr(WINDOW_VertObject,g->objects[OID_MAIN],(ULONG *)&vscroller);
-
 	RefreshSetGadgetAttrs((APTR)g->objects[OID_VSCROLL],g->win,NULL,
 		SCROLLER_Top,sy,
 		TAG_DONE);
@@ -1023,8 +1067,10 @@ void gui_window_update_extent(struct gui_window *g)
 
 	GetAttr(SPACE_AreaBox,g->gadgets[GID_BROWSER],(ULONG *)&bbox);
 
+/*
 	printf("upd ext %ld,%ld\n",g->bw->current_content->width, // * g->bw->scale,
 	g->bw->current_content->height); // * g->bw->scale);
+*/
 
 	RefreshSetGadgetAttrs((APTR)g->objects[OID_VSCROLL],g->win,NULL,
 		SCROLLER_Total,g->bw->current_content->height,
@@ -1080,12 +1126,25 @@ void gui_window_stop_throbber(struct gui_window *g)
 
 void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
 {
-// draw to rastport
+	struct IBox *bbox;
+
+	GetAttr(SPACE_AreaBox,g->gadgets[GID_BROWSER],(ULONG *)&bbox);
+
+	SetAPen(g->win->RPort,3);
+	RectFill(g->win->RPort,x+bbox->Left,y+bbox->Top,x+bbox->Left+2,y+bbox->Top+height);
+
+	g->c_x = x;
+	g->c_y = y;
+	g->c_h = height;
 }
 
 void gui_window_remove_caret(struct gui_window *g)
 {
-// blit from g->bm
+	struct IBox *bbox;
+
+	GetAttr(SPACE_AreaBox,g->gadgets[GID_BROWSER],(ULONG *)&bbox);
+
+	BltBitMapRastPort(g->bm,g->c_x,g->c_y,g->win->RPort,bbox->Left+g->c_x,bbox->Top+g->c_y,2,g->c_h,0x0C0);
 }
 
 void gui_window_new_content(struct gui_window *g)
@@ -1120,20 +1179,36 @@ struct gui_download_window *gui_download_window_create(const char *url,
 		const char *mime_type, struct fetch *fetch,
 		unsigned int total_size, struct gui_window *gui)
 {
+	char *fname = AllocVec(1024,MEMF_CLEAR);
+	printf("download: %s\n",url);
+
+	if(AslRequestTags(filereq,
+		ASLFR_TitleText,messages_get("NetSurf"),
+		ASLFR_Screen,scrn,
+		ASLFR_DoSaveMode,TRUE,
+		TAG_DONE))
+	{
+		strlcpy(fname,filereq->fr_Drawer,1024);
+		AddPart(fname,filereq->fr_File,1024);
+		printf("DOWNLOAD AS: %s\n",fname);
+	}
 }
 
 void gui_download_window_data(struct gui_download_window *dw, const char *data,
 		unsigned int size)
 {
+	printf("download data\n");
 }
 
 void gui_download_window_error(struct gui_download_window *dw,
 		const char *error_msg)
 {
+	printf("download error\n");
 }
 
 void gui_download_window_done(struct gui_download_window *dw)
 {
+	printf("download done\n");
 }
 
 void gui_drag_save_object(gui_save_type type, struct content *c,
@@ -1151,7 +1226,32 @@ void gui_start_selection(struct gui_window *g)
 
 void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
 {
-	printf("paste from clipboard\n");
+	/* This and the other clipboard code is heavily based on the RKRM examples */
+	struct ContextNode *cn;
+	ULONG rlen=0,error;
+	STRPTR readbuf = AllocVec(1024,MEMF_CLEAR);
+
+	if(OpenIFF(iffh,IFFF_READ)) return;
+	if(StopChunk(iffh,ID_FTXT,ID_CHRS)) return;
+
+	while(1)
+	{
+		error = ParseIFF(iffh,IFFPARSE_SCAN);
+		if(error == IFFERR_EOC) continue;
+		else if(error) break;
+
+		cn = CurrentChunk(iffh);
+
+		if((cn)&&(cn->cn_Type == ID_FTXT)&&(cn->cn_ID == ID_CHRS))
+		{
+			while((rlen = ReadChunkBytes(iffh,readbuf,1024)) > 0)
+			{
+				browser_window_paste_text(g->bw,readbuf,rlen,true);
+			}
+			if(rlen < 0) error = rlen;
+		}
+	}
+	CloseIFF(iffh);
 }
 
 bool gui_empty_clipboard(void)
@@ -1160,17 +1260,64 @@ bool gui_empty_clipboard(void)
 
 bool gui_add_to_clipboard(const char *text, size_t length, bool space)
 {
-	printf("add to clipboard\n");
+	if(!(PushChunk(iffh,0,ID_CHRS,IFFSIZE_UNKNOWN))) /* DOESN'T WORK SECOND TIME */
+	{
+		WriteChunkBytes(iffh,text,length);
+		PopChunk(iffh);
+		return true;
+	}
+	else
+	{
+		PopChunk(iffh);
+		return false;
+	}
 }
 
 bool gui_commit_clipboard(void)
 {
-	printf("commit clipboard\n");
+	if(iffh) CloseIFF(iffh);
+
+	return true;
+}
+
+bool ami_clipboard_copy(const char *text, size_t length, struct box *box,
+	void *handle, const char *whitespace_text,size_t whitespace_length)
+{
+	/* add any whitespace which precedes the text from this box */
+
+	if (whitespace_text)
+	{
+		if(!gui_add_to_clipboard(whitespace_text,whitespace_length, false)) return false;
+	}
+
+	if(text)
+	{
+		if (!gui_add_to_clipboard(text, length, box->space)) return false;
+	}
+
+	return true;
 }
 
 bool gui_copy_to_clipboard(struct selection *s)
 {
-	printf("copy to clipboard\n");
+	if(!(OpenIFF(iffh,IFFF_WRITE)))
+	{
+		if(!(PushChunk(iffh,ID_FTXT,ID_FORM,IFFSIZE_UNKNOWN)))
+		{
+			if (s->defined && selection_traverse(s, ami_clipboard_copy, NULL))
+			{
+				gui_commit_clipboard();
+				return true;
+			}
+		}
+		else
+		{
+			PopChunk(iffh);
+		}
+		CloseIFF(iffh);
+	}
+
+	return false;
 }
 
 void gui_create_form_select_menu(struct browser_window *bw,
@@ -1238,11 +1385,8 @@ uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved)
     int32 itemid = 0;
 	struct gui_window *gwin = hook->h_Data;
 
-printf("popuphookfunc\n");
-
     if(GetAttr(PMIA_ID, item, &itemid))
     {
-		printf("itemid: %ld\n",itemid);
 		browser_window_form_select(gwin->bw,gwin->control,itemid);
     }
 
