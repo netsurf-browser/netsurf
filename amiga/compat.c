@@ -57,12 +57,21 @@ int uname(struct utsname *uts)
 	if(VersionBase = OpenLibrary("version.library",50))
 	{
 		sprintf(uts->release,"%ld.%ld",VersionBase->lib_Version,VersionBase->lib_Version);
+
+		if((VersionBase->lib_Version >= 50) && (VersionBase->lib_Version <=52))
+		{
+			strcpy(uts->version,"4.0");
+		}
+		else if((VersionBase->lib_Version >= 53))
+		{
+			strcpy(uts->version,"4.1");
+		}
+
 		CloseLibrary(VersionBase);
 	}
 
 	strcpy(uts->sysname,"AmigaOS");
 	strcpy(uts->nodename,"amiga");
-	strcpy(uts->version,"4.0");
 	strcpy(uts->machine,"ppc");
 
 }

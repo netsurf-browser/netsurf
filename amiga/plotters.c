@@ -51,17 +51,22 @@ const struct plotter_table amiplot = {
 	NULL, //ami_group_end,
 	ami_flush, // optional
 	ami_path,
-	0 // option_knockout
+	true // option_knockout
 };
 
 bool ami_clg(colour c)
 {
 	DebugPrintF("clg %lx\n",c);
 
-	SetDrMd(currp,BGBACKFILL);
+	SetRPAttrs(currp,RPTAG_BPenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),
+					TAG_DONE);
 
+	ClearScreen(currp);
+
+/*
 	p96RectFill(currp,clipx0,clipy0,clipx1,clipy1,
 				p96EncodeColor(RGBFB_A8B8G8R8,c));
+*/
 
 	return true;
 }
@@ -86,6 +91,10 @@ bool ami_rectangle(int x0, int y0, int width, int height,
 	Draw(currp,x0,y0+height);
 	Draw(currp,x0,y0);
 
+	currp->PenWidth = 1;
+	currp->PenHeight = 1;
+	currp->LinePtrn = PATT_LINE;
+
 	return true;
 }
 
@@ -106,6 +115,10 @@ bool ami_line(int x0, int y0, int x1, int y1, int width,
 	Move(currp,x0,y0);
 	Draw(currp,x1,y1);
 
+	currp->PenWidth = 1;
+	currp->PenHeight = 1;
+	currp->LinePtrn = PATT_LINE;
+
 	return true;
 }
 
@@ -115,9 +128,6 @@ bool ami_polygon(int *p, unsigned int n, colour fill)
 	ULONG cx,cy;
 
 	DebugPrintF("poly\n");
-	currp->PenWidth = 1;
-	currp->PenHeight = 1;
-	currp->LinePtrn = PATT_LINE;
 
 	SetRPAttrs(currp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,fill),
 					TAG_DONE);
@@ -144,6 +154,9 @@ bool ami_fill(int x0, int y0, int x1, int y1, colour c)
 
 bool ami_clip(int x0, int y0, int x1, int y1)
 {
+/* to do - need to actually clip to this region using layers.library */
+
+	DebugPrintF("clip\n");
 	clipx0=x0;
 	clipy0=y0;
 	clipx1=x1;
@@ -177,10 +190,6 @@ bool ami_disc(int x, int y, int radius, colour c, bool filled)
 
 	DebugPrintF("disc\n");
 
-	currp->PenWidth = 1;
-	currp->PenHeight = 1;
-	currp->LinePtrn = PATT_LINE;
-
 	SetRPAttrs(currp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),
 					TAG_DONE);
 
@@ -205,10 +214,6 @@ bool ami_arc(int x, int y, int radius, int angle1, int angle2,
 CommonFuncsPPC.lha */
 	DebugPrintF("arc\n");
 
-	currp->PenWidth = 1;
-	currp->PenHeight = 1;
-	currp->LinePtrn = PATT_LINE;
-
 	return true;
 }
 
@@ -219,9 +224,9 @@ bool ami_bitmap(int x, int y, int width, int height,
 
 DebugPrintF("bitmap plotter %ld %ld %ld %ld (%ld %ld)\n",x,y,width,height,bitmap->width,bitmap->height);
 
-//	ami_fill(x,y,x+width,y+height,bg);
+/* needs to also scale */
 
-	if(x<0 || y<0) DebugPrintF("NEGATIVE X,Y COORDINATES\n");
+//	ami_fill(x,y,x+width,y+height,bg);
 
 	SetRPAttrs(currp,RPTAG_BPenColor,p96EncodeColor(RGBFB_A8B8G8R8,bg),
 					TAG_DONE);

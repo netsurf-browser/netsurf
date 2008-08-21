@@ -23,6 +23,8 @@
 
 #define AMINS_CALLBACK 0
 #define AMINS_WINDOW 1
+#define AMINS_FRAME 2
+#define AMINS_DLWINDOW 3
 
 struct nsObject
 {

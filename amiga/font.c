@@ -75,6 +75,7 @@ bool nsfont_position_in_string(const struct css_style *style,
 {
 	struct TextExtent extent;
 	struct TextFont *tfont = ami_open_font(style);
+
 	*char_offset = TextFit(currp,string,length,
 						&extent,NULL,1,x,32767);
 
@@ -228,5 +229,5 @@ void ami_close_font(struct TextFont *tfont)
 			RPTAG_Font,origrpfont,
 			TAG_DONE);
 
-	CloseFont(tfont);
+	if(tfont) CloseFont(tfont);
 }
