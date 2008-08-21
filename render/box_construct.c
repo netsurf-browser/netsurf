@@ -910,7 +910,13 @@ struct css_style * box_get_style(struct content *c,
 	}
 
 	if (!author->height && (s = (char *) xmlGetProp(n,
-						(const xmlChar *) "height"))) {
+			(const xmlChar *) "height")) &&
+			((strcmp((const char *) n->name, "iframe") == 0) ||
+			(strcmp((const char *) n->name, "td") == 0) ||
+			(strcmp((const char *) n->name, "th") == 0) ||
+			(strcmp((const char *) n->name, "img") == 0) ||
+			(strcmp((const char *) n->name, "object") == 0) ||
+			(strcmp((const char *) n->name, "applet") == 0))) {
 		float value = isdigit(s[0]) ? atof(s) : -1;
 		if (value <= 0 || strlen(s) == 0) {
 			/* ignore negative values and height="" */
@@ -985,7 +991,15 @@ struct css_style * box_get_style(struct content *c,
 	}
 
 	if (!author->width && (s = (char *) xmlGetProp(n,
-						(const xmlChar *) "width"))) {
+			(const xmlChar *) "width")) &&
+			((strcmp((const char *) n->name, "hr") == 0) ||
+			(strcmp((const char *) n->name, "iframe") == 0) ||
+			(strcmp((const char *) n->name, "img") == 0) ||
+			(strcmp((const char *) n->name, "object") == 0) ||
+			(strcmp((const char *) n->name, "table") == 0) ||
+			(strcmp((const char *) n->name, "td") == 0) ||
+			(strcmp((const char *) n->name, "th") == 0) ||
+			(strcmp((const char *) n->name, "applet") == 0))) {
 		float value = isdigit(s[0]) ? atof(s) : -1;
 		if (value < 0 || strlen(s) == 0) {
 			/* ignore negative values and width="" */
