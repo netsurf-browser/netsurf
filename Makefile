@@ -251,7 +251,7 @@ ifeq ($(TARGET),riscos)
   ifeq ($(HOST),riscos)
     $(eval $(call feature_enabled,HUBBUB,-DWITH_HUBBUB,-lhubbub -lparserutils,Hubbub HTML parser))
     $(eval $(call feature_enabled,BMP,-DWITH_BMP,-lnsbmp,NetSurf BMP decoder))
-    $(eval $(call feature_enabled,BMP,-DWITH_GIF,-lnsgif,NetSurf GIF decoder))
+    $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif,NetSurf GIF decoder))
   else
     NETSURF_FEATURE_HUBBUB_CFLAGS := -DWITH_HUBBUB
     NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
