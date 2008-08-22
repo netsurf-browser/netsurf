@@ -798,8 +798,10 @@ void fetch_curl_done(CURL *curl_handle, CURLcode result)
 		cert = true;
 	}
 #endif
-	else
-		error = true;
+	else {
+                LOG(("Unknown cURL response code %d", result));
+                error = true;
+        }
 
 	fetch_curl_stop(f);
 
