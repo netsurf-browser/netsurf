@@ -25,6 +25,7 @@
 #include <intuition/intuition.h>
 #include <graphics/rpattr.h>
 #include <graphics/gfxmacros.h>
+#include "amiga/utf8.h"
 
 #include <proto/exec.h> // for debugprintf only
 
@@ -168,6 +169,7 @@ bool ami_clip(int x0, int y0, int x1, int y1)
 bool ami_text(int x, int y, const struct css_style *style,
 			const char *text, size_t length, colour bg, colour c)
 {
+	char *buffer = NULL;
 	struct TextFont *tfont = ami_open_font(style);
 
 	SetRPAttrs(currp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),
@@ -175,10 +177,18 @@ bool ami_text(int x, int y, const struct css_style *style,
 //					RPTAG_OPenColor,p96EncodeColor(RGBFB_A8B8G8R8,bg),
 //					RPTAG_Font,tfont,
 					TAG_DONE);
+
+	utf8_to_local_encoding(text,length,&buffer);
+//	ami_utf8_to_any(text,length,&buffer);
+
+	if(!buffer) return true;
+
 	Move(currp,x,y);
-	Text(currp,text,length);
+	Text(currp,buffer,strlen(buffer));
+//	Text(currp,text,length);
 
 	ami_close_font(tfont);
+	ami_utf8_free(buffer);
 
 	return true;
 }
@@ -245,11 +255,9 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 			bool repeat_x, bool repeat_y, struct content *content)
 {
 	struct RenderInfo ri;
+	ULONG xf,yf,wf,hf;
 
 DebugPrintF("bitmap tile plotter\n");
-/* not implemented properly - needs to tile! */
-
-	if(x<0 || y<0) DebugPrintF("NEGATIVE X,Y COORDINATES\n");
 
 	SetRPAttrs(currp,RPTAG_BPenColor,p96EncodeColor(RGBFB_A8B8G8R8,bg),
 					TAG_DONE);
@@ -258,7 +266,36 @@ DebugPrintF("bitmap tile plotter\n");
 	ri.BytesPerRow = bitmap->width * 4;
 	ri.RGBFormat = RGBFB_R8G8B8A8;
 
-	p96WritePixelArray((struct RenderInfo *)&ri,0,0,currp,x,y,width,height);
+/*
+if(repeat_x) printf("repeatx\n");
+if(repeat_y) printf("repeaty\n");
+*/
+	for(xf=0;xf<width;xf+=bitmap->width)
+	{
+		for(yf=0;yf<height;yf+=bitmap->height)
+		{
+			if(width > xf+bitmap->width)
+			{
+				wf = width-(xf+bitmap->width);
+			}
+			else
+			{
+				wf=bitmap->width;
+			}
+
+			if(height > yf+bitmap->height)
+			{
+				hf = height-(yf+bitmap->height);
+			}
+			else
+			{
+				hf=bitmap->height;
+			}
+
+//printf("%ld %ld %ld\n",xf,width,bitmap->width);
+			p96WritePixelArray((struct RenderInfo *)&ri,0,0,currp,x+xf,y+yf,wf,hf);
+		}
+	}
 
 	return true;
 }
