@@ -44,6 +44,9 @@
 #include <proto/iffparse.h>
 #include <datatypes/textclass.h>
 #include "desktop/selection.h"
+#include <proto/codesets.h>
+#include "utils/utf8.h"
+#include "amiga/utf8.h"
 
 #ifdef WITH_HUBBUB
 #include <hubbub/hubbub.h>
@@ -56,7 +59,9 @@
 #include <proto/button.h>
 #include <proto/space.h>
 #include <proto/popupmenu.h>
+#include <proto/fuelgauge.h>
 #include <classes/window.h>
+#include <gadgets/fuelgauge.h>
 #include <gadgets/layout.h>
 #include <gadgets/string.h>
 #include <gadgets/scroller.h>
@@ -80,12 +85,15 @@ struct Device *TimerBase;
 struct TimerIFace *ITimer;
 struct Library  *PopupMenuBase = NULL;
 struct PopupMenuIFace *IPopupMenu = NULL;
+struct Library  *CodesetsBase = NULL;
+struct CodesetsIFace *ICodesets = NULL;
 
 struct Screen *scrn;
 bool win_destroyed = false;
 static struct RastPort dummyrp;
 struct FileRequester *filereq;
 struct IFFHandle *iffh = NULL;
+STRPTR nsscreentitle = NULL;
 
 void ami_update_buttons(struct gui_window *);
 void ami_scroller_hook(struct Hook *,Object *,struct IntuiMessage *);
@@ -123,6 +131,11 @@ void gui_init(int argc, char** argv)
 		IPopupMenu = (struct PopupMenuIFace *)GetInterface(PopupMenuBase,"main",1,NULL);
 	}
 
+	if(CodesetsBase = OpenLibrary("codesets.library",0))
+	{
+		ICodesets = (struct CodesetsIFace *)GetInterface(CodesetsBase,"main",1,NULL);
+	}
+
 	filereq = (struct FileRequester *)AllocAslRequest(ASL_FileRequest,NULL);
 
 	if(iffh = AllocIFF())
@@ -136,6 +149,8 @@ void gui_init(int argc, char** argv)
 /* need to do some proper checking that components are opening */
 
 	verbose_log = 0;
+
+	nsscreentitle = ASPrintf("NetSurf %s",netsurf_version);
 
 	if(lock=Lock("Resources/LangNames",ACCESS_READ))
 	{
@@ -157,7 +172,7 @@ void gui_init(int argc, char** argv)
 			continue;
 		}
 		strcat(&lang,"/messages");
-		printf("%s\n",lang);
+//		printf("%s\n",lang);
 		if(lock=Lock(lang,ACCESS_READ))
 		{
 			UnLock(lock);
@@ -253,7 +268,7 @@ void gui_init2(int argc, char** argv)
 							SA_Height,option_window_screen_height,
 							SA_Depth,32,
 							SA_DisplayID,id,
-							SA_Title,messages_get("NetSurf"),
+							SA_Title,nsscreentitle,
 							SA_LikeWorkbench,TRUE,
 							TAG_DONE);
 
@@ -535,11 +550,15 @@ void gui_quit(void)
 
 	CloseScreen(scrn);
 	p96FreeBitMap(dummyrp.BitMap);
+	FreeVec(nsscreentitle);
 
 	if(iffh->iff_Stream) CloseClipboard((struct ClipboardHandle *)iffh->iff_Stream);
 	if(iffh) FreeIFF(iffh);
 
 	FreeAslRequest(filereq);
+
+    if(ICodesets) DropInterface((struct Interface *)ICodesets);
+    if(CodesetsBase) CloseLibrary(CodesetsBase);
 
     if(IPopupMenu) DropInterface((struct Interface *)IPopupMenu);
     if(PopupMenuBase) CloseLibrary(PopupMenuBase);
@@ -638,7 +657,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
         case BROWSER_WINDOW_IFRAME:
 
 		gwin->objects[OID_MAIN] = WindowObject,
-       	    WA_ScreenTitle, messages_get("NetSurf"),
+       	    WA_ScreenTitle,nsscreentitle,
            	WA_Title, messages_get("NetSurf"),
            	WA_Activate, TRUE,
            	WA_DepthGadget, TRUE,
@@ -676,7 +695,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		break;
         case BROWSER_WINDOW_NORMAL:
 		gwin->objects[OID_MAIN] = WindowObject,
-       	    WA_ScreenTitle, messages_get("NetSurf"),
+       	    WA_ScreenTitle,nsscreentitle,
            	WA_Title, messages_get("NetSurf"),
            	WA_Activate, TRUE,
            	WA_DepthGadget, TRUE,
@@ -865,7 +884,7 @@ void gui_window_destroy(struct gui_window *g)
 
 void gui_window_set_title(struct gui_window *g, const char *title)
 {
-	SetWindowTitles(g->win,title,"NetSurf");
+	SetWindowTitles(g->win,title,nsscreentitle);
 }
 
 void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
@@ -957,7 +976,7 @@ void ami_do_redraw(struct gui_window *g)
 	currp = &g->rp;
 /*
 	layerinfo = NewLayerInfo();
-	layer = CreateLayer(layerinfo,LAYA_BitMap,&g->bm,LAYA_StayTop,TRUE,
+	layer = CreateLayer(layerinfo,LAYA_BitMap,g->bm,LAYA_StayTop,TRUE,
 LAYA_MinX,0,LAYA_MinY,0,LAYA_MaxX,1024,LAYA_MaxY,768,TAG_DONE);
 	currp = layer->rp;
 //	region = NewRegion();
@@ -1180,35 +1199,118 @@ struct gui_download_window *gui_download_window_create(const char *url,
 		unsigned int total_size, struct gui_window *gui)
 {
 	char *fname = AllocVec(1024,MEMF_CLEAR);
-	printf("download: %s\n",url);
+	struct gui_download_window *dw;
+	APTR va[3];
 
 	if(AslRequestTags(filereq,
 		ASLFR_TitleText,messages_get("NetSurf"),
 		ASLFR_Screen,scrn,
 		ASLFR_DoSaveMode,TRUE,
+		ASLFR_InitialFile,FilePart(url),
 		TAG_DONE))
 	{
 		strlcpy(fname,filereq->fr_Drawer,1024);
 		AddPart(fname,filereq->fr_File,1024);
-		printf("DOWNLOAD AS: %s\n",fname);
 	}
+	else return NULL;
+
+	dw = AllocVec(sizeof(struct gui_download_window),MEMF_CLEAR);
+
+	dw->size = total_size;
+	dw->downloaded = 0;
+
+	va[0] = dw->downloaded;
+	va[1] = dw->size;
+	va[2] = 0;
+
+	if(!(dw->fh = FOpen(fname,MODE_NEWFILE,0)))
+	{
+		FreeVec(dw);
+		return NULL;
+	}
+
+	dw->objects[OID_MAIN] = WindowObject,
+      	    WA_ScreenTitle,nsscreentitle,
+           	WA_Title, url,
+           	WA_Activate, TRUE,
+           	WA_DepthGadget, TRUE,
+           	WA_DragBar, TRUE,
+           	WA_CloseGadget, FALSE,
+           	WA_SizeGadget, TRUE,
+			WA_CustomScreen,scrn,
+			WINDOW_IconifyGadget, TRUE,
+         	WINDOW_Position, WPOS_CENTERSCREEN,
+           	WINDOW_ParentGroup, dw->gadgets[GID_MAIN] = VGroupObject,
+				LAYOUT_AddChild, dw->gadgets[GID_STATUS] = FuelGaugeObject,
+					GA_ID,GID_STATUS,
+					GA_Text,messages_get("amiDownload"),
+					FUELGAUGE_Min,0,
+					FUELGAUGE_Max,total_size,
+					FUELGAUGE_Level,0,
+					FUELGAUGE_Ticks,4,
+					FUELGAUGE_ShortTicks,4,
+					FUELGAUGE_VarArgs,va,
+					FUELGAUGE_Percent,FALSE,
+					FUELGAUGE_Justification,FGJ_CENTER,
+				StringEnd,
+				CHILD_NominalSize,TRUE,
+				CHILD_WeightedHeight,0,
+			EndGroup,
+		EndWindow;
+
+	dw->win = (struct Window *)RA_OpenWindow(dw->objects[OID_MAIN]);
+
+	dw->node = AddObject(window_list,AMINS_DLWINDOW);
+	dw->node->objstruct = dw;
+
+	return dw;
 }
 
 void gui_download_window_data(struct gui_download_window *dw, const char *data,
 		unsigned int size)
 {
-	printf("download data\n");
+	APTR va[3];
+	if(!dw) return;
+
+	FWrite(dw->fh,data,1,size);
+
+	dw->downloaded = dw->downloaded + size;
+
+	va[0] = dw->downloaded;
+	va[1] = dw->size;
+	va[2] = 0;
+
+	if(dw->size)
+	{
+		RefreshSetGadgetAttrs(dw->gadgets[GID_STATUS],dw->win,NULL,
+						FUELGAUGE_Level,dw->downloaded,
+						GA_Text,messages_get("amiDownload"),
+						FUELGAUGE_VarArgs,va,
+						TAG_DONE);
+	}
+	else
+	{
+		RefreshSetGadgetAttrs(dw->gadgets[GID_STATUS],dw->win,NULL,
+						FUELGAUGE_Level,dw->downloaded,
+						GA_Text,messages_get("amiDownloadU"),
+						FUELGAUGE_VarArgs,va,
+						TAG_DONE);
+	}
 }
 
 void gui_download_window_error(struct gui_download_window *dw,
 		const char *error_msg)
 {
-	printf("download error\n");
+	warn_user("Unwritten");
+	gui_download_window_done(dw);
 }
 
 void gui_download_window_done(struct gui_download_window *dw)
 {
-	printf("download done\n");
+	if(!dw) return;
+	FClose(dw->fh);
+	DisposeObject(dw->objects[OID_MAIN]);
+	DelObject(dw->node);
 }
 
 void gui_drag_save_object(gui_save_type type, struct content *c,
@@ -1260,17 +1362,11 @@ bool gui_empty_clipboard(void)
 
 bool gui_add_to_clipboard(const char *text, size_t length, bool space)
 {
-	if(!(PushChunk(iffh,0,ID_CHRS,IFFSIZE_UNKNOWN))) /* DOESN'T WORK SECOND TIME */
-	{
-		WriteChunkBytes(iffh,text,length);
-		PopChunk(iffh);
-		return true;
-	}
-	else
-	{
-		PopChunk(iffh);
-		return false;
-	}
+	char *buffer;
+	utf8_to_local_encoding(text,length,&buffer);
+	WriteChunkBytes(iffh,buffer,strlen(buffer));
+	ami_utf8_free(buffer);
+	return true;
 }
 
 bool gui_commit_clipboard(void)
@@ -1283,16 +1379,24 @@ bool gui_commit_clipboard(void)
 bool ami_clipboard_copy(const char *text, size_t length, struct box *box,
 	void *handle, const char *whitespace_text,size_t whitespace_length)
 {
-	/* add any whitespace which precedes the text from this box */
-
-	if (whitespace_text)
+	if(!(PushChunk(iffh,0,ID_CHRS,IFFSIZE_UNKNOWN)))
 	{
-		if(!gui_add_to_clipboard(whitespace_text,whitespace_length, false)) return false;
+		if (whitespace_text)
+		{
+			if(!gui_add_to_clipboard(whitespace_text,whitespace_length, false)) return false;
+		}
+
+		if(text)
+		{
+			if (!gui_add_to_clipboard(text, length, box->space)) return false;
+		}
+
+		PopChunk(iffh);
 	}
-
-	if(text)
+	else
 	{
-		if (!gui_add_to_clipboard(text, length, box->space)) return false;
+		PopChunk(iffh);
+		return false;
 	}
 
 	return true;

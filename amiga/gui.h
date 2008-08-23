@@ -22,6 +22,7 @@
 #include "amiga/object.h"
 #include <intuition/classusr.h>
 #include "desktop/browser.h"
+#include <dos/dos.h>
 
 void ami_get_msg(void);
 
@@ -42,12 +43,6 @@ enum
 
 enum
 {
-    WID_MAIN=0,
-    WID_LAST
-};
-
-enum
-{
     OID_MAIN=0,
 	OID_VSCROLL,
 	OID_HSCROLL,
@@ -55,23 +50,39 @@ enum
     OID_LAST
 };
 
-struct gui_window {
+struct gui_download_window {
 	struct Window *win;
-	struct browser_window *bw;
-	struct BitMap *bm;
-	struct RastPort rp;
 	Object *objects[OID_LAST];
 	struct Gadget *gadgets[GID_LAST];
 	struct nsObject *node;
+	bool pad;
+	BPTR fh;
+	uint32 size;
+	uint32 downloaded;
+};
+
+struct gui_window {
+	struct Window *win;
+	Object *objects[OID_LAST];
+	struct Gadget *gadgets[GID_LAST];
+	struct nsObject *node;
+	bool redraw_required;
+	struct browser_window *bw;
+	struct BitMap *bm;
+	struct RastPort rp;
 	struct Hook scrollerhook;
 	struct Hook popuphook;
 	struct form_control *control;
-	bool redraw_required;
 	union content_msg_data *redraw_data;
 	browser_mouse_state mouse_state;
+	int c_x;
+	int c_y;
+	int c_h;
 };
 
 //struct gui_window *curwin;
 struct RastPort *currp;
 struct TextFont *origrpfont;
+struct Layer *layer;
+struct Layer_Info *layerinfo;
 #endif
