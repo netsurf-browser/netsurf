@@ -47,6 +47,7 @@
 #include <proto/codesets.h>
 #include "utils/utf8.h"
 #include "amiga/utf8.h"
+#include "amiga/hotlist.h"
 
 #ifdef WITH_HUBBUB
 #include <hubbub/hubbub.h>
@@ -94,6 +95,7 @@ static struct RastPort dummyrp;
 struct FileRequester *filereq;
 struct IFFHandle *iffh = NULL;
 STRPTR nsscreentitle = NULL;
+struct tree *hotlist;
 
 void ami_update_buttons(struct gui_window *);
 void ami_scroller_hook(struct Hook *,Object *,struct IntuiMessage *);
@@ -238,7 +240,9 @@ void gui_init(int argc, char** argv)
 
 	urldb_load("Resources/URLs");
 	urldb_load_cookies(option_cookie_file);
+	hotlist = options_load_tree("Resources/Hotlist");
 
+	if(!hotlist) ami_hotlist_init(&hotlist);
 }
 
 void gui_init2(int argc, char** argv)
@@ -432,7 +436,7 @@ void ami_get_msg(void)
 						menunum = MENUNUM(code);
 						itemnum = ITEMNUM(code);
 						subnum = SUBNUM(code);
-printf("%ld,%ld,%ld\n",menunum,itemnum,subnum);
+
 						switch(menunum)
 						{
 							case 0:  // project
@@ -462,6 +466,22 @@ printf("%ld,%ld,%ld\n",menunum,itemnum,subnum);
 									break;
 								}
 							break;
+
+							case 2: // hotlist
+								switch(itemnum)
+								{
+									case 0: // add
+										ami_hotlist_add(hotlist->root,gwin->bw->current_content);
+										options_save_tree(hotlist,"Resources/Hotlist","NetSurf hotlist");
+									break;
+
+									case 1: // show
+/* this along with save_tree above is very temporary! */
+										browser_window_go(gwin->bw,"file:///netsurf/resources/hotlist",NULL,true);
+									break;
+								}
+							break;
+
 						}
 						code = item->NextSelect;
 					}
@@ -543,6 +563,7 @@ void gui_quit(void)
 {
 //	urldb_save("resources/URLs");
 	urldb_save_cookies(option_cookie_file);
+	options_save_tree(hotlist,"Resources/Hotlist","NetSurf hotlist");
 
 #ifdef WITH_HUBBUB
 	hubbub_finalise(myrealloc,NULL);
@@ -610,14 +631,17 @@ struct NewMenu *ami_create_menu(ULONG type)
 	}
 
 	STATIC struct NewMenu menu[] = {
-			  {NM_TITLE,0,0,0,0,0,},
-			  { NM_ITEM,0,"N",0,0,0,},
-			  { NM_ITEM,NM_BARLABEL,0,0,0,0,},
-			  { NM_ITEM,0,"K",0,0,0,},
-			  {NM_TITLE,0,0,0,0,0,},
-			  { NM_ITEM,0,"C",0,0,0,},
-			  { NM_ITEM,0,"V",0,0,0,},
-			  {  NM_END,0,0,0,0,0,},
+			  	{NM_TITLE,0,0,0,0,0,}, // project
+			  	{ NM_ITEM,0,"N",0,0,0,}, // new window
+			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
+			  	{ NM_ITEM,0,"K",0,0,0,}, // close window
+			  	{NM_TITLE,0,0,0,0,0,}, // edit
+			  	{ NM_ITEM,0,"C",0,0,0,}, // copy
+			  	{ NM_ITEM,0,"V",0,0,0,}, // paste
+				{NM_TITLE,0,0,0,0,0,}, // hotlist
+				{ NM_ITEM,0,0,0,0,0,}, // add to hotlist
+			  	{ NM_ITEM,0,"H",0,0,0,}, // show hotlist
+			  	{  NM_END,0,0,0,0,0,},
 			 };
 
 	menu[0].nm_Label = messages_get("Project");
@@ -628,6 +652,9 @@ struct NewMenu *ami_create_menu(ULONG type)
 	menu[4].nm_Label = messages_get("Edit");
 	menu[5].nm_Label = messages_get("Copy");
 	menu[6].nm_Label = messages_get("Paste");
+	menu[7].nm_Label = messages_get("Hotlist");
+	menu[8].nm_Label = messages_get("HotlistAdd");
+	menu[9].nm_Label = messages_get("HotlistShow");
 
 	return(menu);
 }
