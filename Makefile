@@ -649,7 +649,7 @@ $(eval $(foreach SOURCE,$(filter %.s,$(SOURCES)), \
 
 clean: $(CLEANS)
 
-install-gtk:
+install-gtk: nsgtk
 	mkdir -p $(DESTDIR)$(NETSURF_GTK_RESOURCES)throbber
 	mkdir -p $(DESTDIR)$(NETSURF_GTK_BIN)
 	@cp -v nsgtk $(DESTDIR)$(NETSURF_GTK_BIN)netsurf
@@ -666,6 +666,7 @@ install-gtk:
 	gzip -9v < gtk/res/downloads.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)downloads.glade
 	gzip -9v < gtk/res/netsurf.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)netsurf.glade
 	gzip -9v < gtk/res/options.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)options.glade
+	gzip -9v < gtk/res/history.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)history.glade
 
 install: all-program install-$(TARGET)
 
