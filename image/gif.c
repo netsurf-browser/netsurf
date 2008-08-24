@@ -196,6 +196,7 @@ void nsgif_destroy(struct content *c)
  */
 gif_result nsgif_get_frame(struct content *c) {
 	int previous_frame, current_frame, frame;
+	gif_result res = GIF_OK;
 
 	current_frame = c->data.gif.current_frame;
 	if (!option_animate_images)
@@ -205,7 +206,9 @@ gif_result nsgif_get_frame(struct content *c) {
 	else
 		previous_frame = c->data.gif.gif->decoded_frame + 1;
 	for (frame = previous_frame; frame <= current_frame; frame++)
-		return gif_decode_frame(c->data.gif.gif, frame);
+		res = gif_decode_frame(c->data.gif.gif, frame);
+
+	return res;
 }
 
 
