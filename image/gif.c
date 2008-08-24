@@ -38,23 +38,23 @@
 #include "utils/utils.h"
 
 
-/*	GIF FUNCTIONALITY
-	=================
-
-	All GIFs are dynamically decompressed using the routines that gifread.c
-	provides. Whilst this allows support for progressive decoding, it is
-	not implemented here as NetSurf currently does not provide such support.
-
-	[rjw] - Sun 4th April 2004
-*/
+/** \file
+ * GIF support (implementation)
+ *
+ * All GIFs are dynamically decompressed using the routines that gifread.c
+ * provides. Whilst this allows support for progressive decoding, it is
+ * not implemented here as NetSurf currently does not provide such support.
+ *
+ * [rjw] - Sun 4th April 2004
+ */
 
 static void nsgif_invalidate(void *bitmap, void *private_word);
 static void nsgif_animate(void *p);
 static gif_result nsgif_get_frame(struct content *c);
 
-/*	The Bitmap callbacks function table;
-	necessary for interaction with nsgiflib.
-*/
+/* The Bitmap callbacks function table;
+ * necessary for interaction with nsgiflib.
+ */
 gif_bitmap_callback_vt gif_bitmap_callbacks = {
 	.bitmap_create = nsgif_bitmap_create,
 	.bitmap_destroy = bitmap_destroy,
@@ -67,8 +67,7 @@ gif_bitmap_callback_vt gif_bitmap_callbacks = {
 
 bool nsgif_create(struct content *c, const char *params[]) {
 	union content_msg_data msg_data;
-	/*	Initialise our data structure
-	*/
+	/* Initialise our data structure */
 	c->data.gif.gif = calloc(sizeof(gif_animation), 1);
 	if (!c->data.gif.gif) {
 		msg_data.error = messages_get("NoMemory");
@@ -85,14 +84,13 @@ bool nsgif_convert(struct content *c, int iwidth, int iheight) {
 	struct gif_animation *gif;
 	union content_msg_data msg_data;
 
-	/*	Get the animation
-	*/
+	/* Get the animation */
 	gif = c->data.gif.gif;
 
-	/*	Initialise the GIF
-	*/
+	/* Initialise the GIF */
 	do {
-		res = gif_initialise(gif, c->source_size, (unsigned char *)c->source_data);
+		res = gif_initialise(gif, c->source_size,
+				(unsigned char *)c->source_data);
 		if (res != GIF_OK && res != GIF_WORKING) {
 			switch (res)
 			{
@@ -111,8 +109,7 @@ bool nsgif_convert(struct content *c, int iwidth, int iheight) {
 		}
 	} while (res != GIF_OK);
 
-	/*	Abort on bad GIFs
-	*/
+	/* Abort on bad GIFs */
 	if ((gif->frame_count_partial == 0) || (gif->width == 0) ||
 			(gif->height == 0)) {
 		msg_data.error = messages_get("BadGIF");
@@ -120,25 +117,24 @@ bool nsgif_convert(struct content *c, int iwidth, int iheight) {
 		return false;
 	}
 
-	/*	Store our content width and description
-	*/
+	/* Store our content width and description */
 	c->width = gif->width;
 	c->height = gif->height;
 	c->title = malloc(100);
-	if (c->title)
-		snprintf(c->title, 100, messages_get("GIFTitle"), c->width, c->height, c->source_size);
+	if (c->title) {
+		snprintf(c->title, 100, messages_get("GIFTitle"), c->width,
+				c->height, c->source_size);
+	}
 	c->size += (gif->width * gif->height * 4) + 16 + 44 + 100;
 
-	/*	Schedule the animation if we have one
-	*/
+	/* Schedule the animation if we have one */
 	c->data.gif.current_frame = 0;
 	if (gif->frame_count_partial > 1)
 		schedule(gif->frames[0].frame_delay, nsgif_animate, c);
 	else
 		bitmap_set_suspendable(gif->frame_image, gif, nsgif_invalidate);
 
-	/*	Exit as a success
-	*/
+	/* Exit as a success */
 	c->bitmap = gif->frame_image;
 	c->status = CONTENT_STATUS_DONE;
 	/* Done: update status bar */
@@ -177,16 +173,15 @@ bool nsgif_redraw_tiled(struct content *c, int x, int y,
 		if (nsgif_get_frame(c) != GIF_OK)
 			return false;
 	c->bitmap = c->data.gif.gif->frame_image;
-	return plot.bitmap_tile(x, y, width, height, c->bitmap, background_colour,
-			repeat_x, repeat_y, c);
+	return plot.bitmap_tile(x, y, width, height, c->bitmap,
+			background_colour, repeat_x, repeat_y, c);
 }
 
 
 void nsgif_destroy(struct content *c)
 {
 
-	/*	Free all the associated memory buffers
-	*/
+	/* Free all the associated memory buffers */
 	schedule_remove(nsgif_animate, c);
 	gif_finalise(c->data.gif.gif);
 	free(c->data.gif.gif);
@@ -214,9 +209,10 @@ gif_result nsgif_get_frame(struct content *c) {
 }
 
 
-/**	Performs any necessary animation.
-
-	@param	c		The content to animate
+/**
+ * Performs any necessary animation.
+ *
+ * \param p  The content to animate
 */
 void nsgif_animate(void *p)
 {
@@ -226,26 +222,24 @@ void nsgif_animate(void *p)
 	int delay;
 	int f;
 
-	/*	Advance by a frame, updating the loop count accordingly
-	*/
+	/* Advance by a frame, updating the loop count accordingly */
 	gif = c->data.gif.gif;
 	c->data.gif.current_frame++;
 	if (c->data.gif.current_frame == (int)gif->frame_count_partial) {
 		c->data.gif.current_frame = 0;
 
-		/*	A loop count of 0 has a special meaning of infinite
-		*/
+		/* A loop count of 0 has a special meaning of infinite */
 		if (gif->loop_count != 0) {
 			gif->loop_count--;
 			if (gif->loop_count == 0) {
-				c->data.gif.current_frame = gif->frame_count_partial - 1;
+				c->data.gif.current_frame =
+						gif->frame_count_partial - 1;
 				gif->loop_count = -1;
 			}
 		}
 	}
 
-	/*	Continue animating if we should
-	*/
+	/* Continue animating if we should */
 	if (gif->loop_count >= 0) {
 		delay = gif->frames[c->data.gif.current_frame].frame_delay;
 		if (delay < option_minimum_gif_delay)
@@ -253,7 +247,8 @@ void nsgif_animate(void *p)
 		schedule(delay, nsgif_animate, c);
 	}
 
-	if ((!option_animate_images) || (!gif->frames[c->data.gif.current_frame].display))
+	if ((!option_animate_images) ||
+			(!gif->frames[c->data.gif.current_frame].display))
 		return;
 
 	/* area within gif to redraw */
@@ -266,23 +261,32 @@ void nsgif_animate(void *p)
 	/* redraw background (true) or plot on top (false) */
 	if (c->data.gif.current_frame > 0) {
 		data.redraw.full_redraw = gif->frames[f - 1].redraw_required;
-		/* previous frame needed clearing: expand the redraw area to cover it */
+		/* previous frame needed clearing: expand the redraw area to
+		 * cover it */
 		if (data.redraw.full_redraw) {
 			if (data.redraw.x > gif->frames[f - 1].redraw_x) {
-				data.redraw.width += data.redraw.x - gif->frames[f - 1].redraw_x;
+				data.redraw.width += data.redraw.x -
+						gif->frames[f - 1].redraw_x;
 				data.redraw.x = gif->frames[f - 1].redraw_x;
 			}
 			if (data.redraw.y > gif->frames[f - 1].redraw_y) {
-				data.redraw.height += (data.redraw.y - gif->frames[f - 1].redraw_y);
+				data.redraw.height += (data.redraw.y -
+						gif->frames[f - 1].redraw_y);
 				data.redraw.y = gif->frames[f - 1].redraw_y;
 			}
-			if ((gif->frames[f - 1].redraw_x + gif->frames[f - 1].redraw_width) >
+			if ((gif->frames[f - 1].redraw_x +
+					gif->frames[f - 1].redraw_width) >
 					(data.redraw.x + data.redraw.width))
-				data.redraw.width = gif->frames[f - 1].redraw_x - data.redraw.x +
+				data.redraw.width =
+						gif->frames[f - 1].redraw_x -
+						data.redraw.x +
 						gif->frames[f - 1].redraw_width;
-			if ((gif->frames[f - 1].redraw_y + gif->frames[f - 1].redraw_height) >
+			if ((gif->frames[f - 1].redraw_y +
+					gif->frames[f - 1].redraw_height) >
 					(data.redraw.y + data.redraw.height))
-				data.redraw.height = gif->frames[f - 1].redraw_y - data.redraw.y +
+				data.redraw.height =
+						gif->frames[f - 1].redraw_y -
+						data.redraw.y +
 						gif->frames[f - 1].redraw_height;
 		}
 	} else {

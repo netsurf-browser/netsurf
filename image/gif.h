@@ -17,6 +17,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/** \file
+ * GIF support (interface).
+ */
+
 #ifndef _NETSURF_IMAGE_GIF_H_
 #define _NETSURF_IMAGE_GIF_H_
 
@@ -29,8 +33,8 @@
 struct content;
 
 struct content_gif_data {
-	struct gif_animation *gif;	/**< GIF animation data */
-	int current_frame;		/**< current frame to display [0...(max-1)] */
+	struct gif_animation *gif; /**< GIF animation data */
+	int current_frame;	   /**< current frame to display [0...(max-1)] */
 };
 
 bool nsgif_create(struct content *c, const char *params[]);
