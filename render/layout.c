@@ -345,7 +345,7 @@ bool layout_block_context(struct box *block, struct content *content)
 
 		/* Unless the box has an overflow style of visible, the box
 		 * establishes a new block context. */
-		if (box->type != BOX_INLINE_CONTAINER && box->style &&
+		if (box->type == BOX_BLOCK && box->style &&
 				box->style->overflow != CSS_OVERFLOW_VISIBLE) {
 			cy += max_pos_margin - max_neg_margin;
 			box->y += max_pos_margin - max_neg_margin;
@@ -1254,7 +1254,7 @@ bool layout_line(struct box *first, int *width, int *y,
 
 	gadget_size.unit = CSS_UNIT_EM;
 	gadget_size.value = 1;
-	
+
 	LOG(("first %p, first->text '%.*s', width %i, y %i, cx %i, cy %i",
 			first, (int) first->length, first->text, *width,
 			*y, cx, cy));
