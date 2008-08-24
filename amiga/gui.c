@@ -276,7 +276,7 @@ void gui_init2(int argc, char** argv)
 							SA_LikeWorkbench,TRUE,
 							TAG_DONE);
 
-	bw = browser_window_create(option_homepage_url, 0, 0, true); // curbw = temp
+	bw = browser_window_create(option_homepage_url, 0, 0, true,false); // curbw = temp
 }
 
 void ami_get_msg(void)
@@ -445,7 +445,7 @@ void ami_get_msg(void)
 									struct browser_window *bw;
 
 									case 0: // new window
-										bw = browser_window_create(gwin->bw->current_content->url, 0, 0, true);
+										bw = browser_window_create(gwin->bw->current_content->url, 0, 0, true, false);
 									break;
 
 									case 2: // close
@@ -660,8 +660,10 @@ struct NewMenu *ami_create_menu(ULONG type)
 }
 
 struct gui_window *gui_create_browser_window(struct browser_window *bw,
-		struct browser_window *clone)
+		struct browser_window *clone, bool new_tab)
 {
+// tabs are ignored for the moment
+
 	struct gui_window *gwin = NULL;
 	bool closegadg=TRUE;
 	struct NewMenu *menu = ami_create_menu(bw->browser_window_type);
@@ -1391,7 +1393,7 @@ bool gui_add_to_clipboard(const char *text, size_t length, bool space)
 {
 	char *buffer;
 	utf8_to_local_encoding(text,length,&buffer);
-	WriteChunkBytes(iffh,buffer,strlen(buffer));
+	if(buffer) WriteChunkBytes(iffh,buffer,strlen(buffer));
 	ami_utf8_free(buffer);
 	return true;
 }
