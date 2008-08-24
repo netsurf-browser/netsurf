@@ -17,6 +17,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/** \file
+ * Content for image/bmp (implementation)
+ */
+
 #include "utils/config.h"
 #ifdef WITH_BMP
 
@@ -34,9 +38,9 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 
-/*	The Bitmap callbacks function table;
-	necessary for interaction with nsbmplib.
-*/
+/* The Bitmap callbacks function table;
+ * necessary for interaction with nsbmplib.
+ */
 bmp_bitmap_callback_vt bmp_bitmap_callbacks = {
 	.bitmap_create = nsbmp_bitmap_create,
 	.bitmap_destroy = bitmap_destroy,
@@ -45,7 +49,8 @@ bmp_bitmap_callback_vt bmp_bitmap_callbacks = {
 	.bitmap_get_bpp = bitmap_get_bpp
 };
 
-bool nsbmp_create(struct content *c, const char *params[]) {
+bool nsbmp_create(struct content *c, const char *params[])
+{
 	union content_msg_data msg_data;
 
 	c->data.bmp.bmp = calloc(sizeof(struct bmp_image), 1);
@@ -59,7 +64,8 @@ bool nsbmp_create(struct content *c, const char *params[]) {
 }
 
 
-bool nsbmp_convert(struct content *c, int iwidth, int iheight) {
+bool nsbmp_convert(struct content *c, int iwidth, int iheight)
+{
 	bmp_result res;
 	bmp_image *bmp;
 	union content_msg_data msg_data;
@@ -84,8 +90,7 @@ bool nsbmp_convert(struct content *c, int iwidth, int iheight) {
 			return false;
 	}
 
-	/*	Store our content width and description
-	*/
+	/* Store our content width and description */
 	c->width = bmp->width;
 	c->height = bmp->height;
 	LOG(("BMP      width %u       height %u\n\n", c->width, c->height));
@@ -99,6 +104,7 @@ bool nsbmp_convert(struct content *c, int iwidth, int iheight) {
 	/* exit as a success */
 	c->bitmap = bmp->bitmap;
 	c->status = CONTENT_STATUS_DONE;
+
 	/* Done: update status bar */
 	content_set_status(c, "");
 	return true;
@@ -108,13 +114,15 @@ bool nsbmp_convert(struct content *c, int iwidth, int iheight) {
 bool nsbmp_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-		float scale, unsigned long background_colour) {
+		float scale, unsigned long background_colour)
+{
 
 	if (!c->data.bmp.bmp->decoded)
 	  	if (bmp_decode(c->data.bmp.bmp) != BMP_OK)
 			return false;
 	c->bitmap = c->data.bmp.bmp->bitmap;
- 	return plot.bitmap(x, y, width, height,	c->bitmap, background_colour, c);
+ 	return plot.bitmap(x, y, width, height,	c->bitmap,
+ 			background_colour, c);
 }
 
 
@@ -122,7 +130,8 @@ bool nsbmp_redraw_tiled(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale, unsigned long background_colour,
-		bool repeat_x, bool repeat_y) {
+		bool repeat_x, bool repeat_y)
+{
 
 	if (!c->data.bmp.bmp->decoded)
 	  	if (bmp_decode(c->data.bmp.bmp) != BMP_OK)
@@ -149,13 +158,15 @@ void nsbmp_destroy(struct content *c)
  * \param  state   a flag word indicating the initial state
  * \return an opaque struct bitmap, or NULL on memory exhaustion
  */
-void *nsbmp_bitmap_create(int width, int height, unsigned int bmp_state) {
+void *nsbmp_bitmap_create(int width, int height, unsigned int bmp_state)
+{
 	unsigned int bitmap_state = BITMAP_NEW;
-	
+
 	/* set bitmap state based on bmp state */
 	bitmap_state |= (bmp_state & BMP_OPAQUE) ? BITMAP_OPAQUE : 0;
-	bitmap_state |= (bmp_state & BMP_CLEAR_MEMORY) ? BITMAP_CLEAR_MEMORY : 0;
-	
+	bitmap_state |= (bmp_state & BMP_CLEAR_MEMORY) ?
+			BITMAP_CLEAR_MEMORY : 0;
+
 	/* return the created bitmap */
 	return bitmap_create(width, height, bitmap_state);
 }

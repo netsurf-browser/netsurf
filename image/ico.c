@@ -16,6 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/** \file
+ * Content for image/ico (implementation)
+ */
+
 #include "utils/config.h"
 #ifdef WITH_BMP
 
@@ -33,11 +37,14 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 
-bool nsico_create(struct content *c, const char *params[]) {
+bool nsico_create(struct content *c, const char *params[])
+{
 	union content_msg_data msg_data;
-	extern bmp_bitmap_callback_vt bmp_bitmap_callbacks;	/**< external structure containing
-								*  bitmap callback functions */
-
+	extern bmp_bitmap_callback_vt bmp_bitmap_callbacks; /**< external
+							     * structure
+							     * containing
+							     * bitmap callback
+							     * functions */
 	c->data.ico.ico = calloc(sizeof(ico_collection), 1);
 	if (!c->data.ico.ico) {
 		msg_data.error = messages_get("NoMemory");
@@ -49,7 +56,8 @@ bool nsico_create(struct content *c, const char *params[]) {
 }
 
 
-bool nsico_convert(struct content *c, int iwidth, int iheight) {
+bool nsico_convert(struct content *c, int iwidth, int iheight)
+{
 	struct bmp_image *bmp;
 	bmp_result res;
 	ico_collection *ico;
@@ -59,7 +67,9 @@ bool nsico_convert(struct content *c, int iwidth, int iheight) {
 	ico = c->data.ico.ico;
 
 	/* analyse the ico */
-	res = ico_analyse(ico, c->source_size, (unsigned char *) c->source_data);
+	res = ico_analyse(ico, c->source_size, (unsigned char *)
+			c->source_data);
+
 	switch (res) {
 		case BMP_OK:
 			break;
@@ -74,8 +84,7 @@ bool nsico_convert(struct content *c, int iwidth, int iheight) {
 			return false;
 	}
 
-	/*	Store our content width and description
-	*/
+	/* Store our content width and description */
 	c->width = ico->width;
 	c->height = ico->height;
 	c->title = malloc(100);
@@ -97,7 +106,8 @@ bool nsico_convert(struct content *c, int iwidth, int iheight) {
 bool nsico_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-		float scale, unsigned long background_colour) {
+		float scale, unsigned long background_colour)
+{
 	struct bmp_image *bmp = ico_find(c->data.ico.ico, width, height);
 	if (!bmp->decoded)
 	  	if (bmp_decode(bmp) != BMP_OK)
@@ -112,7 +122,8 @@ bool nsico_redraw_tiled(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale, unsigned long background_colour,
-		bool repeat_x, bool repeat_y) {
+		bool repeat_x, bool repeat_y)
+{
 	struct bmp_image *bmp = ico_find(c->data.ico.ico, width, height);
 	if (!bmp->decoded)
 	  	if (bmp_decode(bmp) != BMP_OK)

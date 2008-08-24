@@ -18,7 +18,7 @@
  */
 
 /** \file
- * GIF support (interface).
+ * Content for image/gif (interface).
  */
 
 #ifndef _NETSURF_IMAGE_GIF_H_

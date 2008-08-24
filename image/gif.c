@@ -18,6 +18,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/** \file
+ * Content for image/gif (implementation)
+ *
+ * All GIFs are dynamically decompressed using the routines that gifread.c
+ * provides. Whilst this allows support for progressive decoding, it is
+ * not implemented here as NetSurf currently does not provide such support.
+ *
+ * [rjw] - Sun 4th April 2004
+ */
+
 #include "utils/config.h"
 #ifdef WITH_GIF
 
@@ -37,17 +47,6 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 
-
-/** \file
- * GIF support (implementation)
- *
- * All GIFs are dynamically decompressed using the routines that gifread.c
- * provides. Whilst this allows support for progressive decoding, it is
- * not implemented here as NetSurf currently does not provide such support.
- *
- * [rjw] - Sun 4th April 2004
- */
-
 static void nsgif_invalidate(void *bitmap, void *private_word);
 static void nsgif_animate(void *p);
 static gif_result nsgif_get_frame(struct content *c);
@@ -65,7 +64,8 @@ gif_bitmap_callback_vt gif_bitmap_callbacks = {
 };
 
 
-bool nsgif_create(struct content *c, const char *params[]) {
+bool nsgif_create(struct content *c, const char *params[])
+{
 	union content_msg_data msg_data;
 	/* Initialise our data structure */
 	c->data.gif.gif = calloc(sizeof(gif_animation), 1);
@@ -79,7 +79,8 @@ bool nsgif_create(struct content *c, const char *params[]) {
 }
 
 
-bool nsgif_convert(struct content *c, int iwidth, int iheight) {
+bool nsgif_convert(struct content *c, int iwidth, int iheight)
+{
 	int res;
 	struct gif_animation *gif;
 	union content_msg_data msg_data;
@@ -101,7 +102,8 @@ bool nsgif_convert(struct content *c, int iwidth, int iheight) {
 					msg_data.error = messages_get("BadGIF");
 					break;
 				case GIF_INSUFFICIENT_MEMORY:
-					msg_data.error = messages_get("NoMemory");
+					msg_data.error = messages_get(
+							"NoMemory");
 					break;
 			}
 			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
@@ -142,7 +144,8 @@ bool nsgif_convert(struct content *c, int iwidth, int iheight) {
 	return true;
 }
 
-void nsgif_invalidate(void *bitmap, void *private_word) {
+void nsgif_invalidate(void *bitmap, void *private_word)
+{
 	struct gif_animation *gif = (struct gif_animation *)private_word;
 
 	gif->decoded_frame = -1;
@@ -151,13 +154,14 @@ void nsgif_invalidate(void *bitmap, void *private_word) {
 bool nsgif_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-		float scale, unsigned long background_colour) {
-
+		float scale, unsigned long background_colour)
+{
 	if (c->data.gif.current_frame != c->data.gif.gif->decoded_frame)
 		if (nsgif_get_frame(c) != GIF_OK)
 			return false;
 	c->bitmap = c->data.gif.gif->frame_image;
-	return plot.bitmap(x, y, width, height,	c->bitmap, background_colour, c);
+	return plot.bitmap(x, y, width, height,	c->bitmap,
+			background_colour, c);
 }
 
 
@@ -165,8 +169,8 @@ bool nsgif_redraw_tiled(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale, unsigned long background_colour,
-		bool repeat_x, bool repeat_y) {
-
+		bool repeat_x, bool repeat_y)
+{
 	gif_result res;
 
 	if (c->data.gif.current_frame != c->data.gif.gif->decoded_frame)
@@ -180,7 +184,6 @@ bool nsgif_redraw_tiled(struct content *c, int x, int y,
 
 void nsgif_destroy(struct content *c)
 {
-
 	/* Free all the associated memory buffers */
 	schedule_remove(nsgif_animate, c);
 	gif_finalise(c->data.gif.gif);
@@ -194,7 +197,8 @@ void nsgif_destroy(struct content *c)
  *
  * \param c  the content to update
  */
-gif_result nsgif_get_frame(struct content *c) {
+gif_result nsgif_get_frame(struct content *c)
+{
 	int previous_frame, current_frame, frame;
 	gif_result res = GIF_OK;
 
@@ -290,7 +294,8 @@ void nsgif_animate(void *p)
 				data.redraw.height =
 						gif->frames[f - 1].redraw_y -
 						data.redraw.y +
-						gif->frames[f - 1].redraw_height;
+						gif->frames[f - 1].
+								redraw_height;
 		}
 	} else {
 		/* do advanced check */
@@ -325,7 +330,8 @@ void nsgif_animate(void *p)
  * \param  height  width of image in pixels
  * \return an opaque struct bitmap, or NULL on memory exhaustion
  */
-void *nsgif_bitmap_create(int width, int height) {
+void *nsgif_bitmap_create(int width, int height)
+{
 	return bitmap_create(width, height, BITMAP_NEW);
 }
 

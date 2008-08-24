@@ -17,6 +17,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/** \file
+ * Content for image/bmp (interface).
+ */
+
 #ifndef _NETSURF_IMAGE_BMP_H_
 #define _NETSURF_IMAGE_BMP_H_
 

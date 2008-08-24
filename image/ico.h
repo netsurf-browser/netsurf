@@ -16,6 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/** \file
+ * Content for image/ico (interface).
+ */
+
 #ifndef _NETSURF_IMAGE_ICO_H_
 #define _NETSURF_IMAGE_ICO_H_
 
