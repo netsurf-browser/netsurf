@@ -44,6 +44,7 @@
 #include "gtk/gtk_schedule.h"
 #include "gtk/gtk_download.h"
 #include "gtk/options.h"
+#include "gtk/gtk_tabs.h"
 #include "render/box.h"
 #include "render/font.h"
 #include "render/form.h"
@@ -64,10 +65,12 @@ struct gtk_history_window;
 
 struct gtk_scaffolding {
 	GtkWindow		*window;
+	GtkNotebook		*notebook;
 	GtkEntry		*url_bar;
 	GtkEntryCompletion	*url_bar_completion;
 	GtkLabel		*status_bar;
 	GtkMenu			*edit_menu;
+	GtkMenuItem		*tabs_menu;
 	GtkToolbar		*tool_bar;
 	GtkToolButton		*back_button;
 	GtkToolButton		*forward_button;
@@ -144,6 +147,7 @@ void nsgtk_openfile_open(char *filename);
 /* prototypes for menu handlers */
 /* file menu */
 MENUPROTO(new_window);
+MENUPROTO(new_tab);
 MENUPROTO(open_location);
 MENUPROTO(open_file);
 MENUPROTO(export_pdf);
@@ -180,6 +184,10 @@ MENUPROTO(home);
 MENUPROTO(local_history);
 MENUPROTO(global_history);
 
+/* tabs menu */
+MENUPROTO(next_tab);
+MENUPROTO(prev_tab);
+
 /* help menu */
 MENUPROTO(about);
 
@@ -189,6 +197,7 @@ MENUPROTO(about);
 static struct menu_events menu_events[] = {
 	/* file menu */
 	MENUEVENT(new_window),
+	MENUEVENT(new_tab),
 	MENUEVENT(open_location),
 	MENUEVENT(open_file),
 #ifdef WITH_PDF_EXPORT
@@ -226,6 +235,10 @@ static struct menu_events menu_events[] = {
 	MENUEVENT(home),
 	MENUEVENT(local_history),
 	MENUEVENT(global_history),
+
+	/* tab menu */
+	MENUEVENT(next_tab),
+	MENUEVENT(prev_tab),
 
 	/* help menu */
 	MENUEVENT(about),
@@ -427,6 +440,13 @@ gboolean nsgtk_window_url_changed(GtkWidget *widget, GdkEventKey *event,
 }
 
 
+void nsgtk_window_tabs_num_changed(GtkNotebook *notebook, GtkWidget *page,
+		guint page_num, struct gtk_scaffolding *g)
+{
+	gboolean visible = gtk_notebook_get_show_tabs(g->notebook);
+	g_object_set(g->tabs_menu, "visible", visible, NULL);
+}
+
 void nsgtk_openfile_open(char *filename)
 {
     struct browser_window *bw = nsgtk_get_browser_for_gui(
@@ -451,7 +471,18 @@ MENUHANDLER(new_window)
 	struct browser_window *bw = nsgtk_get_browser_for_gui(gw->top_level);
 	const char *url = gtk_entry_get_text(GTK_ENTRY(gw->url_bar));
 
-	browser_window_create(url, bw, NULL, false);
+	browser_window_create(url, bw, NULL, false, false);
+
+	return TRUE;
+}
+
+MENUHANDLER(new_tab)
+{
+	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
+	struct browser_window *bw = nsgtk_get_browser_for_gui(gw->top_level);
+	const char *url = gtk_entry_get_text(GTK_ENTRY(gw->url_bar));
+
+	browser_window_create(url, bw, NULL, false, true);
 
 	return TRUE;
 }
@@ -880,6 +911,20 @@ MENUHANDLER(global_history)
 	return TRUE;
 }
 
+MENUHANDLER(next_tab)
+{
+	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
+
+	gtk_notebook_next_page(gw->notebook);
+}
+
+MENUHANDLER(prev_tab)
+{
+	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
+
+	gtk_notebook_prev_page(gw->notebook);
+}
+
 MENUHANDLER(about)
 {
 	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
@@ -947,17 +992,17 @@ static gboolean do_scroll_event(GtkWidget *widget, GdkEvent *ev,
 }
 
 void nsgtk_attach_toplevel_viewport(nsgtk_scaffolding *g,
-                                    GtkViewport *vp)
+                                    GtkWidget *sw)
 {
         GtkWidget *scrollbar;
 
         /* Insert the viewport into the right part of our table */
         GtkTable *table = GTK_TABLE(GET_WIDGET("centreTable"));
         LOG(("Attaching viewport to scaffolding %p", g));
-        gtk_table_attach_defaults(table, GTK_WIDGET(vp), 0, 1, 0, 1);
+/*        gtk_table_attach_defaults(table, GTK_WIDGET(vp), 0, 1, 0, 1);
 
         /* connect our scrollbars to the viewport */
-	scrollbar = GET_WIDGET("coreScrollHorizontal");
+/*	scrollbar = GET_WIDGET("coreScrollHorizontal");
 	gtk_viewport_set_hadjustment(vp,
 		gtk_range_get_adjustment(GTK_RANGE(scrollbar)));
         g_object_set_data(G_OBJECT(vp), "hScroll", scrollbar);
@@ -971,8 +1016,9 @@ void nsgtk_attach_toplevel_viewport(nsgtk_scaffolding *g,
         gdk_window_set_accept_focus (GTK_WIDGET(vp)->window, TRUE);
 
         /* And set the size-request to zero to cause it to get its act together */
-	gtk_widget_set_size_request(GTK_WIDGET(vp), 0, 0);
+//	gtk_widget_set_size_request(GTK_WIDGET(vp), 0, 0);
 
+	gtk_table_attach_defaults(table, sw, 0, 1, 0, 1);
 }
 
 nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
@@ -991,10 +1037,12 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	g->xml = glade_xml_new(glade_file_location, "wndBrowser", NULL);
 	glade_xml_signal_autoconnect(g->xml);
 	g->window = GTK_WINDOW(GET_WIDGET("wndBrowser"));
+	g->notebook = GTK_NOTEBOOK(GET_WIDGET("notebook"));
 	g->url_bar = GTK_ENTRY(GET_WIDGET("URLBar"));
 	g->menu_bar = GTK_MENU_BAR(GET_WIDGET("menubar"));
 	g->status_bar = GTK_LABEL(GET_WIDGET("statusBar"));
 	g->edit_menu = GTK_MENU(GET_WIDGET("menumain_edit"));
+	g->tabs_menu = GTK_MENU_ITEM(GET_WIDGET("menuitem_tabs"));
 	g->tool_bar = GTK_TOOLBAR(GET_WIDGET("toolbar"));
 	g->back_button = GTK_TOOL_BUTTON(GET_WIDGET("toolBack"));
 	g->forward_button = GTK_TOOL_BUTTON(GET_WIDGET("toolForward"));
@@ -1019,6 +1067,8 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	} else {
 		gtk_window_set_default_size(g->window, 600, 600);
 	}
+
+	nsgtk_tab_init(g->notebook);
 
 	/* set the size of the hpane with status bar and h scrollbar */
 	gtk_paned_set_position(g->status_pane, option_toolbar_status_width);
@@ -1095,6 +1145,13 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	CONNECT(g->history_window->window, "delete_event",
 		gtk_widget_hide_on_delete, NULL);
 
+	g_signal_connect_swapped(g->notebook, "switch-page",
+		G_CALLBACK(nsgtk_window_update_back_forward), g);
+	g_signal_connect_after(g->notebook, "page-added",
+		G_CALLBACK(nsgtk_window_tabs_num_changed), g);	
+	g_signal_connect_after(g->notebook, "page-removed",
+		G_CALLBACK(nsgtk_window_tabs_num_changed), g);
+	
 	/* connect signals to handlers. */
 	CONNECT(g->window, "delete-event", nsgtk_window_delete_event, NULL);
 	CONNECT(g->window, "destroy", nsgtk_window_destroy_event, g);
@@ -1175,18 +1232,21 @@ void gui_window_set_title(struct gui_window *_g, const char *title)
 	static char suffix[] = " - NetSurf";
   	char nt[strlen(title) + strlen(suffix) + 1];
         struct gtk_scaffolding *g = nsgtk_get_scaffold(_g);
-        if (g->top_level != _g) return;
 
-	if (title == NULL || title[0] == '\0')
-	{
-		gtk_window_set_title(g->window, "NetSurf");
+	nsgtk_tab_set_title(_g, title);
 
-	}
-	else
-	{
-		strcpy(nt, title);
-		strcat(nt, suffix);
-	  	gtk_window_set_title(g->window, nt);
+        if (g->top_level == _g) {
+		if (title == NULL || title[0] == '\0')
+		{
+			gtk_window_set_title(g->window, "NetSurf");
+
+		}
+		else
+		{
+			strcpy(nt, title);
+			strcat(nt, suffix);
+			gtk_window_set_title(g->window, nt);
+		}
 	}
 }
 
@@ -1243,6 +1303,16 @@ gboolean nsgtk_scaffolding_is_busy(struct gtk_scaffolding *scaffold)
 GtkWindow* nsgtk_scaffolding_get_window (struct gui_window *g)
 {
 	return g->scaffold->window;
+}
+
+GtkNotebook* nsgtk_scaffolding_get_notebook (struct gui_window *g)
+{
+	return g->scaffold->notebook;
+}
+
+void nsgtk_scaffolding_set_top_level (struct gui_window *gw)
+{
+	gw->scaffold->top_level = gw;
 }
 
 void nsgtk_scaffolding_popup_menu(struct gtk_scaffolding *g, guint button)

@@ -60,7 +60,7 @@ void ro_uri_message_received(wimp_message *msg)
 
 	xuri_request_uri(0, uri_requested, uri_length, uri_handle, NULL);
 
-	browser_window_create(uri_requested, NULL, 0, true);
+	browser_window_create(uri_requested, NULL, 0, true, false);
 
 	free(uri_requested);
 }

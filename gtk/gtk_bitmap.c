@@ -58,12 +58,8 @@ void *bitmap_create(int width, int height, unsigned int state)
 {
         struct bitmap *bmp = malloc(sizeof(struct bitmap));
 
-// 	if ((state & BITMAP_OPAQUE) != 0)
-// 		bmp->primary = gdk_pixbuf_new(GDK_COLORSPACE_RGB, false,
-// 					       8, width, height);
-// 	else
-		bmp->primary = gdk_pixbuf_new(GDK_COLORSPACE_RGB, true,
-					       8, width, height);
+	bmp->primary = gdk_pixbuf_new(GDK_COLORSPACE_RGB, true,
+				       8, width, height);
 
 	/* fill the pixbuf in with 100% transparent black, as the memory
 	 * won't have been cleared.
@@ -289,7 +285,10 @@ gtk_bitmap_generate_pretile(GdkPixbuf *primary, int repeat_x, int repeat_y)
 GdkPixbuf *
 gtk_bitmap_get_primary(struct bitmap *bitmap)
 {
-	return bitmap->primary;
+	if (bitmap != NULL)
+ 		return bitmap->primary;
+ 	else
+ 		return NULL;
 }
 
 /**

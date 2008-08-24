@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Rob Kendrick <rjek@rjek.com>
+ * Copyright 2008 Michael Lester <element3260@gmail.com>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,29 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __NSGTK_HISTORY_H__
-#define __NSGTK_HISTORY_H__
+#ifndef _NETSURF_GTK_TABS_H_
+#define _NETSURF_GTK_TABS_H_
 
-#include <gtk/gtk.h>
+void nsgtk_tab_init();
+void nsgtk_tab_add(struct gui_window *window);
+void nsgtk_tab_set_title(struct gui_window *g, const char *title);
 
-extern GtkWindow *wndHistory;
-
-
-struct history_model {
-	GtkListStore *history_list;
-	GtkTreeModel *history_filter;
-		GtkTreeModel *site_filter;
-			GtkTreeModel *site_sort;
-			GtkTreeView *site_treeview;
-			GtkTreeSelection *site_selection;
-	GtkListStore *domain_list;	
-		GtkTreeModel *domain_filter;
-			GHashTable *domain_hash;
-			GtkTreeModel *domain_sort;
-			GtkTreeView *domain_treeview;
-			GtkTreeSelection *domain_selection;
-};
-
-void nsgtk_history_init(void);
-
-#endif /* __NSGTK_HISTORY_H__ */
+#endif

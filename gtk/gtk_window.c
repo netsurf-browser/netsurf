@@ -27,6 +27,7 @@
 #include "gtk/gtk_scaffolding.h"
 #include "gtk/gtk_plotters.h"
 #include "gtk/gtk_schedule.h"
+#include "gtk/gtk_tabs.h"
 #undef NDEBUG
 #include "utils/log.h"
 #include "utils/utils.h"
@@ -79,7 +80,8 @@ float nsgtk_get_scale_for_gui(struct gui_window *g)
 
 /* Create a gui_window */
 struct gui_window *gui_create_browser_window(struct browser_window *bw,
-                                             struct browser_window *clone)
+                                             struct browser_window *clone,
+                                             bool new_tab)
 {
 	struct gui_window *g;		/**< what we're creating to return */
         GtkPolicyType scrollpolicy;
@@ -114,13 +116,15 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
         g->prev = NULL;
         window_list = g;
 
-        if (bw->parent != NULL) {
+        if (bw->parent != NULL) 
                 /* Find our parent's scaffolding */
                 g->scaffold = bw->parent->window->scaffold;
-        } else {
+        else if (new_tab)
+        	g->scaffold = clone->window->scaffold;
+        else 
                 /* Now construct and attach a scaffold */
                 g->scaffold = nsgtk_new_scaffolding(g);
-        }
+        
 
         /* Construct our primary elements */
         g->fixed = GTK_FIXED(gtk_fixed_new());
@@ -128,32 +132,28 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
         gtk_fixed_put(g->fixed, GTK_WIDGET(g->drawing_area), 0, 0);
         gtk_container_set_border_width(GTK_CONTAINER(g->fixed), 0);
 
-        if (bw->parent != NULL ) {
-                g->scrolledwindow = GTK_SCROLLED_WINDOW(gtk_scrolled_window_new(NULL, NULL));
-                gtk_scrolled_window_add_with_viewport(g->scrolledwindow,
-                                                      GTK_WIDGET(g->fixed));
-                gtk_scrolled_window_set_shadow_type(g->scrolledwindow,
-                                                    GTK_SHADOW_NONE);
-                g->viewport = GTK_VIEWPORT(gtk_bin_get_child(GTK_BIN(g->scrolledwindow)));
-                /* Attach ourselves into our parent at the right point */
+	g->scrolledwindow = GTK_SCROLLED_WINDOW(gtk_scrolled_window_new(NULL, NULL));
+	g_object_set_data(G_OBJECT(g->scrolledwindow), "gui_window", g);
+	gtk_scrolled_window_add_with_viewport(g->scrolledwindow,
+					      GTK_WIDGET(g->fixed));
+	gtk_scrolled_window_set_shadow_type(g->scrolledwindow,
+					    GTK_SHADOW_NONE);
+	g->viewport = GTK_VIEWPORT(gtk_bin_get_child(GTK_BIN(g->scrolledwindow)));
+	g->tab = NULL;
+	
+        if (bw->parent != NULL) 
+        	/* Attach ourselves into our parent at the right point */
                 nsgtk_gui_window_attach_child(bw->parent->window, g);
-        } else {
-                g->scrolledwindow = 0;
-                g->viewport = GTK_VIEWPORT(gtk_viewport_new(NULL, NULL)); /* Need to attach adjustments */
-                gtk_container_add(GTK_CONTAINER(g->viewport), GTK_WIDGET(g->fixed));
-
+	else
                 /* Attach our viewport into the scaffold */
-                nsgtk_attach_toplevel_viewport(g->scaffold, g->viewport);
-        }
+        	nsgtk_tab_add(g);
 
         gtk_container_set_border_width(GTK_CONTAINER(g->viewport), 0);
         gtk_viewport_set_shadow_type(g->viewport, GTK_SHADOW_NONE);
         if (g->scrolledwindow)
                 gtk_widget_show(GTK_WIDGET(g->scrolledwindow));
         /* And enable visibility from our viewport down */
-        gtk_widget_show(GTK_WIDGET(g->viewport));
-        gtk_widget_show(GTK_WIDGET(g->fixed));
-        gtk_widget_show(GTK_WIDGET(g->drawing_area));
+        gtk_widget_show_all(GTK_WIDGET(g->viewport));
 
         switch(bw->scrolling) {
         case SCROLLING_NO:

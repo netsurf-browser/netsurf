@@ -1580,7 +1580,7 @@ bool ro_gui_tree_launch_node(struct tree *tree, struct node *node)
 
 	element = tree_find_element(node, TREE_ELEMENT_URL);
 	if (element) {
-		browser_window_create(element->text, NULL, 0, true);
+		browser_window_create(element->text, NULL, 0, true, false);
 		return true;
 	}
 

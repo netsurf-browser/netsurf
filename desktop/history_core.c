@@ -454,7 +454,7 @@ void history_go(struct browser_window *bw, struct history *history,
 	if (new_window) {
 		current = history->current;
 		history->current = entry;
-		browser_window_create(url, bw, 0, false);
+		browser_window_create(url, bw, 0, false, false);
 		history->current = current;
 	} else {
 		history->current = entry;

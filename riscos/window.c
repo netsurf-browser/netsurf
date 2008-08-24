@@ -169,7 +169,7 @@ struct update_box *pending_updates;
  */
 
 struct gui_window *gui_create_browser_window(struct browser_window *bw,
-		struct browser_window *clone)
+		struct browser_window *clone, bool new_tab)
 {
 	int screen_width, screen_height, win_width, win_height, scroll_width;
 	static int window_count = 2;
@@ -2114,7 +2114,7 @@ bool ro_gui_toolbar_click(wimp_pointer *pointer)
 		case ICON_TOOLBAR_BACK:
 			if (pointer->buttons == wimp_CLICK_ADJUST) {
 				new_bw = browser_window_create(NULL,
-						g->bw, NULL, false);
+						g->bw, NULL, false, false);
 				ro_gui_menu_handle_action(new_bw->window->window,
 						BROWSER_NAVIGATE_BACK, true);
 			} else {
@@ -2126,7 +2126,7 @@ bool ro_gui_toolbar_click(wimp_pointer *pointer)
 		case ICON_TOOLBAR_FORWARD:
 			if (pointer->buttons == wimp_CLICK_ADJUST) {
 				new_bw = browser_window_create(NULL,
-						g->bw, NULL, false);
+						g->bw, NULL, false, false);
 				ro_gui_menu_handle_action(new_bw->window->window,
 						BROWSER_NAVIGATE_FORWARD, true);
 			} else {
@@ -2197,7 +2197,8 @@ bool ro_gui_toolbar_click(wimp_pointer *pointer)
 			if (pointer->buttons == wimp_CLICK_ADJUST) {
 				if (g->bw && g->bw->current_content) {
 					new_bw = browser_window_create(NULL,
-							g->bw, NULL, false);
+							g->bw, NULL, false,
+							false);
 					/* do it without loading the content into the new window */
 					ro_gui_window_navigate_up(new_bw->window,
 							g->bw->current_content->url);

@@ -63,7 +63,7 @@ S_GTK := font_pango.c gtk_bitmap.c gtk_gui.c gtk_schedule.c		\
 	gtk_thumbnail.c gtk_plotters.c gtk_treeview.c gtk_scaffolding.c \
 	gtk_completion.c gtk_login.c gtk_throbber.c gtk_selection.c	\
 	gtk_history.c gtk_window.c gtk_filetype.c gtk_download.c	\
-	gtk_print.c							\
+	gtk_print.c gtk_tabs.c						\
 	$(addprefix dialogs/,gtk_options.c gtk_about.c)
 S_GTK := $(addprefix gtk/,$(S_GTK))
 

@@ -140,7 +140,7 @@ static void browser_window_scroll_box(struct browser_window *bw,
 
 struct browser_window *browser_window_create(const char *url,
 		struct browser_window *clone,
-		const char *referer, bool history_add)
+		const char *referer, bool history_add, bool new_tab)
 {
 	struct browser_window *bw;
 
@@ -156,12 +156,12 @@ struct browser_window *browser_window_create(const char *url,
 
 	/* window characteristics */
 	bw->browser_window_type = BROWSER_WINDOW_NORMAL;
-	bw->scrolling = SCROLLING_YES;
+	bw->scrolling = SCROLLING_AUTO;
 	bw->border = true;
 	bw->no_resize = true;
 
 	/* gui window */
-	if ((bw->window = gui_create_browser_window(bw, clone)) == NULL) {
+	if ((bw->window = gui_create_browser_window(bw, clone, new_tab)) == NULL) {
 		browser_window_destroy(bw);
 		return NULL;
 	}
@@ -1096,7 +1096,7 @@ struct browser_window *browser_window_find_target(struct browser_window *bw, con
 
 	/* handle reserved keywords */
 	if ((new_window) || ((target == TARGET_BLANK) || (!strcasecmp(target, "_blank")))) {
-		bw_target = browser_window_create(NULL, bw, NULL, false);
+		bw_target = browser_window_create(NULL, bw, NULL, false, false);
 		if (!bw_target)
 			return bw;
 		return bw_target;
@@ -1127,7 +1127,7 @@ struct browser_window *browser_window_find_target(struct browser_window *bw, con
 	/* we require a new window using the target name */
 	if (!option_target_blank)
 		return bw;
-	bw_target = browser_window_create(NULL, bw, NULL, false);
+	bw_target = browser_window_create(NULL, bw, NULL, false, false);
 	if (!bw_target)
 		return bw;
 
@@ -1539,7 +1539,10 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 			/* force download of link */
 			browser_window_go_post(bw, url, 0, 0, false,
 					c->url, true, true, 0);
-
+		} else if (mouse & BROWSER_MOUSE_CLICK_1 &&
+				mouse & BROWSER_MOUSE_MOD_2) {
+			/* open link in new tab */
+			browser_window_create(url, bw, c->url, true, true); 
 		} else if (mouse & BROWSER_MOUSE_CLICK_2 &&
 				mouse & BROWSER_MOUSE_MOD_1) {
 			free(browser_window_href_content.url);

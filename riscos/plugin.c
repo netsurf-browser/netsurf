@@ -930,7 +930,8 @@ void plugin_url_access(wimp_message *message)
 			else if (!option_block_popups &&
 					strcasecmp(window, "_blank") == 0) {
 				/* don't do this if popups are blocked */
-				browser_window_create(url, NULL, 0, true);
+				browser_window_create(url, NULL, 0, true,
+						false);
 			}
 		}
 		else { /* POST request */

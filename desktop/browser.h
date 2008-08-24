@@ -214,7 +214,7 @@ extern bool browser_reformat_pending;
 
 struct browser_window * browser_window_create(const char *url,
 		struct browser_window *clone, const char *referer,
-		bool history_add);
+		bool history_add, bool new_tab);
 void browser_window_initialise_common(struct browser_window *bw,
 		struct browser_window *clone);
 void browser_window_go(struct browser_window *bw, const char *url,

@@ -1,6 +1,7 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
+<!--Generated with glade3 3.4.5 on Mon Aug 11 01:54:25 2008 -->
 <glade-interface>
-  <requires-version lib="gtk+" version="2.12"/>
   <widget class="GtkWindow" id="wndBrowser">
     <property name="title" translatable="yes">NetSurf</property>
     <property name="window_position">GTK_WIN_POS_CENTER</property>
@@ -23,6 +24,7 @@
                         <property name="tooltip" translatable="yes">Opens a new browser window.</property>
                         <property name="label" translatable="yes">_New Window</property>
                         <property name="use_underline">True</property>
+                        <accelerator key="n" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                         <child internal-child="image">
                           <widget class="GtkImage" id="image554">
                             <property name="visible">True</property>
@@ -30,7 +32,22 @@
                             <property name="icon_size">1</property>
                           </widget>
                         </child>
-                        <accelerator key="N" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkImageMenuItem" id="new_tab">
+                        <property name="visible">True</property>
+                        <property name="tooltip" translatable="yes">Opens a new browser tab.</property>
+                        <property name="label" translatable="yes">New _Tab</property>
+                        <property name="use_underline">True</property>
+                        <accelerator key="t" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+                        <child internal-child="image">
+                          <widget class="GtkImage" id="menu-item-image25">
+                            <property name="visible">True</property>
+                            <property name="stock">gtk-new</property>
+                            <property name="icon_size">1</property>
+                          </widget>
+                        </child>
                       </widget>
                     </child>
                     <child>
@@ -39,6 +56,7 @@
                         <property name="tooltip" translatable="yes">Open a file on your computer into this browser window.</property>
                         <property name="label" translatable="yes">_Open File...</property>
                         <property name="use_underline">True</property>
+                        <accelerator key="o" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                         <child internal-child="image">
                           <widget class="GtkImage" id="image555">
                             <property name="visible">True</property>
@@ -46,7 +64,6 @@
                             <property name="icon_size">1</property>
                           </widget>
                         </child>
-                        <accelerator key="F" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
                     <child>
@@ -55,6 +72,7 @@
                         <property name="tooltip" translatable="yes">Close this browser window.</property>
                         <property name="label" translatable="yes">_Close Window</property>
                         <property name="use_underline">True</property>
+                        <accelerator key="w" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                         <child internal-child="image">
                           <widget class="GtkImage" id="image556">
                             <property name="visible">True</property>
@@ -62,7 +80,6 @@
                             <property name="icon_size">1</property>
                           </widget>
                         </child>
-                        <accelerator key="W" signal="activate" modifiers="GDK_SHIFT_MASK | GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
                     <child>
@@ -84,7 +101,6 @@
                             <property name="icon_size">1</property>
                           </widget>
                         </child>
-                        <accelerator key="S" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
                     <child>
@@ -244,7 +260,7 @@
                         <property name="label">gtk-select-all</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                        <accelerator key="a" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                        <accelerator key="a" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                       </widget>
                     </child>
                     <child>
@@ -259,7 +275,7 @@
                         <property name="tooltip" translatable="yes">Find specific text in the current browser window.</property>
                         <property name="label" translatable="yes">_Find...</property>
                         <property name="use_underline">True</property>
-                        <accelerator key="F" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                        <accelerator key="F" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                       </widget>
                     </child>
                     <child>
@@ -298,6 +314,7 @@
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">_Stop</property>
                         <property name="use_underline">True</property>
+                        <accelerator key="Escape" modifiers="" signal="activate"/>
                         <child internal-child="image">
                           <widget class="GtkImage" id="image561">
                             <property name="visible">True</property>
@@ -305,7 +322,6 @@
                             <property name="icon_size">1</property>
                           </widget>
                         </child>
-                        <accelerator key="Escape" signal="activate"/>
                       </widget>
                     </child>
                     <child>
@@ -313,6 +329,7 @@
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">_Reload</property>
                         <property name="use_underline">True</property>
+                        <accelerator key="F5" modifiers="" signal="activate"/>
                         <child internal-child="image">
                           <widget class="GtkImage" id="image562">
                             <property name="visible">True</property>
@@ -320,7 +337,6 @@
                             <property name="icon_size">1</property>
                           </widget>
                         </child>
-                        <accelerator key="F5" signal="activate"/>
                       </widget>
                     </child>
                     <child>
@@ -348,9 +364,6 @@
                                     <property name="icon_size">1</property>
                                   </widget>
                                 </child>
-                                <accelerator key="equal" signal="activate" modifiers="GDK_CONTROL_MASK"/>
-                                <accelerator key="KP_Add" signal="activate" modifiers="GDK_CONTROL_MASK"/>
-                                <accelerator key="plus" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                               </widget>
                             </child>
                             <child>
@@ -365,8 +378,6 @@
                                     <property name="icon_size">1</property>
                                   </widget>
                                 </child>
-                                <accelerator key="KP_0" signal="activate" modifiers="GDK_CONTROL_MASK"/>
-                                <accelerator key="0" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                               </widget>
                             </child>
                             <child>
@@ -381,8 +392,6 @@
                                     <property name="icon_size">1</property>
                                   </widget>
                                 </child>
-                                <accelerator key="KP_Subtract" signal="activate" modifiers="GDK_CONTROL_MASK"/>
-                                <accelerator key="minus" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                               </widget>
                             </child>
                           </widget>
@@ -394,7 +403,6 @@
                             <property name="icon_size">1</property>
                           </widget>
                         </child>
-                        <accelerator key="F11" signal="activate"/>
                       </widget>
                     </child>
                     <child>
@@ -402,6 +410,7 @@
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">_Fullscreen</property>
                         <property name="use_underline">True</property>
+                        <accelerator key="F11" modifiers="" signal="activate"/>
                         <child internal-child="image">
                           <widget class="GtkImage" id="image567">
                             <property name="visible">True</property>
@@ -409,7 +418,6 @@
                             <property name="icon_size">1</property>
                           </widget>
                         </child>
-                        <accelerator key="F11" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
                     <child>
@@ -494,6 +502,7 @@
                         <property name="tooltip" translatable="yes">Shows the downloads window</property>
                         <property name="label" translatable="yes">_Downloads...</property>
                         <property name="use_underline">True</property>
+                        <accelerator key="d" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                       </widget>
                     </child>
                     <child>
@@ -549,6 +558,7 @@
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">_Back</property>
                         <property name="use_underline">True</property>
+                        <accelerator key="Left" modifiers="GDK_MOD1_MASK" signal="activate"/>
                         <child internal-child="image">
                           <widget class="GtkImage" id="image568">
                             <property name="visible">True</property>
@@ -556,7 +566,6 @@
                             <property name="icon_size">1</property>
                           </widget>
                         </child>
-                        <accelerator key="Left" signal="activate" modifiers="GDK_MOD1_MASK"/>
                       </widget>
                     </child>
                     <child>
@@ -564,6 +573,7 @@
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">_Forward</property>
                         <property name="use_underline">True</property>
+                        <accelerator key="Right" modifiers="GDK_MOD1_MASK" signal="activate"/>
                         <child internal-child="image">
                           <widget class="GtkImage" id="image569">
                             <property name="visible">True</property>
@@ -571,7 +581,6 @@
                             <property name="icon_size">1</property>
                           </widget>
                         </child>
-                        <accelerator key="Right" signal="activate" modifiers="GDK_MOD1_MASK"/>
                       </widget>
                     </child>
                     <child>
@@ -579,6 +588,7 @@
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">_Home</property>
                         <property name="use_underline">True</property>
+                        <accelerator key="Down" modifiers="GDK_MOD1_MASK" signal="activate"/>
                         <child internal-child="image">
                           <widget class="GtkImage" id="image570">
                             <property name="visible">True</property>
@@ -586,7 +596,6 @@
                             <property name="icon_size">1</property>
                           </widget>
                         </child>
-                        <accelerator key="Home" signal="activate" modifiers="GDK_MOD1_MASK"/>
                       </widget>
                     </child>
                     <child>
@@ -600,7 +609,7 @@
                         <property name="tooltip" translatable="yes">Show the history tree for this browser window.</property>
                         <property name="label" translatable="yes">_Local history...</property>
                         <property name="use_underline">True</property>
-                        <accelerator key="F7" signal="activate"/>
+                        <accelerator key="H" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                       </widget>
                     </child>
                     <child>
@@ -609,7 +618,7 @@
                         <property name="tooltip" translatable="yes">Show the history tree for all windows.</property>
                         <property name="label" translatable="yes">_Global history...</property>
                         <property name="use_underline">True</property>
-                        <accelerator key="F7" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                        <accelerator key="h" modifiers="GDK_SHIFT_MASK | GDK_CONTROL_MASK" signal="activate"/>
                       </widget>
                     </child>
                     <child>
@@ -633,7 +642,7 @@
                         <property name="tooltip" translatable="yes">Open a window showing all your bookmarks.</property>
                         <property name="label" translatable="yes">_Show Bookmarks...</property>
                         <property name="use_underline">True</property>
-                        <accelerator key="F6" signal="activate"/>
+                        <accelerator key="F6" modifiers="" signal="activate"/>
                       </widget>
                     </child>
                     <child>
@@ -647,7 +656,36 @@
                         <property name="tooltip" translatable="yes">Open an address into this browser window.</property>
                         <property name="label" translatable="yes">_Open location...</property>
                         <property name="use_underline">True</property>
-                        <accelerator key="L" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                        <accelerator key="L" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+                      </widget>
+                    </child>
+                  </widget>
+                </child>
+              </widget>
+            </child>
+            <child>
+              <widget class="GtkMenuItem" id="menuitem_tabs">
+                <property name="visible">True</property>
+                <property name="label" translatable="yes">_Tabs</property>
+                <property name="use_underline">True</property>
+                <child>
+                  <widget class="GtkMenu" id="menumain_tabs">
+                    <property name="visible">True</property>
+                    <child>
+                      <widget class="GtkMenuItem" id="next_tab">
+                        <property name="visible">True</property>
+                        <property name="border_width">1</property>
+                        <property name="label" translatable="yes">_Next Tab</property>
+                        <property name="use_underline">True</property>
+                        <accelerator key="Right" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkMenuItem" id="prev_tab">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">_Previous Tab</property>
+                        <property name="use_underline">True</property>
+                        <accelerator key="Left" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                       </widget>
                     </child>
                   </widget>
@@ -675,7 +713,6 @@
                             <property name="icon_size">1</property>
                           </widget>
                         </child>
-                        <accelerator key="F1" signal="activate"/>
                       </widget>
                     </child>
                     <child>
@@ -811,20 +848,57 @@
             <property name="n_rows">3</property>
             <property name="n_columns">2</property>
             <child>
-              <placeholder/>
-            </child>
-            <child>
-              <widget class="GtkStatusbar" id="statusbar1">
-                <property name="height_request">1</property>
+              <widget class="GtkNotebook" id="notebook">
                 <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="show_tabs">False</property>
+                <property name="show_border">False</property>
+                <property name="scrollable">True</property>
+                <child>
+                  <placeholder/>
+                </child>
+                <child>
+                  <widget class="GtkLabel" id="label1">
+                    <property name="visible">True</property>
+                    <property name="label" translatable="yes">page 1</property>
+                  </widget>
+                  <packing>
+                    <property name="type">tab</property>
+                    <property name="tab_fill">False</property>
+                  </packing>
+                </child>
+                <child>
+                  <placeholder/>
+                </child>
+                <child>
+                  <widget class="GtkLabel" id="label2">
+                    <property name="visible">True</property>
+                    <property name="label" translatable="yes">page 2</property>
+                  </widget>
+                  <packing>
+                    <property name="type">tab</property>
+                    <property name="position">1</property>
+                    <property name="tab_fill">False</property>
+                  </packing>
+                </child>
+                <child>
+                  <placeholder/>
+                </child>
+                <child>
+                  <widget class="GtkLabel" id="label3">
+                    <property name="visible">True</property>
+                    <property name="label" translatable="yes">page 3</property>
+                  </widget>
+                  <packing>
+                    <property name="type">tab</property>
+                    <property name="position">2</property>
+                    <property name="tab_fill">False</property>
+                  </packing>
+                </child>
               </widget>
               <packing>
-                <property name="left_attach">1</property>
                 <property name="right_attach">2</property>
-                <property name="top_attach">2</property>
-                <property name="bottom_attach">3</property>
-                <property name="x_options">GTK_FILL</property>
-                <property name="y_options">GTK_SHRINK | GTK_FILL</property>
+                <property name="bottom_attach">2</property>
               </packing>
             </child>
             <child>
@@ -845,14 +919,7 @@
                   </packing>
                 </child>
                 <child>
-                  <widget class="GtkHScrollbar" id="coreScrollHorizontal">
-                    <property name="visible">True</property>
-                    <property name="adjustment">0 0 100 1 10 0</property>
-                  </widget>
-                  <packing>
-                    <property name="resize">False</property>
-                    <property name="shrink">True</property>
-                  </packing>
+                  <placeholder/>
                 </child>
               </widget>
               <packing>
@@ -862,25 +929,17 @@
               </packing>
             </child>
             <child>
-              <widget class="GtkVScrollbar" id="coreScrollVertical">
+              <widget class="GtkStatusbar" id="statusbar1">
+                <property name="height_request">1</property>
                 <property name="visible">True</property>
-                <property name="adjustment">0 0 100 1 10 0</property>
               </widget>
               <packing>
                 <property name="left_attach">1</property>
                 <property name="right_attach">2</property>
-                <property name="bottom_attach">2</property>
+                <property name="top_attach">2</property>
+                <property name="bottom_attach">3</property>
                 <property name="x_options">GTK_FILL</property>
-              </packing>
-            </child>
-            <child>
-              <widget class="GtkHSeparator" id="hseparator3">
-                <property name="visible">True</property>
-              </widget>
-              <packing>
-                <property name="top_attach">1</property>
-                <property name="bottom_attach">2</property>
-                <property name="y_options">GTK_FILL</property>
+                <property name="y_options">GTK_SHRINK | GTK_FILL</property>
               </packing>
             </child>
           </widget>
@@ -924,75 +983,18 @@
                 <property name="column_spacing">11</property>
                 <property name="row_spacing">10</property>
                 <child>
-                  <widget class="GtkLabel" id="labelLoginHost">
+                  <widget class="GtkEntry" id="entryLoginUser">
                     <property name="visible">True</property>
-                    <property name="xalign">0</property>
-                    <property name="label" translatable="yes">moo.yoo.com</property>
+                    <property name="can_focus">True</property>
+                    <property name="has_focus">True</property>
+                    <property name="text" translatable="yes">sesame</property>
                   </widget>
                   <packing>
                     <property name="left_attach">1</property>
                     <property name="right_attach">2</property>
-                    <property name="x_options">GTK_FILL</property>
-                  </packing>
-                </child>
-                <child>
-                  <widget class="GtkLabel" id="label57">
-                    <property name="visible">True</property>
-                    <property name="xalign">0</property>
-                    <property name="label" translatable="yes">Password</property>
-                  </widget>
-                  <packing>
-                    <property name="top_attach">3</property>
-                    <property name="bottom_attach">4</property>
-                    <property name="x_options">GTK_FILL</property>
-                  </packing>
-                </child>
-                <child>
-                  <widget class="GtkLabel" id="label56">
-                    <property name="visible">True</property>
-                    <property name="xalign">0</property>
-                    <property name="label" translatable="yes">Username</property>
-                  </widget>
-                  <packing>
                     <property name="top_attach">2</property>
                     <property name="bottom_attach">3</property>
-                    <property name="x_options">GTK_FILL</property>
-                  </packing>
-                </child>
-                <child>
-                  <widget class="GtkLabel" id="label54">
-                    <property name="visible">True</property>
-                    <property name="xalign">0</property>
-                    <property name="label" translatable="yes">Host</property>
-                  </widget>
-                  <packing>
-                    <property name="x_options">GTK_FILL</property>
-                  </packing>
-                </child>
-                <child>
-                  <widget class="GtkLabel" id="label55">
-                    <property name="visible">True</property>
-                    <property name="xalign">0</property>
-                    <property name="label" translatable="yes">Realm</property>
-                  </widget>
-                  <packing>
-                    <property name="top_attach">1</property>
-                    <property name="bottom_attach">2</property>
-                    <property name="x_options">GTK_FILL</property>
-                  </packing>
-                </child>
-                <child>
-                  <widget class="GtkLabel" id="labelLoginRealm">
-                    <property name="visible">True</property>
-                    <property name="xalign">0</property>
-                    <property name="label" translatable="yes">my sekr3t area</property>
-                  </widget>
-                  <packing>
-                    <property name="left_attach">1</property>
-                    <property name="right_attach">2</property>
-                    <property name="top_attach">1</property>
-                    <property name="bottom_attach">2</property>
-                    <property name="x_options">GTK_FILL</property>
+                    <property name="y_options"></property>
                   </packing>
                 </child>
                 <child>
@@ -1012,18 +1014,75 @@
                   </packing>
                 </child>
                 <child>
-                  <widget class="GtkEntry" id="entryLoginUser">
+                  <widget class="GtkLabel" id="labelLoginRealm">
                     <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="has_focus">True</property>
-                    <property name="text" translatable="yes">sesame</property>
+                    <property name="xalign">0</property>
+                    <property name="label" translatable="yes">my sekr3t area</property>
                   </widget>
                   <packing>
                     <property name="left_attach">1</property>
                     <property name="right_attach">2</property>
+                    <property name="top_attach">1</property>
+                    <property name="bottom_attach">2</property>
+                    <property name="x_options">GTK_FILL</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkLabel" id="label55">
+                    <property name="visible">True</property>
+                    <property name="xalign">0</property>
+                    <property name="label" translatable="yes">Realm</property>
+                  </widget>
+                  <packing>
+                    <property name="top_attach">1</property>
+                    <property name="bottom_attach">2</property>
+                    <property name="x_options">GTK_FILL</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkLabel" id="label54">
+                    <property name="visible">True</property>
+                    <property name="xalign">0</property>
+                    <property name="label" translatable="yes">Host</property>
+                  </widget>
+                  <packing>
+                    <property name="x_options">GTK_FILL</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkLabel" id="label56">
+                    <property name="visible">True</property>
+                    <property name="xalign">0</property>
+                    <property name="label" translatable="yes">Username</property>
+                  </widget>
+                  <packing>
                     <property name="top_attach">2</property>
                     <property name="bottom_attach">3</property>
-                    <property name="y_options"></property>
+                    <property name="x_options">GTK_FILL</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkLabel" id="label57">
+                    <property name="visible">True</property>
+                    <property name="xalign">0</property>
+                    <property name="label" translatable="yes">Password</property>
+                  </widget>
+                  <packing>
+                    <property name="top_attach">3</property>
+                    <property name="bottom_attach">4</property>
+                    <property name="x_options">GTK_FILL</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkLabel" id="labelLoginHost">
+                    <property name="visible">True</property>
+                    <property name="xalign">0</property>
+                    <property name="label" translatable="yes">moo.yoo.com</property>
+                  </widget>
+                  <packing>
+                    <property name="left_attach">1</property>
+                    <property name="right_attach">2</property>
+                    <property name="x_options">GTK_FILL</property>
                   </packing>
                 </child>
               </widget>
@@ -1295,166 +1354,6 @@
           <packing>
             <property name="expand">False</property>
             <property name="pack_type">GTK_PACK_END</property>
-          </packing>
-        </child>
-      </widget>
-    </child>
-  </widget>
-  <widget class="GtkWindow" id="wndHistory">
-    <property name="width_request">400</property>
-    <property name="height_request">500</property>
-    <property name="title" translatable="yes">NetSurf Global History</property>
-    <property name="window_position">GTK_WIN_POS_CENTER</property>
-    <property name="type_hint">GDK_WINDOW_TYPE_HINT_UTILITY</property>
-    <signal name="delete_event" handler="gtk_widget_hide"/>
-    <child>
-      <widget class="GtkVBox" id="vbox28">
-        <property name="visible">True</property>
-        <child>
-          <widget class="GtkScrolledWindow" id="scrolledwindow2">
-            <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="hscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
-            <property name="vscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
-            <property name="shadow_type">GTK_SHADOW_IN</property>
-            <child>
-              <widget class="GtkTreeView" id="treeHistory">
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="headers_visible">False</property>
-                <property name="rules_hint">True</property>
-                <signal name="row_activated" handler="nsgtk_history_row_activated"/>
-              </widget>
-            </child>
-          </widget>
-        </child>
-        <child>
-          <widget class="GtkExpander" id="expander1">
-            <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="expanded">True</property>
-            <child>
-              <widget class="GtkHBox" id="hbox25">
-                <property name="visible">True</property>
-                <child>
-                  <widget class="GtkImage" id="image400">
-                    <property name="visible">True</property>
-                    <property name="yalign">0</property>
-                    <property name="xpad">5</property>
-                    <property name="ypad">5</property>
-                    <property name="stock">gtk-missing-image</property>
-                  </widget>
-                  <packing>
-                    <property name="expand">False</property>
-                  </packing>
-                </child>
-                <child>
-                  <widget class="GtkTable" id="table11">
-                    <property name="visible">True</property>
-                    <property name="border_width">2</property>
-                    <property name="n_rows">3</property>
-                    <property name="n_columns">2</property>
-                    <property name="column_spacing">4</property>
-                    <child>
-                      <widget class="GtkLabel" id="labelHistoryAddress">
-                        <property name="visible">True</property>
-                        <property name="xalign">0</property>
-                        <property name="label" translatable="yes">http://netsurf.sf.net/</property>
-                        <property name="ellipsize">PANGO_ELLIPSIZE_MIDDLE</property>
-                      </widget>
-                      <packing>
-                        <property name="left_attach">1</property>
-                        <property name="right_attach">2</property>
-                        <property name="y_options"></property>
-                      </packing>
-                    </child>
-                    <child>
-                      <widget class="GtkLabel" id="labelHistoryLastVisit">
-                        <property name="visible">True</property>
-                        <property name="xalign">0</property>
-                        <property name="label" translatable="yes">Fri Aug 09 00:00:00 2006</property>
-                        <property name="ellipsize">PANGO_ELLIPSIZE_END</property>
-                      </widget>
-                      <packing>
-                        <property name="left_attach">1</property>
-                        <property name="right_attach">2</property>
-                        <property name="top_attach">1</property>
-                        <property name="bottom_attach">2</property>
-                        <property name="y_options"></property>
-                      </packing>
-                    </child>
-                    <child>
-                      <widget class="GtkLabel" id="labelHistoryVisits">
-                        <property name="visible">True</property>
-                        <property name="xalign">0</property>
-                        <property name="label" translatable="yes">2</property>
-                        <property name="ellipsize">PANGO_ELLIPSIZE_END</property>
-                      </widget>
-                      <packing>
-                        <property name="left_attach">1</property>
-                        <property name="right_attach">2</property>
-                        <property name="top_attach">2</property>
-                        <property name="bottom_attach">3</property>
-                        <property name="y_options"></property>
-                      </packing>
-                    </child>
-                    <child>
-                      <widget class="GtkLabel" id="label119">
-                        <property name="visible">True</property>
-                        <property name="xalign">1</property>
-                        <property name="label" translatable="yes">Number of visits</property>
-                      </widget>
-                      <packing>
-                        <property name="top_attach">2</property>
-                        <property name="bottom_attach">3</property>
-                        <property name="x_options">GTK_FILL</property>
-                        <property name="y_options"></property>
-                      </packing>
-                    </child>
-                    <child>
-                      <widget class="GtkLabel" id="label118">
-                        <property name="visible">True</property>
-                        <property name="xalign">1</property>
-                        <property name="label" translatable="yes">Last visited</property>
-                      </widget>
-                      <packing>
-                        <property name="top_attach">1</property>
-                        <property name="bottom_attach">2</property>
-                        <property name="x_options">GTK_FILL</property>
-                        <property name="y_options"></property>
-                      </packing>
-                    </child>
-                    <child>
-                      <widget class="GtkLabel" id="label117">
-                        <property name="visible">True</property>
-                        <property name="xalign">1</property>
-                        <property name="label" translatable="yes">Address</property>
-                      </widget>
-                      <packing>
-                        <property name="x_options">GTK_FILL</property>
-                        <property name="y_options"></property>
-                      </packing>
-                    </child>
-                  </widget>
-                  <packing>
-                    <property name="position">1</property>
-                  </packing>
-                </child>
-              </widget>
-            </child>
-            <child>
-              <widget class="GtkLabel" id="label116">
-                <property name="visible">True</property>
-                <property name="label" translatable="yes">Details</property>
-              </widget>
-              <packing>
-                <property name="type">label_item</property>
-              </packing>
-            </child>
-          </widget>
-          <packing>
-            <property name="expand">False</property>
-            <property name="position">1</property>
           </packing>
         </child>
       </widget>

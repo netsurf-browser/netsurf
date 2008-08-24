@@ -1516,7 +1516,7 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 		case BROWSER_NEW_WINDOW:
 			if (!c)
 				return false;
-			browser_window_create(c->url, bw, 0, false);
+			browser_window_create(c->url, bw, 0, false, false);
 			return true;
 		case BROWSER_VIEW_SOURCE:
 			if (!c)

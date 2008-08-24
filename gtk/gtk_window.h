@@ -43,6 +43,7 @@ struct gui_window {
          * for frames which need it. Otherwise we just use
          * a viewport.
          */
+        GtkWidget		*tab;
         GtkScrolledWindow	*scrolledwindow;
 	GtkViewport		*viewport;
         GtkFixed                *fixed;

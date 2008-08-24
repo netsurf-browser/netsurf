@@ -107,6 +107,8 @@ bool gui_commit_clipboard(void)
 {
 	clipboard = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
 	gtk_clipboard_set_text(clipboard, current_selection->str, -1);
+	gui_empty_clipboard();
+	
 	return true;
 }
  

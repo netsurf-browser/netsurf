@@ -93,7 +93,7 @@ void browser_window_create_iframes(struct browser_window *bw,
 		window->parent = bw;
 
 		/* gui window */
-		window->window = gui_create_browser_window(window, bw);
+		window->window = gui_create_browser_window(window, bw, false);
 	}
 
 	/* calculate dimensions */
@@ -201,7 +201,7 @@ void browser_window_create_frameset(struct browser_window *bw,
 			window->parent = bw;
 
 			/* gui window */
-			window->window = gui_create_browser_window(window, bw);
+			window->window = gui_create_browser_window(window, bw, false);
 
 			if (window->name)
 				LOG(("Created frame '%s'", window->name));
