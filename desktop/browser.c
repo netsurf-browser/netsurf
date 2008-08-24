@@ -156,7 +156,7 @@ struct browser_window *browser_window_create(const char *url,
 
 	/* window characteristics */
 	bw->browser_window_type = BROWSER_WINDOW_NORMAL;
-	bw->scrolling = SCROLLING_AUTO;
+	bw->scrolling = SCROLLING_YES;
 	bw->border = true;
 	bw->no_resize = true;
 
@@ -631,7 +631,7 @@ void browser_window_convert_to_download(struct browser_window *bw)
 	if (fetch) {
 		/* create download window */
 		download_window = gui_download_window_create(c->url,
-				c->mime_type, fetch, c->total_size, 
+				c->mime_type, fetch, c->total_size,
 				bw->window);
 
 		if (download_window) {
@@ -1542,7 +1542,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 		} else if (mouse & BROWSER_MOUSE_CLICK_1 &&
 				mouse & BROWSER_MOUSE_MOD_2) {
 			/* open link in new tab */
-			browser_window_create(url, bw, c->url, true, true); 
+			browser_window_create(url, bw, c->url, true, true);
 		} else if (mouse & BROWSER_MOUSE_CLICK_2 &&
 				mouse & BROWSER_MOUSE_MOD_1) {
 			free(browser_window_href_content.url);
@@ -1843,7 +1843,7 @@ void browser_window_mouse_track_html(struct browser_window *bw,
 				size_t idx;
 				nsfont.font_position_in_string(box->style,
 						box->text, box->length,
-						dx, &idx, &pixel_offset);	 
+						dx, &idx, &pixel_offset);
 
 				selection_track(bw->sel, mouse,
 						box->byte_offset + idx);
@@ -2197,7 +2197,7 @@ void browser_window_redraw_rect(struct browser_window *bw, int x, int y,
 void browser_redraw_box(struct content *c, struct box *box)
 {
 	int x, y;
-	union content_msg_data data; 
+	union content_msg_data data;
 
 	box_coords(box, &x, &y);
 
