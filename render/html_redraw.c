@@ -174,7 +174,7 @@ bool html_redraw_box(struct box *box,
 	int x0, y0, x1, y1;
 	int x_scrolled, y_scrolled;
 	struct box *bg_box = NULL;
-	
+
 #ifdef WITH_PDF_EXPORT
 	if (html_redraw_printing && box->printed)
 		return true;
@@ -251,7 +251,7 @@ bool html_redraw_box(struct box *box,
 		}
 		else box->printed = true;/*it won't be printed anymore*/
 #endif
-	
+
 	/* if visibility is hidden render children only */
 	if (box->style && box->style->visibility == CSS_VISIBILITY_HIDDEN) {
 	  	if ((plot.group_start) && (!plot.group_start("hidden box")))
@@ -321,7 +321,7 @@ bool html_redraw_box(struct box *box,
 	 *   element is processed, ignore the background.
 	 * + For any other box, just use its own styling.
 	 */
-	
+
 #ifdef WITH_PDF_EXPORT
 	if (!html_redraw_printing ||
 			(html_redraw_printing && !option_remove_backgrounds)) {
@@ -365,7 +365,7 @@ bool html_redraw_box(struct box *box,
 			/* Any other box */
 			bg_box = box;
 		}
-	
+
 		/* bg_box == NULL implies that this box should not have
 		* its background rendered. Otherwise filter out linebreaks,
 		* optimize away non-differing inlines, only plot background
@@ -385,7 +385,7 @@ bool html_redraw_box(struct box *box,
 					x + padding_width + border_right : x1;
 			int py1 = y + padding_height + border_bottom < y1 ?
 					y + padding_height + border_bottom : y1;
-	
+
 			/* valid clipping rectangles only */
 			if ((px0 < px1) && (py0 < py1)) {
 				/* plot background */
@@ -486,7 +486,8 @@ bool html_redraw_box(struct box *box,
 			return false;
 
 	/* scrollbars */
-	if (box->style && box->type != BOX_BR && box->type != BOX_INLINE &&
+	if (box->style && box->type != BOX_BR && box->type != BOX_TABLE &&
+			box->type != BOX_INLINE &&
 			(box->style->overflow == CSS_OVERFLOW_SCROLL ||
 			box->style->overflow == CSS_OVERFLOW_AUTO))
 		if (!html_redraw_scrollbars(box, scale, x, y,
