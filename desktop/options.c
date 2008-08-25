@@ -47,6 +47,8 @@
 #include "gtk/options.h"
 #elif defined(nsbeos)
 #include "beos/options.h"
+#elif defined(nsamiga)
+#include "amiga/options.h"
 #else
 #define EXTRA_OPTION_DEFINE
 #define EXTRA_OPTION_TABLE

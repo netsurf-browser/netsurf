@@ -416,7 +416,7 @@ ifeq ($(TARGET),amiga)
     $(eval $(call feature_enabled,BMP,-DWITH_BMP,-lnsbmp,NetSurf BMP decoder))
     $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif,NetSurf GIF decoder))
 
-  CFLAGS += -mcrt=newlib -D__USE_INLINE__ -std=c99 -I .
+  CFLAGS += -mcrt=newlib -D__USE_INLINE__ -std=c99 -I . -Dnsamiga
   LDFLAGS += -lxml2 -lcurl -lm -lsocket -lpthread -lregex -lauto -lraauto -lssl -lcrypto -lamisslauto -mcrt=newlib
 endif
 
