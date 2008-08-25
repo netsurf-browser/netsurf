@@ -75,3 +75,17 @@ void ami_utf8_free(char *ptr)
 {
 	if(ptr) CodesetsFreeA(ptr,NULL);
 }
+
+char *ami_utf8_easy(char *string)
+{
+	char *localtext;
+
+	if(utf8_to_local_encoding(string,strlen(string),&localtext) == UTF8_CONVERT_OK)
+	{
+		return localtext;
+	}
+	else
+	{
+		return NULL;
+	}
+}

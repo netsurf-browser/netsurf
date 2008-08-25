@@ -16,10 +16,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef AMIGA_UTF8_H
-#define AMIGA_UTF8_H
-//char *ami_utf8_alloc(char *string);
-ULONG ami_utf8_to_any(const char *string, size_t len, char **result);
-void ami_utf8_free(char *ptr);
-char *ami_utf8_easy(char *string);
+#ifndef AMIGA_MENU_H
+#define AMIGA_MENU_H
+#include <exec/types.h>
+
+#define AMI_MENU_MAX 14
+char *menulab[AMI_MENU_MAX];
+
+struct NewMenu *ami_create_menu(ULONG type);
+void ami_init_menulabs(void);
+void ami_free_menulabs(void);
 #endif

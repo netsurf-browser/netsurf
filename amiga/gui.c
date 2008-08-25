@@ -48,6 +48,10 @@
 #include "utils/utf8.h"
 #include "amiga/utf8.h"
 #include "amiga/hotlist.h"
+#include "amiga/menu.h"
+#include "amiga/options.h"
+#include <libraries/keymap.h>
+#include "desktop/textinput.h"
 
 #ifdef WITH_HUBBUB
 #include <hubbub/hubbub.h>
@@ -77,7 +81,6 @@ struct browser_window *curbw;
 char *default_stylesheet_url;
 char *adblock_stylesheet_url;
 struct gui_window *search_current_window = NULL;
-
 struct MinList *window_list;
 
 struct MsgPort *msgport;
@@ -150,7 +153,9 @@ void gui_init(int argc, char** argv)
 
 /* need to do some proper checking that components are opening */
 
-	verbose_log = 0;
+	options_read("Resources/Options");
+
+	verbose_log = option_verbose_log;
 
 	nsscreentitle = ASPrintf("NetSurf %s",netsurf_version);
 
@@ -195,8 +200,6 @@ void gui_init(int argc, char** argv)
 	default_stylesheet_url = "file://NetSurf/Resources/default.css"; //"http://www.unsatisfactorysoftware.co.uk/newlook.css"; //path_to_url(buf);
 	adblock_stylesheet_url = "file://NetSurf/Resources/adblock.css";
 
-	options_read("Resources/Options");
-
 #ifdef WITH_HUBBUB
 	if(hubbub_initialise("Resources/Aliases",myrealloc,NULL) != HUBBUB_OK)
 	{
@@ -207,8 +210,16 @@ void gui_init(int argc, char** argv)
 	if((!option_cookie_file) || (option_cookie_file[0] == '\0'))
 		option_cookie_file = strdup("Resources/Cookies");
 
+	if((!option_hotlist_file) || (option_hotlist_file[0] == '\0'))
+		option_hotlist_file = strdup("Resources/Hotlist");
+
+	if((!option_url_file) || (option_url_file[0] == '\0'))
+		option_url_file = strdup("Resources/URLs");
+
+/*
 	if((!option_cookie_jar) || (option_cookie_jar[0] == '\0'))
 		option_cookie_jar = strdup("Resources/CookieJar");
+*/
 
 	if((!option_ca_bundle) || (option_ca_bundle[0] == '\0'))
 		option_ca_bundle = strdup("devs:curl-ca-bundle.crt");
@@ -225,7 +236,7 @@ void gui_init(int argc, char** argv)
 	if((!option_font_cursive) || (option_font_cursive[0] == '\0'))
 		option_font_cursive = strdup("DejaVu Sans.font");
 
-	if((!option_font_fantasy) || (option_font_cursive[0] == '\0'))
+	if((!option_font_fantasy) || (option_font_fantasy[0] == '\0'))
 		option_font_fantasy = strdup("DejaVu Serif.font");
 
 	if(!option_window_width) option_window_width = 800;
@@ -235,12 +246,14 @@ void gui_init(int argc, char** argv)
 
 	plot=amiplot;
 
+	ami_init_menulabs();
+
 	schedule_list = NewObjList();
 	window_list = NewObjList();
 
-	urldb_load("Resources/URLs");
+	urldb_load(option_url_file);
 	urldb_load_cookies(option_cookie_file);
-	hotlist = options_load_tree("Resources/Hotlist");
+	hotlist = options_load_tree(option_hotlist_file);
 
 	if(!hotlist) ami_hotlist_init(&hotlist);
 }
@@ -261,13 +274,27 @@ void gui_init2(int argc, char** argv)
 
 /* need some bestmodeid() in here, or grab modeid from options file */
 
-	id = p96BestModeIDTags(P96BIDTAG_NominalWidth,option_window_screen_width,
+	if(option_modeid)
+	{
+		id = option_modeid;
+	}
+	else
+	{
+		id = p96BestModeIDTags(P96BIDTAG_NominalWidth,option_window_screen_width,
 					P96BIDTAG_NominalHeight,option_window_screen_height,
 					P96BIDTAG_Depth,32);
 
-	if(id == INVALID_ID) die(messages_get("NoMode"));
+		if(id == INVALID_ID) die(messages_get("NoMode"));
+	}
 
-	scrn = OpenScreenTags(NULL,
+	if(option_use_wb)
+	{
+		scrn = LockPubScreen("Workbench");
+		UnlockPubScreen(NULL,scrn);
+	}
+	else
+	{
+		scrn = OpenScreenTags(NULL,
 							SA_Width,option_window_screen_width,
 							SA_Height,option_window_screen_height,
 							SA_Depth,32,
@@ -275,6 +302,7 @@ void gui_init2(int argc, char** argv)
 							SA_Title,nsscreentitle,
 							SA_LikeWorkbench,TRUE,
 							TAG_DONE);
+	}
 
 	bw = browser_window_create(option_homepage_url, 0, 0, true,false); // curbw = temp
 }
@@ -464,6 +492,14 @@ void ami_get_msg(void)
 									case 1: // paste
 										gui_paste_from_clipboard(gwin,0,0);
 									break;
+
+									case 2: // select all
+										browser_window_key_press(gwin->bw, 1);
+									break;
+
+									case 3: // clear selection
+										browser_window_key_press(gwin->bw, 26);
+									break;
 								}
 							break;
 
@@ -482,7 +518,24 @@ void ami_get_msg(void)
 								}
 							break;
 
+							case 3: // settings
+								switch(itemnum)
+								{
+									case 0: // snapshot
+										option_window_x = gwin->win->LeftEdge;
+										option_window_y = gwin->win->TopEdge;
+										option_window_width = gwin->win->Width;
+										option_window_height = gwin->win->Height;
+									break;
+
+									case 1: // save settings
+										options_write("Resources/Options");
+									break;
+								}
+							break;
+
 						}
+						if(win_destroyed) break;
 						code = item->NextSelect;
 					}
 				break;
@@ -493,6 +546,28 @@ void ami_get_msg(void)
 					//printf("%lx\n",storage);
 
 					browser_window_key_press(gwin->bw,storage);
+				break;
+
+				case WMHI_RAWKEY:
+					storage = result & WMHI_GADGETMASK;
+					switch(storage)
+					{
+						case RAWKEY_CRSRUP:
+							browser_window_key_press(gwin->bw,KEY_UP);
+						break;
+						case RAWKEY_CRSRDOWN:
+							browser_window_key_press(gwin->bw,KEY_DOWN);
+						break;
+						case RAWKEY_CRSRLEFT:
+							browser_window_key_press(gwin->bw,KEY_LEFT);
+						break;
+						case RAWKEY_CRSRRIGHT:
+							browser_window_key_press(gwin->bw,KEY_RIGHT);
+						break;
+						case RAWKEY_ESC:
+							browser_window_key_press(gwin->bw,27);
+						break;
+					}
 				break;
 
 				case WMHI_NEWSIZE:
@@ -561,17 +636,19 @@ void gui_poll(bool active)
 
 void gui_quit(void)
 {
-//	urldb_save("resources/URLs");
+	urldb_save(option_url_file);
 	urldb_save_cookies(option_cookie_file);
-	options_save_tree(hotlist,"Resources/Hotlist","NetSurf hotlist");
+	options_save_tree(hotlist,option_hotlist_file,messages_get("TreeHotlist"));
 
 #ifdef WITH_HUBBUB
 	hubbub_finalise(myrealloc,NULL);
 #endif
 
-	CloseScreen(scrn);
+	if(!option_use_wb) CloseScreen(scrn);
 	p96FreeBitMap(dummyrp.BitMap);
 	FreeVec(nsscreentitle);
+
+	ami_free_menulabs();
 
 	if(iffh->iff_Stream) CloseClipboard((struct ClipboardHandle *)iffh->iff_Stream);
 	if(iffh) FreeIFF(iffh);
@@ -618,55 +695,24 @@ void ami_update_buttons(struct gui_window *gwin)
 	RefreshSetGadgetAttrs(gwin->gadgets[GID_FORWARD],gwin->win,NULL,
 		GA_Disabled,forward,
 		TAG_DONE);
-
-
-}
-
-struct NewMenu *ami_create_menu(ULONG type)
-{
-	ULONG menuflags = 0;
-	if(type != BROWSER_WINDOW_NORMAL)
-	{
-		menuflags = NM_ITEMDISABLED;
-	}
-
-	STATIC struct NewMenu menu[] = {
-			  	{NM_TITLE,0,0,0,0,0,}, // project
-			  	{ NM_ITEM,0,"N",0,0,0,}, // new window
-			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
-			  	{ NM_ITEM,0,"K",0,0,0,}, // close window
-			  	{NM_TITLE,0,0,0,0,0,}, // edit
-			  	{ NM_ITEM,0,"C",0,0,0,}, // copy
-			  	{ NM_ITEM,0,"V",0,0,0,}, // paste
-				{NM_TITLE,0,0,0,0,0,}, // hotlist
-				{ NM_ITEM,0,0,0,0,0,}, // add to hotlist
-			  	{ NM_ITEM,0,"H",0,0,0,}, // show hotlist
-			  	{  NM_END,0,0,0,0,0,},
-			 };
-
-	menu[0].nm_Label = messages_get("Project");
-	menu[1].nm_Label = messages_get("NewWindow");
-	menu[1].nm_Flags = menuflags;
-	menu[3].nm_Label = messages_get("Close");
-	menu[3].nm_Flags = menuflags;
-	menu[4].nm_Label = messages_get("Edit");
-	menu[5].nm_Label = messages_get("Copy");
-	menu[6].nm_Label = messages_get("Paste");
-	menu[7].nm_Label = messages_get("Hotlist");
-	menu[8].nm_Label = messages_get("HotlistAdd");
-	menu[9].nm_Label = messages_get("HotlistShow");
-
-	return(menu);
 }
 
 struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		struct browser_window *clone, bool new_tab)
 {
 // tabs are ignored for the moment
-
+	struct NewMenu *menu;
 	struct gui_window *gwin = NULL;
 	bool closegadg=TRUE;
-	struct NewMenu *menu = ami_create_menu(bw->browser_window_type);
+	
+/*
+	if(bw->browser_window_type == BROWSER_WINDOW_IFRAME)
+	{
+		gwin = bw->parent->window;
+		printf("%lx\n",gwin);
+		return gwin;
+	}
+*/
 
 	gwin = AllocVec(sizeof(struct gui_window),MEMF_CLEAR);
 
@@ -679,26 +725,27 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		return 0;
 	}
 
+	menu = ami_create_menu(bw->browser_window_type);
+
 	switch(bw->browser_window_type)
 	{
+        case BROWSER_WINDOW_IFRAME:
         case BROWSER_WINDOW_FRAMESET:
         case BROWSER_WINDOW_FRAME:
-        case BROWSER_WINDOW_IFRAME:
-
 		gwin->objects[OID_MAIN] = WindowObject,
        	    WA_ScreenTitle,nsscreentitle,
            	WA_Title, messages_get("NetSurf"),
-           	WA_Activate, TRUE,
+           	WA_Activate, FALSE,
            	WA_DepthGadget, TRUE,
            	WA_DragBar, TRUE,
            	WA_CloseGadget, FALSE,
-		WA_Width,200,
-		WA_Height,200,
+			WA_Width,200,
+			WA_Height,200,
            	WA_SizeGadget, TRUE,
 			WA_CustomScreen,scrn,
 			WA_ReportMouse,TRUE,
            	WA_IDCMP,IDCMP_MENUPICK | IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS |
-				 IDCMP_NEWSIZE | IDCMP_VANILLAKEY | IDCMP_GADGETUP | IDCMP_IDCMPUPDATE,
+				 IDCMP_NEWSIZE | IDCMP_VANILLAKEY | IDCMP_RAWKEY | IDCMP_GADGETUP | IDCMP_IDCMPUPDATE,
 //			WINDOW_IconifyGadget, TRUE,
 			WINDOW_NewMenu,menu,
 			WINDOW_HorizProp,1,
@@ -731,14 +778,14 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
            	WA_DragBar, TRUE,
            	WA_CloseGadget, TRUE,
            	WA_SizeGadget, TRUE,
-			WA_Top,option_window_x,
-			WA_Left,option_window_y,
+			WA_Top,option_window_y,
+			WA_Left,option_window_x,
 			WA_Width,option_window_width,
 			WA_Height,option_window_height,
 			WA_CustomScreen,scrn,
 			WA_ReportMouse,TRUE,
            	WA_IDCMP,IDCMP_MENUPICK | IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS |
-				 IDCMP_NEWSIZE | IDCMP_VANILLAKEY | IDCMP_GADGETUP | IDCMP_IDCMPUPDATE,
+				 IDCMP_NEWSIZE | IDCMP_VANILLAKEY | IDCMP_RAWKEY | IDCMP_GADGETUP | IDCMP_IDCMPUPDATE,
 //			WINDOW_IconifyGadget, TRUE,
 			WINDOW_NewMenu,menu,
 			WINDOW_HorizProp,1,
@@ -904,8 +951,7 @@ void gui_window_destroy(struct gui_window *g)
 	if(IsMinListEmpty(window_list))
 	{
 		/* last window closed, so exit */
-		gui_quit();
-		exit(0);
+		netsurf_quit = true;
 	}
 
 	win_destroyed = true;
@@ -1470,7 +1516,7 @@ void gui_create_form_select_menu(struct browser_window *bw,
 
 	while(opt)
 	{
-		IDoMethod(gwin->objects[OID_MENU],PM_INSERT,NewObject( POPUPMENU_GetItemClass(), NULL, PMIA_Title, (ULONG)opt->text,PMIA_ID,i,PMIA_CheckIt,TRUE,PMIA_Checked,opt->selected,TAG_DONE),~0);
+		IDoMethod(gwin->objects[OID_MENU],PM_INSERT,NewObject( POPUPMENU_GetItemClass(), NULL, PMIA_Title, (ULONG)ami_utf8_easy(opt->text),PMIA_ID,i,PMIA_CheckIt,TRUE,PMIA_Checked,opt->selected,TAG_DONE),~0);
 
 		opt = opt->next;
 		i++;
