@@ -37,18 +37,23 @@ void ami_init_menulabs(void)
 	menulab[0] = ami_utf8_easy((char *)messages_get("Project"));
 	menulab[1] = ami_utf8_easy((char *)messages_get("NewWindow"));
 	menulab[2] = NM_BARLABEL;
-	menulab[3] = ami_utf8_easy((char *)messages_get("CloseWindow"));
-	menulab[4] = ami_utf8_easy((char *)messages_get("Edit"));
-	menulab[5] = ami_utf8_easy((char *)messages_get("Copy"));
-	menulab[6] = ami_utf8_easy((char *)messages_get("Paste"));
-	menulab[7] = ami_utf8_easy((char *)messages_get("SelectAll"));
-	menulab[8] = ami_utf8_easy((char *)messages_get("Clear"));
-	menulab[9] = ami_utf8_easy((char *)messages_get("Hotlist"));
-	menulab[10] = ami_utf8_easy((char *)messages_get("HotlistAdd"));
-	menulab[11] = ami_utf8_easy((char *)messages_get("HotlistShow"));
-	menulab[12] = ami_utf8_easy((char *)messages_get("Settings"));
-	menulab[13] = ami_utf8_easy((char *)messages_get("SnapshotWindow"));
-	menulab[14] = ami_utf8_easy((char *)messages_get("SettingsSave"));
+	menulab[3] = ami_utf8_easy((char *)messages_get("SaveAs"));
+	menulab[4] = ami_utf8_easy((char *)messages_get("Text"));
+	menulab[5] = ami_utf8_easy((char *)messages_get("Source"));
+	menulab[6] = ami_utf8_easy((char *)messages_get("PDF"));
+	menulab[7] = NM_BARLABEL;
+	menulab[8] = ami_utf8_easy((char *)messages_get("CloseWindow"));
+	menulab[9] = ami_utf8_easy((char *)messages_get("Edit"));
+	menulab[10] = ami_utf8_easy((char *)messages_get("Copy"));
+	menulab[11] = ami_utf8_easy((char *)messages_get("Paste"));
+	menulab[12] = ami_utf8_easy((char *)messages_get("SelectAll"));
+	menulab[13] = ami_utf8_easy((char *)messages_get("Clear"));
+	menulab[14] = ami_utf8_easy((char *)messages_get("Hotlist"));
+	menulab[15] = ami_utf8_easy((char *)messages_get("HotlistAdd"));
+	menulab[16] = ami_utf8_easy((char *)messages_get("HotlistShow"));
+	menulab[17] = ami_utf8_easy((char *)messages_get("Settings"));
+	menulab[18] = ami_utf8_easy((char *)messages_get("SnapshotWindow"));
+	menulab[19] = ami_utf8_easy((char *)messages_get("SettingsSave"));
 }
 
 struct NewMenu *ami_create_menu(ULONG type)
@@ -58,6 +63,11 @@ struct NewMenu *ami_create_menu(ULONG type)
 	STATIC struct NewMenu menu[] = {
 			  	{NM_TITLE,0,0,0,0,0,}, // project
 			  	{ NM_ITEM,0,"N",0,0,0,}, // new window
+			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
+			  	{ NM_ITEM,0,0,0,0,0,}, // save
+			  	{  NM_SUB,0,0,0,0,0,}, // save as text
+			  	{  NM_SUB,0,0,0,0,0,}, // save as source
+			  	{  NM_SUB,0,0,0,0,0,}, // save as pdf
 			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
 			  	{ NM_ITEM,0,"K",0,0,0,}, // close window
 			  	{NM_TITLE,0,0,0,0,0,}, // edit
@@ -85,7 +95,11 @@ struct NewMenu *ami_create_menu(ULONG type)
 	}
 
 	menu[1].nm_Flags = menuflags;
-	menu[3].nm_Flags = menuflags;
+	menu[8].nm_Flags = menuflags;
+
+#ifndef WITH_PDF_EXPORT
+	menu[6].nm_Flags = NM_ITEMDISABLED;
+#endif
 
 	return(menu);
 }

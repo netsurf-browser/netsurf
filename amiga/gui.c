@@ -476,7 +476,33 @@ void ami_get_msg(void)
 										bw = browser_window_create(gwin->bw->current_content->url, 0, 0, true, false);
 									break;
 
-									case 2: // close
+									case 2: // save
+										switch(subnum)
+										{
+											BPTR fh=0;
+
+											case 0:
+												save_as_text(gwin->bw->current_content,"ram:ns_text");
+											break;
+
+											case 1:
+												if(fh = FOpen("ram:ns_source",MODE_NEWFILE,0))
+												{
+													FWrite(fh,gwin->bw->current_content->source_data,1,gwin->bw->current_content->source_size);
+													FClose(fh);
+												}
+											break;
+
+											case 2:
+#ifdef WITH_PDF_EXPORT
+												pdf_set_scale(DEFAULT_EXPORT_SCALE);
+												save_as_pdf(gwin->bw->current_content,"ram:ns_pdf");
+#endif
+											break;
+										}
+									break;
+
+									case 4: // close
 										browser_window_destroy(gwin->bw);
 									break;
 								}
@@ -1000,6 +1026,8 @@ void gui_window_update_box(struct gui_window *g,
 	xoffset=bbox->Left;
 	yoffset=bbox->Top;
 
+	plot=amiplot;
+
 //	if (c->type == CONTENT_HTML) scale = 1;
 
 		content_redraw(data->redraw.object,
@@ -1061,6 +1089,7 @@ LAYA_MinX,0,LAYA_MinY,0,LAYA_MaxX,1024,LAYA_MaxY,768,TAG_DONE);
 	height=bbox->Height;
 	xoffset=bbox->Left;
 	yoffset=bbox->Top;
+	plot = amiplot;
 
 //	if (c->type == CONTENT_HTML) scale = 1;
 

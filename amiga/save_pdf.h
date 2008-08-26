@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008 John Tytgat <joty@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,14 +16,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef AMIGA_MENU_H
-#define AMIGA_MENU_H
-#include <exec/types.h>
+#ifndef _NETSURF_RISCOS_SAVE_PDF_H_
+#define _NETSURF_RISCOS_SAVE_PDF_H_
 
-#define AMI_MENU_MAX 19
-char *menulab[AMI_MENU_MAX+1];
+#include "utils/config.h"
+#ifdef WITH_PDF_EXPORT
 
-struct NewMenu *ami_create_menu(ULONG type);
-void ami_init_menulabs(void);
-void ami_free_menulabs(void);
+struct content;
+
+bool save_as_pdf(struct content *c, const char *path);
+
+#endif /* WITH_PDF_EXPORT */
+
 #endif

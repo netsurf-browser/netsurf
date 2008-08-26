@@ -85,7 +85,7 @@ S_DEBUG := netsurfd.c debug_bitmap.c filetyped.c fontd.c
 S_DEBUG := $(addprefix debug/,$(S_DEBUG))
 
 # S_AMIGA are sources purely for the Amiga build
-S_AMIGA := compat.c gui.c tree.c history.c hotlist.c schedule.c thumbnail.c misc.c bitmap.c font.c filetype.c utf8.c login.c plotters.c object.c menu.c
+S_AMIGA := compat.c gui.c tree.c history.c hotlist.c schedule.c thumbnail.c misc.c bitmap.c font.c filetype.c utf8.c login.c plotters.c object.c menu.c save_pdf.c
 S_AMIGA := $(addprefix amiga/,$(S_AMIGA))
 
 # Some extra rules for building the scanner etc.
@@ -156,7 +156,7 @@ EXETARGET := nsdebug
 endif
 
 ifeq ($(TARGET),amiga)
-SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_AMIGA)
+SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_AMIGA) $(S_PDF)
 EXETARGET := NetSurf
 endif
 
