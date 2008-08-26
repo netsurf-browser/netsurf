@@ -28,7 +28,7 @@ void warn_user(const char *warning, const char *detail)
 	TimedDosRequesterTags(TDR_ImageType,TDRIMAGE_WARNING,
 							TDR_TitleString,messages_get("NetSurf"),
 							TDR_GadgetString,messages_get("OK"),
-							TDR_CharSet,106,
+//							TDR_CharSet,106,
 							TDR_FormatString,"%s\n%s",
 							TDR_Arg1,messages_get(warning),
 							TDR_Arg2,detail,
@@ -40,7 +40,7 @@ void die(const char *error)
 	TimedDosRequesterTags(TDR_ImageType,TDRIMAGE_ERROR,
 							TDR_TitleString,messages_get("NetSurf"),
 							TDR_GadgetString,messages_get("OK"),
-							TDR_CharSet,106,
+//							TDR_CharSet,106,
 							TDR_FormatString,"%s",
 							TDR_Arg1,error,
 							TAG_DONE);
