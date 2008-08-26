@@ -51,19 +51,23 @@ bool nsfont_width(const struct css_style *style,
 		int *width)
 {
 	struct TextFont *tfont = ami_open_font(style);
+/*
 	char *buffer;
 	utf8_to_local_encoding(string,length,&buffer);
 	if(buffer)
 	{
-		*width = TextLength(currp,buffer,strlen(buffer));
+*/
+		*width = TextLength(currp,string,length); //buffer,strlen(buffer));
+/*
 	}
 	else
 	{
 		*width=0;
 	}
+*/
 
 	ami_close_font(tfont);
-	ami_utf8_free(buffer);
+//	ami_utf8_free(buffer);
 	return true;
 }
 
@@ -89,10 +93,18 @@ bool nsfont_position_in_string(const struct css_style *style,
 	char *buffer;
 	utf8_to_local_encoding(string,length,&buffer);
 
-	*char_offset = TextFit(currp,buffer,strlen(buffer),
-						&extent,NULL,1,x,32767);
+	if(buffer)
+	{
+		*char_offset = TextFit(currp,buffer,strlen(buffer),
+							&extent,NULL,1,x,32767);
 
-	*actual_x = extent.te_Extent.MaxX;
+		*actual_x = extent.te_Extent.MaxX;
+	}
+	else
+	{
+		*char_offset = 0;
+		*actual_x = 0;
+	}
 
 	ami_close_font(tfont);
 	ami_utf8_free(buffer);
@@ -125,24 +137,31 @@ bool nsfont_split(const struct css_style *style,
 	ULONG co;
 	char *charp;
 	struct TextFont *tfont = ami_open_font(style);
-	char *buffer;
-	utf8_to_local_encoding(string,length,&buffer);
+//	char *buffer;
+//	utf8_to_local_encoding(string,length,&buffer);
 
-	co = TextFit(currp,buffer,strlen(buffer),
+	co = TextFit(currp,string,length,
 				&extent,NULL,1,x,32767);
 
-	charp = buffer+co;
-	while((*charp != ' ') && (charp >= buffer))
+	charp = string+co;
+	while(((*charp != ' ')) && (charp > string))
 	{
 		charp--;
 		co--;
 	}
 
 	*char_offset = co;
-	*actual_x = TextLength(currp,buffer,co);
+	if(string && co)
+	{
+		*actual_x = TextLength(currp,string,co);
+	}
+	else
+	{
+		*actual_x = 0;
+	}
 
 	ami_close_font(tfont);
-	ami_utf8_free(buffer);
+//	ami_utf8_free(buffer);
 	return true;
 }
 
