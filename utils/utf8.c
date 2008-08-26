@@ -265,7 +265,7 @@ utf8_convert_ret utf8_from_enc(const char *string, const char *encname,
  * Convert a string from one encoding to another
  *
  * \param string  The NULL-terminated string to convert
- * \param len     Length of input string to consider (in bytes)
+ * \param len     Length of input string to consider (in bytes), or 0
  * \param from    The encoding name to convert from
  * \param to      The encoding name to convert to
  * \param result  Pointer to location in which to store result
@@ -278,14 +278,20 @@ utf8_convert_ret utf8_convert(const char *string, size_t len,
 	char *temp, *out, *in;
 	size_t slen, rlen;
 
-	if (slen == 0 || string[0] == '\0') {
-		/* On AmigaOS, iconv() returns an error if we pass an empty string.  This
-		 * prevents iconv() being called as there is no conversion necessary anyway. */
+	assert(string && from && to && result);
+
+	if (string[0] == '\0') {
+		/* On AmigaOS, iconv() returns an error if we pass an 
+		 * empty string.  This prevents iconv() being called as 
+		 * there is no conversion necessary anyway. */
 		*result = strdup("");
-		return UTF8_CONVERT_OK;
+		if (!(*result)) {
+			*result = NULL;
+			return UTF8_CONVERT_NOMEM;
 		}
 
-	assert(string && from && to && result);
+		return UTF8_CONVERT_OK;
+	}
 
 	if (strcasecmp(from, to) == 0) {
 		/* conversion from an encoding to itself == strdup */
