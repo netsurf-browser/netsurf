@@ -251,7 +251,7 @@ float nsbeos_get_scale_for_gui(struct gui_window *g)
 
 /* Create a gui_window */
 struct gui_window *gui_create_browser_window(struct browser_window *bw,
-					     struct browser_window *clone)
+					     struct browser_window *clone, bool new_tab)
 {
 	struct gui_window *g;		/**< what we're creating to return */
 

@@ -603,7 +603,7 @@ void gui_init2(int argc, char** argv)
                 addr = option_homepage_url;
 
 	if (argc > 1) addr = argv[1];
-	browser_window_create(addr, 0, 0, true);
+	browser_window_create(addr, 0, 0, true, false);
 }
 
 
