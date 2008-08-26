@@ -278,6 +278,13 @@ utf8_convert_ret utf8_convert(const char *string, size_t len,
 	char *temp, *out, *in;
 	size_t slen, rlen;
 
+	if (slen == 0 || string[0] == '\0') {
+		/* On AmigaOS, iconv() returns an error if we pass an empty string.  This
+		 * prevents iconv() being called as there is no conversion necessary anyway. */
+		*result = strdup("");
+		return UTF8_CONVERT_OK;
+		}
+
 	assert(string && from && to && result);
 
 	if (strcasecmp(from, to) == 0) {
@@ -333,6 +340,10 @@ utf8_convert_ret utf8_convert(const char *string, size_t len,
 
 	/* perform conversion */
 	if (iconv(cd, &in, &slen, &out, &rlen) == (size_t)-1) {
+
+                printf("Failed, errno == %d (%s)\n",
+                                errno, strerror(errno));
+
 		free(temp);
 		/* clear the cached conversion descriptor as it's invalid */
 		last_cd.from[0] = '\0';
