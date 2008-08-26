@@ -11,7 +11,7 @@
 # present in this file.  If you add a translation please use the
 # RISC OS naming scheme when possible and add it to this file!
 #
-british-english:en
+english-british:en
 english:en
 german:de
 french:fr
