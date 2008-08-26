@@ -26,6 +26,7 @@
 #include <graphics/rpattr.h>
 #include "amiga/font.h"
 #include "desktop/options.h"
+#include "amiga/utf8.h"
 
 static bool nsfont_width(const struct css_style *style,
 	  const char *string, size_t length,
@@ -50,9 +51,19 @@ bool nsfont_width(const struct css_style *style,
 		int *width)
 {
 	struct TextFont *tfont = ami_open_font(style);
-	*width = TextLength(currp,string,length);
-	ami_close_font(tfont);
+	char *buffer;
+	utf8_to_local_encoding(string,length,&buffer);
+	if(buffer)
+	{
+		*width = TextLength(currp,buffer,strlen(buffer));
+	}
+	else
+	{
+		*width=0;
+	}
 
+	ami_close_font(tfont);
+	ami_utf8_free(buffer);
 	return true;
 }
 
@@ -75,13 +86,16 @@ bool nsfont_position_in_string(const struct css_style *style,
 {
 	struct TextExtent extent;
 	struct TextFont *tfont = ami_open_font(style);
+	char *buffer;
+	utf8_to_local_encoding(string,length,&buffer);
 
-	*char_offset = TextFit(currp,string,length,
+	*char_offset = TextFit(currp,buffer,strlen(buffer),
 						&extent,NULL,1,x,32767);
 
 	*actual_x = extent.te_Extent.MaxX;
 
 	ami_close_font(tfont);
+	ami_utf8_free(buffer);
 	return true;
 }
 
@@ -111,20 +125,24 @@ bool nsfont_split(const struct css_style *style,
 	ULONG co;
 	char *charp;
 	struct TextFont *tfont = ami_open_font(style);
-	co = TextFit(currp,string,length,
+	char *buffer;
+	utf8_to_local_encoding(string,length,&buffer);
+
+	co = TextFit(currp,buffer,strlen(buffer),
 				&extent,NULL,1,x,32767);
 
-	charp = string+co;
-	while((*charp != ' ') && (charp >= string))
+	charp = buffer+co;
+	while((*charp != ' ') && (charp >= buffer))
 	{
 		charp--;
 		co--;
 	}
 
 	*char_offset = co;
-	*actual_x = TextLength(currp,string,co);
+	*actual_x = TextLength(currp,buffer,co);
 
 	ami_close_font(tfont);
+	ami_utf8_free(buffer);
 	return true;
 }
 
