@@ -44,7 +44,6 @@
 #include <proto/iffparse.h>
 #include <datatypes/textclass.h>
 #include "desktop/selection.h"
-#include <proto/codesets.h>
 #include "utils/utf8.h"
 #include "amiga/utf8.h"
 #include "amiga/hotlist.h"
@@ -89,8 +88,6 @@ struct Device *TimerBase;
 struct TimerIFace *ITimer;
 struct Library  *PopupMenuBase = NULL;
 struct PopupMenuIFace *IPopupMenu = NULL;
-struct Library  *CodesetsBase = NULL;
-struct CodesetsIFace *ICodesets = NULL;
 
 struct Screen *scrn;
 bool win_destroyed = false;
@@ -134,11 +131,6 @@ void gui_init(int argc, char** argv)
 	if(PopupMenuBase = OpenLibrary("popupmenu.class",0))
 	{
 		IPopupMenu = (struct PopupMenuIFace *)GetInterface(PopupMenuBase,"main",1,NULL);
-	}
-
-	if(CodesetsBase = OpenLibrary("codesets.library",0))
-	{
-		ICodesets = (struct CodesetsIFace *)GetInterface(CodesetsBase,"main",1,NULL);
 	}
 
 	filereq = (struct FileRequester *)AllocAslRequest(ASL_FileRequest,NULL);
@@ -681,9 +673,6 @@ void gui_quit(void)
 
 	FreeAslRequest(filereq);
 
-    if(ICodesets) DropInterface((struct Interface *)ICodesets);
-    if(CodesetsBase) CloseLibrary(CodesetsBase);
-
     if(IPopupMenu) DropInterface((struct Interface *)IPopupMenu);
     if(PopupMenuBase) CloseLibrary(PopupMenuBase);
 
@@ -760,7 +749,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
         case BROWSER_WINDOW_FRAME:
 		gwin->objects[OID_MAIN] = WindowObject,
        	    WA_ScreenTitle,nsscreentitle,
-           	WA_Title, messages_get("NetSurf"),
+//           	WA_Title, messages_get("NetSurf"),
            	WA_Activate, FALSE,
            	WA_DepthGadget, TRUE,
            	WA_DragBar, TRUE,
@@ -798,7 +787,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
         case BROWSER_WINDOW_NORMAL:
 		gwin->objects[OID_MAIN] = WindowObject,
        	    WA_ScreenTitle,nsscreentitle,
-           	WA_Title, messages_get("NetSurf"),
+//           	WA_Title, messages_get("NetSurf"),
            	WA_Activate, TRUE,
            	WA_DepthGadget, TRUE,
            	WA_DragBar, TRUE,
@@ -931,7 +920,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 /* below needs to be allocated as big as the screen */
 	gwin->bm = p96AllocBitMap(scrn->Width,scrn->Height,32,
 		BMF_CLEAR | BMF_DISPLAYABLE | BMF_INTERLEAVED,
-		gwin->win->RPort->BitMap,RGBFB_A8R8G8B8);
+		gwin->win->RPort->BitMap,
+		RGBFB_A8R8G8B8);
 
 	InitRastPort(&gwin->rp);
 	gwin->rp.BitMap = gwin->bm;
@@ -985,7 +975,8 @@ void gui_window_destroy(struct gui_window *g)
 
 void gui_window_set_title(struct gui_window *g, const char *title)
 {
-	SetWindowTitles(g->win,title,nsscreentitle);
+	if(g->win->Title) ami_utf8_free(g->win->Title);
+	SetWindowTitles(g->win,ami_utf8_easy(title),nsscreentitle);
 }
 
 void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)

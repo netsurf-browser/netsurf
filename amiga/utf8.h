@@ -18,8 +18,6 @@
 
 #ifndef AMIGA_UTF8_H
 #define AMIGA_UTF8_H
-//char *ami_utf8_alloc(char *string);
-ULONG ami_utf8_to_any(const char *string, size_t len, char **result);
-void ami_utf8_free(char *ptr);
 char *ami_utf8_easy(char *string);
+void ami_utf8_free(char *ptr);
 #endif

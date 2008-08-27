@@ -18,62 +18,26 @@
 
 #include <sys/types.h>
 #include "utils/utf8.h"
-#include <proto/codesets.h>
 #include <proto/exec.h>
 #include <parserutils/charset/mibenum.h>
+#include <proto/diskfont.h>
+#include <diskfont/diskfonttag.h>
 
 utf8_convert_ret utf8_to_local_encoding(const char *string, size_t len,
 	char **result)
 {
-/*
-	struct codeset *cs = CodesetsFind("ISO-8859-1",
-							CSA_FallbackToDefault,FALSE,
-							TAG_DONE);
-*/
+	ULONG *charset;
+	char *encname;
 
-//	if(!len) return UTF8_CONVERT_OK;
-
-	*result = CodesetsUTF8ToStr(CSA_Source,string,
-						CSA_SourceLen,len,
-//						CSA_MapForeignChars,TRUE,
-//						CSA_DestCodeset,cs,
-						TAG_DONE);
-
-	return UTF8_CONVERT_OK;
+	charset = GetDiskFontCtrl(DFCTRL_CHARSET);
+	encname = parserutils_charset_mibenum_to_name(charset);
+	
+	return utf8_to_enc(string,encname,len,result);
 }
-
-ULONG ami_utf8_to_any(const char *string, size_t len, char **result)
-{
-	uint16 mibenum = 0;
-
-	struct codeset *cs = CodesetsFindBest(CSA_Source,string,
-							CSA_SourceLen,len,
-							CSA_FallbackToDefault,TRUE,
-							TAG_DONE);
-
-	*result = CodesetsUTF8ToStr(CSA_Source,string,
-						CSA_SourceLen,len,
-//						CSA_MapForeignChars,TRUE,
-						CSA_DestCodeset,cs,
-						TAG_DONE);
-
-	mibenum = parserutils_charset_mibenum_from_name(cs->name,strlen(cs->name));
-
-	printf("%ld\n",mibenum);
-
-	return mibenum; // mibenum
-}
-
-/*
-char *ami_utf8_alloc(char *string)
-{
-	return (AllocVec(CodesetsUTF8Len(string)+1,MEMF_CLEAR));
-}
-*/
 
 void ami_utf8_free(char *ptr)
 {
-	if(ptr) CodesetsFreeA(ptr,NULL);
+	if(ptr) free(ptr);
 }
 
 char *ami_utf8_easy(char *string)
