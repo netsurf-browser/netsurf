@@ -68,7 +68,7 @@ struct gtk_scaffolding {
 	GtkNotebook		*notebook;
 	GtkEntry		*url_bar;
 	GtkEntryCompletion	*url_bar_completion;
-	GtkLabel		*status_bar;
+	GtkStatusbar		*status_bar;
 	GtkMenu			*edit_menu;
 	GtkMenuItem		*tabs_menu;
 	GtkToolbar		*tool_bar;
@@ -1040,7 +1040,7 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	g->notebook = GTK_NOTEBOOK(GET_WIDGET("notebook"));
 	g->url_bar = GTK_ENTRY(GET_WIDGET("URLBar"));
 	g->menu_bar = GTK_MENU_BAR(GET_WIDGET("menubar"));
-	g->status_bar = GTK_LABEL(GET_WIDGET("statusBar"));
+	g->status_bar = GTK_STATUSBAR(GET_WIDGET("statusbar"));
 	g->edit_menu = GTK_MENU(GET_WIDGET("menumain_edit"));
 	g->tabs_menu = GTK_MENU_ITEM(GET_WIDGET("menuitem_tabs"));
 	g->tool_bar = GTK_TOOLBAR(GET_WIDGET("toolbar"));
@@ -1053,7 +1053,6 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	g->stop_menu = GTK_MENU_ITEM(GET_WIDGET("stop"));
 	g->reload_menu = GTK_MENU_ITEM(GET_WIDGET("reload"));
 	g->throbber = GTK_IMAGE(GET_WIDGET("throbber"));
-	g->status_pane = GTK_PANED(GET_WIDGET("hpaned1"));
 	
 	g->preferences_dialog = NULL;
 	
@@ -1069,9 +1068,6 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	}
 
 	nsgtk_tab_init(g->notebook);
-
-	/* set the size of the hpane with status bar and h scrollbar */
-	gtk_paned_set_position(g->status_pane, option_toolbar_status_width);
 
 	/* set the URL entry box to expand, as we can't do this from within
 	 * glade because of the way it emulates toolbars.
@@ -1255,7 +1251,7 @@ void gui_window_set_status(struct gui_window *_g, const char *text)
         struct gtk_scaffolding *g = nsgtk_get_scaffold(_g);
 	assert(g);
 	assert(g->status_bar);
-	gtk_label_set_text(g->status_bar, text);
+	gtk_statusbar_push(g->status_bar, 0, text);
 }
 
 void gui_window_set_url(struct gui_window *_g, const char *url)
