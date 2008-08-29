@@ -346,10 +346,6 @@ utf8_convert_ret utf8_convert(const char *string, size_t len,
 
 	/* perform conversion */
 	if (iconv(cd, &in, &slen, &out, &rlen) == (size_t)-1) {
-
-                printf("Failed, errno == %d (%s)\n",
-                                errno, strerror(errno));
-
 		free(temp);
 		/* clear the cached conversion descriptor as it's invalid */
 		last_cd.from[0] = '\0';
