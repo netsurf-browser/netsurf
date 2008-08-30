@@ -472,23 +472,55 @@ void ami_get_msg(void)
 										switch(subnum)
 										{
 											BPTR fh=0;
+											char fname[1024];
 
 											case 0:
-												save_as_text(gwin->bw->current_content,"ram:ns_text");
+												if(AslRequestTags(filereq,
+													ASLFR_TitleText,messages_get("NetSurf"),
+													ASLFR_Screen,scrn,
+													ASLFR_DoSaveMode,TRUE,
+													ASLFR_InitialFile,FilePart(gwin->bw->current_content->url),
+													TAG_DONE))
+												{
+													strlcpy(&fname,filereq->fr_Drawer,1024);
+													AddPart(&fname,filereq->fr_File,1024);
+													save_as_text(gwin->bw->current_content,&fname);
+												}
 											break;
 
 											case 1:
-												if(fh = FOpen("ram:ns_source",MODE_NEWFILE,0))
+												if(AslRequestTags(filereq,
+													ASLFR_TitleText,messages_get("NetSurf"),
+													ASLFR_Screen,scrn,
+													ASLFR_DoSaveMode,TRUE,
+													ASLFR_InitialFile,FilePart(gwin->bw->current_content->url),
+													TAG_DONE))
 												{
-													FWrite(fh,gwin->bw->current_content->source_data,1,gwin->bw->current_content->source_size);
-													FClose(fh);
+													strlcpy(&fname,filereq->fr_Drawer,1024);
+													AddPart(&fname,filereq->fr_File,1024);
+													if(fh = FOpen(&fname,MODE_NEWFILE,0))
+													{
+														FWrite(fh,gwin->bw->current_content->source_data,1,gwin->bw->current_content->source_size);
+														FClose(fh);
+													}
 												}
 											break;
 
 											case 2:
 #ifdef WITH_PDF_EXPORT
-												pdf_set_scale(DEFAULT_EXPORT_SCALE);
-												save_as_pdf(gwin->bw->current_content,"ram:ns_pdf");
+												if(AslRequestTags(filereq,
+													ASLFR_TitleText,messages_get("NetSurf"),
+													ASLFR_Screen,scrn,
+													ASLFR_DoSaveMode,TRUE,
+													ASLFR_InitialFile,FilePart(gwin->bw->current_content->url),
+													TAG_DONE))
+												{
+													strlcpy(&fname,filereq->fr_Drawer,1024);
+													AddPart(&fname,filereq->fr_File,1024);
+													save_as_text(gwin->bw->current_content,&fname);
+													pdf_set_scale(DEFAULT_EXPORT_SCALE);
+													save_as_pdf(gwin->bw->current_content,&fname);
+												}
 #endif
 											break;
 										}
@@ -927,6 +959,16 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	gwin->rp.BitMap = gwin->bm;
 	SetDrMd(currp,BGBACKFILL);
 
+	gwin->layerinfo = NewLayerInfo();
+	gwin->rp.Layer = CreateUpfrontLayer(gwin->layerinfo,gwin->bm,0,0,scrn->Width-1,scrn->Height-1,0,NULL);
+
+	gwin->areabuf = AllocVec(100,MEMF_CLEAR);
+	gwin->rp.AreaInfo = AllocVec(sizeof(struct AreaInfo),MEMF_CLEAR);
+	InitArea(gwin->rp.AreaInfo,gwin->areabuf,100/5);
+	gwin->rp.TmpRas = AllocVec(sizeof(struct TmpRas),MEMF_CLEAR);
+	gwin->tmprasbuf = AllocVec(scrn->Width*scrn->Height,MEMF_CLEAR);
+	InitTmpRas(gwin->rp.TmpRas,gwin->tmprasbuf,scrn->Width*scrn->Height);
+
 	GetRPAttrs(&gwin->rp,RPTAG_Font,&origrpfont,TAG_DONE);
 
 	GetAttr(WINDOW_HorizObject,gwin->objects[OID_MAIN],(ULONG *)&gwin->objects[OID_HSCROLL]);
@@ -960,7 +1002,13 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 void gui_window_destroy(struct gui_window *g)
 {
 	DisposeObject(g->objects[OID_MAIN]);
+	DeleteLayer(0,g->rp.Layer);
+	DisposeLayerInfo(g->layerinfo);
 	p96FreeBitMap(g->bm);
+	FreeVec(g->rp.TmpRas);
+	FreeVec(g->rp.AreaInfo);
+	FreeVec(g->tmprasbuf);
+	FreeVec(g->areabuf);
 	DelObject(g->node);
 //	FreeVec(g); should be freed by DelObject()
 
@@ -981,7 +1029,7 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 
 void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
 {
-	DebugPrintF("REDRAW\n");
+//	DebugPrintF("REDRAW\n");
 }
 
 void gui_window_redraw_window(struct gui_window *g)
@@ -1001,7 +1049,7 @@ void gui_window_update_box(struct gui_window *g,
 	GetAttr(SCROLLER_Top,g->objects[OID_HSCROLL],&hcurrent);
 	GetAttr(SCROLLER_Top,g->objects[OID_VSCROLL],&vcurrent);
 
-	DebugPrintF("DOING REDRAW\n");
+//	DebugPrintF("DOING REDRAW\n");
 
 	c = g->bw->current_content;
 
@@ -1049,16 +1097,17 @@ void gui_window_update_box(struct gui_window *g,
 
 void ami_do_redraw(struct gui_window *g)
 {
+	struct Region *reg = NULL;
+	struct Rectangle rect;
 	struct content *c;
 	ULONG hcurrent,vcurrent,xoffset,yoffset,width=800,height=600;
 	struct IBox *bbox;
-	struct Region *region;
 
 	GetAttr(SPACE_AreaBox,g->gadgets[GID_BROWSER],(ULONG *)&bbox);
 	GetAttr(SCROLLER_Top,g->objects[OID_HSCROLL],&hcurrent);
 	GetAttr(SCROLLER_Top,g->objects[OID_VSCROLL],&vcurrent);
 
-	DebugPrintF("DOING REDRAW\n");
+//	DebugPrintF("DOING REDRAW\n");
 
 	c = g->bw->current_content;
 
@@ -1068,14 +1117,22 @@ void ami_do_redraw(struct gui_window *g)
 	current_redraw_browser = g->bw;
 
 	currp = &g->rp;
+
 /*
-	layerinfo = NewLayerInfo();
-	layer = CreateLayer(layerinfo,LAYA_BitMap,g->bm,LAYA_StayTop,TRUE,
-LAYA_MinX,0,LAYA_MinY,0,LAYA_MaxX,1024,LAYA_MaxY,768,TAG_DONE);
-	currp = layer->rp;
-//	region = NewRegion();
-//	InstallClipRegion(layer,region);
+	reg = NewRegion();
+
+	rect.MinX = 0;
+	rect.MinY = 0;
+	rect.MaxX = 1023;
+	rect.MaxY = 767;
+
+	OrRectRegion(reg,&rect);
+
+	InstallClipRegion(g->rp.Layer,reg);
 */
+
+//	currp = g->rp.Layer->rp;
+
 	width=bbox->Width;
 	height=bbox->Height;
 	xoffset=bbox->Left;
@@ -1110,15 +1167,17 @@ LAYA_MinX,0,LAYA_MinY,0,LAYA_MaxX,1024,LAYA_MaxY,768,TAG_DONE);
 
 	current_redraw_browser = NULL;
 	currp = &dummyrp;
-/*
-//	InstallClipRegion(layer,NULL);
-//	DisposeRegion(region);
-	DeleteLayer(0,layer);
-	DisposeLayerInfo(layerinfo);
-*/
+
+
 	ami_update_buttons(g);
 
 	BltBitMapRastPort(g->bm,0,0,g->win->RPort,xoffset,yoffset,width,height,0x0C0);
+
+	reg = InstallClipRegion(g->rp.Layer,NULL);
+	if(reg) DisposeRegion(reg);
+
+//	DeleteLayer(0,g->rp.Layer);
+/**/
 
 	g->redraw_required = false;
 	g->redraw_data = NULL;
@@ -1263,16 +1322,18 @@ void gui_window_remove_caret(struct gui_window *g)
 
 void gui_window_new_content(struct gui_window *g)
 {
-	DebugPrintF("new content\n");
+//	DebugPrintF("new content\n");
 }
 
 bool gui_window_scroll_start(struct gui_window *g)
 {
+	DebugPrintF("scroll start\n");
 }
 
 bool gui_window_box_scroll_start(struct gui_window *g,
 		int x0, int y0, int x1, int y1)
 {
+	DebugPrintF("box scroll start\n");
 }
 
 bool gui_window_frame_resize_start(struct gui_window *g)
@@ -1293,7 +1354,7 @@ struct gui_download_window *gui_download_window_create(const char *url,
 		const char *mime_type, struct fetch *fetch,
 		unsigned int total_size, struct gui_window *gui)
 {
-	char *fname = AllocVec(1024,MEMF_CLEAR);
+	char fname[1024];
 	struct gui_download_window *dw;
 	APTR va[3];
 
@@ -1304,8 +1365,8 @@ struct gui_download_window *gui_download_window_create(const char *url,
 		ASLFR_InitialFile,FilePart(url),
 		TAG_DONE))
 	{
-		strlcpy(fname,filereq->fr_Drawer,1024);
-		AddPart(fname,filereq->fr_File,1024);
+		strlcpy(&fname,filereq->fr_Drawer,1024);
+		AddPart(&fname,filereq->fr_File,1024);
 	}
 	else return NULL;
 
@@ -1318,7 +1379,7 @@ struct gui_download_window *gui_download_window_create(const char *url,
 	va[1] = dw->size;
 	va[2] = 0;
 
-	if(!(dw->fh = FOpen(fname,MODE_NEWFILE,0)))
+	if(!(dw->fh = FOpen(&fname,MODE_NEWFILE,0)))
 	{
 		FreeVec(dw);
 		return NULL;

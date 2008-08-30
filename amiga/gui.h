@@ -55,7 +55,7 @@ struct gui_download_window {
 	Object *objects[OID_LAST];
 	struct Gadget *gadgets[GID_LAST];
 	struct nsObject *node;
-	bool pad;
+	ULONG pad[2];
 	BPTR fh;
 	uint32 size;
 	uint32 downloaded;
@@ -67,9 +67,13 @@ struct gui_window {
 	struct Gadget *gadgets[GID_LAST];
 	struct nsObject *node;
 	bool redraw_required;
+	struct List *tab_bw_list;
 	struct browser_window *bw;
 	struct BitMap *bm;
 	struct RastPort rp;
+	struct Layer_Info *layerinfo;
+	APTR areabuf;
+	APTR tmprasbuf;
 	struct Hook scrollerhook;
 	struct Hook popuphook;
 	struct form_control *control;
@@ -80,9 +84,6 @@ struct gui_window {
 	int c_h;
 };
 
-//struct gui_window *curwin;
 struct RastPort *currp;
 struct TextFont *origrpfont;
-struct Layer *layer;
-struct Layer_Info *layerinfo;
 #endif

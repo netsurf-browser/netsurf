@@ -26,10 +26,7 @@
 #include <graphics/rpattr.h>
 #include <graphics/gfxmacros.h>
 #include "amiga/utf8.h"
-
-#include <proto/exec.h> // for debugprintf only
-
-static clipx0=0,clipx1=0,clipy0=0,clipy1=0;
+#include <proto/layers.h>
 
 #define PATT_DOT  0xAAAA
 #define PATT_DASH 0xCCCC
@@ -50,24 +47,17 @@ const struct plotter_table amiplot = {
 	ami_bitmap_tile,
 	NULL, //ami_group_start,
 	NULL, //ami_group_end,
-	ami_flush, // optional
+	NULL, //ami_flush, // optional
 	ami_path,
 	true // option_knockout
 };
 
 bool ami_clg(colour c)
 {
-	DebugPrintF("clg %lx\n",c);
-
 	SetRPAttrs(currp,RPTAG_BPenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),
 					TAG_DONE);
 
 	ClearScreen(currp);
-
-/*
-	p96RectFill(currp,clipx0,clipy0,clipx1,clipy1,
-				p96EncodeColor(RGBFB_A8B8G8R8,c));
-*/
 
 	return true;
 }
@@ -75,8 +65,6 @@ bool ami_clg(colour c)
 bool ami_rectangle(int x0, int y0, int width, int height,
 			int line_width, colour c, bool dotted, bool dashed)
 {
-	DebugPrintF("rect\n");
-
 	currp->PenWidth = line_width;
 	currp->PenHeight = line_width;
 
@@ -102,8 +90,6 @@ bool ami_rectangle(int x0, int y0, int width, int height,
 bool ami_line(int x0, int y0, int x1, int y1, int width,
 			colour c, bool dotted, bool dashed)
 {
-	DebugPrintF("line\n");
-
 	currp->PenWidth = width;
 	currp->PenHeight = width;
 
@@ -128,24 +114,28 @@ bool ami_polygon(int *p, unsigned int n, colour fill)
 	int k;
 	ULONG cx,cy;
 
-	DebugPrintF("poly\n");
+	//DebugPrintF("poly\n");
 
 	SetRPAttrs(currp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,fill),
+					RPTAG_OPenColor,p96EncodeColor(RGBFB_A8B8G8R8,fill),
 					TAG_DONE);
 
-	Move(currp,p[0],p[1]);
+	AreaMove(currp,p[0],p[1]);
 
 	for(k=1;k<n;k++)
 	{
-		Draw(currp,p[k*2],p[(k*2)+1]);
+		AreaDraw(currp,p[k*2],p[(k*2)+1]);
 	}
+
+	AreaEnd(currp);
+	BNDRYOFF(currp);
 
 	return true;
 }
 
 bool ami_fill(int x0, int y0, int x1, int y1, colour c)
 {
-	DebugPrintF("fill %ld,%ld,%ld,%ld\n",x0,y0,x1,y1);
+	//DebugPrintF("fill %ld,%ld,%ld,%ld\n",x0,y0,x1,y1);
 
 	p96RectFill(currp,x0,y0,x1,y1,
 		p96EncodeColor(RGBFB_A8B8G8R8,c));
@@ -155,13 +145,24 @@ bool ami_fill(int x0, int y0, int x1, int y1, colour c)
 
 bool ami_clip(int x0, int y0, int x1, int y1)
 {
-/* to do - need to actually clip to this region using layers.library */
+	struct Region *reg = NULL;
+	struct Rectangle rect;
 
-	DebugPrintF("clip\n");
-	clipx0=x0;
-	clipy0=y0;
-	clipx1=x1;
-	clipy1=y1;
+	if(currp->Layer)
+	{
+		reg = NewRegion();
+
+		rect.MinX = x0;
+		rect.MinY = y0;
+		rect.MaxX = x1-1;
+		rect.MaxY = y1-1;
+
+		OrRectRegion(reg,&rect);
+
+		reg = InstallClipRegion(currp->Layer,reg);
+
+		if(reg) DisposeRegion(reg);
+	}
 
 	return true;
 }
@@ -174,18 +175,22 @@ bool ami_text(int x, int y, const struct css_style *style,
 
 	SetRPAttrs(currp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),
 					RPTAG_BPenColor,p96EncodeColor(RGBFB_A8B8G8R8,bg),
-//					RPTAG_OPenColor,p96EncodeColor(RGBFB_A8B8G8R8,bg),
 //					RPTAG_Font,tfont,
 					TAG_DONE);
 
 	utf8_to_local_encoding(text,length,&buffer);
-//	ami_utf8_to_any(text,length,&buffer);
 
 	if(!buffer) return true;
 
+/* Below function prints Unicode text direct to the RastPort.
+ * This is commented out due to lack of SDK which allows me to perform blits
+ * that respect the Alpha channel.  The code below that (and above) convert to
+ * system default charset and write the text using graphics.library functions.
+ *
+ *	ami_unicode_text(currp,text,length,style,x,y,c);
+ */
 	Move(currp,x,y);
 	Text(currp,buffer,strlen(buffer));
-//	Text(currp,text,length);
 
 	ami_close_font(tfont);
 	ami_utf8_free(buffer);
@@ -195,24 +200,18 @@ bool ami_text(int x, int y, const struct css_style *style,
 
 bool ami_disc(int x, int y, int radius, colour c, bool filled)
 {
-	struct AreaInfo ai;
-	APTR buf[10];
-
-	DebugPrintF("disc\n");
-
 	SetRPAttrs(currp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),
 					TAG_DONE);
 
-/* see rkrm
 	if(filled)
 	{
-//		InitArea(&ai,&buf,2);
 		AreaCircle(currp,x,y,radius);
-//		AreaEnd(currp);
+		AreaEnd(currp);
 	}
-*/
-
-	DrawEllipse(currp,x,y,radius,radius); // NB: does not support fill, need to use AreaCircle for that
+	else
+	{
+		DrawEllipse(currp,x,y,radius,radius); // NB: does not support fill, need to use AreaCircle for that
+	}
 
 	return true;
 }
@@ -222,7 +221,12 @@ bool ami_arc(int x, int y, int radius, int angle1, int angle2,
 {
 /* http://www.crbond.com/primitives.htm
 CommonFuncsPPC.lha */
-	DebugPrintF("arc\n");
+	//DebugPrintF("arc\n");
+
+	SetRPAttrs(currp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),
+					TAG_DONE);
+
+//	DrawArc(currp,x,y,(float)angle1,(float)angle2,radius);
 
 	return true;
 }
@@ -231,10 +235,6 @@ bool ami_bitmap(int x, int y, int width, int height,
 			struct bitmap *bitmap, colour bg, struct content *content)
 {
 	struct RenderInfo ri;
-
-DebugPrintF("bitmap plotter %ld %ld %ld %ld (%ld %ld)\n",x,y,width,height,bitmap->width,bitmap->height);
-
-/* needs to also scale */
 
 //	ami_fill(x,y,x+width,y+height,bg);
 
@@ -245,7 +245,39 @@ DebugPrintF("bitmap plotter %ld %ld %ld %ld (%ld %ld)\n",x,y,width,height,bitmap
 	ri.BytesPerRow = bitmap->width * 4;
 	ri.RGBFormat = RGBFB_R8G8B8A8;
 
-	p96WritePixelArray((struct RenderInfo *)&ri,0,0,currp,x,y,width,height);
+	if((bitmap->width != width) || (bitmap->height != height))
+	{
+		struct BitMap *tbm;
+		struct RastPort trp;
+		struct BitScaleArgs bsa;
+
+		tbm = p96AllocBitMap(bitmap->width,bitmap->height,32,0,currp->BitMap,RGBFB_R8G8B8A8);
+		InitRastPort(&trp);
+		trp.BitMap = tbm;
+		p96WritePixelArray((struct RenderInfo *)&ri,0,0,&trp,0,0,bitmap->width,bitmap->height);
+		bsa.bsa_SrcX = 0;
+		bsa.bsa_SrcY = 0;
+		bsa.bsa_SrcWidth = bitmap->width;
+		bsa.bsa_SrcHeight = bitmap->height;
+		bsa.bsa_DestX = x;
+		bsa.bsa_DestY = y;
+		bsa.bsa_DestWidth = width;
+		bsa.bsa_DestHeight = height;
+		bsa.bsa_XSrcFactor = bitmap->width;
+		bsa.bsa_XDestFactor = width;
+		bsa.bsa_YSrcFactor = bitmap->height;
+		bsa.bsa_YDestFactor = height;
+		bsa.bsa_SrcBitMap = tbm;
+		bsa.bsa_DestBitMap = currp->BitMap;
+		bsa.bsa_Flags = 0;
+
+		BitMapScale(&bsa);
+		p96FreeBitMap(tbm);
+	}
+	else
+	{
+		p96WritePixelArray((struct RenderInfo *)&ri,0,0,currp,x,y,width,height);
+	}
 
 	return true;
 }
@@ -257,7 +289,7 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 	struct RenderInfo ri;
 	ULONG xf,yf,wf,hf;
 
-DebugPrintF("bitmap tile plotter\n");
+//DebugPrintF("bitmap tile plotter\n");
 
 	SetRPAttrs(currp,RPTAG_BPenColor,p96EncodeColor(RGBFB_A8B8G8R8,bg),
 					TAG_DONE);
@@ -292,7 +324,6 @@ if(repeat_y) printf("repeaty\n");
 				hf=bitmap->height;
 			}
 
-//printf("%ld %ld %ld\n",xf,width,bitmap->width);
 			p96WritePixelArray((struct RenderInfo *)&ri,0,0,currp,x+xf,y+yf,wf,hf);
 		}
 	}
@@ -314,13 +345,13 @@ bool ami_group_end(void)
 
 bool ami_flush(void)
 {
-	DebugPrintF("flush\n");
+	//DebugPrintF("flush\n");
 	return true;
 }
 
 bool ami_path(float *p, unsigned int n, colour fill, float width,
 			colour c, float *transform)
 {
-	DebugPrintF("path\n");
+/* Not implemented yet - unable to locate website which requires this plotter! */
 	return true;
 }
