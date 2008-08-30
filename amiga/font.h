@@ -24,5 +24,5 @@
 
 struct TextFont *ami_open_font(struct css_style *);
 void ami_close_font(struct TextFont *tfont);
-
+void ami_unicode_text(struct RastPort *rp,char *string,ULONG length,struct css_style *style,ULONG x,ULONG y,ULONG c);
 #endif

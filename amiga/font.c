@@ -27,6 +27,10 @@
 #include "amiga/font.h"
 #include "desktop/options.h"
 #include "amiga/utf8.h"
+#include "utils/utf8.h"
+#include <diskfont/diskfonttag.h>
+#include <diskfont/oterrors.h>
+#include <proto/Picasso96API.h>
 
 static bool nsfont_width(const struct css_style *style,
 	  const char *string, size_t length,
@@ -170,31 +174,32 @@ struct TextFont *ami_open_font(struct css_style *style)
 	struct TextFont *tfont;
 	struct TTextAttr tattr;
 	struct TagItem tattrtags[2];
+	char fontname[256];
 
 	switch(style->font_family)
 	{
 		case CSS_FONT_FAMILY_SANS_SERIF:
-			tattr.tta_Name = option_font_sans;
+			strcpy(fontname,option_font_sans);
 		break;
 
 		case CSS_FONT_FAMILY_SERIF:
-			tattr.tta_Name = option_font_serif;
+			strcpy(fontname,option_font_serif);
 		break;
 
 		case CSS_FONT_FAMILY_MONOSPACE:
-			tattr.tta_Name = option_font_mono;
+			strcpy(fontname,option_font_mono);
 		break;
 
 		case CSS_FONT_FAMILY_CURSIVE:
-			tattr.tta_Name = option_font_cursive;
+			strcpy(fontname,option_font_cursive);
 		break;
 
 		case CSS_FONT_FAMILY_FANTASY:
-			tattr.tta_Name = option_font_fantasy;
+			strcpy(fontname,option_font_fantasy);
 		break;
 
 		default:
-			tattr.tta_Name = option_font_sans;
+			strcpy(fontname,option_font_sans);
 		break;
 	}
 
@@ -248,6 +253,9 @@ struct TextFont *ami_open_font(struct css_style *style)
 	tattr.tta_Tags = &tattrtags;
 */
 
+	strcat(fontname,".font");
+	tattr.tta_Name = fontname;
+
 	tfont = OpenDiskFont((struct TextAttr *)&tattr);
 
 	if(tfont)
@@ -257,7 +265,104 @@ struct TextFont *ami_open_font(struct css_style *style)
 				TAG_DONE);
 	}
 
+//	free(fontname);
+
 	return tfont;
+}
+
+struct OutlineFont *ami_open_outline_font(struct css_style *style)
+{
+	struct OutlineFont *ofont;
+	char *fontname;
+	WORD ysize;
+
+	switch(style->font_family)
+	{
+		case CSS_FONT_FAMILY_SANS_SERIF:
+			fontname = option_font_sans;
+		break;
+
+		case CSS_FONT_FAMILY_SERIF:
+			fontname = option_font_serif;
+		break;
+
+		case CSS_FONT_FAMILY_MONOSPACE:
+			fontname = option_font_mono;
+		break;
+
+		case CSS_FONT_FAMILY_CURSIVE:
+			fontname = option_font_cursive;
+		break;
+
+		case CSS_FONT_FAMILY_FANTASY:
+			fontname = option_font_fantasy;
+		break;
+
+		default:
+			fontname = option_font_sans;
+		break;
+	}
+
+	if(!(ofont = OpenOutlineFont(fontname,NULL,OFF_OPEN))) return NULL;
+
+/* not implemented yet
+	switch(style->font_style)
+	{
+		case CSS_FONT_STYLE_ITALIC:
+			tattr.tta_Style = FSB_ITALIC;
+		break;
+
+		case CSS_FONT_STYLE_OBLIQUE:
+			tattr.tta_Style = FSB_BOLD;
+		break;
+
+		default:
+			tattr.tta_Style = FS_NORMAL;
+		break;
+	}
+*/
+
+/* not supported
+	switch(style->font_variant)
+	{
+		default:
+			//printf("font variant: %ld\n",style->font_variant);
+		break;
+	}
+*/
+
+	switch(style->font_size.size)
+	{
+		case CSS_FONT_SIZE_LENGTH:
+			ysize = style->font_size.value.length.value;
+		break;
+		default:
+			printf("FONT SIZE TYPE: %ld\n",style->font_size.size);
+		break;
+	}
+
+	if(ysize < option_font_min_size)
+		ysize = option_font_min_size;
+
+	if(ESetInfo(&ofont->olf_EEngine,
+				OT_DeviceDPI,(72<<16) | 72,
+				OT_PointHeight,(ysize<<16),
+				TAG_END) == OTERR_Success)
+	{
+
+	}
+	else
+	{
+		CloseOutlineFont(ofont,NULL);
+		return NULL;
+	}
+
+	return ofont;
+}
+
+void ami_close_outline_font(struct OutlineFont *ofont)
+{
+	if(ofont) CloseOutlineFont(ofont,NULL);
 }
 
 void ami_close_font(struct TextFont *tfont)
@@ -267,4 +372,70 @@ void ami_close_font(struct TextFont *tfont)
 			TAG_DONE);
 
 	if(tfont) CloseFont(tfont);
+}
+
+void ami_unicode_text(struct RastPort *rp,char *string,ULONG length,struct css_style *style,ULONG x, ULONG y, ULONG c)
+{
+	WORD *utf16 = NULL;
+	struct OutlineFont *ofont;
+	struct GlyphMap *glyph;
+	ULONG i,gx,gy;
+	UBYTE *glyphbm;
+	UWORD posn;
+
+	if(!string || string[0]=='\0') return;
+	if(!length) return;
+
+	if(utf8_to_enc(string,"UTF-16",length,&utf16) != UTF8_CONVERT_OK) return;
+
+	if(!(ofont = ami_open_outline_font(style))) return;
+
+	for(i=0;i<length;i++)
+	{
+		if(ESetInfo(&ofont->olf_EEngine,
+			OT_GlyphCode,utf16[i],
+			TAG_END) == OTERR_Success)
+		{
+			if(EObtainInfo(&ofont->olf_EEngine,
+				OT_GlyphMap8Bit,&glyph,
+				TAG_END) == 0)
+			{
+				glyphbm = glyph->glm_BitMap;
+				if(!glyphbm) continue;
+
+				posn = 0; //(glyph->glm_BlackTop * glyph->glm_BMRows) + glyph->glm_BlackLeft;
+
+//printf("%ld %ld\n",glyph->glm_BlackHeight,glyph->glm_BlackWidth);
+
+				x+= glyph->glm_BlackLeft;
+
+				for(gy=0;gy<glyph->glm_BlackHeight;gy++)
+				{
+					for(gx=0;gx<glyph->glm_BlackWidth;gx++)
+					{
+/* This works... except it doesn't.  Current public SDK doesn't have BltBitMapTags(),
+which is needed along with BLITA_UseSrcAlpha, TRUE to respect the alpha channel.
+We may even need to draw this text into a new bitmap and blit that onto our off-screen
+rendering bitmap. */
+						p96WritePixel(rp,x+gx,(y-glyph->glm_BlackHeight)+gy,
+							p96EncodeColor(RGBFB_A8B8G8R8,(glyphbm[posn+gx] << 24) | c));
+					}
+
+					posn+=glyph->glm_BMModulo;
+				}
+				x+= glyph->glm_BlackWidth;
+				//x+=(glyph->glm_Width >> 16);
+
+//				printf("%ld:  %ld\n",i,(glyph->glm_Width >> 16));
+
+				EReleaseInfo(&ofont->olf_EEngine,
+					OT_GlyphMap8Bit,glyph,
+					TAG_END);
+			}
+				
+		}
+
+	}
+
+	ami_close_outline_font(ofont);
 }
