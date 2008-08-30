@@ -38,6 +38,10 @@ enum
 	GID_BACK,
 	GID_FORWARD,
 	GID_THROBBER,
+	GID_USER,
+	GID_PASS,
+	GID_LOGIN,
+	GID_CANCEL,
     GID_LAST
 };
 
@@ -86,4 +90,7 @@ struct gui_window {
 
 struct RastPort *currp;
 struct TextFont *origrpfont;
+struct MinList *window_list;
+struct Screen *scrn;
+STRPTR nsscreentitle;
 #endif

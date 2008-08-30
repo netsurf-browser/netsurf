@@ -80,7 +80,6 @@ struct browser_window *curbw;
 char *default_stylesheet_url;
 char *adblock_stylesheet_url;
 struct gui_window *search_current_window = NULL;
-struct MinList *window_list;
 
 struct MsgPort *msgport;
 struct timerequest *tioreq;
@@ -89,12 +88,10 @@ struct TimerIFace *ITimer;
 struct Library  *PopupMenuBase = NULL;
 struct PopupMenuIFace *IPopupMenu = NULL;
 
-struct Screen *scrn;
 bool win_destroyed = false;
 static struct RastPort dummyrp;
 struct FileRequester *filereq;
 struct IFFHandle *iffh = NULL;
-STRPTR nsscreentitle = NULL;
 struct tree *hotlist;
 
 void ami_update_buttons(struct gui_window *);
@@ -261,10 +258,10 @@ void gui_init2(int argc, char** argv)
 		BMF_CLEAR | BMF_DISPLAYABLE | BMF_INTERLEAVED,
 		NULL,RGBFB_A8R8G8B8);
 
+	if(!dummyrp.BitMap) die(messages_get("NoMemory"));
+
 	if ((!option_homepage_url) || (option_homepage_url[0] == '\0'))
     	option_homepage_url = strdup(NETSURF_HOMEPAGE);
-
-/* need some bestmodeid() in here, or grab modeid from options file */
 
 	if(option_modeid)
 	{
@@ -440,6 +437,19 @@ void ami_get_msg(void)
 							}
 
 							ami_update_buttons(gwin);
+						break;
+
+						case GID_LOGIN:
+								ami_401login_login((struct gui_login_window *)gwin);
+								win_destroyed = true;
+						break;
+
+						case GID_CANCEL:
+							if(gwin->node->Type == AMINS_LOGINWINDOW)
+							{
+								ami_401login_close((struct gui_login_window *)gwin);
+								win_destroyed = true;
+							}
 						break;
 
 						default:
@@ -752,25 +762,27 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	struct gui_window *gwin = NULL;
 	bool closegadg=TRUE;
 	
-/*
 	if(bw->browser_window_type == BROWSER_WINDOW_IFRAME)
 	{
+		if(option_no_iframes) return NULL;
+/*
 		gwin = bw->parent->window;
 		printf("%lx\n",gwin);
 		return gwin;
-	}
 */
+	}
+
 
 	gwin = AllocVec(sizeof(struct gui_window),MEMF_CLEAR);
 
-	gwin->scrollerhook.h_Entry = ami_scroller_hook;
-	gwin->scrollerhook.h_Data = gwin;
-
 	if(!gwin)
 	{
-		printf(messages_get("NoMemory"));
-		return 0;
+		warn_user("NoMemory");
+		return NULL;
 	}
+
+	gwin->scrollerhook.h_Entry = ami_scroller_hook;
+	gwin->scrollerhook.h_Data = gwin;
 
 	menu = ami_create_menu(bw->browser_window_type);
 
@@ -944,16 +956,27 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 	gwin->win = (struct Window *)RA_OpenWindow(gwin->objects[OID_MAIN]);
 
+	if(!gwin->win)
+	{
+		warn_user("NoMemory");
+		FreeVec(gwin);
+		return NULL;
+	}
+
 	gwin->bw = bw;
-//	curwin = gwin;  //test
-/* not needed - no rendering takes place here. */
 	currp = &gwin->rp; // WINDOW.CLASS: &gwin->rp; //gwin->win->RPort;
 
-/* below needs to be allocated as big as the screen */
 	gwin->bm = p96AllocBitMap(scrn->Width,scrn->Height,32,
 		BMF_CLEAR | BMF_DISPLAYABLE | BMF_INTERLEAVED,
 		gwin->win->RPort->BitMap,
 		RGBFB_A8R8G8B8);
+
+	if(!gwin->bm)
+	{
+		warn_user("NoMemory");
+		browser_window_destroy(bw);
+		return NULL;
+	}
 
 	InitRastPort(&gwin->rp);
 	gwin->rp.BitMap = gwin->bm;
@@ -964,9 +987,25 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 	gwin->areabuf = AllocVec(100,MEMF_CLEAR);
 	gwin->rp.AreaInfo = AllocVec(sizeof(struct AreaInfo),MEMF_CLEAR);
+
+	if((!gwin->areabuf) || (!gwin->rp.AreaInfo))
+	{
+		warn_user("NoMemory");
+		browser_window_destroy(bw);
+		return NULL;
+	}
+
 	InitArea(gwin->rp.AreaInfo,gwin->areabuf,100/5);
 	gwin->rp.TmpRas = AllocVec(sizeof(struct TmpRas),MEMF_CLEAR);
 	gwin->tmprasbuf = AllocVec(scrn->Width*scrn->Height,MEMF_CLEAR);
+
+	if((!gwin->tmprasbuf) || (!gwin->rp.TmpRas))
+	{
+		warn_user("NoMemory");
+		browser_window_destroy(bw);
+		return NULL;
+	}
+
 	InitTmpRas(gwin->rp.TmpRas,gwin->tmprasbuf,scrn->Width*scrn->Height);
 
 	GetRPAttrs(&gwin->rp,RPTAG_Font,&origrpfont,TAG_DONE);
@@ -976,19 +1015,11 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 
 	RefreshSetGadgetAttrs((APTR)gwin->objects[OID_VSCROLL],gwin->win,NULL,
-/*
-		GA_RelVerify,TRUE,
-		GA_Immediate,TRUE,
-*/
 		GA_ID,OID_VSCROLL,
 		ICA_TARGET,ICTARGET_IDCMP,
 		TAG_DONE);
 
 	RefreshSetGadgetAttrs((APTR)gwin->objects[OID_HSCROLL],gwin->win,NULL,
-/*
-		GA_RelVerify,TRUE,
-		GA_Immediate,TRUE,
-*/
 		GA_ID,OID_HSCROLL,
 		ICA_TARGET,ICTARGET_IDCMP,
 		TAG_DONE);
@@ -1001,6 +1032,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 void gui_window_destroy(struct gui_window *g)
 {
+	if(!g) return;
+
 	DisposeObject(g->objects[OID_MAIN]);
 	DeleteLayer(0,g->rp.Layer);
 	DisposeLayerInfo(g->layerinfo);
@@ -1023,6 +1056,7 @@ void gui_window_destroy(struct gui_window *g)
 
 void gui_window_set_title(struct gui_window *g, const char *title)
 {
+	if(!g) return;
 	if(g->win->Title) ami_utf8_free(g->win->Title);
 	SetWindowTitles(g->win,ami_utf8_easy(title),nsscreentitle);
 }
@@ -1034,6 +1068,8 @@ void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
 
 void gui_window_redraw_window(struct gui_window *g)
 {
+	if(!g) return;
+
 	g->redraw_required = true;
 	g->redraw_data = NULL;
 }
@@ -1044,6 +1080,8 @@ void gui_window_update_box(struct gui_window *g,
 	struct content *c;
 	ULONG hcurrent,vcurrent,xoffset,yoffset,width=800,height=600;
 	struct IBox *bbox;
+
+	if(!g) return;
 
 	GetAttr(SPACE_AreaBox,g->gadgets[GID_BROWSER],(ULONG *)&bbox);
 	GetAttr(SCROLLER_Top,g->objects[OID_HSCROLL],&hcurrent);
@@ -1191,6 +1229,8 @@ bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 
 void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 {
+	if(!g) return;
+
 	RefreshSetGadgetAttrs((APTR)g->objects[OID_VSCROLL],g->win,NULL,
 		SCROLLER_Top,sy,
 		TAG_DONE);
@@ -1212,6 +1252,7 @@ void gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
 void gui_window_position_frame(struct gui_window *g, int x0, int y0,
 		int x1, int y1)
 {
+	if(!g) return;
 	ChangeWindowBox(g->win,x0,y0,x1-x0,y1-y0);
 }
 
@@ -1219,6 +1260,7 @@ void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 		bool scaled)
 {
 	struct IBox *bbox;
+	if(!g) return;
 
 	GetAttr(SPACE_AreaBox,g->gadgets[GID_BROWSER],(ULONG *)&bbox);
 
@@ -1237,6 +1279,8 @@ void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 void gui_window_update_extent(struct gui_window *g)
 {
 	struct IBox *bbox;
+
+	if(!g) return;
 
 	GetAttr(SPACE_AreaBox,g->gadgets[GID_BROWSER],(ULONG *)&bbox);
 
@@ -1286,6 +1330,8 @@ void gui_window_hide_pointer(struct gui_window *g)
 
 void gui_window_set_url(struct gui_window *g, const char *url)
 {
+	if(!g) return;
+
 	RefreshSetGadgetAttrs(g->gadgets[GID_URL],g->win,NULL,STRINGA_TextVal,url,TAG_DONE);
 }
 
@@ -1301,6 +1347,8 @@ void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
 {
 	struct IBox *bbox;
 
+	if(!g) return;
+
 	GetAttr(SPACE_AreaBox,g->gadgets[GID_BROWSER],(ULONG *)&bbox);
 
 	SetAPen(g->win->RPort,3);
@@ -1314,6 +1362,8 @@ void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
 void gui_window_remove_caret(struct gui_window *g)
 {
 	struct IBox *bbox;
+
+	if(!g) return;
 
 	GetAttr(SPACE_AreaBox,g->gadgets[GID_BROWSER],(ULONG *)&bbox);
 
@@ -1395,6 +1445,7 @@ struct gui_download_window *gui_download_window_create(const char *url,
            	WA_SizeGadget, TRUE,
 			WA_CustomScreen,scrn,
 			WINDOW_IconifyGadget, TRUE,
+			WINDOW_LockHeight,TRUE,
          	WINDOW_Position, WPOS_CENTERSCREEN,
            	WINDOW_ParentGroup, dw->gadgets[GID_MAIN] = VGroupObject,
 				LAYOUT_AddChild, dw->gadgets[GID_STATUS] = FuelGaugeObject,
@@ -1432,8 +1483,8 @@ void gui_download_window_data(struct gui_download_window *dw, const char *data,
 
 	dw->downloaded = dw->downloaded + size;
 
-	va[0] = dw->downloaded;
-	va[1] = dw->size;
+	va[0] = (APTR)dw->downloaded;
+	va[1] = (APTR)dw->size;
 	va[2] = 0;
 
 	if(dw->size)

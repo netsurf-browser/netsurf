@@ -16,28 +16,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef AMIGA_OBJECT_H
-#define AMIGA_OBJECT_H
-
-#include <exec/lists.h>
-
-#define AMINS_CALLBACK 0
-#define AMINS_WINDOW 1
-#define AMINS_FRAME 2
-#define AMINS_DLWINDOW 3
-#define AMINS_LOGINWINDOW 3
-
-struct nsObject
-{
-	struct MinNode dtz_Node;
-	ULONG Type;
-	void *objstruct;
-	ULONG objstruct_size;
+#ifndef AMIGA_LOGIN_H
+#define AMIGA_LOGIN_H
+struct gui_login_window {
+	struct Window *win;
+	Object *objects[OID_LAST];
+	struct Gadget *gadgets[GID_LAST];
+	struct nsObject *node;
+	ULONG pad[2];
+	struct browser_window *bw;
+	char *url;
+	char *realm;
+	char *host;
 };
 
-struct MinList *NewObjList(void);
-struct nsObject *AddObject(struct MinList *objlist,ULONG otype);
-void DelObject(struct nsObject *dtzo);
-void FreeObjList(struct MinList *objlist);
-
+void ami_401login_close(struct gui_login_window *lw);
+void ami_401login_login(struct gui_login_window *lw);
 #endif
