@@ -35,22 +35,22 @@ void ami_free_menulabs(void)
 void ami_init_menulabs(void)
 {
 	menulab[0] = ami_utf8_easy((char *)messages_get("Project"));
-	menulab[1] = ami_utf8_easy((char *)messages_get("NewWindow"));
+	menulab[1] = ami_utf8_easy((char *)messages_get("NewWindowNS"));
 	menulab[2] = NM_BARLABEL;
 	menulab[3] = ami_utf8_easy((char *)messages_get("SaveAs"));
-	menulab[4] = ami_utf8_easy((char *)messages_get("Text"));
-	menulab[5] = ami_utf8_easy((char *)messages_get("Source"));
+	menulab[4] = ami_utf8_easy((char *)messages_get("Source"));
+	menulab[5] = ami_utf8_easy((char *)messages_get("TextNS"));
 	menulab[6] = ami_utf8_easy((char *)messages_get("PDF"));
 	menulab[7] = NM_BARLABEL;
 	menulab[8] = ami_utf8_easy((char *)messages_get("CloseWindow"));
 	menulab[9] = ami_utf8_easy((char *)messages_get("Edit"));
 	menulab[10] = ami_utf8_easy((char *)messages_get("Copy"));
 	menulab[11] = ami_utf8_easy((char *)messages_get("Paste"));
-	menulab[12] = ami_utf8_easy((char *)messages_get("SelectAll"));
-	menulab[13] = ami_utf8_easy((char *)messages_get("Clear"));
+	menulab[12] = ami_utf8_easy((char *)messages_get("SelectAllNS"));
+	menulab[13] = ami_utf8_easy((char *)messages_get("ClearNS"));
 	menulab[14] = ami_utf8_easy((char *)messages_get("Hotlist"));
 	menulab[15] = ami_utf8_easy((char *)messages_get("HotlistAdd"));
-	menulab[16] = ami_utf8_easy((char *)messages_get("HotlistShow"));
+	menulab[16] = ami_utf8_easy((char *)messages_get("HotlistShowNS"));
 	menulab[17] = ami_utf8_easy((char *)messages_get("Settings"));
 	menulab[18] = ami_utf8_easy((char *)messages_get("SnapshotWindow"));
 	menulab[19] = ami_utf8_easy((char *)messages_get("SettingsSave"));
@@ -65,8 +65,8 @@ struct NewMenu *ami_create_menu(ULONG type)
 			  	{ NM_ITEM,0,"N",0,0,0,}, // new window
 			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
 			  	{ NM_ITEM,0,0,0,0,0,}, // save
+			  	{  NM_SUB,0,"S",0,0,0,}, // save as source
 			  	{  NM_SUB,0,0,0,0,0,}, // save as text
-			  	{  NM_SUB,0,0,0,0,0,}, // save as source
 			  	{  NM_SUB,0,0,0,0,0,}, // save as pdf
 			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
 			  	{ NM_ITEM,0,"K",0,0,0,}, // close window

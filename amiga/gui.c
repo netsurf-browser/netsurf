@@ -453,7 +453,7 @@ void ami_get_msg(void)
 						break;
 
 						default:
-							printf("GADGET: %ld\n",(result & WMHI_GADGETMASK));
+//							printf("GADGET: %ld\n",(result & WMHI_GADGETMASK));
 						break;
 					}
 				break;
@@ -494,7 +494,11 @@ void ami_get_msg(void)
 												{
 													strlcpy(&fname,filereq->fr_Drawer,1024);
 													AddPart(&fname,filereq->fr_File,1024);
-													save_as_text(gwin->bw->current_content,&fname);
+													if(fh = FOpen(&fname,MODE_NEWFILE,0))
+													{
+														FWrite(fh,gwin->bw->current_content->source_data,1,gwin->bw->current_content->source_size);
+														FClose(fh);
+													}
 												}
 											break;
 
@@ -508,11 +512,7 @@ void ami_get_msg(void)
 												{
 													strlcpy(&fname,filereq->fr_Drawer,1024);
 													AddPart(&fname,filereq->fr_File,1024);
-													if(fh = FOpen(&fname,MODE_NEWFILE,0))
-													{
-														FWrite(fh,gwin->bw->current_content->source_data,1,gwin->bw->current_content->source_size);
-														FClose(fh);
-													}
+													save_as_text(gwin->bw->current_content,&fname);
 												}
 											break;
 
