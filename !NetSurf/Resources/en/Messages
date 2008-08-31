@@ -215,6 +215,36 @@ ImgStyle1:Direct to screen
 ImgStyle2:Dithered
 ImgStyle3:Error diffused
 
+# Menu items used in the Amiga version.
+# Some of these are copies of other strings but without the
+# embedded shortcut keys. (NS suffix = No Shortcut)
+#
+# Project menu
+#
+Project:Project
+NewWindowNS:New window
+CloseWindow:Close window
+SaveAs:Save as
+Source:Source...
+TextNS:Text...
+PDF:PDF...
+
+# Edit menu
+#
+Copy:Copy
+Paste:Paste
+SelectAllNS:Select all
+ClearNS:Clear selection
+
+# Hotlist menu
+#
+HotlistShowNS:Show hotlist...
+
+# Settings menu
+#
+Settings:Settings
+SnapshotWindow:Snapshot window
+SettingsSave:Save settings
 
 # Treeview interface tokens
 # =========================
@@ -247,6 +277,10 @@ TreeSession:Session end
 TreeUnused:Unused
 TreeImport:Imported URL
 TreeNewFolder:New directory
+
+# Tree export
+#
+TreeHotlist:NetSurf hotlist
 
 
 # Hotlist user interface tokens
@@ -297,6 +331,14 @@ Download:%s of %s  •  %s/s  •  %s remaining
 DownloadU:%s of unknown  •  %s/s  •  %s total
 Downloaded:%s complete  •  average %s/s  •  %s total
 Unwritten:Writing data to file failed.
+
+# Amiga download window tokens
+#
+# This section contains tokens which are used in the Amiga
+# download window.
+#
+amiDownload:%ld of %ld bytes downloaded
+amiDownloadU:%ld bytes downloaded
 
 # GTK download window tokens
 #
@@ -358,6 +400,20 @@ PrintSheetsFilled:sheets are filled
 # dialog box.
 #
 NotFound:Not found
+
+
+# 401 login user interface tokens
+# ===============================
+#
+# This section contains tokens which are used in the 401 login
+# (authentication) dialog box.
+#
+Host:Host
+Realm:Realm
+Username:Username
+Password:Password
+Login:Login
+Cancel:Cancel
 
 
 # Content
@@ -461,6 +517,9 @@ URIError:NetSurf was unable to parse this URI file due to a syntax error.
 EmptyError:file is empty.
 PrintErrorRO2:It appears that the printer is busy.
 AWNotSeen:Please locate the AWViewer application and try again.
+
+# Error messages for Amiga version only
+NoMode:No matching mode in screens database
 
 # Queries
 # =======
@@ -616,6 +675,7 @@ obj:object
 objs:objects
 styl:stylesheet
 styls:stylesheets
+OK:OK
 
 # Interactive help
 # ================
@@ -1012,12 +1072,9 @@ con_theme:Themes
 # These tokens appear to be unused at the current time.
 #
 
-# Tree export
-TreeHotlist:NetSurf hotlist
 TreeHistory:NetSurf history
 SaveSelect:Save
 ExportAs:Export as
-Copy:Copy to clipboard  ^C
 AnimImg:Animations
 DitherImg:Dither images
 FilterImg:Smooth images
