@@ -51,6 +51,10 @@
 #include "amiga/options.h"
 #include <libraries/keymap.h>
 #include "desktop/textinput.h"
+#include <intuition/pointerclass.h>
+#include <math.h>
+#include <prefs/pointer.h>
+#include <prefs/prefhdr.h>
 
 #ifdef WITH_HUBBUB
 #include <hubbub/hubbub.h>
@@ -94,6 +98,32 @@ struct FileRequester *filereq;
 struct IFFHandle *iffh = NULL;
 struct tree *hotlist;
 
+#define AMI_LASTPOINTER GUI_POINTER_PROGRESS
+struct BitMap *mouseptrbm[AMI_LASTPOINTER+1];
+int mousexpt[AMI_LASTPOINTER+1];
+int mouseypt[AMI_LASTPOINTER+1];
+
+char *ptrs[AMI_LASTPOINTER+1] = {
+	"Resources/Pointers/Blank", // replaces default
+	"Resources/Pointers/Point",
+	"Resources/Pointers/Caret",
+	"Resources/Pointers/Menu",
+	"Resources/Pointers/Up",
+	"Resources/Pointers/Down",
+	"Resources/Pointers/Left",
+	"Resources/Pointers/Right",
+	"Resources/Pointers/RightUp",
+	"Resources/Pointers/LeftDown",
+	"Resources/Pointers/LeftUp",
+	"Resources/Pointers/RightDown",
+	"Resources/Pointers/Cross",
+	"Resources/Pointers/Move",
+	"Resources/Pointers/Wait", // not used
+	"Resources/Pointers/Help",
+	"Resources/Pointers/NoDrop",
+	"Resources/Pointers/NotAllowed",
+	"Resources/Pointers/Progress"};
+
 void ami_update_buttons(struct gui_window *);
 void ami_scroller_hook(struct Hook *,Object *,struct IntuiMessage *);
 uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved);
@@ -109,6 +139,8 @@ void gui_init(int argc, char** argv)
 	bool found=FALSE;
 	int i;
 	BPTR lock=0;
+	struct RastPort mouseptr;
+	struct IFFHandle *mpiff = NULL;
 
 	msgport = AllocSysObjectTags(ASOT_PORT,
 	ASO_NoTrack,FALSE,
@@ -140,6 +172,40 @@ void gui_init(int argc, char** argv)
 		}
 	}
 
+	InitRastPort(&mouseptr);
+
+	for(i=0;i<=AMI_LASTPOINTER;i++)
+	{
+		BPTR ptrfile = 0;
+		mouseptrbm[i] = NULL;
+
+		if(ptrfile = Open(ptrs[i],MODE_OLDFILE))
+		{
+			int mx,my;
+			UBYTE *pprefsbuf = AllocVec(1024,MEMF_CLEAR);
+			Read(ptrfile,pprefsbuf,1024);
+
+			mouseptrbm[i]=AllocVec(sizeof(struct BitMap),MEMF_CLEAR);
+			InitBitMap(mouseptrbm[i],2,16,16);
+			mouseptrbm[i]->Planes[0] = AllocRaster(16,16);
+			mouseptrbm[i]->Planes[1] = AllocRaster(16,16);
+			mouseptr.BitMap = mouseptrbm[i];
+
+			for(my=0;my<16;my++)
+			{
+				for(mx=0;mx<16;mx++)
+				{
+					SetAPen(&mouseptr,pprefsbuf[(my*(17))+mx]-'0');
+					WritePixel(&mouseptr,mx,my);
+				}
+			}
+
+			mousexpt[i] = ((pprefsbuf[272]-'0')*10)+(pprefsbuf[273]-'0');
+			mouseypt[i] = ((pprefsbuf[275]-'0')*10)+(pprefsbuf[276]-'0');
+			FreeVec(pprefsbuf);
+			Close(ptrfile);
+		}
+	}
 /* need to do some proper checking that components are opening */
 
 	options_read("Resources/Options");
@@ -696,6 +762,8 @@ void gui_poll(bool active)
 
 void gui_quit(void)
 {
+	int i;
+
 	urldb_save(option_url_file);
 	urldb_save_cookies(option_cookie_file);
 	options_save_tree(hotlist,option_hotlist_file,messages_get("TreeHotlist"));
@@ -707,8 +775,17 @@ void gui_quit(void)
 	if(!option_use_wb) CloseScreen(scrn);
 	p96FreeBitMap(dummyrp.BitMap);
 	FreeVec(nsscreentitle);
-
 	ami_free_menulabs();
+
+	for(i=0;i<=AMI_LASTPOINTER;i++)
+	{
+		if(mouseptrbm[i])
+		{
+			FreeRaster(mouseptrbm[i]->Planes[0],16,16);
+			FreeRaster(mouseptrbm[i]->Planes[1],16,16);
+			FreeVec(mouseptrbm[i]);
+		}
+	}
 
 	if(iffh->iff_Stream) CloseClipboard((struct ClipboardHandle *)iffh->iff_Stream);
 	if(iffh) FreeIFF(iffh);
@@ -1223,8 +1300,8 @@ void ami_do_redraw(struct gui_window *g)
 
 bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 {
-	GetAttr(SCROLLER_Top,g->objects[OID_HSCROLL],sx);
-	GetAttr(SCROLLER_Top,g->objects[OID_VSCROLL],sy);
+	GetAttr(SCROLLER_Top,g->objects[OID_HSCROLL],(ULONG *)sx);
+	GetAttr(SCROLLER_Top,g->objects[OID_VSCROLL],(ULONG *)sy);
 }
 
 void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
@@ -1246,7 +1323,7 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 void gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
 		int x1, int y1)
 {
-	printf("scr vis\n");
+//	printf("scr vis\n");
 }
 
 void gui_window_position_frame(struct gui_window *g, int x0, int y0,
@@ -1307,10 +1384,19 @@ void gui_window_set_status(struct gui_window *g, const char *text)
 	RefreshSetGadgetAttrs(g->gadgets[GID_STATUS],g->win,NULL,STRINGA_TextVal,text,TAG_DONE);
 }
 
+Object *ami_custom_pointer(gui_pointer_shape shape)
+{
+	return NewObject(NULL,"pointerclass",POINTERA_BitMap,mouseptrbm[shape],POINTERA_WordWidth,2,POINTERA_XOffset,-mousexpt[shape],POINTERA_YOffset,-mouseypt[shape],POINTERA_XResolution,POINTERXRESN_SCREENRES,POINTERA_YResolution,POINTERYRESN_SCREENRESASPECT,TAG_DONE);
+}
+
 void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 {
 	switch(shape)
 	{
+		case GUI_POINTER_DEFAULT:
+			SetWindowPointer(g->win,TAG_DONE);
+		break;
+
 		case GUI_POINTER_WAIT:
 			SetWindowPointer(g->win,
 				WA_BusyPointer,TRUE,
@@ -1319,13 +1405,16 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 		break;
 
 		default:
-			SetWindowPointer(g->win,TAG_DONE);
+			SetWindowPointer(g->win,WA_Pointer,ami_custom_pointer(shape),TAG_DONE);
 		break;
 	}
+	
+
 }
 
 void gui_window_hide_pointer(struct gui_window *g)
 {
+	SetWindowPointer(g->win,WA_Pointer,ami_custom_pointer(0),TAG_DONE);
 }
 
 void gui_window_set_url(struct gui_window *g, const char *url)
@@ -1416,7 +1505,7 @@ struct gui_download_window *gui_download_window_create(const char *url,
 		TAG_DONE))
 	{
 		strlcpy(&fname,filereq->fr_Drawer,1024);
-		AddPart(&fname,filereq->fr_File,1024);
+		AddPart((STRPTR)&fname,filereq->fr_File,1024);
 	}
 	else return NULL;
 
@@ -1425,11 +1514,11 @@ struct gui_download_window *gui_download_window_create(const char *url,
 	dw->size = total_size;
 	dw->downloaded = 0;
 
-	va[0] = dw->downloaded;
-	va[1] = dw->size;
+	va[0] = (APTR)dw->downloaded;
+	va[1] = (APTR)dw->size;
 	va[2] = 0;
 
-	if(!(dw->fh = FOpen(&fname,MODE_NEWFILE,0)))
+	if(!(dw->fh = FOpen((STRPTR)&fname,MODE_NEWFILE,0)))
 	{
 		FreeVec(dw);
 		return NULL;
