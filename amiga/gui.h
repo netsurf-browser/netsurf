@@ -83,6 +83,7 @@ struct gui_window {
 	struct form_control *control;
 	union content_msg_data *redraw_data;
 	browser_mouse_state mouse_state;
+	browser_mouse_state key_state;
 	int c_x;
 	int c_y;
 	int c_h;

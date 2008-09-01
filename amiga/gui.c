@@ -401,17 +401,17 @@ void ami_get_msg(void)
 					{
 						if(gwin->mouse_state & BROWSER_MOUSE_PRESS_1)
 						{
-							browser_window_mouse_track(gwin->bw,BROWSER_MOUSE_DRAG_1,x,y);
+							browser_window_mouse_track(gwin->bw,BROWSER_MOUSE_DRAG_1 | gwin->key_state,x,y);
 							gwin->mouse_state = BROWSER_MOUSE_HOLDING_1 | BROWSER_MOUSE_DRAG_ON;
 						}
 						else if(gwin->mouse_state & BROWSER_MOUSE_PRESS_2)
 						{
-							browser_window_mouse_track(gwin->bw,BROWSER_MOUSE_DRAG_2,x,y);
+							browser_window_mouse_track(gwin->bw,BROWSER_MOUSE_DRAG_2 | gwin->key_state,x,y);
 							gwin->mouse_state = BROWSER_MOUSE_HOLDING_2 | BROWSER_MOUSE_DRAG_ON;
 						}
 						else
 						{
-							browser_window_mouse_track(gwin->bw,gwin->mouse_state,x,y);
+							browser_window_mouse_track(gwin->bw,gwin->mouse_state | gwin->key_state,x,y);
 						}
 					}
 				break;
@@ -431,15 +431,14 @@ void ami_get_msg(void)
 						//code = code>>16;
 						switch(code)
 						{
-/* various things aren't implemented here yet, like shift-clicks, ctrl-clicks etc */
 							case SELECTDOWN:
-								browser_window_mouse_click(gwin->bw,BROWSER_MOUSE_PRESS_1,x,y);
+								browser_window_mouse_click(gwin->bw,BROWSER_MOUSE_PRESS_1 | gwin->key_state,x,y);
 								gwin->mouse_state=BROWSER_MOUSE_PRESS_1;
 							break;
 							case SELECTUP:
 								if(gwin->mouse_state & BROWSER_MOUSE_PRESS_1)
 								{
-									browser_window_mouse_click(gwin->bw,BROWSER_MOUSE_CLICK_1,x,y);
+									browser_window_mouse_click(gwin->bw,BROWSER_MOUSE_CLICK_1 | gwin->key_state,x,y);
 								}
 								else
 								{
@@ -448,13 +447,13 @@ void ami_get_msg(void)
 								gwin->mouse_state=0;
 							break;
 							case MIDDLEDOWN:
-								browser_window_mouse_click(gwin->bw,BROWSER_MOUSE_PRESS_2,x,y);
+								browser_window_mouse_click(gwin->bw,BROWSER_MOUSE_PRESS_2 | gwin->key_state,x,y);
 								gwin->mouse_state=BROWSER_MOUSE_PRESS_2;
 							break;
 							case MIDDLEUP:
 								if(gwin->mouse_state & BROWSER_MOUSE_PRESS_2)
 								{
-									browser_window_mouse_click(gwin->bw,BROWSER_MOUSE_CLICK_2,x,y);
+									browser_window_mouse_click(gwin->bw,BROWSER_MOUSE_CLICK_2 | gwin->key_state,x,y);
 								}
 								else
 								{
@@ -560,11 +559,14 @@ void ami_get_msg(void)
 												{
 													strlcpy(&fname,filereq->fr_Drawer,1024);
 													AddPart(&fname,filereq->fr_File,1024);
+													gui_window_set_pointer(gwin,GUI_POINTER_WAIT);
 													if(fh = FOpen(&fname,MODE_NEWFILE,0))
 													{
 														FWrite(fh,gwin->bw->current_content->source_data,1,gwin->bw->current_content->source_size);
 														FClose(fh);
+														SetComment(&fname,gwin->bw->current_content->url);
 													}
+													gui_window_set_pointer(gwin,GUI_POINTER_DEFAULT);
 												}
 											break;
 
@@ -578,7 +580,10 @@ void ami_get_msg(void)
 												{
 													strlcpy(&fname,filereq->fr_Drawer,1024);
 													AddPart(&fname,filereq->fr_File,1024);
+													gui_window_set_pointer(gwin,GUI_POINTER_WAIT);
 													save_as_text(gwin->bw->current_content,&fname);
+													SetComment(&fname,gwin->bw->current_content->url);
+													gui_window_set_pointer(gwin,GUI_POINTER_DEFAULT);
 												}
 											break;
 
@@ -593,9 +598,11 @@ void ami_get_msg(void)
 												{
 													strlcpy(&fname,filereq->fr_Drawer,1024);
 													AddPart(&fname,filereq->fr_File,1024);
-													save_as_text(gwin->bw->current_content,&fname);
+													gui_window_set_pointer(gwin,GUI_POINTER_WAIT);
 													pdf_set_scale(DEFAULT_EXPORT_SCALE);
 													save_as_pdf(gwin->bw->current_content,&fname);
+													SetComment(&fname,gwin->bw->current_content->url);
+													gui_window_set_pointer(gwin,GUI_POINTER_DEFAULT);
 												}
 #endif
 											break;
@@ -692,6 +699,18 @@ void ami_get_msg(void)
 						break;
 						case RAWKEY_ESC:
 							browser_window_key_press(gwin->bw,27);
+						break;
+						case RAWKEY_LSHIFT:
+							gwin->key_state = BROWSER_MOUSE_MOD_1;
+						break;
+						case 0xe0: // lshift up
+							gwin->key_state = 0;
+						break;
+						case RAWKEY_LCTRL:
+							gwin->key_state = BROWSER_MOUSE_MOD_2;
+						break;
+						case 0xe3: // lctrl up
+							gwin->key_state = 0;
 						break;
 					}
 				break;
@@ -1386,6 +1405,8 @@ void gui_window_set_status(struct gui_window *g, const char *text)
 
 Object *ami_custom_pointer(gui_pointer_shape shape)
 {
+	if(!mouseptrbm[shape]) printf("%ld is null\n",shape);
+
 	return NewObject(NULL,"pointerclass",POINTERA_BitMap,mouseptrbm[shape],POINTERA_WordWidth,2,POINTERA_XOffset,-mousexpt[shape],POINTERA_YOffset,-mouseypt[shape],POINTERA_XResolution,POINTERXRESN_SCREENRES,POINTERA_YResolution,POINTERYRESN_SCREENRESASPECT,TAG_DONE);
 }
 
@@ -1523,6 +1544,8 @@ struct gui_download_window *gui_download_window_create(const char *url,
 		FreeVec(dw);
 		return NULL;
 	}
+
+	SetComment(&fname,url);
 
 	dw->objects[OID_MAIN] = WindowObject,
       	    WA_ScreenTitle,nsscreentitle,
@@ -1742,6 +1765,8 @@ void gui_create_form_select_menu(struct browser_window *bw,
 		opt = opt->next;
 		i++;
 	}
+
+	gui_window_set_pointer(gwin,GUI_POINTER_DEFAULT); // Clear the menu-style pointer
 
 	IDoMethod(gwin->objects[OID_MENU],PM_OPEN,gwin->win);
 
