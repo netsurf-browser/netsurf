@@ -53,3 +53,29 @@ char *ami_utf8_easy(char *string)
 		return NULL;
 	}
 }
+
+char *ami_to_utf8_easy(char *string)
+{
+	char *localtext;
+
+	if(utf8_from_local_encoding(string,strlen(string),&localtext) == UTF8_CONVERT_OK)
+	{
+		return localtext;
+	}
+	else
+	{
+		return NULL;
+	}
+}
+
+utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
+	char **result)
+{
+	ULONG *charset;
+	char *encname;
+
+	charset = GetDiskFontCtrl(DFCTRL_CHARSET);
+	encname = parserutils_charset_mibenum_to_name(charset);
+	
+	return utf8_from_enc(string,encname,len,result);
+}

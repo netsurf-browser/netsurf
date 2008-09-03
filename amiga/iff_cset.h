@@ -16,9 +16,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef AMIGA_UTF8_H
-#define AMIGA_UTF8_H
-char *ami_utf8_easy(char *string);
-void ami_utf8_free(char *ptr);
-char *ami_to_utf8_easy(char *string);
+#ifndef AMIGA_IFF_CSET_H
+#define AMIGA_IFF_CSET_H
+
+/* This structure is for the IFF CSET chunk, registered by Martin Taillefer */
+
+struct CSet {
+	LONG	CodeSet;	/* 0=ECMA Latin 1 (std Amiga charset) */
+	/* CBM will define additional values  */
+	LONG	Reserved[7];
+	};
+
+#define ID_CSET  MAKE_ID('C','S','E','T')
+
 #endif

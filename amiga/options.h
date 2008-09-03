@@ -27,6 +27,7 @@ extern bool option_use_wb;
 extern int option_modeid;
 extern char *option_toolbar_images;
 extern bool option_no_iframes;
+extern bool option_utf8_clipboard;
 
 #define EXTRA_OPTION_DEFINE \
 bool option_verbose_log = false; \
@@ -36,6 +37,7 @@ bool option_use_wb = false; \
 int option_modeid = 0; \
 char *option_toolbar_images = 0; \
 bool option_no_iframes = false; \
+bool option_utf8_clipboard = false; \
 
 #define EXTRA_OPTION_TABLE \
 { "verbose_log",	OPTION_BOOL,	&option_verbose_log}, \
@@ -44,5 +46,6 @@ bool option_no_iframes = false; \
 { "use_workbench",	OPTION_BOOL,	&option_use_wb}, \
 { "screen_modeid",	OPTION_INTEGER,	&option_modeid}, \
 { "toolbar_images",		OPTION_STRING,	&option_toolbar_images }, \
-{ "no_iframes",	OPTION_BOOL,	&option_no_iframes},
+{ "no_iframes",	OPTION_BOOL,	&option_no_iframes}, \
+{ "clipboard_write_utf8",	OPTION_BOOL,	&option_utf8_clipboard},
 #endif
