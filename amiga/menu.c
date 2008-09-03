@@ -21,6 +21,16 @@
 #include "utils/messages.h"
 #include "amiga/utf8.h"
 #include <libraries/gadtools.h>
+#include <proto/asl.h>
+#include "desktop/options.h"
+#include "desktop/gui.h"
+#include "amiga/hotlist.h"
+#include <proto/dos.h>
+#include "amiga/gui.h"
+#include "amiga/save_pdf.h"
+#include "desktop/save_text.h"
+#include "desktop/save_pdf/pdf_plotters.h"
+#include <string.h>
 
 void ami_free_menulabs(void)
 {
@@ -102,4 +112,147 @@ struct NewMenu *ami_create_menu(ULONG type)
 #endif
 
 	return(menu);
+}
+
+void ami_menupick(ULONG code,struct gui_window *gwin)
+{
+	ULONG menunum=0,itemnum=0,subnum=0;
+	menunum = MENUNUM(code);
+	itemnum = ITEMNUM(code);
+	subnum = SUBNUM(code);
+
+	switch(menunum)
+	{
+		case 0:  // project
+			switch(itemnum)
+			{
+				struct browser_window *bw;
+				case 0: // new window
+					bw = browser_window_create(gwin->bw->current_content->url,gwin->bw, 0, true, false);
+				break;
+
+				case 2: // save
+					switch(subnum)
+					{
+						BPTR fh=0;
+						char fname[1024];
+
+						case 0:
+							if(AslRequestTags(filereq,
+								ASLFR_TitleText,messages_get("NetSurf"),
+								ASLFR_Screen,scrn,
+								ASLFR_DoSaveMode,TRUE,
+								ASLFR_InitialFile,FilePart(gwin->bw->current_content->url),
+								TAG_DONE))
+							{
+								strlcpy(&fname,filereq->fr_Drawer,1024);
+								AddPart(fname,filereq->fr_File,1024);
+								gui_window_set_pointer(gwin,GUI_POINTER_WAIT);
+								if(fh = FOpen(fname,MODE_NEWFILE,0))
+								{
+									FWrite(fh,gwin->bw->current_content->source_data,1,gwin->bw->current_content->source_size);
+									FClose(fh);
+									SetComment(fname,gwin->bw->current_content->url);
+								}
+								gui_window_set_pointer(gwin,GUI_POINTER_DEFAULT);
+							}
+						break;
+
+						case 1:
+							if(AslRequestTags(filereq,
+								ASLFR_TitleText,messages_get("NetSurf"),
+								ASLFR_Screen,scrn,
+								ASLFR_DoSaveMode,TRUE,
+								ASLFR_InitialFile,FilePart(gwin->bw->current_content->url),
+								TAG_DONE))
+							{
+								strlcpy(&fname,filereq->fr_Drawer,1024);
+								AddPart(fname,filereq->fr_File,1024);
+								gui_window_set_pointer(gwin,GUI_POINTER_WAIT);
+								save_as_text(gwin->bw->current_content,fname);
+								SetComment(fname,gwin->bw->current_content->url);
+								gui_window_set_pointer(gwin,GUI_POINTER_DEFAULT);
+							}
+						break;
+
+						case 2:
+#ifdef WITH_PDF_EXPORT
+							if(AslRequestTags(filereq,
+								ASLFR_TitleText,messages_get("NetSurf"),
+								ASLFR_Screen,scrn,
+								ASLFR_DoSaveMode,TRUE,
+								ASLFR_InitialFile,FilePart(gwin->bw->current_content->url),
+								TAG_DONE))
+							{
+								strlcpy(&fname,filereq->fr_Drawer,1024);
+								AddPart(fname,filereq->fr_File,1024);
+								gui_window_set_pointer(gwin,GUI_POINTER_WAIT);
+								pdf_set_scale(DEFAULT_EXPORT_SCALE);
+								save_as_pdf(gwin->bw->current_content,fname);
+								SetComment(fname,gwin->bw->current_content->url);
+								gui_window_set_pointer(gwin,GUI_POINTER_DEFAULT);
+							}
+#endif
+						break;
+					}
+				break;
+
+				case 4: // close
+					browser_window_destroy(gwin->bw);
+				break;
+			}
+		break;
+
+		case 1:  // edit
+			switch(itemnum)
+			{
+				case 0: // copy
+					gui_copy_to_clipboard(gwin->bw->sel);
+				break;
+
+				case 1: // paste
+					gui_paste_from_clipboard(gwin,0,0);
+				break;
+
+				case 2: // select all
+					browser_window_key_press(gwin->bw, 1);
+				break;
+
+				case 3: // clear selection
+					browser_window_key_press(gwin->bw, 26);
+				break;
+			}
+		break;
+
+		case 2: // hotlist
+			switch(itemnum)
+			{
+				case 0: // add
+					ami_hotlist_add(hotlist->root,gwin->bw->current_content);
+					options_save_tree(hotlist,"Resources/Hotlist","NetSurf hotlist");
+				break;
+
+				case 1: // show
+/* this along with save_tree above is very temporary! */
+					browser_window_go(gwin->bw,"file:///netsurf/resources/hotlist",NULL,true);
+				break;
+			}
+		break;
+
+		case 3: // settings
+			switch(itemnum)
+			{
+				case 0: // snapshot
+					option_window_x = gwin->win->LeftEdge;
+					option_window_y = gwin->win->TopEdge;
+					option_window_width = gwin->win->Width;
+					option_window_height = gwin->win->Height;
+				break;
+
+				case 1: // save settings
+					options_write("Resources/Options");
+				break;
+			}
+		break;
+	}
 }

@@ -26,4 +26,5 @@ char *menulab[AMI_MENU_MAX+1];
 struct NewMenu *ami_create_menu(ULONG type);
 void ami_init_menulabs(void);
 void ami_free_menulabs(void);
+void ami_menupick(ULONG code,struct gui_window *gwin);
 #endif

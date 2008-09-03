@@ -53,8 +53,8 @@
 #include "desktop/textinput.h"
 #include <intuition/pointerclass.h>
 #include <math.h>
-#include <prefs/pointer.h>
-#include <prefs/prefhdr.h>
+#include <workbench/workbench.h>
+#include "amiga/iff_cset.h"
 
 #ifdef WITH_HUBBUB
 #include <hubbub/hubbub.h>
@@ -85,6 +85,7 @@ char *default_stylesheet_url;
 char *adblock_stylesheet_url;
 struct gui_window *search_current_window = NULL;
 
+struct MsgPort *appport;
 struct MsgPort *msgport;
 struct timerequest *tioreq;
 struct Device *TimerBase;
@@ -94,9 +95,7 @@ struct PopupMenuIFace *IPopupMenu = NULL;
 
 bool win_destroyed = false;
 static struct RastPort dummyrp;
-struct FileRequester *filereq;
 struct IFFHandle *iffh = NULL;
-struct tree *hotlist;
 
 #define AMI_LASTPOINTER GUI_POINTER_PROGRESS
 struct BitMap *mouseptrbm[AMI_LASTPOINTER+1];
@@ -156,6 +155,10 @@ void gui_init(int argc, char** argv)
 
 	TimerBase = (struct Device *)tioreq->tr_node.io_Device;
 	ITimer = (struct TimerIFace *)GetInterface((struct Library *)TimerBase,"main",1,NULL);
+
+    if(!(appport = AllocSysObjectTags(ASOT_PORT,
+							ASO_NoTrack,FALSE,
+							TAG_DONE))) die(messages_get("NoMemory"));
 
 	if(PopupMenuBase = OpenLibrary("popupmenu.class",0))
 	{
@@ -280,19 +283,19 @@ void gui_init(int argc, char** argv)
 		option_ca_bundle = strdup("devs:curl-ca-bundle.crt");
 
 	if((!option_font_sans) || (option_font_sans[0] == '\0'))
-		option_font_sans = strdup("DejaVu Sans.font");
+		option_font_sans = strdup("DejaVu Sans");
 
 	if((!option_font_serif) || (option_font_serif[0] == '\0'))
-		option_font_serif = strdup("DejaVu Serif.font");
+		option_font_serif = strdup("DejaVu Serif");
 
 	if((!option_font_mono) || (option_font_mono[0] == '\0'))
-		option_font_mono = strdup("DejaVu Sans Mono.font");
+		option_font_mono = strdup("DejaVu Sans Mono");
 
 	if((!option_font_cursive) || (option_font_cursive[0] == '\0'))
-		option_font_cursive = strdup("DejaVu Sans.font");
+		option_font_cursive = strdup("DejaVu Sans");
 
 	if((!option_font_fantasy) || (option_font_fantasy[0] == '\0'))
-		option_font_fantasy = strdup("DejaVu Serif.font");
+		option_font_fantasy = strdup("DejaVu Serif");
 
 	if(!option_window_width) option_window_width = 800;
 	if(!option_window_height) option_window_height = 600;
@@ -365,6 +368,7 @@ void gui_init2(int argc, char** argv)
 void ami_get_msg(void)
 {
 	struct IntuiMessage *message = NULL;
+	struct AppMessage *appmsg;
 	ULONG class,result,storage = 0,x,y,xs,ys,width=800,height=600;
 	uint16 code;
 	struct IBox *bbox;
@@ -414,6 +418,10 @@ void ami_get_msg(void)
 							browser_window_mouse_track(gwin->bw,gwin->mouse_state | gwin->key_state,x,y);
 						}
 					}
+					else
+					{
+						if(!gwin->mouse_state)	gui_window_set_pointer(gwin,GUI_POINTER_DEFAULT);
+					}
 				break;
 
 				case WMHI_MOUSEBUTTONS:
@@ -435,33 +443,42 @@ void ami_get_msg(void)
 								browser_window_mouse_click(gwin->bw,BROWSER_MOUSE_PRESS_1 | gwin->key_state,x,y);
 								gwin->mouse_state=BROWSER_MOUSE_PRESS_1;
 							break;
-							case SELECTUP:
-								if(gwin->mouse_state & BROWSER_MOUSE_PRESS_1)
-								{
-									browser_window_mouse_click(gwin->bw,BROWSER_MOUSE_CLICK_1 | gwin->key_state,x,y);
-								}
-								else
-								{
-									browser_window_mouse_drag_end(gwin->bw,0,x,y);
-								}
-								gwin->mouse_state=0;
-							break;
 							case MIDDLEDOWN:
 								browser_window_mouse_click(gwin->bw,BROWSER_MOUSE_PRESS_2 | gwin->key_state,x,y);
 								gwin->mouse_state=BROWSER_MOUSE_PRESS_2;
 							break;
-							case MIDDLEUP:
-								if(gwin->mouse_state & BROWSER_MOUSE_PRESS_2)
-								{
-									browser_window_mouse_click(gwin->bw,BROWSER_MOUSE_CLICK_2 | gwin->key_state,x,y);
-								}
-								else
-								{
-									browser_window_mouse_drag_end(gwin->bw,0,x,y);
-								}
-								gwin->mouse_state=0;
-							break;
 						}
+					}
+
+					if(x<xs) x=xs;
+					if(y<ys) y=ys;
+					if(x>=width+xs) x=width+xs-1;
+					if(y>=height+ys) y=height+ys-1;
+
+					switch(code)
+					{
+						case SELECTUP:
+							if(gwin->mouse_state & BROWSER_MOUSE_PRESS_1)
+							{
+								browser_window_mouse_click(gwin->bw,BROWSER_MOUSE_CLICK_1 | gwin->key_state,x,y);
+							}
+							else
+							{
+								browser_window_mouse_drag_end(gwin->bw,0,x,y);
+							}
+							gwin->mouse_state=0;
+						break;
+						case MIDDLEUP:
+							if(gwin->mouse_state & BROWSER_MOUSE_PRESS_2)
+							{
+								browser_window_mouse_click(gwin->bw,BROWSER_MOUSE_CLICK_2 | gwin->key_state,x,y);
+							}
+							else
+							{
+								browser_window_mouse_drag_end(gwin->bw,0,x,y);
+							}
+							gwin->mouse_state=0;
+						break;
 					}
 				break;
 
@@ -527,147 +544,8 @@ void ami_get_msg(void)
 					item = ItemAddress(gwin->win->MenuStrip,code);
 					while (code != MENUNULL)
 					{
-						ULONG menunum=0,itemnum=0,subnum=0;
-						menunum = MENUNUM(code);
-						itemnum = ITEMNUM(code);
-						subnum = SUBNUM(code);
+						ami_menupick(code,gwin);
 
-						switch(menunum)
-						{
-							case 0:  // project
-								switch(itemnum)
-								{
-									struct browser_window *bw;
-
-									case 0: // new window
-										bw = browser_window_create(gwin->bw->current_content->url, 0, 0, true, false);
-									break;
-
-									case 2: // save
-										switch(subnum)
-										{
-											BPTR fh=0;
-											char fname[1024];
-
-											case 0:
-												if(AslRequestTags(filereq,
-													ASLFR_TitleText,messages_get("NetSurf"),
-													ASLFR_Screen,scrn,
-													ASLFR_DoSaveMode,TRUE,
-													ASLFR_InitialFile,FilePart(gwin->bw->current_content->url),
-													TAG_DONE))
-												{
-													strlcpy(&fname,filereq->fr_Drawer,1024);
-													AddPart(&fname,filereq->fr_File,1024);
-													gui_window_set_pointer(gwin,GUI_POINTER_WAIT);
-													if(fh = FOpen(&fname,MODE_NEWFILE,0))
-													{
-														FWrite(fh,gwin->bw->current_content->source_data,1,gwin->bw->current_content->source_size);
-														FClose(fh);
-														SetComment(&fname,gwin->bw->current_content->url);
-													}
-													gui_window_set_pointer(gwin,GUI_POINTER_DEFAULT);
-												}
-											break;
-
-											case 1:
-												if(AslRequestTags(filereq,
-													ASLFR_TitleText,messages_get("NetSurf"),
-													ASLFR_Screen,scrn,
-													ASLFR_DoSaveMode,TRUE,
-													ASLFR_InitialFile,FilePart(gwin->bw->current_content->url),
-													TAG_DONE))
-												{
-													strlcpy(&fname,filereq->fr_Drawer,1024);
-													AddPart(&fname,filereq->fr_File,1024);
-													gui_window_set_pointer(gwin,GUI_POINTER_WAIT);
-													save_as_text(gwin->bw->current_content,&fname);
-													SetComment(&fname,gwin->bw->current_content->url);
-													gui_window_set_pointer(gwin,GUI_POINTER_DEFAULT);
-												}
-											break;
-
-											case 2:
-#ifdef WITH_PDF_EXPORT
-												if(AslRequestTags(filereq,
-													ASLFR_TitleText,messages_get("NetSurf"),
-													ASLFR_Screen,scrn,
-													ASLFR_DoSaveMode,TRUE,
-													ASLFR_InitialFile,FilePart(gwin->bw->current_content->url),
-													TAG_DONE))
-												{
-													strlcpy(&fname,filereq->fr_Drawer,1024);
-													AddPart(&fname,filereq->fr_File,1024);
-													gui_window_set_pointer(gwin,GUI_POINTER_WAIT);
-													pdf_set_scale(DEFAULT_EXPORT_SCALE);
-													save_as_pdf(gwin->bw->current_content,&fname);
-													SetComment(&fname,gwin->bw->current_content->url);
-													gui_window_set_pointer(gwin,GUI_POINTER_DEFAULT);
-												}
-#endif
-											break;
-										}
-									break;
-
-									case 4: // close
-										browser_window_destroy(gwin->bw);
-									break;
-								}
-							break;
-
-							case 1:  // edit
-								switch(itemnum)
-								{
-									case 0: // copy
-										gui_copy_to_clipboard(gwin->bw->sel);
-									break;
-
-									case 1: // paste
-										gui_paste_from_clipboard(gwin,0,0);
-									break;
-
-									case 2: // select all
-										browser_window_key_press(gwin->bw, 1);
-									break;
-
-									case 3: // clear selection
-										browser_window_key_press(gwin->bw, 26);
-									break;
-								}
-							break;
-
-							case 2: // hotlist
-								switch(itemnum)
-								{
-									case 0: // add
-										ami_hotlist_add(hotlist->root,gwin->bw->current_content);
-										options_save_tree(hotlist,"Resources/Hotlist","NetSurf hotlist");
-									break;
-
-									case 1: // show
-/* this along with save_tree above is very temporary! */
-										browser_window_go(gwin->bw,"file:///netsurf/resources/hotlist",NULL,true);
-									break;
-								}
-							break;
-
-							case 3: // settings
-								switch(itemnum)
-								{
-									case 0: // snapshot
-										option_window_x = gwin->win->LeftEdge;
-										option_window_y = gwin->win->TopEdge;
-										option_window_width = gwin->win->Width;
-										option_window_height = gwin->win->Height;
-									break;
-
-									case 1: // save settings
-										options_write("Resources/Options");
-									break;
-								}
-							break;
-
-						}
 						if(win_destroyed) break;
 						code = item->NextSelect;
 					}
@@ -749,6 +627,14 @@ void ami_get_msg(void)
 
 		node = nnode;
 	}
+
+	if(appmsg=(struct AppMessage *)GetMsg(appport))
+	{
+		GetAttr(WINDOW_UserData,appmsg->am_ID,(ULONG *)&gwin);
+		printf("type:%lx id:%lx/%lx num:%lx x:%lx y:%lx\n",appmsg->am_Type,gwin->win,gwin,appmsg->am_NumArgs,appmsg->am_MouseX,appmsg->am_MouseY);
+		//AMTYPE_APPWINDOW
+		ReplyMsg((struct Message *)appmsg);
+	}
 }
 
 void gui_multitask(void)
@@ -809,6 +695,8 @@ void gui_quit(void)
 	if(iffh->iff_Stream) CloseClipboard((struct ClipboardHandle *)iffh->iff_Stream);
 	if(iffh) FreeIFF(iffh);
 
+	FreeSysObject(ASOT_PORT,appport);
+
 	FreeAslRequest(filereq);
 
     if(IPopupMenu) DropInterface((struct Interface *)IPopupMenu);
@@ -857,7 +745,19 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	struct NewMenu *menu;
 	struct gui_window *gwin = NULL;
 	bool closegadg=TRUE;
-	
+	ULONG curx=option_window_x,cury=option_window_y,curw=option_window_width,curh=option_window_height;
+
+	if(clone)
+	{
+		if(clone->window)
+		{
+			curx=clone->window->win->LeftEdge;
+			cury=clone->window->win->TopEdge;
+			curw=clone->window->win->Width;
+			curh=clone->window->win->Height;
+		}
+	}
+
 	if(bw->browser_window_type == BROWSER_WINDOW_IFRAME)
 	{
 		if(option_no_iframes) return NULL;
@@ -894,8 +794,10 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
            	WA_DepthGadget, TRUE,
            	WA_DragBar, TRUE,
            	WA_CloseGadget, FALSE,
-			WA_Width,200,
-			WA_Height,200,
+			WA_Top,cury,
+			WA_Left,curx,
+			WA_Width,curw,
+			WA_Height,curh,
            	WA_SizeGadget, TRUE,
 			WA_CustomScreen,scrn,
 			WA_ReportMouse,TRUE,
@@ -906,7 +808,10 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			WINDOW_HorizProp,1,
 			WINDOW_VertProp,1,
 			WINDOW_IDCMPHook,&gwin->scrollerhook,
-			WINDOW_IDCMPHookBits,IDCMP_IDCMPUPDATE, 
+			WINDOW_IDCMPHookBits,IDCMP_IDCMPUPDATE,
+            WINDOW_AppPort, appport,
+			WINDOW_AppWindow,TRUE,
+			WINDOW_UserData,gwin,
 //         	WINDOW_Position, WPOS_CENTERSCREEN,
 //			WINDOW_CharSet,106,
            	WINDOW_ParentGroup, gwin->gadgets[GID_MAIN] = VGroupObject,
@@ -933,10 +838,10 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
            	WA_DragBar, TRUE,
            	WA_CloseGadget, TRUE,
            	WA_SizeGadget, TRUE,
-			WA_Top,option_window_y,
-			WA_Left,option_window_x,
-			WA_Width,option_window_width,
-			WA_Height,option_window_height,
+			WA_Top,cury,
+			WA_Left,curx,
+			WA_Width,curw,
+			WA_Height,curh,
 			WA_CustomScreen,scrn,
 			WA_ReportMouse,TRUE,
            	WA_IDCMP,IDCMP_MENUPICK | IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS |
@@ -946,7 +851,10 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			WINDOW_HorizProp,1,
 			WINDOW_VertProp,1,
 			WINDOW_IDCMPHook,&gwin->scrollerhook,
-			WINDOW_IDCMPHookBits,IDCMP_IDCMPUPDATE, 
+			WINDOW_IDCMPHookBits,IDCMP_IDCMPUPDATE,
+            WINDOW_AppPort, appport,
+			WINDOW_AppWindow,TRUE,
+			WINDOW_UserData,gwin,
 //         	WINDOW_Position, WPOS_CENTERSCREEN,
 //			WINDOW_CharSet,106,
            	WINDOW_ParentGroup, gwin->gadgets[GID_MAIN] = VGroupObject,
@@ -1650,10 +1558,15 @@ void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
 	/* This and the other clipboard code is heavily based on the RKRM examples */
 	struct ContextNode *cn;
 	ULONG rlen=0,error;
+	struct CSet cset;
+	char *clip;
 	STRPTR readbuf = AllocVec(1024,MEMF_CLEAR);
+
+	cset.CodeSet = 0;
 
 	if(OpenIFF(iffh,IFFF_READ)) return;
 	if(StopChunk(iffh,ID_FTXT,ID_CHRS)) return;
+	if(StopChunk(iffh,ID_FTXT,ID_CSET)) return;
 
 	while(1)
 	{
@@ -1663,11 +1576,25 @@ void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
 
 		cn = CurrentChunk(iffh);
 
+		if((cn)&&(cn->cn_Type == ID_FTXT)&&(cn->cn_ID == ID_CSET))
+		{
+			rlen = ReadChunkBytes(iffh,&cset,24);
+		}
+
 		if((cn)&&(cn->cn_Type == ID_FTXT)&&(cn->cn_ID == ID_CHRS))
 		{
 			while((rlen = ReadChunkBytes(iffh,readbuf,1024)) > 0)
 			{
-				browser_window_paste_text(g->bw,readbuf,rlen,true);
+				if(cset.CodeSet == 0)
+				{
+					utf8_from_local_encoding(readbuf,rlen,&clip);
+				}
+				else
+				{
+					utf8_from_enc(readbuf,parserutils_charset_mibenum_to_name(cset.CodeSet),rlen,&clip);
+				}
+
+				browser_window_paste_text(g->bw,clip,rlen,true);
 			}
 			if(rlen < 0) error = rlen;
 		}
@@ -1682,9 +1609,16 @@ bool gui_empty_clipboard(void)
 bool gui_add_to_clipboard(const char *text, size_t length, bool space)
 {
 	char *buffer;
-	utf8_to_local_encoding(text,length,&buffer);
-	if(buffer) WriteChunkBytes(iffh,buffer,strlen(buffer));
-	ami_utf8_free(buffer);
+	if(option_utf8_clipboard)
+	{
+		WriteChunkBytes(iffh,text,length);
+	}
+	else
+	{
+		utf8_to_local_encoding(text,length,&buffer);
+		if(buffer) WriteChunkBytes(iffh,buffer,strlen(buffer));
+		ami_utf8_free(buffer);
+	}
 	return true;
 }
 
@@ -1723,10 +1657,22 @@ bool ami_clipboard_copy(const char *text, size_t length, struct box *box,
 
 bool gui_copy_to_clipboard(struct selection *s)
 {
+	struct CSet cset = {0};
+
 	if(!(OpenIFF(iffh,IFFF_WRITE)))
 	{
 		if(!(PushChunk(iffh,ID_FTXT,ID_FORM,IFFSIZE_UNKNOWN)))
 		{
+			if(option_utf8_clipboard)
+			{
+				if(!(PushChunk(iffh,0,ID_CSET,24)))
+				{
+					cset.CodeSet = 106; // UTF-8
+					WriteChunkBytes(iffh,&cset,24);
+					PopChunk(iffh);
+				}
+			}
+
 			if (s->defined && selection_traverse(s, ami_clipboard_copy, NULL))
 			{
 				gui_commit_clipboard();

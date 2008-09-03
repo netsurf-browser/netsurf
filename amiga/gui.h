@@ -94,4 +94,5 @@ struct TextFont *origrpfont;
 struct MinList *window_list;
 struct Screen *scrn;
 STRPTR nsscreentitle;
+struct FileRequester *filereq;
 #endif
