@@ -85,6 +85,7 @@ char *default_stylesheet_url;
 char *adblock_stylesheet_url;
 struct gui_window *search_current_window = NULL;
 
+struct MsgPort *sport;
 struct MsgPort *appport;
 struct MsgPort *msgport;
 struct timerequest *tioreq;
@@ -157,6 +158,10 @@ void gui_init(int argc, char** argv)
 	ITimer = (struct TimerIFace *)GetInterface((struct Library *)TimerBase,"main",1,NULL);
 
     if(!(appport = AllocSysObjectTags(ASOT_PORT,
+							ASO_NoTrack,FALSE,
+							TAG_DONE))) die(messages_get("NoMemory"));
+
+    if(!(sport = AllocSysObjectTags(ASOT_PORT,
 							ASO_NoTrack,FALSE,
 							TAG_DONE))) die(messages_get("NoMemory"));
 
@@ -365,10 +370,9 @@ void gui_init2(int argc, char** argv)
 	bw = browser_window_create(option_homepage_url, 0, 0, true,false); // curbw = temp
 }
 
-void ami_get_msg(void)
+void ami_handle_msg(void)
 {
 	struct IntuiMessage *message = NULL;
-	struct AppMessage *appmsg;
 	ULONG class,result,storage = 0,x,y,xs,ys,width=800,height=600;
 	uint16 code;
 	struct IBox *bbox;
@@ -388,7 +392,7 @@ void ami_get_msg(void)
 
 //printf("class %ld\n",class);
 	        switch(result & WMHI_CLASSMASK) // class
-    	   	{
+   		   	{
 				case WMHI_MOUSEMOVE:
 					GetAttr(SPACE_AreaBox,gwin->gadgets[GID_BROWSER],&bbox);
 
@@ -425,7 +429,7 @@ void ami_get_msg(void)
 				break;
 
 				case WMHI_MOUSEBUTTONS:
-					GetAttr(SPACE_AreaBox,gwin->gadgets[GID_BROWSER],(ULONG *)&bbox);
+					GetAttr(SPACE_AreaBox,gwin->gadgets[GID_BROWSER],(ULONG *)&bbox);	
 					GetAttr(SCROLLER_Top,gwin->objects[OID_HSCROLL],&xs);
 					x = gwin->win->MouseX - bbox->Left +xs;
 					GetAttr(SCROLLER_Top,gwin->objects[OID_VSCROLL],&ys);
@@ -492,7 +496,7 @@ void ami_get_msg(void)
 						break;
 
 						case GID_HOME:
-							browser_window_go(gwin->bw,option_homepage_url,NULL,true);
+							browser_window_go(gwin->bw,option_homepage_url,NULL,true);	
 						break;
 
 						case GID_STOP:
@@ -508,7 +512,7 @@ void ami_get_msg(void)
 							{
 								history_back(gwin->bw,gwin->bw->history);
 							}
-
+	
 							ami_update_buttons(gwin);
 						break;
 
@@ -522,8 +526,8 @@ void ami_get_msg(void)
 						break;
 
 						case GID_LOGIN:
-								ami_401login_login((struct gui_login_window *)gwin);
-								win_destroyed = true;
+							ami_401login_login((struct gui_login_window *)gwin);
+							win_destroyed = true;
 						break;
 
 						case GID_CANCEL:
@@ -545,7 +549,6 @@ void ami_get_msg(void)
 					while (code != MENUNULL)
 					{
 						ami_menupick(code,gwin);
-
 						if(win_destroyed) break;
 						code = item->NextSelect;
 					}
@@ -594,7 +597,7 @@ void ami_get_msg(void)
 				break;
 
 				case WMHI_NEWSIZE:
-					GetAttr(SPACE_AreaBox,gwin->gadgets[GID_BROWSER],(ULONG *)&bbox);
+					GetAttr(SPACE_AreaBox,gwin->gadgets[GID_BROWSER],(ULONG *)&bbox);	
 					browser_window_reformat(gwin->bw,bbox->Width,bbox->Height);
 					gwin->redraw_required = true;
 					//gui_window_redraw_window(gwin);
@@ -603,16 +606,20 @@ void ami_get_msg(void)
 				case WMHI_CLOSEWINDOW:
 					browser_window_destroy(gwin->bw);
 					//destroywin=gwin;
-		           	break;
+		        break;
 
-	      	     	default:
-//						printf("class: %ld\n",(result & WMHI_CLASSMASK));
-	           		break;
+				case WMHI_INTUITICK:
+// these are only here to stop netsurf stalling waiting for an event					
+				break;					
+
+	   	     	default:
+//					printf("class: %ld\n",(result & WMHI_CLASSMASK));
+   	       		break;
 			}
 
 			if(win_destroyed)
 			{
-				/* we can't be sure what state our window_list is in, so let's
+					/* we can't be sure what state our window_list is in, so let's
 					jump out of the function and start again */
 
 				win_destroyed = false;
@@ -627,40 +634,72 @@ void ami_get_msg(void)
 
 		node = nnode;
 	}
+}
 
-	if(appmsg=(struct AppMessage *)GetMsg(appport))
+void ami_handle_appmsg(void)
+{
+	struct AppMessage *appmsg;
+	struct gui_window *gwin;
+
+	while(appmsg=(struct AppMessage *)GetMsg(appport))
 	{
 		GetAttr(WINDOW_UserData,appmsg->am_ID,(ULONG *)&gwin);
 		printf("type:%lx id:%lx/%lx num:%lx x:%lx y:%lx\n",appmsg->am_Type,gwin->win,gwin,appmsg->am_NumArgs,appmsg->am_MouseX,appmsg->am_MouseY);
-		//AMTYPE_APPWINDOW
+		if(appmsg->am_Type == AMTYPE_APPWINDOW)
+			{
+			if (!gwin->bw->current_content || gwin->bw->current_content->type != CONTENT_HTML)
+			{
+// we'll just load the file in - deal with this later
+
+//struct WBArg * am_ArgList
+			}
+			else
+			{
+//struct WBArg * am_ArgList
+			}
+		}
 		ReplyMsg((struct Message *)appmsg);
+	}
+}
+
+void ami_get_msg(void)
+{
+	ULONG winsignal = 1L << sport->mp_SigBit;
+	ULONG appsig = 1L << appport->mp_SigBit;
+    ULONG signalmask = winsignal | appsig;
+	ULONG signal;
+
+    signal = Wait(signalmask);
+
+	if(signal & winsignal)
+	{
+		ami_handle_msg();
+	}
+	else if(signal & appsig)
+	{
+		ami_handle_appmsg();
 	}
 }
 
 void gui_multitask(void)
 {
-//	printf("mtask\n");
-	ami_get_msg();
+	/* This seems a bit topsy-turvy to me, but in this function, NetSurf is doing
+	   stuff and we need to poll for user events */
 
-/* Commented out the below as we seem to have an odd concept of multitasking
-   where we can't wait for input as other things need to be done.
-
-	ULONG winsignal = 1L << curwin->win->UserPort->mp_SigBit;
-    ULONG signalmask = winsignal;
-	ULONG signals;
-
-    signals = Wait(signalmask);
-
-	if(signals & winsignal)
-	{
-		ami_get_msg();
-   	}
-*/
+	ami_handle_msg();
+	ami_handle_appmsg();
 }
 
 void gui_poll(bool active)
 {
-//	printf("poll\n");
+	/* However, down here we are waiting for the user to do something or for a
+	   scheduled event to kick in (scheduled events will be signalled using
+       timer.device in the future rather than inefficiently polled - currently
+       Intuition is sending IDCMP_INTUITICKS messages every 1/10s to our active
+	   window which breaks us out of ami_get_msg - and schedule_run checks every
+	   event, really they need to be sorted and/or when signalled the schedule
+	   node should be part of the message) */
+
 	ami_get_msg();
 	schedule_run();
 }
@@ -696,6 +735,7 @@ void gui_quit(void)
 	if(iffh) FreeIFF(iffh);
 
 	FreeSysObject(ASOT_PORT,appport);
+	FreeSysObject(ASOT_PORT,sport);
 
 	FreeAslRequest(filereq);
 
@@ -811,6 +851,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			WINDOW_IDCMPHookBits,IDCMP_IDCMPUPDATE,
             WINDOW_AppPort, appport,
 			WINDOW_AppWindow,TRUE,
+			WINDOW_SharedPort,sport,
 			WINDOW_UserData,gwin,
 //         	WINDOW_Position, WPOS_CENTERSCREEN,
 //			WINDOW_CharSet,106,
@@ -845,7 +886,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			WA_CustomScreen,scrn,
 			WA_ReportMouse,TRUE,
            	WA_IDCMP,IDCMP_MENUPICK | IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS |
-				 IDCMP_NEWSIZE | IDCMP_VANILLAKEY | IDCMP_RAWKEY | IDCMP_GADGETUP | IDCMP_IDCMPUPDATE,
+				 IDCMP_NEWSIZE | IDCMP_VANILLAKEY | IDCMP_RAWKEY | IDCMP_GADGETUP | IDCMP_IDCMPUPDATE | IDCMP_INTUITICKS,
 //			WINDOW_IconifyGadget, TRUE,
 			WINDOW_NewMenu,menu,
 			WINDOW_HorizProp,1,
@@ -854,6 +895,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			WINDOW_IDCMPHookBits,IDCMP_IDCMPUPDATE,
             WINDOW_AppPort, appport,
 			WINDOW_AppWindow,TRUE,
+			WINDOW_SharedPort,sport,
 			WINDOW_UserData,gwin,
 //         	WINDOW_Position, WPOS_CENTERSCREEN,
 //			WINDOW_CharSet,106,
