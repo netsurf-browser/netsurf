@@ -578,12 +578,14 @@ bool box_construct_element(xmlNode *n, struct content *content,
 				float current;
 				for (child = box->children; child;
 							child = child->next) {
-					if (child->type == BOX_TABLE_CELL) {
-						current = css_len2px(
+					current = css_len2px(
 							&child->style->height.
 							length, child->style);
-						value = (value > current) ?
-							value : current;
+					if (child->type == BOX_TABLE_CELL &&
+							value > current) {
+						/* Row height exceeds cell
+						 * height, increase cell height
+						 * to row height */
 						child->style->height.height =
 							CSS_HEIGHT_LENGTH;
 						child->style->height.length.

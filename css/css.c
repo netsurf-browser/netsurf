@@ -131,7 +131,7 @@ static bool css_match_detail(const struct css_selector *detail,
 		xmlNode *element);
 static bool css_match_first_child(const struct css_selector *detail,
 		xmlNode *element);
-static void css_dump_length(FILE *stream, 
+static void css_dump_length(FILE *stream,
 		const struct css_length * const length);
 static void css_dump_selector(const struct css_selector *r);
 #ifdef DEBUG_WORKING_STYLESHEET
@@ -2065,7 +2065,7 @@ void css_dump_style(FILE *stream, const struct css_style * const style)
 			fprintf(stream, "inherit");
 			break;
 		case CSS_MIN_HEIGHT_LENGTH:
-			css_dump_length(stream, 
+			css_dump_length(stream,
 					&style->min_height.value.length);
 			break;
 		case CSS_MIN_HEIGHT_PERCENT:
@@ -3151,22 +3151,29 @@ float css_len2px(const struct css_length *length,
 			if ((font.value = css_len2pt(&style->
 					font_size.value.length, style)) <
 					option_font_min_size / 10) {
+				/* min font size is greater than given length so
+				 * use min font size for conversion to px */
 				font.value = option_font_min_size / 10;
 				return length->value * css_len2px(&font,
-					style);
+						style);
 			} else
+				/* use given length for conversion to px */
 				return length->value * css_len2px(&style->
-					font_size.value.length, 0);
+						font_size.value.length, 0);
 		case CSS_UNIT_EX:
 			if ((font.value = css_len2pt(&style->
 					font_size.value.length, style)) <
 					option_font_min_size / 10) {
+				/* min font size is greater than given length so
+				 * use min font size for conversion to px */
 				font.value = option_font_min_size / 10;
 				return length->value * css_len2px(&font,
-					style) * 0.6;
+						style) * 0.6;
 			} else
+				/* use given length for conversion to px */
 				return length->value * css_len2px(&style->
-					font_size.value.length, 0) * 0.6;
+						font_size.value.length, 0) *
+						0.6;
 		case CSS_UNIT_PX: return length->value;
 		/* We assume the screen and any other output has the same dpi */
 		case CSS_UNIT_IN: return length->value * css_screen_dpi;
