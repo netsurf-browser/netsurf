@@ -3136,6 +3136,14 @@ unsigned int css_hash(const char *s, int length)
 
 /**
  * Convert a struct css_length to pixels.
+ *
+ * \param  length  css_length to convert
+ * \param  style   css_style applying to length. may be 0 if the length's
+ *		   unit is em or ex
+ * \return	   length in pixels
+ *
+ * If a length's unit is em or ex, the returned length is subject to the
+ * configured option_font_min_size.
  */
 
 float css_len2px(const struct css_length *length,
@@ -3154,8 +3162,7 @@ float css_len2px(const struct css_length *length,
 				/* min font size is greater than given length so
 				 * use min font size for conversion to px */
 				font.value = option_font_min_size / 10;
-				return length->value * css_len2px(&font,
-						style);
+				return length->value * css_len2px(&font, style);
 			} else
 				/* use given length for conversion to px */
 				return length->value * css_len2px(&style->
@@ -3190,16 +3197,27 @@ float css_len2px(const struct css_length *length,
 
 /**
  * Convert a struct css_length to points.
+ *
+ * \param  length  css_length to convert
+ * \param  style   css_style applying to length. may be 0 if the length's
+ *		   unit is em or ex
+ * \return	   length in points
  */
 
 float css_len2pt(const struct css_length *length,
 		const struct css_style *style)
 {
-	assert(!((length->unit == CSS_UNIT_EM || length->unit == CSS_UNIT_EX) && style == 0));
+	assert(!((length->unit == CSS_UNIT_EM || length->unit == CSS_UNIT_EX) &&
+			style == 0));
 	switch (length->unit) {
-		case CSS_UNIT_EM: return length->value * css_len2pt(&style->font_size.value.length, 0);
-		case CSS_UNIT_EX: return length->value * css_len2pt(&style->font_size.value.length, 0) * 0.6;
-		/* We assume the screen and any other output has the same dpi  */
+		case CSS_UNIT_EM:
+			return length->value *
+				css_len2pt(&style->font_size.value.length, 0);
+		case CSS_UNIT_EX:
+			return length->value *
+				css_len2pt(&style->font_size.value.length, 0) *
+				0.6;
+		/* We assume the screen and any other output has the same dpi */
 		case CSS_UNIT_PX: return length->value * css_screen_dpi / 72;
 		/* 1pt = 1in/72 */
 		case CSS_UNIT_IN: return length->value * 72;
