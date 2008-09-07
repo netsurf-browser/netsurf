@@ -644,6 +644,10 @@ bool layout_block_object(struct box *block)
  * Compute dimensions of box, margins, paddings, and borders for a block-level
  * element.
  *
+ * \param  available_width  Max width available in pixels
+ * \param  box		    box to find dimensions of. updated with new width,
+ *			    height, margins, borders and paddings
+ *
  * See CSS 2.1 10.3.3, 10.3.4, 10.6.2, and 10.6.3.
  */
 
