@@ -1,4 +1,5 @@
 /*
+ * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2008 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
@@ -22,6 +23,7 @@
 #include "desktop/cookies.h"
 #include <proto/dos.h>
 #include "utils/messages.h"
+#include <stdlib.h>
 
 void warn_user(const char *warning, const char *detail)
 {
@@ -52,5 +54,15 @@ bool cookies_update(const char *domain, const struct cookie_data *data)
 
 char *url_to_path(const char *url)
 {
-	return strdup(url + 5);
+	return (char *)strdup(url + 5);
+}
+
+char *path_to_url(const char *path)
+{
+	char *r = malloc(strlen(path) + 7 + 1);
+
+	strcpy(r, "file://");
+	strcat(r, path);
+
+	return r;
 }

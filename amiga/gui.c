@@ -640,22 +640,120 @@ void ami_handle_appmsg(void)
 {
 	struct AppMessage *appmsg;
 	struct gui_window *gwin;
+	struct IBox *bbox;
+	ULONG x,y,xs,ys,width,height,len;
+	struct WBArg *appwinargs;
+	STRPTR filename;
+	struct box *box,*file_box=0,*text_box=0;
+	struct content *content;
+	int box_x=0,box_y=0;
+	BPTR fh = 0;
+	char *utf8text,*urlfilename;
 
 	while(appmsg=(struct AppMessage *)GetMsg(appport))
 	{
 		GetAttr(WINDOW_UserData,appmsg->am_ID,(ULONG *)&gwin);
-		printf("type:%lx id:%lx/%lx num:%lx x:%lx y:%lx\n",appmsg->am_Type,gwin->win,gwin,appmsg->am_NumArgs,appmsg->am_MouseX,appmsg->am_MouseY);
-		if(appmsg->am_Type == AMTYPE_APPWINDOW)
-			{
-			if (!gwin->bw->current_content || gwin->bw->current_content->type != CONTENT_HTML)
-			{
-// we'll just load the file in - deal with this later
 
-//struct WBArg * am_ArgList
-			}
-			else
+		if(appmsg->am_Type == AMTYPE_APPWINDOW)
+		{
+			GetAttr(SPACE_AreaBox,gwin->gadgets[GID_BROWSER],&bbox);
+
+			GetAttr(SCROLLER_Top,gwin->objects[OID_HSCROLL],&xs);
+			x = (appmsg->am_MouseX) - (bbox->Left) +xs;
+
+			GetAttr(SCROLLER_Top,gwin->objects[OID_VSCROLL],&ys);
+			y = appmsg->am_MouseY - bbox->Top + ys;
+
+			width=bbox->Width;
+			height=bbox->Height;
+
+			if(appwinargs = appmsg->am_ArgList)
 			{
-//struct WBArg * am_ArgList
+				if(filename = AllocVec(1024,MEMF_CLEAR))
+				{
+					if(appwinargs->wa_Lock)
+					{
+						NameFromLock(appwinargs->wa_Lock,filename,1024);
+					}
+
+					AddPart(filename,appwinargs->wa_Name,1024);
+
+					if((!gwin->bw->current_content || gwin->bw->current_content->type != CONTENT_HTML) || (!((x>=xs) && (y>=ys) && (x<width+xs) && (y<height+ys))))
+					{
+						urlfilename = path_to_url(filename);
+						browser_window_go(gwin->bw,urlfilename,NULL,true);
+						free(urlfilename);
+					}
+					else
+					{
+						content = gwin->bw->current_content;
+						box = content->data.html.layout;
+						while ((box = box_at_point(box, x, y, &box_x, &box_y, &content)))
+						{
+							if (box->style && box->style->visibility == CSS_VISIBILITY_HIDDEN)	continue;
+
+							if (box->gadget)
+							{
+								switch (box->gadget->type)
+								{
+									case GADGET_FILE:
+										file_box = box;
+									break;
+
+									case GADGET_TEXTBOX:
+									case GADGET_TEXTAREA:
+									case GADGET_PASSWORD:
+										text_box = box;
+									break;
+
+									default:
+									break;
+								}
+							}
+						}
+
+						if(!file_box && !text_box)
+							return false;
+
+						if(file_box)
+						{
+							utf8_convert_ret ret;
+							char *utf8_fn;
+
+							if(utf8_from_local_encoding(filename,0,&utf8_fn) != UTF8_CONVERT_OK)
+							{
+								warn_user("NoMemory");
+								return;
+							}
+
+							free(file_box->gadget->value);
+							file_box->gadget->value = utf8_fn;
+
+							box_coords(file_box, &x, &y);
+							gui_window_redraw(gwin->bw->window,x,y,
+								x + file_box->width,
+								y + file_box->height);
+						}
+						else
+						{
+							browser_window_mouse_click(gwin->bw, BROWSER_MOUSE_PRESS_1, x,y);
+							if(fh = FOpen(filename,MODE_OLDFILE,0))
+							{
+								while(len = FRead(fh,filename,1,1024))
+								{
+									if(utf8_from_local_encoding(filename,len,&utf8text) == UTF8_CONVERT_OK)
+									{
+										browser_window_paste_text(gwin->bw,utf8text,strlen(utf8text),true);
+										free(utf8text);
+									}
+								}
+								FClose(fh);
+							}
+						}
+
+					}
+					FreeVec(filename);
+				}
 			}
 		}
 		ReplyMsg((struct Message *)appmsg);
@@ -1109,7 +1207,7 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 
 void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
 {
-//	DebugPrintF("REDRAW\n");
+	gui_window_redraw_window(g); // temporary
 }
 
 void gui_window_redraw_window(struct gui_window *g)
