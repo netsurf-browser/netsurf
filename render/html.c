@@ -32,6 +32,7 @@
 #include <hubbub/hubbub.h>
 #include <hubbub/parser.h>
 #include <hubbub/tree.h>
+#include <libxml/debugXML.h> // yes, with hubbub
 #endif
 #include <libxml/tree.h>
 #include <libxml/parser.h>
@@ -164,6 +165,8 @@ int create_comment(void *ctx, const hubbub_string *data, void **result)
 {
 	xmlNode *node = xmlNewComment(NULL);
 
+	LOG(("%.*s", (int) data->len, data->ptr));
+
 	node->content = xmlStrndup(data->ptr, data->len);
 	node->_private = (void *)1;
 	*result = node;
@@ -191,6 +194,8 @@ int create_element(void *ctx, const hubbub_tag *tag, void **result)
 	char *name = strndup((const char *) tag->name.ptr,
 			tag->name.len);
 
+	LOG(("%s", name));
+
 	xmlNode *node = xmlNewNode(NULL, BAD_CAST name);
 	node->_private = (void *)1;
 	*result = node;
@@ -216,6 +221,8 @@ int create_element(void *ctx, const hubbub_tag *tag, void **result)
 		char *value = strndup((const char *) attr->value.ptr,
 				attr->value.len);
 
+		LOG(("\t%s='%s'", name, value));
+
 		if (attr->ns == HUBBUB_NS_NULL) {
 			xmlNewProp(node, BAD_CAST name, BAD_CAST value);
 		} else {
@@ -233,6 +240,9 @@ int create_element(void *ctx, const hubbub_tag *tag, void **result)
 int create_text(void *ctx, const hubbub_string *data, void **result)
 {
 	xmlNode *node = xmlNewTextLen(BAD_CAST data->ptr, data->len);
+
+	LOG(("%.*s", (int) data->len, data->ptr));
+
 	node->_private = (void *)1;
 	*result = node;
 
@@ -264,6 +274,11 @@ int append_child(void *ctx, void *parent, void *child, void **result)
 	xmlNode *nparent = parent;
 	xmlNode *nchild = child;
 
+	LOG(("Parent:"));
+	xmlDebugDumpOneNode(stderr, nparent, 0);
+	LOG(("Child:"));
+	xmlDebugDumpOneNode(stderr, nchild, 0);
+
 	if (nchild->type == XML_TEXT_NODE &&
 			nparent->last != NULL &&
 			nparent->last->type == XML_TEXT_NODE) {
@@ -283,6 +298,13 @@ int append_child(void *ctx, void *parent, void *child, void **result)
 int insert_before(void *ctx, void *parent, void *child, void *ref_child,
 		void **result)
 {
+	LOG(("Parent:"));
+	xmlDebugDumpOneNode(stderr, parent, 0);
+	LOG(("Ref:"));
+	xmlDebugDumpOneNode(stderr, ref_child, 0);
+	LOG(("Child:"));
+	xmlDebugDumpOneNode(stderr, child, 0);
+
 	*result = xmlAddPrevSibling(ref_child, child);
 	ref_node(ctx, *result);
 
@@ -291,6 +313,11 @@ int insert_before(void *ctx, void *parent, void *child, void *ref_child,
 
 int remove_child(void *ctx, void *parent, void *child, void **result)
 {
+	LOG(("Parent:"));
+	xmlDebugDumpOneNode(stderr, parent, 0);
+	LOG(("Child:"));
+	xmlDebugDumpOneNode(stderr, child, 0);
+
 	xmlUnlinkNode(child);
 	*result = child;
 
@@ -301,6 +328,9 @@ int remove_child(void *ctx, void *parent, void *child, void **result)
 
 int clone_node(void *ctx, void *node, bool deep, void **result)
 {
+	LOG(("%s cloning:", deep ? "deep" : ""));
+	xmlDebugDumpOneNode(stderr, node, 0);
+
 	xmlNode *n = xmlCopyNode(node, deep ? 1 : 2);
 	n->_private = (void *)1;
 	*result = n;
@@ -313,6 +343,11 @@ int reparent_children(void *ctx, void *node, void *new_parent)
 {
 	xmlNode *n = (xmlNode *) node;
 	xmlNode *p = (xmlNode *) new_parent;
+
+	LOG(("Old parent:"));
+	xmlDebugDumpOneNode(stderr, node, 0);
+	LOG(("New parent:"));
+	xmlDebugDumpOneNode(stderr, new_parent, 0);
 
 	for (xmlNode *child = n->children; child != NULL; ) {
 		xmlNode *next = child->next;
