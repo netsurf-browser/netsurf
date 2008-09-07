@@ -1179,7 +1179,7 @@ int bitmap_get_height(void *vbitmap)
 /**
  * Find the bytes per pixel of a bitmap
  *
- * \param  bitmap  a bitmap, as returned by bitmap_create()
+ * \param  vbitmap  a bitmap, as returned by bitmap_create()
  * \return bytes per pixel
  */
 

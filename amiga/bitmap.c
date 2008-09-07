@@ -208,14 +208,17 @@ int bitmap_get_height(void *bitmap)
 	}
 }
 
-size_t bitmap_get_bpp(void *bitmap)
+
+/**
+ * Find the bytes per pixel of a bitmap
+ *
+ * \param  vbitmap  a bitmap, as returned by bitmap_create()
+ * \return bytes per pixel
+ */
+
+size_t bitmap_get_bpp(void *vbitmap)
 {
-	if(bitmap)
-	{
-		return 32;
-	}
-	else
-	{
-		return 0;
-	}
+	struct bitmap *bitmap = (struct bitmap *)vbitmap;
+	assert(bitmap);
+	return 4;
 }

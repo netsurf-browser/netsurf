@@ -73,8 +73,8 @@ void *bitmap_create(int width, int height, unsigned int state)
 /**
  * Sets whether a bitmap should be plotted opaque
  *
- * \param  bitmap  a bitmap, as returned by bitmap_create()
- * \param  opaque  whether the bitmap should be plotted opaque
+ * \param  vbitmap  a bitmap, as returned by bitmap_create()
+ * \param  opaque   whether the bitmap should be plotted opaque
  */
 void bitmap_set_opaque(void *vbitmap, bool opaque)
 {
@@ -87,7 +87,7 @@ void bitmap_set_opaque(void *vbitmap, bool opaque)
 /**
  * Tests whether a bitmap has an opaque alpha channel
  *
- * \param  bitmap  a bitmap, as returned by bitmap_create()
+ * \param  vbitmap  a bitmap, as returned by bitmap_create()
  * \return whether the bitmap is opaque
  */
 bool bitmap_test_opaque(void *vbitmap)
@@ -102,7 +102,7 @@ bool bitmap_test_opaque(void *vbitmap)
 /**
  * Gets whether a bitmap should be plotted opaque
  *
- * \param  bitmap  a bitmap, as returned by bitmap_create()
+ * \param  vbitmap  a bitmap, as returned by bitmap_create()
  */
 bool bitmap_get_opaque(void *vbitmap)
 {
@@ -116,7 +116,7 @@ bool bitmap_get_opaque(void *vbitmap)
 /**
  * Return a pointer to the pixel data in a bitmap.
  *
- * \param  bitmap  a bitmap, as returned by bitmap_create()
+ * \param  vbitmap  a bitmap, as returned by bitmap_create()
  * \return pointer to the pixel buffer
  *
  * The pixel data is packed as BITMAP_FORMAT, possibly with padding at the end
@@ -134,7 +134,7 @@ unsigned char *bitmap_get_buffer(void *vbitmap)
 /**
  * Find the width of a pixel row in bytes.
  *
- * \param  bitmap  a bitmap, as returned by bitmap_create()
+ * \param  vbitmap  a bitmap, as returned by bitmap_create()
  * \return width of a pixel row in the bitmap
  */
 
@@ -149,7 +149,7 @@ size_t bitmap_get_rowstride(void *vbitmap)
 /**
  * Find the bytes per pixel of a bitmap
  *
- * \param  bitmap  a bitmap, as returned by bitmap_create()
+ * \param  vbitmap  a bitmap, as returned by bitmap_create()
  * \return bytes per pixel
  */
 
@@ -174,7 +174,7 @@ gtk_bitmap_free_pretiles(struct bitmap *bitmap)
 /**
  * Free a bitmap.
  *
- * \param  bitmap  a bitmap, as returned by bitmap_create()
+ * \param  vbitmap  a bitmap, as returned by bitmap_create()
  */
 
 void bitmap_destroy(void *vbitmap)
@@ -190,9 +190,9 @@ void bitmap_destroy(void *vbitmap)
 /**
  * Save a bitmap in the platform's native format.
  *
- * \param  bitmap  a bitmap, as returned by bitmap_create()
- * \param  path    pathname for file
- * \param  flags   modify the behaviour of the save
+ * \param  vbitmap  a bitmap, as returned by bitmap_create()
+ * \param  path     pathname for file
+ * \param  flags    modify the behaviour of the save
  * \return true on success, false on error and error reported
  */
 
