@@ -486,8 +486,8 @@ bool html_create(struct content *c, const char *params[])
 	union content_msg_data msg_data;
 
 	html->parser = 0;
-#ifdef WITH_HUBBUB
 	html->document = 0;
+#ifdef WITH_HUBBUB
 	html->has_ns = false;
 	memset(html->ns, 0, sizeof(html->ns));
 #endif
@@ -869,7 +869,6 @@ const char *html_detect_encoding(const char **data, unsigned int *size)
 
 bool html_convert(struct content *c, int width, int height)
 {
-	xmlDoc *document;
 	xmlNode *html, *head;
 	union content_msg_data msg_data;
 	unsigned int time_before, time_taken;
@@ -887,18 +886,18 @@ bool html_convert(struct content *c, int width, int height)
 
 #ifndef WITH_HUBBUB
 	htmlParseChunk(c->data.html.parser, "", 0, 1);
-	document = c->data.html.parser->myDoc;
-	/*xmlDebugDumpDocument(stderr, c->data.html.parser->myDoc);*/
+	c->data.html.document = c->data.html.parser->myDoc;
+	/*xmlDebugDumpDocument(stderr, c->data.html.document);*/
 	htmlFreeParserCtxt(c->data.html.parser);
 	c->data.html.parser = 0;
 #else
 	hubbub_parser_completed(c->data.html.parser);
 	hubbub_parser_destroy(c->data.html.parser);
 	c->data.html.parser = 0;
-	document = c->data.html.document;
+	c->data.html.document = c->data.html.document;
 	/*xmlDebugDumpDocument(stderr, document);*/
 #endif
-	if (!document) {
+	if (!c->data.html.document) {
 		LOG(("Parsing failed"));
 		msg_data.error = messages_get("ParsingFail");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
@@ -906,10 +905,10 @@ bool html_convert(struct content *c, int width, int height)
 	}
 
 	/* locate html and head elements */
-	html = xmlDocGetRootElement(document);
+	html = xmlDocGetRootElement(c->data.html.document);
 	if (html == 0 || strcmp((const char *) html->name, "html") != 0) {
 		LOG(("html element not found"));
-		xmlFreeDoc(document);
+		xmlFreeDoc(c->data.html.document);
 		msg_data.error = messages_get("ParsingFail");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
@@ -960,9 +959,6 @@ bool html_convert(struct content *c, int width, int height)
 		return false;
 	}
 	/*imagemap_dump(c);*/
-
-	/* XML tree not required past this point */
-	xmlFreeDoc(document);
 
 	/* layout the box tree */
 	html_set_status(c, messages_get("Formatting"));
@@ -2217,6 +2213,9 @@ void html_destroy(struct content *c)
 #else
 		hubbub_parser_destroy(c->data.html.parser);
 #endif
+
+	if (c->data.html.document)
+		xmlFreeDoc(c->data.html.document);
 
 	/* Free base target */
 	if (c->data.html.base_target) {

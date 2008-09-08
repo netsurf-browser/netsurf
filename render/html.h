@@ -126,11 +126,11 @@ struct content_html_data {
 #else
 	hubbub_parser *parser; /**< HTML parser context. */
 	hubbub_tree_handler tree_handler;
-	xmlDoc *document;
 
 	bool has_ns;
 	xmlNs *ns[NUM_NAMESPACES];
 #endif
+	xmlDoc *document;
 
 	/** HTML parser encoding handler. */
 	xmlCharEncodingHandler *encoding_handler;
