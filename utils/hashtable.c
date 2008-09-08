@@ -54,7 +54,7 @@ struct hash_table {
 
 static inline unsigned int hash_string_fnv(const char *datum, unsigned int *len)
 {
-	unsigned int z = 0x01000193;
+	unsigned int z = 0x811c9dc5;
 	const char *start = datum;
 	*len = 0;
 
