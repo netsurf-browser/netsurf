@@ -20,6 +20,7 @@
 #include <exec/lists.h>
 #include <exec/nodes.h>
 #include "amiga/object.h"
+#include "amiga/schedule.h"
 
 struct MinList *NewObjList(void)
 {
@@ -64,6 +65,9 @@ void FreeObjList(struct MinList *objlist)
 
 	while(nnode=(struct nsObject *)(node->dtz_Node.mln_Succ))
 	{
+		if(node->Type == AMINS_CALLBACK)
+			ami_remove_timer_event((struct nscallback *)node->objstruct);
+
 		DelObject(node);
 		node=nnode;
 	}

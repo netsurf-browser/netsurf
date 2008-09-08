@@ -88,7 +88,6 @@ struct gui_window *search_current_window = NULL;
 struct MsgPort *sport;
 struct MsgPort *appport;
 struct MsgPort *msgport;
-struct timerequest *tioreq;
 struct Device *TimerBase;
 struct TimerIFace *ITimer;
 struct Library  *PopupMenuBase = NULL;
@@ -152,7 +151,7 @@ void gui_init(int argc, char** argv)
 	ASO_NoTrack,FALSE,
 	TAG_DONE);
 
-	OpenDevice("timer.device",UNIT_VBLANK,(struct IORequest *)tioreq,0);
+	OpenDevice("timer.device",UNIT_WAITUNTIL,(struct IORequest *)tioreq,0);
 
 	TimerBase = (struct Device *)tioreq->tr_node.io_Device;
 	ITimer = (struct TimerIFace *)GetInterface((struct Library *)TimerBase,"main",1,NULL);
@@ -609,8 +608,7 @@ void ami_handle_msg(void)
 		        break;
 
 				case WMHI_INTUITICK:
-// these are only here to stop netsurf stalling waiting for an event					
-				break;					
+				break;
 
 	   	     	default:
 //					printf("class: %ld\n",(result & WMHI_CLASSMASK));
@@ -737,6 +735,9 @@ void ami_handle_appmsg(void)
 						else
 						{
 							browser_window_mouse_click(gwin->bw, BROWSER_MOUSE_PRESS_1, x,y);
+	/* This bit pastes a plain text file into a form.  Really we should be using
+	   Datatypes for this to support more formats */
+
 							if(fh = FOpen(filename,MODE_OLDFILE,0))
 							{
 								while(len = FRead(fh,filename,1,1024))
@@ -757,6 +758,9 @@ void ami_handle_appmsg(void)
 			}
 		}
 		ReplyMsg((struct Message *)appmsg);
+
+		if(gwin->redraw_required)
+			ami_do_redraw(gwin);
 	}
 }
 
@@ -764,8 +768,10 @@ void ami_get_msg(void)
 {
 	ULONG winsignal = 1L << sport->mp_SigBit;
 	ULONG appsig = 1L << appport->mp_SigBit;
-    ULONG signalmask = winsignal | appsig;
+	ULONG schedulesig = 1L << msgport->mp_SigBit;
+    ULONG signalmask = winsignal | appsig | schedulesig;
 	ULONG signal;
+	struct Message *timermsg = NULL;
 
     signal = Wait(signalmask);
 
@@ -776,6 +782,11 @@ void ami_get_msg(void)
 	else if(signal & appsig)
 	{
 		ami_handle_appmsg();
+	}
+	else if(signal & schedulesig)
+	{
+		while(GetMsg(msgport))
+			schedule_run();
 	}
 }
 
@@ -791,15 +802,25 @@ void gui_multitask(void)
 void gui_poll(bool active)
 {
 	/* However, down here we are waiting for the user to do something or for a
-	   scheduled event to kick in (scheduled events will be signalled using
-       timer.device in the future rather than inefficiently polled - currently
-       Intuition is sending IDCMP_INTUITICKS messages every 1/10s to our active
-	   window which breaks us out of ami_get_msg - and schedule_run checks every
-	   event, really they need to be sorted and/or when signalled the schedule
-	   node should be part of the message) */
+	   scheduled event to kick in (scheduled events are signalled using
+       timer.device, but NetSurf seems to still be wanting to run code.  We ask
+	   Intuition to send IDCMP_INTUITICKS messages every 1/10s to our active
+	   window to break us out of ami_get_msg to stop NetSurf stalling (the active
+	   variable seems to have no real bearing on reality, but is supposed to
+	   indicate that NetSurf wants control back ASAP, so we poll in that case).
 
-	ami_get_msg();
-	schedule_run();
+	   schedule_run checks every event, really they need to be sorted so only
+	   the first event needs to be run on each signal. */
+
+	if(active)
+	{
+		gui_multitask();
+		schedule_run();
+	}
+	else
+	{
+		ami_get_msg();
+	}
 }
 
 void gui_quit(void)
@@ -940,7 +961,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			WA_CustomScreen,scrn,
 			WA_ReportMouse,TRUE,
            	WA_IDCMP,IDCMP_MENUPICK | IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS |
-				 IDCMP_NEWSIZE | IDCMP_VANILLAKEY | IDCMP_RAWKEY | IDCMP_GADGETUP | IDCMP_IDCMPUPDATE,
+				 IDCMP_NEWSIZE | IDCMP_VANILLAKEY | IDCMP_RAWKEY | IDCMP_GADGETUP | IDCMP_IDCMPUPDATE | IDCMP_INTUITICKS,
 //			WINDOW_IconifyGadget, TRUE,
 			WINDOW_NewMenu,menu,
 			WINDOW_HorizProp,1,

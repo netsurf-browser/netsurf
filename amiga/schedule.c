@@ -20,7 +20,6 @@
 #include "amiga/object.h"
 #include "amiga/schedule.h"
 #include <proto/exec.h>
-#include <proto/timer.h>
 
 /**
  * Schedule a callback.
@@ -47,8 +46,23 @@ void schedule(int t, void (*callback)(void *p), void *p)
 
 	nscb->tv.tv_sec = 0;
 	nscb->tv.tv_micro = t*10000;
+
+	while(nscb->tv.tv_micro >= 1000000)
+	{
+		nscb->tv.tv_sec++;
+		nscb->tv.tv_micro -= 1000000;
+	}
+
 	GetSysTime(&tv);
-	AddTime(&nscb->tv,&tv);
+	AddTime(&nscb->tv,&tv); // now contains time when event occurs
+
+	nscb->treq = AllocVec(sizeof(struct timerequest),MEMF_CLEAR);
+
+	*nscb->treq = *tioreq;
+    nscb->treq->tr_node.io_Command=TR_ADDREQUEST;
+    nscb->treq->tr_time.tv_sec=nscb->tv.tv_sec; // secs
+    nscb->treq->tr_time.tv_micro=nscb->tv.tv_micro; // micro
+    SendIO((struct IORequest *)nscb->treq);
 
 	nscb->callback = callback;
 	nscb->p = p;
@@ -76,9 +90,11 @@ void schedule_remove(void (*callback)(void *p), void *p)
 	while(nnode=(struct nsObject *)(node->dtz_Node.mln_Succ))
 	{
 		nscb = node->objstruct;
+		if(!nscb) continue;
 
 		if((nscb->callback == callback) && (nscb->p == p))
 		{
+			ami_remove_timer_event(nscb);
 			DelObject(node);
 		}
 
@@ -115,11 +131,26 @@ void schedule_run(void)
 			{
 				callback = nscb->callback;
 				p = nscb->p;
+				ami_remove_timer_event(nscb);
 				DelObject(node);
 				callback(p);
 			}
 		}
 
 		node=nnode;
+	}
+}
+
+void ami_remove_timer_event(struct nscallback *nscb)
+{
+	if(!nscb) return;
+
+	if(nscb->treq)
+	{
+		if(CheckIO((struct IORequest *)nscb->treq)==0)
+   			AbortIO((struct IORequest *)nscb->treq);
+
+		WaitIO((struct IORequest *)nscb->treq);
+		FreeVec(nscb->treq);
 	}
 }
