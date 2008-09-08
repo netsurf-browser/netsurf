@@ -189,26 +189,27 @@ void gui_init(int argc, char** argv)
 		if(ptrfile = Open(ptrs[i],MODE_OLDFILE))
 		{
 			int mx,my;
-			UBYTE *pprefsbuf = AllocVec(1024,MEMF_CLEAR);
-			Read(ptrfile,pprefsbuf,1024);
+			UBYTE *pprefsbuf = AllocVec(1061,MEMF_CLEAR);
+			Read(ptrfile,pprefsbuf,1061);
 
 			mouseptrbm[i]=AllocVec(sizeof(struct BitMap),MEMF_CLEAR);
-			InitBitMap(mouseptrbm[i],2,16,16);
-			mouseptrbm[i]->Planes[0] = AllocRaster(16,16);
-			mouseptrbm[i]->Planes[1] = AllocRaster(16,16);
+			InitBitMap(mouseptrbm[i],2,32,32);
+			mouseptrbm[i]->Planes[0] = AllocRaster(32,32);
+			mouseptrbm[i]->Planes[1] = AllocRaster(32,32);
 			mouseptr.BitMap = mouseptrbm[i];
 
-			for(my=0;my<16;my++)
+			for(my=0;my<32;my++)
 			{
-				for(mx=0;mx<16;mx++)
+				for(mx=0;mx<32;mx++)
 				{
-					SetAPen(&mouseptr,pprefsbuf[(my*(17))+mx]-'0');
+					SetAPen(&mouseptr,pprefsbuf[(my*(33))+mx]-'0');
 					WritePixel(&mouseptr,mx,my);
 				}
 			}
 
-			mousexpt[i] = ((pprefsbuf[272]-'0')*10)+(pprefsbuf[273]-'0');
-			mouseypt[i] = ((pprefsbuf[275]-'0')*10)+(pprefsbuf[276]-'0');
+			mousexpt[i] = ((pprefsbuf[1056]-'0')*10)+(pprefsbuf[1057]-'0');
+			mouseypt[i] = ((pprefsbuf[1059]-'0')*10)+(pprefsbuf[1060]-'0');
+
 			FreeVec(pprefsbuf);
 			Close(ptrfile);
 		}
