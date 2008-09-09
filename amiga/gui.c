@@ -609,6 +609,9 @@ void ami_handle_msg(void)
 		        break;
 
 				case WMHI_INTUITICK:
+#ifndef AMI_SCHEDULER_USES_TIMER
+					schedule_run();
+#endif
 				break;
 
 	   	     	default:

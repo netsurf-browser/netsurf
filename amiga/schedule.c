@@ -39,8 +39,15 @@ void schedule(int t, void (*callback)(void *p), void *p)
 	struct timeval tv;
 
 	obj = AddObject(schedule_list,AMINS_CALLBACK);
+	if(!obj) return;
+
 	obj->objstruct_size = sizeof(struct nscallback);
 	obj->objstruct = AllocVec(obj->objstruct_size,MEMF_CLEAR);
+	if(!obj->objstruct)
+	{
+		DelObject(obj);
+		return;
+	}
 
 	nscb = (struct nscallback *)obj->objstruct;
 
@@ -55,15 +62,16 @@ void schedule(int t, void (*callback)(void *p), void *p)
 
 	GetSysTime(&tv);
 	AddTime(&nscb->tv,&tv); // now contains time when event occurs
-
-	nscb->treq = AllocVec(sizeof(struct timerequest),MEMF_CLEAR);
-
-	*nscb->treq = *tioreq;
-    nscb->treq->tr_node.io_Command=TR_ADDREQUEST;
-    nscb->treq->tr_time.tv_sec=nscb->tv.tv_sec; // secs
-    nscb->treq->tr_time.tv_micro=nscb->tv.tv_micro; // micro
-    SendIO((struct IORequest *)nscb->treq);
-
+#ifdef AMI_SCHEDULER_USES_TIMER
+	if(nscb->treq = AllocVec(sizeof(struct timerequest),MEMF_CLEAR))
+	{
+		*nscb->treq = *tioreq;
+    	nscb->treq->tr_node.io_Command=TR_ADDREQUEST;
+    	nscb->treq->tr_time.tv_sec=nscb->tv.tv_sec; // secs
+    	nscb->treq->tr_time.tv_micro=nscb->tv.tv_micro; // micro
+    	SendIO((struct IORequest *)nscb->treq);
+	}
+#endif
 	nscb->callback = callback;
 	nscb->p = p;
 }
@@ -147,7 +155,7 @@ void ami_remove_timer_event(struct nscallback *nscb)
 
 	if(nscb->treq)
 	{
-		if(CheckIO((struct IORequest *)nscb->treq)==0)
+		if(CheckIO((struct IORequest *)nscb->treq)==NULL)
    			AbortIO((struct IORequest *)nscb->treq);
 
 		WaitIO((struct IORequest *)nscb->treq);
