@@ -162,6 +162,16 @@ OBJROOT := build-$(HOST)-$(TARGET)$(SUBTARGET)
 # General flag setup
 # ----------------------------------------------------------------------------
 
+# Set up the WARNFLAGS here so that they can be overridden in the Makefile.config
+WARNFLAGS = -W -Wall -Wundef -Wpointer-arith \
+	-Wcast-align -Wwrite-strings -Wstrict-prototypes \
+	-Wmissing-prototypes -Wmissing-declarations -Wredundant-decls \
+	-Wnested-externs -Winline 
+ifneq ($(GCCVER),2)
+  WARNFLAGS += -Wno-unused-parameter 
+endif
+
+# Pull in the configuration
 include Makefile.config
 
 # 1: Feature name (ie, NETSURF_USE_BMP -> BMP)
@@ -456,14 +466,6 @@ $(DEPROOT)/created: $(OBJROOT)/created
 	$(VQ)echo "   MKDIR: $(DEPROOT)"
 	$(Q)$(MKDIR) $(DEPROOT)
 	$(Q)$(TOUCH) $(DEPROOT)/created
-
-WARNFLAGS = -W -Wall -Wundef -Wpointer-arith \
-	-Wcast-align -Wwrite-strings -Wstrict-prototypes \
-	-Wmissing-prototypes -Wmissing-declarations -Wredundant-decls \
-	-Wnested-externs -Winline 
-ifneq ($(GCCVER),2)
-  WARNFLAGS += -Wno-unused-parameter 
-endif
 
 CLEANS := clean-target
 
