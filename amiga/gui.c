@@ -43,6 +43,7 @@
 #include <proto/asl.h>
 #include <proto/iffparse.h>
 #include <datatypes/textclass.h>
+#include <datatypes/animationclass.h>
 #include "desktop/selection.h"
 #include "utils/utf8.h"
 #include "amiga/utf8.h"
@@ -55,6 +56,7 @@
 #include <math.h>
 #include <workbench/workbench.h>
 #include "amiga/iff_cset.h"
+#include <proto/datatypes.h>
 
 #ifdef WITH_HUBBUB
 #include <hubbub/hubbub.h>
@@ -92,6 +94,8 @@ struct Device *TimerBase;
 struct TimerIFace *ITimer;
 struct Library  *PopupMenuBase = NULL;
 struct PopupMenuIFace *IPopupMenu = NULL;
+
+Object *throbber = NULL;
 
 bool win_destroyed = false;
 static struct RastPort dummyrp;
@@ -141,6 +145,14 @@ void gui_init(int argc, char** argv)
 	struct RastPort mouseptr;
 	struct IFFHandle *mpiff = NULL;
 
+/* ttengine.library
+	if(!ami_open_tte())
+	{
+		char errormsg[100];
+		die(sprintf(errormsg,"%s ttengine.library",messages_get("OpenError")));
+	}
+*/
+
 	msgport = AllocSysObjectTags(ASOT_PORT,
 	ASO_NoTrack,FALSE,
 	TAG_DONE);
@@ -178,6 +190,14 @@ void gui_init(int argc, char** argv)
 			InitIFFasClip(iffh);
 		}
 	}
+
+	throbber = NewDTObject("Resources/Throbber",
+						GA_ID,OID_THROBBER,
+						GA_ReadOnly,TRUE,
+						DTA_ControlPanel,FALSE,
+						DTA_Repeat,TRUE,
+						DTA_GroupID,GID_ANIMATION,
+						TAG_DONE);
 
 	InitRastPort(&mouseptr);
 
@@ -831,6 +851,8 @@ void gui_quit(void)
 {
 	int i;
 
+	DisposeDTObject(throbber);
+
 	urldb_save(option_url_file);
 	urldb_save_cookies(option_cookie_file);
 	options_save_tree(hotlist,option_hotlist_file,messages_get("TreeHotlist"));
@@ -876,6 +898,8 @@ void gui_quit(void)
 
 	FreeObjList(schedule_list);
 	FreeObjList(window_list);
+
+//	ami_close_tte();
 }
 
 void ami_update_buttons(struct gui_window *gwin)
@@ -1102,6 +1126,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 						GA_ID,GID_URL,
 						GA_RelVerify,TRUE,
 					StringEnd,
+					LAYOUT_AddChild,throbber,
+					CHILD_NoDispose,TRUE,
 				LayoutEnd,
 				CHILD_WeightedHeight,0,
 				LAYOUT_AddChild, gwin->gadgets[GID_BROWSER] = SpaceObject,
@@ -1149,7 +1175,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 	InitRastPort(&gwin->rp);
 	gwin->rp.BitMap = gwin->bm;
-	SetDrMd(currp,BGBACKFILL);
+	SetDrMd(&gwin->rp,BGBACKFILL);
 
 	gwin->layerinfo = NewLayerInfo();
 	gwin->rp.Layer = CreateUpfrontLayer(gwin->layerinfo,gwin->bm,0,0,scrn->Width-1,scrn->Height-1,0,NULL);
@@ -1177,7 +1203,9 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 	InitTmpRas(gwin->rp.TmpRas,gwin->tmprasbuf,scrn->Width*scrn->Height);
 
-	GetRPAttrs(&gwin->rp,RPTAG_Font,&origrpfont,TAG_DONE);
+//	GetRPAttrs(&gwin->rp,RPTAG_Font,&origrpfont,TAG_DONE);
+
+//	ami_tte_setdefaults(&gwin->rp,gwin->win);
 
 	GetAttr(WINDOW_HorizObject,gwin->objects[OID_MAIN],(ULONG *)&gwin->objects[OID_HSCROLL]);
 	GetAttr(WINDOW_VertObject,gwin->objects[OID_MAIN],(ULONG *)&gwin->objects[OID_VSCROLL]);
@@ -1203,9 +1231,11 @@ void gui_window_destroy(struct gui_window *g)
 {
 	if(!g) return;
 
+//	DisposeDTObject(g->gadgets[GID_THROBBER]);
 	DisposeObject(g->objects[OID_MAIN]);
 	DeleteLayer(0,g->rp.Layer);
 	DisposeLayerInfo(g->layerinfo);
+//	ami_tte_cleanup(&g->rp);
 	p96FreeBitMap(g->bm);
 	FreeVec(g->rp.TmpRas);
 	FreeVec(g->rp.AreaInfo);
@@ -1520,10 +1550,12 @@ void gui_window_set_url(struct gui_window *g, const char *url)
 
 void gui_window_start_throbber(struct gui_window *g)
 {
+	IDoMethod(throbber,ADTM_START,0); // g->objects[OID_THROBBER]
 }
 
 void gui_window_stop_throbber(struct gui_window *g)
 {
+	IDoMethod(throbber,ADTM_STOP,0);
 }
 
 void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
