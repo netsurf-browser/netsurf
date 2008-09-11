@@ -322,6 +322,9 @@ void gui_init(int argc, char** argv)
 	if((!option_font_fantasy) || (option_font_fantasy[0] == '\0'))
 		option_font_fantasy = strdup("DejaVu Serif");
 
+	if((!option_toolbar_images) || (option_toolbar_images[0] == '\0'))
+		option_toolbar_images = strdup("TBImages:");
+
 	if(!option_window_width) option_window_width = 800;
 	if(!option_window_height) option_window_height = 600;
 	if(!option_window_screen_width) option_window_screen_width = 800;
@@ -933,6 +936,11 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	struct gui_window *gwin = NULL;
 	bool closegadg=TRUE;
 	ULONG curx=option_window_x,cury=option_window_y,curw=option_window_width,curh=option_window_height;
+	char nav_west[100],nav_west_s[100],nav_west_g[100];
+	char nav_east[100],nav_east_s[100],nav_east_g[100];
+	char stop[100],stop_s[100],stop_g[100];
+	char reload[100],reload_s[100],reload_g[100];
+	char home[100],home_s[100],home_g[100];
 
 	if(clone)
 	{
@@ -1018,6 +1026,38 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 		break;
         case BROWSER_WINDOW_NORMAL:
+
+			strcpy(nav_west,option_toolbar_images);
+			strcpy(nav_west_s,option_toolbar_images);
+			strcpy(nav_west_g,option_toolbar_images);
+			strcpy(nav_east,option_toolbar_images);
+			strcpy(nav_east_s,option_toolbar_images);
+			strcpy(nav_east_g,option_toolbar_images);
+			strcpy(stop,option_toolbar_images);
+			strcpy(stop_s,option_toolbar_images);
+			strcpy(stop_g,option_toolbar_images);
+			strcpy(reload,option_toolbar_images);
+			strcpy(reload_s,option_toolbar_images);
+			strcpy(reload_g,option_toolbar_images);
+			strcpy(home,option_toolbar_images);
+			strcpy(home_s,option_toolbar_images);
+			strcpy(home_g,option_toolbar_images);
+			AddPart(nav_west,"nav_west",100);
+			AddPart(nav_west_s,"nav_west_s",100);
+			AddPart(nav_west_g,"nav_west_g",100);
+			AddPart(nav_east,"nav_east",100);
+			AddPart(nav_east_s,"nav_east_s",100);
+			AddPart(nav_east_g,"nav_east_g",100);
+			AddPart(stop,"stop",100);
+			AddPart(stop_s,"stop_s",100);
+			AddPart(stop_g,"stop_g",100);
+			AddPart(reload,"reload",100);
+			AddPart(reload_s,"reload_s",100);
+			AddPart(reload_g,"reload_g",100);
+			AddPart(home,"home",100);
+			AddPart(home_s,"home_s",100);
+			AddPart(home_g,"home_g",100);
+
 		gwin->objects[OID_MAIN] = WindowObject,
        	    WA_ScreenTitle,nsscreentitle,
 //           	WA_Title, messages_get("NetSurf"),
@@ -1056,9 +1096,9 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 						GA_Disabled,TRUE,
 						BUTTON_Transparent,TRUE,
 						BUTTON_RenderImage,BitMapObject,
-							BITMAP_SourceFile,"TBImages:nav_west",
-							BITMAP_SelectSourceFile,"TBImages:nav_west_s",
-							BITMAP_DisabledSourceFile,"TBImages:nav_west_g",
+							BITMAP_SourceFile,nav_west,
+							BITMAP_SelectSourceFile,nav_west_s,
+							BITMAP_DisabledSourceFile,nav_west_g,
 							BITMAP_Screen,scrn,
 							BITMAP_Masking,TRUE,
 						BitMapEnd,
@@ -1071,9 +1111,9 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 						GA_Disabled,TRUE,
 						BUTTON_Transparent,TRUE,
 						BUTTON_RenderImage,BitMapObject,
-							BITMAP_SourceFile,"TBImages:nav_east",
-							BITMAP_SelectSourceFile,"TBImages:nav_east_s",
-							BITMAP_DisabledSourceFile,"TBImages:nav_east_g",
+							BITMAP_SourceFile,nav_east,
+							BITMAP_SelectSourceFile,nav_east_s,
+							BITMAP_DisabledSourceFile,nav_east_g,
 							BITMAP_Screen,scrn,
 							BITMAP_Masking,TRUE,
 						BitMapEnd,
@@ -1085,9 +1125,9 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 						GA_RelVerify,TRUE,
 						BUTTON_Transparent,TRUE,
 						BUTTON_RenderImage,BitMapObject,
-							BITMAP_SourceFile,"TBImages:stop",
-							BITMAP_SelectSourceFile,"TBImages:stop_s",
-							BITMAP_DisabledSourceFile,"TBImages:stop_g",
+							BITMAP_SourceFile,stop,
+							BITMAP_SelectSourceFile,stop_s,
+							BITMAP_DisabledSourceFile,stop_g,
 							BITMAP_Screen,scrn,
 							BITMAP_Masking,TRUE,
 						BitMapEnd,
@@ -1099,9 +1139,9 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 						GA_RelVerify,TRUE,
 						BUTTON_Transparent,TRUE,
 						BUTTON_RenderImage,BitMapObject,
-							BITMAP_SourceFile,"TBImages:reload",
-							BITMAP_SelectSourceFile,"TBImages:reload_s",
-							BITMAP_DisabledSourceFile,"TBImages:reload_g",
+							BITMAP_SourceFile,reload,
+							BITMAP_SelectSourceFile,reload_s,
+							BITMAP_DisabledSourceFile,reload_g,
 							BITMAP_Screen,scrn,
 							BITMAP_Masking,TRUE,
 						BitMapEnd,
@@ -1113,9 +1153,9 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 						GA_RelVerify,TRUE,
 						BUTTON_Transparent,TRUE,
 						BUTTON_RenderImage,BitMapObject,
-							BITMAP_SourceFile,"TBImages:home",
-							BITMAP_SelectSourceFile,"TBImages:home_s",
-							BITMAP_DisabledSourceFile,"TBImages:home_g",
+							BITMAP_SourceFile,home,
+							BITMAP_SelectSourceFile,home_s,
+							BITMAP_DisabledSourceFile,home_g,
 							BITMAP_Screen,scrn,
 							BITMAP_Masking,TRUE,
 						BitMapEnd,
