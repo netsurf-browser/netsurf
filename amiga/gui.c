@@ -665,9 +665,6 @@ void ami_handle_msg(void)
 		        break;
 
 				case WMHI_INTUITICK:
-#ifndef AMI_SCHEDULER_USES_TIMER
-					schedule_run();
-#endif
 				break;
 
 	   	     	default:
@@ -883,6 +880,7 @@ void gui_poll(bool active)
 	else
 	{
 		ami_get_msg();
+		schedule_run(); // run on intuitick
 	}
 }
 
