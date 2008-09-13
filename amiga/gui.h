@@ -37,6 +37,7 @@ enum
 	GID_HOME,
 	GID_BACK,
 	GID_FORWARD,
+	GID_THROBBER,
 	GID_USER,
 	GID_PASS,
 	GID_LOGIN,
@@ -50,7 +51,6 @@ enum
 	OID_VSCROLL,
 	OID_HSCROLL,
 	OID_MENU,
-	OID_THROBBER,
     OID_LAST
 };
 
@@ -84,6 +84,8 @@ struct gui_window {
 	union content_msg_data *redraw_data;
 	browser_mouse_state mouse_state;
 	browser_mouse_state key_state;
+	int throbber_frame;
+	ULONG throbber_update_count;
 	int c_x;
 	int c_y;
 	int c_h;

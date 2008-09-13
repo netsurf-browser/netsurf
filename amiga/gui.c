@@ -43,7 +43,7 @@
 #include <proto/asl.h>
 #include <proto/iffparse.h>
 #include <datatypes/textclass.h>
-#include <datatypes/animationclass.h>
+#include <datatypes/pictureclass.h>
 #include "desktop/selection.h"
 #include "utils/utf8.h"
 #include "amiga/utf8.h"
@@ -95,7 +95,8 @@ struct TimerIFace *ITimer;
 struct Library  *PopupMenuBase = NULL;
 struct PopupMenuIFace *IPopupMenu = NULL;
 
-Object *throbber = NULL;
+struct BitMap *throbber = NULL;
+ULONG throbber_width,throbber_height;
 
 bool win_destroyed = false;
 static struct RastPort dummyrp;
@@ -127,6 +128,7 @@ char *ptrs[AMI_LASTPOINTER+1] = {
 	"Resources/Pointers/NotAllowed",
 	"Resources/Pointers/Progress"};
 
+void ami_update_throbber(struct gui_window *g);
 void ami_update_buttons(struct gui_window *);
 void ami_scroller_hook(struct Hook *,Object *,struct IntuiMessage *);
 uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved);
@@ -144,6 +146,7 @@ void gui_init(int argc, char** argv)
 	BPTR lock=0;
 	struct RastPort mouseptr;
 	struct IFFHandle *mpiff = NULL;
+	Object *dto;
 
 /* ttengine.library
 	if(!ami_open_tte())
@@ -190,14 +193,6 @@ void gui_init(int argc, char** argv)
 			InitIFFasClip(iffh);
 		}
 	}
-
-	throbber = NewDTObject("Resources/Throbber",
-						GA_ID,OID_THROBBER,
-						GA_ReadOnly,TRUE,
-						DTA_ControlPanel,FALSE,
-						DTA_Repeat,TRUE,
-						DTA_GroupID,GID_ANIMATION,
-						TAG_DONE);
 
 	InitRastPort(&mouseptr);
 
@@ -342,6 +337,44 @@ void gui_init(int argc, char** argv)
 	hotlist = options_load_tree(option_hotlist_file);
 
 	if(!hotlist) ami_hotlist_init(&hotlist);
+
+	if(dto = NewDTObject("Resources/Throbber",
+					DTA_GroupID,GID_PICTURE,
+					PDTA_DestMode,PMODE_V43,
+					TAG_DONE))
+	{
+		struct BitMapHeader *throbber_bmh;
+		struct RastPort throbber_rp;
+
+		if(GetDTAttrs(dto,PDTA_BitMapHeader,&throbber_bmh,TAG_DONE))
+		{
+			throbber_width = throbber_bmh->bmh_Width / option_throbber_frames;
+			throbber_height = throbber_bmh->bmh_Height;
+
+			InitRastPort(&throbber_rp);
+
+			if(throbber = p96AllocBitMap(throbber_bmh->bmh_Width,
+				throbber_height,32,
+				BMF_CLEAR | BMF_DISPLAYABLE | BMF_INTERLEAVED,
+				NULL,RGBFB_A8R8G8B8))
+			{
+				struct RenderInfo ri;
+				UBYTE *throbber_tempmem = AllocVec(throbber_bmh->bmh_Width*throbber_height*4,MEMF_CLEAR);
+				throbber_rp.BitMap = throbber;
+				ri.Memory = throbber_tempmem;
+				ri.BytesPerRow = 4*throbber_bmh->bmh_Width;
+				ri.RGBFormat = RGBFB_A8R8G8B8;
+
+				IDoMethod(dto,PDTM_READPIXELARRAY,ri.Memory,PBPAFMT_ARGB,ri.BytesPerRow,0,0,throbber_bmh->bmh_Width,throbber_height);
+
+				p96WritePixelArray((struct RenderInfo *)&ri,0,0,&throbber_rp,0,0,throbber_bmh->bmh_Width,throbber_height);
+
+				FreeVec(throbber_tempmem);
+			}
+		}
+		DisposeDTObject(dto);
+	}
+
 }
 
 void gui_init2(int argc, char** argv)
@@ -657,6 +690,9 @@ void ami_handle_msg(void)
 		if(gwin->redraw_required)
 			ami_do_redraw(gwin);
 
+		if(gwin->throbber_frame)
+			ami_update_throbber(gwin);
+
 		node = nnode;
 	}
 }
@@ -854,7 +890,7 @@ void gui_quit(void)
 {
 	int i;
 
-	DisposeDTObject(throbber);
+	p96FreeBitMap(throbber);
 
 	urldb_save(option_url_file);
 	urldb_save_cookies(option_cookie_file);
@@ -1166,8 +1202,13 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 						GA_ID,GID_URL,
 						GA_RelVerify,TRUE,
 					StringEnd,
-					LAYOUT_AddChild,throbber,
-					CHILD_NoDispose,TRUE,
+					LAYOUT_AddChild, gwin->gadgets[GID_THROBBER] = SpaceObject,
+						GA_ID,GID_THROBBER,
+						SPACE_MinWidth,throbber_width,
+						SPACE_MinHeight,throbber_height,
+					SpaceEnd,
+					CHILD_WeightedWidth,0,
+					CHILD_WeightedHeight,0,
 				LayoutEnd,
 				CHILD_WeightedHeight,0,
 				LAYOUT_AddChild, gwin->gadgets[GID_BROWSER] = SpaceObject,
@@ -1590,12 +1631,43 @@ void gui_window_set_url(struct gui_window *g, const char *url)
 
 void gui_window_start_throbber(struct gui_window *g)
 {
-	IDoMethod(throbber,ADTM_START,0); // g->objects[OID_THROBBER]
+	struct IBox *bbox;
+	GetAttr(SPACE_AreaBox,g->gadgets[GID_THROBBER],&bbox);
+
+	g->throbber_frame=1;
+
+	BltBitMapRastPort(throbber,throbber_width,0,g->win->RPort,bbox->Left,bbox->Top,throbber_width,throbber_height,0x0C0);
 }
 
 void gui_window_stop_throbber(struct gui_window *g)
 {
-	IDoMethod(throbber,ADTM_STOP,0);
+	struct IBox *bbox;
+	GetAttr(SPACE_AreaBox,g->gadgets[GID_THROBBER],&bbox);
+
+	BltBitMapRastPort(throbber,0,0,g->win->RPort,bbox->Left,bbox->Top,throbber_width,throbber_height,0x0C0);
+
+	g->throbber_frame = 0;
+}
+
+void ami_update_throbber(struct gui_window *g)
+{
+	struct IBox *bbox;
+
+	if(g->throbber_update_count < 1000)
+	{
+		g->throbber_update_count++;
+		return;
+	}
+
+	g->throbber_update_count = 0;
+
+	GetAttr(SPACE_AreaBox,g->gadgets[GID_THROBBER],&bbox);
+
+	g->throbber_frame++;
+	if(g->throbber_frame > (option_throbber_frames-1))
+		g->throbber_frame=1;
+
+	BltBitMapRastPort(throbber,throbber_width*g->throbber_frame,0,g->win->RPort,bbox->Left,bbox->Top,throbber_width,throbber_height,0x0C0);
 }
 
 void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
