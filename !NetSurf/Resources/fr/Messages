@@ -463,6 +463,7 @@ ParsingFail:L'analyse syntaxique du document a échoué.
 BadGIF:Erreur de lecture de GIF.
 BadBMP:Erreur de lecture de BMP.
 BadICO:Erreur de lecture de ICO.
+PNGError:Error converting PNG.
 MNGError:Erreur dans la bibliothèque MNG: %i
 BadSprite:Les données du sprite sont invalides ou corrompues.
 

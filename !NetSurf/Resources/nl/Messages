@@ -463,6 +463,7 @@ ParsingFail:fout bij ontleden van dit document.
 BadGIF:fout bij lezen GIF.
 BadBMP:fout bij lezen BMP.
 BadICO:fout bij lezen ICO.
+PNGError:Error converting PNG.
 MNGError:MNG library fout: %i
 BadSprite:foutief sprite bestand.
 

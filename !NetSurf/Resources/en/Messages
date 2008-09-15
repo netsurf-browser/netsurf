@@ -563,6 +563,7 @@ ParsingFail:Parsing the document failed.
 BadGIF:Reading GIF failed.
 BadBMP:Reading BMP failed.
 BadICO:Reading ICO failed.
+PNGError:Error converting PNG.
 MNGError:Error converting MNG/PNG/JNG: %i
 BadSprite:Invalid or corrupt Sprite data.
 
