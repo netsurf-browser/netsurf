@@ -835,8 +835,10 @@ void ro_gui_save_object_native(struct content *c, char *path)
 #ifdef WITH_JPEG
 		case CONTENT_JPEG:
 #endif
-#ifdef WITH_MNG
+#if defined(WITH_MNG) || defined(WITH_PNG)
 		case CONTENT_PNG:
+#endif
+#ifdef WITH_MNG
 		case CONTENT_JNG:
 		case CONTENT_MNG:
 #endif

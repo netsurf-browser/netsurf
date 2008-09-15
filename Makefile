@@ -231,7 +231,6 @@ endef
 
 $(eval $(call feature_enabled,JPEG,-DWITH_JPEG,-ljpeg,JPEG support))
 $(eval $(call feature_enabled,MNG,-DWITH_MNG,-lmng,MNG support))
-$(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG support))
 
 $(eval $(call feature_enabled,HARU_PDF,-DWITH_PDF_EXPORT,-lhpdf -lpng,PDF export))
 $(eval $(call feature_enabled,LIBICONV_PLUG,-DLIBICONV_PLUG,,glibc internal iconv))
@@ -263,14 +262,16 @@ ifeq ($(TARGET),riscos)
     $(eval $(call feature_enabled,HUBBUB,-DWITH_HUBBUB,-lhubbub -lparserutils,Hubbub HTML parser))
     $(eval $(call feature_enabled,BMP,-DWITH_BMP,-lnsbmp,NetSurf BMP decoder))
     $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif,NetSurf GIF decoder))
+    $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG support (libpng)))
   else
     NETSURF_FEATURE_HUBBUB_CFLAGS := -DWITH_HUBBUB
     NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
     NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
+    NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
     $(eval $(call pkg_config_find_and_add,HUBBUB,libhubbub,Hubbub HTML parser))
     $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,NetSurf BMP decoder))
     $(eval $(call pkg_config_find_and_add,GIF,libnsgif,NetSurf GIF decoder))
-    $(eval $(call pkg_config_find_and_add,PNG,libpng,PNG library))
+    $(eval $(call pkg_config_find_and_add,PNG,libpng,PNG support (libpng)))
   endif
 endif
 
@@ -279,6 +280,8 @@ endif
 # ----------------------------------------------------------------------------
 
 ifeq ($(HOST),beos)
+  $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG support (libpng)))
+
   LDFLAGS += -L/boot/home/config/lib
   # some people do *not* have libm...
   LDFLAGS += -lxml2 -lz -lcurl -lssl -lcrypto -liconv
@@ -297,6 +300,7 @@ ifeq ($(TARGET),gtk)
   NETSURF_FEATURE_HUBBUB_CFLAGS := -DWITH_HUBBUB
   NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
   NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
+  NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
 
   # add a line similar to below for each optional pkg-configed lib here
   $(eval $(call pkg_config_find_and_add,RSVG,librsvg-2.0,SVG rendering))
@@ -304,7 +308,7 @@ ifeq ($(TARGET),gtk)
   $(eval $(call pkg_config_find_and_add,HUBBUB,libhubbub,Hubbub HTML parser))
   $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,NetSurf BMP decoder))
   $(eval $(call pkg_config_find_and_add,GIF,libnsgif,NetSurf GIF decoder))
-  $(eval $(call pkg_config_find_and_add,PNG,libpng,PNG library))
+  $(eval $(call pkg_config_find_and_add,PNG,libpng,PNG support (libpng)))
 
   GTKCFLAGS := -std=c99 -Dgtk -Dnsgtk \
 		-DGTK_DISABLE_DEPRECATED \
@@ -423,11 +427,13 @@ ifeq ($(TARGET),amiga)
   NETSURF_FEATURE_HUBBUB_CFLAGS := -DWITH_HUBBUB
   NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
   NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
+  NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
 
     $(eval $(call feature_enabled,ROSPRITE,-DWITH_NSSPRITE,-lrosprite,RISC OS Sprite decoder))
     $(eval $(call feature_enabled,HUBBUB,-DWITH_HUBBUB,-lhubbub -lparserutils,Hubbub HTML parser))
     $(eval $(call feature_enabled,BMP,-DWITH_BMP,-lnsbmp,NetSurf BMP decoder))
     $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif,NetSurf GIF decoder))
+    $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG support (libpng)))
 
   CFLAGS += -mcrt=newlib -D__USE_INLINE__ -std=c99 -I . -Dnsamiga
   LDFLAGS += -lxml2 -lcurl -lm -lsocket -lpthread -lregex -lauto -lraauto -lssl -lcrypto -lamisslauto -mcrt=newlib
@@ -451,7 +457,7 @@ ifeq ($(TARGET),debug)
   $(eval $(call pkg_config_find_and_add,RSVG,librsvg-2.0,SVG rendering))
   $(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,RISC OS sprite rendering))
   $(eval $(call pkg_config_find_and_add,HUBBUB,libhubbub,Hubbub HTML parser))
-  $(eval $(call pkg_config_find_and_add,HUBBUB,libparserutils,Hubbub HTML parser))
+
 LDFLAGS += $(shell $(PKG_CONFIG) --libs libnsgif libnsbmp)
 endif
 

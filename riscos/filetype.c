@@ -278,10 +278,12 @@ int ro_content_filetype_from_type(content_type type) {
 		case CONTENT_HTML:	return 0xfaf;
 		case CONTENT_TEXTPLAIN:	return 0xfff;
 		case CONTENT_CSS:	return 0xf79;
+#if defined(WITH_MNG) || defined(WITH_PNG)
+		case CONTENT_PNG:	return 0xb60;
+#endif
 #ifdef WITH_MNG
 		case CONTENT_JNG:	return 0xf78;
 		case CONTENT_MNG:	return 0xf84;
-		case CONTENT_PNG:	return 0xb60;
 #endif
 #ifdef WITH_JPEG
 		case CONTENT_JPEG:	return 0xc85;

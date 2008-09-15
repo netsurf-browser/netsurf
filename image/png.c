@@ -23,7 +23,8 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include <png.h>
+/* Ugh -- setjmp.h weirdness ensues if this isn't first... */
+#include "image/png.h"
 
 #include "utils/config.h"
 
@@ -113,7 +114,8 @@ bool nspng_process_data(struct content *c, char *data, unsigned int size)
 		return false;
 	}
 
-	png_process_data(c->data.png.png, c->data.png.info, data, size);
+	png_process_data(c->data.png.png, c->data.png.info, 
+			(uint8_t *) data, size);
 
 	return true;
 }
@@ -128,7 +130,6 @@ void info_callback(png_structp png, png_infop info)
 {
 	int bit_depth, color_type, interlace, intent;
 	double gamma;
-	unsigned int rowbytes, sprite_size;
 	unsigned long width, height;
 	struct content *c = png_get_progressive_ptr(png);
         
@@ -193,23 +194,22 @@ void row_callback(png_structp png, png_bytep new_row,
 	struct content *c = png_get_progressive_ptr(png);
 	unsigned long i, j, rowbytes = c->data.png.rowbytes;
 	unsigned int start, step;
-        unsigned char *row = c->data.png.bitbuffer + (c->data.png.rowstride * row_num);
+        unsigned char *row = c->data.png.bitbuffer + 
+			(c->data.png.rowstride * row_num);
 
-	/*	Abort if we've not got any data
-	*/
+	/* Abort if we've not got any data */
 	if (new_row == 0)
 		return;
 
-	/*	Handle interlaced sprites using the Adam7 algorithm
-	*/
+	/* Handle interlaced sprites using the Adam7 algorithm */
 	if (c->data.png.interlace) {
 		start = interlace_start[pass];
  		step = interlace_step[pass];
 		row_num = interlace_row_start[pass] +
 				interlace_row_step[pass] * row_num;
 
-		/*	Copy the data to our current row taking into consideration interlacing
-		*/
+		/* Copy the data to our current row taking interlacing
+		 * into consideration */
                 row = c->data.png.bitbuffer + (c->data.png.rowstride * row_num);
 		for (j = 0, i = start; i < rowbytes; i += step) {
 			row[i++] = new_row[j++];
@@ -218,8 +218,7 @@ void row_callback(png_structp png, png_bytep new_row,
 			row[i++] = new_row[j++];
 		}
 	} else {
-		/*	Do a fast memcpy of the row data
-		*/
+		/* Do a fast memcpy of the row data */
 		memcpy(row, new_row, rowbytes);
 	}
 }
@@ -240,9 +239,10 @@ bool nspng_convert(struct content *c, int width, int height)
 
 	c->title = malloc(NSPNG_TITLE_LEN);
 	
-        if (c->title != NULL)
+        if (c->title != NULL) {
 		snprintf(c->title, NSPNG_TITLE_LEN, messages_get("PNGTitle"),
                          c->width, c->height, c->source_size);
+	}
         
 	c->size += (c->width * c->height * 4) + NSPNG_TITLE_LEN;
         
@@ -268,8 +268,11 @@ bool nspng_redraw(struct content *c, int x, int y,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale, unsigned long background_colour)
 {
-        if (c->bitmap != NULL)
-                plot.bitmap(x, y, width, height, c->bitmap, background_colour, c);
+	if (c->bitmap != NULL) {
+		return plot.bitmap(x, y, width, height, c->bitmap, 
+				background_colour, c);
+	}
+
 	return true;
 }
 
@@ -278,6 +281,11 @@ bool nspng_redraw_tiled(struct content *c, int x, int y, int width, int height,
 		float scale, unsigned long background_colour,
 		bool repeat_x, bool repeat_y)
 {
+	if (c->bitmap != NULL) {
+		return plot.bitmap_tile(x, y, width, height, c->bitmap, 
+				background_colour, repeat_x, repeat_y, c);
+	}
+
 	return true;
 }
 

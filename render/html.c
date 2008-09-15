@@ -613,7 +613,7 @@ bool html_process_data(struct content *c, char *data, unsigned int size)
 	}
 
 #ifdef WITH_HUBBUB
-	LOG(("Parsing %d bytes", (size - x)));
+	LOG(("Parsing %lu bytes", (size - x)));
 	err = hubbub_parser_parse_chunk(
 			c->data.html.parser, 
 			(uint8_t *) data + x, (size - x));
@@ -1679,7 +1679,6 @@ void html_convert_css_callback(content_msg msg, struct content *css,
  * \param  available_width   estimate of width of object
  * \param  available_height  estimate of height of object
  * \param  background        this is a background image
- * \param  frame             name of frame, or 0 if not a frame (copied)
  * \return  true on success, false on memory exhaustion
  */
 

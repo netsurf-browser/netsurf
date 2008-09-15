@@ -62,8 +62,10 @@ static const content_type image_types[] = {
 #ifdef WITH_BMP
 	CONTENT_BMP,
 #endif
-#ifdef WITH_MNG
+#if defined(WITH_MNG) || defined(WITH_PNG)
 	CONTENT_PNG,
+#endif
+#ifdef WITH_MNG
 	CONTENT_JNG,
 	CONTENT_MNG,
 #endif

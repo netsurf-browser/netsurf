@@ -789,8 +789,10 @@ bool box_duplicate_main_tree(struct box *box, struct content *c, int *count)
 			box->object->type ==  CONTENT_BMP ||
 			box->object->type == CONTENT_ICO ||
 #endif
-#ifdef WITH_MNG
+#if defined(WITH_MNG) || defined(WITH_PNG)
 			box->object->type == CONTENT_PNG ||
+#endif
+#ifdef WITH_MNG
 			box->object->type == CONTENT_JNG ||
 			box->object->type == CONTENT_MNG ||
 #endif
