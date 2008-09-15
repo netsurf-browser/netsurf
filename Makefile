@@ -270,6 +270,7 @@ ifeq ($(TARGET),riscos)
     $(eval $(call pkg_config_find_and_add,HUBBUB,libhubbub,Hubbub HTML parser))
     $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,NetSurf BMP decoder))
     $(eval $(call pkg_config_find_and_add,GIF,libnsgif,NetSurf GIF decoder))
+    $(eval $(call pkg_config_find_and_add,PNG,libpng,PNG library))
   endif
 endif
 
@@ -303,6 +304,7 @@ ifeq ($(TARGET),gtk)
   $(eval $(call pkg_config_find_and_add,HUBBUB,libhubbub,Hubbub HTML parser))
   $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,NetSurf BMP decoder))
   $(eval $(call pkg_config_find_and_add,GIF,libnsgif,NetSurf GIF decoder))
+  $(eval $(call pkg_config_find_and_add,PNG,libpng,PNG library))
 
   GTKCFLAGS := -std=c99 -Dgtk -Dnsgtk \
 		-DGTK_DISABLE_DEPRECATED \
