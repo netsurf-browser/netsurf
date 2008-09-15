@@ -75,6 +75,9 @@
 #ifdef WITH_ARTWORKS
 #include "riscos/artworks.h"
 #endif
+#ifdef WITH_PNG
+#include "image/png.h"
+#endif
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/talloc.h"
@@ -144,7 +147,7 @@ static const struct mime_entry mime_map[] = {
 #ifdef WITH_JPEG
 	{"image/pjpeg", CONTENT_JPEG},
 #endif
-#ifdef WITH_MNG
+#if defined(WITH_MNG) || defined(WITH_PNG)
 	{"image/png", CONTENT_PNG},
 #endif
 #if defined(WITH_NS_SVG) || defined (WITH_RSVG)
@@ -203,8 +206,10 @@ const char * const content_type_name[] = {
 	"BMP",
 	"ICO",
 #endif
-#ifdef WITH_MNG
+#if defined(WITH_MNG) || defined(WITH_PNG)
 	"PNG",
+#endif
+#ifdef WITH_MNG
 	"JNG",
 	"MNG",
 #endif
@@ -289,10 +294,19 @@ static const struct handler_entry handler_map[] = {
 	{nsico_create, 0, nsico_convert, 0, nsico_destroy, 0,
 			nsico_redraw, nsico_redraw_tiled, 0, 0, false},
 #endif
+
+#ifdef WITH_PNG
+	{nspng_create, nspng_process_data, nspng_convert,
+		0, nspng_destroy, 0, nspng_redraw, nspng_redraw_tiled,
+                0, 0, false},
+#else
 #ifdef WITH_MNG
 	{nsmng_create, nsmng_process_data, nsmng_convert,
 		0, nsmng_destroy, 0, nsmng_redraw, nsmng_redraw_tiled,
-		0, 0, false},
+                0, 0, false},
+#endif
+#endif
+#ifdef WITH_MNG
 	{nsmng_create, nsmng_process_data, nsmng_convert,
 		0, nsmng_destroy, 0, nsmng_redraw, nsmng_redraw_tiled,
 		0, 0, false},

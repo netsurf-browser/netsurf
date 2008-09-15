@@ -23,6 +23,9 @@
 #include "utils/config.h"
 #ifdef WITH_MNG
 
+/* This must come first due to libpng issues */
+#include "content/content.h"
+
 #include <assert.h>
 #include <stdbool.h>
 #include <string.h>
@@ -30,7 +33,6 @@
 #include <sys/time.h>
 #include <time.h>
 #include <libmng.h>
-#include "content/content.h"
 #include "desktop/browser.h"
 #include "desktop/options.h"
 #include "desktop/plotters.h"

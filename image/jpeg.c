@@ -26,6 +26,9 @@
 #include "utils/config.h"
 #ifdef WITH_JPEG
 
+/* This must come first due to libpng issues */
+#include "content/content.h"
+
 #include <assert.h>
 #include <setjmp.h>
 #include <string.h>
@@ -33,7 +36,6 @@
 #include <stdlib.h>
 #define JPEG_INTERNAL_OPTIONS
 #include "jpeglib.h"
-#include "content/content.h"
 #include "desktop/plotters.h"
 #include "image/bitmap.h"
 #include "image/jpeg.h"

@@ -26,6 +26,13 @@
 #ifndef _NETSURF_DESKTOP_CONTENT_H_
 #define _NETSURF_DESKTOP_CONTENT_H_
 
+/* Irritatingly this must come first, or odd include errors
+ * will occur to do with setjmp.h.
+ */
+#ifdef WITH_PNG
+#include "image/png.h"
+#endif
+
 #include <stdint.h>
 #include "utils/config.h"
 #include "content/content_type.h"
@@ -207,6 +214,9 @@ struct content {
 #endif
 #ifdef WITH_RSVG
 		struct content_rsvg_data rsvg;
+#endif
+#ifdef WITH_PNG
+                struct content_png_data png;
 #endif
 	} data;
 

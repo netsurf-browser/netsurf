@@ -230,7 +230,8 @@ define pkg_config_find_and_add
 endef
 
 $(eval $(call feature_enabled,JPEG,-DWITH_JPEG,-ljpeg,JPEG support))
-$(eval $(call feature_enabled,MNG,-DWITH_MNG,-lmng,PNG support))
+$(eval $(call feature_enabled,MNG,-DWITH_MNG,-lmng,MNG support))
+$(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG support))
 
 $(eval $(call feature_enabled,HARU_PDF,-DWITH_PDF_EXPORT,-lhpdf -lpng,PDF export))
 $(eval $(call feature_enabled,LIBICONV_PLUG,-DLIBICONV_PLUG,,glibc internal iconv))
