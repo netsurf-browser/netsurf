@@ -34,7 +34,7 @@ struct bitmap;
 /** Set of target specific plotting functions.
  *
  * The functions are:
- *  clg		- Clears plotting area to a flat colour
+ *  clg		- Clears plotting area to a flat colour (if needed)
  *  arc		- Plots an arc, around (x,y), from anticlockwise from angle1 to
  *		  angle2. Angles are measured anticlockwise from horizontal, in
  *		  degrees.
@@ -42,11 +42,12 @@ struct bitmap;
  *  line	- Plots a line from (x0,y0) to (x1,y1). Coordinates are at
  *		  centre of line width/thickness.
  *  path	-
- *  polygon	- Plots a filled polygon with stright lines between points. The
- *		  lines around the edge of the ploygon are not plotted. The
+ *  polygon	- Plots a filled polygon with straight lines between points.
+ *		  The lines around the edge of the ploygon are not plotted. The
  *		  polygon is filled with the non-zero winding rule.
- *  rectangle	-
- *  fill	-
+ *  rectangle	- Plots a rectangle outline. The line can be solid, dotted or
+ *		  dashed.
+ *  fill	- Plots a filled rectangle.
  *  clip	-
  *  text	-
  *  bitmap	-
@@ -55,12 +56,23 @@ struct bitmap;
  *  group_end	-
  *  flush	-
  *
- * Coordinates are from top left and (0,0) is the top left grid demomination.
+ * Coordinates are from top left and (0,0) is the top left grid denomination.
+ * If a rectangle is drawn from (0,0) to (4,3), the result is:
+ *
+ *     0 1 2 3 4 5
+ *    +-+-+-+-+-+-
+ *  0 |#|#|#|#| |
+ *    +-+-+-+-+-+-
+ *  1 |#| | |#| |
+ *    +-+-+-+-+-+-
+ *  2 |#|#|#|#| |
+ *    +-+-+-+-+-+-
+ *  3 | | | | | |
  *
  * Plotter options:
- *  option_knockout	Optimisation particularly for unaccelerated screen
- *			redraw. It tries to avoid plotting to the same area more
- *			than once. See desktop/knockout.c
+ *  option_knockout	- Optimisation particularly for unaccelerated screen
+ *			  redraw. It tries to avoid plotting to the same area
+ *			  more than once. See desktop/knockout.c
  */
 struct plotter_table {
 	bool (*clg)(colour c);
