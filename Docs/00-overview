@@ -9,14 +9,17 @@ Directory Structure
 The source is split at top level as follows:
 
 content:: Fetching, managing, and converting content
-render:: HTML processing and layout
 css:: CSS parser
-image:: Image conversion
 desktop:: Non-platform specific front-end
-riscos:: RISC OS specific code
+image:: Image conversion
+render:: HTML processing and layout
+utils:: Misc. useful functions
+
+amiga::AmigaOS specific code
+beos::BeOS/Haiku specific code
 debug:: Unix debug build specific code
 gtk:: GTK specific code
-utils:: Misc. useful functions
+riscos:: RISC OS specific code
 
 Other Documentation
 -------------------
