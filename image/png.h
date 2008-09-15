@@ -21,7 +21,7 @@
 #define _NETSURF_RISCOS_PNG_H_
 
 #include <stdbool.h>
-#include <libpng/png.h>
+#include <png.h>
 
 struct content;
 struct bitmap;

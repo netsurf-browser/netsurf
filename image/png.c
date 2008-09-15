@@ -23,7 +23,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include <libpng/png.h>
+#include <png.h>
 
 #include "utils/config.h"
 
