@@ -82,8 +82,8 @@ bool nsjpeg_convert(struct content *c, int w, int h)
 			nsjpeg_term_source };
 	unsigned int height;
 	unsigned int width;
-	struct bitmap *bitmap = NULL;
-	uint8_t *pixels = NULL;
+	struct bitmap * volatile bitmap = NULL;
+	uint8_t * volatile pixels = NULL;
 	size_t rowstride;
 	union content_msg_data msg_data;
 
