@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
- 
+
 #include <stdbool.h>
 #include <assert.h>
 
@@ -37,7 +37,7 @@ static bool loosen_text(struct box *text, int width, struct content *content);
 
 static bool loosen_table(struct box *box, int available_width,
 		struct content *content);
-				
+
 static bool loosen_position_static(struct box *box, int width, int cx,
 		struct content *content);
 
@@ -49,8 +49,8 @@ static bool loosen_all_second_pass(struct box *box, int width, int cx,
 		struct content *content);
 static bool loosen_all_margins_paddings(struct box *box, int width, int cx,
 		struct content *content);
-		
-static bool loosen_shrink_text(struct box *box);		
+
+static bool loosen_shrink_text(struct box *box);
 
 /**
  * Main loosing procedure
@@ -74,11 +74,11 @@ bool loosen_document_layout(struct content *content, struct box *layout,
 	layout->max_width = UNKNOWN_MAX_WIDTH;
 	content_reformat(content, width, 0);
 
-	/*Check if pass 1 was enough - if re-layouting doesn't give 
+	/*Check if pass 1 was enough - if re-layouting doesn't give
 	 *us the right width, go on to pass 2. And again - if pass 2 was not
 	 *enough - go on to pass 3
 	 */
-	
+
 	if (content->width > width) {
 		if (!loosen_all_second_pass(layout, width, 0, content))
 			return false;
@@ -86,7 +86,7 @@ bool loosen_document_layout(struct content *content, struct box *layout,
 		layout->max_width = UNKNOWN_MAX_WIDTH;
 		content_reformat(content, width, 0);
 	}
-	
+
 	if (content->width > width) {
 		if (!loosen_all_margins_paddings(layout, width, 0, content))
 			return false;
@@ -94,7 +94,7 @@ bool loosen_document_layout(struct content *content, struct box *layout,
 		layout->max_width = UNKNOWN_MAX_WIDTH;
 		content_reformat(content, width, 0);
 	}
-	
+
 	return true;
 }
 
@@ -102,56 +102,56 @@ bool loosen_document_layout(struct content *content, struct box *layout,
  * \param text - the box that contains text to be broken
  * \param width Width the content is intended to fit
  * \param content talloc memory pool for new boxes
- * \return true if successful, false otherwise 
+ * \return true if successful, false otherwise
 */
 bool loosen_text(struct box *text, int width, struct content *content)
 {
 	size_t offset;
 	int actual_x;
-	
+
 	int *breaks;
-	int break_count;
-	
-	int position, i;
+	int break_count, i;
+
+	unsigned int position;
 	const struct font_functions *font_func;
-	
+
 	if (content->type == CONTENT_HTML)
 		font_func = content->data.html.font_func;
 	else
 		return false;
-	
+
 	if (text->width <= width) {
 		LOG(("loosen_text called unnecessary?"));
 		/*Still - not an error for this function*/
 		return true;
 	}
-	
+
 	breaks = malloc( sizeof(int) * text->length);
 	if (breaks == NULL)
 		return false;
-	
+
  	break_count = 0;
 	position = 0;
-	
+
 	while (position < text->length) {
 		font_func->font_position_in_string(text->style,
 				text->text + position,
 				text->length - position,
 				width, &offset, &actual_x);
-		
+
 		if (offset < text->length - position) {
 			/*Another break*/
 			LOG(("Current text broken at offset %d",
 					position + offset));
 			breaks[break_count++] = position + offset-1;
 		}
-		
+
 		position += offset;
 	}
-	
+
 	text->text = talloc_realloc(content, text->text, char,
 			text->length + break_count);
-	
+
 	i = text->length-1;
 	text->length = text->length + break_count;
 
@@ -162,7 +162,7 @@ bool loosen_text(struct box *text, int width, struct content *content)
 			text->text[i + break_count] = ' ';
 		}
 	}
-	
+
 	free(breaks);
 
 	return true;
@@ -178,38 +178,36 @@ bool loosen_text(struct box *text, int width, struct content *content)
  * \param table - the box that contains table to be broken
  * \param width Width the content is intended to fit
  * \param content talloc memory pool for new boxes
- * \return true if successful, false otherwise 
+ * \return true if successful, false otherwise
  */
 bool loosen_table(struct box *table, int width, struct content *content)
 {
 	struct box *row_group, *row, *cell, *br, *prev, *inline_container;
 
 	struct box *text, *child;
-	unsigned int row_sum;
-	bool first_cell_in_row;
 	const struct font_functions *font_func;
 	float scale;
 	int new_width;
-	
+
 	if (table->min_width <= width)
-		return true;		
-	
+		return true;
+
 	if (content->type == CONTENT_HTML)
 		font_func = content->data.html.font_func;
 	else
-		return false;		
+		return false;
 
 	table->style->border_collapse = CSS_BORDER_COLLAPSE_COLLAPSE;
-	
+
 	if (!loosen_shrink_text(table))
 		return false;
-	
+
 	if (!loosen_all_margins_paddings(table, width, 0, content))
 		return false;
-	
+
 	scale = width;
 	scale /= table->min_width;
-	
+
 	for (row_group = table->children; row_group;
 			row_group = row_group->next) {
 		for (row = row_group->children; row; row = row->next) {
@@ -220,12 +218,12 @@ bool loosen_table(struct box *table, int width, struct content *content)
 						text = child->children;
 					else
 						continue;
-					
+
 					/*text in nested boxes won't be broken*/
 					if (text->type != BOX_TEXT)
 						continue;
-					
-					
+
+
 					/*break the words propotionally to the
 					current cell width*/
 					new_width = (float)cell->width * scale * 0.9;
@@ -234,14 +232,14 @@ bool loosen_table(struct box *table, int width, struct content *content)
 			}
 		}
 	}
-			
-	
+
+
 	/*check if the table is loosend enough...*/
 	layout_minmax_table(table, font_func);
 	if (table->min_width <= width)
-		return true;			
-	
-	
+		return true;
+
+
 	/*...in case it's not continue with bigger changes,
 	table cells are changed into inline containers*/
 	inline_container = box_create(0, 0, 0, 0, 0, content);
@@ -249,28 +247,28 @@ bool loosen_table(struct box *table, int width, struct content *content)
 	inline_container->parent = table;
 	inline_container->style = talloc_memdup(content, table->style,
 			sizeof *table->style);
-	
+
 	prev = NULL;
-	
+
 	for (row_group = table->children; row_group;
 			row_group = row_group->next) {
 		for (row = row_group->children; row; row = row->next) {
-			
+
 			for (cell = row->children; cell; cell = cell->next) {
 				cell->type = BOX_INLINE_BLOCK;
 				cell->prev = prev;
 				cell->parent = inline_container;
 				cell->max_width = width;
 				cell->min_width = 0;
-				
+
 				if (prev!=NULL)
 					prev->next = cell;
 				else
 					inline_container->children = cell;
-					
+
 				prev = cell;
 			}
-			
+
 			br = box_create(0, 0, 0, 0, 0, content);
 			br->type = BOX_BR;
 			br->parent = inline_container;
@@ -278,17 +276,17 @@ bool loosen_table(struct box *table, int width, struct content *content)
 			br->style = talloc_memdup(content, table->style,
 					sizeof *table->style);
 			br->style->clear = CSS_CLEAR_BOTH;
-			
+
 			if (prev != NULL)
 				prev->next = br;
 			else
 				inline_container->children = br;
-			
+
 			prev = br;
 		}
 	}
 	inline_container->last = prev;
-	
+
 	table->type = BOX_BLOCK;
 	table->children = table->last = inline_container;
 	table->col = NULL;
@@ -300,14 +298,14 @@ bool loosen_table(struct box *table, int width, struct content *content)
 * Recursively step through the box tree applying LOOSEN_MIN_TEXT_SIZE wherever
 * text is found
 * \param box the box where the shrinking should be started
-* \return true if successful, false otherwise 
+* \return true if successful, false otherwise
 */
 bool loosen_shrink_text(struct box *box)
 {
 	struct box *child;
-	
+
 	box->max_width = UNKNOWN_MAX_WIDTH;
-	
+
 	if (box->type == BOX_TEXT) {
 		box->style->font_size.size = CSS_FONT_SIZE_LENGTH;
 		box->style->font_size.value.length.unit = CSS_UNIT_PX;
@@ -316,8 +314,8 @@ bool loosen_shrink_text(struct box *box)
 	else if (box->children)
 		for(child = box->children; child; child = child->next)
 			if (!loosen_shrink_text(child))
-				return false;		
-	
+				return false;
+
 	return true;
 }
 
@@ -329,40 +327,40 @@ bool loosen_shrink_text(struct box *box)
  * \param width Width the content is intended to fit
  * \param cx current x - not yet in use
  * \param content talloc memory pool for new boxes
- * \return true if successful, false otherwise 
+ * \return true if successful, false otherwise
  */
 bool loosen_position_static(struct box *box, int width, int cx,
 		struct content *content)
 {
 	assert(box->style);
 
-	if (box->style->position == CSS_POSITION_ABSOLUTE) {	
+	if (box->style->position == CSS_POSITION_ABSOLUTE) {
 	   box->style->position = CSS_POSITION_NOT_SET;
 	}
-	
+
 	return true;
 }
-		
+
 /**
  * Shrink an object (esp. an image) to fit the page-width
  * \note Not sure wheter it won't be better for images to be cropped
  * \param box - the box that should be changed
  * \param width Width the content is intended to fit
- * \return true if successful, false otherwise 
+ * \return true if successful, false otherwise
 */
 bool loosen_shrink_object(struct box *box, int width)
 {
 	assert(box->object != NULL);
-	
+
 	box->height = AUTO;
 	box->width = width;
-	
+
 	if (box->style) {
 		box->style->width.width = CSS_WIDTH_PERCENT;
 		box->style->width.value.percent = 100;
 		box->style->height.height= CSS_HEIGHT_AUTO;
 	}
-	
+
 	return true;
 }
 
@@ -373,20 +371,20 @@ bool loosen_shrink_object(struct box *box, int width)
  * \param width Width the content is intended to fit
  * \param cx current x - not yet in use
  * \param content talloc memory pool for new boxes
- * \return true if successful, false otherwise 
+ * \return true if successful, false otherwise
 */
 bool loosen_all_first_pass(struct box *box, int width, int cx,
 		struct content *content)
 {
 	struct box* c;
 	int x;
-	
+
 	for (c = box->children; c ; c = c->next) {
 		x = cx + c->x;
 		if (c->children != NULL)
 			if (!loosen_all_first_pass(c, width, x, content))
 				return false;
-		
+
 		if (c->style) {
 			if (c->style->position == CSS_POSITION_RELATIVE ||
 					c->style->position == CSS_POSITION_ABSOLUTE )
@@ -396,23 +394,21 @@ bool loosen_all_first_pass(struct box *box, int width, int cx,
 					css_len2px(&c->style->width.value.length, c->style) > width)
 				c->style->width.width = CSS_WIDTH_NOT_SET;
 		}
-		
+
 		if (c->object && c->width > width)
 			if (!loosen_shrink_object(c, width))
 				return false;
-				
-		switch (c->type) {
-			case BOX_TEXT:
-				if (!loosen_text(c, width, content))
-					return false;
-				break;
+
+		if (c->type == BOX_TEXT) {
+			if (!loosen_text(c, width, content))
+				return false;
 		}
-		
+
 		c->min_width = 0;
 		c->max_width = UNKNOWN_MAX_WIDTH;
-		
+
 	}
-	
+
 	return true;
 }
 
@@ -422,20 +418,20 @@ bool loosen_all_first_pass(struct box *box, int width, int cx,
  * \param width Width the content is intended to fit
  * \param cx current x - not yet in use
  * \param content talloc memory pool for new boxes
- * \return true if successful, false otherwise 
+ * \return true if successful, false otherwise
  */
 bool loosen_all_second_pass(struct box *box, int width, int cx,
 		struct content *content)
 {
 	struct box *c;
 	int x;
-	
+
 	for (c = box->children; c; c = c->next) {
 		x = cx + c->x;
 		if (c->children != NULL)
 			if (!loosen_all_second_pass(c, width, x, content))
 				return false;
-		
+
 		switch (c->type) {
 			case BOX_TABLE:
 				if (!loosen_table(c, width, content))
@@ -444,11 +440,11 @@ bool loosen_all_second_pass(struct box *box, int width, int cx,
 			default:
 				break;
 		}
-		
+
 		c->min_width = 0;
 		c->max_width = UNKNOWN_MAX_WIDTH;
-	}	
-	
+	}
+
 	return true;
 }
 
@@ -459,14 +455,14 @@ bool loosen_all_second_pass(struct box *box, int width, int cx,
  * \param width Width the content is intended to fit
  * \param cx current x - not yet in use
  * \param content talloc memory pool for new boxes
- * \return true if successful, false otherwise 
+ * \return true if successful, false otherwise
  */
 bool loosen_all_margins_paddings(struct box *box, int width, int cx,
 		struct content *content)
 {
 	struct box *c;
 	int x;
-	
+
 	for (c = box->children; c; c = c->next) {
 		x = cx + c->x;
 		if (c->children != NULL)
@@ -475,27 +471,27 @@ bool loosen_all_margins_paddings(struct box *box, int width, int cx,
 
 		c->padding[LEFT] = c->padding[RIGHT] = 0;
 		c->margin[LEFT] = c->margin[RIGHT] = 0;
-		
+
 		if (c->style) {
 			c->style->margin[LEFT].margin = CSS_MARGIN_PERCENT;
 			c->style->margin[LEFT].value.percent = 0;
-			
+
 			c->style->margin[RIGHT].margin = CSS_MARGIN_PERCENT;
 			c->style->margin[RIGHT].value.percent = 0;
-			
+
 			c->style->padding[LEFT].padding = CSS_PADDING_PERCENT;
-			c->style->padding[LEFT].value.percent = 0; 
-			
+			c->style->padding[LEFT].value.percent = 0;
+
 			c->style->padding[RIGHT].padding = CSS_PADDING_PERCENT;
-			c->style->padding[RIGHT].value.percent = 0; 
-			
+			c->style->padding[RIGHT].value.percent = 0;
+
 		}
 
 		c->min_width = 0;
 		c->max_width = UNKNOWN_MAX_WIDTH;
-		
-	}	
-	
+
+	}
+
 	return true;
 }
 

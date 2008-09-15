@@ -236,7 +236,7 @@ bool html_redraw_box(struct box *box,
 #ifdef WITH_PDF_EXPORT
 	/*if the rectangle is under the page bottom but it can fit in a page,
 	don't print it now*/
-	if (html_redraw_printing)
+	if (html_redraw_printing) {
 		if (y1 > html_redraw_printing_border) {
 			if (y1 - y0 <= html_redraw_printing_border &&
 					(box->type == BOX_TEXT ||
@@ -250,6 +250,7 @@ bool html_redraw_box(struct box *box,
 			}
 		}
 		else box->printed = true;/*it won't be printed anymore*/
+	}
 #endif
 
 	/* if visibility is hidden render children only */
