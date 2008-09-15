@@ -52,8 +52,9 @@ struct bitmap;
  *  text	-
  *  bitmap	-
  *  bitmap_tile	-
- *  group_start	-
- *  group_end	-
+ *  group_start	- Start of a group of objects. Used when plotter implements
+ *		  export to a vector graphics file format. (Optional.)
+ *  group_end	- End of the most recently started group. (Optional.)
  *  flush	-
  *
  * Coordinates are from top left and (0,0) is the top left grid denomination.
