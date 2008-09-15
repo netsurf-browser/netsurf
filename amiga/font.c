@@ -28,16 +28,10 @@
 #include "desktop/options.h"
 #include "amiga/utf8.h"
 #include "utils/utf8.h"
-
 #include <diskfont/diskfonttag.h>
 #include <diskfont/oterrors.h>
 #include <proto/Picasso96API.h>
-
-#include <proto/ttengine.h>
 #include <proto/exec.h>
-
-struct Library *TTEngineBase = NULL;
-struct TTEngineIFace *ITTEngine = NULL;
 
 static bool nsfont_width(const struct css_style *style,
 	  const char *string, size_t length,
@@ -62,23 +56,8 @@ bool nsfont_width(const struct css_style *style,
 		int *width)
 {
 	struct TextFont *tfont = ami_open_font(style);
-/*
-	char *buffer;
-	utf8_to_local_encoding(string,length,&buffer);
-	if(buffer)
-	{
-*/
-		*width = TextLength(currp,string,length); //buffer,strlen(buffer));
-/*
-	}
-	else
-	{
-		*width=0;
-	}
-*/
-
+	*width = TextLength(currp,string,length); //buffer,strlen(buffer));
 	ami_close_font(tfont);
-//	ami_utf8_free(buffer);
 	return true;
 }
 
@@ -101,27 +80,13 @@ bool nsfont_position_in_string(const struct css_style *style,
 {
 	struct TextExtent extent;
 	struct TextFont *tfont = ami_open_font(style);
-/*
-	char *buffer;
-	utf8_to_local_encoding(string,length,&buffer);
 
-	if(buffer)
-	{
-*/
-		*char_offset = TextFit(currp,string,length,
-							&extent,NULL,1,x,32767);
+	*char_offset = TextFit(currp,string,length,
+						&extent,NULL,1,x,32767);
 
-		*actual_x = extent.te_Extent.MaxX;
-/*
-	}
-	else
-	{
-		*char_offset = 0;
-		*actual_x = 0;
-	}
-*/
+	*actual_x = extent.te_Extent.MaxX;
+
 	ami_close_font(tfont);
-//	ami_utf8_free(buffer);
 	return true;
 }
 
@@ -151,8 +116,6 @@ bool nsfont_split(const struct css_style *style,
 	ULONG co;
 	char *charp;
 	struct TextFont *tfont = ami_open_font(style);
-//	char *buffer;
-//	utf8_to_local_encoding(string,length,&buffer);
 
 	co = TextFit(currp,string,length,
 				&extent,NULL,1,x,32767);
@@ -175,7 +138,6 @@ bool nsfont_split(const struct css_style *style,
 	}
 
 	ami_close_font(tfont);
-//	ami_utf8_free(buffer);
 	return true;
 }
 
@@ -280,8 +242,6 @@ struct TextFont *ami_open_font(struct css_style *style)
 				TAG_DONE);
 	}
 
-//	free(fontname);
-
 	return tfont;
 }
 
@@ -320,31 +280,7 @@ struct OutlineFont *ami_open_outline_font(struct css_style *style)
 
 	if(!(ofont = OpenOutlineFont(fontname,NULL,OFF_OPEN))) return NULL;
 
-/* not implemented yet
-	switch(style->font_style)
-	{
-		case CSS_FONT_STYLE_ITALIC:
-			tattr.tta_Style = FSB_ITALIC;
-		break;
-
-		case CSS_FONT_STYLE_OBLIQUE:
-			tattr.tta_Style = FSB_BOLD;
-		break;
-
-		default:
-			tattr.tta_Style = FS_NORMAL;
-		break;
-	}
-*/
-
-/* not supported
-	switch(style->font_variant)
-	{
-		default:
-			//printf("font variant: %ld\n",style->font_variant);
-		break;
-	}
-*/
+/* see diskfont implementation for currently unimplemented bold/italic stuff */
 
 	switch(style->font_size.size)
 	{
@@ -420,8 +356,6 @@ void ami_unicode_text(struct RastPort *rp,char *string,ULONG length,struct css_s
 
 				posn = 0; //(glyph->glm_BlackTop * glyph->glm_BMRows) + glyph->glm_BlackLeft;
 
-//printf("%ld %ld\n",glyph->glm_BlackHeight,glyph->glm_BlackWidth);
-
 				x+= glyph->glm_BlackLeft;
 
 				for(gy=0;gy<glyph->glm_BlackHeight;gy++)
@@ -441,8 +375,6 @@ rendering bitmap. */
 				x+= glyph->glm_BlackWidth;
 				//x+=(glyph->glm_Width >> 16);
 
-//				printf("%ld:  %ld\n",i,(glyph->glm_Width >> 16));
-
 				EReleaseInfo(&ofont->olf_EEngine,
 					OT_GlyphMap8Bit,glyph,
 					TAG_END);
@@ -453,24 +385,4 @@ rendering bitmap. */
 	}
 
 	ami_close_outline_font(ofont);
-}
-
-bool ami_open_tte(void)
-{
-	if(TTEngineBase = OpenLibrary("ttengine.library",0))
-	{
-		if(ITTEngine = (struct TTEngineIFace *)GetInterface(TTEngineBase,"main",1,NULL))
-		{
-			return true;
-		}
-	}
-
-	ami_close_tte();
-	return false;
-}
-
-void ami_close_tte(void)
-{
-    if(ITTEngine) DropInterface((struct Interface *)ITTEngine);
-    if(TTEngineBase) CloseLibrary(TTEngineBase);
 }
