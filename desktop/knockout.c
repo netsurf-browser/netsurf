@@ -18,6 +18,48 @@
 
 /** \file
  * Knockout rendering (implementation).
+ *
+ * Knockout rendering is an optimisation which is particularly for
+ * unaccelerated screen redraw. It tries to avoid plotting the same area more
+ * than once.
+ *
+ * If the object is to plot two overlapping rectangles (one large, one small),
+ * such as:
+ *
+ *   +-----------------+
+ *   |#################|
+ *   |####+-------+####|
+ *   |####|:::::::|####|
+ *   |####|:::::::|####|
+ *   |####|:::::::|####|
+ *   |####+-------+####|
+ *   |#################|
+ *   +-----------------+
+ *
+ * Without knockout rendering we plot the bottom rectangle and then the top one:
+ *
+ *   +-----------------+                 +-----------------+
+ *   |#################|                 |#################|
+ *   |#################|                 |####+-------+####|
+ *   |#################|                 |####|:::::::|####|
+ *   |#################|    and then,    |####|:::::::|####|
+ *   |#################|                 |####|:::::::|####|
+ *   |#################|                 |####+-------+####|
+ *   |#################|                 |#################|
+ *   +-----------------+                 +-----------------+
+ *
+ * With knockoout rendering, the bottom rectangle is split up into smaller
+ * ones and each pixel is just plotted once:
+ *
+ *   +-----------------+
+ *   |#################|
+ *   +----+-------+----+
+ *   |####|:::::::|####|
+ *   |####|:::::::|####|
+ *   |####|:::::::|####|
+ *   +----+-------+----+
+ *   |#################|
+ *   +-----------------+
  */
 
 #define NDEBUG
