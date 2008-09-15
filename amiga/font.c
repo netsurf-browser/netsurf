@@ -28,9 +28,16 @@
 #include "desktop/options.h"
 #include "amiga/utf8.h"
 #include "utils/utf8.h"
+
 #include <diskfont/diskfonttag.h>
 #include <diskfont/oterrors.h>
 #include <proto/Picasso96API.h>
+
+#include <proto/ttengine.h>
+#include <proto/exec.h>
+
+struct Library *TTEngineBase = NULL;
+struct TTEngineIFace *ITTEngine = NULL;
 
 static bool nsfont_width(const struct css_style *style,
 	  const char *string, size_t length,
@@ -94,24 +101,27 @@ bool nsfont_position_in_string(const struct css_style *style,
 {
 	struct TextExtent extent;
 	struct TextFont *tfont = ami_open_font(style);
+/*
 	char *buffer;
 	utf8_to_local_encoding(string,length,&buffer);
 
 	if(buffer)
 	{
-		*char_offset = TextFit(currp,buffer,strlen(buffer),
+*/
+		*char_offset = TextFit(currp,string,length,
 							&extent,NULL,1,x,32767);
 
 		*actual_x = extent.te_Extent.MaxX;
+/*
 	}
 	else
 	{
 		*char_offset = 0;
 		*actual_x = 0;
 	}
-
+*/
 	ami_close_font(tfont);
-	ami_utf8_free(buffer);
+//	ami_utf8_free(buffer);
 	return true;
 }
 
@@ -206,15 +216,20 @@ struct TextFont *ami_open_font(struct css_style *style)
 	switch(style->font_style)
 	{
 		case CSS_FONT_STYLE_ITALIC:
-			tattr.tta_Style = FSB_ITALIC;
-		break;
-
 		case CSS_FONT_STYLE_OBLIQUE:
-			tattr.tta_Style = FSB_BOLD;
+			tattr.tta_Style = FSF_ITALIC;
 		break;
 
 		default:
 			tattr.tta_Style = FS_NORMAL;
+		break;
+	}
+
+	switch(style->font_weight)
+	{
+		case CSS_FONT_WEIGHT_BOLD:
+		case CSS_FONT_WEIGHT_BOLDER:
+			tattr.tta_Style |= FSF_BOLD;
 		break;
 	}
 
@@ -438,4 +453,24 @@ rendering bitmap. */
 	}
 
 	ami_close_outline_font(ofont);
+}
+
+bool ami_open_tte(void)
+{
+	if(TTEngineBase = OpenLibrary("ttengine.library",0))
+	{
+		if(ITTEngine = (struct TTEngineIFace *)GetInterface(TTEngineBase,"main",1,NULL))
+		{
+			return true;
+		}
+	}
+
+	ami_close_tte();
+	return false;
+}
+
+void ami_close_tte(void)
+{
+    if(ITTEngine) DropInterface((struct Interface *)ITTEngine);
+    if(TTEngineBase) CloseLibrary(TTEngineBase);
 }
