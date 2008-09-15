@@ -31,7 +31,37 @@
 struct bitmap;
 
 
-/** Set of target specific plotting functions. */
+/** Set of target specific plotting functions.
+ *
+ * The functions are:
+ *  clg		- Clears plotting area to a flat colour
+ *  arc		- Plots an arc, around (x,y), from anticlockwise from angle1 to
+ *		  angle2. Angles are measured anticlockwise from horizontal, in
+ *		  degrees.
+ *  disc	- Plots a circle, centered on (x,y), which is optionally filled.
+ *  line	- Plots a line from (x0,y0) to (x1,y1). Coordinates are at
+ *		  centre of line width/thickness.
+ *  path	-
+ *  polygon	- Plots a filled polygon with stright lines between points. The
+ *		  lines around the edge of the ploygon are not plotted. The
+ *		  polygon is filled with the non-zero winding rule.
+ *  rectangle	-
+ *  fill	-
+ *  clip	-
+ *  text	-
+ *  bitmap	-
+ *  bitmap_tile	-
+ *  group_start	-
+ *  group_end	-
+ *  flush	-
+ *
+ * Coordinates are from top left and (0,0) is the top left grid demomination.
+ *
+ * Plotter options:
+ *  option_knockout	Optimisation particularly for unaccelerated screen
+ *			redraw. It tries to avoid plotting to the same area more
+ *			than once. See desktop/knockout.c
+ */
 struct plotter_table {
 	bool (*clg)(colour c);
 	bool (*rectangle)(int x0, int y0, int width, int height,
@@ -44,20 +74,19 @@ struct plotter_table {
 	bool (*text)(int x, int y, const struct css_style *style,
 			const char *text, size_t length, colour bg, colour c);
 	bool (*disc)(int x, int y, int radius, colour c, bool filled);
-	bool (*arc)(int x, int y, int radius, int angle1, int angle2,
-	    		colour c);
+	bool (*arc)(int x, int y, int radius, int angle1, int angle2, colour c);
 	bool (*bitmap)(int x, int y, int width, int height,
 			struct bitmap *bitmap, colour bg,
 			struct content *content);
 	bool (*bitmap_tile)(int x, int y, int width, int height,
 			struct bitmap *bitmap, colour bg,
 			bool repeat_x, bool repeat_y, struct content *content);
-	bool (*group_start)(const char *name); /**< optional, may be NULL */
-	bool (*group_end)(void); /**< optional, may be NULL */
-	bool (*flush)(void); /**< optional, may be NULL */
+	bool (*group_start)(const char *name);  /**< optional, may be NULL */
+	bool (*group_end)(void);		/**< optional, may be NULL */
+	bool (*flush)(void);			/**< optional, may be NULL */
 	bool (*path)(float *p, unsigned int n, colour fill, float width,
 			colour c, float *transform);
-	bool option_knockout; /**< when set, avoid areas are replotted more than once.  */
+	bool option_knockout;	/**< set if knockout rendering is required */
 };
 
 /** Current plotters, must be assigned before use. */
