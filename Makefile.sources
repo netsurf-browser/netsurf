@@ -5,37 +5,37 @@
 # for each build.
 #
 
-S_CONTENT := content.c fetch.c fetchcache.c urldb.c \
+S_CONTENT := content.c fetch.c fetchcache.c urldb.c			\
 	fetchers/fetch_curl.c fetchers/fetch_data.c
 S_CSS := css.c css_enum.c parser.c ruleset.c scanner.c
-S_RENDER := box.c box_construct.c box_normalise.c	\
-	directory.c form.c html.c html_redraw.c		\
-	imagemap.c layout.c list.c table.c textplain.c
+S_RENDER := box.c box_construct.c box_normalise.c directory.c		\
+	form.c html.c html_redraw.c imagemap.c layout.c list.c		\
+	table.c textplain.c
 S_UTILS := base64.c filename.c hashtable.c locale.c messages.c talloc.c	\
 	url.c utf8.c utils.c useragent.c
 S_DESKTOP := knockout.c options.c tree.c version.c
 
 # S_COMMON are sources common to all builds
-S_COMMON := $(addprefix content/,$(S_CONTENT))	\
-	$(addprefix css/,$(S_CSS))		\
-	$(addprefix render/,$(S_RENDER))	\
-	$(addprefix utils/,$(S_UTILS))		\
+S_COMMON := $(addprefix content/,$(S_CONTENT))				\
+	$(addprefix css/,$(S_CSS))					\
+	$(addprefix render/,$(S_RENDER))				\
+	$(addprefix utils/,$(S_UTILS))					\
 	$(addprefix desktop/,$(S_DESKTOP))
 
 # S_IMAGE are sources related to image management
-S_IMAGE := bmp.c gif.c ico.c jpeg.c	\
-	mng.c nssprite.c svg.c rsvg.c png.c
+S_IMAGE := bmp.c gif.c ico.c jpeg.c mng.c nssprite.c png.c svg.c rsvg.c
 S_IMAGE := $(addprefix image/,$(S_IMAGE))
 
 # S_PDF are sources of the pdf plotter + the ones for paged-printing
 S_PDF := pdf_plotters.c font_haru.c
 S_PRINT := print.c 
 S_LOOSE := loosen.c
-S_PDF := $(addprefix desktop/save_pdf/,$(S_PDF)) $(addprefix desktop/,$(S_PRINT))	\
-	 $(addprefix render/,$(S_LOOSE))
+S_PDF := $(addprefix desktop/save_pdf/,$(S_PDF))			\
+	$(addprefix desktop/,$(S_PRINT))				\
+	$(addprefix render/,$(S_LOOSE))
 
 # S_BROWSER are sources related to full browsers but are common
-# between RO and Unix builds
+# between RISC OS, GTK, BeOS and AmigaOS builds
 S_BROWSER := browser.c frames.c history_core.c netsurf.c save_text.c	\
 	selection.c textinput.c
 S_BROWSER := $(addprefix desktop/,$(S_BROWSER))
@@ -46,8 +46,8 @@ S_RISCOS := 401login.c artworks.c assert.c awrender.s bitmap.c buffer.c	\
 	filetype.c font.c global_history.c gui.c help.c history.c	\
 	hotlist.c image.c menus.c message.c palettes.c plotters.c	\
 	plugin.c print.c query.c save.c save_complete.c save_draw.c	\
-	save_pdf.c schedule.c search.c sprite.c	sslcert.c textarea.c	\
-	textselection.c theme.c theme_install.c	thumbnail.c		\
+	save_pdf.c schedule.c search.c sprite.c sslcert.c textarea.c	\
+	textselection.c theme.c theme_install.c thumbnail.c		\
 	treeview.c ucstables.c uri.c url_complete.c url_protocol.c	\
 	wimp.c wimp_event.c window.c gui/progress_bar.c			\
 	gui/status_bar.c						\
@@ -60,7 +60,7 @@ TPL_RISCOS := $(addprefix riscos/templates/,$(TPL_RISCOS))
 
 # S_GTK are sources purely for the GTK build
 S_GTK := font_pango.c gtk_bitmap.c gtk_gui.c gtk_schedule.c		\
-	gtk_thumbnail.c gtk_plotters.c gtk_treeview.c gtk_scaffolding.c \
+	gtk_thumbnail.c gtk_plotters.c gtk_treeview.c gtk_scaffolding.c	\
 	gtk_completion.c gtk_login.c gtk_throbber.c gtk_selection.c	\
 	gtk_history.c gtk_window.c gtk_filetype.c gtk_download.c	\
 	gtk_print.c gtk_tabs.c						\
@@ -68,16 +68,17 @@ S_GTK := font_pango.c gtk_bitmap.c gtk_gui.c gtk_schedule.c		\
 S_GTK := $(addprefix gtk/,$(S_GTK))
 
 # S_BEOS are sources purely for the BeOS build
-S_BEOS := beos_bitmap.cpp beos_fetch_rsrc.cpp beos_filetype.cpp beos_font.cpp \
-	beos_gui.cpp beos_history.cpp beos_login.cpp beos_options.cpp \
-	beos_plotters.cpp beos_scaffolding.cpp beos_schedule.cpp \
-	beos_thumbnail.cpp beos_treeview.cpp beos_throbber.cpp \
-	beos_window.cpp
+S_BEOS := beos_bitmap.cpp beos_fetch_rsrc.cpp beos_filetype.cpp		\
+	beos_font.cpp beos_gui.cpp beos_history.cpp beos_login.cpp	\
+	beos_options.cpp beos_plotters.cpp beos_scaffolding.cpp		\
+	beos_schedule.cpp beos_thumbnail.cpp beos_treeview.cpp		\
+	beos_throbber.cpp beos_window.cpp
 S_BEOS := $(addprefix beos/,$(S_BEOS))
 RDEF_BEOS := beos_res.rdef
 RDEF_BEOS := $(addprefix beos/,$(RDEF_BEOS))
-RDEP_BEOS := adblock.css beosdefault.css default.css ca-bundle.txt messages
-RDEP_BEOS := $(addprefix beos/res/,$(RDEP_BEOS)) \
+RDEP_BEOS := adblock.css beosdefault.css default.css ca-bundle.txt	\
+	messages
+RDEP_BEOS := $(addprefix beos/res/,$(RDEP_BEOS))			\
 	$(wildcard beos/res/throbber/throbber*.png)
 
 # S_DEBUG are sources purely for the debug build
@@ -85,7 +86,9 @@ S_DEBUG := netsurfd.c debug_bitmap.c filetyped.c fontd.c
 S_DEBUG := $(addprefix debug/,$(S_DEBUG))
 
 # S_AMIGA are sources purely for the Amiga build
-S_AMIGA := compat.c gui.c tree.c history.c hotlist.c schedule.c thumbnail.c misc.c bitmap.c font.c filetype.c utf8.c login.c plotters.c object.c menu.c save_pdf.c
+S_AMIGA := compat.c gui.c tree.c history.c hotlist.c schedule.c		\
+	thumbnail.c misc.c bitmap.c font.c filetype.c utf8.c login.c	\
+	plotters.c object.c menu.c save_pdf.c
 S_AMIGA := $(addprefix amiga/,$(S_AMIGA))
 
 # Some extra rules for building the scanner etc.
@@ -127,7 +130,7 @@ endif
 
 clean-intermediates:
 	$(VQ)echo "   CLEAN: intermediates"
-	$(Q)$(RM) css/css_enum.c css/css_enum.h css/parser.c \
+	$(Q)$(RM) css/css_enum.c css/css_enum.h css/parser.c		\
 		css/parser.out css/parser.h
 	$(Q)$(RM) css/scanner.c utils/translit.c
 
