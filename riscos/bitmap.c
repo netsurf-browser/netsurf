@@ -34,6 +34,7 @@
 #include "oslib/osfind.h"
 #include "oslib/osgbpb.h"
 #include "oslib/osspriteop.h"
+#include "oslib/wimp.h"
 #include "content/content.h"
 #include "image/bitmap.h"
 #include "riscos/bitmap.h"
@@ -127,7 +128,7 @@ void bitmap_initialise_memory(void)
 		 TaskManager has been adjusted to make it more logical
 		 for the user).
 	*/
-	error = xwimp_slot_size(-1, -1, 0, NULL, &free_slot);
+	error = xwimp_slot_size(-1, -1, NULL, NULL, &free_slot);
 	if (error) {
 		LOG(("xwimp_slot_size: 0x%x: %s",
 				error->errnum, error->errmess));
