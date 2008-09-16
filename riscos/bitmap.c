@@ -306,7 +306,7 @@ void bitmap_overlay_sprite(struct bitmap *bitmap, const osspriteop_header *s)
 
 	dp_offset = bitmap_get_rowstride(bitmap) / 4;
 
-	dp = bitmap_get_buffer(bitmap);
+	dp = (void*)bitmap_get_buffer(bitmap);
 	if (!dp)
 		return;
 	sp = (byte*)s + s->image;
@@ -326,11 +326,10 @@ void bitmap_overlay_sprite(struct bitmap *bitmap, const osspriteop_header *s)
 	}
 
 	/* (partially-)transparent pixels in the overlayed sprite retain
-	   their transparency in the output bitmap; opaque sprite pixels
-	   are also propagated to the bitmap, except those which are the
-	   OVERLAY_INDEX colour which allow the original bitmap contents to
-	   show through */
-
+	 * their transparency in the output bitmap; opaque sprite pixels
+	 * are also propagated to the bitmap, except those which are the
+	 * OVERLAY_INDEX colour which allow the original bitmap contents to
+	 * show through */
 	for (y = 0; y < h; y++) {
 		unsigned *sdp = dp;
 		for(x = 0; x < w; x++) {
@@ -441,10 +440,10 @@ bool bitmap_test_opaque(void *vbitmap)
 		(osspriteop_header *) (bitmap->sprite_area + 1);
 	unsigned int height = (sprite_header->height + 1);
 	unsigned int size = width * height;
-	unsigned *p = (unsigned*)sprite;
+	unsigned *p = (void*)sprite;
 	unsigned *ep;
 
-	ep = (unsigned*)(sprite + (size & ~31));
+	ep = (void*)(sprite + (size & ~31));
 	while (p < ep) {
 		/* \todo prefetch(p, 128)? */
 		if (((p[0] & p[1] & p[2] & p[3] & p[4] & p[5] & p[6] & p[7])
@@ -609,7 +608,7 @@ bool bitmap_save(void *vbitmap, const char *path, unsigned flags)
 
 	if (bitmap_get_opaque(bitmap)) {
 		error = xosspriteop_save_sprite_file(osspriteop_USER_AREA,
-						     (bitmap->sprite_area), path);
+				(bitmap->sprite_area), path);
 		if (error) {
 			LOG(("xosspriteop_save_sprite_file: 0x%x: %s",
 					error->errnum, error->errmess));
@@ -619,8 +618,8 @@ bool bitmap_save(void *vbitmap, const char *path, unsigned flags)
 		return true;
 	} else {
 		/* to make the saved sprite useful we must convert from 'Tinct'
-		   format to either a bi-level mask or a Select-style full
-		   alpha channel */
+		 * format to either a bi-level mask or a Select-style full
+		 * alpha channel */
 		osspriteop_area *area = bitmap->sprite_area;
 		osspriteop_header *hdr = (osspriteop_header*)((char*)area+area->first);
 		unsigned width = hdr->width + 1, height = hdr->height + 1;
