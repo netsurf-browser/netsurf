@@ -216,6 +216,38 @@ ImgStyle2:Tramé
 ImgStyle3:Avec diffusion d'erreur
 
 
+# Menu items used in the Amiga version.
+# Some of these are copies of other strings but without the
+# embedded shortcut keys. (NS suffix = No Shortcut)
+#
+# Project menu
+#
+Project:Project
+NewWindowNS:New window
+CloseWindow:Close window
+SaveAs:Save as
+Source:Source...
+TextNS:Text...
+PDF:PDF...
+
+# Edit menu
+#
+CopyNS:Copy
+Paste:Paste
+SelectAllNS:Select all
+ClearNS:Clear selection
+
+# Hotlist menu
+#
+HotlistShowNS:Show hotlist...
+
+# Settings menu
+#
+Settings:Settings
+SnapshotWindow:Snapshot window
+SettingsSave:Save settings
+
+
 # Treeview interface tokens
 # =========================
 #
@@ -247,6 +279,10 @@ TreeSession:Fin de session
 TreeUnused:Inutilisé
 TreeImport:URL importée
 TreeNewFolder:Nouv. répertoire
+
+# Tree export
+#
+TreeHotlist:Favoris de NetSurf
 
 
 # Hotlist user interface tokens
@@ -298,6 +334,13 @@ DownloadU:%s sur inconnu  •  %s/s  •  %s total
 Downloaded:%s effectués  •  moyenne %s/s  •  %s total
 Unwritten:L'écriture de données dans le fichier a échoué.
 
+# Amiga download window tokens
+#
+# This section contains tokens which are used in the Amiga
+# download window.
+#
+amiDownload:%ld of %ld bytes downloaded
+amiDownloadU:%ld bytes downloaded
 
 # Printing user interface tokens
 # ==============================
@@ -317,6 +360,20 @@ PrintSheetsFilled:feuilles remplies
 # dialog box.
 #
 NotFound:Non trouvé
+
+
+# 401 login user interface tokens
+# ===============================
+#
+# This section contains tokens which are used in the 401 login
+# (authentication) dialog box.
+#
+Host:Host
+Realm:Realm
+Username:Username
+Password:Password
+Login:Login
+Cancel:Cancel
 
 
 # Content
@@ -420,6 +477,9 @@ URIError:NetSurf est incapable de traiter ce fichier URI à cause d'une erreur d
 EmptyError:Le fichier est vide.
 PrintErrorRO2:Il semble que l'imprimante soit occupée.
 AWNotSeen:Localisez l'application AMViewer SVP puis réessayez.
+
+# Error messages for Amiga version only
+NoMode:No matching mode in screens database
 
 # Queries
 # =======
@@ -576,6 +636,7 @@ obj:objet
 objs:objets
 styl:feuille de styles
 styls:feuilles de styles
+OK:OK
 
 # Interactive help
 # ================
@@ -973,7 +1034,6 @@ con_theme:Thèmes
 #
 
 # Tree export
-TreeHotlist:Favoris de NetSurf
 TreeHistory:Historique de NetSurf
 SaveSelect:Sauver
 ExportAs:Exporter sous

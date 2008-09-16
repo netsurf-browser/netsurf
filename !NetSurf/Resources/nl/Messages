@@ -215,6 +215,37 @@ ImgStyle1:Direct weergave
 ImgStyle2:Ditheren
 ImgStyle3:Fout-spreiding
 
+# Menu items used in the Amiga version.
+# Some of these are copies of other strings but without the
+# embedded shortcut keys. (NS suffix = No Shortcut)
+#
+# Project menu
+#
+Project:Project
+NewWindowNS:New window
+CloseWindow:Close window
+SaveAs:Save as
+Source:Source...
+TextNS:Text...
+PDF:PDF...
+
+# Edit menu
+#
+CopyNS:Copy
+Paste:Paste
+SelectAllNS:Select all
+ClearNS:Clear selection
+
+# Hotlist menu
+#
+HotlistShowNS:Show hotlist...
+
+# Settings menu
+#
+Settings:Settings
+SnapshotWindow:Snapshot window
+SettingsSave:Save settings
+
 
 # Treeview interface tokens
 # =========================
@@ -247,6 +278,10 @@ TreeSession:Sessie einde
 TreeUnused:Ongebruikt
 TreeImport:Ge-importeerde URL
 TreeNewFolder:Nieuwe map
+
+# Tree export
+#
+TreeHotlist:NetSurf bladwijzers
 
 
 # Hotlist user interface tokens
@@ -298,6 +333,13 @@ DownloadU:%s van onbekend  •  %s/s  •  %s totaal
 Downloaded:%s compleet  •  gemiddeld %s/s  •  %s totaal
 Unwritten:Data naar bestand schrijven ging fout.
 
+# Amiga download window tokens
+#
+# This section contains tokens which are used in the Amiga
+# download window.
+#
+amiDownload:%ld of %ld bytes downloaded
+amiDownloadU:%ld bytes downloaded
 
 # Printing user interface tokens
 # ==============================
@@ -317,6 +359,20 @@ PrintSheetsFilled:pagina's
 # dialog box.
 #
 NotFound:Niet gevonden
+
+
+# 401 login user interface tokens
+# ===============================
+#
+# This section contains tokens which are used in the 401 login
+# (authentication) dialog box.
+#
+Host:Host
+Realm:Realm
+Username:Username
+Password:Password
+Login:Login
+Cancel:Cancel
 
 
 # Content
@@ -576,6 +632,8 @@ obj:object
 objs:objecten
 styl:stijlblad
 styls:stijlbladen
+OK:OK
+
 
 # Interactive help
 # ================
@@ -973,7 +1031,6 @@ con_theme:Thema's
 #
 
 # Tree export
-TreeHotlist:NetSurf bladwijzers
 TreeHistory:NetSurf historie
 SaveSelect:Bewaar
 ExportAs:Exporteer als

@@ -231,7 +231,7 @@ PDF:PDF...
 
 # Edit menu
 #
-Copy:Copy
+CopyNS:Copy
 Paste:Paste
 SelectAllNS:Select all
 ClearNS:Clear selection
@@ -1080,3 +1080,4 @@ AnimImg:Animations
 DitherImg:Dither images
 FilterImg:Smooth images
 RenderText:Blend text to background
+Copy:Copy to clipboard  ^C

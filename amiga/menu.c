@@ -54,7 +54,7 @@ void ami_init_menulabs(void)
 	menulab[7] = NM_BARLABEL;
 	menulab[8] = ami_utf8_easy((char *)messages_get("CloseWindow"));
 	menulab[9] = ami_utf8_easy((char *)messages_get("Edit"));
-	menulab[10] = ami_utf8_easy((char *)messages_get("Copy"));
+	menulab[10] = ami_utf8_easy((char *)messages_get("CopyNS"));
 	menulab[11] = ami_utf8_easy((char *)messages_get("Paste"));
 	menulab[12] = ami_utf8_easy((char *)messages_get("SelectAllNS"));
 	menulab[13] = ami_utf8_easy((char *)messages_get("ClearNS"));

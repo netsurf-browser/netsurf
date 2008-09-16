@@ -215,6 +215,36 @@ ImgStyle1:Direktausgabe
 ImgStyle2:Dithern
 ImgStyle3:Error-Diffusion
 
+# Menu items used in the Amiga version.
+# Some of these are copies of other strings but without the
+# embedded shortcut keys. (NS suffix = No Shortcut)
+#
+# Project menu
+#
+Project:Project
+NewWindowNS:New window
+CloseWindow:Close window
+SaveAs:Save as
+Source:Source...
+TextNS:Text...
+PDF:PDF...
+
+# Edit menu
+#
+CopyNS:Copy
+Paste:Paste
+SelectAllNS:Select all
+ClearNS:Clear selection
+
+# Hotlist menu
+#
+HotlistShowNS:Show hotlist...
+
+# Settings menu
+#
+Settings:Settings
+SnapshotWindow:Snapshot window
+SettingsSave:Save settings
 
 # Treeview interface tokens
 # =========================
@@ -247,6 +277,10 @@ TreeSession:Session end
 TreeUnused:Nicht benutzt
 TreeImport:Importierte URL
 TreeNewFolder:Neues Verzeichnis
+
+# Tree export
+#
+TreeHotlist:NetSurf hotlist
 
 
 # Hotlist user interface tokens
@@ -298,6 +332,13 @@ DownloadU:%s von unbekannt • %s/s • bisher %s
 Downloaded:%s komplett • etwa %s/s • gesamt %s
 Unwritten:Schreiben der Datei ist fehlgeschlagen.
 
+# Amiga download window tokens
+#
+# This section contains tokens which are used in the Amiga
+# download window.
+#
+amiDownload:%ld of %ld bytes downloaded
+amiDownloadU:%ld bytes downloaded
 
 # Printing user interface tokens
 # ==============================
@@ -317,6 +358,20 @@ PrintSheetsFilled:Druckseiten
 # dialog box.
 #
 NotFound:nichts
+
+
+# 401 login user interface tokens
+# ===============================
+#
+# This section contains tokens which are used in the 401 login
+# (authentication) dialog box.
+#
+Host:Host
+Realm:Realm
+Username:Username
+Password:Password
+Login:Login
+Cancel:Cancel
 
 
 # Content
@@ -420,6 +475,8 @@ URIError:NetSurf konnte die URI Datei nicht lesen. Syntax Fehler.
 EmptyError:Die Datei ist leer.
 PrintErrorRO2:Der Drucker scheint beschäftigt zu sein.
 
+# Error messages for Amiga version only
+NoMode:No matching mode in screens database
 
 # Queries
 # =======
@@ -576,6 +633,7 @@ obj:Objekt
 objs:Objekte
 styl:Formatvorlage
 styls:Formatvorlagen
+OK:OK
 
 # Interactive help
 # ================
@@ -973,7 +1031,6 @@ con_theme:Themen
 #
 
 # Tree export
-TreeHotlist:NetSurf hotlist
 TreeHistory:NetSurf history
 SaveSelect:Sichern
 ExportAs:Exportieren als
