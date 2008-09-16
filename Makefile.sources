@@ -1,5 +1,5 @@
 #
-# Makefile for NetSurf
+# NetSurf source file inclusion
 #
 # Included by main makefile -- indicates sources
 # for each build.
