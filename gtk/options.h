@@ -26,18 +26,22 @@ extern bool option_downloads_clear;
 extern bool option_request_overwrite;
 extern char *option_downloads_directory;
 extern char *option_url_file;
+extern bool option_show_single_tab;
 
 #define EXTRA_OPTION_DEFINE \
 bool option_render_resample = false; \
 bool option_downloads_clear = false; \
 bool option_request_overwrite = true; \
 char *option_downloads_directory = 0; \
-char *option_url_file = 0;
+char *option_url_file = 0;            \
+bool option_show_single_tab = false;
 
 #define EXTRA_OPTION_TABLE \
 { "render_resample",	OPTION_BOOL,	&option_render_resample }, \
 { "downloads_clear",	OPTION_BOOL,	&option_downloads_clear }, \
 { "request_overwrite",	OPTION_BOOL,	&option_request_overwrite }, \
 { "downloads_directory",OPTION_STRING,	&option_downloads_directory }, \
-{ "url_file",		OPTION_STRING,	&option_url_file },
+{ "url_file",		OPTION_STRING,	&option_url_file }, \
+{ "show_single_tab",    OPTION_BOOL,    &option_show_single_tab },
+
 #endif

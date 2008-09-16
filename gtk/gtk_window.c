@@ -570,8 +570,10 @@ gboolean nsgtk_window_size_allocate_event(GtkWidget *widget,
 
 void nsgtk_reflow_all_windows(void)
 {
-	for (struct gui_window *g = window_list; g; g = g->next)
+	for (struct gui_window *g = window_list; g; g = g->next) {
+                nsgtk_tab_options_changed(nsgtk_scaffolding_get_notebook(g));
 		g->bw->reformat_pending = true;
+        }
 
 	browser_reformat_pending = true;
 }

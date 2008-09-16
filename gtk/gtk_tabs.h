@@ -19,8 +19,9 @@
 #ifndef _NETSURF_GTK_TABS_H_
 #define _NETSURF_GTK_TABS_H_
 
-void nsgtk_tab_init();
+void nsgtk_tab_init(GtkWidget *tabs);
 void nsgtk_tab_add(struct gui_window *window);
 void nsgtk_tab_set_title(struct gui_window *g, const char *title);
+void nsgtk_tab_options_changed(GtkWidget *tabs);
 
 #endif

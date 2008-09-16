@@ -21,6 +21,8 @@
 #include "gtk/gtk_gui.h"
 #include "desktop/browser.h"
 #include "content/content.h"
+#include "desktop/options.h"
+#include "gtk/options.h"
 
 #define TAB_WIDTH_N_CHARS 15
 #define GET_WIDGET(x) glade_xml_get_widget(gladeWindows, (x))
@@ -34,15 +36,21 @@ static void nsgtk_tab_update_size(GtkWidget *hbox, GtkStyle *previous_style,
 static void nsgtk_tab_page_changed(GtkNotebook *notebook, GtkNotebookPage *page,
 		gint page_num);
 
+void nsgtk_tab_options_changed(GtkWidget *tabs)
+{
+        nsgtk_tab_visibility_update(GTK_NOTEBOOK(tabs), NULL, 0);
+}
+
 void nsgtk_tab_init(GtkWidget *tabs)
 {
 	g_signal_connect(tabs, "switch-page",
-			G_CALLBACK(nsgtk_tab_page_changed), NULL);
+                         G_CALLBACK(nsgtk_tab_page_changed), NULL);
 
 	g_signal_connect(tabs, "page-removed",
-			G_CALLBACK(nsgtk_tab_visibility_update), NULL);
+                         G_CALLBACK(nsgtk_tab_visibility_update), NULL);
 	g_signal_connect(tabs, "page-added",
-			G_CALLBACK(nsgtk_tab_visibility_update), NULL);	
+                         G_CALLBACK(nsgtk_tab_visibility_update), NULL);	
+        nsgtk_tab_options_changed(tabs);
 }
 
 void nsgtk_tab_add(struct gui_window *window)
@@ -62,7 +70,10 @@ void nsgtk_tab_visibility_update(GtkNotebook *notebook, GtkWidget *child,
 		guint page)
 {
 	gint num_pages = gtk_notebook_get_n_pages(notebook);
-	gtk_notebook_set_show_tabs(notebook, num_pages - 1);
+        if (option_show_single_tab == true || num_pages > 1)
+                gtk_notebook_set_show_tabs(notebook, TRUE);
+        else
+                gtk_notebook_set_show_tabs(notebook, FALSE);
 }
 
 void nsgtk_tab_set_title(struct gui_window *g, const char *title)

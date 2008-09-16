@@ -56,6 +56,7 @@ DECLARE(spinHistoryAge);
 DECLARE(checkHoverURLs);
 DECLARE(checkDisplayRecentURLs);
 DECLARE(checkSendReferer);
+DECLARE(checkShowSingleTab);
 
 DECLARE(comboProxyType);
 DECLARE(entryProxyHost);
@@ -131,6 +132,7 @@ GtkDialog* nsgtk_options_init(struct browser_window *bw, GtkWindow *parent) {
 	//CONNECT(checkHoverURLs, "toggled");
 	CONNECT(checkDisplayRecentURLs, "toggled");
 	CONNECT(checkSendReferer, "toggled");
+        CONNECT(checkShowSingleTab, "toggled");
 
 	CONNECT(comboProxyType, "changed");
 	CONNECT(entryProxyHost, "focus-out-event");
@@ -215,6 +217,7 @@ void nsgtk_options_load(void) {
 	SET_CHECK(checkHideAdverts, option_block_ads);
 	SET_CHECK(checkDisplayRecentURLs, option_url_suggestion);
 	SET_CHECK(checkSendReferer, option_send_referer);
+        SET_CHECK(checkShowSingleTab, option_show_single_tab);
 	
 	if (option_http_proxy == false)
 		proxytype = 0;
@@ -333,6 +336,10 @@ BUTTON_CLICKED(setDefaultPage)
 CHECK_CHANGED(checkHideAdverts, option_block_ads)}
 CHECK_CHANGED(checkDisplayRecentURLs, option_url_suggestion)}
 CHECK_CHANGED(checkSendReferer, option_send_referer)}
+                
+CHECK_CHANGED(checkShowSingleTab, option_show_single_tab)
+	nsgtk_reflow_all_windows();
+}
 
 COMBO_CHANGED(comboProxyType, proxy_type)
 	LOG(("proxy type: %d", proxy_type));
