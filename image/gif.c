@@ -171,8 +171,6 @@ bool nsgif_redraw_tiled(struct content *c, int x, int y,
 		float scale, unsigned long background_colour,
 		bool repeat_x, bool repeat_y)
 {
-	gif_result res;
-
 	if (c->data.gif.current_frame != c->data.gif.gif->decoded_frame)
 		if (nsgif_get_frame(c) != GIF_OK)
 			return false;
