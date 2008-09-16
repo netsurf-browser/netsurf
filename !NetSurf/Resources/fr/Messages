@@ -215,7 +215,6 @@ ImgStyle1:Directement sur l'écran
 ImgStyle2:Tramé
 ImgStyle3:Avec diffusion d'erreur
 
-
 # Menu items used in the Amiga version.
 # Some of these are copies of other strings but without the
 # embedded shortcut keys. (NS suffix = No Shortcut)
@@ -246,7 +245,6 @@ HotlistShowNS:Show hotlist...
 Settings:Settings
 SnapshotWindow:Snapshot window
 SettingsSave:Save settings
-
 
 # Treeview interface tokens
 # =========================
@@ -341,6 +339,48 @@ Unwritten:L'écriture de données dans le fichier a échoué.
 #
 amiDownload:%ld of %ld bytes downloaded
 amiDownloadU:%ld bytes downloaded
+
+# GTK download window tokens
+#
+# This section contains tokens which are used in the gtk
+# download window.
+#
+
+gtkSizeInfo:%s of %s
+gtkProgressBar:%.0f%% of %u files
+gtkProgressBarPulse:Downloading %u files
+gtkProgressBarPulseSingle:Downloading %u file
+
+# Column Headers
+#
+gtkProgress:Progress
+gtkDetails:Details
+gtkSpeed:Speed
+gtkRemaining:Remaining
+
+# Status Messages
+# spaces necessary
+#
+
+gtkError: Error 
+gtkComplete: Complete 
+gtkCanceled: Canceled 
+gtkWorking: Working 
+
+# Dialogs
+#
+gtkQuit:Quit NetSurf?
+gtkDownloadsRunning:There are still downloads running, if you quit now these will be canceled and the files deleted.
+gtkStartDownload:Download file?
+gtkOverwrite:A file named "%s" already exists.  Do you want to replace it?
+gtkOverwriteInfo:The file already exists in "%s".  Replacing it will overwrite its contents.
+gtkFailed:Download failed
+gtkFileError:File error: %s
+gtkInfo:%s from %s is %s in size
+gtkSave:Save file as...
+gtkUnknownHost:an unknown host
+gtkUnknownFile:
+gtkUnknownSize:unknown
 
 # Printing user interface tokens
 # ==============================
@@ -1033,12 +1073,11 @@ con_theme:Thèmes
 # These tokens appear to be unused at the current time.
 #
 
-# Tree export
 TreeHistory:Historique de NetSurf
 SaveSelect:Sauver
 ExportAs:Exporter sous
-Copy:Copier vers le presse-papier  ^C
 AnimImg:Animations
 DitherImg:Tramage
 FilterImg:Adoucir les images
 RenderText:Panachage du texte sur le fond
+Copy:Copier vers le presse-papier  ^C

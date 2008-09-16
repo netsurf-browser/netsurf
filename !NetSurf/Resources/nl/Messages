@@ -246,7 +246,6 @@ Settings:Settings
 SnapshotWindow:Snapshot window
 SettingsSave:Save settings
 
-
 # Treeview interface tokens
 # =========================
 #
@@ -340,6 +339,48 @@ Unwritten:Data naar bestand schrijven ging fout.
 #
 amiDownload:%ld of %ld bytes downloaded
 amiDownloadU:%ld bytes downloaded
+
+# GTK download window tokens
+#
+# This section contains tokens which are used in the gtk
+# download window.
+#
+
+gtkSizeInfo:%s of %s
+gtkProgressBar:%.0f%% of %u files
+gtkProgressBarPulse:Downloading %u files
+gtkProgressBarPulseSingle:Downloading %u file
+
+# Column Headers
+#
+gtkProgress:Progress
+gtkDetails:Details
+gtkSpeed:Speed
+gtkRemaining:Remaining
+
+# Status Messages
+# spaces necessary
+#
+
+gtkError: Error 
+gtkComplete: Complete 
+gtkCanceled: Canceled 
+gtkWorking: Working 
+
+# Dialogs
+#
+gtkQuit:Quit NetSurf?
+gtkDownloadsRunning:There are still downloads running, if you quit now these will be canceled and the files deleted.
+gtkStartDownload:Download file?
+gtkOverwrite:A file named "%s" already exists.  Do you want to replace it?
+gtkOverwriteInfo:The file already exists in "%s".  Replacing it will overwrite its contents.
+gtkFailed:Download failed
+gtkFileError:File error: %s
+gtkInfo:%s from %s is %s in size
+gtkSave:Save file as...
+gtkUnknownHost:an unknown host
+gtkUnknownFile:
+gtkUnknownSize:unknown
 
 # Printing user interface tokens
 # ==============================
@@ -475,7 +516,10 @@ NoURLError:Geef een URL op
 URIError:NetSurf was unable to parse this URI file due to a syntax error.
 EmptyError:bestand is leeg.
 PrintErrorRO2:De printer lijkt al bezig te zijn.
-# AWNotSeen:Please locate the AWViewer application and try again.
+AWNotSeen:Please locate the AWViewer application and try again.
+
+# Error messages for Amiga version only
+NoMode:No matching mode in screens database
 
 # Queries
 # =======
@@ -633,7 +677,6 @@ objs:objecten
 styl:stijlblad
 styls:stijlbladen
 OK:OK
-
 
 # Interactive help
 # ================
@@ -1030,12 +1073,11 @@ con_theme:Thema's
 # These tokens appear to be unused at the current time.
 #
 
-# Tree export
 TreeHistory:NetSurf historie
 SaveSelect:Bewaar
 ExportAs:Exporteer als
-Copy:Copieer naar prikbord  ^C
 AnimImg:Animatie
 DitherImg:Dither afbeelding
 FilterImg:Smooth afbeelding
 RenderText:Tekst met achtergrond mengen
+Copy:Copieer naar prikbord  ^C
