@@ -57,23 +57,23 @@ struct bitmap;
  *  group_end	- End of the most recently started group. (Optional.)
  *  flush	-
  *
+ * Plotter options:
+ *  option_knockout	- Optimisation particularly for unaccelerated screen
+ *			  redraw. It tries to avoid plotting to the same area
+ *			  more than once. See desktop/knockout.c
+ *
  * Coordinates are from top left and (0,0) is the top left grid denomination.
- * If a rectangle is drawn from (0,0) to (4,3), the result is:
+ * If a "fill" is drawn from (0,0) to (4,3), the result is:
  *
  *     0 1 2 3 4 5
  *    +-+-+-+-+-+-
  *  0 |#|#|#|#| |
  *    +-+-+-+-+-+-
- *  1 |#| | |#| |
+ *  1 |#|#|#|#| |
  *    +-+-+-+-+-+-
  *  2 |#|#|#|#| |
  *    +-+-+-+-+-+-
  *  3 | | | | | |
- *
- * Plotter options:
- *  option_knockout	- Optimisation particularly for unaccelerated screen
- *			  redraw. It tries to avoid plotting to the same area
- *			  more than once. See desktop/knockout.c
  */
 struct plotter_table {
 	bool (*clg)(colour c);
