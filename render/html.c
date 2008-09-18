@@ -701,6 +701,7 @@ encoding_change:
 	hubbub_parser_destroy(c->data.html.parser);
 	if (c->data.html.document) {
 		xmlFreeDoc(c->data.html.document);
+		c->data.html.document = NULL;
 	}
 	c->data.html.has_ns = false;
 	memset(c->data.html.ns, 0, sizeof(c->data.html.ns));
@@ -908,7 +909,6 @@ bool html_convert(struct content *c, int width, int height)
 	html = xmlDocGetRootElement(c->data.html.document);
 	if (html == 0 || strcmp((const char *) html->name, "html") != 0) {
 		LOG(("html element not found"));
-		xmlFreeDoc(c->data.html.document);
 		msg_data.error = messages_get("ParsingFail");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
