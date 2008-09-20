@@ -49,14 +49,14 @@ const struct plotter_table amiplot = {
 	NULL, //ami_group_end,
 	NULL, //ami_flush, // optional
 	ami_path,
-	true // option_knockout
+	false // option_knockout
 };
 
 bool ami_clg(colour c)
 {
 	SetRPAttrs(currp,RPTAG_BPenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),
 					TAG_DONE);
-
+	Move(currp,0,0);
 	ClearScreen(currp);
 
 	return true;
@@ -188,6 +188,9 @@ bool ami_text(int x, int y, const struct css_style *style,
  * system default charset and write the text using graphics.library functions.
  *
  *	ami_unicode_text(currp,text,length,style,x,y,c);
+ *
+ *  or, perhaps the ttengine.library version (far too slow):
+ * 	ami_tte_text(currp,text,length);
  */
 	Move(currp,x,y);
 	Text(currp,buffer,strlen(buffer));
