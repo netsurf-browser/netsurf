@@ -184,6 +184,7 @@ bool layout_block_context(struct box *block, struct content *content)
 	int max_neg_margin = 0;
 	int y = 0;
 	struct box *margin_box;
+	struct css_length gadget_size; /* Checkbox / radio buttons */
 
 	assert(block->type == BOX_BLOCK ||
 			block->type == BOX_INLINE_BLOCK ||
@@ -246,6 +247,17 @@ bool layout_block_context(struct box *block, struct content *content)
 				block->height = block->object->height;
 		}
 		return true;
+	}
+
+	/* special case if the block contains an radio button or checkbox */
+	if (block->gadget && (block->gadget->type == GADGET_RADIO ||
+			block->gadget->type == GADGET_CHECKBOX)) {
+		/* form checkbox or radio button
+		 * if width or height is AUTO, set it to 1em */
+		gadget_size.unit = CSS_UNIT_EM;
+		gadget_size.value = 1;
+		if (block->height == AUTO)
+			block->height = css_len2px(&gadget_size, block->style);
 	}
 
 	box = margin_box = block->children;
@@ -530,6 +542,9 @@ void layout_minmax_block(struct box *block, const struct font_functions *font_fu
 	struct css_length size;
 	size.unit = CSS_UNIT_EM;
 	size.value = 10;
+	struct css_length gadget_size; /* Checkbox / radio buttons */
+	gadget_size.unit = CSS_UNIT_EM;
+	gadget_size.value = 1;
 
 	assert(block->type == BOX_BLOCK ||
 			block->type == BOX_INLINE_BLOCK ||
@@ -546,6 +561,15 @@ void layout_minmax_block(struct box *block, const struct font_functions *font_fu
 			block->style &&
 			block->style->width.width == CSS_WIDTH_AUTO) {
 		min = max = css_len2px(&size, block->style);
+	}
+
+	if (block->gadget && (block->gadget->type == GADGET_RADIO ||
+			block->gadget->type == GADGET_CHECKBOX) &&
+			block->style &&
+			block->style->width.width == CSS_WIDTH_AUTO) {
+		/* form checkbox or radio button
+		 * if width is AUTO, set it to 1em */
+		min = max = css_len2px(&gadget_size, block->style);
 	}
 
 	if (block->object) {
