@@ -59,7 +59,7 @@ struct gui_download_window {
 	Object *objects[OID_LAST];
 	struct Gadget *gadgets[GID_LAST];
 	struct nsObject *node;
-	ULONG pad[2];
+	ULONG pad[4];
 	BPTR fh;
 	uint32 size;
 	uint32 downloaded;
@@ -70,9 +70,10 @@ struct gui_window {
 	Object *objects[OID_LAST];
 	struct Gadget *gadgets[GID_LAST];
 	struct nsObject *node;
-	bool redraw_required;
-	struct List *tab_bw_list;
 	struct browser_window *bw;
+	bool redraw_required;
+	int throbber_frame;
+	struct List *tab_bw_list;
 	struct BitMap *bm;
 	struct RastPort rp;
 	struct Layer_Info *layerinfo;
@@ -84,7 +85,6 @@ struct gui_window {
 	union content_msg_data *redraw_data;
 	browser_mouse_state mouse_state;
 	browser_mouse_state key_state;
-	int throbber_frame;
 	ULONG throbber_update_count;
 	int c_x;
 	int c_y;

@@ -23,8 +23,8 @@ struct gui_login_window {
 	Object *objects[OID_LAST];
 	struct Gadget *gadgets[GID_LAST];
 	struct nsObject *node;
-	ULONG pad[2];
 	struct browser_window *bw;
+	ULONG pad[3];
 	char *url;
 	char *realm;
 	char *host;
