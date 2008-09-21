@@ -60,6 +60,8 @@ void gui_401login_open(struct browser_window *bw, struct content *c,
            	WA_CloseGadget, FALSE,
            	WA_SizeGadget, TRUE,
 			WA_CustomScreen,scrn,
+			WINDOW_SharedPort,sport,
+			WINDOW_UserData,lw,
 			WINDOW_IconifyGadget, FALSE,
 			WINDOW_LockHeight,TRUE,
          	WINDOW_Position, WPOS_CENTERSCREEN,
@@ -140,6 +142,7 @@ void ami_401login_login(struct gui_login_window *lw)
 	userpass = ASPrintf("%s:%s",user,pass);
 	urldb_set_auth_details(lw->url,lw->realm,userpass);
 	FreeVec(userpass);
+
 	browser_window_go(lw->bw,lw->url,0,true);
 
 	ami_401login_close(lw);

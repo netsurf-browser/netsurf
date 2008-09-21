@@ -97,4 +97,5 @@ struct MinList *window_list;
 struct Screen *scrn;
 STRPTR nsscreentitle;
 struct FileRequester *filereq;
+struct MsgPort *sport;
 #endif

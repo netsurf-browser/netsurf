@@ -87,7 +87,6 @@ char *default_stylesheet_url;
 char *adblock_stylesheet_url;
 struct gui_window *search_current_window = NULL;
 
-struct MsgPort *sport;
 struct MsgPort *appport;
 struct MsgPort *msgport;
 struct Device *TimerBase;
