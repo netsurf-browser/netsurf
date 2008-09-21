@@ -93,7 +93,8 @@ static void calculate_mbp_width(struct css_style *style, unsigned int side,
 		int *fixed, float *frac);
 static void layout_lists(struct box *box,
 		const struct font_functions *font_func);
-static void layout_position_relative(struct box *root);
+static void layout_position_relative(struct box *root, struct box *fp,
+		int fx, int fy);
 static void layout_compute_relative_offset(struct box *box, int *x, int *y);
 static bool layout_position_absolute(struct box *box,
 		struct box *containing_block,
@@ -157,7 +158,7 @@ bool layout_document(struct content *content, int width, int height)
 
 	layout_lists(doc, font_func);
 	layout_position_absolute(doc, doc, 0, 0, content);
-	layout_position_relative(doc);
+	layout_position_relative(doc, doc, 0, 0);
 
 	layout_calculate_descendant_bboxes(doc);
 
@@ -2852,11 +2853,28 @@ void layout_lists(struct box *box,
 
 /**
  * Adjust positions of relatively positioned boxes.
+ *
+ * \param  root  box to adjust the position of
+ * \param  fp    box which forms the block formatting context for children of
+ *		 "root" which are floats
+ * \param  fx    x offset due to intervening relatively positioned boxes
+ *               between current box, "root", and the block formatting context
+ *               box, "fp", for float children of "root"
+ * \param  fy    y offset due to intervening relatively positioned boxes
+ *               between current box, "root", and the block formatting context
+ *               box, "fp", for float children of "root"
  */
 
-void layout_position_relative(struct box *root)
+void layout_position_relative(struct box *root, struct box *fp, int fx, int fy)
 {
-	struct box *box;
+	struct box *box; /* for children of "root" */
+	struct box *fn;  /* for block formatting context box for children of
+			  * "box" */
+	struct box *fc;  /* for float children of the block formatting context,
+			  * "fp" */
+	int x, y;	 /* for the offsets resulting from any relative
+			  * positioning on the current block */
+	int fnx, fny;    /* for affsets which apply to flat children of "box" */
 
 	/**\todo ensure containing box is large enough after moving boxes */
 
@@ -2864,20 +2882,52 @@ void layout_position_relative(struct box *root)
 
 	/* Normal children */
 	for (box = root->children; box; box = box->next) {
-		int x, y;
 
 		if (box->type == BOX_TEXT)
 			continue;
 
+		/* If relatively positioned, get offsets */
+		if (box->style && box->style->position == CSS_POSITION_RELATIVE)
+			layout_compute_relative_offset(box, &x, &y);
+		else
+			x = y = 0;
+
+		/* Adjust float coordinates.
+		 * (note float x and y are relative to their block formatting
+		 * context box and not their parent) */
+		if (box->style && (box->style->float_ == CSS_FLOAT_LEFT ||
+				box->style->float_ == CSS_FLOAT_RIGHT) &&
+				(fx != 0 || fy != 0)) {
+			/* box is a float and there is a float offset to
+			 * apply */
+			for (fc = fp->float_children; fc; fc = fc->next_float) {
+				if (box == fc->children) {
+					/* Box is floated in the block
+					 * formatting context block, fp.
+					 * Apply float offsets. */
+					box->x += fx;
+					box->y += fy;
+					fx = fy = 0;
+				}
+			}
+		}
+
+		if (box->float_children) {
+			fn = box;
+			fnx = fny = 0;
+		} else {
+			fn = fp;
+			fnx = fx + x;
+			fny = fy + y;
+		}
+
 		/* recurse first */
-		layout_position_relative(box);
+		layout_position_relative(box, fn, fnx, fny);
 
 		/* Ignore things we're not interested in. */
 		if (!box->style || (box->style &&
 				box->style->position != CSS_POSITION_RELATIVE))
 			continue;
-
-		layout_compute_relative_offset(box, &x, &y);
 
 		box->x += x;
 		box->y += y;
