@@ -1640,11 +1640,9 @@ bool layout_line(struct box *first, int *width, int *y,
 					 * floats */
 					if (b->type == BOX_FLOAT_LEFT) {
 						b->x = cx;
-						x0 += b->width;
 						left = b;
 					} else {
 						b->x = cx + *width - b->width;
-						x1 -= b->width;
 						right = b;
 					}
 					fy = layout_clear(cont->float_children,
