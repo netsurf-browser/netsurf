@@ -1609,13 +1609,19 @@ bool layout_line(struct box *first, int *width, int *y,
 					d->padding[BOTTOM] + d->border[BOTTOM] +
 					d->margin[BOTTOM];
 
-			if (d->style && d->style->clear == CSS_CLEAR_NONE &&
+			if (d->style && (d->style->clear == CSS_CLEAR_NONE ||
+					(d->style->clear != CSS_CLEAR_NONE &&
+					left == 0 && right == 0)) &&
 					(b->width <= (x1 - x0) - x ||
 					(left == 0 && right == 0 && x == 0)) &&
 					cy >= cont->clear_level) {
-				/* not cleared
-				 * fits next to this line, or this line is
-				 * empty with no floats */
+				/* + not cleared or,
+				 *   cleared and there are no floats to clear
+				 * + fits next to this line or,
+				 *   this line is empty with no floats  and
+				 * + current y, cy, is below the clear level
+				 *
+				 * Float affects current line */
 				if (b->type == BOX_FLOAT_LEFT) {
 					b->x = cx + x0;
 					x0 += b->width;
@@ -1627,7 +1633,7 @@ bool layout_line(struct box *first, int *width, int *y,
 				}
 				b->y = cy;
 			} else {
-				/* cleared or doesn't fit */
+				/* cleared or doesn't fit on line */
 				/* place below into next available space */
 				fy = (cy > cont->clear_level) ? cy :
 						cont->clear_level;
