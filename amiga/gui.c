@@ -57,6 +57,8 @@
 #include <workbench/workbench.h>
 #include "amiga/iff_cset.h"
 #include <proto/datatypes.h>
+#include <proto/icon.h>
+#include <workbench/icon.h>
 
 #ifdef WITH_HUBBUB
 #include <hubbub/hubbub.h>
@@ -101,13 +103,13 @@ bool win_destroyed = false;
 static struct RastPort dummyrp;
 struct IFFHandle *iffh = NULL;
 
-#define AMI_LASTPOINTER GUI_POINTER_PROGRESS
+#define AMI_LASTPOINTER GUI_POINTER_PROGRESS+1
+Object *mouseptrobj[AMI_LASTPOINTER+1];
 struct BitMap *mouseptrbm[AMI_LASTPOINTER+1];
-int mousexpt[AMI_LASTPOINTER+1];
-int mouseypt[AMI_LASTPOINTER+1];
+int mouseptrcurrent=0;
 
 char *ptrs[AMI_LASTPOINTER+1] = {
-	"Resources/Pointers/Blank", // replaces default
+	"Resources/Pointers/Default",
 	"Resources/Pointers/Point",
 	"Resources/Pointers/Caret",
 	"Resources/Pointers/Menu",
@@ -125,13 +127,15 @@ char *ptrs[AMI_LASTPOINTER+1] = {
 	"Resources/Pointers/Help",
 	"Resources/Pointers/NoDrop",
 	"Resources/Pointers/NotAllowed",
-	"Resources/Pointers/Progress"};
+	"Resources/Pointers/Progress",
+	"Resources/Pointers/Blank"};
 
 void ami_update_throbber(struct gui_window *g);
 void ami_update_buttons(struct gui_window *);
 void ami_scroller_hook(struct Hook *,Object *,struct IntuiMessage *);
 uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved);
 void ami_do_redraw(struct gui_window *g);
+void ami_init_mouse_pointers(void);
 #ifdef WITH_HUBBUB
 static void *myrealloc(void *ptr, size_t len, void *pw);
 #endif
@@ -143,8 +147,6 @@ void gui_init(int argc, char** argv)
 	bool found=FALSE;
 	int i;
 	BPTR lock=0;
-	struct RastPort mouseptr;
-	struct IFFHandle *mpiff = NULL;
 	Object *dto;
 
 /* ttengine.library
@@ -193,47 +195,10 @@ void gui_init(int argc, char** argv)
 		}
 	}
 
-	InitRastPort(&mouseptr);
-
-	for(i=0;i<=AMI_LASTPOINTER;i++)
-	{
-		BPTR ptrfile = 0;
-		mouseptrbm[i] = NULL;
-
-		if(ptrfile = Open(ptrs[i],MODE_OLDFILE))
-		{
-			int mx,my;
-			UBYTE *pprefsbuf = AllocVec(1061,MEMF_CLEAR);
-			Read(ptrfile,pprefsbuf,1061);
-
-			mouseptrbm[i]=AllocVec(sizeof(struct BitMap),MEMF_CLEAR);
-			InitBitMap(mouseptrbm[i],2,32,32);
-			mouseptrbm[i]->Planes[0] = AllocRaster(32,32);
-			mouseptrbm[i]->Planes[1] = AllocRaster(32,32);
-			mouseptr.BitMap = mouseptrbm[i];
-
-			for(my=0;my<32;my++)
-			{
-				for(mx=0;mx<32;mx++)
-				{
-					SetAPen(&mouseptr,pprefsbuf[(my*(33))+mx]-'0');
-					WritePixel(&mouseptr,mx,my);
-				}
-			}
-
-			mousexpt[i] = ((pprefsbuf[1056]-'0')*10)+(pprefsbuf[1057]-'0');
-			mouseypt[i] = ((pprefsbuf[1059]-'0')*10)+(pprefsbuf[1060]-'0');
-
-			FreeVec(pprefsbuf);
-			Close(ptrfile);
-		}
-	}
-/* need to do some proper checking that components are opening */
-
 	options_read("Resources/Options");
 
 	verbose_log = option_verbose_log;
-
+	ami_init_mouse_pointers();
 	nsscreentitle = ASPrintf("NetSurf %s",netsurf_version);
 
 	if(lock=Lock("Resources/LangNames",ACCESS_READ))
@@ -1584,39 +1549,170 @@ void gui_window_set_status(struct gui_window *g, const char *text)
 	RefreshSetGadgetAttrs(g->gadgets[GID_STATUS],g->win,NULL,STRINGA_TextVal,text,TAG_DONE);
 }
 
-Object *ami_custom_pointer(gui_pointer_shape shape)
-{
-	if(!mouseptrbm[shape]) printf("%ld is null\n",shape);
-
-	return NewObject(NULL,"pointerclass",POINTERA_BitMap,mouseptrbm[shape],POINTERA_WordWidth,2,POINTERA_XOffset,-mousexpt[shape],POINTERA_YOffset,-mouseypt[shape],POINTERA_XResolution,POINTERXRESN_SCREENRES,POINTERA_YResolution,POINTERYRESN_SCREENRESASPECT,TAG_DONE);
-}
-
 void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 {
-	switch(shape)
+	if(mouseptrcurrent == shape) return;
+
+	if(option_use_os_pointers)
 	{
-		case GUI_POINTER_DEFAULT:
-			SetWindowPointer(g->win,TAG_DONE);
-		break;
+		switch(shape)
+		{
+			case GUI_POINTER_DEFAULT:
+				SetWindowPointer(g->win,TAG_DONE);
+			break;
 
-		case GUI_POINTER_WAIT:
-			SetWindowPointer(g->win,
-				WA_BusyPointer,TRUE,
-				WA_PointerDelay,TRUE,
-				TAG_DONE);
-		break;
+			case GUI_POINTER_WAIT:
+				SetWindowPointer(g->win,
+					WA_BusyPointer,TRUE,
+					WA_PointerDelay,TRUE,
+					TAG_DONE);
+			break;
 
-		default:
-			SetWindowPointer(g->win,WA_Pointer,ami_custom_pointer(shape),TAG_DONE);
-		break;
+			default:
+				if(mouseptrobj[shape])
+				{
+					SetWindowPointer(g->win,WA_Pointer,mouseptrobj[shape],TAG_DONE);
+				}
+				else
+				{
+					SetWindowPointer(g->win,TAG_DONE);
+				}
+			break;
+		}
 	}
-	
+	else
+	{
+		if(mouseptrobj[shape])
+		{
+			SetWindowPointer(g->win,WA_Pointer,mouseptrobj[shape],TAG_DONE);
+		}
+		else
+		{
+			SetWindowPointer(g->win,TAG_DONE);
+		}
+	}
 
+	mouseptrcurrent = shape;	
 }
 
 void gui_window_hide_pointer(struct gui_window *g)
 {
-	SetWindowPointer(g->win,WA_Pointer,ami_custom_pointer(0),TAG_DONE);
+	if(mouseptrcurrent != AMI_LASTPOINTER)
+	{
+		SetWindowPointer(g->win,WA_Pointer,mouseptrobj[AMI_LASTPOINTER],TAG_DONE);
+		mouseptrcurrent = AMI_LASTPOINTER;
+	}
+}
+
+void ami_init_mouse_pointers(void)
+{
+	int i;
+	struct RastPort mouseptr;
+	struct DiskObject *dobj;
+	uint32 format = IDFMT_BITMAPPED;
+	int32 mousexpt=0,mouseypt=0;
+
+	InitRastPort(&mouseptr);
+
+	for(i=0;i<=AMI_LASTPOINTER;i++)
+	{
+		BPTR ptrfile = 0;
+		mouseptrbm[i] = NULL;
+		mouseptrobj[i] = NULL;
+
+		if(option_truecolour_mouse_pointers)
+		{
+			if(dobj = GetIconTags(ptrs[i],ICONGETA_UseFriendBitMap,TRUE,TAG_DONE))
+			{
+				if(IconControl(dobj, ICONCTRLA_GetImageDataFormat, &format, TAG_DONE))
+				{
+					if(IDFMT_DIRECTMAPPED == format)
+					{
+						int32 width = 0, height = 0;
+						uint8* data = 0;
+						IconControl(dobj,
+							ICONCTRLA_GetWidth, &width,
+							ICONCTRLA_GetHeight, &height,
+							ICONCTRLA_GetImageData1, &data,
+							TAG_DONE);
+
+						if (width > 0 && width <= 64 && height > 0 && height <= 64 && data)
+						{
+							STRPTR tooltype;
+
+							if(tooltype = FindToolType(dobj->do_ToolTypes, "XOFFSET"))
+								mousexpt = atoi(tooltype);
+
+							if(tooltype = FindToolType(dobj->do_ToolTypes, "YOFFSET"))
+								mouseypt = atoi(tooltype);
+
+							if (mousexpt < 0 || mousexpt >= width)
+								mousexpt = 0;
+							if (mouseypt < 0 || mouseypt >= height)
+								mouseypt = 0;
+
+							static uint8 dummyPlane[64 * 64 / 8];
+                   			static struct BitMap dummyBitMap = { 64 / 8, 64, 0, 2, 0, { dummyPlane, dummyPlane, 0, 0, 0, 0, 0, 0 }, };
+
+							mouseptrobj[i] = NewObject(NULL, POINTERCLASS,
+												POINTERA_BitMap, &dummyBitMap,
+												POINTERA_XOffset, -mousexpt,
+												POINTERA_YOffset, -mouseypt,
+												POINTERA_WordWidth, (width + 15) / 16,
+												POINTERA_XResolution, POINTERXRESN_SCREENRES,
+												POINTERA_YResolution, POINTERYRESN_SCREENRESASPECT,
+												POINTERA_Dummy + 0x07, data,
+												POINTERA_Dummy + 0x08, width,
+												POINTERA_Dummy + 0x09, height,
+												TAG_DONE);
+						}
+					}
+				}
+			}
+		}
+
+		if(!mouseptrobj[i])
+		{
+			if(ptrfile = Open(ptrs[i],MODE_OLDFILE))
+			{
+				int mx,my;
+				UBYTE *pprefsbuf = AllocVec(1061,MEMF_CLEAR);
+				Read(ptrfile,pprefsbuf,1061);
+
+				mouseptrbm[i]=AllocVec(sizeof(struct BitMap),MEMF_CLEAR);
+				InitBitMap(mouseptrbm[i],2,32,32);
+				mouseptrbm[i]->Planes[0] = AllocRaster(32,32);
+				mouseptrbm[i]->Planes[1] = AllocRaster(32,32);
+				mouseptr.BitMap = mouseptrbm[i];
+
+				for(my=0;my<32;my++)
+				{
+					for(mx=0;mx<32;mx++)
+					{
+						SetAPen(&mouseptr,pprefsbuf[(my*(33))+mx]-'0');
+						WritePixel(&mouseptr,mx,my);
+					}
+				}
+
+				mousexpt = ((pprefsbuf[1056]-'0')*10)+(pprefsbuf[1057]-'0');
+				mouseypt = ((pprefsbuf[1059]-'0')*10)+(pprefsbuf[1060]-'0');
+
+				mouseptrobj[i] = NewObject(NULL,"pointerclass",
+					POINTERA_BitMap,mouseptrbm[i],
+					POINTERA_WordWidth,2,
+					POINTERA_XOffset,-mousexpt,
+					POINTERA_YOffset,-mouseypt,
+					POINTERA_XResolution,POINTERXRESN_SCREENRES,
+					POINTERA_YResolution,POINTERYRESN_SCREENRESASPECT,
+					TAG_DONE);
+
+				FreeVec(pprefsbuf);
+				Close(ptrfile);
+			}
+
+		}
+
+	} // for
 }
 
 void gui_window_set_url(struct gui_window *g, const char *url)
@@ -1692,6 +1788,8 @@ void gui_window_remove_caret(struct gui_window *g)
 	GetAttr(SPACE_AreaBox,g->gadgets[GID_BROWSER],(ULONG *)&bbox);
 
 	BltBitMapRastPort(g->bm,g->c_x,g->c_y,g->win->RPort,bbox->Left+g->c_x,bbox->Top+g->c_y,2,g->c_h,0x0C0);
+
+	g->c_h = 0;
 }
 
 void gui_window_new_content(struct gui_window *g)

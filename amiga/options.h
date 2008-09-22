@@ -29,6 +29,8 @@ extern char *option_toolbar_images;
 extern bool option_no_iframes;
 extern bool option_utf8_clipboard;
 extern int option_throbber_frames;
+extern bool option_truecolour_mouse_pointers;
+extern bool option_use_os_pointers;
 
 #define EXTRA_OPTION_DEFINE \
 bool option_verbose_log = false; \
@@ -39,7 +41,9 @@ int option_modeid = 0; \
 char *option_toolbar_images = 0; \
 bool option_no_iframes = false; \
 bool option_utf8_clipboard = false; \
-int option_throbber_frames = 1;
+int option_throbber_frames = 1; \
+bool option_truecolour_mouse_pointers = true; \
+bool option_use_os_pointers = false; \
 
 #define EXTRA_OPTION_TABLE \
 { "verbose_log",	OPTION_BOOL,	&option_verbose_log}, \
@@ -50,5 +54,7 @@ int option_throbber_frames = 1;
 { "toolbar_images",		OPTION_STRING,	&option_toolbar_images }, \
 { "no_iframes",	OPTION_BOOL,	&option_no_iframes}, \
 { "clipboard_write_utf8",	OPTION_BOOL,	&option_utf8_clipboard}, \
-{ "throbber_frames",	OPTION_INTEGER,	&option_throbber_frames},
+{ "throbber_frames",	OPTION_INTEGER,	&option_throbber_frames}, \
+{ "truecolour_mouse_pointers",	OPTION_BOOL,	&option_truecolour_mouse_pointers}, \
+{ "os_mouse_pointers",	OPTION_BOOL,	&option_use_os_pointers},
 #endif
