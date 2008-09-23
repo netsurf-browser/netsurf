@@ -1588,7 +1588,17 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 		}
 		else
 		{
-			SetWindowPointer(g->win,TAG_DONE);
+			if(shape ==	GUI_POINTER_WAIT)
+			{
+				SetWindowPointer(g->win,
+					WA_BusyPointer,TRUE,
+					WA_PointerDelay,TRUE,
+					TAG_DONE);
+			}
+			else
+			{
+				SetWindowPointer(g->win,TAG_DONE);
+			}
 		}
 	}
 
