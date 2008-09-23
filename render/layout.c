@@ -264,7 +264,7 @@ bool layout_block_context(struct box *block, struct content *content)
 	box = margin_box = block->children;
 	/* set current coordinates to top-left of the block */
 	cx = 0;
-	cy = block->padding[TOP];
+	y = cy = block->padding[TOP];
 	if (box)
 		box->y = block->padding[TOP];
 
@@ -1618,7 +1618,7 @@ bool layout_line(struct box *first, int *width, int *y,
 				/* + not cleared or,
 				 *   cleared and there are no floats to clear
 				 * + fits next to this line or,
-				 *   this line is empty with no floats  and
+				 *   this line is empty with no floats
 				 * + current y, cy, is below the clear level
 				 *
 				 * Float affects current line */
