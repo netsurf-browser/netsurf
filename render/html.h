@@ -26,13 +26,9 @@
 #define _NETSURF_RENDER_HTML_H_
 
 #include <stdbool.h>
-#ifdef WITH_HUBBUB
-#include <hubbub/parser.h>
-#include <hubbub/tree.h>
-#endif
-#include <libxml/HTMLparser.h>
 #include "content/content_type.h"
 #include "css/css.h"
+#include "render/parser_binding.h"
 
 struct box;
 struct rect;
@@ -42,9 +38,6 @@ struct form_successful_control;
 struct imagemap;
 struct object_params;
 struct plotters;
-
-/* Number of namespaces we support */
-#define NUM_NAMESPACES		7
 
 /* entries in stylesheet_content */
 #define STYLESHEET_BASE		0	/* base style sheet */
@@ -121,26 +114,12 @@ struct content_html_iframe {
 
 /** Data specific to CONTENT_HTML. */
 struct content_html_data {
-#ifndef WITH_HUBBUB
-	htmlParserCtxt *parser;  /**< HTML parser context. */
-#else
-	hubbub_parser *parser; /**< HTML parser context. */
-	hubbub_tree_handler tree_handler;
-
-	bool has_ns;
-	xmlNs *ns[NUM_NAMESPACES];
-#endif
+	void *parser_binding;
 	xmlDoc *document;
 
-	/** HTML parser encoding handler. */
-	xmlCharEncodingHandler *encoding_handler;
-
 	char *encoding;	/**< Encoding of source, 0 if unknown. */
-	enum { ENCODING_SOURCE_HEADER, ENCODING_SOURCE_DETECTED,
-			ENCODING_SOURCE_META } encoding_source;
+	binding_encoding_source encoding_source;
 				/**< Source of encoding information. */
-	bool getenc; /**< Need to get the encoding from the document, as it
-	              * wasn't specified in the Content-Type header. */
 
 	char *base_url;	/**< Base URL (may be a copy of content->url). */
 	char *base_target;	/**< Base target */
