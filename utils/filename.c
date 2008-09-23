@@ -107,7 +107,7 @@ bool filename_claim(const char *filename) {
 
 	/* filename format is always '01/23/45/XX' */
 	strncpy(dir_prefix, filename, 9);
-	dir_prefix[9] = '\0';
+	dir_prefix[8] = '\0';
 	file = (filename[10] + filename[9] * 10 - START_PREFIX);
 
 	/* create the directory */
