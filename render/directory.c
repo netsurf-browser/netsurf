@@ -20,6 +20,7 @@
  * Content for directory listings (implementation).
  */
 
+#include <sys/types.h>
 #include <dirent.h>
 #include <stdbool.h>
 #include <string.h>

@@ -31,6 +31,7 @@
 #include <sys/types.h>
 #include <regex.h>
 #include <time.h>
+#include <unistd.h>
 #include <curl/curl.h>  /* for curl_getdate() */
 #include "utils/config.h"
 #include "content/content.h"

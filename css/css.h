@@ -35,12 +35,13 @@
 #ifndef _NETSURF_CSS_CSS_H_
 #define _NETSURF_CSS_CSS_H_
 
+#include <stdint.h>
 #include <stdbool.h>
 #include <libxml/HTMLparser.h>
 #include "css/css_enum.h"
 
 
-typedef unsigned long colour;  /* 0xbbggrr */
+typedef uint32_t colour;  /* 0xbbggrr */
 #define TRANSPARENT 0x1000000
 #define CSS_COLOR_INHERIT 0x2000000
 #define CSS_COLOR_NONE 0x3000000

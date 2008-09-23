@@ -49,6 +49,8 @@
 #include "beos/options.h"
 #elif defined(nsamiga)
 #include "amiga/options.h"
+#elif defined(nsfb)
+#include "framebuffer/fb_options.h"
 #else
 #define EXTRA_OPTION_DEFINE
 #define EXTRA_OPTION_TABLE

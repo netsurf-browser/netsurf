@@ -94,7 +94,9 @@ ifneq ($(TARGET),riscos)
     ifneq ($(TARGET),beos)
       ifneq ($(TARGET),debug)
         ifneq ($(TARGET),amiga)
-          $(error Unknown TARGET "$(TARGET)", should either be "riscos", "gtk", "beos", "amiga" or "debug")
+          ifneq ($(TARGET),framebuffer)
+            $(error Unknown TARGET "$(TARGET)", should either be "riscos", "gtk", "beos", "amiga", "debug" or "framebuffer")
+          endif
         endif
       endif
     endif
@@ -156,7 +158,7 @@ else
   endif
 endif
 
-OBJROOT := build-$(HOST)-$(TARGET)$(SUBTARGET)
+OBJROOT = build-$(HOST)-$(TARGET)$(SUBTARGET)
 
 # ----------------------------------------------------------------------------
 # General flag setup
@@ -437,6 +439,71 @@ ifeq ($(TARGET),amiga)
 
   CFLAGS += -mcrt=newlib -D__USE_INLINE__ -std=c99 -I . -Dnsamiga
   LDFLAGS += -lxml2 -lcurl -lm -lsocket -lpthread -lregex -lauto -lraauto -lssl -lcrypto -lamisslauto -mcrt=newlib
+endif
+
+# ----------------------------------------------------------------------------
+# Framebuffer target setup
+# ----------------------------------------------------------------------------
+
+ifeq ($(TARGET),framebuffer)
+  $(eval $(call feature_enabled,MNG,-DWITH_MNG,-lmng,PNG support))
+
+  # define additional CFLAGS and LDFLAGS requirements for pkg-configed libs here
+  NETSURF_FEATURE_RSVG_CFLAGS := -DWITH_RSVG
+  NETSURF_FEATURE_ROSPRITE_CFLAGS := -DWITH_NSSPRITE
+  NETSURF_FEATURE_HUBBUB_CFLAGS := -DWITH_HUBBUB
+  NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
+  NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
+
+  CFLAGS += '-DNETSURF_FB_RESPATH="$(NETSURF_FB_RESPATH_$(NETSURF_FB_FRONTEND))"'
+  CFLAGS += '-DNETSURF_FB_HOMEPATH="$(NETSURF_FB_HOMEPATH_$(NETSURF_FB_FRONTEND))"'
+  CFLAGS += -Dnsfb
+
+  ifeq ($(NETSURF_FB_FRONTEND),linux)
+    $(eval $(call pkg_config_find_and_add,RSVG,librsvg-2.0,SVG rendering))
+    $(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,RISC OS sprite rendering))
+    $(eval $(call pkg_config_find_and_add,HUBBUB,libhubbub,Hubbub HTML parser))
+    $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,NetSurf BMP decoder))
+    $(eval $(call pkg_config_find_and_add,GIF,libnsgif,NetSurf GIF decoder))
+
+
+    CFLAGS += -std=c99 -g -I. -Dsmall $(WARNFLAGS) \
+	 	 $(shell xml2-config --cflags) \
+		 -D_BSD_SOURCE \
+		 -D_XOPEN_SOURCE=600 \
+		 -D_POSIX_C_SOURCE=200112L 
+
+    LDFLAGS += -lxml2 -lz -ljpeg -lcurl -lm 
+    LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl openssl)
+    SUBTARGET := -linux
+  endif
+
+  ifeq ($(NETSURF_FB_FRONTEND),able)
+    $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif,NetSurf GIF decoder))
+    CC=arm-able-gcc
+    CFLAGS += -std=c99 -I. -I/usr/lib/able/include -Dsmall $(WARNFLAGS)
+    LDFLAGS += -lxml2 -lz -ljpeg -lcurl -lm 
+    SUBTARGET := -able
+  endif
+
+  ifeq ($(NETSURF_FB_FRONTEND),dummy)
+    $(eval $(call pkg_config_find_and_add,RSVG,librsvg-2.0,SVG rendering))
+    $(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,RISC OS sprite rendering))
+    $(eval $(call pkg_config_find_and_add,HUBBUB,libhubbub,Hubbub HTML parser))
+    $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,NetSurf BMP decoder))
+    $(eval $(call pkg_config_find_and_add,GIF,libnsgif,NetSurf GIF decoder))
+
+
+    CFLAGS += -std=c99 -g -I. $(WARNFLAGS) \
+	 	 $(shell xml2-config --cflags) \
+		 -D_BSD_SOURCE \
+		 -D_XOPEN_SOURCE=600 \
+		 -D_POSIX_C_SOURCE=200112L 
+
+    LDFLAGS += -lxml2 -lz -ljpeg -lcurl -lm 
+    LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl openssl)
+    SUBTARGET := -dummy
+  endif
 endif
 
 # ----------------------------------------------------------------------------

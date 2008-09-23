@@ -22,13 +22,13 @@
  * A maximum of 2^24 files can be allocated at any point in time.
  */
 
+#include <sys/types.h>
 #include <dirent.h>
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include "utils/filename.h"

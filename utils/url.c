@@ -22,14 +22,15 @@
  * URL parsing and joining (implementation).
  */
 
+#include <sys/types.h>
 #include <assert.h>
 #include <ctype.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include <sys/types.h>
 #include <regex.h>
+#include <unistd.h>
 #include "curl/curl.h"
 #include "utils/log.h"
 #include "utils/url.h"
