@@ -53,9 +53,7 @@ static void html_convert_css_callback(content_msg msg, struct content *css,
 		intptr_t p1, intptr_t p2, union content_msg_data data);
 static bool html_meta_refresh(struct content *c, xmlNode *head);
 static bool html_head(struct content *c, xmlNode *head);
-static bool html_find_stylesheets(struct content *c, xmlNode *html,
-		xmlNode *head);
-static bool html_find_inline_stylesheets(struct content *c, xmlNode *html);
+static bool html_find_stylesheets(struct content *c, xmlNode *html);
 static bool html_process_style_element(struct content *c, xmlNode *style);
 static void html_object_callback(content_msg msg, struct content *object,
 		intptr_t p1, intptr_t p2, union content_msg_data data);
@@ -169,7 +167,7 @@ bool html_process_data(struct content *c, char *data, unsigned int size)
 	}
 
 	LOG(("Parsing %lu bytes", (size - x)));
-	err = binding_parse_chunk(c->data.html.parser_binding, 
+	err = binding_parse_chunk(c->data.html.parser_binding,
 			(uint8_t *) data + x, (size - x));
 	if (err == BINDING_ENCODINGCHANGE) {
 		goto encoding_change;
@@ -183,7 +181,7 @@ encoding_change:
 
 	/* Retrieve new encoding */
 	const char *encoding = binding_get_encoding(
-			c->data.html.parser_binding, 
+			c->data.html.parser_binding,
 			&c->data.html.encoding_source);
 
 	c->data.html.encoding = strdup(encoding);
@@ -244,7 +242,7 @@ bool html_convert(struct content *c, int width, int height)
 	}
 
 	binding_parse_completed(c->data.html.parser_binding);
-	c->data.html.document = 
+	c->data.html.document =
 			binding_get_document(c->data.html.parser_binding);
 	/*xmlDebugDumpDocument(stderr, c->data.html.document);*/
 	binding_destroy_tree(c->data.html.parser_binding);
@@ -287,7 +285,7 @@ bool html_convert(struct content *c, int width, int height)
 	}
 
 	/* get stylesheets */
-	if (!html_find_stylesheets(c, html, head))
+	if (!html_find_stylesheets(c, html))
 		return false;
 
 	/* convert xml tree to box tree */
@@ -608,14 +606,14 @@ bool html_meta_refresh(struct content *c, xmlNode *head)
 /**
  * Process inline stylesheets and fetch linked stylesheets.
  *
+ * Uses STYLE and LINK elements inside and outside HEAD
+ *
  * \param  c     content structure
  * \param  head  xml node of html element
- * \param  head  xml node of head element, or 0 if none
  * \return  true on success, false if an error occurred
  */
 
-bool html_find_stylesheets(struct content *c, xmlNode *html,
-		xmlNode *head)
+bool html_find_stylesheets(struct content *c, xmlNode *html)
 {
 	xmlNode *node;
 	char *rel, *type, *media, *href, *url;
@@ -667,91 +665,116 @@ bool html_find_stylesheets(struct content *c, xmlNode *html,
 				c->height, 0, 0, false, 0);
 	}
 
-	for (node = head == 0 ? 0 : head->children; node; node = node->next) {
+	node = html;
+
+	/* depth-first search the tree for link elements */
+	while (node) {
+		if (node->children) {  /* 1. children */
+			node = node->children;
+		} else if (node->next) {  /* 2. siblings */
+			node = node->next;
+		} else {  /* 3. ancestor siblings */
+			while (node && !node->next)
+				node = node->parent;
+			if (!node)
+				break;
+			node = node->next;
+		}
+
+		assert(node);
+
 		if (node->type != XML_ELEMENT_NODE)
 			continue;
 
-		if (strcmp((const char *) node->name, "link") != 0)
-			continue;
+		if (strcmp((const char *) node->name, "link") == 0) {
 
-		/* rel=<space separated list, including 'stylesheet'> */
-		if ((rel = (char *) xmlGetProp(node, (const xmlChar *) "rel")) == NULL)
-			continue;
-		if (strcasestr(rel, "stylesheet") == 0) {
+			/* rel=<space separated list, including 'stylesheet'> */
+			if ((rel = (char *) xmlGetProp(node,
+					(const xmlChar *) "rel")) == NULL)
+				continue;
+			if (strcasestr(rel, "stylesheet") == 0) {
+				xmlFree(rel);
+				continue;
+			} else if (strcasestr(rel, "alternate")) {
+				/* Ignore alternate stylesheets */
+				xmlFree(rel);
+				continue;
+			}
 			xmlFree(rel);
-			continue;
-		} else if (strcasestr(rel, "alternate")) {
-			/* Ignore alternate stylesheets */
-			xmlFree(rel);
-			continue;
-		}
-		xmlFree(rel);
 
-		/* type='text/css' or not present */
-		if ((type = (char *) xmlGetProp(node, (const xmlChar *) "type")) != NULL) {
-			if (strcmp(type, "text/css") != 0) {
+			/* type='text/css' or not present */
+			if ((type = (char *) xmlGetProp(node,
+					(const xmlChar *) "type")) != NULL) {
+				if (strcmp(type, "text/css") != 0) {
+					xmlFree(type);
+					continue;
+				}
 				xmlFree(type);
-				continue;
 			}
-			xmlFree(type);
-		}
 
-		/* media contains 'screen' or 'all' or not present */
-		if ((media = (char *) xmlGetProp(node, (const xmlChar *) "media")) != NULL) {
-			if (strcasestr(media, "screen") == 0 &&
-					strcasestr(media, "all") == 0) {
+			/* media contains 'screen' or 'all' or not present */
+			if ((media = (char *) xmlGetProp(node,
+					(const xmlChar *) "media")) != NULL) {
+				if (strcasestr(media, "screen") == 0 &&
+						strcasestr(media, "all") == 0) {
+					xmlFree(media);
+					continue;
+				}
 				xmlFree(media);
-				continue;
 			}
-			xmlFree(media);
+
+			/* href='...' */
+			if ((href = (char *) xmlGetProp(node,
+					(const xmlChar *) "href")) == NULL)
+				continue;
+
+			/* TODO: only the first preferred stylesheets (ie.
+			 * those with a title attribute) should be loaded
+			 * (see HTML4 14.3) */
+
+			res = url_join(href, c->data.html.base_url, &url);
+			xmlFree(href);
+			if (res != URL_FUNC_OK)
+				continue;
+
+			LOG(("linked stylesheet %i '%s'", i, url));
+
+			/* start fetch */
+			stylesheet_content = talloc_realloc(c,
+					c->data.html.stylesheet_content,
+					struct content *, i + 1);
+			if (!stylesheet_content)
+				goto no_memory;
+			c->data.html.stylesheet_content = stylesheet_content;
+			c->data.html.stylesheet_content[i] = fetchcache(url,
+					html_convert_css_callback,
+					(intptr_t) c, i, c->width, c->height,
+					true, 0, 0, false, false);
+			if (!c->data.html.stylesheet_content[i])
+				goto no_memory;
+			c->active++;
+			fetchcache_go(c->data.html.stylesheet_content[i],
+					c->url,
+					html_convert_css_callback,
+					(intptr_t) c, i, c->width, c->height,
+					0, 0, false, c->url);
+			free(url);
+			i++;
+		} else if (strcmp((const char *) node->name, "style") == 0) {
+
+			if (!html_process_style_element(c, node))
+				return false;
 		}
-
-		/* href='...' */
-		if ((href = (char *) xmlGetProp(node, (const xmlChar *) "href")) == NULL)
-			continue;
-
-		/* TODO: only the first preferred stylesheets (ie. those with a
-		 * title attribute) should be loaded (see HTML4 14.3) */
-
-		res = url_join(href, c->data.html.base_url, &url);
-		xmlFree(href);
-		if (res != URL_FUNC_OK)
-			continue;
-
-		LOG(("linked stylesheet %i '%s'", i, url));
-
-		/* start fetch */
-		stylesheet_content = talloc_realloc(c,
-				c->data.html.stylesheet_content,
-				struct content *, i + 1);
-		if (!stylesheet_content)
-			goto no_memory;
-		c->data.html.stylesheet_content = stylesheet_content;
-		c->data.html.stylesheet_content[i] = fetchcache(url,
-				html_convert_css_callback,
-				(intptr_t) c, i, c->width, c->height,
-				true, 0, 0, false, false);
-		if (!c->data.html.stylesheet_content[i])
-			goto no_memory;
-		c->active++;
-		fetchcache_go(c->data.html.stylesheet_content[i],
-				c->url,
-				html_convert_css_callback,
-				(intptr_t) c, i, c->width, c->height,
-				0, 0, false, c->url);
-		free(url);
-		i++;
 	}
 
 	c->data.html.stylesheet_count = i;
 
-	if (!html_find_inline_stylesheets(c, html))
-		return false;
-
 	if (c->data.html.stylesheet_content[STYLESHEET_STYLE] != 0) {
-		if (css_convert(c->data.html.stylesheet_content[STYLESHEET_STYLE], c->width,
+		if (css_convert(c->data.html.
+				stylesheet_content[STYLESHEET_STYLE], c->width,
 				c->height)) {
-			if (!content_add_user(c->data.html.stylesheet_content[STYLESHEET_STYLE],
+			if (!content_add_user(c->data.html.
+					stylesheet_content[STYLESHEET_STYLE],
 					html_convert_css_callback,
 					(intptr_t) c, STYLESHEET_STYLE)) {
 				/* no memory */
@@ -811,47 +834,6 @@ no_memory:
 	msg_data.error = messages_get("NoMemory");
 	content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 	return false;
-}
-
-
-/**
- * Process inline stylesheets in the document.
- *
- * \param  c     content structure
- * \param  head  xml node of html element
- * \return  true on success, false if an error occurred
- */
-
-bool html_find_inline_stylesheets(struct content *c, xmlNode *html)
-{
-	xmlNode *node = html;
-
-	/* depth-first search the tree for style elements */
-	while (node) {
-		if (node->children) {  /* 1. children */
-			node = node->children;
-		} else if (node->next) {  /* 2. siblings */
-			node = node->next;
-		} else {  /* 3. ancestor siblings */
-			while (node && !node->next)
-				node = node->parent;
-			if (!node)
-				break;
-			node = node->next;
-		}
-
-		assert(node);
-
-		if (node->type != XML_ELEMENT_NODE)
-			continue;
-		if (strcmp((const char *) node->name, "style") != 0)
-			continue;
-
-		if (!html_process_style_element(c, node))
-			return false;
-	}
-
-	return true;
 }
 
 
@@ -1308,7 +1290,7 @@ void html_object_callback(content_msg msg, struct content *object,
 		unsigned int time_before = wallclock(), time_taken;
 		content_reformat(c, c->available_width, c->height);
 		time_taken = wallclock() - time_before;
-		c->reformat_time = wallclock() + 
+		c->reformat_time = wallclock() +
 			((time_taken < option_min_reflow_period ?
 			option_min_reflow_period : time_taken * 1.25));
 	}
