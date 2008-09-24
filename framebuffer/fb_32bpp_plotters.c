@@ -60,7 +60,8 @@ static bool fb_32bpp_line(int x0, int y0, int x1, int y1, int width,
 
         if (y0 == y1) {
                 /* horizontal line special cased */
-                fb_plotters_clip_rect_ctx(&x0, &y0, &x1, &y1);
+                if (!fb_plotters_clip_rect_ctx(&x0, &y0, &x1, &y1))
+                        return true; /* line outside clipping */
 
                 pvideo = fb_32bpp_get_xy_loc(x0, y0);
 

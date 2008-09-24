@@ -61,8 +61,8 @@ bool fb_plotters_clip_rect(const bbox_t *clip,
 
 	if (*y1 < *y0) SWAP(*y0, *y1);
 
-	region1 = REGION(*x0, *y0, clip->x0, clip->x1, clip->y0, clip->y1);
-	region2 = REGION(*x1, *y1, clip->x0, clip->x1, clip->y0, clip->y1);
+	region1 = REGION(*x0, *y0, clip->x0, clip->x1 - 1, clip->y0, clip->y1 - 1);
+	region2 = REGION(*x1, *y1, clip->x0, clip->x1 - 1, clip->y0, clip->y1 - 1);
 
         /* area lies entirely outside the clipping rectangle */
         if ((region1 | region2) && (region1 & region2))
