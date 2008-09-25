@@ -154,6 +154,7 @@ bool html_process_data(struct content *c, char *data, unsigned int size)
 {
 	unsigned long x;
 	binding_error err;
+	const char *encoding;
 
 	for (x = 0; x + CHUNK <= size; x += CHUNK) {
 		LOG(("Parsing %d bytes", CHUNK));
@@ -180,7 +181,7 @@ encoding_change:
 	LOG(("Changing encoding"));
 
 	/* Retrieve new encoding */
-	const char *encoding = binding_get_encoding(
+	encoding = binding_get_encoding(
 			c->data.html.parser_binding,
 			&c->data.html.encoding_source);
 

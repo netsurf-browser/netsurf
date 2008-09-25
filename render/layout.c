@@ -541,9 +541,9 @@ void layout_minmax_block(struct box *block, const struct font_functions *font_fu
 	int extra_fixed = 0;
 	float extra_frac = 0;
 	struct css_length size;
+	struct css_length gadget_size; /* Checkbox / radio buttons */
 	size.unit = CSS_UNIT_EM;
 	size.value = 10;
-	struct css_length gadget_size; /* Checkbox / radio buttons */
 	gadget_size.unit = CSS_UNIT_EM;
 	gadget_size.value = 1;
 
