@@ -18,6 +18,7 @@ utils:: Misc. useful functions
 amiga::AmigaOS specific code
 beos::BeOS/Haiku specific code
 debug:: Unix debug build specific code
+framebuffer:: Framebuffer specific code
 gtk:: GTK specific code
 riscos:: RISC OS specific code
 
