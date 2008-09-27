@@ -1802,30 +1802,34 @@ void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
 	if(!g) return;
 
 	gui_window_remove_caret(g);
-	g->c_x = x;
-	g->c_y = y;
-	g->c_h = height;
 
 	GetAttr(SPACE_AreaBox,g->gadgets[GID_BROWSER],(ULONG *)&bbox);
 	GetAttr(SCROLLER_Top,g->objects[OID_HSCROLL],&xs);
-	x = x - bbox->Left +xs;
-
 	GetAttr(SCROLLER_Top,g->objects[OID_VSCROLL],&ys);
-	y = y - bbox->Top + ys;
 
 	SetAPen(g->win->RPort,3);
-	RectFill(g->win->RPort,x+bbox->Left,y+bbox->Top,x+bbox->Left+2,y+bbox->Top+height);
+
+//	if(((x-xs) < bbox->Left) || ((x-xs) > (bbox->Left+bbox->Width)) || ((y-ys) < bbox->Top) || ((y-ys) > (bbox->Top+bbox->Height))) return;
+
+	RectFill(g->win->RPort,x+bbox->Left-xs,y+bbox->Top-ys,x+bbox->Left+2-xs,y+bbox->Top+height-ys);
+
+	g->c_x = x;
+	g->c_y = y;
+	g->c_h = height;
 }
 
 void gui_window_remove_caret(struct gui_window *g)
 {
 	struct IBox *bbox;
+	int xs,ys;
 
 	if(!g) return;
 
 	GetAttr(SPACE_AreaBox,g->gadgets[GID_BROWSER],(ULONG *)&bbox);
+	GetAttr(SCROLLER_Top,g->objects[OID_HSCROLL],&xs);
+	GetAttr(SCROLLER_Top,g->objects[OID_VSCROLL],&ys);
 
-	BltBitMapRastPort(g->bm,g->c_x,g->c_y,g->win->RPort,bbox->Left+g->c_x,bbox->Top+g->c_y,2,g->c_h,0x0C0);
+	BltBitMapRastPort(g->bm,g->c_x,g->c_y,g->win->RPort,bbox->Left+g->c_x-xs,bbox->Top+g->c_y-ys,2+1,g->c_h+1,0x0C0);
 
 	g->c_h = 0;
 }
