@@ -947,6 +947,8 @@ void layout_float_find_dimensions(int available_width,
 		if (min_width >  0 && width < min_width) width = min_width;
 
 	} else {
+		if (max_width >= 0 && width > max_width) width = max_width;
+		if (min_width >  0 && width < min_width) width = min_width;
 		width -= scrollbar_width;
 	}
 
