@@ -52,6 +52,7 @@ enum
 	GID_PASS,
 	GID_LOGIN,
 	GID_CANCEL,
+	GID_TREEBROWSER,
     GID_LAST
 };
 
@@ -69,7 +70,7 @@ struct gui_download_window {
 	Object *objects[OID_LAST];
 	struct Gadget *gadgets[GID_LAST];
 	struct nsObject *node;
-	ULONG pad[4];
+	ULONG pad[5];
 	BPTR fh;
 	uint32 size;
 	uint32 downloaded;
@@ -83,6 +84,7 @@ struct gui_window {
 	struct browser_window *bw;
 	bool redraw_required;
 	int throbber_frame;
+	int c_h;
 	struct List *tab_bw_list;
 	struct BitMap *bm;
 	struct RastPort rp;
@@ -98,7 +100,6 @@ struct gui_window {
 	ULONG throbber_update_count;
 	int c_x;
 	int c_y;
-	int c_h;
 };
 
 struct RastPort *currp;
@@ -108,4 +109,5 @@ struct Screen *scrn;
 STRPTR nsscreentitle;
 struct FileRequester *filereq;
 struct MsgPort *sport;
+bool win_destroyed;
 #endif
