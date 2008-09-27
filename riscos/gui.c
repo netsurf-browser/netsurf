@@ -4,6 +4,7 @@
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
  * Copyright 2005 Richard Wilson <info@tinct.net>
  * Copyright 2004 Andrew Timmins <atimmins@blueyonder.co.uk>
+ * Copyright 2004-2008 John Tytgat <joty@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -30,7 +31,6 @@
 #include <string.h>
 #include <time.h>
 #include <features.h>
-#include <unixlib/sigstate.h>
 #include <unixlib/local.h>
 #include <curl/curl.h>
 #ifdef WITH_HUBBUB
