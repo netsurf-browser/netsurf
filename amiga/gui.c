@@ -59,6 +59,7 @@
 #include <proto/datatypes.h>
 #include <proto/icon.h>
 #include <workbench/icon.h>
+#include "amiga/tree.h"
 
 #ifdef WITH_HUBBUB
 #include <hubbub/hubbub.h>
@@ -72,6 +73,7 @@
 #include <proto/space.h>
 #include <proto/popupmenu.h>
 #include <proto/fuelgauge.h>
+#include <proto/clicktab.h>
 #include <classes/window.h>
 #include <gadgets/fuelgauge.h>
 #include <gadgets/layout.h>
@@ -80,6 +82,7 @@
 #include <gadgets/button.h>
 #include <images/bitmap.h>
 #include <gadgets/space.h>
+#include <gadgets/clicktab.h>
 #include <classes/popupmenu.h>
 #include <reaction/reaction_macros.h>
 
@@ -99,7 +102,6 @@ struct PopupMenuIFace *IPopupMenu = NULL;
 struct BitMap *throbber = NULL;
 ULONG throbber_width,throbber_height;
 
-bool win_destroyed = false;
 static struct RastPort dummyrp;
 struct IFFHandle *iffh = NULL;
 
@@ -194,6 +196,8 @@ void gui_init(int argc, char** argv)
 			InitIFFasClip(iffh);
 		}
 	}
+
+	win_destroyed = false;
 
 	options_read("Resources/Options");
 
@@ -617,14 +621,28 @@ void ami_handle_msg(void)
 				break;
 
 				case WMHI_NEWSIZE:
-					GetAttr(SPACE_AreaBox,gwin->gadgets[GID_BROWSER],(ULONG *)&bbox);	
-					browser_window_reformat(gwin->bw,bbox->Width,bbox->Height);
-					gwin->redraw_required = true;
-					//gui_window_redraw_window(gwin);
+					switch(node->Type)
+					{
+						case AMINS_WINDOW:
+						case AMINS_FRAME:
+							GetAttr(SPACE_AreaBox,gwin->gadgets[GID_BROWSER],(ULONG *)&bbox);	
+							browser_window_reformat(gwin->bw,bbox->Width,bbox->Height);
+							gwin->redraw_required = true;
+						break;
+					}
 				break;
 
 				case WMHI_CLOSEWINDOW:
-					browser_window_destroy(gwin->bw);
+					switch(node->Type)
+					{
+						case AMINS_TVWINDOW:
+							ami_tree_close((struct treeview_window *)gwin);
+						break;
+
+						default:
+							browser_window_destroy(gwin->bw);
+						break;
+					}
 					//destroywin=gwin;
 		        break;
 
@@ -653,6 +671,9 @@ void ami_handle_msg(void)
 
 		if(gwin->throbber_frame)
 			ami_update_throbber(gwin);
+
+		if(gwin->c_h)
+			gui_window_place_caret(gwin,gwin->c_x,gwin->c_y,gwin->c_h);
 
 		node = nnode;
 	}
@@ -1776,17 +1797,24 @@ void ami_update_throbber(struct gui_window *g)
 void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
 {
 	struct IBox *bbox;
+	ULONG xs,ys;
 
 	if(!g) return;
 
-	GetAttr(SPACE_AreaBox,g->gadgets[GID_BROWSER],(ULONG *)&bbox);
-
-	SetAPen(g->win->RPort,3);
-	RectFill(g->win->RPort,x+bbox->Left,y+bbox->Top,x+bbox->Left+2,y+bbox->Top+height);
-
+	gui_window_remove_caret(g);
 	g->c_x = x;
 	g->c_y = y;
 	g->c_h = height;
+
+	GetAttr(SPACE_AreaBox,g->gadgets[GID_BROWSER],(ULONG *)&bbox);
+	GetAttr(SCROLLER_Top,g->objects[OID_HSCROLL],&xs);
+	x = x - bbox->Left +xs;
+
+	GetAttr(SCROLLER_Top,g->objects[OID_VSCROLL],&ys);
+	y = y - bbox->Top + ys;
+
+	SetAPen(g->win->RPort,3);
+	RectFill(g->win->RPort,x+bbox->Left,y+bbox->Top,x+bbox->Left+2,y+bbox->Top+height);
 }
 
 void gui_window_remove_caret(struct gui_window *g)

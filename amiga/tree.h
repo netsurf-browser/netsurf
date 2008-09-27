@@ -16,32 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef AMIGA_OBJECT_H
-#define AMIGA_OBJECT_H
+#ifndef AMIGA_TREE_H
+#define AMIGA_TREE_H
 
-#include <exec/lists.h>
-
-enum
-{
-	AMINS_CALLBACK,
-	AMINS_WINDOW,
-	AMINS_FRAME,
-	AMINS_DLWINDOW,
-	AMINS_LOGINWINDOW,
-	AMINS_TVWINDOW
-};
-
-struct nsObject
-{
-	struct MinNode dtz_Node;
-	ULONG Type;
-	void *objstruct;
-	ULONG objstruct_size;
-};
-
-struct MinList *NewObjList(void);
-struct nsObject *AddObject(struct MinList *objlist,ULONG otype);
-void DelObject(struct nsObject *dtzo);
-void FreeObjList(struct MinList *objlist);
-
+void ami_open_tree(struct tree *tree);
+bool ami_tree_launch_node(struct tree *tree, struct node *node);
+void ami_tree_close(struct tree *tree);
+void free_browserlist(struct List *list);
 #endif

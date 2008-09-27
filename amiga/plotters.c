@@ -248,6 +248,8 @@ bool ami_bitmap(int x, int y, int width, int height,
 	ri.BytesPerRow = bitmap->width * 4;
 	ri.RGBFormat = RGBFB_R8G8B8A8;
 
+/* check for black boxes under images! */
+/* disabled temporarily for SAM OS4.1
 	if((bitmap->width != width) || (bitmap->height != height))
 	{
 		struct BitMap *tbm;
@@ -279,8 +281,9 @@ bool ami_bitmap(int x, int y, int width, int height,
 	}
 	else
 	{
+*/
 		p96WritePixelArray((struct RenderInfo *)&ri,0,0,currp,x,y,width,height);
-	}
+//	}
 
 	return true;
 }
