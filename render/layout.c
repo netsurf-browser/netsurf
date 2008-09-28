@@ -694,7 +694,7 @@ void layout_block_find_dimensions(int available_width, struct box *box)
 		/* block-level replaced element, see 10.3.4 and 10.6.2 */
 		if (width == AUTO && height == AUTO) {
 			width = box->object->width;
-			width = box->object->width;
+			height = box->object->height;
 		} else if (width == AUTO) {
 			if (box->object->height)
 				width = box->object->width *
