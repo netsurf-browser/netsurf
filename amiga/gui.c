@@ -60,6 +60,11 @@
 #include <proto/icon.h>
 #include <workbench/icon.h>
 #include "amiga/tree.h"
+#include <parserutils/charset/mibenum.h>
+#include "utils/utils.h"
+#include "amiga/login.h"
+#include "utils/url.h"
+#include <string.h>
 
 #ifdef WITH_HUBBUB
 #include <hubbub/hubbub.h>
@@ -150,14 +155,6 @@ void gui_init(int argc, char** argv)
 	int i;
 	BPTR lock=0;
 	Object *dto;
-
-/* ttengine.library
-	if(!ami_open_tte())
-	{
-		char errormsg[100];
-		die(sprintf(errormsg,"%s ttengine.library",messages_get("OpenError")));
-	}
-*/
 
 	msgport = AllocSysObjectTags(ASOT_PORT,
 	ASO_NoTrack,FALSE,
@@ -254,39 +251,39 @@ void gui_init(int argc, char** argv)
 #endif
 
 	if((!option_cookie_file) || (option_cookie_file[0] == '\0'))
-		option_cookie_file = strdup("Resources/Cookies");
+		option_cookie_file = (char *)strdup("Resources/Cookies");
 
 	if((!option_hotlist_file) || (option_hotlist_file[0] == '\0'))
-		option_hotlist_file = strdup("Resources/Hotlist");
+		option_hotlist_file = (char *)strdup("Resources/Hotlist");
 
 	if((!option_url_file) || (option_url_file[0] == '\0'))
-		option_url_file = strdup("Resources/URLs");
+		option_url_file = (char *)strdup("Resources/URLs");
 
 /*
 	if((!option_cookie_jar) || (option_cookie_jar[0] == '\0'))
-		option_cookie_jar = strdup("Resources/CookieJar");
+		option_cookie_jar = (char *)strdup("Resources/CookieJar");
 */
 
 	if((!option_ca_bundle) || (option_ca_bundle[0] == '\0'))
-		option_ca_bundle = strdup("devs:curl-ca-bundle.crt");
+		option_ca_bundle = (char *)strdup("devs:curl-ca-bundle.crt");
 
 	if((!option_font_sans) || (option_font_sans[0] == '\0'))
-		option_font_sans = strdup("DejaVu Sans");
+		option_font_sans = (char *)strdup("DejaVu Sans");
 
 	if((!option_font_serif) || (option_font_serif[0] == '\0'))
-		option_font_serif = strdup("DejaVu Serif");
+		option_font_serif = (char *)strdup("DejaVu Serif");
 
 	if((!option_font_mono) || (option_font_mono[0] == '\0'))
-		option_font_mono = strdup("DejaVu Sans Mono");
+		option_font_mono = (char *)strdup("DejaVu Sans Mono");
 
 	if((!option_font_cursive) || (option_font_cursive[0] == '\0'))
-		option_font_cursive = strdup("DejaVu Sans");
+		option_font_cursive = (char *)strdup("DejaVu Sans");
 
 	if((!option_font_fantasy) || (option_font_fantasy[0] == '\0'))
-		option_font_fantasy = strdup("DejaVu Serif");
+		option_font_fantasy = (char *)strdup("DejaVu Serif");
 
 	if((!option_toolbar_images) || (option_toolbar_images[0] == '\0'))
-		option_toolbar_images = strdup("TBImages:");
+		option_toolbar_images = (char *)strdup("TBImages:");
 
 	if(!option_window_width) option_window_width = 800;
 	if(!option_window_height) option_window_height = 600;
@@ -349,7 +346,14 @@ void gui_init2(int argc, char** argv)
 {
 	struct browser_window *bw;
 	ULONG id;
-//	const char *addr = NETSURF_HOMEPAGE; //"http://netsurf-browser.org/welcome/";
+	long rarray[] = {0};
+	struct RDArgs *args;
+	STRPTR template = "URL/A";
+
+	enum
+	{
+		A_URL
+	};
 
 	InitRastPort(&dummyrp);
 	dummyrp.BitMap = p96AllocBitMap(1,1,32,
@@ -358,8 +362,20 @@ void gui_init2(int argc, char** argv)
 
 	if(!dummyrp.BitMap) die(messages_get("NoMemory"));
 
+	if(argc) // argc==0 is started from wb
+	{
+		if(args = ReadArgs(template,rarray,NULL))
+		{
+			if(rarray[A_URL])
+			{
+				option_homepage_url = (char *)strdup(rarray[A_URL]);
+			}
+			FreeArgs(args);
+		}
+	}
+
 	if ((!option_homepage_url) || (option_homepage_url[0] == '\0'))
-    	option_homepage_url = strdup(NETSURF_HOMEPAGE);
+    	option_homepage_url = (char *)strdup(NETSURF_HOMEPAGE);
 
 	if(option_modeid)
 	{
@@ -437,12 +453,12 @@ void ami_handle_msg(void)
 	        switch(result & WMHI_CLASSMASK) // class
    		   	{
 				case WMHI_MOUSEMOVE:
-					GetAttr(SPACE_AreaBox,gwin->gadgets[GID_BROWSER],&bbox);
+					GetAttr(SPACE_AreaBox,gwin->gadgets[GID_BROWSER],(ULONG *)&bbox);
 
-					GetAttr(SCROLLER_Top,gwin->objects[OID_HSCROLL],&xs);
+					GetAttr(SCROLLER_Top,gwin->objects[OID_HSCROLL],(ULONG *)&xs);
 					x = gwin->win->MouseX - bbox->Left +xs;
 
-					GetAttr(SCROLLER_Top,gwin->objects[OID_VSCROLL],&ys);
+					GetAttr(SCROLLER_Top,gwin->objects[OID_VSCROLL],(ULONG *)&ys);
 					y = gwin->win->MouseY - bbox->Top + ys;
 
 					width=bbox->Width;
@@ -473,9 +489,9 @@ void ami_handle_msg(void)
 
 				case WMHI_MOUSEBUTTONS:
 					GetAttr(SPACE_AreaBox,gwin->gadgets[GID_BROWSER],(ULONG *)&bbox);	
-					GetAttr(SCROLLER_Top,gwin->objects[OID_HSCROLL],&xs);
+					GetAttr(SCROLLER_Top,gwin->objects[OID_HSCROLL],(ULONG *)&xs);
 					x = gwin->win->MouseX - bbox->Left +xs;
-					GetAttr(SCROLLER_Top,gwin->objects[OID_VSCROLL],&ys);
+					GetAttr(SCROLLER_Top,gwin->objects[OID_VSCROLL],(ULONG *)&ys);
 					y = gwin->win->MouseY - bbox->Top + ys;
 
 					width=bbox->Width;
@@ -533,7 +549,7 @@ void ami_handle_msg(void)
 					switch(result & WMHI_GADGETMASK) //gadaddr->GadgetID) //result & WMHI_GADGETMASK)
 					{
 						case GID_URL:
-							GetAttr(STRINGA_TextVal,gwin->gadgets[GID_URL],&storage);
+							GetAttr(STRINGA_TextVal,gwin->gadgets[GID_URL],(ULONG *)&storage);
 							browser_window_go(gwin->bw,(char *)storage,NULL,true);
 							//printf("%s\n",(char *)storage);
 						break;
@@ -706,16 +722,16 @@ void ami_handle_appmsg(void)
 
 	while(appmsg=(struct AppMessage *)GetMsg(appport))
 	{
-		GetAttr(WINDOW_UserData,appmsg->am_ID,(ULONG *)&gwin);
+		GetAttr(WINDOW_UserData,(struct Window *)appmsg->am_ID,(ULONG *)&gwin);
 
 		if(appmsg->am_Type == AMTYPE_APPWINDOW)
 		{
-			GetAttr(SPACE_AreaBox,gwin->gadgets[GID_BROWSER],&bbox);
+			GetAttr(SPACE_AreaBox,gwin->gadgets[GID_BROWSER],(ULONG *)&bbox);
 
-			GetAttr(SCROLLER_Top,gwin->objects[OID_HSCROLL],&xs);
+			GetAttr(SCROLLER_Top,gwin->objects[OID_HSCROLL],(ULONG *)&xs);
 			x = (appmsg->am_MouseX) - (bbox->Left) +xs;
 
-			GetAttr(SCROLLER_Top,gwin->objects[OID_VSCROLL],&ys);
+			GetAttr(SCROLLER_Top,gwin->objects[OID_VSCROLL],(ULONG *)&ys);
 			y = appmsg->am_MouseY - bbox->Top + ys;
 
 			width=bbox->Width;
@@ -767,7 +783,7 @@ void ami_handle_appmsg(void)
 						}
 
 						if(!file_box && !text_box)
-							return false;
+							return;
 
 						if(file_box)
 						{
@@ -776,14 +792,14 @@ void ami_handle_appmsg(void)
 
 							if(utf8_from_local_encoding(filename,0,&utf8_fn) != UTF8_CONVERT_OK)
 							{
-								warn_user("NoMemory");
+								warn_user("NoMemory","");
 								return;
 							}
 
 							free(file_box->gadget->value);
 							file_box->gadget->value = utf8_fn;
 
-							box_coords(file_box, &x, &y);
+							box_coords(file_box, (int *)&x, (int *)&y);
 							gui_window_redraw(gwin->bw->window,x,y,
 								x + file_box->width,
 								y + file_box->height);
@@ -998,7 +1014,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 	if(!gwin)
 	{
-		warn_user("NoMemory");
+		warn_user("NoMemory","");
 		return NULL;
 	}
 
@@ -1228,7 +1244,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 	if(!gwin->win)
 	{
-		warn_user("NoMemory");
+		warn_user("NoMemory","");
 		FreeVec(gwin);
 		return NULL;
 	}
@@ -1243,7 +1259,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 	if(!gwin->bm)
 	{
-		warn_user("NoMemory");
+		warn_user("NoMemory","");
 		browser_window_destroy(bw);
 		return NULL;
 	}
@@ -1260,7 +1276,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 	if((!gwin->areabuf) || (!gwin->rp.AreaInfo))
 	{
-		warn_user("NoMemory");
+		warn_user("NoMemory","");
 		browser_window_destroy(bw);
 		return NULL;
 	}
@@ -1271,7 +1287,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 	if((!gwin->tmprasbuf) || (!gwin->rp.TmpRas))
 	{
-		warn_user("NoMemory");
+		warn_user("NoMemory","");
 		browser_window_destroy(bw);
 		return NULL;
 	}
@@ -1358,8 +1374,8 @@ void gui_window_update_box(struct gui_window *g,
 	if(!g) return;
 
 	GetAttr(SPACE_AreaBox,g->gadgets[GID_BROWSER],(ULONG *)&bbox);
-	GetAttr(SCROLLER_Top,g->objects[OID_HSCROLL],&hcurrent);
-	GetAttr(SCROLLER_Top,g->objects[OID_VSCROLL],&vcurrent);
+	GetAttr(SCROLLER_Top,g->objects[OID_HSCROLL],(ULONG *)&hcurrent);
+	GetAttr(SCROLLER_Top,g->objects[OID_VSCROLL],(ULONG *)&vcurrent);
 
 //	DebugPrintF("DOING REDRAW\n");
 
@@ -1416,8 +1432,8 @@ void ami_do_redraw(struct gui_window *g)
 	struct IBox *bbox;
 
 	GetAttr(SPACE_AreaBox,g->gadgets[GID_BROWSER],(ULONG *)&bbox);
-	GetAttr(SCROLLER_Top,g->objects[OID_HSCROLL],&hcurrent);
-	GetAttr(SCROLLER_Top,g->objects[OID_VSCROLL],&vcurrent);
+	GetAttr(SCROLLER_Top,g->objects[OID_HSCROLL],(ULONG *)&hcurrent);
+	GetAttr(SCROLLER_Top,g->objects[OID_VSCROLL],(ULONG *)&vcurrent);
 
 //	DebugPrintF("DOING REDRAW\n");
 
@@ -1767,7 +1783,7 @@ void gui_window_set_url(struct gui_window *g, const char *url)
 void gui_window_start_throbber(struct gui_window *g)
 {
 	struct IBox *bbox;
-	GetAttr(SPACE_AreaBox,g->gadgets[GID_THROBBER],&bbox);
+	GetAttr(SPACE_AreaBox,g->gadgets[GID_THROBBER],(ULONG *)&bbox);
 
 	g->throbber_frame=1;
 
@@ -1777,7 +1793,7 @@ void gui_window_start_throbber(struct gui_window *g)
 void gui_window_stop_throbber(struct gui_window *g)
 {
 	struct IBox *bbox;
-	GetAttr(SPACE_AreaBox,g->gadgets[GID_THROBBER],&bbox);
+	GetAttr(SPACE_AreaBox,g->gadgets[GID_THROBBER],(ULONG *)&bbox);
 
 	BltBitMapRastPort(throbber,0,0,g->win->RPort,bbox->Left,bbox->Top,throbber_width,throbber_height,0x0C0);
 
@@ -1796,7 +1812,7 @@ void ami_update_throbber(struct gui_window *g)
 
 	g->throbber_update_count = 0;
 
-	GetAttr(SPACE_AreaBox,g->gadgets[GID_THROBBER],&bbox);
+	GetAttr(SPACE_AreaBox,g->gadgets[GID_THROBBER],(ULONG *)&bbox);
 
 	g->throbber_frame++;
 	if(g->throbber_frame > (option_throbber_frames-1))
@@ -1837,8 +1853,8 @@ void gui_window_remove_caret(struct gui_window *g)
 	if(!g) return;
 
 	GetAttr(SPACE_AreaBox,g->gadgets[GID_BROWSER],(ULONG *)&bbox);
-	GetAttr(SCROLLER_Top,g->objects[OID_HSCROLL],&xs);
-	GetAttr(SCROLLER_Top,g->objects[OID_VSCROLL],&ys);
+	GetAttr(SCROLLER_Top,g->objects[OID_HSCROLL],(ULONG *)&xs);
+	GetAttr(SCROLLER_Top,g->objects[OID_VSCROLL],(ULONG *)&ys);
 
 	BltBitMapRastPort(g->bm,g->c_x,g->c_y,g->win->RPort,bbox->Left+g->c_x-xs,bbox->Top+g->c_y-ys,2+1,g->c_h+1,0x0C0);
 
@@ -1910,7 +1926,7 @@ struct gui_download_window *gui_download_window_create(const char *url,
 		return NULL;
 	}
 
-	SetComment(&fname,url);
+	SetComment(fname,url);
 
 	dw->objects[OID_MAIN] = WindowObject,
       	    WA_ScreenTitle,nsscreentitle,
@@ -1985,7 +2001,7 @@ void gui_download_window_data(struct gui_download_window *dw, const char *data,
 void gui_download_window_error(struct gui_download_window *dw,
 		const char *error_msg)
 {
-	warn_user("Unwritten");
+	warn_user("Unwritten","");
 	gui_download_window_done(dw);
 }
 
