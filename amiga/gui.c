@@ -416,6 +416,11 @@ void ami_handle_msg(void)
 		{
 			if(ami_tree_event((struct treeviw_window *)gwin))
 			{
+				if(IsMinListEmpty(window_list))
+				{
+					/* last window closed, so exit */
+					netsurf_quit = true;
+				}
 				break;
 			}
 			else
