@@ -239,6 +239,8 @@ bool ami_bitmap(int x, int y, int width, int height,
 {
 	struct RenderInfo ri;
 
+	if(!width || !height) return true;
+
 //	ami_fill(x,y,x+width,y+height,bg);
 
 	SetRPAttrs(currp,RPTAG_BPenColor,p96EncodeColor(RGBFB_A8B8G8R8,bg),
@@ -248,14 +250,13 @@ bool ami_bitmap(int x, int y, int width, int height,
 	ri.BytesPerRow = bitmap->width * 4;
 	ri.RGBFormat = RGBFB_R8G8B8A8;
 
-/* check for black boxes under images! */
-/* disabled temporarily for SAM OS4.1
 	if((bitmap->width != width) || (bitmap->height != height))
 	{
-		struct BitMap *tbm;
+		struct BitMap *tbm,*scaledbm;
 		struct RastPort trp;
 		struct BitScaleArgs bsa;
 
+		scaledbm = p96AllocBitMap(width,height,32,0,currp->BitMap,RGBFB_R8G8B8A8);
 		tbm = p96AllocBitMap(bitmap->width,bitmap->height,32,0,currp->BitMap,RGBFB_R8G8B8A8);
 		InitRastPort(&trp);
 		trp.BitMap = tbm;
@@ -264,26 +265,28 @@ bool ami_bitmap(int x, int y, int width, int height,
 		bsa.bsa_SrcY = 0;
 		bsa.bsa_SrcWidth = bitmap->width;
 		bsa.bsa_SrcHeight = bitmap->height;
-		bsa.bsa_DestX = x;
-		bsa.bsa_DestY = y;
-		bsa.bsa_DestWidth = width;
-		bsa.bsa_DestHeight = height;
+		bsa.bsa_DestX = 0;
+		bsa.bsa_DestY = 0;
+//		bsa.bsa_DestWidth = width;
+//		bsa.bsa_DestHeight = height;
 		bsa.bsa_XSrcFactor = bitmap->width;
 		bsa.bsa_XDestFactor = width;
 		bsa.bsa_YSrcFactor = bitmap->height;
 		bsa.bsa_YDestFactor = height;
 		bsa.bsa_SrcBitMap = tbm;
-		bsa.bsa_DestBitMap = currp->BitMap;
+		bsa.bsa_DestBitMap = scaledbm;
 		bsa.bsa_Flags = 0;
 
 		BitMapScale(&bsa);
+		BltBitMapRastPort(scaledbm,0,0,currp,x,y,width,height,0x0C0);
+
 		p96FreeBitMap(tbm);
+		p96FreeBitMap(scaledbm);
 	}
 	else
 	{
-*/
 		p96WritePixelArray((struct RenderInfo *)&ri,0,0,currp,x,y,width,height);
-//	}
+	}
 
 	return true;
 }
