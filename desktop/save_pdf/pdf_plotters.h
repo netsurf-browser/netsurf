@@ -24,12 +24,11 @@
 #define NETSURF_PDF_PLOTTERS_H
 
 #include "desktop/print.h"
-struct plotter_table;
 
-extern struct printer pdf_printer;
+extern const struct printer pdf_printer;
 
 /**Start plotting a pdf file*/
-bool pdf_begin(struct print_settings* settings);
+bool pdf_begin(struct print_settings *settings);
 
 /**Finish the current page and start a new one*/
 bool pdf_next_page(void);
@@ -39,6 +38,6 @@ void pdf_end(void);
 
 void pdf_set_scale(float s);
 
-void save_pdf(char *path);
+void save_pdf(const char *path);
 
 #endif /*NETSURF_PDF_PLOTTERS_H*/

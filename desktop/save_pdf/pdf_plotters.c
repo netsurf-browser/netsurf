@@ -32,9 +32,10 @@
 #include "desktop/print.h"
 #include "desktop/printer.h"
 #include "desktop/save_pdf/pdf_plotters.h"
+#include "image/bitmap.h"
 #include "utils/log.h"
 #include "utils/utils.h"
-#include "image/bitmap.h"
+#include "utils/useragent.h"
 
 #include "font_haru.h"
 
@@ -91,9 +92,9 @@ static HPDF_REAL page_height, page_width;
 
 /*Remeber if pdf_plot_clip was invoked for current page*/
 static bool page_clipped;
-int last_clip_x0, last_clip_y0, last_clip_x1, last_clip_y1;
+static int last_clip_x0, last_clip_y0, last_clip_x1, last_clip_y1;
 
-bool in_text_mode, text_mode_request;
+static bool in_text_mode, text_mode_request;
 
 static struct print_settings* settings;
 
@@ -116,7 +117,7 @@ static const struct plotter_table pdf_plotters = {
 	false
 };
 
-struct printer pdf_printer= {
+const struct printer pdf_printer = {
 	&pdf_plotters,
 	pdf_begin,
 	pdf_next_page,
@@ -409,8 +410,9 @@ bool pdf_plot_bitmap_tile(int x, int y, int width, int height,
 	apply_clip_and_mode();
 
 	image = pdf_extract_image(bitmap, content);
-
-	if (image) {
+	if (!image)
+		return false;
+	else {
 		/*The position of the next tile*/
 		HPDF_REAL current_x, current_y ;
 		HPDF_REAL max_width, max_height;
@@ -425,21 +427,14 @@ bool pdf_plot_bitmap_tile(int x, int y, int width, int height,
 						current_x + x,
       						page_height-current_y - y - height,
       						width, height);
-
-		return true;
 	}
-	else
-		return false;
 
 	return true;
 }
 
 HPDF_Image pdf_extract_image(struct bitmap *bitmap, struct content *content)
 {
-	HPDF_Image image = NULL,smask;
-	char *img_buffer, *rgb_buffer, *alpha_buffer;
-	int img_width, img_height, img_rowstride;
-	int i, j;
+	HPDF_Image image = NULL;
 
 	if (content) {
 		/*Not sure if I don't have to check if downloading has been
@@ -450,7 +445,7 @@ HPDF_Image pdf_extract_image(struct bitmap *bitmap, struct content *content)
 			/*Handle "embeddable" types of images*/
 			case CONTENT_JPEG:
  				image = HPDF_LoadJpegImageFromMem(pdf_doc,
- 						content->source_data,
+ 						(const HPDF_BYTE *)content->source_data,
  						content->source_size);
  				break;
 
@@ -458,7 +453,7 @@ HPDF_Image pdf_extract_image(struct bitmap *bitmap, struct content *content)
 
 			case CONTENT_PNG:
 				image = HPDF_LoadPngImageFromMem(pdf_doc,
-						content->source_data,
+						(const HPDF_BYTE *)content->source_data,
 						content->total_size);
 				break;*/
 			default:
@@ -467,28 +462,28 @@ HPDF_Image pdf_extract_image(struct bitmap *bitmap, struct content *content)
 	}
 
 	if (!image) {
+		HPDF_Image smask;
+		unsigned char *img_buffer, *rgb_buffer, *alpha_buffer;
+		int img_width, img_height, img_rowstride;
+		int i, j;
+
 		/*Handle pixmaps*/
 		img_buffer = bitmap_get_buffer(bitmap);
 		img_width = bitmap_get_width(bitmap);
 		img_height = bitmap_get_height(bitmap);
 		img_rowstride = bitmap_get_rowstride(bitmap);
 
-		rgb_buffer = (char*)malloc(3 * img_width * img_height);
-		if (rgb_buffer == NULL) {
+		rgb_buffer = (unsigned char *)malloc(3 * img_width * img_height);
+		alpha_buffer = (unsigned char *)malloc(img_width * img_height);
+		if (rgb_buffer == NULL || alpha_buffer == NULL) {
 			LOG(("Not enough memory to create RGB buffer"));
-			return NULL;
-		}
-
-		alpha_buffer = (char*)malloc(img_width * img_height);
-		if (alpha_buffer == NULL) {
-			LOG(("Not enough memory to create alpha buffer"));
 			free(rgb_buffer);
+			free(alpha_buffer);
 			return NULL;
 		}
 
-
-		for (i = 0; i<img_height; i++)
-			for (j = 0 ; j<img_width ; j++) {
+		for (i = 0; i < img_height; i++)
+			for (j = 0; j < img_width; j++) {
 				rgb_buffer[((i * img_width) + j) * 3] =
 				  img_buffer[(i * img_rowstride) + (j * 4)];
 
@@ -502,23 +497,24 @@ HPDF_Image pdf_extract_image(struct bitmap *bitmap, struct content *content)
 				  img_buffer[(i * img_rowstride) + (j * 4) + 3];
 			}
 
-			smask = HPDF_LoadRawImageFromMem(pdf_doc, alpha_buffer,
-							img_width, img_height,
-     							HPDF_CS_DEVICE_GRAY, 8);
+		smask = HPDF_LoadRawImageFromMem(pdf_doc, alpha_buffer,
+				img_width, img_height,
+     				HPDF_CS_DEVICE_GRAY, 8);
 
-			image = HPDF_LoadRawImageFromMem(pdf_doc, rgb_buffer,
-							img_width, img_height,
-     							HPDF_CS_DEVICE_RGB, 8);
+		image = HPDF_LoadRawImageFromMem(pdf_doc, rgb_buffer,
+				img_width, img_height,
+     				HPDF_CS_DEVICE_RGB, 8);
 
-			if (HPDF_Image_AddSMask(pdf_doc, image,smask) != HPDF_OK)
-				image = NULL;
+		if (HPDF_Image_AddSMask(pdf_doc, image, smask) != HPDF_OK)
+			image = NULL;
 
-			free(rgb_buffer);
-			free(alpha_buffer);
+		free(rgb_buffer);
+		free(alpha_buffer);
 	}
 
 	return image;
 }
+
 /**change the mode and clip only if it's necessary*/
 static void apply_clip_and_mode()
 {
@@ -667,8 +663,8 @@ void pdf_set_dotted()
  */
 bool pdf_begin(struct print_settings *print_settings)
 {
-	pdf_doc = NULL;
-
+	if (pdf_doc != NULL)
+		HPDF_Free(pdf_doc);
 	pdf_doc = HPDF_New(error_handler, NULL);
 	if (!pdf_doc) {
 		LOG(("Error creating pdf_doc"));
@@ -685,9 +681,9 @@ bool pdf_begin(struct print_settings *print_settings)
 
 	if (option_enable_PDF_compression)
 		HPDF_SetCompressionMode(pdf_doc, HPDF_COMP_ALL); /*Compression on*/
+	HPDF_SetInfoAttr(pdf_doc, HPDF_INFO_CREATOR, user_agent_string());
 
-	pdf_font = HPDF_GetFont (pdf_doc, "Times-Roman", "StandardEncoding");
-
+	pdf_font = NULL;
 	pdf_page = NULL;
 
 #ifdef PDF_DEBUG
@@ -733,7 +729,6 @@ bool pdf_next_page(void)
 
 void pdf_end(void)
 {
-	char *path;
 #ifdef PDF_DEBUG
 	LOG(("pdf_end begins"));
 	if (pdf_page != NULL) {
@@ -745,22 +740,19 @@ void pdf_end(void)
 	}
 #endif
 
-	if (settings->output != NULL)
-		path = strdup(settings->output);
-	else
-		path = NULL;
-
 	/*Encryption on*/
 	if (option_enable_PDF_password)
-		PDF_Password(&owner_pass, &user_pass, path);
+		PDF_Password(&owner_pass, &user_pass,
+				(void *)settings->output);
 	else
-		save_pdf(path);
+		save_pdf(settings->output);
 #ifdef PDF_DEBUG
 	LOG(("pdf_end finishes"));
 #endif
 }
+
 /** saves the pdf optionally encrypting it before*/
-void save_pdf(char *path)
+void save_pdf(const char *path)
 {
 	bool success = false;
 
@@ -776,14 +768,13 @@ void save_pdf(char *path)
 			remove(path);
 		else
 			success = true;
-
-		free(path);
 	}
 
 	if (!success)
 		warn_user("Unable to save PDF file.", 0);
 
 	HPDF_Free(pdf_doc);
+	pdf_doc = NULL;
 }
 
 

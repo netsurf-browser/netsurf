@@ -705,6 +705,7 @@ static void nsgtk_PDF_set_pass(GtkButton *w, gpointer data)
 		g_object_unref(G_OBJECT(x));
 		
 		save_pdf(path);
+		free(path);
 	}
 	else {
 		gtk_label_set_text(GTK_LABEL(glade_xml_get_widget(x,
@@ -729,6 +730,7 @@ static void nsgtk_PDF_no_pass(GtkButton *w, gpointer data)
 	g_object_unref(G_OBJECT(x));
 	
 	save_pdf(path);
+	free(path);
 }
 #endif
 
