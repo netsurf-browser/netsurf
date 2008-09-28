@@ -48,11 +48,11 @@ void nsmng_destroy(struct content *c);
 bool nsmng_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-		float scale, unsigned long background_colour);
+		float scale, colour background_colour);
 bool nsmng_redraw_tiled(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-		float scale, unsigned long background_colour,
+		float scale, colour background_colour,
 		bool repeat_x, bool repeat_y);
 
 #endif /* WITH_MNG */

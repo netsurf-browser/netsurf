@@ -101,7 +101,7 @@ bool nsico_convert(struct content *c, int iwidth, int iheight)
 bool nsico_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-		float scale, unsigned long background_colour)
+		float scale, colour background_colour)
 {
 	struct bmp_image *bmp = ico_find(c->data.ico.ico, width, height);
 	if (!bmp->decoded)
@@ -116,7 +116,7 @@ bool nsico_redraw(struct content *c, int x, int y,
 bool nsico_redraw_tiled(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-		float scale, unsigned long background_colour,
+		float scale, colour background_colour,
 		bool repeat_x, bool repeat_y)
 {
 	struct bmp_image *bmp = ico_find(c->data.ico.ico, width, height);

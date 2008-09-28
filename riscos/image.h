@@ -20,6 +20,7 @@
 #define _NETSURF_RISCOS_IMAGE_H_
 
 #include <stdbool.h>
+#include "css/css.h"
 #include "oslib/osspriteop.h"
 
 struct osspriteop_area;
@@ -32,7 +33,7 @@ typedef enum {
 
 bool image_redraw(osspriteop_area *area, int x, int y, int req_width,
 		int req_height, int width, int height,
-		unsigned long background_colour,
+		colour background_colour,
 		bool repeatx, bool repeaty, bool background, image_type type);
 
 #endif

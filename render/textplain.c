@@ -326,7 +326,7 @@ void textplain_destroy(struct content *c)
 bool textplain_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-		float scale, unsigned long background_colour)
+		float scale, colour background_colour)
 {
 	struct browser_window *bw = current_redraw_browser;
 	char *utf8_data = c->data.textplain.utf8_data;

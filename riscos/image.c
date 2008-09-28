@@ -30,7 +30,7 @@
 
 static bool image_redraw_tinct(osspriteop_id header, int x, int y,
 		int req_width, int req_height, int width, int height,
-		unsigned long background_colour, bool repeatx, bool repeaty,
+		colour background_colour, bool repeatx, bool repeaty,
 		bool alpha, unsigned int tinct_options);
 static bool image_redraw_os(osspriteop_id header, int x, int y,
 		int req_width, int req_height, int width, int height);
@@ -54,7 +54,7 @@ static bool image_redraw_os(osspriteop_id header, int x, int y,
  */
 bool image_redraw(osspriteop_area *area, int x, int y, int req_width,
 		int req_height, int width, int height,
-		unsigned long background_colour,
+		colour background_colour,
 		bool repeatx, bool repeaty, bool background, image_type type)
 {
 	unsigned int tinct_options;
@@ -115,7 +115,7 @@ bool image_redraw(osspriteop_area *area, int x, int y, int req_width,
  */
 bool image_redraw_tinct(osspriteop_id header, int x, int y,
 		int req_width, int req_height, int width, int height,
-		unsigned long background_colour, bool repeatx, bool repeaty,
+		colour background_colour, bool repeatx, bool repeaty,
 		bool alpha, unsigned int tinct_options)
 {
 	_kernel_oserror *error;

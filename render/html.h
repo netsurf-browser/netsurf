@@ -189,7 +189,7 @@ void html_close(struct content *c);
 bool html_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-		float scale, unsigned long background_colour);
+		float scale, colour background_colour);
 
 
 /* redraw a short text string, complete with highlighting

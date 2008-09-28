@@ -236,7 +236,7 @@ void nsjpeg_term_source(j_decompress_ptr cinfo)
 bool nsjpeg_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-		float scale, unsigned long background_colour)
+		float scale, colour background_colour)
 {
 	return plot.bitmap(x, y, width, height,
 			c->bitmap, background_colour, c);
@@ -250,7 +250,7 @@ bool nsjpeg_redraw(struct content *c, int x, int y,
 bool nsjpeg_redraw_tiled(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-		float scale, unsigned long background_colour,
+		float scale, colour background_colour,
 		bool repeat_x, bool repeat_y)
 {
 	return plot.bitmap_tile(x, y, width, height,

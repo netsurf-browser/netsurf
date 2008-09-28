@@ -1589,7 +1589,7 @@ void css_dump_style(FILE *stream, const struct css_style * const style)
 		else if (style->z == CSS_COLOR_NONE)			\
 			fprintf(stream, s ": none; ");			\
 		else							\
-			fprintf(stream, s ": #%.6lx; ", style->z);	\
+			fprintf(stream, s ": #%.6x; ", style->z);	\
 	}
 
 #define DUMP_KEYWORD(z, s, n) \
@@ -1748,7 +1748,7 @@ void css_dump_style(FILE *stream, const struct css_style * const style)
 			else if (style->border[i].color == CSS_COLOR_NOT_SET)
 				;
 			else
-				fprintf(stream, " #%.6lx",
+				fprintf(stream, " #%.6x",
 						style->border[i].color);
 			fprintf(stream, "; ");
 		}
@@ -2137,7 +2137,7 @@ void css_dump_style(FILE *stream, const struct css_style * const style)
 			else if (style->outline.color.value == CSS_COLOR_NOT_SET)
 				fprintf(stream, " .");
 			else
-				fprintf(stream, " #%.6lx", style->outline.color.value);
+				fprintf(stream, " #%.6x", style->outline.color.value);
 			break;
 		case CSS_OUTLINE_COLOR_NOT_SET:
 			break;

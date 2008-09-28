@@ -256,11 +256,11 @@ struct handler_entry {
 	bool (*redraw)(struct content *c, int x, int y,
 			int width, int height,
 			int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-			float scale, unsigned long background_colour);
+			float scale, colour background_colour);
 	bool (*redraw_tiled)(struct content *c, int x, int y,
 			int width, int height,
 			int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-			float scale, unsigned long background_colour,
+			float scale, colour background_colour,
 			bool repeat_x, bool repeat_y);
 	void (*open)(struct content *c, struct browser_window *bw,
 			struct content *page, unsigned int index,
@@ -1000,7 +1000,7 @@ void content_quit(void)
 bool content_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-		float scale, unsigned long background_colour)
+		float scale, colour background_colour)
 {
 	assert(c != 0);
 //	LOG(("%p %s", c, c->url));
@@ -1025,7 +1025,7 @@ bool content_redraw(struct content *c, int x, int y,
 bool content_redraw_tiled(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-		float scale, unsigned long background_colour,
+		float scale, colour background_colour,
 		bool repeat_x, bool repeat_y)
 {
 	int x0, y0, x1, y1;
