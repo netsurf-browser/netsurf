@@ -40,11 +40,6 @@
 bool nsico_create(struct content *c, const char *params[])
 {
 	union content_msg_data msg_data;
-	extern bmp_bitmap_callback_vt bmp_bitmap_callbacks; /**< external
-							     * structure
-							     * containing
-							     * bitmap callback
-							     * functions */
 	c->data.ico.ico = calloc(sizeof(ico_collection), 1);
 	if (!c->data.ico.ico) {
 		msg_data.error = messages_get("NoMemory");

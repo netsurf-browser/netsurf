@@ -38,6 +38,8 @@ struct content_bmp_data {
 	bmp_image *bmp;	/** BMP image data */
 };
 
+extern bmp_bitmap_callback_vt bmp_bitmap_callbacks; /** Only to be used by ICO code.  */
+
 bool nsbmp_create(struct content *c, const char *params[]);
 bool nsbmp_convert(struct content *c, int width, int height);
 void nsbmp_destroy(struct content *c);
