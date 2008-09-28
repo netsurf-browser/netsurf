@@ -29,6 +29,7 @@
 #include <stdbool.h>
 #include <librsvg/rsvg.h>
 #include <cairo.h>
+#include "css/css.h"
 #include "image/bitmap.h"
 
 struct content;
