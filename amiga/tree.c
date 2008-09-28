@@ -31,17 +31,9 @@
 #include <proto/intuition.h>
 #include "amiga/tree.h"
 
-struct treeview_window {
-	struct Window *win;
-	Object *objects[OID_LAST];
-	struct Gadget *gadgets[GID_LAST];
-	struct nsObject *node;
-	ULONG pad[5];
-	struct tree *tree;
-	struct List *listbrowser_list;
-};
-
 void ami_add_elements(struct treeview_window *twin,struct node *root,WORD *gen);
+bool ami_tree_launch_node(struct tree *tree, struct node *node);
+void free_browserlist(struct List *list);
 
 void tree_initialise_redraw(struct tree *tree)
 {
@@ -184,7 +176,14 @@ void ami_open_tree(struct tree *tree)
 	struct treeview_window *twin;
 	BOOL msel = TRUE;
 	static WORD gen=0;
-/* open window with listbrowser gadget added */
+
+	if(tree->handle)
+	{
+		twin = tree->handle;
+		WindowToFront(twin->win);
+		ActivateWindow(twin->win);
+		return;
+	}
 
 	twin = AllocVec(sizeof(struct treeview_window),MEMF_CLEAR);
 	twin->listbrowser_list = AllocVec(sizeof(struct List),MEMF_CLEAR);
@@ -214,7 +213,8 @@ void ami_open_tree(struct tree *tree)
            	WA_CloseGadget, TRUE,
            	WA_SizeGadget, TRUE,
 			WA_CustomScreen,scrn,
-		WINDOW_SharedPort,sport,
+			WINDOW_SharedPort,sport,
+			WINDOW_UserData,twin,
 			WINDOW_IconifyGadget, TRUE,
          	WINDOW_Position, WPOS_CENTERSCREEN,
            	WINDOW_ParentGroup, twin->gadgets[GID_MAIN] = VGroupObject,
@@ -225,11 +225,13 @@ void ami_open_tree(struct tree *tree)
 					LISTBROWSER_ColumnInfo, &columninfo,
 					LISTBROWSER_ColumnTitles, TRUE,
 					LISTBROWSER_Hierarchical,TRUE,
+					LISTBROWSER_Editable,TRUE,
 //	LISTBROWSER_TitleClickable,TRUE,
 					LISTBROWSER_AutoFit, TRUE,
 					LISTBROWSER_HorizontalProp, TRUE,
 					LISTBROWSER_Labels, twin->listbrowser_list,
 					LISTBROWSER_MultiSelect,msel,
+					LISTBROWSER_ShowSelected,TRUE,
         		ListBrowserEnd,
 				CHILD_NominalSize,TRUE,
 			EndGroup,
@@ -272,15 +274,14 @@ bool ami_tree_launch_node(struct tree *tree, struct node *node)
 	return false;
 }
 
-void ami_tree_close(struct tree *tree)
+void ami_tree_close(struct treeview_window *twin)
 {
-	struct treeview_window *twin = tree->handle;
-
+	twin->tree->handle = NULL;
 	DisposeObject(twin->objects[OID_MAIN]);
 	FreeListBrowserList(twin->listbrowser_list);
+	FreeVec(twin->listbrowser_list);
 	//free_browserlist(twin->listbrowser_list);
 	DelObject(twin->node);
-	win_destroyed = true;
 }
 
 void free_browserlist(struct List *list)
@@ -307,33 +308,55 @@ void ami_add_elements(struct treeview_window *twin,struct node *root,WORD *gen)
 	BOOL edit = FALSE;
 	struct node_element *element=NULL,*element2=NULL,*element3=NULL;
 	struct node *node;
+	ULONG flags = 0;
+	STRPTR text1 = "",text2 = "",text3 = "";
 
 	*gen = *gen + 1;
 	for (node = root; node; node = node->next)
 	{
 		element = tree_find_element(node, TREE_ELEMENT_NAME);
 		if(!element) element = tree_find_element(node, TREE_ELEMENT_TITLE);
+		if(element && element->text)
+		{
+			text1 = element->text;
+		}
+
 //		printf("node %lx url %s gen %ld\n",node,element->text,*gen);
 		element2 = tree_find_element(node, TREE_ELEMENT_URL);
-		element3 = tree_find_element(node, TREE_ELEMENT_VISITS);
+
+		if(element2 && element2->text)
+		{
+			text2 = element2->text;
+		}
+
+//		element = tree_find_element(node, TREE_ELEMENT_VISITS);
+
+		if(node->expanded) flags = LBFLG_SHOWCHILDREN;
 
 		switch (element->type) {
 			case NODE_ELEMENT_TEXT_PLUS_SPRITE:
 			case NODE_ELEMENT_TEXT:
     	    		if (lbnode = AllocListBrowserNode(3,
-//					LBNA_UserData,nodetime,
-				LBNA_Generation,*gen,
+					LBNA_UserData,node,
+					LBNA_Generation,*gen,
+					LBNA_Selected,node->selected,
+					LBNA_Flags,flags,
 	            	LBNA_Column, 0,
-					LBNCA_CopyText,TRUE,
-	 	               LBNCA_Text, element->text,
-					LBNCA_Editable,edit,
- 	    	       LBNA_Column, 1,
-					LBNCA_CopyText,TRUE,
- 	            	   LBNCA_Text, element2->text,
-	 	           LBNA_Column, 2,
-					LBNCA_CopyText,TRUE,
-	 	               LBNCA_Text, "",
- 		           TAG_DONE))
+						LBNCA_CopyText,TRUE,
+						LBNCA_MaxChars,256,
+	 	               	LBNCA_Text, text1,
+						LBNCA_Editable,node->editable,
+ 	    	       	LBNA_Column, 1,
+						LBNCA_CopyText,TRUE,
+						LBNCA_MaxChars,256,
+ 	            	   	LBNCA_Text, text2,
+						LBNCA_Editable,node->editable,
+	 	           	LBNA_Column, 2,
+						LBNCA_CopyText,TRUE,
+						LBNCA_MaxChars,256,
+	 	               	LBNCA_Text,"",
+						LBNCA_Editable,node->editable,
+ 		           	TAG_DONE))
 					{
 						AddTail(twin->listbrowser_list, lbnode);
  		       		}
@@ -346,4 +369,60 @@ void ami_add_elements(struct treeview_window *twin,struct node *root,WORD *gen)
 		}
 	}
 	*gen = *gen - 1;
+}
+
+BOOL ami_tree_event(struct treeview_window *twin)
+{
+	/* return TRUE if window destroyed */
+	ULONG class,result,relevent = 0;
+	uint16 code;
+	struct MenuItem *item;
+	struct node *treenode;
+	struct Node *lbnode;
+
+	while((result = RA_HandleInput(twin->objects[OID_MAIN],&code)) != WMHI_LASTMSG)
+	{
+       	switch(result & WMHI_CLASSMASK) // class
+   		{
+			case WMHI_GADGETUP:
+				switch(result & WMHI_GADGETMASK)
+				{
+					case GID_TREEBROWSER:
+						GetAttrs(twin->gadgets[GID_TREEBROWSER],
+							LISTBROWSER_RelEvent,&relevent,
+							TAG_DONE);
+
+							switch(relevent)
+						{
+							case LBRE_DOUBLECLICK:
+								GetAttr(LISTBROWSER_SelectedNode,twin->gadgets[GID_TREEBROWSER],(ULONG *)&lbnode);
+								GetListBrowserNodeAttrs(lbnode,
+									LBNA_UserData,(ULONG *)&treenode,
+									TAG_DONE);
+								ami_tree_launch_node(twin->tree,treenode);
+							break;
+						}
+					break;
+				}
+			break;
+
+/* no menus yet, copied in as will probably need it later
+			case WMHI_MENUPICK:
+				item = ItemAddress(gwin->win->MenuStrip,code);
+				while (code != MENUNULL)
+				{
+					ami_menupick(code,gwin);
+					if(win_destroyed) break;
+					code = item->NextSelect;
+				}
+			break;
+*/
+
+			case WMHI_CLOSEWINDOW:
+				ami_tree_close(twin);
+				return TRUE;
+			break;
+		}
+	}
+	return FALSE;
 }

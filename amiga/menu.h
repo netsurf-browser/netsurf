@@ -20,7 +20,7 @@
 #define AMIGA_MENU_H
 #include <exec/types.h>
 
-#define AMI_MENU_MAX 19
+#define AMI_MENU_MAX 20
 char *menulab[AMI_MENU_MAX+1];
 
 struct NewMenu *ami_create_menu(ULONG type);

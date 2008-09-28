@@ -404,12 +404,26 @@ void ami_handle_msg(void)
 	struct nsObject *nnode;
 	struct gui_window *gwin,*destroywin=NULL;
 	struct MenuItem *item;
+	struct InputEvent *ie;
 
 	node = (struct nsObject *)window_list->mlh_Head;
 
 	while(nnode=(struct nsObject *)(node->dtz_Node.mln_Succ))
 	{
 		gwin = node->objstruct;
+
+		if(node->Type == AMINS_TVWINDOW)
+		{
+			if(ami_tree_event((struct treeviw_window *)gwin))
+			{
+				break;
+			}
+			else
+			{
+				node = nnode;
+				continue;
+			}
+		}
 
 		while((result = RA_HandleInput(gwin->objects[OID_MAIN],&code)) != WMHI_LASTMSG)
 		{
@@ -588,6 +602,8 @@ void ami_handle_msg(void)
 
 				case WMHI_RAWKEY:
 					storage = result & WMHI_GADGETMASK;
+
+					GetAttr(WINDOW_InputEvent,gwin->objects[OID_MAIN],(ULONG *)&ie);
 					switch(storage)
 					{
 						case RAWKEY_CRSRUP:
@@ -633,17 +649,7 @@ void ami_handle_msg(void)
 				break;
 
 				case WMHI_CLOSEWINDOW:
-					switch(node->Type)
-					{
-						case AMINS_TVWINDOW:
-							ami_tree_close((struct treeview_window *)gwin);
-						break;
-
-						default:
-							browser_window_destroy(gwin->bw);
-						break;
-					}
-					//destroywin=gwin;
+					browser_window_destroy(gwin->bw);
 		        break;
 
 				case WMHI_INTUITICK:

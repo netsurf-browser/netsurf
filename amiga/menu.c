@@ -31,6 +31,7 @@
 #include "desktop/save_text.h"
 #include "desktop/save_pdf/pdf_plotters.h"
 #include <string.h>
+#include "amiga/tree.h"
 
 void ami_free_menulabs(void)
 {
@@ -61,9 +62,10 @@ void ami_init_menulabs(void)
 	menulab[14] = ami_utf8_easy((char *)messages_get("Hotlist"));
 	menulab[15] = ami_utf8_easy((char *)messages_get("HotlistAdd"));
 	menulab[16] = ami_utf8_easy((char *)messages_get("HotlistShowNS"));
-	menulab[17] = ami_utf8_easy((char *)messages_get("Settings"));
-	menulab[18] = ami_utf8_easy((char *)messages_get("SnapshotWindow"));
-	menulab[19] = ami_utf8_easy((char *)messages_get("SettingsSave"));
+	menulab[17] = ami_utf8_easy((char *)messages_get("Hotlist-browser"));
+	menulab[18] = ami_utf8_easy((char *)messages_get("Settings"));
+	menulab[19] = ami_utf8_easy((char *)messages_get("SnapshotWindow"));
+	menulab[20] = ami_utf8_easy((char *)messages_get("SettingsSave"));
 }
 
 struct NewMenu *ami_create_menu(ULONG type)
@@ -87,7 +89,8 @@ struct NewMenu *ami_create_menu(ULONG type)
 			  	{ NM_ITEM,0,"Z",0,0,0,}, // clear selection
 				{NM_TITLE,0,0,0,0,0,}, // hotlist
 				{ NM_ITEM,0,0,0,0,0,}, // add to hotlist
-			  	{ NM_ITEM,0,"H",0,0,0,}, // show hotlist
+			  	{ NM_ITEM,0,"H",0,0,0,}, // show hotlist (treeview)
+			  	{ NM_ITEM,0,0,0,0,0,}, // show hotlist (browser window)
 				{NM_TITLE,0,0,0,0,0,}, // settings
 				{ NM_ITEM,0,0,0,0,0,}, // snapshot window
 				{ NM_ITEM,0,0,0,0,0,}, // save settings
@@ -208,6 +211,7 @@ void ami_menupick(ULONG code,struct gui_window *gwin)
 			{
 				case 0: // copy
 					gui_copy_to_clipboard(gwin->bw->sel);
+					browser_window_key_press(gwin->bw, 26);
 				break;
 
 				case 1: // paste
@@ -232,9 +236,14 @@ void ami_menupick(ULONG code,struct gui_window *gwin)
 					options_save_tree(hotlist,"Resources/Hotlist","NetSurf hotlist");
 				break;
 
-				case 1: // show
-/* this along with save_tree above is very temporary! */
+				case 2: // show
+/* this along with save_tree above is very temporary!
+config option for this? */
 					browser_window_go(gwin->bw,"file:///netsurf/resources/hotlist",NULL,true);
+				break;
+
+				case 1: // show
+					ami_open_tree(hotlist);
 				break;
 			}
 		break;

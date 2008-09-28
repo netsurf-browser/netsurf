@@ -19,8 +19,17 @@
 #ifndef AMIGA_TREE_H
 #define AMIGA_TREE_H
 
+struct treeview_window {
+	struct Window *win;
+	Object *objects[OID_LAST];
+	struct Gadget *gadgets[GID_LAST];
+	struct nsObject *node;
+	ULONG pad[5];
+	struct tree *tree;
+	struct List *listbrowser_list;
+};
+
 void ami_open_tree(struct tree *tree);
-bool ami_tree_launch_node(struct tree *tree, struct node *node);
-void ami_tree_close(struct tree *tree);
-void free_browserlist(struct List *list);
+void ami_tree_close(struct treeview_window *twin);
+BOOL ami_tree_event(struct treeview_window *twin);
 #endif
