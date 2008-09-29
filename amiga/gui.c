@@ -65,6 +65,7 @@
 #include "amiga/login.h"
 #include "utils/url.h"
 #include <string.h>
+#include "amiga/arexx.h"
 
 #ifdef WITH_HUBBUB
 #include <hubbub/hubbub.h>
@@ -185,6 +186,8 @@ void gui_init(int argc, char** argv)
 	}
 
 	filereq = (struct FileRequester *)AllocAslRequest(ASL_FileRequest,NULL);
+
+	ami_arexx_init();
 
 	if(iffh = AllocIFF())
 	{
@@ -841,7 +844,7 @@ void ami_get_msg(void)
 	ULONG winsignal = 1L << sport->mp_SigBit;
 	ULONG appsig = 1L << appport->mp_SigBit;
 	ULONG schedulesig = 1L << msgport->mp_SigBit;
-    ULONG signalmask = winsignal | appsig | schedulesig;
+    ULONG signalmask = winsignal | appsig | schedulesig | rxsig;
 	ULONG signal;
 	struct Message *timermsg = NULL;
 
@@ -854,6 +857,10 @@ void ami_get_msg(void)
 	else if(signal & appsig)
 	{
 		ami_handle_appmsg();
+	}
+	else if(signal & rxsig)
+	{
+		ami_arexx_handle();
 	}
 	else if(signal & schedulesig)
 	{
@@ -928,6 +935,7 @@ void gui_quit(void)
 	if(iffh->iff_Stream) CloseClipboard((struct ClipboardHandle *)iffh->iff_Stream);
 	if(iffh) FreeIFF(iffh);
 
+	ami_arexx_cleanup();
 	FreeSysObject(ASOT_PORT,appport);
 	FreeSysObject(ASOT_PORT,sport);
 
