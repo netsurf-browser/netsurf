@@ -69,6 +69,9 @@ static const content_type image_types[] = {
 	CONTENT_JNG,
 	CONTENT_MNG,
 #endif
+#if defined(WITH_NS_SVG) || defined(WITH_RSVG)
+	CONTENT_SVG,
+#endif
 #if defined(WITH_SPRITE) || defined(WITH_NSSPRITE)
 	CONTENT_SPRITE,
 #endif
