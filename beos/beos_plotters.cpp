@@ -106,7 +106,8 @@ const struct plotter_table nsbeos_plotters = {
 	NULL,
 	NULL,
 	NULL,
-	nsbeos_plot_path
+	nsbeos_plot_path,
+	false // option_knockout
 };
 
 

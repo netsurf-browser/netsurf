@@ -133,6 +133,7 @@ void *bitmap_create(int width, int height, unsigned int state)
 	bmp->pretile_x = bmp->pretile_y = bmp->pretile_xy = NULL;
 
 	bmp->opaque = false;
+	bmp->opaque = (state & BITMAP_OPAQUE) != 0; // XXX store state instead
 
 #if 0 /* GTK */
 	bmp->primary = gdk_pixbuf_new(GDK_COLORSPACE_RGB, true, 8,
@@ -174,7 +175,8 @@ bool bitmap_test_opaque(void *vbitmap)
 	struct bitmap *bitmap = (struct bitmap *)vbitmap;
 	assert(bitmap);
 /* todo: test if bitmap as opaque */
-	return false;//bitmap->opaque;
+	//return bitmap->opaque;
+	return true;
 }
 
 
@@ -188,7 +190,7 @@ bool bitmap_get_opaque(void *vbitmap)
 	struct bitmap *bitmap = (struct bitmap *)vbitmap;
 	assert(bitmap);
 /* todo: get whether bitmap is opaque */
-	return false;//bitmap->opaque;
+	return bitmap->opaque;
 }
 
 

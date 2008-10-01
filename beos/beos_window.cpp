@@ -292,8 +292,20 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	BRect frame(0,0,-1,-1); // will be resized later
 	g->view = new NSBrowserFrameView(frame, g);
 	/* set the default background colour of the drawing area to white. */
+	//g->view->SetViewColor(B_TRANSPARENT_COLOR);
 	g->view->SetViewColor(kWhiteColor);
-	g->view->SetHighColor(kWhiteColor);
+	g->view->SetLowColor(kWhiteColor);
+
+#ifdef B_BEOS_VERSION_DANO
+	/* enable double-buffering on the content view */
+/*
+	XXX: doesn't really work
+	g->view->SetDoubleBuffering(B_UPDATE_INVALIDATED
+		| B_UPDATE_SCROLLED
+		//| B_UPDATE_RESIZED
+		| B_UPDATE_EXPOSED);
+*/
+#endif
 
 	if (bw->parent != NULL ) {
 		g->toplevel = false;
@@ -670,6 +682,9 @@ void nsbeos_window_expose_event(BView *view, gui_window *g, BMessage *message)
 		return;
 	nsbeos_current_gc_set(view);
 
+	if (view->Window())
+		view->Window()->BeginViewTransaction();
+
 	plot = nsbeos_plotters;
 	nsbeos_plot_set_scale(g->bw->scale);
 	content_redraw(c, 0, 0,
@@ -683,6 +698,9 @@ void nsbeos_window_expose_event(BView *view, gui_window *g, BMessage *message)
 
 	if (g->careth != 0)
 		nsbeos_plot_caret(g->caretx, g->carety, g->careth);
+
+	if (view->Window())
+		view->Window()->EndViewTransaction();
 
 	// reset clipping just in case
 	view->ConstrainClippingRegion(NULL);
