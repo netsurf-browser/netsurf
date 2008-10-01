@@ -23,6 +23,9 @@
 #include "utils/config.h"
 
 #ifdef WITH_PNG
+
+#include "css/css.h"
+
 #include <stdbool.h>
 #include <png.h>
 
