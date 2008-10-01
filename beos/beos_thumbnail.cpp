@@ -42,6 +42,10 @@ extern "C" {
 #include "beos/beos_plotters.h"
 #include "beos/beos_bitmap.h"
 
+// Zeta PRIVATE: in libzeta for now.
+extern status_t ScaleBitmap(const BBitmap& inBitmap, BBitmap& outBitmap);
+
+
 /**
  * Create a thumbnail of a page.
  *
@@ -52,69 +56,98 @@ extern "C" {
 bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 		const char *url)
 {
-#warning WRITEME
-#if 0 /* GTK */
-	GdkPixbuf *pixbuf;
-	gint width;
-	gint height;
-	gint depth;
-	GdkPixmap *pixmap;
-	GdkPixbuf *big;
+	BBitmap *thumbnail;
+	BBitmap *small;
+	BBitmap *big;
+	BView *oldView;
+	BView *view;
+	BView *thumbView;
+	float width;
+	float height;
+	int depth;
 
 	assert(content);
 	assert(bitmap);
 
-	pixbuf = beos_bitmap_get_primary(bitmap);
-	width = gdk_pixbuf_get_width(pixbuf);
-	height = gdk_pixbuf_get_height(pixbuf);
-	depth = (gdk_screen_get_system_visual(gdk_screen_get_default()))->depth;
+	thumbnail = nsbeos_bitmap_get_primary(bitmap);
+	width = thumbnail->Bounds().Width();
+	height = thumbnail->Bounds().Height();
+	depth = 32;
+	//depth = (gdk_screen_get_system_visual(gdk_screen_get_default()))->depth;
 
-	LOG(("Trying to create a thumbnail pixmap for a content of %dx%d@%d",
+	LOG(("Trying to create a thumbnail bitmap %dx%d for a content of %dx%d@%d",
+		width, height,
 		content->width, content->width, depth));
 
-	pixmap = gdk_pixmap_new(NULL, content->width, content->width, depth);
-	
-	if (pixmap == NULL) {
-		/* the creation failed for some reason: most likely because
-		 * we've been asked to create with with at least one dimention
-		 * as zero.  The RISC OS thumbnail generator returns false
-		 * from here when it can't create a bitmap, so we assume it's
-		 * safe to do so here too.
-		 */
+	BRect contentRect(0, 0, content->width - 1, content->width - 1);
+	big = new BBitmap(contentRect,
+		B_BITMAP_ACCEPTS_VIEWS, B_RGB32);
+
+	if (big->InitCheck() < B_OK) {
+		delete big;
 		return false;
 	}
 
-	gdk_drawable_set_colormap(pixmap, gdk_colormap_get_system());
+	small = new BBitmap(thumbnail->Bounds(), 
+		B_BITMAP_ACCEPTS_VIEWS, B_RGB32);
 
-	/* set the plotting functions up */
+	if (small->InitCheck() < B_OK) {
+		delete small;
+		delete big;
+		return false;
+	}
+
+	//XXX: _lock ?
+	// backup the current gc
+	oldView = nsbeos_current_gc();
+
+	view = new BView(contentRect, "thumbnailer", 
+		B_FOLLOW_NONE, B_WILL_DRAW);
+	big->AddChild(view);
+
+	thumbView = new BView(small->Bounds(), "thumbnail", 
+		B_FOLLOW_NONE, B_WILL_DRAW);
+	small->AddChild(thumbView);
+
+	view->LockLooper();
+
+	/* impose our view on the content... */
+	nsbeos_current_gc_set(view);
+
 	plot = nsbeos_plotters;
-
 	nsbeos_plot_set_scale(1.0);
 
-	/* set to plot to pixmap */
-	current_drawable = pixmap;
-	current_gc = gdk_gc_new(current_drawable);
-#ifdef CAIRO_VERSION
-	current_cr = gdk_cairo_create(current_drawable);
-#endif
 	plot.fill(0, 0, content->width, content->width, 0xffffffff);
 
 	/* render the content */
 	content_redraw(content, 0, 0, content->width, content->width,
 			0, 0, content->width, content->width, 1.0, 0xFFFFFF);
+	
+	view->Sync();
+	view->UnlockLooper();
 
-	/* resample the large plot down to the size of our thumbnail */
-	big = gdk_pixbuf_get_from_drawable(NULL, pixmap, NULL, 0, 0, 0, 0,
-			content->width, content->width);
+	// restore the current gc
+	nsbeos_current_gc_set(oldView);
 
-	gdk_pixbuf_scale(big, pixbuf, 0, 0, width, height, 0, 0,
-			(double)width / (double)content->width,
-			(double)height / (double)content->width,
-			GDK_INTERP_TILES);
 
-	/* As a debugging aid, try this to dump out a copy of the thumbnail as
-	 * a PNG: gdk_pixbuf_save(pixbuf, "thumbnail.png", "png", NULL, NULL);
-	 */
+	// now scale it down
+//XXX: use Zeta's bilinear scaler ?
+//#ifdef B_ZETA_VERSION
+//	err = ScaleBitmap(*shot, *scaledBmp);
+//#else
+	thumbView->LockLooper();
+	thumbView->DrawBitmap(big, big->Bounds(), small->Bounds());
+	thumbView->Sync();
+	thumbView->UnlockLooper();
+
+	small->LockBits();
+	thumbnail->LockBits();
+
+	// copy it to the bitmap
+	memcpy(thumbnail->Bits(), small->Bits(), thumbnail->BitsLength());
+
+	thumbnail->UnlockBits();
+	small->UnlockBits();
 
 	/* register the thumbnail with the URL */
 	if (url)
@@ -122,14 +155,13 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 
 	bitmap_modified(bitmap);
 
-	g_object_unref(current_gc);
-#ifdef CAIRO_VERSION
-	cairo_destroy(current_cr);
-#endif
-	g_object_unref(pixmap);
-	g_object_unref(big);
+	// cleanup
+	small->RemoveChild(thumbView);
+	delete thumbView;
+	delete small;
+	big->RemoveChild(view);
+	delete view;
+	delete big;
 
 	return true;
-#endif
-	return false;
 }
