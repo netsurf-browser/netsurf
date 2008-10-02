@@ -1,6 +1,5 @@
 /*
  * Copyright 2008 François Revol <mmu_man@users.sourceforge.net>
- * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -28,7 +27,11 @@
 #include <assert.h>
 #include <string.h>
 #include <Bitmap.h>
+#include <BitmapStream.h>
+#include <File.h>
 #include <GraphicsDefs.h>
+#include <TranslatorFormats.h>
+#include <TranslatorRoster.h>
 extern "C" {
 #include "content/content.h"
 #include "image/bitmap.h"
@@ -63,25 +66,6 @@ struct bitmap {
  * \param rowstride	Number of bytes to skip after each row (this
  *			implementation requires this to be a multiple of 4.)
  */
-#if 0
-static inline void nsbeos_abgr_to_bgra(void *src, void *dst, int width, int height,
-				size_t rowstride)
-{
-	u_int32_t *from = (u_int32_t *)src;
-	u_int32_t *to = (u_int32_t *)dst;
-
-	rowstride >>= 2;
-
-	for (int y = 0; y < height; y++) {
-		for (int x = 0; x < width; x++) {
-			u_int32_t e = from[x];
-			to[x] = (e >> 24) | (e << 8);
-		}
-		from += rowstride;
-		to += rowstride;
-	}
-}
-#endif
 static inline void nsbeos_rgba_to_bgra(void *src, void *dst, int width, int height,
 				size_t rowstride)
 {
@@ -135,16 +119,6 @@ void *bitmap_create(int width, int height, unsigned int state)
 	bmp->opaque = false;
 	bmp->opaque = (state & BITMAP_OPAQUE) != 0; // XXX store state instead
 
-#if 0 /* GTK */
-	bmp->primary = gdk_pixbuf_new(GDK_COLORSPACE_RGB, true, 8,
-				      width, height);
-
-	/* fill the pixbuf in with 100% transparent black, as the memory
-	 * won't have been cleared.
-	 */
-	gdk_pixbuf_fill(bmp->primary, 0);
-	bmp->pretile_x = bmp->pretile_y = bmp->pretile_xy = NULL;
-#endif
 	return bmp;
 }
 
@@ -281,7 +255,17 @@ void bitmap_destroy(void *vbitmap)
 bool bitmap_save(void *vbitmap, const char *path, unsigned flags)
 {
 	struct bitmap *bitmap = (struct bitmap *)vbitmap;
-#warning WRITEME
+	BTranslatorRoster *roster = BTranslatorRoster::Default();
+	BBitmapStream stream(bitmap->primary);
+	BFile file(path, B_WRITE_ONLY | B_CREATE_FILE);
+	uint32 type = B_PNG_FORMAT;
+
+	if (file.InitCheck() < B_OK)
+		return false;
+
+	if (roster->Translate(&stream, NULL, NULL, &file, type) < B_OK)
+		return false;
+
 #if 0 /* GTK */
 	GError *err = NULL;
 
@@ -359,34 +343,6 @@ nsbeos_bitmap_generate_pretile(BBitmap *primary, int repeat_x, int repeat_y)
 	}
 	return result;
 
-#if 0 /* GTK */
-	BBitmap *result = gdk_pixbuf_new(GDK_COLORSPACE_RGB, true, 8,
-					   width * repeat_x, height * repeat_y);
-	char *target_buffer = (char *)gdk_pixbuf_get_pixels(result);
-	int x,y,row;
-	/* This algorithm won't work if the strides are not multiples */
-	assert((size_t)gdk_pixbuf_get_rowstride(result) ==
-		(primary_stride * repeat_x));
-
-	if (repeat_x == 1 && repeat_y == 1) {
-		g_object_ref(primary);
-		g_object_unref(result);
-		return primary;
-	}
-
-	for (y = 0; y < repeat_y; ++y) {
-		char *primary_buffer = (char *)gdk_pixbuf_get_pixels(primary);
-		for (row = 0; row < height; ++row) {
-			for (x = 0; x < repeat_x; ++x) {
-				memcpy(target_buffer,
-				       primary_buffer, primary_stride);
-				target_buffer += primary_stride;
-			}
-			primary_buffer += primary_stride;
-		}
-	}
-	return result;
-#endif
 }
 
 /**

@@ -1,6 +1,5 @@
 /*
  * Copyright 2008 François Revol <mmu_man@users.sourceforge.net>
- * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -61,6 +60,7 @@ const struct font_functions nsfont = {
 	nsfont_split
 };
 
+
 /**
  * Measure the width of a string.
  *
@@ -78,10 +78,6 @@ bool nsfont_width(const struct css_style *style,
 {
 	//fprintf(stderr, "%s(, '%s', %d, )\n", __FUNCTION__, string, length);
 	BFont font;
-#if 0 /* GTK */
-	PangoContext *context;
-	PangoLayout *layout;
-#endif
 
 	if (length == 0) {
 		*width = 0;
@@ -90,19 +86,6 @@ bool nsfont_width(const struct css_style *style,
 
 	nsfont_style_to_font(font, style);
 	*width = (int)font.StringWidth(string, length);
-	return true;
-#if 0 /* GTK */
-	context = gdk_pango_context_get();
-	layout = pango_layout_new(context);
-	pango_layout_set_font_description(layout, desc);
-	pango_layout_set_text(layout, string, length);
-
-	pango_layout_get_pixel_size(layout, width, 0);
-
-	g_object_unref(layout);
-	g_object_unref(context);
-	pango_font_description_free(desc);
-#endif
 	return true;
 }
 
@@ -128,6 +111,7 @@ static int utf8_char_len(const char *c)
 	return i;
 }
 
+
 /**
  * Find the position in a string where an x coordinate falls.
  *
@@ -149,12 +133,6 @@ bool nsfont_position_in_string(const struct css_style *style,
 	//fprintf(stderr, "%s(, '%s', %d, %d, , )\n", __FUNCTION__, string, length, x);
 	int index;
 	BFont font;
-#if 0 /* GTK */
-	PangoFontDescription *desc;
-	PangoContext *context;
-	PangoLayout *layout;
-	PangoRectangle pos;
-#endif
 
 	nsfont_style_to_font(font, style);
 	BString str(string);
@@ -175,26 +153,6 @@ bool nsfont_position_in_string(const struct css_style *style,
 	}
 	*actual_x = (int)current;
 	*char_offset = i; //index;
-#if 0 /* GTK */
-	context = gdk_pango_context_get();
-	layout = pango_layout_new(context);
-	pango_layout_set_font_description(layout, desc);
-	pango_layout_set_text(layout, string, length);
-
-	pango_layout_xy_to_index(layout, x * PANGO_SCALE, 0, &index, 0);
-	if (pango_layout_xy_to_index(layout, x * PANGO_SCALE,
-		0, &index, 0) == 0)
-		index = length;
-
-	pango_layout_index_to_pos(layout, index, &pos);
-
-	g_object_unref(layout);
-	g_object_unref(context);
-	pango_font_description_free(desc);
-
-	*char_offset = index;
-	*actual_x = PANGO_PIXELS(pos.x);
-#endif
 
 	return true;
 }
@@ -225,14 +183,6 @@ bool nsfont_split(const struct css_style *style,
 	//LOG(("(, '%s', %d, %d, , )", string, length, x));
 	int index = 0;
 	BFont font;
-#if 0 /* GTK */
-	PangoFontDescription *desc;
-	PangoContext *context;
-	PangoLayout *layout;
-	PangoLayoutLine *line;
-	PangoLayoutIter *iter;
-	PangoRectangle rect;
-#endif
 
 	nsfont_style_to_font(font, style);
 	BString str(string);
@@ -261,31 +211,6 @@ bool nsfont_split(const struct css_style *style,
 	}
 	*actual_x = MIN(*actual_x, (int)current);
 	*char_offset = index;
-	return true;
-	
-#if 0 /* GTK */
-	context = gdk_pango_context_get();
-	layout = pango_layout_new(context);
-	pango_layout_set_font_description(layout, desc);
-	pango_layout_set_text(layout, string, length);
-
-	pango_layout_set_width(layout, x * PANGO_SCALE);
-	pango_layout_set_wrap(layout, PANGO_WRAP_WORD);
-	line = pango_layout_get_line(layout, 1);
-	if (line)
-		index = line->start_index - 1;
-
-	iter = pango_layout_get_iter(layout);
-	pango_layout_iter_get_line_extents(iter, NULL, &rect);
-	pango_layout_iter_free(iter);
-
-	g_object_unref(layout);
-	g_object_unref(context);
-	pango_font_description_free(desc);
-
-	*char_offset = index;
-	*actual_x = PANGO_PIXELS(rect.width);
-#endif
 
 	return true;
 }
@@ -359,63 +284,6 @@ bool nsfont_paint(const struct css_style *style,
 
 	//nsbeos_current_gc_unlock();
 
-#if 0 /* GTK */
-	size = (float)((double)pango_font_description_get_size(desc) * nsgtk_plot_get_scale());
-	if (pango_font_description_get_size_is_absolute(desc))
-		pango_font_description_set_absolute_size(desc, size);
-	else
-		pango_font_description_set_size(desc, size);
-
-	PangoFontDescription *desc;
-	PangoLayout *layout;
-	gint size;
-#ifdef CAIRO_VERSION
-	int width, height;
-#else
-	PangoLayoutLine *line;
-	PangoContext *context;
-	GdkColor colour = { 0,
-			((c & 0xff) << 8) | (c & 0xff),
-			(c & 0xff00) | (c & 0xff00 >> 8),
-			((c & 0xff0000) >> 8) | (c & 0xff0000 >> 16) };
-#endif
-
-	if (length == 0)
-		return true;
-
-	desc = nsfont_style_to_font(font, style);
-	size = (gint)((double)pango_font_description_get_size(desc) * nsgtk_plot_get_scale());
-	if (pango_font_description_get_size_is_absolute(desc))
-		pango_font_description_set_absolute_size(desc, size);
-	else
-		pango_font_description_set_size(desc, size);
-
-#ifdef CAIRO_VERSION
-	layout = pango_cairo_create_layout(current_cr);
-#else
-	context = gdk_pango_context_get();
-	layout = pango_layout_new(context);
-#endif
-
-	pango_layout_set_font_description(layout, desc);
-	pango_layout_set_text(layout, string, length);
-
-#ifdef CAIRO_VERSION
-	pango_layout_get_pixel_size(layout, &width, &height);
-	cairo_move_to(current_cr, x, y - height);
-	nsgtk_set_colour(c);
-	pango_cairo_show_layout(current_cr, layout);
-#else
-	line = pango_layout_get_line(layout, 0);
-	gdk_draw_layout_line_with_colors(current_drawable, current_gc,
-			x, y, line, &colour, 0);
-
-	g_object_unref(context);
-#endif
-	g_object_unref(layout);
-	pango_font_description_free(desc);
-#endif
-
 	return true;
 }
 
@@ -434,9 +302,6 @@ static void nsfont_style_to_font(BFont &font,
 	float size;
 	uint16 face = 0;
 	const char *family;
-//	PangoFontDescription *desc;
-//	PangoWeight weight = PANGO_WEIGHT_NORMAL;
-//	PangoStyle styl = PANGO_STYLE_NORMAL;
 
 	assert(style->font_size.size == CSS_FONT_SIZE_LENGTH);
 
@@ -523,27 +388,6 @@ static void nsfont_style_to_font(BFont &font,
 		font.SetFace(face);
 	}
 
-#if 0
-	*font_size = css_len2px(&style->font_size.value.length, style) *
-			72.0 / 90.0 * 16.;
-	if (*font_size < option_font_min_size * 1.6)
-		*font_size = option_font_min_size * 1.6;
-	if (1600 < *font_size)
-		*font_size = 1600;
-#endif
-
-#if 0 /* GTK */
-	if (style->font_size.value.length.unit == CSS_UNIT_PX)
-		size = style->font_size.value.length.value;
-	else
-		size = css_len2pt(&style->font_size.value.length, style);
-	//XXX ?
-	if (style->font_size.value.length.unit == CSS_UNIT_PX)
-		font.SetSize(size);
-	else
-		font.SetSize(font.Size() + size);
-#endif
-
 //fprintf(stderr, "nsfont_style_to_font: value %f unit %d\n", style->font_size.value.length.value, style->font_size.value.length.unit);
 	if (style->font_size.value.length.unit == CSS_UNIT_PT)
 		size = style->font_size.value.length.value;
@@ -558,16 +402,4 @@ static void nsfont_style_to_font(BFont &font,
 //fprintf(stderr, "nsfont_style_to_font: %f %d\n", size, style->font_size.value.length.unit);
 
 	font.SetSize(size);
-
-
-#if 0 /* GTK */
-	switch (style->font_variant) {
-	case CSS_FONT_VARIANT_SMALL_CAPS:
-		pango_font_description_set_variant(desc, PANGO_VARIANT_SMALL_CAPS);
-		break;
-	case CSS_FONT_VARIANT_NORMAL:
-	default:
-		pango_font_description_set_variant(desc, PANGO_VARIANT_NORMAL);
-	}
-#endif
 }

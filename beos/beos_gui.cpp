@@ -463,8 +463,8 @@ void gui_init(int argc, char** argv)
 	LOG(("Using '%s' as Messages file", buf));
 	messages_load(buf);
 
-	find_resource(buf, "mime.types", "/etc/mime.types");
-	beos_fetch_filetype_init(buf);
+	//find_resource(buf, "mime.types", "/etc/mime.types");
+	beos_fetch_filetype_init();
 
 	/* set up stylesheet urls */
 

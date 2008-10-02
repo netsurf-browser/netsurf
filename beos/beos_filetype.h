@@ -1,7 +1,5 @@
 /*
  * Copyright 2008 François Revol <mmu_man@users.sourceforge.net>
- * Copyright 2007 Rob Kendrick <rjek@netsurf-browser.org>
- * Copyright 2007 Vincent Sanders <vince@debian.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -18,5 +16,5 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-void beos_fetch_filetype_init(const char *mimefile);
+void beos_fetch_filetype_init(void);
 void beos_fetch_filetype_fin(void);

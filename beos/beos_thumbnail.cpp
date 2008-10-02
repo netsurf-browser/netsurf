@@ -45,6 +45,8 @@ extern "C" {
 // Zeta PRIVATE: in libzeta for now.
 extern status_t ScaleBitmap(const BBitmap& inBitmap, BBitmap& outBitmap);
 
+#warning XXX do we need to set bitmap:shadow ?
+
 
 /**
  * Create a thumbnail of a page.
