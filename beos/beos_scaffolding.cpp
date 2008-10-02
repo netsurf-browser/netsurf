@@ -1155,6 +1155,28 @@ void nsbeos_attach_toplevel_view(nsbeos_scaffolding *g, BView *view)
 		}
 	}
 
+	// add toolbar shortcuts
+	BMessage *msg;
+
+	msg = new BMessage('back');
+	msg->AddPointer("scaffolding", g);
+	g->window->AddShortcut(B_LEFT_ARROW, 0, msg, view);
+
+	msg = new BMessage('forw');
+	msg->AddPointer("scaffolding", g);
+	g->window->AddShortcut(B_RIGHT_ARROW, 0, msg, view);
+
+	msg = new BMessage('stop');
+	msg->AddPointer("scaffolding", g);
+	g->window->AddShortcut('S', 0, msg, view);
+
+	msg = new BMessage('relo');
+	msg->AddPointer("scaffolding", g);
+	g->window->AddShortcut('R', 0, msg, view);
+
+	msg = new BMessage('home');
+	msg->AddPointer("scaffolding", g);
+	g->window->AddShortcut('H', 0, msg, view);
 
 	if (g->window)
 		g->window->Show();
