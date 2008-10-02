@@ -106,6 +106,8 @@ static struct form_control *select_menu_control;
 
 static thread_id sBAppThreadID;
 
+static BMessage *gFirstRefsReceived = NULL;
+
 static int sEventPipe[2];
 
 #if 0 /* GTK */
@@ -157,12 +159,22 @@ NSBrowserApplication::MessageReceived(BMessage *message)
 
 
 void
+NSBrowserApplication::ArgvReceived(int32 argc, char **argv)
+{
+	CALLED();
+}
+
+
+void
 NSBrowserApplication::RefsReceived(BMessage *message)
 {
+	CALLED();
 	DetachCurrentMessage();
 	NSBrowserWindow *win = nsbeos_find_last_window();
-	if (!win)
+	if (!win) {
+		gFirstRefsReceived = message;
 		return;
+	}
 	win->Unlock();
 	nsbeos_pipe_message_top(message, win, win->Scaffolding());
 }
@@ -507,102 +519,12 @@ void gui_init(int argc, char** argv)
 	urldb_load(option_url_file);
 	urldb_load_cookies(option_cookie_file);
 
-	//nsbeos_history_init();
+	nsbeos_history_init();
 	//nsbeos_download_initialise();
 
 	be_app->Unlock();
 
 #if 0 /* GTK */
-	PangoFontDescription *fontdesc;
-
-	gtk_init(&argc, &argv);
-
-	check_homedir();
-
-	find_resource(buf, "netsurf.glade", "./beos/res/netsurf.glade");
-	LOG(("Using '%s' as Glade template file", buf));
-	glade_file_location = strdup(buf);
-
-	glade_init();
-	gladeWindows = glade_xml_new(glade_file_location, NULL, NULL);
-	if (gladeWindows == NULL)
-		die("Unable to load Glade window definitions.\n");
-	glade_xml_signal_autoconnect(gladeWindows);
-
-	find_resource(buf, "netsurf.xpm", "./beos/res/netsurf.xpm");
-	beos_window_set_default_icon_from_file(buf, NULL);
-
-	wndTooltip = beos_WINDOW(glade_xml_get_widget(gladeWindows, "wndTooltip"));
-	labelTooltip = beos_LABEL(glade_xml_get_widget(gladeWindows, "tooltip"));
-
-	nsbeos_completion_init();
-
-	find_resource(buf, "throbber.gif", "./beos/res/throbber.gif");
-	nsbeos_throbber_initialise(buf);
-	if (nsbeos_throbber == NULL)
-		die("Unable to load throbber image.\n");
-
-	find_resource(buf, "Choices", "~/.netsurf/Choices");
-	LOG(("Using '%s' as Preferences file", buf));
-	options_file_location = strdup(buf);
-	options_read(buf);
-
-	/* check what the font settings are, setting them to a default font
-	 * if they're not set - stops Pango whinging
-	 */
-#define SETFONTDEFAULT(x,y) (x) = ((x) != NULL) ? (x) : strdup((y))
-	SETFONTDEFAULT(option_font_sans, "Sans");
-	SETFONTDEFAULT(option_font_serif, "Serif");
-	SETFONTDEFAULT(option_font_mono, "Monospace");
-	SETFONTDEFAULT(option_font_cursive, "Serif");
-	SETFONTDEFAULT(option_font_fantasy, "Serif");
-
-	nsbeos_options_init();
-
-	if (!option_cookie_file) {
-		find_resource(buf, "Cookies", "~/.netsurf/Cookies");
-		LOG(("Using '%s' as Cookies file", buf));
-		option_cookie_file = strdup(buf);
-	}
-	if (!option_cookie_jar) {
-		find_resource(buf, "Cookies", "~/.netsurf/Cookies");
-		LOG(("Using '%s' as Cookie Jar file", buf));
-		option_cookie_jar = strdup(buf);
-	}
-	if (!option_cookie_file || !option_cookie_jar)
-		die("Failed initialising cookie options");
-
-	if (!option_url_file) {
-		find_resource(buf, "URLs", "~/.netsurf/URLs");
-		LOG(("Using '%s' as URL file", buf));
-		option_url_file = strdup(buf);
-	}
-
-        if (!option_ca_path) {
-                find_resource(buf, "certs", "/etc/ssl/certs");
-                LOG(("Using '%s' as certificate path", buf));
-                option_ca_path = strdup(buf);
-        }
-
-	find_resource(buf, "messages", "./beos/res/messages");
-	LOG(("Using '%s' as Messages file", buf));
-	messages_load(buf);
-
-	find_resource(buf, "mime.types", "/etc/mime.types");
-	beos_fetch_filetype_init(buf);
-
-	/* set up stylesheet urls */
-	find_resource(buf, "beosdefault.css", "./beos/res/beosdefault.css");
-	default_stylesheet_url = path_to_url(buf);
-	LOG(("Using '%s' as Default CSS URL", default_stylesheet_url));
-
-	find_resource(buf, "adblock.css", "./beos/res/adblock.css");
-	adblock_stylesheet_url = path_to_url(buf);
-	LOG(("Using '%s' as AdBlock CSS URL", adblock_stylesheet_url));
-
-	urldb_load(option_url_file);
-	urldb_load_cookies(option_cookie_file);
-
 	wndAbout = beos_WINDOW(glade_xml_get_widget(gladeWindows, "wndAbout"));
 	beos_label_set_text(beos_LABEL(
 		glade_xml_get_widget(gladeWindows, "labelVersion")),
@@ -616,9 +538,6 @@ void gui_init(int argc, char** argv)
 
 	wndWarning = beos_WINDOW(glade_xml_get_widget(gladeWindows, "wndWarning"));
 	wndOpenFile = beos_DIALOG(glade_xml_get_widget(gladeWindows, "wndOpenFile"));
-
-	nsbeos_history_init();
-	nsbeos_download_initialise();
 #endif
 }
 
@@ -628,11 +547,18 @@ void gui_init2(int argc, char** argv)
 	CALLED();
 	const char *addr = NETSURF_HOMEPAGE;
 
-        if (option_homepage_url != NULL && option_homepage_url[0] != '\0')
-                addr = option_homepage_url;
+	if (option_homepage_url != NULL && option_homepage_url[0] != '\0')
+		addr = option_homepage_url;
 
 	if (argc > 1) addr = argv[1];
+	if (gFirstRefsReceived) addr = NULL;
 	browser_window_create(addr, 0, 0, true, false);
+	if (gFirstRefsReceived) {
+		// resend the refs we got before having a window to send them to
+		be_app_messenger.SendMessage(gFirstRefsReceived);
+		delete gFirstRefsReceived;
+		gFirstRefsReceived = NULL;
+	}
 }
 
 

@@ -52,7 +52,7 @@ static bool nsgtk_history_add_internal(const char *, const struct url_data *);
 static void nsgtk_history_selection_changed(GtkTreeSelection *, gpointer);
 #endif
 
-void nsgtk_history_init(void)
+void nsbeos_history_init(void)
 {
 #warning XXX
 #if 0 /* GTK */

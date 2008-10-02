@@ -1,6 +1,5 @@
 /*
  * Copyright 2008 François Revol <mmu_man@users.sourceforge.net>
- * Copyright 2006 Rob Kendrick <rjek@rjek.com>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *

@@ -38,6 +38,7 @@ virtual	~NSBrowserApplication();
 
 virtual void	MessageReceived(BMessage *message);
 virtual void	RefsReceived(BMessage *message);
+virtual void	ArgvReceived(int32 argc, char **argv);
 
 virtual bool	QuitRequested();
 };

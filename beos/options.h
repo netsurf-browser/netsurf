@@ -22,17 +22,14 @@
 
 #include "desktop/options.h"
 
-extern bool option_render_cairo;
 extern bool option_render_resample;
 extern char *option_url_file;
 
 #define EXTRA_OPTION_DEFINE \
-bool option_render_cairo = true; \
 bool option_render_resample = false; \
 char *option_url_file = 0;
 
 #define EXTRA_OPTION_TABLE \
-{ "render_cairo",	OPTION_BOOL,	&option_render_cairo }, \
 { "render_resample",	OPTION_BOOL,	&option_render_resample }, \
 { "url_file",		OPTION_STRING,	&option_url_file },
 #endif

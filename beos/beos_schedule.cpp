@@ -1,6 +1,5 @@
 /*
  * Copyright 2008 François Revol <mmu_man@users.sourceforge.net>
- * Copyright 2006-2007 Daniel Silverstone <dsilvers@digital-scurf.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -48,33 +47,6 @@ static BList *callbacks = NULL;
 /** earliest deadline. It's used for select() in gui_poll() */
 bigtime_t earliest_callback_timeout = B_INFINITE_TIMEOUT;
 
-#warning XXX
-#if 0 /* GTK */
-/** List of callbacks which have occurred and are pending running. */
-static GList *pending_callbacks = NULL;
-/** List of callbacks which are queued to occur in the future. */
-static GList *queued_callbacks = NULL;
-/** List of callbacks which are about to be run in this ::schedule_run. */
-static GList *this_run = NULL;
-
-static gboolean
-nsbeos_schedule_generic_callback(gpointer data)
-{
-	_nsbeos_callback_t *cb = (_nsbeos_callback_t *)(data);
-	if (cb->callback_killed) {
-		/* This callback instance has been killed. */
-		LOG(("CB at %p already dead.", cb));
-		free(cb);
-		return FALSE;
-	}
-	LOG(("CB for %p(%p) set pending.", cb->callback, cb->context));
-	/* The callback is alive, so move it to pending. */
-	cb->callback_fired = true;
-	queued_callbacks = g_list_remove(queued_callbacks, cb);
-	pending_callbacks = g_list_append(pending_callbacks, cb);
-	return FALSE;
-}
-#endif
 
 static bool
 nsbeos_schedule_kill_callback(void *_target, void *_match)
@@ -104,21 +76,6 @@ schedule_remove(void (*callback)(void *p), void *p)
 
 
 	callbacks->DoForEach(nsbeos_schedule_kill_callback, &cb_match);
-
-#warning XXX
-#if 0 /* GTK */
-	_nsbeos_callback_t cb_match = {
-		.callback = callback,
-		.context = p,
-	};
-
-	g_list_foreach(queued_callbacks,
-		       nsbeos_schedule_kill_callback, &cb_match);
-	g_list_foreach(pending_callbacks,
-		       nsbeos_schedule_kill_callback, &cb_match);
-	g_list_foreach(this_run,
-		       nsbeos_schedule_kill_callback, &cb_match);
-#endif
 }
 
 void
@@ -140,20 +97,6 @@ schedule(int t, void (*callback)(void *p), void *p)
 	if (earliest_callback_timeout > timeout)
 		earliest_callback_timeout = timeout;
 	callbacks->AddItem(cb);
-
-#warning XXX
-#if 0 /* GTK */
-	const int msec_timeout = t * 10;
-	_nsbeos_callback_t *cb = malloc(sizeof(_nsbeos_callback_t));
-	/* Kill any pending schedule of this kind. */
-	schedule_remove(callback, p);
-	cb->callback = callback;
-	cb->context = p;
-	cb->callback_killed = cb->callback_fired = false;
-	/* Prepend is faster right now. */
-	queued_callbacks = g_list_prepend(queued_callbacks, cb);
-	g_timeout_add(msec_timeout, nsbeos_schedule_generic_callback, cb);
-#endif
 }
 
 void
@@ -185,27 +128,4 @@ schedule_run(void)
 		callbacks->RemoveItem(cb);
 		free(cb);
 	}
-
-#warning XXX
-#if 0 /* GTK */
-	/* Capture this run of pending callbacks into the list. */
-	this_run = pending_callbacks;
-
-	if (this_run == NULL)
-		return; /* Nothing to do */
-
-	/* Clear the pending list. */
-	pending_callbacks = NULL;
-
-	LOG(("Captured a run of %d callbacks to fire.", g_list_length(this_run)));
-
-	/* Run all the callbacks which made it this far. */
-	while (this_run != NULL) {
-		_nsbeos_callback_t *cb = (_nsbeos_callback_t *)(this_run->data);
-		this_run = g_list_remove(this_run, this_run->data);
-		if (!cb->callback_killed)
-			cb->callback(cb->context);
-		free(cb);
-	}
-#endif
 }
