@@ -1081,6 +1081,16 @@ NSBrowserWindow *nsbeos_get_bwindow_for_scaffolding(nsbeos_scaffolding *scaffold
 	 return scaffold->window;
 }
 
+static void recursively_set_menu_items_target(BMenu *menu, BHandler *handler)
+{
+	menu->SetTargetForItems(handler);
+	for (int i = 0; menu->ItemAt(i); i++) {
+		if (!menu->SubmenuAt(i))
+			continue;
+		recursively_set_menu_items_target(menu->SubmenuAt(i), handler);
+	}
+}
+
 void nsbeos_attach_toplevel_view(nsbeos_scaffolding *g, BView *view)
 {
 	LOG(("Attaching view to scaffolding %p", g));
@@ -1144,16 +1154,7 @@ void nsbeos_attach_toplevel_view(nsbeos_scaffolding *g, BView *view)
 
 	g->url_bar->SetTarget(view);
 
-	for (int i = 0; g->menu_bar->ItemAt(i); i++) {
-		if (!g->menu_bar->SubmenuAt(i))
-			continue;
-		g->menu_bar->SubmenuAt(i)->SetTargetForItems(view);
-		for (int j = 0; g->menu_bar->SubmenuAt(i)->ItemAt(j); j++) {
-			if (!g->menu_bar->SubmenuAt(i)->SubmenuAt(j))
-				continue;
-				g->menu_bar->SubmenuAt(i)->SubmenuAt(j)->SetTargetForItems(view);
-		}
-	}
+	recursively_set_menu_items_target(g->menu_bar, view);
 
 	// add toolbar shortcuts
 	BMessage *msg;
