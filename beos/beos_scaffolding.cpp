@@ -24,7 +24,9 @@
 #include <string.h>
 #include <BeBuild.h>
 #include <Button.h>
+#include <Menu.h>
 #include <MenuBar.h>
+#include <MenuItem.h>
 #include <Node.h>
 #include <Path.h>
 #include <PopUpMenu.h>
@@ -98,30 +100,18 @@ struct beos_scaffolding {
 	BScrollView		*scroll_view;
 #warning XXX
 #if 0 /* GTK */
-	GtkWindow		*window;
-	GtkEntry		*url_bar;
 	GtkEntryCompletion	*url_bar_completion;
-	GtkLabel		*status_bar;
-	GtkToolbar		*tool_bar;
-	GtkToolButton		*back_button;
-	GtkToolButton		*forward_button;
-	GtkToolButton		*stop_button;
-	GtkToolButton		*reload_button;
 	GtkMenuBar		*menu_bar;
 	GtkMenuItem		*back_menu;
 	GtkMenuItem		*forward_menu;
 	GtkMenuItem		*stop_menu;
 	GtkMenuItem		*reload_menu;
-	GtkImage		*throbber;
-	GtkPaned		*status_pane;
-
-	GladeXML		*xml;
 
 	GladeXML		*popup_xml;
 	GtkMenu			*popup_menu;
 
-	struct gtk_history_window *history_window;
 #endif
+	struct beos_history_window *history_window;
 
 	int			throb_frame;
 	struct gui_window	*top_level;
@@ -132,6 +122,8 @@ struct beos_scaffolding {
 
 struct beos_history_window {
 	struct beos_scaffolding 	*g;
+	BWindow		*window;
+
 #warning XXX
 #if 0 /* GTK */
 	GtkWindow		*window;
@@ -149,116 +141,10 @@ struct menu_events {
 };
 
 
-#warning XXX: UPDATE
-typedef enum {
-
-	/* no/unknown actions */
-	NO_ACTION,
-
-	/* help actions */
-	HELP_OPEN_CONTENTS,
-	HELP_OPEN_GUIDE,
-	HELP_OPEN_INFORMATION,
-	HELP_OPEN_ABOUT,
-	HELP_LAUNCH_INTERACTIVE,
-
-	/* history actions */
-	HISTORY_SHOW_LOCAL,
-	HISTORY_SHOW_GLOBAL,
-
-	/* hotlist actions */
-	HOTLIST_ADD_URL,
-	HOTLIST_SHOW,
-
-	/* cookie actions */
-	COOKIES_SHOW,
-	COOKIES_DELETE,
-
-	/* page actions */
-	BROWSER_PAGE,
-	BROWSER_PAGE_INFO,
-	BROWSER_PRINT,
-	BROWSER_NEW_WINDOW,
-	BROWSER_VIEW_SOURCE,
-
-	/* object actions */
-	BROWSER_OBJECT,
-	BROWSER_OBJECT_INFO,
-	BROWSER_OBJECT_RELOAD,
-
-	/* save actions */
-	BROWSER_OBJECT_SAVE,
-	BROWSER_OBJECT_EXPORT_SPRITE,
-	BROWSER_OBJECT_SAVE_URL_URI,
-	BROWSER_OBJECT_SAVE_URL_URL,
-	BROWSER_OBJECT_SAVE_URL_TEXT,
-	BROWSER_SAVE,
-	BROWSER_SAVE_COMPLETE,
-	BROWSER_EXPORT_DRAW,
-	BROWSER_EXPORT_TEXT,
-	BROWSER_SAVE_URL_URI,
-	BROWSER_SAVE_URL_URL,
-	BROWSER_SAVE_URL_TEXT,
-	HOTLIST_EXPORT,
-	HISTORY_EXPORT,
-
-	/* navigation actions */
-	BROWSER_NAVIGATE_HOME,
-	BROWSER_NAVIGATE_BACK,
-	BROWSER_NAVIGATE_FORWARD,
-	BROWSER_NAVIGATE_UP,
-	BROWSER_NAVIGATE_RELOAD,
-	BROWSER_NAVIGATE_RELOAD_ALL,
-	BROWSER_NAVIGATE_STOP,
-	BROWSER_NAVIGATE_URL,
-
-	/* browser window/display actions */
-	BROWSER_SCALE_VIEW,
-	BROWSER_FIND_TEXT,
-	BROWSER_IMAGES_FOREGROUND,
-	BROWSER_IMAGES_BACKGROUND,
-	BROWSER_BUFFER_ANIMS,
-	BROWSER_BUFFER_ALL,
-	BROWSER_SAVE_VIEW,
-	BROWSER_WINDOW_DEFAULT,
-	BROWSER_WINDOW_STAGGER,
-	BROWSER_WINDOW_COPY,
-	BROWSER_WINDOW_RESET,
-
-	/* tree actions */
-	TREE_NEW_FOLDER,
-	TREE_NEW_LINK,
-	TREE_EXPAND_ALL,
-	TREE_EXPAND_FOLDERS,
-	TREE_EXPAND_LINKS,
-	TREE_COLLAPSE_ALL,
-	TREE_COLLAPSE_FOLDERS,
-	TREE_COLLAPSE_LINKS,
-	TREE_SELECTION,
-	TREE_SELECTION_EDIT,
-	TREE_SELECTION_LAUNCH,
-	TREE_SELECTION_DELETE,
-	TREE_SELECT_ALL,
-	TREE_CLEAR_SELECTION,
-
-	/* toolbar actions */
-	TOOLBAR_BUTTONS,
-	TOOLBAR_ADDRESS_BAR,
-	TOOLBAR_THROBBER,
-	TOOLBAR_EDIT,
-
-	/* misc actions */
-	CHOICES_SHOW,
-	APPLICATION_QUIT,
-} menu_action;
 
 
 static int open_windows = 0;		/**< current number of open browsers */
 static struct beos_scaffolding *current_model; /**< current window for model dialogue use */
-#warning XXX
-#if 0 /* GTK */
-static void nsbeos_window_destroy_event(GtkWidget *, gpointer);
-#endif
 
 static void nsbeos_window_update_back_forward(struct beos_scaffolding *);
 static void nsbeos_throb(void *);
@@ -489,6 +375,8 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 	int width, height;
 	struct browser_window *bw;
 	bw = nsbeos_get_browser_for_gui(scaffold->top_level);
+	bool reloadAll = false;
+
 	LOG(("nsbeos_scaffolding_dispatch_event() what = 0x%08lx", message->what));
 	switch (message->what) {
 		case B_QUIT_REQUESTED:
@@ -532,24 +420,32 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 			browser_window_go(bw, url.String(), 0, true);
 			break;
 		}
+		case BROWSER_NAVIGATE_BACK:
 		case 'back':
 			if (!history_back_available(bw->history))
 				break;
 			history_back(bw, bw->history);
 			nsbeos_window_update_back_forward(scaffold);
 			break;
+		case BROWSER_NAVIGATE_FORWARD:
 		case 'forw':
 			if (!history_forward_available(bw->history))
 				break;
 			history_forward(bw, bw->history);
 			nsbeos_window_update_back_forward(scaffold);
 			break;
+		case BROWSER_NAVIGATE_STOP:
 		case 'stop':
 			browser_window_stop(bw);
 			break;
+		case BROWSER_NAVIGATE_RELOAD_ALL:
 		case 'relo':
-			browser_window_reload(bw, true);
+			reloadAll = true;
+			// FALLTHRU
+		case BROWSER_NAVIGATE_RELOAD:
+			browser_window_reload(bw, reloadAll);
 			break;
+		case BROWSER_NAVIGATE_HOME:
 		case 'home':
 		{
 			static const char *addr = NETSURF_HOMEPAGE;
@@ -581,6 +477,7 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 			//nsbeos_completion_update(text.String());
 			break;
 		}
+/*
 		case 'menu':
 		{
 			menu_action action;
@@ -599,6 +496,142 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 #warning XXX
 			break;
 		}
+*/
+		case NO_ACTION:
+			break;
+		case HELP_OPEN_CONTENTS:
+			break;
+		case HELP_OPEN_GUIDE:
+			break;
+		case HELP_OPEN_INFORMATION:
+			break;
+		case HELP_OPEN_ABOUT:
+			break;
+		case HELP_LAUNCH_INTERACTIVE:
+			break;
+		case HISTORY_SHOW_LOCAL:
+			break;
+		case HISTORY_SHOW_GLOBAL:
+			break;
+		case HOTLIST_ADD_URL:
+			break;
+		case HOTLIST_SHOW:
+			break;
+		case COOKIES_SHOW:
+			break;
+		case COOKIES_DELETE:
+			break;
+		case BROWSER_PAGE:
+			break;
+		case BROWSER_PAGE_INFO:
+			break;
+		case BROWSER_PRINT:
+			break;
+		case BROWSER_NEW_WINDOW:
+		{
+			BString text;
+			if (!scaffold->url_bar->LockLooper())
+				break;
+			text = scaffold->url_bar->Text();
+			scaffold->url_bar->UnlockLooper();
+
+			browser_window_create(text.String(), bw, NULL, false, false);
+			break;
+		}
+		case BROWSER_VIEW_SOURCE:
+			break;
+		case BROWSER_OBJECT:
+			break;
+		case BROWSER_OBJECT_INFO:
+			break;
+		case BROWSER_OBJECT_RELOAD:
+			break;
+		case BROWSER_OBJECT_SAVE:
+			break;
+		case BROWSER_OBJECT_EXPORT_SPRITE:
+			break;
+		case BROWSER_OBJECT_SAVE_URL_URI:
+			break;
+		case BROWSER_OBJECT_SAVE_URL_URL:
+			break;
+		case BROWSER_OBJECT_SAVE_URL_TEXT:
+			break;
+		case BROWSER_SAVE:
+			break;
+		case BROWSER_SAVE_COMPLETE:
+			break;
+		case BROWSER_EXPORT_DRAW:
+			break;
+		case BROWSER_EXPORT_TEXT:
+			break;
+		case BROWSER_SAVE_URL_URI:
+			break;
+		case BROWSER_SAVE_URL_URL:
+			break;
+		case BROWSER_SAVE_URL_TEXT:
+			break;
+		case HOTLIST_EXPORT:
+			break;
+		case HISTORY_EXPORT:
+			break;
+		case BROWSER_NAVIGATE_UP:
+			break;
+		case BROWSER_NAVIGATE_URL:
+			if (!scaffold->url_bar->LockLooper())
+				break;
+			scaffold->url_bar->MakeFocus();
+			scaffold->url_bar->UnlockLooper();
+			break;
+		case BROWSER_SCALE_VIEW:
+			break;
+		case BROWSER_FIND_TEXT:
+			break;
+		case BROWSER_IMAGES_FOREGROUND:
+			break;
+		case BROWSER_IMAGES_BACKGROUND:
+			break;
+		case BROWSER_BUFFER_ANIMS:
+			break;
+		case BROWSER_BUFFER_ALL:
+			break;
+		case BROWSER_SAVE_VIEW:
+			break;
+		case BROWSER_WINDOW_DEFAULT:
+			break;
+		case BROWSER_WINDOW_STAGGER:
+			break;
+		case BROWSER_WINDOW_COPY:
+			break;
+		case BROWSER_WINDOW_RESET:
+			break;
+		case TREE_NEW_FOLDER:
+		case TREE_NEW_LINK:
+		case TREE_EXPAND_ALL:
+		case TREE_EXPAND_FOLDERS:
+		case TREE_EXPAND_LINKS:
+		case TREE_COLLAPSE_ALL:
+		case TREE_COLLAPSE_FOLDERS:
+		case TREE_COLLAPSE_LINKS:
+		case TREE_SELECTION:
+		case TREE_SELECTION_EDIT:
+		case TREE_SELECTION_LAUNCH:
+		case TREE_SELECTION_DELETE:
+		case TREE_SELECT_ALL:
+		case TREE_CLEAR_SELECTION:
+			break;
+		case TOOLBAR_BUTTONS:
+			break;
+		case TOOLBAR_ADDRESS_BAR:
+			break;
+		case TOOLBAR_THROBBER:
+			break;
+		case TOOLBAR_EDIT:
+			break;
+		case CHOICES_SHOW:
+			break;
+		case APPLICATION_QUIT:
+			netsurf_quit = true;
+			break;
 		default:
 			break;
 	}
@@ -610,14 +643,6 @@ void nsbeos_scaffolding_destroy(nsbeos_scaffolding *scaffold)
 	if (scaffold->being_destroyed) return;
 	scaffold->being_destroyed = 1;
 	nsbeos_window_destroy_event(scaffold->window, scaffold, NULL);
-#warning XXX
-#if 0 /* GTK */
-	/* Our top_level has asked us to die */
-	LOG(("Being Destroyed = %d", scaffold->being_destroyed));
-	if (scaffold->being_destroyed) return;
-	scaffold->being_destroyed = 1;
-	nsbeos_window_destroy_event(0, scaffold);
-#endif
 }
 
 
@@ -1115,6 +1140,17 @@ void nsbeos_attach_toplevel_view(nsbeos_scaffolding *g, BView *view)
 
 	g->url_bar->SetTarget(view);
 
+	for (int i = 0; g->menu_bar->ItemAt(i); i++) {
+		if (!g->menu_bar->SubmenuAt(i))
+			continue;
+		g->menu_bar->SubmenuAt(i)->SetTargetForItems(view);
+		for (int j = 0; g->menu_bar->SubmenuAt(i)->ItemAt(j); j++) {
+			if (!g->menu_bar->SubmenuAt(i)->SubmenuAt(j))
+				continue;
+				g->menu_bar->SubmenuAt(i)->SubmenuAt(j)->SetTargetForItems(view);
+		}
+	}
+
 
 	if (g->window)
 		g->window->Show();
@@ -1146,6 +1182,53 @@ void nsbeos_attach_toplevel_view(nsbeos_scaffolding *g, BView *view)
 	beos_widget_set_size_request(beos_WIDGET(vp), 0, 0);
 
 #endif
+}
+
+static BMenuItem *make_menu_item(const char *name, BMessage *msg)
+{
+	BMenuItem *item;
+	BString label(messages_get(name));
+	BString accel;
+	uint32 mods = 0;
+	char key = 0;
+	// try to understand accelerators
+	int32 start = label.IFindLast(" ");
+	if (start > 0 && (label.Length() - start > 1)
+		&& (label.Length() - start < 7) 
+		&& (label[start + 1] == 'F' 
+		|| label[start + 1] == '\xe2'
+		|| label[start + 1] == '^')) {
+
+		label.MoveInto(accel, start, label.Length());
+		// strip the trailing spaces
+		while (label[label.Length() - 1] == ' ')
+			label.Truncate(label.Length() - 1);
+
+		if (accel.FindFirst("\xe2\x87\x91") > -1) {
+			accel.RemoveFirst("\xe2\x87\x91");
+			mods |= B_SHIFT_KEY;
+		}
+		if (accel.FindFirst("^") > -1) {
+			accel.RemoveFirst("^");
+			mods |= B_CONTROL_KEY; // ALT!!!
+		}
+		if (accel.Length() > 1 && accel[0] == 'F') { // Function key
+			int num;
+			if (sscanf(accel.String(), "F%d", &num) > 0) {
+				//
+			}
+		} else if (accel.Length() > 0) {
+			key = accel[0];
+		}
+		printf("MENU: detected 	accel '%s' mods 0x%08lx, key %d\n", accel.String(), mods, key);
+	}
+
+	// turn ... into ellipsis
+	label.ReplaceAll("...", B_UTF8_ELLIPSIS);
+
+	item = new BMenuItem(label.String(), msg, key, mods);
+
+	return item;
 }
 
 nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
@@ -1208,21 +1291,286 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 	g->window->AddChild(g->menu_bar);
 
 	BMenu *menu;
+	BMenu *submenu;
+	BMenuItem *item;
+	BMessage *msg;
 
-	menu = new BMenu("File");
+	// App menu
+	//XXX: use icon item ?
+
+	menu = new BMenu(messages_get("NetSurf"));
 	g->menu_bar->AddItem(menu);
 
-	menu = new BMenu("Edit");
+	msg = new BMessage(NO_ACTION);
+	item = make_menu_item("Info", msg);
+	menu->AddItem(item);
+
+	msg = new BMessage(NO_ACTION);
+	item = make_menu_item("AppHelp", msg);
+	menu->AddItem(item);
+
+	submenu = new BMenu(messages_get("Open"));
+	menu->AddItem(submenu);
+
+	msg = new BMessage(NO_ACTION);
+	item = make_menu_item("OpenURL", msg);
+	submenu->AddItem(item);
+
+	msg = new BMessage(CHOICES_SHOW);
+	item = make_menu_item("Choices", msg);
+	menu->AddItem(item);
+
+	msg = new BMessage(APPLICATION_QUIT);
+	item = make_menu_item("Quit", msg);
+	menu->AddItem(item);
+
+	// Page menu
+
+	menu = new BMenu(messages_get("Page"));
 	g->menu_bar->AddItem(menu);
 
-	menu = new BMenu("View");
+	msg = new BMessage(BROWSER_PAGE_INFO);
+	item = make_menu_item("PageInfo", msg);
+	menu->AddItem(item);
+
+	msg = new BMessage(BROWSER_SAVE);
+	item = make_menu_item("Save", msg);
+	menu->AddItem(item);
+
+	msg = new BMessage(BROWSER_SAVE_COMPLETE);
+	item = make_menu_item("SaveComp", msg);
+	menu->AddItem(item);
+
+	submenu = new BMenu(messages_get("Export"));
+	menu->AddItem(submenu);
+
+	/*
+	msg = new BMessage(BROWSER_EXPORT_DRAW);
+	item = make_menu_item("Draw", msg);
+	submenu->AddItem(item);
+	*/
+
+	msg = new BMessage(BROWSER_EXPORT_TEXT);
+	item = make_menu_item("Text", msg);
+	submenu->AddItem(item);
+
+
+	submenu = new BMenu(messages_get("SaveURL"));
+	menu->AddItem(submenu);
+
+	//XXX
+	msg = new BMessage(BROWSER_OBJECT_SAVE_URL_URL);
+	item = make_menu_item("URL", msg);
+	submenu->AddItem(item);
+
+
+	msg = new BMessage(BROWSER_PRINT);
+	item = make_menu_item("Print", msg);
+	menu->AddItem(item);
+
+	msg = new BMessage(BROWSER_NEW_WINDOW);
+	item = make_menu_item("NewWindow", msg);
+	menu->AddItem(item);
+
+	msg = new BMessage(BROWSER_VIEW_SOURCE);
+	item = make_menu_item("ViewSrc", msg);
+	menu->AddItem(item);
+
+	// Object menu
+
+	menu = new BMenu(messages_get("Object"));
 	g->menu_bar->AddItem(menu);
 
-	menu = new BMenu("Navigate");
+	msg = new BMessage(BROWSER_OBJECT_INFO);
+	item = make_menu_item("ObjInfo", msg);
+	menu->AddItem(item);
+
+	msg = new BMessage(BROWSER_OBJECT_SAVE);
+	item = make_menu_item("ObjSave", msg);
+	menu->AddItem(item);
+	// XXX: submenu: Sprite ?
+
+	msg = new BMessage(BROWSER_OBJECT_RELOAD);
+	item = make_menu_item("ObjReload", msg);
+	menu->AddItem(item);
+
+	// Navigate menu
+
+	menu = new BMenu(messages_get("Navigate"));
 	g->menu_bar->AddItem(menu);
 
-	menu = new BMenu("Help");
+	msg = new BMessage(BROWSER_NAVIGATE_HOME);
+	item = make_menu_item("Home", msg);
+	menu->AddItem(item);
+
+	msg = new BMessage(BROWSER_NAVIGATE_BACK);
+	item = make_menu_item("Back", msg);
+	menu->AddItem(item);
+
+	msg = new BMessage(BROWSER_NAVIGATE_FORWARD);
+	item = make_menu_item("Forward", msg);
+	menu->AddItem(item);
+
+	msg = new BMessage(BROWSER_NAVIGATE_UP);
+	item = make_menu_item("UpLevel", msg);
+	menu->AddItem(item);
+
+	msg = new BMessage(BROWSER_NAVIGATE_RELOAD);
+	item = make_menu_item("Reload", msg);
+	menu->AddItem(item);
+
+	msg = new BMessage(BROWSER_NAVIGATE_STOP);
+	item = make_menu_item("Stop", msg);
+	menu->AddItem(item);
+
+	// View menu
+
+	menu = new BMenu(messages_get("View"));
 	g->menu_bar->AddItem(menu);
+
+	msg = new BMessage(BROWSER_SCALE_VIEW);
+	item = make_menu_item("ScaleView", msg);
+	menu->AddItem(item);
+
+	submenu = new BMenu(messages_get("Images"));
+	menu->AddItem(submenu);
+
+	msg = new BMessage(BROWSER_IMAGES_FOREGROUND);
+	item = make_menu_item("ForeImg", msg);
+	submenu->AddItem(item);
+
+	msg = new BMessage(BROWSER_IMAGES_BACKGROUND);
+	item = make_menu_item("BackImg", msg);
+	submenu->AddItem(item);
+
+
+	submenu = new BMenu(messages_get("Toolbars"));
+	menu->AddItem(submenu);
+	submenu->SetEnabled(false);
+
+	msg = new BMessage(NO_ACTION);
+	item = make_menu_item("ToolButtons", msg);
+	submenu->AddItem(item);
+
+	msg = new BMessage(NO_ACTION);
+	item = make_menu_item("ToolAddress", msg);
+	submenu->AddItem(item);
+
+	msg = new BMessage(NO_ACTION);
+	item = make_menu_item("ToolThrob", msg);
+	submenu->AddItem(item);
+
+	msg = new BMessage(NO_ACTION);
+	item = make_menu_item("ToolStatus", msg);
+	submenu->AddItem(item);
+
+
+	submenu = new BMenu(messages_get("Render"));
+	menu->AddItem(submenu);
+
+	msg = new BMessage(BROWSER_BUFFER_ANIMS);
+	item = make_menu_item("RenderAnims", msg);
+	submenu->AddItem(item);
+
+	msg = new BMessage(BROWSER_BUFFER_ALL);
+	item = make_menu_item("RenderAll", msg);
+	submenu->AddItem(item);
+
+
+	msg = new BMessage(NO_ACTION);
+	item = make_menu_item("OptDefault", msg);
+	menu->AddItem(item);
+
+	// Utilities menu
+
+	menu = new BMenu(messages_get("Utilities"));
+	g->menu_bar->AddItem(menu);
+
+	submenu = new BMenu(messages_get("Hotlist"));
+	menu->AddItem(submenu);
+
+	msg = new BMessage(HOTLIST_ADD_URL);
+	item = make_menu_item("HotlistAdd", msg);
+	submenu->AddItem(item);
+
+	msg = new BMessage(HOTLIST_SHOW);
+	item = make_menu_item("HotlistShow", msg);
+	submenu->AddItem(item);
+
+
+	submenu = new BMenu(messages_get("History"));
+	menu->AddItem(submenu);
+
+	msg = new BMessage(HISTORY_SHOW_LOCAL);
+	item = make_menu_item("HistLocal", msg);
+	submenu->AddItem(item);
+
+	msg = new BMessage(HISTORY_SHOW_GLOBAL);
+	item = make_menu_item("HistGlobal", msg);
+	submenu->AddItem(item);
+
+
+	submenu = new BMenu(messages_get("Cookies"));
+	menu->AddItem(submenu);
+
+	msg = new BMessage(COOKIES_SHOW);
+	item = make_menu_item("ShowCookies", msg);
+	submenu->AddItem(item);
+
+	msg = new BMessage(COOKIES_DELETE);
+	item = make_menu_item("DeleteCookies", msg);
+	submenu->AddItem(item);
+
+
+	msg = new BMessage(BROWSER_FIND_TEXT);
+	item = make_menu_item("FindText", msg);
+	menu->AddItem(item);
+
+	submenu = new BMenu(messages_get("Window"));
+	menu->AddItem(submenu);
+
+	msg = new BMessage(BROWSER_WINDOW_DEFAULT);
+	item = make_menu_item("WindowSave", msg);
+	submenu->AddItem(item);
+
+	msg = new BMessage(BROWSER_WINDOW_STAGGER);
+	item = make_menu_item("WindowStagr", msg);
+	submenu->AddItem(item);
+
+	msg = new BMessage(BROWSER_WINDOW_COPY);
+	item = make_menu_item("WindowSize", msg);
+	submenu->AddItem(item);
+
+	msg = new BMessage(BROWSER_WINDOW_RESET);
+	item = make_menu_item("WindowReset", msg);
+	submenu->AddItem(item);
+
+
+	// Help menu
+
+	menu = new BMenu(messages_get("Help"));
+	g->menu_bar->AddItem(menu);
+
+	msg = new BMessage(HELP_OPEN_CONTENTS);
+	item = make_menu_item("HelpContent", msg);
+	menu->AddItem(item);
+
+	msg = new BMessage(HELP_OPEN_GUIDE);
+	item = make_menu_item("HelpGuide", msg);
+	menu->AddItem(item);
+
+	msg = new BMessage(HELP_OPEN_INFORMATION);
+	item = make_menu_item("HelpInfo", msg);
+	menu->AddItem(item);
+
+	msg = new BMessage(HELP_OPEN_ABOUT);
+	item = make_menu_item("HelpAbout", msg);
+	menu->AddItem(item);
+
+	msg = new BMessage(HELP_LAUNCH_INTERACTIVE);
+	item = make_menu_item("HelpInter", msg);
+	menu->AddItem(item);
+
 
 	// the base view that receives the toolbar, statusbar and top-level view.
 	rect = frame.OffsetToCopy(0,0);
