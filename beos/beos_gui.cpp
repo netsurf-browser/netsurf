@@ -35,6 +35,7 @@
 #include <Alert.h>
 #include <Application.h>
 #include <BeBuild.h>
+#include <FindDirectory.h>
 #include <Mime.h>
 #include <Path.h>
 #include <Roster.h>
@@ -241,6 +242,7 @@ char *realpath(const char *f, char *buf)
 		strncpy(buf, f, MAXPATHLEN);
 		return NULL;
 	}
+	printf("RP: '%s'\n", path.Path());
 	strncpy(buf, path.Path(), MAXPATHLEN);
 	return buf;
 }
@@ -254,17 +256,33 @@ char *realpath(const char *f, char *buf)
  * \param  def      default to return if file not found
  * \return buf
  *
- * Search order is: ~/.netsurf/, $NETSURFRES/ (where NETSURFRES is an
- * environment variable), and finally the path specified by the #define
- * at the top of this file.
+ * Search order is: ~/config/settings/NetSurf/, ~/.netsurf/, $NETSURFRES/
+ * (where NETSURFRES is an environment variable), and finally the path
+ * specified by the #define at the top of this file.
  */
 
 static char *find_resource(char *buf, const char *filename, const char *def)
 {
 	CALLED();
-	char *cdir = getenv("HOME");
+	const char *cdir = NULL;
+	status_t err;
+	BPath path;
 	char t[PATH_MAX];
 
+	err = find_directory(B_USER_SETTINGS_DIRECTORY, &path);
+	path.Append("NetSurf");
+	if (err >= B_OK)
+		cdir = path.Path();
+	if (cdir != NULL) {
+		strcpy(t, cdir);
+		strcat(t, "/");
+		strcat(t, filename);
+		realpath(t, buf);
+		if (access(buf, R_OK) == 0)
+			return buf;
+	}
+
+	cdir = getenv("HOME");
 	if (cdir != NULL) {
 		strcpy(t, cdir);
 		strcat(t, "/.netsurf/");
@@ -290,7 +308,10 @@ static char *find_resource(char *buf, const char *filename, const char *def)
 	if (access(buf, R_OK) == 0)
 		return buf;
 
-	if (def[0] == '~') {
+	if (def[0] == '%') {
+		snprintf(t, PATH_MAX, "%s%s", path.Path(), def + 1);
+		realpath(t, buf);
+	} else if (def[0] == '~') {
 		snprintf(t, PATH_MAX, "%s%s", getenv("HOME"), def + 1);
 		realpath(t, buf);
 	} else {
@@ -306,24 +327,22 @@ static char *find_resource(char *buf, const char *filename, const char *def)
 static void check_homedir(void)
 {
 	CALLED();
-//TODO: use find_directory();
-	char *hdir = getenv("HOME");
-	char buf[BUFSIZ];
+	status_t err;
 
-	if (hdir == NULL) {
+	BPath path;
+	err = find_directory(B_USER_SETTINGS_DIRECTORY, &path, true);
+
+	if (err < B_OK) {
 		/* we really can't continue without a home directory. */
-		LOG(("HOME is not set - nowhere to store state!"));
-		die("NetSurf requires HOME to be set in order to run.\n");
-
+		LOG(("Can't find user settings directory - nowhere to store state!"));
+		die("NetSurf needs to find the user settings directory in order to run.\n");
 	}
 
-	snprintf(buf, BUFSIZ, "%s/.netsurf", hdir);
-	if (access(buf, F_OK) != 0) {
-		LOG(("You don't have a ~/.netsurf - creating one for you."));
-		if (mkdir(buf, 0777) == -1) {
-			LOG(("Unable to create %s", buf));
-			die("NetSurf requires ~/.netsurf to exist, but it cannot be created.\n");
-		}
+	path.Append("NetSurf");
+	err = create_directory(path.Path(), 0644); 
+	if (err < B_OK) {
+		LOG(("Unable to create %s", path.Path()));
+		die("NetSurf could not create its settings directory.\n");
 	}
 }
 
@@ -389,7 +408,7 @@ void gui_init(int argc, char** argv)
 	if (nsbeos_throbber == NULL)
 		die("Unable to load throbber image.\n");
 
-	find_resource(buf, "Choices", "~/.netsurf/Choices");
+	find_resource(buf, "Choices", "%/Choices");
 	LOG(("Using '%s' as Preferences file", buf));
 	options_file_location = strdup(buf);
 	options_read(buf);
@@ -435,12 +454,12 @@ void gui_init(int argc, char** argv)
 	nsbeos_options_init();
 
 	if (!option_cookie_file) {
-		find_resource(buf, "Cookies", "~/.netsurf/Cookies");
+		find_resource(buf, "Cookies", "%/Cookies");
 		LOG(("Using '%s' as Cookies file", buf));
 		option_cookie_file = strdup(buf);
 	}
 	if (!option_cookie_jar) {
-		find_resource(buf, "Cookies", "~/.netsurf/Cookies");
+		find_resource(buf, "Cookies", "%/Cookies");
 		LOG(("Using '%s' as Cookie Jar file", buf));
 		option_cookie_jar = strdup(buf);
 	}
@@ -448,7 +467,7 @@ void gui_init(int argc, char** argv)
 		die("Failed initialising cookie options");
 
 	if (!option_url_file) {
-		find_resource(buf, "URLs", "~/.netsurf/URLs");
+		find_resource(buf, "URLs", "%/URLs");
 		LOG(("Using '%s' as URL file", buf));
 		option_url_file = strdup(buf);
 	}
