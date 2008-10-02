@@ -1200,10 +1200,11 @@ static BMenuItem *make_menu_item(const char *name, BMessage *msg)
 	if (start > 0 && (label.Length() - start > 1)
 		&& (label.Length() - start < 7) 
 		&& (label[start + 1] == 'F' 
+		|| !strcmp(label.String() + start + 1, "PRINT")
 		|| label[start + 1] == '\xe2'
 		|| label[start + 1] == '^')) {
 
-		label.MoveInto(accel, start, label.Length());
+		label.MoveInto(accel, start + 1, label.Length());
 		// strip the trailing spaces
 		while (label[label.Length() - 1] == ' ')
 			label.Truncate(label.Length() - 1);
@@ -1215,6 +1216,11 @@ static BMenuItem *make_menu_item(const char *name, BMessage *msg)
 		if (accel.FindFirst("^") > -1) {
 			accel.RemoveFirst("^");
 			mods |= B_CONTROL_KEY; // ALT!!!
+		}
+		if (accel.FindFirst("PRINT") > -1) {
+			accel.RemoveFirst("PRINT");
+			//mods |= ; // ALT!!!
+			key = B_PRINT_KEY;
 		}
 		if (accel.Length() > 1 && accel[0] == 'F') { // Function key
 			int num;
