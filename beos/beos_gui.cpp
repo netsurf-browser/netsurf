@@ -78,7 +78,10 @@ extern "C" {
 
 /* Where to search for shared resources.  Must have trailing / */
 #define RESPATH "/boot/apps/netsurf/res/"
+
 //TODO: use resources
+// enable using resources instead of files
+#define USE_RESOURCES 1
 
 bool gui_in_multitask = false;
 
@@ -464,15 +467,22 @@ void gui_init(int argc, char** argv)
 	beos_fetch_filetype_init(buf);
 
 	/* set up stylesheet urls */
+
+#ifdef USE_RESOURCES
+	default_stylesheet_url = strdup("rsrc:/beosdefault.css,text/css");
+#else
 	find_resource(buf, "beosdefault.css", "./beos/res/beosdefault.css");
 	default_stylesheet_url = path_to_url(buf);
-	//default_stylesheet_url = strdup("rsrc:/beosdefault.css,text/css");
+#endif
 	//default_stylesheet_url = generate_default_css();
 	LOG(("Using '%s' as Default CSS URL", default_stylesheet_url));
 
+#ifdef USE_RESOURCES
+	adblock_stylesheet_url = strdup("rsrc:/adblock.css,text/css");
+#else
 	find_resource(buf, "adblock.css", "./beos/res/adblock.css");
 	adblock_stylesheet_url = path_to_url(buf);
-	//adblock_stylesheet_url = strdup("rsrc:/adblock.css,text/css");
+#endif
 	LOG(("Using '%s' as AdBlock CSS URL", adblock_stylesheet_url));
 
 	urldb_load(option_url_file);

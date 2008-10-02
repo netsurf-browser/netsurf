@@ -4,7 +4,8 @@
 
 /* Load base stylesheet. */
 
-@import "default.css";
+/*@import "default.css";*/
+@import "rsrc:/default.css,text/css";
 
 /* Apply GTK specific rules. */
 

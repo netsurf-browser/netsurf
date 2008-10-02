@@ -627,7 +627,6 @@ void nsbeos_dispatch_event(BMessage *message)
 		LOG(("discarding event for destroyed scaffolding"));
 		return;
 	}
-	//#warning XXX VALIDATE gui_window!!!
 
 	// messages for top-level
 	if (scaffold) {
@@ -637,6 +636,7 @@ void nsbeos_dispatch_event(BMessage *message)
 		return;
 	}
 
+	LOG(("processing message"));
 	switch (message->what) {
 		case B_QUIT_REQUESTED:
 			// from the BApplication
@@ -814,6 +814,7 @@ void nsbeos_window_keypress_event(BView *view, gui_window *g, BMessage *event)
 	if (!numbytes)
 		numbytes = strlen(bytes);
 
+	LOG(("mods 0x%08lx key %ld raw %ld byte[0] %d", mods, key, raw_char, buff[0]));
 
 	char byte;
 	if (numbytes == 1) {
@@ -877,7 +878,9 @@ void nsbeos_window_keypress_event(BView *view, gui_window *g, BMessage *event)
 		// else use convert_from_utf8()
 	}
 
-	if (browser_window_key_press(g->bw, nskey))
+	bool done = browser_window_key_press(g->bw, nskey);
+	LOG(("nskey %d %d", nskey, done));
+	//if (browser_window_key_press(g->bw, nskey))
 		return;
 	
 }
