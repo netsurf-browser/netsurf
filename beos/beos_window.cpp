@@ -41,6 +41,7 @@ extern "C" {
 #include <InterfaceDefs.h>
 #include <Message.h>
 #include <ScrollBar.h>
+#include <String.h>
 #include <View.h>
 #include <Window.h>
 

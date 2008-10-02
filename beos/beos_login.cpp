@@ -23,6 +23,7 @@
 #include <string.h>
 #include <assert.h>
 #include <Alert.h>
+#include <String.h>
 #include <TextControl.h>
 #include <View.h>
 #include <Window.h>
