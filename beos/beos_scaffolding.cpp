@@ -307,7 +307,6 @@ NSThrobber::SetBitmap(const BBitmap *bitmap)
 }
 
 
-
 // #pragma mark - class NSBrowserWindow
 
 
@@ -1075,6 +1074,11 @@ NSBrowserWindow *nsbeos_find_last_window(void)
 	}
 	be_app->Unlock();
 	return NULL;
+}
+
+NSBrowserWindow *nsbeos_get_bwindow_for_scaffolding(nsbeos_scaffolding *scaffold)
+{
+	 return scaffold->window;
 }
 
 void nsbeos_attach_toplevel_view(nsbeos_scaffolding *g, BView *view)

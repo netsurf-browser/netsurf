@@ -149,6 +149,8 @@ typedef enum {
 
 NSBrowserWindow *nsbeos_find_last_window(void);
 
+NSBrowserWindow *nsbeos_get_bwindow_for_scaffolding(nsbeos_scaffolding *scaffold);
+
 nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel);
 
 bool nsbeos_scaffolding_is_busy(nsbeos_scaffolding *scaffold);

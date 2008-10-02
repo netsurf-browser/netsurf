@@ -21,6 +21,7 @@
 #define __STDBOOL_H__	1
 #include <assert.h>
 extern "C" {
+#include "content/urldb.h"
 #include "desktop/browser.h"
 #include "desktop/options.h"
 #include "desktop/textinput.h"
@@ -636,7 +637,7 @@ void nsbeos_dispatch_event(BMessage *message)
 		return;
 	}
 
-	LOG(("processing message"));
+	//LOG(("processing message"));
 	switch (message->what) {
 		case B_QUIT_REQUESTED:
 			// from the BApplication
@@ -674,6 +675,7 @@ void nsbeos_dispatch_event(BMessage *message)
 
 			BPoint where;
 			int32 buttons;
+			int32 mods;
 			BPoint screenWhere;
 			if (message->FindPoint("be:view_where", &where) < B_OK) {
 				if (message->FindPoint("where", &where) < B_OK)
@@ -683,6 +685,8 @@ void nsbeos_dispatch_event(BMessage *message)
 				break;
 			if (message->FindPoint("screen_where", &screenWhere) < B_OK)
 				break;
+			if (message->FindInt32("modifiers", &mods) < B_OK)
+				mods = 0;
 
 			browser_mouse_state button = BROWSER_MOUSE_CLICK_1;
 
@@ -695,6 +699,11 @@ void nsbeos_dispatch_event(BMessage *message)
 				nsbeos_scaffolding_popup_menu(gui->scaffold, screenWhere);
 				break;
 			}
+
+			if (mods & B_SHIFT_KEY)
+				buttons |= BROWSER_MOUSE_MOD_1;
+			if (mods & B_CONTROL_KEY)
+				buttons |= BROWSER_MOUSE_MOD_2;
 
 			browser_window_mouse_click(gui->bw, button,
 				   (int)(where.x / gui->bw->scale),
@@ -719,6 +728,23 @@ void nsbeos_dispatch_event(BMessage *message)
 				nsbeos_window_moved_event(view, gui, message);
 			break;
 		case B_MOUSE_WHEEL_CHANGED:
+			break;
+		case 'nsLO': // login
+		{
+			BString url;
+			BString realm;
+			BString auth;
+			if (message->FindString("URL", &url) < B_OK)
+				break;
+			if (message->FindString("Realm", &realm) < B_OK)
+				break;
+			if (message->FindString("Auth", &auth) < B_OK)
+				break;
+			//printf("login to '%s' with '%s'\n", url.String(), auth.String());
+			urldb_set_auth_details(url.String(), realm.String(), auth.String());
+			browser_window_go(gui->bw, url.String(), 0, true);
+			break;
+		}
 		default:
 			break;
 	}

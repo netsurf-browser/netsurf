@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <Alert.h>
 #include <TextControl.h>
 #include <View.h>
 #include <Window.h>
@@ -37,30 +38,124 @@ extern "C" {
 #include "utils/utils.h"
 }
 #include "beos/beos_gui.h"
+#include "beos/beos_scaffolding.h"
+#include "beos/beos_window.h"
 
-struct session_401 {
-	char *url;				/**< URL being fetched */
-	char *host;				/**< Host for user display */
-	char *realm;				/**< Authentication realm */
-	struct browser_window *bw;		/**< Browser window handle */
-#warning WRITEME
-#if 0 /* GTK */
-	GladeXML *x;				/**< Our glade windows */
-	GtkWindow *wnd;				/**< The login window itself */
-	GtkEntry *user;				/**< Widget with username */
-	GtkEntry *pass;				/**< Widget with password */
-#endif
+class LoginAlert : public BAlert {
+public:
+			LoginAlert(struct browser_window *bw,
+				const char *url, 
+				const char *host, 
+				const char *realm, 
+				const char *text);
+	virtual	~LoginAlert();
+	void	MessageReceived(BMessage *message);
+
+private:
+	BString 	fUrl;				/**< URL being fetched */
+	BString		fHost;				/**< Host for user display */
+	BString		fRealm;				/**< Authentication realm */
+	struct gui_window *fW;			/**< GUI window handle */
+
+	BTextControl	*fUserControl;
+	BTextControl	*fPassControl;
 };
 
 static void create_login_window(struct browser_window *bw, const char *host,
                 const char *realm, const char *fetchurl);
-static void destroy_login_window(struct session_401 *session);
-#warning WRITEME
-#if 0 /* GTK */
-static void nsgtk_login_next(GtkWidget *w, gpointer data);
-static void nsgtk_login_ok_clicked(GtkButton *w, gpointer data);
-static void nsgtk_login_cancel_clicked(GtkButton *w, gpointer data);
-#endif
+
+
+#define TC_H 25
+#define TC_MARGIN 10
+
+LoginAlert::LoginAlert(struct browser_window *bw,
+				const char *url, 
+				const char *host, 
+				const char *realm, 
+				const char *text)
+	: BAlert("Login", text, "Cancel", "Ok", NULL, 
+		B_WIDTH_AS_USUAL, B_WARNING_ALERT)
+{
+	fUrl = url;
+	fHost = host;
+	fRealm = realm;
+	// dereference now as we can't be sure 
+	// the main thread won't delete from under our feet
+	fW = bw->window;
+
+	SetFeel(B_MODAL_SUBSET_WINDOW_FEEL);
+	nsbeos_scaffolding *s = nsbeos_get_scaffold(bw->window);
+	if (s) {
+		NSBrowserWindow *w = nsbeos_get_bwindow_for_scaffolding(s);
+		if (w)
+			AddToSubset(w);
+	}
+
+	// make space for controls
+	ResizeBy(0, 2 * TC_H);
+	MoveTo(AlertPosition(Frame().Width() + 1, 
+		Frame().Height() + 1));
+
+
+	BTextView *tv = TextView();
+	BRect r(TC_MARGIN, tv->Bounds().bottom - 2 * TC_H, 
+		tv->Bounds().right - TC_MARGIN, tv->Bounds().bottom - TC_H);
+
+	fUserControl = new BTextControl(r, "user", "Username", "", 
+		new BMessage(), B_FOLLOW_BOTTOM | B_FOLLOW_RIGHT);
+	fUserControl->SetDivider(60);
+	tv->AddChild(fUserControl);
+
+	r.OffsetBySelf(0, TC_H);
+
+	fPassControl = new BTextControl(r, "pass", "Password", "", 
+		new BMessage(), B_FOLLOW_BOTTOM | B_FOLLOW_RIGHT);
+	fPassControl->TextView()->HideTyping(true);
+	fPassControl->SetDivider(60);
+	tv->AddChild(fPassControl);
+	
+	SetShortcut(0, B_ESCAPE);
+}
+
+LoginAlert::~LoginAlert()
+{
+}
+
+void
+LoginAlert::MessageReceived(BMessage *message)
+{
+	switch (message->what) {
+	case 'ALTB':
+	{
+		int32 which;
+		if (message->FindInt32("which", &which) < B_OK)
+			break;
+		// not 'Ok'
+		if (which != 1)
+			break;
+		BMessage *m = new BMessage(*message);
+		m->what = 'nsLO';
+		m->AddString("URL", fUrl.String());
+		m->AddString("Host", fHost.String());
+		m->AddString("Realm", fRealm.String());
+		m->AddPointer("gui_window", fW);
+		m->AddString("User", fUserControl->Text());
+		m->AddString("Pass", fPassControl->Text());
+		BString auth(fUserControl->Text());
+		auth << ":" << fPassControl->Text();
+		m->AddString("Auth", auth.String());
+		
+		// notify the main thread
+		// the event dispatcher will handle it
+		nsbeos_pipe_message(m, NULL, fW);
+	}
+		break;
+	default:
+		break;
+	}
+	BAlert::MessageReceived(message);
+}
+
 
 void gui_401login_open(struct browser_window *bw, struct content *c,
 		const char *realm)
@@ -79,83 +174,19 @@ void gui_401login_open(struct browser_window *bw, struct content *c,
 void create_login_window(struct browser_window *bw, const char *host,
 		const char *realm, const char *fetchurl)
 {
-	struct session_401 *session;
+	BString r("Secure Area");
+	if (realm)
+		r = realm;
+	BString text(/*messages_get(*/"Please login\n");
+	text << "Realm:	" << r << "\n";
+	text << "Host:	" << host << "\n";
+	//text << "\n";
 
-#warning WRITEME
-#if 0 /* GTK */
-	/* create a new instance of the login window, and get handles to all
-	 * the widgets we're interested in.
-	 */
+	LoginAlert *a = new LoginAlert(bw, fetchurl, host, r.String(), 
+		text.String());
+	// asynchronously
+	a->Go(NULL);
 
-	GladeXML *x = glade_xml_new(glade_file_location, NULL, NULL);
-	GtkWindow *wnd = GTK_WINDOW(glade_xml_get_widget(x, "wndLogin"));
-	GtkLabel *lhost, *lrealm;
-	GtkEntry *euser, *epass;
-	GtkButton *bok, *bcan;
-
-	lhost = GTK_LABEL(glade_xml_get_widget(x, "labelLoginHost"));
-	lrealm = GTK_LABEL(glade_xml_get_widget(x, "labelLoginRealm"));
-	euser = GTK_ENTRY(glade_xml_get_widget(x, "entryLoginUser"));
-	epass = GTK_ENTRY(glade_xml_get_widget(x, "entryLoginPass"));
-	bok = GTK_BUTTON(glade_xml_get_widget(x, "buttonLoginOK"));
-	bcan = GTK_BUTTON(glade_xml_get_widget(x, "buttonLoginCan"));
-
-	/* create and fill in our session structure */
-
-	session = calloc(1, sizeof(struct session_401));
-	session->url = strdup(fetchurl);
-	session->host = strdup(host);
-	session->realm = strdup(realm ? realm : "Secure Area");
-	session->bw = bw;
-	session->x = x;
-	session->wnd = wnd;
-	session->user = euser;
-	session->pass = epass;
-
-	/* fill in our new login window */
-
-	gtk_label_set_text(GTK_LABEL(lhost), host);
-	gtk_label_set_text(lrealm, realm);
-	gtk_entry_set_text(euser, "");
-	gtk_entry_set_text(epass, "");
-
-	/* attach signal handlers to the Login and Cancel buttons in our new
-	 * window to call functions in this file to process the login
-	 */
-	g_signal_connect(G_OBJECT(bok), "clicked",
-			G_CALLBACK(nsgtk_login_ok_clicked), (gpointer)session);
-	g_signal_connect(G_OBJECT(bcan), "clicked",
-			G_CALLBACK(nsgtk_login_cancel_clicked),
-			(gpointer)session);
-
-	/* attach signal handlers to the entry boxes such that pressing
-	 * enter in one progresses the focus onto the next widget.
-	 */
-
-	g_signal_connect(G_OBJECT(euser), "activate",
-			G_CALLBACK(nsgtk_login_next), (gpointer)epass);
-	g_signal_connect(G_OBJECT(epass), "activate",
-			G_CALLBACK(nsgtk_login_next), (gpointer)bok);
-
-	/* make sure the username entry box currently has the focus */
-	gtk_widget_grab_focus(GTK_WIDGET(euser));
-
-	/* finally, show the window */
-	gtk_widget_show(GTK_WIDGET(wnd));
-#endif
-}
-
-void destroy_login_window(struct session_401 *session)
-{
-	free(session->url);
-	free(session->host);
-	free(session->realm);
-#warning WRITEME
-#if 0 /* GTK */
-	gtk_widget_destroy(GTK_WIDGET(session->wnd));
-	g_object_unref(G_OBJECT(session->x));
-#endif
-	free(session);
 }
 
 #warning WRITEME
