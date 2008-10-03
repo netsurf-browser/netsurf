@@ -305,7 +305,7 @@ void bitmap_modified(void *vbitmap) {
  * \param  resume	the function to be called when resuming
  */
 void bitmap_set_suspendable(void *vbitmap, void *private_word,
-		void (*invalidate)(struct bitmap *bitmap, void *private_word)) {
+		void (*invalidate)(void *vbitmap, void *private_word)) {
 	struct bitmap *bitmap = (struct bitmap *)vbitmap;
 }
 
