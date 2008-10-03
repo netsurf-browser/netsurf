@@ -56,6 +56,7 @@ extern "C" {
 #include "render/box.h"
 #include "render/form.h"
 #include "render/html.h"
+#include "utils/filename.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/url.h"
@@ -383,6 +384,9 @@ void gui_init(int argc, char** argv)
 	fetch_rsrc_register();
 
 	check_homedir();
+
+	// make sure the cache dir exists
+	create_directory(TEMP_FILENAME_PREFIX, 0600);
 
 	//nsbeos_completion_init();
 
@@ -819,6 +823,92 @@ void gui_create_form_select_menu(struct browser_window *bw,
 
 void gui_window_save_as_link(struct gui_window *g, struct content *c)
 {
+}
+
+/**
+ * Send the source of a content to a text editor.
+ */
+
+void nsbeos_gui_view_source(struct content *content)
+{
+	char *temp_name;
+	bool done = false;
+	BPath path;
+	status_t err;
+
+	if (!content || !content->source_data) {
+		warn_user("MiscError", "No document source");
+		return;
+	}
+
+	/* try to load local files directly. */
+	temp_name = url_to_path(content->url);
+	if (temp_name) {
+		path.SetTo(temp_name);
+		BEntry entry;
+		if (entry.SetTo(path.Path()) >= B_OK 
+			&& entry.Exists() && entry.IsFile())
+			done = true;
+	}
+	if (!done) {
+		/* We cannot release the requested filename until after it
+		 * has finished being used. As we can't easily find out when
+		 * this is, we simply don't bother releasing it and simply
+		 * allow it to be re-used next time NetSurf is started. The
+		 * memory overhead from doing this is under 1 byte per
+		 * filename. */
+		const char *filename = filename_request();
+		if (!filename) {
+			warn_user("NoMemory", 0);
+			return;
+		}
+		path.SetTo(TEMP_FILENAME_PREFIX);
+		path.Append(filename);
+		BFile file(path.Path(), B_WRITE_ONLY | B_CREATE_FILE);
+		err = file.InitCheck();
+		if (err < B_OK) {
+			warn_user("IOError", strerror(err));
+			return;
+		}
+		err = file.Write(content->source_data, content->source_size);
+		if (err < B_OK) {
+			warn_user("IOError", strerror(err));
+			return;
+		}
+		const char *mime = content_mime(content->type);
+		file.WriteAttr("BEOS:TYPE", B_MIME_STRING_TYPE, 0LL, 
+			mime, strlen(mime) + 1);
+		
+	}
+
+	entry_ref ref;
+	if (get_ref_for_path(path.Path(), &ref) < B_OK)
+		return;
+
+	BMessage m(B_REFS_RECEIVED);
+	m.AddRef("refs", &ref);
+
+	// apps to try
+	const char *editorSigs[] = {
+		"application/x-vnd.beunited.pe",
+		"application/x-vnd.XEmacs",
+		"application/x-vnd.Haiku-STEE",
+		"application/x-vnd.Be-STEE",
+		"application/x-vnd.yT-STEE",
+		NULL
+	};
+	int i;
+	for (i = 0; editorSigs[i]; i++) {
+		team_id team = -1;
+		BMessenger msgr(editorSigs[i], team);
+		if (msgr.SendMessage(&m) >= B_OK)
+			break;
+		if (be_roster->Launch(editorSigs[i], (BMessage *)NULL, &team) >= B_OK) {
+			snooze(1000);
+			if (msgr.SendMessage(&m) >= B_OK)
+				break;
+		}
+	}
 }
 
 /**

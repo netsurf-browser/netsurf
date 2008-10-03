@@ -538,7 +538,12 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 			break;
 		}
 		case BROWSER_VIEW_SOURCE:
+		{
+			if (!bw || !bw->current_content)
+				break;
+			nsbeos_gui_view_source(bw->current_content);
 			break;
+		}
 		case BROWSER_OBJECT:
 			break;
 		case BROWSER_OBJECT_INFO:
