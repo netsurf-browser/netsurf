@@ -383,23 +383,6 @@ content_type content_lookup(const char *mime_type)
 
 
 /**
- * Convert a content_type to a MIME type.
- *
- */
-
-const char *content_mime(content_type type)
-{
-	struct mime_entry *m;
-	int i;
-	m = mime_map;
-	for (i = MIME_MAP_COUNT - 1; i >= 0; i--)
-		if (m[i].type == type)
-			return m[i].mime_type;
-	return "application/octet-stream";
-}
-
-
-/**
  * Create a new content structure.
  *
  * \param  url  URL of content, copied

@@ -281,7 +281,6 @@ extern const char * const content_status_name[];
 
 
 content_type content_lookup(const char *mime_type);
-const char *content_mime(content_type type);
 struct content * content_create(const char *url);
 struct content * content_get(const char *url);
 struct content * content_get_ready(const char *url);
