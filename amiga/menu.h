@@ -19,6 +19,7 @@
 #ifndef AMIGA_MENU_H
 #define AMIGA_MENU_H
 #include <exec/types.h>
+#include "amiga/gui.h"
 
 #define AMI_MENU_MAX 20
 char *menulab[AMI_MENU_MAX+1];
@@ -26,5 +27,5 @@ char *menulab[AMI_MENU_MAX+1];
 struct NewMenu *ami_create_menu(ULONG type);
 void ami_init_menulabs(void);
 void ami_free_menulabs(void);
-void ami_menupick(ULONG code,struct gui_window *gwin);
+void ami_menupick(ULONG code,struct gui_window_2 *gwin);
 #endif

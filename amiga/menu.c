@@ -47,22 +47,22 @@ void ami_init_menulabs(void)
 {
 	menulab[0] = ami_utf8_easy((char *)messages_get("Project"));
 	menulab[1] = ami_utf8_easy((char *)messages_get("NewWindowNS"));
-	menulab[2] = NM_BARLABEL;
-	menulab[3] = ami_utf8_easy((char *)messages_get("SaveAs"));
-	menulab[4] = ami_utf8_easy((char *)messages_get("Source"));
-	menulab[5] = ami_utf8_easy((char *)messages_get("TextNS"));
-	menulab[6] = ami_utf8_easy((char *)messages_get("PDF"));
-	menulab[7] = NM_BARLABEL;
-	menulab[8] = ami_utf8_easy((char *)messages_get("CloseWindow"));
-	menulab[9] = ami_utf8_easy((char *)messages_get("Edit"));
-	menulab[10] = ami_utf8_easy((char *)messages_get("CopyNS"));
-	menulab[11] = ami_utf8_easy((char *)messages_get("Paste"));
-	menulab[12] = ami_utf8_easy((char *)messages_get("SelectAllNS"));
-	menulab[13] = ami_utf8_easy((char *)messages_get("ClearNS"));
-	menulab[14] = ami_utf8_easy((char *)messages_get("Hotlist"));
-	menulab[15] = ami_utf8_easy((char *)messages_get("HotlistAdd"));
-	menulab[16] = ami_utf8_easy((char *)messages_get("HotlistShowNS"));
-	menulab[17] = ami_utf8_easy((char *)messages_get("Hotlist-browser"));
+	menulab[2] = ami_utf8_easy((char *)messages_get("NewTab"));
+	menulab[3] = NM_BARLABEL;
+	menulab[4] = ami_utf8_easy((char *)messages_get("SaveAs"));
+	menulab[5] = ami_utf8_easy((char *)messages_get("Source"));
+	menulab[6] = ami_utf8_easy((char *)messages_get("TextNS"));
+	menulab[7] = ami_utf8_easy((char *)messages_get("PDF"));
+	menulab[8] = NM_BARLABEL;
+	menulab[9] = ami_utf8_easy((char *)messages_get("CloseWindow"));
+	menulab[10] = ami_utf8_easy((char *)messages_get("Edit"));
+	menulab[11] = ami_utf8_easy((char *)messages_get("CopyNS"));
+	menulab[12] = ami_utf8_easy((char *)messages_get("Paste"));
+	menulab[13] = ami_utf8_easy((char *)messages_get("SelectAllNS"));
+	menulab[14] = ami_utf8_easy((char *)messages_get("ClearNS"));
+	menulab[15] = ami_utf8_easy((char *)messages_get("Hotlist"));
+	menulab[16] = ami_utf8_easy((char *)messages_get("HotlistAdd"));
+	menulab[17] = ami_utf8_easy((char *)messages_get("HotlistShowNS"));
 	menulab[18] = ami_utf8_easy((char *)messages_get("Settings"));
 	menulab[19] = ami_utf8_easy((char *)messages_get("SnapshotWindow"));
 	menulab[20] = ami_utf8_easy((char *)messages_get("SettingsSave"));
@@ -75,6 +75,7 @@ struct NewMenu *ami_create_menu(ULONG type)
 	STATIC struct NewMenu menu[] = {
 			  	{NM_TITLE,0,0,0,0,0,}, // project
 			  	{ NM_ITEM,0,"N",0,0,0,}, // new window
+			  	{ NM_ITEM,0,"T",0,0,0,}, // new tab
 			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
 			  	{ NM_ITEM,0,0,0,0,0,}, // save
 			  	{  NM_SUB,0,"S",0,0,0,}, // save as source
@@ -90,7 +91,6 @@ struct NewMenu *ami_create_menu(ULONG type)
 				{NM_TITLE,0,0,0,0,0,}, // hotlist
 				{ NM_ITEM,0,0,0,0,0,}, // add to hotlist
 			  	{ NM_ITEM,0,"H",0,0,0,}, // show hotlist (treeview)
-			  	{ NM_ITEM,0,0,0,0,0,}, // show hotlist (browser window)
 				{NM_TITLE,0,0,0,0,0,}, // settings
 				{ NM_ITEM,0,0,0,0,0,}, // snapshot window
 				{ NM_ITEM,0,0,0,0,0,}, // save settings
@@ -108,21 +108,27 @@ struct NewMenu *ami_create_menu(ULONG type)
 	}
 
 	menu[1].nm_Flags = menuflags;
-	menu[8].nm_Flags = menuflags;
+	menu[2].nm_Flags = menuflags;
+	menu[9].nm_Flags = menuflags;
 
 #ifndef WITH_PDF_EXPORT
-	menu[6].nm_Flags = NM_ITEMDISABLED;
+	menu[7].nm_Flags = NM_ITEMDISABLED;
 #endif
 
 	return(menu);
 }
 
-void ami_menupick(ULONG code,struct gui_window *gwin)
+void ami_menupick(ULONG code,struct gui_window_2 *gwin)
 {
+	struct gui_window tgw;
 	ULONG menunum=0,itemnum=0,subnum=0;
 	menunum = MENUNUM(code);
 	itemnum = ITEMNUM(code);
 	subnum = SUBNUM(code);
+
+	tgw.tab_node = NULL;
+	tgw.tab = 0;
+	tgw.shared = gwin;
 
 	switch(menunum)
 	{
@@ -134,7 +140,11 @@ void ami_menupick(ULONG code,struct gui_window *gwin)
 					bw = browser_window_create(gwin->bw->current_content->url,gwin->bw, 0, true, false);
 				break;
 
-				case 2: // save
+				case 1: // new tab
+					bw = browser_window_create(gwin->bw->current_content->url,gwin->bw, 0, true, true);
+				break;
+
+				case 3: // save
 					switch(subnum)
 					{
 						BPTR fh=0;
@@ -150,14 +160,14 @@ void ami_menupick(ULONG code,struct gui_window *gwin)
 							{
 								strlcpy(&fname,filereq->fr_Drawer,1024);
 								AddPart(fname,filereq->fr_File,1024);
-								gui_window_set_pointer(gwin,GUI_POINTER_WAIT);
+								ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
 								if(fh = FOpen(fname,MODE_NEWFILE,0))
 								{
 									FWrite(fh,gwin->bw->current_content->source_data,1,gwin->bw->current_content->source_size);
 									FClose(fh);
 									SetComment(fname,gwin->bw->current_content->url);
 								}
-								gui_window_set_pointer(gwin,GUI_POINTER_DEFAULT);
+								ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
 							}
 						break;
 
@@ -171,10 +181,10 @@ void ami_menupick(ULONG code,struct gui_window *gwin)
 							{
 								strlcpy(&fname,filereq->fr_Drawer,1024);
 								AddPart(fname,filereq->fr_File,1024);
-								gui_window_set_pointer(gwin,GUI_POINTER_WAIT);
+								ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
 								save_as_text(gwin->bw->current_content,fname);
 								SetComment(fname,gwin->bw->current_content->url);
-								gui_window_set_pointer(gwin,GUI_POINTER_DEFAULT);
+								ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
 							}
 						break;
 
@@ -189,18 +199,18 @@ void ami_menupick(ULONG code,struct gui_window *gwin)
 							{
 								strlcpy(&fname,filereq->fr_Drawer,1024);
 								AddPart(fname,filereq->fr_File,1024);
-								gui_window_set_pointer(gwin,GUI_POINTER_WAIT);
+								ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
 								pdf_set_scale(DEFAULT_EXPORT_SCALE);
 								save_as_pdf(gwin->bw->current_content,fname);
 								SetComment(fname,gwin->bw->current_content->url);
-								gui_window_set_pointer(gwin,GUI_POINTER_DEFAULT);
+								ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
 							}
 #endif
 						break;
 					}
 				break;
 
-				case 4: // close
+				case 5: // close
 					browser_window_destroy(gwin->bw);
 				break;
 			}
@@ -215,7 +225,7 @@ void ami_menupick(ULONG code,struct gui_window *gwin)
 				break;
 
 				case 1: // paste
-					gui_paste_from_clipboard(gwin,0,0);
+					gui_paste_from_clipboard(&tgw,0,0);
 				break;
 
 				case 2: // select all

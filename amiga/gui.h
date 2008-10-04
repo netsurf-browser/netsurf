@@ -23,6 +23,7 @@
 #include <intuition/classusr.h>
 #include "desktop/browser.h"
 #include <dos/dos.h>
+#include "desktop/gui.h"
 
 /* temp icon.library stuff */
 #define ICONCTRLA_SetImageDataFormat        (ICONA_Dummy + 0x67) /*103*/
@@ -33,8 +34,6 @@
 #define IDFMT_PALETTEMAPPED (1)  /* Palette mapped icon (chunky, V44+) */
 #define IDFMT_DIRECTMAPPED  (2)  /* Direct mapped icon (truecolor 0xAARRGGBB, V51+) */ 
 /* temp icon.library stuff */
-
-void ami_get_msg(void);
 
 enum
 {
@@ -48,6 +47,7 @@ enum
 	GID_BACK,
 	GID_FORWARD,
 	GID_THROBBER,
+	GID_TABS,
 	GID_USER,
 	GID_PASS,
 	GID_LOGIN,
@@ -76,7 +76,7 @@ struct gui_download_window {
 	uint32 downloaded;
 };
 
-struct gui_window {
+struct gui_window_2 {
 	struct Window *win;
 	Object *objects[OID_LAST];
 	struct Gadget *gadgets[GID_LAST];
@@ -85,7 +85,8 @@ struct gui_window {
 	bool redraw_required;
 	int throbber_frame;
 	int c_h;
-	struct List *tab_bw_list;
+	struct List tab_list;
+	int tabs;
 	struct BitMap *bm;
 	struct RastPort rp;
 	struct Layer_Info *layerinfo;
@@ -101,6 +102,16 @@ struct gui_window {
 	int c_x;
 	int c_y;
 };
+
+struct gui_window
+{
+	struct gui_window_2 *shared;
+	int tab;
+	struct Node *tab_node;
+};
+
+void ami_get_msg(void);
+void ami_update_pointer(struct Window *win, gui_pointer_shape shape);
 
 struct RastPort *currp;
 struct TextFont *origrpfont;
