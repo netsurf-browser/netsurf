@@ -552,9 +552,10 @@ void ami_handle_msg(void)
 					{
 						case GID_TABS:
 							ami_switch_tab(gwin,true);
+						break;
 
-//							gwin->redraw_required = true;
-//							gwin->redraw_data = NULL;
+						case GID_CLOSETAB:
+							browser_window_destroy(gwin->bw);
 						break;
 
 						case GID_URL:
@@ -1026,6 +1027,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	char stop[100],stop_s[100],stop_g[100];
 	char reload[100],reload_s[100],reload_g[100];
 	char home[100],home_s[100],home_g[100];
+	char closetab[100];
 
 	if(option_force_tabs && (bw->browser_window_type == BROWSER_WINDOW_NORMAL))
 	{
@@ -1072,17 +1074,16 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	if(new_tab && clone && (bw->browser_window_type == BROWSER_WINDOW_NORMAL))
 	{
 		gwin->shared = clone->window->shared;
+		gwin->tab = gwin->shared->next_tab;
 
 		SetGadgetAttrs(gwin->shared->gadgets[GID_TABS],gwin->shared->win,NULL,
 						CLICKTAB_Labels,~0,
 						TAG_DONE);
 
 		gwin->tab_node = AllocClickTabNode(TNA_Text,messages_get("NetSurf"),
-								TNA_Number,gwin->shared->next_tab,
+								TNA_Number,gwin->tab,
 								TNA_UserData,bw,
 								TAG_DONE);
-
-		gwin->tab = gwin->shared->tabs;
 
 		AddTail(&gwin->shared->tab_list,gwin->tab_node);
 
@@ -1093,7 +1094,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		if(option_new_tab_active)
 		{
 			RefreshSetGadgetAttrs(gwin->shared->gadgets[GID_TABS],gwin->shared->win,NULL,
-							CLICKTAB_Current,gwin->shared->next_tab,
+							CLICKTAB_Current,gwin->tab,
 							TAG_DONE);
 		}
 
@@ -1201,6 +1202,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 				strcpy(home,option_toolbar_images);
 				strcpy(home_s,option_toolbar_images);
 				strcpy(home_g,option_toolbar_images);
+				strcpy(closetab,option_toolbar_images);
 				AddPart(nav_west,"nav_west",100);
 				AddPart(nav_west_s,"nav_west_s",100);
 				AddPart(nav_west_g,"nav_west_g",100);
@@ -1216,6 +1218,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 				AddPart(home,"home",100);
 				AddPart(home_s,"home_s",100);
 				AddPart(home_g,"home_g",100);
+				AddPart(closetab,"list_cancel",100);
 
 				gwin->shared->objects[OID_MAIN] = WindowObject,
 		       	    WA_ScreenTitle,nsscreentitle,
@@ -1338,6 +1341,18 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 						LayoutEnd,
 						CHILD_WeightedHeight,0,
 						LAYOUT_AddChild, gwin->shared->gadgets[GID_TABLAYOUT] = HGroupObject,
+							LAYOUT_AddChild, gwin->shared->gadgets[GID_CLOSETAB] = ButtonObject,
+								GA_ID,GID_CLOSETAB,
+								GA_RelVerify,TRUE,
+								BUTTON_Transparent,TRUE,
+								BUTTON_RenderImage,BitMapObject,
+									BITMAP_SourceFile,closetab,
+									BITMAP_Screen,scrn,
+									BITMAP_Masking,TRUE,
+								BitMapEnd,
+							ButtonEnd,
+							CHILD_WeightedWidth,0,
+							CHILD_WeightedHeight,0,
 							LAYOUT_AddChild, gwin->shared->gadgets[GID_TABS] = ClickTabObject,
 								GA_ID,GID_TABS,
 								GA_RelVerify,TRUE,
@@ -1496,8 +1511,8 @@ void gui_window_destroy(struct gui_window *g)
 						CLICKTAB_Labels,~0,
 						TAG_DONE);
 
-		ptab = GetPred(g->tab_node);
-		if(!ptab) ptab = GetSucc(g->tab_node);
+		ptab = GetSucc(g->tab_node);
+		if(!ptab) ptab = GetPred(g->tab_node);
 
 		GetClickTabNodeAttrs(ptab,TNA_Number,(ULONG *)&ptabnum,TAG_DONE);
 		Remove(g->tab_node);
@@ -1736,18 +1751,26 @@ bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 
 void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 {
+	ULONG cur_tab = 0;
+
 	if(!g) return;
+/*
+	if(g->tab_node) GetAttr(CLICKTAB_Current,g->shared->gadgets[GID_TABS],(ULONG *)&cur_tab);
 
-	RefreshSetGadgetAttrs((APTR)g->shared->objects[OID_VSCROLL],g->shared->win,NULL,
-		SCROLLER_Top,sy,
-		TAG_DONE);
+	if((cur_tab == g->tab) || (g->shared->tabs == 0))
+	{
+*/
+		RefreshSetGadgetAttrs((APTR)g->shared->objects[OID_VSCROLL],g->shared->win,NULL,
+			SCROLLER_Top,sy,
+			TAG_DONE);
 
-	RefreshSetGadgetAttrs((APTR)g->shared->objects[OID_HSCROLL],g->shared->win,NULL,
-		SCROLLER_Top,sx,
-		TAG_DONE);
+		RefreshSetGadgetAttrs((APTR)g->shared->objects[OID_HSCROLL],g->shared->win,NULL,
+			SCROLLER_Top,sx,
+			TAG_DONE);
 
-	g->shared->redraw_required = true;
-	g->shared->redraw_data = NULL;
+		g->shared->redraw_required = true;
+		g->shared->redraw_data = NULL;
+//	}
 }
 
 void gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
