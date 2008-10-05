@@ -56,6 +56,11 @@ cairo_t *current_cr;
 #endif
 #endif
 
+/*
+ * NOTE: BeOS rects differ from NetSurf ones:
+ * the right-bottom pixel is actually part of the BRect!
+ */
+
 static bool nsbeos_plot_clg(colour c);
 static bool nsbeos_plot_rectangle(int x0, int y0, int width, int height,
 		int line_width, colour c, bool dotted, bool dashed);
@@ -334,7 +339,7 @@ bool nsbeos_plot_fill(int x0, int y0, int x1, int y1, colour c)
 
 	nsbeos_set_colour(c);
 
-	BRect rect(x0, y0, x1, y1);
+	BRect rect(x0, y0, x1 - 1, y1 - 1);
 	view->FillRect(rect);
 
 	//nsbeos_current_gc_unlock();
@@ -369,7 +374,7 @@ bool nsbeos_plot_clip(int clip_x0, int clip_y0,
 		return false;
 	}
 
-	BRect rect(clip_x0, clip_y0, clip_x1, clip_y1);
+	BRect rect(clip_x0, clip_y0, clip_x1 - 1, clip_y1 - 1);
 	BRegion clip(rect);
 	view->ConstrainClippingRegion(NULL);
 	if (view->Bounds() != rect)
@@ -851,3 +856,67 @@ void nsbeos_plot_caret(int x, int y, int h)
 			x, y + h - 1);
 #endif
 }
+
+#ifdef TEST_PLOTTERS
+//
+static void test_plotters(void)
+{
+	int x0, y0;
+	int x1, y1;
+
+	x0 = 5;
+	y0 = 5;
+	x1 = 35;
+	y1 = 6;
+	
+	plot.line(x0, y0, x1, y1, 1, 0x0000ff00, false, false);
+	y0+=2; y1+=2;
+	plot.line(x0, y0, x1, y1, 1, 0x0000ff00, true, false);
+	y0+=2; y1+=2;
+	plot.line(x0, y0, x1, y1, 1, 0x0000ff00, false, true);
+	y0+=2; y1+=2;
+	plot.line(x0, y0, x1, y1, 1, 0x0000ff00, true, true);
+	y0+=10; y1+=20;
+	
+	plot.fill(x0, y0, x1, y1, 0x00ff0000);
+	plot.rectangle(x0+10, y0+10, x1-x0+1, y1-y0+1, 2, 0x00ffff00, true, false);
+	y0+=30; y1+=30;
+	plot.clip(x0 + 2, y0 + 2, x1 - 2, y1 - 2);
+	plot.fill(x0, y0, x1, y1, 0x00000000);
+	plot.disc(x1, y1, 8, 0x000000ff, false);
+	plot.clip(0, 0, 300, 300);
+
+	y0+=30; y1+=30;
+	
+}
+
+#include <Application.h>
+#include <View.h>
+#include <Window.h>
+class PTView : public BView {
+public:
+	PTView(BRect frame) : BView(frame, "view", B_FOLLOW_NONE, B_WILL_DRAW) {};
+	virtual ~PTView() {};
+	virtual void Draw(BRect update)
+	{
+		test_plotters();
+	};
+
+};
+
+extern "C" void test_plotters_main(void);
+void test_plotters_main(void)
+{
+	BApplication app("application/x-vnd.NetSurf");
+	memcpy(&plot, &nsbeos_plotters, sizeof(plot));
+	BRect frame(0,0,300,300);
+	PTView *view = new PTView(frame);
+	frame.OffsetBySelf(100,100);
+	BWindow *win = new BWindow(frame, "NetSurfPlotterTest", B_TITLED_WINDOW, B_QUIT_ON_WINDOW_CLOSE);
+	win->AddChild(view);
+	nsbeos_current_gc_set(view);
+	win->Show();
+	app.Run();
+}
+#endif /* TEST_PLOTTERS */
+
