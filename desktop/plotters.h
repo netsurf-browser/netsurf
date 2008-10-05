@@ -55,7 +55,8 @@ struct bitmap;
  *  group_start	- Start of a group of objects. Used when plotter implements
  *		  export to a vector graphics file format. (Optional.)
  *  group_end	- End of the most recently started group. (Optional.)
- *  flush	-
+ *  flush	- Only used internally by the knockout code. Should be NULL in
+ *		  any front end display plotters or export plotters.
  *
  * Plotter options:
  *  option_knockout	- Optimisation particularly for unaccelerated screen
