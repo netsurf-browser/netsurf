@@ -875,9 +875,10 @@ void nsbeos_gui_view_source(struct content *content)
 			warn_user("IOError", strerror(err));
 			return;
 		}
-		const char *mime = content_mime(content->type);
-		file.WriteAttr("BEOS:TYPE", B_MIME_STRING_TYPE, 0LL, 
-			mime, strlen(mime) + 1);
+		const char *mime = content->mime_type;
+		if (mime)
+			file.WriteAttr("BEOS:TYPE", B_MIME_STRING_TYPE, 0LL, 
+				mime, strlen(mime) + 1);
 		
 	}
 
@@ -900,14 +901,15 @@ void nsbeos_gui_view_source(struct content *content)
 	int i;
 	for (i = 0; editorSigs[i]; i++) {
 		team_id team = -1;
-		BMessenger msgr(editorSigs[i], team);
-		if (msgr.SendMessage(&m) >= B_OK)
-			break;
-		if (be_roster->Launch(editorSigs[i], (BMessage *)NULL, &team) >= B_OK) {
-			snooze(1000);
+		{
+			BMessenger msgr(editorSigs[i], team);
 			if (msgr.SendMessage(&m) >= B_OK)
 				break;
 		}
+		
+		err = be_roster->Launch(editorSigs[i], (BMessage *)&m, &team);
+		if (err >= B_OK)
+			break;
 	}
 }
 
