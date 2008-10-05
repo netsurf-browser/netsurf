@@ -143,6 +143,20 @@ void nsbeos_current_gc_set(BView *view)
 bool nsbeos_plot_clg(colour c)
 {
 #warning BView::Invalidate() ?
+	
+	BView *view;
+
+	view = nsbeos_current_gc/*_lock*/();
+	if (view == NULL) {
+		warn_user("No GC", 0);
+		return false;
+	}
+
+	nsbeos_set_colour(c);
+	view->FillRect(view->Bounds());
+	
+	//nsbeos_current_gc_unlock();
+
 	return true;
 }
 
@@ -596,10 +610,12 @@ bool nsbeos_plot_bitmap_tile(int x, int y, int width, int height,
 		pretiled = nsbeos_bitmap_get_pretile_y(bitmap);
 	primary = nsbeos_bitmap_get_primary(bitmap);
 	/* use the primary and pretiled widths to scale the w/h provided */
+printf("plot_tile: -> %dx%d\n", width, height);
 	width *= pretiled->Bounds().Width() + 1;
 	width /= primary->Bounds().Width() + 1;
 	height *= pretiled->Bounds().Height() + 1;
 	height /= primary->Bounds().Height() + 1;
+printf("plot_tile: -> %dx%d\n", width, height);
 
 	BView *view;
 

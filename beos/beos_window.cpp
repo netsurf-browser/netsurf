@@ -367,8 +367,12 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	BRect frame(0,0,-1,-1); // will be resized later
 	g->view = new NSBrowserFrameView(frame, g);
 	/* set the default background colour of the drawing area to white. */
-	//g->view->SetViewColor(B_TRANSPARENT_COLOR);
-	g->view->SetViewColor(kWhiteColor);
+	//g->view->SetViewColor(kWhiteColor);
+	/* NOOO! Since we defer drawing (DetachCurrent()), the white flickers,
+	 * besides sometimes text was drawn twice, making it ugly.
+	 * Instead we set to transparent here, and implement plot_clg() to 
+	 * do it just before the rest. This almost removes the flicker. */
+	g->view->SetViewColor(B_TRANSPARENT_COLOR);
 	g->view->SetLowColor(kWhiteColor);
 
 #ifdef B_BEOS_VERSION_DANO
