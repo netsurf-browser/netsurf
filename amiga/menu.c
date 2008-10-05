@@ -22,7 +22,7 @@
 #include "amiga/utf8.h"
 #include <libraries/gadtools.h>
 #include <proto/asl.h>
-#include "desktop/options.h"
+#include "amiga/options.h"
 #include "desktop/gui.h"
 #include "amiga/hotlist.h"
 #include <proto/dos.h>
@@ -54,18 +54,19 @@ void ami_init_menulabs(void)
 	menulab[6] = ami_utf8_easy((char *)messages_get("TextNS"));
 	menulab[7] = ami_utf8_easy((char *)messages_get("PDF"));
 	menulab[8] = NM_BARLABEL;
-	menulab[9] = ami_utf8_easy((char *)messages_get("CloseWindow"));
-	menulab[10] = ami_utf8_easy((char *)messages_get("Edit"));
-	menulab[11] = ami_utf8_easy((char *)messages_get("CopyNS"));
-	menulab[12] = ami_utf8_easy((char *)messages_get("Paste"));
-	menulab[13] = ami_utf8_easy((char *)messages_get("SelectAllNS"));
-	menulab[14] = ami_utf8_easy((char *)messages_get("ClearNS"));
-	menulab[15] = ami_utf8_easy((char *)messages_get("Hotlist"));
-	menulab[16] = ami_utf8_easy((char *)messages_get("HotlistAdd"));
-	menulab[17] = ami_utf8_easy((char *)messages_get("HotlistShowNS"));
-	menulab[18] = ami_utf8_easy((char *)messages_get("Settings"));
-	menulab[19] = ami_utf8_easy((char *)messages_get("SnapshotWindow"));
-	menulab[20] = ami_utf8_easy((char *)messages_get("SettingsSave"));
+	menulab[9] = ami_utf8_easy((char *)messages_get("CloseTab"));
+	menulab[10] = ami_utf8_easy((char *)messages_get("CloseWindow"));
+	menulab[11] = ami_utf8_easy((char *)messages_get("Edit"));
+	menulab[12] = ami_utf8_easy((char *)messages_get("CopyNS"));
+	menulab[13] = ami_utf8_easy((char *)messages_get("Paste"));
+	menulab[14] = ami_utf8_easy((char *)messages_get("SelectAllNS"));
+	menulab[15] = ami_utf8_easy((char *)messages_get("ClearNS"));
+	menulab[16] = ami_utf8_easy((char *)messages_get("Hotlist"));
+	menulab[17] = ami_utf8_easy((char *)messages_get("HotlistAdd"));
+	menulab[18] = ami_utf8_easy((char *)messages_get("HotlistShowNS"));
+	menulab[19] = ami_utf8_easy((char *)messages_get("Settings"));
+	menulab[20] = ami_utf8_easy((char *)messages_get("SnapshotWindow"));
+	menulab[21] = ami_utf8_easy((char *)messages_get("SettingsSave"));
 }
 
 struct NewMenu *ami_create_menu(ULONG type)
@@ -82,7 +83,8 @@ struct NewMenu *ami_create_menu(ULONG type)
 			  	{  NM_SUB,0,0,0,0,0,}, // save as text
 			  	{  NM_SUB,0,0,0,0,0,}, // save as pdf
 			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
-			  	{ NM_ITEM,0,"K",0,0,0,}, // close window
+			  	{ NM_ITEM,0,"K",0,0,0,}, // close tab
+			  	{ NM_ITEM,0,0,0,0,0,}, // close window
 			  	{NM_TITLE,0,0,0,0,0,}, // edit
 			  	{ NM_ITEM,0,"C",0,0,0,}, // copy
 			  	{ NM_ITEM,0,"V",0,0,0,}, // paste
@@ -110,6 +112,7 @@ struct NewMenu *ami_create_menu(ULONG type)
 	menu[1].nm_Flags = menuflags;
 	menu[2].nm_Flags = menuflags;
 	menu[9].nm_Flags = menuflags;
+	menu[10].nm_Flags = menuflags;
 
 #ifndef WITH_PDF_EXPORT
 	menu[7].nm_Flags = NM_ITEMDISABLED;
@@ -120,11 +123,20 @@ struct NewMenu *ami_create_menu(ULONG type)
 
 void ami_menupick(ULONG code,struct gui_window_2 *gwin)
 {
+	struct browser_window *bw;
 	struct gui_window tgw;
 	ULONG menunum=0,itemnum=0,subnum=0;
 	menunum = MENUNUM(code);
 	itemnum = ITEMNUM(code);
 	subnum = SUBNUM(code);
+	bool openwin=false;
+	bool opentab=true;
+
+	if(option_force_tabs)
+	{
+		openwin=true;
+		opentab=false;
+	}
 
 	tgw.tab_node = NULL;
 	tgw.tab = 0;
@@ -135,13 +147,12 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin)
 		case 0:  // project
 			switch(itemnum)
 			{
-				struct browser_window *bw;
 				case 0: // new window
-					bw = browser_window_create(gwin->bw->current_content->url,gwin->bw, 0, true, false);
+					bw = browser_window_create(gwin->bw->current_content->url,gwin->bw, 0, true, openwin);
 				break;
 
 				case 1: // new tab
-					bw = browser_window_create(gwin->bw->current_content->url,gwin->bw, 0, true, true);
+					bw = browser_window_create(gwin->bw->current_content->url,gwin->bw, 0, true, opentab);
 				break;
 
 				case 3: // save
@@ -210,7 +221,11 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin)
 					}
 				break;
 
-				case 5: // close
+				case 5: // close tab
+					browser_window_destroy(gwin->bw);
+				break;
+
+				case 6: // close window
 					browser_window_destroy(gwin->bw);
 				break;
 			}

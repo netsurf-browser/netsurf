@@ -223,6 +223,8 @@ ImgStyle3:Error-Diffusion
 #
 Project:Project
 NewWindowNS:New window
+NewTab:New tab
+CloseTab:Close tab
 CloseWindow:Close window
 SaveAs:Save as
 Source:Source...

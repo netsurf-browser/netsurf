@@ -38,6 +38,7 @@
 enum
 {
     GID_MAIN=0,
+	GID_TABLAYOUT,
 	GID_BROWSER,
 	GID_STATUS,
 	GID_URL,
@@ -86,7 +87,8 @@ struct gui_window_2 {
 	int throbber_frame;
 	int c_h;
 	struct List tab_list;
-	int tabs;
+	ULONG tabs;
+	ULONG next_tab;
 	struct BitMap *bm;
 	struct RastPort rp;
 	struct Layer_Info *layerinfo;

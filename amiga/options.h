@@ -31,6 +31,8 @@ extern bool option_utf8_clipboard;
 extern int option_throbber_frames;
 extern bool option_truecolour_mouse_pointers;
 extern bool option_use_os_pointers;
+extern bool option_force_tabs;
+extern bool option_new_tab_active;
 
 #define EXTRA_OPTION_DEFINE \
 bool option_verbose_log = false; \
@@ -44,6 +46,8 @@ bool option_utf8_clipboard = false; \
 int option_throbber_frames = 1; \
 bool option_truecolour_mouse_pointers = true; \
 bool option_use_os_pointers = false; \
+bool option_force_tabs = false; \
+bool option_new_tab_active = false; \
 
 #define EXTRA_OPTION_TABLE \
 { "verbose_log",	OPTION_BOOL,	&option_verbose_log}, \
@@ -56,5 +60,7 @@ bool option_use_os_pointers = false; \
 { "clipboard_write_utf8",	OPTION_BOOL,	&option_utf8_clipboard}, \
 { "throbber_frames",	OPTION_INTEGER,	&option_throbber_frames}, \
 { "truecolour_mouse_pointers",	OPTION_BOOL,	&option_truecolour_mouse_pointers}, \
-{ "os_mouse_pointers",	OPTION_BOOL,	&option_use_os_pointers},
+{ "os_mouse_pointers",	OPTION_BOOL,	&option_use_os_pointers}, \
+{ "always_open_tabs",	OPTION_BOOL,	&option_force_tabs}, \
+{ "new_tab_is_active",	OPTION_BOOL,	&option_new_tab_active},
 #endif

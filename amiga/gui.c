@@ -551,17 +551,10 @@ void ami_handle_msg(void)
 					switch(result & WMHI_GADGETMASK) //gadaddr->GadgetID) //result & WMHI_GADGETMASK)
 					{
 						case GID_TABS:
-							GetAttr(CLICKTAB_CurrentNode,gwin->gadgets[GID_TABS],(ULONG *)&tabnode);
-							GetClickTabNodeAttrs(tabnode,
-								TNA_UserData,&gwin->bw,
-								TAG_DONE);
+							ami_switch_tab(gwin,true);
 
-							ami_update_buttons(gwin);
-
-							browser_window_update(gwin->bw,false);
-
-							gwin->redraw_required = true;
-							gwin->redraw_data = NULL;
+//							gwin->redraw_required = true;
+//							gwin->redraw_data = NULL;
 						break;
 
 						case GID_URL:
@@ -920,6 +913,29 @@ void gui_poll(bool active)
 	}
 }
 
+void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
+{
+	struct Node *tabnode;
+
+	if(gwin->tabs == 0) return;
+
+	GetAttr(CLICKTAB_CurrentNode,gwin->gadgets[GID_TABS],(ULONG *)&tabnode);
+	GetClickTabNodeAttrs(tabnode,
+						TNA_UserData,&gwin->bw,
+						TAG_DONE);
+
+	ami_update_buttons(gwin);
+
+	if(redraw)
+	{
+		browser_window_update(gwin->bw,false);
+
+		RefreshSetGadgetAttrs(gwin->gadgets[GID_URL],gwin->win,NULL,
+							STRINGA_TextVal,gwin->bw->current_content->url,
+							TAG_DONE);
+	}
+}
+
 void gui_quit(void)
 {
 	int i;
@@ -1012,6 +1028,16 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	char reload[100],reload_s[100],reload_g[100];
 	char home[100],home_s[100],home_g[100];
 
+	if(option_force_tabs && (bw->browser_window_type == BROWSER_WINDOW_NORMAL))
+	{
+		/* option_force_tabs reverses the new_tab parameter.
+		 * We can still open new windows by setting new_tab to true.
+		 */
+
+		if(new_tab) new_tab = false;
+			else new_tab = true;
+	}
+
 	if(clone)
 	{
 		if(clone->window)
@@ -1042,7 +1068,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		return NULL;
 	}
 
-	if(new_tab)
+	if(new_tab && clone && (bw->browser_window_type == BROWSER_WINDOW_NORMAL))
 	{
 		gwin->shared = clone->window->shared;
 
@@ -1051,7 +1077,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 						TAG_DONE);
 
 		gwin->tab_node = AllocClickTabNode(TNA_Text,messages_get("NetSurf"),
-								TNA_Number,gwin->shared->tabs,
+								TNA_Number,gwin->shared->next_tab,
 								TNA_UserData,bw,
 								TAG_DONE);
 
@@ -1063,9 +1089,19 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 							CLICKTAB_Labels,&gwin->shared->tab_list,
 							TAG_DONE);
 
-		RethinkLayout(gwin->shared->gadgets[GID_MAIN],gwin->shared->win,NULL,TRUE);
+		if(option_new_tab_active)
+		{
+			RefreshSetGadgetAttrs(gwin->shared->gadgets[GID_TABS],gwin->shared->win,NULL,
+							CLICKTAB_Current,gwin->shared->next_tab,
+							TAG_DONE);
+		}
+
+		RethinkLayout(gwin->shared->gadgets[GID_TABLAYOUT],gwin->shared->win,NULL,TRUE);
 
 		gwin->shared->tabs++;
+		gwin->shared->next_tab++;
+
+		if(option_new_tab_active) ami_switch_tab(gwin->shared,false);
 
 		return gwin;
 	}
@@ -1086,7 +1122,12 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
         case BROWSER_WINDOW_IFRAME:
         case BROWSER_WINDOW_FRAMESET:
         case BROWSER_WINDOW_FRAME:
-		gwin->shared->objects[OID_MAIN] = WindowObject,
+
+			gwin->tab = 0;
+			gwin->shared->tabs = 0;
+			gwin->tab_node = NULL;
+
+			gwin->shared->objects[OID_MAIN] = WindowObject,
        	    WA_ScreenTitle,nsscreentitle,
 //           	WA_Title, messages_get("NetSurf"),
            	WA_Activate, FALSE,
@@ -1103,7 +1144,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
            	WA_IDCMP,IDCMP_MENUPICK | IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS |
 				 IDCMP_NEWSIZE | IDCMP_VANILLAKEY | IDCMP_RAWKEY | IDCMP_GADGETUP | IDCMP_IDCMPUPDATE | IDCMP_INTUITICKS,
 //			WINDOW_IconifyGadget, TRUE,
-			WINDOW_NewMenu,menu,
+//			WINDOW_NewMenu,menu,
 			WINDOW_HorizProp,1,
 			WINDOW_VertProp,1,
 			WINDOW_IDCMPHook,&gwin->shared->scrollerhook,
@@ -1130,17 +1171,17 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 		break;
         case BROWSER_WINDOW_NORMAL:
+			menu = ami_create_menu(bw->browser_window_type);
 
-	menu = ami_create_menu(bw->browser_window_type);
+			NewList(&gwin->shared->tab_list);
+			gwin->tab_node = AllocClickTabNode(TNA_Text,messages_get("NetSurf"),
+												TNA_Number,0,
+												TNA_UserData,bw,
+												TAG_DONE);
+			AddTail(&gwin->shared->tab_list,gwin->tab_node);
 
-	NewList(&gwin->shared->tab_list);
-	gwin->tab_node = AllocClickTabNode(TNA_Text,messages_get("NetSurf"),
-							TNA_Number,0,
-							TNA_UserData,bw,
-							TAG_DONE);
-	AddTail(&gwin->shared->tab_list,gwin->tab_node);
-
-	gwin->shared->tabs=1;
+			gwin->shared->tabs=1;
+			gwin->shared->next_tab=1;
 
 			strcpy(nav_west,option_toolbar_images);
 			strcpy(nav_west_s,option_toolbar_images);
@@ -1290,13 +1331,16 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 					CHILD_WeightedHeight,0,
 				LayoutEnd,
 				CHILD_WeightedHeight,0,
-				LAYOUT_AddChild, gwin->shared->gadgets[GID_TABS] = ClickTabObject,
-					GA_ID,GID_TABS,
-					GA_RelVerify,TRUE,
-					CLICKTAB_Labels,&gwin->shared->tab_list,
-					CLICKTAB_LabelTruncate,TRUE,
-				ClickTabEnd,
-				CHILD_CacheDomain,FALSE,
+				LAYOUT_AddChild, gwin->shared->gadgets[GID_TABLAYOUT] = HGroupObject,
+					LAYOUT_AddChild, gwin->shared->gadgets[GID_TABS] = ClickTabObject,
+						GA_ID,GID_TABS,
+						GA_RelVerify,TRUE,
+						CLICKTAB_Labels,&gwin->shared->tab_list,
+						CLICKTAB_LabelTruncate,TRUE,
+					ClickTabEnd,
+					CHILD_CacheDomain,FALSE,
+				LayoutEnd,
+				CHILD_WeightedHeight,0,
 				LAYOUT_AddChild, gwin->shared->gadgets[GID_BROWSER] = SpaceObject,
 					GA_ID,GID_BROWSER,
 				SpaceEnd,
@@ -1392,28 +1436,50 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 void gui_window_destroy(struct gui_window *g)
 {
+	struct Node *ptab;
+	ULONG ptabnum;
+
 	if(!g) return;
 
 	if(g->shared->tabs > 1)
 	{
-/* we need to remove the tab in question, but for the moment... */
+		SetGadgetAttrs(g->shared->gadgets[GID_TABS],g->shared->win,NULL,
+						CLICKTAB_Labels,~0,
+						TAG_DONE);
+
+		ptab = GetPred(g->tab_node);
+		if(!ptab) ptab = GetSucc(g->tab_node);
+
+		GetClickTabNodeAttrs(ptab,TNA_Number,(ULONG *)&ptabnum,TAG_DONE);
+		Remove(g->tab_node);
+		FreeClickTabNode(g->tab_node);
+		RefreshSetGadgetAttrs(g->shared->gadgets[GID_TABS],g->shared->win,NULL,
+						CLICKTAB_Labels,&g->shared->tab_list,
+						CLICKTAB_Current,ptabnum,
+						TAG_DONE);
+		RethinkLayout(g->shared->gadgets[GID_TABLAYOUT],g->shared->win,NULL,TRUE);
+
 		g->shared->tabs--;
-		win_destroyed = true;
+		ami_switch_tab(g->shared,true);
+		FreeVec(g);
 		return;
 	}
 
-//	DisposeDTObject(g->gadgets[GID_THROBBER]);
 	DisposeObject(g->shared->objects[OID_MAIN]);
 	DeleteLayer(0,g->shared->rp.Layer);
 	DisposeLayerInfo(g->shared->layerinfo);
-//	ami_tte_cleanup(&g->rp);
 	p96FreeBitMap(g->shared->bm);
 	FreeVec(g->shared->rp.TmpRas);
 	FreeVec(g->shared->rp.AreaInfo);
 	FreeVec(g->shared->tmprasbuf);
 	FreeVec(g->shared->areabuf);
 	DelObject(g->shared->node);
-//	FreeVec(g); should be freed by DelObject()
+	if(g->tab_node)
+	{
+		Remove(g->tab_node);
+		FreeClickTabNode(g->tab_node);
+	}
+	FreeVec(g); // g->shared should be freed by DelObject()
 
 	if(IsMinListEmpty(window_list))
 	{
@@ -1427,7 +1493,7 @@ void gui_window_destroy(struct gui_window *g)
 void gui_window_set_title(struct gui_window *g, const char *title)
 {
 	struct Node *node;
-	WORD cur_tab;
+	ULONG cur_tab = 0;
 	if(!g) return;
 
 	if(g->tab_node)
@@ -1441,7 +1507,7 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 		RefreshSetGadgetAttrs(g->shared->gadgets[GID_TABS],g->shared->win,NULL,
 						CLICKTAB_Labels,&g->shared->tab_list,
 						TAG_DONE);
-		RethinkLayout(g->shared->gadgets[GID_MAIN],g->shared->win,NULL,TRUE);
+		RethinkLayout(g->shared->gadgets[GID_TABLAYOUT],g->shared->win,NULL,TRUE);
 
 		GetAttr(CLICKTAB_Current,g->shared->gadgets[GID_TABS],(ULONG *)&cur_tab);
 	}
@@ -1867,9 +1933,16 @@ void ami_init_mouse_pointers(void)
 
 void gui_window_set_url(struct gui_window *g, const char *url)
 {
+	ULONG cur_tab = 0;
+
 	if(!g) return;
 
-	RefreshSetGadgetAttrs(g->shared->gadgets[GID_URL],g->shared->win,NULL,STRINGA_TextVal,url,TAG_DONE);
+	if(g->tab_node) GetAttr(CLICKTAB_Current,g->shared->gadgets[GID_TABS],(ULONG *)&cur_tab);
+
+	if((cur_tab == g->tab) || (g->shared->tabs == 0))
+	{
+		RefreshSetGadgetAttrs(g->shared->gadgets[GID_URL],g->shared->win,NULL,STRINGA_TextVal,url,TAG_DONE);
+	}
 }
 
 void gui_window_start_throbber(struct gui_window *g)
