@@ -34,7 +34,8 @@ resource(201, "beosdefault.css") #'data' import "res/beosdefault.css";
 resource(202, "adblock.css") #'data' import "res/adblock.css";
 resource(203, "ca-bundle.txt") #'data' import "res/ca-bundle.txt";
 resource(204, "messages") #'data' import "res/messages";
-/* resource(205, "netsurf.xpm") #'data' import "res/netsurf.xpm"; */
+resource(205, "Aliases") #'data' import "res/Aliases";
+/* resource(206, "netsurf.xpm") #'data' import "res/netsurf.xpm"; */
 
 /* throbber */
 resource(400, "throbber0.png") #'data' import "res/throbber/throbber0.png";
