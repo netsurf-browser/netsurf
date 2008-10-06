@@ -116,6 +116,7 @@ struct gui_window
 void ami_get_msg(void);
 void ami_update_pointer(struct Window *win, gui_pointer_shape shape);
 void ami_close_all_tabs(struct gui_window_2 *gwin);
+void ami_quit_netsurf(void);
 
 struct RastPort *currp;
 struct TextFont *origrpfont;

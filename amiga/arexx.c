@@ -21,17 +21,21 @@
 #include <string.h>
 #include <proto/intuition.h>
 #include "desktop/browser.h"
+#include "amiga/gui.h"
 
 enum
 {
 	RX_OPEN=0,
+	RX_QUIT,
 };
 
 STATIC VOID rx_open(struct ARexxCmd *, struct RexxMsg *);
+STATIC VOID rx_quit(struct ARexxCmd *, struct RexxMsg *);
 
 STATIC struct ARexxCmd Commands[] =
 {
 	{"OPEN",RX_OPEN,rx_open,"URL/A", 		0, 	NULL, 	0, 	0, 	NULL },
+	{"QUIT",RX_QUIT,rx_quit,NULL, 		0, 	NULL, 	0, 	0, 	NULL },
 	{ NULL, 		0, 				NULL, 		NULL, 		0, 	NULL, 	0, 	0, 	NULL }
 };
 
@@ -62,4 +66,9 @@ void ami_arexx_cleanup()
 STATIC VOID rx_open(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
 	browser_window_create((char *)cmd->ac_ArgList[0],NULL,NULL,true,false);
+}
+
+STATIC VOID rx_quit(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
+{
+	ami_quit_netsurf();
 }

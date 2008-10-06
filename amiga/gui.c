@@ -937,6 +937,40 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 	}
 }
 
+void ami_quit_netsurf(void)
+{
+	struct nsObject *node;
+	struct nsObject *nnode;
+	struct gui_window_2 *gwin;
+
+	node = (struct nsObject *)GetHead((struct List *)window_list);
+
+	do
+	{
+		nnode=(struct nsObject *)GetSucc((struct Node *)node);
+		gwin = node->objstruct;
+
+		switch(node->Type)
+		{
+			case AMINS_TVWINDOW:
+				ami_tree_close((struct treeview_window *)gwin);
+			break;
+
+			case AMINS_WINDOW:
+				ami_close_all_tabs(gwin);				
+			break;
+		}
+
+		node = nnode;
+	} while(node = nnode);
+
+	if(IsMinListEmpty(window_list))
+	{
+		/* last window closed, so exit */
+		netsurf_quit = true;
+	}
+}
+
 void gui_quit(void)
 {
 	int i;
@@ -1795,6 +1829,9 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 	ULONG cur_tab = 0;
 
 	if(!g) return;
+	if(sx<0) sx=0;
+	if(sy<0) sy=0;
+
 /*
 	if(g->tab_node) GetAttr(CLICKTAB_Current,g->shared->gadgets[GID_TABS],(ULONG *)&cur_tab);
 

@@ -56,17 +56,19 @@ void ami_init_menulabs(void)
 	menulab[8] = NM_BARLABEL;
 	menulab[9] = ami_utf8_easy((char *)messages_get("CloseTab"));
 	menulab[10] = ami_utf8_easy((char *)messages_get("CloseWindow"));
-	menulab[11] = ami_utf8_easy((char *)messages_get("Edit"));
-	menulab[12] = ami_utf8_easy((char *)messages_get("CopyNS"));
-	menulab[13] = ami_utf8_easy((char *)messages_get("Paste"));
-	menulab[14] = ami_utf8_easy((char *)messages_get("SelectAllNS"));
-	menulab[15] = ami_utf8_easy((char *)messages_get("ClearNS"));
-	menulab[16] = ami_utf8_easy((char *)messages_get("Hotlist"));
-	menulab[17] = ami_utf8_easy((char *)messages_get("HotlistAdd"));
-	menulab[18] = ami_utf8_easy((char *)messages_get("HotlistShowNS"));
-	menulab[19] = ami_utf8_easy((char *)messages_get("Settings"));
-	menulab[20] = ami_utf8_easy((char *)messages_get("SnapshotWindow"));
-	menulab[21] = ami_utf8_easy((char *)messages_get("SettingsSave"));
+	menulab[11] = NM_BARLABEL;
+	menulab[12] = ami_utf8_easy((char *)messages_get("Quit"));
+	menulab[13] = ami_utf8_easy((char *)messages_get("Edit"));
+	menulab[14] = ami_utf8_easy((char *)messages_get("CopyNS"));
+	menulab[15] = ami_utf8_easy((char *)messages_get("Paste"));
+	menulab[16] = ami_utf8_easy((char *)messages_get("SelectAllNS"));
+	menulab[17] = ami_utf8_easy((char *)messages_get("ClearNS"));
+	menulab[18] = ami_utf8_easy((char *)messages_get("Hotlist"));
+	menulab[19] = ami_utf8_easy((char *)messages_get("HotlistAdd"));
+	menulab[20] = ami_utf8_easy((char *)messages_get("HotlistShowNS"));
+	menulab[21] = ami_utf8_easy((char *)messages_get("Settings"));
+	menulab[22] = ami_utf8_easy((char *)messages_get("SnapshotWindow"));
+	menulab[23] = ami_utf8_easy((char *)messages_get("SettingsSave"));
 }
 
 struct NewMenu *ami_create_menu(ULONG type)
@@ -85,6 +87,8 @@ struct NewMenu *ami_create_menu(ULONG type)
 			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
 			  	{ NM_ITEM,0,"K",0,0,0,}, // close tab
 			  	{ NM_ITEM,0,0,0,0,0,}, // close window
+			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
+			  	{ NM_ITEM,0,"Q",0,0,0,}, // quit
 			  	{NM_TITLE,0,0,0,0,0,}, // edit
 			  	{ NM_ITEM,0,"C",0,0,0,}, // copy
 			  	{ NM_ITEM,0,"V",0,0,0,}, // paste
@@ -227,6 +231,10 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin)
 
 				case 6: // close window
 					ami_close_all_tabs(gwin);
+				break;
+
+				case 8: // quit
+					ami_quit_netsurf();
 				break;
 			}
 		break;
