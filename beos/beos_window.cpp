@@ -771,6 +771,10 @@ void nsbeos_window_expose_event(BView *view, gui_window *g, BMessage *message)
 	assert(z);
 	assert(g->view == view);
 
+	// we'll be resizing = reflowing = redrawing everything anyway...
+	if (g->pending_resizes > 1)
+		return;
+
 	if (message->FindRect("rect", &updateRect) < B_OK)
 		return;
 
@@ -796,8 +800,8 @@ void nsbeos_window_expose_event(BView *view, gui_window *g, BMessage *message)
 			(view->Bounds().Height() + 1) * scale,
 			updateRect.left,
 			updateRect.top,
-			updateRect.right,
-			updateRect.bottom,
+			updateRect.right + 1,
+			updateRect.bottom + 1,
 			g->bw->scale, 0xFFFFFF);
 
 	if (g->careth != 0)
@@ -1116,8 +1120,8 @@ void nsbeos_window_process_reformats(void)
 		view->UnlockLooper();
 #warning XXX why - 1 & - 2 !???
 		browser_window_reformat(g->bw,
-				bounds.Width() + 1 - 1 /* - 2*/,
-				bounds.Height() + 1 - 1);
+				bounds.Width() + 1 /* - 2*/,
+				bounds.Height() + 1);
 	}
 
 #warning WRITEME
@@ -1211,7 +1215,7 @@ void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
 	nsbeos_current_gc_set(g->view);
 
 //XXX +1 ??
-	g->view->Invalidate(BRect(x0, y0, x1, y1));
+	g->view->Invalidate(BRect(x0, y0, x1 - 1, y1 - 1));
 
 	nsbeos_current_gc_set(NULL);
 	g->view->UnlockLooper();
