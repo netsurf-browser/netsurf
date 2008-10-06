@@ -1102,7 +1102,7 @@ void nsbeos_attach_toplevel_view(nsbeos_scaffolding *g, BView *view)
 
 	BRect rect(g->top_view->Bounds());
 	rect.top += TOOLBAR_HEIGHT;
-	rect.right -= B_H_SCROLL_BAR_HEIGHT;
+	rect.right -= B_V_SCROLL_BAR_WIDTH;
 	rect.bottom -= B_H_SCROLL_BAR_HEIGHT;
 	
 	view->ResizeTo(rect.Width() /*+ 1*/, rect.Height() /*+ 1*/);
@@ -1161,31 +1161,32 @@ void nsbeos_attach_toplevel_view(nsbeos_scaffolding *g, BView *view)
 
 	recursively_set_menu_items_target(g->menu_bar, view);
 
-	// add toolbar shortcuts
-	BMessage *msg;
+	if (g->window) {
+		// add toolbar shortcuts
+		BMessage *msg;
 
-	msg = new BMessage('back');
-	msg->AddPointer("scaffolding", g);
-	g->window->AddShortcut(B_LEFT_ARROW, 0, msg, view);
+		msg = new BMessage('back');
+		msg->AddPointer("scaffolding", g);
+		g->window->AddShortcut(B_LEFT_ARROW, 0, msg, view);
 
-	msg = new BMessage('forw');
-	msg->AddPointer("scaffolding", g);
-	g->window->AddShortcut(B_RIGHT_ARROW, 0, msg, view);
+		msg = new BMessage('forw');
+		msg->AddPointer("scaffolding", g);
+		g->window->AddShortcut(B_RIGHT_ARROW, 0, msg, view);
 
-	msg = new BMessage('stop');
-	msg->AddPointer("scaffolding", g);
-	g->window->AddShortcut('S', 0, msg, view);
+		msg = new BMessage('stop');
+		msg->AddPointer("scaffolding", g);
+		g->window->AddShortcut('S', 0, msg, view);
 
-	msg = new BMessage('relo');
-	msg->AddPointer("scaffolding", g);
-	g->window->AddShortcut('R', 0, msg, view);
+		msg = new BMessage('relo');
+		msg->AddPointer("scaffolding", g);
+		g->window->AddShortcut('R', 0, msg, view);
 
-	msg = new BMessage('home');
-	msg->AddPointer("scaffolding", g);
-	g->window->AddShortcut('H', 0, msg, view);
+		msg = new BMessage('home');
+		msg->AddPointer("scaffolding", g);
+		g->window->AddShortcut('H', 0, msg, view);
 
-	if (g->window)
 		g->window->Show();
+	}
 
 #warning XXX
 #if 0 /* GTK */
@@ -1623,7 +1624,7 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 
 	// toolbar
 	rect = g->top_view->Bounds();
-	rect.bottom = rect.top + TOOLBAR_HEIGHT;
+	rect.bottom = rect.top + TOOLBAR_HEIGHT - 1;
 	BView *toolbar = new BView(rect, "Toolbar", 
 		B_FOLLOW_LEFT_RIGHT | B_FOLLOW_TOP, 0);
 	toolbar->SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
@@ -1638,41 +1639,47 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 	rect = toolbar->Bounds();
 	rect.right = TOOLBAR_HEIGHT;
 	rect.InsetBySelf(5, 5);
+	rect.OffsetBySelf(0, -1);
+	int nButtons = 0;
 
 	message = new BMessage('back');
 	message->AddPointer("scaffolding", g);
-
 	g->back_button = new BButton(rect, "back_button", "<", message);
 	toolbar->AddChild(g->back_button);
+	nButtons++;
 
 	rect.OffsetBySelf(TOOLBAR_HEIGHT, 0);
 	message = new BMessage('forw');
 	message->AddPointer("scaffolding", g);
 	g->forward_button = new BButton(rect, "forward_button", ">", message);
 	toolbar->AddChild(g->forward_button);
+	nButtons++;
 
 	rect.OffsetBySelf(TOOLBAR_HEIGHT, 0);
 	message = new BMessage('stop');
 	message->AddPointer("scaffolding", g);
 	g->stop_button = new BButton(rect, "stop_button", "S", message);
 	toolbar->AddChild(g->stop_button);
+	nButtons++;
 
 	rect.OffsetBySelf(TOOLBAR_HEIGHT, 0);
 	message = new BMessage('relo');
 	message->AddPointer("scaffolding", g);
 	g->reload_button = new BButton(rect, "reload_button", "R", message);
 	toolbar->AddChild(g->reload_button);
+	nButtons++;
 
 	rect.OffsetBySelf(TOOLBAR_HEIGHT, 0);
 	message = new BMessage('home');
 	message->AddPointer("scaffolding", g);
 	g->home_button = new BButton(rect, "home_button", "H", message);
 	toolbar->AddChild(g->home_button);
+	nButtons++;
 
 
 	// url bar
 	rect = toolbar->Bounds();
-	rect.left += TOOLBAR_HEIGHT * 5;
+	rect.left += TOOLBAR_HEIGHT * nButtons;
 	rect.right -= TOOLBAR_HEIGHT * 1;
 	rect.InsetBySelf(5, 5);
 	message = new BMessage('urle');
@@ -1911,11 +1918,6 @@ void gui_window_set_url(struct gui_window *_g, const char *url)
 	g->url_bar->SetText(url);
 
 	g->top_view->UnlockLooper();
-#warning XXX
-#if 0 /* GTK */
-	beos_entry_set_text(g->url_bar, url);
-	beos_editable_set_position(beos_EDITABLE(g->url_bar),  -1);
-#endif
 }
 
 void gui_window_start_throbber(struct gui_window* _g)
@@ -1933,18 +1935,6 @@ void gui_window_start_throbber(struct gui_window* _g)
 	nsbeos_window_update_back_forward(g);
 
 	schedule(10, nsbeos_throb, g);
-
-#warning XXX
-#if 0 /* GTK */
-	beos_widget_set_sensitive(beos_WIDGET(g->stop_button), TRUE);
-	beos_widget_set_sensitive(beos_WIDGET(g->reload_button), FALSE);
-	beos_widget_set_sensitive(beos_WIDGET(g->stop_menu), TRUE);
-	beos_widget_set_sensitive(beos_WIDGET(g->reload_button), FALSE);
-
-	nsbeos_window_update_back_forward(g);
-
-	schedule(10, nsbeos_throb, g);
-#endif
 }
 
 void gui_window_stop_throbber(struct gui_window* _g)
@@ -1965,20 +1955,6 @@ void gui_window_stop_throbber(struct gui_window* _g)
 	g->throbber->Invalidate();
 
 	g->top_view->UnlockLooper();
-
-#warning XXX
-#if 0 /* GTK */
-	beos_widget_set_sensitive(beos_WIDGET(g->stop_button), FALSE);
-	beos_widget_set_sensitive(beos_WIDGET(g->reload_button), TRUE);
-	beos_widget_set_sensitive(beos_WIDGET(g->stop_menu), FALSE);
-	beos_widget_set_sensitive(beos_WIDGET(g->reload_menu), TRUE);
-
-	nsbeos_window_update_back_forward(g);
-
-	schedule_remove(nsbeos_throb, g);
-
-	beos_image_set_from_pixbuf(g->throbber, nsbeos_throbber->framedata[0]);
-#endif
 }
 
 #warning XXX
