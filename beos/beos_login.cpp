@@ -1,6 +1,5 @@
 /*
  * Copyright 2008 François Revol <mmu_man@users.sourceforge.net>
- * Copyright 2006 Rob Kendrick <rjek@rjek.com>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -189,38 +188,3 @@ void create_login_window(struct browser_window *bw, const char *host,
 	a->Go(NULL);
 
 }
-
-#warning WRITEME
-#if 0 /* GTK */
-void nsgtk_login_next(GtkWidget *w, gpointer data)
-{
-	gtk_widget_grab_focus(GTK_WIDGET(data));
-}
-
-void nsgtk_login_ok_clicked(GtkButton *w, gpointer data)
-{
-	/* close the window and destroy it, having continued the fetch
-	 * assoicated with it.
-	 */
-
-  	struct session_401 *session = (struct session_401 *)data;
-	const gchar *user = gtk_entry_get_text(session->user);
-	const gchar *pass = gtk_entry_get_text(session->pass);
-	char *auth;
-
-	auth = malloc(strlen(user) + strlen(pass) + 2);
-	sprintf(auth, "%s:%s", user, pass);
-	urldb_set_auth_details(session->url, session->realm, auth);
-	free(auth);
-
-	browser_window_go(session->bw, session->url, 0, true);
-
-	destroy_login_window(session);
-}
-
-void nsgtk_login_cancel_clicked(GtkButton *w, gpointer data)
-{
-	/* just close and destroy the window */
-	destroy_login_window((struct session_401 *)data);
-}
-#endif
