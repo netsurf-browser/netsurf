@@ -424,10 +424,12 @@ void ami_handle_msg(void)
 	struct InputEvent *ie;
 	struct Node *tabnode;
 
-	node = (struct nsObject *)window_list->mlh_Head;
+	node = (struct nsObject *)GetHead((struct List *)window_list);
 
-	while(nnode=(struct nsObject *)(node->dtz_Node.mln_Succ))
+	do
 	{
+		nnode=(struct nsObject *)GetSucc((struct Node *)node);
+
 		gwin = node->objstruct;
 
 		if(node->Type == AMINS_TVWINDOW)
@@ -715,9 +717,7 @@ void ami_handle_msg(void)
 			tgw.shared = gwin;
 			gui_window_place_caret(&tgw,gwin->c_x,gwin->c_y,gwin->c_h);
 		}
-
-		node = nnode;
-	}
+	} while(node = nnode);
 }
 
 void ami_handle_appmsg(void)
@@ -1553,19 +1553,14 @@ void ami_close_all_tabs(struct gui_window_2 *gwin)
 	{
 		tab = GetHead(&gwin->tab_list);
 
-		while(ntab=GetSucc(tab))
+		do
 		{
+			ntab=GetSucc(tab);
 			GetClickTabNodeAttrs(tab,
 								TNA_UserData,&gwin->bw,
 								TAG_DONE);
 			browser_window_destroy(gwin->bw);
-			tab=ntab;
-		}
-
-		GetClickTabNodeAttrs(tab,
-							TNA_UserData,&gwin->bw,
-							TAG_DONE);
-		browser_window_destroy(gwin->bw);
+		} while(tab=ntab);
 	}
 	else
 	{

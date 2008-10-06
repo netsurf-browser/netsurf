@@ -93,10 +93,12 @@ void schedule_remove(void (*callback)(void *p), void *p)
 
 	if(IsMinListEmpty(schedule_list)) return;
 
-	node = (struct nsObject *)schedule_list->mlh_Head;
+	node = (struct nsObject *)GetHead((struct List *)schedule_list);
 
-	while(nnode=(struct nsObject *)(node->dtz_Node.mln_Succ))
+	do
 	{
+		nnode=(struct nsObject *)GetSucc((struct Node *)node);
+
 		nscb = node->objstruct;
 		if(!nscb) continue;
 
@@ -105,9 +107,7 @@ void schedule_remove(void (*callback)(void *p), void *p)
 			ami_remove_timer_event(nscb);
 			DelObject(node);
 		}
-
-		node=nnode;
-	}
+	} while(node=nnode);
 }
 
 /**
@@ -127,10 +127,12 @@ void schedule_run(void)
 
 	GetSysTime(&tv);
 
-	node = (struct nsObject *)schedule_list->mlh_Head;
+	node = (struct nsObject *)GetHead((struct List *)schedule_list);
 
-	while(nnode=(struct nsObject *)(node->dtz_Node.mln_Succ))
+	do
 	{
+		nnode=(struct nsObject *)GetSucc((struct Node *)node);
+
 		if((node->Type == AMINS_CALLBACK) && (node->objstruct))
 		{
 			nscb = node->objstruct;
@@ -144,9 +146,7 @@ void schedule_run(void)
 				callback(p);
 			}
 		}
-
-		node=nnode;
-	}
+	} while(node=nnode);
 }
 
 void ami_remove_timer_event(struct nscallback *nscb)

@@ -61,14 +61,15 @@ void FreeObjList(struct MinList *objlist)
 	struct nsObject *node;
 	struct nsObject *nnode;
 
-	node = (struct nsObject *)objlist->mlh_Head;
+	node = (struct nsObject *)GetHead((struct List *)objlist);
 
-	while(nnode=(struct nsObject *)(node->dtz_Node.mln_Succ))
+	while(nnode=(struct nsObject *)GetSucc((struct Node *)node))
 	{
 		if(node->Type == AMINS_CALLBACK)
 			ami_remove_timer_event((struct nscallback *)node->objstruct);
 
 		DelObject(node);
+
 		node=nnode;
 	}
 

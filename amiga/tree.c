@@ -290,13 +290,14 @@ void free_browserlist(struct List *list)
 
 	if(IsListEmpty(list)) return;
 
-    node = list->lh_Head;
-    while (nextnode = node->ln_Succ)
+    node = GetHead(list);
+
+	do
     {
+    	nextnode = GetSucc(node);
 		FreeVec(node->ln_Name);
         FreeListBrowserNode(node);
-        node = nextnode;
-    }
+    } while(node = nextnode);
 }
 
 void ami_add_elements(struct treeview_window *twin,struct node *root,WORD *gen)
