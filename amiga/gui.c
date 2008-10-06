@@ -680,7 +680,7 @@ void ami_handle_msg(void)
 				break;
 
 				case WMHI_CLOSEWINDOW:
-					browser_window_destroy(gwin->bw);
+					ami_close_all_tabs(gwin);
 		        break;
 
 				case WMHI_INTUITICK:
@@ -993,7 +993,7 @@ void gui_quit(void)
 
 void ami_update_buttons(struct gui_window_2 *gwin)
 {
-	bool back=FALSE,forward=TRUE;
+	bool back=FALSE,forward=TRUE,tabclose=FALSE;
 
 	if(!history_back_available(gwin->bw->history))
 	{
@@ -1005,6 +1005,11 @@ void ami_update_buttons(struct gui_window_2 *gwin)
 		forward=FALSE;
 	}
 
+	if(gwin->tabs <= 1)
+	{
+		tabclose=TRUE;
+	}
+
 	RefreshSetGadgetAttrs(gwin->gadgets[GID_BACK],gwin->win,NULL,
 		GA_Disabled,back,
 		TAG_DONE);
@@ -1012,6 +1017,13 @@ void ami_update_buttons(struct gui_window_2 *gwin)
 	RefreshSetGadgetAttrs(gwin->gadgets[GID_FORWARD],gwin->win,NULL,
 		GA_Disabled,forward,
 		TAG_DONE);
+
+	if(gwin->tabs)
+	{
+		RefreshSetGadgetAttrs(gwin->gadgets[GID_CLOSETAB],gwin->win,NULL,
+			GA_Disabled,tabclose,
+			TAG_DONE);
+	}
 }
 
 struct gui_window *gui_create_browser_window(struct browser_window *bw,
@@ -1496,6 +1508,35 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	gwin->shared->node->objstruct = gwin->shared;
 
 	return gwin;
+}
+
+void ami_close_all_tabs(struct gui_window_2 *gwin)
+{
+	struct Node *tab;
+	struct Node *ntab;
+
+	if(gwin->tabs)
+	{
+		tab = GetHead(&gwin->tab_list);
+
+		while(ntab=GetSucc(tab))
+		{
+			GetClickTabNodeAttrs(tab,
+								TNA_UserData,&gwin->bw,
+								TAG_DONE);
+			browser_window_destroy(gwin->bw);
+			tab=ntab;
+		}
+
+		GetClickTabNodeAttrs(tab,
+							TNA_UserData,&gwin->bw,
+							TAG_DONE);
+		browser_window_destroy(gwin->bw);
+	}
+	else
+	{
+			browser_window_destroy(gwin->bw);
+	}
 }
 
 void gui_window_destroy(struct gui_window *g)

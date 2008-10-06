@@ -226,7 +226,7 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin)
 				break;
 
 				case 6: // close window
-					browser_window_destroy(gwin->bw);
+					ami_close_all_tabs(gwin);
 				break;
 			}
 		break;
