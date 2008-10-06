@@ -597,7 +597,7 @@ void nsbeos_pipe_message(BMessage *message, BView *_this, struct gui_window *gui
 		message->AddPointer("gui_window", gui);
 	int len = write(sEventPipe[1], &message, sizeof(void *));
 	//LOG(("nsbeos_pipe_message: %d written", len));
-	printf("nsbeos_pipe_message: %d written\n", len);
+	//printf("nsbeos_pipe_message: %d written\n", len);
 }
 
 
@@ -613,7 +613,7 @@ void nsbeos_pipe_message_top(BMessage *message, BWindow *_this, struct beos_scaf
 		message->AddPointer("scaffolding", scaffold);
 	int len = write(sEventPipe[1], &message, sizeof(void *));
 	//LOG(("nsbeos_pipe_message: %d written", len));
-	printf("nsbeos_pipe_message: %d written\n", len);
+	//printf("nsbeos_pipe_message: %d written\n", len);
 }
 
 

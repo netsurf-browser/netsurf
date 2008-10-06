@@ -54,6 +54,12 @@ struct gui_window {
 	/* A gui_window is the rendering of a browser_window */
 	struct browser_window	*bw;
 
+	struct {
+		int pressed_x;
+		int pressed_y;
+		int state; /* browser_mouse_state */
+	} mouse;
+
 	/* These are the storage for the rendering */
 	int			caretx, carety, careth;
 	gui_pointer_shape	current_pointer;
@@ -286,7 +292,13 @@ NSBrowserFrameView::MouseUp(BPoint where)
 {
 	//BMessage *message = Window()->DetachCurrentMessage();
 	//nsbeos_pipe_message(message, this, fGuiWindow);
-	BView::MouseUp(where);
+	BMessage *message = Window()->DetachCurrentMessage();
+	BPoint screenWhere;
+	if (message->FindPoint("screen_where", &screenWhere) < B_OK) {
+		screenWhere = ConvertToScreen(where);
+		message->AddPoint("screen_where", screenWhere);
+	}
+	nsbeos_pipe_message(message, this, fGuiWindow);
 }
 
 
@@ -339,6 +351,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	LOG(("Creating gui window %p for browser window %p", g, bw));
 
 	g->bw = bw;
+	g->mouse.state = 0;
 	g->current_pointer = GUI_POINTER_DEFAULT;
 	if (clone != NULL)
 		bw->scale = clone->scale;
@@ -607,7 +620,7 @@ void nsbeos_dispatch_event(BMessage *message)
 	struct beos_scaffolding *scaffold = NULL;
 	NSBrowserWindow *window = NULL;
 
-	message->PrintToStream();
+	//message->PrintToStream();
 	if (message->FindPointer("View", (void **)&view) < B_OK)
 		view = NULL;
 	if (message->FindPointer("gui_window", (void **)&gui) < B_OK)
@@ -658,14 +671,45 @@ void nsbeos_dispatch_event(BMessage *message)
 				break;
 
 			BPoint where;
+			int32 mods;
 			// where refers to Window coords !?
 			// check be:view_where first
 			if (message->FindPoint("be:view_where", &where) < B_OK) {
 				if (message->FindPoint("where", &where) < B_OK)
 					break;
 			}
+			if (message->FindInt32("modifiers", &mods) < B_OK)
+				mods = 0;
 
-			browser_window_mouse_track(gui->bw, (browser_mouse_state)0, 
+
+			if (gui->mouse.state & BROWSER_MOUSE_PRESS_1) {
+				/* Start button 1 drag */
+				browser_window_mouse_click(gui->bw, BROWSER_MOUSE_DRAG_1,
+					gui->mouse.pressed_x, gui->mouse.pressed_y);
+				/* Replace PRESS with HOLDING and declare drag in progress */
+				gui->mouse.state ^= (BROWSER_MOUSE_PRESS_1 |
+					BROWSER_MOUSE_HOLDING_1);
+				gui->mouse.state |= BROWSER_MOUSE_DRAG_ON;
+			} else if (gui->mouse.state & BROWSER_MOUSE_PRESS_2) {
+				/* Start button 2 drag */
+				browser_window_mouse_click(gui->bw, BROWSER_MOUSE_DRAG_2,
+					gui->mouse.pressed_x, gui->mouse.pressed_y);
+				/* Replace PRESS with HOLDING and declare drag in progress */
+				gui->mouse.state ^= (BROWSER_MOUSE_PRESS_2 |
+					BROWSER_MOUSE_HOLDING_2);
+				gui->mouse.state |= BROWSER_MOUSE_DRAG_ON;
+			}
+
+			bool shift = mods & B_SHIFT_KEY;
+			bool ctrl = mods & B_CONTROL_KEY;
+
+			/* Handle modifiers being removed */
+			if (gui->mouse.state & BROWSER_MOUSE_MOD_1 && !shift)
+				gui->mouse.state ^= BROWSER_MOUSE_MOD_1;
+			if (gui->mouse.state & BROWSER_MOUSE_MOD_2 && !ctrl)
+				gui->mouse.state ^= BROWSER_MOUSE_MOD_2;
+
+			browser_window_mouse_track(gui->bw, (browser_mouse_state)gui->mouse.state, 
 					(int)(where.x / gui->bw->scale),
 					(int)(where.y / gui->bw->scale));
 
@@ -693,11 +737,6 @@ void nsbeos_dispatch_event(BMessage *message)
 			if (message->FindInt32("modifiers", &mods) < B_OK)
 				mods = 0;
 
-			browser_mouse_state button = BROWSER_MOUSE_CLICK_1;
-
-			if (buttons & B_TERTIARY_MOUSE_BUTTON) /* 3 == middle button on BeOS */
-				button = BROWSER_MOUSE_CLICK_2;
-
 			if (buttons & B_SECONDARY_MOUSE_BUTTON) {
 				/* 2 == right button on BeOS */
 				
@@ -705,19 +744,87 @@ void nsbeos_dispatch_event(BMessage *message)
 				break;
 			}
 
+			//browser_mouse_state button = BROWSER_MOUSE_CLICK_1;
+			gui->mouse.state = BROWSER_MOUSE_PRESS_1;
+
+			if (buttons & B_TERTIARY_MOUSE_BUTTON) /* 3 == middle button on BeOS */
+				gui->mouse.state = BROWSER_MOUSE_PRESS_2;
+
 			if (mods & B_SHIFT_KEY)
-				buttons |= BROWSER_MOUSE_MOD_1;
+				gui->mouse.state |= BROWSER_MOUSE_MOD_1;
 			if (mods & B_CONTROL_KEY)
-				buttons |= BROWSER_MOUSE_MOD_2;
+				gui->mouse.state |= BROWSER_MOUSE_MOD_2;
 
-			browser_window_mouse_click(gui->bw, button,
-				   (int)(where.x / gui->bw->scale),
-				   (int)(where.y / gui->bw->scale));
+			gui->mouse.pressed_x = where.x / gui->bw->scale;
+			gui->mouse.pressed_y = where.y / gui->bw->scale;
 
+			/*
 			if (view && view->LockLooper()) {
 				view->MakeFocus();
 				view->UnlockLooper();
 			}
+			*/
+
+			browser_window_mouse_click(gui->bw, 
+				(browser_mouse_state)gui->mouse.state,
+				gui->mouse.pressed_x, gui->mouse.pressed_y);
+
+			break;
+		}
+		case B_MOUSE_UP:
+		{
+			if (gui == NULL)
+				break;
+
+			BPoint where;
+			int32 buttons;
+			int32 mods;
+			BPoint screenWhere;
+			if (message->FindPoint("be:view_where", &where) < B_OK) {
+				if (message->FindPoint("where", &where) < B_OK)
+					break;
+			}
+			if (message->FindInt32("buttons", &buttons) < B_OK)
+				break;
+			if (message->FindPoint("screen_where", &screenWhere) < B_OK)
+				break;
+			if (message->FindInt32("modifiers", &mods) < B_OK)
+				mods = 0;
+
+			/* If the mouse state is PRESS then we are waiting for a release to emit
+			 * a click event, otherwise just reset the state to nothing*/
+			if (gui->mouse.state & BROWSER_MOUSE_PRESS_1) 
+				gui->mouse.state ^= (BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_CLICK_1);
+			else if (gui->mouse.state & BROWSER_MOUSE_PRESS_2)
+				gui->mouse.state ^= (BROWSER_MOUSE_PRESS_2 | BROWSER_MOUSE_CLICK_2);
+
+			bool shift = mods & B_SHIFT_KEY;
+			bool ctrl = mods & B_CONTROL_KEY;
+
+			/* Handle modifiers being removed */
+			if (gui->mouse.state & BROWSER_MOUSE_MOD_1 && !shift)
+				gui->mouse.state ^= BROWSER_MOUSE_MOD_1;
+			if (gui->mouse.state & BROWSER_MOUSE_MOD_2 && !ctrl)
+				gui->mouse.state ^= BROWSER_MOUSE_MOD_2;
+
+			/*
+			if (view && view->LockLooper()) {
+				view->MakeFocus();
+				view->UnlockLooper();
+			}
+			*/
+
+			if (gui->mouse.state & (BROWSER_MOUSE_CLICK_1|BROWSER_MOUSE_CLICK_2))
+				browser_window_mouse_click(gui->bw, 
+					(browser_mouse_state)gui->mouse.state, 
+					where.x / gui->bw->scale,
+					where.y / gui->bw->scale);
+			else 
+				browser_window_mouse_drag_end(gui->bw, (browser_mouse_state)0, 
+					where.x, where.y);
+
+			gui->mouse.state = 0;
+
 			break;
 		}
 		case B_KEY_DOWN:
@@ -798,10 +905,10 @@ void nsbeos_window_expose_event(BView *view, gui_window *g, BMessage *message)
 	content_redraw(c, 0, 0,
 			(view->Bounds().Width() + 1) * scale,
 			(view->Bounds().Height() + 1) * scale,
-			updateRect.left,
-			updateRect.top,
-			updateRect.right + 1,
-			updateRect.bottom + 1,
+			(int)updateRect.left,
+			(int)updateRect.top,
+			(int)updateRect.right + 1,
+			(int)updateRect.bottom + 1,
 			g->bw->scale, 0xFFFFFF);
 
 	if (g->careth != 0)
