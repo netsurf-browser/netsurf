@@ -744,7 +744,6 @@ void nsbeos_dispatch_event(BMessage *message)
 				break;
 			}
 
-			//browser_mouse_state button = BROWSER_MOUSE_CLICK_1;
 			gui->mouse.state = BROWSER_MOUSE_PRESS_1;
 
 			if (buttons & B_TERTIARY_MOUSE_BUTTON) /* 3 == middle button on BeOS */
@@ -758,12 +757,12 @@ void nsbeos_dispatch_event(BMessage *message)
 			gui->mouse.pressed_x = where.x / gui->bw->scale;
 			gui->mouse.pressed_y = where.y / gui->bw->scale;
 
-			/*
+			// make sure the view is in focus
 			if (view && view->LockLooper()) {
-				view->MakeFocus();
+				if (!view->IsFocus())
+					view->MakeFocus();
 				view->UnlockLooper();
 			}
-			*/
 
 			browser_window_mouse_click(gui->bw, 
 				(browser_mouse_state)gui->mouse.state,
