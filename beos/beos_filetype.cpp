@@ -39,47 +39,49 @@ extern "C" {
 
 #include "beos/beos_filetype.h"
 
+static struct {
+	const char *type;
+	const char *ext1;
+	const char *ext2;
+} default_types[] = {
+	{ "text/plain", "txt", NULL },
+	{ "text/html", "htm", "html" },
+	{ "text/css", "css", NULL },
+	{ "image/gif", "gif", NULL },
+	{ "image/jpeg", "jpg", "jpeg" },
+	{ "image/png", "png", NULL },
+	{ "image/jng", "jng", NULL },
+	{ NULL, NULL, NULL }
+};
+
 void beos_fetch_filetype_init(void)
 {
-#if 0
-	BMessage mimes;
+	BMimeType m;
 	status_t err;
+	int i;
 
-	err = BMimeType::GetInstalledTypes(&mimes);
-	if (err < B_OK) {
-		warn_user("Mime", strerror(err));
-		return;
-	}
-
-	mime_hash = hash_create(117);
-
-	// just in case
-	hash_add(mime_hash, "css", "text/css");
-	hash_add(mime_hash, "htm", "text/html");
-	hash_add(mime_hash, "html", "text/html");
-	hash_add(mime_hash, "jpg", "image/jpeg");
-	hash_add(mime_hash, "jpeg", "image/jpeg");
-	hash_add(mime_hash, "gif", "image/gif");
-	hash_add(mime_hash, "png", "image/png");
-	hash_add(mime_hash, "jng", "image/jng");
-
-
-	BString type;
-	int i, j;
-	//mimes.PrintToStream();
-	for (i = 0; mimes.FindString("types", i, &type) >= B_OK; i++) {
-		BMimeType mime(type.String());
-		if (!mime.IsValid())
+	// make sure we have basic mime types in the database
+	for (i = 0; default_types[i].type; i++) {
+		if (m.SetTo(default_types[i].type) < B_OK)
 			continue;
-		BMessage extensions;
-		if (mime.GetFileExtensions(&extensions) < B_OK)
+		if (m.IsInstalled())
 			continue;
-		BString ext;
-		for (j = 0; extensions.FindString("extentions", i, &ext) >= B_OK; i++) {
-			hash_add(mime_hash, ext.String(), type.String());
+		err = m.Install();
+		if (err < B_OK) {
+			warn_user("Mime", strerror(err));
+			continue;
+		}
+		// the mime db doesn't know about it yet
+		BMessage extensions(0UL);
+		if (default_types[i].ext1)
+			extensions.AddString("extensions", default_types[i].ext1);
+		if (default_types[i].ext2)
+			extensions.AddString("extensions", default_types[i].ext2);
+		err = m.SetFileExtensions(&extensions);
+		if (err < B_OK) {
+			warn_user("Mime", strerror(err));
 		}
 	}
-#endif
 }
 
 void beos_fetch_filetype_fin(void)
@@ -90,50 +92,34 @@ const char *fetch_filetype(const char *unix_path)
 {
 	struct stat statbuf;
 	status_t err;
-
-	stat(unix_path, &statbuf);
-	if (S_ISDIR(statbuf.st_mode))
-		return "application/x-netsurf-directory";
-
-	if (strchr(unix_path, '.') == NULL) {
-		/* no extension anywhere! */
-		return "text/plain";
-	}
-
-	// force some types
-	const char *ext;
-	ext = strrchr(unix_path, '.');
-	if (!strcmp(ext, ".css"))
-		return "text/css";
-	if (!strcmp(ext, ".html"))
-		return "text/html";
-	if (!strcmp(ext, ".htm"))
-		return "text/html";
-
-	BNode node(unix_path);
-	if (node.InitCheck() < B_OK) {
-		warn_user("Mime", strerror(err));
-		return "text/plain";
-	}
-
-	BNodeInfo info(&node);
-	if (info.InitCheck() < B_OK) {
-		warn_user("Mime", strerror(err));
-		return "text/plain";
-	}
-
 	// NOT THREADSAFE
 	static char type[B_MIME_TYPE_LENGTH];
-	if (info.GetType(type) < B_OK) {
-		// it might not have been sniffed yet...
-		update_mime_info(unix_path, false, true, false);
-		// try again
-		if (info.GetType(type) < B_OK) {
-			warn_user("Mime", strerror(err));
-			return "text/plain";
-		}
-	}
 
+	BEntry entry(unix_path, true);
+	BNode node(&entry);
+	err = node.InitCheck();
+	if (err < B_OK)
+		return "text/plain";
+
+	if (node.IsDirectory())
+		return "application/x-netsurf-directory";
+
+	BNodeInfo info(&node);
+	err = info.InitCheck();
+	if (err < B_OK)
+		return "test/plain";
+
+	err = info.GetType(type);
+	if (err < B_OK) {
+		// not there yet, sniff and retry
+		err = update_mime_info(unix_path, false, true, false);
+		if (err < B_OK)
+			return "text/plain";
+		err = info.GetType(type);
+		if (err < B_OK)
+			return "text/plain";
+	}
+	
 	return type;
 }
 
