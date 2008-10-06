@@ -650,15 +650,18 @@ void gui_poll(bool active)
 
 
 	bigtime_t next_schedule = earliest_callback_timeout - system_time();
+	if (!block)
+		next_schedule = 0LL; // now
+	if (block && earliest_callback_timeout != B_INFINITE_TIMEOUT)
+		block = false;
 	timeout.tv_sec = (long)(next_schedule / 1000000LL);
 	timeout.tv_usec = (long)(next_schedule % 1000000LL);
 	LOG(("gui_poll: select(%d, ..., %Ldus", max_fd, next_schedule));
 
 	fd_count = select(max_fd, &read_fd_set, &write_fd_set, &exc_fd_set, 
-		/*block?NULL:*/(
-		earliest_callback_timeout == B_INFINITE_TIMEOUT) ? NULL : &timeout);
+		block ? NULL : &timeout);
 
-	if (max_fd > 0 && FD_ISSET(sEventPipe[0], &read_fd_set)) {
+	if (fd_count > 0 && FD_ISSET(sEventPipe[0], &read_fd_set)) {
 		BMessage *message;
 		int len = read(sEventPipe[0], &message, sizeof(void *));
 		LOG(("gui_poll: BMessage ? %d read", len));
