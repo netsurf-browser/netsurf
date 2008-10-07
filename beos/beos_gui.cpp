@@ -631,11 +631,12 @@ void gui_poll(bool active)
 	if (browser_reformat_pending)
 		block = false;
 
+	FD_ZERO(&read_fd_set);
+	FD_ZERO(&write_fd_set);
+	FD_ZERO(&exc_fd_set);
+
 	if (active) {
 		fetch_poll();
-		FD_ZERO(&read_fd_set);
-		FD_ZERO(&write_fd_set);
-		FD_ZERO(&exc_fd_set);
 		code = curl_multi_fdset(fetch_curl_multi,
 				&read_fd_set,
 				&write_fd_set,
@@ -668,70 +669,6 @@ void gui_poll(bool active)
 		if (len == sizeof(void *))
 			nsbeos_dispatch_event(message);
 	}
-
-
-/*
-	for (unsigned int i = 0; fd_count && i < max_fd; i++) {
-		g_main_context_remove_poll(0, fd_list[i]);
-		free(fd_list[i]);
-		fd_count--;
-	}
-*/
-
-#if 0 /* GTK */
-	CURLMcode code;
-	fd_set read_fd_set, write_fd_set, exc_fd_set;
-	int max_fd;
-	GPollFD *fd_list[1000];
-	unsigned int fd_count = 0;
-	bool block = true;
-
-	if (browser_reformat_pending)
-		block = false;
-
-	if (active) {
-		fetch_poll();
-		FD_ZERO(&read_fd_set);
-		FD_ZERO(&write_fd_set);
-		FD_ZERO(&exc_fd_set);
-		code = curl_multi_fdset(fetch_curl_multi,
-				&read_fd_set,
-				&write_fd_set,
-				&exc_fd_set,
-				&max_fd);
-		assert(code == CURLM_OK);
-		for (int i = 0; i <= max_fd; i++) {
-			if (FD_ISSET(i, &read_fd_set)) {
-				GPollFD *fd = malloc(sizeof *fd);
-				fd->fd = i;
-				fd->events = G_IO_IN | G_IO_HUP | G_IO_ERR;
-				g_main_context_add_poll(0, fd, 0);
-				fd_list[fd_count++] = fd;
-			}
-			if (FD_ISSET(i, &write_fd_set)) {
-				GPollFD *fd = malloc(sizeof *fd);
-				fd->fd = i;
-				fd->events = G_IO_OUT | G_IO_ERR;
-				g_main_context_add_poll(0, fd, 0);
-				fd_list[fd_count++] = fd;
-			}
-			if (FD_ISSET(i, &exc_fd_set)) {
-				GPollFD *fd = malloc(sizeof *fd);
-				fd->fd = i;
-				fd->events = G_IO_ERR;
-				g_main_context_add_poll(0, fd, 0);
-				fd_list[fd_count++] = fd;
-			}
-		}
-	}
-
-	beos_main_iteration_do(block);
-
-	for (unsigned int i = 0; i != fd_count; i++) {
-		g_main_context_remove_poll(0, fd_list[i]);
-		free(fd_list[i]);
-	}
-#endif
 
 	schedule_run();
 
