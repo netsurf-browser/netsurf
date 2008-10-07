@@ -857,7 +857,7 @@ void nsbeos_gui_view_source(struct content *content)
 	const char *editorSigs[] = {
 		"application/x-vnd.beunited.pe",
 		"application/x-vnd.XEmacs",
-		"application/x-vnd.Haiku-STEE",
+		"application/x-vnd.Haiku-StyledEdit",
 		"application/x-vnd.Be-STEE",
 		"application/x-vnd.yT-STEE",
 		NULL
