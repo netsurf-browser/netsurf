@@ -405,6 +405,16 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 			BNode node(path.Path());
 			if (node.InitCheck() < B_OK)
 				break;
+			if (node.IsSymLink()) {
+				// dereference the symlink
+				BEntry entry(path.Path(), true);
+				if (entry.InitCheck() < B_OK)
+					break;
+				if (entry.GetPath(&path) < B_OK)
+					break;
+				if (node.SetTo(path.Path()) < B_OK)
+					break;
+			}
 
 			attr_info ai;
 			if (node.GetAttrInfo("META:url", &ai) >= B_OK) {
