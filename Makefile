@@ -580,6 +580,14 @@ $(RSRC_BEOS): $(RDEF_BEOS) $(RDEP_BEOS)
 	$(Q)$(BEOS_RC) -o $@ $<
 endif
 
+ifeq ($(HOST),amiga)
+	$(VQ)echo "   CLEAN: amiga/version.c"
+	$(Q)$(RM) amiga/version.c
+amiga/version.c: amiga/version.rexx
+	$(VQ)echo "   AREXX: amiga/version.rexx"
+	$(Q)rx amiga/version.rexx >amiga/version.c
+endif
+
 ifeq ($(TARGET),riscos)
   # Native RO build is different as 1) it can't do piping and 2) ccres on
   # RO does not understand Unix filespec
