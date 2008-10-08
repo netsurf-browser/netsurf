@@ -27,6 +27,7 @@ extern "C" {
 #include "desktop/textinput.h"
 #undef NDEBUG
 #include "utils/log.h"
+#include "utils/utf8.h"
 #include "utils/utils.h"
 }
 #include "beos/beos_window.h"
@@ -1014,9 +1015,7 @@ void nsbeos_window_keypress_event(BView *view, gui_window *g, BMessage *event)
 			}
 		}
 	} else {
-		// XXX is raw_char actually UCS ??
-		nskey = (uint32_t)raw_char;
-		// else use convert_from_utf8()
+		nskey = utf8_to_ucs4(bytes, numbytes);
 	}
 
 	bool done = browser_window_key_press(g->bw, nskey);
