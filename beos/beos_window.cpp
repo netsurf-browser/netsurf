@@ -911,6 +911,7 @@ void nsbeos_window_expose_event(BView *view, gui_window *g, BMessage *message)
 
 	plot = nsbeos_plotters;
 	nsbeos_plot_set_scale(g->bw->scale);
+	current_redraw_browser = g->bw;
 	content_redraw(c, 0, 0,
 			(view->Bounds().Width() + 1) * scale,
 			(view->Bounds().Height() + 1) * scale,
@@ -919,6 +920,7 @@ void nsbeos_window_expose_event(BView *view, gui_window *g, BMessage *message)
 			(int)updateRect.right + 1,
 			(int)updateRect.bottom + 1,
 			g->bw->scale, 0xFFFFFF);
+	current_redraw_browser = NULL;
 
 	if (g->careth != 0)
 		nsbeos_plot_caret(g->caretx, g->carety, g->careth);
