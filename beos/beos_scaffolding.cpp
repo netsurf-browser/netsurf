@@ -46,6 +46,7 @@ extern "C" {
 #include "desktop/netsurf.h"
 #include "desktop/plotters.h"
 #include "desktop/options.h"
+#include "desktop/selection.h"
 #include "desktop/textinput.h"
 #include "render/box.h"
 #include "render/font.h"
@@ -429,6 +430,19 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 			browser_window_go(bw, url.String(), 0, true);
 			break;
 		}
+		case B_COPY:
+			gui_copy_to_clipboard(bw->sel);
+			break;
+		case B_CUT:
+			browser_window_key_press(bw, 24);
+			break;
+		case B_PASTE:
+			gui_paste_from_clipboard(scaffold->top_level, 0, 0);
+			break;
+		case B_SELECT_ALL:
+			LOG(("Selecting all text"));
+			selection_select_all(bw->sel);
+			break;
 		case BROWSER_NAVIGATE_BACK:
 		case 'back':
 			if (!history_back_available(bw->history))

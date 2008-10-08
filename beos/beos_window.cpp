@@ -141,7 +141,10 @@ NSBrowserFrameView::MessageReceived(BMessage *message)
 	switch (message->what) {
 		case B_SIMPLE_DATA:
 		case B_REFS_RECEIVED:
-		message->PrintToStream();
+		case B_COPY:
+		case B_CUT:
+		case B_PASTE:
+		case B_SELECT_ALL:
 		//case B_MOUSE_WHEEL_CHANGED:
 		// messages for top-level
 		case 'back':
@@ -229,6 +232,7 @@ NSBrowserFrameView::MessageReceived(BMessage *message)
 			nsbeos_pipe_message_top(message, NULL, fGuiWindow->scaffold);
 			break;
 		default:
+		message->PrintToStream();
 			BView::MessageReceived(message);
 	}
 }
@@ -1778,7 +1782,7 @@ bool gui_commit_clipboard(void)
 		if (clip) {
 			clip->AddData("text/plain", B_MIME_TYPE, 
 				current_selection.String(), 
-				current_selection.Length() + 1);
+				current_selection.Length());
 			gui_empty_clipboard();
 			be_clipboard->Commit();
 		}
