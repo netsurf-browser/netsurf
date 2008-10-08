@@ -24,6 +24,7 @@ extern "C" {
 #include "content/urldb.h"
 #include "desktop/browser.h"
 #include "desktop/options.h"
+#include "desktop/selection.h"
 #include "desktop/textinput.h"
 #undef NDEBUG
 #include "utils/log.h"
@@ -38,10 +39,12 @@ extern "C" {
 
 #include <AppDefs.h>
 #include <BeBuild.h>
+#include <Clipboard.h>
 #include <Cursor.h>
 #include <InterfaceDefs.h>
 #include <Message.h>
 #include <ScrollBar.h>
+#include <String.h>
 #include <String.h>
 #include <View.h>
 #include <Window.h>
@@ -99,6 +102,8 @@ struct gui_window {
 static const rgb_color kWhiteColor = {255, 255, 255, 255};
 
 static struct gui_window *window_list = 0;	/**< first entry in win list*/
+
+static BString current_selection;
 
 static void nsbeos_gui_window_attach_child(struct gui_window *parent,
 					  struct gui_window *child);
@@ -1319,8 +1324,7 @@ void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
 
 	nsbeos_current_gc_set(g->view);
 
-//XXX +1 ??
-	g->view->Invalidate(BRect(x0, y0, x1 - 1, y1 - 1));
+	g->view->Invalidate(BRect(x0, y0, x1, y1));
 
 	nsbeos_current_gc_set(NULL);
 	g->view->UnlockLooper();
@@ -1720,32 +1724,91 @@ void gui_drag_save_selection(struct selection *s, struct gui_window *g)
 
 void gui_start_selection(struct gui_window *g)
 {
+	current_selection.Truncate(0);
 
+	if (!g->view->LockLooper())
+		return;
+
+	g->view->MakeFocus();
+
+	g->view->UnlockLooper();
 }
 
 void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
 {
-
+	BMessage *clip;
+	if (be_clipboard->Lock()) {
+		clip = be_clipboard->Data();
+		if (clip) {
+			const char *text;
+			int32 textlen;
+			if (clip->FindData("text/plain", B_MIME_TYPE, 
+				(const void **)&text, &textlen) >= B_OK) {
+				browser_window_paste_text(g->bw,text,textlen,true);
+			}
+		}
+		be_clipboard->Unlock();
+	}
 }
 
 bool gui_empty_clipboard(void)
 {
+	current_selection.Truncate(0);
 	return true;
 }
 
 bool gui_add_to_clipboard(const char *text, size_t length, bool space)
 {
+	current_selection << text;
+	if (space)
+		current_selection << " ";
   	return true;
 }
 
 bool gui_commit_clipboard(void)
 {
+	BMessage *clip;
+
+	if (current_selection.Length() == 0)
+		return true;
+
+	if (be_clipboard->Lock()) {
+		be_clipboard->Clear();
+		clip = be_clipboard->Data();
+		if (clip) {
+			clip->AddData("text/plain", B_MIME_TYPE, 
+				current_selection.String(), 
+				current_selection.Length() + 1);
+			gui_empty_clipboard();
+			be_clipboard->Commit();
+		}
+		be_clipboard->Unlock();
+	}
 	return true;
 }
 
+static bool copy_handler(const char *text, size_t length, struct box *box,
+		void *handle, const char *whitespace_text,
+		size_t whitespace_length)
+{
+	/* add any whitespace which precedes the text from this box */
+	if (whitespace_text) {
+		if (!gui_add_to_clipboard(whitespace_text,
+				whitespace_length, false)) {
+			return false;
+		}
+	}
+	/* add the text from this box */
+	if (!gui_add_to_clipboard(text, length, box->space))
+		return false;
+
+	return true;
+}
 
 bool gui_copy_to_clipboard(struct selection *s)
 {
+	if (s->defined && selection_traverse(s, copy_handler, NULL))
+		gui_commit_clipboard();
 	return true;
 }
 
