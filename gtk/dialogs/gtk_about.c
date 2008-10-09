@@ -65,7 +65,7 @@ void nsgtk_about_dialog_init(GtkWindow *parent, struct browser_window *bw, const
 
 	gtk_show_about_dialog(parent, "artists", artists, "authors", authors,
 	"comments", description,"copyright", copyright, "documenters", documenters,
-	"license", licence,
+	"license", licence_text,
 	"program-name", name, "translator-credits", translators,
 	"version", version, "website", url, "website-label", url_label,
 	"wrap-license", FALSE, NULL);
