@@ -327,6 +327,7 @@ void
 NSBrowserWindow::MessageReceived(BMessage *message)
 {
 	switch (message->what) {
+		case B_ARGV_RECEIVED:
 		case B_REFS_RECEIVED:
 			DetachCurrentMessage();
 			nsbeos_pipe_message_top(message, this, fScaffolding);
@@ -393,41 +394,53 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 		}
 		case B_REFS_RECEIVED:
 		{
+			int32 i;
 			entry_ref ref;
 
-			if (message->FindRef("refs", &ref) < B_OK)
-				break;
+			for (i = 0; message->FindRef("refs", i, &ref) >= B_OK; i++) {
+				BString url("file://");
+				BPath path(&ref);
+				if (path.InitCheck() < B_OK)
+					break;
 
-			BString url("file://");
-			BPath path(&ref);
-			if (path.InitCheck() < B_OK)
-				break;
+				BNode node(path.Path());
+				if (node.InitCheck() < B_OK)
+					break;
+				if (node.IsSymLink()) {
+					// dereference the symlink
+					BEntry entry(path.Path(), true);
+					if (entry.InitCheck() < B_OK)
+						break;
+					if (entry.GetPath(&path) < B_OK)
+						break;
+					if (node.SetTo(path.Path()) < B_OK)
+						break;
+				}
 
-			BNode node(path.Path());
-			if (node.InitCheck() < B_OK)
-				break;
-			if (node.IsSymLink()) {
-				// dereference the symlink
-				BEntry entry(path.Path(), true);
-				if (entry.InitCheck() < B_OK)
-					break;
-				if (entry.GetPath(&path) < B_OK)
-					break;
-				if (node.SetTo(path.Path()) < B_OK)
-					break;
+				attr_info ai;
+				if (node.GetAttrInfo("META:url", &ai) >= B_OK) {
+					char data[(size_t)ai.size + 1];
+					memset(data, 0, (size_t)ai.size + 1);
+					if (node.ReadAttr("META:url", B_STRING_TYPE, 0LL, data, (size_t)ai.size) < 4)
+						break;
+					url = data;
+				} else
+					url << path.Path();
+
+				if (/*message->WasDropped() &&*/ i == 0)
+					browser_window_go(bw, url.String(), 0, true);
+				else
+					browser_window_create(url.String(), bw, NULL, false, false);
 			}
-
-			attr_info ai;
-			if (node.GetAttrInfo("META:url", &ai) >= B_OK) {
-				char data[(size_t)ai.size + 1];
-				memset(data, 0, (size_t)ai.size + 1);
-				if (node.ReadAttr("META:url", B_STRING_TYPE, 0LL, data, (size_t)ai.size) < 4)
-					break;
-				url = data;
-			} else
-				url << path.Path();
-
-			browser_window_go(bw, url.String(), 0, true);
+			break;
+		}
+		case B_ARGV_RECEIVED:
+		{
+			int32 i;
+			BString url;
+			for (i = 1; message->FindString("argv", i, &url) >= B_OK; i++) {
+				browser_window_create(url.String(), bw, NULL, false, false);
+			}
 			break;
 		}
 		case B_COPY:

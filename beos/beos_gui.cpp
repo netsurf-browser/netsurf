@@ -173,6 +173,13 @@ void
 NSBrowserApplication::ArgvReceived(int32 argc, char **argv)
 {
 	CALLED();
+	NSBrowserWindow *win = nsbeos_find_last_window();
+	if (!win) {
+		return;
+	}
+	win->Unlock();
+	BMessage *message = DetachCurrentMessage();
+	nsbeos_pipe_message_top(message, win, win->Scaffolding());
 }
 
 
@@ -188,6 +195,13 @@ NSBrowserApplication::RefsReceived(BMessage *message)
 	}
 	win->Unlock();
 	nsbeos_pipe_message_top(message, win, win->Scaffolding());
+}
+
+
+void
+NSBrowserApplication::AboutRequested()
+{
+	nsbeos_pipe_message(new BMessage(B_ABOUT_REQUESTED), NULL, NULL);
 }
 
 

@@ -140,6 +140,7 @@ NSBrowserFrameView::MessageReceived(BMessage *message)
 {
 	switch (message->what) {
 		case B_SIMPLE_DATA:
+		case B_ARGV_RECEIVED:
 		case B_REFS_RECEIVED:
 		case B_COPY:
 		case B_CUT:
@@ -650,10 +651,12 @@ void nsbeos_dispatch_event(BMessage *message)
 
 	if (gui && gui != z) {
 		LOG(("discarding event for destroyed gui_window"));
+		delete message;
 		return;
 	}
 	if (scaffold && (!y || scaffold != y->scaffold)) {
 		LOG(("discarding event for destroyed scaffolding"));
+		delete message;
 		return;
 	}
 
@@ -671,6 +674,16 @@ void nsbeos_dispatch_event(BMessage *message)
 			// from the BApplication
 			netsurf_quit = true;
 			break;
+		case B_ABOUT_REQUESTED:
+		{
+			//BAlert *alert;
+			//XXX: i18n-ize
+			/* XXX: doesn't work yet! bug in rsrc:/
+			BString url("rsrc:/about.en.html,text/html");
+			browser_window_create(url.String(), NULL, NULL, true, false);
+			*/
+			break;
+		}
 		case _UPDATE_:
 			if (gui && view)
 				nsbeos_window_expose_event(view, gui, message);
@@ -1765,7 +1778,9 @@ bool gui_empty_clipboard(void)
 
 bool gui_add_to_clipboard(const char *text, size_t length, bool space)
 {
-	current_selection << text;
+	BString s;
+	s.SetTo(text, length);
+	current_selection << s;
 	if (space)
 		current_selection << " ";
   	return true;
