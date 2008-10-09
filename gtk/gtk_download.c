@@ -48,7 +48,7 @@ static GtkTreeIter nsgtk_download_iter;
 static GTimer *nsgtk_downloads_timer;
 static GList *nsgtk_downloads_list, *nsgtk_download_buttons;
 static gint nsgtk_downloads_num_active;
-static gchar* status_messages[] = { NULL, "gtkWorking", "gtkError", 
+static const gchar* status_messages[] = { NULL, "gtkWorking", "gtkError", 
 		"gtkComplete", "gtkCanceled" };
 
 static gboolean nsgtk_download_hide(GtkWidget *window);
@@ -316,7 +316,6 @@ GtkTreeView* nsgtk_download_tree_view_new(GladeXML *gladeFile)
 	GtkTreeView *treeview = GTK_TREE_VIEW(glade_xml_get_widget(gladeFile,
 				"treeDownloads"));
 	GtkCellRenderer *renderer;
-	gchar *progress, *information, *speed, *remaining;
 	
 	/* Progress column */
 	renderer = gtk_cell_renderer_progress_new();
@@ -428,6 +427,7 @@ gboolean nsgtk_download_update(gboolean force_update)
 		switch (dl->status) {
 			case NSGTK_DOWNLOAD_WORKING:
 				pulse_mode = TRUE;
+				
 			case NSGTK_DOWNLOAD_NONE:
 				dl->speed = dl->size_downloaded / 
 						(elapsed - dl->start_time);
@@ -448,6 +448,10 @@ gboolean nsgtk_download_update(gboolean force_update)
 				downloaded += dl->size_downloaded;
 				total += dl->size_total;
 				dls++;
+				
+			default:
+				;//Do nothing
+				
 		}
 		if (update) 
 			nsgtk_download_store_update_item(dl);
