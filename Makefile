@@ -569,7 +569,7 @@ ifeq ($(TARGET),beos)
 	$(Q)$(BEOS_SETVER) $(EXETARGET) \
                 -app $(VERSION_MAJ) $(VERSION_MIN) 0 d 0 \
                 -short "NetSurf $(VERSION_FULL)" \
-                -long "NetSurf $(VERSION_FULL) ©"
+                -long "NetSurf $(VERSION_FULL) © 2003 - 2008 The NetSurf Developers"
 	$(VQ)echo " MIMESET: $(EXETARGET)"
 	$(Q)$(BEOS_MIMESET) $(EXETARGET)
 endif
