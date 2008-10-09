@@ -33,14 +33,12 @@
 #include "desktop/print.h"
 
 GtkDialog *wndPreferences;
-GladeXML *gladeFile;
-gboolean is_initialized = FALSE;
-gchar *glade_location = "options.glade";
-struct browser_window *current_browser;
+static GladeXML *gladeFile;
+static gchar *glade_location;
+static struct browser_window *current_browser;
 
-char *proxy_port = NULL;
-int proxy_type;
-float animation_delay;
+static int proxy_type;
+static float animation_delay;
 
 /* Declares both widget and callback */
 #define DECLARE(x) GtkWidget *x; gboolean on_##x##_changed( \
@@ -109,7 +107,7 @@ DECLARE(setDefaultExportOptions);
 	G_CALLBACK(on_##x##_changed), NULL)
 
 GtkDialog* nsgtk_options_init(struct browser_window *bw, GtkWindow *parent) {
-	glade_location = g_strconcat(res_dir_location, glade_location, NULL);
+	glade_location = g_strconcat(res_dir_location, "options.glade", NULL);
 	LOG(("Using '%s' as Glade template file", glade_location));
 	gladeFile = glade_xml_new(glade_location, NULL, NULL);
 	
@@ -126,13 +124,15 @@ GtkDialog* nsgtk_options_init(struct browser_window *bw, GtkWindow *parent) {
 	CONNECT(setCurrentPage, "clicked");
 	CONNECT(setDefaultPage, "clicked");
 	CONNECT(checkHideAdverts, "toggled");
-	//CONNECT(checkDisablePopups, "toggled");
-	//CONNECT(checkDisablePlugins, "toggled");
-	//CONNECT(spinHistoryAge, "focus-out-event");
-	//CONNECT(checkHoverURLs, "toggled");
+	/* mike: why are these commented out?
+	CONNECT(checkDisablePopups, "toggled");
+	CONNECT(checkDisablePlugins, "toggled");
+	CONNECT(spinHistoryAge, "focus-out-event");
+	CONNECT(checkHoverURLs, "toggled");
+	*/
 	CONNECT(checkDisplayRecentURLs, "toggled");
 	CONNECT(checkSendReferer, "toggled");
-        CONNECT(checkShowSingleTab, "toggled");
+	CONNECT(checkShowSingleTab, "toggled");
 
 	CONNECT(comboProxyType, "changed");
 	CONNECT(entryProxyHost, "focus-out-event");
@@ -206,7 +206,8 @@ GtkDialog* nsgtk_options_init(struct browser_window *bw, GtkWindow *parent) {
 #define SET_BUTTON(x) (x) = glade_xml_get_widget(gladeFile, #x);
 
 
-void nsgtk_options_load(void) {
+void nsgtk_options_load(void) 
+{
 	char b[20];
 	int proxytype = 0;
 
@@ -276,22 +277,23 @@ void nsgtk_options_load(void) {
 	SET_BUTTON(setDefaultExportOptions);
 }
 
-static void dialog_response_handler (GtkDialog *dlg, gint res_id){
-	switch (res_id)
-	{
-		case GTK_RESPONSE_HELP:
-			/* Ready to implement Help */
-			break;
+static void dialog_response_handler (GtkDialog *dlg, gint res_id)
+{
+	switch (res_id)	{
+	case GTK_RESPONSE_HELP:
+		/* Ready to implement Help */
+		break;
 
-		case GTK_RESPONSE_CLOSE:
-			on_dialog_close(dlg, TRUE);
+	case GTK_RESPONSE_CLOSE:
+		on_dialog_close(dlg, TRUE);
 	}
 }
 
-static gboolean on_dialog_close (GtkDialog *dlg, gboolean stay_alive){
+static gboolean on_dialog_close (GtkDialog *dlg, gboolean stay_alive)
+{
 	LOG(("Writing options to file"));
 	options_write(options_file_location);
-	if (stay_alive) gtk_widget_hide (GTK_WIDGET(wndPreferences));
+	if (stay_alive) gtk_widget_hide(GTK_WIDGET(wndPreferences));
 	return stay_alive;
 }
 	
@@ -321,24 +323,43 @@ static gboolean on_dialog_close (GtkDialog *dlg, gboolean stay_alive){
 	(y) = gtk_file_chooser_get_current_folder(GTK_FILE_CHOOSER((x)));
 #define BUTTON_CLICKED(x) gboolean on_##x##_changed(GtkWidget *widget, gpointer data) { \
 	LOG(("Signal emitted on '%s'", #x));
+
 ENTRY_CHANGED(entryHomePageURL, option_homepage_url)}
-	return FALSE;}
+	return FALSE;
+}
+
 BUTTON_CLICKED(setCurrentPage)
 	const gchar *url = current_browser->current_content->url;
 	gtk_entry_set_text(GTK_ENTRY(entryHomePageURL), url);
 	option_homepage_url = 
-		strdup(gtk_entry_get_text(GTK_ENTRY(entryHomePageURL)));}
+		strdup(gtk_entry_get_text(GTK_ENTRY(entryHomePageURL)));
+	return FALSE;
+}
+
 BUTTON_CLICKED(setDefaultPage)
 	gtk_entry_set_text(GTK_ENTRY(entryHomePageURL),
 	 				   "http://www.netsurf-browser.org/welcome/");
 	option_homepage_url = 
-		strdup(gtk_entry_get_text(GTK_ENTRY(entryHomePageURL)));}
-CHECK_CHANGED(checkHideAdverts, option_block_ads)}
-CHECK_CHANGED(checkDisplayRecentURLs, option_url_suggestion)}
-CHECK_CHANGED(checkSendReferer, option_send_referer)}
+		strdup(gtk_entry_get_text(GTK_ENTRY(entryHomePageURL)));
+	
+	return FALSE;
+}
+
+CHECK_CHANGED(checkHideAdverts, option_block_ads)
+	return FALSE;
+}
+
+CHECK_CHANGED(checkDisplayRecentURLs, option_url_suggestion)
+	return FALSE;
+}
+
+CHECK_CHANGED(checkSendReferer, option_send_referer)
+	return FALSE;
+}
                 
 CHECK_CHANGED(checkShowSingleTab, option_show_single_tab)
 	nsgtk_reflow_all_windows();
+	return FALSE;
 }
 
 COMBO_CHANGED(comboProxyType, proxy_type)
@@ -367,10 +388,13 @@ COMBO_CHANGED(comboProxyType, proxy_type)
 	gtk_widget_set_sensitive (entryProxyPort, sensitive);
 	gtk_widget_set_sensitive (entryProxyUser, sensitive);
 	gtk_widget_set_sensitive (entryProxyPassword, sensitive);
+	
+	return FALSE;
 }
 
 ENTRY_CHANGED(entryProxyHost, option_http_proxy_host)}
-	return FALSE;}
+	return FALSE;
+}
 
 gboolean on_entryProxyPort_changed(GtkWidget *widget, gpointer data)
 {
@@ -391,53 +415,138 @@ gboolean on_entryProxyPort_changed(GtkWidget *widget, gpointer data)
 }
 
 ENTRY_CHANGED(entryProxyUser, option_http_proxy_auth_user)}
-	return FALSE;}
+	return FALSE;
+}
 ENTRY_CHANGED(entryProxyPassword, option_http_proxy_auth_pass)}
-	return FALSE;}
+	return FALSE;
+}
 
-SPIN_CHANGED(spinMaxFetchers, option_max_fetchers)}
-SPIN_CHANGED(spinFetchesPerHost, option_max_fetchers_per_host)}
-SPIN_CHANGED(spinCachedConnections, option_max_cached_fetch_handles)}
+SPIN_CHANGED(spinMaxFetchers, option_max_fetchers)
+	return FALSE;
+}
 
-CHECK_CHANGED(checkResampleImages, option_render_resample)}
+SPIN_CHANGED(spinFetchesPerHost, option_max_fetchers_per_host)
+	return FALSE;
+}
+
+SPIN_CHANGED(spinCachedConnections, option_max_cached_fetch_handles)
+	return FALSE;
+}
+
+CHECK_CHANGED(checkResampleImages, option_render_resample)
+	return FALSE;
+}
+
 SPIN_CHANGED(spinAnimationSpeed, animation_delay)
-	option_minimum_gif_delay = round(animation_delay * 100.0);}
+	option_minimum_gif_delay = round(animation_delay * 100.0);
+	return FALSE;
+}
 CHECK_CHANGED(checkDisableAnimations, option_animate_images);
-	option_animate_images = !option_animate_images;}
+	option_animate_images = !option_animate_images;
+	return FALSE;
+}
 
-FONT_CHANGED(fontSansSerif, option_font_sans)}
-FONT_CHANGED(fontSerif, option_font_serif)}
-FONT_CHANGED(fontMonospace, option_font_mono)}
-FONT_CHANGED(fontCursive, option_font_cursive)}
-FONT_CHANGED(fontFantasy, option_font_fantasy)}
+FONT_CHANGED(fontSansSerif, option_font_sans)
+	return FALSE;
+}
+
+FONT_CHANGED(fontSerif, option_font_serif)
+	return FALSE;
+}
+
+FONT_CHANGED(fontMonospace, option_font_mono)
+	return FALSE;
+}
+
+FONT_CHANGED(fontCursive, option_font_cursive)
+	return FALSE;
+}
+
+FONT_CHANGED(fontFantasy, option_font_fantasy)
+	return FALSE;
+}
+
 COMBO_CHANGED(comboDefault, option_font_default)
-	option_font_default++;}
+	option_font_default++;
+	return FALSE;
+}
 
 SPIN_CHANGED(spinDefaultSize, option_font_size)
-	option_font_size *= 10;}
+	option_font_size *= 10;
+	return FALSE;
+}
+
 SPIN_CHANGED(spinMinimumSize, option_font_min_size)
-	option_font_min_size *= 10;}
+	option_font_min_size *= 10;
+	return FALSE;
+}
+
 BUTTON_CLICKED(fontPreview)
-	nsgtk_reflow_all_windows();}
+	nsgtk_reflow_all_windows();
+	return FALSE;
+}
 
 SPIN_CHANGED(spinMemoryCacheSize, option_memory_cache_size)
-	option_memory_cache_size <<= 20;}
-SPIN_CHANGED(spinDiscCacheAge, option_disc_cache_age)}
+	option_memory_cache_size <<= 20;
+	return FALSE;
+}
 
-CHECK_CHANGED(checkClearDownloads, option_downloads_clear)}
-CHECK_CHANGED(checkRequestOverwrite, option_request_overwrite)}
-FILE_CHOOSER_CHANGED(fileChooserDownloads, option_downloads_directory)}
+SPIN_CHANGED(spinDiscCacheAge, option_disc_cache_age)
+	return FALSE;
+}
 
-SPIN_CHANGED(spinMarginTop, option_margin_top)}
-SPIN_CHANGED(spinMarginBottom, option_margin_bottom)}
-SPIN_CHANGED(spinMarginLeft, option_margin_left)}
-SPIN_CHANGED(spinMarginRight, option_margin_right)}
-SPIN_CHANGED(spinExportScale, option_export_scale)}
-CHECK_CHANGED(checkSuppressImages, option_suppress_images)}
-CHECK_CHANGED(checkRemoveBackgrounds, option_remove_backgrounds)}
-CHECK_CHANGED(checkFitPage, option_enable_loosening)}
-CHECK_CHANGED(checkCompressPDF, option_enable_PDF_compression)}
-CHECK_CHANGED(checkPasswordPDF, option_enable_PDF_password)}
+CHECK_CHANGED(checkClearDownloads, option_downloads_clear)
+	return FALSE;
+}
+
+CHECK_CHANGED(checkRequestOverwrite, option_request_overwrite)
+	return FALSE;
+}
+
+FILE_CHOOSER_CHANGED(fileChooserDownloads, option_downloads_directory)
+	return FALSE;
+}
+
+SPIN_CHANGED(spinMarginTop, option_margin_top)
+	return FALSE;
+}
+
+SPIN_CHANGED(spinMarginBottom, option_margin_bottom)
+	return FALSE;
+}
+
+SPIN_CHANGED(spinMarginLeft, option_margin_left)
+	return FALSE;
+}
+
+SPIN_CHANGED(spinMarginRight, option_margin_right)
+	return FALSE;
+}
+
+SPIN_CHANGED(spinExportScale, option_export_scale)
+	return FALSE;
+}
+
+CHECK_CHANGED(checkSuppressImages, option_suppress_images)
+	return FALSE;
+}
+
+CHECK_CHANGED(checkRemoveBackgrounds, option_remove_backgrounds)
+	return FALSE;
+}
+
+CHECK_CHANGED(checkFitPage, option_enable_loosening)
+	return FALSE;
+}
+
+CHECK_CHANGED(checkCompressPDF, option_enable_PDF_compression)
+	return FALSE;
+}
+
+CHECK_CHANGED(checkPasswordPDF, option_enable_PDF_password)
+	return FALSE;
+}
+
 BUTTON_CLICKED(setDefaultExportOptions)
 	option_margin_top = DEFAULT_MARGIN_TOP_MM;
 	option_margin_bottom = DEFAULT_MARGIN_BOTTOM_MM;
@@ -461,4 +570,5 @@ BUTTON_CLICKED(setDefaultExportOptions)
 	SET_CHECK(checkPasswordPDF, option_enable_PDF_password);
 	SET_CHECK(checkFitPage, option_enable_loosening);
 	
+	return FALSE;
 }
