@@ -24,50 +24,59 @@ GtkAboutDialog* about_dialog;
 
 static const gchar *authors[] = {
 		"John-Mark Bell", "James Bursa", "Michael Drake",
-		"Rob Kendrick", "Adrian Lees", "Vincent Sanders", "Daniel Silverstone",
-		"Richard Wilson", "\nContributors:", "Kevin Bagust", "Stefaan Claes",
+		"Rob Kendrick", "Adrian Lees", "Vincent Sanders",
+		"Daniel Silverstone", "Richard Wilson",
+		"\nContributors:", "Kevin Bagust", "Stefaan Claes",
 		"Matthew Hambley", "Rob Jackson", "Jeffrey Lee", "Phil Mellor",
-		"Philip Pemberton", "Darren Salt", "Andrew Timmins", "John Tytgat",
-		"Chris Williams", "\nGoogle Summer of Code Contributors:",
-		"Adam Blokus", "Sean Fox", "Michael Lester", "Andrew Sidwell", NULL
-}
-;
-static const gchar *translators = "Sebastian Barthel \nBruno D'Arcangeli \nGerard van Katwijk \nJérôme Mathevet \nSimon Voortman.";
+		"Philip Pemberton", "Darren Salt", "Andrew Timmins",
+		"John Tytgat", "Chris Williams",
+		"\nGoogle Summer of Code Contributors:", "Adam Blokus",
+		"Sean Fox", "Michael Lester", "Andrew Sidwell", NULL
+};
+
+static const gchar *translators = "Sebastian Barthel\nBruno D'Arcangeli\n"
+		"Gerard van Katwijk\nJérôme Mathevet\nSimon Voortman.";
 static const gchar *artists[] = {
-		"Michael Drake", "\nContributors:",
-		"Andrew Duffell", "John Duffell", "Richard Hallas", "Phil Mellor",
-		NULL
-}
-;
+		"Michael Drake", "\nContributors:", "Andrew Duffell",
+		"John Duffell", "Richard Hallas", "Phil Mellor", NULL
+};
+
 static const gchar *documenters[] = {
-		"John-Mark Bell", "James Bursa", "Michael Drake", "Richard Wilson",
-		"\nContributors:", "James Shaw", NULL
+		"John-Mark Bell", "James Bursa", "Michael Drake",
+		"Richard Wilson", "\nContributors:", "James Shaw", NULL
 };
 
 static const gchar *name = "NetSurf";
-static const gchar *description = "Small as a mouse, fast as a cheetah, and available for free.\nNetSurf is a web browser for RISC OS and UNIX-like platforms.";
+static const gchar *description =
+		"Small as a mouse, fast as a cheetah, and available for free.\n"
+		"NetSurf is a web browser for RISC OS and UNIX-like platforms.";
 static const gchar *url = "http://www.netsurf-browser.org/";
 static const gchar *url_label = "NetSurf Website";
-static const gchar *copyright = "Copyright © 2003 - 2008 The NetSurf Developers";
+static const gchar *copyright =
+		"Copyright © 2003 - 2008 The NetSurf Developers";
 
-static void launch_url (GtkAboutDialog *about_dialog, const gchar *url, gpointer data)
+static void launch_url (GtkAboutDialog *about_dialog, const gchar *url,
+		gpointer data)
 {
 	struct browser_window *bw = data;
 	browser_window_go(bw, url, 0, true);
- }
+}
 
-void nsgtk_about_dialog_init(GtkWindow *parent, struct browser_window *bw, const char *version)
+void nsgtk_about_dialog_init(GtkWindow *parent, struct browser_window *bw,
+		const char *version)
 {
 	gchar *licence_text;
 	
-	g_file_get_contents(g_strconcat(res_dir_location, "licence", NULL), &licence_text, NULL, NULL);
+	g_file_get_contents(g_strconcat(res_dir_location, "licence", NULL),
+			&licence_text, NULL, NULL);
 	gtk_about_dialog_set_url_hook (launch_url, (gpointer) bw, NULL);
 
 	gtk_show_about_dialog(parent, "artists", artists, "authors", authors,
-	"comments", description,"copyright", copyright, "documenters", documenters,
-	"license", licence_text,
-	"program-name", name, "translator-credits", translators,
-	"version", version, "website", url, "website-label", url_label,
-	"wrap-license", FALSE, NULL);
+			"comments", description,"copyright", copyright,
+			"documenters", documenters, "license", licence_text,
+			"program-name", name, "translator-credits", translators,
+			"version", version, "website", url,
+			"website-label", url_label,
+			"wrap-license", FALSE, NULL);
 }
 
