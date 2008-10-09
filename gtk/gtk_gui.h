@@ -16,6 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef GTK_GUI_H
+#define GTK_GUI_H
+
 #include <stdbool.h>
 #include <gtk/gtk.h>
 #include <glade/glade.h>
@@ -33,3 +36,6 @@ extern GtkWindow *wndTooltip;
 extern GtkLabel *labelTooltip;
 
 extern GtkDialog *wndOpenFile;
+
+#endif /* GTK_GUI_H */
+
