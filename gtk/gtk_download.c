@@ -67,8 +67,7 @@ static void nsgtk_download_store_create_item (struct gui_download_window *dl);
 static void nsgtk_download_store_clear_item (struct gui_download_window *dl);
 static void nsgtk_download_store_cancel_item (struct gui_download_window *dl);
 
-static void nsgtk_download_sensitivity_evaluate(
-		GtkTreeSelection *selection);
+static void nsgtk_download_sensitivity_evaluate(GtkTreeSelection *selection);
 static void nsgtk_download_sensitivity_update_buttons(
 		nsgtk_download_actions sensitivity);
 		
@@ -144,9 +143,10 @@ void nsgtk_download_init()
 	g_signal_connect_swapped(glade_xml_get_widget(gladeFile, "buttonClear"),
 			"clicked", G_CALLBACK(nsgtk_download_do),
 			nsgtk_download_store_clear_item);
-	g_signal_connect_swapped(glade_xml_get_widget(gladeFile, "buttonCancel"),
-			"clicked", G_CALLBACK(nsgtk_download_do),
-			nsgtk_download_store_cancel_item);
+	g_signal_connect_swapped(glade_xml_get_widget(gladeFile,
+			 "buttonCancel"), "clicked",
+			 G_CALLBACK(nsgtk_download_do),
+			 nsgtk_download_store_cancel_item);
 	g_signal_connect(G_OBJECT(nsgtk_download_window), "delete-event", 
 			G_CALLBACK(nsgtk_download_hide), NULL);
 	
@@ -727,7 +727,7 @@ gchar* nsgtk_download_info_to_string (struct gui_download_window *dl)
 	gchar *size_info = g_strdup_printf(messages_get("gtkSizeInfo"), 
 			human_friendly_bytesize(dl->size_downloaded),
 			dl->size_total == 0 ? messages_get("gtkUnknownSize") : 
-					human_friendly_bytesize(dl->size_total));
+				human_friendly_bytesize(dl->size_total));
 	
 	if (dl->status != NSGTK_DOWNLOAD_ERROR)
 		return g_strdup_printf("%s\n%s", 
