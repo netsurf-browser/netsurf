@@ -182,7 +182,6 @@ static void *myrealloc(void *ptr, size_t len, void *pw)
 void gui_init(int argc, char** argv)
 {
 	char buf[PATH_MAX];
-	PangoFontDescription *fontdesc;
 
 	gtk_init(&argc, &argv);
 

@@ -60,18 +60,18 @@ static const gchar* domainAll;
 
 static struct history_model *history;
 
-static void nsgtk_history_init_model();
-static void nsgtk_history_init_filters();
-static void nsgtk_history_init_sort();
-static void nsgtk_history_init_treeviews();
-static void nsgtk_history_init_list();
+static void nsgtk_history_init_model(void);
+static void nsgtk_history_init_filters(void);
+static void nsgtk_history_init_sort(void);
+static void nsgtk_history_init_treeviews(void);
+static void nsgtk_history_init_list(void);
 
 static bool nsgtk_history_add_internal(const char *, const struct url_data *);
 
 static void nsgtk_history_show_domain(GtkTreeSelection *treesel,
 		GString *domain_filter);
 		
-static void nsgtk_history_show_all();
+static void nsgtk_history_show_all(void);
 
 static gboolean nsgtk_history_filter_search(GtkTreeModel *model, 
 		GtkTreeIter *iter, GtkWidget *search_entry);
@@ -87,7 +87,7 @@ static gint nsgtk_history_domain_sort_compare(GtkTreeModel *model, GtkTreeIter *
 static void nsgtk_history_domain_set_visible (GtkTreeModel *model, 
 		GtkTreePath *path, GtkTreeIter *iter, gboolean has_sites);
 		
-static void nsgtk_history_search();
+static void nsgtk_history_search(void);
 static void nsgtk_history_search_clear (GtkEntry *entry);
 
 static gchar *nsgtk_history_date_parse(time_t visit_time);
@@ -99,8 +99,6 @@ static void nsgtk_history_scroll_top (GtkScrolledWindow *scrolled_window);
 
 void nsgtk_history_init(void)
 {
-	GtkTreeIter iter;
-
 	dateToday = messages_get("DateToday");
 	dateYesterday = messages_get("DateYesterday");
 	dateAt = messages_get("DateAt");
@@ -123,7 +121,7 @@ void nsgtk_history_init(void)
 	nsgtk_history_show_all();
 }
 
-void nsgtk_history_init_model()
+void nsgtk_history_init_model(void)
 {
 	history = malloc(sizeof(struct history_model));
 	
@@ -162,7 +160,7 @@ void nsgtk_history_init_model()
 			gtk_tree_view_get_selection(history->domain_treeview);
 }
 
-void nsgtk_history_init_list()
+void nsgtk_history_init_list(void)
 {
 	GtkTreeIter iter;
 	
@@ -180,7 +178,7 @@ void nsgtk_history_init_list()
 	urldb_iterate_entries(nsgtk_history_add_internal);
 }
 
-void nsgtk_history_init_filters()
+void nsgtk_history_init_filters(void)
 {	
 	GtkWidget *search_entry, *clear_button;
 	GString *filter_string = g_string_new(NULL);
@@ -212,7 +210,7 @@ void nsgtk_history_init_filters()
 		G_CALLBACK(nsgtk_history_show_domain), filter_string);
 }
 
-void nsgtk_history_init_sort()
+void nsgtk_history_init_sort(void)
 {
 	GtkWidget *domain_window = glade_xml_get_widget(gladeFile,
 						"windowDomain");
@@ -248,7 +246,7 @@ void nsgtk_history_init_sort()
 			GUINT_TO_POINTER(SITE_TOTALVISITS), NULL);		
 }	
 
-void nsgtk_history_init_treeviews()
+void nsgtk_history_init_treeviews(void)
 {
 	GtkCellRenderer *renderer;
 	
@@ -364,7 +362,6 @@ void nsgtk_history_show_domain(GtkTreeSelection *treesel,
 {
 	GtkTreeIter iter;
 	GtkTreeModel *model;
-	gint columns[] = { DOM_DOMAIN, DOM_LASTVISIT, DOM_TOTALVISITS };
 	
 	if (gtk_tree_selection_get_selected(treesel, &model, &iter)) {
 		gtk_tree_model_get(model, &iter, DOM_DOMAIN, 
@@ -376,7 +373,7 @@ void nsgtk_history_show_domain(GtkTreeSelection *treesel,
 	nsgtk_history_update_info(treesel, TRUE); 
 }
 
-void nsgtk_history_show_all()
+static void nsgtk_history_show_all(void)
 {
 	GtkTreePath *path = gtk_tree_path_new_from_string("0");
 	
@@ -501,7 +498,7 @@ void nsgtk_history_search_clear (GtkEntry *entry)
 gchar *nsgtk_history_date_parse(time_t visit_time)
 {
 	gchar *date_string = malloc(30);
-	gchar *format = malloc(30);
+	gchar format[30];
 	time_t current_time = time(NULL);
 	gint current_day = localtime(&current_time)->tm_yday;
 	struct tm *visit_date = localtime(&visit_time);
@@ -516,7 +513,7 @@ gchar *nsgtk_history_date_parse(time_t visit_time)
 		g_snprintf(format, 30, "%%A %s %%I:%%M %%p",
 				dateAt); 
 	else 
-		format = "%B %d, %Y"; 
+		g_snprintf(format, 30, "%%B %%d, %%Y");
 
 	strftime(date_string, 30, format, visit_date);
 

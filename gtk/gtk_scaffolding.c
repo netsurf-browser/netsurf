@@ -139,7 +139,8 @@ static gboolean nsgtk_history_button_press_event(GtkWidget *, GdkEventButton *,
 						gpointer);
 
 static void nsgtk_attach_menu_handlers(GladeXML *, gpointer);
-
+static void nsgtk_window_tabs_num_changed(GtkNotebook *notebook,
+		GtkWidget *page, guint page_num, struct gtk_scaffolding *g);
 void nsgtk_openfile_open(char *filename);
 
 #define MENUEVENT(x) { #x, G_CALLBACK(nsgtk_on_##x##_activate) }
@@ -345,16 +346,22 @@ void nsgtk_throb(void *p)
 static gboolean nsgtk_window_edit_menu_clicked(GtkWidget *widget, struct gtk_scaffolding *g)
 {
 	nsgtk_scaffolding_update_edit_actions_sensitivity (g, g->xml, FALSE);
+	
+	return TRUE;
 }
 
 static gboolean nsgtk_window_edit_menu_hidden(GtkWidget *widget, struct gtk_scaffolding *g)
 {
 	nsgtk_scaffolding_enable_edit_actions_sensitivity(g, g->xml);
+	return TRUE;
+
 }
 
 static gboolean nsgtk_window_popup_menu_hidden(GtkWidget *widget, struct gtk_scaffolding *g)
 {
 	nsgtk_scaffolding_enable_edit_actions_sensitivity(g, g->popup_xml);
+	return TRUE;
+
 }
 
 gboolean nsgtk_window_back_button_clicked(GtkWidget *widget, gpointer data)
@@ -648,6 +655,8 @@ MENUHANDLER(cut)
 		gtk_editable_cut_clipboard (GTK_EDITABLE(gw->url_bar));
 	else
 		browser_window_key_press(bw, 24);
+		
+	return TRUE;
 }
 
 MENUHANDLER(copy)
@@ -661,6 +670,8 @@ MENUHANDLER(copy)
 		gtk_editable_copy_clipboard(GTK_EDITABLE(gw->url_bar));
 	else
 		gui_copy_to_clipboard(bw->sel);
+		
+	return TRUE;
 }
 
 MENUHANDLER(paste)
@@ -672,8 +683,10 @@ MENUHANDLER(paste)
 	/* If the url bar has focus, let gtk handle it */
 	if (GTK_IS_EDITABLE (focused))
 		gtk_editable_paste_clipboard (GTK_EDITABLE (focused));
-	else    
+	else
 		gui_paste_from_clipboard(gui, 0, 0);
+	
+	return TRUE;
 }
 
 MENUHANDLER(select_all)
@@ -683,6 +696,8 @@ MENUHANDLER(select_all)
 	
 	LOG(("Selecting all text"));
 	selection_select_all(bw->sel);
+	
+	return TRUE;
 }
 
 MENUHANDLER(preferences)
@@ -693,6 +708,7 @@ MENUHANDLER(preferences)
 		gw->preferences_dialog = nsgtk_options_init(bw, gw->window);
 	else
 		gtk_widget_show (GTK_WIDGET(gw->preferences_dialog));
+		
 	return TRUE;
 }
 
@@ -869,6 +885,8 @@ MENUHANDLER(save_box_tree)
 	}
 	
 	gtk_widget_destroy(save_dialog);
+	
+	return TRUE;
 }
 
 MENUHANDLER(save_dom_tree)
@@ -917,6 +935,8 @@ MENUHANDLER(save_dom_tree)
 	}
 	
 	gtk_widget_destroy(save_dialog);
+	
+	return TRUE;
 }
 
 
@@ -968,6 +988,8 @@ MENUHANDLER(next_tab)
 	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
 
 	gtk_notebook_next_page(gw->notebook);
+	
+	return TRUE;
 }
 
 MENUHANDLER(prev_tab)
@@ -975,6 +997,8 @@ MENUHANDLER(prev_tab)
 	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
 
 	gtk_notebook_prev_page(gw->notebook);
+	
+	return TRUE;
 }
 
 MENUHANDLER(about)

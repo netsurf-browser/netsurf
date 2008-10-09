@@ -77,8 +77,6 @@ static void nsgtk_print_set_dashed(void);	/**< Set for drawing dashed lines */
 
 
 static void nsgtk_print_set_colour(colour c);
-static void nsgtk_print_plot_caret(int x, int y, int h);
-
 
 static bool gtk_print_font_paint(const struct css_style *style,
 		const char *string, size_t length,
@@ -430,7 +428,6 @@ void nsgtk_print_set_solid()
 void nsgtk_print_set_dotted()
 {
 	double cdashes = 1;
-	gint8 dashes[] = { 1, 1 };
 
 	cairo_set_dash(gtk_print_current_cr, &cdashes, 1, 0);
 
@@ -439,7 +436,6 @@ void nsgtk_print_set_dotted()
 void nsgtk_print_set_dashed()
 {
 	double cdashes = 3;
-	gint8 dashes[] = { 3, 3 };
 
 	cairo_set_dash(gtk_print_current_cr, &cdashes, 1, 0);
 }
@@ -452,9 +448,6 @@ bool gtk_print_font_paint(const struct css_style *style,
 	PangoLayout *layout;
 	gint size;
 	PangoLayoutLine *line;
-
-	int width, height;
-
 
 	if (length == 0)
 		return true;

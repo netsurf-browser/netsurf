@@ -27,7 +27,4 @@ GtkDialog* nsgtk_options_init(struct browser_window *bw, GtkWindow *parent);		/*
 void nsgtk_options_load(void);		/** Load current options into window */
 void nsgtk_options_save(void);		/** Save options from window */
 
-/** Callbacks */
-static void dialog_response_handler (GtkDialog *dlg, gint res_id);
-static gboolean on_dialog_close (GtkDialog *dlg, gboolean stay_alive);
 #endif

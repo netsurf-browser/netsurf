@@ -314,7 +314,7 @@ PangoFontDescription *nsfont_style_to_description(
 	else
 		size = css_len2pt(&style->font_size.value.length, style);
 
-	if (size < abs(option_font_min_size / 10))
+	if (size < (unsigned)abs(option_font_min_size / 10))
 		size = option_font_min_size / 10;
 
 	size *= PANGO_SCALE;

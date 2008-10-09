@@ -451,7 +451,6 @@ void nsgtk_set_solid()
 void nsgtk_set_dotted()
 {
 	double cdashes = 1;
-	gint8 dashes[] = { 1, 1 };
 
 	cairo_set_dash(current_cr, &cdashes, 1, 0);
 }
@@ -459,7 +458,6 @@ void nsgtk_set_dotted()
 void nsgtk_set_dashed()
 {
 	double cdashes = 3;
-	gint8 dashes[] = { 3, 3 };
 
 	cairo_set_dash(current_cr, &cdashes, 1, 0);
 }

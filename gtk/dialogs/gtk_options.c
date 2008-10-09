@@ -40,6 +40,9 @@ static struct browser_window *current_browser;
 static int proxy_type;
 static float animation_delay;
 
+static void dialog_response_handler (GtkDialog *dlg, gint res_id);
+static gboolean on_dialog_close (GtkDialog *dlg, gboolean stay_alive);
+
 /* Declares both widget and callback */
 #define DECLARE(x) GtkWidget *x; gboolean on_##x##_changed( \
 	GtkWidget *widget, gpointer data)
