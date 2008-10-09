@@ -35,8 +35,6 @@ GtkNotebook* nsgtk_scaffolding_get_notebook (struct gui_window *g);
 
 void nsgtk_scaffolding_set_top_level (struct gui_window *gw);
 
-void nsgtk_attach_toplevel_viewport(nsgtk_scaffolding *g, GtkWidget *sw);
-
 void nsgtk_scaffolding_destroy(nsgtk_scaffolding *scaffold);
 
 void nsgtk_scaffolding_popup_menu(nsgtk_scaffolding *g, guint button);

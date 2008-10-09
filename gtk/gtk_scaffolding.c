@@ -1067,36 +1067,6 @@ static gboolean do_scroll_event(GtkWidget *widget, GdkEvent *ev,
         return TRUE;
 }
 
-void nsgtk_attach_toplevel_viewport(nsgtk_scaffolding *g,
-                                    GtkWidget *sw)
-{
-        GtkWidget *scrollbar;
-
-        /* Insert the viewport into the right part of our table */
-        GtkTable *table = GTK_TABLE(GET_WIDGET("centreTable"));
-        LOG(("Attaching viewport to scaffolding %p", g));
-/*        gtk_table_attach_defaults(table, GTK_WIDGET(vp), 0, 1, 0, 1);
-
-        /* connect our scrollbars to the viewport */
-/*	scrollbar = GET_WIDGET("coreScrollHorizontal");
-	gtk_viewport_set_hadjustment(vp,
-		gtk_range_get_adjustment(GTK_RANGE(scrollbar)));
-        g_object_set_data(G_OBJECT(vp), "hScroll", scrollbar);
-        scrollbar = GET_WIDGET("coreScrollVertical");
-	gtk_viewport_set_vadjustment(vp,
-                gtk_range_get_adjustment(GTK_RANGE(scrollbar)));
-        g_object_set_data(G_OBJECT(vp), "vScroll", scrollbar);
-        g_signal_connect(G_OBJECT(vp), "scroll_event",
-	    			G_CALLBACK(do_scroll_event), NULL);
-
-        gdk_window_set_accept_focus (GTK_WIDGET(vp)->window, TRUE);
-
-        /* And set the size-request to zero to cause it to get its act together */
-//	gtk_widget_set_size_request(GTK_WIDGET(vp), 0, 0);
-
-	gtk_table_attach_defaults(table, sw, 0, 1, 0, 1);
-}
-
 nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 {
         struct gtk_scaffolding *g = malloc(sizeof(*g));
@@ -1146,7 +1116,7 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 		gtk_window_set_default_size(g->window, 600, 600);
 	}
 
-	nsgtk_tab_init(g->notebook);
+	nsgtk_tab_init(GTK_WIDGET(g->notebook));
 
 	/* set the URL entry box to expand, as we can't do this from within
 	 * glade because of the way it emulates toolbars.
@@ -1401,7 +1371,7 @@ static void nsgtk_scaffolding_update_edit_actions_sensitivity
 	(struct gtk_scaffolding *g, GladeXML *xml, gboolean hide)
 {
 	GtkWidget *widget = gtk_window_get_focus(g->window);
-	gboolean can_copy, can_cut, can_undo, can_redo, can_paste;
+	gboolean can_copy, can_cut, can_paste;
 	gboolean has_selection;
 	
 	if (GTK_IS_EDITABLE (widget))
