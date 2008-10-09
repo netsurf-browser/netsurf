@@ -23,6 +23,7 @@
 #include "content/content.h"
 #include "desktop/options.h"
 #include "gtk/options.h"
+#include "gtk/gtk_tabs.h"
 
 #define TAB_WIDTH_N_CHARS 15
 #define GET_WIDGET(x) glade_xml_get_widget(gladeWindows, (x))
@@ -55,7 +56,6 @@ void nsgtk_tab_init(GtkWidget *tabs)
 
 void nsgtk_tab_add(struct gui_window *window)
 {
-        GtkWidget *scrollbar;
 	GtkNotebook *tabs = nsgtk_scaffolding_get_notebook(window);
 
 	GtkWidget *tabBox = nsgtk_tab_label_setup(window);
@@ -133,7 +133,6 @@ void nsgtk_tab_update_size(GtkWidget *hbox, GtkStyle *previous_style,
 {
 	PangoFontMetrics *metrics;
 	PangoContext *context;
-	GtkWidget *button;
 	int char_width, h, w;
 
 	context = gtk_widget_get_pango_context (hbox);

@@ -386,12 +386,13 @@ gboolean nsgtk_window_button_press_event(GtkWidget *widget,
 	
 	browser_window_mouse_click(g->bw, g->mouse->state, g->mouse->pressed_x,
 			g->mouse->pressed_y);
+		
+	return TRUE;
 }
 
 gboolean nsgtk_window_button_release_event(GtkWidget *widget,
                                          GdkEventButton *event, gpointer data)
 {
-	int button;
 	struct gui_window *g = data;
 	bool shift = event->state & GDK_SHIFT_MASK;
 	bool ctrl = event->state & GDK_CONTROL_MASK;
@@ -571,7 +572,8 @@ gboolean nsgtk_window_size_allocate_event(GtkWidget *widget,
 void nsgtk_reflow_all_windows(void)
 {
 	for (struct gui_window *g = window_list; g; g = g->next) {
-                nsgtk_tab_options_changed(nsgtk_scaffolding_get_notebook(g));
+                nsgtk_tab_options_changed(GTK_WIDGET(
+							nsgtk_scaffolding_get_notebook(g)));
 		g->bw->reformat_pending = true;
         }
 

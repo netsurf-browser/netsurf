@@ -97,13 +97,13 @@ bool nsgtk_throbber_initialise_from_png(const int frames, ...)
  * \return true on success.
  */
 #ifdef WITH_GIF
+extern gif_bitmap_callback_vt gif_bitmap_callbacks;	/**< external structure containing
+								*  bitmap callback functions */
 bool nsgtk_throbber_initialise_from_gif(const char *fn)
 {
 	/* disect the GIF provided by filename in *fn into a series of
 	 * GdkPixbuf for use later.
 	 */
-	extern gif_bitmap_callback_vt gif_bitmap_callbacks;	/**< external structure containing
-								*  bitmap callback functions */
 	gif_animation gif;
 	struct nsgtk_throbber throb;				/**< structure we generate */
 	int res;
