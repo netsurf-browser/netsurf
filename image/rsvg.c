@@ -171,6 +171,7 @@ bool rsvg_convert(struct content *c, int iwidth, int iheight)
 				bitmap_get_rowstride(d->bitmap));
 
 	c->bitmap = d->bitmap;
+	bitmap_modified(c->bitmap);
 	c->status = CONTENT_STATUS_DONE;
 	/* Done: update status bar */
 	content_set_status(c, "");

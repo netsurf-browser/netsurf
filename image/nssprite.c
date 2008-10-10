@@ -105,7 +105,9 @@ bool nssprite_convert(struct content *c, int width, int height)
 
 	c->width = sprite->width;
 	c->height = sprite->height;
+	bitmap_modified(c->bitmap);
 	c->status = CONTENT_STATUS_DONE;
+
 	return true;
 }
 

@@ -92,7 +92,9 @@ bool nsico_convert(struct content *c, int iwidth, int iheight)
 	bmp = ico_find(c->data.ico.ico, 255, 255);
 	assert(bmp);
 	c->bitmap = bmp->bitmap;
+	bitmap_modified(c->bitmap);
 	c->status = CONTENT_STATUS_DONE;
+
 	/* Done: update status bar */
 	content_set_status(c, "");
 	return true;

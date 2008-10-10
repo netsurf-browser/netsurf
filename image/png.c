@@ -243,11 +243,12 @@ bool nspng_convert(struct content *c, int width, int height)
 		snprintf(c->title, NSPNG_TITLE_LEN, messages_get("PNGTitle"),
                          c->width, c->height, c->source_size);
 	}
-        
+	
 	c->size += (c->width * c->height * 4) + NSPNG_TITLE_LEN;
-        
+	
+	c->bitmap = c->data.png.bitmap;
+	bitmap_modified(c->bitmap);
 	c->status = CONTENT_STATUS_DONE;
-        c->bitmap = c->data.png.bitmap;
 	content_set_status(c, "");
         
 	return true;
