@@ -152,8 +152,10 @@ MENUPROTO(new_window);
 MENUPROTO(new_tab);
 MENUPROTO(open_location);
 MENUPROTO(open_file);
+#ifdef WITH_PDF_EXPORT
 MENUPROTO(export_pdf);
 MENUPROTO(print);
+#endif
 MENUPROTO(close_window);
 MENUPROTO(quit);
 
@@ -1048,24 +1050,6 @@ gboolean nsgtk_history_button_press_event(GtkWidget *widget,
 }
 
 #define GET_WIDGET(x) glade_xml_get_widget(g->xml, (x))
-
-static gboolean do_scroll_event(GtkWidget *widget, GdkEvent *ev,
-                                gpointer data)
-{
-        switch (((GdkEventScroll *)ev)->direction)
-        {
-        case GDK_SCROLL_UP:
-        case GDK_SCROLL_DOWN:
-                gtk_widget_event(g_object_get_data(
-                			G_OBJECT(widget), "vScroll"), ev);
-                break;
-        default:
-                gtk_widget_event(g_object_get_data(
-                			G_OBJECT(widget), "hScroll"), ev);
-        }
-
-        return TRUE;
-}
 
 nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 {
