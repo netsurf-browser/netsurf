@@ -141,7 +141,7 @@ bool loosen_text(struct box *text, int width, struct content *content)
 
 		if (offset < text->length - position) {
 			/*Another break*/
-			LOG(("Current text broken at offset %d",
+			LOG(("Current text broken at offset %zu",
 					position + offset));
 			breaks[break_count++] = position + offset-1;
 		}

@@ -78,7 +78,7 @@ bool nssprite_convert(struct content *c, int width, int height)
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
 	}
-	char* imagebuf = bitmap_get_buffer(c->bitmap);
+	unsigned char* imagebuf = bitmap_get_buffer(c->bitmap);
 	if (!imagebuf) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
