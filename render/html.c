@@ -48,6 +48,11 @@
 
 #define CHUNK 4096
 
+/* Change these to 1 to cause a dump to stderr of the frameset or box
+ * when the trees have been built.
+ */
+#define ALWAYS_DUMP_FRAMESET 0
+#define ALWAYS_DUMP_BOX 0
 
 static void html_convert_css_callback(content_msg msg, struct content *css,
 		intptr_t p1, intptr_t p2, union content_msg_data data);
@@ -67,8 +72,10 @@ static void html_object_refresh(void *p);
 static void html_destroy_frameset(struct content_html_frames *frameset);
 static void html_destroy_iframe(struct content_html_iframe *iframe);
 static void html_set_status(struct content *c, const char *extra);
+#if ALWAYS_DUMP_FRAMESET
 static void html_dump_frameset(struct content_html_frames *frame,
 		unsigned int depth);
+#endif
 
 static const char empty_document[] =
 	"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\""
@@ -298,9 +305,13 @@ bool html_convert(struct content *c, int width, int height)
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
 	}
-	/*box_dump(c->data.html.layout->children, 0);*/
-	/*if (c->data.html.frameset)
-		html_dump_frameset(c->data.html.frameset, 0);*/
+#if ALWAYS_DUMP_BOX
+	box_dump(c->data.html.layout->children, 0);
+#endif
+#if ALWAYS_DUMP_FRAMESET
+	if (c->data.html.frameset)
+                html_dump_frameset(c->data.html.frameset, 0);
+#endif
 
 	/* extract image maps - can't do this sensibly in xml_to_box */
 	if (!imagemap_extract(html, c)) {
@@ -1706,7 +1717,7 @@ void html_close(struct content *c)
 	}
 }
 
-
+#if ALWAYS_DUMP_FRAMESET
 /**
  * Print a frameset tree to stderr.
  */
@@ -1757,3 +1768,5 @@ void html_dump_frameset(struct content_html_frames *frame,
 		}
 	}
 }
+
+#endif
