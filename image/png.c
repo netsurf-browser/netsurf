@@ -178,7 +178,7 @@ void info_callback(png_structp png, png_infop info)
 	c->width = width;
 	c->height = height;
 
-	LOG(("size %li * %li, bpp %i, rowbytes %u", width,
+	LOG(("size %li * %li, bpp %i, rowbytes %zu", width,
 				height, bit_depth, c->data.png.rowbytes));
 }
 
