@@ -91,8 +91,10 @@ static void nsgtk_ssl_accept(GtkButton *w, gpointer data);
 static void nsgtk_ssl_reject(GtkButton *w, gpointer data);
 static void nsgtk_select_menu_clicked(GtkCheckMenuItem *checkmenuitem,
 					gpointer user_data);
+#ifdef WITH_PDF_EXPORT
 static void nsgtk_PDF_set_pass(GtkButton *w, gpointer data);
 static void nsgtk_PDF_no_pass(GtkButton *w, gpointer data);
+#endif
 
 /**
  * Locate a shared resource file by searching known places in order.
@@ -172,12 +174,12 @@ static void check_homedir(void)
 	}
 }
 
-
+#ifdef WITH_HUBBUB
 static void *myrealloc(void *ptr, size_t len, void *pw)
 {
 	return realloc(ptr, len);
 }
-
+#endif
 
 void gui_init(int argc, char** argv)
 {
