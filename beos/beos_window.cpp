@@ -32,6 +32,7 @@ extern "C" {
 #include "utils/utils.h"
 }
 #include "beos/beos_window.h"
+#include "beos/beos_font.h"
 #include "beos/beos_gui.h"
 #include "beos/beos_scaffolding.h"
 #include "beos/beos_plotters.h"
@@ -46,6 +47,7 @@ extern "C" {
 #include <ScrollBar.h>
 #include <String.h>
 #include <String.h>
+#include <TextView.h>
 #include <View.h>
 #include <Window.h>
 
@@ -104,6 +106,7 @@ static const rgb_color kWhiteColor = {255, 255, 255, 255};
 static struct gui_window *window_list = 0;	/**< first entry in win list*/
 
 static BString current_selection;
+static BList current_selection_textruns;
 
 static void nsbeos_gui_window_attach_child(struct gui_window *parent,
 					  struct gui_window *child);
@@ -1744,6 +1747,10 @@ void gui_drag_save_selection(struct selection *s, struct gui_window *g)
 void gui_start_selection(struct gui_window *g)
 {
 	current_selection.Truncate(0);
+	while (current_selection_textruns.ItemAt(0)) {
+		text_run *run = (text_run *)current_selection_textruns.RemoveItem(0L);
+		delete run;
+	}
 
 	if (!g->view->LockLooper())
 		return;
@@ -1773,6 +1780,10 @@ void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
 bool gui_empty_clipboard(void)
 {
 	current_selection.Truncate(0);
+	while (current_selection_textruns.ItemAt(0)) {
+		text_run *run = (text_run *)current_selection_textruns.RemoveItem(0L);
+		delete run;
+	}
 	return true;
 }
 
@@ -1800,6 +1811,17 @@ bool gui_commit_clipboard(void)
 			clip->AddData("text/plain", B_MIME_TYPE, 
 				current_selection.String(), 
 				current_selection.Length());
+			int arraySize = sizeof(text_run_array) + 
+				current_selection_textruns.CountItems() * sizeof(text_run);
+			text_run_array *array = (text_run_array *)malloc(arraySize);
+			array->count = current_selection_textruns.CountItems();
+			for (int i = 0; i < array->count; i++)
+				memcpy(&array->runs[i], current_selection_textruns.ItemAt(i), 
+					sizeof(text_run));
+			clip->AddData("application/x-vnd.Be-text_run_array", B_MIME_TYPE, 
+				array, arraySize);
+			free(array);
+			
 			gui_empty_clipboard();
 			be_clipboard->Commit();
 		}
@@ -1812,6 +1834,7 @@ static bool copy_handler(const char *text, size_t length, struct box *box,
 		void *handle, const char *whitespace_text,
 		size_t whitespace_length)
 {
+	//XXX: handle box->style to StyledEdit / RTF ?
 	/* add any whitespace which precedes the text from this box */
 	if (whitespace_text) {
 		if (!gui_add_to_clipboard(whitespace_text,
@@ -1819,6 +1842,18 @@ static bool copy_handler(const char *text, size_t length, struct box *box,
 			return false;
 		}
 	}
+
+	// add a text_run for StyledEdit-like text formating
+	if (box && box->style) {
+		text_run *run = new text_run;
+		BFont font;
+		nsbeos_style_to_font(font, box->style);
+		run->offset = current_selection.Length();
+		run->font = font;
+		run->color = nsbeos_rgb_colour(box->style->color);
+		current_selection_textruns.AddItem(run);
+	}
+
 	/* add the text from this box */
 	if (!gui_add_to_clipboard(text, length, box->space))
 		return false;

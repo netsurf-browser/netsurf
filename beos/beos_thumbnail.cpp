@@ -76,7 +76,7 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 	depth = 32;
 	//depth = (gdk_screen_get_system_visual(gdk_screen_get_default()))->depth;
 
-	LOG(("Trying to create a thumbnail bitmap %dx%d for a content of %dx%d@%d",
+	LOG(("Trying to create a thumbnail bitmap %d x %d for a content of %d x %d @ %d",
 		width, height,
 		content->width, content->width, depth));
 

@@ -42,8 +42,6 @@ extern "C" {
 #include "beos/beos_font.h"
 #include "beos/beos_plotters.h"
 
-static void nsfont_style_to_font(BFont &font, 
-		const struct css_style *style);
 static bool nsfont_width(const struct css_style *style,
 		const char *string, size_t length,
 		int *width);
@@ -84,7 +82,7 @@ bool nsfont_width(const struct css_style *style,
 		return true;
 	}
 
-	nsfont_style_to_font(font, style);
+	nsbeos_style_to_font(font, style);
 	*width = (int)font.StringWidth(string, length);
 	return true;
 }
@@ -134,7 +132,7 @@ bool nsfont_position_in_string(const struct css_style *style,
 	int index;
 	BFont font;
 
-	nsfont_style_to_font(font, style);
+	nsbeos_style_to_font(font, style);
 	BString str(string);
 	int32 len = str.CountChars();
 	float escapements[len];
@@ -184,7 +182,7 @@ bool nsfont_split(const struct css_style *style,
 	int index = 0;
 	BFont font;
 
-	nsfont_style_to_font(font, style);
+	nsbeos_style_to_font(font, style);
 	BString str(string);
 	int32 len = str.CountChars();
 	float escapements[len];
@@ -245,7 +243,7 @@ bool nsfont_paint(const struct css_style *style,
 	if (length == 0)
 		return true;
 
-	nsfont_style_to_font(font, style);
+	nsbeos_style_to_font(font, style);
 	background = nsbeos_rgb_colour(bg);
 	foreground = nsbeos_rgb_colour(c);
 
@@ -296,7 +294,7 @@ bool nsfont_paint(const struct css_style *style,
  * \return  a new Pango font description
  */
 
-static void nsfont_style_to_font(BFont &font, 
+void nsbeos_style_to_font(BFont &font, 
 		const struct css_style *style)
 {
 	float size;
@@ -378,7 +376,7 @@ static void nsfont_style_to_font(BFont &font,
 	if (!face)
 		face = B_REGULAR_FACE;
 
-//fprintf(stderr, "nsfont_style_to_font: %d, %d, %d -> '%s' %04x\n", style->font_family, style->font_style, style->font_weight, family, face);
+//fprintf(stderr, "nsbeos_style_to_font: %d, %d, %d -> '%s' %04x\n", style->font_family, style->font_style, style->font_weight, family, face);
 
 	if (family)
 		font.SetFamilyAndFace((const font_family)family, face);
@@ -388,7 +386,7 @@ static void nsfont_style_to_font(BFont &font,
 		font.SetFace(face);
 	}
 
-//fprintf(stderr, "nsfont_style_to_font: value %f unit %d\n", style->font_size.value.length.value, style->font_size.value.length.unit);
+//fprintf(stderr, "nsbeos_style_to_font: value %f unit %d\n", style->font_size.value.length.value, style->font_size.value.length.unit);
 	if (style->font_size.value.length.unit == CSS_UNIT_PT)
 		size = style->font_size.value.length.value;
 	else
@@ -399,7 +397,7 @@ static void nsfont_style_to_font(BFont &font,
 	if (size < abs(option_font_min_size / 10))
 		size = option_font_min_size / 10;
 
-//fprintf(stderr, "nsfont_style_to_font: %f %d\n", size, style->font_size.value.length.unit);
+//fprintf(stderr, "nsbeos_style_to_font: %f %d\n", size, style->font_size.value.length.unit);
 
 	font.SetSize(size);
 }

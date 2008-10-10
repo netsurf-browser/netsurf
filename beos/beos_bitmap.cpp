@@ -38,6 +38,7 @@ extern "C" {
 #include "utils/log.h"
 }
 #include "beos/beos_bitmap.h"
+#include "beos/beos_gui.h"
 #include "beos/beos_scaffolding.h"
 
 struct bitmap {
@@ -105,14 +106,19 @@ static inline void nsbeos_rgba_to_bgra(void *src, void *dst, int width, int heig
 
 void *bitmap_create(int width, int height, unsigned int state)
 {
+	CALLED();
 	struct bitmap *bmp = (struct bitmap *)malloc(sizeof(struct bitmap));
 	if (bmp == NULL)
 		return NULL;
 
+	int32 flags = 0;
+	if (state & BITMAP_CLEAR_MEMORY)
+		flags |= B_BITMAP_CLEAR_TO_WHITE;
+
 	BRect frame(0, 0, width - 1, height - 1);
 	//XXX: bytes per row ?
-	bmp->primary = new BBitmap(frame, 0, B_RGBA32);
-	bmp->shadow = new BBitmap(frame, 0, B_RGBA32);
+	bmp->primary = new BBitmap(frame, flags, B_RGBA32);
+	bmp->shadow = new BBitmap(frame, flags, B_RGBA32);
 
 	bmp->pretile_x = bmp->pretile_y = bmp->pretile_xy = NULL;
 
@@ -286,6 +292,7 @@ bool bitmap_save(void *vbitmap, const char *path, unsigned flags)
  * \param  vbitmap  a bitmap, as returned by bitmap_create()
  */
 void bitmap_modified(void *vbitmap) {
+	CALLED();
 	struct bitmap *bitmap = (struct bitmap *)vbitmap;
 	// convert the shadow (ABGR) to into the primary bitmap
 	nsbeos_rgba_to_bgra(bitmap->shadow->Bits(), bitmap->primary->Bits(),

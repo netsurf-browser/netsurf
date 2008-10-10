@@ -807,7 +807,7 @@ void gui_window_save_as_link(struct gui_window *g, struct content *c)
  * Send the source of a content to a text editor.
  */
 
-void nsbeos_gui_view_source(struct content *content)
+void nsbeos_gui_view_source(struct content *content, struct selection *selection)
 {
 	char *temp_name;
 	bool done = false;
@@ -866,6 +866,22 @@ void nsbeos_gui_view_source(struct content *content)
 
 	BMessage m(B_REFS_RECEIVED);
 	m.AddRef("refs", &ref);
+
+#if 0
+	if (selection && selection->defined) {
+		int32 line = -1;
+		if (content->type == CONTENT_HTML) {
+			// XXX: use selection, find line in source code
+		}
+		if (content->type == CONTENT_TEXTPLAIN) {
+				line = MAKELINE_FROM_IDX(start_idx);
+		}
+		// not CSS!
+		
+		if (line > -1)
+			message.AddInt32("be:line", line);
+	}
+#endif
 
 	// apps to try
 	const char *editorSigs[] = {

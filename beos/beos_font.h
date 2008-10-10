@@ -28,3 +28,6 @@ struct css_style;
 bool nsfont_paint(const struct css_style *style,
 		const char *string, size_t length,
 		int x, int y, colour bg, colour c);
+
+void nsbeos_style_to_font(BFont &font, 
+		const struct css_style *style);
