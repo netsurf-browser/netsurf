@@ -255,8 +255,7 @@ static struct search_node *urldb_search_insert(struct search_node *root,
 		const struct host_part *data);
 static struct search_node *urldb_search_insert_internal(
 		struct search_node *root, struct search_node *n);
-static struct search_node *urldb_search_remove(struct search_node *root,
-		const struct host_part *data);
+/* for urldb_search_remove, see r5531 which removed it */
 static const struct host_part *urldb_search_find(struct search_node *root,
 		const char *host);
 static struct search_node *urldb_search_skew(struct search_node *root);
@@ -2021,61 +2020,6 @@ struct search_node *urldb_search_insert_internal(struct search_node *root,
 
 		root = urldb_search_skew(root);
 		root = urldb_search_split(root);
-	}
-
-	return root;
-}
-
-/**
- * Delete a node from a search tree
- *
- * \param root Tree to remove from
- * \param data Data to delete
- * \return Updated root of tree
- */
-struct search_node *urldb_search_remove(struct search_node *root,
-		const struct host_part *data)
-{
-	static struct search_node *last, *deleted;
-	int c;
-
-	assert(root && data);
-
-	if (root == &empty)
-		return root;
-
-	c = urldb_search_match_host(root->data, data);
-
-	last = root;
-	if (c > 0) {
-		root->left = urldb_search_remove(root->left, data);
-	} else {
-		deleted = root;
-		root->right = urldb_search_remove(root->right, data);
-	}
-
-	if (root == last) {
-		if (deleted != &empty &&
-				urldb_search_match_host(deleted->data,
-						data) == 0) {
-			deleted->data = last->data;
-			deleted = &empty;
-			root = root->right;
-			free(last);
-		}
-	} else {
-		if (root->left->level < root->level - 1 ||
-				root->right->level < root->level - 1) {
-			if (root->right->level > --root->level)
-				root->right->level = root->level;
-
-			root = urldb_search_skew(root);
-			root->right = urldb_search_skew(root->right);
-			root->right->right =
-				urldb_search_skew(root->right->right);
-			root = urldb_search_split(root);
-			root->right = urldb_search_split(root->right);
-		}
 	}
 
 	return root;
