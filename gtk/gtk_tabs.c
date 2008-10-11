@@ -50,7 +50,7 @@ void nsgtk_tab_init(GtkWidget *tabs)
 	g_signal_connect(tabs, "page-removed",
                          G_CALLBACK(nsgtk_tab_visibility_update), NULL);
 	g_signal_connect(tabs, "page-added",
-                         G_CALLBACK(nsgtk_tab_visibility_update), NULL);	
+                         G_CALLBACK(nsgtk_tab_visibility_update), NULL);
         nsgtk_tab_options_changed(tabs);
 }
 
@@ -86,30 +86,34 @@ void nsgtk_tab_set_title(struct gui_window *g, const char *title)
 		gtk_label_set_text(GTK_LABEL(label), title);
 
 		gtk_widget_set_tooltip_text(g->tab, title);
-	}	
+	}
 }
 
 GtkWidget *nsgtk_tab_label_setup(struct gui_window *window)
 {
 	GtkWidget *hbox, *label, *button, *close;
+	GtkRcStyle *rcstyle;
 
 	hbox = gtk_hbox_new(FALSE, 2);
-	
+
 	label = gtk_label_new("Loading...");
 		gtk_label_set_ellipsize(GTK_LABEL(label), PANGO_ELLIPSIZE_END);
 		gtk_label_set_single_line_mode(GTK_LABEL(label), TRUE);
 		gtk_misc_set_alignment(GTK_MISC(label), 0.0, 0.5);
 		gtk_misc_set_padding(GTK_MISC(label), 0, 0);
 		gtk_widget_show(label);
-	
+
 	button = gtk_button_new();
-		 close = gtk_image_new_from_stock("gtk-close",
-		 		GTK_ICON_SIZE_MENU);
-		 gtk_container_add(GTK_CONTAINER(button), close);
-		 gtk_button_set_focus_on_click(GTK_BUTTON(button), FALSE);
-		 gtk_button_set_relief(GTK_BUTTON(button), GTK_RELIEF_NONE);
-		 gtk_widget_set_tooltip_text(button, "Close this tab.");
-		 
+	close = gtk_image_new_from_stock("gtk-close", GTK_ICON_SIZE_MENU);
+	gtk_container_add(GTK_CONTAINER(button), close);
+	gtk_button_set_focus_on_click(GTK_BUTTON(button), FALSE);
+	gtk_button_set_relief(GTK_BUTTON(button), GTK_RELIEF_NONE);
+	gtk_widget_set_tooltip_text(button, "Close this tab.");
+
+	rcstyle = gtk_rc_style_new();
+	rcstyle->xthickness = rcstyle->ythickness = 0;
+	gtk_widget_modify_style(button, rcstyle);
+	g_object_unref(rcstyle);
 
 	g_signal_connect_swapped(button, "clicked",
 			G_CALLBACK(nsgtk_window_destroy_browser), window);
