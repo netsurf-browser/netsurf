@@ -560,7 +560,7 @@ BOOL ami_tree_event(struct treeview_window *twin)
 						GetListBrowserNodeAttrs(lbnode,
 							LBNA_UserData,(ULONG *)&treenode,
 							TAG_DONE);
-						tree_delete_node(twin->tree, treenode, true);
+						tree_delete_node(twin->tree, treenode, false);
 /* We are recreating the list from scratch as there is no obvious easy way
    to delete children from a listbrowser list */
 						ami_recreate_listbrowser(twin);
