@@ -1,5 +1,6 @@
 /*
  * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2008 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -51,5 +52,5 @@ const char *fetch_filetype(const char *unix_path)
 
 char *fetch_mimetype(const char *ro_path)
 {
-	return strdup("text/plain");
+	return strdup(fetch_filetype(ro_path));
 }
