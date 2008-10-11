@@ -3187,9 +3187,9 @@ float css_len2px(const struct css_length *length,
 		case CSS_UNIT_CM: return length->value * css_screen_dpi / 2.54;
 		case CSS_UNIT_MM: return length->value * css_screen_dpi / 25.4;
 		/* 1pt = 1in/72 */
-		case CSS_UNIT_PT: return length->value * 1.25;
+		case CSS_UNIT_PT: return length->value * css_screen_dpi / 72;
 		/* 1pc = 1pt * 12 */
-		case CSS_UNIT_PC: return length->value * 15.0;
+		case CSS_UNIT_PC: return length->value * css_screen_dpi / 6;
 		default: break;
 	}
 	return 0;
