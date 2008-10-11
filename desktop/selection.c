@@ -729,7 +729,7 @@ void selection_set_start(struct selection *s, unsigned offset)
 	s->start_idx = offset;
 	s->defined = (s->start_idx < s->end_idx);
 	
-	if (s->root->gadget && s->defined) {
+	if (s->defined && s->root && s->root->gadget) {
 		/* update the caret text_box and offset so that it stays at the 
 		 * beginning of the selection */
 		s->root->gadget->caret_text_box = selection_get_start(s, 
