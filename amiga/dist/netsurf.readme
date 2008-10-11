@@ -1,0 +1,25 @@
+Short:        Fast CSS capable web browser
+Uploader:     chris@unsatisfactorysoftware.co.uk (Chris Young)
+Author:       NetSurf contributors (OS4 port by Chris Young)
+Type:         comm/www
+Version:      2.0 development (SVN 5484)
+Architecture: ppc-amigaos >= 4.0.0
+Requires:     AISS
+
+NOT FOR DISTRIBUTION!!!!
+
+This is a PREVIEW RELEASE of the OS4 native port of NetSurf.
+It is beta software, which means it is unstable and missing
+features - use at your own risk!
+
+This is provided for testing purposes only, to gain feedback
+in order to fix bugs for the real release and to prioritise
+features.
+
+Please report bugs to chris@unsatisfactorysoftware.co.uk,
+on the Amigans.net forums or
+in the bug tracker at http://www.unsatisfactorysoftware.co.uk/bugs
+(the bug tracker does not send email notifications, so please also
+use one of the other methods or it might not be picked up quickly)
+
+See http://www.netsurf-browser.org for more information about NetSurf.
