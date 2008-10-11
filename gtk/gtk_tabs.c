@@ -84,7 +84,6 @@ void nsgtk_tab_set_title(struct gui_window *g, const char *title)
 	if (is_top_level) {
 		label = g_object_get_data(G_OBJECT(g->tab), "label");
 		gtk_label_set_text(GTK_LABEL(label), title);
-
 		gtk_widget_set_tooltip_text(g->tab, title);
 	}
 }
@@ -97,13 +96,14 @@ GtkWidget *nsgtk_tab_label_setup(struct gui_window *window)
 	hbox = gtk_hbox_new(FALSE, 2);
 
 	label = gtk_label_new("Loading...");
-		gtk_label_set_ellipsize(GTK_LABEL(label), PANGO_ELLIPSIZE_END);
-		gtk_label_set_single_line_mode(GTK_LABEL(label), TRUE);
-		gtk_misc_set_alignment(GTK_MISC(label), 0.0, 0.5);
-		gtk_misc_set_padding(GTK_MISC(label), 0, 0);
-		gtk_widget_show(label);
+	gtk_label_set_ellipsize(GTK_LABEL(label), PANGO_ELLIPSIZE_END);
+	gtk_label_set_single_line_mode(GTK_LABEL(label), TRUE);
+	gtk_misc_set_alignment(GTK_MISC(label), 0.0, 0.5);
+	gtk_misc_set_padding(GTK_MISC(label), 0, 0);
+	gtk_widget_show(label);
 
 	button = gtk_button_new();
+
 	close = gtk_image_new_from_stock("gtk-close", GTK_ICON_SIZE_MENU);
 	gtk_container_add(GTK_CONTAINER(button), close);
 	gtk_button_set_focus_on_click(GTK_BUTTON(button), FALSE);
@@ -123,8 +123,8 @@ GtkWidget *nsgtk_tab_label_setup(struct gui_window *window)
 	gtk_box_pack_start(GTK_BOX(hbox), label, TRUE, TRUE, 0);
 	gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0);
 
-	g_object_set_data (G_OBJECT (hbox), "label", label);
-	g_object_set_data (G_OBJECT (hbox), "close-button", button);
+	g_object_set_data(G_OBJECT(hbox), "label", label);
+	g_object_set_data(G_OBJECT(hbox), "close-button", button);
 
 	window->tab = hbox;
 
@@ -139,16 +139,15 @@ void nsgtk_tab_update_size(GtkWidget *hbox, GtkStyle *previous_style,
 	PangoContext *context;
 	int char_width, h, w;
 
-	context = gtk_widget_get_pango_context (hbox);
-	metrics = pango_context_get_metrics (context, hbox->style->font_desc,
-					     pango_context_get_language(
-					     		context));
+	context = gtk_widget_get_pango_context(hbox);
+	metrics = pango_context_get_metrics(context, hbox->style->font_desc,
+			pango_context_get_language(context));
 
-	char_width = pango_font_metrics_get_approximate_digit_width (metrics);
-	pango_font_metrics_unref (metrics);
+	char_width = pango_font_metrics_get_approximate_digit_width(metrics);
+	pango_font_metrics_unref(metrics);
 
-	gtk_icon_size_lookup_for_settings (gtk_widget_get_settings (hbox),
-					   GTK_ICON_SIZE_MENU, &w, &h);
+	gtk_icon_size_lookup_for_settings(gtk_widget_get_settings (hbox),
+			GTK_ICON_SIZE_MENU, &w, &h);
 
 	gtk_widget_set_size_request(hbox,
 			TAB_WIDTH_N_CHARS * PANGO_PIXELS(char_width) + 2 * w,
