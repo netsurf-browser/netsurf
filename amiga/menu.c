@@ -32,6 +32,8 @@
 #include "desktop/save_pdf/pdf_plotters.h"
 #include <string.h>
 #include "amiga/tree.h"
+#include "amiga/history.h"
+#include "amiga/cookies.h"
 
 void ami_free_menulabs(void)
 {
@@ -69,6 +71,8 @@ void ami_init_menulabs(void)
 	menulab[21] = ami_utf8_easy((char *)messages_get("Settings"));
 	menulab[22] = ami_utf8_easy((char *)messages_get("SnapshotWindow"));
 	menulab[23] = ami_utf8_easy((char *)messages_get("SettingsSave"));
+	menulab[24] = ami_utf8_easy((char *)messages_get("GlobalHistory"));
+	menulab[25] = ami_utf8_easy((char *)messages_get("ShowCookies"));	
 }
 
 struct NewMenu *ami_create_menu(ULONG type)
@@ -100,6 +104,8 @@ struct NewMenu *ami_create_menu(ULONG type)
 				{NM_TITLE,0,0,0,0,0,}, // settings
 				{ NM_ITEM,0,0,0,0,0,}, // snapshot window
 				{ NM_ITEM,0,0,0,0,0,}, // save settings
+				{ NM_ITEM,0,0,0,0,0,}, // show history
+				{ NM_ITEM,0,0,0,0,0,}, // show cookies
 			  	{  NM_END,0,0,0,0,0,},
 			 };
 
@@ -276,7 +282,7 @@ config option for this? */
 				break;
 
 				case 1: // show
-					ami_open_tree(hotlist);
+					ami_open_tree(hotlist,AMI_TREE_HOTLIST);
 				break;
 			}
 		break;
@@ -293,6 +299,14 @@ config option for this? */
 
 				case 1: // save settings
 					options_write("Resources/Options");
+				break;
+
+				case 2: // global history
+					ami_open_tree(global_history_tree,AMI_TREE_HISTORY);
+				break;
+
+				case 3: // cookies tree
+					ami_open_tree(cookies_tree,AMI_TREE_COOKIES);
 				break;
 			}
 		break;

@@ -64,6 +64,8 @@
 #include "utils/url.h"
 #include <string.h>
 #include "amiga/arexx.h"
+#include "amiga/hotlist.h"
+#include "amiga/history.h"
 
 #ifdef WITH_HUBBUB
 #include <hubbub/hubbub.h>
@@ -260,6 +262,9 @@ void gui_init(int argc, char** argv)
 	if((!option_url_file) || (option_url_file[0] == '\0'))
 		option_url_file = (char *)strdup("Resources/URLs");
 
+	if((!option_recent_file) || (option_recent_file[0] == '\0'))
+		option_recent_file = (char *)strdup("Resources/Recent");
+
 /*
 	if((!option_cookie_jar) || (option_cookie_jar[0] == '\0'))
 		option_cookie_jar = (char *)strdup("Resources/CookieJar");
@@ -303,6 +308,8 @@ void gui_init(int argc, char** argv)
 	hotlist = options_load_tree(option_hotlist_file);
 
 	if(!hotlist) ami_hotlist_init(&hotlist);
+	ami_global_history_initialise();
+	ami_cookies_initialise();
 
 	if(dto = NewDTObject("Resources/Throbber",
 					DTA_GroupID,GID_PICTURE,
@@ -980,6 +987,10 @@ void gui_quit(void)
 	urldb_save(option_url_file);
 	urldb_save_cookies(option_cookie_file);
 	options_save_tree(hotlist,option_hotlist_file,messages_get("TreeHotlist"));
+	void ami_global_history_save();
+
+	ami_cookies_free();
+	ami_global_history_free();
 
 #ifdef WITH_HUBBUB
 	hubbub_finalise(myrealloc,NULL);
@@ -1163,7 +1174,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	}
 
 	gwin->shared->scrollerhook.h_Entry = ami_scroller_hook;
-	gwin->shared->scrollerhook.h_Data = gwin;
+	gwin->shared->scrollerhook.h_Data = gwin->shared;
 
 	switch(bw->browser_window_type)
 	{
@@ -2531,7 +2542,7 @@ bool gui_search_term_highlighted(struct gui_window *g,
 void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg) 
 {
 	ULONG gid,x,y;
-	struct gui_window *gwin = hook->h_Data;
+	struct gui_window_2 *gwin = hook->h_Data;
 
 	if (msg->Class == IDCMP_IDCMPUPDATE) 
 	{ 
@@ -2540,11 +2551,11 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 		switch( gid ) 
 		{ 
  			case OID_HSCROLL: 
-				gwin->shared->redraw_required = true;
+				gwin->redraw_required = true;
  			break; 
 
  			case OID_VSCROLL: 
-				gwin->shared->redraw_required = true;
+				gwin->redraw_required = true;
  			break; 
 		} 
 	}

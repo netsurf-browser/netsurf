@@ -16,31 +16,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef AMIGA_TREE_H
-#define AMIGA_TREE_H
+#ifndef AMIGA_HISTORY_H
+#define AMIGA_HISTORY_H
+#include "desktop/tree.h"
 
-#include <exec/types.h>
-#include <intuition/classusr.h>
-#include "amiga/gui.h"
+#define GLOBAL_HISTORY_RECENT_URLS 16
 
-struct treeview_window {
-	struct Window *win;
-	Object *objects[OID_LAST];
-	struct Gadget *gadgets[GID_LAST];
-	struct nsObject *node;
-	ULONG pad[5];
-	struct tree *tree;
-	struct List *listbrowser_list;
-};
+void ami_global_history_initialise(void);
 
-enum
-{
-	AMI_TREE_HOTLIST,
-	AMI_TREE_HISTORY,
-	AMI_TREE_COOKIES
-};
-
-void ami_open_tree(struct tree *tree,int type);
-void ami_tree_close(struct treeview_window *twin);
-BOOL ami_tree_event(struct treeview_window *twin);
+struct tree *global_history_tree;
 #endif

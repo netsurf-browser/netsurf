@@ -21,15 +21,68 @@
 #include "desktop/tree.h"
 #include <proto/exec.h>
 #include "content/urldb.h"
+#include "amiga/hotlist.h"
+
+void ami_gui_hotlist_visited(struct content *content, struct tree *tree,
+		struct node *node);
+
+static const struct {
+	const char *url;
+	const char *msg_key;
+} default_entries[] = {
+	{ "http://www.netsurf-browser.org/", "HotlistHomepage" },
+//	{ "http://www.netsurf-browser.org/builds/", "HotlistTestBuild" },
+	{ "http://www.netsurf-browser.org/documentation/", "HotlistDocumentation" },
+	{ "http://sourceforge.net/tracker/?atid=464312&group_id=51719",
+			"HotlistBugTracker" },
+	{ "http://sourceforge.net/tracker/?atid=464315&group_id=51719",
+			"HotlistFeatureRequest" },
+	{ "http://www.unsatisfactorysoftware.co.uk",
+			"Unsatisfactory Software" }
+};
+#define ENTRIES_COUNT (sizeof(default_entries) / sizeof(default_entries[0]))
 
 void hotlist_visited(struct content *content)
 {
+	if ((!content) || (!content->url) || (!hotlist))
+		return;
+	ami_gui_hotlist_visited(content, hotlist, hotlist->root);
+}
+
+/**
+ * Informs the hotlist that some content has been visited
+ *
+ * \param content  the content visited
+ * \param tree	   the tree to find the URL data from
+ * \param node	   the node to update siblings and children of
+ */
+void ami_gui_hotlist_visited(struct content *content, struct tree *tree,
+		struct node *node)
+{
+	struct node_element *element;
+
+	for (; node; node = node->next) {
+		if (!node->folder) {
+			element = tree_find_element(node, TREE_ELEMENT_URL);
+			if ((element) && (!strcmp(element->text,
+					content->url))) {
+				tree_update_URL_node(node, content->url, NULL);
+				tree_handle_node_changed(tree, node, true,
+						false);
+			}
+		}
+		if (node->child)
+			ami_gui_hotlist_visited(content, tree, node->child);
+	}
 }
 
 void ami_hotlist_init(struct tree **hotlist)
 {
 	struct tree *hotlist_tree;
 	struct node *node;
+	int i;
+	const struct url_data *data;
+
 	*hotlist = AllocVec(sizeof(struct tree),MEMF_CLEAR);
 	hotlist_tree = *hotlist;
 
@@ -50,7 +103,6 @@ void ami_hotlist_init(struct tree **hotlist)
 	if (!node)
 		node = hotlist_tree->root;
 
-/*
 	for (i = 0; i != ENTRIES_COUNT; i++) {
 			data = urldb_get_url_data(default_entries[i].url);
 			if (!data) {
@@ -67,7 +119,7 @@ void ami_hotlist_init(struct tree **hotlist)
 					messages_get(default_entries[i].msg_key));
 			}
 		}
-*/
+
 		tree_initialise(hotlist_tree);
 }
 
@@ -87,4 +139,6 @@ void ami_hotlist_add(struct node *node,struct content *c)
 	{
 		tree_create_URL_node(node,c->url,data,c->title);
 	}
+
+	tree_handle_node_changed(hotlist,node,false,true);
 }

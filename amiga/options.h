@@ -34,6 +34,7 @@ extern bool option_use_os_pointers;
 extern bool option_force_tabs;
 extern bool option_new_tab_active;
 extern bool option_kiosk_mode;
+extern char *option_recent_file;
 
 #define EXTRA_OPTION_DEFINE \
 bool option_verbose_log = false; \
@@ -50,6 +51,7 @@ bool option_use_os_pointers = false; \
 bool option_force_tabs = false; \
 bool option_new_tab_active = false; \
 bool option_kiosk_mode = false; \
+char *option_recent_file = 0; \
 
 #define EXTRA_OPTION_TABLE \
 { "verbose_log",	OPTION_BOOL,	&option_verbose_log}, \
@@ -65,5 +67,6 @@ bool option_kiosk_mode = false; \
 { "os_mouse_pointers",	OPTION_BOOL,	&option_use_os_pointers}, \
 { "always_open_tabs",	OPTION_BOOL,	&option_force_tabs}, \
 { "new_tab_is_active",	OPTION_BOOL,	&option_new_tab_active}, \
-{ "kiosk_mode",	OPTION_BOOL,	&option_kiosk_mode},
+{ "kiosk_mode",	OPTION_BOOL,	&option_kiosk_mode}, \
+{ "recent_file",		OPTION_STRING,	&option_recent_file },
 #endif
