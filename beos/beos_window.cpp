@@ -1834,6 +1834,7 @@ static bool copy_handler(const char *text, size_t length, struct box *box,
 		void *handle, const char *whitespace_text,
 		size_t whitespace_length)
 {
+	bool space = false;
 	//XXX: handle box->style to StyledEdit / RTF ?
 	/* add any whitespace which precedes the text from this box */
 	if (whitespace_text) {
@@ -1852,10 +1853,11 @@ static bool copy_handler(const char *text, size_t length, struct box *box,
 		run->font = font;
 		run->color = nsbeos_rgb_colour(box->style->color);
 		current_selection_textruns.AddItem(run);
+		space = box->space;
 	}
 
 	/* add the text from this box */
-	if (!gui_add_to_clipboard(text, length, box->space))
+	if (!gui_add_to_clipboard(text, length, space))
 		return false;
 
 	return true;
