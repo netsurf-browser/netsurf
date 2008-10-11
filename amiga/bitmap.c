@@ -34,8 +34,6 @@ void *bitmap_create(int width, int height, unsigned int state)
 {
 	struct bitmap *bitmap;
 
-	DebugPrintF("creating bitmap\n");
-
 	bitmap = AllocVec(sizeof(struct bitmap),MEMF_CLEAR);
 	if(bitmap)
 	{
