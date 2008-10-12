@@ -736,34 +736,34 @@ bool layout_apply_minmax_height(struct box *box) {
 	if (box->style) {
 		/* max-height */
 		switch (box->style->max_height.max_height) {
-			case CSS_MAX_HEIGHT_LENGTH:
-				h = css_len2px(&box->style->max_height.value.
-						length, box->style);
-				if (h < box->height) {
-					box->height = h;
-					updated = true;
-				}
-				break;
-			case CSS_MAX_HEIGHT_PERCENT:
-				/* percentage heights not yet implemented */
-			default:
-				break;
+		case CSS_MAX_HEIGHT_LENGTH:
+			h = css_len2px(&box->style->max_height.value.length,
+					box->style);
+			if (h < box->height) {
+				box->height = h;
+				updated = true;
+			}
+			break;
+		case CSS_MAX_HEIGHT_PERCENT:
+			/* percentage heights not yet implemented */
+		default:
+			break;
 		}
 
 		/* min-height */
 		switch (box->style->min_height.min_height) {
-			case CSS_MIN_HEIGHT_LENGTH:
-				h = css_len2px(&box->style->min_height.value.
-						length, box->style);
-				if (h > box->height) {
-					box->height = h;
-					updated = true;
-				}
-				break;
-			case CSS_MIN_HEIGHT_PERCENT:
-				/* percentage heights not yet implemented */
-			default:
-				break;
+		case CSS_MIN_HEIGHT_LENGTH:
+			h = css_len2px(&box->style->min_height.value.length,
+					box->style);
+			if (h > box->height) {
+				box->height = h;
+				updated = true;
+			}
+			break;
+		case CSS_MIN_HEIGHT_PERCENT:
+			/* percentage heights not yet implemented */
+		default:
+			break;
 		}
 	}
 	return updated;
@@ -989,99 +989,90 @@ void layout_find_dimensions(int available_width,
 
 	if (width) {
 		switch (style->width.width) {
-			case CSS_WIDTH_LENGTH:
-				*width = css_len2px(&style->width.value.length,
-						style);
-				break;
-			case CSS_WIDTH_PERCENT:
-				*width = (style->width.value.percent *
-						available_width) / 100;
-					/* gadget widths include margins,
-					 * borders and padding */
-					if (box->gadget) {
-						calculate_mbp_width(style,
-							LEFT, &fixed, &frac);
-						calculate_mbp_width(style,
-							RIGHT, &fixed, &frac);
-						*width -= frac + fixed;
-						*width = *width > 0 ?
-								*width : 0;
-					}
-				break;
-			case CSS_WIDTH_AUTO:
-			default:
-				*width = AUTO;
-				break;
+		case CSS_WIDTH_LENGTH:
+			*width = css_len2px(&style->width.value.length, style);
+			break;
+		case CSS_WIDTH_PERCENT:
+			*width = (style->width.value.percent *
+					available_width) / 100;
+			/* gadget widths include margins,
+			 * borders and padding */
+			if (box->gadget) {
+				calculate_mbp_width(style, LEFT, &fixed, &frac);
+				calculate_mbp_width(style, RIGHT, &fixed,
+						&frac);
+				*width -= frac + fixed;
+				*width = *width > 0 ? *width : 0;
+			}
+			break;
+		case CSS_WIDTH_AUTO:
+		default:
+			*width = AUTO;
+			break;
 		}
 	}
 
 	if (height) {
 		switch (style->height.height) {
-			case CSS_HEIGHT_LENGTH:
-				*height = css_len2px(&style->height.length,
-						style);
-				break;
-			case CSS_HEIGHT_AUTO:
-			default:
-				*height = AUTO;
-				break;
+		case CSS_HEIGHT_LENGTH:
+			*height = css_len2px(&style->height.length, style);
+			break;
+		case CSS_HEIGHT_AUTO:
+		default:
+			*height = AUTO;
+			break;
 		}
 	}
 
 	if (max_width) {
 		switch (style->max_width.max_width) {
-			case CSS_MAX_WIDTH_LENGTH:
-				*max_width = css_len2px(&style->max_width.value.
-						length, style);
-				break;
-			case CSS_MAX_WIDTH_PERCENT:
-				*max_width = (style->max_width.value.percent *
-						available_width) / 100;
-					/* gadget widths include margins,
-					 * borders and padding */
-					if (box->gadget) {
-						calculate_mbp_width(style,
-							LEFT, &fixed, &frac);
-						calculate_mbp_width(style,
-							RIGHT, &fixed, &frac);
-						*max_width -= frac + fixed;
-						*max_width = *max_width > 0 ?
-								*max_width : 0;
-					}
-				break;
-			case CSS_MAX_WIDTH_NONE:
-			default:
-				/* Inadmissible */
-				*max_width = -1;
-				break;
+		case CSS_MAX_WIDTH_LENGTH:
+			*max_width = css_len2px(&style->max_width.value.length,
+					style);
+			break;
+		case CSS_MAX_WIDTH_PERCENT:
+			*max_width = (style->max_width.value.percent *
+					available_width) / 100;
+			/* gadget widths include margins,
+			 * borders and padding */
+			if (box->gadget) {
+				calculate_mbp_width(style, LEFT, &fixed, &frac);
+				calculate_mbp_width(style, RIGHT, &fixed,
+						&frac);
+				*max_width -= frac + fixed;
+				*max_width = *max_width > 0 ? *max_width : 0;
+			}
+			break;
+		case CSS_MAX_WIDTH_NONE:
+		default:
+			/* Inadmissible */
+			*max_width = -1;
+			break;
 		}
 	}
 
 	if (min_width) {
 		switch (style->min_width.min_width) {
-			case CSS_MIN_WIDTH_LENGTH:
-				*min_width = css_len2px(&style->min_width.value.
-						length, style);
-				break;
-			case CSS_MIN_WIDTH_PERCENT:
-				*min_width = (style->min_width.value.percent *
-						available_width) / 100;
-					/* gadget widths include margins,
-					 * borders and padding */
-					if (box->gadget) {
-						calculate_mbp_width(style,
-							LEFT, &fixed, &frac);
-						calculate_mbp_width(style,
-							RIGHT, &fixed, &frac);
-						*min_width -= frac + fixed;
-						*min_width = *min_width > 0 ?
-								*min_width : 0;
-					}
-				break;
-			default:
-				/* Inadmissible */
-				*min_width = 0;
-				break;
+		case CSS_MIN_WIDTH_LENGTH:
+			*min_width = css_len2px(&style->min_width.value.
+					length, style);
+			break;
+		case CSS_MIN_WIDTH_PERCENT:
+			*min_width = (style->min_width.value.percent *
+					available_width) / 100;
+			/* gadget widths include margins,
+			 * borders and padding */
+			if (box->gadget) {
+				calculate_mbp_width(style, LEFT, &fixed, &frac);
+				calculate_mbp_width(style, RIGHT, &fixed,
+						&frac);
+				*min_width -= frac + fixed;							*min_width = *min_width > 0 ? *min_width : 0;
+			}
+			break;
+		default:
+			/* Inadmissible */
+			*min_width = 0;
+			break;
 		}
 	}
 
@@ -1310,17 +1301,15 @@ int line_height(struct css_style *style)
 		font_len = option_font_min_size * css_screen_dpi / 720.0;
 
 	switch (style->line_height.size) {
-		case CSS_LINE_HEIGHT_LENGTH:
-			return css_len2px(&style->line_height.value.length,
-					style);
+	case CSS_LINE_HEIGHT_LENGTH:
+		return css_len2px(&style->line_height.value.length, style);
 
-		case CSS_LINE_HEIGHT_ABSOLUTE:
-			return style->line_height.value.absolute * font_len;
+	case CSS_LINE_HEIGHT_ABSOLUTE:
+		return style->line_height.value.absolute * font_len;
 
-		case CSS_LINE_HEIGHT_PERCENT:
-		default:
-			return style->line_height.value.percent * font_len
-					/ 100.0;
+	case CSS_LINE_HEIGHT_PERCENT:
+	default:
+		return style->line_height.value.percent * font_len / 100.0;
 	}
 }
 
@@ -1531,31 +1520,29 @@ bool layout_line(struct box *first, int *width, int *y,
 
 		/* calculate box width */
 		switch (b->style->width.width) {
-			case CSS_WIDTH_LENGTH:
-				b->width = css_len2px(&b->style->width.value.
-						length, b->style);
-				break;
-			case CSS_WIDTH_PERCENT:
-				b->width = *width *
-						b->style->width.value.percent /
-						100;
-				break;
-			case CSS_WIDTH_AUTO:
-			default:
-				b->width = AUTO;
-				break;
+		case CSS_WIDTH_LENGTH:
+			b->width = css_len2px(&b->style->width.value.length,
+					b->style);
+			break;
+		case CSS_WIDTH_PERCENT:
+			b->width = *width * b->style->width.value.percent / 100;
+			break;
+		case CSS_WIDTH_AUTO:
+		default:
+			b->width = AUTO;
+			break;
 		}
 
 		/* height */
 		switch (b->style->height.height) {
-			case CSS_HEIGHT_LENGTH:
-				b->height = css_len2px(&b->style->height.length,
-						b->style);
-				break;
-			case CSS_HEIGHT_AUTO:
-			default:
-				b->height = AUTO;
-				break;
+		case CSS_HEIGHT_LENGTH:
+			b->height = css_len2px(&b->style->height.length,
+					b->style);
+			break;
+		case CSS_HEIGHT_AUTO:
+		default:
+			b->height = AUTO;
+			break;
 		}
 
 		if (b->object) {
@@ -1897,9 +1884,15 @@ bool layout_line(struct box *first, int *width, int *y,
 
 	/* set positions */
 	switch (first->parent->parent->style->text_align) {
-		case CSS_TEXT_ALIGN_RIGHT:  x0 = x1 - x; break;
-		case CSS_TEXT_ALIGN_CENTER: x0 = (x0 + (x1 - x)) / 2; break;
-		default:		    break; /* leave on left */
+	case CSS_TEXT_ALIGN_RIGHT:
+		x0 = x1 - x;
+		break;
+	case CSS_TEXT_ALIGN_CENTER:
+		x0 = (x0 + (x1 - x)) / 2;
+		break;
+	default:
+		/* leave on left */
+		break;
 	}
 
 	for (d = first; d != b; d = d->next) {
@@ -2091,33 +2084,32 @@ struct box *layout_minmax_line(struct box *first,
 
 		/* calculate box width */
 		switch (b->style->width.width) {
-			case CSS_WIDTH_LENGTH:
-				width = css_len2px(&b->style->width.value.
-						length, b->style);
-				if (width < 0)
-					width = 0;
-				break;
-			case CSS_WIDTH_PERCENT:
-				/*b->width = width *
-						b->style->width.value.percent /
-						100;
-				break;*/
-			case CSS_WIDTH_AUTO:
-			default:
-				width = AUTO;
-				break;
+		case CSS_WIDTH_LENGTH:
+			width = css_len2px(&b->style->width.value.length,
+					b->style);
+			if (width < 0)
+				width = 0;
+			break;
+		case CSS_WIDTH_PERCENT:
+			/*
+			b->width = width * b->style->width.value.percent / 100;
+			break;
+			*/
+		case CSS_WIDTH_AUTO:
+		default:
+			width = AUTO;
+			break;
 		}
 
 		/* height */
 		switch (b->style->height.height) {
-			case CSS_HEIGHT_LENGTH:
-				height = css_len2px(&b->style->height.length,
-						b->style);
-				break;
-			case CSS_HEIGHT_AUTO:
-			default:
-				height = AUTO;
-				break;
+		case CSS_HEIGHT_LENGTH:
+			height = css_len2px(&b->style->height.length, b->style);
+			break;
+		case CSS_HEIGHT_AUTO:
+		default:
+			height = AUTO;
+			break;
 		}
 
 		if (b->object) {
@@ -2169,13 +2161,12 @@ struct box *layout_minmax_line(struct box *first,
 int layout_text_indent(struct css_style *style, int width)
 {
 	switch (style->text_indent.size) {
-		case CSS_TEXT_INDENT_LENGTH:
-			return css_len2px(&style->text_indent.value.length,
-					style);
-		case CSS_TEXT_INDENT_PERCENT:
-			return width * style->text_indent.value.percent / 100;
-		default:
-			return 0;
+	case CSS_TEXT_INDENT_LENGTH:
+		return css_len2px(&style->text_indent.value.length, style);
+	case CSS_TEXT_INDENT_PERCENT:
+		return width * style->text_indent.value.percent / 100;
+	default:
+		return 0;
 	}
 }
 
@@ -2551,8 +2542,9 @@ bool layout_table(struct box *table, int available_width,
 					free(xs);
 					return false;
 				}
-				/* warning: c->descendant_y0 and c->descendant_y1 used as temporary
-				 * storage until after vertical alignment is complete */
+				/* warning: c->descendant_y0 and
+				 * c->descendant_y1 used as temporary storage
+				 * until after vertical alignment is complete */
 				c->descendant_y0 = c->height;
 				c->descendant_y1 = c->padding[BOTTOM];
 				if (c->style->height.height ==
@@ -2627,38 +2619,44 @@ bool layout_table(struct box *table, int available_width,
 	}
 
 	/* perform vertical alignment */
-	for (row_group = table->children; row_group; row_group = row_group->next) {
+	for (row_group = table->children; row_group;
+			row_group = row_group->next) {
 		for (row = row_group->children; row; row = row->next) {
 			for (c = row->children; c; c = c->next) {
-				/* unextended bottom padding is in c->descendant_y1, and unextended
+				/* unextended bottom padding is in
+				 * c->descendant_y1, and unextended
 				 * cell height is in c->descendant_y0 */
-				spare_height = (c->padding[BOTTOM] - c->descendant_y1) +
+				spare_height = (c->padding[BOTTOM] -
+						c->descendant_y1) +
 						(c->height - c->descendant_y0);
 				switch (c->style->vertical_align.type) {
-					case CSS_VERTICAL_ALIGN_SUB:
-					case CSS_VERTICAL_ALIGN_SUPER:
-					case CSS_VERTICAL_ALIGN_TEXT_TOP:
-					case CSS_VERTICAL_ALIGN_TEXT_BOTTOM:
-					case CSS_VERTICAL_ALIGN_LENGTH:
-					case CSS_VERTICAL_ALIGN_PERCENT:
-					case CSS_VERTICAL_ALIGN_BASELINE:
-						/* todo: baseline alignment, for now just use ALIGN_TOP */
-					case CSS_VERTICAL_ALIGN_TOP:
-						break;
-					case CSS_VERTICAL_ALIGN_MIDDLE:
-						c->padding[TOP] += spare_height / 2;
-						c->padding[BOTTOM] -= spare_height / 2;
-						layout_move_children(c, 0, spare_height / 2);
-						break;
-					case CSS_VERTICAL_ALIGN_BOTTOM:
-						c->padding[TOP] += spare_height;
-						c->padding[BOTTOM] -= spare_height;
-						layout_move_children(c, 0, spare_height);
-						break;
-					case CSS_VERTICAL_ALIGN_NOT_SET:
-					case CSS_VERTICAL_ALIGN_INHERIT:
-						assert(0);
-						break;
+				case CSS_VERTICAL_ALIGN_SUB:
+				case CSS_VERTICAL_ALIGN_SUPER:
+				case CSS_VERTICAL_ALIGN_TEXT_TOP:
+				case CSS_VERTICAL_ALIGN_TEXT_BOTTOM:
+				case CSS_VERTICAL_ALIGN_LENGTH:
+				case CSS_VERTICAL_ALIGN_PERCENT:
+				case CSS_VERTICAL_ALIGN_BASELINE:
+					/* todo: baseline alignment, for now
+					 * just use ALIGN_TOP */
+				case CSS_VERTICAL_ALIGN_TOP:
+					break;
+				case CSS_VERTICAL_ALIGN_MIDDLE:
+					c->padding[TOP] += spare_height / 2;
+					c->padding[BOTTOM] -= spare_height / 2;
+					layout_move_children(c, 0,
+							spare_height / 2);
+					break;
+				case CSS_VERTICAL_ALIGN_BOTTOM:
+					c->padding[TOP] += spare_height;
+					c->padding[BOTTOM] -= spare_height;
+					layout_move_children(c, 0,
+							spare_height);
+					break;
+				case CSS_VERTICAL_ALIGN_NOT_SET:
+				case CSS_VERTICAL_ALIGN_INHERIT:
+					assert(0);
+					break;
 				}
 			}
 		}
