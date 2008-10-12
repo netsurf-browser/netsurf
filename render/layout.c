@@ -308,6 +308,9 @@ bool layout_block_context(struct box *block, struct content *content)
 				(box->style->position == CSS_POSITION_ABSOLUTE||
 				 box->style->position == CSS_POSITION_FIXED)) {
 			box->x = box->parent->padding[LEFT];
+			layout_find_dimensions(box->parent->width, box,
+					box->style, NULL, &(box->height), NULL,
+					NULL, NULL, NULL, NULL);
 			/* absolute positioned; this element will establish
 			 * its own block context when it gets laid out later,
 			 * so no need to look at its children now. */
@@ -974,8 +977,8 @@ void layout_float_find_dimensions(int available_width,
  * \param  max_width        updated to max-width, may be NULL
  * \param  min_width        updated to min-width, may be NULL
  * \param  margin[4]	    filled with margins, may be NULL
- * \param  padding[4]	    filled with paddings
- * \param  border[4]	    filled with border widths
+ * \param  padding[4]	    filled with paddings, may be NULL
+ * \param  border[4]	    filled with border widths, may be NULL
  */
 
 void layout_find_dimensions(int available_width,
@@ -983,6 +986,7 @@ void layout_find_dimensions(int available_width,
 		int *width, int *height, int *max_width, int *min_width,
 		int margin[4], int padding[4], int border[4])
 {
+	struct box *containing_block = NULL;
 	unsigned int i;
 	int fixed = 0;
 	float frac = 0;
@@ -1015,7 +1019,33 @@ void layout_find_dimensions(int available_width,
 	if (height) {
 		switch (style->height.height) {
 		case CSS_HEIGHT_LENGTH:
-			*height = css_len2px(&style->height.length, style);
+			*height = css_len2px(&style->height.value.length,
+					style);
+			break;
+		case CSS_HEIGHT_PERCENT:
+			if (box->float_container) {
+				containing_block = box->float_container;
+			} else if (box->parent && box->parent->type !=
+					BOX_INLINE_CONTAINER) {
+				containing_block = box->parent;
+			} else if (box->parent && box->parent->type ==
+					BOX_INLINE_CONTAINER) {
+				assert(box->parent->parent);
+				containing_block = box->parent->parent;
+			}
+			if (box->style->position == CSS_POSITION_ABSOLUTE ||
+					(containing_block &&
+					(containing_block->style->height.
+					height == CSS_HEIGHT_LENGTH ||
+					containing_block->style->height.
+					height == CSS_HEIGHT_PERCENT) &&
+					containing_block->height != AUTO)) {
+				*height = style->height.value.percent *
+						containing_block->height / 100;
+			} else {
+				/* else treated as auto; fall though */
+				*height = AUTO;
+			}
 			break;
 		case CSS_HEIGHT_AUTO:
 		default:
@@ -1094,25 +1124,31 @@ void layout_find_dimensions(int available_width,
 			}
 		}
 
-		switch (style->padding[i].padding) {
-		case CSS_PADDING_PERCENT:
-			padding[i] = available_width *
-					style->padding[i].value.percent / 100;
-			break;
-		case CSS_PADDING_LENGTH:
-		default:
-			padding[i] = css_len2px(&style->padding[i].
-					value.length, style);
-			break;
+		if (padding) {
+			switch (style->padding[i].padding) {
+			case CSS_PADDING_PERCENT:
+				padding[i] = available_width *
+						style->padding[i].value.
+						percent / 100;
+				break;
+			case CSS_PADDING_LENGTH:
+			default:
+				padding[i] = css_len2px(&style->padding[i].
+						value.length, style);
+				break;
+			}
 		}
 
-		if (style->border[i].style == CSS_BORDER_STYLE_HIDDEN ||
-				style->border[i].style == CSS_BORDER_STYLE_NONE)
-			/* spec unclear: following Mozilla */
-			border[i] = 0;
-		else
-			border[i] = css_len2px(&style->border[i].
-					width.value, style);
+		if (border) {
+			if (style->border[i].style == CSS_BORDER_STYLE_HIDDEN ||
+					style->border[i].style ==
+					CSS_BORDER_STYLE_NONE)
+				/* spec unclear: following Mozilla */
+				border[i] = 0;
+			else
+				border[i] = css_len2px(&style->border[i].
+						width.value, style);
+		}
 	}
 }
 
@@ -1536,7 +1572,7 @@ bool layout_line(struct box *first, int *width, int *y,
 		/* height */
 		switch (b->style->height.height) {
 		case CSS_HEIGHT_LENGTH:
-			b->height = css_len2px(&b->style->height.length,
+			b->height = css_len2px(&b->style->height.value.length,
 					b->style);
 			break;
 		case CSS_HEIGHT_AUTO:
@@ -1735,6 +1771,7 @@ bool layout_line(struct box *first, int *width, int *y,
 				box_dump(stderr, cont, 0);
 				assert(0);
 			}
+			b->float_container = d->float_container = cont;
 			b->next_float = cont->float_children;
 			cont->float_children = b;
 			split_box = 0;
@@ -2104,7 +2141,8 @@ struct box *layout_minmax_line(struct box *first,
 		/* height */
 		switch (b->style->height.height) {
 		case CSS_HEIGHT_LENGTH:
-			height = css_len2px(&b->style->height.length, b->style);
+			height = css_len2px(&b->style->height.value.length,
+					b->style);
 			break;
 		case CSS_HEIGHT_AUTO:
 		default:
@@ -2553,7 +2591,7 @@ bool layout_table(struct box *table, int available_width,
 					 * to attempt to make cells as small as
 					 * possible, so treat it as a minimum */
 					int h = (int) css_len2px(&c->style->
-						height.length, c->style);
+						height.value.length, c->style);
 					if (c->height < h)
 						c->height = h;
 				}
@@ -2673,7 +2711,7 @@ bool layout_table(struct box *table, int available_width,
 	/* Take account of any table height specified within CSS/HTML */
 	if (style->height.height == CSS_HEIGHT_LENGTH) {
 		/* This is the minimum height for the table (see 17.5.3) */
-		int min_height = css_len2px(&style->height.length, style);
+		int min_height = css_len2px(&style->height.value.length, style);
 
 		table->height = max(table_height, min_height);
 	} else {
@@ -3205,9 +3243,14 @@ bool layout_absolute(struct box *box, struct box *containing_block,
 	layout_compute_offsets(box, containing_block,
 			&top, &right, &bottom, &left);
 
+	/* Pass containing block into layout_find_dimensions via the float
+	 * containing block box member. This is unused for absolutly positioned
+	 * boxes because a box can't be floated and absolutly positioned. */
+	box->float_container = containing_block;
 	layout_find_dimensions(available_width, box, box->style,
 			&width, &height, &max_width, &min_width,
 			margin, padding, border);
+	box->float_container = NULL;
 
 	/* 10.3.7 */
 	LOG(("%i + %i + %i + %i + %i + %i + %i + %i + %i = %i",

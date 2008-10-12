@@ -190,7 +190,7 @@ struct box {
 	unsigned int start_column;  /**< Start column for TABLE_CELL only. */
 
 	bool printed; /** Whether this box has already been printed*/
-	
+
 	struct box *next;      /**< Next sibling box, or 0. */
 	struct box *prev;      /**< Previous sibling box, or 0. */
 	struct box *children;  /**< First child box, or 0. */
@@ -207,6 +207,8 @@ struct box {
 	struct box *float_children;
 	/** Next sibling float box. */
 	struct box *next_float;
+	/** If box is a float, points to box's containing block */
+	struct box *float_container;
 	/** Level below which subsequent floats must be cleared.
 	 * This is used only for boxes with float_children */
 	int clear_level;

@@ -2228,8 +2228,11 @@ void parse_height(struct css_style * const s, const struct css_node * const v)
 	if (v->type == CSS_NODE_IDENT && v->data_length == 4 &&
 			strncasecmp(v->data, "auto", 4) == 0)
 		s->height.height = CSS_HEIGHT_AUTO;
-	else if ((v->type == CSS_NODE_DIMENSION || v->type == CSS_NODE_NUMBER) &&
-			parse_length(&s->height.length, v, true) == 0)
+	else if (v->type == CSS_NODE_PERCENTAGE) {
+		s->height.height = CSS_HEIGHT_PERCENT;
+		s->height.value.percent = atof(v->data);
+	} else if ((v->type == CSS_NODE_DIMENSION || v->type == CSS_NODE_NUMBER) &&
+			parse_length(&s->height.value.length, v, true) == 0)
 		s->height.height = CSS_HEIGHT_LENGTH;
 }
 

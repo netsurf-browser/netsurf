@@ -583,9 +583,14 @@ bool box_construct_element(xmlNode *n, struct content *content,
 				float current;
 				for (child = box->children; child;
 							child = child->next) {
-					current = css_len2px(
+					if (child->style->height.height ==
+							CSS_HEIGHT_LENGTH)
+						current = css_len2px(
 							&child->style->height.
-							length, child->style);
+							value.length,
+							child->style);
+					else
+						current = 0;
 					if (child->type == BOX_TABLE_CELL &&
 							value > current) {
 						/* Row height exceeds cell
@@ -593,10 +598,11 @@ bool box_construct_element(xmlNode *n, struct content *content,
 						 * to row height */
 						child->style->height.height =
 							CSS_HEIGHT_LENGTH;
-						child->style->height.length.
-							unit = CSS_UNIT_PX;
-						child->style->height.length.
-							value = value;
+						child->style->height.value.
+							length.unit =
+							CSS_UNIT_PX;
+						child->style->height.value.
+							length.value = value;
 					}
 				}
 			}
@@ -932,8 +938,8 @@ struct css_style * box_get_style(struct content *c,
 			 * percentage heights mean, so ignore them */
 		} else {
 			style->height.height = CSS_HEIGHT_LENGTH;
-			style->height.length.unit = CSS_UNIT_PX;
-			style->height.length.value = value;
+			style->height.value.length.unit = CSS_UNIT_PX;
+			style->height.value.length.value = value;
 		}
 		xmlFree(s);
 	}
@@ -1027,8 +1033,8 @@ struct css_style * box_get_style(struct content *c,
 			int value = isdigit(s[0]) ? atoi(s): -1;
 			if (0 < value) {
 				style->height.height = CSS_HEIGHT_LENGTH;
-				style->height.length.unit = CSS_UNIT_EM;
-				style->height.length.value = value;
+				style->height.value.length.unit = CSS_UNIT_EM;
+				style->height.value.length.value = value;
 			}
 			xmlFree(s);
 		}

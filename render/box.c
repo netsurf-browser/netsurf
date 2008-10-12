@@ -102,6 +102,7 @@ struct box * box_create(struct css_style *style,
 	box->fallback = NULL;
 	box->inline_end = NULL;
 	box->float_children = NULL;
+	box->float_container = NULL;
 	box->next_float = NULL;
 	box->list_marker = NULL;
 	box->col = NULL;
@@ -551,7 +552,7 @@ void box_dump(FILE *stream, struct box *box, unsigned int depth)
 	fprintf(stream, "(%i %i %i %i) ",
 			box->descendant_x0, box->descendant_y0,
 			box->descendant_x1, box->descendant_y1);
-	
+
 	fprintf(stream, "m(%i %i %i %i) ",
 			box->margin[TOP], box->margin[LEFT],
 			box->margin[BOTTOM], box->margin[RIGHT]);
@@ -685,9 +686,9 @@ struct box* box_duplicate_tree(struct box *root, struct content *c)
 	struct box *new_root;/**< Root of the new box tree*/
 	int box_number = 0;
 	struct box_dict_element *box_dict, *box_dict_end;
-	
+
 	box_duplicate_last = NULL;
-	
+
 	/* 1. Duplicate parent - children structure, list_markers*/
 	new_root = talloc_memdup(c, root, sizeof (struct box));
 	if (!box_duplicate_main_tree(new_root, c, &box_number))
@@ -695,32 +696,32 @@ struct box* box_duplicate_tree(struct box *root, struct content *c)
 
 	/* 2. Create address translation dictionary*/
 	/*TODO: dont save unnecessary addresses*/
-	
+
 	box_dict_end = box_dict = malloc(box_number *
 			sizeof(struct box_dict_element));
-	
+
 	if (box_dict == NULL)
 		return NULL;
 	box_duplicate_create_dict(root, new_root, &box_dict_end);
-	
+
 	assert((box_dict_end - box_dict) == box_number);
-	
+
 	/*3. Sort it*/
-	
+
 	qsort(box_dict, (box_dict_end - box_dict), sizeof(struct box_dict_element),
 	      (int (*)(const void *, const void *))box_compare_dict_elements);
-	
+
 	/* 4. Update inline_end and float_children pointers */
-	
+
 	box_duplicate_update(new_root, box_dict, (box_dict_end - box_dict));
-	
+
 	free(box_dict);
-	
+
 	return new_root;
 }
 
 /**
- * Recursively duplicates children of an element, and also if present - its 
+ * Recursively duplicates children of an element, and also if present - its
  * list_marker, style and text.
  * \param box Current box to duplicate its children
  * \param c talloc memory pool
@@ -730,9 +731,9 @@ struct box* box_duplicate_tree(struct box *root, struct content *c)
 bool box_duplicate_main_tree(struct box *box, struct content *c, int *count)
 {
 	struct box *b, *prev;
-	
+
 	prev = NULL;
-	
+
 	for (b = box->children; b; b = b->next) {
 		struct box *copy;
 
@@ -740,14 +741,14 @@ bool box_duplicate_main_tree(struct box *box, struct content *c, int *count)
 		copy = talloc_memdup(c, b, sizeof (struct box));
 		if (copy == NULL)
 			return false;
-		
+
 		copy->parent = box;
-		
+
 		if (prev != NULL)
 			prev->next = copy;
 		else
 			box->children = copy;
-		
+
 		if (copy->type == BOX_INLINE) {
 			struct box_duplicate_llist *temp;
 
@@ -763,21 +764,21 @@ bool box_duplicate_main_tree(struct box *box, struct content *c, int *count)
 
 			box_duplicate_last->box->inline_end = copy;
 			copy->inline_end = box_duplicate_last->box;
-			
+
 			temp = box_duplicate_last;
 			box_duplicate_last = temp->prev;
 			free(temp);
 		}
-		
+
 		/* Recursively visit child */
 		if (!box_duplicate_main_tree(copy, c, count))
 			return false;
-		
+
 		prev = copy;
 	}
-	
+
 	box->last = prev;
-	
+
 	if (box->object && option_suppress_images && (
 #ifdef WITH_JPEG
 			box->object->type == CONTENT_JPEG ||
@@ -817,27 +818,27 @@ bool box_duplicate_main_tree(struct box *box, struct content *c, int *count)
 #endif
 			false))
 		box->object = NULL;
-	
+
 	if (box->list_marker) {
 		box->list_marker = talloc_memdup(c, box->list_marker,
 				sizeof *box->list_marker);
-		if (box->list_marker == NULL) 
+		if (box->list_marker == NULL)
 			return false;
 		box->list_marker->parent = box;
 	}
-	
+
 	if (box->text) {
 		box->text = talloc_memdup(c, box->text, box->length);
-		if (box->text == NULL) 
+		if (box->text == NULL)
 			return false;
 	}
-	
+
 	if (box->style) {
 		box->style = talloc_memdup(c, box->style, sizeof *box->style);
-		if (box->style == NULL) 
+		if (box->style == NULL)
 			return false;
 	}
-	
+
 	/*Make layout calculate the size of this element later
 	(might change because of font change etc.) */
 	box->width = UNKNOWN_WIDTH;
@@ -845,7 +846,7 @@ bool box_duplicate_main_tree(struct box *box, struct content *c, int *count)
 	box->max_width = UNKNOWN_MAX_WIDTH;
 
 	(*count)++;
-	
+
 	return true;
 }
 
@@ -861,15 +862,15 @@ void box_duplicate_create_dict(struct box *old_box, struct box *new_box,
 {
 	/**Children of the old and new boxes*/
 	struct box *b_old, *b_new;
-	
+
 	for (b_old = old_box->children, b_new = new_box->children;
 	     b_old != NULL && b_new != NULL;
 	     b_old = b_old->next, b_new = b_new->next)
 		box_duplicate_create_dict(b_old, b_new, dict);
-	
+
 	/*The new tree should be a exact copy*/
 	assert(b_old == NULL && b_new == NULL);
-	
+
 	(*dict)->old = old_box;
 	(*dict)->new = new_box;
 	(*dict)++;
@@ -888,10 +889,10 @@ void box_duplicate_update(struct box *box,
 	struct box_dict_element *box_dict_element;
 	struct box *b;
 	struct box_dict_element element;
-	
+
 	for (b = box->children; b; b = b->next)
 		box_duplicate_update(b, box_dict, n);
-	
+
 	if (box->float_children) {
 		element.old = box->float_children;
 		box_dict_element = bsearch(&element,
@@ -900,7 +901,7 @@ void box_duplicate_update(struct box *box,
 				(int (*)(const void *, const void *))box_compare_dict_elements);
 		box->float_children = box_dict_element->new;
 	}
-	
+
 	if (box->next_float) {
 		element.old = box->next_float;
 		box_dict_element = bsearch(&element,

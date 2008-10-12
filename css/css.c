@@ -180,7 +180,7 @@ const struct css_style css_base_style = {
 	CSS_FONT_STYLE_NORMAL,
 	CSS_FONT_VARIANT_NORMAL,
 	CSS_FONT_WEIGHT_NORMAL,
-	{ CSS_HEIGHT_AUTO, { 1, CSS_UNIT_EM } },
+	{ CSS_HEIGHT_AUTO, { { 1, CSS_UNIT_EM } } },
 	{ CSS_LETTER_SPACING_NORMAL, { 0, CSS_UNIT_PX } },
 	{ CSS_LINE_HEIGHT_ABSOLUTE, { 1.33 } },
 	{ CSS_LIST_STYLE_IMAGE_NONE, 0 },
@@ -265,7 +265,7 @@ const struct css_style css_empty_style = {
 	CSS_FONT_STYLE_NOT_SET,
 	CSS_FONT_VARIANT_NOT_SET,
 	CSS_FONT_WEIGHT_NOT_SET,
-	{ CSS_HEIGHT_NOT_SET, { 1, CSS_UNIT_EM } },
+	{ CSS_HEIGHT_NOT_SET, { { 1, CSS_UNIT_EM } } },
 	{ CSS_LETTER_SPACING_NOT_SET, { 0, CSS_UNIT_PX } },
 	{ CSS_LINE_HEIGHT_NOT_SET, { 1.33 } },
 	{ CSS_LIST_STYLE_IMAGE_NOT_SET, 0 },
@@ -351,7 +351,7 @@ const struct css_style css_blank_style = {
 	CSS_FONT_STYLE_INHERIT,
 	CSS_FONT_VARIANT_INHERIT,
 	CSS_FONT_WEIGHT_INHERIT,
-	{ CSS_HEIGHT_AUTO, { 1, CSS_UNIT_EM } },
+	{ CSS_HEIGHT_AUTO, { { 1, CSS_UNIT_EM } } },
 	{ CSS_LETTER_SPACING_INHERIT, { 0, CSS_UNIT_PX } },
 	{ CSS_LINE_HEIGHT_INHERIT, { 1.33 } },
 	{ CSS_LIST_STYLE_IMAGE_INHERIT, 0 },
@@ -1903,7 +1903,11 @@ void css_dump_style(FILE *stream, const struct css_style * const style)
 			fprintf(stream, "auto");
 			break;
 		case CSS_HEIGHT_LENGTH:
-			css_dump_length(stream, &style->height.length);
+			css_dump_length(stream, &style->height.value.length);
+			break;
+		case CSS_HEIGHT_PERCENT:
+			fprintf(stream, "%g%%",
+				style->height.value.percent);
 			break;
 		default:
 			fprintf(stream, "UNKNOWN");

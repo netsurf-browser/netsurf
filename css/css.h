@@ -279,8 +279,12 @@ struct css_style {
 		enum { CSS_HEIGHT_INHERIT,
 		       CSS_HEIGHT_AUTO,
 		       CSS_HEIGHT_LENGTH,
+		       CSS_HEIGHT_PERCENT,
 		       CSS_HEIGHT_NOT_SET } height;
-		struct css_length length;
+		union {
+			struct css_length length;
+			float percent;
+		} value;
 	} height;
 
 	struct {
