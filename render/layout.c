@@ -1040,10 +1040,14 @@ void layout_find_dimensions(int available_width,
 					containing_block->style->height.
 					height == CSS_HEIGHT_PERCENT) &&
 					containing_block->height != AUTO)) {
+				/* Box is absolutely positioned or its
+				 * containing block has a valid specified
+				 * height. (CSS 2.1 Section 10.5) */
 				*height = style->height.value.percent *
 						containing_block->height / 100;
 			} else {
-				/* else treated as auto; fall though */
+				/* precentage height not permissible
+				 * treat height as auto */
 				*height = AUTO;
 			}
 			break;
@@ -3244,8 +3248,8 @@ bool layout_absolute(struct box *box, struct box *containing_block,
 			&top, &right, &bottom, &left);
 
 	/* Pass containing block into layout_find_dimensions via the float
-	 * containing block box member. This is unused for absolutly positioned
-	 * boxes because a box can't be floated and absolutly positioned. */
+	 * containing block box member. This is unused for absolutely positioned
+	 * boxes because a box can't be floated and absolutely positioned. */
 	box->float_container = containing_block;
 	layout_find_dimensions(available_width, box, box->style,
 			&width, &height, &max_width, &min_width,
