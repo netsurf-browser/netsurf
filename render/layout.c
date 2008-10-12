@@ -1705,6 +1705,7 @@ bool layout_line(struct box *first, int *width, int *y,
 			LOG(("float %p", b));
 			d = b->children;
 			d->float_children = 0;
+			b->float_container = d->float_container = cont;
 
 			if (!layout_float(d, *width, content))
 				return false;
@@ -1775,7 +1776,6 @@ bool layout_line(struct box *first, int *width, int *y,
 				box_dump(stderr, cont, 0);
 				assert(0);
 			}
-			b->float_container = d->float_container = cont;
 			b->next_float = cont->float_children;
 			cont->float_children = b;
 			split_box = 0;
