@@ -2523,14 +2523,16 @@ bool layout_table(struct box *table, int available_width,
 			}
 			table_width = max_width;
 		} else {
-			/* for fixed-width tables, distribute the extra space too */
+			/* for fixed-width tables, distribute the extra space
+			 * too */
 			unsigned int flexible_columns = 0;
 			for (i = 0; i != columns; i++)
 				if (col[i].type != COLUMN_WIDTH_FIXED)
 					flexible_columns++;
 			if (flexible_columns == 0) {
 				int extra = (table_width - max_width) / columns;
-				remainder = (table_width - max_width) - (extra * columns);
+				remainder = (table_width - max_width) -
+						(extra * columns);
 				for (i = 0; i != columns; i++) {
 					col[i].width = col[i].max + extra;
 					count -= remainder;
@@ -2541,11 +2543,14 @@ bool layout_table(struct box *table, int available_width,
 				}
 
 			} else {
-				int extra = (table_width - max_width) / flexible_columns;
-				remainder = (table_width - max_width) - (extra * flexible_columns);
+				int extra = (table_width - max_width) /
+						flexible_columns;
+				remainder = (table_width - max_width) -
+						(extra * flexible_columns);
 				for (i = 0; i != columns; i++)
 					if (col[i].type != COLUMN_WIDTH_FIXED) {
-						col[i].width = col[i].max + extra;
+						col[i].width = col[i].max +
+								extra;
 						count -= remainder;
 						if (count < 0) {
 							col[i].width++;
@@ -3473,39 +3478,34 @@ bool layout_absolute(struct box *box, struct box *containing_block,
 		if (margin[BOTTOM] == AUTO)
 			margin[BOTTOM] = 0;
 		bottom = containing_block->height -
-				top -
-				margin[TOP] - border[TOP] - padding[TOP] -
-				height -
-				padding[BOTTOM] - border[BOTTOM] - margin[BOTTOM];
+				top - margin[TOP] - border[TOP] -
+				padding[TOP] - height - padding[BOTTOM] -
+				border[BOTTOM] - margin[BOTTOM];
 	} else if (top != AUTO && height != AUTO && bottom != AUTO) {
 		if (margin[TOP] == AUTO && margin[BOTTOM] == AUTO) {
 			space = containing_block->height -
-					top -
-					border[TOP] - padding[TOP] -
-					height -
-					padding[BOTTOM] - border[BOTTOM] -
-					bottom;
+					top - border[TOP] - padding[TOP] -
+					height - padding[BOTTOM] -
+					border[BOTTOM] - bottom;
 			margin[TOP] = margin[BOTTOM] = space / 2;
 		} else if (margin[TOP] == AUTO) {
 			margin[TOP] = containing_block->height -
-					top -
-					border[TOP] - padding[TOP] -
-					height -
-					padding[BOTTOM] - border[BOTTOM] - margin[BOTTOM] -
+					top - border[TOP] - padding[TOP] -
+					height - padding[BOTTOM] -
+					border[BOTTOM] - margin[BOTTOM] -
 					bottom;
 		} else if (margin[BOTTOM] == AUTO) {
 			margin[BOTTOM] = containing_block->height -
-					top -
-					margin[TOP] - border[TOP] - padding[TOP] -
-					height -
+					top - margin[TOP] - border[TOP] -
+					padding[TOP] - height -
 					padding[BOTTOM] - border[BOTTOM] -
 					bottom;
 		} else {
 			bottom = containing_block->height -
-					top -
-					margin[TOP] - border[TOP] - padding[TOP] -
-					height -
-					padding[BOTTOM] - border[BOTTOM] - margin[BOTTOM];
+					top - margin[TOP] - border[TOP] -
+					padding[TOP] - height -
+					padding[BOTTOM] - border[BOTTOM] -
+					margin[BOTTOM];
 		}
 	} else {
 		if (margin[TOP] == AUTO)
@@ -3515,42 +3515,42 @@ bool layout_absolute(struct box *box, struct box *containing_block,
 		if (top == AUTO && height == AUTO && bottom != AUTO) {
 			height = box->height;
 			top = containing_block->height -
-					margin[TOP] - border[TOP] - padding[TOP] -
-					height -
-					padding[BOTTOM] - border[BOTTOM] - margin[BOTTOM] -
-					bottom;
+					margin[TOP] - border[TOP] -
+					padding[TOP] - height -
+					padding[BOTTOM] - border[BOTTOM] -
+					margin[BOTTOM] - bottom;
 		} else if (top == AUTO && height != AUTO && bottom == AUTO) {
 			top = static_top;
 			bottom = containing_block->height -
-					top -
-					margin[TOP] - border[TOP] - padding[TOP] -
-					height -
-					padding[BOTTOM] - border[BOTTOM] - margin[BOTTOM];
+					top - margin[TOP] - border[TOP] -
+					padding[TOP] - height -
+					padding[BOTTOM] - border[BOTTOM] -
+					margin[BOTTOM];
 		} else if (top != AUTO && height == AUTO && bottom == AUTO) {
 			height = box->height;
 			bottom = containing_block->height -
-					top -
-					margin[TOP] - border[TOP] - padding[TOP] -
-					height -
-					padding[BOTTOM] - border[BOTTOM] - margin[BOTTOM];
+					top - margin[TOP] - border[TOP] -
+					padding[TOP] - height -
+					padding[BOTTOM] - border[BOTTOM] -
+					margin[BOTTOM];
 		} else if (top == AUTO && height != AUTO && bottom != AUTO) {
 			top = containing_block->height -
-					margin[TOP] - border[TOP] - padding[TOP] -
-					height -
-					padding[BOTTOM] - border[BOTTOM] - margin[BOTTOM] -
-					bottom;
+					margin[TOP] - border[TOP] -
+					padding[TOP] - height -
+					padding[BOTTOM] - border[BOTTOM] -
+					margin[BOTTOM] - bottom;
 		} else if (top != AUTO && height == AUTO && bottom != AUTO) {
 			height = containing_block->height -
-					top -
-					margin[TOP] - border[TOP] - padding[TOP] -
-					padding[BOTTOM] - border[BOTTOM] - margin[BOTTOM] -
+					top - margin[TOP] - border[TOP] -
+					padding[TOP] - padding[BOTTOM] -
+					border[BOTTOM] - margin[BOTTOM] -
 					bottom;
 		} else if (top != AUTO && height != AUTO && bottom == AUTO) {
 			bottom = containing_block->height -
-					top -
-					margin[TOP] - border[TOP] - padding[TOP] -
-					height -
-					padding[BOTTOM] - border[BOTTOM] - margin[BOTTOM];
+					top - margin[TOP] - border[TOP] -
+					padding[TOP] - height -
+					padding[BOTTOM] - border[BOTTOM] -
+					margin[BOTTOM];
 		}
 	}
 	LOG(("%i + %i + %i + %i + %i + %i + %i + %i + %i = %i",
