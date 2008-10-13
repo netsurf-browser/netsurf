@@ -154,7 +154,7 @@ void gui_init(int argc, char** argv)
 	char lang[100];
 	bool found=FALSE;
 	int i;
-	BPTR lock=0;
+	BPTR lock=0,amiupdatefh;
 	Object *dto;
 
 	msgport = AllocSysObjectTags(ASOT_PORT,
@@ -298,6 +298,26 @@ void gui_init(int argc, char** argv)
 
 	plot=amiplot;
 
+	/* AmiUpdate */
+	if(((lock = Lock("ENVARC:AppPaths",SHARED_LOCK)) == 0))
+	{
+		lock = CreateDir("ENVARC:AppPaths");
+	}
+	
+	UnLock(lock);
+
+	if(lock=GetCurrentDir())
+	{
+		char filename[1024];
+
+		DevNameFromLock(lock,(STRPTR)&filename,1024L,DN_FULLPATH);
+
+		amiupdatefh = FOpen("ENVARC:AppPaths/NetSurf",MODE_NEWFILE,0);
+		FPuts(amiupdatefh,(CONST_STRPTR)&filename);
+		FClose(amiupdatefh);
+	}
+	/* end Amiupdate */
+
 	ami_init_menulabs();
 
 	schedule_list = NewObjList();
@@ -305,7 +325,12 @@ void gui_init(int argc, char** argv)
 
 	urldb_load(option_url_file);
 	urldb_load_cookies(option_cookie_file);
-	hotlist = options_load_tree(option_hotlist_file);
+
+	if(lock = Lock(option_hotlist_file,SHARED_LOCK))
+	{
+		UnLock(lock);
+		hotlist = options_load_tree(option_hotlist_file);
+	}
 
 	if(!hotlist) ami_hotlist_init(&hotlist);
 	ami_global_history_initialise();
@@ -1585,6 +1610,8 @@ void gui_window_destroy(struct gui_window *g)
 	ULONG ptabnum;
 
 	if(!g) return;
+
+	currp = &dummyrp;
 
 	if(g->shared->tabs > 1)
 	{
