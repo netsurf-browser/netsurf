@@ -1023,13 +1023,28 @@ void layout_find_dimensions(int available_width,
 					style);
 			break;
 		case CSS_HEIGHT_PERCENT:
-			if (box->float_container) {
+			if (box->style->position == CSS_POSITION_ABSOLUTE &&
+					box->float_container) {
+				/* Box is absolutely positioned */
 				containing_block = box->float_container;
+			} else if (box->float_container &&
+					box->style->position !=
+					CSS_POSITION_ABSOLUTE &&
+					(box->style->float_ ==
+					CSS_FLOAT_LEFT ||
+					box->style->float_ ==
+					CSS_FLOAT_RIGHT)) {
+				/* Box is a float */
+				assert(box->parent && box->parent->parent &&
+						box->parent->parent->parent);
+				containing_block = box->parent->parent->parent;
 			} else if (box->parent && box->parent->type !=
 					BOX_INLINE_CONTAINER) {
+				/* Box is a block level element */
 				containing_block = box->parent;
 			} else if (box->parent && box->parent->type ==
 					BOX_INLINE_CONTAINER) {
+				/* Box is an inline block */
 				assert(box->parent->parent);
 				containing_block = box->parent->parent;
 			}
