@@ -191,8 +191,12 @@ static bool fetch_data_process(struct fetch_data_context *c)
 	
 	/* we URL unescape the data first, just incase some insane page
 	 * decides to nest URL and base64 encoding.  Like, say, Acid2.
+         *
+         * Note: the odd cast via void* is to prevent type-punning issues.
+         *       we can be confident that size_t is at least as well aligned
+         *       as int will be.
 	 */
-	unescaped = curl_easy_unescape(curl, comma + 1, 0, (int *)&c->datalen);
+	unescaped = curl_easy_unescape(curl, comma + 1, 0, (int *)((void *)&c->datalen));
 	if (unescaped == NULL) {
 		fetch_data_send_callback(FETCH_ERROR, c,
 			"Unable to URL decode data: URL", 0);
