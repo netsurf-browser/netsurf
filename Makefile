@@ -739,15 +739,15 @@ install-gtk: nsgtk
 	mkdir -p $(DESTDIR)$(NETSURF_GTK_RESOURCES)throbber
 	mkdir -p $(DESTDIR)$(NETSURF_GTK_BIN)
 	@cp -v nsgtk $(DESTDIR)$(NETSURF_GTK_BIN)netsurf
-	@cp -vrL gtk/res/adblock.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -vrL gtk/res/ca-bundle.txt $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -vrL gtk/res/default.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -vrL gtk/res/gtkdefault.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -vrL gtk/res/license $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -vrL gtk/res/netsurf.xpm $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -vrL gtk/res/netsurf-16x16.xpm $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -vrL gtk/res/throbber/*.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)/throbber
-	@cp -vrL gtk/res/Aliases $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -vRL gtk/res/adblock.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -vRL gtk/res/ca-bundle.txt $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -vRL gtk/res/default.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -vRL gtk/res/gtkdefault.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -vRL gtk/res/license $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -vRL gtk/res/netsurf.xpm $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -vRL gtk/res/netsurf-16x16.xpm $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -vRL gtk/res/throbber/*.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)/throbber
+	@cp -vRL gtk/res/Aliases $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	gzip -9v < gtk/res/messages > $(DESTDIR)$(NETSURF_GTK_RESOURCES)messages
 	gzip -9v < gtk/res/downloads.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)downloads.glade
 	gzip -9v < gtk/res/netsurf.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)netsurf.glade
