@@ -60,7 +60,7 @@ static void layout_minmax_block(struct box *block,
 		const struct font_functions *font_func);
 static bool layout_block_object(struct box *block);
 static void layout_block_find_dimensions(int available_width, struct box *box);
-static bool layout_apply_minmax_height(struct box *box);
+static bool layout_apply_minmax_height(struct box *box, struct box *container);
 static void layout_block_add_scrollbar(struct box *box, int which);
 static int layout_solve_width(int available_width, int width, int max_width,
 		int min_width, int margin[4], int padding[4], int border[4]);
@@ -482,7 +482,7 @@ bool layout_block_context(struct box *block, struct content *content)
 					cy += box->height -
 							(y - box->padding[TOP]);
 
-				if (layout_apply_minmax_height(box)) {
+				if (layout_apply_minmax_height(box, NULL)) {
 					/* Height altered */
 					/* Set current cy */
 					cy += box->height -
@@ -524,7 +524,7 @@ bool layout_block_context(struct box *block, struct content *content)
 		if (block->type == BOX_BLOCK)
 			layout_block_add_scrollbar(block, BOTTOM);
 	}
-	layout_apply_minmax_height(block);
+	layout_apply_minmax_height(block, NULL);
 
 	return true;
 }
@@ -729,12 +729,36 @@ void layout_block_find_dimensions(int available_width, struct box *box)
  * Manimpulate box height according to CSS min-height and max-height properties
  *
  * \param  box		block to modify with any min-height or max-height
+ * \param  container	containing block for absolutely positioned elements, or
+ *			NULL for non absolutely positioned elements.
  * \return		whether the height has been changed
  */
 
-bool layout_apply_minmax_height(struct box *box) {
+bool layout_apply_minmax_height(struct box *box, struct box *container)
+{
 	int h;
+	struct box *containing_block = NULL;
 	bool updated = false;
+
+	/* Find containing block for percentage heights */
+	if (container) {
+		/* Box is absolutely positioned */
+		containing_block = container;
+	} else if (box->float_container &&
+			(box->style->float_ == CSS_FLOAT_LEFT ||
+			 box->style->float_ == CSS_FLOAT_RIGHT)) {
+		/* Box is a float */
+		assert(box->parent && box->parent->parent &&
+				box->parent->parent->parent);
+		containing_block = box->parent->parent->parent;
+	} else if (box->parent && box->parent->type != BOX_INLINE_CONTAINER) {
+		/* Box is a block level element */
+		containing_block = box->parent;
+	} else if (box->parent && box->parent->type == BOX_INLINE_CONTAINER) {
+		/* Box is an inline block */
+		assert(box->parent->parent);
+		containing_block = box->parent->parent;
+	}
 
 	if (box->style) {
 		/* max-height */
@@ -748,7 +772,24 @@ bool layout_apply_minmax_height(struct box *box) {
 			}
 			break;
 		case CSS_MAX_HEIGHT_PERCENT:
-			/* percentage heights not yet implemented */
+			if (box->style->position == CSS_POSITION_ABSOLUTE ||
+					(containing_block &&
+					(containing_block->style->height.
+					height == CSS_HEIGHT_LENGTH ||
+					containing_block->style->height.
+					height == CSS_HEIGHT_PERCENT) &&
+					containing_block->height != AUTO)) {
+				/* Box is absolutely positioned or its
+				 * containing block has a valid specified
+				 * height. (CSS 2.1 Section 10.5) */
+				h = box->style->max_height.value.percent *
+						containing_block->height / 100;
+				if (h < box->height) {
+					box->height = h;
+					updated = true;
+				}
+			}
+			break;
 		default:
 			break;
 		}
@@ -764,7 +805,24 @@ bool layout_apply_minmax_height(struct box *box) {
 			}
 			break;
 		case CSS_MIN_HEIGHT_PERCENT:
-			/* percentage heights not yet implemented */
+			if (box->style->position == CSS_POSITION_ABSOLUTE ||
+					(containing_block &&
+					(containing_block->style->height.
+					height == CSS_HEIGHT_LENGTH ||
+					containing_block->style->height.
+					height == CSS_HEIGHT_PERCENT) &&
+					containing_block->height != AUTO)) {
+				/* Box is absolutely positioned or its
+				 * containing block has a valid specified
+				 * height. (CSS 2.1 Section 10.5) */
+				h = box->style->min_height.value.percent *
+						containing_block->height / 100;
+				if (h > box->height) {
+					box->height = h;
+					updated = true;
+				}
+			}
+			break;
 		default:
 			break;
 		}
@@ -3569,7 +3627,7 @@ bool layout_absolute(struct box *box, struct box *containing_block,
 		/** \todo Inline ancestors */
 	}
 	box->height = height;
-	layout_apply_minmax_height(box);
+	layout_apply_minmax_height(box, containing_block);
 
 	return true;
 }
