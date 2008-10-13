@@ -846,6 +846,7 @@ void urldb_reset_url_visit_data(const char *url)
 const struct url_data *urldb_get_url_data(const char *url)
 {
 	struct path_data *p;
+	struct url_internal_data *u;
 
 	assert(url);
 
@@ -853,7 +854,9 @@ const struct url_data *urldb_get_url_data(const char *url)
 	if (!p)
 		return NULL;
 
-	return (struct url_data *)&p->urld;
+	u = &p->urld;
+
+	return (struct url_data *) u;
 }
 
 /**
@@ -1351,13 +1354,17 @@ bool urldb_iterate_entries_path(const struct path_data *parent,
 
 		/** \todo handle fragments? */
 		if (url_callback) {
+			const struct url_internal_data *u = &parent->urld;
+
 			assert(parent->url);
 			if (!url_callback(parent->url,
-					(const struct url_data *) &parent->urld))
+					(const struct url_data *) u))
 				return false;
 		} else {
-			if (parent->cookies && !cookie_callback(parent->cookies->domain,
-					(const struct cookie_data *) parent->cookies))
+			if (parent->cookies && !cookie_callback(
+					parent->cookies->domain,
+					(const struct cookie_data *) 
+						parent->cookies))
 				return false;
 		}
 	}
