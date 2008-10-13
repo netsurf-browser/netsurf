@@ -18,6 +18,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <locale.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -110,6 +111,7 @@ void netsurf_init(int argc, char** argv)
 	lib_init();
 	url_init();
 	gui_init(argc, argv);
+	setlocale(LC_ALL, "C");
 	fetch_init();
 	fetchcache_init();
 	gui_init2(argc, argv);
