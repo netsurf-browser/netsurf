@@ -238,6 +238,11 @@ Paste:Paste
 SelectAllNS:Select all
 ClearNS:Clear selection
 
+# Browser menu
+#
+Browser:Browser
+HistGlobalNS:Show global history...
+
 # Hotlist menu
 #
 HotlistShowNS:Show hotlist...
@@ -279,6 +284,8 @@ TreeSession:Session end
 TreeUnused:Unused
 TreeImport:Imported URL
 TreeNewFolder:New directory
+TreeLaunch:Visit URL
+TreeDelete:Delete
 
 # Tree export
 #

@@ -43,4 +43,5 @@ enum
 void ami_open_tree(struct tree *tree,int type);
 void ami_tree_close(struct treeview_window *twin);
 BOOL ami_tree_event(struct treeview_window *twin);
+void ami_recreate_listbrowser(struct treeview_window *twin);
 #endif

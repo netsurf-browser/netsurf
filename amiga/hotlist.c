@@ -22,6 +22,7 @@
 #include <proto/exec.h>
 #include "content/urldb.h"
 #include "amiga/hotlist.h"
+#include "amiga/tree.h"
 
 void ami_gui_hotlist_visited(struct content *content, struct tree *tree,
 		struct node *node);
@@ -141,4 +142,7 @@ void ami_hotlist_add(struct node *node,struct content *c)
 	}
 
 	tree_handle_node_changed(hotlist,node,false,true);
+
+	if(hotlist->handle)
+		ami_recreate_listbrowser((struct treeview_window *)hotlist->handle);
 }

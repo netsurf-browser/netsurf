@@ -65,14 +65,15 @@ void ami_init_menulabs(void)
 	menulab[15] = ami_utf8_easy((char *)messages_get("Paste"));
 	menulab[16] = ami_utf8_easy((char *)messages_get("SelectAllNS"));
 	menulab[17] = ami_utf8_easy((char *)messages_get("ClearNS"));
-	menulab[18] = ami_utf8_easy((char *)messages_get("Hotlist"));
-	menulab[19] = ami_utf8_easy((char *)messages_get("HotlistAdd"));
-	menulab[20] = ami_utf8_easy((char *)messages_get("HotlistShowNS"));
-	menulab[21] = ami_utf8_easy((char *)messages_get("Settings"));
-	menulab[22] = ami_utf8_easy((char *)messages_get("SnapshotWindow"));
-	menulab[23] = ami_utf8_easy((char *)messages_get("SettingsSave"));
-	menulab[24] = ami_utf8_easy((char *)messages_get("GlobalHistory"));
-	menulab[25] = ami_utf8_easy((char *)messages_get("ShowCookies"));	
+	menulab[18] = ami_utf8_easy((char *)messages_get("Browser"));
+	menulab[19] = ami_utf8_easy((char *)messages_get("HistGlobalNS"));
+	menulab[20] = ami_utf8_easy((char *)messages_get("ShowCookies"));
+	menulab[21] = ami_utf8_easy((char *)messages_get("Hotlist"));
+	menulab[22] = ami_utf8_easy((char *)messages_get("HotlistAdd"));
+	menulab[23] = ami_utf8_easy((char *)messages_get("HotlistShowNS"));
+	menulab[24] = ami_utf8_easy((char *)messages_get("Settings"));
+	menulab[25] = ami_utf8_easy((char *)messages_get("SnapshotWindow"));
+	menulab[26] = ami_utf8_easy((char *)messages_get("SettingsSave"));
 }
 
 struct NewMenu *ami_create_menu(ULONG type)
@@ -98,14 +99,15 @@ struct NewMenu *ami_create_menu(ULONG type)
 			  	{ NM_ITEM,0,"V",0,0,0,}, // paste
 			  	{ NM_ITEM,0,"A",0,0,0,}, // select all
 			  	{ NM_ITEM,0,"Z",0,0,0,}, // clear selection
+			  	{NM_TITLE,0,0,0,0,0,}, // browser
+			  	{ NM_ITEM,0,0,0,0,0,}, // global history
+			  	{ NM_ITEM,0,0,0,0,0,}, // cookies
 				{NM_TITLE,0,0,0,0,0,}, // hotlist
 				{ NM_ITEM,0,0,0,0,0,}, // add to hotlist
 			  	{ NM_ITEM,0,"H",0,0,0,}, // show hotlist (treeview)
 				{NM_TITLE,0,0,0,0,0,}, // settings
 				{ NM_ITEM,0,0,0,0,0,}, // snapshot window
 				{ NM_ITEM,0,0,0,0,0,}, // save settings
-				{ NM_ITEM,0,0,0,0,0,}, // show history
-				{ NM_ITEM,0,0,0,0,0,}, // show cookies
 			  	{  NM_END,0,0,0,0,0,},
 			 };
 
@@ -267,7 +269,20 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin)
 			}
 		break;
 
-		case 2: // hotlist
+		case 2:
+			switch(itemnum)
+			{
+				case 0: // global history
+					ami_open_tree(global_history_tree,AMI_TREE_HISTORY);
+				break;
+
+				case 1: // cookies tree
+					ami_open_tree(cookies_tree,AMI_TREE_COOKIES);
+				break;
+			}
+		break;
+
+		case 3: // hotlist
 			switch(itemnum)
 			{
 				case 0: // add
@@ -287,7 +302,7 @@ config option for this? */
 			}
 		break;
 
-		case 3: // settings
+		case 4: // settings
 			switch(itemnum)
 			{
 				case 0: // snapshot
@@ -299,14 +314,6 @@ config option for this? */
 
 				case 1: // save settings
 					options_write("Resources/Options");
-				break;
-
-				case 2: // global history
-					ami_open_tree(global_history_tree,AMI_TREE_HISTORY);
-				break;
-
-				case 3: // cookies tree
-					ami_open_tree(cookies_tree,AMI_TREE_COOKIES);
 				break;
 			}
 		break;

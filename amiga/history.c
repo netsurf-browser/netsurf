@@ -42,13 +42,16 @@ static bool global_history_init;
 static struct node *ami_global_history_find(const char *url);
 static bool global_history_add_internal(const char *url,
 		const struct url_data *data);
+void ami_global_history_initialise_node(const char *title,
+		time_t base, int days_back);
+void ami_global_history_initialise_nodes(void);
 
 void ami_global_history_initialise(void)
 {
 	char s[MAXIMUM_URL_LENGTH];
 	BPTR *fp;
 
-	if(global_history_tree) return;
+//	if(global_history_tree) return;
 
 	/* Create an empty tree */
 	global_history_tree = AllocVec(sizeof(struct tree), MEMF_CLEAR | MEMF_PRIVATE);
@@ -63,6 +66,7 @@ void ami_global_history_initialise(void)
 		global_history_tree = NULL;
 	}
 	global_history_tree->root->expanded = true;
+	ami_global_history_initialise_nodes();
 	global_history_tree->movable = false;
 
 	/* load recent URLs */
@@ -303,3 +307,72 @@ void ami_global_history_free()
 {
 	FreeVec(global_history_tree);
 }
+
+/**
+ * Initialises the base nodes
+ */
+void ami_global_history_initialise_nodes(void)
+{
+	struct tm *full_time;
+	time_t t;
+	int weekday;
+	int i;
+
+	/* get the current time */
+	t = time(NULL);
+	if (t == -1)
+		return;
+
+	/* get the time at the start of today */
+	full_time = localtime(&t);
+	weekday = full_time->tm_wday;
+	full_time->tm_sec = 0;
+	full_time->tm_min = 0;
+	full_time->tm_hour = 0;
+	t = mktime(full_time);
+	if (t == -1)
+		return;
+
+	ami_global_history_initialise_node((char *)messages_get("DateToday"), t, 0);
+	if (weekday > 0)
+		ami_global_history_initialise_node(
+				(char *)messages_get("DateYesterday"), t, -1);
+	for (i = 2; i <= weekday; i++)
+		ami_global_history_initialise_node(NULL, t, -i);
+	ami_global_history_initialise_node((char *)messages_get("Date1Week"),
+				t, -weekday - 7);
+	ami_global_history_initialise_node((char *)messages_get("Date2Week"),
+				t, -weekday - 14);
+	ami_global_history_initialise_node((char *)messages_get("Date3Week"),
+				t, -weekday - 21);
+}
+
+/**
+ * Create and initialise a node
+ */
+void ami_global_history_initialise_node(const char *title,
+		time_t base, int days_back)
+{
+	struct tm *full_time;
+	char buffer[64];
+	struct node *node;
+
+	base += days_back * 60 * 60 * 24;
+	if (!title) {
+		full_time = localtime(&base);
+		strftime((char *)&buffer, (size_t)64, "%A", full_time);
+		node = tree_create_folder_node(NULL, buffer);
+	} else
+		node = tree_create_folder_node(NULL, title);
+
+	if (!node)
+		return;
+
+	node->retain_in_memory = true;
+	node->deleted = true;
+	node->editable = false;
+	global_history_base_node[global_history_base_node_count] = node;
+	global_history_base_node_time[global_history_base_node_count] = base;
+	global_history_base_node_count++;
+}
+

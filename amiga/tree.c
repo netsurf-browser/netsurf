@@ -115,12 +115,10 @@ void tree_update_URL_node(struct node *node, const char *url,
 	struct node_element *element;
 	char buffer[256];
 
-	DebugPrintF("tree_update_URL_node\n");
-
 	assert(node);
 
 	element = tree_find_element(node, TREE_ELEMENT_URL);
-DebugPrintF("%s\n",element->text);
+
 	if (!element)
 		return;
 	if (data) {
@@ -188,7 +186,7 @@ void tree_set_node_sprite(struct node *node, const char *sprite,
 void ami_open_tree(struct tree *tree,int type)
 {
 	struct treeview_window *twin;
-	BOOL msel = TRUE,nothl = TRUE;
+	BOOL msel = TRUE,nothl = TRUE,launchdisable=FALSE;
 	static WORD gen=0;
 	char *wintitle;
 
@@ -205,8 +203,8 @@ void ami_open_tree(struct tree *tree,int type)
 
 	static struct ColumnInfo columninfo[] =
 	{
-    	{ 22,"Name", CIF_DRAGGABLE | CIF_SORTABLE},
-    	{ 5,"URL", CIF_DRAGGABLE },
+    	{ 80,"Name", CIF_DRAGGABLE | CIF_SORTABLE},
+    	{ 20,"URL", CIF_DRAGGABLE },
 //    	{ 5,"Visits", CIF_DRAGGABLE },
     	{ -1, (STRPTR)~0, -1 }
 	};
@@ -221,11 +219,12 @@ void ami_open_tree(struct tree *tree,int type)
 		break;
 		case AMI_TREE_COOKIES:
 			nothl = TRUE;
+			launchdisable=TRUE;
 			wintitle = (char *)messages_get("Cookies");
 		break;
 		case AMI_TREE_HISTORY:
 			nothl = TRUE;
-			wintitle = (char *)messages_get("History");
+			wintitle = (char *)messages_get("GlobalHistory");
 		break;
 	}
 
@@ -250,8 +249,8 @@ void ami_open_tree(struct tree *tree,int type)
 			WINDOW_Position, WPOS_CENTERSCREEN,
 			WINDOW_ParentGroup, twin->gadgets[GID_MAIN] = VGroupObject,
 				LAYOUT_AddChild, twin->gadgets[GID_TREEBROWSER] = ListBrowserObject,
-    		   	 		GA_ID, GID_TREEBROWSER,
-        				GA_RelVerify, TRUE,
+					GA_ID, GID_TREEBROWSER,
+					GA_RelVerify, TRUE,
 					GA_ReadOnly,FALSE,
 					LISTBROWSER_ColumnInfo, &columninfo,
 //					LISTBROWSER_ColumnTitles, TRUE,
@@ -268,9 +267,9 @@ void ami_open_tree(struct tree *tree,int type)
 				LAYOUT_AddChild, HGroupObject,
 					LAYOUT_AddChild, twin->gadgets[GID_OPEN] = ButtonObject,
 						GA_ID,GID_OPEN,
-						GA_Text,messages_get("Open"),
+						GA_Text,messages_get("TreeLaunch"),
 						GA_RelVerify,TRUE,
-						GA_Disabled,nothl,
+						GA_Disabled,launchdisable,
 					ButtonEnd,
 					LAYOUT_AddChild, twin->gadgets[GID_NEWF] = ButtonObject,
 						GA_ID,GID_NEWF,
@@ -298,7 +297,7 @@ void ami_open_tree(struct tree *tree,int type)
 					ButtonEnd,
 					LAYOUT_AddChild, twin->gadgets[GID_DEL] = ButtonObject,
 						GA_ID,GID_DEL,
-						GA_Text,messages_get("Delete"),
+						GA_Text,messages_get("TreeDelete"),
 						GA_RelVerify,TRUE,
 					ButtonEnd,
 				EndGroup,
@@ -409,14 +408,17 @@ area below the listview when items are selected */
 
 //		element = tree_find_element(node, TREE_ELEMENT_VISITS);
 
-		if(node->expanded) flags = LBFLG_SHOWCHILDREN;
+		flags = 0;
+		/*if(node->expanded) */ flags = LBFLG_SHOWCHILDREN;
+		if(node->folder) flags |= LBFLG_HASCHILDREN;
+		if(!node->parent) flags |= LBFLG_HIDDEN;
 
 		switch (element->type) {
 			case NODE_ELEMENT_TEXT_PLUS_SPRITE:
 			case NODE_ELEMENT_TEXT:
     	    		if (lbnode = AllocListBrowserNode(3,
 					LBNA_UserData,node,
-					LBNA_Generation,*gen,
+					LBNA_Generation,*gen - 1,
 					LBNA_Selected,node->selected,
 					LBNA_Flags,flags,
 	            	LBNA_Column, 0,
@@ -592,7 +594,7 @@ BOOL ami_tree_event(struct treeview_window *twin)
 void ami_move_node(struct treeview_window *twin,bool up)
 {
 	struct Node *lbnode = NULL;
-	struct node *treenode;
+	struct node *treenode,*moveto;
 	BOOL sel = FALSE;
 
 	GetAttr(LISTBROWSER_SelectedNode,twin->gadgets[GID_TREEBROWSER],(ULONG *)&lbnode);
@@ -601,17 +603,22 @@ void ami_move_node(struct treeview_window *twin,bool up)
 	{
 		GetListBrowserNodeAttrs(lbnode,
 				LBNA_UserData,(ULONG *)&treenode,
-				LBNA_Selected,(BOOL *)&sel,
+// for multiselects?				LBNA_Selected,(BOOL *)&sel,
 				TAG_DONE);
 	}
 
-	if(sel)
-	{
-		tree_set_node_selected(twin->tree,treenode,true);
+	tree_set_node_selected(twin->tree,treenode,true);
 
-		tree_move_selected_nodes(twin->tree,treenode,up);
+	if(up)
+	{
+		moveto = treenode->previous;
+	}
+	else
+	{
+		moveto = treenode->next;
 	}
 
+	tree_move_selected_nodes(twin->tree,moveto,up);
 	tree_set_node_selected(twin->tree,treenode,false);
 	ami_recreate_listbrowser(twin);
 }
@@ -636,7 +643,6 @@ void ami_new_bookmark(struct treeview_window *twin)
 	}
 
 	url = (char *)strdup("http://www.netsurf-browser.org");
-	title = (char *)messages_get("NewBookmark");
 
 	data = urldb_get_url_data(url);
 	if (!data)
@@ -648,6 +654,7 @@ void ami_new_bookmark(struct treeview_window *twin)
 
 	if (data)
 	{
+		title = data->title;
 		tree_create_URL_node(treenode,url,data,title);
 		ami_recreate_listbrowser(twin);
 	}
