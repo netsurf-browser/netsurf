@@ -1266,14 +1266,18 @@ bool layout_inline_container(struct box *inline_container, int width,
 
 	has_text_children = false;
 	for (c = inline_container->children; c; c = c->next) {
-                bool is_pre = false;
-                if (c->style)
-                        is_pre = (c->style->white_space == CSS_WHITE_SPACE_PRE ||
-                                  c->style->white_space == CSS_WHITE_SPACE_PRE_LINE ||
-                                  c->style->white_space == CSS_WHITE_SPACE_PRE_WRAP);
-		if ((!c->object && c->text && (c->length || is_pre)) || c->type == BOX_BR)
-                        has_text_children = true;
-        }
+		bool is_pre = false;
+		if (c->style)
+			is_pre = (c->style->white_space ==
+					CSS_WHITE_SPACE_PRE ||
+					c->style->white_space ==
+					CSS_WHITE_SPACE_PRE_LINE ||
+					c->style->white_space ==
+					CSS_WHITE_SPACE_PRE_WRAP);
+		if ((!c->object && c->text && (c->length || is_pre)) ||
+				c->type == BOX_BR)
+			has_text_children = true;
+	}
 
 	/** \todo fix wrapping so that a box with horizontal scrollbar will
 	 * shrink back to 'width' if no word is wider than 'width' (Or just set
@@ -1527,7 +1531,7 @@ bool layout_line(struct box *first, int *width, int *y,
 			}
 
 			if (b->width == UNKNOWN_WIDTH) {
- 				/** \todo handle errors */
+				/** \todo handle errors */
 
 				/* If it's a select element, we must use the
 				 * width of the widest option text */
@@ -2084,7 +2088,7 @@ struct box *layout_minmax_line(struct box *first,
 				continue;
 
 			if (b->width == UNKNOWN_WIDTH) {
- 				/** \todo handle errors */
+				/** \todo handle errors */
 
 				/* If it's a select element, we must use the
 				 * width of the widest option text */
