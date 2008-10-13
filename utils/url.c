@@ -311,8 +311,11 @@ url_func_result url_join(const char *rel, const char *base, char **result)
 {
 	url_func_result status = URL_FUNC_NOMEM;
 	struct url_components_internal base_components = {0,0,0,0,0,0};
+	struct url_components_internal *base_ptr = &base_components;
 	struct url_components_internal rel_components = {0,0,0,0,0,0};
+	struct url_components_internal *rel_ptr = &rel_components;
 	struct url_components_internal merged_components = {0,0,0,0,0,0};
+	struct url_components_internal *merged_ptr = &merged_components;
 	char *merge_path = NULL, *split_point;
 	char *input, *output, *start = NULL;
 	int len, buf_len;
@@ -324,8 +327,7 @@ url_func_result url_join(const char *rel, const char *base, char **result)
 
 
 	/* break down the relative URL (not cached, corruptable) */
-	status = url_get_components(rel,
-			(struct url_components *)&rel_components);
+	status = url_get_components(rel, (struct url_components *) rel_ptr);
 	if (status != URL_FUNC_OK) {
 		LOG(("relative url '%s' failed to get components", rel));
 		return URL_FUNC_FAILED;
@@ -337,11 +339,9 @@ url_func_result url_join(const char *rel, const char *base, char **result)
 		goto url_join_reform_url;
 
 	/* break down the base URL (possibly cached, not corruptable) */
-	status = url_get_components(base,
-			(struct url_components *)&base_components);
+	status = url_get_components(base, (struct url_components *) base_ptr);
 	if (status != URL_FUNC_OK) {
-		url_destroy_components(
-				(struct url_components *)&rel_components);
+		url_destroy_components((struct url_components *) rel_ptr);
 		LOG(("base url '%s' failed to get components", base));
 		return URL_FUNC_FAILED;
 	}
@@ -481,8 +481,7 @@ url_join_reform_url:
 	}
 
 	/* 5.3 */
-	*result = url_reform_components(
-			(struct url_components *)&merged_components);
+	*result = url_reform_components((struct url_components *) merged_ptr);
   	if (!(*result))
 		goto url_join_no_mem;
 
@@ -492,8 +491,8 @@ url_join_reform_url:
 url_join_no_mem:
 	free(start);
 	free(merge_path);
-	url_destroy_components((struct url_components *)&base_components);
-	url_destroy_components((struct url_components *)&rel_components);
+	url_destroy_components((struct url_components *) base_ptr);
+	url_destroy_components((struct url_components *) rel_ptr);
 	return status;
 }
 
