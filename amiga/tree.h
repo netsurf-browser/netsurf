@@ -40,6 +40,13 @@ enum
 	AMI_TREE_COOKIES
 };
 
+enum
+{
+	AMI_MOVE_UP,
+	AMI_MOVE_DOWN,
+	AMI_MOVE_OUT
+};
+
 void ami_open_tree(struct tree *tree,int type);
 void ami_tree_close(struct treeview_window *twin);
 BOOL ami_tree_event(struct treeview_window *twin);

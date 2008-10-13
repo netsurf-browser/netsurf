@@ -38,7 +38,7 @@
 void ami_add_elements(struct treeview_window *twin,struct node *root,WORD *gen);
 bool ami_tree_launch_node(struct tree *tree, struct node *node);
 void free_browserlist(struct List *list);
-void ami_move_node(struct treeview_window *twin,bool up);
+void ami_move_node(struct treeview_window *twin,int move);
 void ami_new_bookmark(struct treeview_window *twin);
 void ami_recreate_listbrowser(struct treeview_window *twin);
 
@@ -282,6 +282,12 @@ void ami_open_tree(struct tree *tree,int type)
 						BUTTON_AutoButton,BAG_POPFILE,
 						GA_RelVerify,TRUE,
 						GA_Disabled,nothl,
+					ButtonEnd,
+					LAYOUT_AddChild, twin->gadgets[GID_LEFT] = ButtonObject,
+						GA_ID,GID_LEFT,
+						BUTTON_AutoButton,BAG_LFARROW,
+						GA_RelVerify,TRUE,
+						GA_Disabled,nothl, //(!tree->movable),
 					ButtonEnd,
 					LAYOUT_AddChild, twin->gadgets[GID_UP] = ButtonObject,
 						GA_ID,GID_UP,
@@ -550,11 +556,15 @@ BOOL ami_tree_event(struct treeview_window *twin)
 					break;
 
 					case GID_UP:
-						ami_move_node(twin,true);
+						ami_move_node(twin,AMI_MOVE_UP);
 					break;
 
 					case GID_DOWN:
-						ami_move_node(twin,false);
+						ami_move_node(twin,AMI_MOVE_DOWN);
+					break;
+
+					case GID_LEFT:
+						ami_move_node(twin,AMI_MOVE_OUT);
 					break;
 
 					case GID_DEL:
@@ -591,35 +601,47 @@ BOOL ami_tree_event(struct treeview_window *twin)
 	return FALSE;
 }
 
-void ami_move_node(struct treeview_window *twin,bool up)
+void ami_move_node(struct treeview_window *twin,int move)
 {
 	struct Node *lbnode = NULL;
 	struct node *treenode,*moveto;
-	BOOL sel = FALSE;
+	bool before;
 
 	GetAttr(LISTBROWSER_SelectedNode,twin->gadgets[GID_TREEBROWSER],(ULONG *)&lbnode);
 
-	if(lbnode)
-	{
-		GetListBrowserNodeAttrs(lbnode,
-				LBNA_UserData,(ULONG *)&treenode,
-// for multiselects?				LBNA_Selected,(BOOL *)&sel,
-				TAG_DONE);
-	}
+	if(!lbnode) return;
 
+	GetListBrowserNodeAttrs(lbnode,
+			LBNA_UserData,(ULONG *)&treenode,
+// for multiselects?				LBNA_Selected,(BOOL *)&sel,
+			TAG_DONE);
+
+	tree_set_node_selected(twin->tree,twin->tree->root,false);
 	tree_set_node_selected(twin->tree,treenode,true);
 
-	if(up)
+	switch(move)
 	{
-		moveto = treenode->previous;
-	}
-	else
-	{
-		moveto = treenode->next;
+		case AMI_MOVE_UP:
+			moveto = treenode->previous;
+			before = true;
+		break;
+
+		case AMI_MOVE_DOWN:
+			moveto = treenode->next;
+			before = false;
+		break;
+
+		case AMI_MOVE_OUT:
+			moveto = treenode->parent->previous;
+			before = false;
+		break;
 	}
 
-	tree_move_selected_nodes(twin->tree,moveto,up);
-	tree_set_node_selected(twin->tree,treenode,false);
+	if(!moveto) return;
+
+	tree_delink_node(treenode);
+	//tree_move_selected_nodes(twin->tree,moveto,before);
+	tree_link_node(moveto,treenode,before);
 	ami_recreate_listbrowser(twin);
 }
 
