@@ -100,7 +100,12 @@ void ami_hotlist_init(struct tree **hotlist)
 	}
 
 	hotlist_tree->root->expanded = true;
-	node = tree_create_folder_node(hotlist_tree->root, "NetSurf");
+
+	node = tree_create_folder_node(hotlist_tree->root, "Menu");
+	if (!node)
+		node = hotlist_tree->root;
+
+	node = tree_create_folder_node(node, "NetSurf");
 	if (!node)
 		node = hotlist_tree->root;
 

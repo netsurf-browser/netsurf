@@ -651,7 +651,7 @@ void ami_handle_msg(void)
 					item = ItemAddress(gwin->win->MenuStrip,code);
 					while (code != MENUNULL)
 					{
-						ami_menupick(code,gwin);
+						ami_menupick(code,gwin,item);
 						if(win_destroyed) break;
 						code = item->NextSelect;
 					}

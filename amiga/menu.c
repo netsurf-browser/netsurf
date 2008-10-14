@@ -35,13 +35,16 @@
 #include "amiga/history.h"
 #include "amiga/cookies.h"
 
+void ami_menu_scan(struct tree *tree,struct NewMenu *menu);
+void ami_menu_scan_2(struct tree *tree,struct node *root,WORD *gen,ULONG *item,struct NewMenu *menu);
+
 void ami_free_menulabs(void)
 {
 	int i;
 
 	for(i=0;i<=AMI_MENU_MAX;i++)
 	{
-		if(menulab[i] != NM_BARLABEL) ami_utf8_free(menulab[i]);
+		if(menulab[i] && (menulab[i] != NM_BARLABEL)) ami_utf8_free(menulab[i]);
 	}
 }
 
@@ -71,9 +74,11 @@ void ami_init_menulabs(void)
 	menulab[21] = ami_utf8_easy((char *)messages_get("Hotlist"));
 	menulab[22] = ami_utf8_easy((char *)messages_get("HotlistAdd"));
 	menulab[23] = ami_utf8_easy((char *)messages_get("HotlistShowNS"));
-	menulab[24] = ami_utf8_easy((char *)messages_get("Settings"));
-	menulab[25] = ami_utf8_easy((char *)messages_get("SnapshotWindow"));
-	menulab[26] = ami_utf8_easy((char *)messages_get("SettingsSave"));
+	menulab[24] = NM_BARLABEL;
+
+	menulab[65] = ami_utf8_easy((char *)messages_get("Settings"));
+	menulab[66] = ami_utf8_easy((char *)messages_get("SnapshotWindow"));
+	menulab[67] = ami_utf8_easy((char *)messages_get("SettingsSave"));
 }
 
 struct NewMenu *ami_create_menu(ULONG type)
@@ -105,6 +110,47 @@ struct NewMenu *ami_create_menu(ULONG type)
 				{NM_TITLE,0,0,0,0,0,}, // hotlist
 				{ NM_ITEM,0,0,0,0,0,}, // add to hotlist
 			  	{ NM_ITEM,0,"H",0,0,0,}, // show hotlist (treeview)
+			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
 				{NM_TITLE,0,0,0,0,0,}, // settings
 				{ NM_ITEM,0,0,0,0,0,}, // snapshot window
 				{ NM_ITEM,0,0,0,0,0,}, // save settings
@@ -130,10 +176,69 @@ struct NewMenu *ami_create_menu(ULONG type)
 	menu[7].nm_Flags = NM_ITEMDISABLED;
 #endif
 
+	ami_menu_scan(hotlist,menu);
+
 	return(menu);
 }
 
-void ami_menupick(ULONG code,struct gui_window_2 *gwin)
+void ami_menu_scan(struct tree *tree,struct NewMenu *menu)
+{
+	struct node *root = tree->root->child;
+	struct node_element *element=NULL;
+	struct node *node;
+	static WORD gen = 0;
+	static ULONG item = AMI_MENU_HOTLIST;
+
+	for (node = root; node; node = node->next)
+	{
+		element = tree_find_element(node, TREE_ELEMENT_NAME);
+		if(!element) element = tree_find_element(node, TREE_ELEMENT_TITLE);
+		if(element && (strcmp(element->text,"Menu")==0))
+		{
+			// found menu
+			ami_menu_scan_2(tree,node,&gen,&item,menu);
+		}
+	}
+}
+
+void ami_menu_scan_2(struct tree *tree,struct node *root,WORD *gen,ULONG *item,struct NewMenu *menu)
+{
+	struct node *tempnode;
+	struct node_element *element=NULL;
+	struct node *node;
+
+	*gen = *gen + 1;
+
+	for (node = root; node; node = node->next)
+	{
+		element = tree_find_element(node, TREE_ELEMENT_TITLE);
+
+		if((*gen > 1) && (*gen < 4))
+		{
+			if(*item >= AMI_MENU_HOTLIST_MAX) return;
+
+			if(*gen == 2) menu[*item].nm_Type = NM_ITEM;
+			if(*gen == 3) menu[*item].nm_Type = NM_SUB;
+
+			menu[*item].nm_Label = element->text;
+
+			element = tree_find_element(node, TREE_ELEMENT_URL);
+			if(element && element->text)
+				menu[*item].nm_UserData = element->text;
+
+			*item = *item + 1;
+		}
+
+		if (node->child)
+		{
+			ami_menu_scan_2(tree,node->child,gen,item,menu);
+		}
+	}
+
+	*gen = *gen - 1;
+}
+
+void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 {
 	struct browser_window *bw;
 	struct gui_window tgw;
@@ -290,14 +395,13 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin)
 					options_save_tree(hotlist,"Resources/Hotlist","NetSurf hotlist");
 				break;
 
-				case 2: // show
-/* this along with save_tree above is very temporary!
-config option for this? */
-					browser_window_go(gwin->bw,"file:///netsurf/resources/hotlist",NULL,true);
-				break;
-
 				case 1: // show
 					ami_open_tree(hotlist,AMI_TREE_HOTLIST);
+				break;
+
+				default: // bookmarks
+					if(GTMENUITEM_USERDATA(item))
+						browser_window_go(gwin->bw,GTMENUITEM_USERDATA(item),NULL, true);
 				break;
 			}
 		break;
