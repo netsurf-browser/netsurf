@@ -39,6 +39,7 @@
 #include "desktop/textinput.h"
 #include "desktop/options.h"
 #include "desktop/print.h"
+#include "image/bitmap.h"
 #include "render/box.h"
 #include "render/font.h"
 #include "render/form.h"

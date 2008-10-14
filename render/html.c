@@ -35,6 +35,7 @@
 #include "desktop/browser.h"
 #include "desktop/gui.h"
 #include "desktop/options.h"
+#include "image/bitmap.h"
 #include "render/box.h"
 #include "render/font.h"
 #include "render/html.h"
