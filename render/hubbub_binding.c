@@ -132,7 +132,7 @@ void *binding_create_tree(void *arena, const char *charset)
 	ctx->document = NULL;
 	ctx->owns_doc = true;
 
-	ctx->parser = hubbub_parser_create(charset, myrealloc, arena);
+	ctx->parser = hubbub_parser_create(charset, true, myrealloc, arena);
 	if (ctx->parser == NULL) {
 		free(ctx);
 		return NULL;
