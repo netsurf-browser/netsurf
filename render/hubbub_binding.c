@@ -32,6 +32,7 @@
 
 #include "render/parser_binding.h"
 
+#include "utils/config.h"
 #include "utils/log.h"
 #include "utils/talloc.h"
 
