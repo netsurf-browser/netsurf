@@ -729,14 +729,17 @@ gchar* nsgtk_download_info_to_string (struct gui_download_window *dl)
 			dl->size_total == 0 ? messages_get("gtkUnknownSize") : 
 				human_friendly_bytesize(dl->size_total));
 	
+	gchar *r;
+
 	if (dl->status != NSGTK_DOWNLOAD_ERROR)
-		return g_strdup_printf("%s\n%s", 
-			dl->name->str, size_info);
+		r = g_strdup_printf("%s\n%s", dl->name->str, size_info);
 	else
-		return g_strdup_printf("%s\n%s", dl->name->str, 
-				dl->error->message);
+		r = g_strdup_printf("%s\n%s", dl->name->str, 
+			dl->error->message);
 	
 	g_free(size_info);
+
+	return r;
 }
 
 gchar* nsgtk_download_time_to_string (gint seconds)
