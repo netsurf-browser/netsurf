@@ -187,7 +187,9 @@ void ami_menu_scan(struct tree *tree,struct NewMenu *menu)
 	struct node_element *element=NULL;
 	struct node *node;
 	static WORD gen = 0;
-	static ULONG item = AMI_MENU_HOTLIST;
+	static ULONG item;
+
+	item = AMI_MENU_HOTLIST;
 
 	for (node = root; node; node = node->next)
 	{
@@ -220,7 +222,8 @@ void ami_menu_scan_2(struct tree *tree,struct node *root,WORD *gen,ULONG *item,s
 			if(*gen == 2) menu[*item].nm_Type = NM_ITEM;
 			if(*gen == 3) menu[*item].nm_Type = NM_SUB;
 
-			menu[*item].nm_Label = element->text;
+			menulab[*item] = ami_utf8_easy(element->text);
+			menu[*item].nm_Label = menulab[*item];
 
 			element = tree_find_element(node, TREE_ELEMENT_URL);
 			if(element && element->text)
