@@ -150,6 +150,15 @@ NSBrowserFrameView::MessageReceived(BMessage *message)
 		case B_PASTE:
 		case B_SELECT_ALL:
 		//case B_MOUSE_WHEEL_CHANGED:
+		// NetPositive messages
+		case B_NETPOSITIVE_OPEN_URL:
+		case B_NETPOSITIVE_BACK:
+		case B_NETPOSITIVE_FORWARD:
+		case B_NETPOSITIVE_HOME:
+		case B_NETPOSITIVE_RELOAD:
+		case B_NETPOSITIVE_STOP:
+		case B_NETPOSITIVE_DOWN:
+		case B_NETPOSITIVE_UP:
 		// messages for top-level
 		case 'back':
 		case 'forw':

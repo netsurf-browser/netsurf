@@ -354,6 +354,15 @@ NSBaseView::MessageReceived(BMessage *message)
 		case B_PASTE:
 		case B_SELECT_ALL:
 		//case B_MOUSE_WHEEL_CHANGED:
+		// NetPositive messages
+		case B_NETPOSITIVE_OPEN_URL:
+		case B_NETPOSITIVE_BACK:
+		case B_NETPOSITIVE_FORWARD:
+		case B_NETPOSITIVE_HOME:
+		case B_NETPOSITIVE_RELOAD:
+		case B_NETPOSITIVE_STOP:
+		case B_NETPOSITIVE_DOWN:
+		case B_NETPOSITIVE_UP:
 		// messages for top-level
 		case 'back':
 		case 'forw':
@@ -523,6 +532,8 @@ NSBaseView::AllAttached()
 
 	g->url_bar->SetTarget(this);
 
+	SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
+
 	g->dragger->SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
 
 	g->status_bar->SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
@@ -623,6 +634,9 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 		case B_QUIT_REQUESTED:
 			nsbeos_scaffolding_destroy(scaffold);
 			break;
+		case B_NETPOSITIVE_DOWN:
+			//XXX WRITEME
+			break;
 		case B_SIMPLE_DATA:
 		{
 			if (!message->HasRef("refs")) {
@@ -683,6 +697,15 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 			}
 			break;
 		}
+		case B_NETPOSITIVE_OPEN_URL:
+		{
+			int32 i;
+			BString url;
+			if (message->FindString("be:url", &url) < B_OK)
+				break;
+			browser_window_go(bw, url.String(), 0, true);
+			break;
+		}
 		case B_COPY:
 			gui_copy_to_clipboard(bw->sel);
 			break;
@@ -696,6 +719,7 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 			LOG(("Selecting all text"));
 			selection_select_all(bw->sel);
 			break;
+		case B_NETPOSITIVE_BACK:
 		case BROWSER_NAVIGATE_BACK:
 		case 'back':
 			if (!history_back_available(bw->history))
@@ -703,6 +727,7 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 			history_back(bw, bw->history);
 			nsbeos_window_update_back_forward(scaffold);
 			break;
+		case B_NETPOSITIVE_FORWARD:
 		case BROWSER_NAVIGATE_FORWARD:
 		case 'forw':
 			if (!history_forward_available(bw->history))
@@ -710,10 +735,12 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 			history_forward(bw, bw->history);
 			nsbeos_window_update_back_forward(scaffold);
 			break;
+		case B_NETPOSITIVE_STOP:
 		case BROWSER_NAVIGATE_STOP:
 		case 'stop':
 			browser_window_stop(bw);
 			break;
+		case B_NETPOSITIVE_RELOAD:
 		case BROWSER_NAVIGATE_RELOAD_ALL:
 		case 'relo':
 			reloadAll = true;
@@ -721,6 +748,7 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 		case BROWSER_NAVIGATE_RELOAD:
 			browser_window_reload(bw, reloadAll);
 			break;
+		case B_NETPOSITIVE_HOME:
 		case BROWSER_NAVIGATE_HOME:
 		case 'home':
 		{
@@ -855,6 +883,7 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 			break;
 		case HISTORY_EXPORT:
 			break;
+		case B_NETPOSITIVE_UP:
 		case BROWSER_NAVIGATE_UP:
 			break;
 		case BROWSER_NAVIGATE_URL:

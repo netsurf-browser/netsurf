@@ -162,6 +162,15 @@ NSBrowserApplication::MessageReceived(BMessage *message)
 		case 'urlc':
 		case 'urle':
 		case 'menu':
+		// NetPositive messages
+		case B_NETPOSITIVE_OPEN_URL:
+		case B_NETPOSITIVE_BACK:
+		case B_NETPOSITIVE_FORWARD:
+		case B_NETPOSITIVE_HOME:
+		case B_NETPOSITIVE_RELOAD:
+		case B_NETPOSITIVE_STOP:
+		case B_NETPOSITIVE_DOWN:
+		case B_NETPOSITIVE_UP:
 			//DetachCurrentMessage();
 			//nsbeos_pipe_message(message, this, fGuiWindow);
 			break;
@@ -942,6 +951,11 @@ void gui_launch_url(const char *url)
 	BString mimeType = "application/x-vnd.Be.URL.";
 	BString arg(url);
 	mimeType.Append(arg, arg.FindFirst(":"));
+
+	// special case, text/x-email is used traditionally
+	// use it instead
+	if (arg.IFindFirst("mailto:") == 0)
+		mimeType = "text/x-email";
 
 	// the protocol should be alphanum
 	// we just check if it's registered
