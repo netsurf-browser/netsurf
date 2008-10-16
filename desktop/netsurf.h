@@ -28,6 +28,9 @@ extern const char * const netsurf_version;
 extern const int netsurf_version_major;
 extern const int netsurf_version_minor;
 
+extern void netsurf_init(int argc, char** argv);
+extern void netsurf_exit(void);
 extern int netsurf_main(int argc, char** argv);
+extern int netsurf_main_loop(void);
 
 #endif

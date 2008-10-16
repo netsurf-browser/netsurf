@@ -43,9 +43,7 @@ bool netsurf_quit = false;
 bool netsurf_embedded = true;
 bool verbose_log = false;
 
-static void netsurf_init(int argc, char** argv);
 static void netsurf_poll(void);
-static void netsurf_exit(void);
 static void lib_init(void);
 
 
@@ -55,6 +53,7 @@ static void lib_init(void);
 
 int main(int argc, char** argv)
 {
+	setbuf(stderr, NULL);
 	netsurf_embedded = false;
 	return netsurf_main(argc, argv);
 }
@@ -66,15 +65,26 @@ int main(int argc, char** argv)
 
 int netsurf_main(int argc, char** argv)
 {
-	setbuf(stderr, NULL);
 	netsurf_init(argc, argv);
 
-	while (!netsurf_quit)
-		netsurf_poll();
+	netsurf_main_loop();
 
 	netsurf_exit();
 
 	return EXIT_SUCCESS;
+}
+
+
+/**
+ * Gui NetSurf main loop.
+ */
+
+int netsurf_main_loop(void)
+{
+	while (!netsurf_quit)
+		netsurf_poll();
+
+	return 0;
 }
 
 
