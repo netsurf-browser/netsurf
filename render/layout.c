@@ -2039,6 +2039,8 @@ bool layout_line(struct box *first, int *width, int *y,
 			if (used_height < h)
 				used_height = h;
 		}
+		if (d->type == BOX_TEXT && d->height > used_height)
+			used_height = d->height;
 	}
 
 	assert(b != first || (move_y && 0 < used_height && (left || right)));
