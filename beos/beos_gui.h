@@ -25,6 +25,8 @@
 #define CALLED() fprintf(stderr, "%s()\n", __FUNCTION__);
 
 extern bool gui_in_multitask;
+extern bool replicated;
+
 #if 0 /* GTK */
 //extern GladeXML *gladeWindows;
 //extern char *glade_file_location;
@@ -59,4 +61,4 @@ void nsbeos_pipe_message(BMessage *message, BView *_this, struct gui_window *gui
 void nsbeos_pipe_message_top(BMessage *message, BWindow *_this, struct beos_scaffolding *scaffold);
 
 void nsbeos_gui_view_source(struct content *content, struct selection *selection);
-
+image_id nsbeos_find_app_path(char *path);

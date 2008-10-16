@@ -81,6 +81,7 @@ extern "C" {
 //#include "beos/beos_download.h"
 #include "beos/beos_schedule.h"
 #include "beos/beos_fetch_rsrc.h"
+#include "beos/beos_scaffolding.h"
 
 
 #ifdef WITH_HUBBUB
@@ -96,6 +97,7 @@ static void *myrealloc(void *ptr, size_t len, void *pw);
 #define USE_RESOURCES 1
 
 bool gui_in_multitask = false;
+bool replicated = false; /**< if we are running as a replicant */
 
 char *default_stylesheet_url;
 char *adblock_stylesheet_url;
@@ -285,6 +287,26 @@ char *realpath(const char *f, char *buf)
 }
 #endif
 
+/* finds the NetSurf binary image ID and path
+ * 
+ */
+image_id nsbeos_find_app_path(char *path)
+{
+	image_info info;
+	int32 cookie = 0;
+	while (get_next_image_info(0, &cookie, &info) == B_OK) {
+//fprintf(stderr, "%p <> %p, %p\n", (char *)&find_app_resources, (char *)info.text, (char *)info.text + info.text_size);
+		if (((char *)&nsbeos_find_app_path >= (char *)info.text)
+		 && ((char *)&nsbeos_find_app_path < (char *)info.text + info.text_size)) {
+//fprintf(stderr, "match\n");
+			if (path)
+				strlcpy(path, info.name, B_PATH_NAME_LENGTH);
+			return info.id;
+		}
+	}
+	return B_ERROR;
+}
+
 /**
  * Locate a shared resource file by searching known places in order.
  *
@@ -397,13 +419,14 @@ void gui_init(int argc, char** argv)
 
 	if (pipe(sEventPipe) < 0)
 		return;
-
-	new NSBrowserApplication;
-	sBAppThreadID = spawn_thread(bapp_thread, "BApplication(NetSurf)", B_NORMAL_PRIORITY, (void *)find_thread(NULL));
-	if (sBAppThreadID < B_OK)
-		return; /* #### handle errors */
-	if (resume_thread(sBAppThreadID) < B_OK)
-		return;
+	if (!replicated) {
+		new NSBrowserApplication;
+		sBAppThreadID = spawn_thread(bapp_thread, "BApplication(NetSurf)", B_NORMAL_PRIORITY, (void *)find_thread(NULL));
+		if (sBAppThreadID < B_OK)
+			return; /* #### handle errors */
+		if (resume_thread(sBAppThreadID) < B_OK)
+			return;
+	}
 
 	fetch_rsrc_register();
 
@@ -559,7 +582,8 @@ void gui_init(int argc, char** argv)
 	nsbeos_history_init();
 	//nsbeos_download_initialise();
 
-	be_app->Unlock();
+	if (!replicated)
+		be_app->Unlock();
 
 #if 0 /* GTK */
 	wndAbout = beos_WINDOW(glade_xml_get_widget(gladeWindows, "wndAbout"));

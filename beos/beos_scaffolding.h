@@ -29,6 +29,28 @@ extern "C" {
 
 typedef struct beos_scaffolding nsbeos_scaffolding;
 
+class NSBaseView : public BView {
+public:
+		NSBaseView(BRect frame);
+		NSBaseView(BMessage *archive);
+virtual	~NSBaseView();
+
+virtual void	MessageReceived(BMessage *message);
+//virtual void	Draw(BRect updateRect);
+
+//virtual void	FrameMoved(BPoint new_location);
+//virtual void	FrameResized(float new_width, float new_height);
+
+virtual void		AllAttached(void);
+
+virtual status_t	Archive(BMessage *archive, bool deep=true) const;
+static BArchivable	*Instantiate(BMessage *archive);
+
+void			SetScaffolding(struct beos_scaffolding *scaf);
+private:
+	struct beos_scaffolding *fScaffolding;
+};
+
 class NSBrowserWindow : public BWindow {
 public:
 		NSBrowserWindow(BRect frame, struct beos_scaffolding *scaf);
@@ -44,6 +66,7 @@ private:
 };
 
 
+// XXX: clean up
 typedef enum {
 
 	/* no/unknown actions */

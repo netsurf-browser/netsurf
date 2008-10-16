@@ -47,6 +47,7 @@ extern "C" {
 #include "utils/base64.h"
 }
 #include "beos/beos_fetch_rsrc.h"
+#include "beos/beos_gui.h"
 
 #include <image.h>
 #include <Resources.h>
@@ -317,21 +318,9 @@ static void fetch_rsrc_poll(const char *scheme)
  */
 static int find_app_resources()
 {
-	image_info info;
-	const char *path = NULL;
-	int32 cookie = 0;
-	while (get_next_image_info(0, &cookie, &info) == B_OK) {
-//fprintf(stderr, "%p <> %p, %p\n", (char *)&find_app_resources, (char *)info.text, (char *)info.text + info.text_size);
-		if (((char *)&find_app_resources >= (char *)info.text)
-		 && ((char *)&find_app_resources < (char *)info.text + info.text_size)) {
-//fprintf(stderr, "match\n");
-		 	path = info.name;
-		 	break;
-		}
-	}
-	if (path == NULL)
+	char path[B_PATH_NAME_LENGTH];
+	if (nsbeos_find_app_path(path) < B_OK)
 		return B_ERROR;
-
 //fprintf(stderr, "loading resources from '%s'\n", path);
 
 	BFile file(path, B_READ_ONLY);

@@ -24,6 +24,7 @@
 #include <string.h>
 #include <BeBuild.h>
 #include <Button.h>
+#include <Dragger.h>
 #include <Menu.h>
 #include <MenuBar.h>
 #include <MenuItem.h>
@@ -69,6 +70,7 @@ extern "C" {
 //#include "beos/beos_download.h"
 
 #define TOOLBAR_HEIGHT 32
+#define DRAGGER_WIDTH 8
 
 struct beos_history_window;
 
@@ -79,11 +81,13 @@ struct beos_scaffolding {
 	NSBrowserWindow		*window;	// top-level container object
 
 	// top-level view, contains toolbar & top-level browser view
-	BView			*top_view;
+	NSBaseView		*top_view;
 
 	BMenuBar		*menu_bar;
 
 	BPopUpMenu		*popup_menu;
+
+	BDragger		*dragger;
 
 	BControl		*back_button;
 	BControl		*forward_button;
@@ -97,7 +101,7 @@ struct beos_scaffolding {
 	NSThrobber		*throbber;
 
 	BStringView		*status_bar;
-	
+
 	BScrollView		*scroll_view;
 #warning XXX
 #if 0 /* GTK */
@@ -141,14 +145,22 @@ struct menu_events {
 #endif
 };
 
+// passed to the replicant main thread
+struct replicant_thread_info {
+	BString url;
+};
 
 
 
 static int open_windows = 0;		/**< current number of open browsers */
 static struct beos_scaffolding *current_model; /**< current window for model dialogue use */
+static NSBaseView *replicant_view = NULL; /**< if not NULL, the replicant View we are running NetSurf for */
+static sem_id replicant_done_sem = -1;
 
 static void nsbeos_window_update_back_forward(struct beos_scaffolding *);
 static void nsbeos_throb(void *);
+static int32 nsbeos_replicant_main_thread(void *_arg);
+
 #warning XXX
 #if 0 /* GTK */
 static gboolean nsbeos_window_url_activate_event(beosWidget *, gpointer);
@@ -308,6 +320,219 @@ NSThrobber::SetBitmap(const BBitmap *bitmap)
 }
 
 
+// #pragma mark - class NSBaseView
+
+
+NSBaseView::NSBaseView(BRect frame)
+	: BView(frame, "NetSurf", B_FOLLOW_ALL_SIDES, 
+		0 /*B_WILL_DRAW | B_NAVIGABLE | B_FRAME_EVENTS*/ /*| B_SUBPIXEL_PRECISE*/),
+	fScaffolding(NULL)
+{
+}
+
+NSBaseView::NSBaseView(BMessage *archive)
+	: BView(archive),
+	fScaffolding(NULL)
+{
+}
+
+
+NSBaseView::~NSBaseView()
+{
+}
+
+
+void
+NSBaseView::MessageReceived(BMessage *message)
+{
+	switch (message->what) {
+		case B_SIMPLE_DATA:
+		case B_ARGV_RECEIVED:
+		case B_REFS_RECEIVED:
+		case B_COPY:
+		case B_CUT:
+		case B_PASTE:
+		case B_SELECT_ALL:
+		//case B_MOUSE_WHEEL_CHANGED:
+		// messages for top-level
+		case 'back':
+		case 'forw':
+		case 'stop':
+		case 'relo':
+		case 'home':
+		case 'urlc':
+		case 'urle':
+		case 'menu':
+		case NO_ACTION:
+		case HELP_OPEN_CONTENTS:
+		case HELP_OPEN_GUIDE:
+		case HELP_OPEN_INFORMATION:
+		case HELP_OPEN_ABOUT:
+		case HELP_LAUNCH_INTERACTIVE:
+		case HISTORY_SHOW_LOCAL:
+		case HISTORY_SHOW_GLOBAL:
+		case HOTLIST_ADD_URL:
+		case HOTLIST_SHOW:
+		case COOKIES_SHOW:
+		case COOKIES_DELETE:
+		case BROWSER_PAGE:
+		case BROWSER_PAGE_INFO:
+		case BROWSER_PRINT:
+		case BROWSER_NEW_WINDOW:
+		case BROWSER_VIEW_SOURCE:
+		case BROWSER_OBJECT:
+		case BROWSER_OBJECT_INFO:
+		case BROWSER_OBJECT_RELOAD:
+		case BROWSER_OBJECT_SAVE:
+		case BROWSER_OBJECT_EXPORT_SPRITE:
+		case BROWSER_OBJECT_SAVE_URL_URI:
+		case BROWSER_OBJECT_SAVE_URL_URL:
+		case BROWSER_OBJECT_SAVE_URL_TEXT:
+		case BROWSER_SAVE:
+		case BROWSER_SAVE_COMPLETE:
+		case BROWSER_EXPORT_DRAW:
+		case BROWSER_EXPORT_TEXT:
+		case BROWSER_SAVE_URL_URI:
+		case BROWSER_SAVE_URL_URL:
+		case BROWSER_SAVE_URL_TEXT:
+		case HOTLIST_EXPORT:
+		case HISTORY_EXPORT:
+		case BROWSER_NAVIGATE_HOME:
+		case BROWSER_NAVIGATE_BACK:
+		case BROWSER_NAVIGATE_FORWARD:
+		case BROWSER_NAVIGATE_UP:
+		case BROWSER_NAVIGATE_RELOAD:
+		case BROWSER_NAVIGATE_RELOAD_ALL:
+		case BROWSER_NAVIGATE_STOP:
+		case BROWSER_NAVIGATE_URL:
+		case BROWSER_SCALE_VIEW:
+		case BROWSER_FIND_TEXT:
+		case BROWSER_IMAGES_FOREGROUND:
+		case BROWSER_IMAGES_BACKGROUND:
+		case BROWSER_BUFFER_ANIMS:
+		case BROWSER_BUFFER_ALL:
+		case BROWSER_SAVE_VIEW:
+		case BROWSER_WINDOW_DEFAULT:
+		case BROWSER_WINDOW_STAGGER:
+		case BROWSER_WINDOW_COPY:
+		case BROWSER_WINDOW_RESET:
+		case TREE_NEW_FOLDER:
+		case TREE_NEW_LINK:
+		case TREE_EXPAND_ALL:
+		case TREE_EXPAND_FOLDERS:
+		case TREE_EXPAND_LINKS:
+		case TREE_COLLAPSE_ALL:
+		case TREE_COLLAPSE_FOLDERS:
+		case TREE_COLLAPSE_LINKS:
+		case TREE_SELECTION:
+		case TREE_SELECTION_EDIT:
+		case TREE_SELECTION_LAUNCH:
+		case TREE_SELECTION_DELETE:
+		case TREE_SELECT_ALL:
+		case TREE_CLEAR_SELECTION:
+		case TOOLBAR_BUTTONS:
+		case TOOLBAR_ADDRESS_BAR:
+		case TOOLBAR_THROBBER:
+		case TOOLBAR_EDIT:
+		case CHOICES_SHOW:
+		case APPLICATION_QUIT:
+			if (Window())
+				Window()->DetachCurrentMessage();
+			nsbeos_pipe_message_top(message, NULL, fScaffolding);
+			break;
+		default:
+		message->PrintToStream();
+			BView::MessageReceived(message);
+	}
+}
+
+
+status_t
+NSBaseView::Archive(BMessage *archive, bool deep) const
+{
+	// force archiving only the base view
+	deep = false;
+	status_t err;
+	err = BView::Archive(archive, deep);
+	if (err < B_OK)
+		return err;
+	// add our own fields
+	// we try to reuse the same fields as NetPositive
+	archive->AddString("add_on", "application/x-vnd.NetSurf");
+	//archive->AddInt32("version", 2);
+	archive->AddString("url", fScaffolding->url_bar->Text());
+	archive->AddBool("openAsText", false);
+	archive->AddInt32("encoding", 258);
+	return err;
+}
+
+
+BArchivable	*
+NSBaseView::Instantiate(BMessage *archive)
+{
+	if (!validate_instantiation(archive, "NSBaseView"))
+		return NULL;
+	const char *url;
+	if (archive->FindString("url", &url) < B_OK) {
+		return NULL;
+	}
+	NSBaseView *view = new NSBaseView(archive);
+	replicant_view = view;
+	replicated = true;
+
+	struct replicant_thread_info info;
+	info.url = url;
+	replicant_done_sem = create_sem(0, "NS Replicant created");
+	thread_id nsMainThread = spawn_thread(nsbeos_replicant_main_thread,
+		"NetSurf Main Thread", B_NORMAL_PRIORITY, &info);
+	if (nsMainThread < B_OK) {
+		delete_sem(replicant_done_sem);
+		delete view;
+		return NULL;
+	}
+	resume_thread(nsMainThread);
+	while (acquire_sem(replicant_done_sem) == EINTR);
+	delete_sem(replicant_done_sem);
+
+	return view;
+}
+
+
+void
+NSBaseView::SetScaffolding(struct beos_scaffolding *scaf)
+{
+	fScaffolding = scaf;
+}
+
+
+// AttachedToWindow() is not enough to get the dragger and status bar
+// stick to the panel color
+void
+NSBaseView::AllAttached()
+{
+	BView::AllAttached();
+	struct beos_scaffolding *g = fScaffolding;
+	if (!g)
+		return;
+	// set targets to the topmost ns view
+	g->back_button->SetTarget(this);
+	g->forward_button->SetTarget(this);
+	g->stop_button->SetTarget(this);
+	g->reload_button->SetTarget(this);
+	g->home_button->SetTarget(this);
+
+	g->url_bar->SetTarget(this);
+
+	g->dragger->SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
+
+	g->status_bar->SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
+	g->status_bar->SetLowColor(ui_color(B_PANEL_BACKGROUND_COLOR)) ;
+#if defined(__HAIKU__) || defined(B_DANO_VERSION)
+	g->status_bar->SetHighColor(ui_color(B_PANEL_TEXT_COLOR));
+#endif
+}
+
+
 // #pragma mark - class NSBrowserWindow
 
 
@@ -351,6 +576,21 @@ NSBrowserWindow::QuitRequested(void)
 
 
 // #pragma mark - implementation
+
+int32 nsbeos_replicant_main_thread(void *_arg)
+{
+	char app[B_PATH_NAME_LENGTH];
+	if (nsbeos_find_app_path(app) < B_OK)
+		return B_ERROR;
+	struct replicant_thread_info *info = (struct replicant_thread_info *)_arg;
+	// info becomes invalid once we created the scaffolding and released .sem
+	BString url(info->url);
+	char *args[] = { app, (char *)url.String(), NULL };
+	//XXX find path with get_next_image()
+	int ret = netsurf_main(2, args);
+	return ret;
+}
+
 
 /* event handlers and support functions for them */
 
@@ -1137,6 +1377,12 @@ void nsbeos_attach_toplevel_view(nsbeos_scaffolding *g, BView *view)
 {
 	LOG(("Attaching view to scaffolding %p", g));
 
+	// this is a replicant,... and it went bad
+	if (!g->window) {
+		if (g->top_view->Looper() && !g->top_view->LockLooper())
+			return;
+	}
+
 	BRect rect(g->top_view->Bounds());
 	rect.top += TOOLBAR_HEIGHT;
 	rect.right -= B_V_SCROLL_BAR_WIDTH;
@@ -1173,10 +1419,8 @@ void nsbeos_attach_toplevel_view(nsbeos_scaffolding *g, BView *view)
 		B_RAISED_BORDER);
 	*/
 
-	BString status("NetSurf");
-	status << " " << netsurf_version;
-	g->status_bar = new BStringView(rect, "StatusBar", status.String(),
-		B_FOLLOW_LEFT/*_RIGHT*/ | B_FOLLOW_BOTTOM);
+	g->status_bar->MoveTo(rect.LeftTop());
+	g->status_bar->ResizeTo(rect.Width() + 1, rect.Height() + 1);
 	g->scroll_view->AddChild(g->status_bar);
 	g->status_bar->SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
 	g->status_bar->SetLowColor(ui_color(B_PANEL_BACKGROUND_COLOR)) ;
@@ -1188,6 +1432,8 @@ void nsbeos_attach_toplevel_view(nsbeos_scaffolding *g, BView *view)
 
 	// set targets to the topmost ns view,
 	// we might not have a window later (replicant ?)
+	// this won't work for replicants, since the base view isn't attached yet
+	// we'll redo this in NSBaseView::AllAttached
 	g->back_button->SetTarget(view);
 	g->forward_button->SetTarget(view);
 	g->stop_button->SetTarget(view);
@@ -1196,34 +1442,38 @@ void nsbeos_attach_toplevel_view(nsbeos_scaffolding *g, BView *view)
 
 	g->url_bar->SetTarget(view);
 
-	recursively_set_menu_items_target(g->menu_bar, view);
-
 	if (g->window) {
+		recursively_set_menu_items_target(g->menu_bar, view);
+
 		// add toolbar shortcuts
-		BMessage *msg;
+		BMessage *message;
 
-		msg = new BMessage('back');
-		msg->AddPointer("scaffolding", g);
-		g->window->AddShortcut(B_LEFT_ARROW, 0, msg, view);
+		message = new BMessage('back');
+		message->AddPointer("scaffolding", g);
+		g->window->AddShortcut(B_LEFT_ARROW, 0, message, view);
 
-		msg = new BMessage('forw');
-		msg->AddPointer("scaffolding", g);
-		g->window->AddShortcut(B_RIGHT_ARROW, 0, msg, view);
+		message = new BMessage('forw');
+		message->AddPointer("scaffolding", g);
+		g->window->AddShortcut(B_RIGHT_ARROW, 0, message, view);
 
-		msg = new BMessage('stop');
-		msg->AddPointer("scaffolding", g);
-		g->window->AddShortcut('S', 0, msg, view);
+		message = new BMessage('stop');
+		message->AddPointer("scaffolding", g);
+		g->window->AddShortcut('S', 0, message, view);
 
-		msg = new BMessage('relo');
-		msg->AddPointer("scaffolding", g);
-		g->window->AddShortcut('R', 0, msg, view);
+		message = new BMessage('relo');
+		message->AddPointer("scaffolding", g);
+		g->window->AddShortcut('R', 0, message, view);
 
-		msg = new BMessage('home');
-		msg->AddPointer("scaffolding", g);
-		g->window->AddShortcut('H', 0, msg, view);
+		message = new BMessage('home');
+		message->AddPointer("scaffolding", g);
+		g->window->AddShortcut('H', 0, message, view);
 
 		g->window->Show();
+	} else {
+		if (g->top_view->Looper())
+			g->top_view->UnlockLooper();
 	}
+
 
 #warning XXX
 #if 0 /* GTK */
@@ -1254,7 +1504,7 @@ void nsbeos_attach_toplevel_view(nsbeos_scaffolding *g, BView *view)
 #endif
 }
 
-static BMenuItem *make_menu_item(const char *name, BMessage *msg)
+static BMenuItem *make_menu_item(const char *name, BMessage *message)
 {
 	BMenuItem *item;
 	BString label(messages_get(name));
@@ -1302,7 +1552,7 @@ static BMenuItem *make_menu_item(const char *name, BMessage *msg)
 	// turn ... into ellipsis
 	label.ReplaceAll("...", B_UTF8_ELLIPSIS);
 
-	item = new BMenuItem(label.String(), msg, key, mods);
+	item = new BMenuItem(label.String(), message, key, mods);
 
 	return item;
 }
@@ -1314,362 +1564,379 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 	LOG(("Constructing a scaffold of %p for gui_window %p", g, toplevel));
 
 	g->top_level = toplevel;
+	g->being_destroyed = 0;
+	g->fullscreen = false;
 
 	open_windows++;
 
-	BRect frame(0, 0, 600-1, 500-1);
-	if (option_window_width > 0) {
-		frame.Set(0, 0, option_window_width - 1, option_window_height - 1);
-		frame.OffsetToSelf(option_window_x, option_window_y);
-	} else {
-		BPoint pos(50, 50);
-		// XXX: use last BApplication::WindowAt()'s dynamic_cast<NSBrowserWindow *> Frame()
-		NSBrowserWindow *win = nsbeos_find_last_window();
-		if (win) {
-			pos = win->Frame().LeftTop();
-			win->Unlock();
-		}
-		pos += BPoint(20, 20);
-		BScreen screen;
-		BRect screenFrame(screen.Frame());
-		if (pos.y + frame.Height() >= screenFrame.Height()) {
-			pos.y = 50;
-			pos.x += 50;
-		}
-		if (pos.x + frame.Width() >= screenFrame.Width()) {
-			pos.x = 50;
-			pos.y = 50;
-		}
-		frame.OffsetToSelf(pos);
-	}
-
-	g->window = new NSBrowserWindow(frame, g);
-
-	g->being_destroyed = 0;
-
-	g->fullscreen = false;
-
-
 	BMessage *message;
+	BRect rect;
+
+	g->window = NULL;
+	g->menu_bar = NULL;
+	g->window = NULL;
+
+
+	if (!replicated) {
+
+		BRect frame(0, 0, 600-1, 500-1);
+		if (option_window_width > 0) {
+			frame.Set(0, 0, option_window_width - 1, option_window_height - 1);
+			frame.OffsetToSelf(option_window_x, option_window_y);
+		} else {
+			BPoint pos(50, 50);
+			// XXX: use last BApplication::WindowAt()'s dynamic_cast<NSBrowserWindow *> Frame()
+			NSBrowserWindow *win = nsbeos_find_last_window();
+			if (win) {
+				pos = win->Frame().LeftTop();
+				win->Unlock();
+			}
+			pos += BPoint(20, 20);
+			BScreen screen;
+			BRect screenFrame(screen.Frame());
+			if (pos.y + frame.Height() >= screenFrame.Height()) {
+				pos.y = 50;
+				pos.x += 50;
+			}
+			if (pos.x + frame.Width() >= screenFrame.Width()) {
+				pos.x = 50;
+				pos.y = 50;
+			}
+			frame.OffsetToSelf(pos);
+		}
+
+		g->window = new NSBrowserWindow(frame, g);
+
+		rect = frame.OffsetToCopy(0,0);
+		rect.bottom = rect.top + 20;
+
+		// build menus
+		g->menu_bar = new BMenuBar(rect, "menu_bar");
+		g->window->AddChild(g->menu_bar);
+
+		BMenu *menu;
+		BMenu *submenu;
+		BMenuItem *item;
+
+		// App menu
+		//XXX: use icon item ?
+
+		menu = new BMenu(messages_get("NetSurf"));
+		g->menu_bar->AddItem(menu);
+
+		message = new BMessage(NO_ACTION);
+		item = make_menu_item("Info", message);
+		menu->AddItem(item);
+
+		message = new BMessage(NO_ACTION);
+		item = make_menu_item("AppHelp", message);
+		menu->AddItem(item);
+
+		submenu = new BMenu(messages_get("Open"));
+		menu->AddItem(submenu);
+
+		message = new BMessage(NO_ACTION);
+		item = make_menu_item("OpenURL", message);
+		submenu->AddItem(item);
+
+		message = new BMessage(CHOICES_SHOW);
+		item = make_menu_item("Choices", message);
+		menu->AddItem(item);
+
+		message = new BMessage(APPLICATION_QUIT);
+		item = make_menu_item("Quit", message);
+		menu->AddItem(item);
+
+		// Page menu
+
+		menu = new BMenu(messages_get("Page"));
+		g->menu_bar->AddItem(menu);
+
+		message = new BMessage(BROWSER_PAGE_INFO);
+		item = make_menu_item("PageInfo", message);
+		menu->AddItem(item);
+
+		message = new BMessage(BROWSER_SAVE);
+		item = make_menu_item("Save", message);
+		menu->AddItem(item);
+
+		message = new BMessage(BROWSER_SAVE_COMPLETE);
+		item = make_menu_item("SaveComp", message);
+		menu->AddItem(item);
+
+		submenu = new BMenu(messages_get("Export"));
+		menu->AddItem(submenu);
+
+		/*
+		message = new BMessage(BROWSER_EXPORT_DRAW);
+		item = make_menu_item("Draw", message);
+		submenu->AddItem(item);
+		*/
+
+		message = new BMessage(BROWSER_EXPORT_TEXT);
+		item = make_menu_item("Text", message);
+		submenu->AddItem(item);
+
+
+		submenu = new BMenu(messages_get("SaveURL"));
+		menu->AddItem(submenu);
+
+		//XXX
+		message = new BMessage(BROWSER_OBJECT_SAVE_URL_URL);
+		item = make_menu_item("URL", message);
+		submenu->AddItem(item);
+
+
+		message = new BMessage(BROWSER_PRINT);
+		item = make_menu_item("Print", message);
+		menu->AddItem(item);
+
+		message = new BMessage(BROWSER_NEW_WINDOW);
+		item = make_menu_item("NewWindow", message);
+		menu->AddItem(item);
+
+		message = new BMessage(BROWSER_VIEW_SOURCE);
+		item = make_menu_item("ViewSrc", message);
+		menu->AddItem(item);
+
+		// Object menu
+
+		menu = new BMenu(messages_get("Object"));
+		g->menu_bar->AddItem(menu);
+
+		message = new BMessage(BROWSER_OBJECT_INFO);
+		item = make_menu_item("ObjInfo", message);
+		menu->AddItem(item);
+
+		message = new BMessage(BROWSER_OBJECT_SAVE);
+		item = make_menu_item("ObjSave", message);
+		menu->AddItem(item);
+		// XXX: submenu: Sprite ?
+
+		message = new BMessage(BROWSER_OBJECT_RELOAD);
+		item = make_menu_item("ObjReload", message);
+		menu->AddItem(item);
+
+		// Navigate menu
+
+		menu = new BMenu(messages_get("Navigate"));
+		g->menu_bar->AddItem(menu);
+
+		message = new BMessage(BROWSER_NAVIGATE_HOME);
+		item = make_menu_item("Home", message);
+		menu->AddItem(item);
+
+		message = new BMessage(BROWSER_NAVIGATE_BACK);
+		item = make_menu_item("Back", message);
+		menu->AddItem(item);
+
+		message = new BMessage(BROWSER_NAVIGATE_FORWARD);
+		item = make_menu_item("Forward", message);
+		menu->AddItem(item);
+
+		message = new BMessage(BROWSER_NAVIGATE_UP);
+		item = make_menu_item("UpLevel", message);
+		menu->AddItem(item);
+
+		message = new BMessage(BROWSER_NAVIGATE_RELOAD);
+		item = make_menu_item("Reload", message);
+		menu->AddItem(item);
+
+		message = new BMessage(BROWSER_NAVIGATE_STOP);
+		item = make_menu_item("Stop", message);
+		menu->AddItem(item);
+
+		// View menu
+
+		menu = new BMenu(messages_get("View"));
+		g->menu_bar->AddItem(menu);
+
+		message = new BMessage(BROWSER_SCALE_VIEW);
+		item = make_menu_item("ScaleView", message);
+		menu->AddItem(item);
+
+		submenu = new BMenu(messages_get("Images"));
+		menu->AddItem(submenu);
+
+		message = new BMessage(BROWSER_IMAGES_FOREGROUND);
+		item = make_menu_item("ForeImg", message);
+		submenu->AddItem(item);
+
+		message = new BMessage(BROWSER_IMAGES_BACKGROUND);
+		item = make_menu_item("BackImg", message);
+		submenu->AddItem(item);
+
+
+		submenu = new BMenu(messages_get("Toolbars"));
+		menu->AddItem(submenu);
+		submenu->SetEnabled(false);
+
+		message = new BMessage(NO_ACTION);
+		item = make_menu_item("ToolButtons", message);
+		submenu->AddItem(item);
+
+		message = new BMessage(NO_ACTION);
+		item = make_menu_item("ToolAddress", message);
+		submenu->AddItem(item);
+
+		message = new BMessage(NO_ACTION);
+		item = make_menu_item("ToolThrob", message);
+		submenu->AddItem(item);
+
+		message = new BMessage(NO_ACTION);
+		item = make_menu_item("ToolStatus", message);
+		submenu->AddItem(item);
+
+
+		submenu = new BMenu(messages_get("Render"));
+		menu->AddItem(submenu);
+
+		message = new BMessage(BROWSER_BUFFER_ANIMS);
+		item = make_menu_item("RenderAnims", message);
+		submenu->AddItem(item);
+
+		message = new BMessage(BROWSER_BUFFER_ALL);
+		item = make_menu_item("RenderAll", message);
+		submenu->AddItem(item);
+
+
+		message = new BMessage(NO_ACTION);
+		item = make_menu_item("OptDefault", message);
+		menu->AddItem(item);
+
+		// Utilities menu
+
+		menu = new BMenu(messages_get("Utilities"));
+		g->menu_bar->AddItem(menu);
+
+		submenu = new BMenu(messages_get("Hotlist"));
+		menu->AddItem(submenu);
+
+		message = new BMessage(HOTLIST_ADD_URL);
+		item = make_menu_item("HotlistAdd", message);
+		submenu->AddItem(item);
+
+		message = new BMessage(HOTLIST_SHOW);
+		item = make_menu_item("HotlistShow", message);
+		submenu->AddItem(item);
+
+
+		submenu = new BMenu(messages_get("History"));
+		menu->AddItem(submenu);
+
+		message = new BMessage(HISTORY_SHOW_LOCAL);
+		item = make_menu_item("HistLocal", message);
+		submenu->AddItem(item);
+
+		message = new BMessage(HISTORY_SHOW_GLOBAL);
+		item = make_menu_item("HistGlobal", message);
+		submenu->AddItem(item);
+
+
+		submenu = new BMenu(messages_get("Cookies"));
+		menu->AddItem(submenu);
+
+		message = new BMessage(COOKIES_SHOW);
+		item = make_menu_item("ShowCookies", message);
+		submenu->AddItem(item);
+
+		message = new BMessage(COOKIES_DELETE);
+		item = make_menu_item("DeleteCookies", message);
+		submenu->AddItem(item);
+
+
+		message = new BMessage(BROWSER_FIND_TEXT);
+		item = make_menu_item("FindText", message);
+		menu->AddItem(item);
+
+		submenu = new BMenu(messages_get("Window"));
+		menu->AddItem(submenu);
+
+		message = new BMessage(BROWSER_WINDOW_DEFAULT);
+		item = make_menu_item("WindowSave", message);
+		submenu->AddItem(item);
+
+		message = new BMessage(BROWSER_WINDOW_STAGGER);
+		item = make_menu_item("WindowStagr", message);
+		submenu->AddItem(item);
+
+		message = new BMessage(BROWSER_WINDOW_COPY);
+		item = make_menu_item("WindowSize", message);
+		submenu->AddItem(item);
+
+		message = new BMessage(BROWSER_WINDOW_RESET);
+		item = make_menu_item("WindowReset", message);
+		submenu->AddItem(item);
+
+
+		// Help menu
+
+		menu = new BMenu(messages_get("Help"));
+		g->menu_bar->AddItem(menu);
+
+		message = new BMessage(HELP_OPEN_CONTENTS);
+		item = make_menu_item("HelpContent", message);
+		menu->AddItem(item);
+
+		message = new BMessage(HELP_OPEN_GUIDE);
+		item = make_menu_item("HelpGuide", message);
+		menu->AddItem(item);
+
+		message = new BMessage(HELP_OPEN_INFORMATION);
+		item = make_menu_item("HelpInfo", message);
+		menu->AddItem(item);
+
+		message = new BMessage(HELP_OPEN_ABOUT);
+		item = make_menu_item("HelpAbout", message);
+		menu->AddItem(item);
+
+		message = new BMessage(HELP_LAUNCH_INTERACTIVE);
+		item = make_menu_item("HelpInter", message);
+		menu->AddItem(item);
+
+		// the base view that receives the toolbar, statusbar and top-level view.
+		rect = frame.OffsetToCopy(0,0);
+		rect.top = g->menu_bar->Bounds().Height() + 1;
+		//rect.top = 20 + 1; // XXX
+		//rect.bottom -= B_H_SCROLL_BAR_HEIGHT;
+		g->top_view = new NSBaseView(rect);
+		// add the top view to the window
+		g->window->AddChild(g->top_view);
+	} else { // replicant_view
+		// the base view has already been created with the archive constructor
+		g->top_view = replicant_view;
+		replicant_view = NULL;
+	}
+	g->top_view->SetScaffolding(g);
 
 	// build popup menu
 	g->popup_menu = new BPopUpMenu("");
 
-	
-	
 
-	BRect rect;
-	rect = frame.OffsetToCopy(0,0);
-	rect.bottom = rect.top + 20;
-
-	// build menus
-	g->menu_bar = new BMenuBar(rect, "menu_bar");
-	g->window->AddChild(g->menu_bar);
-
-	BMenu *menu;
-	BMenu *submenu;
-	BMenuItem *item;
-	BMessage *msg;
-
-	// App menu
-	//XXX: use icon item ?
-
-	menu = new BMenu(messages_get("NetSurf"));
-	g->menu_bar->AddItem(menu);
-
-	msg = new BMessage(NO_ACTION);
-	item = make_menu_item("Info", msg);
-	menu->AddItem(item);
-
-	msg = new BMessage(NO_ACTION);
-	item = make_menu_item("AppHelp", msg);
-	menu->AddItem(item);
-
-	submenu = new BMenu(messages_get("Open"));
-	menu->AddItem(submenu);
-
-	msg = new BMessage(NO_ACTION);
-	item = make_menu_item("OpenURL", msg);
-	submenu->AddItem(item);
-
-	msg = new BMessage(CHOICES_SHOW);
-	item = make_menu_item("Choices", msg);
-	menu->AddItem(item);
-
-	msg = new BMessage(APPLICATION_QUIT);
-	item = make_menu_item("Quit", msg);
-	menu->AddItem(item);
-
-	// Page menu
-
-	menu = new BMenu(messages_get("Page"));
-	g->menu_bar->AddItem(menu);
-
-	msg = new BMessage(BROWSER_PAGE_INFO);
-	item = make_menu_item("PageInfo", msg);
-	menu->AddItem(item);
-
-	msg = new BMessage(BROWSER_SAVE);
-	item = make_menu_item("Save", msg);
-	menu->AddItem(item);
-
-	msg = new BMessage(BROWSER_SAVE_COMPLETE);
-	item = make_menu_item("SaveComp", msg);
-	menu->AddItem(item);
-
-	submenu = new BMenu(messages_get("Export"));
-	menu->AddItem(submenu);
-
-	/*
-	msg = new BMessage(BROWSER_EXPORT_DRAW);
-	item = make_menu_item("Draw", msg);
-	submenu->AddItem(item);
-	*/
-
-	msg = new BMessage(BROWSER_EXPORT_TEXT);
-	item = make_menu_item("Text", msg);
-	submenu->AddItem(item);
-
-
-	submenu = new BMenu(messages_get("SaveURL"));
-	menu->AddItem(submenu);
-
-	//XXX
-	msg = new BMessage(BROWSER_OBJECT_SAVE_URL_URL);
-	item = make_menu_item("URL", msg);
-	submenu->AddItem(item);
-
-
-	msg = new BMessage(BROWSER_PRINT);
-	item = make_menu_item("Print", msg);
-	menu->AddItem(item);
-
-	msg = new BMessage(BROWSER_NEW_WINDOW);
-	item = make_menu_item("NewWindow", msg);
-	menu->AddItem(item);
-
-	msg = new BMessage(BROWSER_VIEW_SOURCE);
-	item = make_menu_item("ViewSrc", msg);
-	menu->AddItem(item);
-
-	// Object menu
-
-	menu = new BMenu(messages_get("Object"));
-	g->menu_bar->AddItem(menu);
-
-	msg = new BMessage(BROWSER_OBJECT_INFO);
-	item = make_menu_item("ObjInfo", msg);
-	menu->AddItem(item);
-
-	msg = new BMessage(BROWSER_OBJECT_SAVE);
-	item = make_menu_item("ObjSave", msg);
-	menu->AddItem(item);
-	// XXX: submenu: Sprite ?
-
-	msg = new BMessage(BROWSER_OBJECT_RELOAD);
-	item = make_menu_item("ObjReload", msg);
-	menu->AddItem(item);
-
-	// Navigate menu
-
-	menu = new BMenu(messages_get("Navigate"));
-	g->menu_bar->AddItem(menu);
-
-	msg = new BMessage(BROWSER_NAVIGATE_HOME);
-	item = make_menu_item("Home", msg);
-	menu->AddItem(item);
-
-	msg = new BMessage(BROWSER_NAVIGATE_BACK);
-	item = make_menu_item("Back", msg);
-	menu->AddItem(item);
-
-	msg = new BMessage(BROWSER_NAVIGATE_FORWARD);
-	item = make_menu_item("Forward", msg);
-	menu->AddItem(item);
-
-	msg = new BMessage(BROWSER_NAVIGATE_UP);
-	item = make_menu_item("UpLevel", msg);
-	menu->AddItem(item);
-
-	msg = new BMessage(BROWSER_NAVIGATE_RELOAD);
-	item = make_menu_item("Reload", msg);
-	menu->AddItem(item);
-
-	msg = new BMessage(BROWSER_NAVIGATE_STOP);
-	item = make_menu_item("Stop", msg);
-	menu->AddItem(item);
-
-	// View menu
-
-	menu = new BMenu(messages_get("View"));
-	g->menu_bar->AddItem(menu);
-
-	msg = new BMessage(BROWSER_SCALE_VIEW);
-	item = make_menu_item("ScaleView", msg);
-	menu->AddItem(item);
-
-	submenu = new BMenu(messages_get("Images"));
-	menu->AddItem(submenu);
-
-	msg = new BMessage(BROWSER_IMAGES_FOREGROUND);
-	item = make_menu_item("ForeImg", msg);
-	submenu->AddItem(item);
-
-	msg = new BMessage(BROWSER_IMAGES_BACKGROUND);
-	item = make_menu_item("BackImg", msg);
-	submenu->AddItem(item);
-
-
-	submenu = new BMenu(messages_get("Toolbars"));
-	menu->AddItem(submenu);
-	submenu->SetEnabled(false);
-
-	msg = new BMessage(NO_ACTION);
-	item = make_menu_item("ToolButtons", msg);
-	submenu->AddItem(item);
-
-	msg = new BMessage(NO_ACTION);
-	item = make_menu_item("ToolAddress", msg);
-	submenu->AddItem(item);
-
-	msg = new BMessage(NO_ACTION);
-	item = make_menu_item("ToolThrob", msg);
-	submenu->AddItem(item);
-
-	msg = new BMessage(NO_ACTION);
-	item = make_menu_item("ToolStatus", msg);
-	submenu->AddItem(item);
-
-
-	submenu = new BMenu(messages_get("Render"));
-	menu->AddItem(submenu);
-
-	msg = new BMessage(BROWSER_BUFFER_ANIMS);
-	item = make_menu_item("RenderAnims", msg);
-	submenu->AddItem(item);
-
-	msg = new BMessage(BROWSER_BUFFER_ALL);
-	item = make_menu_item("RenderAll", msg);
-	submenu->AddItem(item);
-
-
-	msg = new BMessage(NO_ACTION);
-	item = make_menu_item("OptDefault", msg);
-	menu->AddItem(item);
-
-	// Utilities menu
-
-	menu = new BMenu(messages_get("Utilities"));
-	g->menu_bar->AddItem(menu);
-
-	submenu = new BMenu(messages_get("Hotlist"));
-	menu->AddItem(submenu);
-
-	msg = new BMessage(HOTLIST_ADD_URL);
-	item = make_menu_item("HotlistAdd", msg);
-	submenu->AddItem(item);
-
-	msg = new BMessage(HOTLIST_SHOW);
-	item = make_menu_item("HotlistShow", msg);
-	submenu->AddItem(item);
-
-
-	submenu = new BMenu(messages_get("History"));
-	menu->AddItem(submenu);
-
-	msg = new BMessage(HISTORY_SHOW_LOCAL);
-	item = make_menu_item("HistLocal", msg);
-	submenu->AddItem(item);
-
-	msg = new BMessage(HISTORY_SHOW_GLOBAL);
-	item = make_menu_item("HistGlobal", msg);
-	submenu->AddItem(item);
-
-
-	submenu = new BMenu(messages_get("Cookies"));
-	menu->AddItem(submenu);
-
-	msg = new BMessage(COOKIES_SHOW);
-	item = make_menu_item("ShowCookies", msg);
-	submenu->AddItem(item);
-
-	msg = new BMessage(COOKIES_DELETE);
-	item = make_menu_item("DeleteCookies", msg);
-	submenu->AddItem(item);
-
-
-	msg = new BMessage(BROWSER_FIND_TEXT);
-	item = make_menu_item("FindText", msg);
-	menu->AddItem(item);
-
-	submenu = new BMenu(messages_get("Window"));
-	menu->AddItem(submenu);
-
-	msg = new BMessage(BROWSER_WINDOW_DEFAULT);
-	item = make_menu_item("WindowSave", msg);
-	submenu->AddItem(item);
-
-	msg = new BMessage(BROWSER_WINDOW_STAGGER);
-	item = make_menu_item("WindowStagr", msg);
-	submenu->AddItem(item);
-
-	msg = new BMessage(BROWSER_WINDOW_COPY);
-	item = make_menu_item("WindowSize", msg);
-	submenu->AddItem(item);
-
-	msg = new BMessage(BROWSER_WINDOW_RESET);
-	item = make_menu_item("WindowReset", msg);
-	submenu->AddItem(item);
-
-
-	// Help menu
-
-	menu = new BMenu(messages_get("Help"));
-	g->menu_bar->AddItem(menu);
-
-	msg = new BMessage(HELP_OPEN_CONTENTS);
-	item = make_menu_item("HelpContent", msg);
-	menu->AddItem(item);
-
-	msg = new BMessage(HELP_OPEN_GUIDE);
-	item = make_menu_item("HelpGuide", msg);
-	menu->AddItem(item);
-
-	msg = new BMessage(HELP_OPEN_INFORMATION);
-	item = make_menu_item("HelpInfo", msg);
-	menu->AddItem(item);
-
-	msg = new BMessage(HELP_OPEN_ABOUT);
-	item = make_menu_item("HelpAbout", msg);
-	menu->AddItem(item);
-
-	msg = new BMessage(HELP_LAUNCH_INTERACTIVE);
-	item = make_menu_item("HelpInter", msg);
-	menu->AddItem(item);
-
-
-	// the base view that receives the toolbar, statusbar and top-level view.
-	rect = frame.OffsetToCopy(0,0);
-	rect.top = g->menu_bar->Bounds().Height() + 1;
-	//rect.top = 20 + 1; // XXX
-	//rect.bottom -= B_H_SCROLL_BAR_HEIGHT;
-
-	g->top_view = new BView(rect, "NetSurfBrowser", 
-		B_FOLLOW_ALL_SIDES, 0);
-	g->top_view->SetViewColor(0, 255, 0);
-	g->window->AddChild(g->top_view);
-
-	// toolbar
+	// the dragger to allow replicating us
+	// XXX: try to stuff it in the status bar at the bottom
+	// (BDragger *must* be a parent, sibiling or direct child of NSBaseView!)
 	rect = g->top_view->Bounds();
 	rect.bottom = rect.top + TOOLBAR_HEIGHT - 1;
+	rect.left = rect.right - DRAGGER_WIDTH + 1;
+	g->dragger = new BDragger(rect, g->top_view, 
+		B_FOLLOW_RIGHT | B_FOLLOW_TOP, B_WILL_DRAW);
+	g->top_view->AddChild(g->dragger);
+	g->dragger->SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
+	g->dragger->SetLowColor(ui_color(B_PANEL_BACKGROUND_COLOR)) ;
+
+	// toolbar
+	// the toolbar is also the dragger for now
+	// XXX: try to stuff it in the status bar at the bottom
+	// (BDragger *must* be a parent, sibiling or direct child of NSBaseView!)
+	rect = g->top_view->Bounds();
+	rect.bottom = rect.top + TOOLBAR_HEIGHT - 1;
+	rect.right = rect.right - DRAGGER_WIDTH;
 	BView *toolbar = new BView(rect, "Toolbar", 
-		B_FOLLOW_LEFT_RIGHT | B_FOLLOW_TOP, 0);
+		B_FOLLOW_LEFT_RIGHT | B_FOLLOW_TOP, B_WILL_DRAW);
+	g->top_view->AddChild(toolbar);
 	toolbar->SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
 	toolbar->SetLowColor(ui_color(B_PANEL_BACKGROUND_COLOR)) ;
-#if defined(__HAIKU__) || defined(B_DANO_VERSION)
-	toolbar->SetHighColor(ui_color(B_PANEL_TEXT_COLOR));
-#endif
-	g->top_view->AddChild(toolbar);
 
 	// buttons
 #warning use BPictureButton
@@ -1743,7 +2010,15 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 
 
 	// the status bar at the bottom
-	// will be constructed when adding the top view.
+	BString status("NetSurf");
+	status << " " << netsurf_version;
+	g->status_bar = new BStringView(BRect(0,0,-1,-1), "StatusBar", 
+		status.String(), B_FOLLOW_LEFT/*_RIGHT*/ | B_FOLLOW_BOTTOM);
+
+	// will be added to the scrollview when adding the top view.
+
+	// notify the thread creating the replicant that we're done
+	release_sem(replicant_done_sem);
 
 #warning XXX
 #if 0 /* GTK */
