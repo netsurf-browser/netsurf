@@ -147,7 +147,9 @@ struct menu_events {
 
 // passed to the replicant main thread
 struct replicant_thread_info {
+	char app[B_PATH_NAME_LENGTH];
 	BString url;
+	char *args[3];
 };
 
 
@@ -485,22 +487,31 @@ NSBaseView::Instantiate(BMessage *archive)
 	if (archive->FindString("url", &url) < B_OK) {
 		return NULL;
 	}
+
+	struct replicant_thread_info *info = new replicant_thread_info;
+	info->url = url;
+	if (nsbeos_find_app_path(info->app) < B_OK)
+		return NULL;
+	info->args[0] = info->app;
+	info->args[1] = (char *)info->url.String();
+	info->args[2] = NULL;
 	NSBaseView *view = new NSBaseView(archive);
 	replicant_view = view;
 	replicated = true;
 
-	struct replicant_thread_info info;
-	info.url = url;
+	netsurf_init(2, info->args);
+
 	replicant_done_sem = create_sem(0, "NS Replicant created");
 	thread_id nsMainThread = spawn_thread(nsbeos_replicant_main_thread,
 		"NetSurf Main Thread", B_NORMAL_PRIORITY, &info);
 	if (nsMainThread < B_OK) {
 		delete_sem(replicant_done_sem);
+		delete info;
 		delete view;
 		return NULL;
 	}
 	resume_thread(nsMainThread);
-	while (acquire_sem(replicant_done_sem) == EINTR);
+	//while (acquire_sem(replicant_done_sem) == EINTR);
 	delete_sem(replicant_done_sem);
 
 	return view;
@@ -590,16 +601,11 @@ NSBrowserWindow::QuitRequested(void)
 
 int32 nsbeos_replicant_main_thread(void *_arg)
 {
-	char app[B_PATH_NAME_LENGTH];
-	if (nsbeos_find_app_path(app) < B_OK)
-		return B_ERROR;
 	struct replicant_thread_info *info = (struct replicant_thread_info *)_arg;
-	// info becomes invalid once we created the scaffolding and released .sem
-	BString url(info->url);
-	char *args[] = { app, (char *)url.String(), NULL };
-	//XXX find path with get_next_image()
-	int ret = netsurf_main(2, args);
-	return ret;
+	netsurf_main_loop();
+	netsurf_exit();
+	delete info;
+	return 0;
 }
 
 

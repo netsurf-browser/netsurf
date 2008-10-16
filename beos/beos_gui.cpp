@@ -308,8 +308,10 @@ image_id nsbeos_find_app_path(char *path)
 		if (((char *)&nsbeos_find_app_path >= (char *)info.text)
 		 && ((char *)&nsbeos_find_app_path < (char *)info.text + info.text_size)) {
 //fprintf(stderr, "match\n");
-			if (path)
-				strlcpy(path, info.name, B_PATH_NAME_LENGTH);
+			if (path) {
+				memset(path, 0, B_PATH_NAME_LENGTH);
+				strncpy(path, info.name, B_PATH_NAME_LENGTH-1);
+			}
 			return info.id;
 		}
 	}
