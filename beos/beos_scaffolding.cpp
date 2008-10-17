@@ -1612,7 +1612,13 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 	g->window = NULL;
 
 
-	if (!replicated) {
+	if (replicated && !replicant_view) {
+		warn_user("Error: No subwindow allowed when replicated.", NULL);
+		return NULL;
+	}
+
+
+	if (!replicant_view) {
 
 		BRect frame(0, 0, 600-1, 500-1);
 		if (option_window_width > 0) {
@@ -1940,7 +1946,6 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 	} else { // replicant_view
 		// the base view has already been created with the archive constructor
 		g->top_view = replicant_view;
-		replicant_view = NULL;
 	}
 	g->top_view->SetScaffolding(g);
 
@@ -2053,7 +2058,10 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 	// will be added to the scrollview when adding the top view.
 
 	// notify the thread creating the replicant that we're done
-	release_sem(replicant_done_sem);
+	if (replicant_view)
+		release_sem(replicant_done_sem);
+
+	replicant_view = NULL;
 
 #warning XXX
 #if 0 /* GTK */

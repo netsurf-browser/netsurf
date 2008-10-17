@@ -68,7 +68,8 @@ S_GTK := font_pango.c gtk_bitmap.c gtk_gui.c gtk_schedule.c		\
 S_GTK := $(addprefix gtk/,$(S_GTK))
 
 # S_BEOS are sources purely for the BeOS build
-S_BEOS := beos_bitmap.cpp beos_fetch_rsrc.cpp beos_filetype.cpp		\
+S_BEOS := beos_about.cpp beos_bitmap.cpp beos_fetch_rsrc.cpp 	\
+	beos_filetype.cpp		\
 	beos_font.cpp beos_gui.cpp beos_history.cpp beos_login.cpp	\
 	beos_options.cpp beos_plotters.cpp beos_scaffolding.cpp		\
 	beos_schedule.cpp beos_thumbnail.cpp beos_treeview.cpp		\

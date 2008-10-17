@@ -31,6 +31,7 @@ extern "C" {
 #include "utils/utf8.h"
 #include "utils/utils.h"
 }
+#include "beos/beos_about.h"
 #include "beos/beos_window.h"
 #include "beos/beos_font.h"
 #include "beos/beos_gui.h"
@@ -100,6 +101,8 @@ struct gui_window {
 	/* Keep gui_windows in a list for cleanup later */
 	struct gui_window	*next, *prev;
 };
+
+
 
 static const rgb_color kWhiteColor = {255, 255, 255, 255};
 
@@ -397,6 +400,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	} else {
 		/* Now construct and attach a scaffold */
 		g->scaffold = nsbeos_new_scaffolding(g);
+		if (!g->scaffold)
+			return NULL;
 	}
 
 	/* Construct our primary elements */
@@ -688,8 +693,7 @@ void nsbeos_dispatch_event(BMessage *message)
 			break;
 		case B_ABOUT_REQUESTED:
 		{
-			//BAlert *alert;
-			//XXX: i18n-ize
+			nsbeos_about(gui);
 			/* XXX: doesn't work yet! bug in rsrc:/
 			BString url("rsrc:/about.en.html,text/html");
 			browser_window_create(url.String(), NULL, NULL, true, false);
@@ -1287,6 +1291,9 @@ void nsbeos_window_destroy_browser(struct gui_window *g)
 
 void gui_window_destroy(struct gui_window *g)
 {
+	if (!g)
+		return;
+
 	if (g->prev)
 		g->prev->next = g->next;
 	else
