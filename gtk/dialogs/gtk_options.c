@@ -304,7 +304,7 @@ static gboolean on_dialog_close (GtkDialog *dlg, gboolean stay_alive)
 /* Defines the callback functions for all widgets and specifies
  * nsgtk_reflow_all_windows only where necessary */
 #define ENTRY_CHANGED(x, y) gboolean on_##x##_changed(GtkWidget *widget, gpointer data) { \
-		if (!g_str_equal(gtk_entry_get_text(GTK_ENTRY((x))), (y))) { \
+    if (!g_str_equal(gtk_entry_get_text(GTK_ENTRY((x))), (y) ? (y) : "")) { \
 			LOG(("Signal emitted on '%s'", #x)); \
 			if ((y)) free((y)); \
 			(y) = strdup(gtk_entry_get_text(GTK_ENTRY((x)))); 
