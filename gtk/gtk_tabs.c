@@ -165,3 +165,17 @@ void nsgtk_tab_page_changed(GtkNotebook *notebook, GtkNotebookPage *page,
 	if (gw)
 		nsgtk_scaffolding_set_top_level(gw);
 }
+
+void nsgtk_tab_close_current(GtkNotebook *notebook)
+{
+	gint curr_page = gtk_notebook_get_current_page(notebook);
+	GtkWidget *window = gtk_notebook_get_nth_page(notebook, curr_page);
+	struct gui_window *gw = g_object_get_data(G_OBJECT(window),
+			"gui_window");
+	
+	if (gtk_notebook_get_n_pages(notebook) < 2)
+		return;	/* wicked things happen if we close the last tab */
+	
+	gtk_notebook_remove_page(notebook, curr_page);
+	nsgtk_window_destroy_browser(gw);
+}

@@ -192,6 +192,7 @@ MENUPROTO(global_history);
 /* tabs menu */
 MENUPROTO(next_tab);
 MENUPROTO(prev_tab);
+MENUPROTO(close_tab);
 
 /* help menu */
 MENUPROTO(about);
@@ -245,6 +246,7 @@ static struct menu_events menu_events[] = {
 	/* tab menu */
 	MENUEVENT(next_tab),
 	MENUEVENT(prev_tab),
+	MENUEVENT(close_tab),
 
 	/* help menu */
 	MENUEVENT(about),
@@ -1000,6 +1002,15 @@ MENUHANDLER(prev_tab)
 
 	gtk_notebook_prev_page(gw->notebook);
 	
+	return TRUE;
+}
+
+MENUHANDLER(close_tab)
+{
+	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
+	
+	nsgtk_tab_close_current(gw->notebook);
+
 	return TRUE;
 }
 
