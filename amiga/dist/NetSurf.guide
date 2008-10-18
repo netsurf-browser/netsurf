@@ -6,9 +6,13 @@
 @{b}NetSurf@{ub} Amiga-specific documentation
 http://www.netsurf-browser.org
 
+@{"Licence             " link COPYING/Main}
 @{"Command line options" link cli}
 @{"Options file        " link options}
 @{"ARexx port          " link arexx}
+@{"Hotlist menu        " link hotlist}
+
+@{"Credits             " link contact}
 @endnode
 
 @node cli "Command line options"
@@ -46,4 +50,53 @@ Commands are:
 
 @{b}OPEN URL/A@{ub} Opens URL in a new window
 @{b}QUIT@{ub} Quits NetSurf
+@endnode
+
+@node hotlist "Hotlist menu"
+Items from the hotlist can be added to the Hotlist menu as follows:
+
+Select Hotlist => Show hotlist...
+Add a folder called Menu.  This must not be placed within any other folder.
+
+Items in this folder node up to a maximum (currently) of 40 items will be added to the Hotlist menu, within the limits of the Intuition menu system.
+
+Items in folders within the Menu folder node will be converted to subitems in the menu.
+
+Folders more than one level down in the heirarchy will become menu items with no action.  Items deeper will not be included in the menu at all.
+
+Folders with no items in them will show up disabled in the menu.  If they are named "--" they will be displayed as separator bars.
+
+eg.
+
+- Menu
+    |
+    +- Netsurf
+    |     |
+    |     +- NetSurf Homepage
+    |     |
+    |     +- More NetSurf links
+    |                |
+    |                +- NetSurf bugtracker
+    |
+    +- --
+    |
+    +- Google
+
+Will look something like the following within the menu:
+
+|NetSurf »| - |NetSurf Homepage  |
+|---------|   |More NetSurf links|
+|Google   |
+
+@endnode
+
+@node contact "Credits"
+NetSurf was ported to AmigaOS 4 by Chris Young
+chris@unsatisfactorysoftware.co.uk
+
+The pointer images and AISS theme Throbber were drawn by Martin 'Mason' Merz.
+http://www.masonicons.de
+
+All other code and files are the same for all platforms and credited in the files and/or on the NetSurf website.
+http://www.netsurf-browser.org
 @endnode

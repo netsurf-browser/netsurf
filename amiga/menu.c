@@ -222,12 +222,21 @@ void ami_menu_scan_2(struct tree *tree,struct node *root,WORD *gen,ULONG *item,s
 			if(*gen == 2) menu[*item].nm_Type = NM_ITEM;
 			if(*gen == 3) menu[*item].nm_Type = NM_SUB;
 
-			menulab[*item] = ami_utf8_easy(element->text);
+			if(strcmp(element->text,"--"))
+			{
+				menulab[*item] = ami_utf8_easy(element->text);
+			}
+			else
+			{
+				menulab[*item] = NM_BARLABEL;
+			}
+
 			menu[*item].nm_Label = menulab[*item];
 
 			element = tree_find_element(node, TREE_ELEMENT_URL);
-			if(element && element->text)
-				menu[*item].nm_UserData = element->text;
+			if(element && element->text) menu[*item].nm_UserData = element->text;
+
+			if(node->folder && (!node->child)) menu[*item].nm_Flags = NM_ITEMDISABLED;
 
 			*item = *item + 1;
 		}

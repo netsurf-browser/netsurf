@@ -2,13 +2,11 @@ Short:        Fast CSS capable web browser
 Uploader:     chris@unsatisfactorysoftware.co.uk (Chris Young)
 Author:       NetSurf contributors (OS4 port by Chris Young)
 Type:         comm/www
-Version:      2.0 development (SVN 5484)
+Version:      2.0 development (SVN 5591)
 Architecture: ppc-amigaos >= 4.0.0
 Requires:     AISS
 
-NOT FOR DISTRIBUTION!!!!
-
-This is a PREVIEW RELEASE of the OS4 native port of NetSurf.
+This is a preview release of the OS4 native port of NetSurf.
 It is beta software, which means it is unstable and missing
 features - use at your own risk!
 
