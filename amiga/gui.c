@@ -106,7 +106,7 @@ struct Library  *PopupMenuBase = NULL;
 struct PopupMenuIFace *IPopupMenu = NULL;
 
 struct BitMap *throbber = NULL;
-ULONG throbber_width,throbber_height;
+ULONG throbber_width,throbber_height,throbber_frames;
 
 static struct RastPort dummyrp;
 struct IFFHandle *iffh = NULL;
@@ -151,7 +151,7 @@ static void *myrealloc(void *ptr, size_t len, void *pw);
 void gui_init(int argc, char** argv)
 {
 	struct Locale *locale;
-	char lang[100];
+	char lang[100],throbberfile[100];
 	bool found=FALSE;
 	int i;
 	BPTR lock=0,amiupdatefh;
@@ -288,8 +288,8 @@ void gui_init(int argc, char** argv)
 	if((!option_font_fantasy) || (option_font_fantasy[0] == '\0'))
 		option_font_fantasy = (char *)strdup("DejaVu Serif");
 
-	if((!option_toolbar_images) || (option_toolbar_images[0] == '\0'))
-		option_toolbar_images = (char *)strdup("TBImages:");
+	if((!option_theme) || (option_theme[0] == '\0'))
+		option_theme = (char *)strdup("Resources/Themes/Default");
 
 	if(!option_window_width) option_window_width = 800;
 	if(!option_window_height) option_window_height = 600;
@@ -336,7 +336,14 @@ void gui_init(int argc, char** argv)
 	ami_global_history_initialise();
 	ami_cookies_initialise();
 
-	if(dto = NewDTObject("Resources/Throbber",
+	strcpy(&throbberfile,option_theme);
+	AddPart(&throbberfile,"Theme",100);
+	messages_load(throbberfile);
+
+	ami_get_theme_filename(&throbberfile,"theme_throbber");
+	throbber_frames=atoi(messages_get("theme_throbber_frames"));
+
+	if(dto = NewDTObject(throbberfile,
 					DTA_GroupID,GID_PICTURE,
 					PDTA_DestMode,PMODE_V43,
 					TAG_DONE))
@@ -346,7 +353,7 @@ void gui_init(int argc, char** argv)
 
 		if(GetDTAttrs(dto,PDTA_BitMapHeader,&throbber_bmh,TAG_DONE))
 		{
-			throbber_width = throbber_bmh->bmh_Width / option_throbber_frames;
+			throbber_width = throbber_bmh->bmh_Width / throbber_frames;
 			throbber_height = throbber_bmh->bmh_Height;
 
 			InitRastPort(&throbber_rp);
@@ -1096,6 +1103,16 @@ void ami_update_buttons(struct gui_window_2 *gwin)
 	}
 }
 
+void ami_get_theme_filename(char *filename,char *themestring)
+{
+	if(messages_get(themestring)[0] == '*') strncpy(filename,messages_get(themestring)+1,100);
+		else
+		{
+			strcpy(filename,option_theme);
+			AddPart(filename,messages_get(themestring),100);
+		}
+}
+
 struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		struct browser_window *clone, bool new_tab)
 {
@@ -1269,38 +1286,22 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 				gwin->shared->tabs=1;
 				gwin->shared->next_tab=1;
 
-				strcpy(nav_west,option_toolbar_images);
-				strcpy(nav_west_s,option_toolbar_images);
-				strcpy(nav_west_g,option_toolbar_images);
-				strcpy(nav_east,option_toolbar_images);
-				strcpy(nav_east_s,option_toolbar_images);
-				strcpy(nav_east_g,option_toolbar_images);
-				strcpy(stop,option_toolbar_images);
-				strcpy(stop_s,option_toolbar_images);
-				strcpy(stop_g,option_toolbar_images);
-				strcpy(reload,option_toolbar_images);
-				strcpy(reload_s,option_toolbar_images);
-				strcpy(reload_g,option_toolbar_images);
-				strcpy(home,option_toolbar_images);
-				strcpy(home_s,option_toolbar_images);
-				strcpy(home_g,option_toolbar_images);
-				strcpy(closetab,option_toolbar_images);
-				AddPart(nav_west,"nav_west",100);
-				AddPart(nav_west_s,"nav_west_s",100);
-				AddPart(nav_west_g,"nav_west_g",100);
-				AddPart(nav_east,"nav_east",100);
-				AddPart(nav_east_s,"nav_east_s",100);
-				AddPart(nav_east_g,"nav_east_g",100);
-				AddPart(stop,"stop",100);
-				AddPart(stop_s,"stop_s",100);
-				AddPart(stop_g,"stop_g",100);
-				AddPart(reload,"reload",100);
-				AddPart(reload_s,"reload_s",100);
-				AddPart(reload_g,"reload_g",100);
-				AddPart(home,"home",100);
-				AddPart(home_s,"home_s",100);
-				AddPart(home_g,"home_g",100);
-				AddPart(closetab,"list_cancel",100);
+				ami_get_theme_filename(nav_west,"theme_nav_west");
+				ami_get_theme_filename(nav_west_s,"theme_nav_west_s");
+				ami_get_theme_filename(nav_west_g,"theme_nav_west_g");
+				ami_get_theme_filename(nav_east,"theme_nav_east");
+				ami_get_theme_filename(nav_east_s,"theme_nav_east_s");
+				ami_get_theme_filename(nav_east_g,"theme_nav_east_g");
+				ami_get_theme_filename(stop,"theme_stop");
+				ami_get_theme_filename(stop_s,"theme_stop_s");
+				ami_get_theme_filename(stop_g,"theme_stop_g");
+				ami_get_theme_filename(reload,"theme_reload");
+				ami_get_theme_filename(reload_s,"theme_reload_s");
+				ami_get_theme_filename(reload_g,"theme_reload_g");
+				ami_get_theme_filename(home,"theme_home");
+				ami_get_theme_filename(home_s,"theme_home_s");
+				ami_get_theme_filename(home_g,"theme_home_g");
+				ami_get_theme_filename(closetab,"theme_closetab");
 
 				gwin->shared->objects[OID_MAIN] = WindowObject,
 		       	    WA_ScreenTitle,nsscreentitle,
@@ -2180,7 +2181,7 @@ void ami_update_throbber(struct gui_window_2 *g)
 	GetAttr(SPACE_AreaBox,g->gadgets[GID_THROBBER],(ULONG *)&bbox);
 
 	g->throbber_frame++;
-	if(g->throbber_frame > (option_throbber_frames-1))
+	if(g->throbber_frame > (throbber_frames-1))
 		g->throbber_frame=1;
 
 	BltBitMapRastPort(throbber,throbber_width*g->throbber_frame,0,g->win->RPort,bbox->Left,bbox->Top,throbber_width,throbber_height,0x0C0);

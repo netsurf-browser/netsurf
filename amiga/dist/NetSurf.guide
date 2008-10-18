@@ -27,10 +27,10 @@ The options file is stored in Resources/Options by default.  The following optio
 @{b}hotlist_file@{ub} Path to Hotlist file
 @{b}use_workbench@{ub} Open NetSurf in a window on Workbench screen (default is to open a custom screen)
 @{b}screen_modeid@{ub} Mode ID for NetSurf's custom screen
-@{b}toolbar_images@{ub} Path to toolbar images (default is TBImages:, which is AISS - see http://www.masonicons.de)
+@{b}theme@{ub} Path to theme (default is Resources/Themes/Default - an alternative included theme is Resources/Themes/AISS)
 @{b}no_iframes@{ub} Disable IFrames
 @{b}clipboard_write_utf8@{ub} Write UTF-8 strings to the clipboard along with a charset identifier (when this option is 0, NetSurf will convert copied strings to local charset)
-@{b}throbber_frames@{ub} Number of frames in Resources/Throbber file (must be a flat image file with first image inactive)
+@{b}throbber_frames@{ub} Not used (now in theme description file)
 @{b}truecolour_mouse_pointers@{ub} Use 32-bit mouse pointers, when disabled NetSurf will use old-style 4 colour images (see Resources/Pointers)
 @{b}os_mouse_pointers@{ub} Don't override default and busy mouse pointers
 @{b}always_open_tabs@{ub} Force opening tabs instead of windows (actually swaps the functions so ctrl-click now opens windows and middle mouse button opens tabs)

@@ -25,10 +25,10 @@ extern char *option_url_file;
 extern char *option_hotlist_file;
 extern bool option_use_wb;
 extern int option_modeid;
-extern char *option_toolbar_images;
+extern char *option_theme;
 extern bool option_no_iframes;
 extern bool option_utf8_clipboard;
-extern int option_throbber_frames;
+extern int option_throbber_frames; // unused
 extern bool option_truecolour_mouse_pointers;
 extern bool option_use_os_pointers;
 extern bool option_force_tabs;
@@ -42,7 +42,7 @@ char *option_url_file = 0; \
 char *option_hotlist_file = 0; \
 bool option_use_wb = false; \
 int option_modeid = 0; \
-char *option_toolbar_images = 0; \
+char *option_theme = 0; \
 bool option_no_iframes = false; \
 bool option_utf8_clipboard = false; \
 int option_throbber_frames = 1; \
@@ -59,7 +59,7 @@ char *option_recent_file = 0; \
 { "hotlist_file",		OPTION_STRING,	&option_hotlist_file }, \
 { "use_workbench",	OPTION_BOOL,	&option_use_wb}, \
 { "screen_modeid",	OPTION_INTEGER,	&option_modeid}, \
-{ "toolbar_images",		OPTION_STRING,	&option_toolbar_images }, \
+{ "theme",		OPTION_STRING,	&option_theme}, \
 { "no_iframes",	OPTION_BOOL,	&option_no_iframes}, \
 { "clipboard_write_utf8",	OPTION_BOOL,	&option_utf8_clipboard}, \
 { "throbber_frames",	OPTION_INTEGER,	&option_throbber_frames}, \

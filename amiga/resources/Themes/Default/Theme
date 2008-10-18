@@ -1,0 +1,36 @@
+# Theme description file for AmigaOS NetSurf
+#
+# Format is theme_image:filename
+# Where filename is relative to the directory in which this file
+# is stored.
+#
+# If filename is prefixed by an asterisk, it will be treated as
+# a full path to a file.
+#
+# Where theme_image is suffixed by _s or _g, these are the selected
+# and ghosted version of the image.
+#
+# The images can be stored in any format which has a picture datatype
+# available. 
+#
+# theme_throbber is a film strip of theme_throbber_frames frames
+# The first frame must be the inactive image.
+#
+theme_nav_west:*TBImages:nav_west
+theme_nav_west_s:*TBImages:nav_west_s
+theme_nav_west_g:*TBImages:nav_west_g
+theme_nav_east:*TBImages:nav_east
+theme_nav_east_s:*TBImages:nav_east_s
+theme_nav_east_g:*TBImages:nav_east_g
+theme_stop:*TBImages:stop
+theme_stop_s:*TBImages:stop_s
+theme_stop_g:*TBImages:stop_g
+theme_reload:*TBImages:reload
+theme_reload_s:*TBImages:reload_s
+theme_reload_g:*TBImages:reload_g
+theme_home:*TBImages:home
+theme_home_s:*TBImages:home_s
+theme_home_g:*TBImages:home_g
+theme_closetab:*TBImages:list_cancel
+theme_throbber:Throbber
+theme_throbber_frames:9
