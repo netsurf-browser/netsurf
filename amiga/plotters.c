@@ -297,8 +297,7 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 {
 	struct RenderInfo ri;
 	ULONG xf,yf,wf,hf;
-
-//DebugPrintF("bitmap tile plotter\n");
+	int max_width,max_height;
 
 	SetRPAttrs(currp,RPTAG_BPenColor,p96EncodeColor(RGBFB_A8B8G8R8,bg),
 					TAG_DONE);
@@ -307,13 +306,12 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 	ri.BytesPerRow = bitmap->width * 4;
 	ri.RGBFormat = RGBFB_R8G8B8A8;
 
-/*
-if(repeat_x) printf("repeatx\n");
-if(repeat_y) printf("repeaty\n");
-*/
-	for(xf=0;xf<width;xf+=bitmap->width)
+	max_width =  (repeat_x ? scrn->Width : width);
+	max_height = (repeat_y ? scrn->Height: height);
+
+	for(xf=0;xf<max_width;xf+=bitmap->width)
 	{
-		for(yf=0;yf<height;yf+=bitmap->height)
+		for(yf=0;yf<max_height;yf+=bitmap->height)
 		{
 			if(width > xf+bitmap->width)
 			{
