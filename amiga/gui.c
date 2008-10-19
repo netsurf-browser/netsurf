@@ -750,11 +750,14 @@ void ami_handle_msg(void)
 		if(gwin->throbber_frame)
 			ami_update_throbber(gwin);
 
-		if(gwin->c_h)
+		if(node->Type == AMINS_WINDOW)
 		{
-			struct gui_window tgw;
-			tgw.shared = gwin;
-			gui_window_place_caret(&tgw,gwin->c_x,gwin->c_y,gwin->c_h);
+			if(gwin->bw->window->c_h)
+			{
+//			struct gui_window tgw;
+//			tgw.shared = gwin;
+				gui_window_place_caret(gwin->bw->window,gwin->bw->window->c_x,gwin->bw->window->c_y,gwin->bw->window->c_h);
+			}
 		}
 	} while(node = nnode);
 }
@@ -970,9 +973,8 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 	{
 		browser_window_update(gwin->bw,false);
 
-		RefreshSetGadgetAttrs(gwin->gadgets[GID_URL],gwin->win,NULL,
-							STRINGA_TextVal,gwin->bw->current_content->url,
-							TAG_DONE);
+		if(gwin->bw->current_content)
+			gui_window_set_url(gwin->bw->window,gwin->bw->current_content->url);
 	}
 }
 
@@ -1667,12 +1669,14 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 {
 	struct Node *node;
 	ULONG cur_tab = 0;
+	STRPTR oldtitle;
+
 	if(!g) return;
 
 	if(g->tab_node)
 	{
 		node = g->tab_node;
-//	GetAttr(CLICKTAB_CurrentNode,g->shared->gadgets[GID_TABS],(ULONG *)&node);
+
 		SetGadgetAttrs(g->shared->gadgets[GID_TABS],g->shared->win,NULL,
 						CLICKTAB_Labels,~0,
 						TAG_DONE);
@@ -1866,12 +1870,10 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 	if(sx<0) sx=0;
 	if(sy<0) sy=0;
 
-/*
 	if(g->tab_node) GetAttr(CLICKTAB_Current,g->shared->gadgets[GID_TABS],(ULONG *)&cur_tab);
 
 	if((cur_tab == g->tab) || (g->shared->tabs == 0))
 	{
-*/
 		RefreshSetGadgetAttrs((APTR)g->shared->objects[OID_VSCROLL],g->shared->win,NULL,
 			SCROLLER_Top,sy,
 			TAG_DONE);
@@ -1882,7 +1884,7 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 
 		g->shared->redraw_required = true;
 		g->shared->redraw_data = NULL;
-//	}
+	}
 }
 
 void gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
@@ -1921,36 +1923,53 @@ void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 void gui_window_update_extent(struct gui_window *g)
 {
 	struct IBox *bbox;
+	ULONG cur_tab = 0;
 
 	if(!g) return;
 
-	GetAttr(SPACE_AreaBox,g->shared->gadgets[GID_BROWSER],(ULONG *)&bbox);
+	if(g->tab_node) GetAttr(CLICKTAB_Current,g->shared->gadgets[GID_TABS],(ULONG *)&cur_tab);
+
+	if((cur_tab == g->tab) || (g->shared->tabs == 0))
+	{
+		GetAttr(SPACE_AreaBox,g->shared->gadgets[GID_BROWSER],(ULONG *)&bbox);
 
 /*
 	printf("upd ext %ld,%ld\n",g->bw->current_content->width, // * g->bw->scale,
 	g->bw->current_content->height); // * g->bw->scale);
 */
 
-	RefreshSetGadgetAttrs((APTR)g->shared->objects[OID_VSCROLL],g->shared->win,NULL,
-		SCROLLER_Total,g->shared->bw->current_content->height,
-		SCROLLER_Visible,bbox->Height,
-		SCROLLER_Top,0,
-		TAG_DONE);
+		RefreshSetGadgetAttrs((APTR)g->shared->objects[OID_VSCROLL],g->shared->win,NULL,
+			SCROLLER_Total,g->shared->bw->current_content->height,
+			SCROLLER_Visible,bbox->Height,
+			SCROLLER_Top,0,
+			TAG_DONE);
 
-	RefreshSetGadgetAttrs((APTR)g->shared->objects[OID_HSCROLL],g->shared->win,NULL,
-		SCROLLER_Total,g->shared->bw->current_content->width,
-		SCROLLER_Visible,bbox->Width,
-		SCROLLER_Top,0,
-		TAG_DONE);
+		RefreshSetGadgetAttrs((APTR)g->shared->objects[OID_HSCROLL],g->shared->win,NULL,
+			SCROLLER_Total,g->shared->bw->current_content->width,
+			SCROLLER_Visible,bbox->Width,
+			SCROLLER_Top,0,
+			TAG_DONE);
+	}
 }
 
 void gui_window_set_status(struct gui_window *g, const char *text)
 {
-	RefreshSetGadgetAttrs(g->shared->gadgets[GID_STATUS],g->shared->win,NULL,STRINGA_TextVal,text,TAG_DONE);
+	ULONG cur_tab = 0;
+
+	if(!g) return;
+
+	if(g->tab_node) GetAttr(CLICKTAB_Current,g->shared->gadgets[GID_TABS],(ULONG *)&cur_tab);
+
+	if((cur_tab == g->tab) || (g->shared->tabs == 0))
+	{
+		RefreshSetGadgetAttrs(g->shared->gadgets[GID_STATUS],g->shared->win,NULL,STRINGA_TextVal,text,TAG_DONE);
+	}
 }
 
 void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 {
+	if(shape == GUI_POINTER_DEFAULT && g->shared->bw->throbbing) shape = GUI_POINTER_PROGRESS;
+
 	ami_update_pointer(g->shared->win,shape);
 }
 
@@ -2135,6 +2154,7 @@ void gui_window_set_url(struct gui_window *g, const char *url)
 	ULONG cur_tab = 0;
 
 	if(!g) return;
+	if(!url) return;
 
 	if(g->tab_node) GetAttr(CLICKTAB_Current,g->shared->gadgets[GID_TABS],(ULONG *)&cur_tab);
 
@@ -2206,9 +2226,9 @@ void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
 
 	RectFill(g->shared->win->RPort,x+bbox->Left-xs,y+bbox->Top-ys,x+bbox->Left+2-xs,y+bbox->Top+height-ys);
 
-	g->shared->c_x = x;
-	g->shared->c_y = y;
-	g->shared->c_h = height;
+	g->c_x = x;
+	g->c_y = y;
+	g->c_h = height;
 }
 
 void gui_window_remove_caret(struct gui_window *g)
@@ -2222,9 +2242,9 @@ void gui_window_remove_caret(struct gui_window *g)
 	GetAttr(SCROLLER_Top,g->shared->objects[OID_HSCROLL],(ULONG *)&xs);
 	GetAttr(SCROLLER_Top,g->shared->objects[OID_VSCROLL],(ULONG *)&ys);
 
-	BltBitMapRastPort(g->shared->bm,g->shared->c_x,g->shared->c_y,g->shared->win->RPort,bbox->Left+g->shared->c_x-xs,bbox->Top+g->shared->c_y-ys,2+1,g->shared->c_h+1,0x0C0);
+	BltBitMapRastPort(g->shared->bm,g->c_x,g->c_y,g->shared->win->RPort,bbox->Left+g->c_x-xs,bbox->Top+g->c_y-ys,2+1,g->c_h+1,0x0C0);
 
-	g->shared->c_h = 0;
+	g->c_h = 0;
 }
 
 void gui_window_new_content(struct gui_window *g)

@@ -93,7 +93,6 @@ struct gui_window_2 {
 	struct browser_window *bw;
 	bool redraw_required;
 	int throbber_frame;
-	int c_h;
 	struct List tab_list;
 	ULONG tabs;
 	ULONG next_tab;
@@ -109,8 +108,6 @@ struct gui_window_2 {
 	browser_mouse_state mouse_state;
 	browser_mouse_state key_state;
 	ULONG throbber_update_count;
-	int c_x;
-	int c_y;
 };
 
 struct gui_window
@@ -118,6 +115,9 @@ struct gui_window
 	struct gui_window_2 *shared;
 	int tab;
 	struct Node *tab_node;
+	int c_x;
+	int c_y;
+	int c_h;
 };
 
 void ami_get_msg(void);
