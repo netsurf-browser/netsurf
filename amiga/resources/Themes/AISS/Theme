@@ -17,5 +17,10 @@ theme_home:*TBImages:home
 theme_home_s:*TBImages:home_s
 theme_home_g:*TBImages:home_g
 theme_closetab:*TBImages:list_cancel
+theme_list_folder_closed:*TBImages:list_folderfold
+theme_list_folder_open:*TBImages:list_folderunfold
+theme_list_bookmark:*TBImages:list_bookmark
+theme_list_cookie:*TBImages:list_abstract
+theme_list_history:*TBImages:list_archive
 theme_throbber:Throbber
 theme_throbber_frames:13

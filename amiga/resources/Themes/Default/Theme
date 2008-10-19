@@ -32,5 +32,10 @@ theme_home:*TBImages:home
 theme_home_s:*TBImages:home_s
 theme_home_g:*TBImages:home_g
 theme_closetab:*TBImages:list_cancel
+theme_list_folder_closed:
+theme_list_folder_open:
+theme_list_bookmark:
+theme_list_cookie:
+theme_list_history:
 theme_throbber:Throbber
 theme_throbber_frames:9

@@ -34,6 +34,8 @@
 #include <gadgets/button.h>
 #include <string.h>
 #include "utils/messages.h"
+#include <proto/bitmap.h>
+#include <images/bitmap.h>
 
 void ami_add_elements(struct treeview_window *twin,struct node *root,WORD *gen);
 bool ami_tree_launch_node(struct tree *tree, struct node *node);
@@ -189,6 +191,7 @@ void ami_open_tree(struct tree *tree,int type)
 	BOOL msel = TRUE,nothl = TRUE,launchdisable=FALSE;
 	static WORD gen=0;
 	char *wintitle;
+	char folderclosed[100],folderopen[100],item[100];
 
 	if(tree->handle)
 	{
@@ -211,20 +214,26 @@ void ami_open_tree(struct tree *tree,int type)
 
 	if(tree->single_selection) msel = FALSE;
 
+	ami_get_theme_filename(&folderclosed,"theme_list_folder_closed");
+	ami_get_theme_filename(&folderopen,"theme_list_folder_open");
+
 	switch(type)
 	{
 		case AMI_TREE_HOTLIST:
 			nothl = FALSE;
 			wintitle = (char *)messages_get("Hotlist");
+			ami_get_theme_filename(&item,"theme_list_bookmark");
 		break;
 		case AMI_TREE_COOKIES:
 			nothl = TRUE;
 			launchdisable=TRUE;
 			wintitle = (char *)messages_get("Cookies");
+			ami_get_theme_filename(&item,"theme_list_cookie");
 		break;
 		case AMI_TREE_HISTORY:
 			nothl = TRUE;
 			wintitle = (char *)messages_get("GlobalHistory");
+			ami_get_theme_filename(&item,"theme_list_history");
 		break;
 	}
 
@@ -262,6 +271,21 @@ void ami_open_tree(struct tree *tree,int type)
 					LISTBROWSER_Labels, twin->listbrowser_list,
 //					LISTBROWSER_MultiSelect,msel,
 					LISTBROWSER_ShowSelected,TRUE,
+					LISTBROWSER_ShowImage,BitMapObject,
+						BITMAP_SourceFile,folderclosed,
+						BITMAP_Screen,scrn,
+						BITMAP_Masking,TRUE,
+						BitMapEnd,
+					LISTBROWSER_HideImage,BitMapObject,
+						BITMAP_SourceFile,folderopen,
+						BITMAP_Screen,scrn,
+						BITMAP_Masking,TRUE,
+						BitMapEnd,
+					LISTBROWSER_LeafImage,BitMapObject,
+						BITMAP_SourceFile,item,
+						BITMAP_Screen,scrn,
+						BITMAP_Masking,TRUE,
+						BitMapEnd,
         			ListBrowserEnd,
 				CHILD_NominalSize,TRUE,
 				LAYOUT_AddChild, HGroupObject,
