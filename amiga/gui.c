@@ -107,6 +107,7 @@ struct PopupMenuIFace *IPopupMenu = NULL;
 
 struct BitMap *throbber = NULL;
 ULONG throbber_width,throbber_height,throbber_frames;
+BOOL rmbtrapped;
 
 static struct RastPort dummyrp;
 struct IFFHandle *iffh = NULL;
@@ -509,6 +510,12 @@ void ami_handle_msg(void)
 
 					if((x>=xs) && (y>=ys) && (x<width+xs) && (y<height+ys))
 					{
+						if(option_context_menu && rmbtrapped == FALSE)
+						{
+							SetAttrs(gwin->objects[OID_MAIN],WA_RMBTrap,TRUE);
+							rmbtrapped=TRUE;
+						}
+
 						if(gwin->mouse_state & BROWSER_MOUSE_PRESS_1)
 						{
 							browser_window_mouse_track(gwin->bw,BROWSER_MOUSE_DRAG_1 | gwin->key_state,x,y);
@@ -526,6 +533,12 @@ void ami_handle_msg(void)
 					}
 					else
 					{
+						if(option_context_menu && rmbtrapped == TRUE)
+						{
+							SetAttrs(gwin->objects[OID_MAIN],WA_RMBTrap,FALSE);
+							rmbtrapped=FALSE;
+						}
+
 						if(!gwin->mouse_state)	ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
 					}
 				break;
@@ -1926,6 +1939,7 @@ void gui_window_update_extent(struct gui_window *g)
 	ULONG cur_tab = 0;
 
 	if(!g) return;
+	if(!g->shared->bw->current_content) return;
 
 	if(g->tab_node) GetAttr(CLICKTAB_Current,g->shared->gadgets[GID_TABS],(ULONG *)&cur_tab);
 

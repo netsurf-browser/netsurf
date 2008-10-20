@@ -28,7 +28,7 @@ extern int option_modeid;
 extern char *option_theme;
 extern bool option_no_iframes;
 extern bool option_utf8_clipboard;
-extern int option_throbber_frames; // unused
+extern bool option_context_menu;
 extern bool option_truecolour_mouse_pointers;
 extern bool option_use_os_pointers;
 extern bool option_force_tabs;
@@ -45,7 +45,7 @@ int option_modeid = 0; \
 char *option_theme = 0; \
 bool option_no_iframes = false; \
 bool option_utf8_clipboard = false; \
-int option_throbber_frames = 1; \
+bool option_context_menu = false; \
 bool option_truecolour_mouse_pointers = true; \
 bool option_use_os_pointers = false; \
 bool option_force_tabs = false; \
@@ -62,7 +62,7 @@ char *option_recent_file = 0; \
 { "theme",		OPTION_STRING,	&option_theme}, \
 { "no_iframes",	OPTION_BOOL,	&option_no_iframes}, \
 { "clipboard_write_utf8",	OPTION_BOOL,	&option_utf8_clipboard}, \
-{ "throbber_frames",	OPTION_INTEGER,	&option_throbber_frames}, \
+{ "context_menu",	OPTION_BOOL,	&option_context_menu}, \
 { "truecolour_mouse_pointers",	OPTION_BOOL,	&option_truecolour_mouse_pointers}, \
 { "os_mouse_pointers",	OPTION_BOOL,	&option_use_os_pointers}, \
 { "always_open_tabs",	OPTION_BOOL,	&option_force_tabs}, \
