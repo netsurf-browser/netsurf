@@ -251,7 +251,7 @@ HotlistShowNS:Mostra Hotlist...
 # Settings menu
 #
 Settings:Impostazioni
-SnapshotWindow:Istantanea finestra
+SnapshotWindow:Fissa finestra
 SettingsSave:Salva impostazioni
 
 # Treeview interface tokens
