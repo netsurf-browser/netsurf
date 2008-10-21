@@ -66,6 +66,8 @@
 #include "amiga/arexx.h"
 #include "amiga/hotlist.h"
 #include "amiga/history.h"
+#include "amiga/context_menu.h"
+#include "amiga/cookies.h"
 
 #ifdef WITH_HUBBUB
 #include <hubbub/hubbub.h>
@@ -145,6 +147,7 @@ void ami_scroller_hook(struct Hook *,Object *,struct IntuiMessage *);
 uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved);
 void ami_do_redraw(struct gui_window_2 *g);
 void ami_init_mouse_pointers(void);
+void ami_switch_tab(struct gui_window_2 *gwin,bool redraw);
 #ifdef WITH_HUBBUB
 static void *myrealloc(void *ptr, size_t len, void *pw);
 #endif
@@ -565,6 +568,10 @@ void ami_handle_msg(void)
 							case MIDDLEDOWN:
 								browser_window_mouse_click(gwin->bw,BROWSER_MOUSE_PRESS_2 | gwin->key_state,x,y);
 								gwin->mouse_state=BROWSER_MOUSE_PRESS_2;
+							break;
+
+							case MENUDOWN:
+								ami_context_menu_show(gwin,x,y);
 							break;
 						}
 					}
@@ -2569,12 +2576,14 @@ void gui_create_form_select_menu(struct browser_window *bw,
 	struct form_option *opt = control->data.select.items;
 	ULONG i = 0;
 
+	if(gwin->shared->objects[OID_MENU]) DisposeObject(gwin->shared->objects[OID_MENU]);
+
 	gwin->shared->popuphook.h_Entry = ami_popup_hook;
 	gwin->shared->popuphook.h_Data = gwin;
 
 	gwin->shared->control = control;
 
-    gwin->shared->objects[OID_MENU] = PMMENU(messages_get("NetSurf")),
+    gwin->shared->objects[OID_MENU] = PMMENU(ami_utf8_easy(control->name)),
                         PMA_MenuHandler, &gwin->shared->popuphook,End;
 
 	while(opt)
@@ -2633,8 +2642,6 @@ uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved)
     {
 		browser_window_form_select(gwin->shared->bw,gwin->shared->control,itemid);
     }
-
-//	DisposeObject(gwin->objects[OID_MENU]);
 
     return itemid;
 }
