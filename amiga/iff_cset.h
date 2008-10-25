@@ -18,6 +18,7 @@
 
 #ifndef AMIGA_IFF_CSET_H
 #define AMIGA_IFF_CSET_H
+#include <exec/types.h>
 
 /* This structure is for the IFF CSET chunk, registered by Martin Taillefer */
 

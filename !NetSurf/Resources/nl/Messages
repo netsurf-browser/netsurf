@@ -253,6 +253,15 @@ Settings:Settings
 SnapshotWindow:Snapshot window
 SettingsSave:Save settings
 
+# Context menu
+#
+Link:Link
+LinkNewTab:Open in new tab
+LinkNewWin:Open in new window
+CopyURL:Copy URL to clipboard
+ObjShow:Show object
+SelectFile:Select file...
+
 # Treeview interface tokens
 # =========================
 #

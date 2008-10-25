@@ -90,7 +90,7 @@ S_DEBUG := $(addprefix debug/,$(S_DEBUG))
 S_AMIGA := compat.c gui.c tree.c history.c hotlist.c schedule.c		\
 	thumbnail.c misc.c bitmap.c font.c filetype.c utf8.c login.c	\
 	plotters.c object.c menu.c save_pdf.c arexx.c version.c		\
-	cookies.c context_menu.c
+	cookies.c context_menu.c clipboard.c
 S_AMIGA := $(addprefix amiga/,$(S_AMIGA))
 
 # S_FRAMEBUFFER are sources purely for the framebuffer build

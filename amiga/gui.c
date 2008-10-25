@@ -39,8 +39,6 @@
 #include <libraries/gadtools.h>
 #include <proto/layers.h>
 #include <proto/asl.h>
-#include <proto/iffparse.h>
-#include <datatypes/textclass.h>
 #include <datatypes/pictureclass.h>
 #include "desktop/selection.h"
 #include "utils/utf8.h"
@@ -53,12 +51,10 @@
 #include <intuition/pointerclass.h>
 #include <math.h>
 #include <workbench/workbench.h>
-#include "amiga/iff_cset.h"
 #include <proto/datatypes.h>
 #include <proto/icon.h>
 #include <workbench/icon.h>
 #include "amiga/tree.h"
-#include <parserutils/charset/mibenum.h>
 #include "utils/utils.h"
 #include "amiga/login.h"
 #include "utils/url.h"
@@ -68,6 +64,7 @@
 #include "amiga/history.h"
 #include "amiga/context_menu.h"
 #include "amiga/cookies.h"
+#include "amiga/clipboard.h"
 
 #ifdef WITH_HUBBUB
 #include <hubbub/hubbub.h>
@@ -112,7 +109,6 @@ ULONG throbber_width,throbber_height,throbber_frames;
 BOOL rmbtrapped;
 
 static struct RastPort dummyrp;
-struct IFFHandle *iffh = NULL;
 
 #define AMI_LASTPOINTER GUI_POINTER_PROGRESS+1
 Object *mouseptrobj[AMI_LASTPOINTER+1];
@@ -193,13 +189,7 @@ void gui_init(int argc, char** argv)
 
 	ami_arexx_init();
 
-	if(iffh = AllocIFF())
-	{
-		if(iffh->iff_Stream = OpenClipboard(0))
-		{
-			InitIFFasClip(iffh);
-		}
-	}
+	ami_clipboard_init();
 
 	win_destroyed = false;
 
@@ -323,6 +313,7 @@ void gui_init(int argc, char** argv)
 	/* end Amiupdate */
 
 	ami_init_menulabs();
+	if(option_context_menu) ami_context_menu_init();
 
 	schedule_list = NewObjList();
 	window_list = NewObjList();
@@ -571,7 +562,11 @@ void ami_handle_msg(void)
 							break;
 
 							case MENUDOWN:
-								ami_context_menu_show(gwin,x,y);
+								if(!option_sticky_context_menu) ami_context_menu_show(gwin,x,y);
+							break;
+
+							case MENUUP:
+								if(option_sticky_context_menu) ami_context_menu_show(gwin,x,y);
 							break;
 						}
 					}
@@ -1053,6 +1048,8 @@ void gui_quit(void)
 	if(!option_use_wb) CloseScreen(scrn);
 	p96FreeBitMap(dummyrp.BitMap);
 	FreeVec(nsscreentitle);
+
+	if(option_context_menu) ami_context_menu_free();
 	ami_free_menulabs();
 
 	for(i=0;i<=AMI_LASTPOINTER;i++)
@@ -1065,8 +1062,7 @@ void gui_quit(void)
 		}
 	}
 
-	if(iffh->iff_Stream) CloseClipboard((struct ClipboardHandle *)iffh->iff_Stream);
-	if(iffh) FreeIFF(iffh);
+	ami_clipboard_free();
 
 	ami_arexx_cleanup();
 	FreeSysObject(ASOT_PORT,appport);
@@ -2423,150 +2419,6 @@ void gui_download_window_done(struct gui_download_window *dw)
 void gui_drag_save_object(gui_save_type type, struct content *c,
 		struct gui_window *g)
 {
-}
-
-void gui_drag_save_selection(struct selection *s, struct gui_window *g)
-{
-}
-
-void gui_start_selection(struct gui_window *g)
-{
-}
-
-void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
-{
-	/* This and the other clipboard code is heavily based on the RKRM examples */
-	struct ContextNode *cn;
-	ULONG rlen=0,error;
-	struct CSet cset;
-	char *clip;
-	STRPTR readbuf = AllocVec(1024,MEMF_CLEAR);
-
-	cset.CodeSet = 0;
-
-	if(OpenIFF(iffh,IFFF_READ)) return;
-	if(StopChunk(iffh,ID_FTXT,ID_CHRS)) return;
-	if(StopChunk(iffh,ID_FTXT,ID_CSET)) return;
-
-	while(1)
-	{
-		error = ParseIFF(iffh,IFFPARSE_SCAN);
-		if(error == IFFERR_EOC) continue;
-		else if(error) break;
-
-		cn = CurrentChunk(iffh);
-
-		if((cn)&&(cn->cn_Type == ID_FTXT)&&(cn->cn_ID == ID_CSET))
-		{
-			rlen = ReadChunkBytes(iffh,&cset,24);
-		}
-
-		if((cn)&&(cn->cn_Type == ID_FTXT)&&(cn->cn_ID == ID_CHRS))
-		{
-			while((rlen = ReadChunkBytes(iffh,readbuf,1024)) > 0)
-			{
-				if(cset.CodeSet == 0)
-				{
-					utf8_from_local_encoding(readbuf,rlen,&clip);
-				}
-				else
-				{
-					utf8_from_enc(readbuf,parserutils_charset_mibenum_to_name(cset.CodeSet),rlen,&clip);
-				}
-
-				browser_window_paste_text(g->shared->bw,clip,rlen,true);
-			}
-			if(rlen < 0) error = rlen;
-		}
-	}
-	CloseIFF(iffh);
-}
-
-bool gui_empty_clipboard(void)
-{
-}
-
-bool gui_add_to_clipboard(const char *text, size_t length, bool space)
-{
-	char *buffer;
-	if(option_utf8_clipboard)
-	{
-		WriteChunkBytes(iffh,text,length);
-	}
-	else
-	{
-		utf8_to_local_encoding(text,length,&buffer);
-		if(buffer) WriteChunkBytes(iffh,buffer,strlen(buffer));
-		ami_utf8_free(buffer);
-	}
-	return true;
-}
-
-bool gui_commit_clipboard(void)
-{
-	if(iffh) CloseIFF(iffh);
-
-	return true;
-}
-
-bool ami_clipboard_copy(const char *text, size_t length, struct box *box,
-	void *handle, const char *whitespace_text,size_t whitespace_length)
-{
-	if(!(PushChunk(iffh,0,ID_CHRS,IFFSIZE_UNKNOWN)))
-	{
-		if (whitespace_text)
-		{
-			if(!gui_add_to_clipboard(whitespace_text,whitespace_length, false)) return false;
-		}
-
-		if(text)
-		{
-			if (!gui_add_to_clipboard(text, length, box->space)) return false;
-		}
-
-		PopChunk(iffh);
-	}
-	else
-	{
-		PopChunk(iffh);
-		return false;
-	}
-
-	return true;
-}
-
-bool gui_copy_to_clipboard(struct selection *s)
-{
-	struct CSet cset = {0};
-
-	if(!(OpenIFF(iffh,IFFF_WRITE)))
-	{
-		if(!(PushChunk(iffh,ID_FTXT,ID_FORM,IFFSIZE_UNKNOWN)))
-		{
-			if(option_utf8_clipboard)
-			{
-				if(!(PushChunk(iffh,0,ID_CSET,24)))
-				{
-					cset.CodeSet = 106; // UTF-8
-					WriteChunkBytes(iffh,&cset,24);
-					PopChunk(iffh);
-				}
-			}
-
-			if (s->defined && selection_traverse(s, ami_clipboard_copy, NULL))
-			{
-				gui_commit_clipboard();
-				return true;
-			}
-		}
-		else
-		{
-			PopChunk(iffh);
-		}
-		CloseIFF(iffh);
-	}
-
-	return false;
 }
 
 void gui_create_form_select_menu(struct browser_window *bw,

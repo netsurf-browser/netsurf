@@ -307,7 +307,7 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 	ri.RGBFormat = RGBFB_R8G8B8A8;
 
 	max_width =  (repeat_x ? scrn->Width : width);
-	max_height = (repeat_y ? scrn->Height: height);
+	max_height = (repeat_y ? scrn->Height : height);
 
 	for(xf=0;xf<max_width;xf+=bitmap->width)
 	{

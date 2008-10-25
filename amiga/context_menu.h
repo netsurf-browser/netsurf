@@ -23,10 +23,16 @@
 enum {
 	CMID_SELECTFILE,
 	CMID_COPYURL,
-	CMID_SAVEURL,
+	CMID_URLOPENWIN,
+	CMID_URLOPENTAB,
 	CMID_SHOWOBJ,
-	CMID_SAVEOBJ
+	CMID_COPYOBJ,
+	CMSUB_OBJECT,
+	CMSUB_URL,
+	CMID_LAST
 };
 
+void ami_context_menu_init(void);
+void ami_context_menu_free(void);
 void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y);
 #endif

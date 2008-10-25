@@ -4,7 +4,7 @@ Author:       NetSurf contributors (OS4 port by Chris Young)
 Type:         comm/www
 Version:      2.0 development (SVN 5591)
 Architecture: ppc-amigaos >= 4.0.0
-Requires:     AISS
+Requires:     AISS, dev/c/pthreads.lha
 
 This is a preview release of the OS4 native port of NetSurf.
 It is beta software, which means it is unstable and missing
