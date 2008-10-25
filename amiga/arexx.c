@@ -27,15 +27,23 @@ enum
 {
 	RX_OPEN=0,
 	RX_QUIT,
+	RX_TOFRONT,
+	RX_GETURL
 };
+
+STATIC char result[100];
 
 STATIC VOID rx_open(struct ARexxCmd *, struct RexxMsg *);
 STATIC VOID rx_quit(struct ARexxCmd *, struct RexxMsg *);
+STATIC VOID rx_tofront(struct ARexxCmd *, struct RexxMsg *);
+STATIC VOID rx_geturl(struct ARexxCmd *, struct RexxMsg *);
 
 STATIC struct ARexxCmd Commands[] =
 {
-	{"OPEN",RX_OPEN,rx_open,"URL/A", 		0, 	NULL, 	0, 	0, 	NULL },
+	{"OPEN",RX_OPEN,rx_open,"URL/A,NEW=NEWWINDOW/S", 		0, 	NULL, 	0, 	0, 	NULL },
 	{"QUIT",RX_QUIT,rx_quit,NULL, 		0, 	NULL, 	0, 	0, 	NULL },
+	{"TOFRONT",RX_TOFRONT,rx_tofront,NULL, 		0, 	NULL, 	0, 	0, 	NULL },
+	{"GETURL",RX_GETURL,rx_geturl,NULL, 		0, 	NULL, 	0, 	0, 	NULL },
 	{ NULL, 		0, 				NULL, 		NULL, 		0, 	NULL, 	0, 	0, 	NULL }
 };
 
@@ -65,10 +73,29 @@ void ami_arexx_cleanup()
 
 STATIC VOID rx_open(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
-	browser_window_create((char *)cmd->ac_ArgList[0],NULL,NULL,true,false);
+	if(cmd->ac_ArgList[1])
+	{
+		browser_window_create((char *)cmd->ac_ArgList[0],NULL,NULL,true,false);
+	}
+	else
+	{
+		browser_window_go(curbw,(char *)cmd->ac_ArgList[0],NULL,true);
+	}
 }
 
 STATIC VOID rx_quit(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
 	ami_quit_netsurf();
 }
+
+STATIC VOID rx_tofront(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
+{
+	ScreenToFront(scrn);
+}
+
+STATIC VOID rx_geturl(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
+{
+	strcpy(result,curbw->current_content->url);
+	cmd->ac_Result = result;
+}
+

@@ -91,8 +91,6 @@
 #include <classes/popupmenu.h>
 #include <reaction/reaction_macros.h>
 
-struct browser_window *curbw;
-
 char *default_stylesheet_url;
 char *adblock_stylesheet_url;
 struct gui_window *search_current_window = NULL;
@@ -739,6 +737,10 @@ void ami_handle_msg(void)
 					ami_close_all_tabs(gwin);
 		        break;
 
+				case WMHI_ACTIVE:
+					curbw = gwin->bw;
+				break;
+
 				case WMHI_INTUITICK:
 				break;
 
@@ -981,6 +983,7 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 	GetClickTabNodeAttrs(tabnode,
 						TNA_UserData,&gwin->bw,
 						TAG_DONE);
+	curbw = gwin->bw;
 
 	ami_update_buttons(gwin);
 
@@ -1339,7 +1342,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 								IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
 								IDCMP_VANILLAKEY | IDCMP_RAWKEY |
 								IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
-								IDCMP_INTUITICKS,
+								IDCMP_INTUITICKS | IDCMP_ACTIVEWINDOW,
 //					WINDOW_IconifyGadget, TRUE,
 					WINDOW_NewMenu,menu,
 					WINDOW_HorizProp,1,
@@ -1593,6 +1596,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		ICA_TARGET,ICTARGET_IDCMP,
 		TAG_DONE);
 
+	curbw = bw;
+
 	gwin->shared->node = AddObject(window_list,AMINS_WINDOW);
 	gwin->shared->node->objstruct = gwin->shared;
 
@@ -1655,6 +1660,8 @@ void gui_window_destroy(struct gui_window *g)
 		FreeVec(g);
 		return;
 	}
+
+	curbw = NULL;
 
 	DisposeObject(g->shared->objects[OID_MAIN]);
 	DeleteLayer(0,g->shared->rp.Layer);

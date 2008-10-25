@@ -134,4 +134,5 @@ STRPTR nsscreentitle;
 struct FileRequester *filereq;
 struct MsgPort *sport;
 bool win_destroyed;
+struct browser_window *curbw;
 #endif
