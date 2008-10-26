@@ -36,6 +36,8 @@ extern bool option_force_tabs;
 extern bool option_new_tab_active;
 extern bool option_kiosk_mode;
 extern char *option_recent_file;
+extern char *option_arexx_dir;
+extern char *option_download_dir;
 
 #define EXTRA_OPTION_DEFINE \
 bool option_verbose_log = false; \
@@ -54,6 +56,8 @@ bool option_force_tabs = false; \
 bool option_new_tab_active = false; \
 bool option_kiosk_mode = false; \
 char *option_recent_file = 0; \
+char *option_arexx_dir = 0; \
+char *option_download_dir = 0; \
 
 #define EXTRA_OPTION_TABLE \
 { "verbose_log",	OPTION_BOOL,	&option_verbose_log}, \
@@ -71,5 +75,7 @@ char *option_recent_file = 0; \
 { "always_open_tabs",	OPTION_BOOL,	&option_force_tabs}, \
 { "new_tab_is_active",	OPTION_BOOL,	&option_new_tab_active}, \
 { "kiosk_mode",	OPTION_BOOL,	&option_kiosk_mode}, \
-{ "recent_file",		OPTION_STRING,	&option_recent_file },
+{ "recent_file",		OPTION_STRING,	&option_recent_file }, \
+{ "arexx_dir",		OPTION_STRING,	&option_arexx_dir }, \
+{ "download_dir",		OPTION_STRING,	&option_download_dir },
 #endif

@@ -22,10 +22,32 @@
 #include "amiga/gui.h"
 #include <intuition/intuition.h>
 
+/* Number of hotlist items, menu structure needs to be changed in ami_create_menu()
+ * if this value is changed. */
 #define AMI_HOTLIST_ITEMS 40
-#define AMI_MENU_MAX 28 + AMI_HOTLIST_ITEMS
+
+/* Maximum number of menu items - first value is number of static items
+ * (ie. everything not intially defined as NM_IGNORE) */
+#define AMI_MENU_MAX 31 + AMI_HOTLIST_ITEMS
+
+/* Where the hotlist entries start */
 #define AMI_MENU_HOTLIST 25
+
+/* Where the hotlist entries end */
 #define AMI_MENU_HOTLIST_MAX AMI_MENU_HOTLIST+AMI_HOTLIST_ITEMS
+
+/* Number of ARexx menu items.  menu structure in ami_create_menu() needs to be
+ * changed if this value is modified. */
+#define AMI_MENU_AREXX_ITEMS 20
+
+/* Where the ARexx menu items start.  ARexx menu items are right at the end...
+ * for now, at least.  We can get away with AMI_MENU_MAX falling short as it is
+ * only used for freeing the UTF-8 converted menu labels */
+#define AMI_MENU_AREXX AMI_MENU_MAX
+
+/* Where the ARexx menu items end (incidentally this is the real AMI_MENU_MAX) */
+#define AMI_MENU_AREXX_MAX AMI_MENU_AREXX+AMI_MENU_AREXX_ITEMS
+
 char *menulab[AMI_MENU_MAX+1];
 
 struct NewMenu *ami_create_menu(ULONG type);

@@ -253,6 +253,11 @@ Settings:Settings
 SnapshotWindow:Snapshot window
 SettingsSave:Save settings
 
+# ARexx menu
+#
+ARexx:ARexx
+ARexxExecute:Execute script...
+
 # Context menu
 #
 Link:Link

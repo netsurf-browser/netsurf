@@ -47,7 +47,7 @@ STATIC struct ARexxCmd Commands[] =
 	{ NULL, 		0, 				NULL, 		NULL, 		0, 	NULL, 	0, 	0, 	NULL }
 };
 
-void ami_arexx_init()
+void ami_arexx_init(void)
 {
 	if(arexx_obj = ARexxObject,
 			AREXX_HostName,"NETSURF",
@@ -61,12 +61,17 @@ void ami_arexx_init()
 	}
 }
 
-void ami_arexx_handle()
+void ami_arexx_handle(void)
 {
 	RA_HandleRexx(arexx_obj);
 }
 
-void ami_arexx_cleanup()
+void ami_arexx_execute(char *script)
+{
+	IDoMethod(arexx_obj, AM_EXECUTE, script, NULL, NULL, NULL, NULL, NULL);
+}
+
+void ami_arexx_cleanup(void)
 {
 	if(arexx_obj) DisposeObject(arexx_obj);
 }
@@ -95,7 +100,15 @@ STATIC VOID rx_tofront(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((
 
 STATIC VOID rx_geturl(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
-	strcpy(result,curbw->current_content->url);
+	if(curbw)
+	{
+		strcpy(result,curbw->current_content->url);
+	}
+	else
+	{
+		strcpy(result,"\0");
+	}
+
 	cmd->ac_Result = result;
 }
 

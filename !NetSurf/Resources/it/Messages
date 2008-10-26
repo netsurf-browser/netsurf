@@ -254,6 +254,11 @@ Settings:Impostazioni
 SnapshotWindow:Fissa finestra
 SettingsSave:Salva impostazioni
 
+# ARexx menu
+#
+ARexx:ARexx
+ARexxExecute:Execute script...
+
 # Context menu
 #
 Link:Link

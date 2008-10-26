@@ -65,6 +65,7 @@
 #include "amiga/context_menu.h"
 #include "amiga/cookies.h"
 #include "amiga/clipboard.h"
+#include <proto/keymap.h>
 
 #ifdef WITH_HUBBUB
 #include <hubbub/hubbub.h>
@@ -101,6 +102,8 @@ struct Device *TimerBase;
 struct TimerIFace *ITimer;
 struct Library  *PopupMenuBase = NULL;
 struct PopupMenuIFace *IPopupMenu = NULL;
+struct Library  *KeymapBase = NULL;
+struct KeymapIFace *IKeymap = NULL;
 
 struct BitMap *throbber = NULL;
 ULONG throbber_width,throbber_height,throbber_frames;
@@ -183,9 +186,12 @@ void gui_init(int argc, char** argv)
 		IPopupMenu = (struct PopupMenuIFace *)GetInterface(PopupMenuBase,"main",1,NULL);
 	}
 
-	filereq = (struct FileRequester *)AllocAslRequest(ASL_FileRequest,NULL);
+	if(KeymapBase = OpenLibrary("keymap.library",37))
+	{
+		IKeymap = (struct KeymapIFace *)GetInterface(KeymapBase,"main",1,NULL);
+	}
 
-	ami_arexx_init();
+	filereq = (struct FileRequester *)AllocAslRequest(ASL_FileRequest,NULL);
 
 	ami_clipboard_init();
 
@@ -194,6 +200,7 @@ void gui_init(int argc, char** argv)
 	options_read("Resources/Options");
 
 	verbose_log = option_verbose_log;
+
 	ami_init_mouse_pointers();
 	nsscreentitle = ASPrintf("NetSurf %s",netsurf_version);
 
@@ -283,6 +290,9 @@ void gui_init(int argc, char** argv)
 	if((!option_theme) || (option_theme[0] == '\0'))
 		option_theme = (char *)strdup("Resources/Themes/Default");
 
+	if((!option_arexx_dir) || (option_arexx_dir[0] == '\0'))
+		option_arexx_dir = (char *)strdup("Rexx");
+
 	if(!option_window_width) option_window_width = 800;
 	if(!option_window_height) option_window_height = 600;
 	if(!option_window_screen_width) option_window_screen_width = 800;
@@ -310,6 +320,7 @@ void gui_init(int argc, char** argv)
 	}
 	/* end Amiupdate */
 
+	ami_arexx_init();
 	ami_init_menulabs();
 	if(option_context_menu) ami_context_menu_init();
 
@@ -627,7 +638,14 @@ void ami_handle_msg(void)
 						break;
 
 						case GID_RELOAD:
-							browser_window_reload(gwin->bw,false);
+							if(gwin->key_state & BROWSER_MOUSE_MOD_1)
+							{
+								browser_window_reload(gwin->bw,true);
+							}
+							else
+							{
+								browser_window_reload(gwin->bw,false);
+							}
 						break;
 
 						case GID_BACK:
@@ -689,6 +707,7 @@ void ami_handle_msg(void)
 					storage = result & WMHI_GADGETMASK;
 
 					GetAttr(WINDOW_InputEvent,gwin->objects[OID_MAIN],(ULONG *)&ie);
+
 					switch(storage)
 					{
 						case RAWKEY_CRSRUP:
@@ -717,6 +736,9 @@ void ami_handle_msg(void)
 						break;
 						case 0xe3: // lctrl up
 							gwin->key_state = 0;
+						break;
+						default:
+							/*MapRawKey etc */
 						break;
 					}
 				break;
@@ -1075,6 +1097,9 @@ void gui_quit(void)
 
     if(IPopupMenu) DropInterface((struct Interface *)IPopupMenu);
     if(PopupMenuBase) CloseLibrary(PopupMenuBase);
+
+    if(IKeymap) DropInterface((struct Interface *)IKeymap);
+    if(KeymapBase) CloseLibrary(KeymapBase);
 
 	if(ITimer)
 	{

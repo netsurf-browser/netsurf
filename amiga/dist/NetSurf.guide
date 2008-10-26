@@ -25,12 +25,12 @@ URL = address of page to open on startup.
 @endnode
 
 @node options "Options file"
-The options file is stored in Resources/Options by default.  The following options are specific to the Amiga version although there are other relevant options in the file:
+The options file is stored in @{"Resources/Options" link Resources/Options/Main} by default.  The following options are specific to the Amiga version although there are other relevant options in the file:
 
 @{b}url_file@{ub} Path to URL database file
 @{b}hotlist_file@{ub} Path to Hotlist file
 @{b}use_workbench@{ub} Open NetSurf in a window on Workbench screen (default is to open a custom screen)
-@{b}screen_modeid@{ub} Mode ID for NetSurf's custom screen
+@{b}screen_modeid@{ub} Mode ID for NetSurf's custom screen.  If not specified, NetSurf will use @{b}window_screen_width@{ub} and @{b}window_screen_height@{ub} to find the best mode.
 @{b}theme@{ub} Path to theme (default is Resources/Themes/Default - an alternative included theme is Resources/Themes/AISS)
 @{b}no_iframes@{ub} Disable IFrames
 @{b}clipboard_write_utf8@{ub} Write UTF-8 strings to the clipboard along with a charset identifier (when this option is 0, NetSurf will convert copied strings to local charset)
@@ -42,6 +42,8 @@ The options file is stored in Resources/Options by default.  The following optio
 @{b}new_tab_is_active@{ub} Make new tab the active one
 @{b}kiosk_mode@{ub} No gadgets
 @{b}recent_file@{ub} Path to file to store recent history list
+@{b}arexx_dir@{ub} Path to ARexx scripts dir
+@{b}download_dir@{ub} default download destination (not used yet)
 @endnode
 
 @node arexx "ARexx port"
@@ -49,8 +51,25 @@ NetSurf's ARexx port is called NETSURF.
 
 Commands are:
 
-@{b}OPEN URL/A@{ub} Opens URL in a new window
+@{b}OPEN URL/A,NEW=NEWWINDOW/S@{ub} Opens URL in current window or a new window if NEWWINDOW is specified.
 @{b}QUIT@{ub} Quits NetSurf
+@{b}TOFRONT@{ub} Brings NetSurf's screen to the front
+@{b}GETURL@{ub} Puts the URL displayed in the current window/tab into RESULT
+
+The ARexx menu will be populated with scripts named #?.nsrx in @{"arexx_dir" link options 18}, up to a maximum of 20 entries.  The titles of these entries will be the comments field of the file (or the filename if comments field is empty).
+
+
+@{u}OpenURL configuration@{uu}
+
+Click Add on the Browsers page and fill in the details as follows:
+Name: NetSurf
+Path: NetSurf %u
+ARexx port: NETSURF
+Show:
+To front: TOFRONT
+Open URL: OPEN "%u"
+New window: OPEN "%u" NEW
+
 @endnode
 
 @node hotlist "Hotlist menu"

@@ -34,9 +34,14 @@
 #include "amiga/tree.h"
 #include "amiga/history.h"
 #include "amiga/cookies.h"
+#include <proto/exec.h>
+#include "amiga/arexx.h"
+
+BOOL menualreadyinit;
 
 void ami_menu_scan(struct tree *tree,struct NewMenu *menu);
 void ami_menu_scan_2(struct tree *tree,struct node *root,WORD *gen,ULONG *item,struct NewMenu *menu);
+void ami_menu_arexx_scan(struct NewMenu *menu);
 
 void ami_free_menulabs(void)
 {
@@ -79,6 +84,9 @@ void ami_init_menulabs(void)
 	menulab[65] = ami_utf8_easy((char *)messages_get("Settings"));
 	menulab[66] = ami_utf8_easy((char *)messages_get("SnapshotWindow"));
 	menulab[67] = ami_utf8_easy((char *)messages_get("SettingsSave"));
+	menulab[68] = ami_utf8_easy((char *)messages_get("ARexx"));
+	menulab[69] = ami_utf8_easy((char *)messages_get("ARexxExecute"));
+	menulab[70] = NM_BARLABEL;
 }
 
 struct NewMenu *ami_create_menu(ULONG type)
@@ -154,6 +162,29 @@ struct NewMenu *ami_create_menu(ULONG type)
 				{NM_TITLE,0,0,0,0,0,}, // settings
 				{ NM_ITEM,0,0,0,0,0,}, // snapshot window
 				{ NM_ITEM,0,0,0,0,0,}, // save settings
+				{NM_TITLE,0,0,0,0,0,}, // arexx
+				{ NM_ITEM,0,0,0,0,0,}, // execute arexx
+				{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
+				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
+				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
 			  	{  NM_END,0,0,0,0,0,},
 			 };
 
@@ -176,9 +207,73 @@ struct NewMenu *ami_create_menu(ULONG type)
 	menu[7].nm_Flags = NM_ITEMDISABLED;
 #endif
 
-	ami_menu_scan(hotlist,menu);
+	if(!menualreadyinit)
+	{
+		ami_menu_scan(hotlist,menu);
+		ami_menu_arexx_scan(menu);
+		menualreadyinit = TRUE;
+	}
 
 	return(menu);
+}
+
+void ami_menu_arexx_scan(struct NewMenu *menu)
+{
+	int item = AMI_MENU_AREXX;
+	BPTR lock = 0;
+	UBYTE *buffer;
+	struct ExAllControl *ctrl;
+	char matchpatt[16];
+	LONG cont;
+	struct ExAllData *ead;
+
+	if(lock = Lock(option_arexx_dir,SHARED_LOCK))
+	{
+		if(buffer = AllocVec(1024,MEMF_PRIVATE | MEMF_CLEAR))
+		{
+			if(ctrl = AllocDosObject(DOS_EXALLCONTROL,NULL))
+			{
+				ctrl->eac_LastKey = 0;
+
+				if(ParsePatternNoCase("#?.nsrx",(char *)&matchpatt,16) != -1)
+				{
+					ctrl->eac_MatchString = (char *)&matchpatt;
+				}
+
+				do
+				{
+					cont = ExAll(lock,buffer,1024,ED_COMMENT,ctrl);
+					if((!cont) && (IoErr() != ERROR_NO_MORE_ENTRIES)) break;
+					if(!ctrl->eac_Entries) continue;
+
+					for(ead = (struct ExAllData *)buffer; ead; ead = ead->ed_Next)
+					{
+						if(item >= AMI_MENU_AREXX_MAX) continue;
+						if(EAD_IS_FILE(ead))
+						{
+							menu[item].nm_Type = NM_ITEM;
+							if(ead->ed_Comment[0] != '\0')
+							{
+								menulab[item] = (char *)strdup(ead->ed_Comment);
+							}
+							else
+							{
+								menulab[item] = (char *)strdup(ead->ed_Name);
+							}
+
+							menu[item].nm_Label = menulab[item];
+							menu[item].nm_UserData = (char *)strdup(ead->ed_Name);
+
+							item++;
+						}
+					}
+				}while(cont);
+				FreeDosObject(DOS_EXALLCONTROL,ctrl);
+			}
+			FreeVec(buffer);
+		}
+		UnLock(lock);
+	}
 }
 
 void ami_menu_scan(struct tree *tree,struct NewMenu *menu)
@@ -224,7 +319,7 @@ void ami_menu_scan_2(struct tree *tree,struct node *root,WORD *gen,ULONG *item,s
 
 			if(strcmp(element->text,"--"))
 			{
-				menulab[*item] = ami_utf8_easy(element->text);
+				menulab[*item] = ami_utf8_easy((char *)element->text);
 			}
 			else
 			{
@@ -234,7 +329,7 @@ void ami_menu_scan_2(struct tree *tree,struct node *root,WORD *gen,ULONG *item,s
 			menu[*item].nm_Label = menulab[*item];
 
 			element = tree_find_element(node, TREE_ELEMENT_URL);
-			if(element && element->text) menu[*item].nm_UserData = element->text;
+			if(element && element->text) menu[*item].nm_UserData = (void *)element->text;
 
 			if(node->folder && (!node->child)) menu[*item].nm_Flags = NM_ITEMDISABLED;
 
@@ -260,6 +355,7 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 	subnum = SUBNUM(code);
 	bool openwin=false;
 	bool opentab=true;
+	char *temp;
 
 	if(option_force_tabs)
 	{
@@ -430,6 +526,43 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 
 				case 1: // save settings
 					options_write("Resources/Options");
+				break;
+			}
+		break;
+
+		case 5: // arexx
+			switch(itemnum)
+			{
+				case 0: // execute arexx
+					if(AslRequestTags(filereq,
+						ASLFR_TitleText,messages_get("NetSurf"),
+						ASLFR_Screen,scrn,
+						ASLFR_DoSaveMode,FALSE,
+						ASLFR_InitialDrawer,option_arexx_dir,
+						ASLFR_InitialPattern,"#?.nsrx",
+						TAG_DONE))
+					{
+						if(temp = AllocVec(1024,MEMF_PRIVATE | MEMF_CLEAR))
+						{
+							strlcpy(temp,filereq->fr_Drawer,1024);
+							AddPart(temp,filereq->fr_File,1024);
+							ami_arexx_execute(temp);
+							FreeVec(temp);
+						}
+					}
+				break;
+
+				default: // arexx menu items
+					if(GTMENUITEM_USERDATA(item))
+					{
+						if(temp = AllocVec(1024,MEMF_PRIVATE | MEMF_CLEAR))
+						{
+							strcpy(temp,option_arexx_dir);
+							AddPart(temp,GTMENUITEM_USERDATA(item),1024);
+							ami_arexx_execute(temp);
+							FreeVec(temp);
+						}
+					}
 				break;
 			}
 		break;
