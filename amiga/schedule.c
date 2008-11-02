@@ -42,7 +42,7 @@ void schedule(int t, void (*callback)(void *p), void *p)
 	if(!obj) return;
 
 	obj->objstruct_size = sizeof(struct nscallback);
-	obj->objstruct = AllocVec(obj->objstruct_size,MEMF_CLEAR);
+	obj->objstruct = AllocVec(obj->objstruct_size,MEMF_PRIVATE | MEMF_CLEAR);
 	if(!obj->objstruct)
 	{
 		DelObject(obj);
@@ -63,7 +63,7 @@ void schedule(int t, void (*callback)(void *p), void *p)
 	GetSysTime(&tv);
 	AddTime(&nscb->tv,&tv); // now contains time when event occurs
 #ifdef AMI_SCHEDULER_USES_TIMER
-	if(nscb->treq = AllocVec(sizeof(struct timerequest),MEMF_CLEAR))
+	if(nscb->treq = AllocVec(sizeof(struct timerequest),MEMF_PRIVATE | MEMF_CLEAR))
 	{
 		*nscb->treq = *tioreq;
     	nscb->treq->tr_node.io_Command=TR_ADDREQUEST;
@@ -95,10 +95,8 @@ void schedule_remove(void (*callback)(void *p), void *p)
 
 	node = (struct nsObject *)GetHead((struct List *)schedule_list);
 
-	do
+	while(nnode=(struct nsObject *)GetSucc((struct Node *)node))
 	{
-		nnode=(struct nsObject *)GetSucc((struct Node *)node);
-
 		nscb = node->objstruct;
 		if(!nscb) continue;
 
@@ -107,7 +105,8 @@ void schedule_remove(void (*callback)(void *p), void *p)
 			ami_remove_timer_event(nscb);
 			DelObject(node);
 		}
-	} while(node=nnode);
+		node=nnode;
+	}
 }
 
 /**

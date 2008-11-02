@@ -201,8 +201,8 @@ void ami_open_tree(struct tree *tree,int type)
 		return;
 	}
 
-	twin = AllocVec(sizeof(struct treeview_window),MEMF_CLEAR);
-	twin->listbrowser_list = AllocVec(sizeof(struct List),MEMF_CLEAR);
+	twin = AllocVec(sizeof(struct treeview_window),MEMF_PRIVATE | MEMF_CLEAR);
+	twin->listbrowser_list = AllocVec(sizeof(struct List),MEMF_PRIVATE | MEMF_CLEAR);
 
 	static struct ColumnInfo columninfo[] =
 	{

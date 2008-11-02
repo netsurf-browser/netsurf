@@ -138,7 +138,7 @@ char *ptrs[AMI_LASTPOINTER+1] = {
 	"Resources/Pointers/Progress",
 	"Resources/Pointers/Blank"};
 
-void ami_update_throbber(struct gui_window_2 *g);
+void ami_update_throbber(struct gui_window_2 *g,bool redraw);
 void ami_update_buttons(struct gui_window_2 *);
 void ami_scroller_hook(struct Hook *,Object *,struct IntuiMessage *);
 uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved);
@@ -368,7 +368,7 @@ void gui_init(int argc, char** argv)
 				NULL,RGBFB_A8R8G8B8))
 			{
 				struct RenderInfo ri;
-				UBYTE *throbber_tempmem = AllocVec(throbber_bmh->bmh_Width*throbber_height*4,MEMF_CLEAR);
+				UBYTE *throbber_tempmem = AllocVec(throbber_bmh->bmh_Width*throbber_height*4,MEMF_PRIVATE | MEMF_CLEAR);
 				throbber_rp.BitMap = throbber;
 				ri.Memory = throbber_tempmem;
 				ri.BytesPerRow = 4*throbber_bmh->bmh_Width;
@@ -747,6 +747,8 @@ void ami_handle_msg(void)
 					switch(node->Type)
 					{
 						case AMINS_WINDOW:
+							ami_update_throbber(gwin,true);
+							// fall through
 						case AMINS_FRAME:
 							GetAttr(SPACE_AreaBox,gwin->gadgets[GID_BROWSER],(ULONG *)&bbox);	
 							browser_window_reformat(gwin->bw,bbox->Width,bbox->Height);
@@ -787,7 +789,7 @@ void ami_handle_msg(void)
 			ami_do_redraw(gwin);
 
 		if(gwin->throbber_frame)
-			ami_update_throbber(gwin);
+			ami_update_throbber(gwin,false);
 
 		if(node->Type == AMINS_WINDOW)
 		{
@@ -834,7 +836,7 @@ void ami_handle_appmsg(void)
 
 			if(appwinargs = appmsg->am_ArgList)
 			{
-				if(filename = AllocVec(1024,MEMF_CLEAR))
+				if(filename = AllocVec(1024,MEMF_PRIVATE | MEMF_CLEAR))
 				{
 					if(appwinargs->wa_Lock)
 					{
@@ -968,6 +970,7 @@ void gui_multitask(void)
 
 	ami_handle_msg();
 	ami_handle_appmsg();
+	ami_arexx_handle();
 }
 
 void gui_poll(bool active)
@@ -1208,7 +1211,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	}
 
 
-	gwin = AllocVec(sizeof(struct gui_window),MEMF_CLEAR);
+	gwin = AllocVec(sizeof(struct gui_window),MEMF_PRIVATE | MEMF_CLEAR);
 
 	if(!gwin)
 	{
@@ -1253,7 +1256,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		return gwin;
 	}
 
-	gwin->shared = AllocVec(sizeof(struct gui_window_2),MEMF_CLEAR);
+	gwin->shared = AllocVec(sizeof(struct gui_window_2),MEMF_PRIVATE | MEMF_CLEAR);
 
 	if(!gwin->shared)
 	{
@@ -1580,8 +1583,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	gwin->shared->layerinfo = NewLayerInfo();
 	gwin->shared->rp.Layer = CreateUpfrontLayer(gwin->shared->layerinfo,gwin->shared->bm,0,0,scrn->Width-1,scrn->Height-1,0,NULL);
 
-	gwin->shared->areabuf = AllocVec(100,MEMF_CLEAR);
-	gwin->shared->rp.AreaInfo = AllocVec(sizeof(struct AreaInfo),MEMF_CLEAR);
+	gwin->shared->areabuf = AllocVec(100,MEMF_PRIVATE | MEMF_CLEAR);
+	gwin->shared->rp.AreaInfo = AllocVec(sizeof(struct AreaInfo),MEMF_PRIVATE | MEMF_CLEAR);
 
 	if((!gwin->shared->areabuf) || (!gwin->shared->rp.AreaInfo))
 	{
@@ -1591,8 +1594,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	}
 
 	InitArea(gwin->shared->rp.AreaInfo,gwin->shared->areabuf,100/5);
-	gwin->shared->rp.TmpRas = AllocVec(sizeof(struct TmpRas),MEMF_CLEAR);
-	gwin->shared->tmprasbuf = AllocVec(scrn->Width*scrn->Height,MEMF_CLEAR);
+	gwin->shared->rp.TmpRas = AllocVec(sizeof(struct TmpRas),MEMF_PRIVATE | MEMF_CLEAR);
+	gwin->shared->tmprasbuf = AllocVec(scrn->Width*scrn->Height,MEMF_PRIVATE | MEMF_CLEAR);
 
 	if((!gwin->shared->tmprasbuf) || (!gwin->shared->rp.TmpRas))
 	{
@@ -2159,10 +2162,10 @@ void ami_init_mouse_pointers(void)
 			if(ptrfile = Open(ptrs[i],MODE_OLDFILE))
 			{
 				int mx,my;
-				UBYTE *pprefsbuf = AllocVec(1061,MEMF_CLEAR);
+				UBYTE *pprefsbuf = AllocVec(1061,MEMF_PRIVATE | MEMF_CLEAR);
 				Read(ptrfile,pprefsbuf,1061);
 
-				mouseptrbm[i]=AllocVec(sizeof(struct BitMap),MEMF_CLEAR);
+				mouseptrbm[i]=AllocVec(sizeof(struct BitMap),MEMF_PRIVATE | MEMF_CLEAR);
 				InitBitMap(mouseptrbm[i],2,32,32);
 				mouseptrbm[i]->Planes[0] = AllocRaster(32,32);
 				mouseptrbm[i]->Planes[1] = AllocRaster(32,32);
@@ -2233,25 +2236,29 @@ void gui_window_stop_throbber(struct gui_window *g)
 	g->shared->throbber_frame = 0;
 }
 
-void ami_update_throbber(struct gui_window_2 *g)
+void ami_update_throbber(struct gui_window_2 *g,bool redraw)
 {
 	struct IBox *bbox;
 
 	if(!g->gadgets[GID_THROBBER]) return;
 
-	if(g->throbber_update_count < 1000)
+	if(!redraw)
 	{
-		g->throbber_update_count++;
-		return;
+		if(g->throbber_update_count < 1000)
+		{
+			g->throbber_update_count++;
+			return;
+		}
+
+		g->throbber_update_count = 0;
+
+		g->throbber_frame++;
+		if(g->throbber_frame > (throbber_frames-1))
+			g->throbber_frame=1;
+
 	}
 
-	g->throbber_update_count = 0;
-
 	GetAttr(SPACE_AreaBox,g->gadgets[GID_THROBBER],(ULONG *)&bbox);
-
-	g->throbber_frame++;
-	if(g->throbber_frame > (throbber_frames-1))
-		g->throbber_frame=1;
 
 	BltBitMapRastPort(throbber,throbber_width*g->throbber_frame,0,g->win->RPort,bbox->Left,bbox->Top,throbber_width,throbber_height,0x0C0);
 }
@@ -2346,7 +2353,7 @@ struct gui_download_window *gui_download_window_create(const char *url,
 	}
 	else return NULL;
 
-	dw = AllocVec(sizeof(struct gui_download_window),MEMF_CLEAR);
+	dw = AllocVec(sizeof(struct gui_download_window),MEMF_PRIVATE | MEMF_CLEAR);
 
 	dw->size = total_size;
 	dw->downloaded = 0;

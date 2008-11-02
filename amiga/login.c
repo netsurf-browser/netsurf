@@ -42,7 +42,7 @@
 void gui_401login_open(struct browser_window *bw, struct content *c,
 	const char *realm)
 {
-	struct gui_login_window *lw = AllocVec(sizeof(struct gui_login_window),MEMF_CLEAR);
+	struct gui_login_window *lw = AllocVec(sizeof(struct gui_login_window),MEMF_PRIVATE | MEMF_CLEAR);
 	char *host;
 
 	url_host(c->url, &host);

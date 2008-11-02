@@ -27,7 +27,7 @@ struct MinList *NewObjList(void)
 
 	struct MinList *objlist;
 
-	objlist = (struct MinList *)AllocVec(sizeof(struct MinList),MEMF_CLEAR);
+	objlist = (struct MinList *)AllocVec(sizeof(struct MinList),MEMF_PRIVATE | MEMF_CLEAR);
 
 	NewMinList(objlist);
 
@@ -39,7 +39,7 @@ struct nsObject *AddObject(struct MinList *objlist,ULONG otype)
 {
 	struct nsObject *dtzo;
 
-	dtzo = (struct nsObject *)AllocVec(sizeof(struct nsObject),MEMF_CLEAR);
+	dtzo = (struct nsObject *)AllocVec(sizeof(struct nsObject),MEMF_PRIVATE | MEMF_CLEAR);
 
 	AddTail((struct List *)objlist,(struct Node *)dtzo);
 

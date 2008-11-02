@@ -63,7 +63,7 @@ void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
 	ULONG rlen=0,error;
 	struct CSet cset;
 	char *clip;
-	STRPTR readbuf = AllocVec(1024,MEMF_CLEAR);
+	STRPTR readbuf = AllocVec(1024,MEMF_PRIVATE | MEMF_CLEAR);
 
 	cset.CodeSet = 0;
 

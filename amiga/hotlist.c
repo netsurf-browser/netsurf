@@ -84,7 +84,7 @@ void ami_hotlist_init(struct tree **hotlist)
 	int i;
 	const struct url_data *data;
 
-	*hotlist = AllocVec(sizeof(struct tree),MEMF_CLEAR);
+	*hotlist = AllocVec(sizeof(struct tree),MEMF_PRIVATE | MEMF_CLEAR);
 	hotlist_tree = *hotlist;
 
 	if (!hotlist_tree) {

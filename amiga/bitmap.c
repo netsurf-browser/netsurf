@@ -34,10 +34,10 @@ void *bitmap_create(int width, int height, unsigned int state)
 {
 	struct bitmap *bitmap;
 
-	bitmap = AllocVec(sizeof(struct bitmap),MEMF_CLEAR);
+	bitmap = AllocVec(sizeof(struct bitmap),MEMF_PRIVATE | MEMF_CLEAR);
 	if(bitmap)
 	{
-		bitmap->pixdata = AllocVec(width*height*4*2,MEMF_CLEAR);
+		bitmap->pixdata = AllocVec(width*height*4*2,MEMF_PRIVATE | MEMF_CLEAR);
 		bitmap->width = width;
 		bitmap->height = height;
 	}
