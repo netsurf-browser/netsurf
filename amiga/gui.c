@@ -421,15 +421,15 @@ void gui_init2(int argc, char** argv)
 	if ((!option_homepage_url) || (option_homepage_url[0] == '\0'))
     	option_homepage_url = (char *)strdup(NETSURF_HOMEPAGE);
 
-	if(option_modeid)
+	if((option_modeid) && (option_modeid[0] != '\0'))
 	{
-		id = option_modeid;
+		id = strtoul(option_modeid,NULL,0);
 	}
 	else
 	{
 		id = p96BestModeIDTags(P96BIDTAG_NominalWidth,option_window_screen_width,
 					P96BIDTAG_NominalHeight,option_window_screen_height,
-					P96BIDTAG_Depth,32);
+					P96BIDTAG_Depth,option_screen_depth);
 
 		if(id == INVALID_ID) die(messages_get("NoMode"));
 	}
@@ -444,7 +444,7 @@ void gui_init2(int argc, char** argv)
 		scrn = OpenScreenTags(NULL,
 							SA_Width,option_window_screen_width,
 							SA_Height,option_window_screen_height,
-							SA_Depth,32,
+							SA_Depth,option_screen_depth,
 							SA_DisplayID,id,
 							SA_Title,nsscreentitle,
 							SA_LikeWorkbench,TRUE,

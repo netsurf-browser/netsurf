@@ -24,7 +24,8 @@ extern bool option_verbose_log;
 extern char *option_url_file;
 extern char *option_hotlist_file;
 extern bool option_use_wb;
-extern int option_modeid;
+extern char *option_modeid;
+extern int option_screen_depth;
 extern char *option_theme;
 extern bool option_no_iframes;
 extern bool option_utf8_clipboard;
@@ -44,14 +45,15 @@ bool option_verbose_log = false; \
 char *option_url_file = 0; \
 char *option_hotlist_file = 0; \
 bool option_use_wb = false; \
-int option_modeid = 0; \
+char *option_modeid = 0; \
+int option_screen_depth = 16; \
 char *option_theme = 0; \
 bool option_no_iframes = false; \
 bool option_utf8_clipboard = false; \
 bool option_context_menu = true; \
 bool option_sticky_context_menu = true; \
-bool option_truecolour_mouse_pointers = true; \
-bool option_use_os_pointers = false; \
+bool option_truecolour_mouse_pointers = false; \
+bool option_use_os_pointers = true; \
 bool option_force_tabs = false; \
 bool option_new_tab_active = false; \
 bool option_kiosk_mode = false; \
@@ -64,7 +66,8 @@ char *option_download_dir = 0; \
 { "url_file",		OPTION_STRING,	&option_url_file }, \
 { "hotlist_file",		OPTION_STRING,	&option_hotlist_file }, \
 { "use_workbench",	OPTION_BOOL,	&option_use_wb}, \
-{ "screen_modeid",	OPTION_INTEGER,	&option_modeid}, \
+{ "screen_modeid",	OPTION_STRING,	&option_modeid}, \
+{ "screen_depth",	OPTION_INTEGER,	&option_screen_depth}, \
 { "theme",		OPTION_STRING,	&option_theme}, \
 { "no_iframes",	OPTION_BOOL,	&option_no_iframes}, \
 { "clipboard_write_utf8",	OPTION_BOOL,	&option_utf8_clipboard}, \

@@ -19,8 +19,5 @@
 /* This script launches getvideo.rexx (Aminet:comm/www/getvideo.lha) */
 
 options results
-address netsurf
-
 geturl
-
 address REXX 'rexx:getvideo.rexx' result 'save "ram:"'
