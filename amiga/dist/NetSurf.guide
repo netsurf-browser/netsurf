@@ -11,6 +11,7 @@ http://www.netsurf-browser.org
 @{"Options file        " link options}
 @{"ARexx port          " link arexx}
 @{"Hotlist menu        " link hotlist}
+@{"Local MIME types    " link mimetypes}
 
 @{"Credits             " link contact}
 @endnode
@@ -108,6 +109,18 @@ Will look something like the following within the menu:
 |---------|   |More NetSurf links|
 |Google   |
 
+@endnode
+
+@node mimetypes "Local MIME Types"
+NetSurf determines the MIME types of local files primarily by checking the icon of the file.  If the icon is not found it will check the default icon for the file type.
+
+It looks for a tooltype MIMETYPE and, if found, will use the contents as the filetype of the file.  If not found it makes a guess at the MIME type using datatypes.library, however this will not be very accurate.
+
+The Installer script will set the MIMETYPE tooltype on basic relevant default filetype icons.  If you get problems:
+* If the file has a real icon, add MIMETYPE=<MIME type of file> to the tooltypes.
+* If the file does not have an icon, check:
+1. The file type is showing in DefIcons Prefs editor
+2. The icon ENVARC:Sys/def_<filetype> contains the MIMETYPE tooltype.
 @endnode
 
 @node contact "Credits"
