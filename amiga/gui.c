@@ -66,6 +66,7 @@
 #include "amiga/cookies.h"
 #include "amiga/clipboard.h"
 #include <proto/keymap.h>
+#include "amiga/save_complete.h"
 
 #ifdef WITH_HUBBUB
 #include <hubbub/hubbub.h>
@@ -339,6 +340,7 @@ void gui_init(int argc, char** argv)
 	if(!hotlist) ami_hotlist_init(&hotlist);
 	ami_global_history_initialise();
 	ami_cookies_initialise();
+	save_complete_init();
 
 	strcpy(&throbberfile,option_theme);
 	AddPart(&throbberfile,"Theme",100);
@@ -393,6 +395,7 @@ void gui_init2(int argc, char** argv)
 	long rarray[] = {0};
 	struct RDArgs *args;
 	STRPTR template = "URL/A";
+	STRPTR temp_homepage_url = NULL;
 
 	enum
 	{
@@ -412,7 +415,7 @@ void gui_init2(int argc, char** argv)
 		{
 			if(rarray[A_URL])
 			{
-				option_homepage_url = (char *)strdup(rarray[A_URL]);
+				temp_homepage_url = (char *)strdup(rarray[A_URL]);
 			}
 			FreeArgs(args);
 		}
@@ -451,7 +454,15 @@ void gui_init2(int argc, char** argv)
 							TAG_DONE);
 	}
 
-	bw = browser_window_create(option_homepage_url, 0, 0, true,false); // curbw = temp
+	if(temp_homepage_url)
+	{
+		bw = browser_window_create(temp_homepage_url, 0, 0, true,false);
+		free(temp_homepage_url);
+	}
+	else
+	{
+		bw = browser_window_create(option_homepage_url, 0, 0, true,false); // curbw = temp
+	}
 }
 
 void ami_handle_msg(void)
@@ -1004,6 +1015,8 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 
 	if(gwin->tabs == 0) return;
 
+	gui_window_get_scroll(gwin->bw->window,&gwin->bw->window->scrollx,&gwin->bw->window->scrolly);
+
 	GetAttr(CLICKTAB_CurrentNode,gwin->gadgets[GID_TABS],(ULONG *)&tabnode);
 	GetClickTabNodeAttrs(tabnode,
 						TNA_UserData,&gwin->bw,
@@ -1014,6 +1027,8 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 
 	if(redraw)
 	{
+		gui_window_set_scroll(gwin->bw->window,gwin->bw->window->scrollx,gwin->bw->window->scrolly);
+
 		browser_window_update(gwin->bw,false);
 
 		if(gwin->bw->current_content)
@@ -1252,6 +1267,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		gwin->shared->next_tab++;
 
 		if(option_new_tab_active) ami_switch_tab(gwin->shared,false);
+
+		ami_update_buttons(gwin->shared);
 
 		return gwin;
 	}

@@ -36,6 +36,7 @@
 #include "amiga/cookies.h"
 #include <proto/exec.h>
 #include "amiga/arexx.h"
+#include "amiga/save_complete.h"
 
 BOOL menualreadyinit;
 
@@ -62,31 +63,32 @@ void ami_init_menulabs(void)
 	menulab[4] = ami_utf8_easy((char *)messages_get("SaveAs"));
 	menulab[5] = ami_utf8_easy((char *)messages_get("Source"));
 	menulab[6] = ami_utf8_easy((char *)messages_get("TextNS"));
-	menulab[7] = ami_utf8_easy((char *)messages_get("PDF"));
-	menulab[8] = NM_BARLABEL;
-	menulab[9] = ami_utf8_easy((char *)messages_get("CloseTab"));
-	menulab[10] = ami_utf8_easy((char *)messages_get("CloseWindow"));
-	menulab[11] = NM_BARLABEL;
-	menulab[12] = ami_utf8_easy((char *)messages_get("Quit"));
-	menulab[13] = ami_utf8_easy((char *)messages_get("Edit"));
-	menulab[14] = ami_utf8_easy((char *)messages_get("CopyNS"));
-	menulab[15] = ami_utf8_easy((char *)messages_get("Paste"));
-	menulab[16] = ami_utf8_easy((char *)messages_get("SelectAllNS"));
-	menulab[17] = ami_utf8_easy((char *)messages_get("ClearNS"));
-	menulab[18] = ami_utf8_easy((char *)messages_get("Browser"));
-	menulab[19] = ami_utf8_easy((char *)messages_get("HistGlobalNS"));
-	menulab[20] = ami_utf8_easy((char *)messages_get("ShowCookies"));
-	menulab[21] = ami_utf8_easy((char *)messages_get("Hotlist"));
-	menulab[22] = ami_utf8_easy((char *)messages_get("HotlistAdd"));
-	menulab[23] = ami_utf8_easy((char *)messages_get("HotlistShowNS"));
-	menulab[24] = NM_BARLABEL;
+	menulab[7] = ami_utf8_easy((char *)messages_get("SaveCompNS"));
+	menulab[8] = ami_utf8_easy((char *)messages_get("PDF"));
+	menulab[9] = NM_BARLABEL;
+	menulab[10] = ami_utf8_easy((char *)messages_get("CloseTab"));
+	menulab[11] = ami_utf8_easy((char *)messages_get("CloseWindow"));
+	menulab[12] = NM_BARLABEL;
+	menulab[13] = ami_utf8_easy((char *)messages_get("Quit"));
+	menulab[14] = ami_utf8_easy((char *)messages_get("Edit"));
+	menulab[15] = ami_utf8_easy((char *)messages_get("CopyNS"));
+	menulab[16] = ami_utf8_easy((char *)messages_get("Paste"));
+	menulab[17] = ami_utf8_easy((char *)messages_get("SelectAllNS"));
+	menulab[18] = ami_utf8_easy((char *)messages_get("ClearNS"));
+	menulab[19] = ami_utf8_easy((char *)messages_get("Browser"));
+	menulab[20] = ami_utf8_easy((char *)messages_get("HistGlobalNS"));
+	menulab[21] = ami_utf8_easy((char *)messages_get("ShowCookies"));
+	menulab[22] = ami_utf8_easy((char *)messages_get("Hotlist"));
+	menulab[23] = ami_utf8_easy((char *)messages_get("HotlistAdd"));
+	menulab[24] = ami_utf8_easy((char *)messages_get("HotlistShowNS"));
+	menulab[25] = NM_BARLABEL;
 
-	menulab[65] = ami_utf8_easy((char *)messages_get("Settings"));
-	menulab[66] = ami_utf8_easy((char *)messages_get("SnapshotWindow"));
-	menulab[67] = ami_utf8_easy((char *)messages_get("SettingsSave"));
-	menulab[68] = ami_utf8_easy((char *)messages_get("ARexx"));
-	menulab[69] = ami_utf8_easy((char *)messages_get("ARexxExecute"));
-	menulab[70] = NM_BARLABEL;
+	menulab[AMI_MENU_HOTLIST_MAX] = ami_utf8_easy((char *)messages_get("Settings"));
+	menulab[AMI_MENU_HOTLIST_MAX+1] = ami_utf8_easy((char *)messages_get("SnapshotWindow"));
+	menulab[AMI_MENU_HOTLIST_MAX+2] = ami_utf8_easy((char *)messages_get("SettingsSave"));
+	menulab[AMI_MENU_HOTLIST_MAX+3] = ami_utf8_easy((char *)messages_get("ARexx"));
+	menulab[AMI_MENU_HOTLIST_MAX+4] = ami_utf8_easy((char *)messages_get("ARexxExecute"));
+	menulab[AMI_MENU_HOTLIST_MAX+5] = NM_BARLABEL;
 }
 
 struct NewMenu *ami_create_menu(ULONG type)
@@ -101,6 +103,7 @@ struct NewMenu *ami_create_menu(ULONG type)
 			  	{ NM_ITEM,0,0,0,0,0,}, // save
 			  	{  NM_SUB,0,"S",0,0,0,}, // save as source
 			  	{  NM_SUB,0,0,0,0,0,}, // save as text
+			  	{  NM_SUB,0,0,0,0,0,}, // save as complete
 			  	{  NM_SUB,0,0,0,0,0,}, // save as pdf
 			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
 			  	{ NM_ITEM,0,"K",0,0,0,}, // close tab
@@ -356,6 +359,7 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 	bool openwin=false;
 	bool opentab=true;
 	char *temp;
+	BPTR lock = 0;
 
 	if(option_force_tabs)
 	{
@@ -425,6 +429,27 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 						break;
 
 						case 2:
+							if(AslRequestTags(filereq,
+								ASLFR_TitleText,messages_get("NetSurf"),
+								ASLFR_Screen,scrn,
+								ASLFR_DoSaveMode,TRUE,
+								ASLFR_InitialFile,FilePart(gwin->bw->current_content->url),
+								TAG_DONE))
+							{
+								strlcpy(&fname,filereq->fr_Drawer,1024);
+								AddPart(fname,filereq->fr_File,1024);
+								ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
+								if(lock = CreateDir(fname))
+								{
+									UnLock(lock);
+									save_complete(gwin->bw->current_content,fname);
+									SetComment(fname,gwin->bw->current_content->url);
+								}
+								ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
+							}
+						break;
+
+						case 3:
 #ifdef WITH_PDF_EXPORT
 							if(AslRequestTags(filereq,
 								ASLFR_TitleText,messages_get("NetSurf"),

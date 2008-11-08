@@ -118,6 +118,8 @@ struct gui_window
 	int c_x;
 	int c_y;
 	int c_h;
+	int scrollx;
+	int scrolly;
 };
 
 void ami_get_msg(void);
