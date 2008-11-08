@@ -1,0 +1,146 @@
+; Installation script for NetSurf
+
+(procedure p_setmimetype #type #mimetype
+	(transcript "Setting MIME Type " #mimetype " for default " #type " icon")
+
+	(set #fullpath (cat "ENVARC:Sys/def_" #type))
+
+	(tooltype
+		(prompt "Setting MIME type")
+		(help @tooltype-help)
+		(dest #fullpath)
+		(settooltype "MIMETYPE" #mimetype)
+	)
+)
+
+(if (= @app-name "NetSurfAutoInstall") (set #AutoInstall 1))
+
+(if (<> #AutoInstall 1) (welcome))
+
+(complete 0)
+
+(set @default-dest (getenv "AppPaths/NetSurf"))
+
+(set @default-dest
+	(askdir
+    		(prompt "Where would you like to install NetSurf?")
+		(help @askdir-help)
+		(default @default-dest)
+	)
+)
+
+(copylib
+	(prompt "Please check the version of NetSurf you are copying against "
+			"any which might already be installed.")
+	(help @copylib-help)
+	(source "NetSurf")
+	(dest @default-dest)
+	(infos)
+	(optional "askuser" "force" "oknodelete")
+	(confirm "expert")
+)
+
+(complete 20)
+
+(copyfiles
+	(prompt "Copying files")
+	(source "")
+	(choices "Resources" "Rexx" "NetSurf.guide" "NetSurf.readme")
+	(help @copyfiles-help)
+	(dest @default-dest)
+	(infos)
+;	(all)
+)
+
+(complete 70)
+
+(set #options-exist (exists (tackon @default-dest "Resources/Options")))
+
+(if (= #options-exist 0)
+	(
+		(set #screen-width   ;(querydisplay "screen" "width"))
+			(asknumber
+				(prompt "Enter desired screen width")
+				(help @asknumber-help)
+				(default 1024)
+			)
+		)
+		(set #screen-height  ;(querydisplay "screen" "height"))
+			(asknumber
+				(prompt "Enter desired screen height")
+				(help @asknumber-help)
+				(default 768)
+			)
+		)
+
+		(set #depth ;(querydisplay "screen" "depth"))
+			(askchoice
+				(prompt "Enter desired screen depth")
+				(help @asknumber-help)
+				(choices "16" "24" "32")
+				(default 2)
+			)
+		)
+
+		(select #depth
+			(set #screen-depth "16")
+			(set #screen-depth "24")
+			(set #screen-depth "32")
+		)
+
+		(set #themename
+   			(askchoice
+  				(prompt "Please select theme")
+ 	      		(help @askchoice-help)
+				(choices "Default" "AISS")
+       			(default 0)
+   			)
+		)
+
+		(select #themename
+			(set #theme "Resources/Themes/Default")
+			(set #theme "Resources/Themes/AISS")
+		)
+
+		(textfile
+			(prompt "Setting default options")
+			(help @textfile-help)
+			(dest (tackon @default-dest "Resources/Options"))
+			(append 	"font_min_size:12\n"
+				  	"window_x:0\n"
+					"window_y:24\n"
+					"window_width:" #screen-width "\n"
+					"window_height:" (- #screen-height 24) "\n"
+					"window_screen_width:" #screen-width "\n"
+					"window_screen_height:" #screen-height "\n"
+					"theme:" #theme "\n")
+		)
+	)
+)
+
+(complete 90)
+
+(working "Setting MIME types")
+(p_setmimetype "css" "text/css")
+(p_setmimetype "html" "text/html")
+(p_setmimetype "ascii" "text/plain")
+(p_setmimetype "jpeg" "image/jpeg")
+(p_setmimetype "gif" "image/gif")
+(p_setmimetype "png" "image/png")
+(p_setmimetype "jng" "image/jng")
+(p_setmimetype "mng" "image/mng")
+(p_setmimetype "svg" "image/svg")
+(p_setmimetype "bmp" "image/bmp")
+(p_setmimetype "ico" "image/ico")
+(p_setmimetype "sprite" "image/x-riscos-sprite")
+
+(complete 100)
+
+(if (= #AutoInstall 1)
+	(
+		(exit (quiet))
+	)
+	(
+		(exit)
+	)
+)
