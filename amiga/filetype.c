@@ -1,5 +1,4 @@
 /*
- * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2008 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
@@ -22,6 +21,10 @@
 #include "content/fetch.h"
 #include "utils/log.h"
 #include "utils/utils.h"
+#include <proto/icon.h>
+#include <proto/dos.h>
+#include <proto/datatypes.h>
+#include <workbench/icon.h>
 
 /**
  * filetype -- determine the MIME type of a local file
@@ -29,24 +32,67 @@
 
 const char *fetch_filetype(const char *unix_path)
 {
-	int l;
-	LOG(("unix path %s", unix_path));
-	l = strlen(unix_path);
-	if (2 < l && strcasecmp(unix_path + l - 3, "css") == 0)
-		return "text/css";
-	if (2 < l && strcasecmp(unix_path + l - 3, "jpg") == 0)
-		return "image/jpeg";
-	if (3 < l && strcasecmp(unix_path + l - 4, "jpeg") == 0)
-		return "image/jpeg";
-	if (2 < l && strcasecmp(unix_path + l - 3, "gif") == 0)
-		return "image/gif";
-	if (2 < l && strcasecmp(unix_path + l - 3, "png") == 0)
-		return "image/png";
-	if (2 < l && strcasecmp(unix_path + l - 3, "jng") == 0)
-		return "image/jng";
-	if (2 < l && strcasecmp(unix_path + l - 3, "svg") == 0)
-		return "image/svg";
-	return "text/html";
+	static char mimetype[20];
+	STRPTR ttype = NULL;
+	struct DiskObject *dobj = NULL;
+	BPTR lock = 0;
+    struct DataTypeHeader *dth;
+    struct DataType *dtn;
+
+	/* First try getting a tooltype "MIMETYPE" and use that as the MIME type.  Will fail over
+		to default icons if the file doesn't have a real icon. */
+
+	if(dobj = GetIconTags(unix_path,ICONGETA_FailIfUnavailable,FALSE,
+						TAG_DONE))
+	{
+		ttype = FindToolType(dobj->do_ToolTypes, "MIMETYPE");
+		if(ttype) strcpy(mimetype,ttype);
+		FreeDiskObject(dobj);
+	}
+
+	if(!mimetype)
+	{
+		/* If that didn't work, have a go at guessing it using datatypes.library.  This isn't
+			accurate - the base names differ from those used by MIME and it relies on the
+			user having a datatype installed which can handle the file. */
+
+		if (lock = Lock (unix_path, ACCESS_READ))
+		{
+			if (dtn = ObtainDataTypeA (DTST_FILE, (APTR)lock, NULL))
+			{
+				dth = dtn->dtn_Header;
+
+				switch(dth->dth_GroupID)
+				{
+					case GID_SYSTEM:
+						sprintf(mimetype,"application/%s",dth->dth_BaseName);
+					break;
+					case GID_TEXT:
+					case GID_DOCUMENT:
+						sprintf(mimetype,"text/%s",dth->dth_BaseName);
+					break;
+					case GID_SOUND:
+					case GID_INSTRUMENT:
+					case GID_MUSIC:
+						sprintf(mimetype,"audio/%s",dth->dth_BaseName);
+					break;
+					case GID_PICTURE:
+						sprintf(mimetype,"image/%s",dth->dth_BaseName);
+					break;
+					case GID_ANIMATION:
+					case GID_MOVIE:
+						sprintf(mimetype,"video/%s",dth->dth_BaseName);
+					break;
+				}
+				ReleaseDataType(dtn);
+			}
+			UnLock(lock);
+		}
+	}
+
+	if(!mimetype) strcpy(mimetype,"text/plain"); /* If all else fails */
+
+	return mimetype;
 }
 
 
