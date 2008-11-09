@@ -117,59 +117,66 @@ static void *myrealloc(void *ptr, size_t len, void *pw)
 	return talloc_realloc_size(pw, ptr, len);
 }
 
-void *binding_create_tree(void *arena, const char *charset)
+binding_error binding_create_tree(void *arena, const char *charset, void **ctx)
 {
-	hubbub_ctx *ctx;
+	hubbub_ctx *c;
 	hubbub_parser_optparams params;
+	hubbub_error error;
 
-	ctx = malloc(sizeof(hubbub_ctx));
-	if (ctx == NULL)
-		return NULL;
+	c = malloc(sizeof(hubbub_ctx));
+	if (c == NULL)
+		return BINDING_NOMEM;
 
-	ctx->parser = NULL;
-	ctx->encoding = charset;
-	ctx->encoding_source = ENCODING_SOURCE_HEADER;
-	ctx->document = NULL;
-	ctx->owns_doc = true;
+	c->parser = NULL;
+	c->encoding = charset;
+	c->encoding_source = ENCODING_SOURCE_HEADER;
+	c->document = NULL;
+	c->owns_doc = true;
 
-	ctx->parser = hubbub_parser_create(charset, true, myrealloc, arena);
-	if (ctx->parser == NULL) {
-		free(ctx);
-		return NULL;
+	error = hubbub_parser_create(charset, true, myrealloc, arena, 
+			&c->parser);
+	if (error != HUBBUB_OK) {
+		free(c);
+		if (error == HUBBUB_BADENCODING)
+			return BINDING_BADENCODING;
+		else
+			return BINDING_NOMEM;	/* Assume OOM */
 	}
 
-	ctx->document = htmlNewDocNoDtD(NULL, NULL);
-	if (ctx->document == NULL) {
-		hubbub_parser_destroy(ctx->parser);
-		free(ctx);
-		return NULL;
+	c->document = htmlNewDocNoDtD(NULL, NULL);
+	if (c->document == NULL) {
+		hubbub_parser_destroy(c->parser);
+		free(c);
+		return BINDING_NOMEM;
 	}
-	ctx->document->_private = (void *) 0;
+	c->document->_private = (void *) 0;
 
 	for (uint32_t i = 0; 
-		i < sizeof(ctx->namespaces) / sizeof(ctx->namespaces[0]); i++) {
-		ctx->namespaces[i] = NULL;
+		i < sizeof(c->namespaces) / sizeof(c->namespaces[0]); i++) {
+		c->namespaces[i] = NULL;
 	}
 
-	ctx->tree_handler = tree_handler;
-	ctx->tree_handler.ctx = (void *) ctx;
+	c->tree_handler = tree_handler;
+	c->tree_handler.ctx = (void *) c;
 
-	params.tree_handler = &ctx->tree_handler;
-	hubbub_parser_setopt(ctx->parser, HUBBUB_PARSER_TREE_HANDLER, &params);
+	params.tree_handler = &c->tree_handler;
+	hubbub_parser_setopt(c->parser, HUBBUB_PARSER_TREE_HANDLER, &params);
 
-	ref_node(ctx, ctx->document);
-	params.document_node = ctx->document;
-	hubbub_parser_setopt(ctx->parser, HUBBUB_PARSER_DOCUMENT_NODE, &params);
+	ref_node(c, c->document);
+	params.document_node = c->document;
+	hubbub_parser_setopt(c->parser, HUBBUB_PARSER_DOCUMENT_NODE, &params);
 
-	return (void *) ctx;
+	*ctx = (void *) c;
+
+	return BINDING_OK;
 }
 
-void binding_destroy_tree(void *ctx)
+binding_error binding_destroy_tree(void *ctx)
 {
 	hubbub_ctx *c = (hubbub_ctx *) ctx;
 
 	if (ctx == NULL)
-		return;
+		return BINDING_OK;
 
 	if (c->parser != NULL)
 		hubbub_parser_destroy(c->parser);
@@ -182,6 +189,8 @@ void binding_destroy_tree(void *ctx)
 	c->document = NULL;
 
 	free(c);
+
+	return BINDING_OK;
 }
 
 binding_error binding_parse_chunk(void *ctx, const uint8_t *data, size_t len)

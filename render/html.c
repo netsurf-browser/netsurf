@@ -104,6 +104,7 @@ bool html_create(struct content *c, const char *params[])
 	unsigned int i;
 	struct content_html_data *html = &c->data.html;
 	union content_msg_data msg_data;
+	binding_error error;
 
 	html->parser_binding = NULL;
 	html->document = 0;
@@ -131,22 +132,28 @@ bool html_create(struct content *c, const char *params[])
 	for (i = 0; params[i]; i += 2) {
 		if (strcasecmp(params[i], "charset") == 0) {
 			html->encoding = talloc_strdup(c, params[i + 1]);
-			if (!html->encoding)
-				goto no_memory;
+			if (!html->encoding) {
+				error = BINDING_NOMEM;
+				goto error;
+			}
 			html->encoding_source = ENCODING_SOURCE_HEADER;
 			break;
 		}
 	}
 
 	/* Create the parser binding */
-	html->parser_binding = binding_create_tree(c, html->encoding);
-	if (!html->parser_binding)
-		goto no_memory;
+	error = binding_create_tree(c, html->encoding, &html->parser_binding);
+	if (error != BINDING_OK)
+		goto error;
 
 	return true;
 
-no_memory:
-	msg_data.error = messages_get("NoMemory");
+error:
+	if (error == BINDING_BADENCODING)
+		msg_data.error = messages_get("BadEncoding");
+	else
+		msg_data.error = messages_get("NoMemory");
+
 	content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 	return false;
 }
@@ -206,12 +213,15 @@ encoding_change:
 	binding_destroy_tree(c->data.html.parser_binding);
 
 	/* Create new binding, using the new encoding */
-	c->data.html.parser_binding = binding_create_tree(c,
-			c->data.html.encoding);
-	if (!c->data.html.parser_binding) {
+	err = binding_create_tree(c, c->data.html.encoding,
+			&c->data.html.parser_binding);
+	if (err != BINDING_OK) {
 		union content_msg_data msg_data;
 
-		msg_data.error = messages_get("NoMemory");
+		if (err == BINDING_BADENCODING)
+			msg_data.error = messages_get("BadEncoding");
+		else
+			msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
 	}

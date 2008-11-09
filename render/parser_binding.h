@@ -26,6 +26,7 @@
 typedef enum binding_error {
 	BINDING_OK,
 	BINDING_NOMEM,
+	BINDING_BADENCODING,
 	BINDING_ENCODINGCHANGE
 } binding_error;
 
@@ -35,8 +36,8 @@ typedef enum binding_encoding_source {
 	ENCODING_SOURCE_META 
 } binding_encoding_source;
 
-void *binding_create_tree(void *arena, const char *charset);
-void binding_destroy_tree(void *ctx);
+binding_error binding_create_tree(void *arena, const char *charset, void **ctx);
+binding_error binding_destroy_tree(void *ctx);
 
 binding_error binding_parse_chunk(void *ctx, const uint8_t *data, size_t len);
 binding_error binding_parse_completed(void *ctx);

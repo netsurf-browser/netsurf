@@ -47,44 +47,46 @@ typedef struct libxml_ctx {
 static bool set_parser_encoding(libxml_ctx *c, const char *encoding);
 static const char *detect_encoding(const char **data, size_t *size);
 
-void *binding_create_tree(void *arena, const char *charset)
+binding_error binding_create_tree(void *arena, const char *charset, void **ctx)
 {
-	libxml_ctx *ctx;
+	libxml_ctx *c;
 
-	ctx = malloc(sizeof(libxml_ctx));
-	if (ctx == NULL)
-		return NULL;
+	c = malloc(sizeof(libxml_ctx));
+	if (c == NULL)
+		return BINDING_NOMEM;
 
-	ctx->parser = NULL;
-	ctx->encoding_handler = NULL;
-	ctx->encoding = charset;
-	ctx->encoding_source = ENCODING_SOURCE_HEADER;
-	ctx->getenc = true;
+	c->parser = NULL;
+	c->encoding_handler = NULL;
+	c->encoding = charset;
+	c->encoding_source = ENCODING_SOURCE_HEADER;
+	c->getenc = true;
 
-	ctx->parser = htmlCreatePushParserCtxt(0, 0, "", 0, 0, 
+	c->parser = htmlCreatePushParserCtxt(0, 0, "", 0, 0, 
 			XML_CHAR_ENCODING_NONE);
-	if (ctx->parser == NULL) {
-		free(ctx);
-		return NULL;
+	if (c->parser == NULL) {
+		free(c);
+		return BINDING_NOMEM;
 	}
 
-	if (ctx->encoding != NULL && !set_parser_encoding(ctx, charset)) {
-		if (ctx->parser->myDoc != NULL)
-			xmlFreeDoc(ctx->parser->myDoc);
-		htmlFreeParserCtxt(ctx->parser);
-		free(ctx);
-		return NULL;
+	if (c->encoding != NULL && !set_parser_encoding(c, charset)) {
+		if (c->parser->myDoc != NULL)
+			xmlFreeDoc(c->parser->myDoc);
+		htmlFreeParserCtxt(c->parser);
+		free(c);
+		return BINDING_BADENCODING;
 	}
 
-	return (void *) ctx;
+	*ctx = (void *) c;
+
+	return BINDING_OK;
 }
 
-void binding_destroy_tree(void *ctx)
+binding_error binding_destroy_tree(void *ctx)
 {
 	libxml_ctx *c = (libxml_ctx *) ctx;
 
 	if (ctx == NULL)
-		return;
+		return BINDING_OK;
 
 	if (c->parser->myDoc != NULL)
 		xmlFreeDoc(c->parser->myDoc);
@@ -96,6 +98,8 @@ void binding_destroy_tree(void *ctx)
 	c->encoding = NULL;
 
 	free(c);
+
+	return BINDING_OK;
 }
 
 binding_error binding_parse_chunk(void *ctx, const uint8_t *data, size_t len)
