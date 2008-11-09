@@ -149,9 +149,10 @@ bool html_create(struct content *c, const char *params[])
 	return true;
 
 error:
-	if (error == BINDING_BADENCODING)
-		msg_data.error = messages_get("BadEncoding");
-	else
+	if (error == BINDING_BADENCODING) {
+		LOG(("Bad encoding: %s", html->encoding ? html->encoding : ""));
+		msg_data.error = messages_get("ParsingFail");
+	} else
 		msg_data.error = messages_get("NoMemory");
 
 	content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
@@ -218,9 +219,11 @@ encoding_change:
 	if (err != BINDING_OK) {
 		union content_msg_data msg_data;
 
-		if (err == BINDING_BADENCODING)
-			msg_data.error = messages_get("BadEncoding");
-		else
+		if (err == BINDING_BADENCODING) {
+			LOG(("Bad encoding: %s", c->data.html.encoding 
+					? c->data.html.encoding : ""));
+			msg_data.error = messages_get("ParsingFail");
+		} else
 			msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
