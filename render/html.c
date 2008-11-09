@@ -173,7 +173,6 @@ bool html_process_data(struct content *c, char *data, unsigned int size)
 	const char *encoding;
 
 	for (x = 0; x + CHUNK <= size; x += CHUNK) {
-		LOG(("Parsing %d bytes", CHUNK));
 		err = binding_parse_chunk(c->data.html.parser_binding,
 				(uint8_t *) data + x, CHUNK);
 		if (err == BINDING_ENCODINGCHANGE) {
@@ -183,7 +182,6 @@ bool html_process_data(struct content *c, char *data, unsigned int size)
 		gui_multitask();
 	}
 
-	LOG(("Parsing %lu bytes", (size - x)));
 	err = binding_parse_chunk(c->data.html.parser_binding,
 			(uint8_t *) data + x, (size - x));
 	if (err == BINDING_ENCODINGCHANGE) {
@@ -193,8 +191,6 @@ bool html_process_data(struct content *c, char *data, unsigned int size)
 	return true;
 
 encoding_change:
-
-	LOG(("Changing encoding"));
 
 	/* Retrieve new encoding */
 	encoding = binding_get_encoding(
