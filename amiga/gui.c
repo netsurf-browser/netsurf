@@ -1027,9 +1027,12 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 
 	if(redraw)
 	{
-		gui_window_set_scroll(gwin->bw->window,gwin->bw->window->scrollx,gwin->bw->window->scrolly);
-
 		browser_window_update(gwin->bw,false);
+
+		if((gwin->bw->window->scrollx) || (gwin->bw->window->scrolly))
+		{
+			gui_window_set_scroll(gwin->bw->window,gwin->bw->window->scrollx,gwin->bw->window->scrolly);
+		}
 
 		if(gwin->bw->current_content)
 			gui_window_set_url(gwin->bw->window,gwin->bw->current_content->url);

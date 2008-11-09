@@ -32,7 +32,7 @@
 
 const char *fetch_filetype(const char *unix_path)
 {
-	static char mimetype[20];
+	static char mimetype[50];
 	STRPTR ttype = NULL;
 	struct DiskObject *dobj = NULL;
 	BPTR lock = 0;
@@ -90,7 +90,7 @@ const char *fetch_filetype(const char *unix_path)
 		}
 	}
 
-	if(!mimetype) strcpy(mimetype,"text/plain"); /* If all else fails */
+	if(!mimetype) strcpy(mimetype,"text/html"); /* If all else fails */
 
 	return mimetype;
 }
