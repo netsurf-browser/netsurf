@@ -460,8 +460,6 @@ void fetchcache_callback(fetch_msg msg, void *p, const void *data,
 			break;
 
 		case FETCH_HEADER:
-			LOG(("FETCH_HEADER \"%.*s\"",
-						(int) size, (char *) data));
 			fetchcache_parse_header(c, data, size);
 			break;
 
