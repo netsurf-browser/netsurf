@@ -18,7 +18,7 @@
   such.  Others cannot be automatically detected from the Makefile, so you will
   either need to install the dependencies, or set them to NO.
   
-  You should then obtain NetSurf's dependancies, keeping in mind which options
+  You should then obtain NetSurf's dependencies, keeping in mind which options
   you have enabled in the configuration file.  See the next section for
   specifics.
   
@@ -42,13 +42,14 @@
   If you are packaging NetSurf, see the PACKAGING-GTK document.
 
 
-  Obtaining NetSurf's dependencies
-==================================
+  Obtaining NetSurf's build dependencies
+========================================
 
   Many of NetSurf's dependencies are packaged on various operating systems.
-  The remainder must be installed manually.  Hopefully the number of NetSurf-
-  related libraries required will have official releases, downloadable tarballs
-  and such.  But for now, you'll have to do with svn checkouts.
+  The remainder must be installed manually.  Currently, some of the libraries
+  developed as part of the NetSurf project have not had official releases.
+  Hopefully they will soon be released with downloadable tarballs and packaged
+  in common distros.  For now, you'll have to make do with svn checkouts.
 
 
   Package installation
@@ -63,6 +64,15 @@
 
       $ yum install libglade2-devel curl-devel libxml2-devel libmng-devel
       $ yum install librsvg2-devel lcms-devel re2c
+
+  Other:
+
+  You'll need to install re2c, a tool which builds the CSS lexer, and the
+  development resources for libglade2, libcurl3, libxml2, libmng and librsvg.
+
+  Note that if you don't require MNG or JNG image support, NetSurf can be
+  configured to use libpng instead of libmng. If you wish to do this, install
+  the libpng development package instead.
 
   Libnsbmp
 ----------
@@ -104,8 +114,8 @@
 -------------
 
   NetSurf uses James Shaw's librosprite for rendering RISC OS Sprite files on
-  non-RISC OS platforms.  The Makefile will automatically use it if it can find
-  it.  You can disable it entirely by editing Makefile.config.
+  non-RISC OS platforms.  The Makefile will automatically use librosprite if
+  it is installed.  You can disable it entirely by editing Makefile.config.
 
   To build librosprite, check out from svn://svn.rjek.com/jshaw/libsprite/trunk
   Build and install it:
