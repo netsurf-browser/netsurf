@@ -39,6 +39,9 @@
 #include "amiga/save_complete.h"
 
 BOOL menualreadyinit;
+const char * const netsurf_version;
+const char * const versvn;
+const char * const verdate;
 
 void ami_menu_scan(struct tree *tree,struct NewMenu *menu);
 void ami_menu_scan_2(struct tree *tree,struct node *root,WORD *gen,ULONG *item,struct NewMenu *menu);
@@ -112,7 +115,7 @@ struct NewMenu *ami_create_menu(ULONG type)
 			  	{ NM_ITEM,0,"K",0,0,0,}, // close tab
 			  	{ NM_ITEM,0,0,0,0,0,}, // close window
 			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
-			  	{ NM_ITEM,0,"?",NM_ITEMDISABLED,0,0,}, // about
+			  	{ NM_ITEM,0,"?",0,0,0,}, // about
 			  	{ NM_ITEM,0,"Q",0,0,0,}, // quit
 			  	{NM_TITLE,0,0,0,0,0,}, // edit
 			  	{ NM_ITEM,0,"C",0,0,0,}, // copy
@@ -506,7 +509,20 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 				break;
 
 				case 9: // about
-					// do nothing
+					ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
+
+					TimedDosRequesterTags(
+						TDR_ImageType,TDRIMAGE_INFO,
+						TDR_TitleString,messages_get("NetSurf"),
+						TDR_Window,gwin->win,
+						TDR_GadgetString,messages_get("OK"),
+						TDR_FormatString,"NetSurf %s\n%s (%s)\n\nhttp://www.netsurf-browser.org",
+						TDR_Arg1,netsurf_version,
+						TDR_Arg2,versvn,
+						TDR_Arg3,verdate,
+						TAG_DONE);
+
+					ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
 				break;
 
 				case 10: // quit
