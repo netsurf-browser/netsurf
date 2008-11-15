@@ -1,7 +1,7 @@
 /*
  * Copyright 2008 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
- * This file is part of NetSurf.
+ * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
  * NetSurf is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,6 +26,15 @@
 #include "utils/url.h"
 #include <proto/dos.h>
 #include <proto/exec.h>
+#include "amiga/object.h"
+#include <malloc.h>
+#include "content/content.h"
+#include <time.h>
+#include <proto/utility.h>
+#include "utils/messages.h"
+
+static struct MinList *ami_file_fetcher_list;
+static UBYTE *ami_file_fetcher_buffer = NULL;
 
 /** Information for a single fetch. */
 struct ami_file_fetch_info {
@@ -34,6 +43,13 @@ struct ami_file_fetch_info {
 	bool only_2xx;		/**< Only HTTP 2xx responses acceptable. */
 	char *path;
 	char *url;		/**< URL of this fetch. */
+	bool aborted;
+	bool locked;
+	struct nsObject *obj;
+	int httpcode;
+	ULONG len;
+	char *mimetype;
+	struct cache_data cachedata;
 };
 
 static bool ami_fetch_file_initialise(const char *scheme);
@@ -75,7 +91,11 @@ void ami_fetch_file_register(void)
 bool ami_fetch_file_initialise(const char *scheme)
 {
 	LOG(("Initialise Amiga fetcher for %s", scheme));
-	return true; /* Always succeeds */
+	ami_file_fetcher_list = NewObjList();
+	ami_file_fetcher_buffer = AllocVec(1024,MEMF_PRIVATE);
+
+	if(ami_file_fetcher_list && ami_file_fetcher_buffer) return true;
+		else return false;
 }
 
 
@@ -86,6 +106,8 @@ bool ami_fetch_file_initialise(const char *scheme)
 void ami_fetch_file_finalise(const char *scheme)
 {
 	LOG(("Finalise Amiga fetcher %s", scheme));
+	FreeObjList(ami_file_fetcher_list);
+	FreeVec(ami_file_fetcher_buffer);
 }
 
 
@@ -124,13 +146,16 @@ void * ami_fetch_file_setup(struct fetch *parent_fetch, const char *url,
 
 	fetch->fetch_handle = parent_fetch;
 
-	LOG(("fetch %p, url '%s'", fetch, url));
-
 	/* construct a new fetch structure */
 	fetch->fh = 0;
 	fetch->only_2xx = only_2xx;
 //	fetch->url = strdup(url);
 	fetch->path = url_to_path(url);
+
+	LOG(("fetch %p, url '%s', path '%s'", fetch, url,fetch->path));
+
+	fetch->obj = AddObject(ami_file_fetcher_list,AMINS_FETCHER);
+	fetch->obj->objstruct = fetch;
 
 	return fetch;
 }
@@ -143,24 +168,38 @@ bool ami_fetch_file_start(void *vfetch)
 {
 	struct ami_file_fetch_info *fetch = (struct ami_file_fetch_info*)vfetch;
 
-	fetch->fh = FOpen(fetch->path,MODE_OLDFILE,0);
+	LOG(("ami file fetcher start"));
 
-	if(fetch->fh) return true;
-		else return false;
+	fetch->cachedata.req_time = time(NULL);
+	fetch->cachedata.res_time = time(NULL);
+	fetch->cachedata.date = 0;
+	fetch->cachedata.expires = 0;
+	fetch->cachedata.age = INVALID_AGE;
+	fetch->cachedata.max_age = 0;
+	fetch->cachedata.no_cache = true;
+	fetch->cachedata.etag = NULL;
+	fetch->cachedata.last_modified = 0;
+
+	return true;
 }
 
 void ami_fetch_file_abort(void *vf)
 {
 	struct ami_file_fetch_info *fetch = (struct ami_file_fetch_info*)vf;
 
+	LOG(("ami file fetcher abort"));
+
 	if (fetch->fh) {
 		FClose(fetch->fh);
 		fetch->fh = 0;
-//		f->abort = true;
-	} else {
+		fetch->aborted = true;
+	}
+/*
+else {
 		fetch_remove_from_queues(fetch->fetch_handle);
 		fetch_free(fetch->fetch_handle);
 	}
+*/
 }
 
 
@@ -171,15 +210,24 @@ void ami_fetch_file_abort(void *vf)
 void ami_fetch_file_free(void *vf)
 {
 	struct ami_file_fetch_info *fetch = (struct ami_file_fetch_info*)vf;
+	LOG(("ami file fetcher free %lx",fetch));
 
-	if(fetch->fh)
-	{
-		FClose(fetch->fh);
-	}
+	if(fetch->fh) FClose(fetch->fh);
+	if(fetch->mimetype) free(fetch->mimetype);
+	if(fetch->path) free(fetch->path);
 
-	FreeVec(fetch);
+	DelObject(fetch->obj); // delobject frees fetch
 }
 
+static void ami_fetch_file_send_callback(fetch_msg msg,
+		struct ami_file_fetch_info *fetch, const void *data,
+		unsigned long size)
+{
+	fetch->locked = true;
+	LOG(("ami file fetcher callback %ld",msg));
+	fetch_send_callback(msg,fetch->fetch_handle,data,size);
+	fetch->locked = false;
+}
 
 /**
  * Do some work on current fetches.
@@ -189,5 +237,79 @@ void ami_fetch_file_free(void *vf)
 
 void ami_fetch_file_poll(const char *scheme_ignored)
 {
-}
+	struct nsObject *node;
+	struct nsObject *nnode;
+	struct ami_file_fetch_info *fetch;
+	
+	if(IsMinListEmpty(ami_file_fetcher_list)) return;
 
+	node = (struct nsObject *)GetHead((struct List *)ami_file_fetcher_list);
+
+	do
+	{
+		nnode=(struct nsObject *)GetSucc((struct Node *)node);
+
+		fetch = (struct ami_file_fetch_info *)node->objstruct;
+		LOG(("polling %lx",fetch));
+
+		if(fetch->locked) continue;
+
+		if(!fetch->aborted)
+		{
+			if(fetch->fh)
+			{
+				ULONG len;
+
+				len = FRead(fetch->fh,ami_file_fetcher_buffer,1,1024);
+
+				LOG(("fetch %lx read %ld",fetch,len));
+
+				ami_fetch_file_send_callback(FETCH_DATA, 
+					fetch,ami_file_fetcher_buffer,len);
+
+				if((len<1024) && (!fetch->aborted))
+				{
+					ami_fetch_file_send_callback(FETCH_FINISHED,
+						fetch, &fetch->cachedata, 0);
+
+					fetch->aborted = true;
+				}
+			}
+			else
+			{
+				fetch->fh = FOpen(fetch->path,MODE_OLDFILE,0);
+
+				if(fetch->fh)
+				{
+					struct FileInfoBlock fib;
+					if(ExamineFH(fetch->fh,&fib))
+						fetch->len = fib.fib_Size;
+
+					fetch_set_http_code(fetch->fetch_handle,200);
+					fetch->mimetype = fetch_mimetype(fetch->path);
+					LOG(("mimetype %s len %ld",fetch->mimetype,fetch->len));
+
+					ami_fetch_file_send_callback(FETCH_TYPE,
+						fetch, fetch->mimetype, fetch->len);
+				}
+				else
+				{
+					STRPTR errorstring;
+
+					errorstring = ASPrintf("%s %s",messages_get("FileError"),fetch->path);
+					fetch_set_http_code(fetch->fetch_handle,404);
+					ami_fetch_file_send_callback(FETCH_ERROR, fetch,
+						errorstring, 0);
+					fetch->aborted = true;
+					FreeVec(errorstring);
+				}
+			}
+		}
+
+		if(fetch && fetch->aborted)
+		{
+			fetch_remove_from_queues(fetch->fetch_handle);
+			fetch_free(fetch->fetch_handle);
+		}
+	}while(node=nnode);
+}

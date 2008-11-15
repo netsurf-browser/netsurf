@@ -60,28 +60,30 @@ void ami_init_menulabs(void)
 	menulab[1] = ami_utf8_easy((char *)messages_get("NewWindowNS"));
 	menulab[2] = ami_utf8_easy((char *)messages_get("NewTab"));
 	menulab[3] = NM_BARLABEL;
-	menulab[4] = ami_utf8_easy((char *)messages_get("SaveAs"));
-	menulab[5] = ami_utf8_easy((char *)messages_get("Source"));
-	menulab[6] = ami_utf8_easy((char *)messages_get("TextNS"));
-	menulab[7] = ami_utf8_easy((char *)messages_get("SaveCompNS"));
-	menulab[8] = ami_utf8_easy((char *)messages_get("PDF"));
-	menulab[9] = NM_BARLABEL;
-	menulab[10] = ami_utf8_easy((char *)messages_get("CloseTab"));
-	menulab[11] = ami_utf8_easy((char *)messages_get("CloseWindow"));
-	menulab[12] = NM_BARLABEL;
-	menulab[13] = ami_utf8_easy((char *)messages_get("Quit"));
-	menulab[14] = ami_utf8_easy((char *)messages_get("Edit"));
-	menulab[15] = ami_utf8_easy((char *)messages_get("CopyNS"));
-	menulab[16] = ami_utf8_easy((char *)messages_get("Paste"));
-	menulab[17] = ami_utf8_easy((char *)messages_get("SelectAllNS"));
-	menulab[18] = ami_utf8_easy((char *)messages_get("ClearNS"));
-	menulab[19] = ami_utf8_easy((char *)messages_get("Browser"));
-	menulab[20] = ami_utf8_easy((char *)messages_get("HistGlobalNS"));
-	menulab[21] = ami_utf8_easy((char *)messages_get("ShowCookies"));
-	menulab[22] = ami_utf8_easy((char *)messages_get("Hotlist"));
-	menulab[23] = ami_utf8_easy((char *)messages_get("HotlistAdd"));
-	menulab[24] = ami_utf8_easy((char *)messages_get("HotlistShowNS"));
-	menulab[25] = NM_BARLABEL;
+	menulab[4] = ami_utf8_easy((char *)messages_get("OpenFile"));
+	menulab[5] = ami_utf8_easy((char *)messages_get("SaveAs"));
+	menulab[6] = ami_utf8_easy((char *)messages_get("Source"));
+	menulab[7] = ami_utf8_easy((char *)messages_get("TextNS"));
+	menulab[8] = ami_utf8_easy((char *)messages_get("SaveCompNS"));
+	menulab[9] = ami_utf8_easy((char *)messages_get("PDF"));
+	menulab[10] = NM_BARLABEL;
+	menulab[11] = ami_utf8_easy((char *)messages_get("CloseTab"));
+	menulab[12] = ami_utf8_easy((char *)messages_get("CloseWindow"));
+	menulab[13] = NM_BARLABEL;
+	menulab[14] = ami_utf8_easy((char *)messages_get("About"));
+	menulab[15] = ami_utf8_easy((char *)messages_get("Quit"));
+	menulab[16] = ami_utf8_easy((char *)messages_get("Edit"));
+	menulab[17] = ami_utf8_easy((char *)messages_get("CopyNS"));
+	menulab[18] = ami_utf8_easy((char *)messages_get("Paste"));
+	menulab[19] = ami_utf8_easy((char *)messages_get("SelectAllNS"));
+	menulab[20] = ami_utf8_easy((char *)messages_get("ClearNS"));
+	menulab[21] = ami_utf8_easy((char *)messages_get("Browser"));
+	menulab[22] = ami_utf8_easy((char *)messages_get("HistGlobalNS"));
+	menulab[23] = ami_utf8_easy((char *)messages_get("ShowCookies"));
+	menulab[24] = ami_utf8_easy((char *)messages_get("Hotlist"));
+	menulab[25] = ami_utf8_easy((char *)messages_get("HotlistAdd"));
+	menulab[26] = ami_utf8_easy((char *)messages_get("HotlistShowNS"));
+	menulab[27] = NM_BARLABEL;
 
 	menulab[AMI_MENU_HOTLIST_MAX] = ami_utf8_easy((char *)messages_get("Settings"));
 	menulab[AMI_MENU_HOTLIST_MAX+1] = ami_utf8_easy((char *)messages_get("SnapshotWindow"));
@@ -100,6 +102,7 @@ struct NewMenu *ami_create_menu(ULONG type)
 			  	{ NM_ITEM,0,"N",0,0,0,}, // new window
 			  	{ NM_ITEM,0,"T",0,0,0,}, // new tab
 			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
+			  	{ NM_ITEM,0,"O",0,0,0,}, // open local file
 			  	{ NM_ITEM,0,0,0,0,0,}, // save
 			  	{  NM_SUB,0,"S",0,0,0,}, // save as source
 			  	{  NM_SUB,0,0,0,0,0,}, // save as text
@@ -109,6 +112,7 @@ struct NewMenu *ami_create_menu(ULONG type)
 			  	{ NM_ITEM,0,"K",0,0,0,}, // close tab
 			  	{ NM_ITEM,0,0,0,0,0,}, // close window
 			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
+			  	{ NM_ITEM,0,"?",NM_ITEMDISABLED,0,0,}, // about
 			  	{ NM_ITEM,0,"Q",0,0,0,}, // quit
 			  	{NM_TITLE,0,0,0,0,0,}, // edit
 			  	{ NM_ITEM,0,"C",0,0,0,}, // copy
@@ -384,7 +388,29 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 					bw = browser_window_create(gwin->bw->current_content->url,gwin->bw, 0, true, opentab);
 				break;
 
-				case 3: // save
+				case 3: // open local file
+					if(AslRequestTags(filereq,
+						ASLFR_TitleText,messages_get("NetSurf"),
+						ASLFR_Screen,scrn,
+						ASLFR_DoSaveMode,FALSE,
+//						ASLFR_InitialDrawer,option_arexx_dir,
+//						ASLFR_InitialPattern,"#?.html",
+						TAG_DONE))
+					{
+						if(temp = AllocVec(1024,MEMF_PRIVATE | MEMF_CLEAR))
+						{
+							char *temp2;
+							strlcpy(temp,filereq->fr_Drawer,1024);
+							AddPart(temp,filereq->fr_File,1024);
+							temp2 = path_to_url(temp);
+							browser_window_go(gwin->bw,temp2,NULL, true);
+							free(temp2);
+							FreeVec(temp);
+						}
+					}
+				break;
+
+				case 4: // save
 					switch(subnum)
 					{
 						BPTR fh=0;
@@ -471,15 +497,19 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 					}
 				break;
 
-				case 5: // close tab
+				case 6: // close tab
 					browser_window_destroy(gwin->bw);
 				break;
 
-				case 6: // close window
+				case 7: // close window
 					ami_close_all_tabs(gwin);
 				break;
 
-				case 8: // quit
+				case 9: // about
+					// do nothing
+				break;
+
+				case 10: // quit
 					ami_quit_netsurf();
 				break;
 			}

@@ -1,5 +1,4 @@
 /*
- * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2008 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
@@ -24,6 +23,7 @@
 #include <proto/dos.h>
 #include "utils/messages.h"
 #include <stdlib.h>
+#include <curl/curl.h>
 
 void warn_user(const char *warning, const char *detail)
 {
@@ -51,14 +51,36 @@ void die(const char *error)
 
 char *url_to_path(const char *url)
 {
-	return (char *)strdup(url + 5);
+	char *tmps,*unesc;
+	CURL *curl;
+
+	if(tmps = strchr(url,'/'))
+	{
+		if(tmps = strchr(tmps+1,'/'))
+		{
+			if(tmps = strchr(tmps+1,'/'))
+			{
+				if(curl = curl_easy_init())
+				{
+					unesc = curl_easy_unescape(curl,tmps+1,0,NULL);
+					tmps = strdup(unesc);
+					curl_free(unesc);
+					curl_easy_cleanup(curl);
+					return tmps;
+
+				}
+			}
+		}
+	}
+
+	return strdup((char *)url);
 }
 
 char *path_to_url(const char *path)
 {
-	char *r = malloc(strlen(path) + 7 + 1);
+	char *r = malloc(strlen(path) + 8 + 1);
 
-	strcpy(r, "file://");
+	strcpy(r, "file:///");
 	strcat(r, path);
 
 	return r;

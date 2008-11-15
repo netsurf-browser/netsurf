@@ -67,6 +67,7 @@
 #include "amiga/clipboard.h"
 #include <proto/keymap.h>
 #include "amiga/save_complete.h"
+#include "amiga/fetch_file.h"
 
 #ifdef WITH_HUBBUB
 #include <hubbub/hubbub.h>
@@ -243,8 +244,8 @@ void gui_init(int argc, char** argv)
 
 	messages_load(lang); // check locale language and read appropriate file
 
-	default_stylesheet_url = "file://NetSurf/Resources/default.css"; //"http://www.unsatisfactorysoftware.co.uk/newlook.css"; //path_to_url(buf);
-	adblock_stylesheet_url = "file://NetSurf/Resources/adblock.css";
+	default_stylesheet_url = "file:///Resources/default.css"; //"http://www.unsatisfactorysoftware.co.uk/newlook.css"; //path_to_url(buf);
+	adblock_stylesheet_url = "file:///Resources/adblock.css";
 
 #ifdef WITH_HUBBUB
 	if(hubbub_initialise("Resources/Aliases",myrealloc,NULL) != HUBBUB_OK)
@@ -401,6 +402,8 @@ void gui_init2(int argc, char** argv)
 	{
 		A_URL
 	};
+
+	ami_fetch_file_register();
 
 	InitRastPort(&dummyrp);
 	dummyrp.BitMap = p96AllocBitMap(1,1,32,
@@ -1195,6 +1198,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	char home[100],home_s[100],home_g[100];
 	char closetab[100];
 
+	if((bw->browser_window_type == BROWSER_WINDOW_IFRAME) && option_no_iframes) return NULL;
+
 	if(option_force_tabs && (bw->browser_window_type == BROWSER_WINDOW_NORMAL))
 	{
 		/* option_force_tabs reverses the new_tab parameter.
@@ -1218,17 +1223,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		}
 	}
 
-	if(bw->browser_window_type == BROWSER_WINDOW_IFRAME)
-	{
-		if(option_no_iframes) return NULL;
-/*
-		gwin = bw->parent->window;
-		printf("%lx\n",gwin);
-		return gwin;
-*/
-	}
-
-
 	gwin = AllocVec(sizeof(struct gui_window),MEMF_PRIVATE | MEMF_CLEAR);
 
 	if(!gwin)
@@ -1236,6 +1230,15 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		warn_user("NoMemory","");
 		return NULL;
 	}
+
+/*
+	if(bw->browser_window_type == BROWSER_WINDOW_IFRAME)
+	{
+		gwin->shared = bw->parent->window->shared;
+		gwin->bw = bw;
+		return gwin;
+	}
+*/
 
 	if(new_tab && clone && (bw->browser_window_type == BROWSER_WINDOW_NORMAL))
 	{
@@ -1968,6 +1971,7 @@ void gui_window_position_frame(struct gui_window *g, int x0, int y0,
 		int x1, int y1)
 {
 	if(!g) return;
+
 	ChangeWindowBox(g->shared->win,x0,y0,x1-x0,y1-y0);
 }
 
@@ -2366,6 +2370,7 @@ struct gui_download_window *gui_download_window_create(const char *url,
 		ASLFR_Screen,scrn,
 		ASLFR_DoSaveMode,TRUE,
 		ASLFR_InitialFile,FilePart(url),
+		ASLFR_InitialDrawer,option_download_dir,
 		TAG_DONE))
 	{
 		strlcpy(&fname,filereq->fr_Drawer,1024);

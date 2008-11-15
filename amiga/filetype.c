@@ -36,8 +36,9 @@ const char *fetch_filetype(const char *unix_path)
 	STRPTR ttype = NULL;
 	struct DiskObject *dobj = NULL;
 	BPTR lock = 0;
-    struct DataTypeHeader *dth;
+    struct DataTypeHeader *dth = NULL;
     struct DataType *dtn;
+	BOOL found = FALSE;
 
 	/* First try getting a tooltype "MIMETYPE" and use that as the MIME type.  Will fail over
 		to default icons if the file doesn't have a real icon. */
@@ -46,16 +47,21 @@ const char *fetch_filetype(const char *unix_path)
 						TAG_DONE))
 	{
 		ttype = FindToolType(dobj->do_ToolTypes, "MIMETYPE");
-		if(ttype) strcpy(mimetype,ttype);
+		if(ttype)
+		{
+			strcpy(mimetype,ttype);
+			found = TRUE;
+		}
+
 		FreeDiskObject(dobj);
 	}
 
-	if(!mimetype)
-	{
-		/* If that didn't work, have a go at guessing it using datatypes.library.  This isn't
-			accurate - the base names differ from those used by MIME and it relies on the
-			user having a datatype installed which can handle the file. */
+	/* If that didn't work, have a go at guessing it using datatypes.library.  This isn't
+		accurate - the base names differ from those used by MIME and it relies on the
+		user having a datatype installed which can handle the file. */
 
+	if(!found)
+	{
 		if (lock = Lock (unix_path, ACCESS_READ))
 		{
 			if (dtn = ObtainDataTypeA (DTST_FILE, (APTR)lock, NULL))
@@ -84,13 +90,14 @@ const char *fetch_filetype(const char *unix_path)
 						sprintf(mimetype,"video/%s",dth->dth_BaseName);
 					break;
 				}
+				found = TRUE;
 				ReleaseDataType(dtn);
 			}
 			UnLock(lock);
 		}
 	}
 
-	if(!mimetype) strcpy(mimetype,"text/html"); /* If all else fails */
+	if(!found) strcpy(mimetype,"text/html"); /* If all else fails */
 
 	return mimetype;
 }
