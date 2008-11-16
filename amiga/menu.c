@@ -37,6 +37,7 @@
 #include <proto/exec.h>
 #include "amiga/arexx.h"
 #include "amiga/save_complete.h"
+#include "utils/url.h"
 
 BOOL menualreadyinit;
 const char * const netsurf_version;
@@ -396,8 +397,9 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 						ASLFR_TitleText,messages_get("NetSurf"),
 						ASLFR_Screen,scrn,
 						ASLFR_DoSaveMode,FALSE,
-//						ASLFR_InitialDrawer,option_arexx_dir,
-//						ASLFR_InitialPattern,"#?.html",
+						ASLFR_RejectIcons,TRUE,
+						ASLFR_DoPatterns,TRUE,
+//						ASLFR_InitialPattern,"~(#?.info)",
 						TAG_DONE))
 					{
 						if(temp = AllocVec(1024,MEMF_PRIVATE | MEMF_CLEAR))

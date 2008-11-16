@@ -79,6 +79,10 @@ const char *fetch_filetype(const char *unix_path)
 						{
 							sprintf(mimetype,"text/plain",dth->dth_BaseName);
 						}
+						else if(strcmp("simplehtml",dth->dth_BaseName)==0)
+						{
+							sprintf(mimetype,"text/html",dth->dth_BaseName);
+						}
 						else
 						{
 							sprintf(mimetype,"text/%s",dth->dth_BaseName);
@@ -105,6 +109,8 @@ const char *fetch_filetype(const char *unix_path)
 	}
 
 	if(!found) strcpy(mimetype,"text/html"); /* If all else fails */
+
+	//printf("%s: %s\n",unix_path,mimetype);
 
 	return mimetype;
 }
