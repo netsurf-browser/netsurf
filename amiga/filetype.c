@@ -75,7 +75,14 @@ const char *fetch_filetype(const char *unix_path)
 					break;
 					case GID_TEXT:
 					case GID_DOCUMENT:
-						sprintf(mimetype,"text/%s",dth->dth_BaseName);
+						if(strcmp("ascii",dth->dth_BaseName)==0)
+						{
+							sprintf(mimetype,"text/plain",dth->dth_BaseName);
+						}
+						else
+						{
+							sprintf(mimetype,"text/%s",dth->dth_BaseName);
+						}
 					break;
 					case GID_SOUND:
 					case GID_INSTRUMENT:

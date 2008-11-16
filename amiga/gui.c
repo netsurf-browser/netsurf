@@ -322,7 +322,6 @@ void gui_init(int argc, char** argv)
 	}
 	/* end Amiupdate */
 
-	ami_arexx_init();
 	ami_init_menulabs();
 	if(option_context_menu) ami_context_menu_init();
 
@@ -391,18 +390,20 @@ void gui_init(int argc, char** argv)
 
 void gui_init2(int argc, char** argv)
 {
-	struct browser_window *bw;
+	struct browser_window *bw = NULL;
 	ULONG id;
 	long rarray[] = {0};
 	struct RDArgs *args;
 	STRPTR template = "URL/A";
 	STRPTR temp_homepage_url = NULL;
+	BOOL notalreadyrunning;
 
 	enum
 	{
 		A_URL
 	};
 
+	notalreadyrunning = ami_arexx_init();
 	ami_fetch_file_register();
 
 	InitRastPort(&dummyrp);
@@ -412,42 +413,29 @@ void gui_init2(int argc, char** argv)
 
 	if(!dummyrp.BitMap) die(messages_get("NoMemory"));
 
-	if(argc) // argc==0 is started from wb
+	if(notalreadyrunning)
 	{
-		if(args = ReadArgs(template,rarray,NULL))
+		if((option_modeid) && (option_modeid[0] != '\0'))
 		{
-			if(rarray[A_URL])
-			{
-				temp_homepage_url = (char *)strdup(rarray[A_URL]);
-			}
-			FreeArgs(args);
+			id = strtoul(option_modeid,NULL,0);
 		}
-	}
-
-	if ((!option_homepage_url) || (option_homepage_url[0] == '\0'))
-    	option_homepage_url = (char *)strdup(NETSURF_HOMEPAGE);
-
-	if((option_modeid) && (option_modeid[0] != '\0'))
-	{
-		id = strtoul(option_modeid,NULL,0);
-	}
-	else
-	{
-		id = p96BestModeIDTags(P96BIDTAG_NominalWidth,option_window_screen_width,
+		else
+		{
+			id = p96BestModeIDTags(P96BIDTAG_NominalWidth,option_window_screen_width,
 					P96BIDTAG_NominalHeight,option_window_screen_height,
 					P96BIDTAG_Depth,option_screen_depth);
 
-		if(id == INVALID_ID) die(messages_get("NoMode"));
-	}
+			if(id == INVALID_ID) die(messages_get("NoMode"));
+		}
 
-	if(option_use_wb)
-	{
-		scrn = LockPubScreen("Workbench");
-		UnlockPubScreen(NULL,scrn);
-	}
-	else
-	{
-		scrn = OpenScreenTags(NULL,
+		if(option_use_wb)
+		{
+			scrn = LockPubScreen("Workbench");
+			UnlockPubScreen(NULL,scrn);
+		}
+		else
+		{
+			scrn = OpenScreenTags(NULL,
 							SA_Width,option_window_screen_width,
 							SA_Height,option_window_screen_height,
 							SA_Depth,option_screen_depth,
@@ -455,17 +443,84 @@ void gui_init2(int argc, char** argv)
 							SA_Title,nsscreentitle,
 							SA_LikeWorkbench,TRUE,
 							TAG_DONE);
+		}
 	}
 
-	if(temp_homepage_url)
+	if(argc) // argc==0 is started from wb
 	{
-		bw = browser_window_create(temp_homepage_url, 0, 0, true,false);
-		free(temp_homepage_url);
+		if(args = ReadArgs(template,rarray,NULL))
+		{
+			if(rarray[A_URL])
+			{
+				temp_homepage_url = (char *)strdup(rarray[A_URL]);
+				if(notalreadyrunning)
+				{
+					bw = browser_window_create(temp_homepage_url, 0, 0, true,false);
+					free(temp_homepage_url);
+				}
+			}
+			FreeArgs(args);
+		}
 	}
 	else
 	{
-		bw = browser_window_create(option_homepage_url, 0, 0, true,false); // curbw = temp
+		struct WBStartup *WBenchMsg = (struct WBStartup *)argv;
+		struct WBArg *wbarg;
+		int first=0,i=0;
+		char fullpath[1024];
+
+		for(i=0,wbarg=WBenchMsg->sm_ArgList;i<WBenchMsg->sm_NumArgs;i++,wbarg++)
+		{
+			if(i==0) continue;
+			if((wbarg->wa_Lock)&&(*wbarg->wa_Name))
+			{
+				DevNameFromLock(wbarg->wa_Lock,&fullpath,1024,DN_FULLPATH);
+				AddPart(&fullpath,wbarg->wa_Name,1024);
+
+				if(!temp_homepage_url) temp_homepage_url = path_to_url(fullpath);
+
+				if(notalreadyrunning)
+				{
+					if(!first)
+					{
+						bw = browser_window_create(temp_homepage_url, 0, 0, true,false);
+ 						first=1;
+					}
+					else
+					{
+						bw = browser_window_create(temp_homepage_url, bw, 0, true,false);
+					}
+					free(temp_homepage_url);
+					temp_homepage_url = NULL;
+				}
+			}
+		}
 	}
+
+	if ((!option_homepage_url) || (option_homepage_url[0] == '\0'))
+    	option_homepage_url = (char *)strdup(NETSURF_HOMEPAGE);
+
+	if(!notalreadyrunning)
+	{
+		STRPTR sendcmd = NULL;
+
+		if(temp_homepage_url)
+		{
+			sendcmd = ASPrintf("OPEN \"%s\" NEW",temp_homepage_url);
+			free(temp_homepage_url);
+		}
+		else
+		{
+			sendcmd = ASPrintf("OPEN \"%s\" NEW",option_homepage_url);
+		}
+		IDoMethod(arexx_obj,AM_EXECUTE,sendcmd,"NETSURF",NULL,NULL,NULL,NULL);
+		IDoMethod(arexx_obj,AM_EXECUTE,"TOFRONT","NETSURF",NULL,NULL,NULL,NULL);
+		FreeVec(sendcmd);
+		netsurf_quit=true;
+		return;
+	}
+
+	if(!bw)	bw = browser_window_create(option_homepage_url, 0, 0, true,false);
 }
 
 void ami_handle_msg(void)

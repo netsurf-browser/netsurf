@@ -47,7 +47,7 @@ STATIC struct ARexxCmd Commands[] =
 	{ NULL, 		0, 				NULL, 		NULL, 		0, 	NULL, 	0, 	0, 	NULL }
 };
 
-void ami_arexx_init(void)
+BOOL ami_arexx_init(void)
 {
 	if(arexx_obj = ARexxObject,
 			AREXX_HostName,"NETSURF",
@@ -58,6 +58,20 @@ void ami_arexx_init(void)
 			End)
 	{
 		GetAttr(AREXX_SigMask, arexx_obj, &rxsig);
+		return true;
+	}
+	else
+	{
+/* Create a temporary ARexx port so will can send commands to the NetSurf which
+ * is already running */
+		arexx_obj = ARexxObject,
+			AREXX_HostName,"NETSURF",
+			AREXX_Commands,Commands,
+			AREXX_NoSlot,FALSE,
+			AREXX_ReplyHook,NULL,
+			AREXX_DefExtension,"nsrx",
+			End;
+		return false;
 	}
 }
 

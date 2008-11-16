@@ -22,7 +22,7 @@
 #include <proto/arexx.h>
 #include <classes/arexx.h>
 
-void ami_arexx_init(void);
+BOOL ami_arexx_init(void);
 void ami_arexx_handle(void);
 void ami_arexx_execute(char *);
 void ami_arexx_cleanup(void);
