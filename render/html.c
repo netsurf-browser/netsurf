@@ -254,9 +254,37 @@ bool html_convert(struct content *c, int width, int height)
 
 	/* finish parsing */
 	if (c->source_size == 0) {
-		binding_parse_chunk(c->data.html.parser_binding,
-				(uint8_t *) empty_document,
-				sizeof empty_document);
+		binding_error err;
+
+		/* Destroy current binding */
+		binding_destroy_tree(c->data.html.parser_binding);
+
+		/* Also, any existing encoding information, 
+		 * as it's not guaranteed to match the error page.
+		 */
+		free(c->data.html.encoding);
+		c->data.html.encoding = NULL;
+
+		/* Create new binding, using default charset */
+		err = binding_create_tree(c, NULL, 
+				&c->data.html.parser_binding);
+		if (err != BINDING_OK) {
+			union content_msg_data msg_data;
+
+			if (err == BINDING_BADENCODING) {
+				LOG(("Bad encoding: %s", c->data.html.encoding 
+						? c->data.html.encoding : ""));
+				msg_data.error = messages_get("ParsingFail");
+			} else
+				msg_data.error = messages_get("NoMemory");
+			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+			return false;
+		}
+
+		/* Process the error page */
+		if (html_process_data(c, (char *) empty_document, 
+				SLEN(empty_document)) == false)
+			return false;
 	}
 
 	binding_parse_completed(c->data.html.parser_binding);
