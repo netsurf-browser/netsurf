@@ -37,7 +37,7 @@ RMEnsure WindowManager 3.80 Error NetSurf requires the Nested Window Manager. Th
 If "<System$Path>" = "" Then Set System$Path_Message System resources not found.
 If "<Wimp$ScrapDir>" = "" Then Error Scrap resource not found.
 If "<InetDBase$Path>" = "" Then Error Internet resources can not be found
-If "<Unicode$Path>" = "" Then Error NetSurf requires the !Unicode resource. This can be found, along with the Iconv module, at http://netsurf.sourceforge.net/iconv/
+If "<Unicode$Path>" = "" Then Error NetSurf requires the !Unicode resource. This can be found, along with the Iconv module, at http://www.netsurf-browser.org/projects/iconv/
 If "<Inet$MimeMappings>" = "" Then Set Inet$MimeMappings InetDBase:MimeMap
 
 | Define this alias for clarity
@@ -85,8 +85,8 @@ RMEnsure Tinct 0.13 Error NetSurf requires Tinct 0.13 or later. This can be down
 
 | Ensure Iconv
 | http://www.netsurf-browser.org/iconv/
-RMEnsure Iconv 0.08 NetSurfRMLoad System:Modules.Iconv
-RMEnsure Iconv 0.08 Error NetSurf requires Iconv 0.08 or later. This can be downloaded from http://www.netsurf-browser.org/iconv/
+RMEnsure Iconv 0.09 NetSurfRMLoad System:Modules.Iconv
+RMEnsure Iconv 0.09 Error NetSurf requires Iconv 0.09 or later. This can be downloaded from http://www.netsurf-browser.org/iconv/
 
 | Disable SpecialFX, if present
 Set NetSurf$SpecialFX 1
