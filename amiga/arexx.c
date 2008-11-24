@@ -23,12 +23,21 @@
 #include "desktop/browser.h"
 #include "amiga/gui.h"
 
+const char * const verarexx;
+const int verver;
+const int verrev;
+const char * const netsurf_version;
+const int netsurf_version_major;
+const int netsurf_version_minor;
+
 enum
 {
 	RX_OPEN=0,
 	RX_QUIT,
 	RX_TOFRONT,
-	RX_GETURL
+	RX_GETURL,
+	RX_GETTITLE,
+	RX_VERSION
 };
 
 STATIC char result[100];
@@ -37,6 +46,8 @@ STATIC VOID rx_open(struct ARexxCmd *, struct RexxMsg *);
 STATIC VOID rx_quit(struct ARexxCmd *, struct RexxMsg *);
 STATIC VOID rx_tofront(struct ARexxCmd *, struct RexxMsg *);
 STATIC VOID rx_geturl(struct ARexxCmd *, struct RexxMsg *);
+STATIC VOID rx_gettitle(struct ARexxCmd *, struct RexxMsg *);
+STATIC VOID rx_version(struct ARexxCmd *, struct RexxMsg *);
 
 STATIC struct ARexxCmd Commands[] =
 {
@@ -44,6 +55,8 @@ STATIC struct ARexxCmd Commands[] =
 	{"QUIT",RX_QUIT,rx_quit,NULL, 		0, 	NULL, 	0, 	0, 	NULL },
 	{"TOFRONT",RX_TOFRONT,rx_tofront,NULL, 		0, 	NULL, 	0, 	0, 	NULL },
 	{"GETURL",RX_GETURL,rx_geturl,NULL, 		0, 	NULL, 	0, 	0, 	NULL },
+	{"GETTITLE",RX_GETTITLE,rx_gettitle,NULL, 		0, 	NULL, 	0, 	0, 	NULL },
+	{"VERSION",RX_VERSION,rx_version,"VERSION/N,SVN=REVISION/N,RELEASE/S", 		0, 	NULL, 	0, 	0, 	NULL },
 	{ NULL, 		0, 				NULL, 		NULL, 		0, 	NULL, 	0, 	0, 	NULL }
 };
 
@@ -126,3 +139,80 @@ STATIC VOID rx_geturl(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((u
 	cmd->ac_Result = result;
 }
 
+STATIC VOID rx_gettitle(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
+{
+	if(curbw)
+	{
+		strcpy(result,curbw->window->shared->win->Title);
+	}
+	else
+	{
+		strcpy(result,"\0");
+	}
+
+	cmd->ac_Result = result;
+}
+
+STATIC VOID rx_version(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
+{
+	if(cmd->ac_ArgList[2])
+	{
+		if(cmd->ac_ArgList[1])
+		{
+			if((netsurf_version_major > *(ULONG *)cmd->ac_ArgList[0]) || ((netsurf_version_minor >= *(ULONG *)cmd->ac_ArgList[1]) && (netsurf_version_major == *(ULONG *)cmd->ac_ArgList[0])))
+			{
+				strcpy(result,"1");
+			}
+			else
+			{
+				strcpy(result,"0");
+			}
+		}
+		else if(cmd->ac_ArgList[0])
+		{
+			if((netsurf_version_major >= *(ULONG *)cmd->ac_ArgList[0]))
+			{
+				strcpy(result,"1");
+			}
+			else
+			{
+				strcpy(result,"0");
+			}
+		}
+		else
+		{
+			strcpy(result,netsurf_version);
+		}
+	}
+	else
+	{
+		if(cmd->ac_ArgList[1])
+		{
+			if((verver > *(ULONG *)cmd->ac_ArgList[0]) || ((verrev >= *(ULONG *)cmd->ac_ArgList[1]) && (verver == *(ULONG *)cmd->ac_ArgList[0])))
+			{
+				strcpy(result,"1");
+			}
+			else
+			{
+				strcpy(result,"0");
+			}
+		}
+		else if(cmd->ac_ArgList[0])
+		{
+			if((verver >= *(ULONG *)cmd->ac_ArgList[0]))
+			{
+				strcpy(result,"1");
+			}
+			else
+			{
+				strcpy(result,"0");
+			}
+		}
+		else
+		{
+			strcpy(result,verarexx);
+		}
+	}
+
+	cmd->ac_Result = result;
+}
