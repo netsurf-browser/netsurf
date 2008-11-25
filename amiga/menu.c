@@ -304,7 +304,7 @@ void ami_menu_scan(struct tree *tree,struct NewMenu *menu)
 		if(element && (strcmp(element->text,"Menu")==0))
 		{
 			// found menu
-			ami_menu_scan_2(tree,node,&gen,&item,menu);
+			ami_menu_scan_2(tree,node->child,&gen,&item,menu);
 		}
 	}
 }
@@ -321,12 +321,12 @@ void ami_menu_scan_2(struct tree *tree,struct node *root,WORD *gen,ULONG *item,s
 	{
 		element = tree_find_element(node, TREE_ELEMENT_TITLE);
 
-		if((*gen > 1) && (*gen < 4))
+		if((*gen > 0) && (*gen < 3))
 		{
 			if(*item >= AMI_MENU_HOTLIST_MAX) return;
 
-			if(*gen == 2) menu[*item].nm_Type = NM_ITEM;
-			if(*gen == 3) menu[*item].nm_Type = NM_SUB;
+			if(*gen == 1) menu[*item].nm_Type = NM_ITEM;
+			if(*gen == 2) menu[*item].nm_Type = NM_SUB;
 
 			if(strcmp(element->text,"--"))
 			{
@@ -341,7 +341,6 @@ void ami_menu_scan_2(struct tree *tree,struct node *root,WORD *gen,ULONG *item,s
 
 			element = tree_find_element(node, TREE_ELEMENT_URL);
 			if(element && element->text) menu[*item].nm_UserData = (void *)element->text;
-
 			if(node->folder && (!node->child)) menu[*item].nm_Flags = NM_ITEMDISABLED;
 
 			*item = *item + 1;
