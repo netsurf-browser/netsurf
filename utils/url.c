@@ -22,6 +22,7 @@
  * URL parsing and joining (implementation).
  */
 
+#define _GNU_SOURCE /* for strdup() */
 #include <sys/types.h>
 #include <assert.h>
 #include <ctype.h>
