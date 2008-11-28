@@ -3315,21 +3315,4 @@ struct css_border *css_eyecatching_border(struct css_border *test1,
 	return test2;
 }
 
-#ifdef DEBUG
 
-int main()
-{
-	const char data[] = "h1 { blah: foo; display: block; }"
-		"h1.c1 h2#id1 + h3, h4 h5.c2#id2 { size: 100mm; color: red }"
-		"p { background-color: #123; clear: left; color: #ff0000; display: block;"
-		"float: left; font-size: 150%; height: blah; line-height: 100;"
-		"text-align: left right; width: 90%;}";
-	struct content c;
-	css_create(&c);
-	css_process_data(&c, data, 24);
-	css_process_data(&c, data + 24, sizeof(data) - 25);
-	css_convert(&c, 100, 100);
-	return 0;
-}
-
-#endif
