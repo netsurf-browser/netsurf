@@ -63,7 +63,6 @@ void nsgtk_tab_add(struct gui_window *window)
 			GTK_WIDGET(window->scrolledwindow), tabBox);
 
 	gtk_widget_show_all(GTK_WIDGET(window->scrolledwindow));
-	gtk_notebook_set_current_page(tabs, page);
 }
 
 void nsgtk_tab_visibility_update(GtkNotebook *notebook, GtkWidget *child,
@@ -172,10 +171,10 @@ void nsgtk_tab_close_current(GtkNotebook *notebook)
 	GtkWidget *window = gtk_notebook_get_nth_page(notebook, curr_page);
 	struct gui_window *gw = g_object_get_data(G_OBJECT(window),
 			"gui_window");
-	
+
 	if (gtk_notebook_get_n_pages(notebook) < 2)
 		return;	/* wicked things happen if we close the last tab */
-	
+
 	gtk_notebook_remove_page(notebook, curr_page);
 	nsgtk_window_destroy_browser(gw);
 }

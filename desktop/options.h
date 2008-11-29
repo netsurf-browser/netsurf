@@ -71,6 +71,7 @@ extern char *option_cookie_file;
 extern char *option_cookie_jar;
 extern char *option_homepage_url;
 extern bool option_target_blank;
+extern bool option_button_2_tab;
 extern bool option_url_suggestion;
 extern int option_window_x;
 extern int option_window_y;

@@ -98,7 +98,8 @@ static void browser_window_destroy_internal(struct browser_window *bw);
 static void browser_window_set_scale_internal(struct browser_window *bw,
 		float scale);
 static struct browser_window *browser_window_find_target(
-		struct browser_window *bw, const char *target, bool new_window);
+		struct browser_window *bw, const char *target,
+		browser_mouse_state mouse);
 static void browser_window_find_target_internal(struct browser_window *bw,
 		const char *target, int depth, struct browser_window *page,
 		int *rdepth, struct browser_window **bw_target);
@@ -1073,8 +1074,8 @@ void browser_window_set_scale_internal(struct browser_window *bw, float scale)
  * \param new_window  always return a new window (ie 'Open Link in New Window')
  */
 
-struct browser_window *browser_window_find_target(struct browser_window *bw, const char *target,
-		bool new_window)
+struct browser_window *browser_window_find_target(struct browser_window *bw,
+		const char *target, browser_mouse_state mouse)
 {
 	struct browser_window *bw_target;
 	struct browser_window *top;
@@ -1088,21 +1089,62 @@ struct browser_window *browser_window_find_target(struct browser_window *bw, con
 	if (!target)
 		target = TARGET_SELF;
 
-	/* allow the simple case of target="_blank" to be ignored if requested */
-	if ((!new_window) && (!option_target_blank)) {
+	/* allow the simple case of target="_blank" to be ignored if requested
+	 */
+	if ((!(mouse & BROWSER_MOUSE_CLICK_2)) &&
+			(!((mouse & BROWSER_MOUSE_CLICK_2) &&
+			(mouse & BROWSER_MOUSE_MOD_2))) &&
+			(!option_target_blank)) {
+		/* not a mouse button 2 click
+		 * not a mouse button 1 click with ctrl pressed
+		 * configured to ignore target="_blank" */
 		if ((target == TARGET_BLANK) || (!strcasecmp(target, "_blank")))
 			return bw;
 	}
 
 	/* handle reserved keywords */
-	if ((new_window) || ((target == TARGET_BLANK) || (!strcasecmp(target, "_blank")))) {
+	if (((option_button_2_tab) && (mouse & BROWSER_MOUSE_CLICK_2)) ||
+			((!option_button_2_tab) &&
+			((mouse & BROWSER_MOUSE_CLICK_1) &&
+			(mouse & BROWSER_MOUSE_MOD_2))) ||
+			((option_button_2_tab) && ((target == TARGET_BLANK) ||
+			(!strcasecmp(target, "_blank"))))) {
+		/* open in new tab if:
+		 * - button_2 opens in new tab and button_2 was pressed
+		 * OR
+		 * - button_2 doesn't open in new tabs and button_1 was
+		 *   pressed with ctrl held
+		 * OR
+		 * - button_2 opens in new tab and the link target is "_blank"
+		 */
+		bw_target = browser_window_create(NULL, bw, NULL, false, true);
+		if (!bw_target)
+			return bw;
+		return bw_target;
+	} else if (((!option_button_2_tab) &&
+			(mouse & BROWSER_MOUSE_CLICK_2)) ||
+			((option_button_2_tab) &&
+			((mouse & BROWSER_MOUSE_CLICK_1) &&
+			(mouse & BROWSER_MOUSE_MOD_2))) ||
+			((!option_button_2_tab) && ((target == TARGET_BLANK) ||
+			(!strcasecmp(target, "_blank"))))) {
+		/* open in new window if:
+		 * - button_2 doesn't open in new tabs and button_2 was pressed
+		 * OR
+		 * - button_2 opens in new tab and button_1 was pressed with
+		 *   ctrl held
+		 * OR
+		 * - button_2 doesn't open in new tabs and the link target is
+		 *   "_blank"
+		 */
 		bw_target = browser_window_create(NULL, bw, NULL, false, false);
 		if (!bw_target)
 			return bw;
 		return bw_target;
 	} else if ((target == TARGET_SELF) || (!strcasecmp(target, "_self"))) {
 		return bw;
-	} else if ((target == TARGET_PARENT) || (!strcasecmp(target, "_parent"))) {
+	} else if ((target == TARGET_PARENT) ||
+			(!strcasecmp(target, "_parent"))) {
 		if (bw->parent)
 			return bw->parent;
 		return bw;
@@ -1539,10 +1581,6 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 			/* force download of link */
 			browser_window_go_post(bw, url, 0, 0, false,
 					c->url, true, true, 0);
-		} else if (mouse & BROWSER_MOUSE_CLICK_1 &&
-				mouse & BROWSER_MOUSE_MOD_2) {
-			/* open link in new tab */
-			browser_window_create(url, bw, c->url, true, true);
 		} else if (mouse & BROWSER_MOUSE_CLICK_2 &&
 				mouse & BROWSER_MOUSE_MOD_1) {
 			free(browser_window_href_content.url);
@@ -1648,13 +1686,11 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 	switch (action) {
 	case ACTION_SUBMIT:
 		browser_form_submit(bw,
-				browser_window_find_target(bw, target,
-						(mouse & BROWSER_MOUSE_CLICK_2)),
+				browser_window_find_target(bw, target, mouse),
 				gadget->form, gadget);
 		break;
 	case ACTION_GO:
-		browser_window_go(browser_window_find_target(bw, target,
-						(mouse & BROWSER_MOUSE_CLICK_2)),
+		browser_window_go(browser_window_find_target(bw, target, mouse),
 				url, c->url, true);
 		break;
 	case ACTION_NONE:
