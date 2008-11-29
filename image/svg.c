@@ -94,6 +94,7 @@ bool svg_redraw(struct content *c, int x, int y,
 	struct svgtiny_diagram *diagram = c->data.svg.diagram;
 	bool ok;
 	int px, py;
+	unsigned int i;
 
 	assert(diagram);
 
@@ -106,7 +107,7 @@ bool svg_redraw(struct content *c, int x, int y,
 
 #define BGR(c) ((c) == svgtiny_TRANSPARENT ? TRANSPARENT : ((svgtiny_RED((c))) | (svgtiny_GREEN((c)) << 8) | (svgtiny_BLUE((c)) << 16)))
 
-	for (unsigned int i = 0; i != diagram->shape_count; i++) {
+	for (i = 0; i != diagram->shape_count; i++) {
 		if (diagram->shape[i].path) {
 			ok = plot.path(diagram->shape[i].path,
 					diagram->shape[i].path_length,

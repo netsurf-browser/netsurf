@@ -121,6 +121,7 @@ binding_error binding_create_tree(void *arena, const char *charset, void **ctx)
 {
 	hubbub_ctx *c;
 	hubbub_parser_optparams params;
+	uint32_t i;
 	hubbub_error error;
 
 	c = malloc(sizeof(hubbub_ctx));
@@ -151,7 +152,7 @@ binding_error binding_create_tree(void *arena, const char *charset, void **ctx)
 	}
 	c->document->_private = (void *) 0;
 
-	for (uint32_t i = 0; 
+	for (i = 0; 
 		i < sizeof(c->namespaces) / sizeof(c->namespaces[0]); i++) {
 		c->namespaces[i] = NULL;
 	}
@@ -244,7 +245,8 @@ char *c_string_from_hubbub_string(hubbub_ctx *ctx, const hubbub_string *str)
 
 void create_namespaces(hubbub_ctx *ctx, xmlNode *root)
 {
-	for (uint32_t i = 1; 
+	uint32_t i;
+	for (i = 1; 
 			i < sizeof(namespaces) / sizeof(namespaces[0]); i++) {
 		ctx->namespaces[i - 1] = xmlNewNs(root, 
 				BAD_CAST namespaces[i].url, 
@@ -521,8 +523,9 @@ int reparent_children(void *ctx, void *node, void *new_parent)
 {
 	xmlNode *n = (xmlNode *) node;
 	xmlNode *p = (xmlNode *) new_parent;
+	xmlNode *child;
 
-	for (xmlNode *child = n->children; child != NULL; ) {
+	for (child = n->children; child != NULL; ) {
 		xmlNode *next = child->next;
 
 		xmlUnlinkNode(child);
@@ -572,8 +575,9 @@ int add_attributes(void *ctx, void *node,
 {
 	hubbub_ctx *c = (hubbub_ctx *) ctx;
 	xmlNode *n = (xmlNode *) node;
+	uint32_t attr;
 
-	for (uint32_t attr = 0; attr < n_attributes; attr++) {
+	for (attr = 0; attr < n_attributes; attr++) {
 		xmlAttr *prop;
 		char *name, *value;
 
@@ -616,6 +620,8 @@ int set_quirks_mode(void *ctx, hubbub_quirks_mode mode)
 int change_encoding(void *ctx, const char *charset)
 {
 	hubbub_ctx *c = (hubbub_ctx *) ctx;
+	uint32_t source;
+	const char *name;
 
 	/* If we have an encoding here, it means we are *certain* */
 	if (c->encoding != NULL) {
@@ -623,8 +629,7 @@ int change_encoding(void *ctx, const char *charset)
 	}
 
 	/* Find the confidence otherwise (can only be from a BOM) */
-	uint32_t source;
-	const char *name = hubbub_parser_read_charset(c->parser, &source);
+	name = hubbub_parser_read_charset(c->parser, &source);
 
 	if (source == HUBBUB_CHARSET_CONFIDENT) {
 		c->encoding_source = ENCODING_SOURCE_DETECTED;
