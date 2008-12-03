@@ -376,28 +376,28 @@ const int *ucstable_from_alphabet(int alphabet)
 
 
 static const char *localencodings[] = {
-	"ISO-8859-1",	/* BFont - 100 - just use Latin1, instead */
-	"ISO-8859-1",
-	"ISO-8859-2",
-	"ISO-8859-3",
-	"ISO-8859-4",
-	"ISO-8859-5",
-	"ISO-8859-6",
-	"ISO-8859-7",
-	"ISO-8859-8",
-	"ISO-8859-9",
-	"ISO-IR-182",
+	"ISO-8859-1//TRANSLIT",	/* BFont - 100 - just use Latin1, instead */
+	"ISO-8859-1//TRANSLIT",
+	"ISO-8859-2//TRANSLIT",
+	"ISO-8859-3//TRANSLIT",
+	"ISO-8859-4//TRANSLIT",
+	"ISO-8859-5//TRANSLIT",
+	"ISO-8859-6//TRANSLIT",
+	"ISO-8859-7//TRANSLIT",
+	"ISO-8859-8//TRANSLIT",
+	"ISO-8859-9//TRANSLIT",
+	"ISO-IR-182//TRANSLIT",
 	"UTF-8",
-	"ISO-8859-15",
-	"ISO-8859-10",
-	"ISO-8859-13",
-	"ISO-8859-14",
-	"ISO-8859-16",
+	"ISO-8859-15//TRANSLIT",
+	"ISO-8859-10//TRANSLIT",
+	"ISO-8859-13//TRANSLIT",
+	"ISO-8859-14//TRANSLIT",
+	"ISO-8859-16//TRANSLIT",
 #define CONT_ENC_END 116	/* RISC OS alphabet numbers lie in a
 				 * contiguous range [100,CONT_ENC_END]
 				 * _except_ for Cyrillic2, which doesn't.
 				 */
-	"CP866"		/* Cyrillic2 - 120 */
+	"CP866//TRANSLIT"	/* Cyrillic2 - 120 */
 };
 
 static const struct special {
