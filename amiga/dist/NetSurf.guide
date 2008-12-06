@@ -39,12 +39,21 @@ The options file is stored in @{"Resources/Options" link Resources/Options/Main}
 @{b}sticky_context_menu@{ub} When disabled, context menu requires mouse button to be held down to keep it visible
 @{b}truecolour_mouse_pointers@{ub} Use 32-bit mouse pointers, when disabled NetSurf will use old-style 4 colour images (see Resources/Pointers)
 @{b}os_mouse_pointers@{ub} Don't override default and busy mouse pointers
-@{b}always_open_tabs@{ub} Force opening tabs instead of windows (actually swaps the functions so ctrl-click now opens windows and middle mouse button opens tabs)
+@{b}always_open_tabs@{ub} Force opening tabs instead of windows (actually swaps the functions so ctrl-click now opens windows and middle mouse button opens tabs) See note [1]
 @{b}new_tab_is_active@{ub} Make new tab the active one
 @{b}kiosk_mode@{ub} No gadgets
 @{b}recent_file@{ub} Path to file to store recent history list
 @{b}arexx_dir@{ub} Path to ARexx scripts dir
 @{b}download_dir@{ub} default download destination (not used yet)
+
+[1] There is another option called button_2_tab which does something similar, but does not force links that open new windows into new tabs instead.
+
+always_open_tabs | button_2_tab | middle button tabs | force tabs
+        0        |       0      |         No         |     No
+        1        |       0      |         Yes        |     Yes
+        0        |       1      |         Yes        |     No
+        1        |       1      |         No         |     Yes
+
 @endnode
 
 @node arexx "ARexx port"
