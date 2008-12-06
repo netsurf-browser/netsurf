@@ -441,8 +441,12 @@ void gui_init2(int argc, char** argv)
 							SA_Depth,option_screen_depth,
 							SA_DisplayID,id,
 							SA_Title,nsscreentitle,
+							SA_Type,CUSTOMSCREEN,
+							SA_PubName,"NetSurf",
 							SA_LikeWorkbench,TRUE,
 							TAG_DONE);
+
+			if(scrn) PubScreenStatus(scrn,0);
 		}
 	}
 
@@ -535,6 +539,13 @@ void ami_handle_msg(void)
 	struct MenuItem *item;
 	struct InputEvent *ie;
 	struct Node *tabnode;
+
+	if(IsMinListEmpty(window_list))
+	{
+		/* no windows in list, so NetSurf should not be running */
+		netsurf_quit = true;
+		return;
+	}
 
 	node = (struct nsObject *)GetHead((struct List *)window_list);
 
