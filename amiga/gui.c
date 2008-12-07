@@ -110,6 +110,7 @@ struct KeymapIFace *IKeymap = NULL;
 struct BitMap *throbber = NULL;
 ULONG throbber_width,throbber_height,throbber_frames;
 BOOL rmbtrapped;
+BOOL locked_screen = FALSE;
 
 static struct RastPort dummyrp;
 
@@ -428,12 +429,7 @@ void gui_init2(int argc, char** argv)
 			if(id == INVALID_ID) die(messages_get("NoMode"));
 		}
 
-		if(option_use_wb)
-		{
-			scrn = LockPubScreen("Workbench");
-			UnlockPubScreen(NULL,scrn);
-		}
-		else
+		if(!option_use_wb)
 		{
 			scrn = OpenScreenTags(NULL,
 							SA_Width,option_window_screen_width,
@@ -446,7 +442,27 @@ void gui_init2(int argc, char** argv)
 							SA_LikeWorkbench,TRUE,
 							TAG_DONE);
 
-			if(scrn) PubScreenStatus(scrn,0);
+			if(scrn)
+			{
+				PubScreenStatus(scrn,0);
+			}
+			else
+			{
+				if(scrn = LockPubScreen("NetSurf"))
+				{
+					locked_screen = TRUE;
+				}
+				else
+				{
+					option_use_wb = true;
+				}
+			}
+		}
+
+		if(option_use_wb)
+		{
+			scrn = LockPubScreen("Workbench");
+			locked_screen = TRUE;
 		}
 	}
 
@@ -525,6 +541,8 @@ void gui_init2(int argc, char** argv)
 	}
 
 	if(!bw)	bw = browser_window_create(option_homepage_url, 0, 0, true,false);
+
+	if(locked_screen) UnlockPubScreen(NULL,scrn);
 }
 
 void ami_handle_msg(void)
@@ -1160,7 +1178,12 @@ void gui_quit(void)
 	hubbub_finalise(myrealloc,NULL);
 #endif
 
-	if(!option_use_wb) CloseScreen(scrn);
+	ami_arexx_cleanup();
+
+	if(!locked_screen) /* set if we are using somebody else's screen */
+	{
+		while(!CloseScreen(scrn));
+	}
 	p96FreeBitMap(dummyrp.BitMap);
 	FreeVec(nsscreentitle);
 
@@ -1179,7 +1202,6 @@ void gui_quit(void)
 
 	ami_clipboard_free();
 
-	ami_arexx_cleanup();
 	FreeSysObject(ASOT_PORT,appport);
 	FreeSysObject(ASOT_PORT,sport);
 
