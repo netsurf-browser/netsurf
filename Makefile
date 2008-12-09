@@ -116,6 +116,8 @@ ifeq ($(TARGET),riscos)
     GCCSDK_INSTALL_ENV := <NSLibs$$Dir>
     CCRES := ccres
     TPLEXT :=
+    MAKERUN := makerun
+    RUNEXT :=
     CC := gcc
     EXEEXT :=
     PKG_CONFIG :=
@@ -126,6 +128,8 @@ ifeq ($(TARGET),riscos)
     GCCSDK_INSTALL_CROSSBIN ?= /home/riscos/cross/bin
     CCRES := $(GCCSDK_INSTALL_CROSSBIN)/ccres
     TPLEXT := ,fec
+    MAKERUN := $(GCCSDK_INSTALL_CROSSBIN)/makerun
+    RUNEXT := ,feb
     CC := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*gcc)
     ifneq (,$(findstring arm-unknown-riscos-gcc,$(CC)))
       SUBTARGET := -elf
@@ -545,6 +549,8 @@ $(DEPROOT)/created: $(OBJROOT)/created
 
 CLEANS := clean-target
 
+POSTEXES :=
+
 include Makefile.sources
 
 OBJECTS := $(sort $(addprefix $(OBJROOT)/,$(subst /,_,$(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(patsubst %.s,%.o,$(SOURCES)))))))
@@ -595,7 +601,7 @@ ifeq ($(TARGET),riscos)
     define compile_template
 !NetSurf/Resources/$(1)/Templates$$(TPLEXT): $(2)
 	$$(VQ)echo "TEMPLATE: $(2)"
-	$$(Q)$$(CC) -x c -E -P $$(CFLAGS) $(2) > processed_template
+	$$(Q)$$(CC) -x c -E -P $$(CFLAGS) -o processed_template $(2)
 	$$(Q)$$(CCRES) processed_template $$(subst /,.,$$@)
 	$$(Q)$(RM) processed_template
 CLEAN_TEMPLATES += !NetSurf/Resources/$(1)/Templates$$(TPLEXT)
@@ -629,7 +635,9 @@ clean-builddir:
 	$(Q)$(RM) -r $(OBJROOT)
 CLEANS += clean-builddir
 
-all-program: $(EXETARGET)
+all-program: $(EXETARGET) post-exe
+
+post-exe: $(POSTEXES)
 
 .SUFFIXES:
 
