@@ -161,7 +161,10 @@ CLEANS += clean-intermediates
 # Finally select the correct set of sources for this build...
 
 ifeq ($(TARGET),riscos)
-!NetSurf/!Run$(RUNEXT): riscos/scripts/Run
+SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_PDF) $(S_RISCOS)
+EXETARGET := !NetSurf/!RunImage$(EXEEXT)
+
+!NetSurf/!Run$(RUNEXT): riscos/scripts/Run $(EXETARGET)
 	$(VQ)echo " MAKERUN: $@"
 	$(Q)$(MAKERUN) $(EXETARGET) $< $@
 POSTEXES += !NetSurf/!Run$(RUNEXT)
@@ -170,9 +173,6 @@ clean-run:
 	$(VQ)echo "   CLEAN: !NetSurf/!Run$(RUNEXT)"
 	$(Q) $(RM) !NetSurf/!Run$(RUNEXT)
 CLEANS += clean-run
-
-SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_PDF) $(S_RISCOS)
-EXETARGET := !NetSurf/!RunImage$(EXEEXT)
 endif
 
 ifeq ($(TARGET),gtk)
