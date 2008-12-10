@@ -20,8 +20,8 @@
 #define AMIGA_BITMAP_H
 #include <exec/types.h>
 struct bitmap {
-	ULONG width;
-	ULONG height;
+	int width;
+	int height;
 	UBYTE *pixdata;
 };
 

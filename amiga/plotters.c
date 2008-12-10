@@ -309,6 +309,9 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 	max_width =  (repeat_x ? scrn->Width : width);
 	max_height = (repeat_y ? scrn->Height : height);
 
+	if(repeat_x && (x<-bitmap->width)) while(x<-bitmap->width) x+=bitmap->width;
+	if(repeat_y && (y<-bitmap->height)) while(y<-bitmap->height) y+=bitmap->height;
+
 	for(xf=0;xf<max_width;xf+=bitmap->width)
 	{
 		for(yf=0;yf<max_height;yf+=bitmap->height)
