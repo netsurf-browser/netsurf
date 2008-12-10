@@ -1996,8 +1996,9 @@ void ami_do_redraw(struct gui_window_2 *g)
 	{
 */
 		content_redraw(c, -hcurrent,-vcurrent,width,height,
-			0,0,width,height,
+			0,0,c->width,c->height,
 			g->bw->scale,0xFFFFFF);
+
 //	}
 
 	current_redraw_browser = NULL;
