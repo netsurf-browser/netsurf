@@ -38,15 +38,20 @@
 #include "amiga/arexx.h"
 #include "amiga/save_complete.h"
 #include "utils/url.h"
+#include <dos/anchorpath.h>
+
 
 BOOL menualreadyinit;
 const char * const netsurf_version;
 const char * const versvn;
 const char * const verdate;
+static struct Hook aslhookfunc;
 
 void ami_menu_scan(struct tree *tree,struct NewMenu *menu);
 void ami_menu_scan_2(struct tree *tree,struct node *root,WORD *gen,ULONG *item,struct NewMenu *menu);
 void ami_menu_arexx_scan(struct NewMenu *menu);
+static const ULONG ami_asl_mime_hook(struct Hook *mh,struct FileRequester *fr,struct AnchorPathOld *ap);
+
 
 void ami_free_menulabs(void)
 {
@@ -82,12 +87,17 @@ void ami_init_menulabs(void)
 	menulab[19] = ami_utf8_easy((char *)messages_get("SelectAllNS"));
 	menulab[20] = ami_utf8_easy((char *)messages_get("ClearNS"));
 	menulab[21] = ami_utf8_easy((char *)messages_get("Browser"));
-	menulab[22] = ami_utf8_easy((char *)messages_get("HistGlobalNS"));
-	menulab[23] = ami_utf8_easy((char *)messages_get("ShowCookies"));
-	menulab[24] = ami_utf8_easy((char *)messages_get("Hotlist"));
-	menulab[25] = ami_utf8_easy((char *)messages_get("HotlistAdd"));
-	menulab[26] = ami_utf8_easy((char *)messages_get("HotlistShowNS"));
-	menulab[27] = NM_BARLABEL;
+	menulab[22] = ami_utf8_easy((char *)messages_get("FindTextNS"));
+	menulab[23] = ami_utf8_easy((char *)messages_get("size"));
+	menulab[24] = ami_utf8_easy((char *)messages_get("normal"));
+	menulab[25] = ami_utf8_easy((char *)messages_get("double"));
+	menulab[26] = NM_BARLABEL;
+	menulab[27] = ami_utf8_easy((char *)messages_get("HistGlobalNS"));
+	menulab[28] = ami_utf8_easy((char *)messages_get("ShowCookies"));
+	menulab[29] = ami_utf8_easy((char *)messages_get("Hotlist"));
+	menulab[30] = ami_utf8_easy((char *)messages_get("HotlistAdd"));
+	menulab[31] = ami_utf8_easy((char *)messages_get("HotlistShowNS"));
+	menulab[32] = NM_BARLABEL;
 
 	menulab[AMI_MENU_HOTLIST_MAX] = ami_utf8_easy((char *)messages_get("Settings"));
 	menulab[AMI_MENU_HOTLIST_MAX+1] = ami_utf8_easy((char *)messages_get("SnapshotWindow"));
@@ -124,6 +134,11 @@ struct NewMenu *ami_create_menu(ULONG type)
 			  	{ NM_ITEM,0,"A",0,0,0,}, // select all
 			  	{ NM_ITEM,0,"Z",0,0,0,}, // clear selection
 			  	{NM_TITLE,0,0,0,0,0,}, // browser
+			  	{ NM_ITEM,0,"F",0,0,0,}, // find in page
+			  	{ NM_ITEM,0,0,0,0,0,}, // size
+			  	{  NM_SUB,0,0,0,0,0,}, // normal
+			  	{  NM_SUB,0,0,0,0,0,}, // double
+			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
 			  	{ NM_ITEM,0,0,0,0,0,}, // global history
 			  	{ NM_ITEM,0,0,0,0,0,}, // cookies
 				{NM_TITLE,0,0,0,0,0,}, // hotlist
@@ -222,6 +237,11 @@ struct NewMenu *ami_create_menu(ULONG type)
 	{
 		ami_menu_scan(hotlist,menu);
 		ami_menu_arexx_scan(menu);
+
+		aslhookfunc.h_Entry = &ami_asl_mime_hook;
+		aslhookfunc.h_SubEntry = NULL;
+		aslhookfunc.h_Data = NULL;
+
 		menualreadyinit = TRUE;
 	}
 
@@ -368,12 +388,6 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 	char *temp;
 	BPTR lock = 0;
 
-	if(option_force_tabs)
-	{
-		openwin=true;
-		opentab=false;
-	}
-
 	tgw.tab_node = NULL;
 	tgw.tab = 0;
 	tgw.shared = gwin;
@@ -397,7 +411,8 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 						ASLFR_Screen,scrn,
 						ASLFR_DoSaveMode,FALSE,
 						ASLFR_RejectIcons,TRUE,
-						ASLFR_DoPatterns,TRUE,
+						ASLFR_FilterFunc,&aslhookfunc,
+//						ASLFR_DoPatterns,TRUE,
 //						ASLFR_InitialPattern,"~(#?.info)",
 						TAG_DONE))
 					{
@@ -557,11 +572,28 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 		case 2:
 			switch(itemnum)
 			{
-				case 0: // global history
+				case 0: // search
+					ami_search_open(gwin->bw->window);
+				break;
+
+				case 1: // size
+					switch(subnum)
+					{
+						case 0: // normal
+							gwin->bw->scale = 1.0;
+						break;
+
+						case 1: // double
+							gwin->bw->scale = 2.0;
+						break;
+					}
+				break;
+
+				case 3: // global history
 					ami_open_tree(global_history_tree,AMI_TREE_HISTORY);
 				break;
 
-				case 1: // cookies tree
+				case 4: // cookies tree
 					ami_open_tree(cookies_tree,AMI_TREE_COOKIES);
 				break;
 			}
@@ -640,3 +672,36 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 		break;
 	}
 }
+
+static const ULONG ami_asl_mime_hook(struct Hook *mh,struct FileRequester *fr,struct AnchorPathOld *ap)
+{
+	BPTR file = 0;
+	char buffer[10];
+	char fname[1024];
+	BOOL ret = FALSE;
+	char *mt = NULL;
+
+	if(ap->ap_Info.fib_DirEntryType > 0) return(TRUE);
+
+	strcpy(fname,fr->fr_Drawer);
+	AddPart(fname,ap->ap_Info.fib_FileName,1024);
+
+  	mt = fetch_mimetype(fname);
+
+	if(!strcmp(mt,"text/html")) ret = TRUE;
+	else if(!strcmp(mt,"text/plain")) ret = TRUE;
+	else if(!strcmp(mt,"image/jpeg")) ret = TRUE;
+	else if(!strcmp(mt,"image/gif")) ret = TRUE;
+	else if(!strcmp(mt,"image/png")) ret = TRUE;
+	else if(!strcmp(mt,"image/jng")) ret = TRUE;
+	else if(!strcmp(mt,"image/mng")) ret = TRUE;
+	else if(!strcmp(mt,"image/bmp")) ret = TRUE;
+	else if(!strcmp(mt,"image/ico")) ret = TRUE;
+	else if(!strcmp(mt,"image/x-riscos-sprite")) ret = TRUE;
+#ifdef WITH_NS_SVG
+	else if(!strcmp(mt,"image/svg")) ret = TRUE;
+#endif
+
+	free(mt);
+	return ret;
+} 

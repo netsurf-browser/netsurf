@@ -62,6 +62,9 @@ enum
 	GID_NEWF,
 	GID_NEWB,
 	GID_DEL,
+	GID_NEXT,
+	GID_PREV,
+	GID_SEARCHSTRING,
     GID_LAST
 };
 
@@ -73,6 +76,8 @@ enum
 	OID_MENU,
     OID_LAST
 };
+
+struct find_window;
 
 struct gui_download_window {
 	struct Window *win;
@@ -108,6 +113,7 @@ struct gui_window_2 {
 	browser_mouse_state mouse_state;
 	browser_mouse_state key_state;
 	ULONG throbber_update_count;
+	struct find_window *searchwin;
 };
 
 struct gui_window
