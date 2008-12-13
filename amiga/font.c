@@ -204,15 +204,7 @@ struct TextFont *ami_open_font(struct css_style *style)
 	}
 */
 
-	switch(style->font_size.size)
-	{
-		case CSS_FONT_SIZE_LENGTH:
-			tattr.tta_YSize = (UWORD)style->font_size.value.length.value;
-		break;
-		default:
-			printf("FONT SIZE TYPE: %ld\n",style->font_size.size);
-		break;
-	}
+	tattr.tta_YSize = css_len2px(&style->font_size.value.length, style);
 
 	if(tattr.tta_YSize < option_font_min_size)
 		tattr.tta_YSize = option_font_min_size;
@@ -282,15 +274,7 @@ struct OutlineFont *ami_open_outline_font(struct css_style *style)
 
 /* see diskfont implementation for currently unimplemented bold/italic stuff */
 
-	switch(style->font_size.size)
-	{
-		case CSS_FONT_SIZE_LENGTH:
-			ysize = style->font_size.value.length.value;
-		break;
-		default:
-			printf("FONT SIZE TYPE: %ld\n",style->font_size.size);
-		break;
-	}
+	ysize = css_len2px(&style->font_size.value.length, style);
 
 	if(ysize < option_font_min_size)
 		ysize = option_font_min_size;

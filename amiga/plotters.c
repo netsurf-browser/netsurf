@@ -27,6 +27,7 @@
 #include <graphics/gfxmacros.h>
 #include "amiga/utf8.h"
 #include <proto/layers.h>
+#include "amiga/options.h"
 
 #define PATT_DOT  0xAAAA
 #define PATT_DASH 0xCCCC
@@ -137,7 +138,7 @@ bool ami_fill(int x0, int y0, int x1, int y1, colour c)
 {
 	//DebugPrintF("fill %ld,%ld,%ld,%ld\n",x0,y0,x1,y1);
 
-	p96RectFill(currp,x0,y0,x1,y1,
+	p96RectFill(currp,x0,y0,x1-1,y1-1,
 		p96EncodeColor(RGBFB_A8B8G8R8,c));
 
 	return true;
@@ -171,16 +172,20 @@ bool ami_text(int x, int y, const struct css_style *style,
 			const char *text, size_t length, colour bg, colour c)
 {
 	char *buffer = NULL;
-	struct TextFont *tfont = ami_open_font(style);
+	struct TextFont *tfont;
 
-	SetRPAttrs(currp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),
+	if(option_quick_text)
+	{
+		tfont = ami_open_font(style);
+
+		SetRPAttrs(currp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),
 					RPTAG_BPenColor,p96EncodeColor(RGBFB_A8B8G8R8,bg),
 //					RPTAG_Font,tfont,
 					TAG_DONE);
 
-	utf8_to_local_encoding(text,length,&buffer);
+		utf8_to_local_encoding(text,length,&buffer);
 
-	if(!buffer) return true;
+		if(!buffer) return true;
 
 /* Below function prints Unicode text direct to the RastPort.
  * This is commented out due to lack of SDK which allows me to perform blits
@@ -192,11 +197,15 @@ bool ami_text(int x, int y, const struct css_style *style,
  *  or, perhaps the ttengine.library version (far too slow):
  * 	ami_tte_text(currp,text,length);
  */
-	Move(currp,x,y);
-	Text(currp,buffer,strlen(buffer));
-
-	ami_close_font(tfont);
-	ami_utf8_free(buffer);
+		Move(currp,x,y);
+		Text(currp,buffer,strlen(buffer));
+		ami_close_font(tfont);
+		ami_utf8_free(buffer);
+	}
+	else
+	{
+		ami_unicode_text(currp,text,length,style,x,y,c);
+	}
 
 	return true;
 }
