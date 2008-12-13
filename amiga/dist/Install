@@ -29,6 +29,8 @@
 	)
 )
 
+(set #icon-exists (exists (tackon @default-dest "NetSurf.info")))
+
 (copylib
 	(prompt "Please check the version of NetSurf you are copying against "
 			"any which might already be installed.")
@@ -100,6 +102,16 @@
 		(select #themename
 			(set #theme "Resources/Themes/Default")
 			(set #theme "Resources/Themes/AISS")
+		)
+
+		(set #theme-icon (tackon @default-dest (tackon #theme "NetSurf.info")))
+		(set #options-exist (exists #theme-icon))
+
+		(copyfiles
+			(prompt "Copying theme icon")
+			(source #theme-icon)
+			(help @copyfiles-help)
+			(dest @default-dest)
 		)
 
 		(textfile
