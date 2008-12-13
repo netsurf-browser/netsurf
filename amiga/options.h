@@ -33,12 +33,12 @@ extern bool option_context_menu;
 extern bool option_sticky_context_menu;
 extern bool option_truecolour_mouse_pointers;
 extern bool option_use_os_pointers;
-extern bool option_force_tabs;
 extern bool option_new_tab_active;
 extern bool option_kiosk_mode;
 extern char *option_recent_file;
 extern char *option_arexx_dir;
 extern char *option_download_dir;
+extern bool option_quick_text;
 
 #define EXTRA_OPTION_DEFINE \
 bool option_verbose_log = false; \
@@ -54,12 +54,12 @@ bool option_context_menu = true; \
 bool option_sticky_context_menu = true; \
 bool option_truecolour_mouse_pointers = false; \
 bool option_use_os_pointers = true; \
-bool option_force_tabs = false; \
 bool option_new_tab_active = false; \
 bool option_kiosk_mode = false; \
 char *option_recent_file = 0; \
 char *option_arexx_dir = 0; \
 char *option_download_dir = 0; \
+bool option_quick_text = true; \
 
 #define EXTRA_OPTION_TABLE \
 { "verbose_log",	OPTION_BOOL,	&option_verbose_log}, \
@@ -75,10 +75,10 @@ char *option_download_dir = 0; \
 { "sticky_context_menu",	OPTION_BOOL,	&option_sticky_context_menu}, \
 { "truecolour_mouse_pointers",	OPTION_BOOL,	&option_truecolour_mouse_pointers}, \
 { "os_mouse_pointers",	OPTION_BOOL,	&option_use_os_pointers}, \
-{ "always_open_tabs",	OPTION_BOOL,	&option_force_tabs}, \
 { "new_tab_is_active",	OPTION_BOOL,	&option_new_tab_active}, \
 { "kiosk_mode",	OPTION_BOOL,	&option_kiosk_mode}, \
 { "recent_file",		OPTION_STRING,	&option_recent_file }, \
 { "arexx_dir",		OPTION_STRING,	&option_arexx_dir }, \
-{ "download_dir",		OPTION_STRING,	&option_download_dir },
+{ "download_dir",		OPTION_STRING,	&option_download_dir }, \
+{ "quick_text",	OPTION_BOOL,	&option_quick_text},
 #endif
