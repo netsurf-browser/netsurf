@@ -246,6 +246,7 @@ ClearNS:Cancella selezione
 #
 Browser:Browser
 HistGlobalNS:Mostra cronologia globale...
+FindTextNS:Find text...
 
 # Hotlist menu
 #
@@ -427,6 +428,8 @@ PrintSheetsFilled:I fogli di stampa sono pieni
 # dialog box.
 #
 NotFound:Non trovato
+Next:Next
+Prev:Previous
 
 
 # 401 login user interface tokens

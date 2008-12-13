@@ -245,6 +245,7 @@ ClearNS:Clear selection
 #
 Browser:Browser
 HistGlobalNS:Show global history...
+FindTextNS:Find text...
 
 # Hotlist menu
 #
@@ -426,6 +427,8 @@ PrintSheetsFilled:Druckseiten
 # dialog box.
 #
 NotFound:nichts
+Next:Next
+Prev:Previous
 
 
 # 401 login user interface tokens
