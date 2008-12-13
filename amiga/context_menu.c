@@ -30,6 +30,7 @@
 #include <proto/dos.h>
 #include <string.h>
 #include "utils/utils.h"
+#include <proto/asl.h>
 
 uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved);
 
@@ -41,17 +42,10 @@ void ami_context_menu_init(void)
 	ctxmenulab[CMID_COPYURL] = ami_utf8_easy((char *)messages_get("CopyURL"));
 	ctxmenulab[CMID_SHOWOBJ] = ami_utf8_easy((char *)messages_get("ObjShow"));
 	ctxmenulab[CMID_COPYOBJ] = ami_utf8_easy((char *)messages_get("CopyURL"));
+	ctxmenulab[CMID_SAVEOBJ] = ami_utf8_easy((char *)messages_get("ObjSave"));
 
-	if(!option_force_tabs)
-	{
-		ctxmenulab[CMID_URLOPENWIN] = ami_utf8_easy((char *)messages_get("LinkNewWin"));
-		ctxmenulab[CMID_URLOPENTAB] = ami_utf8_easy((char *)messages_get("LinkNewTab"));
-	}
-	else
-	{
-		ctxmenulab[CMID_URLOPENWIN] = ami_utf8_easy((char *)messages_get("LinkNewTab"));
-		ctxmenulab[CMID_URLOPENTAB] = ami_utf8_easy((char *)messages_get("LinkNewWin"));
-	}
+	ctxmenulab[CMID_URLOPENWIN] = ami_utf8_easy((char *)messages_get("LinkNewWin"));
+	ctxmenulab[CMID_URLOPENTAB] = ami_utf8_easy((char *)messages_get("LinkNewTab"));
 
 	ctxmenulab[CMSUB_OBJECT] = ami_utf8_easy((char *)messages_get("Object"));
 	ctxmenulab[CMSUB_URL] = ami_utf8_easy((char *)messages_get("Link"));
@@ -131,6 +125,11 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 							PMIA_ID,CMID_COPYOBJ,
 							PMIA_UserData,curbox->object->url,
 						TAG_DONE),
+						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_SAVEOBJ],
+							PMIA_ID,CMID_SAVEOBJ,
+							PMIA_UserData,curbox->object,
+						TAG_DONE),
 					TAG_DONE),
 				TAG_DONE),
 				~0);
@@ -163,6 +162,7 @@ uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved)
 	struct gui_window_2 *gwin = hook->h_Data;
 	APTR userdata = NULL;
 	struct browser_window *bw;
+	struct content *object;
 
     if(GetAttrs(item,PMIA_ID,&itemid,
 					PMIA_UserData,&userdata,
@@ -216,6 +216,31 @@ uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved)
 
 			case CMID_SHOWOBJ:
 				browser_window_go(gwin->bw,userdata,gwin->bw->current_content->url,true);
+			break;
+
+			case CMID_SAVEOBJ:
+				object = (struct content *)userdata;
+
+				if(AslRequestTags(filereq,
+							ASLFR_TitleText,messages_get("NetSurf"),
+							ASLFR_Screen,scrn,
+							ASLFR_DoSaveMode,TRUE,
+							ASLFR_InitialFile,FilePart(object->url),
+							TAG_DONE))
+				{
+					BPTR fh = 0;
+					char fname[1024];
+					strlcpy(&fname,filereq->fr_Drawer,1024);
+					AddPart(fname,filereq->fr_File,1024);
+					ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
+					if(fh = FOpen(fname,MODE_NEWFILE,0))
+					{
+						FWrite(fh,object->source_data,1,object->source_size);
+						FClose(fh);
+						SetComment(fname,object->url);
+					}
+					ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
+				}
 			break;
 		}
     }
