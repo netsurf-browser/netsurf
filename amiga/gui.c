@@ -68,6 +68,8 @@
 #include <proto/keymap.h>
 #include "amiga/save_complete.h"
 #include "amiga/fetch_file.h"
+#include "amiga/fetch_mailto.h"
+#include "amiga/search.h"
 
 #ifdef WITH_HUBBUB
 #include <hubbub/hubbub.h>
@@ -96,7 +98,6 @@
 
 char *default_stylesheet_url;
 char *adblock_stylesheet_url;
-struct gui_window *search_current_window = NULL;
 
 struct MsgPort *appport;
 struct MsgPort *msgport;
@@ -120,26 +121,48 @@ struct BitMap *mouseptrbm[AMI_LASTPOINTER+1];
 int mouseptrcurrent=0;
 
 char *ptrs[AMI_LASTPOINTER+1] = {
-	"Resources/Pointers/Default",
-	"Resources/Pointers/Point",
-	"Resources/Pointers/Caret",
-	"Resources/Pointers/Menu",
-	"Resources/Pointers/Up",
-	"Resources/Pointers/Down",
-	"Resources/Pointers/Left",
-	"Resources/Pointers/Right",
-	"Resources/Pointers/RightUp",
-	"Resources/Pointers/LeftDown",
-	"Resources/Pointers/LeftUp",
-	"Resources/Pointers/RightDown",
-	"Resources/Pointers/Cross",
-	"Resources/Pointers/Move",
-	"Resources/Pointers/Wait", // not used
-	"Resources/Pointers/Help",
-	"Resources/Pointers/NoDrop",
-	"Resources/Pointers/NotAllowed",
-	"Resources/Pointers/Progress",
-	"Resources/Pointers/Blank"};
+	"ptr_default",
+	"ptr_point",
+	"ptr_caret",
+	"ptr_menu",
+	"ptr_up",
+	"ptr_down",
+	"ptr_left",
+	"ptr_right",
+	"ptr_rightup",
+	"ptr_leftdown",
+	"ptr_leftup",
+	"ptr_rightdown",
+	"ptr_cross",
+	"ptr_move",
+	"ptr_wait", // not used
+	"ptr_help",
+	"ptr_nodrop",
+	"ptr_notallowed",
+	"ptr_progress",
+	"ptr_blank"};
+
+char *ptrs32[AMI_LASTPOINTER+1] = {
+	"ptr32_default",
+	"ptr32_point",
+	"ptr32_caret",
+	"ptr32_menu",
+	"ptr32_up",
+	"ptr32_down",
+	"ptr32_left",
+	"ptr32_right",
+	"ptr32_rightup",
+	"ptr32_leftdown",
+	"ptr32_leftup",
+	"ptr32_rightdown",
+	"ptr32_cross",
+	"ptr32_move",
+	"ptr32_wait", // not used
+	"ptr32_help",
+	"ptr32_nodrop",
+	"ptr32_notallowed",
+	"ptr32_progress",
+	"ptr32_blank"};
 
 void ami_update_throbber(struct gui_window_2 *g,bool redraw);
 void ami_update_buttons(struct gui_window_2 *);
@@ -204,7 +227,6 @@ void gui_init(int argc, char** argv)
 
 	verbose_log = option_verbose_log;
 
-	ami_init_mouse_pointers();
 	nsscreentitle = ASPrintf("NetSurf %s",netsurf_version);
 
 	if(lock=Lock("Resources/LangNames",ACCESS_READ))
@@ -254,6 +276,8 @@ void gui_init(int argc, char** argv)
 		die(messages_get("NoMemory"));
 	}
 #endif
+
+	css_screen_dpi = 72;
 
 	if((!option_cookie_file) || (option_cookie_file[0] == '\0'))
 		option_cookie_file = (char *)strdup("Resources/Cookies");
@@ -347,6 +371,8 @@ void gui_init(int argc, char** argv)
 	AddPart(&throbberfile,"Theme",100);
 	messages_load(throbberfile);
 
+	ami_init_mouse_pointers();
+
 	ami_get_theme_filename(&throbberfile,"theme_throbber");
 	throbber_frames=atoi(messages_get("theme_throbber_frames"));
 
@@ -406,6 +432,7 @@ void gui_init2(int argc, char** argv)
 
 	notalreadyrunning = ami_arexx_init();
 	ami_fetch_file_register();
+	ami_fetch_mailto_register();
 
 	InitRastPort(&dummyrp);
 	dummyrp.BitMap = p96AllocBitMap(1,1,32,
@@ -576,6 +603,23 @@ void ami_handle_msg(void)
 		if(node->Type == AMINS_TVWINDOW)
 		{
 			if(ami_tree_event((struct treeview_window *)gwin))
+			{
+				if(IsMinListEmpty(window_list))
+				{
+					/* last window closed, so exit */
+					netsurf_quit = true;
+				}
+				break;
+			}
+			else
+			{
+				node = nnode;
+				continue;
+			}
+		}
+		else if(node->Type == AMINS_FINDWINDOW)
+		{
+			if(ami_search_event())
 			{
 				if(IsMinListEmpty(window_list))
 				{
@@ -1114,6 +1158,10 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 
 	if(redraw)
 	{
+		struct IBox *bbox;
+		GetAttr(SPACE_AreaBox,gwin->gadgets[GID_BROWSER],(ULONG *)&bbox);
+		p96RectFill(gwin->win->RPort,bbox->Left,bbox->Top,bbox->Width-1,bbox->Height-1,0xffffffff);
+
 		browser_window_update(gwin->bw,false);
 
 		if((gwin->bw->window->scrollx) || (gwin->bw->window->scrolly))
@@ -1287,16 +1335,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	char closetab[100];
 
 	if((bw->browser_window_type == BROWSER_WINDOW_IFRAME) && option_no_iframes) return NULL;
-
-	if(option_force_tabs && (bw->browser_window_type == BROWSER_WINDOW_NORMAL))
-	{
-		/* option_force_tabs reverses the new_tab parameter.
-		 * We can still open new windows by setting new_tab to true.
-		 */
-
-		if(new_tab) new_tab = false;
-			else new_tab = true;
-	}
 
 	if(option_kiosk_mode) new_tab = false;
 
@@ -1801,6 +1839,7 @@ void gui_window_destroy(struct gui_window *g)
 	}
 
 	curbw = NULL;
+	if(g->shared->searchwin) ami_search_close();
 
 	DisposeObject(g->shared->objects[OID_MAIN]);
 	DeleteLayer(0,g->shared->rp.Layer);
@@ -1995,9 +2034,13 @@ void ami_do_redraw(struct gui_window_2 *g)
 	else
 	{
 */
-		content_redraw(c, -hcurrent,-vcurrent,width,height,
-			0,0,c->width,c->height,
-			g->bw->scale,0xFFFFFF);
+		content_redraw(c, -hcurrent /* * g->bw->scale */,
+					-vcurrent /* * g->bw->scale */,
+					width /* * g->bw->scale */,
+					height /* * g->bw->scale */,
+					0,0,c->width /* * g->bw->scale */,
+					c->height /* * g->bw->scale */,
+					g->bw->scale,0xFFFFFF);
 
 //	}
 
@@ -2032,6 +2075,8 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 	if(!g) return;
 	if(sx<0) sx=0;
 	if(sy<0) sy=0;
+	if(sx > g->shared->bw->current_content->width) sx = g->shared->bw->current_content->width;
+	if(sy > g->shared->bw->current_content->height) sy = g->shared->bw->current_content->height;
 
 	if(g->tab_node) GetAttr(CLICKTAB_Current,g->shared->gadgets[GID_TABS],(ULONG *)&cur_tab);
 
@@ -2053,7 +2098,8 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 void gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
 		int x1, int y1)
 {
-//	printf("scr vis\n");
+	gui_window_set_scroll(g, x0, y0);
+	ami_do_redraw(g->shared);
 }
 
 void gui_window_position_frame(struct gui_window *g, int x0, int y0,
@@ -2218,10 +2264,12 @@ void ami_init_mouse_pointers(void)
 		BPTR ptrfile = 0;
 		mouseptrbm[i] = NULL;
 		mouseptrobj[i] = NULL;
+		char ptrfname[1024];
 
 		if(option_truecolour_mouse_pointers)
 		{
-			if(dobj = GetIconTags(ptrs[i],ICONGETA_UseFriendBitMap,TRUE,TAG_DONE))
+			ami_get_theme_filename(&ptrfname,ptrs32[i]);
+			if(dobj = GetIconTags(ptrfname,ICONGETA_UseFriendBitMap,TRUE,TAG_DONE))
 			{
 				if(IconControl(dobj, ICONCTRLA_GetImageDataFormat, &format, TAG_DONE))
 				{
@@ -2272,7 +2320,8 @@ void ami_init_mouse_pointers(void)
 
 		if(!mouseptrobj[i])
 		{
-			if(ptrfile = Open(ptrs[i],MODE_OLDFILE))
+			ami_get_theme_filename(&ptrfname,ptrs[i]);
+			if(ptrfile = Open(ptrfname,MODE_OLDFILE))
 			{
 				int mx,my;
 				UBYTE *pprefsbuf = AllocVec(1061,MEMF_PRIVATE | MEMF_CLEAR);
@@ -2606,12 +2655,6 @@ void gui_create_form_select_menu(struct browser_window *bw,
 }
 
 void gui_launch_url(const char *url)
-{
-}
-
-bool gui_search_term_highlighted(struct gui_window *g,
-		unsigned start_offset, unsigned end_offset,
-		unsigned *start_idx, unsigned *end_idx)
 {
 }
 
