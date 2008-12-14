@@ -101,11 +101,10 @@ void ami_fetch_mailto_register(void)
 bool ami_fetch_mailto_initialise(const char *scheme)
 {
 	LOG(("Initialise Amiga fetcher for %s", scheme));
-	//ami_mailto_fetcher_list = NewObjList();
+	ami_mailto_fetcher_list = NewObjList();
 
-	//if(ami_mailto_fetcher_list) 
-	return true;
-	//	else return false;
+	if(ami_mailto_fetcher_list) return true;
+		else return false;
 }
 
 
@@ -116,7 +115,7 @@ bool ami_fetch_mailto_initialise(const char *scheme)
 void ami_fetch_mailto_finalise(const char *scheme)
 {
 	LOG(("Finalise Amiga fetcher %s", scheme));
-//	FreeObjList(ami_mailto_fetcher_list);
+	FreeObjList(ami_mailto_fetcher_list);
 	if(IOpenURL) DropInterface((struct Interface *)IOpenURL);
 	if(OpenURLBase) CloseLibrary(OpenURLBase);
 
@@ -166,8 +165,8 @@ void * ami_fetch_mailto_setup(struct fetch *parent_fetch, const char *url,
 
 //	LOG(("fetch %p, url '%s', path '%s'", fetch, url,fetch->path));
 
-//	fetch->obj = AddObject(ami_mailto_fetcher_list,AMINS_FETCHER);
-//	fetch->obj->objstruct = fetch;
+	fetch->obj = AddObject(ami_mailto_fetcher_list,AMINS_FETCHER);
+	fetch->obj->objstruct = fetch;
 
 	return fetch;
 }
@@ -192,8 +191,6 @@ bool ami_fetch_mailto_start(void *vfetch)
 	fetch->cachedata.etag = NULL;
 	fetch->cachedata.last_modified = 0;
 
-	URL_OpenA(fetch->url,NULL);
-
 	return true;
 }
 
@@ -202,6 +199,8 @@ void ami_fetch_mailto_abort(void *vf)
 	struct ami_mailto_fetch_info *fetch = (struct ami_mailto_fetch_info*)vf;
 
 	LOG(("ami mailto fetcher abort"));
+
+	fetch->aborted = true;
 }
 
 
@@ -215,9 +214,7 @@ void ami_fetch_mailto_free(void *vf)
 	LOG(("ami file fetcher free %lx",fetch));
 
 	free(fetch->url);
-	FreeVec(fetch);
-
-//	DelObject(fetch->obj); // delobject frees fetch
+	DelObject(fetch->obj); // delobject frees fetch
 }
 
 static void ami_fetch_mailto_send_callback(fetch_msg msg,
@@ -238,10 +235,10 @@ static void ami_fetch_mailto_send_callback(fetch_msg msg,
 
 void ami_fetch_mailto_poll(const char *scheme_ignored)
 {
-/*
 	struct nsObject *node;
 	struct nsObject *nnode;
 	struct ami_mailto_fetch_info *fetch;
+	STRPTR errorstring = "launched in external program\0";
 	
 	if(IsMinListEmpty(ami_mailto_fetcher_list)) return;
 
@@ -252,67 +249,17 @@ void ami_fetch_mailto_poll(const char *scheme_ignored)
 		nnode=(struct nsObject *)GetSucc((struct Node *)node);
 
 		fetch = (struct ami_mailto_fetch_info *)node->objstruct;
-		LOG(("polling %lx",fetch));
 
 		if(fetch->locked) continue;
 
-		if(!fetch->aborted)
-		{
-			if(fetch->fh)
-			{
-				ULONG len;
+		URL_OpenA(fetch->url,NULL);
 
-				len = FRead(fetch->fh,ami_mailto_fetcher_buffer,1,1024);
-
-				LOG(("fetch %lx read %ld",fetch,len));
-
-				ami_fetch_mailto_send_callback(FETCH_DATA, 
-					fetch,ami_mailto_fetcher_buffer,len);
-
-				if((len<1024) && (!fetch->aborted))
-				{
-					ami_fetch_mailto_send_callback(FETCH_FINISHED,
-						fetch, &fetch->cachedata, 0);
-
-					fetch->aborted = true;
-				}
-			}
-			else
-			{
-				fetch->fh = FOpen(fetch->path,MODE_OLDFILE,0);
-
-				if(fetch->fh)
-				{
-					struct FileInfoBlock fib;
-					if(ExamineFH(fetch->fh,&fib))
-						fetch->len = fib.fib_Size;
-
-					fetch_set_http_code(fetch->fetch_handle,200);
-					fetch->mimetype = fetch_mimetype(fetch->path);
-					LOG(("mimetype %s len %ld",fetch->mimetype,fetch->len));
-
-					ami_fetch_mailto_send_callback(FETCH_TYPE,
-						fetch, fetch->mimetype, fetch->len);
-				}
-				else
-				{
-					STRPTR errorstring;
-
-					errorstring = ASPrintf("%s %s",messages_get("FileError"),fetch->path);
-					fetch_set_http_code(fetch->fetch_handle,404);
-					ami_fetch_mailto_send_callback(FETCH_ERROR, fetch,
+		fetch_set_http_code(fetch->fetch_handle,200);
+		ami_fetch_mailto_send_callback(FETCH_ERROR, fetch,
 						errorstring, 0);
-					fetch->aborted = true;
-					FreeVec(errorstring);
-				}
-			}
-		}
 
-		if(fetch && fetch->aborted)
-		{
-			fetch_remove_from_queues(fetch->fetch_handle);
-			fetch_free(fetch->fetch_handle);
-		}
+		fetch_remove_from_queues(fetch->fetch_handle);
+		fetch_free(fetch->fetch_handle);
+
 	}while(node=nnode);
-*/
 }

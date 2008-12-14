@@ -73,6 +73,7 @@ To front: TOFRONT
 Open URL: OPEN "%u"
 New window: OPEN "%u" NEW
 
+On the Misc tab, please ensure "Send mailto: URLs to email application" is set.
 @endnode
 
 @node hotlist "Hotlist menu"
