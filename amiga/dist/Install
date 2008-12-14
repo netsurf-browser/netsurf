@@ -105,13 +105,17 @@
 		)
 
 		(set #theme-icon (tackon @default-dest (tackon #theme "NetSurf.info")))
-		(set #options-exist (exists #theme-icon))
+		(set #icon-exists (exists #theme-icon))
 
-		(copyfiles
-			(prompt "Copying theme icon")
-			(source #theme-icon)
-			(help @copyfiles-help)
-			(dest @default-dest)
+		(if #icon-exists
+			(
+				(copyfiles
+					(prompt "Copying theme icon")
+					(source #theme-icon)
+					(help @copyfiles-help)
+					(dest @default-dest)
+				)
+			)
 		)
 
 		(textfile
