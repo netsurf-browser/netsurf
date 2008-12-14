@@ -238,7 +238,6 @@ void ami_fetch_mailto_poll(const char *scheme_ignored)
 	struct nsObject *node;
 	struct nsObject *nnode;
 	struct ami_mailto_fetch_info *fetch;
-	STRPTR errorstring = "launched in external program\0";
 	
 	if(IsMinListEmpty(ami_mailto_fetcher_list)) return;
 
@@ -254,9 +253,9 @@ void ami_fetch_mailto_poll(const char *scheme_ignored)
 
 		URL_OpenA(fetch->url,NULL);
 
-		fetch_set_http_code(fetch->fetch_handle,200);
-		ami_fetch_mailto_send_callback(FETCH_ERROR, fetch,
-						errorstring, 0);
+		fetch_set_http_code(fetch->fetch_handle,302);
+		ami_fetch_mailto_send_callback(FETCH_REDIRECT, fetch,
+					fetch_get_referer(fetch->fetch_handle), 0);
 
 		fetch_remove_from_queues(fetch->fetch_handle);
 		fetch_free(fetch->fetch_handle);
