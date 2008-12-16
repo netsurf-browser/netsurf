@@ -3222,7 +3222,7 @@ float css_len2pt(const struct css_length *length,
 				css_len2pt(&style->font_size.value.length, 0) *
 				0.6;
 		/* We assume the screen and any other output has the same dpi */
-		case CSS_UNIT_PX: return length->value * css_screen_dpi / 72;
+		case CSS_UNIT_PX: return length->value * 72 / css_screen_dpi;
 		/* 1pt = 1in/72 */
 		case CSS_UNIT_IN: return length->value * 72;
 		case CSS_UNIT_CM: return length->value * 28.452756;

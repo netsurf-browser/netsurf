@@ -421,8 +421,7 @@ void nsfont_read_style(const struct css_style *style,
 		rufl_style *font_style)
 {
 	assert(style->font_size.size == CSS_FONT_SIZE_LENGTH);
-	*font_size = css_len2px(&style->font_size.value.length, style) *
-			72.0 / 90.0 * 16.;
+	*font_size = css_len2pt(&style->font_size.value.length, style) * 16.;
 	if (*font_size < option_font_min_size * 1.6)
 		*font_size = option_font_min_size * 1.6;
 	if (1600 < *font_size)
