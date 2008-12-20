@@ -51,13 +51,13 @@ void schedule(int t, void (*callback)(void *p), void *p)
 
 	nscb = (struct nscallback *)obj->objstruct;
 
-	nscb->tv.tv_sec = 0;
-	nscb->tv.tv_micro = t*10000;
+	nscb->tv.Seconds = 0;
+	nscb->tv.Microseconds = t*10000;
 
-	while(nscb->tv.tv_micro >= 1000000)
+	while(nscb->tv.Microseconds >= 1000000)
 	{
-		nscb->tv.tv_sec++;
-		nscb->tv.tv_micro -= 1000000;
+		nscb->tv.Seconds++;
+		nscb->tv.Microseconds -= 1000000;
 	}
 
 	GetSysTime(&tv);
@@ -66,9 +66,9 @@ void schedule(int t, void (*callback)(void *p), void *p)
 	if(nscb->treq = AllocVec(sizeof(struct timerequest),MEMF_PRIVATE | MEMF_CLEAR))
 	{
 		*nscb->treq = *tioreq;
-    	nscb->treq->tr_node.io_Command=TR_ADDREQUEST;
-    	nscb->treq->tr_time.tv_sec=nscb->tv.tv_sec; // secs
-    	nscb->treq->tr_time.tv_micro=nscb->tv.tv_micro; // micro
+    	nscb->treq->Request.io_Command=TR_ADDREQUEST;
+    	nscb->treq->Time.Seconds=nscb->tv.tv_sec; // secs
+    	nscb->treq->Time.Microseconds=nscb->tv.Microseconds; // micro
     	SendIO((struct IORequest *)nscb->treq);
 	}
 #endif

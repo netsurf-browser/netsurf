@@ -22,14 +22,14 @@
 #include <proto/timer.h>
 
 struct MinList *schedule_list;
-struct timerequest *tioreq;
+struct TimeRequest *tioreq;
 
 struct nscallback
 {
-	struct timeval tv;
+	struct TimeVal tv;
 	void *callback;
 	void *p;
-	struct timerequest *treq;
+	struct TimeRequest *treq;
 };
 
 void ami_remove_timer_event(struct nscallback *nscb);

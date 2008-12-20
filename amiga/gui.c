@@ -188,15 +188,15 @@ void gui_init(int argc, char** argv)
 	ASO_NoTrack,FALSE,
 	TAG_DONE);
 
-	tioreq= (struct timerequest *)AllocSysObjectTags(ASOT_IOREQUEST,
-	ASOIOR_Size,sizeof(struct timerequest),
+	tioreq= (struct TimeRequest *)AllocSysObjectTags(ASOT_IOREQUEST,
+	ASOIOR_Size,sizeof(struct TimeRequest),
 	ASOIOR_ReplyPort,msgport,
 	ASO_NoTrack,FALSE,
 	TAG_DONE);
 
 	OpenDevice("timer.device",UNIT_WAITUNTIL,(struct IORequest *)tioreq,0);
 
-	TimerBase = (struct Device *)tioreq->tr_node.io_Device;
+	TimerBase = (struct Device *)tioreq->Request.io_Device;
 	ITimer = (struct TimerIFace *)GetInterface((struct Library *)TimerBase,"main",1,NULL);
 
     if(!(appport = AllocSysObjectTags(ASOT_PORT,
@@ -2308,9 +2308,9 @@ void ami_init_mouse_pointers(void)
 												POINTERA_WordWidth, (width + 15) / 16,
 												POINTERA_XResolution, POINTERXRESN_SCREENRES,
 												POINTERA_YResolution, POINTERYRESN_SCREENRESASPECT,
-												POINTERA_Dummy + 0x07, data,
-												POINTERA_Dummy + 0x08, width,
-												POINTERA_Dummy + 0x09, height,
+												POINTERA_ImageData, data,
+												POINTERA_Width, width,
+												POINTERA_Height, height,
 												TAG_DONE);
 						}
 					}
@@ -2656,6 +2656,7 @@ void gui_create_form_select_menu(struct browser_window *bw,
 
 void gui_launch_url(const char *url)
 {
+	printf("%s\n",url);
 }
 
 void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg) 

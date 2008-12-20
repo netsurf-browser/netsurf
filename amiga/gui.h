@@ -25,16 +25,6 @@
 #include <dos/dos.h>
 #include "desktop/gui.h"
 
-/* temp icon.library stuff */
-#define ICONCTRLA_SetImageDataFormat        (ICONA_Dummy + 0x67) /*103*/
-#define ICONCTRLA_GetImageDataFormat        (ICONA_Dummy + 0x68) /*104*/
-
-/* Values for ICONCTRLA_Set/GetImageDataFormat */
-#define IDFMT_BITMAPPED     (0)  /* Bitmapped icon (planar, legacy) */
-#define IDFMT_PALETTEMAPPED (1)  /* Palette mapped icon (chunky, V44+) */
-#define IDFMT_DIRECTMAPPED  (2)  /* Direct mapped icon (truecolor 0xAARRGGBB, V51+) */ 
-/* temp icon.library stuff */
-
 enum
 {
     GID_MAIN=0,

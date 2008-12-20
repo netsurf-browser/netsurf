@@ -19,8 +19,28 @@
 #ifndef AMIGA_COMPAT_H
 #define AMIGA_COMPAT_H
 //#include <sys/unistd.h>
-#include <termios.h>
 #include <sys/utsname.h>
+
+/* for termios.h compatiblity */
+typedef unsigned int	tcflag_t;
+typedef unsigned char	cc_t;
+typedef unsigned int	speed_t;
+
+#define NCCS	16
+
+struct termios {
+	tcflag_t	c_iflag;
+	tcflag_t	c_oflag;
+	tcflag_t	c_cflag;
+	tcflag_t	c_lflag;
+	cc_t	c_cc[NCCS];
+	/* Private */
+	speed_t	c_ispeed;
+	speed_t	c_ospeed;
+	int type;
+	unsigned int flags;
+};
+/**/
 
 extern gid_t getegid(void);
 extern uid_t geteuid(void);
