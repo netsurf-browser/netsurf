@@ -911,6 +911,8 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 	int right = box->border[RIGHT];
 	int bottom = box->border[BOTTOM];
 	int left = box->border[LEFT];
+	int x, y;
+	unsigned int i;
 
 	if (scale != 1.0) {
 		top *= scale;
@@ -921,32 +923,33 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 
 	assert(box->style);
 
-	int x = (x_parent + box->x) * scale;
-	int y = (y_parent + box->y) * scale;
+	x = (x_parent + box->x) * scale;
+	y = (y_parent + box->y) * scale;
 
-	/* calculate border vertices */
-	int p[20] = {
-		x,				y,
-		x - left,			y - top,
-		x + padding_width + right,	y - top,
-		x + padding_width,		y,
-		x + padding_width,		y + padding_height,
-		x + padding_width + right,	y + padding_height + bottom,
-		x - left,			y + padding_height + bottom,
-		x,				y + padding_height,
-		x,				y,
-		x - left,			y - top
-	};
-
-	unsigned int i;
-	for (i = 0; i != 4; i++) {
-		if (box->border[i] == 0)
-			continue;
-		if (!html_redraw_border_plot(i, p,
-				box->style->border[i].color,
-				box->style->border[i].style,
-				box->border[i] * scale))
-			return false;
+	{
+		/* calculate border vertices */
+		int p[20] = {
+			x,				y,
+			x - left,			y - top,
+			x + padding_width + right,	y - top,
+			x + padding_width,		y,
+			x + padding_width,		y + padding_height,
+			x + padding_width + right,	y + padding_height + bottom,
+			x - left,			y + padding_height + bottom,
+			x,				y + padding_height,
+			x,				y,
+			x - left,			y - top
+		};
+	
+		for (i = 0; i != 4; i++) {
+			if (box->border[i] == 0)
+				continue;
+			if (!html_redraw_border_plot(i, p,
+					box->style->border[i].color,
+					box->style->border[i].style,
+					box->border[i] * scale))
+				return false;
+		}
 	}
 
 	return true;
@@ -984,40 +987,42 @@ bool html_redraw_inline_borders(struct box *box, int x0, int y0, int x1, int y1,
 
 	assert(box->style);
 
-	/* calculate border vertices */
-	int p[20] = {
-		x0 + left,	y0 + top,
-		x0,		y0,
-		x1,		y0,
-		x1 - right,	y0 + top,
-		x1 - right,	y1 - bottom,
-		x1,		y1,
-		x0,		y1,
-		x0 + left,	y1 - bottom,
-		x0 + left,	y0 + top,
-		x0,		y0
-	};
-
-	if (box->border[LEFT] && first)
-		if (!html_redraw_border_plot(LEFT, p,
-				box->style->border[LEFT].color,
-				box->style->border[LEFT].style, left))
-			return false;
-	if (box->border[TOP])
-		if (!html_redraw_border_plot(TOP, p,
-				box->style->border[TOP].color,
-				box->style->border[TOP].style, top))
-			return false;
-	if (box->border[BOTTOM])
-		if (!html_redraw_border_plot(BOTTOM, p,
-				box->style->border[BOTTOM].color,
-				box->style->border[BOTTOM].style, bottom))
-			return false;
-	if (box->border[RIGHT] && last)
-		if (!html_redraw_border_plot(RIGHT, p,
-				box->style->border[RIGHT].color,
-				box->style->border[RIGHT].style, right))
-			return false;
+	{
+		/* calculate border vertices */
+		int p[20] = {
+			x0 + left,	y0 + top,
+			x0,		y0,
+			x1,		y0,
+			x1 - right,	y0 + top,
+			x1 - right,	y1 - bottom,
+			x1,		y1,
+			x0,		y1,
+			x0 + left,	y1 - bottom,
+			x0 + left,	y0 + top,
+			x0,		y0
+		};
+	
+		if (box->border[LEFT] && first)
+			if (!html_redraw_border_plot(LEFT, p,
+					box->style->border[LEFT].color,
+					box->style->border[LEFT].style, left))
+				return false;
+		if (box->border[TOP])
+			if (!html_redraw_border_plot(TOP, p,
+					box->style->border[TOP].color,
+					box->style->border[TOP].style, top))
+				return false;
+		if (box->border[BOTTOM])
+			if (!html_redraw_border_plot(BOTTOM, p,
+					box->style->border[BOTTOM].color,
+					box->style->border[BOTTOM].style, bottom))
+				return false;
+		if (box->border[RIGHT] && last)
+			if (!html_redraw_border_plot(RIGHT, p,
+					box->style->border[RIGHT].color,
+					box->style->border[RIGHT].style, right))
+				return false;
+	}
 	return true;
 }
 
