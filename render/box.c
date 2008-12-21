@@ -93,6 +93,7 @@ struct box * box_create(struct css_style *style,
 	box->columns = 1;
 	box->rows = 1;
 	box->start_column = 0;
+	box->inline_new_line = false;
 	box->printed = false;
 	box->next = NULL;
 	box->prev = NULL;

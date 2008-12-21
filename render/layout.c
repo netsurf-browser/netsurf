@@ -2014,6 +2014,7 @@ bool layout_line(struct box *first, int *width, int *y,
 	}
 
 	for (d = first; d != b; d = d->next) {
+		d->inline_new_line = false;
 		if (d->type == BOX_INLINE || d->type == BOX_BR ||
 				d->type == BOX_TEXT ||
 				d->type == BOX_INLINE_END) {
@@ -2042,6 +2043,7 @@ bool layout_line(struct box *first, int *width, int *y,
 		if (d->type == BOX_TEXT && d->height > used_height)
 			used_height = d->height;
 	}
+	first->inline_new_line = true;
 
 	assert(b != first || (move_y && 0 < used_height && (left || right)));
 
@@ -3730,8 +3732,7 @@ void layout_calculate_descendant_bboxes(struct box *box)
 
 	if (box->type == BOX_INLINE_END) {
 		box = box->inline_end;
-		for (child = box->next;
-				child && child != box->inline_end;
+		for (child = box->next; child;
 				child = child->next) {
 			if (child->type == BOX_FLOAT_LEFT ||
 					child->type == BOX_FLOAT_RIGHT)
@@ -3753,6 +3754,8 @@ void layout_calculate_descendant_bboxes(struct box *box)
 					child->descendant_y1 - box->y)
 				box->descendant_y1 = child->y +
 						child->descendant_y1 - box->y;
+			if (child == box->inline_end)
+				break;
 		}
 		return;
 	}

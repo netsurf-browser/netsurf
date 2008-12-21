@@ -52,8 +52,7 @@
 static bool html_redraw_box(struct box *box,
 		int x, int y,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-		float scale, colour current_background_color,
-		int inline_depth);
+		float scale, colour current_background_color);
 static bool html_redraw_box_children(struct box *box,
 		int x_parent, int y_parent,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
@@ -65,6 +64,8 @@ static bool html_redraw_caret(struct caret *caret,
 		colour current_background_color, float scale);
 static bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 		int padding_width, int padding_height, float scale);
+bool html_redraw_inline_borders(struct box *box, int x0, int y0, int x1, int y1,
+		float scale, bool first, bool last);
 static bool html_redraw_border_plot(int i, int *p, colour c,
 		css_border_style style, int thickness);
 static colour html_redraw_darker(colour c);
@@ -79,6 +80,10 @@ static bool html_redraw_file(int x, int y, int width, int height,
 static bool html_redraw_background(int x, int y, struct box *box, float scale,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		colour *background_colour, struct box *background);
+static bool html_redraw_inline_background(int x, int y, struct box *box,
+		float scale, int clip_x0, int clip_y0,
+		int clip_x1, int clip_y1, int px0, int py0, int px1, int py1,
+		bool first, bool last, colour *background_colour);
 static bool html_redraw_text_decoration(struct box *box,
 		int x_parent, int y_parent, float scale,
 		colour background_colour);
@@ -134,7 +139,7 @@ bool html_redraw(struct content *c, int x, int y,
 
 	result &= html_redraw_box(box, x, y,
 			clip_x0, clip_y0, clip_x1, clip_y1,
-			scale, background_colour, 0);
+			scale, background_colour);
 
 	if (want_knockout)
 		knockout_plot_end();
@@ -165,8 +170,7 @@ bool html_redraw(struct content *c, int x, int y,
 bool html_redraw_box(struct box *box,
 		int x_parent, int y_parent,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-		float scale, colour current_background_color,
-		int inline_depth)
+		float scale, colour current_background_color)
 {
 	int x, y;
 	int width, height;
@@ -311,7 +315,8 @@ bool html_redraw_box(struct box *box,
 		x1 = clip_x1;
 		y1 = clip_y1;
 	}
-	/* background colour and image */
+
+	/* background colour and image for block level content */
 
 	/* Thanks to backwards compatibility, CSS defines the following:
 	 *
@@ -373,11 +378,11 @@ bool html_redraw_box(struct box *box,
 		* optimize away non-differing inlines, only plot background
 		* for BOX_TEXT it's in an inline and ensure the bg_box
 		* has something worth rendering */
-		if (bg_box && (bg_box->style && bg_box->type != BOX_BR &&
-				(bg_box->type != BOX_INLINE ||
-				bg_box->style != bg_box->parent->parent->style)) &&
-				(bg_box->type != BOX_TEXT ||
-				(bg_box->type == BOX_TEXT && inline_depth > 0)) &&
+		if (bg_box && bg_box->style &&
+				bg_box->type != BOX_BR &&
+				bg_box->type != BOX_TEXT &&
+				bg_box->type != BOX_INLINE &&
+				bg_box->type != BOX_INLINE_END &&
 				((bg_box->style->background_color != TRANSPARENT) ||
 				(bg_box->background))) {
 			/* find intersection of clip box and border edge */
@@ -402,14 +407,122 @@ bool html_redraw_box(struct box *box,
 		}
 	}
 
-	/* borders */
+	/* borders for block level content */
 	if (box->style && box->type != BOX_TEXT &&
+			box->type != BOX_INLINE &&
+			box->type != BOX_INLINE_END &&
 			(border_top || border_right ||
 			 border_bottom || border_left))
 		if (!html_redraw_borders(box, x_parent, y_parent,
 				padding_width, padding_height,
 				scale))
 			return false;
+
+	/* backgrounds and borders for inlines */
+	if (box->style && box->type == BOX_INLINE && box->inline_end &&
+			(box->style->background_color != TRANSPARENT ||
+			box->background)) {
+		/* inline backgrounds and borders span other boxes and may
+		 * wrap onto separate lines */
+		struct box *ib;
+		bool first = true;
+		int ib_x;
+		int ib_y = y;
+		int ib_width;
+		int ib_p_left, ib_p_width;
+		int ib_b_left, ib_b_right;
+		int xmin = x - border_left;
+		int xmax = x + padding_width + border_right;
+		int ymin = y - border_top;
+		int ymax = y + padding_height + border_bottom;
+		int px0 = xmin < x0 ? x0 : xmin;
+		int px1 = xmax < x1 ? xmax : x1;
+		int py0 = ymin < y0 ? y0 : ymin;
+		int py1 = ymax < y1 ? ymax : y1;
+		for (ib = box; ib; ib = ib->next) {
+			/* to get extents of rectangle(s) associated with
+			 * inline, cycle though all boxes in inline, skipping
+			 * over floats */
+			if (ib->type == BOX_FLOAT_LEFT ||
+					ib->type == BOX_FLOAT_RIGHT)
+				continue;
+			if (scale == 1.0) {
+				ib_x = x_parent + ib->x;
+				ib_y = y_parent + ib->y;
+				ib_width = ib->width;
+				ib_p_left = ib->padding[LEFT];
+				ib_p_width = ib_p_left + ib->width +
+						ib->padding[RIGHT];
+				ib_b_left = ib->border[LEFT];
+				ib_b_right = ib->border[RIGHT];
+			} else {
+				ib_x = (x_parent + ib->x) * scale;
+				ib_y = (y_parent + ib->y) * scale;
+				ib_width = ib->width * scale;
+				/* left and top padding values are normally
+				 * zero, so avoid trivial FP maths */
+				ib_p_left = ib->padding[LEFT] ?
+						ib->padding[LEFT] * scale : 0;
+				ib_p_width = (ib->padding[LEFT] + ib->width +
+						ib->padding[RIGHT]) * scale;
+				ib_b_left = ib->border[LEFT] * scale;
+				ib_b_right = ib->border[RIGHT] * scale;
+			}
+
+			if (ib->inline_new_line && ib != box) {
+				/* inline element has wrapped, plot background
+				 * and borders */
+				if (!html_redraw_inline_background(
+						x, y, box, scale,
+						px0, py0, px1, py1,
+						xmin, ymin, xmax, ymax,
+						first, false,
+						&current_background_color))
+					return false;
+				/* restore previous graphics window */
+				if (!plot.clip(x0, y0, x1, y1))
+					return false;
+				if (!html_redraw_inline_borders(box,
+						xmin, ymin, xmax, ymax,
+						scale, first, false))
+					return false;
+				/* reset coords */
+				xmin = ib_x - ib_b_left;
+				xmax = ib_x + ib_p_width + ib_b_right;
+				ymin = ib_y - border_top - padding_top;
+				ymax = ib_y + padding_height - padding_top +
+						border_bottom;
+
+				px0 = xmin < x0 ? x0 : xmin;
+				px1 = xmax < x1 ? xmax : x1;
+				py0 = ymin < y0 ? y0 : ymin;
+				py1 = ymax < y1 ? ymax : y1;
+
+				first = false;
+			}
+
+			/* increase width for current box */
+			xmax = ib_x + ib_p_width + ib_b_right;
+			px1 = xmax < x1 ? xmax : x1;
+
+			if (ib == box->inline_end)
+				/* reached end of BOX_INLINE span */
+				break;
+		}
+		/* plot background and borders for last rectangle of
+		 * the inline */
+		if (!html_redraw_inline_background(x, ib_y, box, scale,
+				px0, py0, px1, py1, xmin, ymin, xmax, ymax,
+				first, true, &current_background_color))
+			return false;
+		/* restore previous graphics window */
+		if (!plot.clip(x0, y0, x1, y1))
+			return false;
+		if (!html_redraw_inline_borders(box, xmin, ymin, xmax, ymax,
+				scale, first, true))
+			return false;
+
+	}
 
 	/* clip to the padding edge for boxes with overflow hidden or scroll */
 	if (box->style && box->style->overflow != CSS_OVERFLOW_VISIBLE) {
@@ -484,7 +597,7 @@ bool html_redraw_box(struct box *box,
 				x_parent + box->x - box->scroll_x,
 				y_parent + box->y - box->scroll_y,
 				clip_x0, clip_y0, clip_x1, clip_y1,
-				scale, current_background_color, 0))
+				scale, current_background_color))
 			return false;
 
 	/* scrollbars */
@@ -509,7 +622,7 @@ bool html_redraw_box(struct box *box,
 /**
  * Draw the various children of a box.
  *
- * \param  box	    box to draw
+ * \param  box	    box to draw children of
  * \param  x_parent coordinate of parent box
  * \param  y_parent coordinate of parent box
  * \param  clip_x0  clip rectangle
@@ -526,22 +639,16 @@ bool html_redraw_box_children(struct box *box,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale, colour current_background_color)
 {
-	int inline_depth = 0;
 	struct box *c;
 
 	for (c = box->children; c; c = c->next) {
-		if (c->type == BOX_INLINE)
-			inline_depth++;
-		else if (c->type == BOX_INLINE_END)
-			inline_depth--;
 
 		if (c->type != BOX_FLOAT_LEFT && c->type != BOX_FLOAT_RIGHT)
 			if (!html_redraw_box(c,
 					x_parent + box->x - box->scroll_x,
 					y_parent + box->y - box->scroll_y,
 					clip_x0, clip_y0, clip_x1, clip_y1,
-					scale, current_background_color,
-					inline_depth))
+					scale, current_background_color))
 				return false;
 	}
 	for (c = box->float_children; c; c = c->next_float)
@@ -549,7 +656,7 @@ bool html_redraw_box_children(struct box *box,
 				x_parent + box->x - box->scroll_x,
 				y_parent + box->y - box->scroll_y,
 				clip_x0, clip_y0, clip_x1, clip_y1,
-				scale, current_background_color, 0))
+				scale, current_background_color))
 			return false;
 
 	return true;
@@ -814,99 +921,103 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 
 	assert(box->style);
 
-	if (box->type == BOX_INLINE && !box->object && !box->gadget &&
-			!box->text) {
-		int padding_height = (box->padding[TOP] + box->height +
-				box->padding[BOTTOM]) * scale;
-		struct box *c;
-		for (c = box; c; c = c->next) {
-			int x = (x_parent + c->x) * scale;
-			int y = y_parent + c->y;
-			int padding_width = c->width;
-			int p[20];
-			if (c != box)
-				y -= box->padding[TOP];
-			if (c == box)
-				padding_width += box->padding[LEFT];
-			if (!box->inline_end || c == box->inline_end)
-				padding_width += box->padding[RIGHT];
-			if (scale != 1) {
-				y *= scale;
-				padding_width *= scale;
-			}
-			p[0] = x;
-			p[1] = y;
-			p[2] = x - left;
-			p[3] = y - top;
-			p[4] = x + padding_width + right;
-			p[5] = y - top;
-			p[6] = x + padding_width;
-			p[7] = y;
-			p[8] = x + padding_width;
-			p[9] = y + padding_height;
-			p[10] = x + padding_width + right;
-			p[11] = y + padding_height + bottom;
-			p[12] = x - left;
-			p[13] = y + padding_height + bottom;
-			p[14] = x;
-			p[15] = y + padding_height;
-			p[16] = x;
-			p[17] = y;
-			p[18] = x - left;
-			p[19] = y - top;
-			if (box->border[LEFT] && c == box)
-				html_redraw_border_plot(LEFT, p,
-						box->style->border[LEFT].color,
-						box->style->border[LEFT].style,
-						box->border[LEFT] * scale);
-			if (box->border[TOP])
-				html_redraw_border_plot(TOP, p,
-						box->style->border[TOP].color,
-						box->style->border[TOP].style,
-						box->border[TOP] * scale);
-			if (box->border[BOTTOM])
-				html_redraw_border_plot(BOTTOM, p,
-						box->style->border[BOTTOM].
-						color,
-						box->style->border[BOTTOM].
-						style,
-						box->border[BOTTOM] * scale);
-			if (box->border[RIGHT] && (!box->inline_end ||
-					c == box->inline_end))
-				html_redraw_border_plot(RIGHT, p,
-						box->style->border[RIGHT].color,
-						box->style->border[RIGHT].style,
-						box->border[RIGHT] * scale);
-			if (!box->inline_end || c == box->inline_end)
-				break;
-		}
-	} else {
-		int x = (x_parent + box->x) * scale;
-		int y = (y_parent + box->y) * scale;
-		int p[20] = {
-			x, y,
-			x - left, y - top,
-			x + padding_width + right, y - top,
-			x + padding_width, y,
-			x + padding_width, y + padding_height,
-			x + padding_width + right, y + padding_height + bottom,
-			x - left, y + padding_height + bottom,
-			x, y + padding_height,
-			x, y,
-			x - left, y - top
-		};
-		unsigned int i;
-		for (i = 0; i != 4; i++) {
-			if (box->border[i] == 0)
-				continue;
-			if (!html_redraw_border_plot(i, p,
-					box->style->border[i].color,
-					box->style->border[i].style,
-					box->border[i] * scale))
-				return false;
-		}
+	int x = (x_parent + box->x) * scale;
+	int y = (y_parent + box->y) * scale;
+
+	/* calculate border vertices */
+	int p[20] = {
+		x,				y,
+		x - left,			y - top,
+		x + padding_width + right,	y - top,
+		x + padding_width,		y,
+		x + padding_width,		y + padding_height,
+		x + padding_width + right,	y + padding_height + bottom,
+		x - left,			y + padding_height + bottom,
+		x,				y + padding_height,
+		x,				y,
+		x - left,			y - top
+	};
+
+	unsigned int i;
+	for (i = 0; i != 4; i++) {
+		if (box->border[i] == 0)
+			continue;
+		if (!html_redraw_border_plot(i, p,
+				box->style->border[i].color,
+				box->style->border[i].style,
+				box->border[i] * scale))
+			return false;
 	}
 
+	return true;
+}
+
+
+/**
+ * Draw an inline's borders.
+ *
+ * \param  box	  BOX_INLINE which created the border
+ * \param  x0	  coordinate of border edge rectangle
+ * \param  y0	  coordinate of border edge rectangle
+ * \param  x1	  coordinate of border edge rectangle
+ * \param  y1	  coordinate of border edge rectangle
+ * \param  scale  scale for redraw
+ * \param  first  true if this is the first rectangle associated with the inline
+ * \param  last	  true if this is the last rectangle associated with the inline
+ * \return true if successful, false otherwise
+ */
+
+bool html_redraw_inline_borders(struct box *box, int x0, int y0, int x1, int y1,
+		float scale, bool first, bool last)
+{
+	int top = box->border[TOP];
+	int right = box->border[RIGHT];
+	int bottom = box->border[BOTTOM];
+	int left = box->border[LEFT];
+
+	if (scale != 1.0) {
+		top *= scale;
+		right *= scale;
+		bottom *= scale;
+		left *= scale;
+	}
+
+	assert(box->style);
+
+	/* calculate border vertices */
+	int p[20] = {
+		x0 + left,	y0 + top,
+		x0,		y0,
+		x1,		y0,
+		x1 - right,	y0 + top,
+		x1 - right,	y1 - bottom,
+		x1,		y1,
+		x0,		y1,
+		x0 + left,	y1 - bottom,
+		x0 + left,	y0 + top,
+		x0,		y0
+	};
+
+	if (box->border[LEFT] && first)
+		if (!html_redraw_border_plot(LEFT, p,
+				box->style->border[LEFT].color,
+				box->style->border[LEFT].style, left))
+			return false;
+	if (box->border[TOP])
+		if (!html_redraw_border_plot(TOP, p,
+				box->style->border[TOP].color,
+				box->style->border[TOP].style, top))
+			return false;
+	if (box->border[BOTTOM])
+		if (!html_redraw_border_plot(BOTTOM, p,
+				box->style->border[BOTTOM].color,
+				box->style->border[BOTTOM].style, bottom))
+			return false;
+	if (box->border[RIGHT] && last)
+		if (!html_redraw_border_plot(RIGHT, p,
+				box->style->border[RIGHT].color,
+				box->style->border[RIGHT].style, right))
+			return false;
 	return true;
 }
 
@@ -1316,7 +1427,8 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 			case CSS_BACKGROUND_POSITION_PERCENT:
 				y += (box->padding[TOP] + box->height +
 					box->padding[BOTTOM] -
-					background->background->height) * scale *
+					background->background->height) *
+					scale *
 					background->style->background_position.
 						vert.value.percent / 100;
 				break;
@@ -1383,8 +1495,9 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 				background->style->background_color;
 			if (plot_colour)
 				if (!plot.fill(clip_x0, clip_y0,
-					clip_x1, clip_y1, *background_colour))
-				return false;
+						clip_x1, clip_y1,
+						*background_colour))
+					return false;
 		}
 		/* and plot the image */
 		if (plot_content) {
@@ -1396,7 +1509,8 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 						scale)
 					clip_x1 = x + background->background->
 							width * scale;
-			} else if (!repeat_y) {
+			}
+			if (!repeat_y) {
 				if (clip_y0 < y)
 					clip_y0 = y;
 				if (clip_y1 > y +
@@ -1428,6 +1542,161 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 		if (!clip_to_children)
 			return true;
 	}
+	return true;
+}
+
+
+/**
+ * Plot an inline's background and/or background image.
+ *
+ * \param  x	  coordinate of box
+ * \param  y	  coordinate of box
+ * \param  box	  BOX_INLINE which created the background
+ * \param  scale  scale for redraw
+ * \param  clip_x0	coordinate of clip rectangle
+ * \param  clip_y0	coordinate of clip rectangle
+ * \param  clip_x1	coordinate of clip rectangle
+ * \param  clip_y1	coordinate of clip rectangle
+ * \param  px0	  coordinate of border edge rectangle
+ * \param  py0	  coordinate of border edge rectangle
+ * \param  px1	  coordinate of border edge rectangle
+ * \param  py1	  coordinate of border edge rectangle
+ * \param  first  true if this is the first rectangle associated with the inline
+ * \param  last   true if this is the last rectangle associated with the inline
+ * \param  background_colour  updated to current background colour if plotted
+ * \return true if successful, false otherwise
+ */
+
+bool html_redraw_inline_background(int x, int y, struct box *box, float scale,
+		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
+		int px0, int py0, int px1, int py1,
+		bool first, bool last, colour *background_colour)
+{
+	bool repeat_x = false;
+	bool repeat_y = false;
+	bool plot_colour = true;
+	bool plot_content;
+
+	plot_content = (box->background != NULL);
+
+	if (plot_content) {
+		/* handle background-repeat */
+		switch (box->style->background_repeat) {
+			case CSS_BACKGROUND_REPEAT_REPEAT:
+				repeat_x = repeat_y = true;
+				/* optimisation: only plot the colour if
+				 * bitmap is not opaque */
+				if (box->background->bitmap)
+					plot_colour = !bitmap_get_opaque(
+						box->background->bitmap);
+				break;
+			case CSS_BACKGROUND_REPEAT_REPEAT_X:
+				repeat_x = true;
+				break;
+			case CSS_BACKGROUND_REPEAT_REPEAT_Y:
+				repeat_y = true;
+				break;
+			case CSS_BACKGROUND_REPEAT_NO_REPEAT:
+				break;
+			default:
+				break;
+		}
+
+		/* handle background-position */
+		switch (box->style->background_position.horz.pos) {
+			case CSS_BACKGROUND_POSITION_PERCENT:
+				x += (px1 - px0 -
+					box->background->width * scale) *
+					box->style->background_position.
+						horz.value.percent / 100;
+
+				if (!repeat_x &&
+						((box->style->
+						background_position.
+						horz.value.percent < 2 &&
+						!first) ||
+						(box->style->
+						background_position.
+						horz.value.percent > 98 &&
+						!last))) {
+					plot_content = false;
+				}
+				break;
+			case CSS_BACKGROUND_POSITION_LENGTH:
+				x += (int) (css_len2px(&box->style->
+					background_position.horz.value.length,
+					box->style) * scale);
+				break;
+			default:
+				break;
+		}
+
+		switch (box->style->background_position.vert.pos) {
+			case CSS_BACKGROUND_POSITION_PERCENT:
+				y += (py1 - py0 -
+					box->background->height * scale) *
+					box->style->background_position.
+						vert.value.percent / 100;
+				break;
+			case CSS_BACKGROUND_POSITION_LENGTH:
+				y += (int) (css_len2px(&box->style->
+					background_position.vert.value.length,
+					box->style) * scale);
+				break;
+			default:
+				break;
+		}
+	}
+
+	/* plot the background colour */
+	if (box->style->background_color != TRANSPARENT) {
+		*background_colour =
+			box->style->background_color;
+		if (plot_colour)
+			if (!plot.fill(clip_x0, clip_y0,
+					clip_x1, clip_y1,
+					*background_colour))
+				return false;
+	}
+	/* and plot the image */
+	if (plot_content) {
+		if (!repeat_x) {
+			if (clip_x0 < x)
+				clip_x0 = x;
+			if (clip_x1 > x +
+					box->background->width *
+					scale)
+				clip_x1 = x + box->background->
+						width * scale;
+		}
+		if (!repeat_y) {
+			if (clip_y0 < y)
+				clip_y0 = y;
+			if (clip_y1 > y +
+					box->background->height *
+					scale)
+				clip_y1 = y + box->background->
+						height * scale;
+		}
+		/* valid clipping rectangles only */
+		if ((clip_x0 < clip_x1) && (clip_y0 < clip_y1)) {
+			if (!plot.clip(clip_x0, clip_y0,
+					clip_x1, clip_y1))
+				return false;
+			if (!content_redraw_tiled(box->
+					background, x, y,
+					ceilf(box->background->
+					width * scale),
+					ceilf(box->background->
+					height * scale),
+					clip_x0, clip_y0,
+					clip_x1, clip_y1,
+					scale, *background_colour,
+					repeat_x, repeat_y))
+				return false;
+		}
+	}
+
 	return true;
 }
 
