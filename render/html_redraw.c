@@ -1779,6 +1779,8 @@ bool html_redraw_text_decoration_inline(struct box *box, int x, int y,
 	for (c = box->next;
 			c && c != box->inline_end;
 			c = c->next) {
+		if (c->type != BOX_TEXT)
+			continue;
 		if (!plot.line((x + c->x) * scale,
 				(y + c->y + c->height * ratio) * scale,
 				(x + c->x + c->width) * scale,
