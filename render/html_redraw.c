@@ -421,7 +421,8 @@ bool html_redraw_box(struct box *box,
 	/* backgrounds and borders for inlines */
 	if (box->style && box->type == BOX_INLINE && box->inline_end &&
 			(box->style->background_color != TRANSPARENT ||
-			box->background)) {
+			box->background || border_top || border_right ||
+			border_bottom || border_left)) {
 		/* inline backgrounds and borders span other boxes and may
 		 * wrap onto separate lines */
 		struct box *ib;
