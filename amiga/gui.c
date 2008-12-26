@@ -113,7 +113,7 @@ ULONG throbber_width,throbber_height,throbber_frames;
 BOOL rmbtrapped;
 BOOL locked_screen = FALSE;
 
-static struct RastPort dummyrp;
+//static struct RastPort dummyrp;
 
 #define AMI_LASTPOINTER GUI_POINTER_PROGRESS+1
 Object *mouseptrobj[AMI_LASTPOINTER+1];
@@ -434,13 +434,14 @@ void gui_init2(int argc, char** argv)
 	ami_fetch_file_register();
 	ami_fetch_mailto_register();
 
+/*
 	InitRastPort(&dummyrp);
 	dummyrp.BitMap = p96AllocBitMap(1,1,32,
 		BMF_CLEAR | BMF_DISPLAYABLE | BMF_INTERLEAVED,
 		NULL,RGBFB_A8R8G8B8);
 
 	if(!dummyrp.BitMap) die(messages_get("NoMemory"));
-
+*/
 	if(notalreadyrunning)
 	{
 		if((option_modeid) && (option_modeid[0] != '\0'))
@@ -492,6 +493,52 @@ void gui_init2(int argc, char** argv)
 			locked_screen = TRUE;
 		}
 	}
+
+/* init shared bitmaps */
+	glob.bm = p96AllocBitMap(scrn->Width,scrn->Height,32,
+		BMF_CLEAR | BMF_DISPLAYABLE | BMF_INTERLEAVED,
+		NULL, //gwin->shared->win->RPort->BitMap,
+		RGBFB_A8R8G8B8);
+
+	if(!glob.bm)
+	{
+		warn_user("NoMemory","");
+		//browser_window_destroy(bw);
+		//return NULL;
+	}
+
+	InitRastPort(&glob.rp);
+	glob.rp.BitMap = glob.bm;
+	SetDrMd(&glob.rp,BGBACKFILL);
+
+	glob.layerinfo = NewLayerInfo();
+	glob.rp.Layer = CreateUpfrontLayer(glob.layerinfo,glob.bm,0,0,scrn->Width-1,scrn->Height-1,0,NULL);
+
+	glob.areabuf = AllocVec(100,MEMF_PRIVATE | MEMF_CLEAR);
+	glob.rp.AreaInfo = AllocVec(sizeof(struct AreaInfo),MEMF_PRIVATE | MEMF_CLEAR);
+
+	if((!glob.areabuf) || (!glob.rp.AreaInfo))
+	{
+		warn_user("NoMemory","");
+		//browser_window_destroy(bw);
+		//return NULL;
+	}
+
+	InitArea(glob.rp.AreaInfo,glob.areabuf,100/5);
+	glob.rp.TmpRas = AllocVec(sizeof(struct TmpRas),MEMF_PRIVATE | MEMF_CLEAR);
+	glob.tmprasbuf = AllocVec(scrn->Width*scrn->Height,MEMF_PRIVATE | MEMF_CLEAR);
+
+	if((!glob.tmprasbuf) || (!glob.rp.TmpRas))
+	{
+		warn_user("NoMemory","");
+		//browser_window_destroy(bw);
+		//return NULL;
+	}
+
+	InitTmpRas(glob.rp.TmpRas,glob.tmprasbuf,scrn->Width*scrn->Height);
+
+	currp = &glob.rp;
+/* init shared bitmaps */
 
 	if(argc) // argc==0 is started from wb
 	{
@@ -1228,11 +1275,20 @@ void gui_quit(void)
 
 	ami_arexx_cleanup();
 
+	DeleteLayer(0,glob.rp.Layer);
+	DisposeLayerInfo(glob.layerinfo);
+	p96FreeBitMap(glob.bm);
+	FreeVec(glob.rp.TmpRas);
+	FreeVec(glob.rp.AreaInfo);
+	FreeVec(glob.tmprasbuf);
+	FreeVec(glob.areabuf);
+
 	if(!locked_screen) /* set if we are using somebody else's screen */
 	{
 		while(!CloseScreen(scrn));
 	}
-	p96FreeBitMap(dummyrp.BitMap);
+//	p96FreeBitMap(dummyrp.BitMap);
+
 	FreeVec(nsscreentitle);
 
 	if(option_context_menu) ami_context_menu_free();
@@ -1711,49 +1767,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	}
 
 	gwin->shared->bw = bw;
-	currp = &gwin->shared->rp; // WINDOW.CLASS: &gwin->rp; //gwin->win->RPort;
-
-	gwin->shared->bm = p96AllocBitMap(scrn->Width,scrn->Height,32,
-		BMF_CLEAR | BMF_DISPLAYABLE | BMF_INTERLEAVED,
-		gwin->shared->win->RPort->BitMap,
-		RGBFB_A8R8G8B8);
-
-	if(!gwin->shared->bm)
-	{
-		warn_user("NoMemory","");
-		browser_window_destroy(bw);
-		return NULL;
-	}
-
-	InitRastPort(&gwin->shared->rp);
-	gwin->shared->rp.BitMap = gwin->shared->bm;
-	SetDrMd(&gwin->shared->rp,BGBACKFILL);
-
-	gwin->shared->layerinfo = NewLayerInfo();
-	gwin->shared->rp.Layer = CreateUpfrontLayer(gwin->shared->layerinfo,gwin->shared->bm,0,0,scrn->Width-1,scrn->Height-1,0,NULL);
-
-	gwin->shared->areabuf = AllocVec(100,MEMF_PRIVATE | MEMF_CLEAR);
-	gwin->shared->rp.AreaInfo = AllocVec(sizeof(struct AreaInfo),MEMF_PRIVATE | MEMF_CLEAR);
-
-	if((!gwin->shared->areabuf) || (!gwin->shared->rp.AreaInfo))
-	{
-		warn_user("NoMemory","");
-		browser_window_destroy(bw);
-		return NULL;
-	}
-
-	InitArea(gwin->shared->rp.AreaInfo,gwin->shared->areabuf,100/5);
-	gwin->shared->rp.TmpRas = AllocVec(sizeof(struct TmpRas),MEMF_PRIVATE | MEMF_CLEAR);
-	gwin->shared->tmprasbuf = AllocVec(scrn->Width*scrn->Height,MEMF_PRIVATE | MEMF_CLEAR);
-
-	if((!gwin->shared->tmprasbuf) || (!gwin->shared->rp.TmpRas))
-	{
-		warn_user("NoMemory","");
-		browser_window_destroy(bw);
-		return NULL;
-	}
-
-	InitTmpRas(gwin->shared->rp.TmpRas,gwin->shared->tmprasbuf,scrn->Width*scrn->Height);
+	//currp = &glob.rp; // WINDOW.CLASS: &gwin->rp; //gwin->win->RPort;
 
 //	GetRPAttrs(&gwin->rp,RPTAG_Font,&origrpfont,TAG_DONE);
 
@@ -1812,7 +1826,7 @@ void gui_window_destroy(struct gui_window *g)
 
 	if(!g) return;
 
-	currp = &dummyrp;
+//	currp = &dummyrp;
 
 	if(g->shared->tabs > 1)
 	{
@@ -1842,13 +1856,6 @@ void gui_window_destroy(struct gui_window *g)
 	if(g->shared->searchwin) ami_search_close();
 
 	DisposeObject(g->shared->objects[OID_MAIN]);
-	DeleteLayer(0,g->shared->rp.Layer);
-	DisposeLayerInfo(g->shared->layerinfo);
-	p96FreeBitMap(g->shared->bm);
-	FreeVec(g->shared->rp.TmpRas);
-	FreeVec(g->shared->rp.AreaInfo);
-	FreeVec(g->shared->tmprasbuf);
-	FreeVec(g->shared->areabuf);
 	DelObject(g->shared->node);
 	if(g->tab_node)
 	{
@@ -1947,7 +1954,7 @@ void gui_window_update_box(struct gui_window *g,
 
 	current_redraw_browser = g->shared->bw;
 
-	currp = &g->shared->rp;
+	currp = &glob.rp;
 
 	width=bbox->Width;
 	height=bbox->Height;
@@ -1972,11 +1979,11 @@ void gui_window_update_box(struct gui_window *g,
 		0xFFFFFF);
 
 	current_redraw_browser = NULL;
-	currp = &dummyrp;
+//	currp = &dummyrp;
 
 	ami_update_buttons(g->shared);
 
-	BltBitMapRastPort(g->shared->bm,0,0,g->shared->win->RPort,xoffset,yoffset,width,height,0x0C0); // this blit needs optimising
+	BltBitMapRastPort(glob.bm,0,0,g->shared->win->RPort,xoffset,yoffset,width,height,0x0C0); // this blit needs optimising
 
 /* doing immediate redraw here for now
 	g->shared->redraw_required = true;
@@ -2005,7 +2012,7 @@ void ami_do_redraw(struct gui_window_2 *g)
 
 	current_redraw_browser = g->bw;
 
-	currp = &g->rp;
+	currp = &glob.rp;
 
 	width=bbox->Width;
 	height=bbox->Height;
@@ -2045,14 +2052,14 @@ void ami_do_redraw(struct gui_window_2 *g)
 //	}
 
 	current_redraw_browser = NULL;
-	currp = &dummyrp;
+//	currp = &dummyrp;
 
 
 	ami_update_buttons(g);
 
-	BltBitMapRastPort(g->bm,0,0,g->win->RPort,xoffset,yoffset,width,height,0x0C0);
+	BltBitMapRastPort(glob.bm,0,0,g->win->RPort,xoffset,yoffset,width,height,0x0C0);
 
-	reg = InstallClipRegion(g->rp.Layer,NULL);
+	reg = InstallClipRegion(glob.rp.Layer,NULL);
 	if(reg) DisposeRegion(reg);
 
 //	DeleteLayer(0,g->rp.Layer);
@@ -2460,7 +2467,7 @@ void gui_window_remove_caret(struct gui_window *g)
 	GetAttr(SCROLLER_Top,g->shared->objects[OID_HSCROLL],(ULONG *)&xs);
 	GetAttr(SCROLLER_Top,g->shared->objects[OID_VSCROLL],(ULONG *)&ys);
 
-	BltBitMapRastPort(g->shared->bm,g->c_x,g->c_y,g->shared->win->RPort,bbox->Left+g->c_x-xs,bbox->Top+g->c_y-ys,2+1,g->c_h+1,0x0C0);
+	BltBitMapRastPort(glob.bm,g->c_x,g->c_y,g->shared->win->RPort,bbox->Left+g->c_x-xs,bbox->Top+g->c_y-ys,2+1,g->c_h+1,0x0C0);
 
 	g->c_h = 0;
 }

@@ -91,11 +91,6 @@ struct gui_window_2 {
 	struct List tab_list;
 	ULONG tabs;
 	ULONG next_tab;
-	struct BitMap *bm;
-	struct RastPort rp;
-	struct Layer_Info *layerinfo;
-	APTR areabuf;
-	APTR tmprasbuf;
 	struct Hook scrollerhook;
 	struct Hook popuphook;
 	struct form_control *control;
@@ -119,6 +114,15 @@ struct gui_window
 	struct browser_window *bw; // not used
 };
 
+struct gui_globals
+{
+	struct BitMap *bm;
+	struct RastPort rp;
+	struct Layer_Info *layerinfo;
+	APTR areabuf;
+	APTR tmprasbuf;
+};
+
 void ami_get_msg(void);
 void ami_update_pointer(struct Window *win, gui_pointer_shape shape);
 void ami_close_all_tabs(struct gui_window_2 *gwin);
@@ -134,4 +138,5 @@ struct FileRequester *filereq;
 struct MsgPort *sport;
 bool win_destroyed;
 struct browser_window *curbw;
+struct gui_globals glob;
 #endif
