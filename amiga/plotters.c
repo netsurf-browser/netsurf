@@ -28,6 +28,8 @@
 #include "amiga/utf8.h"
 #include <proto/layers.h>
 #include "amiga/options.h"
+#include <graphics/blitattr.h>
+#include <graphics/composite.h>
 
 #define PATT_DOT  0xAAAA
 #define PATT_DASH 0xCCCC
@@ -119,6 +121,7 @@ bool ami_polygon(int *p, unsigned int n, colour fill)
 
 	SetRPAttrs(currp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,fill),
 					RPTAG_OPenColor,p96EncodeColor(RGBFB_A8B8G8R8,fill),
+//					RPTAG_OPenColor,0xffffffff,
 					TAG_DONE);
 
 	AreaMove(currp,p[0],p[1]);
@@ -247,55 +250,97 @@ bool ami_bitmap(int x, int y, int width, int height,
 			struct bitmap *bitmap, colour bg, struct content *content)
 {
 	struct RenderInfo ri;
+	struct BitMap *tbm;
+	struct RastPort trp;
 
 	if(!width || !height) return true;
 
 //	ami_fill(x,y,x+width,y+height,bg);
 
+/*
 	SetRPAttrs(currp,RPTAG_BPenColor,p96EncodeColor(RGBFB_A8B8G8R8,bg),
 					TAG_DONE);
-
+*/
 	ri.Memory = bitmap->pixdata;
 	ri.BytesPerRow = bitmap->width * 4;
 	ri.RGBFormat = RGBFB_R8G8B8A8;
 
+	tbm = p96AllocBitMap(bitmap->width,bitmap->height,32,BMF_DISPLAYABLE,currp->BitMap,RGBFB_R8G8B8A8);
+	InitRastPort(&trp);
+	trp.BitMap = tbm;
+	p96WritePixelArray((struct RenderInfo *)&ri,0,0,&trp,0,0,bitmap->width,bitmap->height);
+
 	if((bitmap->width != width) || (bitmap->height != height))
 	{
-		struct BitMap *tbm,*scaledbm;
-		struct RastPort trp;
-		struct BitScaleArgs bsa;
+		if(GfxBase->lib_Version >= 53) // AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)
+		{
+			CompositeTags(COMPOSITE_Src_Over_Dest,tbm,currp->BitMap,
+						COMPTAG_ScaleX,COMP_FLOAT_TO_FIX(width/bitmap->width),
+						COMPTAG_ScaleY,COMP_FLOAT_TO_FIX(height/bitmap->height),
+						COMPTAG_Flags,COMPFLAG_IgnoreDestAlpha,
+						COMPTAG_DestX,x,
+						COMPTAG_DestY,y,
+						COMPTAG_DestWidth,width,
+						COMPTAG_DestHeight,height,
+						COMPTAG_OffsetX,x,
+						COMPTAG_OffsetY,y,
+						TAG_DONE);
+		}
+		else /* do it the old-fashioned way.  This is pretty slow, but probably
+			uses Composite() on OS4.1 anyway, so we're only saving a blit really. */
+		{
+			struct BitMap *scaledbm;
+			struct BitScaleArgs bsa;
 
-		scaledbm = p96AllocBitMap(width,height,32,0,currp->BitMap,RGBFB_R8G8B8A8);
-		tbm = p96AllocBitMap(bitmap->width,bitmap->height,32,0,currp->BitMap,RGBFB_R8G8B8A8);
-		InitRastPort(&trp);
-		trp.BitMap = tbm;
-		p96WritePixelArray((struct RenderInfo *)&ri,0,0,&trp,0,0,bitmap->width,bitmap->height);
-		bsa.bsa_SrcX = 0;
-		bsa.bsa_SrcY = 0;
-		bsa.bsa_SrcWidth = bitmap->width;
-		bsa.bsa_SrcHeight = bitmap->height;
-		bsa.bsa_DestX = 0;
-		bsa.bsa_DestY = 0;
-//		bsa.bsa_DestWidth = width;
-//		bsa.bsa_DestHeight = height;
-		bsa.bsa_XSrcFactor = bitmap->width;
-		bsa.bsa_XDestFactor = width;
-		bsa.bsa_YSrcFactor = bitmap->height;
-		bsa.bsa_YDestFactor = height;
-		bsa.bsa_SrcBitMap = tbm;
-		bsa.bsa_DestBitMap = scaledbm;
-		bsa.bsa_Flags = 0;
+			scaledbm = p96AllocBitMap(width,height,32,BMF_DISPLAYABLE,currp->BitMap,RGBFB_R8G8B8A8);
 
-		BitMapScale(&bsa);
-		BltBitMapRastPort(scaledbm,0,0,currp,x,y,width,height,0x0C0);
+			bsa.bsa_SrcX = 0;
+			bsa.bsa_SrcY = 0;
+			bsa.bsa_SrcWidth = bitmap->width;
+			bsa.bsa_SrcHeight = bitmap->height;
+			bsa.bsa_DestX = 0;
+			bsa.bsa_DestY = 0;
+	//		bsa.bsa_DestWidth = width;
+	//		bsa.bsa_DestHeight = height;
+			bsa.bsa_XSrcFactor = bitmap->width;
+			bsa.bsa_XDestFactor = width;
+			bsa.bsa_YSrcFactor = bitmap->height;
+			bsa.bsa_YDestFactor = height;
+			bsa.bsa_SrcBitMap = tbm;
+			bsa.bsa_DestBitMap = scaledbm;
+			bsa.bsa_Flags = 0;
 
-		p96FreeBitMap(tbm);
-		p96FreeBitMap(scaledbm);
+			BitMapScale(&bsa);
+
+			BltBitMapTags(BLITA_Width,width,
+						BLITA_Height,height,
+						BLITA_Source,scaledbm,
+						BLITA_Dest,currp,
+						BLITA_DestX,x,
+						BLITA_DestY,y,
+						BLITA_SrcType,BLITT_BITMAP,
+						BLITA_DestType,BLITT_RASTPORT,
+						BLITA_UseSrcAlpha,TRUE,
+						TAG_DONE);
+
+			p96FreeBitMap(scaledbm);
+		}
 	}
 	else
 	{
-		p96WritePixelArray((struct RenderInfo *)&ri,0,0,currp,x,y,width,height);
+		BltBitMapTags(BLITA_Width,width,
+						BLITA_Height,height,
+						BLITA_Source,&trp,
+						BLITA_Dest,currp,
+						BLITA_DestX,x,
+						BLITA_DestY,y,
+						BLITA_SrcType,BLITT_RASTPORT,
+						BLITA_DestType,BLITT_RASTPORT,
+						BLITA_UseSrcAlpha,TRUE,
+						TAG_DONE);
 	}
+
+	p96FreeBitMap(tbm);
 
 	return true;
 }
@@ -307,13 +352,21 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 	struct RenderInfo ri;
 	ULONG xf,yf,wf,hf;
 	int max_width,max_height;
+	struct BitMap *tbm;
+	struct RastPort trp;
 
+/*
 	SetRPAttrs(currp,RPTAG_BPenColor,p96EncodeColor(RGBFB_A8B8G8R8,bg),
 					TAG_DONE);
-
+*/
 	ri.Memory = bitmap->pixdata;
 	ri.BytesPerRow = bitmap->width * 4;
 	ri.RGBFormat = RGBFB_R8G8B8A8;
+
+	tbm = p96AllocBitMap(bitmap->width,bitmap->height,32,0,currp->BitMap,RGBFB_R8G8B8A8);
+	InitRastPort(&trp);
+	trp.BitMap = tbm;
+	p96WritePixelArray((struct RenderInfo *)&ri,0,0,&trp,0,0,bitmap->width,bitmap->height);
 
 	max_width =  (repeat_x ? scrn->Width : width);
 	max_height = (repeat_y ? scrn->Height : height);
@@ -343,9 +396,20 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 				hf=bitmap->height;
 			}
 
-			p96WritePixelArray((struct RenderInfo *)&ri,0,0,currp,x+xf,y+yf,wf,hf);
+			BltBitMapTags(BLITA_Width,wf,
+						BLITA_Height,hf,
+						BLITA_Source,&trp,
+						BLITA_Dest,currp,
+						BLITA_DestX,x+xf,
+						BLITA_DestY,y+yf,
+						BLITA_SrcType,BLITT_RASTPORT,
+						BLITA_DestType,BLITT_RASTPORT,
+						BLITA_UseSrcAlpha,TRUE,
+						TAG_DONE);
 		}
 	}
+
+	p96FreeBitMap(tbm);
 
 	return true;
 }
