@@ -578,7 +578,7 @@ void ro_gui_download_update_status(struct gui_download_window *dw)
 		sprintf(time, "%u:%.2u", left / 60, left % 60);
 		speed = human_friendly_bytesize(rate);
 
-		err = utf8_to_local_encoding(messages_get("DownloadU"), 0,
+		err = utf8_to_local_encoding(messages_get("Downloaded"), 0,
 				&local_status);
 		if (err != UTF8_CONVERT_OK) {
 			/* badenc should never happen */

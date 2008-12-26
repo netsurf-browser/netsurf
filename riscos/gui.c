@@ -961,7 +961,7 @@ void gui_poll(bool active)
 	gui_last_poll = clock();
 	ro_gui_handle_event(event, &block);
 	schedule_run();
-        ro_gui_window_update_boxes();
+	ro_gui_window_update_boxes();
 
 	if (browser_reformat_pending && event == wimp_NULL_REASON_CODE)
 		ro_gui_window_process_reformats();
@@ -1136,9 +1136,13 @@ void ro_gui_open_window_request(wimp_open *open)
 
 void ro_gui_close_window_request(wimp_close *close)
 {
-	if (ro_gui_wimp_event_close_window(close->w))
-		return;
-	ro_gui_dialog_close(close->w);
+	if (ro_gui_alt_pressed())
+		ro_gui_window_close_all();
+	else {
+		if (ro_gui_wimp_event_close_window(close->w))
+			return;
+		ro_gui_dialog_close(close->w);
+	}
 }
 
 
@@ -2003,7 +2007,10 @@ void ro_msg_window_info(wimp_message *message)
 	g = ro_gui_window_lookup(wi->w);
 
 	/* ic_<task name> will suffice for our other windows */
-	if (g) ro_gui_window_iconise(g, wi);
+	if (g) {
+		ro_gui_window_iconise(g, wi);
+		ro_gui_dialog_close_persistent(wi->w);
+	}
 }
 
 

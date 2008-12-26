@@ -146,6 +146,8 @@ void ro_gui_cert_open(struct tree *tree, struct node *node);
 
 /* in window.c */
 void ro_gui_window_quit(void);
+/* void ro_gui_window_close_all(void); */
+#define ro_gui_window_close_all ro_gui_window_quit  /* no need for a separate fn */
 void ro_gui_window_update_theme(void);
 void ro_gui_window_mouse_at(struct gui_window *g, wimp_pointer *pointer);
 bool ro_gui_toolbar_click(wimp_pointer *pointer);
@@ -166,6 +168,7 @@ void ro_gui_window_prepare_navigate_all(void);
 browser_mouse_state ro_gui_mouse_click_state(wimp_mouse_state buttons);
 bool ro_gui_shift_pressed(void);
 bool ro_gui_ctrl_pressed(void);
+bool ro_gui_alt_pressed(void);
 void ro_gui_window_scroll_end(struct gui_window *g, wimp_dragged *drag);
 void ro_gui_window_frame_resize_end(struct gui_window *g, wimp_dragged *drag);
 void ro_gui_window_iconise(struct gui_window *g,

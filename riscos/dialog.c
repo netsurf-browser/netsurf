@@ -650,8 +650,8 @@ void ro_gui_dialog_close_persistent(wimp_w parent) {
 	for (i = 0; i < MAX_PERSISTENT; i++) {
 		if (persistent_dialog[i].parent == parent &&
 				persistent_dialog[i].dialog != NULL) {
-			ro_gui_dialog_close(persistent_dialog[i].dialog);
-			ro_gui_wimp_event_close_window(persistent_dialog[i].dialog);
+			if (!ro_gui_wimp_event_close_window(persistent_dialog[i].dialog))
+				ro_gui_dialog_close(persistent_dialog[i].dialog);
 			persistent_dialog[i].parent = NULL;
 			persistent_dialog[i].dialog = NULL;
 		}

@@ -39,6 +39,8 @@
 #include "desktop/save_text.h"
 #include "desktop/selection.h"
 #include "image/bitmap.h"
+#include "render/box.h"
+#include "render/form.h"
 #include "riscos/dialog.h"
 #include "riscos/gui.h"
 #include "riscos/menus.h"
@@ -65,7 +67,7 @@ static struct content *gui_save_content = NULL;
 static struct selection *gui_save_selection = NULL;
 static int gui_save_filetype;
 
-static bool dragbox_active = false;  /** there is a Wimp_DragBox or DragASprite call in progress */
+static bool dragbox_active = false;  /** in-progress Wimp_DragBox/DragASprite op */
 static bool using_dragasprite = true;
 static bool saving_from_dialog = true;
 static osspriteop_area *saveas_area = NULL;
@@ -486,11 +488,56 @@ void ro_gui_save_drag_end(wimp_dragged *drag)
 		return;
 	}
 
-	/* ignore drags that remain within the source window */
+	/* perform hit-test if the destination is the same as the source window;
+		we want to allow drag-saving from a page into the input fields within
+		the page, but avoid accidental replacements of the current page */
 	if (gui_save_sourcew != (wimp_w)-1 && pointer.w == gui_save_sourcew) {
-		/* cancel the drag operation */
-		gui_current_drag_type = GUI_DRAG_NONE;
-		return;
+		int dx = (drag->final.x1 + drag->final.x0)/2;
+		int dy = (drag->final.y1 + drag->final.y0)/2;
+		struct gui_window *g;
+		bool dest_ok = false;
+		os_coord pos;
+
+		g = ro_gui_window_lookup(gui_save_sourcew);
+
+		if (g && ro_gui_window_to_window_pos(g, dx, dy, &pos)) {
+			struct content *content = g->bw->current_content;
+
+			if (content && content->type == CONTENT_HTML) {
+				struct box *box = content->data.html.layout;
+				int box_x, box_y;
+
+				/* Consider the margins of the html page now */
+				box_x = box->margin[LEFT];
+				box_y = box->margin[TOP];
+
+				while (!dest_ok && (box = box_at_point(box, pos.x, pos.y,
+									&box_x, &box_y, &content))) {
+					if (box->style &&
+							box->style->visibility == CSS_VISIBILITY_HIDDEN)
+						continue;
+
+					if (box->gadget) {
+						switch (box->gadget->type) {
+							case GADGET_FILE:
+							case GADGET_TEXTBOX:
+							case GADGET_TEXTAREA:
+							case GADGET_PASSWORD:
+								dest_ok = true;
+								break;
+
+							default:	/* appease compiler */
+								break;
+						}
+					}
+				}
+			}
+		}
+		if (!dest_ok) {
+			/* cancel the drag operation */
+			gui_current_drag_type = GUI_DRAG_NONE;
+			return;
+		}
 	}
 
 	if (!saving_from_dialog) {
@@ -550,7 +597,8 @@ void ro_gui_save_drag_end(wimp_dragged *drag)
  * clipboard contents we're being asked for when the DataSaveAck reply arrives
  */
 
-void ro_gui_send_datasave(gui_save_type save_type, wimp_full_message_data_xfer *message, wimp_t to)
+void ro_gui_send_datasave(gui_save_type save_type,
+		wimp_full_message_data_xfer *message, wimp_t to)
 {
 	/* Close the save window because otherwise we need two contexts
 	*/
@@ -1017,7 +1065,7 @@ void ro_gui_save_set_state(struct content *c, gui_save_type save_type,
 
 		error = ro_gui_wimp_get_sprite(icon_buf, &sprite);
 		if (error && error->errnum == error_SPRITE_OP_DOESNT_EXIST) {
-			/* try the 'unknown' filetype sprite has a fallback */
+			/* try the 'unknown' filetype sprite as a fallback */
 			memcpy(icon_buf, "file_xxx", 9);
 			error = ro_gui_wimp_get_sprite(icon_buf, &sprite);
 		}

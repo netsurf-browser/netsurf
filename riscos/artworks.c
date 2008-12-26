@@ -103,12 +103,13 @@ bool artworks_convert(struct content *c, int width, int height)
 	void *init_workspace;
 	void *init_routine;
 	os_error *error;
-	int used;
+	int used = -1;  /* slightly better with older OSLib versions */
 
 	/* check whether AWViewer has been seen and we can therefore
 		locate the ArtWorks rendering modules */
-	if (xos_read_var_val_size("Alias$LoadArtWorksModules", 0, os_VARTYPE_STRING,
-		&used, NULL, NULL) || used >= 0) {
+	xos_read_var_val_size("Alias$LoadArtWorksModules", 0, os_VARTYPE_STRING,
+				&used, NULL, NULL);
+	if (used >= 0) {
 		LOG(("Alias$LoadArtWorksModules not defined"));
 		msg_data.error = messages_get("AWNotSeen");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);

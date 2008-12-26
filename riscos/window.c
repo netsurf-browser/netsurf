@@ -1921,6 +1921,7 @@ void ro_gui_window_close(wimp_w w) {
 	char *temp_name, *r;
 	char *filename;
 	struct content *content = NULL;
+	bool destroy;
 
 	error = xwimp_get_pointer_info(&pointer);
 	if (error) {
@@ -1932,6 +1933,7 @@ void ro_gui_window_close(wimp_w w) {
 	if (g->bw)
 		content = g->bw->current_content;
 	if (pointer.buttons & wimp_CLICK_ADJUST) {
+		destroy = !ro_gui_shift_pressed();
 		filename = (content && content->url) ? url_to_path(content->url) : NULL;
 		if (filename) {
 			temp_name = malloc(strlen(filename) + 32);
@@ -1957,11 +1959,14 @@ void ro_gui_window_close(wimp_w w) {
 			free(filename);
 		} else {
 			/* this is pointless if we are about to close the window */
-			if (ro_gui_shift_pressed())
+			if (!destroy)
 				ro_gui_menu_handle_action(w, BROWSER_NAVIGATE_UP, true);
 		}
 	}
-	if (!ro_gui_shift_pressed())
+	else
+		destroy = true;
+
+	if (destroy)
 		browser_window_destroy(g->bw);
 }
 
@@ -2770,12 +2775,12 @@ bool ro_gui_window_to_screen_pos(struct gui_window *g, int x, int y, os_coord *p
 
 bool ro_gui_window_dataload(struct gui_window *g, wimp_message *message)
 {
-	int box_x = 0, box_y = 0;
 	struct box *box;
 	struct box *file_box = 0;
 	struct box *text_box = 0;
 	struct browser_window *bw = g->bw;
 	struct content *content;
+	int box_x, box_y;
 	os_error *error;
 	os_coord pos;
 
@@ -2793,6 +2798,11 @@ bool ro_gui_window_dataload(struct gui_window *g, wimp_message *message)
 
 	content = bw->current_content;
 	box = content->data.html.layout;
+
+	/* Consider the margins of the html page now */
+	box_x = box->margin[LEFT];
+	box_y = box->margin[TOP];
+
 	while ((box = box_at_point(box, pos.x, pos.y, &box_x, &box_y, &content))) {
 		if (box->style &&
 				box->style->visibility == CSS_VISIBILITY_HIDDEN)
@@ -3092,6 +3102,18 @@ bool ro_gui_ctrl_pressed(void)
 	int ctrl = 0;
 	xosbyte1(osbyte_SCAN_KEYBOARD, 1 ^ 0x80, 0, &ctrl);
 	return (ctrl == 0xff);
+}
+
+
+/**
+ * Returns true iff one or more Alt keys is held down
+ */
+
+bool ro_gui_alt_pressed(void)
+{
+	int alt = 0;
+	xosbyte1(osbyte_SCAN_KEYBOARD, 2 ^ 0x80, 0, &alt);
+	return (alt == 0xff);
 }
 
 
