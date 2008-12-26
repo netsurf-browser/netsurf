@@ -63,7 +63,7 @@ static bool html_redraw_text_box(struct box *box, int x, int y,
 static bool html_redraw_caret(struct caret *caret,
 		colour current_background_color, float scale);
 static bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
-		int padding_width, int padding_height, float scale);
+		int p_width, int p_height, float scale);
 bool html_redraw_inline_borders(struct box *box, int x0, int y0, int x1, int y1,
 		float scale, bool first, bool last);
 static bool html_redraw_border_plot(int i, int *p, colour c,
@@ -700,7 +700,8 @@ bool html_redraw_text_box(struct box *box, int x, int y,
 	/* does this textbox contain the ghost caret? */
 	if (ghost_caret.defined && box == ghost_caret.text_box) {
 
-		if (!html_redraw_caret(&ghost_caret, current_background_color, scale))
+		if (!html_redraw_caret(&ghost_caret, current_background_color,
+				scale))
 			return false;
 	}
 	return true;
@@ -866,9 +867,9 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 /**
  * Draw text caret.
  *
- * \param  c	structure describing text caret
- * \param  current_background_color		background colour under the caret
- * \param  scale	current scale setting (1.0 = 100%)
+ * \param  c	  structure describing text caret
+ * \param  current_background_color	background colour under the caret
+ * \param  scale  current scale setting (1.0 = 100%)
  * \return true iff successful and redraw should proceed
  */
 
@@ -895,17 +896,17 @@ bool html_redraw_caret(struct caret *c, colour current_background_color,
 /**
  * Draw borders for a box.
  *
- * \param  box		   box to draw
- * \param  x_parent	   coordinate of left padding edge of parent of box
- * \param  y_parent	   coordinate of top padding edge of parent of box
- * \param  padding_width   width of padding box
- * \param  padding_height  height of padding box
- * \param  scale	   scale for redraw
+ * \param  box		box to draw
+ * \param  x_parent	coordinate of left padding edge of parent of box
+ * \param  y_parent	coordinate of top padding edge of parent of box
+ * \param  p_width	width of padding box
+ * \param  p_height	height of padding box
+ * \param  scale	scale for redraw
  * \return true if successful, false otherwise
  */
 
 bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
-		int padding_width, int padding_height, float scale)
+		int p_width, int p_height, float scale)
 {
 	int top = box->border[TOP];
 	int right = box->border[RIGHT];
@@ -913,6 +914,7 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 	int left = box->border[LEFT];
 	int x, y;
 	unsigned int i;
+	int p[20];
 
 	if (scale != 1.0) {
 		top *= scale;
@@ -926,30 +928,26 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 	x = (x_parent + box->x) * scale;
 	y = (y_parent + box->y) * scale;
 
-	{
-		/* calculate border vertices */
-		int p[20] = {
-			x,				y,
-			x - left,			y - top,
-			x + padding_width + right,	y - top,
-			x + padding_width,		y,
-			x + padding_width,		y + padding_height,
-			x + padding_width + right,	y + padding_height + bottom,
-			x - left,			y + padding_height + bottom,
-			x,				y + padding_height,
-			x,				y,
-			x - left,			y - top
-		};
-	
-		for (i = 0; i != 4; i++) {
-			if (box->border[i] == 0)
-				continue;
-			if (!html_redraw_border_plot(i, p,
-					box->style->border[i].color,
-					box->style->border[i].style,
-					box->border[i] * scale))
-				return false;
-		}
+	/* calculate border vertices */
+	p[0]  = x;			p[1]  = y;
+	p[2]  = x - left;		p[3]  = y - top;
+	p[4]  = x + p_width + right;	p[5]  = y - top;
+	p[6]  = x + p_width;		p[7]  = y;
+	p[8]  = x + p_width;		p[9]  = y + p_height;
+	p[10] = x + p_width + right;	p[11] = y + p_height + bottom;
+	p[12] = x - left;		p[13] = y + p_height + bottom;
+	p[14] = x;			p[15] = y + p_height;
+	p[16] = x;			p[17] = y;
+	p[18] = x - left;		p[19] = y - top;
+
+	for (i = 0; i != 4; i++) {
+		if (box->border[i] == 0)
+			continue;
+		if (!html_redraw_border_plot(i, p,
+				box->style->border[i].color,
+				box->style->border[i].style,
+				box->border[i] * scale))
+			return false;
 	}
 
 	return true;
@@ -978,6 +976,20 @@ bool html_redraw_inline_borders(struct box *box, int x0, int y0, int x1, int y1,
 	int bottom = box->border[BOTTOM];
 	int left = box->border[LEFT];
 
+	/* calculate border vertices */
+	int p[20] = {
+		x0 + left,	y0 + top,
+		x0,		y0,
+		x1,		y0,
+		x1 - right,	y0 + top,
+		x1 - right,	y1 - bottom,
+		x1,		y1,
+		x0,		y1,
+		x0 + left,	y1 - bottom,
+		x0 + left,	y0 + top,
+		x0,		y0
+	};
+
 	if (scale != 1.0) {
 		top *= scale;
 		right *= scale;
@@ -987,42 +999,26 @@ bool html_redraw_inline_borders(struct box *box, int x0, int y0, int x1, int y1,
 
 	assert(box->style);
 
-	{
-		/* calculate border vertices */
-		int p[20] = {
-			x0 + left,	y0 + top,
-			x0,		y0,
-			x1,		y0,
-			x1 - right,	y0 + top,
-			x1 - right,	y1 - bottom,
-			x1,		y1,
-			x0,		y1,
-			x0 + left,	y1 - bottom,
-			x0 + left,	y0 + top,
-			x0,		y0
-		};
-	
-		if (box->border[LEFT] && first)
-			if (!html_redraw_border_plot(LEFT, p,
-					box->style->border[LEFT].color,
-					box->style->border[LEFT].style, left))
-				return false;
-		if (box->border[TOP])
-			if (!html_redraw_border_plot(TOP, p,
-					box->style->border[TOP].color,
-					box->style->border[TOP].style, top))
-				return false;
-		if (box->border[BOTTOM])
-			if (!html_redraw_border_plot(BOTTOM, p,
-					box->style->border[BOTTOM].color,
-					box->style->border[BOTTOM].style, bottom))
-				return false;
-		if (box->border[RIGHT] && last)
-			if (!html_redraw_border_plot(RIGHT, p,
-					box->style->border[RIGHT].color,
-					box->style->border[RIGHT].style, right))
-				return false;
-	}
+	if (box->border[LEFT] && first)
+		if (!html_redraw_border_plot(LEFT, p,
+				box->style->border[LEFT].color,
+				box->style->border[LEFT].style, left))
+			return false;
+	if (box->border[TOP])
+		if (!html_redraw_border_plot(TOP, p,
+				box->style->border[TOP].color,
+				box->style->border[TOP].style, top))
+			return false;
+	if (box->border[BOTTOM])
+		if (!html_redraw_border_plot(BOTTOM, p,
+				box->style->border[BOTTOM].color,
+				box->style->border[BOTTOM].style, bottom))
+			return false;
+	if (box->border[RIGHT] && last)
+		if (!html_redraw_border_plot(RIGHT, p,
+				box->style->border[RIGHT].color,
+				box->style->border[RIGHT].style, right))
+			return false;
 	return true;
 }
 
@@ -1136,7 +1132,7 @@ bool html_redraw_border_plot(int i, int *p, colour c,
 		case 2:
 			c_lit = html_redraw_darker(c_lit);
 		}
-		if (!plot.polygon(z, 4,	c_lit))
+		if (!plot.polygon(z, 4, c_lit))
 			return false;
 		z[0] = p[i * 4 + 2];
 		z[1] = p[i * 4 + 3];
@@ -1247,7 +1243,7 @@ bool html_redraw_checkbox(int x, int y, int width, int height,
 		return false;
 
 	if (selected) {
-	  	if (width < 12 || height < 12) {
+		if (width < 12 || height < 12) {
 			/* render a solid box instead of a tick */
 			if (!plot.fill(x + z + z, y + z + z,
 				x + width - z, y + height - z,
@@ -1289,8 +1285,8 @@ bool html_redraw_radio(int x, int y, int width, int height,
 	int dark = html_redraw_darker(html_redraw_darker(WIDGET_BASEC));
 	int lite = html_redraw_lighter(html_redraw_lighter(WIDGET_BASEC));
 
-  	/* plot background of radio button */
-  	if (!plot.disc(x + width * 0.5, y + height * 0.5,
+	/* plot background of radio button */
+	if (!plot.disc(x + width * 0.5, y + height * 0.5,
 			width * 0.5 - 1, WIDGET_BASEC, true))
 		return false;
 
@@ -1304,10 +1300,10 @@ bool html_redraw_radio(int x, int y, int width, int height,
 			width * 0.5 - 1, 225, 45, lite))
 		return false;
 
-  	if (selected) {
+	if (selected) {
 		/* plot selection blob */
 		if (!plot.disc(x + width * 0.5, y + height * 0.5,
-		      		width * 0.3 - 1, WIDGET_BLOBC, true))
+				width * 0.3 - 1, WIDGET_BLOBC, true))
 			return false;
 	}
 
@@ -1464,18 +1460,18 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 	}
 
 	for (; clip_box; clip_box = clip_box->next) {
-	  	/* clip to child boxes if needed */
-	  	if (clip_to_children) {
-	  	  	assert(clip_box->type == BOX_TABLE_CELL);
+		/* clip to child boxes if needed */
+		if (clip_to_children) {
+			assert(clip_box->type == BOX_TABLE_CELL);
 
-	  	  	/* update clip_* to the child cell */
-	  	  	clip_x0 = ox + (clip_box->x * scale);
-	  	  	clip_y0 = oy + (clip_box->y * scale);
-	  	  	clip_x1 = clip_x0 + (clip_box->padding[LEFT] +
-	  	  			clip_box->width +
+			/* update clip_* to the child cell */
+			clip_x0 = ox + (clip_box->x * scale);
+			clip_y0 = oy + (clip_box->y * scale);
+			clip_x1 = clip_x0 + (clip_box->padding[LEFT] +
+					clip_box->width +
 					clip_box->padding[RIGHT]) * scale;
-	  	  	clip_y1 = clip_y0 + (clip_box->padding[TOP] +
-	  	  			clip_box->height +
+			clip_y1 = clip_y0 + (clip_box->padding[TOP] +
+					clip_box->height +
 					clip_box->padding[BOTTOM]) * scale;
 
 			if (clip_x0 < px0) clip_x0 = px0;
@@ -1492,7 +1488,7 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 					 bitmap_get_opaque(
 						 clip_box->background->bitmap)))
 				continue;
-	  	}
+		}
 
 		/* plot the background colour */
 		if (background->style->background_color != TRANSPARENT) {
@@ -1865,12 +1861,12 @@ bool html_redraw_scrollbars(struct box *box, float scale,
 			&well_height, &bar_top, &bar_height,
 			&well_width, &bar_left, &bar_width);
 
-#define TRIANGLE(x0, y0, x1, y1, x2, y2, c) \
-	if (!plot.line(x0, y0, x1, y1, scale, c, false, false))	\
+#define TRIANGLE(x0, y0, x1, y1, x2, y2, c)				\
+	if (!plot.line(x0, y0, x1, y1, scale, c, false, false))		\
 		return false;						\
-	if (!plot.line(x0, y0, x2, y2, scale, c, false, false))	\
+	if (!plot.line(x0, y0, x2, y2, scale, c, false, false))		\
 		return false;						\
-	if (!plot.line(x1, y1, x2, y2, scale, c, false, false))	\
+	if (!plot.line(x1, y1, x2, y2, scale, c, false, false))		\
 		return false;
 
 	/* fill scrollbar well(s) with background colour */
