@@ -272,28 +272,29 @@ bool ami_bitmap(int x, int y, int width, int height,
 
 	if((bitmap->width != width) || (bitmap->height != height))
 	{
+		struct BitMap *scaledbm;
+		struct BitScaleArgs bsa;
+
+		scaledbm = p96AllocBitMap(width,height,32,BMF_DISPLAYABLE,currp->BitMap,RGBFB_R8G8B8A8);
+
 		if(GfxBase->lib_Version >= 53) // AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)
 		{
-			CompositeTags(COMPOSITE_Src_Over_Dest,tbm,currp->BitMap,
+			CompositeTags(COMPOSITE_Src_Over_Dest,tbm,scaledbm,
 						COMPTAG_ScaleX,COMP_FLOAT_TO_FIX(width/bitmap->width),
 						COMPTAG_ScaleY,COMP_FLOAT_TO_FIX(height/bitmap->height),
 						COMPTAG_Flags,COMPFLAG_IgnoreDestAlpha,
-						COMPTAG_DestX,x,
-						COMPTAG_DestY,y,
+						COMPTAG_DestX,0,
+						COMPTAG_DestY,0,
 						COMPTAG_DestWidth,width,
 						COMPTAG_DestHeight,height,
-						COMPTAG_OffsetX,x,
-						COMPTAG_OffsetY,y,
+						COMPTAG_OffsetX,0,
+						COMPTAG_OffsetY,0,
+						COMPTAG_FriendBitMap,currp->BitMap,
 						TAG_DONE);
 		}
 		else /* do it the old-fashioned way.  This is pretty slow, but probably
 			uses Composite() on OS4.1 anyway, so we're only saving a blit really. */
 		{
-			struct BitMap *scaledbm;
-			struct BitScaleArgs bsa;
-
-			scaledbm = p96AllocBitMap(width,height,32,BMF_DISPLAYABLE,currp->BitMap,RGBFB_R8G8B8A8);
-
 			bsa.bsa_SrcX = 0;
 			bsa.bsa_SrcY = 0;
 			bsa.bsa_SrcWidth = bitmap->width;
@@ -311,8 +312,9 @@ bool ami_bitmap(int x, int y, int width, int height,
 			bsa.bsa_Flags = 0;
 
 			BitMapScale(&bsa);
+		}
 
-			BltBitMapTags(BLITA_Width,width,
+		BltBitMapTags(BLITA_Width,width,
 						BLITA_Height,height,
 						BLITA_Source,scaledbm,
 						BLITA_Dest,currp,
@@ -323,8 +325,8 @@ bool ami_bitmap(int x, int y, int width, int height,
 						BLITA_UseSrcAlpha,TRUE,
 						TAG_DONE);
 
-			p96FreeBitMap(scaledbm);
-		}
+		p96FreeBitMap(scaledbm);
+
 	}
 	else
 	{
@@ -336,7 +338,7 @@ bool ami_bitmap(int x, int y, int width, int height,
 						BLITA_DestY,y,
 						BLITA_SrcType,BLITT_RASTPORT,
 						BLITA_DestType,BLITT_RASTPORT,
-						BLITA_UseSrcAlpha,TRUE,
+						BLITA_UseSrcAlpha,!bitmap->opaque,
 						TAG_DONE);
 	}
 
@@ -404,7 +406,7 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 						BLITA_DestY,y+yf,
 						BLITA_SrcType,BLITT_RASTPORT,
 						BLITA_DestType,BLITT_RASTPORT,
-						BLITA_UseSrcAlpha,TRUE,
+						BLITA_UseSrcAlpha,!bitmap->opaque,
 						TAG_DONE);
 		}
 	}
