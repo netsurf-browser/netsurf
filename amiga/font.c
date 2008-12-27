@@ -32,6 +32,7 @@
 #include <diskfont/oterrors.h>
 #include <proto/Picasso96API.h>
 #include <proto/exec.h>
+#include <graphics/blitattr.h>
 
 static bool nsfont_width(const struct css_style *style,
 	  const char *string, size_t length,
@@ -309,7 +310,7 @@ void ami_close_font(struct TextFont *tfont)
 	if(tfont) CloseFont(tfont);
 }
 
-void ami_unicode_text(struct RastPort *rp,char *string,ULONG length,struct css_style *style,ULONG x, ULONG y, ULONG c)
+void ami_unicode_text(struct RastPort *rp,char *string,ULONG length,struct css_style *style,ULONG dx, ULONG dy, ULONG c)
 {
 	WORD *utf16 = NULL;
 	struct OutlineFont *ofont;
@@ -317,6 +318,10 @@ void ami_unicode_text(struct RastPort *rp,char *string,ULONG length,struct css_s
 	ULONG i,gx,gy;
 	UBYTE *glyphbm;
 	UWORD posn;
+	struct BitMap *tbm;
+	struct RastPort trp;
+	uint32 width,height;
+	uint32 x=0,y=0;
 
 	if(!string || string[0]=='\0') return;
 	if(!length) return;
@@ -324,6 +329,19 @@ void ami_unicode_text(struct RastPort *rp,char *string,ULONG length,struct css_s
 	if(utf8_to_enc(string,"UTF-16",length,&utf16) != UTF8_CONVERT_OK) return;
 
 	if(!(ofont = ami_open_outline_font(style))) return;
+
+	/* width and height need to be calculated properly... */
+	width = length*10;
+	height = css_len2px(&style->font_size.value.length, style);
+	if(height < option_font_min_size)
+		height = option_font_min_size;
+
+	tbm = p96AllocBitMap(width,height,32,BMF_DISPLAYABLE,currp->BitMap,RGBFB_R8G8B8A8);
+	InitRastPort(&trp);
+	trp.BitMap = tbm;
+
+
+y=height;
 
 	for(i=0;i<length;i++)
 	{
@@ -350,7 +368,7 @@ void ami_unicode_text(struct RastPort *rp,char *string,ULONG length,struct css_s
 which is needed along with BLITA_UseSrcAlpha, TRUE to respect the alpha channel.
 We may even need to draw this text into a new bitmap and blit that onto our off-screen
 rendering bitmap. */
-						p96WritePixel(rp,x+gx,(y-glyph->glm_BlackHeight)+gy,
+						p96WritePixel(&trp,x+gx,(y-glyph->glm_BlackHeight)+gy,
 							p96EncodeColor(RGBFB_A8B8G8R8,(glyphbm[posn+gx] << 24) | c));
 					}
 
@@ -369,4 +387,17 @@ rendering bitmap. */
 	}
 
 	ami_close_outline_font(ofont);
+
+	BltBitMapTags(BLITA_Width,width,
+					BLITA_Height,height,
+					BLITA_Source,tbm,
+					BLITA_Dest,currp,
+					BLITA_DestX,dx,
+					BLITA_DestY,dy-height,
+					BLITA_SrcType,BLITT_BITMAP,
+					BLITA_DestType,BLITT_RASTPORT,
+					BLITA_UseSrcAlpha,TRUE,
+					TAG_DONE);
+
+	p96FreeBitMap(tbm);
 }

@@ -43,7 +43,8 @@ The options file is stored in @{"Resources/Options" link Resources/Options/Main}
 @{b}kiosk_mode@{ub} No gadgets
 @{b}recent_file@{ub} Path to file to store recent history list
 @{b}arexx_dir@{ub} Path to ARexx scripts dir
-@{b}download_dir@{ub} default download destination (not used yet)
+@{b}download_dir@{ub} default download destination
+@{b}quick_text@{ub} disable for experimental Unicode display
 
 @endnode
 
