@@ -222,7 +222,24 @@ bool html_redraw_box(struct box *box,
 	}
 
 	/* calculate rectangle covering this box and descendants */
-	if (box->style && box->style->overflow != CSS_OVERFLOW_VISIBLE) {
+	if (!box->parent) {
+		int margin_left, margin_top, margin_right, margin_bottom;
+		if (scale == 1.0) {
+			margin_left = box->margin[LEFT];
+			margin_top = box->margin[TOP];
+			margin_right = box->margin[RIGHT];
+			margin_bottom = box->margin[BOTTOM];
+		} else {
+			margin_left = box->margin[LEFT] * scale;
+			margin_top = box->margin[TOP] * scale;
+			margin_right = box->margin[RIGHT] * scale;
+			margin_bottom = box->margin[BOTTOM] * scale;
+		}
+		x0 = x - border_left - margin_left;
+		y0 = y - border_top - margin_top;
+		x1 = x + padding_width + border_right + margin_right;
+		y1 = y + padding_height + border_bottom + margin_bottom;
+	} else if (box->style && box->style->overflow != CSS_OVERFLOW_VISIBLE) {
 		x0 = x - border_left;
 		y0 = y - border_top;
 		x1 = x + padding_width + border_right;
@@ -338,16 +355,19 @@ bool html_redraw_box(struct box *box,
 		if (!box->parent) {
 			/* Root box */
 			if (box->style &&
-					(box->style->background_color != TRANSPARENT ||
+					(box->style->background_color !=
+					TRANSPARENT ||
 					box->background)) {
 				/* With its own background */
 				bg_box = box;
 			} else if (!box->style ||
-					(box->style->background_color == TRANSPARENT &&
+					(box->style->background_color ==
+					TRANSPARENT &&
 					!box->background)) {
 				/* Without its own background */
 				if (box->children && box->children->style &&
-					(box->children->style->background_color !=
+						(box->children->style->
+						background_color !=
 						TRANSPARENT ||
 						box->children->background)) {
 					/* But body has one, so use that */
@@ -357,14 +377,16 @@ bool html_redraw_box(struct box *box,
 		} else if (box->parent && !box->parent->parent) {
 			/* Body box */
 			if (box->style &&
-					(box->style->background_color != TRANSPARENT ||
+					(box->style->background_color !=
+					TRANSPARENT ||
 					box->background)) {
 				/* With a background */
 				if (box->parent->style &&
 					(box->parent->style->background_color !=
 						TRANSPARENT ||
 						box->parent->background)) {
-					/* Root has own background; process normally */
+					/* Root has own background; process
+					 * normally */
 					bg_box = box;
 				}
 			}
@@ -383,22 +405,44 @@ bool html_redraw_box(struct box *box,
 				bg_box->type != BOX_TEXT &&
 				bg_box->type != BOX_INLINE &&
 				bg_box->type != BOX_INLINE_END &&
-				((bg_box->style->background_color != TRANSPARENT) ||
+				((bg_box->style->background_color !=
+				TRANSPARENT) ||
 				(bg_box->background))) {
 			/* find intersection of clip box and border edge */
-			int px0 = x - border_left < x0 ? x0 : x - border_left;
-			int py0 = y - border_top < y0 ? y0 : y - border_top;
-			int px1 = x + padding_width + border_right < x1 ?
+			int px0, py0, px1, py1;
+			px0 = x - border_left < x0 ? x0 : x - border_left;
+			py0 = y - border_top < y0 ? y0 : y - border_top;
+			px1 = x + padding_width + border_right < x1 ?
 					x + padding_width + border_right : x1;
-			int py1 = y + padding_height + border_bottom < y1 ?
+			py1 = y + padding_height + border_bottom < y1 ?
 					y + padding_height + border_bottom : y1;
-
+			if (!box->parent) {
+				/* Root element, special case:
+				 * background covers margins too */
+				int m_left, m_top, m_right, m_bottom;
+				if (scale == 1.0) {
+					m_left = box->margin[LEFT];
+					m_top = box->margin[TOP];
+					m_right = box->margin[RIGHT];
+					m_bottom = box->margin[BOTTOM];
+				} else {
+					m_left = box->margin[LEFT] * scale;
+					m_top = box->margin[TOP] * scale;
+					m_right = box->margin[RIGHT] * scale;
+					m_bottom = box->margin[BOTTOM] * scale;
+				}
+				px0 = px0 - m_left < x0 ? x0 : px0 - m_left;
+				py0 = py0 - m_top < y0 ? y0 : py0 - m_top;
+				px1 = px1 + m_right < x1 ? px1 + m_right : x1;
+				py1 = py1 + m_bottom < y1 ? py1 + m_bottom : y1;
+			}
 			/* valid clipping rectangles only */
 			if ((px0 < px1) && (py0 < py1)) {
 				/* plot background */
 				if (!html_redraw_background(x, y, box, scale,
 						px0, py0, px1, py1,
-						&current_background_color, bg_box))
+						&current_background_color,
+						bg_box))
 					return false;
 				/* restore previous graphics window */
 				if (!plot.clip(x0, y0, x1, y1))
@@ -1380,11 +1424,29 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 	struct box *clip_box = box;
 	int px0 = clip_x0, py0 = clip_y0, px1 = clip_x1, py1 = clip_y1;
 	int ox = x, oy = y;
+	int width, height;
 	struct box *parent;
 
 	plot_content = (background->background != NULL);
 
 	if (plot_content) {
+		if (!box->parent) {
+			/* Root element, special case:
+			 * background origin calc. is based on margin box */
+			x -= box->margin[LEFT] * scale;
+			y -= box->margin[TOP] * scale;
+			width = box->margin[LEFT] + box->padding[LEFT] +
+					box->width + box->padding[RIGHT] +
+					box->margin[RIGHT];
+			height = box->margin[TOP] + box->padding[TOP] +
+					box->height + box->padding[BOTTOM] +
+					box->margin[BOTTOM];
+		} else {
+			width = box->padding[LEFT] + box->width +
+					box->padding[RIGHT];
+			height = box->padding[TOP] + box->height +
+					box->padding[BOTTOM];
+		}
 		/* handle background-repeat */
 		switch (background->style->background_repeat) {
 			case CSS_BACKGROUND_REPEAT_REPEAT:
@@ -1410,9 +1472,8 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 		/* handle background-position */
 		switch (background->style->background_position.horz.pos) {
 			case CSS_BACKGROUND_POSITION_PERCENT:
-				x += (box->padding[LEFT] + box->width +
-					box->padding[RIGHT] -
-					background->background->width) * scale *
+				x += (width - background->background->width) *
+					scale *
 					background->style->background_position.
 						horz.value.percent / 100;
 				break;
@@ -1427,9 +1488,7 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 
 		switch (background->style->background_position.vert.pos) {
 			case CSS_BACKGROUND_POSITION_PERCENT:
-				y += (box->padding[TOP] + box->height +
-					box->padding[BOTTOM] -
-					background->background->height) *
+				y += (height - background->background->height) *
 					scale *
 					background->style->background_position.
 						vert.value.percent / 100;
