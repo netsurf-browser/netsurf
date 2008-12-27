@@ -23,6 +23,7 @@ struct bitmap {
 	int width;
 	int height;
 	UBYTE *pixdata;
+	bool opaque;
 };
 
 #endif

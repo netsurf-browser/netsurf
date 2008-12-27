@@ -34,12 +34,17 @@ void *bitmap_create(int width, int height, unsigned int state)
 {
 	struct bitmap *bitmap;
 
-	bitmap = AllocVec(sizeof(struct bitmap),MEMF_PRIVATE | MEMF_CLEAR);
+	bitmap = AllocVec(sizeof(struct bitmap),MEMF_PRIVATE);
 	if(bitmap)
 	{
-		bitmap->pixdata = AllocVec(width*height*4*2,MEMF_PRIVATE | MEMF_CLEAR);
+		bitmap->pixdata = AllocVecTags(width*height*4,
+							AVT_Type,MEMF_PRIVATE,
+							AVT_ClearWithValue,0xff,
+							TAG_DONE);
 		bitmap->width = width;
 		bitmap->height = height;
+		if(state & BITMAP_OPAQUE) bitmap->opaque = true;
+			else bitmap->opaque = false;
 	}
 	return bitmap;
 }
@@ -147,8 +152,9 @@ void bitmap_set_suspendable(void *bitmap, void *private_word,
  */
 void bitmap_set_opaque(void *bitmap, bool opaque)
 {
+	struct bitmap *bm = bitmap;
 	assert(bitmap);
-/* todo: set bitmap as opaque */
+	bm->opaque = opaque;
 }
 
 
@@ -160,9 +166,19 @@ void bitmap_set_opaque(void *bitmap, bool opaque)
  */
 bool bitmap_test_opaque(void *bitmap)
 {
+	struct bitmap *bm = bitmap;
+	uint32 p = bm->width * bm->height;
+	uint32 a = 0;
+	uint32 *bmi = bm->pixdata;
+
 	assert(bitmap);
-/* todo: test if bitmap as opaque */
-	return false;
+
+	for(a=0;a<p;a+=4)
+	{
+		if ((*bmi & 0xff000000U) != 0xff000000U) return false;
+		bmi++;
+	}
+	return true;
 }
 
 
@@ -173,9 +189,10 @@ bool bitmap_test_opaque(void *bitmap)
  */
 bool bitmap_get_opaque(void *bitmap)
 {
+	struct bitmap *bm = bitmap;
 	assert(bitmap);
 /* todo: get whether bitmap is opaque */
-	return false;
+	return bm->opaque;
 }
 
 int bitmap_get_width(void *bitmap)
