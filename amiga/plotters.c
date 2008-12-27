@@ -322,7 +322,7 @@ bool ami_bitmap(int x, int y, int width, int height,
 						BLITA_DestY,y,
 						BLITA_SrcType,BLITT_BITMAP,
 						BLITA_DestType,BLITT_RASTPORT,
-						BLITA_UseSrcAlpha,TRUE,
+						BLITA_UseSrcAlpha,!bitmap->opaque,
 						TAG_DONE);
 
 		p96FreeBitMap(scaledbm);
