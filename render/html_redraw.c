@@ -333,7 +333,8 @@ bool html_redraw_box(struct box *box,
 		y1 = clip_y1;
 	}
 
-	/* background colour and image for block level content */
+	/* background colour and image for block level content and replaced
+	 * inlines */
 
 	/* Thanks to backwards compatibility, CSS defines the following:
 	 *
@@ -403,8 +404,9 @@ bool html_redraw_box(struct box *box,
 		if (bg_box && bg_box->style &&
 				bg_box->type != BOX_BR &&
 				bg_box->type != BOX_TEXT &&
-				bg_box->type != BOX_INLINE &&
 				bg_box->type != BOX_INLINE_END &&
+				(bg_box->type != BOX_INLINE ||
+				bg_box->object) &&
 				((bg_box->style->background_color !=
 				TRANSPARENT) ||
 				(bg_box->background))) {
@@ -451,10 +453,10 @@ bool html_redraw_box(struct box *box,
 		}
 	}
 
-	/* borders for block level content */
+	/* borders for block level content and replaced inlines */
 	if (box->style && box->type != BOX_TEXT &&
-			box->type != BOX_INLINE &&
 			box->type != BOX_INLINE_END &&
+			(bg_box->type != BOX_INLINE || bg_box->object) &&
 			(border_top || border_right ||
 			 border_bottom || border_left))
 		if (!html_redraw_borders(box, x_parent, y_parent,
@@ -462,7 +464,7 @@ bool html_redraw_box(struct box *box,
 				scale))
 			return false;
 
-	/* backgrounds and borders for inlines */
+	/* backgrounds and borders for non-replaced inlines */
 	if (box->style && box->type == BOX_INLINE && box->inline_end &&
 			(box->style->background_color != TRANSPARENT ||
 			box->background || border_top || border_right ||
