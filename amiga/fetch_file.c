@@ -47,7 +47,7 @@ struct ami_file_fetch_info {
 	bool locked;
 	struct nsObject *obj;
 	int httpcode;
-	ULONG len;
+	int64 len;
 	char *mimetype;
 	struct cache_data cachedata;
 };
@@ -281,16 +281,19 @@ void ami_fetch_file_poll(const char *scheme_ignored)
 
 				if(fetch->fh)
 				{
-					struct FileInfoBlock fib;
-					if(ExamineFH(fetch->fh,&fib))
-						fetch->len = fib.fib_Size;
+					struct ExamineData *fib;
+					if(fib = ExamineObjectTags(EX_FileHandleInput,fetch->fh,TAG_DONE))
+					{
+						fetch->len = fib->FileSize;
+						FreeDosObject(DOS_EXAMINEDATA,fib);
+					}
 
 					fetch_set_http_code(fetch->fetch_handle,200);
 					fetch->mimetype = fetch_mimetype(fetch->path);
 					LOG(("mimetype %s len %ld",fetch->mimetype,fetch->len));
 
 					ami_fetch_file_send_callback(FETCH_TYPE,
-						fetch, fetch->mimetype, fetch->len);
+						fetch, fetch->mimetype, (ULONG)fetch->len);
 				}
 				else
 				{
