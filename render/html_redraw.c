@@ -222,24 +222,7 @@ bool html_redraw_box(struct box *box,
 	}
 
 	/* calculate rectangle covering this box and descendants */
-	if (!box->parent) {
-		int margin_left, margin_top, margin_right, margin_bottom;
-		if (scale == 1.0) {
-			margin_left = box->margin[LEFT];
-			margin_top = box->margin[TOP];
-			margin_right = box->margin[RIGHT];
-			margin_bottom = box->margin[BOTTOM];
-		} else {
-			margin_left = box->margin[LEFT] * scale;
-			margin_top = box->margin[TOP] * scale;
-			margin_right = box->margin[RIGHT] * scale;
-			margin_bottom = box->margin[BOTTOM] * scale;
-		}
-		x0 = x - border_left - margin_left;
-		y0 = y - border_top - margin_top;
-		x1 = x + padding_width + border_right + margin_right;
-		y1 = y + padding_height + border_bottom + margin_bottom;
-	} else if (box->style && box->style->overflow != CSS_OVERFLOW_VISIBLE) {
+	if (box->style && box->style->overflow != CSS_OVERFLOW_VISIBLE) {
 		x0 = x - border_left;
 		y0 = y - border_top;
 		x1 = x + padding_width + border_right;
@@ -249,6 +232,33 @@ bool html_redraw_box(struct box *box,
 		y0 = y + box->descendant_y0 * scale;
 		x1 = x + box->descendant_x1 * scale + 1;
 		y1 = y + box->descendant_y1 * scale + 1;
+		if (!box->parent) {
+			int margin_left, margin_right;
+			int margin_top, margin_bottom;
+			if (scale == 1.0) {
+				margin_left = box->margin[LEFT];
+				margin_top = box->margin[TOP];
+				margin_right = box->margin[RIGHT];
+				margin_bottom = box->margin[BOTTOM];
+			} else {
+				margin_left = box->margin[LEFT] * scale;
+				margin_top = box->margin[TOP] * scale;
+				margin_right = box->margin[RIGHT] * scale;
+				margin_bottom = box->margin[BOTTOM] * scale;
+			}
+			x0 = x - border_left - margin_left < x0 ?
+					x - border_left - margin_left : x0;
+			y0 = y - border_top - margin_top < y0 ?
+					y - border_top - margin_top : y0;
+			x1 = x + padding_width + border_right +
+					margin_right > x1 ?
+					x + padding_width + border_right +
+					margin_right : x1;
+			y1 = y + padding_height + border_bottom +
+					margin_bottom > y1 ?
+					y + padding_height + border_bottom +
+					margin_bottom : y1;
+		}
 	}
 
 	/* return if the rectangle is completely outside the clip rectangle */
