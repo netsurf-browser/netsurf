@@ -485,56 +485,42 @@ void gui_init2(int argc, char** argv)
 			scrn = LockPubScreen("Workbench");
 			locked_screen = TRUE;
 		}
-	}
 
-/* init shared bitmaps */
-	glob.bm = p96AllocBitMap(scrn->Width,scrn->Height,32,
-		BMF_CLEAR | BMF_DISPLAYABLE | BMF_INTERLEAVED,
-		scrn->RastPort.BitMap,RGBFB_A8R8G8B8);
+		/* init shared bitmaps */
+		glob.bm = p96AllocBitMap(scrn->Width,scrn->Height,32,
+					BMF_CLEAR | BMF_DISPLAYABLE | BMF_INTERLEAVED,
+					scrn->RastPort.BitMap,RGBFB_A8R8G8B8);
 
-	if(!glob.bm)
-	{
-		warn_user("NoMemory","");
-		//browser_window_destroy(bw);
-		//return NULL;
-	}
+		if(!glob.bm) warn_user("NoMemory","");
 
-	InitRastPort(&glob.rp);
-	glob.rp.BitMap = glob.bm;
-	SetDrMd(&glob.rp,BGBACKFILL);
+		InitRastPort(&glob.rp);
+		glob.rp.BitMap = glob.bm;
+		SetDrMd(&glob.rp,BGBACKFILL);
 
-	glob.layerinfo = NewLayerInfo();
-	glob.rp.Layer = CreateUpfrontLayer(glob.layerinfo,glob.bm,0,0,scrn->Width-1,scrn->Height-1,0,NULL);
+		glob.layerinfo = NewLayerInfo();
+		glob.rp.Layer = CreateUpfrontLayer(glob.layerinfo,glob.bm,0,0,
+							scrn->Width-1,scrn->Height-1,0,NULL);
 
-	glob.areabuf = AllocVec(100,MEMF_PRIVATE | MEMF_CLEAR);
-	glob.rp.AreaInfo = AllocVec(sizeof(struct AreaInfo),MEMF_PRIVATE | MEMF_CLEAR);
+		glob.areabuf = AllocVec(100,MEMF_PRIVATE | MEMF_CLEAR);
+		glob.rp.AreaInfo = AllocVec(sizeof(struct AreaInfo),MEMF_PRIVATE | MEMF_CLEAR);
 
-	if((!glob.areabuf) || (!glob.rp.AreaInfo))
-	{
-		warn_user("NoMemory","");
-		//browser_window_destroy(bw);
-		//return NULL;
-	}
+		if((!glob.areabuf) || (!glob.rp.AreaInfo))	warn_user("NoMemory","");
 
-	InitArea(glob.rp.AreaInfo,glob.areabuf,100/5);
-	glob.rp.TmpRas = AllocVec(sizeof(struct TmpRas),MEMF_PRIVATE | MEMF_CLEAR);
-	glob.tmprasbuf = AllocVec(scrn->Width*scrn->Height,MEMF_PRIVATE | MEMF_CLEAR);
+		InitArea(glob.rp.AreaInfo,glob.areabuf,100/5);
+		glob.rp.TmpRas = AllocVec(sizeof(struct TmpRas),MEMF_PRIVATE | MEMF_CLEAR);
+		glob.tmprasbuf = AllocVec(scrn->Width*scrn->Height,MEMF_PRIVATE | MEMF_CLEAR);
 
-	if((!glob.tmprasbuf) || (!glob.rp.TmpRas))
-	{
-		warn_user("NoMemory","");
-		//browser_window_destroy(bw);
-		//return NULL;
-	}
+		if((!glob.tmprasbuf) || (!glob.rp.TmpRas))	warn_user("NoMemory","");
 
-	InitTmpRas(glob.rp.TmpRas,glob.tmprasbuf,scrn->Width*scrn->Height);
-	currp = &glob.rp;
+		InitTmpRas(glob.rp.TmpRas,glob.tmprasbuf,scrn->Width*scrn->Height);
+		currp = &glob.rp;
 
 #ifdef NS_AMIGA_CAIRO
-	glob.surface = cairo_amigaos_surface_create(glob.bm);
-	glob.cr = cairo_create(glob.surface);
+		glob.surface = cairo_amigaos_surface_create(glob.bm);
+		glob.cr = cairo_create(glob.surface);
 #endif
-/* init shared bitmaps */
+		/* init shared bitmaps */
+	}
 
 	if(argc) // argc==0 is started from wb
 	{
