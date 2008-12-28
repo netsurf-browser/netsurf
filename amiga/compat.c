@@ -49,7 +49,7 @@ void jpeg_destroy_compress(void)
 {
 	/* dummy */
 }
-
+/*
 int uname(struct utsname *uts)
 {
 	struct Library *VersionBase;
@@ -75,7 +75,7 @@ int uname(struct utsname *uts)
 	strcpy(uts->machine,"ppc");
 
 }
-
+*/
 uid_t geteuid(void)
 {
 	return 0;
