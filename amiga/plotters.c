@@ -318,25 +318,41 @@ bool ami_bitmap(int x, int y, int width, int height,
 	SetRPAttrs(currp,RPTAG_BPenColor,p96EncodeColor(RGBFB_A8B8G8R8,bg),
 					TAG_DONE);
 */
-	ri.Memory = bitmap->pixdata;
-	ri.BytesPerRow = bitmap->width * 4;
-	ri.RGBFormat = RGBFB_R8G8B8A8;
 
-	tbm = p96AllocBitMap(bitmap->width,bitmap->height,32,BMF_DISPLAYABLE,currp->BitMap,RGBFB_R8G8B8A8);
-	InitRastPort(&trp);
-	trp.BitMap = tbm;
-	p96WritePixelArray((struct RenderInfo *)&ri,0,0,&trp,0,0,bitmap->width,bitmap->height);
-
-	if((bitmap->width != width) || (bitmap->height != height))
+	if(bitmap->nativebm)
 	{
-		struct BitMap *scaledbm;
-		struct BitScaleArgs bsa;
-
-		scaledbm = p96AllocBitMap(width,height,32,BMF_DISPLAYABLE,currp->BitMap,RGBFB_R8G8B8A8);
-
-		if(GfxBase->lib_Version >= 53) // AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)
+		if((bitmap->nativebmwidth != width) || (bitmap->nativebmheight != height))
 		{
-			CompositeTags(COMPOSITE_Src_Over_Dest,tbm,scaledbm,
+			p96FreeBitMap(bitmap->nativebm);
+			bitmap->nativebm = NULL;
+		}
+		else
+		{
+			tbm = bitmap->nativebm;
+		}
+	}
+
+	if(!bitmap->nativebm)
+	{
+		ri.Memory = bitmap->pixdata;
+		ri.BytesPerRow = bitmap->width * 4;
+		ri.RGBFormat = RGBFB_R8G8B8A8;
+
+		tbm = p96AllocBitMap(bitmap->width,bitmap->height,32,BMF_DISPLAYABLE,currp->BitMap,RGBFB_R8G8B8A8);
+		InitRastPort(&trp);
+		trp.BitMap = tbm;
+		p96WritePixelArray((struct RenderInfo *)&ri,0,0,&trp,0,0,bitmap->width,bitmap->height);
+
+		if((bitmap->width != width) || (bitmap->height != height))
+		{
+			struct BitMap *scaledbm;
+			struct BitScaleArgs bsa;
+
+			scaledbm = p96AllocBitMap(width,height,32,BMF_DISPLAYABLE,currp->BitMap,RGBFB_R8G8B8A8);
+
+			if(GfxBase->lib_Version >= 53) // AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)
+			{
+				CompositeTags(COMPOSITE_Src_Over_Dest,tbm,scaledbm,
 						COMPTAG_ScaleX,COMP_FLOAT_TO_FIX(width/bitmap->width),
 						COMPTAG_ScaleY,COMP_FLOAT_TO_FIX(height/bitmap->height),
 						COMPTAG_Flags,COMPFLAG_IgnoreDestAlpha,
@@ -348,32 +364,68 @@ bool ami_bitmap(int x, int y, int width, int height,
 						COMPTAG_OffsetY,0,
 						COMPTAG_FriendBitMap,currp->BitMap,
 						TAG_DONE);
-		}
-		else /* do it the old-fashioned way.  This is pretty slow, but probably
+			}
+			else /* do it the old-fashioned way.  This is pretty slow, but probably
 			uses Composite() on OS4.1 anyway, so we're only saving a blit really. */
-		{
-			bsa.bsa_SrcX = 0;
-			bsa.bsa_SrcY = 0;
-			bsa.bsa_SrcWidth = bitmap->width;
-			bsa.bsa_SrcHeight = bitmap->height;
-			bsa.bsa_DestX = 0;
-			bsa.bsa_DestY = 0;
-	//		bsa.bsa_DestWidth = width;
-	//		bsa.bsa_DestHeight = height;
-			bsa.bsa_XSrcFactor = bitmap->width;
-			bsa.bsa_XDestFactor = width;
-			bsa.bsa_YSrcFactor = bitmap->height;
-			bsa.bsa_YDestFactor = height;
-			bsa.bsa_SrcBitMap = tbm;
-			bsa.bsa_DestBitMap = scaledbm;
-			bsa.bsa_Flags = 0;
+			{
+				bsa.bsa_SrcX = 0;
+				bsa.bsa_SrcY = 0;
+				bsa.bsa_SrcWidth = bitmap->width;
+				bsa.bsa_SrcHeight = bitmap->height;
+				bsa.bsa_DestX = 0;
+				bsa.bsa_DestY = 0;
+	//			bsa.bsa_DestWidth = width;
+	//			bsa.bsa_DestHeight = height;
+				bsa.bsa_XSrcFactor = bitmap->width;
+				bsa.bsa_XDestFactor = width;
+				bsa.bsa_YSrcFactor = bitmap->height;
+				bsa.bsa_YDestFactor = height;
+				bsa.bsa_SrcBitMap = tbm;
+				bsa.bsa_DestBitMap = scaledbm;
+				bsa.bsa_Flags = 0;
 
-			BitMapScale(&bsa);
+				BitMapScale(&bsa);
+			}
+
+			BltBitMapTags(BLITA_Width,width,
+							BLITA_Height,height,
+							BLITA_Source,scaledbm,
+							BLITA_Dest,currp,
+							BLITA_DestX,x,
+							BLITA_DestY,y,
+							BLITA_SrcType,BLITT_BITMAP,
+							BLITA_DestType,BLITT_RASTPORT,
+							BLITA_UseSrcAlpha,!bitmap->opaque,
+							TAG_DONE);
+
+			bitmap->nativebm = scaledbm;
+			//p96FreeBitMap(scaledbm);
+
+		}
+		else
+		{
+			BltBitMapTags(BLITA_Width,width,
+							BLITA_Height,height,
+							BLITA_Source,tbm,
+							BLITA_Dest,currp,
+							BLITA_DestX,x,
+							BLITA_DestY,y,
+							BLITA_SrcType,BLITT_BITMAP,
+							BLITA_DestType,BLITT_RASTPORT,
+							BLITA_UseSrcAlpha,!bitmap->opaque,
+							TAG_DONE);
+
+			bitmap->nativebm = tbm;
 		}
 
+		bitmap->nativebmwidth = width;
+		bitmap->nativebmheight = height;
+	}
+	else
+	{
 		BltBitMapTags(BLITA_Width,width,
 						BLITA_Height,height,
-						BLITA_Source,scaledbm,
+						BLITA_Source,tbm,
 						BLITA_Dest,currp,
 						BLITA_DestX,x,
 						BLITA_DestY,y,
@@ -381,25 +433,9 @@ bool ami_bitmap(int x, int y, int width, int height,
 						BLITA_DestType,BLITT_RASTPORT,
 						BLITA_UseSrcAlpha,!bitmap->opaque,
 						TAG_DONE);
-
-		p96FreeBitMap(scaledbm);
-
-	}
-	else
-	{
-		BltBitMapTags(BLITA_Width,width,
-						BLITA_Height,height,
-						BLITA_Source,&trp,
-						BLITA_Dest,currp,
-						BLITA_DestX,x,
-						BLITA_DestY,y,
-						BLITA_SrcType,BLITT_RASTPORT,
-						BLITA_DestType,BLITT_RASTPORT,
-						BLITA_UseSrcAlpha,!bitmap->opaque,
-						TAG_DONE);
 	}
 
-	p96FreeBitMap(tbm);
+//	p96FreeBitMap(tbm);
 
 	return true;
 }
@@ -418,14 +454,34 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 	SetRPAttrs(currp,RPTAG_BPenColor,p96EncodeColor(RGBFB_A8B8G8R8,bg),
 					TAG_DONE);
 */
-	ri.Memory = bitmap->pixdata;
-	ri.BytesPerRow = bitmap->width * 4;
-	ri.RGBFormat = RGBFB_R8G8B8A8;
 
-	tbm = p96AllocBitMap(bitmap->width,bitmap->height,32,0,currp->BitMap,RGBFB_R8G8B8A8);
-	InitRastPort(&trp);
-	trp.BitMap = tbm;
-	p96WritePixelArray((struct RenderInfo *)&ri,0,0,&trp,0,0,bitmap->width,bitmap->height);
+	if(bitmap->nativebm)
+	{
+		if((bitmap->nativebmwidth != bitmap->width) || (bitmap->nativebmheight != bitmap->height))
+		{
+			p96FreeBitMap(bitmap->nativebm);
+			bitmap->nativebm = NULL;
+		}
+		else
+		{
+			tbm = bitmap->nativebm;
+		}
+	}
+
+	if(!bitmap->nativebm)
+	{
+		ri.Memory = bitmap->pixdata;
+		ri.BytesPerRow = bitmap->width * 4;
+		ri.RGBFormat = RGBFB_R8G8B8A8;
+
+		tbm = p96AllocBitMap(bitmap->width,bitmap->height,32,0,currp->BitMap,RGBFB_R8G8B8A8);
+		InitRastPort(&trp);
+		trp.BitMap = tbm;
+		p96WritePixelArray((struct RenderInfo *)&ri,0,0,&trp,0,0,bitmap->width,bitmap->height);
+		bitmap->nativebm = tbm;
+		bitmap->nativebmwidth = bitmap->width;
+		bitmap->nativebmheight = bitmap->height;
+	}
 
 	max_width =  (repeat_x ? scrn->Width : width);
 	max_height = (repeat_y ? scrn->Height : height);
@@ -457,18 +513,18 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 
 			BltBitMapTags(BLITA_Width,wf,
 						BLITA_Height,hf,
-						BLITA_Source,&trp,
+						BLITA_Source,tbm,
 						BLITA_Dest,currp,
 						BLITA_DestX,x+xf,
 						BLITA_DestY,y+yf,
-						BLITA_SrcType,BLITT_RASTPORT,
+						BLITA_SrcType,BLITT_BITMAP,
 						BLITA_DestType,BLITT_RASTPORT,
 						BLITA_UseSrcAlpha,!bitmap->opaque,
 						TAG_DONE);
 		}
 	}
 
-	p96FreeBitMap(tbm);
+//	p96FreeBitMap(tbm);
 
 	return true;
 }

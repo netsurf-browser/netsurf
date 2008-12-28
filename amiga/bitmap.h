@@ -19,11 +19,16 @@
 #ifndef AMIGA_BITMAP_H
 #define AMIGA_BITMAP_H
 #include <exec/types.h>
+#include <proto/graphics.h>
+
 struct bitmap {
 	int width;
 	int height;
 	UBYTE *pixdata;
 	bool opaque;
+	struct BitMap *nativebm;
+	int nativebmwidth;
+	int nativebmheight;
 };
 
 #endif

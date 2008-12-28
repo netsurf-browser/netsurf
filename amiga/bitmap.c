@@ -20,6 +20,7 @@
 #include "image/bitmap.h"
 #include "amiga/bitmap.h"
 #include <proto/exec.h>
+#include <proto/picasso96api.h>
 
 /**
  * Create a bitmap.
@@ -34,7 +35,7 @@ void *bitmap_create(int width, int height, unsigned int state)
 {
 	struct bitmap *bitmap;
 
-	bitmap = AllocVec(sizeof(struct bitmap),MEMF_PRIVATE);
+	bitmap = AllocVec(sizeof(struct bitmap),MEMF_PRIVATE | MEMF_CLEAR);
 	if(bitmap)
 	{
 		bitmap->pixdata = AllocVecTags(width*height*4,
@@ -101,6 +102,7 @@ void bitmap_destroy(void *bitmap)
 
 	if(bm)
 	{
+		if(bm->nativebm) p96FreeBitMap(bm->nativebm);
 		FreeVec(bm->pixdata);
 		bm->pixdata = NULL;
 		FreeVec(bm);
@@ -129,6 +131,10 @@ bool bitmap_save(void *bitmap, const char *path, unsigned flags)
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  */
 void bitmap_modified(void *bitmap) {
+	struct bitmap *bm = bitmap;
+
+	p96FreeBitMap(bm->nativebm);
+	bm->nativebm = NULL;
 }
 
 
