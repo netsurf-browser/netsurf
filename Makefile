@@ -447,7 +447,7 @@ ifeq ($(TARGET),amiga)
   LDFLAGS += -lxml2 -lcurl -lm -lsocket -lpthread -lregex -lauto -lraauto -lssl -lcrypto -lamisslauto -lparserutils -mcrt=newlib
 
   ifeq ($(NETSURF_AMIGA_USE_CAIRO),YES)
-    CFLAGS += -DNS_AMIGA_CAIRO
+    CFLAGS += -DNS_AMIGA_CAIRO -I SDK:local/common/include/cairo
     LDFLAGS += -use-dynld -lcairo -lpixman-1 -lfreetype -lfontconfig -lpng12 -lexpat
   endif
 endif

@@ -24,6 +24,9 @@
 #include "desktop/browser.h"
 #include <dos/dos.h>
 #include "desktop/gui.h"
+#ifdef NS_AMIGA_CAIRO
+#include <cairo/cairo.h>
+#endif
 
 enum
 {
@@ -121,6 +124,10 @@ struct gui_globals
 	struct Layer_Info *layerinfo;
 	APTR areabuf;
 	APTR tmprasbuf;
+#ifdef NS_AMIGA_CAIRO
+	cairo_surface_t *surface;
+	cairo_t *cr;
+#endif
 };
 
 void ami_get_msg(void);

@@ -75,7 +75,7 @@ void ami_cairo_set_colour(cairo_t *cr,colour c)
 	g = (c & 0xff00) >> 8;
 	b = (c & 0xff0000) >> 16;
 
-	cairo_set_source_rgba(cr, r / 255.0,
+	cairo_set_source_rgba(glob.cr, r / 255.0,
 			g / 255.0, b / 255.0, 1.0);
 }
 
@@ -83,21 +83,21 @@ void ami_cairo_set_solid(cairo_t *cr)
 {
 	double dashes = 0;
 	
-	cairo_set_dash(cr, &dashes, 0, 0);
+	cairo_set_dash(glob.cr, &dashes, 0, 0);
 }
 
 void ami_cairo_set_dotted(cairo_t *cr)
 {
 	double cdashes = 1;
 
-	cairo_set_dash(cr, &cdashes, 1, 0);
+	cairo_set_dash(glob.cr, &cdashes, 1, 0);
 }
 
 void ami_cairo_set_dashed(cairo_t *cr)
 {
 	double cdashes = 3;
 
-	cairo_set_dash(cr, &cdashes, 1, 0);
+	cairo_set_dash(glob.cr, &cdashes, 1, 0);
 }
 #endif
 
@@ -281,20 +281,14 @@ bool ami_arc(int x, int y, int radius, int angle1, int angle2,
 	    		colour c)
 {
 #ifdef NS_AMIGA_CAIRO
-	cairo_surface_t *surface = cairo_amigaos_surface_create(currp->BitMap);
-	cairo_t *cr = cairo_create(surface);
+	ami_cairo_set_colour(glob.cr,c);
+	ami_cairo_set_solid(glob.cr);
 
-	ami_cairo_set_colour(cr,c);
-	ami_cairo_set_solid(cr);
-
-	cairo_set_line_width(cr, 1);
-	cairo_arc(cr, x, y, radius,
+	cairo_set_line_width(glob.cr, 1);
+	cairo_arc(glob.cr, x, y, radius,
 			(angle1 + 90) * (M_PI / 180),
 			(angle2 + 90) * (M_PI / 180));
-	cairo_stroke(cr);
-
-	cairo_destroy (cr);
-	cairo_surface_destroy(surface);
+	cairo_stroke(glob.cr);
 #else
 /* http://www.crbond.com/primitives.htm
 CommonFuncsPPC.lha */
@@ -503,9 +497,6 @@ bool ami_path(float *p, unsigned int n, colour fill, float width,
 /* For SVG only, because it needs Bezier curves we are going to cheat
    and insist on Cairo */
 #ifdef NS_AMIGA_CAIRO
-	cairo_surface_t *surface = cairo_amigaos_surface_create(currp->BitMap);
-	cairo_t *cr = cairo_create(surface);
-
 	unsigned int i;
 	cairo_matrix_t old_ctm, n_ctm;
 
@@ -518,11 +509,11 @@ bool ami_path(float *p, unsigned int n, colour fill, float width,
 	}
 
 	/* Save CTM */
-	cairo_get_matrix(cr, &old_ctm);
+	cairo_get_matrix(glob.cr, &old_ctm);
 
 	/* Set up line style and width */
-	cairo_set_line_width(cr, 1);
-	ami_cairo_set_solid(cr);
+	cairo_set_line_width(glob.cr, 1);
+	ami_cairo_set_solid(glob.cr);
 
 	/* Load new CTM */
 	n_ctm.xx = transform[0];
@@ -532,56 +523,53 @@ bool ami_path(float *p, unsigned int n, colour fill, float width,
 	n_ctm.x0 = transform[4];
 	n_ctm.y0 = transform[5];
 
-	cairo_set_matrix(cr, &n_ctm);
+	cairo_set_matrix(glob.cr, &n_ctm);
 
 	/* Construct path */
 	for (i = 0; i < n; ) {
 		if (p[i] == PLOTTER_PATH_MOVE) {
-			cairo_move_to(cr, p[i+1], p[i+2]);
+			cairo_move_to(glob.cr, p[i+1], p[i+2]);
 			i += 3;
 		} else if (p[i] == PLOTTER_PATH_CLOSE) {
-			cairo_close_path(cr);
+			cairo_close_path(glob.cr);
 			i++;
 		} else if (p[i] == PLOTTER_PATH_LINE) {
-			cairo_line_to(cr, p[i+1], p[i+2]);
+			cairo_line_to(glob.cr, p[i+1], p[i+2]);
 			i += 3;
 		} else if (p[i] == PLOTTER_PATH_BEZIER) {
-			cairo_curve_to(cr, p[i+1], p[i+2],
+			cairo_curve_to(glob.cr, p[i+1], p[i+2],
 					p[i+3], p[i+4],
 					p[i+5], p[i+6]);
 			i += 7;
 		} else {
 			LOG(("bad path command %f", p[i]));
 			/* Reset matrix for safety */
-			cairo_set_matrix(cr, &old_ctm);
+			cairo_set_matrix(glob.cr, &old_ctm);
 			return false;
 		}
 	}
 
 	/* Restore original CTM */
-	cairo_set_matrix(cr, &old_ctm);
+	cairo_set_matrix(glob.cr, &old_ctm);
 
 	/* Now draw path */
 	if (fill != TRANSPARENT) {
-		ami_cairo_set_colour(cr,fill);
+		ami_cairo_set_colour(glob.cr,fill);
 
 		if (c != TRANSPARENT) {
 			/* Fill & Stroke */
-			cairo_fill_preserve(cr);
-			ami_cairo_set_colour(cr,c);
-			cairo_stroke(cr);
+			cairo_fill_preserve(glob.cr);
+			ami_cairo_set_colour(glob.cr,c);
+			cairo_stroke(glob.cr);
 		} else {
 			/* Fill only */
-			cairo_fill(cr);
+			cairo_fill(glob.cr);
 		}
 	} else if (c != TRANSPARENT) {
 		/* Stroke only */
-		ami_cairo_set_colour(cr,c);
-		cairo_stroke(cr);
+		ami_cairo_set_colour(glob.cr,c);
+		cairo_stroke(glob.cr);
 	}
-
-	cairo_destroy (cr);
-	cairo_surface_destroy(surface);
 #endif
 	return true;
 }

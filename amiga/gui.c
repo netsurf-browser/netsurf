@@ -71,6 +71,9 @@
 #include "amiga/fetch_mailto.h"
 #include "amiga/search.h"
 
+#ifdef NS_AMIGA_CAIRO
+#include <cairo/cairo-amigaos.h>
+#endif
 #ifdef WITH_HUBBUB
 #include <hubbub/hubbub.h>
 #endif
@@ -112,8 +115,6 @@ struct BitMap *throbber = NULL;
 ULONG throbber_width,throbber_height,throbber_frames;
 BOOL rmbtrapped;
 BOOL locked_screen = FALSE;
-
-//static struct RastPort dummyrp;
 
 #define AMI_LASTPOINTER GUI_POINTER_PROGRESS+1
 Object *mouseptrobj[AMI_LASTPOINTER+1];
@@ -434,14 +435,6 @@ void gui_init2(int argc, char** argv)
 	ami_fetch_file_register();
 	ami_fetch_mailto_register();
 
-/*
-	InitRastPort(&dummyrp);
-	dummyrp.BitMap = p96AllocBitMap(1,1,32,
-		BMF_CLEAR | BMF_DISPLAYABLE | BMF_INTERLEAVED,
-		NULL,RGBFB_A8R8G8B8);
-
-	if(!dummyrp.BitMap) die(messages_get("NoMemory"));
-*/
 	if(notalreadyrunning)
 	{
 		if((option_modeid) && (option_modeid[0] != '\0'))
@@ -497,8 +490,7 @@ void gui_init2(int argc, char** argv)
 /* init shared bitmaps */
 	glob.bm = p96AllocBitMap(scrn->Width,scrn->Height,32,
 		BMF_CLEAR | BMF_DISPLAYABLE | BMF_INTERLEAVED,
-		NULL, //gwin->shared->win->RPort->BitMap,
-		RGBFB_A8R8G8B8);
+		scrn->RastPort.BitMap,RGBFB_A8R8G8B8);
 
 	if(!glob.bm)
 	{
@@ -536,8 +528,12 @@ void gui_init2(int argc, char** argv)
 	}
 
 	InitTmpRas(glob.rp.TmpRas,glob.tmprasbuf,scrn->Width*scrn->Height);
-
 	currp = &glob.rp;
+
+#ifdef NS_AMIGA_CAIRO
+	glob.surface = cairo_amigaos_surface_create(glob.bm);
+	glob.cr = cairo_create(glob.surface);
+#endif
 /* init shared bitmaps */
 
 	if(argc) // argc==0 is started from wb
@@ -1275,6 +1271,10 @@ void gui_quit(void)
 
 	ami_arexx_cleanup();
 
+#ifdef NS_AMIGA_CAIRO
+	cairo_destroy(glob.cr);
+	cairo_surface_destroy(glob.surface);
+#endif
 	DeleteLayer(0,glob.rp.Layer);
 	DisposeLayerInfo(glob.layerinfo);
 	p96FreeBitMap(glob.bm);
@@ -1287,7 +1287,6 @@ void gui_quit(void)
 	{
 		while(!CloseScreen(scrn));
 	}
-//	p96FreeBitMap(dummyrp.BitMap);
 
 	FreeVec(nsscreentitle);
 
@@ -1497,7 +1496,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			WA_CustomScreen,scrn,
 			WA_ReportMouse,TRUE,
            	WA_IDCMP,IDCMP_MENUPICK | IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS |
-				 IDCMP_NEWSIZE | IDCMP_VANILLAKEY | IDCMP_RAWKEY | IDCMP_GADGETUP | IDCMP_IDCMPUPDATE | IDCMP_INTUITICKS,
+				 IDCMP_NEWSIZE | IDCMP_VANILLAKEY | IDCMP_RAWKEY | IDCMP_GADGETUP | IDCMP_IDCMPUPDATE | IDCMP_INTUITICKS | IDCMP_EXTENDEDMOUSE,
 //			WINDOW_IconifyGadget, TRUE,
 //			WINDOW_NewMenu,menu,
 			WINDOW_HorizProp,1,
@@ -1506,6 +1505,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			WINDOW_IDCMPHookBits,IDCMP_IDCMPUPDATE,
             WINDOW_AppPort, appport,
 			WINDOW_AppWindow,TRUE,
+			WINDOW_BuiltInScroll,TRUE,
 			WINDOW_SharedPort,sport,
 			WINDOW_UserData,gwin->shared,
 //         	WINDOW_Position, WPOS_CENTERSCREEN,
@@ -1575,7 +1575,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 								IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
 								IDCMP_VANILLAKEY | IDCMP_RAWKEY |
 								IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
-								IDCMP_INTUITICKS | IDCMP_ACTIVEWINDOW,
+								IDCMP_INTUITICKS | IDCMP_ACTIVEWINDOW |
+								IDCMP_EXTENDEDMOUSE,
 //					WINDOW_IconifyGadget, TRUE,
 					WINDOW_NewMenu,menu,
 					WINDOW_HorizProp,1,
@@ -1585,6 +1586,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
         		    WINDOW_AppPort, appport,
 					WINDOW_AppWindow,TRUE,
 					WINDOW_SharedPort,sport,
+					WINDOW_BuiltInScroll,TRUE,
 					WINDOW_UserData,gwin->shared,
 //      		   	WINDOW_Position, WPOS_CENTERSCREEN,
 //					WINDOW_CharSet,106,
@@ -1736,7 +1738,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 							IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
 							IDCMP_VANILLAKEY | IDCMP_RAWKEY |
 							IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
-							IDCMP_INTUITICKS,
+							IDCMP_INTUITICKS | IDCMP_EXTENDEDMOUSE,
 					WINDOW_HorizProp,1,
 					WINDOW_VertProp,1,
 					WINDOW_IDCMPHook,&gwin->shared->scrollerhook,
@@ -1745,6 +1747,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 					WINDOW_AppWindow,TRUE,
 					WINDOW_SharedPort,sport,
 					WINDOW_UserData,gwin->shared,
+					WINDOW_BuiltInScroll,TRUE,
 		           	WINDOW_ParentGroup, gwin->shared->gadgets[GID_MAIN] = VGroupObject,
 		               	LAYOUT_SpaceOuter, TRUE,
 						LAYOUT_AddChild, gwin->shared->gadgets[GID_BROWSER] = SpaceObject,
@@ -1825,8 +1828,6 @@ void gui_window_destroy(struct gui_window *g)
 	ULONG ptabnum;
 
 	if(!g) return;
-
-//	currp = &dummyrp;
 
 	if(g->shared->tabs > 1)
 	{
@@ -1979,7 +1980,6 @@ void gui_window_update_box(struct gui_window *g,
 		0xFFFFFF);
 
 	current_redraw_browser = NULL;
-//	currp = &dummyrp;
 
 	ami_update_buttons(g->shared);
 
@@ -2052,8 +2052,6 @@ void ami_do_redraw(struct gui_window_2 *g)
 //	}
 
 	current_redraw_browser = NULL;
-//	currp = &dummyrp;
-
 
 	ami_update_buttons(g);
 
