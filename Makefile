@@ -434,15 +434,22 @@ ifeq ($(TARGET),amiga)
   NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
   NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
   NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
+  NETSURF_FEATURE_NSSVG_CFLAGS := -DWITH_NS_SVG
 
     $(eval $(call feature_enabled,ROSPRITE,-DWITH_NSSPRITE,-lrosprite,RISC OS Sprite decoder))
-    $(eval $(call feature_enabled,HUBBUB,-DWITH_HUBBUB,-lhubbub -lparserutils,Hubbub HTML parser))
+    $(eval $(call feature_enabled,HUBBUB,-DWITH_HUBBUB,-lhubbub,Hubbub HTML parser))
     $(eval $(call feature_enabled,BMP,-DWITH_BMP,-lnsbmp,NetSurf BMP decoder))
     $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif,NetSurf GIF decoder))
     $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG support))
+    $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG rendering))
 
   CFLAGS += -mcrt=newlib -D__USE_INLINE__ -std=c99 -I . -Dnsamiga
-  LDFLAGS += -lxml2 -lcurl -lm -lsocket -lpthread -lregex -lauto -lraauto -lssl -lcrypto -lamisslauto -mcrt=newlib
+  LDFLAGS += -lxml2 -lcurl -lm -lsocket -lpthread -lregex -lauto -lraauto -lssl -lcrypto -lamisslauto -lparserutils -mcrt=newlib
+
+  ifeq ($(NETSURF_AMIGA_USE_CAIRO),YES)
+    CFLAGS += -DNS_AMIGA_CAIRO
+    LDFLAGS += -use-dynld -lcairo -lpixman-1 -lfreetype -lfontconfig -lpng12 -lexpat
+  endif
 endif
 
 # ----------------------------------------------------------------------------

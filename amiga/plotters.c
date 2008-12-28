@@ -30,6 +30,17 @@
 #include "amiga/options.h"
 #include <graphics/blitattr.h>
 #include <graphics/composite.h>
+#include "utils/log.h"
+#include <math.h>
+
+#ifndef M_PI /* For some reason we don't always get this from math.h */
+#define M_PI		3.14159265358979323846
+#endif
+
+#ifdef NS_AMIGA_CAIRO
+#include <cairo/cairo.h>
+#include <cairo/cairo-amigaos.h>
+#endif
 
 #define PATT_DOT  0xAAAA
 #define PATT_DASH 0xCCCC
@@ -54,6 +65,41 @@ const struct plotter_table amiplot = {
 	ami_path,
 	false // option_knockout
 };
+
+#ifdef NS_AMIGA_CAIRO
+void ami_cairo_set_colour(cairo_t *cr,colour c)
+{
+	int r, g, b;
+
+	r = c & 0xff;
+	g = (c & 0xff00) >> 8;
+	b = (c & 0xff0000) >> 16;
+
+	cairo_set_source_rgba(cr, r / 255.0,
+			g / 255.0, b / 255.0, 1.0);
+}
+
+void ami_cairo_set_solid(cairo_t *cr)
+{
+	double dashes = 0;
+	
+	cairo_set_dash(cr, &dashes, 0, 0);
+}
+
+void ami_cairo_set_dotted(cairo_t *cr)
+{
+	double cdashes = 1;
+
+	cairo_set_dash(cr, &cdashes, 1, 0);
+}
+
+void ami_cairo_set_dashed(cairo_t *cr)
+{
+	double cdashes = 3;
+
+	cairo_set_dash(cr, &cdashes, 1, 0);
+}
+#endif
 
 bool ami_clg(colour c)
 {
@@ -234,6 +280,22 @@ bool ami_disc(int x, int y, int radius, colour c, bool filled)
 bool ami_arc(int x, int y, int radius, int angle1, int angle2,
 	    		colour c)
 {
+#ifdef NS_AMIGA_CAIRO
+	cairo_surface_t *surface = cairo_amigaos_surface_create(currp->BitMap);
+	cairo_t *cr = cairo_create(surface);
+
+	ami_cairo_set_colour(cr,c);
+	ami_cairo_set_solid(cr);
+
+	cairo_set_line_width(cr, 1);
+	cairo_arc(cr, x, y, radius,
+			(angle1 + 90) * (M_PI / 180),
+			(angle2 + 90) * (M_PI / 180));
+	cairo_stroke(cr);
+
+	cairo_destroy (cr);
+	cairo_surface_destroy(surface);
+#else
 /* http://www.crbond.com/primitives.htm
 CommonFuncsPPC.lha */
 	//DebugPrintF("arc\n");
@@ -242,6 +304,7 @@ CommonFuncsPPC.lha */
 					TAG_DONE);
 
 //	DrawArc(currp,x,y,(float)angle1,(float)angle2,radius);
+#endif
 
 	return true;
 }
@@ -437,6 +500,88 @@ bool ami_flush(void)
 bool ami_path(float *p, unsigned int n, colour fill, float width,
 			colour c, float *transform)
 {
-/* Not implemented yet - unable to locate website which requires this plotter! */
+/* For SVG only, because it needs Bezier curves we are going to cheat
+   and insist on Cairo */
+#ifdef NS_AMIGA_CAIRO
+	cairo_surface_t *surface = cairo_amigaos_surface_create(currp->BitMap);
+	cairo_t *cr = cairo_create(surface);
+
+	unsigned int i;
+	cairo_matrix_t old_ctm, n_ctm;
+
+	if (n == 0)
+		return true;
+
+	if (p[0] != PLOTTER_PATH_MOVE) {
+		LOG(("Path does not start with move"));
+		return false;
+	}
+
+	/* Save CTM */
+	cairo_get_matrix(cr, &old_ctm);
+
+	/* Set up line style and width */
+	cairo_set_line_width(cr, 1);
+	ami_cairo_set_solid(cr);
+
+	/* Load new CTM */
+	n_ctm.xx = transform[0];
+	n_ctm.yx = transform[1];
+	n_ctm.xy = transform[2];
+	n_ctm.yy = transform[3];
+	n_ctm.x0 = transform[4];
+	n_ctm.y0 = transform[5];
+
+	cairo_set_matrix(cr, &n_ctm);
+
+	/* Construct path */
+	for (i = 0; i < n; ) {
+		if (p[i] == PLOTTER_PATH_MOVE) {
+			cairo_move_to(cr, p[i+1], p[i+2]);
+			i += 3;
+		} else if (p[i] == PLOTTER_PATH_CLOSE) {
+			cairo_close_path(cr);
+			i++;
+		} else if (p[i] == PLOTTER_PATH_LINE) {
+			cairo_line_to(cr, p[i+1], p[i+2]);
+			i += 3;
+		} else if (p[i] == PLOTTER_PATH_BEZIER) {
+			cairo_curve_to(cr, p[i+1], p[i+2],
+					p[i+3], p[i+4],
+					p[i+5], p[i+6]);
+			i += 7;
+		} else {
+			LOG(("bad path command %f", p[i]));
+			/* Reset matrix for safety */
+			cairo_set_matrix(cr, &old_ctm);
+			return false;
+		}
+	}
+
+	/* Restore original CTM */
+	cairo_set_matrix(cr, &old_ctm);
+
+	/* Now draw path */
+	if (fill != TRANSPARENT) {
+		ami_cairo_set_colour(cr,fill);
+
+		if (c != TRANSPARENT) {
+			/* Fill & Stroke */
+			cairo_fill_preserve(cr);
+			ami_cairo_set_colour(cr,c);
+			cairo_stroke(cr);
+		} else {
+			/* Fill only */
+			cairo_fill(cr);
+		}
+	} else if (c != TRANSPARENT) {
+		/* Stroke only */
+		ami_cairo_set_colour(cr,c);
+		cairo_stroke(cr);
+	}
+
+	cairo_destroy (cr);
+	cairo_surface_destroy(surface);
+#endif
 	return true;
 }
