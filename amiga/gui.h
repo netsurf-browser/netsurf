@@ -124,6 +124,7 @@ struct gui_globals
 	struct Layer_Info *layerinfo;
 	APTR areabuf;
 	APTR tmprasbuf;
+	struct Rectangle rect;
 #ifdef NS_AMIGA_CAIRO
 	cairo_surface_t *surface;
 	cairo_t *cr;

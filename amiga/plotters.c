@@ -244,21 +244,28 @@ bool ami_fill(int x0, int y0, int x1, int y1, colour c)
 bool ami_clip(int x0, int y0, int x1, int y1)
 {
 	struct Region *reg = NULL;
-	struct Rectangle rect;
 
 	if(currp->Layer)
 	{
-		reg = NewRegion();
+		reg = InstallClipRegion(currp->Layer,NULL);
 
-		rect.MinX = x0;
-		rect.MinY = y0;
-		rect.MaxX = x1-1;
-		rect.MaxY = y1-1;
+		if(!reg)
+		{
+			reg = NewRegion();
+		}
+		else
+		{
+			ClearRectRegion(reg,&glob.rect);
+		}
 
-		OrRectRegion(reg,&rect);
+		glob.rect.MinX = x0;
+		glob.rect.MinY = y0;
+		glob.rect.MaxX = x1-1;
+		glob.rect.MaxY = y1-1;
+
+		OrRectRegion(reg,&glob.rect);
 
 		reg = InstallClipRegion(currp->Layer,reg);
-
 		if(reg) DisposeRegion(reg);
 	}
 
