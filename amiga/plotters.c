@@ -114,6 +114,7 @@ bool ami_clg(colour c)
 bool ami_rectangle(int x0, int y0, int width, int height,
 			int line_width, colour c, bool dotted, bool dashed)
 {
+#ifndef NS_AMIGA_CAIRO_ALL
 	currp->PenWidth = line_width;
 	currp->PenHeight = line_width;
 
@@ -132,6 +133,19 @@ bool ami_rectangle(int x0, int y0, int width, int height,
 	currp->PenWidth = 1;
 	currp->PenHeight = 1;
 	currp->LinePtrn = PATT_LINE;
+#else
+	ami_cairo_set_colour(glob.cr,c);
+	if (dotted) ami_cairo_set_dotted(glob.cr);
+        else if (dashed) ami_cairo_set_dashed(glob.cr);
+        else ami_cairo_set_solid(glob.cr);
+
+	if (line_width == 0)
+		line_width = 1;
+
+	cairo_set_line_width(glob.cr, line_width);
+	cairo_rectangle(glob.cr, x0, y0, width, height);
+	cairo_stroke(glob.cr);
+#endif
 
 	return true;
 }
@@ -139,6 +153,7 @@ bool ami_rectangle(int x0, int y0, int width, int height,
 bool ami_line(int x0, int y0, int x1, int y1, int width,
 			colour c, bool dotted, bool dashed)
 {
+#ifndef NS_AMIGA_CAIRO_ALL
 	currp->PenWidth = width;
 	currp->PenHeight = width;
 
@@ -154,13 +169,27 @@ bool ami_line(int x0, int y0, int x1, int y1, int width,
 	currp->PenWidth = 1;
 	currp->PenHeight = 1;
 	currp->LinePtrn = PATT_LINE;
+#else
+	ami_cairo_set_colour(glob.cr,c);
+	if (dotted) ami_cairo_set_dotted(glob.cr);
+	else if (dashed) ami_cairo_set_dashed(glob.cr);
+	else ami_cairo_set_solid(glob.cr);
 
+	if (width == 0)
+		width = 1;
+
+	cairo_set_line_width(glob.cr, width);
+	cairo_move_to(glob.cr, x0, y0 - 0.5);
+	cairo_line_to(glob.cr, x1, y1 - 0.5);
+	cairo_stroke(glob.cr);
+#endif
 	return true;
 }
 
 bool ami_polygon(int *p, unsigned int n, colour fill)
 {
 	int k;
+#ifndef NS_AMIGA_CAIRO
 	ULONG cx,cy;
 
 	//DebugPrintF("poly\n");
@@ -179,17 +208,36 @@ bool ami_polygon(int *p, unsigned int n, colour fill)
 
 	AreaEnd(currp);
 	BNDRYOFF(currp);
+#else
+	ami_cairo_set_colour(glob.cr,fill);
+	ami_cairo_set_solid(glob.cr);
+
+	cairo_set_line_width(glob.cr, 0);
+	cairo_move_to(glob.cr, p[0], p[1]);
+	for (k = 1; k != n; k++) {
+		cairo_line_to(glob.cr, p[k * 2], p[k * 2 + 1]);
+	}
+	cairo_fill(glob.cr);
+	cairo_stroke(glob.cr);
+#endif
 
 	return true;
 }
 
 bool ami_fill(int x0, int y0, int x1, int y1, colour c)
 {
-	//DebugPrintF("fill %ld,%ld,%ld,%ld\n",x0,y0,x1,y1);
-
+#ifndef NS_AMIGA_CAIRO_ALL
 	p96RectFill(currp,x0,y0,x1-1,y1-1,
 		p96EncodeColor(RGBFB_A8B8G8R8,c));
+#else
+	ami_cairo_set_colour(glob.cr,c);
+	ami_cairo_set_solid(glob.cr);
 
+	cairo_set_line_width(glob.cr, 0);
+	cairo_rectangle(glob.cr, x0, y0, x1 - x0, y1 - y0);
+	cairo_fill(glob.cr);
+	cairo_stroke(glob.cr);
+#endif
 	return true;
 }
 
@@ -214,6 +262,11 @@ bool ami_clip(int x0, int y0, int x1, int y1)
 		if(reg) DisposeRegion(reg);
 	}
 
+#ifdef NS_AMIGA_CAIRO_ALL
+	cairo_reset_clip(glob.cr);
+	cairo_rectangle(glob.cr, x0, y0, x1 - x0, y1 - y0);
+	cairo_clip(glob.cr);
+#endif
 	return true;
 }
 
@@ -261,6 +314,7 @@ bool ami_text(int x, int y, const struct css_style *style,
 
 bool ami_disc(int x, int y, int radius, colour c, bool filled)
 {
+#ifndef NS_AMIGA_CAIRO_ALL
 	SetRPAttrs(currp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),
 					TAG_DONE);
 
@@ -273,7 +327,22 @@ bool ami_disc(int x, int y, int radius, colour c, bool filled)
 	{
 		DrawEllipse(currp,x,y,radius,radius); // NB: does not support fill, need to use AreaCircle for that
 	}
+#else
+	ami_cairo_set_colour(glob.cr,c);
+	ami_cairo_set_solid(glob.cr);
 
+	if (filled)
+		cairo_set_line_width(glob.cr, 0);
+	else
+		cairo_set_line_width(glob.cr, 1);
+
+	cairo_arc(glob.cr, x, y, radius, 0, M_PI * 2);
+
+	if (filled)
+		cairo_fill(glob.cr);
+
+	cairo_stroke(glob.cr);
+#endif
 	return true;
 }
 
@@ -352,7 +421,7 @@ bool ami_bitmap(int x, int y, int width, int height,
 
 			if(GfxBase->lib_Version >= 53) // AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)
 			{
-				CompositeTags(COMPOSITE_Src_Over_Dest,tbm,scaledbm,
+				CompositeTags(COMPOSITE_Src,tbm,scaledbm,
 						COMPTAG_ScaleX,COMP_FLOAT_TO_FIX(width/bitmap->width),
 						COMPTAG_ScaleY,COMP_FLOAT_TO_FIX(height/bitmap->height),
 						COMPTAG_Flags,COMPFLAG_IgnoreDestAlpha,
