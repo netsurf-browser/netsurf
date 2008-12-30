@@ -1447,10 +1447,7 @@ bool browser_window_input_paste_text(struct browser_window *bw,
 				nchars < input->gadget->maxlength &&
 				*p != '\n' && *p != '\r') {
 			unsigned len = utf8_next(p, ep - p, 0);
-
-			if (input->gadget->type == GADGET_PASSWORD)
-				buf[nbytes++] = '*';
-			else if (*p == ' ')
+			if (*p == ' ')
 				nbytes += utf8_from_ucs4(160, &buf[nbytes]);
 			else {
 				memcpy(&buf[nbytes], p, len);
@@ -1647,6 +1644,7 @@ bool textbox_insert(struct browser_window *bw, struct box *text_box,
 {
 	char *text;
 	struct box *input = text_box->parent->parent;
+	bool hide;
 	
 	if (bw->sel->defined)
 		delete_selection(bw->sel);
@@ -1671,7 +1669,18 @@ bool textbox_insert(struct browser_window *bw, struct box *text_box,
 		input->gadget->length += utf8_len;
 		input->gadget->value[input->gadget->length] = 0;
 	}
-	
+
+	hide = (input->gadget && input->gadget->type == GADGET_PASSWORD);
+	if (hide) {
+		/* determine the number of '*'s to be inserted */
+		const char *eutf8 = utf8 + utf8_len;
+		utf8_len = 0;
+		while (utf8 < eutf8) {
+			utf8 += utf8_next(utf8, eutf8 - utf8, 0);
+			utf8_len++;
+		}
+	}
+
 	/* insert in text box */
 	text = talloc_realloc(bw->current_content, text_box->text,
 			char,
@@ -1684,13 +1693,15 @@ bool textbox_insert(struct browser_window *bw, struct box *text_box,
 
 	if (text_box->space &&
 			char_offset == text_box->length + text_box->space) {
-		unsigned int last_off = utf8_prev(utf8, utf8_len);
-
-		if (utf8[last_off] != ' ')
+		if (hide)
 			text_box->space = 0;
-		else
-			utf8_len = last_off;
-
+		else {
+			unsigned int last_off = utf8_prev(utf8, utf8_len);
+			if (utf8[last_off] != ' ')
+				text_box->space = 0;
+			else
+				utf8_len = last_off;
+		}
 		text_box->text[text_box->length++] = ' ';
 	} else {
 		memmove(text_box->text + char_offset + utf8_len,
@@ -1698,9 +1709,10 @@ bool textbox_insert(struct browser_window *bw, struct box *text_box,
 				text_box->length - char_offset);
 	}
 
-	memcpy(text_box->text + char_offset, 
-			input->gadget->type == GADGET_PASSWORD ? "*": utf8, 
-			utf8_len);
+	if (hide)
+		memset(text_box->text + char_offset, '*', utf8_len);
+	else
+		memcpy(text_box->text + char_offset, utf8, utf8_len);
 	text_box->length += utf8_len;
 
 	/* nothing should assume that the text is terminated, 
