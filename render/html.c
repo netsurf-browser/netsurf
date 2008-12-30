@@ -517,7 +517,9 @@ bool html_meta_refresh(struct content *c, xmlNode *head)
 
 		end = (char *) content + strlen((const char *) content);
 
-		/* content  := *LWS 1*DIGIT *LWS [';' *LWS *1url *LWS]
+		/* content  := *LWS intpart fracpart? *LWS [';' *LWS *1url *LWS]
+		 * intpart  := 1*DIGIT
+		 * fracpart := 1*('.' | DIGIT)
 		 * url      := "url" *LWS '=' *LWS (url-nq | url-sq | url-dq)
 		 * url-nq   := *urlchar
 		 * url-sq   := "'" *(urlchar | '"') "'"
@@ -526,13 +528,19 @@ bool html_meta_refresh(struct content *c, xmlNode *head)
 		 * nonascii := [#x80-#xD7FF#xE000-#xFFFD#x10000-#x10FFFF]
 		 */
 
-		/* *LWS 1*DIGIT */
+		/* *LWS intpart */
 		msg_data.delay = (int)strtol((char *) content, &url, 10);
 		/* a very small delay and self-referencing URL can cause a loop
 		 * that grinds machines to a halt. To prevent this we set a
 		 * minimum refresh delay of 1s. */
 		if (msg_data.delay < 1)
 			msg_data.delay = 1;
+
+		/* fracpart? (ignored, as delay is integer only) */
+		while (url < end && (('0' <= *url && *url <= '9') || 
+				*url == '.')) {
+			url++;
+		}
 
 		/* *LWS */
 		while (url < end && isspace(*url)) {
