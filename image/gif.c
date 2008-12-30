@@ -92,10 +92,9 @@ bool nsgif_convert(struct content *c, int iwidth, int iheight)
 	do {
 		res = gif_initialise(gif, c->source_size,
 				(unsigned char *)c->source_data);
-		if (res != GIF_OK && res != GIF_WORKING) {
+		if (res != GIF_OK && res != GIF_WORKING && res != GIF_INSUFFICIENT_FRAME_DATA) {
 			switch (res)
 			{
-				case GIF_INSUFFICIENT_FRAME_DATA:
 				case GIF_FRAME_DATA_ERROR:
 				case GIF_INSUFFICIENT_DATA:
 				case GIF_DATA_ERROR:
@@ -109,7 +108,7 @@ bool nsgif_convert(struct content *c, int iwidth, int iheight)
 			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 			return false;
 		}
-	} while (res != GIF_OK);
+	} while (res != GIF_OK && res != GIF_INSUFFICIENT_FRAME_DATA);
 
 	/* Abort on bad GIFs */
 	if ((gif->frame_count_partial == 0) || (gif->width == 0) ||
