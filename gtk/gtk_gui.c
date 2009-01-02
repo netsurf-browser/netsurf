@@ -118,32 +118,39 @@ static char *find_resource(char *buf, const char *filename, const char *def)
 		strcpy(t, cdir);
 		strcat(t, "/.netsurf/");
 		strcat(t, filename);
-		realpath(t, buf);
-		if (access(buf, R_OK) == 0)
-			return buf;
+		if (realpath(t, buf) != NULL) {
+                        if (access(buf, R_OK) == 0)
+                                return buf;
+                }
 	}
 
 	cdir = getenv("NETSURFRES");
 
 	if (cdir != NULL) {
-		realpath(cdir, buf);
-		strcat(buf, "/");
-		strcat(buf, filename);
-		if (access(buf, R_OK) == 0)
-			return buf;
+		if (realpath(cdir, buf) != NULL) {
+                        strcat(buf, "/");
+                        strcat(buf, filename);
+                        if (access(buf, R_OK) == 0)
+                                return buf;
+                }
 	}
 
 	strcpy(t, GTK_RESPATH);
 	strcat(t, filename);
-	realpath(t, buf);
-	if (access(buf, R_OK) == 0)
-		return buf;
+	if (realpath(t, buf) != NULL) {
+                if (access(buf, R_OK) == 0)
+                        return buf;
+        }
 
 	if (def[0] == '~') {
 		snprintf(t, PATH_MAX, "%s%s", getenv("HOME"), def + 1);
-		realpath(t, buf);
+		if (realpath(t, buf) == NULL) {
+                        strcpy(buf, t);
+                }
 	} else {
-		realpath(def, buf);
+		if (realpath(def, buf) == NULL) {
+                        strcpy(buf, def);
+                }
 	}
 
 	return buf;
