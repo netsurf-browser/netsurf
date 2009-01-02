@@ -1,5 +1,7 @@
 /*
  * Copyright 2006 Rob Kendrick <rjek@rjek.com>
+ * Copyright 2008 Mike Lester <element3260@gmail.com>
+ * Copyright 2009 Daniel Silverstone <dsilvers@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -44,8 +46,9 @@ static void dialog_response_handler (GtkDialog *dlg, gint res_id);
 static gboolean on_dialog_close (GtkDialog *dlg, gboolean stay_alive);
 
 /* Declares both widget and callback */
-#define DECLARE(x) GtkWidget *x; gboolean on_##x##_changed( \
-	GtkWidget *widget, gpointer data)
+#define DECLARE(x) \
+  static GtkWidget *x; \
+  static gboolean on_##x##_changed(GtkWidget *widget, gpointer data)
 
 DECLARE(entryHomePageURL);
 DECLARE(setCurrentPage);
@@ -102,12 +105,17 @@ DECLARE(checkPasswordPDF);
 DECLARE(setDefaultExportOptions);
 
 /* Used when the feature is not implemented yet */
-#define FIND_WIDGET(x) (x) = glade_xml_get_widget(gladeFile, #x); \
-	if ((x) == NULL) LOG(("Unable to find widget '%s'!", #x))
-		
+#define FIND_WIDGET(wname)                                              \
+        do {                                                            \
+                (wname) = glade_xml_get_widget(gladeFile, #wname);      \
+                if ((wname) == NULL)                                    \
+                        LOG(("Unable to find widget '%s'!", #wname));   \
+        } while (0)
+
 /* Assigns widget and connects it to its callback function */
-#define CONNECT(x, y) g_signal_connect(G_OBJECT(x), y, \
-	G_CALLBACK(on_##x##_changed), NULL)
+#define CONNECT(wname, event)                                           \
+        g_signal_connect(G_OBJECT(wname), event,                        \
+                         G_CALLBACK(on_##wname##_changed), NULL)
 
 GtkDialog* nsgtk_options_init(struct browser_window *bw, GtkWindow *parent) {
 	glade_location = g_strconcat(res_dir_location, "options.glade", NULL);
@@ -194,19 +202,49 @@ GtkDialog* nsgtk_options_init(struct browser_window *bw, GtkWindow *parent) {
 	return wndPreferences;
 }
 
-#define SET_ENTRY(x, y) (x) = glade_xml_get_widget(gladeFile, #x); \
-	gtk_entry_set_text(GTK_ENTRY((x)), (y))
-#define SET_SPIN(x, y) (x) = glade_xml_get_widget(gladeFile, #x); \
-	gtk_spin_button_set_value(GTK_SPIN_BUTTON((x)), (y))
-#define SET_CHECK(x, y) (x) = glade_xml_get_widget(gladeFile, #x); \
-	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON((x)), (y))
-#define SET_COMBO(x, y) (x) = glade_xml_get_widget(gladeFile, #x); \
-	gtk_combo_box_set_active(GTK_COMBO_BOX((x)), (y))
-#define SET_FONT(x, y) (x) = glade_xml_get_widget(gladeFile, #x); \
-	gtk_font_button_set_font_name(GTK_FONT_BUTTON((x)), (y))
-#define SET_FILE_CHOOSER(x, y) (x) = glade_xml_get_widget(gladeFile, #x); \
-	gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER((x)), (y))
-#define SET_BUTTON(x) (x) = glade_xml_get_widget(gladeFile, #x);
+#define SET_ENTRY(widget, value)                                        \
+        do {                                                            \
+                (widget) = glade_xml_get_widget(gladeFile, #widget);    \
+                gtk_entry_set_text(GTK_ENTRY((widget)), (value));       \
+        } while (0)
+
+#define SET_SPIN(widget, value)                                         \
+        do {                                                            \
+                (widget) = glade_xml_get_widget(gladeFile, #widget);    \
+                gtk_spin_button_set_value(GTK_SPIN_BUTTON((widget)), (value)); \
+        } while (0)
+
+#define SET_CHECK(widget, value)                                        \
+        do {                                                            \
+                (widget) = glade_xml_get_widget(gladeFile, #widget);    \
+                gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON((widget)), \
+                                             (value));                  \
+        } while (0)
+
+#define SET_COMBO(widget, value)                                        \
+        do {                                                            \
+                (widget) = glade_xml_get_widget(gladeFile, #widget);    \
+                gtk_combo_box_set_active(GTK_COMBO_BOX((widget)), (value)); \
+        } while (0)
+
+#define SET_FONT(widget, value)                                         \
+        do {                                                            \
+                (widget) = glade_xml_get_widget(gladeFile, #widget);    \
+                gtk_font_button_set_font_name(GTK_FONT_BUTTON((widget)), \
+                                              (value));                 \
+        } while (0)
+
+#define SET_FILE_CHOOSER(widgt, value)                                  \
+        do {                                                            \
+                (widgt) = glade_xml_get_widget(gladeFile, #widgt);      \
+                gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER((widgt)), \
+                                                    (value));           \
+        } while (0)
+
+#define SET_BUTTON(widget)                                              \
+        do {                                                            \
+                (widget) = glade_xml_get_widget(gladeFile, #widget);    \
+        } while (0)
 
 
 void nsgtk_options_load(void) 
@@ -303,67 +341,88 @@ static gboolean on_dialog_close (GtkDialog *dlg, gboolean stay_alive)
 
 /* Defines the callback functions for all widgets and specifies
  * nsgtk_reflow_all_windows only where necessary */
-#define ENTRY_CHANGED(x, y) gboolean on_##x##_changed(GtkWidget *widget, gpointer data) { \
-    if (!g_str_equal(gtk_entry_get_text(GTK_ENTRY((x))), (y) ? (y) : "")) { \
-			LOG(("Signal emitted on '%s'", #x)); \
-			if ((y)) free((y)); \
-			(y) = strdup(gtk_entry_get_text(GTK_ENTRY((x)))); 
-#define CHECK_CHANGED(x, y) gboolean on_##x##_changed(GtkWidget *widget, gpointer data) { \
-	LOG(("Signal emitted on '%s'", #x)); \
-	(y) = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON((x)));
-#define SPIN_CHANGED(x, y) gboolean on_##x##_changed(GtkWidget *widget, gpointer data) { \
-		LOG(("Signal emitted on '%s'", #x)); \
-		(y) = gtk_spin_button_get_value(GTK_SPIN_BUTTON((x)));
-#define COMBO_CHANGED(x, y) gboolean on_##x##_changed(GtkWidget *widget, gpointer data) { \
-	LOG(("Signal emitted on '%s'", #x)); \
-	(y) = gtk_combo_box_get_active(GTK_COMBO_BOX((x)));
-#define FONT_CHANGED(x, y) gboolean on_##x##_changed(GtkWidget *widget, gpointer data) { \
-	LOG(("Signal emitted on '%s'", #x)); \
-	if ((y)) free((y)); \
-	(y) = strdup(gtk_font_button_get_font_name(GTK_FONT_BUTTON((x))));
-#define FILE_CHOOSER_CHANGED(x, y) gboolean on_##x##_changed(GtkWidget *widget, gpointer data) { \
-	LOG(("Signal emitted on '%s'", #x)); \
-	(y) = gtk_file_chooser_get_current_folder(GTK_FILE_CHOOSER((x)));
-#define BUTTON_CLICKED(x) gboolean on_##x##_changed(GtkWidget *widget, gpointer data) { \
-	LOG(("Signal emitted on '%s'", #x));
 
-ENTRY_CHANGED(entryHomePageURL, option_homepage_url)}
-	return FALSE;
-}
+#define ENTRY_CHANGED(widget, option)                                   \
+        static gboolean on_##widget##_changed(GtkWidget *widget, gpointer data) { \
+        if (!g_str_equal(gtk_entry_get_text(GTK_ENTRY((widget))), (option) ? (option) : "")) { \
+                LOG(("Signal emitted on '%s'", #widget));               \
+                if ((option))                                           \
+                        free((option));                                 \
+                (option) = strdup(gtk_entry_get_text(GTK_ENTRY((widget)))); \
+                }                                                       \
+        do {                                                            \
+                
+#define CHECK_CHANGED(widget, option)                                   \
+        static gboolean on_##widget##_changed(GtkWidget *widget, gpointer data) { \
+	LOG(("Signal emitted on '%s'", #widget));                       \
+	(option) = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON((widget))); \
+        do {                                                            \
+
+#define SPIN_CHANGED(widget, option)                                    \
+        static gboolean on_##widget##_changed(GtkWidget *widget, gpointer data) { \
+        LOG(("Signal emitted on '%s'", #widget));                       \
+        (option) = gtk_spin_button_get_value(GTK_SPIN_BUTTON((widget))); \
+        do {                                                            \
+
+#define COMBO_CHANGED(widget, option)                                   \
+        static gboolean on_##widget##_changed(GtkWidget *widget, gpointer data) { \
+	LOG(("Signal emitted on '%s'", #widget));                       \
+	(option) = gtk_combo_box_get_active(GTK_COMBO_BOX((widget)));   \
+        do {
+
+#define FONT_CHANGED(widget, option)                                    \
+        static gboolean on_##widget##_changed(GtkWidget *widget, gpointer data) { \
+	LOG(("Signal emitted on '%s'", #widget));                       \
+	if ((option))                                                   \
+                free((option));                                         \
+	(option) = strdup(gtk_font_button_get_font_name(GTK_FONT_BUTTON((widget)))); \
+        do {
+
+#define FILE_CHOOSER_CHANGED(widget, option)                            \
+        static gboolean on_##widget##_changed(GtkWidget *widget, gpointer data) { \
+	LOG(("Signal emitted on '%s'", #widget));                       \
+	(option) = gtk_file_chooser_get_current_folder(GTK_FILE_CHOOSER((widget))); \
+        do {
+
+#define BUTTON_CLICKED(widget)                                          \
+        static gboolean on_##widget##_changed(GtkWidget *widget, gpointer data) { \
+	LOG(("Signal emitted on '%s'", #widget));                       \
+        do {
+
+#define END_HANDLER                             \
+        } while (0);                            \
+        return FALSE;                           \
+        }
+
+ENTRY_CHANGED(entryHomePageURL, option_homepage_url)
+END_HANDLER
 
 BUTTON_CLICKED(setCurrentPage)
 	const gchar *url = current_browser->current_content->url;
 	gtk_entry_set_text(GTK_ENTRY(entryHomePageURL), url);
 	option_homepage_url = 
 		strdup(gtk_entry_get_text(GTK_ENTRY(entryHomePageURL)));
-	return FALSE;
-}
+END_HANDLER
 
 BUTTON_CLICKED(setDefaultPage)
 	gtk_entry_set_text(GTK_ENTRY(entryHomePageURL),
-	 				   "http://www.netsurf-browser.org/welcome/");
+                           "http://www.netsurf-browser.org/welcome/");
 	option_homepage_url = 
 		strdup(gtk_entry_get_text(GTK_ENTRY(entryHomePageURL)));
-	
-	return FALSE;
-}
+END_HANDLER
 
 CHECK_CHANGED(checkHideAdverts, option_block_ads)
-	return FALSE;
-}
+END_HANDLER
 
 CHECK_CHANGED(checkDisplayRecentURLs, option_url_suggestion)
-	return FALSE;
-}
+END_HANDLER
 
 CHECK_CHANGED(checkSendReferer, option_send_referer)
-	return FALSE;
-}
+END_HANDLER
                 
 CHECK_CHANGED(checkShowSingleTab, option_show_single_tab)
 	nsgtk_reflow_all_windows();
-	return FALSE;
-}
+END_HANDLER
 
 COMBO_CHANGED(comboProxyType, proxy_type)
 	LOG(("proxy type: %d", proxy_type));
@@ -392,12 +451,10 @@ COMBO_CHANGED(comboProxyType, proxy_type)
 	gtk_widget_set_sensitive (entryProxyUser, sensitive);
 	gtk_widget_set_sensitive (entryProxyPassword, sensitive);
 	
-	return FALSE;
-}
+END_HANDLER
 
-ENTRY_CHANGED(entryProxyHost, option_http_proxy_host)}
-	return FALSE;
-}
+ENTRY_CHANGED(entryProxyHost, option_http_proxy_host)
+END_HANDLER
 
 gboolean on_entryProxyPort_changed(GtkWidget *widget, gpointer data)
 {
@@ -417,138 +474,108 @@ gboolean on_entryProxyPort_changed(GtkWidget *widget, gpointer data)
 	return FALSE;
 }
 
-ENTRY_CHANGED(entryProxyUser, option_http_proxy_auth_user)}
-	return FALSE;
-}
-ENTRY_CHANGED(entryProxyPassword, option_http_proxy_auth_pass)}
-	return FALSE;
-}
+ENTRY_CHANGED(entryProxyUser, option_http_proxy_auth_user)
+END_HANDLER
+
+ENTRY_CHANGED(entryProxyPassword, option_http_proxy_auth_pass)
+END_HANDLER
 
 SPIN_CHANGED(spinMaxFetchers, option_max_fetchers)
-	return FALSE;
-}
+END_HANDLER
 
 SPIN_CHANGED(spinFetchesPerHost, option_max_fetchers_per_host)
-	return FALSE;
-}
+END_HANDLER
 
 SPIN_CHANGED(spinCachedConnections, option_max_cached_fetch_handles)
-	return FALSE;
-}
+END_HANDLER
 
 CHECK_CHANGED(checkResampleImages, option_render_resample)
-	return FALSE;
-}
+END_HANDLER
 
 SPIN_CHANGED(spinAnimationSpeed, animation_delay)
 	option_minimum_gif_delay = round(animation_delay * 100.0);
-	return FALSE;
-}
+END_HANDLER
+
 CHECK_CHANGED(checkDisableAnimations, option_animate_images);
 	option_animate_images = !option_animate_images;
-	return FALSE;
-}
+END_HANDLER
 
 FONT_CHANGED(fontSansSerif, option_font_sans)
-	return FALSE;
-}
+END_HANDLER
 
 FONT_CHANGED(fontSerif, option_font_serif)
-	return FALSE;
-}
+END_HANDLER
 
 FONT_CHANGED(fontMonospace, option_font_mono)
-	return FALSE;
-}
+END_HANDLER
 
 FONT_CHANGED(fontCursive, option_font_cursive)
-	return FALSE;
-}
+END_HANDLER
 
 FONT_CHANGED(fontFantasy, option_font_fantasy)
-	return FALSE;
-}
+END_HANDLER
 
 COMBO_CHANGED(comboDefault, option_font_default)
 	option_font_default++;
-	return FALSE;
-}
+END_HANDLER
 
 SPIN_CHANGED(spinDefaultSize, option_font_size)
 	option_font_size *= 10;
-	return FALSE;
-}
+END_HANDLER
 
 SPIN_CHANGED(spinMinimumSize, option_font_min_size)
 	option_font_min_size *= 10;
-	return FALSE;
-}
+END_HANDLER
 
 BUTTON_CLICKED(fontPreview)
 	nsgtk_reflow_all_windows();
-	return FALSE;
-}
+END_HANDLER
 
 SPIN_CHANGED(spinMemoryCacheSize, option_memory_cache_size)
 	option_memory_cache_size <<= 20;
-	return FALSE;
-}
+END_HANDLER
 
 SPIN_CHANGED(spinDiscCacheAge, option_disc_cache_age)
-	return FALSE;
-}
+END_HANDLER
 
 CHECK_CHANGED(checkClearDownloads, option_downloads_clear)
-	return FALSE;
-}
+END_HANDLER
 
 CHECK_CHANGED(checkRequestOverwrite, option_request_overwrite)
-	return FALSE;
-}
+END_HANDLER
 
 FILE_CHOOSER_CHANGED(fileChooserDownloads, option_downloads_directory)
-	return FALSE;
-}
+END_HANDLER
 
 SPIN_CHANGED(spinMarginTop, option_margin_top)
-	return FALSE;
-}
+END_HANDLER
 
 SPIN_CHANGED(spinMarginBottom, option_margin_bottom)
-	return FALSE;
-}
+END_HANDLER
 
 SPIN_CHANGED(spinMarginLeft, option_margin_left)
-	return FALSE;
-}
+END_HANDLER
 
 SPIN_CHANGED(spinMarginRight, option_margin_right)
-	return FALSE;
-}
+END_HANDLER
 
 SPIN_CHANGED(spinExportScale, option_export_scale)
-	return FALSE;
-}
+END_HANDLER
 
 CHECK_CHANGED(checkSuppressImages, option_suppress_images)
-	return FALSE;
-}
+END_HANDLER
 
 CHECK_CHANGED(checkRemoveBackgrounds, option_remove_backgrounds)
-	return FALSE;
-}
+END_HANDLER
 
 CHECK_CHANGED(checkFitPage, option_enable_loosening)
-	return FALSE;
-}
+END_HANDLER
 
 CHECK_CHANGED(checkCompressPDF, option_enable_PDF_compression)
-	return FALSE;
-}
+END_HANDLER
 
 CHECK_CHANGED(checkPasswordPDF, option_enable_PDF_password)
-	return FALSE;
-}
+END_HANDLER
 
 BUTTON_CLICKED(setDefaultExportOptions)
 	option_margin_top = DEFAULT_MARGIN_TOP_MM;
@@ -572,6 +599,4 @@ BUTTON_CLICKED(setDefaultExportOptions)
 	SET_CHECK(checkCompressPDF, option_enable_PDF_compression);
 	SET_CHECK(checkPasswordPDF, option_enable_PDF_password);
 	SET_CHECK(checkFitPage, option_enable_loosening);
-	
-	return FALSE;
-}
+END_HANDLER
