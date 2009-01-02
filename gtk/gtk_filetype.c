@@ -72,7 +72,8 @@ void gtk_fetch_filetype_init(const char *mimefile)
 
 	while (!feof(fh)) {
 		char line[256], *ptr, *type, *ext;
-		fgets(line, 256, fh);
+		if (fgets(line, 256, fh) == NULL)
+                	break;
 		if (!feof(fh) && line[0] != '#') {
 			ptr = line;
 
