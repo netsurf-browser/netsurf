@@ -696,7 +696,7 @@ gchar* nsgtk_download_dialog_show (gchar *filename, gchar *domain,
 						"<b>%s</b>",message); 
 				gtk_message_dialog_format_secondary_markup(
 						GTK_MESSAGE_DIALOG(dialog),
-						info);
+						"%s", info);
 			
 				GtkWidget *button = gtk_dialog_add_button(
 						GTK_DIALOG(dialog), 
