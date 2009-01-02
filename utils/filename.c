@@ -173,7 +173,7 @@ bool filename_initialise(void) {
 			*start = '/';
 		}
 	}
-	LOG((directory));
+	LOG(("Temporary directory location: %s", directory));
 	mkdir(directory, S_IRWXU);
 	free(directory);
 	return true;

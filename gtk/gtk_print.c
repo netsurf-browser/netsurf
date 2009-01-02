@@ -28,6 +28,7 @@
 #ifdef WITH_PDF_EXPORT 
 
 #include <math.h>
+#include <assert.h>
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
 #include "desktop/plotters.h"
@@ -336,48 +337,50 @@ bool nsgtk_print_plot_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
 		bool repeat_x, bool repeat_y, struct content *content)
 {
- 	int doneheight = 0, donewidth = 0;
- 	GdkPixbuf *primary;
- 	GdkPixbuf *pretiled;
+	int doneheight = 0, donewidth = 0;
+	GdkPixbuf *primary;
+	GdkPixbuf *pretiled = NULL;
  
- 	if (!(repeat_x || repeat_y)) {
- 		/* Not repeating at all, so just pass it on */
- 		return nsgtk_print_plot_bitmap(x,y,width,height,bitmap,bg,content);
- 	}
- 
- 	if (repeat_x && !repeat_y)
- 		pretiled = gtk_bitmap_get_pretile_x(bitmap);
- 	if (repeat_x && repeat_y)
- 		pretiled = gtk_bitmap_get_pretile_xy(bitmap);
- 	if (!repeat_x && repeat_y)
- 		pretiled = gtk_bitmap_get_pretile_y(bitmap);
- 	primary = gtk_bitmap_get_primary(bitmap);
- 	/* use the primary and pretiled widths to scale the w/h provided */
- 	width *= gdk_pixbuf_get_width(pretiled);
- 	width /= gdk_pixbuf_get_width(primary);
- 	height *= gdk_pixbuf_get_height(pretiled);
- 	height /= gdk_pixbuf_get_height(primary);
- 
- 	if (y > cliprect.y)
- 		doneheight = (cliprect.y - height) + ((y - cliprect.y) % height);
- 	else
- 		doneheight = y;
- 
- 	while (doneheight < (cliprect.y + cliprect.height)) {
- 		if (x > cliprect.x)
- 			donewidth = (cliprect.x - width) + ((x - cliprect.x) % width);
- 		else
- 			donewidth = x;
- 		while (donewidth < (cliprect.x + cliprect.width)) {
- 			nsgtk_print_plot_pixbuf(donewidth, doneheight,
- 					  width, height, pretiled, bg);
- 			donewidth += width;
- 			if (!repeat_x) break;
- 		}
- 		doneheight += height;
- 		if (!repeat_y) break;
- 	}
+	if (!(repeat_x || repeat_y)) {
+		/* Not repeating at all, so just pass it on */
+		return nsgtk_print_plot_bitmap(x,y,width,height,bitmap,bg,content);
+	}
 
+	if (repeat_x && !repeat_y)
+		pretiled = gtk_bitmap_get_pretile_x(bitmap);
+	if (repeat_x && repeat_y)
+		pretiled = gtk_bitmap_get_pretile_xy(bitmap);
+	if (!repeat_x && repeat_y)
+		pretiled = gtk_bitmap_get_pretile_y(bitmap);
+	
+	assert(pretiled != NULL);
+
+	primary = gtk_bitmap_get_primary(bitmap);
+	/* use the primary and pretiled widths to scale the w/h provided */
+	width *= gdk_pixbuf_get_width(pretiled);
+	width /= gdk_pixbuf_get_width(primary);
+	height *= gdk_pixbuf_get_height(pretiled);
+	height /= gdk_pixbuf_get_height(primary);
+
+	if (y > cliprect.y)
+		doneheight = (cliprect.y - height) + ((y - cliprect.y) % height);
+	else
+		doneheight = y;
+
+	while (doneheight < (cliprect.y + cliprect.height)) {
+		if (x > cliprect.x)
+			donewidth = (cliprect.x - width) + ((x - cliprect.x) % width);
+		else
+			donewidth = x;
+		while (donewidth < (cliprect.x + cliprect.width)) {
+			nsgtk_print_plot_pixbuf(donewidth, doneheight,
+					  width, height, pretiled, bg);
+			donewidth += width;
+			if (!repeat_x) break;
+		}
+		doneheight += height;
+		if (!repeat_y) break;
+	}
 
 	return true;
 }

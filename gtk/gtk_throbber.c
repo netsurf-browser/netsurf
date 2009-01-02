@@ -125,7 +125,12 @@ bool nsgtk_throbber_initialise_from_gif(const char *fn)
 
 	/* allocate a block of sufficient size, and load the data in. */
 	data = (unsigned char *)malloc(size);
-	fread(data, size, 1, fh);
+	if (fread(data, size, 1, fh) != 1) {
+		/* interesting; we couldn't read it all in. */
+		fclose(fh);
+		free(data);
+		return false;
+	}
 	fclose(fh);
 
 	/* create our gif animation */
