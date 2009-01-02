@@ -59,8 +59,8 @@ void nsgtk_tab_add(struct gui_window *window)
 	GtkNotebook *tabs = nsgtk_scaffolding_get_notebook(window);
 
 	GtkWidget *tabBox = nsgtk_tab_label_setup(window);
-	gint page = gtk_notebook_append_page(tabs,
-			GTK_WIDGET(window->scrolledwindow), tabBox);
+	gtk_notebook_append_page(tabs,
+                                 GTK_WIDGET(window->scrolledwindow), tabBox);
 
 	gtk_widget_show_all(GTK_WIDGET(window->scrolledwindow));
 }
