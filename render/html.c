@@ -143,6 +143,16 @@ bool html_create(struct content *c, const char *params[])
 
 	/* Create the parser binding */
 	error = binding_create_tree(c, html->encoding, &html->parser_binding);
+	if (error == BINDING_BADENCODING && html->encoding != NULL) {
+		/* Ok, we don't support the declared encoding. Bailing out 
+		 * isn't exactly user-friendly, so fall back to autodetect */
+		talloc_free(html->encoding);
+		html->encoding = NULL;
+
+		error = binding_create_tree(c, html->encoding, 
+				&html->parser_binding);
+	}
+
 	if (error != BINDING_OK)
 		goto error;
 
@@ -215,6 +225,23 @@ encoding_change:
 	/* Create new binding, using the new encoding */
 	err = binding_create_tree(c, c->data.html.encoding,
 			&c->data.html.parser_binding);
+	if (err == BINDING_BADENCODING) {
+		/* Ok, we don't support the declared encoding. Bailing out 
+		 * isn't exactly user-friendly, so fall back to Windows-1252 */
+		talloc_free(c->data.html.encoding);
+		c->data.html.encoding = talloc_strdup(c, "Windows-1252");
+		if (c->data.html.encoding == NULL) {
+			union content_msg_data msg_data;
+
+			msg_data.error = messages_get("NoMemory");
+			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+			return false;
+		}
+
+		err = binding_create_tree(c, c->data.html.encoding,
+				&c->data.html.parser_binding);
+	}
+
 	if (err != BINDING_OK) {
 		union content_msg_data msg_data;
 
