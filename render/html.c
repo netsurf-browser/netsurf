@@ -197,8 +197,11 @@ encoding_change:
 			c->data.html.parser_binding,
 			&c->data.html.encoding_source);
 
-	c->data.html.encoding = strdup(encoding);
-	if (!c->data.html.encoding) {
+	if (c->data.html.encoding != NULL)
+		talloc_free(c->data.html.encoding);
+
+	c->data.html.encoding = talloc_strdup(c, encoding);
+	if (c->data.html.encoding == NULL) {
 		union content_msg_data msg_data;
 
 		msg_data.error = messages_get("NoMemory");
@@ -262,7 +265,7 @@ bool html_convert(struct content *c, int width, int height)
 		/* Also, any existing encoding information, 
 		 * as it's not guaranteed to match the error page.
 		 */
-		free(c->data.html.encoding);
+		talloc_free(c->data.html.encoding);
 		c->data.html.encoding = NULL;
 
 		/* Create new binding, using default charset */
