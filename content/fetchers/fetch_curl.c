@@ -11,7 +11,7 @@
  *
  * NetSurf is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
@@ -79,7 +79,7 @@ struct curl_fetch_info {
 	char *cookie_string;	/**< Cookie string for this fetch */
 	char *realm;		/**< HTTP Auth Realm */
 	char *post_urlenc;	/**< Url encoded POST string, or 0. */
-	unsigned long http_code; /**< HTTP result code from cURL. */
+	long http_code; /**< HTTP result code from cURL. */
 	struct curl_httppost *post_multipart;	/**< Multipart post data, or 0. */
 	time_t last_modified;		/**< If-Modified-Since time */
 	time_t file_etag;		/**< ETag for local objects */
@@ -120,8 +120,8 @@ static CURL *fetch_curl_get_handle(char *host);
 static void fetch_curl_cache_handle(CURL *handle, char *hostname);
 static CURLcode fetch_curl_set_options(struct curl_fetch_info *f);
 #ifdef WITH_SSL
-static CURLcode fetch_curl_sslctxfun(CURL *curl_handle, SSL_CTX *sslctx,
-		void *p);
+static CURLcode fetch_curl_sslctxfun(CURL *curl_handle, void *_sslctx,
+				     void *p);
 #endif
 static void fetch_curl_abort(void *vf);
 static void fetch_curl_stop(struct curl_fetch_info *f);
@@ -130,11 +130,15 @@ static void fetch_curl_poll(const char *scheme_ignored);
 static void fetch_curl_done(CURL *curl_handle, CURLcode result);
 static int fetch_curl_progress(void *clientp, double dltotal, double dlnow,
 		double ultotal, double ulnow);
-static int fetch_curl_ignore(void);
-static size_t fetch_curl_data(void *data, size_t size, size_t nmemb,
-		struct curl_fetch_info *f);
+static int fetch_curl_ignore_debug(CURL *handle,
+				   curl_infotype type,
+				   char *data,
+				   size_t size,
+				   void *userptr);
+static size_t fetch_curl_data(char *data, size_t size, size_t nmemb,
+			      void *_f);
 static size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
-		struct curl_fetch_info *f);
+				void *_f);
 static bool fetch_curl_process_headers(struct curl_fetch_info *f);
 static struct curl_httppost *fetch_curl_post_convert(
 		struct form_successful_control *control);
@@ -190,7 +194,7 @@ void fetch_curl_register(void)
 	}
 	SETOPT(CURLOPT_ERRORBUFFER, fetch_error_buffer);
 	if (option_suppress_curl_debug)
-		SETOPT(CURLOPT_DEBUGFUNCTION, fetch_curl_ignore);
+		SETOPT(CURLOPT_DEBUGFUNCTION, fetch_curl_ignore_debug);
 	SETOPT(CURLOPT_WRITEFUNCTION, fetch_curl_data);
 	SETOPT(CURLOPT_HEADERFUNCTION, fetch_curl_header);
 	SETOPT(CURLOPT_PROGRESSFUNCTION, fetch_curl_progress);
@@ -538,16 +542,16 @@ fetch_curl_set_options(struct curl_fetch_info *f)
 	SETOPT(CURLOPT_REFERER, fetch_get_referer_to_send(f->fetch_handle));
 	SETOPT(CURLOPT_HTTPHEADER, f->headers);
 	if (f->post_urlenc) {
-		SETOPT(CURLOPT_HTTPPOST, 0);
+		SETOPT(CURLOPT_HTTPPOST, NULL);
 		SETOPT(CURLOPT_HTTPGET, 0L);
 		SETOPT(CURLOPT_POSTFIELDS, f->post_urlenc);
 	} else if (f->post_multipart) {
-		SETOPT(CURLOPT_POSTFIELDS, 0);
+		SETOPT(CURLOPT_POSTFIELDS, NULL);
 		SETOPT(CURLOPT_HTTPGET, 0L);
 		SETOPT(CURLOPT_HTTPPOST, f->post_multipart);
 	} else {
-		SETOPT(CURLOPT_POSTFIELDS, 0);
-		SETOPT(CURLOPT_HTTPPOST, 0);
+		SETOPT(CURLOPT_POSTFIELDS, NULL);
+		SETOPT(CURLOPT_HTTPPOST, NULL);
 		SETOPT(CURLOPT_HTTPGET, 1L);
 	}
 
@@ -555,7 +559,7 @@ fetch_curl_set_options(struct curl_fetch_info *f)
 	if (f->cookie_string) {
 		SETOPT(CURLOPT_COOKIE, f->cookie_string);
 	} else {
-		SETOPT(CURLOPT_COOKIE, 0);
+		SETOPT(CURLOPT_COOKIE, NULL);
 	}
 
 #ifdef WITH_AUTH
@@ -564,7 +568,7 @@ fetch_curl_set_options(struct curl_fetch_info *f)
 		SETOPT(CURLOPT_USERPWD, auth);
 	} else {
 #endif
-		SETOPT(CURLOPT_USERPWD, 0);
+		SETOPT(CURLOPT_USERPWD, NULL);
 #ifdef WITH_AUTH
 	}
 #endif
@@ -591,8 +595,8 @@ fetch_curl_set_options(struct curl_fetch_info *f)
 		/* Disable certificate verification */
 		SETOPT(CURLOPT_SSL_VERIFYPEER, 0L);
 		SETOPT(CURLOPT_SSL_VERIFYHOST, 0L);
-		SETOPT(CURLOPT_SSL_CTX_FUNCTION, 0);
-		SETOPT(CURLOPT_SSL_CTX_DATA, 0);
+		SETOPT(CURLOPT_SSL_CTX_FUNCTION, NULL);
+		SETOPT(CURLOPT_SSL_CTX_DATA, NULL);
 	} else {
 		/* do verification */
 		SETOPT(CURLOPT_SSL_VERIFYPEER, 1L);
@@ -612,8 +616,9 @@ fetch_curl_set_options(struct curl_fetch_info *f)
  */
 
 CURLcode
-fetch_curl_sslctxfun(CURL *curl_handle, SSL_CTX *sslctx, void *parm)
+fetch_curl_sslctxfun(CURL *curl_handle, void *_sslctx, void *parm)
 {
+	SSL_CTX *sslctx = _sslctx;
 	SSL_CTX_set_verify(sslctx, SSL_VERIFY_PEER, fetch_curl_verify_callback);
 	SSL_CTX_set_cert_verify_callback(sslctx, fetch_curl_cert_verify_callback,
 					 parm);
@@ -723,7 +728,7 @@ void fetch_curl_poll(const char *scheme_ignored)
 					codem, curl_multi_strerror(codem)));
 			warn_user("MiscError", curl_multi_strerror(codem));
 			return;
-                }
+		}
 	} while (codem == CURLM_CALL_MULTI_PERFORM);
 
 	/* process curl results */
@@ -745,7 +750,7 @@ void fetch_curl_poll(const char *scheme_ignored)
 /**
  * Handle a completed fetch (CURLMSG_DONE from curl_multi_info_read()).
  *
- * \param  curl_handle  curl easy handle of fetch
+ * \param  curl_handle	curl easy handle of fetch
  */
 
 void fetch_curl_done(CURL *curl_handle, CURLcode result)
@@ -757,6 +762,7 @@ void fetch_curl_done(CURL *curl_handle, CURLcode result)
 #endif
 	bool abort;
 	struct curl_fetch_info *f;
+	char **_hideous_hack = (char**)&f;
 	CURLcode code;
 #ifdef WITH_SSL
 	struct cert_info certs[MAX_CERTS];
@@ -764,7 +770,8 @@ void fetch_curl_done(CURL *curl_handle, CURLcode result)
 #endif
 
 	/* find the structure associated with this fetch */
-	code = curl_easy_getinfo(curl_handle, CURLINFO_PRIVATE, &f);
+	/* For some reason, cURL thinks CURLINFO_PRIVATE should be a string?! */
+	code = curl_easy_getinfo(curl_handle, CURLINFO_PRIVATE, _hideous_hack);
 	assert(code == CURLE_OK);
 
 	abort = f->abort;
@@ -799,9 +806,9 @@ void fetch_curl_done(CURL *curl_handle, CURLcode result)
 	}
 #endif
 	else {
-                LOG(("Unknown cURL response code %d", result));
-                error = true;
-        }
+		LOG(("Unknown cURL response code %d", result));
+		error = true;
+	}
 
 	fetch_curl_stop(f);
 
@@ -941,7 +948,11 @@ int fetch_curl_progress(void *clientp, double dltotal, double dlnow,
  * Used to ignore cURL debug.
  */
 
-int fetch_curl_ignore(void)
+int fetch_curl_ignore_debug(CURL *handle,
+			    curl_infotype type,
+			    char *data,
+			    size_t size,
+			    void *userptr)
 {
 	return 0;
 }
@@ -951,9 +962,10 @@ int fetch_curl_ignore(void)
  * Callback function for cURL.
  */
 
-size_t fetch_curl_data(void *data, size_t size, size_t nmemb,
-		       struct curl_fetch_info *f)
+size_t fetch_curl_data(char *data, size_t size, size_t nmemb,
+		       void *_f)
 {
+	struct curl_fetch_info *f = _f;
 	CURLcode code;
 
 	/* ensure we only have to get this information once */
@@ -1000,8 +1012,9 @@ size_t fetch_curl_data(void *data, size_t size, size_t nmemb,
  */
 
 size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
-			 struct curl_fetch_info *f)
+			 void *_f)
 {
+	struct curl_fetch_info *f = _f;
 	int i;
 	size *= nmemb;
 
