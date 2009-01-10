@@ -30,8 +30,8 @@ The options file is stored in @{"Resources/Options" link Resources/Options/Main}
 
 @{b}url_file@{ub} Path to URL database file
 @{b}hotlist_file@{ub} Path to Hotlist file
-@{b}use_workbench@{ub} Open NetSurf in a window on Workbench screen (default is to open a custom screen)
-@{b}screen_modeid@{ub} Mode ID for NetSurf's custom screen.  If not specified, NetSurf will use @{b}window_screen_width@{ub} and @{b}window_screen_height@{ub} to find the best mode.
+@{b}use_pubscreen@{ub} Open NetSurf on the named public screen
+@{b}screen_modeid@{ub} Mode ID for NetSurf's custom screen.  If not specified, NetSurf will prompt on startup.  Choose Settings=>Save settings to make permanent.
 @{b}theme@{ub} Path to theme (default is Resources/Themes/Default - an alternative included theme is Resources/Themes/AISS)
 @{b}no_iframes@{ub} Disable IFrames
 @{b}clipboard_write_utf8@{ub} Write UTF-8 strings to the clipboard along with a charset identifier (when this option is 0, NetSurf will convert copied strings to local charset)
@@ -45,6 +45,7 @@ The options file is stored in @{"Resources/Options" link Resources/Options/Main}
 @{b}arexx_dir@{ub} Path to ARexx scripts dir
 @{b}download_dir@{ub} default download destination
 @{b}quick_text@{ub} disable for experimental Unicode display
+@{b}delay_redraw@{ub} slows down redraw interval
 
 @endnode
 
@@ -54,6 +55,7 @@ NetSurf's ARexx port is called NETSURF.
 Commands are:
 
 @{b}OPEN URL/A,NEW=NEWWINDOW/S@{ub} Opens URL in current window or a new window if NEWWINDOW is specified.
+@{b}SAVE FILENAME/A@{ub} (2.6027) Saves current page source to FILENAME
 @{b}QUIT@{ub} Quits NetSurf
 @{b}TOFRONT@{ub} Brings NetSurf's screen to the front
 @{b}GETURL@{ub} Puts the URL displayed in the current window/tab into RESULT
