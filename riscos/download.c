@@ -125,6 +125,9 @@ static int download_progress_x0;
 static int download_progress_y0;
 static int download_progress_y1;
 
+/** Current download directory. */
+static char *download_dir = NULL;
+static size_t download_dir_len;
 
 
 static const char *ro_gui_download_temp_name(struct gui_download_window *dw);
@@ -136,6 +139,7 @@ static bool ro_gui_download_check_space(struct gui_download_window *dw,
 		const char *dest_file, const char *orig_file);
 static os_error *ro_gui_download_move(struct gui_download_window *dw,
 		const char *dest_file, const char *src_file);
+static void ro_gui_download_remember_dir(const char *path);
 static bool ro_gui_download_save(struct gui_download_window *dw,
 		const char *file_name, bool force_overwrite);
 static void ro_gui_download_send_dataload(struct gui_download_window *dw);
@@ -221,6 +225,7 @@ struct gui_download_window *gui_download_window_create(const char *url,
 	url_func_result res;
 	char *local_path;
 	utf8_convert_ret err;
+	size_t leaf_ofst;
 	size_t i;
 
 	dw = malloc(sizeof *dw);
@@ -329,20 +334,36 @@ struct gui_download_window *gui_download_window_create(const char *url,
 	download_template->icons[ICON_DOWNLOAD_ICON].data.indirected_sprite.id =
 			(osspriteop_id) dw->sprite_name;
 
+	if (download_dir) {
+		memcpy(dw->path, download_dir, download_dir_len);
+		dw->path[download_dir_len] = '.';
+		leaf_ofst = download_dir_len + 1;
+	}
+	else
+		leaf_ofst = 0;
+
 	if ((res = url_nice(url, &nice, option_strip_extensions)) ==
 			URL_FUNC_OK) {
-		for (i = 0; nice[i]; i++) {
+		int imax = sizeof dw->path - (leaf_ofst + 1);
+		for (i = 0; i < imax && nice[i]; i++) {
 			if (nice[i] == '.')
 				nice[i] = '/';
 			else if (nice[i] <= ' ' ||
 					strchr(":*#$&@^%\\", nice[i]))
 				nice[i] = '_';
 		}
-		strncpy(dw->path, nice, sizeof dw->path);
+		memcpy(dw->path + leaf_ofst, nice, i);
+		dw->path[leaf_ofst + i] = '\0';
 		free(nice);
 	}
-	else
-		strcpy(dw->path, messages_get("SaveObject"));
+	else {
+		const char *leaf = messages_get("SaveObject");
+		size_t len = strlen(leaf);
+		if (len >= sizeof dw->path - leaf_ofst)
+			len = sizeof dw->path - leaf_ofst - 1;
+		memcpy(dw->path + leaf_ofst, leaf, len);
+		dw->path[leaf_ofst + len] = '\0';
+	}
 
 	err = utf8_to_local_encoding(dw->path, 0, &local_path);
 	if (err != UTF8_CONVERT_OK) {
@@ -772,9 +793,21 @@ bool ro_gui_download_click(wimp_pointer *pointer)
 	if (pointer->i == ICON_DOWNLOAD_ICON && !dw->error &&
 			!dw->saved) {
 		const char *sprite = ro_gui_get_icon_string(pointer->w, pointer->i);
+		int x = pointer->pos.x, y = pointer->pos.y;
+		wimp_window_state wstate;
+		wimp_icon_state istate;
+		/* start the drag from the icon's exact location, rather than the pointer */
+		istate.w = wstate.w = pointer->w;
+		istate.i = pointer->i;
+		if (!xwimp_get_window_state(&wstate) && !xwimp_get_icon_state(&istate)) {
+			x = (istate.icon.extent.x1 + istate.icon.extent.x0)/2 +
+					wstate.visible.x0 - wstate.xscroll;
+			y = (istate.icon.extent.y1 + istate.icon.extent.y0)/2 +
+					wstate.visible.y1 - wstate.yscroll;
+		}
 		gui_current_drag_type = GUI_DRAG_DOWNLOAD_SAVE;
 		download_window_current = dw;
-		ro_gui_drag_icon(pointer->pos.x, pointer->pos.y, sprite);
+		ro_gui_drag_icon(x, y, sprite);
 
 	} else if (pointer->i == ICON_DOWNLOAD_DESTINATION) {
 		strncpy(command + 14, dw->path, 242);
@@ -1153,6 +1186,34 @@ os_error *ro_gui_download_move(struct gui_download_window *dw,
 
 
 /**
+ * Remember the directory containing the given file,
+ * for use in further downloads.
+ *
+ * \param  path  pathname of downloaded file
+ * \return none
+ */
+
+void ro_gui_download_remember_dir(const char *path)
+{
+	char *lastdot = NULL;
+	char *p = path;
+	while (*p >= 0x20) {
+		if (*p == '.') lastdot = p;
+		p++;
+	}
+	if (lastdot) {
+		/* remember the directory */
+		char *new_dir = realloc(download_dir, (lastdot+1)-path);
+		if (new_dir) {
+			download_dir_len = lastdot - path;
+			memcpy(new_dir, path, download_dir_len);
+			new_dir[download_dir_len] = '\0';
+			download_dir = new_dir;
+		}
+	}
+}
+
+/**
  * Start of save operation, user has specified where the file should be saved.
  *
  * \param  dw               download window
@@ -1174,7 +1235,7 @@ bool ro_gui_download_save(struct gui_download_window *dw,
 	temp_name = ro_gui_download_temp_name(dw);
 
 	/* does the user want to check for collisions when saving? */
-	if (true && !force_overwrite) {
+	if (!force_overwrite) {
 		/* check whether the destination file/dir already exists */
 		error = xosfile_read_stamped(file_name, &obj_type,
 				NULL, NULL, NULL, NULL, NULL);
@@ -1235,6 +1296,8 @@ bool ro_gui_download_save(struct gui_download_window *dw,
 
 	dw->saved = true;
 	strncpy(dw->path, file_name, sizeof dw->path);
+
+	ro_gui_download_remember_dir(file_name);
 
 	/* grey out file icon */
 	error = xwimp_set_icon_state(dw->window, ICON_DOWNLOAD_ICON,

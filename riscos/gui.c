@@ -1292,10 +1292,17 @@ void ro_gui_drag_end(wimp_dragged *drag)
 
 void ro_gui_keypress(wimp_key *key)
 {
-	os_error *error;
+	if (key->c == wimp_KEY_ESCAPE &&
+		(gui_current_drag_type == GUI_DRAG_SAVE ||
+		 gui_current_drag_type == GUI_DRAG_DOWNLOAD_SAVE)) {
 
-	if (!ro_gui_wimp_event_keypress(key)) {
-		error = xwimp_process_key(key->c);
+		/* Allow Escape key to be used for cancelling a drag save
+			(easier than finding somewhere safe to abort the drag) */
+		ro_gui_drag_box_cancel();
+		gui_current_drag_type = GUI_DRAG_NONE;
+	}
+	else if (!ro_gui_wimp_event_keypress(key)) {
+		os_error *error = xwimp_process_key(key->c);
 		if (error) {
 			LOG(("xwimp_process_key: 0x%x: %s",
 					error->errnum, error->errmess));

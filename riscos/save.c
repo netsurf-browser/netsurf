@@ -46,6 +46,7 @@
 #include "riscos/menus.h"
 #include "riscos/message.h"
 #include "riscos/options.h"
+#include "riscos/query.h"
 #include "riscos/save.h"
 #include "riscos/save_complete.h"
 #include "riscos/save_draw.h"
@@ -61,11 +62,25 @@
 #include "utils/utf8.h"
 #include "utils/utils.h"
 
+//typedef enum
+//{
+//	QueryRsn_Quit,
+//	QueryRsn_Abort,
+//	QueryRsn_Overwrite
+//} query_reason;
+
+
+/**todo - much of the state information for a save should probably be moved into a structure
+          now since we could have multiple saves outstanding */
 
 static gui_save_type gui_save_current_type;
 static struct content *gui_save_content = NULL;
 static struct selection *gui_save_selection = NULL;
 static int gui_save_filetype;
+static query_id gui_save_query;
+static bool gui_save_send_dataload;
+static wimp_message gui_save_message;
+static bool gui_save_close_after = true;
 
 static bool dragbox_active = false;  /** in-progress Wimp_DragBox/DragASprite op */
 static bool using_dragasprite = true;
@@ -75,16 +90,29 @@ static wimp_w gui_save_sourcew = (wimp_w)-1;
 #define LEAFNAME_MAX 200
 static char save_leafname[LEAFNAME_MAX];
 
+/** Current save directory (updated by and used for dialog-based saving) */
+static char *save_dir = NULL;
+static size_t save_dir_len;
+
 typedef enum { LINK_ACORN, LINK_ANT, LINK_TEXT } link_format;
 
 static bool ro_gui_save_complete(struct content *c, char *path);
-static bool ro_gui_save_content(struct content *c, char *path);
+static bool ro_gui_save_content(struct content *c, char *path, bool force_overwrite);
+static void ro_gui_save_done(void);
 static void ro_gui_save_bounced(wimp_message *message);
 static void ro_gui_save_object_native(struct content *c, char *path);
 static bool ro_gui_save_link(struct content *c, link_format format, char *path);
 static void ro_gui_save_set_state(struct content *c, gui_save_type save_type,
 		char *leaf_buf, char *icon_buf);
 static bool ro_gui_save_create_thumbnail(struct content *c, const char *name);
+static void ro_gui_save_overwrite_confirmed(query_id, enum query_response res, void *p);
+static void ro_gui_save_overwrite_cancelled(query_id, enum query_response res, void *p);
+
+static const query_callback overwrite_funcs =
+{
+	ro_gui_save_overwrite_confirmed,
+	ro_gui_save_overwrite_cancelled
+};
 
 
 /** An entry in gui_save_table. */
@@ -180,7 +208,7 @@ wimp_w ro_gui_saveas_create(const char *template_name)
 
 
 /**
- * Clean-up function that releases our sprite area.
+ * Clean-up function that releases our sprite area and memory.
  */
 
 void ro_gui_saveas_quit(void)
@@ -193,6 +221,9 @@ void ro_gui_saveas_quit(void)
 		}
 		saveas_area = NULL;
 	}
+
+	free(save_dir);
+	save_dir = NULL;
 }
 
 /**
@@ -209,7 +240,8 @@ void ro_gui_saveas_quit(void)
 
 void ro_gui_save_prepare(gui_save_type save_type, struct content *c)
 {
-	char name_buf[LEAFNAME_MAX];
+	char name_buf[FILENAME_MAX];
+	size_t leaf_offset = 0;
 	char icon_buf[20];
 
 	assert((save_type == GUI_SAVE_HOTLIST_EXPORT_HTML) ||
@@ -218,7 +250,13 @@ void ro_gui_save_prepare(gui_save_type save_type, struct content *c)
 	gui_save_current_type = save_type;
 	gui_save_content = c;
 
-	ro_gui_save_set_state(c, save_type, name_buf, icon_buf);
+	if (save_dir) {
+		leaf_offset = save_dir_len;
+		memcpy(name_buf, save_dir, leaf_offset);
+		name_buf[leaf_offset++] = '.';
+	}
+
+	ro_gui_save_set_state(c, save_type, name_buf + leaf_offset, icon_buf);
 
 	ro_gui_set_icon_sprite(dialog_saveas, ICON_SAVE_ICON, saveas_area,
 			icon_buf);
@@ -234,12 +272,25 @@ void ro_gui_save_prepare(gui_save_type save_type, struct content *c)
  */
 void ro_gui_save_start_drag(wimp_pointer *pointer)
 {
-	if (pointer->buttons == wimp_DRAG_SELECT) {
+	if (pointer->buttons & (wimp_DRAG_SELECT | wimp_DRAG_ADJUST)) {
 		const char *sprite = ro_gui_get_icon_string(pointer->w, pointer->i);
+		int x = pointer->pos.x, y = pointer->pos.y;
+		wimp_window_state wstate;
+		wimp_icon_state istate;
+		/* start the drag from the icon's exact location, rather than the pointer */
+		istate.w = wstate.w = pointer->w;
+		istate.i = pointer->i;
+		if (!xwimp_get_window_state(&wstate) && !xwimp_get_icon_state(&istate)) {
+			x = (istate.icon.extent.x1 + istate.icon.extent.x0)/2 +
+					wstate.visible.x0 - wstate.xscroll;
+			y = (istate.icon.extent.y1 + istate.icon.extent.y0)/2 +
+					wstate.visible.y1 - wstate.yscroll;
+		}
 		gui_current_drag_type = GUI_DRAG_SAVE;
 		gui_save_sourcew = pointer->w;
 		saving_from_dialog = true;
-		ro_gui_drag_icon(pointer->pos.x, pointer->pos.y, sprite);
+		gui_save_close_after = !(pointer->buttons & wimp_DRAG_ADJUST);
+		ro_gui_drag_icon(x, y, sprite);
 	}
 }
 
@@ -253,6 +304,7 @@ void ro_gui_save_start_drag(wimp_pointer *pointer)
 bool ro_gui_save_ok(wimp_w w)
 {
 	const char *name = ro_gui_get_icon_string(w, ICON_SAVE_PATH);
+	wimp_pointer pointer;
 	char path[256];
 
 	if (!strrchr(name, '.')) {
@@ -263,7 +315,14 @@ bool ro_gui_save_ok(wimp_w w)
 	ro_gui_convert_save_path(path, sizeof path, name);
 	gui_save_sourcew = w;
 	saving_from_dialog = true;
-	return ro_gui_save_content(gui_save_content, path);
+	gui_save_close_after = xwimp_get_pointer_info(&pointer)
+						|| !(pointer.buttons & wimp_CLICK_ADJUST);
+	if (!ro_gui_save_content(gui_save_content, path, !option_confirm_overwrite)) {
+		memcpy(&gui_save_message.data.data_xfer.file_name, path, 1 + strlen(path));
+		gui_save_send_dataload = false;
+		return false;
+	}
+	return true;
 }
 
 
@@ -626,13 +685,15 @@ void ro_gui_save_bounced(wimp_message *message)
 
 
 /**
- * Handle Message_DataSaveAck for a drag from the save dialog or browser window.
+ * Handle Message_DataSaveAck for a drag from the save dialog or browser window,
+ * or Clipboard protocol.
  */
 
 void ro_gui_save_datasave_ack(wimp_message *message)
 {
 	char *path = message->data.data_xfer.file_name;
 	struct content *c = gui_save_content;
+	bool force_overwrite;
 
 	switch (gui_save_current_type) {
 		case GUI_SAVE_HOTLIST_EXPORT_HTML:
@@ -653,31 +714,18 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 		ro_gui_set_icon_string(gui_save_sourcew, ICON_SAVE_PATH,
 				path, true);
 
-	if (ro_gui_save_content(c, path)) {
-		os_error *error;
+	gui_save_send_dataload = true;
+	memcpy(&gui_save_message, message, sizeof(gui_save_message));
 
-		/* Ack successful save with message_DATA_LOAD */
-		message->action = message_DATA_LOAD;
-		message->your_ref = message->my_ref;
-		error = xwimp_send_message(wimp_USER_MESSAGE, message,
-				message->sender);
-		if (error) {
-			LOG(("xwimp_send_message: 0x%x: %s",
-					error->errnum, error->errmess));
-			warn_user("SaveError", error->errmess);
-		}
+	/* if saving/pasting to another application, don't request user
+	   confirmation; a ScrapFile almost certainly exists already */
+	if (message->data.data_xfer.est_size == -1)
+		force_overwrite = true;
+	else
+		force_overwrite = !option_confirm_overwrite;
 
-		/*	Close the save window */
-		ro_gui_dialog_close(dialog_saveas);
-		error = xwimp_create_menu(wimp_CLOSE_MENU, 0, 0);
-		if (error) {
-			LOG(("xwimp_create_menu: 0x%x: %s",
-					error->errnum, error->errmess));
-			warn_user("MenuError", error->errmess);
-		}
-
-		gui_save_content = 0;
-	}
+	if (ro_gui_save_content(c, path, force_overwrite))
+		ro_gui_save_done();
 }
 
 
@@ -685,14 +733,47 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 /**
  * Does the actual saving
  *
- * \param  c     content to save (or NULL for other)
- * \param  path  path to save as
- * \return  true on success, false on error and error reported
+ * \param  c               content to save (or NULL for other)
+ * \param  path            path to save as
+ * \param  force_overwrite true iff required to overwrite without prompting
+ * \return true on success,
+ *         false on (i) error and error reported
+ *               or (ii) deferred awaiting user confirmation
  */
 
-bool ro_gui_save_content(struct content *c, char *path)
+bool ro_gui_save_content(struct content *c, char *path, bool force_overwrite)
 {
 	os_error *error;
+
+	/* does the user want to check for collisions when saving? */
+	if (!force_overwrite) {
+		fileswitch_object_type obj_type;
+		/* check whether the destination file/dir already exists */
+		error = xosfile_read_stamped(path, &obj_type,
+				NULL, NULL, NULL, NULL, NULL);
+		if (error) {
+			LOG(("xosfile_read_stamped: 0x%x:%s", error->errnum, error->errmess));
+			warn_user("SaveError", error->errmess);
+			return false;
+		}
+
+		switch (obj_type) {
+			case osfile_NOT_FOUND:
+				break;
+
+			case osfile_IS_FILE:
+				gui_save_query = query_user("OverwriteFile", NULL, &overwrite_funcs, NULL,
+								messages_get("Replace"), messages_get("DontReplace"));
+//				gui_save_query_rsn = QueryRsn_Overwrite;
+				return false;
+
+			default:
+				error = xosfile_make_error(path, obj_type);
+				assert(error);
+				warn_user("SaveError", error->errmess);
+				return false;
+		}
+	}
 
 	switch (gui_save_current_type) {
 #ifdef WITH_DRAW_EXPORT
@@ -784,6 +865,67 @@ bool ro_gui_save_content(struct content *c, char *path)
 
 
 /**
+ * Save completed, inform recipient and close our 'save as' dialog.
+ */
+
+void ro_gui_save_done(void)
+{
+	os_error *error;
+
+	if (gui_save_send_dataload) {
+		/* Ack successful save with message_DATA_LOAD */
+		wimp_message *message = &gui_save_message;
+		message->action = message_DATA_LOAD;
+		message->your_ref = message->my_ref;
+		error = xwimp_send_message(wimp_USER_MESSAGE, message,
+				message->sender);
+		if (error) {
+			LOG(("xwimp_send_message: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("SaveError", error->errmess);
+		}
+	}
+
+	if (saving_from_dialog) {
+		/* */
+		char *sp = gui_save_message.data.data_xfer.file_name;
+		char *ep = sp + sizeof(gui_save_message.data.data_xfer.file_name);
+		char *lastdot = NULL;
+		char *p = sp;
+
+		while (p < ep && *p >= 0x20) {
+			if (*p == '.') lastdot = p;
+			p++;
+		}
+		if (lastdot) {
+			/* remember the directory */
+			char *new_dir = realloc(save_dir, (lastdot+1)-sp);
+			if (new_dir) {
+				save_dir_len = lastdot - sp;
+				memcpy(new_dir, sp, save_dir_len);
+				new_dir[save_dir_len] = '\0';
+				save_dir = new_dir;
+			}
+		}
+
+		if (gui_save_close_after) {
+			/*	Close the save window */
+			ro_gui_dialog_close(dialog_saveas);
+			error = xwimp_create_menu(wimp_CLOSE_MENU, 0, 0);
+			if (error) {
+				LOG(("xwimp_create_menu: 0x%x: %s",
+						error->errnum, error->errmess));
+				warn_user("MenuError", error->errmess);
+			}
+		}
+	}
+
+	if (!saving_from_dialog || gui_save_close_after)
+		gui_save_content = 0;
+}
+
+
+/**
  * Prepare an application directory and save_complete() to it.
  *
  * \param  c     content of type CONTENT_HTML to save
@@ -808,7 +950,7 @@ bool ro_gui_save_complete(struct content *c, char *path)
 	char *dot;
 	int i;
 
-        /* Create dir */
+	/* Create dir */
 	error = xosfile_create_dir(path, 0);
 	if (error) {
 		LOG(("xosfile_create_dir: 0x%x: %s",
@@ -817,7 +959,7 @@ bool ro_gui_save_complete(struct content *c, char *path)
 		return false;
 	}
 
-        /* Save !Run file */
+	/* Save !Run file */
 	snprintf(buf, sizeof buf, "%s.!Run", path);
 	fp = fopen(buf, "w");
 	if (!fp) {
@@ -850,8 +992,8 @@ bool ro_gui_save_complete(struct content *c, char *path)
 	memcpy(sprite->name, dot, len);
 	memset(sprite->name + len, 0, 12 - len);
 	for (i = 0; i < 12; i++) /* convert to lower case */
-	  	if (sprite->name[i] != '\0')
-	  		sprite->name[i] = tolower(sprite->name[i]);
+		if (sprite->name[i] != '\0')
+			sprite->name[i] = tolower(sprite->name[i]);
 
 	/* Create !Sprites */
 	snprintf(buf, sizeof buf, "%s.!Sprites", path);
@@ -1139,4 +1281,28 @@ bool ro_gui_save_create_thumbnail(struct content *c, const char *name)
 	free(area);
 
 	return true;
+}
+
+
+/**
+ * User has opted not to overwrite the existing file.
+ */
+
+void ro_gui_save_overwrite_cancelled(query_id id, enum query_response res, void *p)
+{
+	if (!saving_from_dialog) {
+//		ro_gui_save_prepare(gui_save_current_type, gui_save_content);
+//		ro_gui_dialog_open_persistent(g->window, dialog_saveas, true);
+	}
+}
+
+
+/**
+ * Overwrite of existing file confirmed, proceed with the save.
+ */
+
+void ro_gui_save_overwrite_confirmed(query_id id, enum query_response res, void *p)
+{
+	if (ro_gui_save_content(gui_save_content, gui_save_message.data.data_xfer.file_name, true))
+		ro_gui_save_done();
 }

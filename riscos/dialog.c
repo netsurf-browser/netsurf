@@ -311,13 +311,13 @@ wimp_window * ro_gui_dialog_load_template(const char *template_name)
 
 
 /**
- * Open a dialog box, centered on the screen.
+ * Open a dialog box, centred on the screen.
  */
 
 void ro_gui_dialog_open(wimp_w w)
 {
 	int screen_x, screen_y, dx, dy;
-	wimp_window_state open;
+	wimp_window_state state;
 	os_error *error;
 
 	/* find screen centre in os units */
@@ -326,31 +326,24 @@ void ro_gui_dialog_open(wimp_w w)
 	screen_y /= 2;
 
 	/* centre and open */
-	open.w = w;
-	error = xwimp_get_window_state(&open);
+	state.w = w;
+	error = xwimp_get_window_state(&state);
 	if (error) {
 		LOG(("xwimp_get_window_state: 0x%x: %s",
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
 		return;
 	}
-	dx = (open.visible.x1 - open.visible.x0) / 2;
-	dy = (open.visible.y1 - open.visible.y0) / 2;
-	open.visible.x0 = screen_x - dx;
-	open.visible.x1 = screen_x + dx;
-	open.visible.y0 = screen_y - dy;
-	open.visible.y1 = screen_y + dy;
-	open.next = wimp_TOP;
-	error = xwimp_open_window((wimp_open *) &open);
-	if (error) {
-		LOG(("xwimp_open_window: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-		return;
-	}
+	dx = (state.visible.x1 - state.visible.x0) / 2;
+	dy = (state.visible.y1 - state.visible.y0) / 2;
+	state.visible.x0 = screen_x - dx;
+	state.visible.x1 = screen_x + dx;
+	state.visible.y0 = screen_y - dy;
+	state.visible.y1 = screen_y + dy;
+	state.next = wimp_TOP;
+	ro_gui_open_window_request((wimp_open*)&state);
 
-	/*	Set the caret position
-	*/
+	/*	Set the caret position */
 	ro_gui_set_caret_first(w);
 }
 
@@ -486,8 +479,6 @@ bool ro_gui_dialog_open_top(wimp_w w, struct toolbar *toolbar,
 
 void ro_gui_dialog_open_at_pointer(wimp_w w)
 {
-	int dx, dy;
-	wimp_window_state state;
 	wimp_pointer ptr;
 	os_error *error;
 
@@ -500,6 +491,20 @@ void ro_gui_dialog_open_at_pointer(wimp_w w)
 		return;
 	}
 
+	ro_gui_dialog_open_xy(w, ptr.pos.x - 64, ptr.pos.y);
+}
+
+
+/**
+ * Open window at a specified location.
+ */
+
+void ro_gui_dialog_open_xy(wimp_w w, int x, int y)
+{
+	wimp_window_state state;
+	os_error *error;
+	int dx, dy;
+
 	/* move the window */
 	state.w = w;
 	error = xwimp_get_window_state(&state);
@@ -511,10 +516,10 @@ void ro_gui_dialog_open_at_pointer(wimp_w w)
 	}
 	dx = (state.visible.x1 - state.visible.x0);
 	dy = (state.visible.y1 - state.visible.y0);
-	state.visible.x0 = ptr.pos.x - 64;
-	state.visible.x1 = ptr.pos.x - 64 + dx;
-	state.visible.y0 = ptr.pos.y - dy;
-	state.visible.y1 = ptr.pos.y;
+	state.visible.x0 = x;
+	state.visible.x1 = x + dx;
+	state.visible.y0 = y - dy;
+	state.visible.y1 = y;
 
 	/* if the window is already open, close it first so that it opens fully
 	 * on screen */
@@ -598,7 +603,7 @@ void ro_gui_dialog_open_centre_parent(wimp_w parent, wimp_w child) {
 void ro_gui_dialog_open_persistent(wimp_w parent, wimp_w w, bool pointer) {
 
 	if (pointer)
-	  	ro_gui_dialog_open_at_pointer(w);
+		ro_gui_dialog_open_at_pointer(w);
 	else
 		ro_gui_dialog_open_centre_parent(parent, w);
 
@@ -608,7 +613,6 @@ void ro_gui_dialog_open_persistent(wimp_w parent, wimp_w w, bool pointer) {
 				wimp_WINDOW_CLOSE_ICON);
 	ro_gui_dialog_add_persistent(parent, w);
 	ro_gui_set_caret_first(w);
-
 }
 
 
@@ -650,8 +654,8 @@ void ro_gui_dialog_close_persistent(wimp_w parent) {
 	for (i = 0; i < MAX_PERSISTENT; i++) {
 		if (persistent_dialog[i].parent == parent &&
 				persistent_dialog[i].dialog != NULL) {
-			if (!ro_gui_wimp_event_close_window(persistent_dialog[i].dialog))
-				ro_gui_dialog_close(persistent_dialog[i].dialog);
+			ro_gui_dialog_close(persistent_dialog[i].dialog);
+			ro_gui_wimp_event_close_window(persistent_dialog[i].dialog);
 			persistent_dialog[i].parent = NULL;
 			persistent_dialog[i].dialog = NULL;
 		}

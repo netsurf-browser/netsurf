@@ -94,7 +94,9 @@ struct gui_query_window *ro_gui_query_window_lookup_id(query_id id)
 
 
 /**
- * Display a query to the user, requesting a response.
+ * Display a query to the user, requesting a response, near the current
+ * pointer position to keep the required mouse travel small, but also
+ * protecting against spurious mouse clicks.
  *
  * \param  query   message token of query
  * \param  detail  parameter used in expanding tokenised message
@@ -109,13 +111,44 @@ query_id query_user(const char *query, const char *detail,
 		const query_callback *cb, void *pw,
 		const char *yes, const char *no)
 {
+	wimp_pointer pointer;
+	if (xwimp_get_pointer_info(&pointer))
+		pointer.pos.y = pointer.pos.x = -1;
+
+	return query_user_xy(query, detail, cb, pw, yes, no,
+				pointer.pos.x, pointer.pos.y);
+}
+
+
+/**
+ * Display a query to the user, requesting a response, at a specified
+ * screen position (x,y). The window is positioned relative to the given
+ * location such that the required mouse travel is small, but non-zero
+ * for protection spurious double-clicks.
+ *
+ * \param  query   message token of query
+ * \param  detail  parameter used in expanding tokenised message
+ * \param  cb      table of callback functions to be called when user responds
+ * \param  pw      handle to be passed to callback functions
+ * \param  yes     text to use for 'Yes' button' (or NULL for default)
+ * \param  no      text to use for 'No' button (or NULL for default)
+ * \param  x       x position in screen coordinates (-1 = centred on screen)
+ * \param  y       y position in screen coordinates (-1 = centred on screen)
+ * \return id number of the query (or QUERY_INVALID if it failed)
+ */
+
+query_id query_user_xy(const char *query, const char *detail,
+		const query_callback *cb, void *pw,
+		const char *yes, const char *no,
+		int x, int y)
+{
 	struct gui_query_window *qw;
 	char query_buffer[300];
 	os_error *error;
 	wimp_icon *icn;
 	int width;
 	int len;
-	int x;
+	int tx;
 	char *local_text = NULL;
 	utf8_convert_ret err;
 
@@ -164,7 +197,7 @@ query_id query_user(const char *query, const char *detail,
 	width += 44;
 	if (width < query_yes_width)
 		width = query_yes_width;
-	icn->extent.x0 = x = icn->extent.x1 - width;
+	icn->extent.x0 = tx = icn->extent.x1 - width;
 
 	/* set the text of the 'No' button and size accordingly */
 	err = utf8_to_local_encoding(no, 0, &local_text);
@@ -185,7 +218,7 @@ query_id query_user(const char *query, const char *detail,
 	local_text = NULL;
 
 	if (!query_no_width) query_no_width = icn->extent.x1 - icn->extent.x0;
-	icn->extent.x1 = x - 16;
+	icn->extent.x1 = tx - 16;
 	error = xwimptextop_string_width(icn->data.indirected_text.text, len, &width);
 	if (error) {
 		LOG(("xwimptextop_string_width: 0x%x:%s",
@@ -214,7 +247,13 @@ query_id query_user(const char *query, const char *detail,
 	xwimp_set_icon_state(qw->window, ICON_QUERY_HELP,
 			wimp_ICON_DELETED, wimp_ICON_DELETED);
 
-	ro_gui_dialog_open(qw->window);
+	if (x >= 0 && y >= 0) {
+		x -= tx - 8;
+		y += (query_template->visible.y1 - query_template->visible.y0) / 2;
+		ro_gui_dialog_open_xy(qw->window, x, y);
+	}
+	else
+		ro_gui_dialog_open(qw->window);
 
 	ro_gui_wimp_event_set_user_data(qw->window, qw);
 	ro_gui_wimp_event_register_mouse_click(qw->window, ro_gui_query_click);
