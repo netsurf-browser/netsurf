@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-9 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -23,7 +23,7 @@
 extern bool option_verbose_log;
 extern char *option_url_file;
 extern char *option_hotlist_file;
-extern bool option_use_wb;
+extern char *option_use_pubscreen;
 extern char *option_modeid;
 extern int option_screen_depth;
 extern char *option_theme;
@@ -39,12 +39,13 @@ extern char *option_recent_file;
 extern char *option_arexx_dir;
 extern char *option_download_dir;
 extern bool option_quick_text;
+extern bool option_redraw_on_intuiticks;
 
 #define EXTRA_OPTION_DEFINE \
 bool option_verbose_log = false; \
 char *option_url_file = 0; \
 char *option_hotlist_file = 0; \
-bool option_use_wb = false; \
+char *option_use_pubscreen = 0; \
 char *option_modeid = 0; \
 int option_screen_depth = 16; \
 char *option_theme = 0; \
@@ -60,12 +61,13 @@ char *option_recent_file = 0; \
 char *option_arexx_dir = 0; \
 char *option_download_dir = 0; \
 bool option_quick_text = true; \
+bool option_redraw_on_intuiticks = true; \
 
 #define EXTRA_OPTION_TABLE \
 { "verbose_log",	OPTION_BOOL,	&option_verbose_log}, \
 { "url_file",		OPTION_STRING,	&option_url_file }, \
 { "hotlist_file",		OPTION_STRING,	&option_hotlist_file }, \
-{ "use_workbench",	OPTION_BOOL,	&option_use_wb}, \
+{ "use_pubscreen",	OPTION_STRING,	&option_use_pubscreen}, \
 { "screen_modeid",	OPTION_STRING,	&option_modeid}, \
 { "screen_depth",	OPTION_INTEGER,	&option_screen_depth}, \
 { "theme",		OPTION_STRING,	&option_theme}, \
@@ -80,5 +82,6 @@ bool option_quick_text = true; \
 { "recent_file",		OPTION_STRING,	&option_recent_file }, \
 { "arexx_dir",		OPTION_STRING,	&option_arexx_dir }, \
 { "download_dir",		OPTION_STRING,	&option_download_dir }, \
-{ "quick_text",	OPTION_BOOL,	&option_quick_text},
+{ "quick_text",	OPTION_BOOL,	&option_quick_text}, \
+{ "delay_redraw",	OPTION_BOOL,	&option_redraw_on_intuiticks},
 #endif
