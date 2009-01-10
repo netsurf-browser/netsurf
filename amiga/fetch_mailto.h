@@ -1,7 +1,7 @@
 /*
- * Copyright 2008 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-9 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
- * This file is part of NetSurf.
+ * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
  * NetSurf is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,5 +23,6 @@
 #ifndef AMIGA_FETCH_MAILTO_H
 #define AMIGA_FETCH_MAILTO_H
 
-void ami_fetch_mailto_register(void);
+void ami_openurl_open(void);
+void ami_openurl_close(void);
 #endif
