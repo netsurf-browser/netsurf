@@ -623,10 +623,10 @@ void gui_init2(int argc, char** argv)
 
 void ami_update_quals(struct gui_window_2 *gwin)
 {
-	uint16 quals = 0;
+	uint32 quals = 0;
 
-	GetAttr(WINDOW_Qualifier,gwin->objects[OID_MAIN],(uint16 *)&quals);
-printf("%lx\n",quals);
+	GetAttr(WINDOW_Qualifier,gwin->objects[OID_MAIN],(uint32 *)&quals);
+
 	gwin->key_state = 0;
 
 	if((quals & IEQUALIFIER_LSHIFT) || (quals & IEQUALIFIER_RSHIFT)) 
@@ -723,7 +723,7 @@ void ami_handle_msg(void)
 
 					if((x>=xs) && (y>=ys) && (x<width+xs) && (y<height+ys))
 					{
-						//ami_update_quals(gwin);
+						ami_update_quals(gwin);
 
 						if(option_context_menu && rmbtrapped == FALSE)
 						{
@@ -768,7 +768,7 @@ void ami_handle_msg(void)
 					width=bbox->Width;
 					height=bbox->Height;
 
-					//ami_update_quals(gwin);
+					ami_update_quals(gwin);
 
 					if((x>=xs) && (y>=ys) && (x<width+xs) && (y<height+ys))
 					{
@@ -852,7 +852,7 @@ void ami_handle_msg(void)
 						break;
 
 						case GID_RELOAD:
-							//ami_update_quals(gwin);
+							ami_update_quals(gwin);
 
 							if(gwin->key_state & BROWSER_MOUSE_MOD_1)
 							{
@@ -940,18 +940,6 @@ void ami_handle_msg(void)
 						break;
 						case RAWKEY_ESC:
 							browser_window_key_press(gwin->bw,27);
-						break;
-						case RAWKEY_LSHIFT:
-							gwin->key_state = BROWSER_MOUSE_MOD_1;
-						break;
-						case 0xe0: // lshift up
-							gwin->key_state = 0;
-						break;
-						case RAWKEY_LCTRL:
-							gwin->key_state = BROWSER_MOUSE_MOD_2;
-						break;
-						case 0xe3: // lctrl up
-							gwin->key_state = 0;
 						break;
 						default:
 							/*MapRawKey etc */
