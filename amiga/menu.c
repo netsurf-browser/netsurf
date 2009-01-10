@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-9 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -436,15 +436,14 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 						char fname[1024];
 
 						case 0:
-							if(AslRequestTags(filereq,
+							if(AslRequestTags(savereq,
 								ASLFR_TitleText,messages_get("NetSurf"),
 								ASLFR_Screen,scrn,
-								ASLFR_DoSaveMode,TRUE,
 								ASLFR_InitialFile,FilePart(gwin->bw->current_content->url),
 								TAG_DONE))
 							{
-								strlcpy(&fname,filereq->fr_Drawer,1024);
-								AddPart(fname,filereq->fr_File,1024);
+								strlcpy(&fname,savereq->fr_Drawer,1024);
+								AddPart(fname,savereq->fr_File,1024);
 								ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
 								if(fh = FOpen(fname,MODE_NEWFILE,0))
 								{
@@ -457,15 +456,14 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 						break;
 
 						case 1:
-							if(AslRequestTags(filereq,
+							if(AslRequestTags(savereq,
 								ASLFR_TitleText,messages_get("NetSurf"),
 								ASLFR_Screen,scrn,
-								ASLFR_DoSaveMode,TRUE,
 								ASLFR_InitialFile,FilePart(gwin->bw->current_content->url),
 								TAG_DONE))
 							{
-								strlcpy(&fname,filereq->fr_Drawer,1024);
-								AddPart(fname,filereq->fr_File,1024);
+								strlcpy(&fname,savereq->fr_Drawer,1024);
+								AddPart(fname,savereq->fr_File,1024);
 								ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
 								save_as_text(gwin->bw->current_content,fname);
 								SetComment(fname,gwin->bw->current_content->url);
@@ -474,15 +472,14 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 						break;
 
 						case 2:
-							if(AslRequestTags(filereq,
+							if(AslRequestTags(savereq,
 								ASLFR_TitleText,messages_get("NetSurf"),
 								ASLFR_Screen,scrn,
-								ASLFR_DoSaveMode,TRUE,
 								ASLFR_InitialFile,FilePart(gwin->bw->current_content->url),
 								TAG_DONE))
 							{
-								strlcpy(&fname,filereq->fr_Drawer,1024);
-								AddPart(fname,filereq->fr_File,1024);
+								strlcpy(&fname,savereq->fr_Drawer,1024);
+								AddPart(fname,savereq->fr_File,1024);
 								ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
 								if(lock = CreateDir(fname))
 								{
@@ -496,15 +493,14 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 
 						case 3:
 #ifdef WITH_PDF_EXPORT
-							if(AslRequestTags(filereq,
+							if(AslRequestTags(savereq,
 								ASLFR_TitleText,messages_get("NetSurf"),
 								ASLFR_Screen,scrn,
-								ASLFR_DoSaveMode,TRUE,
 								ASLFR_InitialFile,FilePart(gwin->bw->current_content->url),
 								TAG_DONE))
 							{
-								strlcpy(&fname,filereq->fr_Drawer,1024);
-								AddPart(fname,filereq->fr_File,1024);
+								strlcpy(&fname,savereq->fr_Drawer,1024);
+								AddPart(fname,savereq->fr_File,1024);
 								ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
 								pdf_set_scale(DEFAULT_EXPORT_SCALE);
 								save_as_pdf(gwin->bw->current_content,fname);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-9 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -221,17 +221,16 @@ uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved)
 			case CMID_SAVEOBJ:
 				object = (struct content *)userdata;
 
-				if(AslRequestTags(filereq,
+				if(AslRequestTags(savereq,
 							ASLFR_TitleText,messages_get("NetSurf"),
 							ASLFR_Screen,scrn,
-							ASLFR_DoSaveMode,TRUE,
 							ASLFR_InitialFile,FilePart(object->url),
 							TAG_DONE))
 				{
 					BPTR fh = 0;
 					char fname[1024];
-					strlcpy(&fname,filereq->fr_Drawer,1024);
-					AddPart(fname,filereq->fr_File,1024);
+					strlcpy(&fname,savereq->fr_Drawer,1024);
+					AddPart(fname,savereq->fr_File,1024);
 					ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
 					if(fh = FOpen(fname,MODE_NEWFILE,0))
 					{
