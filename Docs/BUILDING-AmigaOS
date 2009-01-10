@@ -1,0 +1,206 @@
+--------------------------------------------------------------------------------
+  Build Instructions for AmigaOS NetSurf                       10 January 2009
+--------------------------------------------------------------------------------
+
+  This document provides instructions for building the AmigaOS version of
+  NetSurf and provides guidance on obtaining NetSurf's build dependencies.
+
+  AmigaOS NetSurf has been tested on AmigaOS 4.0 July 2007 Update and AmigaOS
+  4.1.  It will require modification for AmigaOS 3.9 or earlier, or other
+  Amiga-like platforms.
+
+  AmigaOS NetSurf will build against newlib by default, building against
+  clib2 has not been tested.
+
+
+  Building and executing NetSurf
+=================================
+
+  First of all, you should examine the contents of Makefile.config and enable
+  and disable relevant features as you see fit.  Some of these options can be
+  automatically detected and used, although it is better to explicitly enable
+  or disable options.
+  
+  You should then obtain NetSurf's dependencies, keeping in mind which options
+  you have enabled in the configuration file.  See the next section for
+  specifics.
+  
+  Once done, to build AmigaOS NetSurf on OS4, simply run:
+
+      1> gmake
+
+  If that produces errors, you probably don't have some of NetSurf's build
+  dependencies installed. See "Obtaining NetSurf's dependencies" below, or turn
+  off the complaining features in Makefile.config.
+
+  Running NetSurf from the build tree requires some setup:
+
+      1> makelink resources amiga/resources force
+      1> makelink NetSurf.info amiga/dist/NetSurf.info
+
+  It should then be possible to run NetSurf by executing NetSurf from the
+  Shell or by double-clicking on the icon.
+
+
+  Obtaining NetSurf's build dependencies
+========================================
+
+  Many of NetSurf's dependencies are included with the OS4 SDK or available
+  from Aminet or OS4Depot.  The remainder must be built manually.
+
+
+  Lemon
+-------
+
+  A pre-built version of Lemon is available from Aminet:
+      http://www.aminet.net/package/dev/c/lemon
+
+
+  RE2C
+------
+
+  A pre-built version of re2c is available from Aminet:
+      http://www.aminet.net/package/dev/c/re2c
+
+
+  cURL
+------
+
+  A version of libcurl built for newlib is available from Aminet
+      http://www.aminet.net/package/dev/lib/libcurl
+
+
+  libmng
+--------
+
+  NetSurf uses libMNG to display MNG and PNG files.
+  It builds without any problems on OS4, or an older version is available
+  from Aminet:
+      http://www.aminet.net/package/dev/lib/libmng
+
+
+  libxml2
+---------
+
+  libxml2 is available from Aminet:
+
+      http://www.aminet.net/package/dev/lib/libxml2
+
+
+  OpenSSL
+----------
+
+  NetSurf uses OpenSSL for encrypted transfers.  The archive on Aminet/OS4Depot
+  is missing the newlib version of the library.
+
+
+  Libnsbmp
+----------
+
+  NetSurf has its own library for decoding and rendering BMPs, ICOs, etc.
+  You can check it out from svn://svn.netsurf-browser.org/trunk/libnsbmp
+  
+  To build:
+  
+      1> gmake
+
+
+  Libnsgif
+----------
+
+  NetSurf has its own library for decoding and rendering GIFs.  You can check
+  it out from svn://svn.netsurf-browser.org/trunk/libnsgif
+  
+  To build:
+
+      1> gmake
+
+
+  Hubbub
+--------
+
+  NetSurf can use Hubbub, the project's HTML parser, instead of using libxml2's
+  HTML parser.  To build this, you will also require libparserutils.  Firstly,
+  check out libparserutils from;
+  
+      svn://svn.netsurf-browser.org/trunk/libparserutils
+  
+  and do the usual "gmake".  Once this is built and installed, you
+  can check out and build Hubbub.  Check out hubbub from;
+  
+      svn://svn.netsurf-browser.org/trunk/hubbub
+
+  and again do the usual "gmake".
+
+
+  Librosprite
+-------------
+
+  NetSurf uses James Shaw's librosprite for rendering RISC OS Sprite files on
+  non-RISC OS platforms.  The Makefile will automatically use librosprite, you
+  can disable it by editing Makefile.config.
+
+  To build librosprite, check out from svn://svn.rjek.com/jshaw/libsprite/trunk
+
+      1> gmake
+
+
+  Libhpdf
+---------
+
+  NetSurf can use Haru PDF to enable PDF export and printing in GTK.  This
+  is currently enabled by default, and cannot be auto-detected by the Makefile.
+  If you wish to disable it, do so by editing Makefile.config.
+
+  Haru PDF can be obtained from http://libharu.sourceforge.net/, although we
+  currently depend on features that the official version does not have.  You
+  can obtain our patched version from the following Subversion address until
+  the patches are accepted upstream;
+
+      svn://svn.netsurf-browser.org/trunk/libhpdf
+
+
+  libregex
+----------
+
+  A version of the regular expression library can be obtained from Aminet:
+
+      http://www.aminet.net/package/dev/lib/libregex-4.4.3
+
+
+  libsvgtiny
+------------
+
+  Enabling SVG support requires libsvgtiny, which can be obtained from SVN:
+
+      svn://svn.netsurf-browser.org/trunk/libsvgtiny
+
+  Building libsvgtiny requires gperf available from Aminet:
+
+      http://www.aminet.net/package/dev/c/gperf
+
+
+  openurl.library
+-----------------
+
+  The AmigaOS mailto: URL support uses openurl.library, this and the includes
+  can be obtained from Aminet:
+
+      http://www.aminet.net/package/comm/www/OpenURL-OS4
+
+
+  General requirements
+----------------------
+
+  SDK:newlib/include/strings.h needs to be modified by adding the following:
+
+      extern int strcasecmp(const char *, const char *);
+
+  amiga/version.c is generated by version.rexx using the SVN command.  If
+  the source has not been checked out from SVN, or is being cross-compiled,
+  this file will need to be created by hand.  See the end of version.rexx
+  for the variables that are defined in the file.
+
+  Please note that building with Cairo (option NETSURF_AMIGA_USE_CAIRO) will
+  link NetSurf against shared objects, and require the OS4.1 SDK to build and
+  AmigaOS 4.1 to run.
