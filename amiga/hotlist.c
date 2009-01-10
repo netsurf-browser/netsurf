@@ -1,6 +1,6 @@
 /*
  * Copyright 2004, 2005 Richard Wilson <info@tinct.net>
- * Copyright 2008 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008, 2009 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -32,7 +32,7 @@ static const struct {
 	const char *msg_key;
 } default_entries[] = {
 	{ "http://www.netsurf-browser.org/", "HotlistHomepage" },
-//	{ "http://www.netsurf-browser.org/builds/", "HotlistTestBuild" },
+	{ "http://www.netsurf-browser.org/downloads/amiga/", "HotlistTestBuild" },
 	{ "http://www.netsurf-browser.org/documentation/", "HotlistDocumentation" },
 	{ "http://sourceforge.net/tracker/?atid=464312&group_id=51719",
 			"HotlistBugTracker" },
