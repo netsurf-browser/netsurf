@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-9 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -70,6 +70,7 @@
 #include "amiga/fetch_file.h"
 #include "amiga/fetch_mailto.h"
 #include "amiga/search.h"
+#include <devices/inputevent.h>
 
 #ifdef NS_AMIGA_CAIRO
 #include <cairo/cairo-amigaos.h>
@@ -169,7 +170,7 @@ void ami_update_throbber(struct gui_window_2 *g,bool redraw);
 void ami_update_buttons(struct gui_window_2 *);
 void ami_scroller_hook(struct Hook *,Object *,struct IntuiMessage *);
 uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved);
-void ami_do_redraw(struct gui_window_2 *g);
+void ami_do_redraw(struct gui_window_2 *g,bool scroll);
 void ami_init_mouse_pointers(void);
 void ami_switch_tab(struct gui_window_2 *gwin,bool redraw);
 #ifdef WITH_HUBBUB
@@ -219,6 +220,11 @@ void gui_init(int argc, char** argv)
 	}
 
 	filereq = (struct FileRequester *)AllocAslRequest(ASL_FileRequest,NULL);
+	savereq = (struct FileRequester *)AllocAslRequestTags(ASL_FileRequest,
+							ASLFR_DoSaveMode,TRUE,
+							ASLFR_RejectIcons,TRUE,
+							ASLFR_InitialDrawer,option_download_dir,
+							TAG_DONE);
 
 	ami_clipboard_init();
 
@@ -323,8 +329,6 @@ void gui_init(int argc, char** argv)
 
 	if(!option_window_width) option_window_width = 800;
 	if(!option_window_height) option_window_height = 600;
-	if(!option_window_screen_width) option_window_screen_width = 800;
-	if(!option_window_screen_height) option_window_screen_height = 600;
 
 	plot=amiplot;
 
@@ -433,7 +437,7 @@ void gui_init2(int argc, char** argv)
 
 	notalreadyrunning = ami_arexx_init();
 	ami_fetch_file_register();
-	ami_fetch_mailto_register();
+	ami_openurl_open();
 
 	if(notalreadyrunning)
 	{
@@ -443,19 +447,29 @@ void gui_init2(int argc, char** argv)
 		}
 		else
 		{
-			id = p96BestModeIDTags(P96BIDTAG_NominalWidth,option_window_screen_width,
-					P96BIDTAG_NominalHeight,option_window_screen_height,
-					P96BIDTAG_Depth,option_screen_depth);
+			struct ScreenModeRequester *screenmodereq = NULL;
 
-			if(id == INVALID_ID) die(messages_get("NoMode"));
+			if(screenmodereq = AllocAslRequest(ASL_ScreenModeRequest,NULL))
+			{
+				AslRequestTags(screenmodereq,
+						ASLSM_MinDepth,16,
+						ASLSM_MaxDepth,32,
+						TAG_DONE);
+
+				id = screenmodereq->sm_DisplayID;
+				option_modeid = malloc(20);
+				sprintf(option_modeid,"0x%lx",id);
+
+				FreeAslRequest(screenmodereq);
+			}
 		}
 
-		if(!option_use_wb)
+		if(!option_use_pubscreen || option_use_pubscreen[0] == '\0')
 		{
 			scrn = OpenScreenTags(NULL,
-							SA_Width,option_window_screen_width,
-							SA_Height,option_window_screen_height,
-							SA_Depth,option_screen_depth,
+//							SA_Width,option_window_screen_width,
+//							SA_Height,option_window_screen_height,
+//							SA_Depth,option_screen_depth,
 							SA_DisplayID,id,
 							SA_Title,nsscreentitle,
 							SA_Type,CUSTOMSCREEN,
@@ -475,15 +489,21 @@ void gui_init2(int argc, char** argv)
 				}
 				else
 				{
-					option_use_wb = true;
+					option_use_pubscreen = "Workbench";
 				}
 			}
 		}
 
-		if(option_use_wb)
+		if(option_use_pubscreen && option_use_pubscreen[0] != '\0')
 		{
-			scrn = LockPubScreen("Workbench");
-			locked_screen = TRUE;
+			if(scrn = LockPubScreen(option_use_pubscreen))
+			{
+				locked_screen = TRUE;
+			}
+			else
+			{
+				scrn = LockPubScreen("Workbench");
+			}
 		}
 
 		/* init shared bitmaps */
@@ -601,11 +621,30 @@ void gui_init2(int argc, char** argv)
 	if(locked_screen) UnlockPubScreen(NULL,scrn);
 }
 
+void ami_update_quals(struct gui_window_2 *gwin)
+{
+	uint16 quals = 0;
+
+	GetAttr(WINDOW_Qualifier,gwin->objects[OID_MAIN],(uint16 *)&quals);
+
+	gwin->key_state = 0;
+
+	if((quals & IEQUALIFIER_LSHIFT) || (quals & IEQUALIFIER_RSHIFT)) 
+	{
+		gwin->key_state |= BROWSER_MOUSE_MOD_1;
+	}
+
+	if(quals & IEQUALIFIER_CONTROL) 
+	{
+		gwin->key_state |= BROWSER_MOUSE_MOD_2;
+	}
+}
+
 void ami_handle_msg(void)
 {
 	struct IntuiMessage *message = NULL;
 	ULONG class,result,storage = 0,x,y,xs,ys,width=800,height=600;
-	uint16 code;
+	uint16 code,quals;
 	struct IBox *bbox;
 	struct nsObject *node;
 	struct nsObject *nnode;
@@ -684,6 +723,8 @@ void ami_handle_msg(void)
 
 					if((x>=xs) && (y>=ys) && (x<width+xs) && (y<height+ys))
 					{
+						ami_update_quals(gwin);
+
 						if(option_context_menu && rmbtrapped == FALSE)
 						{
 							SetAttrs(gwin->objects[OID_MAIN],WA_RMBTrap,TRUE);
@@ -726,6 +767,8 @@ void ami_handle_msg(void)
 
 					width=bbox->Width;
 					height=bbox->Height;
+
+					ami_update_quals(gwin);
 
 					if((x>=xs) && (y>=ys) && (x<width+xs) && (y<height+ys))
 					{
@@ -809,6 +852,8 @@ void ami_handle_msg(void)
 						break;
 
 						case GID_RELOAD:
+							ami_update_quals(gwin);
+
 							if(gwin->key_state & BROWSER_MOUSE_MOD_1)
 							{
 								browser_window_reload(gwin->bw,true);
@@ -896,6 +941,7 @@ void ami_handle_msg(void)
 						case RAWKEY_ESC:
 							browser_window_key_press(gwin->bw,27);
 						break;
+/*
 						case RAWKEY_LSHIFT:
 							gwin->key_state = BROWSER_MOUSE_MOD_1;
 						break;
@@ -908,6 +954,7 @@ void ami_handle_msg(void)
 						case 0xe3: // lctrl up
 							gwin->key_state = 0;
 						break;
+*/
 						default:
 							/*MapRawKey etc */
 						break;
@@ -937,6 +984,11 @@ void ami_handle_msg(void)
 				break;
 
 				case WMHI_INTUITICK:
+					if(option_redraw_on_intuiticks)
+					{
+						if(gwin->redraw_required)
+							ami_do_redraw(gwin,false);
+					}
 				break;
 
 	   	     	default:
@@ -956,14 +1008,17 @@ void ami_handle_msg(void)
 //	ReplyMsg((struct Message *)message);
 		}
 
-		if(gwin->redraw_required)
-			ami_do_redraw(gwin);
-
-		if(gwin->throbber_frame)
-			ami_update_throbber(gwin,false);
-
-		if(node->Type == AMINS_WINDOW)
+		if((node->Type == AMINS_WINDOW) || (node->Type == AMINS_FRAME))
 		{
+			if(!option_redraw_on_intuiticks)
+			{
+				if(gwin->redraw_required)
+					ami_do_redraw(gwin,false);
+			}
+
+			if(gwin->throbber_frame)
+				ami_update_throbber(gwin,false);
+
 			if(gwin->bw->window->c_h)
 			{
 //			struct gui_window tgw;
@@ -1100,7 +1155,7 @@ void ami_handle_appmsg(void)
 		ReplyMsg((struct Message *)appmsg);
 
 		if(gwin->redraw_required)
-			ami_do_redraw(gwin);
+			ami_do_redraw(gwin,false);
 	}
 }
 
@@ -1295,6 +1350,9 @@ void gui_quit(void)
 	FreeSysObject(ASOT_PORT,sport);
 
 	FreeAslRequest(filereq);
+	FreeAslRequest(savereq);
+
+	ami_openurl_close();
 
     if(IPopupMenu) DropInterface((struct Interface *)IPopupMenu);
     if(PopupMenuBase) CloseLibrary(PopupMenuBase);
@@ -1715,8 +1773,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 					WA_RMBTrap,TRUE,
 					WA_Top,0,
 					WA_Left,0,
-					WA_Width,option_window_screen_width,
-					WA_Height,option_window_screen_height,
+					WA_Width,option_window_width,
+					WA_Height,option_window_height,
 		           	WA_SizeGadget, FALSE,
 					WA_CustomScreen,scrn,
 					WA_ReportMouse,TRUE,
@@ -1941,7 +1999,7 @@ void gui_window_update_box(struct gui_window *g,
 
 	current_redraw_browser = g->shared->bw;
 
-	currp = &glob.rp;
+	//currp = &glob.rp;
 
 	width=bbox->Width;
 	height=bbox->Height;
@@ -1977,13 +2035,14 @@ void gui_window_update_box(struct gui_window *g,
 */
 }
 
-void ami_do_redraw(struct gui_window_2 *g)
+void ami_do_redraw(struct gui_window_2 *g,bool scroll)
 {
 	struct Region *reg = NULL;
 	struct Rectangle rect;
 	struct content *c;
 	ULONG hcurrent,vcurrent,xoffset,yoffset,width=800,height=600;
 	struct IBox *bbox;
+	ULONG oldh=g->oldh,oldv=g->oldv;
 
 	GetAttr(SPACE_AreaBox,g->gadgets[GID_BROWSER],(ULONG *)&bbox);
 	GetAttr(SCROLLER_Top,g->objects[OID_HSCROLL],(ULONG *)&hcurrent);
@@ -1998,7 +2057,7 @@ void ami_do_redraw(struct gui_window_2 *g)
 
 	current_redraw_browser = g->bw;
 
-	currp = &glob.rp;
+//	currp = &glob.rp;
 
 	width=bbox->Width;
 	height=bbox->Height;
@@ -2008,20 +2067,39 @@ void ami_do_redraw(struct gui_window_2 *g)
 
 //	if (c->type == CONTENT_HTML) scale = 1;
 
+	if(scroll)
+	{
+		BltBitMapRastPort(glob.bm,hcurrent-oldh,vcurrent-oldv,g->win->RPort,xoffset,yoffset,width-(hcurrent-oldh),height-(vcurrent-oldv),0x0C0);
+
+		content_redraw(c, -hcurrent /* * g->bw->scale */,
+					-vcurrent /* * g->bw->scale */,
+					width /* * g->bw->scale */,
+					height /* * g->bw->scale */,
+					width-(hcurrent-oldh),height-(vcurrent-oldv),c->width /* * g->bw->scale */,
+					c->height /* * g->bw->scale */,
+					g->bw->scale,0xFFFFFF);
+
+		BltBitMapRastPort(glob.bm,width-(hcurrent-oldh),height-(vcurrent-oldv),g->win->RPort,xoffset+(width-(hcurrent-oldh)),yoffset+(width-(hcurrent-oldh)),width,height,0x0C0);
+	}
+	else
+	{
+
+		ami_clg(0xffffff);
+
 /* temp get it to redraw everything ***
 	if(g->redraw_data)
 	{
 		content_redraw(g->redraw_data->redraw.object,
 		floorf((g->redraw_data->redraw.object_x *
-		g->bw->scale)-hcurrent),
+		g->shared->bw->scale)-hcurrent),
 		ceilf((g->redraw_data->redraw.object_y *
-		g->bw->scale)-vcurrent),
+		g->shared->bw->scale)-vcurrent),
 		g->redraw_data->redraw.object_width *
-		g->bw->scale,
+		g->shared->bw->scale,
 		g->redraw_data->redraw.object_height *
-		g->bw->scale,
+		g->shared->bw->scale,
 		0,0,width,height,
-		g->bw->scale,
+		g->shared->bw->scale,
 		0xFFFFFF);
 	}
 	else
@@ -2037,17 +2115,15 @@ void ami_do_redraw(struct gui_window_2 *g)
 
 //	}
 
-	current_redraw_browser = NULL;
+		current_redraw_browser = NULL;
 
-	ami_update_buttons(g);
+		ami_update_buttons(g);
 
-	BltBitMapRastPort(glob.bm,0,0,g->win->RPort,xoffset,yoffset,width,height,0x0C0);
+		BltBitMapRastPort(glob.bm,0,0,g->win->RPort,xoffset,yoffset,width,height,0x0C0);
+	}
 
-	reg = InstallClipRegion(glob.rp.Layer,NULL);
-	if(reg) DisposeRegion(reg);
-
-//	DeleteLayer(0,g->rp.Layer);
-/**/
+	g->oldh = hcurrent;
+	g->oldv = vcurrent;
 
 	g->redraw_required = false;
 	g->redraw_data = NULL;
@@ -2090,7 +2166,7 @@ void gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
 		int x1, int y1)
 {
 	gui_window_set_scroll(g, x0, y0);
-	ami_do_redraw(g->shared);
+	ami_do_redraw(g->shared,false);
 }
 
 void gui_window_position_frame(struct gui_window *g, int x0, int y0,
@@ -2115,8 +2191,8 @@ void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 /*
 	if(scaled)
 	{
-		*width /= g->bw->scale;
-		*height /= g->bw->scale;
+		*width /= g->shared->bw->scale;
+		*height /= g->shared->bw->scale;
 	}
 */
 }
@@ -2494,16 +2570,14 @@ struct gui_download_window *gui_download_window_create(const char *url,
 	struct gui_download_window *dw;
 	APTR va[3];
 
-	if(AslRequestTags(filereq,
+	if(AslRequestTags(savereq,
 		ASLFR_TitleText,messages_get("NetSurf"),
 		ASLFR_Screen,scrn,
-		ASLFR_DoSaveMode,TRUE,
 		ASLFR_InitialFile,FilePart(url),
-		ASLFR_InitialDrawer,option_download_dir,
 		TAG_DONE))
 	{
-		strlcpy(&fname,filereq->fr_Drawer,1024);
-		AddPart((STRPTR)&fname,filereq->fr_File,1024);
+		strlcpy(&fname,savereq->fr_Drawer,1024);
+		AddPart((STRPTR)&fname,savereq->fr_File,1024);
 	}
 	else return NULL;
 
@@ -2645,11 +2719,6 @@ void gui_create_form_select_menu(struct browser_window *bw,
 
 }
 
-void gui_launch_url(const char *url)
-{
-	printf("%s\n",url);
-}
-
 void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg) 
 {
 	ULONG gid,x,y;
@@ -2662,11 +2731,9 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 		switch( gid ) 
 		{ 
  			case OID_HSCROLL: 
-				gwin->redraw_required = true;
- 			break; 
-
  			case OID_VSCROLL: 
 				gwin->redraw_required = true;
+//				ami_do_redraw(gwin,true);
  			break; 
 		} 
 	}

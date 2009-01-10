@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-9 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -102,6 +102,8 @@ struct gui_window_2 {
 	browser_mouse_state key_state;
 	ULONG throbber_update_count;
 	struct find_window *searchwin;
+	ULONG oldh;
+	ULONG oldv;
 };
 
 struct gui_window
@@ -143,6 +145,7 @@ struct MinList *window_list;
 struct Screen *scrn;
 STRPTR nsscreentitle;
 struct FileRequester *filereq;
+struct FileRequester *savereq;
 struct MsgPort *sport;
 bool win_destroyed;
 struct browser_window *curbw;
