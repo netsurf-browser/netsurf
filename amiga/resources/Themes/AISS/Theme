@@ -1,4 +1,6 @@
-# AISS theme.  Requires AISS to be installed (see http://www.masonicons.de)
+# AISS theme.  Requires:
+# AISS to be installed (see http://www.masonicons.de)
+# defpointers package from OS4Depot (http://www.os4depot.net)
 # Throbber animation by Martin Merz
 #
 theme_nav_west:*TBImages:nav_west
@@ -44,23 +46,23 @@ ptr_nodrop:*Resources/Pointers/NoDrop
 ptr_notallowed:*Resources/Pointers/NotAllowed
 ptr_progress:*Resources/Pointers/Progress
 ptr_blank:*Resources/Pointers/Blank
-ptr32_default:*Resources/Pointers/Default
-ptr32_point:*Resources/Pointers/Point
-ptr32_caret:*Resources/Pointers/Caret
-ptr32_menu:*Resources/Pointers/Menu
-ptr32_up:*Resources/Pointers/Up
-ptr32_down:*Resources/Pointers/Down
-ptr32_left:*Resources/Pointers/Left
-ptr32_right:*Resources/Pointers/Right
-ptr32_rightup:*Resources/Pointers/RightUp
-ptr32_leftdown:*Resources/Pointers/LeftDown
-ptr32_leftup:*Resources/Pointers/LeftUp
-ptr32_rightdown:*Resources/Pointers/RightDown
-ptr32_cross:*Resources/Pointers/Cross
-ptr32_move:*Resources/Pointers/Move
-ptr32_wait:*Resources/Pointers/Wait
-ptr32_help:*Resources/Pointers/Help
-ptr32_nodrop:*Resources/Pointers/NoDrop
-ptr32_notallowed:*Resources/Pointers/NotAllowed
-ptr32_progress:*Resources/Pointers/Progress
-ptr32_blank:*Resources/Pointers/Blank
+ptr32_default:*ENV:Sys/def_pointer
+ptr32_point:*ENV:Sys/def_linkpointer
+ptr32_caret:*ENV:Sys/def_textpointer
+ptr32_menu:*ENV:Sys/def_contextmenupointer
+ptr32_up:*ENV:Sys/def_northresizepointer
+ptr32_down:*ENV:Sys/def_southresizepointer
+ptr32_left:*ENV:Sys/def_westresizepointer
+ptr32_right:*ENV:Sys/def_eastresizepointer
+ptr32_rightup:*ENV:Sys/def_northeastresizepointer
+ptr32_leftdown:*ENV:Sys/def_southwestresizepointer
+ptr32_leftup:*ENV:Sys/def_northwestresizepointer
+ptr32_rightdown:*ENV:Sys/def_southeastresizepointer
+ptr32_cross:*ENV:Sys/def_crosspointer
+ptr32_move:*ENV:Sys/def_handpointer
+ptr32_wait:*ENV:Sys/def_busypointer
+ptr32_help:*ENV:Sys/def_helppointer
+ptr32_nodrop:*ENV:Sys/def_nodroppointer
+ptr32_notallowed:*ENV:Sys/def_notallowedpointer
+ptr32_progress:*ENV:Sys/def_progresspointer
+ptr32_blank:*ENV:Sys/def_nonepointer
