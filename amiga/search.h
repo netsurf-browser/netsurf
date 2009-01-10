@@ -32,4 +32,5 @@ struct find_window {
 
 void ami_search_open(struct gui_window *gwin);
 BOOL ami_search_event(void);
+void ami_search_close(void);
 #endif
