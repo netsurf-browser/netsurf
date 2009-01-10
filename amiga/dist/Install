@@ -60,36 +60,6 @@
 
 (if (= #options-exist 0)
 	(
-		(set #screen-width   ;(querydisplay "screen" "width"))
-			(asknumber
-				(prompt "Enter desired screen width")
-				(help @asknumber-help)
-				(default 1024)
-			)
-		)
-		(set #screen-height  ;(querydisplay "screen" "height"))
-			(asknumber
-				(prompt "Enter desired screen height")
-				(help @asknumber-help)
-				(default 768)
-			)
-		)
-
-		(set #depth ;(querydisplay "screen" "depth"))
-			(askchoice
-				(prompt "Enter desired screen depth")
-				(help @asknumber-help)
-				(choices "16" "24" "32")
-				(default 2)
-			)
-		)
-
-		(select #depth
-			(set #screen-depth "16")
-			(set #screen-depth "24")
-			(set #screen-depth "32")
-		)
-
 		(set #themename
    			(askchoice
   				(prompt "Please select theme")
@@ -123,12 +93,6 @@
 			(help @textfile-help)
 			(dest (tackon @default-dest "Resources/Options"))
 			(append 	"font_min_size:12\n"
-				  	"window_x:0\n"
-					"window_y:24\n"
-					"window_width:" #screen-width "\n"
-					"window_height:" (- #screen-height 24) "\n"
-					"window_screen_width:" #screen-width "\n"
-					"window_screen_height:" #screen-height "\n"
 					"theme:" #theme "\n")
 		)
 	)
