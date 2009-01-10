@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-9 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -22,6 +22,7 @@
 #include <proto/intuition.h>
 #include "desktop/browser.h"
 #include "amiga/gui.h"
+#include <proto/dos.h>
 
 const char * const verarexx;
 const int verver;
@@ -37,7 +38,8 @@ enum
 	RX_TOFRONT,
 	RX_GETURL,
 	RX_GETTITLE,
-	RX_VERSION
+	RX_VERSION,
+	RX_SAVE
 };
 
 STATIC char result[100];
@@ -48,6 +50,7 @@ STATIC VOID rx_tofront(struct ARexxCmd *, struct RexxMsg *);
 STATIC VOID rx_geturl(struct ARexxCmd *, struct RexxMsg *);
 STATIC VOID rx_gettitle(struct ARexxCmd *, struct RexxMsg *);
 STATIC VOID rx_version(struct ARexxCmd *, struct RexxMsg *);
+STATIC VOID rx_save(struct ARexxCmd *, struct RexxMsg *);
 
 STATIC struct ARexxCmd Commands[] =
 {
@@ -57,6 +60,7 @@ STATIC struct ARexxCmd Commands[] =
 	{"GETURL",RX_GETURL,rx_geturl,NULL, 		0, 	NULL, 	0, 	0, 	NULL },
 	{"GETTITLE",RX_GETTITLE,rx_gettitle,NULL, 		0, 	NULL, 	0, 	0, 	NULL },
 	{"VERSION",RX_VERSION,rx_version,"VERSION/N,SVN=REVISION/N,RELEASE/S", 		0, 	NULL, 	0, 	0, 	NULL },
+	{"SAVE",RX_SAVE,rx_save,"FILENAME/A", 		0, 	NULL, 	0, 	0, 	NULL },
 	{ NULL, 		0, 				NULL, 		NULL, 		0, 	NULL, 	0, 	0, 	NULL }
 };
 
@@ -113,6 +117,20 @@ STATIC VOID rx_open(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 	{
 		browser_window_go(curbw,(char *)cmd->ac_ArgList[0],NULL,true);
 	}
+}
+
+STATIC VOID rx_save(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
+{
+	BPTR fh = 0;
+	ami_update_pointer(curbw->window->shared->win,GUI_POINTER_WAIT);
+	if(fh = FOpen(cmd->ac_ArgList[0],MODE_NEWFILE,0))
+	{
+		FWrite(fh,curbw->current_content->source_data,1,curbw->current_content->source_size);
+		FClose(fh);
+		SetComment(cmd->ac_ArgList[0],curbw->current_content->url);
+	}
+
+	ami_update_pointer(curbw->window->shared->win,GUI_POINTER_DEFAULT);
 }
 
 STATIC VOID rx_quit(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
