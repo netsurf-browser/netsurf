@@ -626,7 +626,7 @@ void ami_update_quals(struct gui_window_2 *gwin)
 	uint16 quals = 0;
 
 	GetAttr(WINDOW_Qualifier,gwin->objects[OID_MAIN],(uint16 *)&quals);
-
+printf("%lx\n",quals);
 	gwin->key_state = 0;
 
 	if((quals & IEQUALIFIER_LSHIFT) || (quals & IEQUALIFIER_RSHIFT)) 
@@ -723,7 +723,7 @@ void ami_handle_msg(void)
 
 					if((x>=xs) && (y>=ys) && (x<width+xs) && (y<height+ys))
 					{
-						ami_update_quals(gwin);
+						//ami_update_quals(gwin);
 
 						if(option_context_menu && rmbtrapped == FALSE)
 						{
@@ -768,7 +768,7 @@ void ami_handle_msg(void)
 					width=bbox->Width;
 					height=bbox->Height;
 
-					ami_update_quals(gwin);
+					//ami_update_quals(gwin);
 
 					if((x>=xs) && (y>=ys) && (x<width+xs) && (y<height+ys))
 					{
@@ -852,7 +852,7 @@ void ami_handle_msg(void)
 						break;
 
 						case GID_RELOAD:
-							ami_update_quals(gwin);
+							//ami_update_quals(gwin);
 
 							if(gwin->key_state & BROWSER_MOUSE_MOD_1)
 							{
@@ -941,7 +941,6 @@ void ami_handle_msg(void)
 						case RAWKEY_ESC:
 							browser_window_key_press(gwin->bw,27);
 						break;
-/*
 						case RAWKEY_LSHIFT:
 							gwin->key_state = BROWSER_MOUSE_MOD_1;
 						break;
@@ -954,7 +953,6 @@ void ami_handle_msg(void)
 						case 0xe3: // lctrl up
 							gwin->key_state = 0;
 						break;
-*/
 						default:
 							/*MapRawKey etc */
 						break;
@@ -1873,6 +1871,9 @@ void gui_window_destroy(struct gui_window *g)
 
 	if(!g) return;
 
+//	if(g->shared->searchwin)
+//		if(g->shared->searchwin->gwin == g) ami_search_close();
+
 	if(g->shared->tabs > 1)
 	{
 		SetGadgetAttrs(g->shared->gadgets[GID_TABS],g->shared->win,NULL,
@@ -1898,7 +1899,6 @@ void gui_window_destroy(struct gui_window *g)
 	}
 
 	curbw = NULL;
-	if(g->shared->searchwin) ami_search_close();
 
 	DisposeObject(g->shared->objects[OID_MAIN]);
 	DelObject(g->shared->node);
