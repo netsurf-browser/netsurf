@@ -762,7 +762,7 @@ void fetch_curl_done(CURL *curl_handle, CURLcode result)
 #endif
 	bool abort;
 	struct curl_fetch_info *f;
-	char **_hideous_hack = (char**)&f;
+	char **_hideous_hack = (char **) (void *) &f;
 	CURLcode code;
 #ifdef WITH_SSL
 	struct cert_info certs[MAX_CERTS];
