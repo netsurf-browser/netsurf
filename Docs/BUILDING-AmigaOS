@@ -53,6 +53,7 @@
 -------
 
   A pre-built version of Lemon is available from Aminet:
+
       http://www.aminet.net/package/dev/c/lemon
 
 
@@ -60,6 +61,7 @@
 ------
 
   A pre-built version of re2c is available from Aminet:
+
       http://www.aminet.net/package/dev/c/re2c
 
 
@@ -67,7 +69,13 @@
 ------
 
   A version of libcurl built for newlib is available from Aminet
+
       http://www.aminet.net/package/dev/lib/libcurl
+
+  There is a shared object version included with some OWB releases.  To use
+  this when compiling with Cairo support, a link must be made:
+
+      1> makelink sdk:local/newlib/lib/libcurl.so sobjs:libcurl-7.16.so soft
 
 
   libmng
@@ -76,6 +84,7 @@
   NetSurf uses libMNG to display MNG and PNG files.
   It builds without any problems on OS4, or an older version is available
   from Aminet:
+
       http://www.aminet.net/package/dev/lib/libmng
 
 
@@ -86,12 +95,20 @@
 
       http://www.aminet.net/package/dev/lib/libxml2
 
+  OWB's shared object version does not appear to work with NetSurf.
+
 
   OpenSSL
 ----------
 
-  NetSurf uses OpenSSL for encrypted transfers.  The archive on Aminet/OS4Depot
-  is missing the newlib version of the library.
+  NetSurf uses OpenSSL for encrypted transfers.
+
+      http://www.os4depot.net/share/development/library/misc/libopenssl.lha
+
+  There is a shared object version included with some OWB releases.  To use
+  this when compiling with Cairo support, a link must be made:
+
+      1> makelink sdk:local/newlib/lib/libssl.so sobjs:libssl-0.9.8.so soft
 
 
   Libnsbmp
