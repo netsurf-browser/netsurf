@@ -346,11 +346,11 @@ void ami_unicode_text(struct RastPort *rp,char *string,ULONG length,struct css_s
 				glyphbm = glyph->glm_BitMap;
 				if(!glyphbm) continue;
 
-				x+= glyph->glm_BlackLeft;
-
-				BltBitMapTags(BLITA_DestX,dx+x,
-						BLITA_DestY,dy-glyph->glm_BlackHeight+glyph->glm_BlackTop,
-						BLITA_Width,glyph->glm_BlackWidth,
+				BltBitMapTags(BLITA_SrcX,glyph->glm_BlackLeft,
+						BLITA_SrcY,glyph->glm_BlackTop,
+						BLITA_DestX,dx+x,
+						BLITA_DestY,dy-glyph->glm_Y1,
+						BLITA_Width,glyph->glm_X1,
 						BLITA_Height,glyph->glm_BlackHeight,
 						BLITA_Source,glyphbm,
 						BLITA_SrcType,BLITT_ALPHATEMPLATE,
@@ -359,7 +359,7 @@ void ami_unicode_text(struct RastPort *rp,char *string,ULONG length,struct css_s
 						BLITA_SrcBytesPerRow,glyph->glm_BMModulo,
 						TAG_DONE);
 
-				x+= glyph->glm_BlackWidth + 1;
+				x+= glyph->glm_X1;
 
 				EReleaseInfo(&ofont->olf_EEngine,
 					OT_GlyphMap8Bit,glyph,
