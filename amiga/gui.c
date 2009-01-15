@@ -219,13 +219,6 @@ void gui_init(int argc, char** argv)
 		IKeymap = (struct KeymapIFace *)GetInterface(KeymapBase,"main",1,NULL);
 	}
 
-	filereq = (struct FileRequester *)AllocAslRequest(ASL_FileRequest,NULL);
-	savereq = (struct FileRequester *)AllocAslRequestTags(ASL_FileRequest,
-							ASLFR_DoSaveMode,TRUE,
-							ASLFR_RejectIcons,TRUE,
-							ASLFR_InitialDrawer,option_download_dir,
-							TAG_DONE);
-
 	ami_clipboard_init();
 
 	win_destroyed = false;
@@ -233,6 +226,13 @@ void gui_init(int argc, char** argv)
 	options_read("Resources/Options");
 
 	verbose_log = option_verbose_log;
+
+	filereq = (struct FileRequester *)AllocAslRequest(ASL_FileRequest,NULL);
+	savereq = (struct FileRequester *)AllocAslRequestTags(ASL_FileRequest,
+							ASLFR_DoSaveMode,TRUE,
+							ASLFR_RejectIcons,TRUE,
+							ASLFR_InitialDrawer,option_download_dir,
+							TAG_DONE);
 
 	nsscreentitle = ASPrintf("NetSurf %s",netsurf_version);
 
