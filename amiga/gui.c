@@ -2055,24 +2055,24 @@ void ami_do_redraw(struct gui_window_2 *g,bool scroll)
 
 //	if (c->type == CONTENT_HTML) scale = 1;
 
-	if(scroll)
+	if(c->type == CONTENT_HTML)
 	{
-		BltBitMapRastPort(glob.bm,hcurrent-oldh,vcurrent-oldv,g->win->RPort,xoffset,yoffset,width-(hcurrent-oldh),height-(vcurrent-oldv),0x0C0);
+		if(scroll)
+		{
+			BltBitMapRastPort(glob.bm,hcurrent-oldh,vcurrent-oldv,g->win->RPort,xoffset,yoffset,width-(hcurrent-oldh),height-(vcurrent-oldv),0x0C0); // this needs to be an overlap blit
 
-		content_redraw(c, -hcurrent /* * g->bw->scale */,
-					-vcurrent /* * g->bw->scale */,
-					width /* * g->bw->scale */,
-					height /* * g->bw->scale */,
-					width-(hcurrent-oldh),height-(vcurrent-oldv),c->width /* * g->bw->scale */,
-					c->height /* * g->bw->scale */,
-					g->bw->scale,0xFFFFFF);
+			content_redraw(c, -hcurrent /* * g->bw->scale */,
+						-vcurrent /* * g->bw->scale */,
+						width /* * g->bw->scale */,
+						height /* * g->bw->scale */,
+						width-(hcurrent-oldh),height-(vcurrent-oldv),c->width /* * g->bw->scale */,
+						c->height /* * g->bw->scale */,
+						g->bw->scale,0xFFFFFF);
+		}
+		else
+		{
 
-		BltBitMapRastPort(glob.bm,width-(hcurrent-oldh),height-(vcurrent-oldv),g->win->RPort,xoffset+(width-(hcurrent-oldh)),yoffset+(width-(hcurrent-oldh)),width,height,0x0C0);
-	}
-	else
-	{
-
-		ami_clg(0xffffff);
+			ami_clg(0xffffff);
 
 /* temp get it to redraw everything ***
 	if(g->redraw_data)
@@ -2093,22 +2093,31 @@ void ami_do_redraw(struct gui_window_2 *g,bool scroll)
 	else
 	{
 */
-		content_redraw(c, -hcurrent /* * g->bw->scale */,
-					-vcurrent /* * g->bw->scale */,
-					width /* * g->bw->scale */,
-					height /* * g->bw->scale */,
-					0,0,c->width /* * g->bw->scale */,
-					c->height /* * g->bw->scale */,
-					g->bw->scale,0xFFFFFF);
-
-//	}
-
-		current_redraw_browser = NULL;
-
-		ami_update_buttons(g);
-
-		BltBitMapRastPort(glob.bm,0,0,g->win->RPort,xoffset,yoffset,width,height,0x0C0);
+			content_redraw(c, -hcurrent /* * g->bw->scale */,
+						-vcurrent /* * g->bw->scale */,
+						width-hcurrent /* * g->bw->scale */,
+						height-vcurrent /* * g->bw->scale */,
+						0,0,width /* * g->bw->scale */,
+						height /* * g->bw->scale */,
+						g->bw->scale,0xFFFFFF);
+		}
 	}
+	else
+	{
+			content_redraw(c, -hcurrent /* * g->bw->scale */,
+						-vcurrent /* * g->bw->scale */,
+						width-hcurrent /* * g->bw->scale */,
+						height-vcurrent /* * g->bw->scale */,
+						0,0,c->width /* * g->bw->scale */,
+						c->height /* * g->bw->scale */,
+						g->bw->scale,0xFFFFFF);
+	}
+
+	current_redraw_browser = NULL;
+
+	ami_update_buttons(g);
+
+	BltBitMapRastPort(glob.bm,0,0,g->win->RPort,xoffset,yoffset,width,height,0x0C0);
 
 	g->oldh = hcurrent;
 	g->oldv = vcurrent;
