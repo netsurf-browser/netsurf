@@ -23,8 +23,8 @@
  * The content functions manipulate struct contents, which correspond to URLs.
  */
 
-#ifndef _NETSURF_DESKTOP_CONTENT_H_
-#define _NETSURF_DESKTOP_CONTENT_H_
+#ifndef _NETSURF_CONTENT_CONTENT_H_
+#define _NETSURF_CONTENT_CONTENT_H_
 
 /* Irritatingly this must come first, or odd include errors
  * will occur to do with setjmp.h.
@@ -34,6 +34,7 @@
 #endif
 
 #include <stdint.h>
+#include <time.h>
 #include "utils/config.h"
 #include "content/content_type.h"
 #include "css/css.h"
