@@ -33,6 +33,7 @@
 #include <proto/Picasso96API.h>
 #include <proto/exec.h>
 #include <graphics/blitattr.h>
+#include <graphics/composite.h>
 
 static bool nsfont_width(const struct css_style *style,
 	  const char *string, size_t length,
@@ -330,18 +331,7 @@ void ami_unicode_text(struct RastPort *rp,char *string,ULONG length,struct css_s
 
 	if(!(ofont = ami_open_outline_font(style))) return;
 
-	/* width and height need to be calculated properly... */
-	width = length*10;
-	height = css_len2px(&style->font_size.value.length, style);
-	if(height < option_font_min_size)
-		height = option_font_min_size;
-
-	tbm = p96AllocBitMap(width,height,32,BMF_DISPLAYABLE,currp->BitMap,RGBFB_R8G8B8A8);
-	InitRastPort(&trp);
-	trp.BitMap = tbm;
-
-
-y=height;
+	SetRPAttrs(currp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),TAG_DONE);
 
 	for(i=0;i<length;i++)
 	{
@@ -356,26 +346,20 @@ y=height;
 				glyphbm = glyph->glm_BitMap;
 				if(!glyphbm) continue;
 
-				posn = 0; //(glyph->glm_BlackTop * glyph->glm_BMRows) + glyph->glm_BlackLeft;
-
 				x+= glyph->glm_BlackLeft;
 
-				for(gy=0;gy<glyph->glm_BlackHeight;gy++)
-				{
-					for(gx=0;gx<glyph->glm_BlackWidth;gx++)
-					{
-/* This works... except it doesn't.  Current public SDK doesn't have BltBitMapTags(),
-which is needed along with BLITA_UseSrcAlpha, TRUE to respect the alpha channel.
-We may even need to draw this text into a new bitmap and blit that onto our off-screen
-rendering bitmap. */
-						p96WritePixel(&trp,x+gx,(y-glyph->glm_BlackHeight)+gy,
-							p96EncodeColor(RGBFB_A8B8G8R8,(glyphbm[posn+gx] << 24) | c));
-					}
+				BltBitMapTags(BLITA_DestX,dx+x,
+						BLITA_DestY,dy-glyph->glm_BlackHeight+glyph->glm_BlackTop,
+						BLITA_Width,glyph->glm_BlackWidth,
+						BLITA_Height,glyph->glm_BlackHeight,
+						BLITA_Source,glyphbm,
+						BLITA_SrcType,BLITT_ALPHATEMPLATE,
+						BLITA_Dest,currp,
+						BLITA_DestType,BLITT_RASTPORT,
+						BLITA_SrcBytesPerRow,glyph->glm_BMModulo,
+						TAG_DONE);
 
-					posn+=glyph->glm_BMModulo;
-				}
-				x+= glyph->glm_BlackWidth;
-				//x+=(glyph->glm_Width >> 16);
+				x+= glyph->glm_BlackWidth + 1;
 
 				EReleaseInfo(&ofont->olf_EEngine,
 					OT_GlyphMap8Bit,glyph,
@@ -387,17 +371,4 @@ rendering bitmap. */
 	}
 
 	ami_close_outline_font(ofont);
-
-	BltBitMapTags(BLITA_Width,width,
-					BLITA_Height,height,
-					BLITA_Source,tbm,
-					BLITA_Dest,currp,
-					BLITA_DestX,dx,
-					BLITA_DestY,dy-height,
-					BLITA_SrcType,BLITT_BITMAP,
-					BLITA_DestType,BLITT_RASTPORT,
-					BLITA_UseSrcAlpha,TRUE,
-					TAG_DONE);
-
-	p96FreeBitMap(tbm);
 }
