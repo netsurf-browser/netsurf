@@ -47,8 +47,12 @@ void ami_context_menu_init(void)
 	ctxmenulab[CMID_URLOPENWIN] = ami_utf8_easy((char *)messages_get("LinkNewWin"));
 	ctxmenulab[CMID_URLOPENTAB] = ami_utf8_easy((char *)messages_get("LinkNewTab"));
 
+	ctxmenulab[CMID_SELCOPY] = ami_utf8_easy((char *)messages_get("CopyNS"));
+	ctxmenulab[CMID_SELALL] = ami_utf8_easy((char *)messages_get("SelectAllNS"));
+
 	ctxmenulab[CMSUB_OBJECT] = ami_utf8_easy((char *)messages_get("Object"));
 	ctxmenulab[CMSUB_URL] = ami_utf8_easy((char *)messages_get("Link"));
+	ctxmenulab[CMSUB_SEL] = ami_utf8_easy((char *)messages_get("Selection"));
 }
 
 void ami_context_menu_free(void)
@@ -129,6 +133,27 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 							PMIA_Title, (ULONG)ctxmenulab[CMID_SAVEOBJ],
 							PMIA_ID,CMID_SAVEOBJ,
 							PMIA_UserData,curbox->object,
+						TAG_DONE),
+					TAG_DONE),
+				TAG_DONE),
+				~0);
+		}
+
+		if(curbox->text)
+		{
+			IDoMethod(gwin->objects[OID_MENU],PM_INSERT,
+				NewObject(POPUPMENU_GetItemClass(), NULL,
+					PMIA_Title, (ULONG)ctxmenulab[CMSUB_SEL],
+					PMSIMPLESUB,
+						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_SELCOPY],
+							PMIA_ID,CMID_SELCOPY,
+							//PMIA_UserData,curbox->href,
+						TAG_DONE),
+						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_SELALL],
+							PMIA_ID,CMID_SELALL,
+							//PMIA_UserData,curbox->href,
 						TAG_DONE),
 					TAG_DONE),
 				TAG_DONE),
@@ -240,6 +265,15 @@ uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved)
 					}
 					ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
 				}
+			break;
+
+			case CMID_SELCOPY:
+				gui_copy_to_clipboard(gwin->bw->sel);
+				browser_window_key_press(gwin->bw, 26);
+			break;
+
+			case CMID_SELALL:
+				browser_window_key_press(gwin->bw, 1);
 			break;
 		}
     }
