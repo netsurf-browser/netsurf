@@ -1,6 +1,5 @@
 /*
- * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
- *           2008 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008,2009 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -33,7 +32,9 @@
 #include <proto/Picasso96API.h>
 #include <proto/exec.h>
 #include <graphics/blitattr.h>
-#include <graphics/composite.h>
+#include "amiga/options.h"
+
+struct OutlineFont *of[CSS_FONT_FAMILY_NOT_SET];
 
 static bool nsfont_width(const struct css_style *style,
 	  const char *string, size_t length,
@@ -57,9 +58,19 @@ bool nsfont_width(const struct css_style *style,
 		const char *string, size_t length,
 		int *width)
 {
-	struct TextFont *tfont = ami_open_font(style);
-	*width = TextLength(currp,string,length); //buffer,strlen(buffer));
-	ami_close_font(tfont);
+	struct TextFont *tfont;
+
+	if(option_quick_text)
+	{
+		tfont = ami_open_font(style);
+		*width = TextLength(currp,string,length); //buffer,strlen(buffer));
+		ami_close_font(tfont);
+	}
+	else
+	{
+		*width = ami_unicode_text(NULL,string,length,style,0,0,0);
+	}
+
 	return true;
 }
 
@@ -245,34 +256,7 @@ struct OutlineFont *ami_open_outline_font(struct css_style *style)
 	char *fontname;
 	WORD ysize;
 
-	switch(style->font_family)
-	{
-		case CSS_FONT_FAMILY_SANS_SERIF:
-			fontname = option_font_sans;
-		break;
-
-		case CSS_FONT_FAMILY_SERIF:
-			fontname = option_font_serif;
-		break;
-
-		case CSS_FONT_FAMILY_MONOSPACE:
-			fontname = option_font_mono;
-		break;
-
-		case CSS_FONT_FAMILY_CURSIVE:
-			fontname = option_font_cursive;
-		break;
-
-		case CSS_FONT_FAMILY_FANTASY:
-			fontname = option_font_fantasy;
-		break;
-
-		default:
-			fontname = option_font_sans;
-		break;
-	}
-
-	if(!(ofont = OpenOutlineFont(fontname,NULL,OFF_OPEN))) return NULL;
+	ofont = of[style->font_family];
 
 /* see diskfont implementation for currently unimplemented bold/italic stuff */
 
@@ -282,24 +266,14 @@ struct OutlineFont *ami_open_outline_font(struct css_style *style)
 		ysize = option_font_min_size;
 
 	if(ESetInfo(&ofont->olf_EEngine,
-				OT_DeviceDPI,(72<<16) | 72,
-				OT_PointHeight,(ysize<<16),
-				TAG_END) == OTERR_Success)
+			OT_DeviceDPI,(72<<16) | 72,
+			OT_PointHeight,(ysize<<16),
+			TAG_END) == OTERR_Success)
 	{
-
-	}
-	else
-	{
-		CloseOutlineFont(ofont,NULL);
-		return NULL;
+		return ofont;
 	}
 
-	return ofont;
-}
-
-void ami_close_outline_font(struct OutlineFont *ofont)
-{
-	if(ofont) CloseOutlineFont(ofont,NULL);
+	return NULL;
 }
 
 void ami_close_font(struct TextFont *tfont)
@@ -311,7 +285,7 @@ void ami_close_font(struct TextFont *tfont)
 	if(tfont) CloseFont(tfont);
 }
 
-void ami_unicode_text(struct RastPort *rp,char *string,ULONG length,struct css_style *style,ULONG dx, ULONG dy, ULONG c)
+ULONG ami_unicode_text(struct RastPort *rp,char *string,ULONG length,struct css_style *style,ULONG dx, ULONG dy, ULONG c)
 {
 	WORD *utf16 = NULL;
 	struct OutlineFont *ofont;
@@ -329,7 +303,7 @@ void ami_unicode_text(struct RastPort *rp,char *string,ULONG length,struct css_s
 
 	if(utf8_to_enc(string,"UTF-16",length,&utf16) != UTF8_CONVERT_OK) return;
 
-	if(!(ofont = ami_open_outline_font(style))) return;
+	if(!(ofont = ami_open_outline_font(style))) return 0;
 
 	SetRPAttrs(currp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),TAG_DONE);
 
@@ -346,7 +320,9 @@ void ami_unicode_text(struct RastPort *rp,char *string,ULONG length,struct css_s
 				glyphbm = glyph->glm_BitMap;
 				if(!glyphbm) continue;
 
-				BltBitMapTags(BLITA_SrcX,glyph->glm_BlackLeft,
+				if(rp)
+				{
+					BltBitMapTags(BLITA_SrcX,glyph->glm_BlackLeft,
 						BLITA_SrcY,glyph->glm_BlackTop,
 						BLITA_DestX,dx+x,
 						BLITA_DestY,dy-glyph->glm_Y1,
@@ -354,10 +330,11 @@ void ami_unicode_text(struct RastPort *rp,char *string,ULONG length,struct css_s
 						BLITA_Height,glyph->glm_BlackHeight,
 						BLITA_Source,glyphbm,
 						BLITA_SrcType,BLITT_ALPHATEMPLATE,
-						BLITA_Dest,currp,
+						BLITA_Dest,rp,
 						BLITA_DestType,BLITT_RASTPORT,
 						BLITA_SrcBytesPerRow,glyph->glm_BMModulo,
 						TAG_DONE);
+				}
 
 				x+= glyph->glm_X1;
 
@@ -370,5 +347,32 @@ void ami_unicode_text(struct RastPort *rp,char *string,ULONG length,struct css_s
 
 	}
 
-	ami_close_outline_font(ofont);
+	return x;
+}
+
+void ami_init_fonts(void)
+{
+	if(!option_quick_text)
+	{
+		of[CSS_FONT_FAMILY_SANS_SERIF] = OpenOutlineFont(option_font_sans,NULL,OFF_OPEN);
+		of[CSS_FONT_FAMILY_SERIF] = OpenOutlineFont(option_font_serif,NULL,OFF_OPEN);
+		of[CSS_FONT_FAMILY_MONOSPACE] = OpenOutlineFont(option_font_mono,NULL,OFF_OPEN);
+		of[CSS_FONT_FAMILY_CURSIVE] = OpenOutlineFont(option_font_cursive,NULL,OFF_OPEN);
+		of[CSS_FONT_FAMILY_FANTASY] = OpenOutlineFont(option_font_fantasy,NULL,OFF_OPEN);
+		of[CSS_FONT_FAMILY_UNKNOWN] = OpenOutlineFont(option_font_sans,NULL,OFF_OPEN);
+		of[CSS_FONT_FAMILY_NOT_SET] = OpenOutlineFont(option_font_sans,NULL,OFF_OPEN);
+	}
+}
+
+void ami_close_fonts(void)
+{
+	int i=0;
+
+	if(!option_quick_text)
+	{
+		for(i=0;i<=CSS_FONT_FAMILY_NOT_SET;i++)
+		{
+			if(of[i]) CloseOutlineFont(of[i],NULL);
+		}
+	}
 }

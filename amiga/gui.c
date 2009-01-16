@@ -330,6 +330,8 @@ void gui_init(int argc, char** argv)
 	if(!option_window_width) option_window_width = 800;
 	if(!option_window_height) option_window_height = 600;
 
+	ami_init_fonts();
+
 	plot=amiplot;
 
 	/* AmiUpdate */
@@ -1309,6 +1311,8 @@ void gui_quit(void)
 	FreeVec(glob.rp.AreaInfo);
 	FreeVec(glob.tmprasbuf);
 	FreeVec(glob.areabuf);
+
+	ami_close_fonts();
 
 	if(!locked_screen) /* set if we are using somebody else's screen */
 	{

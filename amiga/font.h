@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008,2009 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -24,5 +24,8 @@
 
 struct TextFont *ami_open_font(struct css_style *);
 void ami_close_font(struct TextFont *tfont);
-void ami_unicode_text(struct RastPort *rp,char *string,ULONG length,struct css_style *style,ULONG x,ULONG y,ULONG c);
+ULONG ami_unicode_text(struct RastPort *rp,char *string,ULONG length,struct css_style *style,ULONG x,ULONG y,ULONG c);
+
+void ami_init_fonts(void);
+void ami_close_fonts(void);
 #endif
