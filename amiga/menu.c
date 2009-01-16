@@ -600,7 +600,7 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 			{
 				case 0: // add
 					ami_hotlist_add(hotlist->root,gwin->bw->current_content);
-					options_save_tree(hotlist,"Resources/Hotlist","NetSurf hotlist");
+					options_save_tree(hotlist,option_hotlist_file,messages_get("TreeHotlist"));
 				break;
 
 				case 1: // show
