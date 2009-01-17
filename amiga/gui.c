@@ -1232,7 +1232,7 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 	{
 		struct IBox *bbox;
 		GetAttr(SPACE_AreaBox,gwin->gadgets[GID_BROWSER],(ULONG *)&bbox);
-		p96RectFill(gwin->win->RPort,bbox->Left,bbox->Top,bbox->Width-1,bbox->Height-1,0xffffffff);
+		p96RectFill(gwin->win->RPort,bbox->Left,bbox->Top,bbox->Width+bbox->Left,bbox->Height+bbox->Top,0xffffffff);
 
 		browser_window_update(gwin->bw,false);
 
