@@ -36,6 +36,8 @@
 
 struct OutlineFont *of[CSS_FONT_FAMILY_NOT_SET];
 
+struct OutlineFont *ami_open_outline_font(struct css_style *style);
+
 static bool nsfont_width(const struct css_style *style,
 	  const char *string, size_t length,
     int *width);
@@ -92,14 +94,59 @@ bool nsfont_position_in_string(const struct css_style *style,
 		int x, size_t *char_offset, int *actual_x)
 {
 	struct TextExtent extent;
-	struct TextFont *tfont = ami_open_font(style);
+	struct TextFont *tfont;
 
-	*char_offset = TextFit(currp,string,length,
+	if(option_quick_text)
+	{
+		tfont = ami_open_font(style);
+
+		*char_offset = TextFit(currp,string,length,
 						&extent,NULL,1,x,32767);
 
-	*actual_x = extent.te_Extent.MaxX;
+		*actual_x = extent.te_Extent.MaxX;
 
-	ami_close_font(tfont);
+		ami_close_font(tfont);
+	}
+	else
+	{
+		WORD *utf16 = NULL;
+		struct OutlineFont *ofont;
+		struct GlyphMap *glyph;
+		uint32 tx=0,i=0;
+
+		if(utf8_to_enc(string,"UTF-16",length,&utf16) != UTF8_CONVERT_OK) return;
+
+		if(!(ofont = ami_open_outline_font(style))) return 0;
+
+		for(i=0;i<length;i++)
+		{
+			if(ESetInfo(&ofont->olf_EEngine,
+				OT_GlyphCode,utf16[i],
+				TAG_END) == OTERR_Success)
+			{
+				if(EObtainInfo(&ofont->olf_EEngine,
+					OT_GlyphMap8Bit,&glyph,
+					TAG_END) == 0)
+				{
+					*actual_x = tx;
+					*char_offset = i;
+
+					if(x<tx+glyph->glm_X1)
+					{
+						i = length+1;
+					}
+
+					tx+= glyph->glm_X1;
+
+					EReleaseInfo(&ofont->olf_EEngine,
+						OT_GlyphMap8Bit,glyph,
+						TAG_END);
+				}
+				
+			}
+		}
+	}
+
 	return true;
 }
 
@@ -128,29 +175,79 @@ bool nsfont_split(const struct css_style *style,
 	struct TextExtent extent;
 	ULONG co;
 	char *charp;
-	struct TextFont *tfont = ami_open_font(style);
+	struct TextFont *tfont;
 
-	co = TextFit(currp,string,length,
-				&extent,NULL,1,x,32767);
-
-	charp = string+co;
-	while(((*charp != ' ')) && (charp > string))
+	if(option_quick_text)
 	{
-		charp--;
-		co--;
-	}
+		tfont = ami_open_font(style);
 
-	*char_offset = co;
-	if(string && co)
-	{
-		*actual_x = TextLength(currp,string,co);
+		co = TextFit(currp,string,length,
+					&extent,NULL,1,x,32767);
+
+		charp = string+co;
+		while(((*charp != ' ')) && (charp > string))
+		{
+			charp--;
+			co--;
+		}
+
+		*char_offset = co;
+		if(string && co)
+		{
+			*actual_x = TextLength(currp,string,co);
+		}
+		else
+		{
+			*actual_x = 0;
+		}
+
+		ami_close_font(tfont);
 	}
 	else
 	{
-		*actual_x = 0;
+		WORD *utf16 = NULL;
+		struct OutlineFont *ofont;
+		struct GlyphMap *glyph;
+		uint32 tx=0,i=0;
+
+		if(utf8_to_enc(string,"UTF-16",length,&utf16) != UTF8_CONVERT_OK) return;
+
+		if(!(ofont = ami_open_outline_font(style))) return 0;
+
+		*char_offset = 0;
+
+		for(i=0;i<length;i++)
+		{
+			if(ESetInfo(&ofont->olf_EEngine,
+				OT_GlyphCode,utf16[i],
+				TAG_END) == OTERR_Success)
+			{
+				if(EObtainInfo(&ofont->olf_EEngine,
+					OT_GlyphMap8Bit,&glyph,
+					TAG_END) == 0)
+				{
+					if(utf16[i] == 0x0020)
+					{
+						*actual_x = tx;
+						*char_offset = i;
+					}
+
+					if(x<tx+glyph->glm_X1)
+					{
+						i = length+1;
+					}
+
+					tx+= glyph->glm_X1;
+
+					EReleaseInfo(&ofont->olf_EEngine,
+						OT_GlyphMap8Bit,glyph,
+						TAG_END);
+				}
+				
+			}
+		}
 	}
 
-	ami_close_font(tfont);
 	return true;
 }
 
@@ -298,14 +395,16 @@ ULONG ami_unicode_text(struct RastPort *rp,char *string,ULONG length,struct css_
 	uint32 width,height;
 	uint32 x=0,y=0;
 
-	if(!string || string[0]=='\0') return;
-	if(!length) return;
+	if(!string || string[0]=='\0') return 0;
+	if(!length) return 0;
 
-	if(utf8_to_enc(string,"UTF-16",length,&utf16) != UTF8_CONVERT_OK) return;
+	if(utf8_to_enc(string,"UTF-16",length,&utf16) != UTF8_CONVERT_OK) return 0;
 
 	if(!(ofont = ami_open_outline_font(style))) return 0;
 
-	SetRPAttrs(currp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),TAG_DONE);
+	if(rp) SetRPAttrs(currp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),TAG_DONE);
+
+	dy++;
 
 	for(i=0;i<length;i++)
 	{
