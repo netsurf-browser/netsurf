@@ -356,110 +356,94 @@ bool html_redraw_box(struct box *box,
 	 *   element is processed, ignore the background.
 	 * + For any other box, just use its own styling.
 	 */
-
-#ifdef WITH_PDF_EXPORT
-	if (!html_redraw_printing ||
-			(html_redraw_printing && !option_remove_backgrounds)) {
-#else
-	{
-#endif
-		if (!box->parent) {
-			/* Root box */
-			if (box->style &&
-					(box->style->background_color !=
-					TRANSPARENT ||
-					box->background)) {
-				/* With its own background */
-				bg_box = box;
-			} else if (!box->style ||
-					(box->style->background_color ==
-					TRANSPARENT &&
-					!box->background)) {
-				/* Without its own background */
-				if (box->children && box->children->style &&
-						(box->children->style->
-						background_color !=
-						TRANSPARENT ||
-						box->children->background)) {
-					/* But body has one, so use that */
-					bg_box = box->children;
-				}
-			}
-		} else if (box->parent && !box->parent->parent) {
-			/* Body box */
-			if (box->style &&
-					(box->style->background_color !=
-					TRANSPARENT ||
-					box->background)) {
-				/* With a background */
-				if (box->parent->style &&
-					(box->parent->style->background_color !=
-						TRANSPARENT ||
-						box->parent->background)) {
-					/* Root has own background; process
-					 * normally */
-					bg_box = box;
-				}
-			}
-		} else {
-			/* Any other box */
+	if (!box->parent) {
+		/* Root box */
+		if (box->style &&
+				(box->style->background_color != TRANSPARENT ||
+				box->background)) {
+			/* With its own background */
 			bg_box = box;
+		} else if (!box->style ||
+				(box->style->background_color == TRANSPARENT &&
+				!box->background)) {
+			/* Without its own background */
+			if (box->children && box->children->style &&
+					(box->children->style->
+					background_color != TRANSPARENT ||
+					box->children->background)) {
+				/* But body has one, so use that */
+				bg_box = box->children;
+			}
 		}
+	} else if (box->parent && !box->parent->parent) {
+		/* Body box */
+		if (box->style &&
+				(box->style->background_color != TRANSPARENT ||
+				box->background)) {
+			/* With a background */
+			if (box->parent->style &&
+				(box->parent->style->background_color !=
+					TRANSPARENT ||
+					box->parent->background)) {
+				/* Root has own background; process normally */
+				bg_box = box;
+			}
+		}
+	} else {
+		/* Any other box */
+		bg_box = box;
+	}
 
-		/* bg_box == NULL implies that this box should not have
-		* its background rendered. Otherwise filter out linebreaks,
-		* optimize away non-differing inlines, only plot background
-		* for BOX_TEXT it's in an inline and ensure the bg_box
-		* has something worth rendering */
-		if (bg_box && bg_box->style &&
-				bg_box->type != BOX_BR &&
-				bg_box->type != BOX_TEXT &&
-				bg_box->type != BOX_INLINE_END &&
-				(bg_box->type != BOX_INLINE ||
-				bg_box->object) &&
-				((bg_box->style->background_color !=
-				TRANSPARENT) ||
-				(bg_box->background))) {
-			/* find intersection of clip box and border edge */
-			int px0, py0, px1, py1;
-			px0 = x - border_left < x0 ? x0 : x - border_left;
-			py0 = y - border_top < y0 ? y0 : y - border_top;
-			px1 = x + padding_width + border_right < x1 ?
-					x + padding_width + border_right : x1;
-			py1 = y + padding_height + border_bottom < y1 ?
-					y + padding_height + border_bottom : y1;
-			if (!box->parent) {
-				/* Root element, special case:
-				 * background covers margins too */
-				int m_left, m_top, m_right, m_bottom;
-				if (scale == 1.0) {
-					m_left = box->margin[LEFT];
-					m_top = box->margin[TOP];
-					m_right = box->margin[RIGHT];
-					m_bottom = box->margin[BOTTOM];
-				} else {
-					m_left = box->margin[LEFT] * scale;
-					m_top = box->margin[TOP] * scale;
-					m_right = box->margin[RIGHT] * scale;
-					m_bottom = box->margin[BOTTOM] * scale;
-				}
-				px0 = px0 - m_left < x0 ? x0 : px0 - m_left;
-				py0 = py0 - m_top < y0 ? y0 : py0 - m_top;
-				px1 = px1 + m_right < x1 ? px1 + m_right : x1;
-				py1 = py1 + m_bottom < y1 ? py1 + m_bottom : y1;
+	/* bg_box == NULL implies that this box should not have
+	* its background rendered. Otherwise filter out linebreaks,
+	* optimize away non-differing inlines, only plot background
+	* for BOX_TEXT it's in an inline and ensure the bg_box
+	* has something worth rendering */
+	if (bg_box && bg_box->style &&
+			bg_box->type != BOX_BR &&
+			bg_box->type != BOX_TEXT &&
+			bg_box->type != BOX_INLINE_END &&
+			(bg_box->type != BOX_INLINE || bg_box->object) &&
+			((bg_box->style->background_color != TRANSPARENT) ||
+			(bg_box->background))) {
+		/* find intersection of clip box and border edge */
+		int px0, py0, px1, py1;
+		px0 = x - border_left < x0 ? x0 : x - border_left;
+		py0 = y - border_top < y0 ? y0 : y - border_top;
+		px1 = x + padding_width + border_right < x1 ?
+				x + padding_width + border_right : x1;
+		py1 = y + padding_height + border_bottom < y1 ?
+				y + padding_height + border_bottom : y1;
+		if (!box->parent) {
+			/* Root element, special case:
+			 * background covers margins too */
+			int m_left, m_top, m_right, m_bottom;
+			if (scale == 1.0) {
+				m_left = box->margin[LEFT];
+				m_top = box->margin[TOP];
+				m_right = box->margin[RIGHT];
+				m_bottom = box->margin[BOTTOM];
+			} else {
+				m_left = box->margin[LEFT] * scale;
+				m_top = box->margin[TOP] * scale;
+				m_right = box->margin[RIGHT] * scale;
+				m_bottom = box->margin[BOTTOM] * scale;
 			}
-			/* valid clipping rectangles only */
-			if ((px0 < px1) && (py0 < py1)) {
-				/* plot background */
-				if (!html_redraw_background(x, y, box, scale,
-						px0, py0, px1, py1,
-						&current_background_color,
-						bg_box))
-					return false;
-				/* restore previous graphics window */
-				if (!plot.clip(x0, y0, x1, y1))
-					return false;
-			}
+			px0 = px0 - m_left < x0 ? x0 : px0 - m_left;
+			py0 = py0 - m_top < y0 ? y0 : py0 - m_top;
+			px1 = px1 + m_right < x1 ? px1 + m_right : x1;
+			py1 = py1 + m_bottom < y1 ? py1 + m_bottom : y1;
+		}
+		/* valid clipping rectangles only */
+		if ((px0 < px1) && (py0 < py1)) {
+			/* plot background */
+			if (!html_redraw_background(x, y, box, scale,
+					px0, py0, px1, py1,
+					&current_background_color, bg_box))
+				return false;
+			/* restore previous graphics window */
+			if (!plot.clip(x0, y0, x1, y1))
+				return false;
 		}
 	}
 
@@ -807,11 +791,13 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 		}
 
 		/* what about the current search operation, if any? */
-		if (!highlighted &&
-			search_current_window == current_redraw_browser->window &&
-			gui_search_term_highlighted(current_redraw_browser->window,
-				offset, offset + len, &start_idx, &end_idx)) {
-				highlighted = true;
+		if (!highlighted && search_current_window ==
+				current_redraw_browser->window &&
+				gui_search_term_highlighted(
+						current_redraw_browser->window,
+						offset, offset + len,
+						&start_idx, &end_idx)) {
+			highlighted = true;
 		}
 
 		/* \todo make search terms visible within selected text */
@@ -823,22 +809,28 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 			int startx, endx;
 
 			if (end_idx > utf8_len) {
-				/* adjust for trailing space, not present in utf8_text */
+				/* adjust for trailing space, not present in
+				 * utf8_text */
 				assert(end_idx == utf8_len + 1);
 				endtxt_idx = utf8_len;
 			}
 
-			if (!nsfont.font_width(style, utf8_text, start_idx, &startx))
+			if (!nsfont.font_width(style, utf8_text, start_idx,
+					&startx))
 				startx = 0;
 
-			if (!nsfont.font_width(style, utf8_text, endtxt_idx, &endx))
+			if (!nsfont.font_width(style, utf8_text, endtxt_idx,
+					&endx))
 				endx = 0;
 
-			/* is there a trailing space that should be highlighted as well? */
+			/* is there a trailing space that should be highlighted
+			 * as well? */
 			if (end_idx > utf8_len) {
 				int spc_width;
-				/* \todo is there a more elegant/efficient solution? */
-				if (nsfont.font_width(style, " ", 1, &spc_width))
+				/* \todo is there a more elegant/efficient
+				 * solution? */
+				if (nsfont.font_width(style, " ", 1,
+						&spc_width))
 					endx += spc_width;
 			}
 
@@ -852,11 +844,12 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 				!plot.text(x, y + (int) (height * 0.75 * scale),
 						style, utf8_text, start_idx,
 						current_background_color,
-						/*print_text_black ? 0 :*/ style->color))
+						/*print_text_black ? 0 :*/
+						style->color))
 				return false;
 
-			/* decide whether highlighted portion is to be white-on-black or
-			   black-on-white */
+			/* decide whether highlighted portion is to be
+			 * white-on-black or black-on-white */
 			if ((current_background_color & 0x808080) == 0x808080)
 				hback_col = 0;
 			else
@@ -864,8 +857,8 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 			hfore_col = hback_col ^ 0xffffff;
 
 			/* highlighted portion */
-			if (!plot.fill(x + startx, y, x + endx, y + height * scale,
-					hback_col))
+			if (!plot.fill(x + startx, y, x + endx,
+					y + height * scale, hback_col))
 				return false;
 
 			if (start_idx > 0) {
@@ -873,11 +866,13 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 				int px1 = min(x + endx, clip->x1);
 
 				if (px0 < px1) {
-					if (!plot.clip(px0, clip->y0, px1, clip->y1))
+					if (!plot.clip(px0, clip->y0, px1,
+							clip->y1))
 						return false;
 					clip_changed = true;
-				} else
+				} else {
 					text_visible = false;
+				}
 			}
 
 			if (text_visible &&
@@ -891,21 +886,25 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 				int px0 = max(x + endx, clip->x0);
 				if (px0 < clip->x1) {
 
-					if (!plot.clip(px0, clip->y0, clip->x1, clip->y1))
+					if (!plot.clip(px0, clip->y0,
+							clip->x1, clip->y1))
 						return false;
 
 					clip_changed = true;
 
-					if (!plot.text(x, y + (int) (height * 0.75 * scale),
+					if (!plot.text(x, y + (int)
+						(height * 0.75 * scale),
 						style, utf8_text, utf8_len,
 						current_background_color,
-						/*print_text_black ? 0 :*/ style->color))
+						/*print_text_black ? 0 :*/
+						style->color))
 						return false;
 				}
 			}
 
 			if (clip_changed &&
-				!plot.clip(clip->x0, clip->y0, clip->x1, clip->y1))
+				!plot.clip(clip->x0, clip->y0,
+						clip->x1, clip->y1))
 				return false;
 		}
 	}
@@ -1439,6 +1438,12 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 	int width, height;
 	struct box *parent;
 
+#ifdef WITH_PDF_EXPORT
+	if (html_redraw_printing && option_remove_backgrounds)
+		return true;
+#endif
+
+
 	plot_content = (background->background != NULL);
 
 	if (plot_content) {
@@ -1651,6 +1656,11 @@ bool html_redraw_inline_background(int x, int y, struct box *box, float scale,
 	bool plot_content;
 
 	plot_content = (box->background != NULL);
+
+#ifdef WITH_PDF_EXPORT
+	if (html_redraw_printing && option_remove_backgrounds)
+		return true;
+#endif
 
 	if (plot_content) {
 		/* handle background-repeat */
