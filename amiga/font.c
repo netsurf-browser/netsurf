@@ -33,6 +33,8 @@
 #include <proto/exec.h>
 #include <graphics/blitattr.h>
 #include "amiga/options.h"
+#include <parserutils/charset/utf8.h>
+#include <parserutils/charset/utf16.h>
 
 struct OutlineFont *of[CSS_FONT_FAMILY_NOT_SET];
 
@@ -109,19 +111,25 @@ bool nsfont_position_in_string(const struct css_style *style,
 	}
 	else
 	{
-		WORD *utf16 = NULL;
+		uint16 *utf16 = NULL;
 		struct OutlineFont *ofont;
 		struct GlyphMap *glyph;
 		uint32 tx=0,i=0;
+		size_t len,utf8len;
+		uint8 *utf8;
+		uint32 co = 0;
 
+		parserutils_charset_utf8_length(string, length, &len);
 		if(utf8_to_enc(string,"UTF-16",length,&utf16) != UTF8_CONVERT_OK) return;
 
 		if(!(ofont = ami_open_outline_font(style))) return 0;
 
-		for(i=0;i<length;i++)
+		*char_offset = length;
+
+		for(i=0;i<len;i++)
 		{
 			if(ESetInfo(&ofont->olf_EEngine,
-				OT_GlyphCode,utf16[i],
+				OT_GlyphCode,*utf16,
 				TAG_END) == OTERR_Success)
 			{
 				if(EObtainInfo(&ofont->olf_EEngine,
@@ -129,11 +137,13 @@ bool nsfont_position_in_string(const struct css_style *style,
 					TAG_END) == 0)
 				{
 					*actual_x = tx;
-					*char_offset = i;
+					if(utf8_from_enc(utf16,"UTF-16",4,&utf8) != UTF8_CONVERT_OK) return;
+					parserutils_charset_utf8_char_byte_length(utf8,&utf8len);
+					co += utf8len;
 
 					if(x<tx+glyph->glm_X1)
 					{
-						i = length+1;
+						i = len+1;
 					}
 
 					tx+= glyph->glm_X1;
@@ -142,9 +152,13 @@ bool nsfont_position_in_string(const struct css_style *style,
 						OT_GlyphMap8Bit,glyph,
 						TAG_END);
 				}
-				
 			}
+			if (*utf16 < 0xD800 || 0xDFFF < *utf16)
+				utf16++;
+			else
+				utf16 += 2;
 		}
+		*char_offset = co;
 	}
 
 	return true;
@@ -205,31 +219,33 @@ bool nsfont_split(const struct css_style *style,
 	}
 	else
 	{
-		WORD *utf16 = NULL;
+		uint16 *utf16 = NULL;
 		struct OutlineFont *ofont;
 		struct GlyphMap *glyph;
 		uint32 tx=0,i=0;
+		size_t len;
 
+		parserutils_charset_utf8_length(string, length, &len);
 		if(utf8_to_enc(string,"UTF-16",length,&utf16) != UTF8_CONVERT_OK) return;
 
 		if(!(ofont = ami_open_outline_font(style))) return 0;
 
 		*char_offset = 0;
 
-		for(i=0;i<length;i++)
+		for(i=0;i<len;i++)
 		{
 			if(ESetInfo(&ofont->olf_EEngine,
-				OT_GlyphCode,utf16[i],
+				OT_GlyphCode,*utf16,
 				TAG_END) == OTERR_Success)
 			{
 				if(EObtainInfo(&ofont->olf_EEngine,
 					OT_GlyphMap8Bit,&glyph,
 					TAG_END) == 0)
 				{
-					if(utf16[i] == 0x0020)
+					if(*utf16 == 0x0020)
 					{
 						*actual_x = tx;
-						*char_offset = i;
+						co = i;
 					}
 
 					if(x<tx+glyph->glm_X1)
@@ -243,9 +259,20 @@ bool nsfont_split(const struct css_style *style,
 						OT_GlyphMap8Bit,glyph,
 						TAG_END);
 				}
-				
 			}
+			if (*utf16 < 0xD800 || 0xDFFF < *utf16)
+				utf16++;
+			else
+				utf16 += 2;
 		}
+
+		charp = string+co;
+		while(((*charp != ' ')) && (charp > string))
+		{
+			charp--;
+			co--;
+		}
+		*char_offset = co;
 	}
 
 	return true;
@@ -384,7 +411,7 @@ void ami_close_font(struct TextFont *tfont)
 
 ULONG ami_unicode_text(struct RastPort *rp,char *string,ULONG length,struct css_style *style,ULONG dx, ULONG dy, ULONG c)
 {
-	WORD *utf16 = NULL;
+	uint16 *utf16 = NULL;
 	struct OutlineFont *ofont;
 	struct GlyphMap *glyph;
 	ULONG i,gx,gy;
@@ -394,10 +421,12 @@ ULONG ami_unicode_text(struct RastPort *rp,char *string,ULONG length,struct css_
 	struct RastPort trp;
 	uint32 width,height;
 	uint32 x=0,y=0;
+	size_t len;
 
 	if(!string || string[0]=='\0') return 0;
 	if(!length) return 0;
 
+	parserutils_charset_utf8_length(string, length, &len);
 	if(utf8_to_enc(string,"UTF-16",length,&utf16) != UTF8_CONVERT_OK) return 0;
 
 	if(!(ofont = ami_open_outline_font(style))) return 0;
@@ -406,10 +435,10 @@ ULONG ami_unicode_text(struct RastPort *rp,char *string,ULONG length,struct css_
 
 	dy++;
 
-	for(i=0;i<length;i++)
+	for(i=0;i<=len;i++)
 	{
 		if(ESetInfo(&ofont->olf_EEngine,
-			OT_GlyphCode,utf16[i],
+			OT_GlyphCode,*utf16,
 			TAG_END) == OTERR_Success)
 		{
 			if(EObtainInfo(&ofont->olf_EEngine,
@@ -441,9 +470,11 @@ ULONG ami_unicode_text(struct RastPort *rp,char *string,ULONG length,struct css_
 					OT_GlyphMap8Bit,glyph,
 					TAG_END);
 			}
-				
 		}
-
+		if (*utf16 < 0xD800 || 0xDFFF < *utf16)
+			utf16++;
+		else
+			utf16 += 2;
 	}
 
 	return x;
