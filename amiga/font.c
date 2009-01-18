@@ -36,7 +36,7 @@
 #include <parserutils/charset/utf8.h>
 #include <parserutils/charset/utf16.h>
 
-struct OutlineFont *of[CSS_FONT_FAMILY_NOT_SET];
+static struct OutlineFont *of[CSS_FONT_FAMILY_NOT_SET];
 
 struct OutlineFont *ami_open_outline_font(struct css_style *style);
 
@@ -139,11 +139,14 @@ bool nsfont_position_in_string(const struct css_style *style,
 					*actual_x = tx;
 					if(utf8_from_enc(utf16,"UTF-16",4,&utf8) != UTF8_CONVERT_OK) return;
 					parserutils_charset_utf8_char_byte_length(utf8,&utf8len);
-					co += utf8len;
 
 					if(x<tx+glyph->glm_X1)
 					{
 						i = len+1;
+					}
+					else
+					{
+						co += utf8len;
 					}
 
 					tx+= glyph->glm_X1;
@@ -384,7 +387,7 @@ struct OutlineFont *ami_open_outline_font(struct css_style *style)
 
 /* see diskfont implementation for currently unimplemented bold/italic stuff */
 
-	ysize = css_len2px(&style->font_size.value.length, style);
+	ysize = css_len2pt(&style->font_size.value.length, style);
 
 	if(ysize < option_font_min_size)
 		ysize = option_font_min_size;
@@ -482,6 +485,9 @@ ULONG ami_unicode_text(struct RastPort *rp,char *string,ULONG length,struct css_
 
 void ami_init_fonts(void)
 {
+	int i;
+	char *bname,*iname,*biname;
+
 	if(!option_quick_text)
 	{
 		of[CSS_FONT_FAMILY_SANS_SERIF] = OpenOutlineFont(option_font_sans,NULL,OFF_OPEN);
@@ -491,6 +497,26 @@ void ami_init_fonts(void)
 		of[CSS_FONT_FAMILY_FANTASY] = OpenOutlineFont(option_font_fantasy,NULL,OFF_OPEN);
 		of[CSS_FONT_FAMILY_UNKNOWN] = OpenOutlineFont(option_font_sans,NULL,OFF_OPEN);
 		of[CSS_FONT_FAMILY_NOT_SET] = OpenOutlineFont(option_font_sans,NULL,OFF_OPEN);
+
+#if 0
+		for(i=CSS_FONT_FAMILY_SANS_SERIF;i<=CSS_FONT_FAMILY_NOT_SET;i++)
+		{
+			if(EObtainInfo(&of[i]->olf_EEngine,
+				OT_BName,&bname,
+				OT_IName,&iname,
+				OT_BIName,&biname,
+				TAG_END) == 0)
+			{
+				printf("%s\n",bname);
+
+				EReleaseInfo(&of[i]->olf_EEngine,
+					OT_BName,bname,
+					OT_IName,iname,
+					OT_BIName,biname,
+					TAG_END);
+			}
+		}
+#endif
 	}
 }
 
