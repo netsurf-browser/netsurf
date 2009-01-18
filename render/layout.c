@@ -364,8 +364,25 @@ bool layout_block_context(struct box *block, struct content *content)
 		 * establishes a new block context. */
 		if (box->type == BOX_BLOCK && box->style &&
 				box->style->overflow != CSS_OVERFLOW_VISIBLE) {
+			int x0, x1;
+			struct box *left, *right;
+
 			cy += max_pos_margin - max_neg_margin;
 			box->y += max_pos_margin - max_neg_margin;
+
+			/* Before calling layout_block_context, find the
+			 * available width */
+			x0 = cx;
+			x1 = cx + box->parent->width;
+			find_sides(block->float_children, cy, cy, &x0, &x1,
+					&left, &right);
+			box->x += x0 - cx;
+			x1 = box->parent->width - x1 + x0;
+			if (box->width - x1 > 0)
+				box->width -= x1;
+			else
+				box->width = 0;
+			cx = x0;
 
 			layout_block_context(box, content);
 
