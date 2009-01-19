@@ -184,6 +184,8 @@ bool layout_block_context(struct box *block, struct content *content)
 	int max_pos_margin = 0;
 	int max_neg_margin = 0;
 	int y = 0;
+	int available_width;
+	int inset = 0;
 	struct box *margin_box;
 	struct css_length gadget_size; /* Checkbox / radio buttons */
 
@@ -315,10 +317,30 @@ bool layout_block_context(struct box *block, struct content *content)
 			 * its own block context when it gets laid out later,
 			 * so no need to look at its children now. */
 			goto advance_to_next_box;
-	        }
+		}
 
+		inset = 0;
+		available_width = box->parent->width;
                 if (box->type == BOX_BLOCK || box->object) {
-			layout_block_find_dimensions(box->parent->width, box);
+                	if (!box->object && box->style &&
+					box->style->overflow !=
+					CSS_OVERFLOW_VISIBLE) {
+				/* box establishes new block formatting context
+				 * so available width may be diminished due to
+				 * floats. */
+				int x0, x1;
+				struct box *left, *right;
+				x0 = cx;
+				x1 = cx + box->parent->width;
+				find_sides(block->float_children, cy, cy,
+						&x0, &x1, &left, &right);
+				inset = x0 - cx;
+				if (box->style->width.width == CSS_WIDTH_AUTO) {
+					available_width = x1 - x0 > 0 ?
+							x1 - x0 : 0;
+				}
+			}
+			layout_block_find_dimensions(available_width, box);
 			layout_block_add_scrollbar(box, RIGHT);
 			layout_block_add_scrollbar(box, BOTTOM);
 		} else if (box->type == BOX_TABLE) {
@@ -333,6 +355,7 @@ bool layout_block_context(struct box *block, struct content *content)
 		box->x = box->parent->padding[LEFT] + box->margin[LEFT] +
 				box->border[LEFT];
 		cx += box->x;
+		box->x += inset;
 
 		/* Position box: top margin. */
 		if (max_pos_margin < box->margin[TOP])
@@ -364,25 +387,8 @@ bool layout_block_context(struct box *block, struct content *content)
 		 * establishes a new block context. */
 		if (box->type == BOX_BLOCK && box->style &&
 				box->style->overflow != CSS_OVERFLOW_VISIBLE) {
-			int x0, x1;
-			struct box *left, *right;
-
 			cy += max_pos_margin - max_neg_margin;
 			box->y += max_pos_margin - max_neg_margin;
-
-			/* Before calling layout_block_context, find the
-			 * available width */
-			x0 = cx;
-			x1 = cx + box->parent->width;
-			find_sides(block->float_children, cy, cy, &x0, &x1,
-					&left, &right);
-			box->x += x0 - cx;
-			x1 = box->parent->width - x1 + x0;
-			if (box->width - x1 > 0)
-				box->width -= x1;
-			else
-				box->width = 0;
-			cx = x0;
 
 			layout_block_context(box, content);
 
@@ -401,7 +407,7 @@ bool layout_block_context(struct box *block, struct content *content)
 				max_pos_margin = box->margin[BOTTOM];
 			else if (max_neg_margin < -box->margin[BOTTOM])
 				max_neg_margin = -box->margin[BOTTOM];
-			cx -= box->x;
+			cx -= box->x - inset;
 			y = box->y + box->padding[TOP] + box->height +
 					box->padding[BOTTOM] +
 					box->border[BOTTOM];
