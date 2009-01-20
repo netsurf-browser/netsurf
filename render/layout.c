@@ -1836,12 +1836,16 @@ bool layout_line(struct box *first, int *width, int *y,
 				 * Float affects current line */
 				if (b->type == BOX_FLOAT_LEFT) {
 					b->x = cx + x0;
-					x0 += b->width;
-					left = b;
+					if (b->width > 0) {
+						x0 += b->width;
+						left = b;
+					}
 				} else {
 					b->x = cx + x1 - b->width;
-					x1 -= b->width;
-					right = b;
+					if (b->width > 0) {
+						x1 -= b->width;
+						right = b;
+					}
 				}
 				b->y = cy;
 			} else {
