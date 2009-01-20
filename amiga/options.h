@@ -60,8 +60,8 @@ bool option_kiosk_mode = false; \
 char *option_recent_file = 0; \
 char *option_arexx_dir = 0; \
 char *option_download_dir = 0; \
-bool option_quick_text = true; \
-bool option_redraw_on_intuiticks = true; \
+bool option_quick_text = false; \
+bool option_redraw_on_intuiticks = false; \
 
 #define EXTRA_OPTION_TABLE \
 { "verbose_log",	OPTION_BOOL,	&option_verbose_log}, \

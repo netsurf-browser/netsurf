@@ -44,7 +44,7 @@ The options file is stored in @{"Resources/Options" link Resources/Options/Main}
 @{b}recent_file@{ub} Path to file to store recent history list
 @{b}arexx_dir@{ub} Path to ARexx scripts dir
 @{b}download_dir@{ub} default download destination
-@{b}quick_text@{ub} disable for experimental Unicode display
+@{b}quick_text@{ub} enable for local charset text only (not recommended)
 @{b}delay_redraw@{ub} slows down redraw interval
 
 @endnode

@@ -22,6 +22,11 @@
 #include "css/css.h"
 #include <graphics/text.h>
 
+#define NSA_NORMAL 0
+#define NSA_ITALIC 1
+#define NSA_BOLD 2
+#define NSA_BOLDITALIC 3
+
 struct TextFont *ami_open_font(struct css_style *);
 void ami_close_font(struct TextFont *tfont);
 ULONG ami_unicode_text(struct RastPort *rp,char *string,ULONG length,struct css_style *style,ULONG x,ULONG y,ULONG c);

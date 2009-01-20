@@ -35,8 +35,12 @@
 #include "amiga/options.h"
 #include <parserutils/charset/utf8.h>
 #include <parserutils/charset/utf16.h>
+#include <proto/utility.h>
 
 static struct OutlineFont *of[CSS_FONT_FAMILY_NOT_SET];
+static struct OutlineFont *ofb[CSS_FONT_FAMILY_NOT_SET];
+static struct OutlineFont *ofi[CSS_FONT_FAMILY_NOT_SET];
+static struct OutlineFont *ofbi[CSS_FONT_FAMILY_NOT_SET];
 
 struct OutlineFont *ami_open_outline_font(struct css_style *style);
 
@@ -382,10 +386,45 @@ struct OutlineFont *ami_open_outline_font(struct css_style *style)
 	struct OutlineFont *ofont;
 	char *fontname;
 	WORD ysize;
+	int tstyle = 0;
 
-	ofont = of[style->font_family];
+	switch(style->font_style)
+	{
+		case CSS_FONT_STYLE_ITALIC:
+		case CSS_FONT_STYLE_OBLIQUE:
+			tstyle += NSA_ITALIC;
+		break;
+	}
 
-/* see diskfont implementation for currently unimplemented bold/italic stuff */
+	switch(style->font_weight)
+	{
+		case CSS_FONT_WEIGHT_BOLD:
+		case CSS_FONT_WEIGHT_BOLDER:
+			tstyle += NSA_BOLD;
+		break;
+	}
+
+	switch(tstyle)
+	{
+		case NSA_ITALIC:
+			if(ofi[style->font_family]) ofont = ofi[style->font_family];
+				else ofont = of[style->font_family];
+		break;
+
+		case NSA_BOLD:
+			if(ofb[style->font_family]) ofont = ofb[style->font_family];
+				else ofont = of[style->font_family];
+		break;
+
+		case NSA_BOLDITALIC:
+			if(ofbi[style->font_family]) ofont = ofbi[style->font_family];
+				else ofont = of[style->font_family];
+		break;
+
+		default:
+			ofont = of[style->font_family];
+		break;
+	}
 
 	ysize = css_len2pt(&style->font_size.value.length, style);
 
@@ -498,25 +537,37 @@ void ami_init_fonts(void)
 		of[CSS_FONT_FAMILY_UNKNOWN] = OpenOutlineFont(option_font_sans,NULL,OFF_OPEN);
 		of[CSS_FONT_FAMILY_NOT_SET] = OpenOutlineFont(option_font_sans,NULL,OFF_OPEN);
 
-#if 0
 		for(i=CSS_FONT_FAMILY_SANS_SERIF;i<=CSS_FONT_FAMILY_NOT_SET;i++)
 		{
-			if(EObtainInfo(&of[i]->olf_EEngine,
-				OT_BName,&bname,
-				OT_IName,&iname,
-				OT_BIName,&biname,
-				TAG_END) == 0)
-			{
-				printf("%s\n",bname);
+			if(!of[i]) warn_user("FontError",""); // temporary error message
 
-				EReleaseInfo(&of[i]->olf_EEngine,
-					OT_BName,bname,
-					OT_IName,iname,
-					OT_BIName,biname,
-					TAG_END);
+			if(bname = GetTagData(OT_BName,0,of[i]->olf_OTagList))
+			{
+				ofb[i] = OpenOutlineFont(bname,NULL,OFF_OPEN);
+			}
+			else
+			{
+				ofb[i] = NULL;
+			}
+
+			if(iname = GetTagData(OT_IName,0,of[i]->olf_OTagList))
+			{
+				ofi[i] = OpenOutlineFont(iname,NULL,OFF_OPEN);
+			}
+			else
+			{
+				ofi[i] = NULL;
+			}
+
+			if(biname = GetTagData(OT_BIName,0,of[i]->olf_OTagList))
+			{
+				ofbi[i] = OpenOutlineFont(biname,NULL,OFF_OPEN);
+			}
+			else
+			{
+				ofbi[i] = NULL;
 			}
 		}
-#endif
 	}
 }
 
@@ -526,9 +577,12 @@ void ami_close_fonts(void)
 
 	if(!option_quick_text)
 	{
-		for(i=0;i<=CSS_FONT_FAMILY_NOT_SET;i++)
+		for(i=CSS_FONT_FAMILY_SANS_SERIF;i<=CSS_FONT_FAMILY_NOT_SET;i++)
 		{
 			if(of[i]) CloseOutlineFont(of[i],NULL);
+			if(ofb[i]) CloseOutlineFont(ofb[i],NULL);
+			if(ofi[i]) CloseOutlineFont(ofi[i],NULL);
+			if(ofbi[i]) CloseOutlineFont(ofbi[i],NULL);
 		}
 	}
 }
