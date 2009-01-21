@@ -344,7 +344,16 @@ bool layout_block_context(struct box *block, struct content *content)
 			layout_block_add_scrollbar(box, RIGHT);
 			layout_block_add_scrollbar(box, BOTTOM);
 		} else if (box->type == BOX_TABLE) {
-			if (!layout_table(box, box->parent->width, content))
+			if (box->style->width.width == CSS_WIDTH_AUTO) {
+				int x0, x1;
+				struct box *left, *right;
+				x0 = cx;
+				x1 = cx + box->parent->width;
+				find_sides(block->float_children, cy, cy,
+						&x0, &x1, &left, &right);
+				available_width = x1 - x0 > 0 ? x1 - x0 : 0;
+			}
+			if (!layout_table(box, available_width, content))
 				return false;
 			layout_solve_width(box->parent->width, box->width,
 					-1, -1, box->margin, box->padding,
@@ -438,6 +447,8 @@ bool layout_block_context(struct box *block, struct content *content)
 				find_sides(block->float_children, y,
 						y + box->height,
 						&x0, &x1, &left, &right);
+				if (box->style->width.width == CSS_WIDTH_AUTO)
+					break;
 				if (box->width <= x1 - x0)
 					break;
 				if (!left && !right)
