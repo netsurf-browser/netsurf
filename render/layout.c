@@ -319,6 +319,12 @@ bool layout_block_context(struct box *block, struct content *content)
 			goto advance_to_next_box;
 		}
 
+		/* Clearance. */
+		y = 0;
+		if (box->style && box->style->clear != CSS_CLEAR_NONE)
+			y = layout_clear(block->float_children,
+					box->style->clear);
+
 		inset = 0;
 		available_width = box->parent->width;
                 if (box->type == BOX_BLOCK || box->object) {
@@ -328,11 +334,12 @@ bool layout_block_context(struct box *block, struct content *content)
 				/* box establishes new block formatting context
 				 * so available width may be diminished due to
 				 * floats. */
-				int x0, x1;
+				int x0, x1, top;
 				struct box *left, *right;
+				top = cy > y ? cy : y;
 				x0 = cx;
 				x1 = cx + box->parent->width;
-				find_sides(block->float_children, cy, cy,
+				find_sides(block->float_children, top, top,
 						&x0, &x1, &left, &right);
 				inset = x0 - cx;
 				if (box->style->width.width == CSS_WIDTH_AUTO) {
@@ -345,11 +352,12 @@ bool layout_block_context(struct box *block, struct content *content)
 			layout_block_add_scrollbar(box, BOTTOM);
 		} else if (box->type == BOX_TABLE) {
 			if (box->style->width.width == CSS_WIDTH_AUTO) {
-				int x0, x1;
+				int x0, x1, top;
 				struct box *left, *right;
+				top = cy > y ? cy : y;
 				x0 = cx;
 				x1 = cx + box->parent->width;
-				find_sides(block->float_children, cy, cy,
+				find_sides(block->float_children, top, top,
 						&x0, &x1, &left, &right);
 				available_width = x1 - x0 > 0 ? x1 - x0 : 0;
 			}
@@ -371,12 +379,6 @@ bool layout_block_context(struct box *block, struct content *content)
 			max_pos_margin = box->margin[TOP];
 		else if (max_neg_margin < -box->margin[TOP])
 			max_neg_margin = -box->margin[TOP];
-
-		/* Clearance. */
-		y = 0;
-		if (box->style && box->style->clear != CSS_CLEAR_NONE)
-			y = layout_clear(block->float_children,
-					box->style->clear);
 
 		if (box->type != BOX_BLOCK || y ||
 				box->border[TOP] || box->padding[TOP]) {
