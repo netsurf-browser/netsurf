@@ -1835,8 +1835,10 @@ bool layout_line(struct box *first, int *width, int *y,
 					d->margin[BOTTOM];
 
 			if (d->style && (d->style->clear == CSS_CLEAR_NONE ||
-					(d->style->clear != CSS_CLEAR_NONE &&
-					left == 0 && right == 0)) &&
+					(d->style->clear == CSS_CLEAR_LEFT &&
+					left == 0) ||
+					(d->style->clear == CSS_CLEAR_RIGHT &&
+					right == 0)) &&
 					(b->width <= (x1 - x0) - x ||
 					(left == 0 && right == 0 && x == 0)) &&
 					cy >= cont->clear_level) {
