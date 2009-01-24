@@ -115,7 +115,7 @@ bool nsfont_position_in_string(const struct css_style *style,
 	}
 	else
 	{
-		uint16 *utf16 = NULL;
+		uint16 *utf16 = NULL, *outf16 = NULL;
 		struct OutlineFont *ofont;
 		struct GlyphMap *glyph;
 		uint32 tx=0,i=0;
@@ -125,6 +125,7 @@ bool nsfont_position_in_string(const struct css_style *style,
 
 		parserutils_charset_utf8_length(string, length, &len);
 		if(utf8_to_enc(string,"UTF-16",length,&utf16) != UTF8_CONVERT_OK) return;
+		outf16 = utf16;
 
 		if(!(ofont = ami_open_outline_font(style))) return 0;
 
@@ -143,6 +144,7 @@ bool nsfont_position_in_string(const struct css_style *style,
 					*actual_x = tx;
 					if(utf8_from_enc(utf16,"UTF-16",4,&utf8) != UTF8_CONVERT_OK) return;
 					parserutils_charset_utf8_char_byte_length(utf8,&utf8len);
+					free(utf8);
 
 					if(x<tx+glyph->glm_X1)
 					{
@@ -166,6 +168,7 @@ bool nsfont_position_in_string(const struct css_style *style,
 				utf16 += 2;
 		}
 		*char_offset = co;
+		free(outf16);
 	}
 
 	return true;
@@ -226,7 +229,7 @@ bool nsfont_split(const struct css_style *style,
 	}
 	else
 	{
-		uint16 *utf16 = NULL;
+		uint16 *utf16 = NULL,*outf16 = NULL;
 		struct OutlineFont *ofont;
 		struct GlyphMap *glyph;
 		uint32 tx=0,i=0;
@@ -234,7 +237,7 @@ bool nsfont_split(const struct css_style *style,
 
 		parserutils_charset_utf8_length(string, length, &len);
 		if(utf8_to_enc(string,"UTF-16",length,&utf16) != UTF8_CONVERT_OK) return;
-
+		outf16 = utf16;
 		if(!(ofont = ami_open_outline_font(style))) return 0;
 
 		*char_offset = 0;
@@ -280,6 +283,7 @@ bool nsfont_split(const struct css_style *style,
 			co--;
 		}
 		*char_offset = co;
+		free(outf16);
 	}
 
 	return true;
@@ -453,7 +457,7 @@ void ami_close_font(struct TextFont *tfont)
 
 ULONG ami_unicode_text(struct RastPort *rp,char *string,ULONG length,struct css_style *style,ULONG dx, ULONG dy, ULONG c)
 {
-	uint16 *utf16 = NULL;
+	uint16 *utf16 = NULL, *outf16 = NULL;
 	struct OutlineFont *ofont;
 	struct GlyphMap *glyph;
 	ULONG i,gx,gy;
@@ -470,7 +474,7 @@ ULONG ami_unicode_text(struct RastPort *rp,char *string,ULONG length,struct css_
 
 	parserutils_charset_utf8_length(string, length, &len);
 	if(utf8_to_enc(string,"UTF-16",length,&utf16) != UTF8_CONVERT_OK) return 0;
-
+	outf16 = utf16;
 	if(!(ofont = ami_open_outline_font(style))) return 0;
 
 	if(rp) SetRPAttrs(currp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),TAG_DONE);
@@ -519,6 +523,7 @@ ULONG ami_unicode_text(struct RastPort *rp,char *string,ULONG length,struct css_
 			utf16 += 2;
 	}
 
+	free(outf16);
 	return x;
 }
 
