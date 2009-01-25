@@ -654,6 +654,8 @@ void ami_handle_msg(void)
 	struct MenuItem *item;
 	struct InputEvent *ie;
 	struct Node *tabnode;
+	UBYTE buffer[20];
+	int chars;
 
 	if(IsMinListEmpty(window_list))
 	{
@@ -942,11 +944,7 @@ void ami_handle_msg(void)
 							browser_window_key_press(gwin->bw,27);
 						break;
 						default:
-						{
-							UBYTE buffer[20];
-							int chars;
-
-   							if(chars = MapRawKey(ie,buffer,20,NULL))
+   							if((chars = MapRawKey(ie,buffer,20,NULL)) > 0)
 							{
 								if(ie->ie_Qualifier & IEQUALIFIER_RCOMMAND)
 								{
@@ -973,7 +971,6 @@ void ami_handle_msg(void)
 									browser_window_key_press(gwin->bw,buffer[0]);
 								}
 							}
-						}
 						break;
 					}
 				break;
