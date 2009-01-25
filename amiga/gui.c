@@ -720,6 +720,9 @@ void ami_handle_msg(void)
 					GetAttr(SCROLLER_Top,gwin->objects[OID_VSCROLL],(ULONG *)&ys);
 					y = gwin->win->MouseY - bbox->Top + ys;
 
+					x /= gwin->bw->scale;
+					y /= gwin->bw->scale;
+
 					width=bbox->Width;
 					height=bbox->Height;
 
@@ -766,6 +769,9 @@ void ami_handle_msg(void)
 					x = gwin->win->MouseX - bbox->Left +xs;
 					GetAttr(SCROLLER_Top,gwin->objects[OID_VSCROLL],(ULONG *)&ys);
 					y = gwin->win->MouseY - bbox->Top + ys;
+
+					x /= gwin->bw->scale;
+					y /= gwin->bw->scale;
 
 					width=bbox->Width;
 					height=bbox->Height;
@@ -913,14 +919,6 @@ void ami_handle_msg(void)
 					}
 				break;
 
-				case WMHI_VANILLAKEY:
-					storage = result & WMHI_GADGETMASK;
-
-					//printf("%lx\n",storage);
-
-					browser_window_key_press(gwin->bw,storage);
-				break;
-
 				case WMHI_RAWKEY:
 					storage = result & WMHI_GADGETMASK;
 
@@ -944,7 +942,38 @@ void ami_handle_msg(void)
 							browser_window_key_press(gwin->bw,27);
 						break;
 						default:
-							/*MapRawKey etc */
+						{
+							UBYTE buffer[20];
+							int chars;
+
+   							if(chars = MapRawKey(ie,buffer,20,NULL))
+							{
+								if(ie->ie_Qualifier & IEQUALIFIER_RCOMMAND)
+								{
+/* We are duplicating the menu shortcuts here, as if RMBTRAP is active
+ * (ie. when context menus are enabled and the mouse is over the browser
+ * rendering area), Intuition also does not catch the menu shortcut
+ * key presses.  This should probably be expanded to contain all the
+ * menu shortcuts, but copy and paste are the most used so we only
+ * handle those for now. */
+									switch(buffer[0])
+									{
+										case 'c':
+											gui_copy_to_clipboard(gwin->bw->sel);
+											browser_window_key_press(gwin->bw, 26);
+										break;
+
+										case 'v':
+											gui_paste_from_clipboard(gwin->bw->window,0,0);
+										break;
+									}
+								}
+								else
+								{
+									browser_window_key_press(gwin->bw,buffer[0]);
+								}
+							}
+						}
 						break;
 					}
 				break;
@@ -1530,7 +1559,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			WA_CustomScreen,scrn,
 			WA_ReportMouse,TRUE,
            	WA_IDCMP,IDCMP_MENUPICK | IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS |
-				 IDCMP_NEWSIZE | IDCMP_VANILLAKEY | IDCMP_RAWKEY | IDCMP_GADGETUP | IDCMP_IDCMPUPDATE | IDCMP_INTUITICKS | IDCMP_EXTENDEDMOUSE,
+				 IDCMP_NEWSIZE | IDCMP_RAWKEY | IDCMP_GADGETUP |
+				IDCMP_IDCMPUPDATE | IDCMP_INTUITICKS | IDCMP_EXTENDEDMOUSE,
 //			WINDOW_IconifyGadget, TRUE,
 //			WINDOW_NewMenu,menu,
 			WINDOW_HorizProp,1,
@@ -1607,7 +1637,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 					WA_ReportMouse,TRUE,
         		   	WA_IDCMP,IDCMP_MENUPICK | IDCMP_MOUSEMOVE |
 								IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
-								IDCMP_VANILLAKEY | IDCMP_RAWKEY |
+								IDCMP_RAWKEY |
 								IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
 								IDCMP_INTUITICKS | IDCMP_ACTIVEWINDOW |
 								IDCMP_EXTENDEDMOUSE,
@@ -1770,7 +1800,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 					WA_ReportMouse,TRUE,
         		   	WA_IDCMP,IDCMP_MENUPICK | IDCMP_MOUSEMOVE |
 							IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
-							IDCMP_VANILLAKEY | IDCMP_RAWKEY |
+							IDCMP_RAWKEY |
 							IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
 							IDCMP_INTUITICKS | IDCMP_EXTENDEDMOUSE,
 					WINDOW_HorizProp,1,
@@ -2143,6 +2173,7 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 	if(!g) return;
 	if(sx<0) sx=0;
 	if(sy<0) sy=0;
+	if(!g->shared->bw || !g->shared->bw->current_content) return;
 	if(sx > g->shared->bw->current_content->width) sx = g->shared->bw->current_content->width;
 	if(sy > g->shared->bw->current_content->height) sy = g->shared->bw->current_content->height;
 
@@ -2189,13 +2220,11 @@ void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 	*width = bbox->Width;
 	*height = bbox->Height;
 
-/*
 	if(scaled)
 	{
 		*width /= g->shared->bw->scale;
 		*height /= g->shared->bw->scale;
 	}
-*/
 }
 
 void gui_window_update_extent(struct gui_window *g)
@@ -2528,7 +2557,7 @@ void gui_window_remove_caret(struct gui_window *g)
 	GetAttr(SCROLLER_Top,g->shared->objects[OID_HSCROLL],(ULONG *)&xs);
 	GetAttr(SCROLLER_Top,g->shared->objects[OID_VSCROLL],(ULONG *)&ys);
 
-	BltBitMapRastPort(glob.bm,g->c_x,g->c_y,g->shared->win->RPort,bbox->Left+g->c_x-xs,bbox->Top+g->c_y-ys,2+1,g->c_h+1,0x0C0);
+	BltBitMapRastPort(glob.bm,g->c_x+bbox->Left-xs,g->c_y+bbox->Top-ys,g->shared->win->RPort,bbox->Left+g->c_x-xs,bbox->Top+g->c_y-ys,2+1,g->c_h+1,0x0C0);
 
 	g->c_h = 0;
 }
