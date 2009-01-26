@@ -339,16 +339,19 @@ bool layout_block_context(struct box *block, struct content *content)
 				int x0, x1, top;
 				struct box *left, *right;
 				top = cy > y ? cy : y;
-				x0 = cx - box->parent->padding[LEFT];
+				x0 = cx;
 				x1 = cx + box->parent->width -
+						box->parent->padding[LEFT] -
 						box->parent->padding[RIGHT];
 				find_sides(block->float_children, top, top,
 						&x0, &x1, &left, &right);
 				/* calculate min required left & right margins
 				 * needed to avoid floats */
-				lm = x0 - cx - box->parent->padding[LEFT];
-				rm = cx + box->parent->width - x1 -
-						box->parent->padding[RIGHT];
+				lm = x0 - cx;
+				rm = cx + box->parent->width -
+						box->parent->padding[LEFT] -
+						box->parent->padding[RIGHT] -
+						x1;
 			}
 			layout_block_find_dimensions(box->parent->width,
 					lm, rm, box);
@@ -362,14 +365,18 @@ bool layout_block_context(struct box *block, struct content *content)
 				struct box *left, *right;
 				top = cy > y ? cy : y;
 				x0 = cx;
-				x1 = cx + box->parent->width;
+				x1 = cx + box->parent->width -
+						box->parent->padding[LEFT] -
+						box->parent->padding[RIGHT];
 				find_sides(block->float_children, top, top,
 						&x0, &x1, &left, &right);
 				/* calculate min required left & right margins
 				 * needed to avoid floats */
-				lm = x0 - cx - box->parent->padding[LEFT];
-				rm = cx + box->parent->width - x1 -
-						box->parent->padding[RIGHT];
+				lm = x0 - cx;
+				rm = cx + box->parent->width -
+						box->parent->padding[LEFT] -
+						box->parent->padding[RIGHT] -
+						x1;
 			}
 			if (!layout_table(box, box->parent->width - lm - rm,
 					content))
@@ -421,6 +428,7 @@ bool layout_block_context(struct box *block, struct content *content)
 				layout_block_add_scrollbar(box, BOTTOM);
 			}
 
+			cx -= box->x;
 			cy += box->height + box->padding[BOTTOM] +
 					box->border[BOTTOM];
 			max_pos_margin = max_neg_margin = 0;
@@ -2531,11 +2539,21 @@ bool layout_table(struct box *table, int available_width,
 	switch (style->width.width) {
 	case CSS_WIDTH_LENGTH:
 		table_width = css_len2px(&style->width.value.length, style);
+
+		/* specified width includes border */
+		table_width -= table->border[LEFT] + table->border[RIGHT];
+		table_width = table_width < 0 ? 0 : table_width;
+
 		auto_width = table_width;
 		break;
 	case CSS_WIDTH_PERCENT:
 		table_width = ceil(available_width *
 				style->width.value.percent / 100);
+
+		/* specified width includes border */
+		table_width -= table->border[LEFT] + table->border[RIGHT];
+		table_width = table_width < 0 ? 0 : table_width;
+
 		auto_width = table_width;
 		break;
 	case CSS_WIDTH_AUTO:
