@@ -932,9 +932,9 @@ int layout_solve_width(int available_width, int width, int lm, int rm,
 	bool auto_width = false;
 
 	/* Increase specified left/right margins */
-	if (margin[LEFT] != AUTO && margin[LEFT] < lm)
+	if (margin[LEFT] != AUTO && margin[LEFT] < lm && margin[LEFT] >= 0)
 		margin[LEFT] = lm;
-	if (margin[RIGHT] != AUTO && margin[RIGHT] < rm)
+	if (margin[RIGHT] != AUTO && margin[RIGHT] < rm && margin[RIGHT] >= 0)
 		margin[RIGHT] = rm;
 
 	/* Find width */
