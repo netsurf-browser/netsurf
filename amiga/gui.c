@@ -734,8 +734,8 @@ void ami_handle_msg(void)
 
 						if(option_context_menu && rmbtrapped == FALSE)
 						{
-							SetAttrs(gwin->objects[OID_MAIN],WA_RMBTrap,TRUE);
-							rmbtrapped=TRUE;
+							SetWindowAttr(gwin->win,WA_RMBTrap,TRUE,1);
+							rmbtrapped=TRUE; // crash points to this line
 						}
 
 						if(gwin->mouse_state & BROWSER_MOUSE_PRESS_1)
@@ -757,7 +757,7 @@ void ami_handle_msg(void)
 					{
 						if(option_context_menu && rmbtrapped == TRUE)
 						{
-							SetAttrs(gwin->objects[OID_MAIN],WA_RMBTrap,FALSE);
+							SetWindowAttr(gwin->win,WA_RMBTrap,FALSE,1);
 							rmbtrapped=FALSE;
 						}
 
