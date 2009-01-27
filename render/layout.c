@@ -1540,6 +1540,7 @@ bool layout_line(struct box *first, int *width, int *y,
 	struct box *d;
 	struct box *br_box = 0;
 	bool move_y = false;
+	bool place_below = false;
 	int space_before = 0, space_after = 0;
 	unsigned int inline_count = 0;
 	unsigned int i;
@@ -1873,17 +1874,19 @@ bool layout_line(struct box *first, int *width, int *y,
 					d->padding[BOTTOM] + d->border[BOTTOM] +
 					d->margin[BOTTOM];
 
+			if (b->width > (x1 - x0) - x)
+				place_below = true;
 			if (d->style && (d->style->clear == CSS_CLEAR_NONE ||
 					(d->style->clear == CSS_CLEAR_LEFT &&
 					left == 0) ||
 					(d->style->clear == CSS_CLEAR_RIGHT &&
 					right == 0)) &&
-					(b->width <= (x1 - x0) - x ||
+					(!place_below ||
 					(left == 0 && right == 0 && x == 0)) &&
 					cy >= cont->clear_level) {
 				/* + not cleared or,
 				 *   cleared and there are no floats to clear
-				 * + fits next to this line or,
+				 * + fits without needing to be placed below or,
 				 *   this line is empty with no floats
 				 * + current y, cy, is below the clear level
 				 *
@@ -2420,14 +2423,15 @@ void place_float_below(struct box *c, int width, int cx, int y,
 		struct box *cont)
 {
 	int x0, x1, yy = y;
-	struct box * left;
-	struct box * right;
+	struct box *left;
+	struct box *right;
 	LOG(("c %p, width %i, cx %i, y %i, cont %p", c, width, cx, y, cont));
 	do {
 		y = yy;
 		x0 = cx;
 		x1 = cx + width;
-		find_sides(cont->float_children, y, y, &x0, &x1, &left, &right);
+		find_sides(cont->float_children, y, y + c->height, &x0, &x1,
+				&left, &right);
 		if (left != 0 && right != 0) {
 			yy = (left->y + left->height <
 					right->y + right->height ?
