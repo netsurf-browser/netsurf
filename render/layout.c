@@ -327,20 +327,10 @@ bool layout_block_context(struct box *block, struct content *content)
 					box->style->clear);
 
 		/* Get top margin */
-		switch (box->style->margin[TOP].margin) {
-		case CSS_MARGIN_LENGTH:
-			box->margin[TOP] = css_len2px(&box->style->margin[TOP].
-					value.length, box->style);
-			break;
-		case CSS_MARGIN_PERCENT:
-			box->margin[TOP] = box->parent->width *
-					box->style->margin[TOP].value.percent /
-					100;
-			break;
-		case CSS_MARGIN_AUTO:
-		default:
-			box->margin[TOP] = 0;
-			break;
+		if (box->style) {
+			layout_find_dimensions(box->parent->width, box,
+					box->style, NULL, NULL, NULL, NULL,
+					box->margin, NULL, NULL);
 		}
 
 		if (max_pos_margin < box->margin[TOP])
