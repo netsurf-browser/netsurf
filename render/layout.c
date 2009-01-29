@@ -325,7 +325,30 @@ bool layout_block_context(struct box *block, struct content *content)
 		if (box->style && box->style->clear != CSS_CLEAR_NONE)
 			y = layout_clear(block->float_children,
 					box->style->clear);
-		/* no /required/ margins if box doesn't establisha new block
+
+		/* Get top margin */
+		switch (box->style->margin[TOP].margin) {
+		case CSS_MARGIN_LENGTH:
+			box->margin[TOP] = css_len2px(&box->style->margin[TOP].
+					value.length, box->style);
+			break;
+		case CSS_MARGIN_PERCENT:
+			box->margin[TOP] = box->parent->width *
+					box->style->margin[TOP].value.percent /
+					100;
+			break;
+		case CSS_MARGIN_AUTO:
+		default:
+			box->margin[TOP] = 0;
+			break;
+		}
+
+		if (max_pos_margin < box->margin[TOP])
+			max_pos_margin = box->margin[TOP];
+		else if (max_neg_margin < -box->margin[TOP])
+			max_neg_margin = -box->margin[TOP];
+
+		/* no /required/ margins if box doesn't establish a new block
 		 * formatting context */
 		lm = rm = 0;
 
@@ -339,6 +362,7 @@ bool layout_block_context(struct box *block, struct content *content)
 				int x0, x1, top;
 				struct box *left, *right;
 				top = cy > y ? cy : y;
+				top += max_pos_margin - max_neg_margin;
 				x0 = cx;
 				x1 = cx + box->parent->width -
 						box->parent->padding[LEFT] -
@@ -364,6 +388,7 @@ bool layout_block_context(struct box *block, struct content *content)
 				int x0, x1, top;
 				struct box *left, *right;
 				top = cy > y ? cy : y;
+				top += max_pos_margin - max_neg_margin;
 				x0 = cx;
 				x1 = cx + box->parent->width -
 						box->parent->padding[LEFT] -
@@ -391,12 +416,7 @@ bool layout_block_context(struct box *block, struct content *content)
 				box->border[LEFT];
 		cx += box->x;
 
-		/* Position box: top margin. */
-		if (max_pos_margin < box->margin[TOP])
-			max_pos_margin = box->margin[TOP];
-		else if (max_neg_margin < -box->margin[TOP])
-			max_neg_margin = -box->margin[TOP];
-
+		/* Position box: vertical. */
 		if (box->type != BOX_BLOCK || y ||
 				box->border[TOP] || box->padding[TOP]) {
 			margin_box->y += max_pos_margin - max_neg_margin;
