@@ -66,9 +66,10 @@ void nsgtk_about_dialog_init(GtkWindow *parent, struct browser_window *bw,
 		const char *version)
 {
 	gchar *licence_text;
+  gchar *licence_location = g_strconcat(res_dir_location, "licence", NULL);
 	
-	g_file_get_contents(g_strconcat(res_dir_location, "licence", NULL),
-			&licence_text, NULL, NULL);
+  g_file_get_contents(licence_location, &licence_text, NULL, NULL);
+  free(licence_location);
 	gtk_about_dialog_set_url_hook (launch_url, (gpointer) bw, NULL);
 
 	gtk_show_about_dialog(parent, "artists", artists, "authors", authors,

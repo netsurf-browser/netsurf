@@ -215,7 +215,7 @@ struct gui_download_window *gui_download_window_create(const char *url,
 		strcpy(domain, messages_get("gtkUnknownHost"));
 	
 	destination = nsgtk_download_dialog_show(filename, domain, size);
-	if (destination == NULL) 
+	if (destination == NULL)
 		return NULL;
 	
 	/* Add the new row and store the reference to it (which keeps track of 
@@ -236,12 +236,15 @@ struct gui_download_window *gui_download_window_create(const char *url,
 	download->time_remaining = -1;
 	download->status = NSGTK_DOWNLOAD_NONE;
 	download->filename = destination;
-	download->progress = 0; 
+	download->progress = 0;
 	download->error = NULL;
-	download->write = g_io_channel_new_file(destination, "w", 
+	download->write = g_io_channel_new_file(destination, "w",
 			&download->error);
 	if (nsgtk_download_handle_error(download->error)) {
-		free(download);	
+    g_string_free(download->name, TRUE);
+    g_string_free(download->time_left, TRUE);
+    g_free(download->filename);
+		free(download);
 		return NULL;
 	}
 	g_io_channel_set_encoding(download->write, NULL,
@@ -527,6 +530,9 @@ void nsgtk_download_store_clear_item (struct gui_download_window *dl)
 				gtk_tree_row_reference_get_path(dl->row));
 		gtk_list_store_remove(nsgtk_download_store, 
 				&nsgtk_download_iter);
+    g_string_free(dl->name, TRUE);
+    g_string_free(dl->time_left, TRUE);
+    g_free(dl->filename);
 		g_free(dl);
 		
 		nsgtk_download_sensitivity_evaluate(nsgtk_download_selection);
