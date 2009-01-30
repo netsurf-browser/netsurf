@@ -1144,11 +1144,7 @@ void urldb_iterate_partial(const char *prefix,
 		if (!h) {
 			int len = slash - prefix;
 
-			if ((len == 1 && tolower(host[0]) != 'w') ||
-				(len == 2 && (tolower(host[0]) != 'w' ||
-					tolower(host[1]) != 'w')) ||
-				(len >= 3 &&
-					strncasecmp(host, "www", 3))) {
+			if (len <= 3 || strncasecmp(host, "www.", 4) != 0) {
 				snprintf(buf, sizeof buf, "www.%s", host);
 				h = urldb_search_find(
 					search_trees[ST_DN + 'w' - 'a'],
@@ -1173,11 +1169,7 @@ void urldb_iterate_partial(const char *prefix,
 		if (!urldb_iterate_partial_host(tree, prefix, callback))
 			return;
 
-		if ((len == 1 && tolower(prefix[0]) != 'w') ||
-				(len == 2 && (tolower(prefix[0]) != 'w' ||
-					tolower(prefix[1]) != 'w')) ||
-				(len >= 3 &&
-					strncasecmp(prefix, "www", 3))) {
+		if (len <= 3 || strncasecmp(prefix, "www.", 4) != 0) {
 			/* now look for www.prefix */
 			snprintf(buf, sizeof buf, "www.%s", prefix);
 			if(!urldb_iterate_partial_host(
@@ -1197,8 +1189,7 @@ void urldb_iterate_partial(const char *prefix,
  * \return true to continue, false otherwise
  */
 bool urldb_iterate_partial_host(struct search_node *root, const char *prefix,
-		bool (*callback)(const char *url,
-		const struct url_data *data))
+		bool (*callback)(const char *url, const struct url_data *data))
 {
 	int c;
 
