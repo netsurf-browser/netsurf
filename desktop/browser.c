@@ -220,6 +220,22 @@ void browser_window_go(struct browser_window *bw, const char *url,
 
 
 /**
+ * Start a download of the given URL from a browser window.
+ *
+ * \param  bw	    browser window
+ * \param  url	    URL to start downloading (copied)
+ * \param  referer  the referring uri (copied), or 0 if none
+ */
+
+void browser_window_download(struct browser_window *bw, const char *url,
+		const char *referrer)
+{
+	browser_window_go_post(bw, url, 0, 0, false, referrer,
+			true, true, 0);
+}
+
+
+/**
  * Start fetching a page in a browser window.
  *
  * \param  bw	    browser window
@@ -1672,6 +1688,10 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 					pointer = GUI_POINTER_MOVE;
 				}
 			}
+		}
+		if ((mouse & BROWSER_MOUSE_CLICK_1) && !selection_defined(bw->sel)) {
+			/* ensure key presses still act on the browser window */
+			browser_window_remove_caret(bw);
 		}
 	}
 

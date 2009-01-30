@@ -696,14 +696,7 @@ void selection_clear(struct selection *s, bool redraw)
 
 void selection_select_all(struct selection *s)
 {
-	unsigned old_start, old_end;
-	bool was_defined;
-
 	assert(s);
-	was_defined = selection_defined(s);
-	old_start = s->start_idx;
-	old_end = s->end_idx;
-
 	s->defined = true;
 	
 	if (IS_INPUT(s->root))

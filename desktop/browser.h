@@ -113,7 +113,7 @@ struct browser_window {
 	unsigned int drag_resize_up : 1;
 	unsigned int drag_resize_down : 1;
 
-	/** Referer for current fetch, or 0. */
+	/** Referrer for current fetch, or 0. */
 	char *referer;
 
 	/** Current fetch is download */
@@ -213,14 +213,16 @@ extern struct browser_window *current_redraw_browser;
 extern bool browser_reformat_pending;
 
 struct browser_window * browser_window_create(const char *url,
-		struct browser_window *clone, const char *referer,
+		struct browser_window *clone, const char *referrer,
 		bool history_add, bool new_tab);
 void browser_window_initialise_common(struct browser_window *bw,
 		struct browser_window *clone);
 void browser_window_go(struct browser_window *bw, const char *url,
-		const char *referer, bool history_add);
+		const char *referrer, bool history_add);
 void browser_window_go_unverifiable(struct browser_window *bw,
-		const char *url, const char *referer, bool history_add);
+		const char *url, const char *referrer, bool history_add);
+void browser_window_download(struct browser_window *bw,
+		const char *url, const char *referrer);
 void browser_window_update(struct browser_window *bw, bool scroll_to_top);
 void browser_window_stop(struct browser_window *bw);
 void browser_window_reload(struct browser_window *bw, bool all);
