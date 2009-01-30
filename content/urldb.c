@@ -516,7 +516,7 @@ void urldb_save_search_tree(struct search_node *parent, FILE *fp)
 	const struct host_part *h;
 	unsigned int path_count = 0;
 	char *path, *p, *end;
-	int path_alloc = 64, path_used = 2;
+	int path_alloc = 64, path_used = 1;
 	time_t expiry = time(NULL) - (60 * 60 * 24) * option_expire_url;
 
 	if (parent == &empty)
@@ -528,8 +528,7 @@ void urldb_save_search_tree(struct search_node *parent, FILE *fp)
 	if (!path)
 		return;
 
-	path[0] = '/';
-	path[1] = '\0';
+	path[0] = '\0';
 
 	for (h = parent->data, p = host, end = host + sizeof host;
 			h && h != &db_root && p < end; h = h->parent) {
@@ -566,16 +565,31 @@ void urldb_save_search_tree(struct search_node *parent, FILE *fp)
 void urldb_count_urls(const struct path_data *root, time_t expiry,
 		unsigned int *count)
 {
-	const struct path_data *p;
+	const struct path_data *p = root;
 
-	if (!root->children) {
-		if (root->persistent || ((root->urld.last_visit > expiry) &&
-				(root->urld.visits > 0)))
-			(*count)++;
-	}
+	do {
+		if (p->children != NULL) {
+			/* Drill down into children */
+			p = p->children;
+		} else {
+			/* No more children, increment count if required */
+			if (p->persistent || ((p->urld.last_visit > expiry) &&
+					(p->urld.visits > 0)))
+				(*count)++;
 
-	for (p = root->children; p; p = p->next)
-		urldb_count_urls(p, expiry, count);
+			/* Now, find next node to process. */
+			while (p != root) {
+				if (p->next != NULL) {
+					/* Have a sibling, process that */
+					p = p->next;
+					break;
+				}
+
+				/* Ascend tree */
+				p = p->parent;
+			}
+		}
+	} while (p != root);
 }
 
 /**
@@ -593,81 +607,102 @@ void urldb_write_paths(const struct path_data *parent, const char *host,
 		FILE *fp, char **path, int *path_alloc, int *path_used,
 		time_t expiry)
 {
-	const struct path_data *p;
+	const struct path_data *p = parent;
 	int i;
-	int pused = *path_used;
 
-	if (!parent->children) {
-		/* leaf node */
-		if (!(parent->persistent ||
-				((parent->urld.last_visit > expiry) &&
-				(parent->urld.visits > 0))))
-			/* expired */
-			return;
+	do {
+		int seglen = p->segment != NULL ? strlen(p->segment) : 0;
+		int len = *path_used + seglen + 1;
 
-		fprintf(fp, "%s\n", parent->scheme);
-
-		if (parent->port)
-			fprintf(fp,"%d\n", parent->port);
-		else
-			fprintf(fp, "\n");
-
-		fprintf(fp, "%s\n", *path);
-
-		/** \todo handle fragments? */
-
-		fprintf(fp, "%i\n%i\n%i\n", parent->urld.visits,
-				(int)parent->urld.last_visit,
-				(int)parent->urld.type);
-
-#ifdef riscos
-		if (parent->thumb)
-			fprintf(fp, "%s\n", parent->thumb->filename);
-		else
-			fprintf(fp, "\n");
-#else
-		fprintf(fp, "\n");
-#endif
-
-		if (parent->urld.title) {
-			char *s = parent->urld.title;
-			for (i = 0; s[i] != '\0'; i++)
-				if (s[i] < 32)
-					s[i] = ' ';
-			for (--i; ((i > 0) && (s[i] == ' ')); i--)
-					s[i] = '\0';
-			fprintf(fp, "%s\n", parent->urld.title);
-		} else
-			fprintf(fp, "\n");
-	}
-
-	for (p = parent->children; p; p = p->next) {
-		int len = *path_used + strlen(p->segment) + 1;
 		if (*path_alloc < len) {
 			char *temp = realloc(*path,
-				(len > 64) ? len : *path_alloc + 64);
+					(len > 64) ? len : *path_alloc + 64);
 			if (!temp)
 				return;
 			*path = temp;
 			*path_alloc = (len > 64) ? len : *path_alloc + 64;
 		}
 
-		strcat(*path, p->segment);
-		if (p->children) {
-			strcat(*path, "/");
+		memcpy(*path + *path_used - 1, p->segment, seglen);
+
+		if (p->children != NULL) {
+			(*path)[*path_used + seglen - 1] = '/';
+			(*path)[*path_used + seglen] = '\0';
 		} else {
+			(*path)[*path_used + seglen - 1] = '\0';
 			len -= 1;
 		}
 
 		*path_used = len;
 
-		urldb_write_paths(p, host, fp, path, path_alloc, path_used,
-				expiry);
+		if (p->children != NULL) {
+			/* Drill down into children */
+			p = p->children;
+		} else {
+			/* leaf node */
+			if (p->persistent ||((p->urld.last_visit > expiry) &&
+					(p->urld.visits > 0))) {
+				fprintf(fp, "%s\n", p->scheme);
 
-		/* restore path to its state on entry to this function */
-		*path_used = pused;
-		(*path)[pused - 1] = '\0';
-	}
+				if (p->port)
+					fprintf(fp,"%d\n", p->port);
+				else
+					fprintf(fp, "\n");
+
+				fprintf(fp, "%s\n", *path);
+
+				/** \todo handle fragments? */
+
+				fprintf(fp, "%i\n%i\n%i\n", p->urld.visits,
+						(int)p->urld.last_visit,
+						(int)p->urld.type);
+
+#ifdef riscos
+				if (p->thumb)
+					fprintf(fp, "%s\n", p->thumb->filename);
+				else
+					fprintf(fp, "\n");
+#else
+				fprintf(fp, "\n");
+#endif
+
+				if (p->urld.title) {
+					char *s = p->urld.title;
+
+					for (i = 0; s[i] != '\0'; i++)
+						if (s[i] < 32)
+							s[i] = ' ';
+					for (--i; ((i > 0) && (s[i] == ' ')); 
+							i--)
+						s[i] = '\0';
+					fprintf(fp, "%s\n", p->urld.title);
+				} else
+					fprintf(fp, "\n");
+			}
+
+			/* Now, find next node to process. */
+			while (p != parent) {
+				int seglen = strlen(p->segment);
+
+				/* Remove our segment from the path */
+				*path_used -= seglen;
+				(*path)[*path_used - 1] = '\0';
+
+				if (p->next != NULL) {
+					/* Have a sibling, process that */
+					p = p->next;
+					break;
+				}
+
+				/* Going up, so remove '/' */
+				*path_used -= 1;
+				(*path)[*path_used - 1] = '\0';
+
+				/* Ascend tree */
+				p = p->parent;
+			}
+		}
+	} while (p != parent);
 }
 
 /**
