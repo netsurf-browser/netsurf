@@ -217,11 +217,15 @@ static bool urldb_iterate_partial_path(const struct path_data *parent,
 		const char *prefix, bool (*callback)(const char *url,
 		const struct url_data *data));
 static bool urldb_iterate_entries_host(struct search_node *parent,
-		bool (*url_callback)(const char *url, const struct url_data *data),
-		bool (*cookie_callback)(const char *domain, const struct cookie_data *data));
+		bool (*url_callback)(const char *url, 
+		const struct url_data *data),
+		bool (*cookie_callback)(const char *domain, 
+		const struct cookie_data *data));
 static bool urldb_iterate_entries_path(const struct path_data *parent,
-		bool (*url_callback)(const char *url, const struct url_data *data),
-		bool (*cookie_callback)(const char *domain, const struct cookie_data *data));
+		bool (*url_callback)(const char *url, 
+		const struct url_data *data),
+		bool (*cookie_callback)(const char *domain, 
+		const struct cookie_data *data));
 
 /* Insertion */
 static struct host_part *urldb_add_host_node(const char *part,
@@ -1337,7 +1341,8 @@ void urldb_iterate_entries(bool (*callback)(const char *url,
  *
  * \param callback Function to callback for each entry
  */
-void urldb_iterate_cookies(bool (*callback)(const char *domain, const struct cookie_data *data))
+void urldb_iterate_cookies(bool (*callback)(const char *domain, 
+		const struct cookie_data *data))
 {
 	int i;
 
