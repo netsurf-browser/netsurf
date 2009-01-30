@@ -35,6 +35,7 @@
 #include "desktop/gui.h"
 #include "desktop/history_core.h"
 #include "desktop/netsurf.h"
+#include "desktop/selection.h"
 #include "render/box.h"
 #include "riscos/dialog.h"
 #include "render/form.h"
@@ -129,6 +130,8 @@ wimp_menu *current_menu;
 bool current_menu_open = false;
 /** Box for object under menu, or 0 if no object. */
 static struct box *current_menu_object_box = 0;
+/** Box for link under menu, or 0 if no link. */
+static struct box *current_menu_link_box = 0;
 /** Menu of options for form select controls. */
 static wimp_menu *gui_form_select_menu = 0;
 /** Form control which gui_form_select_menu is for. */
@@ -177,7 +180,7 @@ void ro_gui_menu_init(void)
 			(struct ns_menu *)&iconbar_definition);
 
 	/* browser menu */
-	NS_MENU(69) browser_definition = {
+	NS_MENU(83) browser_definition = {
 		"NetSurf", {
 			{ "Page", BROWSER_PAGE, 0 },
 			{ "Page.PageInfo",BROWSER_PAGE_INFO, dialog_pageinfo },
@@ -199,17 +202,32 @@ void ro_gui_menu_init(void)
 			{ "Page.SaveURL.LinkText", BROWSER_SAVE_URL_TEXT, dialog_saveas },
 			{ "_Page.Print", BROWSER_PRINT, dialog_print },
 			{ "Page.NewWindow", BROWSER_NEW_WINDOW, 0 },
+			{ "Page.FindText", BROWSER_FIND_TEXT, dialog_search },
 			{ "Page.ViewSrc", BROWSER_VIEW_SOURCE, 0 },
 			{ "Object", BROWSER_OBJECT, 0 },
-			{ "Object.ObjInfo", BROWSER_OBJECT_INFO, dialog_objinfo },
-			{ "Object.ObjSave", BROWSER_OBJECT_SAVE, dialog_saveas },
-			{ "Object.Export", NO_ACTION, 0 },
-			{ "Object.Export.Sprite", BROWSER_OBJECT_EXPORT_SPRITE, dialog_saveas },
-			{ "_Object.SaveURL", NO_ACTION, 0 },
-			{ "Object.SaveURL.URI", BROWSER_OBJECT_SAVE_URL_URI, dialog_saveas },
-			{ "Object.SaveURL.URL", BROWSER_OBJECT_SAVE_URL_URL, dialog_saveas },
-			{ "Object.SaveURL.LinkText", BROWSER_OBJECT_SAVE_URL_TEXT, dialog_saveas },
-			{ "Object.ObjReload", BROWSER_OBJECT_RELOAD, 0 },
+			{ "Object.Object", BROWSER_OBJECT_OBJECT, 0 },
+			{ "Object.Object.ObjInfo", BROWSER_OBJECT_INFO, dialog_objinfo },
+			{ "Object.Object.ObjSave", BROWSER_OBJECT_SAVE, dialog_saveas },
+			{ "Object.Object.Export", BROWSER_OBJECT_EXPORT, 0 },
+			{ "Object.Object.Export.Sprite", BROWSER_OBJECT_EXPORT_SPRITE, dialog_saveas },
+			{ "Object.Object.Export.ObjDraw", BROWSER_OBJECT_EXPORT_DRAW, dialog_saveas },
+			{ "Object.Object.SaveURL", NO_ACTION, 0 },
+			{ "Object.Object.SaveURL.URI", BROWSER_OBJECT_SAVE_URL_URI, dialog_saveas },
+			{ "Object.Object.SaveURL.URL", BROWSER_OBJECT_SAVE_URL_URL, dialog_saveas },
+			{ "Object.Object.SaveURL.LinkText", BROWSER_OBJECT_SAVE_URL_TEXT, dialog_saveas },
+			{ "_Object.Object.ObjReload", BROWSER_OBJECT_RELOAD, 0 },
+			{ "Object.Link", BROWSER_OBJECT_LINK, 0 },
+			{ "Object.Link.LinkSave", BROWSER_LINK_SAVE, 0 },
+			{ "Object.Link.LinkSave.URI", BROWSER_LINK_SAVE_URI, dialog_saveas },
+			{ "Object.Link.LinkSave.URL", BROWSER_LINK_SAVE_URL, dialog_saveas },
+			{ "Object.Link.LinkSave.LinkText", BROWSER_LINK_SAVE_TEXT, dialog_saveas },
+			{ "_Object.Link.LinkDload", BROWSER_LINK_DOWNLOAD, 0 },
+			{ "Object.Link.LinkNew", BROWSER_LINK_NEW_WINDOW, 0 },
+			{ "Selection", BROWSER_SELECTION, 0 },
+			{ "_Selection.SelSave", BROWSER_SELECTION_SAVE, dialog_saveas },
+			{ "Selection.Copy", BROWSER_SELECTION_COPY, 0 },
+			{ "Selection.Cut", BROWSER_SELECTION_CUT, 0 },
+			{ "Selection.Paste", BROWSER_SELECTION_PASTE, 0 },
 			{ "Navigate", NO_ACTION, 0 },
 			{ "Navigate.Home", BROWSER_NAVIGATE_HOME, 0 },
 			{ "Navigate.Back", BROWSER_NAVIGATE_BACK, 0 },
@@ -230,7 +248,12 @@ void ro_gui_menu_init(void)
 			{ "_View.Render", NO_ACTION, 0 },
 			{ "View.Render.RenderAnims", BROWSER_BUFFER_ANIMS, 0 },
 			{ "View.Render.RenderAll", BROWSER_BUFFER_ALL, 0 },
-			{ "View.OptDefault", BROWSER_SAVE_VIEW, 0 },
+			{ "_View.OptDefault", BROWSER_SAVE_VIEW, 0 },
+			{ "View.Window", NO_ACTION, 0 },
+			{ "View.Window.WindowSave", BROWSER_WINDOW_DEFAULT, 0 },
+			{ "View.Window.WindowStagr", BROWSER_WINDOW_STAGGER, 0 },
+			{ "_View.Window.WindowSize", BROWSER_WINDOW_COPY, 0 },
+			{ "View.Window.WindowReset", BROWSER_WINDOW_RESET, 0 },
 			{ "Utilities", NO_ACTION, 0 },
 			{ "Utilities.Hotlist", HOTLIST_SHOW, 0 },
 			{ "Utilities.Hotlist.HotlistAdd", HOTLIST_ADD_URL, 0 },
@@ -241,12 +264,6 @@ void ro_gui_menu_init(void)
 			{ "Utilities.Cookies", COOKIES_SHOW, 0 },
 			{ "Utilities.Cookies.ShowCookies", COOKIES_SHOW, 0 },
 			{ "Utilities.Cookies.DeleteCookies", COOKIES_DELETE, 0 },
-			{ "Utilities.FindText", BROWSER_FIND_TEXT, dialog_search },
-			{ "Utilities.Window", NO_ACTION, 0 },
-			{ "Utilities.Window.WindowSave", BROWSER_WINDOW_DEFAULT, 0 },
-			{ "Utilities.Window.WindowStagr", BROWSER_WINDOW_STAGGER, 0 },
-			{ "_Utilities.Window.WindowSize", BROWSER_WINDOW_COPY, 0 },
-			{ "Utilities.Window.WindowReset", BROWSER_WINDOW_RESET, 0 },
 			{ "Help", HELP_OPEN_CONTENTS, 0 },
 			{ "Help.HelpContent", HELP_OPEN_CONTENTS, 0 },
 			{ "Help.HelpGuide", HELP_OPEN_GUIDE, 0 },
@@ -487,8 +504,10 @@ void ro_gui_menu_create(wimp_menu *menu, int x, int y, wimp_w w)
 			return;
 		current_menu_object_box = NULL;
 		if (g->bw->current_content &&
-				g->bw->current_content->type == CONTENT_HTML)
+				g->bw->current_content->type == CONTENT_HTML) {
 			current_menu_object_box = box_object_at_point(g->bw->current_content, pos.x, pos.y);
+			current_menu_link_box = box_href_at_point(g->bw->current_content, pos.x, pos.y);
+		}
 	}
 
 	/* store the menu characteristics */
@@ -1539,12 +1558,31 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 			browser_window_reload(bw, false);
 			return true;
 
+		/* link actions */
+		case BROWSER_LINK_SAVE_URI:
+		case BROWSER_LINK_SAVE_URL:
+		case BROWSER_LINK_SAVE_TEXT:
+			if (!current_menu_link_box)
+				return false;
+			ro_gui_menu_prepare_action(owner, action, true);
+			ro_gui_dialog_open_persistent(owner, dialog_saveas,
+					windows_at_pointer);
+			break;
+		case BROWSER_LINK_DOWNLOAD:
+			if (!current_menu_link_box)
+				return false;
+			browser_window_download(bw, current_menu_link_box->href, c->url);
+			break;
+		case BROWSER_LINK_NEW_WINDOW:
+			if (!current_menu_link_box)
+				return false;
+			browser_window_create(current_menu_link_box->href, bw, c->url, true, false);
+			break;
+
 		/* save actions */
 		case BROWSER_OBJECT_SAVE:
 		case BROWSER_OBJECT_EXPORT_SPRITE:
-		case BROWSER_OBJECT_SAVE_URL_URI:
-		case BROWSER_OBJECT_SAVE_URL_URL:
-		case BROWSER_OBJECT_SAVE_URL_TEXT:
+		case BROWSER_OBJECT_EXPORT_DRAW:
 			c = current_menu_object_box ?
 				current_menu_object_box->object : NULL;
 			/* Fall through */
@@ -1564,6 +1602,22 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 			ro_gui_menu_prepare_action(owner, action, true);
 			ro_gui_dialog_open_persistent(owner, dialog_saveas,
 					windows_at_pointer);
+			return true;
+
+		/* selection actions */
+		case BROWSER_SELECTION_SAVE:
+			ro_gui_menu_prepare_action(owner, action, true);
+			ro_gui_dialog_open_persistent(owner, dialog_saveas,
+					windows_at_pointer);
+			return true;
+		case BROWSER_SELECTION_COPY:
+			browser_window_key_press(bw, 3);
+			break;
+		case BROWSER_SELECTION_CUT:
+			browser_window_key_press(bw, 24);
+			return true;
+		case BROWSER_SELECTION_PASTE:
+			browser_window_key_press(bw, 22);
 			return true;
 
 		/* navigation actions */
@@ -1863,6 +1917,12 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 			break;
 
 		/* page actions */
+		case BROWSER_PAGE:
+			ro_gui_menu_set_entry_shaded(current_menu,
+					action, !(c && (c->type == CONTENT_HTML ||
+						 			c->type == CONTENT_TEXTPLAIN)
+						 		&& !current_menu_object_box));
+			break;
 		case BROWSER_PAGE_INFO:
 			ro_gui_menu_set_entry_shaded(current_menu,
 					action, !c);
@@ -1884,7 +1944,6 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 						t->toolbar_handle,
 						ICON_TOOLBAR_PRINT, !c);
 			break;
-		case BROWSER_PAGE:
 		case BROWSER_NEW_WINDOW:
 		case BROWSER_VIEW_SOURCE:
 			ro_gui_menu_set_entry_shaded(current_menu,
@@ -1893,11 +1952,20 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 
 		/* object actions */
 		case BROWSER_OBJECT:
-			c = current_menu_object_box ?
-				current_menu_object_box->object : NULL;
-			ro_gui_menu_set_entry_shaded(current_menu,
-					action, !c);
+			ro_gui_menu_set_entry_shaded(current_menu, action,
+					!(c && c->type == CONTENT_HTML &&
+					(current_menu_object_box || current_menu_link_box)));
 			break;
+
+		case BROWSER_OBJECT_OBJECT:
+			ro_gui_menu_set_entry_shaded(current_menu, action,
+					!(c && c->type == CONTENT_HTML && current_menu_object_box));
+			break;
+		case BROWSER_OBJECT_LINK:
+			ro_gui_menu_set_entry_shaded(current_menu, action,
+					!(c && c->type == CONTENT_HTML && current_menu_link_box));
+			break;
+
 		case BROWSER_OBJECT_INFO:
 			if ((windows) && (current_menu_object_box))
 				ro_gui_menu_prepare_objectinfo(
@@ -1905,31 +1973,133 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 			/* Fall through */
 		case BROWSER_OBJECT_RELOAD:
 			ro_gui_menu_set_entry_shaded(current_menu, action,
-					!current_menu_object_box);
+					!(current_menu_object_box ||
+					  (c && c->type != CONTENT_HTML && c->type != CONTENT_TEXTPLAIN)));
 			break;
 
 		/* save actions (browser, hotlist, history) */
 		case BROWSER_OBJECT_SAVE:
-			c = current_menu_object_box ?
-				current_menu_object_box->object : NULL;
+			if (c && c->type == CONTENT_HTML) {
+				c = current_menu_object_box ?
+					current_menu_object_box->object : NULL;
+			}
 			ro_gui_menu_set_entry_shaded(current_menu,
 					action, !c);
 			if ((c) && (windows))
-				ro_gui_save_prepare(GUI_SAVE_OBJECT_ORIG, c);
+				ro_gui_save_prepare(GUI_SAVE_OBJECT_ORIG, c, NULL, NULL, NULL);
 			break;
+		case BROWSER_OBJECT_EXPORT:
 		case BROWSER_OBJECT_EXPORT_SPRITE:
-			c = current_menu_object_box ?
-				current_menu_object_box->object : NULL;
+		case BROWSER_OBJECT_EXPORT_DRAW: {
+			bool exp_sprite = false;
+			bool exp_draw = false;
+
+			if (c && c->type == CONTENT_HTML && current_menu_object_box)
+				c = current_menu_object_box->object;
+
+			if (c) {
+				switch (c->type) {
+/* \todo - this classification should prob be done in content_() */
+					/* bitmap types (Sprite export possible) */
+#ifdef WITH_JPEG
+					case CONTENT_JPEG:
+#endif
+#ifdef WITH_MNG
+					case CONTENT_JNG:
+					case CONTENT_MNG:
+#endif
+#ifdef WITH_GIF
+					case CONTENT_GIF:
+#endif
+#ifdef WITH_BMP
+					case CONTENT_BMP:
+					case CONTENT_ICO:
+#endif
+#if defined(WITH_MNG) || defined(WITH_PNG)
+					case CONTENT_PNG:
+#endif
+#ifdef WITH_SPRITE
+					case CONTENT_SPRITE:
+#endif
+						exp_sprite = true;
+						break;
+
+					/* vector types (Draw export possible) */
+#if defined(WITH_NS_SVG) || defined(WITH_RSVG)
+/* \todo - implement SVG to Draw conversion
+						case CONTENT_SVG: */
+#endif
+#ifdef WITH_DRAW
+					case CONTENT_DRAW:
+#endif
+						exp_draw = true;
+						break;
+
+					default: break;
+				}
+			}
+
+			switch (action) {
+				case BROWSER_OBJECT_EXPORT_SPRITE: if (!exp_sprite) c = NULL; break;
+				case BROWSER_OBJECT_EXPORT_DRAW: if (!exp_draw) c = NULL; break;
+				default: if (!exp_sprite && !exp_draw) c = NULL; break;
+			}
+
 			ro_gui_menu_set_entry_shaded(current_menu,
 					action, !c);
 			if ((c) && (windows))
-				ro_gui_save_prepare(GUI_SAVE_OBJECT_NATIVE, c);
+				ro_gui_save_prepare(GUI_SAVE_OBJECT_NATIVE, c, NULL, NULL, NULL);
+		}
+		break;
+		case BROWSER_LINK_SAVE_URI:
+		case BROWSER_LINK_SAVE_URL:
+		case BROWSER_LINK_SAVE_TEXT:
+			if (c && (c->type != CONTENT_HTML || !current_menu_link_box))
+				c = NULL;
+			ro_gui_menu_set_entry_shaded(current_menu,
+					action, !c);
+			if ((c) && (windows)) {
+				gui_save_type save_type;
+				switch (action) {
+					case BROWSER_LINK_SAVE_URI:
+						save_type = GUI_SAVE_LINK_URI;
+						break;
+					case BROWSER_LINK_SAVE_URL:
+						save_type = GUI_SAVE_LINK_URL;
+						break;
+					default:
+						save_type = GUI_SAVE_LINK_TEXT;
+						break;
+				}
+				ro_gui_save_prepare(save_type, NULL, NULL,
+						current_menu_link_box->href, NULL);
+			}
+			break;
+
+		case BROWSER_SELECTION:
+			/* make menu available if there's a selection or an input field for pasting */
+			ro_gui_menu_set_entry_shaded(current_menu, action,
+				!(c && (bw->paste_callback || (bw->sel && selection_defined(bw->sel)))));
+			break;
+		case BROWSER_SELECTION_SAVE:
+			if (c && (!bw->sel || !selection_defined(bw->sel))) c = NULL;
+			ro_gui_menu_set_entry_shaded(current_menu, action, !c);
+			if ((c) && (windows))
+				ro_gui_save_prepare(GUI_SAVE_TEXT_SELECTION, NULL, bw->sel, NULL, NULL);
+			break;
+		case BROWSER_SELECTION_COPY:
+		case BROWSER_SELECTION_CUT:
+			ro_gui_menu_set_entry_shaded(current_menu, action,
+				!(c && bw->sel && selection_defined(bw->sel)));
+			break;
+		case BROWSER_SELECTION_PASTE:
+			ro_gui_menu_set_entry_shaded(current_menu, action, !(c && bw->paste_callback));
 			break;
 		case BROWSER_SAVE:
 			ro_gui_menu_set_entry_shaded(current_menu,
 					action, !c);
 			if ((c) && (windows))
-				ro_gui_save_prepare(GUI_SAVE_SOURCE, c);
+				ro_gui_save_prepare(GUI_SAVE_SOURCE, c, NULL, NULL, NULL);
 			if ((t) && (!t->editor) &&
 					(t->type == THEME_BROWSER_TOOLBAR))
 				ro_gui_set_icon_shaded_state(
@@ -1940,65 +2110,74 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 			ro_gui_menu_set_entry_shaded(current_menu,
 					action, !c);
 			if ((c) && (windows))
-				ro_gui_save_prepare(GUI_SAVE_COMPLETE, c);
+				ro_gui_save_prepare(GUI_SAVE_COMPLETE, c, NULL, NULL, NULL);
 			break;
 		case BROWSER_EXPORT_DRAW:
 			ro_gui_menu_set_entry_shaded(current_menu,
 					action, !c);
 			if ((c) && (windows))
-				ro_gui_save_prepare(GUI_SAVE_DRAW, c);
+				ro_gui_save_prepare(GUI_SAVE_DRAW, c, NULL, NULL, NULL);
 			break;
 		case BROWSER_EXPORT_PDF:
 			ro_gui_menu_set_entry_shaded(current_menu,
 					action, !c);
 			if ((c) && (windows))
-				ro_gui_save_prepare(GUI_SAVE_PDF, c);
+				ro_gui_save_prepare(GUI_SAVE_PDF, c, NULL, NULL, NULL);
 			break;
 		case BROWSER_EXPORT_TEXT:
 			ro_gui_menu_set_entry_shaded(current_menu,
 					action, !c);
 			if ((c) && (windows))
-				ro_gui_save_prepare(GUI_SAVE_TEXT, c);
+				ro_gui_save_prepare(GUI_SAVE_TEXT, c, NULL, NULL, NULL);
 			break;
 		case BROWSER_OBJECT_SAVE_URL_URI:
-			c = current_menu_object_box ?
-				current_menu_object_box->object : NULL;
+			if (c && c->type == CONTENT_HTML) {
+				c = current_menu_object_box ?
+					current_menu_object_box->object : NULL;
+			}
 			/* Fall through */
 		case BROWSER_SAVE_URL_URI:
 			ro_gui_menu_set_entry_shaded(current_menu,
 					action, !c);
 			if ((c) && (windows))
-				ro_gui_save_prepare(GUI_SAVE_LINK_URI, c);
+				ro_gui_save_prepare(GUI_SAVE_LINK_URI, NULL, NULL,
+						c->url, c->title);
 			break;
 		case BROWSER_OBJECT_SAVE_URL_URL:
-			c = current_menu_object_box ?
-				current_menu_object_box->object : NULL;
+			if (c && c->type == CONTENT_HTML) {
+				c = current_menu_object_box ?
+					current_menu_object_box->object : NULL;
+			}
 			/* Fall through */
 		case BROWSER_SAVE_URL_URL:
 			ro_gui_menu_set_entry_shaded(current_menu,
 					action, !c);
 			if ((c) && (windows))
-				ro_gui_save_prepare(GUI_SAVE_LINK_URL, c);
+				ro_gui_save_prepare(GUI_SAVE_LINK_URL, NULL, NULL,
+						c->url, c->title);
 			break;
 		case BROWSER_OBJECT_SAVE_URL_TEXT:
-			c = current_menu_object_box ?
-				current_menu_object_box->object : NULL;
+			if (c && c->type == CONTENT_HTML) {
+				c = current_menu_object_box ?
+					current_menu_object_box->object : NULL;
+			}
 			/* Fall through */
 		case BROWSER_SAVE_URL_TEXT:
 			ro_gui_menu_set_entry_shaded(current_menu,
 					action, !c);
 			if ((c) && (windows))
-				ro_gui_save_prepare(GUI_SAVE_LINK_TEXT, c);
+				ro_gui_save_prepare(GUI_SAVE_LINK_TEXT, NULL, NULL,
+						c->url, c->title);
 			break;
 		case HOTLIST_EXPORT:
 			if ((tree) && (windows))
 				ro_gui_save_prepare(GUI_SAVE_HOTLIST_EXPORT_HTML,
-						NULL);
+						NULL, NULL, NULL, NULL);
 			break;
 		case HISTORY_EXPORT:
 			if ((tree) && (windows))
 				ro_gui_save_prepare(GUI_SAVE_HISTORY_EXPORT_HTML,
-						NULL);
+						NULL, NULL, NULL, NULL);
 			break;
 
 		/* navigation actions */
