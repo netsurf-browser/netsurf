@@ -943,7 +943,7 @@ const char *urldb_get_auth_details(const char *url)
 		 * We look for this here.
 		 */
 		for (q = p->children; q; q = q->next) {
-			if (strlen(q->segment) == 0)
+			if (q->segment[0] == '\0')
 				break;
 		}
 
