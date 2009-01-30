@@ -282,6 +282,11 @@ void nsgtk_attach_menu_handlers(GladeXML *xml, gpointer g)
 	}
 }
 
+GtkWindow *nsgtk_get_window_for_scaffold(struct gtk_scaffolding *g)
+{
+  return g->window;
+}
+
 /* event handlers and support functions for them */
 
 gboolean nsgtk_window_delete_event(GtkWidget *widget, gpointer data)

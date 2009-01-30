@@ -25,6 +25,8 @@
 
 typedef struct gtk_scaffolding nsgtk_scaffolding;
 
+GtkWindow *nsgtk_get_window_for_scaffold(struct gtk_scaffolding *g);
+
 nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel);
 
 gboolean nsgtk_scaffolding_is_busy(nsgtk_scaffolding *scaffold);
