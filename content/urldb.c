@@ -1242,39 +1242,73 @@ bool urldb_iterate_partial_path(const struct path_data *parent,
 		const char *prefix, bool (*callback)(const char *url,
 		const struct url_data *data))
 {
-	const struct path_data *p;
+	const struct path_data *p = parent->children;
 	const char *slash, *end = prefix + strlen(prefix);
-	int c;
 
-	slash = strchr(prefix, '/');
-	if (!slash)
-		slash = end;
+	/* 
+	 * Given: http://www.example.org/a/b/c/d//e
+	 * and assuming a path tree:
+	 *     .
+	 *    / \
+	 *   a1 b1
+	 *  / \
+	 * a2 b2
+	 *    /|\
+	 *   a b c
+	 *   3 3 |
+	 *       d
+	 *       |
+	 *       e
+	 *      / \
+	 *      f g
+	 *
+	 * Prefix will be:	p will be:
+	 *
+	 * a/b/c/d//e		a1
+	 *   b/c/d//e		a2
+	 *   b/c/d//e		b3
+	 *     c/d//e		a3
+	 *     c/d//e		b3
+	 *     c/d//e		c
+	 *       d//e		d
+	 *         /e		e		(skip /)
+	 *          e		e
+	 *
+	 * I.E. we perform a breadth-first search of the tree.
+	 */
 
-	if (slash == prefix && *prefix == '/')
-		/* Ignore "//" */
-		return true;
+	do {
+		slash = strchr(prefix, '/');
+		if (!slash)
+			slash = end;
 
-	for (p = parent->children; p; p = p->next) {
-		if ((c = strncasecmp(p->segment, prefix, slash - prefix)) < 0)
-			/* didn't match, but may be more */
+		if (slash == prefix && *prefix == '/') {
+			/* Ignore "//" */
+			prefix++;
 			continue;
-		else if (c > 0)
-			/* still possible matches in a different case */
-			continue;
-
-		/* prefix matches so far */
-		if (slash == end) {
-			/* we've run out of prefix, so all
-			 * paths below this one match */
-			if (!urldb_iterate_entries_path(p, callback, NULL))
-				return false;
-		} else {
-			/* more prefix to go => recurse */
-			if (!urldb_iterate_partial_path(p, slash + 1,
-					callback))
-				return false;
 		}
-	}
+	
+		if (strncasecmp(p->segment, prefix, slash - prefix) == 0) {
+			/* prefix matches so far */
+			if (slash == end) {
+				/* we've run out of prefix, so all
+				 * paths below this one match */
+				if (!urldb_iterate_entries_path(p, callback, 
+						NULL))
+					return false;
+
+				break;
+			}
+
+			/* Skip over this segment */
+			prefix = slash + 1;
+
+			p = p->children;
+		} else {
+			/* Doesn't match this segment, try next sibling */
+			p = p->next;
+		}
+	} while (p != NULL);
 
 	return true;
 }
