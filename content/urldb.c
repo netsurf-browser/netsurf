@@ -1406,39 +1406,49 @@ bool urldb_iterate_entries_path(const struct path_data *parent,
 		bool (*cookie_callback)(const char *domain,
 				const struct cookie_data *data))
 {
-	const struct path_data *p;
+	const struct path_data *p = parent;
 
-	if (!parent->children) {
-		/* leaf node */
-
-		/* All leaf nodes in the path tree should have an URL or
-		 * cookies attached to them. If this is not the case, it
-		 * indicates that there's a bug in the file loader/URL
-		 * insertion code. Therefore, assert this here. */
-		assert(url_callback || cookie_callback);
-
-		/** \todo handle fragments? */
-		if (url_callback) {
-			const struct url_internal_data *u = &parent->urld;
-
-			assert(parent->url);
-			if (!url_callback(parent->url,
-					(const struct url_data *) u))
-				return false;
+	do {
+		if (p->children != NULL) {
+			/* Drill down into children */
+			p = p->children;
 		} else {
-			if (parent->cookies && !cookie_callback(
-					parent->cookies->domain,
-					(const struct cookie_data *) 
-						parent->cookies))
-				return false;
-		}
-	}
+			/* All leaf nodes in the path tree should have an URL or
+			 * cookies attached to them. If this is not the case, it
+			 * indicates that there's a bug in the file loader/URL
+			 * insertion code. Therefore, assert this here. */
+			assert(url_callback || cookie_callback);
 
-	for (p = parent->children; p; p = p->next) {
-		if (!urldb_iterate_entries_path(p,
-				url_callback, cookie_callback))
-			return false;
-	}
+			/** \todo handle fragments? */
+			if (url_callback) {
+				const struct url_internal_data *u = &p->urld;
+
+				assert(p->url);
+
+				if (!url_callback(p->url,
+						(const struct url_data *) u))
+					return false;
+			} else {
+				if (p->cookies && !cookie_callback(
+						p->cookies->domain,
+						(const struct cookie_data *) 
+							p->cookies))
+					return false;
+			}
+
+			/* Now, find next node to process. */
+			while (p != parent) {
+				if (p->next != NULL) {
+					/* Have a sibling, process that */
+					p = p->next;
+					break;
+				}
+
+				/* Ascend tree */
+				p = p->parent;
+			}
+		}
+	} while (p != parent);
 
 	return true;
 }
