@@ -372,8 +372,19 @@ gboolean nsgtk_window_button_press_event(GtkWidget *widget,
 	g->mouse->pressed_x = event->x / g->bw->scale;
 	g->mouse->pressed_y = event->y / g->bw->scale;
 
-	if (event->button == 3){
-    nsgtk_scaffolding_popup_menu(g->scaffold, g->mouse->pressed_x, g->mouse->pressed_y);
+	if (event->button == 3) {
+		/** \todo
+		 * Firstly, MOUSE_PRESS_2 on GTK is a middle click, which doesn't
+		 * appear correct to me.  Secondly, right-clicks are not passed to
+		 * browser_window_mouse_click() at all, which also seems incorrect
+		 * since they should result in browser_window_remove_caret().
+		 *
+		 * I would surmise we need a MOUSE_PRESS_3, unless right-clicking is
+		 * supposed to be mapped to MOUSE_PRESS_2, but that doesn't appear
+		 * correct either.
+		 */
+		browser_window_remove_caret(g->bw);
+		nsgtk_scaffolding_popup_menu(g->scaffold, g->mouse->pressed_x, g->mouse->pressed_y);
 		return TRUE;
 	}
 	
@@ -389,7 +400,7 @@ gboolean nsgtk_window_button_press_event(GtkWidget *widget,
 	
 	browser_window_mouse_click(g->bw, g->mouse->state, g->mouse->pressed_x,
 			g->mouse->pressed_y);
-		
+	
 	return TRUE;
 }
 
