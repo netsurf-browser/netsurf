@@ -1372,7 +1372,7 @@ void gui_window_save_as_link(struct gui_window *g, struct content *c)
 {
 	if (!c)
 		return;
-	ro_gui_save_prepare(GUI_SAVE_LINK_URL, c);
+	ro_gui_save_prepare(GUI_SAVE_LINK_URL, NULL, NULL, c->url, c->title);
 	ro_gui_dialog_open_persistent(g->window, dialog_saveas, true);
 }
 

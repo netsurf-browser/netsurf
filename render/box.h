@@ -297,6 +297,7 @@ struct box *box_at_point(struct box *box, int x, int y,
 		int *box_x, int *box_y,
 		struct content **content);
 struct box *box_object_at_point(struct content *c, int x, int y);
+struct box *box_href_at_point(struct content *c, int x, int y);
 struct box *box_find_by_id(struct box *box, const char *id);
 bool box_visible(struct box *box);
 void box_dump(FILE *stream, struct box *box, unsigned int depth);

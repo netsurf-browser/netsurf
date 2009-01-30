@@ -71,15 +71,24 @@ URI:Acorn URI
 URL:ANT URL
 LinkText:Texte
 
-# Main -> Object menu
+# Main -> Object -> Object menu
 #
 ObjInfo:Info
 ObjSave:Sauver
 ObjReload:Recharger
 
-# Main -> Object -> Export menu
+# Main -> Object -> Object -> Export menu
 #
 Sprite:Sprite
+ObjDraw:Draw
+
+# Main -> Object -> Link menu
+LinkSave:Save
+LinkDload:Download target
+LinkNew:New window
+
+#Main -> Selection menu
+SelSave:Save
 
 # Main -> Navigate menu
 #
@@ -162,6 +171,9 @@ EditToolbar:Barre de configuration
 Selection:Sélection
 SelectAll:Tout sélectionner  ^A
 Clear:Effacer la sélection  ^Z
+Copy:Copier vers le presse-papier  ^C
+Cut:Cut to clipboard  ^X
+Paste:Paste from clipboard  ^V
 
 # Selection Menu
 #
@@ -754,61 +766,79 @@ HelpBrowserMenu0-4-1:\Rsauver l'adresse en cours au format Ant URL.
 HelpBrowserMenu0-4-2:\Rsauver l'adresse courante en simple texte.
 HelpBrowserMenu0-5:\Souvrir la boîte de dialogue d'impression.
 HelpBrowserMenu0-6:\Souvrir la page courante dans une nouvelle fenêtre.
-HelpBrowserMenu0-7:\Svoir le code source de la page courante dans un éditeur de texte.
+HelpBrowserMenu0-7:\Rchercher un fragment de texte sur la page.
+HelpBrowserMenu0-8:\Svoir le code source de la page courante dans un éditeur de texte.
 HelpBrowserMenu1:\Rvoir les options correspondant à l'objet courant.
-HelpBrowserMenu1-0:\Rvoir les informations sur l'objet en cours.
-HelpBrowserMenu1-1:\Rsauver l'objet courant.
-HelpBrowserMenu1-2:\Rvoir les options d'exportation.
-HelpBrowserMenu1-2-0:\Rsauver l'image au format Sprite.
-HelpBrowserMenu1-3:\Rsauver l'adresse de l'objet courant.
-HelpBrowserMenu1-3-0:\Rsauver l'adresse de l'objet courant au format Acorn URI.
-HelpBrowserMenu1-3-1:\Rsauver l'adresse de l'objet courant au format Ant URL.
-HelpBrowserMenu1-3-2:\Rsauver l'adresse de l'objet courant en texte simple.
-HelpBrowserMenu1-4:\Srecharger tous les objets de cete page.
-HelpBrowserMenu2:\Rvoir les options de navigation.
-HelpBrowserMenu2-0:\Srevenir à la page d'accueil configurée.
-HelpBrowserMenu2-1:\Sreculer d'une page dans l'historique local.|ML'information du formlaire n'est pas réenvoyée.
-HelpBrowserMenu2-2:\Savancer d'une page dans l'historique local.|ML'information du formlaire n'est pas réenvoyée.
-HelpBrowserMenu2-3:\Straverse up one level in the directory tree.
-HelpBrowserMenu2-4:\Srecommencer le chargement de la page courante.
-HelpBrowserMenu2-5:\Sarrêter le chargement de la page par NetSurf.
-HelpBrowserMenu3:\Rdéfinir les options d'affichage locales.
-HelpBrowserMenu3-0:\Rredimensionner la page, y compris texte et images.
-HelpBrowserMenu3-1:\Rdéfinir les options d'images locales.
-#HelpBrowserMenu3-1-0:\Safficher ou pas des images de premier plan.
-HelpBrowserMenu3-1-1:\Safficher ou pas des images de fond.
-HelpBrowserMenu3-1-2:\Safficher ou pas des animations.|MSi les animations ne sont pas montrées, seule la première image est affichée.
-HelpBrowserMenu3-2:\Rcontroler l'affichage des barres d'outils de NetSurf.
-HelpBrowserMenu3-2-0:\Safficher ou pas les boutons de la barre d'outil.|MLa barre d'URL utilise l'espace restant.
-HelpBrowserMenu3-2-1:\Safficher ou pas la barre d'adresse (URL).
-HelpBrowserMenu3-2-2:\Safficher le pulseur ou pas.|MLa barre d'URL utilise l'espace restant.
-HelpBrowserMenu3-2-3:\Safficher la barre d'état ou pas.|MLa barre de défilement horizontal utilise la largeur restante.
-HelpBrowserMenu3-2-4:\Schanger le mode d'édition de barre d'outils.
-HelpBrowserMenu3-3:\Scontroler la façon d'afficher.
-HelpBrowserMenu3-3-0:\Sdécider si les animations sont affichées quand tous les calculs sont terminés (ou avant).
-HelpBrowserMenu3-3-1:\Sdécider si tout doit être affiché quand tous les calculs sont terminés (ou avant).
-HelpBrowserMenu3-4:\Spromouvoir vos options d'affichage locales en options par défaut pour NetSurf.
-HelpBrowserMenu4:\Raccéder aux utilitaires intégrés à NetSurf.|MLes utilitaires sont des outils comme les favoris, l'historique arborescent et diverses options de configuration.
-HelpBrowserMenu4-0:\Rgérer les favoris.
-HelpBrowserMenu4-0-0:\Sajouter la page en cours aux favoris.
-HelpBrowserMenu4-0-1:\Souvrir la \w de gestion des favoris.
-HelpBrowserMenu4-1:\Rview the history options.
-HelpBrowserMenu4-1-0:\Souvrir la \w d'historique local.
-HelpBrowserMenu4-1-1:\Souvrir la fenêtre d'historique global.
-HelpBrowserMenu4-2:\Rgérer vos favoris.
-HelpBrowserMenu4-2-0:\Souvrir la fenêtre de gestion des cookies.
-HelpBrowserMenu4-3:\Rchercher un fragment de texte sur la page.
-HelpBrowserMenu4-4:\Rcontroler le positionnement de fenêtre par défaut.
-HelpBrowserMenu4-4-0:\Spromouvoir la position de fenêtre courante en celle par défault.
-HelpBrowserMenu4-4-1:\Sdécider si les fenêtres suivantes doivent être ouvertes en décalage à l'écran.
-HelpBrowserMenu4-4-2:\Sdécider si les fenêtres-filles doivent être ouvertes à la même taille que celle de leurs parents.
-HelpBrowserMenu4-4-3:\Srevenir au positionnement de fenêtre par défaut.
-HelpBrowserMenu5:\Rvoir l'aide disponible.
-HelpBrowserMenu5-0:\Souvrir la page de documentation dans une nouvelle fenêtre.
-HelpBrowserMenu5-1:\Souvrir le guide de l'utilisateur dans une nouvelle fenêtre.
-HelpBrowserMenu5-2:\Souvrir la page d'information de l'utilisateur dans une nouvelle fenêtre.
-HelpBrowserMenu5-3:\Souvrir la page "À propos de" de NetSurf dans une nouvelle fenêtre.
-HelpBrowserMenu5-4:\Slancer Help.
+HelpBrowserMenu1-0-0:\Rvoir les informations sur l'objet en cours.
+HelpBrowserMenu1-0-1:\Rsauver l'objet courant.
+HelpBrowserMenu1-0-2:\Rvoir les options d'exportation.
+HelpBrowserMenu1-0-2-0:\Rsauver l'image au format Sprite.
+HelpBrowserMenu1-0-3:\Rsauver l'adresse de l'objet courant.
+HelpBrowserMenu1-0-3-0:\Rsauver l'adresse de l'objet courant au format Acorn URI.
+HelpBrowserMenu1-0-3-1:\Rsauver l'adresse de l'objet courant au format Ant URL.
+HelpBrowserMenu1-0-3-2:\Rsauver l'adresse de l'objet courant en texte simple.
+HelpBrowserMenu1-0-4:\Srecharger tous les objets de cete page.
+HelpBrowserMenu1-1:\Rsee the options relating to the current link.
+HelpBrowserMenu1-1-0:\Rsave the current link.
+HelpBrowserMenu1-1-0-0:\Rsave the link in Acorn URI format.
+HelpBrowserMenu1-1-0-1:\Rsave the link in Ant URL format.
+HelpBrowserMenu1-1-0-2:\Rsave the link as plain text.
+HelpBrowserMenu1-1-1:\Sdownload from this link.
+HelpBrowserMenu1-1-2:\Sopen this link in a new window.
+HelpBrowserMenu2:\Rsee the selection options.
+HelpBrowserMenu2-0:\Rsave the current selection.
+HelpBrowserMenu2-1:\Scopy the selected text to the clipboard.
+HelpBrowserMenu2-2:\Scut the selected text to the clipboard.
+HelpBrowserMenu2-3:\Spaste text from the clipboard.
+HelpBrowserMenu3:\Rvoir les options de navigation.
+HelpBrowserMenu3-0:\Srevenir à la page d'accueil configurée.
+HelpBrowserMenu3-1:\Sreculer d'une page dans l'historique local.|ML'information du formlaire n'est pas réenvoyée.
+HelpBrowserMenu3-2:\Savancer d'une page dans l'historique local.|ML'information du formlaire n'est pas réenvoyée.
+HelpBrowserMenu3-3:\Straverse up one level in the directory tree.
+HelpBrowserMenu3-4:\Srecommencer le chargement de la page courante.
+HelpBrowserMenu3-5:\Sarrêter le chargement de la page par NetSurf.
+HelpBrowserMenu4:\Rdéfinir les options d'affichage locales.
+HelpBrowserMenu4-0:\Rredimensionner la page, y compris texte et images.
+HelpBrowserMenu4-1:\Rdéfinir les options d'images locales.
+#HelpBrowserMenu4-1-0:\Safficher ou pas des images de premier plan.
+HelpBrowserMenu4-1-1:\Safficher ou pas des images de fond.
+HelpBrowserMenu4-1-2:\Safficher ou pas des animations.|MSi les animations ne sont pas montrées, seule la première image est affichée.
+HelpBrowserMenu4-2:\Rcontroler l'affichage des barres d'outils de NetSurf.
+HelpBrowserMenu4-2-0:\Safficher ou pas les boutons de la barre d'outil.|MLa barre d'URL utilise l'espace restant.
+HelpBrowserMenu4-2-1:\Safficher ou pas la barre d'adresse (URL).
+HelpBrowserMenu4-2-2:\Safficher le pulseur ou pas.|MLa barre d'URL utilise l'espace restant.
+HelpBrowserMenu4-2-3:\Safficher la barre d'état ou pas.|MLa barre de défilement horizontal utilise la largeur restante.
+HelpBrowserMenu4-2-4:\Schanger le mode d'édition de barre d'outils.
+HelpBrowserMenu4-3:\Scontroler la façon d'afficher.
+HelpBrowserMenu4-3-0:\Sdécider si les animations sont affichées quand tous les calculs sont terminés (ou avant).
+HelpBrowserMenu4-3-1:\Sdécider si tout doit être affiché quand tous les calculs sont terminés (ou avant).
+HelpBrowserMenu4-4:\Spromouvoir vos options d'affichage locales en options par défaut pour NetSurf.
+HelpBrowserMenu4-5:\Rcontroler le positionnement de fenêtre par défaut.
+HelpBrowserMenu4-5-0:\Spromouvoir la position de fenêtre courante en celle par défault.
+HelpBrowserMenu4-5-1:\Sdécider si les fenêtres suivantes doivent être ouvertes en décalage à l'écran.
+HelpBrowserMenu4-5-2:\Sdécider si les fenêtres-filles doivent être ouvertes à la même taille que celle de leurs parents.
+HelpBrowserMenu4-5-3:\Srevenir au positionnement de fenêtre par défaut.
+HelpBrowserMenu5:\Raccéder aux utilitaires intégrés à NetSurf.|MLes utilitaires sont des outils comme les favoris, l'historique arborescent et diverses options de configuration.
+HelpBrowserMenu5-0:\Rgérer les favoris.
+HelpBrowserMenu5-0-0:\Sajouter la page en cours aux favoris.
+HelpBrowserMenu5-0-1:\Souvrir la \w de gestion des favoris.
+HelpBrowserMenu5-1:\Rview the history options.
+HelpBrowserMenu5-1-0:\Souvrir la \w d'historique local.
+HelpBrowserMenu5-1-1:\Souvrir la fenêtre d'historique global.
+HelpBrowserMenu5-2:\Rgérer vos favoris.
+HelpBrowserMenu5-2-0:\Souvrir la fenêtre de gestion des cookies.
+HelpBrowserMenu5-3:\Rchercher un fragment de texte sur la page.
+HelpBrowserMenu5-4:\Rcontroler le positionnement de fenêtre par défaut.
+HelpBrowserMenu5-4-0:\Spromouvoir la position de fenêtre courante en celle par défault.
+HelpBrowserMenu5-4-1:\Sdécider si les fenêtres suivantes doivent être ouvertes en décalage à l'écran.
+HelpBrowserMenu5-4-2:\Sdécider si les fenêtres-filles doivent être ouvertes à la même taille que celle de leurs parents.
+HelpBrowserMenu5-4-3:\Srevenir au positionnement de fenêtre par défaut.
+HelpBrowserMenu6:\Rvoir l'aide disponible.
+HelpBrowserMenu6-0:\Souvrir la page de documentation dans une nouvelle fenêtre.
+HelpBrowserMenu6-1:\Souvrir le guide de l'utilisateur dans une nouvelle fenêtre.
+HelpBrowserMenu6-2:\Souvrir la page d'information de l'utilisateur dans une nouvelle fenêtre.
+HelpBrowserMenu6-3:\Souvrir la page "À propos de" de NetSurf dans une nouvelle fenêtre.
+HelpBrowserMenu6-4:\Slancer Help.
 
 HelpBrowser-1:Cliquer \s sur un lien pour le suivre.|MCliquer \a sur un lien pour l'ouvrir dans une nouvelle \w.|MShift+\s click on a link to download the link target contents.|MShift+\a click to save the link target address.
 
@@ -1109,4 +1139,3 @@ AnimImg:Animations
 DitherImg:Tramage
 FilterImg:Adoucir les images
 RenderText:Panachage du texte sur le fond
-Copy:Copier vers le presse-papier  ^C

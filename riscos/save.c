@@ -76,6 +76,8 @@
 static gui_save_type gui_save_current_type;
 static struct content *gui_save_content = NULL;
 static struct selection *gui_save_selection = NULL;
+static const char *gui_save_url = NULL;
+static const char *gui_save_title = NULL;
 static int gui_save_filetype;
 static query_id gui_save_query;
 static bool gui_save_send_dataload;
@@ -101,9 +103,9 @@ static bool ro_gui_save_content(struct content *c, char *path, bool force_overwr
 static void ro_gui_save_done(void);
 static void ro_gui_save_bounced(wimp_message *message);
 static void ro_gui_save_object_native(struct content *c, char *path);
-static bool ro_gui_save_link(struct content *c, link_format format, char *path);
+static bool ro_gui_save_link(const char *url, const char *title, link_format format, char *path);
 static void ro_gui_save_set_state(struct content *c, gui_save_type save_type,
-		char *leaf_buf, char *icon_buf);
+		const char *url, char *leaf_buf, char *icon_buf);
 static bool ro_gui_save_create_thumbnail(struct content *c, const char *name);
 static void ro_gui_save_overwrite_confirmed(query_id, enum query_response res, void *p);
 static void ro_gui_save_overwrite_cancelled(query_id, enum query_response res, void *p);
@@ -132,7 +134,7 @@ static const struct gui_save_table_entry gui_save_table[] = {
 	/* GUI_SAVE_TEXT,                */ { 0xfff, "SaveText" },
 	/* GUI_SAVE_COMPLETE,            */ { 0xfaf, "SaveComplete" },
 	/* GUI_SAVE_OBJECT_ORIG,         */ {     0, "SaveObject" },
-	/* GUI_SAVE_OBJECT_NATIVE,       */ { 0xff9, "SaveObject" },
+	/* GUI_SAVE_OBJECT_NATIVE,       */ {     0, "SaveObject" },
 	/* GUI_SAVE_LINK_URI,            */ { 0xf91, "SaveLink" },
 	/* GUI_SAVE_LINK_URL,            */ { 0xb28, "SaveLink" },
 	/* GUI_SAVE_LINK_TEXT,           */ { 0xfff, "SaveLink" },
@@ -232,23 +234,28 @@ void ro_gui_saveas_quit(void)
  *
  * \param  save_type  type of save
  * \param  c          content to save
- * \param  sub_menu   open dialog as a sub menu, otherwise persistent
- * \param  x          x position, for sub_menu true only
- * \param  y          y position, for sub_menu true only
- * \param  parent     parent window for persistent box, for sub_menu false only
+ * \param  s          selection to save
+ * \param  url        url to be saved (link types)
+ * \param  title      title (if any), when saving links
  */
 
-void ro_gui_save_prepare(gui_save_type save_type, struct content *c)
+void ro_gui_save_prepare(gui_save_type save_type, struct content *c,
+	struct selection *s, const char *url, const char *title)
 {
 	char name_buf[FILENAME_MAX];
 	size_t leaf_offset = 0;
 	char icon_buf[20];
 
-	assert((save_type == GUI_SAVE_HOTLIST_EXPORT_HTML) ||
-			(save_type == GUI_SAVE_HISTORY_EXPORT_HTML) || c);
+	assert( (save_type == GUI_SAVE_LINK_URI) ||
+			(save_type == GUI_SAVE_LINK_URL) ||
+			(save_type == GUI_SAVE_LINK_TEXT) ||
+			(save_type == GUI_SAVE_HOTLIST_EXPORT_HTML) ||
+			(save_type == GUI_SAVE_HISTORY_EXPORT_HTML) ||
+			(save_type == GUI_SAVE_TEXT_SELECTION) || c);
 
-	gui_save_current_type = save_type;
-	gui_save_content = c;
+	gui_save_selection = s;
+	gui_save_url = url;
+	gui_save_title = title;
 
 	if (save_dir) {
 		leaf_offset = save_dir_len;
@@ -256,7 +263,8 @@ void ro_gui_save_prepare(gui_save_type save_type, struct content *c)
 		name_buf[leaf_offset++] = '.';
 	}
 
-	ro_gui_save_set_state(c, save_type, name_buf + leaf_offset, icon_buf);
+	ro_gui_save_set_state(c, save_type, c ? c->url : url,
+			name_buf + leaf_offset, icon_buf);
 
 	ro_gui_set_icon_sprite(dialog_saveas, ICON_SAVE_ICON, saveas_area,
 			icon_buf);
@@ -357,7 +365,7 @@ void gui_drag_save_object(gui_save_type save_type, struct content *c,
 		return;
 	}
 
-	ro_gui_save_set_state(c, save_type, save_leafname, icon_buf);
+	ro_gui_save_set_state(c, save_type, c->url, save_leafname, icon_buf);
 
 	gui_current_drag_type = GUI_DRAG_SAVE;
 
@@ -396,7 +404,7 @@ void gui_drag_save_selection(struct selection *s, struct gui_window *g)
 
 	gui_save_selection = s;
 
-	ro_gui_save_set_state(NULL, GUI_SAVE_TEXT_SELECTION, save_leafname,
+	ro_gui_save_set_state(NULL, GUI_SAVE_TEXT_SELECTION, NULL, save_leafname,
 			icon_buf);
 
 	gui_current_drag_type = GUI_DRAG_SAVE;
@@ -696,6 +704,9 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 	bool force_overwrite;
 
 	switch (gui_save_current_type) {
+		case GUI_SAVE_LINK_URI:
+		case GUI_SAVE_LINK_URL:
+		case GUI_SAVE_LINK_TEXT:
 		case GUI_SAVE_HOTLIST_EXPORT_HTML:
 		case GUI_SAVE_HISTORY_EXPORT_HTML:
 		case GUI_SAVE_TEXT_SELECTION:
@@ -822,13 +833,13 @@ bool ro_gui_save_content(struct content *c, char *path, bool force_overwrite)
 			break;
 
 		case GUI_SAVE_LINK_URI:
-			return ro_gui_save_link(c, LINK_ACORN, path);
+			return ro_gui_save_link(gui_save_url, gui_save_title, LINK_ACORN, path);
 
 		case GUI_SAVE_LINK_URL:
-			return ro_gui_save_link(c, LINK_ANT, path);
+			return ro_gui_save_link(gui_save_url, gui_save_title, LINK_ANT, path);
 
 		case GUI_SAVE_LINK_TEXT:
-			return ro_gui_save_link(c, LINK_TEXT, path);
+			return ro_gui_save_link(gui_save_url, gui_save_title, LINK_TEXT, path);
 
 		case GUI_SAVE_HOTLIST_EXPORT_HTML:
 			if (!options_save_tree(hotlist_tree, path, "NetSurf hotlist"))
@@ -1011,7 +1022,7 @@ bool ro_gui_save_complete(struct content *c, char *path)
 
 	/* save URL file with original URL */
 	snprintf(buf, sizeof buf, "%s.URL", path);
-	if (!ro_gui_save_link(c, LINK_ANT, buf))
+	if (!ro_gui_save_link(c->url, c->title, LINK_ANT, buf))
 		return false;
 
 	return save_complete(c, path);
@@ -1044,9 +1055,13 @@ void ro_gui_save_object_native(struct content *c, char *path)
 			bitmap_save(c->bitmap, path, flags);
 		}
 		break;
-
 #ifdef WITH_SPRITE
-		case CONTENT_SPRITE: {
+		case CONTENT_SPRITE:
+#endif
+#ifdef WITH_DRAW
+		case CONTENT_DRAW:
+#endif
+		{
 			os_error *error;
 			error = xosfile_save_stamped(path,
 					ro_content_filetype(c),
@@ -1059,8 +1074,10 @@ void ro_gui_save_object_native(struct content *c, char *path)
 			}
 		}
 		break;
+#if defined(WITH_NS_SVG) || defined(WITH_RSVG)
+		case CONTENT_SVG:
+			break;
 #endif
-
 		default:
 			break;
 	}
@@ -1070,13 +1087,14 @@ void ro_gui_save_object_native(struct content *c, char *path)
 /**
  * Save a link file.
  *
- * \param  c       content to save link to
+ * \param  url     url to be saved
+ * \param  title   corresponding title, if any
  * \param  format  format of link file
  * \param  path    pathname for link file
  * \return  true on success, false on failure and reports the error
  */
 
-bool ro_gui_save_link(struct content *c, link_format format, char *path)
+bool ro_gui_save_link(const char *url, const char *title, link_format format, char *path)
 {
 	FILE *fp = fopen(path, "w");
 
@@ -1089,15 +1107,15 @@ bool ro_gui_save_link(struct content *c, link_format format, char *path)
 		case LINK_ACORN: /* URI */
 			fprintf(fp, "%s\t%s\n", "URI", "100");
 			fprintf(fp, "\t# NetSurf %s\n\n", netsurf_version);
-			fprintf(fp, "\t%s\n", c->url);
-			if (c->title)
-				fprintf(fp, "\t%s\n", c->title);
+			fprintf(fp, "\t%s\n", url);
+			if (title)
+				fprintf(fp, "\t%s\n", title);
 			else
 				fprintf(fp, "\t*\n");
 			break;
 		case LINK_ANT: /* URL */
 		case LINK_TEXT: /* Text */
-			fprintf(fp, "%s\n", c->url);
+			fprintf(fp, "%s\n", url);
 			break;
 	}
 
@@ -1124,13 +1142,14 @@ bool ro_gui_save_link(struct content *c, link_format format, char *path)
  *
  * \param  c          content being saved
  * \param  save_type  type of save operation being performed
+ * \param  url        used to determine leafname
  * \param  leaf_buf   buffer to receive suggested leafname, length at least
  *                    LEAFNAME_MAX
  * \param  icon_buf   buffer to receive sprite name, length at least 13
  */
 
 void ro_gui_save_set_state(struct content *c, gui_save_type save_type,
-		char *leaf_buf, char *icon_buf)
+		const char *url, char *leaf_buf, char *icon_buf)
 {
 	/* filename */
 	const char *name = gui_save_table[save_type].name;
@@ -1147,11 +1166,50 @@ void ro_gui_save_set_state(struct content *c, gui_save_type save_type,
 
 	/* suggest a filetype based upon the content */
 	gui_save_filetype = gui_save_table[save_type].filetype;
-	if (!gui_save_filetype)
-		gui_save_filetype = ro_content_filetype(c);
+	if (!gui_save_filetype && c) {
+		if (save_type == GUI_SAVE_OBJECT_NATIVE) {
+			switch (c->type) {
+				/* bitmap images */
+#ifdef WITH_JPEG
+				case CONTENT_JPEG:
+#endif
+#if defined(WITH_MNG) || defined(WITH_PNG)
+				case CONTENT_PNG:
+#endif
+#ifdef WITH_MNG
+				case CONTENT_JNG:
+				case CONTENT_MNG:
+#endif
+#ifdef WITH_GIF
+				case CONTENT_GIF:
+#endif
+#ifdef WITH_BMP
+				case CONTENT_BMP:
+				case CONTENT_ICO:
+#endif
+					gui_save_filetype = osfile_TYPE_SPRITE;
+					break;
+				/* vector formats */
+#if defined(WITH_NS_SVG) || defined(WITH_RSVG)
+				case CONTENT_SVG:
+					gui_save_filetype = osfile_TYPE_DRAW;
+					break;
+#endif
+#ifdef WITH_DRAW
+				case CONTENT_DRAW:
+					gui_save_filetype = osfile_TYPE_DRAW;
+					break;
+#endif
+				default:
+					break;
+			}
+		}
+		if (!gui_save_filetype)
+			gui_save_filetype = ro_content_filetype(c);
+	}
 
 	/* leafname */
-	if (c && (res = url_nice(c->url, &nice, option_strip_extensions)) ==
+	if (url && (res = url_nice(url, &nice, option_strip_extensions)) ==
 			URL_FUNC_OK) {
 		for (i = 0; nice[i]; i++) {
 			if (nice[i] == '.')

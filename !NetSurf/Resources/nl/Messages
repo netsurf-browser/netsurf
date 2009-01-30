@@ -71,15 +71,24 @@ URI:Acorn URI
 URL:ANT URL
 LinkText:Tekst
 
-# Main -> Object menu
+# Main -> Object -> Object menu
 #
 ObjInfo:Informatie
 ObjSave:Bewaar
 ObjReload:Herlaad
 
-# Main -> Object -> Export menu
+# Main -> Object -> Object -> Export menu
 #
 Sprite:Sprite
+ObjDraw:Draw
+
+# Main -> Object -> Link menu
+LinkSave:Save
+LinkDload:Download target
+LinkNew:New window
+
+# Main -> Selection menu
+SelSave:Save
 
 # Main -> Navigate menu
 #
@@ -162,6 +171,9 @@ EditToolbar:Werkbalk aanpassen
 Selection:Selectie
 SelectAll:Selecteer alles  ^A
 Clear:Selectie opheffen  ^Z
+Copy:Copieer naar prikbord  ^C
+Cut:Cut to clipboard  ^X
+Paste:Paste from clipboard  ^V
 
 # Selection Menu
 #
@@ -754,61 +766,73 @@ HelpBrowserMenu0-4-1:\Rsave the current address in Ant URL format.
 HelpBrowserMenu0-4-2:\Rsave the current address as plain text.
 HelpBrowserMenu0-5:\Sopen the print dialogue box.
 HelpBrowserMenu0-6:\Sopen the current page in a new window.
-HelpBrowserMenu0-7:\Sview the source code of the current page in a text editor.
+HelpBrowserMenu0-7:\Rsearch for instances of a string of text on the page.
+HelpBrowserMenu0-8:\Sview the source code of the current page in a text editor.
 HelpBrowserMenu1:\Rsee the options relating to the current item.
-HelpBrowserMenu1-0:\Rsee information about the current item.
-HelpBrowserMenu1-1:\Rsave the current item.
-HelpBrowserMenu1-2:\Rsee the export options.
-HelpBrowserMenu1-2-0:\Rsave the image as a Sprite.
-HelpBrowserMenu1-3:\Rsave the address of the current item.
-HelpBrowserMenu1-3-0:\Rsave the current item's address in Acorn URI format.
-HelpBrowserMenu1-3-1:\Rsave the current item's address in Ant URL format.
-HelpBrowserMenu1-3-2:\Rsave the current item's address as plain text.
-HelpBrowserMenu1-4:\Sreload all the items on this page.
-HelpBrowserMenu2:\Rsee the navigation options.
-HelpBrowserMenu2-0:\Sreturn to the configured home page.
-HelpBrowserMenu2-1:\Sgo back a page in the local history.|MForm information is not resubmitted.
-HelpBrowserMenu2-2:\Sstep forward a page in the local history.|MForm information is not resubmitted.
-HelpBrowserMenu2-3:\Straverse up one level in the directory tree.
-HelpBrowserMenu2-4:\Sfetch the current page again.
-HelpBrowserMenu2-5:\Sstop NetSurf from continuing to load this page.
-HelpBrowserMenu3:\Rset the local display options.
-HelpBrowserMenu3-0:\Rscale the page, affecting both text and images.
-HelpBrowserMenu3-1:\Rset the local image options.
-#HelpBrowserMenu3-1-0:\Stoggle the display of foreground images.
-HelpBrowserMenu3-1-1:\Stoggle the display of background images.
-HelpBrowserMenu3-1-2:\Stoggle the display of animations.|MIf turned off, the first frame is displayed.
-HelpBrowserMenu3-2:\Rcontrol the display of NetSurf's toolbars.
-HelpBrowserMenu3-2-0:\Stoggle the display of the toolbar buttons.|MURL bar uses the remaining space.
-HelpBrowserMenu3-2-1:\Stoggle the display of the address (URL) bar.
-HelpBrowserMenu3-2-2:\Stoggle the display of the throbber.|MURL bar uses the remaining space.
-HelpBrowserMenu3-2-3:\Stoggle the display of the status bar.|MHorizontal scroll bar uses the remaining width.
-HelpBrowserMenu3-2-4:\Stoggle toolbar edit mode.
-HelpBrowserMenu3-3:\Scontrol the manner in which the display is rendered.
-HelpBrowserMenu3-3-0:\Stoggle whether animations are not displayed until all calculations are complete.
-HelpBrowserMenu3-3-1:\Stoggle whether everything is not displayed until all calculations are complete.
-HelpBrowserMenu3-4:\Smake your local display options the default options for NetSurf.
-HelpBrowserMenu4:\Rto access NetSurf's built in utilities.|MUtilities are tools such as the hotlist, history tree and various setup options.
-HelpBrowserMenu4-0:\Rmanage the hotlist.
-HelpBrowserMenu4-0-0:\Sadd the current page to the hotlist.
-HelpBrowserMenu4-0-1:\Sopen the hotlist management \w.
-HelpBrowserMenu4-1:\Rview the history options.
-HelpBrowserMenu4-1-0:\Sopen the local history \w.
-HelpBrowserMenu4-1-1:\Sopen the global history \w.
-HelpBrowserMenu4-2:\Rmanage your cookies.
-HelpBrowserMenu4-2-0:\Sopen the cookie management \w.
-HelpBrowserMenu4-3:\Rsearch for instances of a string of text on the page.
-HelpBrowserMenu4-4:\Rcontrol the default \w positioning.
-HelpBrowserMenu4-4-0:\Sto make the current \w position the default.
-HelpBrowserMenu4-4-1:\Sto toggle whether subsequent windows are staggered down the screen.
-HelpBrowserMenu4-4-2:\Sto toggle whether child windows copy the size and position of their parent.|MWhen off, all new windows open in the default position.
-HelpBrowserMenu4-4-3:\Sto return to the default \w positioning.
-HelpBrowserMenu5:\Rsee the help resources available.
-HelpBrowserMenu5-0:\Sopen the documentation contents page in a new \w.
-HelpBrowserMenu5-1:\Sopen the user guide in a new \w.
-HelpBrowserMenu5-2:\Sopen the user information page in a new \w.
-HelpBrowserMenu5-3:\Sopen the NetSurf about page in a new \w.
-HelpBrowserMenu5-4:\Srun Help.
+HelpBrowserMenu1-0-0:\Rsee information about the current item.
+HelpBrowserMenu1-0-1:\Rsave the current item.
+HelpBrowserMenu1-0-2:\Rsee the export options.
+HelpBrowserMenu1-0-2-0:\Rsave the image as a Sprite.
+HelpBrowserMenu1-0-3:\Rsave the address of the current item.
+HelpBrowserMenu1-0-3-0:\Rsave the current item's address in Acorn URI format.
+HelpBrowserMenu1-0-3-1:\Rsave the current item's address in Ant URL format.
+HelpBrowserMenu1-0-3-2:\Rsave the current item's address as plain text.
+HelpBrowserMenu1-0-4:\Sreload all the items on this page.
+HelpBrowserMenu1-1:\Rsee the options relating to the current link.
+HelpBrowserMenu1-1-0:\Rsave the current link.
+HelpBrowserMenu1-1-0-0:\Rsave the link in Acorn URI format.
+HelpBrowserMenu1-1-0-1:\Rsave the link in Ant URL format.
+HelpBrowserMenu1-1-0-2:\Rsave the link as plain text.
+HelpBrowserMenu1-1-1:\Sdownload from this link.
+HelpBrowserMenu1-1-2:\Sopen this link in a new window.
+HelpBrowserMenu2:\Rsee the selection options.
+HelpBrowserMenu2-0:\Rsave the current selection.
+HelpBrowserMenu2-1:\Scopy the selected text to the clipboard.
+HelpBrowserMenu2-2:\Scut the selected text to the clipboard.
+HelpBrowserMenu2-3:\Spaste text from the clipboard.
+HelpBrowserMenu3:\Rsee the navigation options.
+HelpBrowserMenu3-0:\Sreturn to the configured home page.
+HelpBrowserMenu3-1:\Sgo back a page in the local history.|MForm information is not resubmitted.
+HelpBrowserMenu3-2:\Sstep forward a page in the local history.|MForm information is not resubmitted.
+HelpBrowserMenu3-3:\Straverse up one level in the directory tree.
+HelpBrowserMenu3-4:\Sfetch the current page again.
+HelpBrowserMenu3-5:\Sstop NetSurf from continuing to load this page.
+HelpBrowserMenu4:\Rset the local display options.
+HelpBrowserMenu4-0:\Rscale the page, affecting both text and images.
+HelpBrowserMenu4-1:\Rset the local image options.
+#HelpBrowserMen43-1-0:\Stoggle the display of foreground images.
+HelpBrowserMenu4-1-1:\Stoggle the display of background images.
+HelpBrowserMenu4-1-2:\Stoggle the display of animations.|MIf turned off, the first frame is displayed.
+HelpBrowserMenu4-2:\Rcontrol the display of NetSurf's toolbars.
+HelpBrowserMenu4-2-0:\Stoggle the display of the toolbar buttons.|MURL bar uses the remaining space.
+HelpBrowserMenu4-2-1:\Stoggle the display of the address (URL) bar.
+HelpBrowserMenu4-2-2:\Stoggle the display of the throbber.|MURL bar uses the remaining space.
+HelpBrowserMenu4-2-3:\Stoggle the display of the status bar.|MHorizontal scroll bar uses the remaining width.
+HelpBrowserMenu4-2-4:\Stoggle toolbar edit mode.
+HelpBrowserMenu4-3:\Scontrol the manner in which the display is rendered.
+HelpBrowserMenu4-3-0:\Stoggle whether animations are not displayed until all calculations are complete.
+HelpBrowserMenu4-3-1:\Stoggle whether everything is not displayed until all calculations are complete.
+HelpBrowserMenu4-4:\Smake your local display options the default options for NetSurf.
+HelpBrowserMenu4-5:\Rcontrol the default \w positioning.
+HelpBrowserMenu4-5-0:\Sto make the current \w position the default.
+HelpBrowserMenu4-5-1:\Sto toggle whether subsequent windows are staggered down the screen.
+HelpBrowserMenu4-5-2:\Sto toggle whether child windows copy the size and position of their parent.|MWhen off, all new windows open in the default position.
+HelpBrowserMenu4-5-3:\Sto return to the default \w positioning.
+HelpBrowserMenu5:\Rto access NetSurf's built in utilities.|MUtilities are tools such as the hotlist, history tree and various setup options.
+HelpBrowserMenu5-0:\Rmanage the hotlist.
+HelpBrowserMenu5-0-0:\Sadd the current page to the hotlist.
+HelpBrowserMenu5-0-1:\Sopen the hotlist management \w.
+HelpBrowserMenu5-1:\Rview the history options.
+HelpBrowserMenu5-1-0:\Sopen the local history \w.
+HelpBrowserMenu5-1-1:\Sopen the global history \w.
+HelpBrowserMenu5-2:\Rmanage your cookies.
+HelpBrowserMenu5-2-0:\Sopen the cookie management \w.
+HelpBrowserMenu6:\Rsee the help resources available.
+HelpBrowserMenu6-0:\Sopen the documentation contents page in a new \w.
+HelpBrowserMenu6-1:\Sopen the user guide in a new \w.
+HelpBrowserMenu6-2:\Sopen the user information page in a new \w.
+HelpBrowserMenu6-3:\Sopen the NetSurf about page in a new \w.
+HelpBrowserMenu6-4:\Srun Help.
 
 HelpBrowser-1:Click \s on a link to follow it.|MClick \a on a link to open it in a new \w.|MShift+\s click on a link to download the link target contents.|MShift+\a click to save the link target address.
 
@@ -1109,4 +1133,3 @@ AnimImg:Animatie
 DitherImg:Dither afbeelding
 FilterImg:Smooth afbeelding
 RenderText:Tekst met achtergrond mengen
-Copy:Copieer naar prikbord  ^C

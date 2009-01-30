@@ -29,7 +29,8 @@
 
 wimp_w ro_gui_saveas_create(const char *template_name);
 void ro_gui_saveas_quit(void);
-void ro_gui_save_prepare(gui_save_type save_type, struct content *c);
+void ro_gui_save_prepare(gui_save_type save_type, struct content *c, struct selection *s,
+			const char *url, const char *title);
 void ro_gui_save_start_drag(wimp_pointer *pointer);
 void ro_gui_drag_icon(int x, int y, const char *sprite);
 void ro_gui_drag_box_cancel(void);
