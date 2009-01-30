@@ -88,7 +88,7 @@ struct gtk_scaffolding {
 	GladeXML		*xml;
 
 	GladeXML		*popup_xml;
-	GtkMenu			*popup_menu;
+  GtkMenu			*popup_menu;
 
 	struct gtk_history_window *history_window;
 	GtkDialog 		*preferences_dialog;
@@ -113,15 +113,21 @@ struct menu_events {
 };
 
 static int open_windows = 0;		/**< current number of open browsers */
-static struct gtk_scaffolding *current_model; /**< current window for model dialogue use */
+static struct gtk_scaffolding *current_model; /**< current window for model
+                                                     dialogue use */
+static struct box  *current_menu_link_box; /**< pointer to the box containing a
+                                          link under the mouse, or 0 if none */
 static gboolean nsgtk_window_delete_event(GtkWidget *, gpointer);
 static void nsgtk_window_destroy_event(GtkWidget *, gpointer);
 
 static void nsgtk_window_update_back_forward(struct gtk_scaffolding *);
 static void nsgtk_throb(void *);
-static gboolean nsgtk_window_edit_menu_clicked(GtkWidget *widget, struct gtk_scaffolding *g);
-static gboolean nsgtk_window_edit_menu_hidden(GtkWidget *widget, struct gtk_scaffolding *g);
-static gboolean nsgtk_window_popup_menu_hidden(GtkWidget *widget, struct gtk_scaffolding *g);
+static gboolean nsgtk_window_edit_menu_clicked(GtkWidget *widget,
+    struct gtk_scaffolding *g);
+static gboolean nsgtk_window_edit_menu_hidden(GtkWidget *widget,
+    struct gtk_scaffolding *g);
+static gboolean nsgtk_window_popup_menu_hidden(GtkWidget *widget,
+    struct gtk_scaffolding *g);
 static gboolean nsgtk_window_back_button_clicked(GtkWidget *, gpointer);
 static gboolean nsgtk_window_forward_button_clicked(GtkWidget *, gpointer);
 static gboolean nsgtk_window_stop_button_clicked(GtkWidget *, gpointer);
@@ -130,13 +136,20 @@ static gboolean nsgtk_window_home_button_clicked(GtkWidget *, gpointer);
 static gboolean nsgtk_window_url_activate_event(GtkWidget *, gpointer);
 static gboolean nsgtk_window_url_changed(GtkWidget *, GdkEventKey *, gpointer);
 
-static void nsgtk_scaffolding_update_edit_actions_sensitivity (struct gtk_scaffolding *g, GladeXML *xml, gboolean hide);
-static void nsgtk_scaffolding_enable_edit_actions_sensitivity (struct gtk_scaffolding *g, GladeXML *xml);
+static guint nsgtk_scaffolding_update_save_link_sensitivity
+    (struct gtk_scaffolding *g, GladeXML *xml, gdouble x, gdouble y,
+     gboolean hide);
+static guint nsgtk_scaffolding_update_edit_actions_sensitivity
+    (struct gtk_scaffolding *g, GladeXML *xml, gboolean hide);
+static void nsgtk_scaffolding_enable_save_link_sensitivity
+    (struct gtk_scaffolding *g, GladeXML *xml);
+static void nsgtk_scaffolding_enable_edit_actions_sensitivity
+    (struct gtk_scaffolding *g, GladeXML *xml);
 
 static gboolean nsgtk_history_expose_event(GtkWidget *, GdkEventExpose *,
-						gpointer);
+    gpointer);
 static gboolean nsgtk_history_button_press_event(GtkWidget *, GdkEventButton *,
-						gpointer);
+    gpointer);
 
 static void nsgtk_attach_menu_handlers(GladeXML *, gpointer);
 static void nsgtk_window_tabs_num_changed(GtkNotebook *notebook,
@@ -160,6 +173,7 @@ MENUPROTO(close_window);
 MENUPROTO(quit);
 
 /* edit menu */
+MENUPROTO(save_link);
 MENUPROTO(cut);
 MENUPROTO(copy);
 MENUPROTO(paste);
@@ -214,6 +228,7 @@ static struct menu_events menu_events[] = {
 	MENUEVENT(quit),
 
 	/* edit menu */
+    MENUEVENT(save_link),
 	MENUEVENT(cut),
 	MENUEVENT(copy),
 	MENUEVENT(paste),
@@ -363,6 +378,7 @@ static gboolean nsgtk_window_edit_menu_hidden(GtkWidget *widget, struct gtk_scaf
 
 static gboolean nsgtk_window_popup_menu_hidden(GtkWidget *widget, struct gtk_scaffolding *g)
 {
+    nsgtk_scaffolding_enable_save_link_sensitivity(g, g->popup_xml);
 	nsgtk_scaffolding_enable_edit_actions_sensitivity(g, g->popup_xml);
 	return TRUE;
 
@@ -646,6 +662,21 @@ MENUHANDLER(quit)
 	if (!nsgtk_check_for_downloads(gw->window))
 		netsurf_quit = true;
 	return TRUE;
+}
+
+MENUHANDLER(save_link)
+{
+    struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
+    struct gui_window *gui = gw->top_level;
+    struct browser_window *bw = nsgtk_get_browser_for_gui(gui);
+
+    if (!current_menu_link_box)
+        return FALSE;
+
+    browser_window_download(bw, current_menu_link_box->href,
+            bw->current_content->url);
+
+    return TRUE;
 }
 
 MENUHANDLER(cut)
@@ -1232,6 +1263,8 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 								 nsgtk_window_forward_button_clicked, g);
 	CONNECT(glade_xml_get_widget(g->popup_xml, "popupReload"), "activate", 
 								 nsgtk_window_reload_button_clicked, g);
+  CONNECT(glade_xml_get_widget(g->popup_xml, "save_link_popup"), "activate", 
+                 nsgtk_on_save_link_activate, g); 
 	CONNECT(glade_xml_get_widget(g->popup_xml, "cut_popup"), "activate", 
 								 nsgtk_on_cut_activate, g);	
 	CONNECT(glade_xml_get_widget(g->popup_xml, "copy_popup"), "activate",
@@ -1355,14 +1388,54 @@ void nsgtk_scaffolding_set_top_level (struct gui_window *gw)
 	gw->scaffold->top_level = gw;
 }
 
-void nsgtk_scaffolding_popup_menu(struct gtk_scaffolding *g, guint button)
+void nsgtk_scaffolding_popup_menu(struct gtk_scaffolding *g,
+    gdouble x, gdouble y)
 {
-	nsgtk_scaffolding_update_edit_actions_sensitivity(g, g->popup_xml, TRUE);
-	gtk_menu_popup(g->popup_menu, NULL, NULL, NULL, NULL, 0,
-			gtk_get_current_event_time());
+    guint available_menu_options = 0;
+    GtkWidget *widget = NULL;
+
+    available_menu_options |=
+            nsgtk_scaffolding_update_save_link_sensitivity(g,
+            g->popup_xml, x, y, TRUE);
+    available_menu_options |=
+        nsgtk_scaffolding_update_edit_actions_sensitivity(g,
+        g->popup_xml, TRUE);
+
+    /* Hide the separator as well */
+    if (!available_menu_options) {
+        widget = glade_xml_get_widget(g->popup_xml, "separator");
+        gtk_widget_hide(widget);
+    }
+
+    gtk_menu_popup(g->popup_menu, NULL, NULL, NULL, NULL, 0,
+        gtk_get_current_event_time());
 }
 
-static void nsgtk_scaffolding_update_edit_actions_sensitivity
+static guint nsgtk_scaffolding_update_save_link_sensitivity
+    (struct gtk_scaffolding *g, GladeXML *xml, gdouble x, gdouble y,
+     gboolean hide)
+{
+    GtkWidget *widget = glade_xml_get_widget_prefix(xml, "save_link")->data;
+    struct browser_window *bw = nsgtk_get_browser_for_gui(g->top_level);
+    current_menu_link_box = 0;
+
+    if (bw->current_content &&
+            bw->current_content->type == CONTENT_HTML)
+        current_menu_link_box = box_href_at_point(bw->current_content,
+                                              x, y);
+
+    if (current_menu_link_box)
+        gtk_widget_set_sensitive (widget, TRUE);
+    else
+        gtk_widget_set_sensitive (widget, FALSE);
+
+    if (hide && !current_menu_link_box)
+        gtk_widget_hide(widget);
+
+    return (current_menu_link_box ? 1 : 0);
+}
+
+static guint nsgtk_scaffolding_update_edit_actions_sensitivity
 	(struct gtk_scaffolding *g, GladeXML *xml, gboolean hide)
 {
 	GtkWidget *widget = gtk_window_get_focus(g->window);
@@ -1402,11 +1475,17 @@ static void nsgtk_scaffolding_update_edit_actions_sensitivity
 	if (hide && !can_paste) 
 		gtk_widget_hide(widget);
 	
-	/* If its for the popup menu, handle seperator too */
-	if (hide && !(can_paste || can_cut || can_copy)){
-		widget = glade_xml_get_widget(xml, "separator");
-		gtk_widget_hide(widget);
-	}
+  return (can_paste | can_cut | can_copy);
+}
+
+static void nsgtk_scaffolding_enable_save_link_sensitivity
+    (struct gtk_scaffolding *g, GladeXML *xml)
+{
+    GtkWidget *widget;
+
+    widget = glade_xml_get_widget_prefix(xml, "save_link")->data;
+    gtk_widget_set_sensitive (widget, TRUE);
+    gtk_widget_show(widget);
 }
 
 static void nsgtk_scaffolding_enable_edit_actions_sensitivity

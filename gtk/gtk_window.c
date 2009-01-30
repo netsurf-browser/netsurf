@@ -52,7 +52,7 @@ static gboolean nsgtk_window_keypress_event(GtkWidget *, GdkEventKey *,
 						gpointer);
 static gboolean nsgtk_window_size_allocate_event(GtkWidget *, GtkAllocation *,
 						gpointer);
-		
+
 /* Other useful bits */
 static void nsgtk_redraw_caret(struct gui_window *g);
 
@@ -365,9 +365,12 @@ gboolean nsgtk_window_button_press_event(GtkWidget *widget,
                                          GdkEventButton *event, gpointer data)
 {
 	struct gui_window *g = data;
-	
+
+	g->mouse->pressed_x = event->x / g->bw->scale;
+	g->mouse->pressed_y = event->y / g->bw->scale;
+
 	if (event->button == 3){
-		nsgtk_scaffolding_popup_menu(g->scaffold, event->button);
+    nsgtk_scaffolding_popup_menu(g->scaffold, g->mouse->pressed_x, g->mouse->pressed_y);
 		return TRUE;
 	}
 	
@@ -380,9 +383,6 @@ gboolean nsgtk_window_button_press_event(GtkWidget *widget,
 		g->mouse->state |= BROWSER_MOUSE_MOD_1;
 	if (event->state & GDK_CONTROL_MASK) 
 		g->mouse->state |= BROWSER_MOUSE_MOD_2;
-		
-	g->mouse->pressed_x = event->x / g->bw->scale;
-	g->mouse->pressed_y = event->y / g->bw->scale;
 	
 	browser_window_mouse_click(g->bw, g->mouse->state, g->mouse->pressed_x,
 			g->mouse->pressed_y);

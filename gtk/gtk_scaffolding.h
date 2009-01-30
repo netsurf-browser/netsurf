@@ -37,6 +37,7 @@ void nsgtk_scaffolding_set_top_level (struct gui_window *gw);
 
 void nsgtk_scaffolding_destroy(nsgtk_scaffolding *scaffold);
 
-void nsgtk_scaffolding_popup_menu(nsgtk_scaffolding *g, guint button);
+void nsgtk_scaffolding_popup_menu(struct gtk_scaffolding *g, gdouble x,
+    gdouble y);
 
 #endif /* NETSURF_GTK_SCAFFOLDING_H */

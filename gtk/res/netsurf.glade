@@ -2065,7 +2065,7 @@
       <property name="use_underline">True</property>
 
       <child internal-child="image">
-	<widget class="GtkImage" id="menu-item-image31">
+	<widget class="GtkImage" id="image634">
 	  <property name="visible">True</property>
 	  <property name="stock">gtk-go-back</property>
 	  <property name="icon_size">1</property>
@@ -2085,7 +2085,7 @@
       <property name="use_underline">True</property>
 
       <child internal-child="image">
-	<widget class="GtkImage" id="menu-item-image32">
+	<widget class="GtkImage" id="image635">
 	  <property name="visible">True</property>
 	  <property name="stock">gtk-go-forward</property>
 	  <property name="icon_size">1</property>
@@ -2105,7 +2105,7 @@
       <property name="use_underline">True</property>
 
       <child internal-child="image">
-	<widget class="GtkImage" id="menu-item-image33">
+	<widget class="GtkImage" id="image636">
 	  <property name="visible">True</property>
 	  <property name="stock">gtk-refresh</property>
 	  <property name="icon_size">1</property>
@@ -2125,15 +2125,36 @@
   </child>
 
   <child>
+    <widget class="GtkImageMenuItem" id="save_link_popup">
+      <property name="visible">True</property>
+      <property name="label" translatable="yes">Save Lin_k As...</property>
+      <property name="use_underline">True</property>
+
+      <child internal-child="image">
+	<widget class="GtkImage" id="image637">
+	  <property name="visible">True</property>
+	  <property name="stock">gtk-save-as</property>
+	  <property name="icon_size">1</property>
+	  <property name="xalign">0.5</property>
+	  <property name="yalign">0.5</property>
+	  <property name="xpad">0</property>
+	  <property name="ypad">0</property>
+	</widget>
+      </child>
+    </widget>
+  </child>
+
+  <child>
     <widget class="GtkImageMenuItem" id="cut_popup">
       <property name="visible">True</property>
       <property name="label" translatable="yes">Cu_t</property>
       <property name="use_underline">True</property>
 
       <child internal-child="image">
-	<widget class="GtkImage" id="menu-item-image22">
+	<widget class="GtkImage" id="image638">
+	  <property name="visible">True</property>
 	  <property name="stock">gtk-cut</property>
-	  <property name="icon_size">4</property>
+	  <property name="icon_size">1</property>
 	  <property name="xalign">0.5</property>
 	  <property name="yalign">0.5</property>
 	  <property name="xpad">0</property>
@@ -2150,9 +2171,10 @@
       <property name="use_underline">True</property>
 
       <child internal-child="image">
-	<widget class="GtkImage" id="menu-item-image23">
+	<widget class="GtkImage" id="image639">
+	  <property name="visible">True</property>
 	  <property name="stock">gtk-copy</property>
-	  <property name="icon_size">4</property>
+	  <property name="icon_size">1</property>
 	  <property name="xalign">0.5</property>
 	  <property name="yalign">0.5</property>
 	  <property name="xpad">0</property>
@@ -2169,9 +2191,10 @@
       <property name="use_underline">True</property>
 
       <child internal-child="image">
-	<widget class="GtkImage" id="menu-item-image24">
+	<widget class="GtkImage" id="image640">
+	  <property name="visible">True</property>
 	  <property name="stock">gtk-paste</property>
-	  <property name="icon_size">4</property>
+	  <property name="icon_size">1</property>
 	  <property name="xalign">0.5</property>
 	  <property name="yalign">0.5</property>
 	  <property name="xpad">0</property>
