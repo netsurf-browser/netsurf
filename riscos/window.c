@@ -2216,6 +2216,7 @@ bool ro_gui_toolbar_click(wimp_pointer *pointer)
 		case ICON_TOOLBAR_URL:
 			if (pointer->buttons & (wimp_DRAG_SELECT | wimp_DRAG_ADJUST)) {
 				if (g->bw->current_content) {
+					struct content *c = g->bw->current_content;
 					gui_save_type save_type;
 
 					if (ro_gui_shift_pressed())
@@ -2223,7 +2224,7 @@ bool ro_gui_toolbar_click(wimp_pointer *pointer)
 					else
 						save_type = GUI_SAVE_LINK_TEXT;
 
-					gui_drag_save_object(save_type, g->bw->current_content, g);
+					ro_gui_drag_save_link(save_type, c->url, c->title, g);
 				}
 			}
 			else

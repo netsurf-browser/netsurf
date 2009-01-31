@@ -215,7 +215,7 @@ void ro_gui_menu_init(void)
 			{ "Object.Object.SaveURL.URI", BROWSER_OBJECT_SAVE_URL_URI, dialog_saveas },
 			{ "Object.Object.SaveURL.URL", BROWSER_OBJECT_SAVE_URL_URL, dialog_saveas },
 			{ "Object.Object.SaveURL.LinkText", BROWSER_OBJECT_SAVE_URL_TEXT, dialog_saveas },
-			{ "_Object.Object.ObjReload", BROWSER_OBJECT_RELOAD, 0 },
+			{ "Object.Object.ObjReload", BROWSER_OBJECT_RELOAD, 0 },
 			{ "Object.Link", BROWSER_OBJECT_LINK, 0 },
 			{ "Object.Link.LinkSave", BROWSER_LINK_SAVE, 0 },
 			{ "Object.Link.LinkSave.URI", BROWSER_LINK_SAVE_URI, dialog_saveas },

@@ -414,6 +414,49 @@ void gui_drag_save_selection(struct selection *s, struct gui_window *g)
 
 
 /**
+ * Initiates drag saving of a link/URL file
+ *
+ * \param  save_type	format in which URL should be saved
+ * \param  url			url to be saved
+ * \param  title		title to be included in URI format, if any
+ * \param  g			gui window to save from
+ * \
+ */
+
+void ro_gui_drag_save_link(gui_save_type save_type, const char *url,
+		const char *title, struct gui_window *g)
+{
+	wimp_pointer pointer;
+	char icon_buf[20];
+	os_error *error;
+
+	/* Close the save window because otherwise we need two contexts
+	*/
+	xwimp_create_menu(wimp_CLOSE_MENU, 0, 0);
+	ro_gui_dialog_close(dialog_saveas);
+
+	gui_save_url = url;
+	gui_save_title = title;
+	gui_save_sourcew = g->window;
+	saving_from_dialog = false;
+
+	error = xwimp_get_pointer_info(&pointer);
+	if (error) {
+		LOG(("xwimp_get_pointer_info: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+
+	ro_gui_save_set_state(NULL, save_type, url, save_leafname, icon_buf);
+
+	gui_current_drag_type = GUI_DRAG_SAVE;
+
+	ro_gui_drag_icon(pointer.pos.x, pointer.pos.y, icon_buf);
+}
+
+
+/**
  * Start drag of icon under the pointer.
  */
 
