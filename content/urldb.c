@@ -1901,26 +1901,29 @@ struct path_data *urldb_find_url(const char *url)
 struct path_data *urldb_match_path(const struct path_data *parent,
 		const char *path, const char *scheme, unsigned short port)
 {
-	struct path_data *p;
+	const struct path_data *p = parent;
 	const char *slash;
 
-	if (*path == '\0')
-		return (struct path_data *)parent;
+	do {
+		if (*path == '\0')
+			return (struct path_data *) p;
 
-	slash = strchr(path + 1, '/');
-	if (!slash)
-		slash = path + strlen(path);
+		slash = strchr(path + 1, '/');
+		if (!slash)
+			slash = path + strlen(path);
 
-	for (p = parent->children; p; p = p->next) {
 		if (strncmp(p->segment, path + 1, slash - path - 1) == 0 &&
 				strcmp(p->scheme, scheme) == 0 &&
-				p->port == port)
-			break;
-	}
+				p->port == port) {
+			/* Match so far, go down tree */
+			p = p->children;
 
-	if (p) {
-		return urldb_match_path(p, slash, scheme, port);
-	}
+			path = slash;
+		} else {
+			/* No match, try next sibling */
+			p = p->next;
+		}
+	} while (p != NULL);
 
 	return NULL;
 }
