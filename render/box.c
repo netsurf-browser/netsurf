@@ -102,6 +102,7 @@ struct box * box_create(struct css_style *style,
 	box->parent = NULL;
 	box->fallback = NULL;
 	box->inline_end = NULL;
+	box->line_height = 0;
 	box->float_children = NULL;
 	box->float_container = NULL;
 	box->next_float = NULL;
@@ -576,6 +577,9 @@ void box_dump(FILE *stream, struct box *box, unsigned int depth)
 		fprintf(stream, "  ");
 
 	fprintf(stream, "%p ", box);
+	if (box->type == BOX_INLINE || box->type == BOX_TEXT ||
+			box->type == BOX_INLINE_END)
+		fprintf(stream, "lh%i ", box->line_height);
 	fprintf(stream, "x%i y%i w%i h%i ", box->x, box->y,
 			box->width, box->height);
 	if (box->max_width != UNKNOWN_MAX_WIDTH)

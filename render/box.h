@@ -201,6 +201,7 @@ struct box {
 	 * corresponding to this INLINE_END box. */
 	struct box *inline_end;
 	bool inline_new_line;
+	int line_height;
 
 	/** First float child box, or 0. Float boxes are in the tree twice, in
 	 * this list for the block box which defines the area for floats, and
