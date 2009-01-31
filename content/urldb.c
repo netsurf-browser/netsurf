@@ -3761,20 +3761,22 @@ void urldb_save_cookie_hosts(FILE *fp, struct host_part *parent)
  */
 void urldb_save_cookie_paths(FILE *fp, struct path_data *parent)
 {
-	struct path_data *p;
+	struct path_data *p = parent;
 	time_t now = time(NULL);
 
 	assert(fp && parent);
 
-	if (parent->cookies) {
-		struct cookie_internal_data *c;
-		for (c = parent->cookies; c;
-				c = c->next) {
-			if (c->expires < now)
-				/* Skip expired cookies */
-				continue;
+	do {
+		if (p->cookies != NULL) {
+			struct cookie_internal_data *c;
 
-			fprintf(fp, "%d\t%s\t%d\t%s\t%d\t%d\t%d\t%d\t%d\t"
+			for (c = p->cookies; c != NULL; c = c->next) {
+				if (c->expires < now)
+					/* Skip expired cookies */
+					continue;
+
+				fprintf(fp, 
+					"%d\t%s\t%d\t%s\t%d\t%d\t%d\t%d\t%d\t"
 					"%s\t%s\t%d\t%s\t%s\t%s\n",
 					c->version, c->domain,
 					c->domain_from_set, c->path,
@@ -3782,15 +3784,25 @@ void urldb_save_cookie_paths(FILE *fp, struct path_data *parent)
 					(int)c->expires, (int)c->last_used,
 					c->no_destroy, c->name, c->value,
 					c->value_was_quoted,
-					parent->scheme  ? parent->scheme
-							: "unused",
-					parent->url ? parent->url : "unused",
+					p->scheme ? p->scheme : "unused",
+					p->url ? p->url : "unused",
 					c->comment ? c->comment : "");
+			}
 		}
-	}
 
-	for (p = parent->children; p; p = p->next)
-		urldb_save_cookie_paths(fp, p);
+		if (p->children != NULL) {
+			p = p->children;
+		} else {
+			while (p != parent) {
+				if (p->next != NULL) {
+					p = p->next;
+					break;
+				}
+
+				p = p->parent;
+			}
+		}
+	} while (p != parent);
 }
 
 
