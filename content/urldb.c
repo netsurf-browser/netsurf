@@ -1905,17 +1905,13 @@ struct path_data *urldb_match_path(const struct path_data *parent,
 	const char *slash;
 
 	assert(parent != NULL);
+	assert(parent->segment == NULL);
 	assert(path[0] == '/');
 
-	/* Skip past leading / */
-	path++;
-	/* And start with children, as parent has no segment */
+	/* Start with children, as parent has no segment */
 	p = parent->children;
 
 	while (p != NULL) {
-		if (*path == '\0')
-			return (struct path_data *) p;
-
 		slash = strchr(path + 1, '/');
 		if (!slash)
 			slash = path + strlen(path);
@@ -1923,6 +1919,11 @@ struct path_data *urldb_match_path(const struct path_data *parent,
 		if (strncmp(p->segment, path + 1, slash - path - 1) == 0 &&
 				strcmp(p->scheme, scheme) == 0 &&
 				p->port == port) {
+			if (*slash == '\0') {
+				/* Complete match */
+				return (struct path_data *) p;
+			}
+
 			/* Match so far, go down tree */
 			p = p->children;
 
