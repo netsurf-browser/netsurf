@@ -3660,26 +3660,43 @@ void urldb_delete_cookie_paths(const char *domain, const char *path,
 
 	assert(parent);
 
-	for (c = parent->cookies; c; c = c->next) {
-		if (!strcmp(c->domain, domain) && !strcmp(c->path, path) &&
-				!strcmp(c->name, name)) {
-			if (c->prev)
-				c->prev->next = c->next;
-			else
-			  	parent->cookies = c->next;
-			if (c->next)
-				c->next->prev = c->prev;
-			else
-				parent->cookies_end = c->prev;
-			if (!parent->cookies)
-				cookies_update(domain, NULL);
-			urldb_free_cookie(c);
-			return;
-		}
-	}
+	do {
+		for (c = p->cookies; c; c = c->next) {
+			if (strcmp(c->domain, domain) == 0 && 
+					strcmp(c->path, path) == 0 &&
+					strcmp(c->name, name) == 0) {
+				if (c->prev)
+					c->prev->next = c->next;
+				else
+					p->cookies = c->next;
 
-	for (p = parent->children; p; p = p->next)
-		urldb_delete_cookie_paths(domain, path, name, p);
+				if (c->next)
+					c->next->prev = c->prev;
+				else
+					p->cookies_end = c->prev;
+
+				if (p->cookies == NULL)
+					cookies_update(domain, NULL);
+
+				urldb_free_cookie(c);
+
+				return;
+			}
+		}
+
+		if (p->children) {
+			p = p->children;
+		} else {
+			while (p != parent) {
+				if (p->next != NULL) {
+					p = p->next;
+					break;
+				}
+
+				p = p->parent;
+			}
+		}
+	} while(p != parent);
 }
 
 /**
