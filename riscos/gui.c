@@ -4,7 +4,7 @@
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
  * Copyright 2005 Richard Wilson <info@tinct.net>
  * Copyright 2004 Andrew Timmins <atimmins@blueyonder.co.uk>
- * Copyright 2004-2008 John Tytgat <joty@netsurf-browser.org>
+ * Copyright 2004-2009 John Tytgat <joty@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -154,7 +154,9 @@ int __feature_imagefs_is_file = 1;		/**< For UnixLib. */
 /* default filename handling */
 int __riscosify_control = __RISCOSIFY_NO_SUFFIX |
 			__RISCOSIFY_NO_REVERSE_SUFFIX;
+#ifndef __ELF__
 extern int __dynamic_num;
+#endif
 
 const char * NETSURF_DIR;
 
@@ -865,6 +867,7 @@ void ro_gui_signal(int sig)
 		options_dump();
 		/*rufl_dump_state();*/
 
+#ifndef __ELF__
 		/* save WimpSlot and DA to files if NetSurf$CoreDump exists */
 		int used;
 		xos_read_var_val_size("NetSurf$CoreDump", 0, 0, &used, 0, 0);
@@ -890,6 +893,13 @@ void ro_gui_signal(int sig)
 						base_address + size);
 			}
 		}
+#else
+		/* Save WimpSlot and UnixLib managed DAs when UnixEnv$coredump
+		 * defines a coredump directory.  */
+		_kernel_oserror *err = __unixlib_write_coredump (NULL);
+		if (err != NULL)
+			LOG(("Coredump failed: %s", err->errmess));
+#endif
 
 		xhourglass_colours(old_sand, old_glass, 0, 0);
 		xhourglass_off();
