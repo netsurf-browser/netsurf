@@ -54,7 +54,7 @@ STATIC VOID rx_save(struct ARexxCmd *, struct RexxMsg *);
 
 STATIC struct ARexxCmd Commands[] =
 {
-	{"OPEN",RX_OPEN,rx_open,"URL/A,NEW=NEWWINDOW/S", 		0, 	NULL, 	0, 	0, 	NULL },
+	{"OPEN",RX_OPEN,rx_open,"URL/A,NEW=NEWWINDOW/S,SAVEAS/K", 		0, 	NULL, 	0, 	0, 	NULL },
 	{"QUIT",RX_QUIT,rx_quit,NULL, 		0, 	NULL, 	0, 	0, 	NULL },
 	{"TOFRONT",RX_TOFRONT,rx_tofront,NULL, 		0, 	NULL, 	0, 	0, 	NULL },
 	{"GETURL",RX_GETURL,rx_geturl,NULL, 		0, 	NULL, 	0, 	0, 	NULL },
@@ -79,7 +79,7 @@ BOOL ami_arexx_init(void)
 	}
 	else
 	{
-/* Create a temporary ARexx port so will can send commands to the NetSurf which
+/* Create a temporary ARexx port so we can send commands to the NetSurf which
  * is already running */
 		arexx_obj = ARexxObject,
 			AREXX_HostName,"NETSURF",
@@ -109,7 +109,12 @@ void ami_arexx_cleanup(void)
 
 STATIC VOID rx_open(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
-	if(cmd->ac_ArgList[1])
+	if(cmd->ac_ArgList[2])
+	{
+		curbw->window->dlfilename = strdup(cmd->ac_ArgList[2]);
+		browser_window_download(curbw,(char *)cmd->ac_ArgList[0],NULL);
+	}
+	else if(cmd->ac_ArgList[1])
 	{
 		browser_window_create((char *)cmd->ac_ArgList[0],NULL,NULL,true,false);
 	}

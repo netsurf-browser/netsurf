@@ -43,7 +43,7 @@ void ami_context_menu_init(void)
 	ctxmenulab[CMID_SHOWOBJ] = ami_utf8_easy((char *)messages_get("ObjShow"));
 	ctxmenulab[CMID_COPYOBJ] = ami_utf8_easy((char *)messages_get("CopyURL"));
 	ctxmenulab[CMID_SAVEOBJ] = ami_utf8_easy((char *)messages_get("ObjSave"));
-
+	ctxmenulab[CMID_SAVEURL] = ami_utf8_easy((char *)messages_get("LinkDload"));
 	ctxmenulab[CMID_URLOPENWIN] = ami_utf8_easy((char *)messages_get("LinkNewWin"));
 	ctxmenulab[CMID_URLOPENTAB] = ami_utf8_easy((char *)messages_get("LinkNewTab"));
 
@@ -106,6 +106,11 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
 							PMIA_Title, (ULONG)ctxmenulab[CMID_COPYURL],
 							PMIA_ID,CMID_COPYURL,
+							PMIA_UserData,curbox->href,
+						TAG_DONE),
+						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_SAVEURL],
+							PMIA_ID,CMID_SAVEURL,
 							PMIA_UserData,curbox->href,
 						TAG_DONE),
 					TAG_DONE),
@@ -237,6 +242,10 @@ uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved)
 
 			case CMID_URLOPENTAB:
 				bw = browser_window_create(userdata,gwin->bw, gwin->bw->current_content->url, true, true);
+			break;
+
+			case CMID_SAVEURL:
+				browser_window_download(gwin->bw,userdata,gwin->bw->current_content->url);
 			break;
 
 			case CMID_SHOWOBJ:

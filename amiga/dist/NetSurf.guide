@@ -54,7 +54,7 @@ NetSurf's ARexx port is called NETSURF.
 
 Commands are:
 
-@{b}OPEN URL/A,NEW=NEWWINDOW/S@{ub} Opens URL in current window or a new window if NEWWINDOW is specified.
+@{b}OPEN URL/A,NEW=NEWWINDOW/S,SAVEAS/K@{ub} Opens URL in current window or a new window if NEWWINDOW is specified.  Saves the location without displaying if SAVEAS and a filename is specified (SAVEAS available in 2.6325)
 @{b}SAVE FILENAME/A@{ub} (2.6027) Saves current page source to FILENAME
 @{b}QUIT@{ub} Quits NetSurf
 @{b}TOFRONT@{ub} Brings NetSurf's screen to the front

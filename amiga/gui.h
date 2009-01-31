@@ -116,7 +116,8 @@ struct gui_window
 	int c_h;
 	int scrollx;
 	int scrolly;
-	struct browser_window *bw; // not used
+	char *dlfilename;
+//	struct browser_window *bw; // not used
 };
 
 struct gui_globals

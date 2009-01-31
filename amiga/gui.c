@@ -717,7 +717,7 @@ void ami_handle_msg(void)
 					GetAttr(SPACE_AreaBox,gwin->gadgets[GID_BROWSER],(ULONG *)&bbox);
 
 					GetAttr(SCROLLER_Top,gwin->objects[OID_HSCROLL],(ULONG *)&xs);
-					x = gwin->win->MouseX - bbox->Left +xs;
+					x = gwin->win->MouseX - bbox->Left +xs; // mousex should be in intuimessage
 
 					GetAttr(SCROLLER_Top,gwin->objects[OID_VSCROLL],(ULONG *)&ys);
 					y = gwin->win->MouseY - bbox->Top + ys;
@@ -1971,6 +1971,57 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
 {
 	gui_window_redraw_window(g); // temporary
+#if 0
+this doesn't actually redraw the section as it should...
+	struct content *c;
+	ULONG hcurrent,vcurrent,xoffset,yoffset,width=800,height=600;
+	struct IBox *bbox;
+	ULONG cur_tab = 0;
+
+	if(!g) return;
+
+	if(g->tab_node) GetAttr(CLICKTAB_Current,g->shared->gadgets[GID_TABS],(ULONG *)&cur_tab);
+
+	if(!((cur_tab == g->tab) || (g->shared->tabs == 0)))
+	{
+		return;
+	}
+
+	GetAttr(SPACE_AreaBox,g->shared->gadgets[GID_BROWSER],(ULONG *)&bbox);
+	GetAttr(SCROLLER_Top,g->shared->objects[OID_HSCROLL],(ULONG *)&hcurrent);
+	GetAttr(SCROLLER_Top,g->shared->objects[OID_VSCROLL],(ULONG *)&vcurrent);
+
+	c = g->shared->bw->current_content;
+
+	if(!c) return;
+	if (c->locked) return;
+
+	current_redraw_browser = g->shared->bw;
+
+	width=bbox->Width;
+	height=bbox->Height;
+	xoffset=bbox->Left+x0;
+	yoffset=bbox->Top+y0;
+
+	plot=amiplot;
+
+//	if (c->type == CONTENT_HTML) scale = 1;
+
+		content_redraw(c,
+		xoffset-hcurrent,
+		yoffset-vcurrent,
+		x1,
+		y1,
+		0,0,width,height,
+		g->shared->bw->scale,
+		0xFFFFFF);
+
+	current_redraw_browser = NULL;
+
+	ami_update_buttons(g->shared);
+
+	BltBitMapRastPort(glob.bm,0,0,g->shared->win->RPort,xoffset,yoffset,width,height,0x0C0); // this blit needs optimising
+#endif
 }
 
 void gui_window_redraw_window(struct gui_window *g)
@@ -1994,7 +2045,7 @@ void gui_window_update_box(struct gui_window *g,
 	struct content *c;
 	ULONG hcurrent,vcurrent,xoffset,yoffset,width=800,height=600;
 	struct IBox *bbox;
-	ULONG cur_tab = 0;
+	ULONG cur_tab = 0,x0,y0,x1,y1;
 
 	if(!g) return;
 
@@ -2029,6 +2080,7 @@ void gui_window_update_box(struct gui_window *g,
 
 //	if (c->type == CONTENT_HTML) scale = 1;
 
+/* this needs fixing as it appears to be redrawing the entire page */
 		content_redraw(data->redraw.object,
 		floorf((data->redraw.object_x *
 		g->shared->bw->scale)-hcurrent),
@@ -2124,6 +2176,7 @@ void ami_do_redraw(struct gui_window_2 *g,bool scroll)
 	else
 	{
 */
+
 			content_redraw(c, -hcurrent /* * g->bw->scale */,
 						-vcurrent /* * g->bw->scale */,
 						width-hcurrent /* * g->bw->scale */,
@@ -2597,16 +2650,25 @@ struct gui_download_window *gui_download_window_create(const char *url,
 	struct gui_download_window *dw;
 	APTR va[3];
 
-	if(AslRequestTags(savereq,
-		ASLFR_TitleText,messages_get("NetSurf"),
-		ASLFR_Screen,scrn,
-		ASLFR_InitialFile,FilePart(url),
-		TAG_DONE))
+	if(gui->dlfilename)
 	{
-		strlcpy(&fname,savereq->fr_Drawer,1024);
-		AddPart((STRPTR)&fname,savereq->fr_File,1024);
+		strcpy(fname,gui->dlfilename);
+		free(gui->dlfilename);
+		gui->dlfilename = NULL;
 	}
-	else return NULL;
+	else
+	{
+		if(AslRequestTags(savereq,
+			ASLFR_TitleText,messages_get("NetSurf"),
+			ASLFR_Screen,scrn,
+			ASLFR_InitialFile,FilePart(url),
+			TAG_DONE))
+		{
+			strlcpy(&fname,savereq->fr_Drawer,1024);
+			AddPart((STRPTR)&fname,savereq->fr_File,1024);
+		}
+		else return NULL;
+	}
 
 	dw = AllocVec(sizeof(struct gui_download_window),MEMF_PRIVATE | MEMF_CLEAR);
 
