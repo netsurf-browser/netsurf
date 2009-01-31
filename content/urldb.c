@@ -1998,21 +1998,32 @@ void urldb_dump_hosts(struct host_part *parent)
  */
 void urldb_dump_paths(struct path_data *parent)
 {
-	struct path_data *p;
+	const struct path_data *p = parent;
 	unsigned int i;
 
-	if (parent->segment) {
-		LOG(("\t%s : %u", parent->scheme, parent->port));
+	do {
+		if (p->segment != NULL) {
+			LOG(("\t%s : %u", p->scheme, p->port));
 
-		LOG(("\t\t'%s'", parent->segment));
+			LOG(("\t\t'%s'", p->segment));
 
-		for (i = 0; i != parent->frag_cnt; i++)
-			LOG(("\t\t\t#%s", parent->fragment[i]));
-	}
+			for (i = 0; i != p->frag_cnt; i++)
+				LOG(("\t\t\t#%s", p->fragment[i]));
+		}
 
-	/* and recurse */
-	for (p = parent->children; p; p = p->next)
-		urldb_dump_paths(p);
+		if (p->children != NULL) {
+			p = p->children;
+		} else {
+			while (p != parent) {
+				if (p->next != NULL) {
+					p = p->next;
+					break;
+				}
+
+				p = p->parent;
+			}
+		}
+	} while (p != parent);
 }
 
 /**
