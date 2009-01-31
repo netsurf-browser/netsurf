@@ -1031,20 +1031,7 @@ bool html_redraw_inline_borders(struct box *box, int x0, int y0, int x1, int y1,
 	int right = box->border[RIGHT];
 	int bottom = box->border[BOTTOM];
 	int left = box->border[LEFT];
-
-	/* calculate border vertices */
-	int p[20] = {
-		x0 + left,	y0 + top,
-		x0,		y0,
-		x1,		y0,
-		x1 - right,	y0 + top,
-		x1 - right,	y1 - bottom,
-		x1,		y1,
-		x0,		y1,
-		x0 + left,	y1 - bottom,
-		x0 + left,	y0 + top,
-		x0,		y0
-	};
+	int p[20];
 
 	if (scale != 1.0) {
 		top *= scale;
@@ -1052,6 +1039,18 @@ bool html_redraw_inline_borders(struct box *box, int x0, int y0, int x1, int y1,
 		bottom *= scale;
 		left *= scale;
 	}
+
+	/* calculate border vertices */
+	p[0]  = x0 + left;	p[1]  = y0 + top;
+	p[2]  = x0;		p[3]  = y0;
+	p[4]  = x1;		p[5]  = y0;
+	p[6]  = x1 - right;	p[7]  = y0 + top;
+	p[8]  = x1 - right;	p[9]  = y1 - bottom;
+	p[10] = x1;		p[11] = y1;
+	p[12] = x0;		p[13] = y1;
+	p[14] = x0 + left;	p[15] = y1 - bottom;
+	p[16] = x0 + left;	p[17] = y0 + top;
+	p[18] = x0;		p[19] = y0;
 
 	assert(box->style);
 
