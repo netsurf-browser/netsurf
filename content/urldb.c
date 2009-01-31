@@ -3656,7 +3656,7 @@ void urldb_delete_cookie_paths(const char *domain, const char *path,
 		const char *name, struct path_data *parent)
 {
 	struct cookie_internal_data *c;
-	struct path_data *p;
+	struct path_data *p = parent;
 
 	assert(parent);
 
