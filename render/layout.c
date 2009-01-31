@@ -2131,7 +2131,7 @@ bool layout_line(struct box *first, int *width, int *y,
 				d->next != d->inline_end) {
 			if (d->height > d->inline_end->line_height)
 				d->inline_end->line_height = d->height;
-			for (struct box *il = d; il != d->inline_end;
+			for (struct box *il = d; il && il != d->inline_end;
 						il = il->next) {
 				if (d->height > il->line_height)
 					il->line_height = d->height;
