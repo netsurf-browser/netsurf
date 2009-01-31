@@ -3864,17 +3864,32 @@ void urldb_destroy_host_tree(struct host_part *root)
  */
 void urldb_destroy_path_tree(struct path_data *root)
 {
-	struct path_data *p, *q;
+	struct path_data *p = root;
 
-	/* Destroy children */
-	for (p = root->children; p; p = q) {
-		q = p->next;
-		urldb_destroy_path_tree(p);
-	}
+	do {
+		if (p->children != NULL) {
+			p = p->children;
+		} else {
+			struct path_data *q = p;
 
-	/* And ourselves */
-	urldb_destroy_path_node_content(root);
-	free(root);
+			while (p != root) {
+				if (p->next != NULL) {
+					p = p->next;
+					break;
+				}
+
+				p = p->parent;
+
+				urldb_destroy_path_node_content(q);
+				free(q);
+
+				q = p;
+			}
+
+			urldb_destroy_path_node_content(q);
+			free(q);
+		}
+	} while (p != root);
 }
 
 /**
