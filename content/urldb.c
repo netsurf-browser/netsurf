@@ -1901,10 +1901,18 @@ struct path_data *urldb_find_url(const char *url)
 struct path_data *urldb_match_path(const struct path_data *parent,
 		const char *path, const char *scheme, unsigned short port)
 {
-	const struct path_data *p = parent;
+	const struct path_data *p;
 	const char *slash;
 
-	do {
+	assert(parent != NULL);
+	assert(path[0] == '/');
+
+	/* Skip past leading / */
+	path++;
+	/* And start with children, as parent has no segment */
+	p = parent->children;
+
+	while (p != NULL) {
 		if (*path == '\0')
 			return (struct path_data *) p;
 
@@ -1923,7 +1931,7 @@ struct path_data *urldb_match_path(const struct path_data *parent,
 			/* No match, try next sibling */
 			p = p->next;
 		}
-	} while (p != NULL);
+	}
 
 	return NULL;
 }
@@ -3977,7 +3985,7 @@ void warn_user(const char *warning, const char *detail)
 	printf("WARNING: %s %s\n", warning, detail);
 }
 
-void bitmap_destroy(struct bitmap *bitmap)
+void bitmap_destroy(void *bitmap)
 {
 }
 
@@ -4151,7 +4159,7 @@ int main(void)
 
 /*
   gcc -g -o urldbtest -std=c99 -DTEST_URLDB -I. \
-  `pkg-config --cflags --libs libxml-2.0 cairo librsvg-2.0 libcurl` \
+  `pkg-config --cflags --libs libxml-2.0 cairo libcurl` \
   content/urldb.c utils/url.c utils/utils.c utils/messages.c \
   utils/hashtable.c utils/filename.c
  */
