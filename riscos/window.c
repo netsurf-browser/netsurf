@@ -1444,7 +1444,7 @@ void ro_gui_window_redraw(wimp_draw *redraw)
 		return;
 	}
 	while (more) {
-		int clip_x0, clip_y0, clip_x1, clip_y1, clear_x1, clear_y1;
+		int clip_x0, clip_y0, clip_x1, clip_y1;
 
 		ro_plot_origin_x = redraw->box.x0 - redraw->xscroll;
 		ro_plot_origin_y = redraw->box.y1 - redraw->yscroll;
@@ -1452,8 +1452,6 @@ void ro_gui_window_redraw(wimp_draw *redraw)
 		clip_y0 = (ro_plot_origin_y - redraw->clip.y1) / 2;
 		clip_x1 = (redraw->clip.x1 - ro_plot_origin_x) / 2;
 		clip_y1 = (ro_plot_origin_y - redraw->clip.y0) / 2;
-		clear_x1 = redraw->clip.x1 - ro_plot_origin_x;
-		clear_y1 = redraw->clip.y0 - ro_plot_origin_y;
 
 		if (ro_gui_current_redraw_gui->option.buffer_everything)
 			ro_gui_buffer_open(redraw);
