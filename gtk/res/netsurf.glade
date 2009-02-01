@@ -198,6 +198,7 @@
 			  <child>
 			    <widget class="GtkMenuItem" id="export_pdf">
 			      <property name="visible">True</property>
+			      <property name="sensitive">False</property>
 			      <property name="tooltip" translatable="yes">Portable Document Format.</property>
 			      <property name="label" translatable="yes">PDF...</property>
 			      <property name="use_underline">True</property>
