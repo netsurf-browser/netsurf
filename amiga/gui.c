@@ -2036,9 +2036,8 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 
 void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
 {
-	gui_window_redraw_window(g); // temporary
-#if 0
-this doesn't actually redraw the section as it should...
+//	gui_window_redraw_window(g); // temporary
+
 	struct content *c;
 	ULONG hcurrent,vcurrent,xoffset,yoffset,width=800,height=600;
 	struct IBox *bbox;
@@ -2066,19 +2065,21 @@ this doesn't actually redraw the section as it should...
 
 	width=bbox->Width;
 	height=bbox->Height;
-	xoffset=bbox->Left+x0;
-	yoffset=bbox->Top+y0;
+	xoffset=bbox->Left;
+	yoffset=bbox->Top;
 
 	plot=amiplot;
 
-//	if (c->type == CONTENT_HTML) scale = 1;
-
 		content_redraw(c,
-		xoffset-hcurrent,
-		yoffset-vcurrent,
-		x1,
-		y1,
-		0,0,width,height,
+		-hcurrent,-vcurrent,width,height,
+		floorf((x0 *
+		g->shared->bw->scale)-hcurrent),
+		ceilf((y0 *
+		g->shared->bw->scale)-vcurrent),
+		(x1 *
+		g->shared->bw->scale),
+		(y1 *
+		g->shared->bw->scale),
 		g->shared->bw->scale,
 		0xFFFFFF);
 
@@ -2086,8 +2087,7 @@ this doesn't actually redraw the section as it should...
 
 	ami_update_buttons(g->shared);
 
-	BltBitMapRastPort(glob.bm,0,0,g->shared->win->RPort,xoffset,yoffset,width,height,0x0C0); // this blit needs optimising
-#endif
+	BltBitMapRastPort(glob.bm,x0-hcurrent,y0-vcurrent,g->shared->win->RPort,xoffset+x0-hcurrent,yoffset+y0-vcurrent,x1-x0,y1-y0,0x0C0);
 }
 
 void gui_window_redraw_window(struct gui_window *g)
@@ -2146,17 +2146,16 @@ void gui_window_update_box(struct gui_window *g,
 
 //	if (c->type == CONTENT_HTML) scale = 1;
 
-/* this needs fixing as it appears to be redrawing the entire page */
 		content_redraw(data->redraw.object,
-		floorf((data->redraw.object_x *
-		g->shared->bw->scale)-hcurrent),
-		ceilf((data->redraw.object_y *
-		g->shared->bw->scale)-vcurrent),
-		data->redraw.object_width *
-		g->shared->bw->scale,
-		data->redraw.object_height *
-		g->shared->bw->scale,
-		0,0,width,height,
+		-hcurrent,-vcurrent,width,height,
+		floorf((data->redraw.x *
+		g->shared->bw->scale) - hcurrent),
+		ceilf((data->redraw.y *
+		g->shared->bw->scale) - vcurrent),
+		(data->redraw.width+data->redraw.x *
+		g->shared->bw->scale),
+		(data->redraw.height+data->redraw.y *
+		g->shared->bw->scale),
 		g->shared->bw->scale,
 		0xFFFFFF);
 
@@ -2164,7 +2163,7 @@ void gui_window_update_box(struct gui_window *g,
 
 	ami_update_buttons(g->shared);
 
-	BltBitMapRastPort(glob.bm,0,0,g->shared->win->RPort,xoffset,yoffset,width,height,0x0C0); // this blit needs optimising
+	BltBitMapRastPort(glob.bm,data->redraw.x-hcurrent,data->redraw.y-vcurrent,g->shared->win->RPort,xoffset+data->redraw.x-hcurrent,yoffset+data->redraw.y-vcurrent,data->redraw.width,data->redraw.height,0x0C0);
 
 /* doing immediate redraw here for now
 	g->shared->redraw_required = true;
@@ -2208,15 +2207,21 @@ void ami_do_redraw(struct gui_window_2 *g,bool scroll)
 	{
 		if(scroll)
 		{
-			BltBitMapRastPort(glob.bm,hcurrent-oldh,vcurrent-oldv,g->win->RPort,xoffset,yoffset,width-(hcurrent-oldh),height-(vcurrent-oldv),0x0C0); // this needs to be an overlap blit
+/* to use this, enable ami_do_redraw in ami_scroller_hook
+note that content_redraw call needs to be modified to redraw
+ the blank part of the window */
 
-			content_redraw(c, -hcurrent /* * g->bw->scale */,
-						-vcurrent /* * g->bw->scale */,
-						width /* * g->bw->scale */,
-						height /* * g->bw->scale */,
-						width-(hcurrent-oldh),height-(vcurrent-oldv),c->width /* * g->bw->scale */,
+			ScrollWindowRaster(g->win,hcurrent-oldh,vcurrent-oldv,xoffset,yoffset,xoffset+width,yoffset+height);
+#if 0
+			content_redraw(c, width-(hcurrent-oldh),height-(vcurrent-oldv),c->width /* * g->bw->scale */,
+						c->height /* * g->bw->scale */,
+
+0,0,c->width /* * g->bw->scale */,
 						c->height /* * g->bw->scale */,
 						g->bw->scale,0xFFFFFF);
+
+			BltBitMapRastPort(glob.bm,0,0,g->win->RPort,xoffset+width-(hcurrent-oldh),yoffset+height-(vcurrent-oldv),width-(hcurrent-oldh),height-(vcurrent-oldv),0x0C0);
+#endif
 		}
 		else
 		{
@@ -2250,24 +2255,26 @@ void ami_do_redraw(struct gui_window_2 *g,bool scroll)
 						0,0,width /* * g->bw->scale */,
 						height /* * g->bw->scale */,
 						g->bw->scale,0xFFFFFF);
+
+			BltBitMapRastPort(glob.bm,0,0,g->win->RPort,xoffset,yoffset,width,height,0x0C0);
 		}
 	}
 	else
 	{
-			content_redraw(c, -hcurrent /* * g->bw->scale */,
+		content_redraw(c, -hcurrent /* * g->bw->scale */,
 						-vcurrent /* * g->bw->scale */,
 						width-hcurrent /* * g->bw->scale */,
 						height-vcurrent /* * g->bw->scale */,
 						0,0,c->width /* * g->bw->scale */,
 						c->height /* * g->bw->scale */,
 						g->bw->scale,0xFFFFFF);
+
+		BltBitMapRastPort(glob.bm,0,0,g->win->RPort,xoffset,yoffset,width,height,0x0C0);
 	}
 
 	current_redraw_browser = NULL;
 
 	ami_update_buttons(g);
-
-	BltBitMapRastPort(glob.bm,0,0,g->win->RPort,xoffset,yoffset,width,height,0x0C0);
 
 	g->oldh = hcurrent;
 	g->oldv = vcurrent;
@@ -2888,7 +2895,7 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
  			case OID_HSCROLL: 
  			case OID_VSCROLL: 
 				gwin->redraw_required = true;
-//				ami_do_redraw(gwin,true);
+			//	ami_do_redraw(gwin,true);
  			break; 
 		} 
 	}
