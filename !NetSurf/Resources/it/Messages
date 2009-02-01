@@ -77,6 +77,7 @@ LinkText:Testo
 #
 ObjInfo:Info
 ObjSave:Salva
+ObjPrint:Stampa
 ObjReload:Ricarica
 
 # Main -> Object -> Object -> Export menu
@@ -251,7 +252,7 @@ About:About...
 # Edit menu
 #
 CopyNS:Copia
-Paste:Incolla
+PasteNS:Incolla
 SelectAllNS:Seleziona tutto
 ClearNS:Cancella selezione
 

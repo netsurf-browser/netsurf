@@ -34,8 +34,22 @@ struct box;
 
 enum input_key {
 
+	KEY_SELECT_ALL = 1,
+	KEY_COPY_SELECTION = 3,
+
 	KEY_DELETE_LEFT = 8,
 	KEY_TAB = 9,
+
+	KEY_NL = 10,
+	KEY_SHIFT_TAB = 11,
+	KEY_CR = 13,
+
+	KEY_CUT_LINE = 21,
+	KEY_PASTE = 22,
+	KEY_CUT_SELECTION = 24,
+	KEY_CLEAR_SELECTION = 26,
+
+	KEY_ESCAPE = 27,
 
 	/* cursor movement keys */
 	KEY_LEFT = 28,

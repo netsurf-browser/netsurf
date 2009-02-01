@@ -76,6 +76,7 @@ LinkText:Text
 #
 ObjInfo:Info
 ObjSave:Speichern
+ObjPrint:Drucken
 ObjReload:erneut laden
 
 # Main -> Object -> Object -> Export menu
@@ -250,7 +251,7 @@ About:About...
 # Edit menu
 #
 CopyNS:Copy
-Paste:Paste
+PasteNS:Paste
 SelectAllNS:Select all
 ClearNS:Clear selection
 

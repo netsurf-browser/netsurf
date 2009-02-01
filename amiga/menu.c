@@ -83,7 +83,7 @@ void ami_init_menulabs(void)
 	menulab[15] = ami_utf8_easy((char *)messages_get("Quit"));
 	menulab[16] = ami_utf8_easy((char *)messages_get("Edit"));
 	menulab[17] = ami_utf8_easy((char *)messages_get("CopyNS"));
-	menulab[18] = ami_utf8_easy((char *)messages_get("Paste"));
+	menulab[18] = ami_utf8_easy((char *)messages_get("PasteNS"));
 	menulab[19] = ami_utf8_easy((char *)messages_get("SelectAllNS"));
 	menulab[20] = ami_utf8_easy((char *)messages_get("ClearNS"));
 	menulab[21] = ami_utf8_easy((char *)messages_get("Browser"));

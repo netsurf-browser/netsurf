@@ -467,8 +467,8 @@ bool browser_window_textarea_callback(struct browser_window *bw,
 		reflow = true;
 		break;
 
-	case 10:
-	case 13:	/* paragraph break */
+	case KEY_NL:
+	case KEY_CR:	/* paragraph break */
 		if (selection_exists) {
 			/* If we have a selection, then delete it, 
 			 * so it's replaced by the break */
@@ -486,7 +486,7 @@ bool browser_window_textarea_callback(struct browser_window *bw,
 		reflow = true;
 		break;
 
-	case 21:	/* Ctrl + U */
+	case KEY_CUT_LINE:
 	{
 		struct box *start_box = line_start(text_box);
 		struct box *end_box = line_end(text_box);
@@ -503,7 +503,7 @@ bool browser_window_textarea_callback(struct browser_window *bw,
 	}
 		break;
 
-	case 22:	/* Ctrl + V */
+	case KEY_PASTE:
 		gui_paste_from_clipboard(bw->window,
 			box_x + inline_container->x + 
 					text_box->x + pixel_offset,
@@ -512,7 +512,7 @@ bool browser_window_textarea_callback(struct browser_window *bw,
 		/* screen updated and caret repositioned already */
 		return true;
 
-	case 24:	/* Ctrl + X */
+	case KEY_CUT_SELECTION:
 	{
 		size_t start_idx, end_idx;
 		struct box *start_box = 
@@ -953,7 +953,7 @@ bool browser_window_input_callback(struct browser_window *bw,
 	}
 		break;
 
-	case 9:		/* Tab */
+	case KEY_TAB:
 	{
 		struct form_control *next_input;
 		/* Find next text entry field that is actually 
@@ -976,15 +976,15 @@ bool browser_window_input_callback(struct browser_window *bw,
 	}
 		break;
 
-	case 10:
-	case 13:	/* Return/Enter hit */
+	case KEY_NL:
+	case KEY_CR:	/* Return/Enter hit */
 		selection_clear(bw->sel, true);
 
 		if (form)
 			browser_form_submit(bw, bw, form, 0);
 		return true;
 
-	case 11:	/* Shift + Tab */
+	case KEY_SHIFT_TAB:
 	{
 		struct form_control *prev_input;
 		/* Find previous text entry field that is actually 
@@ -1007,7 +1007,7 @@ bool browser_window_input_callback(struct browser_window *bw,
 	}
 		break;
 
-	case 21:	/* Ctrl + U */
+	case KEY_CUT_LINE:
 		/* Clear the selection, if one exists */
 		if (selection_exists)
 			selection_clear(bw->sel, false);
@@ -1019,7 +1019,7 @@ bool browser_window_input_callback(struct browser_window *bw,
 		changed = true;
 		break;
 
-	case 22:	/* Ctrl + V */
+	case KEY_PASTE:
 		gui_paste_from_clipboard(bw->window,
 			box_x + input->children->x + text_box->x + pixel_offset,
 			box_y + input->children->y + text_box->y);
@@ -1027,7 +1027,7 @@ bool browser_window_input_callback(struct browser_window *bw,
 		/* screen updated and caret repositioned already */
 		return true;
 
-	case 24:	/* Ctrl + X */
+	case KEY_CUT_SELECTION:
 	{
 		size_t start_idx, end_idx;
 		struct box *start_box = 
@@ -1232,19 +1232,19 @@ bool browser_window_key_press(struct browser_window *bw, uint32_t key)
 {
 	/* keys that take effect wherever the caret is positioned */
 	switch (key) {
-		case 1:		/* Ctrl + A */
+		case KEY_SELECT_ALL:
 			selection_select_all(bw->sel);
 			return true;
 
-		case 3:		/* Ctrl + C */
+		case KEY_COPY_SELECTION:
 			gui_copy_to_clipboard(bw->sel);
 			return true;
 
-		case 26:	/* Ctrl + Z */
+		case KEY_CLEAR_SELECTION:
 			selection_clear(bw->sel, true);
 			return true;
 
-		case 27:	/** Escape */
+		case KEY_ESCAPE:
 			if (selection_defined(bw->sel)) {
 				selection_clear(bw->sel, true);
 				return true;
