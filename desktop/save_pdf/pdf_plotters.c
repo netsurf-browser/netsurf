@@ -505,7 +505,7 @@ HPDF_Image pdf_extract_image(struct bitmap *bitmap, struct content *content)
 				img_width, img_height,
      				HPDF_CS_DEVICE_RGB, 8);
 
-		if (HPDF_Image_AddSMask(pdf_doc, image, smask) != HPDF_OK)
+		if (HPDF_Image_AddSMask(image, smask) != HPDF_OK)
 			image = NULL;
 
 		free(rgb_buffer);

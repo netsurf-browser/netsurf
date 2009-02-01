@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
-  Build Instructions for GTK NetSurf                           13 October 2008
+  Build Instructions for GTK NetSurf                          01 February 2009
 --------------------------------------------------------------------------------
 
   This document provides instructions for building the GTK version of NetSurf
@@ -59,6 +59,8 @@
 
       $ apt-get install libglade2-dev libcurl3-dev libxml2-dev libmng-dev 
       $ apt-get install librsvg2-dev lemon re2c
+
+  Recent OS versions might need libcurl4-dev instead of libcurl3-dev.
 
   Fedora:
 
@@ -133,10 +135,12 @@
   is currently enabled by default, and cannot be auto-detected by the Makefile.
   If you wish to disable it, do so by editing Makefile.config.
 
-  Haru PDF can be obtained from http://libharu.sourceforge.net/, although we
-  currently depend on features that the official version does not have.  You
-  can obtain our patched version from the following Subversion address until
-  the patches are accepted upstream;
+  Haru PDF can be obtained from http://libharu.org/, although we currently
+  depend on features that none of the official released versions does have.
+  The current development versions of libharu are fine and we anticipate
+  the libharu 2.2 release will be fine for NetSurf usage.
+  A recently taken snapshot of one of those libharu development versions can
+  be found at:
 
       svn://svn.netsurf-browser.org/trunk/libharu
 
