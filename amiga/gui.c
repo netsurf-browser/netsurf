@@ -1819,6 +1819,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 							LAYOUT_AddChild, gwin->shared->gadgets[GID_TABS] = ClickTabObject,
 								GA_ID,GID_TABS,
 								GA_RelVerify,TRUE,
+								GA_Underscore,13, // disable kb shortcuts
 								CLICKTAB_Labels,&gwin->shared->tab_list,
 								CLICKTAB_LabelTruncate,TRUE,
 							ClickTabEnd,
@@ -2004,7 +2005,7 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 {
 	struct Node *node;
 	ULONG cur_tab = 0;
-	STRPTR oldtitle;
+	STRPTR newtitle = NULL;
 
 	if(!g) return;
 
@@ -2015,7 +2016,9 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 		SetGadgetAttrs(g->shared->gadgets[GID_TABS],g->shared->win,NULL,
 						CLICKTAB_Labels,~0,
 						TAG_DONE);
-		SetClickTabNodeAttrs(node,TNA_Text,title,TAG_DONE);
+		newtitle = ami_utf8_easy(title);
+		SetClickTabNodeAttrs(node,TNA_Text,ami_utf8_easy(newtitle),TAG_DONE);
+		if(newtitle) ami_utf8_free(newtitle);
 		RefreshSetGadgetAttrs(g->shared->gadgets[GID_TABS],g->shared->win,NULL,
 						CLICKTAB_Labels,&g->shared->tab_list,
 						TAG_DONE);
