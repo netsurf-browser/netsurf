@@ -2034,11 +2034,8 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 	}
 }
 
-void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
+void ami_do_redraw_limits(struct gui_window *g, struct content *c,int x0, int y0, int x1, int y1)
 {
-//	gui_window_redraw_window(g); // temporary
-
-	struct content *c;
 	ULONG hcurrent,vcurrent,xoffset,yoffset,width=800,height=600;
 	struct IBox *bbox;
 	ULONG cur_tab = 0;
@@ -2055,8 +2052,6 @@ void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
 	GetAttr(SPACE_AreaBox,g->shared->gadgets[GID_BROWSER],(ULONG *)&bbox);
 	GetAttr(SCROLLER_Top,g->shared->objects[OID_HSCROLL],(ULONG *)&hcurrent);
 	GetAttr(SCROLLER_Top,g->shared->objects[OID_VSCROLL],(ULONG *)&vcurrent);
-
-	c = g->shared->bw->current_content;
 
 	if(!c) return;
 	if (c->locked) return;
@@ -2090,6 +2085,14 @@ void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
 	BltBitMapRastPort(glob.bm,x0-hcurrent,y0-vcurrent,g->shared->win->RPort,xoffset+x0-hcurrent,yoffset+y0-vcurrent,x1-x0,y1-y0,0x0C0);
 }
 
+void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
+{
+	struct content *c;
+	c = g->shared->bw->current_content;
+
+	ami_do_redraw_limits(g,c,x0,y0,x1,y1);
+}
+
 void gui_window_redraw_window(struct gui_window *g)
 {
 	ULONG cur_tab = 0;
@@ -2108,67 +2111,10 @@ void gui_window_redraw_window(struct gui_window *g)
 void gui_window_update_box(struct gui_window *g,
 		const union content_msg_data *data)
 {
-	struct content *c;
-	ULONG hcurrent,vcurrent,xoffset,yoffset,width=800,height=600;
-	struct IBox *bbox;
-	ULONG cur_tab = 0,x0,y0,x1,y1;
-
-	if(!g) return;
-
-	if(g->tab_node) GetAttr(CLICKTAB_Current,g->shared->gadgets[GID_TABS],(ULONG *)&cur_tab);
-
-	if(!((cur_tab == g->tab) || (g->shared->tabs == 0)))
-	{
-		return;
-	}
-
-	GetAttr(SPACE_AreaBox,g->shared->gadgets[GID_BROWSER],(ULONG *)&bbox);
-	GetAttr(SCROLLER_Top,g->shared->objects[OID_HSCROLL],(ULONG *)&hcurrent);
-	GetAttr(SCROLLER_Top,g->shared->objects[OID_VSCROLL],(ULONG *)&vcurrent);
-
-//	DebugPrintF("DOING REDRAW\n");
-
-	c = g->shared->bw->current_content;
-
-	if(!c) return;
-	if (c->locked) return;
-
-	current_redraw_browser = g->shared->bw;
-
-	//currp = &glob.rp;
-
-	width=bbox->Width;
-	height=bbox->Height;
-	xoffset=bbox->Left;
-	yoffset=bbox->Top;
-
-	plot=amiplot;
-
-//	if (c->type == CONTENT_HTML) scale = 1;
-
-		content_redraw(data->redraw.object,
-		-hcurrent,-vcurrent,width,height,
-		floorf((data->redraw.x *
-		g->shared->bw->scale) - hcurrent),
-		ceilf((data->redraw.y *
-		g->shared->bw->scale) - vcurrent),
-		(data->redraw.width+data->redraw.x *
-		g->shared->bw->scale),
-		(data->redraw.height+data->redraw.y *
-		g->shared->bw->scale),
-		g->shared->bw->scale,
-		0xFFFFFF);
-
-	current_redraw_browser = NULL;
-
-	ami_update_buttons(g->shared);
-
-	BltBitMapRastPort(glob.bm,data->redraw.x-hcurrent,data->redraw.y-vcurrent,g->shared->win->RPort,xoffset+data->redraw.x-hcurrent,yoffset+data->redraw.y-vcurrent,data->redraw.width,data->redraw.height,0x0C0);
-
-/* doing immediate redraw here for now
-	g->shared->redraw_required = true;
-	g->shared->redraw_data = data;
-*/
+	ami_do_redraw_limits(g,data->redraw.object,
+			data->redraw.x,data->redraw.y,
+			data->redraw.width+data->redraw.x,
+			data->redraw.height+data->redraw.y);
 }
 
 void ami_do_redraw(struct gui_window_2 *g,bool scroll)
@@ -2203,71 +2149,36 @@ void ami_do_redraw(struct gui_window_2 *g,bool scroll)
 
 //	if (c->type == CONTENT_HTML) scale = 1;
 
-	if(c->type == CONTENT_HTML)
+	if(scroll && c->type == CONTENT_HTML)
 	{
-		if(scroll)
-		{
 /* to use this, enable ami_do_redraw in ami_scroller_hook
 note that content_redraw call needs to be modified to redraw
  the blank part of the window */
 
-			ScrollWindowRaster(g->win,hcurrent-oldh,vcurrent-oldv,xoffset,yoffset,xoffset+width,yoffset+height);
+		ScrollWindowRaster(g->win,hcurrent-oldh,vcurrent-oldv,xoffset,yoffset,xoffset+width,yoffset+height);
 #if 0
-			content_redraw(c, width-(hcurrent-oldh),height-(vcurrent-oldv),c->width /* * g->bw->scale */,
+		content_redraw(c, width-(hcurrent-oldh),height-(vcurrent-oldv),c->width /* * g->bw->scale */,
 						c->height /* * g->bw->scale */,
 
 0,0,c->width /* * g->bw->scale */,
 						c->height /* * g->bw->scale */,
 						g->bw->scale,0xFFFFFF);
 
-			BltBitMapRastPort(glob.bm,0,0,g->win->RPort,xoffset+width-(hcurrent-oldh),yoffset+height-(vcurrent-oldv),width-(hcurrent-oldh),height-(vcurrent-oldv),0x0C0);
+		BltBitMapRastPort(glob.bm,0,0,g->win->RPort,xoffset+width-(hcurrent-oldh),yoffset+height-(vcurrent-oldv),width-(hcurrent-oldh),height-(vcurrent-oldv),0x0C0);
 #endif
-		}
-		else
-		{
-
-			ami_clg(0xffffff);
-
-/* temp get it to redraw everything ***
-	if(g->redraw_data)
-	{
-		content_redraw(g->redraw_data->redraw.object,
-		floorf((g->redraw_data->redraw.object_x *
-		g->shared->bw->scale)-hcurrent),
-		ceilf((g->redraw_data->redraw.object_y *
-		g->shared->bw->scale)-vcurrent),
-		g->redraw_data->redraw.object_width *
-		g->shared->bw->scale,
-		g->redraw_data->redraw.object_height *
-		g->shared->bw->scale,
-		0,0,width,height,
-		g->shared->bw->scale,
-		0xFFFFFF);
 	}
 	else
 	{
-*/
+		ami_clg(0xffffff);
 
-			content_redraw(c, -hcurrent /* * g->bw->scale */,
-						-vcurrent /* * g->bw->scale */,
-						width-hcurrent /* * g->bw->scale */,
-						height-vcurrent /* * g->bw->scale */,
-						0,0,width /* * g->bw->scale */,
-						height /* * g->bw->scale */,
-						g->bw->scale,0xFFFFFF);
-
-			BltBitMapRastPort(glob.bm,0,0,g->win->RPort,xoffset,yoffset,width,height,0x0C0);
-		}
-	}
-	else
-	{
 		content_redraw(c, -hcurrent /* * g->bw->scale */,
 						-vcurrent /* * g->bw->scale */,
-						width-hcurrent /* * g->bw->scale */,
-						height-vcurrent /* * g->bw->scale */,
+						width /* * g->bw->scale */,
+						height /* * g->bw->scale */,
 						0,0,c->width /* * g->bw->scale */,
 						c->height /* * g->bw->scale */,
 						g->bw->scale,0xFFFFFF);
+
 
 		BltBitMapRastPort(glob.bm,0,0,g->win->RPort,xoffset,yoffset,width,height,0x0C0);
 	}
