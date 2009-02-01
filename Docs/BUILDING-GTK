@@ -138,7 +138,7 @@
   can obtain our patched version from the following Subversion address until
   the patches are accepted upstream;
 
-      svn://svn.netsurf-browser.org/branches/libharu/adamblokus
+      svn://svn.netsurf-browser.org/trunk/libharu
 
   Lemon
 -------
