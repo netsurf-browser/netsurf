@@ -156,7 +156,7 @@ STATIC VOID rx_geturl(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((u
 	}
 	else
 	{
-		strcpy(result,"\0");
+		strcpy(result,"");
 	}
 
 	cmd->ac_Result = result;
@@ -170,7 +170,7 @@ STATIC VOID rx_gettitle(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__(
 	}
 	else
 	{
-		strcpy(result,"\0");
+		strcpy(result,"");
 	}
 
 	cmd->ac_Result = result;

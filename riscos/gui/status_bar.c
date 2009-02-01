@@ -51,8 +51,8 @@ struct status_bar {
 	bool visible;			/**< status bar is visible? */
 };
 
-static char status_widget_text[] = "\0";
-static char status_widget_validation[] = "R5;Pptr_lr,8,6\0";
+static char status_widget_text[] = "";
+static char status_widget_validation[] = "R5;Pptr_lr,8,6";
 
 wimp_WINDOW(1) status_bar_definition = {
 	{0, 0, 1, 1},

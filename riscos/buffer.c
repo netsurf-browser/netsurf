@@ -41,7 +41,7 @@ static void ro_gui_buffer_free(void);
 /** The buffer characteristics
 */
 static osspriteop_area *buffer = NULL;
-static char buffer_name[] = "scr_buffer\0\0";
+static char buffer_name[12] = "scr_buffer";
 
 /** The current clip area
 */

@@ -1447,7 +1447,7 @@ bool plugin_write_parameters_file(struct content *c,
 		ppi = 0;
 	}
 
-	fwrite("\0", sizeof(char), 4, fp);
+	fwrite("", sizeof(char), 4, fp);
 
 	fclose(fp);
 

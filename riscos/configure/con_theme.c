@@ -78,9 +78,9 @@ static wimp_window theme_pane_definition = {
 static wimp_w theme_pane;
 static struct theme_descriptor *theme_list = NULL;
 static struct toolbar_display *toolbars = NULL;
-static char theme_radio_validation[] = "Sradiooff,radioon\0";
-static char theme_null_validation[] = "\0";
-static char theme_line_validation[] = "R2\0";
+static char theme_radio_validation[] = "Sradiooff,radioon";
+static char theme_null_validation[] = "";
+static char theme_line_validation[] = "R2";
 
 static bool ro_gui_options_theme_ok(wimp_w w);
 static bool ro_gui_options_theme_click(wimp_pointer *pointer);
@@ -358,7 +358,6 @@ void ro_gui_options_theme_load(void)
 			new_icon.icon.data.indirected_text.validation =
 					theme_line_validation;
 			new_icon.icon.data.indirected_text.size = 1;
-					strlen(link->descriptor->filename) + 1;
 			xwimp_create_icon(&new_icon, 0);
 		}
 

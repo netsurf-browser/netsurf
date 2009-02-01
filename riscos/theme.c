@@ -120,9 +120,9 @@ static wimp_window theme_toolbar_window = {
 
 /*	Shared icon validation
 */
-static char theme_url_validation[] = "Pptr_write;KN\0";
-static char theme_null_text_string[] = "\0";
-static char theme_separator_name[] = "separator\0";
+static char theme_url_validation[] = "Pptr_write;KN";
+static char theme_null_text_string[] = "";
+static char theme_separator_name[] = "separator";
 static char theme_favicon_sprite[12];
 
 

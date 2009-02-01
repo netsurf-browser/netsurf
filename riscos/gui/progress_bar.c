@@ -56,7 +56,7 @@ struct progress_bar {
 	bool icon_obscured;		/**< icon is partially obscured */
 };
 
-static char progress_animation_sprite[] = "progress\0";
+static char progress_animation_sprite[] = "progress";
 static osspriteop_header *progress_icon;
 static unsigned int progress_width;
 static unsigned int progress_height;

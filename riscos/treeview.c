@@ -75,7 +75,7 @@ static int ro_gui_tree_origin_y;
 /* element drawing */
 static wimp_icon ro_gui_tree_icon;
 static char ro_gui_tree_icon_validation[24];
-static char ro_gui_tree_icon_null[] = "\0";
+static char ro_gui_tree_icon_null[] = "";
 
 /* dragging information */
 static struct tree *ro_gui_tree_current_drag_tree;

@@ -51,7 +51,7 @@ static char *url_complete_original_url = NULL;
 static bool url_complete_memory_exhausted = false;
 
 static const char *url_complete_redraw[MAXIMUM_VISIBLE_LINES];
-static char url_complete_icon_null[] = "\0";
+static char url_complete_icon_null[] = "";
 static char url_complete_icon_sprite[12];
 static wimp_icon url_complete_icon;
 static wimp_icon url_complete_sprite;

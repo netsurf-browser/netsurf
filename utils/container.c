@@ -327,8 +327,8 @@ int main(int argc, char *argv[])
 	int state = 0;
 	char *n;
 
-	container_add(ctx, "CHEESE", "This is a test of some cheese.\0", 31);
-	container_add(ctx, "FOO", "This is a test of some cheese.\0", 31);
+	container_add(ctx, "CHEESE", "This is a test of some cheese.", sizeof("This is a test of some cheese."));
+	container_add(ctx, "FOO", "This is a test of some cheese.", sizeof("This is a test of some cheese."));
 
 	container_close(ctx);
 
