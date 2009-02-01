@@ -486,7 +486,7 @@ void nsgtk_openfile_open(char *filename)
 {
     struct browser_window *bw = nsgtk_get_browser_for_gui(
 		current_model->top_level);
-	char *url = malloc(strlen(filename) + strlen("file://") + 1);
+	char *url = malloc(strlen(filename) + sizeof("file://"));
 
 	sprintf(url, "file://%s", filename);
 

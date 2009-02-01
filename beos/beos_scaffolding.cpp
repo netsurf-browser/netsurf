@@ -1031,7 +1031,7 @@ gboolean nsbeos_openfile_open(beosWidget *widget, gpointer data)
 						current_model->top_level);
 	char *filename = beos_file_chooser_get_filename(
 						beos_FILE_CHOOSER(wndOpenFile));
-	char *url = malloc(strlen(filename) + strlen("file://") + 1);
+	char *url = malloc(strlen(filename) + sizeof("file://"));
 
 	sprintf(url, "file://%s", filename);
 
