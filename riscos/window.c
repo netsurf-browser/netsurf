@@ -1446,12 +1446,21 @@ void ro_gui_window_redraw(wimp_draw *redraw)
 	while (more) {
 		int clip_x0, clip_y0, clip_x1, clip_y1;
 
+		/* OS's redraw request coordinates are in screen coordinates,
+		 * with an origin at the bottom left of the screen.
+		 * Find the coordinate of the top left of the document in terms
+		 * of OS screen coordinates.
+		 * NOTE: OS units are 2 per px. */
 		ro_plot_origin_x = redraw->box.x0 - redraw->xscroll;
 		ro_plot_origin_y = redraw->box.y1 - redraw->yscroll;
-		clip_x0 = (redraw->clip.x0 - ro_plot_origin_x) / 2;
-		clip_y0 = (ro_plot_origin_y - redraw->clip.y1) / 2;
-		clip_x1 = (redraw->clip.x1 - ro_plot_origin_x) / 2;
-		clip_y1 = (ro_plot_origin_y - redraw->clip.y0) / 2;
+
+		/* Convert OS redraw rectangle request coordinates into NetSurf
+		 * coordinates. NetSurf coordinates have origin at top left of
+		 * document and units are in px. */
+		clip_x0 = (redraw->clip.x0 - ro_plot_origin_x) / 2; /* left   */
+		clip_y0 = (ro_plot_origin_y - redraw->clip.y1) / 2; /* top    */
+		clip_x1 = (redraw->clip.x1 - ro_plot_origin_x) / 2; /* right  */
+		clip_y1 = (ro_plot_origin_y - redraw->clip.y0) / 2; /* bottom */
 
 		if (ro_gui_current_redraw_gui->option.buffer_everything)
 			ro_gui_buffer_open(redraw);
