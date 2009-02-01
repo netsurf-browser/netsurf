@@ -1415,23 +1415,23 @@ bool plugin_write_parameters_file(struct content *c,
 	fp = fopen(c->data.plugin.filename, "wb+");
 
 	while (pilist != 0) {
-		fwrite(&pilist->type, (unsigned int)sizeof(int), 1, fp);
-		fwrite(&pilist->rsize, (unsigned int)sizeof(int), 1, fp);
+		fwrite(&pilist->type, sizeof(int), 1, fp);
+		fwrite(&pilist->rsize, sizeof(int), 1, fp);
 
-		fwrite(&pilist->nsize, (unsigned int)sizeof(int), 1, fp);
-		fwrite(pilist->name, (unsigned int)strlen(pilist->name), 1, fp);
+		fwrite(&pilist->nsize, sizeof(int), 1, fp);
+		fwrite(pilist->name, strlen(pilist->name), 1, fp);
 		for (; pilist->npad != 0; pilist->npad--)
 			fputc('\0', fp);
 
-		fwrite(&pilist->vsize, (unsigned int)sizeof(int), 1, fp);
-		fwrite(pilist->value, (unsigned int)strlen(pilist->value), 1, fp);
+		fwrite(&pilist->vsize, sizeof(int), 1, fp);
+		fwrite(pilist->value, strlen(pilist->value), 1, fp);
 		for(; pilist->vpad != 0; pilist->vpad--)
 			fputc('\0', fp);
 
-		fwrite(&pilist->msize, (unsigned int)sizeof(int), 1, fp);
+		fwrite(&pilist->msize, sizeof(int), 1, fp);
 		if (pilist->msize > 0) {
 			fwrite(pilist->mime_type,
-				(unsigned int)strlen(pilist->mime_type), 1, fp);
+				strlen(pilist->mime_type), 1, fp);
 			for (; pilist->mpad != 0; pilist->mpad--)
 				fputc('\0', fp);
 		}
