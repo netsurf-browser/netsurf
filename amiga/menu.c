@@ -39,7 +39,8 @@
 #include "amiga/save_complete.h"
 #include "utils/url.h"
 #include <dos/anchorpath.h>
-
+#include "desktop/textinput.h"
+#include "amiga/search.h"
 
 BOOL menualreadyinit;
 const char * const netsurf_version;
@@ -547,20 +548,21 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 			switch(itemnum)
 			{
 				case 0: // copy
-					gui_copy_to_clipboard(gwin->bw->sel);
-					browser_window_key_press(gwin->bw, 26);
+					browser_window_key_press(gwin->bw, KEY_COPY_SELECTION);
+					browser_window_key_press(gwin->bw, KEY_ESCAPE);
 				break;
 
 				case 1: // paste
-					gui_paste_from_clipboard(&tgw,0,0);
+					browser_window_key_press(gwin->bw, KEY_PASTE);
+					//gui_paste_from_clipboard(&tgw,0,0);
 				break;
 
 				case 2: // select all
-					browser_window_key_press(gwin->bw, 1);
+					browser_window_key_press(gwin->bw, KEY_SELECT_ALL);
 				break;
 
 				case 3: // clear selection
-					browser_window_key_press(gwin->bw, 26);
+					browser_window_key_press(gwin->bw, KEY_CLEAR_SELECTION);
 				break;
 			}
 		break;

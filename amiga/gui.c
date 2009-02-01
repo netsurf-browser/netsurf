@@ -929,19 +929,84 @@ void ami_handle_msg(void)
 					switch(storage)
 					{
 						case RAWKEY_CRSRUP:
-							browser_window_key_press(gwin->bw,KEY_UP);
+							if(ie->ie_Qualifier & IEQUALIFIER_RSHIFT)
+							{
+								browser_window_key_press(gwin->bw,KEY_PAGE_UP);
+							}
+							else if(ie->ie_Qualifier & IEQUALIFIER_RALT)
+							{
+								browser_window_key_press(gwin->bw,KEY_TEXT_START);
+							}
+							else browser_window_key_press(gwin->bw,KEY_UP);
 						break;
 						case RAWKEY_CRSRDOWN:
-							browser_window_key_press(gwin->bw,KEY_DOWN);
+							if(ie->ie_Qualifier & IEQUALIFIER_RSHIFT)
+							{
+								browser_window_key_press(gwin->bw,KEY_PAGE_DOWN);
+							}
+							else if(ie->ie_Qualifier & IEQUALIFIER_RALT)
+							{
+								browser_window_key_press(gwin->bw,KEY_TEXT_END);
+							}
+							else browser_window_key_press(gwin->bw,KEY_DOWN);
 						break;
 						case RAWKEY_CRSRLEFT:
-							browser_window_key_press(gwin->bw,KEY_LEFT);
+							if(ie->ie_Qualifier & IEQUALIFIER_RSHIFT)
+							{
+								browser_window_key_press(gwin->bw,KEY_LINE_START);
+							}
+							else if(ie->ie_Qualifier & IEQUALIFIER_RALT)
+							{
+								browser_window_key_press(gwin->bw,KEY_WORD_LEFT);
+							}
+							else browser_window_key_press(gwin->bw,KEY_LEFT);
 						break;
 						case RAWKEY_CRSRRIGHT:
-							browser_window_key_press(gwin->bw,KEY_RIGHT);
+							if(ie->ie_Qualifier & IEQUALIFIER_RSHIFT)
+							{
+								browser_window_key_press(gwin->bw,KEY_LINE_END);
+							}
+							else if(ie->ie_Qualifier & IEQUALIFIER_RALT)
+							{
+								browser_window_key_press(gwin->bw,KEY_WORD_RIGHT);
+							}
+							else browser_window_key_press(gwin->bw,KEY_RIGHT);
 						break;
 						case RAWKEY_ESC:
-							browser_window_key_press(gwin->bw,27);
+							browser_window_key_press(gwin->bw,KEY_ESCAPE);
+						break;
+						case RAWKEY_PAGEUP:
+							browser_window_key_press(gwin->bw,KEY_PAGE_UP);
+						break;
+						case RAWKEY_PAGEDOWN:
+							browser_window_key_press(gwin->bw,KEY_PAGE_DOWN);
+						break;
+						case RAWKEY_HOME:
+							browser_window_key_press(gwin->bw,KEY_TEXT_START);
+						break;
+						case RAWKEY_END:
+							browser_window_key_press(gwin->bw,KEY_TEXT_END);
+						break;
+						case RAWKEY_BACKSPACE:
+							if(ie->ie_Qualifier & IEQUALIFIER_RSHIFT)
+							{
+								browser_window_key_press(gwin->bw,KEY_DELETE_LINE_START);
+							}
+							else browser_window_key_press(gwin->bw,KEY_DELETE_LEFT);
+						break;
+						case RAWKEY_DEL:
+							if(ie->ie_Qualifier & IEQUALIFIER_RSHIFT)
+							{
+								browser_window_key_press(gwin->bw,KEY_DELETE_LINE_END);
+							}
+							else browser_window_key_press(gwin->bw,KEY_DELETE_RIGHT);
+						break;
+						case RAWKEY_TAB:
+							if(ie->ie_Qualifier & IEQUALIFIER_RSHIFT)
+							{
+								browser_window_key_press(gwin->bw,KEY_SHIFT_TAB);
+							}
+							else browser_window_key_press(gwin->bw,KEY_TAB);
 						break;
 						default:
    							if((chars = MapRawKey(ie,buffer,20,NULL)) > 0)
@@ -951,18 +1016,16 @@ void ami_handle_msg(void)
 /* We are duplicating the menu shortcuts here, as if RMBTRAP is active
  * (ie. when context menus are enabled and the mouse is over the browser
  * rendering area), Intuition also does not catch the menu shortcut
- * key presses.  This should probably be expanded to contain all the
- * menu shortcuts, but copy and paste are the most used so we only
- * handle those for now. */
+ * key presses.  Context menus need to be changed to use MENUVERIFY not RMBTRAP */
 									switch(buffer[0])
 									{
 										case 'c':
-											gui_copy_to_clipboard(gwin->bw->sel);
-											browser_window_key_press(gwin->bw, 26);
+											browser_window_key_press(gwin->bw, KEY_COPY_SELECTION);
+											browser_window_key_press(gwin->bw, KEY_ESCAPE);
 										break;
 
 										case 'v':
-											gui_paste_from_clipboard(gwin->bw->window,0,0);
+											browser_window_key_press(gwin->bw, KEY_PASTE);
 										break;
 									}
 								}

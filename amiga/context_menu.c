@@ -31,6 +31,7 @@
 #include <string.h>
 #include "utils/utils.h"
 #include <proto/asl.h>
+#include "desktop/textinput.h"
 
 uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved);
 
@@ -277,12 +278,12 @@ uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved)
 			break;
 
 			case CMID_SELCOPY:
-				gui_copy_to_clipboard(gwin->bw->sel);
-				browser_window_key_press(gwin->bw, 26);
+				browser_window_key_press(gwin->bw, KEY_COPY_SELECTION);
+				browser_window_key_press(gwin->bw, KEY_CLEAR_SELECTION);
 			break;
 
 			case CMID_SELALL:
-				browser_window_key_press(gwin->bw, 1);
+				browser_window_key_press(gwin->bw, KEY_SELECT_ALL);
 			break;
 		}
     }
