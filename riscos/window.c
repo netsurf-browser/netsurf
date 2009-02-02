@@ -1465,11 +1465,13 @@ void ro_gui_window_redraw(wimp_draw *redraw)
 		if (ro_gui_current_redraw_gui->option.buffer_everything)
 			ro_gui_buffer_open(redraw);
 
+		/* Set up NetSurf's plotters with current clip rectangle */
 		plot.clip(clip_x0, clip_y0, clip_x1, clip_y1);
 
 		if (c->type != CONTENT_HTML)
 			plot.clg(0x00ffffff);
 
+		/* Redraw the clip rectangle area of the content */
 		content_redraw(c, 0, 0,
 				c->width * scale, c->height * scale,
 				clip_x0, clip_y0, clip_x1, clip_y1,
@@ -1479,6 +1481,8 @@ void ro_gui_window_redraw(wimp_draw *redraw)
 		if (ro_gui_current_redraw_gui->option.buffer_everything)
 			ro_gui_buffer_close();
 
+		/* Check to see if there are more rectangles to draw and
+		 * get next one */
 		error = xwimp_get_rectangle(redraw, &more);
 		/* RISC OS 3.7 returns an error here if enough buffer was
 		   claimed to cause a new dynamic area to be created. It
