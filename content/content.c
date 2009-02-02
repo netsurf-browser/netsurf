@@ -995,6 +995,25 @@ void content_quit(void)
  * Display content on screen.
  *
  * Calls the redraw function for the content, if it exists.
+ *
+ * \param  c		     content
+ * \param  x		     coordinate for top-left of redraw
+ * \param  y		     coordinate for top-left of redraw
+ * \param  width	     available width (not used for HTML redraw)
+ * \param  height	     available height (not used for HTML redraw)
+ * \param  clip_x0	     clip rectangle left
+ * \param  clip_y0	     clip rectangle top
+ * \param  clip_x1	     clip rectangle right
+ * \param  clip_y1	     clip rectangle bottom
+ * \param  scale	     scale for redraw
+ * \param  background_colour the background colour
+ * \return true if successful, false otherwise
+ *
+ * x, y and clip_* are coordinates from the top left of the canvas area.
+ *
+ * The top left corner of the clip rectangle is (clip_x0, clip_y0) and
+ * the bottom right corner of the clip rectangle is (clip_x1, clip_y1).
+ * Units for x, y and clip_* are pixels.
  */
 
 bool content_redraw(struct content *c, int x, int y,
