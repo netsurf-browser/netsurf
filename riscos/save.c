@@ -323,14 +323,16 @@ bool ro_gui_save_ok(wimp_w w)
 	ro_gui_convert_save_path(path, sizeof path, name);
 	gui_save_sourcew = w;
 	saving_from_dialog = true;
+	gui_save_send_dataload = false;
 	gui_save_close_after = xwimp_get_pointer_info(&pointer)
 						|| !(pointer.buttons & wimp_CLICK_ADJUST);
-	if (!ro_gui_save_content(gui_save_content, path, !option_confirm_overwrite)) {
-		memcpy(&gui_save_message.data.data_xfer.file_name, path, 1 + strlen(path));
-		gui_save_send_dataload = false;
-		return false;
+	memcpy(&gui_save_message.data.data_xfer.file_name, path, 1 + strlen(path));
+
+	if (ro_gui_save_content(gui_save_content, path, !option_confirm_overwrite)) {
+		ro_gui_save_done();
+		return true;
 	}
-	return true;
+	return false;
 }
 
 
@@ -941,24 +943,32 @@ void ro_gui_save_done(void)
 	}
 
 	if (saving_from_dialog) {
-		/* */
-		char *sp = gui_save_message.data.data_xfer.file_name;
-		char *ep = sp + sizeof(gui_save_message.data.data_xfer.file_name);
-		char *lastdot = NULL;
-		char *p = sp;
+		/* remember the save directory if saving to the Filer */
+		if (!gui_save_send_dataload ||
+			gui_save_message.data.data_xfer.est_size != -1) {
+			char *sp = gui_save_message.data.data_xfer.file_name;
+			char *ep = sp + sizeof(gui_save_message.data.data_xfer.file_name);
+			char *lastdot = NULL;
+			char *p = sp;
 
-		while (p < ep && *p >= 0x20) {
-			if (*p == '.') lastdot = p;
-			p++;
-		}
-		if (lastdot) {
-			/* remember the directory */
-			char *new_dir = realloc(save_dir, (lastdot+1)-sp);
-			if (new_dir) {
-				save_dir_len = lastdot - sp;
-				memcpy(new_dir, sp, save_dir_len);
-				new_dir[save_dir_len] = '\0';
-				save_dir = new_dir;
+			while (p < ep && *p >= 0x20) {
+				if (*p == '.') {
+					/* don't remember the directory if it's a temporary file */
+					if (!lastdot && p == sp + 12 &&
+						!memcmp(sp, "<Wimp$Scrap>", 12)) break;
+					lastdot = p;
+				}
+				p++;
+			}
+			if (lastdot) {
+				/* remember the directory */
+				char *new_dir = realloc(save_dir, (lastdot+1)-sp);
+				if (new_dir) {
+					save_dir_len = lastdot - sp;
+					memcpy(new_dir, sp, save_dir_len);
+					new_dir[save_dir_len] = '\0';
+					save_dir = new_dir;
+				}
 			}
 		}
 

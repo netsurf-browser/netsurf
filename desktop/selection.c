@@ -134,7 +134,8 @@ void selection_reinit(struct selection *s, struct box *root)
 
 	if (IS_INPUT(root)) {
 		static int next_idx = 0;
-		root_idx = (next_idx++) << 28;
+		if (!++next_idx) next_idx = 1;
+		root_idx = next_idx << 28;
 	}
 	else
 		root_idx = 0;
@@ -188,6 +189,20 @@ void selection_init(struct selection *s, struct box *root)
 	s->drag_state = DRAG_NONE;
 
 	selection_reinit(s, root);
+}
+
+
+/**
+ * Indicate whether the selected text is read only, ie. cannot be modified.
+ *
+ * \param  s   selection object
+ * \return true iff the selection is read only
+ */
+
+bool selection_read_only(struct selection *s)
+{
+	return !s->root || !NUMBER_SPACE(s->root->byte_offset);
+
 }
 
 

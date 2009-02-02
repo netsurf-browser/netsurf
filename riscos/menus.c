@@ -2099,9 +2099,9 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 			break;
 
 		case BROWSER_SELECTION:
-			/* make menu available if there's a selection or an input field for pasting */
+			/* make menu available if there's anything that /could/ be selected */
 			ro_gui_menu_set_entry_shaded(current_menu, action,
-				!(c && (bw->paste_callback || (bw->sel && selection_defined(bw->sel)))));
+				!c || (c->type != CONTENT_HTML && c->type != CONTENT_TEXTPLAIN));
 			break;
 		case BROWSER_SELECTION_SAVE:
 			if (c && (!bw->sel || !selection_defined(bw->sel))) c = NULL;
@@ -2110,9 +2110,13 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 				ro_gui_save_prepare(GUI_SAVE_TEXT_SELECTION, NULL, bw->sel, NULL, NULL);
 			break;
 		case BROWSER_SELECTION_COPY:
-		case BROWSER_SELECTION_CUT:
 			ro_gui_menu_set_entry_shaded(current_menu, action,
 				!(c && bw->sel && selection_defined(bw->sel)));
+			break;
+		case BROWSER_SELECTION_CUT:
+			ro_gui_menu_set_entry_shaded(current_menu, action,
+				!(c && bw->sel && selection_defined(bw->sel)
+					&& !selection_read_only(bw->sel)));
 			break;
 		case BROWSER_SELECTION_PASTE:
 			ro_gui_menu_set_entry_shaded(current_menu, action, !(c && bw->paste_callback));

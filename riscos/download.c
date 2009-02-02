@@ -1198,7 +1198,12 @@ void ro_gui_download_remember_dir(const char *path)
 	char *lastdot = NULL;
 	char *p = path;
 	while (*p >= 0x20) {
-		if (*p == '.') lastdot = p;
+		if (*p == '.') {
+			/* don't remember the directory if it's a temporary file */
+			if (!lastdot && p == path + 12 &&
+				!memcmp(path, "<Wimp$Scrap>", 12)) break;
+			lastdot = p;
+		}
 		p++;
 	}
 	if (lastdot) {
@@ -1297,7 +1302,8 @@ bool ro_gui_download_save(struct gui_download_window *dw,
 	dw->saved = true;
 	strncpy(dw->path, file_name, sizeof dw->path);
 
-	ro_gui_download_remember_dir(file_name);
+	if (!dw->send_dataload || dw->save_message.data.data_xfer.est_size != -1)
+		ro_gui_download_remember_dir(file_name);
 
 	/* grey out file icon */
 	error = xwimp_set_icon_state(dw->window, ICON_DOWNLOAD_ICON,
