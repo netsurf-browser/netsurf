@@ -2010,7 +2010,8 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 			ro_gui_menu_set_entry_shaded(current_menu,
 					action, !current_menu_object);
 			if (windows && current_menu_object)
-				ro_gui_save_prepare(GUI_SAVE_OBJECT_ORIG, c, NULL, NULL, NULL);
+				ro_gui_save_prepare(GUI_SAVE_OBJECT_ORIG, current_menu_object,
+						NULL, NULL, NULL);
 			break;
 		case BROWSER_OBJECT_EXPORT:
 		case BROWSER_OBJECT_EXPORT_SPRITE:
