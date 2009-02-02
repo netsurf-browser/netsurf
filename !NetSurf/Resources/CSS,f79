@@ -139,6 +139,7 @@ hr[noshade] { background-color: #888; height: 2px; border: none; }
 
 noframes { display: none; }
 
+iframe { width: 19em; height: 10em; }
 iframe[align=left] { float: left; }
 iframe[align=right] { float: right; }
 
