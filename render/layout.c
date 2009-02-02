@@ -1420,7 +1420,6 @@ bool layout_inline_container(struct box *inline_container, int width,
 		if ((!c->object && c->text && (c->length || is_pre)) ||
 				c->type == BOX_BR)
 			has_text_children = true;
-		c->line_height = 0;
 	}
 
 	/** \todo fix wrapping so that a box with horizontal scrollbar will
@@ -2131,16 +2130,6 @@ bool layout_line(struct box *first, int *width, int *y,
 				(d->style->position == CSS_POSITION_ABSOLUTE ||
 				 d->style->position == CSS_POSITION_FIXED))
 			continue;
-		if (d->type == BOX_INLINE && d->inline_end &&
-				d->next != d->inline_end) {
-			if (d->height > d->inline_end->line_height)
-				d->inline_end->line_height = d->height;
-			for (struct box *il = d; il && il != d->inline_end;
-						il = il->next) {
-				if (d->height > il->line_height)
-					il->line_height = d->height;
-			}
-		}
 		if ((d->type == BOX_INLINE && (d->object || d->gadget)) ||
 				d->type == BOX_INLINE_BLOCK) {
 			h = d->margin[TOP] + d->border[TOP] + d->padding[TOP] +
@@ -2149,13 +2138,10 @@ bool layout_line(struct box *first, int *width, int *y,
 			if (used_height < h)
 				used_height = h;
 		}
-		if (d->line_height > used_height)
-			used_height = d->line_height;
-	}
+		if (d->type == BOX_TEXT && d->height > used_height)
+			used_height = d->height;
 
-	/* Set the line_height for the boxes on the current line */
-	for (d = first; d != b; d = d->next)
-		d->line_height = used_height;
+	}
 
 	first->inline_new_line = true;
 
