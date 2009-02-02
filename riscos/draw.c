@@ -61,10 +61,16 @@ bool draw_convert(struct content *c, int width, int height)
 		return false;
 	}
 
-	/* c->width & c->height stored as (OS units/2)
-	   => divide by 512 to convert from draw units */
-	c->width = ((bbox.x1 - bbox.x0) / 512);
-	c->height = ((bbox.y1 - bbox.y0) / 512);
+	if (bbox.x1 > bbox.x0 && bbox.y1 > bbox.y0) {
+		/* c->width & c->height stored as (OS units/2)
+		   => divide by 512 to convert from draw units */
+		c->width = ((bbox.x1 - bbox.x0) / 512);
+		c->height = ((bbox.y1 - bbox.y0) / 512);
+	}
+	else
+		/* invalid/undefined bounding box */
+		c->height = c->width = 0;
+
 	c->data.draw.x0 = bbox.x0;
 	c->data.draw.y0 = bbox.y0;
 	c->title = malloc(100);
@@ -101,6 +107,9 @@ bool draw_redraw(struct content *c, int x, int y,
 	os_trfm matrix;
 
 	if (plot.flush && !plot.flush())
+		return false;
+
+	if (!c->width || !c->height)
 		return false;
 
 	/* Scaled image. Transform units (65536*OS units) */
