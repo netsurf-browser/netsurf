@@ -124,7 +124,7 @@ const struct printer pdf_printer = {
 	pdf_end
 };
 
-float pdf_scale;
+static float pdf_scale = DEFAULT_EXPORT_SCALE;
 static char *owner_pass;
 static char *user_pass;
 
@@ -288,12 +288,7 @@ bool pdf_plot_text(int x, int y, const struct css_style *style,
 	else
 		size = css_len2pt(&style->font_size.value.length, style);
 
-	/*this can be removed when export options get added for riscos*/
-#ifdef riscos
-	size *= DEFAULT_EXPORT_SCALE;
-#else
 	size *= pdf_scale;
-#endif
 
 	if (size <= 0)
 		return true;
@@ -812,7 +807,9 @@ void pdf_plot_grid(int x_dist, int y_dist, unsigned int colour)
 }
 #endif
 
-/**used to synch the text scale with the scale for the whole content*/
+/**
+ * Sync the text scale with the scale for the whole content
+ */
 void pdf_set_scale(float s)
 {
 	pdf_scale = s;

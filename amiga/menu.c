@@ -503,7 +503,6 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 								strlcpy(&fname,savereq->fr_Drawer,1024);
 								AddPart(fname,savereq->fr_File,1024);
 								ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
-								pdf_set_scale(DEFAULT_EXPORT_SCALE);
 								save_as_pdf(gwin->bw->current_content,fname);
 								SetComment(fname,gwin->bw->current_content->url);
 								ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);

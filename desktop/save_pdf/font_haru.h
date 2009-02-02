@@ -31,6 +31,5 @@ bool haru_nsfont_apply_style(const struct css_style *style,
 	  			HPDF_Font *font);
  
 extern const struct font_functions haru_nsfont;
-extern float pdf_scale;
 
 #endif
