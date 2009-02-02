@@ -1891,7 +1891,9 @@ bool layout_line(struct box *first, int *width, int *y,
 					(d->style->clear == CSS_CLEAR_LEFT &&
 					left == 0) ||
 					(d->style->clear == CSS_CLEAR_RIGHT &&
-					right == 0)) &&
+					right == 0) ||
+					(d->style->clear == CSS_CLEAR_BOTH &&
+					left == 0 && right == 0)) &&
 					(!place_below ||
 					(left == 0 && right == 0 && x == 0)) &&
 					cy >= cont->clear_level) {
@@ -1928,13 +1930,11 @@ bool layout_line(struct box *first, int *width, int *y,
 							CSS_CLEAR_NONE) {
 					/* to be cleared below existing
 					 * floats */
-					if (b->type == BOX_FLOAT_LEFT) {
+					if (b->type == BOX_FLOAT_LEFT)
 						b->x = cx;
-						left = b;
-					} else {
+					else
 						b->x = cx + *width - b->width;
-						right = b;
-					}
+
 					fy = layout_clear(cont->float_children,
 							d->style->clear);
 					if (fy > cont->clear_level)
@@ -1942,6 +1942,10 @@ bool layout_line(struct box *first, int *width, int *y,
 					if (b->y < fy)
 						b->y = fy;
 				}
+				if (b->type == BOX_FLOAT_LEFT)
+					left = b;
+				else
+					right = b;
 			}
 			if (cont->float_children == b) {
 				LOG(("float %p already placed", b));
