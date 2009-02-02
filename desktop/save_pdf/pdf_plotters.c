@@ -1,5 +1,6 @@
 /*
  * Copyright 2008 Adam Blokus <adamblokus@gmail.com>
+ * Copyright 2009 John Tytgat <joty@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -72,7 +73,7 @@ static void pdf_set_dashed(void);
 static void pdf_set_dotted(void);
 
 static HPDF_Image pdf_extract_image(struct bitmap *bitmap, struct content *content);
-static void apply_clip_and_mode(void);
+static void apply_clip_and_mode(bool selectTextMode);
 
 
 static void error_handler(HPDF_STATUS error_no, HPDF_STATUS detail_no,
@@ -94,9 +95,9 @@ static HPDF_REAL page_height, page_width;
 static bool page_clipped;
 static int last_clip_x0, last_clip_y0, last_clip_x1, last_clip_y1;
 
-static bool in_text_mode, text_mode_request;
+static bool in_text_mode;
 
-static struct print_settings* settings;
+static const struct print_settings *settings;
 
 static const struct plotter_table pdf_plotters = {
 	pdf_plot_clg,
@@ -139,7 +140,7 @@ bool pdf_plot_rectangle(int x0, int y0, int width, int height,
 #ifdef PDF_DEBUG
 	LOG(("."));
 #endif
-	apply_clip_and_mode();
+	apply_clip_and_mode(false);
 
 	HPDF_Page_SetLineWidth(pdf_page, line_width);
 
@@ -165,7 +166,7 @@ bool pdf_plot_line(int x0, int y0, int x1, int y1, int width,
 	LOG(("."));
 #endif
 
-	apply_clip_and_mode();
+	apply_clip_and_mode(false);
 
 	HPDF_Page_SetLineWidth(pdf_page, width);
 
@@ -197,7 +198,7 @@ bool pdf_plot_polygon(int *p, unsigned int n, colour fill)
 	if (n == 0)
 		return true;
 
-	apply_clip_and_mode();
+	apply_clip_and_mode(false);
 
 	HPDF_Page_SetRGBFill(pdf_page, R(fill), G(fill), B(fill));
 	HPDF_Page_MoveTo(pdf_page, p[0], page_height - p[1]);
@@ -238,7 +239,7 @@ bool pdf_plot_fill(int x0, int y0, int x1, int y1, colour c)
 	x1 = min(max(x1, 0), page_width);
 	y1 = min(max(y1, 0), page_height);
 
-	apply_clip_and_mode();
+	apply_clip_and_mode(false);
 
 	HPDF_Page_SetRGBFill(pdf_page, R(c), G(c), B(c));
 	HPDF_Page_Rectangle(pdf_page, x0, page_height - y1, x1-x0, y1-y0);
@@ -271,7 +272,7 @@ bool pdf_plot_text(int x, int y, const struct css_style *style,
 		const char *text, size_t length, colour bg, colour c)
 {
 #ifdef PDF_DEBUG
-	LOG((". %d %d %s", x, y, text));
+	LOG((". %d %d %.*s", x, y, (int)length, text));
 #endif
 	char *word;
 	HPDF_REAL size;
@@ -280,8 +281,7 @@ bool pdf_plot_text(int x, int y, const struct css_style *style,
 	if (length == 0)
 		return true;
 
-	text_mode_request = true;
-	apply_clip_and_mode();
+	apply_clip_and_mode(true);
 
 	if (style->font_size.value.length.unit  == CSS_UNIT_PX)
 		size = style->font_size.value.length.value;
@@ -323,7 +323,7 @@ bool pdf_plot_disc(int x, int y, int radius, colour c, bool filled)
 #ifdef PDF_DEBUG
 	LOG(("."));
 #endif
-	apply_clip_and_mode();
+	apply_clip_and_mode(false);
 
 	if (filled)
 		HPDF_Page_SetRGBFill(pdf_page, R(c), G(c), B(c));
@@ -352,7 +352,7 @@ bool pdf_plot_arc(int x, int y, int radius, int angle1, int angle2, colour c)
 	if (angle1 > angle2)
 		angle1 -= 360;
 
-	apply_clip_and_mode();
+	apply_clip_and_mode(false);
 
 	HPDF_Page_SetRGBStroke(pdf_page, R(c), G(c), B(c));
 
@@ -368,13 +368,13 @@ bool pdf_plot_bitmap(int x, int y, int width, int height,
 	HPDF_Image image;
 
 #ifdef PDF_DEBUG
-	LOG(("%d %d %d %d %X %X %X", x, y, width, height,
+	LOG(("%d %d %d %d %p 0x%x %p", x, y, width, height,
 	     bitmap, bg, content));
 #endif
  	if (width == 0 || height == 0)
  		return true;
 
-	apply_clip_and_mode();
+	apply_clip_and_mode(false);
 
 	image = pdf_extract_image(bitmap, content);
 
@@ -396,13 +396,13 @@ bool pdf_plot_bitmap_tile(int x, int y, int width, int height,
 	HPDF_Image image;
 
 #ifdef PDF_DEBUG
-	LOG(("%d %d %d %d %X %X %X", x, y, width, height,
+	LOG(("%d %d %d %d %p 0x%x %p", x, y, width, height,
 	     bitmap, bg, content));
 #endif
  	if (width == 0 || height == 0)
  		return true;
 
-	apply_clip_and_mode();
+	apply_clip_and_mode(false);
 
 	image = pdf_extract_image(bitmap, content);
 	if (!image)
@@ -510,17 +510,17 @@ HPDF_Image pdf_extract_image(struct bitmap *bitmap, struct content *content)
 	return image;
 }
 
-/**change the mode and clip only if it's necessary*/
-static void apply_clip_and_mode()
+/**
+ * Change the mode and clip only if it's necessary
+ */
+static void apply_clip_and_mode(bool selectTextMode)
 {
-
-	if (in_text_mode && (!text_mode_request || page_clipped)) {
+	if (in_text_mode && (!selectTextMode || page_clipped)) {
 		HPDF_Page_EndText(pdf_page);
 		in_text_mode = false;
 	}
 
 	if (page_clipped) {
-
 		HPDF_Page_GRestore(pdf_page);
 		HPDF_Page_GSave(pdf_page);
 
@@ -534,13 +534,11 @@ static void apply_clip_and_mode()
 		page_clipped = false;
 	}
 
-	if (text_mode_request) {
+	if (selectTextMode) {
 		if (!in_text_mode) {
 			HPDF_Page_BeginText(pdf_page);
 			in_text_mode = true;
 		}
-
-		text_mode_request = false;
 	}
 }
 
@@ -584,7 +582,7 @@ bool pdf_plot_path(float *p, unsigned int n, colour fill, float width,
 	transform[4] = 0;
 	transform[5] = 0;
 
-	for (i = 0 ; i<n ; ) {
+	for (i = 0 ; i < n ; ) {
 		if (p[i] == PLOTTER_PATH_MOVE) {
 			HPDF_Page_MoveTo(pdf_page,
 					transform_x(transform, p[i+1], p[i+2]),
@@ -621,7 +619,7 @@ bool pdf_plot_path(float *p, unsigned int n, colour fill, float width,
 		return true;
 	}
 
-	if (fill!=TRANSPARENT) {
+	if (fill != TRANSPARENT) {
 		if (c != TRANSPARENT)
 			HPDF_Page_FillStroke(pdf_page);
 		else
@@ -640,13 +638,13 @@ void pdf_set_solid()
 
 void pdf_set_dashed()
 {
-	HPDF_UINT16 dash_ptn[] = {3};
+	const HPDF_UINT16 dash_ptn[] = {3};
 	HPDF_Page_SetDash(pdf_page, dash_ptn, 1, 1);
 }
 
 void pdf_set_dotted()
 {
-	HPDF_UINT16 dash_ptn[] = {1};
+	const HPDF_UINT16 dash_ptn[] = {1};
 	HPDF_Page_SetDash(pdf_page, dash_ptn, 1, 1);
 }
 
@@ -691,10 +689,16 @@ bool pdf_begin(struct print_settings *print_settings)
 bool pdf_next_page(void)
 {
 #ifdef PDF_DEBUG
+	LOG(("pdf_next_page begins"));
+#endif
 	if (pdf_page != NULL) {
+		page_clipped = false;
+		apply_clip_and_mode(false);
 		HPDF_Page_GRestore(pdf_page);
-		if (page_clipped)
-			HPDF_Page_GRestore(pdf_page);
+	}
+
+#ifdef PDF_DEBUG
+	if (pdf_page != NULL) {
 		pdf_plot_grid(10, 10, 0xCCCCCC);
 		pdf_plot_grid(100, 100, 0xCCCCFF);
 	}
@@ -711,9 +715,6 @@ bool pdf_next_page(void)
 	page_clipped = false;
 	HPDF_Page_GSave(pdf_page);
 
-	text_mode_request = false;
-	in_text_mode = false;
-
 #ifdef PDF_DEBUG
 	LOG(("%f %f", page_width, page_height));
 #endif
@@ -726,10 +727,15 @@ void pdf_end(void)
 {
 #ifdef PDF_DEBUG
 	LOG(("pdf_end begins"));
+#endif
 	if (pdf_page != NULL) {
+		page_clipped = false;
+		apply_clip_and_mode(false);
 		HPDF_Page_GRestore(pdf_page);
-		if (page_clipped)
-			HPDF_Page_GRestore(pdf_page);
+	}
+
+#ifdef PDF_DEBUG
+	if (pdf_page != NULL) {
 		pdf_plot_grid(10, 10, 0xCCCCCC);
 		pdf_plot_grid(100, 100, 0xCCCCFF);
 	}
@@ -796,8 +802,6 @@ static void error_handler(HPDF_STATUS error_no, HPDF_STATUS detail_no,
 #ifdef PDF_DEBUG
 void pdf_plot_grid(int x_dist, int y_dist, unsigned int colour)
 {
-	int i;
-
 	for (int i = x_dist ; i < page_width ; i += x_dist)
 		pdf_plot_line(i, 0, i, page_height, 1, colour, false, false);
 
