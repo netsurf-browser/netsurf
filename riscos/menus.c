@@ -2049,9 +2049,10 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 						break;
 
 					/* vector types (Draw export possible) */
+#ifdef WITH_DRAW_EXPORT
 #if defined(WITH_NS_SVG) || defined(WITH_RSVG)
-/* \todo - implement SVG to Draw conversion
-						case CONTENT_SVG: */
+					case CONTENT_SVG:
+#endif
 #endif
 #ifdef WITH_DRAW
 					case CONTENT_DRAW:

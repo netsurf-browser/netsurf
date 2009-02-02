@@ -102,7 +102,7 @@ static bool ro_gui_save_complete(struct content *c, char *path);
 static bool ro_gui_save_content(struct content *c, char *path, bool force_overwrite);
 static void ro_gui_save_done(void);
 static void ro_gui_save_bounced(wimp_message *message);
-static void ro_gui_save_object_native(struct content *c, char *path);
+static bool ro_gui_save_object_native(struct content *c, char *path);
 static bool ro_gui_save_link(const char *url, const char *title, link_format format, char *path);
 static void ro_gui_save_set_state(struct content *c, gui_save_type save_type,
 		const char *url, char *leaf_buf, char *icon_buf);
@@ -874,8 +874,7 @@ bool ro_gui_save_content(struct content *c, char *path, bool force_overwrite)
 			break;
 
 		case GUI_SAVE_OBJECT_NATIVE:
-			ro_gui_save_object_native(c, path);
-			break;
+			return ro_gui_save_object_native(c, path);
 
 		case GUI_SAVE_LINK_URI:
 			return ro_gui_save_link(gui_save_url, gui_save_title, LINK_ACORN, path);
@@ -1083,7 +1082,7 @@ bool ro_gui_save_complete(struct content *c, char *path)
 
 #endif
 
-void ro_gui_save_object_native(struct content *c, char *path)
+bool ro_gui_save_object_native(struct content *c, char *path)
 {
 	switch (c->type) {
 #ifdef WITH_JPEG
@@ -1106,6 +1105,7 @@ void ro_gui_save_object_native(struct content *c, char *path)
 		{
 			unsigned flags = (os_version == 0xA9) ? BITMAP_SAVE_FULL_ALPHA : 0;
 			bitmap_save(c->bitmap, path, flags);
+			return true;
 		}
 		break;
 #ifdef WITH_SPRITE
@@ -1124,15 +1124,19 @@ void ro_gui_save_object_native(struct content *c, char *path)
 				LOG(("xosfile_save_stamped: 0x%x: %s",
 						error->errnum, error->errmess));
 				warn_user("SaveError", error->errmess);
+				return false;
 			}
+			return true;
 		}
 		break;
+#ifdef WITH_DRAW_EXPORT
 #if defined(WITH_NS_SVG) || defined(WITH_RSVG)
 		case CONTENT_SVG:
-			break;
+			return save_as_draw(c, path);
+#endif
 #endif
 		default:
-			break;
+			return false;
 	}
 }
 
