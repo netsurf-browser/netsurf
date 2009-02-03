@@ -82,7 +82,7 @@ struct plotter_table {
 			int line_width, colour c, bool dotted, bool dashed);
 	bool (*line)(int x0, int y0, int x1, int y1, int width,
 			colour c, bool dotted, bool dashed);
-	bool (*polygon)(int *p, unsigned int n, colour fill);
+	bool (*polygon)(const int *p, unsigned int n, colour fill);
 	bool (*fill)(int x0, int y0, int x1, int y1, colour c);
 	bool (*clip)(int x0, int y0, int x1, int y1);
 	bool (*text)(int x, int y, const struct css_style *style,
@@ -98,8 +98,8 @@ struct plotter_table {
 	bool (*group_start)(const char *name);  /**< optional, may be NULL */
 	bool (*group_end)(void);		/**< optional, may be NULL */
 	bool (*flush)(void);			/**< optional, may be NULL */
-	bool (*path)(float *p, unsigned int n, colour fill, float width,
-			colour c, float *transform);
+	bool (*path)(const float *p, unsigned int n, colour fill, float width,
+			colour c, const float transform[6]);
 	bool option_knockout;	/**< set if knockout rendering is required */
 };
 

@@ -27,7 +27,7 @@ bool ami_rectangle(int x0, int y0, int width, int height,
 			int line_width, colour c, bool dotted, bool dashed);
 bool ami_line(int x0, int y0, int x1, int y1, int width,
 			colour c, bool dotted, bool dashed);
-bool ami_polygon(int *p, unsigned int n, colour fill);
+bool ami_polygon(const int *p, unsigned int n, colour fill);
 bool ami_fill(int x0, int y0, int x1, int y1, colour c);
 bool ami_clip(int x0, int y0, int x1, int y1);
 bool ami_text(int x, int y, const struct css_style *style,
@@ -43,6 +43,6 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 bool ami_group_start(const char *name);
 bool ami_group_end(void);
 bool ami_flush(void);
-bool ami_path(float *p, unsigned int n, colour fill, float width,
-			colour c, float *transform);
+bool ami_path(const float *p, unsigned int n, colour fill, float width,
+			colour c, const float transform[6]);
 #endif

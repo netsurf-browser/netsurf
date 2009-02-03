@@ -55,9 +55,9 @@ static bool nsgtk_print_plot_rectangle(int x0, int y0, int width, int height,
 		int line_width, colour c, bool dotted, bool dashed);
 static bool nsgtk_print_plot_line(int x0, int y0, int x1, int y1, int width,
 		colour c, bool dotted, bool dashed);
-static bool nsgtk_print_plot_polygon(int *p, unsigned int n, colour fill);
-static bool nsgtk_print_plot_path(float *p, unsigned int n, colour fill, float width,
-		colour c, float *transform);
+static bool nsgtk_print_plot_polygon(const int *p, unsigned int n, colour fill);
+static bool nsgtk_print_plot_path(const float *p, unsigned int n, colour fill, float width,
+		colour c, const float transform[6]);
 static bool nsgtk_print_plot_fill(int x0, int y0, int x1, int y1, colour c);
 static bool nsgtk_print_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
@@ -170,7 +170,7 @@ bool nsgtk_print_plot_line(int x0, int y0, int x1, int y1, int width,
 }
 
 
-bool nsgtk_print_plot_polygon(int *p, unsigned int n, colour fill)
+bool nsgtk_print_plot_polygon(const int *p, unsigned int n, colour fill)
 {
 	
 	LOG(("Plotting polygon."));	
@@ -385,8 +385,8 @@ bool nsgtk_print_plot_bitmap_tile(int x, int y, int width, int height,
 	return true;
 }
 
-bool nsgtk_print_plot_path(float *p, unsigned int n, colour fill, float width,
-		colour c, float *transform)
+bool nsgtk_print_plot_path(const float *p, unsigned int n, colour fill, float width,
+		colour c, const float transform[6])
 {
 	/* Only the internal SVG renderer uses this plot call currently,
 	* and the GTK version uses librsvg.  Thus, we ignore this complexity,

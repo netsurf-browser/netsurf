@@ -41,9 +41,9 @@ static bool ro_plot_line(int x0, int y0, int x1, int y1, int width,
 		colour c, bool dotted, bool dashed);
 static bool ro_plot_draw_path(const draw_path * const path, int width,
 		colour c, bool dotted, bool dashed);
-static bool ro_plot_polygon(int *p, unsigned int n, colour fill);
-static bool ro_plot_path(float *p, unsigned int n, colour fill, float width,
-		colour c, float *transform);
+static bool ro_plot_polygon(const int *p, unsigned int n, colour fill);
+static bool ro_plot_path(const float *p, unsigned int n, colour fill, float width,
+		colour c, const float transform[6]);
 static bool ro_plot_fill(int x0, int y0, int x1, int y1, colour c);
 static bool ro_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
@@ -190,7 +190,7 @@ bool ro_plot_draw_path(const draw_path * const path, int width,
 }
 
 
-bool ro_plot_polygon(int *p, unsigned int n, colour fill)
+bool ro_plot_polygon(const int *p, unsigned int n, colour fill)
 {
 	int path[n * 3 + 2];
 	unsigned int i;
@@ -222,8 +222,8 @@ bool ro_plot_polygon(int *p, unsigned int n, colour fill)
 }
 
 
-bool ro_plot_path(float *p, unsigned int n, colour fill, float width,
-		colour c, float *transform)
+bool ro_plot_path(const float *p, unsigned int n, colour fill, float width,
+		colour c, const float transform[6])
 {
 	static const draw_line_style line_style = { draw_JOIN_MITRED,
 			draw_CAP_BUTT, draw_CAP_BUTT, 0, 0x7fffffff,

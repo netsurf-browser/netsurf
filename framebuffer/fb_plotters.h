@@ -34,7 +34,7 @@ bool fb_plotters_clip_rect(const bbox_t *clip, int *x0, int *y0, int *x1, int *y
 bool fb_plotters_clip_line_ctx(int *x0, int *y0, int *x1, int *y1);
 bool fb_plotters_clip_line(const bbox_t *clip, int *x0, int *y0, int *x1, int *y1);
 
-bool fb_plotters_polygon(int *p, unsigned int n, colour fill, bool (linefn)(int x0, int y0, int x1, int y1, int width, colour c, bool dotted, bool dashed));
+bool fb_plotters_polygon(const int *p, unsigned int n, colour fill, bool (linefn)(int x0, int y0, int x1, int y1, int width, colour c, bool dotted, bool dashed));
 
 bool fb_plotters_bitmap_tile(int x, int y, 
                              int width, int height,

@@ -103,7 +103,7 @@ static bool print_fonts_plot_rectangle(int x0, int y0, int width, int height,
 		int line_width, colour c, bool dotted, bool dashed);
 static bool print_fonts_plot_line(int x0, int y0, int x1, int y1, int width,
 		colour c, bool dotted, bool dashed);
-static bool print_fonts_plot_polygon(int *p, unsigned int n, colour fill);
+static bool print_fonts_plot_polygon(const int *p, unsigned int n, colour fill);
 static bool print_fonts_plot_fill(int x0, int y0, int x1, int y1, colour c);
 static bool print_fonts_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
@@ -119,8 +119,8 @@ static bool print_fonts_plot_bitmap(int x, int y, int width, int height,
 static bool print_fonts_plot_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
 		bool repeat_x, bool repeat_y, struct content *content);
-static bool print_fonts_plot_path(float *p, unsigned int n, colour fill, float width,
-		colour c, float *transform);
+static bool print_fonts_plot_path(const float *p, unsigned int n, colour fill, float width,
+		colour c, const float transform[6]);
 static void print_fonts_callback(void *context,
 		const char *font_name, unsigned int font_size,
 		const char *s8, unsigned short *s16, unsigned int n,
@@ -831,7 +831,7 @@ bool print_fonts_plot_line(int x0, int y0, int x1, int y1, int width,
 {
 	return true;
 }
-bool print_fonts_plot_polygon(int *p, unsigned int n, colour fill)
+bool print_fonts_plot_polygon(const int *p, unsigned int n, colour fill)
 {
 	return true;
 }
@@ -865,8 +865,8 @@ bool print_fonts_plot_bitmap_tile(int x, int y, int width, int height,
 {
 	return true;
 }
-bool print_fonts_plot_path(float *p, unsigned int n, colour fill, float width,
-		colour c, float *transform)
+bool print_fonts_plot_path(const float *p, unsigned int n, colour fill, float width,
+		colour c, const float transform[6])
 {
 	return true;
 }

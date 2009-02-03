@@ -189,7 +189,7 @@ bool ami_line(int x0, int y0, int x1, int y1, int width,
 	return true;
 }
 
-bool ami_polygon(int *p, unsigned int n, colour fill)
+bool ami_polygon(const int *p, unsigned int n, colour fill)
 {
 	int k;
 #ifndef NS_AMIGA_CAIRO
@@ -626,8 +626,8 @@ bool ami_flush(void)
 	return true;
 }
 
-bool ami_path(float *p, unsigned int n, colour fill, float width,
-			colour c, float *transform)
+bool ami_path(const float *p, unsigned int n, colour fill, float width,
+			colour c, const float transform[6])
 {
 /* For SVG only, because it needs Bezier curves we are going to cheat
    and insist on Cairo */

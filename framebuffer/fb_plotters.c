@@ -221,10 +221,10 @@ colour fb_plotters_ablend(colour pixel, colour scrpixel)
 }
 
 bool
-fb_plotters_polygon(int *p, unsigned int n, colour fill,bool (linefn)(int x0, int y0, int x1, int y1, int width, colour c, bool dotted, bool dashed))
+fb_plotters_polygon(const int *p, unsigned int n, colour fill,bool (linefn)(int x0, int y0, int x1, int y1, int width, colour c, bool dotted, bool dashed))
 {
         unsigned int pnt;
-        int *cur = p;
+        const int *cur = p;
         
         for (pnt = 1; pnt < n; pnt++) {
                 cur = p + (pnt << 1);

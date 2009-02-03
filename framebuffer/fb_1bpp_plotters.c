@@ -50,7 +50,7 @@ static bool fb_1bpp_line(int x0, int y0, int x1, int y1, int width,
 	return true;
 }
 
-static bool fb_1bpp_polygon(int *p, unsigned int n, colour fill)
+static bool fb_1bpp_polygon(const int *p, unsigned int n, colour fill)
 {
         LOG(("%s(%p, %d, 0x%lx)\n", __func__, p,n,fill));
 	return true;
@@ -235,8 +235,8 @@ static bool fb_1bpp_flush(void)
 	return true;
 }
 
-static bool fb_1bpp_path(float *p, unsigned int n, colour fill, float width,
-			colour c, float *transform)
+static bool fb_1bpp_path(const float *p, unsigned int n, colour fill, float width,
+			colour c, const float transform[6])
 {
         LOG(("%s(%f, %d, 0x%lx, %f, 0x%lx, %f)\n", __func__, 
              *p, n, fill, width, c, *transform));

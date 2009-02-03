@@ -41,9 +41,9 @@ static bool ro_save_draw_rectangle(int x0, int y0, int width, int height,
 		int line_width, colour c, bool dotted, bool dashed);
 static bool ro_save_draw_line(int x0, int y0, int x1, int y1, int width,
 		colour c, bool dotted, bool dashed);
-static bool ro_save_draw_polygon(int *p, unsigned int n, colour fill);
-static bool ro_save_draw_path(float *p, unsigned int n, colour fill,
-		float width, colour c, float *transform);
+static bool ro_save_draw_polygon(const int *p, unsigned int n, colour fill);
+static bool ro_save_draw_path(const float *p, unsigned int n, colour fill,
+		float width, colour c, const float transform[6]);
 static bool ro_save_draw_fill(int x0, int y0, int x1, int y1, colour c);
 static bool ro_save_draw_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
@@ -63,7 +63,7 @@ static bool ro_save_draw_group_end(void);
 static bool ro_save_draw_error(pencil_code code);
 
 
-const struct plotter_table ro_save_draw_plotters = {
+static const struct plotter_table ro_save_draw_plotters = {
 	ro_save_draw_clg,
 	ro_save_draw_rectangle,
 	ro_save_draw_line,
@@ -199,7 +199,7 @@ bool ro_save_draw_line(int x0, int y0, int x1, int y1, int width,
 }
 
 
-bool ro_save_draw_polygon(int *p, unsigned int n, colour fill)
+bool ro_save_draw_polygon(const int *p, unsigned int n, colour fill)
 {
 	pencil_code code;
 	int path[n * 3 + 1];
@@ -224,14 +224,9 @@ bool ro_save_draw_polygon(int *p, unsigned int n, colour fill)
 }
 
 
-bool ro_save_draw_path(float *p, unsigned int n, colour fill,
-		float width, colour c, float *transform)
+bool ro_save_draw_path(const float *p, unsigned int n, colour fill,
+		float width, colour c, const float transform[6])
 {
-	pencil_code code;
-	int *path;
-	unsigned int i;
-	bool empty_path = true;
-
 	if (n == 0)
 		return true;
 
@@ -240,12 +235,14 @@ bool ro_save_draw_path(float *p, unsigned int n, colour fill,
 		return false;
 	}
 
-	path = malloc(sizeof *path * (n + 10));
+	int *path = malloc(sizeof *path * (n + 10));
 	if (!path) {
 		LOG(("out of memory"));
 		return false;
 	}
 
+	unsigned int i;
+	bool empty_path = true;
 	for (i = 0; i < n; ) {
 		if (p[i] == PLOTTER_PATH_MOVE) {
 			path[i] = draw_MOVE_TO;
@@ -304,7 +301,7 @@ bool ro_save_draw_path(float *p, unsigned int n, colour fill,
 		return true;
 	}
 
-	code = pencil_path(ro_save_draw_diagram, path, i + 1,
+	pencil_code code = pencil_path(ro_save_draw_diagram, path, i + 1,
 			fill == TRANSPARENT ? pencil_TRANSPARENT : fill << 8,
 			c == TRANSPARENT ? pencil_TRANSPARENT : c << 8,
 			width, pencil_JOIN_MITRED,

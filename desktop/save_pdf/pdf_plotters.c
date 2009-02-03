@@ -51,7 +51,7 @@ static bool pdf_plot_rectangle(int x0, int y0, int width, int height,
 		int line_width, colour c, bool dotted, bool dashed);
 static bool pdf_plot_line(int x0, int y0, int x1, int y1, int width,
 		colour c, bool dotted, bool dashed);
-static bool pdf_plot_polygon(int *p, unsigned int n, colour fill);
+static bool pdf_plot_polygon(const int *p, unsigned int n, colour fill);
 static bool pdf_plot_fill(int x0, int y0, int x1, int y1, colour c);
 static bool pdf_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
@@ -65,8 +65,8 @@ static bool pdf_plot_bitmap(int x, int y, int width, int height,
 static bool pdf_plot_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
 		bool repeat_x, bool repeat_y, struct content *content);
-static bool pdf_plot_path(float *p, unsigned int n, colour fill, float width,
-		colour c, float *transform);
+static bool pdf_plot_path(const float *p, unsigned int n, colour fill, float width,
+		colour c, const float transform[6]);
 
 static void pdf_set_solid(void);
 static void pdf_set_dashed(void);
@@ -150,10 +150,10 @@ bool pdf_plot_rectangle(int x0, int y0, int width, int height,
 		pdf_set_dashed();
 
 	HPDF_Page_SetRGBStroke(pdf_page, R(c), G(c), B(c));
-	HPDF_Page_Rectangle(pdf_page, x0, page_height - y0 + height, width, height);
+	HPDF_Page_Rectangle(pdf_page, x0, page_height - y0, width, -height);
 	HPDF_Page_Stroke(pdf_page);
 
-	if (dotted||dashed)
+	if (dotted || dashed)
 		pdf_set_solid();
 
 	return true;
@@ -181,13 +181,13 @@ bool pdf_plot_line(int x0, int y0, int x1, int y1, int width,
 	HPDF_Page_LineTo(pdf_page, x1, page_height - y1);
 	HPDF_Page_Stroke(pdf_page);
 
-	if (dotted||dashed)
+	if (dotted || dashed)
 		pdf_set_solid();
 
 	return true;
 }
 
-bool pdf_plot_polygon(int *p, unsigned int n, colour fill)
+bool pdf_plot_polygon(const int *p, unsigned int n, colour fill)
 {
 	unsigned int i;
 #ifdef PDF_DEBUG
@@ -214,7 +214,7 @@ bool pdf_plot_polygon(int *p, unsigned int n, colour fill)
 	}
 
 #ifdef PDF_DEBUG
-	LOG(("%d %d %d %d %f", pminx, pminy, pmaxx, pmaxy, page_height-pminy));
+	LOG(("%d %d %d %d %f", pminx, pminy, pmaxx, pmaxy, page_height - pminy));
 #endif
 
 	HPDF_Page_LineTo(pdf_page, p[0], page_height - p[1]);
@@ -226,7 +226,7 @@ bool pdf_plot_polygon(int *p, unsigned int n, colour fill)
 bool pdf_plot_fill(int x0, int y0, int x1, int y1, colour c)
 {
 #ifdef PDF_DEBUG
-	LOG(("%d %d %d %d %f %X", x0, y0, x1, y1, page_height-y0, c));
+	LOG(("%d %d %d %d %f %X", x0, y0, x1, y1, page_height - y0, c));
 #endif
 
 	/*Normalize boundaries of the area - to prevent overflows.
@@ -242,7 +242,7 @@ bool pdf_plot_fill(int x0, int y0, int x1, int y1, colour c)
 	apply_clip_and_mode(false);
 
 	HPDF_Page_SetRGBFill(pdf_page, R(c), G(c), B(c));
-	HPDF_Page_Rectangle(pdf_page, x0, page_height - y1, x1-x0, y1-y0);
+	HPDF_Page_Rectangle(pdf_page, x0, page_height - y1, x1 - x0, y1 - y0);
 	HPDF_Page_Fill(pdf_page);
 
 	return true;
@@ -330,7 +330,7 @@ bool pdf_plot_disc(int x, int y, int radius, colour c, bool filled)
 	else
 		HPDF_Page_SetRGBStroke(pdf_page, R(c), G(c), B(c));
 
-	HPDF_Page_Circle(pdf_page, x, page_height-y, radius);
+	HPDF_Page_Circle(pdf_page, x, page_height - y, radius);
 
 	if (filled)
 		HPDF_Page_Fill(pdf_page);
@@ -356,7 +356,7 @@ bool pdf_plot_arc(int x, int y, int radius, int angle1, int angle2, colour c)
 
 	HPDF_Page_SetRGBStroke(pdf_page, R(c), G(c), B(c));
 
-	HPDF_Page_Arc(pdf_page, x, page_height-y, radius, angle1, angle2);
+	HPDF_Page_Arc(pdf_page, x, page_height - y, radius, angle1, angle2);
 
 	HPDF_Page_Stroke(pdf_page);
 	return true;
@@ -382,7 +382,7 @@ bool pdf_plot_bitmap(int x, int y, int width, int height,
 		return false;
 
 	HPDF_Page_DrawImage(pdf_page, image,
-			x, page_height-y-height,
+			x, page_height - y - height,
 			width, height);
 	return true;
 
@@ -394,6 +394,8 @@ bool pdf_plot_bitmap_tile(int x, int y, int width, int height,
   		bool repeat_x, bool repeat_y, struct content *content)
 {
 	HPDF_Image image;
+	HPDF_REAL current_x, current_y ;
+	HPDF_REAL max_width, max_height;
 
 #ifdef PDF_DEBUG
 	LOG(("%d %d %d %d %p 0x%x %p", x, y, width, height,
@@ -407,22 +409,17 @@ bool pdf_plot_bitmap_tile(int x, int y, int width, int height,
 	image = pdf_extract_image(bitmap, content);
 	if (!image)
 		return false;
-	else {
-		/*The position of the next tile*/
-		HPDF_REAL current_x, current_y ;
-		HPDF_REAL max_width, max_height;
 
-		max_width =  (repeat_x ? page_width : width);
-		max_height = (repeat_y ? page_height: height);
+	/*The position of the next tile*/
+	max_width =  (repeat_x) ? page_width : width;
+	max_height = (repeat_y) ? page_height : height;
 
-
-		for (current_y=0; current_y < max_height; current_y += height)
-			for (current_x=0; current_x < max_width; current_x += width)
-				HPDF_Page_DrawImage(pdf_page, image,
-						current_x + x,
-      						page_height-current_y - y - height,
-      						width, height);
-	}
+	for (current_y = 0; current_y < max_height; current_y += height)
+		for (current_x = 0; current_x < max_width; current_x += width)
+			HPDF_Page_DrawImage(pdf_page, image,
+					current_x + x,
+					page_height - current_y - y - height,
+					width, height);
 
 	return true;
 }
@@ -542,46 +539,45 @@ static void apply_clip_and_mode(bool selectTextMode)
 	}
 }
 
-static inline float transform_x(float *transform, float x, float y)
+static inline float transform_x(const float transform[6], float x, float y)
 {
-	return ((transform[0] * x) + (transform[2] * (-y) ) + transform[4]) * 2;
+	return transform[0] * x + transform[2] * y + transform[4];
 }
 
-static inline float transform_y(float *transform, float x, float y)
+static inline float transform_y(const float transform[6], float x, float y)
 {
-	return page_height - (((transform[1] * x) +
-			(transform[3] * (-y)) - transform[5]) * 2);
+	return page_height
+		- (transform[1] * x + transform[3] * y + transform[5]);
 }
 
-bool pdf_plot_path(float *p, unsigned int n, colour fill, float width,
-		colour c, float *transform)
+bool pdf_plot_path(const float *p, unsigned int n, colour fill, float width,
+		colour c, const float transform[6])
 {
 #ifdef PDF_DEBUG
 	LOG(("."));
 #endif
 	unsigned int i;
-	bool empty_path = true;
+	bool empty_path;
 
 	if (n == 0)
 		return true;
 
-	if ((c == TRANSPARENT) && (fill == TRANSPARENT))
+	if (c == TRANSPARENT && fill == TRANSPARENT)
 		return true;
 
-	if (p[0] != PLOTTER_PATH_MOVE) {
+	if (p[0] != PLOTTER_PATH_MOVE)
 		return false;
+
+	apply_clip_and_mode(false);
+
+	if (fill != TRANSPARENT)
+		HPDF_Page_SetRGBFill(pdf_page, R(fill), G(fill), B(fill));
+	if (c != TRANSPARENT) {
+		HPDF_Page_SetLineWidth(pdf_page, width);
+		HPDF_Page_SetRGBStroke(pdf_page, R(c), G(c), B(c));
 	}
 
-	HPDF_Page_SetRGBFill(pdf_page, R(fill), G(fill), B(fill));
-	HPDF_Page_SetRGBStroke(pdf_page, R(c), G(c), B(c));
-
-	transform[0] = 0.1;
-	transform[1] = 0;
-	transform[2] = 0;
-	transform[3] = -0.1;
-	transform[4] = 0;
-	transform[5] = 0;
-
+	empty_path = true;
 	for (i = 0 ; i < n ; ) {
 		if (p[i] == PLOTTER_PATH_MOVE) {
 			HPDF_Page_MoveTo(pdf_page,
@@ -672,8 +668,10 @@ bool pdf_begin(struct print_settings *print_settings)
 	page_height = settings->page_height - settings->margins[MARGINTOP];
 
 
+#ifndef PDF_DEBUG
 	if (option_enable_PDF_compression)
 		HPDF_SetCompressionMode(pdf_doc, HPDF_COMP_ALL); /*Compression on*/
+#endif
 	HPDF_SetInfoAttr(pdf_doc, HPDF_INFO_CREATOR, user_agent_string());
 
 	pdf_font = NULL;

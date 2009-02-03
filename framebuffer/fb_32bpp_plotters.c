@@ -135,7 +135,7 @@ static bool fb_32bpp_rectangle(int x0, int y0, int width, int height,
 }
 
 
-static bool fb_32bpp_polygon(int *p, unsigned int n, colour fill)
+static bool fb_32bpp_polygon(const int *p, unsigned int n, colour fill)
 {
         return fb_plotters_polygon(p, n, fill, fb_32bpp_line);
 }
@@ -367,8 +367,8 @@ static bool fb_32bpp_flush(void)
 	return true;
 }
 
-static bool fb_32bpp_path(float *p, unsigned int n, colour fill, float width,
-			colour c, float *transform)
+static bool fb_32bpp_path(const float *p, unsigned int n, colour fill, float width,
+			colour c, const float transform[6])
 {
 	printf("path\n");
 	return true;

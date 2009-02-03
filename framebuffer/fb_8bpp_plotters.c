@@ -55,7 +55,7 @@ static bool fb_8bpp_line(int x0, int y0, int x1, int y1, int width,
 	return true;
 }
 
-static bool fb_8bpp_polygon(int *p, unsigned int n, colour fill)
+static bool fb_8bpp_polygon(const int *p, unsigned int n, colour fill)
 {
         /*LOG(("%p, %d, 0x%lx", p,n,fill));*/
         return fb_plotters_polygon(p, n, fill, fb_8bpp_line);
@@ -266,8 +266,8 @@ static bool fb_8bpp_flush(void)
 	return true;
 }
 
-static bool fb_8bpp_path(float *p, unsigned int n, colour fill, float width,
-                  colour c, float *transform)
+static bool fb_8bpp_path(const float *p, unsigned int n, colour fill, float width,
+                  colour c, const float transform[6])
 {
         LOG(("%s(%f, %d, 0x%lx, %f, 0x%lx, %f)\n", __func__, 
              *p, n, fill, width, c, *transform));
