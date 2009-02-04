@@ -2065,8 +2065,14 @@ void ami_do_redraw_limits(struct gui_window *g, struct content *c,int x0, int y0
 
 	plot=amiplot;
 
+	if(x0-hcurrent<0) x0 = hcurrent;
+	if(y0-vcurrent<0) y0 = vcurrent;
+
+	if(x1>width+x0) x1 = width+x0;
+	if(y1>width+y0) y1 = width+y0;
+
 		content_redraw(c,
-		-hcurrent,-vcurrent,width,height,
+		-hcurrent,-vcurrent,width-hcurrent,height-vcurrent,
 		floorf((x0 *
 		g->shared->bw->scale)-hcurrent),
 		ceilf((y0 *
@@ -2171,14 +2177,26 @@ note that content_redraw call needs to be modified to redraw
 	{
 		ami_clg(0xffffff);
 
-		content_redraw(c, -hcurrent /* * g->bw->scale */,
+		if(c->type == CONTENT_HTML)
+		{
+			content_redraw(c, -hcurrent /* * g->bw->scale */,
 						-vcurrent /* * g->bw->scale */,
-						width /* * g->bw->scale */,
+						width-hcurrent /* * g->bw->scale */,
+						height-vcurrent /* * g->bw->scale */,
+						0,0,width /* * g->bw->scale */,
 						height /* * g->bw->scale */,
+						g->bw->scale,0xFFFFFF);
+		}
+		else
+		{
+			content_redraw(c, -hcurrent /* * g->bw->scale */,
+						-vcurrent /* * g->bw->scale */,
+						width-hcurrent /* * g->bw->scale */,
+						height-vcurrent /* * g->bw->scale */,
 						0,0,c->width /* * g->bw->scale */,
 						c->height /* * g->bw->scale */,
 						g->bw->scale,0xFFFFFF);
-
+		}
 
 		BltBitMapRastPort(glob.bm,0,0,g->win->RPort,xoffset,yoffset,width,height,0x0C0);
 	}
