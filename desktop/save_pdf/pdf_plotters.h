@@ -36,8 +36,6 @@ bool pdf_next_page(void);
 /**Close pdf document and save changes to file*/
 void pdf_end(void);
 
-void pdf_set_scale(float s);
-
 void save_pdf(const char *path);
 
 #endif /*NETSURF_PDF_PLOTTERS_H*/

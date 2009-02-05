@@ -573,7 +573,7 @@ MENUHANDLER(export_pdf){
 	settings = print_make_settings(OPTIONS, NULL);
 	/*this way the scale used by PDF functions is synchronized with that
 	used by the all-purpose print interface*/
-	pdf_set_scale((float)option_export_scale / 100);
+	haru_nsfont_set_scale((float)option_export_scale / 100);
 
 	save_dialog = gtk_file_chooser_dialog_new("Export to PDF", gw->window,
 		GTK_FILE_CHOOSER_ACTION_SAVE,

@@ -1,5 +1,6 @@
 /*
  * Copyright 2008 Adam Blokus <adamblokus@gmail.com>
+ * Copyright 2009 John Tytgat <joty@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -28,8 +29,10 @@
  
 bool haru_nsfont_apply_style(const struct css_style *style,
 			      	HPDF_Doc doc, HPDF_Page page,
-	  			HPDF_Font *font);
- 
+	  			HPDF_Font *font, HPDF_REAL *font_size);
+
+void haru_nsfont_set_scale(float s);
+
 extern const struct font_functions haru_nsfont;
 
 #endif

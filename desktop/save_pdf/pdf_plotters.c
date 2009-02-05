@@ -40,11 +40,8 @@
 
 #include "font_haru.h"
 
-#define R(x) ((  (x) & 0x0000ff     )/256.0)
-#define G(x) ((( (x) & 0x00ff00)>>8 )/256.0)
-#define B(x) ((( (x) & 0xff0000)>>16)/256.0)
-
-/*#define PDF_DEBUG*/
+/* #define PDF_DEBUG */
+/* #define PDF_DEBUG_DUMPGRID */
 
 static bool pdf_plot_clg(colour c);
 static bool pdf_plot_rectangle(int x0, int y0, int width, int height,
@@ -68,34 +65,61 @@ static bool pdf_plot_bitmap_tile(int x, int y, int width, int height,
 static bool pdf_plot_path(const float *p, unsigned int n, colour fill, float width,
 		colour c, const float transform[6]);
 
-static void pdf_set_solid(void);
-static void pdf_set_dashed(void);
-static void pdf_set_dotted(void);
-
 static HPDF_Image pdf_extract_image(struct bitmap *bitmap, struct content *content);
-static void apply_clip_and_mode(bool selectTextMode);
-
 
 static void error_handler(HPDF_STATUS error_no, HPDF_STATUS detail_no,
 		void *user_data);
 
-#ifdef PDF_DEBUG
+#ifdef PDF_DEBUG_DUMPGRID
 static void pdf_plot_grid(int x_dist,int y_dist,unsigned int colour);
 #endif
 
-/*PDF Plotter - current doc,page and font*/
-static HPDF_Doc pdf_doc;
-static HPDF_Page pdf_page;
-static HPDF_Font pdf_font;
+typedef enum {
+	DashPattern_eNone,
+	DashPattern_eDash,
+	DashPattern_eDotted
+} DashPattern_e;
+
+/* Wrapper routines to minimize gstate updates in the produced PDF file.  */
+static void pdfw_gs_init(void);
+static void pdfw_gs_save(HPDF_Page page);
+static void pdfw_gs_restore(HPDF_Page page);
+static void pdfw_gs_fillcolour(HPDF_Page page, colour col);
+static void pdfw_gs_strokecolour(HPDF_Page page, colour col);
+static void pdfw_gs_linewidth(HPDF_Page page, float lineWidth);
+static void pdfw_gs_font(HPDF_Page page, HPDF_Font font, HPDF_REAL font_size);
+static void pdfw_gs_dash(HPDF_Page page, DashPattern_e dash);
+
+/** 
+ * Our PDF gstate mirror which we use to minimize gstate updates
+ * in the PDF file.
+ */
+typedef struct {
+	colour fillColour; /**< Current fill colour.  */
+	colour strokeColour; /**< Current stroke colour.  */
+	float lineWidth; /**< Current line width.  */
+	HPDF_Font font; /**< Current font.  */
+	HPDF_REAL font_size; /**< Current font size.  */
+	DashPattern_e dash; /**< Current dash state.  */
+} PDFW_GState;
+
+static void apply_clip_and_mode(bool selectTextMode, colour fillCol,
+	colour strokeCol, float lineWidth, DashPattern_e dash);
+
+#define PDFW_MAX_GSTATES 4
+static PDFW_GState pdfw_gs[PDFW_MAX_GSTATES];
+static unsigned int pdfw_gs_level;
+
+static HPDF_Doc pdf_doc; /**< Current PDF document.  */
+static HPDF_Page pdf_page; /**< Current page.  */
 
 /*PDF Page size*/
 static HPDF_REAL page_height, page_width;
 
-/*Remeber if pdf_plot_clip was invoked for current page*/
-static bool page_clipped;
+static bool in_text_mode; /**< true if we're currently in text mode or not.  */
+static bool clip_update_needed; /**< true if pdf_plot_clip was invoked for
+	current page and not yet synced with PDF output.  */
 static int last_clip_x0, last_clip_y0, last_clip_x1, last_clip_y1;
-
-static bool in_text_mode;
 
 static const struct print_settings *settings;
 
@@ -125,7 +149,6 @@ const struct printer pdf_printer = {
 	pdf_end
 };
 
-static float pdf_scale = DEFAULT_EXPORT_SCALE;
 static char *owner_pass;
 static char *user_pass;
 
@@ -140,21 +163,13 @@ bool pdf_plot_rectangle(int x0, int y0, int width, int height,
 #ifdef PDF_DEBUG
 	LOG(("."));
 #endif
-	apply_clip_and_mode(false);
 
-	HPDF_Page_SetLineWidth(pdf_page, line_width);
+	apply_clip_and_mode(false, TRANSPARENT, c, line_width,
+			(dotted) ? DashPattern_eDotted :
+			((dashed) ? DashPattern_eDash : DashPattern_eNone));
 
-	if (dotted)
-		pdf_set_dotted();
-	else if (dashed)
-		pdf_set_dashed();
-
-	HPDF_Page_SetRGBStroke(pdf_page, R(c), G(c), B(c));
 	HPDF_Page_Rectangle(pdf_page, x0, page_height - y0, width, -height);
 	HPDF_Page_Stroke(pdf_page);
-
-	if (dotted || dashed)
-		pdf_set_solid();
 
 	return true;
 }
@@ -166,23 +181,13 @@ bool pdf_plot_line(int x0, int y0, int x1, int y1, int width,
 	LOG(("."));
 #endif
 
-	apply_clip_and_mode(false);
+	apply_clip_and_mode(false, TRANSPARENT, c, width,
+			(dotted) ? DashPattern_eDotted :
+			((dashed) ? DashPattern_eDash : DashPattern_eNone));
 
-	HPDF_Page_SetLineWidth(pdf_page, width);
-
-	if (dotted)
-		pdf_set_dotted();
-	else if (dashed)
-		pdf_set_dashed();
-
-	HPDF_Page_SetRGBStroke(pdf_page, R(c), G(c), B(c));
-	HPDF_Page_SetLineWidth(pdf_page, width);
 	HPDF_Page_MoveTo(pdf_page, x0, page_height - y0);
 	HPDF_Page_LineTo(pdf_page, x1, page_height - y1);
 	HPDF_Page_Stroke(pdf_page);
-
-	if (dotted || dashed)
-		pdf_set_solid();
 
 	return true;
 }
@@ -198,11 +203,9 @@ bool pdf_plot_polygon(const int *p, unsigned int n, colour fill)
 	if (n == 0)
 		return true;
 
-	apply_clip_and_mode(false);
+	apply_clip_and_mode(false, fill, TRANSPARENT, 0., DashPattern_eNone);
 
-	HPDF_Page_SetRGBFill(pdf_page, R(fill), G(fill), B(fill));
 	HPDF_Page_MoveTo(pdf_page, p[0], page_height - p[1]);
-
 	for (i = 1 ; i<n ; i++) {
 		HPDF_Page_LineTo(pdf_page, p[i*2], page_height - p[i*2+1]);
 #ifdef PDF_DEBUG
@@ -217,7 +220,6 @@ bool pdf_plot_polygon(const int *p, unsigned int n, colour fill)
 	LOG(("%d %d %d %d %f", pminx, pminy, pmaxx, pmaxy, page_height - pminy));
 #endif
 
-	HPDF_Page_LineTo(pdf_page, p[0], page_height - p[1]);
 	HPDF_Page_Fill(pdf_page);
 
 	return true;
@@ -229,6 +231,8 @@ bool pdf_plot_fill(int x0, int y0, int x1, int y1, colour c)
 	LOG(("%d %d %d %d %f %X", x0, y0, x1, y1, page_height - y0, c));
 #endif
 
+	apply_clip_and_mode(false, c, TRANSPARENT, 0., DashPattern_eNone);
+
 	/*Normalize boundaries of the area - to prevent overflows.
 	  It is needed only in a few functions, where integers are subtracted.
 	  When the whole browser window is meant min and max int values are used
@@ -239,10 +243,7 @@ bool pdf_plot_fill(int x0, int y0, int x1, int y1, colour c)
 	x1 = min(max(x1, 0), page_width);
 	y1 = min(max(y1, 0), page_height);
 
-	apply_clip_and_mode(false);
-
-	HPDF_Page_SetRGBFill(pdf_page, R(c), G(c), B(c));
-	HPDF_Page_Rectangle(pdf_page, x0, page_height - y1, x1 - x0, y1 - y0);
+	HPDF_Page_Rectangle(pdf_page, x0, page_height, x1 - x0, y0 - y1);
 	HPDF_Page_Fill(pdf_page);
 
 	return true;
@@ -263,7 +264,7 @@ bool pdf_plot_clip(int clip_x0, int clip_y0, int clip_x1, int clip_y1)
 	last_clip_x1 = min(max(clip_x1, 0), page_width);
 	last_clip_y1 = min(max(clip_y1, 0), page_height);
 
-	page_clipped = true;
+	clip_update_needed = true;
 
 	return true;
 }
@@ -275,42 +276,25 @@ bool pdf_plot_text(int x, int y, const struct css_style *style,
 	LOG((". %d %d %.*s", x, y, (int)length, text));
 #endif
 	char *word;
+	HPDF_Font pdf_font;
 	HPDF_REAL size;
-	float text_bottom_position, descent;
 
 	if (length == 0)
 		return true;
 
-	apply_clip_and_mode(true);
+	apply_clip_and_mode(true, c, TRANSPARENT, 0., DashPattern_eNone);
 
-	if (style->font_size.value.length.unit  == CSS_UNIT_PX)
-		size = style->font_size.value.length.value;
-	else
-		size = css_len2pt(&style->font_size.value.length, style);
+	haru_nsfont_apply_style(style, pdf_doc, pdf_page, &pdf_font, &size);
+	pdfw_gs_font(pdf_page, pdf_font, size);
 
-	size *= pdf_scale;
-
-	if (size <= 0)
-		return true;
-
-	if (size > HPDF_MAX_FONTSIZE)
-		size = HPDF_MAX_FONTSIZE;
-
-	haru_nsfont_apply_style(style, pdf_doc, pdf_page, &pdf_font);
-
-	descent = size * (HPDF_Font_GetDescent(pdf_font) / 1000.0);
-	text_bottom_position = page_height - y + descent;
-
-	word = (char*) malloc( sizeof(char) * (length+1) );
+	/* FIXME: UTF-8 to current font encoding needs to done.  Or the font
+	 * encoding needs to be UTF-8 or other Unicode encoding.  */
+	word = (char *)malloc( sizeof(char) * (length+1) );
 	if (word == NULL)
 		return false;
-
 	memcpy(word, text, length);
 	word[length] = '\0';
 
-	HPDF_Page_SetRGBFill(pdf_page, R(c), G(c), B(c));
-
-	HPDF_Page_SetFontAndSize (pdf_page, pdf_font, size);
 	HPDF_Page_TextOut (pdf_page, x, page_height - y, word);
 
 	free(word);
@@ -323,12 +307,11 @@ bool pdf_plot_disc(int x, int y, int radius, colour c, bool filled)
 #ifdef PDF_DEBUG
 	LOG(("."));
 #endif
-	apply_clip_and_mode(false);
 
-	if (filled)
-		HPDF_Page_SetRGBFill(pdf_page, R(c), G(c), B(c));
-	else
-		HPDF_Page_SetRGBStroke(pdf_page, R(c), G(c), B(c));
+	/* FIXME: line width 1 is ok ? */
+	apply_clip_and_mode(false,
+			filled ? c : TRANSPARENT, filled ? TRANSPARENT : c,
+			1., DashPattern_eNone);
 
 	HPDF_Page_Circle(pdf_page, x, page_height - y, radius);
 
@@ -346,15 +329,14 @@ bool pdf_plot_arc(int x, int y, int radius, int angle1, int angle2, colour c)
 	LOG(("%d %d %d %d %d %X", x, y, radius, angle1, angle2, c));
 #endif
 
-	/*Normalize angles*/
+	/* FIXME: line width 1 is ok ? */
+	apply_clip_and_mode(false, TRANSPARENT, c, 1., DashPattern_eNone);
+
+	/* Normalize angles */
 	angle1 %= 360;
 	angle2 %= 360;
 	if (angle1 > angle2)
 		angle1 -= 360;
-
-	apply_clip_and_mode(false);
-
-	HPDF_Page_SetRGBStroke(pdf_page, R(c), G(c), B(c));
 
 	HPDF_Page_Arc(pdf_page, x, page_height - y, radius, angle1, angle2);
 
@@ -374,7 +356,7 @@ bool pdf_plot_bitmap(int x, int y, int width, int height,
  	if (width == 0 || height == 0)
  		return true;
 
-	apply_clip_and_mode(false);
+	apply_clip_and_mode(false, TRANSPARENT, TRANSPARENT, 0., DashPattern_eNone);
 
 	image = pdf_extract_image(bitmap, content);
 
@@ -404,7 +386,7 @@ bool pdf_plot_bitmap_tile(int x, int y, int width, int height,
  	if (width == 0 || height == 0)
  		return true;
 
-	apply_clip_and_mode(false);
+	apply_clip_and_mode(false, TRANSPARENT, TRANSPARENT, 0., DashPattern_eNone);
 
 	image = pdf_extract_image(bitmap, content);
 	if (!image)
@@ -508,18 +490,55 @@ HPDF_Image pdf_extract_image(struct bitmap *bitmap, struct content *content)
 }
 
 /**
- * Change the mode and clip only if it's necessary
+ * Enter/leave text mode and update PDF gstate for its clip, fill & stroke
+ * colour, line width and dash pattern parameters.
+ * \param selectTextMode true if text mode needs to be entered if required;
+ * false otherwise.
+ * \param fillCol Desired fill colour, use TRANSPARENT if no update is
+ * required.
+ * \param strokeCol Desired stroke colour, use TRANSPARENT if no update is
+ * required.
+ * \param lineWidth Desired line width. Only taken into account when strokeCol
+ * is different from TRANSPARENT.
+ * \param dash Desired dash pattern. Only taken into account when strokeCol
+ * is different from TRANSPARENT.
  */
-static void apply_clip_and_mode(bool selectTextMode)
+static void apply_clip_and_mode(bool selectTextMode, colour fillCol,
+		colour strokeCol, float lineWidth, DashPattern_e dash)
 {
-	if (in_text_mode && (!selectTextMode || page_clipped)) {
+	/* Leave text mode when
+	 *  1) we're not setting text anymore
+	 *  2) or we need to update the current clippath
+	 *  3) or we need to update any fill/stroke colour, linewidth or dash.
+	 * Note: the test on stroke parameters (stroke colour, line width and
+	 * dash) is commented out as if these need updating we want to be
+	 * outside the text mode anyway (i.e. selectTextMode is false).
+	 */
+	if (in_text_mode && (!selectTextMode || clip_update_needed
+		|| (fillCol != TRANSPARENT
+			&& fillCol != pdfw_gs[pdfw_gs_level].fillColour)
+		/* || (strokeCol != TRANSPARENT
+			&& (strokeCol != pdfw_gs[pdfw_gs_level].strokeColour
+				|| lineWidth != pdfw_gs[pdfw_gs_level].lineWidth
+				|| dash != pdfw_gs[pdfw_gs_level].dash)) */)) {
 		HPDF_Page_EndText(pdf_page);
 		in_text_mode = false;
 	}
 
-	if (page_clipped) {
-		HPDF_Page_GRestore(pdf_page);
-		HPDF_Page_GSave(pdf_page);
+	if (clip_update_needed)
+		pdfw_gs_restore(pdf_page);
+
+	/* Update fill/stroke colour, linewidth and dash when needed.  */
+	if (fillCol != TRANSPARENT)
+		pdfw_gs_fillcolour(pdf_page, fillCol);
+	if (strokeCol != TRANSPARENT) {
+		pdfw_gs_strokecolour(pdf_page, strokeCol);
+		pdfw_gs_linewidth(pdf_page, lineWidth);
+		pdfw_gs_dash(pdf_page, dash);
+	}
+
+	if (clip_update_needed) {
+		pdfw_gs_save(pdf_page);
 
 		HPDF_Page_Rectangle(pdf_page, last_clip_x0,
 				page_height - last_clip_y1,
@@ -528,14 +547,12 @@ static void apply_clip_and_mode(bool selectTextMode)
 		HPDF_Page_Clip(pdf_page);
 		HPDF_Page_EndPath(pdf_page);
 
-		page_clipped = false;
+		clip_update_needed = false;
 	}
 
-	if (selectTextMode) {
-		if (!in_text_mode) {
-			HPDF_Page_BeginText(pdf_page);
-			in_text_mode = true;
-		}
+	if (selectTextMode && !in_text_mode) {
+		HPDF_Page_BeginText(pdf_page);
+		in_text_mode = true;
 	}
 }
 
@@ -553,11 +570,12 @@ static inline float transform_y(const float transform[6], float x, float y)
 bool pdf_plot_path(const float *p, unsigned int n, colour fill, float width,
 		colour c, const float transform[6])
 {
+	unsigned int i;
+	bool empty_path;
+
 #ifdef PDF_DEBUG
 	LOG(("."));
 #endif
-	unsigned int i;
-	bool empty_path;
 
 	if (n == 0)
 		return true;
@@ -568,14 +586,7 @@ bool pdf_plot_path(const float *p, unsigned int n, colour fill, float width,
 	if (p[0] != PLOTTER_PATH_MOVE)
 		return false;
 
-	apply_clip_and_mode(false);
-
-	if (fill != TRANSPARENT)
-		HPDF_Page_SetRGBFill(pdf_page, R(fill), G(fill), B(fill));
-	if (c != TRANSPARENT) {
-		HPDF_Page_SetLineWidth(pdf_page, width);
-		HPDF_Page_SetRGBStroke(pdf_page, R(c), G(c), B(c));
-	}
+	apply_clip_and_mode(false, fill, c, width, DashPattern_eNone);
 
 	empty_path = true;
 	for (i = 0 ; i < n ; ) {
@@ -627,23 +638,6 @@ bool pdf_plot_path(const float *p, unsigned int n, colour fill, float width,
 	return true;
 }
 
-void pdf_set_solid()
-{
-	HPDF_Page_SetDash(pdf_page, NULL, 0, 0);
-}
-
-void pdf_set_dashed()
-{
-	const HPDF_UINT16 dash_ptn[] = {3};
-	HPDF_Page_SetDash(pdf_page, dash_ptn, 1, 1);
-}
-
-void pdf_set_dotted()
-{
-	const HPDF_UINT16 dash_ptn[] = {1};
-	HPDF_Page_SetDash(pdf_page, dash_ptn, 1, 1);
-}
-
 /**
  * Begin pdf plotting - initialize a new document
  * \param path Output file path
@@ -652,6 +646,8 @@ void pdf_set_dotted()
  */
 bool pdf_begin(struct print_settings *print_settings)
 {
+	pdfw_gs_init();
+
 	if (pdf_doc != NULL)
 		HPDF_Free(pdf_doc);
 	pdf_doc = HPDF_New(error_handler, NULL);
@@ -674,7 +670,6 @@ bool pdf_begin(struct print_settings *print_settings)
 #endif
 	HPDF_SetInfoAttr(pdf_doc, HPDF_INFO_CREATOR, user_agent_string());
 
-	pdf_font = NULL;
 	pdf_page = NULL;
 
 #ifdef PDF_DEBUG
@@ -689,13 +684,14 @@ bool pdf_next_page(void)
 #ifdef PDF_DEBUG
 	LOG(("pdf_next_page begins"));
 #endif
+	clip_update_needed = false;
 	if (pdf_page != NULL) {
-		page_clipped = false;
-		apply_clip_and_mode(false);
-		HPDF_Page_GRestore(pdf_page);
+		apply_clip_and_mode(false, TRANSPARENT, TRANSPARENT, 0.,
+				DashPattern_eNone);
+		pdfw_gs_restore(pdf_page);
 	}
 
-#ifdef PDF_DEBUG
+#ifdef PDF_DEBUG_DUMPGRID
 	if (pdf_page != NULL) {
 		pdf_plot_grid(10, 10, 0xCCCCCC);
 		pdf_plot_grid(100, 100, 0xCCCCFF);
@@ -708,10 +704,9 @@ bool pdf_next_page(void)
 	HPDF_Page_SetWidth (pdf_page, settings->page_width);
 	HPDF_Page_SetHeight(pdf_page, settings->page_height);
 
-	HPDF_Page_Concat(pdf_page,1,0,0,1,settings->margins[MARGINLEFT],0);
+	HPDF_Page_Concat(pdf_page, 1, 0, 0, 1, settings->margins[MARGINLEFT], 0);
 
-	page_clipped = false;
-	HPDF_Page_GSave(pdf_page);
+	pdfw_gs_save(pdf_page);
 
 #ifdef PDF_DEBUG
 	LOG(("%f %f", page_width, page_height));
@@ -726,13 +721,14 @@ void pdf_end(void)
 #ifdef PDF_DEBUG
 	LOG(("pdf_end begins"));
 #endif
+	clip_update_needed = false;
 	if (pdf_page != NULL) {
-		page_clipped = false;
-		apply_clip_and_mode(false);
-		HPDF_Page_GRestore(pdf_page);
+		apply_clip_and_mode(false, TRANSPARENT, TRANSPARENT, 0.,
+				DashPattern_eNone);
+		pdfw_gs_restore(pdf_page);
 	}
 
-#ifdef PDF_DEBUG
+#ifdef PDF_DEBUG_DUMPGRID
 	if (pdf_page != NULL) {
 		pdf_plot_grid(10, 10, 0xCCCCCC);
 		pdf_plot_grid(100, 100, 0xCCCCFF);
@@ -797,7 +793,7 @@ static void error_handler(HPDF_STATUS error_no, HPDF_STATUS detail_no,
  * This function plots a grid - used for debug purposes to check if all
  * elements' final coordinates are correct.
 */
-#ifdef PDF_DEBUG
+#ifdef PDF_DEBUG_DUMPGRID
 void pdf_plot_grid(int x_dist, int y_dist, unsigned int colour)
 {
 	for (int i = x_dist ; i < page_width ; i += x_dist)
@@ -805,16 +801,148 @@ void pdf_plot_grid(int x_dist, int y_dist, unsigned int colour)
 
 	for (int i = y_dist ; i < page_height ; i += x_dist)
 		pdf_plot_line(0, i, page_width, i, 1, colour, false, false);
-
 }
 #endif
 
 /**
- * Sync the text scale with the scale for the whole content
+ * Initialize the gstate wrapper code.
  */
-void pdf_set_scale(float s)
+void pdfw_gs_init()
 {
-	pdf_scale = s;
+	pdfw_gs_level = 0;
+	pdfw_gs[0].fillColour = 0x00000000; /* Default PDF fill colour is black.  */
+	pdfw_gs[0].strokeColour = 0x00000000; /* Default PDF stroke colour is black.  */
+	pdfw_gs[0].lineWidth = 1.0; /* Default PDF line width is 1.  */
+	pdfw_gs[0].font = NULL;
+	pdfw_gs[0].font_size = 0.;
+	pdfw_gs[0].dash = DashPattern_eNone; /* Default dash state is a solid line.  */
+}
+
+/**
+ * Increase gstate level.
+ * \param page	PDF page where the update needs to happen.
+ */
+void pdfw_gs_save(HPDF_Page page)
+{
+	if (pdfw_gs_level == PDFW_MAX_GSTATES)
+		abort();
+	pdfw_gs[pdfw_gs_level + 1] = pdfw_gs[pdfw_gs_level];
+	++pdfw_gs_level;
+	HPDF_Page_GSave(page);
+}
+
+/**
+ * Decrease gstate level and restore the gstate to its value at last save
+ * operation.
+ * \param page	PDF page where the update needs to happen.
+ */
+void pdfw_gs_restore(HPDF_Page page)
+{
+	if (pdfw_gs_level == 0)
+		abort();
+	--pdfw_gs_level;
+	HPDF_Page_GRestore(page);
+}
+
+#define RBYTE(x) (((x) & 0x0000FF) >>  0)
+#define GBYTE(x) (((x) & 0x00FF00) >>  8)
+#define BBYTE(x) (((x) & 0xFF0000) >> 16)
+#define R(x) (RBYTE(x) / 255.)
+#define G(x) (GBYTE(x) / 255.)
+#define B(x) (BBYTE(x) / 255.)
+
+/**
+ * Checks if given fill colour is already set in PDF gstate and if not,
+ * update the gstate accordingly.
+ * \param page	PDF page where the update needs to happen.
+ * \param col	Wanted fill colour.
+ */
+void pdfw_gs_fillcolour(HPDF_Page page, colour col)
+{
+	if (col == pdfw_gs[pdfw_gs_level].fillColour)
+		return;
+	pdfw_gs[pdfw_gs_level].fillColour = col;
+	if (RBYTE(col) == GBYTE(col) && GBYTE(col) == BBYTE(col))
+		HPDF_Page_SetGrayFill(pdf_page, R(col));
+	else
+		HPDF_Page_SetRGBFill(pdf_page, R(col), G(col), B(col));
+}
+
+/**
+ * Checks if given stroke colour is already set in PDF gstate and if not,
+ * update the gstate accordingly.
+ * \param page	PDF page where the update needs to happen.
+ * \param col	Wanted stroke colour.
+ */
+void pdfw_gs_strokecolour(HPDF_Page page, colour col)
+{
+	if (col == pdfw_gs[pdfw_gs_level].strokeColour)
+		return;
+	pdfw_gs[pdfw_gs_level].strokeColour = col;
+	if (RBYTE(col) == GBYTE(col) && GBYTE(col) == BBYTE(col))
+		HPDF_Page_SetGrayStroke(pdf_page, R(col));
+	else
+		HPDF_Page_SetRGBStroke(pdf_page, R(col), G(col), B(col));
+}
+
+/**
+ * Checks if given line width is already set in PDF gstate and if not, update
+ * the gstate accordingly.
+ * \param page		PDF page where the update needs to happen.
+ * \param lineWidth	Wanted line width.
+ */
+void pdfw_gs_linewidth(HPDF_Page page, float lineWidth)
+{
+	if (lineWidth == pdfw_gs[pdfw_gs_level].lineWidth)
+		return;
+	pdfw_gs[pdfw_gs_level].lineWidth = lineWidth;
+	HPDF_Page_SetLineWidth(page, lineWidth);
+}
+
+/**
+ * Checks if given font and font size is already set in PDF gstate and if not,
+ * update the gstate accordingly.
+ * \param page		PDF page where the update needs to happen.
+ * \param font		Wanted PDF font.
+ * \param font_size	Wanted PDF font size.
+ */
+void pdfw_gs_font(HPDF_Page page, HPDF_Font font, HPDF_REAL font_size)
+{
+	if (font == pdfw_gs[pdfw_gs_level].font
+		&& font_size == pdfw_gs[pdfw_gs_level].font_size)
+		return;
+	pdfw_gs[pdfw_gs_level].font = font;
+	pdfw_gs[pdfw_gs_level].font_size = font_size;
+	HPDF_Page_SetFontAndSize(page, font, font_size);
+}
+
+/**
+ * Checks if given dash pattern is already set in PDF gstate and if not,
+ * update the gstate accordingly.
+ * \param page	PDF page where the update needs to happen.
+ * \param dash	Wanted dash pattern.
+ */
+void pdfw_gs_dash(HPDF_Page page, DashPattern_e dash)
+{
+	if (dash == pdfw_gs[pdfw_gs_level].dash)
+		return;
+	pdfw_gs[pdfw_gs_level].dash = dash;
+	switch (dash) {
+		case DashPattern_eNone: {
+			HPDF_Page_SetDash(page, NULL, 0, 0);
+			break;
+		}
+		case DashPattern_eDash: {
+			const HPDF_UINT16 dash_ptn[] = {3};
+			HPDF_Page_SetDash(page, dash_ptn, 1, 1);
+			break;
+		}
+		case DashPattern_eDotted: {
+			const HPDF_UINT16 dash_ptn[] = {1};
+			HPDF_Page_SetDash(page, dash_ptn, 1, 1);
+			break;
+		}
+	}
 }
 
 #endif /* WITH_PDF_EXPORT */

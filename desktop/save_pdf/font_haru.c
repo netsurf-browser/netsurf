@@ -1,5 +1,6 @@
 /*
  * Copyright 2008 Adam Blokus <adamblokus@gmail.com>
+ * Copyright 2009 John Tytgat <joty@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -32,8 +33,11 @@
 #include <float.h> 
 #include <math.h>
 #include <string.h> 
+
 #include "hpdf.h"  
 #include "css/css.h"
+
+#include "desktop/options.h"
 #include "desktop/save_pdf/font_haru.h"
 #include "render/font.h"
 #include "utils/log.h"
@@ -54,6 +58,7 @@ static bool haru_nsfont_split(const struct css_style *style,
 		const char *string, size_t length,
 	 	int x, size_t *char_offset, int *actual_x);
 	 	
+static float pdf_text_scale = DEFAULT_EXPORT_SCALE;
 
 const struct font_functions haru_nsfont = {
 	haru_nsfont_width,
@@ -122,22 +127,21 @@ bool haru_nsfont_width(const struct css_style *style,
 	HPDF_Page page;
 	char *string_nt;
 	HPDF_REAL width_real;
-	
+
 	*width = 0;
-	
-	if (length == 0) {
+
+	if (length == 0)
 		return true;
-	}
-	
+
 	if (!haru_nsfont_init(&pdf, &page, string, &string_nt, length))
 		return false;
-	
-	if (!haru_nsfont_apply_style(style, pdf, page, NULL)) {
+
+	if (!haru_nsfont_apply_style(style, pdf, page, NULL, NULL)) {
 		free(string_nt);
 		HPDF_Free(pdf);
 		return false;
 	}
-	
+
 	width_real = HPDF_Page_TextWidth(page, string_nt);
 	*width = width_real;
 
@@ -146,8 +150,7 @@ bool haru_nsfont_width(const struct css_style *style,
 #endif
 	free(string_nt);
 	HPDF_Free(pdf);
-	
-		
+
 	return true;
 }
 
@@ -179,7 +182,7 @@ bool haru_nsfont_position_in_string(const struct css_style *style,
 		return false;
 	
 	if (HPDF_Page_SetWidth(page, x) != HPDF_OK
-			|| !haru_nsfont_apply_style(style, pdf, page, NULL)) {
+			|| !haru_nsfont_apply_style(style, pdf, page, NULL, NULL)) {
 		free(string_nt);
 		HPDF_Free(pdf);
 		return false;
@@ -239,7 +242,7 @@ bool haru_nsfont_split(const struct css_style *style,
 		return false;
 	
 	if (HPDF_Page_SetWidth(page, x) != HPDF_OK
-		    || !haru_nsfont_apply_style(style, pdf, page, NULL)) {
+		    || !haru_nsfont_apply_style(style, pdf, page, NULL, NULL)) {
 		free(string_nt);
 		HPDF_Free(pdf);
 		return false;
@@ -270,12 +273,18 @@ bool haru_nsfont_split(const struct css_style *style,
  *			CSS_FONT_SIZE_LENGTH
  * \param  doc		document owning the page
  * \param  page		the page to apply the style to
- * \param  font		if this is not NULL it is updated to the font from the
- *			style and nothing with the page is done
+ * \param  font		if this is non NULL it is updated to the font based
+ *			on given CSS style style
+ * \param  font_size	if this is non NULL it is updated to the font size
+ *			based on given CSS style
  * \return true on success, false on error and error reported
+ *
+ * When both font and font_size are NULL, the HPDF_Page is updated for given
+ * CSS style, otherwise it is left to the called to do this.
  */
 bool haru_nsfont_apply_style(const struct css_style *style,
-		HPDF_Doc doc, HPDF_Page page, HPDF_Font *font)
+		HPDF_Doc doc, HPDF_Page page,
+		HPDF_Font *font, HPDF_REAL *font_size)
 {
 	HPDF_Font pdf_font;
 	HPDF_REAL size;
@@ -287,7 +296,6 @@ bool haru_nsfont_apply_style(const struct css_style *style,
 	roman = false;
 	bold = false;
 	styled = false;
-	
 	
 	/*TODO: style handling, we are mapping the
 		styles on the basic 14 fonts only
@@ -311,7 +319,7 @@ bool haru_nsfont_apply_style(const struct css_style *style,
 			break;
 	}
 	
-	if (style->font_weight == CSS_FONT_WEIGHT_BOLD){
+	if (style->font_weight == CSS_FONT_WEIGHT_BOLD) {
 		strcat(font_name, "-Bold");
 		bold = true;
 	}
@@ -339,33 +347,41 @@ bool haru_nsfont_apply_style(const struct css_style *style,
 	LOG(("Setting font: %s", font_name));
 #endif		
 	
-	/*the functions was invoked only to get the proper font*/
-	if (font != NULL) {
-		pdf_font = HPDF_GetFont(doc, font_name, "StandardEncoding");
-		if (pdf_font == NULL)
-			return false;
+	if (style->font_size.value.length.unit  == CSS_UNIT_PX)
+		size = style->font_size.value.length.value;
+	else
+		size = css_len2pt(&style->font_size.value.length, style);
+
+	if (font != NULL)
+		size *= pdf_text_scale;
+
+	if (size <= 0)
+		return true;
+
+	if (size > HPDF_MAX_FONTSIZE)
+		size = HPDF_MAX_FONTSIZE;
+
+	if (font_size)
+		*font_size = size;
+
+	pdf_font = HPDF_GetFont(doc, font_name, "StandardEncoding");
+	if (pdf_font == NULL)
+		return false;
+	if (font != NULL)
 		*font = pdf_font;
-	}
-	/*the function was invoked to set the page parameters*/
-	else {
-		if (style->font_size.value.length.unit  == CSS_UNIT_PX)
-			size = style->font_size.value.length.value;
-		else
-			size = css_len2pt(&style->font_size.value.length, style);
-	
-		if (size <= 0)
-			return false;
-		
-		if (size > HPDF_MAX_FONTSIZE)
-			size = HPDF_MAX_FONTSIZE;
-		
-		pdf_font = HPDF_GetFont(doc, font_name, "StandardEncoding");
-		if (pdf_font == NULL)
-			return false;
+
+	if (font == NULL || font_size == NULL)
 		HPDF_Page_SetFontAndSize(page, pdf_font, size);
-	}	
 	
 	return true;
+}
+
+/**
+ * Sync the text scale with the scale for the whole content
+ */
+void haru_nsfont_set_scale(float s)
+{
+	pdf_text_scale = s;
 }
 
 #endif /* WITH_PDF_EXPORT */
