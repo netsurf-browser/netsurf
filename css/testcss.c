@@ -12,6 +12,8 @@
 #include "utils/talloc.h"
 #include "utils/utils.h"
 
+#define ITERATIONS (1)
+
 bool verbose_log = 0;
 int option_font_size = 10;
 int option_font_min_size = 10;
@@ -123,59 +125,57 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	c = talloc_zero(0, struct content);
-	if (c == NULL) {
-		fprintf(stderr, "No memory for content\n");
-		return 1;
-	}
+	printf("sizeof(struct css_style): %zu\n", sizeof(struct css_style));
 
-	c->url = talloc_strdup(c, "http://www.example.com/");
-	if (c->url == NULL) {
-		fprintf(stderr, "No memory for url\n");
+	for (int i = 0; i < ITERATIONS; i++) {
+		c = talloc_zero(0, struct content);
+		if (c == NULL) {
+			fprintf(stderr, "No memory for content\n");
+			return 1;
+		}
+
+		c->url = talloc_strdup(c, "http://www.example.com/");
+		if (c->url == NULL) {
+			fprintf(stderr, "No memory for url\n");
+			talloc_free(c);
+			return 1;
+		}
+
+		c->type = CONTENT_CSS;
+
+		fp = fopen(argv[1], "rb");
+		if (fp == NULL) {
+			fprintf(stderr, "Failed opening %s\n", argv[1]);
+			talloc_free(c);
+			return 1;
+		}
+
+		fseek(fp, 0, SEEK_END);
+		origlen = len = ftell(fp);
+		fseek(fp, 0, SEEK_SET);
+
+		while (len >= CHUNK_SIZE) {
+			fread(data, 1, CHUNK_SIZE, fp);
+
+			css_process_data(c, data, CHUNK_SIZE);
+
+			len -= CHUNK_SIZE;
+		}
+
+		if (len > 0) {
+			fread(data, 1, len, fp);
+
+			css_process_data(c, data, len);
+
+			len = 0;
+		}
+
+		fclose(fp);
+
+		css_convert(c, 100, 100);
+
 		talloc_free(c);
-		return 1;
 	}
-
-	c->type = CONTENT_CSS;
-
-	fp = fopen(argv[1], "rb");
-	if (fp == NULL) {
-		fprintf(stderr, "Failed opening %s\n", argv[1]);
-		talloc_free(c);
-		return 1;
-	}
-
-	fseek(fp, 0, SEEK_END);
-	origlen = len = ftell(fp);
-	fseek(fp, 0, SEEK_SET);
-
-	printf("Reading %zu bytes\n", len);
-
-	while (len >= CHUNK_SIZE) {
-		fread(data, 1, CHUNK_SIZE, fp);
-
-		css_process_data(c, data, CHUNK_SIZE);
-
-		len -= CHUNK_SIZE;
-	}
-
-	if (len > 0) {
-		fread(data, 1, len, fp);
-
-		css_process_data(c, data, len);
-
-		len = 0;
-	}
-
-	fclose(fp);
-
-	printf("Converting\n");
-
-	css_convert(c, 100, 100);
-
-	printf("Done\n");
-
-	talloc_free(c);
 
 	return 0;
 }
