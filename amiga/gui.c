@@ -1061,11 +1061,6 @@ void ami_handle_msg(void)
 				break;
 
 				case WMHI_INTUITICK:
-					if(option_redraw_on_intuiticks)
-					{
-						if(gwin->redraw_required)
-							ami_do_redraw(gwin,false);
-					}
 				break;
 
 	   	     	default:
@@ -1087,11 +1082,8 @@ void ami_handle_msg(void)
 
 		if((node->Type == AMINS_WINDOW) || (node->Type == AMINS_FRAME))
 		{
-			if(!option_redraw_on_intuiticks)
-			{
-				if(gwin->redraw_required)
-					ami_do_redraw(gwin,false);
-			}
+			if(gwin->redraw_required)
+				ami_do_redraw(gwin,false);
 
 			if(gwin->throbber_frame)
 				ami_update_throbber(gwin,false);
@@ -2069,7 +2061,7 @@ void ami_do_redraw_limits(struct gui_window *g, struct content *c,int x0, int y0
 	if(y0-vcurrent<0) y0 = vcurrent;
 
 	if(x1>width+x0) x1 = width+x0;
-	if(y1>width+y0) y1 = width+y0;
+	if(y1>height+y0) y1 = height+y0;
 
 		content_redraw(c,
 		-hcurrent,-vcurrent,width-hcurrent,height-vcurrent,
@@ -2086,7 +2078,7 @@ void ami_do_redraw_limits(struct gui_window *g, struct content *c,int x0, int y0
 
 	current_redraw_browser = NULL;
 
-	ami_update_buttons(g->shared);
+//	ami_update_buttons(g->shared);
 
 	BltBitMapRastPort(glob.bm,x0-hcurrent,y0-vcurrent,g->shared->win->RPort,xoffset+x0-hcurrent,yoffset+y0-vcurrent,x1-x0,y1-y0,0x0C0);
 }
@@ -2157,21 +2149,27 @@ void ami_do_redraw(struct gui_window_2 *g,bool scroll)
 
 	if(scroll && c->type == CONTENT_HTML)
 	{
-/* to use this, enable ami_do_redraw in ami_scroller_hook
-note that content_redraw call needs to be modified to redraw
- the blank part of the window */
-
 		ScrollWindowRaster(g->win,hcurrent-oldh,vcurrent-oldv,xoffset,yoffset,xoffset+width,yoffset+height);
-#if 0
-		content_redraw(c, width-(hcurrent-oldh),height-(vcurrent-oldv),c->width /* * g->bw->scale */,
-						c->height /* * g->bw->scale */,
 
-0,0,c->width /* * g->bw->scale */,
-						c->height /* * g->bw->scale */,
-						g->bw->scale,0xFFFFFF);
+		if(vcurrent-oldv > 0)
+		{
+			ami_do_redraw_limits(g->bw->window,c,0,vcurrent-oldv,width,height-(vcurrent-oldv));
+			BltBitMapRastPort(glob.bm,0,vcurrent-oldv,g->win->RPort,xoffset,yoffset+(vcurrent-oldv),width,height-(vcurrent-oldv),0x0C0);  // this shouldn't be needed but the blit in ami_do_redraw_limits isn't working in this instance
+		}
+		else if(vcurrent-oldv < 0)
+		{
+			ami_do_redraw_limits(g->bw->window,c,0,0,width,oldv-vcurrent);
+		}
 
-		BltBitMapRastPort(glob.bm,0,0,g->win->RPort,xoffset+width-(hcurrent-oldh),yoffset+height-(vcurrent-oldv),width-(hcurrent-oldh),height-(vcurrent-oldv),0x0C0);
-#endif
+		if(hcurrent-oldh > 0)
+		{
+			ami_do_redraw_limits(g->bw->window,c,hcurrent-oldh,0,width-(hcurrent-oldh),height);
+			BltBitMapRastPort(glob.bm,vcurrent-oldv,0,g->win->RPort,xoffset+(hcurrent-oldh),yoffset,width-(hcurrent-oldh),height,0x0C0); // this shouldn't be needed but the blit in ami_do_redraw_limits isn't working in this instance
+		}
+		else if(hcurrent-oldh < 0)
+		{
+			ami_do_redraw_limits(g->bw->window,c,0,0,oldh-hcurrent,height);
+		}
 	}
 	else
 	{
@@ -2823,8 +2821,9 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 		{ 
  			case OID_HSCROLL: 
  			case OID_VSCROLL: 
-				gwin->redraw_required = true;
-			//	ami_do_redraw(gwin,true);
+				if(!option_faster_scroll)
+					gwin->redraw_required = true;
+				else ami_do_redraw(gwin,true);
  			break; 
 		} 
 	}
