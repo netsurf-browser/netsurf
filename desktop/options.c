@@ -39,6 +39,7 @@
 #include "desktop/tree.h"
 #include "utils/log.h"
 #include "utils/messages.h"
+#include "utils/url.h"
 #include "utils/utils.h"
 
 #if defined(riscos)
@@ -458,7 +459,12 @@ struct tree *options_load_tree(const char *filename) {
 		return NULL;
 	}
 	tree->root = tree_create_folder_node(NULL, "Root");
-	if (!tree->root) return NULL;
+	if (!tree->root) {
+		free(tree);
+		xmlFreeDoc(doc);
+
+		return NULL;
+	}
 
 	options_load_tree_directory(ul, tree->root);
 	tree->root->expanded = true;
@@ -517,8 +523,11 @@ void options_load_tree_directory(xmlNode *ul, struct node *directory) {
 			}
 
 			dir = tree_create_folder_node(directory, title);
-			if (!dir)
+			if (!dir) {
+				free(title);
+
 				return;
+			}
 			options_load_tree_directory(n, dir);
 		}
 	}
@@ -532,26 +541,46 @@ void options_load_tree_directory(xmlNode *ul, struct node *directory) {
  * \param  directory  directory to add this entry to
  */
 void options_load_tree_entry(xmlNode *li, struct node *directory) {
-	char *url = 0;
-	char *title = 0;
+	char *url = NULL, *url1 = NULL;
+	char *title = NULL;
 	struct node *entry;
 	xmlNode *n;
 	const struct url_data *data;
+	url_func_result res;
 
 	for (n = li->children; n; n = n->next) {
 		/* The li must contain an "a" element */
 		if (n->type == XML_ELEMENT_NODE &&
 				strcmp((const char *) n->name, "a") == 0) {
-			url = (char *) xmlGetProp(n, (const xmlChar *) "href");
+			url1 = (char *) xmlGetProp(n, (const xmlChar *) "href");
 			title = (char *) xmlNodeGetContent(n);
 		}
 	}
 
-	if (!url || !title) {
+	if (!url1 || !title) {
 		warn_user("HotlistLoadError", "(Missing <a> in <li> or "
 				"memory exhausted.)");
 		return;
 	}
+
+	/* We're loading external input. 
+	 * This may be garbage, so attempt to normalise
+	 */
+	res = url_normalize(url1, &url);
+	if (res != URL_FUNC_OK) {
+		LOG(("Failed normalising '%s'", url1));
+
+		if (res == URL_FUNC_NOMEM)
+			warn_user("NoMemory", NULL);
+
+		xmlFree(url1);
+		xmlFree(title);
+
+		return;
+	}
+
+	/* No longer need this */
+	xmlFree(url1);
 
 	data = urldb_get_url_data(url);
 	if (!data) {
@@ -560,8 +589,12 @@ void options_load_tree_entry(xmlNode *li, struct node *directory) {
 		/* now attempt to get url data */
 		data = urldb_get_url_data(url);
 	}
-	if (!data)
+	if (!data) {
+		xmlFree(title);
+		free(url);
+
 		return;
+	}
 
 	/* Make this URL persistent */
 	urldb_set_url_persistence(url, true);
@@ -570,8 +603,9 @@ void options_load_tree_entry(xmlNode *li, struct node *directory) {
 		urldb_set_url_title(url, title);
 
 	entry = tree_create_URL_node(directory, url, data, title);
-	xmlFree(url);
+
 	xmlFree(title);
+	free(url);
 }
 
 
