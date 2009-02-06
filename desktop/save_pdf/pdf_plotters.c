@@ -243,7 +243,7 @@ bool pdf_plot_fill(int x0, int y0, int x1, int y1, colour c)
 	x1 = min(max(x1, 0), page_width);
 	y1 = min(max(y1, 0), page_height);
 
-	HPDF_Page_Rectangle(pdf_page, x0, page_height, x1 - x0, y0 - y1);
+	HPDF_Page_Rectangle(pdf_page, x0, page_height - y1, x1 - x0, y1 - y0);
 	HPDF_Page_Fill(pdf_page);
 
 	return true;
