@@ -79,6 +79,10 @@
  * with similar performance characteristics, but with a significantly
  * simpler implementation. Entries in this tree comprise pointers to the
  * leaf nodes of the host tree described above.
+ *
+ * REALLY IMPORTANT NOTE: urldb expects all URLs to be normalised. Use of 
+ * non-normalised URLs with urldb will result in undefined behaviour and 
+ * potential crashes.
  */
 
 #define _GNU_SOURCE /* For strndup */
