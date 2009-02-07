@@ -45,7 +45,8 @@ The options file is stored in @{"Resources/Options" link Resources/Options/Main}
 @{b}arexx_dir@{ub} Path to ARexx scripts dir
 @{b}download_dir@{ub} default download destination
 @{b}quick_text@{ub} enable for local charset text only (not recommended)
-@{b}delay_redraw@{ub} slows down redraw interval
+@{b}faster_scroll@{ub} enable faster scrolling (experimental)
+@{b}cache_bitmaps@{ub} cache bitmaps in native format in gfx mem (0=off, 1=sclaed, 2=all)
 
 @endnode
 

@@ -477,9 +477,21 @@ bool ami_bitmap(int x, int y, int width, int height,
 							BLITA_UseSrcAlpha,!bitmap->opaque,
 							TAG_DONE);
 
-			bitmap->nativebm = scaledbm;
-			//p96FreeBitMap(scaledbm);
+			if(option_cache_bitmaps >= 1)
+			{
+				if(bitmap->nativebm)
+				{
+					p96FreeBitMap(bitmap->nativebm);
+				}
 
+				bitmap->nativebm = scaledbm;
+			}
+			else
+			{
+				p96FreeBitMap(scaledbm);
+			}
+
+			p96FreeBitMap(tbm);
 		}
 		else
 		{
@@ -494,7 +506,19 @@ bool ami_bitmap(int x, int y, int width, int height,
 							BLITA_UseSrcAlpha,!bitmap->opaque,
 							TAG_DONE);
 
-			bitmap->nativebm = tbm;
+			if(option_cache_bitmaps == 2)
+			{
+				if(bitmap->nativebm)
+				{
+					p96FreeBitMap(bitmap->nativebm);
+				}
+
+				bitmap->nativebm = tbm;
+			}
+			else
+			{
+				p96FreeBitMap(tbm);
+			}
 		}
 
 		bitmap->nativebmwidth = width;
@@ -513,8 +537,6 @@ bool ami_bitmap(int x, int y, int width, int height,
 						BLITA_UseSrcAlpha,!bitmap->opaque,
 						TAG_DONE);
 	}
-
-//	p96FreeBitMap(tbm);
 
 	return true;
 }
@@ -557,9 +579,13 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 		InitRastPort(&trp);
 		trp.BitMap = tbm;
 		p96WritePixelArray((struct RenderInfo *)&ri,0,0,&trp,0,0,bitmap->width,bitmap->height);
-		bitmap->nativebm = tbm;
-		bitmap->nativebmwidth = bitmap->width;
-		bitmap->nativebmheight = bitmap->height;
+
+		if(option_cache_bitmaps == 2)
+		{
+			bitmap->nativebm = tbm;
+			bitmap->nativebmwidth = bitmap->width;
+			bitmap->nativebmheight = bitmap->height;
+		}
 	}
 
 	max_width =  (repeat_x ? scrn->Width : width);
@@ -603,7 +629,10 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 		}
 	}
 
-//	p96FreeBitMap(tbm);
+	if(option_cache_bitmaps != 2)
+	{
+		p96FreeBitMap(tbm);
+	}
 
 	return true;
 }
