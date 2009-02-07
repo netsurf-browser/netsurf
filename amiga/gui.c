@@ -1507,6 +1507,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	if((bw->browser_window_type == BROWSER_WINDOW_IFRAME) && option_no_iframes) return NULL;
 
 	if(option_kiosk_mode) new_tab = false;
+	bw->scale = 1.0;
 
 	if(clone)
 	{
@@ -2057,11 +2058,13 @@ void ami_do_redraw_limits(struct gui_window *g, struct content *c,int x0, int y0
 
 	plot=amiplot;
 
-	if(x0-hcurrent<0) x0 = hcurrent;
-	if(y0-vcurrent<0) y0 = vcurrent;
+//DebugPrintF("%ld %ld %ld %ld old\n%ld %ld %ld %ld x0-xc etc\n",x0,y0,x1,y1,x0-hcurrent,y0-vcurrent,width+x0,height+y0);
 
-	if(x1>width+x0) x1 = width+x0;
-	if(y1>height+y0) y1 = height+y0;
+	if((x0-(int)hcurrent)<0) x0 = hcurrent;
+	if((y0-(int)vcurrent)<0) y0 = vcurrent;
+
+	if((x1-x0)+(xoffset+x0-hcurrent)>(width)) x1 = (width-(x0-hcurrent)+x0);
+	if((y1-y0)+(yoffset+y0-vcurrent)>(height)) y1 = (height-(y0-vcurrent)+y0);
 
 		content_redraw(c,
 		-hcurrent,-vcurrent,width-hcurrent,height-vcurrent,
@@ -2070,9 +2073,9 @@ void ami_do_redraw_limits(struct gui_window *g, struct content *c,int x0, int y0
 		ceilf((y0 *
 		g->shared->bw->scale)-vcurrent),
 		(x1 *
-		g->shared->bw->scale),
+		g->shared->bw->scale)-hcurrent,
 		(y1 *
-		g->shared->bw->scale),
+		g->shared->bw->scale)-vcurrent,
 		g->shared->bw->scale,
 		0xFFFFFF);
 
@@ -2081,6 +2084,16 @@ void ami_do_redraw_limits(struct gui_window *g, struct content *c,int x0, int y0
 //	ami_update_buttons(g->shared);
 
 	BltBitMapRastPort(glob.bm,x0-hcurrent,y0-vcurrent,g->shared->win->RPort,xoffset+x0-hcurrent,yoffset+y0-vcurrent,x1-x0,y1-y0,0x0C0);
+
+/*
+	DebugPrintF("%ld %ld %ld %ld draw area\n%ld %ld %ld %ld clip rect\n%ld %ld bitmap src\n%ld %ld %ld %ld bitmap dest\n\n",-hcurrent,-vcurrent,width-hcurrent,height-vcurrent,
+		(ULONG)floorf((x0 *
+		g->shared->bw->scale)-(int)hcurrent),
+		(ULONG)ceilf((y0 *
+		g->shared->bw->scale)-(int)vcurrent),
+		(ULONG)x1-hcurrent,
+		(ULONG)y1-vcurrent,x0-hcurrent,y0-vcurrent,xoffset+x0-hcurrent,yoffset+y0-vcurrent,x1-x0,y1-y0);
+*/
 }
 
 void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
@@ -2151,22 +2164,22 @@ void ami_do_redraw(struct gui_window_2 *g,bool scroll)
 	{
 		ScrollWindowRaster(g->win,hcurrent-oldh,vcurrent-oldv,xoffset,yoffset,xoffset+width,yoffset+height);
 
-		if(vcurrent-oldv > 0)
+		if((vcurrent-oldv) > 0)
 		{
-			ami_do_redraw_limits(g->bw->window,c,0,vcurrent-oldv,width,height-(vcurrent-oldv));
-			BltBitMapRastPort(glob.bm,0,vcurrent-oldv,g->win->RPort,xoffset,yoffset+(vcurrent-oldv),width,height-(vcurrent-oldv),0x0C0);  // this shouldn't be needed but the blit in ami_do_redraw_limits isn't working in this instance
+			ami_do_redraw_limits(g->bw->window,c,0,height-(vcurrent-oldv),width,(vcurrent-oldv));
+	//		BltBitMapRastPort(glob.bm,0,vcurrent-oldv,g->win->RPort,xoffset,yoffset+(vcurrent-oldv),width,height-(vcurrent-oldv),0x0C0);  // this shouldn't be needed but the blit in ami_do_redraw_limits isn't working in this instance
 		}
-		else if(vcurrent-oldv < 0)
+		else if((vcurrent-oldv) < 0)
 		{
 			ami_do_redraw_limits(g->bw->window,c,0,0,width,oldv-vcurrent);
 		}
 
-		if(hcurrent-oldh > 0)
+		if((hcurrent-oldh) > 0)
 		{
-			ami_do_redraw_limits(g->bw->window,c,hcurrent-oldh,0,width-(hcurrent-oldh),height);
-			BltBitMapRastPort(glob.bm,vcurrent-oldv,0,g->win->RPort,xoffset+(hcurrent-oldh),yoffset,width-(hcurrent-oldh),height,0x0C0); // this shouldn't be needed but the blit in ami_do_redraw_limits isn't working in this instance
+			ami_do_redraw_limits(g->bw->window,c,width-(hcurrent-oldh),0,(hcurrent-oldh),height);
+	//		BltBitMapRastPort(glob.bm,vcurrent-oldv,0,g->win->RPort,xoffset+(hcurrent-oldh),yoffset,width-(hcurrent-oldh),height,0x0C0); // this shouldn't be needed but the blit in ami_do_redraw_limits isn't working in this instance
 		}
-		else if(hcurrent-oldh < 0)
+		else if((hcurrent-oldh) < 0)
 		{
 			ami_do_redraw_limits(g->bw->window,c,0,0,oldh-hcurrent,height);
 		}
