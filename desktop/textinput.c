@@ -767,16 +767,6 @@ bool browser_window_textarea_callback(struct browser_window *bw,
 			char_offset, &pixel_offset);
 	
 	selection_clear(bw->sel, true);
-			
-	browser_window_place_caret(bw,
-			box_x + inline_container->x + text_box->x +
-			pixel_offset,
-			box_y + inline_container->y + text_box->y,
-			text_box->height,
-			browser_window_textarea_callback,
-			browser_window_textarea_paste_text,
-			browser_window_textarea_move_caret,
-			textarea);
 
 	textarea->gadget->caret_inline_container = inline_container;
 	textarea->gadget->caret_text_box = text_box;
@@ -788,6 +778,16 @@ bool browser_window_textarea_callback(struct browser_window *bw,
 	scrolled = ensure_caret_visible(textarea);
 	box_x -= textarea->scroll_x;
 	box_y -= textarea->scroll_y;
+
+	browser_window_place_caret(bw,
+			box_x + inline_container->x + text_box->x +
+			pixel_offset,
+			box_y + inline_container->y + text_box->y,
+			text_box->height,
+			browser_window_textarea_callback,
+			browser_window_textarea_paste_text,
+			browser_window_textarea_move_caret,
+			textarea);
 
 	if (scrolled || reflow)
 		browser_redraw_box(bw->current_content, textarea);
@@ -2165,7 +2165,7 @@ bool word_right(const char *text, size_t len, size_t *poffset, size_t *pchars)
 /**
  * Adjust scroll offsets so that the caret is visible
  * \param textarea  textarea box
- * \return true if a change in scroll offsets has occured
+ * \return true if a change in scroll offsets has occurred
 */
 
 bool ensure_caret_visible(struct box *textarea)
