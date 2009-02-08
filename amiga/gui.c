@@ -2122,7 +2122,7 @@ void gui_window_redraw_window(struct gui_window *g)
 void gui_window_update_box(struct gui_window *g,
 		const union content_msg_data *data)
 {
-	ami_do_redraw_limits(g,data->redraw.object,
+	ami_do_redraw_limits(g,g->shared->bw->current_content,
 			data->redraw.x,data->redraw.y,
 			data->redraw.width+data->redraw.x,
 			data->redraw.height+data->redraw.y);
