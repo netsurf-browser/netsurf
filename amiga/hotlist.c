@@ -38,7 +38,7 @@ static const struct {
 			"HotlistBugTracker" },
 	{ "http://sourceforge.net/tracker/?atid=464315&group_id=51719",
 			"HotlistFeatureRequest" },
-	{ "http://www.unsatisfactorysoftware.co.uk",
+	{ "http://www.unsatisfactorysoftware.co.uk/",
 			"Unsatisfactory Software" }
 };
 #define ENTRIES_COUNT (sizeof(default_entries) / sizeof(default_entries[0]))
