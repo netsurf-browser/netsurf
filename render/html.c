@@ -704,7 +704,7 @@ bool html_meta_refresh(struct content *c, xmlNode *head)
 bool html_find_stylesheets(struct content *c, xmlNode *html)
 {
 	xmlNode *node;
-	char *rel, *type, *media, *href, *url;
+	char *rel, *type, *media, *href, *url, *url2;
 	unsigned int i = STYLESHEET_START;
 	unsigned int last_active = 0;
 	union content_msg_data msg_data;
@@ -827,26 +827,39 @@ bool html_find_stylesheets(struct content *c, xmlNode *html)
 
 			LOG(("linked stylesheet %i '%s'", i, url));
 
+			res = url_normalize(url, &url2);
+			if (res != URL_FUNC_OK) {
+				if (res == URL_FUNC_NOMEM)
+					goto no_memory;
+				continue;
+			}
+
+			free(url);
+
 			/* start fetch */
 			stylesheet_content = talloc_realloc(c,
 					c->data.html.stylesheet_content,
 					struct content *, i + 1);
-			if (!stylesheet_content)
+			if (!stylesheet_content) {
+				free(url2);
 				goto no_memory;
+			}
+
 			c->data.html.stylesheet_content = stylesheet_content;
-			c->data.html.stylesheet_content[i] = fetchcache(url,
+			c->data.html.stylesheet_content[i] = fetchcache(url2,
 					html_convert_css_callback,
 					(intptr_t) c, i, c->width, c->height,
 					true, 0, 0, false, false);
+			free(url2);
 			if (!c->data.html.stylesheet_content[i])
 				goto no_memory;
+
 			c->active++;
 			fetchcache_go(c->data.html.stylesheet_content[i],
 					c->url,
 					html_convert_css_callback,
 					(intptr_t) c, i, c->width, c->height,
 					0, 0, false, c->url);
-			free(url);
 			i++;
 		} else if (strcmp((const char *) node->name, "style") == 0) {
 
@@ -1112,11 +1125,24 @@ bool html_fetch_object(struct content *c, char *url, struct box *box,
 	unsigned int i = c->data.html.object_count;
 	struct content_html_object *object;
 	struct content *c_fetch;
+	char *url2;
+	url_func_result res;
+
+	/* Normalize the URL */
+	res = url_normalize(url, &url2);
+	if (res != URL_FUNC_OK) {
+		LOG(("failed to normalize url '%s'", url));
+		return res != URL_FUNC_NOMEM;
+	}
 
 	/* initialise fetch */
-	c_fetch = fetchcache(url, html_object_callback,
+	c_fetch = fetchcache(url2, html_object_callback,
 			(intptr_t) c, i, available_width, available_height,
 			true, 0, 0, false, false);
+
+	/* No longer need normalized url */
+	free(url2);
+
 	if (!c_fetch)
 		return false;
 
@@ -1163,6 +1189,8 @@ bool html_replace_object(struct content *c, unsigned int i, char *url,
 {
 	struct content *c_fetch;
 	struct content *page;
+	char *url2;
+	url_func_result res;
 
 	assert(c->type == CONTENT_HTML);
 
@@ -1177,12 +1205,19 @@ bool html_replace_object(struct content *c, unsigned int i, char *url,
 		c->data.html.object[i].box->object = 0;
 	}
 
+	res = url_normalize(url, &url2);
+	if (res != URL_FUNC_OK)
+		return res != URL_FUNC_NOMEM;
+
 	/* initialise fetch */
-	c_fetch = fetchcache(url, html_object_callback,
+	c_fetch = fetchcache(url2, html_object_callback,
 			(intptr_t) c, i,
 			c->data.html.object[i].box->width,
 			c->data.html.object[i].box->height,
 			false, post_urlenc, post_multipart, false, false);
+
+	free(url2);
+
 	if (!c_fetch)
 		return false;
 

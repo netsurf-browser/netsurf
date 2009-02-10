@@ -878,16 +878,30 @@ void css_atimport(struct content *c, struct css_node *node)
 		return;
 	}
 
+	/* Make URL absolute */
 	res = url_join(url, c->url, &url1);
 	if (res != URL_FUNC_OK) {
 		free(url);
 		return;
 	}
 
+	/* Destroy raw url data */
+	free(url);
+
+	/* URL must be normalized */
+	res = url_normalize(url1, &url);
+	if (res != URL_FUNC_OK) {
+		free(url1);
+		return;
+	}
+
+	/* Destroy non-normalized data */
+	free(url1);
+
 	/* start the fetch */
 	c->data.css.import_count++;
 	i = c->data.css.import_count - 1;
-	c->data.css.import_content[i] = fetchcache(url1,
+	c->data.css.import_content[i] = fetchcache(url,
 			css_atimport_callback, (intptr_t) c, i,
 			c->width, c->height, true, 0, 0, false, false);
 	if (c->data.css.import_content[i]) {
