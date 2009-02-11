@@ -202,7 +202,7 @@ void tree_set_node_sprite_folder(struct node *node) {}
 #ifndef riscos
 void schedule(int t, void (*callback)(void *p), void *p) {}
 void schedule_remove(void (*callback)(void *p), void *p) {}
-void schedule_run(void) {}
+bool schedule_run(void) {}
 #endif
 
 bool selection_highlighted(struct selection *s, unsigned start, unsigned end,

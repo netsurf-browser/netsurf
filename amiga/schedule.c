@@ -115,7 +115,7 @@ void schedule_remove(void (*callback)(void *p), void *p)
  * Process events up to current time.
  */
 
-void schedule_run(void)
+bool schedule_run(void)
 {
 	struct nsObject *node;
 	struct nsObject *nnode;
@@ -124,7 +124,7 @@ void schedule_run(void)
 	void *p;
 	struct timeval tv;
 
-	if(IsMinListEmpty(schedule_list)) return;
+	if(IsMinListEmpty(schedule_list)) return false;
 
 	GetSysTime(&tv);
 
@@ -148,6 +148,8 @@ void schedule_run(void)
 			}
 		}
 	} while(node=nnode);
+
+        return true;
 }
 
 void ami_remove_timer_event(struct nscallback *nscb)

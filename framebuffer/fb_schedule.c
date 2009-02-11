@@ -126,7 +126,7 @@ void schedule_remove(void (*callback)(void *p), void *p)
  * Process events up to current time.
  */
 
-void schedule_run(void)
+bool schedule_run(void)
 {
 	struct timeval tv;
         struct nscallback *cur_nscb;
@@ -134,7 +134,7 @@ void schedule_run(void)
         struct nscallback *unlnk_nscb;
 
         if (schedule_list == NULL)
-                return;
+                return false;
 
         cur_nscb = schedule_list;
         prev_nscb = NULL;
@@ -167,7 +167,7 @@ void schedule_run(void)
                         cur_nscb = prev_nscb->next;
                 } 
         }
-        
+        return true;
 }
 
 void list_schedule(void)

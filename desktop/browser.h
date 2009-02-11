@@ -265,7 +265,7 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 /* In platform specific schedule.c. */
 void schedule(int t, void (*callback)(void *p), void *p);
 void schedule_remove(void (*callback)(void *p), void *p);
-void schedule_run(void);
+bool schedule_run(void);
 
 /* In platform specific theme_install.c. */
 #ifdef WITH_THEME_INSTALL

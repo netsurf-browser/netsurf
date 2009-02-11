@@ -128,7 +128,7 @@ void schedule_remove(void (*callback)(void *p), void *p)
  * Process events up to current time.
  */
 
-void schedule_run(void)
+bool schedule_run(void)
 {
 	struct sched_entry *entry;
 	void (*callback)(void *p);
@@ -153,4 +153,6 @@ void schedule_run(void)
 		sched_time = sched_queue.next->time;
 	} else
 		sched_active = false;
+
+        return sched_active;
 }

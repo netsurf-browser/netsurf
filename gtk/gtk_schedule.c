@@ -107,14 +107,14 @@ schedule(int t, void (*callback)(void *p), void *p)
         g_timeout_add(msec_timeout, nsgtk_schedule_generic_callback, cb);
 }
 
-void
+bool
 schedule_run(void)
 {
         /* Capture this run of pending callbacks into the list. */
         this_run = pending_callbacks;
 
         if (this_run == NULL)
-                return; /* Nothing to do */
+                return false; /* Nothing to do */
 
         /* Clear the pending list. */
         pending_callbacks = NULL;
@@ -129,4 +129,5 @@ schedule_run(void)
                         cb->callback(cb->context);
                 free(cb);
         }
+        return true;
 }
