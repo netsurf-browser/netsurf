@@ -20,6 +20,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <limits.h>
 #include <unistd.h>
 
 #include "desktop/gui.h"
