@@ -208,11 +208,11 @@ void gui_poll(bool active)
     //    LOG(("enter fetch_poll"));
     if (active)
         fetch_poll();
+ 
     //LOG(("enter schedule run"));
-    schedule_run();
+    active = schedule_run() | active; 
 
-
-    fb_os_input(input_window);
+    fb_os_input(input_window, active);
 
     if (redraws_pending == true) {
             struct gui_window *g;

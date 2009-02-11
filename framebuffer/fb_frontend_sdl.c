@@ -58,7 +58,7 @@ framebuffer_t *fb_os_init(int argc, char** argv)
 
         newfb->width = 800;
         newfb->height = 600;
-        newfb->bpp = 16;
+        newfb->bpp = 32;
 
         sdl_screen = SDL_SetVideoMode(newfb->width, 
                                   newfb->height, 
@@ -84,11 +84,14 @@ void fb_os_quit(framebuffer_t *fb)
 {
 }
 
-void fb_os_input(struct gui_window *g) 
+void fb_os_input(struct gui_window *g, bool active) 
 {
         SDL_Event event;
 
-        SDL_PollEvent(&event);//SDL_WaitEvent(&event);
+        if (active)
+                SDL_PollEvent(&event);
+        else
+                SDL_WaitEvent(&event);
 
         switch (event.type) {
         case SDL_KEYDOWN:

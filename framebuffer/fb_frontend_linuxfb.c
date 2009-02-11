@@ -591,7 +591,7 @@ void fb_os_quit(framebuffer_t *fb)
         fb_cleanup();
 }
 
-void fb_os_input(struct gui_window *g) 
+void fb_os_input(struct gui_window *g, bool active) 
 {
         ssize_t amt;
         struct input_event event;       
