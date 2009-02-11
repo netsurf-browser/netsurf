@@ -134,6 +134,12 @@ fb_os_option_override(void)
         option_max_fetchers = option_max_fetchers_per_host = 1;
 }
 
+/* called by generic code to inform os code of screen update */
+void
+fb_os_redraw(struct bbox_s *box)
+{
+}
+
 /*
  * Local Variables:
  * c-basic-offset:8

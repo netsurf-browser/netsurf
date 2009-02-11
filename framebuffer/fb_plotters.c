@@ -29,6 +29,7 @@
 #include "framebuffer/fb_plotters.h"
 #include "framebuffer/fb_bitmap.h"
 #include "framebuffer/fb_font.h"
+#include "framebuffer/fb_frontend.h"
 
 /* Currently selected ploting routines. */
 struct plotter_table plot;
@@ -277,7 +278,6 @@ bool fb_plotters_bitmap_tile(int x, int y,
 
 bool fb_plotters_move_block(int srcx, int srcy, int width, int height, int dstx, int dsty)
 {
-	LOG(("from (%d,%d) w %d h %d to (%d,%d)",srcx,srcy,width,height,dstx,dsty));
 	uint8_t *srcptr = (framebuffer->ptr + 
                            (srcy * framebuffer->linelen) + 
 			   (srcx));
@@ -286,7 +286,21 @@ bool fb_plotters_move_block(int srcx, int srcy, int width, int height, int dstx,
                            (dsty * framebuffer->linelen) + 
 			   (dstx));
 
+        bbox_t redrawbox;
+
+	LOG(("from (%d,%d) w %d h %d to (%d,%d)",srcx,srcy,width,height,dstx,dsty));
+
 	memmove(dstptr, srcptr, (width * height * framebuffer->bpp) / 8);
+
+        /* callback to the os specific routine in case it needs to do something
+         * explicit to redraw 
+         */
+        redrawbox.x0 = dstx;
+        redrawbox.y0 = dsty;
+        redrawbox.x1 = dstx + width;
+        redrawbox.y1 = dsty + height;
+        fb_os_redraw(&redrawbox);
+
         return true;
 }
 

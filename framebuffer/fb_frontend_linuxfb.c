@@ -672,6 +672,11 @@ fb_os_option_override(void)
 {
 }
 
+/* called by generic code to inform os code of screen update */
+void
+fb_os_redraw(struct bbox_s *box)
+{
+}
 
 /*
  * Local Variables:

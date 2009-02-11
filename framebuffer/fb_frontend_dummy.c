@@ -64,10 +64,15 @@ framebuffer_t *fb_os_init(int argc, char** argv)
 
 void fb_os_quit(framebuffer_t *fb)
 {
-        free(fb->ptr);
 }
 
 void fb_os_input(struct gui_window *g) 
+{
+}
+
+/* called by generic code to inform os code of screen update */
+void
+fb_os_redraw(struct bbox_s *box)
 {
 }
 

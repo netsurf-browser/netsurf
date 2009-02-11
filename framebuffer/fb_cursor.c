@@ -34,6 +34,7 @@
 #include "framebuffer/fb_plotters.h"
 #include "framebuffer/fb_bitmap.h"
 #include "framebuffer/fb_cursor.h"
+#include "framebuffer/fb_frontend.h"
 
 struct fb_cursor_s {
         int x;
@@ -125,6 +126,7 @@ static void fb_cursor_clear(framebuffer_t *fb)
         uint8_t *pvid;
         int yloop;
         int height = fb->cursor->height;
+        bbox_t cursorbox;
 
         if ((fb->height - fb->cursor->y) < height)
                 height = fb->height - fb->cursor->y ;
@@ -152,15 +154,24 @@ static void fb_cursor_clear(framebuffer_t *fb)
                 pvid += fb->linelen;
         }
 
+        /* callback to the os specific routine in case it needs to do something
+         * explicit to redraw 
+         */
+        cursorbox.x0 = fb->cursor->x;
+        cursorbox.y0 = fb->cursor->y;
+        cursorbox.x1 = fb->cursor->x + fb->cursor->width;
+        cursorbox.y1 = fb->cursor->y + fb->cursor->height;
+        fb_os_redraw(&cursorbox);
+
 }
 
 void
-fb_cursor_move(framebuffer_t *fb, int x, int y)
+fb_cursor_move_abs(framebuffer_t *fb, int x, int y)
 {
         fb_cursor_clear(fb);
 
-        fb->cursor->x += x;
-        fb->cursor->y += y;
+        fb->cursor->x = x;
+        fb->cursor->y = y;
         if (fb->cursor->x < 0)
                 fb->cursor->x = 0;
         if (fb->cursor->y < 0)
@@ -172,14 +183,25 @@ fb_cursor_move(framebuffer_t *fb, int x, int y)
 
 }
 
+void
+fb_cursor_move(framebuffer_t *fb, int x, int y)
+{
+        fb_cursor_move_abs(fb, fb->cursor->x + x, fb->cursor->y + y);
+}
+
 void 
 fb_cursor_plot(framebuffer_t *fb)
 {
         bbox_t saved_plot_ctx;
+        bbox_t cursorbox;
 
+        /* if cursor is not currently plotted give up early */
         if (fb->cursor->plotted)
                 return;
 
+        /* enlarge the clipping rectangle to the whole screen for plotting the
+         * cursor 
+         */
         saved_plot_ctx = fb_plot_ctx;
 
         fb_plot_ctx.x0 = 0;
@@ -187,13 +209,26 @@ fb_cursor_plot(framebuffer_t *fb)
         fb_plot_ctx.x1 = fb->width;
         fb_plot_ctx.y1 = fb->height;
 
+        /* save under the cursor */
         fb_cursor_save(fb);
 
+        /* plot the cursor image */
         plot.bitmap(fb->cursor->x, fb->cursor->y, 
                     fb->cursor->width, fb->cursor->height,
                     fb->cursor->bitmap, 0, NULL);
 
+        /* callback to the os specific routine in case it needs to do something
+         * explicit to redraw 
+         */
+        cursorbox.x0 = fb->cursor->x;
+        cursorbox.y0 = fb->cursor->y;
+        cursorbox.x1 = fb->cursor->x + fb->cursor->width;
+        cursorbox.y1 = fb->cursor->y + fb->cursor->height;
+        fb_os_redraw(&cursorbox);
+
         fb->cursor->plotted = true;
+
+        /* restore clipping rectangle */
         fb_plot_ctx = saved_plot_ctx;
 }
 

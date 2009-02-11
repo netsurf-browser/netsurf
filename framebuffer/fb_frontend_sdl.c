@@ -34,6 +34,7 @@
 #include "framebuffer/fb_gui.h"
 #include "framebuffer/fb_plotters.h"
 #include "framebuffer/fb_frontend.h"
+#include "framebuffer/fb_cursor.h"
 
 #include "utils/log.h"
 
@@ -74,6 +75,8 @@ framebuffer_t *fb_os_init(int argc, char** argv)
         newfb->ptr = sdl_screen->pixels;
         newfb->linelen = sdl_screen->pitch;
 
+        SDL_ShowCursor(SDL_DISABLE);
+
         return newfb;
 }
 
@@ -89,9 +92,39 @@ void fb_os_input(struct gui_window *g)
 
         switch (event.type) {
         case SDL_KEYDOWN:
-            printf("The %s key was pressed!\n",
-                   SDL_GetKeyName(event.key.keysym.sym));
+
+            switch (event.key.keysym.sym) {
+
+            case SDLK_j:
+                    fb_window_scroll(g, 0, 100);
+                    break;
+                    
+            case SDLK_k:
+                    fb_window_scroll(g, 0, -100);
+                    break;
+                    
+            case SDLK_q:
+                    browser_window_destroy(g->bw);
+                    break;
+
+            default:
+                    printf("The %s key was pressed!\n",
+                           SDL_GetKeyName(event.key.keysym.sym));
+                    break;
+            }
             break;
+
+        case SDL_MOUSEMOTION:
+                fb_cursor_move_abs(framebuffer, 
+                                   event.motion.x, 
+                                   event.motion.y);
+                break;
+
+        case SDL_MOUSEBUTTONDOWN:
+                fb_cursor_click(framebuffer, g, BROWSER_MOUSE_CLICK_1);
+                /*                printf("Mouse button %d pressed at (%d,%d)\n",
+                                  event.button.button, event.button.x, event.button.y);*/
+                break;
 
         case SDL_QUIT:
             browser_window_destroy(g->bw);
@@ -104,10 +137,13 @@ fb_os_option_override(void)
 {
 }
 
+/* called by generic code to inform os code of screen update */
 void
-fb_os_redraw(struct gui_window *g, struct bbox_s *box)
+fb_os_redraw(struct bbox_s *box)
 {
-        SDL_UpdateRect(sdl_screen, box->x0, box->y0, box->x1, box->y1);
+        SDL_UpdateRect(sdl_screen, 
+                       box->x0, box->y0, 
+                       box->x1 - box->x0, box->y1 - box->y0);
 }
 
 /*

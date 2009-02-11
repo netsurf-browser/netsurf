@@ -23,6 +23,6 @@ extern framebuffer_t *fb_os_init(int argc, char** argv);
 extern void fb_os_quit(framebuffer_t *fb);
 extern void fb_os_input(struct gui_window *g);
 extern void fb_os_option_override(void);
-extern void fb_os_redraw(struct gui_window *g, struct bbox_s *box);
+extern void fb_os_redraw(struct bbox_s *box);
 
 #endif /* NETSURF_FB_FRONTEND_H */

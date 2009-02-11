@@ -21,6 +21,8 @@
 
 void fb_cursor_move(struct framebuffer_s *fb, int x, int y);
 
+void fb_cursor_move_abs(struct framebuffer_s *fb, int x, int y);
+
 void fb_cursor_plot(struct framebuffer_s *fb);
 
 fb_cursor_t *fb_cursor_init(struct framebuffer_s *fb);
