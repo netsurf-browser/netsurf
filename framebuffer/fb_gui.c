@@ -125,6 +125,8 @@ static void fb_redraw(struct gui_window *g)
                        g->redraw_box.x0, g->redraw_box.y0, g->redraw_box.x1, g->redraw_box.y1,
                        g->bw->scale, 0xFFFFFF);
 
+        fb_os_redraw(g, &g->redraw_box);
+
 	g->redraw_required = false;
         g->redraw_box.y0 = g->redraw_box.x0 = INT_MAX;
         g->redraw_box.y1 = g->redraw_box.x1 = -(INT_MAX);

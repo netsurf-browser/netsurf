@@ -111,6 +111,9 @@ endif
 ifeq ($(NETSURF_FB_FRONTEND),dummy)
 S_FRAMEBUFFER += fb_frontend_dummy.c
 endif
+ifeq ($(NETSURF_FB_FRONTEND),sdl)
+S_FRAMEBUFFER += fb_frontend_sdl.c
+endif
 
 S_FRAMEBUFFER := $(addprefix framebuffer/,$(S_FRAMEBUFFER))
 

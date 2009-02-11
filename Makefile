@@ -515,6 +515,26 @@ ifeq ($(TARGET),framebuffer)
     LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl openssl)
     SUBTARGET := -dummy
   endif
+
+  ifeq ($(NETSURF_FB_FRONTEND),sdl)
+    $(eval $(call pkg_config_find_and_add,RSVG,librsvg-2.0,SVG rendering))
+    $(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,RISC OS sprite rendering))
+    $(eval $(call pkg_config_find_and_add,HUBBUB,libhubbub,Hubbub HTML parser))
+    $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,NetSurf BMP decoder))
+    $(eval $(call pkg_config_find_and_add,GIF,libnsgif,NetSurf GIF decoder))
+#    $(eval $(call pkg_config_find_and_add,SDL,libSDL,SDL Library))
+
+
+    CFLAGS += -std=c99 -g -I. $(WARNFLAGS) \
+	 	 $(shell xml2-config --cflags) \
+		 -D_BSD_SOURCE \
+		 -D_XOPEN_SOURCE=600 \
+		 -D_POSIX_C_SOURCE=200112L 
+
+    LDFLAGS += -lxml2 -lz -ljpeg -lcurl -lm -lSDL
+    LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl openssl)
+    SUBTARGET := -sdl
+  endif
 endif
 
 # ----------------------------------------------------------------------------
