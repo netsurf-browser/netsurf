@@ -99,6 +99,14 @@ void fb_os_input(struct gui_window *g, bool active)
 
             switch (event.key.keysym.sym) {
 
+            case SDLK_PAGEDOWN:
+                    fb_window_scroll(g, 0, g->height);
+                    break;
+                    
+            case SDLK_PAGEUP:
+                    fb_window_scroll(g, 0, -g->height);
+                    break;
+
             case SDLK_j:
                     fb_window_scroll(g, 0, 100);
                     break;
@@ -135,9 +143,30 @@ void fb_os_input(struct gui_window *g, bool active)
                 break;
 
         case SDL_MOUSEBUTTONDOWN:
-                fb_cursor_click(framebuffer, g, BROWSER_MOUSE_CLICK_1);
-                /*                printf("Mouse button %d pressed at (%d,%d)\n",
-                                  event.button.button, event.button.x, event.button.y);*/
+                switch (event.button.button) {
+
+                case SDL_BUTTON_LEFT:
+                        fb_cursor_click(framebuffer, g, BROWSER_MOUSE_CLICK_1);
+                        break;
+
+                case SDL_BUTTON_RIGHT:
+                        fb_cursor_click(framebuffer, g, BROWSER_MOUSE_CLICK_2);
+                        break;
+
+                case SDL_BUTTON_WHEELUP:
+                    fb_window_scroll(g, 0, -100);
+                    break;
+
+                case SDL_BUTTON_WHEELDOWN:
+                    fb_window_scroll(g, 0, 100);
+                    break;
+
+                case SDL_BUTTON_MIDDLE:
+                default:
+                        printf("Mouse button %d pressed at (%d,%d)\n",
+                               event.button.button, event.button.x, event.button.y);
+
+                }
                 break;
 
         case SDL_QUIT:

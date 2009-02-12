@@ -35,6 +35,7 @@
 #include "framebuffer/fb_bitmap.h"
 #include "framebuffer/fb_cursor.h"
 #include "framebuffer/fb_frontend.h"
+#include "framebuffer/fb_rootwindow.h"
 
 struct fb_cursor_s {
         int x;
@@ -262,11 +263,18 @@ fb_cursor_click(framebuffer_t *fb,
                 struct gui_window *g, 
                 browser_mouse_state st)
 {
+        /* check click lies within window */
+        if ((fb->cursor->x > g->x) && 
+            (fb->cursor->y > g->y) && 
+            (fb->cursor->x < g->x + g->width) && 
+            (fb->cursor->y < g->y + g->height)) {
         browser_window_mouse_click(g->bw,
                                    st,
-                                   fb->cursor->x, 
-                                   fb->cursor->y + g->scrolly);
-
+                                   fb->cursor->x - g->x + g->scrollx, 
+                                   fb->cursor->y - g->y + g->scrolly);
+        } else {
+                fb_rootwindow_click(st, fb->cursor->x, fb->cursor->y);
+        }
 }
 
 /*

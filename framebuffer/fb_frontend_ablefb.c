@@ -33,6 +33,7 @@
 #include "framebuffer/fb_gui.h"
 #include "framebuffer/fb_plotters.h"
 #include "framebuffer/fb_frontend.h"
+#include "framebuffer/fb_options.h"
 
 #include "utils/log.h"
 

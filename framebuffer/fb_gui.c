@@ -71,10 +71,11 @@ static void fb_pan(struct gui_window *g)
 	if (!c) return;
 	if (c->locked) return;
 
-	LOG(("panning %d, %d from %d, %d in content %d,%d",g->panx, g->pany,g->scrollx,g->scrolly,c->width, c->height));
+	LOG(("panning %d, %d from %d, %d in content %d,%d",
+             g->panx, g->pany,g->scrollx,g->scrolly,c->width, c->height));
 	/* dont pan off the top */
 	if ((g->scrolly + g->pany) < 0)
-		g->pany = -g->scrolly;
+		g->pany = - g->scrolly;
 
         /* do not pan off the bottom of the content */
 	if ((g->scrolly + g->pany) > (c->height - g->height))
@@ -94,8 +95,8 @@ static void fb_pan(struct gui_window *g)
                                        g->width, g->height + g->pany, 
                                        g->x, g->y - g->pany);
 		g->scrolly += g->pany;
-		fb_queue_redraw(g, g->x, g->y, 
-				g->x + g->width, g->y - g->pany);
+		fb_queue_redraw(g, 0, 0, 
+				g->width, - g->pany);
 	}
 	if (g->pany > 0) {
 		/* we cannot pan more than a window height at a time */
@@ -104,10 +105,12 @@ static void fb_pan(struct gui_window *g)
 
 		LOG(("panning down %d", g->pany));
 
-		fb_plotters_move_block(g->x, g->y + g->pany, g->width, g->height - g->pany, g->x, g->y);
+		fb_plotters_move_block(g->x, g->y + g->pany, 
+                                       g->width, g->height - g->pany, 
+                                       g->x, g->y);
 		g->scrolly += g->pany;
-		fb_queue_redraw(g, g->x, g->y + g->height - g->pany, 
-				g->x + g->width, g->y + g->height);
+		fb_queue_redraw(g, 0, g->height - g->pany, 
+				g->width, g->height);
 	}
 
 	g->pan_required = false;
@@ -127,7 +130,18 @@ static void fb_redraw(struct gui_window *g)
 	if (!c) return;
 	if (c->locked) return;
 
-        content_redraw(c, 0, -g->scrolly, g->width, g->height,
+        /* adjust clipping co-ordinates according to window location */
+        g->redraw_box.y0 += g->y;
+        g->redraw_box.y1 += g->y;
+        g->redraw_box.x0 += g->x;
+        g->redraw_box.x1 += g->x;
+
+        /* redraw bounding box is relative to window */
+        content_redraw(c, 
+                       g->x - g->scrollx, 
+                       g->y - g->scrolly , 
+                       g->width, 
+                       g->height,
                        g->redraw_box.x0, g->redraw_box.y0, 
                        g->redraw_box.x1, g->redraw_box.y1,
                        g->bw->scale, 0xFFFFFF);
@@ -165,7 +179,7 @@ void gui_init(int argc, char** argv)
         /* load browser options */        
 	options_read(fb_findfile("Options"));
 
-        default_stylesheet_url = fb_findfile_asurl("default.css");
+        default_stylesheet_url = fb_findfile_asurl("http://jennifer.kyllikki.org/~vince/res/default.css");
         
         framebuffer = fb_os_init(argc, argv);
         
@@ -228,7 +242,7 @@ void gui_poll(bool active)
         fetch_poll();
  
     //LOG(("enter schedule run"));
-    active = schedule_run() | active; 
+    active = schedule_run() | active | redraws_pending; 
 
     fb_os_input(input_window, active);
 
@@ -275,9 +289,9 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
                 return NULL;
 
         g->x = 0;
-        g->y = 0;
+        g->y = 30;
         g->width = framebuffer->width;
-        g->height = framebuffer->height;
+        g->height = framebuffer->height - 60;
         g->bw = bw;
 
         if (window_list == NULL) {
@@ -323,7 +337,9 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 #define MAX(a,b) (((a) > (b)) ? (a) : (b))
 #endif
 
-static void fb_queue_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
+/* queue a redraw operation, co-ordinates are relative to the window */
+static void 
+fb_queue_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
 {
 	if (!g) return;
 

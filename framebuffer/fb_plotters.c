@@ -184,15 +184,13 @@ bool fb_clip(int x0, int y0, int x1, int y1)
 
         g = window_list;
 
-        /* LOG(("x0 %d, y0 %d, x1 %d, y1 %d", x0, y0, x1, y1)); */
-
 	if (x1 < x0) SWAP(x0, x1);
 	if (y1 < y0) SWAP(y0, y1);
 
         clip.x0 = g->x;
         clip.y0 = g->y;
         clip.x1 = g->x + g->width;
-        clip.y1 = g->x + g->height;
+        clip.y1 = g->y + g->height;
 
         if (fb_plotters_clip_rect(&clip, &x0, &y0, &x1, &y1)) {
                 /* new clipping region is inside the root window */
@@ -201,6 +199,11 @@ bool fb_clip(int x0, int y0, int x1, int y1)
                 fb_plot_ctx.x1 = x1;
                 fb_plot_ctx.y1 = y1;
         }
+
+        LOG(("%d, %d - %d, %d clipped to %d, %d - %d, %d", 
+             x0,y0,x1,y1,
+             fb_plot_ctx.x0, fb_plot_ctx.y0, fb_plot_ctx.x1, fb_plot_ctx.y1)); 
+
 	return true;
 }
 

@@ -99,7 +99,7 @@ S_FRAMEBUFFER := fb_gui.c tree.c history.c hotlist.c fb_schedule.c	\
 	thumbnail.c misc.c fb_bitmap.c fb_font.c font_8x16.c		\
 	fb_filetype.c login.c fb_cursor.c fb_plotters.c			\
 	fb_8bpp_plotters.c fb_16bpp_plotters.c fb_32bpp_plotters.c	\
-	fb_findfile.c
+	fb_findfile.c fb_rootwindow.c
 #	fb_1bpp_plotters.c
 
 ifeq ($(NETSURF_FB_FRONTEND),linux)

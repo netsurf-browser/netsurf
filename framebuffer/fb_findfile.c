@@ -67,7 +67,12 @@ char *
 fb_findfile_asurl(const char *filename)
 {
         static char buffer[PATH_MAX];
-        char *f = fb_findfile(filename);
+        char *f; 
+
+        if (strncmp(filename, "http://", 5) == 0)
+                return strdup(filename);
+                
+        f = fb_findfile(filename);
         
         if (f == NULL)
                 return NULL;
