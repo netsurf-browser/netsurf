@@ -42,6 +42,7 @@
 #include "framebuffer/fb_schedule.h"
 #include "framebuffer/fb_cursor.h"
 #include "framebuffer/fb_findfile.h"
+#include "framebuffer/fb_rootwindow.h"
 
 #include "content/urldb.h"
 #include "desktop/history_core.h"
@@ -217,14 +218,16 @@ void gui_init2(int argc, char** argv)
 	struct browser_window *bw;
 	const char *addr = NETSURF_HOMEPAGE;
 
-        LOG(("%s(%d, %p)", __func__, argc, argv));
+        LOG(("argc %d, argv %p", argc, argv));
 
         if (option_homepage_url != NULL && option_homepage_url[0] != '\0')
                 addr = option_homepage_url;
 
 	if (argc > 1) addr = argv[1];
 
-        LOG(("%s: calling browser_window_create", __func__));
+        fb_rootwindow_create(framebuffer);
+
+        LOG(("calling browser_window_create"));
 	bw = browser_window_create(addr, 0, 0, true, false);
 }
 

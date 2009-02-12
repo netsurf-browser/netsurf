@@ -268,12 +268,12 @@ fb_cursor_click(framebuffer_t *fb,
             (fb->cursor->y > g->y) && 
             (fb->cursor->x < g->x + g->width) && 
             (fb->cursor->y < g->y + g->height)) {
-        browser_window_mouse_click(g->bw,
-                                   st,
-                                   fb->cursor->x - g->x + g->scrollx, 
-                                   fb->cursor->y - g->y + g->scrolly);
+                browser_window_mouse_click(g->bw,
+                                           st,
+                                           fb->cursor->x - g->x + g->scrollx, 
+                                           fb->cursor->y - g->y + g->scrolly);
         } else {
-                fb_rootwindow_click(st, fb->cursor->x, fb->cursor->y);
+                fb_rootwindow_click(fb, g, st, fb->cursor->x, fb->cursor->y);
         }
 }
 
