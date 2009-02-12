@@ -59,7 +59,7 @@ framebuffer_t *framebuffer;
 
 static void fb_queue_redraw(struct gui_window *g, int x0, int y0, int x1, int y1);
 
-static void fb_pan(struct gui_window *g) 
+static void fb_pan(struct gui_window *g)
 {
 	struct content *c;
 
@@ -91,11 +91,11 @@ static void fb_pan(struct gui_window *g)
 
 		LOG(("panning up %d", g->pany));
 
-		fb_plotters_move_block(g->x, g->y, 
-                                       g->width, g->height + g->pany, 
+		fb_plotters_move_block(g->x, g->y,
+                                       g->width, g->height + g->pany,
                                        g->x, g->y - g->pany);
 		g->scrolly += g->pany;
-		fb_queue_redraw(g, 0, 0, 
+		fb_queue_redraw(g, 0, 0,
 				g->width, - g->pany);
 	}
 	if (g->pany > 0) {
@@ -105,11 +105,11 @@ static void fb_pan(struct gui_window *g)
 
 		LOG(("panning down %d", g->pany));
 
-		fb_plotters_move_block(g->x, g->y + g->pany, 
-                                       g->width, g->height - g->pany, 
+		fb_plotters_move_block(g->x, g->y + g->pany,
+                                       g->width, g->height - g->pany,
                                        g->x, g->y);
 		g->scrolly += g->pany;
-		fb_queue_redraw(g, 0, g->height - g->pany, 
+		fb_queue_redraw(g, 0, g->height - g->pany,
 				g->width, g->height);
 	}
 
@@ -137,12 +137,12 @@ static void fb_redraw(struct gui_window *g)
         g->redraw_box.x1 += g->x;
 
         /* redraw bounding box is relative to window */
-        content_redraw(c, 
-                       g->x - g->scrollx, 
-                       g->y - g->scrolly , 
-                       g->width, 
+        content_redraw(c,
+                       g->x - g->scrollx,
+                       g->y - g->scrolly ,
+                       g->width,
                        g->height,
-                       g->redraw_box.x0, g->redraw_box.y0, 
+                       g->redraw_box.x0, g->redraw_box.y0,
                        g->redraw_box.x1, g->redraw_box.y1,
                        g->bw->scale, 0xFFFFFF);
 
@@ -168,7 +168,7 @@ void gui_init(int argc, char** argv)
         LOG(("argc %d, argv %p", argc, argv));
 
 #ifdef WITH_HUBBUB
-	if (hubbub_initialise(fb_findfile("Aliases"), myrealloc, NULL) != 
+	if (hubbub_initialise(fb_findfile("Aliases"), myrealloc, NULL) !=
 			HUBBUB_OK)
 		die("Unable to initialise HTML parsing library.\n");
 #endif
@@ -176,17 +176,17 @@ void gui_init(int argc, char** argv)
         /* load browser messages */
         messages_load(fb_findfile("messages"));
 
-        /* load browser options */        
+        /* load browser options */
 	options_read(fb_findfile("Options"));
 
-        default_stylesheet_url = fb_findfile_asurl("http://jennifer.kyllikki.org/~vince/res/default.css");
-        
+        default_stylesheet_url = fb_findfile_asurl("default.css");
+
         framebuffer = fb_os_init(argc, argv);
-        
+
         fb_os_option_override();
-        
+
         option_target_blank = false;
-        
+
         switch (framebuffer->bpp) {
                 /*        case 1:
                 plot = framebuffer_1bpp_plot;
@@ -195,7 +195,7 @@ void gui_init(int argc, char** argv)
         case 8:
                 plot = framebuffer_8bpp_plot;
                 break;
-                
+
         case 16:
                 plot = framebuffer_16bpp_plot;
                 break;
@@ -225,7 +225,7 @@ void gui_init2(int argc, char** argv)
 	if (argc > 1) addr = argv[1];
 
         LOG(("%s: calling browser_window_create", __func__));
-	bw = browser_window_create(addr, 0, 0, true, false); 
+	bw = browser_window_create(addr, 0, 0, true, false);
 }
 
 
@@ -240,9 +240,9 @@ void gui_poll(bool active)
     //    LOG(("enter fetch_poll"));
     if (active)
         fetch_poll();
- 
+
     //LOG(("enter schedule run"));
-    active = schedule_run() | active | redraws_pending; 
+    active = schedule_run() | active | redraws_pending;
 
     fb_os_input(input_window, active);
 
@@ -250,7 +250,7 @@ void gui_poll(bool active)
             struct gui_window *g;
 
             fb_cursor_move(framebuffer, 0,0);
-            
+
             redraws_pending = false;
 
             for (g = window_list; g != NULL; g = g->next) {
@@ -308,7 +308,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 void gui_window_destroy(struct gui_window *g)
 {
         LOG(("g %p", g));
-        
+
         if (g->prev == NULL) {
                 window_list = input_window = g->next;
         } else {
@@ -338,7 +338,7 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 #endif
 
 /* queue a redraw operation, co-ordinates are relative to the window */
-static void 
+static void
 fb_queue_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
 {
 	if (!g) return;
@@ -367,7 +367,7 @@ static void fb_queue_pan(struct gui_window *g, int x, int y)
 	g->pan_required = true;
 }
 
-void fb_window_scroll(struct gui_window *g, int x, int y) 
+void fb_window_scroll(struct gui_window *g, int x, int y)
 {
 	fb_queue_pan(g, x, y);
 }
@@ -431,8 +431,8 @@ void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 		bool scaled)
 {
         LOG(("%p, %d, %d, %d", g, *width, *height, scaled));
-        *width = g->width; 
-        *height = g->height; 
+        *width = g->width;
+        *height = g->height;
 
 }
 
