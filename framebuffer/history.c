@@ -20,6 +20,13 @@
 
 void global_history_add(const char *url)
 {
+	const struct url_data *data;
+
+	data = urldb_get_url_data(url);
+	if (!data)
+		return;
+
+
 }
 
 void global_history_add_recent(const char *url)

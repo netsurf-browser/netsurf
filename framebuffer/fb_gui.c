@@ -128,7 +128,8 @@ static void fb_redraw(struct gui_window *g)
 	if (c->locked) return;
 
         content_redraw(c, 0, -g->scrolly, g->width, g->height,
-                       g->redraw_box.x0, g->redraw_box.y0, g->redraw_box.x1, g->redraw_box.y1,
+                       g->redraw_box.x0, g->redraw_box.y0, 
+                       g->redraw_box.x1, g->redraw_box.y1,
                        g->bw->scale, 0xFFFFFF);
 
         fb_os_redraw(&g->redraw_box);

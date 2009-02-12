@@ -30,6 +30,7 @@
 #include "desktop/gui.h"
 #include "desktop/options.h"
 #include "utils/messages.h"
+#include "desktop/history_core.h"
 
 #include "framebuffer/fb_gui.h"
 #include "framebuffer/fb_plotters.h"
@@ -108,6 +109,16 @@ void fb_os_input(struct gui_window *g, bool active)
                     
             case SDLK_q:
                     browser_window_destroy(g->bw);
+                    break;
+
+            case SDLK_b:
+                    if (history_back_available(g->bw->history))
+                            history_back(g->bw, g->bw->history);
+                    break;
+
+            case SDLK_f:
+                    if (history_forward_available(g->bw->history))
+                            history_forward(g->bw, g->bw->history);
                     break;
 
             default:
