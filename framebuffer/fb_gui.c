@@ -23,12 +23,17 @@
 #include <limits.h>
 #include <unistd.h>
 
+#ifdef WITH_HUBBUB
+#include <hubbub/hubbub.h>
+#endif
+
 #include "desktop/gui.h"
 #include "desktop/plotters.h"
 #include "desktop/netsurf.h"
 #include "desktop/options.h"
 #include "utils/log.h"
 #include "utils/messages.h"
+#include "utils/utils.h"
 
 #include "framebuffer/fb_bitmap.h"
 #include "framebuffer/fb_gui.h"
@@ -136,10 +141,22 @@ static void fb_redraw(struct gui_window *g)
         redraws_pending = false;
 }
 
+#ifdef WITH_HUBBUB
+static void *myrealloc(void *ptr, size_t len, void *pw)
+{
+	return realloc(ptr, len);
+}
+#endif
 
 void gui_init(int argc, char** argv)
 {
         LOG(("argc %d, argv %p", argc, argv));
+
+#ifdef WITH_HUBBUB
+	if (hubbub_initialise(fb_findfile("Aliases"), myrealloc, NULL) != 
+			HUBBUB_OK)
+		die("Unable to initialise HTML parsing library.\n");
+#endif
 
         /* load browser messages */
         messages_load(fb_findfile("messages"));
@@ -238,6 +255,10 @@ void gui_quit(void)
 {
         LOG(("gui_quit"));
         fb_os_quit(framebuffer);
+#ifdef WITH_HUBBUB
+	/* We don't care if this fails as we're about to die, anyway */
+	hubbub_finalise(myrealloc, NULL);
+#endif
 }
 
 
