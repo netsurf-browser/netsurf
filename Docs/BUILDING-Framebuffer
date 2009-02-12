@@ -1,0 +1,172 @@
+--------------------------------------------------------------------------------
+  Build Instructions for Framebuffer NetSurf                    12 February 2009
+--------------------------------------------------------------------------------
+
+  This document provides instructions for building the Framebuffer version of 
+  NetSurf and provides guidance on obtaining NetSurf's build dependencies.
+
+  Framebuffer NetSurf has been tested on Ubuntu and Debian.
+
+  Building and executing NetSurf
+=================================
+
+  First of all, you should examine the contents of Makefile.config and
+  enable and disable relevant features as you see fit in a
+  Makefile.config.override .  Some of these options can be
+  automatically detected and used, and where this is the case they are
+  set to such.  Others cannot be automatically detected from the
+  Makefile, so you will either need to install the dependencies, or
+  set them to NO.
+  
+  One option it is vitally important to set is the Framebuffer ports
+  frontend type by setting the NETSURF_FB_FRONTEND variable. The port
+  can run on a number of simple framebuffer implementations including
+  the linux framebuffer and an SDL surface.
+
+  You should then obtain NetSurf's dependencies, keeping in mind which options
+  you have enabled in the configuration file.  See the next section for
+  specifics.
+  
+  Once done, to build Framebuffer NetSurf on a UNIX-like platform, simply run:
+
+      $ make TARGET=framebuffer
+
+  If that produces errors, you probably don't have some of NetSurf's build
+  dependencies installed. See "Obtaining NetSurf's dependencies" below. Or turn
+  off the complaining features in Makefile.config. You may need to "make clean"
+  before attempting to build after installing the dependencies.
+
+  Run NetSurf by executing the "nsfb" shell script:
+
+      $ ./nsfb
+
+  This script makes it easy to run the nsfb binary from the build tree. It
+  sets up some environment variables which enable NetSurf to find its
+  resources.
+
+  Obtaining NetSurf's build dependencies
+========================================
+
+  Many of NetSurf's dependencies are packaged on various operating systems.
+  The remainder must be installed manually.  Currently, some of the libraries
+  developed as part of the NetSurf project have not had official releases.
+  Hopefully they will soon be released with downloadable tarballs and packaged
+  in common distros.  For now, you'll have to make do with svn checkouts.
+
+
+  Package installation
+----------------------
+
+  Debian-like OS:
+
+      $ apt-get install libglade2-dev libcurl3-dev libxml2-dev libmng-dev 
+      $ apt-get install librsvg2-dev lemon re2c
+
+  Recent OS versions might need libcurl4-dev instead of libcurl3-dev.
+
+  Fedora:
+
+      $ yum install libglade2-devel curl-devel libxml2-devel libmng-devel
+      $ yum install librsvg2-devel lcms-devel re2c
+
+  Other:
+
+  You'll need to install re2c, a tool which builds the CSS lexer, and the
+  development resources for libglade2, libcurl3, libxml2, libmng and librsvg.
+
+  Note that if you don't require MNG or JNG image support, NetSurf can be
+  configured to use libpng instead of libmng. If you wish to do this, install
+  the libpng development package instead.
+
+  Libnsbmp
+----------
+
+  NetSurf has its own library for decoding and rendering BMPs, ICOs, etc.
+  You can check it out from svn://svn.netsurf-browser.org/trunk/libnsbmp
+  
+  To build and install it:
+  
+      $ sudo make install
+
+  Libnsgif
+----------
+
+  NetSurf has its own library for decoding and rendering GIFs.  You can check
+  it out from svn://svn.netsurf-browser.org/trunk/libnsgif
+  
+  To build and install it:
+
+      $ sudo make install
+
+  Hubbub
+--------
+
+  NetSurf can use Hubbub, the project's HTML parser, instead of using libxml2's
+  HTML parser.  To build this, you will also require libparserutils.  Firstly,
+  check out libparserutils from;
+  
+      svn://svn.netsurf-browser.org/trunk/libparserutils
+  
+  and do the usual "sudo make install".  Once this is built and installed, you
+  can check out and build Hubbub.  Check out hubbub from;
+  
+      svn://svn.netsurf-browser.org/trunk/hubbub
+
+  and again do the usual "sudo make install".
+
+  Librosprite
+-------------
+
+  NetSurf uses James Shaw's librosprite for rendering RISC OS Sprite files on
+  non-RISC OS platforms.  The Makefile will automatically use librosprite if
+  it is installed.  You can disable it entirely by editing Makefile.config.
+
+  To build librosprite, check out from svn://svn.rjek.com/jshaw/libsprite/trunk
+  Build and install it:
+
+      $ sudo make install
+
+  Optionally, specify an install prefix:
+
+      $ PREFIX=/path/to/install make install
+
+  Libhpdf
+---------
+
+  NetSurf can use Haru PDF to enable PDF export and printing in GTK.  This
+  is currently enabled by default, and cannot be auto-detected by the Makefile.
+  If you wish to disable it, do so by editing Makefile.config.
+
+  Haru PDF can be obtained from http://libharu.org/, although we currently
+  depend on features that none of the official released versions does have.
+  The current development versions of libharu are fine and we anticipate
+  the libharu 2.2 release will be fine for NetSurf usage.
+  A recently taken snapshot of one of those libharu development versions can
+  be found at:
+
+      svn://svn.netsurf-browser.org/trunk/libharu
+
+  Lemon
+-------
+
+  If your distribution does not package 'lemon' (Fedora doesn't) then you'll
+  need to download it and build it yourself. You may find it comes with the
+  SQLite packages (SQLite's parser is built with lemon). If not, try this:
+
+      $ mkdir -p /usr/local/share/lemon
+      $ wget http://www.sqlite.org/cvstrac/getfile/sqlite/tool/lemon.c
+      $ wget -O /usr/local/share/lemon/lempar.c http://www.sqlite.org/cvstrac/getfile/sqlite/tool/lempar.c
+      $ sed -e's!lempar.c!/usr/local/share/lemon/lempar.c!' lemon.c > lem.c
+      $ gcc -o /usr/local/bin/lemon lem.c
+
+
+  General requirements
+----------------------
+
+  Depending on the frontend selected the build may need specific
+  libraries installed, e.g. the SDL port requires SDL1.2 or later
+
+  Installing these libraries will often will pull in loads of things,
+  like the PNG and JPEG libraries, colour management libraries, zlib,
+  OpenSSL etc that NetSurf also depends on.
+
