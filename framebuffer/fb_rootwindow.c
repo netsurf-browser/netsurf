@@ -355,7 +355,6 @@ static const fb_widget_image_t reload = {
 };
 
 
-typedef int (*fb_widget_mouseclick_t)(framebuffer_t *fb, struct gui_window *g);
 
 struct fb_widget {
         struct fb_widget *next;
@@ -365,10 +364,10 @@ struct fb_widget {
         int height;
         fb_widget_mouseclick_t click;
         struct bitmap *bitmap; 
+        struct gui_window *g;
 };
 
 static struct fb_widget *widget_list;
-
 
 static struct fb_widget *
 fb_add_button_widget(int x, 
@@ -411,9 +410,33 @@ fb_add_button_widget(int x,
         return new_widget;
 }
 
+struct fb_widget *
+fb_add_window_widget(struct gui_window *g,
+                     fb_widget_mouseclick_t click_rtn)
+{
+        struct fb_widget *new_widget;
+        new_widget = malloc(sizeof(struct fb_widget));
+        if (new_widget == NULL)
+                return NULL;
+
+        new_widget->x = g->x;
+        new_widget->y = g->y;
+        new_widget->width = g->width;
+        new_widget->height = g->height;
+        new_widget->click = click_rtn;
+
+        new_widget->bitmap = NULL;
+        new_widget->g = g;
+
+        new_widget->next = widget_list;
+        widget_list = new_widget;
+
+        return new_widget;
+}
+
 /* left icon click routine */
 static int 
-fb_widget_leftarrow_click(framebuffer_t *fb, struct gui_window *g)
+fb_widget_leftarrow_click(struct gui_window *g, browser_mouse_state st, int x, int y)
 {
         if (history_back_available(g->bw->history))
                 history_back(g->bw, g->bw->history);
@@ -423,7 +446,7 @@ fb_widget_leftarrow_click(framebuffer_t *fb, struct gui_window *g)
 
 /* right arrow icon click routine */
 static int 
-fb_widget_rightarrow_click(framebuffer_t *fb, struct gui_window *g)
+fb_widget_rightarrow_click(struct gui_window *g, browser_mouse_state st, int x, int y)
 {
         if (history_forward_available(g->bw->history))
                 history_forward(g->bw, g->bw->history);
@@ -466,21 +489,20 @@ void fb_rootwindow_create(framebuffer_t *fb)
         fb_plot_ctx = saved_plot_ctx;
 }
 
-void fb_rootwindow_click(framebuffer_t *fb, 
-                         struct gui_window *g,
-                         browser_mouse_state st , 
-                         int x, int y)
+void 
+fb_rootwindow_click(struct gui_window *g, browser_mouse_state st, int x, int y)
 {
         struct fb_widget *widget;
         LOG(("Click in root window"));
 
         widget = widget_list;
         while (widget != NULL) {
-                if ((x > widget->x) && 
+                if ((widget->click != NULL) &&
+                    (x > widget->x) && 
                     (y > widget->y) && 
                     (x < widget->x + widget->width) && 
                     (y < widget->y + widget->height)) {
-                        widget->click(fb, g);
+                        widget->click(g, st, x, y);
                         break;
                 }
                 widget = widget->next;

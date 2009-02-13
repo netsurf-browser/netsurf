@@ -258,24 +258,16 @@ fb_cursor_init(framebuffer_t *fb)
         return cursor;
 }
 
-void
-fb_cursor_click(framebuffer_t *fb, 
-                struct gui_window *g, 
-                browser_mouse_state st)
+int fb_cursor_x(framebuffer_t *fb)
 {
-        /* check click lies within window */
-        if ((fb->cursor->x > g->x) && 
-            (fb->cursor->y > g->y) && 
-            (fb->cursor->x < g->x + g->width) && 
-            (fb->cursor->y < g->y + g->height)) {
-                browser_window_mouse_click(g->bw,
-                                           st,
-                                           fb->cursor->x - g->x + g->scrollx, 
-                                           fb->cursor->y - g->y + g->scrolly);
-        } else {
-                fb_rootwindow_click(fb, g, st, fb->cursor->x, fb->cursor->y);
-        }
+        return fb->cursor->x;
 }
+
+int fb_cursor_y(framebuffer_t *fb)
+{
+        return fb->cursor->y;
+}
+
 
 /*
  * Local Variables:

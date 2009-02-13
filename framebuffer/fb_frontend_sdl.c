@@ -36,6 +36,7 @@
 #include "framebuffer/fb_plotters.h"
 #include "framebuffer/fb_frontend.h"
 #include "framebuffer/fb_cursor.h"
+#include "framebuffer/fb_rootwindow.h"
 
 #include "utils/log.h"
 
@@ -146,11 +147,17 @@ void fb_os_input(struct gui_window *g, bool active)
                 switch (event.button.button) {
 
                 case SDL_BUTTON_LEFT:
-                        fb_cursor_click(framebuffer, g, BROWSER_MOUSE_CLICK_1);
+                        fb_rootwindow_click(g, 
+                                            BROWSER_MOUSE_CLICK_1, 
+                                            fb_cursor_x(framebuffer), 
+                                            fb_cursor_y(framebuffer));
                         break;
 
                 case SDL_BUTTON_RIGHT:
-                        fb_cursor_click(framebuffer, g, BROWSER_MOUSE_CLICK_2);
+                        fb_rootwindow_click(g, 
+                                            BROWSER_MOUSE_CLICK_2, 
+                                            fb_cursor_x(framebuffer), 
+                                            fb_cursor_y(framebuffer));
                         break;
 
                 case SDL_BUTTON_WHEELUP:

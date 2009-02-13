@@ -279,6 +279,15 @@ void gui_quit(void)
 #endif
 }
 
+static int 
+fb_browser_window_click(struct gui_window *g, browser_mouse_state st, int x, int y)
+{
+        browser_window_mouse_click(g->bw,
+                                   st,
+                                   x - g->x + g->scrollx, 
+                                   y - g->y + g->scrolly);        
+        return 0;
+}
 
 struct gui_window *gui_create_browser_window(struct browser_window *bw,
                                              struct browser_window *clone,
@@ -299,6 +308,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
         if (window_list == NULL) {
                 window_list = input_window = g;
+                fb_add_window_widget(g, fb_browser_window_click);
         } else {
                 for(p = window_list; p->next != NULL; p = p->next);
                 p->next = g;

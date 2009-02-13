@@ -638,9 +638,10 @@ void fb_os_input(struct gui_window *g, bool active)
                                         fb_cursor_move(framebuffer, 1, 0);
                                         break;
                                 case BTN_LEFT:
-                                        fb_cursor_click(framebuffer,
-                                                        g, 
-                                                        BROWSER_MOUSE_CLICK_1);
+                                        fb_rootwindow_click(g, 
+                                            BROWSER_MOUSE_CLICK_1, 
+                                            fb_cursor_x(framebuffer), 
+                                            fb_cursor_y(framebuffer));
                                         break;
                                 }
                         } else if (event.type == EV_REL) {

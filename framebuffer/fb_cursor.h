@@ -19,6 +19,10 @@
 #ifndef FRAMEBUFFER_FB_CURSOR
 #define FRAMEBUFFER_FB_CURSOR
 
+int fb_cursor_x(framebuffer_t *fb);
+
+int fb_cursor_y(framebuffer_t *fb);
+
 void fb_cursor_move(struct framebuffer_s *fb, int x, int y);
 
 void fb_cursor_move_abs(struct framebuffer_s *fb, int x, int y);
