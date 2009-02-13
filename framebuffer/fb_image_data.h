@@ -16,19 +16,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-typedef struct fb_widget fb_widget_t;
+struct fb_widget_image_s {
+  unsigned int 	 width;
+  unsigned int 	 height;
+  unsigned int 	 bytes_per_pixel; /* 3:RGB, 4:RGBA */ 
+  unsigned char	 *pixel_data;
+};
 
-typedef int (*fb_widget_input_t)(fb_widget_t *widget, struct gui_window *g,int value);
-typedef int (*fb_widget_mouseclick_t)(struct gui_window *g, browser_mouse_state st, int x, int y);
+typedef struct fb_widget_image_s fb_widget_image_t;
 
-void fb_rootwindow_click(struct gui_window *g, 
-                         browser_mouse_state st , int x, int y);
-void fb_rootwindow_input(struct gui_window *g, int value);
-void fb_rootwindow_status(const char* text);
-void fb_rootwindow_url(const char* text);
-
-
-void fb_rootwindow_create(framebuffer_t *fb);
-
-struct fb_widget *fb_add_window_widget(struct gui_window *g, colour bg, fb_widget_mouseclick_t click_rtn, fb_widget_input_t input_rtn);
-
+extern const fb_widget_image_t left_arrow;
+extern const fb_widget_image_t right_arrow;
+extern const fb_widget_image_t reload;
+extern const fb_widget_image_t pointer_image;

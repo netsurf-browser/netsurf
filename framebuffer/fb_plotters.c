@@ -200,9 +200,9 @@ bool fb_clip(int x0, int y0, int x1, int y1)
                 fb_plot_ctx.y1 = y1;
         }
 
-        LOG(("%d, %d - %d, %d clipped to %d, %d - %d, %d", 
+        /*LOG(("%d, %d - %d, %d clipped to %d, %d - %d, %d", 
              x0,y0,x1,y1,
-             fb_plot_ctx.x0, fb_plot_ctx.y0, fb_plot_ctx.x1, fb_plot_ctx.y1)); 
+             fb_plot_ctx.x0, fb_plot_ctx.y0, fb_plot_ctx.x1, fb_plot_ctx.y1)); */
 
 	return true;
 }

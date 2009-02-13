@@ -79,6 +79,8 @@ static bool nsfont_position_in_string(const struct css_style *style,
 {
         const struct fb_font_desc* fb_font = fb_get_font(style);
         *char_offset = x / fb_font->width;
+        if (*char_offset > length)
+                *char_offset = length;
         *actual_x = *char_offset * fb_font->width;
 	return true;
 }

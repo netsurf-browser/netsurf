@@ -279,13 +279,24 @@ void gui_quit(void)
 #endif
 }
 
+/* called back when click in browser window */
 static int 
 fb_browser_window_click(struct gui_window *g, browser_mouse_state st, int x, int y)
 {
+        LOG(("browser window clicked at %d,%d",x,y));
         browser_window_mouse_click(g->bw,
                                    st,
-                                   x - g->x + g->scrollx, 
-                                   y - g->y + g->scrolly);        
+                                   x + g->scrollx, 
+                                   y + g->scrolly);        
+        return 0;
+}
+
+static int
+fb_browser_window_input(fb_widget_t *widget, struct gui_window *g, int value)
+{
+        LOG(("got value %d",value));
+        if (value >= 0)
+                return browser_window_key_press(g->bw, value);
         return 0;
 }
 
@@ -308,9 +319,9 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
         if (window_list == NULL) {
                 window_list = input_window = g;
-                fb_add_window_widget(g, fb_browser_window_click);
+                fb_add_window_widget(g, 0, fb_browser_window_click, fb_browser_window_input);
         } else {
-                for(p = window_list; p->next != NULL; p = p->next);
+                for (p = window_list; p->next != NULL; p = p->next);
                 p->next = g;
                 g->prev = p;
         }
@@ -456,8 +467,7 @@ void gui_window_update_extent(struct gui_window *g)
 
 void gui_window_set_status(struct gui_window *g, const char *text)
 {
-        LOG(("g %p, text %s", g, text));
-        fb_rootwindow_status(framebuffer, text);
+        fb_rootwindow_status(text);
 }
 
 void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
@@ -470,6 +480,7 @@ void gui_window_hide_pointer(struct gui_window *g)
 
 void gui_window_set_url(struct gui_window *g, const char *url)
 {
+        fb_rootwindow_url(url);
 }
 
 void gui_window_start_throbber(struct gui_window *g)

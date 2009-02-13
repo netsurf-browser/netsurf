@@ -108,24 +108,24 @@ void fb_os_input(struct gui_window *g, bool active)
                     fb_window_scroll(g, 0, -g->height);
                     break;
 
-            case SDLK_j:
+            case SDLK_DOWN:
                     fb_window_scroll(g, 0, 100);
                     break;
                     
-            case SDLK_k:
+            case SDLK_UP:
                     fb_window_scroll(g, 0, -100);
                     break;
                     
-            case SDLK_q:
+            case SDLK_ESCAPE:
                     browser_window_destroy(g->bw);
                     break;
 
-            case SDLK_b:
+            case SDLK_LEFT:
                     if (history_back_available(g->bw->history))
                             history_back(g->bw, g->bw->history);
                     break;
 
-            case SDLK_f:
+            case SDLK_RIGHT:
                     if (history_forward_available(g->bw->history))
                             history_forward(g->bw, g->bw->history);
                     break;
@@ -133,6 +133,7 @@ void fb_os_input(struct gui_window *g, bool active)
             default:
                     printf("The %s key was pressed!\n",
                            SDL_GetKeyName(event.key.keysym.sym));
+                    fb_rootwindow_input(g, event.key.keysym.sym);
                     break;
             }
             break;
@@ -147,15 +148,13 @@ void fb_os_input(struct gui_window *g, bool active)
                 switch (event.button.button) {
 
                 case SDL_BUTTON_LEFT:
-                        fb_rootwindow_click(g, 
-                                            BROWSER_MOUSE_CLICK_1, 
+                        fb_rootwindow_click(g, BROWSER_MOUSE_PRESS_1, 
                                             fb_cursor_x(framebuffer), 
                                             fb_cursor_y(framebuffer));
                         break;
 
                 case SDL_BUTTON_RIGHT:
-                        fb_rootwindow_click(g, 
-                                            BROWSER_MOUSE_CLICK_2, 
+                        fb_rootwindow_click(g, BROWSER_MOUSE_PRESS_2, 
                                             fb_cursor_x(framebuffer), 
                                             fb_cursor_y(framebuffer));
                         break;
@@ -169,6 +168,28 @@ void fb_os_input(struct gui_window *g, bool active)
                     break;
 
                 case SDL_BUTTON_MIDDLE:
+                default:
+                        printf("Mouse button %d pressed at (%d,%d)\n",
+                               event.button.button, event.button.x, event.button.y);
+
+                }
+                break;
+
+        case SDL_MOUSEBUTTONUP:
+                switch (event.button.button) {
+
+                case SDL_BUTTON_LEFT:
+                        fb_rootwindow_click(g, BROWSER_MOUSE_CLICK_1, 
+                                            fb_cursor_x(framebuffer), 
+                                            fb_cursor_y(framebuffer));
+                        break;
+
+                case SDL_BUTTON_RIGHT:
+                        fb_rootwindow_click(g, BROWSER_MOUSE_CLICK_2, 
+                                            fb_cursor_x(framebuffer), 
+                                            fb_cursor_y(framebuffer));
+                        break;
+
                 default:
                         printf("Mouse button %d pressed at (%d,%d)\n",
                                event.button.button, event.button.x, event.button.y);
