@@ -2705,32 +2705,48 @@ bool urldb_set_cookie(const char *header, const char *url,
 		/* Domain match host names */
 		if (strcasecmp(host, rhost) != 0) {
 			/* Not exact match, so try the following:
+			 * 
+			 * 1) Find the longest common suffix of host and rhost
+			 *    (may be all of host/rhost)
+			 * 2) Discard characters from the start of the suffix
+			 *    until the suffix starts with a dot
+			 *    (prevents foobar.com matching bar.com)
+			 * 3) Ensure the suffix is non-empty and contains 
+			 *    embedded dots (to avoid permitting .com as a 
+			 *    suffix)
 			 *
-			 * 1) host = A.B; rhost = B (i.e. strip first
-			 *    segment from host and compare against rhost)
-			 * 2) host = A.B; rhost = C.B (i.e. strip first
-			 *    segment off both hosts and compare) */
-			const char *dot = strchr(host, '.');
-			const char *rdot = strchr(rhost, '.');
-
-			if (!dot || !rdot) {
-				free(rhost);
-				goto error;
-			}
+			 * Note that the above in no way resembles the
+			 * domain matching algorithm found in RFC2109.
+			 * It does, however, model the real world rather
+			 * more accurately.
+			 */
+			const char *hptr = host + strlen(host) - 1;
+			const char *rptr = rhost + strlen(rhost) - 1;
+			const char *dot;
 
 			/* 1 */
-			if (strcasecmp(dot + 1, rhost) != 0) {
-				/* B must contain embedded dots */
-				if (strchr(rdot + 1, '.') == NULL) {
-					free(rhost);
-					goto error;
-				}
+			while (hptr >= host && rptr >= rhost) {
+				if (*hptr != *rptr)
+					break;
+				hptr--;
+				rptr--;
+			}
+			/* Ensure we end up pointing at the start of the 
+			 * common suffix. The above loop will exit pointing
+			 * to the byte before the start of the suffix. */
+			hptr++;
+			rptr++;
 
-				/* 2 */
-				if (strcasecmp(dot, rdot) != 0) {
-					free(rhost);
-					goto error;
-				}
+			/* 2 */
+			while (*hptr != '\0' && *hptr != '.')
+				hptr++;
+
+			/* 3 */
+			if (*hptr == '\0' || 
+				(dot = strchr(hptr + 1, '.')) == NULL ||
+					*(dot + 1) == '\0') {
+				free(rhost);
+				goto error;
 			}
 		}
 
@@ -4157,7 +4173,13 @@ int main(void)
 	assert(urldb_set_cookie("foo=\"hello\";Version=1,bar=bat\r\n", "http://example.com/", NULL));
 	assert(strcmp(urldb_get_cookie("http://example.com/"), "foo=\"hello\"; bar=bat; name=value") == 0);
 
+	/* Test domain matching in unverifiable transactions */
+	assert(urldb_set_cookie("foo=bar; domain=.example.tld\r\n", "http://www.foo.example.tld/", "http://bar.example.tld/"));
+	assert(strcmp(urldb_get_cookie("http://www.foo.example.tld/"), "foo=bar") == 0);
+
 	urldb_dump();
+
+	printf("PASS\n");
 
 	return 0;
 }
