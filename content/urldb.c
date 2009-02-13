@@ -2704,6 +2704,18 @@ bool urldb_set_cookie(const char *header, const char *url,
 
 		/* Domain match host names */
 		if (strcasecmp(host, rhost) != 0) {
+			const char *hptr;
+			const char *rptr;
+			const char *dot;
+
+			/* Ensure neither host nor rhost are IP addresses */
+			if (url_host_is_ip_address(host) || 
+					url_host_is_ip_address(rhost)) {
+				/* IP address, so no partial match */
+				free(rhost);
+				goto error;
+			}
+
 			/* Not exact match, so try the following:
 			 * 
 			 * 1) Find the longest common suffix of host and rhost
@@ -2720,9 +2732,9 @@ bool urldb_set_cookie(const char *header, const char *url,
 			 * It does, however, model the real world rather
 			 * more accurately.
 			 */
-			const char *hptr = host + strlen(host) - 1;
-			const char *rptr = rhost + strlen(rhost) - 1;
-			const char *dot;
+
+			hptr = host + strlen(host) - 1;
+			rptr = rhost + strlen(rhost) - 1;
 
 			/* 1 */
 			while (hptr >= host && rptr >= rhost) {
