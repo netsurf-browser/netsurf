@@ -22,3 +22,5 @@ void fb_rootwindow_click(struct gui_window *g, browser_mouse_state st , int x, i
 void fb_rootwindow_create(framebuffer_t *fb);
 
 struct fb_widget *fb_add_window_widget(struct gui_window *g, fb_widget_mouseclick_t click_rtn);
+
+void fb_rootwindow_status(framebuffer_t *fb, const char* text);

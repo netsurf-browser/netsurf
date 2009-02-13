@@ -303,7 +303,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
         g->x = 0;
         g->y = 30;
         g->width = framebuffer->width;
-        g->height = framebuffer->height - 60;
+        g->height = framebuffer->height - 50;
         g->bw = bw;
 
         if (window_list == NULL) {
@@ -457,7 +457,7 @@ void gui_window_update_extent(struct gui_window *g)
 void gui_window_set_status(struct gui_window *g, const char *text)
 {
         LOG(("g %p, text %s", g, text));
-
+        fb_rootwindow_status(framebuffer, text);
 }
 
 void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)

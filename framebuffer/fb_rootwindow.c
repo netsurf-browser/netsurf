@@ -454,6 +454,30 @@ fb_widget_rightarrow_click(struct gui_window *g, browser_mouse_state st, int x, 
 
 }
 
+void fb_rootwindow_status(framebuffer_t *fb, const char* text)
+{
+       bbox_t saved_plot_ctx;
+ 
+        /* enlarge the clipping rectangle to the whole screen for plotting the
+         * root window 
+         */
+        saved_plot_ctx = fb_plot_ctx;
+
+        fb_plot_ctx.x0 = 0;
+        fb_plot_ctx.y0 = fb->height - 20;
+        fb_plot_ctx.x1 = fb->width;
+        fb_plot_ctx.y1 = fb->height;
+
+        /* do our drawing etc. */
+        plot.fill(0, fb_plot_ctx.y0, fb_plot_ctx.x1, fb_plot_ctx.y1, 0xFFFFFFFF);
+        plot.text(fb_plot_ctx.x0, fb_plot_ctx.y0 + 15, NULL, text, strlen(text), 0xffffffff, 0xFF000000);
+
+        fb_os_redraw(&fb_plot_ctx);
+
+        /* restore clipping rectangle */
+        fb_plot_ctx = saved_plot_ctx;
+}
+
 void fb_rootwindow_create(framebuffer_t *fb)
 {
         bbox_t saved_plot_ctx;
