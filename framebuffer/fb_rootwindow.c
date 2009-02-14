@@ -425,6 +425,29 @@ fb_rootwindow_click(struct gui_window *g, browser_mouse_state st, int x, int y)
 }
 
 
+void
+fb_rootwindow_move_abs(framebuffer_t *fb, struct gui_window *g, int x, int y)
+{
+        struct fb_widget *widget;
+
+        fb_cursor_move_abs(fb, x, y);
+
+        widget = widget_list;
+        while (widget != NULL) {
+                if ((x > widget->x) && 
+                    (y > widget->y) && 
+                    (x < widget->x + widget->width) && 
+                    (y < widget->y + widget->height)) {
+
+                        if (widget->g == g) {
+                                browser_window_mouse_track(g->bw, 0, x - widget->x, y - widget->y);
+                                break;
+                        }
+                }
+                widget = widget->next;
+        }
+
+}
 
 /*
  * Local Variables:
