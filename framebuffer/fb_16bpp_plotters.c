@@ -205,16 +205,16 @@ static bool fb_16bpp_text(int x, int y, const struct css_style *style,
         uint16_t fgcol;
         uint16_t bgcol;
 
-	char *buffer = NULL;
+	unsigned char *buffer = NULL;
         int x0,y0,x1,y1;
 	int xoff, yoff; /* x and y offset into image */
         int height = fb_font->height;
 
         /* aquire thge text in local font encoding */
-	utf8_to_font_encoding(fb_font, text, length, &buffer);
+	utf8_to_font_encoding(fb_font, text, length, (char **)&buffer);
 	if (!buffer) 
                 return true;
-        length = strlen(buffer);
+        length = strlen((char *)buffer);
 
 
         /* y is given to the fonts baseline we need it to the fonts top */
@@ -282,7 +282,7 @@ static bool fb_16bpp_text(int x, int y, const struct css_style *style,
 static bool fb_16bpp_disc(int x, int y, int radius, colour c, bool filled)
 {
         LOG(("x %d, y %d, r %d, c 0x%lx, fill %d",
-             x, y, radius, c, filled));
+             x, y, radius, (unsigned long)c, filled));
 
 	return true;
 }
@@ -291,7 +291,7 @@ static bool fb_16bpp_arc(int x, int y, int radius, int angle1, int angle2,
                          colour c)
 {
         LOG(("x %d, y %d, r %d, a1 %d, a2 %d, c 0x%lx",
-             x, y, radius, angle1, angle2, c));
+             x, y, radius, angle1, angle2, (unsigned long)c));
 	return true;
 }
 
@@ -390,7 +390,7 @@ static bool fb_16bpp_path(const float *p, unsigned int n, colour fill, float wid
 			colour c, const float transform[6])
 {
         LOG(("%f, %d, 0x%lx, %f, 0x%lx, %f",
-             *p, n, fill, width, c, *transform));
+             *p, n, fill, width, (unsigned long)c, *transform));
 	return true;
 }
 

@@ -41,16 +41,16 @@ fb_8bpp_get_xy_loc(int x, int y)
 static bool fb_8bpp_rectangle(int x0, int y0, int width, int height,
                        int line_width, colour c, bool dotted, bool dashed)
 {
-        LOG(("%s(%d, %d, %d, %d, %d, 0x%lx, %d, %d)\n", __func__, 
-             x0,y0,width,height,line_width,c,dotted,dashed));
+        LOG(("%d, %d, %d, %d, %d, 0x%lx, %d, %d\n", 
+             x0, y0, width, height, line_width, (unsigned long)c, dotted, dashed));
 	return true;
 }
 
 static bool fb_8bpp_line(int x0, int y0, int x1, int y1, int width,
                   colour c, bool dotted, bool dashed)
 {
-        LOG(("%s(%d, %d, %d, %d, %d, 0x%lx, %d, %d)\n", __func__, 
-             x0,y0,x1,y1,width,c,dotted,dashed));
+        LOG(("%d, %d, %d, %d, %d, 0x%lx, %d, %d", 
+             x0, y0, x1, y1, width, (unsigned long)c, dotted, dashed));
 
 	return true;
 }
@@ -118,7 +118,7 @@ static bool fb_8bpp_fill(int x0, int y0, int x1, int y1, colour c)
 
 static bool fb_8bpp_clg(colour c)
 {
-        LOG(("%s(%lx)\n", __func__, c));
+        LOG(("colour %lx", (unsigned long)c));
         fb_8bpp_fill(fb_plot_ctx.x0, 
                      fb_plot_ctx.y0, 
                      fb_plot_ctx.x1, 
@@ -140,16 +140,16 @@ static bool fb_8bpp_text(int x, int y, const struct css_style *style,
         uint8_t *pvideo;
         uint8_t fgcol;
 
-	char *buffer = NULL;
+	unsigned char *buffer = NULL;
         int x0,y0,x1,y1;
 	int xoff, yoff; /* x and y offset into image */
         int height = fb_font->height;
 
         /* aquire thge text in local font encoding */
-	utf8_to_font_encoding(fb_font, text, length, &buffer);
+	utf8_to_font_encoding(fb_font, text, length, (char **)&buffer);
 	if (!buffer) 
                 return true;
-        length = strlen(buffer);
+        length = strlen((char *)buffer);
 
 
         /* y is given to the fonts baseline we need it to the fonts top */
@@ -210,7 +210,7 @@ static bool fb_8bpp_text(int x, int y, const struct css_style *style,
 
 static bool fb_8bpp_disc(int x, int y, int radius, colour c, bool filled)
 {
-        LOG(("x %d, y %d, rad %d, c 0x%lx, fill %d", x, y, radius, c, filled));
+        LOG(("x %d, y %d, rad %d, c 0x%lx, fill %d", x, y, radius, (unsigned long)c, filled));
 	return true;
 }
 
@@ -218,7 +218,7 @@ static bool fb_8bpp_arc(int x, int y, int radius, int angle1, int angle2,
                  colour c)
 {
         LOG(("x %d, y %d, radius %d, angle1 %d, angle2 %d, c 0x%lx", 
-             x, y, radius, angle1, angle2, c));
+             x, y, radius, angle1, angle2, (unsigned long)c));
 	return true;
 }
 
@@ -266,11 +266,15 @@ static bool fb_8bpp_flush(void)
 	return true;
 }
 
-static bool fb_8bpp_path(const float *p, unsigned int n, colour fill, float width,
-                  colour c, const float transform[6])
+static bool fb_8bpp_path(const float *p, 
+                         unsigned int n, 
+                         colour fill, 
+                         float width,
+                         colour c, 
+                         const float transform[6])
 {
-        LOG(("%s(%f, %d, 0x%lx, %f, 0x%lx, %f)\n", __func__, 
-             *p, n, fill, width, c, *transform));
+        LOG(("%f, %d, 0x%lx, %f, 0x%lx, %f", 
+             *p, n, (unsigned long)fill, width, (unsigned long)c, *transform));
 
 	return true;
 }

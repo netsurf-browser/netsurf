@@ -191,16 +191,16 @@ static bool fb_32bpp_text(int x, int y, const struct css_style *style,
         uint32_t *pvideo;
         uint32_t fgcol;
 
-	char *buffer = NULL;
+	unsigned char *buffer = NULL;
         int x0,y0,x1,y1;
 	int xoff, yoff; /* x and y offset into image */
         int height = fb_font->height;
 
         /* aquire thge text in local font encoding */
-	utf8_to_font_encoding(fb_font, text, length, &buffer);
+	utf8_to_font_encoding(fb_font, text, length, (char**)&buffer);
 	if (!buffer) 
                 return true;
-        length = strlen(buffer);
+        length = strlen((char *)buffer);
 
 
         /* y is given to the fonts baseline we need it to the fonts top */
