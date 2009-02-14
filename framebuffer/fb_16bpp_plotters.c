@@ -390,7 +390,7 @@ static bool fb_16bpp_path(const float *p, unsigned int n, colour fill, float wid
 			colour c, const float transform[6])
 {
         LOG(("%f, %d, 0x%lx, %f, 0x%lx, %f",
-             *p, n, fill, width, (unsigned long)c, *transform));
+             *p, n, (unsigned long)fill, width, (unsigned long)c, *transform));
 	return true;
 }
 
