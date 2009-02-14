@@ -449,7 +449,7 @@ fb_rootwindow_move(framebuffer_t *fb,
                     (y < widget->y + widget->height)) {
 
                         if (widget->g == g) {
-                                browser_window_mouse_track(g->bw, 0, x - widget->x, y - widget->y);
+                                browser_window_mouse_track(g->bw, 0, x - widget->x + g->scrollx, y - widget->y + g->scrolly);
                                 break;
                         }
                 }
