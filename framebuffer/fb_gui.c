@@ -265,7 +265,7 @@ void gui_poll(bool active)
     if (redraws_pending == true) {
             struct gui_window *g;
 
-            fb_cursor_move(framebuffer, 0,0);
+            fb_cursor_move(framebuffer, fb_cursor_x(framebuffer), fb_cursor_y(framebuffer));
 
             redraws_pending = false;
 
