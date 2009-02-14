@@ -1399,6 +1399,11 @@ void gui_quit(void)
 	{
 		while(!CloseScreen(scrn));
 	}
+	else
+	{
+	/* have a go at closing the public screen, apparently this is OK to do */
+		CloseScreen(scrn);
+	}
 
 	FreeVec(nsscreentitle);
 
