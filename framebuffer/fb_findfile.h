@@ -19,7 +19,8 @@
 #ifndef NETSURF_FB_FINDFILE_H
 #define NETSURF_FB_FINDFILE_H
 
-extern char *fb_findfile(const char *filename);
-extern char *fb_findfile_asurl(const char *filename);
+char *path_to_url(const char *path);
+
+extern char *fb_find_resource(char *buf, const char *filename, const char *def);
 
 #endif /* NETSURF_FB_FINDFILE_H */

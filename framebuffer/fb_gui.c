@@ -50,6 +50,7 @@
 
 char *default_stylesheet_url;
 char *adblock_stylesheet_url;
+char *options_file_location;
 struct gui_window *input_window = NULL;
 struct gui_window *search_current_window;
 struct gui_window *window_list = NULL;
@@ -166,21 +167,33 @@ static void *myrealloc(void *ptr, size_t len, void *pw)
 
 void gui_init(int argc, char** argv)
 {
+	char buf[PATH_MAX];
+
         LOG(("argc %d, argv %p", argc, argv));
 
 #ifdef WITH_HUBBUB
-	if (hubbub_initialise(fb_findfile("Aliases"), myrealloc, NULL) !=
+	fb_find_resource(buf, "Aliases", "./framebuffer/res/Aliases");
+	LOG(("Using '%s' as Aliases file", buf));
+	if (hubbub_initialise(buf, myrealloc, NULL) !=
 			HUBBUB_OK)
 		die("Unable to initialise HTML parsing library.\n");
 #endif
 
         /* load browser messages */
-        messages_load(fb_findfile("messages"));
-
+	fb_find_resource(buf, "messages", "./framebuffer/res/messages");
+	LOG(("Using '%s' as Messages file", buf));
+	messages_load(buf);
+        
         /* load browser options */
-	options_read(fb_findfile("Options"));
+	fb_find_resource(buf, "Options", "~/.netsurf/Options");
+	LOG(("Using '%s' as Preferences file", buf));
+	options_file_location = strdup(buf);
+	options_read(buf);
 
-        default_stylesheet_url = fb_findfile_asurl("default.css");
+	/* set up stylesheet urls */
+	fb_find_resource(buf, "default.css", "./framebuffer/res/default.css");
+	default_stylesheet_url = path_to_url(buf);
+	LOG(("Using '%s' as Default CSS URL", default_stylesheet_url));
 
         framebuffer = fb_os_init(argc, argv);
 

@@ -426,11 +426,20 @@ fb_rootwindow_click(struct gui_window *g, browser_mouse_state st, int x, int y)
 
 
 void
-fb_rootwindow_move_abs(framebuffer_t *fb, struct gui_window *g, int x, int y)
+fb_rootwindow_move(framebuffer_t *fb, 
+                   struct gui_window *g, 
+                   int x, 
+                   int y, 
+                   bool relative)
 {
         struct fb_widget *widget;
 
-        fb_cursor_move_abs(fb, x, y);
+        if (relative) {
+                x += fb_cursor_x(fb);
+                y += fb_cursor_y(fb);
+        }
+
+        fb_cursor_move(fb, x, y);
 
         widget = widget_list;
         while (widget != NULL) {

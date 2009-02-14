@@ -23,64 +23,80 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "utils/log.h"
+
 #include "fb_findfile.h"
 
-static bool
-fb_findfile_exists(char *buffer, const char *base, const char *filename)
+char *path_to_url(const char *path)
 {
-        if (base == NULL)
-                return false;
-        
-        if (*base == '~') {
-                snprintf(buffer, PATH_MAX, "%s/%s/%s", 
-                         getenv("HOME") ? getenv("HOME") : "",
-                         base + 1, filename);
-        } else {
-                snprintf(buffer, PATH_MAX, "%s/%s", base, filename);
+	char *r = malloc(strlen(path) + 7 + 1);
+
+	strcpy(r, "file://");
+	strcat(r, path);
+
+	return r;
+}
+
+/**
+ * Locate a shared resource file by searching known places in order.
+ *
+ * \param  buf      buffer to write to.  must be at least PATH_MAX chars
+ * \param  filename file to look for
+ * \param  def      default to return if file not found
+ * \return buf
+ *
+ * Search order is: ~/.netsurf/, $NETSURFRES/ (where NETSURFRES is an
+ * environment variable), and finally the path specified by NETSURF_FB_RESPATH
+ * from the Makefile
+ */
+
+char *fb_find_resource(char *buf, const char *filename, const char *def)
+{
+	char *cdir = getenv("HOME");
+	char t[PATH_MAX];
+
+	if (cdir != NULL) {
+		strcpy(t, cdir);
+		strcat(t, "/.netsurf/");
+		strcat(t, filename);
+		if (realpath(t, buf) != NULL) {
+                        if (access(buf, R_OK) == 0)
+                                return buf;
+                }
+	}
+
+	cdir = getenv("NETSURFRES");
+
+	if (cdir != NULL) {
+		if (realpath(cdir, buf) != NULL) {
+                        strcat(buf, "/");
+                        strcat(buf, filename);
+                        if (access(buf, R_OK) == 0)
+                                return buf;
+                }
+	}
+
+	strcpy(t, NETSURF_FB_RESPATH);
+	strcat(t, filename);
+	if (realpath(t, buf) != NULL) {
+                if (access(buf, R_OK) == 0)
+                        return buf;
         }
-        
-        return (access(buffer, R_OK) == 0);
+
+	if (def[0] == '~') {
+		snprintf(t, PATH_MAX, "%s%s", getenv("HOME"), def + 1);
+		if (realpath(t, buf) == NULL) {
+                        strcpy(buf, t);
+                }
+	} else {
+		if (realpath(def, buf) == NULL) {
+                        strcpy(buf, def);
+                }
+	}
+
+	return buf;
 }
 
-char *
-fb_findfile(const char *filename)
-{
-        static char buffer[PATH_MAX];
-
-        /* Search sequence is:
-         * home/filename
-         * res-env/filename
-         * resources/filename
-         */
-        
-        if (fb_findfile_exists(buffer, NETSURF_FB_HOMEPATH, filename))
-                return buffer;
-        if (fb_findfile_exists(buffer, getenv("NETSURF_RES"), filename))
-                return buffer;
-        if (fb_findfile_exists(buffer, NETSURF_FB_RESPATH, filename))
-                return buffer;
-        
-        return NULL;
-}
-
-char *
-fb_findfile_asurl(const char *filename)
-{
-        static char buffer[PATH_MAX];
-        char *f; 
-
-        if (strncmp(filename, "http://", 5) == 0)
-                return strdup(filename);
-                
-        f = fb_findfile(filename);
-        
-        if (f == NULL)
-                return NULL;
-        
-        snprintf(buffer, PATH_MAX, "file://%s", f);
-        
-        return strdup(buffer);
-}
 
 /*
  * Local Variables:

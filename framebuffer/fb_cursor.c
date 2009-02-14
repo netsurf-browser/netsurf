@@ -137,8 +137,9 @@ static void fb_cursor_clear(framebuffer_t *fb)
 
 }
 
+/* move cursor to absolute position */
 void
-fb_cursor_move_abs(framebuffer_t *fb, int x, int y)
+fb_cursor_move(framebuffer_t *fb, int x, int y)
 {
         fb_cursor_clear(fb);
 
@@ -152,13 +153,6 @@ fb_cursor_move_abs(framebuffer_t *fb, int x, int y)
                 fb->cursor->x = fb->width;
         if (fb->cursor->y > fb->height)
                 fb->cursor->y = fb->height;
-
-}
-
-void
-fb_cursor_move(framebuffer_t *fb, int x, int y)
-{
-        fb_cursor_move_abs(fb, fb->cursor->x + x, fb->cursor->y + y);
 }
 
 void 

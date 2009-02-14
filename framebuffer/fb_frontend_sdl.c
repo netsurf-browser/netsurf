@@ -139,7 +139,7 @@ void fb_os_input(struct gui_window *g, bool active)
             break;
 
         case SDL_MOUSEMOTION:
-                fb_rootwindow_move_abs(framebuffer, g, event.motion.x, event.motion.y); 
+                fb_rootwindow_move(framebuffer, g, event.motion.x, event.motion.y, false); 
                 break;
 
         case SDL_MOUSEBUTTONDOWN:

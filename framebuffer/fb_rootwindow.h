@@ -24,6 +24,8 @@ typedef int (*fb_widget_mouseclick_t)(struct gui_window *g, browser_mouse_state 
 void fb_rootwindow_click(struct gui_window *g, 
                          browser_mouse_state st , int x, int y);
 void fb_rootwindow_input(struct gui_window *g, int value);
+void fb_rootwindow_move(framebuffer_t *fb, struct gui_window *g, int x, int y, bool relative);
+
 void fb_rootwindow_status(const char* text);
 void fb_rootwindow_url(const char* text);
 
