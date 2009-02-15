@@ -485,7 +485,7 @@ ifeq ($(TARGET),amiga)
     $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG rendering))
 
   CFLAGS += -mcrt=newlib -D__USE_INLINE__ -std=c99 -I . -Dnsamiga
-  LDFLAGS += -lxml2 -lcurl -lm -lsocket -lpthread -lregex -lauto -lraauto -lamisslauto -lparserutils -mcrt=newlib
+  LDFLAGS += -lxml2 -lcurl -lm -lsocket -lpthread -lregex -lauto -lraauto -lparserutils -mcrt=newlib
   ifeq ($(NETSURF_USE_SSL),YES)
     LDFLAGS += -lssl -lcrypto
   endif
