@@ -241,6 +241,42 @@ $(eval $(call feature_enabled,MNG,-DWITH_MNG,-lmng,JNG/MNG/PNG support))
 $(eval $(call feature_enabled,HARU_PDF,-DWITH_PDF_EXPORT,-lhpdf -lpng,PDF export))
 $(eval $(call feature_enabled,LIBICONV_PLUG,-DLIBICONV_PLUG,,glibc internal iconv))
 
+# Check for SSL
+ifeq ($(NETSURF_USE_SSL),AUTO)
+  _CURL_HAS_SSL := $(findstring SSL,$(shell curl-config --features))
+  ifeq ($(_CURL_HAS_SSL),SSL)
+    _CURL_USES_OPENSSL := $(findstring -lssl -lcrypto,$(shell curl-config --libs))
+    ifeq ($(_CURL_USES_OPENSSL),)
+      NETSURF_USE_SSL := NO
+      ifneq ($(MAKECMDGOALS),clean)
+        $(info M.CONFIG: cURL not built against OpenSSL, disabling certificate UI)
+      endif
+    else
+      NETSURF_USE_SSL := YES
+      ifneq ($(MAKECMDGOALS),clean)
+        $(info M.CONFIG: cURL appears to be built against OpenSSL, enabling certificate UI)
+      endif
+    endif
+  else
+    NETSURF_USE_SSL := NO
+    ifneq ($(MAKECMDGOALS),clean)
+      $(info M.CONFIG: cURL not built with SSL, disabling certificate UI)
+    endif
+  endif
+endif
+
+ifeq ($(NETSURF_USE_SSL),YES)
+  ifneq ($(MAKECMDGOALS),clean)
+    $(info M.CONFIG: SSL certificate UI enabled)
+  endif
+  CFLAGS += -DWITH_SSL
+  SSL_PKGCONFIG := openssl
+else
+  ifneq ($(MAKECMDGOALS),clean)
+    $(info M.CONFIG: SSL certificate UI disabled)
+  endif
+endif
+
 # common libraries without pkg-config support
 LDFLAGS += -lz
 
@@ -253,10 +289,12 @@ CFLAGS += -DNETSURF_HOMEPAGE=\"$(NETSURF_HOMEPAGE)\"
 
 ifeq ($(TARGET),riscos)
   ifeq ($(HOST),riscos)
-    LDFLAGS += -Xlinker -symbols=$(OBJROOT)/sym -lxml2 -lz -lm -lcurl -lssl \
-		-lcrypto -lcares
+    LDFLAGS += -Xlinker -symbols=$(OBJROOT)/sym -lxml2 -lz -lm -lcurl -lcares
+    ifeq ($(NETSURF_USE_SSL),YES)
+      LDFLAGS += -lssl -lcrypto 
+    endif
   else
-    LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl openssl)
+    LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl $(SSL_PKGCONFIG))
   endif
 
   $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG rendering))
@@ -290,7 +328,10 @@ ifeq ($(HOST),beos)
 
   LDFLAGS += -L/boot/home/config/lib
   # some people do *not* have libm...
-  LDFLAGS += -lxml2 -lz -lcurl -lssl -lcrypto -liconv
+  LDFLAGS += -lxml2 -lz -lcurl -liconv
+  ifeq ($(NETSURF_USE_SSL),YES)
+    LDFLAGS += -lssl -lcrypto
+  endif
 endif
 
 # ----------------------------------------------------------------------------
@@ -298,7 +339,7 @@ endif
 # ----------------------------------------------------------------------------
 
 ifeq ($(TARGET),gtk)
-  LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl openssl)
+  LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl $(SSL_PKGCONFIG))
 
   # define additional CFLAGS and LDFLAGS requirements for pkg-configed libs here
   NETSURF_FEATURE_RSVG_CFLAGS := -DWITH_RSVG
@@ -444,7 +485,10 @@ ifeq ($(TARGET),amiga)
     $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG rendering))
 
   CFLAGS += -mcrt=newlib -D__USE_INLINE__ -std=c99 -I . -Dnsamiga
-  LDFLAGS += -lxml2 -lcurl -lm -lsocket -lpthread -lregex -lauto -lraauto -lssl -lcrypto -lamisslauto -lparserutils -mcrt=newlib
+  LDFLAGS += -lxml2 -lcurl -lm -lsocket -lpthread -lregex -lauto -lraauto -lamisslauto -lparserutils -mcrt=newlib
+  ifeq ($(NETSURF_USE_SSL),YES)
+    LDFLAGS += -lssl -lcrypto
+  endif
 
   ifeq ($(NETSURF_AMIGA_USE_CAIRO),YES)
     CFLAGS += -DNS_AMIGA_CAIRO -I SDK:local/common/include/cairo
@@ -484,7 +528,7 @@ ifeq ($(TARGET),framebuffer)
 		 -D_POSIX_C_SOURCE=200112L 
 
     LDFLAGS += -lxml2 -lz -ljpeg -lcurl -lm 
-    LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl openssl)
+    LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl $(SSL_PKGCONFIG))
     SUBTARGET := -linux
   endif
 
@@ -569,7 +613,7 @@ ifeq ($(TARGET),debug)
 		$(WARNFLAGS) -I. -g \
 		$(shell $(PKG_CONFIG) --cflags libnsgif libnsbmp) \
 		$(shell xml2-config --cflags)
-  LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl openssl)
+  LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl $(SSL_PKGCONFIG))
 
   $(eval $(call pkg_config_find_and_add,RSVG,librsvg-2.0,SVG rendering))
   $(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,RISC OS sprite rendering))

@@ -42,11 +42,6 @@ char *strndup(const char *s, size_t n);
 /* HTTP Auth */
 #define WITH_AUTH
 
-/* SSL */
-#if !defined(small)
-#define WITH_SSL
-#endif
-
 /* Platform specific features */
 #if defined(riscos)
     /* Acorn URI protocol support */
