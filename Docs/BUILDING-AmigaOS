@@ -109,6 +109,7 @@
   this when compiling with Cairo support, a link must be made:
 
       1> makelink sdk:local/newlib/lib/libssl.so sobjs:libssl-0.9.8.so soft
+      1> makelink sdk:local/newlib/lib/libcrypto.so sobjs:libssl-0.9.8.so soft
 
 
   Libnsbmp
