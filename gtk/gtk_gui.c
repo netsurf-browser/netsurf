@@ -84,11 +84,13 @@ static GtkWidget *select_menu;
 static struct browser_window *select_menu_bw;
 static struct form_control *select_menu_control;
 
+#ifdef WITH_SSL
 static void nsgtk_create_ssl_verify_window(struct browser_window *bw,
 		struct content *c, const struct ssl_cert_info *certs,
 		unsigned long num);
 static void nsgtk_ssl_accept(GtkButton *w, gpointer data);
 static void nsgtk_ssl_reject(GtkButton *w, gpointer data);
+#endif
 static void nsgtk_select_menu_clicked(GtkCheckMenuItem *checkmenuitem,
 					gpointer user_data);
 #ifdef WITH_PDF_EXPORT
@@ -526,6 +528,7 @@ void hotlist_visited(struct content *content)
 {
 }
 
+#ifdef WITH_SSL
 void gui_cert_verify(struct browser_window *bw, struct content *c,
 		const struct ssl_cert_info *certs, unsigned long num)
 {
@@ -585,6 +588,7 @@ static void nsgtk_ssl_reject(GtkButton *w, gpointer data)
 	free(session[1]);
 	free(session);
 }
+#endif
 
 utf8_convert_ret utf8_to_local_encoding(const char *string, size_t len,
 		char **result)
