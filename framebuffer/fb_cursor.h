@@ -27,7 +27,9 @@ void fb_cursor_move(struct framebuffer_s *fb, int x, int y);
 
 void fb_cursor_plot(struct framebuffer_s *fb);
 
-fb_cursor_t *fb_cursor_init(struct framebuffer_s *fb);
+void fb_cursor_set(fb_cursor_t *cursor, struct bitmap *bmp);
+
+fb_cursor_t *fb_cursor_init(struct framebuffer_s *fb, struct bitmap *bmp);
 
 void fb_cursor_click(framebuffer_t *fb, struct gui_window *g, browser_mouse_state st);
 

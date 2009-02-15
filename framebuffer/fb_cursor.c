@@ -198,27 +198,25 @@ fb_cursor_plot(framebuffer_t *fb)
         fb_plot_ctx = saved_plot_ctx;
 }
 
+void
+fb_cursor_set(fb_cursor_t *cursor, struct bitmap *bmp)
+{
+        cursor->width = bmp->width;
+        cursor->height = bmp->height;
+        cursor->bitmap = bmp;
+}
 
 fb_cursor_t *
-fb_cursor_init(framebuffer_t *fb)
+fb_cursor_init(framebuffer_t *fb, struct bitmap *bmp)
 {
         fb_cursor_t *cursor;
         cursor = calloc(1, sizeof(fb_cursor_t));
 
         cursor->x = fb->width / 2;
         cursor->y = fb->height / 2;
-
-        cursor->width = pointer_image.width;
-        cursor->height = pointer_image.height;
-        cursor->bitmap = bitmap_create(cursor->width, cursor->height, 0);
-
-        memcpy(cursor->bitmap->pixdata, 
-               pointer_image.pixel_data, 
-               pointer_image.width * 
-               pointer_image.height * 
-               pointer_image.bytes_per_pixel);
-
         cursor->plotted = false;
+
+        fb_cursor_set(cursor, bmp);
 
         return cursor;
 }

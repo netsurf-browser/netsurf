@@ -43,6 +43,7 @@
 #include "framebuffer/fb_cursor.h"
 #include "framebuffer/fb_findfile.h"
 #include "framebuffer/fb_rootwindow.h"
+#include "framebuffer/fb_image_data.h"
 
 #include "content/urldb.h"
 #include "desktop/history_core.h"
@@ -223,7 +224,7 @@ void gui_init(int argc, char** argv)
                 exit(1);
         }
 
-        framebuffer->cursor = fb_cursor_init(framebuffer);
+        framebuffer->cursor = fb_cursor_init(framebuffer, &pointer_image);
 }
 
 void gui_init2(int argc, char** argv)
@@ -485,10 +486,18 @@ void gui_window_set_status(struct gui_window *g, const char *text)
 
 void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 {
+        switch (shape) {
+        case GUI_POINTER_POINT:
+                fb_cursor_set(framebuffer->cursor, &hand_image);
+                break;
+
+        default:
+                fb_cursor_set(framebuffer->cursor, &pointer_image);
+        }
 }
 
 void gui_window_hide_pointer(struct gui_window *g)
-{
+{        
 }
 
 void gui_window_set_url(struct gui_window *g, const char *url)
