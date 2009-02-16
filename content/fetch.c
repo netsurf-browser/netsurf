@@ -585,6 +585,19 @@ const char *fetch_get_parent_url(struct fetch *fetch)
 	return fetch->verifiable ? fetch->url : fetch->parent_fetch_url;
 }
 
+/**
+ * Determine if a fetch was verifiable
+ *
+ * \param fetch  Fetch to consider
+ * \return Verifiable status of fetch
+ */
+bool fetch_get_verifiable(struct fetch *fetch)
+{
+	assert(fetch);
+
+	return fetch->verifiable;
+}
+
 void
 fetch_send_callback(fetch_msg msg, struct fetch *fetch, const void *data,
 		unsigned long size)

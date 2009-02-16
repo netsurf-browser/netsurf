@@ -85,6 +85,7 @@ void fetch_change_callback(struct fetch *fetch,
 long fetch_http_code(struct fetch *fetch);
 const char *fetch_get_referer(struct fetch *fetch);
 const char *fetch_get_parent_url(struct fetch *fetch);
+bool fetch_get_verifiable(struct fetch *fetch);
 
 /* API for fetchers themselves */
 

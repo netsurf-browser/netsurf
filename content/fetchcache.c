@@ -937,6 +937,7 @@ void fetchcache_redirect(struct content *c, const void *data,
 	const char *ref;
 	const char *parent;
 	bool can_fetch;
+	bool parent_was_verifiable;
 	union content_msg_data msg_data;
 	url_func_result result;
 
@@ -948,6 +949,7 @@ void fetchcache_redirect(struct content *c, const void *data,
 	http_code = fetch_http_code(c->fetch);
 	ref = fetch_get_referer(c->fetch);
 	parent = fetch_get_parent_url(c->fetch);
+	parent_was_verifiable = fetch_get_verifiable(c->fetch);
 
 	/* Ensure a redirect happened */
 	assert(300 <= http_code && http_code <= 399);
@@ -1083,9 +1085,25 @@ void fetchcache_redirect(struct content *c, const void *data,
 
 		if (can_fetch) {
 			/* Get replacement content -- HTTP GET request */
+
+			/* A note about fetch verifiability: according to
+			 * both RFC2109 and 2965, redirects result in an
+			 * unverifiable fetch and thus cookies must be handled
+			 * differently. Unfortunately, however, other browsers
+			 * do not adhere to this rule and just process cookies
+			 * as per normal in this case. Websites have come to
+			 * depend upon this "feature", so we must do something
+			 * which approximates the appropriate behaviour.
+			 *
+			 * Therefore, a redirected fetch will preserve the
+			 * verifiability of the origin fetch. Thus, fetches
+			 * for embedded objects will remain unverifiable,
+			 * as expected.
+			 */
 			replacement = fetchcache(url, callback, p1, p2, 
 					c->width, c->height, c->no_error_pages,
-					NULL, NULL, false, c->download);
+					NULL, NULL, parent_was_verifiable, 
+					c->download);
 			if (!replacement) {
 				msg_data.error = messages_get("BadRedirect");
 				content_broadcast(c, CONTENT_MSG_ERROR, 
@@ -1109,7 +1127,7 @@ void fetchcache_redirect(struct content *c, const void *data,
 			/* Start fetching the replacement content */
 			fetchcache_go(replacement, referer, callback, p1, p2,
 					c->width, c->height, NULL, NULL,
-					false, parent_url);
+					parent_was_verifiable, parent_url);
 		}
 	}
 
