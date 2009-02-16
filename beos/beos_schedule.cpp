@@ -99,12 +99,12 @@ schedule(int t, void (*callback)(void *p), void *p)
 	callbacks->AddItem(cb);
 }
 
-void
+bool
 schedule_run(void)
 {
 	LOG(("schedule_run()"));
 	if (callbacks == NULL)
-		return; /* Nothing to do */
+		return false; /* Nothing to do */
 
 	bigtime_t now = system_time();
 	earliest_callback_timeout = B_INFINITE_TIMEOUT;
@@ -128,4 +128,5 @@ schedule_run(void)
 		callbacks->RemoveItem(cb);
 		free(cb);
 	}
+	return true;
 }
