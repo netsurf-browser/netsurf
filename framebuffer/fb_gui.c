@@ -491,6 +491,10 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
                 fb_cursor_set(framebuffer->cursor, &hand_image);
                 break;
 
+        case GUI_POINTER_CARET:
+                fb_cursor_set(framebuffer->cursor, &caret_image);
+                break;
+
         default:
                 fb_cursor_set(framebuffer->cursor, &pointer_image);
         }

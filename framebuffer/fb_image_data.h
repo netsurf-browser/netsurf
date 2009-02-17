@@ -32,3 +32,4 @@ extern const fb_widget_image_t stop_image;
 
 extern struct bitmap pointer_image;
 extern struct bitmap hand_image;
+extern struct bitmap caret_image;
