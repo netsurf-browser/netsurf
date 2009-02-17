@@ -327,6 +327,8 @@ ifeq ($(HOST),beos)
   $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG support))
 
   LDFLAGS += -L/boot/home/config/lib
+  # for Haiku
+  LDFLAGS += -L/boot/common/lib
   # some people do *not* have libm...
   LDFLAGS += -lxml2 -lz -lcurl -liconv
   ifeq ($(NETSURF_USE_SSL),YES)
@@ -448,6 +450,9 @@ ifeq ($(TARGET),beos)
     endif
     ifneq ($(wildcard /boot/develop/lib/*/libnetwork.so),)
       # Haiku
+      CFLAGS += -I/boot/common/include		\
+		-I/boot/common/include/libxml2	\
+		-I/boot/common/include/libmng
       NETLDFLAGS := -lnetwork
     else
       ifneq ($(wildcard /boot/develop/lib/*/libbind.so),)
