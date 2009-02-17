@@ -509,7 +509,6 @@ void gtk_print_signal_begin_print (GtkPrintOperation *operation,
 	
 	LOG(("Begin print"));
 	
-	
 	settings = user_data;
 		
 	settings->margins[MARGINTOP] = 0;
@@ -521,10 +520,11 @@ void gtk_print_signal_begin_print (GtkPrintOperation *operation,
 	settings->scale = 0.7;/*at 0.7 the pages look the best*/
 	settings->font_func = &nsfont;
 	
-	print_set_up(content_to_print, &gtk_printer, settings, &height_to_print);
+	print_set_up(content_to_print, &gtk_printer, 
+			settings, &height_to_print);
 
-	LOG(("page_width: %f ;page_height: %f; content height: %lf",settings->page_width,
-	     settings->page_height, height_to_print));
+	LOG(("page_width: %f ;page_height: %f; content height: %lf",
+		settings->page_width, settings->page_height, height_to_print));
 	
 	height_on_page = settings->page_height;
 	height_on_page = height_on_page - settings->margins[MARGINTOP]
@@ -537,7 +537,7 @@ void gtk_print_signal_begin_print (GtkPrintOperation *operation,
 				
 	gtk_print_operation_set_n_pages(operation, page_number);
 }
-  		
+
 /** Handle the draw_page signal from the GtkPrintOperation.
  * This function changes only the cairo context to print on.
  */  		
