@@ -10,10 +10,10 @@ S_CONTENT := content.c fetch.c fetchcache.c urldb.c			\
 S_CSS := css.c css_enum.c parser.c ruleset.c scanner.c
 S_RENDER := box.c box_construct.c box_normalise.c directory.c		\
 	form.c html.c html_redraw.c hubbub_binding.c imagemap.c 	\
-	layout.c libxml_binding.c list.c table.c textplain.c
+	layout.c libxml_binding.c list.c loosen.c table.c textplain.c
 S_UTILS := base64.c filename.c hashtable.c locale.c messages.c talloc.c	\
 	url.c utf8.c utils.c useragent.c
-S_DESKTOP := knockout.c options.c tree.c version.c
+S_DESKTOP := knockout.c options.c print.c tree.c version.c
 
 # S_COMMON are sources common to all builds
 S_COMMON := $(addprefix content/,$(S_CONTENT))				\
@@ -28,11 +28,7 @@ S_IMAGE := $(addprefix image/,$(S_IMAGE))
 
 # S_PDF are sources of the pdf plotter + the ones for paged-printing
 S_PDF := pdf_plotters.c font_haru.c
-S_PRINT := print.c 
-S_LOOSE := loosen.c
-S_PDF := $(addprefix desktop/save_pdf/,$(S_PDF))			\
-	$(addprefix desktop/,$(S_PRINT))				\
-	$(addprefix render/,$(S_LOOSE))
+S_PDF := $(addprefix desktop/save_pdf/,$(S_PDF))
 
 # S_BROWSER are sources related to full browsers but are common
 # between RISC OS, GTK, BeOS and AmigaOS builds
