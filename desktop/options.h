@@ -94,14 +94,11 @@ extern bool option_remove_backgrounds;
 extern bool option_enable_loosening;
 extern bool option_enable_PDF_compression;
 extern bool option_enable_PDF_password;
-#define DEFAULT_PAGE_WIDTH 595
-#define DEFAULT_PAGE_HEIGHT 840
 #define DEFAULT_MARGIN_TOP_MM 10
 #define DEFAULT_MARGIN_BOTTOM_MM 10
 #define DEFAULT_MARGIN_LEFT_MM 10
 #define DEFAULT_MARGIN_RIGHT_MM 10
 #define DEFAULT_EXPORT_SCALE 0.7
-#define DEFAULT_COPIES 1
 
 /* Fetcher configuration. */
 extern int option_max_fetchers;

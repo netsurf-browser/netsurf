@@ -24,6 +24,7 @@
 #include "utils/config.h"
 #ifdef WITH_PDF_EXPORT
 
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include "hpdf.h"
@@ -734,6 +735,8 @@ void pdf_end(void)
 		pdf_plot_grid(100, 100, 0xCCCCFF);
 	}
 #endif
+
+	assert(settings->output != NULL);
 
 	/*Encryption on*/
 	if (option_enable_PDF_password)

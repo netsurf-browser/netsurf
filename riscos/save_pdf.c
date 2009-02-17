@@ -27,6 +27,7 @@
 #include "oslib/osfile.h"
 #include "content/content.h"
 #include "desktop/print.h"
+#include "desktop/save_pdf/font_haru.h"
 #include "desktop/save_pdf/pdf_plotters.h"
 #include "riscos/save_pdf.h"
 #include "utils/log.h"
@@ -43,13 +44,15 @@ bool save_as_pdf(struct content *c, const char *path)
 {
 	struct print_settings *psettings;
 	
-	psettings = print_make_settings(DEFAULT, path);
+	psettings = print_make_settings(PRINT_DEFAULT, path, &haru_nsfont);
 	if (psettings == NULL)
 		return false;
 
 	if (!print_basic_run(c, &pdf_printer, psettings))
 		return false;
+
 	xosfile_set_type(path, 0xadf);
+
 	return true;
 }
 

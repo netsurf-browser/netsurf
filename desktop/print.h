@@ -40,7 +40,7 @@ struct printer;
 enum { MARGINLEFT = 0, MARGINRIGHT = 1, MARGINTOP = 2, MARGINBOTTOM = 3};
 
 /** Predefined printing configuration names*/
-typedef enum {DEFAULT, OPTIONS} print_configuration;
+typedef enum { PRINT_DEFAULT, PRINT_OPTIONS } print_configuration;
 
 /** Settings for a print - filled in by print_make_settings or
  * 'manually' by the caller
@@ -62,19 +62,19 @@ struct print_settings{
 };
 
 
-bool print_basic_run(struct content *, const struct printer *, struct print_settings *);
-bool print_set_up(struct content *content,
-		const struct printer *printer, struct print_settings *settings,
-		double *height);
+bool print_basic_run(struct content *, const struct printer *, 
+		struct print_settings *);
+bool print_set_up(struct content *content, const struct printer *printer, 
+		struct print_settings *settings, double *height);
 bool print_draw_next_page(const struct printer *printer,
 		struct print_settings *settings);
 bool print_cleanup(struct content *, const struct printer *,
 		struct print_settings *settings);
 
 struct print_settings *print_make_settings(print_configuration configuration,
-		const char *url);
+		const char *url, const struct font_functions *font_func);
 
-/*is the content currently redrawn fo printing?*/
+/*is the content currently redrawn for printing?*/
 extern bool html_redraw_printing;
 /*if something is partially under this Y coordinate it won't be drawn...*/
 extern int html_redraw_printing_border;
@@ -82,3 +82,4 @@ extern int html_redraw_printing_border;
 extern int html_redraw_printing_top_cropped;
 
 #endif
+

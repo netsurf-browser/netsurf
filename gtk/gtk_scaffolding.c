@@ -29,23 +29,29 @@
 #include "desktop/history_core.h"
 #include "desktop/gui.h"
 #include "desktop/netsurf.h"
-#include "desktop/plotters.h"
-#include "desktop/selection.h"
 #include "desktop/options.h"
+#include "desktop/plotters.h"
+#include "desktop/print.h"
+#ifdef WITH_PDF_EXPORT
+#include "desktop/save_pdf/font_haru.h"
+#include "desktop/save_pdf/pdf_plotters.h"
+#endif
+#include "desktop/selection.h"
 #include "desktop/textinput.h"
-#include "gtk/gtk_gui.h"
-#include "gtk/gtk_plotters.h"
-#include "gtk/gtk_scaffolding.h"
+#include "gtk/gtk_completion.h"
 #include "gtk/dialogs/gtk_options.h"
 #include "gtk/dialogs/gtk_about.h"
-#include "gtk/gtk_completion.h"
-#include "gtk/gtk_throbber.h"
-#include "gtk/gtk_history.h"
-#include "gtk/gtk_window.h"
-#include "gtk/gtk_schedule.h"
 #include "gtk/gtk_download.h"
-#include "gtk/options.h"
+#include "gtk/gtk_gui.h"
+#include "gtk/gtk_history.h"
+#include "gtk/gtk_plotters.h"
+#include "gtk/gtk_print.h"
+#include "gtk/gtk_scaffolding.h"
+#include "gtk/gtk_schedule.h"
 #include "gtk/gtk_tabs.h"
+#include "gtk/gtk_throbber.h"
+#include "gtk/gtk_window.h"
+#include "gtk/options.h"
 #include "render/box.h"
 #include "render/font.h"
 #include "render/form.h"
@@ -54,12 +60,6 @@
 #include "utils/utils.h"
 #include "utils/url.h"
 
-#include "desktop/print.h"
-#include "desktop/save_pdf/pdf_plotters.h"
-#ifdef WITH_PDF_EXPORT
-#include "gtk/gtk_print.h"
-#include "desktop/save_pdf/font_haru.h"
-#endif
 #undef NDEBUG
 #include "utils/log.h"
 
@@ -168,8 +168,8 @@ MENUPROTO(open_location);
 MENUPROTO(open_file);
 #ifdef WITH_PDF_EXPORT
 MENUPROTO(export_pdf);
-MENUPROTO(print);
 #endif
+MENUPROTO(print);
 MENUPROTO(close_window);
 MENUPROTO(quit);
 
@@ -225,8 +225,8 @@ static struct menu_events menu_events[] = {
 	MENUEVENT(open_file),
 #ifdef WITH_PDF_EXPORT
 	MENUEVENT(export_pdf),
-	MENUEVENT(print),
 #endif
+	MENUEVENT(print),
 	MENUEVENT(close_window),
 	MENUEVENT(quit),
 
@@ -555,7 +555,6 @@ MENUHANDLER(open_file)
 }
 
 #ifdef WITH_PDF_EXPORT
-
 MENUHANDLER(export_pdf)
 {
 	GtkWidget *save_dialog;
@@ -586,7 +585,6 @@ MENUHANDLER(export_pdf)
 	strncat(dirname, "/", PATH_MAX - strlen(dirname));
 	dirname[PATH_MAX - 1] = '\0';
 	
-	settings = print_make_settings(OPTIONS, NULL);
 	/*this way the scale used by PDF functions is synchronized with that
 	used by the all-purpose print interface*/
 	haru_nsfont_set_scale((float)option_export_scale / 100);
@@ -604,8 +602,18 @@ MENUHANDLER(export_pdf)
 			filename);
 	
 	if (gtk_dialog_run(GTK_DIALOG(save_dialog)) == GTK_RESPONSE_ACCEPT) {
-		settings->output = gtk_file_chooser_get_filename(
+		gchar *filename = gtk_file_chooser_get_filename(
 				GTK_FILE_CHOOSER(save_dialog));
+
+		settings = print_make_settings(PRINT_OPTIONS, 
+				(const char *) filename, &haru_nsfont);
+		g_free(filename);
+
+		if (settings == NULL) {
+			warn_user(messages_get("NoMemory"), 0);
+			gtk_widget_destroy(save_dialog);
+			return TRUE;
+		}
 
 		/* This will clean up the print_settings object for us */
 		print_basic_run(bw->current_content, &pdf_printer, settings);
@@ -615,6 +623,7 @@ MENUHANDLER(export_pdf)
 
 	return TRUE;
 }
+#endif /* WITH_PDF_EXPORT */
 
 MENUHANDLER(print)
 {
@@ -654,7 +663,7 @@ MENUHANDLER(print)
 	}
 	gtk_print_operation_set_default_page_setup(print_op, page_setup);
 	
-	settings = print_make_settings(DEFAULT, NULL);
+	settings = print_make_settings(PRINT_DEFAULT, NULL, &nsfont);
 	
 	g_signal_connect(print_op, "begin_print", 
 			G_CALLBACK(gtk_print_signal_begin_print), settings);
@@ -684,8 +693,6 @@ MENUHANDLER(print)
 	
 	return TRUE;
 }
-
-#endif /* WITH_PDF_EXPORT */
 
 MENUHANDLER(close_window)
 {
@@ -1343,7 +1350,6 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	/* disable PDF-requiring menu items */
 #ifndef WITH_PDF_EXPORT
 	gtk_widget_set_sensitive(GET_WIDGET("export_pdf"), FALSE);
-	gtk_widget_set_sensitive(GET_WIDGET("print"), FALSE);
 #endif
 
 	/* finally, show the window. */

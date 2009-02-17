@@ -25,30 +25,25 @@
   */
 
 #include "utils/config.h"
-#ifdef WITH_PDF_EXPORT 
 
 #include <math.h>
 #include <assert.h>
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
-#include "desktop/plotters.h"
-#include "gtk/font_pango.h"
-#include "gtk/gtk_scaffolding.h"
-#include "render/font.h"
-#include "utils/log.h"
-#include "desktop/options.h"
-#include "gtk/options.h"
-#include "gtk/gtk_bitmap.h"
 
+#include "content/content.h"
+#include "desktop/options.h"
+#include "desktop/plotters.h"
 #include "desktop/print.h"
 #include "desktop/printer.h"
-#include "content/content.h"
-#include "gtk_print.h"
+#include "gtk/font_pango.h"
+#include "gtk/gtk_bitmap.h"
+#include "gtk/gtk_print.h"
+#include "gtk/gtk_scaffolding.h"
+#include "gtk/options.h"
+#include "render/font.h"
+#include "utils/log.h"
 #include "utils/utils.h"
-
-cairo_t *gtk_print_current_cr;
-static struct print_settings* settings;
-struct content *content_to_print;
 
 static bool nsgtk_print_plot_clg(colour c);
 static bool nsgtk_print_plot_rectangle(int x0, int y0, int width, int height,
@@ -56,25 +51,26 @@ static bool nsgtk_print_plot_rectangle(int x0, int y0, int width, int height,
 static bool nsgtk_print_plot_line(int x0, int y0, int x1, int y1, int width,
 		colour c, bool dotted, bool dashed);
 static bool nsgtk_print_plot_polygon(const int *p, unsigned int n, colour fill);
-static bool nsgtk_print_plot_path(const float *p, unsigned int n, colour fill, float width,
-		colour c, const float transform[6]);
+static bool nsgtk_print_plot_path(const float *p, unsigned int n, colour fill, 
+		float width, colour c, const float transform[6]);
 static bool nsgtk_print_plot_fill(int x0, int y0, int x1, int y1, colour c);
 static bool nsgtk_print_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
 static bool nsgtk_print_plot_text(int x, int y, const struct css_style *style,
 		const char *text, size_t length, colour bg, colour c);
-static bool nsgtk_print_plot_disc(int x, int y, int radius, colour c, bool filled);
-static bool nsgtk_print_plot_arc(int x, int y, int radius, int angle1, int angle2,
-		colour c);
+static bool nsgtk_print_plot_disc(int x, int y, int radius, colour c, 
+		bool filled);
+static bool nsgtk_print_plot_arc(int x, int y, int radius, int angle1, 
+		int angle2, colour c);
 static bool nsgtk_print_plot_bitmap(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg, struct content *content);
 static bool nsgtk_print_plot_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
 		bool repeat_x, bool repeat_y, struct content *content);
        
-static void nsgtk_print_set_solid(void);	/**< Set for drawing solid lines */
-static void nsgtk_print_set_dotted(void);	/**< Set for drawing dotted lines */
-static void nsgtk_print_set_dashed(void);	/**< Set for drawing dashed lines */
+static void nsgtk_print_set_solid(void); /**< Set for drawing solid lines */
+static void nsgtk_print_set_dotted(void); /**< Set for drawing dotted lines */
+static void nsgtk_print_set_dashed(void); /**< Set for drawing dashed lines */
 
 
 static void nsgtk_print_set_colour(colour c);
@@ -86,9 +82,12 @@ static bool gtk_print_font_paint(const struct css_style *style,
 
 static bool gtk_print_begin(struct print_settings* settings);
 static bool gtk_print_next_page(void);
-static void gtk_print_end(void);		
-		
+static void gtk_print_end(void);	
 
+/* Globals */
+cairo_t *gtk_print_current_cr;
+static struct print_settings* settings;
+struct content *content_to_print;
 static GdkRectangle cliprect;
 
 static const struct plotter_table nsgtk_print_plotters = {
@@ -110,7 +109,7 @@ static const struct plotter_table nsgtk_print_plotters = {
 	false
 };
 
-static const struct printer gtk_printer= {
+static const struct printer gtk_printer = {
 	&nsgtk_print_plotters,
 	gtk_print_begin,
 	gtk_print_next_page,
@@ -126,14 +125,15 @@ bool nsgtk_print_plot_rectangle(int x0, int y0, int width, int height,
 		int line_width, colour c, bool dotted, bool dashed)
 {
 	LOG(("Plotting rectangle. width: %i ; height: %i", width, height));
+
 	nsgtk_print_set_colour(c);
+
 	if (dotted)
 		nsgtk_print_set_dotted();
 	else if (dashed)
 		nsgtk_print_set_dashed();
 	else
 		nsgtk_print_set_solid();
-
 
 	if (line_width == 0)
 		line_width = 1;
@@ -150,13 +150,13 @@ bool nsgtk_print_plot_line(int x0, int y0, int x1, int y1, int width,
 		colour c, bool dotted, bool dashed)
 {
 	nsgtk_print_set_colour(c);
+
 	if (dotted)
 		nsgtk_print_set_dotted();
 	else if (dashed)
 		nsgtk_print_set_dashed();
 	else
 		nsgtk_print_set_solid();
-
 
 	if (width == 0)
 		width = 1;
@@ -172,21 +172,23 @@ bool nsgtk_print_plot_line(int x0, int y0, int x1, int y1, int width,
 
 bool nsgtk_print_plot_polygon(const int *p, unsigned int n, colour fill)
 {
-	
-	LOG(("Plotting polygon."));	
 	unsigned int i;
+
+	LOG(("Plotting polygon."));	
 
 	nsgtk_print_set_colour(fill);
 	nsgtk_print_set_solid();
-
 	
 	cairo_set_line_width(gtk_print_current_cr, 0);
 	cairo_move_to(gtk_print_current_cr, p[0], p[1]);
+
 	LOG(("Starting line at: %i\t%i",p[0],p[1]));
+
 	for (i = 1; i != n; i++) {
 		cairo_line_to(gtk_print_current_cr, p[i * 2], p[i * 2 + 1]);
 		LOG(("Drawing line to: %i\t%i",p[i * 2], p[i * 2 + 1]));
 	}
+
 	cairo_fill(gtk_print_current_cr);
 	cairo_stroke(gtk_print_current_cr);
 
@@ -196,13 +198,14 @@ bool nsgtk_print_plot_polygon(const int *p, unsigned int n, colour fill)
 
 bool nsgtk_print_plot_fill(int x0, int y0, int x1, int y1, colour c)
 {
-	LOG(("Plotting fill. x0: %i ;\t y0: %i ;\t x1: %i ;\t y1: %i", x0,y0,x1,y1));	
+	LOG(("Plotting fill. x0: %i ;\t y0: %i ;\t x1: %i ;\t y1: %i", 
+			x0,y0,x1,y1));
+
 	nsgtk_print_set_colour(c);
 	nsgtk_print_set_solid();
 	
-	/*Normalize boundaries of the area - to prevent overflows.
-	  See comment in pdf_plot_fill.
-	*/
+	/* Normalize boundaries of the area - to prevent overflows.
+	 * See comment in pdf_plot_fill. */
 	x0 = min(max(x0, 0), settings->page_width);
 	y0 = min(max(y0, 0), settings->page_height);
 	x1 = min(max(x1, 0), settings->page_width);
@@ -223,15 +226,13 @@ bool nsgtk_print_plot_clip(int clip_x0, int clip_y0,
 	LOG(("Clipping. x0: %i ;\t y0: %i ;\t x1: %i ;\t y1: %i",
 			clip_x0,clip_y0,clip_x1,clip_y1));	
 	
-	/*Normalize cllipping area - to prevent overflows.
-	See comment in pdf_plot_fill.
-	*/
+	/* Normalize cllipping area - to prevent overflows.
+	 * See comment in pdf_plot_fill. */
 	clip_x0 = min(max(clip_x0, 0), settings->page_width);
 	clip_y0 = min(max(clip_y0, 0), settings->page_height);
 	clip_x1 = min(max(clip_x1, 0), settings->page_width);
 	clip_y1 = min(max(clip_y1, 0), settings->page_height);
 	
-
 	cairo_reset_clip(gtk_print_current_cr);
 	cairo_rectangle(gtk_print_current_cr, clip_x0, clip_y0,
 			clip_x1 - clip_x0, clip_y1 - clip_y0);
@@ -242,8 +243,7 @@ bool nsgtk_print_plot_clip(int clip_x0, int clip_y0,
 	cliprect.width = clip_x1 - clip_x0;
 	cliprect.height = clip_y1 - clip_y0;
 	
-	return true;
-	
+	return true;	
 }
 
 
@@ -271,11 +271,11 @@ bool nsgtk_print_plot_disc(int x, int y, int radius, colour c, bool filled)
 
 	cairo_stroke(gtk_print_current_cr);
 
-
 	return true;
 }
 
-bool nsgtk_print_plot_arc(int x, int y, int radius, int angle1, int angle2, colour c)
+bool nsgtk_print_plot_arc(int x, int y, int radius, int angle1, int angle2, 
+		colour c)
 {
 	nsgtk_print_set_colour(c);
 	nsgtk_print_set_solid();
@@ -285,7 +285,6 @@ bool nsgtk_print_plot_arc(int x, int y, int radius, int angle1, int angle2, colo
 			(angle1 + 90) * (M_PI / 180),
 			(angle2 + 90) * (M_PI / 180));
 	cairo_stroke(gtk_print_current_cr);
-
 
 	return true;
 }
@@ -301,22 +300,21 @@ static bool nsgtk_print_plot_pixbuf(int x, int y, int width, int height,
  		return true;
  
  	if (gdk_pixbuf_get_width(pixbuf) == width &&
-		   gdk_pixbuf_get_height(pixbuf) == height) {
+			gdk_pixbuf_get_height(pixbuf) == height) {
 		gdk_cairo_set_source_pixbuf(gtk_print_current_cr, pixbuf, x, y);
 		cairo_paint(gtk_print_current_cr);
- 
- 	} else {
+  	} else {
  		GdkPixbuf *scaled;
 		scaled = gdk_pixbuf_scale_simple(pixbuf,
  				width, height,
-     				/* plotting for the printer doesn't have to be fast
-				 * so we can use always the interp_style
-      				 * that gives better quality
+     				/* plotting for the printer doesn't have 
+				 * to be fast so we can use always the 
+				 * interp_style that gives better quality
 				 */
- 				GDK_INTERP_BILINEAR
- 				);
+ 				GDK_INTERP_BILINEAR);
  		if (!scaled)
  			return false;
+
 		gdk_cairo_set_source_pixbuf(gtk_print_current_cr, scaled, x, y);
 		cairo_paint(gtk_print_current_cr);
 
@@ -330,6 +328,7 @@ bool nsgtk_print_plot_bitmap(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg, struct content *content)
 {
  	GdkPixbuf *pixbuf = gtk_bitmap_get_primary(bitmap);
+
  	return nsgtk_print_plot_pixbuf(x, y, width, height, pixbuf, bg);
 }
 
@@ -343,7 +342,8 @@ bool nsgtk_print_plot_bitmap_tile(int x, int y, int width, int height,
  
 	if (!(repeat_x || repeat_y)) {
 		/* Not repeating at all, so just pass it on */
-		return nsgtk_print_plot_bitmap(x,y,width,height,bitmap,bg,content);
+		return nsgtk_print_plot_bitmap(x, y, width, height, 
+				bitmap, bg, content);
 	}
 
 	if (repeat_x && !repeat_y)
@@ -356,42 +356,47 @@ bool nsgtk_print_plot_bitmap_tile(int x, int y, int width, int height,
 	assert(pretiled != NULL);
 
 	primary = gtk_bitmap_get_primary(bitmap);
+
 	/* use the primary and pretiled widths to scale the w/h provided */
 	width *= gdk_pixbuf_get_width(pretiled);
 	width /= gdk_pixbuf_get_width(primary);
 	height *= gdk_pixbuf_get_height(pretiled);
 	height /= gdk_pixbuf_get_height(primary);
 
-	if (y > cliprect.y)
-		doneheight = (cliprect.y - height) + ((y - cliprect.y) % height);
-	else
+	if (y > cliprect.y) {
+		doneheight = (cliprect.y - height) + 
+				((y - cliprect.y) % height);
+	} else
 		doneheight = y;
 
 	while (doneheight < (cliprect.y + cliprect.height)) {
-		if (x > cliprect.x)
-			donewidth = (cliprect.x - width) + ((x - cliprect.x) % width);
-		else
+		if (x > cliprect.x) {
+			donewidth = (cliprect.x - width) + 
+					((x - cliprect.x) % width);
+		} else
 			donewidth = x;
+
 		while (donewidth < (cliprect.x + cliprect.width)) {
 			nsgtk_print_plot_pixbuf(donewidth, doneheight,
 					  width, height, pretiled, bg);
 			donewidth += width;
 			if (!repeat_x) break;
 		}
+
 		doneheight += height;
+
 		if (!repeat_y) break;
 	}
 
 	return true;
 }
 
-bool nsgtk_print_plot_path(const float *p, unsigned int n, colour fill, float width,
-		colour c, const float transform[6])
+bool nsgtk_print_plot_path(const float *p, unsigned int n, colour fill, 
+		float width, colour c, const float transform[6])
 {
 	/* Only the internal SVG renderer uses this plot call currently,
-	* and the GTK version uses librsvg.  Thus, we ignore this complexity,
-	* and just return true obliviously.
-	*/
+	 * and the GTK version uses librsvg.  Thus, we ignore this complexity,
+	 * and just return true obliviously. */
 
 	return true;
 }
@@ -410,33 +415,27 @@ void nsgtk_print_set_colour(colour c)
 	colour.blue = b | (b << 8);
 	colour.pixel = (r << 16) | (g << 8) | b;
 
-	gdk_color_alloc(gdk_colormap_get_system(),
- 			&colour);
+	gdk_color_alloc(gdk_colormap_get_system(), &colour);
 
 	cairo_set_source_rgba(gtk_print_current_cr, r / 255.0,
 			g / 255.0, b / 255.0, 1.0);
-
 }
 
-
-void nsgtk_print_set_solid()
+void nsgtk_print_set_solid(void)
 {
-
 	double dashes = 0;
 
 	cairo_set_dash(gtk_print_current_cr, &dashes, 0, 0);
-
 }
 
-void nsgtk_print_set_dotted()
+void nsgtk_print_set_dotted(void)
 {
 	double cdashes = 1;
 
 	cairo_set_dash(gtk_print_current_cr, &cdashes, 1, 0);
-
 }
 
-void nsgtk_print_set_dashed()
+void nsgtk_print_set_dashed(void)
 {
 	double cdashes = 3;
 
@@ -456,12 +455,13 @@ bool gtk_print_font_paint(const struct css_style *style,
 		return true;
 
 	desc = nsfont_style_to_description(style);
-	size = (gint)((double)pango_font_description_get_size(desc) * settings->scale);
+	size = (gint) ((double) pango_font_description_get_size(desc) * 
+				settings->scale);
+
 	if (pango_font_description_get_size_is_absolute(desc))
 		pango_font_description_set_absolute_size(desc, size);
 	else
 		pango_font_description_set_size(desc, size);
-
 
 	layout = pango_cairo_create_layout(gtk_print_current_cr);
 
@@ -474,35 +474,33 @@ bool gtk_print_font_paint(const struct css_style *style,
 	nsgtk_print_set_colour(c);
 	pango_cairo_show_layout_line(gtk_print_current_cr, line);
 
-	
 	g_object_unref(layout);
 	pango_font_description_free(desc);
 
 	return true;
 }
 
-
-
 static bool gtk_print_begin(struct print_settings* settings)
 {
 	return true;
 }
-static bool gtk_print_next_page()
+static bool gtk_print_next_page(void)
 {
 	return true;
 }
-static void gtk_print_end()
+static void gtk_print_end(void)
 {
 }
 
-/** Handle the begin_print signal from the GtkPrintOperation
+/** 
+ * Handle the begin_print signal from the GtkPrintOperation
+ *
  * \param operation the operation which emited the signal
  * \param context the print context used to set up the pages
  * \param user_data nothing in here
  */
 void gtk_print_signal_begin_print (GtkPrintOperation *operation,
-		GtkPrintContext *context,
-		gpointer user_data)
+		GtkPrintContext *context, gpointer user_data)
 {
 	int page_number;	
 	double height_on_page, height_to_print;
@@ -532,34 +530,33 @@ void gtk_print_signal_begin_print (GtkPrintOperation *operation,
 	height_to_print *= settings->scale;
 	
 	page_number = height_to_print / height_on_page;
+
 	if (height_to_print - page_number * height_on_page > 0)
 		page_number += 1;
 				
 	gtk_print_operation_set_n_pages(operation, page_number);
 }
 
-/** Handle the draw_page signal from the GtkPrintOperation.
+/** 
+ * Handle the draw_page signal from the GtkPrintOperation.
  * This function changes only the cairo context to print on.
  */  		
 void gtk_print_signal_draw_page(GtkPrintOperation *operation,
-		GtkPrintContext *context,
-		gint page_nr,
-		gpointer user_data)
+		GtkPrintContext *context, gint page_nr, gpointer user_data)
 {
 	LOG(("Draw Page"));
 	gtk_print_current_cr = gtk_print_context_get_cairo_context(context);
 	print_draw_next_page(&gtk_printer, settings);
 }
 
-/** Handle the end_print signal from the GtkPrintOperation.
+/** 
+ * Handle the end_print signal from the GtkPrintOperation.
  * This functions calls only the print_cleanup function from the print interface
  */  	
 void gtk_print_signal_end_print(GtkPrintOperation *operation,
-		GtkPrintContext *context,
-		gpointer user_data)
+		GtkPrintContext *context, gpointer user_data)
 {
 	LOG(("End print"));	
 	print_cleanup(content_to_print, &gtk_printer, user_data);
 }
 
-#endif /* WITH_PDF_EXPORT */
