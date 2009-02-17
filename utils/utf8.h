@@ -23,16 +23,21 @@
 #ifndef _NETSURF_UTILS_UTF8_H_
 #define _NETSURF_UTILS_UTF8_H_
 
+#include <stdint.h>
+
 typedef enum {
 	UTF8_CONVERT_OK,
 	UTF8_CONVERT_NOMEM,
 	UTF8_CONVERT_BADENC
 } utf8_convert_ret;
 
-size_t utf8_to_ucs4(const char *s, size_t l);
-size_t utf8_from_ucs4(size_t c, char *s);
+uint32_t utf8_to_ucs4(const char *s, size_t l);
+size_t utf8_from_ucs4(uint32_t c, char *s);
 
 size_t utf8_length(const char *s);
+size_t utf8_bounded_length(const char *s, size_t l);
+
+size_t utf8_char_byte_length(const char *s);
 
 size_t utf8_prev(const char *s, size_t o);
 size_t utf8_next(const char *s, size_t l, size_t o);

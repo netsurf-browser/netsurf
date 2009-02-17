@@ -33,8 +33,6 @@
 #include <proto/exec.h>
 #include <graphics/blitattr.h>
 #include "amiga/options.h"
-#include <parserutils/charset/utf8.h>
-#include <parserutils/charset/utf16.h>
 #include <proto/utility.h>
 
 static struct OutlineFont *of[CSS_FONT_FAMILY_NOT_SET];
@@ -123,7 +121,7 @@ bool nsfont_position_in_string(const struct css_style *style,
 		uint8 *utf8;
 		uint32 co = 0;
 
-		parserutils_charset_utf8_length(string, length, &len);
+		len = utf8_bounded_length(string, length);
 		if(utf8_to_enc(string,"UTF-16",length,&utf16) != UTF8_CONVERT_OK) return;
 		outf16 = utf16;
 
@@ -143,7 +141,7 @@ bool nsfont_position_in_string(const struct css_style *style,
 				{
 					*actual_x = tx;
 					if(utf8_from_enc(utf16,"UTF-16",4,&utf8) != UTF8_CONVERT_OK) return;
-					parserutils_charset_utf8_char_byte_length(utf8,&utf8len);
+					utf8len = utf8_char_byte_length(utf8);
 					free(utf8);
 
 					if(x<tx+glyph->glm_X1)
@@ -235,7 +233,7 @@ bool nsfont_split(const struct css_style *style,
 		uint32 tx=0,i=0;
 		size_t len;
 
-		parserutils_charset_utf8_length(string, length, &len);
+		len = utf8_bounded_length(string, length);
 		if(utf8_to_enc(string,"UTF-16",length,&utf16) != UTF8_CONVERT_OK) return;
 		outf16 = utf16;
 		if(!(ofont = ami_open_outline_font(style))) return 0;
@@ -472,7 +470,7 @@ ULONG ami_unicode_text(struct RastPort *rp,char *string,ULONG length,struct css_
 	if(!string || string[0]=='\0') return 0;
 	if(!length) return 0;
 
-	parserutils_charset_utf8_length(string, length, &len);
+	len = utf8_bounded_length(string, length);
 	if(utf8_to_enc(string,"UTF-16",length,&utf16) != UTF8_CONVERT_OK) return 0;
 	outf16 = utf16;
 	if(!(ofont = ami_open_outline_font(style))) return 0;
