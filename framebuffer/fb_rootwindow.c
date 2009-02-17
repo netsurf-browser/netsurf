@@ -45,6 +45,10 @@
 #include "framebuffer/fb_rootwindow.h"
 #include "framebuffer/fb_image_data.h"
 
+#define FB_FRAME_COLOUR 0xFFDDDDDD
+#define FB_COLOUR_BLACK 0xFF000000
+#define FB_COLOUR_WHITE 0xFFFFFFFF
+
 enum fb_widget_type_e {
         FB_WIDGET_TYPE_NONE = 0,
         FB_WIDGET_TYPE_BUTTON,
@@ -254,7 +258,7 @@ fb_add_text_widget(int x, int y, int width, int height, colour bg, fb_widget_inp
         new_widget->width = width;
         new_widget->height = height;
         new_widget->bg = bg;
-        new_widget->fg = 0xFF000000;
+        new_widget->fg = FB_COLOUR_BLACK;
 
         new_widget->input = input_rtn;
 
@@ -312,6 +316,22 @@ fb_widget_rightarrow_click(struct gui_window *g, browser_mouse_state st, int x, 
 
 }
 
+/* reload icon click routine */
+static int 
+fb_widget_reload_click(struct gui_window *g, browser_mouse_state st, int x, int y)
+{
+        browser_window_reload(g->bw, true);
+        return 0;
+}
+
+/* stop icon click routine */
+static int 
+fb_widget_stop_click(struct gui_window *g, browser_mouse_state st, int x, int y)
+{
+	browser_window_stop(g->bw);
+        return 0;
+}
+
 
 /* update status widget */
 void fb_rootwindow_status(const char* text)
@@ -359,7 +379,7 @@ void fb_rootwindow_create(framebuffer_t *fb)
         rootwindow->y = 0;
         rootwindow->width = fb->width;
         rootwindow->height = fb->height;
-        fb_add_window_widget(rootwindow, 0xFFCCCCCC, NULL, NULL);
+        fb_add_window_widget(rootwindow, FB_FRAME_COLOUR, NULL, NULL);
 
         /* back button */
         newwidget = fb_add_button_widget(5, 2, 
@@ -372,10 +392,22 @@ void fb_rootwindow_create(framebuffer_t *fb)
                                          &right_arrow, 
                                          fb_widget_rightarrow_click);
 
+        /* reload button */
+        newwidget = fb_add_button_widget(newwidget->x + newwidget->width + 5, 
+                                         2, 
+                                         &stop_image, 
+                                         fb_widget_stop_click);
+
+        /* reload button */
+        newwidget = fb_add_button_widget(newwidget->x + newwidget->width + 5, 
+                                         2, 
+                                         &reload, 
+                                         fb_widget_reload_click);
+
         /* url widget */
         url_widget = fb_add_text_widget(newwidget->x + newwidget->width + 5, 5, 
                                         fb->width - 200, 20, 
-                                        0xFFFFFFFF,
+                                        FB_COLOUR_WHITE,
                                         fb_widget_url_input);
 
 
@@ -384,7 +416,7 @@ void fb_rootwindow_create(framebuffer_t *fb)
          */
         status_widget = fb_add_text_widget(0, fb->height - 20, 
                                            fb->width - 200, 20,
-                                           0xFFCCCCCC,
+                                           FB_FRAME_COLOUR,
                                            NULL);
 
 }

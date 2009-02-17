@@ -28,6 +28,7 @@ typedef struct fb_widget_image_s fb_widget_image_t;
 extern const fb_widget_image_t left_arrow;
 extern const fb_widget_image_t right_arrow;
 extern const fb_widget_image_t reload;
+extern const fb_widget_image_t stop_image;
 
 extern struct bitmap pointer_image;
 extern struct bitmap hand_image;
