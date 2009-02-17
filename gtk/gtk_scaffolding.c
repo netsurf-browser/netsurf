@@ -1510,8 +1510,6 @@ static guint nsgtk_scaffolding_update_edit_actions_sensitivity(
 		has_selection = bw->sel->defined; 
 		
 		can_copy = has_selection;
-		/* Cut and Paste do not always register properly due to a bug
-		 * in the core selection code. */
 		can_cut = (has_selection && bw->caret_callback != 0);
 		can_paste = (bw->paste_callback != 0);		
 	}
