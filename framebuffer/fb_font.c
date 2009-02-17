@@ -56,7 +56,7 @@ static bool nsfont_width(const struct css_style *style,
                          int *width)
 {
         const struct fb_font_desc* fb_font = fb_get_font(style);
-        *width = fb_font->width * length;
+        *width = fb_font->width * utf8_bounded_length(string, length);
 	return true;
 }
 
