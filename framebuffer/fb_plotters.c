@@ -31,6 +31,9 @@
 #include "framebuffer/fb_font.h"
 #include "framebuffer/fb_frontend.h"
 
+/* max height the poly plotter can cope with */
+#define WINDOW_HEIGHT (2048)
+
 /* Currently selected ploting routines. */
 struct plotter_table plot;
 
@@ -224,20 +227,194 @@ colour fb_plotters_ablend(colour pixel, colour scrpixel)
         return r | (g << 8) | (b << 16);
 }
 
-bool
-fb_plotters_polygon(const int *p, unsigned int n, colour fill,bool (linefn)(int x0, int y0, int x1, int y1, int width, colour c, bool dotted, bool dashed))
+typedef bool (linefn_t)(int x0, int y0, int x1, int y1, int width, colour c, bool dotted, bool dashed);
+
+typedef struct dcPt_s {
+        int x;
+        int y; 
+} dcPt;
+
+typedef struct tEdge {
+        int yUpper;
+        float xIntersect, dxPerScan;
+        struct tEdge *next;
+} Edge;
+
+static void insertEdge(Edge *list, Edge *edge)
 {
-        unsigned int pnt;
-        const int *cur = p;
-        
-        for (pnt = 1; pnt < n; pnt++) {
-                cur = p + (pnt << 1);
-                linefn(cur[-2], cur[-1], cur[0], cur[1], 1, fill, false, false);
+        Edge *p, *q = list;
+
+        p = q->next;
+        while (p != NULL) {
+                if (edge->xIntersect < p->xIntersect) {
+                        p = NULL;
+                } else {
+                        q = p;
+                        p = p->next;
+                }
         }
+        edge->next = q->next;
+        q->next = edge;
+}
 
-        linefn(cur[0], cur[1], p[0], p[1], 1, fill, false, false);
+static int yNext(int k, int cnt, dcPt *pts)
+{
+        int j;
+        if ((k+1) > (cnt-1))
+                j = 0;
+        else
+                j = k +1;
 
-	return true;
+        while (pts[k].y == pts[j].y) {
+                if ((j+1) > (cnt-1))
+                        j = 0;
+                else
+                        j++;
+        }
+        return (pts[j].y);
+}
+
+static void makeEdgeRec(dcPt lower, dcPt upper, int yComp,  Edge **edges)
+{
+        Edge *edge;
+        edge = malloc(sizeof(Edge));
+
+        edge->dxPerScan = (float)(upper.x - lower.x) / (upper.y - lower.y);
+        edge->xIntersect = lower.x;
+
+        if (upper.y < yComp)
+                edge->yUpper = upper.y - 1;
+        else
+                edge->yUpper = upper.y;
+
+        if (!fb_plotters_clip_line_ctx(&lower.x, &lower.y, 
+                                       &upper.x, &edge->yUpper)) {
+                free(edge);
+        } else {
+                insertEdge(edges[lower.y], edge);
+        }
+}
+
+static void buildEdgeList(int cnt, dcPt *pts, Edge **edges)
+{
+        dcPt v1, v2;
+        int i, yPrev = pts[cnt - 2].y;
+
+        v1.x = pts[cnt - 1].x;
+        v1.y = pts[cnt - 1].y;
+        for (i = 0; i < cnt; i++) {
+                v2 = pts[i];
+                if (v1.y != v2.y) {
+                        /* line is not horizontal */
+                        if (v1.y < v2.y)
+                                makeEdgeRec(v1, v2, yNext(i,cnt,pts), edges); /* up going edge */
+                        else
+                                makeEdgeRec(v2, v1, yPrev, edges); /* down going edge */
+                }
+                yPrev = v1.y;
+                v1 = v2;
+        }
+}
+
+static void buildActiveList(int scan, Edge *active, Edge **edges)
+{
+        Edge *p,*q;
+
+        p = edges[scan]->next;
+
+        while (p) {
+                q = p->next;
+                insertEdge(active, p);
+                p = q;
+        }
+}
+
+static void fillScan(int scan, Edge *active, colour fill, linefn_t linefn)
+{
+        Edge *p1, *p2;
+
+        p1 = active->next;
+        while (p1) {
+                p2 = p1->next;
+                if (p2 == NULL) {
+                        LOG(("only one active edge!"));
+                        break;
+                } else {
+                        linefn(p1->xIntersect, scan, 
+                               p2->xIntersect, scan, 
+                               1, fill, false, false);
+                }
+                p1 = p2->next;
+        }
+}
+
+static void deleteAfter(Edge *q)
+{ 
+        Edge *p = q->next;
+        q->next = p->next;
+        free (p);
+}
+
+static void updateActiveList(int scan, Edge *active)
+{
+        Edge *q = active, *p = active->next;
+        while (p) {
+                if (scan >= p->yUpper) {
+                        p = p->next;
+                        deleteAfter(q);
+                } else {
+                        p->xIntersect = p->xIntersect + p->dxPerScan;
+                        q = p;
+                        p = p->next;
+                }
+        }
+}
+
+static void resortActiveList(Edge * active)
+{
+        Edge *q, *p = active->next;
+
+        active->next = NULL;
+        while (p) {
+                q = p->next;
+                insertEdge(active, p);
+                p = q;
+        } 
+}
+
+
+static void scanFill(int cnt, dcPt *pts, colour fill, linefn_t linefn)
+{
+        Edge *edges[WINDOW_HEIGHT], *active;
+        int i, scan;
+
+        for (i = 0; i < WINDOW_HEIGHT; i++) {
+                edges[i] = malloc(sizeof(Edge));
+                edges[i]->next = NULL;
+        }
+        buildEdgeList(cnt, pts, edges);
+
+        active = malloc(sizeof(Edge));
+        active->next = NULL;
+        for (scan = 0; scan < WINDOW_HEIGHT; scan++) {
+                buildActiveList (scan, active, edges);
+                if (active->next) {
+                        fillScan(scan, active, fill, linefn);
+                        updateActiveList (scan, active);
+                        resortActiveList(active);
+                }
+        }
+        for (i = 0; i < WINDOW_HEIGHT; i++) {
+                free(edges[i]);
+        }
+        free(active);
+}
+
+bool
+fb_plotters_polygon(const int *p, unsigned int n, colour fill, linefn_t linefn)
+{
+        scanFill(n, (dcPt *)p, fill, linefn);
+        return true;
 }
 
 bool fb_plotters_bitmap_tile(int x, int y, 
