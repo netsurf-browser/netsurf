@@ -88,12 +88,17 @@ void fb_os_quit(framebuffer_t *fb)
 
 void fb_os_input(struct gui_window *g, bool active) 
 {
+        int got_event;
         SDL_Event event;
 
         if (active)
-                SDL_PollEvent(&event);
+                got_event = SDL_PollEvent(&event);
         else
-                SDL_WaitEvent(&event);
+                got_event = SDL_WaitEvent(&event);
+
+        /* Do nothing if there was no event */
+        if (got_event == 0)
+	        return;
 
         switch (event.type) {
         case SDL_KEYDOWN:
