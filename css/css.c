@@ -1025,6 +1025,7 @@ struct css_working_stylesheet *css_make_working_stylesheet(
 	rule_scratch = talloc_array(working_stylesheet, struct css_selector *,
 			css_count);
 	if (!rule_scratch) {
+		free(css);
 		talloc_free(working_stylesheet);
 		return 0;
 	}
@@ -1033,11 +1034,13 @@ struct css_working_stylesheet *css_make_working_stylesheet(
 	for (chain = 0; chain != HASH_SIZE; chain++) {
 		if (!css_working_merge_chains(working_stylesheet, css,
 				css_count, chain, rule_scratch)) {
+			free(css);
 			talloc_free(working_stylesheet);
 			return 0;
 		}
 	}
 
+	free(css);
 	talloc_free(rule_scratch);
 
 #ifdef DEBUG_WORKING_STYLESHEET
