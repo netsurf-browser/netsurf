@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "content/urldb.h"
 #include "desktop/browser.h"
 
 void global_history_add(const char *url)
