@@ -73,7 +73,7 @@ struct fb_widget {
         fb_widget_input_t input;
 
         /* data */
-        struct bitmap *bitmap; 
+        struct bitmap *bitmap;
         struct gui_window *g;
         char* text;
 };
@@ -96,7 +96,7 @@ static void
 fb_redraw_widget(struct fb_widget *widget)
 {
        bbox_t saved_plot_ctx;
- 
+
         /* set the clipping rectangle to the widget area */
         saved_plot_ctx = fb_plot_ctx;
 
@@ -108,8 +108,8 @@ fb_redraw_widget(struct fb_widget *widget)
         /* clear background */
         if ((widget->bg & 0xFF000000) != 0) {
                 /* transparent polygon filling isnt working so fake it */
-        plot.fill(fb_plot_ctx.x0, fb_plot_ctx.y0, 
-                  fb_plot_ctx.x1, fb_plot_ctx.y1, 
+        plot.fill(fb_plot_ctx.x0, fb_plot_ctx.y0,
+                  fb_plot_ctx.x1, fb_plot_ctx.y1,
                   widget->bg);
         }
 
@@ -119,11 +119,11 @@ fb_redraw_widget(struct fb_widget *widget)
 
         case FB_WIDGET_TYPE_BUTTON:
                 /* plot the image */
-                plot.bitmap(widget->x, 
-                            widget->y, 
-                            widget->width, 
-                            widget->height, 
-                            widget->bitmap, 
+                plot.bitmap(widget->x,
+                            widget->y,
+                            widget->width,
+                            widget->height,
+                            widget->bitmap,
                             0, NULL);
                 break;
 
@@ -132,12 +132,16 @@ fb_redraw_widget(struct fb_widget *widget)
 
         case FB_WIDGET_TYPE_TEXT:
                 if (widget->text != NULL) {
-                        plot.text(fb_plot_ctx.x0, 
-                                  fb_plot_ctx.y0 + 15, 
-                                  NULL, 
-                                  widget->text, 
-                                  strlen(widget->text), 
-                                  widget->bg, 
+                	plot.rectangle(fb_plot_ctx.x0, fb_plot_ctx.y0,
+                			fb_plot_ctx.x1 - fb_plot_ctx.x0 - 1,
+                			fb_plot_ctx.y1 - fb_plot_ctx.y0 - 1,
+                			1, 0x00000000, false, false);
+                        plot.text(fb_plot_ctx.x0 + 2,
+                                  fb_plot_ctx.y0 + 15,
+                                  NULL,
+                                  widget->text,
+                                  strlen(widget->text),
+                                  widget->bg,
                                   widget->fg);
                 }
                 break;
@@ -177,7 +181,7 @@ fb_change_input_focus(struct fb_widget *widget)
         inputfocus_widget = widget;
 
         /* tell it so */
-        widget->input(widget, NULL, -1);
+        widget->input(widget, NULL, - 1);
 }
 
 static int
@@ -211,9 +215,9 @@ fb_widget_url_input(struct fb_widget *widget, struct gui_window *g, int value)
 }
 
 static struct fb_widget *
-fb_add_button_widget(int x, 
-              int y, 
-              const fb_widget_image_t *widget_image, 
+fb_add_button_widget(int x,
+              int y,
+              const fb_widget_image_t *widget_image,
               fb_widget_mouseclick_t click_rtn)
 {
         struct fb_widget *new_widget;
@@ -229,14 +233,14 @@ fb_add_button_widget(int x,
 
         new_widget->click = click_rtn;
 
-        new_widget->bitmap = bitmap_create(widget_image->width, 
-                                           widget_image->height, 
+        new_widget->bitmap = bitmap_create(widget_image->width,
+                                           widget_image->height,
                                            0);
 
-        memcpy(new_widget->bitmap->pixdata, 
-               widget_image->pixel_data, 
-               widget_image->width * 
-               widget_image->height * 
+        memcpy(new_widget->bitmap->pixdata,
+               widget_image->pixel_data,
+               widget_image->width *
+               widget_image->height *
                widget_image->bytes_per_pixel);
 
         fb_insert_widget(new_widget);
@@ -268,9 +272,9 @@ fb_add_text_widget(int x, int y, int width, int height, colour bg, fb_widget_inp
 }
 
 struct fb_widget *
-fb_add_window_widget(struct gui_window *g, 
-                     colour bg, 
-                     fb_widget_mouseclick_t click_rtn, 
+fb_add_window_widget(struct gui_window *g,
+                     colour bg,
+                     fb_widget_mouseclick_t click_rtn,
                      fb_widget_input_t input_rtn)
 {
         struct fb_widget *new_widget;
@@ -297,7 +301,7 @@ fb_add_window_widget(struct gui_window *g,
 
 
 /* left icon click routine */
-static int 
+static int
 fb_widget_leftarrow_click(struct gui_window *g, browser_mouse_state st, int x, int y)
 {
         if (history_back_available(g->bw->history))
@@ -307,7 +311,7 @@ fb_widget_leftarrow_click(struct gui_window *g, browser_mouse_state st, int x, i
 }
 
 /* right arrow icon click routine */
-static int 
+static int
 fb_widget_rightarrow_click(struct gui_window *g, browser_mouse_state st, int x, int y)
 {
         if (history_forward_available(g->bw->history))
@@ -317,7 +321,7 @@ fb_widget_rightarrow_click(struct gui_window *g, browser_mouse_state st, int x, 
 }
 
 /* reload icon click routine */
-static int 
+static int
 fb_widget_reload_click(struct gui_window *g, browser_mouse_state st, int x, int y)
 {
         browser_window_reload(g->bw, true);
@@ -325,7 +329,7 @@ fb_widget_reload_click(struct gui_window *g, browser_mouse_state st, int x, int 
 }
 
 /* stop icon click routine */
-static int 
+static int
 fb_widget_stop_click(struct gui_window *g, browser_mouse_state st, int x, int y)
 {
 	browser_window_stop(g->bw);
@@ -382,67 +386,70 @@ void fb_rootwindow_create(framebuffer_t *fb)
         fb_add_window_widget(rootwindow, FB_FRAME_COLOUR, NULL, NULL);
 
         /* back button */
-        newwidget = fb_add_button_widget(5, 2, 
-                                         &left_arrow, 
+        newwidget = fb_add_button_widget(5, 2,
+                                         &left_arrow,
                                          fb_widget_leftarrow_click);
 
         /* forward button */
-        newwidget = fb_add_button_widget(newwidget->x + newwidget->width + 5, 
-                                         2, 
-                                         &right_arrow, 
+        newwidget = fb_add_button_widget(newwidget->x + newwidget->width + 5,
+                                         2,
+                                         &right_arrow,
                                          fb_widget_rightarrow_click);
 
         /* reload button */
-        newwidget = fb_add_button_widget(newwidget->x + newwidget->width + 5, 
-                                         2, 
-                                         &stop_image, 
+        newwidget = fb_add_button_widget(newwidget->x + newwidget->width + 5,
+                                         2,
+                                         &stop_image,
                                          fb_widget_stop_click);
 
         /* reload button */
-        newwidget = fb_add_button_widget(newwidget->x + newwidget->width + 5, 
-                                         2, 
-                                         &reload, 
+        newwidget = fb_add_button_widget(newwidget->x + newwidget->width + 5,
+                                         2,
+                                         &reload,
                                          fb_widget_reload_click);
 
         /* url widget */
-        url_widget = fb_add_text_widget(newwidget->x + newwidget->width + 5, 5, 
-                                        fb->width - 200, 20, 
+        url_widget = fb_add_text_widget(newwidget->x + newwidget->width + 5, 3,
+                                        fb->width -
+                                        (newwidget->x + newwidget->width + 5) -
+                                        (25 + 10),
+                                        22,
                                         FB_COLOUR_WHITE,
                                         fb_widget_url_input);
 
 
         /* add status area widget, width of framebuffer less some for
-         * scrollbar 
+         * scrollbar
          */
-        status_widget = fb_add_text_widget(0, fb->height - 20, 
+        status_widget = fb_add_text_widget(0, fb->height - 20,
                                            fb->width - 200, 20,
                                            FB_FRAME_COLOUR,
                                            NULL);
 
 }
 
-void 
+void
 fb_rootwindow_input(struct gui_window *g, int value)
 {
-        if ((inputfocus_widget != NULL) && 
+        if ((inputfocus_widget != NULL) &&
             (inputfocus_widget->input != NULL)) {
                 inputfocus_widget->input(inputfocus_widget, g, value);
         }
 }
 
-void 
+void
 fb_rootwindow_click(struct gui_window *g, browser_mouse_state st, int x, int y)
 {
         struct fb_widget *widget;
 
         widget = widget_list;
         while (widget != NULL) {
-                if ((x > widget->x) && 
-                    (y > widget->y) && 
-                    (x < widget->x + widget->width) && 
+                if ((x > widget->x) &&
+                    (y > widget->y) &&
+                    (x < widget->x + widget->width) &&
                     (y < widget->y + widget->height)) {
                         if (widget->click != NULL) {
-                                widget->click(g, st, 
+                                widget->click(g, st,
                                               x - widget->x, y - widget->y);
                         }
 
@@ -458,10 +465,10 @@ fb_rootwindow_click(struct gui_window *g, browser_mouse_state st, int x, int y)
 
 
 void
-fb_rootwindow_move(framebuffer_t *fb, 
-                   struct gui_window *g, 
-                   int x, 
-                   int y, 
+fb_rootwindow_move(framebuffer_t *fb,
+                   struct gui_window *g,
+                   int x,
+                   int y,
                    bool relative)
 {
         struct fb_widget *widget;
@@ -475,9 +482,9 @@ fb_rootwindow_move(framebuffer_t *fb,
 
         widget = widget_list;
         while (widget != NULL) {
-                if ((x > widget->x) && 
-                    (y > widget->y) && 
-                    (x < widget->x + widget->width) && 
+                if ((x > widget->x) &&
+                    (y > widget->y) &&
+                    (x < widget->x + widget->width) &&
                     (y < widget->y + widget->height)) {
 
                         if (widget->g == g) {
