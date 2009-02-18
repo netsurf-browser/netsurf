@@ -21,4 +21,5 @@
 bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 	const char *url)
 {
+	return false;
 }

@@ -281,7 +281,11 @@ void history_add(struct history *history, struct content *content,
 			warn_user("NoMemory", 0);
 			return;
 		}
-		thumbnail_create(content, bitmap, url);
+		if (thumbnail_create(content, bitmap, url) == false) {
+			/* Thumbnailing failed. Ignore it silently */
+			bitmap_destroy(bitmap);
+			bitmap = NULL;
+		}
 	}
 	entry->bitmap = bitmap;
 
