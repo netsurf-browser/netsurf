@@ -172,7 +172,7 @@ size_t utf8_from_ucs4(uint32_t c, char *s)
 		return 3;
 	}
 
-	return len;
+	return 6 - len;
 #else
 	uint8_t *buf;
 	uint8_t l = 0;
