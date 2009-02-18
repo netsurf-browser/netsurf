@@ -216,8 +216,10 @@ static bool fb_32bpp_text(int x, int y, const struct css_style *style,
         x1 = x + (fb_font->width * length);
         y1 = y + fb_font->height;
 
-        if (!fb_plotters_clip_rect_ctx(&x0, &y0, &x1, &y1))
+        if (!fb_plotters_clip_rect_ctx(&x0, &y0, &x1, &y1)) {
+                free(buffer);
                 return true; /* text lies outside current clipping region */
+        }
 
         /* find width and height to plot */
         if (height > (y1 - y0))
