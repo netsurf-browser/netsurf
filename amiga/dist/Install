@@ -23,13 +23,18 @@
 
 (set @default-dest
 	(askdir
-    		(prompt "Where would you like to install NetSurf?")
+		(prompt "Where would you like to install NetSurf?")
 		(help @askdir-help)
 		(default @default-dest)
 	)
 )
 
 (set #icon-exists (exists (tackon @default-dest "NetSurf.info")))
+
+; *****************************************************
+; TODO: Check OS version/existing build and provide
+; option to select graphics.library or part-Cairo build.
+; ****************************************************
 
 (copylib
 	(prompt "Please check the version of NetSurf you are copying against "
@@ -62,7 +67,10 @@
 	(
 		(set #themename
    			(askchoice
-  				(prompt "Please select theme")
+  				(prompt "Please select theme\n"
+					"AISS theme requires AISS and def_pointers packages "
+					"to be installed.")
+; perhaps we should be detecting these?
  	      		(help @askchoice-help)
 				(choices "Default" "AISS")
        			(default 0)

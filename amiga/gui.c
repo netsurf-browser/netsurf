@@ -1507,7 +1507,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	char stop[100],stop_s[100],stop_g[100];
 	char reload[100],reload_s[100],reload_g[100];
 	char home[100],home_s[100],home_g[100];
-	char closetab[100];
+	char closetab[100],closetab_s[100],closetab_g[100];
 
 	if((bw->browser_window_type == BROWSER_WINDOW_IFRAME) && option_no_iframes) return NULL;
 
@@ -1678,6 +1678,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 				ami_get_theme_filename(home_s,"theme_home_s");
 				ami_get_theme_filename(home_g,"theme_home_g");
 				ami_get_theme_filename(closetab,"theme_closetab");
+				ami_get_theme_filename(closetab_s,"theme_closetab_s");
+				ami_get_theme_filename(closetab_g,"theme_closetab_g");
 
 				gwin->shared->objects[OID_MAIN] = WindowObject,
 		       	    WA_ScreenTitle,nsscreentitle,
@@ -1808,6 +1810,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 								BUTTON_Transparent,TRUE,
 								BUTTON_RenderImage,BitMapObject,
 									BITMAP_SourceFile,closetab,
+									BITMAP_SelectSourceFile,closetab_s,
+									BITMAP_DisabledSourceFile,closetab_g,
 									BITMAP_Screen,scrn,
 									BITMAP_Masking,TRUE,
 								BitMapEnd,

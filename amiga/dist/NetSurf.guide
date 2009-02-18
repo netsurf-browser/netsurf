@@ -32,7 +32,7 @@ The options file is stored in @{"Resources/Options" link Resources/Options/Main}
 @{b}hotlist_file@{ub} Path to Hotlist file
 @{b}use_pubscreen@{ub} Open NetSurf on the named public screen
 @{b}screen_modeid@{ub} Mode ID for NetSurf's custom screen.  If not specified, NetSurf will prompt on startup.  Choose Settings=>Save settings to make permanent.
-@{b}theme@{ub} Path to theme (default is Resources/Themes/Default - an alternative included theme is Resources/Themes/AISS)
+@{b}theme@{ub} Path to @{"theme" link Themes} (default is Resources/Themes/Default)
 @{b}no_iframes@{ub} Disable IFrames
 @{b}clipboard_write_utf8@{ub} Write UTF-8 strings to the clipboard along with a charset identifier (when this option is 0, NetSurf will convert copied strings to local charset)
 @{b}context_menu@{ub} Enable context menus
@@ -48,6 +48,17 @@ The options file is stored in @{"Resources/Options" link Resources/Options/Main}
 @{b}faster_scroll@{ub} enable faster scrolling (experimental)
 @{b}cache_bitmaps@{ub} cache bitmaps in native format in gfx mem (0=off, 1=sclaed, 2=all)
 
+@endnode
+
+@node Themes
+AmigaOS NetSurf supports basic theming of gadget imagery.  Themes live in the Resources/Themes directory, and two are included by default:
+
+Default - default theme with no external dependencies.
+AISS - theme using Mason's AISS images for buttons, and the def_pointers package for 32-bit pointer images.
+
+The file "Theme" in the theme directory contains the files used for that theme.  See @{"Default Theme file" link Resources/Themes/Default/Theme/Main} for more details.
+
+Theme directories should be copied and renamed if themes are modified, as update installation of NetSurf will overwrite any changes.  AmigaOS NetSurf themes are not compatible with NetSurf for other platforms.
 @endnode
 
 @node arexx "ARexx port"

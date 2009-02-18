@@ -4,7 +4,6 @@ Author:       NetSurf contributors (OS4 port by Chris Young)
 Type:         comm/www
 Version:      2.0 development (SVN 5911)
 Architecture: ppc-amigaos >= 4.0.0
-Requires:     AISS
 
 This is a preview release of the OS4 native port of NetSurf.
 It is beta software, which means it is unstable and missing
@@ -13,9 +12,6 @@ features - use at your own risk!
 This is provided for testing purposes only, to gain feedback
 in order to fix bugs for the real release and to prioritise
 features.
-
-IF YOU UPDATE AN OLDER VERSION YOU MAY NEED TO ADD
-screen_depth:32 TO YOUR RESOURCES/OPTIONS FILE
 
 Please report bugs to chris@unsatisfactorysoftware.co.uk,
 on the Amigans.net forums or in the bug tracker at
