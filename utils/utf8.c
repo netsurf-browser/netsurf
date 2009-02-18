@@ -502,6 +502,8 @@ utf8_convert_ret utf8_convert(const char *string, size_t len,
 	if (iconv(cd, &in, &slen, &out, &rlen) == (size_t)-1) {
 		free(temp);
 		/* clear the cached conversion descriptor as it's invalid */
+		if (last_cd.cd)
+			iconv_close(last_cd.cd);
 		last_cd.from[0] = '\0';
 		last_cd.to[0] = '\0';
 		last_cd.cd = 0;
