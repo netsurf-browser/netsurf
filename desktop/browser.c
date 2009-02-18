@@ -116,7 +116,7 @@ static const char *browser_window_scrollbar_click(struct browser_window *bw,
 		int box_x, int box_y, int x, int y);
 static void browser_radio_set(struct content *content,
 		struct form_control *radio);
-static gui_pointer_shape get_pointer_shape(css_cursor cursor);
+static gui_pointer_shape get_pointer_shape(struct box *box);
 static bool browser_window_nearer_text_box(struct box *box, int bx, int by,
 		int x, int y, int dir, struct box **nearest, int *tx, int *ty,
 		int *nr_xd, int *nr_yd);
@@ -1349,6 +1349,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 	int gadget_box_x = 0, gadget_box_y = 0;
 	int scroll_box_x = 0, scroll_box_y = 0;
 	int text_box_x = 0, text_box_y = 0;
+	struct box *url_box = 0;
 	struct box *gadget_box = 0;
 	struct box *scroll_box = 0;
 	struct box *text_box = 0;
@@ -1388,6 +1389,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 			url_content = content;
 			url = box->href;
 			target = box->target;
+			url_box = box;
 		}
 
 		if (box->usemap)
@@ -1409,7 +1411,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 			title = box->title;
 
 		if (box->style && box->style->cursor != CSS_CURSOR_UNKNOWN)
-			pointer = get_pointer_shape(box->style->cursor);
+			pointer = get_pointer_shape(box);
 
 		if (box->style && box->type != BOX_BR &&
 				box->type != BOX_INLINE &&
@@ -1474,8 +1476,9 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 						messages_get("FormSubmit"),
 						gadget->form->action);
 				status = status_buffer;
-				pointer = GUI_POINTER_POINT;
-				if (mouse & (BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2))
+				pointer = get_pointer_shape(gadget_box);
+				if (mouse & (BROWSER_MOUSE_CLICK_1 |
+						BROWSER_MOUSE_CLICK_2))
 					action = ACTION_SUBMIT;
 			} else {
 				status = messages_get("FormBadSubmit");
@@ -1483,10 +1486,12 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 			break;
 		case GADGET_TEXTAREA:
 			status = messages_get("FormTextarea");
-			pointer = GUI_POINTER_CARET;
+			pointer = get_pointer_shape(gadget_box);
 
-			if (mouse & (BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_PRESS_2)) {
-				if (text_box && selection_root(bw->sel) != gadget_box)
+			if (mouse & (BROWSER_MOUSE_PRESS_1 |
+					BROWSER_MOUSE_PRESS_2)) {
+				if (text_box && selection_root(bw->sel) !=
+						gadget_box)
 					selection_init(bw->sel, gadget_box);
 
 				browser_window_textarea_click(bw,
@@ -1524,7 +1529,8 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 		case GADGET_TEXTBOX:
 		case GADGET_PASSWORD:
 			status = messages_get("FormTextbox");
-			pointer = GUI_POINTER_CARET;
+			pointer = get_pointer_shape(gadget_box);
+
 			if ((mouse & BROWSER_MOUSE_PRESS_1) &&
 					!(mouse & (BROWSER_MOUSE_MOD_1 |
 					BROWSER_MOUSE_MOD_2))) {
@@ -1590,7 +1596,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 		} else
 			status = url;
 
-		pointer = GUI_POINTER_POINT;
+		pointer = get_pointer_shape(url_box);
 
 		if (mouse & BROWSER_MOUSE_CLICK_1 &&
 				mouse & BROWSER_MOUSE_MOD_1) {
@@ -1607,7 +1613,8 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 				gui_window_save_as_link(bw->window,
 					&browser_window_href_content);
 
-		} else if (mouse & (BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2))
+		} else if (mouse & (BROWSER_MOUSE_CLICK_1 |
+				BROWSER_MOUSE_CLICK_2))
 			action = ACTION_GO;
 
 	} else {
@@ -1616,15 +1623,19 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 		/* frame resizing */
 		if (bw->parent) {
 			struct browser_window *parent;
-			for (parent = bw->parent; parent->parent; parent = parent->parent);
-			browser_window_resize_frames(parent, mouse, x + bw->x0, y + bw->y0,
+			for (parent = bw->parent; parent->parent;
+					parent = parent->parent);
+			browser_window_resize_frames(parent, mouse,
+					x + bw->x0, y + bw->y0,
 					&pointer, &status, &done);
 		}
 
-		/* if clicking in the main page, remove the selection from any text areas */
+		/* if clicking in the main page, remove the selection from any
+		 * text areas */
 		if (!done) {
 			if (text_box &&
-				(mouse & (BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2)) &&
+				(mouse & (BROWSER_MOUSE_CLICK_1 |
+						BROWSER_MOUSE_CLICK_2)) &&
 				selection_root(bw->sel) != c->data.html.layout)
 				selection_init(bw->sel, c->data.html.layout);
 
@@ -1689,7 +1700,8 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 				}
 			}
 		}
-		if ((mouse & BROWSER_MOUSE_CLICK_1) && !selection_defined(bw->sel)) {
+		if ((mouse & BROWSER_MOUSE_CLICK_1) &&
+				!selection_defined(bw->sel)) {
 			/* ensure key presses still act on the browser window */
 			browser_window_remove_caret(bw);
 		}
@@ -1861,8 +1873,10 @@ void browser_window_mouse_track_html(struct browser_window *bw,
 						box->descendant_y0);
 				if (scroll_y < box->descendant_y0)
 					scroll_y = box->descendant_y0;
-				else if (box->descendant_y1 - box->height < scroll_y)
-					scroll_y = box->descendant_y1 - box->height;
+				else if (box->descendant_y1 - box->height <
+						scroll_y)
+					scroll_y = box->descendant_y1 -
+							box->height;
 				if (scroll_y == box->scroll_y)
 					return;
 			}
@@ -1877,8 +1891,10 @@ void browser_window_mouse_track_html(struct browser_window *bw,
 						box->descendant_x0);
 				if (scroll_x < box->descendant_x0)
 					scroll_x = box->descendant_x0;
-				else if (box->descendant_x1 - box->width < scroll_x)
-					scroll_x = box->descendant_x1 - box->width;
+				else if (box->descendant_x1 - box->width <
+						scroll_x)
+					scroll_x = box->descendant_x1 -
+							box->width;
 			}
 
 			browser_window_scroll_box(bw, box, scroll_x, scroll_y);
@@ -2361,11 +2377,28 @@ void browser_window_form_select(struct browser_window *bw,
 }
 
 
-gui_pointer_shape get_pointer_shape(css_cursor cursor)
+gui_pointer_shape get_pointer_shape(struct box *box)
 {
 	gui_pointer_shape pointer;
 
-	switch (cursor) {
+	assert(box->style);
+	switch (box->style->cursor) {
+		case CSS_CURSOR_AUTO:
+			if (box->href || (box->gadget &&
+					(box->gadget->type == GADGET_IMAGE ||
+					box->gadget->type == GADGET_SUBMIT)))
+				/* link */
+				pointer = GUI_POINTER_POINT;
+			else if (box->gadget &&
+					(box->gadget->type == GADGET_TEXTBOX ||
+					box->gadget->type == GADGET_PASSWORD ||
+					box->gadget->type == GADGET_TEXTAREA))
+				/* text input */
+				pointer = GUI_POINTER_CARET;
+			else
+				/* anything else */
+				pointer = GUI_POINTER_DEFAULT;
+			break;
 		case CSS_CURSOR_CROSSHAIR:
 			pointer = GUI_POINTER_CROSS;
 			break;
