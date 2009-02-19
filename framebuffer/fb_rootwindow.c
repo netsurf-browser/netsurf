@@ -67,6 +67,7 @@ struct fb_widget {
         int height;
         colour bg;
         colour fg;
+        bool outline;
 
         /* handlers */
         fb_widget_mouseclick_t click;
@@ -131,11 +132,13 @@ fb_redraw_widget(struct fb_widget *widget)
                 break;
 
         case FB_WIDGET_TYPE_TEXT:
-                if (widget->text != NULL) {
+        	if (widget->outline) {
                 	plot.rectangle(fb_plot_ctx.x0, fb_plot_ctx.y0,
                 			fb_plot_ctx.x1 - fb_plot_ctx.x0 - 1,
                 			fb_plot_ctx.y1 - fb_plot_ctx.y0 - 1,
                 			1, 0x00000000, false, false);
+                }
+                if (widget->text != NULL) {
                         plot.text(fb_plot_ctx.x0 + 2,
                                   fb_plot_ctx.y0 + 15,
                                   NULL,
@@ -230,6 +233,7 @@ fb_add_button_widget(int x,
         new_widget->y = y;
         new_widget->width = widget_image->width;
         new_widget->height = widget_image->height;
+        new_widget->outline = false;
 
         new_widget->click = click_rtn;
 
@@ -249,7 +253,7 @@ fb_add_button_widget(int x,
 }
 
 static struct fb_widget *
-fb_add_text_widget(int x, int y, int width, int height, colour bg, fb_widget_input_t input_rtn)
+fb_add_text_widget(int x, int y, int width, int height, colour bg, bool outline, fb_widget_input_t input_rtn)
 {
         struct fb_widget *new_widget;
         new_widget = calloc(1, sizeof(struct fb_widget));
@@ -263,6 +267,7 @@ fb_add_text_widget(int x, int y, int width, int height, colour bg, fb_widget_inp
         new_widget->height = height;
         new_widget->bg = bg;
         new_widget->fg = FB_COLOUR_BLACK;
+        new_widget->outline = outline;
 
         new_widget->input = input_rtn;
 
@@ -288,6 +293,7 @@ fb_add_window_widget(struct gui_window *g,
         new_widget->width = g->width;
         new_widget->height = g->height;
         new_widget->bg = bg;
+        new_widget->outline = false;
 
         new_widget->click = click_rtn;
         new_widget->input = input_rtn;
@@ -414,7 +420,7 @@ void fb_rootwindow_create(framebuffer_t *fb)
                                         (newwidget->x + newwidget->width + 5) -
                                         (25 + 10),
                                         22,
-                                        FB_COLOUR_WHITE,
+                                        FB_COLOUR_WHITE, true,
                                         fb_widget_url_input);
 
 
@@ -423,7 +429,7 @@ void fb_rootwindow_create(framebuffer_t *fb)
          */
         status_widget = fb_add_text_widget(0, fb->height - 20,
                                            fb->width - 200, 20,
-                                           FB_FRAME_COLOUR,
+                                           FB_FRAME_COLOUR, false,
                                            NULL);
 
 }
