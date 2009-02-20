@@ -38,6 +38,7 @@
 #include "image/bitmap.h"
 #include "render/box.h"
 #include "render/font.h"
+#include "render/form.h"
 #include "render/html.h"
 #include "render/imagemap.h"
 #include "render/layout.h"
@@ -281,6 +282,9 @@ bool html_convert(struct content *c, int width, int height)
 	xmlNode *html, *head;
 	union content_msg_data msg_data;
 	unsigned int time_before, time_taken;
+#ifdef WITH_HUBBUB
+	struct form *f;
+#endif
 
 	/* finish parsing */
 	if (c->source_size == 0) {
@@ -321,8 +325,6 @@ bool html_convert(struct content *c, int width, int height)
 	c->data.html.document =
 			binding_get_document(c->data.html.parser_binding);
 	/*xmlDebugDumpDocument(stderr, c->data.html.document);*/
-	binding_destroy_tree(c->data.html.parser_binding);
-	c->data.html.parser_binding = NULL;
 
 	if (!c->data.html.document) {
 		LOG(("Parsing failed"));
@@ -364,6 +366,26 @@ bool html_convert(struct content *c, int width, int height)
 	if (!html_find_stylesheets(c, html))
 		return false;
 
+#ifdef WITH_HUBBUB
+	/* Retrieve forms from parser */
+	c->data.html.forms = binding_get_forms(c->data.html.parser_binding);
+	/* Make all actions absolute */
+	for (f = c->data.html.forms; f != NULL; f = f->prev) {
+		char *action;
+		url_func_result res;
+
+		res = url_join(f->action, c->data.html.base_url, &action);
+		if (res != URL_FUNC_OK) {
+			msg_data.error = messages_get("NoMemory");
+			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+			return false;
+		}
+
+		free(f->action);
+		f->action = action;
+	}
+#endif
+
 	/* convert xml tree to box tree */
 	LOG(("XML to box"));
 	content_set_status(c, messages_get("Processing"));
@@ -404,6 +426,10 @@ bool html_convert(struct content *c, int width, int height)
 	LOG(("Scheduling relayout no sooner than %dcs",
 		c->reformat_time - wallclock()));
 	/*box_dump(c->data.html.layout->children, 0);*/
+
+	/* Destroy the parser binding */
+	binding_destroy_tree(c->data.html.parser_binding);
+	c->data.html.parser_binding = NULL;
 
 	if (c->active == 0)
 		c->status = CONTENT_STATUS_DONE;
@@ -1654,7 +1680,16 @@ void html_reformat(struct content *c, int width, int height)
 void html_destroy(struct content *c)
 {
 	unsigned int i;
+	struct form *f, *g;
+
 	LOG(("content %p", c));
+
+	/* Destroy forms */
+	for (f = c->data.html.forms; f != NULL; f = g) {
+		g = f->prev;
+
+		form_free(f);
+	}
 
 	imagemap_destroy(c);
 

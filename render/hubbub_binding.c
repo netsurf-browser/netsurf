@@ -30,6 +30,7 @@
 #include <hubbub/parser.h>
 #include <hubbub/tree.h>
 
+#include "render/form.h"
 #include "render/parser_binding.h"
 
 #include "utils/config.h"
@@ -50,6 +51,8 @@ typedef struct hubbub_ctx {
 #undef NUM_NAMESPACES
 
 	hubbub_tree_handler tree_handler;
+
+	struct form *forms;
 } hubbub_ctx;
 
 static struct {
@@ -90,6 +93,12 @@ static int add_attributes(void *ctx, void *node,
 		const hubbub_attribute *attributes, uint32_t n_attributes);
 static int set_quirks_mode(void *ctx, hubbub_quirks_mode mode);
 static int change_encoding(void *ctx, const char *charset);
+
+static struct form *parse_form_element(xmlNode *node, const char *docenc);
+static struct form_control *parse_input_element(xmlNode *node);
+static struct form_control *parse_button_element(xmlNode *node);
+static struct form_control *parse_select_element(xmlNode *node);
+static struct form_control *parse_textarea_element(xmlNode *node);
 
 static hubbub_tree_handler tree_handler = {
 	create_comment,
@@ -133,6 +142,7 @@ binding_error binding_create_tree(void *arena, const char *charset, void **ctx)
 	c->encoding_source = ENCODING_SOURCE_HEADER;
 	c->document = NULL;
 	c->owns_doc = true;
+	c->forms = NULL;
 
 	error = hubbub_parser_create(charset, true, myrealloc, arena, 
 			&c->parser);
@@ -152,8 +162,7 @@ binding_error binding_create_tree(void *arena, const char *charset, void **ctx)
 	}
 	c->document->_private = (void *) 0;
 
-	for (i = 0; 
-		i < sizeof(c->namespaces) / sizeof(c->namespaces[0]); i++) {
+	for (i = 0; i < sizeof(c->namespaces) / sizeof(c->namespaces[0]); i++) {
 		c->namespaces[i] = NULL;
 	}
 
@@ -236,6 +245,42 @@ xmlDocPtr binding_get_document(void *ctx)
 	return doc;
 }
 
+struct form *binding_get_forms(void *ctx)
+{
+	hubbub_ctx *c = (hubbub_ctx *) ctx;
+
+	return c->forms;
+}
+
+struct form_control *binding_get_control_for_node(void *ctx, xmlNodePtr node)
+{
+	hubbub_ctx *c = (hubbub_ctx *) ctx;
+	struct form *f;
+	struct form_control *ctl = NULL;
+
+	for (f = c->forms; f != NULL; f = f->prev) {
+		for (ctl = f->controls; ctl != NULL; ctl = ctl->next) {
+			if (ctl->node == node)
+				return ctl;
+		}
+	}
+
+	/* No control found. This implies that it's not associated 
+	 * with any form. In this case, we create a control for it 
+	 * on the fly. */
+	if (strcasecmp((const char *) node->name, "input") == 0) {
+		ctl = parse_input_element(node);
+	} else if (strcasecmp((const char *) node->name, "button") == 0) {
+		ctl = parse_button_element(node);
+	} else if (strcasecmp((const char *) node->name, "select") == 0) {
+		ctl = parse_select_element(node);
+	} else if (strcasecmp((const char *) node->name, "textarea") == 0) {
+		ctl = parse_textarea_element(node);
+	} 
+
+	return ctl;
+}
+
 /*****************************************************************************/
 
 char *c_string_from_hubbub_string(hubbub_ctx *ctx, const hubbub_string *str)
@@ -246,8 +291,8 @@ char *c_string_from_hubbub_string(hubbub_ctx *ctx, const hubbub_string *str)
 void create_namespaces(hubbub_ctx *ctx, xmlNode *root)
 {
 	uint32_t i;
-	for (i = 1; 
-			i < sizeof(namespaces) / sizeof(namespaces[0]); i++) {
+
+	for (i = 1; i < sizeof(namespaces) / sizeof(namespaces[0]); i++) {
 		ctx->namespaces[i - 1] = xmlNewNs(root, 
 				BAD_CAST namespaces[i].url, 
 				BAD_CAST namespaces[i].prefix);
@@ -365,6 +410,21 @@ int create_element(void *ctx, const hubbub_tag *tag, void **result)
 		xmlFreeNode(n);
 		free(name);
 		return 1;
+	}
+
+	if (strcasecmp(name, "form") == 0) {
+		struct form *form = parse_form_element(n, c->encoding);
+
+		/* Memory exhaustion */
+		if (form == NULL) {
+			xmlFreeNode(n);
+			free(name);
+			return 1;
+		}
+
+		/* Insert into list */
+		form->prev = c->forms;
+		c->forms = form;
 	}
 
 	*result = (void *) n;
@@ -567,6 +627,39 @@ int has_children(void *ctx, void *node, bool *result)
 
 int form_associate(void *ctx, void *form, void *node)
 {
+	hubbub_ctx *c = (hubbub_ctx *) ctx;
+	xmlNode *n = (xmlNode *) node;
+	struct form *f;
+	struct form_control *control = NULL;
+
+	/* Find form object to associate with */
+	for (f = c->forms; f != NULL; f = f->prev) {
+		if (f->node == form)
+			break;
+	}
+
+	/* None found -- give up */
+	if (f == NULL)
+		return 0;
+
+	if (strcasecmp((const char *) n->name, "input") == 0) {
+		control = parse_input_element(n);
+	} else if (strcasecmp((const char *) n->name, "button") == 0) {
+		control = parse_button_element(n);
+	} else if (strcasecmp((const char *) n->name, "select") == 0) {
+		control = parse_select_element(n);
+	} else if (strcasecmp((const char *) n->name, "textarea") == 0) {
+		control = parse_textarea_element(n);
+	} else
+		return 0;
+
+	/* Memory exhaustion */
+	if (control == NULL)
+		return 1;
+
+	/* Add the control to the form */
+	form_add_control(f, control);
+
 	return 0;
 }
 
@@ -652,6 +745,243 @@ int change_encoding(void *ctx, const char *charset)
 
 	/* Equal encodings will have the same string pointers */
 	return (charset == name) ? 0 : 1;
+}
+
+struct form *parse_form_element(xmlNode *node, const char *docenc)
+{
+	struct form *form;
+	form_method method;
+	xmlChar *action, *meth, *charset, *target;
+
+	action = xmlGetProp(node, (const xmlChar *) "action");
+	charset = xmlGetProp(node, (const xmlChar *) "accept-charset");
+	target = xmlGetProp(node, (const xmlChar *) "target");
+
+	method = method_GET;
+	meth = xmlGetProp(node, (const xmlChar *) "method");
+	if (meth != NULL) {
+		if (strcasecmp((char *) meth, "post") == 0) {
+			xmlChar *enctype;
+
+			method = method_POST_URLENC;
+
+			enctype = xmlGetProp(node, (const xmlChar *) "enctype");
+			if (enctype != NULL) {
+				if (strcasecmp((char *) enctype, 
+						"multipart/form-data") == 0)
+					method = method_POST_MULTIPART;
+
+				xmlFree(enctype);
+			}
+		}
+		xmlFree(meth);
+	}
+
+	form = form_new(node, (char *) action, (char *) target, method, 
+			(char *) charset, docenc);
+
+	if (target != NULL)
+		xmlFree(target);
+	if (charset != NULL)
+		xmlFree(charset);
+	if (action != NULL)
+		xmlFree(action);
+
+	return form;
+}
+
+struct form_control *parse_input_element(xmlNode *node)
+{
+	struct form_control *control = NULL;
+	xmlChar *type = xmlGetProp(node, (const xmlChar *) "type");
+	xmlChar *name;
+
+	if (type != NULL && strcasecmp((char *) type, "password") == 0) {
+		control = form_new_control(node, GADGET_PASSWORD);
+	} else if (type != NULL && strcasecmp((char *) type, "file") == 0) {
+		control = form_new_control(node, GADGET_FILE);
+	} else if (type != NULL && strcasecmp((char *) type, "hidden") == 0) {
+		control = form_new_control(node, GADGET_HIDDEN);
+	} else if (type != NULL && strcasecmp((char *) type, "checkbox") == 0) {
+		control = form_new_control(node, GADGET_CHECKBOX);
+	} else if (type != NULL && strcasecmp((char *) type, "radio") == 0) {
+		control = form_new_control(node, GADGET_RADIO);
+	} else if (type != NULL && strcasecmp((char *) type, "submit") == 0) {
+		control = form_new_control(node, GADGET_SUBMIT);
+	} else if (type != NULL && strcasecmp((char *) type, "reset") == 0) {
+		control = form_new_control(node, GADGET_RESET);
+	} else if (type != NULL && strcasecmp((char *) type, "button") == 0) {
+		control = form_new_control(node, GADGET_BUTTON);
+	} else if (type != NULL && strcasecmp((char *) type, "image") == 0) {
+		control = form_new_control(node, GADGET_IMAGE);
+	} else {
+		control = form_new_control(node, GADGET_TEXTBOX);
+	}
+
+	xmlFree(type);
+
+	if (control == NULL)
+		return NULL;
+
+	if (control->type == GADGET_CHECKBOX || control->type == GADGET_RADIO) {
+		control->selected = 
+				xmlHasProp(node, (const xmlChar *) "checked");
+	}
+
+	if (control->type == GADGET_PASSWORD || 
+			control->type == GADGET_TEXTBOX) {
+		xmlChar *len = xmlGetProp(node, (const xmlChar *) "maxlength");
+		if (len != NULL) {
+			if (len[0] != '\0')
+				control->maxlength = atoi((char *) len);
+			xmlFree(len);
+		}
+	}
+
+	if (control->type != GADGET_FILE && control->type != GADGET_IMAGE) { 
+		xmlChar *value = xmlGetProp(node, (const xmlChar *) "value");
+		if (value != NULL) {
+			control->value = strdup((char *) value);
+
+			xmlFree(value);
+
+			if (control->value == NULL) {
+				form_free_control(control);
+				return NULL;
+			}
+
+			control->length = strlen(control->value);
+		}
+
+		if (control->type == GADGET_TEXTBOX || 
+				control->type == GADGET_PASSWORD) {
+			if (control->value == NULL) {
+				control->value = strdup("");
+				if (control->value == NULL) {
+					form_free_control(control);
+					return NULL;
+				}
+
+				control->length = 0;
+			}
+
+			control->initial_value = strdup(control->value);
+			if (control->initial_value == NULL) {
+				form_free_control(control);
+				return NULL;
+			}
+		}
+	}
+
+	name = xmlGetProp(node, (const xmlChar *) "name");
+	if (name != NULL) {
+		control->name = strdup((char *) name);
+
+		xmlFree(name);
+
+		if (control->name == NULL) {
+			form_free_control(control);
+			return NULL;
+		}
+	}
+
+	return control;
+}
+
+struct form_control *parse_button_element(xmlNode *node)
+{
+	struct form_control *control;
+	xmlChar *type = xmlGetProp(node, (const xmlChar *) "type");
+	xmlChar *name;
+	xmlChar *value;
+
+	if (type == NULL || strcasecmp((char *) type, "submit") == 0) {
+		control = form_new_control(node, GADGET_SUBMIT);
+	} else if (strcasecmp((char *) type, "reset") == 0) {
+		control = form_new_control(node, GADGET_RESET);
+	} else {
+		control = form_new_control(node, GADGET_BUTTON);
+	}
+
+	xmlFree(type);
+
+	if (control == NULL)
+		return NULL;
+
+	value = xmlGetProp(node, (const xmlChar *) "value");
+	if (value != NULL) {
+		control->value = strdup((char *) value);
+
+		xmlFree(value);
+
+		if (control->value == NULL) {
+			form_free_control(control);
+			return NULL;
+		}
+	}
+
+	name = xmlGetProp(node, (const xmlChar *) "name");
+	if (name != NULL) {
+		control->name = strdup((char *) name);
+
+		xmlFree(name);
+
+		if (control->name == NULL) {
+			form_free_control(control);
+			return NULL;
+		}
+	}
+
+	return control;
+}
+
+struct form_control *parse_select_element(xmlNode *node)
+{
+	struct form_control *control = form_new_control(node, GADGET_SELECT);
+	xmlChar *name;
+
+	if (control == NULL)
+		return NULL;
+
+	control->data.select.multiple = 
+			xmlHasProp(node, (const xmlChar *) "multiple");
+
+	name = xmlGetProp(node, (const xmlChar *) "name");
+	if (name != NULL) {
+		control->name = strdup((char *) name);
+
+		xmlFree(name);
+
+		if (control->name == NULL) {
+			form_free_control(control);
+			return NULL;
+		}
+	}
+
+	return control;
+}
+
+struct form_control *parse_textarea_element(xmlNode *node)
+{
+	struct form_control *control = form_new_control(node, GADGET_TEXTAREA);
+	xmlChar *name;
+
+	if (control == NULL)
+		return NULL;
+
+	name = xmlGetProp(node, (const xmlChar *) "name");
+	if (name != NULL) {
+		control->name = strdup((char *) name);
+
+		xmlFree(name);
+
+		if (control->name == NULL) {
+			form_free_control(control);
+			return NULL;
+		}
+	}
+
+	return control;
 }
 
 #endif

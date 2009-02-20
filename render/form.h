@@ -40,14 +40,17 @@ typedef enum {
 
 /** HTML form. */
 struct form {
-	char *action;				/**< Absolute URL to submit to. */
-	char *target;				/**< Target to submit to. */
-	form_method method;			/**< Method and enctype. */
-	char *accept_charsets;			/**< Charset to submit form in */
-	char *document_charset;			/**< Charset of document containing form */
-	struct form_control *controls;		/**< Linked list of controls. */
+	void *node;			/**< Corresponding DOM node */
+
+	char *action;			/**< Absolute URL to submit to. */
+	char *target;			/**< Target to submit to. */
+	form_method method;		/**< Method and enctype. */
+	char *accept_charsets;		/**< Charset to submit form in */
+	char *document_charset;		/**< Charset of document containing form */
+	struct form_control *controls;	/**< Linked list of controls. */
 	struct form_control *last_control;	/**< Last control in list. */
-	struct form *prev;			/**< Previous form in doc. */
+
+	struct form *prev;		/**< Previous form in doc. */
 };
 
 /** Type of a struct form_control. */
@@ -62,25 +65,35 @@ typedef enum {
 	GADGET_PASSWORD,
 	GADGET_SUBMIT,
 	GADGET_RESET,
-	GADGET_FILE
+	GADGET_FILE,
+	GADGET_BUTTON
 } form_control_type;
 
 /** Form control. */
 struct form_control {
-	form_control_type type;
-	char *name;
-	char *value;
-	char *initial_value;
-	bool disabled;
-	struct form *form;
-	struct box *box;
+	void *node;			/**< Corresponding DOM node */
+
+	form_control_type type;		/**< Type of control */
+
+	struct form *form;		/**< Containing form */
+
+	char *name;			/**< Control name */
+	char *value;			/**< Current value of control */
+	char *initial_value;		/**< Initial value of control */
+	bool disabled;			/**< Whether control is disabled */
+
+	struct box *box;		/**< Box for control */
+	/** Caret details. */
 	struct box *caret_inline_container;
 	struct box *caret_text_box;
 	size_t caret_box_offset, caret_form_offset;
-	unsigned int length;
 	int caret_pixel_offset;
-	unsigned int maxlength;
-	bool selected;
+
+	unsigned int length;		/**< Number of characters in control */
+	unsigned int maxlength;		/**< Maximum characters permitted */
+
+	bool selected;			/**< Whether control is selected */
+
 	union {
 		struct {
 			int mx, my;
@@ -94,6 +107,7 @@ struct form_control {
 			struct form_option *current;
 		} select;
 	} data;
+
 	struct form_control *prev;      /**< Previous control in this form */
 	struct form_control *next;	/**< Next control in this form. */
 };
@@ -115,9 +129,11 @@ struct form_successful_control {
 	struct form_successful_control *next;	/**< Next in linked list. */
 };
 
-struct form *form_new(char *action, char *target, form_method method, char *charset,
-		char *doc_charset);
-struct form_control *form_new_control(form_control_type type);
+struct form *form_new(void *node, const char *action, const char *target, 
+		form_method method, const char *charset, 
+		const char *doc_charset);
+void form_free(struct form *form);
+struct form_control *form_new_control(void *node, form_control_type type);
 void form_add_control(struct form *form, struct form_control *control);
 void form_free_control(struct form_control *control);
 bool form_add_option(struct form_control *control, char *value, char *text,

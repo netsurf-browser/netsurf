@@ -1,7 +1,7 @@
 /*
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
- * Copyright 2005-7 John M Bell <jmb202@ecs.soton.ac.uk>
+ * Copyright 2005-9 John-Mark Bell <jmb@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -45,61 +45,113 @@ static char *form_encode_item(const char *item, const char *charset,
 /**
  * Create a struct form.
  *
- * \param  action  URL to submit form to, used directly (not copied)
+ * \param  node    DOM node associated with form
+ * \param  action  URL to submit form to, or NULL for default
+ * \param  target  Target frame of form, or NULL for default
  * \param  method  method and enctype
- * \param  charset acceptable charactersets for form submission (not copied)
- * \param  doc_charset  characterset of containing document (not copied)
- * \return  a new structure, or 0 on memory exhaustion
+ * \param  charset acceptable encodings for form submission, or NULL
+ * \param  doc_charset  encoding of containing document
+ * \return  a new structure, or NULL on memory exhaustion
  */
-
-struct form *form_new(char *action, char *target, form_method method,
-		char *charset, char *doc_charset)
+struct form *form_new(void *node, const char *action, const char *target, 
+		form_method method, const char *charset, 
+		const char *doc_charset)
 {
 	struct form *form;
 
-	form = malloc(sizeof *form);
+	assert(doc_charset != NULL);
+
+	form = calloc(1, sizeof *form);
 	if (!form)
-		return 0;
-	form->action = action;
-	form->target = target;
+		return NULL;
+
+	form->action = strdup(action != NULL ? action : "");
+	if (form->action == NULL) {
+		free(form);
+		return NULL;
+	}
+
+	form->target = target != NULL ? strdup(target) : NULL;
+	if (target != NULL && form->target == NULL) {
+		free(form->action);
+		free(form);
+		return NULL;
+	}
+
 	form->method = method;
-	form->accept_charsets = charset;
-	form->document_charset = doc_charset;
-	form->controls = 0;
-	form->last_control = 0;
-	form->prev = 0;
+
+	form->accept_charsets = charset != NULL ? strdup(charset) : NULL;
+	if (charset != NULL && form->accept_charsets == NULL) {
+		free(form->target);
+		free(form->action);
+		free(form);
+		return NULL;
+	}
+
+	form->document_charset = strdup(doc_charset);
+	if (form->document_charset == NULL) {
+		free(form->accept_charsets);
+		free(form->target);
+		free(form->action);
+		free(form);
+		return NULL;
+	}
+
+	form->node = node;
+
 	return form;
 }
 
+/**
+ * Free a form, and any controls it owns.
+ *
+ * \param form  The form to free
+ *
+ * \note There may exist controls attached to box tree nodes which are not
+ * associated with any form. These will leak at present. Ideally, they will
+ * be cleaned up when the box tree is destroyed. As that currently happens
+ * via talloc, this won't happen. These controls are distinguishable, as their
+ * form field will be NULL.
+ */
+void form_free(struct form *form)
+{
+	struct form_control *c, *d;
+
+	for (c = form->controls; c != NULL; c = d) {
+		d = c->next;
+
+		form_free_control(c);
+	}
+
+	free(form->action);
+	free(form->target);
+	free(form->accept_charsets);
+	free(form->document_charset);
+
+	free(form);
+}
 
 /**
  * Create a struct form_control.
  *
+ * \param  node  Associated DOM node
  * \param  type  control type
- * \return  a new structure, or 0 on memory exhaustion
+ * \return  a new structure, or NULL on memory exhaustion
  */
-
-struct form_control *form_new_control(form_control_type type)
+struct form_control *form_new_control(void *node, form_control_type type)
 {
 	struct form_control *control;
 
-	if ((control = malloc(sizeof *control)) == NULL)
+	control = calloc(1, sizeof *control);
+	if (control == NULL)
 		return NULL;
+
+	control->node = node;
 	control->type = type;
-	control->name = NULL;
-	control->value = NULL;
-	control->initial_value = NULL;
-	control->disabled = false;
-	control->form = NULL;
-	control->box = NULL;
-	control->caret_inline_container = NULL;
-	control->caret_text_box = NULL;
-	control->caret_box_offset = control->caret_form_offset = 0;
-	control->length = 0;
+
+	/* Default max length of input to something insane */
 	control->maxlength = UINT_MAX;
-	control->selected = false;
-	control->prev = NULL;
-	control->next = NULL;
+
 	return control;
 }
 
@@ -110,12 +162,13 @@ struct form_control *form_new_control(form_control_type type)
  * \param form  The form to add the control to
  * \param control  The control to add
  */
-
 void form_add_control(struct form *form, struct form_control *control)
 {
 	control->form = form;
+
 	if (form->controls != NULL) {
 		assert(form->last_control);
+
 		form->last_control->next = control;
 		control->prev = form->last_control;
 		control->next = NULL;
@@ -131,14 +184,15 @@ void form_add_control(struct form *form, struct form_control *control)
  *
  * \param  control  structure to free
  */
-
 void form_free_control(struct form_control *control)
 {
 	free(control->name);
 	free(control->value);
 	free(control->initial_value);
+
 	if (control->type == GADGET_SELECT) {
 		struct form_option *option, *next;
+
 		for (option = control->data.select.items; option;
 				option = next) {
 			next = option->next;
@@ -147,6 +201,7 @@ void form_free_control(struct form_control *control)
 			free(option);
 		}
 	}
+
 	free(control);
 }
 
@@ -160,7 +215,6 @@ void form_free_control(struct form_control *control)
  * \param  selected  this option is selected
  * \return  true on success, false on memory exhaustion
  */
-
 bool form_add_option(struct form_control *control, char *value, char *text,
 		bool selected)
 {
@@ -169,13 +223,12 @@ bool form_add_option(struct form_control *control, char *value, char *text,
 	assert(control);
 	assert(control->type == GADGET_SELECT);
 
-	option = malloc(sizeof *option);
+	option = calloc(1, sizeof *option);
 	if (!option)
 		return false;
-	option->selected = option->initial_selected = false;
+
 	option->value = value;
 	option->text = text;
-	option->next = 0;
 
 	/* add to linked list */
 	if (control->data.select.items == 0)
@@ -216,7 +269,6 @@ bool form_add_option(struct form_control *control, char *value, char *text,
  *
  * See HTML 4.01 section 17.13.2.
  */
-
 bool form_successful_controls(struct form *form,
 		struct form_control *submit_button,
 		struct form_successful_control **successful_controls)
@@ -344,17 +396,23 @@ bool form_successful_controls(struct form *form,
 			case GADGET_IMAGE: {
 				/* image */
 				size_t len;
+				char *name;
 
 				if (control != submit_button)
 					/* only the activated submit button
 					 * is successful */
 					continue;
 
-				len = strlen(control->name) + 3;
+				name = ENCODE_ITEM(control->name);
+				if (name == NULL)
+					goto no_memory;
+
+				len = strlen(name) + 3;
 
 				/* x */
 				success_new = malloc(sizeof(*success_new));
 				if (!success_new) {
+					free(name);
 					LOG(("malloc failed"));
 					goto no_memory;
 				}
@@ -366,11 +424,11 @@ bool form_successful_controls(struct form *form,
 					free(success_new->name);
 					free(success_new->value);
 					free(success_new);
+					free(name);
 					LOG(("malloc failed"));
 					goto no_memory;
 				}
-				sprintf(success_new->name, "%s.x",
-						control->name);
+				sprintf(success_new->name, "%s.x", name);
 				sprintf(success_new->value, "%i",
 						control->data.image.mx);
 				success_new->next = 0;
@@ -380,6 +438,7 @@ bool form_successful_controls(struct form *form,
 				/* y */
 				success_new = malloc(sizeof(*success_new));
 				if (!success_new) {
+					free(name);
 					LOG(("malloc failed"));
 					goto no_memory;
 				}
@@ -391,16 +450,18 @@ bool form_successful_controls(struct form *form,
 					free(success_new->name);
 					free(success_new->value);
 					free(success_new);
+					free(name);
 					LOG(("malloc failed"));
 					goto no_memory;
 				}
-				sprintf(success_new->name, "%s.y",
-						control->name);
+				sprintf(success_new->name, "%s.y", name);
 				sprintf(success_new->value, "%i",
 						control->data.image.my);
 				success_new->next = 0;
 				last_success->next = success_new;
 				last_success = success_new;
+
+				free(name);
 
 				continue;
 				break;
@@ -450,7 +511,8 @@ bool form_successful_controls(struct form *form,
 				}
 				success_new->file = true;
 				success_new->name = ENCODE_ITEM(control->name);
-				success_new->value = ENCODE_ITEM(control->value ?
+				success_new->value = 
+						ENCODE_ITEM(control->value ?
 						control->value : "");
 				success_new->next = 0;
 				last_success->next = success_new;
@@ -462,6 +524,10 @@ bool form_successful_controls(struct form *form,
 				}
 
 				continue;
+				break;
+
+			case GADGET_BUTTON:
+				/* Ignore it */
 				break;
 
 			default:
@@ -505,7 +571,6 @@ no_memory:
  * \param  textarea  control of type GADGET_TEXTAREA
  * \return  the value as a UTF-8 string on heap, or 0 on memory exhaustion
  */
-
 char *form_textarea_value(struct form_control *textarea)
 {
 	unsigned int len = 0;

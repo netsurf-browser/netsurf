@@ -1574,6 +1574,9 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 		case GADGET_FILE:
 			status = messages_get("FormFile");
 			break;
+		case GADGET_BUTTON:
+			/* Do nothing, as this gadget cannot be activated */
+			break;
 		}
 
 	} else if (object && (mouse & BROWSER_MOUSE_MOD_2)) {
