@@ -50,7 +50,7 @@ static char *form_encode_item(const char *item, const char *charset,
  * \param  target  Target frame of form, or NULL for default
  * \param  method  method and enctype
  * \param  charset acceptable encodings for form submission, or NULL
- * \param  doc_charset  encoding of containing document
+ * \param  doc_charset  encoding of containing document, or NULL
  * \return  a new structure, or NULL on memory exhaustion
  */
 struct form *form_new(void *node, const char *action, const char *target, 
@@ -58,8 +58,6 @@ struct form *form_new(void *node, const char *action, const char *target,
 		const char *doc_charset)
 {
 	struct form *form;
-
-	assert(doc_charset != NULL);
 
 	form = calloc(1, sizeof *form);
 	if (!form)
@@ -88,8 +86,9 @@ struct form *form_new(void *node, const char *action, const char *target,
 		return NULL;
 	}
 
-	form->document_charset = strdup(doc_charset);
-	if (form->document_charset == NULL) {
+	form->document_charset = doc_charset != NULL ? strdup(doc_charset)
+						     : NULL;
+	if (doc_charset && form->document_charset == NULL) {
 		free(form->accept_charsets);
 		free(form->target);
 		free(form->action);

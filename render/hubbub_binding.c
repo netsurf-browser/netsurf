@@ -139,7 +139,8 @@ binding_error binding_create_tree(void *arena, const char *charset, void **ctx)
 
 	c->parser = NULL;
 	c->encoding = charset;
-	c->encoding_source = ENCODING_SOURCE_HEADER;
+	c->encoding_source = charset != NULL ? ENCODING_SOURCE_HEADER
+					     : ENCODING_SOURCE_DETECTED;
 	c->document = NULL;
 	c->owns_doc = true;
 	c->forms = NULL;
@@ -232,7 +233,7 @@ const char *binding_get_encoding(void *ctx, binding_encoding_source *source)
 
 	*source = c->encoding_source;
 
-	return c->encoding;
+	return c->encoding != NULL ? c->encoding : "Windows-1252";
 }
 
 xmlDocPtr binding_get_document(void *ctx)

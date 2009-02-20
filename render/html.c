@@ -333,6 +333,19 @@ bool html_convert(struct content *c, int width, int height)
 		return false;
 	}
 
+	if (c->data.html.encoding == NULL) {
+		const char *encoding = binding_get_encoding(
+				c->data.html.parser_binding, 
+				&c->data.html.encoding_source);
+
+		c->data.html.encoding = talloc_strdup(c, encoding);
+		if (c->data.html.encoding == NULL) {
+			msg_data.error = messages_get("NoMemory");
+			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+			return false;
+		}
+	}
+
 	/* locate html and head elements */
 	html = xmlDocGetRootElement(c->data.html.document);
 	if (html == 0 || strcmp((const char *) html->name, "html") != 0) {
@@ -369,11 +382,11 @@ bool html_convert(struct content *c, int width, int height)
 #ifdef WITH_HUBBUB
 	/* Retrieve forms from parser */
 	c->data.html.forms = binding_get_forms(c->data.html.parser_binding);
-	/* Make all actions absolute */
 	for (f = c->data.html.forms; f != NULL; f = f->prev) {
 		char *action;
 		url_func_result res;
 
+		/* Make all actions absolute */
 		res = url_join(f->action, c->data.html.base_url, &action);
 		if (res != URL_FUNC_OK) {
 			msg_data.error = messages_get("NoMemory");
@@ -383,6 +396,17 @@ bool html_convert(struct content *c, int width, int height)
 
 		free(f->action);
 		f->action = action;
+
+		/* Ensure each form has a document encoding */
+		if (f->document_charset == NULL) {
+			f->document_charset = strdup(c->data.html.encoding);
+			if (f->document_charset == NULL) {
+				msg_data.error = messages_get("NoMemory");
+				content_broadcast(c, CONTENT_MSG_ERROR, 
+						msg_data);
+				return false;
+			}
+		}
 	}
 #endif
 
