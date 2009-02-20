@@ -266,14 +266,12 @@ static bool fb_32bpp_text(int x, int y, const struct css_style *style,
                 nxtchr = utf8_next(text, length, nxtchr);
                 glyph_index = FT_Get_Char_Index(face, ucs4);
 
-                error = FT_Load_Glyph(face, glyph_index, FT_LOAD_DEFAULT);
+                error = FT_Load_Glyph(face, glyph_index, FT_LOAD_RENDER |
+		    					 FT_LOAD_MONOCHROME | 
+							 FT_LOAD_FORCE_AUTOHINT);
                 if (error) 
                         continue;
 
-                error = FT_Render_Glyph(face->glyph,  FT_RENDER_MODE_MONO ); 
-                if (error) 
-                        continue; 
-                
                 /* now, draw to our target surface */  
                 fb_32bpp_draw_ft_bitmap( &face->glyph->bitmap, 
                                          x + face->glyph->bitmap_left, 
