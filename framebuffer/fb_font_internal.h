@@ -19,20 +19,6 @@
 #ifndef NETSURF_FB_FONT_H
 #define NETSURF_FB_FONT_H
 
-bool fb_font_init(void);
-bool fb_font_finalise(void);
-
-#ifdef FB_USE_FREETYPE
-
-#include <ft2build.h>  
-#include FT_FREETYPE_H 
-
-FT_Face fb_get_face(const struct css_style *style);
-
-#else
-
-#include "utils/utf8.h"
-
 struct fb_font_desc {
     const char *name;
     int width, height;
@@ -48,7 +34,6 @@ extern utf8_convert_ret utf8_to_font_encoding(const struct fb_font_desc* font,
 				       const char *string, 
 				       size_t len,
 				       char **result);
-#endif
 
 #endif /* NETSURF_FB_FONT_H */
 

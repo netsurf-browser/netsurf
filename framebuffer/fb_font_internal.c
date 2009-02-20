@@ -28,6 +28,11 @@
 #include "framebuffer/fb_gui.h"
 #include "framebuffer/fb_font.h"
 
+bool fb_font_init(void)
+{
+        return true;
+}
+
 const struct fb_font_desc*
 fb_get_font(const struct css_style *style)
 {

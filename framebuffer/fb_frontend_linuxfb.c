@@ -49,6 +49,7 @@
 #include "framebuffer/fb_cursor.h"
 #include "framebuffer/fb_frontend.h"
 #include "framebuffer/fb_options.h"
+#include "framebuffer/fb_rootwindow.h"
 
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -647,15 +648,11 @@ void fb_os_input(struct gui_window *g, bool active)
                         } else if (event.type == EV_REL) {
                                 switch (event.code) {
 				case 0:
-                                        fb_cursor_move(framebuffer, 
-                                                       event.value, 
-                                                       0);
+                                        fb_rootwindow_move(framebuffer, g, event.value, 0, true);
 					break;
 
                                 case 1: 
-                                        fb_cursor_move(framebuffer, 
-                                                       0, 
-                                                       event.value);
+                                        fb_rootwindow_move(framebuffer, g, 0, event.value, true);
 					break;
 
 				case 8:

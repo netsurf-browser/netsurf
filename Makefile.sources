@@ -92,11 +92,17 @@ S_AMIGA := $(addprefix amiga/,$(S_AMIGA))
 
 # S_FRAMEBUFFER are sources purely for the framebuffer build
 S_FRAMEBUFFER := fb_gui.c tree.c history.c hotlist.c fb_schedule.c	\
-	thumbnail.c misc.c fb_bitmap.c fb_font.c font_8x16.c		\
+	thumbnail.c misc.c fb_bitmap.c 		\
 	fb_filetype.c login.c fb_cursor.c fb_plotters.c			\
 	fb_8bpp_plotters.c fb_16bpp_plotters.c fb_32bpp_plotters.c	\
 	fb_findfile.c fb_rootwindow.c fb_image_data.c
 #	fb_1bpp_plotters.c
+
+S_FRAMEBUFFER += fb_font_$(NETSURF_FB_FONTLIB).c
+
+ifeq ($(NETSURF_FB_FONTLIB),internal)
+S_FRAMEBUFFER += font_8x16.c
+endif
 
 ifeq ($(NETSURF_FB_FRONTEND),linux)
 S_FRAMEBUFFER += fb_frontend_linuxfb.c

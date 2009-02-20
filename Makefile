@@ -508,6 +508,11 @@ endif
 ifeq ($(TARGET),framebuffer)
   $(eval $(call feature_enabled,MNG,-DWITH_MNG,-lmng,PNG support))
 
+  ifeq ($(NETSURF_FB_FONTLIB),freetype)
+	CFLAGS += -DFB_USE_FREETYPE -I/usr/include/freetype2
+	LDFLAGS += -lfreetype
+  endif
+
   # define additional CFLAGS and LDFLAGS requirements for pkg-configed libs here
   NETSURF_FEATURE_RSVG_CFLAGS := -DWITH_RSVG
   NETSURF_FEATURE_ROSPRITE_CFLAGS := -DWITH_NSSPRITE

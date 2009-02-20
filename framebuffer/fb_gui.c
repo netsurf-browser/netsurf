@@ -44,6 +44,7 @@
 #include "framebuffer/fb_findfile.h"
 #include "framebuffer/fb_rootwindow.h"
 #include "framebuffer/fb_image_data.h"
+#include "framebuffer/fb_font.h"
 
 #include "content/urldb.h"
 #include "desktop/history_core.h"
@@ -225,6 +226,9 @@ void gui_init(int argc, char** argv)
         }
 
         framebuffer->cursor = fb_cursor_init(framebuffer, &pointer_image);
+
+        fb_font_init();
+
 }
 
 void gui_init2(int argc, char** argv)
@@ -542,7 +546,7 @@ bool gui_window_box_scroll_start(struct gui_window *g,
 
 bool gui_window_frame_resize_start(struct gui_window *g)
 {
-	printf("resize frame\n");
+	LOG(("resize frame\n"));
 	return true;
 }
 
@@ -552,7 +556,7 @@ void gui_window_save_as_link(struct gui_window *g, struct content *c)
 
 void gui_window_set_scale(struct gui_window *g, float scale)
 {
-	printf("set scale\n");
+	LOG(("set scale\n"));
 }
 
 struct gui_download_window *gui_download_window_create(const char *url,

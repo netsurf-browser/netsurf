@@ -79,6 +79,8 @@ struct fb_widget {
         char* text;
 };
 
+static struct css_style root_style;
+
 static struct fb_widget *widget_list;
 
 /* widget for status */
@@ -141,7 +143,7 @@ fb_redraw_widget(struct fb_widget *widget)
                 if (widget->text != NULL) {
                         plot.text(fb_plot_ctx.x0 + 2,
                                   fb_plot_ctx.y0 + 15,
-                                  NULL,
+                                  &root_style,
                                   widget->text,
                                   strlen(widget->text),
                                   widget->bg,
@@ -382,6 +384,10 @@ void fb_rootwindow_create(framebuffer_t *fb)
 
         /* no widget yet has input */
         inputfocus_widget = NULL;
+
+        /* setup root css style (for text etc.) */
+        root_style.font_size.value.length.unit = CSS_UNIT_PX;
+        root_style.font_size.value.length.value = 14;
 
         /* underlying root window, cannot take input and lowest in stack */
         rootwindow = calloc(1, sizeof(struct gui_window));

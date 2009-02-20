@@ -178,7 +178,114 @@ static bool fb_32bpp_clg(colour c)
 	return true;
 }
 
+#ifdef FB_USE_FREETYPE
 
+
+static bool
+fb_32bpp_draw_ft_bitmap(FT_Bitmap *bp, int x, int y, colour c)
+{
+        int height = bp->rows;
+        int width = bp->width;
+        uint32_t row;
+        int xloop, yloop;
+
+        uint32_t *pvideo;
+        uint32_t fgcol;
+
+        int x0,y0,x1,y1;
+	int xoff, yoff; /* x and y offset into image */
+
+        unsigned char *fntd;
+
+        if (width == 0) {
+                LOG(("null width char!"));
+                return false;
+        }
+
+
+        y+=1; /* the coord is the bottom-left of the pixels offset by 1 to make
+               *   it work since fb coords are the top-left of pixels 
+               */
+
+        /* The part of the text displayed is cropped to the current context. */
+        x0 = x;
+        y0 = y;
+        x1 = x + width;
+        y1 = y + height;
+
+        if (!fb_plotters_clip_rect_ctx(&x0, &y0, &x1, &y1)) {
+                return true; /* text lies outside current clipping region */
+        }
+
+        /* find width and height to plot */
+        if (height > (y1 - y0))
+                height = (y1 - y0);
+
+        if (width > (x1 - x0))
+                width = (x1 - x0);
+
+	xoff = x0 - x;
+	yoff = y0 - y;
+
+        fgcol = ((c & 0xff0000) >> 16) | (c & 0xff00) | ((c & 0xff) << 16);
+
+
+        pvideo = fb_32bpp_get_xy_loc(x, y0);
+
+        for (yloop = yoff; yloop < height; yloop++) {
+                fntd = bp->buffer + (yloop * bp->pitch);
+                for (xloop = 0; xloop < width ; xloop++) {
+                        if ((xloop % 8) == 0) {
+                                row = *fntd++;
+                        }
+ 
+                        if ((row & 0x80) != 0) {
+                                *(pvideo + xloop) = fgcol;
+                        } 
+                        row = row << 1;
+                }
+
+                pvideo += (framebuffer->linelen >> 2);
+        }
+        
+
+	return true;
+}
+
+static bool fb_32bpp_text(int x, int y, const struct css_style *style,
+			const char *text, size_t length, colour bg, colour c)
+{
+        uint32_t ucs4;
+        size_t nxtchr = 0;
+        FT_UInt glyph_index; 
+        FT_Face face = fb_get_face(style);
+        FT_Error error;
+
+        while (nxtchr < length) {
+                ucs4 = utf8_to_ucs4(text + nxtchr, length - nxtchr);
+                nxtchr = utf8_next(text, length, nxtchr);
+                glyph_index = FT_Get_Char_Index(face, ucs4);
+
+                error = FT_Load_Glyph(face, glyph_index, FT_LOAD_DEFAULT);
+                if (error) 
+                        continue;
+
+                error = FT_Render_Glyph(face->glyph,  FT_RENDER_MODE_MONO ); 
+                if (error) 
+                        continue; 
+                
+                /* now, draw to our target surface */  
+                fb_32bpp_draw_ft_bitmap( &face->glyph->bitmap, 
+                                         x + face->glyph->bitmap_left, 
+                                         y - face->glyph->bitmap_top,
+                                         c); 
+
+                x += face->glyph->advance.x >> 6;
+
+        }
+        return true;
+}
+#else
 static bool fb_32bpp_text(int x, int y, const struct css_style *style,
 			const char *text, size_t length, colour bg, colour c)
 {
@@ -259,17 +366,18 @@ static bool fb_32bpp_text(int x, int y, const struct css_style *style,
 	free(buffer);
 	return true;
 }
+#endif
 
 static bool fb_32bpp_disc(int x, int y, int radius, colour c, bool filled)
 {
-	printf("disc\n");
+	LOG(("disc unimplemented"));
 	return true;
 }
 
 static bool fb_32bpp_arc(int x, int y, int radius, int angle1, int angle2,
 	    		colour c)
 {
-	printf("arc\n");
+	LOG(("arc unimplemented"));
 	return true;
 }
 
@@ -365,14 +473,14 @@ static bool fb_32bpp_bitmap_tile(int x, int y, int width, int height,
 
 static bool fb_32bpp_flush(void)
 {
-	printf("flush\n");
+	LOG(("flush unimplemnted"));
 	return true;
 }
 
 static bool fb_32bpp_path(const float *p, unsigned int n, colour fill, float width,
 			colour c, const float transform[6])
 {
-	printf("path\n");
+	LOG(("path unimplemented"));
 	return true;
 }
 

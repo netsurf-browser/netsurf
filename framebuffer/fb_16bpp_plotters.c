@@ -191,7 +191,13 @@ static bool fb_16bpp_clg(colour c)
 	return true;
 }
 
-
+#ifdef FB_USE_FREETYPE
+static bool fb_16bpp_text(int x, int y, const struct css_style *style,
+			const char *text, size_t length, colour bg, colour c)
+{
+        return false;
+}
+#else
 static bool fb_16bpp_text(int x, int y, const struct css_style *style,
 			const char *text, size_t length, colour bg, colour c)
 {
@@ -278,6 +284,7 @@ static bool fb_16bpp_text(int x, int y, const struct css_style *style,
 	free(buffer);
 	return true;
 }
+#endif
 
 static bool fb_16bpp_disc(int x, int y, int radius, colour c, bool filled)
 {
