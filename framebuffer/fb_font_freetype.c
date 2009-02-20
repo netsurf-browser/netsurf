@@ -54,7 +54,7 @@ bool fb_font_init(void)
         }
 
         error = FT_New_Face(library, 
-                            "/usr/share/fonts/truetype/freefont/FreeSans.ttf", 
+                            "/usr/share/fonts/truetype/ttf-bitstream-vera/Vera.ttf", 
                             0, 
                             &face_sans_serif ); 
         if (error) {
