@@ -176,4 +176,4 @@ fieldset { display: block; border: thin solid #888; margin: 1.12em 0; }
 [align=center] { text-align: center; }
 [align=right] { text-align: right; }
 
-noembed, script, style { display: none; }
+noembed, script, style, title { display: none; }
