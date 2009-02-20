@@ -608,6 +608,11 @@ ifeq ($(TARGET),framebuffer)
     LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl openssl)
     SUBTARGET := -vnc
   endif
+
+  ifeq ($(SUBTARGET),)
+    $(error Unable to proceed, no FB subtarget chosen.)
+  endif
+
 endif
 
 # ----------------------------------------------------------------------------
