@@ -477,6 +477,7 @@ FormCheckbox:Click to check this option
 FormRadio:Click to choose this option
 FormSubmit:Send form to %s
 FormBadSubmit:Warning: form can not be submitted
+FormButton:Warning: button can not be activated
 FormTextarea:Click to edit the text
 FormTextbox:Click to edit this field
 FormReset:Reset form (not implemented)

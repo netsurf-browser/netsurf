@@ -477,6 +477,7 @@ FormCheckbox:Cliquer pour cocher cette option
 FormRadio:Cliquer pour choisir cette option
 FormSubmit:Envoyer le formulaire à %s
 FormBadSubmit:Alerte: le formulaire n'a pas pu être envoyé
+FormButton:Warning: button can not be activated
 FormTextarea:Cliquer pour éditer ce texte
 FormTextbox:Cliquer pour éditer ce champ
 FormReset:RAZ du formulaire (non implémenté)

@@ -477,6 +477,7 @@ FormCheckbox:Klikken selekteert deze optie
 FormRadio:Klikken kiest deze optie
 FormSubmit:Verstuur data naar %s
 FormBadSubmit:Waarschuwing: data kan niet verzonden worden
+FormButton:Warning: button can not be activated
 FormTextarea:Klikken om tekst te bewerken
 FormTextbox:Klikken om dit veld te bewerken
 FormReset:Reset form (not implemented)

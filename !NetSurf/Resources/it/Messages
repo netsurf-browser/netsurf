@@ -478,6 +478,7 @@ FormCheckbox:Clicca per verificare questa opzione
 FormRadio:Clicca per scegliere questa opzione
 FormSubmit:Invia form a %s
 FormBadSubmit:Attenzione: Il form non può essere inviato
+FormButton:Warning: button can not be activated
 FormTextarea:Clicca per editare il testo
 FormTextbox:Clicca per editare il campo
 FormReset:Resetta form (non ancora implementato)

@@ -477,6 +477,7 @@ FormCheckbox:Anklicken um die Option an/abzuschalten
 FormRadio:Anklicken wählt diese Option
 FormSubmit:Daten übertragen an %s
 FormBadSubmit:Achtung: Daten können nicht gesendet werden
+FormButton:Warning: button can not be activated
 FormTextarea:Anklicken zum Editieren
 FormTextbox:Anklicken zum Bearbeiten des Feldes
 FormReset:Reset form (not implemented)

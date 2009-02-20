@@ -1581,7 +1581,8 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 			status = messages_get("FormFile");
 			break;
 		case GADGET_BUTTON:
-			/* Do nothing, as this gadget cannot be activated */
+			/* This gadget cannot be activated */
+			status = messages_get("FormButton");
 			break;
 		}
 
