@@ -116,7 +116,7 @@ static const char *browser_window_scrollbar_click(struct browser_window *bw,
 		int box_x, int box_y, int x, int y);
 static void browser_radio_set(struct content *content,
 		struct form_control *radio);
-static gui_pointer_shape get_pointer_shape(struct box *box);
+static gui_pointer_shape get_pointer_shape(struct box *box, bool imagemap);
 static bool browser_window_nearer_text_box(struct box *box, int bx, int by,
 		int x, int y, int dir, struct box **nearest, int *tx, int *ty,
 		int *nr_xd, int *nr_yd);
@@ -1345,6 +1345,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 	char status_buffer[200];
 	const char *status = 0;
 	gui_pointer_shape pointer = GUI_POINTER_DEFAULT;
+	bool imagemap = false;
 	int box_x = 0, box_y = 0;
 	int gadget_box_x = 0, gadget_box_y = 0;
 	int scroll_box_x = 0, scroll_box_y = 0;
@@ -1392,9 +1393,14 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 			url_box = box;
 		}
 
-		if (box->usemap)
+		if (box->usemap) {
 			url = imagemap_get(content, box->usemap,
 					box_x, box_y, x, y, &target);
+			if (url) {
+				imagemap = true;
+				url_box = box;
+			}
+		}
 
 		if (box->gadget) {
 			gadget_content = content;
@@ -1411,7 +1417,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 			title = box->title;
 
 		if (box->style && box->style->cursor != CSS_CURSOR_UNKNOWN)
-			pointer = get_pointer_shape(box);
+			pointer = get_pointer_shape(box, false);
 
 		if (box->style && box->type != BOX_BR &&
 				box->type != BOX_INLINE &&
@@ -1476,7 +1482,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 						messages_get("FormSubmit"),
 						gadget->form->action);
 				status = status_buffer;
-				pointer = get_pointer_shape(gadget_box);
+				pointer = get_pointer_shape(gadget_box, false);
 				if (mouse & (BROWSER_MOUSE_CLICK_1 |
 						BROWSER_MOUSE_CLICK_2))
 					action = ACTION_SUBMIT;
@@ -1486,7 +1492,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 			break;
 		case GADGET_TEXTAREA:
 			status = messages_get("FormTextarea");
-			pointer = get_pointer_shape(gadget_box);
+			pointer = get_pointer_shape(gadget_box, false);
 
 			if (mouse & (BROWSER_MOUSE_PRESS_1 |
 					BROWSER_MOUSE_PRESS_2)) {
@@ -1529,7 +1535,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 		case GADGET_TEXTBOX:
 		case GADGET_PASSWORD:
 			status = messages_get("FormTextbox");
-			pointer = get_pointer_shape(gadget_box);
+			pointer = get_pointer_shape(gadget_box, false);
 
 			if ((mouse & BROWSER_MOUSE_PRESS_1) &&
 					!(mouse & (BROWSER_MOUSE_MOD_1 |
@@ -1599,7 +1605,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 		} else
 			status = url;
 
-		pointer = get_pointer_shape(url_box);
+		pointer = get_pointer_shape(url_box, imagemap);
 
 		if (mouse & BROWSER_MOUSE_CLICK_1 &&
 				mouse & BROWSER_MOUSE_MOD_1) {
@@ -2380,7 +2386,7 @@ void browser_window_form_select(struct browser_window *bw,
 }
 
 
-gui_pointer_shape get_pointer_shape(struct box *box)
+gui_pointer_shape get_pointer_shape(struct box *box, bool imagemap)
 {
 	gui_pointer_shape pointer;
 	struct css_style *style;
@@ -2395,7 +2401,8 @@ gui_pointer_shape get_pointer_shape(struct box *box)
 		case CSS_CURSOR_AUTO:
 			if (box->href || (box->gadget &&
 					(box->gadget->type == GADGET_IMAGE ||
-					box->gadget->type == GADGET_SUBMIT)))
+					box->gadget->type == GADGET_SUBMIT)) ||
+					imagemap)
 				/* link */
 				pointer = GUI_POINTER_POINT;
 			else if (box->gadget &&
