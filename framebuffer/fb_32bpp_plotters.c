@@ -302,7 +302,7 @@ fb_32bpp_draw_ft_bitmap(FT_Bitmap *bp, int x, int y, colour c)
                         abpixel = (pixel[((yoff + yloop) * bp->pitch) + xloop + xoff] << 24) | fgcol;
                         if ((abpixel & 0xFF000000) != 0) {
                                 /* pixel is not transparent */
-                                if ((abpixel & 0xFF000000) != 0xFF) {
+                                if ((abpixel & 0xFF000000) != 0xFF000000) {
                                         abpixel = fb_plotters_ablend(abpixel, 
                                          fb_32bpp_to_colour(*(pvideo + xloop)));
                                 }
@@ -511,7 +511,7 @@ static bool fb_32bpp_bitmap(int x, int y, int width, int height,
                 for (xloop = 0; xloop < width; xloop++) {
                         abpixel = pixel[((yoff + yloop) * bitmap->width) + xloop + xoff];
                         if ((abpixel & 0xFF000000) != 0) {
-                                if ((abpixel & 0xFF000000) != 0xFF) {
+                                if ((abpixel & 0xFF000000) != 0xFF000000) {
                                         abpixel = fb_plotters_ablend(abpixel, 
                                          fb_32bpp_to_colour(*(pvideo + xloop)));
                                 }
