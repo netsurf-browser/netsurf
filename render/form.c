@@ -527,6 +527,7 @@ bool form_successful_controls(struct form *form,
 
 			case GADGET_BUTTON:
 				/* Ignore it */
+				continue;
 				break;
 
 			default:
