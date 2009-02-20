@@ -2383,9 +2383,15 @@ void browser_window_form_select(struct browser_window *bw,
 gui_pointer_shape get_pointer_shape(struct box *box)
 {
 	gui_pointer_shape pointer;
+	struct css_style *style;
 
-	assert(box->style);
-	switch (box->style->cursor) {
+	if (box->type == BOX_FLOAT_LEFT || box->type == BOX_FLOAT_RIGHT)
+		style = box->children->style;
+	else
+		style = box->style;
+
+	assert(style);
+	switch (style->cursor) {
 		case CSS_CURSOR_AUTO:
 			if (box->href || (box->gadget &&
 					(box->gadget->type == GADGET_IMAGE ||
