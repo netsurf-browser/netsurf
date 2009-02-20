@@ -32,6 +32,7 @@
 static FT_Library library; 
 static FT_Face face_sans_serif; 
 
+int ft_load_type;
 
 utf8_convert_ret utf8_to_local_encoding(const char *string, 
 				       size_t len,
@@ -68,6 +69,9 @@ bool fb_font_init(void)
                 return false;
         } 
         
+        /* set the default render mode */
+        //        ft_load_type = FT_LOAD_MONOCHROME;
+        ft_load_type = 0;
         
         return true;
 }

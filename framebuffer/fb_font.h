@@ -29,6 +29,8 @@ bool fb_font_finalise(void);
 
 FT_Face fb_get_face(const struct css_style *style);
 
+extern int ft_load_type;
+
 #else
 
 #include "utils/utf8.h"
