@@ -65,14 +65,18 @@
 
 (if (= #options-exist 0)
 	(
+		(if (exists "TBimages:" (noreq))
+			(set #aiss-theme "AISS")
+		)
+
 		(set #themename
    			(askchoice
-  				(prompt "Please select theme\n"
-					"AISS theme requires AISS and def_pointers packages "
-					"to be installed.")
-; perhaps we should be detecting these?
- 	      		(help @askchoice-help)
-				(choices "Default" "AISS")
+  				(prompt "Please select theme")
+ 	      		(help "AISS theme requires AISS (and def_pointers for 32-bit "
+						"pointers), and will only be shown as an option if "
+						"AISS is installed.\n\n"
+						@askchoice-help)
+				(choices "Default" #aiss-theme)
        			(default 0)
    			)
 		)
@@ -121,6 +125,8 @@
 (p_setmimetype "bmp" "image/bmp")
 (p_setmimetype "ico" "image/ico")
 (p_setmimetype "sprite" "image/x-riscos-sprite")
+(p_setmimetype "lha" "application/x-lha")
+(p_setmimetype "zip" "application/x-zip")
 
 (complete 100)
 
