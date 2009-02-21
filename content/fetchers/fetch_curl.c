@@ -222,6 +222,8 @@ void fetch_curl_register(void)
 	if (code != CURLE_OK) {
 		curl_with_openssl = false;
 	}
+
+	LOG(("cURL %slinked against openssl", curl_with_openssl ? "" : "not "));
 #endif
 
 	/* cURL initialised okay, register the fetchers */
