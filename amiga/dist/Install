@@ -180,6 +180,7 @@
 			(help @copylib-help)
 			(source #netsurf-name)
 			(dest @default-dest)
+			(newname "NetSurf")
 			(infos)
 			(optional "askuser" "force" "oknodelete")
 			(confirm "expert")
