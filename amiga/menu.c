@@ -528,10 +528,15 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 						TDR_TitleString,messages_get("NetSurf"),
 						TDR_Window,gwin->win,
 						TDR_GadgetString,messages_get("OK"),
-						TDR_FormatString,"NetSurf %s\n%s (%s)\n\nhttp://www.netsurf-browser.org",
+						TDR_FormatString,"NetSurf %s\n%s (%s) %s\n\nhttp://www.netsurf-browser.org",
 						TDR_Arg1,netsurf_version,
 						TDR_Arg2,versvn,
 						TDR_Arg3,verdate,
+#ifdef NS_AMIGA_CAIRO
+						TDR_Arg4,"Cairo",
+#else
+						TDR_Arg4,"",
+#endif
 						TAG_DONE);
 
 					ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);

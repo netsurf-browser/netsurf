@@ -13,6 +13,96 @@
 	)
 )
 
+(procedure p_copysobj #sobj
+	(set #sobj-version (getversion (tackon "SObjs/" #sobj)))
+
+	(if (<> #sobj-version 0)
+		(
+			(transcript "Date compare copy " #sobj)
+
+			(if (exists (tackon "SObjs:" #sobj))
+				(
+					(set #file-newer (earlier (tackon "SObjs:" #sobj) (tackon "SObjs/" #sobj)))
+
+					(if (= #file-newer 0)
+						(
+							(set #newer-text "has an older datestamp")
+						)
+						;else
+						(
+							(set #newer-text "has a newer datestamp")
+						)
+					)
+
+					(set #old-size (getsize (tackon "SObjs:" #sobj)))
+					(set #new-size (getsize (tackon "SObjs/" #sobj)))
+
+					(if (AND (= #old-size #new-size) (= #file-newer 0))
+						(
+							(set #copy 0)
+						)
+						;else
+						(
+							(if (OR (= @user-level 2) (AND (= @user-level 1) (<> #file-newer 0)))
+; Expert users are always prompted
+; Average users are prompted if the file trying to be copied is newer
+; Novice users are never prompted
+; This is roughly equivalent to (copylib (confirm))
+; No prompting occurs if the destination does not exist (silent copy)
+; or the files are the same size and the one being copied isn't newer (don't copy)
+								(
+									(set #copy
+										(askbool
+											(prompt "Copying " #sobj "...\n\n"
+												"Version to install: " #new-size " bytes\n"
+												"Version currently installed: " #old-size " bytes\n\n"
+												"The file to copy " #newer-text)
+											(help @askbool-help)
+											(default #file-newer)
+											(choices "Proceed with copy" "Skip this part")
+										)
+									)
+								)
+								;else
+								(
+									(set #copy #file-newer)
+								)
+							)
+						)
+					)
+				)
+				; else if dest file does not exist
+				(
+					(set #copy 1)
+				)
+			)
+
+			(if (<> #copy 0)
+				(
+					(copyfiles
+						(prompt "Copying " #sobj "...")
+						(help @copyfiles-help)
+						(source (tackon "SObjs/" #sobj))
+						(dest "SObjs:")
+						(optional "nofail" "force")
+					)
+				)
+			)
+		)
+		; else if version info is available
+		(
+			(copylib
+				(prompt "Copying " #sobj "...")
+				(help @copylib-help)
+				(source (tackon "SObjs/" #sobj))
+				(dest "SObjs:")
+				(optional "nofail" "force")
+				(confirm)
+			)
+		)
+	)
+)
+
 (if (= @app-name "NetSurfAutoInstall") (set #AutoInstall 1))
 
 (if (<> #AutoInstall 1) (welcome))
@@ -29,22 +119,87 @@
 	)
 )
 
+(working "Checking existing installation...")
 (set #icon-exists (exists (tackon @default-dest "NetSurf.info")))
+(set osver (getversion))
+(set osver (/ osver 65536))
 
-; *****************************************************
-; TODO: Check OS version/existing build and provide
-; option to select graphics.library or part-Cairo build.
-; ****************************************************
+(if (>= osver 53)
+	(
+		(if (= #AutoInstall 0)
+			(
+				(set #cairo-name "Shared objects/part-Cairo")
+			)
+			;else
+			(
+				(set #cairo-name "")
+			)
+		)
+		(set #cairo-version 1)
+		(set #netsurf-exists (exists (tackon @default-dest "NetSurf")))
+		(if (<> #netsurf-exists 0)
+			(
+				(set #netsurf-size (getsize (tackon @default-dest "NetSurf")))
 
-(copylib
-	(prompt "Please check the version of NetSurf you are copying against "
-			"any which might already be installed.")
-	(help @copylib-help)
-	(source "NetSurf")
-	(dest @default-dest)
-	(infos)
-	(optional "askuser" "force" "oknodelete")
-	(confirm "expert")
+		; This loop checks the installed version of NetSurf against known
+		; filesizes for non-Cairo versions.  This isn't great as self-compiled
+		; or non-release builds won't be picked up.
+		; Below only contains latest dev snapshot as that is all I can find out.
+		; Additional sizes can be added "1234" "5678" etc
+		; We might be able to guess as the static build is always bigger (>8MB?)
+
+				(set #loop 0)
+				(while (set #compare-size (select #loop "9646743"))
+					(
+						(set #loop (+ #loop 1))
+						(if (= #netsurf-size #compare-size) (set #cairo-version 0))
+					)
+				)
+			)
+		)
+	)
+	; else
+	(
+		(set #cairo-version 0)
+		(set #cairo-name "")		
+	)
+)
+
+(if (AND (> @user-level 0) (<> #cairo-name ""))
+	(
+		(set #cairo-version
+			(askchoice
+				(prompt "Which version of NetSurf would you like to install?")
+				(help "The Cairo/shared objects version has better rendering "
+					"of some graphical elements, and supports SVG.  However, "
+					"some users report problems with the use of shared objects.\n\n"
+					@askchoice-help)
+				(choices "Static/graphics.library" #cairo-name)
+				(default #cairo-version)
+			)
+		)
+	)
+)
+
+(set #netsurf-name (select #cairo-version "NetSurf" "NetSurf_Cairo"))
+
+(if (= #AutoInstall 0)
+	(
+		(copylib
+			(prompt "Please check the version of NetSurf you are copying against "
+					"any which might already be installed.")
+			(help @copylib-help)
+			(source #netsurf-name)
+			(dest @default-dest)
+			(infos)
+			(optional "askuser" "force" "oknodelete")
+			(confirm "expert")
+		)
+	)
+;else
+	(
+		(run "CopyStore " #netsurf-name " " @default-dest)
+	)
 )
 
 (complete 20)
@@ -57,6 +212,27 @@
 	(dest @default-dest)
 	(infos)
 ;	(all)
+)
+
+(complete 50)
+
+(if (= #cairo-version 1)
+	(
+		(working "Copying Shared Objects")
+
+		(p_copysobj "libc.so")
+		(p_copysobj "libgcc.so")
+		(p_copysobj "libjpeg.so")
+		(p_copysobj "libpthread.so")
+
+		; This is only needed for Cairo, but we have a newer version so why not?
+		(p_copysobj "libexpat.so")
+
+		; Following two are included with OS4.1
+		; until I have something newer they aren't in the archive
+		;(p_sodatecopy "libcurl-7.16.so")
+		;(p_sodatecopy "libssl-0.9.8.so")
+	)
 )
 
 (complete 70)
