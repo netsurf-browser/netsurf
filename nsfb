@@ -12,11 +12,11 @@ else
   LOG=netsurf-log.txt
 fi
 
-if [ -x nsfb-sdl ]; then
+if [ -x $(dirname $0)/nsfb-sdl ]; then
 TYPE=-sdl
-elif [ -x nsfb-linux ]; then
+elif [ -x $(dirname $0)/nsfb-linux ]; then
 TYPE=-linux
-elif [ -x nsfb-dummy ]; then
+elif [ -x $(dirname $0)/nsfb-dummy ]; then
 TYPE=-dummy
 fi
 
