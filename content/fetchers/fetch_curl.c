@@ -102,6 +102,9 @@ CURLM *fetch_curl_multi;		/**< Global cURL multi handle. */
 static CURL *fetch_blank_curl;
 static struct cache_handle *curl_handle_ring = 0; /**< Ring of cached handles */
 static int curl_fetchers_registered = 0;
+#ifdef WITH_SSL
+static bool curl_with_openssl;
+#endif
 
 static char fetch_error_buffer[CURL_ERROR_SIZE]; /**< Error buffer for cURL. */
 static char fetch_progress_buffer[256]; /**< Progress buffer for cURL */
@@ -210,6 +213,16 @@ void fetch_curl_register(void)
 		SETOPT(CURLOPT_CAINFO, option_ca_bundle);
 	if (option_ca_path && strcmp(option_ca_path, ""))
 		SETOPT(CURLOPT_CAPATH, option_ca_path);
+
+#ifdef WITH_SSL
+	/* Detect whether the SSL CTX function API works */
+	curl_with_openssl = true;
+	code = curl_easy_setopt(fetch_blank_curl, 
+			CURLOPT_SSL_CTX_FUNCTION, NULL);
+	if (code != CURLE_OK) {
+		curl_with_openssl = false;
+	}
+#endif
 
 	/* cURL initialised okay, register the fetchers */
 
@@ -595,14 +608,18 @@ fetch_curl_set_options(struct curl_fetch_info *f)
 		/* Disable certificate verification */
 		SETOPT(CURLOPT_SSL_VERIFYPEER, 0L);
 		SETOPT(CURLOPT_SSL_VERIFYHOST, 0L);
-		SETOPT(CURLOPT_SSL_CTX_FUNCTION, NULL);
-		SETOPT(CURLOPT_SSL_CTX_DATA, NULL);
+		if (curl_with_openssl) {
+			SETOPT(CURLOPT_SSL_CTX_FUNCTION, NULL);
+			SETOPT(CURLOPT_SSL_CTX_DATA, NULL);
+		}
 	} else {
 		/* do verification */
 		SETOPT(CURLOPT_SSL_VERIFYPEER, 1L);
 		SETOPT(CURLOPT_SSL_VERIFYHOST, 2L);
-		SETOPT(CURLOPT_SSL_CTX_FUNCTION, fetch_curl_sslctxfun);
-		SETOPT(CURLOPT_SSL_CTX_DATA, f);
+		if (curl_with_openssl) {
+			SETOPT(CURLOPT_SSL_CTX_FUNCTION, fetch_curl_sslctxfun);
+			SETOPT(CURLOPT_SSL_CTX_DATA, f);
+		}
 	}
 #endif
 
