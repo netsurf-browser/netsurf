@@ -16,7 +16,7 @@
 (procedure p_copysobj #sobj
 	(set #sobj-version (getversion (tackon "SObjs/" #sobj)))
 
-	(if (<> #sobj-version 0)
+	(if (= #sobj-version 0)
 		(
 			(transcript "Date compare copy " #sobj)
 
