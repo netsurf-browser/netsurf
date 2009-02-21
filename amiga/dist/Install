@@ -97,7 +97,7 @@
 				(source (tackon "SObjs/" #sobj))
 				(dest "SObjs:")
 				(optional "nofail" "force")
-				(confirm)
+				(confirm "expert")
 			)
 		)
 	)
@@ -139,22 +139,11 @@
 		(set #netsurf-exists (exists (tackon @default-dest "NetSurf")))
 		(if (<> #netsurf-exists 0)
 			(
+				; Guess if the installed version is static, if it
+				; is bigger than 9MB then it probably is!
+
 				(set #netsurf-size (getsize (tackon @default-dest "NetSurf")))
-
-		; This loop checks the installed version of NetSurf against known
-		; filesizes for non-Cairo versions.  This isn't great as self-compiled
-		; or non-release builds won't be picked up.
-		; Below only contains latest dev snapshot as that is all I can find out.
-		; Additional sizes can be added "1234" "5678" etc
-		; We might be able to guess as the static build is always bigger (>8MB?)
-
-				(set #loop 0)
-				(while (set #compare-size (select #loop "9646743"))
-					(
-						(set #loop (+ #loop 1))
-						(if (= #netsurf-size #compare-size) (set #cairo-version 0))
-					)
-				)
+				(if (> #netsurf-size 9000000) (set #cairo-version 0))
 			)
 		)
 	)
