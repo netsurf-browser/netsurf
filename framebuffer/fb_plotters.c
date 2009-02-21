@@ -52,14 +52,14 @@ enum {
                                       ( (x) > (cx2) ? POINT_RIGHTOF_REGION : 0) |  \
                                       ( (x) < (cx1) ? POINT_LEFTOF_REGION : 0) )
 
-#define SWAP(a, b) do { int t; t=(a); (a)=(b); (b)=t;  } while(0) 
+#define SWAP(a, b) do { int t; t=(a); (a)=(b); (b)=t;  } while(0)
 
 /* clip a rectangle to another rectangle */
-bool fb_plotters_clip_rect(const bbox_t *clip, 
+bool fb_plotters_clip_rect(const bbox_t *clip,
                            int *x0, int *y0, int *x1, int *y1)
 {
-        char region1; 
-        char region2; 
+        char region1;
+        char region2;
 
 	if (*x1 < *x0) SWAP(*x0, *x1);
 
@@ -70,7 +70,7 @@ bool fb_plotters_clip_rect(const bbox_t *clip,
 
         /* area lies entirely outside the clipping rectangle */
         if ((region1 | region2) && (region1 & region2))
-                return false; 
+                return false;
 
         if (*x0 < clip->x0)
                 *x0 = clip->x0;
@@ -102,7 +102,7 @@ bool fb_plotters_clip_rect_ctx(int *x0, int *y0, int *x1, int *y1)
 
 /** Clip a line to a bounding box.
  */
-bool fb_plotters_clip_line(const bbox_t *clip, 
+bool fb_plotters_clip_line(const bbox_t *clip,
                            int *x0, int *y0, int *x1, int *y1)
 {
         char region1;
@@ -113,27 +113,27 @@ bool fb_plotters_clip_line(const bbox_t *clip,
         while (region1 | region2) {
                 if (region1 & region2) {
                         /* line lies entirely outside the clipping rectangle */
-                        return false;  
+                        return false;
                 }
 
                 if (region1) {
                         /* first point */
-                        if (region1 & POINT_BELOW_REGION) { 
+                        if (region1 & POINT_BELOW_REGION) {
                                 /* divide line at bottom */
                                 *x0 = (*x0 + (*x1 - *x0) *
                                        (clip->y1 - 1 - *y0) / (*y1-*y0));
                                 *y0 = clip->y1 - 1;
-                        } else if (region1 & POINT_ABOVE_REGION) { 
+                        } else if (region1 & POINT_ABOVE_REGION) {
                                 /* divide line at top */
                                 *x0 = (*x0 + (*x1 - *x0) *
                                        (clip->y0 - *y0) / (*y1-*y0));
                                 *y0 = clip->y0;
-                        } else if (region1 & POINT_RIGHTOF_REGION) { 
+                        } else if (region1 & POINT_RIGHTOF_REGION) {
                                 /* divide line at right */
                                 *y0 = (*y0 + (*y1 - *y0) *
                                        (clip->x1  - 1 - *x0) / (*x1-*x0));
                                 *x0 = clip->x1 - 1;
-                        } else if (region1 & POINT_LEFTOF_REGION) { 
+                        } else if (region1 & POINT_LEFTOF_REGION) {
                                 /* divide line at right */
                                 *y0 = (*y0 + (*y1 - *y0) *
                                        (clip->x0 - *x0) / (*x1-*x0));
@@ -144,22 +144,22 @@ bool fb_plotters_clip_line(const bbox_t *clip,
                                          clip->x0, clip->x1 - 1, clip->y0, clip->y1 - 1);
                 } else {
                         /* second point */
-                        if (region2 & POINT_BELOW_REGION) {  
+                        if (region2 & POINT_BELOW_REGION) {
                                 /* divide line at bottom*/
                                 *x1 = (*x0 + (*x1 - *x0) *
                                        (clip->y1  - 1 - *y0) / (*y1-*y0));
                                 *y1 = clip->y1 - 1;
-                        } else if (region2 & POINT_ABOVE_REGION) { 
+                        } else if (region2 & POINT_ABOVE_REGION) {
                                 /* divide line at top*/
                                 *x1 = (*x0 + (*x1 - *x0) *
                                        (clip->y0 - *y0) / (*y1-*y0));
                                 *y1 = clip->y0;
-                        } else if (region2 & POINT_RIGHTOF_REGION) { 
+                        } else if (region2 & POINT_RIGHTOF_REGION) {
                                 /* divide line at right*/
                                 *y1 = (*y0 + (*y1 - *y0) *
                                        (clip->x1  - 1 - *x0) / (*x1 - *x0));
                                 *x1 = clip->x1 - 1;
-                        } else if (region2 & POINT_LEFTOF_REGION) { 
+                        } else if (region2 & POINT_LEFTOF_REGION) {
                                 /* divide line at right*/
                                 *y1 = (*y0 + (*y1 - *y0) *
                                        (clip->x0 - *x0) / (*x1 - *x0));
@@ -203,7 +203,7 @@ bool fb_clip(int x0, int y0, int x1, int y1)
                 fb_plot_ctx.y1 = y1;
         }
 
-        /*LOG(("%d, %d - %d, %d clipped to %d, %d - %d, %d", 
+        /*LOG(("%d, %d - %d, %d clipped to %d, %d - %d, %d",
              x0,y0,x1,y1,
              fb_plot_ctx.x0, fb_plot_ctx.y0, fb_plot_ctx.x1, fb_plot_ctx.y1)); */
 
@@ -223,7 +223,7 @@ colour fb_plotters_ablend(colour pixel, colour scrpixel)
 
         b = ((((pixel & 0xFF0000) >> 16) * opacity) >> 8) +
             ((((scrpixel & 0xFF0000) >> 16) * (0xFF - opacity)) >> 8);
-        
+
         return r | (g << 8) | (b << 16);
 }
 
@@ -231,7 +231,7 @@ typedef bool (linefn_t)(int x0, int y0, int x1, int y1, int width, colour c, boo
 
 typedef struct dcPt_s {
         int x;
-        int y; 
+        int y;
 } dcPt;
 
 typedef struct tEdge {
@@ -287,7 +287,7 @@ static void makeEdgeRec(dcPt lower, dcPt upper, int yComp,  Edge **edges)
         else
                 edge->yUpper = upper.y;
 
-        if (!fb_plotters_clip_line_ctx(&lower.x, &lower.y, 
+        if (!fb_plotters_clip_line_ctx(&lower.x, &lower.y,
                                        &upper.x, &edge->yUpper)) {
                 free(edge);
         } else {
@@ -340,8 +340,8 @@ static void fillScan(int scan, Edge *active, colour fill, linefn_t linefn)
                         LOG(("only one active edge!"));
                         break;
                 } else {
-                        linefn(p1->xIntersect, scan, 
-                               p2->xIntersect, scan, 
+                        linefn(p1->xIntersect, scan,
+                               p2->xIntersect, scan,
                                1, fill, false, false);
                 }
                 p1 = p2->next;
@@ -349,7 +349,7 @@ static void fillScan(int scan, Edge *active, colour fill, linefn_t linefn)
 }
 
 static void deleteAfter(Edge *q)
-{ 
+{
         Edge *p = q->next;
         q->next = p->next;
         free (p);
@@ -379,7 +379,7 @@ static void resortActiveList(Edge * active)
                 q = p->next;
                 insertEdge(active, p);
                 p = q;
-        } 
+        }
 }
 
 
@@ -417,22 +417,23 @@ fb_plotters_polygon(const int *p, unsigned int n, colour fill, linefn_t linefn)
         return true;
 }
 
-bool fb_plotters_bitmap_tile(int x, int y, 
+bool fb_plotters_bitmap_tile(int x, int y,
                              int width, int height,
                              struct bitmap *bitmap, colour bg,
                              bool repeat_x, bool repeat_y,
                              struct content *content,
-                             bool (bitmapfn)(int x, int y, 
+                             bool (bitmapfn)(int x, int y,
                                              int width, int height,
-                                             struct bitmap *bitmap, 
+                                             struct bitmap *bitmap,
                                              colour bg,
                                              struct content *content))
 {
 	int xf,yf;
 
-        /* x and y define top left hand corner of tile start, the width height
-         * are the mage scaling and the bounding box defines teh extent of the
-         * repeat 
+        /* x and y define coordinate of top left of of the initial explicitly
+         * placed tile. The width and height are the image scaling and the
+         * bounding box defines the extent of the repeat (which may go in all
+         * four directions from the initial tile).
          */
 
         LOG(("x %d, y %d, width %d, height %d, bitmap %p, repx %d repy %d content %p", x,y,width,height,bitmap,repeat_x, repeat_y, content));
@@ -443,14 +444,38 @@ bool fb_plotters_bitmap_tile(int x, int y,
 		return bitmapfn(x, y, width, height, bitmap, bg,content);
 	}
 
+	/* Initial tile and repeat left, right and down */
 	for (xf = x; xf < fb_plot_ctx.x1; xf += width) {
 		for (yf = y; yf < fb_plot_ctx.y1; yf += height) {
                         bitmapfn(xf, yf, width, height, bitmap, bg, content);
                         if (!repeat_y)
                                 break;
+                }
+		for (yf = y - height; yf + height > fb_plot_ctx.y0;
+				yf -= height) {
+                        if (!repeat_y)
+                                break;
+                        bitmapfn(xf, yf, width, height, bitmap, bg, content);
 		}
                 if (!repeat_x)
                         break;
+	}
+
+	/* repeat left and right above */
+	for (xf = x - width; xf + height > fb_plot_ctx.x0; xf -= width) {
+                if (!repeat_x)
+                        break;
+		for (yf = y; yf < fb_plot_ctx.y1; yf += height) {
+                        bitmapfn(xf, yf, width, height, bitmap, bg, content);
+                        if (!repeat_y)
+                                break;
+                }
+		for (yf = y - height; yf + height > fb_plot_ctx.y0;
+				yf -= height) {
+                        if (!repeat_y)
+                                break;
+                        bitmapfn(xf, yf, width, height, bitmap, bg, content);
+		}
 	}
 
 	return true;
@@ -458,12 +483,12 @@ bool fb_plotters_bitmap_tile(int x, int y,
 
 bool fb_plotters_move_block(int srcx, int srcy, int width, int height, int dstx, int dsty)
 {
-	uint8_t *srcptr = (framebuffer->ptr + 
-                           (srcy * framebuffer->linelen) + 
+	uint8_t *srcptr = (framebuffer->ptr +
+                           (srcy * framebuffer->linelen) +
 			   (srcx));
 
-	uint8_t *dstptr = (framebuffer->ptr + 
-                           (dsty * framebuffer->linelen) + 
+	uint8_t *dstptr = (framebuffer->ptr +
+                           (dsty * framebuffer->linelen) +
 			   (dstx));
 
         bbox_t redrawbox;
@@ -473,7 +498,7 @@ bool fb_plotters_move_block(int srcx, int srcy, int width, int height, int dstx,
 	memmove(dstptr, srcptr, (width * height * framebuffer->bpp) / 8);
 
         /* callback to the os specific routine in case it needs to do something
-         * explicit to redraw 
+         * explicit to redraw
          */
         redrawbox.x0 = dstx;
         redrawbox.y0 = dsty;
