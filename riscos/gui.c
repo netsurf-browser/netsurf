@@ -82,9 +82,7 @@
 #include "riscos/textselection.h"
 #include "riscos/theme.h"
 #include "riscos/treeview.h"
-#ifdef WITH_URI
 #include "riscos/uri.h"
-#endif
 #ifdef WITH_URL
 #include "riscos/url_protocol.h"
 #endif
@@ -205,10 +203,8 @@ static wimp_MESSAGE_LIST(42) task_messages = { {
 	message_DRAG_CLAIM,
 	message_MODE_CHANGE,
 	message_FONT_CHANGED,
-#ifdef WITH_URI
 	message_URI_PROCESS,
 	message_URI_RETURN_RESULT,
-#endif
 #ifdef WITH_URL
 	message_INET_SUITE_OPEN_URL,
 #endif
@@ -1370,7 +1366,6 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 			ro_gui_wimp_get_desktop_font();
 			break;
 
-#ifdef WITH_URI
 		case message_URI_PROCESS:
 			if (event != wimp_USER_MESSAGE_ACKNOWLEDGE)
 				ro_uri_message_received(message);
@@ -1378,7 +1373,6 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 		case message_URI_RETURN_RESULT:
 			ro_uri_bounce(message);
 			break;
-#endif
 #ifdef WITH_URL
 		case message_INET_SUITE_OPEN_URL:
 			if (event == wimp_USER_MESSAGE_ACKNOWLEDGE) {

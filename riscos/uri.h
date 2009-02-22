@@ -20,14 +20,11 @@
 #define _NETSURF_RISCOS_URI_H_
 
 #include "utils/config.h"
-#ifdef WITH_URI
 
 #include "oslib/wimp.h"
 
 void ro_uri_message_received(wimp_message *message);
 bool ro_uri_launch(char *uri);
 void ro_uri_bounce(wimp_message *message);
-
-#endif /* WITH_URI */
 
 #endif

@@ -41,8 +41,6 @@ char *strndup(const char *s, size_t n);
 
 /* Platform specific features */
 #if defined(riscos)
-    /* Acorn URI protocol support */
-    #define WITH_URI
     /* ANT URL protocol support */
     #define WITH_URL
     /* Free text search */

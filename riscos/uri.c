@@ -17,7 +17,6 @@
  */
 
 #include "utils/config.h"
-#ifdef WITH_URI
 
 #include <stdbool.h>
 #include <stdio.h>
@@ -101,4 +100,3 @@ void ro_uri_bounce(wimp_message *msg)
 
 	return;
 }
-#endif
