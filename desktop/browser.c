@@ -604,7 +604,6 @@ void browser_window_callback(content_msg msg, struct content *c,
 		break;
 #endif
 
-#ifdef WITH_SSL
 	case CONTENT_MSG_SSL:
 		gui_cert_verify(bw, c, data.ssl.certs, data.ssl.num);
 		if (c == bw->loading_content)
@@ -619,7 +618,6 @@ void browser_window_callback(content_msg msg, struct content *c,
 		free(bw->referer);
 		bw->referer = 0;
 		break;
-#endif
 
 	case CONTENT_MSG_REFRESH:
 		bw->refresh_interval = data.delay * 100;
@@ -1263,9 +1261,7 @@ void download_window_callback(fetch_msg msg, void *p, const void *data,
 		case FETCH_TYPE:
 		case FETCH_NOTMODIFIED:
 		case FETCH_AUTH:
-#ifdef WITH_SSL
 		case FETCH_CERT_ERR:
-#endif
 		default:
 			/* not possible */
 			assert(0);

@@ -359,7 +359,6 @@ bool ami_tree_launch_node(struct tree *tree, struct node *node)
 		return true;
 	}
 
-#ifdef WITH_SSL
 /* not implemented yet
 	element = tree_find_element(node, TREE_ELEMENT_SSL);
 	if (element) {
@@ -367,7 +366,6 @@ bool ami_tree_launch_node(struct tree *tree, struct node *node)
 		return true;
 	}
 */
-#endif
 
 	return false;
 }

@@ -38,9 +38,7 @@
 #include <sys/stat.h>
 #include <sys/utsname.h>
 #include "utils/config.h"
-#ifdef WITH_SSL
 #include <openssl/ssl.h>
-#endif
 #include "content/fetch.h"
 #include "content/fetchers/fetch_curl.h"
 #include "content/urldb.h"
@@ -55,13 +53,11 @@
 #include "utils/ring.h"
 #include "utils/useragent.h"
 
-#ifdef WITH_SSL
 /** SSL certificate info */
 struct cert_info {
 	X509 *cert;		/**< Pointer to certificate */
 	long err;		/**< OpenSSL error code */
 };
-#endif
 
 /** Information for a single fetch. */
 struct curl_fetch_info {
@@ -83,10 +79,8 @@ struct curl_fetch_info {
 	struct curl_httppost *post_multipart;	/**< Multipart post data, or 0. */
 	time_t last_modified;		/**< If-Modified-Since time */
 	time_t file_etag;		/**< ETag for local objects */
-#ifdef WITH_SSL
 #define MAX_CERTS 10
 	struct cert_info cert_data[MAX_CERTS];	/**< HTTPS certificate data */
-#endif
 };
 
 struct cache_handle {
@@ -102,9 +96,7 @@ CURLM *fetch_curl_multi;		/**< Global cURL multi handle. */
 static CURL *fetch_blank_curl;
 static struct cache_handle *curl_handle_ring = 0; /**< Ring of cached handles */
 static int curl_fetchers_registered = 0;
-#ifdef WITH_SSL
 static bool curl_with_openssl;
-#endif
 
 static char fetch_error_buffer[CURL_ERROR_SIZE]; /**< Error buffer for cURL. */
 static char fetch_progress_buffer[256]; /**< Progress buffer for cURL */
@@ -122,10 +114,8 @@ static bool fetch_curl_initiate_fetch(struct curl_fetch_info *fetch,
 static CURL *fetch_curl_get_handle(char *host);
 static void fetch_curl_cache_handle(CURL *handle, char *hostname);
 static CURLcode fetch_curl_set_options(struct curl_fetch_info *f);
-#ifdef WITH_SSL
 static CURLcode fetch_curl_sslctxfun(CURL *curl_handle, void *_sslctx,
 				     void *p);
-#endif
 static void fetch_curl_abort(void *vf);
 static void fetch_curl_stop(struct curl_fetch_info *f);
 static void fetch_curl_free(void *f);
@@ -145,12 +135,10 @@ static size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
 static bool fetch_curl_process_headers(struct curl_fetch_info *f);
 static struct curl_httppost *fetch_curl_post_convert(
 		struct form_successful_control *control);
-#ifdef WITH_SSL
 static int fetch_curl_verify_callback(int preverify_ok,
 		X509_STORE_CTX *x509_ctx);
 static int fetch_curl_cert_verify_callback(X509_STORE_CTX *x509_ctx,
 		void *parm);
-#endif
 
 
 /**
@@ -214,7 +202,6 @@ void fetch_curl_register(void)
 	if (option_ca_path && strcmp(option_ca_path, ""))
 		SETOPT(CURLOPT_CAPATH, option_ca_path);
 
-#ifdef WITH_SSL
 	/* Detect whether the SSL CTX function API works */
 	curl_with_openssl = true;
 	code = curl_easy_setopt(fetch_blank_curl, 
@@ -224,7 +211,6 @@ void fetch_curl_register(void)
 	}
 
 	LOG(("cURL %slinked against openssl", curl_with_openssl ? "" : "not "));
-#endif
 
 	/* cURL initialised okay, register the fetchers */
 
@@ -361,9 +347,7 @@ void * fetch_curl_setup(struct fetch *parent_fetch, const char *url,
 	fetch->last_modified = 0;
 	fetch->file_etag = 0;
 	fetch->http_code = 0;
-#ifdef WITH_SSL
 	memset(fetch->cert_data, 0, sizeof(fetch->cert_data));
-#endif
 
 	if (!fetch->url ||
 	    (post_urlenc && !fetch->post_urlenc) ||
@@ -605,7 +589,6 @@ fetch_curl_set_options(struct curl_fetch_info *f)
 		}
 	}
 
-#ifdef WITH_SSL
 	if (urldb_get_cert_permissions(f->url)) {
 		/* Disable certificate verification */
 		SETOPT(CURLOPT_SSL_VERIFYPEER, 0L);
@@ -623,13 +606,11 @@ fetch_curl_set_options(struct curl_fetch_info *f)
 			SETOPT(CURLOPT_SSL_CTX_DATA, f);
 		}
 	}
-#endif
 
 	return CURLE_OK;
 }
 
 
-#ifdef WITH_SSL
 /**
  * cURL SSL setup callback
  */
@@ -643,7 +624,6 @@ fetch_curl_sslctxfun(CURL *curl_handle, void *_sslctx, void *parm)
 					 parm);
 	return CURLE_OK;
 }
-#endif
 
 
 /**
@@ -698,9 +678,7 @@ void fetch_curl_stop(struct curl_fetch_info *f)
 void fetch_curl_free(void *vf)
 {
 	struct curl_fetch_info *f = (struct curl_fetch_info *)vf;
-#ifdef WITH_SSL
 	int i;
-#endif
 
 	if (f->curl_handle)
 		curl_easy_cleanup(f->curl_handle);
@@ -715,13 +693,11 @@ void fetch_curl_free(void *vf)
 	if (f->post_multipart)
 		curl_formfree(f->post_multipart);
 
-#ifdef WITH_SSL
 	for (i = 0; i < MAX_CERTS && f->cert_data[i].cert; i++) {
 		f->cert_data[i].cert->references--;
 		if (f->cert_data[i].cert->references == 0)
 			X509_free(f->cert_data[i].cert);
 	}
-#endif
 
 	free(f);
 }
@@ -776,17 +752,13 @@ void fetch_curl_done(CURL *curl_handle, CURLcode result)
 {
 	bool finished = false;
 	bool error = false;
-#ifdef WITH_SSL
 	bool cert = false;
-#endif
 	bool abort;
 	struct curl_fetch_info *f;
 	char **_hideous_hack = (char **) (void *) &f;
 	CURLcode code;
-#ifdef WITH_SSL
 	struct cert_info certs[MAX_CERTS];
 	memset(certs, 0, sizeof(certs));
-#endif
 
 	/* find the structure associated with this fetch */
 	/* For some reason, cURL thinks CURLINFO_PRIVATE should be a string?! */
@@ -816,14 +788,12 @@ void fetch_curl_done(CURL *curl_handle, CURLcode result)
 		/* CURLE_WRITE_ERROR occurs when fetch_curl_data
 		 * returns 0, which we use to abort intentionally */
 		;
-#ifdef WITH_SSL
 	else if (result == CURLE_SSL_PEER_CERTIFICATE ||
 			result == CURLE_SSL_CACERT) {
 		memcpy(certs, f->cert_data, sizeof(certs));
 		memset(f->cert_data, 0, sizeof(f->cert_data));
 		cert = true;
 	}
-#endif
 	else {
 		LOG(("Unknown cURL response code %d", result));
 		error = true;
@@ -835,7 +805,6 @@ void fetch_curl_done(CURL *curl_handle, CURLcode result)
 		; /* fetch was aborted: no callback */
 	else if (finished)
 		fetch_send_callback(FETCH_FINISHED, f->fetch_handle, 0, 0);
-#ifdef WITH_SSL
 	else if (cert) {
 		int i;
 		BIO *mem;
@@ -917,7 +886,6 @@ void fetch_curl_done(CURL *curl_handle, CURLcode result)
 				&ssl_certs, i);
 
 	}
-#endif
 	else if (error)
 		fetch_send_callback(FETCH_ERROR, f->fetch_handle,
 				fetch_error_buffer, 0);
@@ -1317,7 +1285,6 @@ fetch_curl_post_convert(struct form_successful_control *control)
 }
 
 
-#ifdef WITH_SSL
 /**
  * OpenSSL Certificate verification callback
  * Stores certificate details in fetch struct.
@@ -1360,4 +1327,3 @@ int fetch_curl_cert_verify_callback(X509_STORE_CTX *x509_ctx, void *parm)
 
 	return ok;
 }
-#endif

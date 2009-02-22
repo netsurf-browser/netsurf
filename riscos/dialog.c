@@ -110,9 +110,7 @@ void ro_gui_dialog_init(void)
 #endif
 
 	/* certificate verification window */
-#ifdef WITH_SSL
 	ro_gui_cert_init();
-#endif
 
 	/* hotlist window */
 	ro_gui_hotlist_initialise();

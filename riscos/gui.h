@@ -139,10 +139,8 @@ void ro_gui_401login_init(void);
 #endif
 
 /* in sslcert.c */
-#ifdef WITH_SSL
 void ro_gui_cert_init(void);
 void ro_gui_cert_open(struct tree *tree, struct node *node);
-#endif
 
 /* in window.c */
 void ro_gui_window_quit(void);

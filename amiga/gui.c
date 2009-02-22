@@ -2868,12 +2868,10 @@ uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved)
     return itemid;
 }
 
-#ifdef WITH_SSL
 void gui_cert_verify(struct browser_window *bw, struct content *c,
 		const struct ssl_cert_info *certs, unsigned long num)
 {
 }
-#endif
 
 #ifdef WITH_HUBBUB
 static void *myrealloc(void *ptr, size_t len, void *pw)

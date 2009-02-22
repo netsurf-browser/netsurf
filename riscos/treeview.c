@@ -1584,13 +1584,11 @@ bool ro_gui_tree_launch_node(struct tree *tree, struct node *node)
 		return true;
 	}
 
-#ifdef WITH_SSL
 	element = tree_find_element(node, TREE_ELEMENT_SSL);
 	if (element) {
 		ro_gui_cert_open(tree, node);
 		return true;
 	}
-#endif
 
 	return false;
 }

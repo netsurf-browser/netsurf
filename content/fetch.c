@@ -36,9 +36,6 @@
 #include <sys/select.h>
 #include <sys/stat.h>
 #include "utils/config.h"
-#ifdef WITH_SSL
-#include <openssl/ssl.h>
-#endif
 #include "content/fetch.h"
 #include "content/fetchers/fetch_curl.h"
 #include "content/fetchers/fetch_data.h"

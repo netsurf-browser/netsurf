@@ -39,16 +39,13 @@ typedef enum {
 #ifdef WITH_AUTH
               FETCH_AUTH,
 #endif
-#ifdef WITH_SSL
               FETCH_CERT_ERR,
-#endif
 } fetch_msg;
 
 struct content;
 struct fetch;
 struct form_successful_control;
 
-#ifdef WITH_SSL
 struct ssl_cert_info {
 	long version;		/**< Certificate version */
 	char not_before[32];	/**< Valid from date */
@@ -59,7 +56,6 @@ struct ssl_cert_info {
 	char subject[256];	/**< Subject details */
 	int cert_type;		/**< Certificate type */
 };
-#endif
 
 extern bool fetch_active;
 

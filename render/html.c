@@ -1139,13 +1139,11 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 			break;
 #endif
 
-#ifdef WITH_SSL
 		case CONTENT_MSG_SSL:
 			c->data.html.stylesheet_content[i] = 0;
 			c->active--;
 			content_add_error(c, "?", 0);
 			break;
-#endif
 
 		default:
 			assert(0);
@@ -1420,13 +1418,11 @@ void html_object_callback(content_msg msg, struct content *object,
 			break;
 #endif
 
-#ifdef WITH_SSL
 		case CONTENT_MSG_SSL:
 			c->data.html.object[i].content = 0;
 			c->active--;
 			content_add_error(c, "?", 0);
 			break;
-#endif
 
 		case CONTENT_MSG_REFRESH:
 			if (object->type == CONTENT_HTML)

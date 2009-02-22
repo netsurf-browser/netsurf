@@ -100,9 +100,7 @@ typedef enum {
 #ifdef WITH_AUTH
 	CONTENT_MSG_AUTH,      /**< authentication required */
 #endif
-#ifdef WITH_SSL
 	CONTENT_MSG_SSL        /**< SSL cert verify failed */
-#endif
 } content_msg;
 
 /** Extra data for some content_msg messages. */

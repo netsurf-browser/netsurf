@@ -21,7 +21,6 @@
  */
 
 #include "utils/config.h"
-#ifdef WITH_SSL
 
 #include <assert.h>
 #include <stdbool.h>
@@ -446,4 +445,3 @@ bool ro_gui_cert_click(wimp_pointer *pointer)
 	return true;
 }
 
-#endif

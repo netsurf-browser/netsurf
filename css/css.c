@@ -959,9 +959,7 @@ void css_atimport_callback(content_msg msg, struct content *css,
 #ifdef WITH_AUTH
 		case CONTENT_MSG_AUTH:
 #endif
-#ifdef WITH_SSL
 		case CONTENT_MSG_SSL:
-#endif
 			/* todo: handle AUTH and SSL */
 
 		case CONTENT_MSG_LAUNCH:

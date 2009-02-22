@@ -514,7 +514,6 @@ void fetchcache_callback(fetch_msg msg, void *p, const void *data,
 			break;
 #endif
 
-#ifdef WITH_SSL
 		case FETCH_CERT_ERR:
 			c->fetch = 0;
 			/* set the status to ERROR so that the content is
@@ -525,7 +524,6 @@ void fetchcache_callback(fetch_msg msg, void *p, const void *data,
 			msg_data.ssl.num = size;
 			content_broadcast(c, CONTENT_MSG_SSL, msg_data);
 			break;
-#endif
 
 		default:
 			assert(0);

@@ -635,12 +635,10 @@ bool gui_search_term_highlighted(struct gui_window *g,
 
 
 
-#ifdef WITH_SSL
 void gui_cert_verify(struct browser_window *bw, struct content *c,
 		const struct ssl_cert_info *certs, unsigned long num)
 {
 }
-#endif
 
 /*
  * Local Variables:

@@ -127,11 +127,9 @@ bool gui_search_term_highlighted(struct gui_window *g,
 		unsigned start_offset, unsigned end_offset,
 		unsigned *start_idx, unsigned *end_idx);
 
-#ifdef WITH_SSL
 struct ssl_cert_info;
 
 void gui_cert_verify(struct browser_window *bw, struct content *c,
 		const struct ssl_cert_info *certs, unsigned long num);
-#endif
 
 #endif

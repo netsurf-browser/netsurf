@@ -1718,11 +1718,9 @@ void plugin_stream_callback(content_msg msg, struct content *c,
 			/* ignore this */
 			break;
 
-#ifdef WITH_SSL
 		case CONTENT_MSG_SSL:
 			plugin_destroy_stream(p, plugin_STREAM_DESTROY_ERROR);
 			break;
-#endif
 
 		case CONTENT_MSG_READY:
 		case CONTENT_MSG_DONE:
@@ -1770,9 +1768,7 @@ void plugin_fetch_callback(fetch_msg msg, void *p, const void *data,
 		case FETCH_TYPE:
 		case FETCH_NOTMODIFIED:
 		case FETCH_AUTH:
-#ifdef WITH_SSL
 		case FETCH_CERT_ERR:
-#endif
 		default:
 			/* not possible */
 			assert(0);
