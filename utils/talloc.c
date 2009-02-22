@@ -55,7 +55,7 @@
 #include "replace.h"
 #else
 #include <stdarg.h>
-#ifndef __BEOS__
+#if !defined(__BEOS__) && !defined(__HAIKU__)
 /* Assume we've got va_copy */
 #define HAVE_VA_COPY
 #include <string.h>
