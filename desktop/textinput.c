@@ -455,8 +455,7 @@ bool browser_window_textarea_callback(struct browser_window *bw,
 
 			/* leave caret at join */
 			reflow = true;
-		}
-		else {
+		} else {
 			/* delete a character */
 			size_t next_offset = utf8_next(text_box->text, 
 					text_box->length, char_offset);
@@ -1052,9 +1051,12 @@ bool browser_window_input_callback(struct browser_window *bw,
 			break;
 		}
 
-		/* Go to the next valid UTF-8 character */
-		box_offset = utf8_next(text_box->text, text_box->length,
-								box_offset);
+		if (box_offset < text_box->length) {
+			/* Go to the next valid UTF-8 character */
+			box_offset = utf8_next(text_box->text, 
+					text_box->length, box_offset);
+		}
+
 		break;
 
 	case KEY_LEFT:
