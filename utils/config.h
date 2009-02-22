@@ -41,8 +41,6 @@ char *strndup(const char *s, size_t n);
 
 /* Platform specific features */
 #if defined(riscos)
-    /* ANT URL protocol support */
-    #define WITH_URL
     /* Free text search */
     #define WITH_SEARCH
     /* Theme auto-install */

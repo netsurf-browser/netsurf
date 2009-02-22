@@ -83,9 +83,7 @@
 #include "riscos/theme.h"
 #include "riscos/treeview.h"
 #include "riscos/uri.h"
-#ifdef WITH_URL
 #include "riscos/url_protocol.h"
-#endif
 #include "riscos/url_complete.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
@@ -205,9 +203,7 @@ static wimp_MESSAGE_LIST(42) task_messages = { {
 	message_FONT_CHANGED,
 	message_URI_PROCESS,
 	message_URI_RETURN_RESULT,
-#ifdef WITH_URL
 	message_INET_SUITE_OPEN_URL,
-#endif
 #ifdef WITH_PLUGIN
 	message_PLUG_IN_OPENING,
 	message_PLUG_IN_CLOSED,
@@ -1373,7 +1369,6 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 		case message_URI_RETURN_RESULT:
 			ro_uri_bounce(message);
 			break;
-#ifdef WITH_URL
 		case message_INET_SUITE_OPEN_URL:
 			if (event == wimp_USER_MESSAGE_ACKNOWLEDGE) {
 				ro_url_bounce(message);
@@ -1382,7 +1377,6 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 				ro_url_message_received(message);
 			}
 			break;
-#endif
 #ifdef WITH_PLUGIN
 		case message_PLUG_IN_OPENING:
 			plugin_opening(message);
@@ -2319,10 +2313,8 @@ void ro_gui_dump_content(struct content *content)
 
 void gui_launch_url(const char *url)
 {
-#ifdef WITH_URL
 	/* Try ant broadcast first */
 	ro_url_broadcast(url);
-#endif
 }
 
 

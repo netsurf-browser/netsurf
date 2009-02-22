@@ -24,7 +24,6 @@
 #define _NETSURF_RISCOS_URL_H_
 
 #include "utils/config.h"
-#ifdef WITH_URL
 
 #include "oslib/wimp.h"
 
@@ -32,7 +31,5 @@ void ro_url_message_received(wimp_message *message);
 void ro_url_broadcast(const char *url);
 void ro_url_load(const char *url);
 void ro_url_bounce(wimp_message *message);
-
-#endif /* WITH_URL */
 
 #endif

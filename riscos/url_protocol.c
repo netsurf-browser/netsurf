@@ -25,7 +25,6 @@
  */
 
 #include "utils/config.h"
-#ifdef WITH_URL
 
 #define _GNU_SOURCE  /* for strndup */
 #include <ctype.h>
@@ -205,4 +204,3 @@ void ro_url_bounce(wimp_message *message)
 	ro_uri_launch(url_message->url);
 }
 
-#endif
