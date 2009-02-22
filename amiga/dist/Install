@@ -113,11 +113,14 @@
 
 (set @default-dest
 	(askdir
-		(prompt "Where would you like to install NetSurf?")
+		(prompt "Where would you like to install NetSurf?\n"
+				"(a drawer will not be created)")
 		(help @askdir-help)
 		(default @default-dest)
 	)
 )
+
+(complete 5)
 
 (working "Checking existing installation...")
 (set #icon-exists (exists (tackon @default-dest "NetSurf.info")))
@@ -154,6 +157,8 @@
 	)
 )
 
+(complete 10)
+
 (if (AND (> @user-level 0) (<> #cairo-name ""))
 	(
 		(set #cairo-version
@@ -170,62 +175,7 @@
 	)
 )
 
-(set #netsurf-name (select #cairo-version "NetSurf" "NetSurf_Cairo"))
-
-(if (= #AutoInstall 0)
-	(
-		(copylib
-			(prompt "Please check the version of NetSurf you are copying against "
-					"any which might already be installed.")
-			(help @copylib-help)
-			(source #netsurf-name)
-			(dest @default-dest)
-			(newname "NetSurf")
-			(infos)
-			(optional "askuser" "force" "oknodelete")
-			(confirm "expert")
-		)
-	)
-;else
-	(
-		(run "CopyStore " #netsurf-name " " @default-dest)
-	)
-)
-
-(complete 20)
-
-(copyfiles
-	(prompt "Copying files")
-	(source "")
-	(choices "Resources" "Rexx" "NetSurf.guide" "NetSurf.readme")
-	(help @copyfiles-help)
-	(dest @default-dest)
-	(infos)
-;	(all)
-)
-
-(complete 50)
-
-(if (= #cairo-version 1)
-	(
-		(working "Copying Shared Objects")
-
-		(p_copysobj "libc.so")
-		(p_copysobj "libgcc.so")
-		(p_copysobj "libjpeg.so")
-		(p_copysobj "libpthread.so")
-
-		; This is only needed for Cairo, but we have a newer version so why not?
-		(p_copysobj "libexpat.so")
-
-		; Following two are included with OS4.1
-		; until I have something newer they aren't in the archive
-		;(p_sodatecopy "libcurl-7.16.so")
-		;(p_sodatecopy "libssl-0.9.8.so")
-	)
-)
-
-(complete 70)
+(complete 15)
 
 (set #options-exist (exists (tackon @default-dest "Resources/Options")))
 
@@ -251,7 +201,63 @@
 			(set #theme "Resources/Themes/Default")
 			(set #theme "Resources/Themes/AISS")
 		)
+	)
+)
 
+(complete 20)
+
+(set #netsurf-name (select #cairo-version "NetSurf" "NetSurf_Cairo"))
+
+(if (= #AutoInstall 0)
+	(
+		(copylib
+			(prompt "Please check the version of NetSurf you are copying against "
+					"any which might already be installed.")
+			(help @copylib-help)
+			(source #netsurf-name)
+			(dest @default-dest)
+			(newname "NetSurf")
+			(infos)
+			(optional "askuser" "force" "oknodelete")
+			(confirm "expert")
+		)
+	)
+;else
+	(
+		(run "CopyStore " #netsurf-name " " @default-dest)
+	)
+)
+
+(complete 40)
+
+(copyfiles
+	(prompt "Copying files")
+	(source "")
+	(choices "Resources" "Rexx" "NetSurf.guide" "NetSurf.readme")
+	(help @copyfiles-help)
+	(dest @default-dest)
+	(infos)
+;	(all)
+)
+
+(set #complete 60)
+
+(if (= #cairo-version 1)
+	(
+		(working "Copying Shared Objects")
+
+		(foreach "SObjs" "#?.so"
+			(complete #complete)
+			(p_copysobj @each-name)
+			(set #complete (+ #complete 5))
+		)
+	)
+)
+
+(complete 90)
+
+(if #theme
+	(
 		(set #theme-icon (tackon @default-dest (tackon #theme "NetSurf.info")))
 		(set #icon-exists (exists #theme-icon))
 
@@ -276,7 +282,7 @@
 	)
 )
 
-(complete 90)
+(complete 95)
 
 (working "Setting MIME types")
 (p_setmimetype "css" "text/css")
