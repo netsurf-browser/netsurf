@@ -62,7 +62,11 @@
       $ apt-get install libglade2-dev libcurl3-dev libxml2-dev libmng-dev 
       $ apt-get install librsvg2-dev lemon re2c
 
-  Recent OS versions might need libcurl4-dev instead of libcurl3-dev.
+  Recent OS versions might need libcurl4-dev instead of libcurl3-dev but
+  note that when it has not been built with OpenSSL, the SSL_CTX is not
+  available and results that certification details won't be presented in case
+  they are invalid.  But as this is currently unimplemented in the Framebuffer
+  flavour of NetSurf, this won't make a difference at all.
 
   Fedora:
 
