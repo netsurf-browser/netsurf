@@ -2546,11 +2546,9 @@ bool ro_gui_window_keypress(wimp_key *key)
 			}
 			return true;
 
-#ifdef WITH_PRINT
 		case IS_WIMP_KEY + wimp_KEY_PRINT:
 			return ro_gui_menu_handle_action(g->window,
 					BROWSER_PRINT, false);
-#endif
 
 		case IS_WIMP_KEY | wimp_KEY_LEFT:
 		case IS_WIMP_KEY | wimp_KEY_RIGHT:

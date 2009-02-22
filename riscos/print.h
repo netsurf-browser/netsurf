@@ -20,7 +20,6 @@
 #define _NETSURF_RISCOS_PRINT_H_
 
 #include "utils/config.h"
-#ifdef WITH_PRINT
 
 #include <stdbool.h>
 #include "oslib/wimp.h"
@@ -35,7 +34,5 @@ void ro_print_type_odd(wimp_message *m);
 bool ro_print_ack(wimp_message *m);
 void ro_print_dataload_bounce(wimp_message *m);
 void ro_print_cleanup(void);
-
-#endif /* WITH_PRINT */
 
 #endif

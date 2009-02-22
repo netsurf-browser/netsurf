@@ -75,9 +75,7 @@
 #ifdef WITH_PLUGIN
 #include "riscos/plugin.h"
 #endif
-#ifdef WITH_PRINT
 #include "riscos/print.h"
-#endif
 #include "riscos/query.h"
 #include "riscos/save.h"
 #include "riscos/save_complete.h"
@@ -235,11 +233,9 @@ static wimp_MESSAGE_LIST(42) task_messages = { {
 	message_PLUG_IN_ACTION,
 	/* message_PLUG_IN_INFORMED, (not provided by oslib) */
 #endif
-#ifdef WITH_PRINT
 	message_PRINT_SAVE,
 	message_PRINT_ERROR,
 	message_PRINT_TYPE_ODD,
-#endif
 	0
 } };
 
@@ -1336,20 +1332,16 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 			ro_msg_terminate_filename((wimp_full_message_data_xfer*)message);
 
 			if (event == wimp_USER_MESSAGE_ACKNOWLEDGE) {
-#ifdef WITH_PRINT
 				if (ro_print_current_window)
 					ro_print_dataload_bounce(message);
-#endif
 			}
 			else
 				ro_msg_dataload(message);
 			break;
 
 		case message_DATA_LOAD_ACK:
-#ifdef WITH_PRINT
 			if (ro_print_current_window)
 				ro_print_cleanup();
-#endif
 			break;
 
 		case message_MENU_WARNING:
@@ -1442,7 +1434,6 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 		case message_PLUG_IN_ACTION:
 			break;
 #endif
-#ifdef WITH_PRINT
 		case message_PRINT_SAVE:
 			if (event == wimp_USER_MESSAGE_ACKNOWLEDGE)
 				ro_print_save_bounce(message);
@@ -1453,7 +1444,6 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 		case message_PRINT_TYPE_ODD:
 			ro_print_type_odd(message);
 			break;
-#endif
 
 		case message_QUIT:
 			netsurf_quit = true;
@@ -1866,10 +1856,8 @@ void ro_msg_datasave_ack(wimp_message *message)
 {
 	ro_msg_terminate_filename((wimp_full_message_data_xfer*)message);
 
-#ifdef WITH_PRINT
 	if (ro_print_ack(message))
 		return;
-#endif
 
 	switch (gui_current_drag_type) {
 		case GUI_DRAG_DOWNLOAD_SAVE:

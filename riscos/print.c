@@ -18,7 +18,6 @@
  */
 
 #include "utils/config.h"
-#ifdef WITH_PRINT
 
 #include <assert.h>
 #include <string.h>
@@ -952,5 +951,3 @@ void print_fonts_callback(void *context,
 	print_fonts_count++;
 }
 
-
-#endif

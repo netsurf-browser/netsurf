@@ -136,9 +136,7 @@ void ro_gui_dialog_init(void)
 #endif
 
 	/* print */
-#ifdef WITH_PRINT
 	ro_gui_print_init();
-#endif
 
 	/* about us */
 	dialog_info = ro_gui_dialog_create("info");

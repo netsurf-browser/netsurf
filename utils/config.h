@@ -47,8 +47,6 @@ char *strndup(const char *s, size_t n);
     #define WITH_URL
     /* Free text search */
     #define WITH_SEARCH
-    /* Printing support */
-    #define WITH_PRINT
     /* Theme auto-install */
     #define WITH_THEME_INSTALL
 #elif defined(__HAIKU__) || defined(__BEOS__)
