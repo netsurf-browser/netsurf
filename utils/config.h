@@ -41,8 +41,6 @@ char *strndup(const char *s, size_t n);
 
 /* Platform specific features */
 #if defined(riscos)
-    /* Free text search */
-    #define WITH_SEARCH
     /* Theme auto-install */
     #define WITH_THEME_INSTALL
 #elif defined(__HAIKU__) || defined(__BEOS__)

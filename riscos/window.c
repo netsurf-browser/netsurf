@@ -2177,12 +2177,10 @@ bool ro_gui_toolbar_click(wimp_pointer *pointer)
 			ro_gui_menu_handle_action(g->window,
 					BROWSER_NAVIGATE_HOME, true);
 			break;
-#ifdef WITH_SEARCH
 		case ICON_TOOLBAR_SEARCH:
 			ro_gui_menu_handle_action(g->window,
 					BROWSER_FIND_TEXT, true);
 			break;
-#endif
 		case ICON_TOOLBAR_SCALE:
 			ro_gui_menu_handle_action(g->window,
 					BROWSER_SCALE_VIEW, true);
@@ -2426,12 +2424,10 @@ bool ro_gui_window_keypress(wimp_key *key)
 			return ro_gui_menu_handle_action(g->window,
 					BROWSER_EXPORT_DRAW, false);
 
-#ifdef WITH_SEARCH
 		case 6:			/* Ctrl + F */
 		case IS_WIMP_KEY + wimp_KEY_F4:	/* Search */
 			return ro_gui_menu_handle_action(g->window,
 					BROWSER_FIND_TEXT, false);
-#endif
 
 		case IS_WIMP_KEY + wimp_KEY_F5:	/* Reload */
 			return ro_gui_menu_handle_action(g->window,

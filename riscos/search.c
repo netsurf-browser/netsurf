@@ -22,7 +22,6 @@
  */
 
 #include "utils/config.h"
-#ifdef WITH_SEARCH
 
 #include <ctype.h>
 #include <string.h>
@@ -877,4 +876,3 @@ void show_status(bool found)
 			found ? "" : messages_get("NotFound"), true);
 }
 
-#endif

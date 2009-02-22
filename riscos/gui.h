@@ -198,11 +198,9 @@ extern os_t sched_time;
 void ro_gui_debugwin_open(void);
 
 /* in search.c */
-#ifdef WITH_SEARCH
 void ro_gui_search_init(void);
 void ro_gui_search_prepare(struct gui_window *g);
 bool ro_gui_search_prepare_menu(void);
-#endif
 
 /* in print.c */
 void ro_gui_print_init(void);

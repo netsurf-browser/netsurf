@@ -131,9 +131,7 @@ void ro_gui_dialog_init(void)
 	ro_gui_wimp_event_set_help_prefix(dialog_debug, "HelpDebug");
 
 	/* search */
-#ifdef WITH_SEARCH
 	ro_gui_search_init();
-#endif
 
 	/* print */
 	ro_gui_print_init();
