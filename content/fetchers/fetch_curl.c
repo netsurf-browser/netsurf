@@ -561,16 +561,13 @@ fetch_curl_set_options(struct curl_fetch_info *f)
 		SETOPT(CURLOPT_COOKIE, NULL);
 	}
 
-#ifdef WITH_AUTH
 	if ((auth = urldb_get_auth_details(f->url)) != NULL) {
 		SETOPT(CURLOPT_HTTPAUTH, CURLAUTH_ANY);
 		SETOPT(CURLOPT_USERPWD, auth);
 	} else {
-#endif
 		SETOPT(CURLOPT_USERPWD, NULL);
-#ifdef WITH_AUTH
 	}
-#endif
+
 	if (option_http_proxy && option_http_proxy_host) {
 		SETOPT(CURLOPT_PROXY, option_http_proxy_host);
 		SETOPT(CURLOPT_PROXYPORT, (long) option_http_proxy_port);
@@ -1036,7 +1033,6 @@ size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
 		SKIP_ST(15);
 		if (i < (int)size && '0' <= data[i] && data[i] <= '9')
 			f->content_length = atol(data + i);
-#ifdef WITH_AUTH
 	} else if (17 < size && strncasecmp(data, "WWW-Authenticate:", 17) == 0) {
 		/* extract the first Realm from WWW-Authenticate header */
 		free(f->realm);
@@ -1065,7 +1061,6 @@ size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
 					f->realm[i] == '\n'); --i)
 				f->realm[i] = '\0';
 		}
-#endif
 	} else if (11 < size && strncasecmp(data, "Set-Cookie:", 11) == 0) {
 		/* extract Set-Cookie header */
 		SKIP_ST(11);
@@ -1118,12 +1113,10 @@ bool fetch_curl_process_headers(struct curl_fetch_info *f)
 	}
 
 	/* handle HTTP 401 (Authentication errors) */
-#ifdef WITH_AUTH
 	if (http_code == 401) {
 		fetch_send_callback(FETCH_AUTH, f->fetch_handle, f->realm,0);
 		return true;
 	}
-#endif
 
 	/* handle HTTP errors (non 2xx response codes) */
 	if (f->only_2xx && strncmp(f->url, "http", 4) == 0 &&

@@ -956,12 +956,10 @@ void css_atimport_callback(content_msg msg, struct content *css,
 			/*css_dump_stylesheet(css->data.css);*/
 			c->active--;
 			break;
-#ifdef WITH_AUTH
+
 		case CONTENT_MSG_AUTH:
-#endif
 		case CONTENT_MSG_SSL:
 			/* todo: handle AUTH and SSL */
-
 		case CONTENT_MSG_LAUNCH:
 			/* Fall through */
 		case CONTENT_MSG_ERROR:

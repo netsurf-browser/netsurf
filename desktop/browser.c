@@ -40,9 +40,7 @@
 #include "content/fetchcache.h"
 #include "content/urldb.h"
 #include "css/css.h"
-#ifdef WITH_AUTH
 #include "desktop/401login.h"
-#endif
 #include "desktop/browser.h"
 #include "desktop/frames.h"
 #include "desktop/history_core.h"
@@ -587,7 +585,6 @@ void browser_window_callback(content_msg msg, struct content *c,
 		bw->referer = 0;
 		break;
 
-#ifdef WITH_AUTH
 	case CONTENT_MSG_AUTH:
 		gui_401login_open(bw, c, data.auth_realm);
 		if (c == bw->loading_content)
@@ -602,7 +599,6 @@ void browser_window_callback(content_msg msg, struct content *c,
 		free(bw->referer);
 		bw->referer = 0;
 		break;
-#endif
 
 	case CONTENT_MSG_SSL:
 		gui_cert_verify(bw, c, data.ssl.certs, data.ssl.num);

@@ -39,9 +39,6 @@ char *strndup(const char *s, size_t n);
  * IF ADDING A FEATURE HERE, ADD IT TO Docs/Doxyfile's "PREDEFINED" DEFINITION AS WELL.
  */
 
-/* HTTP Auth */
-#define WITH_AUTH
-
 /* Platform specific features */
 #if defined(riscos)
     /* Acorn URI protocol support */

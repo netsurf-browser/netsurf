@@ -64,9 +64,7 @@
 
 
 wimp_w dialog_info, dialog_saveas,
-#ifdef WITH_AUTH
 	dialog_401li,
-#endif
 	dialog_zoom, dialog_pageinfo, dialog_objinfo, dialog_tooltip,
 	dialog_warning, dialog_debug,
 	dialog_folder, dialog_entry, dialog_search, dialog_print,
@@ -105,9 +103,7 @@ void ro_gui_dialog_init(void)
 	ro_gui_configure_initialise();
 
 	/* 401 login window */
-#ifdef WITH_AUTH
 	ro_gui_401login_init();
-#endif
 
 	/* certificate verification window */
 	ro_gui_cert_init();

@@ -501,7 +501,6 @@ void fetchcache_callback(fetch_msg msg, void *p, const void *data,
 			fetchcache_notmodified(c, data);
 			break;
 
-#ifdef WITH_AUTH
 		case FETCH_AUTH:
 			/* data -> string containing the Realm */
 			LOG(("FETCH_AUTH, '%s'", (const char *)data));
@@ -512,7 +511,6 @@ void fetchcache_callback(fetch_msg msg, void *p, const void *data,
 			 * destroyed in content_clean() */
 			c->status = CONTENT_STATUS_ERROR;
 			break;
-#endif
 
 		case FETCH_CERT_ERR:
 			c->fetch = 0;

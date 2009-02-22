@@ -97,9 +97,7 @@ typedef enum {
 	CONTENT_MSG_NEWPTR,    /**< structure has been replaced */
 	CONTENT_MSG_REFRESH,   /**< wants refresh */
 	CONTENT_MSG_LAUNCH,    /**< needs url launching in external program */
-#ifdef WITH_AUTH
 	CONTENT_MSG_AUTH,      /**< authentication required */
-#endif
 	CONTENT_MSG_SSL        /**< SSL cert verify failed */
 } content_msg;
 

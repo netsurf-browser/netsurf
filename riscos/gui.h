@@ -134,9 +134,7 @@ void ro_gui_download_datasave_ack(wimp_message *message);
 bool ro_gui_download_prequit(void);
 
 /* in 401login.c */
-#ifdef WITH_AUTH
 void ro_gui_401login_init(void);
-#endif
 
 /* in sslcert.c */
 void ro_gui_cert_init(void);

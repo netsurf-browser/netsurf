@@ -36,9 +36,7 @@ typedef enum {
               FETCH_ERROR,
               FETCH_REDIRECT,
               FETCH_NOTMODIFIED,
-#ifdef WITH_AUTH
               FETCH_AUTH,
-#endif
               FETCH_CERT_ERR,
 } fetch_msg;
 

@@ -17,7 +17,6 @@
  */
 
 #include "utils/config.h"
-#ifdef WITH_AUTH
 
 #include <assert.h>
 #include <stdbool.h>
@@ -213,4 +212,3 @@ bool ro_gui_401login_apply(wimp_w w)
 	return true;
 }
 
-#endif
