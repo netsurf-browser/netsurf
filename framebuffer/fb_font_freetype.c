@@ -70,7 +70,7 @@ bool fb_font_init(void)
         } 
         
         /* set the default render mode */
-        //        ft_load_type = FT_LOAD_MONOCHROME;
+        //ft_load_type = FT_LOAD_MONOCHROME; /* faster but less pretty */
         ft_load_type = 0;
         
         return true;
@@ -217,17 +217,13 @@ static bool nsfont_split(const struct css_style *style,
         FT_UInt glyph_index; 
         FT_Face face = fb_get_face(style);
         FT_Error error;
-        int last_space_x = -1;
-        int last_space_idx = -1;
+        int last_space_x = 0;
+        int last_space_idx = 0;
 
         *actual_x = 0;
         while (nxtchr < length) {
                 ucs4 = utf8_to_ucs4(string + nxtchr, length - nxtchr);
 
-                if (ucs4 == 0x20) {
-                        last_space_x = *actual_x;
-                        last_space_idx = nxtchr;
-                }
 
                 glyph_index = FT_Get_Char_Index(face, ucs4);
 
@@ -235,19 +231,26 @@ static bool nsfont_split(const struct css_style *style,
                 if (error) 
                         continue;
 
+                if (ucs4 == 0x20) {
+                        last_space_x = *actual_x;
+                        last_space_idx = nxtchr;
+                }
+
                 *actual_x += face->glyph->advance.x >> 6;
-                if (*actual_x > x)
-                        break;
+                if (*actual_x > x) {
+                        /* string has exceeded available width return previous
+                         * space 
+                         */
+                        *actual_x = last_space_x;
+                        *char_offset = last_space_idx;
+                        return true;
+                }
 
                 nxtchr = utf8_next(string, length, nxtchr);
         }
 
-        if (last_space_x == -1) {
-                *char_offset = nxtchr;
-        } else {
-                *actual_x = last_space_x;
-                *char_offset = last_space_idx;
-        }
+        *char_offset = nxtchr;
+
 	return true;
 }
 
