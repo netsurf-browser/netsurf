@@ -430,54 +430,40 @@ bool fb_plotters_bitmap_tile(int x, int y,
 {
 	int xf,yf;
 
-        /* x and y define coordinate of top left of of the initial explicitly
-         * placed tile. The width and height are the image scaling and the
-         * bounding box defines the extent of the repeat (which may go in all
-         * four directions from the initial tile).
-         */
+	/* x and y define coordinate of top left of of the initial explicitly
+	 * placed tile. The width and height are the image scaling and the
+	 * bounding box defines the extent of the repeat (which may go in all
+	 * four directions from the initial tile).
+	 */
 
-        LOG(("x %d, y %d, width %d, height %d, bitmap %p, repx %d repy %d content %p", x,y,width,height,bitmap,repeat_x, repeat_y, content));
+	LOG(("x %d, y %d, width %d, height %d, bitmap %p, repx %d repy %d content %p", x,y,width,height,bitmap,repeat_x, repeat_y, content));
 
 	if (!(repeat_x || repeat_y)) {
 		/* Not repeating at all, so just pass it on */
-                LOG(("Not repeating"));
+		LOG(("Not repeating"));
 		return bitmapfn(x, y, width, height, bitmap, bg,content);
 	}
 
-	/* Initial tile and repeat left, right and down */
+	/* get left most tile position */
+	if (repeat_x)
+		for (; x > fb_plot_ctx.x0; x -= width)
+			;
+
+	/* get top most tile position */
+	if (repeat_y)
+		for (; y > fb_plot_ctx.y0; y -= height)
+			;
+
+	/* tile down and across to extents */
 	for (xf = x; xf < fb_plot_ctx.x1; xf += width) {
 		for (yf = y; yf < fb_plot_ctx.y1; yf += height) {
-                        bitmapfn(xf, yf, width, height, bitmap, bg, content);
-                        if (!repeat_y)
-                                break;
-                }
-		for (yf = y - height; yf + height > fb_plot_ctx.y0;
-				yf -= height) {
-                        if (!repeat_y)
-                                break;
-                        bitmapfn(xf, yf, width, height, bitmap, bg, content);
+			bitmapfn(xf, yf, width, height, bitmap, bg, content);
+			if (!repeat_y)
+				break;
 		}
-                if (!repeat_x)
-                        break;
+		if (!repeat_x)
+	   		break;
 	}
-
-	/* repeat left and right above */
-	for (xf = x - width; xf + height > fb_plot_ctx.x0; xf -= width) {
-                if (!repeat_x)
-                        break;
-		for (yf = y; yf < fb_plot_ctx.y1; yf += height) {
-                        bitmapfn(xf, yf, width, height, bitmap, bg, content);
-                        if (!repeat_y)
-                                break;
-                }
-		for (yf = y - height; yf + height > fb_plot_ctx.y0;
-				yf -= height) {
-                        if (!repeat_y)
-                                break;
-                        bitmapfn(xf, yf, width, height, bitmap, bg, content);
-		}
-	}
-
 	return true;
 }
 
