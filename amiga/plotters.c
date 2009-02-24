@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008,2009 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -556,9 +556,12 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 					TAG_DONE);
 */
 
+	if(!(repeat_x || repeat_y))
+		return ami_bitmap(x, y, width, height, bitmap, bg, content);
+
 	if(bitmap->nativebm)
 	{
-		if((bitmap->nativebmwidth != bitmap->width) || (bitmap->nativebmheight != bitmap->height))
+		if((bitmap->nativebmwidth != width) || (bitmap->nativebmheight != height))
 		{
 			p96FreeBitMap(bitmap->nativebm);
 			bitmap->nativebm = NULL;
@@ -580,7 +583,7 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 		trp.BitMap = tbm;
 		p96WritePixelArray((struct RenderInfo *)&ri,0,0,&trp,0,0,bitmap->width,bitmap->height);
 
-		if(option_cache_bitmaps == 2)
+		if((option_cache_bitmaps == 2) && (bitmap->height == height && bitmap->width == width))
 		{
 			bitmap->nativebm = tbm;
 			bitmap->nativebmwidth = bitmap->width;
@@ -588,48 +591,101 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 		}
 	}
 
-	max_width =  (repeat_x ? scrn->Width : width);
-	max_height = (repeat_y ? scrn->Height : height);
-
-	if(repeat_x && (x<-bitmap->width)) while(x<-bitmap->width) x+=bitmap->width;
-	if(repeat_y && (y<-bitmap->height)) while(y<-bitmap->height) y+=bitmap->height;
-
-	for(xf=0;xf<max_width;xf+=bitmap->width)
+	if((bitmap->nativebm) && (bitmap->nativebmwidth == width) && (bitmap->nativebmheight==height))
 	{
-		for(yf=0;yf<max_height;yf+=bitmap->height)
+		tbm = bitmap->nativebm;
+	}
+	else
+	{
+		if((bitmap->width != width) || (bitmap->height != height))
 		{
-			if(width > xf+bitmap->width)
+			struct BitMap *scaledbm;
+			struct BitScaleArgs bsa;
+
+			scaledbm = p96AllocBitMap(width,height,32,BMF_DISPLAYABLE,currp->BitMap,RGBFB_R8G8B8A8);
+
+			if(GfxBase->lib_Version >= 53) // AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)
 			{
-				wf = width-(xf+bitmap->width);
+				CompositeTags(COMPOSITE_Src,tbm,scaledbm,
+						COMPTAG_ScaleX,COMP_FLOAT_TO_FIX(width/bitmap->width),
+						COMPTAG_ScaleY,COMP_FLOAT_TO_FIX(height/bitmap->height),
+						COMPTAG_Flags,COMPFLAG_IgnoreDestAlpha,
+						COMPTAG_DestX,0,
+						COMPTAG_DestY,0,
+						COMPTAG_DestWidth,width,
+						COMPTAG_DestHeight,height,
+						COMPTAG_OffsetX,0,
+						COMPTAG_OffsetY,0,
+						COMPTAG_FriendBitMap,currp->BitMap,
+						TAG_DONE);
 			}
-			else
+			else /* do it the old-fashioned way.  This is pretty slow, but probably
+			uses Composite() on OS4.1 anyway, so we're only saving a blit really. */
 			{
-				wf=bitmap->width;
+				bsa.bsa_SrcX = 0;
+				bsa.bsa_SrcY = 0;
+				bsa.bsa_SrcWidth = bitmap->width;
+				bsa.bsa_SrcHeight = bitmap->height;
+				bsa.bsa_DestX = 0;
+				bsa.bsa_DestY = 0;
+	//			bsa.bsa_DestWidth = width;
+	//			bsa.bsa_DestHeight = height;
+				bsa.bsa_XSrcFactor = bitmap->width;
+				bsa.bsa_XDestFactor = width;
+				bsa.bsa_YSrcFactor = bitmap->height;
+				bsa.bsa_YDestFactor = height;
+				bsa.bsa_SrcBitMap = tbm;
+				bsa.bsa_DestBitMap = scaledbm;
+				bsa.bsa_Flags = 0;
+
+				BitMapScale(&bsa);
 			}
 
-			if(height > yf+bitmap->height)
-			{
-				hf = height-(yf+bitmap->height);
-			}
-			else
-			{
-				hf=bitmap->height;
-			}
+			p96FreeBitMap(tbm);
+			tbm = scaledbm;
 
-			BltBitMapTags(BLITA_Width,wf,
-						BLITA_Height,hf,
+			if(option_cache_bitmaps >= 1)
+			{
+				bitmap->nativebm = tbm;
+				bitmap->nativebmwidth = width;
+				bitmap->nativebmheight = height;
+			}
+		}
+	}
+
+	/* get left most tile position */
+	if (repeat_x)
+		for (; x > glob.rect.MinX; x -= width)
+			;
+
+	/* get top most tile position */
+	if (repeat_y)
+		for (; y > glob.rect.MinY; y -= height)
+			;
+
+	/* tile down and across to extents */
+	for (xf = x; xf < glob.rect.MaxX; xf += width) {
+		for (yf = y; yf < glob.rect.MaxY; yf += height) {
+
+			BltBitMapTags(BLITA_Width,width,
+						BLITA_Height,height,
 						BLITA_Source,tbm,
 						BLITA_Dest,currp,
-						BLITA_DestX,x+xf,
-						BLITA_DestY,y+yf,
+						BLITA_DestX,xf,
+						BLITA_DestY,yf,
 						BLITA_SrcType,BLITT_BITMAP,
 						BLITA_DestType,BLITT_RASTPORT,
 						BLITA_UseSrcAlpha,!bitmap->opaque,
 						TAG_DONE);
+
+			if (!repeat_y)
+				break;
 		}
+		if (!repeat_x)
+	   		break;
 	}
 
-	if(option_cache_bitmaps != 2)
+	if(!option_cache_bitmaps)
 	{
 		p96FreeBitMap(tbm);
 	}
