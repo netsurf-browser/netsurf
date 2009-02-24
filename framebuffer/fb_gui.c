@@ -485,6 +485,16 @@ void gui_window_update_extent(struct gui_window *g)
 
 void gui_window_set_status(struct gui_window *g, const char *text)
 {
+        static char *cur_text = NULL;
+
+        if (cur_text != NULL) {
+                if (strcmp(cur_text, text) == 0)
+                        return;
+
+                free(cur_text);
+        }
+        cur_text = strdup(text);
+
         fb_rootwindow_status(text);
 }
 
