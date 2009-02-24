@@ -212,6 +212,7 @@ fb_widget_url_input(struct fb_widget *widget, struct gui_window *g, int value)
                 } else {
                         widget->text = realloc(widget->text, input_idx + 2); /* allow for new character and null */
                         widget->text[input_idx] = value;
+                        widget->text[input_idx + 1] = '\0';
                         input_idx++;
                 }
                 fb_redraw_widget(url_widget);
