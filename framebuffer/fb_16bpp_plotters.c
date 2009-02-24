@@ -38,6 +38,12 @@ fb_16bpp_get_xy_loc(int x, int y)
                             (x << 1));
 }
 
+static inline colour fb_16bpp_to_colour(uint16_t pixel)
+{
+        return ((pixel & 0x1F) << 19) | 
+              ((pixel & 0x7E0) << 5) |
+              ((pixel & 0xF800) >> 8);
+}
 
 #define SIGN(x)  ((x<0) ?  -1  :  ((x>0) ? 1 : 0))
 
@@ -192,11 +198,114 @@ static bool fb_16bpp_clg(colour c)
 }
 
 #ifdef FB_USE_FREETYPE
-static bool fb_16bpp_text(int x, int y, const struct css_style *style,
-			const char *text, size_t length, colour bg, colour c)
+
+static bool
+fb_16bpp_draw_ft_monobitmap(FT_Bitmap *bp, int x, int y, colour c)
 {
         return false;
 }
+
+static bool
+fb_16bpp_draw_ft_bitmap(FT_Bitmap *bp, int x, int y, colour c)
+{
+        uint16_t *pvideo;
+        uint8_t *pixel = (uint8_t *)bp->buffer;
+        colour abpixel; /* alphablended pixel */
+        int xloop, yloop;
+        int x0,y0,x1,y1;
+	int xoff, yoff; /* x and y offset into image */
+        int height = bp->rows;
+        int width = bp->width;
+        uint32_t fgcol;
+
+        /* The part of the scaled image actually displayed is cropped to the
+         * current context. 
+         */
+        x0 = x;
+        y0 = y;
+        x1 = x + width;
+        y1 = y + height;
+
+        if (!fb_plotters_clip_rect_ctx(&x0, &y0, &x1, &y1))
+                return true;
+
+        if (height > (y1 - y0))
+                height = (y1 - y0);
+
+        if (width > (x1 - x0))
+                width = (x1 - x0);
+
+	xoff = x0 - x;
+	yoff = y0 - y;
+
+        /* plot the image */
+        pvideo = fb_16bpp_get_xy_loc(x0, y0);
+
+        fgcol = c & 0xFFFFFF;
+
+        for (yloop = 0; yloop < height; yloop++) {
+                for (xloop = 0; xloop < width; xloop++) {
+                        abpixel = (pixel[((yoff + yloop) * bp->pitch) + xloop + xoff] << 24) | fgcol;
+                        if ((abpixel & 0xFF000000) != 0) {
+                                if ((abpixel & 0xFF000000) != 0xFF000000) {
+                                        abpixel = fb_plotters_ablend(abpixel, 
+                                         fb_16bpp_to_colour(*(pvideo + xloop)));
+                                }
+
+                                *(pvideo + xloop) =
+                                        ((abpixel & 0xF8) << 8) |
+                                        ((abpixel & 0xFC00 ) >> 5) |
+                                        ((abpixel & 0xF80000) >> 19);
+
+                        }
+                }
+                pvideo += (framebuffer->linelen >> 1);
+        }
+
+	return true;
+}
+
+static bool fb_16bpp_text(int x, int y, const struct css_style *style,
+			const char *text, size_t length, colour bg, colour c)
+{
+        uint32_t ucs4;
+        size_t nxtchr = 0;
+        FT_UInt glyph_index; 
+        FT_Face face = fb_get_face(style);
+        FT_Error error;
+
+        while (nxtchr < length) {
+                ucs4 = utf8_to_ucs4(text + nxtchr, length - nxtchr);
+                nxtchr = utf8_next(text, length, nxtchr);
+                glyph_index = FT_Get_Char_Index(face, ucs4);
+
+                error = FT_Load_Glyph(face, 
+                                      glyph_index, 
+                                      FT_LOAD_RENDER | 
+                                      FT_LOAD_FORCE_AUTOHINT | 
+                                      ft_load_type);
+                if (error) 
+                        continue;
+
+                /* now, draw to our target surface */  
+                if (face->glyph->bitmap.pixel_mode == FT_PIXEL_MODE_MONO) {
+                        fb_16bpp_draw_ft_monobitmap( &face->glyph->bitmap, 
+                                                     x + face->glyph->bitmap_left, 
+                                                     y - face->glyph->bitmap_top,
+                                                     c); 
+                } else {
+                        fb_16bpp_draw_ft_bitmap( &face->glyph->bitmap, 
+                                                 x + face->glyph->bitmap_left, 
+                                                 y - face->glyph->bitmap_top,
+                                                 c); 
+                }
+
+                x += face->glyph->advance.x >> 6;
+
+        }
+        return true;
+}
+
 #else
 static bool fb_16bpp_text(int x, int y, const struct css_style *style,
 			const char *text, size_t length, colour bg, colour c)
@@ -302,12 +411,6 @@ static bool fb_16bpp_arc(int x, int y, int radius, int angle1, int angle2,
 	return true;
 }
 
-static inline colour fb_16bpp_to_colour(uint16_t pixel)
-{
-        return ((pixel & 0x1F) << 19) | 
-              ((pixel & 0x7E0) << 5) |
-              ((pixel & 0xF800) >> 8);
-}
 
 static bool fb_16bpp_bitmap(int x, int y, int width, int height,
 			struct bitmap *bitmap, colour bg,
@@ -359,7 +462,7 @@ static bool fb_16bpp_bitmap(int x, int y, int width, int height,
                 for (xloop = 0; xloop < width; xloop++) {
                         abpixel = pixel[((yoff + yloop) * bitmap->width) + xloop + xoff];
                         if ((abpixel & 0xFF000000) != 0) {
-                                if ((abpixel & 0xFF000000) != 0xFF) {
+                                if ((abpixel & 0xFF000000) != 0xFF000000) {
                                         abpixel = fb_plotters_ablend(abpixel, 
                                          fb_16bpp_to_colour(*(pvideo + xloop)));
                                 }
