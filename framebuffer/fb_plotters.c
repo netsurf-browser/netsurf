@@ -471,18 +471,28 @@ bool fb_plotters_move_block(int srcx, int srcy, int width, int height, int dstx,
 {
 	uint8_t *srcptr = (framebuffer->ptr +
                            (srcy * framebuffer->linelen) +
-			   (srcx));
+			   ((srcx * framebuffer->bpp) / 8));
 
 	uint8_t *dstptr = (framebuffer->ptr +
                            (dsty * framebuffer->linelen) +
-			   (dstx));
+			   ((dstx * framebuffer->bpp) / 8));
 
         bbox_t redrawbox;
+        int hloop;
 
 	LOG(("from (%d,%d) w %d h %d to (%d,%d)",srcx,srcy,width,height,dstx,dsty));
 
-	memmove(dstptr, srcptr, (width * height * framebuffer->bpp) / 8);
-
+        if (width == framebuffer->width) {
+                /* take shortcut and use memmove */
+                memmove(dstptr, srcptr, (width * height * framebuffer->bpp) / 8);
+        } else {
+                
+                for (hloop = height; hloop > 0; hloop--) {
+                        memmove(dstptr, srcptr, (width * framebuffer->bpp) / 8);
+                        srcptr += framebuffer->linelen;
+                        dstptr += framebuffer->linelen;
+                }
+        }
         /* callback to the os specific routine in case it needs to do something
          * explicit to redraw
          */

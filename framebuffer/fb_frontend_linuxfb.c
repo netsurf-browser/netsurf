@@ -592,58 +592,116 @@ void fb_os_quit(framebuffer_t *fb)
         fb_cleanup();
 }
 
+
+static int keymap[] = {
+         -1,   -1, '1', '2', '3', '4', '5', '6', '7', '8', /*  0 -  9 */
+         '9', '0', '-', '=',   8,   9, 'q', 'w', 'e', 'r', /* 10 - 19 */
+         't', 'y', 'u', 'i', 'o', 'p', '[', ']',  13,  -1, /* 20 - 29 */
+         'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', /* 30 - 39 */
+         '\'', '#', -1, '\\', 'z', 'x', 'c', 'v', 'b', 'n', /* 40 - 49 */
+         'm', ',', '.', '/',  -1,  -1,  -1, ' ',  -1,  -1, /* 50 - 59 */
+};
+
+static int sh_keymap[] = {
+         -1,   -1, '!', '"', '£', '$', '%', '^', '&', '*', /*  0 -  9 */
+         '(', ')', '_', '+',   8,   9, 'Q', 'W', 'E', 'R', /* 10 - 19 */
+         'T', 'Y', 'U', 'I', 'O', 'P', '{', '}',  13,  -1, /* 20 - 29 */
+         'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ':', /* 30 - 39 */
+         '@', '~',  -1, '|', 'Z', 'X', 'C', 'V', 'B', 'N', /* 40 - 49 */
+         'M', '<', '>', '?',  -1,  -1,  -1, ' ',  -1,  -1, /* 50 - 59 */
+};
+
+
+/* performs character mapping */
+static int keycode_to_ascii(int code, bool shift)
+{
+        int ascii = -1;
+
+        if (shift) {
+                if ((code >= 0) && (code < sizeof(sh_keymap)))
+                        ascii = sh_keymap[code];
+        } else {
+                if ((code >= 0) && (code < sizeof(keymap)))
+                        ascii = keymap[code];
+        }
+        return ascii;
+}
+
 void fb_os_input(struct gui_window *g, bool active) 
 {
         ssize_t amt;
         struct input_event event;       
         fb_input_dev *d;
-        
+        int ascii = -1;
+        static bool shift = false;
+
         for (d = inputdevs; d != NULL; d = d->next) {
                 amt = read(d->fd, &event, sizeof(struct input_event));
                 
                 if (amt > 0) {
                         if (event.type == EV_KEY) {
-                                if (event.value == 0)
+                                if (event.value == 0) {
+                                        /* key up */
+                                        switch (event.code) {
+                                        case KEY_LEFTSHIFT:
+                                        case KEY_RIGHTSHIFT:
+                                                shift = false;
+                                                break;
+
+                                        case BTN_LEFT:
+                                                fb_rootwindow_click(g, 
+                                                                    BROWSER_MOUSE_CLICK_1, 
+                                                                    fb_cursor_x(framebuffer), 
+                                                                    fb_cursor_y(framebuffer));
+                                        break;
+                                        }
                                         return;
+                                }
                                 
                                 switch (event.code) {
-                                case KEY_J:
+                                case KEY_PAGEDOWN:
+                                        fb_window_scroll(g, 0, g->height);
+                                        break;
+                                        
+                                case KEY_PAGEUP:
+                                        fb_window_scroll(g, 0, -g->height);
+                                        break;
+
+                                case KEY_DOWN:
                                         fb_window_scroll(g, 0, 100);
                                         break;
-                                        
-                                case KEY_K:
+                    
+                                case KEY_UP:
                                         fb_window_scroll(g, 0, -100);
                                         break;
-                                        
-                                case KEY_Q:
-                                        browser_window_destroy(g->bw);
-                                        break;
-                                        
-                                case KEY_D:
-                                        list_schedule();
-                                        break;
-                                        
-                                case KEY_UP:
-                                        fb_cursor_move(framebuffer, 0, -1);
-                                        break;
-                                        
-                                case KEY_DOWN:
-                                        fb_cursor_move(framebuffer, 0, 1);
-                                        break;
-                                        
+
                                 case KEY_LEFT:
-                                        fb_cursor_move(framebuffer, -1, 0);
+                                        fb_window_scroll(g, -100, 0);
                                         break;
                                         
                                 case KEY_RIGHT:
-                                        fb_cursor_move(framebuffer, 1, 0);
+                                        fb_window_scroll(g, 100, 0);
                                         break;
+                                        
+                                case KEY_ESC:
+                                        browser_window_destroy(g->bw);
+                                        break;
+
                                 case BTN_LEFT:
                                         fb_rootwindow_click(g, 
-                                            BROWSER_MOUSE_CLICK_1, 
+                                            BROWSER_MOUSE_PRESS_1, 
                                             fb_cursor_x(framebuffer), 
                                             fb_cursor_y(framebuffer));
                                         break;
+
+                                case KEY_LEFTSHIFT:
+                                case KEY_RIGHTSHIFT:
+                                        shift = true;
+                                        break;
+
+                                default:
+                                        ascii = keycode_to_ascii(event.code, shift);
+
                                 }
                         } else if (event.type == EV_REL) {
                                 switch (event.code) {
@@ -660,6 +718,12 @@ void fb_os_input(struct gui_window *g, bool active)
 					break;
                                 }
                         }
+
+                        if (ascii != -1) {
+                                fb_rootwindow_input(g, ascii);
+                                ascii = -1;
+                        }
+
                         
                 }
         }

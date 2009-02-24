@@ -126,18 +126,14 @@ void fb_os_input(struct gui_window *g, bool active)
                     break;
 
             case SDLK_LEFT:
-                    if (history_back_available(g->bw->history))
-                            history_back(g->bw, g->bw->history);
+                    fb_window_scroll(g, -100, 0);
                     break;
 
             case SDLK_RIGHT:
-                    if (history_forward_available(g->bw->history))
-                            history_forward(g->bw, g->bw->history);
+                    fb_window_scroll(g, 100, 0);
                     break;
 
             default:
-                    printf("The %s key was pressed!\n",
-                           SDL_GetKeyName(event.key.keysym.sym));
                     fb_rootwindow_input(g, event.key.keysym.sym);
                     break;
             }

@@ -85,6 +85,14 @@ static void fb_pan(struct gui_window *g)
 	if ((g->scrolly + g->pany) > (c->height - g->height))
 		g->pany = (c->height - g->height) - g->scrolly;
 
+	/* dont pan off the left */
+	if ((g->scrollx + g->panx) < 0)
+		g->panx = - g->scrollx;
+
+        /* do not pan off the right of the content */
+	if ((g->scrollx + g->panx) > (c->width - g->width))
+		g->panx = (c->width - g->width) - g->scrollx;
+
 	LOG(("panning %d, %d",g->panx, g->pany));
 
 	/* pump up the volume. dance, dance! lets do it */
@@ -114,6 +122,36 @@ static void fb_pan(struct gui_window *g)
                                        g->x, g->y);
 		g->scrolly += g->pany;
 		fb_queue_redraw(g, 0, g->height - g->pany,
+				g->width, g->height);
+	}
+
+	if (g->panx < 0) {
+		/* we cannot pan more than a window width at a time */
+		if (g->panx < -g->width)
+			g->panx = -g->width;
+
+		LOG(("panning left %d", g->panx));
+
+		fb_plotters_move_block(g->x, g->y,
+                                       g->width + g->panx, g->height ,
+                                       g->x - g->panx, g->y );
+		g->scrollx += g->panx;
+		fb_queue_redraw(g, 0, 0,
+				- g->panx, g->height);
+	}
+
+	if (g->panx > 0) {
+		/* we cannot pan more than a window width at a time */
+		if (g->panx > g->width)
+			g->panx = g->width;
+
+		LOG(("panning right %d", g->panx));
+
+		fb_plotters_move_block(g->x + g->panx, g->y,
+                                       g->width - g->panx, g->height,
+                                       g->x, g->y);
+		g->scrollx += g->panx;
+		fb_queue_redraw(g, g->width - g->panx, 0,
 				g->width, g->height);
 	}
 
@@ -270,7 +308,9 @@ void gui_poll(bool active)
     if (redraws_pending == true) {
             struct gui_window *g;
 
-            fb_cursor_move(framebuffer, fb_cursor_x(framebuffer), fb_cursor_y(framebuffer));
+            fb_cursor_move(framebuffer, 
+                           fb_cursor_x(framebuffer), 
+                           fb_cursor_y(framebuffer));
 
             redraws_pending = false;
 
