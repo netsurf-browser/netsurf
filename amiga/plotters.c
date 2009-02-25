@@ -414,8 +414,7 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 			struct bitmap *bitmap, colour bg,
 			bool repeat_x, bool repeat_y, struct content *content)
 {
-	ULONG xf,yf,wf,hf;
-	int max_width,max_height;
+	int xf,yf;
 	struct BitMap *tbm = NULL;
 
 	if(!(repeat_x || repeat_y))
