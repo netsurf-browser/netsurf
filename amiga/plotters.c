@@ -402,6 +402,11 @@ bool ami_bitmap(int x, int y, int width, int height,
 						BLITA_UseSrcAlpha,!bitmap->opaque,
 						TAG_DONE);
 
+	if(tbm != bitmap->nativebm)
+	{
+		p96FreeBitMap(tbm);
+	}
+
 	return true;
 }
 
@@ -412,11 +417,6 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 	ULONG xf,yf,wf,hf;
 	int max_width,max_height;
 	struct BitMap *tbm = NULL;
-
-/*
-	SetRPAttrs(currp,RPTAG_BPenColor,p96EncodeColor(RGBFB_A8B8G8R8,bg),
-					TAG_DONE);
-*/
 
 	if(!(repeat_x || repeat_y))
 		return ami_bitmap(x, y, width, height, bitmap, bg, content);
@@ -457,7 +457,7 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 	   		break;
 	}
 
-	if(!option_cache_bitmaps)
+	if(tbm != bitmap->nativebm)
 	{
 		p96FreeBitMap(tbm);
 	}
