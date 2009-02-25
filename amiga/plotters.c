@@ -32,6 +32,7 @@
 #include <graphics/composite.h>
 #include "utils/log.h"
 #include <math.h>
+#include <assert.h>
 
 #ifndef M_PI /* For some reason we don't always get this from math.h */
 #define M_PI		3.14159265358979323846
@@ -548,8 +549,9 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 	struct RenderInfo ri;
 	ULONG xf,yf,wf,hf;
 	int max_width,max_height;
-	struct BitMap *tbm;
+	struct BitMap *tbm = NULL;
 	struct RastPort trp;
+	bool gotscaledbm = false;
 
 /*
 	SetRPAttrs(currp,RPTAG_BPenColor,p96EncodeColor(RGBFB_A8B8G8R8,bg),
@@ -561,18 +563,23 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 
 	if(bitmap->nativebm)
 	{
-		if((bitmap->nativebmwidth != width) || (bitmap->nativebmheight != height))
+		if((bitmap->nativebmwidth == width) && (bitmap->nativebmheight==height))
 		{
-			p96FreeBitMap(bitmap->nativebm);
-			bitmap->nativebm = NULL;
+			tbm = bitmap->nativebm;
+			gotscaledbm = true;
 		}
-		else
+		else if((bitmap->nativebmwidth == bitmap->width) && (bitmap->nativebmheight==bitmap->height))
 		{
 			tbm = bitmap->nativebm;
 		}
+		else
+		{
+			if(bitmap->nativebm) p96FreeBitMap(bitmap->nativebm);
+			bitmap->nativebm = NULL;
+		}
 	}
 
-	if(!bitmap->nativebm)
+	if(!tbm && !gotscaledbm)
 	{
 		ri.Memory = bitmap->pixdata;
 		ri.BytesPerRow = bitmap->width * 4;
@@ -583,7 +590,7 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 		trp.BitMap = tbm;
 		p96WritePixelArray((struct RenderInfo *)&ri,0,0,&trp,0,0,bitmap->width,bitmap->height);
 
-		if((option_cache_bitmaps == 2) && (bitmap->height == height && bitmap->width == width))
+		if(option_cache_bitmaps == 2)
 		{
 			bitmap->nativebm = tbm;
 			bitmap->nativebmwidth = bitmap->width;
@@ -591,13 +598,9 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 		}
 	}
 
-	if((bitmap->nativebm) && (bitmap->nativebmwidth == width) && (bitmap->nativebmheight==height))
+	if((bitmap->width != width) || (bitmap->height != height))
 	{
-		tbm = bitmap->nativebm;
-	}
-	else
-	{
-		if((bitmap->width != width) || (bitmap->height != height))
+		if(!gotscaledbm)
 		{
 			struct BitMap *scaledbm;
 			struct BitScaleArgs bsa;
@@ -641,8 +644,10 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 				BitMapScale(&bsa);
 			}
 
+			if(bitmap->nativebm != tbm) p96FreeBitMap(bitmap->nativebm);
 			p96FreeBitMap(tbm);
 			tbm = scaledbm;
+			bitmap->nativebm = NULL;
 
 			if(option_cache_bitmaps >= 1)
 			{
@@ -666,6 +671,8 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 	/* tile down and across to extents */
 	for (xf = x; xf < glob.rect.MaxX; xf += width) {
 		for (yf = y; yf < glob.rect.MaxY; yf += height) {
+
+			assert(tbm);
 
 			BltBitMapTags(BLITA_Width,width,
 						BLITA_Height,height,
