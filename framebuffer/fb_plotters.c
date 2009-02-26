@@ -210,23 +210,6 @@ bool fb_clip(int x0, int y0, int x1, int y1)
 	return true;
 }
 
-colour fb_plotters_ablend(colour pixel, colour scrpixel)
-{
-        int opacity = (pixel >> 24) & 0xFF;
-        int r,g,b;
-
-        r = (((pixel & 0xFF) * opacity) >> 8) +
-            (((scrpixel & 0xFF) * (0xFF - opacity)) >> 8);
-
-        g = ((((pixel & 0xFF00) >> 8) * opacity) >> 8) +
-            ((((scrpixel & 0xFF00) >> 8) * (0xFF - opacity)) >> 8);
-
-        b = ((((pixel & 0xFF0000) >> 16) * opacity) >> 8) +
-            ((((scrpixel & 0xFF0000) >> 16) * (0xFF - opacity)) >> 8);
-
-        return r | (g << 8) | (b << 16);
-}
-
 typedef bool (linefn_t)(int x0, int y0, int x1, int y1, int width, colour c, bool dotted, bool dashed);
 
 typedef struct dcPt_s {

@@ -174,7 +174,6 @@ static bool fb_32bpp_polygon(const int *p, unsigned int n, colour fill)
 static bool fb_32bpp_fill(int x0, int y0, int x1, int y1, colour c)
 {
         int w;
-        uint32_t *pvid_line;
         uint32_t *pvid;
         uint32_t ent;
         uint32_t llen;
@@ -185,18 +184,15 @@ static bool fb_32bpp_fill(int x0, int y0, int x1, int y1, colour c)
                 return true; /* fill lies outside current clipping region */
 
         ent = fb_colour_to_pixel(c);
-        llen = (framebuffer->linelen >> 2);
         width = x1 - x0;
         height = y1 - y0;
+        llen = (framebuffer->linelen >> 2) - width;
 
-        pvid_line = fb_32bpp_get_xy_loc(x0, y0);
+        pvid = fb_32bpp_get_xy_loc(x0, y0);
 
-        while (height > 0) {
-                height--;
-                pvid = pvid_line;
-                pvid_line += llen;
-                w = width;
-                while (w-- > 0) *pvid++ = ent;                
+        while (height-- > 0) {
+                for (w = width; w > 0; w--) *pvid++ = ent;                
+                pvid += llen;
         }
 
 	return true;

@@ -45,6 +45,12 @@ static inline colour fb_16bpp_to_colour(uint16_t pixel)
               ((pixel & 0xF800) >> 8);
 }
 
+/* convert a colour value to a 16bpp pixel value ready for screen output */
+static inline uint16_t fb_colour_to_pixel(colour c)
+{
+        return ((c & 0xF8) << 8) | ((c & 0xFC00 ) >> 5) | ((c & 0xF80000) >> 19);
+}
+
 #define SIGN(x)  ((x<0) ?  -1  :  ((x>0) ? 1 : 0))
 
 static bool fb_16bpp_line(int x0, int y0, int x1, int y1, int width,
@@ -66,9 +72,7 @@ static bool fb_16bpp_line(int x0, int y0, int x1, int y1, int width,
         if (y0 < fb_plot_ctx.y0)
                 return true;
 
-        ent = ((c & 0xF8) << 8) |
-              ((c & 0xFC00 ) >> 5) |
-              ((c & 0xF80000) >> 19);
+        ent = fb_colour_to_pixel(c);
 
         if (y0 == y1) {
                 /* horizontal line special cased */
@@ -162,25 +166,25 @@ static bool fb_16bpp_polygon(const int *p, unsigned int n, colour fill)
 static bool fb_16bpp_fill(int x0, int y0, int x1, int y1, colour c)
 {
         int w;
-        int y;
+        uint16_t *pvid;
         uint16_t ent;
-        uint16_t *pvideo;
+        uint32_t llen;
+        uint32_t width;
+        uint32_t height;
 
         if (!fb_plotters_clip_rect_ctx(&x0, &y0, &x1, &y1))
                 return true; /* fill lies outside current clipping region */
 
-        ent = ((c & 0xF8) << 8) |
-              ((c & 0xFC00 ) >> 5) |
-              ((c & 0xF80000) >> 19);
+        ent = fb_colour_to_pixel(c);
+        width = x1 - x0;
+        height = y1 - y0;
+        llen = (framebuffer->linelen >> 1) - width;
 
-        pvideo = fb_16bpp_get_xy_loc(x0, y0);
+        pvid = fb_16bpp_get_xy_loc(x0, y0);
 
-        for (y = y0; y < y1; y++) {
-                w = x1 - x0;
-                while (w-- > 0) {
-                        *(pvideo + w) = ent;
-                }
-                pvideo += (framebuffer->linelen >> 1);
+        while (height-- > 0) {
+                for (w = width; w > 0; w--) *pvid++ = ent;                
+                pvid += llen;
         }
 
 	return true;
@@ -252,10 +256,7 @@ fb_16bpp_draw_ft_bitmap(FT_Bitmap *bp, int x, int y, colour c)
                                          fb_16bpp_to_colour(*(pvideo + xloop)));
                                 }
 
-                                *(pvideo + xloop) =
-                                        ((abpixel & 0xF8) << 8) |
-                                        ((abpixel & 0xFC00 ) >> 5) |
-                                        ((abpixel & 0xF80000) >> 19);
+                                *(pvideo + xloop) = fb_colour_to_pixel(abpixel);
 
                         }
                 }
@@ -351,14 +352,9 @@ static bool fb_16bpp_text(int x, int y, const struct css_style *style,
 	xoff = x0 - x;
 	yoff = y0 - y;
 
-        fgcol = ((c & 0xF8) << 8) |
-              ((c & 0xFC00 ) >> 5) |
-              ((c & 0xF80000) >> 19);
+        fgcol = fb_colour_to_pixel(c);
 
-        bgcol = ((bg & 0xF8) << 8) |
-              ((bg & 0xFC00 ) >> 5) |
-              ((bg & 0xF80000) >> 19);
-
+        bgcol = fb_colour_to_pixel(bg);
 
         /*LOG(("x %d, y %d, style %p, txt %.*s , len %d, bg 0x%lx, fg 0x%lx",
           x,y,style,length,text,length,bg,c));*/
@@ -463,11 +459,7 @@ static bool fb_16bpp_bitmap(int x, int y, int width, int height,
                                          fb_16bpp_to_colour(*(pvideo + xloop)));
                                 }
 
-                                *(pvideo + xloop) =
-                                        ((abpixel & 0xF8) << 8) |
-                                        ((abpixel & 0xFC00 ) >> 5) |
-                                        ((abpixel & 0xF80000) >> 19);
-
+                                *(pvideo + xloop) = fb_colour_to_pixel(abpixel);
                         }
                 }
                 pvideo += (framebuffer->linelen >> 1);
