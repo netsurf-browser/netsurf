@@ -165,7 +165,6 @@ FT_Glyph fb_getglyph(const struct css_style *style, uint32_t ucs4)
                                             &glyph, 
                                             NULL);
 
-        LOG(("Returning glyph %p for index %d advance %d", glyph, glyph_index,glyph->advance.x>>16));        
         return glyph;
 }
 
