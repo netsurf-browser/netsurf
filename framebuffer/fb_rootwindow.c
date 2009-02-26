@@ -143,8 +143,8 @@ fb_redraw_widget(struct fb_widget *widget)
                 			1, 0x00000000, false, false);
                 }
                 if (widget->text != NULL) {
-                        plot.text(fb_plot_ctx.x0 + 2,
-                                  fb_plot_ctx.y0 + 15,
+                        plot.text(fb_plot_ctx.x0 + 3,
+                                  fb_plot_ctx.y0 + 17,
                                   &root_style,
                                   widget->text,
                                   strlen(widget->text),
@@ -243,7 +243,7 @@ fb_add_button_widget(int x,
         new_widget->click = click_rtn;
 
         new_widget->bitmap = widget_image;
-        
+
         fb_insert_widget(new_widget);
 
         return new_widget;
@@ -420,7 +420,7 @@ void fb_rootwindow_create(framebuffer_t *fb)
                                         fb->width -
                                         (newwidget->x + newwidget->width + 5) -
                                         (25 + 10),
-                                        22,
+                                        24,
                                         FB_COLOUR_WHITE, true,
                                         fb_widget_url_input);
 
