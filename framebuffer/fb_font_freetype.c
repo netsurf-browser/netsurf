@@ -115,6 +115,8 @@ fb_new_face(const char *fontfile)
 bool fb_font_init(void)
 {
         FT_Error error;
+        FT_ULong max_cache_size;
+        FT_UInt max_faces = 6;
 
         /* freetype library initialise */
         error = FT_Init_FreeType( &library ); 
@@ -123,8 +125,16 @@ bool fb_font_init(void)
                 return false;
         }
 
-        /* cache manager initialise, six faces and defaults for other values */
-        error = FTC_Manager_New(library, 6, 0, 0, ft_face_requester, NULL, &ft_cmanager);
+        max_cache_size = 2 * 1024 *1024; /* 2MB should be enough */
+
+        /* cache manager initialise */
+        error = FTC_Manager_New(library, 
+                                max_faces, 
+                                0, 
+                                max_cache_size, 
+                                ft_face_requester, 
+                                NULL, 
+                                &ft_cmanager);
         if (error) {
                 LOG(("Freetype could not initialise cache manager (code %d)\n", error));
                 FT_Done_FreeType(library);
@@ -162,6 +172,7 @@ bool fb_font_init(void)
 
 bool fb_font_finalise(void)
 {
+        FTC_Manager_Done(ft_cmanager );
         FT_Done_FreeType(library);
         return true;
 }
