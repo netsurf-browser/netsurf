@@ -16,20 +16,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-struct fb_widget_image_s {
-  unsigned int 	 width;
-  unsigned int 	 height;
-  unsigned int 	 bytes_per_pixel; /* 3:RGB, 4:RGBA */ 
-  unsigned char	 *pixel_data;
-};
+#ifndef FB_IMAGE_DATA
+#define FB_IMAGE_DATA
 
-typedef struct fb_widget_image_s fb_widget_image_t;
+#include "framebuffer/fb_bitmap.h"
 
-extern const fb_widget_image_t left_arrow;
-extern const fb_widget_image_t right_arrow;
-extern const fb_widget_image_t reload;
-extern const fb_widget_image_t stop_image;
+extern struct bitmap left_arrow;
+extern struct bitmap right_arrow;
+extern struct bitmap reload;
+extern struct bitmap stop_image;
 
 extern struct bitmap pointer_image;
 extern struct bitmap hand_image;
 extern struct bitmap caret_image;
+
+#endif /* FB_IMAGE_DATA */

@@ -225,7 +225,7 @@ fb_widget_url_input(struct fb_widget *widget, struct gui_window *g, int value)
 static struct fb_widget *
 fb_add_button_widget(int x,
               int y,
-              const fb_widget_image_t *widget_image,
+              struct bitmap *widget_image,
               fb_widget_mouseclick_t click_rtn)
 {
         struct fb_widget *new_widget;
@@ -242,16 +242,8 @@ fb_add_button_widget(int x,
 
         new_widget->click = click_rtn;
 
-        new_widget->bitmap = bitmap_create(widget_image->width,
-                                           widget_image->height,
-                                           0);
-
-        memcpy(new_widget->bitmap->pixdata,
-               widget_image->pixel_data,
-               widget_image->width *
-               widget_image->height *
-               widget_image->bytes_per_pixel);
-
+        new_widget->bitmap = widget_image;
+        
         fb_insert_widget(new_widget);
 
         return new_widget;
