@@ -55,8 +55,8 @@ enum {
 #define SWAP(a, b) do { int t; t=(a); (a)=(b); (b)=t;  } while(0)
 
 /* clip a rectangle to another rectangle */
-bool fb_plotters_clip_rect(const bbox_t *clip,
-                           int *x0, int *y0, int *x1, int *y1)
+bool fb_plotters_clip_rect(const bbox_t * restrict clip,
+                           int * restrict x0, int * restrict y0, int * restrict x1, int * restrict y1)
 {
         char region1;
         char region2;
