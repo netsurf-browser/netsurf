@@ -166,8 +166,10 @@ static bool fb_16bpp_polygon(const int *p, unsigned int n, colour fill)
 static bool fb_16bpp_fill(int x0, int y0, int x1, int y1, colour c)
 {
         int w;
-        uint16_t *pvid;
-        uint16_t ent;
+        uint16_t *pvid16;
+        uint16_t ent16;
+        uint32_t *pvid32;
+        uint32_t ent32;
         uint32_t llen;
         uint32_t width;
         uint32_t height;
@@ -175,18 +177,33 @@ static bool fb_16bpp_fill(int x0, int y0, int x1, int y1, colour c)
         if (!fb_plotters_clip_rect_ctx(&x0, &y0, &x1, &y1))
                 return true; /* fill lies outside current clipping region */
 
-        ent = fb_colour_to_pixel(c);
+        ent16 = fb_colour_to_pixel(c);
         width = x1 - x0;
         height = y1 - y0;
-        llen = (framebuffer->linelen >> 1) - width;
 
-        pvid = fb_16bpp_get_xy_loc(x0, y0);
+        pvid16 = fb_16bpp_get_xy_loc(x0, y0);
 
-        while (height-- > 0) {
-                for (w = width; w > 0; w--) *pvid++ = ent;                
-                pvid += llen;
+        if (((x0 & 1) == 0) && ((width & 1) == 0)) {
+                /* aligned to 32bit value and width is even */
+                width = width >> 1;
+                llen = (framebuffer->linelen >> 2) - width;
+                ent32 = ent16 | (ent16 << 16);
+                pvid32 = (uint32_t *)pvid16;
+
+                while (height-- > 0) {
+                        for (w = width; w > 0; w--) *pvid32++ = ent32;
+                        pvid32 += llen;
+                }
+
+        } else {
+                llen = (framebuffer->linelen >> 1) - width;
+
+
+                while (height-- > 0) {
+                        for (w = width; w > 0; w--) *pvid16++ = ent16;
+                        pvid16 += llen;
+                }
         }
-
 	return true;
 }
 
