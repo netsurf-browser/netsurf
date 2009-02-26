@@ -324,37 +324,34 @@ static bool fb_32bpp_text(int x, int y, const struct css_style *style,
 {
         uint32_t ucs4;
         size_t nxtchr = 0;
-        FT_UInt glyph_index; 
-        FT_Face face = fb_get_face(style);
-        FT_Error error;
+        FT_Glyph glyph;
+        FT_BitmapGlyph bglyph;
 
         while (nxtchr < length) {
                 ucs4 = utf8_to_ucs4(text + nxtchr, length - nxtchr);
                 nxtchr = utf8_next(text, length, nxtchr);
-                glyph_index = FT_Get_Char_Index(face, ucs4);
 
-                error = FT_Load_Glyph(face, 
-                                      glyph_index, 
-                                      FT_LOAD_RENDER | 
-                                      FT_LOAD_FORCE_AUTOHINT | 
-                                      ft_load_type);
-                if (error) 
+                glyph = fb_getglyph(style, ucs4);
+                if (glyph == NULL) 
                         continue;
 
-                /* now, draw to our target surface */  
-                if (face->glyph->bitmap.pixel_mode == FT_PIXEL_MODE_MONO) {
-                        fb_32bpp_draw_ft_monobitmap( &face->glyph->bitmap, 
-                                                     x + face->glyph->bitmap_left, 
-                                                     y - face->glyph->bitmap_top,
-                                                     c); 
-                } else {
-                        fb_32bpp_draw_ft_bitmap( &face->glyph->bitmap, 
-                                                 x + face->glyph->bitmap_left, 
-                                                 y - face->glyph->bitmap_top,
-                                                 c); 
-                }
+                if (glyph->format == FT_GLYPH_FORMAT_BITMAP) {
+                        bglyph = (FT_BitmapGlyph)glyph;
 
-                x += face->glyph->advance.x >> 6;
+                        /* now, draw to our target surface */  
+                        if (bglyph->bitmap.pixel_mode == FT_PIXEL_MODE_MONO) {
+                                fb_32bpp_draw_ft_monobitmap(&bglyph->bitmap, 
+                                                            x + bglyph->left, 
+                                                            y - bglyph->top,
+                                                            c); 
+                        } else {
+                                fb_32bpp_draw_ft_bitmap(&bglyph->bitmap, 
+                                                        x + bglyph->left, 
+                                                        y - bglyph->top,
+                                                        c); 
+                        }
+                }
+                x += glyph->advance.x >> 16;
 
         }
         return true;

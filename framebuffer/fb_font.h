@@ -26,8 +26,9 @@ bool fb_font_finalise(void);
 
 #include <ft2build.h>  
 #include FT_FREETYPE_H 
+#include <freetype/ftglyph.h>
 
-FT_Face fb_get_face(const struct css_style *style);
+FT_Glyph fb_getglyph(const struct css_style *style, uint32_t ucs4);
 
 extern int ft_load_type;
 

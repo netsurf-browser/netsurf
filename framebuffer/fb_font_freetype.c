@@ -20,6 +20,8 @@
 #include <inttypes.h>
 #include <assert.h>
 
+#include <freetype/ftcache.h>
+
 #include "css/css.h"
 #include "render/font.h"
 #include "desktop/options.h"
@@ -30,9 +32,21 @@
 #include "framebuffer/fb_font.h"
 
 static FT_Library library; 
-static FT_Face face_sans_serif; 
+static FTC_Manager ft_cmanager;
+static FTC_CMapCache ft_cmap_cache ;
+static FTC_ImageCache ft_image_cache;
 
 int ft_load_type;
+
+/* cache manager faceID data to create freetype faceid on demand */
+typedef struct fb_faceid_s {
+        char *fontfile; /* path to font */
+        int index; /* index of font */
+} fb_faceid_t;
+
+
+static fb_faceid_t *fb_face_sans_serif; /* global default face */
+
 
 utf8_convert_ret utf8_to_local_encoding(const char *string, 
 				       size_t len,
@@ -41,33 +55,66 @@ utf8_convert_ret utf8_to_local_encoding(const char *string,
 	return utf8_to_enc(string, "UTF-8", len, result);
 }
 
+/* map cache manager handle to face id */
+static FT_Error ft_face_requester(FTC_FaceID face_id, FT_Library  library, FT_Pointer request_data, FT_Face *face )
+{
+        FT_Error error;
+        fb_faceid_t *fb_face = (fb_faceid_t *)face_id;
+
+        error = FT_New_Face(library, fb_face->fontfile, fb_face->index, face); 
+        if (error) {
+                LOG(("Could not find font (code %d)\n", error));
+        }
+
+        LOG(("Loaded face from %s\n", fb_face->fontfile));
+
+        return error;
+}
+
+static fb_faceid_t *
+fb_new_face(const char *fontfile)
+{
+        fb_faceid_t *newf;
+        newf = calloc(1, sizeof(fb_faceid_t));
+        newf->fontfile=strdup(fontfile);
+        return newf;
+}
 
 /* initialise font handling */
 bool fb_font_init(void)
 {
         FT_Error error;
+        FT_Face aface;
 
+        /* freetype library initialise */
         error = FT_Init_FreeType( &library ); 
         if (error) {
                 LOG(("Freetype could not initialised (code %d)\n", error));
                 return false;
         }
 
-        error = FT_New_Face(library, 
-                            "/usr/share/fonts/truetype/ttf-bitstream-vera/Vera.ttf", 
-                            0, 
-                            &face_sans_serif ); 
+        /* cache manager initialise */
+        error = FTC_Manager_New(library, 0, 0, 0, ft_face_requester, NULL, &ft_cmanager);
+        if (error) {
+                LOG(("Freetype could not initialise cache manager (code %d)\n", error));
+                FT_Done_FreeType(library);
+                return false;
+        }
+
+        error = FTC_CMapCache_New(ft_cmanager, &ft_cmap_cache);
+
+        error = FTC_ImageCache_New(ft_cmanager, &ft_image_cache);
+
+
+        fb_face_sans_serif = fb_new_face("/usr/share/fonts/truetype/ttf-bitstream-vera/Vera.ttf");
+
+        error = FTC_Manager_LookupFace(ft_cmanager, (FTC_FaceID)fb_face_sans_serif, &aface);
         if (error) {
                 LOG(("Could not find default font (code %d)\n", error));
                 FT_Done_FreeType(library);
                 return false;
         }
  
-        error = FT_Set_Pixel_Sizes(face_sans_serif, 0, 14 ); 
-        if (error) {
-                LOG(("Could not set pixel size (code %d)\n", error));
-                return false;
-        } 
         
         /* set the default render mode */
         //ft_load_type = FT_LOAD_MONOCHROME; /* faster but less pretty */
@@ -82,34 +129,46 @@ bool fb_font_finalise(void)
         return true;
 }
 
-
-
-FT_Face 
-fb_get_face(const struct css_style *style)
+static void fb_fill_scalar(const struct css_style *style, FTC_Scaler srec)
 {
-        FT_Face face;
-        face = face_sans_serif;
-        FT_Error error;
-        int size;
-
+        srec->face_id = (FTC_FaceID)fb_face_sans_serif; /* should derive from style */
 	if (style->font_size.value.length.unit == CSS_UNIT_PX) {
-		size = style->font_size.value.length.value;
-
-                error = FT_Set_Pixel_Sizes(face_sans_serif, 0, size ); 
-                if (error) {
-                        LOG(("Could not set pixel size (code %d)\n", error));
-                } 
+		srec->width = srec->height = style->font_size.value.length.value;
+                srec->pixel = 1;
         } else {
-		size = css_len2pt(&style->font_size.value.length, style);
-                error = FT_Set_Char_Size( face, 0, size*64, 72, 72 );
-                if (error) {
-                        LOG(("Could not set pixel size (code %d)\n", error));
-                } 
+		srec->width = srec->height = 
+                        css_len2pt(&style->font_size.value.length, style) * 64;
+                srec->pixel = 0;
+
+                srec->x_res = srec->y_res = 72;
         }
 
-
-        return face;
 }
+
+FT_Glyph fb_getglyph(const struct css_style *style, uint32_t ucs4)
+{
+        FT_UInt glyph_index;
+        FTC_ScalerRec srec;
+        FT_Glyph glyph;
+        FT_Error error;
+
+        fb_fill_scalar(style, &srec);
+
+        glyph_index = FTC_CMapCache_Lookup(ft_cmap_cache, srec.face_id, 0, ucs4);
+
+        error = FTC_ImageCache_LookupScaler(ft_image_cache, 
+                                            &srec, 
+                                            FT_LOAD_RENDER | 
+                                            FT_LOAD_FORCE_AUTOHINT | 
+                                            ft_load_type, 
+                                            glyph_index, 
+                                            &glyph, 
+                                            NULL);
+
+        LOG(("Returning glyph %p for index %d advance %d", glyph, glyph_index,glyph->advance.x>>16));        
+        return glyph;
+}
+
 
 /**
  * Measure the width of a string.
@@ -127,21 +186,18 @@ static bool nsfont_width(const struct css_style *style,
 {
         uint32_t ucs4;
         size_t nxtchr = 0;
-        FT_UInt glyph_index; 
-        FT_Face face = fb_get_face(style);
-        FT_Error error;
+        FT_Glyph glyph;
 
         *width = 0;
         while (nxtchr < length) {
                 ucs4 = utf8_to_ucs4(string + nxtchr, length - nxtchr);
                 nxtchr = utf8_next(string, length, nxtchr);
-                glyph_index = FT_Get_Char_Index(face, ucs4);
 
-                error = FT_Load_Glyph(face, glyph_index, FT_LOAD_DEFAULT);
-                if (error) 
+                glyph = fb_getglyph(style, ucs4);
+                if (glyph == NULL)
                         continue;
 
-                *width += face->glyph->advance.x >> 6;
+                *width += glyph->advance.x >> 16;
         }
 
 	return true;
@@ -166,20 +222,17 @@ static bool nsfont_position_in_string(const struct css_style *style,
 {
         uint32_t ucs4;
         size_t nxtchr = 0;
-        FT_UInt glyph_index; 
-        FT_Face face = fb_get_face(style);
-        FT_Error error;
+        FT_Glyph glyph;
 
         *actual_x = 0;
         while (nxtchr < length) {
                 ucs4 = utf8_to_ucs4(string + nxtchr, length - nxtchr);
-                glyph_index = FT_Get_Char_Index(face, ucs4);
 
-                error = FT_Load_Glyph(face, glyph_index, FT_LOAD_DEFAULT);
-                if (error) 
+                glyph = fb_getglyph(style, ucs4);
+                if (glyph == NULL)
                         continue;
 
-                *actual_x += face->glyph->advance.x >> 6;
+                *actual_x += glyph->advance.x >> 16;
                 if (*actual_x > x)
                         break;
 
@@ -214,21 +267,16 @@ static bool nsfont_split(const struct css_style *style,
 {
         uint32_t ucs4;
         size_t nxtchr = 0;
-        FT_UInt glyph_index; 
-        FT_Face face = fb_get_face(style);
-        FT_Error error;
         int last_space_x = 0;
         int last_space_idx = 0;
+        FT_Glyph glyph;
 
         *actual_x = 0;
         while (nxtchr < length) {
                 ucs4 = utf8_to_ucs4(string + nxtchr, length - nxtchr);
 
-
-                glyph_index = FT_Get_Char_Index(face, ucs4);
-
-                error = FT_Load_Glyph(face, glyph_index, FT_LOAD_DEFAULT);
-                if (error) 
+                glyph = fb_getglyph(style, ucs4);
+                if (glyph == NULL)
                         continue;
 
                 if (ucs4 == 0x20) {
@@ -236,7 +284,7 @@ static bool nsfont_split(const struct css_style *style,
                         last_space_idx = nxtchr;
                 }
 
-                *actual_x += face->glyph->advance.x >> 6;
+                *actual_x += glyph->advance.x >> 16;
                 if (*actual_x > x) {
                         /* string has exceeded available width return previous
                          * space 
