@@ -38,12 +38,33 @@ fb_32bpp_get_xy_loc(int x, int y)
                             (x << 2));
 }
 
+#if __BYTE_ORDER == __BIG_ENDIAN
+static inline colour fb_32bpp_to_colour(uint32_t pixel)
+{
+        return ((pixel & 0xFF00) >> 8) | 
+                ((pixel & 0xFF0000) >> 8) | 
+                ((pixel & 0xFF000000) >> 8);
+}
+
+/* convert a colour value to a 32bpp pixel value ready for screen output */
+static inline uint32_t fb_colour_to_pixel(colour c)
+{
+        return ((c & 0xff0000) << 8) | (c & 0xff00) << 8 | ((c & 0xff) << 8);
+}
+#else
 static inline colour fb_32bpp_to_colour(uint32_t pixel)
 {
         return ((pixel & 0xFF) << 16) | 
                 ((pixel & 0xFF00)) | 
                 ((pixel & 0xFF0000) >> 16);
 }
+
+/* convert a colour value to a 32bpp pixel value ready for screen output */
+static inline uint32_t fb_colour_to_pixel(colour c)
+{
+        return ((c & 0xff0000) >> 16) | (c & 0xff00) | ((c & 0xff) << 16);
+}
+#endif
 
 #define SIGN(x)  ((x<0) ?  -1  :  ((x>0) ? 1 : 0))
 
@@ -63,7 +84,7 @@ static bool fb_32bpp_line(int x0, int y0, int x1, int y1, int width,
         if (y0 < fb_plot_ctx.y0)
                 return true;
 
-        ent = ((c & 0xff0000) >> 16) | (c & 0xff00) | ((c & 0xff) << 16);
+        ent = fb_colour_to_pixel(c);
 
         if (y0 == y1) {
                 /* horizontal line special cased */
@@ -163,8 +184,8 @@ static bool fb_32bpp_fill(int x0, int y0, int x1, int y1, colour c)
         if (!fb_plotters_clip_rect_ctx(&x0, &y0, &x1, &y1))
                 return true; /* fill lies outside current clipping region */
 
+        ent = fb_colour_to_pixel(c);
         llen = (framebuffer->linelen >> 2);
-        ent = ((c & 0xff0000) >> 16) | (c & 0xff00) | ((c & 0xff) << 16);
         width = x1 - x0;
         height = y1 - y0;
 
@@ -240,8 +261,7 @@ fb_32bpp_draw_ft_monobitmap(FT_Bitmap *bp, int x, int y, colour c)
 	xoff = x0 - x;
 	yoff = y0 - y;
 
-        fgcol = ((c & 0xff0000) >> 16) | (c & 0xff00) | ((c & 0xff) << 16);
-
+        fgcol = fb_colour_to_pixel(c);
 
         pvideo = fb_32bpp_get_xy_loc(x, y0);
 
@@ -313,10 +333,7 @@ fb_32bpp_draw_ft_bitmap(FT_Bitmap *bp, int x, int y, colour c)
                                          fb_32bpp_to_colour(*(pvideo + xloop)));
                                 }
 
-                                *(pvideo + xloop) = ((abpixel & 0xFF) << 16) | 
-                                                    ((abpixel & 0xFF00)) | 
-                                                    ((abpixel & 0xFF0000) >> 16);
-
+                                *(pvideo + xloop) = fb_colour_to_pixel(abpixel);
                         }
                 }
                 pvideo += (framebuffer->linelen >> 2);
@@ -412,7 +429,7 @@ static bool fb_32bpp_text(int x, int y, const struct css_style *style,
 	xoff = x0 - x;
 	yoff = y0 - y;
 
-        fgcol = ((c & 0xff0000) >> 16) | (c & 0xff00) | ((c & 0xff) << 16);
+        fgcol = fb_colour_to_pixel(c);
 
         /*LOG(("x %d, y %d, style %p, txt %.*s , len %d, bg 0x%lx, fg 0x%lx",
           x,y,style,length,text,length,bg,c));*/
@@ -519,10 +536,7 @@ static bool fb_32bpp_bitmap(int x, int y, int width, int height,
                                          fb_32bpp_to_colour(*(pvideo + xloop)));
                                 }
 
-                                *(pvideo + xloop) = ((abpixel & 0xFF) << 16) | 
-                                                    ((abpixel & 0xFF00)) | 
-                                                    ((abpixel & 0xFF0000) >> 16);
-
+                                *(pvideo + xloop) = fb_colour_to_pixel(abpixel);
                         }
                 }
                 pvideo += (framebuffer->linelen >> 2);
