@@ -37,6 +37,7 @@
 #include "framebuffer/fb_frontend.h"
 #include "framebuffer/fb_cursor.h"
 #include "framebuffer/fb_rootwindow.h"
+#include "framebuffer/fb_options.h"
 
 #include "utils/log.h"
 
@@ -47,6 +48,21 @@ static SDL_Surface *sdl_screen;
 framebuffer_t *fb_os_init(int argc, char** argv)
 {
         framebuffer_t *newfb;
+        int fb_width;
+        int fb_height;
+        int fb_depth;
+
+        if ((option_window_width != 0) && (option_window_height != 0)) {
+                fb_width = option_window_width;
+                fb_height = option_window_height;                
+        } else {
+                fb_width = 800;
+                fb_height = 600;
+        }
+
+        fb_depth = option_fb_depth;
+        if ((fb_depth != 32) && (fb_depth != 16) && (fb_depth != 8))
+                fb_depth = 16; /* sanity checked depth in bpp */
 
         newfb = calloc(1, sizeof(framebuffer_t));
         if (newfb == NULL)
@@ -58,9 +74,9 @@ framebuffer_t *fb_os_init(int argc, char** argv)
         }
         atexit(SDL_Quit);
 
-        newfb->width = 800;
-        newfb->height = 600;
-        newfb->bpp = 32;
+        newfb->width = fb_width;
+        newfb->height = fb_height;
+        newfb->bpp = fb_depth;
 
         sdl_screen = SDL_SetVideoMode(newfb->width, 
                                   newfb->height, 

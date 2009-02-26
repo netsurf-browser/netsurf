@@ -135,12 +135,12 @@ fb_open_input_devices(void)
         fb_input_dev *d;
         struct dirent *de;
         const char *basepath = option_fb_input_devpath ? option_fb_input_devpath : "/dev/input";
-        
+
         dir = opendir(basepath);
-        
+
         if (dir == NULL)
                 return;
-        
+
         while ((de = readdir(dir)) != NULL) {
                 if (fnmatch(option_fb_input_glob ? option_fb_input_glob : "event*",
                             de->d_name, 0) == 0) {
@@ -154,7 +154,7 @@ fb_open_input_devices(void)
                         }
                 }
         }
-        
+
         closedir(dir);
 }
 
@@ -185,7 +185,7 @@ fb_switch_init(void)
         sigemptyset(&act.sa_mask);
         sigaction(SIGUSR1,&act,&old);
         sigaction(SIGUSR2,&act,&old);
-    
+
         if (-1 == ioctl(tty,VT_GETMODE, &vt_mode)) {
                 perror("ioctl VT_GETMODE");
                 exit(1);
@@ -194,7 +194,7 @@ fb_switch_init(void)
         vt_mode.waitv  = 0;
         vt_mode.relsig = SIGUSR1;
         vt_mode.acqsig = SIGUSR2;
-    
+
         if (-1 == ioctl(tty,VT_SETMODE, &vt_mode)) {
                 perror("ioctl VT_SETMODE");
                 exit(1);
@@ -210,7 +210,7 @@ fb_memset (void *addr, int c, size_t len)
 {
 #if 1 /* defined(__powerpc__) */
         unsigned int i, *p;
-    
+
         i = (c & 0xff) << 8;
         i |= i << 16;
         len >>= 2;
@@ -227,13 +227,13 @@ fb_setmode(const char *name, int bpp)
         FILE *fp;
         char line[80],label[32],value[16];
         int  geometry=0, timings=0;
-    
+
         /* load current values */
         if (ioctl(fb,FBIOGET_VSCREENINFO,&fb_var) == -1) {
                 perror("ioctl FBIOGET_VSCREENINFO");
                 exit(1);
         }
-    
+
         if (name == NULL)
                 return -1;
         if ((fp = fopen("/etc/fb.modes","r")) == NULL)
@@ -304,7 +304,7 @@ fb_setvt(int vtno)
 {
         struct vt_stat vts;
         char vtname[12];
-    
+
         if (vtno < 0) {
                 if (-1 == ioctl(tty,VT_OPENQRY, &vtno) || vtno == -1) {
                         perror("ioctl VT_OPENQRY");
@@ -354,11 +354,11 @@ fb_setvt(int vtno)
 }
 
 /* Hmm. radeonfb needs this. matroxfb doesn't. */
-static int 
+static int
 fb_activate_current(int tty)
 {
         struct vt_stat vts;
-    
+
         if (-1 == ioctl(tty,VT_GETSTATE, &vts)) {
                 perror("ioctl VT_GETSTATE");
                 return -1;
@@ -402,11 +402,14 @@ fb_cleanup(void)
 }
 
 static int
-fb_init(const char *device, const char *mode, int bpp, int vt)
+framebuffer_init(const char *device, int width, int height, int refresh, int bpp, int vt)
 {
         char   fbdev[16];
         struct vt_stat vts;
         long pm = ~(sysconf(_SC_PAGESIZE) - 1);
+        char mode[32];
+
+        snprintf(mode, 32, "%dx%d-%d", width, height, refresh);
 
         dev_init();
         tty = 0;
@@ -418,7 +421,7 @@ fb_init(const char *device, const char *mode, int bpp, int vt)
                         strerror(errno));
                 exit(1);
         }
-    
+
         if (device == NULL) {
                 device = getenv("FRAMEBUFFER");
                 if (device == NULL) {
@@ -469,10 +472,10 @@ fb_init(const char *device, const char *mode, int bpp, int vt)
                 exit(1);
         }
         tcgetattr(tty, &term);
-    
+
         /* switch mode */
         fb_setmode(mode, bpp);
-    
+
         /* checks & initialisation */
         if (-1 == ioctl(fb,FBIOGET_FSCREENINFO,&fb_fix)) {
                 perror("ioctl FBIOGET_FSCREENINFO");
@@ -559,8 +562,30 @@ framebuffer_t *fb_os_init(int argc, char** argv)
 {
         framebuffer_t *newfb;
         int ploop;
+        int fb_width;
+        int fb_height;
+        int fb_refresh;
+        int fb_depth;
 
-        fb_init(option_fb_device, option_fb_mode ? option_fb_mode : "800x600-70", 16, 1);
+        if ((option_window_width != 0) && (option_window_height != 0)) {
+                fb_width = option_window_width;
+                fb_height = option_window_height;
+        } else {
+                fb_width = 800;
+                fb_height = 600;
+        }
+
+        if (option_fb_refresh != 0) {
+                fb_refresh = option_fb_refresh;
+        } else {
+                fb_refresh = 60;
+        }
+
+        fb_depth = option_fb_depth;
+        if ((fb_depth != 32) && (fb_depth != 16) && (fb_depth != 8))
+                fb_depth = 16; /* sanity checked depth in bpp */
+
+        framebuffer_init(option_fb_device, fb_width, fb_height, fb_refresh, fb_depth, 1);
         fb_switch_init();
         fb_catch_exit_signals();
 
@@ -574,16 +599,16 @@ framebuffer_t *fb_os_init(int argc, char** argv)
 
         if (newfb->bpp <= 8) {
                 for(ploop=0; ploop < 256; ploop++) {
-                        newfb->palette[ploop] = 0xFF000000 | 
-                                                ocmap.blue[ploop] << 16 | 
-                                                ocmap.green[ploop] << 8 | 
-                                                ocmap.red[ploop] ; 
+                        newfb->palette[ploop] = 0xFF000000 |
+                                                ocmap.blue[ploop] << 16 |
+                                                ocmap.green[ploop] << 8 |
+                                                ocmap.red[ploop] ;
                 }
         }
 
 
         fb_open_input_devices();
-        
+
         return newfb;
 }
 
@@ -594,50 +619,50 @@ void fb_os_quit(framebuffer_t *fb)
 
 
 static int keymap[] = {
-         -1,   -1, '1', '2', '3', '4', '5', '6', '7', '8', /*  0 -  9 */
-         '9', '0', '-', '=',   8,   9, 'q', 'w', 'e', 'r', /* 10 - 19 */
-         't', 'y', 'u', 'i', 'o', 'p', '[', ']',  13,  -1, /* 20 - 29 */
-         'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', /* 30 - 39 */
+          -1,  -1, '1',  '2', '3', '4', '5', '6', '7', '8', /*  0 -  9 */
+         '9', '0', '-',  '=',   8,   9, 'q', 'w', 'e', 'r', /* 10 - 19 */
+         't', 'y', 'u',  'i', 'o', 'p', '[', ']',  13,  -1, /* 20 - 29 */
+         'a', 's', 'd',  'f', 'g', 'h', 'j', 'k', 'l', ';', /* 30 - 39 */
          '\'', '#', -1, '\\', 'z', 'x', 'c', 'v', 'b', 'n', /* 40 - 49 */
-         'm', ',', '.', '/',  -1,  -1,  -1, ' ',  -1,  -1, /* 50 - 59 */
+         'm', ',', '.',  '/',  -1,  -1,  -1, ' ',  -1,  -1, /* 50 - 59 */
 };
 
 static int sh_keymap[] = {
-         -1,   -1, '!', '"', '£', '$', '%', '^', '&', '*', /*  0 -  9 */
-         '(', ')', '_', '+',   8,   9, 'Q', 'W', 'E', 'R', /* 10 - 19 */
-         'T', 'Y', 'U', 'I', 'O', 'P', '{', '}',  13,  -1, /* 20 - 29 */
-         'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ':', /* 30 - 39 */
-         '@', '~',  -1, '|', 'Z', 'X', 'C', 'V', 'B', 'N', /* 40 - 49 */
-         'M', '<', '>', '?',  -1,  -1,  -1, ' ',  -1,  -1, /* 50 - 59 */
+          -1,  -1, '!', '"', 0xa3, '$', '%', '^', '&', '*', /*  0 -  9 */
+         '(', ')', '_', '+',    8,   9, 'Q', 'W', 'E', 'R', /* 10 - 19 */
+         'T', 'Y', 'U', 'I',  'O', 'P', '{', '}',  13,  -1, /* 20 - 29 */
+         'A', 'S', 'D', 'F',  'G', 'H', 'J', 'K', 'L', ':', /* 30 - 39 */
+         '@', '~',  -1, '|',  'Z', 'X', 'C', 'V', 'B', 'N', /* 40 - 49 */
+         'M', '<', '>', '?',   -1,  -1,  -1, ' ',  -1,  -1, /* 50 - 59 */
 };
 
 
 /* performs character mapping */
-static int keycode_to_ascii(int code, bool shift)
+static int keycode_to_ucs4(int code, bool shift)
 {
-        int ascii = -1;
+        int ucs4 = -1;
 
         if (shift) {
                 if ((code >= 0) && (code < sizeof(sh_keymap)))
-                        ascii = sh_keymap[code];
+                        ucs4 = sh_keymap[code];
         } else {
                 if ((code >= 0) && (code < sizeof(keymap)))
-                        ascii = keymap[code];
+                        ucs4 = keymap[code];
         }
-        return ascii;
+        return ucs4;
 }
 
-void fb_os_input(struct gui_window *g, bool active) 
+void fb_os_input(struct gui_window *g, bool active)
 {
         ssize_t amt;
-        struct input_event event;       
+        struct input_event event;
         fb_input_dev *d;
-        int ascii = -1;
+        int ucs4 = -1;
         static bool shift = false;
 
         for (d = inputdevs; d != NULL; d = d->next) {
                 amt = read(d->fd, &event, sizeof(struct input_event));
-                
+
                 if (amt > 0) {
                         if (event.type == EV_KEY) {
                                 if (event.value == 0) {
@@ -649,20 +674,20 @@ void fb_os_input(struct gui_window *g, bool active)
                                                 break;
 
                                         case BTN_LEFT:
-                                                fb_rootwindow_click(g, 
-                                                                    BROWSER_MOUSE_CLICK_1, 
-                                                                    fb_cursor_x(framebuffer), 
+                                                fb_rootwindow_click(g,
+                                                                    BROWSER_MOUSE_CLICK_1,
+                                                                    fb_cursor_x(framebuffer),
                                                                     fb_cursor_y(framebuffer));
                                         break;
                                         }
                                         return;
                                 }
-                                
+
                                 switch (event.code) {
                                 case KEY_PAGEDOWN:
                                         fb_window_scroll(g, 0, g->height);
                                         break;
-                                        
+
                                 case KEY_PAGEUP:
                                         fb_window_scroll(g, 0, -g->height);
                                         break;
@@ -670,7 +695,7 @@ void fb_os_input(struct gui_window *g, bool active)
                                 case KEY_DOWN:
                                         fb_window_scroll(g, 0, 100);
                                         break;
-                    
+
                                 case KEY_UP:
                                         fb_window_scroll(g, 0, -100);
                                         break;
@@ -678,19 +703,19 @@ void fb_os_input(struct gui_window *g, bool active)
                                 case KEY_LEFT:
                                         fb_window_scroll(g, -100, 0);
                                         break;
-                                        
+
                                 case KEY_RIGHT:
                                         fb_window_scroll(g, 100, 0);
                                         break;
-                                        
+
                                 case KEY_ESC:
                                         browser_window_destroy(g->bw);
                                         break;
 
                                 case BTN_LEFT:
-                                        fb_rootwindow_click(g, 
-                                            BROWSER_MOUSE_PRESS_1, 
-                                            fb_cursor_x(framebuffer), 
+                                        fb_rootwindow_click(g,
+                                            BROWSER_MOUSE_PRESS_1,
+                                            fb_cursor_x(framebuffer),
                                             fb_cursor_y(framebuffer));
                                         break;
 
@@ -700,7 +725,7 @@ void fb_os_input(struct gui_window *g, bool active)
                                         break;
 
                                 default:
-                                        ascii = keycode_to_ascii(event.code, shift);
+                                        ucs4 = keycode_to_ucs4(event.code, shift);
 
                                 }
                         } else if (event.type == EV_REL) {
@@ -709,7 +734,7 @@ void fb_os_input(struct gui_window *g, bool active)
                                         fb_rootwindow_move(framebuffer, g, event.value, 0, true);
 					break;
 
-                                case 1: 
+                                case 1:
                                         fb_rootwindow_move(framebuffer, g, 0, event.value, true);
 					break;
 
@@ -719,12 +744,12 @@ void fb_os_input(struct gui_window *g, bool active)
                                 }
                         }
 
-                        if (ascii != -1) {
-                                fb_rootwindow_input(g, ascii);
-                                ascii = -1;
+                        if (ucs4 != -1) {
+                                fb_rootwindow_input(g, ucs4);
+                                ucs4 = -1;
                         }
 
-                        
+
                 }
         }
 }
@@ -745,4 +770,3 @@ fb_os_redraw(struct bbox_s *box)
  * c-basic-offset:8
  * End:
  */
-

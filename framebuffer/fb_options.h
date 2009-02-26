@@ -21,21 +21,24 @@
 
 #include "desktop/options.h"
 
-extern char *option_fb_mode;
+extern int option_fb_depth;
+extern int option_fb_refresh;
 extern char *option_fb_device;
 extern char *option_fb_input_devpath;
 extern char *option_fb_input_glob;
 
 #define EXTRA_OPTION_DEFINE                     \
-  char *option_fb_mode = 0;                     \
+  int option_fb_depth = 32;                     \
+  int option_fb_refresh = 70;                   \
   char *option_fb_device = 0;                   \
   char *option_fb_input_devpath = 0;            \
   char *option_fb_input_glob = 0;
 
-#define EXTRA_OPTION_TABLE \
-  { "fb_mode", OPTION_STRING,	&option_fb_mode },      \
-  { "fb_device", OPTION_STRING, &option_fb_device },    \
-  { "fb_input_devpath", OPTION_STRING, &option_fb_input_devpath },      \
-  { "fb_input_glob", OPTION_STRING, &option_fb_input_glob },
+#define EXTRA_OPTION_TABLE                                              \
+    { "fb_depth", OPTION_INTEGER, &option_fb_depth },                   \
+    { "fb_refresh", OPTION_INTEGER, &option_fb_refresh },               \
+    { "fb_device", OPTION_STRING, &option_fb_device },                  \
+    { "fb_input_devpath", OPTION_STRING, &option_fb_input_devpath },    \
+    { "fb_input_glob", OPTION_STRING, &option_fb_input_glob },
 
 #endif
