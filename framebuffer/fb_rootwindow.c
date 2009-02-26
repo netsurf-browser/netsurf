@@ -36,6 +36,8 @@
 #include "utils/utils.h"
 #include "desktop/history_core.h"
 
+#include "image/bitmap.h"
+
 #include "framebuffer/fb_bitmap.h"
 #include "framebuffer/fb_gui.h"
 #include "framebuffer/fb_frontend.h"
