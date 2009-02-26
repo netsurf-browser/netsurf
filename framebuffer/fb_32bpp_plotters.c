@@ -153,23 +153,29 @@ static bool fb_32bpp_polygon(const int *p, unsigned int n, colour fill)
 static bool fb_32bpp_fill(int x0, int y0, int x1, int y1, colour c)
 {
         int w;
-        int y;
+        uint32_t *pvid_line;
         uint32_t *pvid;
         uint32_t ent;
+        uint32_t llen;
+        uint32_t width;
+        uint32_t height;
 
         if (!fb_plotters_clip_rect_ctx(&x0, &y0, &x1, &y1))
                 return true; /* fill lies outside current clipping region */
 
+        llen = (framebuffer->linelen >> 2);
         ent = ((c & 0xff0000) >> 16) | (c & 0xff00) | ((c & 0xff) << 16);
+        width = x1 - x0;
+        height = y1 - y0;
 
-        pvid = fb_32bpp_get_xy_loc(x0, y0);
+        pvid_line = fb_32bpp_get_xy_loc(x0, y0);
 
-        for (y = y0; y < y1; y++) {
-                w = x1 - x0;
-                while (w-- > 0) {
-                        *(pvid + w) = ent;
-                }
-                pvid += (framebuffer->linelen >> 2);
+        while (height > 0) {
+                height--;
+                pvid = pvid_line;
+                pvid_line += llen;
+                w = width;
+                while (w-- > 0) *pvid++ = ent;                
         }
 
 	return true;
@@ -193,7 +199,7 @@ fb_32bpp_draw_ft_monobitmap(FT_Bitmap *bp, int x, int y, colour c)
 {
         int height = bp->rows;
         int width = bp->width;
-        uint32_t row;
+        uint32_t row = 0;
         int xloop, yloop;
 
         uint32_t *pvideo;
