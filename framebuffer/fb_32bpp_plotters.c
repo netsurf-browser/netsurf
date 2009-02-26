@@ -33,16 +33,16 @@
 static inline uint32_t *
 fb_32bpp_get_xy_loc(int x, int y)
 {
-        return (uint32_t *)(framebuffer->ptr +
-                            (y * framebuffer->linelen) +
+        return (uint32_t *)(framebuffer->ptr + 
+                            (y * framebuffer->linelen) + 
                             (x << 2));
 }
 
 #if __BYTE_ORDER == __BIG_ENDIAN
 static inline colour fb_32bpp_to_colour(uint32_t pixel)
 {
-        return ((pixel & 0xFF00) >> 8) |
-                ((pixel & 0xFF0000) >> 8) |
+        return ((pixel & 0xFF00) >> 8) | 
+                ((pixel & 0xFF0000) >> 8) | 
                 ((pixel & 0xFF000000) >> 8);
 }
 
@@ -54,8 +54,8 @@ static inline uint32_t fb_colour_to_pixel(colour c)
 #else
 static inline colour fb_32bpp_to_colour(uint32_t pixel)
 {
-        return ((pixel & 0xFF) << 16) |
-                ((pixel & 0xFF00)) |
+        return ((pixel & 0xFF) << 16) | 
+                ((pixel & 0xFF00)) | 
                 ((pixel & 0xFF0000) >> 16);
 }
 
@@ -121,7 +121,7 @@ static bool fb_32bpp_line(int x0, int y0, int x1, int y1, int width,
                 x = dyabs >> 1;
                 y = dxabs >> 1;
 
-                if (dxabs >= dyabs) {
+                if (dxabs >= dyabs) { 
                         /* the line is more horizontal than vertical */
                         for (i = 0; i <= dxabs; i++) {
                                 *pvideo = ent;
@@ -146,7 +146,7 @@ static bool fb_32bpp_line(int x0, int y0, int x1, int y1, int width,
                                 }
                         }
                 }
-
+                
         }
 
 	return true;
@@ -191,7 +191,7 @@ static bool fb_32bpp_fill(int x0, int y0, int x1, int y1, colour c)
         pvid = fb_32bpp_get_xy_loc(x0, y0);
 
         while (height-- > 0) {
-                for (w = width; w > 0; w--) *pvid++ = ent;
+                for (w = width; w > 0; w--) *pvid++ = ent;                
                 pvid += llen;
         }
 
@@ -200,10 +200,10 @@ static bool fb_32bpp_fill(int x0, int y0, int x1, int y1, colour c)
 
 static bool fb_32bpp_clg(colour c)
 {
-        fb_32bpp_fill(fb_plot_ctx.x0,
-                      fb_plot_ctx.y0,
-                      fb_plot_ctx.x1,
-                      fb_plot_ctx.y1,
+        fb_32bpp_fill(fb_plot_ctx.x0, 
+                      fb_plot_ctx.y0, 
+                      fb_plot_ctx.x1, 
+                      fb_plot_ctx.y1, 
                       c);
 	return true;
 }
@@ -234,7 +234,7 @@ fb_32bpp_draw_ft_monobitmap(FT_Bitmap *bp, int x, int y, colour c)
 
 
         y+=1; /* the coord is the bottom-left of the pixels offset by 1 to make
-               *   it work since fb coords are the top-left of pixels
+               *   it work since fb coords are the top-left of pixels 
                */
 
         /* The part of the text displayed is cropped to the current context. */
@@ -267,16 +267,16 @@ fb_32bpp_draw_ft_monobitmap(FT_Bitmap *bp, int x, int y, colour c)
                         if ((xloop % 8) == 0) {
                                 row = *fntd++;
                         }
-
+ 
                         if ((row & 0x80) != 0) {
                                 *(pvideo + xloop) = fgcol;
-                        }
+                        } 
                         row = row << 1;
                 }
 
                 pvideo += (framebuffer->linelen >> 2);
         }
-
+        
 
 	return true;
 }
@@ -295,7 +295,7 @@ fb_32bpp_draw_ft_bitmap(FT_Bitmap *bp, int x, int y, colour c)
         uint32_t fgcol;
 
         /* The part of the scaled image actually displayed is cropped to the
-         * current context.
+         * current context. 
          */
         x0 = x;
         y0 = y;
@@ -325,7 +325,7 @@ fb_32bpp_draw_ft_bitmap(FT_Bitmap *bp, int x, int y, colour c)
                         if ((abpixel & 0xFF000000) != 0) {
                                 /* pixel is not transparent */
                                 if ((abpixel & 0xFF000000) != 0xFF000000) {
-                                        abpixel = fb_plotters_ablend(abpixel,
+                                        abpixel = fb_plotters_ablend(abpixel, 
                                          fb_32bpp_to_colour(*(pvideo + xloop)));
                                 }
 
@@ -351,23 +351,23 @@ static bool fb_32bpp_text(int x, int y, const struct css_style *style,
                 nxtchr = utf8_next(text, length, nxtchr);
 
                 glyph = fb_getglyph(style, ucs4);
-                if (glyph == NULL)
+                if (glyph == NULL) 
                         continue;
 
                 if (glyph->format == FT_GLYPH_FORMAT_BITMAP) {
                         bglyph = (FT_BitmapGlyph)glyph;
 
-                        /* now, draw to our target surface */
+                        /* now, draw to our target surface */  
                         if (bglyph->bitmap.pixel_mode == FT_PIXEL_MODE_MONO) {
-                                fb_32bpp_draw_ft_monobitmap(&bglyph->bitmap,
-                                                            x + bglyph->left,
+                                fb_32bpp_draw_ft_monobitmap(&bglyph->bitmap, 
+                                                            x + bglyph->left, 
                                                             y - bglyph->top,
-                                                            c);
+                                                            c); 
                         } else {
-                                fb_32bpp_draw_ft_bitmap(&bglyph->bitmap,
-                                                        x + bglyph->left,
+                                fb_32bpp_draw_ft_bitmap(&bglyph->bitmap, 
+                                                        x + bglyph->left, 
                                                         y - bglyph->top,
-                                                        c);
+                                                        c); 
                         }
                 }
                 x += glyph->advance.x >> 16;
@@ -395,7 +395,7 @@ static bool fb_32bpp_text(int x, int y, const struct css_style *style,
 
         /* aquire thge text in local font encoding */
 	utf8_to_font_encoding(fb_font, text, length, (char**)&buffer);
-	if (!buffer)
+	if (!buffer) 
                 return true;
         length = strlen((char *)buffer);
 
@@ -404,7 +404,7 @@ static bool fb_32bpp_text(int x, int y, const struct css_style *style,
         y-=((fb_font->height * 75)/100);
 
         y+=1; /* the coord is the bottom-left of the pixels offset by 1 to make
-               *   it work since fb coords are the top-left of pixels
+               *   it work since fb coords are the top-left of pixels 
                */
 
         /* The part of the text displayed is cropped to the current context. */
@@ -434,7 +434,7 @@ static bool fb_32bpp_text(int x, int y, const struct css_style *style,
                 if ((x + fb_font->width) > x1)
                         break;
 
-                if (x < x0)
+                if (x < x0) 
                         continue;
 
                 pvideo = fb_32bpp_get_xy_loc(x, y0);
@@ -478,7 +478,7 @@ static inline colour ablend(colour pixel)
 
 
 static bool fb_32bpp_bitmap(int x, int y, int width, int height,
-			struct bitmap *bitmap, colour bg,
+			struct bitmap *bitmap, colour bg, 
                         struct content *content)
 {
         uint32_t *pvideo;
@@ -488,11 +488,11 @@ static bool fb_32bpp_bitmap(int x, int y, int width, int height,
         int x0,y0,x1,y1;
 	int xoff, yoff; /* x and y offset into image */
 
-        /* LOG(("x %d, y %d, width %d, height %d, bitmap %p, content %p",
+        /* LOG(("x %d, y %d, width %d, height %d, bitmap %p, content %p", 
            x,y,width,height,bitmap,content));*/
 
         /* TODO here we should scale the image from bitmap->width to width, for
-         * now simply crop.
+         * now simply crop. 
          */
         if (width > bitmap->width)
                 width = bitmap->width;
@@ -501,7 +501,7 @@ static bool fb_32bpp_bitmap(int x, int y, int width, int height,
                 height = bitmap->height;
 
         /* The part of the scaled image actually displayed is cropped to the
-         * current context.
+         * current context. 
          */
         x0 = x;
         y0 = y;
@@ -518,18 +518,17 @@ static bool fb_32bpp_bitmap(int x, int y, int width, int height,
                 width = (x1 - x0);
 
 	xoff = x0 - x;
-	yoff = (y0 - y) * bitmap->width;
-	height *= bitmap->width;
+	yoff = y0 - y;
 
         /* plot the image */
         pvideo = fb_32bpp_get_xy_loc(x0, y0);
 
-        for (yloop = yoff; yloop < height; yloop += bitmap->width) {
+        for (yloop = 0; yloop < height; yloop++) {
                 for (xloop = 0; xloop < width; xloop++) {
-                        abpixel = pixel[yloop + xloop + xoff];
+                        abpixel = pixel[((yoff + yloop) * bitmap->width) + xloop + xoff];
                         if ((abpixel & 0xFF000000) != 0) {
                                 if ((abpixel & 0xFF000000) != 0xFF000000) {
-                                        abpixel = fb_plotters_ablend(abpixel,
+                                        abpixel = fb_plotters_ablend(abpixel, 
                                          fb_32bpp_to_colour(*(pvideo + xloop)));
                                 }
 
@@ -545,10 +544,10 @@ static bool fb_32bpp_bitmap(int x, int y, int width, int height,
 
 static bool fb_32bpp_bitmap_tile(int x, int y, int width, int height,
 			struct bitmap *bitmap, colour bg,
-			bool repeat_x, bool repeat_y,
+			bool repeat_x, bool repeat_y, 
                              struct content *content)
 {
-        return fb_plotters_bitmap_tile(x, y, width, height,
+        return fb_plotters_bitmap_tile(x, y, width, height, 
                                        bitmap, bg, repeat_x, repeat_y,
                                        content, fb_32bpp_bitmap);
 }
@@ -579,7 +578,7 @@ const struct plotter_table framebuffer_32bpp_plot = {
 	.arc = fb_32bpp_arc,
 	.bitmap = fb_32bpp_bitmap,
 	.bitmap_tile = fb_32bpp_bitmap_tile,
-	.flush = fb_32bpp_flush,
+	.flush = fb_32bpp_flush, 
 	.path = fb_32bpp_path,
         .option_knockout = true,
 };
