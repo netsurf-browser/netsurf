@@ -1,0 +1,45 @@
+# Makefile for NetSurf's resources
+#
+# Copyright 2009 Daniel Silverstone <dsilvers@netsurf-browser.org>
+#
+#
+# This file provides the rules and setup for built-in resources for
+# the NetSurf browser binary.
+
+ifeq ($(TARGET),framebuffer)
+
+# We make fb_convert_image depend on fb_bitmap.h so that if we change
+# that header, we get new images built just in case.
+$(TOOLROOT)/fb_convert_image: $(TOOLROOT)/created framebuffer/fb_convert_image.c framebuffer/fb_bitmap.h
+	$(VQ)echo " HOST CC: $@"
+	$(Q)$(HOST_CC) -o $@ framebuffer/fb_convert_image.c -lpng
+
+FB_IMAGE_left_arrow := framebuffer/res/icons/back.png
+FB_IMAGE_right_arrow := framebuffer/res/icons/forward.png
+FB_IMAGE_reload := framebuffer/res/icons/reload.png
+FB_IMAGE_stop_image := framebuffer/res/icons/stop.png
+
+FB_IMAGE_pointer_image := framebuffer/res/pointers/default.png
+FB_IMAGE_hand_image := framebuffer/res/pointers/point.png
+FB_IMAGE_caret_image := framebuffer/res/pointers/caret.png
+
+# 1: input file
+# 2: output file
+# 3: bitmap name
+define convert_image
+
+S_IMAGES += $(2)
+
+$(2): $(1) $(TOOLROOT)/fb_convert_image
+	$(Q)$(TOOLROOT)/fb_convert_image $(1) $(2) $(3)
+
+endef
+
+S_IMAGES :=
+
+$(eval $(foreach V,$(filter FB_IMAGE_%,$(.VARIABLES)),$(call convert_image,$($(V)),$(OBJROOT)/$(patsubst FB_IMAGE_%,%,$(V)).c,$(patsubst FB_IMAGE_%,%,$(V)))))
+
+
+
+# End of framebuffer resource definitions
+endif

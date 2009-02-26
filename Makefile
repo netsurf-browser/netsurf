@@ -110,6 +110,9 @@ MKDIR=mkdir
 TOUCH=touch
 STRIP=strip
 
+# Override this only if the host compiler is called something different
+HOST_CC := gcc
+
 ifeq ($(TARGET),riscos)
   ifeq ($(HOST),riscos)
     # Build for RO on RO
@@ -610,10 +613,17 @@ $(DEPROOT)/created: $(OBJROOT)/created
 	$(Q)$(MKDIR) $(DEPROOT)
 	$(Q)$(TOUCH) $(DEPROOT)/created
 
+TOOLROOT := $(OBJROOT)/tools
+$(TOOLROOT)/created: $(OBJROOT)/created
+	$(VQ)echo "   MKDIR: $(TOOLROOT)"
+	$(Q)$(MKDIR) $(TOOLROOT)
+	$(Q)$(TOUCH) $(TOOLROOT)/created
+
 CLEANS := clean-target
 
 POSTEXES :=
 
+include Makefile.resources
 include Makefile.sources
 
 OBJECTS := $(sort $(addprefix $(OBJROOT)/,$(subst /,_,$(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(patsubst %.s,%.o,$(SOURCES)))))))
