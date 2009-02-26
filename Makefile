@@ -726,10 +726,6 @@ else
 define dependency_generate_c
 DEPFILES += $(2)
 $$(DEPROOT)/$(2): $$(DEPROOT)/created $(1) css/css_enum.h css/parser.h Makefile.config
-	$$(VQ)echo "     DEP: $(1)"
-	$$(Q)$$(RM) $$(DEPROOT)/$(2)
-	$$(Q)$$(CC) $$(CFLAGS) -MM -MT '$$(DEPROOT)/$2 $$(OBJROOT)/$(3)' \
-		    -MF $$(DEPROOT)/$(2) $(1)
 
 endef
 endif
@@ -740,10 +736,6 @@ endif
 define dependency_generate_s
 DEPFILES += $(2)
 $$(DEPROOT)/$(2): $$(DEPROOT)/created $(1)
-	$$(VQ)echo "     DEP: $(1)"
-	$$(Q)$$(RM) $$(DEPROOT)/$(2)
-	$$(Q)$$(CC) $$(CFLAGS) -MM -MT '$$(DEPROOT)/$2 $$(OBJROOT)/$(3)' \
-		    -MF $$(DEPROOT)/$(2) $(1)
 
 endef
 
@@ -751,9 +743,11 @@ endef
 # 2 = obj filename, no prefix
 # 3 = dep filename, no prefix
 define compile_target_c
-$$(OBJROOT)/$(2): $$(OBJROOT)/created $$(DEPROOT)/$(3)
+$$(DEPROOT)/$(3) $$(OBJROOT)/$(2): $$(OBJROOT)/created
 	$$(VQ)echo " COMPILE: $(1)"
-	$$(Q)$$(CC) $$(CFLAGS) -o $$@ -c $(1)
+	$$(Q)$$(RM) $$(DEPROOT)/$(3)
+	$$(Q)$$(CC) $$(CFLAGS) -MMD -MT '$$(DEPROOT)/$(3) $$(OBJROOT)/$(2)' \
+		    -MF $$(DEPROOT)/$(3) -o $$(OBJROOT)/$(2) -c $(1)
 
 endef
 
@@ -768,9 +762,11 @@ endef
 # 2 = obj filename, no prefix
 # 3 = dep filename, no prefix
 define compile_target_s
-$$(OBJROOT)/$(2): $$(OBJROOT)/created
+$$(DEPROOT)/$3 $$(OBJROOT)/$(2): $$(OBJROOT)/created
 	$$(VQ)echo "ASSEMBLE: $(1)"
-	$$(Q)$$(CC) $$(ASFLAGS) -o $$@ -c $(1)
+	$$(Q)$$(RM) $$(DEPROOT)/$(3)
+	$$(Q)$$(CC) $$(ASFLAGS) -MMD -MT '$$(DEPROOT)/$(3) $$(OBJROOT)/$(2)' \
+		    -MF $$(DEPROOT)/$(3) -o $$(OBJROOT)/$(2) -c $(1)
 
 endef
 
