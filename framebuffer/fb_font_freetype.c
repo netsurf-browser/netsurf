@@ -42,6 +42,7 @@ int ft_load_type;
 typedef struct fb_faceid_s {
         char *fontfile; /* path to font */
         int index; /* index of font */
+        int cidx; /* character map index for unicode */
 } fb_faceid_t;
 
 
@@ -65,12 +66,25 @@ static FT_Error ft_face_requester(FTC_FaceID face_id, FT_Library  library, FT_Po
 {
         FT_Error error;
         fb_faceid_t *fb_face = (fb_faceid_t *)face_id;
+        int cidx;
 
         error = FT_New_Face(library, fb_face->fontfile, fb_face->index, face); 
         if (error) {
                 LOG(("Could not find font (code %d)\n", error));
-        }
+        } else {
 
+                error = FT_Select_Charmap(*face, FT_ENCODING_UNICODE);
+                if (error) {
+                        LOG(("Could not select charmap (code %d)\n", error));
+                } else {
+                        for (cidx = 0; cidx < (*face)->num_charmaps; cidx++) {
+                                if ((*face)->charmap == (*face)->charmaps[cidx]) {
+                                        fb_face->cidx = cidx;
+                                        break;
+                                }
+                        }
+                }
+        }
         LOG(("Loaded face from %s\n", fb_face->fontfile));
 
         return error;
@@ -174,6 +188,9 @@ static void fb_fill_scalar(const struct css_style *style, FTC_Scaler srec)
                 switch (style->font_style) {
                 case CSS_FONT_STYLE_ITALIC:
                         switch (style->font_weight) {
+                        case CSS_FONT_WEIGHT_700:
+                        case CSS_FONT_WEIGHT_800:
+                        case CSS_FONT_WEIGHT_900:
                         case CSS_FONT_WEIGHT_BOLD:
                                 srec->face_id = (FTC_FaceID)fb_face_sans_serif_italic_bold;
                                 break;
@@ -187,6 +204,9 @@ static void fb_fill_scalar(const struct css_style *style, FTC_Scaler srec)
 
                 default:
                         switch (style->font_weight) {
+                        case CSS_FONT_WEIGHT_700:
+                        case CSS_FONT_WEIGHT_800:
+                        case CSS_FONT_WEIGHT_900:
                         case CSS_FONT_WEIGHT_BOLD:
                                 srec->face_id = (FTC_FaceID)fb_face_sans_serif_bold;
                                 break;
@@ -219,10 +239,13 @@ FT_Glyph fb_getglyph(const struct css_style *style, uint32_t ucs4)
         FTC_ScalerRec srec;
         FT_Glyph glyph;
         FT_Error error;
+        fb_faceid_t *fb_face; 
 
         fb_fill_scalar(style, &srec);
 
-        glyph_index = FTC_CMapCache_Lookup(ft_cmap_cache, srec.face_id, 0, ucs4);
+        fb_face = (fb_faceid_t *)srec.face_id;
+
+        glyph_index = FTC_CMapCache_Lookup(ft_cmap_cache, srec.face_id, fb_face->cidx, ucs4);
 
         error = FTC_ImageCache_LookupScaler(ft_image_cache, 
                                             &srec, 
