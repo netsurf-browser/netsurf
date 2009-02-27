@@ -307,8 +307,10 @@ fb_add_window_widget(struct gui_window *g,
 static int
 fb_widget_leftarrow_click(struct gui_window *g, browser_mouse_state st, int x, int y)
 {
-        if (history_back_available(g->bw->history))
-                history_back(g->bw, g->bw->history);
+        if (st == BROWSER_MOUSE_CLICK_1) {
+                if (history_back_available(g->bw->history))
+                        history_back(g->bw, g->bw->history);
+        }
         return 0;
 
 }
@@ -317,8 +319,10 @@ fb_widget_leftarrow_click(struct gui_window *g, browser_mouse_state st, int x, i
 static int
 fb_widget_rightarrow_click(struct gui_window *g, browser_mouse_state st, int x, int y)
 {
-        if (history_forward_available(g->bw->history))
-                history_forward(g->bw, g->bw->history);
+        if (st == BROWSER_MOUSE_CLICK_1) {
+                if (history_forward_available(g->bw->history))
+                        history_forward(g->bw, g->bw->history);
+        }
         return 0;
 
 }
