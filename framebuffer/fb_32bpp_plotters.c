@@ -41,15 +41,13 @@ fb_32bpp_get_xy_loc(int x, int y)
 #if __BYTE_ORDER == __BIG_ENDIAN
 static inline colour fb_32bpp_to_colour(uint32_t pixel)
 {
-        return ((pixel & 0xFF00) >> 8) | 
-                ((pixel & 0xFF0000) >> 8) | 
-                ((pixel & 0xFF000000) >> 8);
+        return (pixel >> 8) & ~0xFF000000U;
 }
 
 /* convert a colour value to a 32bpp pixel value ready for screen output */
 static inline uint32_t fb_colour_to_pixel(colour c)
 {
-        return ((c & 0xff0000) << 8) | (c & 0xff00) << 8 | ((c & 0xff) << 8);
+        return (c << 8);
 }
 #else
 static inline colour fb_32bpp_to_colour(uint32_t pixel)
@@ -191,7 +189,31 @@ static bool fb_32bpp_fill(int x0, int y0, int x1, int y1, colour c)
         pvid = fb_32bpp_get_xy_loc(x0, y0);
 
         while (height-- > 0) {
-                for (w = width; w > 0; w--) *pvid++ = ent;                
+#if 1
+                for (w = width; w > 0; w--) *pvid++ = ent;
+#else
+                uint32_t *evid = pvid + width;
+                while ((pvid += 16) <= evid) {
+                        pvid[0]  = ent;
+                        pvid[1]  = ent;
+                        pvid[2]  = ent;
+                        pvid[3]  = ent;
+                        pvid[4]  = ent;
+                        pvid[5]  = ent;
+                        pvid[6]  = ent;
+                        pvid[7]  = ent;
+                        pvid[8]  = ent;
+                        pvid[9]  = ent;
+                        pvid[10] = ent;
+                        pvid[11] = ent;
+                        pvid[12] = ent;
+                        pvid[13] = ent;
+                        pvid[14] = ent;
+                        pvid[15] = ent;
+                }
+                pvid -= 16;
+                while (pvid < evid) *pvid++ = ent;
+#endif
                 pvid += llen;
         }
 
@@ -483,7 +505,7 @@ static bool fb_32bpp_bitmap(int x, int y, int width, int height,
 {
         uint32_t *pvideo;
         colour *pixel = (colour *)bitmap->pixdata;
-        colour abpixel; /* alphablended pixel */
+        colour abpixel = 0; /* alphablended pixel */
         int xloop, yloop;
         int x0,y0,x1,y1;
 	int xoff, yoff; /* x and y offset into image */
@@ -525,6 +547,7 @@ static bool fb_32bpp_bitmap(int x, int y, int width, int height,
         pvideo = fb_32bpp_get_xy_loc(x0, y0);
 
         for (yloop = yoff; yloop < height; yloop += bitmap->width) {
+#if 1
                 for (xloop = 0; xloop < width; xloop++) {
                         abpixel = pixel[yloop + xloop + xoff];
                         if ((abpixel & 0xFF000000) != 0) {
@@ -536,6 +559,25 @@ static bool fb_32bpp_bitmap(int x, int y, int width, int height,
                                 *(pvideo + xloop) = fb_colour_to_pixel(abpixel);
                         }
                 }
+#else
+                uint32_t *pvid = pvideo;
+                colour *pix  = &pixel[yloop + xoff];
+                colour *epix = pix + width;
+                do {
+                         colour *spix = pix;
+                         while (pix < epix && !((abpixel = *pix) & 0xFF000000U)) pix++;
+                         if (pix < epix) {
+                                pvid += pix++ - spix;
+                                do {
+                                        if ((abpixel & 0xFF000000) != 0xFF000000) {
+                                                abpixel = fb_plotters_ablend(abpixel,
+                                                 fb_32bpp_to_colour(*pvid));
+                                        }
+                                        *pvid++ = fb_colour_to_pixel(abpixel);
+                                } while (pix < epix && ((abpixel = *pix++) & 0xFF000000U));
+                         }
+                } while (pix < epix);
+#endif
                 pvideo += (framebuffer->linelen >> 2);
         }
 

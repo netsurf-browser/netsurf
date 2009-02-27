@@ -50,6 +50,7 @@ bool fb_plotters_bitmap_tile(int x, int y,
 /* alpha blend two pixels together */
 static inline colour fb_plotters_ablend(colour pixel, colour scrpixel)
 {
+#if 1
         int opacity = (pixel >> 24) & 0xFF;
         int r,g,b;
 
@@ -63,6 +64,18 @@ static inline colour fb_plotters_ablend(colour pixel, colour scrpixel)
             ((((scrpixel & 0xFF0000) >> 16) * (0xFF - opacity)) >> 8);
 
         return r | (g << 8) | (b << 16);
+#else
+        int opacity = pixel >> 24;
+        int transp = 0x100 - opacity;
+        uint32_t rb, g;
+
+        rb = ((pixel & 0xFF00FF) * opacity +
+              (scrpixel & 0xFF00FF) * transp) >> 8;
+        g  = ((pixel & 0x00FF00) * opacity +
+              (scrpixel & 0x00FF00) * transp) >> 8;
+
+        return rb | g;
+#endif
 }
 
 
