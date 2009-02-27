@@ -99,7 +99,7 @@ fb_new_face(const char *fontfile)
         FT_Face aface;
 
         newf = calloc(1, sizeof(fb_faceid_t));
-        newf->fontfile=strdup(fontfile);
+        newf->fontfile = strdup(fontfile);
 
         error = FTC_Manager_LookupFace(ft_cmanager, (FTC_FaceID)newf, &aface);
         if (error) {
@@ -149,6 +149,7 @@ bool fb_font_init(void)
         fb_face_sans_serif = fb_new_face("/usr/share/fonts/truetype/ttf-bitstream-vera/Vera.ttf");
         if (fb_face_sans_serif == NULL) {
                 LOG(("Could not find default font (code %d)\n", error));
+                FTC_Manager_Done(ft_cmanager );
                 FT_Done_FreeType(library);
                 return false;
         }

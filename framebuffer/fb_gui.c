@@ -260,12 +260,13 @@ void gui_init(int argc, char** argv)
 
         default:
                 LOG(("Unsupported bit depth (%d)", framebuffer->bpp));
-                exit(1);
+                die("Unsupported bit depth");
         }
 
         framebuffer->cursor = fb_cursor_init(framebuffer, &pointer_image);
 
-        fb_font_init();
+        if (fb_font_init() == false)
+                die("Unable to initialise the font system");
 
 }
 

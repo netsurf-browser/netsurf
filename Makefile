@@ -470,8 +470,8 @@ ifeq ($(TARGET),framebuffer)
   $(eval $(call feature_enabled,MNG,-DWITH_MNG,-lmng,PNG support))
 
   ifeq ($(NETSURF_FB_FONTLIB),freetype)
-	CFLAGS += -DFB_USE_FREETYPE -I/usr/include/freetype2
-	LDFLAGS += -lfreetype
+	CFLAGS += -DFB_USE_FREETYPE $(shell freetype-config --cflags)
+	LDFLAGS += $(shell freetype-config --libs)
   endif
 
   # define additional CFLAGS and LDFLAGS requirements for pkg-configed libs here
