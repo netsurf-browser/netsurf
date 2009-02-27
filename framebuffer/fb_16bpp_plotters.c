@@ -462,14 +462,15 @@ static bool fb_16bpp_bitmap(int x, int y, int width, int height,
                 width = (x1 - x0);
 
 	xoff = x0 - x;
-	yoff = y0 - y;
+	yoff = (y0 - y) * bitmap->width;
+	height = height * bitmap->width + yoff;
 
         /* plot the image */
         pvideo = fb_16bpp_get_xy_loc(x0, y0);
 
-        for (yloop = 0; yloop < height; yloop++) {
+        for (yloop = yoff; yloop < height; yloop += bitmap->width) {
                 for (xloop = 0; xloop < width; xloop++) {
-                        abpixel = pixel[((yoff + yloop) * bitmap->width) + xloop + xoff];
+                        abpixel = pixel[yloop + xloop + xoff];
                         if ((abpixel & 0xFF000000) != 0) {
                                 if ((abpixel & 0xFF000000) != 0xFF000000) {
                                         abpixel = fb_plotters_ablend(abpixel, 
