@@ -24,12 +24,15 @@
 
 #include "css/css.h"
 #include "render/font.h"
-#include "desktop/options.h"
 #include "utils/utf8.h"
 #include "utils/log.h"
 
 #include "framebuffer/fb_gui.h"
 #include "framebuffer/fb_font.h"
+#include "framebuffer/fb_options.h"
+#include "framebuffer/fb_findfile.h"
+
+#define VERA_PATH "/usr/share/fonts/truetype/ttf-bitstream-vera/"
 
 static FT_Library library; 
 static FTC_Manager ft_cmanager;
@@ -45,13 +48,20 @@ typedef struct fb_faceid_s {
         int cidx; /* character map index for unicode */
 } fb_faceid_t;
 
+/* defines for accesing the faces */
+#define FB_FACE_DEFAULT 0
 
-static fb_faceid_t *fb_face_sans_serif; /* global default face */
-static fb_faceid_t *fb_face_sans_serif_bold; /* bold sans face */
-static fb_faceid_t *fb_face_sans_serif_italic; /* bold sans face */
-static fb_faceid_t *fb_face_sans_serif_italic_bold; /* bold sans face */
-static fb_faceid_t *fb_face_monospace; /* monospace face */
-static fb_faceid_t *fb_face_serif; /* serif face */
+#define FB_FACE_SANS_SERIF 0
+#define FB_FACE_SANS_SERIF_BOLD 1
+#define FB_FACE_SANS_SERIF_ITALIC 2
+#define FB_FACE_SANS_SERIF_ITALIC_BOLD 3
+#define FB_FACE_MONOSPACE 4
+#define FB_FACE_SERIF 5
+#define FB_FACE_SERIF_BOLD 6
+
+#define FB_FACE_COUNT 7
+
+static fb_faceid_t *fb_faces[FB_FACE_COUNT];
 
 
 utf8_convert_ret utf8_to_local_encoding(const char *string, 
@@ -92,20 +102,27 @@ static FT_Error ft_face_requester(FTC_FaceID face_id, FT_Library  library, FT_Po
 
 /* create new framebuffer face and cause it to be loaded to check its ok */
 static fb_faceid_t *
-fb_new_face(const char *fontfile)
+fb_new_face(const char *option, const char *resname, const char *fontfile)
 {
         fb_faceid_t *newf;
         FT_Error error;
         FT_Face aface;
+	char buf[PATH_MAX];
 
         newf = calloc(1, sizeof(fb_faceid_t));
-        newf->fontfile = strdup(fontfile);
+
+        if (option != NULL) {
+                newf->fontfile = strdup(option);
+        } else {
+                fb_find_resource(buf, resname, fontfile);
+                newf->fontfile = strdup(buf);
+        }
 
         error = FTC_Manager_LookupFace(ft_cmanager, (FTC_FaceID)newf, &aface);
         if (error) {
                 LOG(("Could not find font face %s (code %d)\n", fontfile, error));
                 free(newf);
-                newf = fb_face_sans_serif; /* use default */
+                newf = fb_faces[FB_FACE_DEFAULT]; /* use default */
         }
 
         return newf;
@@ -145,28 +162,53 @@ bool fb_font_init(void)
 
         error = FTC_ImageCache_New(ft_cmanager, &ft_image_cache);
 
-        fb_face_sans_serif = NULL;
-        fb_face_sans_serif = fb_new_face("/usr/share/fonts/truetype/ttf-bitstream-vera/Vera.ttf");
-        if (fb_face_sans_serif == NULL) {
+        fb_faces[FB_FACE_SANS_SERIF] = NULL;
+        fb_faces[FB_FACE_SANS_SERIF] = 
+                fb_new_face(option_fb_face_sans_serif,
+                            "sans_serif.ttf",
+                            VERA_PATH"Vera.ttf");
+        if (fb_faces[FB_FACE_SANS_SERIF] == NULL) {
                 LOG(("Could not find default font (code %d)\n", error));
                 FTC_Manager_Done(ft_cmanager );
                 FT_Done_FreeType(library);
                 return false;
         }
 
-        fb_face_monospace = fb_new_face("/usr/share/fonts/truetype/ttf-bitstream-vera/VeraMono.ttf");
+        fb_faces[FB_FACE_SANS_SERIF_BOLD] = 
+                fb_new_face(option_fb_face_sans_serif_bold,
+                            "sans_serif_bold.ttf",
+                            VERA_PATH"VeraBd.ttf");
 
-        fb_face_serif = fb_new_face("/usr/share/fonts/truetype/ttf-bitstream-vera/VeraSe.ttf");
- 
-        fb_face_sans_serif_bold = fb_new_face("/usr/share/fonts/truetype/ttf-bitstream-vera/VeraBd.ttf");
+        fb_faces[FB_FACE_SANS_SERIF_ITALIC] = 
+                fb_new_face(option_fb_face_sans_serif_italic,
+                            "sans_serif_italic.ttf",
+                            VERA_PATH"VeraIt.ttf");
 
-        fb_face_sans_serif_italic = fb_new_face("/usr/share/fonts/truetype/ttf-bitstream-vera/VeraIt.ttf");
+        fb_faces[FB_FACE_SANS_SERIF_ITALIC_BOLD] = 
+                fb_new_face(option_fb_face_sans_serif_italic_bold, 
+                            "sans_serif_italic_bold.ttf",
+                            VERA_PATH"VeraBI.ttf");
 
-        fb_face_sans_serif_italic_bold = fb_new_face("/usr/share/fonts/truetype/ttf-bitstream-vera/VeraBI.ttf");
+        fb_faces[FB_FACE_MONOSPACE] = 
+                fb_new_face(option_fb_face_monospace,
+                            "monospace.ttf",
+                            VERA_PATH"VeraMono.ttf");
+
+        fb_faces[FB_FACE_SERIF] = 
+                fb_new_face(option_fb_face_serif,
+                            "serif.ttf",
+                            VERA_PATH"VeraSe.ttf");
+
+        fb_faces[FB_FACE_SERIF_BOLD] = 
+                fb_new_face(option_fb_face_serif_bold,
+                            "serif_bold.ttf",
+                            VERA_PATH"VeraSeBd.ttf");
         
         /* set the default render mode */
-        //ft_load_type = FT_LOAD_MONOCHROME; /* faster but less pretty */
-        ft_load_type = 0;
+        if (option_fb_font_monochrome == true)
+                ft_load_type = FT_LOAD_MONOCHROME; /* faster but less pretty */
+        else
+                ft_load_type = 0;
         
         return true;
 }
@@ -180,6 +222,8 @@ bool fb_font_finalise(void)
 
 static void fb_fill_scalar(const struct css_style *style, FTC_Scaler srec)
 {
+        int selected_face = FB_FACE_DEFAULT;
+
 	switch (style->font_family) {
                 /*
 	case CSS_FONT_FAMILY_CURSIVE:
@@ -188,11 +232,24 @@ static void fb_fill_scalar(const struct css_style *style, FTC_Scaler srec)
 		break;
                 */
 	case CSS_FONT_FAMILY_SERIF:
-                srec->face_id = (FTC_FaceID)fb_face_serif; 
+                switch (style->font_weight) {
+                case CSS_FONT_WEIGHT_700:
+                case CSS_FONT_WEIGHT_800:
+                case CSS_FONT_WEIGHT_900:
+                case CSS_FONT_WEIGHT_BOLD:
+                        selected_face = FB_FACE_SERIF_BOLD;
+                        break;
+                        
+                case CSS_FONT_WEIGHT_NORMAL:
+                default:
+                        selected_face = FB_FACE_SERIF;
+                        break;
+                }
+                
 		break;
 
 	case CSS_FONT_FAMILY_MONOSPACE:
-                srec->face_id = (FTC_FaceID)fb_face_monospace; 
+                selected_face = FB_FACE_MONOSPACE;
 		break;
 
 	case CSS_FONT_FAMILY_SANS_SERIF:
@@ -204,12 +261,12 @@ static void fb_fill_scalar(const struct css_style *style, FTC_Scaler srec)
                         case CSS_FONT_WEIGHT_800:
                         case CSS_FONT_WEIGHT_900:
                         case CSS_FONT_WEIGHT_BOLD:
-                                srec->face_id = (FTC_FaceID)fb_face_sans_serif_italic_bold;
+                                selected_face = FB_FACE_SANS_SERIF_ITALIC_BOLD;
                                 break;
                         
                         case CSS_FONT_WEIGHT_NORMAL:
                         default:
-                                srec->face_id = (FTC_FaceID)fb_face_sans_serif_italic;
+                                selected_face = FB_FACE_SANS_SERIF_ITALIC;
                                 break;
                         }
                         break;
@@ -220,17 +277,19 @@ static void fb_fill_scalar(const struct css_style *style, FTC_Scaler srec)
                         case CSS_FONT_WEIGHT_800:
                         case CSS_FONT_WEIGHT_900:
                         case CSS_FONT_WEIGHT_BOLD:
-                                srec->face_id = (FTC_FaceID)fb_face_sans_serif_bold;
+                                selected_face = FB_FACE_SANS_SERIF_BOLD;
                                 break;
                         
                         case CSS_FONT_WEIGHT_NORMAL:
                         default:
-                                srec->face_id = (FTC_FaceID)fb_face_sans_serif;
+                                selected_face = FB_FACE_SANS_SERIF;
                                 break;
                         }
                         break;
                 }
 	}
+
+        srec->face_id = (FTC_FaceID)fb_faces[selected_face];
 
 	if (style->font_size.value.length.unit == CSS_UNIT_PX) {
 		srec->width = srec->height = style->font_size.value.length.value;
