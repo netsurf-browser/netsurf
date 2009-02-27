@@ -193,25 +193,24 @@ static bool fb_32bpp_fill(int x0, int y0, int x1, int y1, colour c)
                 for (w = width; w > 0; w--) *pvid++ = ent;
 #else
                 uint32_t *evid = pvid + width;
-                while ((pvid += 16) <= evid) {
-                        pvid[0]  = ent;
-                        pvid[1]  = ent;
-                        pvid[2]  = ent;
-                        pvid[3]  = ent;
-                        pvid[4]  = ent;
-                        pvid[5]  = ent;
-                        pvid[6]  = ent;
-                        pvid[7]  = ent;
-                        pvid[8]  = ent;
-                        pvid[9]  = ent;
-                        pvid[10] = ent;
-                        pvid[11] = ent;
-                        pvid[12] = ent;
-                        pvid[13] = ent;
-                        pvid[14] = ent;
-                        pvid[15] = ent;
+                while (pvid <= evid - 16) {
+                       *pvid++ = ent;
+                       *pvid++ = ent;
+                       *pvid++ = ent;
+                       *pvid++ = ent;
+                       *pvid++ = ent;
+                       *pvid++ = ent;
+                       *pvid++ = ent;
+                       *pvid++ = ent;
+                       *pvid++ = ent;
+                       *pvid++ = ent;
+                       *pvid++ = ent;
+                       *pvid++ = ent;
+                       *pvid++ = ent;
+                       *pvid++ = ent;
+                       *pvid++ = ent;
+                       *pvid++ = ent;
                 }
-                pvid -= 16;
                 while (pvid < evid) *pvid++ = ent;
 #endif
                 pvid += llen;
