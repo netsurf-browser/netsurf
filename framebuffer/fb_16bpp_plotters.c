@@ -191,7 +191,28 @@ static bool fb_16bpp_fill(int x0, int y0, int x1, int y1, colour c)
                 pvid32 = (uint32_t *)pvid16;
 
                 while (height-- > 0) {
-                        for (w = width; w > 0; w--) *pvid32++ = ent32;
+                        w = width;
+                        while (w >= 16) {
+                                *pvid32++ = ent32; *pvid32++ = ent32;
+                                *pvid32++ = ent32; *pvid32++ = ent32;
+                                *pvid32++ = ent32; *pvid32++ = ent32;
+                                *pvid32++ = ent32; *pvid32++ = ent32;
+                                *pvid32++ = ent32; *pvid32++ = ent32;
+                                *pvid32++ = ent32; *pvid32++ = ent32;
+                                *pvid32++ = ent32; *pvid32++ = ent32;
+                                *pvid32++ = ent32; *pvid32++ = ent32;
+                                w-=16;
+                        }
+                        while (w >= 4) {
+                                *pvid32++ = ent32; *pvid32++ = ent32;
+                                *pvid32++ = ent32; *pvid32++ = ent32;
+                                w-=4;
+                        }
+                        while (w > 0) {
+                                *pvid32++ = ent32;
+                                w--;
+                        }
+                        // for (w = width; w > 0; w--) *pvid32++ = ent32;
                         pvid32 += llen;
                 }
 

@@ -184,8 +184,8 @@ void fb_os_input(struct gui_window *g, bool active)
 
                 case SDL_BUTTON_MIDDLE:
                 default:
-                        printf("Mouse button %d pressed at (%d,%d)\n",
-                               event.button.button, event.button.x, event.button.y);
+                        LOG(("Mouse button %d pressed at (%d,%d)\n",
+                             event.button.button, event.button.x, event.button.y));
 
                 }
                 break;
@@ -206,8 +206,8 @@ void fb_os_input(struct gui_window *g, bool active)
                         break;
 
                 default:
-                        printf("Mouse button %d pressed at (%d,%d)\n",
-                               event.button.button, event.button.x, event.button.y);
+                        LOG(("Mouse button %d pressed at (%d,%d)\n",
+                             event.button.button, event.button.x, event.button.y));
 
                 }
                 break;

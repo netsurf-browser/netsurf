@@ -189,30 +189,27 @@ static bool fb_32bpp_fill(int x0, int y0, int x1, int y1, colour c)
         pvid = fb_32bpp_get_xy_loc(x0, y0);
 
         while (height-- > 0) {
-#if 1
-                for (w = width; w > 0; w--) *pvid++ = ent;
-#else
-                uint32_t *evid = pvid + width;
-                while (pvid <= evid - 16) {
-                       *pvid++ = ent;
-                       *pvid++ = ent;
-                       *pvid++ = ent;
-                       *pvid++ = ent;
-                       *pvid++ = ent;
-                       *pvid++ = ent;
-                       *pvid++ = ent;
-                       *pvid++ = ent;
-                       *pvid++ = ent;
-                       *pvid++ = ent;
-                       *pvid++ = ent;
-                       *pvid++ = ent;
-                       *pvid++ = ent;
-                       *pvid++ = ent;
-                       *pvid++ = ent;
-                       *pvid++ = ent;
+                w = width;
+                while (w >= 16) {
+                       *pvid++ = ent; *pvid++ = ent;
+                       *pvid++ = ent; *pvid++ = ent;
+                       *pvid++ = ent; *pvid++ = ent;
+                       *pvid++ = ent; *pvid++ = ent;
+                       *pvid++ = ent; *pvid++ = ent;
+                       *pvid++ = ent; *pvid++ = ent;
+                       *pvid++ = ent; *pvid++ = ent;
+                       *pvid++ = ent; *pvid++ = ent;
+                       w-=16;
                 }
-                while (pvid < evid) *pvid++ = ent;
-#endif
+                while (w >= 4) {
+                       *pvid++ = ent; *pvid++ = ent;
+                       *pvid++ = ent; *pvid++ = ent;
+                       w-=4;
+                }
+                while (w > 0) {
+                       *pvid++ = ent;
+                       w--;
+                }
                 pvid += llen;
         }
 
