@@ -777,9 +777,14 @@ MENUHANDLER(select_all)
 	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
         struct browser_window *bw = nsgtk_get_browser_for_gui(gw->top_level);
 	
-	LOG(("Selecting all text"));
-	selection_select_all(bw->sel);
-	
+	if (GTK_WIDGET_HAS_FOCUS(gw->url_bar)) {
+		LOG(("Selecting all URL bar text"));
+		gtk_editable_select_region(GTK_EDITABLE(gw->url_bar), 0, -1);
+	} else {
+		LOG(("Selecting all document text"));
+		selection_select_all(bw->sel);
+	}
+
 	return TRUE;
 }
 
