@@ -104,22 +104,28 @@ struct content * fetchcache(const char *url,
 	if (strncasecmp(url, "file:///", 8) &&
 			strncasecmp(url, "file:/", 6) == 0) {
 		/* Manipulate file URLs into correct format */
-		if (strncasecmp(url, "file://", 7) == 0) {
+		int len = strlen(url) + 1;
+
+		if (strncasecmp(url, "file://", SLEN("file://")) == 0) {
 			/* file://path */
-			url1 = malloc(7 + strlen(url));
+			url1 = malloc(len + 1 /* + '/' */);
 			if (!url1)
 				return NULL;
 
-			strcpy(url1, "file://");
-			strcat(url1 + 7, url + 6);
+			memcpy(url1, "file:///", SLEN("file:///"));
+			memcpy(url1 + SLEN("file:///"), 
+				url + SLEN("file://"),
+				len - SLEN("file://"));
 		} else {
 			/* file:/... */
-			url1 = malloc(7 + strlen(url));
+			url1 = malloc(len + 2 /* + "//" */);
 			if (!url1)
 				return NULL;
 
-			strcpy(url1, "file://");
-			strcat(url1 + 7, url + 5);
+			memcpy(url1, "file:///", SLEN("file:///"));
+			memcpy(url1 + SLEN("file:///"), 
+				url + SLEN("file:/"),
+				len - SLEN("file:/"));
 		}
 	} else {
 		/* simply duplicate the URL */
@@ -304,7 +310,9 @@ void fetchcache_go(struct content *content, const char *referer,
 			return;
 		}
 		if (etag) {
-			headers[i] = malloc(15 + strlen(etag) + 1);
+			int len = SLEN("If-None-Match: ") + strlen(etag) + 1;
+
+			headers[i] = malloc(len);
 			if (!headers[i]) {
 				free(headers);
 				content->status = CONTENT_STATUS_ERROR;
@@ -313,11 +321,14 @@ void fetchcache_go(struct content *content, const char *referer,
 						msg_data);
 				return;
 			}
-			sprintf(headers[i++], "If-None-Match: %s", etag);
+			snprintf(headers[i++], len, "If-None-Match: %s", etag);
 			talloc_free(etag);
 		}
 		if (date) {
-			headers[i] = malloc(19 + 29 + 1);
+			/* Maximum length of an RFC 1123 date is 29 bytes */
+			int len = SLEN("If-Modified-Since: ") + 29 + 1;
+
+			headers[i] = malloc(len);
 			if (!headers[i]) {
 				while (--i >= 0) {
 					free(headers[i]);
@@ -329,7 +340,7 @@ void fetchcache_go(struct content *content, const char *referer,
 						msg_data);
 				return;
 			}
-			sprintf(headers[i++], "If-Modified-Since: %s",
+			snprintf(headers[i++], len, "If-Modified-Since: %s",
 					rfc1123_date(date));
 		}
 		headers[i] = 0;
