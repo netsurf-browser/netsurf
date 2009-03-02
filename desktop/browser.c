@@ -1441,7 +1441,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 		status = browser_window_scrollbar_click(bw, mouse, scroll_box,
 				scroll_box_x, scroll_box_y,
 				x - scroll_box_x, y - scroll_box_y);
-
+		pointer = GUI_POINTER_DEFAULT;
 	} else if (gadget) {
 		switch (gadget->type) {
 		case GADGET_SELECT:
