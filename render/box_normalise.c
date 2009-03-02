@@ -514,7 +514,7 @@ bool box_normalise_table_row(struct box *row,
 {
 	struct box *child;
 	struct box *next_child;
-	struct box *cell;
+	struct box *cell = NULL;
 	struct css_style *style;
 	unsigned int i;
 

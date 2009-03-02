@@ -275,7 +275,7 @@ bool form_successful_controls(struct form *form,
 	struct form_control *control;
 	struct form_option *option;
 	struct form_successful_control sentinel, *last_success, *success_new;
-	char *value;
+	char *value = NULL;
 	bool had_submit = false;
 	char *charset;
 
