@@ -1,5 +1,6 @@
 /*
  * Copyright 2008 Vincent Sanders <vince@simtec.co.uk>
+ * Copyright 2009 Michael Drake <tlsa@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -210,194 +211,180 @@ bool fb_clip(int x0, int y0, int x1, int y1)
 	return true;
 }
 
-typedef bool (linefn_t)(int x0, int y0, int x1, int y1, int width, colour c, bool dotted, bool dashed);
+typedef bool (linefn_t)(int x0, int y0, int x1, int y1, int width, colour c,
+		bool dotted, bool dashed);
 
-typedef struct dcPt_s {
-        int x;
-        int y;
-} dcPt;
 
-typedef struct tEdge {
-        int yUpper;
-        float xIntersect, dxPerScan;
-        struct tEdge *next;
-} Edge;
+/**
+ * Find find first filled span along horizontal line at given coordinate
+ *
+ * \param  p	array of polygon vertices (x1, y1, x2, y2, ... , xN, yN)
+ * \param  n	number of polygon vertex values (N * 2)
+ * \param  x	current position along current scan line
+ * \param  y	position of current scan line
+ * \param  x0	updated to start of filled area
+ * \param  x1	updated to end of filled area
+ * \return true	if an intersection was found
+ */
 
-static void insertEdge(Edge *list, Edge *edge)
+static bool fb_plotters_find_span(const int *p, int n, int x, int y,
+		int *x0, int *x1)
 {
-        Edge *p, *q = list;
+	int i;
+	int p_x0, p_y0;
+	int p_x1, p_y1;
+	int x_new;
+	bool direction;
 
-        p = q->next;
-        while (p != NULL) {
-                if (edge->xIntersect < p->xIntersect) {
-                        p = NULL;
-                } else {
-                        q = p;
-                        p = p->next;
-                }
-        }
-        edge->next = q->next;
-        q->next = edge;
-}
+	*x0 = *x1 = INT_MAX;
 
-static int yNext(int k, int cnt, dcPt *pts)
-{
-        int j;
-        if ((k+1) > (cnt-1))
-                j = 0;
-        else
-                j = k +1;
+	for (i = 0; i < n; i = i + 2) {
+		/* get line endpoints */
+		if (i != n - 2) {
+			/* not the last line */
+			p_x0 = p[i];		p_y0 = p[i + 1];
+			p_x1 = p[i + 2];	p_y1 = p[i + 3];
+		} else {
+			/* last line; 2nd endpoint is first vertex */
+			p_x0 = p[i];	p_y0 = p[i + 1];
+			p_x1 = p[0];	p_y1 = p[1];
+		}
+		/* ignore horizontal lines */
+		if (p_y0 == p_y1)
+			continue;
 
-        while (pts[k].y == pts[j].y) {
-                if ((j+1) > (cnt-1))
-                        j = 0;
-                else
-                        j++;
-        }
-        return (pts[j].y);
-}
+		/* ignore lines that don't cross this y level */
+		if ((y < p_y0 && y < p_y1) || (y > p_y0 && y > p_y1))
+			continue;
 
-static void makeEdgeRec(dcPt lower, dcPt upper, int yComp,  Edge **edges)
-{
-        Edge *edge;
-        edge = malloc(sizeof(Edge));
+		if (p_x0 == p_x1) {
+			/* vertical line, x is constant */
+			x_new = p_x0;
+		} else {
+			/* find intersect */
+			x_new = p_x0 + ((long long)(y - p_y0) * (p_x1 - p_x0)) /
+					(p_y1 - p_y0);
+		}
 
-        edge->dxPerScan = (float)(upper.x - lower.x) / (upper.y - lower.y);
-        edge->xIntersect = lower.x;
+		/* ignore intersections before current x */
+		if (x_new < x)
+			continue;
 
-        if (upper.y < yComp)
-                edge->yUpper = upper.y - 1;
-        else
-                edge->yUpper = upper.y;
+		/* set nearest intersections as filled area endpoints */
+		if (x_new < *x0) {
+			/* nearer than first endpoint */
+			*x1 = *x0;
+			*x0 = x_new;
+			direction = (p_y0 > p_y1);
+		} else if (x_new == *x0) {
+			/* same as first endpoint */
+			if ((p_y0 > p_y1) != direction)
+				*x1 = x_new;
+		} else if (x_new < *x1) {
+			/* nearer than second endpoint */
+			*x1 = x_new;
+		}
 
-        if (!fb_plotters_clip_line_ctx(&lower.x, &lower.y,
-                                       &upper.x, &edge->yUpper)) {
-                free(edge);
-        } else {
-                insertEdge(edges[lower.y], edge);
-        }
-}
+	}
+	if (*x0 == INT_MAX)
+		return false;
 
-static void buildEdgeList(int cnt, dcPt *pts, Edge **edges)
-{
-        dcPt v1, v2;
-        int i, yPrev = pts[cnt - 2].y;
+	if (*x1 == INT_MAX) {
+		*x1 = *x0;
+		*x0 = x;
+		return true;
+	}
 
-        v1.x = pts[cnt - 1].x;
-        v1.y = pts[cnt - 1].y;
-        for (i = 0; i < cnt; i++) {
-                v2 = pts[i];
-                if (v1.y != v2.y) {
-                        /* line is not horizontal */
-                        if (v1.y < v2.y)
-                                makeEdgeRec(v1, v2, yNext(i,cnt,pts), edges); /* up going edge */
-                        else
-                                makeEdgeRec(v2, v1, yPrev, edges); /* down going edge */
-                }
-                yPrev = v1.y;
-                v1 = v2;
-        }
-}
-
-static void buildActiveList(int scan, Edge *active, Edge **edges)
-{
-        Edge *p,*q;
-
-        p = edges[scan]->next;
-
-        while (p) {
-                q = p->next;
-                insertEdge(active, p);
-                p = q;
-        }
-}
-
-static void fillScan(int scan, Edge *active, colour fill, linefn_t linefn)
-{
-        Edge *p1, *p2;
-
-        p1 = active->next;
-        while (p1) {
-                p2 = p1->next;
-                if (p2 == NULL) {
-                        LOG(("only one active edge!"));
-                        break;
-                } else {
-                        linefn(p1->xIntersect, scan,
-                               p2->xIntersect, scan,
-                               1, fill, false, false);
-                }
-                p1 = p2->next;
-        }
-}
-
-static void deleteAfter(Edge *q)
-{
-        Edge *p = q->next;
-        q->next = p->next;
-        free (p);
-}
-
-static void updateActiveList(int scan, Edge *active)
-{
-        Edge *q = active, *p = active->next;
-        while (p) {
-                if (scan >= p->yUpper) {
-                        p = p->next;
-                        deleteAfter(q);
-                } else {
-                        p->xIntersect = p->xIntersect + p->dxPerScan;
-                        q = p;
-                        p = p->next;
-                }
-        }
-}
-
-static void resortActiveList(Edge * active)
-{
-        Edge *q, *p = active->next;
-
-        active->next = NULL;
-        while (p) {
-                q = p->next;
-                insertEdge(active, p);
-                p = q;
-        }
+	return true;
 }
 
 
-static void scanFill(int cnt, dcPt *pts, colour fill, linefn_t linefn)
+/**
+ * Plot a polygon
+ *
+ * \param  p	   array of polygon vertices (x1, y1, x2, y2, ... , xN, yN)
+ * \param  n	   number of polygon vertices (N)
+ * \param  c	   fill colour
+ * \param  linefn  function to call to plot a horizontal line
+ * \return true	   if no errors
+ */
+
+bool fb_plotters_polygon(const int *p, unsigned int n, colour c,
+		linefn_t linefn)
 {
-        Edge *edges[WINDOW_HEIGHT], *active;
-        int i, scan;
+	int poly_x0, poly_y0; /* Clip rect top left corner */
+	int poly_x1, poly_y1; /* Clip rect bottom right corner */
+	int i, j; /* indexes */
+	int x0, x1;
+	int y; /* current y coordinate */
+	int y_max;
 
-        for (i = 0; i < WINDOW_HEIGHT; i++) {
-                edges[i] = malloc(sizeof(Edge));
-                edges[i]->next = NULL;
-        }
-        buildEdgeList(cnt, pts, edges);
+	/* find no. of vertex values */
+	int v = n * 2;
 
-        active = malloc(sizeof(Edge));
-        active->next = NULL;
-        for (scan = 0; scan < WINDOW_HEIGHT; scan++) {
-                buildActiveList (scan, active, edges);
-                if (active->next) {
-                        fillScan(scan, active, fill, linefn);
-                        updateActiveList (scan, active);
-                        resortActiveList(active);
-                }
-        }
-        for (i = 0; i < WINDOW_HEIGHT; i++) {
-                free(edges[i]);
-        }
-        free(active);
-}
+	/* Can't plot polygons with 2 or fewer vertices */
+	if (n <= 2)
+		return true;
 
-bool
-fb_plotters_polygon(const int *p, unsigned int n, colour fill, linefn_t linefn)
-{
-        scanFill(n, (dcPt *)p, fill, linefn);
-        return true;
+	/* Find polygon bounding box */
+	poly_x0 = poly_x1 = *p;
+	poly_y0 = poly_y1 = p[1];
+	for (i = 2; i < v; i = i + 2) {
+		j = i + 1;
+		if (p[i] < poly_x0)
+			poly_x0 = p[i];
+		else if (p[i] > poly_x1)
+			poly_x1 = p[i];
+		if (p[j] < poly_y0)
+			poly_y0 = p[j];
+		else if (p[j] > poly_y1)
+			poly_y1 = p[j];
+	}
+
+	/* Don't try to plot it if it's outside the clip rectangle */
+	if (fb_plot_ctx.y1 < poly_y0 || fb_plot_ctx.y0 > poly_y1 ||
+			fb_plot_ctx.x1 < poly_x0 || fb_plot_ctx.x0 > poly_x1)
+		return true;
+
+	/* Find the top of the important area */
+	if (poly_y0 > fb_plot_ctx.y0)
+		y = poly_y0;
+	else
+		y = fb_plot_ctx.y0;
+
+	/* Find the bottom of the important area */
+	if (poly_y1 < fb_plot_ctx.y1)
+		y_max = poly_y1;
+	else
+		y_max = fb_plot_ctx.y1;
+
+	for (; y < y_max; y++) {
+		x1 = poly_x0;
+		/* For each row */
+		while (fb_plotters_find_span(p, v, x1, y, &x0, &x1)) {
+			/* don't draw anything outside clip region */
+			if (x1 < fb_plot_ctx.x0)
+				continue;
+			else if (x0 < fb_plot_ctx.x0)
+				x0 = fb_plot_ctx.x0;
+			if (x0 > fb_plot_ctx.x1)
+				break;
+			else if (x1 > fb_plot_ctx.x1)
+				x1 = fb_plot_ctx.x1;
+
+			/* draw this filled span on current row */
+			linefn(x0, y, x1, y, 1, c, false, false);
+
+			/* don't look for more spans if already at end of clip
+			 * region or polygon */
+			if (x1 == fb_plot_ctx.x1 || x1 == poly_x1)
+				break;
+
+			if (x0 == x1)
+				x1++;
+		}
+	}
+	return true;
 }
 
 bool fb_plotters_bitmap_tile(int x, int y,
@@ -469,7 +456,7 @@ bool fb_plotters_move_block(int srcx, int srcy, int width, int height, int dstx,
                 /* take shortcut and use memmove */
                 memmove(dstptr, srcptr, (width * height * framebuffer->bpp) / 8);
         } else {
-                
+
                 for (hloop = height; hloop > 0; hloop--) {
                         memmove(dstptr, srcptr, (width * framebuffer->bpp) / 8);
                         srcptr += framebuffer->linelen;
