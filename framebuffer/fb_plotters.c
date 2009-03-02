@@ -287,8 +287,10 @@ static bool fb_plotters_find_span(const int *p, int n, int x, int y,
 
 	}
 	if (*x0 == INT_MAX)
+		/* no span found */
 		return false;
 
+	/* span found */
 	if (*x1 == INT_MAX) {
 		*x1 = *x0;
 		*x0 = x;
@@ -312,12 +314,12 @@ static bool fb_plotters_find_span(const int *p, int n, int x, int y,
 bool fb_plotters_polygon(const int *p, unsigned int n, colour c,
 		linefn_t linefn)
 {
-	int poly_x0, poly_y0; /* Clip rect top left corner */
-	int poly_x1, poly_y1; /* Clip rect bottom right corner */
+	int poly_x0, poly_y0; /* Bounding box top left corner */
+	int poly_x1, poly_y1; /* Bounding box bottom right corner */
 	int i, j; /* indexes */
-	int x0, x1;
+	int x0, x1; /* filled span extents */
 	int y; /* current y coordinate */
-	int y_max;
+	int y_max; /* bottom of plot area */
 
 	/* find no. of vertex values */
 	int v = n * 2;
