@@ -2,7 +2,7 @@
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2004 Richard Wilson <not_ginger_matt@hotmail.com>
  * Copyright 2008 Daniel Silverstone <dsilvers@netsurf-browser.org>
- * 
+ *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
  * NetSurf is free software; you can redistribute it and/or modify
@@ -54,7 +54,7 @@ static void end_callback(png_structp png, png_infop info);
 bool nspng_create(struct content *c, const char *params[])
 {
 	union content_msg_data msg_data;
-        
+
 	c->data.png.png = png_create_read_struct(PNG_LIBPNG_VER_STRING,
                                                  0, 0, 0);
         c->data.png.bitmap = NULL;
@@ -97,7 +97,7 @@ bool nspng_create(struct content *c, const char *params[])
 bool nspng_process_data(struct content *c, char *data, unsigned int size)
 {
 	union content_msg_data msg_data;
-        
+
 	if (setjmp(png_jmpbuf(c->data.png.png))) {
 		png_destroy_read_struct(&c->data.png.png,
 				&c->data.png.info, 0);
@@ -114,7 +114,7 @@ bool nspng_process_data(struct content *c, char *data, unsigned int size)
 		return false;
 	}
 
-	png_process_data(c->data.png.png, c->data.png.info, 
+	png_process_data(c->data.png.png, c->data.png.info,
 			(uint8_t *) data, size);
 
 	return true;
@@ -132,17 +132,17 @@ void info_callback(png_structp png, png_infop info)
 	double gamma;
 	unsigned long width, height;
 	struct content *c = png_get_progressive_ptr(png);
-        
+
 	/* Read the PNG details */
 	png_get_IHDR(png, info, &width, &height, &bit_depth,
 			&color_type, &interlace, 0, 0);
-        
+
 	/* Claim the required memory for the converted PNG */
         c->data.png.bitmap = bitmap_create(width, height, BITMAP_NEW);
         c->data.png.bitbuffer = bitmap_get_buffer(c->data.png.bitmap);
         c->data.png.rowstride = bitmap_get_rowstride(c->data.png.bitmap);
         c->data.png.bpp = bitmap_get_bpp(c->data.png.bitmap);
-        
+
         /* Set up our transformations */
 	if (color_type == PNG_COLOR_TYPE_PALETTE)
 		png_set_palette_to_rgb(png);
@@ -194,7 +194,7 @@ void row_callback(png_structp png, png_bytep new_row,
 	struct content *c = png_get_progressive_ptr(png);
 	unsigned long i, j, rowbytes = c->data.png.rowbytes;
 	unsigned int start, step;
-        unsigned char *row = c->data.png.bitbuffer + 
+        unsigned char *row = c->data.png.bitbuffer +
 			(c->data.png.rowstride * row_num);
 
 	/* Abort if we've not got any data */
@@ -238,19 +238,20 @@ bool nspng_convert(struct content *c, int width, int height)
 	png_destroy_read_struct(&c->data.png.png, &c->data.png.info, 0);
 
 	c->title = malloc(NSPNG_TITLE_LEN);
-	
+
         if (c->title != NULL) {
 		snprintf(c->title, NSPNG_TITLE_LEN, messages_get("PNGTitle"),
                          c->width, c->height, c->source_size);
 	}
-	
+
 	c->size += (c->width * c->height * 4) + NSPNG_TITLE_LEN;
-	
+
 	c->bitmap = c->data.png.bitmap;
+	bitmap_set_opaque(c->bitmap, bitmap_test_opaque(c->bitmap));
 	bitmap_modified(c->bitmap);
 	c->status = CONTENT_STATUS_DONE;
 	content_set_status(c, "");
-        
+
 	return true;
 }
 
@@ -270,7 +271,7 @@ bool nspng_redraw(struct content *c, int x, int y,
 		float scale, colour background_colour)
 {
 	if (c->bitmap != NULL) {
-		return plot.bitmap(x, y, width, height, c->bitmap, 
+		return plot.bitmap(x, y, width, height, c->bitmap,
 				background_colour, c);
 	}
 
@@ -283,7 +284,7 @@ bool nspng_redraw_tiled(struct content *c, int x, int y, int width, int height,
 		bool repeat_x, bool repeat_y)
 {
 	if (c->bitmap != NULL) {
-		return plot.bitmap_tile(x, y, width, height, c->bitmap, 
+		return plot.bitmap_tile(x, y, width, height, c->bitmap,
 				background_colour, repeat_x, repeat_y, c);
 	}
 
