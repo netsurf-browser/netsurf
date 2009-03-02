@@ -82,8 +82,8 @@ void regcomp_wrapper(regex_t *preg, const char *regex, int cflags);
 void unicode_transliterate(unsigned int c, char **r);
 char *human_friendly_bytesize(unsigned long bytesize);
 const char *rfc1123_date(time_t t);
-#if !(defined(_GNU_SOURCE) || defined(__NetBSD__)) || defined(riscos) || \
-	defined(__APPLE__)
+#if !(defined(_GNU_SOURCE) || defined(__NetBSD__) || defined(__OpenBSD__)) \
+	|| defined(riscos) || defined(__APPLE__)
 char *strcasestr(const char *haystack, const char *needle);
 #endif
 unsigned int wallclock(void);

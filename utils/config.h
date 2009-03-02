@@ -25,7 +25,8 @@
 
 #define HAVE_STRNDUP
 #if defined(__FreeBSD__) || (defined(__SRV4) && defined(__sun)) || \
-	defined(__APPLE__) || defined(__HAIKU__) || defined(__BEOS__)
+	defined(__APPLE__) || defined(__HAIKU__) || defined(__BEOS__) \
+	|| defined(__OpenBSD__)
 	/* FreeBSD and Solaris do not have this function, so
 	 * we implement it ourselves in util.c
 	 */

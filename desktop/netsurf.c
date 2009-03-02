@@ -104,7 +104,8 @@ void netsurf_init(int argc, char** argv)
 	 * SIGPIPE, anyway, so may as well just ignore them all. */
 	signal(SIGPIPE, SIG_IGN);
 
-#if !((defined(__SVR4) && defined(__sun)) || defined(__NetBSD__))
+#if !((defined(__SVR4) && defined(__sun)) || defined(__NetBSD__) || \
+	defined(__OpenBSD__)) 
 	stdout = stderr;
 #endif
 
