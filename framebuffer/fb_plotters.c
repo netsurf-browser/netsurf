@@ -234,7 +234,7 @@ static bool fb_plotters_find_span(const int *p, int n, int x, int y,
 	int p_x0, p_y0;
 	int p_x1, p_y1;
 	int x_new;
-	bool direction;
+	bool direction = false;
 
 	*x0 = *x1 = INT_MAX;
 
