@@ -116,15 +116,15 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
         g->prev = NULL;
         window_list = g;
 
-        if (bw->parent != NULL) 
+        if (bw->parent != NULL)
                 /* Find our parent's scaffolding */
                 g->scaffold = bw->parent->window->scaffold;
         else if (new_tab)
         	g->scaffold = clone->window->scaffold;
-        else 
+        else
                 /* Now construct and attach a scaffold */
                 g->scaffold = nsgtk_new_scaffolding(g);
-        
+
 
         /* Construct our primary elements */
         g->fixed = GTK_FIXED(gtk_fixed_new());
@@ -140,8 +140,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 					    GTK_SHADOW_NONE);
 	g->viewport = GTK_VIEWPORT(gtk_bin_get_child(GTK_BIN(g->scrolledwindow)));
 	g->tab = NULL;
-	
-        if (bw->parent != NULL) 
+
+        if (bw->parent != NULL)
         	/* Attach ourselves into our parent at the right point */
                 nsgtk_gui_window_attach_child(bw->parent->window, g);
 	else
@@ -309,7 +309,7 @@ gboolean nsgtk_window_expose_event(GtkWidget *widget,
 			event->area.y + event->area.height,
 			g->bw->scale, 0xFFFFFF);
 	current_redraw_browser = NULL;
-	
+
 	if (g->careth != 0)
 		nsgtk_plot_caret(g->caretx, g->carety, g->careth);
 
@@ -336,7 +336,7 @@ gboolean nsgtk_window_motion_notify_event(GtkWidget *widget,
 		g->mouse->state ^= (BROWSER_MOUSE_PRESS_1 |
 				BROWSER_MOUSE_HOLDING_1);
 		g->mouse->state |= BROWSER_MOUSE_DRAG_ON;
-	} 
+	}
 	else if (g->mouse->state & BROWSER_MOUSE_PRESS_2){
 		/* Start button 2 drag */
 		browser_window_mouse_click(g->bw, BROWSER_MOUSE_DRAG_2,
@@ -351,10 +351,10 @@ gboolean nsgtk_window_motion_notify_event(GtkWidget *widget,
   		g->mouse->state ^= BROWSER_MOUSE_MOD_1;
  	if (g->mouse->state & BROWSER_MOUSE_MOD_2 && !ctrl)
   		g->mouse->state ^= BROWSER_MOUSE_MOD_2;
-	
+
 	browser_window_mouse_track(g->bw, g->mouse->state,
 			event->x / g->bw->scale, event->y / g->bw->scale);
-	
+
 	g->last_x = event->x;
 	g->last_y = event->y;
 
@@ -387,7 +387,7 @@ gboolean nsgtk_window_button_press_event(GtkWidget *widget,
 		nsgtk_scaffolding_popup_menu(g->scaffold, g->mouse->pressed_x, g->mouse->pressed_y);
 		return TRUE;
 	}
-	
+
 	switch (event->button) {
 		case 1: g->mouse->state = BROWSER_MOUSE_PRESS_1; break;
 		case 2: g->mouse->state = BROWSER_MOUSE_PRESS_2; break;
@@ -395,12 +395,12 @@ gboolean nsgtk_window_button_press_event(GtkWidget *widget,
 	/* Handle the modifiers too */
 	if (event->state & GDK_SHIFT_MASK)
 		g->mouse->state |= BROWSER_MOUSE_MOD_1;
-	if (event->state & GDK_CONTROL_MASK) 
+	if (event->state & GDK_CONTROL_MASK)
 		g->mouse->state |= BROWSER_MOUSE_MOD_2;
-	
+
 	browser_window_mouse_click(g->bw, g->mouse->state, g->mouse->pressed_x,
 			g->mouse->pressed_y);
-	
+
 	return TRUE;
 }
 
@@ -410,26 +410,26 @@ gboolean nsgtk_window_button_release_event(GtkWidget *widget,
 	struct gui_window *g = data;
 	bool shift = event->state & GDK_SHIFT_MASK;
 	bool ctrl = event->state & GDK_CONTROL_MASK;
-	
+
 	/* If the mouse state is PRESS then we are waiting for a release to emit
 	 * a click event, otherwise just reset the state to nothing*/
-	if (g->mouse->state & BROWSER_MOUSE_PRESS_1) 
+	if (g->mouse->state & BROWSER_MOUSE_PRESS_1)
 		g->mouse->state ^= (BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_CLICK_1);
 	else if (g->mouse->state & BROWSER_MOUSE_PRESS_2)
 		g->mouse->state ^= (BROWSER_MOUSE_PRESS_2 | BROWSER_MOUSE_CLICK_2);
-	
+
 	/* Handle modifiers being removed */
   	if (g->mouse->state & BROWSER_MOUSE_MOD_1 && !shift)
   		g->mouse->state ^= BROWSER_MOUSE_MOD_1;
  	if (g->mouse->state & BROWSER_MOUSE_MOD_2 && !ctrl)
   		g->mouse->state ^= BROWSER_MOUSE_MOD_2;
-	
+
 	if (g->mouse->state & (BROWSER_MOUSE_CLICK_1|BROWSER_MOUSE_CLICK_2))
 		browser_window_mouse_click(g->bw, g->mouse->state, event->x / g->bw->scale,
 			event->y / g->bw->scale);
-	else 
+	else
 		browser_window_mouse_drag_end(g->bw, 0, event->x, event->y);
-		
+
 	g->mouse->state = 0;
 	return TRUE;
 }
@@ -702,13 +702,13 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
         GtkAdjustment *vadj = gtk_viewport_get_vadjustment(g->viewport);
         GtkAdjustment *hadj = gtk_viewport_get_hadjustment(g->viewport);
         gdouble vlower, vpage, vupper, hlower, hpage, hupper, x = (double)sx, y = (double)sy;
-        
+
         assert(vadj);
         assert(hadj);
-        
+
         g_object_get(vadj, "page-size", &vpage, "lower", &vlower, "upper", &vupper, NULL);
         g_object_get(hadj, "page-size", &hpage, "lower", &hlower, "upper", &hupper, NULL);
-        
+
         if (x < hlower)
                 x = hlower;
         if (x > (hupper - hpage))
@@ -717,7 +717,7 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
                 y = vlower;
         if (y > (vupper - vpage))
                 y = vupper - vpage;
-        
+
         gtk_adjustment_set_value(vadj, y);
         gtk_adjustment_set_value(hadj, x);
 }
@@ -751,34 +751,34 @@ void gui_window_update_extent(struct gui_window *g)
 static GdkCursor *nsgtk_create_menu_cursor(void)
 {
 	static char menu_cursor_bits[] = {
-	0x00, 0x00, 0x80, 0x7F, 0x88, 0x40, 0x9E, 0x5E, 0x88, 0x40, 0x80, 0x56, 
- 	0x80, 0x40, 0x80, 0x5A, 0x80, 0x40, 0x80, 0x5E, 0x80, 0x40, 0x80, 0x56, 
+	0x00, 0x00, 0x80, 0x7F, 0x88, 0x40, 0x9E, 0x5E, 0x88, 0x40, 0x80, 0x56,
+ 	0x80, 0x40, 0x80, 0x5A, 0x80, 0x40, 0x80, 0x5E, 0x80, 0x40, 0x80, 0x56,
 	0x80, 0x40, 0x80, 0x7F, 0x00, 0x00, 0x00, 0x00, };
 
 	static char menu_cursor_mask_bits[] = {
-	0xC0, 0xFF, 0xC8, 0xFF, 0xDF, 0xFF, 0xFF, 0xFF, 0xDF, 0xFF, 0xC8, 0xFF, 
-	0xC0, 0xFF, 0xC0, 0xFF, 0xC0, 0xFF, 0xC0, 0xFF, 0xC0, 0xFF, 0xC0, 0xFF, 
+	0xC0, 0xFF, 0xC8, 0xFF, 0xDF, 0xFF, 0xFF, 0xFF, 0xDF, 0xFF, 0xC8, 0xFF,
+	0xC0, 0xFF, 0xC0, 0xFF, 0xC0, 0xFF, 0xC0, 0xFF, 0xC0, 0xFF, 0xC0, 0xFF,
 	0xC0, 0xFF, 0xC0, 0xFF, 0xC0, 0xFF, 0x00, 0x00, };
-	
+
 	static GdkCursor *r;
 	static GdkColor fg = { 0, 0, 0, 0 };
 	static GdkColor bg = { 0, 65535, 65535, 65535 };
-	
+
 	GdkPixmap *source, *mask;
-	
+
 	if (r != NULL)
 		return r;
-	
+
 	source = gdk_bitmap_create_from_data(NULL, menu_cursor_bits,
 						16, 16);
 	mask = gdk_bitmap_create_from_data (NULL, menu_cursor_mask_bits,
 						16, 16);
-	
+
 	r = gdk_cursor_new_from_pixmap(source, mask, &fg, &bg, 8, 8);
 	gdk_pixmap_unref(source);
 	gdk_pixmap_unref(mask);
-	
-	return r;      
+
+	return r;
 }
 
 void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
@@ -932,6 +932,8 @@ void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 		*width /= g->bw->scale;
 		*height /= g->bw->scale;
 	}
+	LOG(("\tWINDOW WIDTH:  %i\n", *width));
+	LOG(("\tWINDOW HEIGHT: %i\n", *height));
 }
 
 bool gui_window_frame_resize_start(struct gui_window *g)
