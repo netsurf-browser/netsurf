@@ -940,6 +940,7 @@ void fetchcache_redirect(struct content *c, const void *data,
 {
 	char *url, *url1;
 	char *referer, *parent_url;
+	char *scheme;
 	long http_code;
 	const char *ref;
 	const char *parent;
@@ -1065,6 +1066,31 @@ void fetchcache_redirect(struct content *c, const void *data,
 	/* No longer need url1 */
 	free(url1);
 
+	/* Ensure that redirects to file:/// URLs are trapped */
+	result = url_scheme(url, &scheme);
+	if (result != URL_FUNC_OK) {
+		msg_data.error = messages_get("BadRedirect");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+
+		free(url);
+		free(parent_url);
+		free(referer);
+		return;
+	}
+
+	if (strcasecmp(scheme, "file") == 0) {
+		msg_data.error = messages_get("BadRedirect");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+
+		free(scheme);
+		free(url);
+		free(parent_url);
+		free(referer);
+		return;
+	}
+
+	free(scheme); 
+	
 	/* Determine if we've got a fetch handler for this url */
 	can_fetch = fetch_can_fetch(url);
 
