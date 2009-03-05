@@ -298,7 +298,10 @@ struct BitMap *ami_getcachenativebm(struct bitmap *bitmap,int width,int height,s
 
 		if(GfxBase->lib_Version >= 53) // AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)
 		{
-			CompositeTags(COMPOSITE_Src,tbm,scaledbm,
+			uint32 comptype = COMPOSITE_Src;
+			if(!bitmap->opaque) comptype = COMPOSITE_Src_Over_Dest;
+
+			CompositeTags(comptype,tbm,scaledbm,
 						COMPTAG_ScaleX,COMP_FLOAT_TO_FIX(width/bitmap->width),
 						COMPTAG_ScaleY,COMP_FLOAT_TO_FIX(height/bitmap->height),
 						COMPTAG_Flags,COMPFLAG_IgnoreDestAlpha,
