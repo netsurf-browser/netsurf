@@ -89,11 +89,11 @@ void ami_init_menulabs(void)
 	menulab[20] = ami_utf8_easy((char *)messages_get("ClearNS"));
 	menulab[21] = ami_utf8_easy((char *)messages_get("Browser"));
 	menulab[22] = ami_utf8_easy((char *)messages_get("FindTextNS"));
-	menulab[23] = ami_utf8_easy((char *)messages_get("size"));
+	menulab[23] = NM_BARLABEL;
 	menulab[24] = ami_utf8_easy((char *)messages_get("normal"));
-	menulab[25] = ami_utf8_easy((char *)messages_get("double"));
-	menulab[26] = NM_BARLABEL;
-	menulab[27] = ami_utf8_easy((char *)messages_get("HistGlobalNS"));
+	menulab[25] = ami_utf8_easy((char *)messages_get("HistLocal"));
+	menulab[26] = ami_utf8_easy((char *)messages_get("HistGlobalNS"));
+	menulab[27] = NM_BARLABEL;
 	menulab[28] = ami_utf8_easy((char *)messages_get("ShowCookies"));
 	menulab[29] = ami_utf8_easy((char *)messages_get("Hotlist"));
 	menulab[30] = ami_utf8_easy((char *)messages_get("HotlistAdd"));
@@ -136,11 +136,11 @@ struct NewMenu *ami_create_menu(ULONG type)
 			  	{ NM_ITEM,0,"Z",0,0,0,}, // clear selection
 			  	{NM_TITLE,0,0,0,0,0,}, // browser
 			  	{ NM_ITEM,0,"F",0,0,0,}, // find in page
-			  	{ NM_ITEM,0,0,0,0,0,}, // size
-			  	{  NM_SUB,0,0,0,0,0,}, // normal
-			  	{  NM_SUB,0,0,0,0,0,}, // double
+			  	{NM_IGNORE,0,0,0,0,0,}, // size
 			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
+			  	{ NM_ITEM,0,0,0,0,0,}, // local history
 			  	{ NM_ITEM,0,0,0,0,0,}, // global history
+			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
 			  	{ NM_ITEM,0,0,0,0,0,}, // cookies
 				{NM_TITLE,0,0,0,0,0,}, // hotlist
 				{ NM_ITEM,0,0,0,0,0,}, // add to hotlist
@@ -591,11 +591,16 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 					}
 				break;
 
+				case 2: // local history
+					if(gwin->bw && gwin->bw->history)
+						ami_history_open(gwin->bw, gwin->bw->history);
+				break;
+
 				case 3: // global history
 					ami_open_tree(global_history_tree,AMI_TREE_HISTORY);
 				break;
 
-				case 4: // cookies tree
+				case 5: // cookies tree
 					ami_open_tree(cookies_tree,AMI_TREE_COOKIES);
 				break;
 			}
