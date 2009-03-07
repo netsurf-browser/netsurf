@@ -2036,6 +2036,14 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 	}
 }
 
+void ami_clearclipreg(struct RastPort *rp)
+{
+	struct Region *reg = NULL;
+
+	reg = InstallClipRegion(rp->Layer,NULL);
+	if(reg) DisposeRegion(reg);
+}
+
 void ami_do_redraw_limits(struct gui_window *g, struct content *c,int x0, int y0, int x1, int y1)
 {
 	ULONG hcurrent,vcurrent,xoffset,yoffset,width=800,height=600;
@@ -2092,6 +2100,8 @@ void ami_do_redraw_limits(struct gui_window *g, struct content *c,int x0, int y0
 		0xFFFFFF);
 
 	current_redraw_browser = NULL;
+
+	ami_clearclipreg(currp);
 
 //	ami_update_buttons(g->shared);
 
@@ -2220,6 +2230,8 @@ void ami_do_redraw(struct gui_window_2 *g,bool scroll)
 						c->height /* * g->bw->scale */,
 						g->bw->scale,0xFFFFFF);
 		}
+
+		ami_clearclipreg(currp);
 
 		BltBitMapRastPort(glob.bm,0,0,g->win->RPort,xoffset,yoffset,width,height,0x0C0);
 	}
