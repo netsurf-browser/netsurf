@@ -252,6 +252,8 @@ struct BitMap *ami_getcachenativebm(struct bitmap *bitmap,int width,int height,s
 	struct BitMap *tbm = NULL;
 	struct RastPort trp;
 
+	if(!bitmap) return NULL;
+
 	if(bitmap->nativebm)
 	{
 		if((bitmap->nativebmwidth == width) && (bitmap->nativebmheight==height))

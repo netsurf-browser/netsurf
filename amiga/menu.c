@@ -41,6 +41,7 @@
 #include <dos/anchorpath.h>
 #include "desktop/textinput.h"
 #include "amiga/search.h"
+#include "amiga/history_local.h"
 
 BOOL menualreadyinit;
 const char * const netsurf_version;

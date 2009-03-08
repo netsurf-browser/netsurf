@@ -391,6 +391,8 @@ bool ami_bitmap(int x, int y, int width, int height,
 
 	tbm = ami_getcachenativebm(bitmap,width,height,currp->BitMap);
 
+	if(!tbm) return true;
+
 	BltBitMapTags(BLITA_Width,width,
 						BLITA_Height,height,
 						BLITA_Source,tbm,
@@ -421,6 +423,8 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 		return ami_bitmap(x, y, width, height, bitmap, bg, content);
 
 	tbm = ami_getcachenativebm(bitmap,width,height,currp->BitMap);
+
+	if(!tbm) return true;
 
 	/* get left most tile position */
 	if (repeat_x)

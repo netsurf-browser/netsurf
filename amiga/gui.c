@@ -71,6 +71,7 @@
 #include "amiga/fetch_mailto.h"
 #include "amiga/search.h"
 #include <devices/inputevent.h>
+#include "amiga/history_local.h"
 
 #ifdef NS_AMIGA_CAIRO
 #include <cairo/cairo-amigaos.h>
@@ -692,6 +693,23 @@ void ami_handle_msg(void)
 		else if(node->Type == AMINS_FINDWINDOW)
 		{
 			if(ami_search_event())
+			{
+				if(IsMinListEmpty(window_list))
+				{
+					/* last window closed, so exit */
+					netsurf_quit = true;
+				}
+				break;
+			}
+			else
+			{
+				node = nnode;
+				continue;
+			}
+		}
+		else if(node->Type == AMINS_HISTORYWINDOW)
+		{
+			if(ami_history_event((struct history_window *)gwin))
 			{
 				if(IsMinListEmpty(window_list))
 				{
@@ -1637,6 +1655,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
                	LAYOUT_SpaceOuter, TRUE,
 				LAYOUT_AddChild, gwin->shared->gadgets[GID_BROWSER] = SpaceObject,
 					GA_ID,GID_BROWSER,
+					SPACE_Transparent,TRUE,
 /*
 					GA_RelVerify,TRUE,
 					GA_Immediate,TRUE,
@@ -1798,6 +1817,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 								GA_ID,GID_THROBBER,
 								SPACE_MinWidth,throbber_width,
 								SPACE_MinHeight,throbber_height,
+								SPACE_Transparent,TRUE,
 							SpaceEnd,
 							CHILD_WeightedWidth,0,
 							CHILD_WeightedHeight,0,
@@ -1830,6 +1850,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 						CHILD_WeightedHeight,0,
 						LAYOUT_AddChild, gwin->shared->gadgets[GID_BROWSER] = SpaceObject,
 							GA_ID,GID_BROWSER,
+							SPACE_Transparent,TRUE,
 						SpaceEnd,
 						LAYOUT_AddChild, gwin->shared->gadgets[GID_STATUS] = StringObject,
 							GA_ID,GID_STATUS,
@@ -1879,6 +1900,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		               	LAYOUT_SpaceOuter, TRUE,
 						LAYOUT_AddChild, gwin->shared->gadgets[GID_BROWSER] = SpaceObject,
 							GA_ID,GID_BROWSER,
+							SPACE_Transparent,TRUE,
 						SpaceEnd,
 					EndGroup,
 				EndWindow;
