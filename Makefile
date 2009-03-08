@@ -73,7 +73,6 @@ else
       ifeq ($(TARGET),)
         TARGET := amiga
       endif
-      GCCVER := 2
     else
       ifeq ($(HOST),Darwin)
         HOST := macosx
@@ -716,10 +715,6 @@ post-exe: $(POSTEXES)
 
 DEPFILES :=
 # Now some macros which build the make system
-
-ifeq ($(HOST),amiga)
-GCCVER := 4
-endif
 
 # 1 = Source file
 # 2 = dep filename, no prefix
