@@ -41,6 +41,8 @@ bool history_back_available(struct history *history);
 bool history_forward_available(struct history *history);
 void history_size(struct history *history, int *width, int *height);
 bool history_redraw(struct history *history);
+bool history_redraw_rectangle(struct history *history,
+	int x0, int y0, int x1, int y1, int x, int y);
 bool history_click(struct browser_window *bw, struct history *history,
 		int x, int y, bool new_window);
 const char *history_position_url(struct history *history, int x, int y);

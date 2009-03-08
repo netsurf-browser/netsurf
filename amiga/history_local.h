@@ -30,7 +30,7 @@ struct history_window {
 	struct nsObject *node;
 	struct browser_window *bw;
 	ULONG pad[4];
-
+	struct Hook scrollerhook;
 };
 
 void ami_history_open(struct browser_window *bw, struct history *history);

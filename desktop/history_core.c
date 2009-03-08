@@ -86,7 +86,9 @@ static void history_layout(struct history *history);
 static int history_layout_subtree(struct history *history,
 		struct history_entry *entry, int x, int y, bool shuffle);
 static bool history_redraw_entry(struct history *history,
-		struct history_entry *entry);
+		struct history_entry *entry,
+		int x0, int y0, int x1, int y1,
+		int x, int y, bool clip);
 static struct history_entry *history_find_position(struct history_entry *entry,
 		int x, int y);
 
@@ -580,9 +582,32 @@ bool history_redraw(struct history *history)
 {
 	if (!history->start)
 		return true;
-	return history_redraw_entry(history, history->start);
+	return history_redraw_entry(history, history->start, 0, 0, 0, 0, 0, 0, false);
 }
 
+/**
+ * Redraw part of a history.
+ *
+ * \param  history  history to render
+ * \param  x0       left X co-ordinate of redraw area
+ * \param  y0       top Y co-ordinate of redraw area
+ * \param  x1       right X co-ordinate of redraw area
+ * \param  y1       lower Y co-ordinate of redraw area
+ * \param  x        start X co-ordinate on plot canvas
+ * \param  y        start Y co-ordinate on plot canvas
+ *
+ * The current plotter is used.
+ */
+
+bool history_redraw_rectangle(struct history *history,
+	int x0, int y0, int x1, int y1,
+	int x, int y)
+{
+	if (!history->start)
+		return true;
+	return history_redraw_entry(history, history->start,
+		x0, y0, x1, y1, x, y, true);
+}
 
 /**
  * Recursively redraw a history_entry.
@@ -592,18 +617,28 @@ bool history_redraw(struct history *history)
  */
 
 bool history_redraw_entry(struct history *history,
-		struct history_entry *entry)
+		struct history_entry *entry,
+		int x0, int y0, int x1, int y1,
+		int x, int y, bool clip)
 {
 	size_t char_offset;
 	int actual_x;
 	struct history_entry *child;
 	colour c = entry == history->current ? 0x0000ff : 0x333333;
 	int tailsize = 5;
+	int xoffset = x - x0;
+	int yoffset = y - y0;
 
-	if (!plot.bitmap(entry->x, entry->y, WIDTH, HEIGHT,
+	if (clip) {
+		if(!plot.clip(x0 + xoffset, y0 + yoffset, x1 + xoffset, y1 + yoffset))
+			return false;
+	}
+
+	if (!plot.bitmap(entry->x + xoffset, entry->y + yoffset, WIDTH, HEIGHT,
 			entry->bitmap, 0xffffff, NULL))
 		return false;
-	if (!plot.rectangle(entry->x - 1, entry->y - 1, WIDTH + 1, HEIGHT + 1,
+	if (!plot.rectangle(entry->x - 1 + xoffset, entry->y - 1 + yoffset,
+			WIDTH + 1, HEIGHT + 1,
 			entry == history->current ? 2 : 1, c, false, false))
 		return false;
 
@@ -611,26 +646,29 @@ bool history_redraw_entry(struct history *history,
 			strlen(entry->page.title), WIDTH,
 			&char_offset, &actual_x))
 		return false;
-	if (!plot.text(entry->x, entry->y + HEIGHT + 12, &css_base_style,
-			entry->page.title, char_offset, 0xffffff, c))
+	if (!plot.text(entry->x + xoffset, entry->y + HEIGHT + 12 + yoffset,
+			&css_base_style, entry->page.title, char_offset, 0xffffff, c))
 		return false;
 
 	for (child = entry->forward; child; child = child->next) {
-		if (!plot.line(entry->x + WIDTH, entry->y + HEIGHT / 2,
-		      		entry->x + WIDTH + tailsize,
-				entry->y + HEIGHT / 2, 1,
+		if (!plot.line(entry->x + WIDTH + xoffset,
+				entry->y + HEIGHT / 2 + yoffset,
+		      	entry->x + WIDTH + tailsize + xoffset,
+				entry->y + HEIGHT / 2 + yoffset, 1,
 				0x333333, false, false))
 			return false;
-		if (!plot.line(entry->x + WIDTH + tailsize,
-				entry->y + HEIGHT / 2,
-				child->x - tailsize, child->y + HEIGHT / 2, 1,
+		if (!plot.line(entry->x + WIDTH + tailsize + xoffset,
+				entry->y + HEIGHT / 2 + yoffset,
+				child->x - tailsize +xoffset,
+				child->y + HEIGHT / 2 + yoffset, 1,
 				0x333333, false, false))
 			return false;
-		if (!plot.line(child->x - tailsize, child->y + HEIGHT / 2,
-				child->x, child->y + HEIGHT / 2, 1,
+		if (!plot.line(child->x - tailsize + xoffset,
+				child->y + HEIGHT / 2 + yoffset,
+				child->x + xoffset, child->y + HEIGHT / 2 + yoffset, 1,
 				0x333333, false, false))
 			return false;
-		if (!history_redraw_entry(history, child))
+		if (!history_redraw_entry(history, child, x0, y0, x1, y1, x, y, clip))
 			return false;
 	}
 

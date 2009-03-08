@@ -36,12 +36,16 @@
 #include "amiga/history_local.h"
 #include <proto/exec.h>
 #include <proto/graphics.h>
+#include <intuition/icclass.h>
+#include <proto/utility.h>
+#include "utils/messages.h"
 
 #include <proto/window.h>
 #include <proto/space.h>
 #include <proto/layout.h>
 #include <classes/window.h>
 #include <gadgets/space.h>
+#include <gadgets/scroller.h>
 #include <reaction/reaction.h>
 #include <reaction/reaction_macros.h>
 
@@ -51,6 +55,10 @@ static int mouse_x = 0;
 /* Last position of mouse in window. */
 static int mouse_y = 0;
 static struct history_window *hwindow;
+
+void ami_history_update_extent(struct history_window *hw);
+void ami_history_redraw(struct history_window *hw);
+static void ami_history_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg);
 
 /**
  * Open history window.
@@ -63,6 +71,7 @@ static struct history_window *hwindow;
 void ami_history_open(struct browser_window *bw, struct history *history)
 {
 	int width, height;
+	struct IBox *bbox;
 
 	assert(history);
 
@@ -74,6 +83,9 @@ void ami_history_open(struct browser_window *bw, struct history *history)
 
 		hwindow->bw = bw;
 		history_size(history, &width, &height);
+
+		hwindow->scrollerhook.h_Entry = (void *)ami_history_scroller_hook;
+		hwindow->scrollerhook.h_Data = hwindow;
 
 		hwindow->objects[OID_MAIN] = WindowObject,
 			WA_ScreenTitle,nsscreentitle,
@@ -90,9 +102,13 @@ void ami_history_open(struct browser_window *bw, struct history *history)
 			WINDOW_UserData,hwindow,
 			WINDOW_IconifyGadget, FALSE,
 			WINDOW_Position, WPOS_CENTERSCREEN,
-			WA_ReportMouse,TRUE,
+			WINDOW_HorizProp,1,
+			WINDOW_VertProp,1,
+			WINDOW_IDCMPHook,&hwindow->scrollerhook,
+			WINDOW_IDCMPHookBits,IDCMP_IDCMPUPDATE,
+//			WA_ReportMouse,TRUE,
 			WA_IDCMP,IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE, // | IDCMP_MOUSEMOVE,
-			WINDOW_ParentGroup, VGroupObject,
+			WINDOW_ParentGroup, hwindow->gadgets[GID_MAIN] = VGroupObject,
 				LAYOUT_AddChild, hwindow->gadgets[GID_BROWSER] = SpaceObject,
 					GA_ID,GID_BROWSER,
 //					SPACE_MinWidth,width,
@@ -105,6 +121,21 @@ void ami_history_open(struct browser_window *bw, struct history *history)
 //		hwindow->bw->window = hwindow;
 		hwindow->node = AddObject(window_list,AMINS_HISTORYWINDOW);
 		hwindow->node->objstruct = hwindow;
+
+		GetAttr(WINDOW_HorizObject,hwindow->objects[OID_MAIN],(ULONG *)&hwindow->objects[OID_HSCROLL]);
+		GetAttr(WINDOW_VertObject,hwindow->objects[OID_MAIN],(ULONG *)&hwindow->objects[OID_VSCROLL]);
+
+		RefreshSetGadgetAttrs((APTR)hwindow->objects[OID_VSCROLL],hwindow->win,NULL,
+			GA_ID,OID_VSCROLL,
+			SCROLLER_Top,0,
+			ICA_TARGET,ICTARGET_IDCMP,
+			TAG_DONE);
+
+		RefreshSetGadgetAttrs((APTR)hwindow->objects[OID_HSCROLL],hwindow->win,NULL,
+			GA_ID,OID_HSCROLL,
+			SCROLLER_Top,0,
+			ICA_TARGET,ICTARGET_IDCMP,
+			TAG_DONE);
 	}
 
 	hwindow->bw = bw;
@@ -119,14 +150,26 @@ void ami_history_open(struct browser_window *bw, struct history *history)
 void ami_history_redraw(struct history_window *hw)
 {
 	struct IBox *bbox;
+	ULONG xs,ys;
 
 	GetAttr(SPACE_AreaBox,hw->gadgets[GID_BROWSER],(ULONG *)&bbox);
-	ami_clg(0xffffff);
+	GetAttr(SCROLLER_Top,hw->objects[OID_HSCROLL],(ULONG *)&xs);
+	GetAttr(SCROLLER_Top,hw->objects[OID_VSCROLL],(ULONG *)&ys);
 
-	history_redraw(history_current);
+	//ami_clg(0xffffff);
+
+	RefreshGadgets(hw->gadgets[GID_MAIN],hw->win,NULL);
+	currp = hw->win->RPort;
+	history_redraw_rectangle(history_current, xs, ys,
+		bbox->Width + xs, bbox->Height + ys,
+		bbox->Left, bbox->Top);
+
+	currp = &glob.rp;
 
 	ami_clearclipreg(currp);
-	BltBitMapRastPort(glob.bm,0,0,hw->win->RPort,bbox->Left,bbox->Top,bbox->Width,bbox->Height,0x0C0);
+	ami_history_update_extent(hw);
+
+//	BltBitMapRastPort(glob.bm,0,0,hw->win->RPort,bbox->Left,bbox->Top,bbox->Width,bbox->Height,0x0C0);
 }
 
 /**
@@ -139,14 +182,14 @@ bool ami_history_click(struct history_window *hw,uint16 code)
 {
 	int x, y;
 	struct IBox *bbox;
-	ULONG width,height;
+	ULONG width,height,xs,ys;
 
 	GetAttr(SPACE_AreaBox,hw->gadgets[GID_BROWSER],(ULONG *)&bbox);	
 
-//				GetAttr(SCROLLER_Top,gwin->objects[OID_HSCROLL],(ULONG *)&xs);
-	x = hw->win->MouseX - bbox->Left; // +xs;
-//				GetAttr(SCROLLER_Top,gwin->objects[OID_VSCROLL],(ULONG *)&ys);
-	y = hw->win->MouseY - bbox->Top; // + ys;
+	GetAttr(SCROLLER_Top,hw->objects[OID_HSCROLL],(ULONG *)&xs);
+	x = hw->win->MouseX - bbox->Left +xs;
+	GetAttr(SCROLLER_Top,hw->objects[OID_VSCROLL],(ULONG *)&ys);
+	y = hw->win->MouseY - bbox->Top + ys;
 
 	width=bbox->Width;
 	height=bbox->Height;
@@ -218,3 +261,48 @@ BOOL ami_history_event(struct history_window *hw)
 	}
 	return FALSE;
 }
+
+void ami_history_update_extent(struct history_window *hw)
+{
+	struct IBox *bbox;
+	int width, height;
+
+	history_size(hw->bw->history, &width, &height);
+	GetAttr(SPACE_AreaBox,hw->gadgets[GID_BROWSER],(ULONG *)&bbox);
+
+	RefreshSetGadgetAttrs((APTR)hw->objects[OID_VSCROLL],hw->win,NULL,
+		GA_ID,OID_VSCROLL,
+		SCROLLER_Total,height,
+		SCROLLER_Visible,bbox->Height,
+//		SCROLLER_Top,0,
+		ICA_TARGET,ICTARGET_IDCMP,
+		TAG_DONE);
+
+	RefreshSetGadgetAttrs((APTR)hw->objects[OID_HSCROLL],hw->win,NULL,
+		GA_ID,OID_HSCROLL,
+		SCROLLER_Total,width,
+		SCROLLER_Visible,bbox->Width,
+//		SCROLLER_Top,0,
+		ICA_TARGET,ICTARGET_IDCMP,
+		TAG_DONE);
+}
+
+void ami_history_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg) 
+{
+	ULONG gid,x,y;
+	struct history_window *hw = hook->h_Data;
+
+	if (msg->Class == IDCMP_IDCMPUPDATE) 
+	{ 
+		gid = GetTagData( GA_ID, 0, msg->IAddress ); 
+
+		switch( gid ) 
+		{ 
+ 			case OID_HSCROLL: 
+ 			case OID_VSCROLL: 
+				ami_history_redraw(hw);
+ 			break; 
+		} 
+	}
+//	ReplyMsg((struct Message *)msg);
+} 
