@@ -717,6 +717,10 @@ post-exe: $(POSTEXES)
 DEPFILES :=
 # Now some macros which build the make system
 
+ifeq ($(HOST),amiga)
+GCCVER := 4
+endif
+
 # 1 = Source file
 # 2 = dep filename, no prefix
 # 3 = obj filename, no prefix
