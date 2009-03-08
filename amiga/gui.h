@@ -24,7 +24,6 @@
 #include "desktop/browser.h"
 #include <dos/dos.h>
 #include "desktop/gui.h"
-#include "amiga/history_local.h"
 #ifdef NS_AMIGA_CAIRO
 #include <cairo/cairo.h>
 #endif
@@ -118,7 +117,6 @@ struct gui_window
 	int scrollx;
 	int scrolly;
 	char *dlfilename;
-	struct history_window *hw; // not used
 };
 
 struct gui_globals
