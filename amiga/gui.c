@@ -2360,13 +2360,11 @@ void gui_window_update_extent(struct gui_window *g)
 		RefreshSetGadgetAttrs((APTR)g->shared->objects[OID_VSCROLL],g->shared->win,NULL,
 			SCROLLER_Total,g->shared->bw->current_content->height,
 			SCROLLER_Visible,bbox->Height,
-			SCROLLER_Top,0,
 			TAG_DONE);
 
 		RefreshSetGadgetAttrs((APTR)g->shared->objects[OID_HSCROLL],g->shared->win,NULL,
 			SCROLLER_Total,g->shared->bw->current_content->width,
 			SCROLLER_Visible,bbox->Width,
-			SCROLLER_Top,0,
 			TAG_DONE);
 	}
 }
