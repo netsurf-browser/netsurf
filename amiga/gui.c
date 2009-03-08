@@ -508,8 +508,11 @@ void gui_init2(int argc, char** argv)
 			}
 		}
 
-		/* init shared bitmaps */
-		glob.bm = p96AllocBitMap(scrn->Width,scrn->Height,32,
+		/* init shared bitmaps                                               *
+		 * Height is set to screen width to give enough space for thumbnails *
+		 * Also applies to the further gfx/layers functions and memory below */
+
+		glob.bm = p96AllocBitMap(scrn->Width,scrn->Width,32,
 					BMF_CLEAR | BMF_DISPLAYABLE | BMF_INTERLEAVED,
 					scrn->RastPort.BitMap,RGBFB_A8R8G8B8);
 
@@ -521,7 +524,7 @@ void gui_init2(int argc, char** argv)
 
 		glob.layerinfo = NewLayerInfo();
 		glob.rp.Layer = CreateUpfrontLayer(glob.layerinfo,glob.bm,0,0,
-							scrn->Width-1,scrn->Height-1,0,NULL);
+							scrn->Width-1,scrn->Width-1,0,NULL);
 
 		glob.areabuf = AllocVec(100,MEMF_PRIVATE | MEMF_CLEAR);
 		glob.rp.AreaInfo = AllocVec(sizeof(struct AreaInfo),MEMF_PRIVATE | MEMF_CLEAR);
@@ -530,11 +533,11 @@ void gui_init2(int argc, char** argv)
 
 		InitArea(glob.rp.AreaInfo,glob.areabuf,100/5);
 		glob.rp.TmpRas = AllocVec(sizeof(struct TmpRas),MEMF_PRIVATE | MEMF_CLEAR);
-		glob.tmprasbuf = AllocVec(scrn->Width*scrn->Height,MEMF_PRIVATE | MEMF_CLEAR);
+		glob.tmprasbuf = AllocVec(scrn->Width*scrn->Width,MEMF_PRIVATE | MEMF_CLEAR);
 
 		if((!glob.tmprasbuf) || (!glob.rp.TmpRas))	warn_user("NoMemory","");
 
-		InitTmpRas(glob.rp.TmpRas,glob.tmprasbuf,scrn->Width*scrn->Height);
+		InitTmpRas(glob.rp.TmpRas,glob.tmprasbuf,scrn->Width*scrn->Width);
 		currp = &glob.rp;
 
 #ifdef NS_AMIGA_CAIRO

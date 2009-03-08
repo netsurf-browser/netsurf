@@ -103,7 +103,7 @@ void ami_cairo_set_dashed(cairo_t *cr)
 
 bool ami_clg(colour c)
 {
-	p96RectFill(currp,0,0,scrn->Width-1,scrn->Height-1,
+	p96RectFill(currp,0,0,scrn->Width-1,scrn->Width-1,
 	p96EncodeColor(RGBFB_A8B8G8R8,c));
 /*
 	SetRPAttrs(currp,RPTAG_BPenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),

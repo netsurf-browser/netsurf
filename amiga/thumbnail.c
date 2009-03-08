@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008,2009 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -17,9 +17,64 @@
  */
 
 #include "desktop/browser.h"
+#include <proto/graphics.h>
+#include <proto/Picasso96API.h>
+#include <intuition/intuition.h>
+#include <graphics/blitattr.h>
+#include <graphics/composite.h>
+#include "amiga/gui.h"
+#include "amiga/bitmap.h"
 
 bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 	const char *url)
 {
-	return false;
+	struct BitScaleArgs bsa;
+
+	bitmap->nativebm = p96AllocBitMap(bitmap->width,bitmap->height,32,
+	BMF_CLEAR | BMF_DISPLAYABLE | BMF_INTERLEAVED,glob.bm,RGBFB_A8R8G8B8);
+
+	bitmap->nativebmwidth = bitmap->width;
+	bitmap->nativebmheight = bitmap->height;
+	ami_clearclipreg(currp);
+	content_redraw(content, 0, 0, content->width, content->width,
+	0, 0, content->width, content->width, 1.0, 0xFFFFFF);
+
+	if(GfxBase->lib_Version >= 53) // AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)
+	{
+		CompositeTags(COMPOSITE_Src,glob.bm,bitmap->nativebm,
+					COMPTAG_ScaleX,COMP_FLOAT_TO_FIX(bitmap->width/content->width),
+					COMPTAG_ScaleY,COMP_FLOAT_TO_FIX(bitmap->height/content->width),
+					COMPTAG_Flags,COMPFLAG_IgnoreDestAlpha | COMPFLAG_SrcAlphaOverride,
+					COMPTAG_DestX,0,
+					COMPTAG_DestY,0,
+					COMPTAG_DestWidth,bitmap->width,
+					COMPTAG_DestHeight,bitmap->height,
+					COMPTAG_OffsetX,0,
+					COMPTAG_OffsetY,0,
+					TAG_DONE);
+	}
+	else
+	{
+		bsa.bsa_SrcX = 0;
+		bsa.bsa_SrcY = 0;
+		bsa.bsa_SrcWidth = content->width;
+		bsa.bsa_SrcHeight = content->width;
+		bsa.bsa_DestX = 0;
+		bsa.bsa_DestY = 0;
+	//	bsa.bsa_DestWidth = width;
+	//	bsa.bsa_DestHeight = height;
+		bsa.bsa_XSrcFactor = content->width;
+		bsa.bsa_XDestFactor = bitmap->width;
+		bsa.bsa_YSrcFactor = content->width;
+		bsa.bsa_YDestFactor = bitmap->height;
+		bsa.bsa_SrcBitMap = glob.bm;
+		bsa.bsa_DestBitMap = bitmap->nativebm;
+		bsa.bsa_Flags = 0;
+
+		BitMapScale(&bsa);
+	}
+
+	if (url) urldb_set_thumbnail(url, bitmap);
+
+	return true;
 }
