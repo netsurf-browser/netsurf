@@ -92,7 +92,7 @@ void ami_init_menulabs(void)
 	menulab[22] = ami_utf8_easy((char *)messages_get("FindTextNS"));
 	menulab[23] = NM_BARLABEL;
 	menulab[24] = ami_utf8_easy((char *)messages_get("normal"));
-	menulab[25] = ami_utf8_easy((char *)messages_get("HistLocal"));
+	menulab[25] = ami_utf8_easy((char *)messages_get("HistLocalNS"));
 	menulab[26] = ami_utf8_easy((char *)messages_get("HistGlobalNS"));
 	menulab[27] = NM_BARLABEL;
 	menulab[28] = ami_utf8_easy((char *)messages_get("ShowCookies"));
@@ -137,8 +137,8 @@ struct NewMenu *ami_create_menu(ULONG type)
 			  	{ NM_ITEM,0,"Z",0,0,0,}, // clear selection
 			  	{NM_TITLE,0,0,0,0,0,}, // browser
 			  	{ NM_ITEM,0,"F",0,0,0,}, // find in page
-			  	{NM_IGNORE,0,0,0,0,0,}, // size
 			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
+			  	{NM_IGNORE,0,0,0,0,0,}, // was test option for scaling
 			  	{ NM_ITEM,0,0,0,0,0,}, // local history
 			  	{ NM_ITEM,0,0,0,0,0,}, // global history
 			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},

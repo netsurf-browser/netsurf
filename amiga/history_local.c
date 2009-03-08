@@ -35,6 +35,7 @@
 #include <proto/intuition.h>
 #include "amiga/history_local.h"
 #include <proto/exec.h>
+#include <proto/graphics.h>
 
 #include <proto/window.h>
 #include <proto/space.h>
@@ -44,16 +45,12 @@
 #include <reaction/reaction.h>
 #include <reaction/reaction_macros.h>
 
-static struct browser_window *history_bw;
 static struct history *history_current = 0;
 /* Last position of mouse in window. */
 static int mouse_x = 0;
 /* Last position of mouse in window. */
 static int mouse_y = 0;
 static struct history_window *hwindow;
-
-//static void ami_history_redraw(wimp_draw *redraw);
-//static bool ami_history_click(wimp_pointer *pointer);
 
 /**
  * Open history window.
@@ -70,43 +67,47 @@ void ami_history_open(struct browser_window *bw, struct history *history)
 	assert(history);
 
 	history_current = history;
-	history_bw = bw;
 
-	if(hwindow) return;
+	if(!hwindow)
+	{
+		hwindow = AllocVec(sizeof(struct history_window),MEMF_CLEAR | MEMF_PRIVATE);
 
-	hwindow = AllocVec(sizeof(struct history_window),MEMF_CLEAR | MEMF_PRIVATE);
+		hwindow->bw = bw;
+		history_size(history, &width, &height);
 
-	history_size(history, &width, &height);
+		hwindow->objects[OID_MAIN] = WindowObject,
+			WA_ScreenTitle,nsscreentitle,
+			WA_Title,messages_get("History"),
+			WA_Activate, TRUE,
+			WA_DepthGadget, TRUE,
+			WA_DragBar, TRUE,
+			WA_CloseGadget, TRUE,
+			WA_SizeGadget, TRUE,
+			WA_CustomScreen,scrn,
+			WA_InnerWidth,width,
+			WA_InnerHeight,height,
+			WINDOW_SharedPort,sport,
+			WINDOW_UserData,hwindow,
+			WINDOW_IconifyGadget, FALSE,
+			WINDOW_Position, WPOS_CENTERSCREEN,
+			WA_ReportMouse,TRUE,
+			WA_IDCMP,IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE, // | IDCMP_MOUSEMOVE,
+			WINDOW_ParentGroup, VGroupObject,
+				LAYOUT_AddChild, hwindow->gadgets[GID_BROWSER] = SpaceObject,
+					GA_ID,GID_BROWSER,
+//					SPACE_MinWidth,width,
+//					SPACE_MinHeight,height,
+				SpaceEnd,
+			EndGroup,
+		EndWindow;
 
-	hwindow->objects[OID_MAIN] = WindowObject,
-		WA_ScreenTitle,nsscreentitle,
-		WA_Title,messages_get("LocalHistory"),
-		WA_Activate, TRUE,
-		WA_DepthGadget, TRUE,
-		WA_DragBar, TRUE,
-		WA_CloseGadget, TRUE,
-		WA_SizeGadget, TRUE,
-		WA_CustomScreen,scrn,
-		WINDOW_SharedPort,sport,
-		WINDOW_UserData,hwindow,
-		WINDOW_IconifyGadget, FALSE,
-		WINDOW_Position, WPOS_CENTERSCREEN,
-		WA_ReportMouse,TRUE,
-		WA_IDCMP,IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE | IDCMP_MOUSEMOVE,
-		WINDOW_ParentGroup, VGroupObject,
-			LAYOUT_AddChild, hwindow->gadgets[GID_BROWSER] = SpaceObject,
-				GA_ID,GID_BROWSER,
-				SPACE_MinWidth,width,
-				SPACE_MinHeight,height,
-			SpaceEnd,
-		EndGroup,
-	EndWindow;
+		hwindow->win = (struct Window *)RA_OpenWindow(hwindow->objects[OID_MAIN]);
+//		hwindow->bw->window = hwindow;
+		hwindow->node = AddObject(window_list,AMINS_HISTORYWINDOW);
+		hwindow->node->objstruct = hwindow;
+	}
 
-	hwindow->win = (struct Window *)RA_OpenWindow(hwindow->objects[OID_MAIN]);
-//	hwindow->bw->window = hwindow;
-	hwindow->node = AddObject(window_list,AMINS_HISTORYWINDOW);
-	hwindow->node->objstruct = hwindow;
-
+	hwindow->bw = bw;
 	ami_history_redraw(hwindow);
 }
 
@@ -117,9 +118,15 @@ void ami_history_open(struct browser_window *bw, struct history *history)
 
 void ami_history_redraw(struct history_window *hw)
 {
-	currp = hw->win->RPort;
+	struct IBox *bbox;
+
+	GetAttr(SPACE_AreaBox,hw->gadgets[GID_BROWSER],(ULONG *)&bbox);
+	ami_clg(0xffffff);
+
 	history_redraw(history_current);
-	currp = NULL;
+
+	ami_clearclipreg(currp);
+	BltBitMapRastPort(glob.bm,0,0,hw->win->RPort,bbox->Left,bbox->Top,bbox->Width,bbox->Height,0x0C0);
 }
 
 /**
@@ -128,12 +135,39 @@ void ami_history_redraw(struct history_window *hw)
  * \return true if the event was handled, false to pass it on
  */
 
-bool ami_history_click(int xpos,int ypos)
+bool ami_history_click(struct history_window *hw,uint16 code)
 {
 	int x, y;
+	struct IBox *bbox;
+	ULONG width,height;
 
-	history_click(history_bw, history_current, xpos, ypos,0);
-//			pointer->buttons == wimp_CLICK_ADJUST);
+	GetAttr(SPACE_AreaBox,hw->gadgets[GID_BROWSER],(ULONG *)&bbox);	
+
+//				GetAttr(SCROLLER_Top,gwin->objects[OID_HSCROLL],(ULONG *)&xs);
+	x = hw->win->MouseX - bbox->Left; // +xs;
+//				GetAttr(SCROLLER_Top,gwin->objects[OID_VSCROLL],(ULONG *)&ys);
+	y = hw->win->MouseY - bbox->Top; // + ys;
+
+	width=bbox->Width;
+	height=bbox->Height;
+
+	if((x>=0) && (y>=0) && (x<width) && (y<height))
+	{
+		switch(code)
+		{
+			case SELECTUP:
+				history_click(hw->bw,history_current,x,y,false);
+				ami_history_redraw(hw);
+				ami_do_redraw(hw->bw->window->shared,false);
+			break;
+
+			case MIDDLEUP:
+				history_click(hw->bw,history_current,x,y,true);
+				ami_history_redraw(hw);
+			break;
+
+		}
+	}
 
 	return true;
 }
@@ -170,6 +204,10 @@ BOOL ami_history_event(struct history_window *hw)
 
 			case WMHI_NEWSIZE:
 				ami_history_redraw(hw);
+			break;
+
+			case WMHI_MOUSEBUTTONS:
+				ami_history_click(hw,code);
 			break;
 
 			case WMHI_CLOSEWINDOW:

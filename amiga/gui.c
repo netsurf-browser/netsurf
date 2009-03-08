@@ -171,7 +171,6 @@ void ami_update_throbber(struct gui_window_2 *g,bool redraw);
 void ami_update_buttons(struct gui_window_2 *);
 void ami_scroller_hook(struct Hook *,Object *,struct IntuiMessage *);
 uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved);
-void ami_do_redraw(struct gui_window_2 *g,bool scroll);
 void ami_init_mouse_pointers(void);
 void ami_switch_tab(struct gui_window_2 *gwin,bool redraw);
 #ifdef WITH_HUBBUB
