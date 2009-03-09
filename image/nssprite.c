@@ -61,7 +61,7 @@ bool nssprite_convert(struct content *c, int width, int height)
 
 	struct rosprite_mem_context* ctx;
 	ERRCHK(rosprite_create_mem_context((uint8_t *) c->source_data,
-			c->total_size, &ctx));
+			c->source_size, &ctx));
 
 	struct rosprite_area* sprite_area;
 	ERRCHK(rosprite_load(rosprite_mem_reader, ctx, &sprite_area));
@@ -118,7 +118,8 @@ bool nssprite_convert(struct content *c, int width, int height)
 
 void nssprite_destroy(struct content *c)
 {
-	rosprite_destroy_sprite_area(c->data.nssprite.sprite_area);
+	if (c->data.nssprite.sprite_area != NULL)
+		rosprite_destroy_sprite_area(c->data.nssprite.sprite_area);
 }
 
 
