@@ -502,6 +502,13 @@ int append_child(void *ctx, void *parent, void *child, void **result)
 	xmlNode *chld = (xmlNode *) child;
 	xmlNode *p = (xmlNode *) parent;
 
+	/** \todo Text node merging logic as per 
+	 * http://www.whatwg.org/specs/web-apps/current-work/multipage/ \
+	 * tree-construction.html#insert-a-character
+	 *
+	 * Doesn't actually matter for us until we have scripting. Thus,
+	 * this is something which can wait until libdom.
+	 */
 	if (chld->type == XML_TEXT_NODE && p->last != NULL && 
 			p->last->type == XML_TEXT_NODE) {
 		/* Need to clone the child, as libxml will free it if it 
@@ -632,17 +639,42 @@ int form_associate(void *ctx, void *form, void *node)
 	xmlNode *n = (xmlNode *) node;
 	struct form *f;
 	struct form_control *control = NULL;
+	xmlChar *id = NULL;
 
-	/* Find form object to associate with */
+	/* Find form object to associate with:
+	 * 
+	 * 1) If node possesses an @form, use the form with a matching @id 
+	 * 2) Otherwise, use the form provided
+	 */
+	id = xmlGetProp(n, (const xmlChar *) "form");
 	for (f = c->forms; f != NULL; f = f->prev) {
-		if (f->node == form)
+		if (id == NULL && f->node == form) {
 			break;
+		} else if (id != NULL) {
+			xmlNode *fn = (xmlNode *) f->node;
+			xmlChar *fid = xmlGetProp(fn, (const xmlChar *) "id");
+
+			if (fid != NULL && strcmp((char *) id, 
+					(char *) fid) == 0) {
+				xmlFree(fid);
+				break;
+			} else if (fid != NULL) {
+				xmlFree(fid);
+			}
+		}
 	}
+	if (id != NULL)
+		xmlFree(id);
 
 	/* None found -- give up */
 	if (f == NULL)
 		return 0;
 
+	/* Will be one of: button, fieldset, input, label, 
+ 	 * output, select, textarea.
+ 	 *
+ 	 * We ignore fieldset, label and output.
+ 	 */
 	if (strcasecmp((const char *) n->name, "input") == 0) {
 		control = parse_input_element(n);
 	} else if (strcasecmp((const char *) n->name, "button") == 0) {
