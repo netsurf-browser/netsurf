@@ -693,8 +693,23 @@ void browser_window_refresh(void *p)
 				 bw->current_content->refresh)))
 		history_add = false;
 
-	browser_window_go_unverifiable(bw, bw->current_content->refresh,
-			bw->current_content->url, history_add);
+	LOG(("Refresh: %d", bw->refresh_interval));
+
+	/* Treat an (almost) immediate refresh in a top-level browser window as
+	 * if it were an HTTP redirect, and thus make the resulting fetch 
+	 * verifiable.
+	 *
+	 * See fetchcache.c for why redirected fetches should be verifiable at
+	 * all.
+	 */
+	if (bw->refresh_interval <= 100 && 
+			bw->browser_window_type == BROWSER_WINDOW_NORMAL) {
+		browser_window_go(bw, bw->current_content->refresh,
+				bw->current_content->url, history_add);
+	} else {
+		browser_window_go_unverifiable(bw, bw->current_content->refresh,
+				bw->current_content->url, history_add);
+	}
 }
 
 
