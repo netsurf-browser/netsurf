@@ -875,7 +875,7 @@ throbber_advance(void *pw)
                 g->throbber_index = 8;
                 break;
 
-        case 8:
+        default:
                 image = &throbber0;
                 g->throbber_index = 0;
                 break;
