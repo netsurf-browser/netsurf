@@ -875,11 +875,13 @@ throbber_advance(void *pw)
                 g->throbber_index = 8;
                 break;
 
-        default:
+        case 8:
                 image = &throbber0;
                 g->throbber_index = 0;
                 break;
 
+	default:
+		return;
         }
 
         if (g->throbber_index >= 0) {
