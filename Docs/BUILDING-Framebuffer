@@ -84,6 +84,108 @@
     able  Output to the Simtec ABLE bootloader framebuffer and input
           from its input device node.
 
+
+  Fonts
+=======
+
+  The framebuffer port currently has two choices for font
+  handling. The font handler may be selected at compile time by using
+  the NETSURF_FB_FONTLIB configuration key. Currently supported values
+  are internal and freetype
+
+  Internal
+----------
+
+  The internal font system has a single built in monospaced face with
+  CP467 encoding. The internal font plotter requires no additional
+  resources and is very fast, it is also aesthetically unappealing.
+
+  Freetype
+----------
+
+  The freetype font system (freetype version 2 API is used) has
+  support for a number of different font file formats and faces. The
+  framebuffer font handler takes advantage of the freetype library
+  caching system to give good performance. 
+
+  The font glyphs are, by default, rendered as 256 level transparency
+  which gives excellent visual results even on small font sizes.
+
+  The default font is the Vera trutype font set. The default path they
+  are sourced from is /usr/share/fonts/truetype/ttf-bitstream-vera/ . 
+  The font selection may be changed by placing truetype font files
+  in the resources path. The resource files will be the generic names
+  sans_serif.ttf, sans_serif_bold.ttf etc. The selection may also be
+  overridden by setting options.
+
+  The font system is configured at runtime by several options. The
+  fb_font_monochrome option causes the renderer to use monochrome
+  glyph rendering which is faster but less visually appealing. The
+  remaining seven options control the files to be used for font faces.
+
+  fb_face_sans_serif - The sans serif face
+  fb_face_sans_serif_bold - The bold sans serif face
+  fb_face_sans_serif_italic - The italic sans serif face
+  fb_face_sans_serif_italic_bold - The bold italic sans serif face.
+  fb_face_monospace - The monospaced font
+  fb_face_serif - The serif font
+  fb_serif_bold - The bold serif font
+
+  Old Freetype
+--------------
+
+  The framebuffer port Freetype font implementation was constructed
+  using a modern version of the library (2.3.5) to use versions 2.2.1
+  and prior the following patch is necessary.
+
+
+Index: framebuffer/fb_font_freetype.c
+===================================================================
+--- framebuffer/fb_font_freetype.c	(revision 6750)
++++ framebuffer/fb_font_freetype.c	(working copy)
+@@ -311,6 +311,7 @@
+         FT_Glyph glyph;
+         FT_Error error;
+         fb_faceid_t *fb_face; 
++        FTC_ImageTypeRec trec; 
+ 
+         fb_fill_scalar(style, &srec);
+ 
+@@ -318,15 +319,24 @@
+ 
+         glyph_index = FTC_CMapCache_Lookup(ft_cmap_cache, srec.face_id, fb_face->cidx, ucs4);
+ 
+-        error = FTC_ImageCache_LookupScaler(ft_image_cache, 
+-                                            &srec, 
+-                                            FT_LOAD_RENDER | 
+-                                            FT_LOAD_FORCE_AUTOHINT | 
+-                                            ft_load_type, 
+-                                            glyph_index, 
+-                                            &glyph, 
+-                                            NULL);
+ 
++	trec.face_id = srec.face_id;
++	if (srec.pixel) {
++		trec.width = srec.width;
++		trec.height = srec.height;
++	} else {
++		/* Convert from 1/64 pts to pixels */
++		trec.width = srec.width * css_screen_dpi / 64 / srec.x_res;
++		trec.height = srec.height * css_screen_dpi / 64 / srec.y_res;
++	}
++	trec.flags = FT_LOAD_RENDER | FT_LOAD_FORCE_AUTOHINT | ft_load_type;
++
++	error = FTC_ImageCache_Lookup(ft_image_cache,
++				      &trec,
++				      glyph_index,
++				      &glyph,
++				      NULL);
++
+         return glyph;
+ }
+ 
+
+
   Obtaining NetSurf's build dependencies
 ========================================
 
