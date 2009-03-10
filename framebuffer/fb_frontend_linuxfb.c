@@ -41,15 +41,24 @@
 #include <linux/input.h>
 
 #include "css/css.h"
-#include "desktop/browser.h"
+#include "utils/messages.h"
 #include "desktop/gui.h"
+/* #include "desktop/textinput.h" cannot include this becaus eit conflicts with the linux defines */
+#define NSKEY_PAGE_DOWN 135
+#define NSKEY_PAGE_UP 134
+#define NSKEY_DOWN 31
+#define NSKEY_UP 30
+#define NSKEY_LEFT 28
+#define NSKEY_RIGHT 29
+#define NSKEY_ESCAPE 27
+
 #include "framebuffer/fb_gui.h"
+#include "framebuffer/fb_tk.h"
 #include "framebuffer/fb_plotters.h"
 #include "framebuffer/fb_schedule.h"
 #include "framebuffer/fb_cursor.h"
 #include "framebuffer/fb_frontend.h"
 #include "framebuffer/fb_options.h"
-#include "framebuffer/fb_rootwindow.h"
 
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -416,7 +425,7 @@ framebuffer_init(const char *device, int width, int height, int refresh, int bpp
         if (vt != 0)
                 fb_setvt(vt);
 
-        if (-1 == ioctl(tty,VT_GETSTATE, &vts)) {
+        if (ioctl(tty,VT_GETSTATE, &vts) == -1) {
                 fprintf(stderr,"ioctl VT_GETSTATE: %s (not a linux console?)\n",
                         strerror(errno));
                 exit(1);
@@ -538,23 +547,23 @@ fb_catch_exit_signals(void)
         memset(&act,0,sizeof(act));
         act.sa_handler = fb_catch_exit_signal;
         sigemptyset(&act.sa_mask);
-        sigaction(SIGINT, &act,&old);
-        sigaction(SIGQUIT,&act,&old);
-        sigaction(SIGTERM,&act,&old);
+        sigaction(SIGINT, &act, &old);
+        sigaction(SIGQUIT, &act, &old);
+        sigaction(SIGTERM, &act, &old);
 
-        sigaction(SIGABRT,&act,&old);
-        sigaction(SIGTSTP,&act,&old);
+        sigaction(SIGABRT, &act, &old);
+        sigaction(SIGTSTP, &act, &old);
 
-        sigaction(SIGBUS, &act,&old);
-        sigaction(SIGILL, &act,&old);
-        sigaction(SIGSEGV,&act,&old);
+        sigaction(SIGBUS, &act, &old);
+        sigaction(SIGILL, &act, &old);
+        sigaction(SIGSEGV, &act, &old);
 
-        if (0 == (termsig = sigsetjmp(fb_fatal_cleanup,0)))
+        if ((termsig = sigsetjmp(fb_fatal_cleanup,0)) == 0)
                 return;
 
         /* cleanup */
         fb_cleanup();
-        fprintf(stderr,"Oops: %s\n",sys_siglist[termsig]);
+        fprintf(stderr, "Oops: %s\n", sys_siglist[termsig]);
         exit(42);
 }
 
@@ -652,7 +661,7 @@ static int keycode_to_ucs4(int code, bool shift)
         return ucs4;
 }
 
-void fb_os_input(struct gui_window *g, bool active)
+void fb_os_input(fbtk_widget_t *root, bool active)
 {
         ssize_t amt;
         struct input_event event;
@@ -674,49 +683,43 @@ void fb_os_input(struct gui_window *g, bool active)
                                                 break;
 
                                         case BTN_LEFT:
-                                                fb_rootwindow_click(g,
-                                                                    BROWSER_MOUSE_CLICK_1,
-                                                                    fb_cursor_x(framebuffer),
-                                                                    fb_cursor_y(framebuffer));
-                                        break;
+                                                fbtk_click(root, BROWSER_MOUSE_CLICK_1);
+                                                break;
                                         }
                                         return;
                                 }
 
                                 switch (event.code) {
                                 case KEY_PAGEDOWN:
-                                        fb_window_scroll(g, 0, g->height);
+                                        ucs4 = NSKEY_PAGE_DOWN;
                                         break;
 
                                 case KEY_PAGEUP:
-                                        fb_window_scroll(g, 0, -g->height);
+                                        ucs4 = NSKEY_PAGE_UP;
                                         break;
 
                                 case KEY_DOWN:
-                                        fb_window_scroll(g, 0, 100);
+                                        ucs4 = NSKEY_DOWN;
                                         break;
 
                                 case KEY_UP:
-                                        fb_window_scroll(g, 0, -100);
+                                        ucs4 = NSKEY_UP;
                                         break;
 
                                 case KEY_LEFT:
-                                        fb_window_scroll(g, -100, 0);
+                                        ucs4 = NSKEY_LEFT;
                                         break;
 
                                 case KEY_RIGHT:
-                                        fb_window_scroll(g, 100, 0);
+                                        ucs4 = NSKEY_RIGHT;
                                         break;
 
                                 case KEY_ESC:
-                                        browser_window_destroy(g->bw);
+                                        ucs4 = NSKEY_ESCAPE;
                                         break;
 
                                 case BTN_LEFT:
-                                        fb_rootwindow_click(g,
-                                            BROWSER_MOUSE_PRESS_1,
-                                            fb_cursor_x(framebuffer),
-                                            fb_cursor_y(framebuffer));
+                                        fbtk_click(root, BROWSER_MOUSE_PRESS_1);
                                         break;
 
                                 case KEY_LEFTSHIFT:
@@ -730,22 +733,36 @@ void fb_os_input(struct gui_window *g, bool active)
                                 }
                         } else if (event.type == EV_REL) {
                                 switch (event.code) {
-				case 0:
-                                        fb_rootwindow_move(framebuffer, g, event.value, 0, true);
+				case REL_X:
+                                        fbtk_move_pointer(root, event.value, 0, true);
 					break;
 
-                                case 1:
-                                        fb_rootwindow_move(framebuffer, g, 0, event.value, true);
+                                case REL_Y:
+                                        fbtk_move_pointer(root, 0, event.value, true);
 					break;
 
-				case 8:
-					fb_window_scroll(g, 0, event.value * -100);
+				case REL_WHEEL:
+                                        if (event.value > 0)
+                                                fbtk_input(root, NSKEY_UP);
+                                        else
+                                                fbtk_input(root, NSKEY_DOWN);
 					break;
+                                }
+                        } else if (event.type == EV_ABS) {
+                                switch (event.code) {
+				case ABS_X:
+                                        fbtk_move_pointer(root, event.value, -1, false);
+					break;
+
+                                case ABS_Y:
+                                        fbtk_move_pointer(root, -1, event.value, false);
+					break;
+
                                 }
                         }
 
                         if (ucs4 != -1) {
-                                fb_rootwindow_input(g, ucs4);
+                                fbtk_input(root, ucs4);
                                 ucs4 = -1;
                         }
 

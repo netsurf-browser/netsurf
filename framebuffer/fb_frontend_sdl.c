@@ -26,22 +26,20 @@
 #include <SDL/SDL.h>
 
 #include "css/css.h"
-#include "desktop/options.h"
 #include "desktop/gui.h"
 #include "desktop/options.h"
 #include "utils/messages.h"
 #include "desktop/history_core.h"
+#include "desktop/textinput.h"
 
 #include "framebuffer/fb_gui.h"
+#include "framebuffer/fb_tk.h"
 #include "framebuffer/fb_plotters.h"
 #include "framebuffer/fb_frontend.h"
 #include "framebuffer/fb_cursor.h"
-#include "framebuffer/fb_rootwindow.h"
 #include "framebuffer/fb_options.h"
 
 #include "utils/log.h"
-
-#define FILE_PFX "/home/vince/netsurf/netsurf/framebuffer/res/"
 
 static SDL_Surface *sdl_screen;
 
@@ -79,9 +77,9 @@ framebuffer_t *fb_os_init(int argc, char** argv)
         newfb->bpp = fb_depth;
 
         sdl_screen = SDL_SetVideoMode(newfb->width, 
-                                  newfb->height, 
-                                  newfb->bpp, 
-                                  SDL_SWSURFACE);
+                                      newfb->height, 
+                                      newfb->bpp, 
+                                      SDL_SWSURFACE);
 
         if ( sdl_screen == NULL ) {
                 fprintf(stderr, 
@@ -102,10 +100,11 @@ void fb_os_quit(framebuffer_t *fb)
 {
 }
 
-void fb_os_input(struct gui_window *g, bool active) 
+void fb_os_input(fbtk_widget_t *root, bool active) 
 {
         int got_event;
         SDL_Event event;
+        int nskey;
 
         if (active)
                 got_event = SDL_PollEvent(&event);
@@ -119,73 +118,61 @@ void fb_os_input(struct gui_window *g, bool active)
         switch (event.type) {
         case SDL_KEYDOWN:
 
-            switch (event.key.keysym.sym) {
-
-            case SDLK_PAGEDOWN:
-                    fb_window_scroll(g, 0, g->height);
-                    break;
+                switch (event.key.keysym.sym) {
+                case SDLK_PAGEDOWN:
+                        nskey = KEY_PAGE_DOWN;
+                        break;
                     
-            case SDLK_PAGEUP:
-                    fb_window_scroll(g, 0, -g->height);
-                    break;
+                case SDLK_PAGEUP:
+                        nskey = KEY_PAGE_UP;
+                        break;
 
-            case SDLK_DOWN:
-                    fb_window_scroll(g, 0, 100);
-                    break;
-                    
-            case SDLK_UP:
-                    fb_window_scroll(g, 0, -100);
-                    break;
-                    
-            case SDLK_ESCAPE:
-                    browser_window_destroy(g->bw);
-                    break;
+                case SDLK_LEFT:
+                        nskey = KEY_LEFT;
+                        break;
 
-            case SDLK_LEFT:
-                    fb_window_scroll(g, -100, 0);
-                    break;
+                case SDLK_RIGHT:
+                        nskey = KEY_RIGHT;
+                        break;
 
-            case SDLK_RIGHT:
-                    fb_window_scroll(g, 100, 0);
-                    break;
+                case SDLK_DOWN:
+                        nskey = KEY_DOWN;
+                        break;
 
-            default:
-                    fb_rootwindow_input(g, event.key.keysym.sym);
-                    break;
-            }
-            break;
+                case SDLK_UP:
+                        nskey = KEY_UP;
+                        break;
+
+                default:
+                        nskey = event.key.keysym.sym;
+                        break;
+                }
+                fbtk_input(root, nskey);
+
+                break;
 
         case SDL_MOUSEMOTION:
-                fb_rootwindow_move(framebuffer, g, event.motion.x, event.motion.y, false); 
+                fbtk_move_pointer(root, event.motion.x, event.motion.y, false);
                 break;
 
         case SDL_MOUSEBUTTONDOWN:
                 switch (event.button.button) {
 
                 case SDL_BUTTON_LEFT:
-                        fb_rootwindow_click(g, BROWSER_MOUSE_PRESS_1, 
-                                            fb_cursor_x(framebuffer), 
-                                            fb_cursor_y(framebuffer));
+                        fbtk_click(root, BROWSER_MOUSE_PRESS_1);
                         break;
 
                 case SDL_BUTTON_RIGHT:
-                        fb_rootwindow_click(g, BROWSER_MOUSE_PRESS_2, 
-                                            fb_cursor_x(framebuffer), 
-                                            fb_cursor_y(framebuffer));
+                        fbtk_click(root, BROWSER_MOUSE_PRESS_2);
                         break;
 
                 case SDL_BUTTON_WHEELUP:
-                    fb_window_scroll(g, 0, -100);
-                    break;
+                        fbtk_input(root, KEY_UP);
+                        break;
 
                 case SDL_BUTTON_WHEELDOWN:
-                    fb_window_scroll(g, 0, 100);
-                    break;
-
-                case SDL_BUTTON_MIDDLE:
-                default:
-                        LOG(("Mouse button %d pressed at (%d,%d)\n",
-                             event.button.button, event.button.x, event.button.y));
+                        fbtk_input(root, KEY_DOWN);
+                        break;
 
                 }
                 break;
@@ -194,27 +181,20 @@ void fb_os_input(struct gui_window *g, bool active)
                 switch (event.button.button) {
 
                 case SDL_BUTTON_LEFT:
-                        fb_rootwindow_click(g, BROWSER_MOUSE_CLICK_1, 
-                                            fb_cursor_x(framebuffer), 
-                                            fb_cursor_y(framebuffer));
+                        fbtk_click(root, BROWSER_MOUSE_CLICK_1);
                         break;
 
                 case SDL_BUTTON_RIGHT:
-                        fb_rootwindow_click(g, BROWSER_MOUSE_CLICK_2, 
-                                            fb_cursor_x(framebuffer), 
-                                            fb_cursor_y(framebuffer));
+                        fbtk_click(root, BROWSER_MOUSE_CLICK_2);
                         break;
-
-                default:
-                        LOG(("Mouse button %d pressed at (%d,%d)\n",
-                             event.button.button, event.button.x, event.button.y));
 
                 }
                 break;
 
         case SDL_QUIT:
-            browser_window_destroy(g->bw);
-    }
+                netsurf_quit = true;
+                break;
+        }
 
 }
 

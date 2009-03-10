@@ -24,13 +24,17 @@
 
 #include "utils/log.h"
 #include "utils/utf8.h"
+#include "desktop/browser.h"
 #include "desktop/plotters.h"
 
 #include "framebuffer/fb_gui.h"
+#include "framebuffer/fb_tk.h"
 #include "framebuffer/fb_plotters.h"
 #include "framebuffer/fb_bitmap.h"
 #include "framebuffer/fb_font.h"
 #include "framebuffer/fb_frontend.h"
+
+extern fbtk_widget_t *fbtk;
 
 /* max height the poly plotter can cope with */
 #define WINDOW_HEIGHT (2048)
@@ -184,17 +188,14 @@ bool fb_plotters_clip_line_ctx(int *x0, int *y0, int *x1, int *y1)
 bool fb_clip(int x0, int y0, int x1, int y1)
 {
         bbox_t clip;
-        struct gui_window *g;
-
-        g = window_list;
 
 	if (x1 < x0) SWAP(x0, x1);
 	if (y1 < y0) SWAP(y0, y1);
 
-        clip.x0 = g->x;
-        clip.y0 = g->y;
-        clip.x1 = g->x + g->width;
-        clip.y1 = g->y + g->height;
+        clip.x0 = fbtk_get_x(fbtk);
+        clip.y0 = fbtk_get_y(fbtk);
+        clip.x1 = fbtk_get_width(fbtk);
+        clip.y1 = fbtk_get_height(fbtk);
 
         if (fb_plotters_clip_rect(&clip, &x0, &y0, &x1, &y1)) {
                 /* new clipping region is inside the root window */
@@ -202,7 +203,7 @@ bool fb_clip(int x0, int y0, int x1, int y1)
                 fb_plot_ctx.y0 = y0;
                 fb_plot_ctx.x1 = x1;
                 fb_plot_ctx.y1 = y1;
-        }
+                 }
 
         /*LOG(("%d, %d - %d, %d clipped to %d, %d - %d, %d",
              x0,y0,x1,y1,

@@ -18,10 +18,23 @@ FB_IMAGE_left_arrow := framebuffer/res/icons/back.png
 FB_IMAGE_right_arrow := framebuffer/res/icons/forward.png
 FB_IMAGE_reload := framebuffer/res/icons/reload.png
 FB_IMAGE_stop_image := framebuffer/res/icons/stop.png
+FB_IMAGE_scrolll := framebuffer/res/icons/scrolll.png
+FB_IMAGE_scrollr := framebuffer/res/icons/scrollr.png
+
 
 FB_IMAGE_pointer_image := framebuffer/res/pointers/default.png
 FB_IMAGE_hand_image := framebuffer/res/pointers/point.png
 FB_IMAGE_caret_image := framebuffer/res/pointers/caret.png
+
+FB_IMAGE_throbber0 := framebuffer/res/throbber/throbber0.png
+FB_IMAGE_throbber1 := framebuffer/res/throbber/throbber1.png
+FB_IMAGE_throbber2 := framebuffer/res/throbber/throbber2.png
+FB_IMAGE_throbber3 := framebuffer/res/throbber/throbber3.png
+FB_IMAGE_throbber4 := framebuffer/res/throbber/throbber4.png
+FB_IMAGE_throbber5 := framebuffer/res/throbber/throbber5.png
+FB_IMAGE_throbber6 := framebuffer/res/throbber/throbber6.png
+FB_IMAGE_throbber7 := framebuffer/res/throbber/throbber7.png
+FB_IMAGE_throbber8 := framebuffer/res/throbber/throbber8.png
 
 # 1: input file
 # 2: output file

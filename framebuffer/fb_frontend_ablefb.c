@@ -29,8 +29,10 @@
 #include "desktop/gui.h"
 #include "desktop/options.h"
 #include "utils/messages.h"
+#include "desktop/textinput.h"
 
 #include "framebuffer/fb_gui.h"
+#include "framebuffer/fb_tk.h"
 #include "framebuffer/fb_plotters.h"
 #include "framebuffer/fb_frontend.h"
 #include "framebuffer/fb_options.h"
@@ -99,7 +101,7 @@ void fb_os_quit(framebuffer_t *fb)
 {
 }
 
-void fb_os_input(struct gui_window *g) 
+void fb_os_input(fbtk_widget_t *root, bool active) 
 {
         ssize_t amt;
         char key;
@@ -108,17 +110,13 @@ void fb_os_input(struct gui_window *g)
 
         if (amt > 0) {
                 if (key == 'j') {
-                        g->scrolly +=100;
-                        gui_window_redraw_window(g);
+                        fbtk_input(root, KEY_UP);
                 }
                 if (key == 'k') {
-                        g->scrolly -=100;
-                        if (g->scrolly < 0)
-                                g->scrolly = 0;
-                        gui_window_redraw_window(g);
+                        fbtk_input(root, KEY_DOWN);
                 }
                 if (key == 'q') {
-                        browser_window_destroy(g->bw);
+                        netsurf_quit = true;
                 }
                 if (key == 'd') {
                         list_schedule();

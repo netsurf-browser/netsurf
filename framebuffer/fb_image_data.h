@@ -25,9 +25,21 @@ extern struct bitmap left_arrow;
 extern struct bitmap right_arrow;
 extern struct bitmap reload;
 extern struct bitmap stop_image;
+extern struct bitmap scrolll;
+extern struct bitmap scrollr;
 
 extern struct bitmap pointer_image;
 extern struct bitmap hand_image;
 extern struct bitmap caret_image;
+
+extern struct bitmap throbber0;
+extern struct bitmap throbber1;
+extern struct bitmap throbber2;
+extern struct bitmap throbber3;
+extern struct bitmap throbber4;
+extern struct bitmap throbber5;
+extern struct bitmap throbber6;
+extern struct bitmap throbber7;
+extern struct bitmap throbber8;
 
 #endif /* FB_IMAGE_DATA */

@@ -18,9 +18,6 @@
 
 #include <sys/types.h>
 #include <stdint.h>
-
-#include <sys/types.h>
-#include <stdint.h>
 #include <string.h>
 #include <limits.h>
 
@@ -31,11 +28,11 @@
 #include "image/bitmap.h"
 
 #include "framebuffer/fb_gui.h"
+#include "framebuffer/fb_tk.h"
 #include "framebuffer/fb_plotters.h"
 #include "framebuffer/fb_bitmap.h"
 #include "framebuffer/fb_cursor.h"
 #include "framebuffer/fb_frontend.h"
-#include "framebuffer/fb_rootwindow.h"
 #include "framebuffer/fb_image_data.h"
 
 struct fb_cursor_s {
@@ -91,7 +88,7 @@ static void fb_cursor_save(framebuffer_t *fb)
         }
 }
 
-static void fb_cursor_clear(framebuffer_t *fb) 
+void fb_cursor_clear(framebuffer_t *fb) 
 {
         uint8_t *savebuf;
         int savelen;

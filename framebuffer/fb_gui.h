@@ -40,25 +40,16 @@ typedef struct framebuffer_s {
 } framebuffer_t;
 
 struct gui_window {
-	struct gui_window *next, *prev; /**< List of windows */
-	struct browser_window *bw; /**< The browser window connected to this gui window */
-
-	int x;
-	int y;
-	int width; /**< Window width */
-	int height; /**< window height */
-	int scrollx, scrolly; /**< scroll offsets. */
-
-	/* Pending window redraw state. */
-	bool redraw_required; /**< flag indicating the foreground loop
-			       * needs to redraw the window.
-			       */
-	bbox_t redraw_box; /**< Area requiring redraw. */
-	bool pan_required; /**< flag indicating the foreground loop
-			       * needs to pan the window.
-			       */
-	int panx, pany; /**< Panning required. */
+        struct browser_window *bw;
+        struct fbtk_widget_s *window;
+        struct fbtk_widget_s *url;
+        struct fbtk_widget_s *status;
+        struct fbtk_widget_s *throbber;
+        struct fbtk_widget_s *hscroll;
+        struct fbtk_widget_s *browser;
+        int throbber_index;
 };
+
 
 extern framebuffer_t *framebuffer;
 extern struct gui_window *window_list;
