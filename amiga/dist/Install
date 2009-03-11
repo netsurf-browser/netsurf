@@ -241,7 +241,7 @@
 ;	(all)
 )
 
-(set #complete 60)
+(set #complete 50)
 
 (if (= #cairo-version 1)
 	(

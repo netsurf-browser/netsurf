@@ -95,7 +95,12 @@
 
       http://www.aminet.net/package/dev/lib/libxml2
 
-  OWB's shared object version does not appear to work with NetSurf.
+  The shared object version included with OS4.1 does work with NetSurf,
+  however the "ELF QuickFix" must be installed from Hyperion's website.
+
+  The shared object can then be enabled with the following command:
+
+      1> makelink sdk:local/newlib/lib/libxml2.so sobjs:libxml2-2.6.so soft
 
 
   OpenSSL
@@ -148,7 +153,8 @@
   
       svn://svn.netsurf-browser.org/trunk/hubbub
 
-  and again do the usual "gmake".
+  and again do the usual "gmake", or "gmake BUILD_SHARED=yes" for the shared
+  object version.
 
 
   Librosprite
