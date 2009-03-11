@@ -330,6 +330,9 @@ fbtk_window_default_redraw(fbtk_widget_t *window, void *pw)
         fbtk_widget_t *widget;
         int res = 0;
 
+        if (!window->redraw)
+                return res;
+
         /* get the list of widgets */
         lent = window->u.window.widgets;
 
