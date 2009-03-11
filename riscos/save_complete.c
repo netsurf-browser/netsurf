@@ -111,7 +111,7 @@ bool save_complete_html(struct content *c, const char *path, bool index)
 {
 	char spath[256];
 	unsigned int i;
-	htmlParserCtxtPtr parser;
+	xmlDocPtr doc;
 	os_error *error;
 
 	if (c->type != CONTENT_HTML)
@@ -201,35 +201,16 @@ bool save_complete_html(struct content *c, const char *path, bool index)
 
 	/*save_complete_list_dump();*/
 
-	/* make a copy of the document tree */
-	parser = htmlCreateMemoryParserCtxt(c->source_data, c->source_size);
-	if (!parser) {
+	/* copy document */
+	doc = xmlCopyDoc(c->data.html.document, 1);
+	if (doc == NULL) {
 		warn_user("NoMemory", 0);
 		return false;
 	}
-	/* set parser charset */
-	if (c->data.html.encoding) {
-		xmlCharEncodingHandler *enc_handler;
-		enc_handler =
-			xmlFindCharEncodingHandler(c->data.html.encoding);
-		if (enc_handler) {
-			xmlCtxtResetLastError(parser);
-			if (xmlSwitchToEncoding(parser, enc_handler)) {
-				xmlFreeDoc(parser->myDoc);
-				htmlFreeParserCtxt(parser);
-				warn_user("MiscError",
-						"Encoding switch failed");
-				return false;
-			}
-		}
-	}
-
-	htmlParseDocument(parser);
 
 	/* rewrite all urls we know about */
-	if (!rewrite_document_urls(parser->myDoc, c->data.html.base_url)) {
-		xmlFreeDoc(parser->myDoc);
-		htmlFreeParserCtxt(parser);
+	if (!rewrite_document_urls(doc, c->data.html.base_url)) {
+		xmlFreeDoc(doc);
 		warn_user("NoMemory", 0);
 		return false;
 	}
@@ -241,13 +222,17 @@ bool save_complete_html(struct content *c, const char *path, bool index)
 		snprintf(spath, sizeof spath, "%s.%x", path, (unsigned int)c);
 
 	errno = 0;
-	if (htmlSaveFileFormat(spath, parser->myDoc, 0, 0) == -1) {
+	if (htmlSaveFileFormat(spath, doc, 0, 0) == -1) {
 		if (errno)
 			warn_user("SaveError", strerror(errno));
 		else
 			warn_user("SaveError", "htmlSaveFileFormat failed");
+
+		xmlFreeDoc(doc);
 		return false;
 	}
+
+	xmlFreeDoc(doc);
 
 	error = xosfile_set_type(spath, 0xfaf);
 	if (error) {
@@ -256,9 +241,6 @@ bool save_complete_html(struct content *c, const char *path, bool index)
 		warn_user("SaveError", error->errmess);
 		return false;
 	}
-
-	xmlFreeDoc(parser->myDoc);
-	htmlFreeParserCtxt(parser);
 
 	return true;
 }
