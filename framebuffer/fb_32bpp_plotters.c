@@ -542,41 +542,30 @@ static bool fb_32bpp_bitmap(int x, int y, int width, int height,
         /* plot the image */
         pvideo = fb_32bpp_get_xy_loc(x0, y0);
 
-        for (yloop = yoff; yloop < height; yloop += bitmap->width) {
-#if 1
-                for (xloop = 0; xloop < width; xloop++) {
-                        abpixel = pixel[yloop + xloop + xoff];
-                        if ((abpixel & 0xFF000000) != 0) {
-                                if ((abpixel & 0xFF000000) != 0xFF000000) {
-                                        abpixel = fb_plotters_ablend(abpixel, 
-                                         fb_32bpp_to_colour(*(pvideo + xloop)));
-                                }
-
+        if (bitmap->opaque) {
+                for (yloop = yoff; yloop < height; yloop += bitmap->width) {
+                        for (xloop = 0; xloop < width; xloop++) {
+                                abpixel = pixel[yloop + xloop + xoff];
                                 *(pvideo + xloop) = fb_colour_to_pixel(abpixel);
                         }
+                        pvideo += (framebuffer->linelen >> 2);
                 }
-#else
-                uint32_t *pvid = pvideo;
-                colour *pix  = &pixel[yloop + xoff];
-                colour *epix = pix + width;
-                do {
-                         colour *spix = pix;
-                         while (pix < epix && !((abpixel = *pix) & 0xFF000000U)) pix++;
-                         if (pix < epix) {
-                                pvid += pix++ - spix;
-                                do {
+        } else {
+                for (yloop = yoff; yloop < height; yloop += bitmap->width) {
+                        for (xloop = 0; xloop < width; xloop++) {
+                                abpixel = pixel[yloop + xloop + xoff];
+                                if ((abpixel & 0xFF000000) != 0) {
                                         if ((abpixel & 0xFF000000) != 0xFF000000) {
-                                                abpixel = fb_plotters_ablend(abpixel,
-                                                 fb_32bpp_to_colour(*pvid));
+                                                abpixel = fb_plotters_ablend(abpixel, 
+                                                                             fb_32bpp_to_colour(*(pvideo + xloop)));
                                         }
-                                        *pvid++ = fb_colour_to_pixel(abpixel);
-                                } while (pix < epix && ((abpixel = *pix++) & 0xFF000000U));
-                         }
-                } while (pix < epix);
-#endif
-                pvideo += (framebuffer->linelen >> 2);
-        }
 
+                                        *(pvideo + xloop) = fb_colour_to_pixel(abpixel);
+                                }
+                        }
+                        pvideo += (framebuffer->linelen >> 2);
+                }
+        }
 	return true;
 }
 

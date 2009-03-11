@@ -23,6 +23,8 @@ struct bitmap {
 	int width;
 	int height;
 	uint8_t *pixdata;
+        bool opaque;
+
         /* The following two are only used for cursors */
         int hot_x;
         int hot_y;

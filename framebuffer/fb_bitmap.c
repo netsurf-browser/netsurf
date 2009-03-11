@@ -46,6 +46,7 @@ void *bitmap_create(int width, int height, unsigned int state)
                 if (bitmap->pixdata != NULL) {
                         bitmap->width = width;
                         bitmap->height = height;
+                        bitmap->opaque = false;
                 } else {
                         free(bitmap);
                         bitmap=NULL;
@@ -164,11 +165,15 @@ void bitmap_set_suspendable(void *bitmap, void *private_word,
  */
 void bitmap_set_opaque(void *bitmap, bool opaque)
 {	
+	struct bitmap *bm = bitmap;
+
         if (bitmap == NULL) {
                 LOG(("NULL bitmap!"));
                 return;
         }
-        /* todo: set bitmap as opaque */
+
+        LOG(("setting bitmap %p to %s", bm, opaque?"opaque":"transparent"));
+        bm->opaque = opaque;
 }
 
 
@@ -180,13 +185,24 @@ void bitmap_set_opaque(void *bitmap, bool opaque)
  */
 bool bitmap_test_opaque(void *bitmap)
 {
+        int tst;
+	struct bitmap *bm = bitmap;
+
         if (bitmap == NULL) {
                 LOG(("NULL bitmap!"));
                 return false;
         }
 
-        /* todo: test if bitmap as opaque */
-	return false;
+        tst = bm->width * bm->height;
+
+        while (tst-- > 0) {
+                if (bm->pixdata[(tst << 2) + 3] != 0xff) {
+                        LOG(("bitmap %p has transparency",bm));
+                        return false;                     
+                }   
+        }
+        LOG(("bitmap %p is opaque", bm));
+	return true;
 }
 
 
@@ -197,13 +213,14 @@ bool bitmap_test_opaque(void *bitmap)
  */
 bool bitmap_get_opaque(void *bitmap)
 {
+	struct bitmap *bm = bitmap;
+
         if (bitmap == NULL) {
                 LOG(("NULL bitmap!"));
                 return false;
         }
 
-/* todo: get whether bitmap is opaque */
-	return false;
+	return bm->opaque;
 }
 
 int bitmap_get_width(void *bitmap)
