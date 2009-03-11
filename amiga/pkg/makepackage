@@ -20,5 +20,5 @@ copy amiga/dist/~(.svn|AutoInstall) ram:NetSurf/
 makedir ram:NetSurf/Rexx
 copy amiga/dist/Rexx/~(.svn) ram:NetSurf/Rexx/ COM
 makedir ram:NetSurf/SObjs
-copy sobjs:libgcc.so sobjs:libc.so sobjs:libjpeg.so sobjs:libpthread.so sobjs:libexpat.so ram:NetSurf/SObjs clone
+copy sobjs:libgcc.so sobjs:libc.so sobjs:libjpeg.so sobjs:libpthread.so sobjs:libexpat.so libhubbub.so libhpdf-2.2.0.so.0.0 ram:NetSurf/SObjs clone
 ;sobjs:libcurl-7.16.so sobjs:libssl-0.9.8.so
