@@ -266,7 +266,7 @@
 		(foreach "SObjs" "#?"
 			(complete #complete)
 			(p_copysobj @each-name)
-			(set #complete (+ #complete 5))
+			(set #complete (+ #complete 4))
 		)
 	)
 )

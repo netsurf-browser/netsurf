@@ -82,10 +82,9 @@
 --------
 
   NetSurf uses libMNG to display MNG and PNG files.
-  It builds without any problems on OS4, or an older version is available
-  from Aminet:
+  It builds without any problems on OS4, or available from Aminet:
 
-      http://www.aminet.net/package/dev/lib/libmng
+      http://www.aminet.net/package/dev/lib/libmng_so
 
 
   libxml2

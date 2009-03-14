@@ -450,6 +450,7 @@ ifeq ($(TARGET),amiga)
     $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif,NetSurf GIF decoder))
     $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG support))
     $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG rendering))
+    $(eval $(call feature_enabled,MNG,,-llcms -ljpeg,libmng extras))
 
   CFLAGS += -D__USE_INLINE__ -std=c99 -I . -Dnsamiga
   LDFLAGS += -lxml2 -lcurl -lpthread -lregex -lauto -lparserutils
