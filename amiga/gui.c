@@ -1065,8 +1065,10 @@ void ami_handle_msg(void)
 							ami_update_throbber(gwin,true);
 							// fall through
 						case AMINS_FRAME:
-							GetAttr(SPACE_AreaBox,gwin->gadgets[GID_BROWSER],(ULONG *)&bbox);	
-							browser_window_reformat(gwin->bw,bbox->Width,bbox->Height);
+							//GetAttr(SPACE_AreaBox,gwin->gadgets[GID_BROWSER],(ULONG *)&bbox);
+							//browser_reformat_pending = true;
+							gwin->bw->reformat_pending = true;
+							//browser_window_reformat(gwin->bw,bbox->Width,bbox->Height);
 							gwin->redraw_required = true;
 						break;
 					}
@@ -2196,14 +2198,22 @@ void ami_do_redraw(struct gui_window_2 *g,bool scroll)
 	if (c->locked) return;
 
 	current_redraw_browser = g->bw;
-
-//	currp = &glob.rp;
+	currp = &glob.rp;
 
 	width=bbox->Width;
 	height=bbox->Height;
 	xoffset=bbox->Left;
 	yoffset=bbox->Top;
 	plot = amiplot;
+
+	if(g->bw->reformat_pending)
+	{
+		Forbid();
+		browser_window_reformat(g->bw,width,height);
+		Permit();
+		g->bw->reformat_pending = false;
+		scroll = FALSE;
+	}
 
 //	if (c->type == CONTENT_HTML) scale = 1;
 
