@@ -18,7 +18,7 @@
 
 	(if (= #sobj-version 0)
 		(
-			(transcript "Date compare copy " #sobj)
+			(transcript "Date compare " #sobj)
 
 			(if (exists (tackon "SObjs:" #sobj))
 				(
@@ -79,25 +79,41 @@
 
 			(if (<> #copy 0)
 				(
-					(copyfiles
-						(prompt "Copying " #sobj "...")
-						(help @copyfiles-help)
-						(source (tackon "SObjs/" #sobj))
-						(dest "SObjs:")
-						(optional "nofail" "force")
+					(if (<> #AutoInstall 1)
+						(
+							(copyfiles
+								(prompt "Copying " #sobj "...")
+								(help @copyfiles-help)
+								(source (tackon "SObjs/" #sobj))
+								(dest "SObjs:")
+								(optional "nofail" "force")
+							)
+						)
+						;else
+						(
+							(run "CopyStore SObjs/" #sobj " SObjs:")
+						)
 					)
 				)
 			)
 		)
 		; else if version info is available
 		(
-			(copylib
-				(prompt "Copying " #sobj "...")
-				(help @copylib-help)
-				(source (tackon "SObjs/" #sobj))
-				(dest "SObjs:")
-				(optional "nofail" "force")
-				(confirm "expert")
+			(if (<> #AutoInstall 1)
+				(
+					(copylib
+						(prompt "Copying " #sobj "...")
+						(help @copylib-help)
+						(source (tackon "SObjs/" #sobj))
+						(dest "SObjs:")
+						(optional "nofail" "force")
+						(confirm "expert")
+					)
+				)
+				;else
+				(
+					(run "CopyStore SObjs/" #sobj " SObjs:")
+				)
 			)
 		)
 	)
