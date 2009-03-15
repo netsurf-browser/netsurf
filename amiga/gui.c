@@ -1999,10 +1999,17 @@ void gui_window_destroy(struct gui_window *g)
 
 	if(!g) return;
 
-//	if(g->shared->searchwin)
-//		if(g->shared->searchwin->gwin == g) ami_search_close();
+	if(g->shared->searchwin && (g->shared->searchwin->gwin == g))
+	{
+		ami_search_close();
+		win_destroyed = true;
+	}
 
-//	if(g->hw) ami_history_close(g->hw);
+	if(g->hw)
+	{
+		ami_history_close(g->hw);
+		win_destroyed = true;
+	}
 
 	if(g->shared->tabs > 1)
 	{
