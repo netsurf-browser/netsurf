@@ -195,22 +195,19 @@ bool ami_history_click(struct history_window *hw,uint16 code)
 	width=bbox->Width;
 	height=bbox->Height;
 
-	if((x>=0) && (y>=0) && (x<width) && (y<height))
+	switch(code)
 	{
-		switch(code)
-		{
-			case SELECTUP:
-				history_click(hw->bw,history_current,x,y,false);
-				ami_history_redraw(hw);
-				ami_do_redraw(hw->bw->window->shared,false);
-			break;
+		case SELECTUP:
+			history_click(hw->bw,history_current,x,y,false);
+			ami_history_redraw(hw);
+			ami_do_redraw(hw->bw->window->shared,false);
+		break;
 
-			case MIDDLEUP:
-				history_click(hw->bw,history_current,x,y,true);
-				ami_history_redraw(hw);
-			break;
+		case MIDDLEUP:
+			history_click(hw->bw,history_current,x,y,true);
+			ami_history_redraw(hw);
+		break;
 
-		}
 	}
 
 	return true;
