@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008,2009 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -23,6 +23,7 @@
 #define GLOBAL_HISTORY_RECENT_URLS 16
 
 void ami_global_history_initialise(void);
+void ami_global_history_free(void);
 
 struct tree *global_history_tree;
 #endif

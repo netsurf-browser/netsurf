@@ -72,6 +72,7 @@
 #include "amiga/search.h"
 #include <devices/inputevent.h>
 #include "amiga/history_local.h"
+#include "amiga/font.h"
 
 #ifdef NS_AMIGA_CAIRO
 #include <cairo/cairo-amigaos.h>
@@ -246,16 +247,16 @@ void gui_init(int argc, char** argv)
 
 	for(i=0;i<10;i++)
 	{
-		strcpy(&lang,"Resources/");
+		strcpy(lang,"Resources/");
 		if(locale->loc_PrefLanguages[i])
 		{
-			strcat(&lang,messages_get(locale->loc_PrefLanguages[i]));
+			strcat(lang,messages_get(locale->loc_PrefLanguages[i]));
 		}
 		else
 		{
 			continue;
 		}
-		strcat(&lang,"/messages");
+		strcat(lang,"/messages");
 //		printf("%s\n",lang);
 		if(lock=Lock(lang,ACCESS_READ))
 		{
@@ -267,7 +268,7 @@ void gui_init(int argc, char** argv)
 
 	if(!found)
 	{
-		strcpy(&lang,"Resources/en/messages");
+		strcpy(lang,"Resources/en/messages");
 	}
 
 	CloseLocale(locale);
@@ -374,13 +375,28 @@ void gui_init(int argc, char** argv)
 	ami_cookies_initialise();
 	save_complete_init();
 
-	strcpy(&throbberfile,option_theme);
-	AddPart(&throbberfile,"Theme",100);
+	strcpy(throbberfile,option_theme);
+	AddPart(throbberfile,"Theme",100);
+
+	lock = Lock(throbberfile,ACCESS_READ);
+
+	if(!lock)
+	{
+		warn_user("ThemeApplyErr",option_theme);
+		strcpy(throbberfile,"Resources/Themes/Default/Theme");
+		free(option_theme);
+		option_theme = (char *)strdup("Resources/Themes/Default");		
+	}
+	else
+	{
+		UnLock(lock);
+	}
+
 	messages_load(throbberfile);
 
 	ami_init_mouse_pointers();
 
-	ami_get_theme_filename(&throbberfile,"theme_throbber");
+	ami_get_theme_filename(throbberfile,"theme_throbber");
 	throbber_frames=atoi(messages_get("theme_throbber_frames"));
 
 	if(dto = NewDTObject(throbberfile,
@@ -575,8 +591,8 @@ void gui_init2(int argc, char** argv)
 			if(i==0) continue;
 			if((wbarg->wa_Lock)&&(*wbarg->wa_Name))
 			{
-				DevNameFromLock(wbarg->wa_Lock,&fullpath,1024,DN_FULLPATH);
-				AddPart(&fullpath,wbarg->wa_Name,1024);
+				DevNameFromLock(wbarg->wa_Lock,fullpath,1024,DN_FULLPATH);
+				AddPart(fullpath,wbarg->wa_Name,1024);
 
 				if(!temp_homepage_url) temp_homepage_url = path_to_url(fullpath);
 
@@ -754,7 +770,7 @@ void ami_handle_msg(void)
 
 						if(option_context_menu && rmbtrapped == FALSE)
 						{
-							SetWindowAttr(gwin->win,WA_RMBTrap,TRUE,1);
+							SetWindowAttr(gwin->win,WA_RMBTrap,(APTR)TRUE,1);
 							rmbtrapped=TRUE; // crash points to this line
 						}
 
@@ -1611,7 +1627,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		return NULL;
 	}
 
-	gwin->shared->scrollerhook.h_Entry = ami_scroller_hook;
+	gwin->shared->scrollerhook.h_Entry = (void *)ami_scroller_hook;
 	gwin->shared->scrollerhook.h_Data = gwin->shared;
 
 	switch(bw->browser_window_type)
@@ -1986,6 +2002,8 @@ void gui_window_destroy(struct gui_window *g)
 //	if(g->shared->searchwin)
 //		if(g->shared->searchwin->gwin == g) ami_search_close();
 
+//	if(g->hw) ami_history_close(g->hw);
+
 	if(g->shared->tabs > 1)
 	{
 		SetGadgetAttrs(g->shared->gadgets[GID_TABS],g->shared->win,NULL,
@@ -2045,7 +2063,7 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 		SetGadgetAttrs(g->shared->gadgets[GID_TABS],g->shared->win,NULL,
 						CLICKTAB_Labels,~0,
 						TAG_DONE);
-		newtitle = ami_utf8_easy(title);
+		newtitle = ami_utf8_easy((char *)title);
 		SetClickTabNodeAttrs(node,TNA_Text,newtitle,TAG_DONE);
 		if(newtitle) ami_utf8_free(newtitle);
 		RefreshSetGadgetAttrs(g->shared->gadgets[GID_TABS],g->shared->win,NULL,
@@ -2059,7 +2077,7 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 	if((cur_tab == g->tab) || (g->shared->tabs == 0))
 	{
 		if(g->shared->win->Title) ami_utf8_free(g->shared->win->Title);
-		SetWindowTitles(g->shared->win,ami_utf8_easy(title),nsscreentitle);
+		SetWindowTitles(g->shared->win,ami_utf8_easy((char *)title),nsscreentitle);
 	}
 }
 
@@ -2162,10 +2180,7 @@ void gui_window_redraw_window(struct gui_window *g)
 	if(g->tab_node) GetAttr(CLICKTAB_Current,g->shared->gadgets[GID_TABS],(ULONG *)&cur_tab);
 
 	if((cur_tab == g->tab) || (g->shared->tabs == 0))
-	{
 		g->shared->redraw_required = true;
-		g->shared->redraw_data = NULL;
-	}
 }
 
 void gui_window_update_box(struct gui_window *g,
@@ -2279,7 +2294,6 @@ void ami_do_redraw(struct gui_window_2 *g,bool scroll)
 	g->oldv = vcurrent;
 
 	g->redraw_required = false;
-	g->redraw_data = NULL;
 }
 
 bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
@@ -2312,7 +2326,6 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 			TAG_DONE);
 
 		g->shared->redraw_required = true;
-		g->shared->redraw_data = NULL;
 
 		g->scrollx = sx;
 		g->scrolly = sy;
@@ -2488,7 +2501,7 @@ void ami_init_mouse_pointers(void)
 
 		if(option_truecolour_mouse_pointers)
 		{
-			ami_get_theme_filename(&ptrfname,ptrs32[i]);
+			ami_get_theme_filename(ptrfname,ptrs32[i]);
 			if(dobj = GetIconTags(ptrfname,ICONGETA_UseFriendBitMap,TRUE,TAG_DONE))
 			{
 				if(IconControl(dobj, ICONCTRLA_GetImageDataFormat, &format, TAG_DONE))
@@ -2540,7 +2553,7 @@ void ami_init_mouse_pointers(void)
 
 		if(!mouseptrobj[i])
 		{
-			ami_get_theme_filename(&ptrfname,ptrs[i]);
+			ami_get_theme_filename(ptrfname,ptrs[i]);
 			if(ptrfile = Open(ptrfname,MODE_OLDFILE))
 			{
 				int mx,my;

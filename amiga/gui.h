@@ -71,6 +71,7 @@ enum
 };
 
 struct find_window;
+struct history_window;
 
 struct gui_download_window {
 	struct Window *win;
@@ -97,7 +98,6 @@ struct gui_window_2 {
 	struct Hook scrollerhook;
 	struct Hook popuphook;
 	struct form_control *control;
-	union content_msg_data *redraw_data;
 	browser_mouse_state mouse_state;
 	browser_mouse_state key_state;
 	ULONG throbber_update_count;
@@ -117,6 +117,7 @@ struct gui_window
 	int scrollx;
 	int scrolly;
 	char *dlfilename;
+	struct history_window *hw;
 };
 
 struct gui_globals

@@ -139,6 +139,7 @@ void ami_history_open(struct browser_window *bw, struct history *history)
 	}
 
 	hwindow->bw = bw;
+	bw->window->hw = hwindow;
 	ami_history_redraw(hwindow);
 }
 
@@ -217,6 +218,7 @@ bool ami_history_click(struct history_window *hw,uint16 code)
 
 void ami_history_close(struct history_window *hw)
 {
+	hw->bw->window->hw = NULL;
 	DisposeObject(hw->objects[OID_MAIN]);
 	DelObject(hw->node);
 	hwindow = NULL;

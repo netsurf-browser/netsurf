@@ -35,4 +35,5 @@ struct history_window {
 
 void ami_history_open(struct browser_window *bw, struct history *history);
 void ami_history_close(struct history_window *hw);
+BOOL ami_history_event(struct history_window *hw);
 #endif
