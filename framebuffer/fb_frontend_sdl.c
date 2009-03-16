@@ -207,9 +207,20 @@ fb_os_option_override(void)
 void
 fb_os_redraw(struct bbox_s *box)
 {
+        /*LOG(("%d,%d-%d,%d %d,%d", box->x0, box->y0, 
+             box->x1, box->y1 , 
+             box->x1 - box->x0, box->y1 - box->y0));*/
+
+        if ((box->y1 - box->y0) < 0) {
+                LOG(("WTF happened"));
+                return;
+        }
+
         SDL_UpdateRect(sdl_screen, 
-                       box->x0, box->y0, 
-                       box->x1 - box->x0, box->y1 - box->y0);
+                       box->x0, 
+                       box->y0, 
+                       box->x1 - box->x0, 
+                       box->y1 - box->y0);
 }
 
 /*
