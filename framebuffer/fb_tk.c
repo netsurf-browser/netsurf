@@ -43,7 +43,7 @@ enum fbtk_widgettype_e {
         FB_WIDGET_TYPE_FILL,
         FB_WIDGET_TYPE_TEXT,
         FB_WIDGET_TYPE_HSCROLL,
-        FB_WIDGET_TYPE_USER, 
+        FB_WIDGET_TYPE_USER,
 };
 
 typedef struct fbtk_widget_list_s fbtk_widget_list_t;
@@ -83,7 +83,7 @@ struct fbtk_widget_s {
                 struct {
                         framebuffer_t *fb;
                         fbtk_widget_t *rootw;
-                        fbtk_widget_t *input;                        
+                        fbtk_widget_t *input;
                 } root;
 
                 /* window */
@@ -150,7 +150,7 @@ get_root_widget(fbtk_widget_t *widget)
                 LOG(("Widget with null parent that is not the root widget!"));
                 return NULL;
         }
-                
+
         return widget;
 }
 
@@ -194,7 +194,7 @@ add_widget_to_window(fbtk_widget_t *window, fbtk_widget_t *widget)
                 }
 
                 newent = calloc(1, sizeof(struct fbtk_widget_list_s));
-                
+
                 newent->widget = widget;
                 newent->next = NULL;
                 newent->prev = prevent;
@@ -269,7 +269,7 @@ fb_redraw_fill(fbtk_widget_t *widget, void *pw)
         /* clear background */
         if ((widget->bg & 0xFF000000) != 0) {
                 /* transparent polygon filling isnt working so fake it */
-                plot.fill(fb_plot_ctx.x0, fb_plot_ctx.y0, 
+                plot.fill(fb_plot_ctx.x0, fb_plot_ctx.y0,
                           fb_plot_ctx.x1, fb_plot_ctx.y1,
                           widget->bg);
         }
@@ -282,26 +282,32 @@ fb_redraw_hscroll(fbtk_widget_t *widget, void *pw)
         int hscroll;
         int hpos;
 
-        plot.fill(fb_plot_ctx.x0, fb_plot_ctx.y0, 
+        plot.fill(fb_plot_ctx.x0, fb_plot_ctx.y0,
                   fb_plot_ctx.x1, fb_plot_ctx.y1,
                   widget->bg);
 
-        plot.rectangle(fb_plot_ctx.x0, 
+	plot.fill(fb_plot_ctx.x0 + 1,
+			fb_plot_ctx.y0 + 3,
+			fb_plot_ctx.x1 - 1,
+			fb_plot_ctx.y1 - 3,
+			widget->fg);
+
+        plot.rectangle(fb_plot_ctx.x0,
                        fb_plot_ctx.y0 + 2,
                        fb_plot_ctx.x1 - fb_plot_ctx.x0 - 1,
                        fb_plot_ctx.y1 - fb_plot_ctx.y0 - 5,
-                       1, 0x00000000, false, false);
+                       1, 0xFF000000, false, false);
 
         hscroll = ((widget->width - 4) * widget->u.scroll.pct) / 100 ;
         hpos = ((widget->width - 4) * widget->u.scroll.pos) / 100 ;
 
         LOG(("hscroll %d",hscroll));
 
-        plot.fill(fb_plot_ctx.x0 + 3 + hpos, 
-                  fb_plot_ctx.y0 + 5, 
-                  fb_plot_ctx.x0 + hscroll + hpos, 
+        plot.fill(fb_plot_ctx.x0 + 3 + hpos,
+                  fb_plot_ctx.y0 + 5,
+                  fb_plot_ctx.x0 + hscroll + hpos,
                   fb_plot_ctx.y0 + widget->height - 5,
-                  widget->fg);
+                  widget->bg);
 
         return 0;
 }
@@ -312,7 +318,7 @@ fb_redraw_bitmap(fbtk_widget_t *widget, void *pw)
         /* clear background */
         if ((widget->bg & 0xFF000000) != 0) {
                 /* transparent polygon filling isnt working so fake it */
-                plot.fill(fb_plot_ctx.x0, fb_plot_ctx.y0, 
+                plot.fill(fb_plot_ctx.x0, fb_plot_ctx.y0,
                           fb_plot_ctx.x1, fb_plot_ctx.y1,
                           widget->bg);
         }
@@ -339,10 +345,10 @@ fbtk_window_default_redraw(fbtk_widget_t *window, void *pw)
         while (lent != NULL) {
                 widget = lent->widget;
 
-                if ((widget->redraw != NULL) && 
+                if ((widget->redraw != NULL) &&
                     (widget->redraw_required)) {
                         fbtk_redraw_widget(widget);
-                        
+
                 }
                 lent = lent->next;
         }
@@ -368,7 +374,7 @@ fbtk_window_default_move(fbtk_widget_t *window, int x, int y, void *pw)
                     (y < widget->y + widget->height)) {
                         if (widget->move != NULL) {
                                 res = widget->move(widget,
-                                             x - widget->x, 
+                                             x - widget->x,
                                              y - widget->y,
                                              widget->movepw);
                         }
@@ -380,7 +386,7 @@ fbtk_window_default_move(fbtk_widget_t *window, int x, int y, void *pw)
 }
 
 static int
-fbtk_window_default_click(fbtk_widget_t *window, browser_mouse_state st, int x, int y, void *pw) 
+fbtk_window_default_click(fbtk_widget_t *window, browser_mouse_state st, int x, int y, void *pw)
 {
         fbtk_widget_list_t *lent;
         fbtk_widget_t *widget;
@@ -402,16 +408,16 @@ fbtk_window_default_click(fbtk_widget_t *window, browser_mouse_state st, int x, 
                         }
 
                         if (widget->click != NULL) {
-                                res = widget->click(widget, 
+                                res = widget->click(widget,
                                                     st,
-                                                    x - widget->x, 
+                                                    x - widget->x,
                                                     y - widget->y,
                                                     widget->clickpw);
                                 break;
                         }
 
- 
- 
+
+
                 }
                 lent = lent->next;
         }
@@ -424,7 +430,7 @@ fb_redraw_text(fbtk_widget_t *widget, void *pw)
         /* clear background */
         if ((widget->bg & 0xFF000000) != 0) {
                 /* transparent polygon filling isnt working so fake it */
-                plot.fill(fb_plot_ctx.x0, fb_plot_ctx.y0, 
+                plot.fill(fb_plot_ctx.x0, fb_plot_ctx.y0,
                           fb_plot_ctx.x1, fb_plot_ctx.y1,
                           widget->bg);
         }
@@ -468,14 +474,14 @@ text_input(fbtk_widget_t *widget, int value, void *pw)
                 widget->u.text.idx--;
                 widget->u.text.text[widget->u.text.idx] = 0;
                 break;
-            
+
         case '\r':
                 widget->u.text.enter(widget->u.text.pw, widget->u.text.text);
                 break;
 
         default:
                 /* allow for new character and null */
-                widget->u.text.text = realloc(widget->u.text.text, widget->u.text.idx + 2); 
+                widget->u.text.text = realloc(widget->u.text.text, widget->u.text.idx + 2);
                 widget->u.text.text[widget->u.text.idx] = value;
                 widget->u.text.text[widget->u.text.idx + 1] = '\0';
                 widget->u.text.idx++;
@@ -517,7 +523,7 @@ fbtk_get_x(fbtk_widget_t *widget)
 {
         int x = widget->x;
 
-        while (widget->parent != NULL) {                
+        while (widget->parent != NULL) {
                 widget = widget->parent;
                 x += widget->x;
         }
@@ -530,7 +536,7 @@ fbtk_get_y(fbtk_widget_t *widget)
 {
         int y = widget->y;
 
-        while (widget->parent != NULL) {                
+        while (widget->parent != NULL) {
                 widget = widget->parent;
                 y += widget->y;
         }
@@ -569,7 +575,7 @@ fbtk_set_handler_move(fbtk_widget_t *widget, fbtk_move_t move, void *pw)
 void *
 fbtk_get_userpw(fbtk_widget_t *widget)
 {
-        if ((widget == NULL) || (widget->type != FB_WIDGET_TYPE_USER)) 
+        if ((widget == NULL) || (widget->type != FB_WIDGET_TYPE_USER))
                 return NULL;
 
         return widget->u.user.pw;
@@ -578,7 +584,7 @@ fbtk_get_userpw(fbtk_widget_t *widget)
 void
 fbtk_set_text(fbtk_widget_t *widget, const char *text)
 {
-        if ((widget == NULL) || (widget->type != FB_WIDGET_TYPE_TEXT)) 
+        if ((widget == NULL) || (widget->type != FB_WIDGET_TYPE_TEXT))
                 return;
         if (widget->u.text.text != NULL) {
                 if (strcmp(widget->u.text.text, text) == 0)
@@ -594,7 +600,7 @@ fbtk_set_text(fbtk_widget_t *widget, const char *text)
 void
 fbtk_set_scroll(fbtk_widget_t *widget, int pct)
 {
-        if ((widget == NULL) || (widget->type != FB_WIDGET_TYPE_HSCROLL)) 
+        if ((widget == NULL) || (widget->type != FB_WIDGET_TYPE_HSCROLL))
                 return;
 
         widget->u.scroll.pct = pct;
@@ -605,7 +611,7 @@ fbtk_set_scroll(fbtk_widget_t *widget, int pct)
 void
 fbtk_set_scroll_pos(fbtk_widget_t *widget, int pos)
 {
-        if ((widget == NULL) || (widget->type != FB_WIDGET_TYPE_HSCROLL)) 
+        if ((widget == NULL) || (widget->type != FB_WIDGET_TYPE_HSCROLL))
                 return;
 
         widget->u.scroll.pos = pos;
@@ -616,7 +622,7 @@ fbtk_set_scroll_pos(fbtk_widget_t *widget, int pos)
 void
 fbtk_set_bitmap(fbtk_widget_t *widget, struct bitmap *image)
 {
-        if ((widget == NULL) || (widget->type != FB_WIDGET_TYPE_BITMAP)) 
+        if ((widget == NULL) || (widget->type != FB_WIDGET_TYPE_BITMAP))
                 return;
 
         widget->u.bitmap.bitmap = image;
@@ -666,10 +672,10 @@ fbtk_count_children(fbtk_widget_t *widget)
 void
 fbtk_input(fbtk_widget_t *widget, uint32_t ucs4)
 {
-        fbtk_widget_t *input;                        
+        fbtk_widget_t *input;
 
         widget = get_root_widget(widget);
-        
+
         /* obtain widget with input focus */
         input = widget->u.root.input;
         if (input == NULL)
@@ -747,7 +753,7 @@ fbtk_redraw(fbtk_widget_t *widget)
 
         fb_cursor_clear(root->u.root.fb);
 
-        if (window->redraw != NULL) 
+        if (window->redraw != NULL)
                 fbtk_redraw_widget(window);
 
         root->redraw_required = false;
@@ -774,7 +780,7 @@ int fbtk_destroy_widget(fbtk_widget_t *widget)
 
 /************** Widget creation *************/
 fbtk_widget_t *
-fbtk_create_text(fbtk_widget_t *window, 
+fbtk_create_text(fbtk_widget_t *window,
                  int x, int y,
                  int width, int height,
                  colour bg, colour fg,
@@ -826,7 +832,7 @@ fbtk_width_height(fbtk_widget_t *parent, int x, int y, int *width, int *height)
         if ((*width + x) > parent->width) {
                 *width = parent->width - x;
         }
-        
+
         if (*height == 0) {
                 *height = parent->height - y;
         } else if (*height < 0) {
@@ -874,7 +880,7 @@ fbtk_create_hscroll(fbtk_widget_t *window, int x, int y, int width, int height, 
 }
 
 fbtk_widget_t *
-fbtk_create_button(fbtk_widget_t *window, 
+fbtk_create_button(fbtk_widget_t *window,
                    int x, int y,
                    colour c,
                    struct bitmap *image,
@@ -890,11 +896,11 @@ fbtk_create_button(fbtk_widget_t *window,
 }
 
 fbtk_widget_t *
-fbtk_create_writable_text(fbtk_widget_t *window, 
-                          int x, int y, 
-                          int width, int height, 
-                          colour bg, colour fg, 
-                          bool outline, 
+fbtk_create_writable_text(fbtk_widget_t *window,
+                          int x, int y,
+                          int width, int height,
+                          colour bg, colour fg,
+                          bool outline,
                           fbtk_enter_t enter, void *pw)
 {
         fbtk_widget_t *newt = fbtk_create_text(window, x, y, width, height, bg,fg,outline);
@@ -906,14 +912,14 @@ fbtk_create_writable_text(fbtk_widget_t *window,
         return newt;
 }
 
-/* create user widget 
+/* create user widget
  *
- * @param x coord relative to parent 
+ * @param x coord relative to parent
  */
 fbtk_widget_t *
-fbtk_create_user(fbtk_widget_t *window, 
-                 int x, int y, 
-                 int width, int height, 
+fbtk_create_user(fbtk_widget_t *window,
+                 int x, int y,
+                 int width, int height,
                  void *pw)
 {
         fbtk_widget_t *newu = new_widget(FB_WIDGET_TYPE_USER);
@@ -928,7 +934,7 @@ fbtk_create_user(fbtk_widget_t *window,
         if ((width + x) > window->width) {
                 width = window->width - x;
         }
-        
+
         if (height == 0) {
                 height = window->height - y;
         } else if (height < 0) {
@@ -949,21 +955,21 @@ fbtk_create_user(fbtk_widget_t *window,
 }
 
 
-/* create new window 
+/* create new window
  *
- * @param x coord relative to parent 
+ * @param x coord relative to parent
  */
 fbtk_widget_t *
-fbtk_create_window(fbtk_widget_t *parent, 
+fbtk_create_window(fbtk_widget_t *parent,
                    int x, int y, int width, int height)
 {
-        fbtk_widget_t *newwin; 
+        fbtk_widget_t *newwin;
 
         LOG(("Creating window %p %d,%d %d,%d",parent,x,y,width,height));
         if (parent == NULL)
                 return NULL;
 
-        if ((parent->type == FB_WIDGET_TYPE_ROOT) && 
+        if ((parent->type == FB_WIDGET_TYPE_ROOT) &&
             (parent->u.root.rootw != NULL)) {
                 LOG(("Using root window"));
             parent = parent->u.root.rootw;
@@ -980,7 +986,7 @@ fbtk_create_window(fbtk_widget_t *parent,
         if ((width + x) > parent->width) {
                 width = parent->width - x;
         }
-        
+
         if (height == 0) {
                 height = parent->height - y;
         } else if (height < 0) {

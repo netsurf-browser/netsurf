@@ -73,7 +73,7 @@ framebuffer_t *framebuffer;
 #define MAX(a,b) (((a) > (b)) ? (a) : (b))
 #endif
 
-/* private data for browser user widget */ 
+/* private data for browser user widget */
 struct browser_widget_s {
 	struct browser_window *bw; /**< The browser window connected to this gui window */
 	int scrollx, scrolly; /**< scroll offsets. */
@@ -106,8 +106,8 @@ fb_queue_redraw(struct fbtk_widget_s *widget, int x0, int y0, int x1, int y1)
         fbtk_request_redraw(widget);
 }
 
-static void fb_pan(fbtk_widget_t *widget, 
-                   struct browser_widget_s *bwidget, 
+static void fb_pan(fbtk_widget_t *widget,
+                   struct browser_widget_s *bwidget,
                    struct browser_window *bw)
 {
 	struct content *c;
@@ -118,7 +118,7 @@ static void fb_pan(fbtk_widget_t *widget,
 
 	c = bw->current_content;
 
-	if ((!c) || (c->locked)) 
+	if ((!c) || (c->locked))
                 return;
 
         height = fbtk_get_height(widget);
@@ -152,7 +152,7 @@ static void fb_pan(fbtk_widget_t *widget,
 
 		LOG(("panning up %d", bwidget->pany));
 
-		fb_plotters_move_block(x, y, 
+		fb_plotters_move_block(x, y,
                                        width, height + bwidget->pany,
                                        x, y - bwidget->pany);
 		bwidget->scrolly += bwidget->pany;
@@ -180,7 +180,7 @@ static void fb_pan(fbtk_widget_t *widget,
 
 		LOG(("panning left %d", bwidget->panx));
 
-		fb_plotters_move_block(x, y, 
+		fb_plotters_move_block(x, y,
                                        width + bwidget->panx, height ,
                                        x - bwidget->panx, y );
 		bwidget->scrollx += bwidget->panx;
@@ -207,8 +207,8 @@ static void fb_pan(fbtk_widget_t *widget,
 	bwidget->pany = 0;
 }
 
-static void fb_redraw(fbtk_widget_t *widget, 
-                      struct browser_widget_s *bwidget, 
+static void fb_redraw(fbtk_widget_t *widget,
+                      struct browser_widget_s *bwidget,
                       struct browser_window *bw)
 {
 	struct content *c;
@@ -219,7 +219,7 @@ static void fb_redraw(fbtk_widget_t *widget,
 
 	c = bw->current_content;
 
-	if ((!c) || (c->locked)) 
+	if ((!c) || (c->locked))
                 return;
 
         height = fbtk_get_height(widget);
@@ -295,7 +295,7 @@ void gui_init(int argc, char** argv)
 	fb_find_resource(buf, "messages", "./framebuffer/res/messages");
 	LOG(("Using '%s' as Messages file", buf));
 	messages_load(buf);
-        
+
         /* load browser options */
 	fb_find_resource(buf, "Options", "~/.netsurf/Options");
 	LOG(("Using '%s' as Preferences file", buf));
@@ -391,10 +391,10 @@ void gui_quit(void)
 }
 
 /* called back when click in browser window */
-static int 
-fb_browser_window_click(fbtk_widget_t *widget, 
-                        browser_mouse_state st, 
-                        int x, int y, 
+static int
+fb_browser_window_click(fbtk_widget_t *widget,
+                        browser_mouse_state st,
+                        int x, int y,
                         void *pw)
 {
         struct browser_window *bw = pw;
@@ -403,23 +403,23 @@ fb_browser_window_click(fbtk_widget_t *widget,
         LOG(("browser window clicked at %d,%d",x,y));
         browser_window_mouse_click(bw,
                                    st,
-                                   x + bwidget->scrollx, 
-                                   y + bwidget->scrolly);        
+                                   x + bwidget->scrollx,
+                                   y + bwidget->scrolly);
         return 0;
 }
 
 /* called back when movement in browser window */
-static int 
-fb_browser_window_move(fbtk_widget_t *widget, 
-                        int x, int y, 
+static int
+fb_browser_window_move(fbtk_widget_t *widget,
+                        int x, int y,
                         void *pw)
 {
         struct browser_window *bw = pw;
         struct browser_widget_s *bwidget = fbtk_get_userpw(widget);
 
-        browser_window_mouse_track(bw, 
-                                   0, 
-                                   x + bwidget->scrollx, 
+        browser_window_mouse_track(bw,
+                                   0,
+                                   x + bwidget->scrollx,
                                    y + bwidget->scrolly);
 
         return 0;
@@ -467,8 +467,8 @@ fb_browser_window_input(fbtk_widget_t *widget, int value, void *pw)
 
 /* left icon click routine */
 static int
-fb_leftarrow_click(fbtk_widget_t *widget, 
-                   browser_mouse_state st, 
+fb_leftarrow_click(fbtk_widget_t *widget,
+                   browser_mouse_state st,
                    int x, int y, void *pw)
 {
         struct browser_window *bw = pw;
@@ -536,27 +536,27 @@ fb_url_enter(void *pw, char *text)
         return 0;
 }
 
-static int 
-fb_url_move(fbtk_widget_t *widget, 
-            int x, int y, 
+static int
+fb_url_move(fbtk_widget_t *widget,
+            int x, int y,
             void *pw)
 {
         fb_cursor_set(framebuffer->cursor, &caret_image);
         return 0;
 }
 
-static int 
-set_ptr_default_move(fbtk_widget_t *widget, 
-            int x, int y, 
+static int
+set_ptr_default_move(fbtk_widget_t *widget,
+            int x, int y,
             void *pw)
 {
         fb_cursor_set(framebuffer->cursor, &pointer_image);
         return 0;
 }
 
-static int 
-set_ptr_hand_move(fbtk_widget_t *widget, 
-            int x, int y, 
+static int
+set_ptr_hand_move(fbtk_widget_t *widget,
+            int x, int y,
             void *pw)
 {
         fb_cursor_set(framebuffer->cursor, &hand_image);
@@ -580,14 +580,14 @@ gui_create_browser_window(struct browser_window *bw,
                 return NULL;
 
         /* seems we need to associate the gui window with the underlying
-         * browser window 
+         * browser window
          */
         gw->bw = bw;
 
 
         switch(bw->browser_window_type) {
 	case BROWSER_WINDOW_NORMAL:
-                gw->window = fbtk_create_window(fbtk, 0, 0, 0, 0); 
+                gw->window = fbtk_create_window(fbtk, 0, 0, 0, 0);
 
                 top = 30;
                 bot = -50;
@@ -615,17 +615,17 @@ gui_create_browser_window(struct browser_window *bw,
                 fbtk_set_handler_move(widget, set_ptr_hand_move, bw);
 
                 /* url widget */
-                gw->url = fbtk_create_writable_text(gw->window, 
-                                                    125 , 3, 
-                                                    fbtk_get_width(gw->window) - 160, 24, 
-                                                    FB_COLOUR_WHITE, 
-                                                    FB_COLOUR_BLACK, 
-                                                    true, 
-                                                    fb_url_enter, 
+                gw->url = fbtk_create_writable_text(gw->window,
+                                                    125 , 3,
+                                                    fbtk_get_width(gw->window) - 160, 24,
+                                                    FB_COLOUR_WHITE,
+                                                    FB_COLOUR_BLACK,
+                                                    true,
+                                                    fb_url_enter,
                                                     bw);
                 fbtk_set_handler_move(gw->url, fb_url_move, bw);
 
-                gw->throbber = fbtk_create_bitmap(gw->window, 
+                gw->throbber = fbtk_create_bitmap(gw->window,
                                                   130 + fbtk_get_width(gw->url),
                                                   3,
                                                   FB_FRAME_COLOUR,
@@ -636,10 +636,10 @@ gui_create_browser_window(struct browser_window *bw,
                 /* add status area widget, width of framebuffer less some for
                  * scrollbar
                  */
-                gw->status = fbtk_create_text(gw->window, 
-                                              0 , fbtk_get_height(gw->window) - 20, 
-                                              fbtk_get_width(gw->window) - 200, 20, 
-                                              FB_FRAME_COLOUR, FB_COLOUR_BLACK, 
+                gw->status = fbtk_create_text(gw->window,
+                                              0 , fbtk_get_height(gw->window) - 20,
+                                              fbtk_get_width(gw->window) - 200, 20,
+                                              FB_FRAME_COLOUR, FB_COLOUR_BLACK,
                                               false);
 
                 fbtk_set_handler_move(gw->status, set_ptr_default_move, bw);
@@ -648,30 +648,30 @@ gui_create_browser_window(struct browser_window *bw,
                 fbtk_create_button(gw->window, fbtk_get_width(gw->window) - 200, fbtk_get_height(gw->window) - 20, FB_FRAME_COLOUR, &scrolll, fb_scrolll_click, bw);
                 fbtk_create_button(gw->window, fbtk_get_width(gw->window) - 20, fbtk_get_height(gw->window) - 20, FB_FRAME_COLOUR, &scrollr, fb_scrollr_click, bw);
 
-                gw->hscroll = fbtk_create_hscroll(gw->window, 
-                                                  fbtk_get_width(gw->window) - 180, 
-                                                  fbtk_get_height(gw->window) - 20, 
-                                                  160, 
-                                                  20, 
-                                                  FB_COLOUR_BLACK, 
+                gw->hscroll = fbtk_create_hscroll(gw->window,
+                                                  fbtk_get_width(gw->window) - 180,
+                                                  fbtk_get_height(gw->window) - 20,
+                                                  160,
+                                                  20,
+                                                  FB_SCROLL_COLOUR,
                                                   FB_FRAME_COLOUR);
 
                 break;
 
         case BROWSER_WINDOW_FRAME:
-                gw->window = fbtk_create_window(bw->parent->window->window, 0, 0, 0, 0); 
+                gw->window = fbtk_create_window(bw->parent->window->window, 0, 0, 0, 0);
                 LOG(("create frame"));
                 break;
 
         default:
-                gw->window = fbtk_create_window(bw->parent->window->window, 0, 0, 0, 0); 
+                gw->window = fbtk_create_window(bw->parent->window->window, 0, 0, 0, 0);
                 LOG(("unhandled type"));
 
         }
 
         browser_widget = calloc(1, sizeof(struct browser_widget_s));
-        
-        gw->browser = fbtk_create_user(gw->window, 0, top, 0, bot, browser_widget); 
+
+        gw->browser = fbtk_create_user(gw->window, 0, top, 0, bot, browser_widget);
 
         fbtk_set_handler_click(gw->browser, fb_browser_window_click, bw);
         fbtk_set_handler_input(gw->browser, fb_browser_window_input, gw);
@@ -721,10 +721,10 @@ void gui_window_redraw_window(struct gui_window *g)
 void gui_window_update_box(struct gui_window *g,
 		const union content_msg_data *data)
 {
-        fb_queue_redraw(g->browser, 
-                        data->redraw.x, 
+        fb_queue_redraw(g->browser,
+                        data->redraw.x,
                         data->redraw.y,
-                        data->redraw.x + data->redraw.width, 
+                        data->redraw.x + data->redraw.width,
                         data->redraw.y + data->redraw.height);
 }
 
@@ -771,10 +771,10 @@ void gui_window_position_frame(struct gui_window *g, int x0, int y0,
         py = fbtk_get_y(parent->browser) + y0;
         w = x1 - x0;
         h = y1 - y0;
-        if (w > (fbtk_get_width(parent->browser) - px)) 
+        if (w > (fbtk_get_width(parent->browser) - px))
             w = fbtk_get_width(parent->browser) - px;
 
-        if (h > (fbtk_get_height(parent->browser) - py)) 
+        if (h > (fbtk_get_height(parent->browser) - py))
             h = fbtk_get_height(parent->browser) - py;
 
         fbtk_set_pos_and_size(g->window, px, py , w , h);
@@ -820,7 +820,7 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 }
 
 void gui_window_hide_pointer(struct gui_window *g)
-{        
+{
 }
 
 void gui_window_set_url(struct gui_window *g, const char *url)

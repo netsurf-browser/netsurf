@@ -1,4 +1,5 @@
 
+#define FB_SCROLL_COLOUR 0xFF888888
 #define FB_FRAME_COLOUR 0xFFDDDDDD
 #define FB_COLOUR_BLACK 0xFF000000
 #define FB_COLOUR_WHITE 0xFFFFFFFF
@@ -41,10 +42,10 @@ fbtk_widget_t *fbtk_init(framebuffer_t *fb);
  * @param x The x location relative to the parent window.
  * @param y the y location relative to the parent window.
  * @param width The width of the window. 0 indicates parents width should be
- *              used. Negative value indicates parents width less the value 
- *              should be used. The width is limited to lie within the parent 
+ *              used. Negative value indicates parents width less the value
+ *              should be used. The width is limited to lie within the parent
  *              window.
- * @param height The height of the window limited in a similar way to the 
+ * @param height The height of the window limited in a similar way to the
  *               /a width.
  * @param c The background colour.
  * @return new window widget handle or NULL on error.
@@ -52,18 +53,18 @@ fbtk_widget_t *fbtk_init(framebuffer_t *fb);
 fbtk_widget_t *fbtk_create_window(fbtk_widget_t *parent, int x, int y, int width, int height);
 
 /** Create a text widget.
- * 
+ *
  * @param window The window to add the text widget to.
- * @return new widget handle or NULL on error. 
+ * @return new widget handle or NULL on error.
  */
 fbtk_widget_t *fbtk_create_text(fbtk_widget_t *window, int x, int y, int width, int height, colour bg, colour fg, bool outline);
 
 /** Create a bitmap widget.
- * 
+ *
  * Create a widget which shows a bitmap.
- * 
+ *
  * @param window The window to add the bitmap widget to.
- * @return new widget handle or NULL on error. 
+ * @return new widget handle or NULL on error.
  */
 fbtk_widget_t *fbtk_create_bitmap(fbtk_widget_t *window, int x, int y, colour c,struct bitmap *image);
 
@@ -72,7 +73,7 @@ fbtk_widget_t *fbtk_create_bitmap(fbtk_widget_t *window, int x, int y, colour c,
  * Create a widget which is a filled rectangle, usually used for backgrounds.
  *
  * @param window The window to add the filled area widget to.
- * @return new widget handle or NULL on error. 
+ * @return new widget handle or NULL on error.
  */
 fbtk_widget_t *
 fbtk_create_fill(fbtk_widget_t *window, int x, int y, int width, int height, colour c);
@@ -82,40 +83,40 @@ fbtk_create_fill(fbtk_widget_t *window, int x, int y, int width, int height, col
  * Create a horizontal scroll widget.
  *
  * @param window The window to add the filled area widget to.
- * @return new widget handle or NULL on error. 
+ * @return new widget handle or NULL on error.
  */
 fbtk_widget_t *
 fbtk_create_hscroll(fbtk_widget_t *window, int x, int y, int width, int height, colour fg, colour bg);
 
 /** Create a user widget.
- * 
+ *
  * Create a widget which is to be handled entirely by the calling application.
- * 
+ *
  * @param window The window to add the user widget to.
  * @param pw The private pointer which can be read using ::fbtk_get_pw
- * @return new widget handle or NULL on error. 
+ * @return new widget handle or NULL on error.
  */
 fbtk_widget_t *fbtk_create_user(fbtk_widget_t *window, int x, int y, int width, int height, void *pw);
 
 
 /** Create a button widget.
- * 
+ *
  * Helper function which creates a bitmap widget and associate a handler for
  * when it is clicked.
- * 
+ *
  * @param window The window to add the button widget to.
- * @return new widget handle or NULL on error. 
+ * @return new widget handle or NULL on error.
  */
 fbtk_widget_t *fbtk_create_button(fbtk_widget_t *window, int x, int y, colour c, struct bitmap *image, fbtk_mouseclick_t click, void *pw);
 
 /** Create a writable text widget.
- * 
+ *
  * Helper function which creates a text widget and configures an input handler
  * to create a writable text field. This call is equivalent to calling
  * ::fbtk_create_text followed by ::fbtk_writable_text
  *
  * @param window The window to add the text widget to.
- * @return new widget handle or NULL on error. 
+ * @return new widget handle or NULL on error.
  */
 fbtk_widget_t *fbtk_create_writable_text(fbtk_widget_t *window, int x, int y, int width, int height, colour bg, colour fg, bool outline, fbtk_enter_t enter, void *pw);
 
@@ -172,11 +173,11 @@ void fbtk_move_pointer(fbtk_widget_t *widget, int x, int y, bool relative);
  */
 void fbtk_click(fbtk_widget_t *widget, browser_mouse_state st);
 
-/** Input has been recived 
+/** Input has been recived
  */
 void fbtk_input(fbtk_widget_t *widget, uint32_t ucs4);
 
-/** Indicate a widget has to be redrawn 
+/** Indicate a widget has to be redrawn
  */
 void fbtk_request_redraw(fbtk_widget_t *widget);
 
