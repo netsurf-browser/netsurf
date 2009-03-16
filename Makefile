@@ -468,6 +468,7 @@ endif
 
 ifeq ($(TARGET),framebuffer)
   $(eval $(call feature_enabled,MNG,-DWITH_MNG,-lmng,PNG support))
+  $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG support))
 
   ifeq ($(NETSURF_FB_FONTLIB),freetype)
 	CFLAGS += -DFB_USE_FREETYPE $(shell freetype-config --cflags)
@@ -505,9 +506,10 @@ ifeq ($(TARGET),framebuffer)
 
   ifeq ($(NETSURF_FB_FRONTEND),able)
     $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif,NetSurf GIF decoder))
+    $(eval $(call feature_enabled,HUBBUB,-DWITH_HUBBUB,-lhubbub,Hubbub))
     CC=arm-able-gcc
     CFLAGS += -std=c99 -I. -I/usr/lib/able/include -Dsmall $(WARNFLAGS)
-    LDFLAGS += -lxml2 -lz -ljpeg -lcurl -lm 
+    LDFLAGS += -lparserutils -lxml2 -lz -ljpeg -lcurl -lm 
     SUBTARGET := -able
   endif
 

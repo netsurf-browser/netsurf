@@ -23,13 +23,31 @@
 #include <unistd.h>
 #include <string.h>
 #include <able/fb.h>
+#include <able/input.h>
 
 #include "css/css.h"
 #include "desktop/options.h"
 #include "desktop/gui.h"
 #include "desktop/options.h"
 #include "utils/messages.h"
-#include "desktop/textinput.h"
+/* #include "desktop/textinput.h" cannot include this because it conflicts with the able defines */
+#define NSKEY_PAGE_DOWN 135
+#define NSKEY_PAGE_UP 134
+#define NSKEY_DOWN 31
+#define NSKEY_UP 30
+#define NSKEY_LEFT 28
+#define NSKEY_RIGHT 29
+#define NSKEY_ESCAPE 27
+
+#define KEY_LEFTSHIFT 1
+#define KEY_RIGHTSHIFT 2
+#define KEY_PAGEDOWN 3
+#define KEY_PAGEUP 4
+#define KEY_DOWN 5
+#define KEY_UP 6
+#define KEY_LEFT 7
+#define KEY_RIGHT 8
+#define KEY_ESC 9
 
 #include "framebuffer/fb_gui.h"
 #include "framebuffer/fb_tk.h"
@@ -40,7 +58,9 @@
 #include "utils/log.h"
 
 int devfd;
+int eventfd;
 static const char *fbdevname = "(fb0)";
+static const char *inputdevname = "(inputevent)";
 
 framebuffer_t *fb_os_init(int argc, char** argv)
 {
@@ -94,6 +114,8 @@ framebuffer_t *fb_os_init(int argc, char** argv)
         /* set stdin to nonblocking */
         fcntl(0, F_SETFL, O_NONBLOCK);
 
+        eventfd = open(inputdevname, O_RDONLY | O_NONBLOCK );
+
         return newfb;
 }
 
@@ -101,19 +123,55 @@ void fb_os_quit(framebuffer_t *fb)
 {
 }
 
+static int keymap[] = {
+          -1,  -1, '1',  '2', '3', '4', '5', '6', '7', '8', /*  0 -  9 */
+         '9', '0', '-',  '=',   8,   9, 'q', 'w', 'e', 'r', /* 10 - 19 */
+         't', 'y', 'u',  'i', 'o', 'p', '[', ']',  13,  -1, /* 20 - 29 */
+         'a', 's', 'd',  'f', 'g', 'h', 'j', 'k', 'l', ';', /* 30 - 39 */
+         '\'', '#', -1, '\\', 'z', 'x', 'c', 'v', 'b', 'n', /* 40 - 49 */
+         'm', ',', '.',  '/',  -1,  -1,  -1, ' ',  -1,  -1, /* 50 - 59 */
+};
+
+static int sh_keymap[] = {
+          -1,  -1, '!', '"', 0xa3, '$', '%', '^', '&', '*', /*  0 -  9 */
+         '(', ')', '_', '+',    8,   9, 'Q', 'W', 'E', 'R', /* 10 - 19 */
+         'T', 'Y', 'U', 'I',  'O', 'P', '{', '}',  13,  -1, /* 20 - 29 */
+         'A', 'S', 'D', 'F',  'G', 'H', 'J', 'K', 'L', ':', /* 30 - 39 */
+         '@', '~',  -1, '|',  'Z', 'X', 'C', 'V', 'B', 'N', /* 40 - 49 */
+         'M', '<', '>', '?',   -1,  -1,  -1, ' ',  -1,  -1, /* 50 - 59 */
+};
+
+/* performs character mapping */
+static int keycode_to_ucs4(int code, bool shift)
+{
+        int ucs4 = -1;
+
+        if (shift) {
+                if ((code >= 0) && (code < sizeof(sh_keymap)))
+                        ucs4 = sh_keymap[code];
+        } else {
+                if ((code >= 0) && (code < sizeof(keymap)))
+                        ucs4 = keymap[code];
+        }
+        return ucs4;
+}
+
 void fb_os_input(fbtk_widget_t *root, bool active) 
 {
         ssize_t amt;
         char key;
+        struct input_event event;
+        int ucs4 = -1;
+        static bool shift = false;
 
         amt = read(0, &key, 1);
 
         if (amt > 0) {
                 if (key == 'j') {
-                        fbtk_input(root, KEY_UP);
+                        fbtk_input(root, NSKEY_UP);
                 }
                 if (key == 'k') {
-                        fbtk_input(root, KEY_DOWN);
+                        fbtk_input(root, NSKEY_DOWN);
                 }
                 if (key == 'q') {
                         netsurf_quit = true;
@@ -122,6 +180,106 @@ void fb_os_input(fbtk_widget_t *root, bool active)
                         list_schedule();
                 }
         }
+
+        amt = read(eventfd, &event, sizeof(struct input_event));
+        if (amt == sizeof(struct input_event)) {
+                if (event.type == EV_KEY) {
+                        if (event.value == 0) {
+                                /* key up */
+                                switch (event.code) {
+                                case KEY_LEFTSHIFT:
+                                case KEY_RIGHTSHIFT:
+                                        shift = false;
+                                        break;
+
+                                case BTN_LEFT:
+                                        fbtk_click(root, BROWSER_MOUSE_CLICK_1);
+                                        break;
+                                }
+                                return;
+                        }
+
+                        switch (event.code) {
+                        case KEY_PAGEDOWN:
+                                ucs4 = NSKEY_PAGE_DOWN;
+                                break;
+
+                        case KEY_PAGEUP:
+                                ucs4 = NSKEY_PAGE_UP;
+                                break;
+
+                        case KEY_DOWN:
+                                ucs4 = NSKEY_DOWN;
+                                break;
+
+                        case KEY_UP:
+                                ucs4 = NSKEY_UP;
+                                break;
+
+                        case KEY_LEFT:
+                                ucs4 = NSKEY_LEFT;
+                                break;
+
+                        case KEY_RIGHT:
+                                ucs4 = NSKEY_RIGHT;
+                                break;
+
+                        case KEY_ESC:
+                                ucs4 = NSKEY_ESCAPE;
+                                break;
+
+                        case BTN_LEFT:
+                                fbtk_click(root, BROWSER_MOUSE_PRESS_1);
+                                break;
+
+                        case KEY_LEFTSHIFT:
+                        case KEY_RIGHTSHIFT:
+                                shift = true;
+                                break;
+
+                        default:
+                                ucs4 = keycode_to_ucs4(event.code, shift);
+
+                        }
+                } else if (event.type == EV_REL) {
+                        switch (event.code) {
+                        case REL_X:
+                                fbtk_move_pointer(root, event.value, 0, true);
+                                break;
+
+                        case REL_Y:
+                                fbtk_move_pointer(root, 0, event.value, true);
+                                break;
+
+                        case REL_WHEEL:
+                                if (event.value > 0)
+                                        fbtk_input(root, NSKEY_UP);
+                                else
+                                        fbtk_input(root, NSKEY_DOWN);
+                                break;
+                        }
+                } else if (event.type == EV_ABS) {
+                        switch (event.code) {
+                        case ABS_X:
+                                fbtk_move_pointer(root, event.value, -1, false);
+                                break;
+
+                        case ABS_Y:
+                                fbtk_move_pointer(root, -1, event.value, false);
+                                break;
+
+                        }
+                }
+
+                if (ucs4 != -1) {
+                        fbtk_input(root, ucs4);
+                        ucs4 = -1;
+                }
+
+
+        }
+
+        
 
 }
 
@@ -137,6 +295,11 @@ fb_os_option_override(void)
 void
 fb_os_redraw(struct bbox_s *box)
 {
+}
+
+char *realpath(const char *path, char *resolved_path)
+{
+        strcpy(resolved_path, path);
 }
 
 /*
