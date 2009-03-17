@@ -326,7 +326,7 @@ void gui_init(int argc, char** argv)
 		option_theme = (char *)strdup("PROGDIR:Resources/Themes/Default");
 
 	if((!option_arexx_dir) || (option_arexx_dir[0] == '\0'))
-		option_arexx_dir = (char *)strdup("Rexx");
+		option_arexx_dir = (char *)strdup("PROGDIR:Rexx");
 
 	if(!option_window_width) option_window_width = 800;
 	if(!option_window_height) option_window_height = 600;
