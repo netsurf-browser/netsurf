@@ -224,7 +224,7 @@ void gui_init(int argc, char** argv)
 
 	win_destroyed = false;
 
-	options_read("Resources/Options");
+	options_read("PROGDIR:Resources/Options");
 
 	verbose_log = option_verbose_log;
 
@@ -237,17 +237,17 @@ void gui_init(int argc, char** argv)
 
 	nsscreentitle = ASPrintf("NetSurf %s",netsurf_version);
 
-	if(lock=Lock("Resources/LangNames",ACCESS_READ))
+	if(lock=Lock("PROGDIR:Resources/LangNames",ACCESS_READ))
 	{
 		UnLock(lock);
-		messages_load("Resources/LangNames");
+		messages_load("PROGDIR:Resources/LangNames");
 	}
 
 	locale = OpenLocale(NULL);
 
 	for(i=0;i<10;i++)
 	{
-		strcpy(lang,"Resources/");
+		strcpy(lang,"PROGDIR:Resources/");
 		if(locale->loc_PrefLanguages[i])
 		{
 			strcat(lang,messages_get(locale->loc_PrefLanguages[i]));
@@ -268,18 +268,18 @@ void gui_init(int argc, char** argv)
 
 	if(!found)
 	{
-		strcpy(lang,"Resources/en/messages");
+		strcpy(lang,"PROGDIR:Resources/en/messages");
 	}
 
 	CloseLocale(locale);
 
 	messages_load(lang); // check locale language and read appropriate file
 
-	default_stylesheet_url = "file:///Resources/default.css"; //"http://www.unsatisfactorysoftware.co.uk/newlook.css"; //path_to_url(buf);
-	adblock_stylesheet_url = "file:///Resources/adblock.css";
+	default_stylesheet_url = "file:///PROGDIR:Resources/default.css"; //"http://www.unsatisfactorysoftware.co.uk/newlook.css"; //path_to_url(buf);
+	adblock_stylesheet_url = "file:///PROGDIR:Resources/adblock.css";
 
 #ifdef WITH_HUBBUB
-	if(hubbub_initialise("Resources/Aliases",myrealloc,NULL) != HUBBUB_OK)
+	if(hubbub_initialise("PROGDIR:Resources/Aliases",myrealloc,NULL) != HUBBUB_OK)
 	{
 		die(messages_get("NoMemory"));
 	}
@@ -288,20 +288,20 @@ void gui_init(int argc, char** argv)
 	css_screen_dpi = 72;
 
 	if((!option_cookie_file) || (option_cookie_file[0] == '\0'))
-		option_cookie_file = (char *)strdup("Resources/Cookies");
+		option_cookie_file = (char *)strdup("PROGDIR:Resources/Cookies");
 
 	if((!option_hotlist_file) || (option_hotlist_file[0] == '\0'))
-		option_hotlist_file = (char *)strdup("Resources/Hotlist");
+		option_hotlist_file = (char *)strdup("PROGDIR:Resources/Hotlist");
 
 	if((!option_url_file) || (option_url_file[0] == '\0'))
-		option_url_file = (char *)strdup("Resources/URLs");
+		option_url_file = (char *)strdup("PROGDIR:Resources/URLs");
 
 	if((!option_recent_file) || (option_recent_file[0] == '\0'))
-		option_recent_file = (char *)strdup("Resources/Recent");
+		option_recent_file = (char *)strdup("PROGDIR:Resources/Recent");
 
 /*
 	if((!option_cookie_jar) || (option_cookie_jar[0] == '\0'))
-		option_cookie_jar = (char *)strdup("Resources/CookieJar");
+		option_cookie_jar = (char *)strdup("PROGDIR:Resources/CookieJar");
 */
 
 	if((!option_ca_bundle) || (option_ca_bundle[0] == '\0'))
@@ -323,7 +323,7 @@ void gui_init(int argc, char** argv)
 		option_font_fantasy = (char *)strdup("DejaVu Serif");
 
 	if((!option_theme) || (option_theme[0] == '\0'))
-		option_theme = (char *)strdup("Resources/Themes/Default");
+		option_theme = (char *)strdup("PROGDIR:Resources/Themes/Default");
 
 	if((!option_arexx_dir) || (option_arexx_dir[0] == '\0'))
 		option_arexx_dir = (char *)strdup("Rexx");
@@ -383,9 +383,9 @@ void gui_init(int argc, char** argv)
 	if(!lock)
 	{
 		warn_user("ThemeApplyErr",option_theme);
-		strcpy(throbberfile,"Resources/Themes/Default/Theme");
+		strcpy(throbberfile,"PROGDIR:Resources/Themes/Default/Theme");
 		free(option_theme);
-		option_theme = (char *)strdup("Resources/Themes/Default");		
+		option_theme = (char *)strdup("PROGDIR:Resources/Themes/Default");		
 	}
 	else
 	{
