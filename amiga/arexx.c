@@ -150,7 +150,7 @@ STATIC VOID rx_tofront(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((
 
 STATIC VOID rx_geturl(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
-	if(curbw)
+	if(curbw && curbw->current_content)
 	{
 		strcpy(result,curbw->current_content->url);
 	}
