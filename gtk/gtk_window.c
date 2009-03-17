@@ -20,6 +20,7 @@
 #include <inttypes.h>
 #include "gtk/gtk_window.h"
 #include "desktop/browser.h"
+#include "desktop/history_core.h"
 #include "desktop/options.h"
 #include "desktop/textinput.h"
 #include "desktop/selection.h"
@@ -52,6 +53,7 @@ static gboolean nsgtk_window_keypress_event(GtkWidget *, GdkEventKey *,
 						gpointer);
 static gboolean nsgtk_window_size_allocate_event(GtkWidget *, GtkAllocation *,
 						gpointer);
+static void nsgtk_window_scrolled(GtkAdjustment *, gpointer);
 
 /* Other useful bits */
 static void nsgtk_redraw_caret(struct gui_window *g);
@@ -85,6 +87,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 {
 	struct gui_window *g;		/**< what we're creating to return */
         GtkPolicyType scrollpolicy;
+	GtkAdjustment *vadj;
+	GtkAdjustment *hadj;
 
 	g = malloc(sizeof(*g));
        	if (!g) {
@@ -140,6 +144,9 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 					    GTK_SHADOW_NONE);
 	g->viewport = GTK_VIEWPORT(gtk_bin_get_child(GTK_BIN(g->scrolledwindow)));
 	g->tab = NULL;
+	
+	vadj = gtk_viewport_get_vadjustment(g->viewport);
+	hadj = gtk_viewport_get_hadjustment(g->viewport);
 
         if (bw->parent != NULL)
         	/* Attach ourselves into our parent at the right point */
@@ -225,6 +232,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		nsgtk_window_keypress_event, g);
 	CONNECT(g->viewport, "size_allocate",
 		nsgtk_window_size_allocate_event, g);
+	CONNECT(vadj, "value-changed", nsgtk_window_scrolled, g);	
+	CONNECT(hadj, "value-changed", nsgtk_window_scrolled, g);		
 
         return g;
 }
@@ -582,6 +591,16 @@ gboolean nsgtk_window_size_allocate_event(GtkWidget *widget,
 	return TRUE;
 }
 
+void nsgtk_window_scrolled(GtkAdjustment *ga, gpointer data)
+{
+	struct gui_window *g = data;
+	int sx, sy;
+	
+	if (!g->setting_scroll) {
+		gui_window_get_scroll(g->bw->window, &sx, &sy);		
+		history_set_current_scroll(g->bw->history, sx, sy);
+	}
+}		
 
 void nsgtk_reflow_all_windows(void)
 {
@@ -718,8 +737,10 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
         if (y > (vupper - vpage))
                 y = vupper - vpage;
 
+	g->setting_scroll = true;
         gtk_adjustment_set_value(vadj, y);
         gtk_adjustment_set_value(hadj, x);
+	g->setting_scroll = false;
 }
 
 

@@ -46,5 +46,7 @@ bool history_redraw_rectangle(struct history *history,
 bool history_click(struct browser_window *bw, struct history *history,
 		int x, int y, bool new_window);
 const char *history_position_url(struct history *history, int x, int y);
+void history_set_current_scroll(struct history *history, int sx, int sy);
+bool history_get_current_scroll(struct history *history, int *sx, int *sy);
 
 #endif

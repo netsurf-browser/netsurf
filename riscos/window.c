@@ -2537,7 +2537,7 @@ bool ro_gui_window_keypress(wimp_key *key)
 				browser_window_set_scale(g->bw, scale, true);
 //				g->reformat_pending = true;
 //				if ((content) && (content->type != CONTENT_HTML))
-//					browser_window_update(g->bw, false);
+//					browser_window_update(g->bw);
 //				browser_reformat_pending = true;
 			}
 			return true;
