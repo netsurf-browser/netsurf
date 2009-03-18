@@ -489,19 +489,29 @@ static bool fb_16bpp_bitmap(int x, int y, int width, int height,
         /* plot the image */
         pvideo = fb_16bpp_get_xy_loc(x0, y0);
 
-        for (yloop = yoff; yloop < height; yloop += bitmap->width) {
-                for (xloop = 0; xloop < width; xloop++) {
-                        abpixel = pixel[yloop + xloop + xoff];
-                        if ((abpixel & 0xFF000000) != 0) {
-                                if ((abpixel & 0xFF000000) != 0xFF000000) {
-                                        abpixel = fb_plotters_ablend(abpixel, 
-                                         fb_16bpp_to_colour(*(pvideo + xloop)));
-                                }
-
+        if (bitmap->opaque) {
+                for (yloop = yoff; yloop < height; yloop += bitmap->width) {
+                        for (xloop = 0; xloop < width; xloop++) {
+                                abpixel = pixel[yloop + xloop + xoff];
                                 *(pvideo + xloop) = fb_colour_to_pixel(abpixel);
                         }
+                        pvideo += (framebuffer->linelen >> 1);
                 }
-                pvideo += (framebuffer->linelen >> 1);
+        } else {
+                for (yloop = yoff; yloop < height; yloop += bitmap->width) {
+                        for (xloop = 0; xloop < width; xloop++) {
+                                abpixel = pixel[yloop + xloop + xoff];
+                                if ((abpixel & 0xFF000000) != 0) {
+                                        if ((abpixel & 0xFF000000) != 0xFF000000) {
+                                                abpixel = fb_plotters_ablend(abpixel, 
+                                                                             fb_16bpp_to_colour(*(pvideo + xloop)));
+                                        }
+
+                                        *(pvideo + xloop) = fb_colour_to_pixel(abpixel);
+                                }
+                        }
+                        pvideo += (framebuffer->linelen >> 1);
+                }
         }
 
 	return true;
