@@ -43,7 +43,8 @@
 #include "css/css.h"
 #include "utils/messages.h"
 #include "desktop/gui.h"
-/* #include "desktop/textinput.h" cannot include this becaus eit conflicts with the linux defines */
+/* #include "desktop/textinput.h" cannot include this because it conflicts with
+    the linux defines */
 #define NSKEY_PAGE_DOWN 135
 #define NSKEY_PAGE_UP 134
 #define NSKEY_DOWN 31
@@ -75,17 +76,16 @@ unsigned char *fb_mem;
 int fb_mem_offset = 0;
 int fb_switch_state = FB_ACTIVE;
 
+static int fb,tty;
+static int orig_vt_no = 0;
+static struct vt_mode vt_mode;
 
-static int                       fb,tty;
-static int                       orig_vt_no = 0;
-static struct vt_mode            vt_mode;
-
-static int                       kd_mode;
-static struct vt_mode            vt_omode;
-static struct termios            term;
-static struct fb_var_screeninfo  fb_ovar;
-static unsigned short            ored[256], ogreen[256], oblue[256], otransp[256];
-static struct fb_cmap            ocmap = { 0, 256, ored, ogreen, oblue, otransp };
+static int kd_mode;
+static struct vt_mode vt_omode;
+static struct termios term;
+static struct fb_var_screeninfo fb_ovar;
+static unsigned short ored[256], ogreen[256], oblue[256], otransp[256];
+static struct fb_cmap ocmap = { 0, 256, ored, ogreen, oblue, otransp };
 
 typedef struct _input_dev {
         struct _input_dev *next;
@@ -109,24 +109,8 @@ struct DEVS devs_default = {
         .ttynr = "/dev/tty%d",
 };
 
-struct DEVS devs_devfs = {
-        .fb0 = "/dev/fb/0",
-        .fbnr = "/dev/fb/%d",
-        .ttynr = "/dev/vc/%d",
-};
 struct DEVS *devices;
 
-static void dev_init(void)
-{
-        struct stat dummy;
-
-        if (NULL != devices)
-                return;
-        if (0 == stat("/dev/.devfsd",&dummy))
-                devices = &devs_devfs;
-        else
-                devices = &devs_default;
-}
 
 static char *
 fconcat(const char *base, const char *leaf)
@@ -151,7 +135,8 @@ fb_open_input_devices(void)
                 return;
 
         while ((de = readdir(dir)) != NULL) {
-                if (fnmatch(option_fb_input_glob ? option_fb_input_glob : "event*",
+                if (fnmatch(option_fb_input_glob ?
+                            option_fb_input_glob : "event*",
                             de->d_name, 0) == 0) {
                         char *cc = fconcat(basepath, de->d_name);
                         int fd = open(cc, O_RDONLY | O_NONBLOCK);
@@ -189,13 +174,13 @@ fb_switch_init(void)
 {
         struct sigaction act,old;
 
-        memset(&act,0,sizeof(act));
-        act.sa_handler  = fb_switch_signal;
+        memset(&act, 0, sizeof(act));
+        act.sa_handler = fb_switch_signal;
         sigemptyset(&act.sa_mask);
-        sigaction(SIGUSR1,&act,&old);
-        sigaction(SIGUSR2,&act,&old);
+        sigaction(SIGUSR1, &act, &old);
+        sigaction(SIGUSR2, &act, &old);
 
-        if (-1 == ioctl(tty,VT_GETMODE, &vt_mode)) {
+        if (ioctl(tty,VT_GETMODE, &vt_mode) == -1) {
                 perror("ioctl VT_GETMODE");
                 exit(1);
         }
@@ -204,7 +189,7 @@ fb_switch_init(void)
         vt_mode.relsig = SIGUSR1;
         vt_mode.acqsig = SIGUSR2;
 
-        if (-1 == ioctl(tty,VT_SETMODE, &vt_mode)) {
+        if (ioctl(tty,VT_SETMODE, &vt_mode) == -1) {
                 perror("ioctl VT_SETMODE");
                 exit(1);
         }
@@ -214,73 +199,67 @@ fb_switch_init(void)
 /* -------------------------------------------------------------------- */
 /* initialisation & cleanup                                             */
 
-static void
-fb_memset (void *addr, int c, size_t len)
-{
-#if 1 /* defined(__powerpc__) */
-        unsigned int i, *p;
-
-        i = (c & 0xff) << 8;
-        i |= i << 16;
-        len >>= 2;
-        for (p = addr; len--; p++)
-                *p = i;
-#else
-        memset(addr, c, len);
-#endif
-}
-
 static int
 fb_setmode(const char *name, int bpp)
 {
         FILE *fp;
-        char line[80],label[32],value[16];
-        int  geometry=0, timings=0;
+        char line[80], label[32], value[16];
+        int geometry = 0;
+        int timings = 0;
 
         /* load current values */
-        if (ioctl(fb,FBIOGET_VSCREENINFO,&fb_var) == -1) {
+        if (ioctl(fb, FBIOGET_VSCREENINFO, &fb_var) == -1) {
                 perror("ioctl FBIOGET_VSCREENINFO");
                 exit(1);
         }
 
         if (name == NULL)
                 return -1;
+
         if ((fp = fopen("/etc/fb.modes","r")) == NULL)
                 return -1;
+
         while (NULL != fgets(line,79,fp)) {
-                if (1 == sscanf(line, "mode \"%31[^\"]\"",label) &&
-                    0 == strcmp(label,name)) {
+                if ((sscanf(line, "mode \"%31[^\"]\"", label) == 1) &&
+                    (strcmp(label,name) == 0)) {
                         /* fill in new values */
                         fb_var.sync  = 0;
                         fb_var.vmode = 0;
-                        while (NULL != fgets(line,79,fp) &&
-                               NULL == strstr(line,"endmode")) {
+                        while ((fgets(line,79,fp) != NULL) &&
+                               (strstr(line,"endmode") == NULL)) {
                                 if (5 == sscanf(line," geometry %d %d %d %d %d",
                                                 &fb_var.xres,&fb_var.yres,
                                                 &fb_var.xres_virtual,&fb_var.yres_virtual,
                                                 &fb_var.bits_per_pixel))
                                         geometry = 1;
+
                                 if (7 == sscanf(line," timings %d %d %d %d %d %d %d",
                                                 &fb_var.pixclock,
                                                 &fb_var.left_margin,  &fb_var.right_margin,
                                                 &fb_var.upper_margin, &fb_var.lower_margin,
                                                 &fb_var.hsync_len,    &fb_var.vsync_len))
                                         timings = 1;
+
                                 if (1 == sscanf(line, " hsync %15s",value) &&
                                     0 == strcasecmp(value,"high"))
                                         fb_var.sync |= FB_SYNC_HOR_HIGH_ACT;
+
                                 if (1 == sscanf(line, " vsync %15s",value) &&
                                     0 == strcasecmp(value,"high"))
                                         fb_var.sync |= FB_SYNC_VERT_HIGH_ACT;
+
                                 if (1 == sscanf(line, " csync %15s",value) &&
                                     0 == strcasecmp(value,"high"))
                                         fb_var.sync |= FB_SYNC_COMP_HIGH_ACT;
+
                                 if (1 == sscanf(line, " extsync %15s",value) &&
                                     0 == strcasecmp(value,"true"))
                                         fb_var.sync |= FB_SYNC_EXT;
+
                                 if (1 == sscanf(line, " laced %15s",value) &&
                                     0 == strcasecmp(value,"true"))
                                         fb_var.vmode |= FB_VMODE_INTERLACED;
+
                                 if (1 == sscanf(line, " double %15s",value) &&
                                     0 == strcasecmp(value,"true"))
                                         fb_var.vmode |= FB_VMODE_DOUBLE;
@@ -295,10 +274,11 @@ fb_setmode(const char *name, int bpp)
                         /* set */
                         fb_var.xoffset = 0;
                         fb_var.yoffset = 0;
-                        if (-1 == ioctl(fb,FBIOPUT_VSCREENINFO,&fb_var))
+                        if (ioctl(fb, FBIOPUT_VSCREENINFO, &fb_var) == -1)
                                 perror("ioctl FBIOPUT_VSCREENINFO");
+
                         /* look what we have now ... */
-                        if (-1 == ioctl(fb,FBIOGET_VSCREENINFO,&fb_var)) {
+                        if (ioctl(fb, FBIOGET_VSCREENINFO, &fb_var) == -1) {
                                 perror("ioctl FBIOGET_VSCREENINFO");
                                 exit(1);
                         }
@@ -315,7 +295,7 @@ fb_setvt(int vtno)
         char vtname[12];
 
         if (vtno < 0) {
-                if (-1 == ioctl(tty,VT_OPENQRY, &vtno) || vtno == -1) {
+                if ((ioctl(tty, VT_OPENQRY, &vtno) == -1) || (vtno == -1)) {
                         perror("ioctl VT_OPENQRY");
                         exit(1);
                 }
@@ -328,35 +308,19 @@ fb_setvt(int vtno)
                 fprintf(stderr,"access %s: %s\n",vtname,strerror(errno));
                 exit(1);
         }
-        /*        switch (fork()) {
-        case 0:
-                break;
-        case -1:
-                perror("fork");
-                exit(1);
-        default:
-                exit(0);
-                }
-        close(tty);
-        close(0);
-        close(1);
-        close(2);
-        setsid();
-        open(vtname,O_RDWR);
-        dup(0);
-        dup(0);
-*/
+
         tty = open(vtname,O_RDWR);
-        if (-1 == ioctl(tty,VT_GETSTATE, &vts)) {
+        if (ioctl(tty,VT_GETSTATE, &vts) == -1) {
                 perror("ioctl VT_GETSTATE");
                 exit(1);
         }
+
         orig_vt_no = vts.v_active;
-        if (-1 == ioctl(tty,VT_ACTIVATE, vtno)) {
+        if (ioctl(tty,VT_ACTIVATE, vtno) == -1) {
                 perror("ioctl VT_ACTIVATE");
                 exit(1);
         }
-        if (-1 == ioctl(tty,VT_WAITACTIVE, vtno)) {
+        if (ioctl(tty,VT_WAITACTIVE, vtno) == -1) {
                 perror("ioctl VT_WAITACTIVE");
                 exit(1);
         }
@@ -368,15 +332,15 @@ fb_activate_current(int tty)
 {
         struct vt_stat vts;
 
-        if (-1 == ioctl(tty,VT_GETSTATE, &vts)) {
+        if (ioctl(tty,VT_GETSTATE, &vts) == -1) {
                 perror("ioctl VT_GETSTATE");
                 return -1;
         }
-        if (-1 == ioctl(tty,VT_ACTIVATE, vts.v_active)) {
+        if (ioctl(tty,VT_ACTIVATE, vts.v_active) == -1) {
                 perror("ioctl VT_ACTIVATE");
                 return -1;
         }
-        if (-1 == ioctl(tty,VT_WAITACTIVE, vts.v_active)) {
+        if (ioctl(tty,VT_WAITACTIVE, vts.v_active) == -1) {
                 perror("ioctl VT_WAITACTIVE");
                 return -1;
         }
@@ -387,25 +351,31 @@ static void
 fb_cleanup(void)
 {
         /* restore console */
-        if (-1 == ioctl(fb,FBIOPUT_VSCREENINFO,&fb_ovar))
+        if (ioctl(fb,FBIOPUT_VSCREENINFO,&fb_ovar) == -1)
                 perror("ioctl FBIOPUT_VSCREENINFO");
-        if (-1 == ioctl(fb,FBIOGET_FSCREENINFO,&fb_fix))
+
+        if (ioctl(fb,FBIOGET_FSCREENINFO,&fb_fix) == -1)
                 perror("ioctl FBIOGET_FSCREENINFO");
-        if (fb_ovar.bits_per_pixel == 8 ||
-            fb_fix.visual == FB_VISUAL_DIRECTCOLOR) {
-                if (-1 == ioctl(fb,FBIOPUTCMAP,&ocmap))
+
+        if ((fb_ovar.bits_per_pixel == 8) ||
+            (fb_fix.visual == FB_VISUAL_DIRECTCOLOR)) {
+                if (ioctl(fb,FBIOPUTCMAP,&ocmap) == -1)
                         perror("ioctl FBIOPUTCMAP");
         }
         close(fb);
 
-        if (-1 == ioctl(tty,KDSETMODE, kd_mode))
+        if (ioctl(tty,KDSETMODE, kd_mode) == -1)
                 perror("ioctl KDSETMODE");
-        if (-1 == ioctl(tty,VT_SETMODE, &vt_omode))
+
+        if (ioctl(tty,VT_SETMODE, &vt_omode) == -1)
                 perror("ioctl VT_SETMODE");
-        if (orig_vt_no && -1 == ioctl(tty, VT_ACTIVATE, orig_vt_no))
+
+        if (orig_vt_no && (ioctl(tty, VT_ACTIVATE, orig_vt_no) == -1))
                 perror("ioctl VT_ACTIVATE");
-        if (orig_vt_no && -1 == ioctl(tty, VT_WAITACTIVE, orig_vt_no))
+
+        if (orig_vt_no && (ioctl(tty, VT_WAITACTIVE, orig_vt_no) == -1))
                 perror("ioctl VT_WAITACTIVE");
+
         tcsetattr(tty, TCSANOW, &term);
         close(tty);
 }
@@ -413,20 +383,22 @@ fb_cleanup(void)
 static int
 framebuffer_init(const char *device, int width, int height, int refresh, int bpp, int vt)
 {
-        char   fbdev[16];
+        char fbdev[16];
         struct vt_stat vts;
         long pm = ~(sysconf(_SC_PAGESIZE) - 1);
         char mode[32];
 
         snprintf(mode, 32, "%dx%d-%d", width, height, refresh);
 
-        dev_init();
+        devices = &devs_default;
+
         tty = 0;
         if (vt != 0)
                 fb_setvt(vt);
 
         if (ioctl(tty,VT_GETSTATE, &vts) == -1) {
-                fprintf(stderr,"ioctl VT_GETSTATE: %s (not a linux console?)\n",
+                fprintf(stderr,
+                        "ioctl VT_GETSTATE: %s (not a linux console?)\n",
                         strerror(errno));
                 exit(1);
         }
@@ -435,48 +407,56 @@ framebuffer_init(const char *device, int width, int height, int refresh, int bpp
                 device = getenv("FRAMEBUFFER");
                 if (device == NULL) {
                         struct fb_con2fbmap c2m;
-                        if (-1 == (fb = open(devices->fb0,O_RDWR /* O_WRONLY */,0))) {
-                                fprintf(stderr,"open %s: %s\n",devices->fb0,strerror(errno));
+                        if ((fb = open(devices->fb0, O_RDWR, 0)) == -1) {
+                                fprintf(stderr,
+                                        "open %s: %s\n",
+                                        devices->fb0,
+                                        strerror(errno));
                                 exit(1);
                         }
                         c2m.console = vts.v_active;
-                        if (-1 == ioctl(fb, FBIOGET_CON2FBMAP, &c2m)) {
+                        if (ioctl(fb, FBIOGET_CON2FBMAP, &c2m) == -1) {
                                 perror("ioctl FBIOGET_CON2FBMAP");
                                 exit(1);
                         }
                         close(fb);
                         fprintf(stderr,"map: vt%02d => fb%d\n",
-                                c2m.console,c2m.framebuffer);
-                        sprintf(fbdev,devices->fbnr,c2m.framebuffer);
+                                c2m.console, c2m.framebuffer);
+                        sprintf(fbdev, devices->fbnr, c2m.framebuffer);
                         device = fbdev;
                 }
         }
 
         /* get current settings (which we have to restore) */
-        if (-1 == (fb = open(device,O_RDWR /* O_WRONLY */))) {
-                fprintf(stderr,"open %s: %s\n",device,strerror(errno));
+        if ((fb = open(device, O_RDWR)) == -1) {
+                fprintf(stderr, "open %s: %s\n", device, strerror(errno));
                 exit(1);
         }
-        if (-1 == ioctl(fb,FBIOGET_VSCREENINFO,&fb_ovar)) {
+
+        if (ioctl(fb, FBIOGET_VSCREENINFO, &fb_ovar) == -1) {
                 perror("ioctl FBIOGET_VSCREENINFO");
                 exit(1);
         }
-        if (-1 == ioctl(fb,FBIOGET_FSCREENINFO,&fb_fix)) {
+
+        if (ioctl(fb, FBIOGET_FSCREENINFO, &fb_fix) == -1) {
                 perror("ioctl FBIOGET_FSCREENINFO");
                 exit(1);
         }
-        if (fb_ovar.bits_per_pixel == 8 ||
-            fb_fix.visual == FB_VISUAL_DIRECTCOLOR) {
-                if (-1 == ioctl(fb,FBIOGETCMAP,&ocmap)) {
+
+        if ((fb_ovar.bits_per_pixel == 8) ||
+            (fb_fix.visual == FB_VISUAL_DIRECTCOLOR)) {
+                if (ioctl(fb, FBIOGETCMAP, &ocmap) == -1) {
                         perror("ioctl FBIOGETCMAP");
                         exit(1);
                 }
         }
-        if (-1 == ioctl(tty,KDGETMODE, &kd_mode)) {
+
+        if (ioctl(tty, KDGETMODE, &kd_mode) == -1) {
                 perror("ioctl KDGETMODE");
                 exit(1);
         }
-        if (-1 == ioctl(tty,VT_GETMODE, &vt_omode)) {
+
+        if (ioctl(tty,VT_GETMODE, &vt_omode) == -1) {
                 perror("ioctl VT_GETMODE");
                 exit(1);
         }
@@ -486,7 +466,7 @@ framebuffer_init(const char *device, int width, int height, int refresh, int bpp
         fb_setmode(mode, bpp);
 
         /* checks & initialisation */
-        if (-1 == ioctl(fb,FBIOGET_FSCREENINFO,&fb_fix)) {
+        if (ioctl(fb, FBIOGET_FSCREENINFO, &fb_fix) == -1) {
                 perror("ioctl FBIOGET_FSCREENINFO");
                 exit(1);
         }
@@ -496,29 +476,33 @@ framebuffer_init(const char *device, int width, int height, int refresh, int bpp
         }
 
         fb_mem_offset = (unsigned long)(fb_fix.smem_start) & (~pm);
-        fb_mem = mmap(NULL,fb_fix.smem_len+fb_mem_offset,
-                      PROT_READ|PROT_WRITE,MAP_SHARED,fb,0);
+        fb_mem = mmap(NULL, fb_fix.smem_len + fb_mem_offset,
+                      PROT_READ | PROT_WRITE, MAP_SHARED, fb, 0);
+
         if (-1L == (long)fb_mem) {
                 perror("mmap");
                 goto err;
         }
+
         /* move viewport to upper left corner */
-        if (fb_var.xoffset != 0 || fb_var.yoffset != 0) {
+        if ((fb_var.xoffset != 0) || 
+            (fb_var.yoffset != 0)) {
                 fb_var.xoffset = 0;
                 fb_var.yoffset = 0;
-                if (-1 == ioctl(fb,FBIOPAN_DISPLAY,&fb_var)) {
+                if (ioctl(fb, FBIOPAN_DISPLAY, &fb_var) == -1) {
                         perror("ioctl FBIOPAN_DISPLAY");
                         goto err;
                 }
         }
-        if (-1 == ioctl(tty,KDSETMODE, KD_GRAPHICS)) {
+
+        if (ioctl(tty, KDSETMODE, KD_GRAPHICS) == -1) {
                 perror("ioctl KDSETMODE");
                 goto err;
         }
         fb_activate_current(tty);
 
         /* cls */
-        fb_memset(fb_mem + fb_mem_offset, 0, fb_fix.smem_len);
+        memset(fb_mem + fb_mem_offset, 0, fb_fix.smem_len);
         return fb;
 
 err:
@@ -576,7 +560,8 @@ framebuffer_t *fb_os_init(int argc, char** argv)
         int fb_refresh;
         int fb_depth;
 
-        if ((option_window_width != 0) && (option_window_height != 0)) {
+        if ((option_window_width != 0) && 
+            (option_window_height != 0)) {
                 fb_width = option_window_width;
                 fb_height = option_window_height;
         } else {
@@ -591,7 +576,9 @@ framebuffer_t *fb_os_init(int argc, char** argv)
         }
 
         fb_depth = option_fb_depth;
-        if ((fb_depth != 32) && (fb_depth != 16) && (fb_depth != 8))
+        if ((fb_depth != 32) && 
+            (fb_depth != 16) && 
+            (fb_depth != 8))
                 fb_depth = 16; /* sanity checked depth in bpp */
 
         framebuffer_init(option_fb_device, fb_width, fb_height, fb_refresh, fb_depth, 1);
@@ -628,21 +615,21 @@ void fb_os_quit(framebuffer_t *fb)
 
 
 static int keymap[] = {
-          -1,  -1, '1',  '2', '3', '4', '5', '6', '7', '8', /*  0 -  9 */
-         '9', '0', '-',  '=',   8,   9, 'q', 'w', 'e', 'r', /* 10 - 19 */
-         't', 'y', 'u',  'i', 'o', 'p', '[', ']',  13,  -1, /* 20 - 29 */
-         'a', 's', 'd',  'f', 'g', 'h', 'j', 'k', 'l', ';', /* 30 - 39 */
-         '\'', '#', -1, '\\', 'z', 'x', 'c', 'v', 'b', 'n', /* 40 - 49 */
-         'm', ',', '.',  '/',  -1,  -1,  -1, ' ',  -1,  -1, /* 50 - 59 */
+        -1,  -1, '1',  '2', '3', '4', '5', '6', '7', '8', /*  0 -  9 */
+        '9', '0', '-',  '=',   8,   9, 'q', 'w', 'e', 'r', /* 10 - 19 */
+        't', 'y', 'u',  'i', 'o', 'p', '[', ']',  13,  -1, /* 20 - 29 */
+        'a', 's', 'd',  'f', 'g', 'h', 'j', 'k', 'l', ';', /* 30 - 39 */
+        '\'', '#', -1, '\\', 'z', 'x', 'c', 'v', 'b', 'n', /* 40 - 49 */
+        'm', ',', '.',  '/',  -1,  -1,  -1, ' ',  -1,  -1, /* 50 - 59 */
 };
 
 static int sh_keymap[] = {
-          -1,  -1, '!', '"', 0xa3, '$', '%', '^', '&', '*', /*  0 -  9 */
-         '(', ')', '_', '+',    8,   9, 'Q', 'W', 'E', 'R', /* 10 - 19 */
-         'T', 'Y', 'U', 'I',  'O', 'P', '{', '}',  13,  -1, /* 20 - 29 */
-         'A', 'S', 'D', 'F',  'G', 'H', 'J', 'K', 'L', ':', /* 30 - 39 */
-         '@', '~',  -1, '|',  'Z', 'X', 'C', 'V', 'B', 'N', /* 40 - 49 */
-         'M', '<', '>', '?',   -1,  -1,  -1, ' ',  -1,  -1, /* 50 - 59 */
+        -1,  -1, '!', '"', 0xa3, '$', '%', '^', '&', '*', /*  0 -  9 */
+        '(', ')', '_', '+',    8,   9, 'Q', 'W', 'E', 'R', /* 10 - 19 */
+        'T', 'Y', 'U', 'I',  'O', 'P', '{', '}',  13,  -1, /* 20 - 29 */
+        'A', 'S', 'D', 'F',  'G', 'H', 'J', 'K', 'L', ':', /* 30 - 39 */
+        '@', '~',  -1, '|',  'Z', 'X', 'C', 'V', 'B', 'N', /* 40 - 49 */
+        'M', '<', '>', '?',   -1,  -1,  -1, ' ',  -1,  -1, /* 50 - 59 */
 };
 
 
@@ -733,30 +720,30 @@ void fb_os_input(fbtk_widget_t *root, bool active)
                                 }
                         } else if (event.type == EV_REL) {
                                 switch (event.code) {
-				case REL_X:
+                                case REL_X:
                                         fbtk_move_pointer(root, event.value, 0, true);
-					break;
+                                        break;
 
                                 case REL_Y:
                                         fbtk_move_pointer(root, 0, event.value, true);
-					break;
+                                        break;
 
-				case REL_WHEEL:
+                                case REL_WHEEL:
                                         if (event.value > 0)
                                                 fbtk_input(root, NSKEY_UP);
                                         else
                                                 fbtk_input(root, NSKEY_DOWN);
-					break;
+                                        break;
                                 }
                         } else if (event.type == EV_ABS) {
                                 switch (event.code) {
-				case ABS_X:
+                                case ABS_X:
                                         fbtk_move_pointer(root, event.value, -1, false);
-					break;
+                                        break;
 
                                 case ABS_Y:
                                         fbtk_move_pointer(root, -1, event.value, false);
-					break;
+                                        break;
 
                                 }
                         }
