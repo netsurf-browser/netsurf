@@ -43,12 +43,30 @@
 
 static SDL_Surface *sdl_screen;
 
+static void
+set_palette(framebuffer_t *fb)
+{
+        SDL_Color colors[256];
+        int loop;
+        for(loop=0; loop < 256; loop++){
+                colors[loop].r = loop;
+                colors[loop].g = loop;
+                colors[loop].b = loop;
+                fb->palette[loop] = loop << 16 | loop << 8 | loop;
+        }
+
+        /* Set palette */
+        SDL_SetColors(sdl_screen, colors, 0, 256);
+
+}
+
 framebuffer_t *fb_os_init(int argc, char** argv)
 {
         framebuffer_t *newfb;
         int fb_width;
         int fb_height;
         int fb_depth;
+
 
         if ((option_window_width != 0) && (option_window_height != 0)) {
                 fb_width = option_window_width;
@@ -87,6 +105,9 @@ framebuffer_t *fb_os_init(int argc, char** argv)
                 free(newfb);
                 return NULL;
         }
+
+        if (newfb->bpp == 8)
+                set_palette(newfb);
 
         newfb->ptr = sdl_screen->pixels;
         newfb->linelen = sdl_screen->pitch;

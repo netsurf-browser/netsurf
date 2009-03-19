@@ -38,13 +38,6 @@ fb_8bpp_get_xy_loc(int x, int y)
                            (x));
 }
 
-static bool fb_8bpp_rectangle(int x0, int y0, int width, int height,
-                       int line_width, colour c, bool dotted, bool dashed)
-{
-        LOG(("%d, %d, %d, %d, %d, 0x%lx, %d, %d\n", 
-             x0, y0, width, height, line_width, (unsigned long)c, dotted, dashed));
-	return true;
-}
 
 static bool fb_8bpp_line(int x0, int y0, int x1, int y1, int width,
                   colour c, bool dotted, bool dashed)
@@ -55,10 +48,25 @@ static bool fb_8bpp_line(int x0, int y0, int x1, int y1, int width,
 	return true;
 }
 
+static bool fb_8bpp_rectangle(int x0, int y0, int width, int height,
+                       int line_width, colour c, bool dotted, bool dashed)
+{
+        fb_8bpp_line(x0, y0, x0 + width, y0, line_width, c, dotted, dashed);
+        fb_8bpp_line(x0, y0 + height, x0 + width, y0 + height, line_width, c, dotted, dashed);
+        fb_8bpp_line(x0, y0, x0, y0 + height, line_width, c, dotted, dashed);
+        fb_8bpp_line(x0 + width, y0, x0 + width, y0 + height, line_width, c, dotted, dashed);
+	return true;
+}
+
 static bool fb_8bpp_polygon(const int *p, unsigned int n, colour fill)
 {
         /*LOG(("%p, %d, 0x%lx", p,n,fill));*/
         return fb_plotters_polygon(p, n, fill, fb_8bpp_line);
+}
+
+static colour calc_colour(uint8_t c)
+{
+        return framebuffer->palette[c];
 }
 
 
@@ -90,9 +98,14 @@ find_closest_palette_entry(colour c)
         return best_col;
 }
 
-static colour calc_colour(uint8_t c)
+static inline uint8_t fb_colour_to_pixel(colour c)
 {
-        return framebuffer->palette[c];
+        return find_closest_palette_entry(c);
+}
+
+static inline colour fb_8bpp_to_colour(uint8_t pixel)
+{
+        return framebuffer->palette[pixel];
 }
 
 static bool fb_8bpp_fill(int x0, int y0, int x1, int y1, colour c)
@@ -129,10 +142,104 @@ static bool fb_8bpp_clg(colour c)
 
 #ifdef FB_USE_FREETYPE
 
+static bool
+fb_8bpp_draw_ft_monobitmap(FT_Bitmap *bp, int x, int y, colour c)
+{
+        return false;
+}
+
+static bool
+fb_8bpp_draw_ft_bitmap(FT_Bitmap *bp, int x, int y, colour c)
+{
+        uint8_t *pvideo;
+        uint8_t *pixel = (uint8_t *)bp->buffer;
+        colour abpixel; /* alphablended pixel */
+        int xloop, yloop;
+        int x0,y0,x1,y1;
+	int xoff, yoff; /* x and y offset into image */
+        int height = bp->rows;
+        int width = bp->width;
+        uint32_t fgcol;
+
+        /* The part of the scaled image actually displayed is cropped to the
+         * current context. 
+         */
+        x0 = x;
+        y0 = y;
+        x1 = x + width;
+        y1 = y + height;
+
+        if (!fb_plotters_clip_rect_ctx(&x0, &y0, &x1, &y1))
+                return true;
+
+        if (height > (y1 - y0))
+                height = (y1 - y0);
+
+        if (width > (x1 - x0))
+                width = (x1 - x0);
+
+	xoff = x0 - x;
+	yoff = y0 - y;
+
+        /* plot the image */
+        pvideo = fb_8bpp_get_xy_loc(x0, y0);
+
+        fgcol = c & 0xFFFFFF;
+
+        for (yloop = 0; yloop < height; yloop++) {
+                for (xloop = 0; xloop < width; xloop++) {
+                        abpixel = (pixel[((yoff + yloop) * bp->pitch) + xloop + xoff] << 24) | fgcol;
+                        if ((abpixel & 0xFF000000) != 0) {
+                                if ((abpixel & 0xFF000000) != 0xFF000000) {
+                                        abpixel = fb_plotters_ablend(abpixel, 
+                                         fb_8bpp_to_colour(*(pvideo + xloop)));
+                                }
+
+                                *(pvideo + xloop) = fb_colour_to_pixel(abpixel);
+
+                        }
+                }
+                pvideo += framebuffer->linelen;
+        }
+
+	return true;
+}
+
 static bool fb_8bpp_text(int x, int y, const struct css_style *style,
 			const char *text, size_t length, colour bg, colour c)
 {
-        return false;
+        uint32_t ucs4;
+        size_t nxtchr = 0;
+        FT_Glyph glyph;
+        FT_BitmapGlyph bglyph;
+
+        while (nxtchr < length) {
+                ucs4 = utf8_to_ucs4(text + nxtchr, length - nxtchr);
+                nxtchr = utf8_next(text, length, nxtchr);
+
+                glyph = fb_getglyph(style, ucs4);
+                if (glyph == NULL)
+                        continue;
+                if (glyph->format == FT_GLYPH_FORMAT_BITMAP) {
+                        bglyph = (FT_BitmapGlyph)glyph;
+
+                        /* now, draw to our target surface */  
+                        if (bglyph->bitmap.pixel_mode == FT_PIXEL_MODE_MONO) {
+                                fb_8bpp_draw_ft_monobitmap(&bglyph->bitmap, 
+                                                            x + bglyph->left, 
+                                                            y - bglyph->top,
+                                                            c); 
+                        } else {
+                                fb_8bpp_draw_ft_bitmap(&bglyph->bitmap, 
+                                                        x + bglyph->left, 
+                                                        y - bglyph->top,
+                                                        c); 
+                        }
+                }
+                x += glyph->advance.x >> 16;
+
+        }
+        return true;
 
 }
 #else
@@ -240,20 +347,69 @@ static bool fb_8bpp_bitmap(int x, int y, int width, int height,
         uint8_t *pvideo;
         colour *pixel = (colour *)bitmap->pixdata;
         colour abpixel; /* alphablended pixel */
-        int xloop,yloop;
+        int xloop, yloop;
+        int x0,y0,x1,y1;
+	int xoff, yoff; /* x and y offset into image */
 
-        pvideo = fb_8bpp_get_xy_loc(x, y);
+        /* LOG(("x %d, y %d, width %d, height %d, bitmap %p, content %p", 
+           x,y,width,height,bitmap,content));*/
 
-        for (yloop = 0; yloop < height; yloop++) {
-                for (xloop = 0; xloop < width; xloop++) {
-                        abpixel = pixel[(yloop * bitmap->width) + xloop];
-                        if ((abpixel & 0xFF000000) != 0) {
-                                if ((abpixel & 0xFF000000) != 0xFF)
-                                        abpixel = fb_plotters_ablend(abpixel, calc_colour(pvideo[xloop]));
-                                pvideo[xloop] = find_closest_palette_entry(abpixel);
+        /* TODO here we should scale the image from bitmap->width to width, for
+         * now simply crop. 
+         */
+        if (width > bitmap->width)
+                width = bitmap->width;
+
+        if (height > bitmap->height)
+                height = bitmap->height;
+
+        /* The part of the scaled image actually displayed is cropped to the
+         * current context. 
+         */
+        x0 = x;
+        y0 = y;
+        x1 = x + width;
+        y1 = y + height;
+
+        if (!fb_plotters_clip_rect_ctx(&x0, &y0, &x1, &y1))
+                return true;
+
+        if (height > (y1 - y0))
+                height = (y1 - y0);
+
+        if (width > (x1 - x0))
+                width = (x1 - x0);
+
+	xoff = x0 - x;
+	yoff = (y0 - y) * bitmap->width;
+	height = height * bitmap->width + yoff;
+
+        /* plot the image */
+        pvideo = fb_8bpp_get_xy_loc(x0, y0);
+
+        if (bitmap->opaque) {
+                for (yloop = yoff; yloop < height; yloop += bitmap->width) {
+                        for (xloop = 0; xloop < width; xloop++) {
+                                abpixel = pixel[yloop + xloop + xoff];
+                                *(pvideo + xloop) = fb_colour_to_pixel(abpixel);
                         }
+                        pvideo += framebuffer->linelen;
                 }
-                pvideo += framebuffer->linelen;
+        } else {
+                for (yloop = yoff; yloop < height; yloop += bitmap->width) {
+                        for (xloop = 0; xloop < width; xloop++) {
+                                abpixel = pixel[yloop + xloop + xoff];
+                                if ((abpixel & 0xFF000000) != 0) {
+                                        if ((abpixel & 0xFF000000) != 0xFF000000) {
+                                                abpixel = fb_plotters_ablend(abpixel, 
+                                                                             fb_8bpp_to_colour(*(pvideo + xloop)));
+                                        }
+
+                                        *(pvideo + xloop) = fb_colour_to_pixel(abpixel);
+                                }
+                        }
+                        pvideo += framebuffer->linelen;
+                }
         }
 
 	return true;
