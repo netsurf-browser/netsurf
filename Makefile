@@ -758,7 +758,7 @@ ifeq ($(GCCVER),2)
 define compile_target_c
 $$(OBJROOT)/$(2): $$(OBJROOT)/created $$(DEPROOT)/$(3)
 	$$(VQ)echo " COMPILE: $(1)"
-	$$(Q)$$(CXX) $$(CFLAGS) -o $$@ -c $(1)
+	$$(Q)$$(CC) $$(CFLAGS) -o $$@ -c $(1)
 
 endef
 else
