@@ -754,6 +754,14 @@ endef
 # 1 = Source file
 # 2 = obj filename, no prefix
 # 3 = dep filename, no prefix
+ifeq ($(GCCVER),2)
+define compile_target_c
+$$(OBJROOT)/$(2): $$(OBJROOT)/created $$(DEPROOT)/$(3)
+	$$(VQ)echo " COMPILE: $(1)"
+	$$(Q)$$(CXX) $$(CFLAGS) -o $$@ -c $(1)
+
+endef
+else
 define compile_target_c
 $$(DEPROOT)/$(3) $$(OBJROOT)/$(2): $$(OBJROOT)/created
 	$$(VQ)echo " COMPILE: $(1)"
@@ -762,6 +770,7 @@ $$(DEPROOT)/$(3) $$(OBJROOT)/$(2): $$(OBJROOT)/created
 		    -MF $$(DEPROOT)/$(3) -o $$(OBJROOT)/$(2) -c $(1)
 
 endef
+endif
 
 define compile_target_cpp
 $$(OBJROOT)/$(2): $$(OBJROOT)/created $$(DEPROOT)/$(3)
