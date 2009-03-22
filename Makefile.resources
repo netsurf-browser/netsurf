@@ -18,6 +18,12 @@ FB_IMAGE_left_arrow := framebuffer/res/icons/back.png
 FB_IMAGE_right_arrow := framebuffer/res/icons/forward.png
 FB_IMAGE_reload := framebuffer/res/icons/reload.png
 FB_IMAGE_stop_image := framebuffer/res/icons/stop.png
+
+FB_IMAGE_left_arrow_g := framebuffer/res/icons/back_g.png
+FB_IMAGE_right_arrow_g := framebuffer/res/icons/forward_g.png
+FB_IMAGE_reload_g := framebuffer/res/icons/reload_g.png
+FB_IMAGE_stop_image_g := framebuffer/res/icons/stop_g.png
+
 FB_IMAGE_scrolll := framebuffer/res/icons/scrolll.png
 FB_IMAGE_scrollr := framebuffer/res/icons/scrollr.png
 FB_IMAGE_scrollu := framebuffer/res/icons/scrollu.png

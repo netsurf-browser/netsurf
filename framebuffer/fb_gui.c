@@ -470,18 +470,31 @@ fb_browser_window_input(fbtk_widget_t *widget, int value, void *pw)
         return 0;
 }
 
+static void
+fb_update_back_forward(struct gui_window *gw)
+{
+        struct browser_window *bw = gw->bw;
+
+        fbtk_set_bitmap(gw->back, 
+                        (history_back_available(bw->history))? &left_arrow : &left_arrow_g);
+        fbtk_set_bitmap(gw->forward, 
+                        (history_forward_available(bw->history))? &right_arrow : &right_arrow_g);
+}
+
 /* left icon click routine */
 static int
 fb_leftarrow_click(fbtk_widget_t *widget,
                    browser_mouse_state st,
                    int x, int y, void *pw)
 {
-        struct browser_window *bw = pw;
+        struct gui_window *gw =pw;
+        struct browser_window *bw = gw->bw;
 
         if (st == BROWSER_MOUSE_CLICK_1) {
                 if (history_back_available(bw->history))
                         history_back(bw, bw->history);
         }
+        fb_update_back_forward(gw);
         return 0;
 
 }
@@ -490,12 +503,14 @@ fb_leftarrow_click(fbtk_widget_t *widget,
 static int
 fb_rightarrow_click(fbtk_widget_t *widget, browser_mouse_state st, int x, int y, void *pw)
 {
-        struct browser_window *bw = pw;
+        struct gui_window *gw =pw;
+        struct browser_window *bw = gw->bw;
 
         if (st == BROWSER_MOUSE_CLICK_1) {
                 if (history_forward_available(bw->history))
                         history_forward(bw, bw->history);
         }
+        fb_update_back_forward(gw);
         return 0;
 
 }
@@ -615,23 +630,45 @@ gui_create_browser_window(struct browser_window *bw,
                 LOG(("Normal window"));
 
                 /* fill toolbar background */
-                widget = fbtk_create_fill(gw->window, 0, 0, 0, 30, FB_FRAME_COLOUR);
+                widget = fbtk_create_fill(gw->window, 
+                                          0, 0, 0, 30, 
+                                          FB_FRAME_COLOUR);
                 fbtk_set_handler_move(widget, set_ptr_default_move, bw);
 
                 /* back button */
-                widget = fbtk_create_button(gw->window, 5, 2, FB_FRAME_COLOUR, &left_arrow, fb_leftarrow_click, bw);
-                fbtk_set_handler_move(widget, set_ptr_hand_move, bw);
+                gw->back = fbtk_create_button(gw->window, 
+                                            5, 2, 
+                                            FB_FRAME_COLOUR, 
+                                            &left_arrow_g, 
+                                            fb_leftarrow_click, 
+                                            gw);
+                fbtk_set_handler_move(gw->back, set_ptr_hand_move, bw);
 
                 /* forward button */
-                widget = fbtk_create_button(gw->window, 35, 2, FB_FRAME_COLOUR, &right_arrow, fb_rightarrow_click, bw);
+                gw->forward = fbtk_create_button(gw->window, 
+                                            35, 2, 
+                                            FB_FRAME_COLOUR, 
+                                            &right_arrow_g, 
+                                            fb_rightarrow_click, 
+                                            gw);
+                fbtk_set_handler_move(gw->forward, set_ptr_hand_move, bw);
+
+                /* reload button */
+                widget = fbtk_create_button(gw->window, 
+                                            65, 2, 
+                                            FB_FRAME_COLOUR, 
+                                            &stop_image, 
+                                            fb_stop_click, 
+                                            bw);
                 fbtk_set_handler_move(widget, set_ptr_hand_move, bw);
 
                 /* reload button */
-                widget = fbtk_create_button(gw->window, 65, 2, FB_FRAME_COLOUR, &stop_image, fb_stop_click, bw);
-                fbtk_set_handler_move(widget, set_ptr_hand_move, bw);
-
-                /* reload button */
-                widget = fbtk_create_button(gw->window, 95, 2, FB_FRAME_COLOUR, &reload, fb_reload_click, bw);
+                widget = fbtk_create_button(gw->window, 
+                                            95, 2, 
+                                            FB_FRAME_COLOUR, 
+                                            &reload, 
+                                            fb_reload_click, 
+                                            bw);
                 fbtk_set_handler_move(widget, set_ptr_hand_move, bw);
 
                 /* url widget */
@@ -959,10 +996,13 @@ void gui_window_start_throbber(struct gui_window *g)
         schedule(10, throbber_advance, g);
 }
 
-void gui_window_stop_throbber(struct gui_window *g)
+void gui_window_stop_throbber(struct gui_window *gw)
 {
-        g->throbber_index = -1;
-        fbtk_set_bitmap(g->throbber, &throbber0);
+        gw->throbber_index = -1;
+        fbtk_set_bitmap(gw->throbber, &throbber0);
+
+        fb_update_back_forward(gw);
+
 }
 
 void gui_window_place_caret(struct gui_window *g, int x, int y, int height)

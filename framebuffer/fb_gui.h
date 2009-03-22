@@ -41,7 +41,10 @@ typedef struct framebuffer_s {
 
 struct gui_window {
         struct browser_window *bw;
+
         struct fbtk_widget_s *window;
+        struct fbtk_widget_s *back;
+        struct fbtk_widget_s *forward;
         struct fbtk_widget_s *url;
         struct fbtk_widget_s *status;
         struct fbtk_widget_s *throbber;
