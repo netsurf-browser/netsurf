@@ -27,6 +27,8 @@ extern struct bitmap reload;
 extern struct bitmap stop_image;
 extern struct bitmap scrolll;
 extern struct bitmap scrollr;
+extern struct bitmap scrollu;
+extern struct bitmap scrolld;
 
 extern struct bitmap pointer_image;
 extern struct bitmap hand_image;

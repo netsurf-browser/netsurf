@@ -61,7 +61,8 @@ enum {
 
 /* clip a rectangle to another rectangle */
 bool fb_plotters_clip_rect(const bbox_t * restrict clip,
-                           int * restrict x0, int * restrict y0, int * restrict x1, int * restrict y1)
+                           int * restrict x0, int * restrict y0, 
+                           int * restrict x1, int * restrict y1)
 {
         char region1;
         char region2;
@@ -459,11 +460,20 @@ bool fb_plotters_move_block(int srcx, int srcy, int width, int height, int dstx,
                 /* take shortcut and use memmove */
                 memmove(dstptr, srcptr, (width * height * framebuffer->bpp) / 8);
         } else {
-
-                for (hloop = height; hloop > 0; hloop--) {
-                        memmove(dstptr, srcptr, (width * framebuffer->bpp) / 8);
-                        srcptr += framebuffer->linelen;
-                        dstptr += framebuffer->linelen;
+                if (srcy > dsty) {
+                        for (hloop = height; hloop > 0; hloop--) {
+                                memmove(dstptr, srcptr, (width * framebuffer->bpp) / 8);
+                                srcptr += framebuffer->linelen;
+                                dstptr += framebuffer->linelen;
+                        }
+                } else {
+                        srcptr += height * framebuffer->linelen;
+                        dstptr += height * framebuffer->linelen;
+                        for (hloop = height; hloop > 0; hloop--) {
+                                srcptr -= framebuffer->linelen;
+                                dstptr -= framebuffer->linelen;
+                                memmove(dstptr, srcptr, (width * framebuffer->bpp) / 8);
+                        }
                 }
         }
         /* callback to the os specific routine in case it needs to do something

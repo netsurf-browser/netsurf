@@ -88,6 +88,16 @@ fbtk_create_fill(fbtk_widget_t *window, int x, int y, int width, int height, col
 fbtk_widget_t *
 fbtk_create_hscroll(fbtk_widget_t *window, int x, int y, int width, int height, colour fg, colour bg);
 
+/** Create a vertical scroll widget
+ *
+ * Create a vertical scroll widget.
+ *
+ * @param window The window to add the filled area widget to.
+ * @return new widget handle or NULL on error.
+ */
+fbtk_widget_t *
+fbtk_create_vscroll(fbtk_widget_t *window, int x, int y, int width, int height, colour fg, colour bg);
+
 /** Create a user widget.
  *
  * Create a widget which is to be handled entirely by the calling application.

@@ -197,6 +197,7 @@ static void fb_pan(fbtk_widget_t *widget,
 		fb_plotters_move_block(x + bwidget->panx, y,
                                        width - bwidget->panx, height,
                                        x, y);
+
 		bwidget->scrollx += bwidget->panx;
 		fb_queue_redraw(widget, width - bwidget->panx, 0, width, height);
 	}
@@ -233,6 +234,7 @@ static void fb_redraw(fbtk_widget_t *widget,
         bwidget->redraw_box.x0 += x;
         bwidget->redraw_box.x1 += x;
 
+
         /* redraw bounding box is relative to window */
         content_redraw(c,
                        x - bwidget->scrollx, y - bwidget->scrolly,
@@ -240,6 +242,7 @@ static void fb_redraw(fbtk_widget_t *widget,
                        bwidget->redraw_box.x0, bwidget->redraw_box.y0,
                        bwidget->redraw_box.x1, bwidget->redraw_box.y1,
                        bw->scale, 0xFFFFFF);
+
 
         fb_os_redraw(&bwidget->redraw_box);
 
@@ -261,6 +264,8 @@ fb_browser_window_redraw(fbtk_widget_t *widget, void *pw)
                 fb_pan(widget, bwidget, gw->bw);
                 pos = (bwidget->scrollx * 100) / gw->bw->current_content->width;;
                 fbtk_set_scroll_pos(gw->hscroll, pos);
+                pos = (bwidget->scrolly * 100) / gw->bw->current_content->height;
+                fbtk_set_scroll_pos(gw->vscroll, pos);
 
         }
 
@@ -529,6 +534,20 @@ fb_scrollr_click(fbtk_widget_t *widget, browser_mouse_state st, int x, int y, vo
 }
 
 static int
+fb_scrollu_click(fbtk_widget_t *widget, browser_mouse_state st, int x, int y, void *pw)
+{
+        fbtk_input(widget, KEY_UP);
+        return 0;
+}
+
+static int
+fb_scrolld_click(fbtk_widget_t *widget, browser_mouse_state st, int x, int y, void *pw)
+{
+        fbtk_input(widget, KEY_DOWN);
+        return 0;
+}
+
+static int
 fb_url_enter(void *pw, char *text)
 {
         struct browser_window *bw = pw;
@@ -573,6 +592,7 @@ gui_create_browser_window(struct browser_window *bw,
         fbtk_widget_t *widget;
         int top = 0;
         int bot = 0;
+        int right = 0;
 
         gw = calloc(1, sizeof(struct gui_window));
 
@@ -590,8 +610,8 @@ gui_create_browser_window(struct browser_window *bw,
                 gw->window = fbtk_create_window(fbtk, 0, 0, 0, 0);
 
                 top = 30;
-                bot = -50;
-
+                bot = 20;
+                right = 18;
                 LOG(("Normal window"));
 
                 /* fill toolbar background */
@@ -637,25 +657,64 @@ gui_create_browser_window(struct browser_window *bw,
                  * scrollbar
                  */
                 gw->status = fbtk_create_text(gw->window,
-                                              0 , fbtk_get_height(gw->window) - 20,
-                                              fbtk_get_width(gw->window) - 200, 20,
+                                              0 , 
+                                              fbtk_get_height(gw->window) - bot,
+                                              fbtk_get_width(gw->window) - 200 - right, 
+                                              bot,
                                               FB_FRAME_COLOUR, FB_COLOUR_BLACK,
                                               false);
 
                 fbtk_set_handler_move(gw->status, set_ptr_default_move, bw);
 
+                /* horizontal scrollbar */
+                fbtk_create_button(gw->window, 
+                                   fbtk_get_width(gw->window) - 200 - right, 
+                                   fbtk_get_height(gw->window) - bot, 
+                                   FB_FRAME_COLOUR, 
+                                   &scrolll, 
+                                   fb_scrolll_click, 
+                                   bw);
 
-                fbtk_create_button(gw->window, fbtk_get_width(gw->window) - 200, fbtk_get_height(gw->window) - 20, FB_FRAME_COLOUR, &scrolll, fb_scrolll_click, bw);
-                fbtk_create_button(gw->window, fbtk_get_width(gw->window) - 20, fbtk_get_height(gw->window) - 20, FB_FRAME_COLOUR, &scrollr, fb_scrollr_click, bw);
+                fbtk_create_button(gw->window, 
+                                   fbtk_get_width(gw->window) - 20 - right, 
+                                   fbtk_get_height(gw->window) - bot, 
+                                   FB_FRAME_COLOUR, 
+                                   &scrollr, 
+                                   fb_scrollr_click, 
+                                   bw);
 
                 gw->hscroll = fbtk_create_hscroll(gw->window,
-                                                  fbtk_get_width(gw->window) - 180,
-                                                  fbtk_get_height(gw->window) - 20,
+                                                  fbtk_get_width(gw->window) - 160 - 20 - right,
+                                                  fbtk_get_height(gw->window) - bot,
                                                   160,
-                                                  20,
+                                                  bot,
                                                   FB_SCROLL_COLOUR,
                                                   FB_FRAME_COLOUR);
+                /* create vertical */
+                fbtk_create_button(gw->window, 
+                                   fbtk_get_width(gw->window) - right, 
+                                   top, 
+                                   FB_FRAME_COLOUR, 
+                                   &scrollu, 
+                                   fb_scrollu_click, 
+                                   bw);
 
+                fbtk_create_button(gw->window, 
+                                   fbtk_get_width(gw->window) - right, 
+                                   fbtk_get_height(gw->window) - bot - 20, 
+                                   FB_FRAME_COLOUR, 
+                                   &scrolld, 
+                                   fb_scrolld_click, 
+                                   bw);
+                
+                gw->vscroll = fbtk_create_vscroll(gw->window,
+                                                  fbtk_get_width(gw->window) - right,
+                                                  top + 20,
+                                                  right,
+                                                  fbtk_get_height(gw->window) - top - bot - 40 ,
+                                                  FB_SCROLL_COLOUR,
+                                                  FB_FRAME_COLOUR);
+                
                 break;
 
         case BROWSER_WINDOW_FRAME:
@@ -671,7 +730,7 @@ gui_create_browser_window(struct browser_window *bw,
 
         browser_widget = calloc(1, sizeof(struct browser_widget_s));
 
-        gw->browser = fbtk_create_user(gw->window, 0, top, 0, bot, browser_widget);
+        gw->browser = fbtk_create_user(gw->window, 0, top, -right, - (bot + top), browser_widget);
 
         fbtk_set_handler_click(gw->browser, fb_browser_window_click, bw);
         fbtk_set_handler_input(gw->browser, fb_browser_window_input, gw);
@@ -796,6 +855,10 @@ void gui_window_update_extent(struct gui_window *g)
 
         pct = (fbtk_get_width(g->browser) * 100) / g->bw->current_content->width;
         fbtk_set_scroll(g->hscroll, pct);
+
+        pct = (fbtk_get_height(g->browser) * 100) / g->bw->current_content->height;
+        fbtk_set_scroll(g->vscroll, pct);
+
 }
 
 void gui_window_set_status(struct gui_window *g, const char *text)

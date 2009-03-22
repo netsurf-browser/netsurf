@@ -46,6 +46,7 @@ struct gui_window {
         struct fbtk_widget_s *status;
         struct fbtk_widget_s *throbber;
         struct fbtk_widget_s *hscroll;
+        struct fbtk_widget_s *vscroll;
         struct fbtk_widget_s *browser;
         int throbber_index;
 };

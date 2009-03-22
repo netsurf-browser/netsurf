@@ -43,6 +43,7 @@ enum fbtk_widgettype_e {
         FB_WIDGET_TYPE_FILL,
         FB_WIDGET_TYPE_TEXT,
         FB_WIDGET_TYPE_HSCROLL,
+        FB_WIDGET_TYPE_VSCROLL,
         FB_WIDGET_TYPE_USER,
 };
 
@@ -126,6 +127,61 @@ struct fbtk_widget_list_s {
         struct fbtk_widget_list_s *prev;
         fbtk_widget_t *widget;
 } ;
+
+enum {
+        POINT_LEFTOF_REGION = 1,
+        POINT_RIGHTOF_REGION = 2,
+        POINT_ABOVE_REGION = 4,
+        POINT_BELOW_REGION = 8,
+};
+
+#define REGION(x,y,cx1,cx2,cy1,cy2) \
+        (( (y) > (cy2) ? POINT_BELOW_REGION : 0) |                      \
+         ( (y) < (cy1) ? POINT_ABOVE_REGION : 0) |                      \
+         ( (x) > (cx2) ? POINT_RIGHTOF_REGION : 0) |                    \
+         ( (x) < (cx1) ? POINT_LEFTOF_REGION : 0) )
+
+#define SWAP(a, b) do { int t; t=(a); (a)=(b); (b)=t;  } while(0)
+
+/* clip a rectangle to another rectangle */
+bool fbtk_clip_rect(const bbox_t * restrict clip, bbox_t * restrict box)
+{
+        uint8_t region1;
+        uint8_t region2;
+
+	if (box->x1 < box->x0) SWAP(box->x0, box->x1);
+	if (box->y1 < box->y0) SWAP(box->y0, box->y1);
+
+	region1 = REGION(box->x0, box->y0, clip->x0, clip->x1 - 1, clip->y0, clip->y1 - 1);
+	region2 = REGION(box->x1, box->y1, clip->x0, clip->x1 - 1, clip->y0, clip->y1 - 1);
+
+        /* area lies entirely outside the clipping rectangle */
+        if ((region1 | region2) && (region1 & region2))
+                return false;
+
+        if (box->x0 < clip->x0)
+                box->x0 = clip->x0;
+        if (box->x0 > clip->x1)
+                box->x0 = clip->x1;
+
+        if (box->x1 < clip->x0)
+                box->x1 = clip->x0;
+        if (box->x1 > clip->x1)
+                box->x1 = clip->x1;
+
+        if (box->y0 < clip->y0)
+                box->y0 = clip->y0;
+        if (box->y0 > clip->y1)
+                box->y0 = clip->y1;
+
+        if (box->y1 < clip->y0)
+                box->y1 = clip->y0;
+        if (box->y1 > clip->y1)
+                box->y1 = clip->y1;
+
+        return true;
+}
+
 
 /* creates a new widget of a given type */
 static fbtk_widget_t *
@@ -244,17 +300,19 @@ fbtk_redraw_widget(fbtk_widget_t *widget)
         /* set the clipping rectangle to the widget area */
         saved_plot_ctx = fb_plot_ctx;
 
-        fb_plot_ctx.x0 = widget->x;
-        fb_plot_ctx.y0 = widget->y;
-        fb_plot_ctx.x1 = widget->x + widget->width;
-        fb_plot_ctx.y1 = widget->y + widget->height;
+        fb_plot_ctx.x0 = fbtk_get_x(widget);
+        fb_plot_ctx.y0 = fbtk_get_y(widget);
+        fb_plot_ctx.x1 = fb_plot_ctx.x0 + widget->width;
+        fb_plot_ctx.y1 = fb_plot_ctx.y0 + widget->height;
 
-        /* do our drawing according to type */
-        widget->redraw(widget, widget->redrawpw);
+        if (fbtk_clip_rect(&saved_plot_ctx, &fb_plot_ctx )) {
+                /* do our drawing according to type */
+                widget->redraw(widget, widget->redrawpw);
 
-        widget->redraw_required = false;
-        //LOG(("OS redrawing %d,%d %d,%d", fb_plot_ctx.x0, fb_plot_ctx.y0, fb_plot_ctx.x1, fb_plot_ctx.y1));
-        fb_os_redraw(&fb_plot_ctx);
+                widget->redraw_required = false;
+                //LOG(("OS redrawing %d,%d %d,%d", fb_plot_ctx.x0, fb_plot_ctx.y0, fb_plot_ctx.x1, fb_plot_ctx.y1));
+                fb_os_redraw(&fb_plot_ctx);
+        }
 
         /* restore clipping rectangle */
         fb_plot_ctx = saved_plot_ctx;
@@ -313,6 +371,42 @@ fb_redraw_hscroll(fbtk_widget_t *widget, void *pw)
 }
 
 static int
+fb_redraw_vscroll(fbtk_widget_t *widget, void *pw)
+{
+        int vscroll;
+        int vpos;
+
+        plot.fill(fb_plot_ctx.x0, fb_plot_ctx.y0,
+                  fb_plot_ctx.x1, fb_plot_ctx.y1,
+                  widget->bg);
+
+	plot.fill(fb_plot_ctx.x0 + 1,
+			fb_plot_ctx.y0 + 3,
+			fb_plot_ctx.x1 - 1,
+			fb_plot_ctx.y1 - 3,
+			widget->fg);
+
+        plot.rectangle(fb_plot_ctx.x0,
+                       fb_plot_ctx.y0 + 2,
+                       fb_plot_ctx.x1 - fb_plot_ctx.x0 - 1,
+                       fb_plot_ctx.y1 - fb_plot_ctx.y0 - 5,
+                       1, 0xFF000000, false, false);
+
+        vscroll = ((widget->height - 4) * widget->u.scroll.pct) / 100 ;
+        vpos = ((widget->height - 4) * widget->u.scroll.pos) / 100 ;
+
+        LOG(("scroll %d",vscroll));
+
+        plot.fill(fb_plot_ctx.x0 + 3,
+                  fb_plot_ctx.y0 + 5 + vpos,
+                  fb_plot_ctx.x0 + widget->width - 3,
+                  fb_plot_ctx.y0 + vscroll + vpos - 5,
+                  widget->bg);
+
+        return 0;
+}
+
+static int
 fb_redraw_bitmap(fbtk_widget_t *widget, void *pw)
 {
         /* clear background */
@@ -324,7 +418,8 @@ fb_redraw_bitmap(fbtk_widget_t *widget, void *pw)
         }
 
         /* plot the image */
-        plot.bitmap(widget->x, widget->y, widget->width, widget->height,
+        plot.bitmap(fb_plot_ctx.x0, fb_plot_ctx.y0, 
+                    widget->width, widget->height,
                     widget->u.bitmap.bitmap, 0, NULL);
         return 0;
 }
@@ -600,23 +695,30 @@ fbtk_set_text(fbtk_widget_t *widget, const char *text)
 void
 fbtk_set_scroll(fbtk_widget_t *widget, int pct)
 {
-        if ((widget == NULL) || (widget->type != FB_WIDGET_TYPE_HSCROLL))
+        if (widget == NULL)
                 return;
+ 
+        if ((widget->type == FB_WIDGET_TYPE_HSCROLL) || 
+            (widget->type == FB_WIDGET_TYPE_VSCROLL)) {
 
-        widget->u.scroll.pct = pct;
-
-        fbtk_request_redraw(widget);
+                widget->u.scroll.pct = pct;
+                fbtk_request_redraw(widget);
+        }
 }
 
 void
 fbtk_set_scroll_pos(fbtk_widget_t *widget, int pos)
 {
-        if ((widget == NULL) || (widget->type != FB_WIDGET_TYPE_HSCROLL))
+        if (widget == NULL)
                 return;
+ 
+        if ((widget->type == FB_WIDGET_TYPE_HSCROLL) || 
+            (widget->type == FB_WIDGET_TYPE_VSCROLL)) {
 
         widget->u.scroll.pos = pos;
 
         fbtk_request_redraw(widget);
+        }
 }
 
 void
@@ -741,6 +843,8 @@ fbtk_redraw(fbtk_widget_t *widget)
 {
         fbtk_widget_t *root;
         fbtk_widget_t *window;
+        bbox_t saved_plot_ctx;
+
 
         /* ensure we have the root widget */
         root = get_root_widget(widget);
@@ -748,8 +852,16 @@ fbtk_redraw(fbtk_widget_t *widget)
         if (!root->redraw_required)
                 return 0;
 
+        /* set the clipping rectangle to the widget area */
+        saved_plot_ctx = fb_plot_ctx;
+
         /* get the root window */
         window = root->u.root.rootw;
+
+        fb_plot_ctx.x0 = window->x;
+        fb_plot_ctx.y0 = window->y;
+        fb_plot_ctx.x1 = window->x + window->width;
+        fb_plot_ctx.y1 = window->y + window->height;
 
         fb_cursor_clear(root->u.root.fb);
 
@@ -757,6 +869,8 @@ fbtk_redraw(fbtk_widget_t *widget)
                 fbtk_redraw_widget(window);
 
         root->redraw_required = false;
+
+        fb_plot_ctx = saved_plot_ctx;
 
         fb_cursor_plot(root->u.root.fb);
 
@@ -875,6 +989,23 @@ fbtk_create_hscroll(fbtk_widget_t *window, int x, int y, int width, int height, 
         neww->bg = bg;
 
         neww->redraw = fb_redraw_hscroll;
+
+        return add_widget_to_window(window, neww);
+}
+
+fbtk_widget_t *
+fbtk_create_vscroll(fbtk_widget_t *window, int x, int y, int width, int height, colour fg, colour bg)
+{
+        fbtk_widget_t *neww = new_widget(FB_WIDGET_TYPE_VSCROLL);
+
+        neww->x = x;
+        neww->y = y;
+        neww->width = width;
+        neww->height = height;
+        neww->fg = fg;
+        neww->bg = bg;
+
+        neww->redraw = fb_redraw_vscroll;
 
         return add_widget_to_window(window, neww);
 }

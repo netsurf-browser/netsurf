@@ -453,8 +453,6 @@ static bool fb_16bpp_bitmap(int x, int y, int width, int height,
         int x0,y0,x1,y1;
 	int xoff, yoff; /* x and y offset into image */
 
-        /* LOG(("x %d, y %d, width %d, height %d, bitmap %p, content %p", 
-           x,y,width,height,bitmap,content));*/
 
         /* TODO here we should scale the image from bitmap->width to width, for
          * now simply crop. 
@@ -476,11 +474,16 @@ static bool fb_16bpp_bitmap(int x, int y, int width, int height,
         if (!fb_plotters_clip_rect_ctx(&x0, &y0, &x1, &y1))
                 return true;
 
+
+        LOG(("%d, %d  %d, %d  bitmap %p, content %p", 
+           x0,y0,x1,y1,bitmap,content));
+
         if (height > (y1 - y0))
                 height = (y1 - y0);
 
         if (width > (x1 - x0))
                 width = (x1 - x0);
+
 
 	xoff = x0 - x;
 	yoff = (y0 - y) * bitmap->width;
