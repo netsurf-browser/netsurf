@@ -2203,33 +2203,31 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 
 		/* navigation actions */
 		case BROWSER_NAVIGATE_BACK:
-			result = (!bw || !bw->history ||
-					!history_back_available(bw->history));
+			result = browser_window_back_available(bw);
 			ro_gui_menu_set_entry_shaded(current_menu,
-					action, result);
+					action, !result);
 			if ((t) && (!t->editor) &&
 					(t->type == THEME_BROWSER_TOOLBAR))
 				ro_gui_set_icon_shaded_state(
 						t->toolbar_handle,
-						ICON_TOOLBAR_BACK, result);
+						ICON_TOOLBAR_BACK, !result);
 			break;
 		case BROWSER_NAVIGATE_FORWARD:
-			result = (!bw || !bw->history ||
-					!history_forward_available(bw->history));
+			result = browser_window_forward_available(bw);
 			ro_gui_menu_set_entry_shaded(current_menu,
-					action, result);
+					action, !result);
 			if ((t) && (!t->editor) &&
 					(t->type == THEME_BROWSER_TOOLBAR))
 				ro_gui_set_icon_shaded_state(
 						t->toolbar_handle,
-						ICON_TOOLBAR_FORWARD, result);
+						ICON_TOOLBAR_FORWARD, !result);
 			break;
 		case BROWSER_NAVIGATE_UP:
 			result = (bw && c);
 			if (result) {
 				res = url_parent(c->url, &parent);
 				if (res == URL_FUNC_OK) {
-				  	res = url_compare(c->url, parent, 
+				  	res = url_compare(c->url, parent,
 							false, &compare);
 					if (res == URL_FUNC_OK)
 					  	result = !compare;
@@ -2249,7 +2247,7 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 			break;
 		case BROWSER_NAVIGATE_RELOAD:
 		case BROWSER_NAVIGATE_RELOAD_ALL:
-			result = (bw->current_content && !bw->loading_content);
+			result = browser_window_reload_available(bw);
 			ro_gui_menu_set_entry_shaded(current_menu,
 					action, !result);
 			if ((t) && (!t->editor) &&
@@ -2259,9 +2257,7 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 						ICON_TOOLBAR_RELOAD, !result);
 			break;
 		case BROWSER_NAVIGATE_STOP:
-			result = (bw->loading_content || (bw->current_content &&
-					(bw->current_content->status !=
-						CONTENT_STATUS_DONE)));
+			result = browser_window_stop_available(bw);
 			ro_gui_menu_set_entry_shaded(current_menu,
 					action, !result);
 			if ((t) && (!t->editor) &&
