@@ -473,12 +473,14 @@ fb_browser_window_input(fbtk_widget_t *widget, int value, void *pw)
 static void
 fb_update_back_forward(struct gui_window *gw)
 {
-        struct browser_window *bw = gw->bw;
+	struct browser_window *bw = gw->bw;
 
-        fbtk_set_bitmap(gw->back, 
-                        (history_back_available(bw->history))? &left_arrow : &left_arrow_g);
-        fbtk_set_bitmap(gw->forward, 
-                        (history_forward_available(bw->history))? &right_arrow : &right_arrow_g);
+	fbtk_set_bitmap(gw->back, 
+			(browser_window_back_available(bw)) ?
+			&left_arrow : &left_arrow_g);
+	fbtk_set_bitmap(gw->forward, 
+			(browser_window_forward_available(bw)) ?
+			&right_arrow : &right_arrow_g);
 }
 
 /* left icon click routine */
