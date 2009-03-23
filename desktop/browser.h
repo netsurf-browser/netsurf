@@ -250,6 +250,11 @@ void browser_form_submit(struct browser_window *bw, struct browser_window *targe
 void browser_window_redraw_rect(struct browser_window *bw, int x, int y,
 		int width, int height);
 
+bool browser_window_back_available(struct browser_window *bw);
+bool browser_window_forward_available(struct browser_window *bw);
+bool browser_window_reload_available(struct browser_window *bw);
+bool browser_window_stop_available(struct browser_window *bw);
+
 /* In platform specific hotlist.c. */
 void hotlist_visited(struct content *content);
 

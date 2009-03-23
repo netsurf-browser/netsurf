@@ -270,7 +270,7 @@ void browser_window_go_unverifiable(struct browser_window *bw,
  *
  * If post_urlenc and post_multipart are 0 the url is fetched using GET.
  *
- * The page is not added to the window history if add_to_history is false. 
+ * The page is not added to the window history if add_to_history is false.
  * This should be used when returning to a page in the window history.
  */
 
@@ -697,7 +697,7 @@ void browser_window_refresh(void *p)
 		add_to_history = false;
 
 	/* Treat an (almost) immediate refresh in a top-level browser window as
-	 * if it were an HTTP redirect, and thus make the resulting fetch 
+	 * if it were an HTTP redirect, and thus make the resulting fetch
 	 * verifiable.
 	 *
 	 * See fetchcache.c for why redirected fetches should be verifiable at
@@ -794,10 +794,10 @@ void browser_window_update(struct browser_window *bw)
 
 	if (!history_get_current_scroll(bw->history, &sx, &sy))
 		sx = -1;
-	
+
 	/* if the page was scrolled before return to that position */
 	if (sx != -1) {
-		gui_window_set_scroll(bw->window, sx, sy);	
+		gui_window_set_scroll(bw->window, sx, sy);
 	/* if frag_id exists, then try to scroll to it */
 	} else if (bw->frag_id && bw->current_content->type == CONTENT_HTML) {
 		if ((pos = box_find_by_id(bw->current_content->data.html.layout, bw->frag_id)) != 0) {
@@ -805,7 +805,7 @@ void browser_window_update(struct browser_window *bw)
 			gui_window_set_scroll(bw->window, x, y);
 		}
 	} else
-		gui_window_set_scroll(bw->window, 0, 0);	
+		gui_window_set_scroll(bw->window, 0, 0);
 
 	gui_window_redraw_window(bw->window);
 }
@@ -2797,4 +2797,58 @@ void browser_window_page_drag_start(struct browser_window *bw, int x, int y)
 	gui_window_get_scroll(bw->window, &bw->drag_start_scroll_x, &bw->drag_start_scroll_y);
 
 	gui_window_scroll_start(bw->window);
+}
+
+
+/**
+ * Check availability of Back action for a given browser window
+ *
+ * \param bw  browser window
+ * \return true if Back action is available
+ */
+
+bool browser_window_back_available(struct browser_window *bw)
+{
+	return (bw && bw->history && history_back_available(bw->history));
+}
+
+
+/**
+ * Check availability of Forward action for a given browser window
+ *
+ * \param bw  browser window
+ * \return true if Forward action is available
+ */
+
+bool browser_window_forward_available(struct browser_window *bw)
+{
+	return (bw && bw->history && history_forward_available(bw->history));
+}
+
+
+/**
+ * Check availability of Reload action for a given browser window
+ *
+ * \param bw  browser window
+ * \return true if Reload action is available
+ */
+
+bool browser_window_reload_available(struct browser_window *bw)
+{
+	return (bw && bw->current_content && !bw->loading_content);
+}
+
+
+/**
+ * Check availability of Stop action for a given browser window
+ *
+ * \param bw  browser window
+ * \return true if Stop action is available
+ */
+
+bool browser_window_stop_available(struct browser_window *bw)
+{
+	return (bw && (bw->loading_content ||
+			(bw->current_content &&
+			(bw->current_content->status != CONTENT_STATUS_DONE))));
 }
