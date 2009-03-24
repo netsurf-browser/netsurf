@@ -2879,7 +2879,12 @@ void gui_download_window_done(struct gui_download_window *dw)
 void gui_drag_save_object(gui_save_type type, struct content *c,
 		struct gui_window *g)
 {
-	DebugPrintF("gui_drag_save_object\n");
+//	DebugPrintF("gui_drag_save_object\n");
+}
+
+void gui_drag_save_selection(struct selection *s, struct gui_window *g)
+{
+//	DebugPrintF("gui_drag_save_selection\n");
 }
 
 void gui_create_form_select_menu(struct browser_window *bw,

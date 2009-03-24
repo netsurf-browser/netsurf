@@ -48,10 +48,6 @@ void ami_clipboard_free(void)
 	if(iffh) FreeIFF(iffh);
 }
 
-void gui_drag_save_selection(struct selection *s, struct gui_window *g)
-{
-}
-
 void gui_start_selection(struct gui_window *g)
 {
 }
