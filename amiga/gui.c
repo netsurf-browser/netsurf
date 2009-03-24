@@ -894,24 +894,28 @@ void ami_handle_msg(void)
 						break;
 
 						case GID_STOP:
-							browser_window_stop(gwin->bw);
+							if(browser_window_stop_available(gwin->bw))
+								browser_window_stop(gwin->bw);
 						break;
 
 						case GID_RELOAD:
 							ami_update_quals(gwin);
 
-							if(gwin->key_state & BROWSER_MOUSE_MOD_1)
+							if(browser_window_reload_available(gwin->bw))
 							{
-								browser_window_reload(gwin->bw,true);
-							}
-							else
-							{
-								browser_window_reload(gwin->bw,false);
+								if(gwin->key_state & BROWSER_MOUSE_MOD_1)
+								{
+									browser_window_reload(gwin->bw,true);
+								}
+								else
+								{
+									browser_window_reload(gwin->bw,false);
+								}
 							}
 						break;
 
 						case GID_BACK:
-							if(history_back_available(gwin->bw->history))
+							if(browser_window_back_available(gwin->bw))
 							{
 								history_back(gwin->bw,gwin->bw->history);
 							}
@@ -920,7 +924,7 @@ void ami_handle_msg(void)
 						break;
 
 						case GID_FORWARD:
-							if(history_forward_available(gwin->bw->history))
+							if(browser_window_forward_available(gwin->bw))
 							{
 								history_forward(gwin->bw,gwin->bw->history);
 							}
@@ -1489,22 +1493,21 @@ void gui_quit(void)
 
 void ami_update_buttons(struct gui_window_2 *gwin)
 {
-	bool back=FALSE,forward=TRUE,tabclose=FALSE;
+	BOOL back=FALSE,forward=TRUE,tabclose=FALSE,stop=FALSE,reload=FALSE;
 
-	if(!history_back_available(gwin->bw->history))
-	{
+	if(!browser_window_back_available(gwin->bw))
 		back=TRUE;
-	}
 
-	if(history_forward_available(gwin->bw->history))
-	{
+	if(browser_window_forward_available(gwin->bw))
 		forward=FALSE;
-	}
 
-	if(gwin->tabs <= 1)
-	{
-		tabclose=TRUE;
-	}
+	if(!browser_window_stop_available(gwin->bw))
+		stop=TRUE;
+
+	if(!browser_window_reload_available(gwin->bw))
+		reload=TRUE;
+
+	if(gwin->tabs <= 1)	tabclose=TRUE;
 
 	RefreshSetGadgetAttrs(gwin->gadgets[GID_BACK],gwin->win,NULL,
 		GA_Disabled,back,
@@ -1512,6 +1515,14 @@ void ami_update_buttons(struct gui_window_2 *gwin)
 
 	RefreshSetGadgetAttrs(gwin->gadgets[GID_FORWARD],gwin->win,NULL,
 		GA_Disabled,forward,
+		TAG_DONE);
+
+	RefreshSetGadgetAttrs(gwin->gadgets[GID_RELOAD],gwin->win,NULL,
+		GA_Disabled,reload,
+		TAG_DONE);
+
+	RefreshSetGadgetAttrs(gwin->gadgets[GID_STOP],gwin->win,NULL,
+		GA_Disabled,stop,
 		TAG_DONE);
 
 	if(gwin->tabs)
@@ -2868,6 +2879,7 @@ void gui_download_window_done(struct gui_download_window *dw)
 void gui_drag_save_object(gui_save_type type, struct content *c,
 		struct gui_window *g)
 {
+	DebugPrintF("gui_drag_save_object\n");
 }
 
 void gui_create_form_select_menu(struct browser_window *bw,
