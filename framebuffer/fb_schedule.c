@@ -58,9 +58,9 @@ void schedule(int cs_ival, void (*callback)(void *p), void *p)
         tv.tv_sec = 0;
         tv.tv_usec = cs_ival * 10000;
 
-	LOG(("adding callback %p, %p at %d cs", callback, p, cs_ival));
-
 	nscb = calloc(1, sizeof(struct nscallback));
+
+	LOG(("adding callback %p for  %p(%p) at %d cs", nscb, callback, p, cs_ival));
 
 	gettimeofday(&nscb->tv, NULL);
 	timeradd(&nscb->tv, &tv, &nscb->tv);
@@ -101,8 +101,8 @@ void schedule_remove(void (*callback)(void *p), void *p)
                     (cur_nscb->p ==  p)) {
                         /* item to remove */
                         
-                        LOG(("removing %p(%p)",
-                             cur_nscb->callback, cur_nscb->p)); 
+                        LOG(("callback entry %p removing  %p(%p)",
+                             cur_nscb, cur_nscb->callback, cur_nscb->p)); 
 
                         /* remove callback */
                         unlnk_nscb = cur_nscb;
@@ -147,20 +147,26 @@ bool schedule_run(void)
                         
                         /* remove callback */
                         unlnk_nscb = cur_nscb;
-                        cur_nscb = unlnk_nscb->next;
 
                         if (prev_nscb == NULL) {
-                                schedule_list = cur_nscb;
+                                schedule_list = unlnk_nscb->next;
                         } else {
-                                prev_nscb->next = cur_nscb;
+                                prev_nscb->next = unlnk_nscb->next;
                         }
 
-                        LOG(("calling %p with %p",
-                             unlnk_nscb->callback, unlnk_nscb->p)); 
+                        LOG(("callback entry %p running %p(%p)",
+                             unlnk_nscb, unlnk_nscb->callback, unlnk_nscb->p)); 
                         /* call callback */
                         unlnk_nscb->callback(unlnk_nscb->p);
 
                         free (unlnk_nscb);
+
+                        /* the callback might have modded the list, so start
+                         * again 
+                         */
+                        cur_nscb = schedule_list;
+                        prev_nscb = NULL;
+
                 } else {
                         /* move to next element */
                         prev_nscb = cur_nscb;
