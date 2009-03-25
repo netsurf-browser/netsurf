@@ -73,6 +73,7 @@
 #include <devices/inputevent.h>
 #include "amiga/history_local.h"
 #include "amiga/font.h"
+#include <proto/wb.h>
 
 #ifdef NS_AMIGA_CAIRO
 #include <cairo/cairo-amigaos.h>
@@ -118,6 +119,9 @@ struct BitMap *throbber = NULL;
 ULONG throbber_width,throbber_height,throbber_frames;
 BOOL rmbtrapped;
 BOOL locked_screen = FALSE;
+
+int drag_save = 0;
+void *drag_save_data = NULL;
 
 #define AMI_LASTPOINTER GUI_POINTER_PROGRESS+1
 Object *mouseptrobj[AMI_LASTPOINTER+1];
@@ -174,6 +178,7 @@ void ami_scroller_hook(struct Hook *,Object *,struct IntuiMessage *);
 uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved);
 void ami_init_mouse_pointers(void);
 void ami_switch_tab(struct gui_window_2 *gwin,bool redraw);
+void ami_drag_save(struct Window *win);
 #ifdef WITH_HUBBUB
 static void *myrealloc(void *ptr, size_t len, void *pw);
 #endif
@@ -870,6 +875,9 @@ void ami_handle_msg(void)
 							gwin->mouse_state=0;
 						break;
 					}
+
+					if(drag_save && !gwin->mouse_state)
+						ami_drag_save(gwin->win);
 				break;
 
 				case WMHI_GADGETUP:
@@ -2880,11 +2888,77 @@ void gui_drag_save_object(gui_save_type type, struct content *c,
 		struct gui_window *g)
 {
 //	DebugPrintF("gui_drag_save_object\n");
+
+	drag_save_data = c;
+	drag_save = 1;
 }
 
 void gui_drag_save_selection(struct selection *s, struct gui_window *g)
 {
 //	DebugPrintF("gui_drag_save_selection\n");
+	drag_save_data = s;
+	drag_save = 2;
+}
+
+void ami_drag_save(struct Window *win)
+{
+	ULONG which,type;
+	char path[1025],dpath[1025];
+
+	which = WhichWorkbenchObject(NULL,scrn->MouseX,scrn->MouseY,
+									WBOBJA_Type,&type,
+									WBOBJA_FullPath,&path,
+									WBOBJA_FullPathSize,1024,
+									WBOBJA_DrawerPath,&dpath,
+									WBOBJA_DrawerPathSize,1024,
+									TAG_DONE);
+
+	if((which == WBO_DRAWER) || ((which == WBO_ICON) && (type > WBDRAWER)))
+	{
+		strcpy(path,dpath);
+	}
+	else if(which == WBO_NONE)
+	{
+		drag_save = 0;
+		drag_save_data = NULL;
+		return;
+	}
+
+	if(path[0] == '\0')
+	{
+		drag_save = 0;
+		drag_save_data = NULL;
+		return;
+	}
+
+	ami_update_pointer(win,GUI_POINTER_WAIT);
+
+	switch(drag_save)
+	{
+		case 1: // object
+		{
+			struct content *c = drag_save_data;
+			BPTR fh = 0;
+			AddPart(path,c->title,1024);
+
+			if(fh = FOpen(path,MODE_NEWFILE,0))
+			{
+				FWrite(fh,c->source_data,1,c->source_size);
+				FClose(fh);
+				SetComment(path,c->url);
+			}
+		}
+		break;
+
+		case 2: // selection
+			AddPart(path,"netsurf_text_file",1024);
+			selection_save_text((struct selection *)drag_save_data,path);
+		break;
+	}
+
+	ami_update_pointer(win,GUI_POINTER_DEFAULT);
+	drag_save = 0;
+	drag_save_data = NULL;
 }
 
 void gui_create_form_select_menu(struct browser_window *bw,
