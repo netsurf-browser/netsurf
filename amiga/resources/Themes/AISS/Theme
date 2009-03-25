@@ -48,6 +48,7 @@ ptr_nodrop:*PROGDIR:Resources/Pointers/NoDrop
 ptr_notallowed:*PROGDIR:Resources/Pointers/NotAllowed
 ptr_progress:*PROGDIR:Resources/Pointers/Progress
 ptr_blank:*PROGDIR:Resources/Pointers/Blank
+ptr_drag:*PROGDIR:Resources/Pointers/Drag
 ptr32_default:*ENV:Sys/def_pointer
 ptr32_point:*ENV:Sys/def_linkpointer
 ptr32_caret:*ENV:Sys/def_textpointer
@@ -68,3 +69,4 @@ ptr32_nodrop:*ENV:Sys/def_nodroppointer
 ptr32_notallowed:*ENV:Sys/def_notallowedpointer
 ptr32_progress:*ENV:Sys/def_progresspointer
 ptr32_blank:*ENV:Sys/def_nonepointer
+ptr32_drag:*ENV:Sys/def_draganddroppointer

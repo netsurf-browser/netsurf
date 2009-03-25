@@ -123,7 +123,9 @@ BOOL locked_screen = FALSE;
 int drag_save = 0;
 void *drag_save_data = NULL;
 
-#define AMI_LASTPOINTER GUI_POINTER_PROGRESS+1
+#define AMI_GUI_POINTER_BLANK GUI_POINTER_PROGRESS+1
+#define AMI_GUI_POINTER_DRAG  GUI_POINTER_PROGRESS+2
+#define AMI_LASTPOINTER AMI_GUI_POINTER_DRAG
 Object *mouseptrobj[AMI_LASTPOINTER+1];
 struct BitMap *mouseptrbm[AMI_LASTPOINTER+1];
 int mouseptrcurrent=0;
@@ -143,12 +145,13 @@ char *ptrs[AMI_LASTPOINTER+1] = {
 	"ptr_rightdown",
 	"ptr_cross",
 	"ptr_move",
-	"ptr_wait", // not used
+	"ptr_wait",
 	"ptr_help",
 	"ptr_nodrop",
 	"ptr_notallowed",
 	"ptr_progress",
-	"ptr_blank"};
+	"ptr_blank",
+	"ptr_drag"};
 
 char *ptrs32[AMI_LASTPOINTER+1] = {
 	"ptr32_default",
@@ -165,12 +168,13 @@ char *ptrs32[AMI_LASTPOINTER+1] = {
 	"ptr32_rightdown",
 	"ptr32_cross",
 	"ptr32_move",
-	"ptr32_wait", // not used
+	"ptr32_wait",
 	"ptr32_help",
 	"ptr32_nodrop",
 	"ptr32_notallowed",
 	"ptr32_progress",
-	"ptr32_blank"};
+	"ptr32_blank",
+	"ptr32_drag"};
 
 void ami_update_throbber(struct gui_window_2 *g,bool redraw);
 void ami_update_buttons(struct gui_window_2 *);
@@ -2446,6 +2450,7 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 void ami_update_pointer(struct Window *win, gui_pointer_shape shape)
 {
 	if(mouseptrcurrent == shape) return;
+	if(drag_save) return;
 
 	if(option_use_os_pointers)
 	{
@@ -2501,10 +2506,10 @@ void ami_update_pointer(struct Window *win, gui_pointer_shape shape)
 
 void gui_window_hide_pointer(struct gui_window *g)
 {
-	if(mouseptrcurrent != AMI_LASTPOINTER)
+	if(mouseptrcurrent != AMI_GUI_POINTER_BLANK)
 	{
-		SetWindowPointer(g->shared->win,WA_Pointer,mouseptrobj[AMI_LASTPOINTER],TAG_DONE);
-		mouseptrcurrent = AMI_LASTPOINTER;
+		SetWindowPointer(g->shared->win,WA_Pointer,mouseptrobj[AMI_GUI_POINTER_BLANK],TAG_DONE);
+		mouseptrcurrent = AMI_GUI_POINTER_BLANK;
 	}
 }
 
@@ -2887,15 +2892,18 @@ void gui_download_window_done(struct gui_download_window *dw)
 void gui_drag_save_object(gui_save_type type, struct content *c,
 		struct gui_window *g)
 {
-//	DebugPrintF("gui_drag_save_object\n");
+	if(strcmp(option_use_pubscreen,"Workbench")) return;
 
+	gui_window_set_pointer(g,AMI_GUI_POINTER_DRAG);
 	drag_save_data = c;
 	drag_save = 1;
 }
 
 void gui_drag_save_selection(struct selection *s, struct gui_window *g)
 {
-//	DebugPrintF("gui_drag_save_selection\n");
+	if(strcmp(option_use_pubscreen,"Workbench")) return;
+
+	gui_window_set_pointer(g,AMI_GUI_POINTER_DRAG);
 	drag_save_data = s;
 	drag_save = 2;
 }
@@ -2956,9 +2964,9 @@ void ami_drag_save(struct Window *win)
 		break;
 	}
 
-	ami_update_pointer(win,GUI_POINTER_DEFAULT);
 	drag_save = 0;
 	drag_save_data = NULL;
+	ami_update_pointer(win,GUI_POINTER_DEFAULT);
 }
 
 void gui_create_form_select_menu(struct browser_window *bw,
