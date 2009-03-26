@@ -2980,7 +2980,10 @@ void ami_drag_save(struct Window *win)
 		break;
 
 		case GUI_SAVE_OBJECT_NATIVE:
-			// not implemented yet
+		{
+			struct content *c = drag_save_data;
+			bitmap_save(c->bitmap,path,0);
+		}
 		break;
 	}
 
