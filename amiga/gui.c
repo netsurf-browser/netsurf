@@ -2896,7 +2896,7 @@ void gui_drag_save_object(gui_save_type type, struct content *c,
 
 	gui_window_set_pointer(g,AMI_GUI_POINTER_DRAG);
 	drag_save_data = c;
-	drag_save = 1;
+	drag_save = type;
 }
 
 void gui_drag_save_selection(struct selection *s, struct gui_window *g)
@@ -2905,7 +2905,7 @@ void gui_drag_save_selection(struct selection *s, struct gui_window *g)
 
 	gui_window_set_pointer(g,AMI_GUI_POINTER_DRAG);
 	drag_save_data = s;
-	drag_save = 2;
+	drag_save = GUI_SAVE_TEXT_SELECTION;
 }
 
 void ami_drag_save(struct Window *win)
@@ -2943,7 +2943,8 @@ void ami_drag_save(struct Window *win)
 
 	switch(drag_save)
 	{
-		case 1: // object
+		case GUI_SAVE_OBJECT_ORIG: // object
+		case GUI_SAVE_SOURCE:
 		{
 			struct content *c = drag_save_data;
 			BPTR fh = 0;
@@ -2958,9 +2959,28 @@ void ami_drag_save(struct Window *win)
 		}
 		break;
 
-		case 2: // selection
+		case GUI_SAVE_TEXT_SELECTION: // selection
 			AddPart(path,"netsurf_text_file",1024);
 			selection_save_text((struct selection *)drag_save_data,path);
+		break;
+
+		case GUI_SAVE_COMPLETE:
+		{
+			struct content *c = drag_save_data;
+			BPTR lock = 0;
+
+			AddPart(path,c->title,1024);
+			if(lock = CreateDir(path))
+			{
+				UnLock(lock);
+				save_complete(c,path);
+				SetComment(path,c->url);
+			}
+		}
+		break;
+
+		case GUI_SAVE_OBJECT_NATIVE:
+			// not implemented yet
 		break;
 	}
 
