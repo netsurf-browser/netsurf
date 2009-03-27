@@ -70,6 +70,7 @@ static bool html_redraw_border_plot(int i, int *p, colour c,
 		css_border_style style, int thickness);
 static colour html_redraw_darker(colour c);
 static colour html_redraw_lighter(colour c);
+static colour html_redraw_blend(colour c0, colour c1);
 static colour html_redraw_aa(colour c0, colour c1);
 static bool html_redraw_checkbox(int x, int y, int width, int height,
 		bool selected);
@@ -96,6 +97,17 @@ static bool html_redraw_scrollbars(struct box *box, float scale,
 		colour background_colour);
 
 bool html_redraw_debug = false;
+
+/** Overflow scrollbar colours
+ *
+ * Overflow scrollbar colours can be set by front end code to try to match
+ * scrollbar colours used on the desktop.
+ *
+ * If a front end doesn't set scrollbar colours, these defaults are used.
+ */
+colour css_scrollbar_fg_colour = 0x00d9d9d9; /* light grey */
+colour css_scrollbar_bg_colour = 0x006b6b6b; /* mid grey */
+colour css_scrollbar_arrow_colour = 0x00444444; /* dark grey */
 
 /**
  * Draw a CONTENT_HTML using the current set of plotters (plot).
@@ -1246,6 +1258,20 @@ colour html_redraw_lighter(colour c)
 
 
 /**
+ * Blend two colours.
+ *
+ * \param  c0  colour
+ * \param  c1  colour
+ * \return  a blended colour
+ */
+
+colour html_redraw_blend(colour c0, colour c1)
+{
+	return mix_colour(c0, c1)
+}
+
+
+/**
  * Mix two colours to produce a colour suitable for anti-aliasing.
  *
  * \param  c0  first colour
@@ -1915,116 +1941,174 @@ bool html_redraw_scrollbars(struct box *box, float scale,
 	bool vscroll, hscroll;
 	int well_height, bar_top, bar_height;
 	int well_width, bar_left, bar_width;
-	colour vcolour = box->style->border[RIGHT].color;
-	colour hcolour = box->style->border[BOTTOM].color;
-
-	/** \todo We probably want to clamp to either end of the spectrum,
-	 * rather than simply taking the inverse colour. */
-	if (vcolour == TRANSPARENT || vcolour == background_colour)
-		vcolour = background_colour ^ 0xffffff;
-
-	if (hcolour == TRANSPARENT || hcolour == background_colour)
-		hcolour = background_colour ^ 0xffffff;
+	colour c0, c1; /* highlight and shadow colours */
+	int v[6]; /* array of triangle vertices */
 
 	box_scrollbar_dimensions(box, padding_width, padding_height, w,
 			&vscroll, &hscroll,
 			&well_height, &bar_top, &bar_height,
 			&well_width, &bar_left, &bar_width);
 
-#define TRIANGLE(x0, y0, x1, y1, x2, y2, c)				\
-	if (!plot.line(x0, y0, x1, y1, scale, c, false, false))		\
+#define RECTANGLE(x0, y0, x1, y1, c, inset)				\
+	c0 = inset ? html_redraw_darker(c) : html_redraw_lighter(c);	\
+	c1 = inset ? html_redraw_lighter(c) : html_redraw_darker(c);	\
+	if (!plot.line(x0, y0, x1, y0, 1, c0, false, false))		\
 		return false;						\
-	if (!plot.line(x0, y0, x2, y2, scale, c, false, false))		\
+	if (!plot.line(x1, y0, x1, y1 + 1, 1, c1, false, false))	\
 		return false;						\
-	if (!plot.line(x1, y1, x2, y2, scale, c, false, false))		\
+	if (!plot.line(x1, y0, x1, y0 + 1, 1,				\
+			html_redraw_blend(c0, c1), false, false))	\
+		return false;						\
+	if (!plot.line(x1, y1, x0, y1, 1, c1, false, false))		\
+		return false;						\
+	if (!plot.line(x0, y1, x0, y0, 1, c0, false, false))		\
+		return false;						\
+	if (!plot.line(x0, y1, x0, y1 + 1, 1,				\
+			html_redraw_blend(c0, c1), false, false))	\
 		return false;
-
-	/* fill scrollbar well(s) with background colour */
-	if (vscroll)
-		if (!plot.fill(x + padding_width - w, y,
-				x + padding_width, y + padding_height,
-				background_colour))
-			return false;
-	if (hscroll)
-		if (!plot.fill(x, y + padding_height - w,
-				x + padding_width, y + padding_height,
-				background_colour))
-			return false;
-
-	/* vertical scrollbar */
-	if (vscroll) {
-		/* left line */
-		if (!plot.line(x + padding_width - w, y,
-				x + padding_width - w, y + padding_height,
-				scale, vcolour, false, false))
-			return false;
-		/* up arrow */
-		TRIANGLE(x + padding_width - w / 2, y + w / 4,
-				x + padding_width - w * 3 / 4, y + w * 3 / 4,
-				x + padding_width - w / 4, y + w * 3 / 4,
-				vcolour);
-		/* separator */
-		if (!plot.line(x + padding_width - w, y + w,
-				x + padding_width, y + w,
-				scale, vcolour, false, false))
-			return false;
-		/* bar */
-		if (!plot.rectangle(x + padding_width - w * 3 / 4,
-				y + w + bar_top + w / 4,
-				w / 2, bar_height - w / 2,
-				scale, vcolour, false, false))
-			return false;
-		/* separator */
-		if (!plot.line(x + padding_width - w, y + w + well_height,
-				x + padding_width, y + w + well_height,
-				scale, vcolour, false, false))
-			return false;
-		/* down arrow */
-		TRIANGLE(x + padding_width - w / 2,
-				y + w + well_height + w * 3 / 4,
-				x + padding_width - w * 3 / 4,
-				y + w + well_height + w / 4,
-				x + padding_width - w / 4,
-				y + w + well_height + w / 4,
-				vcolour);
-	}
 
 	/* horizontal scrollbar */
 	if (hscroll) {
-		/* top line */
-		if (!plot.line(x, y + padding_height - w,
-				x + well_width + w + w, y + padding_height - w,
-				scale, hcolour, false, false))
+		/* scrollbar outline */
+		RECTANGLE(x,
+				y + padding_height - w,
+				x + padding_width - 1,
+				y + padding_height - 1,
+				css_scrollbar_bg_colour, true);
+		/* left arrow icon border */
+		RECTANGLE(x + 1,
+				y + padding_height - w + 1,
+				x + w - 2,
+				y + padding_height - 2,
+				css_scrollbar_fg_colour, false);
+		/* left arrow icon background */
+		if (!plot.fill(x + 2,
+				y + padding_height - w + 2,
+				x + w - 2,
+				y + padding_height - 2,
+				css_scrollbar_fg_colour))
 			return false;
 		/* left arrow */
-		TRIANGLE(x + w / 4, y + padding_height - w / 2,
-				x + w * 3 / 4, y + padding_height - w * 3 / 4,
-				x + w * 3 / 4, y + padding_height - w / 4,
-				hcolour);
-		/* separator */
-		if (!plot.line(x + w, y + padding_height - w,
-				x + w, y + padding_height,
-				scale, hcolour, false, false))
+		v[0] = x + w / 4;
+		v[1] = y + padding_height - w / 2;
+		v[2] = x + w * 3 / 4;
+		v[3] = y + padding_height - w * 3 / 4;
+		v[4] = x + w * 3 / 4;
+		v[5] = y + padding_height - w / 4;
+		if (!plot.polygon(v, 3, css_scrollbar_arrow_colour))
 			return false;
-		/* bar */
-		if (!plot.rectangle(x + w + bar_left + w / 4,
-				y + padding_height - w * 3 / 4,
-				bar_width - w / 2, w / 2,
-				scale, hcolour, false, false))
+		/* scroll well background */
+		if (!plot.fill(x + w - 1,
+				y + padding_height - w + 1,
+				x + w + well_width + (vscroll ? 2 : 1),
+				y + padding_height - 1,
+				css_scrollbar_bg_colour))
 			return false;
-		/* separator */
-		if (!plot.line(x + w + well_width, y + padding_height - w,
-				x + w + well_width, y + padding_height,
-				scale, hcolour, false, false))
+		/* scroll position indicator bar */
+		RECTANGLE(x + w + bar_left,
+				y + padding_height - w + 1,
+				x + w + bar_left + bar_width + (vscroll? 1 : 0),
+				y + padding_height - 2,
+				css_scrollbar_fg_colour, false);
+		if (!plot.fill(x + w + bar_left + 1,
+				y + padding_height - w + 2,
+				x + w + bar_left + bar_width + (vscroll? 1 : 0),
+				y + padding_height - 2,
+				css_scrollbar_fg_colour))
+			return false;
+		/* right arrow icon border */
+		RECTANGLE(x + w + well_width + 2,
+				y + padding_height - w + 1,
+				x + w + well_width + w - (vscroll ? 1 : 2),
+				y + padding_height - 2,
+				css_scrollbar_fg_colour, false);
+		/* right arrow icon background */
+		if (!plot.fill(x + w + well_width + 3,
+				y + padding_height - w + 2,
+				x + w + well_width + w - (vscroll ? 1 : 2),
+				y + padding_height - 2,
+				css_scrollbar_fg_colour))
 			return false;
 		/* right arrow */
-		TRIANGLE(x + w + well_width + w * 3 / 4,
-				y + padding_height - w / 2,
-				x + w + well_width + w / 4,
-				y + padding_height - w * 3 / 4,
-				x + w + well_width + w / 4,
-				y + padding_height - w / 4,
-				hcolour);
+		v[0] = x + w + well_width + w * 3 / 4 + (vscroll ? 1 : 0);
+		v[1] = y + padding_height - w / 2;
+		v[2] = x + w + well_width + w / 4 + (vscroll ? 1 : 0);
+		v[3] = y + padding_height - w * 3 / 4;
+		v[4] = x + w + well_width + w / 4 + (vscroll ? 1 : 0);
+		v[5] = y + padding_height - w / 4;
+		if (!plot.polygon(v, 3, css_scrollbar_arrow_colour))
+			return false;
+	}
+
+	/* vertical scrollbar */
+	if (vscroll) {
+		/* outline */
+		RECTANGLE(x + padding_width - w,
+				y,
+				x + padding_width - 1,
+				y + padding_height - 1,
+				css_scrollbar_bg_colour, true);
+		/* top arrow background */
+		RECTANGLE(x + padding_width - w + 1,
+				y + 1,
+				x + padding_width - 2,
+				y + w - 2,
+				css_scrollbar_fg_colour, false);
+		if (!plot.fill(x + padding_width - w + 2,
+				y + 2,
+				x + padding_width - 2,
+				y + w - 2,
+				css_scrollbar_fg_colour))
+			return false;
+		/* up arrow */
+		v[0] = x + padding_width - w / 2;
+		v[1] = y + w / 4;
+		v[2] = x + padding_width - w * 3 / 4;
+		v[3] = y + w * 3 / 4;
+		v[4] = x + padding_width - w / 4;
+		v[5] = y + w * 3 / 4;
+		if (!plot.polygon(v, 3, css_scrollbar_arrow_colour))
+			return false;
+		/* scroll well background */
+		if (!plot.fill(x + padding_width - w + 1,
+				y + w - 1,
+				x + padding_width - 1,
+				y + padding_height - w + 1,
+				css_scrollbar_bg_colour))
+			return false;
+		/* scroll position indicator bar */
+		RECTANGLE(x + padding_width - w + 1,
+				y + w + bar_top,
+				x + padding_width - 2,
+				y + w + bar_top + bar_height,
+				css_scrollbar_fg_colour, false);
+		if (!plot.fill(x + padding_width - w + 2,
+				y + w + bar_top + 1,
+				x + padding_width - 2,
+				y + w + bar_top + bar_height,
+				css_scrollbar_fg_colour))
+			return false;
+		/* bottom arrow background */
+		RECTANGLE(x + padding_width - w + 1,
+				y + padding_height - w + 1,
+				x + padding_width - 2,
+				y + padding_height - 2,
+				css_scrollbar_fg_colour, false);
+		if (!plot.fill(x + padding_width - w + 2,
+				y + padding_height - w + 2,
+				x + padding_width - 2,
+				y + padding_height - 2,
+				css_scrollbar_fg_colour))
+			return false;
+		/* down arrow */
+		v[0] = x + padding_width - w / 2;
+		v[1] = y + w + well_height + w * 3 / 4;
+		v[2] = x + padding_width - w * 3 / 4;
+		v[3] = y + w + well_height + w / 4;
+		v[4] = x + padding_width - w / 4;
+		v[5] = y + w + well_height + w / 4;
+		if (!plot.polygon(v, 3, css_scrollbar_arrow_colour))
+			return false;
 	}
 
 	return true;
