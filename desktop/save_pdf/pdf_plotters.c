@@ -27,7 +27,8 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
-#include "hpdf.h"
+
+#include <hpdf.h>
 
 #include "desktop/options.h"
 #include "desktop/plotters.h"

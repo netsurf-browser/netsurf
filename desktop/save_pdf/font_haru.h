@@ -23,9 +23,10 @@
  
 #ifndef _NETSURF_RENDER_FONT_HARU_H_
 #define _NETSURF_RENDER_FONT_HARU_H_
- 
+
+#include <hpdf.h>
+
 #include "render/font.h"
-#include "hpdf.h"
  
 bool haru_nsfont_apply_style(const struct css_style *style,
 			      	HPDF_Doc doc, HPDF_Page page,

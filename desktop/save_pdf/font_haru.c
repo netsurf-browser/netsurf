@@ -34,7 +34,8 @@
 #include <math.h>
 #include <string.h> 
 
-#include "hpdf.h"  
+#include <hpdf.h>
+
 #include "css/css.h"
 
 #include "desktop/options.h"
