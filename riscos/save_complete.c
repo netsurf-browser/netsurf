@@ -153,8 +153,8 @@ bool save_complete_html(struct content *c, const char *path, bool index)
 			return false;
 		}
 
-		error = xosfile_save_stamped(spath, 0xf79, source,
-					source + source_len);
+		error = xosfile_save_stamped(spath, 0xf79, 
+				(byte *) source, (byte *) source + source_len);
 		free(source);
 		if (error) {
 			LOG(("xosfile_save_stamped: 0x%x: %s",
@@ -189,8 +189,8 @@ bool save_complete_html(struct content *c, const char *path, bool index)
 				(unsigned int) obj);
 		error = xosfile_save_stamped(spath,
 				ro_content_filetype(obj),
-				obj->source_data,
-				obj->source_data + obj->source_size);
+				(byte *) obj->source_data,
+				(byte *) obj->source_data + obj->source_size);
 		if (error) {
 			LOG(("xosfile_save_stamped: 0x%x: %s",
 					error->errnum, error->errmess));
@@ -287,8 +287,8 @@ bool save_imported_sheets(struct content *c, const char *path)
 			return false;
 		}
 
-		error = xosfile_save_stamped(spath, 0xf79, source,
-					source + source_len);
+		error = xosfile_save_stamped(spath, 0xf79, 
+				(byte *) source, (byte *) source + source_len);
 		free(source);
 		if (error) {
 			LOG(("xosfile_save_stamped: 0x%x: %s",
@@ -521,28 +521,28 @@ bool rewrite_urls(xmlNode *n, const char *base)
 		/* ignore */
 	}
 	/* 1 */
-	else if (strcmp(n->name, "object") == 0) {
+	else if (strcmp((const char *) n->name, "object") == 0) {
 		if (!rewrite_url(n, "data", base))
 			return false;
 	}
 	/* 2 */
-	else if (strcmp(n->name, "a") == 0 ||
-			strcmp(n->name, "area") == 0 ||
-			strcmp(n->name, "link") == 0) {
+	else if (strcmp((const char *) n->name, "a") == 0 ||
+			strcmp((const char *) n->name, "area") == 0 ||
+			strcmp((const char *) n->name, "link") == 0) {
 		if (!rewrite_url(n, "href", base))
 			return false;
 	}
 	/* 3 */
-	else if (strcmp(n->name, "frame") == 0 ||
-			strcmp(n->name, "iframe") == 0 ||
-			strcmp(n->name, "input") == 0 ||
-			strcmp(n->name, "img") == 0 ||
-			strcmp(n->name, "script") == 0) {
+	else if (strcmp((const char *) n->name, "frame") == 0 ||
+			strcmp((const char *) n->name, "iframe") == 0 ||
+			strcmp((const char *) n->name, "input") == 0 ||
+			strcmp((const char *) n->name, "img") == 0 ||
+			strcmp((const char *) n->name, "script") == 0) {
 		if (!rewrite_url(n, "src", base))
 			return false;
 	}
 	/* 4 */
-	else if (strcmp(n->name, "style") == 0) {
+	else if (strcmp((const char *) n->name, "style") == 0) {
 		unsigned int len;
 		xmlChar *content;
 
@@ -557,9 +557,9 @@ bool rewrite_urls(xmlNode *n, const char *base)
 
 			/* Rewrite @import rules */
 			char *rewritten = rewrite_stylesheet_urls(
-					content,
-					strlen((char*)content),
-					&len, base);
+					(const char *) content,
+					strlen((const char *) content),
+					(int *) &len, base);
 			xmlFree(content);
 			if (!rewritten)
 				return false;
@@ -573,7 +573,7 @@ bool rewrite_urls(xmlNode *n, const char *base)
 		return true;
 	}
 	/* 5 */
-	else if (strcmp(n->name, "base") == 0) {
+	else if (strcmp((const char *) n->name, "base") == 0) {
 		/* simply remove any <base> tags from the document */
 		xmlUnlinkNode(n);
 		xmlFreeNode(n);
@@ -625,7 +625,7 @@ bool rewrite_url(xmlNode *n, const char *attr, const char *base)
 	if (!xmlHasProp(n, (const xmlChar *) attr))
 		return true;
 
-	data = xmlGetProp(n, (const xmlChar *) attr);
+	data = (char *) xmlGetProp(n, (const xmlChar *) attr);
 	if (!data)
 		return false;
 
