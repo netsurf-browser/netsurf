@@ -33,14 +33,14 @@
 static inline uint16_t *
 fb_16bpp_get_xy_loc(int x, int y)
 {
-        return (void *)(framebuffer->ptr + 
-                            (y * framebuffer->linelen) + 
+        return (void *)(framebuffer->ptr +
+                            (y * framebuffer->linelen) +
                             (x << 1));
 }
 
 static inline colour fb_16bpp_to_colour(uint16_t pixel)
 {
-        return ((pixel & 0x1F) << 19) | 
+        return ((pixel & 0x1F) << 19) |
               ((pixel & 0x7E0) << 5) |
               ((pixel & 0xF800) >> 8);
 }
@@ -114,14 +114,14 @@ static bool fb_16bpp_line(int x0, int y0, int x1, int y1, int width,
                 x = dyabs >> 1;
                 y = dxabs >> 1;
 
-                if (dxabs >= dyabs) { 
+                if (dxabs >= dyabs) {
                         /* the line is more horizontal than vertical */
                         for (i = 0; i <= dxabs; i++) {
                                 *pvideo = ent;
 
                                 pvideo++;
                                 y += dyabs;
-                                if (y >= dxabs) {
+                                if (y > dxabs) {
                                         y -= dxabs;
                                         pvideo += sdy * (framebuffer->linelen>>1);
                                 }
@@ -133,13 +133,13 @@ static bool fb_16bpp_line(int x0, int y0, int x1, int y1, int width,
                                 pvideo += sdy * (framebuffer->linelen >> 1);
 
                                 x += dxabs;
-                                if (x >= dyabs) {
+                                if (x > dyabs) {
                                         x -= dyabs;
                                         pvideo++;
                                 }
                         }
                 }
-                
+
         }
 
 
@@ -261,7 +261,7 @@ fb_16bpp_draw_ft_bitmap(FT_Bitmap *bp, int x, int y, colour c)
         uint32_t fgcol;
 
         /* The part of the scaled image actually displayed is cropped to the
-         * current context. 
+         * current context.
          */
         x0 = x;
         y0 = y;
@@ -290,7 +290,7 @@ fb_16bpp_draw_ft_bitmap(FT_Bitmap *bp, int x, int y, colour c)
                         abpixel = (pixel[((yoff + yloop) * bp->pitch) + xloop + xoff] << 24) | fgcol;
                         if ((abpixel & 0xFF000000) != 0) {
                                 if ((abpixel & 0xFF000000) != 0xFF000000) {
-                                        abpixel = fb_plotters_ablend(abpixel, 
+                                        abpixel = fb_plotters_ablend(abpixel,
                                          fb_16bpp_to_colour(*(pvideo + xloop)));
                                 }
 
@@ -322,17 +322,17 @@ static bool fb_16bpp_text(int x, int y, const struct css_style *style,
                 if (glyph->format == FT_GLYPH_FORMAT_BITMAP) {
                         bglyph = (FT_BitmapGlyph)glyph;
 
-                        /* now, draw to our target surface */  
+                        /* now, draw to our target surface */
                         if (bglyph->bitmap.pixel_mode == FT_PIXEL_MODE_MONO) {
-                                fb_16bpp_draw_ft_monobitmap(&bglyph->bitmap, 
-                                                            x + bglyph->left, 
+                                fb_16bpp_draw_ft_monobitmap(&bglyph->bitmap,
+                                                            x + bglyph->left,
                                                             y - bglyph->top,
-                                                            c); 
+                                                            c);
                         } else {
-                                fb_16bpp_draw_ft_bitmap(&bglyph->bitmap, 
-                                                        x + bglyph->left, 
+                                fb_16bpp_draw_ft_bitmap(&bglyph->bitmap,
+                                                        x + bglyph->left,
                                                         y - bglyph->top,
-                                                        c); 
+                                                        c);
                         }
                 }
                 x += glyph->advance.x >> 16;
@@ -362,7 +362,7 @@ static bool fb_16bpp_text(int x, int y, const struct css_style *style,
 
         /* aquire thge text in local font encoding */
 	utf8_to_font_encoding(fb_font, text, length, (char **)&buffer);
-	if (!buffer) 
+	if (!buffer)
                 return true;
         length = strlen((char *)buffer);
 
@@ -371,7 +371,7 @@ static bool fb_16bpp_text(int x, int y, const struct css_style *style,
         y-=((fb_font->height * 75)/100);
 
         y+=1; /* the coord is the bottom-left of the pixels offset by 1 to make
-               *   it work since fb coords are the top-left of pixels 
+               *   it work since fb coords are the top-left of pixels
                */
 
         /* The part of the text displayed is cropped to the current context. */
@@ -401,7 +401,7 @@ static bool fb_16bpp_text(int x, int y, const struct css_style *style,
                 if ((x + fb_font->width) > x1)
                         break;
 
-                if (x < x0) 
+                if (x < x0)
                         continue;
 
                 pvideo = fb_16bpp_get_xy_loc(x, y0);
@@ -455,7 +455,7 @@ static bool fb_16bpp_bitmap(int x, int y, int width, int height,
 
 
         /* TODO here we should scale the image from bitmap->width to width, for
-         * now simply crop. 
+         * now simply crop.
          */
         if (width > bitmap->width)
                 width = bitmap->width;
@@ -464,7 +464,7 @@ static bool fb_16bpp_bitmap(int x, int y, int width, int height,
                 height = bitmap->height;
 
         /* The part of the scaled image actually displayed is cropped to the
-         * current context. 
+         * current context.
          */
         x0 = x;
         y0 = y;
@@ -475,7 +475,7 @@ static bool fb_16bpp_bitmap(int x, int y, int width, int height,
                 return true;
 
 
-        LOG(("%d, %d  %d, %d  bitmap %p, content %p", 
+        LOG(("%d, %d  %d, %d  bitmap %p, content %p",
            x0,y0,x1,y1,bitmap,content));
 
         if (height > (y1 - y0))
@@ -506,7 +506,7 @@ static bool fb_16bpp_bitmap(int x, int y, int width, int height,
                                 abpixel = pixel[yloop + xloop + xoff];
                                 if ((abpixel & 0xFF000000) != 0) {
                                         if ((abpixel & 0xFF000000) != 0xFF000000) {
-                                                abpixel = fb_plotters_ablend(abpixel, 
+                                                abpixel = fb_plotters_ablend(abpixel,
                                                                              fb_16bpp_to_colour(*(pvideo + xloop)));
                                         }
 
@@ -525,7 +525,7 @@ static bool fb_16bpp_bitmap_tile(int x, int y, int width, int height,
 			bool repeat_x, bool repeat_y,
                              struct content *content)
 {
-        return fb_plotters_bitmap_tile(x, y, width, height, 
+        return fb_plotters_bitmap_tile(x, y, width, height,
                                        bitmap, bg, repeat_x, repeat_y,
                                        content, fb_16bpp_bitmap);
 }
