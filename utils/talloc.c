@@ -131,8 +131,8 @@ struct talloc_chunk {
 /* panic if we get a bad magic value */
 static inline struct talloc_chunk *talloc_chunk_from_ptr(const void *ptr)
 {
-	const char *pp = (const char *)ptr;
-	struct talloc_chunk *tc = discard_const_p(struct talloc_chunk, pp - TC_HDR_SIZE);
+	const void *pp = ((const char *)ptr) - TC_HDR_SIZE;
+	struct talloc_chunk *tc = discard_const_p(struct talloc_chunk, pp);
 	if (unlikely((tc->flags & (TALLOC_FLAG_FREE | ~0xF)) != TALLOC_MAGIC)) { 
 		if (tc->flags & TALLOC_FLAG_FREE) {
 			TALLOC_ABORT("Bad talloc magic value - double free"); 
