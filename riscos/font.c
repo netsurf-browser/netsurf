@@ -545,7 +545,7 @@ void ro_gui_wimp_desktop_font(char *family, size_t family_size, int *psize,
 		goto failsafe;
 	}
 
-	error = xfont_read_defn(font_handle, family,
+	error = xfont_read_defn(font_handle, (byte *) family,
 			&ptx, &pty, NULL, NULL, NULL, NULL);
 	if (error) {
 		LOG(("xfont_read_defn: 0x%x: %s",
