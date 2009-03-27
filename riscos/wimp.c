@@ -50,8 +50,6 @@ static int ro_gui_strncmp(const char *s1, const char *s2, size_t len);
 static wimpextend_furniture_sizes furniture_sizes;
 static wimp_w furniture_window = NULL;
 
-unsigned char last_sprite_found[16];
-
 /**
  * Gets the horizontal scrollbar height
  *
@@ -788,10 +786,11 @@ osspriteop_area *ro_gui_load_sprite_file(const char *pathname)
 
 bool ro_gui_wimp_sprite_exists(const char *sprite)
 {
+	static char last_sprite_found[16];
 	os_error *error;
 
 	/* make repeated calls fast */
-	if (!strncmp(sprite, last_sprite_found, 16))
+	if (!strncmp(sprite, last_sprite_found, sizeof(last_sprite_found)))
 		return true;
 
 	/* fallback if not known to exist */
@@ -804,7 +803,7 @@ bool ro_gui_wimp_sprite_exists(const char *sprite)
 		}
 		return false;
 	}
-  	snprintf(last_sprite_found, 16, sprite);
+  	snprintf(last_sprite_found, sizeof(last_sprite_found), sprite);
 	return true;
 }
 
