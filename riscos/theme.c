@@ -302,7 +302,7 @@ bool ro_gui_theme_add_descriptor(const char *folder, const char *leafname)
 		return false;
 	}
 	error = xosgbpb_read_atw(file_handle,
-			(char *)&file_header,
+			(byte *) &file_header,
 			sizeof (struct theme_file_header),
 			0, &output_left);
 	xosfind_closew(file_handle);
