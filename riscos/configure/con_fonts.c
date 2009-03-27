@@ -178,11 +178,11 @@ bool ro_gui_options_fonts_init_menu(void)
 		return false;
 	}
 	default_menu->title_data.indirected_text.text =
-			messages_get("DefaultFonts");
+			(char *) messages_get("DefaultFonts");
 	ro_gui_menu_init_structure(default_menu, 5);
 	for (i = 0; i < 5; i++) {
 		default_menu->entries[i].data.indirected_text.text =
-				css_font_family_name[i+1];
+				(char *) css_font_family_name[i+1];
 		default_menu->entries[i].data.indirected_text.size =
 				strlen(css_font_family_name[i+1]);
 	}
