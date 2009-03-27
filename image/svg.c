@@ -24,7 +24,10 @@
 #ifdef WITH_NS_SVG
 
 #include <assert.h>
-#include "svgtiny.h"
+#include <string.h>
+
+#include <svgtiny.h>
+
 #include "content/content.h"
 #include "css/css.h"
 #include "desktop/plotters.h"
