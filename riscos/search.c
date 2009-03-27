@@ -79,10 +79,11 @@ wimp_menu *recent_search_menu = (wimp_menu *)&menu_recent;
 
 
 static void start_search(bool forwards);
-static void do_search(char *string, int string_len, bool case_sens,
+static void do_search(const char *string, int string_len, bool case_sens,
 		bool forwards);
 static const char *find_pattern(const char *string, int s_len,
-		const char *pattern, int p_len, bool case_sens, int *m_len);
+		const char *pattern, int p_len, bool case_sens, 
+		unsigned int *m_len);
 static bool find_occurrences_html(const char *pattern, int p_len,
 		struct box *cur, bool case_sens);
 static bool find_occurrences_text(const char *pattern, int p_len,
@@ -96,7 +97,7 @@ static void ro_gui_search_end(wimp_w w);
 static bool ro_gui_search_next(wimp_w w);
 static bool ro_gui_search_click(wimp_pointer *pointer);
 static bool ro_gui_search_keypress(wimp_key *key);
-static void ro_gui_search_add_recent(char *search);
+static void ro_gui_search_add_recent(const char *search);
 
 void ro_gui_search_init(void)
 {
@@ -154,7 +155,7 @@ bool ro_gui_search_click(wimp_pointer *pointer)
 	return false;
 }
 
-void ro_gui_search_add_recent(char *search)
+void ro_gui_search_add_recent(const char *search)
 {
 	char *tmp;
 	int i;
@@ -415,7 +416,8 @@ void free_matches(void)
  * \param case_sens whether to perform a case sensitive search
  * \param forwards direction to search in
  */
-void do_search(char *string, int string_len, bool case_sens, bool forwards)
+void do_search(const char *string, int string_len, bool case_sens, 
+		bool forwards)
 {
 	struct rect bounds;
 	struct content *c;
@@ -551,7 +553,7 @@ void do_search(char *string, int string_len, bool case_sens, bool forwards)
  */
 
 const char *find_pattern(const char *string, int s_len, const char *pattern,
-		int p_len, bool case_sens, int *m_len)
+		int p_len, bool case_sens, unsigned int *m_len)
 {
 	struct { const char *ss, *s, *p; bool first; } context[16];
 	const char *ep = pattern + p_len;
