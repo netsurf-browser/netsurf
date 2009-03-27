@@ -101,7 +101,7 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 			return false;
 		sprite_header = (osspriteop_header *)(sprite_area + 1);
 	} else {
-		char *pixbufp = bitmap_get_buffer(bitmap);
+		const uint8_t *pixbufp = bitmap_get_buffer(bitmap);
 		if (!pixbufp || !bitmap->sprite_area)
 			return false;
 		sprite_area = bitmap->sprite_area;
@@ -135,7 +135,7 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 
 	/* if we changed to 8bpp then go back to 32bpp */
 	if (thumbnail_32bpp_available != 1) {
-		char *pixbufp = bitmap_get_buffer(bitmap);
+		const uint8_t *pixbufp = bitmap_get_buffer(bitmap);
 		if (!pixbufp || !bitmap->sprite_area) {
 			free(sprite_area);
 			return false;
@@ -189,7 +189,8 @@ osspriteop_area *thumbnail_convert_8bpp(struct bitmap *bitmap)
 
 	if (sprite_header->image != sprite_header->mask) {
 		/* build the sprite mask from the alpha channel */
-		unsigned *dp = (unsigned*)bitmap_get_buffer(bitmap);
+		void *buf = bitmap_get_buffer(bitmap);
+		unsigned *dp = (unsigned *) buf;
 		if (!dp)
 			return sprite_area;
 		int w = bitmap_get_width(bitmap);
