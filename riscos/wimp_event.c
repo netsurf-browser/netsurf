@@ -36,6 +36,7 @@
 #include "riscos/ucstables.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
+#include "riscos/wimputils.h"
 #include "utils/log.h"
 #include "utils/utils.h"
 
@@ -528,7 +529,7 @@ bool ro_gui_wimp_event_mouse_click(wimp_pointer *pointer)
 						pointer->w);
 				ro_gui_menu_closed(false);
 				gui_poll(true);
-				error = xwimp_open_window((wimp_open *) &open);
+				error = xwimp_open_window(PTR_WIMP_OPEN(&open));
 				if (error) {
 					LOG(("xwimp_open_window: 0x%x: %s",
 							error->errnum, error->errmess));
@@ -718,22 +719,25 @@ bool ro_gui_wimp_event_keypress(wimp_key *key)
 	}
 
 	if (t_alphabet != alphabet) {
+		void *ostable;
 		osbool unclaimed;
 		/* Alphabet has changed, so read UCS table location */
 		alphabet = t_alphabet;
 
 		error = xserviceinternational_get_ucs_conversion_table(
-						alphabet, &unclaimed,
-						(void**)&ucstable);
-		if (error) {
+						alphabet, &unclaimed, &ostable);
+		if (error != NULL) {
 			LOG(("failed reading UCS conversion table: 0x%x: %s",
 					error->errnum, error->errmess));
-			/* try using our own table instead */
+			/* Try using our own table instead */
 			ucstable = ucstable_from_alphabet(alphabet);
-		}
-		if (unclaimed)
+		} else if (unclaimed) {
 			/* Service wasn't claimed so use our own ucstable */
 			ucstable = ucstable_from_alphabet(alphabet);
+		} else {
+			/* Use the table provided by the OS */
+			ucstable = ostable;
+		}
 	}
 
 	if (c < 256) {
