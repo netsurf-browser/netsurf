@@ -32,7 +32,7 @@ struct bitmap {
 	unsigned int state;
 
 	void *private_word;
-	void (*invalidate)(struct bitmap *bitmap, void *private_word);
+	void (*invalidate)(void *bitmap, void *private_word);
 
 	osspriteop_area *sprite_area;	/** Uncompressed data, or NULL */
 	char *compressed;		/** Compressed data, or NULL */

@@ -431,19 +431,28 @@ void bitmap_set_opaque(void *vbitmap, bool opaque)
 bool bitmap_test_opaque(void *vbitmap)
 {
 	struct bitmap *bitmap = (struct bitmap *) vbitmap;
+	unsigned char *sprite;
+	unsigned int width, height, size;
+	osspriteop_header *sprite_header;
+	unsigned *p, *ep;
+
 	assert(bitmap);
-	unsigned char *sprite = bitmap_get_buffer(bitmap);
+
+	sprite = bitmap_get_buffer(bitmap);
 	if (!sprite)
 		return false;
-	unsigned int width = bitmap_get_rowstride(bitmap);
-	osspriteop_header *sprite_header =
-		(osspriteop_header *) (bitmap->sprite_area + 1);
-	unsigned int height = (sprite_header->height + 1);
-	unsigned int size = width * height;
-	unsigned *p = (void*)sprite;
-	unsigned *ep;
 
-	ep = (void*)(sprite + (size & ~31));
+	width = bitmap_get_rowstride(bitmap);
+
+	sprite_header = (osspriteop_header *) (bitmap->sprite_area + 1);
+
+	height = (sprite_header->height + 1);
+	
+	size = width * height;
+	
+	p = (void *) sprite;
+
+	ep = (void *) (sprite + (size & ~31));
 	while (p < ep) {
 		/* \todo prefetch(p, 128)? */
 		if (((p[0] & p[1] & p[2] & p[3] & p[4] & p[5] & p[6] & p[7])
@@ -451,7 +460,8 @@ bool bitmap_test_opaque(void *vbitmap)
 			return false;
 		p += 8;
 	}
-	ep = (unsigned*)(sprite + size);
+
+	ep = (void *) (sprite + size);
 	while (p < ep) {
 		if ((*p & 0xff000000U) != 0xff000000U) return false;
 		p++;
@@ -513,7 +523,7 @@ unsigned char *bitmap_get_buffer(void *vbitmap)
 
 	/* image is already decompressed, no change to image states */
 	if (bitmap->sprite_area)
-		return ((char *) (bitmap->sprite_area)) + 16 + 44;
+		return ((unsigned char *) (bitmap->sprite_area)) + 16 + 44;
 
 	/* load and/or decompress the image */
 	if (bitmap->filename[0])
@@ -526,7 +536,8 @@ unsigned char *bitmap_get_buffer(void *vbitmap)
 			(bitmap_direct_used > bitmap_direct_size * 0.9);
 
 	if (bitmap->sprite_area)
-		return ((char *) (bitmap->sprite_area)) + 16 + 44;
+		return ((unsigned char *) (bitmap->sprite_area)) + 16 + 44;
+
 	return NULL;
 }
 
@@ -575,8 +586,7 @@ void bitmap_destroy(void *vbitmap)
 		free(bitmap->sprite_area);
 	}
 	if (bitmap->compressed) {
-		header = (struct bitmap_compressed_header *)
-				bitmap->compressed;
+		header = (void *) bitmap->compressed;
 		bitmap_compressed_used -= header->input_size +
 			sizeof(struct bitmap_compressed_header);
 		free(bitmap->compressed);
@@ -621,7 +631,7 @@ bool bitmap_save(void *vbitmap, const char *path, unsigned flags)
 		 * format to either a bi-level mask or a Select-style full
 		 * alpha channel */
 		osspriteop_area *area = bitmap->sprite_area;
-		osspriteop_header *hdr = (osspriteop_header*)((char*)area+area->first);
+		osspriteop_header *hdr = (void *) ((char *) area + area->first);
 		unsigned width = hdr->width + 1, height = hdr->height + 1;
 		unsigned image_size = height * width * 4;
 		unsigned char *chunk_buf;
@@ -678,7 +688,7 @@ bool bitmap_save(void *vbitmap, const char *path, unsigned flags)
 			return false;
 		}
 
-		p = (unsigned*)((char*)hdr + hdr->image);
+		p = (void *) ((char *) hdr + hdr->image);
 
 		/* write out the area header, sprite header and image data */
 		error = xosgbpb_writew(fw, (byte*)&file_hdr + 4,
@@ -781,6 +791,7 @@ void bitmap_modified(void *vbitmap) {
 void bitmap_set_suspendable(void *vbitmap, void *private_word,
 		void (*invalidate)(void *bitmap, void *private_word)) {
 	struct bitmap *bitmap = (struct bitmap *) vbitmap;
+
 	bitmap->private_word = private_word;
 	bitmap->invalidate = invalidate;
 	bitmap_suspendable++;
@@ -822,8 +833,7 @@ void bitmap_maintain(void)
 			memory += bitmap->width * bitmap->height * 4;
 		else if ((bitmap->compressed) &&
 				(!bitmap_maintenance_priority)) {
-			header = (struct bitmap_compressed_header *)
-					bitmap->compressed;
+			header = (void *) bitmap->compressed;
 			compressed_memory += header->input_size +
 				sizeof(struct bitmap_compressed_header);
 		} else if (bitmap->state & BITMAP_SUSPENDED)
@@ -871,8 +881,7 @@ void bitmap_maintain(void)
 				return;
 			}
 			if (bitmap->compressed) {
-				header = (struct bitmap_compressed_header *)
-						bitmap->compressed;
+				header = (void *) bitmap->compressed;
 				compressed_memory += header->input_size +
 					sizeof(struct bitmap_compressed_header);
 			}
@@ -911,7 +920,7 @@ void bitmap_decompress(struct bitmap *bitmap)
 	assert(bitmap->compressed);
 
 	/* ensure the width/height is correct */
-	header = (struct bitmap_compressed_header *)bitmap->compressed;
+	header = (void *)bitmap->compressed;
 	if ((header->width != bitmap->width) ||
 			(header->height != bitmap->height)) {
 		LOG(("Warning: Mismatch between bitmap and compressed sizes"));
@@ -1002,6 +1011,7 @@ void bitmap_load_file(struct bitmap *bitmap)
 	char *r;
 	struct bitmap_compressed_header *bitmap_compressed;
 	osspriteop_header *bitmap_direct;
+	int *data;
 
 	assert(bitmap->filename);
 
@@ -1023,12 +1033,14 @@ void bitmap_load_file(struct bitmap *bitmap)
 		return;
 
 	error = xosfile_load_stamped_no_path(bitmap_filename,
-			bitmap->compressed, 0, 0, 0, 0, 0);
+			(byte *) bitmap->compressed, 0, 0, 0, 0, 0);
 	if (error) {
 		free(bitmap->compressed);
 		bitmap->compressed = NULL;
 		return;
 	}
+
+	data = (void *) bitmap->compressed;
 
 	LOG(("Loaded file from disk"));
 	/* Sanity check the file we've just loaded:
@@ -1046,22 +1058,19 @@ void bitmap_load_file(struct bitmap *bitmap)
 	 *
 	 * If it's neither of these, we fail.
 	 */
-	if ((*(int *)bitmap->compressed) == len &&
-			(*(((int *)bitmap->compressed) + 3)) == len &&
-			(*(((int *)bitmap->compressed) + 1)) == 1 &&
+	if (*data == len && *(data + 3) == len && *(data + 1) == 1 &&
 			strncmp(bitmap->compressed + 20, "bitmap", 6) == 0) {
-		bitmap->sprite_area = (osspriteop_area *)bitmap->compressed;
+		bitmap->sprite_area = (void *) bitmap->compressed;
 		bitmap->compressed = NULL;
 		bitmap_direct = (osspriteop_header *)(bitmap->sprite_area + 1);
 		bitmap->width = bitmap_direct->width + 1;
 		bitmap->height = bitmap_direct->height + 1;
 		bitmap_direct_used += 16 + 44 +
 				bitmap->width * bitmap->height * 4;
-	} else if ((int)((*(((int *)bitmap->compressed) + 6)) +
+	} else if ((int) (*(data + 6) + 
 			sizeof(struct bitmap_compressed_header)) == len &&
 			strncmp(bitmap->compressed + 8, "bitmap", 6) == 0) {
-		bitmap_compressed = (struct bitmap_compressed_header *)
-				bitmap->compressed;
+		bitmap_compressed = (void *) bitmap->compressed;
 		bitmap_compressed_used -= bitmap_compressed->input_size +
 				sizeof(struct bitmap_compressed_header);
 		bitmap->width = bitmap_compressed->width;
@@ -1079,7 +1088,8 @@ void bitmap_load_file(struct bitmap *bitmap)
 void bitmap_save_file(struct bitmap *bitmap)
 {
 	unsigned int area_size;
-	char *filename, *r;
+	const char *filename;
+	char *r;
 	os_error *error;
 	struct bitmap_compressed_header *header;
 
@@ -1118,19 +1128,19 @@ void bitmap_save_file(struct bitmap *bitmap)
 		return;
 	}
 	if (bitmap->compressed) {
-		header = (struct bitmap_compressed_header *)bitmap->compressed;
+		header = (void *) bitmap->compressed;
 		area_size = header->input_size +
 				sizeof(struct bitmap_compressed_header);
 		error = xosfile_save_stamped(bitmap_filename, 0xffd,
-				bitmap->compressed,
-				bitmap->compressed + area_size);
+				(byte *) bitmap->compressed,
+				(byte *) bitmap->compressed + area_size);
 	} else {
 		area_size = bitmap->width * bitmap->height * 4 +
 			sizeof(osspriteop_header) +
 			sizeof(osspriteop_area);
 		error = xosfile_save_stamped(bitmap_filename, 0xffd,
-				(char *)bitmap->sprite_area,
-				((char *)bitmap->sprite_area) + area_size);
+				(byte *) bitmap->sprite_area,
+				((byte *) bitmap->sprite_area) + area_size);
 	}
 
 	if (error) {
