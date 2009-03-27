@@ -66,6 +66,7 @@
 #include "riscos/url_complete.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
+#include "riscos/wimputils.h"
 #include "utils/log.h"
 #include "utils/talloc.h"
 #include "utils/url.h"
@@ -388,14 +389,15 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	state.next = wimp_TOP;
 	if (bw->parent) {
 		top = browser_window_owner(bw);
-		error = xwimp_open_window_nested((wimp_open *)&state, top->window->window,
+		error = xwimp_open_window_nested(PTR_WIMP_OPEN(&state), 
+				top->window->window,
 				wimp_CHILD_LINKS_PARENT_WORK_AREA
 						<< wimp_CHILD_XORIGIN_SHIFT |
 				wimp_CHILD_LINKS_PARENT_WORK_AREA
 						<< wimp_CHILD_YORIGIN_SHIFT);
 	}
 
-	ro_gui_window_open((wimp_open*)&state);
+	ro_gui_window_open(PTR_WIMP_OPEN(&state));
 
 	/* Claim the caret for top-level windows */
 	if (bw->browser_window_type == BROWSER_WINDOW_NORMAL) {
@@ -676,7 +678,7 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 	state.yscroll = -sy * 2 * g->bw->scale;
 	if (g->toolbar)
 		state.yscroll += ro_gui_theme_toolbar_full_height(g->toolbar);
-	ro_gui_window_open((wimp_open *)&state);
+	ro_gui_window_open(PTR_WIMP_OPEN(&state));
 }
 
 
@@ -760,7 +762,7 @@ void gui_window_scroll_visible(struct gui_window *g, int x0, int y0, int x1, int
 
 	state.xscroll = cx0;
 	state.yscroll = -cy0 + toolbar_height;
-	ro_gui_window_open((wimp_open *)&state);
+	ro_gui_window_open(PTR_WIMP_OPEN(&state));
 }
 
 
@@ -854,7 +856,7 @@ void gui_window_position_frame(struct gui_window *g, int x0, int y0, int x1, int
 	state.visible.x1 = px0 + x1;
 	state.visible.y1 = py1 - y0 * 2 * scale;
 	g->update_extent = true;
-	ro_gui_window_open((wimp_open *)&state);
+	ro_gui_window_open(PTR_WIMP_OPEN(&state));
 }
 
 
@@ -914,7 +916,7 @@ void gui_window_update_extent(struct gui_window *g)
 	flags = state.flags & (wimp_WINDOW_HSCROLL | wimp_WINDOW_VSCROLL);
 	update = g->bw->reformat_pending;
 	g->update_extent = true;
-	ro_gui_window_open((wimp_open *)&state);
+	ro_gui_window_open(PTR_WIMP_OPEN(&state));
 
 	state.w = g->window;
 	error = xwimp_get_window_state(&state);
@@ -1896,7 +1898,7 @@ void ro_gui_window_open(wimp_open *open)
 	}
 
 	/* first resize stops any flickering by making the URL window on top */
-	ro_gui_url_complete_resize(g, (wimp_open *)&state);
+	ro_gui_url_complete_resize(g, PTR_WIMP_OPEN(&state));
 
 	error = xwimp_open_window_nested_with_flags(&state, parent, linkage);
 	if (error) {
@@ -2617,7 +2619,7 @@ bool ro_gui_window_keypress(wimp_key *key)
 			break;
 	}
 
-	error = xwimp_open_window((wimp_open *) &state);
+	error = xwimp_open_window(PTR_WIMP_OPEN(&state));
 	if (error) {
 		LOG(("xwimp_open_window: 0x%x: %s",
 				error->errnum, error->errmess));
