@@ -35,6 +35,7 @@
 #include "riscos/url_complete.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
+#include "riscos/wimputils.h"
 #include "utils/utils.h"
 
 #define MAXIMUM_VISIBLE_LINES 7
@@ -202,7 +203,7 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, uint32_t key)
 			return false;
 		}
 		url_complete_matches_reset = true;
-		ro_gui_url_complete_resize(g, (wimp_open *)&state);
+		ro_gui_url_complete_resize(g, PTR_WIMP_OPEN(&state));
 		url_complete_matches_reset = false;
 
 		/* redraw the relevant bits of the window */
@@ -325,7 +326,7 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, uint32_t key)
 		state.yscroll =
 			-((url_complete_matches_selection + 1) * 44) + height;
 
-	error = xwimp_open_window((wimp_open *)(&state));
+	error = xwimp_open_window(PTR_WIMP_OPEN(&state));
 	if (error) {
 		LOG(("xwimp_open_window: 0x%x: %s",
 				error->errnum, error->errmess));
