@@ -260,9 +260,10 @@ int ro_content_filetype(struct content *content)
 		return file_type;
 
 	error = xmimemaptranslate_mime_type_to_filetype(content->mime_type,
-			&file_type);
+			(bits *) &file_type);
 	if (error)
 		return 0xffd;
+
 	return file_type;
 }
 
