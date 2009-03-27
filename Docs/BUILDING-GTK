@@ -12,11 +12,12 @@
   Building and executing NetSurf
 =================================
 
-  First of all, you should examine the contents of Makefile.config and enable
-  and disable relevant features as you see fit.  Some of these options can be
-  automatically detected and used, and where this is the case they are set to
-  such.  Others cannot be automatically detected from the Makefile, so you will
-  either need to install the dependencies, or set them to NO.
+  First of all, you should examine the contents of Makefile.defaults
+  and enable and disable relevant features as you see fit by creating
+  a Makefile.config file.  Some of these options can be automatically
+  detected and used, and where this is the case they are set to such.
+  Others cannot be automatically detected from the Makefile, so you
+  will either need to install the dependencies, or set them to NO.
   
   You should then obtain NetSurf's dependencies, keeping in mind which options
   you have enabled in the configuration file.  See the next section for
@@ -26,10 +27,11 @@
 
       $ make
 
-  If that produces errors, you probably don't have some of NetSurf's build
-  dependencies installed. See "Obtaining NetSurf's dependencies" below. Or turn
-  off the complaining features in Makefile.config. You may need to "make clean"
-  before attempting to build after installing the dependencies.
+  If that produces errors, you probably don't have some of NetSurf's
+  build dependencies installed. See "Obtaining NetSurf's dependencies"
+  below. Or turn off the complaining features in a Makefile.config
+  file. You may need to "make clean" before attempting to build after
+  installing the dependencies.
 
   Run NetSurf by executing the "netsurf" shell script:
 
@@ -119,9 +121,10 @@
   Librosprite
 -------------
 
-  NetSurf uses James Shaw's librosprite for rendering RISC OS Sprite files on
-  non-RISC OS platforms.  The Makefile will automatically use librosprite if
-  it is installed.  You can disable it entirely by editing Makefile.config.
+  NetSurf uses James Shaw's librosprite for rendering RISC OS Sprite
+  files on non-RISC OS platforms.  The Makefile will automatically use
+  librosprite if it is installed.  You can disable it entirely by
+  creating a Makefile.config file.
 
   To build librosprite, check out from svn://svn.rjek.com/jshaw/libsprite/trunk
   Build and install it:
@@ -137,7 +140,7 @@
 
   NetSurf can use Haru PDF to enable PDF export and printing in GTK.  This
   is currently enabled by default, and cannot be auto-detected by the Makefile.
-  If you wish to disable it, do so by editing Makefile.config.
+  If you wish to disable it, do so by creating a Makefile.config file.
 
   Haru PDF can be obtained from http://libharu.org/, although we currently
   depend on features that none of the official released versions does have.

@@ -10,13 +10,12 @@
   Building and executing NetSurf
 =================================
 
-  First of all, you should examine the contents of Makefile.config and
-  enable and disable relevant features as you see fit in a
-  Makefile.config.override .  Some of these options can be
-  automatically detected and used, and where this is the case they are
-  set to such.  Others cannot be automatically detected from the
-  Makefile, so you will either need to install the dependencies, or
-  set them to NO.
+  First of all, you should examine the contents of Makefile.defaults
+  and enable and disable relevant features as you see fit in a
+  Makefile.config file.  Some of these options can be automatically
+  detected and used, and where this is the case they are set to such.
+  Others cannot be automatically detected from the Makefile, so you
+  will either need to install the dependencies, or set them to NO.
   
   One option it is vitally important to set is the Framebuffer ports
   frontend type by setting the NETSURF_FB_FRONTEND variable. The port
@@ -33,7 +32,7 @@
 
   If that produces errors, you probably don't have some of NetSurf's build
   dependencies installed. See "Obtaining NetSurf's dependencies" below. Or turn
-  off the complaining features in Makefile.config. You may need to "make clean"
+  off the complaining features in your Makefile.config. You may need to "make clean"
   before attempting to build after installing the dependencies.
 
   Run NetSurf by executing the "nsfb" shell script:
@@ -263,9 +262,10 @@ Index: framebuffer/fb_font_freetype.c
   Librosprite
 -------------
 
-  NetSurf uses James Shaw's librosprite for rendering RISC OS Sprite files on
-  non-RISC OS platforms.  The Makefile will automatically use librosprite if
-  it is installed.  You can disable it entirely by editing Makefile.config.
+  NetSurf uses James Shaw's librosprite for rendering RISC OS Sprite
+  files on non-RISC OS platforms.  The Makefile will automatically use
+  librosprite if it is installed.  You can disable it entirely by
+  creating a Makefile.config file.
 
   To build librosprite, check out from svn://svn.rjek.com/jshaw/libsprite/trunk
   Build and install it:
@@ -281,7 +281,7 @@ Index: framebuffer/fb_font_freetype.c
 
   NetSurf can use Haru PDF to enable PDF export and printing in GTK.  This
   is currently enabled by default, and cannot be auto-detected by the Makefile.
-  If you wish to disable it, do so by editing Makefile.config.
+  If you wish to disable it, do so by creating a Makefile.config file.
 
   Haru PDF can be obtained from http://libharu.org/, although we currently
   depend on features that none of the official released versions does have.
