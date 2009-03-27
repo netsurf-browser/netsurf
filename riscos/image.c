@@ -165,7 +165,7 @@ bool image_redraw_tinct(osspriteop_id header, int x, int y,
 bool image_redraw_os(osspriteop_id header, int x, int y, int req_width,
 		int req_height, int width, int height)
 {
-	unsigned int size;
+	int size;
 	os_factors f;
 	osspriteop_trans_tab *table;
 	os_error *error;
