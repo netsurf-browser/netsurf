@@ -48,10 +48,11 @@ bool draw_convert(struct content *c, int width, int height)
 {
 	union content_msg_data msg_data;
 	os_box bbox;
+	void *data = c->source_data;
 	os_error *error;
 
 	/* BBox contents in Draw units (256*OS unit) */
-	error = xdrawfile_bbox(0, (drawfile_diagram*)(c->source_data),
+	error = xdrawfile_bbox(0, (drawfile_diagram *) data,
 			(int) c->source_size, 0, &bbox);
 	if (error) {
 		LOG(("xdrawfile_bbox: 0x%x: %s",
@@ -103,8 +104,9 @@ bool draw_redraw(struct content *c, int x, int y,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale, colour background_colour)
 {
-	os_error *error;
 	os_trfm matrix;
+	void *data = c->source_data;
+	os_error *error;
 
 	if (plot.flush && !plot.flush())
 		return false;
@@ -123,8 +125,8 @@ bool draw_redraw(struct content *c, int x, int y,
 	matrix.entries[2][1] = ro_plot_origin_y * 256 - (y + height) * 512 -
 			c->data.draw.y0 * height / c->height;
 
-	error = xdrawfile_render(0, (drawfile_diagram*)(c->source_data),
-			(int)c->source_size, &matrix, 0, 0);
+	error = xdrawfile_render(0, (drawfile_diagram *) data,
+			(int) c->source_size, &matrix, 0, 0);
 	if (error) {
 		LOG(("xdrawfile_render: 0x%x: %s",
 				error->errnum, error->errmess));
