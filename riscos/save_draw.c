@@ -134,7 +134,8 @@ bool save_as_draw(struct content *c, const char *path)
 	assert(drawfile_buffer);
 
 	error = xosfile_save_stamped(path, osfile_TYPE_DRAW,
-			drawfile_buffer, drawfile_buffer + drawfile_size);
+			(byte *) drawfile_buffer, 
+			(byte *) drawfile_buffer + drawfile_size);
 	if (error) {
 		LOG(("xosfile_save_stamped failed: 0x%x: %s",
 				error->errnum, error->errmess));
@@ -378,7 +379,7 @@ bool ro_save_draw_bitmap(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg, struct content *content)
 {
 	pencil_code code;
-	char *buffer;
+	const uint8_t *buffer;
 
 	buffer = bitmap_get_buffer(bitmap);
 	if (!buffer) {
