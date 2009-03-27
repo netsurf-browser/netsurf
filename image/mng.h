@@ -27,7 +27,6 @@
 #ifdef WITH_MNG
 
 #include <stdbool.h>
-#include <libmng.h>
 
 struct content;
 
@@ -38,7 +37,7 @@ struct content_mng_data {
 	int read_size;
 	bool waiting;
 	bool displayed;
-	mng_handle handle;
+	void *handle;
 };
 
 bool nsmng_create(struct content *c, const char *params[]);

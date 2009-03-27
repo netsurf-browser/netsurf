@@ -48,12 +48,15 @@
 
 
 static mng_bool nsmng_openstream(mng_handle mng);
-static mng_bool nsmng_readdata(mng_handle mng, mng_ptr buffer, mng_uint32 size, mng_uint32 *bytesread);
+static mng_bool nsmng_readdata(mng_handle mng, mng_ptr buffer, 
+		mng_uint32 size, mng_uint32 *bytesread);
 static mng_bool nsmng_closestream(mng_handle mng);
-static mng_bool nsmng_processheader(mng_handle mng, mng_uint32 width, mng_uint32 height);
+static mng_bool nsmng_processheader(mng_handle mng, mng_uint32 width, 
+		mng_uint32 height);
 static mng_ptr nsmng_getcanvasline(mng_handle mng, mng_uint32 line);
 static mng_uint32 nsmng_gettickcount(mng_handle mng);
-static mng_bool nsmng_refresh(mng_handle mng, mng_uint32 x, mng_uint32 y, mng_uint32 w, mng_uint32 h);
+static mng_bool nsmng_refresh(mng_handle mng, mng_uint32 x, mng_uint32 y, 
+		mng_uint32 w, mng_uint32 h);
 static mng_bool nsmng_settimer(mng_handle mng, mng_uint32 msecs);
 static void nsmng_animate(void *p);
 static bool nsmng_broadcast_error(struct content *c, mng_retcode code);
@@ -66,7 +69,8 @@ static void nsmng_free(mng_ptr p, mng_size_t n);
 #endif
 
 
-bool nsmng_create(struct content *c, const char *params[]) {
+bool nsmng_create(struct content *c, const char *params[])
+{
 	mng_retcode code;
 	union content_msg_data msg_data;
 
@@ -164,12 +168,15 @@ bool nsmng_create(struct content *c, const char *params[]) {
 */
 
 
-mng_bool nsmng_openstream(mng_handle mng) {
+mng_bool nsmng_openstream(mng_handle mng)
+{
 	assert(mng != NULL);
 	return MNG_TRUE;
 }
 
-mng_bool nsmng_readdata(mng_handle mng, mng_ptr buffer, mng_uint32 size, mng_uint32 *bytesread) {
+mng_bool nsmng_readdata(mng_handle mng, mng_ptr buffer, mng_uint32 size, 
+		mng_uint32 *bytesread)
+{
 	struct content *c;
 
 	assert(mng != NULL);
@@ -187,7 +194,8 @@ mng_bool nsmng_readdata(mng_handle mng, mng_ptr buffer, mng_uint32 size, mng_uin
 			(c->source_size - c->data.mng.read_size) : size;
 
 	if ((*bytesread) > 0) {
-		memcpy(buffer, c->source_data + c->data.mng.read_size, *bytesread);
+		memcpy(buffer, c->source_data + c->data.mng.read_size, 
+				*bytesread);
 		c->data.mng.read_size += *bytesread;
 	}
 
@@ -196,20 +204,23 @@ mng_bool nsmng_readdata(mng_handle mng, mng_ptr buffer, mng_uint32 size, mng_uin
 	return MNG_TRUE;
 }
 
-mng_bool nsmng_closestream(mng_handle mng) {
+mng_bool nsmng_closestream(mng_handle mng)
+{
 	assert(mng != NULL);
 	return MNG_TRUE;
 }
 
-mng_bool nsmng_processheader(mng_handle mng, mng_uint32 width, mng_uint32 height) {
+mng_bool nsmng_processheader(mng_handle mng, mng_uint32 width, 
+		mng_uint32 height)
+{
 	struct content *c;
 	union content_msg_data msg_data;
 	uint8_t *buffer;
 
 	assert(mng != NULL);
 
-	/*	This function is called when the header has been read and we know
-		the dimensions of the canvas.
+	/*	This function is called when the header has been read and we 
+	 	know the dimensions of the canvas.
 	*/
 	c = (struct content *)mng_get_userdata(mng);
 	assert(c != NULL);
@@ -253,7 +264,8 @@ mng_bool nsmng_processheader(mng_handle mng, mng_uint32 width, mng_uint32 height
 */
 
 
-bool nsmng_process_data(struct content *c, char *data, unsigned int size) {
+bool nsmng_process_data(struct content *c, char *data, unsigned int size)
+{
 	mng_retcode status;
 
 	assert(c != NULL);
@@ -261,7 +273,8 @@ bool nsmng_process_data(struct content *c, char *data, unsigned int size) {
 
 	/*	We only need to do any processing if we're starting/resuming reading.
 	*/
-	if ((!c->data.mng.read_resume) && (!c->data.mng.read_start)) return true;
+	if ((!c->data.mng.read_resume) && (!c->data.mng.read_start))
+		return true;
 
 	/*	Try to start processing, or process some more data
 	*/
@@ -283,7 +296,8 @@ bool nsmng_process_data(struct content *c, char *data, unsigned int size) {
 }
 
 
-bool nsmng_convert(struct content *c, int width, int height) {
+bool nsmng_convert(struct content *c, int width, int height)
+{
 	mng_retcode status;
 
 	union content_msg_data msg_data;
@@ -344,14 +358,15 @@ bool nsmng_convert(struct content *c, int width, int height) {
 
 	/*	Optimise the plotting of JNG/PNGs
 	*/
-	c->data.mng.opaque_test_pending = (c->type == CONTENT_PNG) || (c->type == CONTENT_JNG);
+	c->data.mng.opaque_test_pending = (c->type == CONTENT_PNG) || 
+			(c->type == CONTENT_JNG);
 	if (c->data.mng.opaque_test_pending)
 		bitmap_set_opaque(c->bitmap, false);
 
 	/* free associated memory except for mngs where it may be subsequently needed for
 	 * animation decoding. */
 	if (c->type != CONTENT_MNG)
-		mng_cleanup(&c->data.mng.handle);
+		mng_cleanup((mng_handle *) &c->data.mng.handle);
 	return true;
 }
 
@@ -360,7 +375,8 @@ bool nsmng_convert(struct content *c, int width, int height) {
 */
 
 
-mng_ptr nsmng_getcanvasline(mng_handle mng, mng_uint32 line) {
+mng_ptr nsmng_getcanvasline(mng_handle mng, mng_uint32 line)
+{
 	struct content *c;
 
 	assert(mng != NULL);
@@ -381,7 +397,8 @@ mng_ptr nsmng_getcanvasline(mng_handle mng, mng_uint32 line) {
  * Get the wall-clock time in milliseconds since some fixed time.
  */
 
-mng_uint32 nsmng_gettickcount(mng_handle mng) {
+mng_uint32 nsmng_gettickcount(mng_handle mng)
+{
 	static bool start = true;
 	static time_t t0;
 	struct timeval tv;
@@ -406,7 +423,9 @@ mng_uint32 nsmng_gettickcount(mng_handle mng) {
 }
 
 
-mng_bool nsmng_refresh(mng_handle mng, mng_uint32 x, mng_uint32 y, mng_uint32 w, mng_uint32 h) {
+mng_bool nsmng_refresh(mng_handle mng, mng_uint32 x, mng_uint32 y, 
+		mng_uint32 w, mng_uint32 h)
+{
 	union content_msg_data data;
 	struct content *c;
 
@@ -424,8 +443,8 @@ mng_bool nsmng_refresh(mng_handle mng, mng_uint32 x, mng_uint32 y, mng_uint32 w,
 	data.redraw.width = w;
 	data.redraw.height = h;
 
-	/*	Set the redraw area to the whole canvas to ensure that if we can redraw something
-		to trigger animation later then we do
+	/*	Set the redraw area to the whole canvas to ensure that if 
+	 	we can redraw something to trigger animation later then we do
 	*/
 /*	data.redraw.x = 0;
 	data.redraw.y = 0;
@@ -456,7 +475,8 @@ mng_bool nsmng_refresh(mng_handle mng, mng_uint32 x, mng_uint32 y, mng_uint32 w,
 	return MNG_TRUE;
 }
 
-mng_bool nsmng_settimer(mng_handle mng, mng_uint32 msecs) {
+mng_bool nsmng_settimer(mng_handle mng, mng_uint32 msecs)
+{
 	struct content *c;
 
 	assert(mng != NULL);
@@ -477,7 +497,8 @@ mng_bool nsmng_settimer(mng_handle mng, mng_uint32 msecs) {
 */
 
 
-void nsmng_destroy(struct content *c) {
+void nsmng_destroy(struct content *c)
+{
 
 	assert (c != NULL);
 
@@ -485,7 +506,7 @@ void nsmng_destroy(struct content *c) {
 	*/
 	schedule_remove(nsmng_animate, c);
 	if (c->type == CONTENT_MNG)
-		mng_cleanup(&c->data.mng.handle);
+		mng_cleanup((mng_handle *) &c->data.mng.handle);
 	if (c->bitmap)
 		bitmap_destroy(c->bitmap);
 	free(c->title);
@@ -550,7 +571,8 @@ bool nsmng_redraw_tiled(struct content *c, int x, int y,
 /**
  * Animates to the next frame
  */
-void nsmng_animate(void *p) {
+void nsmng_animate(void *p)
+{
  	struct content *c;
 
  	assert(p != NULL);
@@ -599,9 +621,8 @@ bool nsmng_broadcast_error(struct content *c, mng_retcode code)
 
 
 mng_bool nsmng_errorproc(mng_handle mng, mng_int32 code,
-	mng_int8 severity,
-    mng_chunkid chunktype, mng_uint32 chunkseq,
-    mng_int32 extra1, mng_int32 extra2, mng_pchar text)
+		mng_int8 severity, mng_chunkid chunktype, mng_uint32 chunkseq,
+		mng_int32 extra1, mng_int32 extra2, mng_pchar text)
 {
 	struct content *c;
 	char chunk[5];
