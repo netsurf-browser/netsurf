@@ -195,8 +195,8 @@ bool ro_gui_theme_install_apply(wimp_w w)
 
 	theme_save[sizeof theme_save - 1] = '\0';
 	error = xosfile_save_stamped(theme_save, 0xffd,
-			(unsigned char *) theme_install_content->source_data,
-			(unsigned char *) theme_install_content->source_data +
+			(byte *) theme_install_content->source_data,
+			(byte *) theme_install_content->source_data +
 			theme_install_content->source_size);
 	if (error) {
 		LOG(("xosfile_save_stamped: 0x%x: %s",
