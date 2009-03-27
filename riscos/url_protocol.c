@@ -172,13 +172,13 @@ void ro_url_load(const char *url)
 		return;
 	}
 
-	sprintf(command, "Alias$URLOpen_%.*s", colon - url, url);
+	sprintf(command, "Alias$URLOpen_%.*s", (int) (colon - url), url);
 	if (!getenv(command)) {
 		free(command);
 		return;
 	}
 
-	sprintf(command, "URLOpen_%.*s %s", colon - url, url, url);
+	sprintf(command, "URLOpen_%.*s %s", (int) (colon - url), url, url);
 
 	error = xwimp_start_task(command, 0);
 	if (error) {
