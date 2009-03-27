@@ -229,7 +229,7 @@ void tree_draw_node_element(struct tree *tree, struct node_element *element)
 	struct node_element *url_element;
 	const struct bitmap *bitmap = NULL;
 	struct node_update *update;
-	char *frame;
+	const uint8_t *frame;
 	rufl_code code;
 	int x0, y0, x1, y1;
 	bool selected = false;
@@ -345,7 +345,7 @@ void tree_draw_node_element(struct tree *tree, struct node_element *element)
 		if (url_element)
 			bitmap = urldb_get_thumbnail(url_element->text);
 		if (bitmap) {
-			frame = bitmap_get_buffer(bitmap);
+			frame = bitmap_get_buffer((struct bitmap *) bitmap);
 			if (!frame)
 				urldb_set_thumbnail(url_element->text, NULL);
 			if ((!frame) || (element->box.width == 0)) {
@@ -1068,7 +1068,8 @@ void ro_gui_tree_start_edit(struct tree *tree, struct node_element *element,
 			element->box.y - element->box.height;
 	if (element->type == NODE_ELEMENT_TEXT_PLUS_SPRITE)
 		ro_gui_tree_edit_icon.icon.extent.x0 += NODE_INSTEP;
-	ro_gui_tree_edit_icon.icon.data.indirected_text.text = element->text;
+	ro_gui_tree_edit_icon.icon.data.indirected_text.text = 
+			(char *) element->text;
 	error = xwimp_create_icon(&ro_gui_tree_edit_icon,
 			(wimp_i *)&tree->edit_handle);
 	if (error)
