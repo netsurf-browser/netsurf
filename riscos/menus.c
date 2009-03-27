@@ -637,7 +637,7 @@ void ro_gui_menu_closed(bool cleanup)
 	}
 
 	current_menu_window = NULL;
-	current_menu_icon = NULL;
+	current_menu_icon = 0;
 	current_menu_open = false;
 	gui_form_select_control = NULL;
 }
