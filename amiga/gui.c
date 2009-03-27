@@ -123,6 +123,10 @@ BOOL locked_screen = FALSE;
 int drag_save = 0;
 void *drag_save_data = NULL;
 
+extern colour css_scrollbar_fg_colour;
+extern colour css_scrollbar_bg_colour;
+extern colour css_scrollbar_arrow_colour;
+
 #define AMI_GUI_POINTER_BLANK GUI_POINTER_PROGRESS+1
 #define AMI_GUI_POINTER_DRAG  GUI_POINTER_PROGRESS+2
 #define AMI_LASTPOINTER AMI_GUI_POINTER_DRAG
@@ -282,9 +286,9 @@ void gui_init(int argc, char** argv)
 
 	CloseLocale(locale);
 
-	messages_load(lang); // check locale language and read appropriate file
+	messages_load(lang);
 
-	default_stylesheet_url = "file:///PROGDIR:Resources/default.css"; //"http://www.unsatisfactorysoftware.co.uk/newlook.css"; //path_to_url(buf);
+	default_stylesheet_url = "file:///PROGDIR:Resources/amiga.css";
 	adblock_stylesheet_url = "file:///PROGDIR:Resources/adblock.css";
 
 #ifdef WITH_HUBBUB
@@ -295,6 +299,9 @@ void gui_init(int argc, char** argv)
 #endif
 
 	css_screen_dpi = 72;
+	css_scrollbar_fg_colour = 0x00aaaaaa;
+	css_scrollbar_bg_colour = 0x00833c3c;
+	css_scrollbar_arrow_colour = 0x00d6d6d6;
 
 	if((!option_cookie_file) || (option_cookie_file[0] == '\0'))
 		option_cookie_file = (char *)strdup("PROGDIR:Resources/Cookies");
