@@ -863,8 +863,8 @@ bool ro_gui_save_content(struct content *c, char *path, bool force_overwrite)
 		case GUI_SAVE_OBJECT_ORIG:
 			error = xosfile_save_stamped(path,
 					ro_content_filetype(c),
-					c->source_data,
-					c->source_data + c->source_size);
+					(byte *) c->source_data,
+					(byte *) c->source_data + c->source_size);
 			if (error) {
 				LOG(("xosfile_save_stamped: 0x%x: %s",
 						error->errnum, error->errmess));
@@ -1004,7 +1004,8 @@ void ro_gui_save_done(void)
 
 bool ro_gui_save_complete(struct content *c, char *path)
 {
-	osspriteop_header *sprite;
+	void *spr = ((byte *) saveas_area) + saveas_area->first;
+	osspriteop_header *sprite = (osspriteop_header *) spr;
 	char name[12];
 	char buf[256];
 	FILE *fp;
@@ -1050,7 +1051,6 @@ bool ro_gui_save_complete(struct content *c, char *path)
 	len = strlen(dot);
 	if (len >= 12) len = 12;
 
-	sprite = (osspriteop_header*)((byte*)saveas_area + saveas_area->first);
 	memcpy(name, sprite->name, 12);  /* remember original name */
 	memcpy(sprite->name, dot, len);
 	memset(sprite->name + len, 0, 12 - len);
@@ -1118,8 +1118,8 @@ bool ro_gui_save_object_native(struct content *c, char *path)
 			os_error *error;
 			error = xosfile_save_stamped(path,
 					ro_content_filetype(c),
-					c->source_data,
-					c->source_data + c->source_size);
+					(byte *) c->source_data,
+					(byte *) c->source_data + c->source_size);
 			if (error) {
 				LOG(("xosfile_save_stamped: 0x%x: %s",
 						error->errnum, error->errmess));
