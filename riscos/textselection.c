@@ -323,7 +323,7 @@ bool gui_commit_clipboard(void)
 		owns_clipboard = true;
 	}
 
-	LOG(("clipboard now holds %d bytes", clip_length));
+	LOG(("clipboard now holds %zd bytes", clip_length));
 
 	return true;
 }
