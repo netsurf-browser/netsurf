@@ -1008,7 +1008,7 @@ bool ro_gui_wimp_event_register_radio(wimp_w w, wimp_i *i)
 		if (!event)
 			return false;
 		event->data.radio_group = window->max_radio_group;
-		*i++;
+		i++;
 	}
 	return true;
 }
