@@ -180,7 +180,7 @@ ifneq ($(GCCVER),2)
 endif
 
 # Pull in the configuration
-include Makefile.config
+include Makefile.defaults
 
 # 1: Feature name (ie, NETSURF_USE_BMP -> BMP)
 # 2: Parameters to add to CFLAGS
