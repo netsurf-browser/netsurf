@@ -1956,7 +1956,7 @@ void ro_gui_window_close(wimp_w w) {
 						*r = '\0';
 						break;
 					}
-					*r--;
+					r--;
 				}
 				error = xos_cli(temp_name);
 				if (error) {
