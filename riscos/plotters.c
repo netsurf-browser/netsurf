@@ -500,7 +500,7 @@ bool ro_plot_arc(int x, int y, int radius, int angle1, int angle2, colour c)
 bool ro_plot_bitmap(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg, struct content *content)
 {
-	char *buffer;
+	const uint8_t *buffer;
 
 	buffer = bitmap_get_buffer(bitmap);
 	if (!buffer) {
@@ -525,7 +525,7 @@ bool ro_plot_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
 		bool repeat_x, bool repeat_y, struct content *content)
 {
-	char *buffer;
+	const uint8_t *buffer;
 
 	buffer = bitmap_get_buffer(bitmap);
 	if (!buffer) {
