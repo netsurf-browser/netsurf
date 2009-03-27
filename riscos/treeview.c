@@ -47,6 +47,7 @@
 #include "riscos/treeview.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
+#include "riscos/wimputils.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
@@ -126,17 +127,20 @@ bool ro_gui_tree_initialise(void)
 bool ro_gui_tree_initialise_sprite(const char *name, int number)
 {
 	char icon_name[12];
+	const char *icon = icon_name;
 	os_error *error;
 
-	sprintf(icon_name, "tr_%s", name);
+	snprintf(icon_name, sizeof(icon_name), "tr_%s", name);
+
 	error = xosspriteop_select_sprite(osspriteop_USER_AREA, gui_sprites,
-				(osspriteop_id)icon_name,
-				(osspriteop_header **)&ro_gui_tree_sprites[number]);
+			(osspriteop_id) icon,
+			(osspriteop_header **) &ro_gui_tree_sprites[number]);
 	if (error) {
 		warn_user("MiscError", error->errmess);
 		LOG(("Failed to find sprite 'tr_%s'", name));
 		return true;
 	}
+
 	return false;
 }
 
@@ -636,7 +640,7 @@ void tree_resized(struct tree *tree)
 		return;
 	}
 	if (state.flags & wimp_WINDOW_OPEN)
-		ro_gui_tree_open((wimp_open *)&state);
+		ro_gui_tree_open(PTR_WIMP_OPEN(&state));
 }
 
 
@@ -1169,7 +1173,7 @@ void ro_gui_tree_scroll_visible(struct tree *tree, struct node_element *element)
 		state.yscroll = state.visible.y1 - state.visible.y0 -
 				tree->offset_y - toolbar_height -
 				(element->box.y + element->box.height);
-	ro_gui_tree_open((wimp_open *)&state);
+	ro_gui_tree_open(PTR_WIMP_OPEN(&state));
 }
 
 
@@ -1390,7 +1394,7 @@ bool ro_gui_tree_keypress(wimp_key *key)
 			break;
 	}
 
-	error = xwimp_open_window((wimp_open *) &state);
+	error = xwimp_open_window(PTR_WIMP_OPEN(&state));
 	if (error) {
 		LOG(("xwimp_open_window: 0x%x: %s",
 				error->errnum, error->errmess));
