@@ -2222,8 +2222,9 @@ void ro_gui_view_source(struct content *content)
 		message.file_name[211] = '\0';
 		error = xosfile_save_stamped(message.file_name,
 				ro_content_filetype(content),
-				content->source_data,
-				content->source_data + content->source_size);
+				(byte *) content->source_data,
+				(byte *) content->source_data + 
+						content->source_size);
 		if (error) {
 			LOG(("xosfile_save_stamped failed: 0x%x: %s",
 					error->errnum, error->errmess));
