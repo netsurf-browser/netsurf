@@ -113,7 +113,8 @@ void ro_gui_progress_bar_init(osspriteop_area *icons)
 		xosspriteop_read_sprite_info(osspriteop_USER_AREA,
 			progress_bar_definition.sprite_area,
 			(osspriteop_id)progress_animation_sprite,
-			&progress_width, &progress_height, 0, 0);
+			(int *) &progress_width, (int *) &progress_height, 
+			0, 0);
 	}
 }
 
