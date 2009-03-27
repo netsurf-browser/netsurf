@@ -54,7 +54,7 @@ bool sprite_convert(struct content *c, int width, int height)
 	os_error *error;
 	int w, h;
 	union content_msg_data msg_data;
-	char *source_data;
+	void *source_data;
 
 	source_data = ((char *)c->source_data) - 4;
 	osspriteop_area *area = (osspriteop_area*)source_data;
