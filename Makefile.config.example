@@ -1,9 +1,12 @@
 #
-# NetSurf default build configuration
+# NetSurf build configuration example
 #
-# This file is included after Makefile.defaults and can be used to
-# provide local build configuration overrides.
+# To configure NetSurf's build options create a Makefile.config file. This is
+# an example Makefile.config.
 #
+# To see the available config options, look at Makefile.defaults
+
+
 # For example, by default, NetSurf builds with BMP support.  If you
 # wish to disable this, then uncomment the following line.
 
