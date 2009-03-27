@@ -560,7 +560,8 @@ void ro_gui_url_complete_redraw(wimp_draw *redraw)
 	/* no matches? no redraw */
 	if (!url_complete_matches) {
 		LOG(("Attempt to redraw with no matches made"));
-		ro_gui_user_redraw(redraw, false, NULL);
+		/* Fill is never used, so make it something obvious */
+		ro_gui_user_redraw(redraw, false, os_COLOUR_BLACK);
 		return;
 	}
 
