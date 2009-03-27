@@ -149,10 +149,12 @@ void theme_install_callback(content_msg msg, struct content *c,
 
 bool theme_install_read(char *source_data, unsigned long source_size)
 {
+	void *data = source_data;
+
 	if (source_size < sizeof(struct theme_file_header))
 		return false;
 	if (!ro_gui_theme_read_file_header(&theme_install_descriptor,
-			(struct theme_file_header *) source_data))
+			(struct theme_file_header *) data))
 		return false;
 	if (source_size - sizeof(struct theme_file_header) !=
 			theme_install_descriptor.compressed_size)
@@ -183,7 +185,7 @@ bool ro_gui_theme_install_apply(wimp_w w)
 	  	LOG(("malloc failed"));
 	  	warn_user("NoMemory", 0);
 	}
-	for (fix = theme_file; *fix != '\0'; *fix++)
+	for (fix = theme_file; *fix != '\0'; fix++)
 		if (*fix == ' ')
 			*fix = 160;	/* hard space */
 
@@ -193,8 +195,8 @@ bool ro_gui_theme_install_apply(wimp_w w)
 
 	theme_save[sizeof theme_save - 1] = '\0';
 	error = xosfile_save_stamped(theme_save, 0xffd,
-			theme_install_content->source_data,
-			theme_install_content->source_data +
+			(unsigned char *) theme_install_content->source_data,
+			(unsigned char *) theme_install_content->source_data +
 			theme_install_content->source_size);
 	if (error) {
 		LOG(("xosfile_save_stamped: 0x%x: %s",
