@@ -344,7 +344,7 @@ struct gui_download_window *gui_download_window_create(const char *url,
 
 	if ((res = url_nice(url, &nice, option_strip_extensions)) ==
 			URL_FUNC_OK) {
-		int imax = sizeof dw->path - (leaf_ofst + 1);
+		size_t imax = sizeof dw->path - (leaf_ofst + 1);
 		for (i = 0; i < imax && nice[i]; i++) {
 			if (nice[i] == '.')
 				nice[i] = '/';
@@ -442,7 +442,8 @@ void gui_download_window_data(struct gui_download_window *dw, const char *data,
 		int unwritten;
 		os_error *error;
 
-		error = xosgbpb_writew(dw->file, data, size, &unwritten);
+		error = xosgbpb_writew(dw->file, (const byte *) data, size, 
+				&unwritten);
 		if (error) {
 			LOG(("xosgbpb_writew: 0x%x: %s",
 					error->errnum, error->errmess));
@@ -1195,8 +1196,9 @@ os_error *ro_gui_download_move(struct gui_download_window *dw,
 
 void ro_gui_download_remember_dir(const char *path)
 {
-	char *lastdot = NULL;
-	char *p = path;
+	const char *lastdot = NULL;
+	const char *p = path;
+
 	while (*p >= 0x20) {
 		if (*p == '.') {
 			/* don't remember the directory if it's a temporary file */
@@ -1206,6 +1208,7 @@ void ro_gui_download_remember_dir(const char *path)
 		}
 		p++;
 	}
+
 	if (lastdot) {
 		/* remember the directory */
 		char *new_dir = realloc(download_dir, (lastdot+1)-path);
