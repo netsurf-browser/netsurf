@@ -157,6 +157,7 @@ wimp_w ro_gui_saveas_create(const char *template_name)
 	const int sprite_size = (68 * 68 * 4) + ((68 * 68) / 8);  /* 32bpp with mask */
 	int area_size = sizeof(osspriteop_area) + sizeof(osspriteop_header) +
 			256 * 8 + sprite_size;
+	void *area = NULL;
 	wimp_window *window;
 	os_error *error;
 	wimp_icon *icons;
@@ -167,13 +168,13 @@ wimp_w ro_gui_saveas_create(const char *template_name)
 
 	icons = window->icons;
 
-	error = xosmodule_alloc(area_size, (void**)&saveas_area);
+	error = xosmodule_alloc(area_size, (void **) &area);
 	if (error) {
 		LOG(("xosmodule_alloc: 0x%x: %s", error->errnum, error->errmess));
 		xwimp_close_template();
 		die(error->errmess);
-	}
-	else {
+	} else {
+		saveas_area = area;
 		saveas_area->size = area_size;
 		saveas_area->first = 16;
 
