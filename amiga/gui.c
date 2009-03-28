@@ -1768,7 +1768,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 					WINDOW_HorizProp,1,
 					WINDOW_VertProp,1,
 					WINDOW_IDCMPHook,&gwin->shared->scrollerhook,
-					WINDOW_IDCMPHookBits,IDCMP_IDCMPUPDATE,
+					WINDOW_IDCMPHookBits,IDCMP_IDCMPUPDATE | IDCMP_EXTENDEDMOUSE,
         		    WINDOW_AppPort, appport,
 					WINDOW_AppWindow,TRUE,
 					WINDOW_SharedPort,sport,
@@ -1934,7 +1934,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 					WINDOW_HorizProp,1,
 					WINDOW_VertProp,1,
 					WINDOW_IDCMPHook,&gwin->shared->scrollerhook,
-					WINDOW_IDCMPHookBits,IDCMP_IDCMPUPDATE,
+					WINDOW_IDCMPHookBits,IDCMP_IDCMPUPDATE | IDCMP_EXTENDEDMOUSE,
 		            WINDOW_AppPort, appport,
 					WINDOW_AppWindow,TRUE,
 					WINDOW_SharedPort,sport,
@@ -2367,6 +2367,8 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 
 		g->scrollx = sx;
 		g->scrolly = sy;
+
+		history_set_current_scroll(g->shared->bw->history,g->scrollx,g->scrolly);
 	}
 }
 
@@ -2374,7 +2376,7 @@ void gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
 		int x1, int y1)
 {
 	gui_window_set_scroll(g, x0, y0);
-	ami_do_redraw(g->shared,false);
+//	ami_do_redraw(g->shared,false);    above function does redraw I think
 }
 
 void gui_window_position_frame(struct gui_window *g, int x0, int y0,
@@ -2800,25 +2802,40 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 {
 	ULONG gid,x,y;
 	struct gui_window_2 *gwin = hook->h_Data;
+	struct IntuiWheelData *wheel;
 
-	if (msg->Class == IDCMP_IDCMPUPDATE) 
-	{ 
-		gid = GetTagData( GA_ID, 0, msg->IAddress ); 
+	gui_window_get_scroll(gwin->bw->window,
+		&gwin->bw->window->scrollx,&gwin->bw->window->scrolly);
 
-		switch( gid ) 
-		{ 
- 			case OID_HSCROLL: 
- 			case OID_VSCROLL:
-				gui_window_get_scroll(gwin->bw->window,
-					&gwin->bw->window->scrollx,&gwin->bw->window->scrolly);
-				history_set_current_scroll(gwin->bw->history,
-					gwin->bw->window->scrollx,gwin->bw->window->scrolly);
+	switch(msg->Class)
+	{
+		case IDCMP_IDCMPUPDATE:
+			gid = GetTagData( GA_ID, 0, msg->IAddress ); 
 
-				if(!option_faster_scroll)
-					gwin->redraw_required = true;
-				else ami_do_redraw(gwin,true);
- 			break; 
-		} 
+			switch( gid ) 
+			{ 
+ 				case OID_HSCROLL: 
+ 				case OID_VSCROLL:
+					history_set_current_scroll(gwin->bw->history,
+						gwin->bw->window->scrollx,gwin->bw->window->scrolly);
+
+					if(!option_faster_scroll)
+						gwin->redraw_required = true;
+					else ami_do_redraw(gwin,true);
+ 				break; 
+			} 
+		break;
+
+		case IDCMP_EXTENDEDMOUSE:
+			if(msg->Code == IMSGCODE_INTUIWHEELDATA)
+			{
+				wheel = (struct IntuiWheelData *)msg->IAddress;
+
+				gui_window_set_scroll(gwin->bw->window,
+					gwin->bw->window->scrollx + (wheel->WheelX * 10),
+					gwin->bw->window->scrolly + (wheel->WheelY * 10));
+			}
+		break;
 	}
 //	ReplyMsg((struct Message *)msg);
 } 
