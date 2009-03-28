@@ -34,6 +34,7 @@
 #include "riscos/gui.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
+#include "riscos/wimputils.h"
 #include "riscos/gui/progress_bar.h"
 #include "riscos/gui/status_bar.h"
 
@@ -401,7 +402,7 @@ void ro_gui_status_bar_resize(struct status_bar *sb)
 		state.visible.y1 = state.visible.y0 - 2;
 		state.visible.x1 = state.visible.x0 + status_width;
 		state.visible.y0 = state.visible.y1 - status_height + 4;
-		error = xwimp_open_window_nested((wimp_open *)&state,
+		error = xwimp_open_window_nested(PTR_WIMP_OPEN(&state),
 				sb->parent,
 				wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
 						<< wimp_CHILD_XORIGIN_SHIFT |
@@ -613,7 +614,7 @@ void ro_gui_status_position_progress_bar(struct status_bar *sb)
 	state.next = wimp_TOP;
 	state.visible.x0 = left;
 	state.visible.x1 = right;
-	error = xwimp_open_window_nested((wimp_open *)&state,
+	error = xwimp_open_window_nested(PTR_WIMP_OPEN(&state),
 			sb->w,
 			wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
 					<< wimp_CHILD_XORIGIN_SHIFT |
