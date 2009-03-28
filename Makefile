@@ -376,7 +376,7 @@ ifeq ($(TARGET),riscos)
       # Go for static builds & AIF binary at the moment:
       CFLAGS += -static
       LDFLAGS += -static
-      EXEEXT := ,ff8
+#      EXEEXT := ,ff8
     endif
   endif
 endif
@@ -632,13 +632,13 @@ OBJECTS := $(sort $(addprefix $(OBJROOT)/,$(subst /,_,$(patsubst %.c,%.o,$(patsu
 
 $(EXETARGET): $(OBJECTS) $(RESOURCES)
 	$(VQ)echo "    LINK: $(EXETARGET)"
-ifneq ($(TARGET)$(SUBTARGET),riscos-elf)
+#ifneq ($(TARGET)$(SUBTARGET),riscos-elf)
 	$(Q)$(CC) -o $(EXETARGET) $(OBJECTS) $(LDFLAGS)
-else
-	$(Q)$(CC) -o $(EXETARGET:,ff8=,e1f) $(OBJECTS) $(LDFLAGS)
-	$(Q)$(ELF2AIF) $(EXETARGET:,ff8=,e1f) $(EXETARGET)
-	$(Q)$(RM) $(EXETARGET:,ff8=,e1f)
-endif
+#else
+#	$(Q)$(CC) -o $(EXETARGET:,ff8=,e1f) $(OBJECTS) $(LDFLAGS)
+#	$(Q)$(ELF2AIF) $(EXETARGET:,ff8=,e1f) $(EXETARGET)
+#	$(Q)$(RM) $(EXETARGET:,ff8=,e1f)
+#endif
 ifeq ($(NETSURF_STRIP_BINARY),YES)
 	$(VQ)echo "   STRIP: $(EXETARGET)"
 	$(Q)$(STRIP) $(EXETARGET)

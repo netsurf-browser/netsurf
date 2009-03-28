@@ -45,6 +45,7 @@
 #include "riscos/treeview.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
+#include "riscos/wimputils.h"
 #include "utils/log.h"
 #include "utils/utils.h"
 
@@ -408,6 +409,7 @@ bool ro_gui_theme_open(struct theme_descriptor *descriptor, bool list)
 	os_error *error;
 	struct theme_descriptor *next_descriptor;
 	char sprite_name[16];
+	const char *name = sprite_name;
 	bool result = true;
 	int i, n;
 	int workspace_size, file_size;
@@ -534,9 +536,9 @@ bool ro_gui_theme_open(struct theme_descriptor *descriptor, bool list)
 			error = xosspriteop_read_sprite_info(
 					osspriteop_USER_AREA,
 					descriptor->theme->sprite_area,
-					(osspriteop_id)sprite_name,
+					(osspriteop_id) name,
 					&dimensions.x, &dimensions.y,
-					(osbool *)0, &mode);
+					(osbool *) 0, &mode);
 			if (error) {
 				LOG(("xosspriteop_read_sprite_info: 0x%x: %s",
 						error->errnum, error->errmess));
@@ -666,10 +668,11 @@ void ro_gui_theme_redraw(wimp_draw *redraw)
 	/* set up the icon */
 	if ((toolbar->descriptor) && (toolbar->descriptor->theme) &&
 			(toolbar->descriptor->theme->sprite_area)) {
+		const char *name = theme_separator_name;
+
 		separator_icon.flags = wimp_ICON_SPRITE | wimp_ICON_INDIRECTED |
 				wimp_ICON_HCENTRED | wimp_ICON_VCENTRED;
-		separator_icon.data.indirected_sprite.id =
-				(osspriteop_id)theme_separator_name;
+		separator_icon.data.indirected_sprite.id = (osspriteop_id) name;
 		separator_icon.data.indirected_sprite.area =
 				toolbar->descriptor->theme->sprite_area;
 		separator_icon.data.indirected_sprite.size = 12;
@@ -1169,7 +1172,7 @@ bool ro_gui_theme_attach_toolbar(struct toolbar *toolbar, wimp_w parent)
 		state.visible.y0 = state.visible.y1 - height + 2;
 		state.xscroll = 0;
 		state.yscroll = toolbar->height - 2; /* clipped by the WIMP */
-		error = xwimp_open_window_nested((wimp_open *)&state, parent,
+		error = xwimp_open_window_nested(PTR_WIMP_OPEN(&state), parent,
 				wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
 						<< wimp_CHILD_XORIGIN_SHIFT |
 				wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
@@ -1194,7 +1197,7 @@ bool ro_gui_theme_attach_toolbar(struct toolbar *toolbar, wimp_w parent)
 		state.w = toolbar->editor->toolbar_handle;
 		state.visible.y1 -= toolbar->height;
 		state.yscroll = toolbar->editor->height - 2;
-		error = xwimp_open_window_nested((wimp_open *)&state,
+		error = xwimp_open_window_nested(PTR_WIMP_OPEN(&state),
 				toolbar->toolbar_handle,
 				wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
 						<< wimp_CHILD_XORIGIN_SHIFT |
@@ -1712,7 +1715,7 @@ void ro_gui_theme_toggle_edit(struct toolbar *toolbar)
 						warn_user("WimpError", error->errmess);
 						return;
 					}
-					ro_gui_open_window_request((wimp_open *)&state);
+					ro_gui_open_window_request(PTR_WIMP_OPEN(&state));
 					xwimp_force_redraw(toolbar->parent_handle,
 							0, -16384, 16384, 16384);
 				}
