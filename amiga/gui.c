@@ -2185,6 +2185,7 @@ DebugPrintF("%ld %ld calc\n",(y1-y0)+(yoffset+y0-vcurrent),(y0-(int)vcurrent));
 
 	BltBitMapRastPort(glob.bm,x0-hcurrent,y0-vcurrent,g->shared->win->RPort,xoffset+x0-hcurrent,yoffset+y0-vcurrent,x1-x0,y1-y0,0x0C0);
 
+/*
 	DebugPrintF("%ld %ld %ld %ld draw area\n%ld %ld %ld %ld clip rect\n%ld %ld bitmap src\n%ld %ld %ld %ld bitmap dest\n\n",-hcurrent,-vcurrent,width-hcurrent,height-vcurrent,
 		(ULONG)floorf((x0 *
 		g->shared->bw->scale)-(int)hcurrent),
@@ -2192,7 +2193,7 @@ DebugPrintF("%ld %ld calc\n",(y1-y0)+(yoffset+y0-vcurrent),(y0-(int)vcurrent));
 		g->shared->bw->scale)-(int)vcurrent),
 		(ULONG)x1-hcurrent,
 		(ULONG)y1-vcurrent,x0-hcurrent,y0-vcurrent,xoffset+x0-hcurrent,yoffset+y0-vcurrent,x1-x0,y1-y0);
-
+*/
 }
 
 void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
@@ -2706,7 +2707,9 @@ void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
 
 	SetAPen(g->shared->win->RPort,3);
 
-//	if(((x-xs) < bbox->Left) || ((x-xs) > (bbox->Left+bbox->Width)) || ((y-ys) < bbox->Top) || ((y-ys) > (bbox->Top+bbox->Height))) return;
+	if((y-ys+height) > (bbox->Height)) height = bbox->Height-y+ys;
+
+	if(((x-xs) <= 0) || ((x-xs+2) >= (bbox->Width)) || ((y-ys) <= 0) || ((y-ys) >= (bbox->Height))) return;
 
 	RectFill(g->shared->win->RPort,x+bbox->Left-xs,y+bbox->Top-ys,x+bbox->Left+2-xs,y+bbox->Top+height-ys);
 
@@ -2750,10 +2753,6 @@ bool gui_window_box_scroll_start(struct gui_window *g,
 bool gui_window_frame_resize_start(struct gui_window *g)
 {
 	printf("resize frame\n");
-}
-
-void gui_window_save_as_link(struct gui_window *g, struct content *c)
-{
 }
 
 void gui_window_set_scale(struct gui_window *g, float scale)

@@ -21,10 +21,22 @@
 #include <proto/exec.h>
 #include <proto/dos.h>
 #include <proto/intuition.h>
+#include <proto/utility.h>
+#include <proto/icon.h>
+
+#include <workbench/icon.h>
 
 #include "amiga/download.h"
 #include "amiga/object.h"
 #include "amiga/options.h"
+#include "amiga/save_complete.h"
+
+#include "desktop/selection.h"
+
+#include "utils/messages.h"
+#include "utils/utils.h"
+
+#include <string.h>
 
 #include <proto/window.h>
 #include <proto/layout.h>
@@ -46,7 +58,7 @@ struct gui_download_window *gui_download_window_create(const char *url,
 
 	DebugPrintF("%s\n%lx\n",url,gui);
 
-	if((!IsListEmpty(&gui->dllist)) && (dw->dln = FindName(&gui->dllist,url)))
+	if((!IsListEmpty(&gui->dllist)) && (dw->dln = (struct dlnode *)FindName(&gui->dllist,url)))
 	{
 		DebugPrintF("%lx node\n",dw->dln);
 		strcpy(fname,dw->dln->filename);
@@ -175,11 +187,11 @@ void gui_download_window_done(struct gui_download_window *dw)
 
 	if(dln = dw->dln)
 	{
-		dln2 = GetSucc(dln);
+		dln2 = (struct dlnode *)GetSucc((struct Node *)dln);
 		if(dln != dln2) queuedl = true;
 
 		free(dln->filename);
-		Remove(dln);
+		Remove((struct Node *)dln);
 		FreeVec(dln);
 	}
 
@@ -197,14 +209,57 @@ void ami_free_download_list(struct List *dllist)
 
 	node = (struct dlnode *)GetHead((struct List *)dllist);
 
-	while(nnode=(struct dlnode *)GetSucc((struct dlnode *)node))
+	while(nnode=(struct dlnode *)GetSucc((struct Node *)node))
 	{
 		free(node->node.ln_Name);
 		free(node->filename);
-		Remove(node);
-		FreeVec(node);
+		Remove((struct Node *)node);
+		FreeVec((struct Node *)node);
 
 		node=nnode;
+	}
+}
+
+void gui_window_save_as_link(struct gui_window *g, struct content *c)
+{
+	BPTR fh = 0;
+	char fname[1024];
+	STRPTR openurlstring,linkname;
+	struct DiskObject *dobj = NULL;
+
+	linkname = ASPrintf("Link_to_%s",FilePart(c->url));
+
+	if(AslRequestTags(savereq,
+		ASLFR_TitleText,messages_get("NetSurf"),
+		ASLFR_Screen,scrn,
+		ASLFR_InitialFile,linkname,
+		TAG_DONE))
+	{
+		strlcpy(&fname,savereq->fr_Drawer,1024);
+		AddPart(fname,savereq->fr_File,1024);
+		ami_update_pointer(g->shared->win,GUI_POINTER_WAIT);
+		if(fh = FOpen(fname,MODE_NEWFILE,0))
+		{
+			openurlstring = ASPrintf("openurl \"%s\"\n",c->url);
+			FWrite(fh,openurlstring,1,strlen(openurlstring));
+			FClose(fh);
+			FreeVec(openurlstring);
+			SetComment(fname,c->url);
+
+			dobj = GetIconTags(NULL,ICONGETA_GetDefaultName,"url",
+								ICONGETA_GetDefaultType,WBPROJECT,
+								TAG_DONE);		
+
+			dobj->do_DefaultTool = "IconX";
+
+			PutIconTags(fname,dobj,
+						ICONPUTA_NotifyWorkbench,TRUE,
+						TAG_DONE);
+
+			FreeDiskObject(dobj);
+		}
+		FreeVec(linkname);
+		ami_update_pointer(g->shared->win,GUI_POINTER_DEFAULT);
 	}
 }
 
