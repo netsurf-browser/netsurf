@@ -34,6 +34,7 @@
 #include "riscos/gui.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
+#include "riscos/wimputils.h"
 #include "utils/log.h"
 #include "utils/url.h"
 #include "utils/utils.h"
@@ -117,7 +118,7 @@ void ro_gui_history_open(struct browser_window *bw,
 	state.visible.x1 = width;
 	state.visible.y1 = height;
 	state.next = wimp_HIDDEN;
-	error = xwimp_open_window((wimp_open *) &state);
+	error = xwimp_open_window(PTR_WIMP_OPEN(&state));
 	if (error) {
 		LOG(("xwimp_open_window: 0x%x: %s",
 				error->errnum, error->errmess));
@@ -171,7 +172,7 @@ void ro_gui_history_redraw(wimp_draw *redraw)
 void ro_gui_history_mouse_at(wimp_pointer *pointer)
 {
 	int x, y;
-	long width;
+	int width;
 	const char *url;
 	wimp_window_state state;
 	wimp_icon_state ic;
@@ -215,7 +216,7 @@ void ro_gui_history_mouse_at(wimp_pointer *pointer)
 	/* get width of string */
 	error = xwimptextop_string_width(url,
 			strlen(url) > 256 ? 256 : strlen(url),
-			(int *) &width);
+			&width);
 	if (error) {
 		LOG(("xwimptextop_string_width: 0x%x: %s",
 				error->errnum, error->errmess));
@@ -272,7 +273,7 @@ void ro_gui_history_mouse_at(wimp_pointer *pointer)
 	state.visible.y1 = pointer->pos.y - 22;
 	state.next = wimp_TOP;
 	/* open window */
-	error = xwimp_open_window((wimp_open *) &state);
+	error = xwimp_open_window(PTR_WIMP_OPEN(&state));
 	if (error) {
 		LOG(("xwimp_open_window: 0x%x: %s",
 				error->errnum, error->errmess));
