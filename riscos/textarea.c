@@ -37,6 +37,7 @@
 #include "riscos/ucstables.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
+#include "riscos/wimputils.h"
 #include "utils/log.h"
 #include "utils/utf8.h"
 
@@ -274,7 +275,7 @@ bool textarea_update(uintptr_t self)
 	}
 
 	/* and open the window */
-	error = xwimp_open_window_nested((wimp_open *)&state, ta->parent,
+	error = xwimp_open_window_nested(PTR_WIMP_OPEN(&state), ta->parent,
 			wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
 					<< wimp_CHILD_XORIGIN_SHIFT |
 			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
@@ -864,7 +865,7 @@ void textarea_reflow(struct text_area *ta, unsigned int line)
 		state.visible.x1 -= vscroll_width;
 
 		/* and reopen window */
-		error = xwimp_open_window_nested((wimp_open *)&state,
+		error = xwimp_open_window_nested(PTR_WIMP_OPEN(&state),
 				parent, linkage);
 		if (error) {
 			LOG(("xwimp_open_window_nested: 0x%x: %s",
