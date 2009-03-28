@@ -242,7 +242,7 @@ const char *ro_gui_get_icon_string(wimp_w w, wimp_i i)
 		ic.icon.data.indirected_text.text
 		:
 		ic.icon.data.text;
-	/* Garantee NUL termination.  */
+	/* Guarantee NUL termination.  */
 	itext[ro_gui_strlen(itext)] = '\0';
 	return itext;
 }

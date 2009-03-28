@@ -20,6 +20,7 @@
  * Hotlist (implementation).
  */
 
+#include <ctype.h>
 #include <string.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -292,41 +293,54 @@ bool ro_gui_hotlist_dialog_apply(wimp_w w)
 {
 	struct node_element *element;
 	struct node *node;
+	const char *icon;
 	char *title;
-	char *icon;
 	char *url = NULL;
-	url_func_result res = URL_FUNC_OK;
+	url_func_result res;
 	const struct url_data *data;
 
 	/* get our data */
 	if (w == dialog_entry) {
-		icon = strip(ro_gui_get_icon_string(w, ICON_ENTRY_URL));
-		if (strlen(icon) == 0) {
-			warn_user("NoURLError", 0);
+		icon = ro_gui_get_icon_string(w, ICON_ENTRY_URL);
+
+		res = url_normalize(icon, &url);
+		if (res != URL_FUNC_OK) {
+			warn_user(res == URL_FUNC_FAILED ? "NoURLError" 
+							 : "NoMemory", 0);
 			return false;
 		}
-		res = url_normalize(icon, &url);
-		title = strip(ro_gui_get_icon_string(w, ICON_ENTRY_NAME));
+
+		icon = ro_gui_get_icon_string(w, ICON_ENTRY_NAME);
+		while (isspace(*icon))
+			icon++;
+		title = strdup(icon);
+
 		node = dialog_entry_node;
 	} else {
-		title = strip(ro_gui_get_icon_string(w, ICON_FOLDER_NAME));
+		icon = ro_gui_get_icon_string(w, ICON_FOLDER_NAME);
+		while (isspace(*icon))
+			icon++;
+		title = strdup(icon);
+
 		node = dialog_folder_node;
 	}
-	title = strdup(title);
 
-	/* check for failed functions or lack of text */
-	if ((title == NULL) || (strlen(title) == 0) || (res != URL_FUNC_OK)) {
+	if (title != NULL)
+		strip(title);
+
+	/* check for lack of text */
+	if (title == NULL || title[0] == '\0') {
 	 	free(url);
 	 	free(title);
 		node = NULL;
-		if ((title == NULL) || (res != URL_FUNC_OK))
+		if (title == NULL)
 			warn_user("NoMemory", 0);
-		else if (strlen(title) == 0)
+		else if (title[0] == '\0')
 			warn_user("NoNameError", 0);
 		return false;
 	}
-	ro_gui_set_icon_string(w,
-			url ? ICON_ENTRY_NAME : ICON_FOLDER_NAME, title, true);
+	ro_gui_set_icon_string(w, url ? ICON_ENTRY_NAME : ICON_FOLDER_NAME, 
+			title, false);
 
 	/* update/insert our data */
 	if (!node) {
