@@ -101,6 +101,7 @@ static void ro_gui_progress_bar_animate(void *p);
  */
 void ro_gui_progress_bar_init(osspriteop_area *icons)
 {
+	const char *name = progress_animation_sprite;
 	os_error *error;
 
 	progress_bar_definition.sprite_area = icons;
@@ -108,11 +109,11 @@ void ro_gui_progress_bar_init(osspriteop_area *icons)
 	progress_icon = NULL;
 	error = xosspriteop_select_sprite(osspriteop_USER_AREA,
 			progress_bar_definition.sprite_area,
-			(osspriteop_id)progress_animation_sprite, &progress_icon);
+			(osspriteop_id) name, &progress_icon);
 	if (!error) {
 		xosspriteop_read_sprite_info(osspriteop_USER_AREA,
 			progress_bar_definition.sprite_area,
-			(osspriteop_id)progress_animation_sprite,
+			(osspriteop_id) name,
 			(int *) &progress_width, (int *) &progress_height, 
 			0, 0);
 	}
