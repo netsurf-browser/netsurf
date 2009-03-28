@@ -46,6 +46,7 @@
 #include "riscos/url_complete.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
+#include "riscos/wimputils.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/url.h"
@@ -331,7 +332,7 @@ void ro_gui_dialog_open(wimp_w w)
 	state.visible.y0 = screen_y - dy;
 	state.visible.y1 = screen_y + dy;
 	state.next = wimp_TOP;
-	ro_gui_open_window_request((wimp_open*)&state);
+	ro_gui_open_window_request(PTR_WIMP_OPEN(&state));
 
 	/*	Set the caret position */
 	ro_gui_set_caret_first(w);
@@ -458,7 +459,7 @@ bool ro_gui_dialog_open_top(wimp_w w, struct toolbar *toolbar,
 
 	/* open the window at the top of the stack */
 	state.next = wimp_TOP;
-	ro_gui_open_window_request((wimp_open*)&state);
+	ro_gui_open_window_request(PTR_WIMP_OPEN(&state));
 	return open;
 }
 
@@ -523,7 +524,7 @@ void ro_gui_dialog_open_xy(wimp_w w, int x, int y)
 
 	/* open the window at the top of the stack */
 	state.next = wimp_TOP;
-	ro_gui_open_window_request((wimp_open *) &state);
+	ro_gui_open_window_request(PTR_WIMP_OPEN(&state));
 }
 
 
@@ -577,7 +578,7 @@ void ro_gui_dialog_open_centre_parent(wimp_w parent, wimp_w child) {
 	state.visible.y0 = mid_y - dimension / 2;
 	state.visible.y1 = state.visible.y0 + dimension;
 	state.next = wimp_TOP;
-	ro_gui_open_window_request((wimp_open*)&state);
+	ro_gui_open_window_request(PTR_WIMP_OPEN(&state));
 }
 
 
