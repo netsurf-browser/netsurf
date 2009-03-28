@@ -25,7 +25,7 @@
 
 #include <oslib/wimp.h>
 
-/* Magical union for working around strict aliasing 
+/* Magical union to permit aliasing of wimp_window_state and wimp_open
  * Do not use this directly. Use the macros, instead. */
 typedef union window_open_state {
 	wimp_window_state state;
@@ -34,5 +34,32 @@ typedef union window_open_state {
 
 /* Convert a pointer to a wimp_window_state into a pointer to a wimp_open */
 #define PTR_WIMP_OPEN(pstate) ((wimp_open *) (window_open_state *) (pstate))
+
+/* Similarly for wimp_message_list */
+typedef struct ns_wimp_message_list {
+	/* Nasty hack to ensure that we have at least one field in the struct */
+	int first;
+	int rest[];
+} ns_wimp_message_list;
+
+typedef union message_list {
+	wimp_message_list wimp;
+	ns_wimp_message_list ns;
+} message_list;
+
+#define PTR_WIMP_MESSAGE_LIST(l) ((wimp_message_list *) (message_list *) (l))
+
+/* Also for VDU variable lists */
+typedef struct ns_os_vdu_var_list {
+	os_vdu_var first;
+	os_vdu_var rest[];
+} ns_os_vdu_var_list;
+
+typedef union vdu_var_list {
+	os_vdu_var_list os;
+	ns_os_vdu_var_list ns;
+} vdu_var_list;
+
+#define PTR_OS_VDU_VAR_LIST(l) ((os_vdu_var_list *) (vdu_var_list *) (l))
 
 #endif

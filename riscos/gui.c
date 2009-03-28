@@ -87,6 +87,7 @@
 #include "riscos/url_complete.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
+#include "riscos/wimputils.h"
 #include "utils/filename.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -183,53 +184,55 @@ static struct {
 } prev_sigs;
 
 /** Accepted wimp user messages. */
-static wimp_MESSAGE_LIST(42) task_messages = { {
+static ns_wimp_message_list task_messages = { 
 	message_HELP_REQUEST,
-	message_DATA_SAVE,
-	message_DATA_SAVE_ACK,
-	message_DATA_LOAD,
-	message_DATA_LOAD_ACK,
-	message_DATA_OPEN,
-	message_PRE_QUIT,
-	message_SAVE_DESKTOP,
-	message_MENU_WARNING,
-	message_MENUS_DELETED,
-	message_WINDOW_INFO,
-	message_CLAIM_ENTITY,
-	message_DATA_REQUEST,
-	message_DRAGGING,
-	message_DRAG_CLAIM,
-	message_MODE_CHANGE,
-	message_FONT_CHANGED,
-	message_URI_PROCESS,
-	message_URI_RETURN_RESULT,
-	message_INET_SUITE_OPEN_URL,
+	{
+		message_DATA_SAVE,
+		message_DATA_SAVE_ACK,
+		message_DATA_LOAD,
+		message_DATA_LOAD_ACK,
+		message_DATA_OPEN,
+		message_PRE_QUIT,
+		message_SAVE_DESKTOP,
+		message_MENU_WARNING,
+		message_MENUS_DELETED,
+		message_WINDOW_INFO,
+		message_CLAIM_ENTITY,
+		message_DATA_REQUEST,
+		message_DRAGGING,
+		message_DRAG_CLAIM,
+		message_MODE_CHANGE,
+		message_FONT_CHANGED,
+		message_URI_PROCESS,
+		message_URI_RETURN_RESULT,
+		message_INET_SUITE_OPEN_URL,
 #ifdef WITH_PLUGIN
-	message_PLUG_IN_OPENING,
-	message_PLUG_IN_CLOSED,
-	message_PLUG_IN_RESHAPE_REQUEST,
-	message_PLUG_IN_FOCUS,
-	message_PLUG_IN_URL_ACCESS,
-	message_PLUG_IN_STATUS,
-	message_PLUG_IN_BUSY,
-	message_PLUG_IN_STREAM_NEW,
-	message_PLUG_IN_STREAM_WRITE,
-	message_PLUG_IN_STREAM_WRITTEN,
-	message_PLUG_IN_STREAM_DESTROY,
-	message_PLUG_IN_OPEN,
-	message_PLUG_IN_CLOSE,
-	message_PLUG_IN_RESHAPE,
-	message_PLUG_IN_STREAM_AS_FILE,
-	message_PLUG_IN_NOTIFY,
-	message_PLUG_IN_ABORT,
-	message_PLUG_IN_ACTION,
-	/* message_PLUG_IN_INFORMED, (not provided by oslib) */
+		message_PLUG_IN_OPENING,
+		message_PLUG_IN_CLOSED,
+		message_PLUG_IN_RESHAPE_REQUEST,
+		message_PLUG_IN_FOCUS,
+		message_PLUG_IN_URL_ACCESS,
+		message_PLUG_IN_STATUS,
+		message_PLUG_IN_BUSY,
+		message_PLUG_IN_STREAM_NEW,
+		message_PLUG_IN_STREAM_WRITE,
+		message_PLUG_IN_STREAM_WRITTEN,
+		message_PLUG_IN_STREAM_DESTROY,
+		message_PLUG_IN_OPEN,
+		message_PLUG_IN_CLOSE,
+		message_PLUG_IN_RESHAPE,
+		message_PLUG_IN_STREAM_AS_FILE,
+		message_PLUG_IN_NOTIFY,
+		message_PLUG_IN_ABORT,
+		message_PLUG_IN_ACTION,
+		/* message_PLUG_IN_INFORMED, (not provided by oslib) */
 #endif
-	message_PRINT_SAVE,
-	message_PRINT_ERROR,
-	message_PRINT_TYPE_ODD,
-	0
-} };
+		message_PRINT_SAVE,
+		message_PRINT_ERROR,
+		message_PRINT_TYPE_ODD,
+		0
+	}
+};
 
 static struct
 {
@@ -433,7 +436,7 @@ void gui_init(int argc, char** argv)
 
 	/* Initialise with the wimp */
 	error = xwimp_initialise(wimp_VERSION_RO38, task_name,
-			(const wimp_message_list *) &task_messages, 0,
+			PTR_WIMP_MESSAGE_LIST(&task_messages), 0,
 			&task_handle);
 	if (error) {
 		LOG(("xwimp_initialise: 0x%x: %s",
@@ -2119,17 +2122,19 @@ char *url_to_path(const char *url)
 
 void ro_gui_get_screen_properties(void)
 {
-	const os_VDU_VAR_LIST(5) vars = {
-		{ os_MODEVAR_XWIND_LIMIT,
-		os_MODEVAR_YWIND_LIMIT,
-		os_MODEVAR_XEIG_FACTOR,
-		os_MODEVAR_YEIG_FACTOR,
-		os_VDUVAR_END_LIST }
+	static const ns_os_vdu_var_list vars = {
+		os_MODEVAR_XWIND_LIMIT,
+		{
+			os_MODEVAR_YWIND_LIMIT,
+			os_MODEVAR_XEIG_FACTOR,
+			os_MODEVAR_YEIG_FACTOR,
+			os_VDUVAR_END_LIST
+		}
 	};
 	os_error *error;
 	int vals[4];
 
-	error = xos_read_vdu_variables((const os_vdu_var_list*)&vars, vals);
+	error = xos_read_vdu_variables(PTR_OS_VDU_VAR_LIST(&vars), vals);
 	if (error) {
 		LOG(("xos_read_vdu_variables: 0x%x: %s",
 			error->errnum, error->errmess));
