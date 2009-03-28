@@ -22,6 +22,7 @@
 #include "utils/messages.h"
 #include <proto/exec.h>
 #include <proto/intuition.h>
+#include <proto/asl.h>
 #include "amiga/plotters.h"
 #include "amiga/schedule.h"
 #include <proto/timer.h>
@@ -38,7 +39,6 @@
 #include <graphics/rpattr.h>
 #include <libraries/gadtools.h>
 #include <proto/layers.h>
-#include <proto/asl.h>
 #include <datatypes/pictureclass.h>
 #include "desktop/selection.h"
 #include "utils/utf8.h"
@@ -73,7 +73,7 @@
 #include <devices/inputevent.h>
 #include "amiga/history_local.h"
 #include "amiga/font.h"
-#include <proto/wb.h>
+#include "amiga/download.h"
 
 #ifdef NS_AMIGA_CAIRO
 #include <cairo/cairo-amigaos.h>
@@ -89,10 +89,8 @@
 #include <proto/button.h>
 #include <proto/space.h>
 #include <proto/popupmenu.h>
-#include <proto/fuelgauge.h>
 #include <proto/clicktab.h>
 #include <classes/window.h>
-#include <gadgets/fuelgauge.h>
 #include <gadgets/layout.h>
 #include <gadgets/string.h>
 #include <gadgets/scroller.h>
@@ -120,16 +118,10 @@ ULONG throbber_width,throbber_height,throbber_frames;
 BOOL rmbtrapped;
 BOOL locked_screen = FALSE;
 
-int drag_save = 0;
-void *drag_save_data = NULL;
-
 extern colour css_scrollbar_fg_colour;
 extern colour css_scrollbar_bg_colour;
 extern colour css_scrollbar_arrow_colour;
 
-#define AMI_GUI_POINTER_BLANK GUI_POINTER_PROGRESS+1
-#define AMI_GUI_POINTER_DRAG  GUI_POINTER_PROGRESS+2
-#define AMI_LASTPOINTER AMI_GUI_POINTER_DRAG
 Object *mouseptrobj[AMI_LASTPOINTER+1];
 struct BitMap *mouseptrbm[AMI_LASTPOINTER+1];
 int mouseptrcurrent=0;
@@ -1601,6 +1593,9 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		return NULL;
 	}
 
+	NewList(&gwin->dllist);
+DebugPrintF("newlist\n");
+
 /*
 	if(bw->browser_window_type == BROWSER_WINDOW_IFRAME)
 	{
@@ -2040,6 +2035,8 @@ void gui_window_destroy(struct gui_window *g)
 		ami_history_close(g->hw);
 		win_destroyed = true;
 	}
+
+	ami_free_download_list(&g->dllist);
 
 	if(g->shared->tabs > 1)
 	{
@@ -2764,239 +2761,6 @@ void gui_window_save_as_link(struct gui_window *g, struct content *c)
 void gui_window_set_scale(struct gui_window *g, float scale)
 {
 	printf("set scale\n");
-}
-
-struct gui_download_window *gui_download_window_create(const char *url,
-		const char *mime_type, struct fetch *fetch,
-		unsigned int total_size, struct gui_window *gui)
-{
-	char fname[1024];
-	struct gui_download_window *dw;
-	APTR va[3];
-
-	if(gui->dlfilename)
-	{
-		strcpy(fname,gui->dlfilename);
-		free(gui->dlfilename);
-		gui->dlfilename = NULL;
-	}
-	else
-	{
-		if(AslRequestTags(savereq,
-			ASLFR_TitleText,messages_get("NetSurf"),
-			ASLFR_Screen,scrn,
-			ASLFR_InitialFile,FilePart(url),
-			TAG_DONE))
-		{
-			strlcpy(&fname,savereq->fr_Drawer,1024);
-			AddPart((STRPTR)&fname,savereq->fr_File,1024);
-		}
-		else return NULL;
-	}
-
-	dw = AllocVec(sizeof(struct gui_download_window),MEMF_PRIVATE | MEMF_CLEAR);
-
-	dw->size = total_size;
-	dw->downloaded = 0;
-
-	va[0] = (APTR)dw->downloaded;
-	va[1] = (APTR)dw->size;
-	va[2] = 0;
-
-	if(!(dw->fh = FOpen((STRPTR)&fname,MODE_NEWFILE,0)))
-	{
-		FreeVec(dw);
-		return NULL;
-	}
-
-	SetComment(fname,url);
-
-	dw->objects[OID_MAIN] = WindowObject,
-      	    WA_ScreenTitle,nsscreentitle,
-           	WA_Title, url,
-           	WA_Activate, TRUE,
-           	WA_DepthGadget, TRUE,
-           	WA_DragBar, TRUE,
-           	WA_CloseGadget, FALSE,
-           	WA_SizeGadget, TRUE,
-			WA_CustomScreen,scrn,
-			WINDOW_IconifyGadget, TRUE,
-			WINDOW_LockHeight,TRUE,
-         	WINDOW_Position, WPOS_CENTERSCREEN,
-           	WINDOW_ParentGroup, dw->gadgets[GID_MAIN] = VGroupObject,
-				LAYOUT_AddChild, dw->gadgets[GID_STATUS] = FuelGaugeObject,
-					GA_ID,GID_STATUS,
-					GA_Text,messages_get("amiDownload"),
-					FUELGAUGE_Min,0,
-					FUELGAUGE_Max,total_size,
-					FUELGAUGE_Level,0,
-					FUELGAUGE_Ticks,11,
-					FUELGAUGE_ShortTicks,TRUE,
-					FUELGAUGE_VarArgs,va,
-					FUELGAUGE_Percent,FALSE,
-					FUELGAUGE_Justification,FGJ_CENTER,
-				StringEnd,
-				CHILD_NominalSize,TRUE,
-				CHILD_WeightedHeight,0,
-			EndGroup,
-		EndWindow;
-
-	dw->win = (struct Window *)RA_OpenWindow(dw->objects[OID_MAIN]);
-
-	dw->node = AddObject(window_list,AMINS_DLWINDOW);
-	dw->node->objstruct = dw;
-
-	return dw;
-}
-
-void gui_download_window_data(struct gui_download_window *dw, const char *data,
-		unsigned int size)
-{
-	APTR va[3];
-	if(!dw) return;
-
-	FWrite(dw->fh,data,1,size);
-
-	dw->downloaded = dw->downloaded + size;
-
-	va[0] = (APTR)dw->downloaded;
-	va[1] = (APTR)dw->size;
-	va[2] = 0;
-
-	if(dw->size)
-	{
-		RefreshSetGadgetAttrs(dw->gadgets[GID_STATUS],dw->win,NULL,
-						FUELGAUGE_Level,dw->downloaded,
-						GA_Text,messages_get("amiDownload"),
-						FUELGAUGE_VarArgs,va,
-						TAG_DONE);
-	}
-	else
-	{
-		RefreshSetGadgetAttrs(dw->gadgets[GID_STATUS],dw->win,NULL,
-						FUELGAUGE_Level,dw->downloaded,
-						GA_Text,messages_get("amiDownloadU"),
-						FUELGAUGE_VarArgs,va,
-						TAG_DONE);
-	}
-}
-
-void gui_download_window_error(struct gui_download_window *dw,
-		const char *error_msg)
-{
-	warn_user("Unwritten","");
-	gui_download_window_done(dw);
-}
-
-void gui_download_window_done(struct gui_download_window *dw)
-{
-	if(!dw) return;
-	FClose(dw->fh);
-	DisposeObject(dw->objects[OID_MAIN]);
-	DelObject(dw->node);
-}
-
-void gui_drag_save_object(gui_save_type type, struct content *c,
-		struct gui_window *g)
-{
-	if(strcmp(option_use_pubscreen,"Workbench")) return;
-
-	gui_window_set_pointer(g,AMI_GUI_POINTER_DRAG);
-	drag_save_data = c;
-	drag_save = type;
-}
-
-void gui_drag_save_selection(struct selection *s, struct gui_window *g)
-{
-	if(strcmp(option_use_pubscreen,"Workbench")) return;
-
-	gui_window_set_pointer(g,AMI_GUI_POINTER_DRAG);
-	drag_save_data = s;
-	drag_save = GUI_SAVE_TEXT_SELECTION;
-}
-
-void ami_drag_save(struct Window *win)
-{
-	ULONG which,type;
-	char path[1025],dpath[1025];
-
-	which = WhichWorkbenchObject(NULL,scrn->MouseX,scrn->MouseY,
-									WBOBJA_Type,&type,
-									WBOBJA_FullPath,&path,
-									WBOBJA_FullPathSize,1024,
-									WBOBJA_DrawerPath,&dpath,
-									WBOBJA_DrawerPathSize,1024,
-									TAG_DONE);
-
-	if((which == WBO_DRAWER) || ((which == WBO_ICON) && (type > WBDRAWER)))
-	{
-		strcpy(path,dpath);
-	}
-	else if(which == WBO_NONE)
-	{
-		drag_save = 0;
-		drag_save_data = NULL;
-		return;
-	}
-
-	if(path[0] == '\0')
-	{
-		drag_save = 0;
-		drag_save_data = NULL;
-		return;
-	}
-
-	ami_update_pointer(win,GUI_POINTER_WAIT);
-
-	switch(drag_save)
-	{
-		case GUI_SAVE_OBJECT_ORIG: // object
-		case GUI_SAVE_SOURCE:
-		{
-			struct content *c = drag_save_data;
-			BPTR fh = 0;
-			AddPart(path,c->title,1024);
-
-			if(fh = FOpen(path,MODE_NEWFILE,0))
-			{
-				FWrite(fh,c->source_data,1,c->source_size);
-				FClose(fh);
-				SetComment(path,c->url);
-			}
-		}
-		break;
-
-		case GUI_SAVE_TEXT_SELECTION: // selection
-			AddPart(path,"netsurf_text_file",1024);
-			selection_save_text((struct selection *)drag_save_data,path);
-		break;
-
-		case GUI_SAVE_COMPLETE:
-		{
-			struct content *c = drag_save_data;
-			BPTR lock = 0;
-
-			AddPart(path,c->title,1024);
-			if(lock = CreateDir(path))
-			{
-				UnLock(lock);
-				save_complete(c,path);
-				SetComment(path,c->url);
-			}
-		}
-		break;
-
-		case GUI_SAVE_OBJECT_NATIVE:
-		{
-			struct content *c = drag_save_data;
-			bitmap_save(c->bitmap,path,0);
-		}
-		break;
-	}
-
-	drag_save = 0;
-	drag_save_data = NULL;
-	ami_update_pointer(win,GUI_POINTER_DEFAULT);
 }
 
 void gui_create_form_select_menu(struct browser_window *bw,

@@ -23,6 +23,8 @@
 #include "desktop/browser.h"
 #include "amiga/gui.h"
 #include <proto/dos.h>
+#include <proto/exec.h>
+#include "amiga/download.h"
 
 const char * const verarexx;
 const int verver;
@@ -109,10 +111,16 @@ void ami_arexx_cleanup(void)
 
 STATIC VOID rx_open(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
+	struct dlnode *dln;
+
 	if(cmd->ac_ArgList[2])
 	{
-		curbw->window->dlfilename = strdup(cmd->ac_ArgList[2]);
-		browser_window_download(curbw,(char *)cmd->ac_ArgList[0],NULL);
+		dln = AllocVec(sizeof(struct dlnode),MEMF_PRIVATE | MEMF_CLEAR);
+		dln->filename = strdup((char *)cmd->ac_ArgList[2]);
+		dln->node.ln_Name = strdup((char *)cmd->ac_ArgList[0]);
+		dln->node.ln_Type = NT_USER;
+		AddTail(&curbw->window->dllist,dln);
+		if(!curbw->download) browser_window_download(curbw,(char *)cmd->ac_ArgList[0],NULL);
 	}
 	else if(cmd->ac_ArgList[1])
 	{

@@ -70,19 +70,12 @@ enum
     OID_LAST
 };
 
+#define AMI_GUI_POINTER_BLANK GUI_POINTER_PROGRESS+1
+#define AMI_GUI_POINTER_DRAG  GUI_POINTER_PROGRESS+2
+#define AMI_LASTPOINTER AMI_GUI_POINTER_DRAG
+
 struct find_window;
 struct history_window;
-
-struct gui_download_window {
-	struct Window *win;
-	Object *objects[OID_LAST];
-	struct Gadget *gadgets[GID_LAST];
-	struct nsObject *node;
-	ULONG pad[5];
-	BPTR fh;
-	uint32 size;
-	uint32 downloaded;
-};
 
 struct gui_window_2 {
 	struct Window *win;
@@ -116,8 +109,8 @@ struct gui_window
 	int c_h;
 	int scrollx;
 	int scrolly;
-	char *dlfilename;
 	struct history_window *hw;
+	struct List dllist;
 };
 
 struct gui_globals
