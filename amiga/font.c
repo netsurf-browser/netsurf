@@ -139,7 +139,6 @@ bool nsfont_position_in_string(const struct css_style *style,
 					OT_GlyphMap8Bit,&glyph,
 					TAG_END) == 0)
 				{
-					*actual_x = tx;
 					if(utf8_from_enc(utf16,"UTF-16",4,&utf8) != UTF8_CONVERT_OK) return;
 					utf8len = utf8_char_byte_length(utf8);
 					free(utf8);
@@ -154,6 +153,7 @@ bool nsfont_position_in_string(const struct css_style *style,
 					}
 
 					tx+= glyph->glm_X1;
+					*actual_x = tx;
 
 					EReleaseInfo(&ofont->olf_EEngine,
 						OT_GlyphMap8Bit,glyph,
@@ -166,6 +166,7 @@ bool nsfont_position_in_string(const struct css_style *style,
 				utf16 += 2;
 		}
 		*char_offset = co;
+		if(co == 0) *actual_x = 0;
 		free(outf16);
 	}
 
