@@ -32,6 +32,7 @@
 #include "riscos/url_complete.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
+#include "riscos/wimputils.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
@@ -126,7 +127,7 @@ bool ro_gui_options_theme_initialise(wimp_w w)
 	state.visible.y0 = state.visible.y1 + icon_state.icon.extent.y0 + 16;
 	state.visible.y1 += icon_state.icon.extent.y1 - 28;
 	LOG(("Y0 = %i, y1 = %i", icon_state.icon.extent.y0, icon_state.icon.extent.y1));
-	error = xwimp_open_window_nested((wimp_open *)&state, w,
+	error = xwimp_open_window_nested(PTR_WIMP_OPEN(&state), w,
 			wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
 					<< wimp_CHILD_XORIGIN_SHIFT |
 			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
@@ -366,7 +367,7 @@ void ro_gui_options_theme_load(void)
 		state.yscroll = 0;
 		state.visible.y1 = nested_y + base_extent;
 		state.visible.y0 = state.visible.y1 - link->toolbar->height + 2;
-		xwimp_open_window_nested((wimp_open *)&state, theme_pane,
+		xwimp_open_window_nested(PTR_WIMP_OPEN(&state), theme_pane,
 				wimp_CHILD_LINKS_PARENT_WORK_AREA
 						<< wimp_CHILD_BS_EDGE_SHIFT |
 				wimp_CHILD_LINKS_PARENT_WORK_AREA
