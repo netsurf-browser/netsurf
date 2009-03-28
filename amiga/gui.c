@@ -178,7 +178,6 @@ void ami_scroller_hook(struct Hook *,Object *,struct IntuiMessage *);
 uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved);
 void ami_init_mouse_pointers(void);
 void ami_switch_tab(struct gui_window_2 *gwin,bool redraw);
-void ami_drag_save(struct Window *win);
 #ifdef WITH_HUBBUB
 static void *myrealloc(void *ptr, size_t len, void *pw);
 #endif
@@ -1594,7 +1593,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	}
 
 	NewList(&gwin->dllist);
-DebugPrintF("newlist\n");
 
 /*
 	if(bw->browser_window_type == BROWSER_WINDOW_IFRAME)

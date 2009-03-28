@@ -36,8 +36,6 @@
 
 #include <reaction/reaction_macros.h>
 
-void ami_drag_save(struct Window *win);
-
 struct gui_download_window *gui_download_window_create(const char *url,
 		const char *mime_type, struct fetch *fetch,
 		unsigned int total_size, struct gui_window *gui)

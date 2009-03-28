@@ -42,6 +42,7 @@ struct gui_download_window {
 int drag_save;
 void *drag_save_data;
 
+void ami_drag_save(struct Window *win);
 void ami_free_download_list(struct List *dllist);
 
 #endif
