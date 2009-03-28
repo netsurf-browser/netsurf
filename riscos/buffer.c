@@ -30,6 +30,7 @@
 #include "riscos/options.h"
 #include "riscos/tinct.h"
 #include "riscos/wimp.h"
+#include "riscos/wimputils.h"
 #include "utils/log.h"
 //#define NDEBUG
 #define BUFFER_EXCLUSIVE_USER_REDRAW "Only support pure user redraw (faster)"
@@ -50,9 +51,10 @@ static os_box clipping;
 /** The current save area
 */
 static osspriteop_save_area *save_area;
-static osspriteop_area *context1;
-static osspriteop_id context2;
-static osspriteop_save_area *context3;
+static int context0;
+static int context1;
+static int context2;
+static int context3;
 
 /** The current sprite mode
 */
@@ -146,17 +148,19 @@ void ro_gui_buffer_open(wimp_draw *redraw)
 	/* if we're not in a numbered screen mode then we need
 	   to build a suitable sprite mode word */
 	if (mode >= (os_mode)0x100) {
-		const os_VDU_VAR_LIST(4) vars = {
-			{ os_MODEVAR_LOG2_BPP,
-			os_MODEVAR_XEIG_FACTOR,
-			os_MODEVAR_YEIG_FACTOR,
-			os_VDUVAR_END_LIST }
+		static const ns_os_vdu_var_list vars = {
+			os_MODEVAR_LOG2_BPP,
+			{
+				os_MODEVAR_XEIG_FACTOR,
+				os_MODEVAR_YEIG_FACTOR,
+				os_VDUVAR_END_LIST
+			}
 		};
 		int xeig, yeig;
 		int vals[4];
 		int type;
 
-		error = xos_read_vdu_variables((const os_vdu_var_list*)&vars, vals);
+		error = xos_read_vdu_variables(PTR_OS_VDU_VAR_LIST(&vars), vals);
 		if (error) {
 			LOG(("Error reading mode properties '%s'", error->errmess));
 			ro_gui_buffer_free();
@@ -225,9 +229,8 @@ void ro_gui_buffer_open(wimp_draw *redraw)
 	/*	Switch output to sprite
 	*/
 	if ((error = xosspriteop_switch_output_to_sprite(osspriteop_PTR,
-			buffer, (osspriteop_id)(buffer + 1), save_area, 0,
-			(int *)&context1, (int *)&context2,
-			(int *)&context3)) != NULL) {
+			buffer, (osspriteop_id)(buffer + 1), save_area,
+			&context0, &context1, &context2, &context3)) != NULL) {
 		LOG(("Switching error '%s'", error->errmess));
 		free(save_area);
 		ro_gui_buffer_free();
@@ -263,9 +266,7 @@ void ro_gui_buffer_close(void)
 	*/
 	ro_plot_origin_x += clipping.x0;
 	ro_plot_origin_y += clipping.y0;
-	xosspriteop_switch_output_to_sprite(osspriteop_PTR,
-			context1, context2, context3,
-			0, 0, 0, 0);
+	xosspriteop_unswitch_output(context0, context1, context2, context3);
 	free(save_area);
 
 	/*	Plot the contents to screen
