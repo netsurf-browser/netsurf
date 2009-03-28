@@ -365,8 +365,14 @@ bool nsmng_convert(struct content *c, int width, int height)
 
 	/* free associated memory except for mngs where it may be subsequently needed for
 	 * animation decoding. */
-	if (c->type != CONTENT_MNG)
-		mng_cleanup((mng_handle *) &c->data.mng.handle);
+	if (c->type != CONTENT_MNG) {
+		mng_handle handle = c->data.mng.handle;
+
+		mng_cleanup(&handle);
+
+		c->data.mng.handle = NULL;
+	}
+
 	return true;
 }
 
@@ -505,10 +511,17 @@ void nsmng_destroy(struct content *c)
 	/*	Cleanup the MNG structure and release the canvas memory
 	*/
 	schedule_remove(nsmng_animate, c);
-	if (c->type == CONTENT_MNG)
-		mng_cleanup((mng_handle *) &c->data.mng.handle);
+	if (c->type == CONTENT_MNG) {
+		mng_handle handle = c->data.mng.handle;
+
+		mng_cleanup(&handle);
+
+		c->data.mng.handle = NULL;
+	}
+
 	if (c->bitmap)
 		bitmap_destroy(c->bitmap);
+
 	free(c->title);
 }
 
