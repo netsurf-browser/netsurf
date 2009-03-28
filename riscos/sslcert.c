@@ -36,8 +36,9 @@
 #include "riscos/dialog.h"
 #include "riscos/textarea.h"
 #include "riscos/treeview.h"
-#include "riscos/wimp_event.h"
 #include "riscos/wimp.h"
+#include "riscos/wimp_event.h"
+#include "riscos/wimputils.h"
 #include "utils/log.h"
 #include "utils/utils.h"
 
@@ -254,7 +255,7 @@ void gui_cert_verify(struct browser_window *bw, struct content *c,
 	state.visible.x0 += istate.icon.extent.x0 + 20;
 	state.visible.y0 = state.visible.y1 + istate.icon.extent.y0 + 20;
 	state.visible.y1 += istate.icon.extent.y1 - 32;
-	error = xwimp_open_window_nested((wimp_open *)&state, ssl_w,
+	error = xwimp_open_window_nested(PTR_WIMP_OPEN(&state), ssl_w,
 			wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
 					<< wimp_CHILD_XORIGIN_SHIFT |
 			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
