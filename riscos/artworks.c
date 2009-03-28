@@ -36,6 +36,7 @@
 #include "content/content.h"
 #include "riscos/artworks.h"
 #include "riscos/gui.h"
+#include "riscos/wimputils.h"
 #include "utils/utils.h"
 #include "utils/messages.h"
 #include "utils/log.h"
@@ -224,11 +225,13 @@ bool artworks_redraw(struct content *c, int x, int y,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale, colour background_colour)
 {
-	const os_VDU_VAR_LIST(4) vars = {
-		{ os_MODEVAR_XEIG_FACTOR,
-		os_MODEVAR_YEIG_FACTOR,
-		os_MODEVAR_LOG2_BPP,
-		os_VDUVAR_END_LIST }
+	static const ns_os_vdu_var_list vars = {
+		os_MODEVAR_XEIG_FACTOR,
+		{
+			os_MODEVAR_YEIG_FACTOR,
+			os_MODEVAR_LOG2_BPP,
+			os_VDUVAR_END_LIST
+		}
 	};
 	struct awinfo_block info;
 	os_error *error;
@@ -281,7 +284,7 @@ bool artworks_redraw(struct content *c, int x, int y,
 	info.print_handle = 0;
 	info.bgcolour = 0x20000000 | background_colour;
 
-	error = xos_read_vdu_variables((os_vdu_var_list*)&vars, vals);
+	error = xos_read_vdu_variables(PTR_OS_VDU_VAR_LIST(&vars), vals);
 	if (error) {
 		LOG(("xos_read_vdu_variables: 0x%x: %s",
 			error->errnum, error->errmess));
