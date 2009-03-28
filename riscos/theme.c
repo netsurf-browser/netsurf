@@ -1831,7 +1831,7 @@ void ro_gui_theme_toolbar_editor_drag_end(wimp_dragged *drag)
 	struct toolbar_icon *insert_icon;
 	struct toolbar_icon *local_icon = NULL;
 	struct toolbar_icon *icon;
-	bool before;
+	bool before = false;
 
 	if ((!theme_toolbar_drag) || (!theme_toolbar_icon_drag) ||
 			(!theme_toolbar_drag->editor))
