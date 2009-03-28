@@ -2151,12 +2151,13 @@ void ami_do_redraw_limits(struct gui_window *g, struct content *c,int x0, int y0
 	yoffset=bbox->Top;
 
 	plot=amiplot;
+/*
+DebugPrintF("%ld %ld %ld %ld old\n%ld %ld %ld %ld x0-xc etc\n",x0,y0,x1,y1,x0-hcurrent,y0-vcurrent,width+x0,height+y0);
+DebugPrintF("%ld %ld calc\n",(y1-y0)+(yoffset+y0-vcurrent),(y0-(int)vcurrent));
 
-//DebugPrintF("%ld %ld %ld %ld old\n%ld %ld %ld %ld x0-xc etc\n",x0,y0,x1,y1,x0-hcurrent,y0-vcurrent,width+x0,height+y0);
-
-	if(((y1-y0)+(yoffset+y0-vcurrent)<0) || ((y0-(int)vcurrent)>height)) return;
-	if(((x1-x0)+(xoffset+x0-hcurrent)<0) || ((x0-(int)hcurrent)>width)) return;
-
+	if((((y1-y0)+(yoffset+y0-vcurrent))<0) || ((y0-(int)vcurrent)>height)) return;
+	if((((x1-x0)+(xoffset+x0-hcurrent))<0) || ((x0-(int)hcurrent)>width)) return;
+*/
 	if((x0-(int)hcurrent)<0) x0 = hcurrent;
 	if((y0-(int)vcurrent)<0) y0 = vcurrent;
 
@@ -2184,7 +2185,6 @@ void ami_do_redraw_limits(struct gui_window *g, struct content *c,int x0, int y0
 
 	BltBitMapRastPort(glob.bm,x0-hcurrent,y0-vcurrent,g->shared->win->RPort,xoffset+x0-hcurrent,yoffset+y0-vcurrent,x1-x0,y1-y0,0x0C0);
 
-/*
 	DebugPrintF("%ld %ld %ld %ld draw area\n%ld %ld %ld %ld clip rect\n%ld %ld bitmap src\n%ld %ld %ld %ld bitmap dest\n\n",-hcurrent,-vcurrent,width-hcurrent,height-vcurrent,
 		(ULONG)floorf((x0 *
 		g->shared->bw->scale)-(int)hcurrent),
@@ -2192,7 +2192,7 @@ void ami_do_redraw_limits(struct gui_window *g, struct content *c,int x0, int y0
 		g->shared->bw->scale)-(int)vcurrent),
 		(ULONG)x1-hcurrent,
 		(ULONG)y1-vcurrent,x0-hcurrent,y0-vcurrent,xoffset+x0-hcurrent,yoffset+y0-vcurrent,x1-x0,y1-y0);
-*/
+
 }
 
 void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
