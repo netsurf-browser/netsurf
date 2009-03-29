@@ -423,9 +423,7 @@ void gui_init(int argc, char** argv)
 	filename_initialise();
 
 	/* Initialise save complete functionality */
-#ifdef WITH_SAVE_COMPLETE
 	save_complete_init();
-#endif
 
 	/* Initialise bitmap memory pool */
 	bitmap_initialise_memory();

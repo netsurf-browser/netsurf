@@ -23,15 +23,10 @@
 #ifndef _NETSURF_RISCOS_SAVE_COMPLETE_H_
 #define _NETSURF_RISCOS_SAVE_COMPLETE_H_
 
-#include "utils/config.h"
-#ifdef WITH_SAVE_COMPLETE
-
 #include <stdbool.h>
 struct content;
 
 void save_complete_init(void);
 bool save_complete(struct content *c, const char *path);
-
-#endif /* WITH_SAVE_COMPLETE */
 
 #endif

@@ -845,7 +845,6 @@ bool ro_gui_save_content(struct content *c, char *path, bool force_overwrite)
 			save_as_text(c, path);
 			xosfile_set_type(path, 0xfff);
 			break;
-#ifdef WITH_SAVE_COMPLETE
 		case GUI_SAVE_COMPLETE:
 			assert(c);
 			if (c->type == CONTENT_HTML) {
@@ -859,7 +858,6 @@ bool ro_gui_save_content(struct content *c, char *path, bool force_overwrite)
 			else
 				gui_save_current_type = GUI_SAVE_OBJECT_ORIG;	/* \todo do this earlier? */
 			/* no break */
-#endif
 		case GUI_SAVE_SOURCE:
 		case GUI_SAVE_OBJECT_ORIG:
 			error = xosfile_save_stamped(path,
@@ -1001,8 +999,6 @@ void ro_gui_save_done(void)
 #define HEIGHT 64
 #define SPRITE_SIZE (16 + 44 + ((WIDTH / 2 + 3) & ~3) * HEIGHT / 2)
 
-#ifdef WITH_SAVE_COMPLETE
-
 bool ro_gui_save_complete(struct content *c, char *path)
 {
 	void *spr = ((byte *) saveas_area) + saveas_area->first;
@@ -1080,8 +1076,6 @@ bool ro_gui_save_complete(struct content *c, char *path)
 
 	return save_complete(c, path);
 }
-
-#endif
 
 bool ro_gui_save_object_native(struct content *c, char *path)
 {

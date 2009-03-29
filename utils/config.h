@@ -56,7 +56,6 @@ char *strndup(const char *s, size_t n);
 #endif
 #if defined(riscos) || defined(DEBUG_BUILD)
     /* Export modules */
-    #define WITH_SAVE_COMPLETE
     #define WITH_DRAW_EXPORT
 #endif
 

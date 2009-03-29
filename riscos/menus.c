@@ -179,9 +179,7 @@ void ro_gui_menu_init(void)
 			{ "Page", BROWSER_PAGE, 0 },
 			{ "Page.PageInfo",BROWSER_PAGE_INFO, &dialog_pageinfo },
 			{ "Page.Save", BROWSER_SAVE, &dialog_saveas },
-#ifdef WITH_SAVE_COMPLETE
 			{ "Page.SaveComp", BROWSER_SAVE_COMPLETE, &dialog_saveas },
-#endif
 			{ "Page.Export", NO_ACTION, 0 },
 #ifdef WITH_DRAW_EXPORT
 			{ "Page.Export.Draw", BROWSER_EXPORT_DRAW, &dialog_saveas },

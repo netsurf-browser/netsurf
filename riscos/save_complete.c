@@ -22,7 +22,6 @@
  */
 
 #include "utils/config.h"
-#ifdef WITH_SAVE_COMPLETE
 
 #define _GNU_SOURCE /* for strndup */
 #include <assert.h>
@@ -755,5 +754,3 @@ bool save_complete_inventory(const char *path)
 	return true;
 }
 
-
-#endif
