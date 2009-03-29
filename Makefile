@@ -722,25 +722,11 @@ DEPFILES :=
 # 1 = Source file
 # 2 = dep filename, no prefix
 # 3 = obj filename, no prefix
-ifeq ($(GCCVER),2)
-# simpler deps tracking for gcc2...
-define dependency_generate_c
-DEPFILES += $(2)
-$$(DEPROOT)/$(2): $$(DEPROOT)/created $(1) css/css_enum.h css/parser.h Makefile.config
-	$$(VQ)echo "     DEP: $(1)"
-	$$(Q)$$(RM) $$(DEPROOT)/$(2)
-	$$(Q)$$(CC) $$(CFLAGS) -MM  \
-		    $(1) | sed 's,^.*:,$$(DEPROOT)/$2 $$(OBJROOT)/$(3):,' \
-		    > $$(DEPROOT)/$(2)
-
-endef
-else
 define dependency_generate_c
 DEPFILES += $(2)
 $$(DEPROOT)/$(2): $$(DEPROOT)/created $(1) css/css_enum.h css/parser.h Makefile.config
 
 endef
-endif
 
 # 1 = Source file
 # 2 = dep filename, no prefix
@@ -755,10 +741,16 @@ endef
 # 2 = obj filename, no prefix
 # 3 = dep filename, no prefix
 ifeq ($(GCCVER),2)
+# simpler deps tracking for gcc2...
 define compile_target_c
-$$(OBJROOT)/$(2): $$(OBJROOT)/created $$(DEPROOT)/$(3)
+$$(DEPROOT)/$(3) $$(OBJROOT)/$(2): $$(OBJROOT)/created
+	$$(VQ)echo "     DEP: $(1)"
+	$$(Q)$$(RM) $$(DEPROOT)/$(3)
+	$$(Q)$$(CC) $$(CFLAGS) -MM  \
+		    $(1) | sed 's,^.*:,$$(DEPROOT)/$(3) $$(OBJROOT)/$(2):,' \
+		    > $$(DEPROOT)/$(3)
 	$$(VQ)echo " COMPILE: $(1)"
-	$$(Q)$$(CC) $$(CFLAGS) -o $$@ -c $(1)
+	$$(Q)$$(CC) $$(CFLAGS) -o $$(OBJROOT)/$(2) -c $(1)
 
 endef
 else
@@ -773,7 +765,12 @@ endef
 endif
 
 define compile_target_cpp
-$$(OBJROOT)/$(2): $$(OBJROOT)/created $$(DEPROOT)/$(3)
+$$(DEPROOT)/$(3) $$(OBJROOT)/$(2): $$(OBJROOT)/created
+	$$(VQ)echo "     DEP: $(1)"
+	$$(Q)$$(RM) $$(DEPROOT)/$(3)
+	$$(Q)$$(CC) $$(CFLAGS) -MM  \
+		    $(1) | sed 's,^.*:,$$(DEPROOT)/$(3) $$(OBJROOT)/$(2):,' \
+		    > $$(DEPROOT)/$(3)
 	$$(VQ)echo " COMPILE: $(1)"
 	$$(Q)$$(CXX) $$(CFLAGS) -o $$@ -c $(1)
 
@@ -783,7 +780,7 @@ endef
 # 2 = obj filename, no prefix
 # 3 = dep filename, no prefix
 define compile_target_s
-$$(DEPROOT)/$3 $$(OBJROOT)/$(2): $$(OBJROOT)/created
+$$(DEPROOT)/$(3) $$(OBJROOT)/$(2): $$(OBJROOT)/created
 	$$(VQ)echo "ASSEMBLE: $(1)"
 	$$(Q)$$(RM) $$(DEPROOT)/$(3)
 	$$(Q)$$(CC) $$(ASFLAGS) -MMD -MT '$$(DEPROOT)/$(3) $$(OBJROOT)/$(2)' \
