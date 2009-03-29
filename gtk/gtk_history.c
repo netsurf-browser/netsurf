@@ -16,8 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <string.h>
+
 #include <gtk/gtk.h>
 #include <glade/glade.h>
+
 #include "utils/log.h"
 #include "utils/utils.h"
 #include "utils/url.h"
