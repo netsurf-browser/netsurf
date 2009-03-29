@@ -2156,13 +2156,9 @@ DebugPrintF("%ld %ld %ld %ld old\n%ld %ld %ld %ld x0-xc etc\n",x0,y0,x1,y1,x0-hc
 DebugPrintF("%ld %ld calc\n",(y1-y0)+(yoffset+y0-vcurrent),(y0-(int)vcurrent));
 */
 
-/*  These stop the screen scrolling oddly when animated GIFs are on the page.
- *	They also stop boxes (eg textarea fields) from updating when they are part-way
- *	off the screen.
+	if((y1<vcurrent) || (y0>vcurrent+height)) return;
+	if((x1<hcurrent) || (x0>hcurrent+width)) return;
 
-	if((((y1-y0)+(yoffset+y0-vcurrent))<0) || ((y0-(int)vcurrent)>height)) return;
-	if((((x1-x0)+(xoffset+x0-hcurrent))<0) || ((x0-(int)hcurrent)>width)) return;
-*/
 	if((x0-(int)hcurrent)<0) x0 = hcurrent;
 	if((y0-(int)vcurrent)<0) y0 = vcurrent;
 
