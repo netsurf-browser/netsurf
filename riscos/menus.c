@@ -63,19 +63,13 @@
 struct ns_menu_entry {
 	const char *text;		/**< menu text (from messages) */
 	menu_action action;		/**< associated action */
-	wimp_w sub_window;		/**< sub-window if any */
+	wimp_w *sub_window;		/**< sub-window if any */
 };
 
 struct ns_menu {
 	const char *title;
-	struct ns_menu_entry entries[1];
+	struct ns_menu_entry entries[];
 };
-
-#define NS_MENU(N) \
-	struct { \
-		const char *title; \
-		struct ns_menu_entry entries[N]; \
-	}
 
 struct menu_definition_entry {
 	menu_action action;			/**< menu action */
@@ -93,9 +87,9 @@ struct menu_definition {
 };
 
 
-static wimp_menu *ro_gui_menu_define_menu(struct ns_menu *menu);
+static wimp_menu *ro_gui_menu_define_menu(const struct ns_menu *menu);
 static void ro_gui_menu_define_menu_add(struct menu_definition *definition,
-		struct ns_menu *menu, int depth,
+		const struct ns_menu *menu, int depth,
 		wimp_menu_entry *parent_entry,
 		int first, int last, const char *prefix, int prefix_length);
 static struct menu_definition *ro_gui_menu_find_menu(wimp_menu *menu);
@@ -163,12 +157,12 @@ wimp_menu *url_suggest_menu = (wimp_menu *)&url_suggest;
 void ro_gui_menu_init(void)
 {
 	/* iconbar menu */
-	NS_MENU(10) iconbar_definition = {
+	static const struct ns_menu iconbar_definition = {
 		"NetSurf", {
-			{ "Info", NO_ACTION, dialog_info },
+			{ "Info", NO_ACTION, &dialog_info },
 			{ "AppHelp", HELP_OPEN_CONTENTS, 0 },
 			{ "Open", BROWSER_NAVIGATE_URL, 0 },
-			{ "Open.OpenURL", BROWSER_NAVIGATE_URL, dialog_openurl },
+			{ "Open.OpenURL", BROWSER_NAVIGATE_URL, &dialog_openurl },
 			{ "Open.HotlistShow", HOTLIST_SHOW, 0 },
 			{ "Open.HistGlobal", HISTORY_SHOW_GLOBAL, 0 },
 			{ "Open.ShowCookies", COOKIES_SHOW, 0 },
@@ -177,56 +171,55 @@ void ro_gui_menu_init(void)
 			{NULL, 0, 0}
 		}
 	};
-	iconbar_menu = ro_gui_menu_define_menu(
-			(struct ns_menu *)&iconbar_definition);
+	iconbar_menu = ro_gui_menu_define_menu(&iconbar_definition);
 
 	/* browser menu */
-	NS_MENU(86) browser_definition = {
+	static const struct ns_menu browser_definition = {
 		"NetSurf", {
 			{ "Page", BROWSER_PAGE, 0 },
-			{ "Page.PageInfo",BROWSER_PAGE_INFO, dialog_pageinfo },
-			{ "Page.Save", BROWSER_SAVE, dialog_saveas },
+			{ "Page.PageInfo",BROWSER_PAGE_INFO, &dialog_pageinfo },
+			{ "Page.Save", BROWSER_SAVE, &dialog_saveas },
 #ifdef WITH_SAVE_COMPLETE
-			{ "Page.SaveComp", BROWSER_SAVE_COMPLETE, dialog_saveas },
+			{ "Page.SaveComp", BROWSER_SAVE_COMPLETE, &dialog_saveas },
 #endif
 			{ "Page.Export", NO_ACTION, 0 },
 #ifdef WITH_DRAW_EXPORT
-			{ "Page.Export.Draw", BROWSER_EXPORT_DRAW, dialog_saveas },
+			{ "Page.Export.Draw", BROWSER_EXPORT_DRAW, &dialog_saveas },
 #endif
 #ifdef WITH_PDF_EXPORT
-			{ "Page.Export.PDF", BROWSER_EXPORT_PDF, dialog_saveas },
+			{ "Page.Export.PDF", BROWSER_EXPORT_PDF, &dialog_saveas },
 #endif
-			{ "Page.Export.Text", BROWSER_EXPORT_TEXT, dialog_saveas },
+			{ "Page.Export.Text", BROWSER_EXPORT_TEXT, &dialog_saveas },
 			{ "Page.SaveURL", NO_ACTION, 0 },
-			{ "Page.SaveURL.URI", BROWSER_SAVE_URL_URI, dialog_saveas },
-			{ "Page.SaveURL.URL", BROWSER_SAVE_URL_URL, dialog_saveas },
-			{ "Page.SaveURL.LinkText", BROWSER_SAVE_URL_TEXT, dialog_saveas },
-			{ "_Page.Print", BROWSER_PRINT, dialog_print },
+			{ "Page.SaveURL.URI", BROWSER_SAVE_URL_URI, &dialog_saveas },
+			{ "Page.SaveURL.URL", BROWSER_SAVE_URL_URL, &dialog_saveas },
+			{ "Page.SaveURL.LinkText", BROWSER_SAVE_URL_TEXT, &dialog_saveas },
+			{ "_Page.Print", BROWSER_PRINT, &dialog_print },
 			{ "Page.NewWindow", BROWSER_NEW_WINDOW, 0 },
-			{ "Page.FindText", BROWSER_FIND_TEXT, dialog_search },
+			{ "Page.FindText", BROWSER_FIND_TEXT, &dialog_search },
 			{ "Page.ViewSrc", BROWSER_VIEW_SOURCE, 0 },
 			{ "Object", BROWSER_OBJECT, 0 },
 			{ "Object.Object", BROWSER_OBJECT_OBJECT, 0 },
-			{ "Object.Object.ObjInfo", BROWSER_OBJECT_INFO, dialog_objinfo },
-			{ "Object.Object.ObjSave", BROWSER_OBJECT_SAVE, dialog_saveas },
+			{ "Object.Object.ObjInfo", BROWSER_OBJECT_INFO, &dialog_objinfo },
+			{ "Object.Object.ObjSave", BROWSER_OBJECT_SAVE, &dialog_saveas },
 			{ "Object.Object.Export", BROWSER_OBJECT_EXPORT, 0 },
-			{ "Object.Object.Export.Sprite", BROWSER_OBJECT_EXPORT_SPRITE, dialog_saveas },
-			{ "Object.Object.Export.ObjDraw", BROWSER_OBJECT_EXPORT_DRAW, dialog_saveas },
+			{ "Object.Object.Export.Sprite", BROWSER_OBJECT_EXPORT_SPRITE, &dialog_saveas },
+			{ "Object.Object.Export.ObjDraw", BROWSER_OBJECT_EXPORT_DRAW, &dialog_saveas },
 			{ "Object.Object.SaveURL", NO_ACTION, 0 },
-			{ "Object.Object.SaveURL.URI", BROWSER_OBJECT_SAVE_URL_URI, dialog_saveas },
-			{ "Object.Object.SaveURL.URL", BROWSER_OBJECT_SAVE_URL_URL, dialog_saveas },
-			{ "Object.Object.SaveURL.LinkText", BROWSER_OBJECT_SAVE_URL_TEXT, dialog_saveas },
+			{ "Object.Object.SaveURL.URI", BROWSER_OBJECT_SAVE_URL_URI, &dialog_saveas },
+			{ "Object.Object.SaveURL.URL", BROWSER_OBJECT_SAVE_URL_URL, &dialog_saveas },
+			{ "Object.Object.SaveURL.LinkText", BROWSER_OBJECT_SAVE_URL_TEXT, &dialog_saveas },
 			{ "Object.Object.ObjPrint", BROWSER_OBJECT_PRINT, 0 },
 			{ "Object.Object.ObjReload", BROWSER_OBJECT_RELOAD, 0 },
 			{ "Object.Link", BROWSER_OBJECT_LINK, 0 },
 			{ "Object.Link.LinkSave", BROWSER_LINK_SAVE, 0 },
-			{ "Object.Link.LinkSave.URI", BROWSER_LINK_SAVE_URI, dialog_saveas },
-			{ "Object.Link.LinkSave.URL", BROWSER_LINK_SAVE_URL, dialog_saveas },
-			{ "Object.Link.LinkSave.LinkText", BROWSER_LINK_SAVE_TEXT, dialog_saveas },
+			{ "Object.Link.LinkSave.URI", BROWSER_LINK_SAVE_URI, &dialog_saveas },
+			{ "Object.Link.LinkSave.URL", BROWSER_LINK_SAVE_URL, &dialog_saveas },
+			{ "Object.Link.LinkSave.LinkText", BROWSER_LINK_SAVE_TEXT, &dialog_saveas },
 			{ "_Object.Link.LinkDload", BROWSER_LINK_DOWNLOAD, 0 },
 			{ "Object.Link.LinkNew", BROWSER_LINK_NEW_WINDOW, 0 },
 			{ "Selection", BROWSER_SELECTION, 0 },
-			{ "_Selection.SelSave", BROWSER_SELECTION_SAVE, dialog_saveas },
+			{ "_Selection.SelSave", BROWSER_SELECTION_SAVE, &dialog_saveas },
 			{ "Selection.Copy", BROWSER_SELECTION_COPY, 0 },
 			{ "Selection.Cut", BROWSER_SELECTION_CUT, 0 },
 			{ "_Selection.Paste", BROWSER_SELECTION_PASTE, 0 },
@@ -240,7 +233,7 @@ void ro_gui_menu_init(void)
 			{ "Navigate.Reload", BROWSER_NAVIGATE_RELOAD_ALL, 0 },
 			{ "Navigate.Stop", BROWSER_NAVIGATE_STOP, 0 },
 			{ "View", NO_ACTION, 0 },
-			{ "View.ScaleView", BROWSER_SCALE_VIEW, dialog_zoom },
+			{ "View.ScaleView", BROWSER_SCALE_VIEW, &dialog_zoom },
 			{ "View.Images", NO_ACTION, 0 },
 			{ "View.Images.ForeImg", BROWSER_IMAGES_FOREGROUND, 0 },
 			{ "View.Images.BackImg", BROWSER_IMAGES_BACKGROUND, 0 },
@@ -277,17 +270,17 @@ void ro_gui_menu_init(void)
 			{NULL, 0, 0}
 		}
 	};
-	browser_menu = ro_gui_menu_define_menu(
-			(struct ns_menu *)&browser_definition);
+	browser_menu = ro_gui_menu_define_menu(&browser_definition);
 
 	/* hotlist menu */
-	NS_MENU(24) hotlist_definition = {
+	static wimp_w one = (wimp_w) 1;
+	static const struct ns_menu hotlist_definition = {
 		"Hotlist", {
 			{ "Hotlist", NO_ACTION, 0 },
 			{ "Hotlist.New", NO_ACTION, 0 },
-			{ "Hotlist.New.Folder", TREE_NEW_FOLDER, dialog_folder },
-			{ "Hotlist.New.Link", TREE_NEW_LINK, dialog_entry },
-			{ "_Hotlist.Export", HOTLIST_EXPORT, dialog_saveas },
+			{ "Hotlist.New.Folder", TREE_NEW_FOLDER, &dialog_folder },
+			{ "Hotlist.New.Link", TREE_NEW_LINK, &dialog_entry },
+			{ "_Hotlist.Export", HOTLIST_EXPORT, &dialog_saveas },
 			{ "Hotlist.Expand", TREE_EXPAND_ALL, 0 },
 			{ "Hotlist.Expand.All", TREE_EXPAND_ALL, 0 },
 			{ "Hotlist.Expand.Folders", TREE_EXPAND_FOLDERS, 0 },
@@ -300,7 +293,13 @@ void ro_gui_menu_init(void)
 			{ "_Hotlist.Toolbars.ToolButtons", TOOLBAR_BUTTONS, 0 },
 			{ "Hotlist.Toolbars.EditToolbar", TOOLBAR_EDIT, 0 },
 			{ "Selection", TREE_SELECTION, 0 },
-			{ "Selection.Edit", TREE_SELECTION_EDIT, (wimp_w)1 },
+			/* We want a window, but it changes depending upon 
+			 * context. Therefore, ensure that the structure is
+			 * created so that we can dynamically modify the 
+			 * actual item presented. We do this by creating a
+			 * fake wimp_w with the value 1, which indicates a 
+			 * window handle as opposed to a submenu. */
+			{ "Selection.Edit", TREE_SELECTION_EDIT, &one },
 			{ "Selection.Launch", TREE_SELECTION_LAUNCH, 0 },
 			{ "Selection.Delete", TREE_SELECTION_DELETE, 0 },
 			{ "SelectAll", TREE_SELECT_ALL, 0 },
@@ -308,14 +307,13 @@ void ro_gui_menu_init(void)
 			{NULL, 0, 0}
 		}
 	};
-	hotlist_menu = ro_gui_menu_define_menu(
-			(struct ns_menu *)&hotlist_definition);
+	hotlist_menu = ro_gui_menu_define_menu(&hotlist_definition);
 
 	/* history menu */
-	NS_MENU(19) global_history_definition = {
+	static const struct ns_menu global_history_definition = {
 		"History", {
 			{ "History", NO_ACTION, 0 },
-			{ "_History.Export", HISTORY_EXPORT, dialog_saveas },
+			{ "_History.Export", HISTORY_EXPORT, &dialog_saveas },
 			{ "History.Expand", TREE_EXPAND_ALL, 0 },
 			{ "History.Expand.All", TREE_EXPAND_ALL, 0 },
 			{ "History.Expand.Folders", TREE_EXPAND_FOLDERS, 0 },
@@ -336,10 +334,10 @@ void ro_gui_menu_init(void)
 		}
 	};
 	global_history_menu = ro_gui_menu_define_menu(
-			(struct ns_menu *)&global_history_definition);
+			&global_history_definition);
 
 	/* history menu */
-	NS_MENU(17) cookies_definition = {
+	static const struct ns_menu cookies_definition = {
 		"Cookies", {
 			{ "Cookies", NO_ACTION, 0 },
 			{ "Cookies.Expand", TREE_EXPAND_ALL, 0 },
@@ -360,10 +358,10 @@ void ro_gui_menu_init(void)
 			{NULL, 0, 0}
 		}
 	};
-	cookies_menu = ro_gui_menu_define_menu(
-			(struct ns_menu *)&cookies_definition);
+	cookies_menu = ro_gui_menu_define_menu(&cookies_definition);
+
 	/* image quality menu */
-	NS_MENU(5) images_definition = {
+	static const struct ns_menu images_definition = {
 		"Display", {
 			{ "ImgStyle0", NO_ACTION, 0 },
 			{ "ImgStyle1", NO_ACTION, 0 },
@@ -372,11 +370,10 @@ void ro_gui_menu_init(void)
 			{NULL, 0, 0}
 		}
 	};
-	image_quality_menu = ro_gui_menu_define_menu(
-			(struct ns_menu *)&images_definition);
+	image_quality_menu = ro_gui_menu_define_menu(&images_definition);
 
 	/* browser toolbar menu */
-	NS_MENU(6) browser_toolbar_definition = {
+	static const struct ns_menu browser_toolbar_definition = {
 		"Toolbar", {
 			{ "Toolbars", NO_ACTION, 0 },
 			{ "Toolbars.ToolButtons", TOOLBAR_BUTTONS, 0 },
@@ -387,10 +384,10 @@ void ro_gui_menu_init(void)
 		}
 	};
 	browser_toolbar_menu = ro_gui_menu_define_menu(
-			(struct ns_menu *)&browser_toolbar_definition);
+			&browser_toolbar_definition);
 
 	/* tree toolbar menu */
-	NS_MENU(4) tree_toolbar_definition = {
+	static const struct ns_menu tree_toolbar_definition = {
 		"Toolbar", {
 			{ "Toolbars", NO_ACTION, 0 },
 			{ "Toolbars.ToolButtons", TOOLBAR_BUTTONS, 0 },
@@ -398,11 +395,10 @@ void ro_gui_menu_init(void)
 			{NULL, 0, 0}
 		}
 	};
-	tree_toolbar_menu = ro_gui_menu_define_menu(
-			(struct ns_menu *)&tree_toolbar_definition);
+	tree_toolbar_menu = ro_gui_menu_define_menu(&tree_toolbar_definition);
 
 	/* proxy menu */
-	NS_MENU(5) proxy_type_definition = {
+	static const struct ns_menu proxy_type_definition = {
 		"ProxyType", {
 			{ "ProxyNone", NO_ACTION, 0 },
 			{ "ProxyNoAuth", NO_ACTION, 0 },
@@ -411,16 +407,15 @@ void ro_gui_menu_init(void)
 			{NULL, 0, 0}
 		}
 	};
-	proxy_type_menu = ro_gui_menu_define_menu(
-			(struct ns_menu *)&proxy_type_definition);
+	proxy_type_menu = ro_gui_menu_define_menu(&proxy_type_definition);
 
 	/* special case menus */
 	url_suggest_menu->title_data.indirected_text.text =
-			(char*)messages_get("URLSuggest");
+			(char *) messages_get("URLSuggest");
 	ro_gui_menu_init_structure(url_suggest_menu, GLOBAL_HISTORY_RECENT_URLS);
 
 	/* Note: This table *must* be kept in sync with the LangNames file */
-	NS_MENU(48) lang_definition = {
+	static const struct ns_menu lang_definition = {
 		"Languages", {
 			{ "lang_af", NO_ACTION, 0 },
 			{ "lang_bm", NO_ACTION, 0 },
@@ -472,9 +467,7 @@ void ro_gui_menu_init(void)
 			{ NULL, 0, 0 }
 		}
 	};
-
-	languages_menu = ro_gui_menu_define_menu(
-			(struct ns_menu *)&lang_definition);
+	languages_menu = ro_gui_menu_define_menu(&lang_definition);
 }
 
 
@@ -1113,7 +1106,7 @@ void gui_create_form_select_menu(struct browser_window *bw,
  * \param menu  the data to create the menu with
  * \return the menu created, or NULL on failure
  */
-wimp_menu *ro_gui_menu_define_menu(struct ns_menu *menu)
+wimp_menu *ro_gui_menu_define_menu(const struct ns_menu *menu)
 {
 	struct menu_definition *definition;
 	int entry;
@@ -1157,7 +1150,7 @@ wimp_menu *ro_gui_menu_define_menu(struct ns_menu *menu)
  * \param prefix_length  Length of prefix
  */
 void ro_gui_menu_define_menu_add(struct menu_definition *definition,
-		struct ns_menu *menu, int depth,
+		const struct ns_menu *menu, int depth,
 		wimp_menu_entry *parent_entry, int first, int last,
 		const char *prefix, int prefix_length)
 {
@@ -1245,7 +1238,7 @@ void ro_gui_menu_define_menu_add(struct menu_definition *definition,
 		/* fill in submenu data */
 		if (menu->entries[id].sub_window)
 			new_menu->entries[entry].sub_menu =
-				(wimp_menu *)menu->entries[id].sub_window;
+				(wimp_menu *) (*menu->entries[id].sub_window);
 
 		/* this is fixed up in ro_gui_menu_translate() */
 		new_menu->entries[entry].data.indirected_text.text = NULL;
