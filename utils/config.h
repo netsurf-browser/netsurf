@@ -54,10 +54,6 @@ char *strndup(const char *s, size_t n);
     /* We're likely to have a working mmap() */
     #define WITH_MMAP
 #endif
-#if defined(riscos) || defined(DEBUG_BUILD)
-    /* Export modules */
-    #define WITH_DRAW_EXPORT
-#endif
 
 /* Configuration sanity checks: */
 #if defined(WITH_NS_SVG) && defined(WITH_RSVG)

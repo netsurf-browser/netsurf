@@ -181,9 +181,7 @@ void ro_gui_menu_init(void)
 			{ "Page.Save", BROWSER_SAVE, &dialog_saveas },
 			{ "Page.SaveComp", BROWSER_SAVE_COMPLETE, &dialog_saveas },
 			{ "Page.Export", NO_ACTION, 0 },
-#ifdef WITH_DRAW_EXPORT
 			{ "Page.Export.Draw", BROWSER_EXPORT_DRAW, &dialog_saveas },
-#endif
 #ifdef WITH_PDF_EXPORT
 			{ "Page.Export.PDF", BROWSER_EXPORT_PDF, &dialog_saveas },
 #endif
@@ -2041,10 +2039,8 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 						break;
 
 					/* vector types (Draw export possible) */
-#ifdef WITH_DRAW_EXPORT
 #if defined(WITH_NS_SVG) || defined(WITH_RSVG)
 					case CONTENT_SVG:
-#endif
 #endif
 #ifdef WITH_DRAW
 					case CONTENT_DRAW:
