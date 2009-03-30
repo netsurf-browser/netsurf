@@ -1369,13 +1369,11 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 
 		browser_window_update(gwin->bw);
 
-//		if((gwin->bw->window->scrollx) || (gwin->bw->window->scrolly))
-//		{
-			gui_window_set_scroll(gwin->bw->window,gwin->bw->window->scrollx,gwin->bw->window->scrolly);
-//		}
+		gui_window_set_scroll(gwin->bw->window,gwin->bw->window->scrollx,gwin->bw->window->scrolly);
 
 		if(gwin->bw->current_content)
-			gui_window_set_url(gwin->bw->window,gwin->bw->current_content->url);
+			browser_window_refresh_url_bar(gwin->bw,gwin->bw->current_content->url,
+											gwin->bw->frag_id);
 	}
 }
 
