@@ -1096,11 +1096,11 @@ void browser_window_refresh_url_bar(struct browser_window *bw, const char *url,
 	url_buf = malloc(len + 2 /* '#' + '\0' */);
 	if (url_buf) {
 		if (frag) {
-			snprintf(url_buf, len + 1, "%s#%s", url, frag);
-			*(url_buf + len + 1) = '\0';
+			snprintf(url_buf, len + 2, "%s#%s", url, frag);
+			*(url_buf + len + 2) = '\0';
 		} else {
-			snprintf(url_buf, len, "%s", url);
-			*(url_buf + len) = '\0';
+			snprintf(url_buf, len + 1, "%s", url);
+			*(url_buf + len + 1) = '\0';
 		}
 		gui_window_set_url(bw->window, url_buf);
 		free(url_buf);
