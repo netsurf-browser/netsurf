@@ -772,7 +772,7 @@ $$(DEPROOT)/$(3) $$(OBJROOT)/$(2): $$(OBJROOT)/created
 		    $(1) | sed 's,^.*:,$$(DEPROOT)/$(3) $$(OBJROOT)/$(2):,' \
 		    > $$(DEPROOT)/$(3)
 	$$(VQ)echo " COMPILE: $(1)"
-	$$(Q)$$(CXX) $$(CFLAGS) -o $$@ -c $(1)
+	$$(Q)$$(CXX) $$(CFLAGS) -o $$(OBJROOT)/$(2) -c $(1)
 
 endef
 
