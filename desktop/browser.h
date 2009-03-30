@@ -231,6 +231,9 @@ struct browser_window * browser_window_owner(struct browser_window *bw);
 void browser_window_reformat(struct browser_window *bw, int width, int height);
 void browser_window_set_scale(struct browser_window *bw, float scale, bool all);
 
+void browser_window_refresh_url_bar(struct browser_window *bw, const char *url,
+		const char *frag);
+
 void browser_window_mouse_click(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y);
 void browser_window_mouse_track(struct browser_window *bw,

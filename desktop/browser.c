@@ -284,7 +284,6 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	char *url2;
 	char *fragment;
 	url_func_result res;
-	char url_buf[256];
 	int depth = 0;
 	struct browser_window *cur;
 	int width, height;
@@ -351,10 +350,11 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 				history_add(bw->history, bw->current_content,
 						bw->frag_id);
 			browser_window_update(bw);
-			snprintf(url_buf, sizeof url_buf, "%s#%s",
-				bw->current_content->url, bw->frag_id);
-			url_buf[sizeof url_buf - 1] = 0;
-			gui_window_set_url(bw->window, url_buf);
+			if (bw->current_content) {
+				browser_window_refresh_url_bar(bw, 
+						bw->current_content->url,
+						bw->frag_id);
+			}
 			return;
 		}
 	}
@@ -401,7 +401,6 @@ void browser_window_callback(content_msg msg, struct content *c,
 		intptr_t p1, intptr_t p2, union content_msg_data data)
 {
 	struct browser_window *bw = (struct browser_window *) p1;
-	char url[256];
 
 	switch (msg) {
 	case CONTENT_MSG_LOADING:
@@ -419,13 +418,8 @@ void browser_window_callback(content_msg msg, struct content *c,
 		}
 #endif
 		else {
-			if (bw->frag_id)
-				snprintf(url, sizeof url, "%s#%s",
-						c->url, bw->frag_id);
-			else
-				snprintf(url, sizeof url, "%s", c->url);
-			url[sizeof url - 1] = 0;
-			gui_window_set_url(bw->window, url);
+			browser_window_refresh_url_bar(bw, c->url, bw->frag_id);
+
 			bw->refresh_interval = -1;
 			browser_window_set_status(bw, c->status_message);
 		}
@@ -449,12 +443,11 @@ void browser_window_callback(content_msg msg, struct content *c,
 		browser_window_remove_caret(bw);
 		bw->scrolling_box = NULL;
 		gui_window_new_content(bw->window);
-		if (bw->frag_id)
-			snprintf(url, sizeof url, "%s#%s", c->url, bw->frag_id);
-		else
-			snprintf(url, sizeof url, "%s", c->url);
-		url[sizeof url - 1] = 0;
-		gui_window_set_url(bw->window, url);
+		if (bw->current_content) {
+			browser_window_refresh_url_bar(bw, 
+					bw->current_content->url,
+					bw->frag_id);
+		}
 		browser_window_update(bw);
 		content_open(c, bw, 0, 0, 0, 0);
 		browser_window_set_status(bw, c->status_message);
@@ -1092,6 +1085,29 @@ void browser_window_set_scale_internal(struct browser_window *bw, float scale)
 		browser_window_set_scale_internal(&bw->iframes[i], scale);
 }
 
+void browser_window_refresh_url_bar(struct browser_window *bw, const char *url,
+		const char *frag)
+{	
+	char *url_buf;
+	int len = strlen(url);
+
+	len  += ((frag) ? strlen(frag) : 0);
+
+	url_buf = malloc(len + 2 /* '#' + '\0' */);
+	if (url_buf) {
+		if (frag) {
+			snprintf(url_buf, len + 1, "%s#%s", url, frag);
+			*(url_buf + len + 1) = '\0';
+		} else {
+			snprintf(url_buf, len, "%s", url);
+			*(url_buf + len) = '\0';
+		}
+		gui_window_set_url(bw->window, url_buf);
+		free(url_buf);
+	} else {
+		warn_user("NoMemory", 0);
+	}
+}
 
 /**
  * Locate a browser window in the specified stack according.

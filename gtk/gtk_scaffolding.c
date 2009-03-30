@@ -344,6 +344,11 @@ void nsgtk_window_update_back_forward(struct gtk_scaffolding *g)
 	gtk_widget_set_sensitive(GTK_WIDGET(glade_xml_get_widget(g->popup_xml,
 	 		"popupForward")), history_forward_available(bw->history));
 
+	/* update the url bar, particularly necessary when tabbing */
+	if ((bw->current_content) && bw->current_content->url)
+		browser_window_refresh_url_bar(bw, bw->current_content->url,
+				bw->frag_id);
+	
 	/* update the local history window, as well as queuing a redraw
 	 * for it.
 	 */
