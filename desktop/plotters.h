@@ -41,13 +41,17 @@ struct bitmap;
  *  disc	- Plots a circle, centered on (x,y), which is optionally filled.
  *  line	- Plots a line from (x0,y0) to (x1,y1). Coordinates are at
  *		  centre of line width/thickness.
- *  path	-
+ *  path	- Plots a path consisting of cubic Bezier curves. Line colour is
+ *		  given by c and fill colour is given by fill.
  *  polygon	- Plots a filled polygon with straight lines between points.
  *		  The lines around the edge of the ploygon are not plotted. The
  *		  polygon is filled with the non-zero winding rule.
  *  rectangle	- Plots a rectangle outline. The line can be solid, dotted or
- *		  dashed.
- *  fill	- Plots a filled rectangle.
+ *		  dashed. Top left corner at (x0,y0) and rectangle has given
+ *		  width and height.
+ *  fill	- Plots a filled rectangle. Top left corner at (x0,y0), bottom
+ *		  right corner at (x1,y1). Note: (x0,y0) is inside filled area,
+ *		  but (x1,y1) is below and to the right. See diagram below.
  *  clip	- Sets a clip rectangle for subsequent plots.
  *  text	- Plots text. (x,y) is the coordinate of the left hand side of
  *		  the text's baseline. The text is UTF-8 encoded. The colour, c,
@@ -76,8 +80,8 @@ struct bitmap;
  *			  redraw. It tries to avoid plotting to the same area
  *			  more than once. See desktop/knockout.c
  *
- * Coordinates are from top left and (0,0) is the top left grid denomination.
- * If a "fill" is drawn from (0,0) to (4,3), the result is:
+ * Coordinates are from top left of canvas and (0,0) is the top left grid
+ * denomination. If a "fill" is drawn from (0,0) to (4,3), the result is:
  *
  *     0 1 2 3 4 5
  *    +-+-+-+-+-+-
