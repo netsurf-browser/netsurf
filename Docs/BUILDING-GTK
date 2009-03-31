@@ -53,6 +53,13 @@
   Hopefully they will soon be released with downloadable tarballs and packaged
   in common distros.  For now, you'll have to make do with svn checkouts.
 
+  Some of NetSurf's own libraries will be installed in /usr/local/ by default.
+  Fedora, and perhaps some other distributions of Linux, do not ship a
+  pkg-config that will search here, so you will either need to change where
+  these libraries install, or do the following before building NetSurf itself;
+  
+      $ PKG_CONFIG_PATH=/usr/local/pkgconfig
+      $ export PKG_CONFIG_PATH
 
   Package installation
 ----------------------
