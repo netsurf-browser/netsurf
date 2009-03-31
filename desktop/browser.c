@@ -351,7 +351,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 						bw->frag_id);
 			browser_window_update(bw);
 			if (bw->current_content) {
-				browser_window_refresh_url_bar(bw, 
+				browser_window_refresh_url_bar(bw,
 						bw->current_content->url,
 						bw->frag_id);
 			}
@@ -444,7 +444,7 @@ void browser_window_callback(content_msg msg, struct content *c,
 		bw->scrolling_box = NULL;
 		gui_window_new_content(bw->window);
 		if (bw->current_content) {
-			browser_window_refresh_url_bar(bw, 
+			browser_window_refresh_url_bar(bw,
 					bw->current_content->url,
 					bw->frag_id);
 		}
@@ -793,7 +793,8 @@ void browser_window_update(struct browser_window *bw)
 		gui_window_set_scroll(bw->window, sx, sy);
 	/* if frag_id exists, then try to scroll to it */
 	} else if (bw->frag_id && bw->current_content->type == CONTENT_HTML) {
-		if ((pos = box_find_by_id(bw->current_content->data.html.layout, bw->frag_id)) != 0) {
+		if ((pos = box_find_by_id(bw->current_content->data.html.layout,
+				bw->frag_id)) != 0) {
 			box_coords(pos, &x, &y);
 			gui_window_set_scroll(bw->window, x, y);
 		}
@@ -1085,9 +1086,18 @@ void browser_window_set_scale_internal(struct browser_window *bw, float scale)
 		browser_window_set_scale_internal(&bw->iframes[i], scale);
 }
 
+
+/**
+ * Update URL bar for a given browser window to given URL
+ *
+ * \param bw	Browser window to update URL bar for.
+ * \param url	URL for content displayed by bw, excluding any #fragment.
+ * \param frag	Additional #fragment. May be NULL if none.
+ */
+
 void browser_window_refresh_url_bar(struct browser_window *bw, const char *url,
 		const char *frag)
-{	
+{
 	char *url_buf;
 	int len = strlen(url);
 
@@ -1205,7 +1215,8 @@ struct browser_window *browser_window_find_target(struct browser_window *bw,
 	rdepth = -1;
 	bw_target = NULL;
 	for (top = bw; top->parent; top = top->parent);
-	browser_window_find_target_internal(top, target, 0, bw, &rdepth, &bw_target);
+	browser_window_find_target_internal(top, target, 0, bw, &rdepth,
+			&bw_target);
 	if (bw_target)
 		return bw_target;
 
@@ -1216,12 +1227,13 @@ struct browser_window *browser_window_find_target(struct browser_window *bw,
 	if (!bw_target)
 		return bw;
 
-	/* frame names should begin with an alphabetic character (a-z,A-Z), however in
-	 * practice you get things such as '_new' and '2left'. The only real effect this
-	 * has is when giving out names as it can be assumed that an author intended '_new'
-	 * to create a new nameless window (ie '_blank') whereas in the case of '2left' the
-	 * intention was for a new named window. As such we merely special case windows that
-	 * begin with an underscore. */
+	/* frame names should begin with an alphabetic character (a-z,A-Z),
+	 * however in practice you get things such as '_new' and '2left'. The
+	 * only real effect this has is when giving out names as it can be
+	 * assumed that an author intended '_new' to create a new nameless
+	 * window (ie '_blank') whereas in the case of '2left' the intention
+	 * was for a new named window. As such we merely special case windows
+	 * that begin with an underscore. */
 	if (target[0] != '_') {
 		bw_target->name = strdup(target);
 		if (!bw_target->name)
@@ -1230,8 +1242,9 @@ struct browser_window *browser_window_find_target(struct browser_window *bw,
 	return bw_target;
 }
 
-void browser_window_find_target_internal(struct browser_window *bw, const char *target,
-		int depth, struct browser_window *page, int *rdepth, struct browser_window **bw_target)
+void browser_window_find_target_internal(struct browser_window *bw,
+		const char *target, int depth, struct browser_window *page,
+		int *rdepth, struct browser_window **bw_target)
 {
 	int i;
 
@@ -1247,19 +1260,20 @@ void browser_window_find_target_internal(struct browser_window *bw, const char *
 
 	depth++;
 	for (i = 0; i < (bw->cols * bw->rows); i++) {
-		if ((bw->children[i].name) && (!strcasecmp(bw->children[i].name, target))) {
+		if ((bw->children[i].name) &&
+				(!strcasecmp(bw->children[i].name, target))) {
 			if ((page == &bw->children[i]) || (depth > *rdepth)) {
 				*rdepth = depth;
 				*bw_target = &bw->children[i];
 			}
 		}
 		if (bw->children[i].children)
-			browser_window_find_target_internal(&bw->children[i], target, depth,
-					page, rdepth, bw_target);
+			browser_window_find_target_internal(&bw->children[i],
+					target, depth, page, rdepth, bw_target);
 	}
 	for (i = 0; i < bw->iframe_count; i++)
-		browser_window_find_target_internal(&bw->iframes[i], target, depth, page,
-				rdepth, bw_target);
+		browser_window_find_target_internal(&bw->iframes[i], target,
+				depth, page, rdepth, bw_target);
 }
 
 
@@ -2045,7 +2059,8 @@ void browser_window_mouse_drag_end(struct browser_window *bw,
 				}
 				else {
 					assert(c->type == CONTENT_TEXTPLAIN);
-					idx = textplain_offset_from_coords(c, x, y, dir);
+					idx = textplain_offset_from_coords(c, x,
+							y, dir);
 				}
 
 				if (found)
@@ -2058,7 +2073,8 @@ void browser_window_mouse_drag_end(struct browser_window *bw,
 		case DRAGGING_2DSCROLL:
 		case DRAGGING_PAGE_SCROLL:
 		case DRAGGING_FRAME:
-			browser_window_set_pointer(bw->window, GUI_POINTER_DEFAULT);
+			browser_window_set_pointer(bw->window,
+					GUI_POINTER_DEFAULT);
 			break;
 
 		default:
@@ -2203,7 +2219,8 @@ const char *browser_window_scrollbar_click(struct browser_window *bw,
 		else if (box->descendant_y1 - box->height < scroll)
 			scroll = box->descendant_y1 - box->height;
 		if (scroll != box->scroll_y)
-			browser_window_scroll_box(bw, box, box->scroll_x, scroll);
+			browser_window_scroll_box(bw, box, box->scroll_x,
+					scroll);
 
 	} else {
 		if (scroll < box->descendant_x0)
@@ -2211,7 +2228,8 @@ const char *browser_window_scrollbar_click(struct browser_window *bw,
 		else if (box->descendant_x1 - box->width < scroll)
 			scroll = box->descendant_x1 - box->width;
 		if (scroll != box->scroll_x)
-			browser_window_scroll_box(bw, box, scroll, box->scroll_y);
+			browser_window_scroll_box(bw, box, scroll,
+					box->scroll_y);
 	}
 
 	return status;
