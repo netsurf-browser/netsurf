@@ -58,7 +58,7 @@
   pkg-config that will search here, so you will either need to change where
   these libraries install, or do the following before building NetSurf itself;
   
-      $ PKG_CONFIG_PATH=/usr/local/pkgconfig
+      $ PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
       $ export PKG_CONFIG_PATH
 
   Package installation
