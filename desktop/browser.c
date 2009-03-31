@@ -1093,7 +1093,7 @@ void browser_window_refresh_url_bar(struct browser_window *bw, const char *url,
 
 	len  += ((frag) ? strlen(frag) : 0);
 
-	url_buf = malloc(len + 2 /* '#' + '\0' */);
+	url_buf = malloc(len + 3 /* '#' + '\0' */);
 	if (url_buf) {
 		if (frag) {
 			snprintf(url_buf, len + 2, "%s#%s", url, frag);
