@@ -1099,29 +1099,29 @@ void browser_window_refresh_url_bar(struct browser_window *bw, const char *url,
 		const char *frag)
 {
 	char *url_buf;
-        
-        assert(bw);
-        assert(url);
-        
-        if (frag == NULL) {
-                /* With no fragment, we may as well pass url straight through
-                 * saving a malloc, copy, free cycle.
-                 */
-                gui_window_set_url(bw->window, url);
-        } else {
-                url_buf = malloc(strlen(url) + 1 /* # */ +
-                                 strlen(frag) + 1 /* \0 */);
-                if (url_buf != NULL) {
-                        /* This sprintf is safe because of the above size
-                         * calculation, thus we don't need snprintf
-                         */
-                        sprintf(url_buf, "%s#%s", url, frag);
-                        gui_window_set_url(bw->window, url_buf);
-                        free(url_buf);
-                } else {
-                        warn_user("NoMemory", 0);
-                }
-        }
+
+	assert(bw);
+	assert(url);
+
+	if (frag == NULL) {
+		/* With no fragment, we may as well pass url straight through
+		 * saving a malloc, copy, free cycle.
+		 */
+		gui_window_set_url(bw->window, url);
+	} else {
+		url_buf = malloc(strlen(url) + 1 /* # */ +
+				strlen(frag) + 1 /* \0 */);
+		if (url_buf != NULL) {
+			/* This sprintf is safe because of the above size
+			 * calculation, thus we don't need snprintf
+			 */
+			sprintf(url_buf, "%s#%s", url, frag);
+			gui_window_set_url(bw->window, url_buf);
+			free(url_buf);
+		} else {
+			warn_user("NoMemory", 0);
+		}
+	}
 }
 
 /**
