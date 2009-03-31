@@ -1091,8 +1091,8 @@ void browser_window_set_scale_internal(struct browser_window *bw, float scale)
  * Update URL bar for a given browser window to given URL
  *
  * \param bw	Browser window to update URL bar for.
- * \param url	URL for content displayed by bw, excluding any #fragment.
- * \param frag	Additional #fragment. May be NULL if none.
+ * \param url	URL for content displayed by bw, excluding any fragment.
+ * \param frag	Additional fragment. May be NULL if none.
  */
 
 void browser_window_refresh_url_bar(struct browser_window *bw, const char *url,
