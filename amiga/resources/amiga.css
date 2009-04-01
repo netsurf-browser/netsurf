@@ -4,4 +4,4 @@
 
 input { border: medium inset #ddd; }
 textarea { border: medium inset #ddd; }
-select { background-color: #ddd; border: medium outset #ddd; }
+select { background-color: #ddd; border: medium groove #ddd; }
