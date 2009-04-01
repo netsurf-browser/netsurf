@@ -182,8 +182,8 @@ bool ami_line(int x0, int y0, int x1, int y1, int width,
 		width = 1;
 
 	cairo_set_line_width(glob.cr, width);
-	cairo_move_to(current_cr, x0 + 0.5, y0 + 0.5);
-	cairo_line_to(current_cr, x1 + 0.5, y1 + 0.5);
+	cairo_move_to(glob.cr, x0 + 0.5, y0 + 0.5);
+	cairo_line_to(glob.cr, x1 + 0.5, y1 + 0.5);
 	cairo_stroke(glob.cr);
 #endif
 	return true;
