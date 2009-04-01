@@ -72,6 +72,7 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 	struct content *cc = gwin->bw->current_content;
 	int box_x=0;
 	int box_y=0;
+	bool menuhascontent = false;
 
 	if(cc->type != CONTENT_HTML) return;
 
@@ -117,6 +118,8 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 					TAG_DONE),
 				TAG_DONE),
 				~0);
+
+			menuhascontent = true;
 		}
 
 		if (curbox->object)
@@ -143,6 +146,8 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 					TAG_DONE),
 				TAG_DONE),
 				~0);
+
+			menuhascontent = true;
 		}
 
 		if(curbox->text)
@@ -164,6 +169,8 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 					TAG_DONE),
 				TAG_DONE),
 				~0);
+
+			menuhascontent = true;
 		}
 
 		if (curbox->gadget)
@@ -178,10 +185,14 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 							PMIA_UserData,curbox,
 							TAG_DONE),
 						~0);
+
+					menuhascontent = true;
 				break;
 			}
 		}
 	}
+
+	if(!menuhascontent) return;
 
 	gui_window_set_pointer(gwin->bw->window,GUI_POINTER_DEFAULT);
 	IDoMethod(gwin->objects[OID_MENU],PM_OPEN,gwin->win);
