@@ -182,8 +182,8 @@ bool ami_line(int x0, int y0, int x1, int y1, int width,
 		width = 1;
 
 	cairo_set_line_width(glob.cr, width);
-	cairo_move_to(glob.cr, x0, y0 - 0.5);
-	cairo_line_to(glob.cr, x1, y1 - 0.5);
+	cairo_move_to(current_cr, x0 + 0.5, y0 + 0.5);
+	cairo_line_to(current_cr, x1 + 0.5, y1 + 0.5);
 	cairo_stroke(glob.cr);
 #endif
 	return true;
@@ -283,42 +283,7 @@ bool ami_clip(int x0, int y0, int x1, int y1)
 bool ami_text(int x, int y, const struct css_style *style,
 			const char *text, size_t length, colour bg, colour c)
 {
-	char *buffer = NULL;
-	struct TextFont *tfont;
-
-	if(option_quick_text)
-	{
-		tfont = ami_open_font(style);
-
-		SetRPAttrs(currp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),
-					RPTAG_BPenColor,p96EncodeColor(RGBFB_A8B8G8R8,bg),
-//					RPTAG_Font,tfont,
-					TAG_DONE);
-
-		utf8_to_local_encoding(text,length,&buffer);
-
-		if(!buffer) return true;
-
-/* Below function prints Unicode text direct to the RastPort.
- * This is commented out due to lack of SDK which allows me to perform blits
- * that respect the Alpha channel.  The code below that (and above) convert to
- * system default charset and write the text using graphics.library functions.
- *
- *	ami_unicode_text(currp,text,length,style,x,y,c);
- *
- *  or, perhaps the ttengine.library version (far too slow):
- * 	ami_tte_text(currp,text,length);
- */
-		Move(currp,x,y);
-		Text(currp,buffer,strlen(buffer));
-		ami_close_font(tfont);
-		ami_utf8_free(buffer);
-	}
-	else
-	{
-		ami_unicode_text(currp,text,length,style,x,y,c);
-	}
-
+	ami_unicode_text(currp,text,length,style,x,y,c);
 	return true;
 }
 

@@ -38,7 +38,6 @@ extern bool option_kiosk_mode;
 extern char *option_recent_file;
 extern char *option_arexx_dir;
 extern char *option_download_dir;
-extern bool option_quick_text;
 extern bool option_faster_scroll;
 
 #define EXTRA_OPTION_DEFINE \
@@ -60,7 +59,6 @@ bool option_kiosk_mode = false; \
 char *option_recent_file = 0; \
 char *option_arexx_dir = 0; \
 char *option_download_dir = 0; \
-bool option_quick_text = false; \
 bool option_faster_scroll = false; \
 
 #define EXTRA_OPTION_TABLE \
@@ -82,6 +80,5 @@ bool option_faster_scroll = false; \
 { "recent_file",		OPTION_STRING,	&option_recent_file }, \
 { "arexx_dir",		OPTION_STRING,	&option_arexx_dir }, \
 { "download_dir",		OPTION_STRING,	&option_download_dir }, \
-{ "quick_text",	OPTION_BOOL,	&option_quick_text}, \
 { "faster_scroll",	OPTION_BOOL,	&option_faster_scroll},
 #endif

@@ -66,16 +66,7 @@ bool nsfont_width(const struct css_style *style,
 {
 	struct TextFont *tfont;
 
-	if(option_quick_text)
-	{
-		tfont = ami_open_font(style);
-		*width = TextLength(currp,string,length); //buffer,strlen(buffer));
-		ami_close_font(tfont);
-	}
-	else
-	{
-		*width = ami_unicode_text(NULL,string,length,style,0,0,0);
-	}
+	*width = ami_unicode_text(NULL,string,length,style,0,0,0);
 
 	return true;
 }
@@ -99,76 +90,61 @@ bool nsfont_position_in_string(const struct css_style *style,
 {
 	struct TextExtent extent;
 	struct TextFont *tfont;
+	uint16 *utf16 = NULL, *outf16 = NULL;
+	struct OutlineFont *ofont;
+	struct GlyphMap *glyph;
+	uint32 tx=0,i=0;
+	size_t len,utf8len;
+	uint8 *utf8;
+	uint32 co = 0;
 
-	if(option_quick_text)
+	len = utf8_bounded_length(string, length);
+	if(utf8_to_enc(string,"UTF-16",length,&utf16) != UTF8_CONVERT_OK) return;
+	outf16 = utf16;
+
+	if(!(ofont = ami_open_outline_font(style))) return 0;
+
+	*char_offset = length;
+
+	for(i=0;i<len;i++)
 	{
-		tfont = ami_open_font(style);
-
-		*char_offset = TextFit(currp,string,length,
-						&extent,NULL,1,x,32767);
-
-		*actual_x = extent.te_Extent.MaxX;
-
-		ami_close_font(tfont);
-	}
-	else
-	{
-		uint16 *utf16 = NULL, *outf16 = NULL;
-		struct OutlineFont *ofont;
-		struct GlyphMap *glyph;
-		uint32 tx=0,i=0;
-		size_t len,utf8len;
-		uint8 *utf8;
-		uint32 co = 0;
-
-		len = utf8_bounded_length(string, length);
-		if(utf8_to_enc(string,"UTF-16",length,&utf16) != UTF8_CONVERT_OK) return;
-		outf16 = utf16;
-
-		if(!(ofont = ami_open_outline_font(style))) return 0;
-
-		*char_offset = length;
-
-		for(i=0;i<len;i++)
+		if(ESetInfo(&ofont->olf_EEngine,
+			OT_GlyphCode,*utf16,
+			TAG_END) == OTERR_Success)
 		{
-			if(ESetInfo(&ofont->olf_EEngine,
-				OT_GlyphCode,*utf16,
-				TAG_END) == OTERR_Success)
+			if(EObtainInfo(&ofont->olf_EEngine,
+				OT_GlyphMap8Bit,&glyph,
+				TAG_END) == 0)
 			{
-				if(EObtainInfo(&ofont->olf_EEngine,
-					OT_GlyphMap8Bit,&glyph,
-					TAG_END) == 0)
+				if(utf8_from_enc(utf16,"UTF-16",4,&utf8) != UTF8_CONVERT_OK) return;
+				utf8len = utf8_char_byte_length(utf8);
+				free(utf8);
+
+				if(x<tx+glyph->glm_X1)
 				{
-					if(utf8_from_enc(utf16,"UTF-16",4,&utf8) != UTF8_CONVERT_OK) return;
-					utf8len = utf8_char_byte_length(utf8);
-					free(utf8);
-
-					if(x<tx+glyph->glm_X1)
-					{
-						i = len+1;
-					}
-					else
-					{
-						co += utf8len;
-					}
-
-					*actual_x = tx;
-					tx+= glyph->glm_X1;
-
-					EReleaseInfo(&ofont->olf_EEngine,
-						OT_GlyphMap8Bit,glyph,
-						TAG_END);
+					i = len+1;
 				}
+				else
+				{
+					co += utf8len;
+				}
+
+				*actual_x = tx;
+				tx+= glyph->glm_X1;
+
+				EReleaseInfo(&ofont->olf_EEngine,
+					OT_GlyphMap8Bit,glyph,
+					TAG_END);
 			}
-			if (*utf16 < 0xD800 || 0xDFFF < *utf16)
-				utf16++;
-			else
-				utf16 += 2;
 		}
-		*char_offset = co;
-		if(co>=length) *actual_x = tx;
-		free(outf16);
+		if (*utf16 < 0xD800 || 0xDFFF < *utf16)
+			utf16++;
+		else
+			utf16 += 2;
 	}
+	*char_offset = co;
+	if(co>=length) *actual_x = tx;
+	free(outf16);
 
 	return true;
 }
@@ -199,189 +175,63 @@ bool nsfont_split(const struct css_style *style,
 	ULONG co;
 	char *charp;
 	struct TextFont *tfont;
+	uint16 *utf16 = NULL,*outf16 = NULL;
+	struct OutlineFont *ofont;
+	struct GlyphMap *glyph;
+	uint32 tx=0,i=0;
+	size_t len;
 
-	if(option_quick_text)
+	len = utf8_bounded_length(string, length);
+	if(utf8_to_enc(string,"UTF-16",length,&utf16) != UTF8_CONVERT_OK) return;
+	outf16 = utf16;
+	if(!(ofont = ami_open_outline_font(style))) return 0;
+
+	*char_offset = 0;
+
+	for(i=0;i<len;i++)
 	{
-		tfont = ami_open_font(style);
-
-		co = TextFit(currp,string,length,
-					&extent,NULL,1,x,32767);
-
-		charp = string+co;
-		while(((*charp != ' ')) && (charp > string))
+		if(ESetInfo(&ofont->olf_EEngine,
+			OT_GlyphCode,*utf16,
+			TAG_END) == OTERR_Success)
 		{
-			charp--;
-			co--;
-		}
-
-		*char_offset = co;
-		if(string && co)
-		{
-			*actual_x = TextLength(currp,string,co);
-		}
-		else
-		{
-			*actual_x = 0;
-		}
-
-		ami_close_font(tfont);
-	}
-	else
-	{
-		uint16 *utf16 = NULL,*outf16 = NULL;
-		struct OutlineFont *ofont;
-		struct GlyphMap *glyph;
-		uint32 tx=0,i=0;
-		size_t len;
-
-		len = utf8_bounded_length(string, length);
-		if(utf8_to_enc(string,"UTF-16",length,&utf16) != UTF8_CONVERT_OK) return;
-		outf16 = utf16;
-		if(!(ofont = ami_open_outline_font(style))) return 0;
-
-		*char_offset = 0;
-
-		for(i=0;i<len;i++)
-		{
-			if(ESetInfo(&ofont->olf_EEngine,
-				OT_GlyphCode,*utf16,
-				TAG_END) == OTERR_Success)
+			if(EObtainInfo(&ofont->olf_EEngine,
+				OT_GlyphMap8Bit,&glyph,
+				TAG_END) == 0)
 			{
-				if(EObtainInfo(&ofont->olf_EEngine,
-					OT_GlyphMap8Bit,&glyph,
-					TAG_END) == 0)
+				if(*utf16 == 0x0020)
 				{
-					if(*utf16 == 0x0020)
-					{
-						*actual_x = tx;
-						co = i;
-					}
-
-					if(x<tx+glyph->glm_X1)
-					{
-						i = length+1;
-					}
-
-					tx+= glyph->glm_X1;
-
-					EReleaseInfo(&ofont->olf_EEngine,
-						OT_GlyphMap8Bit,glyph,
-						TAG_END);
+					*actual_x = tx;
+					co = i;
 				}
-			}
-			if (*utf16 < 0xD800 || 0xDFFF < *utf16)
-				utf16++;
-			else
-				utf16 += 2;
-		}
 
-		charp = string+co;
-		while(((*charp != ' ')) && (charp > string))
-		{
-			charp--;
-			co--;
+				if(x<tx+glyph->glm_X1)
+				{
+					i = length+1;
+				}
+
+				tx+= glyph->glm_X1;
+
+				EReleaseInfo(&ofont->olf_EEngine,
+					OT_GlyphMap8Bit,glyph,
+					TAG_END);
+			}
 		}
-		*char_offset = co;
-		free(outf16);
+		if (*utf16 < 0xD800 || 0xDFFF < *utf16)
+			utf16++;
+		else
+			utf16 += 2;
 	}
+
+	charp = string+co;
+	while(((*charp != ' ')) && (charp > string))
+	{
+		charp--;
+		co--;
+	}
+	*char_offset = co;
+	free(outf16);
 
 	return true;
-}
-
-struct TextFont *ami_open_font(struct css_style *style)
-{
-	struct TextFont *tfont;
-	struct TTextAttr tattr;
-	struct TagItem tattrtags[2];
-	char fontname[256];
-
-	switch(style->font_family)
-	{
-		case CSS_FONT_FAMILY_SANS_SERIF:
-			strcpy(fontname,option_font_sans);
-		break;
-
-		case CSS_FONT_FAMILY_SERIF:
-			strcpy(fontname,option_font_serif);
-		break;
-
-		case CSS_FONT_FAMILY_MONOSPACE:
-			strcpy(fontname,option_font_mono);
-		break;
-
-		case CSS_FONT_FAMILY_CURSIVE:
-			strcpy(fontname,option_font_cursive);
-		break;
-
-		case CSS_FONT_FAMILY_FANTASY:
-			strcpy(fontname,option_font_fantasy);
-		break;
-
-		default:
-			strcpy(fontname,option_font_sans);
-		break;
-	}
-
-	switch(style->font_style)
-	{
-		case CSS_FONT_STYLE_ITALIC:
-		case CSS_FONT_STYLE_OBLIQUE:
-			tattr.tta_Style = FSF_ITALIC;
-		break;
-
-		default:
-			tattr.tta_Style = FS_NORMAL;
-		break;
-	}
-
-	switch(style->font_weight)
-	{
-		case CSS_FONT_WEIGHT_BOLD:
-		case CSS_FONT_WEIGHT_BOLDER:
-			tattr.tta_Style |= FSF_BOLD;
-		break;
-	}
-
-/* not supported
-	switch(style->font_variant)
-	{
-		default:
-			//printf("font variant: %ld\n",style->font_variant);
-		break;
-	}
-*/
-
-	tattr.tta_YSize = css_len2px(&style->font_size.value.length, style);
-
-	if(tattr.tta_YSize < option_font_min_size)
-		tattr.tta_YSize = option_font_min_size;
-
-	tattr.tta_Flags = 0;
-
-/* Uncommenting this changes the font's charset.
-   106 is UTF-8 but OS4 doesn't support it so this only results in a crash! 
-
-	tattrtags[0].ti_Tag = TA_CharSet;
-	tattrtags[0].ti_Data = 106;
-	tattrtags[1].ti_Tag = TAG_DONE;
-
-	tattr.tta_Flags = FSB_TAGGED;  
-	tattr.tta_Tags = &tattrtags;
-*/
-
-	strcat(fontname,".font");
-	tattr.tta_Name = fontname;
-
-	tfont = OpenDiskFont((struct TextAttr *)&tattr);
-
-	if(tfont)
-	{
-		SetRPAttrs(currp,
-				RPTAG_Font,tfont,
-				TAG_DONE);
-	}
-
-	return tfont;
 }
 
 struct OutlineFont *ami_open_outline_font(struct css_style *style)
@@ -443,15 +293,6 @@ struct OutlineFont *ami_open_outline_font(struct css_style *style)
 	}
 
 	return NULL;
-}
-
-void ami_close_font(struct TextFont *tfont)
-{
-	SetRPAttrs(currp,
-			RPTAG_Font,origrpfont,
-			TAG_DONE);
-
-	if(tfont) CloseFont(tfont);
 }
 
 ULONG ami_unicode_text(struct RastPort *rp,char *string,ULONG length,struct css_style *style,ULONG dx, ULONG dy, ULONG c)
@@ -531,46 +372,43 @@ void ami_init_fonts(void)
 	int i;
 	char *bname,*iname,*biname;
 
-	if(!option_quick_text)
+	of[CSS_FONT_FAMILY_SANS_SERIF] = OpenOutlineFont(option_font_sans,NULL,OFF_OPEN);
+	of[CSS_FONT_FAMILY_SERIF] = OpenOutlineFont(option_font_serif,NULL,OFF_OPEN);
+	of[CSS_FONT_FAMILY_MONOSPACE] = OpenOutlineFont(option_font_mono,NULL,OFF_OPEN);
+	of[CSS_FONT_FAMILY_CURSIVE] = OpenOutlineFont(option_font_cursive,NULL,OFF_OPEN);
+	of[CSS_FONT_FAMILY_FANTASY] = OpenOutlineFont(option_font_fantasy,NULL,OFF_OPEN);
+	of[CSS_FONT_FAMILY_UNKNOWN] = OpenOutlineFont(option_font_sans,NULL,OFF_OPEN);
+	of[CSS_FONT_FAMILY_NOT_SET] = OpenOutlineFont(option_font_sans,NULL,OFF_OPEN);
+
+	for(i=CSS_FONT_FAMILY_SANS_SERIF;i<=CSS_FONT_FAMILY_NOT_SET;i++)
 	{
-		of[CSS_FONT_FAMILY_SANS_SERIF] = OpenOutlineFont(option_font_sans,NULL,OFF_OPEN);
-		of[CSS_FONT_FAMILY_SERIF] = OpenOutlineFont(option_font_serif,NULL,OFF_OPEN);
-		of[CSS_FONT_FAMILY_MONOSPACE] = OpenOutlineFont(option_font_mono,NULL,OFF_OPEN);
-		of[CSS_FONT_FAMILY_CURSIVE] = OpenOutlineFont(option_font_cursive,NULL,OFF_OPEN);
-		of[CSS_FONT_FAMILY_FANTASY] = OpenOutlineFont(option_font_fantasy,NULL,OFF_OPEN);
-		of[CSS_FONT_FAMILY_UNKNOWN] = OpenOutlineFont(option_font_sans,NULL,OFF_OPEN);
-		of[CSS_FONT_FAMILY_NOT_SET] = OpenOutlineFont(option_font_sans,NULL,OFF_OPEN);
+		if(!of[i]) warn_user("FontError",""); // temporary error message
 
-		for(i=CSS_FONT_FAMILY_SANS_SERIF;i<=CSS_FONT_FAMILY_NOT_SET;i++)
+		if(bname = GetTagData(OT_BName,0,of[i]->olf_OTagList))
 		{
-			if(!of[i]) warn_user("FontError",""); // temporary error message
+			ofb[i] = OpenOutlineFont(bname,NULL,OFF_OPEN);
+		}
+		else
+		{
+			ofb[i] = NULL;
+		}
 
-			if(bname = GetTagData(OT_BName,0,of[i]->olf_OTagList))
-			{
-				ofb[i] = OpenOutlineFont(bname,NULL,OFF_OPEN);
-			}
-			else
-			{
-				ofb[i] = NULL;
-			}
+		if(iname = GetTagData(OT_IName,0,of[i]->olf_OTagList))
+		{
+			ofi[i] = OpenOutlineFont(iname,NULL,OFF_OPEN);
+		}
+		else
+		{
+			ofi[i] = NULL;
+		}
 
-			if(iname = GetTagData(OT_IName,0,of[i]->olf_OTagList))
-			{
-				ofi[i] = OpenOutlineFont(iname,NULL,OFF_OPEN);
-			}
-			else
-			{
-				ofi[i] = NULL;
-			}
-
-			if(biname = GetTagData(OT_BIName,0,of[i]->olf_OTagList))
-			{
-				ofbi[i] = OpenOutlineFont(biname,NULL,OFF_OPEN);
-			}
-			else
-			{
-				ofbi[i] = NULL;
-			}
+		if(biname = GetTagData(OT_BIName,0,of[i]->olf_OTagList))
+		{
+			ofbi[i] = OpenOutlineFont(biname,NULL,OFF_OPEN);
+		}
+		else
+		{
+			ofbi[i] = NULL;
 		}
 	}
 }
@@ -579,14 +417,11 @@ void ami_close_fonts(void)
 {
 	int i=0;
 
-	if(!option_quick_text)
+	for(i=CSS_FONT_FAMILY_SANS_SERIF;i<=CSS_FONT_FAMILY_NOT_SET;i++)
 	{
-		for(i=CSS_FONT_FAMILY_SANS_SERIF;i<=CSS_FONT_FAMILY_NOT_SET;i++)
-		{
-			if(of[i]) CloseOutlineFont(of[i],NULL);
-			if(ofb[i]) CloseOutlineFont(ofb[i],NULL);
-			if(ofi[i]) CloseOutlineFont(ofi[i],NULL);
-			if(ofbi[i]) CloseOutlineFont(ofbi[i],NULL);
-		}
+		if(of[i]) CloseOutlineFont(of[i],NULL);
+		if(ofb[i]) CloseOutlineFont(ofb[i],NULL);
+		if(ofi[i]) CloseOutlineFont(ofi[i],NULL);
+		if(ofbi[i]) CloseOutlineFont(ofbi[i],NULL);
 	}
 }
