@@ -311,7 +311,6 @@ fbtk_redraw_widget(fbtk_widget_t *widget)
 
                 widget->redraw_required = false;
                 //LOG(("OS redrawing %d,%d %d,%d", fb_plot_ctx.x0, fb_plot_ctx.y0, fb_plot_ctx.x1, fb_plot_ctx.y1));
-                fb_os_redraw(&fb_plot_ctx);
         }
 
         /* restore clipping rectangle */
@@ -331,6 +330,8 @@ fb_redraw_fill(fbtk_widget_t *widget, void *pw)
                           fb_plot_ctx.x1, fb_plot_ctx.y1,
                           widget->bg);
         }
+
+        fb_os_redraw(&fb_plot_ctx);
         return 0;
 }
 
@@ -366,6 +367,8 @@ fb_redraw_hscroll(fbtk_widget_t *widget, void *pw)
                   fb_plot_ctx.x0 + hscroll + hpos,
                   fb_plot_ctx.y0 + widget->height - 5,
                   widget->bg);
+
+        fb_os_redraw(&fb_plot_ctx);
 
         return 0;
 }
@@ -403,6 +406,8 @@ fb_redraw_vscroll(fbtk_widget_t *widget, void *pw)
                   fb_plot_ctx.y0 + vscroll + vpos - 5,
                   widget->bg);
 
+        fb_os_redraw(&fb_plot_ctx);
+
         return 0;
 }
 
@@ -421,6 +426,9 @@ fb_redraw_bitmap(fbtk_widget_t *widget, void *pw)
         plot.bitmap(fb_plot_ctx.x0, fb_plot_ctx.y0, 
                     widget->width, widget->height,
                     widget->u.bitmap.bitmap, 0, NULL);
+
+        fb_os_redraw(&fb_plot_ctx);
+
         return 0;
 }
 
@@ -545,6 +553,9 @@ fb_redraw_text(fbtk_widget_t *widget, void *pw)
                           widget->bg,
                           widget->fg);
         }
+
+        fb_os_redraw(&fb_plot_ctx);
+
         return 0;
 }
 
