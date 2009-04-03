@@ -267,18 +267,18 @@ ifeq ($(TARGET),riscos)
   $(eval $(call feature_enabled,ARTWORKS,-DWITH_ARTWORKS,,ArtWorks rendering))
   $(eval $(call feature_enabled,PLUGINS,-DWITH_PLUGIN,,Plugin protocol support))
   ifeq ($(HOST),riscos)
-    $(eval $(call feature_enabled,HUBBUB,-DWITH_HUBBUB,-lhubbub -lparserutils,Hubbub HTML parser))
-    $(eval $(call feature_enabled,BMP,-DWITH_BMP,-lnsbmp,NetSurf BMP decoder))
-    $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif,NetSurf GIF decoder))
+    $(eval $(call feature_enabled,HUBBUB,-DWITH_HUBBUB,-lhubbub0 -lparserutils0,Hubbub HTML parser))
+    $(eval $(call feature_enabled,BMP,-DWITH_BMP,-lnsbmp0,NetSurf BMP decoder))
+    $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif0,NetSurf GIF decoder))
     $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG support))
   else
     NETSURF_FEATURE_HUBBUB_CFLAGS := -DWITH_HUBBUB
     NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
     NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
     NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
-    $(eval $(call pkg_config_find_and_add,HUBBUB,libhubbub,Hubbub HTML parser))
-    $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,NetSurf BMP decoder))
-    $(eval $(call pkg_config_find_and_add,GIF,libnsgif,NetSurf GIF decoder))
+    $(eval $(call pkg_config_find_and_add,HUBBUB,libhubbub-0,Hubbub HTML parser))
+    $(eval $(call pkg_config_find_and_add,BMP,libnsbmp-0,NetSurf BMP decoder))
+    $(eval $(call pkg_config_find_and_add,GIF,libnsgif-0,NetSurf GIF decoder))
     $(eval $(call pkg_config_find_and_add,PNG,libpng,PNG support))
   endif
 endif
@@ -316,9 +316,9 @@ ifeq ($(TARGET),gtk)
   # add a line similar to below for each optional pkg-configed lib here
   $(eval $(call pkg_config_find_and_add,RSVG,librsvg-2.0,SVG rendering))
   $(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,RISC OS sprite rendering))
-  $(eval $(call pkg_config_find_and_add,HUBBUB,libhubbub,Hubbub HTML parser))
-  $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,NetSurf BMP decoder))
-  $(eval $(call pkg_config_find_and_add,GIF,libnsgif,NetSurf GIF decoder))
+  $(eval $(call pkg_config_find_and_add,HUBBUB,libhubbub-0,Hubbub HTML parser))
+  $(eval $(call pkg_config_find_and_add,BMP,libnsbmp-0,NetSurf BMP decoder))
+  $(eval $(call pkg_config_find_and_add,GIF,libnsgif-0,NetSurf GIF decoder))
   $(eval $(call pkg_config_find_and_add,PNG,libpng,PNG support))
 
   GTKCFLAGS := -std=c99 -Dgtk -Dnsgtk \
@@ -445,15 +445,15 @@ ifeq ($(TARGET),amiga)
   NETSURF_FEATURE_NSSVG_CFLAGS := -DWITH_NS_SVG
 
     $(eval $(call feature_enabled,ROSPRITE,-DWITH_NSSPRITE,-lrosprite,RISC OS Sprite decoder))
-    $(eval $(call feature_enabled,HUBBUB,-DWITH_HUBBUB,-lhubbub,Hubbub HTML parser))
-    $(eval $(call feature_enabled,BMP,-DWITH_BMP,-lnsbmp,NetSurf BMP decoder))
-    $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif,NetSurf GIF decoder))
+    $(eval $(call feature_enabled,HUBBUB,-DWITH_HUBBUB,-lhubbub0,Hubbub HTML parser))
+    $(eval $(call feature_enabled,BMP,-DWITH_BMP,-lnsbmp0,NetSurf BMP decoder))
+    $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif0,NetSurf GIF decoder))
     $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG support))
     $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG rendering))
     $(eval $(call feature_enabled,MNG,,-llcms -ljpeg,libmng extras))
 
   CFLAGS += -D__USE_INLINE__ -std=c99 -I . -Dnsamiga
-  LDFLAGS += -lxml2 -lcurl -lpthread -lregex -lauto -lparserutils
+  LDFLAGS += -lxml2 -lcurl -lpthread -lregex -lauto -lparserutils0
   LDFLAGS += -lssl -lcrypto
 
   ifeq ($(NETSURF_AMIGA_USE_CAIRO),YES)
@@ -488,9 +488,9 @@ ifeq ($(TARGET),framebuffer)
   ifeq ($(NETSURF_FB_FRONTEND),linux)
     $(eval $(call pkg_config_find_and_add,RSVG,librsvg-2.0,SVG rendering))
     $(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,RISC OS sprite rendering))
-    $(eval $(call pkg_config_find_and_add,HUBBUB,libhubbub,Hubbub HTML parser))
-    $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,NetSurf BMP decoder))
-    $(eval $(call pkg_config_find_and_add,GIF,libnsgif,NetSurf GIF decoder))
+    $(eval $(call pkg_config_find_and_add,HUBBUB,libhubbub-0,Hubbub HTML parser))
+    $(eval $(call pkg_config_find_and_add,BMP,libnsbmp-0,NetSurf BMP decoder))
+    $(eval $(call pkg_config_find_and_add,GIF,libnsgif-0,NetSurf GIF decoder))
 
 
     CFLAGS += -std=c99 -g -I. -Dsmall $(WARNFLAGS) \
@@ -505,20 +505,20 @@ ifeq ($(TARGET),framebuffer)
   endif
 
   ifeq ($(NETSURF_FB_FRONTEND),able)
-    $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif,NetSurf GIF decoder))
-    $(eval $(call feature_enabled,HUBBUB,-DWITH_HUBBUB,-lhubbub,Hubbub))
+    $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif-0,NetSurf GIF decoder))
+    $(eval $(call feature_enabled,HUBBUB,-DWITH_HUBBUB,-lhubbub-0,Hubbub))
     CC=arm-able-gcc
     CFLAGS += -std=c99 -I. -I/usr/lib/able/include -Dsmall $(WARNFLAGS)
-    LDFLAGS += -lparserutils -lxml2 -lz -ljpeg -lcurl -lm 
+    LDFLAGS += -lxml2 -lz -ljpeg -lcurl -lm 
     SUBTARGET := -able
   endif
 
   ifeq ($(NETSURF_FB_FRONTEND),dummy)
     $(eval $(call pkg_config_find_and_add,RSVG,librsvg-2.0,SVG rendering))
     $(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,RISC OS sprite rendering))
-    $(eval $(call pkg_config_find_and_add,HUBBUB,libhubbub,Hubbub HTML parser))
-    $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,NetSurf BMP decoder))
-    $(eval $(call pkg_config_find_and_add,GIF,libnsgif,NetSurf GIF decoder))
+    $(eval $(call pkg_config_find_and_add,HUBBUB,libhubbub-0,Hubbub HTML parser))
+    $(eval $(call pkg_config_find_and_add,BMP,libnsbmp-0,NetSurf BMP decoder))
+    $(eval $(call pkg_config_find_and_add,GIF,libnsgif-0,NetSurf GIF decoder))
 
 
     CFLAGS += -std=c99 -g -I. $(WARNFLAGS) \
@@ -535,9 +535,9 @@ ifeq ($(TARGET),framebuffer)
   ifeq ($(NETSURF_FB_FRONTEND),sdl)
     $(eval $(call pkg_config_find_and_add,RSVG,librsvg-2.0,SVG rendering))
     $(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,RISC OS sprite rendering))
-    $(eval $(call pkg_config_find_and_add,HUBBUB,libhubbub,Hubbub HTML parser))
-    $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,NetSurf BMP decoder))
-    $(eval $(call pkg_config_find_and_add,GIF,libnsgif,NetSurf GIF decoder))
+    $(eval $(call pkg_config_find_and_add,HUBBUB,libhubbub-0,Hubbub HTML parser))
+    $(eval $(call pkg_config_find_and_add,BMP,libnsbmp-0,NetSurf BMP decoder))
+    $(eval $(call pkg_config_find_and_add,GIF,libnsgif-0,NetSurf GIF decoder))
 #    $(eval $(call pkg_config_find_and_add,SDL,libSDL,SDL Library))
 
 
@@ -555,9 +555,9 @@ ifeq ($(TARGET),framebuffer)
   ifeq ($(NETSURF_FB_FRONTEND),vnc)
     $(eval $(call pkg_config_find_and_add,RSVG,librsvg-2.0,SVG rendering))
     $(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,RISC OS sprite rendering))
-    $(eval $(call pkg_config_find_and_add,HUBBUB,libhubbub,Hubbub HTML parser))
-    $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,NetSurf BMP decoder))
-    $(eval $(call pkg_config_find_and_add,GIF,libnsgif,NetSurf GIF decoder))
+    $(eval $(call pkg_config_find_and_add,HUBBUB,libhubbub-0,Hubbub HTML parser))
+    $(eval $(call pkg_config_find_and_add,BMP,libnsbmp-0,NetSurf BMP decoder))
+    $(eval $(call pkg_config_find_and_add,GIF,libnsgif-0,NetSurf GIF decoder))
 #    $(eval $(call pkg_config_find_and_add,VNCSERVER,libvncserver,VNC server))
 
 
@@ -589,15 +589,15 @@ ifeq ($(TARGET),debug)
 		-D_POSIX_C_SOURCE=200112L \
 		-D_NETBSD_SOURCE \
 		$(WARNFLAGS) -I. -g \
-		$(shell $(PKG_CONFIG) --cflags libnsgif libnsbmp) \
+		$(shell $(PKG_CONFIG) --cflags libnsgif-0 libnsbmp-0) \
 		$(shell xml2-config --cflags)
   LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl)
 
   $(eval $(call pkg_config_find_and_add,RSVG,librsvg-2.0,SVG rendering))
   $(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,RISC OS sprite rendering))
-  $(eval $(call pkg_config_find_and_add,HUBBUB,libhubbub,Hubbub HTML parser))
+  $(eval $(call pkg_config_find_and_add,HUBBUB,libhubbub-0,Hubbub HTML parser))
 
-LDFLAGS += $(shell $(PKG_CONFIG) --libs libnsgif libnsbmp)
+LDFLAGS += $(shell $(PKG_CONFIG) --libs libnsgif-0 libnsbmp-0)
 endif
 
 # ----------------------------------------------------------------------------
