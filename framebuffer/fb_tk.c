@@ -20,6 +20,7 @@
 
 #include <sys/types.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "utils/log.h"
 #include "css/css.h"

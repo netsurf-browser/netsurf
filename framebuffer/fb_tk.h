@@ -167,6 +167,8 @@ void fbtk_writable_text(fbtk_widget_t *widget, fbtk_enter_t enter, void *pw);
 
 /* General routines */
 
+bool fbtk_clip_rect(const bbox_t * restrict clip, bbox_t * restrict box);
+
 /** Pointer movement.
  *
  * Pointer has been moved.
