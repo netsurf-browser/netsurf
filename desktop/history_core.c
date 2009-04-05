@@ -29,7 +29,6 @@
 #include "content/content.h"
 #include "content/urldb.h"
 #include "css/css.h"
-#include "desktop/browser.h"
 #include "desktop/gui.h"
 #include "desktop/history_core.h"
 #include "desktop/plotters.h"
@@ -64,8 +63,6 @@ struct history_entry {
 	int x;  /**< Position of node. */
 	int y;  /**< Position of node. */
 	struct bitmap *bitmap;  /**< Thumbnail bitmap, or 0. */
-	int sx; /**< X scroll offset. */
-	int sy; /**< Y scroll offset. */	
 };
 
 /** History tree for a window. */
@@ -262,8 +259,6 @@ void history_add(struct history *history, struct content *content,
 	entry->forward = entry->forward_pref = entry->forward_last = 0;
 	entry->children = 0;
 	entry->bitmap = 0;
-	entry->sx = -1;
-	entry->sy = -1;
 	if (history->current) {
 		if (history->current->forward_last)
 			history->current->forward_last->next = entry;
@@ -759,38 +754,4 @@ struct history_entry *history_find_position(struct history_entry *entry,
 	}
 
 	return 0;
-}
-
-/**
- * Save in the history the scroll offsets of the current page
- * \param  history 	history with the page
- * \param  sx		x offset to be set
- * \param  sy		y offset to be set
- */
-
-void history_set_current_scroll(struct history *history, int sx, int sy)
-{
-	if (!history || !history->current)
-		return;
-
-	history->current->sx = sx;
-	history->current->sy = sy;
-}
-
-/**
- * Load from the history the scroll offsets of the current page
- * \param  history	history with the page
- * \param  sx		updated to x offset
- * \param  sy		updated to y offset
- * \return 		true on success
- */
-
-bool history_get_current_scroll(struct history *history, int *sx, int *sy)
-{
-	if (!history || !history->current)
-		return false;
-
-	*sx = history->current->sx;
-	*sy = history->current->sy;
-	return true;
 }

@@ -1069,12 +1069,6 @@ MENUHANDLER(local_history)
 {
 	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
 
-	/* if entries of the same url but different frag_ids have been added
-	 * the history needs redrawing (what is done in the throbber code in
-	 * other cases)
-	 */
-	nsgtk_window_update_back_forward(gw);
-	
 	gtk_widget_show(GTK_WIDGET(gw->history_window->window));
 	gdk_window_raise(GTK_WIDGET(gw->history_window->window)->window);
 
@@ -1160,7 +1154,6 @@ gboolean nsgtk_history_button_press_event(GtkWidget *widget,
 
 	history_click(bw, bw->history,
 		      event->x, event->y, false);
-	nsgtk_window_update_back_forward(bw->window->scaffold);
 
 	return TRUE;
 }

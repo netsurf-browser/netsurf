@@ -80,7 +80,7 @@ struct browser_window {
 	/** Busy indicator is active. */
 	bool throbbing;
 	/** Add loading_content to the window history when it loads. */
-	bool add_to_history;
+	bool history_add;
 
 	/** Fragment identifier for current_content. */
 	char *frag_id;
@@ -214,16 +214,16 @@ extern bool browser_reformat_pending;
 
 struct browser_window * browser_window_create(const char *url,
 		struct browser_window *clone, const char *referrer,
-		bool add_to_history, bool new_tab);
+		bool history_add, bool new_tab);
 void browser_window_initialise_common(struct browser_window *bw,
 		struct browser_window *clone);
 void browser_window_go(struct browser_window *bw, const char *url,
-		const char *referrer, bool add_to_history);
+		const char *referrer, bool history_add);
 void browser_window_go_unverifiable(struct browser_window *bw,
-		const char *url, const char *referrer, bool add_to_history);
+		const char *url, const char *referrer, bool history_add);
 void browser_window_download(struct browser_window *bw,
 		const char *url, const char *referrer);
-void browser_window_update(struct browser_window *bw);
+void browser_window_update(struct browser_window *bw, bool scroll_to_top);
 void browser_window_stop(struct browser_window *bw);
 void browser_window_reload(struct browser_window *bw, bool all);
 void browser_window_destroy(struct browser_window *bw);

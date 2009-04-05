@@ -34,7 +34,6 @@ struct gui_window {
 	int			caretx, carety, careth;
 	gui_pointer_shape	current_pointer;
 	int			last_x, last_y;
-	bool			setting_scroll;
 
         /* Within GTK, a gui_window is a scrolled window
          * with a viewport inside

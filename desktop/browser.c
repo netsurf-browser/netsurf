@@ -139,11 +139,11 @@ static void browser_window_scroll_box(struct browser_window *bw,
 
 struct browser_window *browser_window_create(const char *url,
 		struct browser_window *clone,
-		const char *referer, bool add_to_history, bool new_tab)
+		const char *referer, bool history_add, bool new_tab)
 {
 	struct browser_window *bw;
 
-	assert(clone || add_to_history);
+	assert(clone || history_add);
 
 	if ((bw = calloc(1, sizeof *bw)) == NULL) {
 		warn_user("NoMemory", 0);
@@ -165,7 +165,7 @@ struct browser_window *browser_window_create(const char *url,
 		return NULL;
 	}
 	if (url)
-		browser_window_go(bw, url, referer, add_to_history);
+		browser_window_go(bw, url, referer, history_add);
 
 	return bw;
 }
@@ -208,11 +208,11 @@ void browser_window_initialise_common(struct browser_window *bw,
  */
 
 void browser_window_go(struct browser_window *bw, const char *url,
-		const char *referer, bool add_to_history)
+		const char *referer, bool history_add)
 {
 	/* All fetches passing through here are verifiable
 	 * (i.e are the result of user action) */
-	browser_window_go_post(bw, url, 0, 0, add_to_history, referer,
+	browser_window_go_post(bw, url, 0, 0, history_add, referer,
 			false, true, referer);
 }
 
@@ -244,11 +244,11 @@ void browser_window_download(struct browser_window *bw, const char *url,
  */
 
 void browser_window_go_unverifiable(struct browser_window *bw,
-		const char *url, const char *referer, bool add_to_history)
+		const char *url, const char *referer, bool history_add)
 {
 	/* All fetches passing through here are unverifiable
 	 * (i.e are not the result of user action) */
-	browser_window_go_post(bw, url, 0, 0, add_to_history, referer,
+	browser_window_go_post(bw, url, 0, 0, history_add, referer,
 			false, false, referer);
 }
 
@@ -349,7 +349,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 			if (add_to_history)
 				history_add(bw->history, bw->current_content,
 						bw->frag_id);
-			browser_window_update(bw);
+			browser_window_update(bw, false);
 			if (bw->current_content) {
 				browser_window_refresh_url_bar(bw,
 						bw->current_content->url,
@@ -367,7 +367,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	LOG(("Loading '%s' width %i, height %i", url2, width, height));
 
 	browser_window_set_status(bw, messages_get("Loading"));
-	bw->add_to_history = add_to_history;
+	bw->history_add = add_to_history;
 	c = fetchcache(url2, browser_window_callback, (intptr_t) bw, 0,
 			width, height, false,
 			post_urlenc, post_multipart, verifiable, download);
@@ -448,12 +448,12 @@ void browser_window_callback(content_msg msg, struct content *c,
 					bw->current_content->url,
 					bw->frag_id);
 		}
-		browser_window_update(bw);
+		browser_window_update(bw, false);
 		content_open(c, bw, 0, 0, 0, 0);
 		browser_window_set_status(bw, c->status_message);
 
 		/* history */
-		if (bw->add_to_history && bw->history) {
+		if (bw->history_add && bw->history) {
 			history_add(bw->history, c, bw->frag_id);
 			if (urldb_add_url(c->url)) {
 				urldb_set_url_title(c->url,
@@ -487,7 +487,7 @@ void browser_window_callback(content_msg msg, struct content *c,
 	case CONTENT_MSG_DONE:
 		assert(bw->current_content == c);
 
-		browser_window_update(bw);
+		browser_window_update(bw, false);
 		browser_window_set_status(bw, c->status_message);
 		browser_window_stop_throbber(bw);
 		history_update(bw->history, c);
@@ -537,7 +537,7 @@ void browser_window_callback(content_msg msg, struct content *c,
 		}
 		if (bw->move_callback)
 			bw->move_callback(bw, bw->caret_p);
-		browser_window_update(bw);
+		browser_window_update(bw, false);
 		break;
 
 	case CONTENT_MSG_REDRAW:
@@ -669,7 +669,7 @@ void browser_window_convert_to_download(struct browser_window *bw)
 void browser_window_refresh(void *p)
 {
 	struct browser_window *bw = p;
-	bool add_to_history = true;
+	bool history_add = true;
 
 	assert(bw->current_content &&
 			(bw->current_content->status == CONTENT_STATUS_READY ||
@@ -687,7 +687,7 @@ void browser_window_refresh(void *p)
 			(bw->current_content->refresh) &&
 			(!strcmp(bw->current_content->url,
 				 bw->current_content->refresh)))
-		add_to_history = false;
+		history_add = false;
 
 	/* Treat an (almost) immediate refresh in a top-level browser window as
 	 * if it were an HTTP redirect, and thus make the resulting fetch
@@ -698,10 +698,10 @@ void browser_window_refresh(void *p)
 	 */
 	if (bw->refresh_interval <= 100 && bw->parent == NULL) {
 		browser_window_go(bw, bw->current_content->refresh,
-				bw->current_content->url, add_to_history);
+				bw->current_content->url, history_add);
 	} else {
 		browser_window_go_unverifiable(bw, bw->current_content->refresh,
-				bw->current_content->url, add_to_history);
+				bw->current_content->url, history_add);
 	}
 }
 
@@ -770,10 +770,11 @@ bool browser_window_check_throbber(struct browser_window *bw)
  * \param  scroll_to_top  move view to top of page
  */
 
-void browser_window_update(struct browser_window *bw)
+void browser_window_update(struct browser_window *bw,
+		bool scroll_to_top)
 {
 	struct box *pos;
-	int x, y, sx, sy;
+	int x, y;
 
 	if (!bw->current_content)
 		return;
@@ -785,21 +786,18 @@ void browser_window_update(struct browser_window *bw)
 
 	gui_window_update_extent(bw->window);
 
-	if (!history_get_current_scroll(bw->history, &sx, &sy))
-		sx = -1;
+	if (scroll_to_top)
+		gui_window_set_scroll(bw->window, 0, 0);
 
-	/* if the page was scrolled before return to that position */
-	if (sx != -1) {
-		gui_window_set_scroll(bw->window, sx, sy);
+	/** \todo don't do this if the user has scrolled */
 	/* if frag_id exists, then try to scroll to it */
-	} else if (bw->frag_id && bw->current_content->type == CONTENT_HTML) {
+	if (bw->frag_id && bw->current_content->type == CONTENT_HTML) {
 		if ((pos = box_find_by_id(bw->current_content->data.html.layout,
 				bw->frag_id)) != 0) {
 			box_coords(pos, &x, &y);
 			gui_window_set_scroll(bw->window, x, y);
 		}
-	} else
-		gui_window_set_scroll(bw->window, 0, 0);
+	}
 
 	gui_window_redraw_window(bw->window);
 }
@@ -1071,7 +1069,7 @@ void browser_window_set_scale_internal(struct browser_window *bw, float scale)
 	c = bw->current_content;
 	if (c) {
 	  	if (!content_can_reformat(c)) {
-			browser_window_update(bw);
+			browser_window_update(bw, false);
 	  	} else {
 			bw->reformat_pending = true;
 			browser_reformat_pending = true;
