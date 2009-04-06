@@ -2362,7 +2362,7 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 		g->scrollx = sx;
 		g->scrolly = sy;
 
-		history_set_current_scroll(g->shared->bw->history,g->scrollx,g->scrolly);
+//		history_set_current_scroll(g->shared->bw->history,g->scrollx,g->scrolly);
 	}
 }
 
@@ -2810,8 +2810,8 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 			{ 
  				case OID_HSCROLL: 
  				case OID_VSCROLL:
-					history_set_current_scroll(gwin->bw->history,
-						gwin->bw->window->scrollx,gwin->bw->window->scrolly);
+//					history_set_current_scroll(gwin->bw->history,
+//						gwin->bw->window->scrollx,gwin->bw->window->scrolly);
 
 					if(!option_faster_scroll)
 						gwin->redraw_required = true;
