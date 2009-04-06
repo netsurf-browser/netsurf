@@ -22,6 +22,7 @@
 #include <sys/ioctl.h>
 #include <limits.h>
 #include <unistd.h>
+#include <string.h>
 
 #ifdef WITH_HUBBUB
 #include <hubbub/hubbub.h>

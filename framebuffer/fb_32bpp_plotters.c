@@ -489,11 +489,6 @@ static bool fb_32bpp_arc(int x, int y, int radius, int angle1, int angle2,
 	return true;
 }
 
-static inline colour ablend(colour pixel)
-{
-        return pixel;
-}
-
 
 static bool fb_32bpp_bitmap(int x, int y, int width, int height,
 			struct bitmap *bitmap, colour bg,

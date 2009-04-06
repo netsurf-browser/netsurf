@@ -64,12 +64,6 @@ static bool fb_8bpp_polygon(const int *p, unsigned int n, colour fill)
         return fb_plotters_polygon(p, n, fill, fb_8bpp_line);
 }
 
-static colour calc_colour(uint8_t c)
-{
-        return framebuffer->palette[c];
-}
-
-
 static int
 find_closest_palette_entry(colour c)
 {
