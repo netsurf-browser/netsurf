@@ -57,12 +57,15 @@ void nsgtk_tab_init(GtkWidget *tabs)
 void nsgtk_tab_add(struct gui_window *window)
 {
 	GtkNotebook *tabs = nsgtk_scaffolding_get_notebook(window);
-
 	GtkWidget *tabBox = nsgtk_tab_label_setup(window);
+	
 	gtk_notebook_append_page(tabs,
-                                 GTK_WIDGET(window->scrolledwindow), tabBox);
-
+				 GTK_WIDGET(window->scrolledwindow),
+				 tabBox);
+	
 	gtk_widget_show_all(GTK_WIDGET(window->scrolledwindow));
+
+	gtk_notebook_set_current_page(tabs, gtk_notebook_get_n_pages(tabs) - 1);
 }
 
 void nsgtk_tab_visibility_update(GtkNotebook *notebook, GtkWidget *child,
