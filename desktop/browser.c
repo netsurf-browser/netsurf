@@ -448,7 +448,8 @@ void browser_window_callback(content_msg msg, struct content *c,
 					bw->current_content->url,
 					bw->frag_id);
 		}
-		browser_window_update(bw, false);
+		/* new content; set scroll_to_top */
+		browser_window_update(bw, true);
 		content_open(c, bw, 0, 0, 0, 0);
 		browser_window_set_status(bw, c->status_message);
 
