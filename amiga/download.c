@@ -56,13 +56,11 @@ struct gui_download_window *gui_download_window_create(const char *url,
 	struct gui_download_window *dw;
 	APTR va[3];
 
-	DebugPrintF("%s\n%lx\n",url,gui);
+	dw = AllocVec(sizeof(struct gui_download_window),MEMF_PRIVATE | MEMF_CLEAR);
 
 	if((!IsListEmpty(&gui->dllist)) && (dw->dln = (struct dlnode *)FindName(&gui->dllist,url)))
 	{
-		DebugPrintF("%lx node\n",dw->dln);
 		strcpy(fname,dw->dln->filename);
-		DebugPrintF("%s fname\n",dw->dln->filename);
 		free(dw->dln->node.ln_Name);
 		dw->dln->node.ln_Name = NULL;
 	}
@@ -79,8 +77,6 @@ struct gui_download_window *gui_download_window_create(const char *url,
 		}
 		else return NULL;
 	}
-
-	dw = AllocVec(sizeof(struct gui_download_window),MEMF_PRIVATE | MEMF_CLEAR);
 
 	dw->size = total_size;
 	dw->downloaded = 0;
@@ -132,7 +128,6 @@ struct gui_download_window *gui_download_window_create(const char *url,
 
 	dw->node = AddObject(window_list,AMINS_DLWINDOW);
 	dw->node->objstruct = dw;
-
 	return dw;
 }
 
@@ -188,7 +183,7 @@ void gui_download_window_done(struct gui_download_window *dw)
 	if(dln = dw->dln)
 	{
 		dln2 = (struct dlnode *)GetSucc((struct Node *)dln);
-		if(dln != dln2) queuedl = true;
+		if((dln!=dln2) && (dln2)) queuedl = true;
 
 		free(dln->filename);
 		Remove((struct Node *)dln);
@@ -198,7 +193,6 @@ void gui_download_window_done(struct gui_download_window *dw)
 	FClose(dw->fh);
 	DisposeObject(dw->objects[OID_MAIN]);
 	DelObject(dw->node);
-
 	if(queuedl) browser_window_download(bw,dln2->node.ln_Name,NULL);
 }
 

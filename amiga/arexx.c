@@ -115,6 +115,8 @@ STATIC VOID rx_open(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 
 	if(cmd->ac_ArgList[2])
 	{
+		if(!curbw) return;
+
 		dln = AllocVec(sizeof(struct dlnode),MEMF_PRIVATE | MEMF_CLEAR);
 		dln->filename = strdup((char *)cmd->ac_ArgList[2]);
 		dln->node.ln_Name = strdup((char *)cmd->ac_ArgList[0]);

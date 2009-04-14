@@ -1109,7 +1109,7 @@ void ami_handle_msg(void)
 		        break;
 
 				case WMHI_ACTIVE:
-					curbw = gwin->bw;
+					if(gwin->bw) curbw = gwin->bw;
 				break;
 
 				case WMHI_INTUITICK:
