@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008,2009 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -36,6 +36,9 @@
 #include "utils/messages.h"
 #include <proto/bitmap.h>
 #include <images/bitmap.h>
+
+struct Node *selectednode;
+struct node *selectednode2;
 
 void ami_add_elements(struct treeview_window *twin,struct node *root,WORD *gen);
 bool ami_tree_launch_node(struct tree *tree, struct node *node);
@@ -462,6 +465,7 @@ area below the listview when items are selected */
  		           	TAG_DONE))
 					{
 						AddTail(twin->listbrowser_list, lbnode);
+						if(node == selectednode2) selectednode = lbnode;
  		       		}
 			break;
 		}
@@ -638,6 +642,8 @@ void ami_move_node(struct treeview_window *twin,int move)
 // for multiselects?				LBNA_Selected,(BOOL *)&sel,
 			TAG_DONE);
 
+	selectednode2 = treenode;
+
 	tree_set_node_selected(twin->tree,twin->tree->root,false);
 	tree_set_node_selected(twin->tree,treenode,true);
 
@@ -665,6 +671,7 @@ void ami_move_node(struct treeview_window *twin,int move)
 	//tree_move_selected_nodes(twin->tree,moveto,before);
 	tree_link_node(moveto,treenode,before);
 	ami_recreate_listbrowser(twin);
+	selectednode2 = NULL;
 }
 
 void ami_new_bookmark(struct treeview_window *twin)
@@ -717,5 +724,6 @@ void ami_recreate_listbrowser(struct treeview_window *twin)
 
 	RefreshSetGadgetAttrs(twin->gadgets[GID_TREEBROWSER],twin->win,NULL,
 							LISTBROWSER_Labels,twin->listbrowser_list,
+							LISTBROWSER_SelectedNode,selectednode,
 							TAG_DONE);
 }
