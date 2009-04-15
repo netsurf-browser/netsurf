@@ -188,6 +188,13 @@ bool html_process_data(struct content *c, char *data, unsigned int size)
 				(uint8_t *) data + x, CHUNK);
 		if (err == BINDING_ENCODINGCHANGE) {
 			goto encoding_change;
+		} else if (err != BINDING_OK) {
+			union content_msg_data msg_data;
+
+			msg_data.error = messages_get("NoMemory");
+			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+
+			return false;
 		}
 
 		gui_multitask();
@@ -197,6 +204,13 @@ bool html_process_data(struct content *c, char *data, unsigned int size)
 			(uint8_t *) data + x, (size - x));
 	if (err == BINDING_ENCODINGCHANGE) {
 		goto encoding_change;
+	} else if (err != BINDING_OK) {
+		union content_msg_data msg_data;
+
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+
+		return false;
 	}
 
 	return true;
@@ -279,6 +293,7 @@ encoding_change:
 
 bool html_convert(struct content *c, int width, int height)
 {
+	binding_error err;
 	xmlNode *html, *head;
 	union content_msg_data msg_data;
 	unsigned int time_before, time_taken;
@@ -288,8 +303,6 @@ bool html_convert(struct content *c, int width, int height)
 
 	/* finish parsing */
 	if (c->source_size == 0) {
-		binding_error err;
-
 		/* Destroy current binding */
 		binding_destroy_tree(c->data.html.parser_binding);
 
@@ -321,7 +334,16 @@ bool html_convert(struct content *c, int width, int height)
 			return false;
 	}
 
-	binding_parse_completed(c->data.html.parser_binding);
+	err = binding_parse_completed(c->data.html.parser_binding);
+	if (err != BINDING_OK) {
+		union content_msg_data msg_data;
+
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+
+		return false;
+	}
+
 	c->data.html.document =
 			binding_get_document(c->data.html.parser_binding);
 	/*xmlDebugDumpDocument(stderr, c->data.html.document);*/

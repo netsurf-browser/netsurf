@@ -213,7 +213,7 @@ binding_error binding_parse_chunk(void *ctx, const uint8_t *data, size_t len)
 	if (err == HUBBUB_ENCODINGCHANGE)
 		return BINDING_ENCODINGCHANGE;
 
-	return BINDING_OK;
+	return err == HUBBUB_NOMEM ? BINDING_NOMEM : BINDING_OK;
 }
 
 binding_error binding_parse_completed(void *ctx)
@@ -222,9 +222,8 @@ binding_error binding_parse_completed(void *ctx)
 	hubbub_error error;
 
 	error = hubbub_parser_completed(c->parser);
-	/** \todo error handling */
 
-	return BINDING_OK;
+	return error == HUBBUB_NOMEM ? BINDING_NOMEM : BINDING_OK;
 }
 
 const char *binding_get_encoding(void *ctx, binding_encoding_source *source)
