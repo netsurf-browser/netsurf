@@ -900,6 +900,9 @@ bool layout_apply_minmax_height(struct box *box, struct box *container)
 
 /**
  * Manipulate a block's [RB]padding/height/width to accommodate scrollbars
+ *
+ * \param  box	  Box to apply scrollbar space too. Must be BOX_BLOCK.
+ * \param  which  Which scrollbar to make space for. Must be RIGHT or BOTTOM.
  */
 
 void layout_block_add_scrollbar(struct box *box, int which)
@@ -1009,7 +1012,13 @@ int layout_solve_width(int available_width, int width, int lm, int rm,
 
 /**
  * Compute dimensions of box, margins, paddings, and borders for a floating
- * element.
+ * element using shrink-to-fit. Also used for inline-blocks.
+ *
+ * \param  available_width  Max width available in pixels
+ * \param  style	    Box's style
+ * \param  box		    Box for which to find dimensions
+ *				Box margins, borders, paddings, width and
+ *				height are updated.
  */
 
 void layout_float_find_dimensions(int available_width,
@@ -3274,6 +3283,10 @@ void layout_position_relative(struct box *root, struct box *fp, int fx, int fy)
 
 /**
  * Compute a box's relative offset as per CSS 2.1 9.4.3
+ *
+ * \param  box	Box to compute relative offsets for.
+ * \param  x	Receives relative offset in x.
+ * \param  y	Receives relative offset in y.
  */
 
 void layout_compute_relative_offset(struct box *box, int *x, int *y)
