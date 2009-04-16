@@ -1305,13 +1305,14 @@ bool urldb_iterate_partial_path(const struct path_data *parent,
 						NULL))
 					return false;
 
-				break;
+				/* Progress to next sibling */
+				p = p->next;
+			} else {
+				/* Skip over this segment */
+				prefix = slash + 1;
+
+				p = p->children;
 			}
-
-			/* Skip over this segment */
-			prefix = slash + 1;
-
-			p = p->children;
 		} else {
 			/* Doesn't match this segment, try next sibling */
 			p = p->next;
