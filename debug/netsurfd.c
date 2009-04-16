@@ -20,6 +20,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
 #include "utils/config.h"
 #include "content/fetch.h"
 #include "content/content.h"
@@ -182,12 +183,6 @@ void plugin_close(struct content *c) {}
 bool plugin_handleable(const char *mime_type) {return false;}
 #endif
 
-#ifndef riscos
-bool bitmap_get_opaque(struct bitmap *bitmap) { return false; }
-bool bitmap_test_opaque(struct bitmap *bitmap) { return false; }
-void bitmap_set_opaque(struct bitmap *bitmap, bool opaque) {}
-#endif
-
 void tree_initialise_redraw(struct tree *tree) {}
 void tree_redraw_area(struct tree *tree, int x, int y, int width, int height) {}
 void tree_draw_line(int x, int y, int width, int height) {}
@@ -202,7 +197,7 @@ void tree_set_node_sprite_folder(struct node *node) {}
 #ifndef riscos
 void schedule(int t, void (*callback)(void *p), void *p) {}
 void schedule_remove(void (*callback)(void *p), void *p) {}
-bool schedule_run(void) {}
+bool schedule_run(void) { return false; }
 #endif
 
 bool selection_highlighted(struct selection *s, unsigned start, unsigned end,

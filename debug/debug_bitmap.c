@@ -31,7 +31,7 @@
 
 struct bitmap {
 	int width;
-	char pixels[1];
+	unsigned char pixels[1];
 };
 
 
@@ -44,7 +44,7 @@ struct bitmap {
  * \return an opaque struct bitmap, or NULL on memory exhaustion
  */
 
-struct bitmap *bitmap_create(int width, int height, unsigned int state)
+void *bitmap_create(int width, int height, unsigned int state)
 {
 	struct bitmap *bitmap;
 	bitmap = calloc(sizeof *bitmap + width * height * 4, 1);
@@ -64,8 +64,9 @@ struct bitmap *bitmap_create(int width, int height, unsigned int state)
  * of rows. The width of a row in bytes is given by bitmap_get_rowstride().
  */
 
-char *bitmap_get_buffer(struct bitmap *bitmap)
+unsigned char *bitmap_get_buffer(void *vbitmap)
 {
+	struct bitmap *bitmap = vbitmap;
 	assert(bitmap);
 	return bitmap->pixels;
 }
@@ -78,12 +79,18 @@ char *bitmap_get_buffer(struct bitmap *bitmap)
  * \return width of a pixel row in the bitmap
  */
 
-size_t bitmap_get_rowstride(struct bitmap *bitmap)
+size_t bitmap_get_rowstride(void *vbitmap)
 {
+	struct bitmap *bitmap = vbitmap;
 	assert(bitmap);
 	return bitmap->width * 4;
 }
 
+size_t bitmap_get_bpp(void *bitmap)
+{
+	/* Bytes, not bits (ugh!) */
+	return 4;
+}
 
 /**
  * Free a bitmap.
@@ -91,8 +98,9 @@ size_t bitmap_get_rowstride(struct bitmap *bitmap)
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  */
 
-void bitmap_destroy(struct bitmap *bitmap)
+void bitmap_destroy(void *vbitmap)
 {
+	struct bitmap *bitmap = vbitmap;
 	assert(bitmap);
 	free(bitmap);
 }
@@ -106,7 +114,7 @@ void bitmap_destroy(struct bitmap *bitmap)
  * \return true on success, false on error and error reported
  */
 
-bool bitmap_save(struct bitmap *bitmap, const char *path, unsigned flags)
+bool bitmap_save(void *bitmap, const char *path, unsigned flags)
 {
 	return true;
 }
@@ -117,7 +125,8 @@ bool bitmap_save(struct bitmap *bitmap, const char *path, unsigned flags)
  *
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  */
-void bitmap_modified(struct bitmap *bitmap) {
+void bitmap_modified(void *bitmap)
+{
 }
 
 
@@ -129,6 +138,12 @@ void bitmap_modified(struct bitmap *bitmap) {
  * \param  suspend	the function to be called upon suspension
  * \param  resume	the function to be called when resuming
  */
-void bitmap_set_suspendable(struct bitmap *bitmap, void *private_word,
-		void (*invalidate)(struct bitmap *bitmap, void *private_word)) {
+void bitmap_set_suspendable(void *bitmap, void *private_word,
+		void (*invalidate)(void *bitmap, void *private_word))
+{
 }
+
+bool bitmap_get_opaque(void *bitmap) { return false; }
+bool bitmap_test_opaque(void *bitmap) { return false; }
+void bitmap_set_opaque(void *bitmap, bool opaque) {}
+
