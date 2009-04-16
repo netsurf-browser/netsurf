@@ -216,7 +216,7 @@ void table_collapse_borders(struct box *table)
 		assert(row_group->type == BOX_TABLE_ROW_GROUP);
 		assert(row_group->style);
 		table_collapse_borders_h(table, row_group, &first);
-		first = (row_group->children);
+		first = row_group->children != NULL;
 		for (row = row_group->children; row; row = row->next) {
 			assert(row->type == BOX_TABLE_ROW);
 			assert(row->style);

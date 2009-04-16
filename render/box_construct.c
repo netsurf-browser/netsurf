@@ -2030,7 +2030,7 @@ bool box_create_frameset(struct content_html_frames *f, xmlNode *n,
 				xmlFree(s);
 			}
 			frame->no_resize = xmlHasProp(c,
-					(const xmlChar *) "noresize");
+					(const xmlChar *) "noresize") != NULL;
 			if ((s = (char *) xmlGetProp(c,
 					(const xmlChar *) "frameborder"))) {
 				i = atoi(s);
@@ -2448,25 +2448,25 @@ bool box_input_text(BOX_SPECIAL_PARAMS, bool password)
 		xmlFree(s);
 	if (box->gadget->value == NULL || box->gadget->initial_value == NULL) {
 		box_free(box);
-		return NULL;
+		return false;
 	}
 	box->gadget->length = strlen(box->gadget->value);
 #endif
 
 	inline_container = box_create(0, 0, 0, 0, 0, content);
 	if (!inline_container)
-		return 0;
+		return false;
 	inline_container->type = BOX_INLINE_CONTAINER;
 	inline_box = box_create(box->style, 0, 0, box->title, 0, content);
 	if (!inline_box)
-		return 0;
+		return false;
 	inline_box->type = BOX_TEXT;
 	if (password) {
 		inline_box->length = strlen(box->gadget->value);
 		inline_box->text = talloc_array(content, char,
 				inline_box->length + 1);
 		if (!inline_box->text)
-			return 0;
+			return false;
 		memset(inline_box->text, '*', inline_box->length);
 		inline_box->text[inline_box->length] = '\0';
 	} else {
@@ -2474,17 +2474,17 @@ bool box_input_text(BOX_SPECIAL_PARAMS, bool password)
 		 * wrapping */
 		char *text = cnv_space2nbsp(box->gadget->value);
 		if (!text)
-			return 0;
+			return false;
 		inline_box->text = talloc_strdup(content, text);
 		free(text);
 		if (!inline_box->text)
-			return 0;
+			return false;
 		inline_box->length = strlen(inline_box->text);
 	}
 	box_add_child(inline_container, inline_box);
 	box_add_child(box, inline_container);
 
-	return box;
+	return true;
 }
 
 
@@ -2693,7 +2693,7 @@ bool box_select_add_option(struct form_control *control, xmlNode *n)
 	if (!value)
 		goto no_memory;
 
-	selected = xmlHasProp(n, (const xmlChar *) "selected");
+	selected = xmlHasProp(n, (const xmlChar *) "selected") != NULL;
 
 	/* replace spaces/TABs with hard spaces to prevent line wrapping */
 	text_nowrap = cnv_space2nbsp(text);

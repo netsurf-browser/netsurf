@@ -36,7 +36,7 @@
 #include "utils/url.h"
 #include "utils/utils.h"
 
-#define FULL_WORD (unsigned int)4294967295
+#define FULL_WORD (unsigned int)4294967295U
 /* '0' + '0' * 10 */
 #define START_PREFIX 528
 

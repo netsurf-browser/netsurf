@@ -864,7 +864,7 @@ struct form_control *parse_input_element(xmlNode *node)
 
 	if (control->type == GADGET_CHECKBOX || control->type == GADGET_RADIO) {
 		control->selected = 
-				xmlHasProp(node, (const xmlChar *) "checked");
+			xmlHasProp(node, (const xmlChar *) "checked") != NULL;
 	}
 
 	if (control->type == GADGET_PASSWORD || 
@@ -983,7 +983,7 @@ struct form_control *parse_select_element(xmlNode *node)
 		return NULL;
 
 	control->data.select.multiple = 
-			xmlHasProp(node, (const xmlChar *) "multiple");
+			xmlHasProp(node, (const xmlChar *) "multiple") != NULL;
 
 	name = xmlGetProp(node, (const xmlChar *) "name");
 	if (name != NULL) {

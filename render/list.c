@@ -186,7 +186,7 @@ bool render_list_counter_increment(char *name, int value) {
 	if (counter->state)
 		counter->state->count += value;
 /*	render_list_counter_output(name);
-*/	return (counter->state);
+*/	return counter->state != NULL;
 }
 
 
