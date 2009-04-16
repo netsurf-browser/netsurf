@@ -77,10 +77,6 @@ RDEP_BEOS := adblock.css beosdefault.css default.css ca-bundle.txt	\
 RDEP_BEOS := $(addprefix beos/res/,$(RDEP_BEOS))			\
 	$(wildcard beos/res/throbber/throbber*.png)
 
-# S_DEBUG are sources purely for the debug build
-S_DEBUG := netsurfd.c debug_bitmap.c filetyped.c fontd.c
-S_DEBUG := $(addprefix debug/,$(S_DEBUG))
-
 # S_AMIGA are sources purely for the Amiga build
 S_AMIGA := compat.c gui.c tree.c history.c hotlist.c schedule.c		\
 	thumbnail.c misc.c bitmap.c font.c filetype.c utf8.c login.c	\
@@ -192,11 +188,6 @@ endif
 ifeq ($(TARGET),beos)
 SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_BEOS)
 EXETARGET := NetSurf
-endif
-
-ifeq ($(TARGET),debug)
-SOURCES := $(S_COMMON) $(S_IMAGE) $(S_DEBUG)
-EXETARGET := nsdebug
 endif
 
 ifeq ($(TARGET),amiga)

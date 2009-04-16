@@ -91,11 +91,9 @@ RESOURCES =
 ifneq ($(TARGET),riscos)
   ifneq ($(TARGET),gtk)
     ifneq ($(TARGET),beos)
-      ifneq ($(TARGET),debug)
-        ifneq ($(TARGET),amiga)
-          ifneq ($(TARGET),framebuffer)
-            $(error Unknown TARGET "$(TARGET)", should either be "riscos", "gtk", "beos", "amiga", "debug" or "framebuffer")
-          endif
+      ifneq ($(TARGET),amiga)
+        ifneq ($(TARGET),framebuffer)
+          $(error Unknown TARGET "$(TARGET)", should either be "riscos", "gtk", "beos", "amiga", or "framebuffer")
         endif
       endif
     endif
@@ -159,7 +157,7 @@ else
       PKG_CONFIG :=
     #endif
   else
-    # Building for GTK or debug
+    # Building for GTK, Amiga, or Framebuffer
     PKG_CONFIG := pkg-config
   endif
 endif
@@ -576,28 +574,6 @@ ifeq ($(TARGET),framebuffer)
     $(error Unable to proceed, no FB subtarget chosen.)
   endif
 
-endif
-
-# ----------------------------------------------------------------------------
-# Debug target setup
-# ----------------------------------------------------------------------------
-
-ifeq ($(TARGET),debug)
-  CFLAGS += -std=c99 -DDEBUG_BUILD \
-		-D_BSD_SOURCE \
-		-D_XOPEN_SOURCE=600 \
-		-D_POSIX_C_SOURCE=200112L \
-		-D_NETBSD_SOURCE \
-		$(WARNFLAGS) -I. -g \
-		$(shell $(PKG_CONFIG) --cflags libnsgif-0 libnsbmp-0) \
-		$(shell xml2-config --cflags)
-  LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl)
-
-  $(eval $(call pkg_config_find_and_add,RSVG,librsvg-2.0,SVG rendering))
-  $(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,RISC OS sprite rendering))
-  $(eval $(call pkg_config_find_and_add,HUBBUB,libhubbub-0,Hubbub HTML parser))
-
-LDFLAGS += $(shell $(PKG_CONFIG) --libs libnsgif-0 libnsbmp-0)
 endif
 
 # ----------------------------------------------------------------------------
