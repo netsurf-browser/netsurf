@@ -297,9 +297,7 @@ bool html_convert(struct content *c, int width, int height)
 	xmlNode *html, *head;
 	union content_msg_data msg_data;
 	unsigned int time_before, time_taken;
-#ifdef WITH_HUBBUB
 	struct form *f;
-#endif
 
 	/* finish parsing */
 	if (c->source_size == 0) {
@@ -401,7 +399,6 @@ bool html_convert(struct content *c, int width, int height)
 	if (!html_find_stylesheets(c, html))
 		return false;
 
-#ifdef WITH_HUBBUB
 	/* Retrieve forms from parser */
 	c->data.html.forms = binding_get_forms(c->data.html.parser_binding);
 	for (f = c->data.html.forms; f != NULL; f = f->prev) {
@@ -430,7 +427,6 @@ bool html_convert(struct content *c, int width, int height)
 			}
 		}
 	}
-#endif
 
 	/* convert xml tree to box tree */
 	LOG(("XML to box"));

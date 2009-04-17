@@ -33,9 +33,7 @@
 #include <features.h>
 #include <unixlib/local.h>
 #include <curl/curl.h>
-#ifdef WITH_HUBBUB
 #include <hubbub/hubbub.h>
-#endif
 #include "oslib/font.h"
 #include "oslib/help.h"
 #include "oslib/hourglass.h"
@@ -271,12 +269,10 @@ static void ro_msg_save_desktop(wimp_message *message);
 static void ro_msg_window_info(wimp_message *message);
 static void ro_gui_view_source_bounce(wimp_message *message);
 
-#ifdef WITH_HUBBUB
 static void *myrealloc(void *ptr, size_t len, void *pw)
 {
 	return realloc(ptr, len);
 }
-#endif
 
 /**
  * Initialise the gui (RISC OS specific part).
@@ -317,11 +313,9 @@ void gui_init(int argc, char** argv)
 			ro_plot_patterned_lines = false;
 	}
 
-#ifdef WITH_HUBBUB
 	if (hubbub_initialise("NetSurf:Resources.Aliases", myrealloc, NULL) !=
 			HUBBUB_OK)
 		die("Failed to initialise HTML parsing library.");
-#endif
 
 	/* Read in the options */
 	options_read("NetSurf:Choices");
@@ -778,10 +772,8 @@ void gui_quit(void)
 	xwimp_close_down(task_handle);
  	free(default_stylesheet_url);
 	free(adblock_stylesheet_url);
-#ifdef WITH_HUBBUB
 	/* We don't care if this fails */
 	hubbub_finalise(myrealloc, NULL);
-#endif
 	xhourglass_off();
 }
 

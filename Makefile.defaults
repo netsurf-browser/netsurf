@@ -78,10 +78,6 @@ CFLAGS :=
 # ----------------------------------------------------------------------------
 ifeq ($(TARGET),riscos)
 
-  # Enable NetSurf's use of Hubbub to parse HTML, rather than libxml2
-  # Valid options: YES, NO				  (highly recommended)
-  NETSURF_USE_HUBBUB := YES
-
   # Enable NetSurf's use of libsvgtiny for displaying SVGs
   # Valid options: YES, NO
   NETSURF_USE_NSSVG := YES
@@ -118,10 +114,6 @@ ifeq ($(TARGET),gtk)
 
   # Where to install the netsurf binary
   NETSURF_GTK_BIN := /usr/local/bin/
-
-  # Enable NetSurf's use of Hubbub to parse HTML, rather than libxml2
-  # Valid options: YES, NO, AUTO			  (highly recommended)
-  NETSURF_USE_HUBBUB := AUTO
 
   # Enable NetSurf's use of librsvg in conjunction with Cairo to display SVGs
   # Valid options: YES, NO, AUTO
@@ -173,10 +165,6 @@ ifeq ($(TARGET),amiga)
   # Valid options: YES, NO, AUTO
   NETSURF_USE_ROSPRITE := YES
 
-  # Enable NetSurf's use of Hubbub to parse HTML rather, than libxml2
-  # Valid options: YES, NO, AUTO			  (highly recommended)
-  NETSURF_USE_HUBBUB := YES
-
   # Enable NetSurf's use of libsvgtiny for displaying SVGs
   # (NB: Requires NETSURF_AMIGA_USE_CAIRO)
   # Valid options: YES, NO
@@ -213,10 +201,6 @@ ifeq ($(TARGET),framebuffer)
   # Framebuffer frontend.
   # Valid values are: linux, sdl, vnc, able
   NETSURF_FB_FRONTEND := linux
-
-  # Enable NetSurf's use of Hubbub to parse HTML rather, than libxml2
-  # Valid options: YES, NO, AUTO			  (highly recommended)
-  NETSURF_USE_HUBBUB := AUTO
 
   # Use libharu to enable PDF export and GTK printing support.
   # Valid options: YES, NO

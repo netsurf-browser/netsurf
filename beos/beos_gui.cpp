@@ -43,9 +43,7 @@
 
 extern "C" {
 
-#ifdef WITH_HUBBUB
 #include <hubbub/hubbub.h>
-#endif
 
 #include "content/content.h"
 #include "content/fetch.h"
@@ -84,9 +82,7 @@ extern "C" {
 #include "beos/beos_scaffolding.h"
 
 
-#ifdef WITH_HUBBUB
 static void *myrealloc(void *ptr, size_t len, void *pw);
-#endif
 
 
 /* Where to search for shared resources.  Must have trailing / */
@@ -578,14 +574,12 @@ void gui_init(int argc, char** argv)
 #endif
 	LOG(("Using '%s' as AdBlock CSS URL", adblock_stylesheet_url));
 
-#ifdef WITH_HUBBUB
 	find_resource(buf, "Aliases", "./beos/res/Aliases");
 	LOG(("Using '%s' as aliases file", buf));
 	if(hubbub_initialise(buf,myrealloc,NULL) != HUBBUB_OK)
 	{
 		die(messages_get("NoMemory"));
 	}
-#endif
 
 	urldb_load(option_url_file);
 	urldb_load_cookies(option_cookie_file);
@@ -742,9 +736,7 @@ void gui_quit(void)
 	CALLED();
 	urldb_save_cookies(option_cookie_jar);
 	urldb_save(option_url_file);
-#ifdef WITH_HUBBUB
 	hubbub_finalise(myrealloc,NULL);
-#endif
 	//options_save_tree(hotlist,option_hotlist_file,messages_get("TreeHotlist"));
 
 	free(default_stylesheet_url);
@@ -1147,9 +1139,7 @@ bool cookies_update(const char *domain, const struct cookie_data *data)
 	return true;
 }
 
-#ifdef WITH_HUBBUB
 static void *myrealloc(void *ptr, size_t len, void *pw)
 {
 	return realloc(ptr, len);
 }
-#endif

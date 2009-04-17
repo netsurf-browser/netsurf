@@ -28,36 +28,11 @@
 #include <strings.h>
 #include <iconv.h>
 
-/** \todo Once we can enable hubbub on all platforms, these ifdefs must go */
-#ifdef WITH_HUBBUB
 #include <parserutils/charset/utf8.h>
-#endif
 
 #include "utils/config.h"
 #include "utils/log.h"
 #include "utils/utf8.h"
-
-#ifndef WITH_HUBBUB
-/** Number of continuation bytes for a given start byte */
-static const uint8_t numContinuations[256] = {
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-	2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-	3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5,
-};
-#endif
 
 static utf8_convert_ret utf8_convert(const char *string, size_t len,
 		const char *from, const char *to, char **result);
@@ -74,7 +49,6 @@ static utf8_convert_ret utf8_convert(const char *string, size_t len,
  */
 uint32_t utf8_to_ucs4(const char *s_in, size_t l)
 {
-#ifdef WITH_HUBBUB
 	uint32_t ucs4;
 	size_t len;
 	parserutils_error perror;
@@ -85,66 +59,6 @@ uint32_t utf8_to_ucs4(const char *s_in, size_t l)
 		ucs4 = 0xfffd;
 
 	return ucs4;
-#else
-	const uint8_t *s = (const uint8_t *) s_in;
-	uint32_t c, min;
-	uint8_t n;
-	uint8_t i;
-
-	assert(s != NULL && l > 0);
-
-	c = s[0];
-	
-	if (c < 0x80) {
-		n = 1;
-		min = 0;
-	} else if ((c & 0xE0) == 0xC0) {
-		c &= 0x1F;
-		n = 2;
-		min = 0x80;
-	} else if ((c & 0xF0) == 0xE0) {
-		c &= 0x0F;
-		n = 3;
-		min = 0x800;
-	} else if ((c & 0xF8) == 0xF0) {
-		c &= 0x07;
-		n = 4;
-		min = 0x10000;
-	} else if ((c & 0xFC) == 0xF8) {
-		c &= 0x03;
-		n = 5;
-		min = 0x200000;
-	} else if ((c & 0xFE) == 0xFC) {
-		c &= 0x01;
-		n = 6;
-		min = 0x4000000;
-	} else {
-		assert(0);
-	}
-
-	if (l < n) {
-		return 0xfffd;
-	}
-	
-	for (i = 1; i < n; i++) {
-		uint32_t t = s[i];
-
-		if ((t & 0xC0) != 0x80) {
-			return 0xfffd;
-		}
-
-		c <<= 6;
-		c |= t & 0x3F;
-	}
-
-	/* Detect overlong sequences, surrogates and fffe/ffff */
-	if (c < min || (c >= 0xD800 && c <= 0xDFFF) ||
-			c == 0xFFFE || c == 0xFFFF) {
-		c = 0xfffd;
-	}
-
-	return c;
-#endif
 }
 
 /**
@@ -159,7 +73,6 @@ uint32_t utf8_to_ucs4(const char *s_in, size_t l)
  */
 size_t utf8_from_ucs4(uint32_t c, char *s)
 {
-#ifdef WITH_HUBBUB
 	uint8_t *in = (uint8_t *) s;
 	size_t len = 6;
 	parserutils_error perror;
@@ -173,44 +86,6 @@ size_t utf8_from_ucs4(uint32_t c, char *s)
 	}
 
 	return 6 - len;
-#else
-	uint8_t *buf;
-	uint8_t l = 0;
-
-	assert(s != NULL);
-
-	if (c < 0x80) {
-		l = 1;
-	} else if (c < 0x800) {
-		l = 2;
-	} else if (c < 0x10000) {
-		l = 3;
-	} else if (c < 0x200000) {
-		l = 4;
-	} else if (c < 0x4000000) {
-		l = 5;
-	} else if (c <= 0x7FFFFFFF) {
-		l = 6;
-	} else {
-		assert(0);
-	}
-
-	buf = (uint8_t *) s;
-
-	if (l == 1) {
-		buf[0] = (uint8_t) c;
-	} else {
-		uint8_t i;
-
-		for (i = l; i > 1; i--) {
-			buf[i - 1] = 0x80 | (c & 0x3F);
-			c >>= 6;
-		}
-		buf[0] = ~((1 << (8 - l)) - 1) | c;
-	}
-
-	return l;
-#endif
 }
 
 /**
@@ -233,7 +108,6 @@ size_t utf8_length(const char *s)
  */
 size_t utf8_bounded_length(const char *s, size_t l)
 {
-#ifdef WITH_HUBBUB
 	size_t len;
 	parserutils_error perror;
 
@@ -242,37 +116,6 @@ size_t utf8_bounded_length(const char *s, size_t l)
 		return 0;
 
 	return len;
-#else
-	const uint8_t *p = (const uint8_t *) s;
-	const uint8_t *end = p + l;
-	size_t len = 0;
-
-	assert(s != NULL);
-
-	while (p < end) {
-		uint32_t c = p[0];
-
-		if ((c & 0x80) == 0x00)
-			p += 1;
-		else if ((c & 0xE0) == 0xC0)
-			p += 2;
-		else if ((c & 0xF0) == 0xE0)
-			p += 3;
-		else if ((c & 0xF8) == 0xF0)
-			p += 4;
-		else if ((c & 0xFC) == 0xF8)
-			p += 5;
-		else if ((c & 0xFE) == 0xFC)
-			p += 6;
-		else {
-			assert(0);
-		}
-
-		len++;
-	}
-
-	return len;
-#endif
 }
 
 /**
@@ -283,7 +126,6 @@ size_t utf8_bounded_length(const char *s, size_t l)
  */
 size_t utf8_char_byte_length(const char *s)
 {
-#ifdef WITH_HUBBUB
 	size_t len;
 	parserutils_error perror;
 
@@ -292,12 +134,6 @@ size_t utf8_char_byte_length(const char *s)
 	assert(perror == PARSERUTILS_OK);
 
 	return len;
-#else
-	const uint8_t *p = (const uint8_t *) s;
-	assert(s != NULL);
-
-	return numContinuations[p[0]] + 1 /* Start byte */;
-#endif
 }
 
 /**
@@ -309,7 +145,6 @@ size_t utf8_char_byte_length(const char *s)
  */
 size_t utf8_prev(const char *s, size_t o)
 {
-#ifdef WITH_HUBBUB
 	uint32_t prev;
 	parserutils_error perror;
 
@@ -317,16 +152,6 @@ size_t utf8_prev(const char *s, size_t o)
 	assert(perror == PARSERUTILS_OK);
 
 	return prev;
-#else
-	const uint8_t *p = (const uint8_t *) s;
-
-	assert(s != NULL);
-
-	while (o != 0 && (p[--o] & 0xC0) == 0x80)
-		/* do nothing */;
-
-	return o;
-#endif
 }
 
 /**
@@ -339,7 +164,6 @@ size_t utf8_prev(const char *s, size_t o)
  */
 size_t utf8_next(const char *s, size_t l, size_t o)
 {
-#ifdef WITH_HUBBUB
 	uint32_t next;
 	parserutils_error perror;
 
@@ -348,20 +172,6 @@ size_t utf8_next(const char *s, size_t l, size_t o)
 	assert(perror == PARSERUTILS_OK);
 
 	return next;
-#else
-	const uint8_t *p = (const uint8_t *) s;
-
-	assert(s != NULL && o < l);
-
-	/* Skip current start byte (if present - may be mid-sequence) */
-	if (p[o] < 0x80 || (p[o] & 0xC0) == 0xC0)
-		o++;
-
-	while (o < l && (p[o] & 0xC0) == 0x80)
-		o++;
-
-	return o;
-#endif
 }
 
 /* Cache of previous iconv conversion descriptor used by utf8_convert */

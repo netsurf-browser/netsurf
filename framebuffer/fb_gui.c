@@ -24,9 +24,7 @@
 #include <unistd.h>
 #include <string.h>
 
-#ifdef WITH_HUBBUB
 #include <hubbub/hubbub.h>
-#endif
 
 #include "desktop/gui.h"
 #include "desktop/plotters.h"
@@ -276,12 +274,10 @@ fb_browser_window_redraw(fbtk_widget_t *widget, void *pw)
         return 0;
 }
 
-#ifdef WITH_HUBBUB
 static void *myrealloc(void *ptr, size_t len, void *pw)
 {
 	return realloc(ptr, len);
 }
-#endif
 
 void gui_init(int argc, char** argv)
 {
@@ -289,13 +285,11 @@ void gui_init(int argc, char** argv)
 
         LOG(("argc %d, argv %p", argc, argv));
 
-#ifdef WITH_HUBBUB
 	fb_find_resource(buf, "Aliases", "./framebuffer/res/Aliases");
 	LOG(("Using '%s' as Aliases file", buf));
 	if (hubbub_initialise(buf, myrealloc, NULL) !=
 			HUBBUB_OK)
 		die("Unable to initialise HTML parsing library.\n");
-#endif
 
         /* load browser messages */
 	fb_find_resource(buf, "messages", "./framebuffer/res/messages");
@@ -390,10 +384,8 @@ void gui_quit(void)
 {
         LOG(("gui_quit"));
         fb_os_quit(framebuffer);
-#ifdef WITH_HUBBUB
 	/* We don't care if this fails as we're about to die, anyway */
 	hubbub_finalise(myrealloc, NULL);
-#endif
 }
 
 /* called back when click in browser window */

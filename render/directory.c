@@ -28,10 +28,6 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <time.h>
-#ifdef WITH_HUBBUB
-#include <hubbub/parser.h>
-#endif
-#include <libxml/HTMLparser.h>
 #include "content/content.h"
 #include "render/directory.h"
 #include "render/html.h"

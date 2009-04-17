@@ -31,9 +31,7 @@
 #include <gdk/gdkkeysyms.h>
 #include <gtk/gtk.h>
 #include <glade/glade.h>
-#ifdef WITH_HUBBUB
 #include <hubbub/hubbub.h>
-#endif
 #include "content/content.h"
 #include "content/fetch.h"
 #include "content/fetchers/fetch_curl.h"
@@ -181,12 +179,10 @@ static void check_homedir(void)
 	}
 }
 
-#ifdef WITH_HUBBUB
 static void *myrealloc(void *ptr, size_t len, void *pw)
 {
 	return realloc(ptr, len);
 }
-#endif
 
 void gui_init(int argc, char** argv)
 {
@@ -204,12 +200,10 @@ void gui_init(int argc, char** argv)
 	LOG(("Using '%s' as Resources directory", buf));
 	res_dir_location = strdup(buf);
 
-#ifdef WITH_HUBBUB
 	find_resource(buf, "Aliases", "./gtk/res/Aliases");
 	LOG(("Using '%s' as Aliases file", buf));
 	if (hubbub_initialise(buf, myrealloc, NULL) != HUBBUB_OK)
 		die("Unable to initialise HTML parsing library.\n");
-#endif
 
 	glade_init();
 	gladeWindows = glade_xml_new(glade_file_location, NULL, NULL);
@@ -427,10 +421,8 @@ void gui_quit(void)
 	free(option_cookie_jar);
 	free(print_options_file_location);
 	gtk_fetch_filetype_fin();
-#ifdef WITH_HUBBUB
 	/* We don't care if this fails as we're about to die, anyway */
 	hubbub_finalise(myrealloc, NULL);
-#endif
 }
 
 

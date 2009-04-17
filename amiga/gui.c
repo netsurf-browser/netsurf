@@ -78,9 +78,7 @@
 #ifdef NS_AMIGA_CAIRO
 #include <cairo/cairo-amigaos.h>
 #endif
-#ifdef WITH_HUBBUB
 #include <hubbub/hubbub.h>
-#endif
 
 #include <proto/window.h>
 #include <proto/layout.h>
@@ -178,9 +176,7 @@ void ami_scroller_hook(struct Hook *,Object *,struct IntuiMessage *);
 uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved);
 void ami_init_mouse_pointers(void);
 void ami_switch_tab(struct gui_window_2 *gwin,bool redraw);
-#ifdef WITH_HUBBUB
 static void *myrealloc(void *ptr, size_t len, void *pw);
-#endif
 
 void gui_init(int argc, char** argv)
 {
@@ -282,12 +278,10 @@ void gui_init(int argc, char** argv)
 	default_stylesheet_url = "file:///PROGDIR:Resources/amiga.css";
 	adblock_stylesheet_url = "file:///PROGDIR:Resources/adblock.css";
 
-#ifdef WITH_HUBBUB
 	if(hubbub_initialise("PROGDIR:Resources/Aliases",myrealloc,NULL) != HUBBUB_OK)
 	{
 		die(messages_get("NoMemory"));
 	}
-#endif
 
 	css_screen_dpi = 72;
 	css_scrollbar_fg_colour = 0x00aaaaaa;
@@ -1425,9 +1419,7 @@ void gui_quit(void)
 	ami_cookies_free();
 	ami_global_history_free();
 
-#ifdef WITH_HUBBUB
 	hubbub_finalise(myrealloc,NULL);
-#endif
 
 	ami_arexx_cleanup();
 
@@ -2852,9 +2844,7 @@ void gui_cert_verify(struct browser_window *bw, struct content *c,
 {
 }
 
-#ifdef WITH_HUBBUB
 static void *myrealloc(void *ptr, size_t len, void *pw)
 {
 	return realloc(ptr, len);
 }
-#endif

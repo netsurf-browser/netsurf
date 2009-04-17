@@ -48,10 +48,8 @@ binding_error binding_parse_completed(void *ctx);
 const char *binding_get_encoding(void *ctx, binding_encoding_source *source);
 xmlDocPtr binding_get_document(void *ctx);
 
-#ifdef WITH_HUBBUB
 struct form *binding_get_forms(void *ctx);
 struct form_control *binding_get_control_for_node(void *ctx, xmlNodePtr node);
-#endif
 
 #endif
 

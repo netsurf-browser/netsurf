@@ -17,8 +17,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifdef WITH_HUBBUB
-
 #define _GNU_SOURCE /* for strndup */
 #include <assert.h>
 #include <stdbool.h>
@@ -1022,6 +1020,4 @@ struct form_control *parse_textarea_element(xmlNode *node)
 
 	return control;
 }
-
-#endif
 

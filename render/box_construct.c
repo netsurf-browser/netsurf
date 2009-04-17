@@ -140,9 +140,6 @@ static bool box_a(BOX_SPECIAL_PARAMS);
 static bool box_body(BOX_SPECIAL_PARAMS);
 static bool box_br(BOX_SPECIAL_PARAMS);
 static bool box_image(BOX_SPECIAL_PARAMS);
-#ifndef WITH_HUBBUB
-static bool box_form(BOX_SPECIAL_PARAMS);
-#endif
 static bool box_textarea(BOX_SPECIAL_PARAMS);
 static bool box_select(BOX_SPECIAL_PARAMS);
 static bool box_input(BOX_SPECIAL_PARAMS);
@@ -176,9 +173,6 @@ static const struct element_entry element_table[] = {
 	{"br", box_br},
 	{"button", box_button},
 	{"embed", box_embed},
-#ifndef WITH_HUBBUB
-	{"form", box_form},
-#endif
 	{"frameset", box_frameset},
 	{"iframe", box_iframe},
 	{"image", box_image},
@@ -2162,78 +2156,6 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 }
 
 
-#ifndef WITH_HUBBUB
-/**
- * Interactive form [17.3].
- */
-
-bool box_form(BOX_SPECIAL_PARAMS)
-{
-	char *xmlaction, *action, *method, *enctype, *charset, *target;
-	form_method fmethod;
-	struct form *form;
-	url_func_result result;
-
-	if (!(xmlaction = (char *)
-			xmlGetProp(n, (const xmlChar *) "action"))) {
-		/* the action attribute is required, but many forms fail to
-		 * specify it. In the case where it is _not_ specified,
-		 * follow other browsers and make the form action the URI of
-		 * the page the form is contained in. */
-		action = strdup(content->data.html.base_url);
-	} else {
-		result = url_join(xmlaction, content->data.html.base_url, 
-				&action);
-
-		xmlFree(xmlaction);
-
-		if (result != URL_FUNC_OK)
-			return false;
-	}
-
-	if (!action)
-		return false;
-
-	fmethod = method_GET;
-	if ((method = (char *) xmlGetProp(n, (const xmlChar *) "method"))) {
-		if (strcasecmp(method, "post") == 0) {
-			fmethod = method_POST_URLENC;
-			if ((enctype = (char *) xmlGetProp(n,
-					(const xmlChar *) "enctype"))) {
-				if (strcasecmp(enctype,
-						"multipart/form-data") == 0)
-					fmethod = method_POST_MULTIPART;
-				xmlFree(enctype);
-			}
-		}
-		xmlFree(method);
-	}
-
-	/* acceptable encoding(s) for form data */
-	charset = (char *) xmlGetProp(n, (const xmlChar *) "accept-charset");
-
-	/* target for form data */
-	target = (char *) xmlGetProp(n, (const xmlChar *) "target");
-
-	form = form_new(n, action, target, fmethod, charset, 
-			content->data.html.encoding);
-
-	free(action);
-	if (charset)
-		xmlFree(charset);
-	if (target)
-		xmlFree(target);
-
-	if (!form)
-		return false;
-
-	form->prev = content->data.html.forms;
-	content->data.html.forms = form;
-
-	return true;
-}
-#endif
-
 /**
  * Form control [17.4].
  */
@@ -2246,67 +2168,24 @@ bool box_input(BOX_SPECIAL_PARAMS)
 
 	type = (char *) xmlGetProp(n, (const xmlChar *) "type");
 
-#ifdef WITH_HUBBUB
 	gadget = binding_get_control_for_node(content->data.html.parser_binding,
 			n);
 	if (!gadget)
 		goto no_memory;
 	box->gadget = gadget;
 	gadget->box = box;
-#endif
 
 	if (type && strcasecmp(type, "password") == 0) {
 		if (!box_input_text(n, content, box, 0, markup_track, author,
 									 true))
 			goto no_memory;
-#ifndef WITH_HUBBUB
-		gadget = box->gadget;
-		gadget->box = box;
-#endif
 	} else if (type && strcasecmp(type, "file") == 0) {
 		box->type = BOX_INLINE_BLOCK;
-#ifndef WITH_HUBBUB
-		box->gadget = gadget = form_new_control(n, GADGET_FILE);
-		if (!gadget)
-			goto no_memory;
-		gadget->box = box;
-#endif
 	} else if (type && strcasecmp(type, "hidden") == 0) {
 		/* no box for hidden inputs */
 		box->style->display = CSS_DISPLAY_NONE;
-#ifndef WITH_HUBBUB
-		gadget = form_new_control(n, GADGET_HIDDEN);
-		if (!gadget)
-			goto no_memory;
-
-		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value"))) {
-			gadget->value = strdup(s);
-			xmlFree(s);
-			if (!gadget->value)
-				goto no_memory;
-			gadget->length = strlen(gadget->value);
-		}
-#endif
 	} else if (type && (strcasecmp(type, "checkbox") == 0 ||
 			strcasecmp(type, "radio") == 0)) {
-#ifndef WITH_HUBBUB
-		box->gadget = gadget = form_new_control(n, type[0] == 'c' ||
-				type[0] == 'C' ? GADGET_CHECKBOX : 
-				GADGET_RADIO);
-		if (!gadget)
-			goto no_memory;
-		gadget->box = box;
-
-		gadget->selected = xmlHasProp(n, (const xmlChar *) "checked");
-
-		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value"))) {
-			gadget->value = strdup(s);
-			xmlFree(s);
-			if (!gadget->value)
-				goto no_memory;
-			gadget->length = strlen(gadget->value);
-		}
-#endif
 	} else if (type && (strcasecmp(type, "submit") == 0 ||
 			strcasecmp(type, "reset") == 0 ||
 			strcasecmp(type, "button") == 0)) {
@@ -2339,12 +2218,6 @@ bool box_input(BOX_SPECIAL_PARAMS)
 		box_add_child(inline_container, inline_box);
 		box_add_child(box, inline_container);
 	} else if (type && strcasecmp(type, "image") == 0) {
-#ifndef WITH_HUBBUB
-		box->gadget = gadget = form_new_control(n, GADGET_IMAGE);
-		if (!gadget)
-			goto no_memory;
-		gadget->box = box;
-#endif
 		gadget->type = GADGET_IMAGE;
 
 		if (box->style && box->style->display != CSS_DISPLAY_NONE) {
@@ -2378,28 +2251,10 @@ bool box_input(BOX_SPECIAL_PARAMS)
 		if (!box_input_text(n, content, box, 0, markup_track, author,
 									false))
 			goto no_memory;
-#ifndef WITH_HUBBUB
-		gadget = box->gadget;
-		gadget->box = box;
-#endif
 	}
 
 	if (type)
 		xmlFree(type);
-
-#ifndef WITH_HUBBUB
-	if (gadget) {
-		if (content->data.html.forms)
-			form_add_control(content->data.html.forms, gadget);
-		s = (char *) xmlGetProp(n, (const xmlChar *) "name");
-		if (s) {
-			gadget->name = strdup(s);
-			xmlFree(s);
-			if (!gadget->name)
-				goto no_memory;
-		}
-	}
-#endif
 
 	*convert_children = false;
 	return true;
@@ -2407,10 +2262,6 @@ bool box_input(BOX_SPECIAL_PARAMS)
 no_memory:
 	if (type)
 		xmlFree(type);
-#ifndef WITH_HUBBUB
-	if (gadget)
-		form_free_control(gadget);
-#endif
 	return false;
 }
 
@@ -2421,37 +2272,9 @@ no_memory:
 
 bool box_input_text(BOX_SPECIAL_PARAMS, bool password)
 {
-#ifndef WITH_HUBBUB
-	char *s;
-#endif
 	struct box *inline_container, *inline_box;
 
 	box->type = BOX_INLINE_BLOCK;
-#ifndef WITH_HUBBUB
-	box->gadget = form_new_control(n, (password) ? GADGET_PASSWORD :
-			GADGET_TEXTBOX);
-	if (!box->gadget)
-		return false;
-	box->gadget->box = box;
-
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "maxlength"))) {
-		if (s[0] != '\0')
-			box->gadget->maxlength = atoi(s);
-		xmlFree(s);
-	}
-
-	s = (char *) xmlGetProp(n, (const xmlChar *) "value");
-	box->gadget->value = strdup((s != NULL) ? s : "");
-	box->gadget->initial_value = strdup((box->gadget->value != NULL) ?
-			box->gadget->value : "");
-	if (s)
-		xmlFree(s);
-	if (box->gadget->value == NULL || box->gadget->initial_value == NULL) {
-		box_free(box);
-		return false;
-	}
-	box->gadget->length = strlen(box->gadget->value);
-#endif
 
 	inline_container = box_create(0, 0, 0, 0, 0, content);
 	if (!inline_container)
@@ -2494,41 +2317,6 @@ bool box_input_text(BOX_SPECIAL_PARAMS, bool password)
 
 bool box_button(BOX_SPECIAL_PARAMS)
 {
-#ifndef WITH_HUBBUB
-	xmlChar *s;
-	char *type = (char *) xmlGetProp(n, (const xmlChar *) "type");
-
-	if (!type || strcasecmp(type, "submit") == 0) {
-		box->gadget = form_new_control(n, GADGET_SUBMIT);
-	} else if (strcasecmp(type, "reset") == 0) {
-		box->gadget = form_new_control(n, GADGET_RESET);
-	} else {
-		box->gadget = form_new_control(n, GADGET_BUTTON);
-	}
-
-	if (type)
-		xmlFree(type);
-
-	if (!box->gadget)
-		return false;
-
-	if (content->data.html.forms)
-		form_add_control(content->data.html.forms, box->gadget);
-	box->gadget->box = box;
-
-	if ((s = xmlGetProp(n, (const xmlChar *) "name")) != NULL) {
-		box->gadget->name = strdup((char *) s);
-		xmlFree(s);
-		if (!box->gadget->name)
-			return false;
-	}
-	if ((s = xmlGetProp(n, (const xmlChar *) "value")) != NULL) {
-		box->gadget->value = strdup((char *) s);
-		xmlFree(s);
-		if (!box->gadget->value)
-			return false;
-	}
-#else
 	struct form_control *gadget;
 
 	gadget = binding_get_control_for_node(content->data.html.parser_binding,
@@ -2538,7 +2326,7 @@ bool box_button(BOX_SPECIAL_PARAMS)
 
 	box->gadget = gadget;
 	gadget->box = box;
-#endif
+
 	box->type = BOX_INLINE_BLOCK;
 	
 	/* Just render the contents */
@@ -2556,24 +2344,12 @@ bool box_select(BOX_SPECIAL_PARAMS)
 	struct box *inline_container;
 	struct box *inline_box;
 	struct form_control *gadget;
-#ifndef WITH_HUBBUB
-	char *s;
-#endif
 	xmlNode *c, *c2;
 
-#ifndef WITH_HUBBUB
-	gadget = form_new_control(n, GADGET_SELECT);
-#else
 	gadget = binding_get_control_for_node(content->data.html.parser_binding,
 			n);
-#endif
 	if (!gadget)
 		return false;
-
-#ifndef WITH_HUBBUB
-	gadget->data.select.multiple = 
-			xmlHasProp(n, (const xmlChar *) "multiple");
-#endif
 
 	for (c = n->children; c; c = c->next) {
 		if (strcmp((const char *) c->name, "option") == 0) {
@@ -2592,20 +2368,8 @@ bool box_select(BOX_SPECIAL_PARAMS)
 
 	if (gadget->data.select.num_items == 0) {
 		/* no options: ignore entire select */
-#ifndef WITH_HUBBUB
-		form_free_control(gadget);
-#endif
 		return true;
 	}
-
-#ifndef WITH_HUBBUB
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "name"))) {
-		gadget->name = strdup(s);
-		xmlFree(s);
-		if (!gadget->name)
-			goto no_memory;
-	}
-#endif
 
 	box->type = BOX_INLINE_BLOCK;
 	box->gadget = gadget;
@@ -2644,18 +2408,10 @@ bool box_select(BOX_SPECIAL_PARAMS)
 
 	inline_box->length = strlen(inline_box->text);
 
-#ifndef WITH_HUBBUB
-	if (content->data.html.forms)
-		form_add_control(content->data.html.forms, box->gadget);
-#endif
-
 	*convert_children = false;
 	return true;
 
 no_memory:
-#ifndef WITH_HUBBUB
-	form_free_control(gadget);
-#endif
 	return false;
 }
 
@@ -2736,24 +2492,11 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 	size_t len;
 
 	box->type = BOX_INLINE_BLOCK;
-#ifndef WITH_HUBBUB
-	box->gadget = form_new_control(n, GADGET_TEXTAREA);
-#else
 	box->gadget = binding_get_control_for_node(
 			content->data.html.parser_binding, n);
-#endif
 	if (!box->gadget)
 		return false;
 	box->gadget->box = box;
-
-#ifndef WITH_HUBBUB
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "name"))) {
-		box->gadget->name = strdup(s);
-		xmlFree(s);
-		if (!box->gadget->name)
-			return false;
-	}
-#endif
 
 	inline_container = box_create(0, 0, 0, box->title, 0, content);
 	if (!inline_container)
@@ -2842,11 +2585,6 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 
 	xmlFree(string);
 	xmlBufferFree(buf);
-
-#ifndef WITH_HUBBUB
-	if (content->data.html.forms)
-		form_add_control(content->data.html.forms, box->gadget);
-#endif
 
 	*convert_children = false;
 	return true;
