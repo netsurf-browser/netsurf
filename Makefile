@@ -804,6 +804,22 @@ install-gtk: nsgtk
 	gzip -9v < gtk/res/options.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)options.glade
 	gzip -9v < gtk/res/history.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)history.glade
 
+install-beos: NetSurf
+	# TODO:HAIKU -- not sure if throbber is needed.  being left out for now.
+	mkdir -p $(DESTDIR)$(NETSURF_BEOS_BIN)
+	mkdir -p $(DESTDIR)$(NETSURF_BEOS_RESOURCES)
+#	mkdir -p $(DESTDIR)$(NETSURF_BEOS_RESOURCES)throbber
+	@copyattr -d NetSurf $(DESTDIR)$(NETSURF_BEOS_BIN)NetSurf
+	@cp -vRL beos/res/adblock.css $(DESTDIR)$(NETSURF_BEOS_RESOURCES)
+	@cp -vRL beos/res/ca-bundle.txt $(DESTDIR)$(NETSURF_BEOS_RESOURCES)
+	@cp -vRL beos/res/default.css $(DESTDIR)$(NETSURF_BEOS_RESOURCES)
+	@cp -vRL beos/res/Aliases $(DESTDIR)$(NETSURF_BEOS_RESOURCES)
+	@cp -vRL beos/res/beosdefault.css $(DESTDIR)$(NETSURF_BEOS_RESOURCES)
+	@cp -vRL gtk/res/license $(DESTDIR)$(NETSURF_BEOS_RESOURCES)
+#	@cp -vRL beos/res/throbber/*.png $(DESTDIR)$(NETSURF_BEOS_RESOURCES)throbber
+	gzip -9v < beos/res/messages > $(DESTDIR)$(NETSURF_BEOS_RESOURCES)messages 
+	
+
 install: all-program install-$(TARGET)
 
 docs:
