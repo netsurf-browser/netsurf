@@ -138,6 +138,8 @@ bool layout_document(struct content *content, int width, int height)
 	if (width < 0)
 		width = 0;
 	doc->width = width;
+	if (doc->height == AUTO)
+		doc->height = height;
 
 	ret = layout_block_context(doc, content);
 
