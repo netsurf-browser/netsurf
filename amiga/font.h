@@ -29,7 +29,7 @@
 
 struct TextFont *ami_open_font(struct css_style *);
 void ami_close_font(struct TextFont *tfont);
-ULONG ami_unicode_text(struct RastPort *rp,char *string,ULONG length,struct css_style *style,ULONG x,ULONG y,ULONG c);
+ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const struct css_style *style,ULONG x,ULONG y,ULONG c);
 
 void ami_init_fonts(void);
 void ami_close_fonts(void);
