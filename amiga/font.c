@@ -34,13 +34,14 @@
 #include <graphics/blitattr.h>
 #include "amiga/options.h"
 #include <proto/utility.h>
+#include "utils/utils.h"
 
 static struct OutlineFont *of[CSS_FONT_FAMILY_NOT_SET];
 static struct OutlineFont *ofb[CSS_FONT_FAMILY_NOT_SET];
 static struct OutlineFont *ofi[CSS_FONT_FAMILY_NOT_SET];
 static struct OutlineFont *ofbi[CSS_FONT_FAMILY_NOT_SET];
 
-struct OutlineFont *ami_open_outline_font(struct css_style *style);
+struct OutlineFont *ami_open_outline_font(const struct css_style *style);
 
 static bool nsfont_width(const struct css_style *style,
 	  const char *string, size_t length,
@@ -99,10 +100,10 @@ bool nsfont_position_in_string(const struct css_style *style,
 	uint32 co = 0;
 
 	len = utf8_bounded_length(string, length);
-	if(utf8_to_enc(string,"UTF-16",length,&utf16) != UTF8_CONVERT_OK) return;
+	if(utf8_to_enc(string,"UTF-16",length,(char **)&utf16) != UTF8_CONVERT_OK) return false;
 	outf16 = utf16;
 
-	if(!(ofont = ami_open_outline_font(style))) return 0;
+	if(!(ofont = ami_open_outline_font(style))) return false;
 
 	*char_offset = length;
 
@@ -116,7 +117,7 @@ bool nsfont_position_in_string(const struct css_style *style,
 				OT_GlyphMap8Bit,&glyph,
 				TAG_END) == 0)
 			{
-				if(utf8_from_enc(utf16,"UTF-16",4,&utf8) != UTF8_CONVERT_OK) return;
+				if(utf8_from_enc((char *)utf16,"UTF-16",4,(char **)&utf8) != UTF8_CONVERT_OK) return false;
 				utf8len = utf8_char_byte_length(utf8);
 				free(utf8);
 
@@ -182,9 +183,9 @@ bool nsfont_split(const struct css_style *style,
 	size_t len;
 
 	len = utf8_bounded_length(string, length);
-	if(utf8_to_enc(string,"UTF-16",length,&utf16) != UTF8_CONVERT_OK) return;
+	if(utf8_to_enc((char *)string,"UTF-16",length,(char **)&utf16) != UTF8_CONVERT_OK) return false;
 	outf16 = utf16;
-	if(!(ofont = ami_open_outline_font(style))) return 0;
+	if(!(ofont = ami_open_outline_font(style))) return false;
 
 	*char_offset = 0;
 
@@ -222,7 +223,7 @@ bool nsfont_split(const struct css_style *style,
 			utf16 += 2;
 	}
 
-	charp = string+co;
+	charp = (char *)(string+co);
 	while(((*charp != ' ')) && (charp > string))
 	{
 		charp--;
@@ -234,7 +235,7 @@ bool nsfont_split(const struct css_style *style,
 	return true;
 }
 
-struct OutlineFont *ami_open_outline_font(struct css_style *style)
+struct OutlineFont *ami_open_outline_font(const struct css_style *style)
 {
 	struct OutlineFont *ofont;
 	char *fontname;
@@ -295,7 +296,7 @@ struct OutlineFont *ami_open_outline_font(struct css_style *style)
 	return NULL;
 }
 
-ULONG ami_unicode_text(struct RastPort *rp,char *string,ULONG length,struct css_style *style,ULONG dx, ULONG dy, ULONG c)
+ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const struct css_style *style,ULONG dx, ULONG dy, ULONG c)
 {
 	uint16 *utf16 = NULL, *outf16 = NULL;
 	struct OutlineFont *ofont;
@@ -313,7 +314,7 @@ ULONG ami_unicode_text(struct RastPort *rp,char *string,ULONG length,struct css_
 	if(!length) return 0;
 
 	len = utf8_bounded_length(string, length);
-	if(utf8_to_enc(string,"UTF-16",length,&utf16) != UTF8_CONVERT_OK) return 0;
+	if(utf8_to_enc(string,"UTF-16",length,(char **)&utf16) != UTF8_CONVERT_OK) return 0;
 	outf16 = utf16;
 	if(!(ofont = ami_open_outline_font(style))) return 0;
 
@@ -384,7 +385,7 @@ void ami_init_fonts(void)
 	{
 		if(!of[i]) warn_user("FontError",""); // temporary error message
 
-		if(bname = GetTagData(OT_BName,0,of[i]->olf_OTagList))
+		if(bname = (char *)GetTagData(OT_BName,0,of[i]->olf_OTagList))
 		{
 			ofb[i] = OpenOutlineFont(bname,NULL,OFF_OPEN);
 		}
@@ -393,7 +394,7 @@ void ami_init_fonts(void)
 			ofb[i] = NULL;
 		}
 
-		if(iname = GetTagData(OT_IName,0,of[i]->olf_OTagList))
+		if(iname = (char *)GetTagData(OT_IName,0,of[i]->olf_OTagList))
 		{
 			ofi[i] = OpenOutlineFont(iname,NULL,OFF_OPEN);
 		}
@@ -402,7 +403,7 @@ void ami_init_fonts(void)
 			ofi[i] = NULL;
 		}
 
-		if(biname = GetTagData(OT_BIName,0,of[i]->olf_OTagList))
+		if(biname = (char *)GetTagData(OT_BIName,0,of[i]->olf_OTagList))
 		{
 			ofbi[i] = OpenOutlineFont(biname,NULL,OFF_OPEN);
 		}
