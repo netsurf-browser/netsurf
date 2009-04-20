@@ -915,7 +915,6 @@ void browser_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 
 void browser_window_destroy(struct browser_window *bw)
 {
-
 	/* can't destoy child windows on their own */
 	assert(!bw->parent);
 

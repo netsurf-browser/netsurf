@@ -18,12 +18,14 @@
  */
 
 #include <inttypes.h>
+#include <string.h>
 #include "gtk/gtk_window.h"
 #include "desktop/browser.h"
 #include "desktop/options.h"
 #include "desktop/textinput.h"
 #include "desktop/selection.h"
 #include "gtk/gtk_gui.h"
+#include "gtk/options.h"
 #include "gtk/gtk_scaffolding.h"
 #include "gtk/gtk_plotters.h"
 #include "gtk/gtk_schedule.h"
@@ -34,7 +36,8 @@
 #include <gdk/gdkkeysyms.h>
 #include <assert.h>
 
-static struct gui_window *window_list = 0;	/**< first entry in win list*/
+struct gui_window *window_list = 0;	/**< first entry in win list*/
+int temp_open_background = -1;
 
 static uint32_t gdkkey_to_nskey(GdkEventKey *);
 static void nsgtk_gui_window_attach_child(struct gui_window *parent,
@@ -110,21 +113,21 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	g->careth = 0;
 
         /* Attach ourselves to the list (push_top) */
-        if (window_list)
-                window_list->prev = g;
-        g->next = window_list;
-        g->prev = NULL;
-        window_list = g;
+	if (window_list)
+		window_list->prev = g;
+		g->next = window_list;
+		g->prev = NULL;
+		window_list = g;
 
-        if (bw->parent != NULL)
-                /* Find our parent's scaffolding */
-                g->scaffold = bw->parent->window->scaffold;
-        else if (new_tab)
-        	g->scaffold = clone->window->scaffold;
-        else
-                /* Now construct and attach a scaffold */
-                g->scaffold = nsgtk_new_scaffolding(g);
-
+	if (bw->parent != NULL)
+		/* Find our parent's scaffolding */
+		g->scaffold = bw->parent->window->scaffold;
+	else if (new_tab) {
+		g->scaffold = clone->window->scaffold;
+	}
+	else
+		/* Now construct and attach a scaffold */
+		g->scaffold = nsgtk_new_scaffolding(g);
 
         /* Construct our primary elements */
         g->fixed = GTK_FIXED(gtk_fixed_new());
@@ -141,19 +144,32 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	g->viewport = GTK_VIEWPORT(gtk_bin_get_child(GTK_BIN(g->scrolledwindow)));
 	g->tab = NULL;
 
-        if (bw->parent != NULL)
-        	/* Attach ourselves into our parent at the right point */
-                nsgtk_gui_window_attach_child(bw->parent->window, g);
-	else
-                /* Attach our viewport into the scaffold */
-        	nsgtk_tab_add(g);
+	if (bw->parent != NULL)
+		/* Attach ourselves into our parent at the right point */
+		nsgtk_gui_window_attach_child(bw->parent->window, g);
+	else {	
+		/* Attach our viewport into the scaffold */
+		bool tempback = true;
+		switch (temp_open_background) {
+		case -1:
+			tempback = !(option_focus_new);
+			break;
+		case 0:
+			tempback = false;
+			break;
+		case 1:
+			tempback = true;
+			break;
+		}
+		nsgtk_tab_add(g, tempback);
+	}
 
-        gtk_container_set_border_width(GTK_CONTAINER(g->viewport), 0);
-        gtk_viewport_set_shadow_type(g->viewport, GTK_SHADOW_NONE);
-        if (g->scrolledwindow)
-                gtk_widget_show(GTK_WIDGET(g->scrolledwindow));
-        /* And enable visibility from our viewport down */
-        gtk_widget_show_all(GTK_WIDGET(g->viewport));
+	gtk_container_set_border_width(GTK_CONTAINER(g->viewport), 0);
+	gtk_viewport_set_shadow_type(g->viewport, GTK_SHADOW_NONE);
+	if (g->scrolledwindow)
+		gtk_widget_show(GTK_WIDGET(g->scrolledwindow));
+		/* And enable visibility from our viewport down */
+		gtk_widget_show_all(GTK_WIDGET(g->viewport));
 
         switch(bw->scrolling) {
         case SCROLLING_NO:
@@ -636,14 +652,14 @@ void gui_window_destroy(struct gui_window *g)
 	assert(g != NULL);
 	assert(g->bw != NULL);
 	LOG(("     Scaffolding: %p", g->scaffold));
-        LOG(("     Window name: %s", g->bw->name));
+	LOG(("     Window name: %s", g->bw->name));
 
-        /* If we're a top-level gui_window, destroy our scaffold */
-        if (g->scrolledwindow == NULL) {
-	  	gtk_widget_destroy(GTK_WIDGET(g->viewport));
-                nsgtk_scaffolding_destroy(g->scaffold);
+	/* If we're a top-level gui_window, destroy our scaffold */
+	if (g->scrolledwindow == NULL) {
+		gtk_widget_destroy(GTK_WIDGET(g->viewport));
+		nsgtk_scaffolding_destroy(g->scaffold);
 	} else {
-	  	gtk_widget_destroy(GTK_WIDGET(g->scrolledwindow));
+		gtk_widget_destroy(GTK_WIDGET(g->scrolledwindow));
 	}
 
 	free(g);

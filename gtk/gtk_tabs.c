@@ -17,11 +17,13 @@
  */
 
 #include <glade/glade.h>
+#include <string.h>
 #include "gtk/gtk_window.h"
 #include "gtk/gtk_gui.h"
 #include "desktop/browser.h"
 #include "content/content.h"
 #include "desktop/options.h"
+#include "utils/utils.h"
 #include "gtk/options.h"
 #include "gtk/gtk_tabs.h"
 
@@ -54,18 +56,32 @@ void nsgtk_tab_init(GtkWidget *tabs)
         nsgtk_tab_options_changed(tabs);
 }
 
-void nsgtk_tab_add(struct gui_window *window)
+void nsgtk_tab_add(struct gui_window *window, bool background)
 {
-	GtkNotebook *tabs = nsgtk_scaffolding_get_notebook(window);
+	GtkWidget *tabs = GTK_WIDGET(nsgtk_scaffolding_get_notebook(window));
 	GtkWidget *tabBox = nsgtk_tab_label_setup(window);
-	
-	gtk_notebook_append_page(tabs,
-				 GTK_WIDGET(window->scrolledwindow),
-				 tabBox);
-	
+	gint remember = gtk_notebook_get_current_page(GTK_NOTEBOOK(tabs));
+	gtk_notebook_append_page(GTK_NOTEBOOK(tabs), 
+			GTK_WIDGET(window->scrolledwindow), tabBox);
+	/*causes gtk errors can't set a parent
+	gtk_notebook_set_tab_reorderable(GTK_NOTEBOOK(tabs), 
+			GTK_WIDGET(window->scrolledwindow), true); */
 	gtk_widget_show_all(GTK_WIDGET(window->scrolledwindow));
-
-	gtk_notebook_set_current_page(tabs, gtk_notebook_get_n_pages(tabs) - 1);
+	gtk_notebook_set_current_page(GTK_NOTEBOOK(tabs), 
+			gtk_notebook_get_n_pages(GTK_NOTEBOOK(tabs)) - 1);
+	if (option_new_blank) {
+		/*char *blankpage = malloc(strlen(res_dir_location) +  
+				SLEN("file:///blankpage") + 1);
+		blankpage = g_strconcat("file:///", res_dir_location, 
+				"blankpage", NULL); */
+		/* segfaults 
+		struct browser_window *bw = nsgtk_get_browser_for_gui(window);
+		browser_window_go(bw, blankpage, 0, true); */
+		/* free(blankpage); */
+	}
+	if (background)
+		gtk_notebook_set_current_page(GTK_NOTEBOOK(tabs), remember);
+	gtk_widget_grab_focus(GTK_WIDGET(window->scaffold->url_bar));
 }
 
 void nsgtk_tab_visibility_update(GtkNotebook *notebook, GtkWidget *child,
@@ -97,7 +113,10 @@ GtkWidget *nsgtk_tab_label_setup(struct gui_window *window)
 
 	hbox = gtk_hbox_new(FALSE, 2);
 
-	label = gtk_label_new("Loading...");
+	if (option_new_blank == true)
+		label = gtk_label_new("New Tab");
+	else
+		label = gtk_label_new("Loading...");
 	gtk_label_set_ellipsize(GTK_LABEL(label), PANGO_ELLIPSIZE_END);
 	gtk_label_set_single_line_mode(GTK_LABEL(label), TRUE);
 	gtk_misc_set_alignment(GTK_MISC(label), 0.0, 0.5);
@@ -178,6 +197,7 @@ void nsgtk_tab_close_current(GtkNotebook *notebook)
 	if (gtk_notebook_get_n_pages(notebook) < 2)
 		return;	/* wicked things happen if we close the last tab */
 
-	gtk_notebook_remove_page(notebook, curr_page);
 	nsgtk_window_destroy_browser(gw);
+	/* deletes 2 notebook tabs at a time!
+	gtk_notebook_remove_page(notebook, curr_page); */
 }

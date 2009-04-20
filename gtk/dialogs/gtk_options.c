@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <math.h>
 #include <gtk/gtk.h>
 #include <glade/glade.h>
 #include "utils/log.h"
@@ -59,6 +60,7 @@ DECLARE(checkDisablePlugins);
 DECLARE(spinHistoryAge);
 DECLARE(checkHoverURLs);
 DECLARE(checkDisplayRecentURLs);
+DECLARE(comboLanguage);
 DECLARE(checkSendReferer);
 DECLARE(checkShowSingleTab);
 
@@ -85,12 +87,16 @@ DECLARE(spinDefaultSize);
 DECLARE(spinMinimumSize);
 DECLARE(fontPreview);
 
+DECLARE(comboButtonType);
+
 DECLARE(spinMemoryCacheSize);
 DECLARE(spinDiscCacheAge);
 
 DECLARE(checkClearDownloads);
 DECLARE(checkRequestOverwrite);
 DECLARE(fileChooserDownloads);
+DECLARE(checkFocusNew);
+DECLARE(checkNewBlank);
 
 DECLARE(spinMarginTop);
 DECLARE(spinMarginBottom);
@@ -135,12 +141,14 @@ GtkDialog* nsgtk_options_init(struct browser_window *bw, GtkWindow *parent) {
 	CONNECT(setCurrentPage, "clicked");
 	CONNECT(setDefaultPage, "clicked");
 	CONNECT(checkHideAdverts, "toggled");
-	/* mike: why are these commented out?
+
 	CONNECT(checkDisablePopups, "toggled");
 	CONNECT(checkDisablePlugins, "toggled");
 	CONNECT(spinHistoryAge, "focus-out-event");
 	CONNECT(checkHoverURLs, "toggled");
-	*/
+	
+	CONNECT(comboLanguage, "changed");
+	
 	CONNECT(checkDisplayRecentURLs, "toggled");
 	CONNECT(checkSendReferer, "toggled");
 	CONNECT(checkShowSingleTab, "toggled");
@@ -167,6 +175,8 @@ GtkDialog* nsgtk_options_init(struct browser_window *bw, GtkWindow *parent) {
 	CONNECT(spinDefaultSize, "value-changed");
 	CONNECT(spinMinimumSize, "value-changed");
 	CONNECT(fontPreview, "clicked");
+	
+	CONNECT(comboButtonType, "changed");
 
 	CONNECT(spinMemoryCacheSize, "value-changed");
 	CONNECT(spinDiscCacheAge, "value-changed");
@@ -174,6 +184,9 @@ GtkDialog* nsgtk_options_init(struct browser_window *bw, GtkWindow *parent) {
 	CONNECT(checkClearDownloads, "toggled");
 	CONNECT(checkRequestOverwrite, "toggled");
 	CONNECT(fileChooserDownloads, "current-folder-changed");
+	
+	CONNECT(checkFocusNew, "toggled");
+	CONNECT(checkNewBlank, "toggled");
 	
 	CONNECT(spinMarginTop, "value-changed");
 	CONNECT(spinMarginBottom, "value-changed");
@@ -251,12 +264,78 @@ void nsgtk_options_load(void)
 {
 	char b[20];
 	int proxytype = 0;
+	if (option_button_type == 0) {
+		GtkSettings *settings = gtk_settings_get_default();
+		GtkIconSize tooliconsize;
+		GtkToolbarStyle toolbarstyle;
+		g_object_get(settings, "gtk-toolbar-icon-size",  &tooliconsize,
+				"gtk-toolbar-style", &toolbarstyle, NULL);
+		switch (toolbarstyle) {
+		case GTK_TOOLBAR_ICONS:
+			option_button_type = (tooliconsize ==
+					      GTK_ICON_SIZE_SMALL_TOOLBAR) ? 1 : 2;
+			break;
+		case GTK_TOOLBAR_TEXT:
+			option_button_type = 4;
+			break;
+		case GTK_TOOLBAR_BOTH:
+		case GTK_TOOLBAR_BOTH_HORIZ:
+		default:
+			option_button_type = 3;
+			break;
+		}
+	}
+	
+	/* Following language loading needs reworking.  rjek (20/04/2009) */
 
+	if (option_accept_language == NULL) {
+		option_accept_language = (char *) malloc(3);
+		strcpy(option_accept_language, "en");
+	}
+
+	GtkVBox *combolanguagevbox = GTK_VBOX(glade_xml_get_widget(gladeFile, "combolanguagevbox"));
+	comboLanguage = gtk_combo_box_new_text();
+	gchar * languagefile = g_strconcat(res_dir_location, "languages", NULL);
+	FILE * f;
+	char * in = malloc(6);
+	char temp;
+	temp = 1;
+	int temprowcount = 0;
+	int final = 58;
+	f = fopen(languagefile, "r");
+	int i = 0;
+	while ((temp != '\0') && (fread(&temp, 1, 1, f))) {
+		if (temp == '\n') {
+			in[i] = '\0';
+			i = 0;
+			gtk_combo_box_append_text(GTK_COMBO_BOX(comboLanguage), in);
+			if (strcmp(in, option_accept_language) == 0) {
+				final = temprowcount;
+			} else {
+				temprowcount++;
+			}
+		} else {
+			in[i++] = temp;
+		}
+	}
+	fclose(f);
+	free(in);
+	gtk_combo_box_set_active(GTK_COMBO_BOX(comboLanguage), final);
+	gtk_widget_set_tooltip_text(GTK_WIDGET(comboLanguage), 
+			"set preferred language for web pages");
+	gtk_box_pack_start(GTK_BOX(combolanguagevbox), comboLanguage, FALSE, FALSE, 0);
+	gtk_widget_show(comboLanguage);
 	SET_ENTRY(entryHomePageURL,
 			option_homepage_url ? option_homepage_url : "");
 	SET_BUTTON(setCurrentPage);
 	SET_BUTTON(setDefaultPage);
 	SET_CHECK(checkHideAdverts, option_block_ads);
+	
+	SET_CHECK(checkDisablePopups, option_disable_popups);
+	SET_CHECK(checkDisablePlugins, option_disable_plugins);
+	SET_SPIN(spinHistoryAge, option_history_age);
+	SET_CHECK(checkHoverURLs, option_hover_urls);
+	
 	SET_CHECK(checkDisplayRecentURLs, option_url_suggestion);
 	SET_CHECK(checkSendReferer, option_send_referer);
         SET_CHECK(checkShowSingleTab, option_show_single_tab);
@@ -297,6 +376,8 @@ void nsgtk_options_load(void)
 	SET_SPIN(spinDefaultSize, option_font_size / 10);
 	SET_SPIN(spinMinimumSize, option_font_min_size / 10);
 	SET_BUTTON(fontPreview);
+	
+	SET_COMBO(comboButtonType, option_button_type -1);
 
 	SET_SPIN(spinMemoryCacheSize, option_memory_cache_size >> 20);
 	SET_SPIN(spinDiscCacheAge, option_disc_cache_age);
@@ -304,6 +385,9 @@ void nsgtk_options_load(void)
 	SET_CHECK(checkClearDownloads, option_downloads_clear);
 	SET_CHECK(checkRequestOverwrite, option_request_overwrite);
 	SET_FILE_CHOOSER(fileChooserDownloads, option_downloads_directory);
+	
+	SET_CHECK(checkFocusNew, option_focus_new);
+	SET_CHECK(checkNewBlank, option_new_blank);
 	
 	SET_SPIN(spinMarginTop, option_margin_top);
 	SET_SPIN(spinMarginBottom, option_margin_bottom);
@@ -334,7 +418,11 @@ static gboolean on_dialog_close (GtkDialog *dlg, gboolean stay_alive)
 {
 	LOG(("Writing options to file"));
 	options_write(options_file_location);
-	if (stay_alive) gtk_widget_hide(GTK_WIDGET(wndPreferences));
+	if ((stay_alive) && GTK_IS_WIDGET(dlg))
+		gtk_widget_hide(GTK_WIDGET(dlg));
+	else {
+		stay_alive = FALSE;
+	}
 	return stay_alive;
 }
 	
@@ -394,6 +482,15 @@ static gboolean on_dialog_close (GtkDialog *dlg, gboolean stay_alive)
         return FALSE;                           \
         }
 
+static gboolean on_comboLanguage_changed(GtkWidget *widget, gpointer data)
+{
+	LOG(("Signal emitted from 'comboLanguage'"));
+	strcpy(option_accept_language,
+			gtk_combo_box_get_active_text(GTK_COMBO_BOX(comboLanguage)));
+	
+	return FALSE;
+}
+
 ENTRY_CHANGED(entryHomePageURL, option_homepage_url)
 END_HANDLER
 
@@ -428,22 +525,22 @@ COMBO_CHANGED(comboProxyType, proxy_type)
 	LOG(("proxy type: %d", proxy_type));
 	switch (proxy_type)
 	{
-		case 0:
-			option_http_proxy = false;
-			option_http_proxy_auth = OPTION_HTTP_PROXY_AUTH_NONE;
-			break;
-		case 1:
-			option_http_proxy = true;
-			option_http_proxy_auth = OPTION_HTTP_PROXY_AUTH_NONE;
-			break;
-		case 2:
-			option_http_proxy = true;
-			option_http_proxy_auth = OPTION_HTTP_PROXY_AUTH_BASIC;
-			break;
-		case 3:
-			option_http_proxy = true;
-			option_http_proxy_auth = OPTION_HTTP_PROXY_AUTH_NTLM;
-			break;
+	case 0:
+		option_http_proxy = false;
+		option_http_proxy_auth = OPTION_HTTP_PROXY_AUTH_NONE;
+		break;
+	case 1:
+		option_http_proxy = true;
+		option_http_proxy_auth = OPTION_HTTP_PROXY_AUTH_NONE;
+		break;
+	case 2:
+		option_http_proxy = true;
+		option_http_proxy_auth = OPTION_HTTP_PROXY_AUTH_BASIC;
+		break;
+	case 3:
+		option_http_proxy = true;
+		option_http_proxy_auth = OPTION_HTTP_PROXY_AUTH_NTLM;
+		break;
 	}
 	gboolean sensitive = (!proxy_type == 0);
 	gtk_widget_set_sensitive (entryProxyHost, sensitive);
@@ -500,6 +597,18 @@ CHECK_CHANGED(checkDisableAnimations, option_animate_images);
 	option_animate_images = !option_animate_images;
 END_HANDLER
 
+CHECK_CHANGED(checkDisablePopups, option_disable_popups)
+END_HANDLER
+
+CHECK_CHANGED(checkDisablePlugins, option_disable_plugins)
+END_HANDLER
+
+SPIN_CHANGED(spinHistoryAge, option_history_age)
+END_HANDLER
+
+CHECK_CHANGED(checkHoverURLs, option_hover_urls)
+END_HANDLER
+
 FONT_CHANGED(fontSansSerif, option_font_sans)
 END_HANDLER
 
@@ -531,6 +640,40 @@ BUTTON_CLICKED(fontPreview)
 	nsgtk_reflow_all_windows();
 END_HANDLER
 
+COMBO_CHANGED(comboButtonType, option_button_type)
+	option_button_type++;
+	struct gui_window *current;
+	current = window_list;
+	while (current)	{
+		switch(option_button_type) {
+		case 1:
+			gtk_toolbar_set_style(GTK_TOOLBAR(current->scaffold->tool_bar),
+					      GTK_TOOLBAR_ICONS);
+			gtk_toolbar_set_icon_size(GTK_TOOLBAR(current->scaffold->tool_bar),
+						  GTK_ICON_SIZE_SMALL_TOOLBAR);
+			break;
+		case 2:
+			gtk_toolbar_set_style(GTK_TOOLBAR(current->scaffold->tool_bar),
+					      GTK_TOOLBAR_ICONS);
+			gtk_toolbar_set_icon_size(GTK_TOOLBAR(current->scaffold->tool_bar),
+						  GTK_ICON_SIZE_LARGE_TOOLBAR);
+			break;
+		case 3:
+			gtk_toolbar_set_style(GTK_TOOLBAR(current->scaffold->tool_bar),
+					      GTK_TOOLBAR_BOTH);
+			gtk_toolbar_set_icon_size(GTK_TOOLBAR(current->scaffold->tool_bar),
+						  GTK_ICON_SIZE_LARGE_TOOLBAR);
+			break;
+		case 4:
+			gtk_toolbar_set_style(GTK_TOOLBAR(current->scaffold->tool_bar),
+					      GTK_TOOLBAR_TEXT);
+		default:
+			break;
+		}
+		current = current->next;
+	}
+END_HANDLER
+
 SPIN_CHANGED(spinMemoryCacheSize, option_memory_cache_size)
 	option_memory_cache_size <<= 20;
 END_HANDLER
@@ -545,6 +688,12 @@ CHECK_CHANGED(checkRequestOverwrite, option_request_overwrite)
 END_HANDLER
 
 FILE_CHOOSER_CHANGED(fileChooserDownloads, option_downloads_directory)
+END_HANDLER
+
+CHECK_CHANGED(checkFocusNew, option_focus_new)
+END_HANDLER
+
+CHECK_CHANGED(checkNewBlank, option_new_blank)
 END_HANDLER
 
 SPIN_CHANGED(spinMarginTop, option_margin_top)

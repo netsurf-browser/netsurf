@@ -22,7 +22,7 @@
 struct gui_window;
 
 void nsgtk_tab_init(GtkWidget *tabs);
-void nsgtk_tab_add(struct gui_window *window);
+void nsgtk_tab_add(struct gui_window *window, bool background);
 void nsgtk_tab_set_title(struct gui_window *g, const char *title);
 void nsgtk_tab_options_changed(GtkWidget *tabs);
 void nsgtk_tab_close_current(GtkNotebook *notebook);

@@ -389,7 +389,7 @@ void options_write(const char *path)
 				break;
 		}
 		fprintf(fp, "\n");
-        }
+	}
 
 	fclose(fp);
 }

@@ -20,10 +20,48 @@
 #define NETSURF_GTK_SCAFFOLDING_H 1
 
 #include <gtk/gtk.h>
+#include <glade/glade.h>
 #include "desktop/gui.h"
 #include "desktop/plotters.h"
 
 typedef struct gtk_scaffolding nsgtk_scaffolding;
+
+struct gtk_scaffolding {
+	GtkWindow		*window;
+	GtkNotebook		*notebook;
+	GtkEntry		*url_bar;
+	GtkEntryCompletion	*url_bar_completion;
+	GtkStatusbar		*status_bar;
+	GtkMenuItem		*edit_menu;
+	GtkMenuItem		*tabs_menu;
+	GtkToolbar		*tool_bar;
+	GtkToolButton		*back_button;
+	GtkToolButton		*history_button;
+	GtkToolButton		*forward_button;
+	GtkToolButton		*stop_button;
+	GtkToolButton		*reload_button;
+	GtkMenuBar		*menu_bar;
+	GtkMenuItem		*back_menu;
+	GtkMenuItem		*forward_menu;
+	GtkMenuItem		*stop_menu;
+	GtkMenuItem		*reload_menu;
+	GtkImage		*throbber;
+	GtkPaned		*status_pane;
+
+	GladeXML		*xml;
+
+	GladeXML		*popup_xml;
+	GtkMenu			*popup_menu;
+
+	struct gtk_history_window *history_window;
+	GtkDialog 		*preferences_dialog;
+
+	int			throb_frame;
+	struct gui_window	*top_level;
+	int			being_destroyed;
+
+	bool			fullscreen;
+};
 
 GtkWindow *nsgtk_get_window_for_scaffold(struct gtk_scaffolding *g);
 
