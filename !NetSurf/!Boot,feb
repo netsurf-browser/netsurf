@@ -34,7 +34,6 @@ Set File$Type_FAF HTML
 |
 | See http://www.iyonix.com/32bit/help.shtml for more details.
 Set NetSurf$Help <NetSurf$Dir>.Docs.docs_en
-Set NetSurf$Version "Development Build"
 Set NetSurf$Web "http://www.netsurf-browser.org/"
 Set NetSurf$Title "NetSurf"
 Set NetSurf$Publisher "The NetSurf Developers"
