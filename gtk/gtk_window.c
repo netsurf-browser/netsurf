@@ -626,7 +626,7 @@ void nsgtk_window_process_reformats(void)
 			continue;
 		g->bw->reformat_pending = false;
 		browser_window_reformat(g->bw,
-				widget->allocation.width - 2,
+				widget->allocation.width,
 				widget->allocation.height);
 	}
 }
