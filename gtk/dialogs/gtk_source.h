@@ -16,19 +16,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef netsurf_gtk_dialogs_source_h_
+#define netsurf_gtk_dialogs_source_h_
 
 #include <gtk/gtk.h>
 #include "desktop/browser.h"
 
-struct nsgtk_source_window {
-	gchar *url;
-	gchar *data;
-	GtkWindow *sourcewindow;
-	GtkTextView *gv;
-	struct browser_window *bw;
-	struct nsgtk_source_window *next;
-	struct nsgtk_source_window *prev;
-};
+void nsgtk_source_dialog_init(GtkWindow *parent, struct browser_window *bw);
 
-void nsgtk_source_dialog_init(GtkWindow * parent, struct browser_window * bw);
-void nsgtk_source_file_save(GtkWindow * parent, const char * filename, const char * data);
+#endif
+
