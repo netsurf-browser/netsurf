@@ -254,7 +254,7 @@ CFLAGS += -DNETSURF_HOMEPAGE=\"$(NETSURF_HOMEPAGE)\"
 ifeq ($(TARGET),riscos)
   ifeq ($(HOST),riscos)
     LDFLAGS += -Xlinker -symbols=$(OBJROOT)/sym -lxml2 -lz -lm -lcurl -lcares
-    LDFLAGS += -lssl -lcrypto -lhubbub0 -lparserutils0
+    LDFLAGS += -lssl -lcrypto -lhubbub -lparserutils
   else
     LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl libhubbub)
   endif
@@ -265,8 +265,8 @@ ifeq ($(TARGET),riscos)
   $(eval $(call feature_enabled,ARTWORKS,-DWITH_ARTWORKS,,ArtWorks rendering))
   $(eval $(call feature_enabled,PLUGINS,-DWITH_PLUGIN,,Plugin protocol support))
   ifeq ($(HOST),riscos)
-    $(eval $(call feature_enabled,BMP,-DWITH_BMP,-lnsbmp0,NetSurf BMP decoder))
-    $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif0,NetSurf GIF decoder))
+    $(eval $(call feature_enabled,BMP,-DWITH_BMP,-lnsbmp,NetSurf BMP decoder))
+    $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif,NetSurf GIF decoder))
     $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG support))
   else
     NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
@@ -321,7 +321,7 @@ ifeq ($(TARGET),beos)
   LDFLAGS += -L/boot/common/lib
   # some people do *not* have libm...
   LDFLAGS += -lxml2 -lcurl -liconv
-  LDFLAGS += -lssl -lcrypto -lhubbub0 -lparserutils0
+  LDFLAGS += -lssl -lcrypto -lhubbub -lparserutils
 
   CFLAGS += -I. -O $(WARNFLAGS) -Dnsbeos		\
 		-D_BSD_SOURCE -D_POSIX_C_SOURCE		\
@@ -432,15 +432,15 @@ ifeq ($(TARGET),amiga)
   NETSURF_FEATURE_NSSVG_CFLAGS := -DWITH_NS_SVG
 
     $(eval $(call feature_enabled,ROSPRITE,-DWITH_NSSPRITE,-lrosprite,RISC OS Sprite decoder))
-    $(eval $(call feature_enabled,BMP,-DWITH_BMP,-lnsbmp0,NetSurf BMP decoder))
-    $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif0,NetSurf GIF decoder))
+    $(eval $(call feature_enabled,BMP,-DWITH_BMP,-lnsbmp,NetSurf BMP decoder))
+    $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif,NetSurf GIF decoder))
     $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG support))
     $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG rendering))
     $(eval $(call feature_enabled,MNG,,-llcms -ljpeg,libmng extras))
 
   CFLAGS += -D__USE_INLINE__ -std=c99 -I . -Dnsamiga
   LDFLAGS += -lxml2 -lcurl -lpthread -lregex -lauto
-  LDFLAGS += -lssl -lcrypto -lhubbub0 -lparserutils0
+  LDFLAGS += -lssl -lcrypto -lhubbub -lparserutils
 
   ifeq ($(NETSURF_AMIGA_USE_CAIRO),YES)
     CFLAGS += -DNS_AMIGA_CAIRO -I SDK:local/common/include/cairo
@@ -490,10 +490,10 @@ ifeq ($(TARGET),framebuffer)
   endif
 
   ifeq ($(NETSURF_FB_FRONTEND),able)
-    $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif0,NetSurf GIF decoder))
+    $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif,NetSurf GIF decoder))
     CC=arm-able-gcc
     CFLAGS += -std=c99 -I. -I/usr/lib/able/include -Dsmall $(WARNFLAGS)
-    LDFLAGS += -lxml2 -lz -ljpeg -lcurl -lm -lhubbub0 -lparserutils0
+    LDFLAGS += -lxml2 -lz -ljpeg -lcurl -lm -lhubbub -lparserutils
     SUBTARGET := -able
   endif
 
