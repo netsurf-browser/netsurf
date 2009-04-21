@@ -214,11 +214,14 @@ ifeq ($(TARGET),framebuffer)
 
   # Framebuffer frontends may have differing root paths for resources
   # As such, these specify the resource path and config path.
-  NETSURF_FB_RESPATH_linux := /usr/share/netsurf/
+  NETSURF_FB_RESPATH_linux := $(PREFIX)/share/netsurf/
   NETSURF_FB_RESPATH_able := (tftpboot)/
   NETSURF_FB_RESPATH_dummy := ./
-  NETSURF_FB_RESPATH_sdl := ./
-  NETSURF_FB_RESPATH_vnc := /usr/share/netsurf/
+  NETSURF_FB_RESPATH_sdl := $(PREFIX)/share/netsurf/
+  NETSURF_FB_RESPATH_vnc := $(PREFIX)/share/netsurf/
+
+  NETSURF_FRAMEBUFFER_RESOURCES = $(NETSURF_FB_RESPATH_$(NETSURF_FB_FRONTEND))
+  NETSURF_FRAMEBUFFER_BIN := $(PREFIX)/bin/
 
 endif
 

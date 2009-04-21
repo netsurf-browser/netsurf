@@ -819,7 +819,13 @@ install-beos: NetSurf
 	@cp -vRL gtk/res/license $(DESTDIR)$(NETSURF_BEOS_RESOURCES)
 #	@cp -vRL beos/res/throbber/*.png $(DESTDIR)$(NETSURF_BEOS_RESOURCES)throbber
 	gzip -9v < beos/res/messages > $(DESTDIR)$(NETSURF_BEOS_RESOURCES)messages 
-	
+
+
+install-framebuffer: $(EXETARGET)
+	mkdir -p $(DESTDIR)$(NETSURF_FRAMEBUFFER_BIN)
+	mkdir -p $(DESTDIR)$(NETSURF_FRAMEBUFFER_RESOURCES)
+	@cp -v $(EXETARGET) $(DESTDIR)/$(NETSURF_FRAMEBUFFER_BIN)netsurf$(SUBTARGET)
+	@for F in Aliases default.css messages; do cp -vL framebuffer/res/$$F $(DESTDIR)/$(NETSURF_FRAMEBUFFER_RESOURCES); done
 
 install: all-program install-$(TARGET)
 
