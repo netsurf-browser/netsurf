@@ -1256,7 +1256,8 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	} else {
 		gtk_window_set_default_size(g->window, 600, 600);
 	}
-	
+
+	/* Default toolbar button type uses system defaults */	
 	if (option_button_type == 0) {
 		GtkSettings *settings = gtk_settings_get_default();
 		GtkIconSize tooliconsize;
@@ -1274,32 +1275,35 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 			break;
 		case GTK_TOOLBAR_BOTH:
 		case GTK_TOOLBAR_BOTH_HORIZ:
-		default:
 			option_button_type = 3;
-				break;
+			break;
+		default:
+			/* No system default, so use large icons */
+			option_button_type = 2;
+			break;
 		}
 	}
 
 	switch (option_button_type) {
-	case 1:
+	case 1: /* Small icons */
 		gtk_toolbar_set_style(GTK_TOOLBAR(g->tool_bar),
 				      GTK_TOOLBAR_ICONS);
 		gtk_toolbar_set_icon_size(GTK_TOOLBAR(g->tool_bar),
 					  GTK_ICON_SIZE_SMALL_TOOLBAR);
 		break;
-	case 2:
+	case 2: /* Large icons */
 		gtk_toolbar_set_style(GTK_TOOLBAR(g->tool_bar),
 				      GTK_TOOLBAR_ICONS);
 		gtk_toolbar_set_icon_size(GTK_TOOLBAR(g->tool_bar),
 					  GTK_ICON_SIZE_LARGE_TOOLBAR);
 		break;
-	case 3:
+	case 3: /* Large icons with text */
 		gtk_toolbar_set_style(GTK_TOOLBAR(g->tool_bar),
 				      GTK_TOOLBAR_BOTH);
 		gtk_toolbar_set_icon_size(GTK_TOOLBAR(g->tool_bar),
 					  GTK_ICON_SIZE_LARGE_TOOLBAR);
 		break;
-	case 4:
+	case 4: /* Text icons only */
 		gtk_toolbar_set_style(GTK_TOOLBAR(g->tool_bar),
 				      GTK_TOOLBAR_TEXT);
 	default:
