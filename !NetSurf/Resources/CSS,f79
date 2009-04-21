@@ -126,10 +126,13 @@ font[size="4"] { font-size: large; }
 font[size="5"] { font-size: x-large; }
 font[size="6"] { font-size: xx-large; }
 font[size="7"] { font-size: xx-large; }
-font[size="-1"], font[size="-2"], font[size="-3"], font[size="-4"],
-font[size="-5"], font[size="-6"] { font-size: smaller; }
-font[size="+1"], font[size="+2"], font[size="+3"], font[size="+4"],
-font[size="+5"], font[size="+6"] { font-size: larger; }
+/* And now, some hackery for relative font size */
+font[size="-1"] { font-size: small }
+font[size="-2"] { font-size: x-small } 
+font[size="+1"] { font-size: large }
+font[size="+2"] { font-size: x-large }
+font[size="+3"] { font-size: xx-large }
+font[size="+4"] { font-size: xx-large }
 
 hr {	display: block; background-color: #000; height: 1px;
 	margin: 4px auto; border: 1px #d9d9d9 inset; }
