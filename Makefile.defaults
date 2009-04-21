@@ -39,7 +39,7 @@ NETSURF_USE_JPEG := YES
 # are both enabled then NetSurf will choose libpng for PNGs, leaving
 # MNGs and JNGs to libmng.
 # Valid options: YES, NO	  (at least one of PNG/MNG highly recommended)
-NETSURF_USE_PNG := NO
+NETSURF_USE_PNG := YES
 
 # Enable NetSurf's use of libmng for displaying MNGs, JNGs and PNGs
 # Valid options: YES, NO	  (at least one of PNG/MNG highly recommended)
