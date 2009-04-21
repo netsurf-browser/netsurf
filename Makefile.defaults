@@ -73,6 +73,9 @@ NETSURF_USE_LIBICONV_PLUG := YES
 # Initial CFLAGS. Optimisation level etc. tend to be target specific.
 CFLAGS := 
 
+# Default installation/execution prefix
+PREFIX := /usr/local
+
 # ----------------------------------------------------------------------------
 # RISC OS-specific options
 # ----------------------------------------------------------------------------
@@ -110,10 +113,10 @@ ifeq ($(TARGET),gtk)
 
   # Where to search for NetSurf's resources after looking in ~/.netsurf and
   # $NETSURFRES.  It must have a trailing /
-  NETSURF_GTK_RESOURCES := /usr/local/share/netsurf/
+  NETSURF_GTK_RESOURCES := $(PREFIX)/share/netsurf/
 
   # Where to install the netsurf binary
-  NETSURF_GTK_BIN := /usr/local/bin/
+  NETSURF_GTK_BIN := $(PREFIX)/bin/
 
   # Enable NetSurf's use of librsvg in conjunction with Cairo to display SVGs
   # Valid options: YES, NO, AUTO
