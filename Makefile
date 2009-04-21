@@ -256,7 +256,7 @@ ifeq ($(TARGET),riscos)
     LDFLAGS += -Xlinker -symbols=$(OBJROOT)/sym -lxml2 -lz -lm -lcurl -lcares
     LDFLAGS += -lssl -lcrypto -lhubbub0 -lparserutils0
   else
-    LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl libhubbub-0)
+    LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl libhubbub)
   endif
 
   $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG rendering))
@@ -272,8 +272,8 @@ ifeq ($(TARGET),riscos)
     NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
     NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
     NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
-    $(eval $(call pkg_config_find_and_add,BMP,libnsbmp-0,NetSurf BMP decoder))
-    $(eval $(call pkg_config_find_and_add,GIF,libnsgif-0,NetSurf GIF decoder))
+    $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,NetSurf BMP decoder))
+    $(eval $(call pkg_config_find_and_add,GIF,libnsgif,NetSurf GIF decoder))
     $(eval $(call pkg_config_find_and_add,PNG,libpng,PNG support))
   endif
 
@@ -378,7 +378,7 @@ endif
 # ----------------------------------------------------------------------------
 
 ifeq ($(TARGET),gtk)
-  LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl libhubbub-0)
+  LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl libhubbub)
 
   # define additional CFLAGS and LDFLAGS requirements for pkg-configed libs here
   NETSURF_FEATURE_RSVG_CFLAGS := -DWITH_RSVG
@@ -390,8 +390,8 @@ ifeq ($(TARGET),gtk)
   # add a line similar to below for each optional pkg-configed lib here
   $(eval $(call pkg_config_find_and_add,RSVG,librsvg-2.0,SVG rendering))
   $(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,RISC OS sprite rendering))
-  $(eval $(call pkg_config_find_and_add,BMP,libnsbmp-0,NetSurf BMP decoder))
-  $(eval $(call pkg_config_find_and_add,GIF,libnsgif-0,NetSurf GIF decoder))
+  $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,NetSurf BMP decoder))
+  $(eval $(call pkg_config_find_and_add,GIF,libnsgif,NetSurf GIF decoder))
   $(eval $(call pkg_config_find_and_add,PNG,libpng,PNG support))
 
   GTKCFLAGS := -std=c99 -Dgtk -Dnsgtk \
@@ -403,7 +403,7 @@ ifeq ($(TARGET),gtk)
 		-DGTK_RESPATH=\"$(NETSURF_GTK_RESOURCES)\" \
 		$(WARNFLAGS) -I. -g \
 		$(shell $(PKG_CONFIG) --cflags libglade-2.0 gtk+-2.0) \
-		$(shell $(PKG_CONFIG) --cflags libhubbub-0) \
+		$(shell $(PKG_CONFIG) --cflags libhubbub) \
 		$(shell xml2-config --cflags)
 
   GTKLDFLAGS := $(shell $(PKG_CONFIG) --cflags --libs libglade-2.0 gtk+-2.0 gthread-2.0 gmodule-2.0 lcms)
@@ -473,19 +473,19 @@ ifeq ($(TARGET),framebuffer)
   ifeq ($(NETSURF_FB_FRONTEND),linux)
     $(eval $(call pkg_config_find_and_add,RSVG,librsvg-2.0,SVG rendering))
     $(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,RISC OS sprite rendering))
-    $(eval $(call pkg_config_find_and_add,BMP,libnsbmp-0,NetSurf BMP decoder))
-    $(eval $(call pkg_config_find_and_add,GIF,libnsgif-0,NetSurf GIF decoder))
+    $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,NetSurf BMP decoder))
+    $(eval $(call pkg_config_find_and_add,GIF,libnsgif,NetSurf GIF decoder))
 
 
     CFLAGS += -std=c99 -g -I. -Dsmall $(WARNFLAGS) \
-		 $(shell $(PKG_CONFIG) --cflags libhubbub-0) \
+		 $(shell $(PKG_CONFIG) --cflags libhubbub) \
 	 	 $(shell xml2-config --cflags) \
 		 -D_BSD_SOURCE \
 		 -D_XOPEN_SOURCE=600 \
 		 -D_POSIX_C_SOURCE=200112L 
 
     LDFLAGS += -lxml2 -lz -ljpeg -lcurl -lm 
-    LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl libhubbub-0)
+    LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl libhubbub)
     SUBTARGET := -linux
   endif
 
@@ -500,12 +500,12 @@ ifeq ($(TARGET),framebuffer)
   ifeq ($(NETSURF_FB_FRONTEND),dummy)
     $(eval $(call pkg_config_find_and_add,RSVG,librsvg-2.0,SVG rendering))
     $(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,RISC OS sprite rendering))
-    $(eval $(call pkg_config_find_and_add,BMP,libnsbmp-0,NetSurf BMP decoder))
-    $(eval $(call pkg_config_find_and_add,GIF,libnsgif-0,NetSurf GIF decoder))
+    $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,NetSurf BMP decoder))
+    $(eval $(call pkg_config_find_and_add,GIF,libnsgif,NetSurf GIF decoder))
 
 
     CFLAGS += -std=c99 -g -I. $(WARNFLAGS) \
-		 $(shell $(PKG_CONFIG) --cflags libhubbub-0) \
+		 $(shell $(PKG_CONFIG) --cflags libhubbub) \
 	 	 $(shell xml2-config --cflags) \
 		 -D_BSD_SOURCE \
 		 -D_XOPEN_SOURCE=600 \
@@ -513,20 +513,20 @@ ifeq ($(TARGET),framebuffer)
 
     LDFLAGS += -lxml2 -lz -ljpeg -lcurl -lm 
     LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl openssl)
-    LDFLAGS += $(shell $(PKG_CONFIG) --libs libhubbub-0)
+    LDFLAGS += $(shell $(PKG_CONFIG) --libs libhubbub)
     SUBTARGET := -dummy
   endif
 
   ifeq ($(NETSURF_FB_FRONTEND),sdl)
     $(eval $(call pkg_config_find_and_add,RSVG,librsvg-2.0,SVG rendering))
     $(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,RISC OS sprite rendering))
-    $(eval $(call pkg_config_find_and_add,BMP,libnsbmp-0,NetSurf BMP decoder))
-    $(eval $(call pkg_config_find_and_add,GIF,libnsgif-0,NetSurf GIF decoder))
+    $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,NetSurf BMP decoder))
+    $(eval $(call pkg_config_find_and_add,GIF,libnsgif,NetSurf GIF decoder))
 #    $(eval $(call pkg_config_find_and_add,SDL,libSDL,SDL Library))
 
 
     CFLAGS += -std=c99 -g -I. $(WARNFLAGS) \
-		 $(shell $(PKG_CONFIG) --cflags libhubbub-0) \
+		 $(shell $(PKG_CONFIG) --cflags libhubbub) \
 	 	 $(shell xml2-config --cflags) \
 		 -D_BSD_SOURCE \
 		 -D_XOPEN_SOURCE=600 \
@@ -534,20 +534,20 @@ ifeq ($(TARGET),framebuffer)
 
     LDFLAGS += -lxml2 -lz -ljpeg -lcurl -lm -lSDL
     LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl openssl)
-    LDFLAGS += $(shell $(PKG_CONFIG) --libs libhubbub-0)
+    LDFLAGS += $(shell $(PKG_CONFIG) --libs libhubbub)
     SUBTARGET := -sdl
   endif
 
   ifeq ($(NETSURF_FB_FRONTEND),vnc)
     $(eval $(call pkg_config_find_and_add,RSVG,librsvg-2.0,SVG rendering))
     $(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,RISC OS sprite rendering))
-    $(eval $(call pkg_config_find_and_add,BMP,libnsbmp-0,NetSurf BMP decoder))
-    $(eval $(call pkg_config_find_and_add,GIF,libnsgif-0,NetSurf GIF decoder))
+    $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,NetSurf BMP decoder))
+    $(eval $(call pkg_config_find_and_add,GIF,libnsgif,NetSurf GIF decoder))
 #    $(eval $(call pkg_config_find_and_add,VNCSERVER,libvncserver,VNC server))
 
 
     CFLAGS += -std=c99 -g -I. $(WARNFLAGS) \
-		 $(shell $(PKG_CONFIG) --cflags libhubbub-0) \
+		 $(shell $(PKG_CONFIG) --cflags libhubbub) \
 	 	 $(shell xml2-config --cflags) \
 		 -D_BSD_SOURCE \
 		 -D_XOPEN_SOURCE=600 \
@@ -555,7 +555,7 @@ ifeq ($(TARGET),framebuffer)
 
     LDFLAGS += -lxml2 -lz -ljpeg -lcurl -lm -lvncserver
     LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl openssl)
-    LDFLAGS += $(shell $(PKG_CONFIG) --libs libhubbub-0)
+    LDFLAGS += $(shell $(PKG_CONFIG) --libs libhubbub)
     SUBTARGET := -vnc
   endif
 
