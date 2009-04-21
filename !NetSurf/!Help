@@ -6,9 +6,12 @@ icon bar menu.
 This is a development build of NetSurf. In case of problems, please check
 for a newer development build at http://www.netsurf-browser.org/
 
-Please report bugs to the development mailing list,
-netsurf-develop@lists.sourceforge.net. Alternatively, the developers are
-often available on Freenode in the channel #netsurf.
+Please report any unexpected behaviour on the NetSurf bug tracker. 
+This may be found at 
+http://sourceforge.net/tracker/?func=add&group_id=51719&atid=464312
+
+Alternatively, the developers are often available on Freenode in the 
+channel #netsurf.
 ___________________________________________________________________________
 
 NetSurf - Webbrowser (met open broncode) - http://www.netsurf-browser.org/
@@ -19,7 +22,8 @@ van het symbolenbalk-menu.
 Dit is een testversie van NetSurf. Bij problemen: kijk eerst of er een
 nieuwere versie is op http://www.netsurf-browser.org/
 
-Meld fouten en/of onvolkomenheden a.u.b. (in het Engels!) aan de
-ontwikkelingsverzendlijst, netsurf-develop@lists.sourceforge.net. Een
-alternatief is Freenode op het kanaal #netsurf waar de ontwikkelaars vaak
-bereikbaar zijn.
+Gelieve ook elk onverwacht gedrag van NetSurf te melden via 'bug tracker'
+op http://sourceforge.net/tracker/?func=add&group_id=51719&atid=464312
+ 
+Een alternatief is Freenode op het kanaal #netsurf waar de ontwikkelaars 
+vaak bereikbaar zijn.
