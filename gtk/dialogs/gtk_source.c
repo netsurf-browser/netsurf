@@ -194,7 +194,11 @@ void nsgtk_source_dialog_init(GtkWindow *parent, struct browser_window *bw)
 		GtkTextView *sourceview = GTK_TEXT_VIEW(
 				glade_xml_get_widget(glade_File, 
 				"source_view"));
+		PangoFontDescription *fontdesc =
+			pango_font_description_from_string("Monospace 8");
+
 		thiswindow->gv = sourceview;
+		gtk_widget_modify_font(GTK_WIDGET(sourceview), fontdesc);
 		GtkTextBuffer *tb = gtk_text_view_get_buffer(sourceview);
 		gtk_text_buffer_set_text(tb, thiswindow->data, -1);
 				
