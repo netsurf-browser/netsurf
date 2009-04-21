@@ -26,7 +26,6 @@
 #include <fcntl.h>
 #include <termios.h>
 #include <errno.h>
-#include <setjmp.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/wait.h>
