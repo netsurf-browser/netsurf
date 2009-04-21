@@ -230,7 +230,7 @@ define pkg_config_find_and_add
     endif
   else
     ifneq ($(MAKECMDGOALS),clean)
-      $$(info M.CONFIG: building without $(3))
+      $$(info M.CONFIG: building without $(3) (disabled in build configuration))
     endif
   endif
 endef
