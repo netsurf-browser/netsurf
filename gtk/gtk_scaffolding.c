@@ -319,7 +319,7 @@ void nsgtk_window_update_back_forward(struct gtk_scaffolding *g)
 	 		history_forward_available(bw->history));
 
 	/* update the url bar, particularly necessary when tabbing */
-	if ((bw->current_content) && bw->current_content->url)
+	if (bw->current_content != NULL && bw->current_content->url != NULL)
 		browser_window_refresh_url_bar(bw, bw->current_content->url,
 				bw->frag_id);
 	
@@ -327,8 +327,8 @@ void nsgtk_window_update_back_forward(struct gtk_scaffolding *g)
 	 * for it.
 	 */
 	history_size(bw->history, &width, &height);
-	gtk_widget_set_size_request(GTK_WIDGET(g->history_window->drawing_area)
-			, width, height);
+	gtk_widget_set_size_request(GTK_WIDGET(g->history_window->drawing_area),
+			width, height);
 	gtk_widget_queue_draw(GTK_WIDGET(g->history_window->drawing_area));
 }
 
@@ -1385,8 +1385,6 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	CONNECT(g->history_window->window, "delete_event",
 			gtk_widget_hide_on_delete, NULL);
 
-	g_signal_connect_swapped(g->notebook, "switch-page",
-			G_CALLBACK(nsgtk_window_update_back_forward), g);
 	g_signal_connect_after(g->notebook, "page-added",
 			G_CALLBACK(nsgtk_window_tabs_num_changed), g);	
 	g_signal_connect_after(g->notebook, "page-removed",
@@ -1568,6 +1566,19 @@ GtkNotebook* nsgtk_scaffolding_get_notebook (struct gui_window *g)
 void nsgtk_scaffolding_set_top_level (struct gui_window *gw)
 {
 	gw->scaffold->top_level = gw;
+
+	/* Synchronise the history (will also update the URL bar) */
+	nsgtk_window_update_back_forward(gw->scaffold);
+
+	/* Ensure the window's title bar is updated */
+	if (gw->bw != NULL && gw->bw->current_content != NULL) {
+		if (gw->bw->current_content->title != NULL) {
+			gui_window_set_title(gw, 
+					gw->bw->current_content->title);
+		} else {
+			gui_window_set_title(gw, gw->bw->current_content->url);
+		}
+	}
 }
 
 void nsgtk_scaffolding_popup_menu(struct gtk_scaffolding *g,
