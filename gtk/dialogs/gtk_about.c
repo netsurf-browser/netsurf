@@ -49,11 +49,12 @@ static const gchar *documenters[] = {
 static const gchar *name = "NetSurf";
 static const gchar *description =
 		"Small as a mouse, fast as a cheetah, and available for free.\n"
-		"NetSurf is a web browser for RISC OS and UNIX-like platforms.";
+		"NetSurf is a portable web browser for RISC OS, AmigaOS, BeOS "
+		"and UNIX-like platforms.";
 static const gchar *url = "http://www.netsurf-browser.org/";
 static const gchar *url_label = "NetSurf Website";
 static const gchar *copyright =
-		"Copyright © 2003 - 2008 The NetSurf Developers";
+		"Copyright © 2003 - 2009 The NetSurf Developers";
 
 static void launch_url (GtkAboutDialog *about_dialog, const gchar *url,
 		gpointer data)
