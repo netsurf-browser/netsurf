@@ -371,6 +371,25 @@ ifeq ($(TARGET),beos)
     NETLDFLAGS := -lnetwork
   endif
   LDFLAGS += -lbe -ltranslation $(NETLDFLAGS)
+
+  $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG rendering))
+  ifeq ($(HOST),beos)
+    CFLAGS += -I$(PREFIX)/include
+    LDFLAGS += -L$(PREFIX)/lib
+    $(eval $(call feature_enabled,HUBBUB,-DWITH_HUBBUB,-lhubbub-debug -lparserutils-debug,Hubbub HTML parser))
+    $(eval $(call feature_enabled,BMP,-DWITH_BMP,-lnsbmp,NetSurf BMP decoder))
+    $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif,NetSurf GIF decoder))
+    $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG support))
+  else
+    NETSURF_FEATURE_HUBBUB_CFLAGS := -DWITH_HUBBUB
+    NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
+    NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
+    NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
+    $(eval $(call pkg_config_find_and_add,HUBBUB,libhubbub,Hubbub HTML parser))
+    $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,NetSurf BMP decoder))
+    $(eval $(call pkg_config_find_and_add,GIF,libnsgif,NetSurf GIF decoder))
+    $(eval $(call pkg_config_find_and_add,PNG,libpng,PNG support))
+  endif
 endif
 
 # ----------------------------------------------------------------------------
