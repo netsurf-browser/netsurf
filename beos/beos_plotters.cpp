@@ -712,10 +712,17 @@ printf("plot_tile: -> %dx%d\n", width, height);
 static BPoint transform_pt(float x, float y, const float transform[6])
 {
 #warning XXX: verify
-	return BPoint(x, y);
+	//return BPoint(x, y);
 	BPoint pt;
 	pt.x = x * transform[0] + y * transform[1] + transform[4];
 	pt.y = x * transform[2] + y * transform[3] + transform[5];
+	/*
+	printf("TR: {%f, %f} { %f, %f, %f, %f, %f, %f} = { %f, %f }\n",
+		x, y,
+		transform[0], transform[1], transform[2],
+		transform[3], transform[4], transform[5],
+		pt.x, pt.y);
+	*/
 	return pt;
 }
 
@@ -770,6 +777,7 @@ bool nsbeos_plot_path(const float *p, unsigned int n, colour fill, float width,
 	rgb_color old_high = view->HighColor();
 	float old_pen = view->PenSize();
 	view->SetPenSize(width);
+	view->MovePenTo(0, 0);
 	if (fill != TRANSPARENT) {
 		view->SetHighColor(nsbeos_rgb_colour(fill));
 		view->FillShape(&shape);
