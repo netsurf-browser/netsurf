@@ -471,7 +471,7 @@ void gui_init2(int argc, char** argv)
 			if(screenmodereq = AllocAslRequest(ASL_ScreenModeRequest,NULL))
 			{
 				AslRequestTags(screenmodereq,
-						ASLSM_MinDepth,16,
+						ASLSM_MinDepth,24,
 						ASLSM_MaxDepth,32,
 						TAG_DONE);
 
@@ -2818,8 +2818,8 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 				wheel = (struct IntuiWheelData *)msg->IAddress;
 
 				gui_window_set_scroll(gwin->bw->window,
-					gwin->bw->window->scrollx + (wheel->WheelX * 10),
-					gwin->bw->window->scrolly + (wheel->WheelY * 10));
+					gwin->bw->window->scrollx + (wheel->WheelX * 20),
+					gwin->bw->window->scrolly + (wheel->WheelY * 20));
 			}
 		break;
 	}
