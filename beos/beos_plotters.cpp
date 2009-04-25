@@ -711,9 +711,11 @@ printf("plot_tile: -> %dx%d\n", width, height);
 
 static BPoint transform_pt(float x, float y, const float transform[6])
 {
-#warning WRITEME: XXX: handle transform!
-	
-	BPoint pt(x, y);
+#warning XXX: verify
+	return BPoint(x, y);
+	BPoint pt;
+	pt.x = x * transform[0] + y * transform[1] + transform[4];
+	pt.y = x * transform[2] + y * transform[3] + transform[5];
 	return pt;
 }
 
@@ -734,21 +736,21 @@ bool nsbeos_plot_path(const float *p, unsigned int n, colour fill, float width,
 
 	for (i = 0; i < n; ) {
 		if (p[i] == PLOTTER_PATH_MOVE) {
-			BPoint pt(p[i + 1], p[i + 2]);
+			BPoint pt(transform_pt(p[i + 1], p[i + 2], transform));
 			shape.MoveTo(pt);
 			i += 3;
 		} else if (p[i] == PLOTTER_PATH_CLOSE) {
 			shape.Close();
 			i++;
 		} else if (p[i] == PLOTTER_PATH_LINE) {
-			BPoint pt(p[i + 1], p[i + 2]);
+			BPoint pt(transform_pt(p[i + 1], p[i + 2], transform));
 			shape.LineTo(pt);
 			i += 3;
 		} else if (p[i] == PLOTTER_PATH_BEZIER) {
 			BPoint pt[3] = {
-				BPoint(p[i + 1], p[i + 2]),
-				BPoint(p[i + 3], p[i + 4]),
-				BPoint(p[i + 5], p[i + 6])
+				transform_pt(p[i + 1], p[i + 2], transform),
+				transform_pt(p[i + 3], p[i + 4], transform),
+				transform_pt(p[i + 5], p[i + 6], transform)
 			};
 			shape.BezierTo(pt);
 			i += 7;
@@ -782,14 +784,6 @@ bool nsbeos_plot_path(const float *p, unsigned int n, colour fill, float width,
 
 	//nsbeos_current_gc_unlock();
 
-#warning WRITEME: XXX: handle transform!
-#if 0 /* GTK */
-	/* Only the internal SVG renderer uses this plot call currently,
-	 * and the GTK version uses librsvg.  Thus, we ignore this complexity,
-	 * and just return true obliviously.
-	 */
-
-#endif
 	return true;
 }
 
