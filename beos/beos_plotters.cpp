@@ -709,6 +709,14 @@ printf("plot_tile: -> %dx%d\n", width, height);
 	return true;
 }
 
+static BPoint transform_pt(float x, float y, const float transform[6])
+{
+#warning WRITEME: XXX: handle transform!
+	
+	BPoint pt(x, y);
+	return pt;
+}
+
 bool nsbeos_plot_path(const float *p, unsigned int n, colour fill, float width,
                 colour c, const float transform[6])
 {
@@ -724,41 +732,57 @@ bool nsbeos_plot_path(const float *p, unsigned int n, colour fill, float width,
 
 	BShape shape;
 
-#if 0
 	for (i = 0; i < n; ) {
 		if (p[i] == PLOTTER_PATH_MOVE) {
-			path[i] = draw_MOVE_TO;
-			path[i + 1] = p[i + 1] * 2 * 256;
-			path[i + 2] = -p[i + 2] * 2 * 256;
+			BPoint pt(p[i + 1], p[i + 2]);
+			shape.MoveTo(pt);
 			i += 3;
 		} else if (p[i] == PLOTTER_PATH_CLOSE) {
-			path[i] = draw_CLOSE_LINE;
+			shape.Close();
 			i++;
 		} else if (p[i] == PLOTTER_PATH_LINE) {
-			path[i] = draw_LINE_TO;
-			path[i + 1] = p[i + 1] * 2 * 256;
-			path[i + 2] = -p[i + 2] * 2 * 256;
+			BPoint pt(p[i + 1], p[i + 2]);
+			shape.LineTo(pt);
 			i += 3;
 		} else if (p[i] == PLOTTER_PATH_BEZIER) {
-			path[i] = draw_BEZIER_TO;
-			path[i + 1] = p[i + 1] * 2 * 256;
-			path[i + 2] = -p[i + 2] * 2 * 256;
-			path[i + 3] = p[i + 3] * 2 * 256;
-			path[i + 4] = -p[i + 4] * 2 * 256;
-			path[i + 5] = p[i + 5] * 2 * 256;
-			path[i + 6] = -p[i + 6] * 2 * 256;
+			BPoint pt[3] = {
+				BPoint(p[i + 1], p[i + 2]),
+				BPoint(p[i + 3], p[i + 4]),
+				BPoint(p[i + 5], p[i + 6])
+			};
+			shape.BezierTo(pt);
 			i += 7;
 		} else {
 			LOG(("bad path command %f", p[i]));
-			goto error;
+			return false;
 		}
 	}
-	path[i] = draw_END_PATH;
-	path[i + 1] = 0;
-#endif
+	shape.Close();
 
-	//StrokeBezier
-#warning WRITEME
+	BView *view;
+
+	view = nsbeos_current_gc/*_lock*/();
+	if (view == NULL)
+		return false;
+
+	rgb_color old_high = view->HighColor();
+	float old_pen = view->PenSize();
+	view->SetPenSize(width);
+	if (fill != TRANSPARENT) {
+		view->SetHighColor(nsbeos_rgb_colour(fill));
+		view->FillShape(&shape);
+	}
+	if (c != TRANSPARENT) {
+		view->SetHighColor(nsbeos_rgb_colour(c));
+		view->StrokeShape(&shape);
+	}
+	// restore
+	view->SetPenSize(old_pen);
+	view->SetHighColor(old_high);
+
+	//nsbeos_current_gc_unlock();
+
+#warning WRITEME: XXX: handle transform!
 #if 0 /* GTK */
 	/* Only the internal SVG renderer uses this plot call currently,
 	 * and the GTK version uses librsvg.  Thus, we ignore this complexity,
