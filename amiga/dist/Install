@@ -156,16 +156,14 @@
 		)
 		(set #cairo-version 1)
 		(set #netsurf-exists (exists (tackon @default-dest "NetSurf")))
-;		(if (<> #netsurf-exists 0)
-;			(
+		(if (<> #netsurf-exists 0)
+			(
 				; Guess if the installed version is static, if it
-				; is bigger than 9MB then it probably is!
-; Comment this out temporarily as we want AutoInstall to update to the Cairo
-; version at this stage, as it hasn't seen a snapshot release yet.
-;				(set #netsurf-size (getsize (tackon @default-dest "NetSurf")))
-;				(if (> #netsurf-size 9000000) (set #cairo-version 0))
-;			)
-;		)
+				; is bigger than 5MB then it probably is!
+				(set #netsurf-size (getsize (tackon @default-dest "NetSurf")))
+				(if (> #netsurf-size 5000000) (set #cairo-version 0))
+			)
+		)
 	)
 	; else
 	(
@@ -195,6 +193,7 @@
 (complete 15)
 
 (set #options-exist (exists (tackon @default-dest "Resources/Options")))
+(set #aiss-theme "")
 
 (if (= #options-exist 0)
 	(
@@ -234,14 +233,24 @@
 			(source #netsurf-name)
 			(dest @default-dest)
 			(newname "NetSurf")
-			(infos)
 			(optional "askuser" "force" "oknodelete")
 			(confirm "expert")
 		)
 	)
 ;else
 	(
-		(run "CopyStore " #netsurf-name " " @default-dest)
+		(copyfiles
+			(prompt "Please check the version of NetSurf you are copying against "
+					"any which might already be installed.")
+			(help @copyfiles-help)
+			(source #netsurf-name)
+			(dest "T:")
+			(newname "NetSurf")
+			(optional "force" "oknodelete")
+		)
+
+		(run "CopyStore T:NetSurf" @default-dest)
+		(delete "T:NetSurf")
 	)
 )
 
@@ -250,7 +259,7 @@
 (copyfiles
 	(prompt "Copying files")
 	(source "")
-	(choices "Resources" "Rexx" "NetSurf.guide" "NetSurf.readme")
+	(choices "Resources" "Rexx" "NetSurf.guide" "NetSurf.readme" "COPYING")
 	(help @copyfiles-help)
 	(dest @default-dest)
 	(infos)
