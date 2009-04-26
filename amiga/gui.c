@@ -460,7 +460,7 @@ void gui_init2(int argc, char** argv)
 
 	if(notalreadyrunning)
 	{
-		if((option_modeid) && (option_modeid[0] != '\0'))
+		if((option_modeid) && (strncmp(option_modeid,"0x",2) == 0))
 		{
 			id = strtoul(option_modeid,NULL,0);
 		}
