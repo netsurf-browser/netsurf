@@ -34,7 +34,7 @@
 #include "utils/log.h"
 #include "utils/talloc.h"
 
-static bool box_contains_point(struct box *box, int x, int y);
+static bool box_contains_point(struct box *box, int x, int y, bool *physically);
 
 #define box_is_float(box) (box->type == BOX_FLOAT_LEFT || \
 		box->type == BOX_FLOAT_RIGHT)
@@ -302,12 +302,13 @@ void box_bounds(struct box *box, struct rect *r)
  * \endcode
  */
 
-struct box *box_at_point(struct box *box, int x, int y,
+struct box *box_at_point(struct box *box, const int x, const int y,
 		int *box_x, int *box_y,
 		struct content **content)
 {
 	int bx = *box_x, by = *box_y;
 	struct box *child, *sibling;
+	bool physically;
 
 	assert(box);
 
@@ -324,10 +325,15 @@ struct box *box_at_point(struct box *box, int x, int y,
 
 	/* consider floats second, since they will often overlap other boxes */
 	for (child = box->float_children; child; child = child->next_float) {
-		if (box_contains_point(child, x - bx, y - by)) {
+		if (box_contains_point(child, x - bx, y - by, &physically)) {
 			*box_x = bx + child->x - child->scroll_x;
 			*box_y = by + child->y - child->scroll_y;
-			return child;
+
+			if (physically)
+				return child;
+			else
+				return box_at_point(child, x, y, box_x, box_y,
+						content);
 		}
 	}
 
@@ -336,20 +342,24 @@ non_float_children:
 	for (child = box->children; child; child = child->next) {
 		if (box_is_float(child))
 			continue;
-		if (box_contains_point(child, x - bx, y - by)) {
+		if (box_contains_point(child, x - bx, y - by, &physically)) {
 			*box_x = bx + child->x - child->scroll_x;
 			*box_y = by + child->y - child->scroll_y;
-			return child;
+
+			if (physically)
+				return child;
+			else
+				return box_at_point(child, x, y, box_x, box_y,
+						content);
 		}
 	}
 
 	/* marker boxes */
 	if (box->list_marker) {
-		if (box_contains_point(box->list_marker, x - bx, y - by)) {
-			*box_x = bx + box->list_marker->x -
-					box->list_marker->scroll_x;
-			*box_y = by + box->list_marker->y -
-					box->list_marker->scroll_y;
+		if (box_contains_point(box->list_marker, x - bx, y - by,
+				&physically)) {
+			*box_x = bx + box->list_marker->x;
+			*box_y = by + box->list_marker->y;
 			return box->list_marker;
 		}
 	}
@@ -363,12 +373,19 @@ siblings:
 			for (sibling = box->next_float; sibling;
 					sibling = sibling->next_float) {
 				if (box_contains_point(sibling,
-						x - bx, y - by)) {
+						x - bx, y - by, &physically)) {
 					*box_x = bx + sibling->x -
 							sibling->scroll_x;
 					*box_y = by + sibling->y -
 							sibling->scroll_y;
-					return sibling;
+
+					if (physically)
+						return sibling;
+					else
+						return box_at_point(sibling,
+								x, y,
+								box_x, box_y,
+								content);
 				}
 			}
 			/* ascend to float's parent */
@@ -385,13 +402,20 @@ siblings:
 					sibling = sibling->next) {
 				if (box_is_float(sibling))
 					continue;
-				if (box_contains_point(sibling,
-						x - bx, y - by)) {
+				if (box_contains_point(sibling, x - bx, y - by,
+						&physically)) {
 					*box_x = bx + sibling->x -
 							sibling->scroll_x;
 					*box_y = by + sibling->y -
 							sibling->scroll_y;
-					return sibling;
+
+					if (physically)
+						return sibling;
+					else
+						return box_at_point(sibling,
+								x, y,
+								box_x, box_y,
+								content);
 				}
 			}
 			box = box->parent;
@@ -405,47 +429,55 @@ siblings:
 /**
  * Determine if a point lies within a box.
  *
- * \param  box  box to consider
- * \param  x    coordinate relative to box parent
- * \param  y    coordinate relative to box parent
+ * \param  box		box to consider
+ * \param  x		coordinate relative to box parent
+ * \param  y		coordinate relative to box parent
+ * \param  physically	if function returning true, physically is set true if
+ *			point is within the box's physical dimensions and false
+ *			if the point is not within the box's physical dimensions
+ *			but is in the area defined by the box's descendants.
+ *			if function returning false, physically is undefined.
  * \return  true if the point is within the box or a descendant box
  *
  * This is a helper function for box_at_point().
  */
 
-bool box_contains_point(struct box *box, int x, int y)
+bool box_contains_point(struct box *box, int x, int y, bool *physically)
 {
-	if ((box->style && box->style->overflow != CSS_OVERFLOW_VISIBLE) ||
-			box->inline_end) {
-		if (box->x <= x + box->border[LEFT] &&
-				x < box->x + box->padding[LEFT] + box->width +
-				box->border[RIGHT] + box->padding[RIGHT] &&
-				box->y <= y + box->border[TOP] &&
-				y < box->y + box->padding[TOP] + box->height +
-				box->border[BOTTOM] + box->padding[BOTTOM])
-			return true;
-		if (box->list_marker && box->list_marker->x <= x +
-				box->list_marker->border[LEFT] &&
-				x < box->list_marker->x +
-				box->list_marker->padding[LEFT] +
-				box->list_marker->width +
-				box->list_marker->border[RIGHT] +
-				box->list_marker->padding[RIGHT] &&
-				box->list_marker->y <= y +
-				box->list_marker->border[TOP] &&
-				y < box->list_marker->y +
-				box->list_marker->padding[TOP] +
-				box->list_marker->height +
-				box->list_marker->border[BOTTOM] +
-				box->list_marker->padding[BOTTOM]) {
-			return true;
-		}
-	} else {
+	if (box->x <= x + box->border[LEFT] &&
+			x < box->x + box->padding[LEFT] + box->width +
+			box->border[RIGHT] + box->padding[RIGHT] &&
+			box->y <= y + box->border[TOP] &&
+			y < box->y + box->padding[TOP] + box->height +
+			box->border[BOTTOM] + box->padding[BOTTOM]) {
+		*physically = true;
+		return true;
+	}
+	if (box->list_marker && box->list_marker->x <= x +
+			box->list_marker->border[LEFT] &&
+			x < box->list_marker->x +
+			box->list_marker->padding[LEFT] +
+			box->list_marker->width +
+			box->list_marker->border[RIGHT] +
+			box->list_marker->padding[RIGHT] &&
+			box->list_marker->y <= y +
+			box->list_marker->border[TOP] &&
+			y < box->list_marker->y +
+			box->list_marker->padding[TOP] +
+			box->list_marker->height +
+			box->list_marker->border[BOTTOM] +
+			box->list_marker->padding[BOTTOM]) {
+		*physically = true;
+		return true;
+	}
+	if (box->style && box->style->overflow == CSS_OVERFLOW_VISIBLE) {
 		if (box->x + box->descendant_x0 <= x &&
 				x < box->x + box->descendant_x1 &&
 				box->y + box->descendant_y0 <= y &&
-				y < box->y + box->descendant_y1)
+				y < box->y + box->descendant_y1) {
+			*physically = false;
 			return true;
+		}
 	}
 	return false;
 }
