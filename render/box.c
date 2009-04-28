@@ -470,7 +470,8 @@ bool box_contains_point(struct box *box, int x, int y, bool *physically)
 		*physically = true;
 		return true;
 	}
-	if (box->style && box->style->overflow == CSS_OVERFLOW_VISIBLE) {
+	if ((box->style && box->style->overflow == CSS_OVERFLOW_VISIBLE) ||
+			!box->style) {
 		if (box->x + box->descendant_x0 <= x &&
 				x < box->x + box->descendant_x1 &&
 				box->y + box->descendant_y0 <= y &&
