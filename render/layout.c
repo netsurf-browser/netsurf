@@ -2772,6 +2772,11 @@ bool layout_table(struct box *table, int available_width,
 		int row_group_height = 0;
 		for (row = row_group->children; row; row = row->next) {
 			int row_height = 0;
+			if (row->style->height.height == CSS_HEIGHT_LENGTH) {
+				row_height = (int) css_len2px(&row->style->
+						height.value.length,
+						row->style);
+			}
 			for (c = row->children; c; c = c->next) {
 				assert(c->style);
 				c->width = xs[c->start_column + c->columns] -
@@ -2807,6 +2812,10 @@ bool layout_table(struct box *table, int available_width,
 					if (c->height < h)
 						c->height = h;
 				}
+				/* specified row height is treated as a minimum
+				 */
+				if (c->height < row_height)
+					c->height = row_height;
 				c->x = xs[c->start_column] + c->border[LEFT];
 				c->y = c->border[TOP];
 				for (i = 0; i != c->columns; i++) {

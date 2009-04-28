@@ -562,52 +562,6 @@ bool box_construct_element(xmlNode *n, struct content *content,
 		xmlFree(s);
 	}
 
-	/* transfer <tr height="n"> down to the <td> elements */
-	/* \todo move this into box_get_style() */
-	if (strcmp((const char *) n->name, "tr") == 0) {
-		if ((s = (char *) xmlGetProp(n,
-				(const xmlChar *) "height"))) {
-			float value = atof(s);
-			if (value < 0 || strlen(s) == 0) {
-				/* ignore negative values and height="" */
-			} else if (strrchr(s, '%')) {
-				/* the specification doesn't make clear what
-				 * percentage heights mean, so ignore them */
-			} else {
-				/* The tree is not normalized yet, so accept
-				 * cells not in rows and rows not in row
-				 * groups. */
-				struct box *child;
-				float current;
-				for (child = box->children; child;
-							child = child->next) {
-					if (child->style->height.height ==
-							CSS_HEIGHT_LENGTH)
-						current = css_len2px(
-							&child->style->height.
-							value.length,
-							child->style);
-					else
-						current = 0;
-					if (child->type == BOX_TABLE_CELL &&
-							value > current) {
-						/* Row height exceeds cell
-						 * height, increase cell height
-						 * to row height */
-						child->style->height.height =
-							CSS_HEIGHT_LENGTH;
-						child->style->height.value.
-							length.unit =
-							CSS_UNIT_PX;
-						child->style->height.value.
-							length.value = value;
-					}
-				}
-			}
-			xmlFree(s);
-		}
-	}
-
 	/* fetch any background image for this box */
 	if (style->background_image.type == CSS_BACKGROUND_IMAGE_URI) {
 		if (!html_fetch_object(content, style->background_image.uri,
@@ -925,6 +879,7 @@ struct css_style * box_get_style(struct content *c,
 			((strcmp((const char *) n->name, "iframe") == 0) ||
 			(strcmp((const char *) n->name, "td") == 0) ||
 			(strcmp((const char *) n->name, "th") == 0) ||
+			(strcmp((const char *) n->name, "tr") == 0) ||
 			(strcmp((const char *) n->name, "img") == 0) ||
 			(strcmp((const char *) n->name, "object") == 0) ||
 			(strcmp((const char *) n->name, "applet") == 0))) {
@@ -932,8 +887,8 @@ struct css_style * box_get_style(struct content *c,
 		if (value <= 0 || strlen(s) == 0) {
 			/* ignore negative values and height="" */
 		} else if (strrchr(s, '%')) {
-			/* the specification doesn't make clear what
-			 * percentage heights mean, so ignore them */
+			style->height.height = CSS_HEIGHT_PERCENT;
+			style->height.value.percent = value;
 		} else {
 			style->height.height = CSS_HEIGHT_LENGTH;
 			style->height.value.length.unit = CSS_UNIT_PX;
@@ -2328,7 +2283,7 @@ bool box_button(BOX_SPECIAL_PARAMS)
 	gadget->box = box;
 
 	box->type = BOX_INLINE_BLOCK;
-	
+
 	/* Just render the contents */
 
 	return true;
