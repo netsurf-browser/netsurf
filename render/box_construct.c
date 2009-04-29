@@ -460,20 +460,7 @@ bool box_construct_element(xmlNode *n, struct content *content,
 					author))
 				return false;
 	} else {
-		if (style->float_ == CSS_FLOAT_LEFT ||
-				style->float_ == CSS_FLOAT_RIGHT) {
-			/* float: insert a float box between the parent and
-			 * current node */
-			parent = box_create(0, href, target, title, 0, content);
-			if (!parent)
-				return false;
-			if (style->float_ == CSS_FLOAT_LEFT)
-				parent->type = BOX_FLOAT_LEFT;
-			else
-				parent->type = BOX_FLOAT_RIGHT;
-			box_add_child(*inline_container, parent);
-		}
-
+		/* list item: compute marker, then treat as non-inline box */
 		if (style->display == CSS_DISPLAY_LIST_ITEM) {
 			struct box *marker;
 			marker = box_create(style, 0, 0, title, 0, content);
@@ -503,9 +490,32 @@ bool box_construct_element(xmlNode *n, struct content *content,
 			case CSS_LIST_STYLE_TYPE_LOWER_ROMAN:
 			case CSS_LIST_STYLE_TYPE_UPPER_ALPHA:
 			case CSS_LIST_STYLE_TYPE_UPPER_ROMAN:
-				if (parent->last && parent->last->list_marker)
-					marker->rows = parent->last->
+				if (parent->last) {
+					struct box *last = parent->last;
+
+					/* Drill down into last child of parent
+					 * to find the list marker (if any)
+					 *
+					 * Floated list boxes end up as:
+					 *
+					 * parent
+					 *   BOX_INLINE_CONTAINER
+					 *     BOX_FLOAT_{LEFT,RIGHT}
+					 *       BOX_BLOCK <-- list box
+					 *        ...
+					 */
+					while (last != NULL) {
+						if (last->list_marker != NULL)
+							break;
+
+						last = last->last;
+					}
+
+					if (last && last->list_marker) {
+						marker->rows = last->
 							list_marker->rows + 1;
+					}
+				}
 				marker->text = talloc_array(content, char, 20);
 				if (!marker->text)
 					return false;
@@ -528,6 +538,20 @@ bool box_construct_element(xmlNode *n, struct content *content,
 			}
 			box->list_marker = marker;
 			marker->parent = box;
+		}
+
+		/* float: insert a float box between the parent and
+		 * current node. Note: new parent will be the float */
+		if (style->float_ == CSS_FLOAT_LEFT ||
+				style->float_ == CSS_FLOAT_RIGHT) {
+			parent = box_create(0, href, target, title, 0, content);
+			if (!parent)
+				return false;
+			if (style->float_ == CSS_FLOAT_LEFT)
+				parent->type = BOX_FLOAT_LEFT;
+			else
+				parent->type = BOX_FLOAT_RIGHT;
+			box_add_child(*inline_container, parent);
 		}
 
 		/* non-inline box: add to tree and recurse */
