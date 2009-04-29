@@ -25,15 +25,15 @@
 #include <math.h>
 #include <gtk/gtk.h>
 #include <glade/glade.h>
-#include "utils/log.h"
 #include "desktop/options.h"
+#include "desktop/print.h"
 #include "gtk/options.h"
 #include "gtk/gtk_gui.h"
 #include "gtk/gtk_scaffolding.h"
 #include "gtk/dialogs/gtk_options.h"
 #include "gtk/gtk_window.h"
-
-#include "desktop/print.h"
+#include "utils/log.h"
+#include "utils/utils.h"
 
 GtkDialog *wndPreferences;
 static GladeXML *gladeFile;
@@ -123,7 +123,8 @@ DECLARE(setDefaultExportOptions);
         g_signal_connect(G_OBJECT(wname), event,                        \
                          G_CALLBACK(on_##wname##_changed), NULL)
 
-GtkDialog* nsgtk_options_init(struct browser_window *bw, GtkWindow *parent) {
+GtkDialog* nsgtk_options_init(struct browser_window *bw, GtkWindow *parent)
+{
 	glade_location = g_strconcat(res_dir_location, "options.glade", NULL);
 	LOG(("Using '%s' as Glade template file", glade_location));
 	gladeFile = glade_xml_new(glade_location, NULL, NULL);
@@ -199,8 +200,7 @@ GtkDialog* nsgtk_options_init(struct browser_window *bw, GtkWindow *parent) {
 	CONNECT(checkCompressPDF, "toggled");
 	CONNECT(checkPasswordPDF, "toggled");
 	CONNECT(setDefaultExportOptions, "clicked");
-	
-	
+		
 	g_signal_connect(G_OBJECT(wndPreferences), "response",
 		G_CALLBACK (dialog_response_handler), NULL);
 	
@@ -262,69 +262,57 @@ GtkDialog* nsgtk_options_init(struct browser_window *bw, GtkWindow *parent) {
 
 void nsgtk_options_load(void) 
 {
-	char b[20];
+	GtkVBox *combolanguagevbox;
+	gchar *languagefile;
+	const char *default_accept_language = 
+			option_accept_language ? option_accept_language : "en";
+	int combo_row_count = 0;
+	int active_language = 0;
 	int proxytype = 0;
-	if (option_button_type == 0) {
-		GtkSettings *settings = gtk_settings_get_default();
-		GtkIconSize tooliconsize;
-		GtkToolbarStyle toolbarstyle;
-		g_object_get(settings, "gtk-toolbar-icon-size",  &tooliconsize,
-				"gtk-toolbar-style", &toolbarstyle, NULL);
-		switch (toolbarstyle) {
-		case GTK_TOOLBAR_ICONS:
-			option_button_type = (tooliconsize ==
-					      GTK_ICON_SIZE_SMALL_TOOLBAR) ? 1 : 2;
-			break;
-		case GTK_TOOLBAR_TEXT:
-			option_button_type = 4;
-			break;
-		case GTK_TOOLBAR_BOTH:
-		case GTK_TOOLBAR_BOTH_HORIZ:
-		default:
-			option_button_type = 3;
-			break;
-		}
-	}
-	
-	/* Following language loading needs reworking.  rjek (20/04/2009) */
+	FILE *fp;
+	char buf[20];
 
-	if (option_accept_language == NULL) {
-		option_accept_language = (char *) malloc(3);
-		strcpy(option_accept_language, "en");
-	}
-
-	GtkVBox *combolanguagevbox = GTK_VBOX(glade_xml_get_widget(gladeFile, "combolanguagevbox"));
+	/* Create combobox */
+	combolanguagevbox = 
+		GTK_VBOX(glade_xml_get_widget(gladeFile, "combolanguagevbox"));
 	comboLanguage = gtk_combo_box_new_text();
-	gchar * languagefile = g_strconcat(res_dir_location, "languages", NULL);
-	FILE * f;
-	char * in = malloc(6);
-	char temp;
-	temp = 1;
-	int temprowcount = 0;
-	int final = 58;
-	f = fopen(languagefile, "r");
-	int i = 0;
-	while ((temp != '\0') && (fread(&temp, 1, 1, f))) {
-		if (temp == '\n') {
-			in[i] = '\0';
-			i = 0;
-			gtk_combo_box_append_text(GTK_COMBO_BOX(comboLanguage), in);
-			if (strcmp(in, option_accept_language) == 0) {
-				final = temprowcount;
-			} else {
-				temprowcount++;
-			}
-		} else {
-			in[i++] = temp;
-		}
+
+	languagefile = g_strconcat(res_dir_location, "languages", NULL);
+
+	/* Populate combobox from languages file */
+	fp = fopen((const char *) languagefile, "r");
+	if (fp == NULL) {
+		LOG(("Failed opening languages file"));
+		warn_user("FileError", (const char *) languagefile);
+		return;
 	}
-	fclose(f);
-	free(in);
-	gtk_combo_box_set_active(GTK_COMBO_BOX(comboLanguage), final);
+
+	while (fgets(buf, sizeof(buf), fp)) {
+		/* Ignore blank lines */
+		if (buf[0] == '\0')
+			continue;
+
+		/* Remove trailing \n */
+		buf[strlen(buf) - 1] = '\0';
+
+		gtk_combo_box_append_text(GTK_COMBO_BOX(comboLanguage), buf);
+
+		if (strcmp(buf, default_accept_language) == 0)
+			active_language = combo_row_count;
+
+		combo_row_count++;
+	}
+
+	fclose(fp);
+
+	gtk_combo_box_set_active(GTK_COMBO_BOX(comboLanguage), active_language);
+	/** \todo localisation */
 	gtk_widget_set_tooltip_text(GTK_WIDGET(comboLanguage), 
 			"set preferred language for web pages");
-	gtk_box_pack_start(GTK_BOX(combolanguagevbox), comboLanguage, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(combolanguagevbox), 
+			comboLanguage, FALSE, FALSE, 0);
 	gtk_widget_show(comboLanguage);
+
 	SET_ENTRY(entryHomePageURL,
 			option_homepage_url ? option_homepage_url : "");
 	SET_BUTTON(setCurrentPage);
@@ -348,16 +336,20 @@ void nsgtk_options_load(void)
 	SET_COMBO(comboProxyType, proxytype);
 	SET_ENTRY(entryProxyHost,
 			option_http_proxy_host ? option_http_proxy_host : "");
-			gtk_widget_set_sensitive (entryProxyHost, !proxytype == 0);
-	snprintf(b, 20, "%d", option_http_proxy_port);	
-	SET_ENTRY(entryProxyPort, b);
-			gtk_widget_set_sensitive (entryProxyPort, !proxytype == 0);
+	gtk_widget_set_sensitive(entryProxyHost, proxytype != 0);
+
+	snprintf(buf, sizeof(buf), "%d", option_http_proxy_port);	
+
+	SET_ENTRY(entryProxyPort, buf);
+	gtk_widget_set_sensitive(entryProxyPort, proxytype != 0);
+
 	SET_ENTRY(entryProxyUser, option_http_proxy_auth_user ?
 			option_http_proxy_auth_user : "");
-			gtk_widget_set_sensitive (entryProxyUser, !proxytype == 0);
+	gtk_widget_set_sensitive(entryProxyUser, proxytype != 0);
+
 	SET_ENTRY(entryProxyPassword, option_http_proxy_auth_pass ?
 			option_http_proxy_auth_pass : "");
-			gtk_widget_set_sensitive (entryProxyPassword, !proxytype == 0);
+	gtk_widget_set_sensitive(entryProxyPassword, proxytype != 0);
 
 	SET_SPIN(spinMaxFetchers, option_max_fetchers);
 	SET_SPIN(spinFetchesPerHost, option_max_fetchers_per_host);
@@ -484,9 +476,19 @@ static gboolean on_dialog_close (GtkDialog *dlg, gboolean stay_alive)
 
 static gboolean on_comboLanguage_changed(GtkWidget *widget, gpointer data)
 {
-	LOG(("Signal emitted from 'comboLanguage'"));
-	strcpy(option_accept_language,
-			gtk_combo_box_get_active_text(GTK_COMBO_BOX(comboLanguage)));
+	char *old_lang = option_accept_language;
+	gchar *lang = 
+		gtk_combo_box_get_active_text(GTK_COMBO_BOX(comboLanguage));
+	if (lang == NULL)
+		return FALSE;
+
+	option_accept_language = strdup((const char *) lang);
+	if (option_accept_language == NULL)
+		option_accept_language = old_lang;
+	else
+		free(old_lang);
+
+	g_free(lang);
 	
 	return FALSE;
 }
@@ -564,7 +566,7 @@ gboolean on_entryProxyPort_changed(GtkWidget *widget, gpointer data)
 		option_http_proxy_port = port;
 	} else {
 		char buf[32];
-		snprintf(buf, 31, "%d", option_http_proxy_port);
+		snprintf(buf, sizeof(buf), "%d", option_http_proxy_port);
 		SET_ENTRY(entryProxyPort, buf);
 	}
 
@@ -641,32 +643,38 @@ BUTTON_CLICKED(fontPreview)
 END_HANDLER
 
 COMBO_CHANGED(comboButtonType, option_button_type)
-	option_button_type++;
-	struct gui_window *current;
-	current = window_list;
+	struct gui_window *current = window_list;
+
 	while (current)	{
 		switch(option_button_type) {
+		case 0:
+			gtk_toolbar_set_style(
+				GTK_TOOLBAR(current->scaffold->tool_bar),
+				GTK_TOOLBAR_ICONS);
+			gtk_toolbar_set_icon_size(
+				GTK_TOOLBAR(current->scaffold->tool_bar),
+				GTK_ICON_SIZE_SMALL_TOOLBAR);
+			break;
 		case 1:
-			gtk_toolbar_set_style(GTK_TOOLBAR(current->scaffold->tool_bar),
-					      GTK_TOOLBAR_ICONS);
-			gtk_toolbar_set_icon_size(GTK_TOOLBAR(current->scaffold->tool_bar),
-						  GTK_ICON_SIZE_SMALL_TOOLBAR);
+			gtk_toolbar_set_style(
+				GTK_TOOLBAR(current->scaffold->tool_bar),
+				GTK_TOOLBAR_ICONS);
+			gtk_toolbar_set_icon_size(
+				GTK_TOOLBAR(current->scaffold->tool_bar),
+				GTK_ICON_SIZE_LARGE_TOOLBAR);
 			break;
 		case 2:
-			gtk_toolbar_set_style(GTK_TOOLBAR(current->scaffold->tool_bar),
-					      GTK_TOOLBAR_ICONS);
-			gtk_toolbar_set_icon_size(GTK_TOOLBAR(current->scaffold->tool_bar),
-						  GTK_ICON_SIZE_LARGE_TOOLBAR);
+			gtk_toolbar_set_style(
+				GTK_TOOLBAR(current->scaffold->tool_bar),
+				GTK_TOOLBAR_BOTH);
+			gtk_toolbar_set_icon_size(
+				GTK_TOOLBAR(current->scaffold->tool_bar),
+				GTK_ICON_SIZE_LARGE_TOOLBAR);
 			break;
 		case 3:
-			gtk_toolbar_set_style(GTK_TOOLBAR(current->scaffold->tool_bar),
-					      GTK_TOOLBAR_BOTH);
-			gtk_toolbar_set_icon_size(GTK_TOOLBAR(current->scaffold->tool_bar),
-						  GTK_ICON_SIZE_LARGE_TOOLBAR);
-			break;
-		case 4:
-			gtk_toolbar_set_style(GTK_TOOLBAR(current->scaffold->tool_bar),
-					      GTK_TOOLBAR_TEXT);
+			gtk_toolbar_set_style(
+				GTK_TOOLBAR(current->scaffold->tool_bar),
+				GTK_TOOLBAR_TEXT);
 		default:
 			break;
 		}
