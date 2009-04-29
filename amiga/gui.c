@@ -2704,7 +2704,11 @@ void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
 
 	if(((x-xs) <= 0) || ((x-xs+2) >= (bbox->Width)) || ((y-ys) <= 0) || ((y-ys) >= (bbox->Height))) return;
 
+	SetDrMd(g->shared->win->RPort,COMPLEMENT);
+
 	RectFill(g->shared->win->RPort,x+bbox->Left-xs,y+bbox->Top-ys,x+bbox->Left+2-xs,y+bbox->Top+height-ys);
+
+	SetDrMd(g->shared->win->RPort,JAM1);
 
 	g->c_x = x;
 	g->c_y = y;
