@@ -373,6 +373,7 @@ Download:%s of %s  •  %s/s  •  %s remaining
 DownloadU:%s of unknown  •  %s/s  •  %s total
 Downloaded:%s complete  •  average %s/s  •  %s total
 Unwritten:Writing data to file failed.
+Abort:Abort
 
 # Amiga download window tokens
 #

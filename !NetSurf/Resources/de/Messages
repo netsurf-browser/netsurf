@@ -373,6 +373,7 @@ Download:%s von %s • %s/s • noch %s
 DownloadU:%s von unbekannt • %s/s • bisher %s
 Downloaded:%s komplett • etwa %s/s • gesamt %s
 Unwritten:Schreiben der Datei ist fehlgeschlagen.
+Abort:Abort
 
 # Amiga download window tokens
 #

@@ -37,11 +37,13 @@ struct gui_download_window {
 	uint32 downloaded;
 	struct dlnode *dln;
 	struct browser_window *bw;
+	struct fetch *fetch;
 };
 
 int drag_save;
 void *drag_save_data;
 
+void ami_download_window_abort(struct gui_download_window *dw);
 void ami_drag_save(struct Window *win);
 void ami_free_download_list(struct List *dllist);
 

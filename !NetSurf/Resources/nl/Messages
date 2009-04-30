@@ -373,6 +373,7 @@ Download:%s van %s  •  %s/s  •  nog %s
 DownloadU:%s van onbekend  •  %s/s  •  %s totaal
 Downloaded:%s compleet  •  gemiddeld %s/s  •  %s totaal
 Unwritten:Data naar bestand schrijven ging fout.
+Abort:Abort
 
 # Amiga download window tokens
 #

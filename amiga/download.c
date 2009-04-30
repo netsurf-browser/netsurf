@@ -31,6 +31,8 @@
 #include "amiga/options.h"
 #include "amiga/save_complete.h"
 
+#include "content/fetch.h"
+
 #include "desktop/selection.h"
 
 #include "utils/messages.h"
@@ -103,6 +105,8 @@ struct gui_download_window *gui_download_window_create(const char *url,
            	WA_CloseGadget, FALSE,
            	WA_SizeGadget, TRUE,
 			WA_CustomScreen,scrn,
+			WINDOW_SharedPort,sport,
+			WINDOW_UserData,dw,
 			WINDOW_IconifyGadget, TRUE,
 			WINDOW_LockHeight,TRUE,
          	WINDOW_Position, WPOS_CENTERSCREEN,
@@ -118,13 +122,20 @@ struct gui_download_window *gui_download_window_create(const char *url,
 					FUELGAUGE_VarArgs,va,
 					FUELGAUGE_Percent,FALSE,
 					FUELGAUGE_Justification,FGJ_CENTER,
-				StringEnd,
+				FuelGaugeEnd,
 				CHILD_NominalSize,TRUE,
 				CHILD_WeightedHeight,0,
+				LAYOUT_AddChild, dw->gadgets[GID_CANCEL] = ButtonObject,
+					GA_ID,GID_CANCEL,
+					GA_RelVerify,TRUE,
+					GA_Text,messages_get("Abort"),
+					GA_TabCycle,TRUE,
+				ButtonEnd,
 			EndGroup,
 		EndWindow;
 
 	dw->win = (struct Window *)RA_OpenWindow(dw->objects[OID_MAIN]);
+	dw->fetch = fetch;
 
 	dw->node = AddObject(window_list,AMINS_DLWINDOW);
 	dw->node->objstruct = dw;
@@ -167,6 +178,12 @@ void gui_download_window_error(struct gui_download_window *dw,
 		const char *error_msg)
 {
 	warn_user("Unwritten","");
+	gui_download_window_done(dw);
+}
+
+void ami_download_window_abort(struct gui_download_window *dw)
+{
+	fetch_abort(dw->fetch);
 	gui_download_window_done(dw);
 }
 

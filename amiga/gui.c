@@ -947,6 +947,11 @@ void ami_handle_msg(void)
 								ami_401login_close((struct gui_login_window *)gwin);
 								win_destroyed = true;
 							}
+							else if(gwin->node->Type == AMINS_DLWINDOW)
+							{
+								ami_download_window_abort((struct gui_download_window *)gwin);
+								win_destroyed = true;
+							}
 						break;
 
 						default:

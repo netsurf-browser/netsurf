@@ -374,6 +374,7 @@ Download:%s di %s  ?  %s/s  ?  %s al termine
 DownloadU:%s sconosciuto  ?  %s/s  ?  %s totale
 Downloaded:%s completato  ?  media %s/s  ?  %s totale
 Unwritten:Scrittura dei dati sul file fallita.
+Abort:Abort
 
 # Amiga download window tokens
 #
