@@ -150,7 +150,7 @@ form { display: block; }
 
 input, button { background-color: #fff; color: #000; text-align: left;
 	font-family: sans-serif; width: auto; height: auto; overflow: hidden;
-	margin: 1px; border: 2px solid #333; padding: 1px 2px; }
+	border: 2px solid #333; padding: 1px 2px; }
 input[type=button], input[type=reset], input[type=submit], button {
 	background-color: #d9d9d9; color: #000; text-align: center;
 	border: medium outset #d9d9d9; padding: 1px 0.5em; }
