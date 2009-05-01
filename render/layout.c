@@ -92,6 +92,7 @@ static bool layout_table(struct box *box, int available_width,
 		struct content *content);
 static void layout_move_children(struct box *box, int x, int y);
 static void calculate_mbp_width(struct css_style *style, unsigned int side,
+		bool margin, bool border, bool padding,
 		int *fixed, float *frac);
 static void layout_lists(struct box *box,
 		const struct font_functions *font_func);
@@ -684,13 +685,29 @@ void layout_minmax_block(struct box *block,
 
 	/* fixed width takes priority */
 	if (block->type != BOX_TABLE_CELL &&
-			block->style->width.width == CSS_WIDTH_LENGTH)
+			block->style->width.width == CSS_WIDTH_LENGTH) {
 		min = max = css_len2px(&block->style->width.value.length,
 				block->style);
+	}
 
 	/* add margins, border, padding to min, max widths */
-	calculate_mbp_width(block->style, LEFT, &extra_fixed, &extra_frac);
-	calculate_mbp_width(block->style, RIGHT, &extra_fixed, &extra_frac);
+	if (block->gadget && (block->style->width.width == CSS_WIDTH_PERCENT ||
+			(block->style->width.width == CSS_WIDTH_LENGTH &&
+			(block->gadget->type == GADGET_SUBMIT ||
+			block->gadget->type == GADGET_RESET ||
+			block->gadget->type == GADGET_BUTTON)))) {
+		/* some gadgets with specified width already include border and
+		 * padding, so just get margin */
+		calculate_mbp_width(block->style, LEFT, true, false, false,
+				&extra_fixed, &extra_frac);
+		calculate_mbp_width(block->style, RIGHT, true, false, false,
+				&extra_fixed, &extra_frac);
+	} else {
+		calculate_mbp_width(block->style, LEFT, true, true, true,
+				&extra_fixed, &extra_frac);
+		calculate_mbp_width(block->style, RIGHT, true, true, true,
+				&extra_fixed, &extra_frac);
+	}
 	if (extra_fixed < 0)
 		extra_fixed = 0;
 	if (extra_frac < 0)
@@ -1153,20 +1170,29 @@ void layout_find_dimensions(int available_width,
 		case CSS_WIDTH_PERCENT:
 			*width = (style->width.value.percent *
 					available_width) / 100;
-			/* gadget widths include margins,
-			 * borders and padding */
-			if (box->gadget) {
-				calculate_mbp_width(style, LEFT, &fixed, &frac);
-				calculate_mbp_width(style, RIGHT, &fixed,
-						&frac);
-				*width -= frac + fixed;
-				*width = *width > 0 ? *width : 0;
-			}
 			break;
 		case CSS_WIDTH_AUTO:
 		default:
 			*width = AUTO;
 			break;
+		}
+
+		/* specified gadget widths include borders and padding in some
+		 * cases */
+		if (box->gadget && *width != AUTO &&
+				(style->width.width == CSS_WIDTH_PERCENT ||
+				box->gadget->type == GADGET_SUBMIT ||
+				box->gadget->type == GADGET_RESET ||
+				box->gadget->type == GADGET_BUTTON)) {
+			calculate_mbp_width(style, LEFT, false, true, true,
+					&fixed, &frac);
+			calculate_mbp_width(style, RIGHT, false, true, true,
+					&fixed, &frac);
+			*width -= frac * available_width + fixed;
+			*width = *width > 0 ? *width : 0;
+			/* Reset fixed & frac */
+			fixed = 0;
+			frac = 0;
 		}
 	}
 
@@ -1225,6 +1251,24 @@ void layout_find_dimensions(int available_width,
 			*height = AUTO;
 			break;
 		}
+
+		/* specified gadget heights include borders andpadding in
+		 * some cases */
+		if (box->gadget && *height != AUTO &&
+				(style->height.height == CSS_HEIGHT_PERCENT ||
+				box->gadget->type == GADGET_SUBMIT ||
+				box->gadget->type == GADGET_RESET ||
+				box->gadget->type == GADGET_BUTTON)) {
+			calculate_mbp_width(style, TOP, false, true, true,
+					&fixed, &frac);
+			calculate_mbp_width(style, BOTTOM, false, true, true,
+					&fixed, &frac);
+			*height -= frac * available_width + fixed;
+			*height = *height > 0 ? *height : 0;
+			/* Reset fixed & frac */
+			fixed = 0;
+			frac = 0;
+		}
 	}
 
 	if (max_width) {
@@ -1236,21 +1280,31 @@ void layout_find_dimensions(int available_width,
 		case CSS_MAX_WIDTH_PERCENT:
 			*max_width = (style->max_width.value.percent *
 					available_width) / 100;
-			/* gadget widths include margins,
-			 * borders and padding */
-			if (box->gadget) {
-				calculate_mbp_width(style, LEFT, &fixed, &frac);
-				calculate_mbp_width(style, RIGHT, &fixed,
-						&frac);
-				*max_width -= frac + fixed;
-				*max_width = *max_width > 0 ? *max_width : 0;
-			}
 			break;
 		case CSS_MAX_WIDTH_NONE:
 		default:
 			/* Inadmissible */
 			*max_width = -1;
 			break;
+		}
+
+		/* specified gadget widths include borders and padding in some
+		 * cases */
+		if (box->gadget && *max_width != -1 &&
+				(style->max_width.max_width ==
+						CSS_WIDTH_PERCENT ||
+				box->gadget->type == GADGET_SUBMIT ||
+				box->gadget->type == GADGET_RESET ||
+				box->gadget->type == GADGET_BUTTON)) {
+			calculate_mbp_width(style, LEFT, false, true, true,
+					&fixed, &frac);
+			calculate_mbp_width(style, RIGHT, false, true, true,
+					&fixed, &frac);
+			*max_width -= frac * available_width + fixed;
+			*max_width = *max_width > 0 ? *max_width : 0;
+			/* Reset fixed & frac */
+			fixed = 0;
+			frac = 0;
 		}
 	}
 
@@ -1263,19 +1317,30 @@ void layout_find_dimensions(int available_width,
 		case CSS_MIN_WIDTH_PERCENT:
 			*min_width = (style->min_width.value.percent *
 					available_width) / 100;
-			/* gadget widths include margins,
-			 * borders and padding */
-			if (box->gadget) {
-				calculate_mbp_width(style, LEFT, &fixed, &frac);
-				calculate_mbp_width(style, RIGHT, &fixed,
-						&frac);
-				*min_width -= frac + fixed;							*min_width = *min_width > 0 ? *min_width : 0;
-			}
 			break;
 		default:
 			/* Inadmissible */
 			*min_width = 0;
 			break;
+		}
+
+		/* specified gadget widths include borders and padding in some
+		 * cases */
+		if (box->gadget && *min_width != 0 &&
+				(style->min_width.min_width ==
+						CSS_WIDTH_PERCENT ||
+				box->gadget->type == GADGET_SUBMIT ||
+				box->gadget->type == GADGET_RESET ||
+				box->gadget->type == GADGET_BUTTON)) {
+			calculate_mbp_width(style, LEFT, false, true, true,
+					&fixed, &frac);
+			calculate_mbp_width(style, RIGHT, false, true, true,
+					&fixed, &frac);
+			*min_width -= frac * available_width + fixed;
+			*min_width = *min_width > 0 ? *min_width : 0;
+			/* Reset fixed & frac */
+			fixed = 0;
+			frac = 0;
 		}
 	}
 
@@ -2235,9 +2300,11 @@ struct box *layout_minmax_line(struct box *first,
 
 		if (b->type == BOX_INLINE && !b->object) {
 			fixed = frac = 0;
-			calculate_mbp_width(b->style, LEFT, &fixed, &frac);
+			calculate_mbp_width(b->style, LEFT, true, true, true,
+					&fixed, &frac);
 			if (!b->inline_end)
 				calculate_mbp_width(b->style, RIGHT,
+						true, true, true,
 						&fixed, &frac);
 			if (0 < fixed)
 				max += fixed;
@@ -2245,6 +2312,7 @@ struct box *layout_minmax_line(struct box *first,
 		} else if (b->type == BOX_INLINE_END) {
 			fixed = frac = 0;
 			calculate_mbp_width(b->inline_end->style, RIGHT,
+					true, true, true,
 					&fixed, &frac);
 			if (0 < fixed)
 				max += fixed;
@@ -2358,8 +2426,10 @@ struct box *layout_minmax_line(struct box *first,
 					width = b->object->width;
 			}
 			fixed = frac = 0;
-			calculate_mbp_width(b->style, LEFT, &fixed, &frac);
-			calculate_mbp_width(b->style, RIGHT, &fixed, &frac);
+			calculate_mbp_width(b->style, LEFT, true, true, true,
+					&fixed, &frac);
+			calculate_mbp_width(b->style, RIGHT, true, true, true,
+					&fixed, &frac);
 			width += fixed;
 		} else {
 			/* form control with no object */
@@ -3086,8 +3156,10 @@ void layout_minmax_table(struct box *table,
 	}
 
 	/* add margins, border, padding to min, max widths */
-	calculate_mbp_width(table->style, LEFT, &extra_fixed, &extra_frac);
-	calculate_mbp_width(table->style, RIGHT, &extra_fixed, &extra_frac);
+	calculate_mbp_width(table->style, LEFT, true, true, true,
+			&extra_fixed, &extra_frac);
+	calculate_mbp_width(table->style, RIGHT, true, true, true,
+			&extra_fixed, &extra_frac);
 	if (extra_fixed < 0)
 		extra_fixed = 0;
 	if (extra_frac < 0)
@@ -3125,32 +3197,45 @@ void layout_move_children(struct box *box, int x, int y)
 /**
  * Determine width of margin, borders, and padding on one side of a box.
  *
- * \param  style  style to measure
- * \param  size   side of box to measure
- * \param  fixed  increased by sum of fixed margin, border, and padding
- * \param  frac   increased by sum of fractional margin and padding
+ * \param  style    style to measure
+ * \param  size     side of box to measure
+ * \param  margin   whether margin width is required
+ * \param  border   whether border width is required
+ * \param  padding  whether padding width is required
+ * \param  fixed    increased by sum of fixed margin, border, and padding
+ * \param  frac     increased by sum of fractional margin and padding
  */
 
 void calculate_mbp_width(struct css_style *style, unsigned int side,
+		bool margin, bool border, bool padding,
 		int *fixed, float *frac)
 {
 	assert(style);
 
 	/* margin */
-	if (style->margin[side].margin == CSS_MARGIN_LENGTH)
-		*fixed += css_len2px(&style->margin[side].value.length, style);
-	else if (style->margin[side].margin == CSS_MARGIN_PERCENT)
-		*frac += style->margin[side].value.percent * 0.01;
+	if (margin) {
+		if (style->margin[side].margin == CSS_MARGIN_LENGTH)
+			*fixed += css_len2px(&style->margin[side].value.length,
+					style);
+		else if (style->margin[side].margin == CSS_MARGIN_PERCENT)
+			*frac += style->margin[side].value.percent * 0.01;
+	}
 
 	/* border */
-	if (style->border[side].style != CSS_BORDER_STYLE_NONE)
-		*fixed += css_len2px(&style->border[side].width.value, style);
+	if (border) {
+		if (style->border[side].style != CSS_BORDER_STYLE_NONE)
+			*fixed += css_len2px(&style->border[side].width.value,
+					style);
+	}
 
 	/* padding */
-	if (style->padding[side].padding == CSS_PADDING_LENGTH)
-		*fixed += css_len2px(&style->padding[side].value.length, style);
-	else if (style->padding[side].padding == CSS_PADDING_PERCENT)
-		*frac += style->padding[side].value.percent * 0.01;
+	if (padding) {
+		if (style->padding[side].padding == CSS_PADDING_LENGTH)
+			*fixed += css_len2px(&style->padding[side].value.length,
+					style);
+		else if (style->padding[side].padding == CSS_PADDING_PERCENT)
+			*frac += style->padding[side].value.percent * 0.01;
+	}
 }
 
 
