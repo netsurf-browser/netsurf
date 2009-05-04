@@ -14,7 +14,9 @@
 )
 
 (procedure p_failedsobjs
-	(message "The following shared objects failed to copy.  These will be updated on next reboot.\n\n" #failedsobjs)
+	(if #failedsobjs
+		(message "The following shared objects failed to copy.  These will be updated on next reboot.\n\n" #failedsobjs)
+	)
 )
 
 (procedure p_schedulesobj #sobj
@@ -58,7 +60,7 @@
 		(
 			(set #sobj-oldversion (getversion (tackon "SObjs:" #sobj)))
 
-			(if (= #sobj-version #sobj-oldversion) (set #same 1))
+			(if (<= #sobj-version #sobj-oldversion) (set #same 1))
 		)
 	)
 )
