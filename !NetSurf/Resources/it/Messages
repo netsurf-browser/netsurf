@@ -1,5 +1,6 @@
-# Italian messages for NetSurf
+# Italian messages for NetSurf 2.x
 # Translated by Samir Hawamdeh (http://www.betatesting.it/backforthefuture)
+# 4.05.2009
 # =========================================================================
 #
 # Description
@@ -59,7 +60,7 @@ Export:Esporta
 SaveURL:Salva indirizzo
 Print:Stampa  STAMPA
 NewWindow:Nuova finestra  ^N
-ViewSrc:Mostra sorgente...  F8
+ViewSrc:Visualizza sorgente...  F8
 
 # Main -> Page -> Export menu
 #
@@ -73,25 +74,25 @@ URI:Acorn URI
 URL:ANT URL
 LinkText:Testo
 
-# Main -> Object -> Object menu
+# Main -> Object menu
 #
 ObjInfo:Info
 ObjSave:Salva
 ObjPrint:Stampa
 ObjReload:Ricarica
 
-# Main -> Object -> Object -> Export menu
+# Main -> Object -> Export menu
 #
 Sprite:Sprite
-ObjDraw:Draw
+ObjDraw:Disegna
 
 # Main -> Object -> Link menu
-LinkSave:Save
-LinkDload:Download target
-LinkNew:New window
+LinkSave:Salva
+LinkDload:Salva su
+LinkNew:Nuova finestra
 
 # Main -> Selection menu
-SelSave:Save
+SelSave:Salva
 
 # Main -> Navigate menu
 #
@@ -175,8 +176,8 @@ Selection:Seleziona
 SelectAll:Seleziona tutto  ^A
 Clear:Cancella selezione  ^Z
 Copy:Copia nella clipboard  ^C
-Cut:Cut to clipboard  ^X
-Paste:Paste from clipboard  ^V
+Cut:Taglia nella clipboard  ^X
+Paste:Incolla dalla clipboard  ^V
 
 # Selection Menu
 #
@@ -226,9 +227,9 @@ DefaultFonts:Famiglia Font
 # Images pane
 Display:Display
 ImgStyle0:Usa OS
-ImgStyle1:Direttamente a video
+ImgStyle1:Diretto su schermo
 ImgStyle2:Dithered
-ImgStyle3:Errore diffuso
+ImgStyle3:Diffusione errore
 
 # Menu items used in the Amiga version.
 # Some of these are copies of other strings but without the
@@ -244,24 +245,24 @@ CloseWindow:Chiudi finestra
 SaveAs:Salva come
 Source:Sorgente...
 TextNS:Testo...
-SaveCompNS:Complete...
+SaveCompNS:Completo...
 PDFNS:PDF...
-OpenFile:Open local file...
-About:About...
+OpenFile:Apri file locale...
+About:Informazioni...
 
 # Edit menu
 #
 CopyNS:Copia
-PasteNS:Incolla
+Paste:Incolla
 SelectAllNS:Seleziona tutto
-ClearNS:Cancella selezione
+ClearNS:Annulla selezione
 
 # Browser menu
 #
 Browser:Browser
 HistGlobalNS:Mostra cronologia globale...
-HistLocalNS:Show local history...
-FindTextNS:Find text...
+HistLocalNS:Mostra cronologia locale...
+FindTextNS:Trova testo...
 
 # Hotlist menu
 #
@@ -276,16 +277,16 @@ SettingsSave:Salva impostazioni
 # ARexx menu
 #
 ARexx:ARexx
-ARexxExecute:Execute script...
+ARexxExecute:Esegui script...
 
 # Context menu
 #
 Link:Link
-LinkNewTab:Open in new tab
-LinkNewWin:Open in new window
-CopyURL:Copy URL to clipboard
-ObjShow:Show object
-SelectFile:Select file...
+LinkNewTab:Apri in una nuova scheda
+LinkNewWin:Apri in una nuova finestra
+CopyURL:Copia URL nella clipboard
+ObjShow:Mostra oggetto
+SelectFile:Seleziona file...
 
 # Treeview interface tokens
 # =========================
@@ -374,7 +375,7 @@ Download:%s di %s  ?  %s/s  ?  %s al termine
 DownloadU:%s sconosciuto  ?  %s/s  ?  %s totale
 Downloaded:%s completato  ?  media %s/s  ?  %s totale
 Unwritten:Scrittura dei dati sul file fallita.
-Abort:Abort
+Abort:Rimuovi
 
 # Amiga download window tokens
 #
@@ -413,15 +414,20 @@ gtkWorking: In corso
 
 # Dialogs
 #
+
 gtkQuit:Sei sicuro di voler uscire da NetSurf?
-gtkDownloadsRunning:Ci sono alcuni file in download in attesa di essere completati, chiudendo questa sessione tutti i file incompleti verranno cancellati.
+gtkDownloadsRunning:Sono presenti alcuni file in download in attesa di essere completati, chiudendo questa sessione tutti i file incompleti verranno cancellati.
 gtkStartDownload:Scaricare il file?
 gtkOverwrite:Il file "%s" è già esistente.  Si desidera sovrascriverlo?
+gtkOverwriteTitle:Il file è già esistente
 gtkOverwriteInfo:Il file è già esistente in "%s".  Sostituirlo comporterà la sovrascrittura del file.
 gtkFailed:Scaricamento fallito
 gtkFileError:Errore File: %s
 gtkInfo:%s da %s è %s come dimensione
 gtkSave:Salva file come...
+gtkSourceSave:Salva sorgente
+gtkSaveConfirm:File salvato
+gtkSaveCancelled:File non salvato
 gtkUnknownHost:un Host sconosciuto
 gtkUnknownFile:
 gtkUnknownSize:sconosciuto
@@ -444,9 +450,8 @@ PrintSheetsFilled:I fogli di stampa sono pieni
 # dialog box.
 #
 NotFound:Non trovato
-Next:Next
-Prev:Previous
-
+Next:Successivo
+Prev:Precedente
 
 # 401 login user interface tokens
 # ===============================
@@ -480,7 +485,7 @@ FormCheckbox:Clicca per verificare questa opzione
 FormRadio:Clicca per scegliere questa opzione
 FormSubmit:Invia form a %s
 FormBadSubmit:Attenzione: Il form non può essere inviato
-FormButton:Warning: button can not be activated
+FormButton:Attenzione: il pulsante non può essere attivato
 FormTextarea:Clicca per editare il testo
 FormTextbox:Clicca per editare il campo
 FormReset:Resetta form (non ancora implementato)
@@ -527,7 +532,7 @@ InvalidURL:L'indirizzo <em>%s</em> non è stato riconosciuto.
 
 # HTML error page
 #
-ErrorPage:<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Errore nella pagina</title></head><body><h1>Spiacente, NetSurf non può visualizzare questa pagina.</h1><p><strong>%s</strong></p></body></html>
+ErrorPage:<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Errore nella pagina</title></head><body><h1>Spiacente, NetSurf non è in grado di visualizzare questa pagina.</h1><p><strong>%s</strong></p></body></html>
 
 # General errors - displayed in a dialog box
 #
@@ -549,10 +554,10 @@ AWNotSeen:Per favore imposta l'applicazione AWViewer e riprova ancora.
 
 # Specific errors - displayed in a dialog box
 #
-NoMemory:Non sembra esserci abbastanza mamoria per far girare NetSurf. Per favore liberane un po' e riprova ancora.
-FontBadInst:Si è verificato un errore durante l'inizializzazione dei font a causa della presenza di una copia obsoleta dei font ROM nel disco. NetSurf si chiuderà cercando di lanciare un programma in grado di risolvere questo problema.
+NoMemory:Memoria insufficiente per l'esecuzione di NetSurf. Per favore liberane un pò e riprova ancora.
+FontBadInst:Si è verificato un errore durante l'inizializzazione dei font a causa della presenza di una copia obsoleta dei font ROM nel disco. NetSurf verrà chiuso e si cercherà di lanciare un programma in grado di risolvere questo problema.
 FontError:Impossibile aprire il font "Homerton.Medium" (%s).
-Resolvers:Non è stato configurato nessun nome per i domini dei server, perciò sarà possibile solo una navigazione dei file in locale. Usa "Configura" per impostare il tuo nome del/dei server.
+Resolvers:Non è stato configurato nessun nome per i domini dei server, perciò sarà possibile effettuare solo la navigazione dei file in locale. Usa "Configura" per impostare il tuo nome del/dei server.
 NoDiscSpace:Spazio insufficiente nel disco.
 Template:Una finestra di template risulta mancante. Per favore reinstalla NetSurf.
 HotlistSaveError:Non è stato possibile salvare correttamente l'Hotlist.
@@ -564,6 +569,7 @@ URIError:NetSurf non è stato in grado di processare questo file URI a causa di 
 EmptyError:Il file è vuoto.
 PrintErrorRO2:Sembra che la stampante sia occupata.
 AWNotSeen:Per favore imposta l'applicazione AWViewer e riprova ancora.
+EncNotRec:Tipo di codifica sconosciuta.
 
 # Error messages for Amiga version only
 NoMode:Questa modalità non coincide nel database degli schermi
@@ -576,7 +582,7 @@ NoMode:Questa modalità non coincide nel database degli schermi
 
 AbortDownload:Sei sicuro di voler annullare questo trasferimento?
 QuitDownload:Uno o più file sono in attesa di essere scaricati completamente. Sei sicuro di voler chiudere?
-OverwriteFile:Un file con questo nome è già esistente, continuando potrebbe andare perduto.
+OverwriteFile:Un file con questo nome è già esistente, continuare comporterà la sovrascrittura del file originale.
 
 # Page fetching
 # =============
@@ -603,7 +609,7 @@ Done:Documento completato
 #
 BadRedirect:Errata redirezione dell'URL
 FetchFailed:Impossibile ottenere il documento
-NotCSS:Attenzione: "Foglio di stile" non significa CSS
+NotCSS:Attenzione: "Foglio di stile" non ha nulla a che spartire con i CSS
 BadObject:Attenzione: errato tipo di oggetto
 ObjError:Errore di caricamento dell'oggetto: %s
 ParsingFail:Analisi del documento fallita.
@@ -717,13 +723,14 @@ GBytes: GB
 
 Yes:Si
 No:No
-Replace:Sostituisci file
+Replace:Sostituire il file
 DontReplace:Non sostituire
 obj:oggetto
 objs:oggetti
 styl:foglio di stile
 styls:fogli di stile
 OK:OK
+
 
 # Interactive help
 # ================
@@ -779,6 +786,7 @@ HelpBrowserMenu1-0-0:\Rsee information about the current item.
 HelpBrowserMenu1-0-1:\Rsave the current item.
 HelpBrowserMenu1-0-2:\Rsee the export options.
 HelpBrowserMenu1-0-2-0:\Rsave the image as a Sprite.
+HelpBrowserMenu1-0-2-1:\Rsave the image as a DrawFile
 HelpBrowserMenu1-0-3:\Rsave the address of the current item.
 HelpBrowserMenu1-0-3-0:\Rsave the current item's address in Acorn URI format.
 HelpBrowserMenu1-0-3-1:\Rsave the current item's address in Ant URL format.
@@ -820,11 +828,11 @@ HelpBrowserMenu4-3-0:\Stoggle whether animations are not displayed until all cal
 HelpBrowserMenu4-3-1:\Stoggle whether everything is not displayed until all calculations are complete.
 HelpBrowserMenu4-4:\Smake your local display options the default options for NetSurf.
 HelpBrowserMenu4-5:\Rcontrol the default \w positioning.
-HelpBrowserMenu4-5-0:\Sto make the current \w position the default.
-HelpBrowserMenu4-5-1:\Sto toggle whether subsequent windows are staggered down the screen.
-HelpBrowserMenu4-5-2:\Sto toggle whether child windows copy the size and position of their parent.|MWhen off, all new windows open in the default position.
-HelpBrowserMenu4-5-3:\Sto return to the default \w positioning.
-HelpBrowserMenu5:\Rto access NetSurf's built in utilities.|MUtilities are tools such as the hotlist, history tree and various setup options.
+HelpBrowserMenu4-5-0:\S make the current \w position the default.
+HelpBrowserMenu4-5-1:\S toggle whether subsequent windows are staggered down the screen.
+HelpBrowserMenu4-5-2:\S toggle whether child windows copy the size and position of their parent.|MWhen off, all new windows open in the default position.
+HelpBrowserMenu4-5-3:\S return to the default \w positioning.
+HelpBrowserMenu5:\Raccess NetSurf's built in utilities.|MUtilities are tools such as the hotlist, history tree and various setup options.
 HelpBrowserMenu5-0:\Rmanage the hotlist.
 HelpBrowserMenu5-0-0:\Sadd the current page to the hotlist.
 HelpBrowserMenu5-0-1:\Sopen the hotlist management \w.
