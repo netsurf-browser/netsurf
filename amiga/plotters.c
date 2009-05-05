@@ -354,6 +354,12 @@ bool ami_bitmap(int x, int y, int width, int height,
 
 	if(!width || !height) return true;
 
+	if(((x + width) < glob.rect.MinX) ||
+		((y + height) < glob.rect.MinY) ||
+		(x > glob.rect.MaxX) ||
+		(y > glob.rect.MaxY))
+		return true;
+
 	tbm = ami_getcachenativebm(bitmap,width,height,currp->BitMap);
 
 	if(!tbm) return true;
