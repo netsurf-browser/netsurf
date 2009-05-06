@@ -72,6 +72,8 @@ static void layout_find_dimensions(int available_width,
 		struct box *box, struct css_style *style,
 		int *width, int *height, int *max_width, int *min_width,
 		int margin[4], int padding[4], int border[4]);
+static void layout_tweak_form_dimensions(struct box *box, bool percentage,
+		int available_width, bool setwidth, int *dimension);
 static int layout_clear(struct box *fl, css_clear clear);
 static void find_sides(struct box *fl, int y0, int y1,
 		int *x0, int *x1, struct box **left, struct box **right);
@@ -1159,8 +1161,7 @@ void layout_find_dimensions(int available_width,
 {
 	struct box *containing_block = NULL;
 	unsigned int i;
-	int fixed = 0;
-	float frac = 0;
+	bool percentage;
 
 	if (width) {
 		switch (style->width.width) {
@@ -1179,20 +1180,11 @@ void layout_find_dimensions(int available_width,
 
 		/* specified gadget widths include borders and padding in some
 		 * cases */
-		if (box->gadget && *width != AUTO &&
-				(style->width.width == CSS_WIDTH_PERCENT ||
-				box->gadget->type == GADGET_SUBMIT ||
-				box->gadget->type == GADGET_RESET ||
-				box->gadget->type == GADGET_BUTTON)) {
-			calculate_mbp_width(style, LEFT, false, true, true,
-					&fixed, &frac);
-			calculate_mbp_width(style, RIGHT, false, true, true,
-					&fixed, &frac);
-			*width -= frac * available_width + fixed;
-			*width = *width > 0 ? *width : 0;
-			/* Reset fixed & frac */
-			fixed = 0;
-			frac = 0;
+		if (box->gadget && *width != AUTO) {
+			percentage = style->width.width == CSS_WIDTH_PERCENT;
+
+			layout_tweak_form_dimensions(box, percentage,
+					available_width, true, width);
 		}
 	}
 
@@ -1252,22 +1244,13 @@ void layout_find_dimensions(int available_width,
 			break;
 		}
 
-		/* specified gadget heights include borders andpadding in
+		/* specified gadget heights include borders and padding in
 		 * some cases */
-		if (box->gadget && *height != AUTO &&
-				(style->height.height == CSS_HEIGHT_PERCENT ||
-				box->gadget->type == GADGET_SUBMIT ||
-				box->gadget->type == GADGET_RESET ||
-				box->gadget->type == GADGET_BUTTON)) {
-			calculate_mbp_width(style, TOP, false, true, true,
-					&fixed, &frac);
-			calculate_mbp_width(style, BOTTOM, false, true, true,
-					&fixed, &frac);
-			*height -= frac * available_width + fixed;
-			*height = *height > 0 ? *height : 0;
-			/* Reset fixed & frac */
-			fixed = 0;
-			frac = 0;
+		if (box->gadget && *height != AUTO) {
+			percentage = style->height.height == CSS_HEIGHT_PERCENT;
+
+			layout_tweak_form_dimensions(box, percentage,
+					available_width, false, height);
 		}
 	}
 
@@ -1290,21 +1273,11 @@ void layout_find_dimensions(int available_width,
 
 		/* specified gadget widths include borders and padding in some
 		 * cases */
-		if (box->gadget && *max_width != -1 &&
-				(style->max_width.max_width ==
-						CSS_WIDTH_PERCENT ||
-				box->gadget->type == GADGET_SUBMIT ||
-				box->gadget->type == GADGET_RESET ||
-				box->gadget->type == GADGET_BUTTON)) {
-			calculate_mbp_width(style, LEFT, false, true, true,
-					&fixed, &frac);
-			calculate_mbp_width(style, RIGHT, false, true, true,
-					&fixed, &frac);
-			*max_width -= frac * available_width + fixed;
-			*max_width = *max_width > 0 ? *max_width : 0;
-			/* Reset fixed & frac */
-			fixed = 0;
-			frac = 0;
+		if (box->gadget && *max_width != -1) {
+			percentage = style->max_width.max_width ==
+							CSS_WIDTH_PERCENT;
+			layout_tweak_form_dimensions(box, percentage,
+					available_width, true, max_width);
 		}
 	}
 
@@ -1326,21 +1299,11 @@ void layout_find_dimensions(int available_width,
 
 		/* specified gadget widths include borders and padding in some
 		 * cases */
-		if (box->gadget && *min_width != 0 &&
-				(style->min_width.min_width ==
-						CSS_WIDTH_PERCENT ||
-				box->gadget->type == GADGET_SUBMIT ||
-				box->gadget->type == GADGET_RESET ||
-				box->gadget->type == GADGET_BUTTON)) {
-			calculate_mbp_width(style, LEFT, false, true, true,
-					&fixed, &frac);
-			calculate_mbp_width(style, RIGHT, false, true, true,
-					&fixed, &frac);
-			*min_width -= frac * available_width + fixed;
-			*min_width = *min_width > 0 ? *min_width : 0;
-			/* Reset fixed & frac */
-			fixed = 0;
-			frac = 0;
+		if (box->gadget && *min_width != 0) {
+			percentage = style->min_width.min_width ==
+							CSS_WIDTH_PERCENT;
+			layout_tweak_form_dimensions(box, percentage,
+					available_width, true, min_width);
 		}
 	}
 
@@ -1387,6 +1350,44 @@ void layout_find_dimensions(int available_width,
 				border[i] = css_len2px(&style->border[i].
 						width.value, style);
 		}
+	}
+}
+
+
+/**
+ * Under some circumstances, specified dimensions for form elements include
+ * borders and padding.
+ *
+ * \param  box		    gadget to adjust dimensions of
+ * \param  percentage	    whether the gadget has its dimension specified as a
+ *				percentage
+ * \param  available_width  width of containing block
+ * \param  setwidth	    set true if the dimension to be tweaked is a width,
+ *				else set false for a height
+ * \param  dimension	    current value for given width/height dimension.
+ *				updated to new value after consideration of
+ *				gadget properties.
+ */
+
+void layout_tweak_form_dimensions(struct box *box, bool percentage,
+		int available_width, bool setwidth, int *dimension)
+{
+	int fixed = 0;
+	float frac = 0;
+
+	assert(box && box->gadget);
+
+	/* specified gadget widths include borders and padding in some
+	 * cases */
+	if (percentage || box->gadget->type == GADGET_SUBMIT ||
+			box->gadget->type == GADGET_RESET ||
+			box->gadget->type == GADGET_BUTTON) {
+		calculate_mbp_width(box->style, setwidth ? LEFT : TOP,
+				false, true, true, &fixed, &frac);
+		calculate_mbp_width(box->style, setwidth ? RIGHT : BOTTOM,
+				false, true, true, &fixed, &frac);
+		*dimension -= frac * available_width + fixed;
+		*dimension = *dimension > 0 ? *dimension : 0;
 	}
 }
 
