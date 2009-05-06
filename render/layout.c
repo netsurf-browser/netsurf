@@ -56,6 +56,7 @@
 #define AUTO INT_MIN
 
 
+static bool layout_block_context(struct box *block, struct content *content);
 static void layout_minmax_block(struct box *block,
 		const struct font_functions *font_func);
 static bool layout_block_object(struct box *block);
