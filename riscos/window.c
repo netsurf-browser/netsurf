@@ -78,6 +78,11 @@
 #define wimp_KEY_END wimp_KEY_COPY
 #endif
 
+#ifndef wimp_WINDOW_GIVE_SHADED_ICON_INFO
+	/* RISC OS 5+. Requires OSLib trunk. */
+#define wimp_WINDOW_GIVE_SHADED_ICON_INFO ((wimp_extra_window_flags) 0x10u)
+#endif
+
 #define SCROLL_VISIBLE_PADDING 32
 
 /** Remembers which iconised sprite numbers are in use */
@@ -276,7 +281,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	window.scroll_outer = wimp_COLOUR_DARK_GREY;
 	window.scroll_inner = wimp_COLOUR_MID_LIGHT_GREY;
 	window.highlight_bg = wimp_COLOUR_CREAM;
-	window.extra_flags = wimp_WINDOW_USE_EXTENDED_SCROLL_REQUEST;
+	window.extra_flags = wimp_WINDOW_USE_EXTENDED_SCROLL_REQUEST |
+			wimp_WINDOW_GIVE_SHADED_ICON_INFO;
 	window.extent.x0 = 0;
 	window.extent.y0 = -(window.visible.y1 - window.visible.y0);
 	window.extent.x1 = window.visible.x1 - window.visible.x0;
