@@ -56,11 +56,13 @@
 #define AUTO INT_MIN
 
 
-static bool layout_block_context(struct box *block, struct content *content);
+static bool layout_block_context(struct box *block, int viewport_height,
+		struct content *content);
 static void layout_minmax_block(struct box *block,
 		const struct font_functions *font_func);
 static bool layout_block_object(struct box *block);
-static void layout_block_find_dimensions(int available_width, int lm, int rm,
+static void layout_block_find_dimensions(int available_width,
+		int viewport_height, int lm, int rm,
 		struct box *box);
 static bool layout_apply_minmax_height(struct box *box, struct box *container);
 static void layout_block_add_scrollbar(struct box *box, int which);
@@ -69,7 +71,7 @@ static int layout_solve_width(int available_width, int width, int lm, int rm,
 		int margin[4], int padding[4], int border[4]);
 static void layout_float_find_dimensions(int available_width,
 		struct css_style *style, struct box *box);
-static void layout_find_dimensions(int available_width,
+static void layout_find_dimensions(int available_width, int viewport_height,
 		struct box *box, struct css_style *style,
 		int *width, int *height, int *max_width, int *min_width,
 		int margin[4], int padding[4], int border[4]);
@@ -133,7 +135,7 @@ bool layout_document(struct content *content, int width, int height)
 
 	layout_minmax_block(doc, font_func);
 
-	layout_block_find_dimensions(width, 0, 0, doc);
+	layout_block_find_dimensions(width, height, 0, 0, doc);
 	doc->x = doc->margin[LEFT] + doc->border[LEFT];
 	doc->y = doc->margin[TOP] + doc->border[TOP];
 	width -= doc->margin[LEFT] + doc->border[LEFT] + doc->padding[LEFT] +
@@ -142,10 +144,8 @@ bool layout_document(struct content *content, int width, int height)
 	if (width < 0)
 		width = 0;
 	doc->width = width;
-	if (doc->height == AUTO)
-		doc->height = height;
 
-	ret = layout_block_context(doc, content);
+	ret = layout_block_context(doc, height, content);
 
 	/* make <html> and <body> fill available height */
 	if (doc->y + doc->padding[TOP] + doc->height + doc->padding[BOTTOM] +
@@ -177,15 +177,17 @@ bool layout_document(struct content *content, int width, int height)
 /**
  * Layout a block formatting context.
  *
- * \param  block    BLOCK, INLINE_BLOCK, or TABLE_CELL to layout
- * \param  content  memory pool for any new boxes
+ * \param  block	    BLOCK, INLINE_BLOCK, or TABLE_CELL to layout
+ * \param  viewport_height  Height of viewport in pixels or -ve if unknown
+ * \param  content	    Memory pool for any new boxes
  * \return  true on success, false on memory exhaustion
  *
  * This function carries out layout of a block and its children, as described
  * in CSS 2.1 9.4.1.
  */
 
-bool layout_block_context(struct box *block, struct content *content)
+bool layout_block_context(struct box *block, int viewport_height,
+		struct content *content)
 {
 	struct box *box;
 	int cx, cy;  /**< current coordinates */
@@ -317,8 +319,9 @@ bool layout_block_context(struct box *block, struct content *content)
 				(box->style->position == CSS_POSITION_ABSOLUTE||
 				 box->style->position == CSS_POSITION_FIXED)) {
 			box->x = box->parent->padding[LEFT];
-			layout_find_dimensions(box->parent->width, box,
-					box->style, NULL, &(box->height), NULL,
+			layout_find_dimensions(box->parent->width,
+					viewport_height, box, box->style,
+					NULL, &(box->height), NULL,
 					NULL, NULL, NULL, NULL);
 			/* absolute positioned; this element will establish
 			 * its own block context when it gets laid out later,
@@ -334,8 +337,9 @@ bool layout_block_context(struct box *block, struct content *content)
 
 		/* Get top margin */
 		if (box->style) {
-			layout_find_dimensions(box->parent->width, box,
-					box->style, NULL, NULL, NULL, NULL,
+			layout_find_dimensions(box->parent->width,
+					viewport_height, box, box->style,
+					NULL, NULL, NULL, NULL,
 					box->margin, NULL, NULL);
 		}
 
@@ -374,7 +378,7 @@ bool layout_block_context(struct box *block, struct content *content)
 						x1;
 			}
 			layout_block_find_dimensions(box->parent->width,
-					lm, rm, box);
+					viewport_height, lm, rm, box);
 			layout_block_add_scrollbar(box, RIGHT);
 			layout_block_add_scrollbar(box, BOTTOM);
 		} else if (box->type == BOX_TABLE) {
@@ -434,7 +438,7 @@ bool layout_block_context(struct box *block, struct content *content)
 			cy += max_pos_margin - max_neg_margin;
 			box->y += max_pos_margin - max_neg_margin;
 
-			layout_block_context(box, content);
+			layout_block_context(box, viewport_height, content);
 
 			if (box->type == BOX_BLOCK || box->object)
 				cy += box->padding[TOP];
@@ -760,6 +764,7 @@ bool layout_block_object(struct box *block)
  * element.
  *
  * \param  available_width  Max width available in pixels
+ * \param  viewport_height  Height of viewport in pixels or -ve if unknown
  * \param  lm		    min left margin required to avoid floats in px.
  *				zero if not applicable
  * \param  rm		    min right margin required to avoid floats in px.
@@ -770,8 +775,8 @@ bool layout_block_object(struct box *block)
  * See CSS 2.1 10.3.3, 10.3.4, 10.6.2, and 10.6.3.
  */
 
-void layout_block_find_dimensions(int available_width, int lm, int rm,
-		struct box *box)
+void layout_block_find_dimensions(int available_width, int viewport_height,
+		int lm, int rm, struct box *box)
 {
 	int width, max_width, min_width;
 	int height;
@@ -780,8 +785,9 @@ void layout_block_find_dimensions(int available_width, int lm, int rm,
 	int *border = box->border;
 	struct css_style *style = box->style;
 
-	layout_find_dimensions(available_width, box, style, &width, &height,
-			&max_width, &min_width, margin, padding, border);
+	layout_find_dimensions(available_width, viewport_height, box, style,
+			&width, &height, &max_width, &min_width,
+			margin, padding, border);
 
 	if (box->object && box->object->type != CONTENT_HTML) {
 		/* block-level replaced element, see 10.3.4 and 10.6.2 */
@@ -1054,7 +1060,7 @@ void layout_float_find_dimensions(int available_width,
 			style->overflow == CSS_OVERFLOW_AUTO) ?
 			SCROLLBAR_WIDTH : 0;
 
-	layout_find_dimensions(available_width, box, style, &width, &height,
+	layout_find_dimensions(available_width, -1, box, style, &width, &height,
 			&max_width, &min_width, margin, padding, border);
 
 	if (margin[LEFT] == AUTO)
@@ -1143,6 +1149,7 @@ void layout_float_find_dimensions(int available_width,
  * Calculate width, height, and thickness of margins, paddings, and borders.
  *
  * \param  available_width  width of containing block
+ * \param  viewport_height  height of viewport in pixels or -ve if unknown
  * \param  box		    current box
  * \param  style	    style giving width, height, margins, paddings,
  *                          and borders
@@ -1155,7 +1162,7 @@ void layout_float_find_dimensions(int available_width,
  * \param  border[4]	    filled with border widths, may be NULL
  */
 
-void layout_find_dimensions(int available_width,
+void layout_find_dimensions(int available_width, int viewport_height,
 		struct box *box, struct css_style *style,
 		int *width, int *height, int *max_width, int *min_width,
 		int margin[4], int padding[4], int border[4])
@@ -1233,6 +1240,12 @@ void layout_find_dimensions(int available_width,
 				 * height. (CSS 2.1 Section 10.5) */
 				*height = style->height.value.percent *
 						containing_block->height / 100;
+			} else if ((!box->parent || !box->parent->parent) &&
+					viewport_height >= 0) {
+				/* If root element or it's child
+				 * (HTML or BODY) */
+				*height = style->height.value.percent *
+						viewport_height / 100;
 			} else {
 				/* precentage height not permissible
 				 * treat height as auto */
@@ -1708,7 +1721,7 @@ bool layout_line(struct box *first, int *width, int *y,
 
 		if (b->type == BOX_INLINE) {
 			/* calculate borders, margins, and padding */
-			layout_find_dimensions(*width, b, b->style, 0, 0,
+			layout_find_dimensions(*width, -1, b, b->style, 0, 0,
 					0, 0, b->margin, b->padding, b->border);
 			for (i = 0; i != 4; i++)
 				if (b->margin[i] == AUTO)
@@ -2503,7 +2516,7 @@ bool layout_float(struct box *b, int width, struct content *content)
 		if (b->margin[BOTTOM] == AUTO)
 			b->margin[BOTTOM] = 0;
 	} else
-		return layout_block_context(b, content);
+		return layout_block_context(b, -1, content);
 	return true;
 }
 
@@ -2609,14 +2622,14 @@ bool layout_table(struct box *table, int available_width,
 	memcpy(col, table->col, sizeof(col[0]) * columns);
 
 	/* find margins, paddings, and borders for table and cells */
-	layout_find_dimensions(available_width, table, style, 0, 0, 0, 0,
+	layout_find_dimensions(available_width, -1, table, style, 0, 0, 0, 0,
 			table->margin, table->padding, table->border);
 	for (row_group = table->children; row_group;
 			row_group = row_group->next) {
 		for (row = row_group->children; row; row = row->next) {
 			for (c = row->children; c; c = c->next) {
 				assert(c->style);
-				layout_find_dimensions(available_width,
+				layout_find_dimensions(available_width, -1,
 						c, c->style, 0, 0, 0, 0, 0,
 						c->padding, c->border);
 				if (c->style->overflow ==
@@ -2861,7 +2874,7 @@ bool layout_table(struct box *table, int available_width,
 				c->float_children = 0;
 
 				c->height = AUTO;
-				if (!layout_block_context(c, content)) {
+				if (!layout_block_context(c, -1, content)) {
 					free(col);
 					free(excess_y);
 					free(row_span);
@@ -3559,7 +3572,7 @@ bool layout_absolute(struct box *box, struct box *containing_block,
 	 * containing block box member. This is unused for absolutely positioned
 	 * boxes because a box can't be floated and absolutely positioned. */
 	box->float_container = containing_block;
-	layout_find_dimensions(available_width, box, box->style,
+	layout_find_dimensions(available_width, -1, box, box->style,
 			&width, &height, &max_width, &min_width,
 			margin, padding, border);
 	box->float_container = NULL;
@@ -3739,7 +3752,7 @@ bool layout_absolute(struct box *box, struct box *containing_block,
 
 	if (box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
 			box->object) {
-		if (!layout_block_context(box, content))
+		if (!layout_block_context(box, -1, content))
 			return false;
 	} else if (box->type == BOX_TABLE) {
 		/* \todo  layout_table considers margins etc. again */
