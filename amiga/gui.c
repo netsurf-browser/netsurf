@@ -540,8 +540,11 @@ void gui_init2(int argc, char** argv)
 		SetDrMd(&glob.rp,BGBACKFILL);
 
 		glob.layerinfo = NewLayerInfo();
+
 		glob.rp.Layer = CreateUpfrontLayer(glob.layerinfo,glob.bm,0,0,
-							scrn->Width-1,scrn->Width-1,0,NULL);
+							scrn->Width-1,scrn->Width-1,LAYERSIMPLE,NULL);
+
+		InstallLayerHook(glob.rp.Layer,LAYERS_NOBACKFILL);
 
 		glob.areabuf = AllocVec(100,MEMF_PRIVATE | MEMF_CLEAR);
 		glob.rp.AreaInfo = AllocVec(sizeof(struct AreaInfo),MEMF_PRIVATE | MEMF_CLEAR);
@@ -1672,6 +1675,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
            	WA_SizeGadget, TRUE,
 			WA_CustomScreen,scrn,
 			WA_ReportMouse,TRUE,
+			WA_SimpleRefresh,TRUE,
            	WA_IDCMP,IDCMP_MENUPICK | IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS |
 				 IDCMP_NEWSIZE | IDCMP_RAWKEY | IDCMP_GADGETUP |
 				IDCMP_IDCMPUPDATE | IDCMP_INTUITICKS | IDCMP_EXTENDEDMOUSE,
@@ -1752,6 +1756,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 					WA_Height,curh,
 					WA_CustomScreen,scrn,
 					WA_ReportMouse,TRUE,
+					WA_SimpleRefresh,TRUE,
         		   	WA_IDCMP,IDCMP_MENUPICK | IDCMP_MOUSEMOVE |
 								IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
 								IDCMP_RAWKEY |
@@ -2242,7 +2247,7 @@ void ami_do_redraw(struct gui_window_2 *g,bool scroll)
 	if (c->locked) return;
 
 	current_redraw_browser = g->bw;
-	currp = &glob.rp;
+//	currp = &glob.rp;
 
 	width=bbox->Width;
 	height=bbox->Height;

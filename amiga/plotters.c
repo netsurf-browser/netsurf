@@ -29,6 +29,7 @@
 #include <proto/layers.h>
 #include "amiga/options.h"
 #include <graphics/blitattr.h>
+#include <graphics/composite.h>
 #include "utils/log.h"
 #include <math.h>
 #include <assert.h>
@@ -250,6 +251,7 @@ bool ami_clip(int x0, int y0, int x1, int y1)
 
 	if(currp->Layer)
 	{
+
 		reg = InstallClipRegion(currp->Layer,NULL);
 
 		if(!reg)
@@ -364,7 +366,26 @@ bool ami_bitmap(int x, int y, int width, int height,
 
 	if(!tbm) return true;
 
-	BltBitMapTags(BLITA_Width,width,
+	if(GfxBase->lib_Version >= 53) // AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)
+	{
+		uint32 comptype = COMPOSITE_Src;
+		if(!bitmap->opaque) comptype = COMPOSITE_Src_Over_Dest;
+
+		CompositeTags(comptype,tbm,currp->BitMap,
+					COMPTAG_Flags,COMPFLAG_IgnoreDestAlpha,
+					COMPTAG_DestX,glob.rect.MinX,
+					COMPTAG_DestY,glob.rect.MinY,
+					COMPTAG_DestWidth,glob.rect.MaxX - glob.rect.MinX,
+					COMPTAG_DestHeight,glob.rect.MaxY - glob.rect.MinY,
+					COMPTAG_SrcWidth,width,
+					COMPTAG_SrcHeight,height,
+					COMPTAG_OffsetX,x,
+					COMPTAG_OffsetY,y,
+					TAG_DONE);
+	}
+	else
+	{
+		BltBitMapTags(BLITA_Width,width,
 						BLITA_Height,height,
 						BLITA_Source,tbm,
 						BLITA_Dest,currp,
@@ -372,8 +393,10 @@ bool ami_bitmap(int x, int y, int width, int height,
 						BLITA_DestY,y,
 						BLITA_SrcType,BLITT_BITMAP,
 						BLITA_DestType,BLITT_RASTPORT,
+//						BLITA_Mask,0xFF,
 						BLITA_UseSrcAlpha,!bitmap->opaque,
 						TAG_DONE);
+	}
 
 	if(tbm != bitmap->nativebm)
 	{
@@ -413,7 +436,26 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 
 			assert(tbm);
 
-			BltBitMapTags(BLITA_Width,width,
+			if(GfxBase->lib_Version >= 53) // AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)
+			{
+				uint32 comptype = COMPOSITE_Src;
+				if(!bitmap->opaque) comptype = COMPOSITE_Src_Over_Dest;
+
+		CompositeTags(comptype,tbm,currp->BitMap,
+					COMPTAG_Flags,COMPFLAG_IgnoreDestAlpha,
+					COMPTAG_DestX,glob.rect.MinX,
+					COMPTAG_DestY,glob.rect.MinY,
+					COMPTAG_DestWidth,glob.rect.MaxX - glob.rect.MinX,
+					COMPTAG_DestHeight,glob.rect.MaxY - glob.rect.MinY,
+					COMPTAG_SrcWidth,width,
+					COMPTAG_SrcHeight,height,
+					COMPTAG_OffsetX,xf,
+					COMPTAG_OffsetY,yf,
+					TAG_DONE);
+			}
+			else
+			{
+				BltBitMapTags(BLITA_Width,width,
 						BLITA_Height,height,
 						BLITA_Source,tbm,
 						BLITA_Dest,currp,
@@ -421,9 +463,10 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 						BLITA_DestY,yf,
 						BLITA_SrcType,BLITT_BITMAP,
 						BLITA_DestType,BLITT_RASTPORT,
+//						BLITA_Mask,0xFF,
 						BLITA_UseSrcAlpha,!bitmap->opaque,
 						TAG_DONE);
-
+			}
 			if (!repeat_y)
 				break;
 		}
