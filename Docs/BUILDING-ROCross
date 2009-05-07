@@ -35,25 +35,25 @@ AB_ELFBUILD=yes
 
 $ cd build-ab
 
-$ ../autobuild/build zlib1g
+$ ../autobuilder/build zlib1g
 
-$ ../autobuild/build c-ares
+$ ../autobuilder/build c-ares
 
-$ ../autobuild/build libxml2
+$ ../autobuilder/build libxml2
 
-$ ../autobuild/build/libssl0.9.8
+$ ../autobuilder/build/libssl0.9.8
 
-$ ../autobuild/build/libcurl3
+$ ../autobuilder/build/libcurl3
 
-$ ../autobuild/build/libjpeg62
+$ ../autobuilder/build/libjpeg62
 
-$ ../autobuild/build/liblcms1
+$ ../autobuilder/build/liblcms1
 
-$ ../autobuild/build/libpng12-0
+$ ../autobuilder/build/libpng12-0
 
-$ ../autobuild/build/libmng1
+$ ../autobuilder/build/libmng1
 
-$ ../autobuild/build/oslib
+$ ../autobuilder/build/oslib
 
 B. NetSurf libraries
 ====================
