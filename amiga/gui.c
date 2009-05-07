@@ -256,7 +256,7 @@ void gui_init(int argc, char** argv)
 		{
 			continue;
 		}
-		strcat(lang,"/messages");
+		strcat(lang,"/Messages");
 //		printf("%s\n",lang);
 		if(lock=Lock(lang,ACCESS_READ))
 		{
@@ -268,7 +268,7 @@ void gui_init(int argc, char** argv)
 
 	if(!found)
 	{
-		strcpy(lang,"PROGDIR:Resources/en/messages");
+		strcpy(lang,"PROGDIR:Resources/en/Messages");
 	}
 
 	CloseLocale(locale);
