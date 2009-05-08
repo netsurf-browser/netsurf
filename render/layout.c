@@ -2585,6 +2585,7 @@ bool layout_table(struct box *table, int available_width,
 	int required_width = 0;
 	int x, remainder = 0, count = 0;
 	int table_height = 0;
+	int min_height = 0;
 	int *xs;  /* array of column x positions */
 	int auto_width;
 	int spare_width;
@@ -2592,6 +2593,7 @@ bool layout_table(struct box *table, int available_width,
 	int border_spacing_h = 0, border_spacing_v = 0;
 	int spare_height;
 	int positioned_columns = 0;
+	struct box *containing_block = NULL;
 	struct box *c;
 	struct box *row;
 	struct box *row_group;
@@ -2685,6 +2687,51 @@ bool layout_table(struct box *table, int available_width,
 				 (table->margin[RIGHT] == AUTO ? 0 :
 						table->margin[RIGHT]));
 		break;
+	}
+
+	/* Find any table height specified within CSS/HTML */
+	if (style->height.height == CSS_HEIGHT_LENGTH) {
+		/* This is the minimum height for the table (see 17.5.3) */
+		min_height = css_len2px(&style->height.value.length, style);
+	} else if (style->height.height == CSS_HEIGHT_PERCENT) {
+		/* This is the minimum height for the table (see 17.5.3) */			if (table->style->position == CSS_POSITION_ABSOLUTE &&
+				table->float_container) {
+			/* Table is absolutely positioned */
+			containing_block = table->float_container;
+		} else if (table->float_container &&
+				table->style->position !=
+				CSS_POSITION_ABSOLUTE &&
+				(table->style->float_ ==
+				CSS_FLOAT_LEFT ||
+				table->style->float_ ==
+				CSS_FLOAT_RIGHT)) {
+			/* Table is a float */
+			assert(table->parent && table->parent->parent &&
+					table->parent->parent->parent);
+			containing_block = table->parent->parent->parent;
+		} else if (table->parent && table->parent->type !=
+				BOX_INLINE_CONTAINER) {
+			/* Table is a block level element */
+			containing_block = table->parent;
+		} else if (table->parent && table->parent->type ==
+				BOX_INLINE_CONTAINER) {
+			/* Table is an inline block */
+			assert(table->parent->parent);
+			containing_block = table->parent->parent;
+		}
+		if (table->style->position == CSS_POSITION_ABSOLUTE ||
+				(containing_block &&
+				(containing_block->style->height.
+				height == CSS_HEIGHT_LENGTH ||
+				containing_block->style->height.
+				height == CSS_HEIGHT_PERCENT) &&
+				containing_block->height != AUTO)) {
+			/* Table is absolutely positioned or its
+			 * containing block has a valid specified
+			 * height. (CSS 2.1 Section 10.5) */
+			min_height = style->height.value.percent *
+					containing_block->height / 100;
+		}
 	}
 
 	/* calculate width required by cells */
@@ -2961,6 +3008,10 @@ bool layout_table(struct box *table, int available_width,
 		row_group->height = row_group_height;
 		table_height += row_group_height;
 	}
+	/* Table height is either the height of the contents, or specified
+	 * height if greater */
+	table_height = max(table_height, min_height);
+	/** \TODO distribute spare height over the row groups / rows / cells */
 
 	/* perform vertical alignment */
 	for (row_group = table->children; row_group;
@@ -3013,16 +3064,7 @@ bool layout_table(struct box *table, int available_width,
 	free(xs);
 
 	table->width = table_width;
-
-	/* Take account of any table height specified within CSS/HTML */
-	if (style->height.height == CSS_HEIGHT_LENGTH) {
-		/* This is the minimum height for the table (see 17.5.3) */
-		int min_height = css_len2px(&style->height.value.length, style);
-
-		table->height = max(table_height, min_height);
-	} else {
-		table->height = table_height;
-	}
+	table->height = table_height;
 
 	return true;
 }
