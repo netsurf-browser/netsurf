@@ -39,6 +39,7 @@
 #include <intuition/icclass.h>
 #include <proto/utility.h>
 #include "utils/messages.h"
+#include "amiga/plotters.h"
 
 #include <proto/window.h>
 #include <proto/space.h>
@@ -157,20 +158,19 @@ void ami_history_redraw(struct history_window *hw)
 	GetAttr(SCROLLER_Top,hw->objects[OID_HSCROLL],(ULONG *)&xs);
 	GetAttr(SCROLLER_Top,hw->objects[OID_VSCROLL],(ULONG *)&ys);
 
-	//ami_clg(0xffffff);
+	ami_clg(0xffffff);
 
 	RefreshGadgets(hw->gadgets[GID_MAIN],hw->win,NULL);
-	currp = hw->win->RPort;
+//	currp = hw->win->RPort;
 	history_redraw_rectangle(history_current, xs, ys,
-		bbox->Width + xs, bbox->Height + ys,
-		bbox->Left, bbox->Top);
+		bbox->Width + xs, bbox->Height + ys, 0, 0);
 
-	currp = &glob.rp;
+//	currp = &glob.rp;
 
 	ami_clearclipreg(currp);
 	ami_history_update_extent(hw);
 
-//	BltBitMapRastPort(glob.bm,0,0,hw->win->RPort,bbox->Left,bbox->Top,bbox->Width,bbox->Height,0x0C0);
+	BltBitMapRastPort(glob.bm,0,0,hw->win->RPort,bbox->Left,bbox->Top,bbox->Width,bbox->Height,0x0C0);
 }
 
 /**
