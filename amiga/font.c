@@ -282,8 +282,8 @@ struct OutlineFont *ami_open_outline_font(const struct css_style *style)
 
 	ysize = css_len2pt(&style->font_size.value.length, style);
 
-	if(ysize < option_font_min_size)
-		ysize = option_font_min_size;
+	if(ysize < (option_font_min_size / 10))
+		ysize = option_font_min_size / 10;
 
 	if(ESetInfo(&ofont->olf_EEngine,
 			OT_DeviceDPI,(72<<16) | 72,
