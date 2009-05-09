@@ -368,8 +368,7 @@
 			(prompt "Setting default options")
 			(help @textfile-help)
 			(dest (tackon @default-dest "Resources/Options"))
-			(append 	"font_min_size:12\n"
-					"theme:" #theme "\n")
+			(append "theme:" #theme "\n")
 		)
 	)
 )
