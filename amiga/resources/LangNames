@@ -1,19 +1,59 @@
 # LangNames file for NetSurf AmigaOS
 # 
 # Maps AmigaOS locale.library language names to the two character
-# RISC OS equivalents, enabling localised text strings files
-# shareable with the RISC OS version of NetSurf, without the
-# hassle of renaming directories.
+# ISO-639 codes, enabling localised text strings files shareable
+# with the RISC OS version of NetSurf, without the hassle of
+# renaming directories, and to specify accept-language encoding
+# with no additional configuration.
 #
-# Format is <Locale language name>:<two character language code>
+# Format is <Locale language name>:<language tag>
 #
-# Netsurf will use the full AmigaOS language name if it is not
-# present in this file.  If you add a translation please use the
-# RISC OS naming scheme when possible and add it to this file!
+# NetSurf will use the full AmigaOS language name if it is not
+# present in this file.
 #
-english-british:en
-english:en
-german:de
-french:fr
+albanian:sq
+belarusian:be
+bosnian:bs
+bulgarian:bg
+catalan:ca
+croatian:hr
+czech:cs
+danish:da
 dutch:nl
+english:en
+english-british:en-GB
+esperanto:eo
+estonian:et
+faroese:fo
+finnish:fi
+french:fr
+galician:gl
+german:de
+greek:el
+hebrew:he
+hungarian:hu
+icelandic:is
+irish:ga
 italian:it
+latvian:lv
+lithuanian:lt
+macedonian:mk
+malay-indonesian:id
+malay-malaysian:ms
+maltese:mt
+norwegian:nb
+norwegian-nynorsk:nn
+polish:pl
+portuguese:pt
+portuguese-brazil:pr-BR
+romanian:ro
+russian:ru
+serbian:sr
+slovak:sk
+slovenian:sl
+spanish:es
+swedish:sv
+thai:th
+turkish:tr
+ukrainian:uk
+welsh:cy

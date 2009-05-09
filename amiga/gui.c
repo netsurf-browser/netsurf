@@ -181,7 +181,7 @@ static void *myrealloc(void *ptr, size_t len, void *pw);
 void gui_init(int argc, char** argv)
 {
 	struct Locale *locale;
-	char lang[100],throbberfile[100];
+	char lang[100],throbberfile[100],tempacceptlangs[100] = "\0";
 	bool found=FALSE;
 	int i;
 	BPTR lock=0,amiupdatefh;
@@ -271,6 +271,25 @@ void gui_init(int argc, char** argv)
 		strcpy(lang,"PROGDIR:Resources/en/Messages");
 	}
 
+	for(i=0;i<10;i++)
+	{
+		if(locale->loc_PrefLanguages[i])
+		{
+			if(messages_get(locale->loc_PrefLanguages[i]) != locale->loc_PrefLanguages[i])
+			{
+				if(tempacceptlangs[0] != '\0')
+				{
+					strcat(tempacceptlangs,", ");
+				}
+				strcat(tempacceptlangs,messages_get(locale->loc_PrefLanguages[i]));
+			}
+		}
+		else
+		{
+			continue;
+		}
+	}
+
 	CloseLocale(locale);
 
 	messages_load(lang);
@@ -287,6 +306,9 @@ void gui_init(int argc, char** argv)
 	css_scrollbar_fg_colour = 0x00aaaaaa;
 	css_scrollbar_bg_colour = 0x00833c3c;
 	css_scrollbar_arrow_colour = 0x00d6d6d6;
+
+	if((!option_accept_language) || (option_accept_language[0] == '\0'))
+		option_accept_language = (char *)strdup(tempacceptlangs);
 
 	if((!option_cookie_file) || (option_cookie_file[0] == '\0'))
 		option_cookie_file = (char *)strdup("PROGDIR:Resources/Cookies");
