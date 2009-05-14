@@ -278,9 +278,9 @@ void fetch_curl_finalise(const char *scheme)
  * The function returns immediately. The fetch may be queued for later
  * processing.
  *
- * A pointer to an opaque struct curl_fetch_info is returned, which can be passed to
- * fetch_abort() to abort the fetch at any time. Returns 0 if memory is
- * exhausted (or some other fatal error occurred).
+ * A pointer to an opaque struct curl_fetch_info is returned, which can be 
+ * passed to fetch_abort() to abort the fetch at any time. Returns 0 if memory 
+ * is exhausted (or some other fatal error occurred).
  *
  * The caller must supply a callback function which is called when anything
  * interesting happens. The callback function is first called with msg
@@ -750,7 +750,7 @@ void fetch_curl_done(CURL *curl_handle, CURLcode result)
 	bool finished = false;
 	bool error = false;
 	bool cert = false;
-	bool abort;
+	bool abort_fetch;
 	struct curl_fetch_info *f;
 	char **_hideous_hack = (char **) (void *) &f;
 	CURLcode code;
@@ -762,10 +762,10 @@ void fetch_curl_done(CURL *curl_handle, CURLcode result)
 	code = curl_easy_getinfo(curl_handle, CURLINFO_PRIVATE, _hideous_hack);
 	assert(code == CURLE_OK);
 
-	abort = f->abort;
+	abort_fetch = f->abort;
 	LOG(("done %s", f->url));
 
-	if (!abort && result == CURLE_OK) {
+	if (abort_fetch == false && result == CURLE_OK) {
 		/* fetch completed normally */
 		if (f->stopped ||
 				(!f->had_headers &&
@@ -798,7 +798,7 @@ void fetch_curl_done(CURL *curl_handle, CURLcode result)
 
 	fetch_curl_stop(f);
 
-	if (abort)
+	if (abort_fetch)
 		; /* fetch was aborted: no callback */
 	else if (finished)
 		fetch_send_callback(FETCH_FINISHED, f->fetch_handle, 0, 0);
