@@ -142,9 +142,8 @@
   Hubbub
 --------
 
-  NetSurf can use Hubbub, the project's HTML parser, instead of using libxml2's
-  HTML parser.  To build this, you will also require libparserutils.  Firstly,
-  check out libparserutils from;
+  NetSurf requires Hubbub, the project's HTML parser.  To build this, you will
+  also require libparserutils.  Firstly, check out libparserutils from;
   
       svn://svn.netsurf-browser.org/trunk/libparserutils
   
