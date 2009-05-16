@@ -135,7 +135,7 @@ bool bitmap_save(void *bitmap, const char *path, unsigned flags)
 	{
 		if(fh = Open(path,MODE_NEWFILE))
 		{
-			DoDTMethod(dto,NULL,NULL,DTM_WRITE,fh,0,NULL);
+			DoDTMethod(dto,NULL,NULL,DTM_WRITE,NULL,fh,DTWM_IFF,NULL);
 			Close(fh);
 		}
 
@@ -286,8 +286,8 @@ Object *ami_datatype_object_from_bitmap(struct bitmap *bitmap)
 		}
 
 		SetDTAttrs(dto,NULL,NULL,
-					DTA_ObjName,bitmap->title,
-					DTA_ObjAnnotation,bitmap->url,
+					DTA_ObjName,bitmap->url,
+					DTA_ObjAnnotation,bitmap->title,
 					DTA_ObjAuthor,messages_get("NetSurf"),
 					DTA_NominalHoriz,bitmap_get_width(bitmap),
 					DTA_NominalVert,bitmap_get_height(bitmap),

@@ -31,16 +31,7 @@
 #include <proto/datatypes.h>
 #include "amiga/bitmap.h"
 
-#ifndef ID_AUTH
-#define ID_AUTH MAKE_ID('A','U','T','H')
-#endif
-
-#ifndef ID_ANNO
-#define ID_ANNO MAKE_ID('A','N','N','O')
-#endif
-
 struct IFFHandle *iffh = NULL;
-const char * const netsurf_version;
 
 void ami_clipboard_init(void)
 {
