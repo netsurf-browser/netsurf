@@ -32,6 +32,7 @@
 #include "utils/utils.h"
 #include <proto/asl.h>
 #include "desktop/textinput.h"
+#include "amiga/bitmap.h"
 
 uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved);
 
@@ -43,7 +44,10 @@ void ami_context_menu_init(void)
 	ctxmenulab[CMID_COPYURL] = ami_utf8_easy((char *)messages_get("CopyURL"));
 	ctxmenulab[CMID_SHOWOBJ] = ami_utf8_easy((char *)messages_get("ObjShow"));
 	ctxmenulab[CMID_COPYOBJ] = ami_utf8_easy((char *)messages_get("CopyURL"));
-	ctxmenulab[CMID_SAVEOBJ] = ami_utf8_easy((char *)messages_get("ObjSave"));
+	ctxmenulab[CMID_CLIPOBJ] = ami_utf8_easy((char *)messages_get("CopyClip"));
+	ctxmenulab[CMID_SAVEOBJ] = ami_utf8_easy((char *)messages_get("SaveAs"));
+	ctxmenulab[CMID_SAVEIFFOBJ] = ami_utf8_easy((char *)messages_get("SaveIFF"));
+
 	ctxmenulab[CMID_SAVEURL] = ami_utf8_easy((char *)messages_get("LinkDload"));
 	ctxmenulab[CMID_URLOPENWIN] = ami_utf8_easy((char *)messages_get("LinkNewWin"));
 	ctxmenulab[CMID_URLOPENTAB] = ami_utf8_easy((char *)messages_get("LinkNewTab"));
@@ -139,8 +143,18 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 							PMIA_UserData,curbox->object->url,
 						TAG_DONE),
 						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_CLIPOBJ],
+							PMIA_ID,CMID_CLIPOBJ,
+							PMIA_UserData,curbox->object,
+						TAG_DONE),
+						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
 							PMIA_Title, (ULONG)ctxmenulab[CMID_SAVEOBJ],
 							PMIA_ID,CMID_SAVEOBJ,
+							PMIA_UserData,curbox->object,
+						TAG_DONE),
+						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_SAVEIFFOBJ],
+							PMIA_ID,CMID_SAVEIFFOBJ,
 							PMIA_UserData,curbox->object,
 						TAG_DONE),
 					TAG_DONE),
@@ -264,6 +278,11 @@ uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved)
 				browser_window_go(gwin->bw,userdata,gwin->bw->current_content->url,true);
 			break;
 
+			case CMID_CLIPOBJ:
+				object = (struct content *)userdata;
+				ami_easy_clipboard_bitmap(object->bitmap,NULL,object->url,object->title);
+			break;
+
 			case CMID_SAVEOBJ:
 				object = (struct content *)userdata;
 
@@ -284,6 +303,27 @@ uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved)
 						FClose(fh);
 						SetComment(fname,object->url);
 					}
+					ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
+				}
+			break;
+
+			case CMID_SAVEIFFOBJ:
+				object = (struct content *)userdata;
+
+				if(AslRequestTags(savereq,
+							ASLFR_TitleText,messages_get("NetSurf"),
+							ASLFR_Screen,scrn,
+							ASLFR_InitialFile,FilePart(object->url),
+							TAG_DONE))
+				{
+					BPTR fh = 0;
+					char fname[1024];
+					strlcpy(&fname,savereq->fr_Drawer,1024);
+					AddPart(fname,savereq->fr_File,1024);
+					object->bitmap->url = object->url;
+					object->bitmap->title = object->title;
+					bitmap_save(object->bitmap,fname,0);
+					SetComment(fname,object->url);
 					ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
 				}
 			break;

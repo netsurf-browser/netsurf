@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008,2009 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -18,7 +18,10 @@
 
 #ifndef AMIGA_CLIPBOARD_H
 #define AMIGA_CLIPBOARD_H
+
 void ami_clipboard_init(void);
 void ami_clipboard_free(void);
 bool ami_easy_clipboard(char *text);
+bool ami_easy_clipboard_bitmap(struct bitmap *bitmap,struct IFFHandle *ih,
+								char *url,char *name);
 #endif

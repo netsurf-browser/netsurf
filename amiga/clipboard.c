@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008,2009 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -27,9 +27,21 @@
 #include "amiga/utf8.h"
 #include "utils/utf8.h"
 #include "desktop/selection.h"
+#include <datatypes/pictureclass.h>
+#include <proto/utility.h>
+#include <proto/dos.h>
+#include "utils/messages.h"
 
+#ifndef ID_AUTH
+#define ID_AUTH MAKE_ID('A','U','T','H')
+#endif
+
+#ifndef ID_ANNO
+#define ID_ANNO MAKE_ID('A','N','N','O')
+#endif
 
 struct IFFHandle *iffh = NULL;
+const char * const netsurf_version;
 
 void ami_clipboard_init(void)
 {
@@ -228,6 +240,76 @@ bool ami_easy_clipboard(char *text)
 			PopChunk(iffh);
 		}
 		CloseIFF(iffh);
+	}
+
+	return false;
+}
+
+bool ami_easy_clipboard_bitmap(struct bitmap *bitmap,struct IFFHandle *ih,
+								char *url,char *name)
+{
+	struct BitMapHeader *bmhd;
+	uint32 bmdatasize = bitmap_get_width(bitmap) *
+						bitmap_get_height(bitmap) *
+						bitmap_get_bpp(bitmap);
+
+	if(!ih) ih = iffh;
+
+	if(!(OpenIFF(ih,IFFF_WRITE)))
+	{
+		if(!(PushChunk(ih,ID_ILBM,ID_FORM,IFFSIZE_UNKNOWN)))
+		{
+			if(bmhd = AllocVec(sizeof(struct BitMapHeader),MEMF_CLEAR | MEMF_PRIVATE))
+			{
+				if(!(PushChunk(ih,0,ID_BMHD,sizeof(struct BitMapHeader))))
+				{
+					bmhd->bmh_Width = (UWORD)bitmap_get_width(bitmap);
+					bmhd->bmh_Height = (UWORD)bitmap_get_height(bitmap);
+					bmhd->bmh_Depth = (UBYTE)bitmap_get_bpp(bitmap) * 8;
+					bmhd->bmh_Masking = mskHasAlpha;
+					WriteChunkBytes(ih,bmhd,sizeof(struct BitMapHeader));
+				}
+				PopChunk(ih);
+				FreeVec(bmhd);
+			}
+
+			if(!(PushChunk(ih,0,ID_AUTH,IFFSIZE_UNKNOWN)))
+			{
+				STRPTR ilbm_auth = ASPrintf("%s %s",messages_get("NetSurf"),netsurf_version);
+				WriteChunkBytes(ih,ilbm_auth,strlen(ilbm_auth));
+				FreeVec(ilbm_auth);
+			}
+			PopChunk(ih);
+
+			if(!(PushChunk(ih,0,ID_NAME,IFFSIZE_UNKNOWN)))
+			{
+				WriteChunkBytes(ih,name,strlen(name));
+			}
+			PopChunk(ih);
+
+			if(!(PushChunk(ih,0,ID_ANNO,IFFSIZE_UNKNOWN)))
+			{
+				WriteChunkBytes(ih,url,strlen(url));
+			}
+			PopChunk(ih);
+
+			if(!(PushChunk(ih,0,ID_BODY,bmdatasize)))
+			{
+				WriteChunkBytes(ih,bitmap_get_buffer(bitmap),bmdatasize);
+				PopChunk(ih);
+				CloseIFF(ih);
+				return true;
+			}
+			else
+			{
+				PopChunk(ih);
+			}
+		}
+		else
+		{
+			PopChunk(ih);
+		}
+		CloseIFF(ih);
 	}
 
 	return false;

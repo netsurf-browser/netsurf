@@ -23,6 +23,8 @@
 #include <proto/picasso96api.h>
 #include <graphics/composite.h>
 #include "amiga/options.h"
+#include <proto/iffparse.h>
+#include <proto/dos.h>
 
 /**
  * Create a bitmap.
@@ -123,6 +125,22 @@ void bitmap_destroy(void *bitmap)
 
 bool bitmap_save(void *bitmap, const char *path, unsigned flags)
 {
+	struct IFFHandle *iffh;
+	struct bitmap *bm = bitmap;
+
+	if(iffh = AllocIFF())
+	{
+		if(iffh->iff_Stream = Open(path,MODE_NEWFILE))
+		{
+			InitIFFasDOS(iffh);
+			ami_easy_clipboard_bitmap(bm,iffh,bm->url,bm->title);
+			bm->url = NULL;
+			bm->title = NULL;
+			Close(iffh->iff_Stream);
+		}
+		FreeIFF(iffh);
+	}
+
 	return true;
 }
 
