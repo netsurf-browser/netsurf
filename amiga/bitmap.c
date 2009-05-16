@@ -23,8 +23,11 @@
 #include <proto/picasso96api.h>
 #include <graphics/composite.h>
 #include "amiga/options.h"
-#include <proto/iffparse.h>
+#include <proto/datatypes.h>
+#include <datatypes/pictureclass.h>
 #include <proto/dos.h>
+#include <proto/intuition.h>
+#include "utils/messages.h"
 
 /**
  * Create a bitmap.
@@ -125,20 +128,18 @@ void bitmap_destroy(void *bitmap)
 
 bool bitmap_save(void *bitmap, const char *path, unsigned flags)
 {
-	struct IFFHandle *iffh;
-	struct bitmap *bm = bitmap;
+	BPTR fh = 0;
+	Object *dto = NULL;
 
-	if(iffh = AllocIFF())
+	if(dto = ami_datatype_object_from_bitmap(bitmap))
 	{
-		if(iffh->iff_Stream = Open(path,MODE_NEWFILE))
+		if(fh = Open(path,MODE_NEWFILE))
 		{
-			InitIFFasDOS(iffh);
-			ami_easy_clipboard_bitmap(bm,iffh,bm->url,bm->title);
-			bm->url = NULL;
-			bm->title = NULL;
-			Close(iffh->iff_Stream);
+			DoDTMethod(dto,NULL,NULL,DTM_WRITE,fh,0,NULL);
+			Close(fh);
 		}
-		FreeIFF(iffh);
+
+		DisposeDTObject(dto);
 	}
 
 	return true;
@@ -262,6 +263,43 @@ size_t bitmap_get_bpp(void *vbitmap)
 	struct bitmap *bitmap = (struct bitmap *)vbitmap;
 	assert(bitmap);
 	return 4;
+}
+
+Object *ami_datatype_object_from_bitmap(struct bitmap *bitmap)
+{
+	Object *dto;
+	struct BitMapHeader *bmhd;
+
+	if(dto = NewDTObject(NULL,
+					DTA_SourceType,DTST_RAM,
+					DTA_GroupID,GID_PICTURE,
+					//DTA_BaseName,"ilbm",
+					PDTA_DestMode,PMODE_V43,
+					TAG_DONE))
+	{
+		if(GetDTAttrs(dto,PDTA_BitMapHeader,&bmhd,TAG_DONE))
+		{
+			bmhd->bmh_Width = (UWORD)bitmap_get_width(bitmap);
+			bmhd->bmh_Height = (UWORD)bitmap_get_height(bitmap);
+			bmhd->bmh_Depth = (UBYTE)bitmap_get_bpp(bitmap) * 8;
+			bmhd->bmh_Masking = mskHasAlpha;
+		}
+
+		SetDTAttrs(dto,NULL,NULL,
+					DTA_ObjName,bitmap->title,
+					DTA_ObjAnnotation,bitmap->url,
+					DTA_ObjAuthor,messages_get("NetSurf"),
+					DTA_NominalHoriz,bitmap_get_width(bitmap),
+					DTA_NominalVert,bitmap_get_height(bitmap),
+					PDTA_SourceMode,PMODE_V43,
+					TAG_DONE);
+
+		IDoMethod(dto,PDTM_WRITEPIXELARRAY,bitmap_get_buffer(bitmap),
+				PBPAFMT_RGBA,bitmap_get_rowstride(bitmap),0,0,
+				bitmap_get_width(bitmap),bitmap_get_height(bitmap));
+	}
+
+	return dto;
 }
 
 struct BitMap *ami_getcachenativebm(struct bitmap *bitmap,int width,int height,struct BitMap *friendbm)

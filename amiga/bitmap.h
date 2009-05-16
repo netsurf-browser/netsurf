@@ -20,6 +20,7 @@
 #define AMIGA_BITMAP_H
 #include <exec/types.h>
 #include <proto/graphics.h>
+#include <intuition/classusr.h>
 
 struct bitmap {
 	int width;
@@ -34,5 +35,5 @@ struct bitmap {
 };
 
 struct BitMap *ami_getcachenativebm(struct bitmap *bitmap,int width,int height,struct BitMap *friendbm);
-
+Object *ami_datatype_object_from_bitmap(struct bitmap *bitmap);
 #endif

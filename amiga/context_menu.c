@@ -280,7 +280,9 @@ uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved)
 
 			case CMID_CLIPOBJ:
 				object = (struct content *)userdata;
-				ami_easy_clipboard_bitmap(object->bitmap,NULL,object->url,object->title);
+				object->bitmap->url = object->url;
+				object->bitmap->title = object->title;
+				ami_easy_clipboard_bitmap(object->bitmap);
 			break;
 
 			case CMID_SAVEOBJ:
