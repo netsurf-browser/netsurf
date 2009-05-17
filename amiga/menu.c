@@ -80,29 +80,30 @@ void ami_init_menulabs(void)
 	menulab[7] = ami_utf8_easy((char *)messages_get("TextNS"));
 	menulab[8] = ami_utf8_easy((char *)messages_get("SaveCompNS"));
 	menulab[9] = ami_utf8_easy((char *)messages_get("PDFNS"));
-	menulab[10] = NM_BARLABEL;
-	menulab[11] = ami_utf8_easy((char *)messages_get("CloseTab"));
-	menulab[12] = ami_utf8_easy((char *)messages_get("CloseWindow"));
-	menulab[13] = NM_BARLABEL;
-	menulab[14] = ami_utf8_easy((char *)messages_get("About"));
-	menulab[15] = ami_utf8_easy((char *)messages_get("Quit"));
-	menulab[16] = ami_utf8_easy((char *)messages_get("Edit"));
-	menulab[17] = ami_utf8_easy((char *)messages_get("CopyNS"));
-	menulab[18] = ami_utf8_easy((char *)messages_get("PasteNS"));
-	menulab[19] = ami_utf8_easy((char *)messages_get("SelectAllNS"));
-	menulab[20] = ami_utf8_easy((char *)messages_get("ClearNS"));
-	menulab[21] = ami_utf8_easy((char *)messages_get("Browser"));
-	menulab[22] = ami_utf8_easy((char *)messages_get("FindTextNS"));
-	menulab[23] = NM_BARLABEL;
-	menulab[24] = ami_utf8_easy((char *)messages_get("normal"));
-	menulab[25] = ami_utf8_easy((char *)messages_get("HistLocalNS"));
-	menulab[26] = ami_utf8_easy((char *)messages_get("HistGlobalNS"));
-	menulab[27] = NM_BARLABEL;
-	menulab[28] = ami_utf8_easy((char *)messages_get("ShowCookies"));
-	menulab[29] = ami_utf8_easy((char *)messages_get("Hotlist"));
-	menulab[30] = ami_utf8_easy((char *)messages_get("HotlistAdd"));
-	menulab[31] = ami_utf8_easy((char *)messages_get("HotlistShowNS"));
-	menulab[32] = NM_BARLABEL;
+	menulab[10] = ami_utf8_easy((char *)messages_get("IFF"));
+	menulab[11] = NM_BARLABEL;
+	menulab[12] = ami_utf8_easy((char *)messages_get("CloseTab"));
+	menulab[13] = ami_utf8_easy((char *)messages_get("CloseWindow"));
+	menulab[14] = NM_BARLABEL;
+	menulab[15] = ami_utf8_easy((char *)messages_get("About"));
+	menulab[16] = ami_utf8_easy((char *)messages_get("Quit"));
+	menulab[17] = ami_utf8_easy((char *)messages_get("Edit"));
+	menulab[18] = ami_utf8_easy((char *)messages_get("CopyNS"));
+	menulab[19] = ami_utf8_easy((char *)messages_get("PasteNS"));
+	menulab[20] = ami_utf8_easy((char *)messages_get("SelectAllNS"));
+	menulab[21] = ami_utf8_easy((char *)messages_get("ClearNS"));
+	menulab[22] = ami_utf8_easy((char *)messages_get("Browser"));
+	menulab[23] = ami_utf8_easy((char *)messages_get("FindTextNS"));
+	menulab[24] = NM_BARLABEL;
+	menulab[25] = ami_utf8_easy((char *)messages_get("normal"));
+	menulab[26] = ami_utf8_easy((char *)messages_get("HistLocalNS"));
+	menulab[27] = ami_utf8_easy((char *)messages_get("HistGlobalNS"));
+	menulab[28] = NM_BARLABEL;
+	menulab[29] = ami_utf8_easy((char *)messages_get("ShowCookies"));
+	menulab[30] = ami_utf8_easy((char *)messages_get("Hotlist"));
+	menulab[31] = ami_utf8_easy((char *)messages_get("HotlistAdd"));
+	menulab[32] = ami_utf8_easy((char *)messages_get("HotlistShowNS"));
+	menulab[33] = NM_BARLABEL;
 
 	menulab[AMI_MENU_HOTLIST_MAX] = ami_utf8_easy((char *)messages_get("Settings"));
 	menulab[AMI_MENU_HOTLIST_MAX+1] = ami_utf8_easy((char *)messages_get("SnapshotWindow"));
@@ -127,6 +128,7 @@ struct NewMenu *ami_create_menu(ULONG type)
 			  	{  NM_SUB,0,0,0,0,0,}, // save as text
 			  	{  NM_SUB,0,0,0,0,0,}, // save as complete
 			  	{  NM_SUB,0,0,0,0,0,}, // save as pdf
+			  	{  NM_SUB,0,0,0,0,0,}, // save as iff
 			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
 			  	{ NM_ITEM,0,"K",0,0,0,}, // close tab
 			  	{ NM_ITEM,0,0,0,0,0,}, // close window
@@ -512,6 +514,24 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 								ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
 							}
 #endif
+						break;
+
+						case 4: // iff
+							if(AslRequestTags(savereq,
+								ASLFR_TitleText,messages_get("NetSurf"),
+								ASLFR_Screen,scrn,
+								ASLFR_InitialFile,FilePart(gwin->bw->current_content->url),
+								TAG_DONE))
+							{
+								strlcpy(&fname,savereq->fr_Drawer,1024);
+								AddPart(fname,savereq->fr_File,1024);
+								ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
+								gwin->bw->current_content->bitmap->url = gwin->bw->current_content->url;
+								gwin->bw->current_content->bitmap->title = gwin->bw->current_content->title;
+								bitmap_save(gwin->bw->current_content->bitmap,fname,0);
+								SetComment(fname,gwin->bw->current_content->url);
+								ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
+							}
 						break;
 					}
 				break;

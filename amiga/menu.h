@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008,2009 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -28,10 +28,10 @@
 
 /* Maximum number of menu items - first value is number of static items
  * (ie. everything not intially defined as NM_IGNORE) */
-#define AMI_MENU_MAX 39 + AMI_HOTLIST_ITEMS
+#define AMI_MENU_MAX 40 + AMI_HOTLIST_ITEMS
 
 /* Where the hotlist entries start */
-#define AMI_MENU_HOTLIST 33
+#define AMI_MENU_HOTLIST 34
 
 /* Where the hotlist entries end */
 #define AMI_MENU_HOTLIST_MAX AMI_MENU_HOTLIST+AMI_HOTLIST_ITEMS
@@ -47,6 +47,18 @@
 
 /* Where the ARexx menu items end (incidentally this is the real AMI_MENU_MAX) */
 #define AMI_MENU_AREXX_MAX AMI_MENU_AREXX+AMI_MENU_AREXX_ITEMS
+
+/* The Intuition menu numbers of some menus we might need to modify */
+#define AMI_MENU_SAVEAS_TEXT FULLMENUNUM(0,4,1)
+#define AMI_MENU_SAVEAS_COMPLETE FULLMENUNUM(0,4,2)
+#define AMI_MENU_SAVEAS_PDF FULLMENUNUM(0,4,3)
+#define AMI_MENU_SAVEAS_IFF FULLMENUNUM(0,4,4)
+#define AMI_MENU_CLOSETAB FULLMENUNUM(0,6,0)
+#define AMI_MENU_COPY FULLMENUNUM(1,0,0)
+#define AMI_MENU_PASTE FULLMENUNUM(1,1,0)
+#define AMI_MENU_SELECTALL FULLMENUNUM(1,2,0)
+#define AMI_MENU_CLEAR FULLMENUNUM(1,3,0)
+#define AMI_MENU_FIND FULLMENUNUM(2,0,0)
 
 char *menulab[AMI_MENU_MAX+1];
 

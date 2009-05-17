@@ -1537,7 +1537,15 @@ void ami_update_buttons(struct gui_window_2 *gwin)
 	if(!browser_window_reload_available(gwin->bw))
 		reload=TRUE;
 
-	if(gwin->tabs <= 1)	tabclose=TRUE;
+	if(gwin->tabs <= 1)
+	{
+		tabclose=TRUE;
+		OffMenu(gwin->win,AMI_MENU_CLOSETAB);
+	}
+	else
+	{
+		OnMenu(gwin->win,AMI_MENU_CLOSETAB);
+	}
 
 	RefreshSetGadgetAttrs(gwin->gadgets[GID_BACK],gwin->win,NULL,
 		GA_Disabled,back,
@@ -2765,7 +2773,43 @@ void gui_window_remove_caret(struct gui_window *g)
 
 void gui_window_new_content(struct gui_window *g)
 {
-//	DebugPrintF("new content\n");
+	struct content *c = g->shared->bw->current_content;
+
+	if(c->type <= CONTENT_CSS)
+	{
+		OnMenu(g->shared->win,AMI_MENU_SAVEAS_TEXT);
+		OnMenu(g->shared->win,AMI_MENU_SAVEAS_COMPLETE);
+		OnMenu(g->shared->win,AMI_MENU_SAVEAS_PDF);
+		OnMenu(g->shared->win,AMI_MENU_COPY);
+		OnMenu(g->shared->win,AMI_MENU_PASTE);
+		OnMenu(g->shared->win,AMI_MENU_SELECTALL);
+		OnMenu(g->shared->win,AMI_MENU_CLEAR);
+		OnMenu(g->shared->win,AMI_MENU_FIND);
+		OffMenu(g->shared->win,AMI_MENU_SAVEAS_IFF);
+	}
+	else
+	{
+		OffMenu(g->shared->win,AMI_MENU_SAVEAS_TEXT);
+		OffMenu(g->shared->win,AMI_MENU_SAVEAS_COMPLETE);
+		OffMenu(g->shared->win,AMI_MENU_SAVEAS_PDF);
+		OffMenu(g->shared->win,AMI_MENU_PASTE);
+		OffMenu(g->shared->win,AMI_MENU_SELECTALL);
+		OffMenu(g->shared->win,AMI_MENU_CLEAR);
+		OffMenu(g->shared->win,AMI_MENU_FIND);
+
+		if(c->bitmap)
+		{
+			OnMenu(g->shared->win,AMI_MENU_COPY);
+			OnMenu(g->shared->win,AMI_MENU_SAVEAS_IFF);
+		}
+		else
+		{
+			OffMenu(g->shared->win,AMI_MENU_COPY);
+			OffMenu(g->shared->win,AMI_MENU_SAVEAS_IFF);
+		}
+	}
+
+	ami_clearclipreg(currp);
 }
 
 bool gui_window_scroll_start(struct gui_window *g)
