@@ -42,6 +42,9 @@
 #include "desktop/textinput.h"
 #include "amiga/search.h"
 #include "amiga/history_local.h"
+#include "amiga/bitmap.h"
+#include "amiga/clipboard.h"
+#include "content/fetch.h"
 
 BOOL menualreadyinit;
 const char * const netsurf_version;
@@ -238,9 +241,9 @@ struct NewMenu *ami_create_menu(ULONG type)
 	if(!menualreadyinit)
 	{
 		ami_menu_scan(hotlist,menu);
-		ami_menu_arexx_scan(menu);
+		ami_menu_arexx_scan(&menu);
 
-		aslhookfunc.h_Entry = &ami_asl_mime_hook;
+		aslhookfunc.h_Entry = (void *)&ami_asl_mime_hook;
 		aslhookfunc.h_SubEntry = NULL;
 		aslhookfunc.h_Data = NULL;
 
@@ -553,8 +556,17 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 			switch(itemnum)
 			{
 				case 0: // copy
-					browser_window_key_press(gwin->bw, KEY_COPY_SELECTION);
-					browser_window_key_press(gwin->bw, KEY_ESCAPE);
+					if(gwin->bw->current_content->type <= CONTENT_CSS)
+					{
+						browser_window_key_press(gwin->bw, KEY_COPY_SELECTION);
+						browser_window_key_press(gwin->bw, KEY_ESCAPE);
+					}
+					else if(gwin->bw->current_content->bitmap)
+					{
+						gwin->bw->current_content->bitmap->url = gwin->bw->current_content->url;
+						gwin->bw->current_content->bitmap->title = gwin->bw->current_content->title;
+						ami_easy_clipboard_bitmap(gwin->bw->current_content->bitmap);
+					}
 				break;
 
 				case 1: // paste
