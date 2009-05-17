@@ -202,7 +202,7 @@ bool bitmap_test_opaque(void *bitmap)
 
 	for(a=0;a<p;a+=4)
 	{
-		if ((*bmi & 0xff000000U) != 0xff000000U) return false;
+		if ((*bmi & 0x00000000ffU) != 0x000000ffU) return false;
 		bmi++;
 	}
 	return true;
@@ -282,7 +282,7 @@ Object *ami_datatype_object_from_bitmap(struct bitmap *bitmap)
 			bmhd->bmh_Width = (UWORD)bitmap_get_width(bitmap);
 			bmhd->bmh_Height = (UWORD)bitmap_get_height(bitmap);
 			bmhd->bmh_Depth = (UBYTE)bitmap_get_bpp(bitmap) * 8;
-			bmhd->bmh_Masking = mskHasAlpha;
+			if(!bitmap_get_opaque(bitmap)) bmhd->bmh_Masking = mskHasAlpha;
 		}
 
 		SetDTAttrs(dto,NULL,NULL,
