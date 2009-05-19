@@ -30,6 +30,7 @@
 #include <datatypes/pictureclass.h>
 #include <proto/datatypes.h>
 #include "amiga/bitmap.h"
+#include "amiga/iff_dr2d.h"
 
 struct IFFHandle *iffh = NULL;
 
@@ -244,4 +245,17 @@ bool ami_easy_clipboard_bitmap(struct bitmap *bitmap)
 		DoDTMethod(dto,NULL,NULL,DTM_COPY,NULL);
 		DisposeDTObject(dto);
 	}
+}
+
+bool ami_easy_clipboard_svg(struct content *c)
+{
+	if(c->type != CONTENT_SVG) return false;
+
+	if(!(OpenIFF(iffh,IFFF_WRITE)))
+	{
+		ami_svg_to_dr2d(iffh,c->source_data,c->source_size,c->url);
+		CloseIFF(iffh);
+	}
+
+	return true;
 }

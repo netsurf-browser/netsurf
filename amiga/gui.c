@@ -2797,7 +2797,11 @@ void gui_window_new_content(struct gui_window *g)
 		OffMenu(g->shared->win,AMI_MENU_CLEAR);
 		OffMenu(g->shared->win,AMI_MENU_FIND);
 
+#ifdef WITH_NS_SVG
+		if(c->bitmap || c->type == CONTENT_SVG)
+#else
 		if(c->bitmap)
+#endif
 		{
 			OnMenu(g->shared->win,AMI_MENU_COPY);
 			OnMenu(g->shared->win,AMI_MENU_SAVEAS_IFF);

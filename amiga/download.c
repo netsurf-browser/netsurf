@@ -31,6 +31,7 @@
 #include "amiga/options.h"
 #include "amiga/save_complete.h"
 #include "amiga/bitmap.h"
+#include "amiga/iff_dr2d.h"
 
 #include "content/fetch.h"
 
@@ -368,10 +369,19 @@ void ami_drag_save(struct Window *win)
 		case GUI_SAVE_OBJECT_NATIVE:
 		{
 			struct content *c = drag_save_data;
-			c->bitmap->url = c->url;
-			c->bitmap->title = c->title;
 			AddPart(path,c->title,1024);
-			bitmap_save(c->bitmap,path,0);
+			if(c->bitmap)
+			{
+				c->bitmap->url = c->url;
+				c->bitmap->title = c->title;
+				bitmap_save(c->bitmap,path,0);
+			}
+#ifdef WITH_NS_SVG
+			else if(c->type == CONTENT_SVG)
+			{
+				ami_save_svg(c,path);
+			}
+#endif
 		}
 		break;
 	}

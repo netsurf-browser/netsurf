@@ -33,6 +33,7 @@
 #include <proto/asl.h>
 #include "desktop/textinput.h"
 #include "amiga/bitmap.h"
+#include "amiga/iff_dr2d.h"
 
 uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved);
 
@@ -280,9 +281,18 @@ uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved)
 
 			case CMID_CLIPOBJ:
 				object = (struct content *)userdata;
-				object->bitmap->url = object->url;
-				object->bitmap->title = object->title;
-				ami_easy_clipboard_bitmap(object->bitmap);
+				if(object->bitmap)
+				{
+					object->bitmap->url = object->url;
+					object->bitmap->title = object->title;
+					ami_easy_clipboard_bitmap(object->bitmap);
+				}
+#ifdef WITH_NS_SVG
+				else if(object->type == CONTENT_SVG)
+				{
+					ami_easy_clipboard_svg(object);
+				}
+#endif
 			break;
 
 			case CMID_SAVEOBJ:
@@ -322,9 +332,18 @@ uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved)
 					char fname[1024];
 					strlcpy(&fname,savereq->fr_Drawer,1024);
 					AddPart(fname,savereq->fr_File,1024);
-					object->bitmap->url = object->url;
-					object->bitmap->title = object->title;
-					bitmap_save(object->bitmap,fname,0);
+					if(object->bitmap)
+					{
+						object->bitmap->url = object->url;
+						object->bitmap->title = object->title;
+						bitmap_save(object->bitmap,fname,0);
+					}
+#ifdef WITH_NS_SVG
+					else if(object->type == CONTENT_SVG)
+					{
+						ami_save_svg(object,fname);
+					}
+#endif
 					SetComment(fname,object->url);
 					ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
 				}

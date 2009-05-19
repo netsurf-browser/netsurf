@@ -43,6 +43,7 @@
 #include "amiga/search.h"
 #include "amiga/history_local.h"
 #include "amiga/bitmap.h"
+#include "amiga/iff_dr2d.h"
 #include "amiga/clipboard.h"
 #include "content/fetch.h"
 
@@ -526,9 +527,18 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 								strlcpy(&fname,savereq->fr_Drawer,1024);
 								AddPart(fname,savereq->fr_File,1024);
 								ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
-								gwin->bw->current_content->bitmap->url = gwin->bw->current_content->url;
-								gwin->bw->current_content->bitmap->title = gwin->bw->current_content->title;
-								bitmap_save(gwin->bw->current_content->bitmap,fname,0);
+								if(gwin->bw->current_content->bitmap)
+								{
+									gwin->bw->current_content->bitmap->url = gwin->bw->current_content->url;
+									gwin->bw->current_content->bitmap->title = gwin->bw->current_content->title;
+									bitmap_save(gwin->bw->current_content->bitmap,fname,0);
+								}
+#ifdef WITH_NS_SVG
+								else if(gwin->bw->current_content->type == CONTENT_SVG)
+								{
+									ami_save_svg(gwin->bw->current_content,fname);
+								}
+#endif
 								SetComment(fname,gwin->bw->current_content->url);
 								ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
 							}
@@ -587,6 +597,12 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 						gwin->bw->current_content->bitmap->title = gwin->bw->current_content->title;
 						ami_easy_clipboard_bitmap(gwin->bw->current_content->bitmap);
 					}
+#ifdef WITH_NS_SVG
+					else if(gwin->bw->current_content->type == CONTENT_SVG)
+					{
+						ami_easy_clipboard_svg(gwin->bw->current_content);
+					}
+#endif
 				break;
 
 				case 1: // paste

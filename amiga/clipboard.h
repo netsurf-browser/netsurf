@@ -23,4 +23,5 @@ void ami_clipboard_init(void);
 void ami_clipboard_free(void);
 bool ami_easy_clipboard(char *text);
 bool ami_easy_clipboard_bitmap(struct bitmap *bitmap);
+bool ami_easy_clipboard_svg(struct content *c);
 #endif
