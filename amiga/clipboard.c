@@ -247,6 +247,7 @@ bool ami_easy_clipboard_bitmap(struct bitmap *bitmap)
 	}
 }
 
+#ifdef WITH_NS_SVG
 bool ami_easy_clipboard_svg(struct content *c)
 {
 	if(c->type != CONTENT_SVG) return false;
@@ -259,3 +260,4 @@ bool ami_easy_clipboard_svg(struct content *c)
 
 	return true;
 }
+#endif
