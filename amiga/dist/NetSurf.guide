@@ -6,6 +6,8 @@
 @{b}NetSurf@{ub} Amiga-specific documentation
 http://www.netsurf-browser.org
 
+@{"Change Log          " link ChangeLog/Main}
+
 @{"Licence             " link COPYING/Main}
 @{"Command line options" link cli}
 @{"Options file        " link options}
