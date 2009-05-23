@@ -256,7 +256,7 @@ ifeq ($(TARGET),riscos)
     LDFLAGS += -Xlinker -symbols=$(OBJROOT)/sym -lxml2 -lz -lm -lcurl -lcares
     LDFLAGS += -lssl -lcrypto -lhubbub -lparserutils
   else
-    LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl libhubbub)
+    LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl libhubbub openssl)
   endif
 
   $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG rendering))
@@ -397,7 +397,7 @@ endif
 # ----------------------------------------------------------------------------
 
 ifeq ($(TARGET),gtk)
-  LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl libhubbub)
+  LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl libhubbub openssl)
 
   # define additional CFLAGS and LDFLAGS requirements for pkg-configed libs here
   NETSURF_FEATURE_RSVG_CFLAGS := -DWITH_RSVG
@@ -422,7 +422,7 @@ ifeq ($(TARGET),gtk)
 		-DGTK_RESPATH=\"$(NETSURF_GTK_RESOURCES)\" \
 		$(WARNFLAGS) -I. -g \
 		$(shell $(PKG_CONFIG) --cflags libglade-2.0 gtk+-2.0) \
-		$(shell $(PKG_CONFIG) --cflags libhubbub) \
+		$(shell $(PKG_CONFIG) --cflags libhubbub libcurl openssl) \
 		$(shell xml2-config --cflags)
 
   GTKLDFLAGS := $(shell $(PKG_CONFIG) --cflags --libs libglade-2.0 gtk+-2.0 gthread-2.0 gmodule-2.0 lcms)
@@ -497,14 +497,14 @@ ifeq ($(TARGET),framebuffer)
 
 
     CFLAGS += -std=c99 -g -I. -Dsmall $(WARNFLAGS) \
-		 $(shell $(PKG_CONFIG) --cflags libhubbub) \
+		 $(shell $(PKG_CONFIG) --cflags libhubbub libcurl openssl) \
 	 	 $(shell xml2-config --cflags) \
 		 -D_BSD_SOURCE \
 		 -D_XOPEN_SOURCE=600 \
 		 -D_POSIX_C_SOURCE=200112L 
 
     LDFLAGS += -lxml2 -lz -ljpeg -lcurl -lm 
-    LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl libhubbub)
+    LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl libhubbub openssl)
     SUBTARGET := -linux
   endif
 
@@ -524,7 +524,7 @@ ifeq ($(TARGET),framebuffer)
 
 
     CFLAGS += -std=c99 -g -I. $(WARNFLAGS) \
-		 $(shell $(PKG_CONFIG) --cflags libhubbub) \
+		 $(shell $(PKG_CONFIG) --cflags libhubbub libcurl openssl) \
 	 	 $(shell xml2-config --cflags) \
 		 -D_BSD_SOURCE \
 		 -D_XOPEN_SOURCE=600 \
@@ -545,7 +545,7 @@ ifeq ($(TARGET),framebuffer)
 
 
     CFLAGS += -std=c99 -g -I. $(WARNFLAGS) \
-		 $(shell $(PKG_CONFIG) --cflags libhubbub) \
+		 $(shell $(PKG_CONFIG) --cflags libhubbub libcurl openssl) \
 	 	 $(shell xml2-config --cflags) \
 		 -D_BSD_SOURCE \
 		 -D_XOPEN_SOURCE=600 \
@@ -566,7 +566,7 @@ ifeq ($(TARGET),framebuffer)
 
 
     CFLAGS += -std=c99 -g -I. $(WARNFLAGS) \
-		 $(shell $(PKG_CONFIG) --cflags libhubbub) \
+		 $(shell $(PKG_CONFIG) --cflags libhubbub libcurl openssl) \
 	 	 $(shell xml2-config --cflags) \
 		 -D_BSD_SOURCE \
 		 -D_XOPEN_SOURCE=600 \
@@ -809,10 +809,13 @@ install-gtk: nsgtk
 	mkdir -p $(DESTDIR)$(NETSURF_GTK_BIN)
 	@cp -v nsgtk $(DESTDIR)$(NETSURF_GTK_BIN)netsurf
 	@cp -vRL gtk/res/adblock.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -vRL gtk/res/arrow_down_8x32.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -vRL gtk/res/blankpage $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -vRL gtk/res/ca-bundle.txt $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -vRL gtk/res/default.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -vRL gtk/res/gtkdefault.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -vRL gtk/res/license $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -vRL gtk/res/languages $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -vRL gtk/res/netsurf.xpm $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -vRL gtk/res/netsurf-16x16.xpm $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -vRL gtk/res/throbber/*.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)/throbber
@@ -823,6 +826,7 @@ install-gtk: nsgtk
 	gzip -9v < gtk/res/netsurf.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)netsurf.glade
 	gzip -9v < gtk/res/options.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)options.glade
 	gzip -9v < gtk/res/history.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)history.glade
+	gzip -9v < gtk/res/source.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)source.glade
 
 install-beos: NetSurf
 	# TODO:HAIKU -- not sure if throbber is needed.  being left out for now.
