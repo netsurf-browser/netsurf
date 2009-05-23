@@ -2773,7 +2773,11 @@ void gui_window_remove_caret(struct gui_window *g)
 
 void gui_window_new_content(struct gui_window *g)
 {
-	struct content *c = g->shared->bw->current_content;
+	struct content *c;
+
+	if(g && g->shared && g->shared->bw)
+		c = g->shared->bw->current_content;
+	else return;
 
 	if(c->type <= CONTENT_CSS)
 	{
