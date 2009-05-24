@@ -1525,6 +1525,9 @@ void ami_update_buttons(struct gui_window_2 *gwin)
 {
 	BOOL back=FALSE,forward=TRUE,tabclose=FALSE,stop=FALSE,reload=FALSE;
 
+	if(gwin->bw->browser_window_type != BROWSER_WINDOW_NORMAL)
+		return;
+
 	if(!browser_window_back_available(gwin->bw))
 		back=TRUE;
 
@@ -2779,6 +2782,11 @@ void gui_window_new_content(struct gui_window *g)
 		c = g->shared->bw->current_content;
 	else return;
 
+	ami_clearclipreg(currp);
+
+	if(g->shared->bw->browser_window_type != BROWSER_WINDOW_NORMAL)
+		return;
+
 	if(c->type <= CONTENT_CSS)
 	{
 		OnMenu(g->shared->win,AMI_MENU_SAVEAS_TEXT);
@@ -2816,8 +2824,6 @@ void gui_window_new_content(struct gui_window *g)
 			OffMenu(g->shared->win,AMI_MENU_SAVEAS_IFF);
 		}
 	}
-
-	ami_clearclipreg(currp);
 }
 
 bool gui_window_scroll_start(struct gui_window *g)
