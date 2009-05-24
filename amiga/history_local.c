@@ -160,7 +160,7 @@ void ami_history_redraw(struct history_window *hw)
 
 	ami_clg(0xffffff);
 
-	RefreshGadgets(hw->gadgets[GID_MAIN],hw->win,NULL);
+//	RefreshGadgets(hw->gadgets[GID_MAIN],hw->win,NULL);
 //	currp = hw->win->RPort;
 	history_redraw_rectangle(history_current, xs, ys,
 		bbox->Width + xs, bbox->Height + ys, 0, 0);
