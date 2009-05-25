@@ -1708,7 +1708,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
            	WA_SizeGadget, TRUE,
 			WA_CustomScreen,scrn,
 			WA_ReportMouse,TRUE,
-			WA_SimpleRefresh,TRUE,
+			WA_SmartRefresh,TRUE,
            	WA_IDCMP,IDCMP_MENUPICK | IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS |
 				 IDCMP_NEWSIZE | IDCMP_RAWKEY | IDCMP_GADGETUP |
 				IDCMP_IDCMPUPDATE | IDCMP_INTUITICKS | IDCMP_EXTENDEDMOUSE,
@@ -1789,7 +1789,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 					WA_Height,curh,
 					WA_CustomScreen,scrn,
 					WA_ReportMouse,TRUE,
-					WA_SimpleRefresh,TRUE,
+					WA_SmartRefresh,TRUE,
         		   	WA_IDCMP,IDCMP_MENUPICK | IDCMP_MOUSEMOVE |
 								IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
 								IDCMP_RAWKEY |
