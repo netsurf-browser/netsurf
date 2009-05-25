@@ -39,6 +39,7 @@ extern char *option_recent_file;
 extern char *option_arexx_dir;
 extern char *option_download_dir;
 extern bool option_faster_scroll;
+extern bool option_direct_render;
 
 #define EXTRA_OPTION_DEFINE \
 bool option_verbose_log = false; \
@@ -60,6 +61,7 @@ char *option_recent_file = 0; \
 char *option_arexx_dir = 0; \
 char *option_download_dir = 0; \
 bool option_faster_scroll = false; \
+bool option_direct_render = false; \
 
 #define EXTRA_OPTION_TABLE \
 { "verbose_log",	OPTION_BOOL,	&option_verbose_log}, \
@@ -80,5 +82,6 @@ bool option_faster_scroll = false; \
 { "recent_file",		OPTION_STRING,	&option_recent_file }, \
 { "arexx_dir",		OPTION_STRING,	&option_arexx_dir }, \
 { "download_dir",		OPTION_STRING,	&option_download_dir }, \
-{ "faster_scroll",	OPTION_BOOL,	&option_faster_scroll},
+{ "faster_scroll",	OPTION_BOOL,	&option_faster_scroll}, \
+{ "debug_dr",	OPTION_BOOL,	&option_direct_render},
 #endif

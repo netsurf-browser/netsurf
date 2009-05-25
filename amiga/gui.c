@@ -177,6 +177,7 @@ uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved);
 void ami_init_mouse_pointers(void);
 void ami_switch_tab(struct gui_window_2 *gwin,bool redraw);
 static void *myrealloc(void *ptr, size_t len, void *pw);
+void ami_init_layers(struct RastPort *rp);
 
 void gui_init(int argc, char** argv)
 {
@@ -551,41 +552,23 @@ void gui_init2(int argc, char** argv)
 		 * Height is set to screen width to give enough space for thumbnails *
 		 * Also applies to the further gfx/layers functions and memory below */
 
-		glob.bm = p96AllocBitMap(scrn->Width,scrn->Width,32,
-					BMF_CLEAR | BMF_DISPLAYABLE | BMF_INTERLEAVED,
-					scrn->RastPort.BitMap,RGBFB_A8R8G8B8);
-
-		if(!glob.bm) warn_user("NoMemory","");
-
-		InitRastPort(&glob.rp);
-		glob.rp.BitMap = glob.bm;
-		SetDrMd(&glob.rp,BGBACKFILL);
-
 		glob.layerinfo = NewLayerInfo();
-
-		glob.rp.Layer = CreateUpfrontLayer(glob.layerinfo,glob.bm,0,0,
-							scrn->Width-1,scrn->Width-1,LAYERSIMPLE,NULL);
-
-		InstallLayerHook(glob.rp.Layer,LAYERS_NOBACKFILL);
-
 		glob.areabuf = AllocVec(100,MEMF_PRIVATE | MEMF_CLEAR);
-		glob.rp.AreaInfo = AllocVec(sizeof(struct AreaInfo),MEMF_PRIVATE | MEMF_CLEAR);
-
-		if((!glob.areabuf) || (!glob.rp.AreaInfo))	warn_user("NoMemory","");
-
-		InitArea(glob.rp.AreaInfo,glob.areabuf,100/5);
-		glob.rp.TmpRas = AllocVec(sizeof(struct TmpRas),MEMF_PRIVATE | MEMF_CLEAR);
 		glob.tmprasbuf = AllocVec(scrn->Width*scrn->Width,MEMF_PRIVATE | MEMF_CLEAR);
 
-		if((!glob.tmprasbuf) || (!glob.rp.TmpRas))	warn_user("NoMemory","");
+		if(!option_direct_render)
+		{
+			glob.bm = p96AllocBitMap(scrn->Width,scrn->Width,32,
+						BMF_CLEAR | BMF_DISPLAYABLE | BMF_INTERLEAVED,
+						scrn->RastPort.BitMap,RGBFB_A8R8G8B8);
 
-		InitTmpRas(glob.rp.TmpRas,glob.tmprasbuf,scrn->Width*scrn->Width);
-		currp = &glob.rp;
+			if(!glob.bm) warn_user("NoMemory","");
 
-#ifdef NS_AMIGA_CAIRO
-		glob.surface = cairo_amigaos_surface_create(glob.bm);
-		glob.cr = cairo_create(glob.surface);
-#endif
+			InitRastPort(&glob.rp);
+			glob.rp.BitMap = glob.bm;
+
+			ami_init_layers(&glob.rp);
+		}
 		/* init shared bitmaps */
 	}
 
@@ -668,6 +651,44 @@ void gui_init2(int argc, char** argv)
 	if(locked_screen) UnlockPubScreen(NULL,scrn);
 }
 
+void ami_init_layers(struct RastPort *rp)
+{
+	SetDrMd(rp,BGBACKFILL);
+
+	rp->Layer = CreateUpfrontLayer(glob.layerinfo,rp->BitMap,0,0,
+					scrn->Width-1,scrn->Width-1,LAYERSIMPLE,NULL);
+
+	InstallLayerHook(rp->Layer,LAYERS_NOBACKFILL);
+
+	rp->AreaInfo = AllocVec(sizeof(struct AreaInfo),MEMF_PRIVATE | MEMF_CLEAR);
+
+	if((!glob.areabuf) || (!rp->AreaInfo))	warn_user("NoMemory","");
+
+	InitArea(rp->AreaInfo,glob.areabuf,100/5);
+	rp->TmpRas = AllocVec(sizeof(struct TmpRas),MEMF_PRIVATE | MEMF_CLEAR);
+
+	if((!glob.tmprasbuf) || (!rp->TmpRas))	warn_user("NoMemory","");
+
+	InitTmpRas(rp->TmpRas,glob.tmprasbuf,scrn->Width*scrn->Width);
+	currp = rp;
+
+#ifdef NS_AMIGA_CAIRO
+		glob.surface = cairo_amigaos_surface_create(rp->BitMap);
+		glob.cr = cairo_create(glob.surface);
+#endif
+}
+
+void ami_free_layers(struct RastPort *rp)
+{
+#ifdef NS_AMIGA_CAIRO
+	cairo_destroy(glob.cr);
+	cairo_surface_destroy(glob.surface);
+#endif
+	DeleteLayer(0,rp->Layer);
+	FreeVec(rp->TmpRas);
+	FreeVec(rp->AreaInfo);
+}
+
 void ami_update_quals(struct gui_window_2 *gwin)
 {
 	uint32 quals = 0;
@@ -700,7 +721,7 @@ void ami_handle_msg(void)
 	struct InputEvent *ie;
 	struct Node *tabnode;
 	UBYTE buffer[20];
-	int chars;
+	int chars,i;
 
 	if(IsMinListEmpty(window_list))
 	{
@@ -1085,6 +1106,14 @@ void ami_handle_msg(void)
 						default:
    							if((chars = MapRawKey(ie,buffer,20,NULL)) > 0)
 							{
+/* this doesn't work - MapRawKey would take notice of capslock if it was in
+ie_qualifier anyway
+								if(ie->ie_Qualifier & IEQUALIFIER_CAPSLOCK)
+								{
+									for(i=0;i<chars;i++)
+										buffer[i] = ToUpper(buffer[i]);
+								}
+*/
 								if(ie->ie_Qualifier & IEQUALIFIER_RCOMMAND)
 								{
 /* We are duplicating the menu shortcuts here, as if RMBTRAP is active
@@ -1103,7 +1132,7 @@ void ami_handle_msg(void)
 										break;
 									}
 								}
-								else
+								else //if(!(ie->ie_Code & IECODE_UP_PREFIX))
 								{
 									browser_window_key_press(gwin->bw,buffer[0]);
 								}
@@ -1453,15 +1482,9 @@ void gui_quit(void)
 
 	ami_arexx_cleanup();
 
-#ifdef NS_AMIGA_CAIRO
-	cairo_destroy(glob.cr);
-	cairo_surface_destroy(glob.surface);
-#endif
-	DeleteLayer(0,glob.rp.Layer);
+	if(!option_direct_render) ami_free_layers(&glob.rp);
 	DisposeLayerInfo(glob.layerinfo);
 	p96FreeBitMap(glob.bm);
-	FreeVec(glob.rp.TmpRas);
-	FreeVec(glob.rp.AreaInfo);
 	FreeVec(glob.tmprasbuf);
 	FreeVec(glob.areabuf);
 
@@ -1996,6 +2019,9 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	}
 
 	gwin->shared->bw = bw;
+
+	if(option_direct_render) ami_init_layers(gwin->shared->win->RPort);
+
 	//currp = &glob.rp; // WINDOW.CLASS: &gwin->rp; //gwin->win->RPort;
 
 //	GetRPAttrs(&gwin->rp,RPTAG_Font,&origrpfont,TAG_DONE);
@@ -2095,6 +2121,7 @@ void gui_window_destroy(struct gui_window *g)
 
 	curbw = NULL;
 
+	if(option_direct_render) ami_free_layers(g->shared->win->RPort);
 	DisposeObject(g->shared->objects[OID_MAIN]);
 	DelObject(g->shared->node);
 	if(g->tab_node)
@@ -2217,7 +2244,8 @@ DebugPrintF("%ld %ld calc\n",(y1-y0)+(yoffset+y0-vcurrent),(y0-(int)vcurrent));
 
 //	ami_update_buttons(g->shared);
 
-	BltBitMapRastPort(glob.bm,x0-hcurrent,y0-vcurrent,g->shared->win->RPort,xoffset+x0-hcurrent,yoffset+y0-vcurrent,x1-x0,y1-y0,0x0C0);
+	if(!option_direct_render)
+		BltBitMapRastPort(glob.bm,x0-hcurrent,y0-vcurrent,g->shared->win->RPort,xoffset+x0-hcurrent,yoffset+y0-vcurrent,x1-x0,y1-y0,0x0C0);
 
 /*
 	DebugPrintF("%ld %ld %ld %ld draw area\n%ld %ld %ld %ld clip rect\n%ld %ld bitmap src\n%ld %ld %ld %ld bitmap dest\n\n",-hcurrent,-vcurrent,width-hcurrent,height-vcurrent,
@@ -2264,7 +2292,7 @@ void ami_do_redraw(struct gui_window_2 *g,bool scroll)
 	struct Region *reg = NULL;
 	struct Rectangle rect;
 	struct content *c;
-	ULONG hcurrent,vcurrent,xoffset,yoffset,width=800,height=600;
+	ULONG hcurrent,vcurrent,xoffset,yoffset,width=800,height=600,x0=0,y0=0;
 	struct IBox *bbox;
 	ULONG oldh=g->oldh,oldv=g->oldv;
 
@@ -2350,7 +2378,8 @@ void ami_do_redraw(struct gui_window_2 *g,bool scroll)
 
 		ami_clearclipreg(currp);
 
-		BltBitMapRastPort(glob.bm,0,0,g->win->RPort,xoffset,yoffset,width,height,0x0C0);
+		if(!option_direct_render)
+			BltBitMapRastPort(glob.bm,0,0,g->win->RPort,xoffset,yoffset,width,height,0x0C0);
 	}
 
 	current_redraw_browser = NULL;
@@ -2764,6 +2793,8 @@ void gui_window_remove_caret(struct gui_window *g)
 	int xs,ys;
 
 	if(!g) return;
+	if(option_direct_render) return;
+
 
 	GetAttr(SPACE_AreaBox,g->shared->gadgets[GID_BROWSER],(ULONG *)&bbox);
 	GetAttr(SCROLLER_Top,g->shared->objects[OID_HSCROLL],(ULONG *)&xs);
