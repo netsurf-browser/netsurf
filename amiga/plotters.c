@@ -34,6 +34,17 @@
 #include <math.h>
 #include <assert.h>
 
+static void ami_bitmap_tile_hook(struct Hook *hook,struct RastPort *rp,struct BackFillMessage *bfmsg);
+
+struct bfbitmap {
+	struct BitMap *bm;
+	ULONG width;
+	ULONG height;
+	int offsetx;
+	int offsety;
+};
+
+
 #ifndef M_PI /* For some reason we don't always get this from math.h */
 #define M_PI		3.14159265358979323846
 #endif
@@ -413,6 +424,7 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 	int xf,yf,xm,ym,oy,ox;
 	struct BitMap *tbm = NULL;
 	struct Hook *bfh = NULL;
+	struct bfbitmap bfbm;
 
 	if(!(repeat_x || repeat_y))
 		return ami_bitmap(x, y, width, height, bitmap, bg, content);
@@ -457,19 +469,35 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 		ym = y;
 	}
 
-	bfh = CreateBackFillHook(BFHA_BitMap,tbm,
+	if(bitmap->opaque)
+	{
+		bfh = CreateBackFillHook(BFHA_BitMap,tbm,
 							BFHA_Width,width,
 							BFHA_Height,height,
 							BFHA_OffsetX,ox,
 							BFHA_OffsetY,oy,
 							TAG_DONE);
+	}
+	else
+	{
+		bfbm.bm = tbm;
+		bfbm.width = width;
+		bfbm.height = height;
+		bfbm.offsetx = ox;
+		bfbm.offsety = oy;
+		bfh = AllocVec(sizeof(struct Hook),MEMF_CLEAR);
+		bfh->h_Entry = (HOOKFUNC)ami_bitmap_tile_hook;
+		bfh->h_SubEntry = 0;
+		bfh->h_Data = &bfbm;
+	}
 
 	InstallLayerHook(currp->Layer,bfh);
 
 	EraseRect(currp,xm,ym,xf,yf);
 
 	InstallLayerHook(currp->Layer,LAYERS_NOBACKFILL);
-	DeleteBackFillHook(bfh);
+	if(bitmap->opaque) DeleteBackFillHook(bfh);
+		else FreeVec(bfh);
 
 	if(tbm != bitmap->nativebm)
 	{
@@ -477,6 +505,46 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 	}
 
 	return true;
+}
+
+static void ami_bitmap_tile_hook(struct Hook *hook,struct RastPort *rp,struct BackFillMessage *bfmsg)
+{
+	int xf,yf;
+	struct bfbitmap *bfbm = (struct bfbitmap *)hook->h_Data;
+
+	/* tile down and across to extents  (bfmsg->Bounds.MinX)*/
+	for (xf = -bfbm->offsetx; xf < bfmsg->Bounds.MaxX; xf += bfbm->width) {
+		for (yf = -bfbm->offsety; yf < bfmsg->Bounds.MaxY; yf += bfbm->height) {
+
+			if(GfxBase->lib_Version >= 53) // AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)
+			{
+				CompositeTags(COMPOSITE_Src_Over_Dest,bfbm->bm,rp->BitMap,
+					COMPTAG_Flags,COMPFLAG_IgnoreDestAlpha,
+					COMPTAG_DestX,bfmsg->Bounds.MinX,
+					COMPTAG_DestY,bfmsg->Bounds.MinY,
+					COMPTAG_DestWidth,bfmsg->Bounds.MaxX - bfmsg->Bounds.MinX + 1,
+					COMPTAG_DestHeight,bfmsg->Bounds.MaxY - bfmsg->Bounds.MinY + 1,
+					COMPTAG_SrcWidth,bfbm->width,
+					COMPTAG_SrcHeight,bfbm->height,
+					COMPTAG_OffsetX,xf,
+					COMPTAG_OffsetY,yf,
+					TAG_DONE);
+			}
+			else
+			{
+				BltBitMapTags(BLITA_Width,bfbm->width,
+					BLITA_Height,bfbm->height,
+					BLITA_Source,bfbm->bm,
+					BLITA_Dest,rp,
+					BLITA_DestX,xf,
+					BLITA_DestY,yf,
+					BLITA_SrcType,BLITT_BITMAP,
+					BLITA_DestType,BLITT_RASTPORT,
+					BLITA_UseSrcAlpha,TRUE,
+					TAG_DONE);
+			}
+		}
+	}
 }
 
 bool ami_group_start(const char *name)
