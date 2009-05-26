@@ -410,8 +410,9 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 			struct bitmap *bitmap, colour bg,
 			bool repeat_x, bool repeat_y, struct content *content)
 {
-	int xf,yf;
+	int xf,yf,xm,ym,oy,ox;
 	struct BitMap *tbm = NULL;
+	struct Hook *bfh = NULL;
 
 	if(!(repeat_x || repeat_y))
 		return ami_bitmap(x, y, width, height, bitmap, bg, content);
@@ -420,59 +421,55 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 
 	if(!tbm) return true;
 
+	ox = x;
+	oy = y;
+
 	/* get left most tile position */
-	if (repeat_x)
-		for (; x > glob.rect.MinX; x -= width)
-			;
+	for (; ox > 0; ox -= width)
+	;
 
 	/* get top most tile position */
-	if (repeat_y)
-		for (; y > glob.rect.MinY; y -= height)
-			;
+	for (; oy > 0; oy -= height)
+	;
 
-	/* tile down and across to extents */
-	for (xf = x; xf < glob.rect.MaxX; xf += width) {
-		for (yf = y; yf < glob.rect.MaxY; yf += height) {
+	if(ox<0) ox = -ox;
+	if(oy<0) oy = -oy;
 
-			assert(tbm);
-
-			if(GfxBase->lib_Version >= 53) // AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)
-			{
-				uint32 comptype = COMPOSITE_Src;
-				if(!bitmap->opaque) comptype = COMPOSITE_Src_Over_Dest;
-
-		CompositeTags(comptype,tbm,currp->BitMap,
-					COMPTAG_Flags,COMPFLAG_IgnoreDestAlpha,
-					COMPTAG_DestX,glob.rect.MinX,
-					COMPTAG_DestY,glob.rect.MinY,
-					COMPTAG_DestWidth,glob.rect.MaxX - glob.rect.MinX + 1,
-					COMPTAG_DestHeight,glob.rect.MaxY - glob.rect.MinY + 1,
-					COMPTAG_SrcWidth,width,
-					COMPTAG_SrcHeight,height,
-					COMPTAG_OffsetX,xf,
-					COMPTAG_OffsetY,yf,
-					TAG_DONE);
-			}
-			else
-			{
-				BltBitMapTags(BLITA_Width,width,
-						BLITA_Height,height,
-						BLITA_Source,tbm,
-						BLITA_Dest,currp,
-						BLITA_DestX,xf,
-						BLITA_DestY,yf,
-						BLITA_SrcType,BLITT_BITMAP,
-						BLITA_DestType,BLITT_RASTPORT,
-//						BLITA_Mask,0xFF,
-						BLITA_UseSrcAlpha,!bitmap->opaque,
-						TAG_DONE);
-			}
-			if (!repeat_y)
-				break;
-		}
-		if (!repeat_x)
-	   		break;
+	if(repeat_x)
+	{
+		xf = glob.rect.MaxX;
+		xm = glob.rect.MinX;
 	}
+	else
+	{
+		xf = x + width;
+		xm = x;
+	}
+
+	if(repeat_y)
+	{
+		yf = glob.rect.MaxY;
+		ym = glob.rect.MinY;
+	}
+	else
+	{
+		yf = y + height;
+		ym = y;
+	}
+
+	bfh = CreateBackFillHook(BFHA_BitMap,tbm,
+							BFHA_Width,width,
+							BFHA_Height,height,
+							BFHA_OffsetX,ox,
+							BFHA_OffsetY,oy,
+							TAG_DONE);
+
+	InstallLayerHook(currp->Layer,bfh);
+
+	EraseRect(currp,xm,ym,xf,yf);
+
+	InstallLayerHook(currp->Layer,LAYERS_NOBACKFILL);
+	DeleteBackFillHook(bfh);
 
 	if(tbm != bitmap->nativebm)
 	{
