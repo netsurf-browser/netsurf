@@ -560,8 +560,6 @@ bool layout_block_context(struct box *block, int viewport_height,
 					/* Set current cy */
 					cy += box->height -
 							(y - box->padding[TOP]);
-					/* Update y for any change in height */
-					y = box->height + box->padding[TOP];
 				}
 
 				cy += box->padding[BOTTOM] +
