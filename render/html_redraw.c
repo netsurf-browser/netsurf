@@ -477,8 +477,7 @@ bool html_redraw_box(struct box *box,
 		bool first = true;
 		int ib_x;
 		int ib_y = y;
-		int ib_width;
-		int ib_p_left, ib_p_width;
+		int ib_p_width;
 		int ib_b_left, ib_b_right;
 		int xmin = x - border_left;
 		int xmax = x + padding_width + border_right;
@@ -498,20 +497,13 @@ bool html_redraw_box(struct box *box,
 			if (scale == 1.0) {
 				ib_x = x_parent + ib->x;
 				ib_y = y_parent + ib->y;
-				ib_width = ib->width;
-				ib_p_left = ib->padding[LEFT];
-				ib_p_width = ib_p_left + ib->width +
+				ib_p_width = ib->padding[LEFT] + ib->width +
 						ib->padding[RIGHT];
 				ib_b_left = ib->border[LEFT];
 				ib_b_right = ib->border[RIGHT];
 			} else {
 				ib_x = (x_parent + ib->x) * scale;
 				ib_y = (y_parent + ib->y) * scale;
-				ib_width = ib->width * scale;
-				/* left and top padding values are normally
-				 * zero, so avoid trivial FP maths */
-				ib_p_left = ib->padding[LEFT] ?
-						ib->padding[LEFT] * scale : 0;
 				ib_p_width = (ib->padding[LEFT] + ib->width +
 						ib->padding[RIGHT]) * scale;
 				ib_b_left = ib->border[LEFT] * scale;
@@ -543,7 +535,6 @@ bool html_redraw_box(struct box *box,
 						border_bottom;
 
 				px0 = xmin < x0 ? x0 : xmin;
-				px1 = xmax < x1 ? xmax : x1;
 				py0 = ymin < y0 ? y0 : ymin;
 				py1 = ymax < y1 ? ymax : y1;
 
