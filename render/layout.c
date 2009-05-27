@@ -1201,9 +1201,9 @@ void layout_find_dimensions(int available_width, int viewport_height,
 					style);
 			break;
 		case CSS_HEIGHT_PERCENT:
-			if (box->style->position == CSS_POSITION_ABSOLUTE &&
-					box->float_container) {
+			if (box->style->position == CSS_POSITION_ABSOLUTE) {
 				/* Box is absolutely positioned */
+				assert(box->float_container);
 				containing_block = box->float_container;
 			} else if (box->float_container &&
 					box->style->position !=
@@ -2692,9 +2692,9 @@ bool layout_table(struct box *table, int available_width,
 		/* This is the minimum height for the table (see 17.5.3) */
 		min_height = css_len2px(&style->height.value.length, style);
 	} else if (style->height.height == CSS_HEIGHT_PERCENT) {
-		/* This is the minimum height for the table (see 17.5.3) */			if (table->style->position == CSS_POSITION_ABSOLUTE &&
-				table->float_container) {
+		/* This is the minimum height for the table (see 17.5.3) */			if (table->style->position == CSS_POSITION_ABSOLUTE) {
 			/* Table is absolutely positioned */
+			assert(table->float_container);
 			containing_block = table->float_container;
 		} else if (table->float_container &&
 				table->style->position !=
