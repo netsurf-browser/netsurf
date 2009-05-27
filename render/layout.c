@@ -2692,7 +2692,8 @@ bool layout_table(struct box *table, int available_width,
 		/* This is the minimum height for the table (see 17.5.3) */
 		min_height = css_len2px(&style->height.value.length, style);
 	} else if (style->height.height == CSS_HEIGHT_PERCENT) {
-		/* This is the minimum height for the table (see 17.5.3) */			if (table->style->position == CSS_POSITION_ABSOLUTE) {
+		/* This is the minimum height for the table (see 17.5.3) */
+		if (table->style->position == CSS_POSITION_ABSOLUTE) {
 			/* Table is absolutely positioned */
 			assert(table->float_container);
 			containing_block = table->float_container;
