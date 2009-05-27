@@ -835,8 +835,9 @@ bool layout_apply_minmax_height(struct box *box, struct box *container)
 	bool updated = false;
 
 	/* Find containing block for percentage heights */
-	if (container) {
+	if (box->style->position == CSS_POSITION_ABSOLUTE) {
 		/* Box is absolutely positioned */
+		assert(container);
 		containing_block = container;
 	} else if (box->float_container &&
 			(box->style->float_ == CSS_FLOAT_LEFT ||
