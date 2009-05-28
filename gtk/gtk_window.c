@@ -30,7 +30,6 @@
 #include "gtk/gtk_plotters.h"
 #include "gtk/gtk_schedule.h"
 #include "gtk/gtk_tabs.h"
-#undef NDEBUG
 #include "utils/log.h"
 #include "utils/utils.h"
 #include <gdk/gdkkeysyms.h>

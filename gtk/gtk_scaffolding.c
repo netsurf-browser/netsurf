@@ -60,7 +60,6 @@
 #include "utils/utils.h"
 #include "utils/url.h"
 
-#undef NDEBUG
 #include "utils/log.h"
 
 struct gtk_history_window;

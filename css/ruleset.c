@@ -37,15 +37,14 @@
 #include <strings.h>
 #include <math.h>
 #define CSS_INTERNALS
-#define NDEBUG
 #include "css/css.h"
 #include "content/content.h"
 #include "desktop/options.h"
+#define NDEBUG
 #include "utils/log.h"
+#undef NDEBUG
 #include "utils/url.h"
 #include "utils/utils.h"
-
-
 
 static bool css_compare_selectors(const struct css_selector *n0,
 		const struct css_selector *n1);

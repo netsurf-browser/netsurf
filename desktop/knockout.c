@@ -48,7 +48,7 @@
  *   |#################|                 |#################|
  *   +-----------------+                 +-----------------+
  *
- * With knockoout rendering, the bottom rectangle is split up into smaller
+ * With knockout rendering, the bottom rectangle is split up into smaller
  * ones and each pixel is just plotted once:
  *
  *   +-----------------+
@@ -62,13 +62,14 @@
  *   +-----------------+
  */
 
-#define NDEBUG
 #include <assert.h>
 #include <string.h>
 #include "desktop/knockout.h"
 #include "desktop/plotters.h"
 #include "image/bitmap.h"
+#define NDEBUG
 #include "utils/log.h"
+#undef NDEBUG
 
 #define KNOCKOUT_ENTRIES 3072	/* 40 bytes each */
 #define KNOCKOUT_BOXES 768	/* 28 bytes each */

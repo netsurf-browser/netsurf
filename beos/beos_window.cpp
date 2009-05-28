@@ -26,7 +26,6 @@ extern "C" {
 #include "desktop/options.h"
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
-#undef NDEBUG
 #include "utils/log.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"

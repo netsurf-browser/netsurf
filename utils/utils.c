@@ -34,6 +34,7 @@
 #include "utils/config.h"
 #define NDEBUG
 #include "utils/log.h"
+#undef NDEBUG
 #include "utils/messages.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"

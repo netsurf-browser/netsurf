@@ -93,7 +93,6 @@
 #include <math.h>
 #include <limits.h>
 #define CSS_INTERNALS
-#undef NDEBUG
 #include "utils/config.h"
 #include "content/content.h"
 #include "content/fetch.h"

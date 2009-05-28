@@ -31,6 +31,7 @@
 #include "desktop/gui.h"
 #define NDEBUG
 #include "utils/log.h"
+#undef NDEBUG
 #include "utils/talloc.h"
 
 

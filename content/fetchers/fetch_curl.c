@@ -45,7 +45,6 @@
 #include "desktop/netsurf.h"
 #include "desktop/options.h"
 #include "render/form.h"
-#undef NDEBUG
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/url.h"

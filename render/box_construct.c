@@ -44,7 +44,6 @@
 #include "render/html.h"
 #include "desktop/gui.h"
 #include "utils/locale.h"
-//#define NDEBUG
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/talloc.h"

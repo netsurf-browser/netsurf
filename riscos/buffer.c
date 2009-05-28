@@ -32,7 +32,6 @@
 #include "riscos/wimp.h"
 #include "riscos/wimputils.h"
 #include "utils/log.h"
-//#define NDEBUG
 #define BUFFER_EXCLUSIVE_USER_REDRAW "Only support pure user redraw (faster)"
 //#define BUFFER_EMULATE_32BPP "Redirect to a 32bpp sprite and plot with Tinct"
 

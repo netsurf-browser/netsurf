@@ -55,7 +55,6 @@ extern "C" {
 #include "render/html.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
-#undef NDEBUG
 #include "utils/log.h"
 }
 #include "beos/beos_gui.h"

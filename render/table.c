@@ -27,6 +27,7 @@
 #include "render/table.h"
 #define NDEBUG
 #include "utils/log.h"
+#undef NDEBUG
 #include "utils/talloc.h"
 
 

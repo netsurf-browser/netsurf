@@ -38,6 +38,7 @@
 #include "render/layout.h"
 #define NDEBUG
 #include "utils/log.h"
+#undef NDEBUG
 #include "utils/talloc.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
