@@ -1380,7 +1380,6 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y)
 {
 	enum { ACTION_NONE, ACTION_SUBMIT, ACTION_GO } action = ACTION_NONE;
-	char *base_url = 0;
 	char *title = 0;
 	const char *url = 0;
 	const char *target = 0;
@@ -1391,7 +1390,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 	int box_x = 0, box_y = 0;
 	int gadget_box_x = 0, gadget_box_y = 0;
 	int scroll_box_x = 0, scroll_box_y = 0;
-	int text_box_x = 0, text_box_y = 0;
+	int text_box_x = 0;
 	struct box *url_box = 0;
 	struct box *gadget_box = 0;
 	struct box *scroll_box = 0;
@@ -1400,7 +1399,6 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 	struct box *box;
 	struct content *content = c;
 	struct content *gadget_content = c;
-	struct content *url_content = c;
 	struct form_control *gadget = 0;
 	struct content *object = NULL;
 	struct box *next_box;
@@ -1429,7 +1427,6 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 			object = box->object;
 
 		if (box->href) {
-			url_content = content;
 			url = box->href;
 			target = box->target;
 			url_box = box;
@@ -1446,7 +1443,6 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 
 		if (box->gadget) {
 			gadget_content = content;
-			base_url = content->data.html.base_url;
 			gadget = box->gadget;
 			gadget_box = box;
 			gadget_box_x = box_x;
@@ -1480,7 +1476,6 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 		if (box->text && !box->object) {
 			text_box = box;
 			text_box_x = box_x;
-			text_box_y = box_y;
 		}
 	}
 
@@ -1853,7 +1848,8 @@ void browser_window_mouse_track(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y)
 {
 	struct content *c = bw->current_content;
-	if ((!c) && (bw->drag_type != DRAGGING_FRAME))
+
+	if (c == NULL && bw->drag_type != DRAGGING_FRAME)
 		return;
 
 	/* detect end of drag operation in case the platform-specific code
@@ -1862,6 +1858,7 @@ void browser_window_mouse_track(struct browser_window *bw,
 	if (bw->drag_type != DRAGGING_NONE && !mouse) {
 		browser_window_mouse_drag_end(bw, mouse, x, y);
 	}
+
 	if (bw->drag_type == DRAGGING_FRAME) {
 		browser_window_resize_frame(bw, bw->x0 + x, bw->y0 + y);
 	} else if (bw->drag_type == DRAGGING_PAGE_SCROLL) {
@@ -1877,18 +1874,21 @@ void browser_window_mouse_track(struct browser_window *bw,
 		bw->drag_start_scroll_y = scrolly;
 
 		gui_window_set_scroll(bw->window, scrollx, scrolly);
+	} else {
+		assert(c != NULL);
 
-	} else switch (c->type) {
-	case CONTENT_HTML:
-		browser_window_mouse_track_html(bw, mouse, x, y);
-		break;
+		switch (c->type) {
+		case CONTENT_HTML:
+			browser_window_mouse_track_html(bw, mouse, x, y);
+			break;
 
-	case CONTENT_TEXTPLAIN:
-		browser_window_mouse_track_text(bw, mouse, x, y);
-		break;
+		case CONTENT_TEXTPLAIN:
+			browser_window_mouse_track_text(bw, mouse, x, y);
+			break;
 
-	default:
-		break;
+		default:
+			break;
+		}
 	}
 }
 
