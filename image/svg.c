@@ -133,6 +133,8 @@ bool svg_redraw(struct content *c, int x, int y,
 					diagram->shape[i].text,
 					strlen(diagram->shape[i].text),
 					0xffffff, 0x000000);
+			if (!ok)
+				return false;
 		}
         }
 
