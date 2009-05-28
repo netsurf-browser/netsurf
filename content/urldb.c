@@ -1143,8 +1143,6 @@ void urldb_iterate_partial(const char *prefix,
 	if (slash) {
 		/* if there's a slash in the input, then we can
 		 * assume that we're looking for a path */
-		char *domain = host;
-
 		snprintf(host, sizeof host, "%.*s",
 				(int) (slash - prefix), prefix);
 
@@ -1159,7 +1157,6 @@ void urldb_iterate_partial(const char *prefix,
 					buf);
 				if (!h)
 					return;
-				domain = buf;
 			} else
 				return;
 		}
@@ -2734,6 +2731,10 @@ bool urldb_set_cookie(const char *header, const char *url,
 			 * more accurately.
 			 */
 
+			/** \todo In future, we should consult a TLD service
+			 * instead of just looking for embedded dots.
+			 */
+
 			hptr = host + strlen(host) - 1;
 			rptr = rhost + strlen(rhost) - 1;
 
@@ -2748,7 +2749,6 @@ bool urldb_set_cookie(const char *header, const char *url,
 			 * common suffix. The above loop will exit pointing
 			 * to the byte before the start of the suffix. */
 			hptr++;
-			rptr++;
 
 			/* 2 */
 			while (*hptr != '\0' && *hptr != '.')
