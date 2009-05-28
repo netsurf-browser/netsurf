@@ -424,7 +424,6 @@ bool ro_gui_theme_open(struct theme_descriptor *descriptor, bool list)
 
 	/*	Open the themes
 	*/
-	next_descriptor = descriptor;
 	for (; descriptor; descriptor = next_descriptor) {
 		/* see if we should iterate through the entire list */
 		if (list)
@@ -731,7 +730,6 @@ void ro_gui_theme_free(struct theme_descriptor *descriptor)
 		descriptor = descriptor->previous;
 
 	/* free closed themes */
-	next_descriptor = descriptor;
 	for (; descriptor; descriptor = next_descriptor) {
 		next_descriptor = descriptor->next;
 
@@ -1152,16 +1150,15 @@ bool ro_gui_theme_attach_toolbar(struct toolbar *toolbar, wimp_w parent)
 	wimp_outline outline;
 	wimp_window_state state;
 	int height;
-	int full_height;
 	os_error *error;
 
-	if (!toolbar) return false;
+	if (!toolbar)
+		return false;
 
 	/*	Attach/close the windows
 	*/
 	toolbar->parent_handle = parent;
 	height = ro_gui_theme_toolbar_height(toolbar);
-	full_height = ro_gui_theme_toolbar_full_height(toolbar);
 	if (height > 0) {
 		outline.w = parent;
 		xwimp_get_window_outline(&outline);
@@ -1249,16 +1246,20 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width)
 	int height = -1;
 	int throbber_x = -1;
 	int left_edge, right_edge, bottom_edge;
-	if (!toolbar) return false;
-	int old_height = toolbar->height;
-	int old_width = toolbar->toolbar_current;
+	int old_height;
+	int old_width;
 	struct toolbar_icon *toolbar_icon;
 	bool visible_icon = false;
 	int collapse_height;
 	int xeig, yeig;
 	os_coord pixel = {1, 1};
 	int top, bottom, right;
-	bool parent_hscroll = false;
+
+	if (!toolbar)
+		return false;
+
+	old_height = toolbar->height;
+	old_width = toolbar->toolbar_current;
 
 	/* calculate 1px in OS units */
 	ro_convert_pixels_to_os_units(&pixel, (os_mode)-1);
@@ -1293,7 +1294,6 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width)
 			warn_user("WimpError", error->errmess);
 			return false;
 		}
-		parent_hscroll = state.flags & wimp_WINDOW_HSCROLL;
 		height = state.visible.y1 - state.visible.y0 + 2;
 
 		/*	We can't obscure the height of the scroll bar as we
@@ -1979,28 +1979,28 @@ void ro_gui_theme_update_toolbar_icon(struct toolbar *toolbar,
 	int default_width = 0;
 	osspriteop_area *sprite_area = NULL;
 
-	/*	Separators default to a width of 16
-	*/
-	if (icon->icon_number == -1) default_width = 16;
+	/* Separators default to a width of 16 */
+	if (icon->icon_number == -1)
+		default_width = 16;
 
-	/*	Handle no theme/no sprite area
-	*/
+	/* Handle no theme/no sprite area */
 	if (!toolbar)
 		return;
 	if ((toolbar->descriptor) && (toolbar->descriptor->theme))
 		sprite_area = toolbar->descriptor->theme->sprite_area;
 
-	/*	Get the sprite details
-	*/
+	/* Get the sprite details */
 	if (sprite_area)
 		error = xosspriteop_read_sprite_info(osspriteop_USER_AREA,
 				sprite_area, (osspriteop_id)icon->name,
 				&dimensions.x, &dimensions.y, 0, &mode);
 
-	/* fallback to user area just for 'gright' */
-	if ((error || !sprite_area) && (!strcmp(icon->name, "gright")))
+	/* fallback to Wimp pool, if necessary */
+	if (error || sprite_area == NULL)
 		error = xwimpspriteop_read_sprite_info(icon->name,
 				&dimensions.x, &dimensions.y, 0, &mode);
+
+	/* Give up, if both failed */
 	if (error) {
 		icon->width = default_width;
 		icon->height = 0;
@@ -2012,8 +2012,7 @@ void ro_gui_theme_update_toolbar_icon(struct toolbar *toolbar,
 		return;
 	}
 
-	/*	Store the details
-	*/
+	/* Store the details */
 	ro_convert_pixels_to_os_units(&dimensions, mode);
 	icon->width = dimensions.x;
 	icon->height = dimensions.y;
