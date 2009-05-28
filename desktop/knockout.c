@@ -338,129 +338,129 @@ bool knockout_plot_flush(void)
 
 	for (i = 0; i < knockout_entry_cur; i++) {
 		switch (knockout_entries[i].type) {
-			case KNOCKOUT_PLOT_CLG:
-				success &= plot.clg(
-						knockout_entries[i].data.clg.c);
-				break;
-			case KNOCKOUT_PLOT_RECTANGLE:
-				success &= plot.rectangle(
-						knockout_entries[i].data.rectangle.x0,
-						knockout_entries[i].data.rectangle.y0,
-						knockout_entries[i].data.rectangle.width,
-						knockout_entries[i].data.rectangle.height,
-						knockout_entries[i].data.rectangle.line_width,
-						knockout_entries[i].data.rectangle.c,
-						knockout_entries[i].data.rectangle.dotted,
-						knockout_entries[i].data.rectangle.dashed);
-				break;
-			case KNOCKOUT_PLOT_LINE:
-				success &= plot.line(
-						knockout_entries[i].data.line.x0,
-						knockout_entries[i].data.line.y0,
-						knockout_entries[i].data.line.x1,
-						knockout_entries[i].data.line.y1,
-						knockout_entries[i].data.line.width,
-						knockout_entries[i].data.line.c,
-						knockout_entries[i].data.line.dotted,
-						knockout_entries[i].data.line.dashed);
-				break;
-			case KNOCKOUT_PLOT_POLYGON:
-				success &= plot.polygon(
-						knockout_entries[i].data.polygon.p,
-						knockout_entries[i].data.polygon.n,
-						knockout_entries[i].data.polygon.fill);
-				break;
-			case KNOCKOUT_PLOT_FILL:
-				box = knockout_entries[i].box->child;
-				if (box)
-					success &= knockout_plot_fill_recursive(box,
-							knockout_entries[i].data.fill.c);
-				else if (!knockout_entries[i].box->deleted)
-					success &= plot.fill(
-							knockout_entries[i].data.fill.x0,
-							knockout_entries[i].data.fill.y0,
-							knockout_entries[i].data.fill.x1,
-							knockout_entries[i].data.fill.y1,
-							knockout_entries[i].data.fill.c);
-				break;
-			case KNOCKOUT_PLOT_CLIP:
-				success &= plot.clip(
-						knockout_entries[i].data.clip.x0,
-						knockout_entries[i].data.clip.y0,
-						knockout_entries[i].data.clip.x1,
-						knockout_entries[i].data.clip.y1);
-				break;
-			case KNOCKOUT_PLOT_TEXT:
-				success &= plot.text(
-						knockout_entries[i].data.text.x,
-						knockout_entries[i].data.text.y,
-						knockout_entries[i].data.text.style,
-						knockout_entries[i].data.text.text,
-						knockout_entries[i].data.text.length,
-						knockout_entries[i].data.text.bg,
-						knockout_entries[i].data.text.c);
-				break;
-			case KNOCKOUT_PLOT_DISC:
-				success &= plot.disc(
-						knockout_entries[i].data.disc.x,
-						knockout_entries[i].data.disc.y,
-						knockout_entries[i].data.disc.radius,
-						knockout_entries[i].data.disc.colour,
-						knockout_entries[i].data.disc.filled);
-				break;
-			case KNOCKOUT_PLOT_ARC:
-				success &= plot.arc(
-						knockout_entries[i].data.arc.x,
-						knockout_entries[i].data.arc.y,
-						knockout_entries[i].data.arc.radius,
-						knockout_entries[i].data.arc.angle1,
-						knockout_entries[i].data.arc.angle2,
-						knockout_entries[i].data.arc.c);
-				break;
-			case KNOCKOUT_PLOT_BITMAP:
-				success &= plot.bitmap(
-						knockout_entries[i].data.bitmap.x,
-						knockout_entries[i].data.bitmap.y,
-						knockout_entries[i].data.bitmap.width,
-						knockout_entries[i].data.bitmap.height,
-						knockout_entries[i].data.bitmap.bitmap,
-						knockout_entries[i].data.bitmap.bg,
-						knockout_entries[i].data.bitmap.content);
-				break;
-			case KNOCKOUT_PLOT_BITMAP_TILE:
-				box = knockout_entries[i].box->child;
-				if (box) {
-					success &= knockout_plot_bitmap_tile_recursive(box,
-							&knockout_entries[i]);
-				} else if (!knockout_entries[i].box->deleted) {
-					success &= plot.bitmap_tile(
-							knockout_entries[i].data.
-									bitmap_tile.x,
-							knockout_entries[i].data.
-									bitmap_tile.y,
-							knockout_entries[i].data.
-									bitmap_tile.width,
-							knockout_entries[i].data.
-									bitmap_tile.height,
-							knockout_entries[i].data.
-									bitmap_tile.bitmap,
-							knockout_entries[i].data.
-									bitmap_tile.bg,
-							knockout_entries[i].data.
-									bitmap_tile.repeat_x,
-							knockout_entries[i].data.
-									bitmap_tile.repeat_y,
-							knockout_entries[i].data.
-									bitmap_tile.content);
-				}
-				break;
-			case KNOCKOUT_PLOT_GROUP_START:
-				success &= plot.group_start(
-						knockout_entries[i].data.group_start.name);
-				break;
-			case KNOCKOUT_PLOT_GROUP_END:
-				success &= plot.group_end();
-				break;
+		case KNOCKOUT_PLOT_CLG:
+			success &= plot.clg(
+					knockout_entries[i].data.clg.c);
+			break;
+		case KNOCKOUT_PLOT_RECTANGLE:
+			success &= plot.rectangle(
+					knockout_entries[i].data.rectangle.x0,
+					knockout_entries[i].data.rectangle.y0,
+					knockout_entries[i].data.rectangle.width,
+					knockout_entries[i].data.rectangle.height,
+					knockout_entries[i].data.rectangle.line_width,
+					knockout_entries[i].data.rectangle.c,
+					knockout_entries[i].data.rectangle.dotted,
+					knockout_entries[i].data.rectangle.dashed);
+			break;
+		case KNOCKOUT_PLOT_LINE:
+			success &= plot.line(
+					knockout_entries[i].data.line.x0,
+					knockout_entries[i].data.line.y0,
+					knockout_entries[i].data.line.x1,
+					knockout_entries[i].data.line.y1,
+					knockout_entries[i].data.line.width,
+					knockout_entries[i].data.line.c,
+					knockout_entries[i].data.line.dotted,
+					knockout_entries[i].data.line.dashed);
+			break;
+		case KNOCKOUT_PLOT_POLYGON:
+			success &= plot.polygon(
+					knockout_entries[i].data.polygon.p,
+					knockout_entries[i].data.polygon.n,
+					knockout_entries[i].data.polygon.fill);
+			break;
+		case KNOCKOUT_PLOT_FILL:
+			box = knockout_entries[i].box->child;
+			if (box)
+				success &= knockout_plot_fill_recursive(box,
+						knockout_entries[i].data.fill.c);
+			else if (!knockout_entries[i].box->deleted)
+				success &= plot.fill(
+						knockout_entries[i].data.fill.x0,
+						knockout_entries[i].data.fill.y0,
+						knockout_entries[i].data.fill.x1,
+						knockout_entries[i].data.fill.y1,
+						knockout_entries[i].data.fill.c);
+			break;
+		case KNOCKOUT_PLOT_CLIP:
+			success &= plot.clip(
+					knockout_entries[i].data.clip.x0,
+					knockout_entries[i].data.clip.y0,
+					knockout_entries[i].data.clip.x1,
+					knockout_entries[i].data.clip.y1);
+			break;
+		case KNOCKOUT_PLOT_TEXT:
+			success &= plot.text(
+					knockout_entries[i].data.text.x,
+					knockout_entries[i].data.text.y,
+					knockout_entries[i].data.text.style,
+					knockout_entries[i].data.text.text,
+					knockout_entries[i].data.text.length,
+					knockout_entries[i].data.text.bg,
+					knockout_entries[i].data.text.c);
+			break;
+		case KNOCKOUT_PLOT_DISC:
+			success &= plot.disc(
+					knockout_entries[i].data.disc.x,
+					knockout_entries[i].data.disc.y,
+					knockout_entries[i].data.disc.radius,
+					knockout_entries[i].data.disc.colour,
+					knockout_entries[i].data.disc.filled);
+			break;
+		case KNOCKOUT_PLOT_ARC:
+			success &= plot.arc(
+					knockout_entries[i].data.arc.x,
+					knockout_entries[i].data.arc.y,
+					knockout_entries[i].data.arc.radius,
+					knockout_entries[i].data.arc.angle1,
+					knockout_entries[i].data.arc.angle2,
+					knockout_entries[i].data.arc.c);
+			break;
+		case KNOCKOUT_PLOT_BITMAP:
+			success &= plot.bitmap(
+					knockout_entries[i].data.bitmap.x,
+					knockout_entries[i].data.bitmap.y,
+					knockout_entries[i].data.bitmap.width,
+					knockout_entries[i].data.bitmap.height,
+					knockout_entries[i].data.bitmap.bitmap,
+					knockout_entries[i].data.bitmap.bg,
+					knockout_entries[i].data.bitmap.content);
+			break;
+		case KNOCKOUT_PLOT_BITMAP_TILE:
+			box = knockout_entries[i].box->child;
+			if (box) {
+				success &= knockout_plot_bitmap_tile_recursive(box,
+						&knockout_entries[i]);
+			} else if (!knockout_entries[i].box->deleted) {
+				success &= plot.bitmap_tile(
+						knockout_entries[i].data.
+								bitmap_tile.x,
+						knockout_entries[i].data.
+								bitmap_tile.y,
+						knockout_entries[i].data.
+								bitmap_tile.width,
+						knockout_entries[i].data.
+								bitmap_tile.height,
+						knockout_entries[i].data.
+								bitmap_tile.bitmap,
+						knockout_entries[i].data.
+								bitmap_tile.bg,
+						knockout_entries[i].data.
+								bitmap_tile.repeat_x,
+						knockout_entries[i].data.
+								bitmap_tile.repeat_y,
+						knockout_entries[i].data.
+								bitmap_tile.content);
+			}
+			break;
+		case KNOCKOUT_PLOT_GROUP_START:
+			success &= plot.group_start(
+					knockout_entries[i].data.group_start.name);
+			break;
+		case KNOCKOUT_PLOT_GROUP_END:
+			success &= plot.group_end();
+			break;
 		}
 	}
 
@@ -593,7 +593,8 @@ void knockout_calculate(int x0, int y0, int x1, int y1, struct knockout_box *own
 			  	knockout_boxes[knockout_box_cur].child = NULL;
 			  	knockout_boxes[knockout_box_cur].next = parent->child;
 				parent->child = &knockout_boxes[knockout_box_cur++];
-				nx1 = x1;
+				/* nx1 isn't used again, but if it was it would
+				 * need to be updated to x1 here. */
 			}
 			/* clip left */
 			if (x0 > nx0) {
@@ -605,7 +606,8 @@ void knockout_calculate(int x0, int y0, int x1, int y1, struct knockout_box *own
 			  	knockout_boxes[knockout_box_cur].child = NULL;
 			  	knockout_boxes[knockout_box_cur].next = parent->child;
 				parent->child = &knockout_boxes[knockout_box_cur++];
-				//nx0 = x0;
+				/* nx0 isn't used again, but if it was it would
+				 * need to be updated to x0 here. */
 			}
 		}
 	}
