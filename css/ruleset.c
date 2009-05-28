@@ -1146,7 +1146,7 @@ struct css_background_entry *css_background_lookup(
 				css_background_table[i].length) == 0)
 			break;
 	if (i == CSS_BACKGROUND_TABLE_ENTRIES)
-		return 0;
+		return NULL;
 	return &css_background_table[i];
 }
 
@@ -1187,8 +1187,7 @@ bool css_background_position_parse(const struct css_node **node,
 {
 	const struct css_node *v = *node;
 	const struct css_node *w = v->next;
-	const struct css_node *n_temp = 0;
-	struct css_background_entry *bg = 0, *bg2 = 0, *b_temp = 0;
+	struct css_background_entry *bg = NULL, *bg2 = NULL;
 	bool switched = false;
 
 	if (v->type == CSS_NODE_IDENT)
@@ -1210,7 +1209,7 @@ bool css_background_position_parse(const struct css_node **node,
 				return false;
 			}
 
-			if (!bg)
+			if (bg == NULL)
 				return false;
 			horz->pos = vert->pos = CSS_BACKGROUND_POSITION_PERCENT;
 			horz->value.percent = bg->horizontal ? bg->value : 50;
@@ -1238,7 +1237,7 @@ bool css_background_position_parse(const struct css_node **node,
 	/* two values specified */
 	if (v->type == CSS_NODE_IDENT && w->type == CSS_NODE_IDENT) {
 		/* both keywords */
-		if (!bg || !bg2)
+		if (bg == NULL || bg2 == NULL)
 			return false;
 		if ((bg->horizontal && bg2->horizontal) ||
 				(bg->vertical && bg2->vertical))
@@ -1261,21 +1260,32 @@ bool css_background_position_parse(const struct css_node **node,
 	/* reverse specifiers such that idents are places in h, v order */
 	if ((v->type == CSS_NODE_IDENT && bg && bg->vertical) ||
 			(w->type == CSS_NODE_IDENT && bg2 && bg2->horizontal)) {
-	  	n_temp = v; v = w; w = n_temp;
-	  	b_temp = bg; bg = bg2; bg2 = b_temp;
+		const struct css_node *n_temp; 
+		struct css_background_entry *b_temp;
+
+		n_temp = v;
+		v = w;
+		w = n_temp;
+	  	
+		b_temp = bg;
+		bg = bg2;
+		bg2 = b_temp;
+
+		/* Flag this so we update *node with the right thing */
 	  	switched = true;
 	}
 
 	if (v->type == CSS_NODE_IDENT) { /* horizontal value */
-		if (!bg || bg->vertical)
+		if (bg == NULL || bg->vertical)
 			return false;
 	}
 	if (w->type == CSS_NODE_IDENT) { /* vertical value */
-		if (!bg2 || bg2->horizontal)
+		if (bg2 == NULL || bg2->horizontal)
 			return false;
 	}
 
 	if (v->type == CSS_NODE_IDENT) { /* horizontal value */
+		assert(bg != NULL);
 		horz->pos = CSS_BACKGROUND_POSITION_PERCENT;
 		horz->value.percent = bg->value;
 	} else if (v->type == CSS_NODE_PERCENTAGE) {
@@ -1289,6 +1299,7 @@ bool css_background_position_parse(const struct css_node **node,
 	}
 
 	if (w->type == CSS_NODE_IDENT) { /* vertical value */
+		assert(bg2 != NULL);
 		vert->pos = CSS_BACKGROUND_POSITION_PERCENT;
 		vert->value.percent = bg2->value;
 	} else if (w->type == CSS_NODE_PERCENTAGE) {
@@ -1301,13 +1312,8 @@ bool css_background_position_parse(const struct css_node **node,
 			vert->pos = CSS_BACKGROUND_POSITION_LENGTH;
 	}
 
-	/* undo any switching we did */
-	if (switched) {
-	  	n_temp = v; v = w; w = n_temp;
-	  	b_temp = bg; bg = bg2; bg2 = b_temp;
-	}
+	*node = switched ? v->next : w->next;
 
-	*node = w->next;
 	return true;
 }
 
