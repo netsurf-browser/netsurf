@@ -179,7 +179,7 @@ url_func_result url_normalize(const char *url, char **result)
 
 	/* finally verify that it's actually an URL we're working on
 	 * (RFC regex too fussy to tolerate above WSP problems) */
-	if ((m = regexec(&url_re, norm, 10, match, 0))) {
+	if (regexec(&url_re, norm, 10, match, 0)) {
 		LOG(("url '%s' failed to match regex", url));
 		free(norm);
 		*result = NULL;
@@ -188,11 +188,10 @@ url_func_result url_normalize(const char *url, char **result)
 
 	if (match[URL_RE_SCHEME].rm_so == -1) {
 		/* scheme missing: add http:// and reparse */
-/*		LOG(("scheme missing: using http"));*/
 		memmove(norm + SLEN("http://"), norm, len + 1);
 		memcpy(norm, "http://", SLEN("http://")); /* do NOT copy NUL */
 		len += SLEN("http://");
-		if ((m = regexec(&url_re, norm, 10, match, 0))) {
+		if (regexec(&url_re, norm, 10, match, 0)) {
 			LOG(("url '%s' failed to match regex", norm));
 			free(norm);
 			*result = NULL;
