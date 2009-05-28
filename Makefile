@@ -162,10 +162,6 @@ else
   endif
 endif
 
-# Hackiness for scan-build
-export CCC_CC := $(CC)
-CC := /home/jmb/llvm/tools/clang/utils/ccc-analyzer
-
 OBJROOT = build-$(HOST)-$(TARGET)$(SUBTARGET)
 
 # ----------------------------------------------------------------------------
