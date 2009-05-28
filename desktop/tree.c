@@ -166,11 +166,10 @@ void tree_handle_node_element_changed(struct tree *tree, struct node_element *el
  */
 void tree_recalculate_node(struct tree *tree, struct node *node, bool recalculate_sizes) {
 	struct node_element *element;
-	int width, height;
+	int height;
 
 	assert(node);
 
-	width = node->box.width;
 	height = node->box.height;
 	node->box.width = 0;
 	node->box.height = 0;
@@ -969,7 +968,7 @@ void tree_delete_node_internal(struct tree *tree, struct node *node, bool siblin
 						  		urldb_delete_cookie(
 						  				domain_t,
 						  				path_t,
-						  				e->text);
+						  				name_t);
 						  	}
 						}
 					}
