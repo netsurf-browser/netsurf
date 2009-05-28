@@ -90,13 +90,13 @@ bool directory_convert(struct content *c, int width, int height) {
 			*cnv++ = *tmp;
 		}
 	}
-	*cnv++ = '\0';
+	*cnv = '\0';
 	snprintf(buffer, sizeof(buffer), "Index of %s</title>\n</head>\n"
 			"<body>\n<h1>\nIndex of %s</h1>\n<hr><pre>",
 			nice_path, nice_path);
 	free(nice_path);
 
-	binding_parse_chunk(c->data.html.parser_binding, 
+	binding_parse_chunk(c->data.html.parser_binding,
 			(uint8_t *) buffer, strlen(buffer));
 
 	res = url_parent(c->url, &up);
