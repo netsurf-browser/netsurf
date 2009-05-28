@@ -556,7 +556,12 @@ bool layout_block_context(struct box *block, int viewport_height,
 					cy += box->height -
 							(y - box->padding[TOP]);
 
-				if (layout_apply_minmax_height(box, NULL)) {
+				/* Apply any min-height and max-height to
+				 * boxes in normal flow */
+				if (box->style && box->style->position !=
+						CSS_POSITION_ABSOLUTE &&
+						layout_apply_minmax_height(box,
+								NULL)) {
 					/* Height altered */
 					/* Set current cy */
 					cy += box->height -
@@ -596,7 +601,11 @@ bool layout_block_context(struct box *block, int viewport_height,
 		if (block->type == BOX_BLOCK)
 			layout_block_add_scrollbar(block, BOTTOM);
 	}
-	layout_apply_minmax_height(block, NULL);
+
+	if (block->style && block->style->position != CSS_POSITION_ABSOLUTE) {
+		/* Block is in normal flow */
+		layout_apply_minmax_height(block, NULL);
+	}
 
 	return true;
 }
@@ -868,13 +877,14 @@ bool layout_apply_minmax_height(struct box *box, struct box *container)
 			}
 			break;
 		case CSS_MAX_HEIGHT_PERCENT:
-			if (box->style->position == CSS_POSITION_ABSOLUTE ||
-					(containing_block &&
+			if (containing_block &&
+					containing_block->height != AUTO &&
+					(box->style->position ==
+							CSS_POSITION_ABSOLUTE ||
 					(containing_block->style->height.
 					height == CSS_HEIGHT_LENGTH ||
 					containing_block->style->height.
-					height == CSS_HEIGHT_PERCENT) &&
-					containing_block->height != AUTO)) {
+					height == CSS_HEIGHT_PERCENT))) {
 				/* Box is absolutely positioned or its
 				 * containing block has a valid specified
 				 * height. (CSS 2.1 Section 10.5) */
@@ -901,13 +911,14 @@ bool layout_apply_minmax_height(struct box *box, struct box *container)
 			}
 			break;
 		case CSS_MIN_HEIGHT_PERCENT:
-			if (box->style->position == CSS_POSITION_ABSOLUTE ||
-					(containing_block &&
+			if (containing_block &&
+					containing_block->height != AUTO &&
+					(box->style->position ==
+							CSS_POSITION_ABSOLUTE ||
 					(containing_block->style->height.
 					height == CSS_HEIGHT_LENGTH ||
 					containing_block->style->height.
-					height == CSS_HEIGHT_PERCENT) &&
-					containing_block->height != AUTO)) {
+					height == CSS_HEIGHT_PERCENT))) {
 				/* Box is absolutely positioned or its
 				 * containing block has a valid specified
 				 * height. (CSS 2.1 Section 10.5) */
@@ -1228,13 +1239,14 @@ void layout_find_dimensions(int available_width, int viewport_height,
 				assert(box->parent->parent);
 				containing_block = box->parent->parent;
 			}
-			if (box->style->position == CSS_POSITION_ABSOLUTE ||
-					(containing_block &&
+			if (containing_block &&
+					containing_block->height != AUTO &&
+					(box->style->position ==
+							CSS_POSITION_ABSOLUTE ||
 					(containing_block->style->height.
 					height == CSS_HEIGHT_LENGTH ||
 					containing_block->style->height.
-					height == CSS_HEIGHT_PERCENT) &&
-					containing_block->height != AUTO)) {
+					height == CSS_HEIGHT_PERCENT))) {
 				/* Box is absolutely positioned or its
 				 * containing block has a valid specified
 				 * height. (CSS 2.1 Section 10.5) */
@@ -2720,13 +2732,13 @@ bool layout_table(struct box *table, int available_width,
 			assert(table->parent->parent);
 			containing_block = table->parent->parent;
 		}
-		if (table->style->position == CSS_POSITION_ABSOLUTE ||
-				(containing_block &&
-				(containing_block->style->height.
-				height == CSS_HEIGHT_LENGTH ||
-				containing_block->style->height.
-				height == CSS_HEIGHT_PERCENT) &&
-				containing_block->height != AUTO)) {
+		if (containing_block && containing_block->height != AUTO &&
+				(table->style->position ==
+						CSS_POSITION_ABSOLUTE ||
+				(containing_block->style->height.height ==
+						CSS_HEIGHT_LENGTH ||
+				containing_block->style->height.height ==
+						CSS_HEIGHT_PERCENT))) {
 			/* Table is absolutely positioned or its
 			 * containing block has a valid specified
 			 * height. (CSS 2.1 Section 10.5) */
