@@ -319,7 +319,7 @@ bool browser_window_textarea_callback(struct browser_window *bw,
 	int box_x, box_y;
 	char utf8[6];
 	unsigned int utf8_len;
-	bool scrolled,reflow = false;
+	bool scrolled, reflow = false;
 	bool selection_exists = bw->sel->defined;
 
 	/* box_dump(textarea, 0); */
@@ -455,7 +455,6 @@ bool browser_window_textarea_callback(struct browser_window *bw,
 			box_unlink_and_free(next);
 
 			/* leave caret at join */
-			reflow = true;
 		} else {
 			/* delete a character */
 			size_t next_offset = utf8_next(text_box->text, 
@@ -970,7 +969,6 @@ bool browser_window_input_callback(struct browser_window *bw,
 			return true;
 
 		input = next_input->box;
-		text_box = input->children->children;
 		box_offset = 0;
 		to_textarea = next_input->type == GADGET_TEXTAREA;
 	}
@@ -1001,7 +999,6 @@ bool browser_window_input_callback(struct browser_window *bw,
 			return true;
 
 		input = prev_input->box;
-		text_box = input->children->children;
 		box_offset = 0;
 		to_textarea = prev_input->type == GADGET_TEXTAREA;
 	}
@@ -1039,7 +1036,6 @@ bool browser_window_input_callback(struct browser_window *bw,
 			textarea_cut(bw, start_box, start_idx, 
 					end_box, end_idx, true);
 
-			text_box = start_box;
 			box_offset = start_idx;
 			changed = true;
 		}
@@ -1443,7 +1439,6 @@ bool browser_window_input_paste_text(struct browser_window *bw,
 	while (p < ep && nchars < input->gadget->maxlength) {
 		char buf[80 + 6];
 		int nbytes = 0;
-		unsigned utf8_len;
 
 		/* how many more chars can we insert in one go? */
 		while (p < ep && nbytes < 80 &&
@@ -1461,8 +1456,6 @@ bool browser_window_input_paste_text(struct browser_window *bw,
 			nchars++;
 		}
 
-		utf8_len = p - utf8;
-		
 		if (!textbox_insert(bw, text_box, box_offset, buf, nbytes)) {
 			/* we still need to update the screen */
 			update = true;
