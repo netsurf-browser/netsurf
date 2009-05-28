@@ -125,22 +125,22 @@ void ro_gui_401login_open(struct browser_window *bw, const char *host,
 	}
 
 	/* fill in download window icons */
-	dialog_401_template->icons[ICON_401LOGIN_HOST].data.indirected_text.text =
-		session->host;
-	dialog_401_template->icons[ICON_401LOGIN_HOST].data.indirected_text.size =
-		strlen(host) + 1;
-	dialog_401_template->icons[ICON_401LOGIN_REALM].data.indirected_text.text =
-		session->realm;
-	dialog_401_template->icons[ICON_401LOGIN_REALM].data.indirected_text.size =
-		strlen(realm) + 1;
-	dialog_401_template->icons[ICON_401LOGIN_USERNAME].data.indirected_text.text =
-		session->uname;
-	dialog_401_template->icons[ICON_401LOGIN_USERNAME].data.indirected_text.size =
-		256;
-	dialog_401_template->icons[ICON_401LOGIN_PASSWORD].data.indirected_text.text =
-		session->pwd;
-	dialog_401_template->icons[ICON_401LOGIN_PASSWORD].data.indirected_text.size =
-		256;
+	dialog_401_template->icons[ICON_401LOGIN_HOST].data.
+			indirected_text.text = session->host;
+	dialog_401_template->icons[ICON_401LOGIN_HOST].data.
+			indirected_text.size = strlen(session->host) + 1;
+	dialog_401_template->icons[ICON_401LOGIN_REALM].data.
+			indirected_text.text = session->realm;
+	dialog_401_template->icons[ICON_401LOGIN_REALM].data.
+			indirected_text.size = strlen(session->realm) + 1;
+	dialog_401_template->icons[ICON_401LOGIN_USERNAME].data.
+			indirected_text.text = session->uname;
+	dialog_401_template->icons[ICON_401LOGIN_USERNAME].data.
+			indirected_text.size = sizeof(session->uname);
+	dialog_401_template->icons[ICON_401LOGIN_PASSWORD].data.
+			indirected_text.text = session->pwd;
+	dialog_401_template->icons[ICON_401LOGIN_PASSWORD].data.
+			indirected_text.size = sizeof(session->pwd);
 
 	/* create and open the window */
 	w = wimp_create_window(dialog_401_template);
