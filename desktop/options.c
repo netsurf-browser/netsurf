@@ -603,6 +603,10 @@ void options_load_tree_entry(xmlNode *li, struct node *directory) {
 		urldb_set_url_title(url, title);
 
 	entry = tree_create_URL_node(directory, url, data, title);
+	if (entry == NULL) {
+		/** \todo why isn't this fatal? */
+		warn_user("NoMemory", 0);
+	}
 
 	xmlFree(title);
 	free(url);
