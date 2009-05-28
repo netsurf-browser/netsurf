@@ -529,7 +529,6 @@ bool html_redraw_box(struct box *box,
 					return false;
 				/* reset coords */
 				xmin = ib_x - ib_b_left;
-				xmax = ib_x + ib_p_width + ib_b_right;
 				ymin = ib_y - border_top - padding_top;
 				ymax = ib_y + padding_height - padding_top +
 						border_bottom;
