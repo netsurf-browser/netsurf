@@ -976,6 +976,10 @@ bool selection_save_text(struct selection *s, const char *path)
 	out = fopen(path, "w");
 	if (out) {
 		int res = fputs(result, out);
+		if (res < 0) {
+			LOG(("Warning: writing data failed"));
+		}
+
 		res = fputs("\n", out);
 		fclose(out);
 		free(result);
