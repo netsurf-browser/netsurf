@@ -1476,7 +1476,6 @@ bool browser_window_input_paste_text(struct browser_window *bw,
 			p++;
 			if (*p == '\n') p++;
 		}
-		utf8 = p;
 	}
 
 	if (update)
