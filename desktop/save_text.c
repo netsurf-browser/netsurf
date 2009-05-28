@@ -76,9 +76,19 @@ void save_as_text(struct content *c, char *path)
 	out = fopen(path, "w");
 	if (out) {
 		int res = fputs(result, out);
+
+		if (res < 0) {
+			LOG(("Warning: write failed"));
+		}
+
 		res = fputs("\n", out);
+		if (res < 0) {
+			LOG(("Warning: failed writing trailing newline"));
+		}
+
 		fclose(out);
 	}
+
 	free(result);
 }
 
