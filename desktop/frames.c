@@ -336,9 +336,6 @@ void browser_window_recalculate_frameset(struct browser_window *bw) {
 			/* proportionally distribute error */
 			extent = bw_width - avail_width;
 			for (col = 0; col < bw->cols; col++) {
-				index = (row * bw->cols) + col;
-				window = &bw->children[index];
-
 				if (col == bw->cols - 1) {
 					widths[col][row] = bw_width;
 				} else {
@@ -402,9 +399,6 @@ void browser_window_recalculate_frameset(struct browser_window *bw) {
 			/* proportionally distribute error */
 			extent = bw_height - avail_height;
 			for (row = 0; row < bw->rows; row++) {
-				index = (row * bw->cols) + col;
-				window = &bw->children[index];
-
 				if (row == bw->rows - 1) {
 					heights[col][row] = bw_height;
 				} else {
