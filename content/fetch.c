@@ -221,12 +221,12 @@ struct fetch * fetch_start(const char *url, const char *referer,
 	char *host;
 	struct fetch *fetch;
 	url_func_result res;
-	char *ref1 = 0, *ref2 = 0;
+	char *scheme = NULL, *ref_scheme = NULL;
 	scheme_fetcher *fetcher = fetchers;
 
 	fetch = malloc(sizeof (*fetch));
-	if (!fetch)
-		return 0;
+	if (fetch == NULL)
+		return NULL;
 
 	res = url_host(url, &host);
 	if (res != URL_FUNC_OK) {
@@ -235,25 +235,23 @@ struct fetch * fetch_start(const char *url, const char *referer,
 			goto failed;
 
 		host = strdup("");
-		if (!host)
+		if (host == NULL)
 			goto failed;
 	}
 
-	res = url_scheme(url, &ref1);
-	if (res != URL_FUNC_OK) {
-		/* we only fail memory exhaustion */
-		if (res == URL_FUNC_NOMEM)
-			goto failed;
-		ref1 = NULL;
-	}
+	/* The URL we're fetching must have a scheme */
+	res = url_scheme(url, &scheme);
+	if (res != URL_FUNC_OK)
+		goto failed;
 
 	if (referer) {
-		res = url_scheme(referer, &ref2);
+		res = url_scheme(referer, &ref_scheme);
 		if (res != URL_FUNC_OK) {
 			/* we only fail memory exhaustion */
 			if (res == URL_FUNC_NOMEM)
 				goto failed;
-			ref2 = NULL;
+
+			ref_scheme = NULL;
 		}
 	}
 
@@ -265,34 +263,35 @@ struct fetch * fetch_start(const char *url, const char *referer,
 	fetch->callback = callback;
 	fetch->url = strdup(url);
 	fetch->verifiable = verifiable;
-	fetch->parent_fetch_url = parent_url ? strdup(parent_url) : 0;
+	fetch->parent_fetch_url = parent_url ? strdup(parent_url) : NULL;
 	fetch->p = p;
 	fetch->host = host;
 	fetch->http_code = 0;
-	fetch->r_prev = 0;
-	fetch->r_next = 0;
-	fetch->referer = 0;
+	fetch->r_prev = NULL;
+	fetch->r_next = NULL;
+	fetch->referer = NULL;
 	fetch->send_referer = false;
 	fetch->fetcher_handle = NULL;
-	fetch->ops = 0;
+	fetch->ops = NULL;
 	fetch->fetch_is_active = false;
 
 	if (referer != NULL) {
 		fetch->referer = strdup(referer);
 		if (fetch->referer == NULL)
 			goto failed;
-		if (option_send_referer && ref1 && ref2 &&
-				strcasecmp(ref1, ref2) == 0)
+
+		if (option_send_referer && ref_scheme != NULL &&
+				strcasecmp(scheme, ref_scheme) == 0)
 			fetch->send_referer = true;
 	}
 
-	if (!fetch->url ||
-			(parent_url && !fetch->parent_fetch_url))
+	if (fetch->url == NULL || 
+			(parent_url && fetch->parent_fetch_url == NULL))
 		goto failed;
 
 	/* Pick the scheme ops */
 	while (fetcher) {
-		if (strcmp(fetcher->scheme_name, ref1) == 0) {
+		if (strcmp(fetcher->scheme_name, scheme) == 0) {
 			fetch->ops = fetcher;
 			break;
 		}
@@ -314,31 +313,25 @@ struct fetch * fetch_start(const char *url, const char *referer,
 	fetch_ref_fetcher(fetch->ops);
 
 	/* these aren't needed past here */
-	if (ref1) {
-		free(ref1);
-		ref1 = 0;
-	}
-
-	if (ref2) {
-		free(ref2);
-		ref2 = 0;
-	}
+	free(scheme);
+	free(ref_scheme);
 
 	/* Dump us in the queue and ask the queue to run. */
 	RING_INSERT(queue_ring, fetch);
 	fetch_dispatch_jobs();
+
 	return fetch;
 
 failed:
 	free(host);
-	if (ref1)
-		free(ref1);
+	free(ref_scheme);
+	free(scheme);
 	free(fetch->parent_fetch_url);
 	free(fetch->url);
-	if (fetch->referer)
-		free(fetch->referer);
+	free(fetch->referer);
 	free(fetch);
-	return 0;
+
+	return NULL;
 }
 
 
