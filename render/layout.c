@@ -3458,11 +3458,20 @@ void layout_position_relative(struct box *root, struct box *fp, int fx, int fy)
 void layout_compute_relative_offset(struct box *box, int *x, int *y)
 {
 	int left, right, top, bottom;
+	struct box *containing_block;
 
 	assert(box && box->parent && box->style &&
 			box->style->position == CSS_POSITION_RELATIVE);
 
-	layout_compute_offsets(box, box->parent, &top, &right, &bottom, &left);
+	if (box->float_container && (box->style->float_ == CSS_FLOAT_LEFT ||
+			box->style->float_ == CSS_FLOAT_RIGHT)) {
+		containing_block = box->float_container;
+	} else {
+		containing_block = box->parent;
+	}
+
+	layout_compute_offsets(box, containing_block,
+			&top, &right, &bottom, &left);
 
 	if (left == AUTO && right == AUTO)
 		left = right = 0;
@@ -3475,7 +3484,7 @@ void layout_compute_relative_offset(struct box *box, int *x, int *y)
 	else {
 		/* over constrained => examine direction property
 		 * of containing block */
-		if (box->parent->style) {
+		if (containing_block->style) {
 			if (box->parent->style->direction ==
 					CSS_DIRECTION_LTR)
 				/* left wins */
