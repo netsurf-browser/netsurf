@@ -94,7 +94,6 @@ void ro_gui_interactive_help_request(wimp_message *message)
 	help_full_message_request *message_data;
 	wimp_w window;
 	wimp_i icon;
-	struct gui_window *g;
 	unsigned int index;
 	bool greyed = false;
 	wimp_menu *test_menu;
@@ -139,7 +138,7 @@ void ro_gui_interactive_help_request(wimp_message *message)
 		i = ro_gui_tree_help(message_data->pos.x, message_data->pos.y);
 		sprintf(message_token,
 				(i >= 0) ? "HelpTree%i" :"HelpCookies%i", i);
-	} else if ((g = ro_gui_window_lookup(window)) != NULL)
+	} else if (ro_gui_window_lookup(window) != NULL)
 		sprintf(message_token, "HelpBrowser%i", (int)icon);
 
 	/* if we've managed to find something so far then we broadcast it */
