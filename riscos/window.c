@@ -401,6 +401,11 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 						<< wimp_CHILD_XORIGIN_SHIFT |
 				wimp_CHILD_LINKS_PARENT_WORK_AREA
 						<< wimp_CHILD_YORIGIN_SHIFT);
+		if (error) {
+			LOG(("xwimp_open_window_nested: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+		}
 	}
 
 	ro_gui_window_open(PTR_WIMP_OPEN(&state));
