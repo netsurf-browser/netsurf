@@ -338,12 +338,10 @@ struct gui_download_window *gui_download_window_create(const char *url,
 		memcpy(dw->path, download_dir, download_dir_len);
 		dw->path[download_dir_len] = '.';
 		leaf_ofst = download_dir_len + 1;
-	}
-	else
+	} else
 		leaf_ofst = 0;
 
-	if ((res = url_nice(url, &nice, option_strip_extensions)) ==
-			URL_FUNC_OK) {
+	if (url_nice(url, &nice, option_strip_extensions) == URL_FUNC_OK) {
 		size_t imax = sizeof dw->path - (leaf_ofst + 1);
 		for (i = 0; i < imax && nice[i]; i++) {
 			if (nice[i] == '.')
@@ -355,8 +353,7 @@ struct gui_download_window *gui_download_window_create(const char *url,
 		memcpy(dw->path + leaf_ofst, nice, i);
 		dw->path[leaf_ofst + i] = '\0';
 		free(nice);
-	}
-	else {
+	} else {
 		const char *leaf = messages_get("SaveObject");
 		size_t len = strlen(leaf);
 		if (len >= sizeof dw->path - leaf_ofst)
