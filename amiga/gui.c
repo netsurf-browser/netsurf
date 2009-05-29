@@ -2378,10 +2378,12 @@ void ami_do_redraw(struct gui_window_2 *g,bool scroll)
 
 		if(!option_direct_render)
 		{
+			Forbid();
 			GetAttr(SPACE_AreaBox,g->gadgets[GID_BROWSER],(ULONG *)&bbox);
 
 			BltBitMapRastPort(glob.bm,0,0,g->win->RPort,bbox->Left,bbox->Top,
 								bbox->Width,bbox->Height,0x0C0);
+			Permit();
 		}
 	}
 
