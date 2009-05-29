@@ -146,10 +146,16 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, uint32_t key)
 		lines = MAXIMUM_VISIBLE_LINES;
 		if (lines > url_complete_matches_available)
 			lines = url_complete_matches_available;
-		if (url_complete_matches)
-			for (i = 0; i < MAXIMUM_VISIBLE_LINES; i++)
-				url_complete_redraw[i] =
+		if (url_complete_matches) {
+			for (i = 0; i < MAXIMUM_VISIBLE_LINES; i++) {
+				if (i < lines) {
+					url_complete_redraw[i] = 
 						url_complete_matches[i];
+				} else {
+					url_complete_redraw[i] = NULL;
+				}
+			}
+		}
 
 		/* our selection gets wiped */
 		error = xwimp_force_redraw(dialog_url_complete,
