@@ -351,6 +351,7 @@ const int *ucstable_from_alphabet(int alphabet)
 			break;
 		case 116: /* Latin10 */
 			ucstable = latin10_table;
+			break;
 		case territory_ALPHABET_LATIN9:
 			ucstable = latin9_table;
 			break;
