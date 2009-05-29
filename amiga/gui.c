@@ -2318,9 +2318,7 @@ void ami_do_redraw(struct gui_window_2 *g,bool scroll)
 
 	if(g->bw->reformat_pending)
 	{
-		Forbid();
 		browser_window_reformat(g->bw,width,height);
-		Permit();
 		g->bw->reformat_pending = false;
 		scroll = FALSE;
 	}
@@ -2379,7 +2377,12 @@ void ami_do_redraw(struct gui_window_2 *g,bool scroll)
 		ami_clearclipreg(currp);
 
 		if(!option_direct_render)
-			BltBitMapRastPort(glob.bm,0,0,g->win->RPort,xoffset,yoffset,width,height,0x0C0);
+		{
+			GetAttr(SPACE_AreaBox,g->gadgets[GID_BROWSER],(ULONG *)&bbox);
+
+			BltBitMapRastPort(glob.bm,0,0,g->win->RPort,bbox->Left,bbox->Top,
+								bbox->Width,bbox->Height,0x0C0);
+		}
 	}
 
 	current_redraw_browser = NULL;
