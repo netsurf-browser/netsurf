@@ -79,6 +79,7 @@ void ro_gui_cookies_initialise(void)
 		warn_user("NoMemory", 0);
 		free(cookies_tree);
 		cookies_tree = NULL;
+		return;
 	}
 	cookies_tree->root->expanded = true;
 	cookies_tree->handle = (int)cookies_window;
