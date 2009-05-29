@@ -184,6 +184,7 @@ bool ro_gui_theme_install_apply(wimp_w w)
 	if (!theme_file) {
 	  	LOG(("malloc failed"));
 	  	warn_user("NoMemory", 0);
+		return false;
 	}
 	for (fix = theme_file; *fix != '\0'; fix++)
 		if (*fix == ' ')
