@@ -108,6 +108,7 @@ void ro_gui_hotlist_initialise(void)
 			warn_user("NoMemory", 0);
 			free(hotlist_tree);
 			hotlist_tree = NULL;
+			return;
 		}
 		hotlist_tree->root->expanded = true;
 		node = tree_create_folder_node(hotlist_tree->root, "NetSurf");
