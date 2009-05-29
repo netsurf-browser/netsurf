@@ -281,6 +281,7 @@ void ro_gui_configure_register(const char *window,
 	if (!tool) {
 		LOG(("Insufficient memory for calloc()"));
 		die("Insufficient memory");
+		return; /* For the benefit of scan-build */
 	}
 	tool->name = window;
 	tool->translated[0] = '\0';
