@@ -1201,7 +1201,6 @@ void ro_gui_save_set_state(struct content *c, gui_save_type save_type,
 {
 	/* filename */
 	const char *name = gui_save_table[save_type].name;
-	url_func_result res;
 	bool done = false;
 	char *nice = NULL;
 	utf8_convert_ret err;
@@ -1257,7 +1256,7 @@ void ro_gui_save_set_state(struct content *c, gui_save_type save_type,
 	}
 
 	/* leafname */
-	if (url && (res = url_nice(url, &nice, option_strip_extensions)) ==
+	if (url && url_nice(url, &nice, option_strip_extensions) == 
 			URL_FUNC_OK) {
 		for (i = 0; nice[i]; i++) {
 			if (nice[i] == '.')
