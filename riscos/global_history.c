@@ -98,6 +98,7 @@ void ro_gui_global_history_initialise(void)
 		warn_user("NoMemory", 0);
 		free(global_history_tree);
 		global_history_tree = NULL;
+		return;
 	}
 	global_history_tree->root->expanded = true;
 	ro_gui_global_history_initialise_nodes();
