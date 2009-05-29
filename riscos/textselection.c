@@ -521,7 +521,6 @@ void ro_gui_selection_dragging(wimp_message *message)
 {
 	wimp_full_message_dragging *drag = (wimp_full_message_dragging*)message;
 	struct box *textarea = NULL;
-	struct box *text_box = NULL;
 	struct browser_window *bw;
 	struct content *content;
 	int gadget_box_x = 0;
@@ -531,12 +530,12 @@ void ro_gui_selection_dragging(wimp_message *message)
 	int box_x = 0;
 	int box_y = 0;
 
-/* with autoscrolling, we will probably need to remember the gui_window and
-   override the drag->w window handle which could be any window on the desktop */
+	/* with autoscrolling, we will probably need to remember the 
+	 * gui_window and override the drag->w window handle which 
+	 * could be any window on the desktop */
 	g = ro_gui_window_lookup(drag->w);
 
 	if ((drag->flags & wimp_DRAGGING_TERMINATE_DRAG) || !g) {
-
 		if (drag_claimed) {
 			/* make sure that we erase the ghost caret */
 			caret_remove(&ghost_caret);
@@ -551,36 +550,27 @@ void ro_gui_selection_dragging(wimp_message *message)
 
 	bw = g->bw;
 	content = bw->current_content;
-	if (content && content->type == CONTENT_HTML &&
-		content->data.html.layout) {
-
+	if (content && content->type == CONTENT_HTML && 
+			content->data.html.layout) {
 		struct box *box = content->data.html.layout;
 
-		while ((box = box_at_point(box, pos.x, pos.y, &box_x, &box_y, &content))) {
-			if (box->style &&
-					box->style->visibility == CSS_VISIBILITY_HIDDEN)
+		while ((box = box_at_point(box, pos.x, pos.y, 
+				&box_x, &box_y, &content))) {
+			if (box->style && box->style->visibility == 
+					CSS_VISIBILITY_HIDDEN)
 				continue;
 
-			if (box->gadget) {
-				switch (box->gadget->type) {
-
-					case GADGET_TEXTAREA:
-						textarea = box;
-						gadget_box_x = box_x;
-						gadget_box_y = box_y;
-					case GADGET_TEXTBOX:
-					case GADGET_PASSWORD:
-						text_box = box;
-						break;
-
-					default:	/* appease compiler */
-						break;
-				}
+			if (box->gadget && 
+					box->gadget->type == GADGET_TEXTAREA) {
+				textarea = box;
+				gadget_box_x = box_x;
+				gadget_box_y = box_y;
 			}
 		}
 	}
 
 	if (textarea) {
+		struct box *text_box = NULL;
 		int pixel_offset;
 		int char_offset;
 
@@ -591,12 +581,14 @@ void ro_gui_selection_dragging(wimp_message *message)
 			gui_window_set_pointer(g, GUI_POINTER_CARET);
 
 		text_box = textarea_get_position(textarea, pos.x - gadget_box_x,
-					pos.y - gadget_box_y, &char_offset, &pixel_offset);
+					pos.y - gadget_box_y, 
+					&char_offset, &pixel_offset);
 
-		caret_set_position(&ghost_caret, bw, text_box, char_offset, pixel_offset);
+		caret_set_position(&ghost_caret, bw, text_box, 
+				char_offset, pixel_offset);
+
 		drag_claimed = true;
-	}
-	else {
+	} else {
 		if (drag_claimed) {
 			/* make sure that we erase the ghost caret */
 			caret_remove(&ghost_caret);
@@ -608,15 +600,17 @@ void ro_gui_selection_dragging(wimp_message *message)
 		wimp_full_message_drag_claim claim;
 		os_error *error;
 
-		claim.size = offsetof(wimp_full_message_drag_claim, file_types) + 8;
+		claim.size = 
+			offsetof(wimp_full_message_drag_claim, file_types) + 8;
 		claim.your_ref = drag->my_ref;
 		claim.action = message_DRAG_CLAIM;
-		claim.flags = wimp_DRAG_CLAIM_POINTER_CHANGED | wimp_DRAG_CLAIM_SUPPRESS_DRAGBOX;
+		claim.flags = wimp_DRAG_CLAIM_POINTER_CHANGED | 
+				wimp_DRAG_CLAIM_SUPPRESS_DRAGBOX;
 		claim.file_types[0] = osfile_TYPE_TEXT;
 		claim.file_types[1] = ~0;
 
-		error = xwimp_send_message(wimp_USER_MESSAGE, (wimp_message*)&claim,
-					drag->sender);
+		error = xwimp_send_message(wimp_USER_MESSAGE, 
+				(wimp_message *) &claim, drag->sender);
 		if (error) {
 			LOG(("xwimp_send_message: 0x%x: %s",
 				error->errnum, error->errmess));
