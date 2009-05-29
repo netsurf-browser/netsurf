@@ -662,12 +662,12 @@ void ro_gui_menu_selection(wimp_selection *selection)
 	int previous_menu_icon = current_menu_icon;
 	char *url;
 
-
 	/* if we are using gui_multitask then menu selection events
 	 * may be delivered after the menu has been closed. As such,
 	 * we simply ignore these events. */
 	if (!current_menu)
 		return
+
 	assert(current_menu_window);
 
 	/* get the menu entry and associated action */
@@ -677,7 +677,6 @@ void ro_gui_menu_selection(wimp_selection *selection)
 				entries[selection->items[i]];
 	action = ro_gui_menu_find_action(current_menu, menu_entry);
 
-
 	/* perform menu action */
 	if (action != NO_ACTION)
 		ro_gui_menu_handle_action(current_menu_window, action, false);
@@ -686,18 +685,21 @@ void ro_gui_menu_selection(wimp_selection *selection)
 	if (current_menu == url_suggest_menu) {
 		g = ro_gui_toolbar_lookup(current_menu_window);
 		if (g) {
-		  	url = url_suggest_menu->entries[selection->items[0]].data.indirected_text.text;
+		  	url = url_suggest_menu->entries[selection->items[0]].
+					data.indirected_text.text;
 			gui_window_set_url(g, url);
 			browser_window_go(g->bw, url, 0, true);
 			global_history_add_recent(url);
 		}
-	} else if ((current_menu == gui_form_select_menu) &&
-			(selection->items[0] >= 0)) {
+	} else if (current_menu == gui_form_select_menu) {
 		g = ro_gui_window_lookup(current_menu_window);
 		assert(g);
-		browser_window_form_select(g->bw,
-				gui_form_select_control,
-				selection->items[0]);
+
+		if (selection->items[0] >= 0) {
+			browser_window_form_select(g->bw,
+					gui_form_select_control,
+					selection->items[0]);
+		}
 	}
 
 	/* allow automatic menus to have their data updated */
@@ -719,7 +721,7 @@ void ro_gui_menu_selection(wimp_selection *selection)
 		return;
 	}
 
-	/* re-prepare all the visible enties */
+	/* re-prepare all the visible entries */
 	i = 0;
 	menu = current_menu;
 	do {
@@ -738,11 +740,13 @@ void ro_gui_menu_selection(wimp_selection *selection)
 				break;
 		}
 	} while (j != -1);
-	if (current_menu == gui_form_select_menu)
-		gui_create_form_select_menu(g->bw,
-				gui_form_select_control);
-	else
+
+	if (current_menu == gui_form_select_menu) {
+		assert(g); /* Keep scan-build happy */
+		gui_create_form_select_menu(g->bw, gui_form_select_control);
+	} else
 		ro_gui_menu_create(current_menu, 0, 0, current_menu_window);
+
 	current_menu_icon = previous_menu_icon;
 }
 
@@ -1108,8 +1112,10 @@ wimp_menu *ro_gui_menu_define_menu(const struct ns_menu *menu)
 	int entry;
 
 	definition = calloc(sizeof(struct menu_definition), 1);
-	if (!definition)
+	if (!definition) {
 		die("No memory to create menu definition.");
+		return NULL; /* For the benefit of scan-build */
+	}
 
 	/* link in the menu to our list */
 	definition->next = ro_gui_menu_definitions;
@@ -2230,7 +2236,6 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 				ro_gui_set_icon_shaded_state(
 						t->toolbar_handle,
 						ICON_TOOLBAR_UP, !result);
-			result = true;
 			break;
 		case BROWSER_NAVIGATE_RELOAD:
 		case BROWSER_NAVIGATE_RELOAD_ALL:
@@ -2338,17 +2343,21 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 		case TREE_COLLAPSE_ALL:
 		case TREE_COLLAPSE_FOLDERS:
 		case TREE_COLLAPSE_LINKS:
-			if ((tree) && (tree->root))
+			if ((tree) && (tree->root)) {
 				ro_gui_menu_set_entry_shaded(current_menu,
 						action, !tree->root->child);
-			if ((t) && (!t->editor) &&
-					(t->type != THEME_BROWSER_TOOLBAR)) {
-				ro_gui_set_icon_shaded_state(
-						t->toolbar_handle,
-						ICON_TOOLBAR_EXPAND, !tree->root->child);
-				ro_gui_set_icon_shaded_state(
-						t->toolbar_handle,
-						ICON_TOOLBAR_OPEN, !tree->root->child);
+
+				if ((t) && (!t->editor) && (t->type != 
+						THEME_BROWSER_TOOLBAR)) {
+					ro_gui_set_icon_shaded_state(
+							t->toolbar_handle,
+							ICON_TOOLBAR_EXPAND, 
+							!tree->root->child);
+					ro_gui_set_icon_shaded_state(
+							t->toolbar_handle,
+							ICON_TOOLBAR_OPEN, 
+							!tree->root->child);
+				}
 			}
 			break;
 		case TREE_SELECTION:
