@@ -203,6 +203,7 @@ void gui_cert_verify(struct browser_window *bw, struct content *c,
 		warn_user("NoMemory", 0);
 		free(tree);
 		tree = NULL;
+		return;
 	}
 	tree->root->expanded = true;
 	tree->handle = (int)w;
