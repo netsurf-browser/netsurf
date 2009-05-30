@@ -244,7 +244,7 @@ bool layout_block_context(struct box *block, int viewport_height,
 	gui_multitask();
 #endif
 
-	block->float_children = 0;
+	block->float_children = NULL;
 	block->clear_level = 0;
 
 	/* special case if the block contains an object */
@@ -320,10 +320,6 @@ bool layout_block_context(struct box *block, int viewport_height,
 				(box->style->position == CSS_POSITION_ABSOLUTE||
 				 box->style->position == CSS_POSITION_FIXED)) {
 			box->x = box->parent->padding[LEFT];
-			layout_find_dimensions(box->parent->width,
-					viewport_height, box, box->style,
-					NULL, &(box->height), NULL,
-					NULL, NULL, NULL, NULL);
 			/* absolute positioned; this element will establish
 			 * its own block context when it gets laid out later,
 			 * so no need to look at its children now. */
