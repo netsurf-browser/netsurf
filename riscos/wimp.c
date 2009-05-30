@@ -220,12 +220,18 @@ void ro_gui_force_redraw_icon(wimp_w w, wimp_i i)
  * \param  i  icon handle
  * \return NUL terminated string in icon
  *
+ * If the icon contains direct text then the returned data will
+ * be invalidated by the next call to this function. Therefore,
+ * all client calls to this function must either copy the string or
+ * ensure that this function is not called again until they are
+ * finished with the string data returned.
+ *
  * \todo this doesn't do local encoding -> UTF-8 to match what is done in
  * ro_gui_set_icon_string.
  */
 const char *ro_gui_get_icon_string(wimp_w w, wimp_i i)
 {
-	wimp_icon_state ic;
+	static wimp_icon_state ic;
 	os_error *error;
 	char *itext;
 
@@ -238,12 +244,11 @@ const char *ro_gui_get_icon_string(wimp_w w, wimp_i i)
 		warn_user("WimpError", error->errmess);
 		return NULL;
 	}
-	itext = (ic.icon.flags & wimp_ICON_INDIRECTED) ?
-		ic.icon.data.indirected_text.text
-		:
-		ic.icon.data.text;
+	itext = (ic.icon.flags & wimp_ICON_INDIRECTED)
+			? ic.icon.data.indirected_text.text : ic.icon.data.text;
 	/* Guarantee NUL termination.  */
 	itext[ro_gui_strlen(itext)] = '\0';
+
 	return itext;
 }
 
