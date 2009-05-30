@@ -689,10 +689,9 @@ bool ro_gui_url_complete_click(wimp_pointer *pointer)
 					g->toolbar->toolbar_handle,
 					ICON_TOOLBAR_URL);
 			free(url_complete_original_url);
-			url_complete_original_url = malloc(strlen(url) + 1);
+			url_complete_original_url = strdup(url));
 			if (!url_complete_original_url)
 				return false;
-			strcpy(url_complete_original_url, url);
 		}
 		old_selection = url_complete_matches_selection;
 		url_complete_matches_selection = selection;
