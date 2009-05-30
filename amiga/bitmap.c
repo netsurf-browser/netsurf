@@ -334,10 +334,12 @@ struct BitMap *ami_getcachenativebm(struct bitmap *bitmap,int width,int height,s
 		ri.BytesPerRow = bitmap->width * 4;
 		ri.RGBFormat = RGBFB_R8G8B8A8;
 
-		tbm = p96AllocBitMap(bitmap->width,bitmap->height,32,0,friendbm,RGBFB_R8G8B8A8);
-		InitRastPort(&trp);
-		trp.BitMap = tbm;
-		p96WritePixelArray((struct RenderInfo *)&ri,0,0,&trp,0,0,bitmap->width,bitmap->height);
+		if(tbm = p96AllocBitMap(bitmap->width,bitmap->height,32,0,friendbm,RGBFB_R8G8B8A8))
+		{
+			InitRastPort(&trp);
+			trp.BitMap = tbm;
+			p96WritePixelArray((struct RenderInfo *)&ri,0,0,&trp,0,0,bitmap->width,bitmap->height);
+		}
 
 		if(option_cache_bitmaps == 2)
 		{
