@@ -97,6 +97,7 @@ struct gui_window_2 {
 	struct find_window *searchwin;
 	ULONG oldh;
 	ULONG oldv;
+	bool redraw_scroll;
 };
 
 struct gui_window
@@ -133,7 +134,7 @@ void ami_close_all_tabs(struct gui_window_2 *gwin);
 void ami_quit_netsurf(void);
 void ami_get_theme_filename(char *filename,char *themestring);
 void ami_clearclipreg(struct RastPort *rp);
-void ami_do_redraw(struct gui_window_2 *g,bool scroll);
+void ami_do_redraw(struct gui_window_2 *g);
 
 struct RastPort *currp;
 struct TextFont *origrpfont;

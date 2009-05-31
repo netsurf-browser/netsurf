@@ -200,7 +200,7 @@ bool ami_history_click(struct history_window *hw,uint16 code)
 		case SELECTUP:
 			history_click(hw->bw,history_current,x,y,false);
 			ami_history_redraw(hw);
-			ami_do_redraw(hw->bw->window->shared,false);
+			ami_do_redraw(hw->bw->window->shared);
 		break;
 
 		case MIDDLEUP:
