@@ -238,6 +238,11 @@ void ami_open_tree(struct tree *tree,int type)
 			wintitle = (char *)messages_get("GlobalHistory");
 			ami_get_theme_filename(&item,"theme_list_history");
 		break;
+		case AMI_TREE_SSLCERT:
+			nothl = TRUE;
+			wintitle = (char *)messages_get("ssl cert");
+			ami_get_theme_filename(&item,"theme_list_sslcert");
+		break;
 	}
 
 	NewList(twin->listbrowser_list);
@@ -416,6 +421,7 @@ void ami_add_elements(struct treeview_window *twin,struct node *root,WORD *gen)
 	{
 		element = tree_find_element(node, TREE_ELEMENT_NAME);
 		if(!element) element = tree_find_element(node, TREE_ELEMENT_TITLE);
+		if(!element) element = tree_find_element(node, TREE_ELEMENT_SSL);
 		if(element && element->text)
 		{
 			text1 = (char *)element->text;

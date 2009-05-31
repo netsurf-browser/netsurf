@@ -26,6 +26,7 @@ theme_list_folder_open:*TBImages:list_folderunfold
 theme_list_bookmark:*TBImages:list_bookmark
 theme_list_cookie:*TBImages:list_abstract
 theme_list_history:*TBImages:list_archive
+theme_list_sslcert:*TBImages:list_crypt
 theme_throbber:Throbber
 theme_throbber_frames:13
 ptr_default:*PROGDIR:Resources/Pointers/Default

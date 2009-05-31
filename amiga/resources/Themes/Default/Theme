@@ -39,6 +39,7 @@ theme_list_folder_open:
 theme_list_bookmark:
 theme_list_cookie:
 theme_list_history:
+theme_list_sslcert:
 theme_throbber:Throbber
 theme_throbber_frames:9
 ptr_default:*PROGDIR:Resources/Pointers/Default
