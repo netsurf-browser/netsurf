@@ -2329,6 +2329,12 @@ void ami_do_redraw(struct gui_window_2 *g)
 		g->redraw_scroll = false;
 	}
 
+	if(g->redraw_scroll)
+	{
+		if((abs(vcurrent-oldv) > height) ||	(abs(hcurrent-oldh) > width))
+			g->redraw_scroll = false;
+	}
+
 //	if (c->type == CONTENT_HTML) scale = 1;
 
 	if(g->redraw_scroll && c->type == CONTENT_HTML)
