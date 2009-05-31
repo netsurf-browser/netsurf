@@ -2432,7 +2432,9 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 			TAG_DONE);
 
 		g->shared->redraw_required = true;
-		g->shared->redraw_scroll = true;
+
+		if(option_faster_scroll)
+			g->shared->redraw_scroll = true;
 
 		g->scrollx = sx;
 		g->scrolly = sy;
