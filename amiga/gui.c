@@ -1423,6 +1423,7 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 		browser_window_update(gwin->bw,false);
 
 		gui_window_set_scroll(gwin->bw->window,gwin->bw->window->scrollx,gwin->bw->window->scrolly);
+		gwin->redraw_scroll = false;
 
 		if(gwin->bw->current_content)
 			browser_window_refresh_url_bar(gwin->bw,gwin->bw->current_content->url,
@@ -2819,7 +2820,7 @@ void gui_window_new_content(struct gui_window *g)
 {
 	struct content *c;
 
-	if(g && g->shared && g->shared->bw)
+	if(g && g->shared && g->shared->bw && g->shared->bw->current_content)
 		c = g->shared->bw->current_content;
 	else return;
 
