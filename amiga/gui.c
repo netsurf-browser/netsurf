@@ -2179,6 +2179,11 @@ void ami_clearclipreg(struct RastPort *rp)
 
 	reg = InstallClipRegion(rp->Layer,NULL);
 	if(reg) DisposeRegion(reg);
+
+	glob.rect.MinX = 0;
+	glob.rect.MinY = 0;
+	glob.rect.MaxX = scrn->Width-1;
+	glob.rect.MaxY = scrn->Height-1;
 }
 
 void ami_do_redraw_limits(struct gui_window *g, struct content *c,int x0, int y0, int x1, int y1)
