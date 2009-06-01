@@ -148,24 +148,20 @@ void gui_cert_verify(struct browser_window *bw, struct content *c,
 	ami_open_tree(tree,AMI_TREE_SSLCERT);
 	twin = (struct treeview_window *)data->tree->handle;
 
-	if(yesorno = ASPrintf("%s|%s",messages_get("Yes"),messages_get("No")))
+	if(yesorno = ASPrintf("%s|%s",messages_get("Accept"),messages_get("Reject")))
 	{
-		if(reqcontents = ASPrintf("%s: %s\n%s: %s\n%s: %s\n%s: %s\n%s: %s\n%s: %s\n%s: %s\n\n%s",
-							messages_get("ssl subject"),
+		if(reqcontents = ASPrintf("%s\n\n%s: %s\n%s: %s\n%s: %s\n%s: %s\n%s: %s",
+							messages_get("SSLError"),
+							messages_get("Subject"),
 							to->subject_t,
-							messages_get("ssl issuer"),
+							messages_get("Issuer"),
 							to->issuer_t,
-							messages_get("ssl version"),
+							messages_get("Version"),
 							to->version,
-							messages_get("ssl valid_from"),
+							messages_get("ValidFrom"),
 							to->valid_from,
-							messages_get("ssl type"),
-							to->type,
-							messages_get("ssl valid_to"),
-							to->valid_to,
-							messages_get("ssl serial"),
-							to->serial,
-							messages_get("ssl question")))
+							messages_get("ValidTo"),
+							to->valid_to))
 		{
 			res = TimedDosRequesterTags(TDR_ImageType,TDRIMAGE_QUESTION,
 							TDR_Window,twin->win,

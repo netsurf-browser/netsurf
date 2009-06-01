@@ -240,7 +240,7 @@ void ami_open_tree(struct tree *tree,int type)
 		break;
 		case AMI_TREE_SSLCERT:
 			nothl = TRUE;
-			wintitle = (char *)messages_get("ssl cert");
+			wintitle = (char *)messages_get("SSLCerts");
 			ami_get_theme_filename(&item,"theme_list_sslcert");
 		break;
 	}

@@ -469,6 +469,25 @@ Login:Login
 Cancel:Cancel
 
 
+# SSL certificate verification
+# ============================
+#
+# This section contains tokens which are used in the
+# SSL certificate verification dialog box.
+#
+SSLCerts:SSL certificates
+SSLError:NetSurf failed to verify the authenticity of an SSL certificate. Please verify the details presented below.
+Subject:Subject
+Issuer:Issuer
+Version:Version
+ValidFrom:Valid from
+ValidTo:Valid until
+Type:Type
+Serial:Serial
+Accept:Accept
+Reject:Reject
+
+
 # Content
 # =======
 #
