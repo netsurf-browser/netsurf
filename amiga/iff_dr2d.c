@@ -370,7 +370,6 @@ int main(int argc, char **argv)
 		printf("Unable to open file\n");
 		return 20;
 	}
-	FreeVec(buffer);
 
 	if(iffh = AllocIFF())
 	{
@@ -385,6 +384,7 @@ int main(int argc, char **argv)
 
 	ami_svg_to_dr2d(iffh,buffer,size,(char *)rarray[A_SVG]);
 
+	FreeVec(buffer);
 	if(iffh) CloseIFF(iffh);
 	if(iffh->iff_Stream) Close((BPTR)iffh->iff_Stream);
 	if(iffh) FreeIFF(iffh);
