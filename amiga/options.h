@@ -60,7 +60,7 @@ bool option_kiosk_mode = false; \
 char *option_recent_file = 0; \
 char *option_arexx_dir = 0; \
 char *option_download_dir = 0; \
-bool option_faster_scroll = false; \
+bool option_faster_scroll = true; \
 bool option_direct_render = false; \
 
 #define EXTRA_OPTION_TABLE \

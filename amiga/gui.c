@@ -2187,9 +2187,23 @@ void ami_clearclipreg(struct RastPort *rp)
 	glob.rect.MaxY = scrn->Height-1;
 }
 
-void ami_do_redraw_limits(struct gui_window *g, struct content *c,int x0, int y0, int x1, int y1)
+/**
+ * Redraw an area of the browser window - Amiga-specific function
+ *
+ * \param  g   a struct gui_window 
+ * \param  c   a struct content
+ * \param  x0  top-left co-ordinate (in document co-ordinates)
+ * \param  y0  top-left co-ordinate (in document co-ordinates)
+ * \param  x1  bottom-right co-ordinate (in document co-ordinates)
+ * \param  y1  bottom-right co-ordinate (in document co-ordinates)
+ * \param  sx  horizontal scroller position
+ * \param  sy  vertical scroller position
+ */
+
+void ami_do_redraw_limits(struct gui_window *g, struct content *c,int x0, int y0, int x1, int y1, ULONG sx, ULONG sy)
 {
-	ULONG hcurrent,vcurrent,xoffset,yoffset,width=800,height=600;
+	ULONG xoffset,yoffset,width=800,height=600;
+	ULONG htemp,vtemp;
 	struct IBox *bbox;
 	ULONG cur_tab = 0;
 
@@ -2203,8 +2217,6 @@ void ami_do_redraw_limits(struct gui_window *g, struct content *c,int x0, int y0
 	}
 
 	GetAttr(SPACE_AreaBox,g->shared->gadgets[GID_BROWSER],(ULONG *)&bbox);
-	GetAttr(SCROLLER_Top,g->shared->objects[OID_HSCROLL],(ULONG *)&hcurrent);
-	GetAttr(SCROLLER_Top,g->shared->objects[OID_VSCROLL],(ULONG *)&vcurrent);
 
 	if(!c) return;
 	if (c->locked) return;
@@ -2217,30 +2229,26 @@ void ami_do_redraw_limits(struct gui_window *g, struct content *c,int x0, int y0
 	yoffset=bbox->Top;
 
 	plot=amiplot;
-/*
-DebugPrintF("%ld %ld %ld %ld old\n%ld %ld %ld %ld x0-xc etc\n",x0,y0,x1,y1,x0-hcurrent,y0-vcurrent,width+x0,height+y0);
-DebugPrintF("%ld %ld calc\n",(y1-y0)+(yoffset+y0-vcurrent),(y0-(int)vcurrent));
-*/
 
-	if((y1<vcurrent) || (y0>vcurrent+height)) return;
-	if((x1<hcurrent) || (x0>hcurrent+width)) return;
+	if((y1<sy) || (y0>sy+height)) return;
+	if((x1<sx) || (x0>sx+width)) return;
 
-	if((x0-(int)hcurrent)<0) x0 = hcurrent;
-	if((y0-(int)vcurrent)<0) y0 = vcurrent;
+	if((x0-(int)sx)<0) x0 = sx;
+	if((y0-(int)sy)<0) y0 = sy;
 
-	if((x1-x0)+(xoffset+x0-hcurrent)>(width)) x1 = (width-(x0-hcurrent)+x0);
-	if((y1-y0)+(yoffset+y0-vcurrent)>(height)) y1 = (height-(y0-vcurrent)+y0);
+	if((x1-x0)+(xoffset+x0-sx)>(width)) x1 = (width-(x0-sx)+x0);
+	if((y1-y0)+(yoffset+y0-sy)>(height)) y1 = (height-(y0-sy)+y0);
 
 		content_redraw(c,
-		-hcurrent,-vcurrent,width-hcurrent,height-vcurrent,
+		-sx,-sy,width-sx,height-sy,
 		floorf((x0 *
-		g->shared->bw->scale)-hcurrent),
+		g->shared->bw->scale)-sx),
 		ceilf((y0 *
-		g->shared->bw->scale)-vcurrent),
+		g->shared->bw->scale)-sy),
 		(x1 *
-		g->shared->bw->scale)-hcurrent,
+		g->shared->bw->scale)-sx,
 		(y1 *
-		g->shared->bw->scale)-vcurrent,
+		g->shared->bw->scale)-sy,
 		g->shared->bw->scale,
 		0xFFFFFF);
 
@@ -2248,28 +2256,21 @@ DebugPrintF("%ld %ld calc\n",(y1-y0)+(yoffset+y0-vcurrent),(y0-(int)vcurrent));
 
 	ami_clearclipreg(currp);
 
-//	ami_update_buttons(g->shared);
-
 	if(!option_direct_render)
-		BltBitMapRastPort(glob.bm,x0-hcurrent,y0-vcurrent,g->shared->win->RPort,xoffset+x0-hcurrent,yoffset+y0-vcurrent,x1-x0,y1-y0,0x0C0);
-
-/*
-	DebugPrintF("%ld %ld %ld %ld draw area\n%ld %ld %ld %ld clip rect\n%ld %ld bitmap src\n%ld %ld %ld %ld bitmap dest\n\n",-hcurrent,-vcurrent,width-hcurrent,height-vcurrent,
-		(ULONG)floorf((x0 *
-		g->shared->bw->scale)-(int)hcurrent),
-		(ULONG)ceilf((y0 *
-		g->shared->bw->scale)-(int)vcurrent),
-		(ULONG)x1-hcurrent,
-		(ULONG)y1-vcurrent,x0-hcurrent,y0-vcurrent,xoffset+x0-hcurrent,yoffset+y0-vcurrent,x1-x0,y1-y0);
-*/
+		BltBitMapRastPort(glob.bm,x0-sx,y0-sy,g->shared->win->RPort,
+						xoffset+x0-sx,yoffset+y0-sy,x1-x0,y1-y0,0x0C0);
 }
 
 void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
 {
+	ULONG sx,sy;
 	struct content *c;
 	c = g->shared->bw->current_content;
 
-	ami_do_redraw_limits(g,c,x0,y0,x1,y1);
+	GetAttr(SCROLLER_Top,g->shared->objects[OID_HSCROLL],(ULONG *)&sx);
+	GetAttr(SCROLLER_Top,g->shared->objects[OID_VSCROLL],(ULONG *)&sy);
+
+	ami_do_redraw_limits(g,c,x0,y0,x1,y1,sx,sy);
 }
 
 void gui_window_redraw_window(struct gui_window *g)
@@ -2287,10 +2288,16 @@ void gui_window_redraw_window(struct gui_window *g)
 void gui_window_update_box(struct gui_window *g,
 		const union content_msg_data *data)
 {
+	ULONG sx,sy;
+
+	GetAttr(SCROLLER_Top,g->shared->objects[OID_HSCROLL],(ULONG *)&sx);
+	GetAttr(SCROLLER_Top,g->shared->objects[OID_VSCROLL],(ULONG *)&sy);
+
 	ami_do_redraw_limits(g,g->shared->bw->current_content,
 			data->redraw.x,data->redraw.y,
 			data->redraw.width+data->redraw.x,
-			data->redraw.height+data->redraw.y);
+			data->redraw.height+data->redraw.y,
+			sx,sy);
 }
 
 void ami_do_redraw(struct gui_window_2 *g)
@@ -2301,6 +2308,7 @@ void ami_do_redraw(struct gui_window_2 *g)
 	ULONG hcurrent,vcurrent,xoffset,yoffset,width=800,height=600,x0=0,y0=0;
 	struct IBox *bbox;
 	ULONG oldh=g->oldh,oldv=g->oldv;
+	bool morescroll = false;
 
 	GetAttr(SPACE_AreaBox,g->gadgets[GID_BROWSER],(ULONG *)&bbox);
 	GetAttr(SCROLLER_Top,g->objects[OID_HSCROLL],(ULONG *)&hcurrent);
@@ -2339,24 +2347,29 @@ void ami_do_redraw(struct gui_window_2 *g)
 
 	if(g->redraw_scroll && c->type == CONTENT_HTML)
 	{
-		ScrollWindowRaster(g->win,hcurrent-oldh,vcurrent-oldv,xoffset,yoffset,xoffset+width,yoffset+height);
+		ScrollWindowRaster(g->win,hcurrent-oldh,vcurrent-oldv,
+				xoffset,yoffset,xoffset+width,yoffset+height);
 
 		if(vcurrent>oldv)
 		{
-			ami_do_redraw_limits(g->bw->window,c,hcurrent,height+oldv,hcurrent+width,vcurrent+height);
+			ami_do_redraw_limits(g->bw->window,c,hcurrent,height+oldv,
+					hcurrent+width,vcurrent+height,hcurrent,vcurrent);
 		}
 		else if(vcurrent<oldv)
 		{
-			ami_do_redraw_limits(g->bw->window,c,hcurrent,vcurrent,hcurrent+width,oldv);
+			ami_do_redraw_limits(g->bw->window,c,hcurrent,vcurrent,
+							hcurrent+width,oldv,hcurrent,vcurrent);
 		}
 
 		if(hcurrent>oldh)
 		{
-			ami_do_redraw_limits(g->bw->window,c,width+oldh,vcurrent,hcurrent+width,vcurrent+height);
+			ami_do_redraw_limits(g->bw->window,c,width+oldh,vcurrent,
+					hcurrent+width,vcurrent+height,hcurrent,vcurrent);
 		}
 		else if(hcurrent<oldh)
 		{
-			ami_do_redraw_limits(g->bw->window,c,hcurrent,vcurrent,oldh,vcurrent+height);
+			ami_do_redraw_limits(g->bw->window,c,hcurrent,vcurrent,
+							oldh,vcurrent+height,hcurrent,vcurrent);
 		}
 	}
 	else
