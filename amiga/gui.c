@@ -2439,7 +2439,7 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 
 		g->shared->redraw_required = true;
 
-		if(option_faster_scroll)
+		if(option_faster_scroll && !g->shared->new_content)
 			g->shared->redraw_scroll = true;
 
 		g->scrollx = sx;
@@ -2447,6 +2447,7 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 
 //		history_set_current_scroll(g->shared->bw->history,g->scrollx,g->scrolly);
 	}
+	g->shared->new_content = false;
 }
 
 void gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
@@ -2833,6 +2834,7 @@ void gui_window_new_content(struct gui_window *g)
 	else return;
 
 	ami_clearclipreg(currp);
+	g->shared->new_content = true;
 
 	if(g->shared->bw->browser_window_type != BROWSER_WINDOW_NORMAL)
 		return;
