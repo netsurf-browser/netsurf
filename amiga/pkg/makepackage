@@ -12,7 +12,7 @@ delete ram:netsurf/resources/cookies
 delete ram:netsurf/resources/urls
 delete ram:netsurf/resources/options
 copy resources/Pointers/~(.svn) ram:NetSurf/Resources/Pointers
-copy COPYING ram:NetSurf/
+copy (COPYING|ChangeLog) ram:NetSurf/
 copy NetSurf ram:NetSurf/NetSurf
 copy NetSurf_Cairo ram:NetSurf/NetSurf_Cairo
 copy amiga/dist/AutoInstall ram:
