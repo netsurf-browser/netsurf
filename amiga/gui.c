@@ -2454,6 +2454,8 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 
 		if(option_faster_scroll && !g->shared->new_content)
 			g->shared->redraw_scroll = true;
+			else g->shared->redraw_scroll = false;
+
 
 		g->scrollx = sx;
 		g->scrolly = sy;
