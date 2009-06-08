@@ -1481,8 +1481,9 @@ bool box_a(BOX_SPECIAL_PARAMS)
 			/* the default may have been overridden by a
 			 * <base target=...>, so this is different to 0 */
 			box->target = TARGET_SELF;
-		else if (('a' <= s[0] && s[0] <= 'z') ||
-				('A' <= s[0] && s[0] <= 'Z')) {  /* [6.16] */
+		else {
+			/* 6.16 says that frame names must begin with [a-zA-Z]
+			 * This doesn't match reality, so just take anything */
 			box->target = talloc_strdup(content, (const char *) s);
 			if (!box->target) {
 				xmlFree(s);
