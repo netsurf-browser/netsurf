@@ -1,6 +1,6 @@
-# Italian messages for NetSurf 2.x
+# Italian messages for NetSurf 2.x (Revision 7666)
 # Translated by Samir Hawamdeh (http://www.betatesting.it/backforthefuture)
-# 4.05.2009
+# 8.06.2009
 # =========================================================================
 #
 # Description
@@ -88,7 +88,7 @@ ObjDraw:Disegna
 
 # Main -> Object -> Link menu
 LinkSave:Salva
-LinkDload:Salva su
+LinkDload:Salva su...
 LinkNew:Nuova finestra
 
 # Main -> Selection menu
@@ -214,7 +214,7 @@ URLSuggest:URL Recenti
 Languages:Lingua
 #
 # Network pane
-ProxyType:Tipo di Proxy
+ProxyType:Tipo di proxy
 ProxyNone:Nessun proxy
 ProxyNoAuth:Proxy semplice
 ProxyBasic:Autentificazione di Base
@@ -286,9 +286,9 @@ Link:Link
 LinkNewTab:Apri in una nuova scheda
 LinkNewWin:Apri in una nuova finestra
 CopyURL:Copia URL nella clipboard
-CopyClip:Copy to clipboard
-SaveAs:Save as...
-SaveIFF:Save as IFF...
+CopyClip:Copia nella clipboard
+SaveAs:Salva come...
+SaveIFF:Salva come IFF...
 ObjShow:Mostra oggetto
 SelectFile:Seleziona file...
 
@@ -477,17 +477,17 @@ Cancel:Annulla
 # This section contains tokens which are used in the
 # SSL certificate verification dialog box.
 #
-SSLCerts:SSL certificates
-SSLError:NetSurf failed to verify the authenticity of an SSL certificate. Please verify the details presented below.
-Subject:Subject
-Issuer:Issuer
-Version:Version
-ValidFrom:Valid from
-ValidTo:Valid until
-Type:Type
-Serial:Serial
-Accept:Accept
-Reject:Reject
+SSLCerts:Certificati SSL
+SSLError:NetSurf non è stato in grado di verificare l'autenticità del certificato SSL. Per favore verifica i dettagli qui sotto elencati.
+Subject:Oggetto
+Issuer:Depositario
+Version:Versione
+ValidFrom:Valido da
+ValidTo:Valido fino
+Type:Tipo
+Serial:Seriale
+Accept:Accetta
+Reject:Rifiuta
 
 
 # Content
@@ -580,7 +580,7 @@ AWNotSeen:Per favore imposta l'applicazione AWViewer e riprova ancora.
 NoMemory:Memoria insufficiente per l'esecuzione di NetSurf. Per favore liberane un pò e riprova ancora.
 FontBadInst:Si è verificato un errore durante l'inizializzazione dei font a causa della presenza di una copia obsoleta dei font ROM nel disco. NetSurf verrà chiuso e si cercherà di lanciare un programma in grado di risolvere questo problema.
 FontError:Impossibile aprire il font "Homerton.Medium" (%s).
-Resolvers:Non è stato configurato nessun nome per i domini dei server, perciò sarà possibile effettuare solo la navigazione dei file in locale. Usa "Configura" per impostare il tuo nome del/dei server.
+Resolvers:Non è stato configurato nessun nome per i domini dei server, perciò sarà possibile effettuare solo la navigazione dei file in locale. Usa "Configura" per impostare il/i nome/i del/dei server.
 NoDiscSpace:Spazio insufficiente nel disco.
 Template:Una finestra di template risulta mancante. Per favore reinstalla NetSurf.
 HotlistSaveError:Non è stato possibile salvare correttamente l'Hotlist.
@@ -632,7 +632,7 @@ Done:Documento completato
 #
 BadRedirect:Errata redirezione dell'URL
 FetchFailed:Impossibile ottenere il documento
-NotCSS:Attenzione: "Foglio di stile" non ha nulla a che spartire con i CSS
+NotCSS:Attenzione: la dicitura "Foglio di stile" non ha nulla a che vedere con i CSS
 BadObject:Attenzione: errato tipo di oggetto
 ObjError:Errore di caricamento dell'oggetto: %s
 ParsingFail:Analisi del documento fallita.
@@ -668,7 +668,7 @@ HTTP404:Non trovato
 HTTP405:Metodo non permesso
 HTTP406:Non accettabile
 HTTP407:Autentificazione Proxy necessaria
-HTTP408:Richiesta TimeOut
+HTTP408:Messaggio di TimeOut
 HTTP409:Conflitto
 HTTP410:Irraggiungibile
 HTTP411:Lunghezza richiesta
