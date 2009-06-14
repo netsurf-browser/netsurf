@@ -2850,6 +2850,8 @@ void gui_window_new_content(struct gui_window *g)
 
 	ami_clearclipreg(currp);
 	g->shared->new_content = true;
+	g->scrollx = 0;
+	g->scrolly = 0;
 
 	if(g->shared->bw->browser_window_type != BROWSER_WINDOW_NORMAL)
 		return;
