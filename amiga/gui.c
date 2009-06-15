@@ -74,6 +74,7 @@
 #include "amiga/history_local.h"
 #include "amiga/font.h"
 #include "amiga/download.h"
+#include <graphics/blitattr.h>
 
 #ifdef NS_AMIGA_CAIRO
 #include <cairo/cairo-amigaos.h>
@@ -112,7 +113,7 @@ struct Library  *KeymapBase = NULL;
 struct KeymapIFace *IKeymap = NULL;
 
 struct BitMap *throbber = NULL;
-ULONG throbber_width,throbber_height,throbber_frames;
+ULONG throbber_width,throbber_height,throbber_frames,throbber_update_interval;
 BOOL rmbtrapped;
 BOOL locked_screen = FALSE;
 
@@ -422,6 +423,8 @@ void gui_init(int argc, char** argv)
 
 	ami_get_theme_filename(throbberfile,"theme_throbber");
 	throbber_frames=atoi(messages_get("theme_throbber_frames"));
+	throbber_update_interval = atoi(messages_get("theme_throbber_delay"));
+	if(throbber_update_interval == 0) throbber_update_interval = 1000;
 
 	if(dto = NewDTObject(throbberfile,
 					DTA_GroupID,GID_PICTURE,
@@ -2773,7 +2776,7 @@ void ami_update_throbber(struct gui_window_2 *g,bool redraw)
 
 	if(!redraw)
 	{
-		if(g->throbber_update_count < 1000)
+		if(g->throbber_update_count < throbber_update_interval)
 		{
 			g->throbber_update_count++;
 			return;
@@ -2789,7 +2792,23 @@ void ami_update_throbber(struct gui_window_2 *g,bool redraw)
 
 	GetAttr(SPACE_AreaBox,g->gadgets[GID_THROBBER],(ULONG *)&bbox);
 
-	BltBitMapRastPort(throbber,throbber_width*g->throbber_frame,0,g->win->RPort,bbox->Left,bbox->Top,throbber_width,throbber_height,0x0C0);
+/*
+	EraseRect(g->win->RPort,bbox->Left,bbox->Top,
+		bbox->Left+throbber_width,bbox->Top+throbber_height);
+*/
+
+	BltBitMapTags(BLITA_SrcX,throbber_width*g->throbber_frame,
+					BLITA_SrcY,0,
+					BLITA_DestX,bbox->Left,
+					BLITA_DestY,bbox->Top,
+					BLITA_Width,throbber_width,
+					BLITA_Height,throbber_height,
+					BLITA_Source,throbber,
+					BLITA_Dest,g->win->RPort,
+					BLITA_SrcType,BLITT_BITMAP,
+					BLITA_DestType,BLITT_RASTPORT,
+//					BLITA_UseSrcAlpha,TRUE,
+					TAG_DONE);
 }
 
 void gui_window_place_caret(struct gui_window *g, int x, int y, int height)

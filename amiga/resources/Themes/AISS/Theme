@@ -29,6 +29,7 @@ theme_list_history:*TBImages:list_archive
 theme_list_sslcert:*TBImages:list_crypt
 theme_throbber:Throbber
 theme_throbber_frames:13
+theme_throbber_delay:500
 ptr_default:*PROGDIR:Resources/Pointers/Default
 ptr_point:*PROGDIR:Resources/Pointers/Point
 ptr_caret:*PROGDIR:Resources/Pointers/Caret
