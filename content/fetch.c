@@ -280,9 +280,23 @@ struct fetch * fetch_start(const char *url, const char *referer,
 		if (fetch->referer == NULL)
 			goto failed;
 
-		if (option_send_referer && ref_scheme != NULL &&
-				strcasecmp(scheme, ref_scheme) == 0)
-			fetch->send_referer = true;
+		/* Determine whether to send the Referer header */
+		if (option_send_referer && ref_scheme != NULL) {
+			/* User permits us to send the header 
+			 * Only send it if:
+			 *    1) The fetch and referer schemes match
+			 * or 2) The fetch is https and the referer is http
+			 *
+			 * This ensures that referer information is only sent
+			 * across schemes in the special case of an https
+			 * request from a page served over http. The inverse
+			 * (https -> http) should not send the referer (15.1.3)
+			 */
+			if (strcasecmp(scheme, ref_scheme) == 0 ||
+					(strcasecmp(scheme, "https") == 0 &&
+					strcasecmp(ref_scheme, "http") == 0))
+				fetch->send_referer = true;
+		}
 	}
 
 	if (fetch->url == NULL || 
