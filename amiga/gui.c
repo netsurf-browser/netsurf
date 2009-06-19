@@ -2344,6 +2344,8 @@ void ami_do_redraw(struct gui_window_2 *g)
 	{
 		if((abs(vcurrent-oldv) > height) ||	(abs(hcurrent-oldh) > width))
 			g->redraw_scroll = false;
+
+ 		if(g->new_content) g->redraw_scroll = false;
 	}
 
 //	if (c->type == CONTENT_HTML) scale = 1;
@@ -2422,6 +2424,7 @@ void ami_do_redraw(struct gui_window_2 *g)
 
 	g->redraw_scroll = false;
 	g->redraw_required = false;
+	g->new_content = false;
 }
 
 bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
@@ -2455,8 +2458,7 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 
 		g->shared->redraw_required = true;
 
-		if(option_faster_scroll && !g->shared->new_content)
-			g->shared->redraw_scroll = true;
+		if(option_faster_scroll) g->shared->redraw_scroll = true;
 			else g->shared->redraw_scroll = false;
 
 
@@ -2465,14 +2467,13 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 
 //		history_set_current_scroll(g->shared->bw->history,g->scrollx,g->scrolly);
 	}
-	g->shared->new_content = false;
+//	g->shared->new_content = false;
 }
 
 void gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
 		int x1, int y1)
 {
 	gui_window_set_scroll(g, x0, y0);
-//	ami_do_redraw(g->shared,false);    above function does redraw I think
 }
 
 void gui_window_position_frame(struct gui_window *g, int x0, int y0,
@@ -2871,6 +2872,8 @@ void gui_window_new_content(struct gui_window *g)
 	g->shared->new_content = true;
 	g->scrollx = 0;
 	g->scrolly = 0;
+	g->shared->oldh = 0;
+	g->shared->oldv = 0;
 
 	if(g->shared->bw->browser_window_type != BROWSER_WINDOW_NORMAL)
 		return;
@@ -2916,18 +2919,20 @@ void gui_window_new_content(struct gui_window *g)
 
 bool gui_window_scroll_start(struct gui_window *g)
 {
-	DebugPrintF("scroll start\n");
+	return true;
 }
 
 bool gui_window_box_scroll_start(struct gui_window *g,
 		int x0, int y0, int x1, int y1)
 {
 	DebugPrintF("box scroll start\n");
+	return true;
 }
 
 bool gui_window_frame_resize_start(struct gui_window *g)
 {
-	printf("resize frame\n");
+	DebugPrintF("resize frame\n");
+	return true;
 }
 
 void gui_window_set_scale(struct gui_window *g, float scale)
