@@ -372,14 +372,37 @@ void ami_init_fonts(void)
 {
 	int i;
 	char *bname,*iname,*biname;
+	char *deffont;
+
+	switch(option_font_default)
+	{
+		case CSS_FONT_FAMILY_SANS_SERIF:
+			deffont = strdup(option_font_sans);
+		break;
+		case CSS_FONT_FAMILY_SERIF:
+			deffont = strdup(option_font_serif);
+		break;
+		case CSS_FONT_FAMILY_MONOSPACE:
+			deffont = strdup(option_font_mono);
+		break;
+		case CSS_FONT_FAMILY_CURSIVE:
+			deffont = strdup(option_font_cursive);
+		break;
+		case CSS_FONT_FAMILY_FANTASY:
+			deffont = strdup(option_font_fantasy);
+		break;
+		default:
+			deffont = strdup(option_font_sans);
+		break;
+	}
 
 	of[CSS_FONT_FAMILY_SANS_SERIF] = OpenOutlineFont(option_font_sans,NULL,OFF_OPEN);
 	of[CSS_FONT_FAMILY_SERIF] = OpenOutlineFont(option_font_serif,NULL,OFF_OPEN);
 	of[CSS_FONT_FAMILY_MONOSPACE] = OpenOutlineFont(option_font_mono,NULL,OFF_OPEN);
 	of[CSS_FONT_FAMILY_CURSIVE] = OpenOutlineFont(option_font_cursive,NULL,OFF_OPEN);
 	of[CSS_FONT_FAMILY_FANTASY] = OpenOutlineFont(option_font_fantasy,NULL,OFF_OPEN);
-	of[CSS_FONT_FAMILY_UNKNOWN] = OpenOutlineFont(option_font_sans,NULL,OFF_OPEN);
-	of[CSS_FONT_FAMILY_NOT_SET] = OpenOutlineFont(option_font_sans,NULL,OFF_OPEN);
+	of[CSS_FONT_FAMILY_UNKNOWN] = OpenOutlineFont(deffont,NULL,OFF_OPEN);
+	of[CSS_FONT_FAMILY_NOT_SET] = OpenOutlineFont(deffont,NULL,OFF_OPEN);
 
 	for(i=CSS_FONT_FAMILY_SANS_SERIF;i<=CSS_FONT_FAMILY_NOT_SET;i++)
 	{
@@ -412,6 +435,7 @@ void ami_init_fonts(void)
 			ofbi[i] = NULL;
 		}
 	}
+	if(deffont) free(deffont);
 }
 
 void ami_close_fonts(void)
