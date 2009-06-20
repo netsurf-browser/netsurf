@@ -2531,6 +2531,7 @@ void gui_window_update_extent(struct gui_window *g)
 			SCROLLER_Visible,bbox->Width,
 			TAG_DONE);
 	}
+	g->shared->new_content = true;
 }
 
 void gui_window_set_status(struct gui_window *g, const char *text)
