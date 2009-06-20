@@ -283,6 +283,20 @@
 			(set #theme "Resources/Themes/Default")
 			(set #theme "Resources/Themes/AISS")
 		)
+
+		(set #screen
+   			(askchoice
+  				(prompt "Please select whether to start NetSurf on a new screen or on Workbench")
+ 	      		(help @askchoice-help)
+				(choices "Own screen" "Workbench")
+       			(default 0)
+   			)
+		)
+
+		(select #screen
+			(set #pubscreen "")
+			(set #pubscreen "Workbench")
+		)
 	)
 )
 
@@ -369,6 +383,7 @@
 			(help @textfile-help)
 			(dest (tackon @default-dest "Resources/Options"))
 			(append "theme:" #theme "\n")
+			(append "use_pubscreen:" #pubscreen "\n")
 		)
 	)
 )

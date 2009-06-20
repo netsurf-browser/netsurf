@@ -486,31 +486,32 @@ void gui_init2(int argc, char** argv)
 
 	if(notalreadyrunning)
 	{
-		if((option_modeid) && (strncmp(option_modeid,"0x",2) == 0))
-		{
-			id = strtoul(option_modeid,NULL,0);
-		}
-		else
-		{
-			struct ScreenModeRequester *screenmodereq = NULL;
-
-			if(screenmodereq = AllocAslRequest(ASL_ScreenModeRequest,NULL))
-			{
-				AslRequestTags(screenmodereq,
-						ASLSM_MinDepth,24,
-						ASLSM_MaxDepth,32,
-						TAG_DONE);
-
-				id = screenmodereq->sm_DisplayID;
-				option_modeid = malloc(20);
-				sprintf(option_modeid,"0x%lx",id);
-
-				FreeAslRequest(screenmodereq);
-			}
-		}
-
 		if(!option_use_pubscreen || option_use_pubscreen[0] == '\0')
 		{
+			if((option_modeid) && (strncmp(option_modeid,"0x",2) == 0))
+			{
+				id = strtoul(option_modeid,NULL,0);
+			}
+			else
+			{
+				struct ScreenModeRequester *screenmodereq = NULL;
+
+				if(screenmodereq = AllocAslRequest(ASL_ScreenModeRequest,NULL))
+				{
+					AslRequestTags(screenmodereq,
+							ASLSM_MinDepth,24,
+							ASLSM_MaxDepth,32,
+							TAG_DONE);
+
+					id = screenmodereq->sm_DisplayID;
+					option_modeid = malloc(20);
+					sprintf(option_modeid,"0x%lx",id);
+
+					FreeAslRequest(screenmodereq);
+					options_write("PROGDIR:Resources/Options");
+				}
+			}
+
 			scrn = OpenScreenTags(NULL,
 //							SA_Width,option_window_screen_width,
 //							SA_Height,option_window_screen_height,
