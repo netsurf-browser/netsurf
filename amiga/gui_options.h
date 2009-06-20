@@ -1,5 +1,5 @@
 /*
- * Copyright 2008,2009 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2009 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,37 +16,28 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef AMIGA_OBJECT_H
-#define AMIGA_OBJECT_H
+#ifndef AMIGA_GUI_OPTIONS_H
+#define AMIGA_GUI_OPTIONS_H
 
-#include <exec/lists.h>
+#include <exec/types.h>
+#include <intuition/classusr.h>
+#include "amiga/gui.h"
 
 enum
 {
-	AMINS_UNKNOWN,
-	AMINS_CALLBACK,
-	AMINS_WINDOW,
-	AMINS_FRAME,
-	AMINS_DLWINDOW,
-	AMINS_LOGINWINDOW,
-	AMINS_TVWINDOW,
-	AMINS_FINDWINDOW,
-	AMINS_HISTORYWINDOW,
-	AMINS_GUIOPTSWINDOW,
-	AMINS_FETCHER,
+	GID_OPTS_MAIN=0,
+	GID_OPTS_CANCEL,
+	GID_OPTS_LAST
 };
 
-struct nsObject
-{
-	struct MinNode dtz_Node;
-	ULONG Type;
-	void *objstruct;
-	ULONG objstruct_size;
+struct ami_gui_opts_window {
+	struct Window *win;
+	Object *objects[OID_LAST];
+	struct Gadget *gadgets[GID_OPTS_LAST];
+	struct nsObject *node;
+	ULONG pad[6];
 };
 
-struct MinList *NewObjList(void);
-struct nsObject *AddObject(struct MinList *objlist,ULONG otype);
-void DelObject(struct nsObject *dtzo);
-void FreeObjList(struct MinList *objlist);
-
+void ami_opts_open(void);
+BOOL ami_opts_event(void);
 #endif

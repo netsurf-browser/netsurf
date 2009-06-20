@@ -75,6 +75,7 @@
 #include "amiga/font.h"
 #include "amiga/download.h"
 #include <graphics/blitattr.h>
+#include "amiga/gui_options.h"
 
 #ifdef NS_AMIGA_CAIRO
 #include <cairo/cairo-amigaos.h>
@@ -779,6 +780,23 @@ void ami_handle_msg(void)
 		else if(node->Type == AMINS_HISTORYWINDOW)
 		{
 			if(ami_history_event((struct history_window *)gwin))
+			{
+				if(IsMinListEmpty(window_list))
+				{
+					/* last window closed, so exit */
+					netsurf_quit = true;
+				}
+				break;
+			}
+			else
+			{
+				node = nnode;
+				continue;
+			}
+		}
+		else if(node->Type == AMINS_GUIOPTSWINDOW)
+		{
+			if(ami_gui_opts_event())
 			{
 				if(IsMinListEmpty(window_list))
 				{

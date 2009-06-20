@@ -46,6 +46,7 @@
 #include "amiga/iff_dr2d.h"
 #include "amiga/clipboard.h"
 #include "content/fetch.h"
+#include "amiga/gui_options.h"
 
 BOOL menualreadyinit;
 const char * const netsurf_version;
@@ -101,17 +102,21 @@ void ami_init_menulabs(void)
 	menulab[27] = ami_utf8_easy((char *)messages_get("HistGlobalNS"));
 	menulab[28] = NM_BARLABEL;
 	menulab[29] = ami_utf8_easy((char *)messages_get("ShowCookies"));
-	menulab[30] = ami_utf8_easy((char *)messages_get("Hotlist"));
-	menulab[31] = ami_utf8_easy((char *)messages_get("HotlistAdd"));
-	menulab[32] = ami_utf8_easy((char *)messages_get("HotlistShowNS"));
-	menulab[33] = NM_BARLABEL;
+	menulab[30] = NM_BARLABEL;
+	menulab[31] = ami_utf8_easy((char *)messages_get("**redraw"));
+	menulab[32] = ami_utf8_easy((char *)messages_get("Hotlist"));
+	menulab[33] = ami_utf8_easy((char *)messages_get("HotlistAdd"));
+	menulab[34] = ami_utf8_easy((char *)messages_get("HotlistShowNS"));
+	menulab[35] = NM_BARLABEL;
 
 	menulab[AMI_MENU_HOTLIST_MAX] = ami_utf8_easy((char *)messages_get("Settings"));
-	menulab[AMI_MENU_HOTLIST_MAX+1] = ami_utf8_easy((char *)messages_get("SnapshotWindow"));
-	menulab[AMI_MENU_HOTLIST_MAX+2] = ami_utf8_easy((char *)messages_get("SettingsSave"));
-	menulab[AMI_MENU_HOTLIST_MAX+3] = ami_utf8_easy((char *)messages_get("ARexx"));
-	menulab[AMI_MENU_HOTLIST_MAX+4] = ami_utf8_easy((char *)messages_get("ARexxExecute"));
-	menulab[AMI_MENU_HOTLIST_MAX+5] = NM_BARLABEL;
+	menulab[AMI_MENU_HOTLIST_MAX+1] = ami_utf8_easy((char *)messages_get("**edit prefs..."));
+	menulab[AMI_MENU_HOTLIST_MAX+2] = NM_BARLABEL;
+	menulab[AMI_MENU_HOTLIST_MAX+3] = ami_utf8_easy((char *)messages_get("SnapshotWindow"));
+	menulab[AMI_MENU_HOTLIST_MAX+4] = ami_utf8_easy((char *)messages_get("SettingsSave"));
+	menulab[AMI_MENU_HOTLIST_MAX+5] = ami_utf8_easy((char *)messages_get("ARexx"));
+	menulab[AMI_MENU_HOTLIST_MAX+6] = ami_utf8_easy((char *)messages_get("ARexxExecute"));
+	menulab[AMI_MENU_HOTLIST_MAX+7] = NM_BARLABEL;
 }
 
 struct NewMenu *ami_create_menu(ULONG type)
@@ -149,6 +154,8 @@ struct NewMenu *ami_create_menu(ULONG type)
 			  	{ NM_ITEM,0,0,0,0,0,}, // global history
 			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
 			  	{ NM_ITEM,0,0,0,0,0,}, // cookies
+			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
+			  	{ NM_ITEM,0,0,0,0,0,}, // redraw
 				{NM_TITLE,0,0,0,0,0,}, // hotlist
 				{ NM_ITEM,0,0,0,0,0,}, // add to hotlist
 			  	{ NM_ITEM,0,"H",0,0,0,}, // show hotlist (treeview)
@@ -194,6 +201,8 @@ struct NewMenu *ami_create_menu(ULONG type)
 				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
 				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
 				{NM_TITLE,0,0,0,0,0,}, // settings
+			  	{ NM_ITEM,0,0,0,0,0,}, // edit prefs
+			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
 				{ NM_ITEM,0,0,0,0,0,}, // snapshot window
 				{ NM_ITEM,0,0,0,0,0,}, // save settings
 				{NM_TITLE,0,0,0,0,0,}, // arexx
@@ -652,6 +661,11 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 				case 5: // cookies tree
 					ami_open_tree(cookies_tree,AMI_TREE_COOKIES);
 				break;
+
+				case 7: // redraw
+					gwin->redraw_required = true;
+					gwin->new_content = true;
+				break;
 			}
 		break;
 
@@ -677,14 +691,18 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 		case 4: // settings
 			switch(itemnum)
 			{
-				case 0: // snapshot
+				case 0: // edit prefs
+					ami_gui_opts_open();
+				break;
+
+				case 2: // snapshot
 					option_window_x = gwin->win->LeftEdge;
 					option_window_y = gwin->win->TopEdge;
 					option_window_width = gwin->win->Width;
 					option_window_height = gwin->win->Height;
 				break;
 
-				case 1: // save settings
+				case 3: // save settings
 					options_write("PROGDIR:Resources/Options");
 				break;
 			}
