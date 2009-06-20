@@ -318,7 +318,7 @@ ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const
 	outf16 = utf16;
 	if(!(ofont = ami_open_outline_font(style))) return 0;
 
-	if(rp) SetRPAttrs(currp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),TAG_DONE);
+	if(rp) SetRPAttrs(rp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),TAG_DONE);
 
 	dy++;
 
@@ -346,7 +346,7 @@ ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const
 						BLITA_Source,glyphbm,
 						BLITA_SrcType,BLITT_ALPHATEMPLATE,
 						BLITA_Dest,rp,
-						BLITA_DestType,BLITT_RASTPORT,
+						BLITA_DestType,BLITT_BITMAP,
 						BLITA_SrcBytesPerRow,glyph->glm_BMModulo,
 						TAG_DONE);
 				}
