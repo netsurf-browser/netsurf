@@ -181,7 +181,9 @@ void ro_gui_menu_init(void)
 			{ "Page.Save", BROWSER_SAVE, &dialog_saveas },
 			{ "Page.SaveComp", BROWSER_SAVE_COMPLETE, &dialog_saveas },
 			{ "Page.Export", NO_ACTION, 0 },
+#ifdef WITH_DRAW_EXPORT
 			{ "Page.Export.Draw", BROWSER_EXPORT_DRAW, &dialog_saveas },
+#endif
 #ifdef WITH_PDF_EXPORT
 			{ "Page.Export.PDF", BROWSER_EXPORT_PDF, &dialog_saveas },
 #endif
@@ -200,7 +202,9 @@ void ro_gui_menu_init(void)
 			{ "Object.Object.ObjSave", BROWSER_OBJECT_SAVE, &dialog_saveas },
 			{ "Object.Object.Export", BROWSER_OBJECT_EXPORT, 0 },
 			{ "Object.Object.Export.Sprite", BROWSER_OBJECT_EXPORT_SPRITE, &dialog_saveas },
+#ifdef WITH_DRAW_EXPORT
 			{ "Object.Object.Export.ObjDraw", BROWSER_OBJECT_EXPORT_DRAW, &dialog_saveas },
+#endif
 			{ "Object.Object.SaveURL", NO_ACTION, 0 },
 			{ "Object.Object.SaveURL.URI", BROWSER_OBJECT_SAVE_URL_URI, &dialog_saveas },
 			{ "Object.Object.SaveURL.URL", BROWSER_OBJECT_SAVE_URL_URL, &dialog_saveas },

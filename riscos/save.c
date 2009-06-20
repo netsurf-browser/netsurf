@@ -833,8 +833,10 @@ bool ro_gui_save_content(struct content *c, char *path, bool force_overwrite)
 	}
 
 	switch (gui_save_current_type) {
+#ifdef WITH_DRAW_EXPORT
 		case GUI_SAVE_DRAW:
 			return save_as_draw(c, path);
+#endif
 #ifdef WITH_PDF_EXPORT
 		case GUI_SAVE_PDF:
 			return save_as_pdf(c, path);

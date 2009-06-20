@@ -85,7 +85,7 @@ ifeq ($(TARGET),riscos)
   # Valid options: YES, NO
   NETSURF_USE_NSSVG := YES
 
-  # Enable NetSurf's use of pencil for Drawfile export
+  # Enable NetSurf's support for displaying RISC OS Draw files
   # Valid options: YES, NO
   NETSURF_USE_DRAW := YES
 
@@ -100,6 +100,10 @@ ifeq ($(TARGET),riscos)
   # Enable NetSurf's support for the Acorn plugin protocol
   # Valid options: YES, NO
   NETSURF_USE_PLUGINS := NO
+
+  # Enable NetSurf's use of pencil for Drawfile export
+  # Valid options: YES, NO
+  NETSURF_USE_DRAW_EXPORT := YES
 
   # Optimisation levels
   CFLAGS += -O2 -Wuninitialized

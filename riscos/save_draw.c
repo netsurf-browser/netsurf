@@ -22,6 +22,8 @@
  * Export a content as a DrawFile (implementation).
  */
 
+#ifdef WITH_DRAW_EXPORT
+
 #include <assert.h>
 #include <limits.h>
 #include "oslib/draw.h"
@@ -460,3 +462,5 @@ bool ro_save_draw_error(pencil_code code)
 
 	return false;
 }
+
+#endif

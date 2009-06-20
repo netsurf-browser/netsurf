@@ -139,7 +139,8 @@ bool sprite_redraw(struct content *c, int x, int y,
 
 byte sprite_bpp(const osspriteop_header *s)
 {
-	/* bit 31 indicates the presence of a full alpha channel rather than a binary mask */
+	/* bit 31 indicates the presence of a full alpha channel 
+	 * rather than a binary mask */
 	int type = ((unsigned)s->mode >> osspriteop_TYPE_SHIFT) & 15;
 	byte bpp = 0;
 
@@ -148,8 +149,10 @@ byte sprite_bpp(const osspriteop_header *s)
 		{
 			bits psr;
 			int val;
-			if (!xos_read_mode_variable(s->mode, os_MODEVAR_LOG2_BPP, &val, &psr) &&
-				!(psr & _C)) bpp = 1 << val;
+			if (!xos_read_mode_variable(s->mode, 
+					os_MODEVAR_LOG2_BPP, &val, &psr) &&
+					!(psr & _C))
+				bpp = 1 << val;
 		}
 		break;
 		case osspriteop_TYPE1BPP:  bpp = 1; break;

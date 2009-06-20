@@ -260,10 +260,11 @@ ifeq ($(TARGET),riscos)
   endif
 
   $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG rendering))
-  $(eval $(call feature_enabled,DRAW,-DWITH_DRAW,-lpencil,Drawfile export))
+  $(eval $(call feature_enabled,DRAW,-DWITH_DRAW,,RISC OS Draw rendering))
   $(eval $(call feature_enabled,SPRITE,-DWITH_SPRITE,,RISC OS sprite rendering))
   $(eval $(call feature_enabled,ARTWORKS,-DWITH_ARTWORKS,,ArtWorks rendering))
   $(eval $(call feature_enabled,PLUGINS,-DWITH_PLUGIN,,Plugin protocol support))
+  $(eval $(call feature_enabled,DRAW_EXPORT,-DWITH_DRAW_EXPORT,-lpencil,Drawfile export))
   ifeq ($(HOST),riscos)
     $(eval $(call feature_enabled,BMP,-DWITH_BMP,-lnsbmp,NetSurf BMP decoder))
     $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif,NetSurf GIF decoder))
