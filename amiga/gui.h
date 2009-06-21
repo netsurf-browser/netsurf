@@ -136,6 +136,7 @@ void ami_quit_netsurf(void);
 void ami_get_theme_filename(char *filename,char *themestring);
 void ami_clearclipreg(struct RastPort *rp);
 void ami_do_redraw(struct gui_window_2 *g);
+STRPTR ami_locale_langs(void);
 
 struct RastPort *currp;
 struct TextFont *origrpfont;

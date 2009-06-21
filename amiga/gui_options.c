@@ -274,6 +274,7 @@ void ami_gui_opts_open(void)
 										GETFILE_Drawer, option_theme,
 										GETFILE_DrawersOnly, TRUE,
 										GETFILE_ReadOnly, TRUE,
+										GETFILE_FullFileExpand, FALSE,
 									GetFileEnd,
 								LayoutEnd, // theme
 								CHILD_WeightedHeight, 0,
@@ -443,8 +444,9 @@ void ami_gui_opts_close(void)
 BOOL ami_gui_opts_event(void)
 {
 	/* return TRUE if window destroyed */
-	ULONG result;
+	ULONG result,data;
 	uint16 code;
+	STRPTR text;
 
 	while((result = RA_HandleInput(gow->objects[OID_MAIN],&code)) != WMHI_LASTMSG)
 	{
@@ -468,9 +470,68 @@ BOOL ami_gui_opts_event(void)
 						ami_gui_opts_close();
 						return TRUE;
 					break;
+
+					case GID_OPTS_HOMEPAGE_DEFAULT:
+						RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_HOMEPAGE],
+							gow->win,NULL,STRINGA_TextVal,NETSURF_HOMEPAGE,
+							TAG_DONE);
+					break;
+
+					case GID_OPTS_HOMEPAGE_CURRENT:
+						if(curbw) RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_HOMEPAGE],
+							gow->win,NULL,STRINGA_TextVal,
+							curbw->current_content->url,TAG_DONE);
+					break;
+
+					case GID_OPTS_FROMLOCALE:
+						if(text = ami_locale_langs())
+						{
+							RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_CONTENTLANG],
+								gow->win,NULL,STRINGA_TextVal, text, TAG_DONE);
+							FreeVec(text);
+						}
+					break;
+
+					case GID_OPTS_SCREEN:
+						GetAttr(RADIOBUTTON_Selected,gow->gadgets[GID_OPTS_SCREEN],(ULONG *)&data);
+						switch(data)
+						{
+							case 0:
+								RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_SCREENMODE],
+								gow->win,NULL, GA_Disabled, FALSE, TAG_DONE);
+								RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_SCREENNAME],
+								gow->win,NULL, GA_Disabled, TRUE, TAG_DONE);
+							break;
+
+							case 1:
+								RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_SCREENMODE],
+								gow->win,NULL, GA_Disabled, TRUE, TAG_DONE);
+								RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_SCREENNAME],
+								gow->win,NULL, GA_Disabled, TRUE, TAG_DONE);
+							break;
+
+							case 2:
+								RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_SCREENMODE],
+								gow->win,NULL, GA_Disabled, TRUE, TAG_DONE);
+								RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_SCREENNAME],
+								gow->win,NULL, GA_Disabled, FALSE, TAG_DONE);
+							break;
+						}
+					break;
+
+					case GID_OPTS_SCREENMODE:
+						IDoMethod((Object *)gow->gadgets[GID_OPTS_SCREENMODE],
+						GSM_REQUEST,gow->win);
+					break;
+
+					case GID_OPTS_THEME:
+						IDoMethod((Object *)gow->gadgets[GID_OPTS_THEME],
+						GFILE_REQUEST,gow->win);
+					break;
 				}
 			break;
 		}
 	}
 	return FALSE;
 }
+
