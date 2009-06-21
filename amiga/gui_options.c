@@ -291,6 +291,7 @@ void ami_gui_opts_open(void)
       	              					GA_ID, GID_OPTS_PTROS,
          	           					GA_RelVerify, TRUE,
          	           					GA_Text, gadlab[GID_OPTS_PTROS],
+										GA_Disabled, TRUE,
   				      		            GA_Selected, option_use_os_pointers,
             	    				CheckBoxEnd,
 								LayoutEnd, // mouse
