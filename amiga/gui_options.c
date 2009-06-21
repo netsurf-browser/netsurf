@@ -17,6 +17,7 @@
  */
 
 #include <stdbool.h>
+#include <string.h>
 #include <proto/exec.h>
 #include <proto/intuition.h>
 
@@ -34,18 +35,25 @@
 #include <proto/label.h>
 #include <proto/string.h>
 #include <proto/checkbox.h>
+#include <proto/radiobutton.h>
+#include <proto/getscreenmode.h>
+#include <proto/getfile.h>
 #include <classes/window.h>
 #include <images/label.h>
 #include <gadgets/button.h>
 #include <gadgets/clicktab.h>
 #include <gadgets/string.h>
 #include <gadgets/checkbox.h>
+#include <gadgets/radiobutton.h>
+#include <gadgets/getscreenmode.h>
+#include <gadgets/getfile.h>
 #include <reaction/reaction.h>
 #include <reaction/reaction_macros.h>
 
 static struct ami_gui_opts_window *gow = NULL;
 
-CONST_STRPTR tabs[8];
+CONST_STRPTR tabs[9];
+CONST_STRPTR screenopts[4];
 CONST_STRPTR gadlab[GID_OPTS_LAST];
 
 void ami_gui_opts_setup(void)
@@ -60,6 +68,11 @@ void ami_gui_opts_setup(void)
 	tabs[7] = (char *)ami_utf8_easy((char *)messages_get("Export"));
 	tabs[8] = NULL;
 
+	screenopts[0] = (char *)ami_utf8_easy((char *)messages_get("OwnScreen"));
+	screenopts[1] = (char *)ami_utf8_easy((char *)messages_get("Workbench"));
+	screenopts[2] = (char *)ami_utf8_easy((char *)messages_get("NamedScreen"));
+	screenopts[3] = NULL;
+
 	gadlab[GID_OPTS_HOMEPAGE] = (char *)ami_utf8_easy((char *)messages_get("URL"));
 	gadlab[GID_OPTS_HOMEPAGE_DEFAULT] = (char *)ami_utf8_easy((char *)messages_get("UseDefault"));
 	gadlab[GID_OPTS_HOMEPAGE_CURRENT] = (char *)ami_utf8_easy((char *)messages_get("UseCurrent"));
@@ -67,14 +80,45 @@ void ami_gui_opts_setup(void)
 	gadlab[GID_OPTS_FROMLOCALE] = (char *)ami_utf8_easy((char *)messages_get("FromLocale"));
 	gadlab[GID_OPTS_REFERRAL] = (char *)ami_utf8_easy((char *)messages_get("SendReferer"));
 	gadlab[GID_OPTS_FASTSCROLL] = (char *)ami_utf8_easy((char *)messages_get("FastScrolling"));
+	gadlab[GID_OPTS_SCREEN] = (char *)ami_utf8_easy((char *)messages_get("Screen"));
 	gadlab[GID_OPTS_SAVE] = (char *)ami_utf8_easy((char *)messages_get("Save"));
 	gadlab[GID_OPTS_USE] = (char *)ami_utf8_easy((char *)messages_get("Use"));
 	gadlab[GID_OPTS_CANCEL] = (char *)ami_utf8_easy((char *)messages_get("Cancel"));
 
+// reminder to self - need to free all the above strings
 }
 
 void ami_gui_opts_open(void)
 {
+	uint16 screenoptsselected;
+	ULONG screenmodeid = 0;
+	BOOL screenmodedisabled = FALSE, screennamedisabled = FALSE;
+
+	if(option_use_pubscreen && option_use_pubscreen[0] != '\0')
+	{
+		if(strcmp(option_use_pubscreen,"Workbench") == 0)
+		{
+			screenoptsselected = 1;
+			screennamedisabled = TRUE;
+			screenmodedisabled = TRUE;
+		}
+		else
+		{
+			screenoptsselected = 2;
+			screenmodedisabled = TRUE;
+		}
+	}
+	else
+	{
+		screenoptsselected = 0;
+		screennamedisabled = TRUE;
+	}
+
+	if((option_modeid) && (strncmp(option_modeid,"0x",2) == 0))
+	{
+		screenmodeid = strtoul(option_modeid,NULL,0);
+	}
+
 	if(!gow)
 	{
 		ami_gui_opts_setup();
@@ -185,6 +229,51 @@ void ami_gui_opts_open(void)
 						*/
 						PAGE_Add, LayoutObject,
 							LAYOUT_AddChild,VGroupObject,
+								LAYOUT_AddChild,VGroupObject,
+									LAYOUT_SpaceOuter, TRUE,
+									LAYOUT_BevelStyle, BVS_GROUP, 
+									LAYOUT_Label, messages_get("Screen"),
+									LAYOUT_AddChild, HGroupObject,
+			                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_SCREEN] = RadioButtonObject,
+    	  	              					GA_ID, GID_OPTS_SCREEN,
+        	 	           					GA_RelVerify, TRUE,
+         		           					GA_Text, screenopts,
+  					      		            RADIOBUTTON_Selected, screenoptsselected,
+            	    					RadioButtonEnd,
+										CHILD_WeightedWidth,0,
+										LAYOUT_AddChild,VGroupObject,
+			                				LAYOUT_AddChild, gow->gadgets[GID_OPTS_SCREENMODE] = GetScreenModeObject,
+    	  	              						GA_ID, GID_OPTS_SCREENMODE,
+        	 	           						GA_RelVerify, TRUE,
+												GA_Disabled,screenmodedisabled,
+												GETSCREENMODE_DisplayID,screenmodeid,
+												GETSCREENMODE_MinDepth, 24,
+												GETSCREENMODE_MaxDepth, 32,
+											GetScreenModeEnd,
+											LAYOUT_AddChild, gow->gadgets[GID_OPTS_SCREENNAME] = StringObject,
+												GA_ID, GID_OPTS_SCREENNAME,
+												GA_RelVerify, TRUE,
+												GA_Disabled,screennamedisabled,
+												STRINGA_TextVal, option_use_pubscreen,
+												STRINGA_BufferPos,0,
+											StringEnd,
+										LayoutEnd,
+										CHILD_WeightedHeight,0,
+									LayoutEnd,
+								LayoutEnd, // screen
+								LAYOUT_AddChild,VGroupObject,
+									LAYOUT_SpaceOuter, TRUE,
+									LAYOUT_BevelStyle, BVS_GROUP, 
+									LAYOUT_Label, messages_get("Theme"),
+									LAYOUT_AddChild, gow->gadgets[GID_OPTS_THEME] = GetFileObject,
+										GA_ID, GID_OPTS_THEME,
+										GA_RelVerify, TRUE,
+										GETFILE_Drawer, option_theme,
+										GETFILE_DrawersOnly, TRUE,
+										GETFILE_ReadOnly, TRUE,
+									GetFileEnd,
+								LayoutEnd, // theme
+								CHILD_WeightedHeight, 0,
 							LayoutEnd, // page vgroup
 						PageEnd, // pageadd
 						/*
@@ -259,15 +348,15 @@ void ami_gui_opts_open(void)
 
 void ami_gui_opts_use(void)
 {
-	ULONG *data;
+	ULONG data;
 
 	GetAttr(STRINGA_TextVal,gow->gadgets[GID_OPTS_HOMEPAGE],(ULONG *)&data);
 	if(option_homepage_url) free(option_homepage_url);
-	option_homepage_url = strdup(data);
+	option_homepage_url = (char *)strdup((char *)data);
 
 	GetAttr(STRINGA_TextVal,gow->gadgets[GID_OPTS_CONTENTLANG],(ULONG *)&data);
 	if(option_accept_language) free(option_accept_language);
-	option_accept_language = strdup(data);
+	option_accept_language = (char *)strdup((char *)data);
 
 	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_HIDEADS],(ULONG *)&data);
 	if(data) option_block_ads = true;
@@ -280,6 +369,35 @@ void ami_gui_opts_use(void)
 	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_FASTSCROLL],(ULONG *)&data);
 	if(data) option_faster_scroll = true;
 		else option_faster_scroll = false;
+
+	GetAttr(RADIOBUTTON_Selected,gow->gadgets[GID_OPTS_SCREEN],(ULONG *)&data);
+	switch(data)
+	{
+		case 0:
+			if(option_use_pubscreen) free(option_use_pubscreen);
+			option_use_pubscreen = NULL;
+		break;
+
+		case 1:
+			if(option_use_pubscreen) free(option_use_pubscreen);
+			option_use_pubscreen = (char *)strdup("Workbench");
+		break;
+
+		case 2:
+			GetAttr(STRINGA_TextVal,gow->gadgets[GID_OPTS_SCREENNAME],(ULONG *)&data);
+			if(option_use_pubscreen) free(option_use_pubscreen);
+			option_use_pubscreen = (char *)strdup((char *)data);
+		break;
+	}
+
+	GetAttr(GETSCREENMODE_DisplayID,gow->gadgets[GID_OPTS_SCREENMODE],(ULONG *)&data);
+	if(option_modeid) free(option_modeid);
+	option_modeid = malloc(20);
+	sprintf(option_modeid,"0x%lx",data);
+
+	GetAttr(GETFILE_Drawer,gow->gadgets[GID_OPTS_THEME],(ULONG *)&data);
+	if(option_theme) free(option_theme);
+	option_theme = (char *)strdup((char *)data);
 }
 
 void ami_gui_opts_close(void)
