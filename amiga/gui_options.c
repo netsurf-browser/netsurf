@@ -81,6 +81,8 @@ void ami_gui_opts_setup(void)
 	gadlab[GID_OPTS_REFERRAL] = (char *)ami_utf8_easy((char *)messages_get("SendReferer"));
 	gadlab[GID_OPTS_FASTSCROLL] = (char *)ami_utf8_easy((char *)messages_get("FastScrolling"));
 	gadlab[GID_OPTS_SCREEN] = (char *)ami_utf8_easy((char *)messages_get("Screen"));
+	gadlab[GID_OPTS_PTRTRUE] = (char *)ami_utf8_easy((char *)messages_get("TrueColourPtrs"));
+	gadlab[GID_OPTS_PTROS] = (char *)ami_utf8_easy((char *)messages_get("OSPointers"));
 	gadlab[GID_OPTS_SAVE] = (char *)ami_utf8_easy((char *)messages_get("Save"));
 	gadlab[GID_OPTS_USE] = (char *)ami_utf8_easy((char *)messages_get("Use"));
 	gadlab[GID_OPTS_CANCEL] = (char *)ami_utf8_easy((char *)messages_get("Cancel"));
@@ -261,6 +263,7 @@ void ami_gui_opts_open(void)
 										CHILD_WeightedHeight,0,
 									LayoutEnd,
 								LayoutEnd, // screen
+								CHILD_WeightedHeight,0,
 								LAYOUT_AddChild,VGroupObject,
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
@@ -274,6 +277,27 @@ void ami_gui_opts_open(void)
 									GetFileEnd,
 								LayoutEnd, // theme
 								CHILD_WeightedHeight, 0,
+								LAYOUT_AddChild,VGroupObject,
+									LAYOUT_SpaceOuter, TRUE,
+									LAYOUT_BevelStyle, BVS_GROUP, 
+									LAYOUT_Label, messages_get("MousePointers"),
+		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_PTRTRUE] = CheckBoxObject,
+      	              					GA_ID, GID_OPTS_PTRTRUE,
+         	           					GA_RelVerify, TRUE,
+         	           					GA_Text, gadlab[GID_OPTS_PTRTRUE],
+  				      		            GA_Selected, option_truecolour_mouse_pointers,
+            	    				CheckBoxEnd,
+		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_PTROS] = CheckBoxObject,
+      	              					GA_ID, GID_OPTS_PTROS,
+         	           					GA_RelVerify, TRUE,
+         	           					GA_Text, gadlab[GID_OPTS_PTROS],
+  				      		            GA_Selected, option_use_os_pointers,
+            	    				CheckBoxEnd,
+								LayoutEnd, // mouse
+								CHILD_WeightedHeight,0,
+		                		LAYOUT_AddImage, LabelObject,
+         	           				LABEL_Text, messages_get("will not take effect until next time netsurf is launched"),
+            	    			LabelEnd,
 							LayoutEnd, // page vgroup
 						PageEnd, // pageadd
 						/*
@@ -398,6 +422,14 @@ void ami_gui_opts_use(void)
 	GetAttr(GETFILE_Drawer,gow->gadgets[GID_OPTS_THEME],(ULONG *)&data);
 	if(option_theme) free(option_theme);
 	option_theme = (char *)strdup((char *)data);
+
+	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_PTRTRUE],(ULONG *)&data);
+	if(data) option_truecolour_mouse_pointers = true;
+		else option_truecolour_mouse_pointers = false;
+
+	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_PTROS],(ULONG *)&data);
+	if(data) option_use_os_pointers = true;
+		else option_use_os_pointers = false;
 }
 
 void ami_gui_opts_close(void)
