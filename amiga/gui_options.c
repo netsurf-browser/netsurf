@@ -25,21 +25,60 @@
 #include "amiga/gui_options.h"
 #include "utils/messages.h"
 #include "amiga/options.h"
+#include "amiga/utf8.h"
 
 #include <proto/window.h>
 #include <proto/layout.h>
 #include <proto/button.h>
+#include <proto/clicktab.h>
+#include <proto/label.h>
+#include <proto/string.h>
+#include <proto/checkbox.h>
 #include <classes/window.h>
+#include <images/label.h>
 #include <gadgets/button.h>
+#include <gadgets/clicktab.h>
+#include <gadgets/string.h>
+#include <gadgets/checkbox.h>
 #include <reaction/reaction.h>
 #include <reaction/reaction_macros.h>
 
 static struct ami_gui_opts_window *gow = NULL;
 
+CONST_STRPTR tabs[8];
+CONST_STRPTR gadlab[GID_OPTS_LAST];
+
+void ami_gui_opts_setup(void)
+{
+	tabs[0] = (char *)ami_utf8_easy((char *)messages_get("General"));
+	tabs[1] = (char *)ami_utf8_easy((char *)messages_get("Display"));
+	tabs[2] = (char *)ami_utf8_easy((char *)messages_get("Network"));
+	tabs[3] = (char *)ami_utf8_easy((char *)messages_get("Rendering"));
+	tabs[4] = (char *)ami_utf8_easy((char *)messages_get("Fonts"));
+	tabs[5] = (char *)ami_utf8_easy((char *)messages_get("Cache"));
+	tabs[6] = (char *)ami_utf8_easy((char *)messages_get("Advanced"));
+	tabs[7] = (char *)ami_utf8_easy((char *)messages_get("Export"));
+	tabs[8] = NULL;
+
+	gadlab[GID_OPTS_HOMEPAGE] = (char *)ami_utf8_easy((char *)messages_get("URL"));
+	gadlab[GID_OPTS_HOMEPAGE_DEFAULT] = (char *)ami_utf8_easy((char *)messages_get("UseDefault"));
+	gadlab[GID_OPTS_HOMEPAGE_CURRENT] = (char *)ami_utf8_easy((char *)messages_get("UseCurrent"));
+	gadlab[GID_OPTS_HIDEADS] = (char *)ami_utf8_easy((char *)messages_get("BlockAds"));
+	gadlab[GID_OPTS_FROMLOCALE] = (char *)ami_utf8_easy((char *)messages_get("FromLocale"));
+	gadlab[GID_OPTS_REFERRAL] = (char *)ami_utf8_easy((char *)messages_get("SendReferer"));
+	gadlab[GID_OPTS_FASTSCROLL] = (char *)ami_utf8_easy((char *)messages_get("FastScrolling"));
+	gadlab[GID_OPTS_SAVE] = (char *)ami_utf8_easy((char *)messages_get("Save"));
+	gadlab[GID_OPTS_USE] = (char *)ami_utf8_easy((char *)messages_get("Use"));
+	gadlab[GID_OPTS_CANCEL] = (char *)ami_utf8_easy((char *)messages_get("Cancel"));
+
+}
+
 void ami_gui_opts_open(void)
 {
 	if(!gow)
 	{
+		ami_gui_opts_setup();
+
 		gow = AllocVec(sizeof(struct ami_gui_opts_window),MEMF_CLEAR | MEMF_PRIVATE);
 
 		gow->objects[OID_MAIN] = WindowObject,
@@ -57,18 +96,190 @@ void ami_gui_opts_open(void)
 			WINDOW_Position, WPOS_CENTERSCREEN,
 			WA_IDCMP,IDCMP_GADGETUP,
 			WINDOW_ParentGroup, gow->gadgets[GID_OPTS_MAIN] = VGroupObject,
-				LAYOUT_AddChild, gow->gadgets[GID_OPTS_CANCEL] = ButtonObject,
-					GA_ID,GID_OPTS_CANCEL,
-					GA_Text,messages_get("Cancel"),
-					GA_RelVerify,TRUE,
-				ButtonEnd,
-			EndGroup,
+				LAYOUT_AddChild, ClickTabObject,
+					GA_RelVerify, TRUE,
+					GA_Text, tabs,
+					CLICKTAB_PageGroup, PageObject,
+						/*
+						** General
+						*/
+						PAGE_Add, LayoutObject,
+							LAYOUT_AddChild,VGroupObject,
+								LAYOUT_AddChild,VGroupObject,
+									LAYOUT_SpaceOuter, TRUE,
+									LAYOUT_BevelStyle, BVS_GROUP, 
+									LAYOUT_Label, messages_get("HomePage"),
+									LAYOUT_AddChild, gow->gadgets[GID_OPTS_HOMEPAGE] = StringObject,
+										GA_ID, GID_OPTS_HOMEPAGE,
+										GA_RelVerify, TRUE,
+										STRINGA_TextVal, option_homepage_url,
+										STRINGA_BufferPos,0,
+									StringEnd,
+									CHILD_Label, LabelObject,
+										LABEL_Text, gadlab[GID_OPTS_HOMEPAGE],
+									LabelEnd,
+									LAYOUT_AddChild,HGroupObject,
+										LAYOUT_AddChild, gow->gadgets[GID_OPTS_HOMEPAGE_DEFAULT] = ButtonObject,
+											GA_ID,GID_OPTS_HOMEPAGE_DEFAULT,
+											GA_Text,gadlab[GID_OPTS_HOMEPAGE_DEFAULT],
+											GA_RelVerify,TRUE,
+										ButtonEnd,
+										LAYOUT_AddChild, gow->gadgets[GID_OPTS_HOMEPAGE_CURRENT] = ButtonObject,
+											GA_ID,GID_OPTS_HOMEPAGE_CURRENT,
+											GA_Text,gadlab[GID_OPTS_HOMEPAGE_CURRENT],
+											GA_RelVerify,TRUE,
+										ButtonEnd,
+									LayoutEnd,
+								LayoutEnd, //homepage
+								LAYOUT_AddChild,HGroupObject,
+									LAYOUT_AddChild, VGroupObject,
+										LAYOUT_SpaceOuter, TRUE,
+										LAYOUT_BevelStyle, BVS_GROUP, 
+										LAYOUT_Label, messages_get("ContentBlocking"),
+		                				LAYOUT_AddChild, gow->gadgets[GID_OPTS_HIDEADS] = CheckBoxObject,
+      	              						GA_ID, GID_OPTS_HIDEADS,
+         	           						GA_RelVerify, TRUE,
+         	           						GA_Text, gadlab[GID_OPTS_HIDEADS],
+  				      		            	GA_Selected, option_block_ads,
+            	    					CheckBoxEnd,
+									LayoutEnd, // content blocking
+									LAYOUT_AddChild,VGroupObject,
+										LAYOUT_SpaceOuter, TRUE,
+										LAYOUT_BevelStyle, BVS_GROUP, 
+										LAYOUT_Label, messages_get("ContentLanguage"),
+										LAYOUT_AddChild, gow->gadgets[GID_OPTS_CONTENTLANG] = StringObject,
+											GA_ID, GID_OPTS_CONTENTLANG,
+											GA_RelVerify, TRUE,
+											STRINGA_TextVal, option_accept_language,
+											STRINGA_BufferPos,0,
+										StringEnd,
+										LAYOUT_AddChild, gow->gadgets[GID_OPTS_FROMLOCALE] = ButtonObject,
+											GA_ID,GID_OPTS_FROMLOCALE,
+											GA_Text,gadlab[GID_OPTS_FROMLOCALE],
+											GA_RelVerify,TRUE,
+										ButtonEnd,
+									//	CHILD_WeightedWidth, 0,
+									LayoutEnd, // content language
+								LayoutEnd, // content
+								LAYOUT_AddChild,VGroupObject,
+									LAYOUT_SpaceOuter, TRUE,
+									LAYOUT_BevelStyle, BVS_GROUP, 
+									LAYOUT_Label, messages_get("Miscellaneous"),
+		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_REFERRAL] = CheckBoxObject,
+      	              					GA_ID, GID_OPTS_REFERRAL,
+         	           					GA_RelVerify, TRUE,
+         	           					GA_Text, gadlab[GID_OPTS_REFERRAL],
+  				      		            GA_Selected, option_send_referer,
+            	    				CheckBoxEnd,
+		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_FASTSCROLL] = CheckBoxObject,
+      	              					GA_ID, GID_OPTS_FASTSCROLL,
+         	           					GA_RelVerify, TRUE,
+         	           					GA_Text, gadlab[GID_OPTS_FASTSCROLL],
+  				      		            GA_Selected, option_faster_scroll,
+            	    				CheckBoxEnd,
+								LayoutEnd, // misc
+							LayoutEnd, // page vgroup
+						PageEnd, // pageadd
+						/*
+						** Display
+						*/
+						PAGE_Add, LayoutObject,
+							LAYOUT_AddChild,VGroupObject,
+							LayoutEnd, // page vgroup
+						PageEnd, // pageadd
+						/*
+						** Network
+						*/
+						PAGE_Add, LayoutObject,
+							LAYOUT_AddChild,VGroupObject,
+							LayoutEnd, // page vgroup
+						PageEnd, // page object
+						/*
+						** Rendering
+						*/
+						PAGE_Add, LayoutObject,
+							LAYOUT_AddChild,VGroupObject,
+							LayoutEnd, // page vgroup
+						PageEnd, // page object
+						/*
+						** Fonts
+						*/
+						PAGE_Add, LayoutObject,
+							LAYOUT_AddChild,VGroupObject,
+							LayoutEnd, // page vgroup
+						PageEnd, // page object
+						/*
+						** Cache
+						*/
+						PAGE_Add, LayoutObject,
+							LAYOUT_AddChild,VGroupObject,
+							LayoutEnd, // page vgroup
+						PageEnd, // page object
+						/*
+						** Advanced
+						*/
+						PAGE_Add, LayoutObject,
+							LAYOUT_AddChild,VGroupObject,
+							LayoutEnd, // page vgroup
+						PageEnd, // page object
+						/*
+						** Export
+						*/
+						PAGE_Add, LayoutObject,
+							LAYOUT_AddChild,VGroupObject,
+							LayoutEnd, // page vgroup
+						PageEnd, // page object
+					End, // pagegroup
+				ClickTabEnd,
+                LAYOUT_AddChild, HGroupObject,
+					LAYOUT_AddChild, gow->gadgets[GID_OPTS_SAVE] = ButtonObject,
+						GA_ID,GID_OPTS_SAVE,
+						GA_Text,gadlab[GID_OPTS_SAVE],
+						GA_RelVerify,TRUE,
+					ButtonEnd,
+					LAYOUT_AddChild, gow->gadgets[GID_OPTS_USE] = ButtonObject,
+						GA_ID,GID_OPTS_USE,
+						GA_Text,gadlab[GID_OPTS_USE],
+						GA_RelVerify,TRUE,
+					ButtonEnd,
+					LAYOUT_AddChild, gow->gadgets[GID_OPTS_CANCEL] = ButtonObject,
+						GA_ID,GID_OPTS_CANCEL,
+						GA_Text,gadlab[GID_OPTS_CANCEL],
+						GA_RelVerify,TRUE,
+					ButtonEnd,
+				EndGroup, // save/use/cancel
+			EndGroup, // main
 		EndWindow;
 
 		gow->win = (struct Window *)RA_OpenWindow(gow->objects[OID_MAIN]);
 		gow->node = AddObject(window_list,AMINS_GUIOPTSWINDOW);
 		gow->node->objstruct = gow;
 	}
+}
+
+void ami_gui_opts_use(void)
+{
+	ULONG *data;
+
+	GetAttr(STRINGA_TextVal,gow->gadgets[GID_OPTS_HOMEPAGE],(ULONG *)&data);
+	if(option_homepage_url) free(option_homepage_url);
+	option_homepage_url = strdup(data);
+
+	GetAttr(STRINGA_TextVal,gow->gadgets[GID_OPTS_CONTENTLANG],(ULONG *)&data);
+	if(option_accept_language) free(option_accept_language);
+	option_accept_language = strdup(data);
+
+	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_HIDEADS],(ULONG *)&data);
+	if(data) option_block_ads = true;
+		else option_block_ads = false;
+
+	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_REFERRAL],(ULONG *)&data);
+	if(data) option_send_referer = true;
+		else option_send_referer = false;
+
+	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_FASTSCROLL],(ULONG *)&data);
+	if(data) option_faster_scroll = true;
+		else option_faster_scroll = false;
 }
 
 void ami_gui_opts_close(void)
@@ -91,6 +302,17 @@ BOOL ami_gui_opts_event(void)
 			case WMHI_GADGETUP:
 				switch(result & WMHI_GADGETMASK)
 				{
+					case GID_OPTS_SAVE:
+						ami_gui_opts_use();
+						options_write("PROGDIR:Resources/Options");
+						ami_gui_opts_close();
+						return TRUE;
+					break;
+
+					case GID_OPTS_USE:
+						ami_gui_opts_use();
+						// fall through
+
 					case GID_OPTS_CANCEL:
 						ami_gui_opts_close();
 						return TRUE;
