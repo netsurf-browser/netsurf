@@ -38,6 +38,8 @@
 #include <proto/radiobutton.h>
 #include <proto/getscreenmode.h>
 #include <proto/getfile.h>
+#include <proto/chooser.h>
+#include <proto/integer.h>
 #include <classes/window.h>
 #include <images/label.h>
 #include <gadgets/button.h>
@@ -47,6 +49,8 @@
 #include <gadgets/radiobutton.h>
 #include <gadgets/getscreenmode.h>
 #include <gadgets/getfile.h>
+#include <gadgets/chooser.h>
+#include <gadgets/integer.h>
 #include <reaction/reaction.h>
 #include <reaction/reaction_macros.h>
 
@@ -54,6 +58,7 @@ static struct ami_gui_opts_window *gow = NULL;
 
 CONST_STRPTR tabs[9];
 CONST_STRPTR screenopts[4];
+CONST_STRPTR proxyopts[5];
 CONST_STRPTR gadlab[GID_OPTS_LAST];
 
 void ami_gui_opts_setup(void)
@@ -73,6 +78,12 @@ void ami_gui_opts_setup(void)
 	screenopts[2] = (char *)ami_utf8_easy((char *)messages_get("NamedScreen"));
 	screenopts[3] = NULL;
 
+	proxyopts[0] = (char *)ami_utf8_easy((char *)messages_get("None"));
+	proxyopts[1] = (char *)ami_utf8_easy((char *)messages_get("Simple"));
+	proxyopts[2] = (char *)ami_utf8_easy((char *)messages_get("Basic"));
+	proxyopts[3] = (char *)ami_utf8_easy((char *)messages_get("NTLM"));
+	proxyopts[4] = NULL;
+
 	gadlab[GID_OPTS_HOMEPAGE] = (char *)ami_utf8_easy((char *)messages_get("URL"));
 	gadlab[GID_OPTS_HOMEPAGE_DEFAULT] = (char *)ami_utf8_easy((char *)messages_get("UseDefault"));
 	gadlab[GID_OPTS_HOMEPAGE_CURRENT] = (char *)ami_utf8_easy((char *)messages_get("UseCurrent"));
@@ -83,6 +94,13 @@ void ami_gui_opts_setup(void)
 	gadlab[GID_OPTS_SCREEN] = (char *)ami_utf8_easy((char *)messages_get("Screen"));
 	gadlab[GID_OPTS_PTRTRUE] = (char *)ami_utf8_easy((char *)messages_get("TrueColourPtrs"));
 	gadlab[GID_OPTS_PTROS] = (char *)ami_utf8_easy((char *)messages_get("OSPointers"));
+	gadlab[GID_OPTS_PROXY] = (char *)ami_utf8_easy((char *)messages_get("Type"));
+	gadlab[GID_OPTS_PROXY_HOST] = (char *)ami_utf8_easy((char *)messages_get("Host"));
+	gadlab[GID_OPTS_PROXY_USER] = (char *)ami_utf8_easy((char *)messages_get("Username"));
+	gadlab[GID_OPTS_PROXY_PASS] = (char *)ami_utf8_easy((char *)messages_get("Password"));
+	gadlab[GID_OPTS_FETCHMAX] = (char *)ami_utf8_easy((char *)messages_get("FetchesMax"));
+	gadlab[GID_OPTS_FETCHHOST] = (char *)ami_utf8_easy((char *)messages_get("FetchesPerHost"));
+	gadlab[GID_OPTS_FETCHCACHE] = (char *)ami_utf8_easy((char *)messages_get("FetchesCached"));
 	gadlab[GID_OPTS_SAVE] = (char *)ami_utf8_easy((char *)messages_get("Save"));
 	gadlab[GID_OPTS_USE] = (char *)ami_utf8_easy((char *)messages_get("Use"));
 	gadlab[GID_OPTS_CANCEL] = (char *)ami_utf8_easy((char *)messages_get("Cancel"));
@@ -94,7 +112,9 @@ void ami_gui_opts_open(void)
 {
 	uint16 screenoptsselected;
 	ULONG screenmodeid = 0;
+	ULONG proxytype = 0;
 	BOOL screenmodedisabled = FALSE, screennamedisabled = FALSE;
+	BOOL proxyhostdisabled = TRUE, proxyauthdisabled = TRUE;
 
 	if(option_use_pubscreen && option_use_pubscreen[0] != '\0')
 	{
@@ -119,6 +139,20 @@ void ami_gui_opts_open(void)
 	if((option_modeid) && (strncmp(option_modeid,"0x",2) == 0))
 	{
 		screenmodeid = strtoul(option_modeid,NULL,0);
+	}
+
+	if(option_http_proxy)
+	{
+		proxytype = option_http_proxy_auth + 1;
+		switch(option_http_proxy_auth)
+		{
+			case OPTION_HTTP_PROXY_AUTH_BASIC:
+			case OPTION_HTTP_PROXY_AUTH_NTLM:
+				proxyauthdisabled = FALSE;
+			case OPTION_HTTP_PROXY_AUTH_NONE:
+				proxyhostdisabled = FALSE;
+			break;
+		}
 	}
 
 	if(!gow)
@@ -307,6 +341,110 @@ void ami_gui_opts_open(void)
 						*/
 						PAGE_Add, LayoutObject,
 							LAYOUT_AddChild,VGroupObject,
+								LAYOUT_AddChild,VGroupObject,
+									LAYOUT_SpaceOuter, TRUE,
+									LAYOUT_BevelStyle, BVS_GROUP, 
+									LAYOUT_Label, messages_get("HTTPProxy"),
+									LAYOUT_AddChild, gow->gadgets[GID_OPTS_PROXY] = ChooserObject,
+										GA_ID, GID_OPTS_PROXY,
+										GA_RelVerify, TRUE,
+										CHOOSER_PopUp, TRUE,
+										CHOOSER_LabelArray, proxyopts,
+										CHOOSER_Selected, proxytype,
+									ChooserEnd,
+									CHILD_Label, LabelObject,
+										LABEL_Text, gadlab[GID_OPTS_PROXY],
+									LabelEnd,
+									LAYOUT_AddChild,HGroupObject,
+										LAYOUT_AddChild, gow->gadgets[GID_OPTS_PROXY_HOST] = StringObject,
+											GA_ID, GID_OPTS_PROXY_HOST,
+											GA_RelVerify, TRUE,
+											GA_Disabled, proxyhostdisabled,
+											STRINGA_TextVal, option_http_proxy_host,
+											STRINGA_BufferPos,0,
+										StringEnd,
+										LAYOUT_AddChild, gow->gadgets[GID_OPTS_PROXY_PORT] = IntegerObject,
+											GA_ID, GID_OPTS_PROXY_PORT,
+											GA_RelVerify, TRUE,
+											GA_Disabled, proxyhostdisabled,
+											INTEGER_Number, option_http_proxy_port,
+											INTEGER_Minimum, 1,
+											INTEGER_Maximum, 65535,
+											INTEGER_Arrows, FALSE,
+										IntegerEnd,
+										CHILD_WeightedWidth, 0,
+										CHILD_Label, LabelObject,
+											LABEL_Text, ":",
+										LabelEnd,
+									LayoutEnd, //host:port group
+									CHILD_WeightedHeight, 0,
+									CHILD_Label, LabelObject,
+										LABEL_Text, gadlab[GID_OPTS_PROXY_HOST],
+									LabelEnd,
+									LAYOUT_AddChild, gow->gadgets[GID_OPTS_PROXY_USER] = StringObject,
+										GA_ID, GID_OPTS_PROXY_USER,
+										GA_RelVerify, TRUE,
+										GA_Disabled, proxyauthdisabled,
+										STRINGA_TextVal, option_http_proxy_auth_user,
+										STRINGA_BufferPos,0,
+									StringEnd,
+									CHILD_Label, LabelObject,
+										LABEL_Text, gadlab[GID_OPTS_PROXY_USER],
+									LabelEnd,
+									LAYOUT_AddChild, gow->gadgets[GID_OPTS_PROXY_PASS] = StringObject,
+										GA_ID, GID_OPTS_PROXY_PASS,
+										GA_RelVerify, TRUE,
+										GA_Disabled, proxyauthdisabled,
+										STRINGA_TextVal, option_http_proxy_auth_pass,
+										STRINGA_BufferPos,0,
+									StringEnd,
+									CHILD_Label, LabelObject,
+										LABEL_Text, gadlab[GID_OPTS_PROXY_PASS],
+									LabelEnd,
+								LayoutEnd, // proxy
+								CHILD_WeightedHeight, 0,
+								LAYOUT_AddChild,VGroupObject,
+									LAYOUT_SpaceOuter, TRUE,
+									LAYOUT_BevelStyle, BVS_GROUP, 
+									LAYOUT_Label, messages_get("Fetching"),
+									LAYOUT_AddChild, gow->gadgets[GID_OPTS_FETCHMAX] = IntegerObject,
+										GA_ID, GID_OPTS_FETCHMAX,
+										GA_RelVerify, TRUE,
+										INTEGER_Number, option_max_fetchers,
+										INTEGER_Minimum, 1,
+										INTEGER_Maximum, 99,
+										INTEGER_Arrows, TRUE,
+									IntegerEnd,
+									CHILD_WeightedWidth, 0,
+									CHILD_Label, LabelObject,
+										LABEL_Text, gadlab[GID_OPTS_FETCHMAX],
+									LabelEnd,
+									LAYOUT_AddChild, gow->gadgets[GID_OPTS_FETCHHOST] = IntegerObject,
+										GA_ID, GID_OPTS_FETCHHOST,
+										GA_RelVerify, TRUE,
+										INTEGER_Number, option_max_fetchers_per_host,
+										INTEGER_Minimum, 1,
+										INTEGER_Maximum, 99,
+										INTEGER_Arrows, TRUE,
+									IntegerEnd,
+									CHILD_WeightedWidth, 0,
+									CHILD_Label, LabelObject,
+										LABEL_Text, gadlab[GID_OPTS_FETCHHOST],
+									LabelEnd,
+									LAYOUT_AddChild, gow->gadgets[GID_OPTS_FETCHCACHE] = IntegerObject,
+										GA_ID, GID_OPTS_FETCHCACHE,
+										GA_RelVerify, TRUE,
+										INTEGER_Number, option_max_cached_fetch_handles,
+										INTEGER_Minimum, 1,
+										INTEGER_Maximum, 99,
+										INTEGER_Arrows, TRUE,
+									IntegerEnd,
+									CHILD_WeightedWidth, 0,
+									CHILD_Label, LabelObject,
+										LABEL_Text, gadlab[GID_OPTS_FETCHCACHE],
+									LabelEnd,
+								LayoutEnd,
+								CHILD_WeightedHeight, 0,
 							LayoutEnd, // page vgroup
 						PageEnd, // page object
 						/*
@@ -432,6 +570,31 @@ void ami_gui_opts_use(void)
 	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_PTROS],(ULONG *)&data);
 	if(data) option_use_os_pointers = true;
 		else option_use_os_pointers = false;
+
+	GetAttr(CHOOSER_Selected,gow->gadgets[GID_OPTS_PROXY],(ULONG *)&data);
+	if(data)
+	{
+		option_http_proxy = true;
+		option_http_proxy_auth = data - 1;
+	}
+	else
+	{
+		option_http_proxy = false;
+	}
+
+	GetAttr(STRINGA_TextVal,gow->gadgets[GID_OPTS_PROXY_HOST],(ULONG *)&data);
+	if(option_http_proxy_host) free(option_http_proxy_host);
+	option_http_proxy_host = (char *)strdup((char *)data);
+
+	GetAttr(INTEGER_Number,gow->gadgets[GID_OPTS_PROXY_PORT],(ULONG *)&option_http_proxy_port);
+
+	GetAttr(STRINGA_TextVal,gow->gadgets[GID_OPTS_PROXY_USER],(ULONG *)&data);
+	if(option_http_proxy_auth_user) free(option_http_proxy_auth_user);
+	option_http_proxy_auth_user = (char *)strdup((char *)data);
+
+	GetAttr(STRINGA_TextVal,gow->gadgets[GID_OPTS_PROXY_PASS],(ULONG *)&data);
+	if(option_http_proxy_auth_pass) free(option_http_proxy_auth_pass);
+	option_http_proxy_auth_pass = (char *)strdup((char *)data);
 }
 
 void ami_gui_opts_close(void)
@@ -444,7 +607,7 @@ void ami_gui_opts_close(void)
 BOOL ami_gui_opts_event(void)
 {
 	/* return TRUE if window destroyed */
-	ULONG result,data;
+	ULONG result,data = 0;
 	uint16 code;
 	STRPTR text;
 
@@ -527,6 +690,48 @@ BOOL ami_gui_opts_event(void)
 					case GID_OPTS_THEME:
 						IDoMethod((Object *)gow->gadgets[GID_OPTS_THEME],
 						GFILE_REQUEST,gow->win);
+					break;
+
+					case GID_OPTS_PROXY:
+						GetAttr(CHOOSER_Selected,gow->gadgets[GID_OPTS_PROXY],(ULONG *)&data);
+						switch(data)
+						{
+							case 0:
+								RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_PROXY_HOST],
+								gow->win,NULL, GA_Disabled, TRUE, TAG_DONE);
+								RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_PROXY_PORT],
+								gow->win,NULL, GA_Disabled, TRUE, TAG_DONE);
+
+								RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_PROXY_USER],
+								gow->win,NULL, GA_Disabled, TRUE, TAG_DONE);
+								RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_PROXY_PASS],
+								gow->win,NULL, GA_Disabled, TRUE, TAG_DONE);
+							break;
+							case 1:
+								RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_PROXY_HOST],
+								gow->win,NULL, GA_Disabled, FALSE, TAG_DONE);
+								RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_PROXY_PORT],
+								gow->win,NULL, GA_Disabled, FALSE, TAG_DONE);
+
+								RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_PROXY_USER],
+								gow->win,NULL, GA_Disabled, TRUE, TAG_DONE);
+								RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_PROXY_PASS],
+								gow->win,NULL, GA_Disabled, TRUE, TAG_DONE);
+							break;
+
+							case 2:
+							case 3:
+								RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_PROXY_HOST],
+								gow->win,NULL, GA_Disabled, FALSE, TAG_DONE);
+								RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_PROXY_PORT],
+								gow->win,NULL, GA_Disabled, FALSE, TAG_DONE);
+
+								RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_PROXY_USER],
+								gow->win,NULL, GA_Disabled, FALSE, TAG_DONE);
+								RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_PROXY_PASS],
+								gow->win,NULL, GA_Disabled, FALSE, TAG_DONE);
+							break;
+						}
 					break;
 				}
 			break;
