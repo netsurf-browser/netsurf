@@ -20,6 +20,7 @@
 #include <string.h>
 #include <proto/exec.h>
 #include <proto/intuition.h>
+#include <proto/graphics.h>
 
 #include "amiga/object.h"
 #include "amiga/gui.h"
@@ -59,6 +60,7 @@ static struct ami_gui_opts_window *gow = NULL;
 CONST_STRPTR tabs[9];
 CONST_STRPTR screenopts[4];
 CONST_STRPTR proxyopts[5];
+CONST_STRPTR nativebmopts[3];
 CONST_STRPTR gadlab[GID_OPTS_LAST];
 
 void ami_gui_opts_setup(void)
@@ -84,6 +86,11 @@ void ami_gui_opts_setup(void)
 	proxyopts[3] = (char *)ami_utf8_easy((char *)messages_get("NTLM"));
 	proxyopts[4] = NULL;
 
+	nativebmopts[0] = (char *)ami_utf8_easy((char *)messages_get("None"));
+	nativebmopts[1] = (char *)ami_utf8_easy((char *)messages_get("Scaled"));
+	nativebmopts[2] = (char *)ami_utf8_easy((char *)messages_get("All"));
+	nativebmopts[3] = NULL;
+
 	gadlab[GID_OPTS_HOMEPAGE] = (char *)ami_utf8_easy((char *)messages_get("URL"));
 	gadlab[GID_OPTS_HOMEPAGE_DEFAULT] = (char *)ami_utf8_easy((char *)messages_get("UseDefault"));
 	gadlab[GID_OPTS_HOMEPAGE_CURRENT] = (char *)ami_utf8_easy((char *)messages_get("UseCurrent"));
@@ -101,6 +108,10 @@ void ami_gui_opts_setup(void)
 	gadlab[GID_OPTS_FETCHMAX] = (char *)ami_utf8_easy((char *)messages_get("FetchesMax"));
 	gadlab[GID_OPTS_FETCHHOST] = (char *)ami_utf8_easy((char *)messages_get("FetchesPerHost"));
 	gadlab[GID_OPTS_FETCHCACHE] = (char *)ami_utf8_easy((char *)messages_get("FetchesCached"));
+	gadlab[GID_OPTS_NATIVEBM] = (char *)ami_utf8_easy((char *)messages_get("CacheNative"));
+	gadlab[GID_OPTS_SCALEQ] = (char *)ami_utf8_easy((char *)messages_get("ScaleQuality"));
+	gadlab[GID_OPTS_ANIMSPEED] = (char *)ami_utf8_easy((char *)messages_get("AnimSpeed"));
+	gadlab[GID_OPTS_ANIMDISABLE] = (char *)ami_utf8_easy((char *)messages_get("AnimDisable"));
 	gadlab[GID_OPTS_SAVE] = (char *)ami_utf8_easy((char *)messages_get("Save"));
 	gadlab[GID_OPTS_USE] = (char *)ami_utf8_easy((char *)messages_get("Use"));
 	gadlab[GID_OPTS_CANCEL] = (char *)ami_utf8_easy((char *)messages_get("Cancel"));
@@ -115,6 +126,8 @@ void ami_gui_opts_open(void)
 	ULONG proxytype = 0;
 	BOOL screenmodedisabled = FALSE, screennamedisabled = FALSE;
 	BOOL proxyhostdisabled = TRUE, proxyauthdisabled = TRUE;
+	BOOL disableanims;
+	char animspeed[10];
 
 	if(option_use_pubscreen && option_use_pubscreen[0] != '\0')
 	{
@@ -154,6 +167,11 @@ void ami_gui_opts_open(void)
 			break;
 		}
 	}
+
+	sprintf(animspeed,"%.2f",(float)(option_minimum_gif_delay/100.0));
+
+	if(option_animate_images) disableanims = FALSE;
+		else disableanims = TRUE;
 
 	if(!gow)
 	{
@@ -452,7 +470,52 @@ void ami_gui_opts_open(void)
 						*/
 						PAGE_Add, LayoutObject,
 							LAYOUT_AddChild,VGroupObject,
+								LAYOUT_AddChild,VGroupObject,
+									LAYOUT_SpaceOuter, TRUE,
+									LAYOUT_BevelStyle, BVS_GROUP, 
+									LAYOUT_Label, messages_get("Images"),
+									LAYOUT_AddChild, gow->gadgets[GID_OPTS_NATIVEBM] = ChooserObject,
+										GA_ID, GID_OPTS_NATIVEBM,
+										GA_RelVerify, TRUE,
+										CHOOSER_PopUp, TRUE,
+										CHOOSER_LabelArray, nativebmopts,
+										CHOOSER_Selected, option_cache_bitmaps,
+									ChooserEnd,
+									CHILD_Label, LabelObject,
+										LABEL_Text, gadlab[GID_OPTS_NATIVEBM],
+									LabelEnd,
+		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_SCALEQ] = CheckBoxObject,
+      	              					GA_ID, GID_OPTS_SCALEQ,
+         	           					GA_RelVerify, TRUE,
+         	           					GA_Text, gadlab[GID_OPTS_SCALEQ],
+  				      		            GA_Selected, option_scale_quality,
+            	    				CheckBoxEnd,
+								LayoutEnd, // images
+								CHILD_WeightedHeight, 0,
+								LAYOUT_AddChild,VGroupObject,
+									LAYOUT_SpaceOuter, TRUE,
+									LAYOUT_BevelStyle, BVS_GROUP, 
+									LAYOUT_Label, messages_get("Animations"),
+									LAYOUT_AddChild, gow->gadgets[GID_OPTS_ANIMSPEED] = StringObject,
+										GA_ID, GID_OPTS_ANIMSPEED,
+										GA_RelVerify, TRUE,
+										STRINGA_HookType, SHK_FLOAT,
+										STRINGA_TextVal, animspeed,
+										STRINGA_BufferPos,0,
+									StringEnd,
+									CHILD_Label, LabelObject,
+										LABEL_Text, gadlab[GID_OPTS_ANIMSPEED],
+									LabelEnd,
+		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_ANIMDISABLE] = CheckBoxObject,
+      	              					GA_ID, GID_OPTS_ANIMDISABLE,
+         	           					GA_RelVerify, TRUE,
+         	           					GA_Text, gadlab[GID_OPTS_ANIMDISABLE],
+  				      		            GA_Selected, disableanims,
+            	    				CheckBoxEnd,
+								LayoutEnd, //animations
+								CHILD_WeightedHeight, 0,
 							LayoutEnd, // page vgroup
+							CHILD_WeightedHeight, 0,
 						PageEnd, // page object
 						/*
 						** Fonts
@@ -513,6 +576,7 @@ void ami_gui_opts_open(void)
 void ami_gui_opts_use(void)
 {
 	ULONG data;
+	float animspeed;
 
 	GetAttr(STRINGA_TextVal,gow->gadgets[GID_OPTS_HOMEPAGE],(ULONG *)&data);
 	if(option_homepage_url) free(option_homepage_url);
@@ -595,6 +659,20 @@ void ami_gui_opts_use(void)
 	GetAttr(STRINGA_TextVal,gow->gadgets[GID_OPTS_PROXY_PASS],(ULONG *)&data);
 	if(option_http_proxy_auth_pass) free(option_http_proxy_auth_pass);
 	option_http_proxy_auth_pass = (char *)strdup((char *)data);
+
+	GetAttr(CHOOSER_Selected,gow->gadgets[GID_OPTS_NATIVEBM],(ULONG *)&option_cache_bitmaps);
+
+	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_SCALEQ],(ULONG *)&data);
+	if(data) option_scale_quality = true;
+		else option_scale_quality = false;
+
+	GetAttr(STRINGA_TextVal,gow->gadgets[GID_OPTS_ANIMSPEED],(ULONG *)&data);
+	animspeed = strtof(data,NULL);
+	option_minimum_gif_delay = (int)(animspeed * 100);
+
+	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_ANIMDISABLE],(ULONG *)&data);
+	if(data) option_animate_images = false;
+		else option_animate_images = true;
 }
 
 void ami_gui_opts_close(void)

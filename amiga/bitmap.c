@@ -359,12 +359,15 @@ struct BitMap *ami_getcachenativebm(struct bitmap *bitmap,int width,int height,s
 		if(GfxBase->lib_Version >= 53) // AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)
 		{
 			uint32 comptype = COMPOSITE_Src;
+			uint32 flags = COMPFLAG_IgnoreDestAlpha;
+
 			if(!bitmap->opaque) comptype = COMPOSITE_Src_Over_Dest;
+			if(option_scale_quality) flags |= COMPFLAG_SrcFilter;
 
 			CompositeTags(comptype,tbm,scaledbm,
 						COMPTAG_ScaleX,COMP_FLOAT_TO_FIX(width/bitmap->width),
 						COMPTAG_ScaleY,COMP_FLOAT_TO_FIX(height/bitmap->height),
-						COMPTAG_Flags,COMPFLAG_IgnoreDestAlpha,
+						COMPTAG_Flags, flags,
 						COMPTAG_DestX,0,
 						COMPTAG_DestY,0,
 						COMPTAG_DestWidth,width,
@@ -392,6 +395,7 @@ struct BitMap *ami_getcachenativebm(struct bitmap *bitmap,int width,int height,s
 			bsa.bsa_SrcBitMap = tbm;
 			bsa.bsa_DestBitMap = scaledbm;
 			bsa.bsa_Flags = 0;
+			if(option_scale_quality) bsa.bsa_Flags = BSAF_BILINEAR;
 
 			BitMapScale(&bsa);
 		}
