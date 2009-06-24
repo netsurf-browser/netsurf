@@ -20,7 +20,7 @@
 #include <string.h>
 #include <proto/exec.h>
 #include <proto/intuition.h>
-#include <proto/graphics.h>
+#include <proto/utility.h>
 
 #include "amiga/object.h"
 #include "amiga/gui.h"
@@ -41,6 +41,7 @@
 #include <proto/getfile.h>
 #include <proto/chooser.h>
 #include <proto/integer.h>
+#include <proto/getfont.h>
 #include <classes/window.h>
 #include <images/label.h>
 #include <gadgets/button.h>
@@ -52,6 +53,7 @@
 #include <gadgets/getfile.h>
 #include <gadgets/chooser.h>
 #include <gadgets/integer.h>
+#include <gadgets/getfont.h>
 #include <reaction/reaction.h>
 #include <reaction/reaction_macros.h>
 
@@ -61,6 +63,7 @@ CONST_STRPTR tabs[9];
 CONST_STRPTR screenopts[4];
 CONST_STRPTR proxyopts[5];
 CONST_STRPTR nativebmopts[3];
+CONST_STRPTR fontopts[6];
 CONST_STRPTR gadlab[GID_OPTS_LAST];
 
 void ami_gui_opts_setup(void)
@@ -112,9 +115,25 @@ void ami_gui_opts_setup(void)
 	gadlab[GID_OPTS_SCALEQ] = (char *)ami_utf8_easy((char *)messages_get("ScaleQuality"));
 	gadlab[GID_OPTS_ANIMSPEED] = (char *)ami_utf8_easy((char *)messages_get("AnimSpeed"));
 	gadlab[GID_OPTS_ANIMDISABLE] = (char *)ami_utf8_easy((char *)messages_get("AnimDisable"));
+	gadlab[GID_OPTS_FONT_SANS] = (char *)ami_utf8_easy((char *)messages_get("FontSans"));
+	gadlab[GID_OPTS_FONT_SERIF] = (char *)ami_utf8_easy((char *)messages_get("FontSerif"));
+	gadlab[GID_OPTS_FONT_MONO] = (char *)ami_utf8_easy((char *)messages_get("FontMono"));
+	gadlab[GID_OPTS_FONT_CURSIVE] = (char *)ami_utf8_easy((char *)messages_get("FontCursive"));
+	gadlab[GID_OPTS_FONT_FANTASY] = (char *)ami_utf8_easy((char *)messages_get("FontFantasy"));
+	gadlab[GID_OPTS_FONT_DEFAULT] = (char *)ami_utf8_easy((char *)messages_get("FontDefault"));
+	gadlab[GID_OPTS_FONT_SIZE] = (char *)ami_utf8_easy((char *)messages_get("FontSize"));
+	gadlab[GID_OPTS_FONT_MINSIZE] = (char *)ami_utf8_easy((char *)messages_get("FontMinSize"));
 	gadlab[GID_OPTS_SAVE] = (char *)ami_utf8_easy((char *)messages_get("Save"));
 	gadlab[GID_OPTS_USE] = (char *)ami_utf8_easy((char *)messages_get("Use"));
 	gadlab[GID_OPTS_CANCEL] = (char *)ami_utf8_easy((char *)messages_get("Cancel"));
+
+
+	fontopts[0] = gadlab[GID_OPTS_FONT_SANS];
+	fontopts[1] = gadlab[GID_OPTS_FONT_SERIF];
+	fontopts[2] = gadlab[GID_OPTS_FONT_MONO];
+	fontopts[3] = gadlab[GID_OPTS_FONT_CURSIVE];
+	fontopts[4] = gadlab[GID_OPTS_FONT_FANTASY];
+	fontopts[5] = NULL;
 
 // reminder to self - need to free all the above strings
 }
@@ -128,6 +147,7 @@ void ami_gui_opts_open(void)
 	BOOL proxyhostdisabled = TRUE, proxyauthdisabled = TRUE;
 	BOOL disableanims;
 	char animspeed[10];
+	struct TextAttr fontsans, fontserif, fontmono, fontcursive, fontfantasy;
 
 	if(option_use_pubscreen && option_use_pubscreen[0] != '\0')
 	{
@@ -172,6 +192,30 @@ void ami_gui_opts_open(void)
 
 	if(option_animate_images) disableanims = FALSE;
 		else disableanims = TRUE;
+
+	fontsans.ta_Name = ASPrintf("%s.font",option_font_sans);
+	fontserif.ta_Name = ASPrintf("%s.font",option_font_serif);
+	fontmono.ta_Name = ASPrintf("%s.font",option_font_mono);
+	fontcursive.ta_Name = ASPrintf("%s.font",option_font_cursive);
+	fontfantasy.ta_Name = ASPrintf("%s.font",option_font_fantasy);
+
+	fontsans.ta_Style = 0;
+	fontserif.ta_Style = 0;
+	fontmono.ta_Style = 0;
+	fontcursive.ta_Style = 0;
+	fontfantasy.ta_Style = 0;
+
+	fontsans.ta_YSize = 0;
+	fontserif.ta_YSize = 0;
+	fontmono.ta_YSize = 0;
+	fontcursive.ta_YSize = 0;
+	fontfantasy.ta_YSize = 0;
+
+	fontsans.ta_Flags = 0;
+	fontserif.ta_Flags = 0;
+	fontmono.ta_Flags = 0;
+	fontcursive.ta_Flags = 0;
+	fontfantasy.ta_Flags = 0;
 
 	if(!gow)
 	{
@@ -229,6 +273,7 @@ void ami_gui_opts_open(void)
 										ButtonEnd,
 									LayoutEnd,
 								LayoutEnd, //homepage
+								CHILD_WeightedHeight, 0,
 								LAYOUT_AddChild,HGroupObject,
 									LAYOUT_AddChild, VGroupObject,
 										LAYOUT_SpaceOuter, TRUE,
@@ -259,6 +304,7 @@ void ami_gui_opts_open(void)
 									//	CHILD_WeightedWidth, 0,
 									LayoutEnd, // content language
 								LayoutEnd, // content
+								CHILD_WeightedHeight, 0,
 								LAYOUT_AddChild,VGroupObject,
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
@@ -276,7 +322,9 @@ void ami_gui_opts_open(void)
   				      		            GA_Selected, option_faster_scroll,
             	    				CheckBoxEnd,
 								LayoutEnd, // misc
+								CHILD_WeightedHeight, 0,
 							LayoutEnd, // page vgroup
+							CHILD_WeightedHeight, 0,
 						PageEnd, // pageadd
 						/*
 						** Display
@@ -349,10 +397,11 @@ void ami_gui_opts_open(void)
             	    				CheckBoxEnd,
 								LayoutEnd, // mouse
 								CHILD_WeightedHeight,0,
-		                		LAYOUT_AddImage, LabelObject,
-         	           				LABEL_Text, messages_get("will not take effect until next time netsurf is launched"),
-            	    			LabelEnd,
+			                	LAYOUT_AddImage, LabelObject,
+    	     	           			LABEL_Text, messages_get("will not take effect until next time netsurf is launched"),
+	            	    		LabelEnd,
 							LayoutEnd, // page vgroup
+							CHILD_WeightedHeight, 0,
 						PageEnd, // pageadd
 						/*
 						** Network
@@ -464,6 +513,7 @@ void ami_gui_opts_open(void)
 								LayoutEnd,
 								CHILD_WeightedHeight, 0,
 							LayoutEnd, // page vgroup
+							CHILD_WeightedHeight, 0,
 						PageEnd, // page object
 						/*
 						** Rendering
@@ -522,7 +572,100 @@ void ami_gui_opts_open(void)
 						*/
 						PAGE_Add, LayoutObject,
 							LAYOUT_AddChild,VGroupObject,
+								LAYOUT_AddChild,VGroupObject,
+									LAYOUT_SpaceOuter, TRUE,
+									LAYOUT_BevelStyle, BVS_GROUP,
+									LAYOUT_Label, messages_get("FontFaces"),
+									LAYOUT_AddChild, gow->gadgets[GID_OPTS_FONT_SANS] = GetFontObject,
+										GA_ID, GID_OPTS_FONT_SANS,
+										GA_RelVerify, TRUE,
+										GETFONT_TextAttr, &fontsans,
+										GETFONT_OTagOnly, TRUE,
+									GetFontEnd,
+									CHILD_Label, LabelObject,
+										LABEL_Text, gadlab[GID_OPTS_FONT_SANS],
+									LabelEnd,
+									LAYOUT_AddChild, gow->gadgets[GID_OPTS_FONT_SERIF] = GetFontObject,
+										GA_ID, GID_OPTS_FONT_SERIF,
+										GA_RelVerify, TRUE,
+										GETFONT_TextAttr, &fontserif,
+										GETFONT_OTagOnly, TRUE,
+									GetFontEnd,
+									CHILD_Label, LabelObject,
+										LABEL_Text, gadlab[GID_OPTS_FONT_SERIF],
+									LabelEnd,
+									LAYOUT_AddChild, gow->gadgets[GID_OPTS_FONT_MONO] = GetFontObject,
+										GA_ID, GID_OPTS_FONT_MONO,
+										GA_RelVerify, TRUE,
+										GETFONT_TextAttr, &fontmono,
+										GETFONT_OTagOnly, TRUE,
+										GETFONT_FixedWidthOnly, TRUE,
+									GetFontEnd,
+									CHILD_Label, LabelObject,
+										LABEL_Text, gadlab[GID_OPTS_FONT_MONO],
+									LabelEnd,
+									LAYOUT_AddChild, gow->gadgets[GID_OPTS_FONT_CURSIVE] = GetFontObject,
+										GA_ID, GID_OPTS_FONT_CURSIVE,
+										GA_RelVerify, TRUE,
+										GETFONT_TextAttr, &fontcursive,
+										GETFONT_OTagOnly, TRUE,
+									GetFontEnd,
+									CHILD_Label, LabelObject,
+										LABEL_Text, gadlab[GID_OPTS_FONT_CURSIVE],
+									LabelEnd,
+									LAYOUT_AddChild, gow->gadgets[GID_OPTS_FONT_FANTASY] = GetFontObject,
+										GA_ID, GID_OPTS_FONT_FANTASY,
+										GA_RelVerify, TRUE,
+										GETFONT_TextAttr, &fontfantasy,
+										GETFONT_OTagOnly, TRUE,
+									GetFontEnd,
+									CHILD_Label, LabelObject,
+										LABEL_Text, gadlab[GID_OPTS_FONT_FANTASY],
+									LabelEnd,
+									LAYOUT_AddChild, gow->gadgets[GID_OPTS_FONT_DEFAULT] = ChooserObject,
+										GA_ID, GID_OPTS_FONT_DEFAULT,
+										GA_RelVerify, TRUE,
+										CHOOSER_PopUp, TRUE,
+										CHOOSER_LabelArray, fontopts,
+										CHOOSER_Selected, option_font_default - CSS_FONT_FAMILY_SANS_SERIF,
+									ChooserEnd,
+									CHILD_Label, LabelObject,
+										LABEL_Text, gadlab[GID_OPTS_FONT_DEFAULT],
+									LabelEnd,
+								LayoutEnd, // font faces
+								CHILD_WeightedHeight, 0,
+								LAYOUT_AddChild,VGroupObject,
+									LAYOUT_SpaceOuter, TRUE,
+									LAYOUT_BevelStyle, BVS_GROUP, 
+									LAYOUT_Label, messages_get("FontSize"),
+									LAYOUT_AddChild, gow->gadgets[GID_OPTS_FONT_SIZE] = IntegerObject,
+										GA_ID, GID_OPTS_FONT_SIZE,
+										GA_RelVerify, TRUE,
+										INTEGER_Number, option_font_size / 10,
+										INTEGER_Minimum, 1,
+										INTEGER_Maximum, 99,
+										INTEGER_Arrows, TRUE,
+									IntegerEnd,
+									CHILD_WeightedWidth, 0,
+									CHILD_Label, LabelObject,
+										LABEL_Text, gadlab[GID_OPTS_FONT_SIZE],
+									LabelEnd,
+									LAYOUT_AddChild, gow->gadgets[GID_OPTS_FONT_MINSIZE] = IntegerObject,
+										GA_ID, GID_OPTS_FONT_MINSIZE,
+										GA_RelVerify, TRUE,
+										INTEGER_Number, option_font_min_size / 10,
+										INTEGER_Minimum, 1,
+										INTEGER_Maximum, 99,
+										INTEGER_Arrows, TRUE,
+									IntegerEnd,
+									CHILD_WeightedWidth, 0,
+									CHILD_Label, LabelObject,
+										LABEL_Text, gadlab[GID_OPTS_FONT_MINSIZE],
+									LabelEnd,
+								LayoutEnd,
+								CHILD_WeightedHeight, 0,
 							LayoutEnd, // page vgroup
+							CHILD_WeightedHeight, 0,
 						PageEnd, // page object
 						/*
 						** Cache
@@ -577,6 +720,8 @@ void ami_gui_opts_use(void)
 {
 	ULONG data;
 	float animspeed;
+	struct TextAttr *tattr;
+	char *dot;
 
 	GetAttr(STRINGA_TextVal,gow->gadgets[GID_OPTS_HOMEPAGE],(ULONG *)&data);
 	if(option_homepage_url) free(option_homepage_url);
@@ -673,6 +818,45 @@ void ami_gui_opts_use(void)
 	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_ANIMDISABLE],(ULONG *)&data);
 	if(data) option_animate_images = false;
 		else option_animate_images = true;
+
+	GetAttr(GETFONT_TextAttr,gow->gadgets[GID_OPTS_FONT_SANS],(ULONG *)&data);
+	tattr = (struct TextAttr *)data;
+	if(option_font_sans) free(option_font_sans);
+	if(dot = strrchr(tattr->ta_Name,'.')) *dot = '\0';
+	option_font_sans = (char *)strdup((char *)tattr->ta_Name);
+
+	GetAttr(GETFONT_TextAttr,gow->gadgets[GID_OPTS_FONT_SERIF],(ULONG *)&data);
+	tattr = (struct TextAttr *)data;
+	if(option_font_serif) free(option_font_serif);
+	if(dot = strrchr(tattr->ta_Name,'.')) *dot = '\0';
+	option_font_serif = (char *)strdup((char *)tattr->ta_Name);
+
+	GetAttr(GETFONT_TextAttr,gow->gadgets[GID_OPTS_FONT_MONO],(ULONG *)&data);
+	tattr = (struct TextAttr *)data;
+	if(option_font_mono) free(option_font_mono);
+	if(dot = strrchr(tattr->ta_Name,'.')) *dot = '\0';
+	option_font_mono = (char *)strdup((char *)tattr->ta_Name);
+
+	GetAttr(GETFONT_TextAttr,gow->gadgets[GID_OPTS_FONT_CURSIVE],(ULONG *)&data);
+	tattr = (struct TextAttr *)data;
+	if(option_font_cursive) free(option_font_cursive);
+	if(dot = strrchr(tattr->ta_Name,'.')) *dot = '\0';
+	option_font_cursive = (char *)strdup((char *)tattr->ta_Name);
+
+	GetAttr(GETFONT_TextAttr,gow->gadgets[GID_OPTS_FONT_FANTASY],(ULONG *)&data);
+	tattr = (struct TextAttr *)data;
+	if(option_font_fantasy) free(option_font_fantasy);
+	if(dot = strrchr(tattr->ta_Name,'.')) *dot = '\0';
+	option_font_fantasy = (char *)strdup((char *)tattr->ta_Name);
+
+	GetAttr(CHOOSER_Selected,gow->gadgets[GID_OPTS_FONT_DEFAULT],(ULONG *)&option_font_default);
+	option_font_default += CSS_FONT_FAMILY_SANS_SERIF;
+
+	GetAttr(INTEGER_Number,gow->gadgets[GID_OPTS_FONT_SIZE],(ULONG *)&option_font_size);
+	option_font_size *= 10;
+
+	GetAttr(INTEGER_Number,gow->gadgets[GID_OPTS_FONT_MINSIZE],(ULONG *)&option_font_min_size);
+	option_font_min_size *= 10;
 }
 
 void ami_gui_opts_close(void)
@@ -810,6 +994,31 @@ BOOL ami_gui_opts_event(void)
 								gow->win,NULL, GA_Disabled, FALSE, TAG_DONE);
 							break;
 						}
+					break;
+
+					case GID_OPTS_FONT_SANS:
+						IDoMethod((Object *)gow->gadgets[GID_OPTS_FONT_SANS],
+						GFONT_REQUEST,gow->win);
+					break;
+
+					case GID_OPTS_FONT_SERIF:
+						IDoMethod((Object *)gow->gadgets[GID_OPTS_FONT_SERIF],
+						GFONT_REQUEST,gow->win);
+					break;
+
+					case GID_OPTS_FONT_MONO:
+						IDoMethod((Object *)gow->gadgets[GID_OPTS_FONT_MONO],
+						GFONT_REQUEST,gow->win);
+					break;
+
+					case GID_OPTS_FONT_CURSIVE:
+						IDoMethod((Object *)gow->gadgets[GID_OPTS_FONT_CURSIVE],
+						GFONT_REQUEST,gow->win);
+					break;
+
+					case GID_OPTS_FONT_FANTASY:
+						IDoMethod((Object *)gow->gadgets[GID_OPTS_FONT_FANTASY],
+						GFONT_REQUEST,gow->win);
 					break;
 				}
 			break;
