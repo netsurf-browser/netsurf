@@ -376,8 +376,10 @@ bool layout_block_context(struct box *block, int viewport_height,
 			}
 			layout_block_find_dimensions(box->parent->width,
 					viewport_height, lm, rm, box);
-			layout_block_add_scrollbar(box, RIGHT);
-			layout_block_add_scrollbar(box, BOTTOM);
+			if (box->type == BOX_BLOCK) {
+				layout_block_add_scrollbar(box, RIGHT);
+				layout_block_add_scrollbar(box, BOTTOM);
+			}
 		} else if (box->type == BOX_TABLE) {
 			if (box->style->width.width == CSS_WIDTH_AUTO) {
 				/* max available width may be diminished due to
