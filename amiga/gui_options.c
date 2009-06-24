@@ -60,7 +60,7 @@
 static struct ami_gui_opts_window *gow = NULL;
 
 CONST_STRPTR tabs[9];
-CONST_STRPTR screenopts[4];
+static STRPTR screenopts[4];
 CONST_STRPTR proxyopts[5];
 CONST_STRPTR nativebmopts[3];
 CONST_STRPTR fontopts[6];
