@@ -148,7 +148,7 @@ void ami_gui_opts_open(void)
 	ULONG proxytype = 0;
 	BOOL screenmodedisabled = FALSE, screennamedisabled = FALSE;
 	BOOL proxyhostdisabled = TRUE, proxyauthdisabled = TRUE;
-	BOOL disableanims;
+	BOOL disableanims, animspeeddisabled = FALSE;
 	char animspeed[10];
 	struct TextAttr fontsans, fontserif, fontmono, fontcursive, fontfantasy;
 
@@ -193,8 +193,16 @@ void ami_gui_opts_open(void)
 
 	sprintf(animspeed,"%.2f",(float)(option_minimum_gif_delay/100.0));
 
-	if(option_animate_images) disableanims = FALSE;
-		else disableanims = TRUE;
+	if(option_animate_images)
+	{
+		disableanims = FALSE;
+		animspeeddisabled = FALSE;
+	}
+	else
+	{
+		disableanims = TRUE;
+		animspeeddisabled = TRUE;
+	}
 
 	fontsans.ta_Name = ASPrintf("%s.font",option_font_sans);
 	fontserif.ta_Name = ASPrintf("%s.font",option_font_serif);
@@ -569,6 +577,7 @@ void ami_gui_opts_open(void)
 									LAYOUT_AddChild, gow->gadgets[GID_OPTS_ANIMSPEED] = StringObject,
 										GA_ID, GID_OPTS_ANIMSPEED,
 										GA_RelVerify, TRUE,
+										GA_Disabled, animspeeddisabled,
 										STRINGA_HookType, SHK_FLOAT,
 										STRINGA_TextVal, animspeed,
 										STRINGA_BufferPos,0,
@@ -717,6 +726,7 @@ void ami_gui_opts_open(void)
 									LAYOUT_AddChild, gow->gadgets[GID_OPTS_CACHE_DISC] = IntegerObject,
 										GA_ID, GID_OPTS_CACHE_DISC,
 										GA_RelVerify, TRUE,
+										GA_Disabled, TRUE,
 										INTEGER_Number, option_disc_cache_age,
 										INTEGER_Minimum, 0,
 										INTEGER_Maximum, 366,
@@ -1059,6 +1069,11 @@ BOOL ami_gui_opts_event(void)
 								gow->win,NULL, GA_Disabled, FALSE, TAG_DONE);
 							break;
 						}
+					break;
+
+					case GID_OPTS_ANIMDISABLE:
+						RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_ANIMSPEED],
+							gow->win,NULL, GA_Disabled, code, TAG_DONE);
 					break;
 
 					case GID_OPTS_FONT_SANS:
