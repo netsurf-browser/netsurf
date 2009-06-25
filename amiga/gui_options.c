@@ -99,6 +99,7 @@ void ami_gui_opts_setup(void)
 	gadlab[GID_OPTS_HOMEPAGE_CURRENT] = (char *)ami_utf8_easy((char *)messages_get("UseCurrent"));
 	gadlab[GID_OPTS_HIDEADS] = (char *)ami_utf8_easy((char *)messages_get("BlockAds"));
 	gadlab[GID_OPTS_FROMLOCALE] = (char *)ami_utf8_easy((char *)messages_get("FromLocale"));
+	gadlab[GID_OPTS_HISTORY] = (char *)ami_utf8_easy((char *)messages_get("HistoryAge"));
 	gadlab[GID_OPTS_REFERRAL] = (char *)ami_utf8_easy((char *)messages_get("SendReferer"));
 	gadlab[GID_OPTS_FASTSCROLL] = (char *)ami_utf8_easy((char *)messages_get("FastScrolling"));
 	gadlab[GID_OPTS_SCREEN] = (char *)ami_utf8_easy((char *)messages_get("Screen"));
@@ -123,6 +124,8 @@ void ami_gui_opts_setup(void)
 	gadlab[GID_OPTS_FONT_DEFAULT] = (char *)ami_utf8_easy((char *)messages_get("FontDefault"));
 	gadlab[GID_OPTS_FONT_SIZE] = (char *)ami_utf8_easy((char *)messages_get("FontSize"));
 	gadlab[GID_OPTS_FONT_MINSIZE] = (char *)ami_utf8_easy((char *)messages_get("FontMinSize"));
+	gadlab[GID_OPTS_CACHE_MEM] = (char *)ami_utf8_easy((char *)messages_get("Size"));
+	gadlab[GID_OPTS_CACHE_DISC] = (char *)ami_utf8_easy((char *)messages_get("Duration"));
 	gadlab[GID_OPTS_SAVE] = (char *)ami_utf8_easy((char *)messages_get("Save"));
 	gadlab[GID_OPTS_USE] = (char *)ami_utf8_easy((char *)messages_get("Use"));
 	gadlab[GID_OPTS_CANCEL] = (char *)ami_utf8_easy((char *)messages_get("Cancel"));
@@ -304,6 +307,23 @@ void ami_gui_opts_open(void)
 									//	CHILD_WeightedWidth, 0,
 									LayoutEnd, // content language
 								LayoutEnd, // content
+								LAYOUT_AddChild, VGroupObject,
+									LAYOUT_SpaceOuter, TRUE,
+									LAYOUT_BevelStyle, BVS_GROUP, 
+									LAYOUT_Label, messages_get("History"),
+									LAYOUT_AddChild, gow->gadgets[GID_OPTS_HISTORY] = IntegerObject,
+										GA_ID, GID_OPTS_CACHE_DISC,
+										GA_RelVerify, TRUE,
+										INTEGER_Number, option_expire_url,
+										INTEGER_Minimum, 0,
+										INTEGER_Maximum, 366,
+										INTEGER_Arrows, TRUE,
+									IntegerEnd,
+									CHILD_WeightedWidth, 0,
+									CHILD_Label, LabelObject,
+										LABEL_Text, gadlab[GID_OPTS_HISTORY],
+									LabelEnd,
+								LayoutEnd, // history
 								CHILD_WeightedHeight, 0,
 								LAYOUT_AddChild,VGroupObject,
 									LAYOUT_SpaceOuter, TRUE,
@@ -672,7 +692,44 @@ void ami_gui_opts_open(void)
 						*/
 						PAGE_Add, LayoutObject,
 							LAYOUT_AddChild,VGroupObject,
+								LAYOUT_AddChild, VGroupObject,
+									LAYOUT_SpaceOuter, TRUE,
+									LAYOUT_BevelStyle, BVS_GROUP, 
+									LAYOUT_Label, messages_get("MemCache"),
+									LAYOUT_AddChild, gow->gadgets[GID_OPTS_CACHE_MEM] = IntegerObject,
+										GA_ID, GID_OPTS_CACHE_MEM,
+										GA_RelVerify, TRUE,
+										INTEGER_Number, option_memory_cache_size / 1048576,
+										INTEGER_Minimum, 0,
+										INTEGER_Maximum, 2048,
+										INTEGER_Arrows, TRUE,
+									IntegerEnd,
+									CHILD_WeightedWidth, 0,
+									CHILD_Label, LabelObject,
+										LABEL_Text, gadlab[GID_OPTS_CACHE_MEM],
+									LabelEnd,
+								LayoutEnd, // memory cache
+								CHILD_WeightedHeight, 0,
+								LAYOUT_AddChild, VGroupObject,
+									LAYOUT_SpaceOuter, TRUE,
+									LAYOUT_BevelStyle, BVS_GROUP, 
+									LAYOUT_Label, messages_get("DiscCache"),
+									LAYOUT_AddChild, gow->gadgets[GID_OPTS_CACHE_DISC] = IntegerObject,
+										GA_ID, GID_OPTS_CACHE_DISC,
+										GA_RelVerify, TRUE,
+										INTEGER_Number, option_disc_cache_age,
+										INTEGER_Minimum, 0,
+										INTEGER_Maximum, 366,
+										INTEGER_Arrows, TRUE,
+									IntegerEnd,
+									CHILD_WeightedWidth, 0,
+									CHILD_Label, LabelObject,
+										LABEL_Text, gadlab[GID_OPTS_CACHE_DISC],
+									LabelEnd,
+								LayoutEnd, // disc cache
+								CHILD_WeightedHeight, 0,
 							LayoutEnd, // page vgroup
+							CHILD_WeightedHeight, 0,
 						PageEnd, // page object
 						/*
 						** Advanced
@@ -734,6 +791,8 @@ void ami_gui_opts_use(void)
 	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_HIDEADS],(ULONG *)&data);
 	if(data) option_block_ads = true;
 		else option_block_ads = false;
+
+	GetAttr(INTEGER_Number,gow->gadgets[GID_OPTS_HISTORY],(ULONG *)&option_expire_url);
 
 	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_REFERRAL],(ULONG *)&data);
 	if(data) option_send_referer = true;
@@ -857,6 +916,12 @@ void ami_gui_opts_use(void)
 
 	GetAttr(INTEGER_Number,gow->gadgets[GID_OPTS_FONT_MINSIZE],(ULONG *)&option_font_min_size);
 	option_font_min_size *= 10;
+
+	GetAttr(INTEGER_Number,gow->gadgets[GID_OPTS_CACHE_MEM],(ULONG *)&option_memory_cache_size);
+	option_memory_cache_size *= 1048576;
+
+	GetAttr(INTEGER_Number,gow->gadgets[GID_OPTS_CACHE_DISC],(ULONG *)&option_disc_cache_age);
+
 }
 
 void ami_gui_opts_close(void)
