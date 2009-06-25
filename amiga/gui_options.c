@@ -126,6 +126,13 @@ void ami_gui_opts_setup(void)
 	gadlab[GID_OPTS_FONT_MINSIZE] = (char *)ami_utf8_easy((char *)messages_get("FontMinSize"));
 	gadlab[GID_OPTS_CACHE_MEM] = (char *)ami_utf8_easy((char *)messages_get("Size"));
 	gadlab[GID_OPTS_CACHE_DISC] = (char *)ami_utf8_easy((char *)messages_get("Duration"));
+	gadlab[GID_OPTS_OVERWRITE] = (char *)ami_utf8_easy((char *)messages_get("ConfirmOverwrite"));
+	gadlab[GID_OPTS_DLDIR] = (char *)ami_utf8_easy((char *)messages_get("DownloadDir"));
+	gadlab[GID_OPTS_TAB_ACTIVE] = (char *)ami_utf8_easy((char *)messages_get("TabActive"));
+	gadlab[GID_OPTS_TAB_2] = (char *)ami_utf8_easy((char *)messages_get("TabMiddle"));
+	gadlab[GID_OPTS_CLIPBOARD] = (char *)ami_utf8_easy((char *)messages_get("Clipboard"));
+	gadlab[GID_OPTS_CMENU_ENABLE] = (char *)ami_utf8_easy((char *)messages_get("ContentEnable"));
+	gadlab[GID_OPTS_CMENU_STICKY] = (char *)ami_utf8_easy((char *)messages_get("ContextSticky"));
 	gadlab[GID_OPTS_SAVE] = (char *)ami_utf8_easy((char *)messages_get("Save"));
 	gadlab[GID_OPTS_USE] = (char *)ami_utf8_easy((char *)messages_get("Use"));
 	gadlab[GID_OPTS_CANCEL] = (char *)ami_utf8_easy((char *)messages_get("Cancel"));
@@ -746,7 +753,77 @@ void ami_gui_opts_open(void)
 						*/
 						PAGE_Add, LayoutObject,
 							LAYOUT_AddChild,VGroupObject,
+								LAYOUT_AddChild,VGroupObject,
+									LAYOUT_SpaceOuter, TRUE,
+									LAYOUT_BevelStyle, BVS_GROUP, 
+									LAYOUT_Label, messages_get("Downloads"),
+		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_OVERWRITE] = CheckBoxObject,
+      	              					GA_ID, GID_OPTS_CLIPBOARD,
+         	           					GA_RelVerify, TRUE,
+										GA_Disabled, TRUE,
+         	           					GA_Text, gadlab[GID_OPTS_OVERWRITE],
+  				      		            GA_Selected, FALSE, //option_ask_overwrite,
+            	    				CheckBoxEnd,
+									LAYOUT_AddChild, gow->gadgets[GID_OPTS_DLDIR] = GetFileObject,
+										GA_ID, GID_OPTS_DLDIR,
+										GA_RelVerify, TRUE,
+										GETFILE_FullFile, option_download_dir,
+										GETFILE_ReadOnly, TRUE,
+										GETFILE_FullFileExpand, FALSE,
+									GetFileEnd,
+								LayoutEnd, // downloads
+								CHILD_WeightedHeight, 0,
+								LAYOUT_AddChild,VGroupObject,
+									LAYOUT_SpaceOuter, TRUE,
+									LAYOUT_BevelStyle, BVS_GROUP, 
+									LAYOUT_Label, messages_get("TabbedBrowsing"),
+		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_TAB_ACTIVE] = CheckBoxObject,
+      	              					GA_ID, GID_OPTS_TAB_ACTIVE,
+         	           					GA_RelVerify, TRUE,
+         	           					GA_Text, gadlab[GID_OPTS_TAB_ACTIVE],
+  				      		            GA_Selected, option_new_tab_active,
+            	    				CheckBoxEnd,
+		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_TAB_2] = CheckBoxObject,
+      	              					GA_ID, GID_OPTS_TAB_2,
+         	           					GA_RelVerify, TRUE,
+         	           					GA_Text, gadlab[GID_OPTS_TAB_2],
+  				      		            GA_Selected, option_button_2_tab,
+            	    				CheckBoxEnd,
+								LayoutEnd, // tabbed browsing
+								CHILD_WeightedHeight, 0,
+								LAYOUT_AddChild,HGroupObject,
+									LAYOUT_SpaceOuter, TRUE,
+									LAYOUT_BevelStyle, BVS_GROUP, 
+									LAYOUT_Label, messages_get("Clipboard"),
+		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_CLIPBOARD] = CheckBoxObject,
+      	              					GA_ID, GID_OPTS_CLIPBOARD,
+         	           					GA_RelVerify, TRUE,
+         	           					GA_Text, gadlab[GID_OPTS_CLIPBOARD],
+  				      		            GA_Selected, option_utf8_clipboard,
+            	    				CheckBoxEnd,
+								LayoutEnd, // clipboard
+								CHILD_WeightedHeight, 0,
+								LAYOUT_AddChild,HGroupObject,
+									LAYOUT_SpaceOuter, TRUE,
+									LAYOUT_BevelStyle, BVS_GROUP, 
+									LAYOUT_Label, messages_get("ContextMenu"),
+		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_CMENU_ENABLE] = CheckBoxObject,
+      	              					GA_ID, GID_OPTS_CMENU_ENABLE,
+         	           					GA_RelVerify, TRUE,
+         	           					GA_Text, gadlab[GID_OPTS_CMENU_ENABLE],
+  				      		            GA_Selected, option_context_menu,
+            	    				CheckBoxEnd,
+		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_CMENU_STICKY] = CheckBoxObject,
+      	              					GA_ID, GID_OPTS_CMENU_STICKY,
+         	           					GA_RelVerify, TRUE,
+										GA_Disabled, !option_context_menu,
+         	           					GA_Text, gadlab[GID_OPTS_CMENU_STICKY],
+  				      		            GA_Selected, option_sticky_context_menu,
+            	    				CheckBoxEnd,
+								LayoutEnd, // context menus
+								CHILD_WeightedHeight, 0,
 							LayoutEnd, // page vgroup
+							CHILD_WeightedHeight, 0,
 						PageEnd, // page object
 						/*
 						** Export
