@@ -133,6 +133,16 @@ void ami_gui_opts_setup(void)
 	gadlab[GID_OPTS_CLIPBOARD] = (char *)ami_utf8_easy((char *)messages_get("Clipboard"));
 	gadlab[GID_OPTS_CMENU_ENABLE] = (char *)ami_utf8_easy((char *)messages_get("ContentEnable"));
 	gadlab[GID_OPTS_CMENU_STICKY] = (char *)ami_utf8_easy((char *)messages_get("ContextSticky"));
+	gadlab[GID_OPTS_MARGIN_TOP] = (char *)ami_utf8_easy((char *)messages_get("Top"));
+	gadlab[GID_OPTS_MARGIN_LEFT] = (char *)ami_utf8_easy((char *)messages_get("Left"));
+	gadlab[GID_OPTS_MARGIN_RIGHT] = (char *)ami_utf8_easy((char *)messages_get("Right"));
+	gadlab[GID_OPTS_MARGIN_BOTTOM] = (char *)ami_utf8_easy((char *)messages_get("Bottom"));
+	gadlab[GID_OPTS_EXPORT_SCALE] = (char *)ami_utf8_easy((char *)messages_get("Scale"));
+	gadlab[GID_OPTS_EXPORT_NOIMAGES] = (char *)ami_utf8_easy((char *)messages_get("SuppressImages"));
+	gadlab[GID_OPTS_EXPORT_NOBKG] = (char *)ami_utf8_easy((char *)messages_get("RemoveBackground"));
+	gadlab[GID_OPTS_EXPORT_LOOSEN] = (char *)ami_utf8_easy((char *)messages_get("FitPage"));
+	gadlab[GID_OPTS_EXPORT_COMPRESS] = (char *)ami_utf8_easy((char *)messages_get("CompressPDF"));
+	gadlab[GID_OPTS_EXPORT_PASSWORD] = (char *)ami_utf8_easy((char *)messages_get("SetPassword"));
 	gadlab[GID_OPTS_SAVE] = (char *)ami_utf8_easy((char *)messages_get("Save"));
 	gadlab[GID_OPTS_USE] = (char *)ami_utf8_easy((char *)messages_get("Use"));
 	gadlab[GID_OPTS_CANCEL] = (char *)ami_utf8_easy((char *)messages_get("Cancel"));
@@ -589,6 +599,7 @@ void ami_gui_opts_open(void)
 										STRINGA_TextVal, animspeed,
 										STRINGA_BufferPos,0,
 									StringEnd,
+									CHILD_WeightedWidth, 0,
 									CHILD_Label, LabelObject,
 										LABEL_Text, gadlab[GID_OPTS_ANIMSPEED],
 									LabelEnd,
@@ -834,7 +845,123 @@ void ami_gui_opts_open(void)
 						*/
 						PAGE_Add, LayoutObject,
 							LAYOUT_AddChild,VGroupObject,
+								LAYOUT_AddChild, HGroupObject,
+									LAYOUT_SpaceOuter, TRUE,
+									LAYOUT_BevelStyle, BVS_GROUP, 
+									LAYOUT_Label, messages_get("Margins"),
+									LAYOUT_AddChild, gow->gadgets[GID_OPTS_MARGIN_TOP] = IntegerObject,
+										GA_ID, GID_OPTS_MARGIN_TOP,
+										GA_RelVerify, TRUE,
+										INTEGER_Number, option_margin_top,
+										INTEGER_Minimum, 0,
+										INTEGER_Maximum, 99,
+										INTEGER_Arrows, TRUE,
+									IntegerEnd,
+									CHILD_WeightedWidth, 0,
+									CHILD_Label, LabelObject,
+										LABEL_Text, gadlab[GID_OPTS_MARGIN_TOP],
+									LabelEnd,
+									LAYOUT_AddChild, gow->gadgets[GID_OPTS_MARGIN_LEFT] = IntegerObject,
+										GA_ID, GID_OPTS_MARGIN_LEFT,
+										GA_RelVerify, TRUE,
+										INTEGER_Number, option_margin_left,
+										INTEGER_Minimum, 0,
+										INTEGER_Maximum, 99,
+										INTEGER_Arrows, TRUE,
+									IntegerEnd,
+									CHILD_WeightedWidth, 0,
+									CHILD_Label, LabelObject,
+										LABEL_Text, gadlab[GID_OPTS_MARGIN_LEFT],
+									LabelEnd,
+									LAYOUT_AddChild, gow->gadgets[GID_OPTS_MARGIN_BOTTOM] = IntegerObject,
+										GA_ID, GID_OPTS_MARGIN_BOTTOM,
+										GA_RelVerify, TRUE,
+										INTEGER_Number, option_margin_bottom,
+										INTEGER_Minimum, 0,
+										INTEGER_Maximum, 99,
+										INTEGER_Arrows, TRUE,
+									IntegerEnd,
+									CHILD_WeightedWidth, 0,
+									CHILD_Label, LabelObject,
+										LABEL_Text, gadlab[GID_OPTS_MARGIN_BOTTOM],
+									LabelEnd,
+									LAYOUT_AddChild, gow->gadgets[GID_OPTS_MARGIN_RIGHT] = IntegerObject,
+										GA_ID, GID_OPTS_MARGIN_RIGHT,
+										GA_RelVerify, TRUE,
+										INTEGER_Number, option_margin_right,
+										INTEGER_Minimum, 0,
+										INTEGER_Maximum, 99,
+										INTEGER_Arrows, TRUE,
+									IntegerEnd,
+									CHILD_WeightedWidth, 0,
+									CHILD_Label, LabelObject,
+										LABEL_Text, gadlab[GID_OPTS_MARGIN_RIGHT],
+									LabelEnd,
+								LayoutEnd, // margins
+								CHILD_WeightedHeight, 0,
+								LAYOUT_AddChild, VGroupObject,
+									LAYOUT_SpaceOuter, TRUE,
+									LAYOUT_BevelStyle, BVS_GROUP, 
+									LAYOUT_Label, messages_get("Scaling"),
+									LAYOUT_AddChild, gow->gadgets[GID_OPTS_EXPORT_SCALE] = IntegerObject,
+										GA_ID, GID_OPTS_EXPORT_SCALE,
+										GA_RelVerify, TRUE,
+										INTEGER_Number, option_export_scale,
+										INTEGER_Minimum, 0,
+										INTEGER_Maximum, 100,
+										INTEGER_Arrows, TRUE,
+									IntegerEnd,
+									CHILD_WeightedWidth, 0,
+									CHILD_Label, LabelObject,
+										LABEL_Text, gadlab[GID_OPTS_EXPORT_SCALE],
+									LabelEnd,
+								LayoutEnd, // scaling
+								CHILD_WeightedHeight, 0,
+								LAYOUT_AddChild,VGroupObject,
+									LAYOUT_SpaceOuter, TRUE,
+									LAYOUT_BevelStyle, BVS_GROUP, 
+									LAYOUT_Label, messages_get("Appearance"),
+		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_EXPORT_NOIMAGES] = CheckBoxObject,
+      	              					GA_ID, GID_OPTS_EXPORT_NOIMAGES,
+         	           					GA_RelVerify, TRUE,
+         	           					GA_Text, gadlab[GID_OPTS_EXPORT_NOIMAGES],
+  				      		            GA_Selected, option_suppress_images,
+            	    				CheckBoxEnd,
+		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_EXPORT_NOBKG] = CheckBoxObject,
+      	              					GA_ID, GID_OPTS_EXPORT_NOBKG,
+         	           					GA_RelVerify, TRUE,
+         	           					GA_Text, gadlab[GID_OPTS_EXPORT_NOBKG],
+  				      		            GA_Selected, option_remove_backgrounds,
+            	    				CheckBoxEnd,
+		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_EXPORT_LOOSEN] = CheckBoxObject,
+      	              					GA_ID, GID_OPTS_EXPORT_LOOSEN,
+         	           					GA_RelVerify, TRUE,
+         	           					GA_Text, gadlab[GID_OPTS_EXPORT_LOOSEN],
+  				      		            GA_Selected, option_enable_loosening,
+            	    				CheckBoxEnd,
+								LayoutEnd, // appearance
+								CHILD_WeightedHeight, 0,
+								LAYOUT_AddChild,VGroupObject,
+									LAYOUT_SpaceOuter, TRUE,
+									LAYOUT_BevelStyle, BVS_GROUP, 
+									LAYOUT_Label, messages_get("Advanced"),
+		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_EXPORT_COMPRESS] = CheckBoxObject,
+      	              					GA_ID, GID_OPTS_EXPORT_COMPRESS,
+         	           					GA_RelVerify, TRUE,
+         	           					GA_Text, gadlab[GID_OPTS_EXPORT_COMPRESS],
+  				      		            GA_Selected, option_enable_PDF_compression,
+            	    				CheckBoxEnd,
+		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_EXPORT_PASSWORD] = CheckBoxObject,
+      	              					GA_ID, GID_OPTS_EXPORT_PASSWORD,
+         	           					GA_RelVerify, TRUE,
+										GA_Disabled, TRUE,
+         	           					GA_Text, gadlab[GID_OPTS_EXPORT_PASSWORD],
+  				      		            GA_Selected, option_enable_PDF_password,
+            	    				CheckBoxEnd,
+								LayoutEnd, // advanced
+								CHILD_WeightedHeight, 0,
 							LayoutEnd, // page vgroup
+							CHILD_WeightedHeight, 0,
 						PageEnd, // page object
 					End, // pagegroup
 				ClickTabEnd,
@@ -962,7 +1089,7 @@ void ami_gui_opts_use(void)
 		else option_scale_quality = false;
 
 	GetAttr(STRINGA_TextVal,gow->gadgets[GID_OPTS_ANIMSPEED],(ULONG *)&data);
-	animspeed = strtof(data,NULL);
+	animspeed = strtof((char *)data,NULL);
 	option_minimum_gif_delay = (int)(animspeed * 100);
 
 	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_ANIMDISABLE],(ULONG *)&data);
@@ -1041,6 +1168,35 @@ void ami_gui_opts_use(void)
 	if(data) option_sticky_context_menu = true;
 		else option_sticky_context_menu = false;
 
+	GetAttr(INTEGER_Number,gow->gadgets[GID_OPTS_MARGIN_TOP],(ULONG *)&option_margin_top);
+
+	GetAttr(INTEGER_Number,gow->gadgets[GID_OPTS_MARGIN_LEFT],(ULONG *)&option_margin_left);
+
+	GetAttr(INTEGER_Number,gow->gadgets[GID_OPTS_MARGIN_BOTTOM],(ULONG *)&option_margin_bottom);
+
+	GetAttr(INTEGER_Number,gow->gadgets[GID_OPTS_MARGIN_RIGHT],(ULONG *)&option_margin_right);
+
+	GetAttr(INTEGER_Number,gow->gadgets[GID_OPTS_EXPORT_SCALE],(ULONG *)&option_export_scale);
+
+	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_EXPORT_NOIMAGES],(ULONG *)&data);
+	if(data) option_suppress_images = true;
+		else option_suppress_images = false;
+
+	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_EXPORT_NOBKG],(ULONG *)&data);
+	if(data) option_remove_backgrounds = true;
+		else option_remove_backgrounds = false;
+
+	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_EXPORT_LOOSEN],(ULONG *)&data);
+	if(data) option_enable_loosening = true;
+		else option_enable_loosening = false;
+
+	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_EXPORT_COMPRESS],(ULONG *)&data);
+	if(data) option_enable_PDF_compression = true;
+		else option_enable_PDF_compression = false;
+
+	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_EXPORT_PASSWORD],(ULONG *)&data);
+	if(data) option_enable_PDF_password = true;
+		else option_enable_PDF_password = false;
 }
 
 void ami_gui_opts_close(void)
