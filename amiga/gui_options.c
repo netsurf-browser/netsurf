@@ -767,10 +767,14 @@ void ami_gui_opts_open(void)
 									LAYOUT_AddChild, gow->gadgets[GID_OPTS_DLDIR] = GetFileObject,
 										GA_ID, GID_OPTS_DLDIR,
 										GA_RelVerify, TRUE,
-										GETFILE_FullFile, option_download_dir,
+										GETFILE_Drawer, option_download_dir,
+										GETFILE_DrawersOnly, TRUE,
 										GETFILE_ReadOnly, TRUE,
 										GETFILE_FullFileExpand, FALSE,
 									GetFileEnd,
+									CHILD_Label, LabelObject,
+										LABEL_Text, gadlab[GID_OPTS_DLDIR],
+									LabelEnd,
 								LayoutEnd, // downloads
 								CHILD_WeightedHeight, 0,
 								LAYOUT_AddChild,VGroupObject,
@@ -1009,6 +1013,34 @@ void ami_gui_opts_use(void)
 
 	GetAttr(INTEGER_Number,gow->gadgets[GID_OPTS_CACHE_DISC],(ULONG *)&option_disc_cache_age);
 
+	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_OVERWRITE],(ULONG *)&data);
+	if(data) option_ask_overwrite = true;
+		else option_ask_overwrite = false;
+
+	GetAttr(GETFILE_Drawer,gow->gadgets[GID_OPTS_DLDIR],(ULONG *)&data);
+	if(option_download_dir) free(option_download_dir);
+	option_download_dir = (char *)strdup((char *)data);
+
+	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_TAB_ACTIVE],(ULONG *)&data);
+	if(data) option_new_tab_active = true;
+		else option_new_tab_active = false;
+
+	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_TAB_2],(ULONG *)&data);
+	if(data) option_button_2_tab = true;
+		else option_button_2_tab = false;
+
+	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_CLIPBOARD],(ULONG *)&data);
+	if(data) option_utf8_clipboard = true;
+		else option_utf8_clipboard = false;
+
+	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_CMENU_ENABLE],(ULONG *)&data);
+	if(data) option_context_menu = true;
+		else option_context_menu = false;
+
+	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_CMENU_STICKY],(ULONG *)&data);
+	if(data) option_sticky_context_menu = true;
+		else option_sticky_context_menu = false;
+
 }
 
 void ami_gui_opts_close(void)
@@ -1176,6 +1208,16 @@ BOOL ami_gui_opts_event(void)
 					case GID_OPTS_FONT_FANTASY:
 						IDoMethod((Object *)gow->gadgets[GID_OPTS_FONT_FANTASY],
 						GFONT_REQUEST,gow->win);
+					break;
+
+					case GID_OPTS_DLDIR:
+						IDoMethod((Object *)gow->gadgets[GID_OPTS_DLDIR],
+						GFILE_REQUEST,gow->win);
+					break;
+
+					case GID_OPTS_CMENU_ENABLE:
+						RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_CMENU_STICKY],
+							gow->win,NULL, GA_Disabled, !code, TAG_DONE);
 					break;
 				}
 			break;
