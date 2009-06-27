@@ -119,7 +119,7 @@ bool nsgtk_plot_rectangle(int x0, int y0, int width, int height,
 		line_width = 1;
 
 	cairo_set_line_width(current_cr, line_width);
-	cairo_rectangle(current_cr, x0, y0, width, height);
+	cairo_rectangle(current_cr, x0 + 0.5, y0 + 0.5, width, height);
 	cairo_stroke(current_cr);
 
 	return true;

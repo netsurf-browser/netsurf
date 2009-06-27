@@ -43,6 +43,7 @@
 #include "desktop/netsurf.h"
 #include "desktop/options.h"
 #include "desktop/save_pdf/pdf_plotters.h"
+#include "desktop/textinput.h"
 #include "gtk/gtk_gui.h"
 #include "gtk/dialogs/gtk_options.h"
 #include "gtk/gtk_completion.h"
@@ -734,3 +735,72 @@ static void nsgtk_PDF_no_pass(GtkButton *w, gpointer data)
 }
 #endif
 
+uint32_t gtk_gui_gdkkey_to_nskey(GdkEventKey *key)
+{
+	/* this function will need to become much more complex to support
+	 * everything that the RISC OS version does.  But this will do for
+	 * now.  I hope.
+	 */
+	switch (key->keyval)
+	{
+		case GDK_BackSpace:
+			if (key->state & GDK_SHIFT_MASK)
+				return KEY_DELETE_LINE_START;
+			else
+				return KEY_DELETE_LEFT;
+		case GDK_Delete:
+			if (key->state & GDK_SHIFT_MASK)
+				return KEY_DELETE_LINE_END;
+			else
+				return KEY_DELETE_RIGHT;
+		case GDK_Linefeed:	return 13;
+		case GDK_Return:	return 10;
+		case GDK_Left:		return KEY_LEFT;
+		case GDK_Right:		return KEY_RIGHT;
+		case GDK_Up:		return KEY_UP;
+		case GDK_Down:		return KEY_DOWN;
+		case GDK_Home:
+			if (key->state & GDK_CONTROL_MASK)
+				return KEY_TEXT_START;
+			else
+				return KEY_LINE_START;
+		case GDK_End:
+			if (key->state & GDK_CONTROL_MASK)
+				return KEY_TEXT_END;
+			else
+				return KEY_LINE_END;
+		case GDK_Page_Up:
+			return KEY_PAGE_UP;
+		case GDK_Page_Down:
+			return KEY_PAGE_DOWN;
+		case 'a':
+			if (key->state & GDK_CONTROL_MASK)
+				return KEY_SELECT_ALL;
+			return gdk_keyval_to_unicode(key->keyval);
+		case 'u':
+			if (key->state & GDK_CONTROL_MASK)
+				return KEY_CLEAR_SELECTION;
+			return gdk_keyval_to_unicode(key->keyval);
+		case GDK_Escape:
+			return KEY_ESCAPE;
+			
+		/* Modifiers - do nothing for now */
+		case GDK_Shift_L:
+		case GDK_Shift_R:
+		case GDK_Control_L:
+		case GDK_Control_R:
+		case GDK_Caps_Lock:
+		case GDK_Shift_Lock:
+		case GDK_Meta_L:
+		case GDK_Meta_R:
+		case GDK_Alt_L:
+		case GDK_Alt_R:
+		case GDK_Super_L:
+		case GDK_Super_R:
+		case GDK_Hyper_L:
+		case GDK_Hyper_R:	return 0;
+		
+		default:		return gdk_keyval_to_unicode(
+							key->keyval);
+        }
+}

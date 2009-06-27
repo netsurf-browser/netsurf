@@ -110,12 +110,12 @@ static wimp_window text_area_definition = {
 	{}
 };
 
-static void textarea_reflow(struct text_area *ta, unsigned int line);
-static bool textarea_mouse_click(wimp_pointer *pointer);
-static bool textarea_key_press(wimp_key *key);
-static void textarea_redraw(wimp_draw *redraw);
-static void textarea_redraw_internal(wimp_draw *redraw, bool update);
-static void textarea_open(wimp_open *open);
+static void ro_textarea_reflow(struct text_area *ta, unsigned int line);
+static bool ro_textarea_mouse_click(wimp_pointer *pointer);
+static bool ro_textarea_key_press(wimp_key *key);
+static void ro_textarea_redraw(wimp_draw *redraw);
+static void ro_textarea_redraw_internal(wimp_draw *redraw, bool update);
+static void ro_textarea_open(wimp_open *open);
 
 /**
  * Create a text area
@@ -128,7 +128,7 @@ static void textarea_open(wimp_open *open);
  * \param font_style Font style to use, or 0 for default
  * \return Opaque handle for textarea or 0 on error
  */
-uintptr_t textarea_create(wimp_w parent, wimp_i icon, unsigned int flags,
+uintptr_t ro_textarea_create(wimp_w parent, wimp_i icon, unsigned int flags,
 		const char *font_family, unsigned int font_size,
 		rufl_style font_style)
 {
@@ -189,21 +189,21 @@ uintptr_t textarea_create(wimp_w parent, wimp_i icon, unsigned int flags,
 	}
 
 	/* set the window dimensions */
-	if (!textarea_update((uintptr_t)ret)) {
-	 	textarea_destroy((uintptr_t)ret);
+	if (!ro_textarea_update((uintptr_t)ret)) {
+	 	ro_textarea_destroy((uintptr_t)ret);
 		return 0;
 	}
 
 	/* and register our event handlers */
 	ro_gui_wimp_event_set_user_data(ret->window, ret);
 	ro_gui_wimp_event_register_mouse_click(ret->window,
-			textarea_mouse_click);
+			ro_textarea_mouse_click);
 	ro_gui_wimp_event_register_keypress(ret->window,
-			textarea_key_press);
+			ro_textarea_key_press);
 	ro_gui_wimp_event_register_redraw_window(ret->window,
-			textarea_redraw);
+			ro_textarea_redraw);
 	ro_gui_wimp_event_register_open_window(ret->window,
-			textarea_open);
+			ro_textarea_open);
 
 	return (uintptr_t)ret;
 }
@@ -213,7 +213,7 @@ uintptr_t textarea_create(wimp_w parent, wimp_i icon, unsigned int flags,
  *
  * \param self Text area to update
  */
-bool textarea_update(uintptr_t self)
+bool ro_textarea_update(uintptr_t self)
 {
 	struct text_area *ta;
 	wimp_window_state state;
@@ -291,7 +291,7 @@ bool textarea_update(uintptr_t self)
 	}
 
 	/* reflow the text */
-	textarea_reflow(ta, 0);
+	ro_textarea_reflow(ta, 0);
 	return true;
 }
 
@@ -300,7 +300,7 @@ bool textarea_update(uintptr_t self)
  *
  * \param self Text area to destroy
  */
-void textarea_destroy(uintptr_t self)
+void ro_textarea_destroy(uintptr_t self)
 {
 	struct text_area *ta;
 	os_error *error;
@@ -329,7 +329,7 @@ void textarea_destroy(uintptr_t self)
  * \param text UTF-8 text to set text area's contents to
  * \return true on success, false on memory exhaustion
  */
-bool textarea_set_text(uintptr_t self, const char *text)
+bool ro_textarea_set_text(uintptr_t self, const char *text)
 {
 	struct text_area *ta;
 	unsigned int len = strlen(text) + 1;
@@ -353,7 +353,7 @@ bool textarea_set_text(uintptr_t self, const char *text)
 	memcpy(ta->text, text, len);
 	ta->text_len = len;
 
-	textarea_reflow(ta, 0);
+	ro_textarea_reflow(ta, 0);
 
 	return true;
 }
@@ -367,7 +367,7 @@ bool textarea_set_text(uintptr_t self, const char *text)
  * \param len Length (bytes) of buffer pointed to by buf, or 0 to read length
  * \return Length (bytes) written/required or -1 on error
  */
-int textarea_get_text(uintptr_t self, char *buf, unsigned int len)
+int ro_textarea_get_text(uintptr_t self, char *buf, unsigned int len)
 {
 	struct text_area *ta;
 
@@ -399,7 +399,7 @@ int textarea_get_text(uintptr_t self, char *buf, unsigned int len)
  * \param index 0-based character index to insert at
  * \param text UTF-8 text to insert
  */
-void textarea_insert_text(uintptr_t self, unsigned int index,
+void ro_textarea_insert_text(uintptr_t self, unsigned int index,
 		const char *text)
 {
 	struct text_area *ta;
@@ -442,7 +442,7 @@ void textarea_insert_text(uintptr_t self, unsigned int index,
 	ta->text_len += b_len;
 
 	/** \todo calculate line to reflow from */
-	textarea_reflow(ta, 0);
+	ro_textarea_reflow(ta, 0);
 }
 
 /**
@@ -453,7 +453,7 @@ void textarea_insert_text(uintptr_t self, unsigned int index,
  * \param end End character index of replaced section (exclusive)
  * \param text UTF-8 text to insert
  */
-void textarea_replace_text(uintptr_t self, unsigned int start,
+void ro_textarea_replace_text(uintptr_t self, unsigned int start,
 		unsigned int end, const char *text)
 {
 	struct text_area *ta;
@@ -474,7 +474,7 @@ void textarea_replace_text(uintptr_t self, unsigned int start,
 		end = c_len;
 
 	if (start == end)
-		return textarea_insert_text(self, start, text);
+		return ro_textarea_insert_text(self, start, text);
 
 	if (start > end) {
 		int temp = end;
@@ -515,7 +515,7 @@ void textarea_replace_text(uintptr_t self, unsigned int start,
 	ta->text_len += b_len - (b_end - b_start);
 
 	/** \todo calculate line to reflow from */
-	textarea_reflow(ta, 0);
+	ro_textarea_reflow(ta, 0);
 }
 
 /**
@@ -524,7 +524,7 @@ void textarea_replace_text(uintptr_t self, unsigned int start,
  * \param self Text area
  * \param caret 0-based character index to place caret at
  */
-void textarea_set_caret(uintptr_t self, unsigned int caret)
+void ro_textarea_set_caret(uintptr_t self, unsigned int caret)
 {
 	struct text_area *ta;
 	size_t c_len, b_off;
@@ -566,7 +566,7 @@ void textarea_set_caret(uintptr_t self, unsigned int caret)
 
 
 	/* Finally, redraw the WIMP caret */
-	index = textarea_get_caret(self);
+	index = ro_textarea_get_caret(self);
 	os_line_height.x = 0;
 	os_line_height.y = (int)((float)(ta->line_height - ta->line_spacing) * 0.62) + 1;
 	ro_convert_pixels_to_os_units(&os_line_height, (os_mode)-1);
@@ -605,7 +605,7 @@ void textarea_set_caret(uintptr_t self, unsigned int caret)
  * \param x X position of caret on the screen
  * \param y Y position of caret on the screen
  */
-void textarea_set_caret_xy(uintptr_t self, int x, int y)
+void ro_textarea_set_caret_xy(uintptr_t self, int x, int y)
 {
 	struct text_area *ta;
 	wimp_window_state state;
@@ -665,7 +665,7 @@ void textarea_set_caret_xy(uintptr_t self, int x, int y)
 			temp = utf8_next(ta->text, ta->text_len, temp))
 		c_off++;
 
-	textarea_set_caret((uintptr_t)ta, c_off);
+	ro_textarea_set_caret((uintptr_t)ta, c_off);
 }
 
 /**
@@ -674,7 +674,7 @@ void textarea_set_caret_xy(uintptr_t self, int x, int y)
  * \param self Text area
  * \return 0-based character index of caret location, or -1 on error
  */
-unsigned int textarea_get_caret(uintptr_t self)
+unsigned int ro_textarea_get_caret(uintptr_t self)
 {
 	struct text_area *ta;
 	size_t c_off = 0, b_off;
@@ -701,7 +701,7 @@ unsigned int textarea_get_caret(uintptr_t self)
  * \param ta Text area to reflow
  * \param line Line number to begin reflow on
  */
-void textarea_reflow(struct text_area *ta, unsigned int line)
+void ro_textarea_reflow(struct text_area *ta, unsigned int line)
 {
 	rufl_code code;
 	char *text;
@@ -846,7 +846,8 @@ void textarea_reflow(struct text_area *ta, unsigned int line)
 		}
 
 		/* Now, attempt to create vertical scrollbar */
-		ro_gui_wimp_update_window_furniture(ta->window, wimp_WINDOW_VSCROLL,
+		ro_gui_wimp_update_window_furniture(ta->window,
+				wimp_WINDOW_VSCROLL,
 				wimp_WINDOW_VSCROLL);
 
 		/* Get new window state */
@@ -877,7 +878,7 @@ void textarea_reflow(struct text_area *ta, unsigned int line)
 		ta->vis_width -= vscroll_width;
 
 		/* Now we've done that, we have to reflow the text area */
-		textarea_reflow(ta, 0);
+		ro_textarea_reflow(ta, 0);
 	}
 }
 
@@ -887,13 +888,13 @@ void textarea_reflow(struct text_area *ta, unsigned int line)
  * \param pointer Mouse click state block
  * \return true if click handled, false otherwise
  */
-bool textarea_mouse_click(wimp_pointer *pointer)
+bool ro_textarea_mouse_click(wimp_pointer *pointer)
 {
 	struct text_area *ta;
 
 	ta = (struct text_area *)ro_gui_wimp_event_get_user_data(pointer->w);
 
-	textarea_set_caret_xy((uintptr_t)ta, pointer->pos.x, pointer->pos.y);
+	ro_textarea_set_caret_xy((uintptr_t)ta, pointer->pos.x, pointer->pos.y);
 	return true;
 }
 
@@ -903,7 +904,7 @@ bool textarea_mouse_click(wimp_pointer *pointer)
  * \param key Key pressed state block
  * \param true if press handled, false otherwise
  */
-bool textarea_key_press(wimp_key *key)
+bool ro_textarea_key_press(wimp_key *key)
 {
 	uint32_t c = (uint32_t) key->c;
 	wimp_key keypress;
@@ -925,49 +926,49 @@ bool textarea_key_press(wimp_key *key)
 		utf8_len = utf8_from_ucs4(c, utf8);
 		utf8[utf8_len] = '\0';
 
-		c_pos = textarea_get_caret((uintptr_t)ta);
-		textarea_insert_text((uintptr_t)ta, c_pos, utf8);
-		textarea_set_caret((uintptr_t)ta, ++c_pos);
+		c_pos = ro_textarea_get_caret((uintptr_t)ta);
+		ro_textarea_insert_text((uintptr_t)ta, c_pos, utf8);
+		ro_textarea_set_caret((uintptr_t)ta, ++c_pos);
 
 		redraw = true;
 	} else {
 		/** \todo handle command keys */
 		switch (c & ~IS_WIMP_KEY) {
 		case 8: /* Backspace */
-			c_pos = textarea_get_caret((uintptr_t)ta);
+			c_pos = ro_textarea_get_caret((uintptr_t)ta);
 			if (c_pos > 0) {
-				textarea_replace_text((uintptr_t)ta,
+				ro_textarea_replace_text((uintptr_t)ta,
 					c_pos - 1, c_pos, "");
-				textarea_set_caret((uintptr_t)ta, c_pos - 1);
+				ro_textarea_set_caret((uintptr_t)ta, c_pos - 1);
 				redraw = true;
 			}
 			break;
 		case 21: /* Ctrl + U */
-			textarea_set_text((uintptr_t)ta, "");
-			textarea_set_caret((uintptr_t)ta, 0);
+			ro_textarea_set_text((uintptr_t)ta, "");
+			ro_textarea_set_caret((uintptr_t)ta, 0);
 			redraw = true;
 			break;
 		case wimp_KEY_DELETE:
-			c_pos = textarea_get_caret((uintptr_t)ta);
+			c_pos = ro_textarea_get_caret((uintptr_t)ta);
 			if (os_version < RISCOS5 && c_pos > 0) {
-				textarea_replace_text((uintptr_t)ta,
+				ro_textarea_replace_text((uintptr_t)ta,
 						c_pos - 1, c_pos, "");
-				textarea_set_caret((uintptr_t)ta, c_pos - 1);
+				ro_textarea_set_caret((uintptr_t)ta, c_pos - 1);
 			} else {
-				textarea_replace_text((uintptr_t)ta, c_pos,
+				ro_textarea_replace_text((uintptr_t)ta, c_pos,
 						c_pos + 1, "");
 			}
 			redraw = true;
 			break;
 
 		case wimp_KEY_LEFT:
-			c_pos = textarea_get_caret((uintptr_t)ta);
+			c_pos = ro_textarea_get_caret((uintptr_t)ta);
 			if (c_pos > 0)
-				textarea_set_caret((uintptr_t)ta, c_pos - 1);
+				ro_textarea_set_caret((uintptr_t)ta, c_pos - 1);
 			break;
 		case wimp_KEY_RIGHT:
-			c_pos = textarea_get_caret((uintptr_t)ta);
-			textarea_set_caret((uintptr_t)ta, c_pos + 1);
+			c_pos = ro_textarea_get_caret((uintptr_t)ta);
+			ro_textarea_set_caret((uintptr_t)ta, c_pos + 1);
 			break;
 		case wimp_KEY_UP:
 			/** \todo Move caret up a line */
@@ -984,16 +985,17 @@ bool textarea_key_press(wimp_key *key)
 			/** \todo line end */
 			break;
 		case wimp_KEY_CONTROL | wimp_KEY_UP:
-			textarea_set_caret((uintptr_t)ta, 0);
+			ro_textarea_set_caret((uintptr_t)ta, 0);
 			break;
 		case wimp_KEY_CONTROL | wimp_KEY_DOWN:
-			textarea_set_caret((uintptr_t)ta, utf8_length(ta->text));
+			ro_textarea_set_caret((uintptr_t)ta,
+					utf8_length(ta->text));
 			break;
 
 		case wimp_KEY_COPY:
 			if (os_version < RISCOS5) {
-				c_pos = textarea_get_caret((uintptr_t)ta);
-				textarea_replace_text((uintptr_t)ta, c_pos,
+				c_pos = ro_textarea_get_caret((uintptr_t)ta);
+				ro_textarea_replace_text((uintptr_t)ta, c_pos,
 						c_pos + 1, "");
 			} else {
 				/** \todo line end */
@@ -1004,10 +1006,10 @@ bool textarea_key_press(wimp_key *key)
 		case wimp_KEY_RETURN:
 			if (ta->flags & TEXTAREA_MULTILINE) {
 				/* Insert newline */
-				c_pos = textarea_get_caret((uintptr_t)ta);
-				textarea_insert_text((uintptr_t)ta, c_pos,
+				c_pos = ro_textarea_get_caret((uintptr_t)ta);
+				ro_textarea_insert_text((uintptr_t)ta, c_pos,
 						"\n");
-				textarea_set_caret((uintptr_t)ta, ++c_pos);
+				ro_textarea_set_caret((uintptr_t)ta, ++c_pos);
 
 				redraw = true;
 
@@ -1038,7 +1040,7 @@ bool textarea_key_press(wimp_key *key)
 		update.box.y1 = 0;
 		update.box.x1 = ta->vis_width;
 		update.box.y0 = -ta->line_height * (ta->line_count + 1);
-		textarea_redraw_internal(&update, true);
+		ro_textarea_redraw_internal(&update, true);
 	}
 
 	return true;
@@ -1049,9 +1051,9 @@ bool textarea_key_press(wimp_key *key)
  *
  * \param redraw Redraw request block
  */
-void textarea_redraw(wimp_draw *redraw)
+void ro_textarea_redraw(wimp_draw *redraw)
 {
-	textarea_redraw_internal(redraw, false);
+	ro_textarea_redraw_internal(redraw, false);
 }
 
 /**
@@ -1060,7 +1062,7 @@ void textarea_redraw(wimp_draw *redraw)
  * \param redraw Redraw/update request block
  * \param update True if update, false if full redraw
  */
-void textarea_redraw_internal(wimp_draw *redraw, bool update)
+void ro_textarea_redraw_internal(wimp_draw *redraw, bool update)
 {
 	struct text_area *ta;
 	int clip_x0, clip_y0, clip_x1, clip_y1;
@@ -1170,7 +1172,7 @@ void textarea_redraw_internal(wimp_draw *redraw, bool update)
  *
  * \param open OpenWindow block
  */
-void textarea_open(wimp_open *open)
+void ro_textarea_open(wimp_open *open)
 {
 	os_error *error;
 

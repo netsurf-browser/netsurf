@@ -338,8 +338,8 @@ void ro_gui_cert_open(struct tree *tree, struct node *node)
 		return;
 	}
 	if (session->issuer)
-		textarea_destroy(session->issuer);
-	session->issuer = textarea_create(w, ICON_CERT_ISSUER,
+		ro_textarea_destroy(session->issuer);
+	session->issuer = ro_textarea_create(w, ICON_CERT_ISSUER,
 			TEXTAREA_MULTILINE | TEXTAREA_READONLY,
 			ro_gui_desktop_font_family, ro_gui_desktop_font_size,
 			ro_gui_desktop_font_style);
@@ -348,28 +348,28 @@ void ro_gui_cert_open(struct tree *tree, struct node *node)
 		warn_user("NoMemory", 0);
 		return;
 	}
-	if (!textarea_set_text(session->issuer, session->issuer_t)) {
-		textarea_destroy(session->issuer);
+	if (!ro_textarea_set_text(session->issuer, session->issuer_t)) {
+		ro_textarea_destroy(session->issuer);
 		xwimp_delete_window(w);
 		warn_user("NoMemory", 0);
 		return;
 	}
 
 	if (session->subject)
-		textarea_destroy(session->subject);
-	session->subject = textarea_create(w, ICON_CERT_SUBJECT,
+		ro_textarea_destroy(session->subject);
+	session->subject = ro_textarea_create(w, ICON_CERT_SUBJECT,
 			TEXTAREA_MULTILINE | TEXTAREA_READONLY,
 			ro_gui_desktop_font_family, ro_gui_desktop_font_size,
 			ro_gui_desktop_font_style);
 	if (!session->subject) {
-		textarea_destroy(session->issuer);
+		ro_textarea_destroy(session->issuer);
 		xwimp_delete_window(w);
 		warn_user("NoMemory", 0);
 		return;
 	}
-	if (!textarea_set_text(session->subject, session->subject_t)) {
-		textarea_destroy(session->subject);
-		textarea_destroy(session->issuer);
+	if (!ro_textarea_set_text(session->subject, session->subject_t)) {
+		ro_textarea_destroy(session->subject);
+		ro_textarea_destroy(session->issuer);
 		xwimp_delete_window(w);
 		warn_user("NoMemory", 0);
 		return;
@@ -392,9 +392,9 @@ void ro_gui_cert_close(wimp_w w)
 
 	for (i = 0; i < data->num; i++) {
 		if (data->certs[i].subject)
-			textarea_destroy(data->certs[i].subject);
+			ro_textarea_destroy(data->certs[i].subject);
 		if (data->certs[i].issuer)
-			textarea_destroy(data->certs[i].issuer);
+			ro_textarea_destroy(data->certs[i].issuer);
 	}
 	free(data->certs);
 	free(data->url);

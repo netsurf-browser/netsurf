@@ -19,6 +19,7 @@
 #ifndef GTK_GUI_H
 #define GTK_GUI_H
 
+#include <inttypes.h>
 #include <stdbool.h>
 #include <gtk/gtk.h>
 #include <glade/glade.h>
@@ -36,6 +37,8 @@ extern GtkWindow *wndTooltip;
 extern GtkLabel *labelTooltip;
 
 extern GtkDialog *wndOpenFile;
+
+uint32_t gtk_gui_gdkkey_to_nskey(GdkEventKey *);
 
 #endif /* GTK_GUI_H */
 

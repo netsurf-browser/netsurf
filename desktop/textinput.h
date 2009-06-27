@@ -28,6 +28,7 @@
 
 #include <stdbool.h>
 
+
 struct browser_window;
 struct box;
 

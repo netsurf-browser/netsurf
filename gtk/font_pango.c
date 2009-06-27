@@ -183,6 +183,7 @@ bool nsfont_split(const struct css_style *style,
 
 	pango_layout_set_width(layout, x * PANGO_SCALE);
 	pango_layout_set_wrap(layout, PANGO_WRAP_WORD);
+	pango_layout_set_single_paragraph_mode(layout, true);
 	line = pango_layout_get_line(layout, 1);
 	if (line)
 		index = line->start_index - 1;

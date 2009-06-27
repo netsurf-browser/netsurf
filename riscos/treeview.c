@@ -1080,7 +1080,7 @@ void ro_gui_tree_start_edit(struct tree *tree, struct node_element *element,
 		LOG(("xwimp_create_icon: 0x%x: %s",
 				error->errnum, error->errmess));
 
-	tree->textarea_handle = textarea_create((wimp_w)tree->handle,
+	tree->textarea_handle = ro_textarea_create((wimp_w)tree->handle,
 			(wimp_i)tree->edit_handle, 0, ro_gui_desktop_font_family,
 			ro_gui_desktop_font_size,
 			ro_gui_desktop_font_style);
@@ -1088,12 +1088,13 @@ void ro_gui_tree_start_edit(struct tree *tree, struct node_element *element,
 		ro_gui_tree_stop_edit(tree);
 		return;
 	}
-	textarea_set_text(tree->textarea_handle, element->text);
+	ro_textarea_set_text(tree->textarea_handle, element->text);
 	if (pointer)
-		textarea_set_caret_xy(tree->textarea_handle,
+		ro_textarea_set_caret_xy(tree->textarea_handle,
 				pointer->pos.x, pointer->pos.y);
 	else
-		textarea_set_caret(tree->textarea_handle, strlen(element->text));
+		ro_textarea_set_caret(tree->textarea_handle,
+				strlen(element->text));
 
 	tree_handle_node_element_changed(tree, element);
 	ro_gui_tree_scroll_visible(tree, element);
@@ -1114,7 +1115,7 @@ void ro_gui_tree_stop_edit(struct tree *tree)
 	if (!tree->editing) return;
 
 	if (tree->textarea_handle) {
-	  	textarea_destroy(tree->textarea_handle);
+	  	ro_textarea_destroy(tree->textarea_handle);
 	  	tree->textarea_handle = 0;
 	}
 	error = xwimp_delete_icon((wimp_w)tree->handle, (wimp_i)tree->edit_handle);
@@ -1308,7 +1309,8 @@ bool ro_gui_tree_keypress(wimp_key *key)
 			return true;
 		case wimp_KEY_RETURN:
 			if ((tree->editing) && (tree->textarea_handle)) {
-			  	strlen = textarea_get_text(tree->textarea_handle,
+			  	strlen = ro_textarea_get_text(
+						tree->textarea_handle,
 			  			NULL, 0);
 			  	if (strlen == -1) {
 					ro_gui_tree_stop_edit(tree);
@@ -1321,7 +1323,7 @@ bool ro_gui_tree_keypress(wimp_key *key)
 			  	  	warn_user("NoMemory", 0);
 			  	  	return true;
 			  	}
-			  	textarea_get_text(tree->textarea_handle,
+			  	ro_textarea_get_text(tree->textarea_handle,
 			  			new_string, strlen);
 			  	free((void *)tree->editing->text);
 			  	tree->editing->text = new_string;

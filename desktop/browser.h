@@ -191,21 +191,24 @@ typedef enum {
 					 * a drag. */
 	BROWSER_MOUSE_CLICK_1   = 4,	/* button 1 clicked. */
 	BROWSER_MOUSE_CLICK_2   = 8,	/* button 2 clicked. */
+ 	BROWSER_MOUSE_DOUBLE_CLICK = 16, /* button 1 double clicked */
 
-	BROWSER_MOUSE_DRAG_1    = 16,	/* start of button 1 drag operation */
-	BROWSER_MOUSE_DRAG_2    = 32,	/* start of button 2 drag operation */
+	BROWSER_MOUSE_DRAG_1    = 32,	/* start of button 1 drag operation */
+	BROWSER_MOUSE_DRAG_2    = 64,	/* start of button 2 drag operation */
 
-	BROWSER_MOUSE_DRAG_ON   = 64,	/* a drag operation was started and
+	BROWSER_MOUSE_DRAG_ON   = 128,	/* a drag operation was started and
 					 * a mouse button is still pressed */
 
-	BROWSER_MOUSE_HOLDING_1 = 128,	/* while button 1 drag is in progress */
-	BROWSER_MOUSE_HOLDING_2 = 256,	/* while button 2 drag is in progress */
+	BROWSER_MOUSE_HOLDING_1 = 256,	/* while button 1 drag is in progress */
+	BROWSER_MOUSE_HOLDING_2 = 512,	/* while button 2 drag is in progress */
 
 
-	BROWSER_MOUSE_MOD_1     = 512,	/* primary modifier key pressed
+	BROWSER_MOUSE_MOD_1     = 1024,	/* primary modifier key pressed
 					 * (eg. Shift) */
-	BROWSER_MOUSE_MOD_2     = 1024	/* secondary modifier key pressed
+	BROWSER_MOUSE_MOD_2     = 2048,	/* secondary modifier key pressed
 					 * (eg. Ctrl) */
+	BROWSER_MOUSE_MOD_3     = 4096	/* secondary modifier key pressed
+					 * (eg. Alt) */
 } browser_mouse_state;
 
 

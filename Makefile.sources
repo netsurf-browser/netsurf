@@ -13,7 +13,7 @@ S_RENDER := box.c box_construct.c box_normalise.c directory.c		\
 	layout.c list.c loosen.c table.c textplain.c
 S_UTILS := base64.c filename.c hashtable.c locale.c messages.c talloc.c	\
 	url.c utf8.c utils.c useragent.c
-S_DESKTOP := knockout.c options.c print.c tree.c version.c
+S_DESKTOP := knockout.c options.c print.c tree.c version.c textarea.c
 
 # S_COMMON are sources common to all builds
 S_COMMON := $(addprefix content/,$(S_CONTENT))				\

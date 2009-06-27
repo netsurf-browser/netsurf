@@ -38,7 +38,7 @@
 struct gui_window *window_list = 0;	/**< first entry in win list*/
 int temp_open_background = -1;
 
-static uint32_t gdkkey_to_nskey(GdkEventKey *);
+
 static void nsgtk_gui_window_attach_child(struct gui_window *parent,
                                           struct gui_window *child);
 /* Methods which apply only to a gui_window */
@@ -449,50 +449,11 @@ gboolean nsgtk_window_button_release_event(GtkWidget *widget,
 	return TRUE;
 }
 
-uint32_t gdkkey_to_nskey(GdkEventKey *key)
-{
-        /* this function will need to become much more complex to support
-         * everything that the RISC OS version does.  But this will do for
-         * now.  I hope.
-         */
-
-        switch (key->keyval)
-        {
-                case GDK_BackSpace:             return KEY_DELETE_LEFT;
-                case GDK_Delete:                return KEY_DELETE_RIGHT;
-                case GDK_Linefeed:              return 13;
-                case GDK_Return:                return 10;
-                case GDK_Left:                  return KEY_LEFT;
-                case GDK_Right:                 return KEY_RIGHT;
-                case GDK_Up:                    return KEY_UP;
-                case GDK_Down:                  return KEY_DOWN;
-
-                /* Modifiers - do nothing for now */
-                case GDK_Shift_L:
-                case GDK_Shift_R:
-                case GDK_Control_L:
-                case GDK_Control_R:
-                case GDK_Caps_Lock:
-                case GDK_Shift_Lock:
-                case GDK_Meta_L:
-                case GDK_Meta_R:
-                case GDK_Alt_L:
-                case GDK_Alt_R:
-                case GDK_Super_L:
-                case GDK_Super_R:
-                case GDK_Hyper_L:
-                case GDK_Hyper_R:               return 0;
-
-                default:                        return gdk_keyval_to_unicode(
-								key->keyval);
-        }
-}
-
 gboolean nsgtk_window_keypress_event(GtkWidget *widget, GdkEventKey *event,
 					gpointer data)
 {
 	struct gui_window *g = data;
-	uint32_t nskey = gdkkey_to_nskey(event);
+	uint32_t nskey = gtk_gui_gdkkey_to_nskey(event);
 	if (browser_window_key_press(g->bw, nskey))
 		return TRUE;
 
