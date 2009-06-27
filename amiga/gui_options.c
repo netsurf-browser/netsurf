@@ -57,14 +57,56 @@
 #include <reaction/reaction.h>
 #include <reaction/reaction_macros.h>
 
+enum
+{
+	GRP_OPTS_HOMEPAGE = GID_OPTS_LAST,
+	GRP_OPTS_CONTENTBLOCKING,
+	GRP_OPTS_CONTENTLANGUAGE,
+	GRP_OPTS_HISTORY,
+	GRP_OPTS_MISC,
+	GRP_OPTS_SCREEN,
+	GRP_OPTS_THEME,
+	GRP_OPTS_MOUSE,
+	GRP_OPTS_PROXY,
+	GRP_OPTS_FETCHING,
+	GRP_OPTS_IMAGES,
+	GRP_OPTS_ANIMS,
+	GRP_OPTS_FONTFACES,
+	GRP_OPTS_FONTSIZE,
+	GRP_OPTS_MEMCACHE,
+	GRP_OPTS_DISCCACHE,
+	GRP_OPTS_DOWNLOADS,
+	GRP_OPTS_TABS,
+	GRP_OPTS_CLIPBOARD,
+	GRP_OPTS_CONTEXTMENU,
+	GRP_OPTS_MARGINS,
+	GRP_OPTS_SCALING,
+	GRP_OPTS_APPEARANCE,
+	GRP_OPTS_ADVANCED,
+	GRP_OPTS_LAST
+};
+
+enum
+{
+	LAB_OPTS_WINTITLE = GRP_OPTS_LAST,
+	LAB_OPTS_RESTART,
+	LAB_OPTS_LAST
+};
+
+#define OPTS_LAST LAB_OPTS_LAST
+#define OPTS_MAX_TABS 9
+#define OPTS_MAX_SCREEN 4
+#define OPTS_MAX_PROXY 5
+#define OPTS_MAX_NATIVEBM 3
+
 static struct ami_gui_opts_window *gow = NULL;
 
-CONST_STRPTR tabs[9];
-static STRPTR screenopts[4];
-CONST_STRPTR proxyopts[5];
-CONST_STRPTR nativebmopts[3];
+CONST_STRPTR tabs[OPTS_MAX_TABS];
+static STRPTR screenopts[OPTS_MAX_SCREEN];
+CONST_STRPTR proxyopts[OPTS_MAX_PROXY];
+CONST_STRPTR nativebmopts[OPTS_MAX_NATIVEBM];
 CONST_STRPTR fontopts[6];
-CONST_STRPTR gadlab[GID_OPTS_LAST];
+CONST_STRPTR gadlab[OPTS_LAST];
 
 void ami_gui_opts_setup(void)
 {
@@ -147,6 +189,33 @@ void ami_gui_opts_setup(void)
 	gadlab[GID_OPTS_USE] = (char *)ami_utf8_easy((char *)messages_get("Use"));
 	gadlab[GID_OPTS_CANCEL] = (char *)ami_utf8_easy((char *)messages_get("Cancel"));
 
+	gadlab[LAB_OPTS_WINTITLE] = (char *)ami_utf8_easy((char *)messages_get("Preferences"));
+	gadlab[LAB_OPTS_RESTART] = (char *)ami_utf8_easy((char *)messages_get("NeedRestart"));
+
+	gadlab[GRP_OPTS_HOMEPAGE] = (char *)ami_utf8_easy((char *)messages_get("HomePage"));
+	gadlab[GRP_OPTS_CONTENTBLOCKING] = (char *)ami_utf8_easy((char *)messages_get("ContentBlocking"));
+	gadlab[GRP_OPTS_CONTENTLANGUAGE] = (char *)ami_utf8_easy((char *)messages_get("ContentLanguage"));
+	gadlab[GRP_OPTS_HISTORY] = (char *)ami_utf8_easy((char *)messages_get("History"));
+	gadlab[GRP_OPTS_MISC] = (char *)ami_utf8_easy((char *)messages_get("Miscellaneous"));
+	gadlab[GRP_OPTS_SCREEN] = (char *)ami_utf8_easy((char *)messages_get("Screen"));
+	gadlab[GRP_OPTS_THEME] = (char *)ami_utf8_easy((char *)messages_get("Theme"));
+	gadlab[GRP_OPTS_MOUSE] = (char *)ami_utf8_easy((char *)messages_get("MousePointers"));
+	gadlab[GRP_OPTS_PROXY] = (char *)ami_utf8_easy((char *)messages_get("Proxy"));
+	gadlab[GRP_OPTS_FETCHING] = (char *)ami_utf8_easy((char *)messages_get("Fetching"));
+	gadlab[GRP_OPTS_IMAGES] = (char *)ami_utf8_easy((char *)messages_get("Images"));
+	gadlab[GRP_OPTS_ANIMS] = (char *)ami_utf8_easy((char *)messages_get("Animations"));
+	gadlab[GRP_OPTS_FONTFACES] = (char *)ami_utf8_easy((char *)messages_get("FontFaces"));
+	gadlab[GRP_OPTS_FONTSIZE] = (char *)ami_utf8_easy((char *)messages_get("FontSize"));
+	gadlab[GRP_OPTS_MEMCACHE] = (char *)ami_utf8_easy((char *)messages_get("CacheMemory"));
+	gadlab[GRP_OPTS_DISCCACHE] = (char *)ami_utf8_easy((char *)messages_get("CacheDisc"));
+	gadlab[GRP_OPTS_DOWNLOADS] = (char *)ami_utf8_easy((char *)messages_get("Downloads"));
+	gadlab[GRP_OPTS_TABS] = (char *)ami_utf8_easy((char *)messages_get("TabbedBrowsing"));
+	gadlab[GRP_OPTS_CLIPBOARD] = (char *)ami_utf8_easy((char *)messages_get("Clipboard"));
+	gadlab[GRP_OPTS_CONTEXTMENU] = (char *)ami_utf8_easy((char *)messages_get("ContextMenu"));
+	gadlab[GRP_OPTS_MARGINS] = (char *)ami_utf8_easy((char *)messages_get("Margins"));
+	gadlab[GRP_OPTS_SCALING] = (char *)ami_utf8_easy((char *)messages_get("Scaling"));
+	gadlab[GRP_OPTS_APPEARANCE] = (char *)ami_utf8_easy((char *)messages_get("Appearance"));
+	gadlab[GRP_OPTS_ADVANCED] = (char *)ami_utf8_easy((char *)messages_get("Advanced"));
 
 	fontopts[0] = gadlab[GID_OPTS_FONT_SANS];
 	fontopts[1] = gadlab[GID_OPTS_FONT_SERIF];
@@ -154,8 +223,26 @@ void ami_gui_opts_setup(void)
 	fontopts[3] = gadlab[GID_OPTS_FONT_CURSIVE];
 	fontopts[4] = gadlab[GID_OPTS_FONT_FANTASY];
 	fontopts[5] = NULL;
+}
 
-// reminder to self - need to free all the above strings
+void ami_gui_opts_free(void)
+{
+	int i;
+
+	for(i = 0; i++; i < OPTS_LAST)
+		if(gadlab[i]) FreeVec((APTR)gadlab[i]);
+
+	for(i = 0; i++; i < OPTS_MAX_TABS)
+		if(tabs[i]) FreeVec((APTR)tabs[i]);
+
+	for(i = 0; i++; i < OPTS_MAX_SCREEN)
+		if(screenopts[i]) FreeVec((APTR)screenopts[i]);
+
+	for(i = 0; i++; i < OPTS_MAX_PROXY)
+		if(proxyopts[i]) FreeVec((APTR)proxyopts[i]);
+
+	for(i = 0; i++; i < OPTS_MAX_NATIVEBM)
+		if(nativebmopts[i]) FreeVec((APTR)nativebmopts[i]);
 }
 
 void ami_gui_opts_open(void)
@@ -253,7 +340,7 @@ void ami_gui_opts_open(void)
 
 		gow->objects[OID_MAIN] = WindowObject,
 			WA_ScreenTitle,nsscreentitle,
-			WA_Title,messages_get("**guiopts"),
+			WA_Title, gadlab[LAB_OPTS_WINTITLE],
 			WA_Activate, TRUE,
 			WA_DepthGadget, TRUE,
 			WA_DragBar, TRUE,
@@ -278,7 +365,7 @@ void ami_gui_opts_open(void)
 								LAYOUT_AddChild,VGroupObject,
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
-									LAYOUT_Label, messages_get("HomePage"),
+									LAYOUT_Label, gadlab[GRP_OPTS_HOMEPAGE],
 									LAYOUT_AddChild, gow->gadgets[GID_OPTS_HOMEPAGE] = StringObject,
 										GA_ID, GID_OPTS_HOMEPAGE,
 										GA_RelVerify, TRUE,
@@ -306,7 +393,7 @@ void ami_gui_opts_open(void)
 									LAYOUT_AddChild, VGroupObject,
 										LAYOUT_SpaceOuter, TRUE,
 										LAYOUT_BevelStyle, BVS_GROUP, 
-										LAYOUT_Label, messages_get("ContentBlocking"),
+										LAYOUT_Label, gadlab[GRP_OPTS_CONTENTBLOCKING],
 		                				LAYOUT_AddChild, gow->gadgets[GID_OPTS_HIDEADS] = CheckBoxObject,
       	              						GA_ID, GID_OPTS_HIDEADS,
          	           						GA_RelVerify, TRUE,
@@ -317,7 +404,7 @@ void ami_gui_opts_open(void)
 									LAYOUT_AddChild,VGroupObject,
 										LAYOUT_SpaceOuter, TRUE,
 										LAYOUT_BevelStyle, BVS_GROUP, 
-										LAYOUT_Label, messages_get("ContentLanguage"),
+										LAYOUT_Label, gadlab[GRP_OPTS_CONTENTLANGUAGE],
 										LAYOUT_AddChild, gow->gadgets[GID_OPTS_CONTENTLANG] = StringObject,
 											GA_ID, GID_OPTS_CONTENTLANG,
 											GA_RelVerify, TRUE,
@@ -335,7 +422,7 @@ void ami_gui_opts_open(void)
 								LAYOUT_AddChild, VGroupObject,
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
-									LAYOUT_Label, messages_get("History"),
+									LAYOUT_Label, gadlab[GRP_OPTS_HISTORY],
 									LAYOUT_AddChild, gow->gadgets[GID_OPTS_HISTORY] = IntegerObject,
 										GA_ID, GID_OPTS_CACHE_DISC,
 										GA_RelVerify, TRUE,
@@ -353,7 +440,7 @@ void ami_gui_opts_open(void)
 								LAYOUT_AddChild,VGroupObject,
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
-									LAYOUT_Label, messages_get("Miscellaneous"),
+									LAYOUT_Label, gadlab[GRP_OPTS_MISC],
 		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_REFERRAL] = CheckBoxObject,
       	              					GA_ID, GID_OPTS_REFERRAL,
          	           					GA_RelVerify, TRUE,
@@ -379,7 +466,7 @@ void ami_gui_opts_open(void)
 								LAYOUT_AddChild,VGroupObject,
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
-									LAYOUT_Label, messages_get("Screen"),
+									LAYOUT_Label, gadlab[GRP_OPTS_SCREEN],
 									LAYOUT_AddChild, HGroupObject,
 			                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_SCREEN] = RadioButtonObject,
     	  	              					GA_ID, GID_OPTS_SCREEN,
@@ -412,7 +499,7 @@ void ami_gui_opts_open(void)
 								LAYOUT_AddChild,VGroupObject,
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
-									LAYOUT_Label, messages_get("Theme"),
+									LAYOUT_Label, gadlab[GRP_OPTS_THEME],
 									LAYOUT_AddChild, gow->gadgets[GID_OPTS_THEME] = GetFileObject,
 										GA_ID, GID_OPTS_THEME,
 										GA_RelVerify, TRUE,
@@ -426,7 +513,7 @@ void ami_gui_opts_open(void)
 								LAYOUT_AddChild,VGroupObject,
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
-									LAYOUT_Label, messages_get("MousePointers"),
+									LAYOUT_Label, gadlab[GRP_OPTS_MOUSE],
 		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_PTRTRUE] = CheckBoxObject,
       	              					GA_ID, GID_OPTS_PTRTRUE,
          	           					GA_RelVerify, TRUE,
@@ -443,7 +530,7 @@ void ami_gui_opts_open(void)
 								LayoutEnd, // mouse
 								CHILD_WeightedHeight,0,
 			                	LAYOUT_AddImage, LabelObject,
-    	     	           			LABEL_Text, messages_get("will not take effect until next time netsurf is launched"),
+    	     	           			LABEL_Text, gadlab[LAB_OPTS_RESTART],
 	            	    		LabelEnd,
 							LayoutEnd, // page vgroup
 							CHILD_WeightedHeight, 0,
@@ -456,7 +543,7 @@ void ami_gui_opts_open(void)
 								LAYOUT_AddChild,VGroupObject,
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
-									LAYOUT_Label, messages_get("HTTPProxy"),
+									LAYOUT_Label, gadlab[GRP_OPTS_PROXY],
 									LAYOUT_AddChild, gow->gadgets[GID_OPTS_PROXY] = ChooserObject,
 										GA_ID, GID_OPTS_PROXY,
 										GA_RelVerify, TRUE,
@@ -518,7 +605,7 @@ void ami_gui_opts_open(void)
 								LAYOUT_AddChild,VGroupObject,
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
-									LAYOUT_Label, messages_get("Fetching"),
+									LAYOUT_Label, gadlab[GRP_OPTS_FETCHING],
 									LAYOUT_AddChild, gow->gadgets[GID_OPTS_FETCHMAX] = IntegerObject,
 										GA_ID, GID_OPTS_FETCHMAX,
 										GA_RelVerify, TRUE,
@@ -568,7 +655,7 @@ void ami_gui_opts_open(void)
 								LAYOUT_AddChild,VGroupObject,
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
-									LAYOUT_Label, messages_get("Images"),
+									LAYOUT_Label, gadlab[GRP_OPTS_IMAGES],
 									LAYOUT_AddChild, gow->gadgets[GID_OPTS_NATIVEBM] = ChooserObject,
 										GA_ID, GID_OPTS_NATIVEBM,
 										GA_RelVerify, TRUE,
@@ -590,7 +677,7 @@ void ami_gui_opts_open(void)
 								LAYOUT_AddChild,VGroupObject,
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
-									LAYOUT_Label, messages_get("Animations"),
+									LAYOUT_Label, gadlab[GRP_OPTS_ANIMS],
 									LAYOUT_AddChild, gow->gadgets[GID_OPTS_ANIMSPEED] = StringObject,
 										GA_ID, GID_OPTS_ANIMSPEED,
 										GA_RelVerify, TRUE,
@@ -622,7 +709,7 @@ void ami_gui_opts_open(void)
 								LAYOUT_AddChild,VGroupObject,
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP,
-									LAYOUT_Label, messages_get("FontFaces"),
+									LAYOUT_Label, gadlab[GRP_OPTS_FONTFACES],
 									LAYOUT_AddChild, gow->gadgets[GID_OPTS_FONT_SANS] = GetFontObject,
 										GA_ID, GID_OPTS_FONT_SANS,
 										GA_RelVerify, TRUE,
@@ -684,7 +771,7 @@ void ami_gui_opts_open(void)
 								LAYOUT_AddChild,VGroupObject,
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
-									LAYOUT_Label, messages_get("FontSize"),
+									LAYOUT_Label, gadlab[GRP_OPTS_FONTSIZE],
 									LAYOUT_AddChild, gow->gadgets[GID_OPTS_FONT_SIZE] = IntegerObject,
 										GA_ID, GID_OPTS_FONT_SIZE,
 										GA_RelVerify, TRUE,
@@ -722,7 +809,7 @@ void ami_gui_opts_open(void)
 								LAYOUT_AddChild, VGroupObject,
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
-									LAYOUT_Label, messages_get("MemCache"),
+									LAYOUT_Label, gadlab[GRP_OPTS_MEMCACHE],
 									LAYOUT_AddChild, gow->gadgets[GID_OPTS_CACHE_MEM] = IntegerObject,
 										GA_ID, GID_OPTS_CACHE_MEM,
 										GA_RelVerify, TRUE,
@@ -740,7 +827,7 @@ void ami_gui_opts_open(void)
 								LAYOUT_AddChild, VGroupObject,
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
-									LAYOUT_Label, messages_get("DiscCache"),
+									LAYOUT_Label, gadlab[GRP_OPTS_DISCCACHE],
 									LAYOUT_AddChild, gow->gadgets[GID_OPTS_CACHE_DISC] = IntegerObject,
 										GA_ID, GID_OPTS_CACHE_DISC,
 										GA_RelVerify, TRUE,
@@ -767,7 +854,7 @@ void ami_gui_opts_open(void)
 								LAYOUT_AddChild,VGroupObject,
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
-									LAYOUT_Label, messages_get("Downloads"),
+									LAYOUT_Label, gadlab[GRP_OPTS_DOWNLOADS],
 		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_OVERWRITE] = CheckBoxObject,
       	              					GA_ID, GID_OPTS_CLIPBOARD,
          	           					GA_RelVerify, TRUE,
@@ -791,7 +878,7 @@ void ami_gui_opts_open(void)
 								LAYOUT_AddChild,VGroupObject,
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
-									LAYOUT_Label, messages_get("TabbedBrowsing"),
+									LAYOUT_Label, gadlab[GRP_OPTS_TABS],
 		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_TAB_ACTIVE] = CheckBoxObject,
       	              					GA_ID, GID_OPTS_TAB_ACTIVE,
          	           					GA_RelVerify, TRUE,
@@ -809,7 +896,7 @@ void ami_gui_opts_open(void)
 								LAYOUT_AddChild,HGroupObject,
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
-									LAYOUT_Label, messages_get("Clipboard"),
+									LAYOUT_Label, gadlab[GRP_OPTS_CLIPBOARD],
 		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_CLIPBOARD] = CheckBoxObject,
       	              					GA_ID, GID_OPTS_CLIPBOARD,
          	           					GA_RelVerify, TRUE,
@@ -821,7 +908,7 @@ void ami_gui_opts_open(void)
 								LAYOUT_AddChild,HGroupObject,
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
-									LAYOUT_Label, messages_get("ContextMenu"),
+									LAYOUT_Label, gadlab[GRP_OPTS_CONTEXTMENU],
 		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_CMENU_ENABLE] = CheckBoxObject,
       	              					GA_ID, GID_OPTS_CMENU_ENABLE,
          	           					GA_RelVerify, TRUE,
@@ -848,7 +935,7 @@ void ami_gui_opts_open(void)
 								LAYOUT_AddChild, HGroupObject,
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
-									LAYOUT_Label, messages_get("Margins"),
+									LAYOUT_Label, gadlab[GRP_OPTS_MARGINS],
 									LAYOUT_AddChild, gow->gadgets[GID_OPTS_MARGIN_TOP] = IntegerObject,
 										GA_ID, GID_OPTS_MARGIN_TOP,
 										GA_RelVerify, TRUE,
@@ -902,7 +989,7 @@ void ami_gui_opts_open(void)
 								LAYOUT_AddChild, VGroupObject,
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
-									LAYOUT_Label, messages_get("Scaling"),
+									LAYOUT_Label, gadlab[GRP_OPTS_SCALING],
 									LAYOUT_AddChild, gow->gadgets[GID_OPTS_EXPORT_SCALE] = IntegerObject,
 										GA_ID, GID_OPTS_EXPORT_SCALE,
 										GA_RelVerify, TRUE,
@@ -920,7 +1007,7 @@ void ami_gui_opts_open(void)
 								LAYOUT_AddChild,VGroupObject,
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
-									LAYOUT_Label, messages_get("Appearance"),
+									LAYOUT_Label, gadlab[GRP_OPTS_APPEARANCE],
 		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_EXPORT_NOIMAGES] = CheckBoxObject,
       	              					GA_ID, GID_OPTS_EXPORT_NOIMAGES,
          	           					GA_RelVerify, TRUE,
@@ -944,7 +1031,7 @@ void ami_gui_opts_open(void)
 								LAYOUT_AddChild,VGroupObject,
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
-									LAYOUT_Label, messages_get("Advanced"),
+									LAYOUT_Label, gadlab[GRP_OPTS_ADVANCED],
 		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_EXPORT_COMPRESS] = CheckBoxObject,
       	              					GA_ID, GID_OPTS_EXPORT_COMPRESS,
          	           					GA_RelVerify, TRUE,
@@ -1204,6 +1291,7 @@ void ami_gui_opts_close(void)
 	DisposeObject(gow->objects[OID_MAIN]);
 	DelObject(gow->node);
 	gow = NULL;
+	ami_gui_opts_free();
 }
 
 BOOL ami_gui_opts_event(void)
