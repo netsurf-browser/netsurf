@@ -21,6 +21,7 @@
 #include <proto/exec.h>
 #include <proto/intuition.h>
 #include <proto/utility.h>
+#include <libraries/gadtools.h>
 
 #include "amiga/object.h"
 #include "amiga/gui.h"
@@ -90,6 +91,11 @@ enum
 {
 	LAB_OPTS_WINTITLE = GRP_OPTS_LAST,
 	LAB_OPTS_RESTART,
+	LAB_OPTS_DAYS,
+	LAB_OPTS_SECS,
+	LAB_OPTS_PT,
+	LAB_OPTS_MB,
+	LAB_OPTS_MM,
 	LAB_OPTS_LAST
 };
 
@@ -110,25 +116,25 @@ CONST_STRPTR gadlab[OPTS_LAST];
 
 void ami_gui_opts_setup(void)
 {
-	tabs[0] = (char *)ami_utf8_easy((char *)messages_get("General"));
+	tabs[0] = (char *)ami_utf8_easy((char *)messages_get("con_general"));
 	tabs[1] = (char *)ami_utf8_easy((char *)messages_get("Display"));
-	tabs[2] = (char *)ami_utf8_easy((char *)messages_get("Network"));
-	tabs[3] = (char *)ami_utf8_easy((char *)messages_get("Rendering"));
-	tabs[4] = (char *)ami_utf8_easy((char *)messages_get("Fonts"));
-	tabs[5] = (char *)ami_utf8_easy((char *)messages_get("Cache"));
-	tabs[6] = (char *)ami_utf8_easy((char *)messages_get("Advanced"));
+	tabs[2] = (char *)ami_utf8_easy((char *)messages_get("con_connect"));
+	tabs[3] = (char *)ami_utf8_easy((char *)messages_get("con_rendering"));
+	tabs[4] = (char *)ami_utf8_easy((char *)messages_get("con_fonts"));
+	tabs[5] = (char *)ami_utf8_easy((char *)messages_get("con_cache"));
+	tabs[6] = (char *)ami_utf8_easy((char *)messages_get("con_advanced"));
 	tabs[7] = (char *)ami_utf8_easy((char *)messages_get("Export"));
 	tabs[8] = NULL;
 
-	screenopts[0] = (char *)ami_utf8_easy((char *)messages_get("OwnScreen"));
-	screenopts[1] = (char *)ami_utf8_easy((char *)messages_get("Workbench"));
-	screenopts[2] = (char *)ami_utf8_easy((char *)messages_get("NamedScreen"));
+	screenopts[0] = (char *)ami_utf8_easy((char *)messages_get("ScreenOwn"));
+	screenopts[1] = (char *)ami_utf8_easy((char *)messages_get("ScreenWB"));
+	screenopts[2] = (char *)ami_utf8_easy((char *)messages_get("ScreenPublic"));
 	screenopts[3] = NULL;
 
-	proxyopts[0] = (char *)ami_utf8_easy((char *)messages_get("None"));
-	proxyopts[1] = (char *)ami_utf8_easy((char *)messages_get("Simple"));
-	proxyopts[2] = (char *)ami_utf8_easy((char *)messages_get("Basic"));
-	proxyopts[3] = (char *)ami_utf8_easy((char *)messages_get("NTLM"));
+	proxyopts[0] = (char *)ami_utf8_easy((char *)messages_get("ProxyNone"));
+	proxyopts[1] = (char *)ami_utf8_easy((char *)messages_get("ProxyNoAuth"));
+	proxyopts[2] = (char *)ami_utf8_easy((char *)messages_get("ProxyBasic"));
+	proxyopts[3] = (char *)ami_utf8_easy((char *)messages_get("ProxyNTLM"));
 	proxyopts[4] = NULL;
 
 	nativebmopts[0] = (char *)ami_utf8_easy((char *)messages_get("None"));
@@ -136,45 +142,44 @@ void ami_gui_opts_setup(void)
 	nativebmopts[2] = (char *)ami_utf8_easy((char *)messages_get("All"));
 	nativebmopts[3] = NULL;
 
-	gadlab[GID_OPTS_HOMEPAGE] = (char *)ami_utf8_easy((char *)messages_get("URL"));
-	gadlab[GID_OPTS_HOMEPAGE_DEFAULT] = (char *)ami_utf8_easy((char *)messages_get("UseDefault"));
-	gadlab[GID_OPTS_HOMEPAGE_CURRENT] = (char *)ami_utf8_easy((char *)messages_get("UseCurrent"));
+	gadlab[GID_OPTS_HOMEPAGE] = (char *)ami_utf8_easy((char *)messages_get("HomePageURL"));
+	gadlab[GID_OPTS_HOMEPAGE_DEFAULT] = (char *)ami_utf8_easy((char *)messages_get("HomePageDefault"));
+	gadlab[GID_OPTS_HOMEPAGE_CURRENT] = (char *)ami_utf8_easy((char *)messages_get("HomePageCurrent"));
 	gadlab[GID_OPTS_HIDEADS] = (char *)ami_utf8_easy((char *)messages_get("BlockAds"));
-	gadlab[GID_OPTS_FROMLOCALE] = (char *)ami_utf8_easy((char *)messages_get("FromLocale"));
+	gadlab[GID_OPTS_FROMLOCALE] = (char *)ami_utf8_easy((char *)messages_get("LocaleLang"));
 	gadlab[GID_OPTS_HISTORY] = (char *)ami_utf8_easy((char *)messages_get("HistoryAge"));
 	gadlab[GID_OPTS_REFERRAL] = (char *)ami_utf8_easy((char *)messages_get("SendReferer"));
 	gadlab[GID_OPTS_FASTSCROLL] = (char *)ami_utf8_easy((char *)messages_get("FastScrolling"));
-	gadlab[GID_OPTS_SCREEN] = (char *)ami_utf8_easy((char *)messages_get("Screen"));
-	gadlab[GID_OPTS_PTRTRUE] = (char *)ami_utf8_easy((char *)messages_get("TrueColourPtrs"));
+	gadlab[GID_OPTS_PTRTRUE] = (char *)ami_utf8_easy((char *)messages_get("TrueColour"));
 	gadlab[GID_OPTS_PTROS] = (char *)ami_utf8_easy((char *)messages_get("OSPointers"));
-	gadlab[GID_OPTS_PROXY] = (char *)ami_utf8_easy((char *)messages_get("Type"));
+	gadlab[GID_OPTS_PROXY] = (char *)ami_utf8_easy((char *)messages_get("ProxyType"));
 	gadlab[GID_OPTS_PROXY_HOST] = (char *)ami_utf8_easy((char *)messages_get("Host"));
 	gadlab[GID_OPTS_PROXY_USER] = (char *)ami_utf8_easy((char *)messages_get("Username"));
 	gadlab[GID_OPTS_PROXY_PASS] = (char *)ami_utf8_easy((char *)messages_get("Password"));
 	gadlab[GID_OPTS_FETCHMAX] = (char *)ami_utf8_easy((char *)messages_get("FetchesMax"));
-	gadlab[GID_OPTS_FETCHHOST] = (char *)ami_utf8_easy((char *)messages_get("FetchesPerHost"));
+	gadlab[GID_OPTS_FETCHHOST] = (char *)ami_utf8_easy((char *)messages_get("FetchesHost"));
 	gadlab[GID_OPTS_FETCHCACHE] = (char *)ami_utf8_easy((char *)messages_get("FetchesCached"));
 	gadlab[GID_OPTS_NATIVEBM] = (char *)ami_utf8_easy((char *)messages_get("CacheNative"));
 	gadlab[GID_OPTS_SCALEQ] = (char *)ami_utf8_easy((char *)messages_get("ScaleQuality"));
-	gadlab[GID_OPTS_ANIMSPEED] = (char *)ami_utf8_easy((char *)messages_get("AnimSpeed"));
+	gadlab[GID_OPTS_ANIMSPEED] = (char *)ami_utf8_easy((char *)messages_get("AnimSpeedLimit"));
 	gadlab[GID_OPTS_ANIMDISABLE] = (char *)ami_utf8_easy((char *)messages_get("AnimDisable"));
 	gadlab[GID_OPTS_FONT_SANS] = (char *)ami_utf8_easy((char *)messages_get("FontSans"));
 	gadlab[GID_OPTS_FONT_SERIF] = (char *)ami_utf8_easy((char *)messages_get("FontSerif"));
 	gadlab[GID_OPTS_FONT_MONO] = (char *)ami_utf8_easy((char *)messages_get("FontMono"));
 	gadlab[GID_OPTS_FONT_CURSIVE] = (char *)ami_utf8_easy((char *)messages_get("FontCursive"));
 	gadlab[GID_OPTS_FONT_FANTASY] = (char *)ami_utf8_easy((char *)messages_get("FontFantasy"));
-	gadlab[GID_OPTS_FONT_DEFAULT] = (char *)ami_utf8_easy((char *)messages_get("FontDefault"));
-	gadlab[GID_OPTS_FONT_SIZE] = (char *)ami_utf8_easy((char *)messages_get("FontSize"));
-	gadlab[GID_OPTS_FONT_MINSIZE] = (char *)ami_utf8_easy((char *)messages_get("FontMinSize"));
+	gadlab[GID_OPTS_FONT_DEFAULT] = (char *)ami_utf8_easy((char *)messages_get("Default"));
+	gadlab[GID_OPTS_FONT_SIZE] = (char *)ami_utf8_easy((char *)messages_get("Default"));
+	gadlab[GID_OPTS_FONT_MINSIZE] = (char *)ami_utf8_easy((char *)messages_get("Minimum"));
 	gadlab[GID_OPTS_CACHE_MEM] = (char *)ami_utf8_easy((char *)messages_get("Size"));
 	gadlab[GID_OPTS_CACHE_DISC] = (char *)ami_utf8_easy((char *)messages_get("Duration"));
 	gadlab[GID_OPTS_OVERWRITE] = (char *)ami_utf8_easy((char *)messages_get("ConfirmOverwrite"));
 	gadlab[GID_OPTS_DLDIR] = (char *)ami_utf8_easy((char *)messages_get("DownloadDir"));
 	gadlab[GID_OPTS_TAB_ACTIVE] = (char *)ami_utf8_easy((char *)messages_get("TabActive"));
 	gadlab[GID_OPTS_TAB_2] = (char *)ami_utf8_easy((char *)messages_get("TabMiddle"));
-	gadlab[GID_OPTS_CLIPBOARD] = (char *)ami_utf8_easy((char *)messages_get("Clipboard"));
-	gadlab[GID_OPTS_CMENU_ENABLE] = (char *)ami_utf8_easy((char *)messages_get("ContentEnable"));
-	gadlab[GID_OPTS_CMENU_STICKY] = (char *)ami_utf8_easy((char *)messages_get("ContextSticky"));
+	gadlab[GID_OPTS_CLIPBOARD] = (char *)ami_utf8_easy((char *)messages_get("ClipboardUTF8"));
+	gadlab[GID_OPTS_CMENU_ENABLE] = (char *)ami_utf8_easy((char *)messages_get("Enable"));
+	gadlab[GID_OPTS_CMENU_STICKY] = (char *)ami_utf8_easy((char *)messages_get("Sticky"));
 	gadlab[GID_OPTS_MARGIN_TOP] = (char *)ami_utf8_easy((char *)messages_get("Top"));
 	gadlab[GID_OPTS_MARGIN_LEFT] = (char *)ami_utf8_easy((char *)messages_get("Left"));
 	gadlab[GID_OPTS_MARGIN_RIGHT] = (char *)ami_utf8_easy((char *)messages_get("Right"));
@@ -185,14 +190,19 @@ void ami_gui_opts_setup(void)
 	gadlab[GID_OPTS_EXPORT_LOOSEN] = (char *)ami_utf8_easy((char *)messages_get("FitPage"));
 	gadlab[GID_OPTS_EXPORT_COMPRESS] = (char *)ami_utf8_easy((char *)messages_get("CompressPDF"));
 	gadlab[GID_OPTS_EXPORT_PASSWORD] = (char *)ami_utf8_easy((char *)messages_get("SetPassword"));
-	gadlab[GID_OPTS_SAVE] = (char *)ami_utf8_easy((char *)messages_get("Save"));
+	gadlab[GID_OPTS_SAVE] = (char *)ami_utf8_easy((char *)messages_get("SelSave"));
 	gadlab[GID_OPTS_USE] = (char *)ami_utf8_easy((char *)messages_get("Use"));
 	gadlab[GID_OPTS_CANCEL] = (char *)ami_utf8_easy((char *)messages_get("Cancel"));
 
 	gadlab[LAB_OPTS_WINTITLE] = (char *)ami_utf8_easy((char *)messages_get("Preferences"));
 	gadlab[LAB_OPTS_RESTART] = (char *)ami_utf8_easy((char *)messages_get("NeedRestart"));
+	gadlab[LAB_OPTS_DAYS] = (char *)ami_utf8_easy((char *)messages_get("Days"));
+	gadlab[LAB_OPTS_SECS] = (char *)ami_utf8_easy((char *)messages_get("AnimSpeedFrames"));
+	gadlab[LAB_OPTS_PT] = (char *)ami_utf8_easy((char *)messages_get("Pt"));
+	gadlab[LAB_OPTS_MM] = (char *)ami_utf8_easy((char *)messages_get("MM"));
+	gadlab[LAB_OPTS_MB] = (char *)ami_utf8_easy((char *)messages_get("MBytes"));
 
-	gadlab[GRP_OPTS_HOMEPAGE] = (char *)ami_utf8_easy((char *)messages_get("HomePage"));
+	gadlab[GRP_OPTS_HOMEPAGE] = (char *)ami_utf8_easy((char *)messages_get("Home"));
 	gadlab[GRP_OPTS_CONTENTBLOCKING] = (char *)ami_utf8_easy((char *)messages_get("ContentBlocking"));
 	gadlab[GRP_OPTS_CONTENTLANGUAGE] = (char *)ami_utf8_easy((char *)messages_get("ContentLanguage"));
 	gadlab[GRP_OPTS_HISTORY] = (char *)ami_utf8_easy((char *)messages_get("History"));
@@ -204,7 +214,7 @@ void ami_gui_opts_setup(void)
 	gadlab[GRP_OPTS_FETCHING] = (char *)ami_utf8_easy((char *)messages_get("Fetching"));
 	gadlab[GRP_OPTS_IMAGES] = (char *)ami_utf8_easy((char *)messages_get("Images"));
 	gadlab[GRP_OPTS_ANIMS] = (char *)ami_utf8_easy((char *)messages_get("Animations"));
-	gadlab[GRP_OPTS_FONTFACES] = (char *)ami_utf8_easy((char *)messages_get("FontFaces"));
+	gadlab[GRP_OPTS_FONTFACES] = (char *)ami_utf8_easy((char *)messages_get("FontFamilies"));
 	gadlab[GRP_OPTS_FONTSIZE] = (char *)ami_utf8_easy((char *)messages_get("FontSize"));
 	gadlab[GRP_OPTS_MEMCACHE] = (char *)ami_utf8_easy((char *)messages_get("CacheMemory"));
 	gadlab[GRP_OPTS_DISCCACHE] = (char *)ami_utf8_easy((char *)messages_get("CacheDisc"));
@@ -215,7 +225,7 @@ void ami_gui_opts_setup(void)
 	gadlab[GRP_OPTS_MARGINS] = (char *)ami_utf8_easy((char *)messages_get("Margins"));
 	gadlab[GRP_OPTS_SCALING] = (char *)ami_utf8_easy((char *)messages_get("Scaling"));
 	gadlab[GRP_OPTS_APPEARANCE] = (char *)ami_utf8_easy((char *)messages_get("Appearance"));
-	gadlab[GRP_OPTS_ADVANCED] = (char *)ami_utf8_easy((char *)messages_get("Advanced"));
+	gadlab[GRP_OPTS_ADVANCED] = (char *)ami_utf8_easy((char *)messages_get("con_advanced"));
 
 	fontopts[0] = gadlab[GID_OPTS_FONT_SANS];
 	fontopts[1] = gadlab[GID_OPTS_FONT_SERIF];
@@ -423,14 +433,21 @@ void ami_gui_opts_open(void)
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
 									LAYOUT_Label, gadlab[GRP_OPTS_HISTORY],
-									LAYOUT_AddChild, gow->gadgets[GID_OPTS_HISTORY] = IntegerObject,
-										GA_ID, GID_OPTS_CACHE_DISC,
-										GA_RelVerify, TRUE,
-										INTEGER_Number, option_expire_url,
-										INTEGER_Minimum, 0,
-										INTEGER_Maximum, 366,
-										INTEGER_Arrows, TRUE,
-									IntegerEnd,
+									LAYOUT_AddChild, HGroupObject,
+										LAYOUT_LabelColumn, PLACETEXT_RIGHT,
+										LAYOUT_AddChild, gow->gadgets[GID_OPTS_HISTORY] = IntegerObject,
+											GA_ID, GID_OPTS_CACHE_DISC,
+											GA_RelVerify, TRUE,
+											INTEGER_Number, option_expire_url,
+											INTEGER_Minimum, 0,
+											INTEGER_Maximum, 366,
+											INTEGER_Arrows, TRUE,
+										IntegerEnd,
+										CHILD_WeightedWidth, 0,
+				                		CHILD_Label, LabelObject,
+    		     	           				LABEL_Text, gadlab[LAB_OPTS_DAYS],
+	        	    	    			LabelEnd,
+									LayoutEnd,
 									CHILD_WeightedWidth, 0,
 									CHILD_Label, LabelObject,
 										LABEL_Text, gadlab[GID_OPTS_HISTORY],
@@ -678,15 +695,21 @@ void ami_gui_opts_open(void)
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
 									LAYOUT_Label, gadlab[GRP_OPTS_ANIMS],
-									LAYOUT_AddChild, gow->gadgets[GID_OPTS_ANIMSPEED] = StringObject,
-										GA_ID, GID_OPTS_ANIMSPEED,
-										GA_RelVerify, TRUE,
-										GA_Disabled, animspeeddisabled,
-										STRINGA_HookType, SHK_FLOAT,
-										STRINGA_TextVal, animspeed,
-										STRINGA_BufferPos,0,
-									StringEnd,
-									CHILD_WeightedWidth, 0,
+									LAYOUT_AddChild, HGroupObject,
+										LAYOUT_LabelColumn, PLACETEXT_RIGHT,
+										LAYOUT_AddChild, gow->gadgets[GID_OPTS_ANIMSPEED] = StringObject,
+											GA_ID, GID_OPTS_ANIMSPEED,
+											GA_RelVerify, TRUE,
+											GA_Disabled, animspeeddisabled,
+											STRINGA_HookType, SHK_FLOAT,
+											STRINGA_TextVal, animspeed,
+											STRINGA_BufferPos,0,
+										StringEnd,
+										CHILD_WeightedWidth, 0,
+										CHILD_Label, LabelObject,
+											LABEL_Text, gadlab[LAB_OPTS_SECS],
+										LabelEnd,
+									LayoutEnd,
 									CHILD_Label, LabelObject,
 										LABEL_Text, gadlab[GID_OPTS_ANIMSPEED],
 									LabelEnd,
@@ -772,27 +795,39 @@ void ami_gui_opts_open(void)
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
 									LAYOUT_Label, gadlab[GRP_OPTS_FONTSIZE],
-									LAYOUT_AddChild, gow->gadgets[GID_OPTS_FONT_SIZE] = IntegerObject,
-										GA_ID, GID_OPTS_FONT_SIZE,
-										GA_RelVerify, TRUE,
-										INTEGER_Number, option_font_size / 10,
-										INTEGER_Minimum, 1,
-										INTEGER_Maximum, 99,
-										INTEGER_Arrows, TRUE,
-									IntegerEnd,
-									CHILD_WeightedWidth, 0,
+									LAYOUT_AddChild, HGroupObject,
+										LAYOUT_LabelColumn, PLACETEXT_RIGHT,
+										LAYOUT_AddChild, gow->gadgets[GID_OPTS_FONT_SIZE] = IntegerObject,
+											GA_ID, GID_OPTS_FONT_SIZE,
+											GA_RelVerify, TRUE,
+											INTEGER_Number, option_font_size / 10,
+											INTEGER_Minimum, 1,
+											INTEGER_Maximum, 99,
+											INTEGER_Arrows, TRUE,
+										IntegerEnd,
+										CHILD_WeightedWidth, 0,
+										CHILD_Label, LabelObject,
+											LABEL_Text, gadlab[LAB_OPTS_PT],
+										LabelEnd,
+									LayoutEnd,
 									CHILD_Label, LabelObject,
 										LABEL_Text, gadlab[GID_OPTS_FONT_SIZE],
 									LabelEnd,
-									LAYOUT_AddChild, gow->gadgets[GID_OPTS_FONT_MINSIZE] = IntegerObject,
-										GA_ID, GID_OPTS_FONT_MINSIZE,
-										GA_RelVerify, TRUE,
-										INTEGER_Number, option_font_min_size / 10,
-										INTEGER_Minimum, 1,
-										INTEGER_Maximum, 99,
-										INTEGER_Arrows, TRUE,
-									IntegerEnd,
-									CHILD_WeightedWidth, 0,
+									LAYOUT_AddChild, HGroupObject,
+										LAYOUT_LabelColumn, PLACETEXT_RIGHT,
+										LAYOUT_AddChild, gow->gadgets[GID_OPTS_FONT_MINSIZE] = IntegerObject,
+											GA_ID, GID_OPTS_FONT_MINSIZE,
+											GA_RelVerify, TRUE,
+											INTEGER_Number, option_font_min_size / 10,
+											INTEGER_Minimum, 1,
+											INTEGER_Maximum, 99,
+											INTEGER_Arrows, TRUE,
+										IntegerEnd,
+										CHILD_WeightedWidth, 0,
+										CHILD_Label, LabelObject,
+											LABEL_Text, gadlab[LAB_OPTS_PT],
+										LabelEnd,
+									LayoutEnd,
 									CHILD_Label, LabelObject,
 										LABEL_Text, gadlab[GID_OPTS_FONT_MINSIZE],
 									LabelEnd,
@@ -810,15 +845,21 @@ void ami_gui_opts_open(void)
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
 									LAYOUT_Label, gadlab[GRP_OPTS_MEMCACHE],
-									LAYOUT_AddChild, gow->gadgets[GID_OPTS_CACHE_MEM] = IntegerObject,
-										GA_ID, GID_OPTS_CACHE_MEM,
-										GA_RelVerify, TRUE,
-										INTEGER_Number, option_memory_cache_size / 1048576,
-										INTEGER_Minimum, 0,
-										INTEGER_Maximum, 2048,
-										INTEGER_Arrows, TRUE,
-									IntegerEnd,
-									CHILD_WeightedWidth, 0,
+									LAYOUT_AddChild, HGroupObject,
+										LAYOUT_LabelColumn, PLACETEXT_RIGHT,
+										LAYOUT_AddChild, gow->gadgets[GID_OPTS_CACHE_MEM] = IntegerObject,
+											GA_ID, GID_OPTS_CACHE_MEM,
+											GA_RelVerify, TRUE,
+											INTEGER_Number, option_memory_cache_size / 1048576,
+											INTEGER_Minimum, 0,
+											INTEGER_Maximum, 2048,
+											INTEGER_Arrows, TRUE,
+										IntegerEnd,
+										CHILD_WeightedWidth, 0,
+										CHILD_Label, LabelObject,
+											LABEL_Text, gadlab[LAB_OPTS_MB],
+										LabelEnd,
+									LayoutEnd,
 									CHILD_Label, LabelObject,
 										LABEL_Text, gadlab[GID_OPTS_CACHE_MEM],
 									LabelEnd,
@@ -828,16 +869,22 @@ void ami_gui_opts_open(void)
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
 									LAYOUT_Label, gadlab[GRP_OPTS_DISCCACHE],
-									LAYOUT_AddChild, gow->gadgets[GID_OPTS_CACHE_DISC] = IntegerObject,
-										GA_ID, GID_OPTS_CACHE_DISC,
-										GA_RelVerify, TRUE,
-										GA_Disabled, TRUE,
-										INTEGER_Number, option_disc_cache_age,
-										INTEGER_Minimum, 0,
-										INTEGER_Maximum, 366,
-										INTEGER_Arrows, TRUE,
-									IntegerEnd,
-									CHILD_WeightedWidth, 0,
+									LAYOUT_AddChild, HGroupObject,
+										LAYOUT_LabelColumn, PLACETEXT_RIGHT,
+										LAYOUT_AddChild, gow->gadgets[GID_OPTS_CACHE_DISC] = IntegerObject,
+											GA_ID, GID_OPTS_CACHE_DISC,
+											GA_RelVerify, TRUE,
+											GA_Disabled, TRUE,
+											INTEGER_Number, option_disc_cache_age,
+											INTEGER_Minimum, 0,
+											INTEGER_Maximum, 366,
+											INTEGER_Arrows, TRUE,
+										IntegerEnd,
+										CHILD_WeightedWidth, 0,
+										CHILD_Label, LabelObject,
+											LABEL_Text, gadlab[LAB_OPTS_DAYS],
+										LabelEnd,
+									LayoutEnd,
 									CHILD_Label, LabelObject,
 										LABEL_Text, gadlab[GID_OPTS_CACHE_DISC],
 									LabelEnd,
@@ -883,7 +930,7 @@ void ami_gui_opts_open(void)
       	              					GA_ID, GID_OPTS_TAB_ACTIVE,
          	           					GA_RelVerify, TRUE,
          	           					GA_Text, gadlab[GID_OPTS_TAB_ACTIVE],
-  				      		            GA_Selected, option_new_tab_active,
+  				      		            GA_Selected, !option_new_tab_active,
             	    				CheckBoxEnd,
 		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_TAB_2] = CheckBoxObject,
       	              					GA_ID, GID_OPTS_TAB_2,
@@ -936,51 +983,75 @@ void ami_gui_opts_open(void)
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
 									LAYOUT_Label, gadlab[GRP_OPTS_MARGINS],
-									LAYOUT_AddChild, gow->gadgets[GID_OPTS_MARGIN_TOP] = IntegerObject,
-										GA_ID, GID_OPTS_MARGIN_TOP,
-										GA_RelVerify, TRUE,
-										INTEGER_Number, option_margin_top,
-										INTEGER_Minimum, 0,
-										INTEGER_Maximum, 99,
-										INTEGER_Arrows, TRUE,
-									IntegerEnd,
-									CHILD_WeightedWidth, 0,
+									LAYOUT_AddChild, HGroupObject,
+										LAYOUT_LabelColumn, PLACETEXT_RIGHT,
+										LAYOUT_AddChild, gow->gadgets[GID_OPTS_MARGIN_TOP] = IntegerObject,
+											GA_ID, GID_OPTS_MARGIN_TOP,
+											GA_RelVerify, TRUE,
+											INTEGER_Number, option_margin_top,
+											INTEGER_Minimum, 0,
+											INTEGER_Maximum, 99,
+											INTEGER_Arrows, TRUE,
+										IntegerEnd,
+										CHILD_WeightedWidth, 0,
+										CHILD_Label, LabelObject,
+											LABEL_Text, gadlab[LAB_OPTS_MM],
+										LabelEnd,
+									LayoutEnd,
 									CHILD_Label, LabelObject,
 										LABEL_Text, gadlab[GID_OPTS_MARGIN_TOP],
 									LabelEnd,
-									LAYOUT_AddChild, gow->gadgets[GID_OPTS_MARGIN_LEFT] = IntegerObject,
-										GA_ID, GID_OPTS_MARGIN_LEFT,
-										GA_RelVerify, TRUE,
-										INTEGER_Number, option_margin_left,
-										INTEGER_Minimum, 0,
-										INTEGER_Maximum, 99,
-										INTEGER_Arrows, TRUE,
-									IntegerEnd,
-									CHILD_WeightedWidth, 0,
+									LAYOUT_AddChild, HGroupObject,
+										LAYOUT_LabelColumn, PLACETEXT_RIGHT,
+										LAYOUT_AddChild, gow->gadgets[GID_OPTS_MARGIN_LEFT] = IntegerObject,
+											GA_ID, GID_OPTS_MARGIN_LEFT,
+											GA_RelVerify, TRUE,
+											INTEGER_Number, option_margin_left,
+											INTEGER_Minimum, 0,
+											INTEGER_Maximum, 99,
+											INTEGER_Arrows, TRUE,
+										IntegerEnd,
+										CHILD_WeightedWidth, 0,
+										CHILD_Label, LabelObject,
+											LABEL_Text, gadlab[LAB_OPTS_MM],
+										LabelEnd,
+									LayoutEnd,
 									CHILD_Label, LabelObject,
 										LABEL_Text, gadlab[GID_OPTS_MARGIN_LEFT],
 									LabelEnd,
-									LAYOUT_AddChild, gow->gadgets[GID_OPTS_MARGIN_BOTTOM] = IntegerObject,
-										GA_ID, GID_OPTS_MARGIN_BOTTOM,
-										GA_RelVerify, TRUE,
-										INTEGER_Number, option_margin_bottom,
-										INTEGER_Minimum, 0,
-										INTEGER_Maximum, 99,
-										INTEGER_Arrows, TRUE,
-									IntegerEnd,
-									CHILD_WeightedWidth, 0,
+									LAYOUT_AddChild, HGroupObject,
+										LAYOUT_LabelColumn, PLACETEXT_RIGHT,
+										LAYOUT_AddChild, gow->gadgets[GID_OPTS_MARGIN_BOTTOM] = IntegerObject,
+											GA_ID, GID_OPTS_MARGIN_BOTTOM,
+											GA_RelVerify, TRUE,
+											INTEGER_Number, option_margin_bottom,
+											INTEGER_Minimum, 0,
+											INTEGER_Maximum, 99,
+											INTEGER_Arrows, TRUE,
+										IntegerEnd,
+										CHILD_WeightedWidth, 0,
+										CHILD_Label, LabelObject,
+											LABEL_Text, gadlab[LAB_OPTS_MM],
+										LabelEnd,
+									LayoutEnd,
 									CHILD_Label, LabelObject,
 										LABEL_Text, gadlab[GID_OPTS_MARGIN_BOTTOM],
 									LabelEnd,
-									LAYOUT_AddChild, gow->gadgets[GID_OPTS_MARGIN_RIGHT] = IntegerObject,
-										GA_ID, GID_OPTS_MARGIN_RIGHT,
-										GA_RelVerify, TRUE,
-										INTEGER_Number, option_margin_right,
-										INTEGER_Minimum, 0,
-										INTEGER_Maximum, 99,
-										INTEGER_Arrows, TRUE,
-									IntegerEnd,
-									CHILD_WeightedWidth, 0,
+									LAYOUT_AddChild, HGroupObject,
+										LAYOUT_LabelColumn, PLACETEXT_RIGHT,
+										LAYOUT_AddChild, gow->gadgets[GID_OPTS_MARGIN_RIGHT] = IntegerObject,
+											GA_ID, GID_OPTS_MARGIN_RIGHT,
+											GA_RelVerify, TRUE,
+											INTEGER_Number, option_margin_right,
+											INTEGER_Minimum, 0,
+											INTEGER_Maximum, 99,
+											INTEGER_Arrows, TRUE,
+										IntegerEnd,
+										CHILD_WeightedWidth, 0,
+										CHILD_Label, LabelObject,
+											LABEL_Text, gadlab[LAB_OPTS_MM],
+										LabelEnd,
+									LayoutEnd,
 									CHILD_Label, LabelObject,
 										LABEL_Text, gadlab[GID_OPTS_MARGIN_RIGHT],
 									LabelEnd,
@@ -990,15 +1061,21 @@ void ami_gui_opts_open(void)
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
 									LAYOUT_Label, gadlab[GRP_OPTS_SCALING],
-									LAYOUT_AddChild, gow->gadgets[GID_OPTS_EXPORT_SCALE] = IntegerObject,
-										GA_ID, GID_OPTS_EXPORT_SCALE,
-										GA_RelVerify, TRUE,
-										INTEGER_Number, option_export_scale,
-										INTEGER_Minimum, 0,
-										INTEGER_Maximum, 100,
-										INTEGER_Arrows, TRUE,
-									IntegerEnd,
-									CHILD_WeightedWidth, 0,
+									LAYOUT_AddChild, HGroupObject,
+										LAYOUT_LabelColumn, PLACETEXT_RIGHT,
+										LAYOUT_AddChild, gow->gadgets[GID_OPTS_EXPORT_SCALE] = IntegerObject,
+											GA_ID, GID_OPTS_EXPORT_SCALE,
+											GA_RelVerify, TRUE,
+											INTEGER_Number, option_export_scale,
+											INTEGER_Minimum, 0,
+											INTEGER_Maximum, 100,
+											INTEGER_Arrows, TRUE,
+										IntegerEnd,
+										CHILD_WeightedWidth, 0,
+										CHILD_Label, LabelObject,
+											LABEL_Text, "%",
+										LabelEnd,
+									LayoutEnd,
 									CHILD_Label, LabelObject,
 										LABEL_Text, gadlab[GID_OPTS_EXPORT_SCALE],
 									LabelEnd,
@@ -1236,8 +1313,8 @@ void ami_gui_opts_use(void)
 	option_download_dir = (char *)strdup((char *)data);
 
 	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_TAB_ACTIVE],(ULONG *)&data);
-	if(data) option_new_tab_active = true;
-		else option_new_tab_active = false;
+	if(data) option_new_tab_active = false;
+		else option_new_tab_active = true;
 
 	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_TAB_2],(ULONG *)&data);
 	if(data) option_button_2_tab = true;

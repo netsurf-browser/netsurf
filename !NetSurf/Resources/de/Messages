@@ -262,6 +262,7 @@ Browser:Browser
 HistGlobalNS:Show global history...
 HistLocalNS:Show local history...
 FindTextNS:Find text...
+Redraw:Redraw page
 
 # Hotlist menu
 #
@@ -269,6 +270,7 @@ HotlistShowNS:Show hotlist...
 
 # Settings menu
 #
+SettingsEdit:Edit preferences...
 Settings:Settings
 SnapshotWindow:Snapshot window
 SettingsSave:Save settings
@@ -1146,6 +1148,118 @@ con_lang:Sprachen
 con_memory:Speicher
 con_secure:Sicherheit
 con_theme:Themen
+con_general:General
+con_rendering:Rendering
+con_advanced:Advanced
+
+# General tab
+#
+
+Preferences:Preferences
+Use:Use
+
+HomePageURL:URL
+HomePageDefault:Use default page
+HomePageCurrent:Use current page
+ContentBlocking:Content blocking
+BlockAds:Hide advertisements
+ContentLanguage:Content language
+LocaleLang:Get from Locale prefs
+HistoryAge:Keep history for
+Days:days
+Miscellaneous:Miscellaneous
+SendReferer:Send site referral information
+FastScrolling:Fast scrolling
+
+# Display tab
+#
+
+Screen:Screen
+ScreenOwn:Own screen
+ScreenWB:Workbench
+ScreenPublic:Public screen
+Theme:Theme
+MousePointers:Mouse pointers
+TrueColour:True colour
+OSPointers:Use OS mouse pointers when possible
+NeedRestart:These options will not take effect until the next time NetSurf is started
+
+# Connection tab
+#
+
+Proxy:HTTP Proxy
+Fetching:Fetching
+FetchesMax:Maximum fetches
+FetchesHost:Fetches per host
+FetchesCached:Cached connections
+
+# Rendering tab
+#
+
+CacheNative:Cache native versions
+ScaleQuality:Higher quality scaling
+Animations:Animations
+AnimSpeedLimit:Limit speed to
+AnimSpeedFrames:seconds between frames
+AnimDisable:Disable animations
+
+None:None
+Scaled:Scaled
+
+# Fonts tab
+#
+
+FontFamilies:Font families
+FontSans:Sans-serif
+FontSerif:Serif
+FontMono:Monospaced
+FontCursive:Cursive
+FontFantasy:Fantasy
+Default:Default
+FontSize:Font size
+Minimum:Minimum
+Pt:pt
+
+# Cache tab
+#
+
+CacheMemory:Memory cache
+CacheDisc:Disc cache
+Size:Size
+Duration:Duration
+
+# Advanced
+#
+
+Downloads:Downloads
+ConfirmOverwrite:Request confirmation when overwriting
+DownloadDir:Initial download location
+TabbedBrowsing:Tabbed browsing
+TabActive:Open new tabs in background
+TabMiddle:Middle mouse button opens tabs
+Clipboard:Clipboard
+ClipboardUTF8:Write text as UTF-8
+ContextMenu:Context menu
+Enable:Enable
+Sticky:Sticky
+
+# Export
+#
+
+Margins:Margins
+Top:Top
+Left:Left
+Right:Right
+Bottom:Bottom
+MM:mm
+Scaling:Scaling
+Scale:Scale
+Appearance:Appearance
+SuppressImages:Suppress images
+RemoveBackground:Remove background
+FitPage:Fit page
+CompressPDF:Compress PDF
+SetPassword:Set password
 
 
 # Unused tokens

@@ -103,14 +103,14 @@ void ami_init_menulabs(void)
 	menulab[28] = NM_BARLABEL;
 	menulab[29] = ami_utf8_easy((char *)messages_get("ShowCookies"));
 	menulab[30] = NM_BARLABEL;
-	menulab[31] = ami_utf8_easy((char *)messages_get("**redraw"));
+	menulab[31] = ami_utf8_easy((char *)messages_get("Redraw"));
 	menulab[32] = ami_utf8_easy((char *)messages_get("Hotlist"));
 	menulab[33] = ami_utf8_easy((char *)messages_get("HotlistAdd"));
 	menulab[34] = ami_utf8_easy((char *)messages_get("HotlistShowNS"));
 	menulab[35] = NM_BARLABEL;
 
 	menulab[AMI_MENU_HOTLIST_MAX] = ami_utf8_easy((char *)messages_get("Settings"));
-	menulab[AMI_MENU_HOTLIST_MAX+1] = ami_utf8_easy((char *)messages_get("**edit prefs..."));
+	menulab[AMI_MENU_HOTLIST_MAX+1] = ami_utf8_easy((char *)messages_get("SettingsEdit"));
 	menulab[AMI_MENU_HOTLIST_MAX+2] = NM_BARLABEL;
 	menulab[AMI_MENU_HOTLIST_MAX+3] = ami_utf8_easy((char *)messages_get("SnapshotWindow"));
 	menulab[AMI_MENU_HOTLIST_MAX+4] = ami_utf8_easy((char *)messages_get("SettingsSave"));
