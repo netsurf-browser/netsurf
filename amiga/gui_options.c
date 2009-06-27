@@ -1205,9 +1205,12 @@ void ami_gui_opts_use(void)
 	}
 
 	GetAttr(GETSCREENMODE_DisplayID,gow->gadgets[GID_OPTS_SCREENMODE],(ULONG *)&data);
-	if(option_modeid) free(option_modeid);
-	option_modeid = malloc(20);
-	sprintf(option_modeid,"0x%lx",data);
+	if(data)
+	{
+		if(option_modeid) free(option_modeid);
+		option_modeid = malloc(20);
+		sprintf(option_modeid,"0x%lx",data);
+	}
 
 	GetAttr(GETFILE_Drawer,gow->gadgets[GID_OPTS_THEME],(ULONG *)&data);
 	if(option_theme) free(option_theme);
