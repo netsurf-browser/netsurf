@@ -28,27 +28,15 @@ URL = address of page to open on startup.
 @endnode
 
 @node options "Options file"
-The options file is stored in @{"Resources/Options" link Resources/Options/Main} by default.  The following options are specific to the Amiga version although there are other relevant options in the file:
+The options file is stored in @{"Resources/Options" link Resources/Options/Main} by default.  Most of the setting can be changed from within NetSurf by selecting Edit preferences from the Settings menu.
 
+There are a couple of Amiga-specific options which can only be changed directly in the file.  These are:
+
+@{b}kiosk_mode@{ub} No gadgets
+@{b}no_iframes@{ub} Disable IFrames
 @{b}url_file@{ub} Path to URL database file
 @{b}hotlist_file@{ub} Path to Hotlist file
-@{b}use_pubscreen@{ub} Open NetSurf on the named public screen
-@{b}screen_modeid@{ub} Mode ID for NetSurf's custom screen.  If not specified, NetSurf will prompt on startup.  Choose Settings=>Save settings to make permanent.
-@{b}theme@{ub} Path to @{"theme" link Themes} (default is Resources/Themes/Default)
-@{b}no_iframes@{ub} Disable IFrames
-@{b}clipboard_write_utf8@{ub} Write UTF-8 strings to the clipboard along with a charset identifier (when this option is 0, NetSurf will convert copied strings to local charset)
-@{b}context_menu@{ub} Enable context menus
-@{b}sticky_context_menu@{ub} When disabled, context menu requires mouse button to be held down to keep it visible
-@{b}truecolour_mouse_pointers@{ub} Use 32-bit mouse pointers, when disabled NetSurf will use old-style 4 colour images (see Resources/Pointers)
-@{b}os_mouse_pointers@{ub} Don't override default and busy mouse pointers
-@{b}new_tab_is_active@{ub} Make new tab the active one
-@{b}kiosk_mode@{ub} No gadgets
-@{b}recent_file@{ub} Path to file to store recent history list (not used)
 @{b}arexx_dir@{ub} Path to ARexx scripts dir
-@{b}download_dir@{ub} default download destination
-@{b}faster_scroll@{ub} enable faster scrolling (experimental)
-@{b}cache_bitmaps@{ub} cache bitmaps in native format in gfx mem (0=off, 1=scaled, 2=all)
-
 @endnode
 
 @node Themes
