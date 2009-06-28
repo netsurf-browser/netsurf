@@ -96,7 +96,7 @@ SelSave:Salva
 
 # Main -> Navigate menu
 #
-Home:HomePage
+Home:Home Page
 Back:Indietro di una pagina
 Forward:Avanti di una pagina
 UpLevel:Su di un livello
@@ -199,7 +199,7 @@ Link:Indirizzo
 
 # Tree expand/collapse menu
 #
-All:Tutto
+All:Tutte
 Folders:Cartelle
 Links:Indirizzi
 
@@ -349,7 +349,7 @@ EditFolder:Rinomina cartella
 
 # Default hotlist page names
 #
-HotlistHomepage:HomePage di NetSurf
+HotlistHomepage:Home Page di NetSurf
 HotlistTestBuild:Versioni Beta di NetSurf
 HotlistDocumentation:Documentazione di NetSurf
 HotlistBugTracker:Bug Tracker di NetSurf
@@ -1150,7 +1150,7 @@ con_cache:Cache
 con_connect:Connessione
 con_content:Contenuto
 con_fonts:Font
-con_home:HomePage
+con_home:Home Page
 con_image:Immagini
 con_inter:Interfaccia
 con_lang:Lingua
@@ -1172,7 +1172,7 @@ HomePageDefault:Usa pagina predefinita
 HomePageCurrent:Usa pagina corrente
 ContentBlocking:Blocca contenuti
 BlockAds:Nascondi annunci
-ContentLanguage:Lingua contenuti
+ContentLanguage:Lingua NetSurf
 LocaleLang:Ottieni da preferenze localizzazione
 HistoryAge:Conserva cronologia per
 Days:giorni
@@ -1185,35 +1185,35 @@ FastScrolling:Scrolling veloce
 
 Screen:Schermo
 ScreenOwn:Schermo proprietario
-ScreenWB:Workbench
+ScreenWB:Schermo Workbench
 ScreenPublic:Schermo pubblico
 Theme:Tema
 MousePointers:Puntatori del mouse
 TrueColour:True color
 OSPointers:Se possibile usa i puntatori del mouse di sistema
-NeedRestart:Queste modifiche avranno effetto al prossimo riavvio di NetSurf.
+NeedRestart:Queste modifiche avranno effetto al prossimo riavvio di NetSurf
 
 # Connection tab
 #
 
 Proxy:Proxy HTTP
-Fetching:Ottenendo
-FetchesMax:Massimi ottenibili
+Fetching:Connessioni ottenibili
+FetchesMax:Massime ottenibili
 FetchesHost:Ottenibili per Host
-FetchesCached:Connessioni in cache
+FetchesCached:Connessioni su cache
 
 # Rendering tab
 #
 
 CacheNative:Versioni cache native
-ScaleQuality:Visualizzazione di massima qualità
+ScaleQuality:Massima qualità di visualizzazione
 Animations:Animazioni
 AnimSpeedLimit:Limita velocità a
 AnimSpeedFrames:secondi tra frame
 AnimDisable:Disattiva animazioni
 
-None:Nulla
-Scaled:Scalato
+None:Nessuna
+Scaled:Scalate
 
 # Fonts tab
 #
@@ -1221,7 +1221,7 @@ Scaled:Scalato
 FontFamilies:Famiglia Font
 FontSans:Sans-serif
 FontSerif:Serif
-FontMono:Monospaced
+FontMono:Mono-spaziato
 FontCursive:Corsivo
 FontFantasy:Fantasia
 Default:Predefinito
@@ -1279,7 +1279,7 @@ SetPassword:Imposta Password
 
 TreeHistory:Cronologia NetSurf
 SaveSelect:Salva
-ExportAs:Esporta come
+ExportAs:Esporta come...
 AnimImg:Animazioni
 DitherImg:Immagini Dither
 FilterImg:Immagini Smooth
