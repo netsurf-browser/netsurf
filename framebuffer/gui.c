@@ -336,7 +336,7 @@ void gui_init(int argc, char** argv)
 	messages_load(buf);
 
         /* load browser options */
-	fb_find_resource(buf, "Options", "~/.netsurf/Options");
+	fb_find_resource(buf, "Choices-fb", "~/.netsurf/Choices-fb");
 	LOG(("Using '%s' as Preferences file", buf));
 	options_file_location = strdup(buf);
 	options_read(buf);
