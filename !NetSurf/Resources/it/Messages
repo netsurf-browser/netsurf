@@ -1,6 +1,6 @@
-# Italian messages for NetSurf 2.x (Revision 7666)
+# Italian messages for NetSurf 3.0 Development (Revision 8065)
 # Translated by Samir Hawamdeh (http://www.betatesting.it/backforthefuture)
-# 8.06.2009
+# 28.06.2009
 # =========================================================================
 #
 # Description
@@ -36,7 +36,7 @@ Info:Info
 AppHelp:Aiuto...  F1
 Open:Apri
 Choices:Scegli...
-Quit:Esci
+Quit:Chiudi
 
 # Iconbar -> Open menu
 #
@@ -88,7 +88,7 @@ ObjDraw:Disegna
 
 # Main -> Object -> Link menu
 LinkSave:Salva
-LinkDload:Salva su...
+LinkDload:Salva in...
 LinkNew:Nuova finestra
 
 # Main -> Selection menu
@@ -254,7 +254,7 @@ About:Informazioni...
 # Edit menu
 #
 CopyNS:Copia
-Paste:Incolla
+PasteNS:Incolla
 SelectAllNS:Seleziona tutto
 ClearNS:Annulla selezione
 
@@ -264,7 +264,7 @@ Browser:Browser
 HistGlobalNS:Mostra cronologia globale...
 HistLocalNS:Mostra cronologia locale...
 FindTextNS:Trova testo...
-Redraw:Redraw page
+Redraw:Aggiorna pagina
 
 # Hotlist menu
 #
@@ -272,7 +272,7 @@ HotlistShowNS:Mostra Hotlist...
 
 # Settings menu
 #
-SettingsEdit:Edit preferences...
+SettingsEdit:Modifica impostazioni...
 Settings:Impostazioni
 SnapshotWindow:Fissa finestra
 SettingsSave:Salva impostazioni
@@ -353,7 +353,7 @@ HotlistHomepage:HomePage di NetSurf
 HotlistTestBuild:Versioni Beta di NetSurf
 HotlistDocumentation:Documentazione di NetSurf
 HotlistBugTracker:Bug Tracker di NetSurf
-HotlistFeatureRequest:Proposte su NetSurf
+HotlistFeatureRequest:Suggerimenti per NetSurf
 
 
 # Global history user interface tokens
@@ -445,8 +445,8 @@ gtkUnknownSize:sconosciuto
 # dialog box.
 #
 
-PrintSheetFilled:Il foglio di stampa è pieno
-PrintSheetsFilled:I fogli di stampa sono pieni
+PrintSheetFilled:Il foglio stampato è pieno
+PrintSheetsFilled:I fogli stampati sono pieni
 
 
 # Find text user interface tokens
@@ -564,13 +564,13 @@ ErrorPage:<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/T
 # These may be augmented with further relevant information, which
 # is displayed after the contents of the relevant token.
 #
-PathToURL:Si è verificato un errore durante la conversione del percorso del file all'URL:
+PathToURL:Si è verificato un errore durante la conversione del percorso file nell'URL:
 SaveError:Il file non può essere salvato a causa di un errore:
 LoadError:Il file non può essere caricato a causa di un errore:
 MenuError:Si è verificato un errore durante l'apertura del menu:
 DragError:Si è verificato un errore durante il trascinamento dell'icona:
 TbarError:Si è verificato un errore durante la costruzione della barra strumenti:
-WimpError:Si è verificato un errore inatteso sulla finestra principale:
+WimpError:Si è verificato un errore inatteso nella finestra principale:
 DownloadWarn:Questo trasferimento potrebbe essere incompleto:
 MiscError:Si è verificato un errore inatteso:
 FileError:Il file è inesistente:
@@ -580,9 +580,9 @@ AWNotSeen:Per favore imposta l'applicazione AWViewer e riprova ancora.
 # Specific errors - displayed in a dialog box
 #
 NoMemory:Memoria insufficiente per l'esecuzione di NetSurf. Per favore liberane un pò e riprova ancora.
-FontBadInst:Si è verificato un errore durante l'inizializzazione dei font a causa della presenza di una copia obsoleta dei font ROM nel disco. NetSurf verrà chiuso e si cercherà di lanciare un programma in grado di risolvere questo problema.
+FontBadInst:Si è verificato un errore durante l'inizializzazione dei font a causa della presenza di una copia obsoleta dei font ROM nel disco. NetSurf verrà ora chiuso e si cercherà di lanciare un programma in grado di risolvere questo problema.
 FontError:Impossibile aprire il font "Homerton.Medium" (%s).
-Resolvers:Non è stato configurato nessun nome per i domini dei server, perciò sarà possibile effettuare solo la navigazione dei file in locale. Usa "Configura" per impostare il/i nome/i del/dei server.
+Resolvers:Non è stato configurato nessun nome per i domini dei server, perciò sarà possibile effettuare la navigazione dei file solo in locale. Usa "Configura" per impostare il nome (o i nomi) del/dei server.
 NoDiscSpace:Spazio insufficiente nel disco.
 Template:Una finestra di template risulta mancante. Per favore reinstalla NetSurf.
 HotlistSaveError:Non è stato possibile salvare correttamente l'Hotlist.
@@ -727,7 +727,7 @@ SaveSelection:Selezione
 # Messages used when installing new themes
 #
 
-ThemeInstActive:Il tema è attualmente in fase di scaricamento o di installazione. Attendere il completamente del processo o annullare l'operazione prima di installare altri temi.
+ThemeInstActive:Il tema è attualmente in fase di scaricamento o di installazione. Attendere il completamente del processo o annullare l'intera operazione prima di installare altri temi.
 ThemeInstDown:Per favore attendere lo scaricamento del tema.
 ThemeInvalid:Il tema scaricato è invalido oppure richiede una versione più recente di NetSurf.
 ThemeInstall:Si desidera installare il tema '%s' di %s?
@@ -1157,118 +1157,118 @@ con_lang:Lingua
 con_memory:Memoria
 con_secure:Sicurezza
 con_theme:Temi
-con_general:General
+con_general:Generale
 con_rendering:Rendering
-con_advanced:Advanced
+con_advanced:Avanzate
 
 # General tab
 #
 
-Preferences:Preferences
-Use:Use
+Preferences:Preferenze
+Use:Usa
 
 HomePageURL:URL
-HomePageDefault:Use default page
-HomePageCurrent:Use current page
-ContentBlocking:Content blocking
-BlockAds:Hide advertisements
-ContentLanguage:Content language
-LocaleLang:Get from Locale prefs
-HistoryAge:Keep history for
-Days:days
-Miscellaneous:Miscellaneous
-SendReferer:Send site referral information
-FastScrolling:Fast scrolling
+HomePageDefault:Usa pagina predefinita
+HomePageCurrent:Usa pagina corrente
+ContentBlocking:Blocca contenuti
+BlockAds:Nascondi annunci
+ContentLanguage:Lingua contenuti
+LocaleLang:Ottieni da preferenze localizzazione
+HistoryAge:Conserva cronologia per
+Days:giorni
+Miscellaneous:Varie
+SendReferer:Invia informazione sul referral del sito
+FastScrolling:Scrolling veloce
 
 # Display tab
 #
 
-Screen:Screen
-ScreenOwn:Own screen
+Screen:Schermo
+ScreenOwn:Schermo proprietario
 ScreenWB:Workbench
-ScreenPublic:Public screen
-Theme:Theme
-MousePointers:Mouse pointers
-TrueColour:True colour
-OSPointers:Use OS mouse pointers when possible
-NeedRestart:These options will not take effect until the next time NetSurf is started
+ScreenPublic:Schermo pubblico
+Theme:Tema
+MousePointers:Puntatori del mouse
+TrueColour:True color
+OSPointers:Se possibile usa i puntatori del mouse di sistema
+NeedRestart:Queste modifiche avranno effetto al prossimo riavvio di NetSurf.
 
 # Connection tab
 #
 
-Proxy:HTTP Proxy
-Fetching:Fetching
-FetchesMax:Maximum fetches
-FetchesHost:Fetches per host
-FetchesCached:Cached connections
+Proxy:Proxy HTTP
+Fetching:Ottenendo
+FetchesMax:Massimi ottenibili
+FetchesHost:Ottenibili per Host
+FetchesCached:Connessioni in cache
 
 # Rendering tab
 #
 
-CacheNative:Cache native versions
-ScaleQuality:Higher quality scaling
-Animations:Animations
-AnimSpeedLimit:Limit speed to
-AnimSpeedFrames:seconds between frames
-AnimDisable:Disable animations
+CacheNative:Versioni cache native
+ScaleQuality:Visualizzazione di massima qualità
+Animations:Animazioni
+AnimSpeedLimit:Limita velocità a
+AnimSpeedFrames:secondi tra frame
+AnimDisable:Disattiva animazioni
 
-None:None
-Scaled:Scaled
+None:Nulla
+Scaled:Scalato
 
 # Fonts tab
 #
 
-FontFamilies:Font families
+FontFamilies:Famiglia Font
 FontSans:Sans-serif
 FontSerif:Serif
 FontMono:Monospaced
-FontCursive:Cursive
-FontFantasy:Fantasy
-Default:Default
-FontSize:Font size
-Minimum:Minimum
+FontCursive:Corsivo
+FontFantasy:Fantasia
+Default:Predefinito
+FontSize:Dimensione Font
+Minimum:Minimo
 Pt:pt
 
 # Cache tab
 #
 
-CacheMemory:Memory cache
-CacheDisc:Disc cache
-Size:Size
-Duration:Duration
+CacheMemory:Cache in memoria
+CacheDisc:Cache su disco
+Size:Dimensione
+Duration:Durata
 
 # Advanced
 #
 
-Downloads:Downloads
-ConfirmOverwrite:Request confirmation when overwriting
-DownloadDir:Initial download location
-TabbedBrowsing:Tabbed browsing
-TabActive:Open new tabs in background
-TabMiddle:Middle mouse button opens tabs
+Downloads:Trasferimenti
+ConfirmOverwrite:Richiedi conferma prima di sovrascrivere
+DownloadDir:Percorso predefinito per i trasferimenti
+TabbedBrowsing:Navigazione a schede
+TabActive:Apri nuove schede in sottofondo
+TabMiddle:Tasto centrale del mouse per l'apertura delle schede
 Clipboard:Clipboard
-ClipboardUTF8:Write text as UTF-8
-ContextMenu:Context menu
-Enable:Enable
-Sticky:Sticky
+ClipboardUTF8:Scrivi testo come UTF-8
+ContextMenu:Menu contestuali
+Enable:Attivi
+Sticky:Fissi
 
 # Export
 #
 
-Margins:Margins
-Top:Top
-Left:Left
-Right:Right
-Bottom:Bottom
+Margins:Margini
+Top:Superiore
+Left:Sinistro
+Right:Destro
+Bottom:Inferiore
 MM:mm
-Scaling:Scaling
-Scale:Scale
-Appearance:Appearance
-SuppressImages:Suppress images
-RemoveBackground:Remove background
-FitPage:Fit page
-CompressPDF:Compress PDF
-SetPassword:Set password
+Scaling:Scalati
+Scale:Scala
+Appearance:Aspetto
+SuppressImages:Sopprimi immagini
+RemoveBackground:Rimuovi sfondo
+FitPage:Adatta pagina
+CompressPDF:Comprimi PDF
+SetPassword:Imposta Password
 
 
 # Unused tokens
