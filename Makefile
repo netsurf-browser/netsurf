@@ -501,7 +501,7 @@ ifeq ($(TARGET),framebuffer)
 		-D_BSD_SOURCE \
 		-D_XOPEN_SOURCE=600 \
 		-D_POSIX_C_SOURCE=200112L  \
-		$(shell $(PKG_CONFIG) --cflags libnsfb-0) \
+		$(shell $(PKG_CONFIG) --cflags libnsfb) \
 		$(shell $(PKG_CONFIG) --cflags libhubbub libcurl openssl) \
 		$(shell xml2-config --cflags)
 
