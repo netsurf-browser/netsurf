@@ -639,6 +639,18 @@ text_input(fbtk_widget_t *widget, nsfb_event_t *event, void *pw)
                 widget->u.text.enter(widget->u.text.pw, widget->u.text.text);
                 break;
 
+	case NSFB_KEY_PAGEUP:
+	case NSFB_KEY_PAGEDOWN:
+	case NSFB_KEY_RIGHT:
+	case NSFB_KEY_LEFT:
+	case NSFB_KEY_UP:
+	case NSFB_KEY_DOWN:
+	case NSFB_KEY_RSHIFT:
+	case NSFB_KEY_LSHIFT:
+		/* Not handling any of these correctly yet, but avoid putting
+		 * charcters in the text widget when they're pressed. */
+		break;
+
         default:
                 /* allow for new character and null */
                 widget->u.text.text = realloc(widget->u.text.text, widget->u.text.idx + 2);
