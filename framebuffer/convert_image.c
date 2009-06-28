@@ -173,7 +173,7 @@ main(int argc, char **argv)
         fprintf(f, "#include <sys/types.h>\n\n");
         fprintf(f, "#include <stdint.h>\n\n");
         fprintf(f, "#include <stdbool.h>\n\n");
-        fprintf(f, "#include \"framebuffer/fb_bitmap.h\"\n\n");
+        fprintf(f, "#include \"framebuffer/bitmap.h\"\n\n");
         
         fprintf(f, "static uint8_t %s_pixdata[] = {\n", argv[3]);
         for (y = 0; y < HEIGHT; ++y) {

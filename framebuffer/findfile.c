@@ -25,7 +25,7 @@
 
 #include "utils/log.h"
 
-#include "fb_findfile.h"
+#include "framebuffer/findfile.h"
 
 char *path_to_url(const char *path)
 {

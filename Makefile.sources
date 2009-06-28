@@ -87,34 +87,16 @@ S_AMIGA := compat.c gui.c tree.c history.c hotlist.c schedule.c		\
 S_AMIGA := $(addprefix amiga/,$(S_AMIGA))
 
 # S_FRAMEBUFFER are sources purely for the framebuffer build
-S_FRAMEBUFFER := fb_gui.c tree.c history.c hotlist.c fb_schedule.c	\
-	thumbnail.c misc.c fb_bitmap.c fb_filetype.c login.c		\
-	fb_cursor.c fb_plotters.c fb_8bpp_plotters.c			\
-	fb_16bpp_plotters.c fb_32bpp_plotters.c fb_findfile.c		\
-	fb_tk.c
-#	fb_1bpp_plotters.c
+S_FRAMEBUFFER := gui.c framebuffer.c tree.c history.c hotlist.c 	\
+        schedule.c thumbnail.c misc.c bitmap.c filetype.c login.c	\
+	findfile.c fbtk.c
 
-S_FRAMEBUFFER += fb_font_$(NETSURF_FB_FONTLIB).c
+S_FRAMEBUFFER += font_$(NETSURF_FB_FONTLIB).c
 
 ifeq ($(NETSURF_FB_FONTLIB),internal)
 S_FRAMEBUFFER += font_8x16.c
 endif
 
-ifeq ($(NETSURF_FB_FRONTEND),linux)
-S_FRAMEBUFFER += fb_frontend_linuxfb.c
-endif
-ifeq ($(NETSURF_FB_FRONTEND),able)
-S_FRAMEBUFFER += fb_frontend_ablefb.c
-endif
-ifeq ($(NETSURF_FB_FRONTEND),dummy)
-S_FRAMEBUFFER += fb_frontend_dummy.c
-endif
-ifeq ($(NETSURF_FB_FRONTEND),sdl)
-S_FRAMEBUFFER += fb_frontend_sdl.c
-endif
-ifeq ($(NETSURF_FB_FRONTEND),vnc)
-S_FRAMEBUFFER += fb_frontend_vnc.c
-endif
 
 S_FRAMEBUFFER := $(addprefix framebuffer/,$(S_FRAMEBUFFER))
 

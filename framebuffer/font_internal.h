@@ -16,23 +16,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef FRAMEBUFFER_FB_CURSOR
-#define FRAMEBUFFER_FB_CURSOR
+#ifndef NETSURF_FB_FONT_INTERNAL_H
+#define NETSURF_FB_FONT_INTERNAL_H
 
-int fb_cursor_x(framebuffer_t *fb);
+struct fb_font_desc {
+    const char *name;
+    int width, height;
+    const char *encoding;
+    const uint32_t *data;
+};
 
-int fb_cursor_y(framebuffer_t *fb);
+extern const struct fb_font_desc font_vga_8x16;
 
-void fb_cursor_move(struct framebuffer_s *fb, int x, int y);
+extern const struct fb_font_desc* fb_get_font(const struct css_style *style);
 
-void fb_cursor_plot(struct framebuffer_s *fb);
+extern utf8_convert_ret utf8_to_font_encoding(const struct fb_font_desc* font,
+				       const char *string, 
+				       size_t len,
+				       char **result);
 
-void fb_cursor_clear(struct framebuffer_s *fb);
+#endif /* NETSURF_FB_FONT_INTERNAL_H */
 
-void fb_cursor_set(fb_cursor_t *cursor, struct bitmap *bmp);
-
-fb_cursor_t *fb_cursor_init(struct framebuffer_s *fb, struct bitmap *bmp);
-
-void fb_cursor_click(framebuffer_t *fb, struct gui_window *g, browser_mouse_state st);
-
-#endif

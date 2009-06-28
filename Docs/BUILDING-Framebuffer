@@ -17,11 +17,6 @@
   Others cannot be automatically detected from the Makefile, so you
   will either need to install the dependencies, or set them to NO.
   
-  One option it is vitally important to set is the Framebuffer ports
-  frontend type by setting the NETSURF_FB_FRONTEND variable. The port
-  can run on a number of simple framebuffer implementations including
-  the linux framebuffer and an SDL surface.
-
   You should then obtain NetSurf's dependencies, keeping in mind which options
   you have enabled in the configuration file.  See the next section for
   specifics.
@@ -30,58 +25,19 @@
 
       $ make TARGET=framebuffer
 
-  If that produces errors, you probably don't have some of NetSurf's build
-  dependencies installed. See "Obtaining NetSurf's dependencies" below. Or turn
-  off the complaining features in your Makefile.config. You may need to "make clean"
-  before attempting to build after installing the dependencies.
+  If that produces errors, you probably don't have some of NetSurf's
+  build dependencies installed. See "Obtaining NetSurf's dependencies"
+  below. Or turn off the complaining features in your
+  Makefile.config. You may need to "make clean" before attempting to
+  build after installing the dependencies.
 
-  Run NetSurf by executing the "nsfb" shell script:
+  Run NetSurf by executing the "nsfb" program:
 
       $ ./nsfb
 
-  This script makes it easy to run the nsfb binary from the build tree. It
-  sets up some environment variables which enable NetSurf to find its
-  resources.
+  The NETSURFRES environment variable may require setting to enable
+  NetSurf to find its resources.
 
-  Selecting a frontend and appropriate options  
-==============================================  
-
-  The framebuffer port can operate on a number of frontends. A
-  frontend in this context is simply the combination of input and
-  output devices. A frontend output device may be any linearly mapped
-  area of memory. The framebuffer may be treated as values at 32, 16
-  or 8 bits per pixel. The input device is typically selected to
-  complement the output device and is completely specific to the
-  frontend.
-
-  There are several configuration options which may influence the
-  framebuffer frontends. These are:
-
-    fb_refresh - The refresh rate (for physical displays)
-    fb_depth - The depth (in bits per pixel) of the framebuffer
-    window_width - The width of the framebuffer
-    window_height - The height of the framebuffer
-
-  The defaults are for 800 by 600 pixels at 16bpp and 70Hz refresh rate.
-
-  There are currently four frontends:
-
-    linux Output to a Linux framebuffer and input from linux input
-          event device nodes. The output device is specified with
-          the fb_device option which defaults to /dev/fb0 . The
-          input nodes are searched for in the path specified by the
-          fb_input_devpath option which defaults to /dev/input/
-
-    sdl   The SDL frontend is a straightforward port to the SDL library
-          which abstracts the input and output from the application and has
-          been targeted to several operating systems.
-
-    vnc   The VNC server frontend uses the libvncserver library to
-          provide a straightforward unsecured VNC server, multiple
-          clients may connect.
-
-    able  Output to the Simtec ABLE bootloader framebuffer and input
-          from its input device node.
 
 
   Fonts
@@ -138,10 +94,10 @@
   and prior the following patch is necessary.
 
 
-Index: framebuffer/fb_font_freetype.c
+Index: framebuffer/font_freetype.c
 ===================================================================
---- framebuffer/fb_font_freetype.c	(revision 6750)
-+++ framebuffer/fb_font_freetype.c	(working copy)
+--- framebuffer/font_freetype.c	(revision 6750)
++++ framebuffer/font_freetype.c	(working copy)
 @@ -311,6 +311,7 @@
          FT_Glyph glyph;
          FT_Error error;
@@ -184,6 +140,34 @@ Index: framebuffer/fb_font_freetype.c
  }
  
 
+  Selecting a frontend and appropriate options  
+==============================================  
+
+  The framebuffer port interfaces to its input and output devices
+  using the NetSurf Framebuffer library (libnsfb). This library
+  provides an abstraction layer to input and output devices.
+
+  The frontend used by libnsfb is selected by using the -fe switch to
+  netsurf when executed. A frontend in this context is simply the
+  combination of input and output devices. 
+
+  A frontend output device may be any linearly mapped area of
+  memory. The framebuffer may be treated as values at 32, 16 or 8 bits
+  per pixel. The input device is typically selected to complement the
+  output device and is completely specific to the frontend.
+
+  There are several configuration options which may influence the
+  framebuffer frontends. These are:
+
+    fb_refresh - The refresh rate (for physical displays)
+    fb_depth - The depth (in bits per pixel) of the framebuffer
+    window_width - The width of the framebuffer
+    window_height - The height of the framebuffer
+
+  The defaults are for 800 by 600 pixels at 16bpp and 70Hz refresh rate.
+
+  The documentation of libnsfb should be consulted for futher
+  information about supported frontends and their configuration.
 
   Obtaining NetSurf's build dependencies
 ========================================
@@ -222,6 +206,17 @@ Index: framebuffer/fb_font_freetype.c
   Note that if you don't require MNG or JNG image support, NetSurf can be
   configured to use libpng instead of libmng. If you wish to do this, install
   the libpng development package instead.
+
+  Libnsfb
+---------
+
+  The NetSurf framebuffer library provides the underlying interface to 
+  the underlying input and output devices.
+  You can check it out from svn://svn.netsurf-browser.org/trunk/libnsfb
+
+  To build and install it:
+  
+      $ sudo make install
 
   Libnsbmp
 ----------

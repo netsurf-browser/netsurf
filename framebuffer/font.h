@@ -19,21 +19,16 @@
 #ifndef NETSURF_FB_FONT_H
 #define NETSURF_FB_FONT_H
 
-struct fb_font_desc {
-    const char *name;
-    int width, height;
-    const char *encoding;
-    const uint32_t *data;
-};
+#include "utils/utf8.h"
 
-extern const struct fb_font_desc font_vga_8x16;
+bool fb_font_init(void);
+bool fb_font_finalise(void);
 
-extern const struct fb_font_desc* fb_get_font(const struct css_style *style);
-
-extern utf8_convert_ret utf8_to_font_encoding(const struct fb_font_desc* font,
-				       const char *string, 
-				       size_t len,
-				       char **result);
+#ifdef FB_USE_FREETYPE
+#include "framebuffer/font_freetype.h"
+#else
+#include "framebuffer/font_internal.h"
+#endif
 
 #endif /* NETSURF_FB_FONT_H */
 

@@ -21,19 +21,23 @@
 #include <sys/types.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdbool.h>
+
+#include <libnsfb.h>
+#include <libnsfb_plot.h>
+#include <libnsfb_plot_util.h>
+#include <libnsfb_event.h>
+#include <libnsfb_cursor.h>
 
 #include "utils/log.h"
 #include "css/css.h"
 #include "desktop/browser.h"
 #include "desktop/plotters.h"
 
-#include "framebuffer/fb_gui.h"
-#include "framebuffer/fb_tk.h"
-#include "framebuffer/fb_plotters.h"
-#include "framebuffer/fb_bitmap.h"
-#include "framebuffer/fb_cursor.h"
-#include "framebuffer/fb_image_data.h"
-#include "framebuffer/fb_frontend.h"
+#include "framebuffer/gui.h"
+#include "framebuffer/fbtk.h"
+#include "framebuffer/bitmap.h"
+#include "framebuffer/image_data.h"
 
 static struct css_style root_style;
 
@@ -83,7 +87,7 @@ struct fbtk_widget_s {
         union {
                 /* toolkit base handle */
                 struct {
-                        framebuffer_t *fb;
+                        nsfb_t *fb;
                         fbtk_widget_t *rootw;
                         fbtk_widget_t *input;
                 } root;
@@ -292,152 +296,190 @@ remove_widget_from_window(fbtk_widget_t *window, fbtk_widget_t *widget)
 }
 
 static void
-fbtk_redraw_widget(fbtk_widget_t *widget)
+fbtk_redraw_widget(fbtk_widget_t *root, fbtk_widget_t *widget)
 {
-        bbox_t saved_plot_ctx;
+        nsfb_bbox_t saved_plot_ctx;
+        nsfb_bbox_t plot_ctx;
 
         //LOG(("widget %p type %d", widget, widget->type));
+        if (widget->redraw_required == false)
+                return;
 
-        /* set the clipping rectangle to the widget area */
-        saved_plot_ctx = fb_plot_ctx;
+        widget->redraw_required = false;
 
-        fb_plot_ctx.x0 = fbtk_get_x(widget);
-        fb_plot_ctx.y0 = fbtk_get_y(widget);
-        fb_plot_ctx.x1 = fb_plot_ctx.x0 + widget->width;
-        fb_plot_ctx.y1 = fb_plot_ctx.y0 + widget->height;
+        /* ensure there is a redraw handler */
+        if (widget->redraw == NULL)
+                return;
 
-        if (fbtk_clip_rect(&saved_plot_ctx, &fb_plot_ctx )) {
+        /* get the current clipping rectangle */
+        nsfb_plot_get_clip(root->u.root.fb, &saved_plot_ctx);
+
+        plot_ctx.x0 = fbtk_get_x(widget);
+        plot_ctx.y0 = fbtk_get_y(widget);
+        plot_ctx.x1 = plot_ctx.x0 + widget->width;
+        plot_ctx.y1 = plot_ctx.y0 + widget->height;
+
+        /* clip widget to the current area and redraw if its exposed */
+        if (nsfb_plot_clip(&saved_plot_ctx, &plot_ctx )) {
+
+                nsfb_plot_set_clip(root->u.root.fb, &plot_ctx);
+
                 /* do our drawing according to type */
-                widget->redraw(widget, widget->redrawpw);
+                widget->redraw(root, widget, widget->redrawpw);
 
-                widget->redraw_required = false;
+                /* restore clipping rectangle */
+                nsfb_plot_set_clip(root->u.root.fb, &saved_plot_ctx);
+
                 //LOG(("OS redrawing %d,%d %d,%d", fb_plot_ctx.x0, fb_plot_ctx.y0, fb_plot_ctx.x1, fb_plot_ctx.y1));
         }
 
-        /* restore clipping rectangle */
-        fb_plot_ctx = saved_plot_ctx;
-        //LOG(("Redraw Complete"));
 }
 
 /*************** redraw widgets **************/
 
 static int
-fb_redraw_fill(fbtk_widget_t *widget, void *pw)
+fb_redraw_fill(fbtk_widget_t *root, fbtk_widget_t *widget, void *pw)
 {
+        nsfb_bbox_t bbox;
+        fbtk_get_bbox(widget, &bbox);
+
+        nsfb_claim(root->u.root.fb, &bbox);
+
         /* clear background */
         if ((widget->bg & 0xFF000000) != 0) {
                 /* transparent polygon filling isnt working so fake it */
-                plot.fill(fb_plot_ctx.x0, fb_plot_ctx.y0,
-                          fb_plot_ctx.x1, fb_plot_ctx.y1,
-                          widget->bg);
+                nsfb_plot_rectangle_fill(root->u.root.fb, &bbox, widget->bg);
         }
 
-        fb_os_redraw(&fb_plot_ctx);
+        nsfb_release(root->u.root.fb, &bbox);
         return 0;
 }
 
 static int
-fb_redraw_hscroll(fbtk_widget_t *widget, void *pw)
+fb_redraw_hscroll(fbtk_widget_t *root, fbtk_widget_t *widget, void *pw)
 {
         int hscroll;
         int hpos;
+        nsfb_bbox_t bbox;
+        nsfb_bbox_t rect;
 
-        plot.fill(fb_plot_ctx.x0, fb_plot_ctx.y0,
-                  fb_plot_ctx.x1, fb_plot_ctx.y1,
-                  widget->bg);
+        fbtk_get_bbox(widget, &bbox);
 
-	plot.fill(fb_plot_ctx.x0 + 1,
-			fb_plot_ctx.y0 + 3,
-			fb_plot_ctx.x1 - 1,
-			fb_plot_ctx.y1 - 3,
-			widget->fg);
+        nsfb_claim(root->u.root.fb, &bbox);
 
-        plot.rectangle(fb_plot_ctx.x0,
-                       fb_plot_ctx.y0 + 2,
-                       fb_plot_ctx.x1 - fb_plot_ctx.x0 - 1,
-                       fb_plot_ctx.y1 - fb_plot_ctx.y0 - 5,
-                       1, 0xFF000000, false, false);
+        rect = bbox;
+
+        nsfb_plot_rectangle_fill(root->u.root.fb, &rect, widget->bg);
+
+        rect.x0 = bbox.x0 + 1;
+        rect.y0 = bbox.y0 + 3;
+        rect.x1 = bbox.x1 - 1;
+        rect.y1 = bbox.y1 - 3;
+
+        nsfb_plot_rectangle_fill(root->u.root.fb, &rect, widget->fg);
+
+        rect.x0 = bbox.x0;
+        rect.y0 = bbox.y0 + 2;
+        rect.x1 = bbox.x1 - 1;
+        rect.y1 = bbox.y1 - 5;
+
+        nsfb_plot_rectangle(root->u.root.fb, &rect, 1, 0xFF000000, false, false);
 
         hscroll = ((widget->width - 4) * widget->u.scroll.pct) / 100 ;
         hpos = ((widget->width - 4) * widget->u.scroll.pos) / 100 ;
 
         LOG(("hscroll %d",hscroll));
 
-        plot.fill(fb_plot_ctx.x0 + 3 + hpos,
-                  fb_plot_ctx.y0 + 5,
-                  fb_plot_ctx.x0 + hscroll + hpos,
-                  fb_plot_ctx.y0 + widget->height - 5,
-                  widget->bg);
+        rect.x0 = bbox.x0 + 3 + hpos;
+        rect.y0 = bbox.y0 + 5;
+        rect.x1 = bbox.x0 + hscroll + hpos;
+        rect.y1 = bbox.y0 + widget->height - 5;
 
-        fb_os_redraw(&fb_plot_ctx);
+        nsfb_plot_rectangle_fill(root->u.root.fb, &rect, widget->bg);
+
+        nsfb_release(root->u.root.fb, &bbox);
 
         return 0;
 }
 
 static int
-fb_redraw_vscroll(fbtk_widget_t *widget, void *pw)
+fb_redraw_vscroll(fbtk_widget_t *root, fbtk_widget_t *widget, void *pw)
 {
         int vscroll;
         int vpos;
 
-        plot.fill(fb_plot_ctx.x0, fb_plot_ctx.y0,
-                  fb_plot_ctx.x1, fb_plot_ctx.y1,
-                  widget->bg);
+        nsfb_bbox_t bbox;
+        nsfb_bbox_t rect;
 
-	plot.fill(fb_plot_ctx.x0 + 1,
-			fb_plot_ctx.y0 + 3,
-			fb_plot_ctx.x1 - 1,
-			fb_plot_ctx.y1 - 3,
-			widget->fg);
+        fbtk_get_bbox(widget, &bbox);
 
-        plot.rectangle(fb_plot_ctx.x0,
-                       fb_plot_ctx.y0 + 2,
-                       fb_plot_ctx.x1 - fb_plot_ctx.x0 - 1,
-                       fb_plot_ctx.y1 - fb_plot_ctx.y0 - 5,
-                       1, 0xFF000000, false, false);
+        nsfb_claim(root->u.root.fb, &bbox);
+
+        rect = bbox;
+
+        nsfb_plot_rectangle_fill(root->u.root.fb, &rect, widget->bg);
+
+        rect.x0 = bbox.x0 + 1;
+        rect.y0 = bbox.y0 + 3;
+        rect.x1 = bbox.x1 - 1;
+        rect.y1 = bbox.y1 - 3;
+
+        nsfb_plot_rectangle_fill(root->u.root.fb, &rect, widget->fg);
+
+        rect.x0 = bbox.x0;
+        rect.y0 = bbox.y0 + 2;
+        rect.x1 = bbox.x1 - 1;
+        rect.y1 = bbox.y1 - 5;
+
+        nsfb_plot_rectangle(root->u.root.fb, &rect, 1, 0xFF000000, false, false);
 
         vscroll = ((widget->height - 4) * widget->u.scroll.pct) / 100 ;
         vpos = ((widget->height - 4) * widget->u.scroll.pos) / 100 ;
 
         LOG(("scroll %d",vscroll));
 
-        plot.fill(fb_plot_ctx.x0 + 3,
-                  fb_plot_ctx.y0 + 5 + vpos,
-                  fb_plot_ctx.x0 + widget->width - 3,
-                  fb_plot_ctx.y0 + vscroll + vpos - 5,
-                  widget->bg);
+        rect.x0 = bbox.x0 + 3 ;
+        rect.y0 = bbox.y0 + 5 + vpos;
+        rect.x1 = bbox.x0 + widget->width - 3;
+        rect.y1 = bbox.y0 + vscroll + vpos - 5;
 
-        fb_os_redraw(&fb_plot_ctx);
+        nsfb_plot_rectangle_fill(root->u.root.fb, &rect, widget->bg);
+
+        nsfb_release(root->u.root.fb, &bbox);
 
         return 0;
 }
 
 static int
-fb_redraw_bitmap(fbtk_widget_t *widget, void *pw)
+fb_redraw_bitmap(fbtk_widget_t *root, fbtk_widget_t *widget, void *pw)
 {
+        nsfb_bbox_t bbox;
+        nsfb_bbox_t rect;
+
+        fbtk_get_bbox(widget, &bbox);
+
+        rect = bbox;
+
+        nsfb_claim(root->u.root.fb, &bbox);
+
         /* clear background */
         if ((widget->bg & 0xFF000000) != 0) {
                 /* transparent polygon filling isnt working so fake it */
-                plot.fill(fb_plot_ctx.x0, fb_plot_ctx.y0,
-                          fb_plot_ctx.x1, fb_plot_ctx.y1,
-                          widget->bg);
+                nsfb_plot_rectangle_fill(root->u.root.fb, &bbox, widget->bg);
         }
 
         /* plot the image */
-        plot.bitmap(fb_plot_ctx.x0, fb_plot_ctx.y0, 
-                    widget->width, widget->height,
-                    widget->u.bitmap.bitmap, 0, NULL);
+        nsfb_plot_bitmap(root->u.root.fb, &rect, (nsfb_colour_t *)widget->u.bitmap.bitmap->pixdata, widget->u.bitmap.bitmap->width, widget->u.bitmap.bitmap->height, widget->u.bitmap.bitmap->width, !widget->u.bitmap.bitmap->opaque);
 
-        fb_os_redraw(&fb_plot_ctx);
+        nsfb_release(root->u.root.fb, &bbox);
 
         return 0;
 }
 
 static int
-fbtk_window_default_redraw(fbtk_widget_t *window, void *pw)
+fbtk_window_default_redraw(fbtk_widget_t *root, fbtk_widget_t *window, void *pw)
 {
         fbtk_widget_list_t *lent;
-        fbtk_widget_t *widget;
         int res = 0;
 
         if (!window->redraw)
@@ -447,13 +489,7 @@ fbtk_window_default_redraw(fbtk_widget_t *window, void *pw)
         lent = window->u.window.widgets;
 
         while (lent != NULL) {
-                widget = lent->widget;
-
-                if ((widget->redraw != NULL) &&
-                    (widget->redraw_required)) {
-                        fbtk_redraw_widget(widget);
-
-                }
+                fbtk_redraw_widget(root, lent->widget);
                 lent = lent->next;
         }
         return res;
@@ -490,7 +526,7 @@ fbtk_window_default_move(fbtk_widget_t *window, int x, int y, void *pw)
 }
 
 static int
-fbtk_window_default_click(fbtk_widget_t *window, browser_mouse_state st, int x, int y, void *pw)
+fbtk_window_default_click(fbtk_widget_t *window, nsfb_event_t *event, int x, int y, void *pw)
 {
         fbtk_widget_list_t *lent;
         fbtk_widget_t *widget;
@@ -513,7 +549,7 @@ fbtk_window_default_click(fbtk_widget_t *window, browser_mouse_state st, int x, 
 
                         if (widget->click != NULL) {
                                 res = widget->click(widget,
-                                                    st,
+                                                    event,
                                                     x - widget->x,
                                                     y - widget->y,
                                                     widget->clickpw);
@@ -529,25 +565,33 @@ fbtk_window_default_click(fbtk_widget_t *window, browser_mouse_state st, int x, 
 }
 
 static int
-fb_redraw_text(fbtk_widget_t *widget, void *pw)
+fb_redraw_text(fbtk_widget_t *root, fbtk_widget_t *widget, void *pw)
 {
+        nsfb_bbox_t bbox;
+        nsfb_bbox_t rect;
+
+        fbtk_get_bbox(widget, &bbox);
+
+        rect = bbox;
+
+        nsfb_claim(root->u.root.fb, &bbox);
+
         /* clear background */
         if ((widget->bg & 0xFF000000) != 0) {
                 /* transparent polygon filling isnt working so fake it */
-                plot.fill(fb_plot_ctx.x0, fb_plot_ctx.y0,
-                          fb_plot_ctx.x1, fb_plot_ctx.y1,
-                          widget->bg);
+                nsfb_plot_rectangle_fill(root->u.root.fb, &bbox, widget->bg);
         }
 
+
         if (widget->u.text.outline) {
-                plot.rectangle(fb_plot_ctx.x0, fb_plot_ctx.y0,
-                               fb_plot_ctx.x1 - fb_plot_ctx.x0 - 1,
-                               fb_plot_ctx.y1 - fb_plot_ctx.y0 - 1,
-                               1, 0x00000000, false, false);
+                rect.x1--;
+                rect.y1--;
+                nsfb_plot_rectangle(root->u.root.fb, &rect, 1, 0x00000000, false, false);
         }
+
         if (widget->u.text.text != NULL) {
-                plot.text(fb_plot_ctx.x0 + 3,
-                          fb_plot_ctx.y0 + 17,
+                plot.text(bbox.x0 + 3,
+                          bbox.y0 + 17,
                           &root_style,
                           widget->u.text.text,
                           strlen(widget->u.text.text),
@@ -555,7 +599,7 @@ fb_redraw_text(fbtk_widget_t *widget, void *pw)
                           widget->fg);
         }
 
-        fb_os_redraw(&fb_plot_ctx);
+        nsfb_release(root->u.root.fb, &bbox);
 
         return 0;
 }
@@ -564,25 +608,34 @@ fb_redraw_text(fbtk_widget_t *widget, void *pw)
 
 
 static int
-text_input(fbtk_widget_t *widget, int value, void *pw)
+text_input(fbtk_widget_t *widget, nsfb_event_t *event, void *pw)
 {
-
-        switch (value) {
-        case -1:
+        int value;
+        if (event == NULL) {
                 /* gain focus */
                 if (widget->u.text.text == NULL)
                         widget->u.text.text = calloc(1,1);
                 widget->u.text.idx = strlen(widget->u.text.text);
-                break;
 
-        case '\b':
+                fbtk_request_redraw(widget);
+
+                return 0;
+                
+        }
+
+        if (event->type != NSFB_EVENT_KEY_DOWN)
+                return 0;
+
+        value = event->value.keycode;
+        switch (value) {
+        case NSFB_KEY_BACKSPACE:
                 if (widget->u.text.idx <= 0)
                         break;
                 widget->u.text.idx--;
                 widget->u.text.text[widget->u.text.idx] = 0;
                 break;
 
-        case '\r':
+        case NSFB_KEY_RETURN:
                 widget->u.text.enter(widget->u.text.pw, widget->u.text.text);
                 break;
 
@@ -649,6 +702,26 @@ fbtk_get_y(fbtk_widget_t *widget)
         }
 
         return y;
+}
+
+/* get widgets bounding box in screen co-ordinates */
+bool
+fbtk_get_bbox(fbtk_widget_t *widget, nsfb_bbox_t *bbox)
+{
+        bbox->x0 = widget->x;
+        bbox->y0 = widget->y;
+        bbox->x1 = widget->x + widget->width;
+        bbox->y1 = widget->y + widget->height;
+
+        while (widget->parent != NULL) {
+                widget = widget->parent;
+                bbox->x0 += widget->x;
+                bbox->y0 += widget->y;
+                bbox->x1 += widget->x;
+                bbox->y1 += widget->y;
+        }
+
+        return true;
 }
 
 void
@@ -784,42 +857,41 @@ fbtk_count_children(fbtk_widget_t *widget)
 
 
 void
-fbtk_input(fbtk_widget_t *widget, uint32_t ucs4)
+fbtk_input(fbtk_widget_t *root, nsfb_event_t *event)
 {
         fbtk_widget_t *input;
 
-        widget = get_root_widget(widget);
+        root = get_root_widget(root);
 
         /* obtain widget with input focus */
-        input = widget->u.root.input;
+        input = root->u.root.input;
         if (input == NULL)
-                return;
+                return; /* no widget with input */
 
         if (input->input == NULL)
                 return;
 
-        input->input(input, ucs4, input->inputpw);
+        /* call the widgets input method */
+        input->input(input, event, input->inputpw);
 }
 
 void
-fbtk_click(fbtk_widget_t *widget, browser_mouse_state st)
+fbtk_click(fbtk_widget_t *widget, nsfb_event_t *event)
 {
         fbtk_widget_t *root;
         fbtk_widget_t *window;
-        int x;
-        int y;
+        nsfb_bbox_t cloc;
 
         /* ensure we have the root widget */
         root = get_root_widget(widget);
 
-        x = fb_cursor_x(root->u.root.fb);
-        y = fb_cursor_y(root->u.root.fb);
+        nsfb_cursor_loc_get(root->u.root.fb, &cloc);
 
         /* get the root window */
         window = root->u.root.rootw;
-
+        LOG(("click %d, %d",cloc.x0,cloc.y0));
         if (window->click != NULL)
-                window->click(window, st, x, y, window->clickpw);
+                window->click(window, event, cloc.x0, cloc.y0, window->clickpw);
 }
 
 
@@ -829,24 +901,29 @@ fbtk_move_pointer(fbtk_widget_t *widget, int x, int y, bool relative)
 {
         fbtk_widget_t *root;
         fbtk_widget_t *window;
+        nsfb_bbox_t cloc;
 
         /* ensure we have the root widget */
         root = get_root_widget(widget);
 
         if (relative) {
-                x += fb_cursor_x(root->u.root.fb);
-                y += fb_cursor_y(root->u.root.fb);
+                nsfb_cursor_loc_get(root->u.root.fb, &cloc);
+                cloc.x0 += x;
+                cloc.y0 += y;
+        } else {
+                cloc.x0 = x;
+                cloc.y0 = y;
         }
 
         root->redraw_required = true;
 
-        fb_cursor_move(root->u.root.fb, x, y);
+        nsfb_cursor_loc_set(root->u.root.fb, &cloc);
 
         /* get the root window */
         window = root->u.root.rootw;
 
         if (window->move != NULL)
-                window->move(window, x, y,window->movepw);
+                window->move(window, cloc.x0, cloc.y0, window->movepw);
 
 }
 
@@ -854,9 +931,6 @@ int
 fbtk_redraw(fbtk_widget_t *widget)
 {
         fbtk_widget_t *root;
-        fbtk_widget_t *window;
-        bbox_t saved_plot_ctx;
-
 
         /* ensure we have the root widget */
         root = get_root_widget(widget);
@@ -864,30 +938,9 @@ fbtk_redraw(fbtk_widget_t *widget)
         if (!root->redraw_required)
                 return 0;
 
-        /* set the clipping rectangle to the widget area */
-        saved_plot_ctx = fb_plot_ctx;
-
-        /* get the root window */
-        window = root->u.root.rootw;
-
-        fb_plot_ctx.x0 = window->x;
-        fb_plot_ctx.y0 = window->y;
-        fb_plot_ctx.x1 = window->x + window->width;
-        fb_plot_ctx.y1 = window->y + window->height;
-
-        fb_cursor_clear(root->u.root.fb);
-
-        if (window->redraw != NULL)
-                fbtk_redraw_widget(window);
-
-        root->redraw_required = false;
-
-        fb_plot_ctx = saved_plot_ctx;
-
-        fb_cursor_plot(root->u.root.fb);
+        fbtk_redraw_widget(root, root->u.root.rootw);
 
         return 1;
-
 }
 
 /****** widget destruction ********/
@@ -1153,24 +1206,128 @@ fbtk_create_window(fbtk_widget_t *parent,
         return add_widget_to_window(parent, newwin);
 }
 
+bool fbtk_event(fbtk_widget_t *root, nsfb_event_t *event, int timeout)
+{
+        bool unused = false; /* is the event available */
+
+        /* ensure we have the root widget */
+        root = get_root_widget(root);
+
+        //LOG(("Reading event with timeout %d",timeout));
+
+        if (nsfb_event(root->u.root.fb, event, timeout) == false)
+                return false;
+
+        switch (event->type) {
+        case NSFB_EVENT_KEY_DOWN:
+        case NSFB_EVENT_KEY_UP:
+                if ((event->value.controlcode >= NSFB_KEY_MOUSE_1) &&
+                    (event->value.controlcode <= NSFB_KEY_MOUSE_5)) {
+                        fbtk_click(root, event);
+                } else {
+                        fbtk_input(root, event);
+                }
+                break;
+
+        case NSFB_EVENT_CONTROL:
+                unused = true;
+                break;
+
+        case NSFB_EVENT_MOVE_RELATIVE:
+                fbtk_move_pointer(root, event->value.vector.x, event->value.vector.y, true);
+                break;
+
+        case NSFB_EVENT_MOVE_ABSOLUTE:
+                fbtk_move_pointer(root, event->value.vector.x, event->value.vector.y, false);
+                break;
+                
+        default:
+                break;
+
+        }
+        return unused;
+}
+
+
+nsfb_t *
+fbtk_get_nsfb(fbtk_widget_t *widget)
+{
+        fbtk_widget_t *root;
+
+        /* ensure we have the root widget */
+        root = get_root_widget(widget);
+
+        return root->u.root.fb;
+}
 
 /* Initialise toolkit for use */
 fbtk_widget_t *
-fbtk_init(framebuffer_t *fb)
+fbtk_init(nsfb_t *fb)
 {
         fbtk_widget_t *root = new_widget(FB_WIDGET_TYPE_ROOT);
 
+        nsfb_get_geometry(fb, &root->width, &root->height, NULL);
+
+        LOG(("width %d height %d",root->width, root->height));
         root->u.root.fb = fb;
         root->x = 0;
         root->y = 0;
-        root->width = framebuffer->width;
-        root->height = framebuffer->height;
         root->u.root.rootw = fbtk_create_window(root, 0, 0, 0, 0);
 
         root_style.font_size.value.length.unit = CSS_UNIT_PX;
         root_style.font_size.value.length.value = 14;
 
         return root;
+}
+
+static int keymap[] = {
+       /* 0    1    2    3    4    5    6    7    8    9               */
+         -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,   8,   9, /*   0 -   9 */
+         -1,  -1,  -1,  13,  -1,  -1,  -1,  -1,  -1,  -1, /*  10 -  19 */
+         -1,  -1,  -1,  -1,  -1,  -1,  -1,  27,  -1,  -1, /*  20 -  29 */
+         -1,  -1, ' ', '!', '"', '#', '$',  -1, '&','\'', /*  30 -  39 */
+        '(', ')', '*', '+', ',', '-', '.', '/', '0', '1', /*  40 -  49 */
+        '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', /*  50 -  59 */
+        '<', '=', '>', '?', '@',  -1,  -1,  -1,  -1,  -1, /*  60 -  69 */
+         -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1, /*  70 -  79 */
+         -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1, /*  80 -  89 */
+         -1, '[','\\', ']', '~', '_', '`', 'a', 'b', 'c', /*  90 -  99 */
+        'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', /* 100 - 109 */
+        'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', /* 110 - 119 */
+        'x', 'y', 'z',  -1,  -1,  -1,  -1,  -1,  -1,  -1, /* 120 - 129 */
+};
+
+static int sh_keymap[] = {
+       /* 0    1    2    3    4    5    6    7    8    9               */
+         -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,   8,   9, /*   0 -   9 */
+         -1,  -1,  -1,  13,  -1,  -1,  -1,  -1,  -1,  -1, /*  10 -  19 */
+         -1,  -1,  -1,  -1,  -1,  -1,  -1,  27,  -1,  -1, /*  20 -  29 */
+         -1,  -1, ' ', '!', '"', '~', '$',  -1, '&', '@', /*  30 -  39 */
+        '(', ')', '*', '+', '<', '_', '>', '?', ')', '!', /*  40 -  49 */
+        '"', 243, '&', '*', '(', ';', ':', /*  50 -  59 */
+        '<', '+', '>', '?', '@',  -1,  -1,  -1,  -1,  -1, /*  60 -  69 */
+         -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1, /*  70 -  79 */
+         -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1, /*  80 -  89 */
+         -1, '{', '|', '}', '~', '_', 254, 'A', 'B', 'C', /*  90 -  99 */
+        'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', /* 100 - 109 */
+        'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', /* 110 - 119 */
+        'X', 'Y', 'Z',  -1,  -1,  -1,  -1,  -1,  -1,  -1, /* 120 - 129 */
+};
+
+
+/* performs character mapping */
+int fbtk_keycode_to_ucs4(int code, uint8_t mods)
+{
+        int ucs4 = -1;
+
+        if (mods) {
+                if ((code >= 0) && (code < sizeof(sh_keymap)))
+                        ucs4 = sh_keymap[code];
+        } else {
+                if ((code >= 0) && (code < sizeof(keymap)))
+                        ucs4 = keymap[code];
+        }
+        return ucs4;
 }
 
 /*

@@ -19,7 +19,7 @@
 #ifndef FB_IMAGE_DATA
 #define FB_IMAGE_DATA
 
-#include "framebuffer/fb_bitmap.h"
+#include "framebuffer/bitmap.h"
 
 extern struct bitmap left_arrow;
 extern struct bitmap right_arrow;

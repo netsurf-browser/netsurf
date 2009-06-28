@@ -21,7 +21,7 @@
 
 #include "assert.h"
 #include "image/bitmap.h"
-#include "framebuffer/fb_bitmap.h"
+#include "framebuffer/bitmap.h"
 
 #include "utils/log.h"
 

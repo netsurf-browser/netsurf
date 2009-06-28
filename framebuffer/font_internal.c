@@ -25,8 +25,8 @@
 #include "desktop/options.h"
 #include "utils/utf8.h"
 
-#include "framebuffer/fb_gui.h"
-#include "framebuffer/fb_font.h"
+#include "framebuffer/gui.h"
+#include "framebuffer/font.h"
 
 bool fb_font_init(void)
 {

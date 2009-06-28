@@ -22,12 +22,7 @@
 typedef struct fb_cursor_s fb_cursor_t;
 
 /* bounding box */
-typedef struct bbox_s {
-        int x0;
-        int y0;
-        int x1;
-        int y1;
-} bbox_t;
+typedef struct nsfb_bbox_s bbox_t;
 
 typedef struct framebuffer_s {
 	int width;
@@ -59,7 +54,7 @@ extern framebuffer_t *framebuffer;
 extern struct gui_window *window_list;
 
 /* scroll a window */
-void fb_window_scroll(struct gui_window *g, int x, int y);
+void fb_window_scroll(struct fbtk_widget_s *browser, int x, int y);
 
 #endif /* NETSURF_FB_GUI_H */
 

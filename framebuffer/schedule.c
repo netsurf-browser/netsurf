@@ -20,7 +20,7 @@
 #include <time.h>
 
 #include "desktop/browser.h"
-#include "framebuffer/fb_schedule.h"
+#include "framebuffer/schedule.h"
 
 #include "utils/log.h"
 

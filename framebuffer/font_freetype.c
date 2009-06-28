@@ -26,11 +26,12 @@
 #include "render/font.h"
 #include "utils/utf8.h"
 #include "utils/log.h"
+#include "desktop/options.h"
 
-#include "framebuffer/fb_gui.h"
-#include "framebuffer/fb_font.h"
-#include "framebuffer/fb_options.h"
-#include "framebuffer/fb_findfile.h"
+#include "framebuffer/gui.h"
+#include "framebuffer/font.h"
+#include "framebuffer/options.h"
+#include "framebuffer/findfile.h"
 
 #define VERA_PATH "/usr/share/fonts/truetype/ttf-bitstream-vera/"
 

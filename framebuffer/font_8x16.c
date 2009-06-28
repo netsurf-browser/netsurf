@@ -19,7 +19,7 @@
 #include "desktop/plotters.h"
 #include "utils/utf8.h"
 
-#include "framebuffer/fb_font.h"
+#include "framebuffer/font_internal.h"
 
 #define FONTDATAMAX 4096
 

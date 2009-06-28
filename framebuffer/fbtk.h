@@ -10,16 +10,16 @@ typedef struct fbtk_widget_s fbtk_widget_t;
 typedef int (*fbtk_user_t)(fbtk_widget_t *widget, void *pw);
 
 /* input callback */
-typedef int (*fbtk_input_t)(fbtk_widget_t *widget, int value, void *pw);
+typedef int (*fbtk_input_t)(fbtk_widget_t *widget, nsfb_event_t *event, void *pw);
 
 /* mouse click callback */
-typedef int (*fbtk_mouseclick_t)(fbtk_widget_t *widget, browser_mouse_state st, int x, int y, void *pw);
+typedef int (*fbtk_mouseclick_t)(fbtk_widget_t *widget, nsfb_event_t *event, int x, int y, void *pw);
 
 /* mouse move callback */
 typedef int (*fbtk_move_t)(fbtk_widget_t *widget, int x, int y, void *pw);
 
 /* redraw function */
-typedef int (*fbtk_redraw_t)(fbtk_widget_t *widget, void *pw);
+typedef int (*fbtk_redraw_t)(fbtk_widget_t *root, fbtk_widget_t *widget, void *pw);
 
 /* enter pressed on writable icon */
 typedef int (*fbtk_enter_t)(void *pw, char *text);
@@ -34,7 +34,7 @@ typedef int (*fbtk_enter_t)(void *pw, char *text);
  * @param fb The underlying framebuffer.
  * @return The root widget handle.
  */
-fbtk_widget_t *fbtk_init(framebuffer_t *fb);
+fbtk_widget_t *fbtk_init(nsfb_t *fb);
 
 /** Create a window widget.
  *
@@ -147,6 +147,7 @@ int fbtk_get_x(fbtk_widget_t *widget);
 int fbtk_get_width(fbtk_widget_t *widget);
 int fbtk_get_height(fbtk_widget_t *widget);
 void *fbtk_get_userpw(fbtk_widget_t *widget);
+nsfb_t *fbtk_get_nsfb(fbtk_widget_t *widget);
 
 /* Set widget properties */
 
@@ -183,11 +184,11 @@ void fbtk_move_pointer(fbtk_widget_t *widget, int x, int y, bool relative);
 
 /** Mouse has been clicked
  */
-void fbtk_click(fbtk_widget_t *widget, browser_mouse_state st);
+void fbtk_click(fbtk_widget_t *widget, nsfb_event_t *event);
 
 /** Input has been recived
  */
-void fbtk_input(fbtk_widget_t *widget, uint32_t ucs4);
+void fbtk_input(fbtk_widget_t *widget, nsfb_event_t *event);
 
 /** Indicate a widget has to be redrawn
  */
@@ -199,9 +200,12 @@ int fbtk_redraw(fbtk_widget_t *widget);
 
 int fbtk_count_children(fbtk_widget_t *widget);
 
+bool fbtk_get_bbox(fbtk_widget_t *widget, struct nsfb_bbox_s *bbox);
 
+bool fbtk_event(fbtk_widget_t *root, nsfb_event_t *event, int timeout);
 
-
+/* keycode to ucs4 */
+int fbtk_keycode_to_ucs4(int code, uint8_t mods);
 
 
 

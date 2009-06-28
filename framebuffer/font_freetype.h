@@ -16,13 +16,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NETSURF_FB_FRONTEND_H
-#define NETSURF_FB_FRONTEND_H
+#ifndef NETSURF_FB_FONT_FREETYPE_H
+#define NETSURF_FB_FONT_FREETYPE_H
 
-extern framebuffer_t *fb_os_init(int argc, char** argv);
-extern void fb_os_quit(framebuffer_t *fb);
-extern void fb_os_input(fbtk_widget_t *root, bool active);
-extern void fb_os_option_override(void);
-extern void fb_os_redraw(struct bbox_s *box);
+#include <ft2build.h>  
+#include FT_FREETYPE_H 
+#include <freetype/ftglyph.h>
 
-#endif /* NETSURF_FB_FRONTEND_H */
+extern int ft_load_type;
+
+FT_Glyph fb_getglyph(const struct css_style *style, uint32_t ucs4);
+
+#endif /* NETSURF_FB_FONT_FREETYPE_H */
