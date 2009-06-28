@@ -9,13 +9,14 @@ http://www.netsurf-browser.org
 @{"Change Log          " link ChangeLog/Main}
 
 @{"Licence             " link COPYING/Main}
-@{"Command line options" link cli}
-@{"Options file        " link options}
-@{"ARexx port          " link arexx}
-@{"Hotlist menu        " link hotlist}
-@{"Local MIME types    " link mimetypes}
+@{"Command line options" link CLI}
+@{"Options file        " link Options}
+@{"Fonts               " link Fonts}
+@{"ARexx port          " link ARexx}
+@{"Hotlist menu        " link Hotlist}
+@{"Local MIME types    " link MIMETypes}
 
-@{"Credits             " link contact}
+@{"Credits             " link Contact}
 @endnode
 
 @node cli "Command line options"
@@ -28,7 +29,7 @@ URL = address of page to open on startup.
 @endnode
 
 @node options "Options file"
-The options file is stored in @{"Resources/Options" link Resources/Options/Main} by default.  Most of the setting can be changed from within NetSurf by selecting Edit preferences from the Settings menu.
+The options file is stored in @{"Resources/Options" link Resources/Options/Main} by default.  Most of the settings can be changed from within NetSurf by selecting Edit preferences from the Settings menu.
 
 There are a couple of Amiga-specific options which can only be changed directly in the file.  These are:
 
@@ -37,6 +38,14 @@ There are a couple of Amiga-specific options which can only be changed directly 
 @{b}url_file@{ub} Path to URL database file
 @{b}hotlist_file@{ub} Path to Hotlist file
 @{b}arexx_dir@{ub} Path to ARexx scripts dir
+@endnode
+
+@node Fonts
+The font to use for each font type can be defined in NetSurf's options.  OS4 NetSurf does not currently support soft styles for bold and italic, so a designed font for these will need to be specified as follows.
+
+Within @{"TypeManager" system "SYS:System/TypeManager"} select a font being used by NetSurf and click on Modify.
+On the Files tab, Font family section, choose the @{b}bold@{ub}, @{i}italic@{ui} and @{b}@{i}bold-italic@{ui}@{ub} version of the font.
+Click Save.
 @endnode
 
 @node Themes
