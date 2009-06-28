@@ -1115,11 +1115,6 @@ throbber_advance(void *pw)
 
         case 7:
                 image = &throbber8;
-                g->throbber_index = 8;
-                break;
-
-        case 8:
-                image = &throbber0;
                 g->throbber_index = 0;
                 break;
 
