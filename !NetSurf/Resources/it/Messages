@@ -1,6 +1,6 @@
 # Italian messages for NetSurf 3.0 Development (Revision 8065)
 # Translated by Samir Hawamdeh (http://www.betatesting.it/backforthefuture)
-# 28.06.2009
+# 29.06.2009
 # =========================================================================
 #
 # Description
@@ -264,7 +264,7 @@ Browser:Browser
 HistGlobalNS:Mostra cronologia globale...
 HistLocalNS:Mostra cronologia locale...
 FindTextNS:Trova testo...
-Redraw:Aggiorna pagina
+Redraw:Ridisegna pagina
 
 # Hotlist menu
 #
@@ -1172,7 +1172,7 @@ HomePageDefault:Usa pagina predefinita
 HomePageCurrent:Usa pagina corrente
 ContentBlocking:Blocca contenuti
 BlockAds:Nascondi annunci
-ContentLanguage:Lingua NetSurf
+ContentLanguage:Lingua contenuti
 LocaleLang:Ottieni da preferenze localizzazione
 HistoryAge:Conserva cronologia per
 Days:giorni
