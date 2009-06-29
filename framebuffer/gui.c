@@ -22,6 +22,7 @@
 #include <sys/ioctl.h>
 #include <limits.h>
 #include <unistd.h>
+#include <assert.h>
 #include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -114,23 +115,23 @@ static void fb_pan(fbtk_widget_t *widget,
                    struct browser_window *bw)
 {
 	struct content *c;
-        int x;
-        int y;
-        int width;
-        int height;
-        nsfb_bbox_t redraw_box;
+	int x;
+	int y;
+	int width;
+	int height;
+	nsfb_bbox_t redraw_box;
 
 	c = bw->current_content;
 
 	if ((!c) || (c->locked))
-                return;
+		return;
 
-        nsfb_t *nsfb = fbtk_get_nsfb(widget);
+	nsfb_t *nsfb = fbtk_get_nsfb(widget);
 
-        height = fbtk_get_height(widget);
-        width = fbtk_get_width(widget);
-        x = fbtk_get_x(widget);
-        y = fbtk_get_y(widget);
+	height = fbtk_get_height(widget);
+	width = fbtk_get_width(widget);
+	x = fbtk_get_x(widget);
+	y = fbtk_get_y(widget);
 
 	/* dont pan off the top */
 	if ((bwidget->scrolly + bwidget->pany) < 0)
@@ -151,88 +152,99 @@ static void fb_pan(fbtk_widget_t *widget,
 	LOG(("panning %d, %d",bwidget->panx, bwidget->pany));
 
 	/* pump up the volume. dance, dance! lets do it */
+	if (bwidget->pany > height || bwidget->pany < -height ||
+			bwidget->panx > width || bwidget->panx < -width) {
+
+		/* pan in any direction by more than viewport size */
+		bwidget->scrolly += bwidget->pany;
+		bwidget->scrollx += bwidget->panx;
+		fb_queue_redraw(widget, 0, 0, width, height);
+
+		/* ensure we don't try to scroll again */
+		bwidget->panx = 0;
+		bwidget->pany = 0;
+	}
+
 	if (bwidget->pany < 0) {
-		/* we cannot pan more than a window height at a time */
-		if (bwidget->pany < -height)
-			bwidget->pany = -height;
+		/* pan up by less then viewport height */
+		redraw_box.x0 = x;
+		redraw_box.y0 = y - bwidget->pany;
+		redraw_box.x1 = redraw_box.x0 + width;
+		redraw_box.y1 = redraw_box.y0 + height + bwidget->pany;
 
-		LOG(("panning up %d", bwidget->pany));
+		/* move part that remains visible up */
+		nsfb_claim(nsfb, &redraw_box);
+		nsfb_plot_copy(nsfb,
+				x, y,
+				width, height + bwidget->pany,
+				x, y - bwidget->pany);
+		nsfb_release(nsfb, &redraw_box);
 
-                redraw_box.x0 = x;
-                redraw_box.y0 = y - bwidget->pany;
-                redraw_box.x1 = redraw_box.x0 + width;
-                redraw_box.y1 = redraw_box.y0 + height + bwidget->pany;
-                nsfb_claim(nsfb, &redraw_box);
-                nsfb_plot_copy(nsfb, x, y, width, height + bwidget->pany, x, y - bwidget->pany);
-                nsfb_release(nsfb, &redraw_box);
-
+		/* redraw newly exposed area */
 		bwidget->scrolly += bwidget->pany;
 		fb_queue_redraw(widget, 0, 0, width, - bwidget->pany);
 	}
 
 	if (bwidget->pany > 0) {
-		/* we cannot pan more than a window height at a time */
-		if (bwidget->pany > height)
-			bwidget->pany = height;
+		/* pan down by less then viewport height */
+		redraw_box.x0 = x;
+		redraw_box.y0 = y;
+		redraw_box.x1 = redraw_box.x0 + width;
+		redraw_box.y1 = redraw_box.y0 + height - bwidget->pany;
 
-		LOG(("panning down %d", bwidget->pany));
+		/* move part that remains visible down */
+		nsfb_claim(nsfb, &redraw_box);
+		nsfb_plot_copy(nsfb,
+				x, y + bwidget->pany,
+				width, height - bwidget->pany,
+				x, y);
+		nsfb_release(nsfb, &redraw_box);
 
-                redraw_box.x0 = x;
-                redraw_box.y0 = y;
-                redraw_box.x1 = redraw_box.x0 + width;
-                redraw_box.y1 = redraw_box.y0 + height - bwidget->pany;
-                nsfb_claim(nsfb, &redraw_box);
-                nsfb_plot_copy(nsfb, 
-                               x, y + bwidget->pany, 
-                               width, height - bwidget->pany, 
-                               x, y);
-                nsfb_release(nsfb, &redraw_box);
-
+		/* redraw newly exposed area */
 		bwidget->scrolly += bwidget->pany;
-		fb_queue_redraw(widget, 0, height - bwidget->pany, width, height);
+		fb_queue_redraw(widget, 0, height - bwidget->pany, width,
+				height);
 	}
 
 	if (bwidget->panx < 0) {
-		/* we cannot pan more than a window width at a time */
-		if (bwidget->panx < -width)
-			bwidget->panx = -width;
+		/* pan left by less then viewport width */
+		redraw_box.x0 = x - bwidget->panx;
+		redraw_box.y0 = y;
+		redraw_box.x1 = redraw_box.x0 + width + bwidget->panx;
+		redraw_box.y1 = redraw_box.y0 + height;
 
-		LOG(("panning left %d", bwidget->panx));
+		/* move part that remains visible left */
+		nsfb_claim(nsfb, &redraw_box);
+		nsfb_plot_copy(nsfb,
+				x, y,
+				width + bwidget->panx, height,
+				x - bwidget->panx, y);
+		nsfb_release(nsfb, &redraw_box);
 
-                redraw_box.x0 = x - bwidget->panx;
-                redraw_box.y0 = y;
-                redraw_box.x1 = redraw_box.x0 + width + bwidget->panx;
-                redraw_box.y1 = redraw_box.y0 + height;
-                nsfb_claim(nsfb, &redraw_box);
-                nsfb_plot_copy(nsfb, 
-                               x, y, 
-                               width + bwidget->panx, height, 
-                               x - bwidget->panx, y);
-                nsfb_release(nsfb, &redraw_box);
+		/* redraw newly exposed area */
 		bwidget->scrollx += bwidget->panx;
 		fb_queue_redraw(widget, 0, 0, -bwidget->panx, height);
 	}
 
 	if (bwidget->panx > 0) {
-		/* we cannot pan more than a window width at a time */
-		if (bwidget->panx > width)
-			bwidget->panx = width;
+		/* pan right by less then viewport width */
+		redraw_box.x0 = x;
+		redraw_box.y0 = y;
+		redraw_box.x1 = redraw_box.x0 + width - bwidget->panx;
+		redraw_box.y1 = redraw_box.y0 + height;
 
-		LOG(("panning right %d", bwidget->panx));
+		/* move part that remains visible right */
+		nsfb_claim(nsfb, &redraw_box);
+		nsfb_plot_copy(nsfb,
+				x + bwidget->panx, y,
+				width - bwidget->panx, height,
+				x, y);
+		nsfb_release(nsfb, &redraw_box);
 
-                redraw_box.x0 = x;
-                redraw_box.y0 = y;
-                redraw_box.x1 = redraw_box.x0 + width - bwidget->panx;
-                redraw_box.y1 = redraw_box.y0 + height;
-                nsfb_claim(nsfb, &redraw_box);
-                nsfb_plot_copy(nsfb, 
-                               x + bwidget->panx, y, 
-                               width - bwidget->panx, height, 
-                               x, y);
-                nsfb_release(nsfb, &redraw_box);
-
+		/* redraw newly exposed area */
 		bwidget->scrollx += bwidget->panx;
-		fb_queue_redraw(widget, width - bwidget->panx, 0, width, height);
+		fb_queue_redraw(widget, width - bwidget->panx, 0, width,
+				height);
 	}
 
 
@@ -300,7 +312,7 @@ fb_browser_window_redraw(fbtk_widget_t *root, fbtk_widget_t *widget, void *pw)
         if (bwidget->pan_required) {
                 int pos;
                 fb_pan(widget, bwidget, gw->bw);
-                pos = (bwidget->scrollx * 100) / gw->bw->current_content->width;;
+                pos = (bwidget->scrollx * 100) / gw->bw->current_content->width;
                 fbtk_set_scroll_pos(gw->hscroll, pos);
                 pos = (bwidget->scrolly * 100) / gw->bw->current_content->height;
                 fbtk_set_scroll_pos(gw->vscroll, pos);
@@ -347,7 +359,7 @@ void gui_init(int argc, char** argv)
 	LOG(("Using '%s' as Default CSS URL", default_stylesheet_url));
 
         nsfb = framebuffer_initialise(argc, argv);
-        if (nsfb == NULL) 
+        if (nsfb == NULL)
                 die("Unable to initialise framebuffer");
 
         framebuffer_set_cursor(&pointer_image);
@@ -394,7 +406,7 @@ void gui_poll(bool active)
 
         fbtk_event(fbtk, &event, timeout);
 
-        if ((event.type == NSFB_EVENT_CONTROL) && 
+        if ((event.type == NSFB_EVENT_CONTROL) &&
             (event.value.controlcode ==  NSFB_CONTROL_QUIT))
                 netsurf_quit = true;
 
@@ -505,8 +517,8 @@ fb_browser_window_move(fbtk_widget_t *widget,
 
 
 static int
-fb_browser_window_input(fbtk_widget_t *widget, 
-                        nsfb_event_t *event, 
+fb_browser_window_input(fbtk_widget_t *widget,
+                        nsfb_event_t *event,
                         void *pw)
 {
         struct gui_window *gw = pw;
@@ -593,10 +605,10 @@ fb_update_back_forward(struct gui_window *gw)
 {
 	struct browser_window *bw = gw->bw;
 
-	fbtk_set_bitmap(gw->back, 
+	fbtk_set_bitmap(gw->back,
 			(browser_window_back_available(bw)) ?
 			&left_arrow : &left_arrow_g);
-	fbtk_set_bitmap(gw->forward, 
+	fbtk_set_bitmap(gw->forward,
 			(browser_window_forward_available(bw)) ?
 			&right_arrow : &right_arrow_g);
 }
@@ -612,7 +624,7 @@ fb_leftarrow_click(fbtk_widget_t *widget,
 
         if (history_back_available(bw->history))
                 history_back(bw, bw->history);
-        
+
         fb_update_back_forward(gw);
         return 0;
 
@@ -620,9 +632,9 @@ fb_leftarrow_click(fbtk_widget_t *widget,
 
 /* right arrow icon click routine */
 static int
-fb_rightarrow_click(fbtk_widget_t *widget, 
-                    nsfb_event_t *event, 
-                    int x, int y, 
+fb_rightarrow_click(fbtk_widget_t *widget,
+                    nsfb_event_t *event,
+                    int x, int y,
                     void *pw)
 {
         struct gui_window *gw =pw;
@@ -638,9 +650,9 @@ fb_rightarrow_click(fbtk_widget_t *widget,
 
 /* reload icon click routine */
 static int
-fb_reload_click(fbtk_widget_t *widget, 
-                nsfb_event_t *event, 
-                int x, int y, 
+fb_reload_click(fbtk_widget_t *widget,
+                nsfb_event_t *event,
+                int x, int y,
                 void *pw)
 {
         struct browser_window *bw = pw;
@@ -650,9 +662,9 @@ fb_reload_click(fbtk_widget_t *widget,
 
 /* stop icon click routine */
 static int
-fb_stop_click(fbtk_widget_t *widget, 
-              nsfb_event_t *event, 
-              int x, int y, 
+fb_stop_click(fbtk_widget_t *widget,
+              nsfb_event_t *event,
+              int x, int y,
               void *pw)
 {
         struct browser_window *bw = pw;
@@ -662,8 +674,8 @@ fb_stop_click(fbtk_widget_t *widget,
 
 /* left scroll icon click routine */
 static int
-fb_scrolll_click(fbtk_widget_t *widget, 
-                 nsfb_event_t *event, 
+fb_scrolll_click(fbtk_widget_t *widget,
+                 nsfb_event_t *event,
                  int x, int y, void *pw)
 {
         struct gui_window *gw = pw;
@@ -672,8 +684,8 @@ fb_scrolll_click(fbtk_widget_t *widget,
 }
 
 static int
-fb_scrollr_click(fbtk_widget_t *widget, 
-                 nsfb_event_t *event, 
+fb_scrollr_click(fbtk_widget_t *widget,
+                 nsfb_event_t *event,
                  int x, int y, void *pw)
 {
         struct gui_window *gw = pw;
@@ -683,8 +695,8 @@ fb_scrollr_click(fbtk_widget_t *widget,
 }
 
 static int
-fb_scrollu_click(fbtk_widget_t *widget, 
-                 nsfb_event_t *event, 
+fb_scrollu_click(fbtk_widget_t *widget,
+                 nsfb_event_t *event,
                  int x, int y, void *pw)
 {
         struct gui_window *gw = pw;
@@ -694,8 +706,8 @@ fb_scrollu_click(fbtk_widget_t *widget,
 }
 
 static int
-fb_scrolld_click(fbtk_widget_t *widget, 
-                 nsfb_event_t *event, 
+fb_scrolld_click(fbtk_widget_t *widget,
+                 nsfb_event_t *event,
                  int x, int y, void *pw)
 {
         struct gui_window *gw = pw;
@@ -772,44 +784,44 @@ gui_create_browser_window(struct browser_window *bw,
                 LOG(("Normal window"));
 
                 /* fill toolbar background */
-                widget = fbtk_create_fill(gw->window, 
-                                          0, 0, 0, 30, 
+                widget = fbtk_create_fill(gw->window,
+                                          0, 0, 0, 30,
                                           FB_FRAME_COLOUR);
                 fbtk_set_handler_move(widget, set_ptr_default_move, bw);
 
                 /* back button */
-                gw->back = fbtk_create_button(gw->window, 
-                                              5, 2, 
-                                              FB_FRAME_COLOUR, 
-                                              &left_arrow_g, 
-                                              fb_leftarrow_click, 
+                gw->back = fbtk_create_button(gw->window,
+                                              5, 2,
+                                              FB_FRAME_COLOUR,
+                                              &left_arrow_g,
+                                              fb_leftarrow_click,
                                               gw);
                 fbtk_set_handler_move(gw->back, set_ptr_hand_move, bw);
 
                 /* forward button */
-                gw->forward = fbtk_create_button(gw->window, 
-                                                 35, 2, 
-                                                 FB_FRAME_COLOUR, 
-                                                 &right_arrow_g, 
-                                                 fb_rightarrow_click, 
+                gw->forward = fbtk_create_button(gw->window,
+                                                 35, 2,
+                                                 FB_FRAME_COLOUR,
+                                                 &right_arrow_g,
+                                                 fb_rightarrow_click,
                                                  gw);
                 fbtk_set_handler_move(gw->forward, set_ptr_hand_move, bw);
 
                 /* reload button */
-                widget = fbtk_create_button(gw->window, 
-                                            65, 2, 
-                                            FB_FRAME_COLOUR, 
-                                            &stop_image, 
-                                            fb_stop_click, 
+                widget = fbtk_create_button(gw->window,
+                                            65, 2,
+                                            FB_FRAME_COLOUR,
+                                            &stop_image,
+                                            fb_stop_click,
                                             bw);
                 fbtk_set_handler_move(widget, set_ptr_hand_move, bw);
 
                 /* reload button */
-                widget = fbtk_create_button(gw->window, 
-                                            95, 2, 
-                                            FB_FRAME_COLOUR, 
-                                            &reload, 
-                                            fb_reload_click, 
+                widget = fbtk_create_button(gw->window,
+                                            95, 2,
+                                            FB_FRAME_COLOUR,
+                                            &reload,
+                                            fb_reload_click,
                                             bw);
                 fbtk_set_handler_move(widget, set_ptr_hand_move, bw);
 
@@ -836,9 +848,9 @@ gui_create_browser_window(struct browser_window *bw,
                  * scrollbar
                  */
                 gw->status = fbtk_create_text(gw->window,
-                                              0 , 
+                                              0 ,
                                               fbtk_get_height(gw->window) - bot,
-                                              fbtk_get_width(gw->window) - 200 - right, 
+                                              fbtk_get_width(gw->window) - 200 - right,
                                               bot,
                                               FB_FRAME_COLOUR, FB_COLOUR_BLACK,
                                               false);
@@ -846,20 +858,20 @@ gui_create_browser_window(struct browser_window *bw,
                 fbtk_set_handler_move(gw->status, set_ptr_default_move, bw);
 
                 /* horizontal scrollbar */
-                fbtk_create_button(gw->window, 
-                                   fbtk_get_width(gw->window) - 200 - right, 
-                                   fbtk_get_height(gw->window) - bot, 
-                                   FB_FRAME_COLOUR, 
-                                   &scrolll, 
-                                   fb_scrolll_click, 
+                fbtk_create_button(gw->window,
+                                   fbtk_get_width(gw->window) - 200 - right,
+                                   fbtk_get_height(gw->window) - bot,
+                                   FB_FRAME_COLOUR,
+                                   &scrolll,
+                                   fb_scrolll_click,
                                    gw);
 
-                fbtk_create_button(gw->window, 
-                                   fbtk_get_width(gw->window) - 20 - right, 
-                                   fbtk_get_height(gw->window) - bot, 
-                                   FB_FRAME_COLOUR, 
-                                   &scrollr, 
-                                   fb_scrollr_click, 
+                fbtk_create_button(gw->window,
+                                   fbtk_get_width(gw->window) - 20 - right,
+                                   fbtk_get_height(gw->window) - bot,
+                                   FB_FRAME_COLOUR,
+                                   &scrollr,
+                                   fb_scrollr_click,
                                    gw);
 
                 gw->hscroll = fbtk_create_hscroll(gw->window,
@@ -870,22 +882,22 @@ gui_create_browser_window(struct browser_window *bw,
                                                   FB_SCROLL_COLOUR,
                                                   FB_FRAME_COLOUR);
                 /* create vertical */
-                fbtk_create_button(gw->window, 
-                                   fbtk_get_width(gw->window) - right, 
-                                   top, 
-                                   FB_FRAME_COLOUR, 
-                                   &scrollu, 
-                                   fb_scrollu_click, 
+                fbtk_create_button(gw->window,
+                                   fbtk_get_width(gw->window) - right,
+                                   top,
+                                   FB_FRAME_COLOUR,
+                                   &scrollu,
+                                   fb_scrollu_click,
                                    gw);
 
-                fbtk_create_button(gw->window, 
-                                   fbtk_get_width(gw->window) - right, 
-                                   fbtk_get_height(gw->window) - bot - 20, 
-                                   FB_FRAME_COLOUR, 
-                                   &scrolld, 
-                                   fb_scrolld_click, 
+                fbtk_create_button(gw->window,
+                                   fbtk_get_width(gw->window) - right,
+                                   fbtk_get_height(gw->window) - bot - 20,
+                                   FB_FRAME_COLOUR,
+                                   &scrolld,
+                                   fb_scrolld_click,
                                    gw);
-                
+
                 gw->vscroll = fbtk_create_vscroll(gw->window,
                                                   fbtk_get_width(gw->window) - right,
                                                   top + 20,
@@ -893,7 +905,7 @@ gui_create_browser_window(struct browser_window *bw,
                                                   fbtk_get_height(gw->window) - top - bot - 40 ,
                                                   FB_SCROLL_COLOUR,
                                                   FB_FRAME_COLOUR);
-                
+
                 break;
 
         case BROWSER_WINDOW_FRAME:
@@ -978,13 +990,16 @@ bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 
 void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 {
-        struct browser_widget_s *bwidget = fbtk_get_userpw(g->browser);
-        LOG(("scroll %d",sx));
-        bwidget->panx = sx;
-        bwidget->pany = sy;
-        bwidget->pan_required = true;
+	struct browser_widget_s *bwidget = fbtk_get_userpw(g->browser);
 
-        fbtk_request_redraw(g->browser);
+	assert(bwidget);
+
+	bwidget->panx = sx - bwidget->scrollx;
+	bwidget->pany = sy - bwidget->scrolly;
+
+	bwidget->pan_required = true;
+
+	fbtk_request_redraw(g->browser);
 }
 
 void gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
