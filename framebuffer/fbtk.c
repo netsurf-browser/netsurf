@@ -620,7 +620,7 @@ text_input(fbtk_widget_t *widget, nsfb_event_t *event, void *pw)
                 fbtk_request_redraw(widget);
 
                 return 0;
-                
+
         }
 
         if (event->type != NSFB_EVENT_KEY_DOWN)
@@ -794,8 +794,8 @@ fbtk_set_scroll(fbtk_widget_t *widget, int pct)
 {
         if (widget == NULL)
                 return;
- 
-        if ((widget->type == FB_WIDGET_TYPE_HSCROLL) || 
+
+        if ((widget->type == FB_WIDGET_TYPE_HSCROLL) ||
             (widget->type == FB_WIDGET_TYPE_VSCROLL)) {
 
                 widget->u.scroll.pct = pct;
@@ -808,8 +808,8 @@ fbtk_set_scroll_pos(fbtk_widget_t *widget, int pos)
 {
         if (widget == NULL)
                 return;
- 
-        if ((widget->type == FB_WIDGET_TYPE_HSCROLL) || 
+
+        if ((widget->type == FB_WIDGET_TYPE_HSCROLL) ||
             (widget->type == FB_WIDGET_TYPE_VSCROLL)) {
 
         widget->u.scroll.pos = pos;
@@ -893,6 +893,10 @@ fbtk_click(fbtk_widget_t *widget, nsfb_event_t *event)
         fbtk_widget_t *root;
         fbtk_widget_t *window;
         nsfb_bbox_t cloc;
+
+	/* Don't act on press and release, or everything happens twice */
+        if (event->type == NSFB_EVENT_KEY_UP)
+        	return;
 
         /* ensure we have the root widget */
         root = get_root_widget(widget);
@@ -1252,7 +1256,7 @@ bool fbtk_event(fbtk_widget_t *root, nsfb_event_t *event, int timeout)
         case NSFB_EVENT_MOVE_ABSOLUTE:
                 fbtk_move_pointer(root, event->value.vector.x, event->value.vector.y, false);
                 break;
-                
+
         default:
                 break;
 
