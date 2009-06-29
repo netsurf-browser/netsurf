@@ -320,6 +320,7 @@ bool ro_plot_path(const float *p, unsigned int n, colour fill, float width,
 		}
 	}
 
+	free(path);
 	return true;
 
 error:
