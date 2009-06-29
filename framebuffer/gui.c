@@ -1071,6 +1071,10 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
                 framebuffer_set_cursor(&caret_image);
                 break;
 
+        case GUI_POINTER_MENU:
+                framebuffer_set_cursor(&menu_image);
+                break;
+
         default:
                 framebuffer_set_cursor(&pointer_image);
                 break;

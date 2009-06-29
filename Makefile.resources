@@ -33,6 +33,7 @@ FB_IMAGE_scrolld := framebuffer/res/icons/scrolld.png
 FB_IMAGE_pointer_image := framebuffer/res/pointers/default.png
 FB_IMAGE_hand_image := framebuffer/res/pointers/point.png
 FB_IMAGE_caret_image := framebuffer/res/pointers/caret.png
+FB_IMAGE_menu_image := framebuffer/res/pointers/menu.png
 
 FB_IMAGE_throbber0 := framebuffer/res/throbber/throbber0.png
 FB_IMAGE_throbber1 := framebuffer/res/throbber/throbber1.png
