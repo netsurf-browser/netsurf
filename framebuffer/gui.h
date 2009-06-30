@@ -24,16 +24,6 @@ typedef struct fb_cursor_s fb_cursor_t;
 /* bounding box */
 typedef struct nsfb_bbox_s bbox_t;
 
-typedef struct framebuffer_s {
-	int width;
-	int height;
-	uint8_t *ptr; /**< Base of video memory. */
-	int linelen; /**< length of a video line. */
-	int bpp;
-	colour palette[256]; /* palette for index modes */
-	fb_cursor_t *cursor;
-} framebuffer_t;
-
 struct gui_window {
         struct browser_window *bw;
 
@@ -50,7 +40,6 @@ struct gui_window {
 };
 
 
-extern framebuffer_t *framebuffer;
 extern struct gui_window *window_list;
 
 /* scroll a window */
