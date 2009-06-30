@@ -122,9 +122,9 @@ extern colour css_scrollbar_fg_colour;
 extern colour css_scrollbar_bg_colour;
 extern colour css_scrollbar_arrow_colour;
 
-Object *mouseptrobj[AMI_LASTPOINTER+1];
-struct BitMap *mouseptrbm[AMI_LASTPOINTER+1];
-int mouseptrcurrent=0;
+static Object *mouseptrobj[AMI_LASTPOINTER+1];
+static struct BitMap *mouseptrbm[AMI_LASTPOINTER+1];
+static int mouseptrcurrent=0;
 
 char *ptrs[AMI_LASTPOINTER+1] = {
 	"ptr_default",
@@ -2622,6 +2622,7 @@ void ami_update_pointer(struct Window *win, gui_pointer_shape shape)
 			default:
 				if(mouseptrobj[shape])
 				{
+DebugPrintF("%ld %lx %lx\n",shape,mouseptrobj[shape],win);
 					SetWindowPointer(win,WA_Pointer,mouseptrobj[shape],TAG_DONE);
 				}
 				else
@@ -2684,7 +2685,7 @@ void ami_init_mouse_pointers(void)
 
 		if(option_truecolour_mouse_pointers)
 		{
-			ami_get_theme_filename(ptrfname,ptrs32[i]);
+			ami_get_theme_filename(&ptrfname,ptrs32[i]);
 			if(dobj = GetIconTags(ptrfname,ICONGETA_UseFriendBitMap,TRUE,TAG_DONE))
 			{
 				if(IconControl(dobj, ICONCTRLA_GetImageDataFormat, &format, TAG_DONE))
@@ -2717,7 +2718,7 @@ void ami_init_mouse_pointers(void)
 							static uint8 dummyPlane[64 * 64 / 8];
                    			static struct BitMap dummyBitMap = { 64 / 8, 64, 0, 2, 0, { dummyPlane, dummyPlane, 0, 0, 0, 0, 0, 0 }, };
 
-							mouseptrobj[i] = NewObject(NULL, POINTERCLASS,
+							mouseptrobj[i] = NewObject(NULL, "pointerclass",
 												POINTERA_BitMap, &dummyBitMap,
 												POINTERA_XOffset, -mousexpt,
 												POINTERA_YOffset, -mouseypt,
