@@ -499,8 +499,6 @@ bool ro_plot_bitmap(int x, int y, int width, int height,
 		bitmap_flags_t flags)
 {
 	const uint8_t *buffer;
-	bool repeat_x = (flags & BITMAPF_REPEAT_X);
-	bool repeat_y = (flags & BITMAPF_REPEAT_Y);
 
 	buffer = bitmap_get_buffer(bitmap);
 	if (!buffer) {
@@ -508,7 +506,6 @@ bool ro_plot_bitmap(int x, int y, int width, int height,
 		return false;
 	}
 
-	if (!(repeat_x || repeat_y)) {
 	return image_redraw(bitmap->sprite_area,
 			ro_plot_origin_x + x * 2,
 			ro_plot_origin_y - y * 2,
@@ -516,19 +513,8 @@ bool ro_plot_bitmap(int x, int y, int width, int height,
 			bitmap->width,
 			bitmap->height,
 			bg,
-			false, false, false,
-			bitmap_get_opaque(bitmap) ? IMAGE_PLOT_TINCT_OPAQUE :
-			IMAGE_PLOT_TINCT_ALPHA);
-        }
-
-	return image_redraw(bitmap->sprite_area,
- 			ro_plot_origin_x + x * 2,
-			ro_plot_origin_y - y * 2,
-			width, height,
-			bitmap->width,
-			bitmap->height,
-			bg,
-			repeat_x, repeat_y, true,
+			flags & BITMAPF_REPEAT_X, flags & BITMAPF_REPEAT_Y,
+			flags & BITMAPF_REPEAT_X || flags & BITMAPF_REPEAT_Y,
 			bitmap_get_opaque(bitmap) ? IMAGE_PLOT_TINCT_OPAQUE :
 			IMAGE_PLOT_TINCT_ALPHA);
 }
