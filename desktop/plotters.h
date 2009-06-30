@@ -30,6 +30,10 @@
 
 struct bitmap;
 
+typedef unsigned long bitmap_flags_t;
+#define BITMAPF_NONE 0
+#define BITMAPF_REPEAT_X 1
+#define BITMAPF_REPEAT_Y 2
 
 /** Set of target specific plotting functions.
  *
@@ -108,10 +112,7 @@ struct plotter_table {
 	bool (*arc)(int x, int y, int radius, int angle1, int angle2, colour c);
 	bool (*bitmap)(int x, int y, int width, int height,
 			struct bitmap *bitmap, colour bg,
-			struct content *content);
-	bool (*bitmap_tile)(int x, int y, int width, int height,
-			struct bitmap *bitmap, colour bg,
-			bool repeat_x, bool repeat_y, struct content *content);
+			bitmap_flags_t flags);
 	bool (*group_start)(const char *name);  /**< optional, may be NULL */
 	bool (*group_end)(void);		/**< optional, may be NULL */
 	bool (*flush)(void);			/**< optional, may be NULL */

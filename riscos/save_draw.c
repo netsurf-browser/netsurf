@@ -56,32 +56,27 @@ static bool ro_save_draw_disc(int x, int y, int radius, colour colour,
 static bool ro_save_draw_arc(int x, int y, int radius, int angle1, int angle2,
     		colour c);
 static bool ro_save_draw_bitmap(int x, int y, int width, int height,
-		struct bitmap *bitmap, colour bg, struct content *content);
-static bool ro_save_draw_bitmap_tile(int x, int y, int width, int height,
-		struct bitmap *bitmap, colour bg,
-		bool repeat_x, bool repeat_y, struct content *content);
+		struct bitmap *bitmap, colour bg, bitmap_flags_t flags);
 static bool ro_save_draw_group_start(const char *name);
 static bool ro_save_draw_group_end(void);
 static bool ro_save_draw_error(pencil_code code);
 
 
 static const struct plotter_table ro_save_draw_plotters = {
-	ro_save_draw_clg,
-	ro_save_draw_rectangle,
-	ro_save_draw_line,
-	ro_save_draw_polygon,
-	ro_save_draw_fill,
-	ro_save_draw_clip,
-	ro_save_draw_text,
-	ro_save_draw_disc,
-	ro_save_draw_arc,
-	ro_save_draw_bitmap,
-	ro_save_draw_bitmap_tile,
-	ro_save_draw_group_start,
-	ro_save_draw_group_end,
-	NULL,
-	ro_save_draw_path,
-	false
+	.clg = ro_save_draw_clg,
+	.rectangle = ro_save_draw_rectangle,
+	.line = ro_save_draw_line,
+	.polygon = ro_save_draw_polygon,
+	.fill = ro_save_draw_fill,
+	.clip = ro_save_draw_clip,
+	.text = ro_save_draw_text,
+	.disc = ro_save_draw_disc,
+	.arc = ro_save_draw_arc,
+	.bitmap = ro_save_draw_bitmap,
+	.group_start = ro_save_draw_group_start,
+	.group_end = ro_save_draw_group_end,
+	.path = ro_save_draw_path,
+	.option_knockout = false,
 };
 
 static struct pencil_diagram *ro_save_draw_diagram;
@@ -378,7 +373,7 @@ bool ro_save_draw_arc(int x, int y, int radius, int angle1, int angle2,
 }
 
 bool ro_save_draw_bitmap(int x, int y, int width, int height,
-		struct bitmap *bitmap, colour bg, struct content *content)
+		struct bitmap *bitmap, colour bg, bitmap_flags_t flags)
 {
 	pencil_code code;
 	const uint8_t *buffer;
@@ -396,14 +391,6 @@ bool ro_save_draw_bitmap(int x, int y, int width, int height,
 	if (code != pencil_OK)
 		return ro_save_draw_error(code);
 
-	return true;
-}
-
-
-bool ro_save_draw_bitmap_tile(int x, int y, int width, int height,
-		struct bitmap *bitmap, colour bg,
-		bool repeat_x, bool repeat_y, struct content *content)
-{
 	return true;
 }
 

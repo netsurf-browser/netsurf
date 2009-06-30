@@ -78,10 +78,8 @@ static bool nsbeos_plot_disc(int x, int y, int radius, colour c, bool filled);
 static bool nsbeos_plot_arc(int x, int y, int radius, int angle1, int angle2,
     		colour c);
 static bool nsbeos_plot_bitmap(int x, int y, int width, int height,
-		struct bitmap *bitmap, colour bg, struct content *content);
-static bool nsbeos_plot_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
-		bool repeat_x, bool repeat_y, struct content *content);
+		bitmap_flags_t flags);
 
 #if 0 /* GTK */
 static GdkRectangle cliprect;
@@ -107,7 +105,6 @@ const struct plotter_table nsbeos_plotters = {
 	nsbeos_plot_disc,
 	nsbeos_plot_arc,
 	nsbeos_plot_bitmap,
-	nsbeos_plot_bitmap_tile,
 	NULL,
 	NULL,
 	NULL,
@@ -583,28 +580,21 @@ static bool nsbeos_plot_bbitmap(int x, int y, int width, int height,
 	return true;
 }
 
-bool nsbeos_plot_bitmap(int x, int y, int width, int height,
-		struct bitmap *bitmap, colour bg, struct content *content)
-{
-	BBitmap *b = nsbeos_bitmap_get_primary(bitmap);
-	return nsbeos_plot_bbitmap(x, y, width, height, b, bg);
-#if 0 /* GTK */
-	GdkPixbuf *pixbuf = gtk_bitmap_get_primary(bitmap);
-	return nsbeos_plot_pixbuf(x, y, width, height, pixbuf, bg);
-#endif
-}
 
-bool nsbeos_plot_bitmap_tile(int x, int y, int width, int height,
+bool nsbeos_plot_bitmap(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
-		bool repeat_x, bool repeat_y, struct content *content)
+		bitmap_flags_t flags)
 {
 	int doneheight = 0, donewidth = 0;
 	BBitmap *primary;
 	BBitmap *pretiled;
+        bool repeat_x = (flags & BITMAPF_REPEAT_X);
+        bool repeat_y = (flags & BITMAPF_REPEAT_Y);
 
 	if (!(repeat_x || repeat_y)) {
-		/* Not repeating at all, so just pass it on */
-		return nsbeos_plot_bitmap(x,y,width,height,bitmap,bg,content);
+		/* Not repeating at all, so just plot it */
+                primary = nsbeos_bitmap_get_primary(bitmap);
+                return nsbeos_plot_bbitmap(x, y, width, height, primary, bg);
 	}
 
 	if (repeat_x && !repeat_y)

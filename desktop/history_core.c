@@ -635,7 +635,7 @@ bool history_redraw_entry(struct history *history,
 	}
 
 	if (!plot.bitmap(entry->x + xoffset, entry->y + yoffset, WIDTH, HEIGHT,
-			entry->bitmap, 0xffffff, NULL))
+			entry->bitmap, 0xffffff, 0))
 		return false;
 	if (!plot.rectangle(entry->x - 1 + xoffset, entry->y - 1 + yoffset,
 			WIDTH + 1, HEIGHT + 1,

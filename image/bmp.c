@@ -123,7 +123,7 @@ bool nsbmp_redraw(struct content *c, int x, int y,
 			return false;
 	c->bitmap = c->data.bmp.bmp->bitmap;
  	return plot.bitmap(x, y, width, height,	c->bitmap,
- 			background_colour, c);
+ 			background_colour, BITMAPF_NONE);
 }
 
 
@@ -133,13 +133,21 @@ bool nsbmp_redraw_tiled(struct content *c, int x, int y,
 		float scale, colour background_colour,
 		bool repeat_x, bool repeat_y)
 {
+	bitmap_flags_t flags = BITMAPF_NONE;
 
 	if (!c->data.bmp.bmp->decoded)
-	  	if (bmp_decode(c->data.bmp.bmp) != BMP_OK)
+		if (bmp_decode(c->data.bmp.bmp) != BMP_OK)
 			return false;
+
 	c->bitmap = c->data.bmp.bmp->bitmap;
-	return plot.bitmap_tile(x, y, width, height, c->bitmap,
-			background_colour, repeat_x, repeat_y, c);
+
+	if (repeat_x)
+		flags |= BITMAPF_REPEAT_X;
+	if (repeat_y)
+		flags |= BITMAPF_REPEAT_Y;
+
+	return plot.bitmap(x, y, width, height, c->bitmap,
+			background_colour, flags);
 }
 
 

@@ -83,7 +83,7 @@ struct knockout_entry;
 static void knockout_set_plotters(void);
 static void knockout_calculate(int x0, int y0, int x1, int y1, struct knockout_box *box);
 static bool knockout_plot_fill_recursive(struct knockout_box *box, colour c);
-static bool knockout_plot_bitmap_tile_recursive(struct knockout_box *box,
+static bool knockout_plot_bitmap_recursive(struct knockout_box *box,
 		struct knockout_entry *entry);
 
 static bool knockout_plot_clg(colour c);
@@ -101,10 +101,8 @@ static bool knockout_plot_disc(int x, int y, int radius, colour colour, bool fil
 static bool knockout_plot_arc(int x, int y, int radius, int angle1, int angle2,
 		colour c);
 static bool knockout_plot_bitmap(int x, int y, int width, int height,
-		struct bitmap *bitmap, colour bg, struct content *content);
-static bool knockout_plot_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
-		bool repeat_x, bool repeat_y, struct content *content);
+		bitmap_flags_t flags);
 static bool knockout_plot_flush(void);
 static bool knockout_plot_group_start(const char *name);
 static bool knockout_plot_group_end(void);
@@ -113,22 +111,21 @@ static bool knockout_plot_path(const float *p, unsigned int n, colour fill,
 
 
 const struct plotter_table knockout_plotters = {
-	knockout_plot_clg,
-	knockout_plot_rectangle,
-	knockout_plot_line,
-	knockout_plot_polygon,
-	knockout_plot_fill,
-	knockout_plot_clip,
-	knockout_plot_text,
-	knockout_plot_disc,
-	knockout_plot_arc,
-	knockout_plot_bitmap,
-	knockout_plot_bitmap_tile,
-	knockout_plot_group_start,
-	knockout_plot_group_end,
-	knockout_plot_flush,
-	knockout_plot_path,
-	true
+	.clg = knockout_plot_clg,
+	.rectangle = knockout_plot_rectangle,
+	.line = knockout_plot_line,
+	.polygon = knockout_plot_polygon,
+	.fill = knockout_plot_fill,
+	.clip = knockout_plot_clip,
+	.text = knockout_plot_text,
+	.disc = knockout_plot_disc,
+	.arc = knockout_plot_arc,
+	.bitmap = knockout_plot_bitmap,
+	.group_start = knockout_plot_group_start,
+	.group_end = knockout_plot_group_end,
+	.flush = knockout_plot_flush,
+	.path = knockout_plot_path,
+	.option_knockout = true,
 };
 
 
@@ -142,8 +139,7 @@ typedef enum {
 	KNOCKOUT_PLOT_TEXT,
 	KNOCKOUT_PLOT_DISC,
 	KNOCKOUT_PLOT_ARC,
-	KNOCKOUT_PLOT_BITMAP,		/* knockout */
-	KNOCKOUT_PLOT_BITMAP_TILE,	/* knockout, knocked out */
+	KNOCKOUT_PLOT_BITMAP,		/* knockout, knocked out */
 	KNOCKOUT_PLOT_GROUP_START,
 	KNOCKOUT_PLOT_GROUP_END,
 } knockout_type;
@@ -238,19 +234,8 @@ struct knockout_entry {
 			int height;
 			struct bitmap *bitmap;
 			colour bg;
-			struct content *content;
+                        bitmap_flags_t flags;
 		} bitmap;
-		struct {
-			int x;
-			int y;
-			int width;
-			int height;
-			struct bitmap *bitmap;
-			colour bg;
-			bool repeat_x;
-			bool repeat_y;
-			struct content *content;
-		} bitmap_tile;
 		struct {
 			const char *name;
 		} group_start;
@@ -418,40 +403,26 @@ bool knockout_plot_flush(void)
 					knockout_entries[i].data.arc.c);
 			break;
 		case KNOCKOUT_PLOT_BITMAP:
-			success &= plot.bitmap(
-					knockout_entries[i].data.bitmap.x,
-					knockout_entries[i].data.bitmap.y,
-					knockout_entries[i].data.bitmap.width,
-					knockout_entries[i].data.bitmap.height,
-					knockout_entries[i].data.bitmap.bitmap,
-					knockout_entries[i].data.bitmap.bg,
-					knockout_entries[i].data.bitmap.content);
-			break;
-		case KNOCKOUT_PLOT_BITMAP_TILE:
 			box = knockout_entries[i].box->child;
 			if (box) {
-				success &= knockout_plot_bitmap_tile_recursive(box,
+				success &= knockout_plot_bitmap_recursive(box,
 						&knockout_entries[i]);
 			} else if (!knockout_entries[i].box->deleted) {
-				success &= plot.bitmap_tile(
+				success &= plot.bitmap(
 						knockout_entries[i].data.
-								bitmap_tile.x,
+								bitmap.x,
 						knockout_entries[i].data.
-								bitmap_tile.y,
+								bitmap.y,
 						knockout_entries[i].data.
-								bitmap_tile.width,
+								bitmap.width,
 						knockout_entries[i].data.
-								bitmap_tile.height,
+								bitmap.height,
 						knockout_entries[i].data.
-								bitmap_tile.bitmap,
+								bitmap.bitmap,
 						knockout_entries[i].data.
-								bitmap_tile.bg,
+								bitmap.bg,
 						knockout_entries[i].data.
-								bitmap_tile.repeat_x,
-						knockout_entries[i].data.
-								bitmap_tile.repeat_y,
-						knockout_entries[i].data.
-								bitmap_tile.content);
+								bitmap.flags);
 			}
 			break;
 		case KNOCKOUT_PLOT_GROUP_START:
@@ -635,7 +606,7 @@ bool knockout_plot_fill_recursive(struct knockout_box *box, colour c)
 }
 
 
-bool knockout_plot_bitmap_tile_recursive(struct knockout_box *box,
+bool knockout_plot_bitmap_recursive(struct knockout_box *box,
 		struct knockout_entry *entry)
 {
 	bool success = true;
@@ -645,21 +616,19 @@ bool knockout_plot_bitmap_tile_recursive(struct knockout_box *box,
 		if (parent->deleted)
 			continue;
 		if (parent->child)
-			knockout_plot_bitmap_tile_recursive(parent->child, entry);
+			knockout_plot_bitmap_recursive(parent->child, entry);
 		else {
 			success &= plot.clip(parent->bbox.x0,
 					parent->bbox.y0,
 					parent->bbox.x1,
 					parent->bbox.y1);
-			success &= plot.bitmap_tile(entry->data.bitmap_tile.x,
-					entry->data.bitmap_tile.y,
-					entry->data.bitmap_tile.width,
-					entry->data.bitmap_tile.height,
-					entry->data.bitmap_tile.bitmap,
-					entry->data.bitmap_tile.bg,
-					entry->data.bitmap_tile.repeat_x,
-					entry->data.bitmap_tile.repeat_y,
-					entry->data.bitmap_tile.content);
+			success &= plot.bitmap(entry->data.bitmap.x,
+					entry->data.bitmap.y,
+					entry->data.bitmap.width,
+					entry->data.bitmap.height,
+					entry->data.bitmap.bitmap,
+					entry->data.bitmap.bg,
+					entry->data.bitmap.flags);
 		}
 	}
 	return success;
@@ -852,40 +821,11 @@ bool knockout_plot_arc(int x, int y, int radius, int angle1, int angle2, colour 
 	return true;
 }
 
+
+
 bool knockout_plot_bitmap(int x, int y, int width, int height,
-		struct bitmap *bitmap, colour bg, struct content *content)
-{
-	int kx0, ky0, kx1, ky1;
-
-	/* opaque bitmaps knockout, but don't get knocked out */
-	if (bitmap_get_opaque(bitmap)) {
-		/* get our bounds */
-  		kx0 = (x > clip_x0_cur) ? x : clip_x0_cur;
-  		ky0 = (y > clip_y0_cur) ? y : clip_y0_cur;
-  		kx1 = (x + width < clip_x1_cur) ? x + width : clip_x1_cur;
-  		ky1 = (y + height< clip_y1_cur) ? y + height: clip_y1_cur;
- 		if ((kx0 > clip_x1_cur) || (kx1 < clip_x0_cur) ||
- 				(ky0 > clip_y1_cur) || (ky1 < clip_y0_cur))
- 			return true;
-		knockout_calculate(kx0, ky0, kx1, ky1, NULL);
-	}
-	knockout_entries[knockout_entry_cur].data.bitmap.x = x;
-	knockout_entries[knockout_entry_cur].data.bitmap.y = y;
-	knockout_entries[knockout_entry_cur].data.bitmap.width = width;
-	knockout_entries[knockout_entry_cur].data.bitmap.height = height;
-	knockout_entries[knockout_entry_cur].data.bitmap.bitmap = bitmap;
-	knockout_entries[knockout_entry_cur].data.bitmap.bg = bg;
-	knockout_entries[knockout_entry_cur].data.bitmap.content = content;
-	knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_BITMAP;
-	if (++knockout_entry_cur >= KNOCKOUT_ENTRIES)
-		knockout_plot_flush();
-	return true;
-}
-
-
-bool knockout_plot_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
-		bool repeat_x, bool repeat_y, struct content *content)
+		bitmap_flags_t flags)
 {
 	int kx0, ky0, kx1, ky1;
 
@@ -894,7 +834,7 @@ bool knockout_plot_bitmap_tile(int x, int y, int width, int height,
   	ky0 = clip_y0_cur;
   	kx1 = clip_x1_cur;
   	ky1 = clip_y1_cur;
-  	if (!repeat_x) {
+  	if (!(flags & BITMAPF_REPEAT_X)) {
   		if (x > kx0)
   			kx0 = x;
   		if (x + width < kx1)
@@ -902,7 +842,7 @@ bool knockout_plot_bitmap_tile(int x, int y, int width, int height,
  		if ((kx0 > clip_x1_cur) || (kx1 < clip_x0_cur))
   			return true;
   	}
-  	if (!repeat_y) {
+  	if (!(flags & BITMAPF_REPEAT_Y)) {
   		if (y > ky0)
   			ky0 = y;
   		if (y + height < ky1)
@@ -923,16 +863,14 @@ bool knockout_plot_bitmap_tile(int x, int y, int width, int height,
 	knockout_boxes[knockout_box_cur].next = knockout_list;
 	knockout_list = &knockout_boxes[knockout_box_cur];
 	knockout_entries[knockout_entry_cur].box = &knockout_boxes[knockout_box_cur];
-	knockout_entries[knockout_entry_cur].data.bitmap_tile.x = x;
-	knockout_entries[knockout_entry_cur].data.bitmap_tile.y = y;
-	knockout_entries[knockout_entry_cur].data.bitmap_tile.width = width;
-	knockout_entries[knockout_entry_cur].data.bitmap_tile.height = height;
-	knockout_entries[knockout_entry_cur].data.bitmap_tile.bitmap = bitmap;
-	knockout_entries[knockout_entry_cur].data.bitmap_tile.bg = bg;
-	knockout_entries[knockout_entry_cur].data.bitmap_tile.repeat_x = repeat_x;
-	knockout_entries[knockout_entry_cur].data.bitmap_tile.repeat_y = repeat_y;
-	knockout_entries[knockout_entry_cur].data.bitmap_tile.content = content;
-	knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_BITMAP_TILE;
+	knockout_entries[knockout_entry_cur].data.bitmap.x = x;
+	knockout_entries[knockout_entry_cur].data.bitmap.y = y;
+	knockout_entries[knockout_entry_cur].data.bitmap.width = width;
+	knockout_entries[knockout_entry_cur].data.bitmap.height = height;
+	knockout_entries[knockout_entry_cur].data.bitmap.bitmap = bitmap;
+	knockout_entries[knockout_entry_cur].data.bitmap.bg = bg;
+	knockout_entries[knockout_entry_cur].data.bitmap.flags = flags;
+	knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_BITMAP;
 	if ((++knockout_entry_cur >= KNOCKOUT_ENTRIES) ||
 			(++knockout_box_cur >= KNOCKOUT_BOXES))
 		knockout_plot_flush();

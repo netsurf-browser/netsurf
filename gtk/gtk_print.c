@@ -63,10 +63,8 @@ static bool nsgtk_print_plot_disc(int x, int y, int radius, colour c,
 static bool nsgtk_print_plot_arc(int x, int y, int radius, int angle1, 
 		int angle2, colour c);
 static bool nsgtk_print_plot_bitmap(int x, int y, int width, int height,
-		struct bitmap *bitmap, colour bg, struct content *content);
-static bool nsgtk_print_plot_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
-		bool repeat_x, bool repeat_y, struct content *content);
+		bitmap_flags_t flags);
        
 static void nsgtk_print_set_solid(void); /**< Set for drawing solid lines */
 static void nsgtk_print_set_dotted(void); /**< Set for drawing dotted lines */
@@ -91,22 +89,18 @@ struct content *content_to_print;
 static GdkRectangle cliprect;
 
 static const struct plotter_table nsgtk_print_plotters = {
-	nsgtk_print_plot_clg,
-	nsgtk_print_plot_rectangle,
-	nsgtk_print_plot_line,
-	nsgtk_print_plot_polygon,
-	nsgtk_print_plot_fill,
-	nsgtk_print_plot_clip,
-	nsgtk_print_plot_text,
-	nsgtk_print_plot_disc,
-	nsgtk_print_plot_arc,
-	nsgtk_print_plot_bitmap,
-	nsgtk_print_plot_bitmap_tile,
-	NULL,
-	NULL,
-	NULL,
-	nsgtk_print_plot_path,
-	false
+	.clg = nsgtk_print_plot_clg,
+	.rectangle = nsgtk_print_plot_rectangle,
+	.line = nsgtk_print_plot_line,
+	.polygon = nsgtk_print_plot_polygon,
+	.fill = nsgtk_print_plot_fill,
+	.clip = nsgtk_print_plot_clip,
+	.text = nsgtk_print_plot_text,
+	.disc = nsgtk_print_plot_disc,
+	.arc = nsgtk_print_plot_arc,
+	.bitmap = nsgtk_print_plot_bitmap,
+	.path = nsgtk_print_plot_path,
+	.option_knockout = false,
 };
 
 static const struct printer gtk_printer = {
@@ -324,26 +318,22 @@ static bool nsgtk_print_plot_pixbuf(int x, int y, int width, int height,
 	return true;
 }
 
+
 bool nsgtk_print_plot_bitmap(int x, int y, int width, int height,
-		struct bitmap *bitmap, colour bg, struct content *content)
-{
- 	GdkPixbuf *pixbuf = gtk_bitmap_get_primary(bitmap);
-
- 	return nsgtk_print_plot_pixbuf(x, y, width, height, pixbuf, bg);
-}
-
-bool nsgtk_print_plot_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
-		bool repeat_x, bool repeat_y, struct content *content)
+		bitmap_flags_t flags)
 {
 	int doneheight = 0, donewidth = 0;
 	GdkPixbuf *primary;
 	GdkPixbuf *pretiled = NULL;
  
+        bool repeat_x = (flags & BITMAPF_REPEAT_X);
+        bool repeat_y = (flags & BITMAPF_REPEAT_Y);
+
 	if (!(repeat_x || repeat_y)) {
 		/* Not repeating at all, so just pass it on */
-		return nsgtk_print_plot_bitmap(x, y, width, height, 
-				bitmap, bg, content);
+                primary = gtk_bitmap_get_primary(bitmap);
+                return nsgtk_print_plot_pixbuf(x, y, width, height, primary, bg);
 	}
 
 	if (repeat_x && !repeat_y)

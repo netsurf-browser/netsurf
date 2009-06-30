@@ -270,12 +270,11 @@ bool nspng_redraw(struct content *c, int x, int y,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale, colour background_colour)
 {
-	if (c->bitmap != NULL) {
-		return plot.bitmap(x, y, width, height, c->bitmap,
-				background_colour, c);
-	}
+	if (c->bitmap == NULL) 
+		return true;
 
-	return true;
+	return plot.bitmap(x, y, width, height, c->bitmap, 
+                           background_colour, BITMAPF_NONE);
 }
 
 bool nspng_redraw_tiled(struct content *c, int x, int y, int width, int height,
@@ -283,12 +282,18 @@ bool nspng_redraw_tiled(struct content *c, int x, int y, int width, int height,
 		float scale, colour background_colour,
 		bool repeat_x, bool repeat_y)
 {
-	if (c->bitmap != NULL) {
-		return plot.bitmap_tile(x, y, width, height, c->bitmap,
-				background_colour, repeat_x, repeat_y, c);
-	}
+	bitmap_flags_t flags = 0;
 
-	return true;
+	if (c->bitmap == NULL) 
+                return true;
+
+	if (repeat_x)
+		flags |= BITMAPF_REPEAT_X;
+	if (repeat_y)
+		flags |= BITMAPF_REPEAT_Y;
+
+	return plot.bitmap(x, y, width, height, c->bitmap,
+				background_colour, flags);
 }
 
 #endif

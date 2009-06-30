@@ -132,30 +132,18 @@ static bool framebuffer_plot_text(int x, int y, const struct css_style *style,
 }
 #endif
 
-static bool framebuffer_plot_bitmap(int x, int y, int width, int height,
-                                    struct bitmap *bitmap, colour bg,
-                                    struct content *content)
-{
-    nsfb_bbox_t loc;
-    loc.x0 = x;
-    loc.y0 = y;
-    loc.x1 = loc.x0 + width;
-    loc.y1 = loc.y0 + height;
-
-    return nsfb_plot_bitmap(nsfb, &loc, (nsfb_colour_t *)bitmap->pixdata, bitmap->width, bitmap->height, bitmap->width, !bitmap->opaque);
-
-}
 
 static bool 
-framebuffer_plot_bitmap_tile(int x, int y,
+framebuffer_plot_bitmap(int x, int y,
                         int width, int height,
                         struct bitmap *bitmap, colour bg,
-                        bool repeat_x, bool repeat_y,
-                        struct content *content)
+                        bitmap_flags_t flags)
 {
 	int xf,yf;
-
+        nsfb_bbox_t loc;
         nsfb_bbox_t clipbox;
+        bool repeat_x = (flags & BITMAPF_REPEAT_X);
+        bool repeat_y = (flags & BITMAPF_REPEAT_Y);
 
         nsfb_plot_get_clip(nsfb, &clipbox);
 
@@ -165,12 +153,17 @@ framebuffer_plot_bitmap_tile(int x, int y,
 	 * four directions from the initial tile).
 	 */
 
-	LOG(("x %d, y %d, width %d, height %d, bitmap %p, repx %d repy %d content %p", x,y,width,height,bitmap,repeat_x, repeat_y, content));
-
 	if (!(repeat_x || repeat_y)) {
-		/* Not repeating at all, so just pass it on */
-		LOG(("Not repeating"));
-		return framebuffer_plot_bitmap(x, y, width, height, bitmap, bg,content);
+		/* Not repeating at all, so just plot it */
+                loc.x0 = x;
+                loc.y0 = y;
+                loc.x1 = loc.x0 + width;
+                loc.y1 = loc.y0 + height;
+
+                return nsfb_plot_bitmap(nsfb, &loc, 
+                                        (nsfb_colour_t *)bitmap->pixdata, 
+                                        bitmap->width, bitmap->height, 
+                                        bitmap->width, !bitmap->opaque);
 	}
 
 	/* get left most tile position */
@@ -179,13 +172,22 @@ framebuffer_plot_bitmap_tile(int x, int y,
 
 	/* get top most tile position */
 	if (repeat_y)
-		for (; y > clipbox.y0; y -= height)
-			;
+		for (; y > clipbox.y0; y -= height);
 
 	/* tile down and across to extents */
 	for (xf = x; xf < clipbox.x1; xf += width) {
 		for (yf = y; yf < clipbox.y1; yf += height) {
-			framebuffer_plot_bitmap(xf, yf, width, height, bitmap, bg, content);
+
+                        loc.x0 = xf;
+                        loc.y0 = yf;
+                        loc.x1 = loc.x0 + width;
+                        loc.y1 = loc.y0 + height;
+
+                        nsfb_plot_bitmap(nsfb, &loc, 
+                                        (nsfb_colour_t *)bitmap->pixdata, 
+                                        bitmap->width, bitmap->height, 
+                                        bitmap->width, !bitmap->opaque);
+
 			if (!repeat_y)
 				break;
 		}
@@ -225,7 +227,6 @@ struct plotter_table plot = {
 	.disc = nsfb_lplot_disc,
 	.arc = nsfb_lplot_arc,
 	.bitmap = framebuffer_plot_bitmap,
-	.bitmap_tile = framebuffer_plot_bitmap_tile,
 	.flush = framebuffer_plot_flush,
 	.path = framebuffer_plot_path,
         .option_knockout = true,

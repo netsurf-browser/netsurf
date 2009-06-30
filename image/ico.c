@@ -111,7 +111,7 @@ bool nsico_redraw(struct content *c, int x, int y,
 			return false;
 	c->bitmap = bmp->bitmap;
 	return plot.bitmap(x, y, width, height, c->bitmap,
-			background_colour, c);
+			background_colour, BITMAPF_NONE);
 }
 
 
@@ -122,12 +122,20 @@ bool nsico_redraw_tiled(struct content *c, int x, int y,
 		bool repeat_x, bool repeat_y)
 {
 	struct bmp_image *bmp = ico_find(c->data.ico.ico, width, height);
+	bitmap_flags_t flags = BITMAPF_NONE;
+
 	if (!bmp->decoded)
-	  	if (bmp_decode(bmp) != BMP_OK)
+		if (bmp_decode(bmp) != BMP_OK)
 			return false;
+
 	c->bitmap = bmp->bitmap;
-	return plot.bitmap_tile(x, y, width, height, c->bitmap,
-			background_colour, repeat_x, repeat_y, c);
+
+	if (repeat_x)
+		flags |= BITMAPF_REPEAT_X;
+	if (repeat_y)
+		flags |= BITMAPF_REPEAT_Y;
+
+	return plot.bitmap(x, y, width, height, c->bitmap, background_colour, flags);
 }
 
 

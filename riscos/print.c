@@ -114,10 +114,7 @@ static bool print_fonts_plot_arc(int x, int y, int radius, int angle1, int angle
 		colour c);
 static bool print_fonts_plot_bitmap(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
-		struct content *content);
-static bool print_fonts_plot_bitmap_tile(int x, int y, int width, int height,
-		struct bitmap *bitmap, colour bg,
-		bool repeat_x, bool repeat_y, struct content *content);
+		bitmap_flags_t flags);
 static bool print_fonts_plot_path(const float *p, unsigned int n, colour fill, float width,
 		colour c, const float transform[6]);
 static void print_fonts_callback(void *context,
@@ -129,22 +126,18 @@ static void print_fonts_callback(void *context,
 /** Plotter for print_declare_fonts(). All the functions do nothing except for
  * print_fonts_plot_text, which records the fonts used. */
 static const struct plotter_table print_fonts_plotters = {
-	print_fonts_plot_clg,
-	print_fonts_plot_rectangle,
-	print_fonts_plot_line,
-	print_fonts_plot_polygon,
-	print_fonts_plot_fill,
-	print_fonts_plot_clip,
-	print_fonts_plot_text,
-	print_fonts_plot_disc,
-	print_fonts_plot_arc,
-	print_fonts_plot_bitmap,
-	print_fonts_plot_bitmap_tile,
-	NULL,
-	NULL,
-	NULL,
-	print_fonts_plot_path,
-	false
+	.clg = print_fonts_plot_clg,
+	.rectangle = print_fonts_plot_rectangle,
+	.line = print_fonts_plot_line,
+	.polygon = print_fonts_plot_polygon,
+	.fill = print_fonts_plot_fill,
+	.clip = print_fonts_plot_clip,
+	.text = print_fonts_plot_text,
+	.disc = print_fonts_plot_disc,
+	.arc = print_fonts_plot_arc,
+	.bitmap = print_fonts_plot_bitmap,
+	.path = print_fonts_plot_path,
+	.option_knockout = false,
 };
 
 
@@ -838,32 +831,31 @@ bool print_fonts_plot_fill(int x0, int y0, int x1, int y1, colour c)
 {
 	return true;
 }
+
 bool print_fonts_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1)
 {
 	return true;
 }
+
 bool print_fonts_plot_disc(int x, int y, int radius, colour colour,
 		bool filled)
 {
 	return true;
 }
+
 bool print_fonts_plot_arc(int x, int y, int radius, int angle1, int angle2,
 		colour c)
 {
 	return true;
 }
+
 bool print_fonts_plot_bitmap(int x, int y, int width, int height,
-		struct bitmap *bitmap, colour bg, struct content *content)
+		struct bitmap *bitmap, colour bg, bitmap_flags_t flags)
 {
 	return true;
 }
-bool print_fonts_plot_bitmap_tile(int x, int y, int width, int height,
-		struct bitmap *bitmap, colour bg,
-		bool repeat_x, bool repeat_y, struct content *content)
-{
-	return true;
-}
+
 bool print_fonts_plot_path(const float *p, unsigned int n, colour fill, float width,
 		colour c, const float transform[6])
 {

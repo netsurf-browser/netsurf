@@ -242,7 +242,7 @@ bool nsjpeg_redraw(struct content *c, int x, int y,
 		float scale, colour background_colour)
 {
 	return plot.bitmap(x, y, width, height,
-			c->bitmap, background_colour, c);
+			c->bitmap, background_colour, BITMAPF_NONE);
 }
 
 
@@ -256,9 +256,16 @@ bool nsjpeg_redraw_tiled(struct content *c, int x, int y,
 		float scale, colour background_colour,
 		bool repeat_x, bool repeat_y)
 {
-	return plot.bitmap_tile(x, y, width, height,
+	bitmap_flags_t flags = BITMAPF_NONE;
+
+	if (repeat_x)
+		flags |= BITMAPF_REPEAT_X;
+	if (repeat_y)
+		flags |= BITMAPF_REPEAT_Y;
+
+	return plot.bitmap(x, y, width, height,
 			c->bitmap, background_colour,
-			repeat_x, repeat_y, c);
+			flags);
 }
 
 

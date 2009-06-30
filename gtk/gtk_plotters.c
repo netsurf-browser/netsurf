@@ -66,10 +66,8 @@ static bool nsgtk_plot_disc(int x, int y, int radius, colour c, bool filled);
 static bool nsgtk_plot_arc(int x, int y, int radius, int angle1, int angle2,
     		colour c);
 static bool nsgtk_plot_bitmap(int x, int y, int width, int height,
-		struct bitmap *bitmap, colour bg, struct content *content);
-static bool nsgtk_plot_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
-		bool repeat_x, bool repeat_y, struct content *content);
+		bitmap_flags_t flags);
 static void nsgtk_set_solid(void);	/**< Set for drawing solid lines */
 static void nsgtk_set_dotted(void);	/**< Set for drawing dotted lines */
 static void nsgtk_set_dashed(void);	/**< Set for drawing dashed lines */
@@ -80,22 +78,18 @@ static float nsgtk_plot_scale = 1.0;
 struct plotter_table plot;
 
 const struct plotter_table nsgtk_plotters = {
-	nsgtk_plot_clg,
-	nsgtk_plot_rectangle,
-	nsgtk_plot_line,
-	nsgtk_plot_polygon,
-	nsgtk_plot_fill,
-	nsgtk_plot_clip,
-	nsgtk_plot_text,
-	nsgtk_plot_disc,
-	nsgtk_plot_arc,
-	nsgtk_plot_bitmap,
-	nsgtk_plot_bitmap_tile,
-	NULL,
-	NULL,
-	NULL,
-	nsgtk_plot_path,
-	true
+	.clg = nsgtk_plot_clg,
+	.rectangle = nsgtk_plot_rectangle,
+	.line = nsgtk_plot_line,
+	.polygon = nsgtk_plot_polygon,
+	.fill = nsgtk_plot_fill,
+	.clip = nsgtk_plot_clip,
+	.text = nsgtk_plot_text,
+	.disc = nsgtk_plot_disc,
+	.arc = nsgtk_plot_arc,
+	.bitmap = nsgtk_plot_bitmap,
+	.path = nsgtk_plot_path,
+	.option_knockout = true
 };
 
 
@@ -283,23 +277,20 @@ static bool nsgtk_plot_pixbuf(int x, int y, int width, int height,
 }
 
 bool nsgtk_plot_bitmap(int x, int y, int width, int height,
-		struct bitmap *bitmap, colour bg, struct content *content)
-{
-	GdkPixbuf *pixbuf = gtk_bitmap_get_primary(bitmap);
-	return nsgtk_plot_pixbuf(x, y, width, height, pixbuf, bg);
-}
-
-bool nsgtk_plot_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
-		bool repeat_x, bool repeat_y, struct content *content)
+		bitmap_flags_t flags)
 {
 	int doneheight = 0, donewidth = 0;
 	GdkPixbuf *primary;
 	GdkPixbuf *pretiled = NULL;
 
+        bool repeat_x = (flags & BITMAPF_REPEAT_X);
+        bool repeat_y = (flags & BITMAPF_REPEAT_Y);
+
 	if (!(repeat_x || repeat_y)) {
-		/* Not repeating at all, so just pass it on */
-		return nsgtk_plot_bitmap(x,y,width,height,bitmap,bg,content);
+                /* Not repeating at all, so just pass it on */
+                primary = gtk_bitmap_get_primary(bitmap);
+                return nsgtk_plot_pixbuf(x, y, width, height, primary, bg);
 	}
 
 	if (repeat_x && !repeat_y)

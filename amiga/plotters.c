@@ -60,22 +60,18 @@ struct bfbitmap {
 
 struct plotter_table plot;
 const struct plotter_table amiplot = {
-	ami_clg,
-	ami_rectangle,
-	ami_line,
-	ami_polygon,
-	ami_fill,
-	ami_clip,
-	ami_text,
-	ami_disc,
-	ami_arc,
-	ami_bitmap,
-	ami_bitmap_tile,
-	NULL, //ami_group_start,
-	NULL, //ami_group_end,
-	NULL, //ami_flush, // optional
-	ami_path,
-	true // option_knockout
+	.clg = ami_clg,
+	.rectangle = ami_rectangle,
+	.line = ami_line,
+	.polygon = ami_polygon,
+	.fill = ami_fill,
+	.clip = ami_clip,
+	.text = ami_text,
+	.disc = ami_disc,
+	.arc = ami_arc,
+	.bitmap = ami_bitmap_tile,
+	.path = ami_path,
+	.option_knockout = true,
 };
 
 #ifdef NS_AMIGA_CAIRO
@@ -360,8 +356,7 @@ CommonFuncsPPC.lha */
 	return true;
 }
 
-bool ami_bitmap(int x, int y, int width, int height,
-			struct bitmap *bitmap, colour bg, struct content *content)
+static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitmap)
 {
 	struct BitMap *tbm;
 
@@ -419,15 +414,17 @@ bool ami_bitmap(int x, int y, int width, int height,
 
 bool ami_bitmap_tile(int x, int y, int width, int height,
 			struct bitmap *bitmap, colour bg,
-			bool repeat_x, bool repeat_y, struct content *content)
+			bitmap_flags_t flags)
 {
 	int xf,yf,xm,ym,oy,ox;
 	struct BitMap *tbm = NULL;
 	struct Hook *bfh = NULL;
 	struct bfbitmap bfbm;
+        bool repeat_x = (flags & BITMAPF_REPEAT_X);
+        bool repeat_y = (flags & BITMAPF_REPEAT_Y);
 
 	if(!(repeat_x || repeat_y))
-		return ami_bitmap(x, y, width, height, bitmap, bg, content);
+		return ami_bitmap(x, y, width, height, bitmap);
 
 	tbm = ami_getcachenativebm(bitmap,width,height,currp->BitMap);
 

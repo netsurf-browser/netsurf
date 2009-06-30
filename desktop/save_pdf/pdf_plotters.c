@@ -59,15 +59,13 @@ static bool pdf_plot_text(int x, int y, const struct css_style *style,
 static bool pdf_plot_disc(int x, int y, int radius, colour c, bool filled);
 static bool pdf_plot_arc(int x, int y, int radius, int angle1, int angle2,
     		colour c);
-static bool pdf_plot_bitmap(int x, int y, int width, int height,
-		struct bitmap *bitmap, colour bg, struct content *content);
 static bool pdf_plot_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
-		bool repeat_x, bool repeat_y, struct content *content);
+		bitmap_flags_t flags);
 static bool pdf_plot_path(const float *p, unsigned int n, colour fill, float width,
 		colour c, const float transform[6]);
 
-static HPDF_Image pdf_extract_image(struct bitmap *bitmap, struct content *content);
+static HPDF_Image pdf_extract_image(struct bitmap *bitmap);
 
 static void error_handler(HPDF_STATUS error_no, HPDF_STATUS detail_no,
 		void *user_data);
@@ -126,22 +124,18 @@ static int last_clip_x0, last_clip_y0, last_clip_x1, last_clip_y1;
 static const struct print_settings *settings;
 
 static const struct plotter_table pdf_plotters = {
-	pdf_plot_clg,
-	pdf_plot_rectangle,
-	pdf_plot_line,
-	pdf_plot_polygon,
-	pdf_plot_fill,
-	pdf_plot_clip,
-	pdf_plot_text,
-	pdf_plot_disc,
-	pdf_plot_arc,
-	pdf_plot_bitmap,
-	pdf_plot_bitmap_tile,
-	NULL,
-	NULL,
-	NULL,
-	pdf_plot_path,
-	false
+	.clg = pdf_plot_clg,
+	.rectangle = pdf_plot_rectangle,
+	.line = pdf_plot_line,
+	.polygon = pdf_plot_polygon,
+	.fill = pdf_plot_fill,
+	.clip = pdf_plot_clip,
+	.text = pdf_plot_text,
+	.disc = pdf_plot_disc,
+	.arc = pdf_plot_arc,
+	.bitmap = pdf_plot_bitmap_tile,
+	.path = pdf_plot_path,
+	.option_knockout = false,
 };
 
 const struct printer pdf_printer = {
@@ -346,36 +340,10 @@ bool pdf_plot_arc(int x, int y, int radius, int angle1, int angle2, colour c)
 	return true;
 }
 
-bool pdf_plot_bitmap(int x, int y, int width, int height,
-		struct bitmap *bitmap, colour bg, struct content *content)
-{
-	HPDF_Image image;
-
-#ifdef PDF_DEBUG
-	LOG(("%d %d %d %d %p 0x%x %p", x, y, width, height,
-	     bitmap, bg, content));
-#endif
- 	if (width == 0 || height == 0)
- 		return true;
-
-	apply_clip_and_mode(false, TRANSPARENT, TRANSPARENT, 0., DashPattern_eNone);
-
-	image = pdf_extract_image(bitmap, content);
-
-	if (!image)
-		return false;
-
-	HPDF_Page_DrawImage(pdf_page, image,
-			x, page_height - y - height,
-			width, height);
-	return true;
-
-
-}
 
 bool pdf_plot_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
-  		bool repeat_x, bool repeat_y, struct content *content)
+  		bitmap_flags_t flags)
 {
 	HPDF_Image image;
 	HPDF_REAL current_x, current_y ;
@@ -390,13 +358,13 @@ bool pdf_plot_bitmap_tile(int x, int y, int width, int height,
 
 	apply_clip_and_mode(false, TRANSPARENT, TRANSPARENT, 0., DashPattern_eNone);
 
-	image = pdf_extract_image(bitmap, content);
+	image = pdf_extract_image(bitmap);
 	if (!image)
 		return false;
 
 	/*The position of the next tile*/
-	max_width =  (repeat_x) ? page_width : width;
-	max_height = (repeat_y) ? page_height : height;
+	max_width =  (flags & BITMAPF_REPEAT_X) ? page_width : width;
+	max_height = (flags & BITMAPF_REPEAT_Y) ? page_height : height;
 
 	for (current_y = 0; current_y < max_height; current_y += height)
 		for (current_x = 0; current_x < max_width; current_x += width)
@@ -408,9 +376,12 @@ bool pdf_plot_bitmap_tile(int x, int y, int width, int height,
 	return true;
 }
 
-HPDF_Image pdf_extract_image(struct bitmap *bitmap, struct content *content)
+HPDF_Image pdf_extract_image(struct bitmap *bitmap)
 {
 	HPDF_Image image = NULL;
+        struct content *content = NULL;
+
+        /* TODO - get content from bitmap pointer */
 
 	if (content) {
 		/*Not sure if I don't have to check if downloading has been

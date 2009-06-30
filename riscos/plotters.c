@@ -53,31 +53,25 @@ static bool ro_plot_disc(int x, int y, int radius, colour colour, bool filled);
 static bool ro_plot_arc(int x, int y, int radius, int angle1, int angle2,
     		colour c);
 static bool ro_plot_bitmap(int x, int y, int width, int height,
-		struct bitmap *bitmap, colour bg, struct content *content);
-static bool ro_plot_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
-		bool repeat_x, bool repeat_y, struct content *content);
+		bitmap_flags_t flags);
 
 
 struct plotter_table plot;
 
 const struct plotter_table ro_plotters = {
-	ro_plot_clg,
-	ro_plot_rectangle,
-	ro_plot_line,
-	ro_plot_polygon,
-	ro_plot_fill,
-	ro_plot_clip,
-	ro_plot_text,
-	ro_plot_disc,
-	ro_plot_arc,
-	ro_plot_bitmap,
-	ro_plot_bitmap_tile,
-	NULL,
-	NULL,
-	NULL,
-	ro_plot_path,
-	true
+	.clg = ro_plot_clg,
+	.rectangle = ro_plot_rectangle,
+	.line = ro_plot_line,
+	.polygon = ro_plot_polygon,
+	.fill = ro_plot_fill,
+	.clip = ro_plot_clip,
+	.text = ro_plot_text,
+	.disc = ro_plot_disc,
+	.arc = ro_plot_arc,
+	.bitmap = ro_plot_bitmap,
+	.path = ro_plot_path,
+	.option_knockout = true,
 };
 
 int ro_plot_origin_x = 0;
@@ -498,10 +492,15 @@ bool ro_plot_arc(int x, int y, int radius, int angle1, int angle2, colour c)
 	return true;
 }
 
+
+
 bool ro_plot_bitmap(int x, int y, int width, int height,
-		struct bitmap *bitmap, colour bg, struct content *content)
+		struct bitmap *bitmap, colour bg,
+		bitmap_flags_t flags)
 {
 	const uint8_t *buffer;
+	bool repeat_x = (flags & BITMAPF_REPEAT_X);
+	bool repeat_y = (flags & BITMAPF_REPEAT_Y);
 
 	buffer = bitmap_get_buffer(bitmap);
 	if (!buffer) {
@@ -509,6 +508,7 @@ bool ro_plot_bitmap(int x, int y, int width, int height,
 		return false;
 	}
 
+	if (!(repeat_x || repeat_y)) {
 	return image_redraw(bitmap->sprite_area,
 			ro_plot_origin_x + x * 2,
 			ro_plot_origin_y - y * 2,
@@ -519,20 +519,7 @@ bool ro_plot_bitmap(int x, int y, int width, int height,
 			false, false, false,
 			bitmap_get_opaque(bitmap) ? IMAGE_PLOT_TINCT_OPAQUE :
 			IMAGE_PLOT_TINCT_ALPHA);
-}
-
-
-bool ro_plot_bitmap_tile(int x, int y, int width, int height,
-		struct bitmap *bitmap, colour bg,
-		bool repeat_x, bool repeat_y, struct content *content)
-{
-	const uint8_t *buffer;
-
-	buffer = bitmap_get_buffer(bitmap);
-	if (!buffer) {
-		LOG(("bitmap_get_buffer failed"));
-		return false;
-	}
+        }
 
 	return image_redraw(bitmap->sprite_area,
  			ro_plot_origin_x + x * 2,
