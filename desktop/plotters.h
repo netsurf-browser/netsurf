@@ -62,17 +62,14 @@ typedef unsigned long bitmap_flags_t;
  *		  is the colour of the text. Background colour, bg, may be used
  *		  optionally to attempt to provide anti-aliased text without
  *		  screen reads. Font information is provided in the style.
- *  bitmap	- Plots a bitmap image. (x,y) is the coordinate of the top
- *		  left of the image. Width and height give the dimensions the
- *		  image is to be plotted to. (Will be different to the image's
- *		  intrinsic width and height if the image is to be scaled.)
- *  bitmap_tile	- Tiled plot of a bitmap image. (x,y) gives the top left
+ *  bitmap     	- Tiled plot of a bitmap image. (x,y) gives the top left
  *		  coordinate of an explicitly placed tile. From this tile the
  *		  image can repeat in all four directions -- up, down, left and
  *		  right -- to the extents given by the current clip rectangle.
- *		  If repeat_x is true, the image is tiled in the x-dimension,
- *		  otherwise it is not. If repeat_y is true, the image is tiled
- *		  in the y-dimension, otherwise it is not.
+ *		  The bitmap_flags say whether to tile in the x and y
+ *		  directions. If not tiling in x or y directions, the single
+ *		  image is plotted. The width and height give the dimensions
+ *		  the image is to be scaled to.
  *  group_start	- Start of a group of objects. Used when plotter implements
  *		  export to a vector graphics file format. (Optional.)
  *  group_end	- End of the most recently started group. (Optional.)
