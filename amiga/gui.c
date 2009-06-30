@@ -2622,7 +2622,6 @@ void ami_update_pointer(struct Window *win, gui_pointer_shape shape)
 			default:
 				if(mouseptrobj[shape])
 				{
-DebugPrintF("%ld %lx %lx\n",shape,mouseptrobj[shape],win);
 					SetWindowPointer(win,WA_Pointer,mouseptrobj[shape],TAG_DONE);
 				}
 				else
