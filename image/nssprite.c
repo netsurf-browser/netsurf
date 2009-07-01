@@ -133,7 +133,7 @@ bool nssprite_redraw(struct content *c, int x, int y,
 		float scale, colour background_colour)
 {
 	return plot.bitmap(x, y, width, height,
-			c->bitmap, background_colour, c);
+			c->bitmap, background_colour, BITMAPF_NONE);
 }
 
 #endif
