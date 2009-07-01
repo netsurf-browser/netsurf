@@ -64,7 +64,7 @@ void ro_uri_message_received(wimp_message *msg)
 	free(uri_requested);
 }
 
-bool ro_uri_launch(char *uri)
+bool ro_uri_launch(const char *uri)
 {
 	uri_h uri_handle;
 	wimp_t handle_task;
@@ -84,19 +84,35 @@ bool ro_uri_launch(char *uri)
 void ro_uri_bounce(wimp_message *msg)
 {
 	uri_full_message_process *message = (uri_full_message_process *)msg;
-	char uri_buf[512];
+	int size;
+	char *uri_buf;
 	os_error *e;
 
 	if ((message->flags & 1) == 0)
 		return;
 
-	e = xuri_request_uri(0, uri_buf, sizeof uri_buf, message->handle, 0);
+	/* Get required buffer size */
+	e = xuri_request_uri(0, NULL, 0, message->handle, &size);
 	if (e) {
 		LOG(("xuri_request_uri: %d: %s", e->errnum, e->errmess));
 		return;
 	}
 
+	uri_buf = malloc(size);
+	if (uri_buf == NULL)
+		return;
+
+	/* Get URI */
+	e = xuri_request_uri(0, uri_buf, size, message->handle, 0);
+	if (e) {
+		LOG(("xuri_request_uri: %d: %s", e->errnum, e->errmess));
+		free(uri_buf);
+		return;
+	}
+
 	ro_url_load(uri_buf);
+
+	free(uri_buf);
 
 	return;
 }

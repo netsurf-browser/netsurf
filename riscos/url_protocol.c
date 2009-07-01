@@ -131,8 +131,11 @@ void ro_url_broadcast(const char *url)
 	os_error *error;
 	int len = strlen(url) + 1;
 
-	if (236 < len)
-		len = 236;
+	/* If URL is too long, then forget ANT and try URI, instead */
+	if (236 < len) {
+		ro_uri_launch(url);
+		return;
+	}
 
 	message.size = ((20+len+3) & ~3);
 	message.your_ref = 0;
