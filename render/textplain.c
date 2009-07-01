@@ -358,7 +358,7 @@ bool textplain_redraw(struct content *c, int x, int y,
 	if (line1 < line0)
 		line1 = line0;
 
-	if (!plot.clg(0xffffff))
+	if (!plot.fill(clip_x0, clip_y0, clip_x1, clip_y1, 0xffffff))
 		return false;
 
 	if (!line)

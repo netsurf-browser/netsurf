@@ -61,7 +61,6 @@ cairo_t *current_cr;
  * the right-bottom pixel is actually part of the BRect!
  */
 
-static bool nsbeos_plot_clg(colour c);
 static bool nsbeos_plot_rectangle(int x0, int y0, int width, int height,
 		int line_width, colour c, bool dotted, bool dashed);
 static bool nsbeos_plot_line(int x0, int y0, int x1, int y1, int width,
@@ -95,7 +94,6 @@ static const rgb_color kBlackColor = { 0, 0, 0, 255 };
 struct plotter_table plot;
 
 const struct plotter_table nsbeos_plotters = {
-	nsbeos_plot_clg,
 	nsbeos_plot_rectangle,
 	nsbeos_plot_line,
 	nsbeos_plot_polygon,
@@ -139,27 +137,6 @@ void nsbeos_current_gc_set(BView *view)
 {
 	// XXX: (un)lock previous ?
 	current_view = view;
-}
-
-
-bool nsbeos_plot_clg(colour c)
-{
-#warning BView::Invalidate() ?
-	
-	BView *view;
-
-	view = nsbeos_current_gc/*_lock*/();
-	if (view == NULL) {
-		warn_user("No GC", 0);
-		return false;
-	}
-
-	nsbeos_set_colour(c);
-	view->FillRect(view->Bounds());
-	
-	//nsbeos_current_gc_unlock();
-
-	return true;
 }
 
 bool nsbeos_plot_rectangle(int x0, int y0, int width, int height,

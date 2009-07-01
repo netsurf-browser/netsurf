@@ -38,7 +38,6 @@ typedef unsigned long bitmap_flags_t;
 /** Set of target specific plotting functions.
  *
  * The functions are:
- *  clg		- Clears plotting area to a flat colour (if needed)
  *  arc		- Plots an arc, around (x,y), from anticlockwise from angle1 to
  *		  angle2. Angles are measured anticlockwise from horizontal, in
  *		  degrees.
@@ -95,7 +94,6 @@ typedef unsigned long bitmap_flags_t;
  *  3 | | | | | |
  */
 struct plotter_table {
-	bool (*clg)(colour c);
 	bool (*rectangle)(int x0, int y0, int width, int height,
 			int line_width, colour c, bool dotted, bool dashed);
 	bool (*line)(int x0, int y0, int x1, int y1, int width,

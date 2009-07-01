@@ -37,8 +37,6 @@
 #include "utils/log.h"
 #include "utils/utils.h"
 
-
-static bool ro_save_draw_clg(colour c);
 static bool ro_save_draw_rectangle(int x0, int y0, int width, int height,
 		int line_width, colour c, bool dotted, bool dashed);
 static bool ro_save_draw_line(int x0, int y0, int x1, int y1, int width,
@@ -63,7 +61,6 @@ static bool ro_save_draw_error(pencil_code code);
 
 
 static const struct plotter_table ro_save_draw_plotters = {
-	.clg = ro_save_draw_clg,
 	.rectangle = ro_save_draw_rectangle,
 	.line = ro_save_draw_line,
 	.polygon = ro_save_draw_polygon,
@@ -145,14 +142,6 @@ bool save_as_draw(struct content *c, const char *path)
 
 	return true;
 }
-
-
-bool ro_save_draw_clg(colour c)
-{
-	return ro_save_draw_fill(0, 0, ro_save_draw_width, ro_save_draw_height,
-			c);
-}
-
 
 bool ro_save_draw_rectangle(int x0, int y0, int width, int height,
 		int line_width, colour c, bool dotted, bool dashed)

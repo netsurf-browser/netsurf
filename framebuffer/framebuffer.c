@@ -217,7 +217,6 @@ framebuffer_plot_path(const float *p,
 }
 
 struct plotter_table plot = {
-	.clg = nsfb_lplot_clg,
 	.rectangle = nsfb_lplot_rectangle,
 	.line = nsfb_lplot_line,
 	.polygon = nsfb_lplot_polygon,

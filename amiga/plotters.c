@@ -60,7 +60,6 @@ struct bfbitmap {
 
 struct plotter_table plot;
 const struct plotter_table amiplot = {
-	.clg = ami_clg,
 	.rectangle = ami_rectangle,
 	.line = ami_line,
 	.polygon = ami_polygon,

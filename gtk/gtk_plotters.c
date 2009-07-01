@@ -49,7 +49,6 @@ GdkDrawable *current_drawable;
 GdkGC *current_gc;
 cairo_t *current_cr;
 
-static bool nsgtk_plot_clg(colour c);
 static bool nsgtk_plot_rectangle(int x0, int y0, int width, int height,
 		int line_width, colour c, bool dotted, bool dashed);
 static bool nsgtk_plot_line(int x0, int y0, int x1, int y1, int width,
@@ -78,7 +77,6 @@ static float nsgtk_plot_scale = 1.0;
 struct plotter_table plot;
 
 const struct plotter_table nsgtk_plotters = {
-	.clg = nsgtk_plot_clg,
 	.rectangle = nsgtk_plot_rectangle,
 	.line = nsgtk_plot_line,
 	.polygon = nsgtk_plot_polygon,
@@ -92,11 +90,6 @@ const struct plotter_table nsgtk_plotters = {
 	.option_knockout = true
 };
 
-
-bool nsgtk_plot_clg(colour c)
-{
-	return true;
-}
 
 bool nsgtk_plot_rectangle(int x0, int y0, int width, int height,
 		int line_width, colour c, bool dotted, bool dashed)

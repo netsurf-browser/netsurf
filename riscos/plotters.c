@@ -34,7 +34,6 @@
 #include "utils/log.h"
 
 
-static bool ro_plot_clg(colour c);
 static bool ro_plot_rectangle(int x0, int y0, int width, int height,
 		int line_width, colour c, bool dotted, bool dashed);
 static bool ro_plot_line(int x0, int y0, int x1, int y1, int width,
@@ -60,7 +59,6 @@ static bool ro_plot_bitmap(int x, int y, int width, int height,
 struct plotter_table plot;
 
 const struct plotter_table ro_plotters = {
-	.clg = ro_plot_clg,
 	.rectangle = ro_plot_rectangle,
 	.line = ro_plot_line,
 	.polygon = ro_plot_polygon,
@@ -82,24 +80,6 @@ float ro_plot_scale = 1.0;
 bool ro_plot_patterned_lines = true;
 
 
-bool ro_plot_clg(colour c)
-{
-	os_error *error;
-	error = xcolourtrans_set_gcol(c << 8,
-			colourtrans_SET_BG_GCOL | colourtrans_USE_ECFS_GCOL,
-			os_ACTION_OVERWRITE, 0, 0);
-	if (error) {
-		LOG(("xcolourtrans_set_gcol: 0x%x: %s",
-				error->errnum, error->errmess));
-		return false;
-	}
-	error = xos_clg();
-	if (error) {
-		LOG(("xos_clg: 0x%x: %s", error->errnum, error->errmess));
-		return false;
-	}
-	return true;
-}
 
 
 bool ro_plot_rectangle(int x0, int y0, int width, int height,

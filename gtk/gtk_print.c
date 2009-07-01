@@ -45,7 +45,6 @@
 #include "utils/log.h"
 #include "utils/utils.h"
 
-static bool nsgtk_print_plot_clg(colour c);
 static bool nsgtk_print_plot_rectangle(int x0, int y0, int width, int height,
 		int line_width, colour c, bool dotted, bool dashed);
 static bool nsgtk_print_plot_line(int x0, int y0, int x1, int y1, int width,
@@ -89,7 +88,6 @@ struct content *content_to_print;
 static GdkRectangle cliprect;
 
 static const struct plotter_table nsgtk_print_plotters = {
-	.clg = nsgtk_print_plot_clg,
 	.rectangle = nsgtk_print_plot_rectangle,
 	.line = nsgtk_print_plot_line,
 	.polygon = nsgtk_print_plot_polygon,
@@ -109,11 +107,6 @@ static const struct printer gtk_printer = {
 	gtk_print_next_page,
 	gtk_print_end
 };
-
-bool nsgtk_print_plot_clg(colour c)
-{
-	return true;
-}
 
 bool nsgtk_print_plot_rectangle(int x0, int y0, int width, int height,
 		int line_width, colour c, bool dotted, bool dashed)

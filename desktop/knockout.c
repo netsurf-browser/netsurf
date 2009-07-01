@@ -86,7 +86,6 @@ static bool knockout_plot_fill_recursive(struct knockout_box *box, colour c);
 static bool knockout_plot_bitmap_recursive(struct knockout_box *box,
 		struct knockout_entry *entry);
 
-static bool knockout_plot_clg(colour c);
 static bool knockout_plot_rectangle(int x0, int y0, int width, int height,
 		int line_width, colour c, bool dotted, bool dashed);
 static bool knockout_plot_line(int x0, int y0, int x1, int y1, int width,
@@ -111,7 +110,6 @@ static bool knockout_plot_path(const float *p, unsigned int n, colour fill,
 
 
 const struct plotter_table knockout_plotters = {
-	.clg = knockout_plot_clg,
 	.rectangle = knockout_plot_rectangle,
 	.line = knockout_plot_line,
 	.polygon = knockout_plot_polygon,
@@ -130,7 +128,6 @@ const struct plotter_table knockout_plotters = {
 
 
 typedef enum {
-	KNOCKOUT_PLOT_CLG,		/* translated to _FILL */
 	KNOCKOUT_PLOT_RECTANGLE,
 	KNOCKOUT_PLOT_LINE,
 	KNOCKOUT_PLOT_POLYGON,
@@ -162,9 +159,6 @@ struct knockout_entry {
 	knockout_type type;
 	struct knockout_box *box;	/* relating series of knockout clips */
 	union {
-		struct {
-			colour c;
-		} clg;
 		struct {
 			int x0;
 			int y0;
@@ -270,7 +264,7 @@ bool knockout_plot_start(struct plotter_table *plotter)
   	/* check if we're recursing */
   	if (nested_depth++ > 0) {
   	  	/* we should already have the knockout renderer as default */
-  		assert(plotter->clg == knockout_plotters.clg);
+  		assert(plotter->rectangle == knockout_plotters.rectangle);
   		return true;
   	}
 
@@ -323,10 +317,6 @@ bool knockout_plot_flush(void)
 
 	for (i = 0; i < knockout_entry_cur; i++) {
 		switch (knockout_entries[i].type) {
-		case KNOCKOUT_PLOT_CLG:
-			success &= plot.clg(
-					knockout_entries[i].data.clg.c);
-			break;
 		case KNOCKOUT_PLOT_RECTANGLE:
 			success &= plot.rectangle(
 					knockout_entries[i].data.rectangle.x0,
@@ -634,10 +624,6 @@ bool knockout_plot_bitmap_recursive(struct knockout_box *box,
 	return success;
 }
 
-bool knockout_plot_clg(colour c)
-{
-	return knockout_plot_fill(clip_x0_cur, clip_y0_cur, clip_x1_cur, clip_y1_cur, c);
-}
 
 
 bool knockout_plot_rectangle(int x0, int y0, int width, int height,

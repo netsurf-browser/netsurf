@@ -45,7 +45,6 @@
 /* #define PDF_DEBUG */
 /* #define PDF_DEBUG_DUMPGRID */
 
-static bool pdf_plot_clg(colour c);
 static bool pdf_plot_rectangle(int x0, int y0, int width, int height,
 		int line_width, colour c, bool dotted, bool dashed);
 static bool pdf_plot_line(int x0, int y0, int x1, int y1, int width,
@@ -124,7 +123,6 @@ static int last_clip_x0, last_clip_y0, last_clip_x1, last_clip_y1;
 static const struct print_settings *settings;
 
 static const struct plotter_table pdf_plotters = {
-	.clg = pdf_plot_clg,
 	.rectangle = pdf_plot_rectangle,
 	.line = pdf_plot_line,
 	.polygon = pdf_plot_polygon,
@@ -147,11 +145,6 @@ const struct printer pdf_printer = {
 
 static char *owner_pass;
 static char *user_pass;
-
-bool pdf_plot_clg(colour c)
-{
-	return true;
-}
 
 bool pdf_plot_rectangle(int x0, int y0, int width, int height,
 		int line_width, colour c, bool dotted, bool dashed)

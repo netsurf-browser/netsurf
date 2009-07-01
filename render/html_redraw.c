@@ -147,7 +147,7 @@ bool html_redraw(struct content *c, int x, int y,
 	result = plot.clip(clip_x0, clip_y0, clip_x1, clip_y1);
 	if (c->data.html.background_colour != TRANSPARENT)
 		background_colour = c->data.html.background_colour;
-	result &= plot.clg(background_colour);
+	result &= plot.fill(clip_x0, clip_y0, clip_x1, clip_y1, background_colour);
 
 	result &= html_redraw_box(box, x, y,
 			clip_x0, clip_y0, clip_x1, clip_y1,

@@ -1483,7 +1483,7 @@ void ro_gui_window_redraw(wimp_draw *redraw)
 		plot.clip(clip_x0, clip_y0, clip_x1, clip_y1);
 
 		if (c->type != CONTENT_HTML)
-			plot.clg(0x00ffffff);
+                    plot.fill(clip_x0, clip_y0, clip_x1, clip_y1, 0x00ffffff);
 
 		/* Redraw the clip rectangle area of the content */
 		content_redraw(c, 0, 0,

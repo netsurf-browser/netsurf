@@ -97,7 +97,6 @@ static void print_send_printsave(struct content *c);
 static bool print_send_printtypeknown(wimp_message *m);
 static bool print_document(struct gui_window *g, const char *filename);
 static const char *print_declare_fonts(struct content *content);
-static bool print_fonts_plot_clg(colour c);
 static bool print_fonts_plot_rectangle(int x0, int y0, int width, int height,
 		int line_width, colour c, bool dotted, bool dashed);
 static bool print_fonts_plot_line(int x0, int y0, int x1, int y1, int width,
@@ -126,7 +125,6 @@ static void print_fonts_callback(void *context,
 /** Plotter for print_declare_fonts(). All the functions do nothing except for
  * print_fonts_plot_text, which records the fonts used. */
 static const struct plotter_table print_fonts_plotters = {
-	.clg = print_fonts_plot_clg,
 	.rectangle = print_fonts_plot_rectangle,
 	.line = print_fonts_plot_line,
 	.polygon = print_fonts_plot_polygon,
@@ -809,24 +807,23 @@ end:
 }
 
 
-bool print_fonts_plot_clg(colour c)
-{
-	return true;
-}
 bool print_fonts_plot_rectangle(int x0, int y0, int width, int height,
 		int line_width, colour c, bool dotted, bool dashed)
 {
 	return true;
 }
+
 bool print_fonts_plot_line(int x0, int y0, int x1, int y1, int width,
 		colour c, bool dotted, bool dashed)
 {
 	return true;
 }
+
 bool print_fonts_plot_polygon(const int *p, unsigned int n, colour fill)
 {
 	return true;
 }
+
 bool print_fonts_plot_fill(int x0, int y0, int x1, int y1, colour c)
 {
 	return true;
