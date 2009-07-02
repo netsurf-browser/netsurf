@@ -1348,10 +1348,10 @@ int fbtk_keycode_to_ucs4(int code, uint8_t mods)
         int ucs4 = -1;
 
         if (mods) {
-                if ((code >= 0) && (code < sizeof(sh_keymap)))
+                if ((code >= 0) && (code < (int) sizeof(sh_keymap)))
                         ucs4 = sh_keymap[code];
         } else {
-                if ((code >= 0) && (code < sizeof(keymap)))
+                if ((code >= 0) && (code < (int) sizeof(keymap)))
                         ucs4 = keymap[code];
         }
         return ucs4;
