@@ -117,7 +117,7 @@ bool nsfont_position_in_string(const struct css_style *style,
 				OT_GlyphMap8Bit,&glyph,
 				TAG_END) == 0)
 			{
-				if(utf8_from_enc((char *)utf16,"UTF-16",4,(char **)&utf8) != UTF8_CONVERT_OK) return false;
+				if(utf8_from_enc((char *)utf16,"UTF-16",2,(char **)&utf8) != UTF8_CONVERT_OK) return false;
 				utf8len = utf8_char_byte_length(utf8);
 				free(utf8);
 
@@ -130,7 +130,7 @@ bool nsfont_position_in_string(const struct css_style *style,
 					co += utf8len;
 				}
 
-				*actual_x = tx;
+				*actual_x = tx + (glyph->glm_X1 / 2);
 				tx+= glyph->glm_X1;
 
 				EReleaseInfo(&ofont->olf_EEngine,
@@ -309,6 +309,7 @@ ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const
 	uint32 width,height;
 	uint32 x=0,y=0;
 	size_t len;
+	uint8 co = 0;
 
 	if(!string || string[0]=='\0') return 0;
 	if(!length) return 0;
