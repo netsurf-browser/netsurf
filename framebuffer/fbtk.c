@@ -187,6 +187,17 @@ bool fbtk_clip_rect(const bbox_t * restrict clip, bbox_t * restrict box)
         return true;
 }
 
+/* clip a rectangle to a widgets area rectangle */
+bool fbtk_clip_to_widget(fbtk_widget_t *widget, bbox_t * restrict box)
+{
+        bbox_t wbox;
+        wbox.x0 = 0;
+        wbox.y0 = 0;
+        wbox.x1 = widget->width;
+        wbox.y1 = widget->height;
+        return fbtk_clip_rect(&wbox, box);
+}
+
 
 /* creates a new widget of a given type */
 static fbtk_widget_t *

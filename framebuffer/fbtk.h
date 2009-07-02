@@ -207,6 +207,8 @@ bool fbtk_event(fbtk_widget_t *root, nsfb_event_t *event, int timeout);
 /* keycode to ucs4 */
 int fbtk_keycode_to_ucs4(int code, uint8_t mods);
 
+/* clip a box to a widgets area */
+bool fbtk_clip_to_widget(fbtk_widget_t *widget, bbox_t * restrict box);
 
 
 

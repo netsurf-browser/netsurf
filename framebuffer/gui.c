@@ -105,9 +105,14 @@ fb_queue_redraw(struct fbtk_widget_s *widget, int x0, int y0, int x1, int y1)
         bwidget->redraw_box.x1 = MAX(bwidget->redraw_box.x1, x1);
         bwidget->redraw_box.y1 = MAX(bwidget->redraw_box.y1, y1);
 
-        bwidget->redraw_required = true;
-
-        fbtk_request_redraw(widget);
+        if (fbtk_clip_to_widget(widget, &bwidget->redraw_box)) {
+                bwidget->redraw_required = true;
+                fbtk_request_redraw(widget);
+        } else {
+                bwidget->redraw_box.y0 = bwidget->redraw_box.x0 = INT_MAX;
+                bwidget->redraw_box.y1 = bwidget->redraw_box.x1 = -(INT_MAX);
+                bwidget->redraw_required = false;                
+        }
 }
 
 static void fb_pan(fbtk_widget_t *widget,
@@ -268,6 +273,8 @@ static void fb_redraw(fbtk_widget_t *widget,
 	if ((!c) || (c->locked))
                 return;
 
+        LOG(("redraw box %d,%d to %d,%d",bwidget->redraw_box.x0,bwidget->redraw_box.y0, bwidget->redraw_box.x1, bwidget->redraw_box.y1));
+
         height = fbtk_get_height(widget);
         width = fbtk_get_width(widget);
         x = fbtk_get_x(widget);
@@ -278,6 +285,8 @@ static void fb_redraw(fbtk_widget_t *widget,
         bwidget->redraw_box.y1 += y;
         bwidget->redraw_box.x0 += x;
         bwidget->redraw_box.x1 += x;
+
+
 
         nsfb_claim(fbtk_get_nsfb(widget), &bwidget->redraw_box);
 
@@ -971,11 +980,14 @@ void gui_window_redraw_window(struct gui_window *g)
 void gui_window_update_box(struct gui_window *g,
                            const union content_msg_data *data)
 {
+        struct browser_widget_s *bwidget = fbtk_get_userpw(g->browser);
         fb_queue_redraw(g->browser,
-                        data->redraw.x,
-                        data->redraw.y,
-                        data->redraw.x + data->redraw.width,
-                        data->redraw.y + data->redraw.height);
+                        data->redraw.x - bwidget->scrollx,
+                        data->redraw.y - bwidget->scrolly,
+                        data->redraw.x - bwidget->scrollx +
+                        data->redraw.width,
+                        data->redraw.y - bwidget->scrolly +
+                        data->redraw.height);
 }
 
 bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
