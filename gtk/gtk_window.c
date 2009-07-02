@@ -380,9 +380,8 @@ gboolean nsgtk_window_button_press_event(GtkWidget *widget,
                                          GdkEventButton *event, gpointer data)
 {
 	struct gui_window *g = data;
-	GtkWindow *window = nsgtk_get_window_for_scaffold(g->scaffold);
 
-	gtk_window_set_focus(window, NULL);
+	gtk_widget_grab_focus(GTK_WIDGET(g->drawing_area));
 
 	g->mouse->pressed_x = event->x / g->bw->scale;
 	g->mouse->pressed_y = event->y / g->bw->scale;
