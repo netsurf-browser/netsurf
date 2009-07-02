@@ -283,8 +283,9 @@ bool imagemap_extract(xmlNode *node, struct content *c)
 
 		xmlFree(name);
 		return true;
-	} else 
+	} else if (node->type != XML_ELEMENT_NODE) {
 		return true;
+	}
 
 	/* now recurse */
 	for (this_node = node->children; this_node != NULL;
@@ -364,7 +365,7 @@ bool imagemap_addtolist(xmlNode *n, char *base_url, struct mapentry **entry)
 	}
 
 	/* no href -> ignore */
-	if ((href = (char *) xmlGetProp(n, (const xmlChar*)"href")) == NULL) {
+	if ((href = (char *) xmlGetProp(n, (const xmlChar *) "href")) == NULL) {
 		return true;
 	}
 
