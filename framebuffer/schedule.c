@@ -55,8 +55,8 @@ void schedule(int cs_ival, void (*callback)(void *p), void *p)
 	struct nscallback *nscb;
 	struct timeval tv;
 
-        tv.tv_sec = 0;
-        tv.tv_usec = cs_ival * 10000;
+        tv.tv_sec = cs_ival / 100; /* cs to seconds */
+        tv.tv_usec = (cs_ival % 100) * 10000; /* remainder to microseconds */
 
 	nscb = calloc(1, sizeof(struct nscallback));
 
@@ -97,12 +97,12 @@ void schedule_remove(void (*callback)(void *p), void *p)
         prev_nscb = NULL;
 
         while (cur_nscb != NULL) {
-                if ((cur_nscb->callback ==  callback) && 
+                if ((cur_nscb->callback ==  callback) &&
                     (cur_nscb->p ==  p)) {
                         /* item to remove */
-                        
+
                         LOG(("callback entry %p removing  %p(%p)",
-                             cur_nscb, cur_nscb->callback, cur_nscb->p)); 
+                             cur_nscb, cur_nscb->callback, cur_nscb->p));
 
                         /* remove callback */
                         unlnk_nscb = cur_nscb;
@@ -118,7 +118,7 @@ void schedule_remove(void (*callback)(void *p), void *p)
                         /* move to next element */
                         prev_nscb = cur_nscb;
                         cur_nscb = prev_nscb->next;
-                } 
+                }
         }
 }
 
@@ -144,7 +144,7 @@ bool schedule_run(void)
         while (cur_nscb != NULL) {
                 if (timercmp(&tv, &cur_nscb->tv, >)) {
                         /* scheduled time */
-                        
+
                         /* remove callback */
                         unlnk_nscb = cur_nscb;
 
@@ -155,14 +155,14 @@ bool schedule_run(void)
                         }
 
                         LOG(("callback entry %p running %p(%p)",
-                             unlnk_nscb, unlnk_nscb->callback, unlnk_nscb->p)); 
+                             unlnk_nscb, unlnk_nscb->callback, unlnk_nscb->p));
                         /* call callback */
                         unlnk_nscb->callback(unlnk_nscb->p);
 
                         free (unlnk_nscb);
 
                         /* the callback might have modded the list, so start
-                         * again 
+                         * again
                          */
                         cur_nscb = schedule_list;
                         prev_nscb = NULL;
@@ -171,7 +171,7 @@ bool schedule_run(void)
                         /* move to next element */
                         prev_nscb = cur_nscb;
                         cur_nscb = prev_nscb->next;
-                } 
+                }
         }
         return true;
 }
@@ -188,7 +188,7 @@ void list_schedule(void)
         cur_nscb = schedule_list;
 
         while (cur_nscb != NULL) {
-                LOG(("Schedule %p at %ld:%ld", 
+                LOG(("Schedule %p at %ld:%ld",
                      cur_nscb, cur_nscb->tv.tv_sec, cur_nscb->tv.tv_usec));
                 cur_nscb = cur_nscb->next;
         }
