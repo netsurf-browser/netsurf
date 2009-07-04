@@ -25,6 +25,7 @@
 #include <proto/dos.h>
 #include <proto/exec.h>
 #include "amiga/download.h"
+#include "amiga/options.h"
 
 const char * const verarexx;
 const int verver;
@@ -41,7 +42,8 @@ enum
 	RX_GETURL,
 	RX_GETTITLE,
 	RX_VERSION,
-	RX_SAVE
+	RX_SAVE,
+	RX_PUBSCREEN
 };
 
 STATIC char result[100];
@@ -53,6 +55,7 @@ STATIC VOID rx_geturl(struct ARexxCmd *, struct RexxMsg *);
 STATIC VOID rx_gettitle(struct ARexxCmd *, struct RexxMsg *);
 STATIC VOID rx_version(struct ARexxCmd *, struct RexxMsg *);
 STATIC VOID rx_save(struct ARexxCmd *, struct RexxMsg *);
+STATIC VOID rx_pubscreen(struct ARexxCmd *, struct RexxMsg *);
 
 STATIC struct ARexxCmd Commands[] =
 {
@@ -63,6 +66,7 @@ STATIC struct ARexxCmd Commands[] =
 	{"GETTITLE",RX_GETTITLE,rx_gettitle,NULL, 		0, 	NULL, 	0, 	0, 	NULL },
 	{"VERSION",RX_VERSION,rx_version,"VERSION/N,SVN=REVISION/N,RELEASE/S", 		0, 	NULL, 	0, 	0, 	NULL },
 	{"SAVE",RX_SAVE,rx_save,"FILENAME/A", 		0, 	NULL, 	0, 	0, 	NULL },
+	{"GETSCREENNAME",RX_PUBSCREEN,rx_pubscreen,NULL, 		0, 	NULL, 	0, 	0, 	NULL },
 	{ NULL, 		0, 				NULL, 		NULL, 		0, 	NULL, 	0, 	0, 	NULL }
 };
 
@@ -245,6 +249,20 @@ STATIC VOID rx_version(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((
 		{
 			strcpy(result,verarexx);
 		}
+	}
+
+	cmd->ac_Result = result;
+}
+
+STATIC VOID rx_pubscreen(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
+{
+	if(!option_use_pubscreen || option_use_pubscreen[0] == '\0')
+	{
+		strcpy(result,"NetSurf");
+	}
+	else
+	{
+		strcpy(result,option_use_pubscreen);
 	}
 
 	cmd->ac_Result = result;
