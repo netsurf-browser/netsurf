@@ -24,6 +24,8 @@
 #include <graphics/composite.h>
 #include "amiga/gui.h"
 #include "amiga/bitmap.h"
+#include "amiga/options.h"
+#include "content/urldb.h"
 
 bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 	const char *url)

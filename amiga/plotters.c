@@ -33,6 +33,7 @@
 #include "utils/log.h"
 #include <math.h>
 #include <assert.h>
+#include <proto/exec.h>
 
 static void ami_bitmap_tile_hook(struct Hook *hook,struct RastPort *rp,struct BackFillMessage *bfmsg);
 
