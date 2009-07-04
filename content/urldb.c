@@ -675,7 +675,7 @@ void urldb_write_paths(const struct path_data *parent, const char *host,
 #endif
 
 				if (p->urld.title) {
-					char *s = p->urld.title;
+					uint8_t *s = (uint8_t *) p->urld.title;
 
 					for (i = 0; s[i] != '\0'; i++)
 						if (s[i] < 32)
