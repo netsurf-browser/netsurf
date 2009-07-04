@@ -117,6 +117,7 @@ struct BitMap *throbber = NULL;
 ULONG throbber_width,throbber_height,throbber_frames,throbber_update_interval;
 BOOL rmbtrapped;
 BOOL locked_screen = FALSE;
+BOOL screen_closed = FALSE;
 
 extern colour css_scrollbar_fg_colour;
 extern colour css_scrollbar_bg_colour;
@@ -491,10 +492,76 @@ void gui_init(int argc, char** argv)
 
 }
 
+void ami_openscreen(void)
+{
+	ULONG id = 0;
+	if(!option_use_pubscreen || option_use_pubscreen[0] == '\0')
+	{
+		if((option_modeid) && (strncmp(option_modeid,"0x",2) == 0))
+		{
+			id = strtoul(option_modeid,NULL,0);
+		}
+		else
+		{
+			struct ScreenModeRequester *screenmodereq = NULL;
+
+			if(screenmodereq = AllocAslRequest(ASL_ScreenModeRequest,NULL))
+			{
+				AslRequestTags(screenmodereq,
+						ASLSM_MinDepth,24,
+						ASLSM_MaxDepth,32,
+						TAG_DONE);
+
+				id = screenmodereq->sm_DisplayID;
+				option_modeid = malloc(20);
+				sprintf(option_modeid,"0x%lx",id);
+
+				FreeAslRequest(screenmodereq);
+				options_write("PROGDIR:Resources/Options");
+			}
+		}
+
+		scrn = OpenScreenTags(NULL,
+					SA_DisplayID,id,
+					SA_Title,nsscreentitle,
+					SA_Type,CUSTOMSCREEN,
+					SA_PubName,"NetSurf",
+					SA_LikeWorkbench,TRUE,
+					TAG_DONE);
+
+		if(scrn)
+		{
+			PubScreenStatus(scrn,0);
+		}
+		else
+		{
+			if(scrn = LockPubScreen("NetSurf"))
+			{
+				locked_screen = TRUE;
+			}
+			else
+			{
+				option_use_pubscreen = "Workbench";
+			}
+		}
+	}
+
+	if(option_use_pubscreen && option_use_pubscreen[0] != '\0')
+	{
+		if(scrn = LockPubScreen(option_use_pubscreen))
+		{
+			locked_screen = TRUE;
+		}
+		else
+		{
+			scrn = LockPubScreen("Workbench");
+		}
+	}
+}
+
 void gui_init2(int argc, char** argv)
 {
 	struct browser_window *bw = NULL;
-	ULONG id;
 	long rarray[] = {0};
 	struct RDArgs *args;
 	STRPTR template = "URL/A";
@@ -512,71 +579,7 @@ void gui_init2(int argc, char** argv)
 
 	if(notalreadyrunning)
 	{
-		if(!option_use_pubscreen || option_use_pubscreen[0] == '\0')
-		{
-			if((option_modeid) && (strncmp(option_modeid,"0x",2) == 0))
-			{
-				id = strtoul(option_modeid,NULL,0);
-			}
-			else
-			{
-				struct ScreenModeRequester *screenmodereq = NULL;
-
-				if(screenmodereq = AllocAslRequest(ASL_ScreenModeRequest,NULL))
-				{
-					AslRequestTags(screenmodereq,
-							ASLSM_MinDepth,24,
-							ASLSM_MaxDepth,32,
-							TAG_DONE);
-
-					id = screenmodereq->sm_DisplayID;
-					option_modeid = malloc(20);
-					sprintf(option_modeid,"0x%lx",id);
-
-					FreeAslRequest(screenmodereq);
-					options_write("PROGDIR:Resources/Options");
-				}
-			}
-
-			scrn = OpenScreenTags(NULL,
-//							SA_Width,option_window_screen_width,
-//							SA_Height,option_window_screen_height,
-//							SA_Depth,option_screen_depth,
-							SA_DisplayID,id,
-							SA_Title,nsscreentitle,
-							SA_Type,CUSTOMSCREEN,
-							SA_PubName,"NetSurf",
-							SA_LikeWorkbench,TRUE,
-							TAG_DONE);
-
-			if(scrn)
-			{
-				PubScreenStatus(scrn,0);
-			}
-			else
-			{
-				if(scrn = LockPubScreen("NetSurf"))
-				{
-					locked_screen = TRUE;
-				}
-				else
-				{
-					option_use_pubscreen = "Workbench";
-				}
-			}
-		}
-
-		if(option_use_pubscreen && option_use_pubscreen[0] != '\0')
-		{
-			if(scrn = LockPubScreen(option_use_pubscreen))
-			{
-				locked_screen = TRUE;
-			}
-			else
-			{
-				scrn = LockPubScreen("Workbench");
-			}
-		}
+		ami_openscreen();
 
 		/* init shared bitmaps                                               *
 		 * Height is set to screen width to give enough space for thumbnails *
@@ -1208,6 +1211,16 @@ ie_qualifier anyway
 					ami_close_all_tabs(gwin);
 		        break;
 
+				case WMHI_ICONIFY:
+				{
+					SetAttrs(gwin->objects[OID_MAIN],
+							WINDOW_IconTitle, gwin->win->Title,
+							TAG_DONE);
+					RA_Iconify(gwin->objects[OID_MAIN]);
+					screen_closed = CloseScreen(scrn);
+				}
+				break;
+
 				case WMHI_ACTIVE:
 					if(gwin->bw) curbw = gwin->bw;
 				break;
@@ -1268,7 +1281,17 @@ void ami_handle_appmsg(void)
 	{
 		GetAttr(WINDOW_UserData,(struct Window *)appmsg->am_ID,(ULONG *)&gwin);
 
-		if(appmsg->am_Type == AMTYPE_APPWINDOW)
+		if(appmsg->am_Type == AMTYPE_APPICON)
+		{
+			if(screen_closed)
+			{
+				ami_openscreen();
+				screen_closed = FALSE;
+			}
+			gwin->win = (struct Window *)RA_OpenWindow(gwin->objects[OID_MAIN]);
+			WindowToFront(gwin->win);
+		}
+		else if(appmsg->am_Type == AMTYPE_APPWINDOW)
 		{
 			GetAttr(SPACE_AreaBox,gwin->gadgets[GID_BROWSER],(ULONG *)&bbox);
 
@@ -1867,7 +1890,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 								IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
 								IDCMP_INTUITICKS | IDCMP_ACTIVEWINDOW |
 								IDCMP_EXTENDEDMOUSE,
-//					WINDOW_IconifyGadget, TRUE,
+					WINDOW_IconifyGadget, TRUE,
 					WINDOW_NewMenu,menu,
 					WINDOW_HorizProp,1,
 					WINDOW_VertProp,1,
