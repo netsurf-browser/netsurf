@@ -41,10 +41,13 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 
 	if(GfxBase->lib_Version >= 53) // AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)
 	{
+		uint32 flags = COMPFLAG_IgnoreDestAlpha | COMPFLAG_SrcAlphaOverride;
+		if(option_scale_quality) flags |= COMPFLAG_SrcFilter;
+
 		CompositeTags(COMPOSITE_Src,glob.bm,bitmap->nativebm,
 					COMPTAG_ScaleX,COMP_FLOAT_TO_FIX(bitmap->width/content->width),
 					COMPTAG_ScaleY,COMP_FLOAT_TO_FIX(bitmap->height/content->width),
-					COMPTAG_Flags,COMPFLAG_IgnoreDestAlpha | COMPFLAG_SrcAlphaOverride,
+					COMPTAG_Flags,flags,
 					COMPTAG_DestX,0,
 					COMPTAG_DestY,0,
 					COMPTAG_DestWidth,bitmap->width,
@@ -70,6 +73,7 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 		bsa.bsa_SrcBitMap = glob.bm;
 		bsa.bsa_DestBitMap = bitmap->nativebm;
 		bsa.bsa_Flags = 0;
+		if(option_scale_quality) bsa.bsa_Flags = BSAF_AVERAGE;
 
 		BitMapScale(&bsa);
 	}
