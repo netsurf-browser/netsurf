@@ -76,6 +76,7 @@
 #include "amiga/download.h"
 #include <graphics/blitattr.h>
 #include "amiga/gui_options.h"
+#include "amiga/bitmap.h"
 
 #ifdef NS_AMIGA_CAIRO
 #include <cairo/cairo-amigaos.h>
@@ -1213,8 +1214,34 @@ ie_qualifier anyway
 
 				case WMHI_ICONIFY:
 				{
+/*
+					struct DiskObject *dobj;
+					struct bitmap *bm;
+					ULONG *argb;
+
+					bm = urldb_get_thumbnail(gwin->bw->current_content->url);
+					argb = AllocVec(bm->nativebmwidth * bm->nativebmheight, MEMF_CLEAR);
+					BltBitMapTags(BLITA_Width, bm->nativebmwidth,
+								BLITA_Height, bm->nativebmheight,
+								BLITA_SrcType, BLITT_BITMAP,
+								BLITA_Source, bm->nativebm,
+								BLITA_DestType, BLITT_ARGB32,
+								BLITA_Dest, argb,
+								TAG_DONE);
+
+			//		dobj = NewDiskObject(WBPROJECT);
+					dobj = GetIconTags(NULL, ICONGETA_GetDefaultType, WBPROJECT, TAG_DONE);
+					IconControl(dobj,
+							ICONCTRLA_SetWidth, bm->nativebmwidth,
+							ICONCTRLA_SetHeight, bm->nativebmheight,
+							ICONCTRLA_SetImageDataFormat, IDFMT_DIRECTMAPPED,
+							ICONCTRLA_SetImageData1, argb,
+							ICONCTRLA_SetImageData2, argb,
+							TAG_DONE);
+*/
 					SetAttrs(gwin->objects[OID_MAIN],
 							WINDOW_IconTitle, gwin->win->Title,
+//							WINDOW_Icon, dobj,
 							TAG_DONE);
 					RA_Iconify(gwin->objects[OID_MAIN]);
 					screen_closed = CloseScreen(scrn);
@@ -1289,6 +1316,8 @@ void ami_handle_appmsg(void)
 				screen_closed = FALSE;
 			}
 			gwin->win = (struct Window *)RA_OpenWindow(gwin->objects[OID_MAIN]);
+			gwin->redraw_required = true;
+			ScreenToFront(scrn);
 			WindowToFront(gwin->win);
 		}
 		else if(appmsg->am_Type == AMTYPE_APPWINDOW)
@@ -1890,7 +1919,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 								IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
 								IDCMP_INTUITICKS | IDCMP_ACTIVEWINDOW |
 								IDCMP_EXTENDEDMOUSE,
-					WINDOW_IconifyGadget, TRUE,
+//					WINDOW_IconifyGadget, TRUE,
 					WINDOW_NewMenu,menu,
 					WINDOW_HorizProp,1,
 					WINDOW_VertProp,1,
