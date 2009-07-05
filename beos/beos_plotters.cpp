@@ -68,7 +68,7 @@ static bool nsbeos_plot_line(int x0, int y0, int x1, int y1, int width,
 static bool nsbeos_plot_polygon(const int *p, unsigned int n, colour fill);
 static bool nsbeos_plot_path(const float *p, unsigned int n, colour fill, float width,
                     colour c, const float transform[6]);
-static bool nsbeos_plot_fill(int x0, int y0, int x1, int y1, colour c);
+static bool nsbeos_plot_fill(int x0, int y0, int x1, int y1, plot_style_t *style);
 static bool nsbeos_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
 static bool nsbeos_plot_text(int x, int y, const struct css_style *style,
@@ -301,7 +301,7 @@ bool nsbeos_plot_polygon(const int *p, unsigned int n, colour fill)
 }
 
 
-bool nsbeos_plot_fill(int x0, int y0, int x1, int y1, colour c)
+bool nsbeos_plot_fill(int x0, int y0, int x1, int y1, plot_style_t *style)
 {
 	BView *view;
 
@@ -311,7 +311,7 @@ bool nsbeos_plot_fill(int x0, int y0, int x1, int y1, colour c)
 		return false;
 	}
 
-	nsbeos_set_colour(c);
+	nsbeos_set_colour(style->fill_colour);
 
 	BRect rect(x0, y0, x1 - 1, y1 - 1);
 	view->FillRect(rect);
@@ -319,7 +319,7 @@ bool nsbeos_plot_fill(int x0, int y0, int x1, int y1, colour c)
 	//nsbeos_current_gc_unlock();
 
 #if 0 /* GTK */
-	nsbeos_set_colour(c);
+	nsbeos_set_colour(style->fill_colour);
 	nsbeos_set_solid();
 #ifdef CAIRO_VERSION
 	if (option_render_cairo) {

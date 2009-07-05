@@ -41,6 +41,10 @@
 #define BORDER_COLOR 0x000000
 #define SELECTION_COL 0xFFDDDD
 
+static plot_style_t plot_style_fill_selection = { 
+    .fill_type = PLOT_OP_TYPE_SOLID,
+    .fill_colour = SELECTION_COL,
+};
 
 struct line_info {
 	unsigned int b_start;		/**< Byte offset of line start */
@@ -713,6 +717,10 @@ void textarea_redraw(struct text_area *ta, int x0, int y0, int x1, int y1)
 	int chars, offset;
 	unsigned int c_pos, c_len, b_start, b_end, line_len;
 	char *line_text;
+        plot_style_t plot_style_fill_bg = { 
+            .fill_type = PLOT_OP_TYPE_SOLID,
+            .fill_colour = BACKGROUND_COL,
+        };
 
 	
 	if (x1 < ta->x || x0 > ta->x + ta->vis_width || y1 < ta->y ||
@@ -723,6 +731,9 @@ void textarea_redraw(struct text_area *ta, int x0, int y0, int x1, int y1)
 	if (ta->lines == NULL)
 		/* Nothing to redraw */
 		return;
+
+        if (ta->flags & TEXTAREA_READONLY)
+            plot_style_fill_bg.fill_colour = READONLY_BG;
 	
 	line0 = (y0 - ta->y + ta->scroll_y) / ta->line_height - 1;
 	line1 = (y1 - ta->y + ta->scroll_y) / ta->line_height + 1;
@@ -748,8 +759,7 @@ void textarea_redraw(struct text_area *ta, int x0, int y0, int x1, int y1)
 		y1 = ta->y + ta->vis_height;
 	
 	plot.clip(x0, y0, x1, y1);
-	plot.fill(x0, y0, x1, y1, (ta->flags & TEXTAREA_READONLY) ?
-			READONLY_BG : BACKGROUND_COL);
+	plot.fill(x0, y0, x1, y1, &plot_style_fill_bg);
 	plot.rectangle(ta->x, ta->y, ta->vis_width - 1, ta->vis_height - 1, 1,
 			BORDER_COLOR, false, false);
 	
@@ -837,7 +847,7 @@ void textarea_redraw(struct text_area *ta, int x0, int y0, int x1, int y1)
 					x1 - ta->scroll_x,
      					ta->y + (line + 1) * ta->line_height -
 					1 - ta->scroll_y,
-				 	SELECTION_COL);
+				 	&plot_style_fill_selection);
 			
 		}
 		

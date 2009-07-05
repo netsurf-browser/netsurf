@@ -197,6 +197,18 @@ framebuffer_plot_bitmap(int x, int y,
 	return true;
 }
 
+static bool 
+framebuffer_plot_fill(int x0, int y0, int x1, int y1, plot_style_t *style)
+{
+    nsfb_bbox_t rect;
+    rect.x0 = x0;
+    rect.y0 = y0;
+    rect.x1 = x1;
+    rect.y1 = y1;
+
+    return nsfb_plot_rectangle_fill(nsfb, &rect, style->fill_colour);
+
+}
 
 static bool framebuffer_plot_flush(void)
 {
@@ -220,7 +232,7 @@ struct plotter_table plot = {
 	.rectangle = nsfb_lplot_rectangle,
 	.line = nsfb_lplot_line,
 	.polygon = nsfb_lplot_polygon,
-	.fill = nsfb_lplot_fill,
+	.fill = framebuffer_plot_fill,
 	.clip = nsfb_lplot_clip,
 	.text = framebuffer_plot_text,
 	.disc = nsfb_lplot_disc,

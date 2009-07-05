@@ -35,6 +35,27 @@ typedef unsigned long bitmap_flags_t;
 #define BITMAPF_REPEAT_X 1
 #define BITMAPF_REPEAT_Y 2
 
+typedef enum {
+    PLOT_OP_TYPE_NONE = 0, /**< No operation */
+    PLOT_OP_TYPE_SOLID, /**< Solid colour */
+    PLOT_OP_TYPE_DOT, /**< Doted plot */
+    PLOT_OP_TYPE_DASH, /**< dashed plot */
+} plot_operation_type_t;
+
+
+typedef struct {
+    plot_operation_type_t stroke_type;
+    int stroke_width;
+    colour stroke_colour;
+    plot_operation_type_t fill_type; 
+    colour fill_colour;
+} plot_style_t;
+
+/* global styles */
+extern plot_style_t *plot_style_fill_white;
+extern plot_style_t *plot_style_fill_red;
+extern plot_style_t *plot_style_fill_black;
+
 /** Set of target specific plotting functions.
  *
  * The functions are:
@@ -99,7 +120,7 @@ struct plotter_table {
 	bool (*line)(int x0, int y0, int x1, int y1, int width,
 			colour c, bool dotted, bool dashed);
 	bool (*polygon)(const int *p, unsigned int n, colour fill);
-	bool (*fill)(int x0, int y0, int x1, int y1, colour c);
+	bool (*fill)(int x0, int y0, int x1, int y1, plot_style_t *style);
 	bool (*clip)(int x0, int y0, int x1, int y1);
 	bool (*text)(int x, int y, const struct css_style *style,
 			const char *text, size_t length, colour bg, colour c);

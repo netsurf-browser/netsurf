@@ -44,7 +44,7 @@ static bool ro_save_draw_line(int x0, int y0, int x1, int y1, int width,
 static bool ro_save_draw_polygon(const int *p, unsigned int n, colour fill);
 static bool ro_save_draw_path(const float *p, unsigned int n, colour fill,
 		float width, colour c, const float transform[6]);
-static bool ro_save_draw_fill(int x0, int y0, int x1, int y1, colour c);
+static bool ro_save_draw_fill(int x0, int y0, int x1, int y1, plot_style_t *style);
 static bool ro_save_draw_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
 static bool ro_save_draw_text(int x, int y, const struct css_style *style,
@@ -302,7 +302,7 @@ bool ro_save_draw_path(const float *p, unsigned int n, colour fill,
 }
 
 
-bool ro_save_draw_fill(int x0, int y0, int x1, int y1, colour c)
+bool ro_save_draw_fill(int x0, int y0, int x1, int y1, plot_style_t *style)
 {
 	pencil_code code;
 	const int path[] = { draw_MOVE_TO, x0 * 2, -y0 * 2 - 1,
@@ -313,10 +313,11 @@ bool ro_save_draw_fill(int x0, int y0, int x1, int y1, colour c)
 			draw_END_PATH };
 
 	code = pencil_path(ro_save_draw_diagram, path,
-			sizeof path / sizeof path[0],
-			c << 8, pencil_TRANSPARENT, 0, pencil_JOIN_MITRED,
-			pencil_CAP_BUTT, pencil_CAP_BUTT, 0, 0, false,
-			pencil_SOLID);
+                           sizeof path / sizeof path[0],
+                           style->fill_colour << 8, 
+                           pencil_TRANSPARENT, 0, pencil_JOIN_MITRED,
+                           pencil_CAP_BUTT, pencil_CAP_BUTT, 0, 0, false,
+                           pencil_SOLID);
 	if (code != pencil_OK)
 		return ro_save_draw_error(code);
 

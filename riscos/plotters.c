@@ -43,7 +43,7 @@ static bool ro_plot_draw_path(const draw_path * const path, int width,
 static bool ro_plot_polygon(const int *p, unsigned int n, colour fill);
 static bool ro_plot_path(const float *p, unsigned int n, colour fill, float width,
 		colour c, const float transform[6]);
-static bool ro_plot_fill(int x0, int y0, int x1, int y1, colour c);
+static bool ro_plot_fill(int x0, int y0, int x1, int y1, plot_style_t *style);
 static bool ro_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
 static bool ro_plot_text(int x, int y, const struct css_style *style,
@@ -303,12 +303,13 @@ error:
 }
 
 
-bool ro_plot_fill(int x0, int y0, int x1, int y1, colour c)
+bool ro_plot_fill(int x0, int y0, int x1, int y1, plot_style_t *style)
 {
 	os_error *error;
 
-	error = xcolourtrans_set_gcol(c << 8, colourtrans_USE_ECFS_GCOL,
-			os_ACTION_OVERWRITE, 0, 0);
+	error = xcolourtrans_set_gcol(style->fill_colour << 8, 
+                                      colourtrans_USE_ECFS_GCOL,
+                                      os_ACTION_OVERWRITE, 0, 0);
 	if (error) {
 		LOG(("xcolourtrans_set_gcol: 0x%x: %s",
 				error->errnum, error->errmess));

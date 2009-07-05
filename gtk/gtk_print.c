@@ -52,7 +52,7 @@ static bool nsgtk_print_plot_line(int x0, int y0, int x1, int y1, int width,
 static bool nsgtk_print_plot_polygon(const int *p, unsigned int n, colour fill);
 static bool nsgtk_print_plot_path(const float *p, unsigned int n, colour fill, 
 		float width, colour c, const float transform[6]);
-static bool nsgtk_print_plot_fill(int x0, int y0, int x1, int y1, colour c);
+static bool nsgtk_print_plot_fill(int x0, int y0, int x1, int y1, plot_style_t *style);
 static bool nsgtk_print_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
 static bool nsgtk_print_plot_text(int x, int y, const struct css_style *style,
@@ -183,12 +183,12 @@ bool nsgtk_print_plot_polygon(const int *p, unsigned int n, colour fill)
 }
 
 
-bool nsgtk_print_plot_fill(int x0, int y0, int x1, int y1, colour c)
+bool nsgtk_print_plot_fill(int x0, int y0, int x1, int y1, plot_style_t *style)
 {
 	LOG(("Plotting fill. x0: %i ;\t y0: %i ;\t x1: %i ;\t y1: %i", 
 			x0,y0,x1,y1));
 
-	nsgtk_print_set_colour(c);
+	nsgtk_print_set_colour(style->fill_colour);
 	nsgtk_print_set_solid();
 	
 	/* Normalize boundaries of the area - to prevent overflows.

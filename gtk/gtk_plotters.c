@@ -56,7 +56,7 @@ static bool nsgtk_plot_line(int x0, int y0, int x1, int y1, int width,
 static bool nsgtk_plot_polygon(const int *p, unsigned int n, colour fill);
 static bool nsgtk_plot_path(const float *p, unsigned int n, colour fill, float width,
                     colour c, const float transform[6]);
-static bool nsgtk_plot_fill(int x0, int y0, int x1, int y1, colour c);
+static bool nsgtk_plot_fill(int x0, int y0, int x1, int y1, plot_style_t *style);
 static bool nsgtk_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
 static bool nsgtk_plot_text(int x, int y, const struct css_style *style,
@@ -87,7 +87,7 @@ const struct plotter_table nsgtk_plotters = {
 	.arc = nsgtk_plot_arc,
 	.bitmap = nsgtk_plot_bitmap,
 	.path = nsgtk_plot_path,
-	.option_knockout = true
+        .option_knockout = true
 };
 
 
@@ -155,9 +155,9 @@ bool nsgtk_plot_polygon(const int *p, unsigned int n, colour fill)
 }
 
 
-bool nsgtk_plot_fill(int x0, int y0, int x1, int y1, colour c)
+bool nsgtk_plot_fill(int x0, int y0, int x1, int y1, plot_style_t *style)
 {
-	nsgtk_set_colour(c);
+	nsgtk_set_colour(style->fill_colour);
 	nsgtk_set_solid();
 
 	cairo_set_line_width(current_cr, 0);

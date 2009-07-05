@@ -509,8 +509,9 @@ void ro_gui_progress_bar_redraw_window(wimp_draw *redraw,
 							progress_ymid - progress_height,
 							tinct_FILL_HORIZONTALLY);
 				} else {
-				  	plot.fill(clip_x0, clip_y0, clip_x1, clip_y1,
-			  				0x000000ff);
+				  	plot.fill(clip_x0, clip_y0, 
+                                                  clip_x1, clip_y1,
+                                                  plot_style_fill_red);
 			  	}
 			}
 		}

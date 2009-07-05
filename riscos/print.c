@@ -102,7 +102,7 @@ static bool print_fonts_plot_rectangle(int x0, int y0, int width, int height,
 static bool print_fonts_plot_line(int x0, int y0, int x1, int y1, int width,
 		colour c, bool dotted, bool dashed);
 static bool print_fonts_plot_polygon(const int *p, unsigned int n, colour fill);
-static bool print_fonts_plot_fill(int x0, int y0, int x1, int y1, colour c);
+static bool print_fonts_plot_fill(int x0, int y0, int x1, int y1, plot_style_t *style);
 static bool print_fonts_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
 static bool print_fonts_plot_text(int x, int y, const struct css_style *style,
@@ -824,7 +824,7 @@ bool print_fonts_plot_polygon(const int *p, unsigned int n, colour fill)
 	return true;
 }
 
-bool print_fonts_plot_fill(int x0, int y0, int x1, int y1, colour c)
+bool print_fonts_plot_fill(int x0, int y0, int x1, int y1, plot_style_t *style)
 {
 	return true;
 }

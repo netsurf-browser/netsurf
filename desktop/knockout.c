@@ -75,6 +75,25 @@
 #define KNOCKOUT_BOXES 768	/* 28 bytes each */
 #define KNOCKOUT_POLYGONS 3072	/* 4 bytes each */
 
+/** Global fill styles - used everywhere, should they be here? */
+static plot_style_t plot_style_fill_white_static = { 
+    .fill_type = PLOT_OP_TYPE_SOLID,
+    .fill_colour = 0xffffff,
+};
+
+static plot_style_t plot_style_fill_red_static = { 
+    .fill_type = PLOT_OP_TYPE_SOLID,
+    .fill_colour = 0x000000ff,
+};
+
+static plot_style_t plot_style_fill_black_static = { 
+    .fill_type = PLOT_OP_TYPE_SOLID,
+    .fill_colour = 0x0,
+};
+
+plot_style_t *plot_style_fill_white = &plot_style_fill_white_static;
+plot_style_t *plot_style_fill_red = &plot_style_fill_red_static;
+plot_style_t *plot_style_fill_black = &plot_style_fill_black_static;
 
 struct knockout_box;
 struct knockout_entry;
@@ -82,7 +101,7 @@ struct knockout_entry;
 
 static void knockout_set_plotters(void);
 static void knockout_calculate(int x0, int y0, int x1, int y1, struct knockout_box *box);
-static bool knockout_plot_fill_recursive(struct knockout_box *box, colour c);
+static bool knockout_plot_fill_recursive(struct knockout_box *box, plot_style_t *plot_style);
 static bool knockout_plot_bitmap_recursive(struct knockout_box *box,
 		struct knockout_entry *entry);
 
@@ -91,7 +110,7 @@ static bool knockout_plot_rectangle(int x0, int y0, int width, int height,
 static bool knockout_plot_line(int x0, int y0, int x1, int y1, int width,
 		colour c, bool dotted, bool dashed);
 static bool knockout_plot_polygon(const int *p, unsigned int n, colour fill);
-static bool knockout_plot_fill(int x0, int y0, int x1, int y1, colour c);
+static bool knockout_plot_fill(int x0, int y0, int x1, int y1, plot_style_t *plot_style);
 static bool knockout_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
 static bool knockout_plot_text(int x, int y, const struct css_style *style,
@@ -189,7 +208,7 @@ struct knockout_entry {
 			int y0;
 			int x1;
 			int y1;
-			colour c;
+			plot_style_t plot_style;
 		} fill;
 		struct {
 			int x0;
@@ -349,14 +368,14 @@ bool knockout_plot_flush(void)
 			box = knockout_entries[i].box->child;
 			if (box)
 				success &= knockout_plot_fill_recursive(box,
-						knockout_entries[i].data.fill.c);
+						&knockout_entries[i].data.fill.plot_style);
 			else if (!knockout_entries[i].box->deleted)
 				success &= plot.fill(
 						knockout_entries[i].data.fill.x0,
 						knockout_entries[i].data.fill.y0,
 						knockout_entries[i].data.fill.x1,
 						knockout_entries[i].data.fill.y1,
-						knockout_entries[i].data.fill.c);
+						&knockout_entries[i].data.fill.plot_style);
 			break;
 		case KNOCKOUT_PLOT_CLIP:
 			success &= plot.clip(
@@ -575,7 +594,7 @@ void knockout_calculate(int x0, int y0, int x1, int y1, struct knockout_box *own
 }
 
 
-bool knockout_plot_fill_recursive(struct knockout_box *box, colour c)
+bool knockout_plot_fill_recursive(struct knockout_box *box, plot_style_t *plot_style)
 {
 	bool success = true;
 	struct knockout_box *parent;
@@ -584,13 +603,13 @@ bool knockout_plot_fill_recursive(struct knockout_box *box, colour c)
 		if (parent->deleted)
 			continue;
 		if (parent->child)
-			knockout_plot_fill_recursive(parent->child, c);
+			knockout_plot_fill_recursive(parent->child, plot_style);
 		else
 			success &= plot.fill(parent->bbox.x0,
 					parent->bbox.y0,
 					parent->bbox.x1,
 					parent->bbox.y1,
-					c);
+					plot_style);
 	}
 	return success;
 }
@@ -700,7 +719,7 @@ bool knockout_plot_path(const float *p, unsigned int n, colour fill,
 }
 
 
-bool knockout_plot_fill(int x0, int y0, int x1, int y1, colour c)
+bool knockout_plot_fill(int x0, int y0, int x1, int y1, plot_style_t *plot_style)
 {
 	int kx0, ky0, kx1, ky1;
 
@@ -728,7 +747,7 @@ bool knockout_plot_fill(int x0, int y0, int x1, int y1, colour c)
 	knockout_entries[knockout_entry_cur].data.fill.y0 = y0;
 	knockout_entries[knockout_entry_cur].data.fill.x1 = x1;
 	knockout_entries[knockout_entry_cur].data.fill.y1 = y1;
-	knockout_entries[knockout_entry_cur].data.fill.c = c;
+	knockout_entries[knockout_entry_cur].data.fill.plot_style = *plot_style;
 	knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_FILL;
 	if ((++knockout_entry_cur >= KNOCKOUT_ENTRIES) ||
 			(++knockout_box_cur >= KNOCKOUT_BOXES))

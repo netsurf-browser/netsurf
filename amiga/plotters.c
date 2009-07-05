@@ -235,13 +235,13 @@ bool ami_polygon(const int *p, unsigned int n, colour fill)
 	return true;
 }
 
-bool ami_fill(int x0, int y0, int x1, int y1, colour c)
+bool ami_fill(int x0, int y0, int x1, int y1, plot_style_t *style)
 {
 #ifndef NS_AMIGA_CAIRO_ALL
 	p96RectFill(currp,x0,y0,x1-1,y1-1,
-		p96EncodeColor(RGBFB_A8B8G8R8,c));
+		p96EncodeColor(RGBFB_A8B8G8R8, style->fill_colour));
 #else
-	ami_cairo_set_colour(glob.cr,c);
+	ami_cairo_set_colour(glob.cr, style->fill_colour);
 	ami_cairo_set_solid(glob.cr);
 
 	cairo_set_line_width(glob.cr, 0);

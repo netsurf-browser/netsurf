@@ -338,9 +338,9 @@ bool textplain_redraw(struct content *c, int x, int y,
 	long line0 = clip_y0 / scaled_line_height - 1;
 	long line1 = clip_y1 / scaled_line_height + 1;
 	struct textplain_line *line = c->data.textplain.physical_line;
-	colour hback_col;
 	struct rect clip;
 	size_t length;
+        plot_style_t *plot_style_highlight;
 
 	clip.x0 = clip_x0;
 	clip.y0 = clip_y0;
@@ -358,7 +358,7 @@ bool textplain_redraw(struct content *c, int x, int y,
 	if (line1 < line0)
 		line1 = line0;
 
-	if (!plot.fill(clip_x0, clip_y0, clip_x1, clip_y1, 0xffffff))
+	if (!plot.fill(clip_x0, clip_y0, clip_x1, clip_y1, plot_style_fill_white))
 		return false;
 
 	if (!line)
@@ -366,9 +366,9 @@ bool textplain_redraw(struct content *c, int x, int y,
 
 	/* choose a suitable background colour for any highlighted text */
 	if ((background_colour & 0x808080) == 0x808080)
-		hback_col = 0;
-	else
-		hback_col = 0xffffff;
+            plot_style_highlight = plot_style_fill_black;
+        else
+            plot_style_highlight = plot_style_fill_white;
 
 	x += MARGIN * scale;
 	y += MARGIN * scale;
@@ -437,8 +437,9 @@ bool textplain_redraw(struct content *c, int x, int y,
 
 				if (highlighted) {
 					int sy = y + (lineno * scaled_line_height);
-					if (!plot.fill(tx, sy, ntx, sy + scaled_line_height,
-							hback_col))
+					if (!plot.fill(tx, sy, 
+                                                       ntx, sy + scaled_line_height,
+							plot_style_highlight))
 						return false;
 				}
 			}

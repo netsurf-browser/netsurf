@@ -135,6 +135,10 @@ bool html_redraw(struct content *c, int x, int y,
 {
 	struct box *box;
 	bool result, want_knockout;
+        plot_style_t pstyle_fill_bg = { 
+            .fill_type = PLOT_OP_TYPE_SOLID,
+            .fill_colour = background_colour,
+        };
 
 	box = c->data.html.layout;
 	assert(box);
@@ -145,13 +149,15 @@ bool html_redraw(struct content *c, int x, int y,
 
 	/* clear to background colour */
 	result = plot.clip(clip_x0, clip_y0, clip_x1, clip_y1);
+
 	if (c->data.html.background_colour != TRANSPARENT)
-		background_colour = c->data.html.background_colour;
-	result &= plot.fill(clip_x0, clip_y0, clip_x1, clip_y1, background_colour);
+		pstyle_fill_bg.fill_colour = c->data.html.background_colour;
+
+	result &= plot.fill(clip_x0, clip_y0, clip_x1, clip_y1, &pstyle_fill_bg);
 
 	result &= html_redraw_box(box, x, y,
 			clip_x0, clip_y0, clip_x1, clip_y1,
-			scale, background_colour);
+			scale, pstyle_fill_bg.fill_colour);
 
 	if (want_knockout)
 		knockout_plot_end();
@@ -801,10 +807,10 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 		/* \todo make search terms visible within selected text */
 		if (highlighted) {
 			unsigned endtxt_idx = end_idx;
-			colour hfore_col, hback_col;
 			bool clip_changed = false;
 			bool text_visible = true;
 			int startx, endx;
+                        plot_style_t *pstyle_fill_hback = plot_style_fill_white; 
 
 			if (end_idx > utf8_len) {
 				/* adjust for trailing space, not present in
@@ -849,14 +855,12 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 			/* decide whether highlighted portion is to be
 			 * white-on-black or black-on-white */
 			if ((current_background_color & 0x808080) == 0x808080)
-				hback_col = 0;
-			else
-				hback_col = 0xffffff;
-			hfore_col = hback_col ^ 0xffffff;
+                            pstyle_fill_hback = plot_style_fill_black;
 
 			/* highlighted portion */
 			if (!plot.fill(x + startx, y, x + endx,
-					y + height * scale, hback_col))
+                                       y + height * scale, 
+                                       pstyle_fill_hback))
 				return false;
 
 			if (start_idx > 0) {
@@ -875,8 +879,9 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 
 			if (text_visible &&
 				!plot.text(x, y + (int) (height * 0.75 * scale),
-						style, utf8_text, endtxt_idx,
-						hback_col, hfore_col))
+                                           style, utf8_text, endtxt_idx,
+                                           pstyle_fill_hback->fill_colour, 
+                                           pstyle_fill_hback->fill_colour ^ 0xffffff))
 				return false;
 
 			/* draw any text succeeding highlighted portion */
@@ -1277,6 +1282,22 @@ colour html_redraw_aa(colour c0, colour c1)
 }
 
 
+
+#define WIDGET_BASEC 0xd9d9d9
+#define WIDGET_BLOBC 0x000000
+
+/** plot style for checkbox base. */
+static plot_style_t pstyle_fill_wbasec = { 
+    .fill_type = PLOT_OP_TYPE_SOLID,
+    .fill_colour = WIDGET_BASEC,
+};
+
+/** plot style for checkbox background. */
+static plot_style_t pstyle_fill_wblobc = { 
+    .fill_type = PLOT_OP_TYPE_SOLID,
+    .fill_colour = WIDGET_BLOBC,
+};
+
 /**
  * Plot a checkbox.
  *
@@ -1288,8 +1309,6 @@ colour html_redraw_aa(colour c0, colour c1)
  * \return true if successful, false otherwise
  */
 
-#define WIDGET_BASEC 0xd9d9d9
-#define WIDGET_BLOBC 0x000000
 bool html_redraw_checkbox(int x, int y, int width, int height,
 		bool selected)
 {
@@ -1300,7 +1319,7 @@ bool html_redraw_checkbox(int x, int y, int width, int height,
 	if (z == 0)
 		z = 1;
 
-	if (!(plot.fill(x, y, x + width, y + height, WIDGET_BASEC) &&
+	if (!(plot.fill(x, y, x + width, y + height, &pstyle_fill_wbasec) &&
 		plot.line(x, y, x + width, y, 1, dark, false, false) &&
 		plot.line(x, y, x, y + height, 1, dark, false, false) &&
 		plot.line(x + width, y, x + width, y + height, 1, lite,
@@ -1314,7 +1333,7 @@ bool html_redraw_checkbox(int x, int y, int width, int height,
 			/* render a solid box instead of a tick */
 			if (!plot.fill(x + z + z, y + z + z,
 				x + width - z, y + height - z,
-				WIDGET_BLOBC))
+				&pstyle_fill_wblobc))
 				return false;
 		} else {
 			/* render a tick, as it'll fit comfortably */
@@ -1448,6 +1467,10 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 	int ox = x, oy = y;
 	int width, height;
 	struct box *parent;
+        plot_style_t pstyle_fill_bg = { 
+            .fill_type = PLOT_OP_TYPE_SOLID,
+            .fill_colour = *background_colour,
+        };
 
 	if (html_redraw_printing && option_remove_backgrounds)
 		return true;
@@ -1579,10 +1602,12 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 		if (background->style->background_color != TRANSPARENT) {
 			*background_colour =
 				background->style->background_color;
+                        pstyle_fill_bg.fill_colour = 
+                            background->style->background_color;
 			if (plot_colour)
 				if (!plot.fill(clip_x0, clip_y0,
 						clip_x1, clip_y1,
-						*background_colour))
+						&pstyle_fill_bg))
 					return false;
 		}
 		/* and plot the image */
@@ -1662,6 +1687,10 @@ bool html_redraw_inline_background(int x, int y, struct box *box, float scale,
 	bool repeat_y = false;
 	bool plot_colour = true;
 	bool plot_content;
+        plot_style_t pstyle_fill_bg = { 
+            .fill_type = PLOT_OP_TYPE_SOLID,
+            .fill_colour = *background_colour,
+        };
 
 	plot_content = (box->background != NULL);
 
@@ -1741,10 +1770,13 @@ bool html_redraw_inline_background(int x, int y, struct box *box, float scale,
 	if (box->style->background_color != TRANSPARENT) {
 		*background_colour =
 			box->style->background_color;
+                pstyle_fill_bg.fill_colour = 
+			box->style->background_color;
+
 		if (plot_colour)
 			if (!plot.fill(clip_x0, clip_y0,
 					clip_x1, clip_y1,
-					*background_colour))
+					&pstyle_fill_bg))
 				return false;
 	}
 	/* and plot the image */
@@ -1933,6 +1965,14 @@ bool html_redraw_scrollbars(struct box *box, float scale,
 	int well_width, bar_left, bar_width;
 	colour c0, c1; /* highlight and shadow colours */
 	int v[6]; /* array of triangle vertices */
+        plot_style_t pstyle_css_scrollbar_bg_colour = { 
+            .fill_type = PLOT_OP_TYPE_SOLID,
+            .fill_colour = css_scrollbar_bg_colour,
+        };
+        plot_style_t pstyle_css_scrollbar_fg_colour = { 
+            .fill_type = PLOT_OP_TYPE_SOLID,
+            .fill_colour = css_scrollbar_fg_colour,
+        };
 
 	box_scrollbar_dimensions(box, padding_width, padding_height, w,
 			&vscroll, &hscroll,
@@ -1976,7 +2016,7 @@ bool html_redraw_scrollbars(struct box *box, float scale,
 				y + padding_height - w + 2,
 				x + w - 2,
 				y + padding_height - 2,
-				css_scrollbar_fg_colour))
+				&pstyle_css_scrollbar_fg_colour))
 			return false;
 		/* left arrow */
 		v[0] = x + w / 4;
@@ -1992,7 +2032,7 @@ bool html_redraw_scrollbars(struct box *box, float scale,
 				y + padding_height - w + 1,
 				x + w + well_width + (vscroll ? 2 : 1),
 				y + padding_height - 1,
-				css_scrollbar_bg_colour))
+				&pstyle_css_scrollbar_bg_colour))
 			return false;
 		/* scroll position indicator bar */
 		RECTANGLE(x + w + bar_left,
@@ -2004,7 +2044,7 @@ bool html_redraw_scrollbars(struct box *box, float scale,
 				y + padding_height - w + 2,
 				x + w + bar_left + bar_width + (vscroll? 1 : 0),
 				y + padding_height - 2,
-				css_scrollbar_fg_colour))
+				&pstyle_css_scrollbar_fg_colour))
 			return false;
 		/* right arrow icon border */
 		RECTANGLE(x + w + well_width + 2,
@@ -2017,7 +2057,7 @@ bool html_redraw_scrollbars(struct box *box, float scale,
 				y + padding_height - w + 2,
 				x + w + well_width + w - (vscroll ? 1 : 2),
 				y + padding_height - 2,
-				css_scrollbar_fg_colour))
+				&pstyle_css_scrollbar_fg_colour))
 			return false;
 		/* right arrow */
 		v[0] = x + w + well_width + w * 3 / 4 + (vscroll ? 1 : 0);
@@ -2048,7 +2088,7 @@ bool html_redraw_scrollbars(struct box *box, float scale,
 				y + 2,
 				x + padding_width - 2,
 				y + w - 2,
-				css_scrollbar_fg_colour))
+				&pstyle_css_scrollbar_fg_colour))
 			return false;
 		/* up arrow */
 		v[0] = x + padding_width - w / 2;
@@ -2064,7 +2104,7 @@ bool html_redraw_scrollbars(struct box *box, float scale,
 				y + w - 1,
 				x + padding_width - 1,
 				y + padding_height - w + 1,
-				css_scrollbar_bg_colour))
+				&pstyle_css_scrollbar_bg_colour))
 			return false;
 		/* scroll position indicator bar */
 		RECTANGLE(x + padding_width - w + 1,
@@ -2076,7 +2116,7 @@ bool html_redraw_scrollbars(struct box *box, float scale,
 				y + w + bar_top + 1,
 				x + padding_width - 2,
 				y + w + bar_top + bar_height,
-				css_scrollbar_fg_colour))
+				&pstyle_css_scrollbar_fg_colour))
 			return false;
 		/* bottom arrow background */
 		RECTANGLE(x + padding_width - w + 1,
@@ -2088,7 +2128,7 @@ bool html_redraw_scrollbars(struct box *box, float scale,
 				y + padding_height - w + 2,
 				x + padding_width - 2,
 				y + padding_height - 2,
-				css_scrollbar_fg_colour))
+				&pstyle_css_scrollbar_fg_colour))
 			return false;
 		/* down arrow */
 		v[0] = x + padding_width - w / 2;

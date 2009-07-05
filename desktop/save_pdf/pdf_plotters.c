@@ -50,7 +50,7 @@ static bool pdf_plot_rectangle(int x0, int y0, int width, int height,
 static bool pdf_plot_line(int x0, int y0, int x1, int y1, int width,
 		colour c, bool dotted, bool dashed);
 static bool pdf_plot_polygon(const int *p, unsigned int n, colour fill);
-static bool pdf_plot_fill(int x0, int y0, int x1, int y1, colour c);
+static bool pdf_plot_fill(int x0, int y0, int x1, int y1, plot_style_t *style);
 static bool pdf_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
 static bool pdf_plot_text(int x, int y, const struct css_style *style,
@@ -214,13 +214,13 @@ bool pdf_plot_polygon(const int *p, unsigned int n, colour fill)
 	return true;
 }
 
-bool pdf_plot_fill(int x0, int y0, int x1, int y1, colour c)
+bool pdf_plot_fill(int x0, int y0, int x1, int y1, plot_style_t *style)
 {
 #ifdef PDF_DEBUG
-	LOG(("%d %d %d %d %f %X", x0, y0, x1, y1, page_height - y0, c));
+	LOG(("%d %d %d %d %f %X", x0, y0, x1, y1, page_height - y0, style->fill_colour));
 #endif
 
-	apply_clip_and_mode(false, c, TRANSPARENT, 0., DashPattern_eNone);
+	apply_clip_and_mode(false, style->fill_colour, TRANSPARENT, 0., DashPattern_eNone);
 
 	/*Normalize boundaries of the area - to prevent overflows.
 	  It is needed only in a few functions, where integers are subtracted.
