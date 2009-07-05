@@ -509,7 +509,7 @@ void ami_openscreen(void)
 			if(screenmodereq = AllocAslRequest(ASL_ScreenModeRequest,NULL))
 			{
 				AslRequestTags(screenmodereq,
-						ASLSM_MinDepth,24,
+						ASLSM_MinDepth,16,
 						ASLSM_MaxDepth,32,
 						TAG_DONE);
 
@@ -593,8 +593,7 @@ void gui_init2(int argc, char** argv)
 		if(!option_direct_render)
 		{
 			glob.bm = p96AllocBitMap(scrn->Width,scrn->Width,32,
-						BMF_CLEAR | BMF_DISPLAYABLE | BMF_INTERLEAVED,
-						scrn->RastPort.BitMap,RGBFB_A8R8G8B8);
+						BMF_INTERLEAVED, NULL, RGBFB_A8R8G8B8);
 
 			if(!glob.bm) warn_user("NoMemory","");
 
