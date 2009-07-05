@@ -16,6 +16,8 @@ http://www.netsurf-browser.org
 @{"Hotlist menu        " link Hotlist}
 @{"Local MIME types    " link MIMETypes}
 
+@{"Optimising for speed" link Speed}
+
 @{"Credits             " link Contact}
 @endnode
 
@@ -137,6 +139,18 @@ The Installer script will set the MIMETYPE tooltype on basic relevant default fi
 * If the file does not have an icon, check:
 1. The file type is showing in DefIcons Prefs editor
 2. The icon ENVARC:Sys/def_<filetype> contains the MIMETYPE tooltype.
+@endnode
+
+@node Speed "Optimising for speed"
+There are a number of options which can be changed that will affect the speed of NetSurf's rendering.  Here are a list of the fastest settings which may help decrease rendering time on slower platforms:
+
+@{lindent 2}* Ensure NetSurf is running on a @{b}32-bit screen@{ub} if possible.  NetSurf down-converts from 32-bit ARGB for display, which can impact performance.@{lindent}
+
+@{lindent 2}* In preferences, General tab, enable @{b}Fast scrolling@{ub}.@{lindent}
+
+@{lindent 2}* In preferences, Rendering tab set:
+@{b}Cache native versions@{ub} to @{b}Scaled@{ub} (or preferably @{b}All@{ub}, but this will use more graphics mem, and scaling images is a bigger performance hit)
+@{b}Deselect @{b}Higher quality scaling@{ub}, this will be very slow if not done in hardware.@{lindent}
 @endnode
 
 @node contact "Credits"
