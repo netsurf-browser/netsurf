@@ -135,10 +135,10 @@ bool html_redraw(struct content *c, int x, int y,
 {
 	struct box *box;
 	bool result, want_knockout;
-        plot_style_t pstyle_fill_bg = { 
-            .fill_type = PLOT_OP_TYPE_SOLID,
-            .fill_colour = background_colour,
-        };
+	plot_style_t pstyle_fill_bg = {
+		.fill_type = PLOT_OP_TYPE_SOLID,
+		.fill_colour = background_colour,
+	};
 
 	box = c->data.html.layout;
 	assert(box);
@@ -301,7 +301,7 @@ bool html_redraw_box(struct box *box,
 
 	/* if visibility is hidden render children only */
 	if (box->style && box->style->visibility == CSS_VISIBILITY_HIDDEN) {
-	  	if ((plot.group_start) && (!plot.group_start("hidden box")))
+		if ((plot.group_start) && (!plot.group_start("hidden box")))
 			return false;
 		if (!html_redraw_box_children(box, x_parent, y_parent,
 				x0, y0, x1, y1, scale,
@@ -810,7 +810,7 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 			bool clip_changed = false;
 			bool text_visible = true;
 			int startx, endx;
-                        plot_style_t *pstyle_fill_hback = plot_style_fill_white; 
+			plot_style_t *pstyle_fill_hback = plot_style_fill_white;
 
 			if (end_idx > utf8_len) {
 				/* adjust for trailing space, not present in
@@ -855,12 +855,12 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 			/* decide whether highlighted portion is to be
 			 * white-on-black or black-on-white */
 			if ((current_background_color & 0x808080) == 0x808080)
-                            pstyle_fill_hback = plot_style_fill_black;
+				pstyle_fill_hback = plot_style_fill_black;
 
 			/* highlighted portion */
 			if (!plot.fill(x + startx, y, x + endx,
-                                       y + height * scale, 
-                                       pstyle_fill_hback))
+					y + height * scale,
+					pstyle_fill_hback))
 				return false;
 
 			if (start_idx > 0) {
@@ -879,9 +879,9 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 
 			if (text_visible &&
 				!plot.text(x, y + (int) (height * 0.75 * scale),
-                                           style, utf8_text, endtxt_idx,
-                                           pstyle_fill_hback->fill_colour, 
-                                           pstyle_fill_hback->fill_colour ^ 0xffffff))
+						style, utf8_text, endtxt_idx,
+						pstyle_fill_hback->fill_colour,
+						pstyle_fill_hback->fill_colour ^						0xffffff))
 				return false;
 
 			/* draw any text succeeding highlighted portion */
@@ -1287,15 +1287,15 @@ colour html_redraw_aa(colour c0, colour c1)
 #define WIDGET_BLOBC 0x000000
 
 /** plot style for checkbox base. */
-static plot_style_t pstyle_fill_wbasec = { 
-    .fill_type = PLOT_OP_TYPE_SOLID,
-    .fill_colour = WIDGET_BASEC,
+static plot_style_t pstyle_fill_wbasec = {
+	.fill_type = PLOT_OP_TYPE_SOLID,
+	.fill_colour = WIDGET_BASEC,
 };
 
 /** plot style for checkbox background. */
-static plot_style_t pstyle_fill_wblobc = { 
-    .fill_type = PLOT_OP_TYPE_SOLID,
-    .fill_colour = WIDGET_BLOBC,
+static plot_style_t pstyle_fill_wblobc = {
+	.fill_type = PLOT_OP_TYPE_SOLID,
+	.fill_colour = WIDGET_BLOBC,
 };
 
 /**
@@ -1467,10 +1467,10 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 	int ox = x, oy = y;
 	int width, height;
 	struct box *parent;
-        plot_style_t pstyle_fill_bg = { 
-            .fill_type = PLOT_OP_TYPE_SOLID,
-            .fill_colour = *background_colour,
-        };
+	plot_style_t pstyle_fill_bg = {
+		.fill_type = PLOT_OP_TYPE_SOLID,
+		.fill_colour = *background_colour,
+	};
 
 	if (html_redraw_printing && option_remove_backgrounds)
 		return true;
@@ -1601,9 +1601,9 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 		/* plot the background colour */
 		if (background->style->background_color != TRANSPARENT) {
 			*background_colour =
-				background->style->background_color;
-                        pstyle_fill_bg.fill_colour = 
-                            background->style->background_color;
+					background->style->background_color;
+			pstyle_fill_bg.fill_colour =
+					background->style->background_color;
 			if (plot_colour)
 				if (!plot.fill(clip_x0, clip_y0,
 						clip_x1, clip_y1,
@@ -1687,10 +1687,10 @@ bool html_redraw_inline_background(int x, int y, struct box *box, float scale,
 	bool repeat_y = false;
 	bool plot_colour = true;
 	bool plot_content;
-        plot_style_t pstyle_fill_bg = { 
-            .fill_type = PLOT_OP_TYPE_SOLID,
-            .fill_colour = *background_colour,
-        };
+	plot_style_t pstyle_fill_bg = {
+		.fill_type = PLOT_OP_TYPE_SOLID,
+		.fill_colour = *background_colour,
+	};
 
 	plot_content = (box->background != NULL);
 
@@ -1769,9 +1769,9 @@ bool html_redraw_inline_background(int x, int y, struct box *box, float scale,
 	/* plot the background colour */
 	if (box->style->background_color != TRANSPARENT) {
 		*background_colour =
-			box->style->background_color;
-                pstyle_fill_bg.fill_colour = 
-			box->style->background_color;
+				box->style->background_color;
+		pstyle_fill_bg.fill_colour =
+				box->style->background_color;
 
 		if (plot_colour)
 			if (!plot.fill(clip_x0, clip_y0,
@@ -1965,14 +1965,14 @@ bool html_redraw_scrollbars(struct box *box, float scale,
 	int well_width, bar_left, bar_width;
 	colour c0, c1; /* highlight and shadow colours */
 	int v[6]; /* array of triangle vertices */
-        plot_style_t pstyle_css_scrollbar_bg_colour = { 
-            .fill_type = PLOT_OP_TYPE_SOLID,
-            .fill_colour = css_scrollbar_bg_colour,
-        };
-        plot_style_t pstyle_css_scrollbar_fg_colour = { 
-            .fill_type = PLOT_OP_TYPE_SOLID,
-            .fill_colour = css_scrollbar_fg_colour,
-        };
+	plot_style_t pstyle_css_scrollbar_bg_colour = {
+		.fill_type = PLOT_OP_TYPE_SOLID,
+		.fill_colour = css_scrollbar_bg_colour,
+	};
+	plot_style_t pstyle_css_scrollbar_fg_colour = {
+		.fill_type = PLOT_OP_TYPE_SOLID,
+		.fill_colour = css_scrollbar_fg_colour,
+	};
 
 	box_scrollbar_dimensions(box, padding_width, padding_height, w,
 			&vscroll, &hscroll,
