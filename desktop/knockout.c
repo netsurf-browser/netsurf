@@ -76,19 +76,19 @@
 #define KNOCKOUT_POLYGONS 3072	/* 4 bytes each */
 
 /** Global fill styles - used everywhere, should they be here? */
-static plot_style_t plot_style_fill_white_static = { 
-    .fill_type = PLOT_OP_TYPE_SOLID,
-    .fill_colour = 0xffffff,
+static plot_style_t plot_style_fill_white_static = {
+	.fill_type = PLOT_OP_TYPE_SOLID,
+	.fill_colour = 0xffffff,
 };
 
-static plot_style_t plot_style_fill_red_static = { 
-    .fill_type = PLOT_OP_TYPE_SOLID,
-    .fill_colour = 0x000000ff,
+static plot_style_t plot_style_fill_red_static = {
+	.fill_type = PLOT_OP_TYPE_SOLID,
+	.fill_colour = 0x000000ff,
 };
 
-static plot_style_t plot_style_fill_black_static = { 
-    .fill_type = PLOT_OP_TYPE_SOLID,
-    .fill_colour = 0x0,
+static plot_style_t plot_style_fill_black_static = {
+	.fill_type = PLOT_OP_TYPE_SOLID,
+	.fill_colour = 0x0,
 };
 
 plot_style_t *plot_style_fill_white = &plot_style_fill_white_static;
@@ -247,7 +247,7 @@ struct knockout_entry {
 			int height;
 			struct bitmap *bitmap;
 			colour bg;
-                        bitmap_flags_t flags;
+			bitmap_flags_t flags;
 		} bitmap;
 		struct {
 			const char *name;
@@ -280,12 +280,12 @@ static int nested_depth = 0;
  */
 bool knockout_plot_start(struct plotter_table *plotter)
 {
-  	/* check if we're recursing */
-  	if (nested_depth++ > 0) {
-  	  	/* we should already have the knockout renderer as default */
-  		assert(plotter->rectangle == knockout_plotters.rectangle);
-  		return true;
-  	}
+	/* check if we're recursing */
+	if (nested_depth++ > 0) {
+		/* we should already have the knockout renderer as default */
+		assert(plotter->rectangle == knockout_plotters.rectangle);
+		return true;
+	}
 
 	/* end any previous sessions */
 	if (knockout_entry_cur > 0)
@@ -491,33 +491,33 @@ void knockout_calculate(int x0, int y0, int x1, int y1, struct knockout_box *own
 		box = owner->child;
 
 	for (parent = box; parent; parent = parent->next) {
-	  	/* permanently delink deleted nodes */
+		/* permanently delink deleted nodes */
 		if (parent->deleted) {
-		  	if (prev) {
-		  	  	/* not the first valid element: just skip future */
-		  		prev->next = parent->next;
-		  	} else {
-		  	  	if (owner) {
-		  	  		/* first valid element: update child reference */
-		  	  		owner->child = parent->next;
-		  	  		/* have we deleted all child nodes? */
-		  	  		if (!owner->child)
-		  	  			owner->deleted = true;
-		  	  	} else {
-		  	  	  	/* we are the head of the list */
-		  	  	  	knockout_list = parent->next;
-		  	  	}
-		  	}
+			if (prev) {
+				/* not the first valid element: just skip future */
+				prev->next = parent->next;
+			} else {
+				if (owner) {
+					/* first valid element: update child reference */
+					owner->child = parent->next;
+					/* have we deleted all child nodes? */
+					if (!owner->child)
+						owner->deleted = true;
+				} else {
+					/* we are the head of the list */
+					knockout_list = parent->next;
+				}
+			}
 			continue;
 		} else {
-		  	prev = parent;
+			prev = parent;
 		}
 
 		/* get the parent dimensions */
-	  	nx0 = parent->bbox.x0;
-	  	ny0 = parent->bbox.y0;
-	  	nx1 = parent->bbox.x1;
-	  	ny1 = parent->bbox.y1;
+		nx0 = parent->bbox.x0;
+		ny0 = parent->bbox.y0;
+		nx1 = parent->bbox.x1;
+		ny1 = parent->bbox.y1;
 
 		/* reject non-overlapping boxes */
 		if ((nx0 >= x1) || (nx1 <= x0) || (ny0 >= y1) || (ny1 <= y0))
@@ -541,50 +541,50 @@ void knockout_calculate(int x0, int y0, int x1, int y1, struct knockout_box *own
 
 			/* clip top */
 			if (y1 < ny1) {
-			  	knockout_boxes[knockout_box_cur].bbox.x0 = nx0;
-			  	knockout_boxes[knockout_box_cur].bbox.y0 = y1;
-			  	knockout_boxes[knockout_box_cur].bbox.x1 = nx1;
-			  	knockout_boxes[knockout_box_cur].bbox.y1 = ny1;
-			  	knockout_boxes[knockout_box_cur].deleted = false;
-			  	knockout_boxes[knockout_box_cur].child = NULL;
-			  	knockout_boxes[knockout_box_cur].next = parent->child;
+				knockout_boxes[knockout_box_cur].bbox.x0 = nx0;
+				knockout_boxes[knockout_box_cur].bbox.y0 = y1;
+				knockout_boxes[knockout_box_cur].bbox.x1 = nx1;
+				knockout_boxes[knockout_box_cur].bbox.y1 = ny1;
+				knockout_boxes[knockout_box_cur].deleted = false;
+				knockout_boxes[knockout_box_cur].child = NULL;
+				knockout_boxes[knockout_box_cur].next = parent->child;
 				parent->child = &knockout_boxes[knockout_box_cur++];
 				ny1 = y1;
 			}
 			/* clip bottom */
 			if (y0 > ny0) {
-			  	knockout_boxes[knockout_box_cur].bbox.x0 = nx0;
-			  	knockout_boxes[knockout_box_cur].bbox.y0 = ny0;
-			  	knockout_boxes[knockout_box_cur].bbox.x1 = nx1;
-			  	knockout_boxes[knockout_box_cur].bbox.y1 = y0;
-			  	knockout_boxes[knockout_box_cur].deleted = false;
-			  	knockout_boxes[knockout_box_cur].child = NULL;
-			  	knockout_boxes[knockout_box_cur].next = parent->child;
+				knockout_boxes[knockout_box_cur].bbox.x0 = nx0;
+				knockout_boxes[knockout_box_cur].bbox.y0 = ny0;
+				knockout_boxes[knockout_box_cur].bbox.x1 = nx1;
+				knockout_boxes[knockout_box_cur].bbox.y1 = y0;
+				knockout_boxes[knockout_box_cur].deleted = false;
+				knockout_boxes[knockout_box_cur].child = NULL;
+				knockout_boxes[knockout_box_cur].next = parent->child;
 				parent->child = &knockout_boxes[knockout_box_cur++];
 				ny0 = y0;
 			}
 			/* clip right */
 			if (x1 < nx1) {
-			  	knockout_boxes[knockout_box_cur].bbox.x0 = x1;
-			  	knockout_boxes[knockout_box_cur].bbox.y0 = ny0;
-			  	knockout_boxes[knockout_box_cur].bbox.x1 = nx1;
-			  	knockout_boxes[knockout_box_cur].bbox.y1 = ny1;
-			  	knockout_boxes[knockout_box_cur].deleted = false;
-			  	knockout_boxes[knockout_box_cur].child = NULL;
-			  	knockout_boxes[knockout_box_cur].next = parent->child;
+				knockout_boxes[knockout_box_cur].bbox.x0 = x1;
+				knockout_boxes[knockout_box_cur].bbox.y0 = ny0;
+				knockout_boxes[knockout_box_cur].bbox.x1 = nx1;
+				knockout_boxes[knockout_box_cur].bbox.y1 = ny1;
+				knockout_boxes[knockout_box_cur].deleted = false;
+				knockout_boxes[knockout_box_cur].child = NULL;
+				knockout_boxes[knockout_box_cur].next = parent->child;
 				parent->child = &knockout_boxes[knockout_box_cur++];
 				/* nx1 isn't used again, but if it was it would
 				 * need to be updated to x1 here. */
 			}
 			/* clip left */
 			if (x0 > nx0) {
-			  	knockout_boxes[knockout_box_cur].bbox.x0 = nx0;
-			  	knockout_boxes[knockout_box_cur].bbox.y0 = ny0;
-			  	knockout_boxes[knockout_box_cur].bbox.x1 = x0;
-			  	knockout_boxes[knockout_box_cur].bbox.y1 = ny1;
-			  	knockout_boxes[knockout_box_cur].deleted = false;
-			  	knockout_boxes[knockout_box_cur].child = NULL;
-			  	knockout_boxes[knockout_box_cur].next = parent->child;
+				knockout_boxes[knockout_box_cur].bbox.x0 = nx0;
+				knockout_boxes[knockout_box_cur].bbox.y0 = ny0;
+				knockout_boxes[knockout_box_cur].bbox.x1 = x0;
+				knockout_boxes[knockout_box_cur].bbox.y1 = ny1;
+				knockout_boxes[knockout_box_cur].deleted = false;
+				knockout_boxes[knockout_box_cur].child = NULL;
+				knockout_boxes[knockout_box_cur].next = parent->child;
 				parent->child = &knockout_boxes[knockout_box_cur++];
 				/* nx0 isn't used again, but if it was it would
 				 * need to be updated to x0 here. */
@@ -683,8 +683,8 @@ bool knockout_plot_line(int x0, int y0, int x1, int y1, int width,
 
 bool knockout_plot_polygon(const int *p, unsigned int n, colour fill)
 {
-  	bool success = true;
-  	int *dest;
+	bool success = true;
+	int *dest;
 
 	/* ensure we have sufficient room even when flushed */
 	if (n * 2 >= KNOCKOUT_POLYGONS) {
@@ -724,13 +724,13 @@ bool knockout_plot_fill(int x0, int y0, int x1, int y1, plot_style_t *plot_style
 	int kx0, ky0, kx1, ky1;
 
 	/* get our bounds */
- 	kx0 = (x0 > clip_x0_cur) ? x0 : clip_x0_cur;
- 	ky0 = (y0 > clip_y0_cur) ? y0 : clip_y0_cur;
-  	kx1 = (x1 < clip_x1_cur) ? x1 : clip_x1_cur;
-  	ky1 = (y1 < clip_y1_cur) ? y1 : clip_y1_cur;
- 	if ((kx0 > clip_x1_cur) || (kx1 < clip_x0_cur) ||
- 			(ky0 > clip_y1_cur) || (ky1 < clip_y0_cur))
- 		return true;
+	kx0 = (x0 > clip_x0_cur) ? x0 : clip_x0_cur;
+	ky0 = (y0 > clip_y0_cur) ? y0 : clip_y0_cur;
+	kx1 = (x1 < clip_x1_cur) ? x1 : clip_x1_cur;
+	ky1 = (y1 < clip_y1_cur) ? y1 : clip_y1_cur;
+	if ((kx0 > clip_x1_cur) || (kx1 < clip_x0_cur) ||
+			(ky0 > clip_y1_cur) || (ky1 < clip_y0_cur))
+		return true;
 
 	/* fills both knock out and get knocked out */
 	knockout_calculate(kx0, ky0, kx1, ky1, NULL);
@@ -835,26 +835,26 @@ bool knockout_plot_bitmap(int x, int y, int width, int height,
 	int kx0, ky0, kx1, ky1;
 
 	/* get our bounds */
-  	kx0 = clip_x0_cur;
-  	ky0 = clip_y0_cur;
-  	kx1 = clip_x1_cur;
-  	ky1 = clip_y1_cur;
-  	if (!(flags & BITMAPF_REPEAT_X)) {
-  		if (x > kx0)
-  			kx0 = x;
-  		if (x + width < kx1)
-  			kx1 = x + width;
- 		if ((kx0 > clip_x1_cur) || (kx1 < clip_x0_cur))
-  			return true;
-  	}
-  	if (!(flags & BITMAPF_REPEAT_Y)) {
-  		if (y > ky0)
-  			ky0 = y;
-  		if (y + height < ky1)
-  			ky1 = y + height;
-  		if ((ky0 > clip_y1_cur) || (ky1 < clip_y0_cur))
-  			return true;
-  	}
+	kx0 = clip_x0_cur;
+	ky0 = clip_y0_cur;
+	kx1 = clip_x1_cur;
+	ky1 = clip_y1_cur;
+	if (!(flags & BITMAPF_REPEAT_X)) {
+		if (x > kx0)
+			kx0 = x;
+		if (x + width < kx1)
+			kx1 = x + width;
+		if ((kx0 > clip_x1_cur) || (kx1 < clip_x0_cur))
+			return true;
+	}
+	if (!(flags & BITMAPF_REPEAT_Y)) {
+		if (y > ky0)
+			ky0 = y;
+		if (y + height < ky1)
+			ky1 = y + height;
+		if ((ky0 > clip_y1_cur) || (ky1 < clip_y0_cur))
+			return true;
+	}
 
 	/* tiled bitmaps both knock out and get knocked out */
 	if (bitmap_get_opaque(bitmap))
