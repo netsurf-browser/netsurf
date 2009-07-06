@@ -340,7 +340,7 @@ bool textplain_redraw(struct content *c, int x, int y,
 	struct textplain_line *line = c->data.textplain.physical_line;
 	struct rect clip;
 	size_t length;
-        plot_style_t *plot_style_highlight;
+	plot_style_t *plot_style_highlight;
 
 	clip.x0 = clip_x0;
 	clip.y0 = clip_y0;
@@ -366,9 +366,9 @@ bool textplain_redraw(struct content *c, int x, int y,
 
 	/* choose a suitable background colour for any highlighted text */
 	if ((background_colour & 0x808080) == 0x808080)
-            plot_style_highlight = plot_style_fill_black;
-        else
-            plot_style_highlight = plot_style_fill_white;
+		plot_style_highlight = plot_style_fill_black;
+	else
+		plot_style_highlight = plot_style_fill_white;
 
 	x += MARGIN * scale;
 	y += MARGIN * scale;
@@ -437,8 +437,8 @@ bool textplain_redraw(struct content *c, int x, int y,
 
 				if (highlighted) {
 					int sy = y + (lineno * scaled_line_height);
-					if (!plot.fill(tx, sy, 
-                                                       ntx, sy + scaled_line_height,
+					if (!plot.fill(tx, sy,
+							ntx, sy + scaled_line_height,
 							plot_style_highlight))
 						return false;
 				}
