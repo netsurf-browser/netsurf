@@ -194,6 +194,25 @@ struct text_area *textarea_create(int x, int y, int width, int height,
 
 
 /**
+ * Change the position of a textarea. The text area is redrawn
+ *
+ * \param ta  the textarea to change position of
+ * \param x   X coordinate of the the new position
+ * \param y   Y coordinate of the the new position
+ */
+void textarea_set_position(struct text_area *ta, int x, int y)
+{
+	ta->x = x;
+	ta->y = y;	
+	ta->redraw_start_callback(ta->data);
+	textarea_redraw(ta, ta->x, ta->y, ta->x + ta->vis_width,
+			ta->y + ta->vis_height);
+	textarea_set_caret(ta, textarea_get_caret(ta));
+	ta->redraw_start_callback(ta->data);	
+}
+
+
+/**
  * Destroy a text area
  *
  * \param ta Text area to destroy
@@ -710,6 +729,10 @@ bool textarea_reflow(struct text_area *ta, unsigned int line)
  * Handle redraw requests for text areas
  *
  * \param redraw Redraw request block
+ * \param x0	 left X coordinate of redraw area
+ * \param y0	 top Y coordinate of redraw area
+ * \param x1	 right X coordinate of redraw area
+ * \param y1	 bottom Y coordinate of redraw area
  */
 void textarea_redraw(struct text_area *ta, int x0, int y0, int x1, int y1)
 {
