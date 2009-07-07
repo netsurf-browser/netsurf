@@ -138,7 +138,6 @@ void ami_clearclipreg(struct RastPort *rp);
 void ami_do_redraw(struct gui_window_2 *g);
 STRPTR ami_locale_langs(void);
 
-struct RastPort *currp;
 struct TextFont *origrpfont;
 struct MinList *window_list;
 struct Screen *scrn;
@@ -148,5 +147,6 @@ struct FileRequester *savereq;
 struct MsgPort *sport;
 bool win_destroyed;
 struct browser_window *curbw;
-struct gui_globals glob;
+struct gui_globals *glob;
+struct gui_globals browserglob;
 #endif

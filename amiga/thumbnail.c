@@ -32,12 +32,13 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 {
 	struct BitScaleArgs bsa;
 
-	bitmap->nativebm = p96AllocBitMap(bitmap->width,bitmap->height,32,
-	BMF_CLEAR | BMF_DISPLAYABLE | BMF_INTERLEAVED,glob.bm,RGBFB_A8R8G8B8);
+	bitmap->nativebm = p96AllocBitMap(bitmap->width, bitmap->height, 32,
+							BMF_CLEAR | BMF_DISPLAYABLE | BMF_INTERLEAVED,
+							browserglob.bm, RGBFB_A8R8G8B8);
 
 	bitmap->nativebmwidth = bitmap->width;
 	bitmap->nativebmheight = bitmap->height;
-	ami_clearclipreg(currp);
+	ami_clearclipreg(&browserglob.rp);
 	content_redraw(content, 0, 0, content->width, content->width,
 	0, 0, content->width, content->width, 1.0, 0xFFFFFF);
 
@@ -46,7 +47,7 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 		uint32 flags = COMPFLAG_IgnoreDestAlpha | COMPFLAG_SrcAlphaOverride;
 		if(option_scale_quality) flags |= COMPFLAG_SrcFilter;
 
-		CompositeTags(COMPOSITE_Src,glob.bm,bitmap->nativebm,
+		CompositeTags(COMPOSITE_Src,browserglob.bm,bitmap->nativebm,
 					COMPTAG_ScaleX,COMP_FLOAT_TO_FIX(bitmap->width/content->width),
 					COMPTAG_ScaleY,COMP_FLOAT_TO_FIX(bitmap->height/content->width),
 					COMPTAG_Flags,flags,
@@ -72,7 +73,7 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 		bsa.bsa_XDestFactor = bitmap->width;
 		bsa.bsa_YSrcFactor = content->width;
 		bsa.bsa_YDestFactor = bitmap->height;
-		bsa.bsa_SrcBitMap = glob.bm;
+		bsa.bsa_SrcBitMap = browserglob.bm;
 		bsa.bsa_DestBitMap = bitmap->nativebm;
 		bsa.bsa_Flags = 0;
 		if(option_scale_quality) bsa.bsa_Flags = BSAF_AVERAGE;

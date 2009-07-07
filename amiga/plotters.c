@@ -83,7 +83,7 @@ void ami_cairo_set_colour(cairo_t *cr,colour c)
 	g = (c & 0xff00) >> 8;
 	b = (c & 0xff0000) >> 16;
 
-	cairo_set_source_rgba(glob.cr, r / 255.0,
+	cairo_set_source_rgba(glob->cr, r / 255.0,
 			g / 255.0, b / 255.0, 1.0);
 }
 
@@ -91,33 +91,33 @@ void ami_cairo_set_solid(cairo_t *cr)
 {
 	double dashes = 0;
 	
-	cairo_set_dash(glob.cr, &dashes, 0, 0);
+	cairo_set_dash(glob->cr, &dashes, 0, 0);
 }
 
 void ami_cairo_set_dotted(cairo_t *cr)
 {
 	double cdashes = 1;
 
-	cairo_set_dash(glob.cr, &cdashes, 1, 0);
+	cairo_set_dash(glob->cr, &cdashes, 1, 0);
 }
 
 void ami_cairo_set_dashed(cairo_t *cr)
 {
 	double cdashes = 3;
 
-	cairo_set_dash(glob.cr, &cdashes, 1, 0);
+	cairo_set_dash(glob->cr, &cdashes, 1, 0);
 }
 #endif
 
 bool ami_clg(colour c)
 {
-	p96RectFill(currp,0,0,scrn->Width-1,scrn->Width-1,
+	p96RectFill(&glob->rp,0,0,scrn->Width-1,scrn->Width-1,
 	p96EncodeColor(RGBFB_A8B8G8R8,c));
 /*
-	SetRPAttrs(currp,RPTAG_BPenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),
+	SetRPAttrs(&glob->rp,RPTAG_BPenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),
 					TAG_DONE);
-	Move(currp,0,0);
-	ClearScreen(currp);
+	Move(&glob->rp,0,0);
+	ClearScreen(&glob->rp);
 */
 	return true;
 }
@@ -126,36 +126,36 @@ bool ami_rectangle(int x0, int y0, int width, int height,
 			int line_width, colour c, bool dotted, bool dashed)
 {
 #ifndef NS_AMIGA_CAIRO_ALL
-	currp->PenWidth = line_width;
-	currp->PenHeight = line_width;
+	glob->rp.PenWidth = line_width;
+	glob->rp.PenHeight = line_width;
 
-	currp->LinePtrn = PATT_LINE;
-	if(dotted) currp->LinePtrn = PATT_DOT;
-	if(dashed) currp->LinePtrn = PATT_DASH;
+	glob->rp.LinePtrn = PATT_LINE;
+	if(dotted) glob->rp.LinePtrn = PATT_DOT;
+	if(dashed) glob->rp.LinePtrn = PATT_DASH;
 
-	SetRPAttrs(currp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),
+	SetRPAttrs(&glob->rp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),
 					TAG_DONE);
-	Move(currp,x0,y0);
-	Draw(currp,x0+width,y0);
-	Draw(currp,x0+width,y0+height);
-	Draw(currp,x0,y0+height);
-	Draw(currp,x0,y0);
+	Move(&glob->rp,x0,y0);
+	Draw(&glob->rp,x0+width,y0);
+	Draw(&glob->rp,x0+width,y0+height);
+	Draw(&glob->rp,x0,y0+height);
+	Draw(&glob->rp,x0,y0);
 
-	currp->PenWidth = 1;
-	currp->PenHeight = 1;
-	currp->LinePtrn = PATT_LINE;
+	glob->rp.PenWidth = 1;
+	glob->rp.PenHeight = 1;
+	glob->rp.LinePtrn = PATT_LINE;
 #else
-	ami_cairo_set_colour(glob.cr,c);
-	if (dotted) ami_cairo_set_dotted(glob.cr);
-        else if (dashed) ami_cairo_set_dashed(glob.cr);
-        else ami_cairo_set_solid(glob.cr);
+	ami_cairo_set_colour(glob->cr,c);
+	if (dotted) ami_cairo_set_dotted(glob->cr);
+        else if (dashed) ami_cairo_set_dashed(glob->cr);
+        else ami_cairo_set_solid(glob->cr);
 
 	if (line_width == 0)
 		line_width = 1;
 
-	cairo_set_line_width(glob.cr, line_width);
-	cairo_rectangle(glob.cr, x0, y0, width, height);
-	cairo_stroke(glob.cr);
+	cairo_set_line_width(glob->cr, line_width);
+	cairo_rectangle(glob->cr, x0, y0, width, height);
+	cairo_stroke(glob->cr);
 #endif
 
 	return true;
@@ -165,34 +165,34 @@ bool ami_line(int x0, int y0, int x1, int y1, int width,
 			colour c, bool dotted, bool dashed)
 {
 #ifndef NS_AMIGA_CAIRO_ALL
-	currp->PenWidth = width;
-	currp->PenHeight = width;
+	glob->rp.PenWidth = width;
+	glob->rp.PenHeight = width;
 
-	currp->LinePtrn = PATT_LINE;
-	if(dotted) currp->LinePtrn = PATT_DOT;
-	if(dashed) currp->LinePtrn = PATT_DASH;
+	glob->rp.LinePtrn = PATT_LINE;
+	if(dotted) glob->rp.LinePtrn = PATT_DOT;
+	if(dashed) glob->rp.LinePtrn = PATT_DASH;
 
-	SetRPAttrs(currp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),
+	SetRPAttrs(&glob->rp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),
 					TAG_DONE);
-	Move(currp,x0,y0);
-	Draw(currp,x1,y1);
+	Move(&glob->rp,x0,y0);
+	Draw(&glob->rp,x1,y1);
 
-	currp->PenWidth = 1;
-	currp->PenHeight = 1;
-	currp->LinePtrn = PATT_LINE;
+	glob->rp.PenWidth = 1;
+	glob->rp.PenHeight = 1;
+	glob->rp.LinePtrn = PATT_LINE;
 #else
-	ami_cairo_set_colour(glob.cr,c);
-	if (dotted) ami_cairo_set_dotted(glob.cr);
-	else if (dashed) ami_cairo_set_dashed(glob.cr);
-	else ami_cairo_set_solid(glob.cr);
+	ami_cairo_set_colour(glob->cr,c);
+	if (dotted) ami_cairo_set_dotted(glob->cr);
+	else if (dashed) ami_cairo_set_dashed(glob->cr);
+	else ami_cairo_set_solid(glob->cr);
 
 	if (width == 0)
 		width = 1;
 
-	cairo_set_line_width(glob.cr, width);
-	cairo_move_to(glob.cr, x0 + 0.5, y0 + 0.5);
-	cairo_line_to(glob.cr, x1 + 0.5, y1 + 0.5);
-	cairo_stroke(glob.cr);
+	cairo_set_line_width(glob->cr, width);
+	cairo_move_to(glob->cr, x0 + 0.5, y0 + 0.5);
+	cairo_line_to(glob->cr, x1 + 0.5, y1 + 0.5);
+	cairo_stroke(glob->cr);
 #endif
 	return true;
 }
@@ -205,31 +205,31 @@ bool ami_polygon(const int *p, unsigned int n, colour fill)
 
 	//DebugPrintF("poly\n");
 
-	SetRPAttrs(currp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,fill),
+	SetRPAttrs(&glob->rp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,fill),
 					RPTAG_OPenColor,p96EncodeColor(RGBFB_A8B8G8R8,fill),
 //					RPTAG_OPenColor,0xffffffff,
 					TAG_DONE);
 
-	AreaMove(currp,p[0],p[1]);
+	AreaMove(&glob->rp,p[0],p[1]);
 
 	for(k=1;k<n;k++)
 	{
-		AreaDraw(currp,p[k*2],p[(k*2)+1]);
+		AreaDraw(&glob->rp,p[k*2],p[(k*2)+1]);
 	}
 
-	AreaEnd(currp);
-	BNDRYOFF(currp);
+	AreaEnd(&glob->rp);
+	BNDRYOFF(&glob->rp);
 #else
-	ami_cairo_set_colour(glob.cr,fill);
-	ami_cairo_set_solid(glob.cr);
+	ami_cairo_set_colour(glob->cr,fill);
+	ami_cairo_set_solid(glob->cr);
 
-	cairo_set_line_width(glob.cr, 0);
-	cairo_move_to(glob.cr, p[0], p[1]);
+	cairo_set_line_width(glob->cr, 0);
+	cairo_move_to(glob->cr, p[0], p[1]);
 	for (k = 1; k != n; k++) {
-		cairo_line_to(glob.cr, p[k * 2], p[k * 2 + 1]);
+		cairo_line_to(glob->cr, p[k * 2], p[k * 2 + 1]);
 	}
-	cairo_fill(glob.cr);
-	cairo_stroke(glob.cr);
+	cairo_fill(glob->cr);
+	cairo_stroke(glob->cr);
 #endif
 
 	return true;
@@ -238,16 +238,16 @@ bool ami_polygon(const int *p, unsigned int n, colour fill)
 bool ami_fill(int x0, int y0, int x1, int y1, plot_style_t *style)
 {
 #ifndef NS_AMIGA_CAIRO_ALL
-	p96RectFill(currp,x0,y0,x1-1,y1-1,
+	p96RectFill(&glob->rp,x0,y0,x1-1,y1-1,
 		p96EncodeColor(RGBFB_A8B8G8R8, style->fill_colour));
 #else
-	ami_cairo_set_colour(glob.cr, style->fill_colour);
-	ami_cairo_set_solid(glob.cr);
+	ami_cairo_set_colour(glob->cr, style->fill_colour);
+	ami_cairo_set_solid(glob->cr);
 
-	cairo_set_line_width(glob.cr, 0);
-	cairo_rectangle(glob.cr, x0, y0, x1 - x0, y1 - y0);
-	cairo_fill(glob.cr);
-	cairo_stroke(glob.cr);
+	cairo_set_line_width(glob->cr, 0);
+	cairo_rectangle(glob->cr, x0, y0, x1 - x0, y1 - y0);
+	cairo_fill(glob->cr);
+	cairo_stroke(glob->cr);
 #endif
 	return true;
 }
@@ -256,10 +256,10 @@ bool ami_clip(int x0, int y0, int x1, int y1)
 {
 	struct Region *reg = NULL;
 
-	if(currp->Layer)
+	if(glob->rp.Layer)
 	{
 
-		reg = InstallClipRegion(currp->Layer,NULL);
+		reg = InstallClipRegion(glob->rp.Layer,NULL);
 
 		if(!reg)
 		{
@@ -267,24 +267,24 @@ bool ami_clip(int x0, int y0, int x1, int y1)
 		}
 		else
 		{
-			ClearRectRegion(reg,&glob.rect);
+			ClearRectRegion(reg,&glob->rect);
 		}
 
-		glob.rect.MinX = x0;
-		glob.rect.MinY = y0;
-		glob.rect.MaxX = x1-1;
-		glob.rect.MaxY = y1-1;
+		glob->rect.MinX = x0;
+		glob->rect.MinY = y0;
+		glob->rect.MaxX = x1-1;
+		glob->rect.MaxY = y1-1;
 
-		OrRectRegion(reg,&glob.rect);
+		OrRectRegion(reg,&glob->rect);
 
-		reg = InstallClipRegion(currp->Layer,reg);
+		reg = InstallClipRegion(glob->rp.Layer,reg);
 		if(reg) DisposeRegion(reg);
 	}
 
 #ifdef NS_AMIGA_CAIRO_ALL
-	cairo_reset_clip(glob.cr);
-	cairo_rectangle(glob.cr, x0, y0, x1 - x0, y1 - y0);
-	cairo_clip(glob.cr);
+	cairo_reset_clip(glob->cr);
+	cairo_rectangle(glob->cr, x0, y0, x1 - x0, y1 - y0);
+	cairo_clip(glob->cr);
 #endif
 	return true;
 }
@@ -292,40 +292,40 @@ bool ami_clip(int x0, int y0, int x1, int y1)
 bool ami_text(int x, int y, const struct css_style *style,
 			const char *text, size_t length, colour bg, colour c)
 {
-	ami_unicode_text(currp,text,length,style,x,y,c);
+	ami_unicode_text(&glob->rp,text,length,style,x,y,c);
 	return true;
 }
 
 bool ami_disc(int x, int y, int radius, colour c, bool filled)
 {
 #ifndef NS_AMIGA_CAIRO_ALL
-	SetRPAttrs(currp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),
+	SetRPAttrs(&glob->rp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),
 					TAG_DONE);
 
 	if(filled)
 	{
-		AreaCircle(currp,x,y,radius);
-		AreaEnd(currp);
+		AreaCircle(&glob->rp,x,y,radius);
+		AreaEnd(&glob->rp);
 	}
 	else
 	{
-		DrawEllipse(currp,x,y,radius,radius); // NB: does not support fill, need to use AreaCircle for that
+		DrawEllipse(&glob->rp,x,y,radius,radius); // NB: does not support fill, need to use AreaCircle for that
 	}
 #else
-	ami_cairo_set_colour(glob.cr,c);
-	ami_cairo_set_solid(glob.cr);
+	ami_cairo_set_colour(glob->cr,c);
+	ami_cairo_set_solid(glob->cr);
 
 	if (filled)
-		cairo_set_line_width(glob.cr, 0);
+		cairo_set_line_width(glob->cr, 0);
 	else
-		cairo_set_line_width(glob.cr, 1);
+		cairo_set_line_width(glob->cr, 1);
 
-	cairo_arc(glob.cr, x, y, radius, 0, M_PI * 2);
+	cairo_arc(glob->cr, x, y, radius, 0, M_PI * 2);
 
 	if (filled)
-		cairo_fill(glob.cr);
+		cairo_fill(glob->cr);
 
-	cairo_stroke(glob.cr);
+	cairo_stroke(glob->cr);
 #endif
 	return true;
 }
@@ -334,23 +334,23 @@ bool ami_arc(int x, int y, int radius, int angle1, int angle2,
 	    		colour c)
 {
 #ifdef NS_AMIGA_CAIRO
-	ami_cairo_set_colour(glob.cr,c);
-	ami_cairo_set_solid(glob.cr);
+	ami_cairo_set_colour(glob->cr,c);
+	ami_cairo_set_solid(glob->cr);
 
-	cairo_set_line_width(glob.cr, 1);
-	cairo_arc(glob.cr, x, y, radius,
+	cairo_set_line_width(glob->cr, 1);
+	cairo_arc(glob->cr, x, y, radius,
 			(angle1 + 90) * (M_PI / 180),
 			(angle2 + 90) * (M_PI / 180));
-	cairo_stroke(glob.cr);
+	cairo_stroke(glob->cr);
 #else
 /* http://www.crbond.com/primitives.htm
 CommonFuncsPPC.lha */
 	//DebugPrintF("arc\n");
 
-	SetRPAttrs(currp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),
+	SetRPAttrs(&glob->rp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),
 					TAG_DONE);
 
-//	DrawArc(currp,x,y,(float)angle1,(float)angle2,radius);
+//	DrawArc(&glob->rp,x,y,(float)angle1,(float)angle2,radius);
 #endif
 
 	return true;
@@ -362,13 +362,13 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 
 	if(!width || !height) return true;
 
-	if(((x + width) < glob.rect.MinX) ||
-		((y + height) < glob.rect.MinY) ||
-		(x > glob.rect.MaxX) ||
-		(y > glob.rect.MaxY))
+	if(((x + width) < glob->rect.MinX) ||
+		((y + height) < glob->rect.MinY) ||
+		(x > glob->rect.MaxX) ||
+		(y > glob->rect.MaxY))
 		return true;
 
-	tbm = ami_getcachenativebm(bitmap,width,height,currp->BitMap);
+	tbm = ami_getcachenativebm(bitmap,width,height,glob->rp.BitMap);
 
 	if(!tbm) return true;
 
@@ -377,12 +377,12 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 		uint32 comptype = COMPOSITE_Src;
 		if(!bitmap->opaque) comptype = COMPOSITE_Src_Over_Dest;
 
-		CompositeTags(comptype,tbm,currp->BitMap,
+		CompositeTags(comptype,tbm,glob->rp.BitMap,
 					COMPTAG_Flags,COMPFLAG_IgnoreDestAlpha,
-					COMPTAG_DestX,glob.rect.MinX,
-					COMPTAG_DestY,glob.rect.MinY,
-					COMPTAG_DestWidth,glob.rect.MaxX - glob.rect.MinX + 1,
-					COMPTAG_DestHeight,glob.rect.MaxY - glob.rect.MinY + 1,
+					COMPTAG_DestX,glob->rect.MinX,
+					COMPTAG_DestY,glob->rect.MinY,
+					COMPTAG_DestWidth,glob->rect.MaxX - glob->rect.MinX + 1,
+					COMPTAG_DestHeight,glob->rect.MaxY - glob->rect.MinY + 1,
 					COMPTAG_SrcWidth,width,
 					COMPTAG_SrcHeight,height,
 					COMPTAG_OffsetX,x,
@@ -394,7 +394,7 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 		BltBitMapTags(BLITA_Width,width,
 						BLITA_Height,height,
 						BLITA_Source,tbm,
-						BLITA_Dest,currp,
+						BLITA_Dest,&glob->rp,
 						BLITA_DestX,x,
 						BLITA_DestY,y,
 						BLITA_SrcType,BLITT_BITMAP,
@@ -426,7 +426,7 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 	if(!(repeat_x || repeat_y))
 		return ami_bitmap(x, y, width, height, bitmap);
 
-	tbm = ami_getcachenativebm(bitmap,width,height,currp->BitMap);
+	tbm = ami_getcachenativebm(bitmap,width,height,glob->rp.BitMap);
 
 	if(!tbm) return true;
 
@@ -446,8 +446,8 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 
 	if(repeat_x)
 	{
-		xf = glob.rect.MaxX;
-		xm = glob.rect.MinX;
+		xf = glob->rect.MaxX;
+		xm = glob->rect.MinX;
 	}
 	else
 	{
@@ -457,8 +457,8 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 
 	if(repeat_y)
 	{
-		yf = glob.rect.MaxY;
-		ym = glob.rect.MinY;
+		yf = glob->rect.MaxY;
+		ym = glob->rect.MinY;
 	}
 	else
 	{
@@ -488,11 +488,11 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 		bfh->h_Data = &bfbm;
 	}
 
-	InstallLayerHook(currp->Layer,bfh);
+	InstallLayerHook(glob->rp.Layer,bfh);
 
-	EraseRect(currp,xm,ym,xf,yf);
+	EraseRect(&glob->rp,xm,ym,xf,yf);
 
-	InstallLayerHook(currp->Layer,LAYERS_NOBACKFILL);
+	InstallLayerHook(glob->rp.Layer,LAYERS_NOBACKFILL);
 	if(bitmap->opaque) DeleteBackFillHook(bfh);
 		else FreeVec(bfh);
 
@@ -580,11 +580,11 @@ bool ami_path(const float *p, unsigned int n, colour fill, float width,
 	}
 
 	/* Save CTM */
-	cairo_get_matrix(glob.cr, &old_ctm);
+	cairo_get_matrix(glob->cr, &old_ctm);
 
 	/* Set up line style and width */
-	cairo_set_line_width(glob.cr, 1);
-	ami_cairo_set_solid(glob.cr);
+	cairo_set_line_width(glob->cr, 1);
+	ami_cairo_set_solid(glob->cr);
 
 	/* Load new CTM */
 	n_ctm.xx = transform[0];
@@ -594,52 +594,52 @@ bool ami_path(const float *p, unsigned int n, colour fill, float width,
 	n_ctm.x0 = transform[4];
 	n_ctm.y0 = transform[5];
 
-	cairo_set_matrix(glob.cr, &n_ctm);
+	cairo_set_matrix(glob->cr, &n_ctm);
 
 	/* Construct path */
 	for (i = 0; i < n; ) {
 		if (p[i] == PLOTTER_PATH_MOVE) {
-			cairo_move_to(glob.cr, p[i+1], p[i+2]);
+			cairo_move_to(glob->cr, p[i+1], p[i+2]);
 			i += 3;
 		} else if (p[i] == PLOTTER_PATH_CLOSE) {
-			cairo_close_path(glob.cr);
+			cairo_close_path(glob->cr);
 			i++;
 		} else if (p[i] == PLOTTER_PATH_LINE) {
-			cairo_line_to(glob.cr, p[i+1], p[i+2]);
+			cairo_line_to(glob->cr, p[i+1], p[i+2]);
 			i += 3;
 		} else if (p[i] == PLOTTER_PATH_BEZIER) {
-			cairo_curve_to(glob.cr, p[i+1], p[i+2],
+			cairo_curve_to(glob->cr, p[i+1], p[i+2],
 					p[i+3], p[i+4],
 					p[i+5], p[i+6]);
 			i += 7;
 		} else {
 			LOG(("bad path command %f", p[i]));
 			/* Reset matrix for safety */
-			cairo_set_matrix(glob.cr, &old_ctm);
+			cairo_set_matrix(glob->cr, &old_ctm);
 			return false;
 		}
 	}
 
 	/* Restore original CTM */
-	cairo_set_matrix(glob.cr, &old_ctm);
+	cairo_set_matrix(glob->cr, &old_ctm);
 
 	/* Now draw path */
 	if (fill != TRANSPARENT) {
-		ami_cairo_set_colour(glob.cr,fill);
+		ami_cairo_set_colour(glob->cr,fill);
 
 		if (c != TRANSPARENT) {
 			/* Fill & Stroke */
-			cairo_fill_preserve(glob.cr);
-			ami_cairo_set_colour(glob.cr,c);
-			cairo_stroke(glob.cr);
+			cairo_fill_preserve(glob->cr);
+			ami_cairo_set_colour(glob->cr,c);
+			cairo_stroke(glob->cr);
 		} else {
 			/* Fill only */
-			cairo_fill(glob.cr);
+			cairo_fill(glob->cr);
 		}
 	} else if (c != TRANSPARENT) {
 		/* Stroke only */
-		ami_cairo_set_colour(glob.cr,c);
-		cairo_stroke(glob.cr);
+		ami_cairo_set_colour(glob->cr,c);
+		cairo_stroke(glob->cr);
 	}
 #endif
 	return true;

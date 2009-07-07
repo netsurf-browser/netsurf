@@ -586,21 +586,21 @@ void gui_init2(int argc, char** argv)
 		 * Height is set to screen width to give enough space for thumbnails *
 		 * Also applies to the further gfx/layers functions and memory below */
 
-		glob.layerinfo = NewLayerInfo();
-		glob.areabuf = AllocVec(100,MEMF_PRIVATE | MEMF_CLEAR);
-		glob.tmprasbuf = AllocVec(scrn->Width*scrn->Width,MEMF_PRIVATE | MEMF_CLEAR);
+		browserglob.layerinfo = NewLayerInfo();
+		browserglob.areabuf = AllocVec(100,MEMF_PRIVATE | MEMF_CLEAR);
+		browserglob.tmprasbuf = AllocVec(scrn->Width*scrn->Width,MEMF_PRIVATE | MEMF_CLEAR);
 
 		if(!option_direct_render)
 		{
-			glob.bm = p96AllocBitMap(scrn->Width,scrn->Width,32,
+			browserglob.bm = p96AllocBitMap(scrn->Width,scrn->Width,32,
 						BMF_INTERLEAVED, NULL, RGBFB_A8R8G8B8);
 
-			if(!glob.bm) warn_user("NoMemory","");
+			if(!browserglob.bm) warn_user("NoMemory","");
 
-			InitRastPort(&glob.rp);
-			glob.rp.BitMap = glob.bm;
+			InitRastPort(&browserglob.rp);
+			browserglob.rp.BitMap = browserglob.bm;
 
-			ami_init_layers(&glob.rp);
+			ami_init_layers(&browserglob.rp);
 		}
 		/* init shared bitmaps */
 	}
@@ -688,34 +688,34 @@ void ami_init_layers(struct RastPort *rp)
 {
 	SetDrMd(rp,BGBACKFILL);
 
-	rp->Layer = CreateUpfrontLayer(glob.layerinfo,rp->BitMap,0,0,
+	rp->Layer = CreateUpfrontLayer(browserglob.layerinfo,rp->BitMap,0,0,
 					scrn->Width-1,scrn->Width-1,LAYERSIMPLE,NULL);
 
 	InstallLayerHook(rp->Layer,LAYERS_NOBACKFILL);
 
 	rp->AreaInfo = AllocVec(sizeof(struct AreaInfo),MEMF_PRIVATE | MEMF_CLEAR);
 
-	if((!glob.areabuf) || (!rp->AreaInfo))	warn_user("NoMemory","");
+	if((!browserglob.areabuf) || (!rp->AreaInfo))	warn_user("NoMemory","");
 
-	InitArea(rp->AreaInfo,glob.areabuf,100/5);
+	InitArea(rp->AreaInfo,browserglob.areabuf,100/5);
 	rp->TmpRas = AllocVec(sizeof(struct TmpRas),MEMF_PRIVATE | MEMF_CLEAR);
 
-	if((!glob.tmprasbuf) || (!rp->TmpRas))	warn_user("NoMemory","");
+	if((!browserglob.tmprasbuf) || (!rp->TmpRas))	warn_user("NoMemory","");
 
-	InitTmpRas(rp->TmpRas,glob.tmprasbuf,scrn->Width*scrn->Width);
-	currp = rp;
+	InitTmpRas(rp->TmpRas,browserglob.tmprasbuf,scrn->Width*scrn->Width);
+	glob = &browserglob;
 
 #ifdef NS_AMIGA_CAIRO
-		glob.surface = cairo_amigaos_surface_create(rp->BitMap);
-		glob.cr = cairo_create(glob.surface);
+		browserglob.surface = cairo_amigaos_surface_create(rp->BitMap);
+		browserglob.cr = cairo_create(browserglob.surface);
 #endif
 }
 
 void ami_free_layers(struct RastPort *rp)
 {
 #ifdef NS_AMIGA_CAIRO
-	cairo_destroy(glob.cr);
-	cairo_surface_destroy(glob.surface);
+	cairo_destroy(browserglob.cr);
+	cairo_surface_destroy(browserglob.surface);
 #endif
 	DeleteLayer(0,rp->Layer);
 	FreeVec(rp->TmpRas);
@@ -1581,11 +1581,11 @@ void gui_quit(void)
 
 	ami_arexx_cleanup();
 
-	if(!option_direct_render) ami_free_layers(&glob.rp);
-	DisposeLayerInfo(glob.layerinfo);
-	p96FreeBitMap(glob.bm);
-	FreeVec(glob.tmprasbuf);
-	FreeVec(glob.areabuf);
+	if(!option_direct_render) ami_free_layers(&browserglob.rp);
+	DisposeLayerInfo(browserglob.layerinfo);
+	p96FreeBitMap(browserglob.bm);
+	FreeVec(browserglob.tmprasbuf);
+	FreeVec(browserglob.areabuf);
 
 	ami_close_fonts();
 
@@ -2121,12 +2121,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 	if(option_direct_render) ami_init_layers(gwin->shared->win->RPort);
 
-	//currp = &glob.rp; // WINDOW.CLASS: &gwin->rp; //gwin->win->RPort;
-
-//	GetRPAttrs(&gwin->rp,RPTAG_Font,&origrpfont,TAG_DONE);
-
-//	ami_tte_setdefaults(&gwin->rp,gwin->win);
-
 	GetAttr(WINDOW_HorizObject,gwin->shared->objects[OID_MAIN],(ULONG *)&gwin->shared->objects[OID_HSCROLL]);
 	GetAttr(WINDOW_VertObject,gwin->shared->objects[OID_MAIN],(ULONG *)&gwin->shared->objects[OID_VSCROLL]);
 
@@ -2279,10 +2273,10 @@ void ami_clearclipreg(struct RastPort *rp)
 	reg = InstallClipRegion(rp->Layer,NULL);
 	if(reg) DisposeRegion(reg);
 
-	glob.rect.MinX = 0;
-	glob.rect.MinY = 0;
-	glob.rect.MaxX = scrn->Width-1;
-	glob.rect.MaxY = scrn->Height-1;
+	browserglob.rect.MinX = 0;
+	browserglob.rect.MinY = 0;
+	browserglob.rect.MaxX = scrn->Width-1;
+	browserglob.rect.MaxY = scrn->Height-1;
 }
 
 /**
@@ -2352,10 +2346,10 @@ void ami_do_redraw_limits(struct gui_window *g, struct content *c,int x0, int y0
 
 	current_redraw_browser = NULL;
 
-	ami_clearclipreg(currp);
+	ami_clearclipreg(&browserglob.rp);
 
 	if(!option_direct_render)
-		BltBitMapRastPort(glob.bm,x0-sx,y0-sy,g->shared->win->RPort,
+		BltBitMapRastPort(browserglob.bm,x0-sx,y0-sy,g->shared->win->RPort,
 						xoffset+x0-sx,yoffset+y0-sy,x1-x0,y1-y0,0x0C0);
 }
 
@@ -2412,15 +2406,13 @@ void ami_do_redraw(struct gui_window_2 *g)
 	GetAttr(SCROLLER_Top,g->objects[OID_HSCROLL],(ULONG *)&hcurrent);
 	GetAttr(SCROLLER_Top,g->objects[OID_VSCROLL],(ULONG *)&vcurrent);
 
-//	DebugPrintF("DOING REDRAW\n");
-
 	c = g->bw->current_content;
 
 	if(!c) return;
 	if (c->locked) return;
 
 	current_redraw_browser = g->bw;
-//	currp = &glob.rp;
+//	currp = &browserglob.rp;
 
 	width=bbox->Width;
 	height=bbox->Height;
@@ -2497,14 +2489,14 @@ void ami_do_redraw(struct gui_window_2 *g)
 						g->bw->scale,0xFFFFFF);
 		}
 
-		ami_clearclipreg(currp);
+		ami_clearclipreg(&browserglob.rp);
 
 		if(!option_direct_render)
 		{
 			Forbid();
 			GetAttr(SPACE_AreaBox,g->gadgets[GID_BROWSER],(ULONG *)&bbox);
 
-			BltBitMapRastPort(glob.bm,0,0,g->win->RPort,bbox->Left,bbox->Top,
+			BltBitMapRastPort(browserglob.bm,0,0,g->win->RPort,bbox->Left,bbox->Top,
 								bbox->Width,bbox->Height,0x0C0);
 			Permit();
 		}
@@ -2951,7 +2943,7 @@ void gui_window_remove_caret(struct gui_window *g)
 	GetAttr(SCROLLER_Top,g->shared->objects[OID_HSCROLL],(ULONG *)&xs);
 	GetAttr(SCROLLER_Top,g->shared->objects[OID_VSCROLL],(ULONG *)&ys);
 
-	BltBitMapRastPort(glob.bm,g->c_x-xs,g->c_y-ys,g->shared->win->RPort,bbox->Left+g->c_x-xs,bbox->Top+g->c_y-ys,2+1,g->c_h+1,0x0C0);
+	BltBitMapRastPort(browserglob.bm,g->c_x-xs,g->c_y-ys,g->shared->win->RPort,bbox->Left+g->c_x-xs,bbox->Top+g->c_y-ys,2+1,g->c_h+1,0x0C0);
 
 	g->c_h = 0;
 }
@@ -2964,7 +2956,7 @@ void gui_window_new_content(struct gui_window *g)
 		c = g->shared->bw->current_content;
 	else return;
 
-	ami_clearclipreg(currp);
+	ami_clearclipreg(&browserglob.rp);
 	g->shared->new_content = true;
 	g->scrollx = 0;
 	g->scrolly = 0;

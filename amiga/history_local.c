@@ -167,10 +167,11 @@ void ami_history_redraw(struct history_window *hw)
 
 //	currp = &glob.rp;
 
-	ami_clearclipreg(currp);
+	ami_clearclipreg(&browserglob.rp);
 	ami_history_update_extent(hw);
 
-	BltBitMapRastPort(glob.bm,0,0,hw->win->RPort,bbox->Left,bbox->Top,bbox->Width,bbox->Height,0x0C0);
+	BltBitMapRastPort(browserglob.bm, 0, 0, hw->win->RPort,
+				bbox->Left, bbox->Top, bbox->Width, bbox->Height, 0x0C0);
 }
 
 /**
