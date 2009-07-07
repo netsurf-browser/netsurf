@@ -94,6 +94,6 @@ struct ami_gui_opts_window {
 	ULONG pad[6];
 };
 
-void ami_opts_open(void);
-BOOL ami_opts_event(void);
+void ami_gui_opts_open(void);
+BOOL ami_gui_opts_event(void);
 #endif
