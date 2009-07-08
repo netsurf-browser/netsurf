@@ -121,7 +121,7 @@ bool ami_clg(colour c)
 	return true;
 }
 
-bool ami_fill(int x0, int y0, int x1, int y1, const plot_style_t *style)
+bool ami_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
 {
         if (style->fill_type != PLOT_OP_TYPE_NONE) { 
 
@@ -152,7 +152,7 @@ bool ami_fill(int x0, int y0, int x1, int y1, const plot_style_t *style)
                         break;
 
                 case PLOT_OP_TYPE_DOT: /**< Doted plot */
-                        glob->rp.LinePtrn = PATT_DOT
+                        glob->rp.LinePtrn = PATT_DOT;
                         break;
 
                 case PLOT_OP_TYPE_DASH: /**< dashed plot */
