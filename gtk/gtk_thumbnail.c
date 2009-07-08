@@ -95,7 +95,7 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 #ifdef CAIRO_VERSION
 	current_cr = gdk_cairo_create(current_drawable);
 #endif
-	plot.fill(0, 0, cwidth, cwidth, plot_style_fill_white);
+	plot.rectangle(0, 0, cwidth, cwidth, plot_style_fill_white);
 
 	/* render the content */
 	content_redraw(content, 0, 0, content->width, content->width,

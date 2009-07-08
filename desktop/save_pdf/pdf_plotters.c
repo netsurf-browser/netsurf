@@ -45,12 +45,10 @@
 /* #define PDF_DEBUG */
 /* #define PDF_DEBUG_DUMPGRID */
 
-static bool pdf_plot_rectangle(int x0, int y0, int width, int height,
-		int line_width, colour c, bool dotted, bool dashed);
+static bool pdf_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style);
 static bool pdf_plot_line(int x0, int y0, int x1, int y1, int width,
 		colour c, bool dotted, bool dashed);
 static bool pdf_plot_polygon(const int *p, unsigned int n, colour fill);
-static bool pdf_plot_fill(int x0, int y0, int x1, int y1, plot_style_t *style);
 static bool pdf_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
 static bool pdf_plot_text(int x, int y, const struct css_style *style,
@@ -126,7 +124,6 @@ static const struct plotter_table pdf_plotters = {
 	.rectangle = pdf_plot_rectangle,
 	.line = pdf_plot_line,
 	.polygon = pdf_plot_polygon,
-	.fill = pdf_plot_fill,
 	.clip = pdf_plot_clip,
 	.text = pdf_plot_text,
 	.disc = pdf_plot_disc,
@@ -146,19 +143,59 @@ const struct printer pdf_printer = {
 static char *owner_pass;
 static char *user_pass;
 
-bool pdf_plot_rectangle(int x0, int y0, int width, int height,
-		int line_width, colour c, bool dotted, bool dashed)
+bool pdf_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *pstyle)
 {
+	DashPattern_e dash;
 #ifdef PDF_DEBUG
-	LOG(("."));
+	LOG(("%d %d %d %d %f %X", x0, y0, x1, y1, page_height - y0, style->fill_colour));
 #endif
 
-	apply_clip_and_mode(false, TRANSPARENT, c, line_width,
-			(dotted) ? DashPattern_eDotted :
-			((dashed) ? DashPattern_eDash : DashPattern_eNone));
+	if (pstyle->fill_type != PLOT_OP_TYPE_NONE) {
 
-	HPDF_Page_Rectangle(pdf_page, x0, page_height - y0, width, -height);
-	HPDF_Page_Stroke(pdf_page);
+		apply_clip_and_mode(false, pstyle->fill_colour, TRANSPARENT, 0., DashPattern_eNone);
+
+		/* Normalize boundaries of the area - to prevent
+		   overflows.  It is needed only in a few functions,
+		   where integers are subtracted.  When the whole
+		   browser window is meant min and max int values are
+		   used what must be handled in paged output.
+		*/
+		x0 = min(max(x0, 0), page_width);
+		y0 = min(max(y0, 0), page_height);
+		x1 = min(max(x1, 0), page_width);
+		y1 = min(max(y1, 0), page_height);
+
+		HPDF_Page_Rectangle(pdf_page, x0, page_height - y1, x1 - x0, y1 - y0);
+		HPDF_Page_Fill(pdf_page);
+
+	}
+
+	if (pstyle->stroke_type != PLOT_OP_TYPE_NONE) {
+
+		switch (pstyle->stroke_type) {
+		case PLOT_OP_TYPE_DOT:
+			dash = DashPattern_eDotted;
+			break;
+
+		case PLOT_OP_TYPE_DASH:
+			dash = DashPattern_eDash;
+			break;
+
+		default:
+			dash = DashPattern_eNone;
+			break;
+
+		}
+
+		apply_clip_and_mode(false, 
+				    TRANSPARENT, 
+				    pstyle->stroke_colour, 
+				    pstyle->stroke_width,
+				    dash);
+
+		HPDF_Page_Rectangle(pdf_page, x0, page_height - y0, x1 - x0, -(y1 - y0));
+		HPDF_Page_Stroke(pdf_page);
+	}
 
 	return true;
 }
@@ -214,29 +251,6 @@ bool pdf_plot_polygon(const int *p, unsigned int n, colour fill)
 	return true;
 }
 
-bool pdf_plot_fill(int x0, int y0, int x1, int y1, plot_style_t *style)
-{
-#ifdef PDF_DEBUG
-	LOG(("%d %d %d %d %f %X", x0, y0, x1, y1, page_height - y0, style->fill_colour));
-#endif
-
-	apply_clip_and_mode(false, style->fill_colour, TRANSPARENT, 0., DashPattern_eNone);
-
-	/*Normalize boundaries of the area - to prevent overflows.
-	  It is needed only in a few functions, where integers are subtracted.
-	  When the whole browser window is meant min and max int values are used
-	  what must be handled in paged output.
-	*/
-	x0 = min(max(x0, 0), page_width);
-	y0 = min(max(y0, 0), page_height);
-	x1 = min(max(x1, 0), page_width);
-	y1 = min(max(y1, 0), page_height);
-
-	HPDF_Page_Rectangle(pdf_page, x0, page_height - y1, x1 - x0, y1 - y0);
-	HPDF_Page_Fill(pdf_page);
-
-	return true;
-}
 
 /**here the clip is only queried */
 bool pdf_plot_clip(int clip_x0, int clip_y0, int clip_x1, int clip_y1)

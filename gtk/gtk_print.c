@@ -45,14 +45,12 @@
 #include "utils/log.h"
 #include "utils/utils.h"
 
-static bool nsgtk_print_plot_rectangle(int x0, int y0, int width, int height,
-		int line_width, colour c, bool dotted, bool dashed);
+static bool nsgtk_print_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style);
 static bool nsgtk_print_plot_line(int x0, int y0, int x1, int y1, int width,
 		colour c, bool dotted, bool dashed);
 static bool nsgtk_print_plot_polygon(const int *p, unsigned int n, colour fill);
 static bool nsgtk_print_plot_path(const float *p, unsigned int n, colour fill, 
 		float width, colour c, const float transform[6]);
-static bool nsgtk_print_plot_fill(int x0, int y0, int x1, int y1, plot_style_t *style);
 static bool nsgtk_print_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
 static bool nsgtk_print_plot_text(int x, int y, const struct css_style *style,
@@ -91,7 +89,6 @@ static const struct plotter_table nsgtk_print_plotters = {
 	.rectangle = nsgtk_print_plot_rectangle,
 	.line = nsgtk_print_plot_line,
 	.polygon = nsgtk_print_plot_polygon,
-	.fill = nsgtk_print_plot_fill,
 	.clip = nsgtk_print_plot_clip,
 	.text = nsgtk_print_plot_text,
 	.disc = nsgtk_print_plot_disc,
@@ -108,29 +105,59 @@ static const struct printer gtk_printer = {
 	gtk_print_end
 };
 
-bool nsgtk_print_plot_rectangle(int x0, int y0, int width, int height,
-		int line_width, colour c, bool dotted, bool dashed)
+bool nsgtk_print_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
 {
-	LOG(("Plotting rectangle. width: %i ; height: %i", width, height));
+	LOG(("x0: %i ;\t y0: %i ;\t x1: %i ;\t y1: %i", x0,y0,x1,y1));
 
-	nsgtk_print_set_colour(c);
+        if (style->fill_type != PLOT_OP_TYPE_NONE) { 
 
-	if (dotted)
-		nsgtk_print_set_dotted();
-	else if (dashed)
-		nsgtk_print_set_dashed();
-	else
+		nsgtk_print_set_colour(style->fill_colour);
 		nsgtk_print_set_solid();
+	
+		/* Normalize boundaries of the area - to prevent overflows.
+		 * See comment in pdf_plot_fill. */
+		x0 = min(max(x0, 0), settings->page_width);
+		y0 = min(max(y0, 0), settings->page_height);
+		x1 = min(max(x1, 0), settings->page_width);
+		y1 = min(max(y1, 0), settings->page_height);
 
-	if (line_width == 0)
-		line_width = 1;
+		cairo_set_line_width(gtk_print_current_cr, 0);
+		cairo_rectangle(gtk_print_current_cr, x0, y0, x1 - x0, y1 - y0);
+		cairo_fill(gtk_print_current_cr);
+		cairo_stroke(gtk_print_current_cr);
+	}
 
-	cairo_set_line_width(gtk_print_current_cr, line_width);
-	cairo_rectangle(gtk_print_current_cr, x0, y0, width, height);
-	cairo_stroke(gtk_print_current_cr);
+        if (style->stroke_type != PLOT_OP_TYPE_NONE) { 
+                nsgtk_print_set_colour(style->stroke_colour);
 
+                switch (style->stroke_type) {
+                case PLOT_OP_TYPE_SOLID: /**< Solid colour */
+                default:
+                        nsgtk_print_set_solid();
+                        break;
+
+                case PLOT_OP_TYPE_DOT: /**< Doted plot */
+                        nsgtk_print_set_dotted();
+                        break;
+
+                case PLOT_OP_TYPE_DASH: /**< dashed plot */
+                        nsgtk_print_set_dashed();
+                        break;
+                }
+
+                if (style->stroke_width == 0) 
+                        cairo_set_line_width(gtk_print_current_cr, 1);
+                else
+                        cairo_set_line_width(gtk_print_current_cr, style->stroke_width);
+
+		cairo_rectangle(gtk_print_current_cr, x0, y0, x1 - x0, y1 - y0);
+		cairo_stroke(gtk_print_current_cr);
+	}
+	
 	return true;
 }
+
+
 
 
 bool nsgtk_print_plot_line(int x0, int y0, int x1, int y1, int width,
@@ -183,28 +210,6 @@ bool nsgtk_print_plot_polygon(const int *p, unsigned int n, colour fill)
 }
 
 
-bool nsgtk_print_plot_fill(int x0, int y0, int x1, int y1, plot_style_t *style)
-{
-	LOG(("Plotting fill. x0: %i ;\t y0: %i ;\t x1: %i ;\t y1: %i", 
-			x0,y0,x1,y1));
-
-	nsgtk_print_set_colour(style->fill_colour);
-	nsgtk_print_set_solid();
-	
-	/* Normalize boundaries of the area - to prevent overflows.
-	 * See comment in pdf_plot_fill. */
-	x0 = min(max(x0, 0), settings->page_width);
-	y0 = min(max(y0, 0), settings->page_height);
-	x1 = min(max(x1, 0), settings->page_width);
-	y1 = min(max(y1, 0), settings->page_height);
-
-	cairo_set_line_width(gtk_print_current_cr, 0);
-	cairo_rectangle(gtk_print_current_cr, x0, y0, x1 - x0, y1 - y0);
-	cairo_fill(gtk_print_current_cr);
-	cairo_stroke(gtk_print_current_cr);
-	
-	return true;
-}
 
 
 bool nsgtk_print_plot_clip(int clip_x0, int clip_y0,

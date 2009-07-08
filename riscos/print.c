@@ -97,12 +97,10 @@ static void print_send_printsave(struct content *c);
 static bool print_send_printtypeknown(wimp_message *m);
 static bool print_document(struct gui_window *g, const char *filename);
 static const char *print_declare_fonts(struct content *content);
-static bool print_fonts_plot_rectangle(int x0, int y0, int width, int height,
-		int line_width, colour c, bool dotted, bool dashed);
+static bool print_fonts_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style);
 static bool print_fonts_plot_line(int x0, int y0, int x1, int y1, int width,
 		colour c, bool dotted, bool dashed);
 static bool print_fonts_plot_polygon(const int *p, unsigned int n, colour fill);
-static bool print_fonts_plot_fill(int x0, int y0, int x1, int y1, plot_style_t *style);
 static bool print_fonts_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
 static bool print_fonts_plot_text(int x, int y, const struct css_style *style,
@@ -128,7 +126,6 @@ static const struct plotter_table print_fonts_plotters = {
 	.rectangle = print_fonts_plot_rectangle,
 	.line = print_fonts_plot_line,
 	.polygon = print_fonts_plot_polygon,
-	.fill = print_fonts_plot_fill,
 	.clip = print_fonts_plot_clip,
 	.text = print_fonts_plot_text,
 	.disc = print_fonts_plot_disc,
@@ -807,11 +804,11 @@ end:
 }
 
 
-bool print_fonts_plot_rectangle(int x0, int y0, int width, int height,
-		int line_width, colour c, bool dotted, bool dashed)
+bool print_fonts_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
 {
 	return true;
 }
+
 
 bool print_fonts_plot_line(int x0, int y0, int x1, int y1, int width,
 		colour c, bool dotted, bool dashed)
@@ -824,10 +821,6 @@ bool print_fonts_plot_polygon(const int *p, unsigned int n, colour fill)
 	return true;
 }
 
-bool print_fonts_plot_fill(int x0, int y0, int x1, int y1, plot_style_t *style)
-{
-	return true;
-}
 
 bool print_fonts_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1)

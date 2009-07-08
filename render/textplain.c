@@ -358,7 +358,7 @@ bool textplain_redraw(struct content *c, int x, int y,
 	if (line1 < line0)
 		line1 = line0;
 
-	if (!plot.fill(clip_x0, clip_y0, clip_x1, clip_y1, plot_style_fill_white))
+	if (!plot.rectangle(clip_x0, clip_y0, clip_x1, clip_y1, plot_style_fill_white))
 		return false;
 
 	if (!line)
@@ -437,9 +437,9 @@ bool textplain_redraw(struct content *c, int x, int y,
 
 				if (highlighted) {
 					int sy = y + (lineno * scaled_line_height);
-					if (!plot.fill(tx, sy,
-							ntx, sy + scaled_line_height,
-							plot_style_highlight))
+					if (!plot.rectangle(tx, sy, 
+							    ntx, sy + scaled_line_height,
+							    plot_style_highlight))
 						return false;
 				}
 			}

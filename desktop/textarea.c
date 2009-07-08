@@ -41,9 +41,15 @@
 #define BORDER_COLOR 0x000000
 #define SELECTION_COL 0xFFDDDD
 
-static plot_style_t plot_style_fill_selection = { 
+static plot_style_t pstyle_fill_selection = { 
     .fill_type = PLOT_OP_TYPE_SOLID,
     .fill_colour = SELECTION_COL,
+};
+
+static plot_style_t pstyle_stroke_border = { 
+    .stroke_type = PLOT_OP_TYPE_SOLID,
+    .stroke_colour = BORDER_COLOR,
+    .stroke_width = 1,
 };
 
 struct line_info {
@@ -782,9 +788,10 @@ void textarea_redraw(struct text_area *ta, int x0, int y0, int x1, int y1)
 		y1 = ta->y + ta->vis_height;
 	
 	plot.clip(x0, y0, x1, y1);
-	plot.fill(x0, y0, x1, y1, &plot_style_fill_bg);
-	plot.rectangle(ta->x, ta->y, ta->vis_width - 1, ta->vis_height - 1, 1,
-			BORDER_COLOR, false, false);
+	plot.rectangle(x0, y0, x1, y1, &plot_style_fill_bg);
+	plot.rectangle(ta->x, ta->y, 
+		       ta->x + ta->vis_width - 1, ta->y + ta->vis_height - 1, 
+		       &pstyle_stroke_border);
 	
 	if (x0 < ta->x + MARGIN_LEFT)
 		x0 = ta->x + MARGIN_LEFT;
@@ -864,13 +871,13 @@ void textarea_redraw(struct text_area *ta, int x0, int y0, int x1, int y1)
 					b_start]),
 					b_end, &x1);
 			x1 += x0;
-			plot.fill(x0 - ta->scroll_x, ta->y +
-					line * ta->line_height
-					+ 1 - ta->scroll_y,
-					x1 - ta->scroll_x,
-     					ta->y + (line + 1) * ta->line_height -
-					1 - ta->scroll_y,
-				 	&plot_style_fill_selection);
+			plot.rectangle(x0 - ta->scroll_x, ta->y +
+				       line * ta->line_height
+				       + 1 - ta->scroll_y,
+				       x1 - ta->scroll_x,
+				       ta->y + (line + 1) * ta->line_height -
+				       1 - ta->scroll_y,
+				       &pstyle_fill_selection);
 			
 		}
 		

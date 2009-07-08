@@ -55,6 +55,9 @@ typedef struct {
 extern plot_style_t *plot_style_fill_white;
 extern plot_style_t *plot_style_fill_red;
 extern plot_style_t *plot_style_fill_black;
+extern plot_style_t *plot_style_stroke_red;
+extern plot_style_t *plot_style_stroke_blue;
+extern plot_style_t *plot_style_stroke_yellow;
 
 /** Set of target specific plotting functions.
  *
@@ -115,12 +118,10 @@ extern plot_style_t *plot_style_fill_black;
  *  3 | | | | | |
  */
 struct plotter_table {
-	bool (*rectangle)(int x0, int y0, int width, int height,
-			int line_width, colour c, bool dotted, bool dashed);
+	bool (*rectangle)(int x0, int y0, int x1, int y1, const plot_style_t *style);
 	bool (*line)(int x0, int y0, int x1, int y1, int width,
 			colour c, bool dotted, bool dashed);
 	bool (*polygon)(const int *p, unsigned int n, colour fill);
-	bool (*fill)(int x0, int y0, int x1, int y1, plot_style_t *style);
 	bool (*clip)(int x0, int y0, int x1, int y1);
 	bool (*text)(int x, int y, const struct css_style *style,
 			const char *text, size_t length, colour bg, colour c);

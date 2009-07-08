@@ -34,8 +34,7 @@
 #include "utils/log.h"
 
 
-static bool ro_plot_rectangle(int x0, int y0, int width, int height,
-		int line_width, colour c, bool dotted, bool dashed);
+static bool ro_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style);
 static bool ro_plot_line(int x0, int y0, int x1, int y1, int width,
 		colour c, bool dotted, bool dashed);
 static bool ro_plot_draw_path(const draw_path * const path, int width,
@@ -43,7 +42,6 @@ static bool ro_plot_draw_path(const draw_path * const path, int width,
 static bool ro_plot_polygon(const int *p, unsigned int n, colour fill);
 static bool ro_plot_path(const float *p, unsigned int n, colour fill, float width,
 		colour c, const float transform[6]);
-static bool ro_plot_fill(int x0, int y0, int x1, int y1, plot_style_t *style);
 static bool ro_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
 static bool ro_plot_text(int x, int y, const struct css_style *style,
@@ -62,7 +60,6 @@ const struct plotter_table ro_plotters = {
 	.rectangle = ro_plot_rectangle,
 	.line = ro_plot_line,
 	.polygon = ro_plot_polygon,
-	.fill = ro_plot_fill,
 	.clip = ro_plot_clip,
 	.text = ro_plot_text,
 	.disc = ro_plot_disc,
@@ -81,29 +78,72 @@ bool ro_plot_patterned_lines = true;
 
 
 
-
-bool ro_plot_rectangle(int x0, int y0, int width, int height,
-		int line_width, colour c, bool dotted, bool dashed)
+bool ro_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
 {
-	const int path[] = { draw_MOVE_TO,
-			(ro_plot_origin_x + x0 * 2) * 256,
-			(ro_plot_origin_y - y0 * 2 - 1) * 256,
-			draw_LINE_TO,
-			(ro_plot_origin_x + (x0 + width) * 2) * 256,
-			(ro_plot_origin_y - y0 * 2 - 1) * 256,
-			draw_LINE_TO,
-			(ro_plot_origin_x + (x0 + width) * 2) * 256,
-			(ro_plot_origin_y - (y0 + height) * 2 - 1) * 256,
-			draw_LINE_TO,
-			(ro_plot_origin_x + x0 * 2) * 256,
-			(ro_plot_origin_y - (y0 + height) * 2 - 1) * 256,
-			draw_CLOSE_LINE,
-			(ro_plot_origin_x + x0 * 2) * 256,
-			(ro_plot_origin_y - y0 * 2 - 1) * 256,
-			draw_END_PATH };
+	os_error *error;
 
-	return ro_plot_draw_path((const draw_path *) path, line_width, c,
-			dotted, dashed);
+        if (style->fill_type != PLOT_OP_TYPE_NONE) { 
+
+		error = xcolourtrans_set_gcol(style->fill_colour << 8, 
+					      colourtrans_USE_ECFS_GCOL,
+					      os_ACTION_OVERWRITE, 0, 0);
+		if (error) {
+			LOG(("xcolourtrans_set_gcol: 0x%x: %s",
+			     error->errnum, error->errmess));
+			return false;
+		}
+
+		error = xos_plot(os_MOVE_TO,
+				 ro_plot_origin_x + x0 * 2,
+				 ro_plot_origin_y - y0 * 2 - 1);
+		if (error) {
+			LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
+			return false;
+		}
+
+		error = xos_plot(os_PLOT_RECTANGLE | os_PLOT_TO,
+				 ro_plot_origin_x + x1 * 2 - 1,
+				 ro_plot_origin_y - y1 * 2);
+		if (error) {
+			LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
+			return false;
+		}
+	}
+
+        if (style->stroke_type != PLOT_OP_TYPE_NONE) {
+		bool dotted = false; 
+		bool dashed = false;
+ 
+		const int path[] = { draw_MOVE_TO,
+				     (ro_plot_origin_x + x0 * 2) * 256,
+				     (ro_plot_origin_y - y0 * 2 - 1) * 256,
+				     draw_LINE_TO,
+				     (ro_plot_origin_x + (x1) * 2) * 256,
+				     (ro_plot_origin_y - y0 * 2 - 1) * 256,
+				     draw_LINE_TO,
+				     (ro_plot_origin_x + (x1) * 2) * 256,
+				     (ro_plot_origin_y - (y1) * 2 - 1) * 256,
+				     draw_LINE_TO,
+				     (ro_plot_origin_x + x0 * 2) * 256,
+				     (ro_plot_origin_y - (y1) * 2 - 1) * 256,
+				     draw_CLOSE_LINE,
+				     (ro_plot_origin_x + x0 * 2) * 256,
+				     (ro_plot_origin_y - y0 * 2 - 1) * 256,
+				     draw_END_PATH };
+
+		if (style->stroke_type == PLOT_OP_TYPE_DOT) 
+			dotted = true;
+
+		if (style->stroke_type == PLOT_OP_TYPE_DASH) 
+			dashed = true;
+
+		ro_plot_draw_path((const draw_path *)path, 
+				  style->stroke_width, 
+				  style->stroke_colour,
+				  dotted, dashed);
+	}
+
+	return true;
 }
 
 
@@ -303,37 +343,6 @@ error:
 }
 
 
-bool ro_plot_fill(int x0, int y0, int x1, int y1, plot_style_t *style)
-{
-	os_error *error;
-
-	error = xcolourtrans_set_gcol(style->fill_colour << 8, 
-                                      colourtrans_USE_ECFS_GCOL,
-                                      os_ACTION_OVERWRITE, 0, 0);
-	if (error) {
-		LOG(("xcolourtrans_set_gcol: 0x%x: %s",
-				error->errnum, error->errmess));
-		return false;
-	}
-
-	error = xos_plot(os_MOVE_TO,
-			ro_plot_origin_x + x0 * 2,
-			ro_plot_origin_y - y0 * 2 - 1);
-	if (error) {
-		LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
-		return false;
-	}
-
-	error = xos_plot(os_PLOT_RECTANGLE | os_PLOT_TO,
-			ro_plot_origin_x + x1 * 2 - 1,
-			ro_plot_origin_y - y1 * 2);
-	if (error) {
-		LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
-		return false;
-	}
-
-	return true;
-}
 
 
 bool ro_plot_clip(int clip_x0, int clip_y0,

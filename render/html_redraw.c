@@ -153,7 +153,7 @@ bool html_redraw(struct content *c, int x, int y,
 	if (c->data.html.background_colour != TRANSPARENT)
 		pstyle_fill_bg.fill_colour = c->data.html.background_colour;
 
-	result &= plot.fill(clip_x0, clip_y0, clip_x1, clip_y1, &pstyle_fill_bg);
+	result &= plot.rectangle(clip_x0, clip_y0, clip_x1, clip_y1, &pstyle_fill_bg);
 
 	result &= html_redraw_box(box, x, y,
 			clip_x0, clip_y0, clip_x1, clip_y1,
@@ -315,23 +315,22 @@ bool html_redraw_box(struct box *box,
 
 	/* dotted debug outlines */
 	if (html_redraw_debug) {
-		if (!plot.rectangle(x, y, padding_width, padding_height,
-				1, 0x0000ff, true, false))
+		if (!plot.rectangle(x, y, 
+				    x + padding_width, y + padding_height,
+				    plot_style_stroke_red))
 			return false;
-		if (!plot.rectangle(x + padding_left, y + padding_top,
-				width, height, 1, 0xff0000, true, false))
+		if (!plot.rectangle(x + padding_left, 
+				    y + padding_top,
+				    x + padding_left + width, 
+				    y + padding_top + height, 
+				    plot_style_stroke_blue))
 			return false;
-		if (!plot.rectangle(x - (box->border[LEFT] +
-				box->margin[LEFT]) * scale,
-				y - (box->border[TOP] +
-				box->margin[TOP]) * scale,
-				padding_width + (box->border[LEFT] +
-				box->margin[LEFT] + box->border[RIGHT] +
-				box->margin[RIGHT]) * scale,
-				padding_height + (box->border[TOP] +
-				box->margin[TOP] + box->border[BOTTOM] +
-				box->margin[BOTTOM]) * scale,
-				1, 0x00ffff, true, false))
+		if (!plot.rectangle(
+			    x - (box->border[LEFT] + box->margin[LEFT]) * scale,
+			    y - (box->border[TOP] + box->margin[TOP]) * scale,
+			    (x - (box->border[LEFT] + box->margin[LEFT]) * scale) + (padding_width + (box->border[LEFT] + box->margin[LEFT] + box->border[RIGHT] + box->margin[RIGHT]) * scale),
+			    (y - (box->border[TOP] + box->margin[TOP]) * scale) + (padding_height + (box->border[TOP] + box->margin[TOP] + box->border[BOTTOM] + box->margin[BOTTOM]) * scale),
+			    plot_style_stroke_yellow))
 			return false;
 	}
 
@@ -858,7 +857,7 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 				pstyle_fill_hback = plot_style_fill_black;
 
 			/* highlighted portion */
-			if (!plot.fill(x + startx, y, x + endx,
+			if (!plot.rectangle(x + startx, y, x + endx,
 					y + height * scale,
 					pstyle_fill_hback))
 				return false;
@@ -1319,7 +1318,7 @@ bool html_redraw_checkbox(int x, int y, int width, int height,
 	if (z == 0)
 		z = 1;
 
-	if (!(plot.fill(x, y, x + width, y + height, &pstyle_fill_wbasec) &&
+	if (!(plot.rectangle(x, y, x + width, y + height, &pstyle_fill_wbasec) &&
 		plot.line(x, y, x + width, y, 1, dark, false, false) &&
 		plot.line(x, y, x, y + height, 1, dark, false, false) &&
 		plot.line(x + width, y, x + width, y + height, 1, lite,
@@ -1331,7 +1330,7 @@ bool html_redraw_checkbox(int x, int y, int width, int height,
 	if (selected) {
 		if (width < 12 || height < 12) {
 			/* render a solid box instead of a tick */
-			if (!plot.fill(x + z + z, y + z + z,
+			if (!plot.rectangle(x + z + z, y + z + z,
 				x + width - z, y + height - z,
 				&pstyle_fill_wblobc))
 				return false;
@@ -1605,7 +1604,7 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 			pstyle_fill_bg.fill_colour =
 					background->style->background_color;
 			if (plot_colour)
-				if (!plot.fill(clip_x0, clip_y0,
+				if (!plot.rectangle(clip_x0, clip_y0,
 						clip_x1, clip_y1,
 						&pstyle_fill_bg))
 					return false;
@@ -1774,7 +1773,7 @@ bool html_redraw_inline_background(int x, int y, struct box *box, float scale,
 				box->style->background_color;
 
 		if (plot_colour)
-			if (!plot.fill(clip_x0, clip_y0,
+			if (!plot.rectangle(clip_x0, clip_y0,
 					clip_x1, clip_y1,
 					&pstyle_fill_bg))
 				return false;
@@ -2012,7 +2011,7 @@ bool html_redraw_scrollbars(struct box *box, float scale,
 				y + padding_height - 2,
 				css_scrollbar_fg_colour, false);
 		/* left arrow icon background */
-		if (!plot.fill(x + 2,
+		if (!plot.rectangle(x + 2,
 				y + padding_height - w + 2,
 				x + w - 2,
 				y + padding_height - 2,
@@ -2028,7 +2027,7 @@ bool html_redraw_scrollbars(struct box *box, float scale,
 		if (!plot.polygon(v, 3, css_scrollbar_arrow_colour))
 			return false;
 		/* scroll well background */
-		if (!plot.fill(x + w - 1,
+		if (!plot.rectangle(x + w - 1,
 				y + padding_height - w + 1,
 				x + w + well_width + (vscroll ? 2 : 1),
 				y + padding_height - 1,
@@ -2040,7 +2039,7 @@ bool html_redraw_scrollbars(struct box *box, float scale,
 				x + w + bar_left + bar_width + (vscroll? 1 : 0),
 				y + padding_height - 2,
 				css_scrollbar_fg_colour, false);
-		if (!plot.fill(x + w + bar_left + 1,
+		if (!plot.rectangle(x + w + bar_left + 1,
 				y + padding_height - w + 2,
 				x + w + bar_left + bar_width + (vscroll? 1 : 0),
 				y + padding_height - 2,
@@ -2053,7 +2052,7 @@ bool html_redraw_scrollbars(struct box *box, float scale,
 				y + padding_height - 2,
 				css_scrollbar_fg_colour, false);
 		/* right arrow icon background */
-		if (!plot.fill(x + w + well_width + 3,
+		if (!plot.rectangle(x + w + well_width + 3,
 				y + padding_height - w + 2,
 				x + w + well_width + w - (vscroll ? 1 : 2),
 				y + padding_height - 2,
@@ -2084,7 +2083,7 @@ bool html_redraw_scrollbars(struct box *box, float scale,
 				x + padding_width - 2,
 				y + w - 2,
 				css_scrollbar_fg_colour, false);
-		if (!plot.fill(x + padding_width - w + 2,
+		if (!plot.rectangle(x + padding_width - w + 2,
 				y + 2,
 				x + padding_width - 2,
 				y + w - 2,
@@ -2100,7 +2099,7 @@ bool html_redraw_scrollbars(struct box *box, float scale,
 		if (!plot.polygon(v, 3, css_scrollbar_arrow_colour))
 			return false;
 		/* scroll well background */
-		if (!plot.fill(x + padding_width - w + 1,
+		if (!plot.rectangle(x + padding_width - w + 1,
 				y + w - 1,
 				x + padding_width - 1,
 				y + padding_height - w + 1,
@@ -2112,7 +2111,7 @@ bool html_redraw_scrollbars(struct box *box, float scale,
 				x + padding_width - 2,
 				y + w + bar_top + bar_height,
 				css_scrollbar_fg_colour, false);
-		if (!plot.fill(x + padding_width - w + 2,
+		if (!plot.rectangle(x + padding_width - w + 2,
 				y + w + bar_top + 1,
 				x + padding_width - 2,
 				y + w + bar_top + bar_height,
@@ -2124,7 +2123,7 @@ bool html_redraw_scrollbars(struct box *box, float scale,
 				x + padding_width - 2,
 				y + padding_height - 2,
 				css_scrollbar_fg_colour, false);
-		if (!plot.fill(x + padding_width - w + 2,
+		if (!plot.rectangle(x + padding_width - w + 2,
 				y + padding_height - w + 2,
 				x + padding_width - 2,
 				y + padding_height - 2,

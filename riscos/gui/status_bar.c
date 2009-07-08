@@ -495,7 +495,7 @@ void ro_gui_status_bar_redraw(wimp_draw *redraw)
 		}
 
 		/* separate the widget from the text with a line */
-		plot.fill((redraw->box.x0 + sb->width - WIDGET_WIDTH - 2) >> 1,
+		plot.rectangle((redraw->box.x0 + sb->width - WIDGET_WIDTH - 2) >> 1,
 				-redraw->box.y0 >> 1,
 				(redraw->box.x0 + sb->width - WIDGET_WIDTH) >> 1,
 				-redraw->box.y1 >> 1,

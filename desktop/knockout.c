@@ -91,9 +91,30 @@ static plot_style_t plot_style_fill_black_static = {
 	.fill_colour = 0x0,
 };
 
+static plot_style_t plot_style_stroke_red_static = {
+	.stroke_type = PLOT_OP_TYPE_SOLID,
+	.stroke_colour = 0x000000ff,
+	.stroke_width = 1,
+};
+
+static plot_style_t plot_style_stroke_blue_static = {
+	.stroke_type = PLOT_OP_TYPE_SOLID,
+	.stroke_colour = 0x00ff0000,
+	.stroke_width = 1,
+};
+
+static plot_style_t plot_style_stroke_yellow_static = {
+	.stroke_type = PLOT_OP_TYPE_SOLID,
+	.stroke_colour = 0x0000ffff,
+	.stroke_width = 1,
+};
+
 plot_style_t *plot_style_fill_white = &plot_style_fill_white_static;
 plot_style_t *plot_style_fill_red = &plot_style_fill_red_static;
 plot_style_t *plot_style_fill_black = &plot_style_fill_black_static;
+plot_style_t *plot_style_stroke_red = &plot_style_stroke_red_static;
+plot_style_t *plot_style_stroke_blue = &plot_style_stroke_blue_static;
+plot_style_t *plot_style_stroke_yellow = &plot_style_stroke_yellow_static;
 
 struct knockout_box;
 struct knockout_entry;
@@ -105,12 +126,10 @@ static bool knockout_plot_fill_recursive(struct knockout_box *box, plot_style_t 
 static bool knockout_plot_bitmap_recursive(struct knockout_box *box,
 		struct knockout_entry *entry);
 
-static bool knockout_plot_rectangle(int x0, int y0, int width, int height,
-		int line_width, colour c, bool dotted, bool dashed);
 static bool knockout_plot_line(int x0, int y0, int x1, int y1, int width,
 		colour c, bool dotted, bool dashed);
 static bool knockout_plot_polygon(const int *p, unsigned int n, colour fill);
-static bool knockout_plot_fill(int x0, int y0, int x1, int y1, plot_style_t *plot_style);
+static bool knockout_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *plot_style);
 static bool knockout_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
 static bool knockout_plot_text(int x, int y, const struct css_style *style,
@@ -132,7 +151,6 @@ const struct plotter_table knockout_plotters = {
 	.rectangle = knockout_plot_rectangle,
 	.line = knockout_plot_line,
 	.polygon = knockout_plot_polygon,
-	.fill = knockout_plot_fill,
 	.clip = knockout_plot_clip,
 	.text = knockout_plot_text,
 	.disc = knockout_plot_disc,
@@ -181,12 +199,9 @@ struct knockout_entry {
 		struct {
 			int x0;
 			int y0;
-			int width;
-			int height;
-			int line_width;
-			colour c;
-			bool dotted;
-			bool dashed;
+			int x1;
+			int y1;
+			plot_style_t plot_style;
 		} rectangle;
 		struct {
 			int x0;
@@ -337,15 +352,12 @@ bool knockout_plot_flush(void)
 	for (i = 0; i < knockout_entry_cur; i++) {
 		switch (knockout_entries[i].type) {
 		case KNOCKOUT_PLOT_RECTANGLE:
-			success &= plot.rectangle(
-					knockout_entries[i].data.rectangle.x0,
-					knockout_entries[i].data.rectangle.y0,
-					knockout_entries[i].data.rectangle.width,
-					knockout_entries[i].data.rectangle.height,
-					knockout_entries[i].data.rectangle.line_width,
-					knockout_entries[i].data.rectangle.c,
-					knockout_entries[i].data.rectangle.dotted,
-					knockout_entries[i].data.rectangle.dashed);
+                        success &= plot.rectangle(
+                                knockout_entries[i].data.rectangle.x0,
+                                knockout_entries[i].data.rectangle.y0,
+                                knockout_entries[i].data.rectangle.x1,
+                                knockout_entries[i].data.rectangle.y1,
+                                &knockout_entries[i].data.rectangle.plot_style);
 			break;
 		case KNOCKOUT_PLOT_LINE:
 			success &= plot.line(
@@ -370,7 +382,7 @@ bool knockout_plot_flush(void)
 				success &= knockout_plot_fill_recursive(box,
 						&knockout_entries[i].data.fill.plot_style);
 			else if (!knockout_entries[i].box->deleted)
-				success &= plot.fill(
+				success &= plot.rectangle(
 						knockout_entries[i].data.fill.x0,
 						knockout_entries[i].data.fill.y0,
 						knockout_entries[i].data.fill.x1,
@@ -605,11 +617,11 @@ bool knockout_plot_fill_recursive(struct knockout_box *box, plot_style_t *plot_s
 		if (parent->child)
 			knockout_plot_fill_recursive(parent->child, plot_style);
 		else
-			success &= plot.fill(parent->bbox.x0,
-					parent->bbox.y0,
-					parent->bbox.x1,
-					parent->bbox.y1,
-					plot_style);
+			success &= plot.rectangle(parent->bbox.x0,
+                                                  parent->bbox.y0,
+                                                  parent->bbox.x1,
+                                                  parent->bbox.y1,
+                                                  plot_style);
 	}
 	return success;
 }
@@ -643,25 +655,56 @@ bool knockout_plot_bitmap_recursive(struct knockout_box *box,
 	return success;
 }
 
-
-
-bool knockout_plot_rectangle(int x0, int y0, int width, int height,
-		int line_width, colour c, bool dotted, bool dashed)
+bool knockout_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *pstyle)
 {
-	knockout_entries[knockout_entry_cur].data.rectangle.x0 = x0;
-	knockout_entries[knockout_entry_cur].data.rectangle.y0 = y0;
-	knockout_entries[knockout_entry_cur].data.rectangle.width = width;
-	knockout_entries[knockout_entry_cur].data.rectangle.height = height;
-	knockout_entries[knockout_entry_cur].data.rectangle.line_width = line_width;
-	knockout_entries[knockout_entry_cur].data.rectangle.c = c;
-	knockout_entries[knockout_entry_cur].data.rectangle.dotted = dotted;
-	knockout_entries[knockout_entry_cur].data.rectangle.dashed = dashed;
-	knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_RECTANGLE;
-	if (++knockout_entry_cur >= KNOCKOUT_ENTRIES)
-		knockout_plot_flush();
+	int kx0, ky0, kx1, ky1;
+
+        if (pstyle->fill_type != PLOT_OP_TYPE_NONE) {
+		/* filled draw */
+
+		/* get our bounds */
+		kx0 = (x0 > clip_x0_cur) ? x0 : clip_x0_cur;
+		ky0 = (y0 > clip_y0_cur) ? y0 : clip_y0_cur;
+		kx1 = (x1 < clip_x1_cur) ? x1 : clip_x1_cur;
+		ky1 = (y1 < clip_y1_cur) ? y1 : clip_y1_cur;
+		if ((kx0 > clip_x1_cur) || (kx1 < clip_x0_cur) ||
+		    (ky0 > clip_y1_cur) || (ky1 < clip_y0_cur))
+			return true;
+
+		/* fills both knock out and get knocked out */
+		knockout_calculate(kx0, ky0, kx1, ky1, NULL);
+		knockout_boxes[knockout_box_cur].bbox.x0 = x0;
+		knockout_boxes[knockout_box_cur].bbox.y0 = y0;
+		knockout_boxes[knockout_box_cur].bbox.x1 = x1;
+		knockout_boxes[knockout_box_cur].bbox.y1 = y1;
+		knockout_boxes[knockout_box_cur].deleted = false;
+		knockout_boxes[knockout_box_cur].child = NULL;
+		knockout_boxes[knockout_box_cur].next = knockout_list;
+		knockout_list = &knockout_boxes[knockout_box_cur];
+		knockout_entries[knockout_entry_cur].box = &knockout_boxes[knockout_box_cur];
+		knockout_entries[knockout_entry_cur].data.fill.x0 = x0;
+		knockout_entries[knockout_entry_cur].data.fill.y0 = y0;
+		knockout_entries[knockout_entry_cur].data.fill.x1 = x1;
+		knockout_entries[knockout_entry_cur].data.fill.y1 = y1;
+		knockout_entries[knockout_entry_cur].data.fill.plot_style = *pstyle;
+		knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_FILL;
+		if ((++knockout_entry_cur >= KNOCKOUT_ENTRIES) ||
+		    (++knockout_box_cur >= KNOCKOUT_BOXES))
+			knockout_plot_flush();
+        } else if (pstyle->stroke_type != PLOT_OP_TYPE_NONE) {
+		/* not a filled area */
+
+		knockout_entries[knockout_entry_cur].data.rectangle.x0 = x0;
+		knockout_entries[knockout_entry_cur].data.rectangle.y0 = y0;
+		knockout_entries[knockout_entry_cur].data.rectangle.x1 = x1;
+		knockout_entries[knockout_entry_cur].data.rectangle.y1 = y1;
+		knockout_entries[knockout_entry_cur].data.fill.plot_style = *pstyle;
+		knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_RECTANGLE;
+		if (++knockout_entry_cur >= KNOCKOUT_ENTRIES)
+			knockout_plot_flush();
+        }
 	return true;
 }
-
 
 bool knockout_plot_line(int x0, int y0, int x1, int y1, int width,
 		colour c, bool dotted, bool dashed)
@@ -716,43 +759,6 @@ bool knockout_plot_path(const float *p, unsigned int n, colour fill,
 {
 	knockout_plot_flush();
 	return real_plot.path(p, n, fill, width, c, transform);
-}
-
-
-bool knockout_plot_fill(int x0, int y0, int x1, int y1, plot_style_t *plot_style)
-{
-	int kx0, ky0, kx1, ky1;
-
-	/* get our bounds */
-	kx0 = (x0 > clip_x0_cur) ? x0 : clip_x0_cur;
-	ky0 = (y0 > clip_y0_cur) ? y0 : clip_y0_cur;
-	kx1 = (x1 < clip_x1_cur) ? x1 : clip_x1_cur;
-	ky1 = (y1 < clip_y1_cur) ? y1 : clip_y1_cur;
-	if ((kx0 > clip_x1_cur) || (kx1 < clip_x0_cur) ||
-			(ky0 > clip_y1_cur) || (ky1 < clip_y0_cur))
-		return true;
-
-	/* fills both knock out and get knocked out */
-	knockout_calculate(kx0, ky0, kx1, ky1, NULL);
-	knockout_boxes[knockout_box_cur].bbox.x0 = x0;
-	knockout_boxes[knockout_box_cur].bbox.y0 = y0;
-	knockout_boxes[knockout_box_cur].bbox.x1 = x1;
-	knockout_boxes[knockout_box_cur].bbox.y1 = y1;
-	knockout_boxes[knockout_box_cur].deleted = false;
-	knockout_boxes[knockout_box_cur].child = NULL;
-	knockout_boxes[knockout_box_cur].next = knockout_list;
-	knockout_list = &knockout_boxes[knockout_box_cur];
-	knockout_entries[knockout_entry_cur].box = &knockout_boxes[knockout_box_cur];
-	knockout_entries[knockout_entry_cur].data.fill.x0 = x0;
-	knockout_entries[knockout_entry_cur].data.fill.y0 = y0;
-	knockout_entries[knockout_entry_cur].data.fill.x1 = x1;
-	knockout_entries[knockout_entry_cur].data.fill.y1 = y1;
-	knockout_entries[knockout_entry_cur].data.fill.plot_style = *plot_style;
-	knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_FILL;
-	if ((++knockout_entry_cur >= KNOCKOUT_ENTRIES) ||
-			(++knockout_box_cur >= KNOCKOUT_BOXES))
-		knockout_plot_flush();
-	return true;
 }
 
 

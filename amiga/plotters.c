@@ -64,7 +64,6 @@ const struct plotter_table amiplot = {
 	.rectangle = ami_rectangle,
 	.line = ami_line,
 	.polygon = ami_polygon,
-	.fill = ami_fill,
 	.clip = ami_clip,
 	.text = ami_text,
 	.disc = ami_disc,
@@ -122,42 +121,85 @@ bool ami_clg(colour c)
 	return true;
 }
 
-bool ami_rectangle(int x0, int y0, int width, int height,
-			int line_width, colour c, bool dotted, bool dashed)
+bool ami_fill(int x0, int y0, int x1, int y1, const plot_style_t *style)
 {
+        if (style->fill_type != PLOT_OP_TYPE_NONE) { 
+
 #ifndef NS_AMIGA_CAIRO_ALL
-	glob->rp.PenWidth = line_width;
-	glob->rp.PenHeight = line_width;
-
-	glob->rp.LinePtrn = PATT_LINE;
-	if(dotted) glob->rp.LinePtrn = PATT_DOT;
-	if(dashed) glob->rp.LinePtrn = PATT_DASH;
-
-	SetRPAttrs(&glob->rp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),
-					TAG_DONE);
-	Move(&glob->rp,x0,y0);
-	Draw(&glob->rp,x0+width,y0);
-	Draw(&glob->rp,x0+width,y0+height);
-	Draw(&glob->rp,x0,y0+height);
-	Draw(&glob->rp,x0,y0);
-
-	glob->rp.PenWidth = 1;
-	glob->rp.PenHeight = 1;
-	glob->rp.LinePtrn = PATT_LINE;
+		p96RectFill(&glob->rp,x0,y0,x1-1,y1-1,
+			    p96EncodeColor(RGBFB_A8B8G8R8, style->fill_colour));
 #else
-	ami_cairo_set_colour(glob->cr,c);
-	if (dotted) ami_cairo_set_dotted(glob->cr);
-        else if (dashed) ami_cairo_set_dashed(glob->cr);
-        else ami_cairo_set_solid(glob->cr);
+		ami_cairo_set_colour(glob->cr, style->fill_colour);
+		ami_cairo_set_solid(glob->cr);
 
-	if (line_width == 0)
-		line_width = 1;
-
-	cairo_set_line_width(glob->cr, line_width);
-	cairo_rectangle(glob->cr, x0, y0, width, height);
-	cairo_stroke(glob->cr);
+		cairo_set_line_width(glob->cr, 0);
+		cairo_rectangle(glob->cr, x0, y0, x1 - x0, y1 - y0);
+		cairo_fill(glob->cr);
+		cairo_stroke(glob->cr);
 #endif
 
+	}
+
+        if (style->stroke_type != PLOT_OP_TYPE_NONE) {
+#ifndef NS_AMIGA_CAIRO_ALL
+		glob->rp.PenWidth = style->stroke_width;
+		glob->rp.PenHeight = style->stroke_width;
+
+                switch (style->stroke_type) {
+                case PLOT_OP_TYPE_SOLID: /**< Solid colour */
+                default:
+                        glob->rp.LinePtrn = PATT_LINE;
+                        break;
+
+                case PLOT_OP_TYPE_DOT: /**< Doted plot */
+                        glob->rp.LinePtrn = PATT_DOT
+                        break;
+
+                case PLOT_OP_TYPE_DASH: /**< dashed plot */
+                        glob->rp.LinePtrn = PATT_DASH;
+                        break;
+                }
+		
+		SetRPAttrs(&glob->rp,
+			   RPTAG_APenColor,
+			   p96EncodeColor(RGBFB_A8B8G8R8, style->stroke_colour),
+			   TAG_DONE);
+		Move(&glob->rp, x0,y0);
+		Draw(&glob->rp, x1, y0);
+		Draw(&glob->rp, x1, y1);
+		Draw(&glob->rp, x0, y1);
+		Draw(&glob->rp, x0, y0);
+
+		glob->rp.PenWidth = 1;
+		glob->rp.PenHeight = 1;
+		glob->rp.LinePtrn = PATT_LINE;
+#else
+		ami_cairo_set_colour(glob->cr, style->stroke_colour);
+
+                switch (style->stroke_type) {
+                case PLOT_OP_TYPE_SOLID: /**< Solid colour */
+                default:
+                        ami_cairo_set_solid(glob->cr);
+                        break;
+
+                case PLOT_OP_TYPE_DOT: /**< Doted plot */
+                        ami_cairo_set_dotted(glob->cr);
+                        break;
+
+                case PLOT_OP_TYPE_DASH: /**< dashed plot */
+                        ami_cairo_set_dashed(glob->cr);
+                        break;
+                }
+
+                if (style->stroke_width == 0) 
+                        cairo_set_line_width(glob->cr, 1);
+                else
+                        cairo_set_line_width(glob->cr, style->stroke_width);
+
+		cairo_rectangle(glob->cr, x0, y0, x1 - x0, y1 - y0);
+		cairo_stroke(glob->cr);
+#endif
+	}
 	return true;
 }
 
@@ -235,22 +277,6 @@ bool ami_polygon(const int *p, unsigned int n, colour fill)
 	return true;
 }
 
-bool ami_fill(int x0, int y0, int x1, int y1, plot_style_t *style)
-{
-#ifndef NS_AMIGA_CAIRO_ALL
-	p96RectFill(&glob->rp,x0,y0,x1-1,y1-1,
-		p96EncodeColor(RGBFB_A8B8G8R8, style->fill_colour));
-#else
-	ami_cairo_set_colour(glob->cr, style->fill_colour);
-	ami_cairo_set_solid(glob->cr);
-
-	cairo_set_line_width(glob->cr, 0);
-	cairo_rectangle(glob->cr, x0, y0, x1 - x0, y1 - y0);
-	cairo_fill(glob->cr);
-	cairo_stroke(glob->cr);
-#endif
-	return true;
-}
 
 bool ami_clip(int x0, int y0, int x1, int y1)
 {

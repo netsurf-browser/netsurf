@@ -37,14 +37,12 @@
 #include "utils/log.h"
 #include "utils/utils.h"
 
-static bool ro_save_draw_rectangle(int x0, int y0, int width, int height,
-		int line_width, colour c, bool dotted, bool dashed);
+static bool ro_save_draw_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style);
 static bool ro_save_draw_line(int x0, int y0, int x1, int y1, int width,
 		colour c, bool dotted, bool dashed);
 static bool ro_save_draw_polygon(const int *p, unsigned int n, colour fill);
 static bool ro_save_draw_path(const float *p, unsigned int n, colour fill,
 		float width, colour c, const float transform[6]);
-static bool ro_save_draw_fill(int x0, int y0, int x1, int y1, plot_style_t *style);
 static bool ro_save_draw_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
 static bool ro_save_draw_text(int x, int y, const struct css_style *style,
@@ -64,7 +62,6 @@ static const struct plotter_table ro_save_draw_plotters = {
 	.rectangle = ro_save_draw_rectangle,
 	.line = ro_save_draw_line,
 	.polygon = ro_save_draw_polygon,
-	.fill = ro_save_draw_fill,
 	.clip = ro_save_draw_clip,
 	.text = ro_save_draw_text,
 	.disc = ro_save_draw_disc,
@@ -143,25 +140,54 @@ bool save_as_draw(struct content *c, const char *path)
 	return true;
 }
 
-bool ro_save_draw_rectangle(int x0, int y0, int width, int height,
-		int line_width, colour c, bool dotted, bool dashed)
+bool ro_save_draw_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
 {
 	pencil_code code;
 	const int path[] = { draw_MOVE_TO, x0 * 2, -y0 * 2 - 1,
-			draw_LINE_TO, (x0 + width) * 2, -y0 * 2 - 1,
-			draw_LINE_TO, (x0 + width) * 2, -(y0 + height) * 2 - 1,
-			draw_LINE_TO, x0 * 2, -(y0 + height) * 2 - 1,
-			draw_CLOSE_LINE,
-			draw_END_PATH };
+			     draw_LINE_TO, x1 * 2, -y0 * 2 - 1,
+			     draw_LINE_TO, x1 * 2, -y1 * 2 - 1,
+			     draw_LINE_TO, x0 * 2, -y1 * 2 - 1,
+			     draw_CLOSE_LINE,
+			     draw_END_PATH };
 
-	code = pencil_path(ro_save_draw_diagram, path,
-			sizeof path / sizeof path[0],
-			pencil_TRANSPARENT, c << 8, width, pencil_JOIN_MITRED,
-			pencil_CAP_BUTT, pencil_CAP_BUTT, 0, 0, false,
-			pencil_SOLID);
-	if (code != pencil_OK)
-		return ro_save_draw_error(code);
+        if (style->fill_type != PLOT_OP_TYPE_NONE) { 
 
+		code = pencil_path(ro_save_draw_diagram, 
+				   path,
+				   sizeof path / sizeof path[0],
+				   style->fill_colour << 8, 
+				   pencil_TRANSPARENT, 
+				   0, 
+				   pencil_JOIN_MITRED,
+				   pencil_CAP_BUTT, 
+				   pencil_CAP_BUTT, 
+				   0, 
+				   0, 
+				   false,
+				   pencil_SOLID);
+		if (code != pencil_OK)
+			return ro_save_draw_error(code);
+	}
+
+        if (style->stroke_type != PLOT_OP_TYPE_NONE) { 
+
+		code = pencil_path(ro_save_draw_diagram, 
+				   path,
+				   sizeof path / sizeof path[0],
+				   pencil_TRANSPARENT, 
+				   style->stroke_colour << 8, 
+				   style->stroke_width, 
+				   pencil_JOIN_MITRED,
+				   pencil_CAP_BUTT, 
+				   pencil_CAP_BUTT, 
+				   0, 
+				   0, 
+				   false,
+				   pencil_SOLID);
+
+		if (code != pencil_OK)
+			return ro_save_draw_error(code);
+	}
 	return true;
 }
 
@@ -302,27 +328,6 @@ bool ro_save_draw_path(const float *p, unsigned int n, colour fill,
 }
 
 
-bool ro_save_draw_fill(int x0, int y0, int x1, int y1, plot_style_t *style)
-{
-	pencil_code code;
-	const int path[] = { draw_MOVE_TO, x0 * 2, -y0 * 2 - 1,
-			draw_LINE_TO, x1 * 2, -y0 * 2 - 1,
-			draw_LINE_TO, x1 * 2, -y1 * 2 - 1,
-			draw_LINE_TO, x0 * 2, -y1 * 2 - 1,
-			draw_CLOSE_LINE,
-			draw_END_PATH };
-
-	code = pencil_path(ro_save_draw_diagram, path,
-                           sizeof path / sizeof path[0],
-                           style->fill_colour << 8, 
-                           pencil_TRANSPARENT, 0, pencil_JOIN_MITRED,
-                           pencil_CAP_BUTT, pencil_CAP_BUTT, 0, 0, false,
-                           pencil_SOLID);
-	if (code != pencil_OK)
-		return ro_save_draw_error(code);
-
-	return true;
-}
 
 
 bool ro_save_draw_clip(int clip_x0, int clip_y0,

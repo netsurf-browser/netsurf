@@ -61,14 +61,12 @@ cairo_t *current_cr;
  * the right-bottom pixel is actually part of the BRect!
  */
 
-static bool nsbeos_plot_rectangle(int x0, int y0, int width, int height,
-		int line_width, colour c, bool dotted, bool dashed);
+static bool nsbeos_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style);
 static bool nsbeos_plot_line(int x0, int y0, int x1, int y1, int width,
 		colour c, bool dotted, bool dashed);
 static bool nsbeos_plot_polygon(const int *p, unsigned int n, colour fill);
 static bool nsbeos_plot_path(const float *p, unsigned int n, colour fill, float width,
                     colour c, const float transform[6]);
-static bool nsbeos_plot_fill(int x0, int y0, int x1, int y1, plot_style_t *style);
 static bool nsbeos_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
 static bool nsbeos_plot_text(int x, int y, const struct css_style *style,
@@ -97,7 +95,6 @@ const struct plotter_table nsbeos_plotters = {
 	nsbeos_plot_rectangle,
 	nsbeos_plot_line,
 	nsbeos_plot_polygon,
-	nsbeos_plot_fill,
 	nsbeos_plot_clip,
 	nsbeos_plot_text,
 	nsbeos_plot_disc,
@@ -139,51 +136,97 @@ void nsbeos_current_gc_set(BView *view)
 	current_view = view;
 }
 
-bool nsbeos_plot_rectangle(int x0, int y0, int width, int height,
-		int line_width, colour c, bool dotted, bool dashed)
+bool nsbeos_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
 {
-	pattern pat = B_SOLID_HIGH;
-	BView *view;
+	if (style->fill_type != PLOT_OP_TYPE_NONE) { 
+		BView *view;
 
-	if (dotted)
-		pat = kDottedPattern;
-	else if (dashed)
-		pat = kDashedPattern;
+		view = nsbeos_current_gc/*_lock*/();
+		if (view == NULL) {
+			warn_user("No GC", 0);
+			return false;
+		}
 
-	view = nsbeos_current_gc/*_lock*/();
-	if (view == NULL) {
-		warn_user("No GC", 0);
-		return false;
+		nsbeos_set_colour(style->fill_colour);
+
+		BRect rect(x0, y0, x1 - 1, y1 - 1);
+		view->FillRect(rect);
+
+		//nsbeos_current_gc_unlock();
+
+#if 0 /* GTK */
+		nsbeos_set_colour(style->fill_colour);
+		nsbeos_set_solid();
+#ifdef CAIRO_VERSION
+		if (option_render_cairo) {
+			cairo_set_line_width(current_cr, 0);
+			cairo_rectangle(current_cr, x0, y0, x1 - x0, y1 - y0);
+			cairo_fill(current_cr);
+			cairo_stroke(current_cr);
+		} else
+#endif
+			gdk_draw_rectangle(current_drawable, current_gc,
+					   TRUE, x0, y0, x1 - x0, y1 - y0);
+#endif
 	}
 
-	nsbeos_set_colour(c);
+        if (style->stroke_type != PLOT_OP_TYPE_NONE) { 
+		pattern pat; 
+		BView *view;
 
-	float pensize = view->PenSize();
-	view->SetPenSize(line_width);
+                switch (style->stroke_type) {
+                case PLOT_OP_TYPE_SOLID: /**< Solid colour */
+                default:
+                        pat = B_SOLID_HIGH;
+                        break;
 
-	BRect rect(x0, y0, x0 + width - 1, y0 + height - 1);
-	view->StrokeRect(rect, pat);
+                case PLOT_OP_TYPE_DOT: /**< Doted plot */
+			pat = kDottedPattern;
+                        break;
 
-	view->SetPenSize(pensize);
+                case PLOT_OP_TYPE_DASH: /**< dashed plot */
+			pat = kDashedPattern;
+                        break;
+                }
 
-	//nsbeos_current_gc_unlock();
+		view = nsbeos_current_gc/*_lock*/();
+		if (view == NULL) {
+			warn_user("No GC", 0);
+			return false;
+		}
+
+		nsbeos_set_colour(style->stroke_colour);
+
+		float pensize = view->PenSize();
+		view->SetPenSize(style->stroke_width);
+
+		BRect rect(x0, y0, x1, y1);
+		view->StrokeRect(rect, pat);
+
+		view->SetPenSize(pensize);
+
+		//nsbeos_current_gc_unlock();
 
 #if 0 /* GTK */
 #ifdef CAIRO_VERSION
-	if (option_render_cairo) {
-		if (line_width == 0)
-			line_width = 1;
+		if (option_render_cairo) {
+			if (line_width == 0)
+				line_width = 1;
 
-		cairo_set_line_width(current_cr, line_width);
-		cairo_rectangle(current_cr, x0, y0, width, height);
-		cairo_stroke(current_cr);
-	} else
+			cairo_set_line_width(current_cr, line_width);
+			cairo_rectangle(current_cr, x0, y0, width, height);
+			cairo_stroke(current_cr);
+		} else
 #endif
-	gdk_draw_rectangle(current_drawable, current_gc,
-			FALSE, x0, y0, width, height);
+			gdk_draw_rectangle(current_drawable, current_gc,
+					   FALSE, x0, y0, width, height);
+		return true;
+#endif
+	}
+
 	return true;
-#endif
 }
+
 
 
 bool nsbeos_plot_line(int x0, int y0, int x1, int y1, int width,
@@ -301,39 +344,6 @@ bool nsbeos_plot_polygon(const int *p, unsigned int n, colour fill)
 }
 
 
-bool nsbeos_plot_fill(int x0, int y0, int x1, int y1, plot_style_t *style)
-{
-	BView *view;
-
-	view = nsbeos_current_gc/*_lock*/();
-	if (view == NULL) {
-		warn_user("No GC", 0);
-		return false;
-	}
-
-	nsbeos_set_colour(style->fill_colour);
-
-	BRect rect(x0, y0, x1 - 1, y1 - 1);
-	view->FillRect(rect);
-
-	//nsbeos_current_gc_unlock();
-
-#if 0 /* GTK */
-	nsbeos_set_colour(style->fill_colour);
-	nsbeos_set_solid();
-#ifdef CAIRO_VERSION
-	if (option_render_cairo) {
-		cairo_set_line_width(current_cr, 0);
-		cairo_rectangle(current_cr, x0, y0, x1 - x0, y1 - y0);
-		cairo_fill(current_cr);
-		cairo_stroke(current_cr);
-	} else
-#endif
-	gdk_draw_rectangle(current_drawable, current_gc,
-			TRUE, x0, y0, x1 - x0, y1 - y0);
-#endif
-	return true;
-}
 
 
 bool nsbeos_plot_clip(int clip_x0, int clip_y0,

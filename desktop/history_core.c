@@ -628,6 +628,11 @@ bool history_redraw_entry(struct history *history,
 	int tailsize = 5;
 	int xoffset = x - x0;
 	int yoffset = y - y0;
+        plot_style_t pstyle_history_rect = { 
+            .stroke_type = PLOT_OP_TYPE_SOLID,
+            .stroke_colour = c,
+            .stroke_width = entry == history->current ? 2 : 1,
+        };
 
 	if (clip) {
 		if(!plot.clip(x0 + xoffset, y0 + yoffset, x1 + xoffset, y1 + yoffset))
@@ -637,9 +642,11 @@ bool history_redraw_entry(struct history *history,
 	if (!plot.bitmap(entry->x + xoffset, entry->y + yoffset, WIDTH, HEIGHT,
 			entry->bitmap, 0xffffff, 0))
 		return false;
-	if (!plot.rectangle(entry->x - 1 + xoffset, entry->y - 1 + yoffset,
-			WIDTH + 1, HEIGHT + 1,
-			entry == history->current ? 2 : 1, c, false, false))
+	if (!plot.rectangle(entry->x - 1 + xoffset, 
+                            entry->y - 1 + yoffset,
+                            entry->x + xoffset + WIDTH, 
+                            entry->y + yoffset + HEIGHT,
+                            &pstyle_history_rect))
 		return false;
 
 	if (!nsfont.font_position_in_string(&css_base_style, entry->page.title,

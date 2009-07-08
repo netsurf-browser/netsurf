@@ -198,16 +198,32 @@ framebuffer_plot_bitmap(int x, int y,
 }
 
 static bool 
-framebuffer_plot_fill(int x0, int y0, int x1, int y1, plot_style_t *style)
+framebuffer_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
 {
-    nsfb_bbox_t rect;
-    rect.x0 = x0;
-    rect.y0 = y0;
-    rect.x1 = x1;
-    rect.y1 = y1;
+	nsfb_bbox_t rect;
+	bool dotted = false; 
+	bool dashed = false;
 
-    return nsfb_plot_rectangle_fill(nsfb, &rect, style->fill_colour);
+	rect.x0 = x0;
+	rect.y0 = y0;
+	rect.x1 = x1;
+	rect.y1 = y1;
 
+	if (style->fill_type != PLOT_OP_TYPE_NONE) {  
+		nsfb_plot_rectangle_fill(nsfb, &rect, style->fill_colour);
+	}
+    
+	if (style->stroke_type != PLOT_OP_TYPE_NONE) {
+		if (style->stroke_type == PLOT_OP_TYPE_DOT) 
+			dotted = true;
+
+		if (style->stroke_type == PLOT_OP_TYPE_DASH) 
+			dashed = true;
+
+		nsfb_plot_rectangle(nsfb, &rect, style->stroke_width, style->stroke_colour, dotted, dashed); 
+	}
+
+	return true;
 }
 
 static bool framebuffer_plot_flush(void)
@@ -229,10 +245,9 @@ framebuffer_plot_path(const float *p,
 }
 
 struct plotter_table plot = {
-	.rectangle = nsfb_lplot_rectangle,
+	.rectangle = framebuffer_plot_rectangle,
 	.line = nsfb_lplot_line,
 	.polygon = nsfb_lplot_polygon,
-	.fill = framebuffer_plot_fill,
 	.clip = nsfb_lplot_clip,
 	.text = framebuffer_plot_text,
 	.disc = nsfb_lplot_disc,
