@@ -24,9 +24,7 @@
 #include "desktop/browser.h"
 #include <dos/dos.h>
 #include "desktop/gui.h"
-#ifdef NS_AMIGA_CAIRO
-#include <cairo/cairo.h>
-#endif
+#include "amiga/plotters.h"
 
 enum
 {
@@ -115,20 +113,6 @@ struct gui_window
 	struct List dllist;
 };
 
-struct gui_globals
-{
-	struct BitMap *bm;
-	struct RastPort rp;
-	struct Layer_Info *layerinfo;
-	APTR areabuf;
-	APTR tmprasbuf;
-	struct Rectangle rect;
-#ifdef NS_AMIGA_CAIRO
-	cairo_surface_t *surface;
-	cairo_t *cr;
-#endif
-};
-
 void ami_get_msg(void);
 void ami_update_pointer(struct Window *win, gui_pointer_shape shape);
 void ami_close_all_tabs(struct gui_window_2 *gwin);
@@ -147,6 +131,5 @@ struct FileRequester *savereq;
 struct MsgPort *sport;
 bool win_destroyed;
 struct browser_window *curbw;
-struct gui_globals *glob;
 struct gui_globals browserglob;
 #endif

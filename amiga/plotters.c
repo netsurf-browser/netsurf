@@ -17,16 +17,13 @@
  */
 
 #include "amiga/plotters.h"
-#include "amiga/gui.h"
 #include "amiga/bitmap.h"
 #include "amiga/font.h"
 #include <proto/Picasso96API.h>
-#include <proto/graphics.h>
 #include <intuition/intuition.h>
 #include <graphics/rpattr.h>
 #include <graphics/gfxmacros.h>
 #include "amiga/utf8.h"
-#include <proto/layers.h>
 #include "amiga/options.h"
 #include <graphics/blitattr.h>
 #include <graphics/composite.h>
@@ -34,6 +31,8 @@
 #include <math.h>
 #include <assert.h>
 #include <proto/exec.h>
+#include "amiga/gui.h"
+#include "utils/utils.h"
 
 static void ami_bitmap_tile_hook(struct Hook *hook,struct RastPort *rp,struct BackFillMessage *bfmsg);
 
@@ -107,6 +106,64 @@ void ami_cairo_set_dashed(cairo_t *cr)
 	cairo_set_dash(glob->cr, &cdashes, 1, 0);
 }
 #endif
+
+void ami_init_layers(struct gui_globals *gg)
+{
+	/* init shared bitmaps                                               *
+	 * Height is set to screen width to give enough space for thumbnails *
+	 * Also applies to the further gfx/layers functions and memory below */
+
+	gg->layerinfo = NewLayerInfo();
+	gg->areabuf = AllocVec(100,MEMF_PRIVATE | MEMF_CLEAR);
+	gg->tmprasbuf = AllocVec(scrn->Width*scrn->Width,MEMF_PRIVATE | MEMF_CLEAR);
+
+	gg->bm = p96AllocBitMap(scrn->Width,scrn->Width,32,
+						BMF_INTERLEAVED, NULL, RGBFB_A8R8G8B8);
+
+	if(!gg->bm) warn_user("NoMemory","");
+
+	InitRastPort(&gg->rp);
+	gg->rp.BitMap = gg->bm;
+
+	SetDrMd(&gg->rp,BGBACKFILL);
+
+	gg->rp.Layer = CreateUpfrontLayer(gg->layerinfo,gg->rp.BitMap,0,0,
+					scrn->Width-1,scrn->Width-1,LAYERSIMPLE,NULL);
+
+	InstallLayerHook(gg->rp.Layer,LAYERS_NOBACKFILL);
+
+	gg->rp.AreaInfo = AllocVec(sizeof(struct AreaInfo),MEMF_PRIVATE | MEMF_CLEAR);
+
+	if((!gg->areabuf) || (!gg->rp.AreaInfo))	warn_user("NoMemory","");
+
+	InitArea(gg->rp.AreaInfo,gg->areabuf,100/5);
+	gg->rp.TmpRas = AllocVec(sizeof(struct TmpRas),MEMF_PRIVATE | MEMF_CLEAR);
+
+	if((!gg->tmprasbuf) || (!gg->rp.TmpRas))	warn_user("NoMemory","");
+
+	InitTmpRas(gg->rp.TmpRas,gg->tmprasbuf,scrn->Width*scrn->Width);
+
+#ifdef NS_AMIGA_CAIRO
+	gg->surface = cairo_amigaos_surface_create(gg->rp.BitMap);
+	gg->cr = cairo_create(gg->surface);
+#endif
+}
+
+void ami_free_layers(struct gui_globals *gg)
+{
+#ifdef NS_AMIGA_CAIRO
+	cairo_destroy(gg->cr);
+	cairo_surface_destroy(gg->surface);
+#endif
+	DeleteLayer(0,gg->rp.Layer);
+	FreeVec(gg->rp.TmpRas);
+	FreeVec(gg->rp.AreaInfo);
+
+	DisposeLayerInfo(gg->layerinfo);
+	p96FreeBitMap(gg->bm);
+	FreeVec(gg->tmprasbuf);
+	FreeVec(gg->areabuf);
+}
 
 bool ami_clg(colour c)
 {

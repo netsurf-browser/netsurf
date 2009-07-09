@@ -38,7 +38,6 @@
 #include "render/form.h"
 #include <graphics/rpattr.h>
 #include <libraries/gadtools.h>
-#include <proto/layers.h>
 #include <datatypes/pictureclass.h>
 #include "desktop/selection.h"
 #include "utils/utf8.h"
@@ -181,7 +180,6 @@ uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved);
 void ami_init_mouse_pointers(void);
 void ami_switch_tab(struct gui_window_2 *gwin,bool redraw);
 static void *myrealloc(void *ptr, size_t len, void *pw);
-void ami_init_layers(struct RastPort *rp);
 
 STRPTR ami_locale_langs(void)
 {
@@ -581,28 +579,7 @@ void gui_init2(int argc, char** argv)
 	if(notalreadyrunning)
 	{
 		ami_openscreen();
-
-		/* init shared bitmaps                                               *
-		 * Height is set to screen width to give enough space for thumbnails *
-		 * Also applies to the further gfx/layers functions and memory below */
-
-		browserglob.layerinfo = NewLayerInfo();
-		browserglob.areabuf = AllocVec(100,MEMF_PRIVATE | MEMF_CLEAR);
-		browserglob.tmprasbuf = AllocVec(scrn->Width*scrn->Width,MEMF_PRIVATE | MEMF_CLEAR);
-
-		if(!option_direct_render)
-		{
-			browserglob.bm = p96AllocBitMap(scrn->Width,scrn->Width,32,
-						BMF_INTERLEAVED, NULL, RGBFB_A8R8G8B8);
-
-			if(!browserglob.bm) warn_user("NoMemory","");
-
-			InitRastPort(&browserglob.rp);
-			browserglob.rp.BitMap = browserglob.bm;
-
-			ami_init_layers(&browserglob.rp);
-		}
-		/* init shared bitmaps */
+		ami_init_layers(&browserglob);
 	}
 
 	if(argc) // argc==0 is started from wb
@@ -682,44 +659,6 @@ void gui_init2(int argc, char** argv)
 	if(!bw)	bw = browser_window_create(option_homepage_url, 0, 0, true,false);
 
 	if(locked_screen) UnlockPubScreen(NULL,scrn);
-}
-
-void ami_init_layers(struct RastPort *rp)
-{
-	SetDrMd(rp,BGBACKFILL);
-
-	rp->Layer = CreateUpfrontLayer(browserglob.layerinfo,rp->BitMap,0,0,
-					scrn->Width-1,scrn->Width-1,LAYERSIMPLE,NULL);
-
-	InstallLayerHook(rp->Layer,LAYERS_NOBACKFILL);
-
-	rp->AreaInfo = AllocVec(sizeof(struct AreaInfo),MEMF_PRIVATE | MEMF_CLEAR);
-
-	if((!browserglob.areabuf) || (!rp->AreaInfo))	warn_user("NoMemory","");
-
-	InitArea(rp->AreaInfo,browserglob.areabuf,100/5);
-	rp->TmpRas = AllocVec(sizeof(struct TmpRas),MEMF_PRIVATE | MEMF_CLEAR);
-
-	if((!browserglob.tmprasbuf) || (!rp->TmpRas))	warn_user("NoMemory","");
-
-	InitTmpRas(rp->TmpRas,browserglob.tmprasbuf,scrn->Width*scrn->Width);
-	glob = &browserglob;
-
-#ifdef NS_AMIGA_CAIRO
-		browserglob.surface = cairo_amigaos_surface_create(rp->BitMap);
-		browserglob.cr = cairo_create(browserglob.surface);
-#endif
-}
-
-void ami_free_layers(struct RastPort *rp)
-{
-#ifdef NS_AMIGA_CAIRO
-	cairo_destroy(browserglob.cr);
-	cairo_surface_destroy(browserglob.surface);
-#endif
-	DeleteLayer(0,rp->Layer);
-	FreeVec(rp->TmpRas);
-	FreeVec(rp->AreaInfo);
 }
 
 void ami_update_quals(struct gui_window_2 *gwin)
@@ -1581,11 +1520,7 @@ void gui_quit(void)
 
 	ami_arexx_cleanup();
 
-	if(!option_direct_render) ami_free_layers(&browserglob.rp);
-	DisposeLayerInfo(browserglob.layerinfo);
-	p96FreeBitMap(browserglob.bm);
-	FreeVec(browserglob.tmprasbuf);
-	FreeVec(browserglob.areabuf);
+	ami_free_layers(&browserglob);
 
 	ami_close_fonts();
 
@@ -2119,8 +2054,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 	gwin->shared->bw = bw;
 
-	if(option_direct_render) ami_init_layers(gwin->shared->win->RPort);
-
 	GetAttr(WINDOW_HorizObject,gwin->shared->objects[OID_MAIN],(ULONG *)&gwin->shared->objects[OID_HSCROLL]);
 	GetAttr(WINDOW_VertObject,gwin->shared->objects[OID_MAIN],(ULONG *)&gwin->shared->objects[OID_VSCROLL]);
 
@@ -2139,6 +2072,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 	gwin->shared->node = AddObject(window_list,AMINS_WINDOW);
 	gwin->shared->node->objstruct = gwin->shared;
+
+	glob = &browserglob;
 
 	return gwin;
 }
@@ -2214,7 +2149,6 @@ void gui_window_destroy(struct gui_window *g)
 
 	curbw = NULL;
 
-	if(option_direct_render) ami_free_layers(g->shared->win->RPort);
 	DisposeObject(g->shared->objects[OID_MAIN]);
 	DelObject(g->shared->node);
 	if(g->tab_node)
@@ -2348,8 +2282,7 @@ void ami_do_redraw_limits(struct gui_window *g, struct content *c,int x0, int y0
 
 	ami_clearclipreg(&browserglob.rp);
 
-	if(!option_direct_render)
-		BltBitMapRastPort(browserglob.bm,x0-sx,y0-sy,g->shared->win->RPort,
+	BltBitMapRastPort(browserglob.bm,x0-sx,y0-sy,g->shared->win->RPort,
 						xoffset+x0-sx,yoffset+y0-sy,x1-x0,y1-y0,0x0C0);
 }
 
@@ -2491,15 +2424,12 @@ void ami_do_redraw(struct gui_window_2 *g)
 
 		ami_clearclipreg(&browserglob.rp);
 
-		if(!option_direct_render)
-		{
-			Forbid();
-			GetAttr(SPACE_AreaBox,g->gadgets[GID_BROWSER],(ULONG *)&bbox);
+		Forbid();
+		GetAttr(SPACE_AreaBox,g->gadgets[GID_BROWSER],(ULONG *)&bbox);
 
-			BltBitMapRastPort(browserglob.bm,0,0,g->win->RPort,bbox->Left,bbox->Top,
+		BltBitMapRastPort(browserglob.bm,0,0,g->win->RPort,bbox->Left,bbox->Top,
 								bbox->Width,bbox->Height,0x0C0);
-			Permit();
-		}
+		Permit();
 	}
 
 	current_redraw_browser = NULL;
@@ -2936,8 +2866,6 @@ void gui_window_remove_caret(struct gui_window *g)
 	int xs,ys;
 
 	if(!g) return;
-	if(option_direct_render) return;
-
 
 	GetAttr(SPACE_AreaBox,g->shared->gadgets[GID_BROWSER],(ULONG *)&bbox);
 	GetAttr(SCROLLER_Top,g->shared->objects[OID_HSCROLL],(ULONG *)&xs);

@@ -39,7 +39,6 @@ extern char *option_recent_file;
 extern char *option_arexx_dir;
 extern char *option_download_dir;
 extern bool option_faster_scroll;
-extern bool option_direct_render;
 extern bool option_scale_quality;
 extern bool option_ask_overwrite;
 
@@ -63,7 +62,6 @@ char *option_recent_file = 0; \
 char *option_arexx_dir = 0; \
 char *option_download_dir = 0; \
 bool option_faster_scroll = true; \
-bool option_direct_render = false; \
 bool option_scale_quality = false; \
 bool option_ask_overwrite = false; \
 
@@ -87,7 +85,6 @@ bool option_ask_overwrite = false; \
 { "arexx_dir",		OPTION_STRING,	&option_arexx_dir }, \
 { "download_dir",		OPTION_STRING,	&option_download_dir }, \
 { "faster_scroll",	OPTION_BOOL,	&option_faster_scroll}, \
-{ "debug_dr",	OPTION_BOOL,	&option_direct_render}, \
 { "scale_quality",	OPTION_BOOL,	&option_scale_quality}, \
 { "ask_overwrite",	OPTION_BOOL,	&option_ask_overwrite},
 #endif

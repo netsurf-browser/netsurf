@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008, 2009 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -19,6 +19,25 @@
 #ifndef AMIGA_PLOTTERS_H
 #define AMIGA_PLOTTERS_H
 #include "desktop/plotters.h"
+#include <proto/layers.h>
+#include <proto/graphics.h>
+#ifdef NS_AMIGA_CAIRO
+#include <cairo/cairo.h>
+#endif
+
+struct gui_globals
+{
+	struct BitMap *bm;
+	struct RastPort rp;
+	struct Layer_Info *layerinfo;
+	APTR areabuf;
+	APTR tmprasbuf;
+	struct Rectangle rect;
+#ifdef NS_AMIGA_CAIRO
+	cairo_surface_t *surface;
+	cairo_t *cr;
+#endif
+};
 
 extern const struct plotter_table amiplot;
 
@@ -41,4 +60,9 @@ bool ami_group_end(void);
 bool ami_flush(void);
 bool ami_path(const float *p, unsigned int n, colour fill, float width,
 			colour c, const float transform[6]);
+
+void ami_init_layers(struct gui_globals *gg);
+void ami_free_layers(struct gui_globals *gg);
+
+struct gui_globals *glob;
 #endif
