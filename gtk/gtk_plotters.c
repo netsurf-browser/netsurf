@@ -439,16 +439,16 @@ void nsgtk_set_solid()
 
 void nsgtk_set_dotted()
 {
-	double cdashes = 1;
+	double cdashes[] = { 1.0, 2.0 };
 
-	cairo_set_dash(current_cr, &cdashes, 1, 0);
+	cairo_set_dash(current_cr, cdashes, 2, 0);
 }
 
 void nsgtk_set_dashed()
 {
-	double cdashes = 3;
+	double cdashes[] = { 8.0, 2.0 };
 
-	cairo_set_dash(current_cr, &cdashes, 1, 0);
+	cairo_set_dash(current_cr, cdashes, 2, 0);
 }
 
 void nsgtk_plot_set_scale(float s)
