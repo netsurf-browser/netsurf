@@ -35,8 +35,7 @@
 
 
 static bool ro_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style);
-static bool ro_plot_line(int x0, int y0, int x1, int y1, int width,
-		colour c, bool dotted, bool dashed);
+static bool ro_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *style);
 static bool ro_plot_draw_path(const draw_path * const path, int width,
 		colour c, bool dotted, bool dashed);
 static bool ro_plot_polygon(const int *p, unsigned int n, colour fill);
@@ -147,8 +146,7 @@ bool ro_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style
 }
 
 
-bool ro_plot_line(int x0, int y0, int x1, int y1, int width,
-		colour c, bool dotted, bool dashed)
+bool ro_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 {
 	const int path[] = { draw_MOVE_TO,
 			(ro_plot_origin_x + x0 * 2) * 256,
@@ -157,8 +155,22 @@ bool ro_plot_line(int x0, int y0, int x1, int y1, int width,
 			(ro_plot_origin_x + x1 * 2) * 256,
 			(ro_plot_origin_y - y1 * 2 - 1) * 256,
 			draw_END_PATH };
+	bool dotted = false; 
+	bool dashed = false;
 
-	return ro_plot_draw_path((const draw_path *) path, width, c, dotted, dashed);
+	if (style->stroke_type != PLOT_OP_TYPE_NONE) {
+		if (style->stroke_type == PLOT_OP_TYPE_DOT) 
+			dotted = true;
+
+		if (style->stroke_type == PLOT_OP_TYPE_DASH) 
+			dashed = true;
+
+		return ro_plot_draw_path((const draw_path *)path, 
+					 style->stroke_width, 
+					 style->stroke_colour, 
+					 dotted, dashed);
+	}
+	return true;
 }
 
 

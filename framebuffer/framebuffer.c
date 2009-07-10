@@ -226,6 +226,31 @@ framebuffer_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *s
 	return true;
 }
 
+static bool 
+framebuffer_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
+{
+	nsfb_bbox_t rect;
+	bool dotted = false; 
+	bool dashed = false;
+
+	rect.x0 = x0;
+	rect.y0 = y0;
+	rect.x1 = x1;
+	rect.y1 = y1;
+    
+	if (style->stroke_type != PLOT_OP_TYPE_NONE) {
+		if (style->stroke_type == PLOT_OP_TYPE_DOT) 
+			dotted = true;
+
+		if (style->stroke_type == PLOT_OP_TYPE_DASH) 
+			dashed = true;
+
+		nsfb_plot_line(nsfb, &rect, style->stroke_width, style->stroke_colour, dotted, dashed); 
+	}
+
+	return true;
+}
+
 static bool framebuffer_plot_flush(void)
 {
 	LOG(("flush unimplemnted"));
@@ -246,7 +271,7 @@ framebuffer_plot_path(const float *p,
 
 struct plotter_table plot = {
 	.rectangle = framebuffer_plot_rectangle,
-	.line = nsfb_lplot_line,
+	.line = framebuffer_plot_line,
 	.polygon = nsfb_lplot_polygon,
 	.clip = nsfb_lplot_clip,
 	.text = framebuffer_plot_text,

@@ -38,8 +38,7 @@
 #include "utils/utils.h"
 
 static bool ro_save_draw_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style);
-static bool ro_save_draw_line(int x0, int y0, int x1, int y1, int width,
-		colour c, bool dotted, bool dashed);
+static bool ro_save_draw_line(int x0, int y0, int x1, int y1, const plot_style_t *style);
 static bool ro_save_draw_polygon(const int *p, unsigned int n, colour fill);
 static bool ro_save_draw_path(const float *p, unsigned int n, colour fill,
 		float width, colour c, const float transform[6]);
@@ -192,19 +191,24 @@ bool ro_save_draw_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *
 }
 
 
-bool ro_save_draw_line(int x0, int y0, int x1, int y1, int width,
-		colour c, bool dotted, bool dashed)
+bool ro_save_draw_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 {
 	pencil_code code;
 	const int path[] = { draw_MOVE_TO, x0 * 2, -y0 * 2 - 1,
-			draw_LINE_TO, x1 * 2, -y1 * 2 - 1,
-			draw_END_PATH };
+			     draw_LINE_TO, x1 * 2, -y1 * 2 - 1,
+			     draw_END_PATH };
 
-	code = pencil_path(ro_save_draw_diagram, path,
-			sizeof path / sizeof path[0],
-			pencil_TRANSPARENT, c << 8, width, pencil_JOIN_MITRED,
-			pencil_CAP_BUTT, pencil_CAP_BUTT, 0, 0, false,
-			pencil_SOLID);
+	code = pencil_path(ro_save_draw_diagram, 
+			   path,
+			   sizeof path / sizeof path[0],
+			   pencil_TRANSPARENT, 
+			   style->stroke_colour << 8, 
+			   style->stroke_width, 
+			   pencil_JOIN_MITRED,
+			   pencil_CAP_BUTT, 
+			   pencil_CAP_BUTT, 
+			   0, 0, false,
+			   pencil_SOLID);
 	if (code != pencil_OK)
 		return ro_save_draw_error(code);
 

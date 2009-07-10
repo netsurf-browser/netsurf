@@ -46,8 +46,7 @@
 /* #define PDF_DEBUG_DUMPGRID */
 
 static bool pdf_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style);
-static bool pdf_plot_line(int x0, int y0, int x1, int y1, int width,
-		colour c, bool dotted, bool dashed);
+static bool pdf_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *pstyle);
 static bool pdf_plot_polygon(const int *p, unsigned int n, colour fill);
 static bool pdf_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
@@ -200,16 +199,30 @@ bool pdf_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *psty
 	return true;
 }
 
-bool pdf_plot_line(int x0, int y0, int x1, int y1, int width,
-		colour c, bool dotted, bool dashed)
+bool pdf_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *pstyle)
 {
-#ifdef PDF_DEBUG
-	LOG(("."));
-#endif
+	DashPattern_e dash;
 
-	apply_clip_and_mode(false, TRANSPARENT, c, width,
-			(dotted) ? DashPattern_eDotted :
-			((dashed) ? DashPattern_eDash : DashPattern_eNone));
+	switch (pstyle->stroke_type) {
+	case PLOT_OP_TYPE_DOT:
+		dash = DashPattern_eDotted;
+		break;
+
+	case PLOT_OP_TYPE_DASH:
+		dash = DashPattern_eDash;
+		break;
+
+	default:
+		dash = DashPattern_eNone;
+		break;
+
+	}
+
+	apply_clip_and_mode(false, 
+			    TRANSPARENT, 
+			    pstyle->stroke_colour, 
+			    pstyle->stroke_width,
+			    dash);
 
 	HPDF_Page_MoveTo(pdf_page, x0, page_height - y0);
 	HPDF_Page_LineTo(pdf_page, x1, page_height - y1);

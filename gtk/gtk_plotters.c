@@ -49,8 +49,7 @@ GdkDrawable *current_drawable;
 GdkGC *current_gc;
 cairo_t *current_cr;
 
-static bool nsgtk_plot_line(int x0, int y0, int x1, int y1, int width,
-		colour c, bool dotted, bool dashed);
+static bool nsgtk_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *style);
 static bool nsgtk_plot_polygon(const int *p, unsigned int n, colour fill);
 static bool nsgtk_plot_path(const float *p, unsigned int n, colour fill, float width,
                     colour c, const float transform[6]);
@@ -129,21 +128,31 @@ bool nsgtk_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *st
 	return true;
 }
 
-bool nsgtk_plot_line(int x0, int y0, int x1, int y1, int width,
-		colour c, bool dotted, bool dashed)
+bool nsgtk_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 {
-	nsgtk_set_colour(c);
-	if (dotted)
-		nsgtk_set_dotted();
-	else if (dashed)
-		nsgtk_set_dashed();
-	else
+
+	nsgtk_set_colour(style->stroke_colour);
+
+	switch (style->stroke_type) {
+	case PLOT_OP_TYPE_SOLID: /**< Solid colour */
+	default:
 		nsgtk_set_solid();
+		break;
 
-	if (width == 0)
-		width = 1;
+	case PLOT_OP_TYPE_DOT: /**< Doted plot */
+		nsgtk_set_dotted();
+		break;
 
-	cairo_set_line_width(current_cr, width);
+	case PLOT_OP_TYPE_DASH: /**< dashed plot */
+		nsgtk_set_dashed();
+		break;
+	}
+
+	if (style->stroke_width == 0) 
+		cairo_set_line_width(current_cr, 1);
+	else
+		cairo_set_line_width(current_cr, style->stroke_width);
+
 	cairo_move_to(current_cr, x0 + 0.5, y0 + 0.5);
 	cairo_line_to(current_cr, x1 + 0.5, y1 + 0.5);
 	cairo_stroke(current_cr);

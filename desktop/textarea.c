@@ -52,6 +52,12 @@ static plot_style_t pstyle_stroke_border = {
     .stroke_width = 1,
 };
 
+static plot_style_t pstyle_stroke_caret = { 
+    .stroke_type = PLOT_OP_TYPE_SOLID,
+    .stroke_colour = CARET_COLOR,
+    .stroke_width = 1,
+};
+
 struct line_info {
 	unsigned int b_start;		/**< Byte offset of line start */
 	unsigned int b_length;		/**< Byte length of line */
@@ -526,7 +532,7 @@ bool textarea_set_caret(struct text_area *ta, int caret)
 		y1 = min(y + height + 1, ta->y + ta->vis_height);
 		
 		plot.clip(x0, y0, x1, y1);
-		plot.line(x, y, x, y + height, 1, CARET_COLOR, false, false);
+		plot.line(x, y, x, y + height, &pstyle_stroke_caret);
 	}
 	ta->redraw_end_callback(ta->data);	
 	

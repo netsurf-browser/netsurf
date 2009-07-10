@@ -75,47 +75,6 @@
 #define KNOCKOUT_BOXES 768	/* 28 bytes each */
 #define KNOCKOUT_POLYGONS 3072	/* 4 bytes each */
 
-/** Global fill styles - used everywhere, should they be here? */
-static plot_style_t plot_style_fill_white_static = {
-	.fill_type = PLOT_OP_TYPE_SOLID,
-	.fill_colour = 0xffffff,
-};
-
-static plot_style_t plot_style_fill_red_static = {
-	.fill_type = PLOT_OP_TYPE_SOLID,
-	.fill_colour = 0x000000ff,
-};
-
-static plot_style_t plot_style_fill_black_static = {
-	.fill_type = PLOT_OP_TYPE_SOLID,
-	.fill_colour = 0x0,
-};
-
-static plot_style_t plot_style_stroke_red_static = {
-	.stroke_type = PLOT_OP_TYPE_SOLID,
-	.stroke_colour = 0x000000ff,
-	.stroke_width = 1,
-};
-
-static plot_style_t plot_style_stroke_blue_static = {
-	.stroke_type = PLOT_OP_TYPE_SOLID,
-	.stroke_colour = 0x00ff0000,
-	.stroke_width = 1,
-};
-
-static plot_style_t plot_style_stroke_yellow_static = {
-	.stroke_type = PLOT_OP_TYPE_SOLID,
-	.stroke_colour = 0x0000ffff,
-	.stroke_width = 1,
-};
-
-plot_style_t *plot_style_fill_white = &plot_style_fill_white_static;
-plot_style_t *plot_style_fill_red = &plot_style_fill_red_static;
-plot_style_t *plot_style_fill_black = &plot_style_fill_black_static;
-plot_style_t *plot_style_stroke_red = &plot_style_stroke_red_static;
-plot_style_t *plot_style_stroke_blue = &plot_style_stroke_blue_static;
-plot_style_t *plot_style_stroke_yellow = &plot_style_stroke_yellow_static;
-
 struct knockout_box;
 struct knockout_entry;
 
@@ -126,8 +85,7 @@ static bool knockout_plot_fill_recursive(struct knockout_box *box, plot_style_t 
 static bool knockout_plot_bitmap_recursive(struct knockout_box *box,
 		struct knockout_entry *entry);
 
-static bool knockout_plot_line(int x0, int y0, int x1, int y1, int width,
-		colour c, bool dotted, bool dashed);
+static bool knockout_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *pstyle);
 static bool knockout_plot_polygon(const int *p, unsigned int n, colour fill);
 static bool knockout_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *plot_style);
 static bool knockout_plot_clip(int clip_x0, int clip_y0,
@@ -208,10 +166,7 @@ struct knockout_entry {
 			int y0;
 			int x1;
 			int y1;
-			int width;
-			colour c;
-			bool dotted;
-			bool dashed;
+			plot_style_t plot_style;
 		} line;
 		struct {
 			int *p;
@@ -365,10 +320,7 @@ bool knockout_plot_flush(void)
 					knockout_entries[i].data.line.y0,
 					knockout_entries[i].data.line.x1,
 					knockout_entries[i].data.line.y1,
-					knockout_entries[i].data.line.width,
-					knockout_entries[i].data.line.c,
-					knockout_entries[i].data.line.dotted,
-					knockout_entries[i].data.line.dashed);
+					&knockout_entries[i].data.line.plot_style);
 			break;
 		case KNOCKOUT_PLOT_POLYGON:
 			success &= plot.polygon(
@@ -687,18 +639,22 @@ bool knockout_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t 
 		knockout_entries[knockout_entry_cur].data.fill.x1 = x1;
 		knockout_entries[knockout_entry_cur].data.fill.y1 = y1;
 		knockout_entries[knockout_entry_cur].data.fill.plot_style = *pstyle;
+		knockout_entries[knockout_entry_cur].data.fill.plot_style.stroke_type = PLOT_OP_TYPE_NONE; /* ensure we only plot the fill */
 		knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_FILL;
 		if ((++knockout_entry_cur >= KNOCKOUT_ENTRIES) ||
 		    (++knockout_box_cur >= KNOCKOUT_BOXES))
 			knockout_plot_flush();
-        } else if (pstyle->stroke_type != PLOT_OP_TYPE_NONE) {
-		/* not a filled area */
+        } 
+
+	if (pstyle->stroke_type != PLOT_OP_TYPE_NONE) {
+		/* draw outline */
 
 		knockout_entries[knockout_entry_cur].data.rectangle.x0 = x0;
 		knockout_entries[knockout_entry_cur].data.rectangle.y0 = y0;
 		knockout_entries[knockout_entry_cur].data.rectangle.x1 = x1;
 		knockout_entries[knockout_entry_cur].data.rectangle.y1 = y1;
 		knockout_entries[knockout_entry_cur].data.fill.plot_style = *pstyle;
+		knockout_entries[knockout_entry_cur].data.fill.plot_style.fill_type = PLOT_OP_TYPE_NONE; /* ensure we only plot the outline */
 		knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_RECTANGLE;
 		if (++knockout_entry_cur >= KNOCKOUT_ENTRIES)
 			knockout_plot_flush();
@@ -706,17 +662,13 @@ bool knockout_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t 
 	return true;
 }
 
-bool knockout_plot_line(int x0, int y0, int x1, int y1, int width,
-		colour c, bool dotted, bool dashed)
+bool knockout_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *pstyle)
 {
 	knockout_entries[knockout_entry_cur].data.line.x0 = x0;
 	knockout_entries[knockout_entry_cur].data.line.y0 = y0;
 	knockout_entries[knockout_entry_cur].data.line.x1 = x1;
 	knockout_entries[knockout_entry_cur].data.line.y1 = y1;
-	knockout_entries[knockout_entry_cur].data.line.width = width;
-	knockout_entries[knockout_entry_cur].data.line.c = c;
-	knockout_entries[knockout_entry_cur].data.line.dotted = dotted;
-	knockout_entries[knockout_entry_cur].data.line.dashed = dashed;
+	knockout_entries[knockout_entry_cur].data.line.plot_style = *pstyle;
 	knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_LINE;
 	if (++knockout_entry_cur >= KNOCKOUT_ENTRIES)
 		knockout_plot_flush();

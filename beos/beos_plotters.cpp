@@ -62,8 +62,7 @@ cairo_t *current_cr;
  */
 
 static bool nsbeos_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style);
-static bool nsbeos_plot_line(int x0, int y0, int x1, int y1, int width,
-		colour c, bool dotted, bool dashed);
+static bool nsbeos_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *style);
 static bool nsbeos_plot_polygon(const int *p, unsigned int n, colour fill);
 static bool nsbeos_plot_path(const float *p, unsigned int n, colour fill, float width,
                     colour c, const float transform[6]);
@@ -229,16 +228,25 @@ bool nsbeos_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *s
 
 
 
-bool nsbeos_plot_line(int x0, int y0, int x1, int y1, int width,
-		colour c, bool dotted, bool dashed)
+bool nsbeos_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 {
-	pattern pat = B_SOLID_HIGH;
+	pattern pat;
 	BView *view;
 
-	if (dotted)
+	switch (style->stroke_type) {
+	case PLOT_OP_TYPE_SOLID: /**< Solid colour */
+	default:
+		pat = B_SOLID_HIGH;
+		break;
+
+	case PLOT_OP_TYPE_DOT: /**< Doted plot */
 		pat = kDottedPattern;
-	else if (dashed)
+		break;
+
+	case PLOT_OP_TYPE_DASH: /**< dashed plot */
 		pat = kDashedPattern;
+		break;
+	}
 
 	view = nsbeos_current_gc/*_lock*/();
 	if (view == NULL) {
@@ -246,10 +254,10 @@ bool nsbeos_plot_line(int x0, int y0, int x1, int y1, int width,
 		return false;
 	}
 
-	nsbeos_set_colour(c);
+	nsbeos_set_colour(style->stroke_colour);
 
 	float pensize = view->PenSize();
-	view->SetPenSize(width);
+	view->SetPenSize(style->stroke_width);
 
 	BPoint start(x0, y0);
 	BPoint end(x1, y1);
@@ -271,8 +279,8 @@ bool nsbeos_plot_line(int x0, int y0, int x1, int y1, int width,
 		cairo_stroke(current_cr);
 	} else
 #endif
-	gdk_draw_line(current_drawable, current_gc,
-			x0, y0, x1, y1);
+		gdk_draw_line(current_drawable, current_gc,
+			      x0, y0, x1, y1);
 #endif
 	return true;
 }

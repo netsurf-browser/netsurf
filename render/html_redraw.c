@@ -934,20 +934,19 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 bool html_redraw_caret(struct caret *c, colour current_background_color,
 		float scale)
 {
-	colour caret_color = 0x808080;  /* todo - choose a proper colour */
 	int xc = c->x, y = c->y;
 	int h = c->height - 1;
 	int w = (h + 7) / 8;
 
 	return (plot.line(xc * scale, y * scale,
 				xc * scale, (y + h) * scale,
-				0, caret_color, false, false) &&
+				plot_style_caret) &&
 			plot.line((xc - w) * scale, y * scale,
 				(xc + w) * scale, y * scale,
-				0, caret_color, false, false) &&
+				plot_style_caret) &&
 			plot.line((xc - w) * scale, (y + h) * scale,
 				(xc + w) * scale, (y + h) * scale,
-				0, caret_color, false, false));
+				plot_style_caret));
 }
 
 
@@ -1095,27 +1094,35 @@ bool html_redraw_border_plot(int i, int *p, colour c,
 		css_border_style style, int thickness)
 {
 	int z[8];
-	bool dotted = false;
 	unsigned int light = i;
 	colour c_lit;
+	plot_style_t plot_style_bdr = {
+		.stroke_type = PLOT_OP_TYPE_DASH,
+		.stroke_colour = c,
+		.stroke_width = thickness,
+		.fill_type = PLOT_OP_TYPE_NONE,
+	};
 
 	if (c == TRANSPARENT)
 		return true;
 
 	switch (style) {
 	case CSS_BORDER_STYLE_DOTTED:
-		dotted = true;
+		plot_style_bdr.stroke_type = PLOT_OP_TYPE_DOT;
+
 	case CSS_BORDER_STYLE_DASHED:
 		if (!plot.line((p[i * 4 + 0] + p[i * 4 + 2]) / 2,
 				(p[i * 4 + 1] + p[i * 4 + 3]) / 2,
 				(p[i * 4 + 4] + p[i * 4 + 6]) / 2,
 				(p[i * 4 + 5] + p[i * 4 + 7]) / 2,
-				thickness,
-				c, dotted, !dotted))
+				&plot_style_bdr))
 			return false;
-		return true;
+		break;
 
 	case CSS_BORDER_STYLE_SOLID:
+	default:
+		if (!plot.polygon(p + i * 4, 4, c))
+			return false;
 		break;
 
 	case CSS_BORDER_STYLE_DOUBLE:
@@ -1139,7 +1146,7 @@ bool html_redraw_border_plot(int i, int *p, colour c,
 		z[7] = p[i * 4 + 5];
 		if (!plot.polygon(z, 4, c))
 			return false;
-		return true;
+		break;
 
 	case CSS_BORDER_STYLE_GROOVE:
 		light = 3 - light;
@@ -1164,7 +1171,7 @@ bool html_redraw_border_plot(int i, int *p, colour c,
 				html_redraw_lighter(c) :
 				html_redraw_darker(c)))
 			return false;
-		return true;
+		break;
 
 	case CSS_BORDER_STYLE_INSET:
 		light = (light + 2) % 4;
@@ -1208,14 +1215,9 @@ bool html_redraw_border_plot(int i, int *p, colour c,
 		}
 		if (!plot.polygon(z, 4, c))
 			return false;
-		return true;
-
-	default:
 		break;
 	}
 
-	if (!plot.polygon(p + i * 4, 4, c))
-		return false;
 
 	return true;
 }
@@ -1282,20 +1284,6 @@ colour html_redraw_aa(colour c0, colour c1)
 
 
 
-#define WIDGET_BASEC 0xd9d9d9
-#define WIDGET_BLOBC 0x000000
-
-/** plot style for checkbox base. */
-static plot_style_t pstyle_fill_wbasec = {
-	.fill_type = PLOT_OP_TYPE_SOLID,
-	.fill_colour = WIDGET_BASEC,
-};
-
-/** plot style for checkbox background. */
-static plot_style_t pstyle_fill_wblobc = {
-	.fill_type = PLOT_OP_TYPE_SOLID,
-	.fill_colour = WIDGET_BLOBC,
-};
 
 /**
  * Plot a checkbox.
@@ -1311,42 +1299,37 @@ static plot_style_t pstyle_fill_wblobc = {
 bool html_redraw_checkbox(int x, int y, int width, int height,
 		bool selected)
 {
-	int dark = html_redraw_darker(html_redraw_darker(WIDGET_BASEC));
-	int lite = html_redraw_lighter(html_redraw_lighter(WIDGET_BASEC));
-
 	double z = width * 0.15;
 	if (z == 0)
 		z = 1;
 
-	if (!(plot.rectangle(x, y, x + width, y + height, &pstyle_fill_wbasec) &&
-		plot.line(x, y, x + width, y, 1, dark, false, false) &&
-		plot.line(x, y, x, y + height, 1, dark, false, false) &&
-		plot.line(x + width, y, x + width, y + height, 1, lite,
-		  false, false) &&
-		plot.line(x, y + height, x + width, y + height, 1, lite,
-		  false, false)))
+	if (!(plot.rectangle(x, y, x + width, y + height, plot_style_fill_wbasec) &&
+		plot.line(x, y, x + width, y, plot_style_stroke_darkwbasec) &&
+		plot.line(x, y, x, y + height, plot_style_stroke_darkwbasec) &&
+		plot.line(x + width, y, x + width, y + height, plot_style_stroke_lightwbasec) &&
+		plot.line(x, y + height, x + width, y + height, plot_style_stroke_lightwbasec)))
 		return false;
 
 	if (selected) {
 		if (width < 12 || height < 12) {
 			/* render a solid box instead of a tick */
 			if (!plot.rectangle(x + z + z, y + z + z,
-				x + width - z, y + height - z,
-				&pstyle_fill_wblobc))
+					    x + width - z, y + height - z,
+					    plot_style_fill_wblobc))
 				return false;
 		} else {
 			/* render a tick, as it'll fit comfortably */
 			if (!(plot.line(x + width - z,
-				y + z,
-				x + (z * 3),
-				y + height - z,
-				2, WIDGET_BLOBC, false, false) &&
+					y + z,
+					x + (z * 3),
+					y + height - z,
+					plot_style_stroke_wblobc) &&
 
-				plot.line(x + (z * 3),
-				y + height - z,
-				x + z + z,
-				y + (height / 2),
-				2, WIDGET_BLOBC, false, false)))
+			      plot.line(x + (z * 3),
+					y + height - z,
+					x + z + z,
+					y + (height / 2),
+					plot_style_stroke_wblobc)))
 				return false;
 		}
 	}
@@ -1889,6 +1872,11 @@ bool html_redraw_text_decoration_inline(struct box *box, int x, int y,
 		float scale, colour colour, float ratio)
 {
 	struct box *c;
+	plot_style_t plot_style_box = {
+		.stroke_type = PLOT_OP_TYPE_SOLID,
+		.stroke_colour = colour,
+	};
+
 	for (c = box->next;
 			c && c != box->inline_end;
 			c = c->next) {
@@ -1898,7 +1886,7 @@ bool html_redraw_text_decoration_inline(struct box *box, int x, int y,
 				(y + c->y + c->height * ratio) * scale,
 				(x + c->x + c->width) * scale,
 				(y + c->y + c->height * ratio) * scale,
-				0, colour, false, false))
+				&plot_style_box))
 			return false;
 	}
 	return true;
@@ -1921,6 +1909,11 @@ bool html_redraw_text_decoration_block(struct box *box, int x, int y,
 		float scale, colour colour, float ratio)
 {
 	struct box *c;
+	plot_style_t plot_style_box = {
+		.stroke_type = PLOT_OP_TYPE_SOLID,
+		.stroke_colour = colour,
+	};
+
 	/* draw through text descendants */
 	for (c = box->children; c; c = c->next) {
 		if (c->type == BOX_TEXT) {
@@ -1928,7 +1921,7 @@ bool html_redraw_text_decoration_block(struct box *box, int x, int y,
 					(y + c->y + c->height * ratio) * scale,
 					(x + c->x + c->width) * scale,
 					(y + c->y + c->height * ratio) * scale,
-					0, colour, false, false))
+					&plot_style_box))
 				return false;
 		} else if (c->type == BOX_INLINE_CONTAINER ||
 				c->type == BOX_BLOCK) {
@@ -1941,6 +1934,42 @@ bool html_redraw_text_decoration_block(struct box *box, int x, int y,
 	return true;
 }
 
+static inline bool 
+html_redraw_scrollbar_rectangle(int x0, int y0, int x1, int y1, colour c, bool inset)
+{
+	static plot_style_t c0 = {
+		.stroke_type = PLOT_OP_TYPE_SOLID,
+		.stroke_width = 1,
+	};
+
+	static plot_style_t c1 = {
+		.stroke_type = PLOT_OP_TYPE_SOLID,
+		.stroke_width = 1,
+	};
+
+	static plot_style_t c2 = {
+		.stroke_type = PLOT_OP_TYPE_SOLID,
+		.stroke_width = 1,
+	};
+
+	if (inset) {
+		c0.stroke_colour = darken_colour(c);
+		c1.stroke_colour = lighten_colour(c);
+	} else {
+		c0.stroke_colour = lighten_colour(c);
+		c1.stroke_colour = darken_colour(c);
+	}
+	c2.stroke_colour = html_redraw_blend(c0.stroke_colour, 
+					     c1.stroke_colour);
+
+	if (!plot.line(x0, y0, x1, y0, &c0)) return false;
+	if (!plot.line(x1, y0, x1, y1 + 1, &c1)) return false;
+	if (!plot.line(x1, y0, x1, y0 + 1, &c2)) return false;
+	if (!plot.line(x1, y1, x0, y1, &c1)) return false;
+	if (!plot.line(x0, y1, x0, y0, &c0)) return false;
+	if (!plot.line(x0, y1, x0, y1 + 1, &c2)) return false;
+	return true;
+}
 
 /**
  * Plot scrollbars for a scrolling box.
@@ -1962,7 +1991,6 @@ bool html_redraw_scrollbars(struct box *box, float scale,
 	bool vscroll, hscroll;
 	int well_height, bar_top, bar_height;
 	int well_width, bar_left, bar_width;
-	colour c0, c1; /* highlight and shadow colours */
 	int v[6]; /* array of triangle vertices */
 	plot_style_t pstyle_css_scrollbar_bg_colour = {
 		.fill_type = PLOT_OP_TYPE_SOLID,
@@ -1978,38 +2006,23 @@ bool html_redraw_scrollbars(struct box *box, float scale,
 			&well_height, &bar_top, &bar_height,
 			&well_width, &bar_left, &bar_width);
 
-#define RECTANGLE(x0, y0, x1, y1, c, inset)				\
-	c0 = inset ? html_redraw_darker(c) : html_redraw_lighter(c);	\
-	c1 = inset ? html_redraw_lighter(c) : html_redraw_darker(c);	\
-	if (!plot.line(x0, y0, x1, y0, 1, c0, false, false))		\
-		return false;						\
-	if (!plot.line(x1, y0, x1, y1 + 1, 1, c1, false, false))	\
-		return false;						\
-	if (!plot.line(x1, y0, x1, y0 + 1, 1,				\
-			html_redraw_blend(c0, c1), false, false))	\
-		return false;						\
-	if (!plot.line(x1, y1, x0, y1, 1, c1, false, false))		\
-		return false;						\
-	if (!plot.line(x0, y1, x0, y0, 1, c0, false, false))		\
-		return false;						\
-	if (!plot.line(x0, y1, x0, y1 + 1, 1,				\
-			html_redraw_blend(c0, c1), false, false))	\
-		return false;
 
 	/* horizontal scrollbar */
 	if (hscroll) {
 		/* scrollbar outline */
-		RECTANGLE(x,
+		if (!html_redraw_scrollbar_rectangle(x,
 				y + padding_height - w,
 				x + padding_width - 1,
 				y + padding_height - 1,
-				css_scrollbar_bg_colour, true);
+				css_scrollbar_bg_colour, true))
+			return false;
 		/* left arrow icon border */
-		RECTANGLE(x + 1,
+		if (!html_redraw_scrollbar_rectangle(x + 1,
 				y + padding_height - w + 1,
 				x + w - 2,
 				y + padding_height - 2,
-				css_scrollbar_fg_colour, false);
+				css_scrollbar_fg_colour, false))
+			return false;
 		/* left arrow icon background */
 		if (!plot.rectangle(x + 2,
 				y + padding_height - w + 2,
@@ -2034,11 +2047,12 @@ bool html_redraw_scrollbars(struct box *box, float scale,
 				&pstyle_css_scrollbar_bg_colour))
 			return false;
 		/* scroll position indicator bar */
-		RECTANGLE(x + w + bar_left,
+		if (!html_redraw_scrollbar_rectangle(x + w + bar_left,
 				y + padding_height - w + 1,
 				x + w + bar_left + bar_width + (vscroll? 1 : 0),
 				y + padding_height - 2,
-				css_scrollbar_fg_colour, false);
+				css_scrollbar_fg_colour, false))
+			return false;
 		if (!plot.rectangle(x + w + bar_left + 1,
 				y + padding_height - w + 2,
 				x + w + bar_left + bar_width + (vscroll? 1 : 0),
@@ -2046,11 +2060,12 @@ bool html_redraw_scrollbars(struct box *box, float scale,
 				&pstyle_css_scrollbar_fg_colour))
 			return false;
 		/* right arrow icon border */
-		RECTANGLE(x + w + well_width + 2,
+		if (!html_redraw_scrollbar_rectangle(x + w + well_width + 2,
 				y + padding_height - w + 1,
 				x + w + well_width + w - (vscroll ? 1 : 2),
 				y + padding_height - 2,
-				css_scrollbar_fg_colour, false);
+				css_scrollbar_fg_colour, false))
+			return false;
 		/* right arrow icon background */
 		if (!plot.rectangle(x + w + well_width + 3,
 				y + padding_height - w + 2,
@@ -2072,22 +2087,26 @@ bool html_redraw_scrollbars(struct box *box, float scale,
 	/* vertical scrollbar */
 	if (vscroll) {
 		/* outline */
-		RECTANGLE(x + padding_width - w,
-				y,
-				x + padding_width - 1,
-				y + padding_height - 1,
-				css_scrollbar_bg_colour, true);
+		if (!html_redraw_scrollbar_rectangle(x + padding_width - w,
+						     y,
+						     x + padding_width - 1,
+						     y + padding_height - 1,
+						     css_scrollbar_bg_colour, 
+						     true))
+			return false;
 		/* top arrow background */
-		RECTANGLE(x + padding_width - w + 1,
-				y + 1,
-				x + padding_width - 2,
-				y + w - 2,
-				css_scrollbar_fg_colour, false);
+		if (!html_redraw_scrollbar_rectangle(x + padding_width - w + 1,
+						     y + 1,
+						     x + padding_width - 2,
+						     y + w - 2,
+						     css_scrollbar_fg_colour, 
+						     false))
+			return false;
 		if (!plot.rectangle(x + padding_width - w + 2,
-				y + 2,
-				x + padding_width - 2,
-				y + w - 2,
-				&pstyle_css_scrollbar_fg_colour))
+				    y + 2,
+				    x + padding_width - 2,
+				    y + w - 2,
+				    &pstyle_css_scrollbar_fg_colour))
 			return false;
 		/* up arrow */
 		v[0] = x + padding_width - w / 2;
@@ -2106,11 +2125,12 @@ bool html_redraw_scrollbars(struct box *box, float scale,
 				&pstyle_css_scrollbar_bg_colour))
 			return false;
 		/* scroll position indicator bar */
-		RECTANGLE(x + padding_width - w + 1,
+		if (!html_redraw_scrollbar_rectangle(x + padding_width - w + 1,
 				y + w + bar_top,
 				x + padding_width - 2,
 				y + w + bar_top + bar_height,
-				css_scrollbar_fg_colour, false);
+				css_scrollbar_fg_colour, false))
+			return false;
 		if (!plot.rectangle(x + padding_width - w + 2,
 				y + w + bar_top + 1,
 				x + padding_width - 2,
@@ -2118,11 +2138,12 @@ bool html_redraw_scrollbars(struct box *box, float scale,
 				&pstyle_css_scrollbar_fg_colour))
 			return false;
 		/* bottom arrow background */
-		RECTANGLE(x + padding_width - w + 1,
+		if (!html_redraw_scrollbar_rectangle(x + padding_width - w + 1,
 				y + padding_height - w + 1,
 				x + padding_width - 2,
 				y + padding_height - 2,
-				css_scrollbar_fg_colour, false);
+				css_scrollbar_fg_colour, false))
+			return false;
 		if (!plot.rectangle(x + padding_width - w + 2,
 				y + padding_height - w + 2,
 				x + padding_width - 2,

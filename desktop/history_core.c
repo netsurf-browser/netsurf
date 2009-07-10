@@ -661,19 +661,19 @@ bool history_redraw_entry(struct history *history,
 		if (!plot.line(entry->x + WIDTH + xoffset,
 				entry->y + HEIGHT / 2 + yoffset,
 		      	entry->x + WIDTH + tailsize + xoffset,
-				entry->y + HEIGHT / 2 + yoffset, 1,
-				0x333333, false, false))
+				entry->y + HEIGHT / 2 + yoffset, 
+			       plot_style_stroke_history))
 			return false;
 		if (!plot.line(entry->x + WIDTH + tailsize + xoffset,
-				entry->y + HEIGHT / 2 + yoffset,
-				child->x - tailsize +xoffset,
-				child->y + HEIGHT / 2 + yoffset, 1,
-				0x333333, false, false))
+			       entry->y + HEIGHT / 2 + yoffset,
+			       child->x - tailsize +xoffset,
+			       child->y + HEIGHT / 2 + yoffset,
+			       plot_style_stroke_history))
 			return false;
 		if (!plot.line(child->x - tailsize + xoffset,
-				child->y + HEIGHT / 2 + yoffset,
-				child->x + xoffset, child->y + HEIGHT / 2 + yoffset, 1,
-				0x333333, false, false))
+			       child->y + HEIGHT / 2 + yoffset,
+			       child->x + xoffset, child->y + HEIGHT / 2 + yoffset,
+			       plot_style_stroke_history))
 			return false;
 		if (!history_redraw_entry(history, child, x0, y0, x1, y1, x, y, clip))
 			return false;
