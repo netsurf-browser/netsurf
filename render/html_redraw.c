@@ -71,7 +71,6 @@ static bool html_redraw_border_plot(int i, int *p, colour c,
 static colour html_redraw_darker(colour c);
 static colour html_redraw_lighter(colour c);
 static colour html_redraw_blend(colour c0, colour c1);
-static colour html_redraw_aa(colour c0, colour c1);
 static bool html_redraw_checkbox(int x, int y, int width, int height,
 		bool selected);
 static bool html_redraw_radio(int x, int y, int width, int height,
@@ -315,14 +314,14 @@ bool html_redraw_box(struct box *box,
 
 	/* dotted debug outlines */
 	if (html_redraw_debug) {
-		if (!plot.rectangle(x, y, 
+		if (!plot.rectangle(x, y,
 				    x + padding_width, y + padding_height,
 				    plot_style_stroke_red))
 			return false;
-		if (!plot.rectangle(x + padding_left, 
+		if (!plot.rectangle(x + padding_left,
 				    y + padding_top,
-				    x + padding_left + width, 
-				    y + padding_top + height, 
+				    x + padding_left + width,
+				    y + padding_top + height,
 				    plot_style_stroke_blue))
 			return false;
 		if (!plot.rectangle(
@@ -1258,31 +1257,15 @@ colour html_redraw_lighter(colour c)
  *
  * \param  c0  colour
  * \param  c1  colour
- * \return  a blended colour
+ * \return  a blended colour, half way between c0 and c1
  */
 
 colour html_redraw_blend(colour c0, colour c1)
-{
-	return mix_colour(c0, c1)
-}
-
-
-/**
- * Mix two colours to produce a colour suitable for anti-aliasing.
- *
- * \param  c0  first colour
- * \param  c1  second colour
- * \return  a colour half way between c0 and c1
- */
-
-colour html_redraw_aa(colour c0, colour c1)
 {
 	return ((((c0 >> 16) + (c1 >> 16)) / 2) << 16) |
 			(((((c0 >> 8) & 0xff) + ((c1 >> 8) & 0xff)) / 2) << 8) |
 			((((c0 & 0xff) + (c1 & 0xff)) / 2) << 0);
 }
-
-
 
 
 /**
@@ -1830,7 +1813,8 @@ bool html_redraw_text_decoration(struct box *box,
 	if (html_redraw_printing)
 		colour = box->style->color;
 	else
-		colour = html_redraw_aa(background_colour, box->style->color);
+		colour = html_redraw_blend(background_colour,
+				box->style->color);
 
 	if (box->type == BOX_INLINE) {
 		if (!box->inline_end)
@@ -1934,7 +1918,7 @@ bool html_redraw_text_decoration_block(struct box *box, int x, int y,
 	return true;
 }
 
-static inline bool 
+static inline bool
 html_redraw_scrollbar_rectangle(int x0, int y0, int x1, int y1, colour c, bool inset)
 {
 	static plot_style_t c0 = {
@@ -1959,7 +1943,7 @@ html_redraw_scrollbar_rectangle(int x0, int y0, int x1, int y1, colour c, bool i
 		c0.stroke_colour = lighten_colour(c);
 		c1.stroke_colour = darken_colour(c);
 	}
-	c2.stroke_colour = html_redraw_blend(c0.stroke_colour, 
+	c2.stroke_colour = html_redraw_blend(c0.stroke_colour,
 					     c1.stroke_colour);
 
 	if (!plot.line(x0, y0, x1, y0, &c0)) return false;
@@ -2091,7 +2075,7 @@ bool html_redraw_scrollbars(struct box *box, float scale,
 						     y,
 						     x + padding_width - 1,
 						     y + padding_height - 1,
-						     css_scrollbar_bg_colour, 
+						     css_scrollbar_bg_colour,
 						     true))
 			return false;
 		/* top arrow background */
@@ -2099,7 +2083,7 @@ bool html_redraw_scrollbars(struct box *box, float scale,
 						     y + 1,
 						     x + padding_width - 2,
 						     y + w - 2,
-						     css_scrollbar_fg_colour, 
+						     css_scrollbar_fg_colour,
 						     false))
 			return false;
 		if (!plot.rectangle(x + padding_width - w + 2,
