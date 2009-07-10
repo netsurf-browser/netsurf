@@ -68,8 +68,6 @@ bool html_redraw_inline_borders(struct box *box, int x0, int y0, int x1, int y1,
 		float scale, bool first, bool last);
 static bool html_redraw_border_plot(int i, int *p, colour c,
 		css_border_style style, int thickness);
-static colour html_redraw_darker(colour c);
-static colour html_redraw_lighter(colour c);
 static bool html_redraw_checkbox(int x, int y, int width, int height,
 		bool selected);
 static bool html_redraw_radio(int x, int y, int width, int height,
@@ -1093,7 +1091,7 @@ bool html_redraw_border_plot(int i, int *p, colour c,
 {
 	int z[8];
 	unsigned int light = i;
-	colour c_lit;
+	colour c_plot;
 	plot_style_t plot_style_bdr = {
 		.stroke_type = PLOT_OP_TYPE_DASH,
 		.stroke_colour = c,
@@ -1158,16 +1156,14 @@ bool html_redraw_border_plot(int i, int *p, colour c,
 		z[6] = p[i * 4 + 6];
 		z[7] = p[i * 4 + 7];
 		if (!plot.polygon(z, 4, light <= 1 ?
-				html_redraw_darker(c) :
-				html_redraw_lighter(c)))
+				darken_colour(c) : lighten_colour(c)))
 			return false;
 		z[0] = p[i * 4 + 2];
 		z[1] = p[i * 4 + 3];
 		z[6] = p[i * 4 + 4];
 		z[7] = p[i * 4 + 5];
 		if (!plot.polygon(z, 4, light <= 1 ?
-				html_redraw_lighter(c) :
-				html_redraw_darker(c)))
+				lighten_colour(c) : darken_colour(c)))
 			return false;
 		break;
 
@@ -1182,19 +1178,22 @@ bool html_redraw_border_plot(int i, int *p, colour c,
 		z[5] = (p[i * 4 + 7] + p[i * 4 + 5]) / 2;
 		z[6] = p[i * 4 + 6];
 		z[7] = p[i * 4 + 7];
-		c_lit = c;
+		c_plot = c;
 		switch (light) {
 		case 3:
-			c_lit = html_redraw_lighter(c_lit);
+			c_plot = double_lighten_colour(c);
+			break;
 		case 0:
-			c_lit = html_redraw_lighter(c_lit);
+			c_plot = lighten_colour(c);
 			break;
 		case 1:
-			c_lit = html_redraw_darker(c_lit);
+			c_plot = double_darken_colour(c);
+			break;
 		case 2:
-			c_lit = html_redraw_darker(c_lit);
+			c_plot = darken_colour(c);
+			break;
 		}
-		if (!plot.polygon(z, 4, c_lit))
+		if (!plot.polygon(z, 4, c_plot))
 			return false;
 		z[0] = p[i * 4 + 2];
 		z[1] = p[i * 4 + 3];
@@ -1202,52 +1201,25 @@ bool html_redraw_border_plot(int i, int *p, colour c,
 		z[7] = p[i * 4 + 5];
 		switch (light) {
 		case 0:
-			c = html_redraw_lighter(c);
+			c_plot = double_lighten_colour(c);
+			break;
 		case 3:
-			c = html_redraw_lighter(c);
+			c_plot = lighten_colour(c);
 			break;
 		case 2:
-			c = html_redraw_darker(c);
+			c_plot = double_darken_colour(c);
+			break;
 		case 1:
-			c = html_redraw_darker(c);
+			c_plot = darken_colour(c);
+			break;
 		}
-		if (!plot.polygon(z, 4, c))
+		if (!plot.polygon(z, 4, c_plot))
 			return false;
 		break;
 	}
 
 
 	return true;
-}
-
-
-/**
- * Make a colour darker.
- *
- * \param  c  colour
- * \return  a darker shade of c
- */
-
-#define mix_colour(c0, c1) ((((c0 >> 16) + 3 * (c1 >> 16)) >> 2) << 16) | \
-		(((((c0 >> 8) & 0xff) + 3 * ((c1 >> 8) & 0xff)) >> 2) << 8) | \
-		((((c0 & 0xff) + 3 * (c1 & 0xff)) >> 2) << 0);
-
-colour html_redraw_darker(colour c)
-{
-	return mix_colour(0x000000, c)
-}
-
-
-/**
- * Make a colour lighter.
- *
- * \param  c  colour
- * \return  a lighter shade of c
- */
-
-colour html_redraw_lighter(colour c)
-{
-	return mix_colour(0xffffff, c)
 }
 
 
@@ -1319,8 +1291,8 @@ bool html_redraw_checkbox(int x, int y, int width, int height,
 bool html_redraw_radio(int x, int y, int width, int height,
 		bool selected)
 {
-	int dark = html_redraw_darker(html_redraw_darker(WIDGET_BASEC));
-	int lite = html_redraw_lighter(html_redraw_lighter(WIDGET_BASEC));
+	int dark = double_darken_colour(WIDGET_BASEC);
+	int lite = double_lighten_colour(WIDGET_BASEC);
 
 	/* plot background of radio button */
 	if (!plot.disc(x + width * 0.5, y + height * 0.5,
