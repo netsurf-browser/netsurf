@@ -803,7 +803,7 @@ bool html_find_stylesheets(struct content *c, xmlNode *html)
 	fetchcache_go(c->data.html.stylesheet_content[STYLESHEET_BASE],
 			c->url, html_convert_css_callback, (intptr_t) c,
 			STYLESHEET_BASE, c->width, c->height,
-			0, 0, false, 0);
+			0, 0, false, c);
 
 	if (option_block_ads) {
 		c->data.html.stylesheet_content[STYLESHEET_ADBLOCK] =
@@ -818,7 +818,7 @@ bool html_find_stylesheets(struct content *c, xmlNode *html)
 				stylesheet_content[STYLESHEET_ADBLOCK],
 				c->url, html_convert_css_callback,
 				(intptr_t) c, STYLESHEET_ADBLOCK, c->width,
-				c->height, 0, 0, false, 0);
+				c->height, 0, 0, false, c);
 	}
 
 	node = html;
@@ -927,7 +927,7 @@ bool html_find_stylesheets(struct content *c, xmlNode *html)
 					c->url,
 					html_convert_css_callback,
 					(intptr_t) c, i, c->width, c->height,
-					0, 0, false, c->url);
+					0, 0, false, c);
 			i++;
 		} else if (strcmp((const char *) node->name, "style") == 0) {
 
@@ -1230,7 +1230,7 @@ bool html_fetch_object(struct content *c, char *url, struct box *box,
 	fetchcache_go(c_fetch, c->url,
 			html_object_callback, (intptr_t) c, i,
 			available_width, available_height,
-			0, 0, false, c->url);
+			0, 0, false, c);
 
 	return true;
 }
@@ -1298,7 +1298,7 @@ bool html_replace_object(struct content *c, unsigned int i, char *url,
 			html_object_callback, (intptr_t) c, i,
 			c->data.html.object[i].box->width,
 			c->data.html.object[i].box->height,
-			post_urlenc, post_multipart, false, c->url);
+			post_urlenc, post_multipart, false, c);
 
 	return true;
 }

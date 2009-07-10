@@ -223,7 +223,8 @@ void browser_window_initialise_common(struct browser_window *bw,
 void browser_window_go(struct browser_window *bw, const char *url,
 		const char *referrer, bool history_add);
 void browser_window_go_unverifiable(struct browser_window *bw,
-		const char *url, const char *referrer, bool history_add);
+		const char *url, const char *referrer, bool history_add,
+		struct content *parent);
 void browser_window_download(struct browser_window *bw,
 		const char *url, const char *referrer);
 void browser_window_update(struct browser_window *bw, bool scroll_to_top);

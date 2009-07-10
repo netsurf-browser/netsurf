@@ -105,7 +105,8 @@ void browser_window_create_iframes(struct browser_window *bw,
 		window = &(bw->iframes[index++]);
 		if (cur->url)
 			browser_window_go_unverifiable(window, cur->url,
-					bw->current_content->url, false);
+					bw->current_content->url, false,
+					bw->current_content);
 	}
 }
 
@@ -154,7 +155,7 @@ void browser_window_create_frameset(struct browser_window *bw,
 	int row, col, index;
 	struct content_html_frames *frame;
 	struct browser_window *window;
-	const char *referer;
+	struct content *parent;
 
 	assert(bw && frameset);
 
@@ -233,10 +234,8 @@ void browser_window_create_frameset(struct browser_window *bw,
 				window->current_content->type == CONTENT_HTML)
 			break;
 	}
-	if (window->current_content)
-		referer = window->current_content->url;
-	else
-		referer = NULL;
+
+	parent = window->current_content;
 
 	/* 4. Launch content */
 	for (row = 0; row < bw->rows; row++) {
@@ -248,8 +247,10 @@ void browser_window_create_frameset(struct browser_window *bw,
 			if (frame->url) {
 				browser_window_go_unverifiable(window,
 						frame->url,
-						referer,
-						true);
+						parent != NULL 
+							? parent->url : NULL,
+						true,
+						parent);
 			}
 		}
 	}

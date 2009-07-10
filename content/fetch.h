@@ -63,10 +63,11 @@ typedef void (*fetch_callback)(fetch_msg msg, void *p, const void *data,
 
 void fetch_init(void);
 struct fetch * fetch_start(const char *url, const char *referer,
-                           fetch_callback callback,
-                           void *p, bool only_2xx, const char *post_urlenc,
-                           struct form_successful_control *post_multipart,
-                           bool verifiable, const char *parent_url, char *headers[]);
+		fetch_callback callback,
+		void *p, bool only_2xx, const char *post_urlenc,
+		struct form_successful_control *post_multipart,
+		bool verifiable, struct content *parent, 
+		char *headers[]);
 void fetch_abort(struct fetch *f);
 void fetch_poll(void);
 void fetch_quit(void);
@@ -78,7 +79,7 @@ void fetch_change_callback(struct fetch *fetch,
                            void *p);
 long fetch_http_code(struct fetch *fetch);
 const char *fetch_get_referer(struct fetch *fetch);
-const char *fetch_get_parent_url(struct fetch *fetch);
+struct content *fetch_get_parent(struct fetch *fetch);
 bool fetch_get_verifiable(struct fetch *fetch);
 
 /* API for fetchers themselves */

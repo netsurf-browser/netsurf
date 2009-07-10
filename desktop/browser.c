@@ -77,7 +77,7 @@ static void browser_window_go_post(struct browser_window *bw,
 		const char *url, char *post_urlenc,
 		struct form_successful_control *post_multipart,
 		bool add_to_history, const char *referer, bool download,
-		bool verifiable, const char *parent_url);
+		bool verifiable, struct content *parent);
 static void browser_window_callback(content_msg msg, struct content *c,
 		intptr_t p1, intptr_t p2, union content_msg_data data);
 static void browser_window_refresh(void *p);
@@ -213,7 +213,7 @@ void browser_window_go(struct browser_window *bw, const char *url,
 	/* All fetches passing through here are verifiable
 	 * (i.e are the result of user action) */
 	browser_window_go_post(bw, url, 0, 0, history_add, referer,
-			false, true, referer);
+			false, true, NULL);
 }
 
 
@@ -226,10 +226,10 @@ void browser_window_go(struct browser_window *bw, const char *url,
  */
 
 void browser_window_download(struct browser_window *bw, const char *url,
-		const char *referrer)
+		const char *referer)
 {
-	browser_window_go_post(bw, url, 0, 0, false, referrer,
-			true, true, 0);
+	browser_window_go_post(bw, url, 0, 0, false, referer,
+			true, true, NULL);
 }
 
 
@@ -244,12 +244,13 @@ void browser_window_download(struct browser_window *bw, const char *url,
  */
 
 void browser_window_go_unverifiable(struct browser_window *bw,
-		const char *url, const char *referer, bool history_add)
+		const char *url, const char *referer, bool history_add,
+		struct content *parent)
 {
 	/* All fetches passing through here are unverifiable
 	 * (i.e are not the result of user action) */
 	browser_window_go_post(bw, url, 0, 0, history_add, referer,
-			false, false, referer);
+			false, false, parent);
 }
 
 /**
@@ -263,8 +264,7 @@ void browser_window_go_unverifiable(struct browser_window *bw,
  * \param  referer	   the referring uri (copied), or 0 if none
  * \param  download	   download, rather than render the uri
  * \param  verifiable	   this transaction is verifiable
- * \param  parent_url	   URL of fetch which spawned this one (copied),
- *                         or 0 if none
+ * \param  parent	   Parent content, or NULL
  *
  * Any existing fetches in the window are aborted.
  *
@@ -278,7 +278,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 		char *post_urlenc,
 		struct form_successful_control *post_multipart,
 		bool add_to_history, const char *referer, bool download,
-		bool verifiable, const char *parent_url)
+		bool verifiable, struct content *parent)
 {
 	struct content *c;
 	char *url2;
@@ -389,7 +389,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	bw->download = download;
 	fetchcache_go(c, referer, browser_window_callback,
 			(intptr_t) bw, 0, width, height,
-			post_urlenc, post_multipart, verifiable, parent_url);
+			post_urlenc, post_multipart, verifiable, parent);
 }
 
 
@@ -702,7 +702,8 @@ void browser_window_refresh(void *p)
 				bw->current_content->url, history_add);
 	} else {
 		browser_window_go_unverifiable(bw, bw->current_content->refresh,
-				bw->current_content->url, history_add);
+				bw->current_content->url, history_add,
+				bw->current_content);
 	}
 }
 

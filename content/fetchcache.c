@@ -228,7 +228,7 @@ struct content * fetchcache(const char *url,
  * \param  post_urlenc     url encoded post data, or 0 if none
  * \param  post_multipart  multipart post data, or 0 if none
  * \param  verifiable  this transaction is verifiable
- * \param  parent_url  URL of fetch which spawned this one, or 0 if none
+ * \param  parent  Content which spawned this one, or NULL if none
  *
  * Errors will be sent back through the callback.
  */
@@ -240,7 +240,7 @@ void fetchcache_go(struct content *content, const char *referer,
 		int width, int height,
 		char *post_urlenc,
 		struct form_successful_control *post_multipart,
-		bool verifiable, const char *parent_url)
+		bool verifiable, struct content *parent)
 {
 	char error_message[500];
 	union content_msg_data msg_data;
@@ -348,7 +348,7 @@ void fetchcache_go(struct content *content, const char *referer,
 				fetchcache_callback, content,
 				content->no_error_pages,
 				post_urlenc, post_multipart, verifiable,
-				parent_url, headers);
+				parent, headers);
 		for (i = 0; headers[i]; i++)
 			free(headers[i]);
 		free(headers);
@@ -884,9 +884,8 @@ void fetchcache_notmodified(struct content *c, const void *data)
 		/* No cached content, so unconditionally refetch */
 		struct content_user *u;
 		const char *ref = fetch_get_referer(c->fetch);
-		const char *parent = fetch_get_parent_url(c->fetch);
+		struct content *parent = fetch_get_parent(c->fetch);
 		char *referer = NULL;
-		char *parent_url = NULL;
 
 		if (ref) {
 			referer = strdup(ref);
@@ -896,19 +895,6 @@ void fetchcache_notmodified(struct content *c, const void *data)
 				msg_data.error = messages_get("NoMemory");
 				content_broadcast(c, CONTENT_MSG_ERROR,
 						msg_data);
-				return;
-			}
-		}
-
-		if (parent) {
-			parent_url = strdup(parent);
-			if (!parent_url) {
-				c->type = CONTENT_UNKNOWN;
-				c->status = CONTENT_STATUS_ERROR;
-				msg_data.error = messages_get("NoMemory");
-				content_broadcast(c, CONTENT_MSG_ERROR,
-						msg_data);
-				free(referer);
 				return;
 			}
 		}
@@ -923,10 +909,9 @@ void fetchcache_notmodified(struct content *c, const void *data)
 		for (u = c->user_list->next; u; u = u->next) {
 			fetchcache_go(c, referer, u->callback, u->p1, u->p2,
 					c->width, c->height, 0, 0,
-					false, parent_url);
+					false, parent);
 		}
 
-		free(parent_url);
 		free(referer);
 	}
 }
@@ -939,11 +924,11 @@ void fetchcache_redirect(struct content *c, const void *data,
 		unsigned long size)
 {
 	char *url, *url1;
-	char *referer, *parent_url;
+	char *referer;
 	char *scheme;
 	long http_code;
 	const char *ref;
-	const char *parent;
+	struct content *parent;
 	bool can_fetch;
 	bool parent_was_verifiable;
 	union content_msg_data msg_data;
@@ -956,7 +941,7 @@ void fetchcache_redirect(struct content *c, const void *data,
 	/* Extract fetch details */
 	http_code = fetch_http_code(c->fetch);
 	ref = fetch_get_referer(c->fetch);
-	parent = fetch_get_parent_url(c->fetch);
+	parent = fetch_get_parent(c->fetch);
 	parent_was_verifiable = fetch_get_verifiable(c->fetch);
 
 	/* Ensure a redirect happened */
@@ -964,10 +949,8 @@ void fetchcache_redirect(struct content *c, const void *data,
 	/* 304 is handled by fetch_notmodified() */
 	assert(http_code != 304);
 
-	/* Clone referer and parent url
-	 * originals are destroyed in fetch_abort() */
+	/* Clone referer -- original is destroyed in fetch_abort() */
 	referer = ref ? strdup(ref) : NULL;
-	parent_url = parent ? strdup(parent) : NULL;
 
 	/* set the status to ERROR so that this content is
 	 * destroyed in content_clean() */
@@ -983,18 +966,6 @@ void fetchcache_redirect(struct content *c, const void *data,
 		msg_data.error = messages_get("BadRedirect");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 
-		return;
-	}
-
-	/* Ensure parent url cloning succeeded
-	 * _must_ be after content invalidation */
-	if (parent && !parent_url) {
-		LOG(("Failed cloning parent url"));
-
-		msg_data.error = messages_get("BadRedirect");
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-
-		free(referer);
 		return;
 	}
 
@@ -1018,7 +989,6 @@ void fetchcache_redirect(struct content *c, const void *data,
 		msg_data.error = messages_get("BadRedirect");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 
-		free(parent_url);
 		free(referer);
 		return;
 	}
@@ -1031,7 +1001,6 @@ void fetchcache_redirect(struct content *c, const void *data,
 		msg_data.error = messages_get("BadRedirect");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 
-		free(parent_url);
 		free(referer);
 		return;
 	}
@@ -1045,7 +1014,6 @@ void fetchcache_redirect(struct content *c, const void *data,
 		msg_data.error = messages_get("BadRedirect");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 
-		free(parent_url);
 		free(referer);
 		return;
 	}
@@ -1058,7 +1026,6 @@ void fetchcache_redirect(struct content *c, const void *data,
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 
 		free(url1);
-		free(parent_url);
 		free(referer);
 		return;
 	}
@@ -1073,7 +1040,6 @@ void fetchcache_redirect(struct content *c, const void *data,
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 
 		free(url);
-		free(parent_url);
 		free(referer);
 		return;
 	}
@@ -1084,7 +1050,6 @@ void fetchcache_redirect(struct content *c, const void *data,
 
 		free(scheme);
 		free(url);
-		free(parent_url);
 		free(referer);
 		return;
 	}
@@ -1143,7 +1108,6 @@ void fetchcache_redirect(struct content *c, const void *data,
 						msg_data);
 
 				free(url);
-				free(parent_url);
 				free(referer);
 				return;
 			}
@@ -1160,13 +1124,12 @@ void fetchcache_redirect(struct content *c, const void *data,
 			/* Start fetching the replacement content */
 			fetchcache_go(replacement, referer, callback, p1, p2,
 					c->width, c->height, NULL, NULL,
-					parent_was_verifiable, parent_url);
+					parent_was_verifiable, parent);
 		}
 	}
 
 	/* Clean up */
 	free(url);
-	free(parent_url);
 	free(referer);
 }
 

@@ -596,6 +596,8 @@ bool content_set_type(struct content *c, content_type type,
 		 * a content per user */
 		const char *referer =
 			c->fetch ? fetch_get_referer(c->fetch) : NULL;
+		struct content *parent =
+			c->fetch ? fetch_get_parent(c->fetch) : NULL;
 
 		while (c->user_list->next->next) {
 			clone = content_create(c->url);
@@ -630,8 +632,7 @@ bool content_set_type(struct content *c, content_type type,
 			fetchcache_go(clone, referer,
 					callback, p1, p2,
 					clone->width, clone->height,
-					0, 0, false,
-					referer ? referer : c->url);
+					0, 0, false, parent);
 		}
 	}
 

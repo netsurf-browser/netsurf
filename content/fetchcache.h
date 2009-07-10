@@ -50,6 +50,6 @@ void fetchcache_go(struct content *content, const char *referer,
 		int width, int height,
 		char *post_urlenc,
 		struct form_successful_control *post_multipart,
-		bool verifiable, const char *parent_url);
+		bool verifiable, struct content *parent);
 
 #endif
