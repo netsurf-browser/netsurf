@@ -28,30 +28,39 @@
 #define WIDGET_BLOBC 0x000000
 
 /* Darken a colour by taking three quaters of each channels intensity */
-#define darken_colour(c1)				 \
-	((((3 * (c1 >> 16)) >> 2) << 16) |		 \
-	 (((3 * ((c1 >> 8) & 0xff)) >> 2) << 8) |	 \
+#define darken_colour(c1)				 		\
+	((((3 * (c1 >> 16)) >> 2) << 16) |		 		\
+	 (((3 * ((c1 >> 8) & 0xff)) >> 2) << 8) |	 		\
 	 (((3 * (c1 & 0xff)) >> 2) << 0))
 
 /* Darken a colour by taking nine sixteenths of each channels intensity */
-#define double_darken_colour(c1)			 \
-	((((9 * (c1 >> 16)) >> 4) << 16) |		 \
-	 (((9 * ((c1 >> 8) & 0xff)) >> 4) << 8) |	 \
+#define double_darken_colour(c1)			 		\
+	((((9 * (c1 >> 16)) >> 4) << 16) |		 		\
+	 (((9 * ((c1 >> 8) & 0xff)) >> 4) << 8) |	 		\
 	 (((9 * (c1 & 0xff)) >> 4) << 0))
 
 /* Lighten a colour by taking three quaters of each channels intensity
- * and adding a full quater 
+ * and adding a full quater
  */
 #define lighten_colour(c1)						\
 	(((((3 * (c1 >> 16)) >> 2) + 64) << 16) |			\
 	 ((((3 * ((c1 >> 8) & 0xff)) >> 2) + 64) << 8) |		\
 	 ((((3 * (c1 & 0xff)) >> 2) + 64) << 0))
 
-/* Lighten a colour by taking nine sixteenths of each channels intensity and adding a full intensity 7/16ths */
-#define double_lighten_colour(c1)				 \
-	(((((9 * (c1 >> 16)) >> 4) + 112) << 16) |		 \
-	 ((((9 * ((c1 >> 8) & 0xff)) >> 4) + 112) << 8) |	 \
+/* Lighten a colour by taking nine sixteenths of each channels intensity and
+ * adding a full intensity 7/16ths */
+#define double_lighten_colour(c1)					\
+	(((((9 * (c1 >> 16)) >> 4) + 112) << 16) |			\
+	 ((((9 * ((c1 >> 8) & 0xff)) >> 4) + 112) << 8) |		\
 	 ((((9 * (c1 & 0xff)) >> 4) + 112) << 0))
+
+/* Blend two colours by taking half the intensity of each channel in the first
+ * colour and adding them to half the intensity of each channel in the second
+ * colour */
+#define blend_colour(c0, c1)						\
+	 ((((c0 >> 16) + (c1 >> 16)) >> 1) << 16) |			\
+	(((((c0 >> 8) & 0xff) + ((c1 >> 8) & 0xff)) >> 1) << 8) |	\
+	 ((((c0 & 0xff) + (c1 & 0xff)) >> 1) << 0)
 
 typedef enum {
     PLOT_OP_TYPE_NONE = 0, /**< No operation */
@@ -64,7 +73,7 @@ typedef struct {
     plot_operation_type_t stroke_type;
     int stroke_width;
     colour stroke_colour;
-    plot_operation_type_t fill_type; 
+    plot_operation_type_t fill_type;
     colour fill_colour;
 } plot_style_t;
 

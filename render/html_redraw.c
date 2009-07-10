@@ -70,7 +70,6 @@ static bool html_redraw_border_plot(int i, int *p, colour c,
 		css_border_style style, int thickness);
 static colour html_redraw_darker(colour c);
 static colour html_redraw_lighter(colour c);
-static colour html_redraw_blend(colour c0, colour c1);
 static bool html_redraw_checkbox(int x, int y, int width, int height,
 		bool selected);
 static bool html_redraw_radio(int x, int y, int width, int height,
@@ -1253,22 +1252,6 @@ colour html_redraw_lighter(colour c)
 
 
 /**
- * Blend two colours.
- *
- * \param  c0  colour
- * \param  c1  colour
- * \return  a blended colour, half way between c0 and c1
- */
-
-colour html_redraw_blend(colour c0, colour c1)
-{
-	return ((((c0 >> 16) + (c1 >> 16)) / 2) << 16) |
-			(((((c0 >> 8) & 0xff) + ((c1 >> 8) & 0xff)) / 2) << 8) |
-			((((c0 & 0xff) + (c1 & 0xff)) / 2) << 0);
-}
-
-
-/**
  * Plot a checkbox.
  *
  * \param  x	     left coordinate
@@ -1286,11 +1269,14 @@ bool html_redraw_checkbox(int x, int y, int width, int height,
 	if (z == 0)
 		z = 1;
 
-	if (!(plot.rectangle(x, y, x + width, y + height, plot_style_fill_wbasec) &&
+	if (!(plot.rectangle(x, y, x + width, y + height,
+			plot_style_fill_wbasec) &&
 		plot.line(x, y, x + width, y, plot_style_stroke_darkwbasec) &&
 		plot.line(x, y, x, y + height, plot_style_stroke_darkwbasec) &&
-		plot.line(x + width, y, x + width, y + height, plot_style_stroke_lightwbasec) &&
-		plot.line(x, y + height, x + width, y + height, plot_style_stroke_lightwbasec)))
+		plot.line(x + width, y, x + width, y + height,
+				plot_style_stroke_lightwbasec) &&
+		plot.line(x, y + height, x + width, y + height,
+				plot_style_stroke_lightwbasec)))
 		return false;
 
 	if (selected) {
@@ -1813,8 +1799,7 @@ bool html_redraw_text_decoration(struct box *box,
 	if (html_redraw_printing)
 		colour = box->style->color;
 	else
-		colour = html_redraw_blend(background_colour,
-				box->style->color);
+		colour = blend_colour(background_colour, box->style->color);
 
 	if (box->type == BOX_INLINE) {
 		if (!box->inline_end)
@@ -1919,7 +1904,8 @@ bool html_redraw_text_decoration_block(struct box *box, int x, int y,
 }
 
 static inline bool
-html_redraw_scrollbar_rectangle(int x0, int y0, int x1, int y1, colour c, bool inset)
+html_redraw_scrollbar_rectangle(int x0, int y0, int x1, int y1, colour c,
+		bool inset)
 {
 	static plot_style_t c0 = {
 		.stroke_type = PLOT_OP_TYPE_SOLID,
@@ -1943,8 +1929,7 @@ html_redraw_scrollbar_rectangle(int x0, int y0, int x1, int y1, colour c, bool i
 		c0.stroke_colour = lighten_colour(c);
 		c1.stroke_colour = darken_colour(c);
 	}
-	c2.stroke_colour = html_redraw_blend(c0.stroke_colour,
-					     c1.stroke_colour);
+	c2.stroke_colour = blend_colour(c0.stroke_colour, c1.stroke_colour);
 
 	if (!plot.line(x0, y0, x1, y0, &c0)) return false;
 	if (!plot.line(x1, y0, x1, y1 + 1, &c1)) return false;
