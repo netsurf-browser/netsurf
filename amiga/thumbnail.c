@@ -76,7 +76,6 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 		bsa.bsa_SrcBitMap = browserglob.bm;
 		bsa.bsa_DestBitMap = bitmap->nativebm;
 		bsa.bsa_Flags = 0;
-		if(option_scale_quality) bsa.bsa_Flags = BSAF_AVERAGE;
 
 		BitMapScale(&bsa);
 	}

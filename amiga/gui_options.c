@@ -263,6 +263,7 @@ void ami_gui_opts_open(void)
 	BOOL screenmodedisabled = FALSE, screennamedisabled = FALSE;
 	BOOL proxyhostdisabled = TRUE, proxyauthdisabled = TRUE;
 	BOOL disableanims, animspeeddisabled = FALSE;
+	BOOL scaleselected = option_scale_quality, scaledisabled = FALSE;
 	char animspeed[10];
 	struct TextAttr fontsans, fontserif, fontmono, fontcursive, fontfantasy;
 
@@ -316,6 +317,12 @@ void ami_gui_opts_open(void)
 	{
 		disableanims = TRUE;
 		animspeeddisabled = TRUE;
+	}
+
+	if(GfxBase->lib_Version < 53)
+	{
+		scaledisabled = TRUE;
+		scaleselected = FALSE;
 	}
 
 	fontsans.ta_Name = ASPrintf("%s.font",option_font_sans);
@@ -684,9 +691,10 @@ void ami_gui_opts_open(void)
 									LabelEnd,
 		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_SCALEQ] = CheckBoxObject,
       	              					GA_ID, GID_OPTS_SCALEQ,
+										GA_Disabled, scaledisabled,
          	           					GA_RelVerify, TRUE,
          	           					GA_Text, gadlab[GID_OPTS_SCALEQ],
-  				      		            GA_Selected, option_scale_quality,
+  				      		            GA_Selected, scaleselected,
             	    				CheckBoxEnd,
 								LayoutEnd, // images
 								CHILD_WeightedHeight, 0,

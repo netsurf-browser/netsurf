@@ -395,7 +395,6 @@ struct BitMap *ami_getcachenativebm(struct bitmap *bitmap,int width,int height,s
 			bsa.bsa_SrcBitMap = tbm;
 			bsa.bsa_DestBitMap = scaledbm;
 			bsa.bsa_Flags = 0;
-			if(option_scale_quality) bsa.bsa_Flags = BSAF_BILINEAR;
 
 			BitMapScale(&bsa);
 		}
