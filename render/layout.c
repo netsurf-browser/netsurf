@@ -684,6 +684,17 @@ void layout_minmax_block(struct box *block,
 				assert(0);
 			}
 			assert(child->max_width != UNKNOWN_MAX_WIDTH);
+
+			if (child->style &&
+					(child->style->position ==
+							CSS_POSITION_ABSOLUTE ||
+					child->style->position ==
+							CSS_POSITION_FIXED)) {
+				/* This child is positioned out of normal flow,
+				 * so it will have no affect on width */
+				continue;
+			}
+
 			if (min < child->min_width)
 				min = child->min_width;
 			if (max < child->max_width)
