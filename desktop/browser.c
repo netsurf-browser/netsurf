@@ -2451,6 +2451,9 @@ gui_pointer_shape get_pointer_shape(struct browser_window *bw, struct box *box,
 	bool loading = (bw->loading_content != NULL || (bw->current_content &&
 			bw->current_content->status == CONTENT_STATUS_READY));
 
+	if (wallclock() - bw->last_action < 100) {
+		LOG(("\n\n\t\tTEST: %i\n\t\tloading_content: %p\n\t\tcurrent_content: %p\n\t\tloading: %i\n\n", wallclock() - bw->last_action, bw->loading_content, bw->current_content, loading));
+	}
 	if (wallclock() - bw->last_action < 100 && loading)
 		/* If less than 1 second since last link followed, show
 		 * progress indicating pointer and we're loading something */
