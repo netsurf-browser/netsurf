@@ -546,7 +546,7 @@ bool html_redraw_box(struct box *box,
 
 	}
 
-	/* dotted debug outlines */
+	/* Debug outlines */
 	if (html_redraw_debug) {
 		int margin_left, margin_right;
 		int margin_top, margin_bottom;
