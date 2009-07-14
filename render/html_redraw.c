@@ -309,43 +309,6 @@ bool html_redraw_box(struct box *box,
 	if ((plot.group_start) && (!plot.group_start("vis box")))
 		return false;
 
-	/* dotted debug outlines */
-	if (html_redraw_debug) {
-		int margin_left, margin_right;
-		int margin_top, margin_bottom;
-		if (scale == 1.0) {
-			/* avoid trivial fp maths */
-			margin_left = box->margin[LEFT];
-			margin_top = box->margin[TOP];
-			margin_right = box->margin[RIGHT];
-			margin_bottom = box->margin[BOTTOM];
-		} else {
-			margin_left = box->margin[LEFT] * scale;
-			margin_top = box->margin[TOP] * scale;
-			margin_right = box->margin[RIGHT] * scale;
-			margin_bottom = box->margin[BOTTOM] * scale;
-		}
-		if (!plot.rectangle(x, y,
-				x + padding_width, y + padding_height,
-				plot_style_stroke_red))
-			return false;
-		if (!plot.rectangle(x + padding_left,
-				y + padding_top,
-				x + padding_left + width,
-				y + padding_top + height,
-				plot_style_stroke_blue))
-			return false;
-		if (!plot.rectangle(
-				x - border_left - margin_left,
-				y - border_top - margin_top,
-				x + padding_width + border_right +
-						margin_right,
-				y + padding_height + border_bottom +
-						margin_bottom,
-				plot_style_stroke_yellow))
-			return false;
-	}
-
 	if (box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
 			box->type == BOX_TABLE_CELL || box->object) {
 		/* find intersection of clip rectangle and box */
@@ -581,6 +544,46 @@ bool html_redraw_box(struct box *box,
 				scale, first, true))
 			return false;
 
+	}
+
+	/* dotted debug outlines */
+	if (html_redraw_debug) {
+		int margin_left, margin_right;
+		int margin_top, margin_bottom;
+		if (scale == 1.0) {
+			/* avoid trivial fp maths */
+			margin_left = box->margin[LEFT];
+			margin_top = box->margin[TOP];
+			margin_right = box->margin[RIGHT];
+			margin_bottom = box->margin[BOTTOM];
+		} else {
+			margin_left = box->margin[LEFT] * scale;
+			margin_top = box->margin[TOP] * scale;
+			margin_right = box->margin[RIGHT] * scale;
+			margin_bottom = box->margin[BOTTOM] * scale;
+		}
+		/* Content edge */
+		if (!plot.rectangle(x + padding_left,
+				y + padding_top,
+				x + padding_left + width,
+				y + padding_top + height,
+				plot_style_stroke_blue))
+			return false;
+		/* Padding edge */
+		if (!plot.rectangle(x, y,
+				x + padding_width, y + padding_height,
+				plot_style_stroke_red))
+			return false;
+		/* Margin edge */
+		if (!plot.rectangle(
+				x - border_left - margin_left,
+				y - border_top - margin_top,
+				x + padding_width + border_right +
+						margin_right,
+				y + padding_height + border_bottom +
+						margin_bottom,
+				plot_style_stroke_yellow))
+			return false;
 	}
 
 	/* clip to the padding edge for boxes with overflow hidden or scroll */
