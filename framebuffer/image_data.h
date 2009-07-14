@@ -39,6 +39,7 @@ extern struct bitmap pointer_image;
 extern struct bitmap hand_image;
 extern struct bitmap caret_image;
 extern struct bitmap menu_image;
+extern struct bitmap progress_image;
 
 extern struct bitmap throbber0;
 extern struct bitmap throbber1;

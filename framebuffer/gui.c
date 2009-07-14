@@ -111,7 +111,7 @@ fb_queue_redraw(struct fbtk_widget_s *widget, int x0, int y0, int x1, int y1)
         } else {
                 bwidget->redraw_box.y0 = bwidget->redraw_box.x0 = INT_MAX;
                 bwidget->redraw_box.y1 = bwidget->redraw_box.x1 = -(INT_MAX);
-                bwidget->redraw_required = false;                
+                bwidget->redraw_required = false;
         }
 }
 
@@ -1085,6 +1085,10 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 
         case GUI_POINTER_MENU:
                 framebuffer_set_cursor(&menu_image);
+                break;
+
+        case GUI_POINTER_PROGRESS:
+                framebuffer_set_cursor(&progress_image);
                 break;
 
         default:
