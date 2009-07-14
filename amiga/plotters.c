@@ -750,10 +750,10 @@ bool ami_path(const float *p, unsigned int n, colour fill, float width,
 	cairo_set_matrix(glob->cr, &old_ctm);
 
 	/* Now draw path */
-	if (fill != TRANSPARENT) {
+	if (fill != NS_TRANSPARENT) {
 		ami_cairo_set_colour(glob->cr,fill);
 
-		if (c != TRANSPARENT) {
+		if (c != NS_TRANSPARENT) {
 			/* Fill & Stroke */
 			cairo_fill_preserve(glob->cr);
 			ami_cairo_set_colour(glob->cr,c);
@@ -762,7 +762,7 @@ bool ami_path(const float *p, unsigned int n, colour fill, float width,
 			/* Fill only */
 			cairo_fill(glob->cr);
 		}
-	} else if (c != TRANSPARENT) {
+	} else if (c != NS_TRANSPARENT) {
 		/* Stroke only */
 		ami_cairo_set_colour(glob->cr,c);
 		cairo_stroke(glob->cr);

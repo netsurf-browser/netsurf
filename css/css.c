@@ -314,7 +314,7 @@ const struct css_style css_empty_style = {
  *  and the 'Initial value' otherwise. */
 const struct css_style css_blank_style = {
 	CSS_BACKGROUND_ATTACHMENT_SCROLL,
-	TRANSPARENT,
+	NS_TRANSPARENT,
 	{ CSS_BACKGROUND_IMAGE_NONE, 0 },
 	{ { CSS_BACKGROUND_POSITION_PERCENT, { 0.0 } },
 	  { CSS_BACKGROUND_POSITION_PERCENT, { 0.0 } } },
@@ -1596,7 +1596,7 @@ void css_dump_style(FILE *stream, const struct css_style * const style)
 
 #define DUMP_COLOR(z, s) \
 	if (style->z != CSS_COLOR_NOT_SET) {				\
-		if (style->z == TRANSPARENT)				\
+		if (style->z == NS_TRANSPARENT)				\
 			fprintf(stream, s ": transparent; ");		\
 		else if (style->z == CSS_COLOR_NONE)			\
 			fprintf(stream, s ": none; ");			\
@@ -1751,7 +1751,7 @@ void css_dump_style(FILE *stream, const struct css_style * const style)
 					css_border_style_name[
 						style->border[i].style]);
 
-			if (style->border[i].color == TRANSPARENT)
+			if (style->border[i].color == NS_TRANSPARENT)
 				fprintf(stream, " transparent");
 			else if (style->border[i].color == CSS_COLOR_NONE)
 				fprintf(stream, " none");
@@ -2144,7 +2144,7 @@ void css_dump_style(FILE *stream, const struct css_style * const style)
 			fprintf(stream, " invert");
 			break;
 		case CSS_OUTLINE_COLOR_COLOR:
-			if (style->outline.color.value == TRANSPARENT)
+			if (style->outline.color.value == NS_TRANSPARENT)
 				fprintf(stream, " transparent");
 			else if (style->outline.color.value == CSS_COLOR_NONE)
 				fprintf(stream, " none");

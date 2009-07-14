@@ -326,8 +326,8 @@ bool ro_save_draw_path(const float *p, unsigned int n, colour fill,
 	}
 
 	pencil_code code = pencil_path(ro_save_draw_diagram, path, i + 1,
-			fill == TRANSPARENT ? pencil_TRANSPARENT : fill << 8,
-			c == TRANSPARENT ? pencil_TRANSPARENT : c << 8,
+			fill == NS_TRANSPARENT ? pencil_TRANSPARENT : fill << 8,
+			c == NS_TRANSPARENT ? pencil_TRANSPARENT : c << 8,
 			width, pencil_JOIN_MITRED,
 			pencil_CAP_BUTT, pencil_CAP_BUTT, 0, 0, false,
 			pencil_SOLID);

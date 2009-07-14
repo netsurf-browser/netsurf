@@ -469,10 +469,10 @@ static bool nsgtk_plot_path(const float *p, unsigned int n, colour fill, float w
 	cairo_set_matrix(current_cr, &old_ctm);
 
 	/* Now draw path */
-	if (fill != TRANSPARENT) {
+	if (fill != NS_TRANSPARENT) {
 		nsgtk_set_colour(fill);
 
-		if (c != TRANSPARENT) {
+		if (c != NS_TRANSPARENT) {
 			/* Fill & Stroke */
 			cairo_fill_preserve(current_cr);
 			nsgtk_set_colour(c);
@@ -481,7 +481,7 @@ static bool nsgtk_plot_path(const float *p, unsigned int n, colour fill, float w
 			/* Fill only */
 			cairo_fill(current_cr);
 		}
-	} else if (c != TRANSPARENT) {
+	} else if (c != NS_TRANSPARENT) {
 		/* Stroke only */
 		nsgtk_set_colour(c);
 		cairo_stroke(current_cr);

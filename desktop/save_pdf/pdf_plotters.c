@@ -151,7 +151,7 @@ bool pdf_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *psty
 
 	if (pstyle->fill_type != PLOT_OP_TYPE_NONE) {
 
-		apply_clip_and_mode(false, pstyle->fill_colour, TRANSPARENT, 0., DashPattern_eNone);
+		apply_clip_and_mode(false, pstyle->fill_colour, NS_TRANSPARENT, 0., DashPattern_eNone);
 
 		/* Normalize boundaries of the area - to prevent
 		   overflows.  It is needed only in a few functions,
@@ -187,7 +187,7 @@ bool pdf_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *psty
 		}
 
 		apply_clip_and_mode(false, 
-				    TRANSPARENT, 
+				    NS_TRANSPARENT, 
 				    pstyle->stroke_colour, 
 				    pstyle->stroke_width,
 				    dash);
@@ -219,7 +219,7 @@ bool pdf_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *pstyle)
 	}
 
 	apply_clip_and_mode(false, 
-			    TRANSPARENT, 
+			    NS_TRANSPARENT, 
 			    pstyle->stroke_colour, 
 			    pstyle->stroke_width,
 			    dash);
@@ -242,7 +242,7 @@ bool pdf_plot_polygon(const int *p, unsigned int n, const plot_style_t *style)
 	if (n == 0)
 		return true;
 
-	apply_clip_and_mode(false, style->fill_colour, TRANSPARENT, 0., DashPattern_eNone);
+	apply_clip_and_mode(false, style->fill_colour, NS_TRANSPARENT, 0., DashPattern_eNone);
 
 	HPDF_Page_MoveTo(pdf_page, p[0], page_height - p[1]);
 	for (i = 1 ; i<n ; i++) {
@@ -298,7 +298,7 @@ bool pdf_plot_text(int x, int y, const struct css_style *style,
 	if (length == 0)
 		return true;
 
-	apply_clip_and_mode(true, c, TRANSPARENT, 0., DashPattern_eNone);
+	apply_clip_and_mode(true, c, NS_TRANSPARENT, 0., DashPattern_eNone);
 
 	haru_nsfont_apply_style(style, pdf_doc, pdf_page, &pdf_font, &size);
 	pdfw_gs_font(pdf_page, pdf_font, size);
@@ -326,7 +326,7 @@ bool pdf_plot_disc(int x, int y, int radius, const plot_style_t *style)
 	if (style->fill_type != PLOT_OP_TYPE_NONE) {
 		apply_clip_and_mode(false,
 				    style->fill_colour, 
-				    TRANSPARENT,
+				    NS_TRANSPARENT,
 				    1., DashPattern_eNone);
 
 		HPDF_Page_Circle(pdf_page, x, page_height - y, radius);
@@ -337,7 +337,7 @@ bool pdf_plot_disc(int x, int y, int radius, const plot_style_t *style)
 	if (style->stroke_type != PLOT_OP_TYPE_NONE) {
 		/* FIXME: line width 1 is ok ? */
 		apply_clip_and_mode(false,
-				    TRANSPARENT, 
+				    NS_TRANSPARENT, 
 				    style->stroke_colour,
 				    1., DashPattern_eNone);
 
@@ -356,7 +356,7 @@ bool pdf_plot_arc(int x, int y, int radius, int angle1, int angle2, const plot_s
 #endif
 
 	/* FIXME: line width 1 is ok ? */
-	apply_clip_and_mode(false, TRANSPARENT, style->fill_colour, 1., DashPattern_eNone);
+	apply_clip_and_mode(false, NS_TRANSPARENT, style->fill_colour, 1., DashPattern_eNone);
 
 	/* Normalize angles */
 	angle1 %= 360;
@@ -386,7 +386,7 @@ bool pdf_plot_bitmap_tile(int x, int y, int width, int height,
  	if (width == 0 || height == 0)
  		return true;
 
-	apply_clip_and_mode(false, TRANSPARENT, TRANSPARENT, 0., DashPattern_eNone);
+	apply_clip_and_mode(false, NS_TRANSPARENT, NS_TRANSPARENT, 0., DashPattern_eNone);
 
 	image = pdf_extract_image(bitmap);
 	if (!image)
@@ -497,14 +497,14 @@ HPDF_Image pdf_extract_image(struct bitmap *bitmap)
  * colour, line width and dash pattern parameters.
  * \param selectTextMode true if text mode needs to be entered if required;
  * false otherwise.
- * \param fillCol Desired fill colour, use TRANSPARENT if no update is
+ * \param fillCol Desired fill colour, use NS_TRANSPARENT if no update is
  * required.
- * \param strokeCol Desired stroke colour, use TRANSPARENT if no update is
+ * \param strokeCol Desired stroke colour, use NS_TRANSPARENT if no update is
  * required.
  * \param lineWidth Desired line width. Only taken into account when strokeCol
- * is different from TRANSPARENT.
+ * is different from NS_TRANSPARENT.
  * \param dash Desired dash pattern. Only taken into account when strokeCol
- * is different from TRANSPARENT.
+ * is different from NS_TRANSPARENT.
  */
 static void apply_clip_and_mode(bool selectTextMode, colour fillCol,
 		colour strokeCol, float lineWidth, DashPattern_e dash)
@@ -518,9 +518,9 @@ static void apply_clip_and_mode(bool selectTextMode, colour fillCol,
 	 * outside the text mode anyway (i.e. selectTextMode is false).
 	 */
 	if (in_text_mode && (!selectTextMode || clip_update_needed
-		|| (fillCol != TRANSPARENT
+		|| (fillCol != NS_TRANSPARENT
 			&& fillCol != pdfw_gs[pdfw_gs_level].fillColour)
-		/* || (strokeCol != TRANSPARENT
+		/* || (strokeCol != NS_TRANSPARENT
 			&& (strokeCol != pdfw_gs[pdfw_gs_level].strokeColour
 				|| lineWidth != pdfw_gs[pdfw_gs_level].lineWidth
 				|| dash != pdfw_gs[pdfw_gs_level].dash)) */)) {
@@ -532,9 +532,9 @@ static void apply_clip_and_mode(bool selectTextMode, colour fillCol,
 		pdfw_gs_restore(pdf_page);
 
 	/* Update fill/stroke colour, linewidth and dash when needed.  */
-	if (fillCol != TRANSPARENT)
+	if (fillCol != NS_TRANSPARENT)
 		pdfw_gs_fillcolour(pdf_page, fillCol);
-	if (strokeCol != TRANSPARENT) {
+	if (strokeCol != NS_TRANSPARENT) {
 		pdfw_gs_strokecolour(pdf_page, strokeCol);
 		pdfw_gs_linewidth(pdf_page, lineWidth);
 		pdfw_gs_dash(pdf_page, dash);
@@ -583,7 +583,7 @@ bool pdf_plot_path(const float *p, unsigned int n, colour fill, float width,
 	if (n == 0)
 		return true;
 
-	if (c == TRANSPARENT && fill == TRANSPARENT)
+	if (c == NS_TRANSPARENT && fill == NS_TRANSPARENT)
 		return true;
 
 	if (p[0] != PLOTTER_PATH_MOVE)
@@ -629,8 +629,8 @@ bool pdf_plot_path(const float *p, unsigned int n, colour fill, float width,
 		return true;
 	}
 
-	if (fill != TRANSPARENT) {
-		if (c != TRANSPARENT)
+	if (fill != NS_TRANSPARENT) {
+		if (c != NS_TRANSPARENT)
 			HPDF_Page_FillStroke(pdf_page);
 		else
 			HPDF_Page_Fill(pdf_page);
@@ -689,7 +689,7 @@ bool pdf_next_page(void)
 #endif
 	clip_update_needed = false;
 	if (pdf_page != NULL) {
-		apply_clip_and_mode(false, TRANSPARENT, TRANSPARENT, 0.,
+		apply_clip_and_mode(false, NS_TRANSPARENT, NS_TRANSPARENT, 0.,
 				DashPattern_eNone);
 		pdfw_gs_restore(pdf_page);
 	}
@@ -726,7 +726,7 @@ void pdf_end(void)
 #endif
 	clip_update_needed = false;
 	if (pdf_page != NULL) {
-		apply_clip_and_mode(false, TRANSPARENT, TRANSPARENT, 0.,
+		apply_clip_and_mode(false, NS_TRANSPARENT, NS_TRANSPARENT, 0.,
 				DashPattern_eNone);
 		pdfw_gs_restore(pdf_page);
 	}

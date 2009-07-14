@@ -42,7 +42,7 @@
 
 
 typedef uint32_t colour;  /* 0xbbggrr */
-#define TRANSPARENT 0x1000000
+#define NS_TRANSPARENT 0x1000000
 #define CSS_COLOR_INHERIT 0x2000000
 #define CSS_COLOR_NONE 0x3000000
 #define CSS_COLOR_NOT_SET 0x4000000

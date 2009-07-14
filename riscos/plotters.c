@@ -311,7 +311,7 @@ bool ro_plot_path(const float *p, unsigned int n, colour fill, float width,
 	trfm.entries[2][0] = (ro_plot_origin_x + transform[4] * 2) * 256;
 	trfm.entries[2][1] = (ro_plot_origin_y - transform[5] * 2) * 256;
 
-	if (fill != TRANSPARENT) {
+	if (fill != NS_TRANSPARENT) {
 		error = xcolourtrans_set_gcol(fill << 8, 0,
 				os_ACTION_OVERWRITE, 0, 0);
 		if (error) {
@@ -328,7 +328,7 @@ bool ro_plot_path(const float *p, unsigned int n, colour fill, float width,
 		}
 	}
 
-	if (c != TRANSPARENT) {
+	if (c != NS_TRANSPARENT) {
 		error = xcolourtrans_set_gcol(c << 8, 0,
 				os_ACTION_OVERWRITE, 0, 0);
 		if (error) {

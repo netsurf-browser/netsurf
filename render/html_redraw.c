@@ -146,7 +146,7 @@ bool html_redraw(struct content *c, int x, int y,
 	/* clear to background colour */
 	result = plot.clip(clip_x0, clip_y0, clip_x1, clip_y1);
 
-	if (c->data.html.background_colour != TRANSPARENT)
+	if (c->data.html.background_colour != NS_TRANSPARENT)
 		pstyle_fill_bg.fill_colour = c->data.html.background_colour;
 
 	result &= plot.rectangle(clip_x0, clip_y0, clip_x1, clip_y1, &pstyle_fill_bg);
@@ -368,17 +368,19 @@ bool html_redraw_box(struct box *box,
 	if (!box->parent) {
 		/* Root box */
 		if (box->style &&
-				(box->style->background_color != TRANSPARENT ||
+				(box->style->background_color !=
+						NS_TRANSPARENT ||
 				box->background)) {
 			/* With its own background */
 			bg_box = box;
 		} else if (!box->style ||
-				(box->style->background_color == TRANSPARENT &&
+				(box->style->background_color ==
+						NS_TRANSPARENT &&
 				!box->background)) {
 			/* Without its own background */
 			if (box->children && box->children->style &&
 					(box->children->style->
-					background_color != TRANSPARENT ||
+					background_color != NS_TRANSPARENT ||
 					box->children->background)) {
 				/* But body has one, so use that */
 				bg_box = box->children;
@@ -387,12 +389,13 @@ bool html_redraw_box(struct box *box,
 	} else if (box->parent && !box->parent->parent) {
 		/* Body box */
 		if (box->style &&
-				(box->style->background_color != TRANSPARENT ||
+				(box->style->background_color !=
+						NS_TRANSPARENT ||
 				box->background)) {
 			/* With a background */
 			if (box->parent->style &&
 				(box->parent->style->background_color !=
-					TRANSPARENT ||
+					NS_TRANSPARENT ||
 					box->parent->background)) {
 				/* Root has own background; process normally */
 				bg_box = box;
@@ -413,7 +416,7 @@ bool html_redraw_box(struct box *box,
 			bg_box->type != BOX_TEXT &&
 			bg_box->type != BOX_INLINE_END &&
 			(bg_box->type != BOX_INLINE || bg_box->object) &&
-			((bg_box->style->background_color != TRANSPARENT) ||
+			((bg_box->style->background_color != NS_TRANSPARENT) ||
 			(bg_box->background))) {
 		/* find intersection of clip box and border edge */
 		int px0, py0, px1, py1;
@@ -469,7 +472,7 @@ bool html_redraw_box(struct box *box,
 
 	/* backgrounds and borders for non-replaced inlines */
 	if (box->style && box->type == BOX_INLINE && box->inline_end &&
-			(box->style->background_color != TRANSPARENT ||
+			(box->style->background_color != NS_TRANSPARENT ||
 			box->background || border_top || border_right ||
 			border_bottom || border_left)) {
 		/* inline backgrounds and borders span other boxes and may
@@ -1112,7 +1115,7 @@ bool html_redraw_border_plot(int i, int *p, colour c,
 	plot_style_t *plot_style_bdr_in;
 	plot_style_t *plot_style_bdr_out;
 
-	if (c == TRANSPARENT)
+	if (c == NS_TRANSPARENT)
 		return true;
 
 	plot_style_bdr.stroke_type = PLOT_OP_TYPE_DASH;
@@ -1313,35 +1316,35 @@ bool html_redraw_radio(int x, int y, int width, int height,
 		bool selected)
 {
 	/* plot background of radio button */
-	if (!plot.disc(x + width * 0.5, 
+	if (!plot.disc(x + width * 0.5,
 		       y + height * 0.5,
-		       width * 0.5 - 1, 
+		       width * 0.5 - 1,
 		       plot_style_fill_wbasec))
 		return false;
 
 	/* plot dark arc */
-	if (!plot.arc(x + width * 0.5, 
+	if (!plot.arc(x + width * 0.5,
 		      y + height * 0.5,
-		      width * 0.5 - 1, 
-		      45, 
-		      225, 
+		      width * 0.5 - 1,
+		      45,
+		      225,
 		      plot_style_fill_darkwbasec))
 		return false;
 
 	/* plot light arc */
-	if (!plot.arc(x + width * 0.5, 
+	if (!plot.arc(x + width * 0.5,
 		      y + height * 0.5,
-		      width * 0.5 - 1, 
-		      225, 
-		      45, 
+		      width * 0.5 - 1,
+		      225,
+		      45,
 		      plot_style_fill_lightwbasec))
 		return false;
 
 	if (selected) {
 		/* plot selection blob */
-		if (!plot.disc(x + width * 0.5, 
+		if (!plot.disc(x + width * 0.5,
 			       y + height * 0.5,
-			       width * 0.3 - 1, 
+			       width * 0.3 - 1,
 			       plot_style_fill_wblobc))
 			return false;
 	}
@@ -1543,7 +1546,7 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 			/* <td> attributes override <tr> */
 			if ((clip_x0 >= clip_x1) || (clip_y0 >= clip_y1) ||
 					(clip_box->style->background_color !=
-					TRANSPARENT) ||
+					NS_TRANSPARENT) ||
 					(clip_box->background &&
 					 clip_box->background->bitmap &&
 					 bitmap_get_opaque(
@@ -1552,7 +1555,7 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 		}
 
 		/* plot the background colour */
-		if (background->style->background_color != TRANSPARENT) {
+		if (background->style->background_color != NS_TRANSPARENT) {
 			*background_colour =
 					background->style->background_color;
 			pstyle_fill_bg.fill_colour =
@@ -1720,7 +1723,7 @@ bool html_redraw_inline_background(int x, int y, struct box *box, float scale,
 	}
 
 	/* plot the background colour */
-	if (box->style->background_color != TRANSPARENT) {
+	if (box->style->background_color != NS_TRANSPARENT) {
 		*background_colour =
 				box->style->background_color;
 		pstyle_fill_bg.fill_colour =

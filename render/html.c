@@ -113,7 +113,7 @@ bool html_create(struct content *c, const char *params[])
 	html->base_url = c->url;
 	html->base_target = NULL;
 	html->layout = 0;
-	html->background_colour = TRANSPARENT;
+	html->background_colour = NS_TRANSPARENT;
 	html->stylesheet_count = 0;
 	html->stylesheet_content = 0;
 	html->style = 0;

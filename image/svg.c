@@ -108,7 +108,7 @@ bool svg_redraw(struct content *c, int x, int y,
 	transform[4] = x;
 	transform[5] = y;
 
-#define BGR(c) ((c) == svgtiny_TRANSPARENT ? TRANSPARENT : ((svgtiny_RED((c))) | (svgtiny_GREEN((c)) << 8) | (svgtiny_BLUE((c)) << 16)))
+#define BGR(c) ((c) == svgtiny_TRANSPARENT ? NS_TRANSPARENT : ((svgtiny_RED((c))) | (svgtiny_GREEN((c)) << 8) | (svgtiny_BLUE((c)) << 16)))
 
 	for (i = 0; i != diagram->shape_count; i++) {
 		if (diagram->shape[i].path) {

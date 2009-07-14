@@ -462,7 +462,7 @@ static const struct css_colour_entry css_colour_table[] = {
 	{ "teal",			0x808000 },
 	{ "thistle",			0xd8bfd8 },
 	{ "tomato",			0x4763ff },
-	{ "transparent",		TRANSPARENT },
+	{ "transparent",		NS_TRANSPARENT },
 	{ "turquoise",			0xd0e040 },
 	{ "violet",			0xee82ee },
 	{ "violetred",			0x9020d0 }, /* not SVG-1.0*/
@@ -902,7 +902,7 @@ bool parse_uri(const struct css_node *v, char **uri)
 void parse_background(struct css_style * const s,
 		const struct css_node * v)
 {
-	colour c = TRANSPARENT, c2;
+	colour c = NS_TRANSPARENT, c2;
 	css_background_image_type bi = CSS_BACKGROUND_IMAGE_NONE, bi2;
 	char *bi_uri = 0;
 	css_background_repeat br = CSS_BACKGROUND_REPEAT_REPEAT, br2;
