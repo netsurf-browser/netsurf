@@ -562,19 +562,19 @@ bool html_redraw_box(struct box *box,
 			margin_right = box->margin[RIGHT] * scale;
 			margin_bottom = box->margin[BOTTOM] * scale;
 		}
-		/* Content edge */
+		/* Content edge -- blue */
 		if (!plot.rectangle(x + padding_left,
 				y + padding_top,
 				x + padding_left + width,
 				y + padding_top + height,
-				plot_style_stroke_blue))
+				plot_style_content_edge))
 			return false;
-		/* Padding edge */
+		/* Padding edge -- red */
 		if (!plot.rectangle(x, y,
 				x + padding_width, y + padding_height,
-				plot_style_stroke_red))
+				plot_style_padding_edge))
 			return false;
-		/* Margin edge */
+		/* Margin edge -- yellow */
 		if (!plot.rectangle(
 				x - border_left - margin_left,
 				y - border_top - margin_top,
@@ -582,7 +582,7 @@ bool html_redraw_box(struct box *box,
 						margin_right,
 				y + padding_height + border_bottom +
 						margin_bottom,
-				plot_style_stroke_yellow))
+				plot_style_margin_edge))
 			return false;
 	}
 

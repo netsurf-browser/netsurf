@@ -82,10 +82,10 @@ extern plot_style_t *plot_style_fill_white;
 extern plot_style_t *plot_style_fill_red;
 extern plot_style_t *plot_style_fill_black;
 
-/* global stroke styles */
-extern plot_style_t *plot_style_stroke_red;
-extern plot_style_t *plot_style_stroke_blue;
-extern plot_style_t *plot_style_stroke_yellow;
+/* Box model debug outline styles for content, padding and margin edges */
+extern plot_style_t const * const plot_style_content_edge;
+extern plot_style_t const * const plot_style_padding_edge;
+extern plot_style_t const * const plot_style_margin_edge;
 
 /* other styles */
 extern plot_style_t *plot_style_caret;

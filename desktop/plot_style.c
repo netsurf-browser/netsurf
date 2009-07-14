@@ -18,7 +18,7 @@
 
 /** \file Plotter global styles.
  *
- * These plot styles are globaly available and used in many places. 
+ * These plot styles are globaly available and used in many places.
  */
 
 #include "desktop/plotters.h"
@@ -41,26 +41,30 @@ static plot_style_t plot_style_fill_red_static = {
 };
 plot_style_t *plot_style_fill_red = &plot_style_fill_red_static;
 
-static plot_style_t plot_style_stroke_red_static = {
-	.stroke_type = PLOT_OP_TYPE_SOLID,
-	.stroke_colour = 0x000000ff,
-	.stroke_width = 1,
-};
-plot_style_t *plot_style_stroke_red = &plot_style_stroke_red_static;
-
-static plot_style_t plot_style_stroke_blue_static = {
+/* Box model debug outline styles for content, padding and margin edges */
+static const plot_style_t plot_style_content_edge_static = {
 	.stroke_type = PLOT_OP_TYPE_SOLID,
 	.stroke_colour = 0x00ff0000,
 	.stroke_width = 1,
 };
-plot_style_t *plot_style_stroke_blue = &plot_style_stroke_blue_static;
+plot_style_t const * const plot_style_content_edge =
+		&plot_style_content_edge_static;
 
-static plot_style_t plot_style_stroke_yellow_static = {
+static const plot_style_t plot_style_padding_edge_static = {
+	.stroke_type = PLOT_OP_TYPE_SOLID,
+	.stroke_colour = 0x000000ff,
+	.stroke_width = 1,
+};
+plot_style_t const * const plot_style_padding_edge =
+		&plot_style_padding_edge_static;
+
+static const plot_style_t plot_style_margin_edge_static = {
 	.stroke_type = PLOT_OP_TYPE_SOLID,
 	.stroke_colour = 0x0000ffff,
 	.stroke_width = 1,
 };
-plot_style_t *plot_style_stroke_yellow = &plot_style_stroke_yellow_static;
+plot_style_t const * const plot_style_margin_edge =
+		&plot_style_margin_edge_static;
 
 /* caret style used in html_redraw_caret */
 static plot_style_t plot_style_caret_static = {
