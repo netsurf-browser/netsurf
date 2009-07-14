@@ -311,22 +311,38 @@ bool html_redraw_box(struct box *box,
 
 	/* dotted debug outlines */
 	if (html_redraw_debug) {
+		int margin_left, margin_right;
+		int margin_top, margin_bottom;
+		if (scale == 1.0) {
+			/* avoid trivial fp maths */
+			margin_left = box->margin[LEFT];
+			margin_top = box->margin[TOP];
+			margin_right = box->margin[RIGHT];
+			margin_bottom = box->margin[BOTTOM];
+		} else {
+			margin_left = box->margin[LEFT] * scale;
+			margin_top = box->margin[TOP] * scale;
+			margin_right = box->margin[RIGHT] * scale;
+			margin_bottom = box->margin[BOTTOM] * scale;
+		}
 		if (!plot.rectangle(x, y,
-				    x + padding_width, y + padding_height,
-				    plot_style_stroke_red))
+				x + padding_width, y + padding_height,
+				plot_style_stroke_red))
 			return false;
 		if (!plot.rectangle(x + padding_left,
-				    y + padding_top,
-				    x + padding_left + width,
-				    y + padding_top + height,
-				    plot_style_stroke_blue))
+				y + padding_top,
+				x + padding_left + width,
+				y + padding_top + height,
+				plot_style_stroke_blue))
 			return false;
 		if (!plot.rectangle(
-			    x - (box->border[LEFT] + box->margin[LEFT]) * scale,
-			    y - (box->border[TOP] + box->margin[TOP]) * scale,
-			    (x - (box->border[LEFT] + box->margin[LEFT]) * scale) + (padding_width + (box->border[LEFT] + box->margin[LEFT] + box->border[RIGHT] + box->margin[RIGHT]) * scale),
-			    (y - (box->border[TOP] + box->margin[TOP]) * scale) + (padding_height + (box->border[TOP] + box->margin[TOP] + box->border[BOTTOM] + box->margin[BOTTOM]) * scale),
-			    plot_style_stroke_yellow))
+				x - border_left - margin_left,
+				y - border_top - margin_top,
+				x + padding_width + border_right +
+						margin_right,
+				y + padding_height + border_bottom +
+						margin_bottom,
+				plot_style_stroke_yellow))
 			return false;
 	}
 
@@ -1130,7 +1146,7 @@ bool html_redraw_border_plot(int i, int *p, colour c,
 	switch (style) {
 	case CSS_BORDER_STYLE_DOTTED:
 		plot_style_bdr.stroke_type = PLOT_OP_TYPE_DOT;
-
+		/* fall through */
 	case CSS_BORDER_STYLE_DASHED:
 		if (!plot.line((p[i * 4 + 0] + p[i * 4 + 2]) / 2,
 				(p[i * 4 + 1] + p[i * 4 + 3]) / 2,
@@ -1141,6 +1157,7 @@ bool html_redraw_border_plot(int i, int *p, colour c,
 		break;
 
 	case CSS_BORDER_STYLE_SOLID:
+		/* fall through to default */
 	default:
 		if (!plot.polygon(p + i * 4, 4, &plot_style_fillbdr))
 			return false;
@@ -1171,7 +1188,9 @@ bool html_redraw_border_plot(int i, int *p, colour c,
 
 	case CSS_BORDER_STYLE_GROOVE:
 		light = 3 - light;
+		/* fall through */
 	case CSS_BORDER_STYLE_RIDGE:
+		/* choose correct colours for each part of the border line */
 		if (light <= 1) {
 			plot_style_bdr_in = &plot_style_fillbdr_dark;
 			plot_style_bdr_out = &plot_style_fillbdr_light;
@@ -1199,7 +1218,9 @@ bool html_redraw_border_plot(int i, int *p, colour c,
 
 	case CSS_BORDER_STYLE_INSET:
 		light = (light + 2) % 4;
+		/* fall through */
 	case CSS_BORDER_STYLE_OUTSET:
+		/* choose correct colours for each part of the border line */
 		switch (light) {
 		case 0:
 			plot_style_bdr_in = &plot_style_fillbdr_light;
@@ -1279,8 +1300,8 @@ bool html_redraw_checkbox(int x, int y, int width, int height,
 		if (width < 12 || height < 12) {
 			/* render a solid box instead of a tick */
 			if (!plot.rectangle(x + z + z, y + z + z,
-					    x + width - z, y + height - z,
-					    plot_style_fill_wblobc))
+					x + width - z, y + height - z,
+					plot_style_fill_wblobc))
 				return false;
 		} else {
 			/* render a tick, as it'll fit comfortably */
@@ -1290,7 +1311,7 @@ bool html_redraw_checkbox(int x, int y, int width, int height,
 					y + height - z,
 					plot_style_stroke_wblobc) &&
 
-			      plot.line(x + (z * 3),
+				plot.line(x + (z * 3),
 					y + height - z,
 					x + z + z,
 					y + (height / 2),
@@ -1317,35 +1338,35 @@ bool html_redraw_radio(int x, int y, int width, int height,
 {
 	/* plot background of radio button */
 	if (!plot.disc(x + width * 0.5,
-		       y + height * 0.5,
-		       width * 0.5 - 1,
-		       plot_style_fill_wbasec))
+			y + height * 0.5,
+			width * 0.5 - 1,
+			plot_style_fill_wbasec))
 		return false;
 
 	/* plot dark arc */
 	if (!plot.arc(x + width * 0.5,
-		      y + height * 0.5,
-		      width * 0.5 - 1,
-		      45,
-		      225,
-		      plot_style_fill_darkwbasec))
+			y + height * 0.5,
+			width * 0.5 - 1,
+			45,
+			225,
+			plot_style_fill_darkwbasec))
 		return false;
 
 	/* plot light arc */
 	if (!plot.arc(x + width * 0.5,
-		      y + height * 0.5,
-		      width * 0.5 - 1,
-		      225,
-		      45,
-		      plot_style_fill_lightwbasec))
+			y + height * 0.5,
+			width * 0.5 - 1,
+			225,
+			45,
+			plot_style_fill_lightwbasec))
 		return false;
 
 	if (selected) {
 		/* plot selection blob */
 		if (!plot.disc(x + width * 0.5,
-			       y + height * 0.5,
-			       width * 0.3 - 1,
-			       plot_style_fill_wblobc))
+				y + height * 0.5,
+				width * 0.3 - 1,
+				plot_style_fill_wblobc))
 			return false;
 	}
 
