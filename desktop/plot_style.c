@@ -73,12 +73,26 @@ plot_style_t *plot_style_caret = &plot_style_caret_static;
 
 /* html redraw widget styles */
 
-/** plot style for widget base. */
+/** plot style for filled widget base colour. */
 static plot_style_t plot_style_fill_wbasec_static = {
 	.fill_type = PLOT_OP_TYPE_SOLID,
 	.fill_colour = WIDGET_BASEC,
 };
 plot_style_t *plot_style_fill_wbasec = &plot_style_fill_wbasec_static;
+
+/** plot style for dark filled widget base colour . */
+static plot_style_t plot_style_fill_darkwbasec_static = {
+	.fill_type = PLOT_OP_TYPE_SOLID,
+	.fill_colour = double_darken_colour(WIDGET_BASEC),
+};
+plot_style_t *plot_style_fill_darkwbasec = &plot_style_fill_darkwbasec_static;
+
+/** plot style for light filled widget base colour. */
+static plot_style_t plot_style_fill_lightwbasec_static = {
+	.fill_type = PLOT_OP_TYPE_SOLID,
+	.fill_colour = double_lighten_colour(WIDGET_BASEC),
+};
+plot_style_t *plot_style_fill_lightwbasec = &plot_style_fill_lightwbasec_static;
 
 
 /** plot style for widget background. */

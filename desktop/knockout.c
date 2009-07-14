@@ -86,15 +86,14 @@ static bool knockout_plot_bitmap_recursive(struct knockout_box *box,
 		struct knockout_entry *entry);
 
 static bool knockout_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *pstyle);
-static bool knockout_plot_polygon(const int *p, unsigned int n, colour fill);
+static bool knockout_plot_polygon(const int *p, unsigned int n, const plot_style_t *pstyle);
 static bool knockout_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *plot_style);
 static bool knockout_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
 static bool knockout_plot_text(int x, int y, const struct css_style *style,
 		const char *text, size_t length, colour bg, colour c);
-static bool knockout_plot_disc(int x, int y, int radius, colour colour, bool filled);
-static bool knockout_plot_arc(int x, int y, int radius, int angle1, int angle2,
-		colour c);
+static bool knockout_plot_disc(int x, int y, int radius, const plot_style_t *pstyle);
+static bool knockout_plot_arc(int x, int y, int radius, int angle1, int angle2, const plot_style_t *pstyle);
 static bool knockout_plot_bitmap(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
 		bitmap_flags_t flags);
@@ -171,7 +170,7 @@ struct knockout_entry {
 		struct {
 			int *p;
 			unsigned int n;
-			colour fill;
+			plot_style_t plot_style;
 		} polygon;
 		struct {
 			int x0;
@@ -199,8 +198,7 @@ struct knockout_entry {
 			int x;
 			int y;
 			int radius;
-			colour colour;
-			bool filled;
+			plot_style_t plot_style;
 		} disc;
 		struct {
 			int x;
@@ -208,7 +206,7 @@ struct knockout_entry {
 			int radius;
 			int angle1;
 			int angle2;
-			colour c;
+			plot_style_t plot_style;
 		} arc;
 		struct {
 			int x;
@@ -326,7 +324,7 @@ bool knockout_plot_flush(void)
 			success &= plot.polygon(
 					knockout_entries[i].data.polygon.p,
 					knockout_entries[i].data.polygon.n,
-					knockout_entries[i].data.polygon.fill);
+					&knockout_entries[i].data.polygon.plot_style);
 			break;
 		case KNOCKOUT_PLOT_FILL:
 			box = knockout_entries[i].box->child;
@@ -363,8 +361,7 @@ bool knockout_plot_flush(void)
 					knockout_entries[i].data.disc.x,
 					knockout_entries[i].data.disc.y,
 					knockout_entries[i].data.disc.radius,
-					knockout_entries[i].data.disc.colour,
-					knockout_entries[i].data.disc.filled);
+					&knockout_entries[i].data.disc.plot_style);
 			break;
 		case KNOCKOUT_PLOT_ARC:
 			success &= plot.arc(
@@ -373,7 +370,7 @@ bool knockout_plot_flush(void)
 					knockout_entries[i].data.arc.radius,
 					knockout_entries[i].data.arc.angle1,
 					knockout_entries[i].data.arc.angle2,
-					knockout_entries[i].data.arc.c);
+					&knockout_entries[i].data.arc.plot_style);
 			break;
 		case KNOCKOUT_PLOT_BITMAP:
 			box = knockout_entries[i].box->child;
@@ -676,7 +673,7 @@ bool knockout_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *psty
 }
 
 
-bool knockout_plot_polygon(const int *p, unsigned int n, colour fill)
+bool knockout_plot_polygon(const int *p, unsigned int n, const plot_style_t *pstyle)
 {
 	bool success = true;
 	int *dest;
@@ -684,7 +681,7 @@ bool knockout_plot_polygon(const int *p, unsigned int n, colour fill)
 	/* ensure we have sufficient room even when flushed */
 	if (n * 2 >= KNOCKOUT_POLYGONS) {
 		knockout_plot_flush();
-		success = real_plot.polygon(p, n, fill);
+		success = real_plot.polygon(p, n, pstyle);
 		return success;
 	}
 
@@ -698,7 +695,7 @@ bool knockout_plot_polygon(const int *p, unsigned int n, colour fill)
 	knockout_polygon_cur += n * 2;
 	knockout_entries[knockout_entry_cur].data.polygon.p = dest;
 	knockout_entries[knockout_entry_cur].data.polygon.n = n;
-	knockout_entries[knockout_entry_cur].data.polygon.fill = fill;
+	knockout_entries[knockout_entry_cur].data.polygon.plot_style = *pstyle;
 	knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_POLYGON;
 	if (++knockout_entry_cur >= KNOCKOUT_ENTRIES)
 		knockout_plot_flush();
@@ -757,27 +754,26 @@ bool knockout_plot_text(int x, int y, const struct css_style *style,
 }
 
 
-bool knockout_plot_disc(int x, int y, int radius, colour colour, bool filled)
+bool knockout_plot_disc(int x, int y, int radius, const plot_style_t *pstyle)
 {
 	knockout_entries[knockout_entry_cur].data.disc.x = x;
 	knockout_entries[knockout_entry_cur].data.disc.y = y;
 	knockout_entries[knockout_entry_cur].data.disc.radius = radius;
-	knockout_entries[knockout_entry_cur].data.disc.colour = colour;
-	knockout_entries[knockout_entry_cur].data.disc.filled = filled;
+	knockout_entries[knockout_entry_cur].data.disc.plot_style = *pstyle;
 	knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_DISC;
 	if (++knockout_entry_cur >= KNOCKOUT_ENTRIES)
 		knockout_plot_flush();
 	return true;
 }
 
-bool knockout_plot_arc(int x, int y, int radius, int angle1, int angle2, colour c)
+bool knockout_plot_arc(int x, int y, int radius, int angle1, int angle2, const plot_style_t *pstyle)
 {
 	knockout_entries[knockout_entry_cur].data.arc.x = x;
 	knockout_entries[knockout_entry_cur].data.arc.y = y;
 	knockout_entries[knockout_entry_cur].data.arc.radius = radius;
 	knockout_entries[knockout_entry_cur].data.arc.angle1 = angle1;
 	knockout_entries[knockout_entry_cur].data.arc.angle2 = angle2;
-	knockout_entries[knockout_entry_cur].data.arc.c = c;
+	knockout_entries[knockout_entry_cur].data.arc.plot_style = *pstyle;
 	knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_ARC;
 	if (++knockout_entry_cur >= KNOCKOUT_ENTRIES)
 		knockout_plot_flush();

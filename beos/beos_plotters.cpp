@@ -63,16 +63,16 @@ cairo_t *current_cr;
 
 static bool nsbeos_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style);
 static bool nsbeos_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *style);
-static bool nsbeos_plot_polygon(const int *p, unsigned int n, colour fill);
+static bool nsbeos_plot_polygon(const int *p, unsigned int n, const plot_style_t *style);
 static bool nsbeos_plot_path(const float *p, unsigned int n, colour fill, float width,
                     colour c, const float transform[6]);
 static bool nsbeos_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
 static bool nsbeos_plot_text(int x, int y, const struct css_style *style,
 		const char *text, size_t length, colour bg, colour c);
-static bool nsbeos_plot_disc(int x, int y, int radius, colour c, bool filled);
+static bool nsbeos_plot_disc(int x, int y, int radius, const plot_style_t *style);
 static bool nsbeos_plot_arc(int x, int y, int radius, int angle1, int angle2,
-    		colour c);
+    		const plot_style_t *style);
 static bool nsbeos_plot_bitmap(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
 		bitmap_flags_t flags);
@@ -91,18 +91,18 @@ static const rgb_color kBlackColor = { 0, 0, 0, 255 };
 struct plotter_table plot;
 
 const struct plotter_table nsbeos_plotters = {
-	nsbeos_plot_rectangle,
-	nsbeos_plot_line,
-	nsbeos_plot_polygon,
 	nsbeos_plot_clip,
-	nsbeos_plot_text,
-	nsbeos_plot_disc,
 	nsbeos_plot_arc,
-	nsbeos_plot_bitmap,
-	NULL,
-	NULL,
-	NULL,
+	nsbeos_plot_disc,
+	nsbeos_plot_line,
+	nsbeos_plot_rectangle,
+	nsbeos_plot_polygon,
 	nsbeos_plot_path,
+	nsbeos_plot_bitmap,
+	nsbeos_plot_text,
+	NULL, // Group Start
+	NULL, // Group End
+	NULL, // Flush
 	false // option_knockout
 };
 
@@ -286,7 +286,7 @@ bool nsbeos_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 }
 
 
-bool nsbeos_plot_polygon(const int *p, unsigned int n, colour fill)
+bool nsbeos_plot_polygon(const int *p, unsigned int n, const plot_style_t *style)
 {
 	unsigned int i;
 	BView *view;
@@ -297,7 +297,7 @@ bool nsbeos_plot_polygon(const int *p, unsigned int n, colour fill)
 		return false;
 	}
 
-	nsbeos_set_colour(fill);
+	nsbeos_set_colour(style->fill_colour);
 
 	BPoint points[n];
 	
@@ -305,7 +305,7 @@ bool nsbeos_plot_polygon(const int *p, unsigned int n, colour fill)
 		points[i] = BPoint(p[2 * i], p[2 * i + 1]);
 	}
 
-	if (fill == TRANSPARENT)
+	if (style->fill_colour == TRANSPARENT)
 		view->StrokePolygon(points, (int32)n);
 	else
 		view->FillPolygon(points, (int32)n);
@@ -401,7 +401,7 @@ bool nsbeos_plot_text(int x, int y, const struct css_style *style,
 }
 
 
-bool nsbeos_plot_disc(int x, int y, int radius, colour c, bool filled)
+bool nsbeos_plot_disc(int x, int y, int radius, const plot_style_t *style)
 {
 	BView *view;
 
@@ -411,10 +411,10 @@ bool nsbeos_plot_disc(int x, int y, int radius, colour c, bool filled)
 		return false;
 	}
 
-	nsbeos_set_colour(c);
+	nsbeos_set_colour(style->fill_colour);
 
 	BPoint center(x, y);
-	if (filled)
+	if (style->fill_type != PLOT_OP_TYPE_NONE)
 		view->FillEllipse(center, radius, radius);
 	else
 		view->StrokeEllipse(center, radius, radius);
@@ -449,7 +449,7 @@ bool nsbeos_plot_disc(int x, int y, int radius, colour c, bool filled)
 	return true;
 }
 
-bool nsbeos_plot_arc(int x, int y, int radius, int angle1, int angle2, colour c)
+bool nsbeos_plot_arc(int x, int y, int radius, int angle1, int angle2, const plot_style_t *style)
 {
 	BView *view;
 
@@ -459,7 +459,7 @@ bool nsbeos_plot_arc(int x, int y, int radius, int angle1, int angle2, colour c)
 		return false;
 	}
 
-	nsbeos_set_colour(c);
+	nsbeos_set_colour(style->fill_colour);
 
 	BPoint center(x, y);
 	float angle = angle1; // in degree
@@ -469,7 +469,7 @@ bool nsbeos_plot_arc(int x, int y, int radius, int angle1, int angle2, colour c)
 	//nsbeos_current_gc_unlock();
 
 #if 0 /* GTK */
-	nsbeos_set_colour(c);
+	nsbeos_set_colour(style->fill_colour);
 	nsbeos_set_solid();
 #ifdef CAIRO_VERSION
 	if (option_render_cairo) {

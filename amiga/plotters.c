@@ -321,7 +321,7 @@ bool ami_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 	return true;
 }
 
-bool ami_polygon(const int *p, unsigned int n, colour fill)
+bool ami_polygon(const int *p, unsigned int n, const plot_style_t *style)
 {
 	int k;
 #ifndef NS_AMIGA_CAIRO
@@ -329,10 +329,13 @@ bool ami_polygon(const int *p, unsigned int n, colour fill)
 
 	//DebugPrintF("poly\n");
 
-	SetRPAttrs(&glob->rp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,fill),
-					RPTAG_OPenColor,p96EncodeColor(RGBFB_A8B8G8R8,fill),
+	SetRPAttrs(&glob->rp,
+		   RPTAG_APenColor,
+		   p96EncodeColor(RGBFB_A8B8G8R8, style->fill_colour),
+		   RPTAG_OPenColor,
+		   p96EncodeColor(RGBFB_A8B8G8R8, style->fill_colour),
 //					RPTAG_OPenColor,0xffffffff,
-					TAG_DONE);
+		   TAG_DONE);
 
 	AreaMove(&glob->rp,p[0],p[1]);
 
@@ -344,7 +347,7 @@ bool ami_polygon(const int *p, unsigned int n, colour fill)
 	AreaEnd(&glob->rp);
 	BNDRYOFF(&glob->rp);
 #else
-	ami_cairo_set_colour(glob->cr,fill);
+	ami_cairo_set_colour(glob->cr, style->fill_colour);
 	ami_cairo_set_solid(glob->cr);
 
 	cairo_set_line_width(glob->cr, 0);
@@ -404,45 +407,58 @@ bool ami_text(int x, int y, const struct css_style *style,
 	return true;
 }
 
-bool ami_disc(int x, int y, int radius, colour c, bool filled)
+bool ami_disc(int x, int y, int radius, const plot_style_t *style)
 {
 #ifndef NS_AMIGA_CAIRO_ALL
-	SetRPAttrs(&glob->rp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),
-					TAG_DONE);
-
-	if(filled)
-	{
+	if (style->fill_type != PLOT_OP_TYPE_NONE) {
+		SetRPAttrs(&glob->rp,
+			   RPTAG_APenColor,
+			   p96EncodeColor(RGBFB_A8B8G8R8, style->fill_colour),
+			   TAG_DONE);
 		AreaCircle(&glob->rp,x,y,radius);
 		AreaEnd(&glob->rp);
 	}
-	else
-	{
-		DrawEllipse(&glob->rp,x,y,radius,radius); // NB: does not support fill, need to use AreaCircle for that
+
+	if (style->stroke_type != PLOT_OP_TYPE_NONE) {
+		SetRPAttrs(&glob->rp,
+			   RPTAG_APenColor,
+			   p96EncodeColor(RGBFB_A8B8G8R8, style->stroke_colour),
+			   TAG_DONE);
+
+		DrawEllipse(&glob->rp,x,y,radius,radius); 
 	}
 #else
-	ami_cairo_set_colour(glob->cr,c);
-	ami_cairo_set_solid(glob->cr);
+	if (style->fill_type != PLOT_OP_TYPE_NONE) {
+		ami_cairo_set_colour(glob->cr, style->fill_colour);
+		ami_cairo_set_solid(glob->cr);
 
-	if (filled)
 		cairo_set_line_width(glob->cr, 0);
-	else
-		cairo_set_line_width(glob->cr, 1);
 
-	cairo_arc(glob->cr, x, y, radius, 0, M_PI * 2);
+		cairo_arc(glob->cr, x, y, radius, 0, M_PI * 2);
 
-	if (filled)
 		cairo_fill(glob->cr);
 
-	cairo_stroke(glob->cr);
+		cairo_stroke(glob->cr);
+	}
+
+	if (style->stroke_type != PLOT_OP_TYPE_NONE) {
+		ami_cairo_set_colour(glob->cr, style->stroke_colour);
+		ami_cairo_set_solid(glob->cr);
+
+		cairo_set_line_width(glob->cr, 1);
+
+		cairo_arc(glob->cr, x, y, radius, 0, M_PI * 2);
+
+		cairo_stroke(glob->cr);
+	}
 #endif
 	return true;
 }
 
-bool ami_arc(int x, int y, int radius, int angle1, int angle2,
-	    		colour c)
+bool ami_arc(int x, int y, int radius, int angle1, int angle2, const plot_style_t *style)
 {
 #ifdef NS_AMIGA_CAIRO
-	ami_cairo_set_colour(glob->cr,c);
+	ami_cairo_set_colour(glob->cr, style->fill_colour);
 	ami_cairo_set_solid(glob->cr);
 
 	cairo_set_line_width(glob->cr, 1);
@@ -455,8 +471,10 @@ bool ami_arc(int x, int y, int radius, int angle1, int angle2,
 CommonFuncsPPC.lha */
 	//DebugPrintF("arc\n");
 
-	SetRPAttrs(&glob->rp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),
-					TAG_DONE);
+	SetRPAttrs(&glob->rp,
+                   RPTAG_APenColor,
+                   p96EncodeColor(RGBFB_A8B8G8R8, style->fill_colour),
+		   TAG_DONE);
 
 //	DrawArc(&glob->rp,x,y,(float)angle1,(float)angle2,radius);
 #endif

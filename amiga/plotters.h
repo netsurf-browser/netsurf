@@ -44,13 +44,13 @@ extern const struct plotter_table amiplot;
 bool ami_clg(colour c);
 bool ami_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style);
 bool ami_line(int x0, int y0, int x1, int y1, const plot_style_t *style);
-bool ami_polygon(const int *p, unsigned int n, colour fill);
+bool ami_polygon(const int *p, unsigned int n, const plot_style_t *style);
 bool ami_clip(int x0, int y0, int x1, int y1);
 bool ami_text(int x, int y, const struct css_style *style,
 			const char *text, size_t length, colour bg, colour c);
-bool ami_disc(int x, int y, int radius, colour c, bool filled);
+bool ami_disc(int x, int y, int radius, const plot_style_t *style);
 bool ami_arc(int x, int y, int radius, int angle1, int angle2,
-	    		colour c);
+	    		const plot_style_t *style);
 bool ami_bitmap_tile(int x, int y, int width, int height,
 			struct bitmap *bitmap, colour bg,
 			bitmap_flags_t flags);

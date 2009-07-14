@@ -1074,6 +1074,24 @@ bool html_redraw_inline_borders(struct box *box, int x0, int y0, int x1, int y1,
 	return true;
 }
 
+static plot_style_t plot_style_bdr = {
+	.stroke_type = PLOT_OP_TYPE_DASH,
+};
+static plot_style_t plot_style_fillbdr = {
+	.fill_type = PLOT_OP_TYPE_SOLID,
+};
+static plot_style_t plot_style_fillbdr_dark = {
+	.fill_type = PLOT_OP_TYPE_SOLID,
+};
+static plot_style_t plot_style_fillbdr_light = {
+	.fill_type = PLOT_OP_TYPE_SOLID,
+};
+static plot_style_t plot_style_fillbdr_ddark = {
+	.fill_type = PLOT_OP_TYPE_SOLID,
+};
+static plot_style_t plot_style_fillbdr_dlight = {
+	.fill_type = PLOT_OP_TYPE_SOLID,
+};
 
 /**
  * Draw one border.
@@ -1091,16 +1109,20 @@ bool html_redraw_border_plot(int i, int *p, colour c,
 {
 	int z[8];
 	unsigned int light = i;
-	colour c_plot;
-	plot_style_t plot_style_bdr = {
-		.stroke_type = PLOT_OP_TYPE_DASH,
-		.stroke_colour = c,
-		.stroke_width = thickness,
-		.fill_type = PLOT_OP_TYPE_NONE,
-	};
+	plot_style_t *plot_style_bdr_in;
+	plot_style_t *plot_style_bdr_out;
 
 	if (c == TRANSPARENT)
 		return true;
+
+	plot_style_bdr.stroke_type = PLOT_OP_TYPE_DASH;
+	plot_style_bdr.stroke_colour = c;
+	plot_style_bdr.stroke_width = thickness;
+	plot_style_fillbdr.fill_colour = c;
+	plot_style_fillbdr_dark.fill_colour = darken_colour(c);
+	plot_style_fillbdr_light.fill_colour = lighten_colour(c);
+	plot_style_fillbdr_ddark.fill_colour = double_darken_colour(c);
+	plot_style_fillbdr_dlight.fill_colour = double_lighten_colour(c);
 
 	switch (style) {
 	case CSS_BORDER_STYLE_DOTTED:
@@ -1117,7 +1139,7 @@ bool html_redraw_border_plot(int i, int *p, colour c,
 
 	case CSS_BORDER_STYLE_SOLID:
 	default:
-		if (!plot.polygon(p + i * 4, 4, c))
+		if (!plot.polygon(p + i * 4, 4, &plot_style_fillbdr))
 			return false;
 		break;
 
@@ -1130,7 +1152,7 @@ bool html_redraw_border_plot(int i, int *p, colour c,
 		z[5] = (p[i * 4 + 7] * 2 + p[i * 4 + 5]) / 3;
 		z[6] = p[i * 4 + 6];
 		z[7] = p[i * 4 + 7];
-		if (!plot.polygon(z, 4, c))
+		if (!plot.polygon(z, 4, &plot_style_fillbdr))
 			return false;
 		z[0] = p[i * 4 + 2];
 		z[1] = p[i * 4 + 3];
@@ -1140,13 +1162,20 @@ bool html_redraw_border_plot(int i, int *p, colour c,
 		z[5] = (p[i * 4 + 5] * 2 + p[i * 4 + 7]) / 3;
 		z[6] = p[i * 4 + 4];
 		z[7] = p[i * 4 + 5];
-		if (!plot.polygon(z, 4, c))
+		if (!plot.polygon(z, 4, &plot_style_fillbdr))
 			return false;
 		break;
 
 	case CSS_BORDER_STYLE_GROOVE:
 		light = 3 - light;
 	case CSS_BORDER_STYLE_RIDGE:
+		if (light <= 1) {
+			plot_style_bdr_in = &plot_style_fillbdr_dark;
+			plot_style_bdr_out = &plot_style_fillbdr_light;
+		} else {
+			plot_style_bdr_in = &plot_style_fillbdr_light;
+			plot_style_bdr_out = &plot_style_fillbdr_dark;
+		}
 		z[0] = p[i * 4 + 0];
 		z[1] = p[i * 4 + 1];
 		z[2] = (p[i * 4 + 0] + p[i * 4 + 2]) / 2;
@@ -1155,21 +1184,42 @@ bool html_redraw_border_plot(int i, int *p, colour c,
 		z[5] = (p[i * 4 + 7] + p[i * 4 + 5]) / 2;
 		z[6] = p[i * 4 + 6];
 		z[7] = p[i * 4 + 7];
-		if (!plot.polygon(z, 4, light <= 1 ?
-				darken_colour(c) : lighten_colour(c)))
+		if (!plot.polygon(z, 4, plot_style_bdr_in))
 			return false;
 		z[0] = p[i * 4 + 2];
 		z[1] = p[i * 4 + 3];
 		z[6] = p[i * 4 + 4];
 		z[7] = p[i * 4 + 5];
-		if (!plot.polygon(z, 4, light <= 1 ?
-				lighten_colour(c) : darken_colour(c)))
+		if (!plot.polygon(z, 4, plot_style_bdr_out))
 			return false;
 		break;
 
 	case CSS_BORDER_STYLE_INSET:
 		light = (light + 2) % 4;
 	case CSS_BORDER_STYLE_OUTSET:
+		switch (light) {
+		case 0:
+			plot_style_bdr_in = &plot_style_fillbdr_light;
+			plot_style_bdr_out = &plot_style_fillbdr_dlight;
+			break;
+		case 1:
+			plot_style_bdr_in = &plot_style_fillbdr_ddark;
+			plot_style_bdr_out = &plot_style_fillbdr_dark;
+			break;
+		case 2:
+			plot_style_bdr_in = &plot_style_fillbdr_dark;
+			plot_style_bdr_out = &plot_style_fillbdr_ddark;
+			break;
+		case 3:
+			plot_style_bdr_in = &plot_style_fillbdr_dlight;
+			plot_style_bdr_out = &plot_style_fillbdr_light;
+			break;
+		default:
+			plot_style_bdr_in = &plot_style_fillbdr;
+			plot_style_bdr_out = &plot_style_fillbdr;
+			break;
+		}
+
 		z[0] = p[i * 4 + 0];
 		z[1] = p[i * 4 + 1];
 		z[2] = (p[i * 4 + 0] + p[i * 4 + 2]) / 2;
@@ -1178,42 +1228,13 @@ bool html_redraw_border_plot(int i, int *p, colour c,
 		z[5] = (p[i * 4 + 7] + p[i * 4 + 5]) / 2;
 		z[6] = p[i * 4 + 6];
 		z[7] = p[i * 4 + 7];
-		c_plot = c;
-		switch (light) {
-		case 3:
-			c_plot = double_lighten_colour(c);
-			break;
-		case 0:
-			c_plot = lighten_colour(c);
-			break;
-		case 1:
-			c_plot = double_darken_colour(c);
-			break;
-		case 2:
-			c_plot = darken_colour(c);
-			break;
-		}
-		if (!plot.polygon(z, 4, c_plot))
+		if (!plot.polygon(z, 4, plot_style_bdr_in))
 			return false;
 		z[0] = p[i * 4 + 2];
 		z[1] = p[i * 4 + 3];
 		z[6] = p[i * 4 + 4];
 		z[7] = p[i * 4 + 5];
-		switch (light) {
-		case 0:
-			c_plot = double_lighten_colour(c);
-			break;
-		case 3:
-			c_plot = lighten_colour(c);
-			break;
-		case 2:
-			c_plot = double_darken_colour(c);
-			break;
-		case 1:
-			c_plot = darken_colour(c);
-			break;
-		}
-		if (!plot.polygon(z, 4, c_plot))
+		if (!plot.polygon(z, 4, plot_style_bdr_out))
 			return false;
 		break;
 	}
@@ -1291,28 +1312,37 @@ bool html_redraw_checkbox(int x, int y, int width, int height,
 bool html_redraw_radio(int x, int y, int width, int height,
 		bool selected)
 {
-	int dark = double_darken_colour(WIDGET_BASEC);
-	int lite = double_lighten_colour(WIDGET_BASEC);
-
 	/* plot background of radio button */
-	if (!plot.disc(x + width * 0.5, y + height * 0.5,
-			width * 0.5 - 1, WIDGET_BASEC, true))
+	if (!plot.disc(x + width * 0.5, 
+		       y + height * 0.5,
+		       width * 0.5 - 1, 
+		       plot_style_fill_wbasec))
 		return false;
 
 	/* plot dark arc */
-	if (!plot.arc(x + width * 0.5, y + height * 0.5,
-			width * 0.5 - 1, 45, 225, dark))
+	if (!plot.arc(x + width * 0.5, 
+		      y + height * 0.5,
+		      width * 0.5 - 1, 
+		      45, 
+		      225, 
+		      plot_style_fill_darkwbasec))
 		return false;
 
 	/* plot light arc */
-	if (!plot.arc(x + width * 0.5, y + height * 0.5,
-			width * 0.5 - 1, 225, 45, lite))
+	if (!plot.arc(x + width * 0.5, 
+		      y + height * 0.5,
+		      width * 0.5 - 1, 
+		      225, 
+		      45, 
+		      plot_style_fill_lightwbasec))
 		return false;
 
 	if (selected) {
 		/* plot selection blob */
-		if (!plot.disc(x + width * 0.5, y + height * 0.5,
-				width * 0.3 - 1, WIDGET_BLOBC, true))
+		if (!plot.disc(x + width * 0.5, 
+			       y + height * 0.5,
+			       width * 0.3 - 1, 
+			       plot_style_fill_wblobc))
 			return false;
 	}
 
@@ -1941,6 +1971,10 @@ bool html_redraw_scrollbars(struct box *box, float scale,
 		.fill_type = PLOT_OP_TYPE_SOLID,
 		.fill_colour = css_scrollbar_fg_colour,
 	};
+	plot_style_t pstyle_css_scrollbar_arrow_colour = {
+		.fill_type = PLOT_OP_TYPE_SOLID,
+		.fill_colour = css_scrollbar_arrow_colour,
+	};
 
 	box_scrollbar_dimensions(box, padding_width, padding_height, w,
 			&vscroll, &hscroll,
@@ -1978,7 +2012,7 @@ bool html_redraw_scrollbars(struct box *box, float scale,
 		v[3] = y + padding_height - w * 3 / 4;
 		v[4] = x + w * 3 / 4;
 		v[5] = y + padding_height - w / 4;
-		if (!plot.polygon(v, 3, css_scrollbar_arrow_colour))
+		if (!plot.polygon(v, 3, &pstyle_css_scrollbar_arrow_colour))
 			return false;
 		/* scroll well background */
 		if (!plot.rectangle(x + w - 1,
@@ -2021,7 +2055,7 @@ bool html_redraw_scrollbars(struct box *box, float scale,
 		v[3] = y + padding_height - w * 3 / 4;
 		v[4] = x + w + well_width + w / 4 + (vscroll ? 1 : 0);
 		v[5] = y + padding_height - w / 4;
-		if (!plot.polygon(v, 3, css_scrollbar_arrow_colour))
+		if (!plot.polygon(v, 3, &pstyle_css_scrollbar_arrow_colour))
 			return false;
 	}
 
@@ -2056,7 +2090,7 @@ bool html_redraw_scrollbars(struct box *box, float scale,
 		v[3] = y + w * 3 / 4;
 		v[4] = x + padding_width - w / 4;
 		v[5] = y + w * 3 / 4;
-		if (!plot.polygon(v, 3, css_scrollbar_arrow_colour))
+		if (!plot.polygon(v, 3, &pstyle_css_scrollbar_arrow_colour))
 			return false;
 		/* scroll well background */
 		if (!plot.rectangle(x + padding_width - w + 1,
@@ -2098,7 +2132,7 @@ bool html_redraw_scrollbars(struct box *box, float scale,
 		v[3] = y + w + well_height + w / 4;
 		v[4] = x + padding_width - w / 4;
 		v[5] = y + w + well_height + w / 4;
-		if (!plot.polygon(v, 3, css_scrollbar_arrow_colour))
+		if (!plot.polygon(v, 3, &pstyle_css_scrollbar_arrow_colour))
 			return false;
 	}
 

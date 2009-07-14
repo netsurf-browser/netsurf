@@ -39,17 +39,16 @@
 
 static bool ro_save_draw_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style);
 static bool ro_save_draw_line(int x0, int y0, int x1, int y1, const plot_style_t *style);
-static bool ro_save_draw_polygon(const int *p, unsigned int n, colour fill);
+static bool ro_save_draw_polygon(const int *p, unsigned int n, const plot_style_t *style);
 static bool ro_save_draw_path(const float *p, unsigned int n, colour fill,
 		float width, colour c, const float transform[6]);
 static bool ro_save_draw_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
 static bool ro_save_draw_text(int x, int y, const struct css_style *style,
 		const char *text, size_t length, colour bg, colour c);
-static bool ro_save_draw_disc(int x, int y, int radius, colour colour,
-		bool filled);
+static bool ro_save_draw_disc(int x, int y, int radius, const plot_style_t *style);
 static bool ro_save_draw_arc(int x, int y, int radius, int angle1, int angle2,
-    		colour c);
+    		const plot_style_t *style);
 static bool ro_save_draw_bitmap(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg, bitmap_flags_t flags);
 static bool ro_save_draw_group_start(const char *name);
@@ -216,7 +215,7 @@ bool ro_save_draw_line(int x0, int y0, int x1, int y1, const plot_style_t *style
 }
 
 
-bool ro_save_draw_polygon(const int *p, unsigned int n, colour fill)
+bool ro_save_draw_polygon(const int *p, unsigned int n, const plot_style_t *style)
 {
 	pencil_code code;
 	int path[n * 3 + 1];
@@ -230,10 +229,18 @@ bool ro_save_draw_polygon(const int *p, unsigned int n, colour fill)
 	path[0] = draw_MOVE_TO;
 	path[n * 3] = draw_END_PATH;
 
-	code = pencil_path(ro_save_draw_diagram, path, n * 3 + 1,
-			fill << 8, pencil_TRANSPARENT, 0, pencil_JOIN_MITRED,
-			pencil_CAP_BUTT, pencil_CAP_BUTT, 0, 0, false,
-			pencil_SOLID);
+	code = pencil_path(ro_save_draw_diagram, 
+			   path, n * 3 + 1,
+			   style->fill_colour << 8, 
+			   pencil_TRANSPARENT, 
+			   0, 
+			   pencil_JOIN_MITRED,
+			   pencil_CAP_BUTT, 
+			   pencil_CAP_BUTT, 
+			   0, 
+			   0, 
+			   false,
+			   pencil_SOLID);
 	if (code != pencil_OK)
 		return ro_save_draw_error(code);
 
@@ -360,13 +367,13 @@ bool ro_save_draw_text(int x, int y, const struct css_style *style,
 }
 
 
-bool ro_save_draw_disc(int x, int y, int radius, colour colour, bool filled)
+bool ro_save_draw_disc(int x, int y, int radius, const plot_style_t *style)
 {
 	return true;
 }
 
 bool ro_save_draw_arc(int x, int y, int radius, int angle1, int angle2,
-		colour c)
+		const plot_style_t *style)
 {
 	return true;
 }

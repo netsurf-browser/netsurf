@@ -38,16 +38,16 @@ static bool ro_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t
 static bool ro_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *style);
 static bool ro_plot_draw_path(const draw_path * const path, int width,
 		colour c, bool dotted, bool dashed);
-static bool ro_plot_polygon(const int *p, unsigned int n, colour fill);
+static bool ro_plot_polygon(const int *p, unsigned int n, const plot_style_t *style);
 static bool ro_plot_path(const float *p, unsigned int n, colour fill, float width,
 		colour c, const float transform[6]);
 static bool ro_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
 static bool ro_plot_text(int x, int y, const struct css_style *style,
 		const char *text, size_t length, colour bg, colour c);
-static bool ro_plot_disc(int x, int y, int radius, colour colour, bool filled);
+static bool ro_plot_disc(int x, int y, int radius, const plot_style_t *style);
 static bool ro_plot_arc(int x, int y, int radius, int angle1, int angle2,
-    		colour c);
+    		const plot_style_t *style);
 static bool ro_plot_bitmap(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
 		bitmap_flags_t flags);
@@ -216,7 +216,7 @@ bool ro_plot_draw_path(const draw_path * const path, int width,
 }
 
 
-bool ro_plot_polygon(const int *p, unsigned int n, colour fill)
+bool ro_plot_polygon(const int *p, unsigned int n, const plot_style_t *style)
 {
 	int path[n * 3 + 2];
 	unsigned int i;
@@ -231,7 +231,7 @@ bool ro_plot_polygon(const int *p, unsigned int n, colour fill)
 	path[n * 3] = draw_END_PATH;
 	path[n * 3 + 1] = 0;
 
-	error = xcolourtrans_set_gcol(fill << 8, 0, os_ACTION_OVERWRITE, 0, 0);
+	error = xcolourtrans_set_gcol(style->fill_colour << 8, 0, os_ACTION_OVERWRITE, 0, 0);
 	if (error) {
 		LOG(("xcolourtrans_set_gcol: 0x%x: %s",
 				error->errnum, error->errmess));
@@ -414,39 +414,59 @@ bool ro_plot_text(int x, int y, const struct css_style *style,
 }
 
 
-bool ro_plot_disc(int x, int y, int radius, colour colour, bool filled)
+bool ro_plot_disc(int x, int y, int radius, const plot_style_t *style)
 {
 	os_error *error;
-
-	error = xcolourtrans_set_gcol(colour << 8, 0,
-			os_ACTION_OVERWRITE, 0, 0);
-	if (error) {
-		LOG(("xcolourtrans_set_gcol: 0x%x: %s",
-				error->errnum, error->errmess));
-		return false;
-	}
-	error = xos_plot(os_MOVE_TO,
-			ro_plot_origin_x + x * 2,
-			ro_plot_origin_y - y * 2);
-	if (error) {
-		LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
-		return false;
-	}
-        if (filled) {
-  	        error = xos_plot(os_PLOT_CIRCLE | os_PLOT_BY, radius * 2, 0);
-        } else {
-                error = xos_plot(os_PLOT_CIRCLE_OUTLINE | os_PLOT_BY,
-                    radius * 2, 0);
+	if (style->fill_type != PLOT_OP_TYPE_NONE) {
+		error = xcolourtrans_set_gcol(style->fill_colour << 8, 0,
+					      os_ACTION_OVERWRITE, 0, 0);
+		if (error) {
+			LOG(("xcolourtrans_set_gcol: 0x%x: %s",
+			     error->errnum, error->errmess));
+			return false;
+		}
+		error = xos_plot(os_MOVE_TO,
+				 ro_plot_origin_x + x * 2,
+				 ro_plot_origin_y - y * 2);
+		if (error) {
+			LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
+			return false;
+		}
+		error = xos_plot(os_PLOT_CIRCLE | os_PLOT_BY, radius * 2, 0);
+		if (error) {
+			LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
+			return false;
+		}
         }
-	if (error) {
-		LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
-		return false;
-	}
 
+	if (style->stroke_type != PLOT_OP_TYPE_NONE) {
+
+		error = xcolourtrans_set_gcol(style->stroke_colour << 8, 0,
+					      os_ACTION_OVERWRITE, 0, 0);
+		if (error) {
+			LOG(("xcolourtrans_set_gcol: 0x%x: %s",
+			     error->errnum, error->errmess));
+			return false;
+		}
+		error = xos_plot(os_MOVE_TO,
+				 ro_plot_origin_x + x * 2,
+				 ro_plot_origin_y - y * 2);
+		if (error) {
+			LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
+			return false;
+		}
+		error = xos_plot(os_PLOT_CIRCLE_OUTLINE | os_PLOT_BY,
+				 radius * 2, 0);
+
+		if (error) {
+			LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
+			return false;
+		}
+        }
 	return true;
 }
 
-bool ro_plot_arc(int x, int y, int radius, int angle1, int angle2, colour c)
+bool ro_plot_arc(int x, int y, int radius, int angle1, int angle2, const plot_style_t *style)
 {
 	os_error *error;
 	int sx, sy, ex, ey;
@@ -456,7 +476,7 @@ bool ro_plot_arc(int x, int y, int radius, int angle1, int angle2, colour c)
 	y = ro_plot_origin_y - y * 2;
 	radius <<= 1;
 
-	error = xcolourtrans_set_gcol(c << 8, 0,
+	error = xcolourtrans_set_gcol(style->fill_colour << 8, 0,
 	    		os_ACTION_OVERWRITE, 0, 0);
 
 	if (error) {

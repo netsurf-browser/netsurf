@@ -91,6 +91,8 @@ extern plot_style_t *plot_style_stroke_yellow;
 extern plot_style_t *plot_style_caret;
 extern plot_style_t *plot_style_stroke_history;
 extern plot_style_t *plot_style_fill_wbasec;
+extern plot_style_t *plot_style_fill_darkwbasec;
+extern plot_style_t *plot_style_fill_lightwbasec;
 extern plot_style_t *plot_style_fill_wblobc;
 extern plot_style_t *plot_style_stroke_wblobc;
 extern plot_style_t *plot_style_stroke_darkwbasec;

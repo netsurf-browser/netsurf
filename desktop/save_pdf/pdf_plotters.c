@@ -47,14 +47,14 @@
 
 static bool pdf_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style);
 static bool pdf_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *pstyle);
-static bool pdf_plot_polygon(const int *p, unsigned int n, colour fill);
+static bool pdf_plot_polygon(const int *p, unsigned int n, const plot_style_t *style);
 static bool pdf_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
 static bool pdf_plot_text(int x, int y, const struct css_style *style,
 		const char *text, size_t length, colour bg, colour c);
-static bool pdf_plot_disc(int x, int y, int radius, colour c, bool filled);
+static bool pdf_plot_disc(int x, int y, int radius, const plot_style_t *style);
 static bool pdf_plot_arc(int x, int y, int radius, int angle1, int angle2,
-    		colour c);
+    		const plot_style_t *style);
 static bool pdf_plot_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
 		bitmap_flags_t flags);
@@ -231,7 +231,7 @@ bool pdf_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *pstyle)
 	return true;
 }
 
-bool pdf_plot_polygon(const int *p, unsigned int n, colour fill)
+bool pdf_plot_polygon(const int *p, unsigned int n, const plot_style_t *style)
 {
 	unsigned int i;
 #ifdef PDF_DEBUG
@@ -242,7 +242,7 @@ bool pdf_plot_polygon(const int *p, unsigned int n, colour fill)
 	if (n == 0)
 		return true;
 
-	apply_clip_and_mode(false, fill, TRANSPARENT, 0., DashPattern_eNone);
+	apply_clip_and_mode(false, style->fill_colour, TRANSPARENT, 0., DashPattern_eNone);
 
 	HPDF_Page_MoveTo(pdf_page, p[0], page_height - p[1]);
 	for (i = 1 ; i<n ; i++) {
@@ -318,35 +318,45 @@ bool pdf_plot_text(int x, int y, const struct css_style *style,
 	return true;
 }
 
-bool pdf_plot_disc(int x, int y, int radius, colour c, bool filled)
+bool pdf_plot_disc(int x, int y, int radius, const plot_style_t *style)
 {
 #ifdef PDF_DEBUG
 	LOG(("."));
 #endif
+	if (style->fill_type != PLOT_OP_TYPE_NONE) {
+		apply_clip_and_mode(false,
+				    style->fill_colour, 
+				    TRANSPARENT,
+				    1., DashPattern_eNone);
 
-	/* FIXME: line width 1 is ok ? */
-	apply_clip_and_mode(false,
-			filled ? c : TRANSPARENT, filled ? TRANSPARENT : c,
-			1., DashPattern_eNone);
+		HPDF_Page_Circle(pdf_page, x, page_height - y, radius);
 
-	HPDF_Page_Circle(pdf_page, x, page_height - y, radius);
-
-	if (filled)
 		HPDF_Page_Fill(pdf_page);
-	else
+	}
+
+	if (style->stroke_type != PLOT_OP_TYPE_NONE) {
+		/* FIXME: line width 1 is ok ? */
+		apply_clip_and_mode(false,
+				    TRANSPARENT, 
+				    style->stroke_colour,
+				    1., DashPattern_eNone);
+
+		HPDF_Page_Circle(pdf_page, x, page_height - y, radius);
+
 		HPDF_Page_Stroke(pdf_page);
+	}
 
 	return true;
 }
 
-bool pdf_plot_arc(int x, int y, int radius, int angle1, int angle2, colour c)
+bool pdf_plot_arc(int x, int y, int radius, int angle1, int angle2, const plot_style_t *style)
 {
 #ifdef PDF_DEBUG
 	LOG(("%d %d %d %d %d %X", x, y, radius, angle1, angle2, c));
 #endif
 
 	/* FIXME: line width 1 is ok ? */
-	apply_clip_and_mode(false, TRANSPARENT, c, 1., DashPattern_eNone);
+	apply_clip_and_mode(false, TRANSPARENT, style->fill_colour, 1., DashPattern_eNone);
 
 	/* Normalize angles */
 	angle1 %= 360;

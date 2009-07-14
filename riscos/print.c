@@ -99,15 +99,13 @@ static bool print_document(struct gui_window *g, const char *filename);
 static const char *print_declare_fonts(struct content *content);
 static bool print_fonts_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style);
 static bool print_fonts_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *style);
-static bool print_fonts_plot_polygon(const int *p, unsigned int n, colour fill);
+static bool print_fonts_plot_polygon(const int *p, unsigned int n, const plot_style_t *style);
 static bool print_fonts_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
 static bool print_fonts_plot_text(int x, int y, const struct css_style *style,
 		const char *text, size_t length, colour bg, colour c);
-static bool print_fonts_plot_disc(int x, int y, int radius, colour c,
-                bool filled);
-static bool print_fonts_plot_arc(int x, int y, int radius, int angle1, int angle2,
-		colour c);
+static bool print_fonts_plot_disc(int x, int y, int radius, const plot_style_t *style);
+static bool print_fonts_plot_arc(int x, int y, int radius, int angle1, int angle2, const plot_style_t *style);
 static bool print_fonts_plot_bitmap(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
 		bitmap_flags_t flags);
@@ -814,7 +812,7 @@ bool print_fonts_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *s
 	return true;
 }
 
-bool print_fonts_plot_polygon(const int *p, unsigned int n, colour fill)
+bool print_fonts_plot_polygon(const int *p, unsigned int n, const plot_style_t *style)
 {
 	return true;
 }
@@ -826,14 +824,13 @@ bool print_fonts_plot_clip(int clip_x0, int clip_y0,
 	return true;
 }
 
-bool print_fonts_plot_disc(int x, int y, int radius, colour colour,
-		bool filled)
+bool print_fonts_plot_disc(int x, int y, int radius, const plot_style_t *style)
 {
 	return true;
 }
 
 bool print_fonts_plot_arc(int x, int y, int radius, int angle1, int angle2,
-		colour c)
+		const plot_style_t *style)
 {
 	return true;
 }

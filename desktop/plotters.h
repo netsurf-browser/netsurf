@@ -95,22 +95,35 @@ typedef unsigned long bitmap_flags_t;
  *  3 | | | | | |
  */
 struct plotter_table {
-	bool (*rectangle)(int x0, int y0, int x1, int y1, const plot_style_t *pstyle);
-	bool (*line)(int x0, int y0, int x1, int y1, const plot_style_t *pstyle);
-	bool (*polygon)(const int *p, unsigned int n, colour fill);
+	/* clipping operations */
 	bool (*clip)(int x0, int y0, int x1, int y1);
-	bool (*text)(int x, int y, const struct css_style *style,
-			const char *text, size_t length, colour bg, colour c);
-	bool (*disc)(int x, int y, int radius, colour c, bool filled);
-	bool (*arc)(int x, int y, int radius, int angle1, int angle2, colour c);
+
+        /* shape primatives */
+	bool (*arc)(int x, int y, int radius, int angle1, int angle2, const plot_style_t *pstyle);
+	bool (*disc)(int x, int y, int radius, const plot_style_t *pstyle);
+	bool (*line)(int x0, int y0, int x1, int y1, const plot_style_t *pstyle);
+	bool (*rectangle)(int x0, int y0, int x1, int y1, const plot_style_t *pstyle);
+	bool (*polygon)(const int *p, unsigned int n, const plot_style_t *pstyle);
+
+	/* complex path (for SVG) */
+	bool (*path)(const float *p, unsigned int n, colour fill, float width,
+			colour c, const float transform[6]);
+
+        /* Image */
 	bool (*bitmap)(int x, int y, int width, int height,
 			struct bitmap *bitmap, colour bg,
 			bitmap_flags_t flags);
+
+	/* text */
+	bool (*text)(int x, int y, const struct css_style *style,
+			const char *text, size_t length, colour bg, colour c);
+
+        /* optional callbacks */
 	bool (*group_start)(const char *name);  /**< optional, may be NULL */
 	bool (*group_end)(void);		/**< optional, may be NULL */
 	bool (*flush)(void);			/**< optional, may be NULL */
-	bool (*path)(const float *p, unsigned int n, colour fill, float width,
-			colour c, const float transform[6]);
+
+        /* flags */
 	bool option_knockout;	/**< set if knockout rendering is required */
 };
 

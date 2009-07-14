@@ -44,6 +44,37 @@ static nsfb_t *nsfb;
 
 #ifdef FB_USE_FREETYPE
 
+static bool
+framebuffer_plot_disc(int x, int y, int radius, const plot_style_t *style)
+{
+    nsfb_bbox_t ellipse;
+    ellipse.x0 = x - radius;
+    ellipse.y0 = y - radius;
+    ellipse.x1 = x + radius;
+    ellipse.y1 = y + radius;
+
+    if (style->fill_type != PLOT_OP_TYPE_NONE) {
+        nsfb_plot_ellipse_fill(nsfb, &ellipse, style->fill_colour);
+    } 
+
+    if (style->stroke_type != PLOT_OP_TYPE_NONE) {
+        nsfb_plot_ellipse(nsfb, &ellipse, style->stroke_colour);
+    }
+    return true;
+}
+
+static bool 
+framebuffer_plot_arc(int x, int y, int radius, int angle1, int angle2, const plot_style_t *style)
+{
+    return nsfb_plot_arc(nsfb, x, y, radius, angle1, angle2, style->fill_colour);
+}
+
+static bool framebuffer_plot_polygon(const int *p, unsigned int n, const plot_style_t *style)
+{
+    return nsfb_plot_polygon(nsfb, p, n, style->fill_colour);
+}
+
+
 static bool framebuffer_plot_text(int x, int y, const struct css_style *style,
 			const char *text, size_t length, colour bg, colour c)
 {
@@ -251,11 +282,6 @@ framebuffer_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 	return true;
 }
 
-static bool framebuffer_plot_flush(void)
-{
-	LOG(("flush unimplemnted"));
-	return true;
-}
 
 static bool 
 framebuffer_plot_path(const float *p, 
@@ -270,16 +296,15 @@ framebuffer_plot_path(const float *p,
 }
 
 struct plotter_table plot = {
-	.rectangle = framebuffer_plot_rectangle,
-	.line = framebuffer_plot_line,
-	.polygon = nsfb_lplot_polygon,
 	.clip = nsfb_lplot_clip,
-	.text = framebuffer_plot_text,
-	.disc = nsfb_lplot_disc,
-	.arc = nsfb_lplot_arc,
-	.bitmap = framebuffer_plot_bitmap,
-	.flush = framebuffer_plot_flush,
+	.arc = framebuffer_plot_arc,
+	.disc = framebuffer_plot_disc,
+	.line = framebuffer_plot_line,
+	.rectangle = framebuffer_plot_rectangle,
+	.polygon = framebuffer_plot_polygon,
 	.path = framebuffer_plot_path,
+	.bitmap = framebuffer_plot_bitmap,
+	.text = framebuffer_plot_text,
         .option_knockout = true,
 };
 

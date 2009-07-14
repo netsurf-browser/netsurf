@@ -49,86 +49,163 @@ GdkDrawable *current_drawable;
 GdkGC *current_gc;
 cairo_t *current_cr;
 
-static bool nsgtk_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *style);
-static bool nsgtk_plot_polygon(const int *p, unsigned int n, colour fill);
-static bool nsgtk_plot_path(const float *p, unsigned int n, colour fill, float width,
-                    colour c, const float transform[6]);
-static bool nsgtk_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style);
-static bool nsgtk_plot_clip(int clip_x0, int clip_y0,
-		int clip_x1, int clip_y1);
-static bool nsgtk_plot_text(int x, int y, const struct css_style *style,
-		const char *text, size_t length, colour bg, colour c);
-static bool nsgtk_plot_disc(int x, int y, int radius, colour c, bool filled);
-static bool nsgtk_plot_arc(int x, int y, int radius, int angle1, int angle2,
-    		colour c);
-static bool nsgtk_plot_bitmap(int x, int y, int width, int height,
-		struct bitmap *bitmap, colour bg,
-		bitmap_flags_t flags);
-static void nsgtk_set_solid(void);	/**< Set for drawing solid lines */
-static void nsgtk_set_dotted(void);	/**< Set for drawing dotted lines */
-static void nsgtk_set_dashed(void);	/**< Set for drawing dashed lines */
-
 static GdkRectangle cliprect;
 static float nsgtk_plot_scale = 1.0;
 
 struct plotter_table plot;
 
-const struct plotter_table nsgtk_plotters = {
-	.rectangle = nsgtk_plot_rectangle,
-	.line = nsgtk_plot_line,
-	.polygon = nsgtk_plot_polygon,
-	.clip = nsgtk_plot_clip,
-	.text = nsgtk_plot_text,
-	.disc = nsgtk_plot_disc,
-	.arc = nsgtk_plot_arc,
-	.bitmap = nsgtk_plot_bitmap,
-	.path = nsgtk_plot_path,
-        .option_knockout = true
-};
-
-
-bool nsgtk_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
+/** set plotting scale factor. */
+void nsgtk_plot_set_scale(float s)
 {
-        if (style->fill_type != PLOT_OP_TYPE_NONE) { 
-                nsgtk_set_colour(style->fill_colour);
-                nsgtk_set_solid();
+	nsgtk_plot_scale = s;
+}
 
-                cairo_set_line_width(current_cr, 0);
-                cairo_rectangle(current_cr, x0, y0, x1 - x0, y1 - y0);
-                cairo_fill(current_cr);
-                cairo_stroke(current_cr);
-        }
+/** get plotting scale factor. */
+float nsgtk_plot_get_scale(void)
+{
+	return nsgtk_plot_scale;
+}
 
-        if (style->stroke_type != PLOT_OP_TYPE_NONE) { 
-                nsgtk_set_colour(style->stroke_colour);
+/** Set cairo context colour to nsgtk colour. */
+void nsgtk_set_colour(colour c)
+{
+	int r, g, b;
+	GdkColor colour;
 
-                switch (style->stroke_type) {
-                case PLOT_OP_TYPE_SOLID: /**< Solid colour */
-                default:
-                        nsgtk_set_solid();
-                        break;
+	r = c & 0xff;
+	g = (c & 0xff00) >> 8;
+	b = (c & 0xff0000) >> 16;
 
-                case PLOT_OP_TYPE_DOT: /**< Doted plot */
-                        nsgtk_set_dotted();
-                        break;
+	colour.red = r | (r << 8);
+	colour.green = g | (g << 8);
+	colour.blue = b | (b << 8);
+	colour.pixel = (r << 16) | (g << 8) | b;
 
-                case PLOT_OP_TYPE_DASH: /**< dashed plot */
-                        nsgtk_set_dashed();
-                        break;
-                }
+	gdk_color_alloc(gdk_colormap_get_system(),
+			&colour);
+	gdk_gc_set_foreground(current_gc, &colour);
 
-                if (style->stroke_width == 0) 
-                        cairo_set_line_width(current_cr, 1);
-                else
-                        cairo_set_line_width(current_cr, style->stroke_width);
+	cairo_set_source_rgba(current_cr, r / 255.0,
+			      g / 255.0, b / 255.0, 1.0);
+}
 
-                cairo_rectangle(current_cr, x0 + 0.5, y0 + 0.5, x1 - x0, y1 - y0);
-                cairo_stroke(current_cr);
-        }
+/** Plot a caret.  
+ *
+ * @note It is assumed that the plotters have been set up. 
+ */
+void nsgtk_plot_caret(int x, int y, int h)
+{
+	GdkColor colour;
+
+	colour.red = 0;
+	colour.green = 0;
+	colour.blue = 0;
+	colour.pixel = 0;
+	gdk_color_alloc(gdk_colormap_get_system(),
+			&colour);
+	gdk_gc_set_foreground(current_gc, &colour);
+
+	gdk_draw_line(current_drawable, current_gc,
+		      x, y,
+		      x, y + h - 1);
+}
+
+/** Set cairo context to solid plot operation. */
+static inline void nsgtk_set_solid(void)
+{
+	double dashes = 0;
+	cairo_set_dash(current_cr, &dashes, 0, 0);
+}
+
+/** Set cairo context to dotted plot operation. */
+static inline void nsgtk_set_dotted(void)
+{
+	double cdashes[] = { 1.0, 2.0 };
+	cairo_set_dash(current_cr, cdashes, 2, 0);
+}
+
+/** Set cairo context to dashed plot operation. */
+static inline void nsgtk_set_dashed(void)
+{
+	double cdashes[] = { 8.0, 2.0 };
+	cairo_set_dash(current_cr, cdashes, 2, 0);
+}
+
+/** Set clipping area for subsequent plot operations. */
+static bool nsgtk_plot_clip(int clip_x0, int clip_y0, int clip_x1, int clip_y1)
+{
+	cairo_reset_clip(current_cr);
+	cairo_rectangle(current_cr, clip_x0, clip_y0,
+			clip_x1 - clip_x0, clip_y1 - clip_y0);
+	cairo_clip(current_cr);
+
+	cliprect.x = clip_x0;
+	cliprect.y = clip_y0;
+	cliprect.width = clip_x1 - clip_x0;
+	cliprect.height = clip_y1 - clip_y0;
+	gdk_gc_set_clip_rectangle(current_gc, &cliprect);
+
 	return true;
 }
 
-bool nsgtk_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
+
+static bool nsgtk_plot_arc(int x, int y, int radius, int angle1, int angle2, const plot_style_t *style)
+{
+	nsgtk_set_colour(style->fill_colour);
+	nsgtk_set_solid();
+
+	cairo_set_line_width(current_cr, 1);
+	cairo_arc(current_cr, x, y, radius,
+		  (angle1 + 90) * (M_PI / 180),
+		  (angle2 + 90) * (M_PI / 180));
+	cairo_stroke(current_cr);
+
+	return true;
+}
+
+static bool nsgtk_plot_disc(int x, int y, int radius, const plot_style_t *style)
+{
+	if (style->fill_type != PLOT_OP_TYPE_NONE) {
+		nsgtk_set_colour(style->fill_colour);
+		nsgtk_set_solid();
+		cairo_set_line_width(current_cr, 0);
+		cairo_arc(current_cr, x, y, radius, 0, M_PI * 2);
+		cairo_fill(current_cr);
+		cairo_stroke(current_cr);
+	}
+
+	if (style->stroke_type != PLOT_OP_TYPE_NONE) {
+		nsgtk_set_colour(style->stroke_colour);
+
+		switch (style->stroke_type) {
+		case PLOT_OP_TYPE_SOLID: /**< Solid colour */
+		default:
+			nsgtk_set_solid();
+			break;
+
+		case PLOT_OP_TYPE_DOT: /**< Doted plot */
+			nsgtk_set_dotted();
+			break;
+
+		case PLOT_OP_TYPE_DASH: /**< dashed plot */
+			nsgtk_set_dashed();
+			break;
+		}
+
+		if (style->stroke_width == 0)
+			cairo_set_line_width(current_cr, 1);
+		else
+			cairo_set_line_width(current_cr, style->stroke_width);
+
+		cairo_arc(current_cr, x, y, radius, 0, M_PI * 2);
+
+		cairo_stroke(current_cr);
+	}
+
+	return true;
+}
+
+static bool nsgtk_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 {
 
 	nsgtk_set_colour(style->stroke_colour);
@@ -148,7 +225,11 @@ bool nsgtk_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 		break;
 	}
 
-	if (style->stroke_width == 0) 
+	if (style->stroke_type != PLOT_OP_TYPE_NONE) {
+		nsgtk_set_colour(style->stroke_colour);
+	}
+
+	if (style->stroke_width == 0)
 		cairo_set_line_width(current_cr, 1);
 	else
 		cairo_set_line_width(current_cr, style->stroke_width);
@@ -161,11 +242,52 @@ bool nsgtk_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 }
 
 
-bool nsgtk_plot_polygon(const int *p, unsigned int n, colour fill)
+static bool nsgtk_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
+{
+	if (style->fill_type != PLOT_OP_TYPE_NONE) {
+		nsgtk_set_colour(style->fill_colour);
+		nsgtk_set_solid();
+
+		cairo_set_line_width(current_cr, 0);
+		cairo_rectangle(current_cr, x0, y0, x1 - x0, y1 - y0);
+		cairo_fill(current_cr);
+		cairo_stroke(current_cr);
+	}
+
+	if (style->stroke_type != PLOT_OP_TYPE_NONE) {
+		nsgtk_set_colour(style->stroke_colour);
+
+		switch (style->stroke_type) {
+		case PLOT_OP_TYPE_SOLID: /**< Solid colour */
+		default:
+			nsgtk_set_solid();
+			break;
+
+		case PLOT_OP_TYPE_DOT: /**< Doted plot */
+			nsgtk_set_dotted();
+			break;
+
+		case PLOT_OP_TYPE_DASH: /**< dashed plot */
+			nsgtk_set_dashed();
+			break;
+		}
+
+		if (style->stroke_width == 0)
+			cairo_set_line_width(current_cr, 1);
+		else
+			cairo_set_line_width(current_cr, style->stroke_width);
+
+		cairo_rectangle(current_cr, x0 + 0.5, y0 + 0.5, x1 - x0, y1 - y0);
+		cairo_stroke(current_cr);
+	}
+	return true;
+}
+
+static bool nsgtk_plot_polygon(const int *p, unsigned int n, const plot_style_t *style)
 {
 	unsigned int i;
 
-	nsgtk_set_colour(fill);
+	nsgtk_set_colour(style->fill_colour);
 	nsgtk_set_solid();
 
 	cairo_set_line_width(current_cr, 0);
@@ -180,67 +302,18 @@ bool nsgtk_plot_polygon(const int *p, unsigned int n, colour fill)
 }
 
 
-bool nsgtk_plot_clip(int clip_x0, int clip_y0,
-		int clip_x1, int clip_y1)
-{
-	cairo_reset_clip(current_cr);
-	cairo_rectangle(current_cr, clip_x0, clip_y0,
-			clip_x1 - clip_x0, clip_y1 - clip_y0);
-	cairo_clip(current_cr);
-
-	cliprect.x = clip_x0;
-	cliprect.y = clip_y0;
-	cliprect.width = clip_x1 - clip_x0;
-	cliprect.height = clip_y1 - clip_y0;
-	gdk_gc_set_clip_rectangle(current_gc, &cliprect);
-
-	return true;
-}
 
 
-bool nsgtk_plot_text(int x, int y, const struct css_style *style,
-		const char *text, size_t length, colour bg, colour c)
+static bool nsgtk_plot_text(int x, int y, const struct css_style *style,
+			    const char *text, size_t length, colour bg, colour c)
 {
 	return nsfont_paint(style, text, length, x, y, c);
 }
 
 
-bool nsgtk_plot_disc(int x, int y, int radius, colour c, bool filled)
-{
-	nsgtk_set_colour(c);
-	nsgtk_set_solid();
-
-	if (filled)
-		cairo_set_line_width(current_cr, 0);
-	else
-		cairo_set_line_width(current_cr, 1);
-
-	cairo_arc(current_cr, x, y, radius, 0, M_PI * 2);
-
-	if (filled)
-		cairo_fill(current_cr);
-
-	cairo_stroke(current_cr);
-
-	return true;
-}
-
-bool nsgtk_plot_arc(int x, int y, int radius, int angle1, int angle2, colour c)
-{
-	nsgtk_set_colour(c);
-	nsgtk_set_solid();
-
-	cairo_set_line_width(current_cr, 1);
-	cairo_arc(current_cr, x, y, radius,
-			(angle1 + 90) * (M_PI / 180),
-			(angle2 + 90) * (M_PI / 180));
-	cairo_stroke(current_cr);
-
-	return true;
-}
 
 static bool nsgtk_plot_pixbuf(int x, int y, int width, int height,
-                              GdkPixbuf *pixbuf, colour bg)
+			      GdkPixbuf *pixbuf, colour bg)
 {
 	/* XXX: This currently ignores the background colour supplied.
 	 * Does this matter?
@@ -250,7 +323,7 @@ static bool nsgtk_plot_pixbuf(int x, int y, int width, int height,
 		return true;
 
 	if (gdk_pixbuf_get_width(pixbuf) == width &&
-			gdk_pixbuf_get_height(pixbuf) == height) {
+	    gdk_pixbuf_get_height(pixbuf) == height) {
 		gdk_draw_pixbuf(current_drawable, current_gc,
 				pixbuf,
 				0, 0,
@@ -261,9 +334,9 @@ static bool nsgtk_plot_pixbuf(int x, int y, int width, int height,
 	} else {
 		GdkPixbuf *scaled;
 		scaled = gdk_pixbuf_scale_simple(pixbuf,
-				width, height,
-				option_render_resample ? GDK_INTERP_BILINEAR
-							: GDK_INTERP_NEAREST);
+						 width, height,
+						 option_render_resample ? GDK_INTERP_BILINEAR
+						 : GDK_INTERP_NEAREST);
 		if (!scaled)
 			return false;
 
@@ -280,21 +353,21 @@ static bool nsgtk_plot_pixbuf(int x, int y, int width, int height,
 	return true;
 }
 
-bool nsgtk_plot_bitmap(int x, int y, int width, int height,
-		struct bitmap *bitmap, colour bg,
-		bitmap_flags_t flags)
+static bool nsgtk_plot_bitmap(int x, int y, int width, int height,
+			      struct bitmap *bitmap, colour bg,
+			      bitmap_flags_t flags)
 {
 	int doneheight = 0, donewidth = 0;
 	GdkPixbuf *primary;
 	GdkPixbuf *pretiled = NULL;
 
-        bool repeat_x = (flags & BITMAPF_REPEAT_X);
-        bool repeat_y = (flags & BITMAPF_REPEAT_Y);
+	bool repeat_x = (flags & BITMAPF_REPEAT_X);
+	bool repeat_y = (flags & BITMAPF_REPEAT_Y);
 
 	if (!(repeat_x || repeat_y)) {
-                /* Not repeating at all, so just pass it on */
-                primary = gtk_bitmap_get_primary(bitmap);
-                return nsgtk_plot_pixbuf(x, y, width, height, primary, bg);
+		/* Not repeating at all, so just pass it on */
+		primary = gtk_bitmap_get_primary(bitmap);
+		return nsgtk_plot_pixbuf(x, y, width, height, primary, bg);
 	}
 
 	if (repeat_x && !repeat_y)
@@ -303,9 +376,9 @@ bool nsgtk_plot_bitmap(int x, int y, int width, int height,
 		pretiled = gtk_bitmap_get_pretile_xy(bitmap);
 	if (!repeat_x && repeat_y)
 		pretiled = gtk_bitmap_get_pretile_y(bitmap);
-	
+
 	assert(pretiled != NULL);
-	
+
 	primary = gtk_bitmap_get_primary(bitmap);
 	/* use the primary and pretiled widths to scale the w/h provided */
 	width *= gdk_pixbuf_get_width(pretiled);
@@ -325,7 +398,7 @@ bool nsgtk_plot_bitmap(int x, int y, int width, int height,
 			donewidth = x;
 		while (donewidth < (cliprect.x + cliprect.width)) {
 			nsgtk_plot_pixbuf(donewidth, doneheight,
-                                          width, height, pretiled, bg);
+					  width, height, pretiled, bg);
 			donewidth += width;
 			if (!repeat_x) break;
 		}
@@ -336,8 +409,8 @@ bool nsgtk_plot_bitmap(int x, int y, int width, int height,
 	return true;
 }
 
-bool nsgtk_plot_path(const float *p, unsigned int n, colour fill, float width,
-                colour c, const float transform[6])
+static bool nsgtk_plot_path(const float *p, unsigned int n, colour fill, float width,
+			    colour c, const float transform[6])
 {
 	unsigned int i;
 	cairo_matrix_t old_ctm, n_ctm;
@@ -381,8 +454,8 @@ bool nsgtk_plot_path(const float *p, unsigned int n, colour fill, float width,
 			i += 3;
 		} else if (p[i] == PLOTTER_PATH_BEZIER) {
 			cairo_curve_to(current_cr, p[i+1], p[i+2],
-					p[i+3], p[i+4],
-					p[i+5], p[i+6]);
+				       p[i+3], p[i+4],
+				       p[i+5], p[i+6]);
 			i += 7;
 		} else {
 			LOG(("bad path command %f", p[i]));
@@ -417,74 +490,19 @@ bool nsgtk_plot_path(const float *p, unsigned int n, colour fill, float width,
 	return true;
 }
 
-void nsgtk_set_colour(colour c)
-{
-	int r, g, b;
-	GdkColor colour;
+/** GTK plotter table */
+const struct plotter_table nsgtk_plotters = {
+	.clip = nsgtk_plot_clip,
+	.arc = nsgtk_plot_arc,
+	.disc = nsgtk_plot_disc,
+	.line = nsgtk_plot_line,
+	.rectangle = nsgtk_plot_rectangle,
+	.polygon = nsgtk_plot_polygon,
+	.path = nsgtk_plot_path,
+	.bitmap = nsgtk_plot_bitmap,
+	.text = nsgtk_plot_text,
+	.option_knockout = true
+};
 
-	r = c & 0xff;
-	g = (c & 0xff00) >> 8;
-	b = (c & 0xff0000) >> 16;
 
-	colour.red = r | (r << 8);
-	colour.green = g | (g << 8);
-	colour.blue = b | (b << 8);
-	colour.pixel = (r << 16) | (g << 8) | b;
-
-	gdk_color_alloc(gdk_colormap_get_system(),
-			&colour);
-	gdk_gc_set_foreground(current_gc, &colour);
-
-	cairo_set_source_rgba(current_cr, r / 255.0,
-			g / 255.0, b / 255.0, 1.0);
-}
-
-void nsgtk_set_solid()
-{
-	double dashes = 0;
-	
-	cairo_set_dash(current_cr, &dashes, 0, 0);
-}
-
-void nsgtk_set_dotted()
-{
-	double cdashes[] = { 1.0, 2.0 };
-
-	cairo_set_dash(current_cr, cdashes, 2, 0);
-}
-
-void nsgtk_set_dashed()
-{
-	double cdashes[] = { 8.0, 2.0 };
-
-	cairo_set_dash(current_cr, cdashes, 2, 0);
-}
-
-void nsgtk_plot_set_scale(float s)
-{
-	nsgtk_plot_scale = s;
-}
-
-float nsgtk_plot_get_scale(void)
-{
-	return nsgtk_plot_scale;
-}
-
-/** Plot a caret.  It is assumed that the plotters have been set up. */
-void nsgtk_plot_caret(int x, int y, int h)
-{
-	GdkColor colour;
-
-	colour.red = 0;
-	colour.green = 0;
-	colour.blue = 0;
-	colour.pixel = 0;
-	gdk_color_alloc(gdk_colormap_get_system(),
-			&colour);
-	gdk_gc_set_foreground(current_gc, &colour);
-
-	gdk_draw_line(current_drawable, current_gc,
-			x, y,
-			x, y + h - 1);
-}
 
