@@ -171,6 +171,9 @@ struct browser_window {
 	/** [iframe_count] iframes */
 	int iframe_count;
 	struct browser_window *iframes;
+
+	/** Last time a link was followed in this window */
+	unsigned int last_action;
 };
 
 

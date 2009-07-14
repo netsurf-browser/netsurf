@@ -114,7 +114,8 @@ static const char *browser_window_scrollbar_click(struct browser_window *bw,
 		int box_x, int box_y, int x, int y);
 static void browser_radio_set(struct content *content,
 		struct form_control *radio);
-static gui_pointer_shape get_pointer_shape(struct box *box, bool imagemap);
+static gui_pointer_shape get_pointer_shape(struct browser_window *bw,
+		struct box *box, bool imagemap);
 static bool browser_window_nearer_text_box(struct box *box, int bx, int by,
 		int x, int y, int dir, struct box **nearest, int *tx, int *ty,
 		int *nr_xd, int *nr_yd);
@@ -158,6 +159,7 @@ struct browser_window *browser_window_create(const char *url,
 	bw->scrolling = SCROLLING_YES;
 	bw->border = true;
 	bw->no_resize = true;
+	bw->last_action = wallclock();
 
 	/* gui window */
 	if ((bw->window = gui_create_browser_window(bw, clone, new_tab)) == NULL) {
@@ -1456,7 +1458,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 			title = box->title;
 
 		if (box->style && box->style->cursor != CSS_CURSOR_UNKNOWN)
-			pointer = get_pointer_shape(box, false);
+			pointer = get_pointer_shape(bw, box, false);
 
 		if (box->style && box->type != BOX_BR &&
 				box->type != BOX_INLINE &&
@@ -1520,7 +1522,8 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 						messages_get("FormSubmit"),
 						gadget->form->action);
 				status = status_buffer;
-				pointer = get_pointer_shape(gadget_box, false);
+				pointer = get_pointer_shape(bw, gadget_box,
+						false);
 				if (mouse & (BROWSER_MOUSE_CLICK_1 |
 						BROWSER_MOUSE_CLICK_2))
 					action = ACTION_SUBMIT;
@@ -1530,7 +1533,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 			break;
 		case GADGET_TEXTAREA:
 			status = messages_get("FormTextarea");
-			pointer = get_pointer_shape(gadget_box, false);
+			pointer = get_pointer_shape(bw, gadget_box, false);
 
 			if (mouse & (BROWSER_MOUSE_PRESS_1 |
 					BROWSER_MOUSE_PRESS_2)) {
@@ -1573,7 +1576,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 		case GADGET_TEXTBOX:
 		case GADGET_PASSWORD:
 			status = messages_get("FormTextbox");
-			pointer = get_pointer_shape(gadget_box, false);
+			pointer = get_pointer_shape(bw, gadget_box, false);
 
 			if ((mouse & BROWSER_MOUSE_PRESS_1) &&
 					!(mouse & (BROWSER_MOUSE_MOD_1 |
@@ -1644,7 +1647,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 		} else
 			status = url;
 
-		pointer = get_pointer_shape(url_box, imagemap);
+		pointer = get_pointer_shape(bw, url_box, imagemap);
 
 		if (mouse & BROWSER_MOUSE_CLICK_1 &&
 				mouse & BROWSER_MOUSE_MOD_1) {
@@ -1756,6 +1759,9 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 	}
 
 	assert(status);
+
+	if (action == ACTION_SUBMIT || action == ACTION_GO)
+		bw->last_action = wallclock();
 
 	browser_window_set_status(bw, status);
 	browser_window_set_pointer(bw->window, pointer);
@@ -2434,10 +2440,21 @@ void browser_window_form_select(struct browser_window *bw,
 }
 
 
-gui_pointer_shape get_pointer_shape(struct box *box, bool imagemap)
+gui_pointer_shape get_pointer_shape(struct browser_window *bw, struct box *box,
+		bool imagemap)
 {
 	gui_pointer_shape pointer;
 	struct css_style *style;
+
+	assert(bw);
+
+	bool loading = (bw->loading_content != NULL || (bw->current_content &&
+			bw->current_content->status == CONTENT_STATUS_READY));
+
+	if (wallclock() - bw->last_action < 100 && loading)
+		/* If less than 1 second since last link followed, show
+		 * progress indicating pointer and we're loading something */
+		return GUI_POINTER_PROGRESS;
 
 	if (box->type == BOX_FLOAT_LEFT || box->type == BOX_FLOAT_RIGHT)
 		style = box->children->style;
@@ -2450,18 +2467,23 @@ gui_pointer_shape get_pointer_shape(struct box *box, bool imagemap)
 			if (box->href || (box->gadget &&
 					(box->gadget->type == GADGET_IMAGE ||
 					box->gadget->type == GADGET_SUBMIT)) ||
-					imagemap)
+					imagemap) {
 				/* link */
 				pointer = GUI_POINTER_POINT;
-			else if (box->gadget &&
+			} else if (box->gadget &&
 					(box->gadget->type == GADGET_TEXTBOX ||
 					box->gadget->type == GADGET_PASSWORD ||
-					box->gadget->type == GADGET_TEXTAREA))
+					box->gadget->type == GADGET_TEXTAREA)) {
 				/* text input */
 				pointer = GUI_POINTER_CARET;
-			else
+			} else {
 				/* anything else */
-				pointer = GUI_POINTER_DEFAULT;
+				if (loading)
+					/* loading new content */
+					pointer = GUI_POINTER_PROGRESS;
+				else
+					pointer = GUI_POINTER_DEFAULT;
+			}
 			break;
 		case CSS_CURSOR_CROSSHAIR:
 			pointer = GUI_POINTER_CROSS;
