@@ -2567,8 +2567,6 @@ void gui_window_set_status(struct gui_window *g, const char *text)
 
 void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 {
-	if(shape == GUI_POINTER_DEFAULT && g->shared->bw->throbbing) shape = GUI_POINTER_PROGRESS;
-
 	ami_update_pointer(g->shared->win,shape);
 }
 
