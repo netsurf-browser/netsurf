@@ -370,6 +370,7 @@
 			(dest (tackon @default-dest "Resources/Options"))
 			(append "theme:" #theme "\n")
 			(append "use_pubscreen:Workbench\n")
+			(append "incremental_reflow:0\n")
 		)
 	)
 )
