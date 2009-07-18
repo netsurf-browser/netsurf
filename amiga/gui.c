@@ -1008,6 +1008,8 @@ void ami_handle_msg(void)
 				case WMHI_RAWKEY:
 					storage = result & WMHI_GADGETMASK;
 
+					if(storage >= IECODE_UP_PREFIX) break;
+
 					GetAttr(WINDOW_InputEvent,gwin->objects[OID_MAIN],(ULONG *)&ie);
 
 					switch(storage)
@@ -1121,7 +1123,7 @@ ie_qualifier anyway
 										break;
 									}
 								}
-								else //if(!(ie->ie_Code & IECODE_UP_PREFIX))
+								else
 								{
 									browser_window_key_press(gwin->bw,buffer[0]);
 								}
