@@ -270,12 +270,12 @@ struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle)
 
 	ysize = fstyle->size;
 
-	if(ysize < (option_font_min_size / 10))
-		ysize = option_font_min_size / 10;
+	if(ysize < (option_font_min_size / 10) * FONT_SIZE_SCALE)
+		ysize = (option_font_min_size / 10) * FONT_SIZE_SCALE;
 
 	if(ESetInfo(&ofont->olf_EEngine,
 			OT_DeviceDPI,(72<<16) | 72,
-			OT_PointHeight,(ysize<<16),
+			OT_PointHeight,(ysize<<16)/FONT_SIZE_SCALE,
 			TAG_END) == OTERR_Success)
 	{
 		return ofont;

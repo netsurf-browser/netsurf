@@ -336,13 +336,15 @@ bool haru_nsfont_apply_style(const plot_font_style_t *fstyle,
 	LOG(("Setting font: %s", font_name));
 #endif		
 
-	size = fstyle->size;	
+	size = fstyle->size;
 
 	if (font != NULL)
 		size *= pdf_text_scale;
 
 	if (size <= 0)
 		return true;
+
+	size /= FONT_SIZE_SCALE;
 
 	if (size > HPDF_MAX_FONTSIZE)
 		size = HPDF_MAX_FONTSIZE;

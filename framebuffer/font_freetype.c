@@ -262,7 +262,7 @@ static void fb_fill_scalar(const plot_font_style_t *fstyle, FTC_Scaler srec)
 
         srec->face_id = (FTC_FaceID)fb_faces[selected_face];
 
-	srec->width = srec->height = fstyle->size * 64;
+	srec->width = srec->height = (fstyle->size * 64) / FONT_SIZE_SCALE;
 	srec->pixel = 0;
 
 	srec->x_res = srec->y_res = 72;

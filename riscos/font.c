@@ -425,7 +425,7 @@ void nsfont_read_style(const plot_font_style_t *fstyle,
 		rufl_WEIGHT_900
 	};
 
-	*font_size = fstyle->size * 16.;
+	*font_size = (fstyle->size * 16) / FONT_SIZE_SCALE;
 	if (*font_size < option_font_min_size * 1.6)
 		*font_size = option_font_min_size * 1.6;
 	if (1600 < *font_size)

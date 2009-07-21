@@ -304,10 +304,10 @@ PangoFontDescription *nsfont_style_to_description(
 
 	size = fstyle->size;
 
-	if (size < (unsigned)abs(option_font_min_size / 10))
-		size = option_font_min_size / 10;
+	if (size < (unsigned)abs(option_font_min_size / 10) * FONT_SIZE_SCALE)
+		size = (option_font_min_size / 10) * FONT_SIZE_SCALE;
 
-	size *= PANGO_SCALE;
+	size = (size * PANGO_SCALE) / FONT_SIZE_SCALE;
 
 	if (fstyle->flags & FONTF_ITALIC)
 		style = PANGO_STYLE_ITALIC;

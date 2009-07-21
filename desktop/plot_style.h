@@ -105,11 +105,16 @@ typedef unsigned long plot_font_flags_t;
 #define FONTF_SMALLCAPS 4
 
 /**
+ * Scaling factor for font sizes
+ */
+#define FONT_SIZE_SCALE 1024
+
+/**
  * Font style for plotting
  */
 typedef struct {
 	plot_font_generic_family_t family; /**< Generic family to plot with */
-	int size; /**< Font size, in points */
+	int size; /**< Font size, in points * FONT_SIZE_SCALE */
 	int weight; /**< Font weight: value in range [100,900] as per CSS */
 	plot_font_flags_t flags; /**< Font flags */
 	colour background; /**< Background colour to blend to, if appropriate */

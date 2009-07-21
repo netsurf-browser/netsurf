@@ -365,7 +365,7 @@ void nsbeos_style_to_font(BFont &font, const plot_font_style_t *style)
 	}
 
 //fprintf(stderr, "nsbeos_style_to_font: value %f unit %d\n", style->font_size.value.length.value, style->font_size.value.length.unit);
-	size = fstyle->size;
+	size = fstyle->size / FONT_SIZE_SCALE;
 
 	//XXX: pango stuff ?
 	if (size < abs(option_font_min_size / 10))

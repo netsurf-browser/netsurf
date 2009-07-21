@@ -35,7 +35,8 @@ void font_plot_style_from_css(const struct css_style *css,
 		plot_font_style_t *fstyle)
 {
 	fstyle->family = plot_font_generic_family(css->font_family);
-	fstyle->size = css_len2pt(&css->font_size.value.length, css);
+	fstyle->size = 
+		css_len2pt(&css->font_size.value.length, css) * FONT_SIZE_SCALE;
 	fstyle->weight = plot_font_weight(css->font_weight);
 	fstyle->flags = plot_font_flags(css->font_style, css->font_variant);
 	fstyle->foreground = css->color;
