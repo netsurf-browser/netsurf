@@ -894,10 +894,10 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 				}
 			}
 
-			fstyle_hback.background = 
-				pstyle_fill_hback->fill_colour ^ 0xffffff;
-			fstyle_hback.foreground = 
+			fstyle_hback.background =
 				pstyle_fill_hback->fill_colour;
+			fstyle_hback.foreground =
+				pstyle_fill_hback->fill_colour ^ 0xffffff;
 
 			if (text_visible &&
 				!plot.text(x, y + (int) (height * 0.75 * scale),
