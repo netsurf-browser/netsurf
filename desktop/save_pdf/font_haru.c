@@ -47,15 +47,15 @@
 static bool haru_nsfont_init(HPDF_Doc *pdf, HPDF_Page *page,
 		const char *string, char **string_nt, int length);
 
-static bool haru_nsfont_width(const struct css_style *style,
+static bool haru_nsfont_width(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int *width);
 
-static bool haru_nsfont_position_in_string(const struct css_style *style,
+static bool haru_nsfont_position_in_string(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x);
 
-static bool haru_nsfont_split(const struct css_style *style,
+static bool haru_nsfont_split(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 	 	int x, size_t *char_offset, int *actual_x);
 	 	
@@ -113,14 +113,13 @@ static bool haru_nsfont_init(HPDF_Doc *pdf, HPDF_Page *page,
 /**
  * Measure the width of a string.
  *
- * \param  style   css_style for this text, with style->font_size.size ==
- *		   CSS_FONT_SIZE_LENGTH
+ * \param  fstyle  style for this text
  * \param  string  string to measure (no UTF-8 currently)
  * \param  length  length of string
  * \param  width   updated to width of string[0..length]
  * \return  true on success, false on error and error reported
  */
-bool haru_nsfont_width(const struct css_style *style,
+bool haru_nsfont_width(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 	 	int *width)
 {
@@ -137,7 +136,7 @@ bool haru_nsfont_width(const struct css_style *style,
 	if (!haru_nsfont_init(&pdf, &page, string, &string_nt, length))
 		return false;
 
-	if (!haru_nsfont_apply_style(style, pdf, page, NULL, NULL)) {
+	if (!haru_nsfont_apply_style(fstyle, pdf, page, NULL, NULL)) {
 		free(string_nt);
 		HPDF_Free(pdf);
 		return false;
@@ -159,8 +158,7 @@ bool haru_nsfont_width(const struct css_style *style,
 /**
  * Find the position in a string where an x coordinate falls.
  *
- * \param  style	css_style for this text, with style->font_size.size ==
- *			CSS_FONT_SIZE_LENGTH
+ * \param  fstyle	style for this text
  * \param  string	string to measure (no UTF-8 currently)
  * \param  length	length of string
  * \param  x		x coordinate to search for
@@ -169,7 +167,7 @@ bool haru_nsfont_width(const struct css_style *style,
  * \return  true on success, false on error and error reported
  */
 
-bool haru_nsfont_position_in_string(const struct css_style *style,
+bool haru_nsfont_position_in_string(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
@@ -183,7 +181,7 @@ bool haru_nsfont_position_in_string(const struct css_style *style,
 		return false;
 	
 	if (HPDF_Page_SetWidth(page, x) != HPDF_OK
-			|| !haru_nsfont_apply_style(style, pdf, page, NULL, NULL)) {
+			|| !haru_nsfont_apply_style(fstyle, pdf, page, NULL, NULL)) {
 		free(string_nt);
 		HPDF_Free(pdf);
 		return false;
@@ -218,7 +216,7 @@ bool haru_nsfont_position_in_string(const struct css_style *style,
 /**
  * Find where to split a string to make it fit a width.
  *
- * \param  style	css_style for this text, with style->font_size.size ==
+ * \param  fstyle	css_style for this text, with style->font_size.size ==
  *			CSS_FONT_SIZE_LENGTH
  * \param  string	string to measure (no UTF-8 currently)
  * \param  length	length of string
@@ -228,7 +226,7 @@ bool haru_nsfont_position_in_string(const struct css_style *style,
  * \return  true on success, false on error and error reported
  */
 
-bool haru_nsfont_split(const struct css_style *style,
+bool haru_nsfont_split(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
@@ -243,7 +241,7 @@ bool haru_nsfont_split(const struct css_style *style,
 		return false;
 	
 	if (HPDF_Page_SetWidth(page, x) != HPDF_OK
-		    || !haru_nsfont_apply_style(style, pdf, page, NULL, NULL)) {
+		    || !haru_nsfont_apply_style(fstyle, pdf, page, NULL, NULL)) {
 		free(string_nt);
 		HPDF_Free(pdf);
 		return false;
@@ -268,77 +266,67 @@ bool haru_nsfont_split(const struct css_style *style,
 }
 
 /**
- * Apply css_style to a Haru HPDF_Page
+ * Apply font style to a Haru HPDF_Page
  *
- * \param  style	css_style for this page, with style->font_size.size ==
- *			CSS_FONT_SIZE_LENGTH
+ * \param  style	plot style for this page
  * \param  doc		document owning the page
  * \param  page		the page to apply the style to
  * \param  font		if this is non NULL it is updated to the font based
- *			on given CSS style style
+ *			on given style
  * \param  font_size	if this is non NULL it is updated to the font size
- *			based on given CSS style
+ *			based on given style
  * \return true on success, false on error and error reported
  *
  * When both font and font_size are NULL, the HPDF_Page is updated for given
- * CSS style, otherwise it is left to the called to do this.
+ * style, otherwise it is left to the called to do this.
  */
-bool haru_nsfont_apply_style(const struct css_style *style,
+bool haru_nsfont_apply_style(const plot_font_style_t *fstyle,
 		HPDF_Doc doc, HPDF_Page page,
 		HPDF_Font *font, HPDF_REAL *font_size)
 {
 	HPDF_Font pdf_font;
 	HPDF_REAL size;
 	char font_name[50];
-	bool roman;
-	bool bold;
-	bool styled;
-	
-	roman = false;
-	bold = false;
-	styled = false;
-	
+	bool roman = false;
+	bool bold = false;
+	bool styled = false;
+
 	/*TODO: style handling, we are mapping the
 		styles on the basic 14 fonts only
 	*/
-	switch (style->font_family) {
-		case CSS_FONT_FAMILY_SERIF:
-			strcpy(font_name, "Times");
-			roman = true;
-			break;
-		case CSS_FONT_FAMILY_MONOSPACE:
-			strcpy(font_name, "Courier");
-			break;
-		case CSS_FONT_FAMILY_SANS_SERIF:
-			strcpy(font_name, "Helvetica");
-			break;
-		case CSS_FONT_FAMILY_CURSIVE:			
-		case CSS_FONT_FAMILY_FANTASY:		
-		default:
-			strcpy(font_name, "Times");
-			roman=true;
-			break;
+	switch (fstyle->family) {
+	case PLOT_FONT_FAMILY_SERIF:
+		strcpy(font_name, "Times");
+		roman = true;
+		break;
+	case PLOT_FONT_FAMILY_MONOSPACE:
+		strcpy(font_name, "Courier");
+		break;
+	case PLOT_FONT_FAMILY_SANS_SERIF:
+		strcpy(font_name, "Helvetica");
+		break;
+	case PLOT_FONT_FAMILY_CURSIVE:			
+	case PLOT_FONT_FAMILY_FANTASY:		
+	default:
+		strcpy(font_name, "Times");
+		roman=true;
+		break;
 	}
 	
-	if (style->font_weight == CSS_FONT_WEIGHT_BOLD) {
+	if (fstyle->weight == 700) {
 		strcat(font_name, "-Bold");
 		bold = true;
 	}
 
-	switch (style->font_style) {
-		case CSS_FONT_STYLE_ITALIC:
-		case CSS_FONT_STYLE_OBLIQUE:
-			if (!bold)
-				strcat(font_name,"-");
-			if (roman)
-				strcat(font_name,"Italic");
-			else
-				strcat(font_name,"Oblique");
+	if ((fstyle->flags & FONTF_ITALIC) || (fstyle->flags & FONTF_OBLIQUE)) {
+		if (!bold)
+			strcat(font_name,"-");
+		if (roman)
+			strcat(font_name,"Italic");
+		else
+			strcat(font_name,"Oblique");
 			
-			styled = true;
-			break;
-		default:
-			break;
+		styled = true;
 	}
 	
 	if (roman && !styled && !bold)
@@ -347,11 +335,8 @@ bool haru_nsfont_apply_style(const struct css_style *style,
 #ifdef FONT_HARU_DEBUG		
 	LOG(("Setting font: %s", font_name));
 #endif		
-	
-	if (style->font_size.value.length.unit  == CSS_UNIT_PX)
-		size = style->font_size.value.length.value;
-	else
-		size = css_len2pt(&style->font_size.value.length, style);
+
+	size = fstyle->size;	
 
 	if (font != NULL)
 		size *= pdf_text_scale;

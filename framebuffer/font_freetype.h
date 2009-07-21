@@ -25,6 +25,6 @@
 
 extern int ft_load_type;
 
-FT_Glyph fb_getglyph(const struct css_style *style, uint32_t ucs4);
+FT_Glyph fb_getglyph(const plot_font_style_t *fstyle, uint32_t ucs4);
 
 #endif /* NETSURF_FB_FONT_FREETYPE_H */

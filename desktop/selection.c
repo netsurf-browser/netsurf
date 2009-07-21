@@ -609,6 +609,9 @@ bool redraw_handler(const char *text, size_t length, struct box *box,
 		struct rdw_info *r = (struct rdw_info*)handle;
 		int width, height, space_width;
 		int x, y;
+		plot_font_style_t fstyle;
+
+		font_plot_style_from_css(box->style, &fstyle);
 
 		/* \todo - it should be possible to reduce the redrawn area by
 		 * considering the 'text', 'length' and 'space' parameters */
@@ -618,7 +621,7 @@ bool redraw_handler(const char *text, size_t length, struct box *box,
 		height = box->padding[TOP] + box->height + box->padding[BOTTOM];
 
 		if (box->type == BOX_TEXT && box->space &&
-				nsfont.font_width(box->style, " ", 1, &space_width))
+				nsfont.font_width(&fstyle, " ", 1, &space_width))
 			width += space_width;
 
 		if (r->inited) {

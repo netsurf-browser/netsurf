@@ -115,6 +115,10 @@ bool loosen_text(struct box *text, int width, struct content *content)
 	unsigned int position;
 	const struct font_functions *font_func;
 
+	plot_font_style_t fstyle;
+
+	font_plot_style_from_css(text->style, &fstyle);
+
 	if (content->type == CONTENT_HTML)
 		font_func = content->data.html.font_func;
 	else
@@ -134,7 +138,7 @@ bool loosen_text(struct box *text, int width, struct content *content)
 	position = 0;
 
 	while (position < text->length) {
-		font_func->font_position_in_string(text->style,
+		font_func->font_position_in_string(&fstyle,
 				text->text + position,
 				text->length - position,
 				width, &offset, &actual_x);

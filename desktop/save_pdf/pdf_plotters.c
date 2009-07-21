@@ -50,8 +50,8 @@ static bool pdf_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *ps
 static bool pdf_plot_polygon(const int *p, unsigned int n, const plot_style_t *style);
 static bool pdf_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
-static bool pdf_plot_text(int x, int y, const struct css_style *style,
-		const char *text, size_t length, colour bg, colour c);
+static bool pdf_plot_text(int x, int y, const char *text, size_t length, 
+		const plot_font_style_t *fstyle);
 static bool pdf_plot_disc(int x, int y, int radius, const plot_style_t *style);
 static bool pdf_plot_arc(int x, int y, int radius, int angle1, int angle2,
     		const plot_style_t *style);
@@ -285,8 +285,8 @@ bool pdf_plot_clip(int clip_x0, int clip_y0, int clip_x1, int clip_y1)
 	return true;
 }
 
-bool pdf_plot_text(int x, int y, const struct css_style *style,
-		const char *text, size_t length, colour bg, colour c)
+bool pdf_plot_text(int x, int y, const char *text, size_t length, 
+		const plot_font_style_t *fstyle)
 {
 #ifdef PDF_DEBUG
 	LOG((". %d %d %.*s", x, y, (int)length, text));
@@ -298,9 +298,10 @@ bool pdf_plot_text(int x, int y, const struct css_style *style,
 	if (length == 0)
 		return true;
 
-	apply_clip_and_mode(true, c, NS_TRANSPARENT, 0., DashPattern_eNone);
+	apply_clip_and_mode(true, fstyle->foreground, NS_TRANSPARENT, 0., 
+			DashPattern_eNone);
 
-	haru_nsfont_apply_style(style, pdf_doc, pdf_page, &pdf_font, &size);
+	haru_nsfont_apply_style(fstyle, pdf_doc, pdf_page, &pdf_font, &size);
 	pdfw_gs_font(pdf_page, pdf_font, size);
 
 	/* FIXME: UTF-8 to current font encoding needs to done.  Or the font

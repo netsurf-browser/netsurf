@@ -98,6 +98,7 @@ bool svg_redraw(struct content *c, int x, int y,
 	bool ok;
 	int px, py;
 	unsigned int i;
+	plot_font_style_t fstyle = *plot_style_font;
 
 	assert(diagram);
 
@@ -128,11 +129,14 @@ bool svg_redraw(struct content *c, int x, int y,
 			py = transform[1] * diagram->shape[i].text_x +
 				transform[3] * diagram->shape[i].text_y +
 				transform[5];
+
+			fstyle.background = 0xffffff;
+			fstyle.foreground = 0x000000;
+
 			ok = plot.text(px, py,
-					&css_base_style,
 					diagram->shape[i].text,
 					strlen(diagram->shape[i].text),
-					0xffffff, 0x000000);
+					&fstyle);
 			if (!ok)
 				return false;
 		}

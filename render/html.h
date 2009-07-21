@@ -28,6 +28,7 @@
 #include <stdbool.h>
 #include "content/content_type.h"
 #include "css/css.h"
+#include "desktop/plot_style.h"
 #include "render/parser_binding.h"
 
 struct box;
@@ -197,11 +198,11 @@ bool html_redraw(struct content *c, int x, int y,
 
 bool text_redraw(const char *utf8_text, size_t utf8_len,
 		size_t offset, bool space,
-		struct css_style *style,
+		const plot_font_style_t *fstyle,
 		int x, int y,
 		struct rect *clip,
 		int height,
-		float scale, colour current_background_color,
+		float scale,
 		bool excluded);
 
 #endif

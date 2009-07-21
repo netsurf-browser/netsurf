@@ -34,7 +34,7 @@ bool fb_font_init(void)
 }
 
 const struct fb_font_desc*
-fb_get_font(const struct css_style *style)
+fb_get_font(const plot_font_style_t *fstyle)
 {
         return &font_vga_8x16;
 }
@@ -56,11 +56,11 @@ utf8_convert_ret utf8_to_local_encoding(const char *string,
 
 }
 
-static bool nsfont_width(const struct css_style *style,
+static bool nsfont_width(const plot_font_style_t *fstyle,
                          const char *string, size_t length,
                          int *width)
 {
-        const struct fb_font_desc* fb_font = fb_get_font(style);
+        const struct fb_font_desc* fb_font = fb_get_font(fstyle);
         *width = fb_font->width * utf8_bounded_length(string, length);
 	return true;
 }
@@ -68,8 +68,7 @@ static bool nsfont_width(const struct css_style *style,
 /**
  * Find the position in a string where an x coordinate falls.
  *
- * \param  style        css_style for this text, with style->font_size.size ==
- *                      CSS_FONT_SIZE_LENGTH
+ * \param  fstyle       style for this text
  * \param  string       UTF-8 string to measure
  * \param  length       length of string
  * \param  x            x coordinate to search for
@@ -78,11 +77,11 @@ static bool nsfont_width(const struct css_style *style,
  * \return  true on success, false on error and error reported
  */
 
-static bool nsfont_position_in_string(const struct css_style *style,
+static bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
-        const struct fb_font_desc* fb_font = fb_get_font(style);
+        const struct fb_font_desc* fb_font = fb_get_font(fstyle);
         *char_offset = x / fb_font->width;
         if (*char_offset > length)
                 *char_offset = length;
@@ -94,8 +93,7 @@ static bool nsfont_position_in_string(const struct css_style *style,
 /**
  * Find where to split a string to make it fit a width.
  *
- * \param  style        css_style for this text, with style->font_size.size ==
- *                      CSS_FONT_SIZE_LENGTH
+ * \param  fstyle       style for this text
  * \param  string       UTF-8 string to measure
  * \param  length       length of string
  * \param  x            width available
@@ -108,12 +106,12 @@ static bool nsfont_position_in_string(const struct css_style *style,
  *           char_offset == length]
  */
 
-static bool nsfont_split(const struct css_style *style,
+static bool nsfont_split(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
 
-        const struct fb_font_desc* fb_font = fb_get_font(style);
+        const struct fb_font_desc* fb_font = fb_get_font(fstyle);
         *char_offset = x / fb_font->width;
         if (*char_offset > length) {
                 *char_offset = length;

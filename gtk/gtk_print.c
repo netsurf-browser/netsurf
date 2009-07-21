@@ -107,9 +107,9 @@ static bool nsgtk_print_plot_pixbuf(int x, int y, int width, int height,
 }
 
 
-static bool gtk_print_font_paint(const struct css_style *style,
+static bool gtk_print_font_paint(int x, int y, 
 		const char *string, size_t length,
-   		int x, int y, colour c)
+		const plot_font_style_t *fstyle)
 {
 	PangoFontDescription *desc;
 	PangoLayout *layout;
@@ -119,7 +119,7 @@ static bool gtk_print_font_paint(const struct css_style *style,
 	if (length == 0)
 		return true;
 
-	desc = nsfont_style_to_description(style);
+	desc = nsfont_style_to_description(fstyle);
 	size = (gint) ((double) pango_font_description_get_size(desc) * 
 				settings->scale);
 
@@ -136,7 +136,7 @@ static bool gtk_print_font_paint(const struct css_style *style,
 	line = pango_layout_get_line(layout, 0);
 
 	cairo_move_to(gtk_print_current_cr, x, y);
-	nsgtk_print_set_colour(c);
+	nsgtk_print_set_colour(fstyle->foreground);
 	pango_cairo_show_layout_line(gtk_print_current_cr, line);
 
 	g_object_unref(layout);
@@ -429,10 +429,10 @@ static bool nsgtk_print_plot_bitmap(int x, int y, int width, int height,
 	return true;
 }
 
-static bool nsgtk_print_plot_text(int x, int y, const struct css_style *style,
-		const char *text, size_t length, colour bg, colour c)
+static bool nsgtk_print_plot_text(int x, int y, const char *text, size_t length,
+		const plot_font_style_t *fstyle)
 {
-	return gtk_print_font_paint(style, text, length, x, y, c);
+	return gtk_print_font_paint(x, y, text, length, fstyle);
 }
 
 /** GTK print plotter table */

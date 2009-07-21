@@ -41,13 +41,13 @@ static int nsfont_list_cmp(const void *keyval, const void *datum);
 static void nsfont_check_fonts(void);
 static void ro_gui_wimp_desktop_font(char *family, size_t bufsize, int *psize,
 		rufl_style *pstyle);
-static bool nsfont_width(const struct css_style *style,
+static bool nsfont_width(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int *width);
-static bool nsfont_position_in_string(const struct css_style *style,
+static bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x);
-static bool nsfont_split(const struct css_style *style,
+static bool nsfont_split(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x);
 
@@ -99,12 +99,12 @@ void nsfont_init(void)
 	nsfont_check_option(&option_font_cursive, "Churchill", fallback);
 	nsfont_check_option(&option_font_fantasy, "Sassoon", fallback);
 
-	if (option_font_default != CSS_FONT_FAMILY_SANS_SERIF &&
-			option_font_default != CSS_FONT_FAMILY_SERIF &&
-			option_font_default != CSS_FONT_FAMILY_MONOSPACE &&
-			option_font_default != CSS_FONT_FAMILY_CURSIVE &&
-			option_font_default != CSS_FONT_FAMILY_FANTASY)
-		option_font_default = CSS_FONT_FAMILY_SANS_SERIF;
+	if (option_font_default != PLOT_FONT_FAMILY_SANS_SERIF &&
+			option_font_default != PLOT_FONT_FAMILY_SERIF &&
+			option_font_default != PLOT_FONT_FAMILY_MONOSPACE &&
+			option_font_default != PLOT_FONT_FAMILY_CURSIVE &&
+			option_font_default != PLOT_FONT_FAMILY_FANTASY)
+		option_font_default = PLOT_FONT_FAMILY_SANS_SERIF;
 }
 
 
@@ -218,15 +218,14 @@ void nsfont_check_fonts(void)
 /**
  * Measure the width of a string.
  *
- * \param  style   css_style for this text, with style->font_size.size ==
- *                 CSS_FONT_SIZE_LENGTH
+ * \param  fstyle  plot style for this text
  * \param  string  UTF-8 string to measure
  * \param  length  length of string
  * \param  width   updated to width of string[0..length)
  * \return  true on success, false on error and error reported
  */
 
-bool nsfont_width(const struct css_style *style,
+bool nsfont_width(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int *width)
 {
@@ -235,7 +234,7 @@ bool nsfont_width(const struct css_style *style,
 	rufl_style font_style;
 	rufl_code code;
 
-	nsfont_read_style(style, &font_family, &font_size, &font_style);
+	nsfont_read_style(fstyle, &font_family, &font_size, &font_style);
 
 	code = rufl_width(font_family, font_style, font_size,
 			string, length,
@@ -259,8 +258,7 @@ bool nsfont_width(const struct css_style *style,
 /**
  * Find the position in a string where an x coordinate falls.
  *
- * \param  style        css_style for this text, with style->font_size.size ==
- *                      CSS_FONT_SIZE_LENGTH
+ * \param  fstyle       style for this text
  * \param  string       UTF-8 string to measure
  * \param  length       length of string
  * \param  x            x coordinate to search for
@@ -269,7 +267,7 @@ bool nsfont_width(const struct css_style *style,
  * \return  true on success, false on error and error reported
  */
 
-bool nsfont_position_in_string(const struct css_style *style,
+bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
@@ -278,7 +276,7 @@ bool nsfont_position_in_string(const struct css_style *style,
 	rufl_style font_style;
 	rufl_code code;
 
-	nsfont_read_style(style, &font_family, &font_size, &font_style);
+	nsfont_read_style(fstyle, &font_family, &font_size, &font_style);
 
 	code = rufl_x_to_offset(font_family, font_style, font_size,
 			string, length,
@@ -303,8 +301,7 @@ bool nsfont_position_in_string(const struct css_style *style,
 /**
  * Find where to split a string to make it fit a width.
  *
- * \param  style        css_style for this text, with style->font_size.size ==
- *                      CSS_FONT_SIZE_LENGTH
+ * \param  fstyle       style for this text
  * \param  string       UTF-8 string to measure
  * \param  length       length of string
  * \param  x            width available
@@ -317,7 +314,7 @@ bool nsfont_position_in_string(const struct css_style *style,
  *           char_offset == length]
  */
 
-bool nsfont_split(const struct css_style *style,
+bool nsfont_split(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
@@ -326,7 +323,7 @@ bool nsfont_split(const struct css_style *style,
 	rufl_style font_style;
 	rufl_code code;
 
-	nsfont_read_style(style, &font_family, &font_size, &font_style);
+	nsfont_read_style(fstyle, &font_family, &font_size, &font_style);
 
 	code = rufl_split(font_family, font_style, font_size,
 			string, length,
@@ -368,19 +365,16 @@ bool nsfont_split(const struct css_style *style,
 /**
  * Paint a string.
  *
- * \param  style   css_style for this text, with style->font_size.size ==
- *                 CSS_FONT_SIZE_LENGTH
+ * \param  fstyle  plot style for this text
  * \param  string  UTF-8 string to measure
  * \param  length  length of string
  * \param  x       x coordinate
  * \param  y       y coordinate
  * \param  scale   scale to apply to font size
- * \param  bg      background colour
- * \param  c       colour for text
  * \return  true on success, false on error and error reported
  */
 
-bool nsfont_paint(const struct css_style *style, const char *string,
+bool nsfont_paint(const plot_font_style_t *fstyle, const char *string,
 		size_t length, int x, int y, float scale)
 {
 	const char *font_family;
@@ -388,7 +382,7 @@ bool nsfont_paint(const struct css_style *style, const char *string,
 	rufl_style font_style;
 	rufl_code code;
 
-	nsfont_read_style(style, &font_family, &font_size, &font_style);
+	nsfont_read_style(fstyle, &font_family, &font_size, &font_style);
 
 	code = rufl_paint(font_family, font_style, font_size * scale,
 			string, length, x, y,
@@ -407,40 +401,50 @@ bool nsfont_paint(const struct css_style *style, const char *string,
 
 
 /**
- * Convert a css_style to a font family, size and rufl_style.
+ * Convert a font style to a font family, size and rufl_style.
  *
- * \param  style        css_style for this text, with style->font_size.size ==
- *                      CSS_FONT_SIZE_LENGTH
+ * \param  fstyle       plot style for this text
  * \param  font_family  updated to font family
  * \param  font_size    updated to font size
  * \param  font_style   updated to font style
  */
 
-void nsfont_read_style(const struct css_style *style,
+void nsfont_read_style(const plot_font_style_t *fstyle,
 		const char **font_family, unsigned int *font_size,
 		rufl_style *font_style)
 {
-	assert(style->font_size.size == CSS_FONT_SIZE_LENGTH);
-	*font_size = css_len2pt(&style->font_size.value.length, style) * 16.;
+	static const rufl_style weight_table[] = {
+		rufl_WEIGHT_100,
+		rufl_WEIGHT_200,
+		rufl_WEIGHT_300,
+		rufl_WEIGHT_400,
+		rufl_WEIGHT_500,
+		rufl_WEIGHT_600,
+		rufl_WEIGHT_700,
+		rufl_WEIGHT_800,
+		rufl_WEIGHT_900
+	};
+
+	*font_size = fstyle->size * 16.;
 	if (*font_size < option_font_min_size * 1.6)
 		*font_size = option_font_min_size * 1.6;
 	if (1600 < *font_size)
 		*font_size = 1600;
 
-	switch (style->font_family) {
-	case CSS_FONT_FAMILY_SANS_SERIF:
+	switch (fstyle->family) {
+	case PLOT_FONT_FAMILY_SANS_SERIF:
 		*font_family = option_font_sans;
 		break;
-	case CSS_FONT_FAMILY_SERIF:
+	case PLOT_FONT_FAMILY_SERIF:
 		*font_family = option_font_serif;
 		break;
-	case CSS_FONT_FAMILY_MONOSPACE:
+	case PLOT_FONT_FAMILY_MONOSPACE:
 		*font_family = option_font_mono;
 		break;
-	case CSS_FONT_FAMILY_CURSIVE:
+	case PLOT_FONT_FAMILY_CURSIVE:
 		*font_family = option_font_cursive;
 		break;
-	case CSS_FONT_FAMILY_FANTASY:
+	case PLOT_FONT_FAMILY_FANTASY:
 		*font_family = option_font_fantasy;
 		break;
 	default:
@@ -448,50 +452,13 @@ void nsfont_read_style(const struct css_style *style,
 		break;
 	}
 
-	switch (style->font_style) {
-	case CSS_FONT_STYLE_ITALIC:
-	case CSS_FONT_STYLE_OBLIQUE:
+	if ((fstyle->flags & FONTF_ITALIC) || (fstyle->flags & FONTF_OBLIQUE)) {
 		*font_style = rufl_SLANTED;
-		break;
-	default:
+	} else {
 		*font_style = 0;
-		break;
 	}
 
-	switch (style->font_weight) {
-	case CSS_FONT_WEIGHT_100:
-		*font_style |= rufl_WEIGHT_100;
-		break;
-	case CSS_FONT_WEIGHT_200:
-		*font_style |= rufl_WEIGHT_200;
-		break;
-	case CSS_FONT_WEIGHT_300:
-		*font_style |= rufl_WEIGHT_300;
-		break;
-	case CSS_FONT_WEIGHT_NORMAL:
-	case CSS_FONT_WEIGHT_400:
-		*font_style |= rufl_WEIGHT_400;
-		break;
-	case CSS_FONT_WEIGHT_500:
-		*font_style |= rufl_WEIGHT_500;
-		break;
-	case CSS_FONT_WEIGHT_600:
-		*font_style |= rufl_WEIGHT_600;
-		break;
-	case CSS_FONT_WEIGHT_BOLD:
-	case CSS_FONT_WEIGHT_700:
-		*font_style |= rufl_WEIGHT_700;
-		break;
-	case CSS_FONT_WEIGHT_800:
-		*font_style |= rufl_WEIGHT_800;
-		break;
-	case CSS_FONT_WEIGHT_900:
-		*font_style |= rufl_WEIGHT_900;
-		break;
-	default:
-		*font_style |= rufl_WEIGHT_400;
-		break;
-	}
+	*font_style |= weight_table[(fstyle->weight / 100) - 1];
 }
 
 

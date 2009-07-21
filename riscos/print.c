@@ -102,8 +102,8 @@ static bool print_fonts_plot_line(int x0, int y0, int x1, int y1, const plot_sty
 static bool print_fonts_plot_polygon(const int *p, unsigned int n, const plot_style_t *style);
 static bool print_fonts_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
-static bool print_fonts_plot_text(int x, int y, const struct css_style *style,
-		const char *text, size_t length, colour bg, colour c);
+static bool print_fonts_plot_text(int x, int y, const char *text, size_t length,
+		const plot_font_style_t *fstyle);
 static bool print_fonts_plot_disc(int x, int y, int radius, const plot_style_t *style);
 static bool print_fonts_plot_arc(int x, int y, int radius, int angle1, int angle2, const plot_style_t *style);
 static bool print_fonts_plot_bitmap(int x, int y, int width, int height,
@@ -852,15 +852,15 @@ bool print_fonts_plot_path(const float *p, unsigned int n, colour fill, float wi
  * Plotter for text plotting during font listing.
  */
 
-bool print_fonts_plot_text(int x, int y, const struct css_style *style,
-		const char *text, size_t length, colour bg, colour c)
+bool print_fonts_plot_text(int x, int y, const char *text, size_t length, 
+		const plot_font_style_t *fstyle)
 {
 	const char *font_family;
 	unsigned int font_size;
 	rufl_style font_style;
 	rufl_code code;
 
-	nsfont_read_style(style, &font_family, &font_size, &font_style);
+	nsfont_read_style(fstyle, &font_family, &font_size, &font_style);
 
 	code = rufl_paint_callback(font_family, font_style, font_size,
 			text, length, 0, 0, print_fonts_callback, 0);

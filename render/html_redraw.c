@@ -747,6 +747,10 @@ bool html_redraw_text_box(struct box *box, int x, int y,
 {
 	bool excluded = (box->object != NULL);
 	struct rect clip;
+	plot_font_style_t fstyle;
+
+	font_plot_style_from_css(box->style, &fstyle);
+	fstyle.background = current_background_color;
 
 	clip.x0 = x0;
 	clip.y0 = y0;
@@ -754,9 +758,8 @@ bool html_redraw_text_box(struct box *box, int x, int y,
 	clip.y1 = y1;
 
 	if (!text_redraw(box->text, box->length, box->byte_offset,
-			box->space, box->style, x, y,
-			&clip, box->height, scale,
-			current_background_color, excluded))
+			box->space, &fstyle, x, y,
+			&clip, box->height, scale, excluded))
 		return false;
 
 	/* does this textbox contain the ghost caret? */
@@ -769,7 +772,6 @@ bool html_redraw_text_box(struct box *box, int x, int y,
 	return true;
 }
 
-
 /**
  * Redraw a short text string, complete with highlighting
  * (for selection/search) and ghost caret
@@ -778,22 +780,21 @@ bool html_redraw_text_box(struct box *box, int x, int y,
  * \param  utf8_len   length of string, in bytes
  * \param  offset     byte offset within textual representation
  * \param  space      indicates whether string is followed by a space
- * \param  style      text style to use
+ * \param  fstyle     text style to use
  * \param  x          x ordinate at which to plot text
  * \param  y          y ordinate at which to plot text
  * \param  clip       pointer to current clip rectangle
  * \param  height     height of text string
  * \param  scale      current display scale (1.0 = 100%)
- * \param  current_background_color
  * \param  excluded   exclude this text string from the selection
  * \return true iff successful and redraw should proceed
  */
 
 bool text_redraw(const char *utf8_text, size_t utf8_len,
-		size_t offset, bool space, struct css_style *style,
+		size_t offset, bool space, const plot_font_style_t *fstyle,
 		int x, int y, struct rect *clip,
 		int height,
-		float scale, colour current_background_color,
+		float scale,
 		bool excluded)
 {
 	bool highlighted = false;
@@ -828,6 +829,7 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 			bool text_visible = true;
 			int startx, endx;
 			plot_style_t *pstyle_fill_hback = plot_style_fill_white;
+			plot_font_style_t fstyle_hback = *fstyle;
 
 			if (end_idx > utf8_len) {
 				/* adjust for trailing space, not present in
@@ -836,11 +838,11 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 				endtxt_idx = utf8_len;
 			}
 
-			if (!nsfont.font_width(style, utf8_text, start_idx,
+			if (!nsfont.font_width(fstyle, utf8_text, start_idx,
 					&startx))
 				startx = 0;
 
-			if (!nsfont.font_width(style, utf8_text, endtxt_idx,
+			if (!nsfont.font_width(fstyle, utf8_text, endtxt_idx,
 					&endx))
 				endx = 0;
 
@@ -850,7 +852,7 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 				int spc_width;
 				/* \todo is there a more elegant/efficient
 				 * solution? */
-				if (nsfont.font_width(style, " ", 1,
+				if (nsfont.font_width(fstyle, " ", 1,
 						&spc_width))
 					endx += spc_width;
 			}
@@ -863,15 +865,13 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 			/* draw any text preceding highlighted portion */
 			if (start_idx > 0 &&
 				!plot.text(x, y + (int) (height * 0.75 * scale),
-						style, utf8_text, start_idx,
-						current_background_color,
-						/*print_text_black ? 0 :*/
-						style->color))
+						utf8_text, start_idx,
+						fstyle))
 				return false;
 
 			/* decide whether highlighted portion is to be
 			 * white-on-black or black-on-white */
-			if ((current_background_color & 0x808080) == 0x808080)
+			if ((fstyle->background & 0x808080) == 0x808080)
 				pstyle_fill_hback = plot_style_fill_black;
 
 			/* highlighted portion */
@@ -894,11 +894,15 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 				}
 			}
 
+			fstyle_hback.background = 
+				pstyle_fill_hback->fill_colour ^ 0xffffff;
+			fstyle_hback.foreground = 
+				pstyle_fill_hback->fill_colour;
+
 			if (text_visible &&
 				!plot.text(x, y + (int) (height * 0.75 * scale),
-						style, utf8_text, endtxt_idx,
-						pstyle_fill_hback->fill_colour,
-						pstyle_fill_hback->fill_colour ^						0xffffff))
+						utf8_text, endtxt_idx,
+						&fstyle_hback))
 				return false;
 
 			/* draw any text succeeding highlighted portion */
@@ -914,10 +918,8 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 
 					if (!plot.text(x, y + (int)
 						(height * 0.75 * scale),
-						style, utf8_text, utf8_len,
-						current_background_color,
-						/*print_text_black ? 0 :*/
-						style->color))
+						utf8_text, utf8_len,
+						fstyle))
 						return false;
 				}
 			}
@@ -931,9 +933,8 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 
 	if (!highlighted) {
 		if (!plot.text(x, y + (int) (height * 0.75 * scale),
-				style, utf8_text, utf8_len,
-				current_background_color,
-				/*print_text_black ? 0 :*/ style->color))
+				utf8_text, utf8_len,
+				fstyle))
 			return false;
 	}
 	return true;
@@ -1396,6 +1397,10 @@ bool html_redraw_file(int x, int y, int width, int height,
 	int text_width;
 	const char *text;
 	size_t length;
+	plot_font_style_t fstyle;
+
+	font_plot_style_from_css(box->style, &fstyle);
+	fstyle.background = background_colour;
 
 	if (box->gadget->value)
 		text = box->gadget->value;
@@ -1403,7 +1408,7 @@ bool html_redraw_file(int x, int y, int width, int height,
 		text = messages_get("Form_Drop");
 	length = strlen(text);
 
-	if (!nsfont.font_width(box->style, text, length, &text_width))
+	if (!nsfont.font_width(&fstyle, text, length, &text_width))
 		return false;
 	text_width *= scale;
 	if (width < text_width + 8)
@@ -1411,9 +1416,7 @@ bool html_redraw_file(int x, int y, int width, int height,
 	else
 		x = x + 4;
 
-	return plot.text(x, y + height * 0.75, box->style, text, length,
-			background_colour,
-			/*print_text_black ? 0 :*/ box->style->color);
+	return plot.text(x, y + height * 0.75, text, length, &fstyle);
 }
 
 

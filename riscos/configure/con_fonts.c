@@ -19,6 +19,7 @@
 #include <stdbool.h>
 #include "css/css.h"
 #include "desktop/options.h"
+#include "desktop/plot_style.h"
 #include "riscos/dialog.h"
 #include "riscos/gui.h"
 #include "riscos/menus.h"
@@ -58,6 +59,14 @@
  * probably be released at some point */
 static wimp_menu *default_menu;
 
+static const char *font_names[PLOT_FONT_FAMILY_COUNT] = {
+	"Sans-serif",
+	"Serif",
+	"Monospace",
+	"Cursive",
+	"Fantasy"
+};
+
 static void ro_gui_options_fonts_default(wimp_pointer *pointer);
 static bool ro_gui_options_fonts_ok(wimp_w w);
 static bool ro_gui_options_fonts_init_menu(void);
@@ -73,7 +82,7 @@ bool ro_gui_options_fonts_initialise(wimp_w w)
 	ro_gui_set_icon_string(w, FONT_CURSIVE_FIELD, option_font_cursive, true);
 	ro_gui_set_icon_string(w, FONT_FANTASY_FIELD, option_font_fantasy, true);
 	ro_gui_set_icon_string(w, FONT_DEFAULT_FIELD,
-			css_font_family_name[option_font_default], true);
+			font_names[option_font_default], true);
 
 	if (!ro_gui_options_fonts_init_menu())
 		return false;
@@ -124,7 +133,7 @@ void ro_gui_options_fonts_default(wimp_pointer *pointer)
 	ro_gui_set_icon_string(pointer->w, FONT_FANTASY_FIELD,
 			nsfont_exists("Sassoon") ? "Sassoon" : fallback, true);
 	ro_gui_set_icon_string(pointer->w, FONT_DEFAULT_FIELD,
-			css_font_family_name[1], true);
+			font_names[0], true);
 }
 
 bool ro_gui_options_fonts_ok(wimp_w w)
@@ -149,16 +158,15 @@ bool ro_gui_options_fonts_ok(wimp_w w)
 	option_font_fantasy = strdup(ro_gui_get_icon_string(w, FONT_FANTASY_FIELD));
 
 	for (i = 0; i != 5; i++) {
-		if (!strcmp(css_font_family_name[i+1],
-				ro_gui_get_icon_string(w,
-						FONT_DEFAULT_FIELD)))
+		if (!strcmp(font_names[i], ro_gui_get_icon_string(w,
+				FONT_DEFAULT_FIELD)))
 			break;
 	}
 	if (i == 5)
 		/* this should never happen, but still */
 		i = 0;
 
-	option_font_default = i + 1;
+	option_font_default = i;
 
 	ro_gui_save_options();
 	return true;
@@ -182,9 +190,9 @@ bool ro_gui_options_fonts_init_menu(void)
 	ro_gui_menu_init_structure(default_menu, 5);
 	for (i = 0; i < 5; i++) {
 		default_menu->entries[i].data.indirected_text.text =
-				(char *) css_font_family_name[i+1];
+				(char *) font_names[i];
 		default_menu->entries[i].data.indirected_text.size =
-				strlen(css_font_family_name[i+1]);
+				strlen(font_names[i]);
 	}
 	return true;
 }

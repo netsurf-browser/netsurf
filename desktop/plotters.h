@@ -115,8 +115,8 @@ struct plotter_table {
 			bitmap_flags_t flags);
 
 	/* text */
-	bool (*text)(int x, int y, const struct css_style *style,
-			const char *text, size_t length, colour bg, colour c);
+	bool (*text)(int x, int y, const char *text, size_t length,
+			const plot_font_style_t *fstyle);
 
         /* optional callbacks */
 	bool (*group_start)(const char *name);  /**< optional, may be NULL */

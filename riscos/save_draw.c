@@ -44,8 +44,8 @@ static bool ro_save_draw_path(const float *p, unsigned int n, colour fill,
 		float width, colour c, const float transform[6]);
 static bool ro_save_draw_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
-static bool ro_save_draw_text(int x, int y, const struct css_style *style,
-		const char *text, size_t length, colour bg, colour c);
+static bool ro_save_draw_text(int x, int y, const char *text, size_t length, 
+		const plot_font_style_t *fstyle);
 static bool ro_save_draw_disc(int x, int y, int radius, const plot_style_t *style);
 static bool ro_save_draw_arc(int x, int y, int radius, int angle1, int angle2,
     		const plot_style_t *style);
@@ -348,18 +348,19 @@ bool ro_save_draw_clip(int clip_x0, int clip_y0,
 }
 
 
-bool ro_save_draw_text(int x, int y, const struct css_style *style,
-		const char *text, size_t length, colour bg, colour c)
+bool ro_save_draw_text(int x, int y, const char *text, size_t length, 
+		const plot_font_style_t *fstyle)
 {
 	pencil_code code;
 	const char *font_family;
 	unsigned int font_size;
 	rufl_style font_style;
 
-	nsfont_read_style(style, &font_family, &font_size, &font_style);
+	nsfont_read_style(fstyle, &font_family, &font_size, &font_style);
 
 	code = pencil_text(ro_save_draw_diagram, x * 2, -y * 2, font_family,
-			font_style, font_size, text, length, c << 8);
+			font_style, font_size, text, length, 
+			fstyle->foreground << 8);
 	if (code != pencil_OK)
 		return ro_save_draw_error(code);
 

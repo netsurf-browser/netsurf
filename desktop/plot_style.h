@@ -17,7 +17,7 @@
  */
 
 /** \file
- * Ploter styles.
+ * Plotter styles.
  */
 
 #ifndef _NETSURF_DESKTOP_PLOT_STYLE_H_
@@ -27,27 +27,27 @@
 #define WIDGET_BASEC 0xd9d9d9
 #define WIDGET_BLOBC 0x000000
 
-/* Darken a colour by taking three quaters of each channels intensity */
+/* Darken a colour by taking three quarters of each channel's intensity */
 #define darken_colour(c1)				 		\
 	((((3 * (c1 >> 16)) >> 2) << 16) |		 		\
 	 (((3 * ((c1 >> 8) & 0xff)) >> 2) << 8) |	 		\
 	 (((3 * (c1 & 0xff)) >> 2) << 0))
 
-/* Darken a colour by taking nine sixteenths of each channels intensity */
+/* Darken a colour by taking nine sixteenths of each channel's intensity */
 #define double_darken_colour(c1)			 		\
 	((((9 * (c1 >> 16)) >> 4) << 16) |		 		\
 	 (((9 * ((c1 >> 8) & 0xff)) >> 4) << 8) |	 		\
 	 (((9 * (c1 & 0xff)) >> 4) << 0))
 
-/* Lighten a colour by taking three quaters of each channels intensity
- * and adding a full quater
+/* Lighten a colour by taking three quarters of each channel's intensity
+ * and adding a full quarter
  */
 #define lighten_colour(c1)						\
 	(((((3 * (c1 >> 16)) >> 2) + 64) << 16) |			\
 	 ((((3 * ((c1 >> 8) & 0xff)) >> 2) + 64) << 8) |		\
 	 ((((3 * (c1 & 0xff)) >> 2) + 64) << 0))
 
-/* Lighten a colour by taking nine sixteenths of each channels intensity and
+/* Lighten a colour by taking nine sixteenths of each channel's intensity and
  * adding a full intensity 7/16ths */
 #define double_lighten_colour(c1)					\
 	(((((9 * (c1 >> 16)) >> 4) + 112) << 16) |			\
@@ -62,20 +62,59 @@
 	(((((c0 >> 8) & 0xff) + ((c1 >> 8) & 0xff)) >> 1) << 8) |	\
 	 ((((c0 & 0xff) + (c1 & 0xff)) >> 1) << 0)
 
+/**
+ * Type of plot operation
+ */
 typedef enum {
-    PLOT_OP_TYPE_NONE = 0, /**< No operation */
-    PLOT_OP_TYPE_SOLID, /**< Solid colour */
-    PLOT_OP_TYPE_DOT, /**< Doted plot */
-    PLOT_OP_TYPE_DASH, /**< dashed plot */
+	PLOT_OP_TYPE_NONE = 0, /**< No operation */
+	PLOT_OP_TYPE_SOLID, /**< Solid colour */
+	PLOT_OP_TYPE_DOT, /**< Dotted plot */
+	PLOT_OP_TYPE_DASH, /**< Dashed plot */
 } plot_operation_type_t;
 
+/**
+ * Plot style for stroke/fill plotters
+ */
 typedef struct {
-    plot_operation_type_t stroke_type;
-    int stroke_width;
-    colour stroke_colour;
-    plot_operation_type_t fill_type;
-    colour fill_colour;
+	plot_operation_type_t stroke_type; /**< Stroke plot type */
+	int stroke_width; /**< Width of stroke, in pixels */
+	colour stroke_colour; /**< Colour of stroke */
+	plot_operation_type_t fill_type; /**< Fill plot type */
+	colour fill_colour; /**< Colour of fill */
 } plot_style_t;
+
+/**
+ * Generic font family type
+ */
+typedef enum {
+	PLOT_FONT_FAMILY_SANS_SERIF = 0,
+	PLOT_FONT_FAMILY_SERIF,
+	PLOT_FONT_FAMILY_MONOSPACE,
+	PLOT_FONT_FAMILY_CURSIVE,
+	PLOT_FONT_FAMILY_FANTASY,
+	PLOT_FONT_FAMILY_COUNT /**< Number of generic families */
+} plot_font_generic_family_t;
+
+/**
+ * Font plot flags
+ */
+typedef unsigned long plot_font_flags_t;
+#define FONTF_NONE 0
+#define FONTF_ITALIC 1
+#define FONTF_OBLIQUE 2
+#define FONTF_SMALLCAPS 4
+
+/**
+ * Font style for plotting
+ */
+typedef struct {
+	plot_font_generic_family_t family; /**< Generic family to plot with */
+	int size; /**< Font size, in points */
+	int weight; /**< Font weight: value in range [100,900] as per CSS */
+	plot_font_flags_t flags; /**< Font flags */
+	colour background; /**< Background colour to blend to, if appropriate */
+	colour foreground; /**< Colour of text */
+} plot_font_style_t;
 
 /* global fill styles */
 extern plot_style_t *plot_style_fill_white;
@@ -97,5 +136,8 @@ extern plot_style_t *plot_style_fill_wblobc;
 extern plot_style_t *plot_style_stroke_wblobc;
 extern plot_style_t *plot_style_stroke_darkwbasec;
 extern plot_style_t *plot_style_stroke_lightwbasec;
+
+/* Default font style */
+extern plot_font_style_t const * const plot_style_font;
 
 #endif

@@ -49,11 +49,20 @@
 
 #define TAB_WIDTH 8  /* must be power of 2 currently */
 
-static struct css_style textplain_style;
+static plot_font_style_t textplain_style = {
+	.family = PLOT_FONT_FAMILY_MONOSPACE,
+	.size = 10,
+	.weight = 400,
+	.flags = FONTF_NONE,
+	.background = 0xffffff,
+	.foreground = 0x000000,
+};
+
 static int textplain_tab_width = 256;  /* try for a sensible default */
 
 static int textplain_coord_from_offset(const char *text, size_t offset,
 	size_t length);
+static float textplain_line_height(void);
 
 
 /**
@@ -67,9 +76,6 @@ bool textplain_create(struct content *c, const char *params[])
 	const char *encoding = "iso-8859-1";
 	iconv_t iconv_cd;
 	union content_msg_data msg_data;
-
-	textplain_style = css_base_style;
-	textplain_style.font_family = CSS_FONT_FAMILY_MONOSPACE;
 
 	utf8_data = talloc_array(c, char, CHUNK);
 	if (!utf8_data)
@@ -281,9 +287,7 @@ void textplain_reformat(struct content *c, int width, int height)
 
 	c->data.textplain.physical_line_count = line_count;
 	c->width = width;
-	c->height = line_count *
-			css_len2px(&textplain_style.font_size.value.length,
-			&textplain_style) * 1.2 + MARGIN + MARGIN;
+	c->height = line_count * textplain_line_height() + MARGIN + MARGIN;
 
 	return;
 
@@ -332,8 +336,7 @@ bool textplain_redraw(struct content *c, int x, int y,
 	char *utf8_data = c->data.textplain.utf8_data;
 	long lineno;
 	unsigned long line_count = c->data.textplain.physical_line_count;
-	float line_height = css_len2px(&textplain_style.font_size.value.length,
-			&textplain_style) * 1.2;
+	float line_height = textplain_line_height();
 	float scaled_line_height = line_height * scale;
 	long line0 = clip_y0 / scaled_line_height - 1;
 	long line1 = clip_y1 / scaled_line_height + 1;
@@ -370,6 +373,9 @@ bool textplain_redraw(struct content *c, int x, int y,
 	else
 		plot_style_highlight = plot_style_fill_white;
 
+	/* Set background colour to plot with */
+	textplain_style.background = background_colour;
+
 	x += MARGIN * scale;
 	y += MARGIN * scale;
 	for (lineno = line0; lineno != line1; lineno++) {
@@ -396,8 +402,7 @@ bool textplain_redraw(struct content *c, int x, int y,
 					line[lineno].start + offset, false,
 					&textplain_style,
 					tx, y + (lineno * scaled_line_height),
-					&clip, line_height, scale,
-					background_colour, false))
+					&clip, line_height, scale, false))
 				return false;
 
 			if (next_offset >= length)
@@ -468,8 +473,7 @@ bool textplain_redraw(struct content *c, int x, int y,
 
 size_t textplain_offset_from_coords(struct content *c, int x, int y, int dir)
 {
-	float line_height = css_len2px(&textplain_style.font_size.value.length,
-			&textplain_style) * 1.2;
+	float line_height = textplain_line_height();
 	struct textplain_line *line;
 	const char *text;
 	unsigned nlines;
@@ -618,8 +622,7 @@ int textplain_coord_from_offset(const char *text, size_t offset, size_t length)
 void textplain_coords_from_range(struct content *c, unsigned start, unsigned end,
 		struct rect *r)
 {
-	float line_height = css_len2px(&textplain_style.font_size.value.length,
-			&textplain_style) * 1.2;
+	float line_height = textplain_line_height();
 	char *utf8_data = c->data.textplain.utf8_data;
 	struct textplain_line *line;
 	unsigned lineno = 0;
@@ -719,3 +722,17 @@ char *textplain_get_raw_data(struct content *c, unsigned start, unsigned end,
 
 	return c->data.textplain.utf8_data + start;
 }
+
+/**
+ * Calculate the line height, in pixels
+ * 
+ * \return Line height, in pixels
+ */
+float textplain_line_height(void)
+{
+	/* Size is in points, so convert to pixels. 
+	 * Then use a constant line height of 1.2 x font size.
+	 */
+	return (textplain_style.size * css_screen_dpi / 72) * 1.2;
+}
+

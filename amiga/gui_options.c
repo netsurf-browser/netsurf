@@ -791,7 +791,7 @@ void ami_gui_opts_open(void)
 										GA_RelVerify, TRUE,
 										CHOOSER_PopUp, TRUE,
 										CHOOSER_LabelArray, fontopts,
-										CHOOSER_Selected, option_font_default - CSS_FONT_FAMILY_SANS_SERIF,
+										CHOOSER_Selected, option_font_default - PLOT_FONT_FAMILY_SANS_SERIF,
 									ChooserEnd,
 									CHILD_Label, LabelObject,
 										LABEL_Text, gadlab[GID_OPTS_FONT_DEFAULT],
@@ -1301,7 +1301,7 @@ void ami_gui_opts_use(void)
 	option_font_fantasy = (char *)strdup((char *)tattr->ta_Name);
 
 	GetAttr(CHOOSER_Selected,gow->gadgets[GID_OPTS_FONT_DEFAULT],(ULONG *)&option_font_default);
-	option_font_default += CSS_FONT_FAMILY_SANS_SERIF;
+	option_font_default += PLOT_FONT_FAMILY_SANS_SERIF;
 
 	GetAttr(INTEGER_Number,gow->gadgets[GID_OPTS_FONT_SIZE],(ULONG *)&option_font_size);
 	option_font_size *= 10;

@@ -42,7 +42,6 @@
 /* netsurf framebuffer library handle */
 static nsfb_t *nsfb;
 
-#ifdef FB_USE_FREETYPE
 
 static bool
 framebuffer_plot_disc(int x, int y, int radius, const plot_style_t *style)
@@ -75,8 +74,9 @@ static bool framebuffer_plot_polygon(const int *p, unsigned int n, const plot_st
 }
 
 
-static bool framebuffer_plot_text(int x, int y, const struct css_style *style,
-			const char *text, size_t length, colour bg, colour c)
+#ifdef FB_USE_FREETYPE
+static bool framebuffer_plot_text(int x, int y, const char *text, size_t length,
+		const plot_font_style_t *fstyle)
 {
         uint32_t ucs4;
         size_t nxtchr = 0;
@@ -88,7 +88,7 @@ static bool framebuffer_plot_text(int x, int y, const struct css_style *style,
                 ucs4 = utf8_to_ucs4(text + nxtchr, length - nxtchr);
                 nxtchr = utf8_next(text, length, nxtchr);
 
-                glyph = fb_getglyph(style, ucs4);
+                glyph = fb_getglyph(fstyle, ucs4);
                 if (glyph == NULL)
                         continue;
 
@@ -106,13 +106,13 @@ static bool framebuffer_plot_text(int x, int y, const struct css_style *style,
                                              &loc, 
                                              bglyph->bitmap.buffer, 
                                              bglyph->bitmap.pitch, 
-                                             c);
+                                             fstyle->foreground);
                         } else {
                             nsfb_plot_glyph8(nsfb, 
                                              &loc, 
                                              bglyph->bitmap.buffer, 
                                              bglyph->bitmap.pitch, 
-                                             c);
+                                             fstyle->foreground);
                         }
                 }
                 x += glyph->advance.x >> 16;
@@ -122,10 +122,10 @@ static bool framebuffer_plot_text(int x, int y, const struct css_style *style,
 
 }
 #else
-static bool framebuffer_plot_text(int x, int y, const struct css_style *style,
-			const char *text, size_t length, colour bg, colour c)
+static bool framebuffer_plot_text(int x, int y, const char *text, size_t length,
+		const plot_font_style_t *fstyle)
 {
-    const struct fb_font_desc* fb_font = fb_get_font(style);
+    const struct fb_font_desc* fb_font = fb_get_font(fstyle);
     const uint32_t *chrp;
     char *buffer = NULL;
     int chr;
@@ -152,7 +152,7 @@ static bool framebuffer_plot_text(int x, int y, const struct css_style *style,
         loc.y1 = loc.y0 + fb_font->height;
 
         chrp = fb_font->data + ((unsigned char)buffer[chr] * fb_font->height);
-        nsfb_plot_glyph1(nsfb, &loc, (uint8_t *)chrp, 32, c);
+        nsfb_plot_glyph1(nsfb, &loc, (uint8_t *)chrp, 32, fstyle->foreground);
 
         x+=fb_font->width;
 

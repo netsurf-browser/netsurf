@@ -221,91 +221,54 @@ bool fb_font_finalise(void)
         return true;
 }
 
-static void fb_fill_scalar(const struct css_style *style, FTC_Scaler srec)
+static void fb_fill_scalar(const plot_font_style_t *fstyle, FTC_Scaler srec)
 {
         int selected_face = FB_FACE_DEFAULT;
 
-	switch (style->font_family) {
+	switch (fstyle->family) {
                 /*
-	case CSS_FONT_FAMILY_CURSIVE:
+	case PLOT_FONT_FAMILY_CURSIVE:
 		break;
-	case CSS_FONT_FAMILY_FANTASY:
+	case PLOT_FONT_FAMILY_FANTASY:
 		break;
                 */
-	case CSS_FONT_FAMILY_SERIF:
-                switch (style->font_weight) {
-                case CSS_FONT_WEIGHT_700:
-                case CSS_FONT_WEIGHT_800:
-                case CSS_FONT_WEIGHT_900:
-                case CSS_FONT_WEIGHT_BOLD:
+	case PLOT_FONT_FAMILY_SERIF:
+		if (fstyle->weight >= 700)
                         selected_face = FB_FACE_SERIF_BOLD;
-                        break;
-                        
-                case CSS_FONT_WEIGHT_NORMAL:
-                default:
+		else
                         selected_face = FB_FACE_SERIF;
-                        break;
-                }
                 
 		break;
 
-	case CSS_FONT_FAMILY_MONOSPACE:
+	case PLOT_FONT_FAMILY_MONOSPACE:
                 selected_face = FB_FACE_MONOSPACE;
 		break;
 
-	case CSS_FONT_FAMILY_SANS_SERIF:
+	case PLOT_FONT_FAMILY_SANS_SERIF:
 	default:
-                switch (style->font_style) {
-                case CSS_FONT_STYLE_ITALIC:
-                        switch (style->font_weight) {
-                        case CSS_FONT_WEIGHT_700:
-                        case CSS_FONT_WEIGHT_800:
-                        case CSS_FONT_WEIGHT_900:
-                        case CSS_FONT_WEIGHT_BOLD:
+		if ((fstyle->flags & FONTF_ITALIC) || 
+				(fstyle->flags & FONTF_OBLIQUE)) {
+			if (fstyle->weight >= 700)
                                 selected_face = FB_FACE_SANS_SERIF_ITALIC_BOLD;
-                                break;
-                        
-                        case CSS_FONT_WEIGHT_NORMAL:
-                        default:
+			else
                                 selected_face = FB_FACE_SANS_SERIF_ITALIC;
-                                break;
-                        }
-                        break;
-
-                default:
-                        switch (style->font_weight) {
-                        case CSS_FONT_WEIGHT_700:
-                        case CSS_FONT_WEIGHT_800:
-                        case CSS_FONT_WEIGHT_900:
-                        case CSS_FONT_WEIGHT_BOLD:
+		} else {
+			if (fstyle->weight >= 700)
                                 selected_face = FB_FACE_SANS_SERIF_BOLD;
-                                break;
-                        
-                        case CSS_FONT_WEIGHT_NORMAL:
-                        default:
+                        else
                                 selected_face = FB_FACE_SANS_SERIF;
-                                break;
-                        }
-                        break;
                 }
 	}
 
         srec->face_id = (FTC_FaceID)fb_faces[selected_face];
 
-	if (style->font_size.value.length.unit == CSS_UNIT_PX) {
-		srec->width = srec->height = style->font_size.value.length.value;
-                srec->pixel = 1;
-        } else {
-		srec->width = srec->height = 
-                        css_len2pt(&style->font_size.value.length, style) * 64;
-                srec->pixel = 0;
+	srec->width = srec->height = fstyle->size * 64;
+	srec->pixel = 0;
 
-                srec->x_res = srec->y_res = 72;
-        }
-
+	srec->x_res = srec->y_res = 72;
 }
 
-FT_Glyph fb_getglyph(const struct css_style *style, uint32_t ucs4)
+FT_Glyph fb_getglyph(const plot_font_style_t *fstyle, uint32_t ucs4)
 {
         FT_UInt glyph_index;
         FTC_ScalerRec srec;
@@ -313,7 +276,7 @@ FT_Glyph fb_getglyph(const struct css_style *style, uint32_t ucs4)
         FT_Error error;
         fb_faceid_t *fb_face; 
 
-        fb_fill_scalar(style, &srec);
+        fb_fill_scalar(fstyle, &srec);
 
         fb_face = (fb_faceid_t *)srec.face_id;
 
@@ -335,14 +298,13 @@ FT_Glyph fb_getglyph(const struct css_style *style, uint32_t ucs4)
 /**
  * Measure the width of a string.
  *
- * \param  style   css_style for this text, with style->font_size.size ==
- *		   CSS_FONT_SIZE_LENGTH
+ * \param  fstyle  style for this text
  * \param  string  UTF-8 string to measure
  * \param  length  length of string
  * \param  width   updated to width of string[0..length)
  * \return  true on success, false on error and error reported
  */
-static bool nsfont_width(const struct css_style *style,
+static bool nsfont_width(const plot_font_style_t *fstyle,
                          const char *string, size_t length,
                          int *width)
 {
@@ -355,7 +317,7 @@ static bool nsfont_width(const struct css_style *style,
                 ucs4 = utf8_to_ucs4(string + nxtchr, length - nxtchr);
                 nxtchr = utf8_next(string, length, nxtchr);
 
-                glyph = fb_getglyph(style, ucs4);
+                glyph = fb_getglyph(fstyle, ucs4);
                 if (glyph == NULL)
                         continue;
 
@@ -368,8 +330,7 @@ static bool nsfont_width(const struct css_style *style,
 /**
  * Find the position in a string where an x coordinate falls.
  *
- * \param  style        css_style for this text, with style->font_size.size ==
- *                      CSS_FONT_SIZE_LENGTH
+ * \param  fstyle       style for this text
  * \param  string       UTF-8 string to measure
  * \param  length       length of string
  * \param  x            x coordinate to search for
@@ -378,7 +339,7 @@ static bool nsfont_width(const struct css_style *style,
  * \return  true on success, false on error and error reported
  */
 
-static bool nsfont_position_in_string(const struct css_style *style,
+static bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
@@ -390,7 +351,7 @@ static bool nsfont_position_in_string(const struct css_style *style,
         while (nxtchr < length) {
                 ucs4 = utf8_to_ucs4(string + nxtchr, length - nxtchr);
 
-                glyph = fb_getglyph(style, ucs4);
+                glyph = fb_getglyph(fstyle, ucs4);
                 if (glyph == NULL)
                         continue;
 
@@ -409,8 +370,7 @@ static bool nsfont_position_in_string(const struct css_style *style,
 /**
  * Find where to split a string to make it fit a width.
  *
- * \param  style        css_style for this text, with style->font_size.size ==
- *                      CSS_FONT_SIZE_LENGTH
+ * \param  fstyle       style for this text
  * \param  string       UTF-8 string to measure
  * \param  length       length of string
  * \param  x            width available
@@ -423,7 +383,7 @@ static bool nsfont_position_in_string(const struct css_style *style,
  *           char_offset == length]
  */
 
-static bool nsfont_split(const struct css_style *style,
+static bool nsfont_split(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
@@ -437,7 +397,7 @@ static bool nsfont_split(const struct css_style *style,
         while (nxtchr < length) {
                 ucs4 = utf8_to_ucs4(string + nxtchr, length - nxtchr);
 
-                glyph = fb_getglyph(style, ucs4);
+                glyph = fb_getglyph(fstyle, ucs4);
                 if (glyph == NULL)
                         continue;
 

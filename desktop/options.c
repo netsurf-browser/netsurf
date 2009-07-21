@@ -36,6 +36,7 @@
 #include "content/urldb.h"
 #include "css/css.h"
 #include "desktop/options.h"
+#include "desktop/plot_style.h"
 #include "desktop/tree.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -103,7 +104,7 @@ bool option_animate_images = true;
 /** How many days to retain URL data for */
 int option_expire_url = 28;
 /** Default font family */
-int option_font_default = CSS_FONT_FAMILY_SANS_SERIF;
+int option_font_default = PLOT_FONT_FAMILY_SANS_SERIF;
 /** ca-bundle location */
 char *option_ca_bundle = 0;
 /** ca-path location */

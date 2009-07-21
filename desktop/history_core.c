@@ -633,6 +633,7 @@ bool history_redraw_entry(struct history *history,
             .stroke_colour = c,
             .stroke_width = entry == history->current ? 2 : 1,
         };
+	plot_font_style_t fstyle = *plot_style_font;
 
 	if (clip) {
 		if(!plot.clip(x0 + xoffset, y0 + yoffset, x1 + xoffset, y1 + yoffset))
@@ -649,12 +650,16 @@ bool history_redraw_entry(struct history *history,
                             &pstyle_history_rect))
 		return false;
 
-	if (!nsfont.font_position_in_string(&css_base_style, entry->page.title,
+	if (!nsfont.font_position_in_string(plot_style_font, entry->page.title,
 			strlen(entry->page.title), WIDTH,
 			&char_offset, &actual_x))
 		return false;
+
+	fstyle.background = 0xffffff;
+	fstyle.foreground = c;
+
 	if (!plot.text(entry->x + xoffset, entry->y + HEIGHT + 12 + yoffset,
-			&css_base_style, entry->page.title, char_offset, 0xffffff, c))
+			entry->page.title, char_offset, &fstyle))
 		return false;
 
 	for (child = entry->forward; child; child = child->next) {

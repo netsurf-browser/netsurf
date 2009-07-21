@@ -39,7 +39,12 @@
 #include "framebuffer/bitmap.h"
 #include "framebuffer/image_data.h"
 
-static struct css_style root_style;
+static plot_font_style_t root_style = {
+	.family = PLOT_FONT_FAMILY_SANS_SERIF,
+	.size = 11,
+	.weight = 400,
+	.flags = FONTF_NONE,
+};	
 
 enum fbtk_widgettype_e {
         FB_WIDGET_TYPE_ROOT = 0,
@@ -601,13 +606,14 @@ fb_redraw_text(fbtk_widget_t *root, fbtk_widget_t *widget, void *pw)
         }
 
         if (widget->u.text.text != NULL) {
+		root_style.background = widget->bg;
+		root_style.foreground = widget->fg;
+
                 plot.text(bbox.x0 + 3,
                           bbox.y0 + 17,
-                          &root_style,
                           widget->u.text.text,
                           strlen(widget->u.text.text),
-                          widget->bg,
-                          widget->fg);
+                          &root_style);
         }
 
         nsfb_release(root->u.root.fb, &bbox);
@@ -1300,9 +1306,6 @@ fbtk_init(nsfb_t *fb)
         root->x = 0;
         root->y = 0;
         root->u.root.rootw = fbtk_create_window(root, 0, 0, 0, 0);
-
-        root_style.font_size.value.length.unit = CSS_UNIT_PX;
-        root_style.font_size.value.length.value = 14;
 
         return root;
 }

@@ -43,8 +43,8 @@ static bool ro_plot_path(const float *p, unsigned int n, colour fill, float widt
 		colour c, const float transform[6]);
 static bool ro_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
-static bool ro_plot_text(int x, int y, const struct css_style *style,
-		const char *text, size_t length, colour bg, colour c);
+static bool ro_plot_text(int x, int y, const char *text, size_t length, 
+		const plot_font_style_t *fstyle);
 static bool ro_plot_disc(int x, int y, int radius, const plot_style_t *style);
 static bool ro_plot_arc(int x, int y, int radius, int angle1, int angle2,
     		const plot_style_t *style);
@@ -394,20 +394,21 @@ bool ro_plot_clip(int clip_x0, int clip_y0,
 }
 
 
-bool ro_plot_text(int x, int y, const struct css_style *style,
-		const char *text, size_t length, colour bg, colour c)
+bool ro_plot_text(int x, int y, const char *text, size_t length, 
+		const plot_font_style_t *fstyle)
 {
 	os_error *error;
 
 	error = xcolourtrans_set_font_colours(font_CURRENT,
-			bg << 8, c << 8, 14, 0, 0, 0);
+			fstyle->background << 8, fstyle->foreground << 8, 
+			14, 0, 0, 0);
 	if (error) {
 		LOG(("xcolourtrans_set_font_colours: 0x%x: %s",
 				error->errnum, error->errmess));
 		return false;
 	}
 
-	return nsfont_paint(style, text, length,
+	return nsfont_paint(fstyle, text, length,
 			ro_plot_origin_x + x * 2,
 			ro_plot_origin_y - y * 2,
 			ro_plot_scale);

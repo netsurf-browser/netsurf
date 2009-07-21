@@ -400,10 +400,10 @@ bool ami_clip(int x0, int y0, int x1, int y1)
 	return true;
 }
 
-bool ami_text(int x, int y, const struct css_style *style,
-			const char *text, size_t length, colour bg, colour c)
+bool ami_text(int x, int y, const char *text, size_t length, 
+		const plot_font_style_t *fstyle)
 {
-	ami_unicode_text(&glob->rp,text,length,style,x,y,c);
+	ami_unicode_text(&glob->rp,text,length,fstyle,x,y);
 	return true;
 }
 

@@ -137,3 +137,14 @@ static plot_style_t plot_style_stroke_history_static = {
 };
 plot_style_t *plot_style_stroke_history = &plot_style_stroke_history_static;
 
+/* Generic font style */
+static const plot_font_style_t plot_style_font_static = {
+	.family = PLOT_FONT_FAMILY_SANS_SERIF,
+	.size = 10,
+	.weight = 400,
+	.flags = FONTF_NONE,
+	.background = 0xffffff,
+	.foreground = 0x000000,
+};
+plot_font_style_t const * const plot_style_font = &plot_style_font_static;
+

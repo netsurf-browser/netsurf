@@ -25,15 +25,13 @@
 
 #include <stdbool.h>
 
+#include "desktop/plot_style.h"
 
-struct css_style;
-
-bool nsfont_paint(const struct css_style *style,
-		const char *string, size_t length,
-		int x, int y, colour c);
+bool nsfont_paint(int x, int y, const char *string, size_t length,
+		const plot_font_style_t *fstyle);
 
 PangoFontDescription *nsfont_style_to_description(
-		const struct css_style *style);
+		const plot_font_style_t *fstyle);
 		
 		
 #endif

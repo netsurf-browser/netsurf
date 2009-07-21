@@ -28,7 +28,7 @@ struct fb_font_desc {
 
 extern const struct fb_font_desc font_vga_8x16;
 
-extern const struct fb_font_desc* fb_get_font(const struct css_style *style);
+extern const struct fb_font_desc* fb_get_font(const plot_font_style_t *fstyle);
 
 extern utf8_convert_ret utf8_to_font_encoding(const struct fb_font_desc* font,
 				       const char *string, 

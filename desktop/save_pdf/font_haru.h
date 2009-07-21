@@ -27,8 +27,9 @@
 #include <hpdf.h>
 
 #include "render/font.h"
+#include "desktop/plot_style.h"
  
-bool haru_nsfont_apply_style(const struct css_style *style,
+bool haru_nsfont_apply_style(const plot_font_style_t *fstyle,
 			      	HPDF_Doc doc, HPDF_Page page,
 	  			HPDF_Font *font, HPDF_REAL *font_size);
 

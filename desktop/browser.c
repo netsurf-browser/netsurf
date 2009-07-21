@@ -1405,6 +1405,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 	struct form_control *gadget = 0;
 	struct content *object = NULL;
 	struct box *next_box;
+	plot_font_style_t fstyle;
 
 	bw->drag_type = DRAGGING_NONE;
 	bw->scrolling_box = NULL;
@@ -1554,7 +1555,10 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 				int pixel_offset;
 				size_t idx;
 
-				nsfont.font_position_in_string(text_box->style,
+				font_plot_style_from_css(text_box->style, 
+						&fstyle);
+
+				nsfont.font_position_in_string(&fstyle,
 					text_box->text,
 					text_box->length,
 					x - gadget_box_x - text_box->x,
@@ -1596,7 +1600,10 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 						BROWSER_MOUSE_DRAG_2))
 					selection_init(bw->sel, gadget_box);
 
-				nsfont.font_position_in_string(text_box->style,
+				font_plot_style_from_css(text_box->style,
+						&fstyle);
+
+				nsfont.font_position_in_string(&fstyle,
 					text_box->text,
 					text_box->length,
 					x - gadget_box_x - text_box->x,
@@ -1694,7 +1701,10 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 				int pixel_offset;
 				size_t idx;
 
-				nsfont.font_position_in_string(text_box->style,
+				font_plot_style_from_css(text_box->style,
+						&fstyle);
+
+				nsfont.font_position_in_string(&fstyle,
 					text_box->text,
 					text_box->length,
 					x - text_box_x,
@@ -1972,7 +1982,11 @@ void browser_window_mouse_track_html(struct browser_window *bw,
 			if (box) {
 				int pixel_offset;
 				size_t idx;
-				nsfont.font_position_in_string(box->style,
+				plot_font_style_t fstyle;
+
+				font_plot_style_from_css(box->style, &fstyle);
+
+				nsfont.font_position_in_string(&fstyle,
 						box->text, box->length,
 						dx, &idx, &pixel_offset);
 
@@ -2052,8 +2066,14 @@ void browser_window_mouse_drag_end(struct browser_window *bw,
 					box = browser_window_pick_text_box(bw,
 							x, y, dir, &dx, &dy);
 					if (box) {
+						plot_font_style_t fstyle;
+
+						font_plot_style_from_css(
+								box->style,
+								&fstyle);
+
 						nsfont.font_position_in_string(
-							box->style,
+							&fstyle,
 							box->text,
 							box->length,
 							dx,

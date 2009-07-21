@@ -37,17 +37,17 @@
 /* Until we can consider the descenders etc, we need to not render using cairo */
 #undef CAIRO_VERSION
 
-static bool nsfont_width(const struct css_style *style,
-		  const char *string, size_t length,
-    int *width);
+static bool nsfont_width(const plot_font_style_t *fstyle,
+		const char *string, size_t length,
+		int *width);
        
-static bool nsfont_position_in_string(const struct css_style *style,
-			       const char *string, size_t length,
-	  int x, size_t *char_offset, int *actual_x);
+static bool nsfont_position_in_string(const plot_font_style_t *fstyle,
+		const char *string, size_t length,
+		int x, size_t *char_offset, int *actual_x);
        
-static bool nsfont_split(const struct css_style *style,
-		  const char *string, size_t length,
-    int x, size_t *char_offset, int *actual_x);
+static bool nsfont_split(const plot_font_style_t *style,
+		const char *string, size_t length,
+		int x, size_t *char_offset, int *actual_x);
 
 const struct font_functions nsfont = {
 	nsfont_width,
@@ -62,15 +62,14 @@ const struct font_functions nsfont = {
 /**
  * Measure the width of a string.
  *
- * \param  style   css_style for this text, with style->font_size.size ==
- *		   CSS_FONT_SIZE_LENGTH
+ * \param  fstyle   plot style for this text
  * \param  string  UTF-8 string to measure
  * \param  length  length of string
  * \param  width   updated to width of string[0..length)
  * \return  true on success, false on error and error reported
  */
 
-bool nsfont_width(const struct css_style *style,
+bool nsfont_width(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int *width)
 {
@@ -83,7 +82,7 @@ bool nsfont_width(const struct css_style *style,
 		return true;
 	}
 
-	desc = nsfont_style_to_description(style);
+	desc = nsfont_style_to_description(fstyle);
 	context = gdk_pango_context_get();
 	layout = pango_layout_new(context);
 	pango_layout_set_font_description(layout, desc);
@@ -102,8 +101,7 @@ bool nsfont_width(const struct css_style *style,
 /**
  * Find the position in a string where an x coordinate falls.
  *
- * \param  style	css_style for this text, with style->font_size.size ==
- *			CSS_FONT_SIZE_LENGTH
+ * \param  fstyle	plot style for this text
  * \param  string	UTF-8 string to measure
  * \param  length	length of string
  * \param  x		x coordinate to search for
@@ -112,7 +110,7 @@ bool nsfont_width(const struct css_style *style,
  * \return  true on success, false on error and error reported
  */
 
-bool nsfont_position_in_string(const struct css_style *style,
+bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
@@ -122,7 +120,7 @@ bool nsfont_position_in_string(const struct css_style *style,
 	PangoLayout *layout;
 	PangoRectangle pos;
 
-	desc = nsfont_style_to_description(style);
+	desc = nsfont_style_to_description(fstyle);
 	context = gdk_pango_context_get();
 	layout = pango_layout_new(context);
 	pango_layout_set_font_description(layout, desc);
@@ -149,8 +147,7 @@ bool nsfont_position_in_string(const struct css_style *style,
 /**
  * Find where to split a string to make it fit a width.
  *
- * \param  style	css_style for this text, with style->font_size.size ==
- *			CSS_FONT_SIZE_LENGTH
+ * \param  fstyle	plot style for this text
  * \param  string	UTF-8 string to measure
  * \param  length	length of string
  * \param  x		width available
@@ -163,7 +160,7 @@ bool nsfont_position_in_string(const struct css_style *style,
  *	     char_offset == length]
  */
 
-bool nsfont_split(const struct css_style *style,
+bool nsfont_split(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
@@ -175,7 +172,7 @@ bool nsfont_split(const struct css_style *style,
 	PangoLayoutIter *iter;
 	PangoRectangle rect;
 
-	desc = nsfont_style_to_description(style);
+	desc = nsfont_style_to_description(fstyle);
 	context = gdk_pango_context_get();
 	layout = pango_layout_new(context);
 	pango_layout_set_font_description(layout, desc);
@@ -206,19 +203,16 @@ bool nsfont_split(const struct css_style *style,
 /**
  * Render a string.
  *
- * \param  style   css_style for this text, with style->font_size.size ==
- *		   CSS_FONT_SIZE_LENGTH
- * \param  string  UTF-8 string to measure
- * \param  length  length of string
  * \param  x	   x coordinate
  * \param  y	   y coordinate
- * \param  c	   colour for text
+ * \param  string  UTF-8 string to measure
+ * \param  length  length of string
+ * \param  style   plot style for this text
  * \return  true on success, false on error and error reported
  */
 
-bool nsfont_paint(const struct css_style *style,
-		const char *string, size_t length,
-		int x, int y, colour c)
+bool nsfont_paint(int x, int y, const char *string, size_t length,
+		const plot_font_style_t *fstyle)
 {
 	PangoFontDescription *desc;
 	PangoLayout *layout;
@@ -229,15 +223,18 @@ bool nsfont_paint(const struct css_style *style,
 #else	
 	PangoContext *context;
 	GdkColor colour = { 0,
-			((c & 0xff) << 8) | (c & 0xff),
-			(c & 0xff00) | (c & 0xff00 >> 8),
-			((c & 0xff0000) >> 8) | (c & 0xff0000 >> 16) };
+			((fstyle->foreground & 0xff) << 8) | 
+					(fstyle->foreground & 0xff),
+			(fstyle->foreground & 0xff00) | 
+					(fstyle->foreground & 0xff00 >> 8),
+			((fstyle->foreground & 0xff0000) >> 8) | 
+					(fstyle->foreground & 0xff0000 >> 16) };
 #endif
 
 	if (length == 0)
 		return true;
 
-	desc = nsfont_style_to_description(style);
+	desc = nsfont_style_to_description(fstyle);
 	size = (gint)((double)pango_font_description_get_size(desc) * nsgtk_plot_get_scale());
 	if (pango_font_description_get_size_is_absolute(desc))
 		pango_font_description_set_absolute_size(desc, size);
@@ -273,96 +270,60 @@ bool nsfont_paint(const struct css_style *style,
 
 
 /**
- * Convert a css_style to a PangoFontDescription.
+ * Convert a plot style to a PangoFontDescription.
  *
- * \param  style	css_style for this text, with style->font_size.size ==
- *			CSS_FONT_SIZE_LENGTH
+ * \param  style	plot style for this text
  * \return  a new Pango font description
  */
 
 PangoFontDescription *nsfont_style_to_description(
-		const struct css_style *style)
+		const plot_font_style_t *fstyle)
 {
 	unsigned int size;
 	PangoFontDescription *desc;
-	PangoWeight weight = PANGO_WEIGHT_NORMAL;
-	PangoStyle styl = PANGO_STYLE_NORMAL;
+	PangoStyle style = PANGO_STYLE_NORMAL;
 
-	assert(style->font_size.size == CSS_FONT_SIZE_LENGTH);
-
-	switch (style->font_family) {
-	case CSS_FONT_FAMILY_SERIF:
+	switch (fstyle->family) {
+	case PLOT_FONT_FAMILY_SERIF:
 		desc = pango_font_description_from_string(option_font_serif);
 		break;
-	case CSS_FONT_FAMILY_MONOSPACE:
+	case PLOT_FONT_FAMILY_MONOSPACE:
 		desc = pango_font_description_from_string(option_font_mono);
 		break;
-	case CSS_FONT_FAMILY_CURSIVE:
+	case PLOT_FONT_FAMILY_CURSIVE:
 		desc = pango_font_description_from_string(option_font_cursive);
 		break;
-	case CSS_FONT_FAMILY_FANTASY:
+	case PLOT_FONT_FAMILY_FANTASY:
 		desc = pango_font_description_from_string(option_font_fantasy);
 		break;
-	case CSS_FONT_FAMILY_SANS_SERIF:
+	case PLOT_FONT_FAMILY_SANS_SERIF:
 	default:
 		desc = pango_font_description_from_string(option_font_sans);
 		break;
 	}
 
-
-	if (style->font_size.value.length.unit == CSS_UNIT_PX)
-		size = style->font_size.value.length.value;
-	else
-		size = css_len2pt(&style->font_size.value.length, style);
+	size = fstyle->size;
 
 	if (size < (unsigned)abs(option_font_min_size / 10))
 		size = option_font_min_size / 10;
 
 	size *= PANGO_SCALE;
 
-	switch (style->font_style) {
-	case CSS_FONT_STYLE_ITALIC:
-		styl = PANGO_STYLE_ITALIC;
-		break;
-	case CSS_FONT_STYLE_OBLIQUE:
-		styl = PANGO_STYLE_OBLIQUE;
-		break;
-	default:
-		break;
-	}
+	if (fstyle->flags & FONTF_ITALIC)
+		style = PANGO_STYLE_ITALIC;
+	else if (fstyle->flags & FONTF_OBLIQUE)
+		style = PANGO_STYLE_OBLIQUE;
 
-	pango_font_description_set_style(desc, styl);
+	pango_font_description_set_style(desc, style);
 
-	switch (style->font_weight) {
-	case CSS_FONT_WEIGHT_NORMAL:
-		weight = PANGO_WEIGHT_NORMAL; break;
-	case CSS_FONT_WEIGHT_BOLD:
-		weight = PANGO_WEIGHT_BOLD; break;
-	case CSS_FONT_WEIGHT_100: weight = 100; break;
-	case CSS_FONT_WEIGHT_200: weight = 200; break;
-	case CSS_FONT_WEIGHT_300: weight = 300; break;
-	case CSS_FONT_WEIGHT_400: weight = 400; break;
-	case CSS_FONT_WEIGHT_500: weight = 500; break;
-	case CSS_FONT_WEIGHT_600: weight = 600; break;
-	case CSS_FONT_WEIGHT_700: weight = 700; break;
-	case CSS_FONT_WEIGHT_800: weight = 800; break;
-	case CSS_FONT_WEIGHT_900: weight = 900; break;
-	default: break;
-	}
+	pango_font_description_set_weight(desc, (PangoWeight) fstyle->weight);
 
-	pango_font_description_set_weight(desc, weight);
+	pango_font_description_set_size(desc, size);
 
-	if (style->font_size.value.length.unit == CSS_UNIT_PX)
-		pango_font_description_set_absolute_size(desc, size);
-	else
-		pango_font_description_set_size(desc, size);
-
-	switch (style->font_variant) {
-	case CSS_FONT_VARIANT_SMALL_CAPS:
-		pango_font_description_set_variant(desc, PANGO_VARIANT_SMALL_CAPS);
-		break;
-	case CSS_FONT_VARIANT_NORMAL:
-	default:
+	if (fstyle->flags & FONTF_SMALLCAPS) {
+		pango_font_description_set_variant(desc, 
+				PANGO_VARIANT_SMALL_CAPS);
+	} else {
 		pango_font_description_set_variant(desc, PANGO_VARIANT_NORMAL);
 	}
 

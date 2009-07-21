@@ -96,7 +96,7 @@ struct text_area {
 	int selection_start;	/**< Character index of sel start(inclusive) */
 	int selection_end;	/**< Character index of sel end(exclusive) */
 
-	struct css_style *style;	/**<  Text style */	
+	plot_font_style_t fstyle;	/**< Text style */
 	
 	int line_count;			/**< Count of lines */
 #define LINE_CHUNK_SIZE 16
@@ -182,15 +182,8 @@ struct text_area *textarea_create(int x, int y, int width, int height,
 	ret->text_alloc = 64;
 	ret->text_len = 1;
 	ret->text_utf8_len = 0;
-	
-	ret->style = malloc(sizeof(struct css_style));
-	if (ret->style == NULL) {
-		LOG(("malloc failed"));
-		free(ret->text);
-		free(ret);
-		return NULL;
-	}
-	memcpy(ret->style, style, sizeof(struct css_style));
+
+	font_plot_style_from_css(style, &ret->fstyle);	
 	ret->line_height = css_len2px(&(style->line_height.value.length),
 			style);
 	
@@ -232,7 +225,6 @@ void textarea_set_position(struct text_area *ta, int x, int y)
 void textarea_destroy(struct text_area *ta)
 {
 	free(ta->text);
-	free(ta->style);
 	free(ta->lines);
 	free(ta);
 }
@@ -448,8 +440,8 @@ bool textarea_set_caret(struct text_area *ta, int caret)
 	if (caret != -1 && (unsigned)caret > c_len)
 		caret = c_len;
 
-	height = css_len2px(&(ta->style->font_size.value.length),
-			ta->style);
+	height = ta->fstyle.size * css_screen_dpi / 72;
+
 	/* Delete the old caret */
 	if (ta->caret_pos.char_off != -1) {
 		index = textarea_get_caret(ta);
@@ -467,7 +459,7 @@ bool textarea_set_caret(struct text_area *ta, int caret)
 				ta->text_len, b_off))
 			; /* do nothing */
 	
-		nsfont.font_width(ta->style,
+		nsfont.font_width(&ta->fstyle,
 				ta->text +
 				ta->lines[ta->caret_pos.line].b_start,
 				b_off - ta->lines[ta->caret_pos.line].b_start,
@@ -516,7 +508,7 @@ bool textarea_set_caret(struct text_area *ta, int caret)
 						ta->text_len, b_off))
 			; /* do nothing */
 	
-		nsfont.font_width(ta->style,
+		nsfont.font_width(&ta->fstyle,
 				ta->text +
 				ta->lines[ta->caret_pos.line].b_start,
 				b_off - ta->lines[ta->caret_pos.line].b_start,
@@ -570,7 +562,7 @@ unsigned int textarea_get_xy_offset(struct text_area *ta, int x, int y)
 	if (ta->line_count - 1 < line)
 		line = ta->line_count - 1;
 
-	nsfont.font_position_in_string(ta->style,
+	nsfont.font_position_in_string(&ta->fstyle,
 			ta->text + ta->lines[line].b_start, 
 	   		ta->lines[line].b_length, x, &b_off, &x);
 	
@@ -679,7 +671,7 @@ bool textarea_reflow(struct text_area *ta, unsigned int line)
 	for (len = ta->text_len - 1, text = ta->text; len > 0;
 			len -= b_off, text += b_off) {
 
-		nsfont.font_split(ta->style, text, len,
+		nsfont.font_split(&ta->fstyle, text, len,
 				ta->vis_width - MARGIN_LEFT - MARGIN_RIGHT,
 				&b_off, &x);
 		
@@ -757,7 +749,6 @@ void textarea_redraw(struct text_area *ta, int x0, int y0, int x1, int y1)
             .fill_colour = BACKGROUND_COL,
         };
 
-	
 	if (x1 < ta->x || x0 > ta->x + ta->vis_width || y1 < ta->y ||
 		   y0 > ta->y + ta->vis_height)
 		/* Textarea outside the clipping rectangle */
@@ -848,7 +839,7 @@ void textarea_redraw(struct text_area *ta, int x0, int y0, int x1, int y1)
 					b_start = utf8_next(line_text,
 							line_len,
        							b_start);
-				nsfont.font_width(ta->style, line_text,
+				nsfont.font_width(&ta->fstyle, line_text,
 						b_start, &x0);
 				x0 += ta->x + MARGIN_LEFT;
 			}
@@ -872,7 +863,7 @@ void textarea_redraw(struct text_area *ta, int x0, int y0, int x1, int y1)
 				b_end = ta->lines[line].b_length;
 			
 			b_end -= b_start;
-			nsfont.font_width(ta->style,
+			nsfont.font_width(&ta->fstyle,
 					&(ta->text[ta->lines[line].b_start +
 					b_start]),
 					b_end, &x1);
@@ -890,14 +881,15 @@ void textarea_redraw(struct text_area *ta, int x0, int y0, int x1, int y1)
 		c_pos += c_len;
 
 		y0 = ta->y + line * ta->line_height + 0.75 * ta->line_height;
-		
-		plot.text(ta->x + MARGIN_LEFT - ta->scroll_x, y0 - ta->scroll_y,
-			  	ta->style,
-			  	ta->text + ta->lines[line].b_start,
-			   	ta->lines[line].b_length,
+
+		ta->fstyle.background = 
 			   	(ta->flags & TEXTAREA_READONLY) ?
 					READONLY_BG : BACKGROUND_COL,
-			   	ta->style->color);
+
+		plot.text(ta->x + MARGIN_LEFT - ta->scroll_x, y0 - ta->scroll_y,
+			  	ta->text + ta->lines[line].b_start,
+			   	ta->lines[line].b_length,
+				&ta->fstyle);
 	}
 }
 
@@ -1253,7 +1245,7 @@ bool textarea_scroll_visible(struct text_area *ta)
 			b_off = utf8_next(ta->text, ta->text_len, b_off))
 		; /* do nothing */
 
-	nsfont.font_width(ta->style,
+	nsfont.font_width(&ta->fstyle,
 			ta->text + ta->lines[ta->caret_pos.line].b_start,
 			b_off - ta->lines[ta->caret_pos.line].b_start,
 			&x);

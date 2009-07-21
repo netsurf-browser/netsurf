@@ -36,22 +36,22 @@
 #include <proto/utility.h>
 #include "utils/utils.h"
 
-static struct OutlineFont *of[CSS_FONT_FAMILY_NOT_SET];
-static struct OutlineFont *ofb[CSS_FONT_FAMILY_NOT_SET];
-static struct OutlineFont *ofi[CSS_FONT_FAMILY_NOT_SET];
-static struct OutlineFont *ofbi[CSS_FONT_FAMILY_NOT_SET];
+static struct OutlineFont *of[PLOT_FONT_FAMILY_COUNT];
+static struct OutlineFont *ofb[PLOT_FONT_FAMILY_COUNT];
+static struct OutlineFont *ofi[PLOT_FONT_FAMILY_COUNT];
+static struct OutlineFont *ofbi[PLOT_FONT_FAMILY_COUNT];
 
-struct OutlineFont *ami_open_outline_font(const struct css_style *style);
+struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle);
 
-static bool nsfont_width(const struct css_style *style,
+static bool nsfont_width(const plot_font_style_t *fstyle,
 	  const char *string, size_t length,
     int *width);
        
-static bool nsfont_position_in_string(const struct css_style *style,
+static bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 	       const char *string, size_t length,
 	  int x, size_t *char_offset, int *actual_x);
        
-static bool nsfont_split(const struct css_style *style,
+static bool nsfont_split(const plot_font_style_t *fstyle,
 	  const char *string, size_t length,
     int x, size_t *char_offset, int *actual_x);
 
@@ -61,13 +61,13 @@ const struct font_functions nsfont = {
 	nsfont_split
 };
 
-bool nsfont_width(const struct css_style *style,
+bool nsfont_width(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int *width)
 {
 	struct TextFont *tfont;
 
-	*width = ami_unicode_text(NULL,string,length,style,0,0,0);
+	*width = ami_unicode_text(NULL,string,length,fstyle,0,0);
 
 	return true;
 }
@@ -75,8 +75,7 @@ bool nsfont_width(const struct css_style *style,
 /**
  * Find the position in a string where an x coordinate falls.
  *
- * \param  style        css_style for this text, with style->font_size.size ==
- *                      CSS_FONT_SIZE_LENGTH
+ * \param  fstyle       style for this text
  * \param  string       UTF-8 string to measure
  * \param  length       length of string
  * \param  x            x coordinate to search for
@@ -85,7 +84,7 @@ bool nsfont_width(const struct css_style *style,
  * \return  true on success, false on error and error reported
  */
 
-bool nsfont_position_in_string(const struct css_style *style,
+bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
@@ -103,7 +102,7 @@ bool nsfont_position_in_string(const struct css_style *style,
 	if(utf8_to_enc(string,"UTF-16",length,(char **)&utf16) != UTF8_CONVERT_OK) return false;
 	outf16 = utf16;
 
-	if(!(ofont = ami_open_outline_font(style))) return false;
+	if(!(ofont = ami_open_outline_font(fstyle))) return false;
 
 	*char_offset = length;
 
@@ -154,8 +153,7 @@ bool nsfont_position_in_string(const struct css_style *style,
 /**
  * Find where to split a string to make it fit a width.
  *
- * \param  style        css_style for this text, with style->font_size.size ==
- *                      CSS_FONT_SIZE_LENGTH
+ * \param  fstyle       style for this text
  * \param  string       UTF-8 string to measure
  * \param  length       length of string
  * \param  x            width available
@@ -168,7 +166,7 @@ bool nsfont_position_in_string(const struct css_style *style,
  *           char_offset == length]
  */
 
-bool nsfont_split(const struct css_style *style,
+bool nsfont_split(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
@@ -185,7 +183,7 @@ bool nsfont_split(const struct css_style *style,
 	len = utf8_bounded_length(string, length);
 	if(utf8_to_enc((char *)string,"UTF-16",length,(char **)&utf16) != UTF8_CONVERT_OK) return false;
 	outf16 = utf16;
-	if(!(ofont = ami_open_outline_font(style))) return false;
+	if(!(ofont = ami_open_outline_font(fstyle))) return false;
 
 	*char_offset = 0;
 
@@ -235,52 +233,42 @@ bool nsfont_split(const struct css_style *style,
 	return true;
 }
 
-struct OutlineFont *ami_open_outline_font(const struct css_style *style)
+struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle)
 {
 	struct OutlineFont *ofont;
 	char *fontname;
 	WORD ysize;
 	int tstyle = 0;
 
-	switch(style->font_style)
-	{
-		case CSS_FONT_STYLE_ITALIC:
-		case CSS_FONT_STYLE_OBLIQUE:
-			tstyle += NSA_ITALIC;
-		break;
-	}
+	if ((fstyle->flags & FONTF_ITALIC) || (fstyle->flags & FONTF_OBLIQUE))
+		tstyle += NSA_ITALIC;
 
-	switch(style->font_weight)
-	{
-		case CSS_FONT_WEIGHT_BOLD:
-		case CSS_FONT_WEIGHT_BOLDER:
-			tstyle += NSA_BOLD;
-		break;
-	}
+	if (fstyle->weight >= 700)
+		tstyle += NSA_BOLD;
 
 	switch(tstyle)
 	{
 		case NSA_ITALIC:
-			if(ofi[style->font_family]) ofont = ofi[style->font_family];
-				else ofont = of[style->font_family];
+			if(ofi[fstyle->family]) ofont = ofi[fstyle->family];
+				else ofont = of[fstyle->family];
 		break;
 
 		case NSA_BOLD:
-			if(ofb[style->font_family]) ofont = ofb[style->font_family];
-				else ofont = of[style->font_family];
+			if(ofb[fstyle->family]) ofont = ofb[fstyle->family];
+				else ofont = of[fstyle->family];
 		break;
 
 		case NSA_BOLDITALIC:
-			if(ofbi[style->font_family]) ofont = ofbi[style->font_family];
-				else ofont = of[style->font_family];
+			if(ofbi[fstyle->family]) ofont = ofbi[fstyle->family];
+				else ofont = of[fstyle->family];
 		break;
 
 		default:
-			ofont = of[style->font_family];
+			ofont = of[fstyle->family];
 		break;
 	}
 
-	ysize = css_len2pt(&style->font_size.value.length, style);
+	ysize = fstyle->size;
 
 	if(ysize < (option_font_min_size / 10))
 		ysize = option_font_min_size / 10;
@@ -296,7 +284,7 @@ struct OutlineFont *ami_open_outline_font(const struct css_style *style)
 	return NULL;
 }
 
-ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const struct css_style *style,ULONG dx, ULONG dy, ULONG c)
+ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const plot_font_style_t *fstyle,ULONG dx, ULONG dy)
 {
 	uint16 *utf16 = NULL, *outf16 = NULL;
 	struct OutlineFont *ofont;
@@ -317,9 +305,9 @@ ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const
 	len = utf8_bounded_length(string, length);
 	if(utf8_to_enc(string,"UTF-16",length,(char **)&utf16) != UTF8_CONVERT_OK) return 0;
 	outf16 = utf16;
-	if(!(ofont = ami_open_outline_font(style))) return 0;
+	if(!(ofont = ami_open_outline_font(fstyle))) return 0;
 
-	if(rp) SetRPAttrs(rp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),TAG_DONE);
+	if(rp) SetRPAttrs(rp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,fstyle->foreground),TAG_DONE);
 
 	dy++;
 
@@ -377,19 +365,19 @@ void ami_init_fonts(void)
 
 	switch(option_font_default)
 	{
-		case CSS_FONT_FAMILY_SANS_SERIF:
+		case PLOT_FONT_FAMILY_SANS_SERIF:
 			deffont = strdup(option_font_sans);
 		break;
-		case CSS_FONT_FAMILY_SERIF:
+		case PLOT_FONT_FAMILY_SERIF:
 			deffont = strdup(option_font_serif);
 		break;
-		case CSS_FONT_FAMILY_MONOSPACE:
+		case PLOT_FONT_FAMILY_MONOSPACE:
 			deffont = strdup(option_font_mono);
 		break;
-		case CSS_FONT_FAMILY_CURSIVE:
+		case PLOT_FONT_FAMILY_CURSIVE:
 			deffont = strdup(option_font_cursive);
 		break;
-		case CSS_FONT_FAMILY_FANTASY:
+		case PLOT_FONT_FAMILY_FANTASY:
 			deffont = strdup(option_font_fantasy);
 		break;
 		default:
@@ -397,15 +385,13 @@ void ami_init_fonts(void)
 		break;
 	}
 
-	of[CSS_FONT_FAMILY_SANS_SERIF] = OpenOutlineFont(option_font_sans,NULL,OFF_OPEN);
-	of[CSS_FONT_FAMILY_SERIF] = OpenOutlineFont(option_font_serif,NULL,OFF_OPEN);
-	of[CSS_FONT_FAMILY_MONOSPACE] = OpenOutlineFont(option_font_mono,NULL,OFF_OPEN);
-	of[CSS_FONT_FAMILY_CURSIVE] = OpenOutlineFont(option_font_cursive,NULL,OFF_OPEN);
-	of[CSS_FONT_FAMILY_FANTASY] = OpenOutlineFont(option_font_fantasy,NULL,OFF_OPEN);
-	of[CSS_FONT_FAMILY_UNKNOWN] = OpenOutlineFont(deffont,NULL,OFF_OPEN);
-	of[CSS_FONT_FAMILY_NOT_SET] = OpenOutlineFont(deffont,NULL,OFF_OPEN);
+	of[PLOT_FONT_FAMILY_SANS_SERIF] = OpenOutlineFont(option_font_sans,NULL,OFF_OPEN);
+	of[PLOT_FONT_FAMILY_SERIF] = OpenOutlineFont(option_font_serif,NULL,OFF_OPEN);
+	of[PLOT_FONT_FAMILY_MONOSPACE] = OpenOutlineFont(option_font_mono,NULL,OFF_OPEN);
+	of[PLOT_FONT_FAMILY_CURSIVE] = OpenOutlineFont(option_font_cursive,NULL,OFF_OPEN);
+	of[PLOT_FONT_FAMILY_FANTASY] = OpenOutlineFont(option_font_fantasy,NULL,OFF_OPEN);
 
-	for(i=CSS_FONT_FAMILY_SANS_SERIF;i<=CSS_FONT_FAMILY_NOT_SET;i++)
+	for(i=PLOT_FONT_FAMILY_SANS_SERIF;i<=PLOT_FONT_FAMILY_FANTASY;i++)
 	{
 		if(!of[i]) warn_user("FontError",""); // temporary error message
 
@@ -443,7 +429,7 @@ void ami_close_fonts(void)
 {
 	int i=0;
 
-	for(i=CSS_FONT_FAMILY_SANS_SERIF;i<=CSS_FONT_FAMILY_NOT_SET;i++)
+	for(i=PLOT_FONT_FAMILY_SANS_SERIF;i<=PLOT_FONT_FAMILY_FANTASY;i++)
 	{
 		if(of[i]) CloseOutlineFont(of[i],NULL);
 		if(ofb[i]) CloseOutlineFont(ofb[i],NULL);

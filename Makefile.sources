@@ -9,7 +9,7 @@ S_CONTENT := content.c fetch.c fetchcache.c urldb.c			\
 	fetchers/fetch_curl.c fetchers/fetch_data.c
 S_CSS := css.c css_enum.c parser.c ruleset.c scanner.c
 S_RENDER := box.c box_construct.c box_normalise.c directory.c		\
-	form.c html.c html_redraw.c hubbub_binding.c imagemap.c		\
+	font.c form.c html.c html_redraw.c hubbub_binding.c imagemap.c	\
 	layout.c list.c loosen.c table.c textplain.c
 S_UTILS := base64.c filename.c hashtable.c locale.c messages.c talloc.c	\
 	url.c utf8.c utils.c useragent.c

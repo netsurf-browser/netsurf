@@ -90,8 +90,8 @@ static bool knockout_plot_polygon(const int *p, unsigned int n, const plot_style
 static bool knockout_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *plot_style);
 static bool knockout_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
-static bool knockout_plot_text(int x, int y, const struct css_style *style,
-		const char *text, size_t length, colour bg, colour c);
+static bool knockout_plot_text(int x, int y, const char *text, size_t length, 
+		const plot_font_style_t *fstyle);
 static bool knockout_plot_disc(int x, int y, int radius, const plot_style_t *pstyle);
 static bool knockout_plot_arc(int x, int y, int radius, int angle1, int angle2, const plot_style_t *pstyle);
 static bool knockout_plot_bitmap(int x, int y, int width, int height,
@@ -188,11 +188,9 @@ struct knockout_entry {
 		struct {
 			int x;
 			int y;
-			const struct css_style *style;
 			const char *text;
 			size_t length;
-			colour bg;
-			colour c;
+			plot_font_style_t font_style;
 		} text;
 		struct {
 			int x;
@@ -350,11 +348,9 @@ bool knockout_plot_flush(void)
 			success &= plot.text(
 					knockout_entries[i].data.text.x,
 					knockout_entries[i].data.text.y,
-					knockout_entries[i].data.text.style,
 					knockout_entries[i].data.text.text,
 					knockout_entries[i].data.text.length,
-					knockout_entries[i].data.text.bg,
-					knockout_entries[i].data.text.c);
+					&knockout_entries[i].data.text.font_style);
 			break;
 		case KNOCKOUT_PLOT_DISC:
 			success &= plot.disc(
@@ -737,16 +733,14 @@ bool knockout_plot_clip(int clip_x0, int clip_y0,
 }
 
 
-bool knockout_plot_text(int x, int y, const struct css_style *style,
-		const char *text, size_t length, colour bg, colour c)
+bool knockout_plot_text(int x, int y, const char *text, size_t length, 
+		const plot_font_style_t *fstyle)
 {
 	knockout_entries[knockout_entry_cur].data.text.x = x;
 	knockout_entries[knockout_entry_cur].data.text.y = y;
-	knockout_entries[knockout_entry_cur].data.text.style = style;
 	knockout_entries[knockout_entry_cur].data.text.text = text;
 	knockout_entries[knockout_entry_cur].data.text.length = length;
-	knockout_entries[knockout_entry_cur].data.text.bg = bg;
-	knockout_entries[knockout_entry_cur].data.text.c = c;
+	knockout_entries[knockout_entry_cur].data.text.font_style = *fstyle;
 	knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_TEXT;
 	if (++knockout_entry_cur >= KNOCKOUT_ENTRIES)
 		knockout_plot_flush();

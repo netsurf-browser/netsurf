@@ -22,12 +22,10 @@
 
 #include <stdbool.h>
 
+#include "desktop/plotters.h"
 
-struct css_style;
-
-bool nsfont_paint(const struct css_style *style,
+bool nsfont_paint(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
-		int x, int y, colour bg, colour c);
+		int x, int y);
 
-void nsbeos_style_to_font(BFont &font, 
-		const struct css_style *style);
+void nsbeos_style_to_font(BFont &font, const plot_font_style_t *fstyle);

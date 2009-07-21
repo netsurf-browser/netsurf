@@ -1668,6 +1668,7 @@ bool layout_line(struct box *first, int *width, int *y,
 	unsigned int i;
 	struct css_length gadget_size; /* Checkbox / radio buttons */
 	const struct font_functions *font_func = content->data.html.font_func;
+	plot_font_style_t fstyle;
 
 	gadget_size.unit = CSS_UNIT_EM;
 	gadget_size.value = 1;
@@ -1722,6 +1723,9 @@ bool layout_line(struct box *first, int *width, int *y,
 				 b->style->position == CSS_POSITION_FIXED))
 			continue;
 
+		assert(b->style != NULL);
+		font_plot_style_from_css(b->style, &fstyle);
+
 		x += space_after;
 
 		if (b->type == BOX_INLINE_BLOCK) {
@@ -1763,7 +1767,7 @@ bool layout_line(struct box *first, int *width, int *y,
 			b->width = 0;
 			if (b->space) {
 				/** \todo optimize out */
-				font_func->font_width(b->style, " ", 1,
+				font_func->font_width(&fstyle, " ", 1,
 						&space_after);
 			} else {
 				space_after = 0;
@@ -1801,7 +1805,7 @@ bool layout_line(struct box *first, int *width, int *y,
 							data.select.items; o;
 							o = o->next) {
 						int opt_width;
-						font_func->font_width(b->style,
+						font_func->font_width(&fstyle,
 								o->text,
 								strlen(o->text),
 								&opt_width);
@@ -1812,7 +1816,7 @@ bool layout_line(struct box *first, int *width, int *y,
 
 					b->width = opt_maxwidth;
 				} else {
-					font_func->font_width(b->style, b->text,
+					font_func->font_width(&fstyle, b->text,
 						b->length, &b->width);
 				}
 			}
@@ -1820,7 +1824,7 @@ bool layout_line(struct box *first, int *width, int *y,
 			x += b->width;
 			if (b->space)
 				/** \todo optimize out */
-				font_func->font_width(b->style, " ", 1,
+				font_func->font_width(&fstyle, " ", 1,
 						&space_after);
 			else
 				space_after = 0;
@@ -1957,10 +1961,13 @@ bool layout_line(struct box *first, int *width, int *y,
 				space_after = 0;
 			else if (b->text || b->type == BOX_INLINE_END) {
 				space_after = 0;
-				if (b->space)
+				if (b->space) {
+					font_plot_style_from_css(b->style, 
+							&fstyle);
 					/** \todo handle errors, optimize */
-					font_func->font_width(b->style, " ", 1,
+					font_func->font_width(&fstyle, " ", 1,
 							&space_after);
+				}
 			} else
 				space_after = 0;
 			split_box = b;
@@ -2099,10 +2106,12 @@ bool layout_line(struct box *first, int *width, int *y,
 
 		if (space == 0)
 			w = split_box->width;
-		else
+		else {
+			font_plot_style_from_css(split_box->style, &fstyle);
 			/** \todo handle errors */
-			font_func->font_width(split_box->style, split_box->text,
+			font_func->font_width(&fstyle, split_box->text,
 					space, &w);
+		}
 
 		LOG(("splitting: split_box %p \"%.*s\", space %zu, w %i, "
 				"left %p, right %p, inline_count %u",
@@ -2171,8 +2180,9 @@ bool layout_line(struct box *first, int *width, int *y,
 		} else {
 			/* fit as many words as possible */
 			assert(space != 0);
+			font_plot_style_from_css(split_box->style, &fstyle);
 			/** \todo handle errors */
-			font_func->font_split(split_box->style,
+			font_func->font_split(&fstyle,
 					split_box->text, split_box->length,
 					x1 - x0 - x - space_before, &space, &w);
 			LOG(("'%.*s' %i %zu %i", (int) split_box->length,
@@ -2294,6 +2304,8 @@ struct box *layout_minmax_line(struct box *first,
 	size_t i, j;
 	struct box *b;
 	struct css_length gadget_size; /* Checkbox / radio buttons */
+	plot_font_style_t fstyle;
+
 	gadget_size.unit = CSS_UNIT_EM;
 	gadget_size.value = 1;
 
@@ -2334,6 +2346,9 @@ struct box *layout_minmax_line(struct box *first,
 			continue;
 		}
 
+		assert(b->style);
+		font_plot_style_from_css(b->style, &fstyle);
+
 		if (b->type == BOX_INLINE && !b->object) {
 			fixed = frac = 0;
 			calculate_mbp_width(b->style, LEFT, true, true, true,
@@ -2353,7 +2368,7 @@ struct box *layout_minmax_line(struct box *first,
 			if (0 < fixed)
 				max += fixed;
 			if (b->next && b->space) {
-				font_func->font_width(b->style, " ", 1, &width);
+				font_func->font_width(&fstyle, " ", 1, &width);
 				max += width;
 			}
 			continue;
@@ -2379,7 +2394,7 @@ struct box *layout_minmax_line(struct box *first,
 							data.select.items; o;
 							o = o->next) {
 						int opt_width;
-						font_func->font_width(b->style,
+						font_func->font_width(&fstyle,
 								o->text,
 								strlen(o->text),
 								&opt_width);
@@ -2390,13 +2405,13 @@ struct box *layout_minmax_line(struct box *first,
 
 					b->width = opt_maxwidth;
 				} else {
-					font_func->font_width(b->style, b->text,
+					font_func->font_width(&fstyle, b->text,
 						b->length, &b->width);
 				}
 			}
 			max += b->width;
 			if (b->next && b->space) {
-				font_func->font_width(b->style, " ", 1, &width);
+				font_func->font_width(&fstyle, " ", 1, &width);
 				max += width;
 			}
 
@@ -2406,7 +2421,7 @@ struct box *layout_minmax_line(struct box *first,
 				for (j = i; j != b->length &&
 						b->text[j] != ' '; j++)
 					;
-				font_func->font_width(b->style, b->text + i,
+				font_func->font_width(&fstyle, b->text + i,
 						j - i, &width);
 				if (min < width)
 					min = width;
@@ -3327,6 +3342,7 @@ void layout_lists(struct box *box,
 {
 	struct box *child;
 	struct box *marker;
+	plot_font_style_t fstyle;
 
 	for (child = box->children; child; child = child->next) {
 		if (child->list_marker) {
@@ -3338,11 +3354,14 @@ void layout_lists(struct box *box,
 				marker->y = (line_height(marker->style) -
 						marker->height) / 2;
 			} else if (marker->text) {
-				if (marker->width == UNKNOWN_WIDTH)
-					font_func->font_width(marker->style,
+				if (marker->width == UNKNOWN_WIDTH) {
+					font_plot_style_from_css(marker->style, 
+							&fstyle);
+					font_func->font_width(&fstyle,
 							marker->text,
 							marker->length,
 							&marker->width);
+				}
 				marker->x = -marker->width;
 				marker->y = 0;
 				marker->height = line_height(marker->style);

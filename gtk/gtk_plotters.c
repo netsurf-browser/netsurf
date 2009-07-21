@@ -304,10 +304,10 @@ static bool nsgtk_plot_polygon(const int *p, unsigned int n, const plot_style_t 
 
 
 
-static bool nsgtk_plot_text(int x, int y, const struct css_style *style,
-			    const char *text, size_t length, colour bg, colour c)
+static bool nsgtk_plot_text(int x, int y, const char *text, size_t length, 
+		const plot_font_style_t *fstyle)
 {
-	return nsfont_paint(style, text, length, x, y, c);
+	return nsfont_paint(x, y, text, length, fstyle);
 }
 
 

@@ -68,8 +68,8 @@ static bool nsbeos_plot_path(const float *p, unsigned int n, colour fill, float 
                     colour c, const float transform[6]);
 static bool nsbeos_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
-static bool nsbeos_plot_text(int x, int y, const struct css_style *style,
-		const char *text, size_t length, colour bg, colour c);
+static bool nsbeos_plot_text(int x, int y, const char *text, size_t length, 
+		const plot_font_style_t *fstyle);
 static bool nsbeos_plot_disc(int x, int y, int radius, const plot_style_t *style);
 static bool nsbeos_plot_arc(int x, int y, int radius, int angle1, int angle2,
     		const plot_style_t *style);
@@ -394,10 +394,10 @@ bool nsbeos_plot_clip(int clip_x0, int clip_y0,
 }
 
 
-bool nsbeos_plot_text(int x, int y, const struct css_style *style,
-		const char *text, size_t length, colour bg, colour c)
+bool nsbeos_plot_text(int x, int y, const char *text, size_t length, 
+		const plot_font_style_t *fstyle)
 {
-	return nsfont_paint(style, text, length, x, y, bg, c);
+	return nsfont_paint(fstyle, text, length, x, y, bg);
 }
 
 

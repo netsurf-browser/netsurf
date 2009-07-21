@@ -42,13 +42,13 @@ extern "C" {
 #include "beos/beos_font.h"
 #include "beos/beos_plotters.h"
 
-static bool nsfont_width(const struct css_style *style,
+static bool nsfont_width(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int *width);
-static bool nsfont_position_in_string(const struct css_style *style,
+static bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x);
-static bool nsfont_split(const struct css_style *style,
+static bool nsfont_split(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x);
 
@@ -62,15 +62,14 @@ const struct font_functions nsfont = {
 /**
  * Measure the width of a string.
  *
- * \param  style   css_style for this text, with style->font_size.size ==
- *		   CSS_FONT_SIZE_LENGTH
+ * \param  fstyle  style for this text
  * \param  string  UTF-8 string to measure
  * \param  length  length of string
  * \param  width   updated to width of string[0..length)
  * \return  true on success, false on error and error reported
  */
 
-bool nsfont_width(const struct css_style *style,
+bool nsfont_width(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int *width)
 {
@@ -82,7 +81,7 @@ bool nsfont_width(const struct css_style *style,
 		return true;
 	}
 
-	nsbeos_style_to_font(font, style);
+	nsbeos_style_to_font(font, fstyle);
 	*width = (int)font.StringWidth(string, length);
 	return true;
 }
@@ -113,8 +112,7 @@ static int utf8_char_len(const char *c)
 /**
  * Find the position in a string where an x coordinate falls.
  *
- * \param  style	css_style for this text, with style->font_size.size ==
- *			CSS_FONT_SIZE_LENGTH
+ * \param  fstyle	style for this text
  * \param  string	UTF-8 string to measure
  * \param  length	length of string
  * \param  x		x coordinate to search for
@@ -123,7 +121,7 @@ static int utf8_char_len(const char *c)
  * \return  true on success, false on error and error reported
  */
 
-bool nsfont_position_in_string(const struct css_style *style,
+bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
@@ -132,7 +130,7 @@ bool nsfont_position_in_string(const struct css_style *style,
 	int index;
 	BFont font;
 
-	nsbeos_style_to_font(font, style);
+	nsbeos_style_to_font(font, fstyle);
 	BString str(string);
 	int32 len = str.CountChars();
 	float escapements[len];
@@ -159,8 +157,7 @@ bool nsfont_position_in_string(const struct css_style *style,
 /**
  * Find where to split a string to make it fit a width.
  *
- * \param  style	css_style for this text, with style->font_size.size ==
- *			CSS_FONT_SIZE_LENGTH
+ * \param  fstyle	style for this text
  * \param  string	UTF-8 string to measure
  * \param  length	length of string
  * \param  x		width available
@@ -173,7 +170,7 @@ bool nsfont_position_in_string(const struct css_style *style,
  *	     char_offset == length]
  */
 
-bool nsfont_split(const struct css_style *style,
+bool nsfont_split(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
@@ -182,7 +179,7 @@ bool nsfont_split(const struct css_style *style,
 	int index = 0;
 	BFont font;
 
-	nsbeos_style_to_font(font, style);
+	nsbeos_style_to_font(font, fstyle);
 	BString str(string);
 	int32 len = str.CountChars();
 	float escapements[len];
@@ -217,8 +214,7 @@ bool nsfont_split(const struct css_style *style,
 /**
  * Render a string.
  *
- * \param  style   css_style for this text, with style->font_size.size ==
- *		   CSS_FONT_SIZE_LENGTH
+ * \param  fstyle  style for this text
  * \param  string  UTF-8 string to measure
  * \param  length  length of string
  * \param  x	   x coordinate
@@ -227,7 +223,7 @@ bool nsfont_split(const struct css_style *style,
  * \return  true on success, false on error and error reported
  */
 
-bool nsfont_paint(const struct css_style *style,
+bool nsfont_paint(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, int y, colour bg, colour c)
 {
@@ -243,7 +239,7 @@ bool nsfont_paint(const struct css_style *style,
 	if (length == 0)
 		return true;
 
-	nsbeos_style_to_font(font, style);
+	nsbeos_style_to_font(font, fstyle);
 	background = nsbeos_rgb_colour(bg);
 	foreground = nsbeos_rgb_colour(c);
 
@@ -287,77 +283,59 @@ bool nsfont_paint(const struct css_style *style,
 
 
 /**
- * Convert a css_style to a PangoFontDescription.
+ * Convert a font style to a PangoFontDescription.
  *
- * \param  style	css_style for this text, with style->font_size.size ==
- *			CSS_FONT_SIZE_LENGTH
+ * \param  fstyle	style for this text
  * \return  a new Pango font description
  */
 
-void nsbeos_style_to_font(BFont &font, 
-		const struct css_style *style)
+void nsbeos_style_to_font(BFont &font, const plot_font_style_t *style)
 {
 	float size;
 	uint16 face = 0;
 	const char *family;
 
-	assert(style->font_size.size == CSS_FONT_SIZE_LENGTH);
-
-	switch (style->font_family) {
-	case CSS_FONT_FAMILY_SERIF:
+	switch (fstyle->family) {
+	case PLOT_FONT_FAMILY_SERIF:
 		family = option_font_serif;
 		break;
-	case CSS_FONT_FAMILY_MONOSPACE:
+	case PLOT_FONT_FAMILY_MONOSPACE:
 		family = option_font_mono;
 		break;
-	case CSS_FONT_FAMILY_CURSIVE:
+	case PLOT_FONT_FAMILY_CURSIVE:
 		family = option_font_cursive;
 		break;
-	case CSS_FONT_FAMILY_FANTASY:
+	case PLOT_FONT_FAMILY_FANTASY:
 		family = option_font_fantasy;
 		break;
-	case CSS_FONT_FAMILY_SANS_SERIF:
+	case PLOT_FONT_FAMILY_SANS_SERIF:
 	default:
 		family = option_font_sans;
 		break;
 	}
 
-
-	switch (style->font_style) {
-	case CSS_FONT_STYLE_ITALIC:
+	if ((fstyle->flags & FONTF_ITALIC)) {
 		face = B_ITALIC_FACE;
-		break;
-	case CSS_FONT_STYLE_OBLIQUE:
+	} else if ((fstyle->flags & FONTF_OBLIQUE)) {
 		face = B_ITALIC_FACE;
 		// XXX: no OBLIQUE flag ??
 		// maybe find "Oblique" style
 		// or use SetShear() ?
-		break;
-	default:
-		break;
 	}
 
-	switch (style->font_weight) {
-	case CSS_FONT_WEIGHT_NORMAL:
-		break;
-	case CSS_FONT_WEIGHT_BOLD:
-	case CSS_FONT_WEIGHT_600:
-	case CSS_FONT_WEIGHT_700:
 #ifndef __HAIKU__XXX
-	case CSS_FONT_WEIGHT_800:
-	case CSS_FONT_WEIGHT_900:
-#endif
-		face |= B_BOLD_FACE; break;
-#ifdef __HAIKU__XXX
-	case CSS_FONT_WEIGHT_BOLDER:
-	case CSS_FONT_WEIGHT_800:
-	case CSS_FONT_WEIGHT_900:
-		face |= B_HEAVY_FACE; break;
-	case CSS_FONT_WEIGHT_100:
-	case CSS_FONT_WEIGHT_200:
-	case CSS_FONT_WEIGHT_300:
-	case CSS_FONT_WEIGHT_LIGHTER:
-		face |= B_LIGHT_FACE; break;
+	if (fstyle->weight >= 600) {
+		face |= B_BOLD_FACE;
+	}
+#else
+	if (fstyle->weight >= 600) {
+		if (fstyle->weight >= 800)
+			face |= B_HEAVY_FACE;
+		else
+			face |= B_BOLD_FACE;
+	} else if (fstyle->weight <= 300) {
+		face |= B_LIGHT_FACE;
+	}
 #endif
 /*
 	case CSS_FONT_WEIGHT_100: weight = 100; break;
@@ -387,11 +365,7 @@ void nsbeos_style_to_font(BFont &font,
 	}
 
 //fprintf(stderr, "nsbeos_style_to_font: value %f unit %d\n", style->font_size.value.length.value, style->font_size.value.length.unit);
-	if (style->font_size.value.length.unit == CSS_UNIT_PT)
-		size = style->font_size.value.length.value;
-	else
-		size = css_len2pt(&style->font_size.value.length, style);
-	// * 72.0 / 90.0;
+	size = fstyle->size;
 
 	//XXX: pango stuff ?
 	if (size < abs(option_font_min_size / 10))
