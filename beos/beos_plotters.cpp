@@ -397,7 +397,7 @@ bool nsbeos_plot_clip(int clip_x0, int clip_y0,
 bool nsbeos_plot_text(int x, int y, const char *text, size_t length, 
 		const plot_font_style_t *fstyle)
 {
-	return nsfont_paint(fstyle, text, length, x, y, bg);
+	return nsfont_paint(fstyle, text, length, x, y);
 }
 
 

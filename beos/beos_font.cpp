@@ -219,13 +219,12 @@ bool nsfont_split(const plot_font_style_t *fstyle,
  * \param  length  length of string
  * \param  x	   x coordinate
  * \param  y	   y coordinate
- * \param  c	   colour for text
  * \return  true on success, false on error and error reported
  */
 
 bool nsfont_paint(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
-		int x, int y, colour bg, colour c)
+		int x, int y)
 {
 	//fprintf(stderr, "%s(, '%s', %d, %d, %d, )\n", __FUNCTION__, string, length, x, y);
 	//CALLED();
@@ -240,8 +239,8 @@ bool nsfont_paint(const plot_font_style_t *fstyle,
 		return true;
 
 	nsbeos_style_to_font(font, fstyle);
-	background = nsbeos_rgb_colour(bg);
-	foreground = nsbeos_rgb_colour(c);
+	background = nsbeos_rgb_colour(fstyle->background);
+	foreground = nsbeos_rgb_colour(fstyle->foreground);
 
 	view = nsbeos_current_gc/*_lock*/();
 	if (view == NULL) {
