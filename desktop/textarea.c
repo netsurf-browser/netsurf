@@ -1415,3 +1415,18 @@ void textarea_normalise_text(struct text_area *ta,
 	}
 	
 }
+
+
+/**
+ * Gets the dimensions of a textarea
+ *
+ * \param width		if not NULL, gets updated to the width of the textarea
+ * \param height	if not NULL, gets updated to the height of the textarea
+ */
+void textarea_get_dimensions(struct text_area *ta, int *width, int *height)
+{
+	if (width != NULL)
+		*width = ta->vis_width;
+	if (height != NULL)
+		*height = ta->vis_height;
+}

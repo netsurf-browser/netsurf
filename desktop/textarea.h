@@ -54,6 +54,7 @@ bool textarea_mouse_action(struct text_area *ta, browser_mouse_state mouse,
 		int x, int y);
 bool textarea_drag_end(struct text_area *ta, browser_mouse_state mouse,
 		int x, int y);
+void textarea_get_dimensions(struct text_area *ta, int *width, int *height);
 
 #endif
 
