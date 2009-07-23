@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
-  Build Instructions for AmigaOS NetSurf                       10 January 2009
+  Build Instructions for AmigaOS NetSurf                          24 July 2009
 --------------------------------------------------------------------------------
 
   This document provides instructions for building the AmigaOS version of
@@ -48,22 +48,6 @@
 
   Many of NetSurf's dependencies are included with the OS4 SDK or available
   from Aminet or OS4Depot.  The remainder must be built manually.
-
-
-  Lemon
--------
-
-  A pre-built version of Lemon is available from Aminet:
-
-      http://www.aminet.net/package/dev/c/lemon
-
-
-  RE2C
-------
-
-  A pre-built version of re2c is available from Aminet:
-
-      http://www.aminet.net/package/dev/c/re2c
 
 
   cURL

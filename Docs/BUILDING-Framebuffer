@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
-  Build Instructions for Framebuffer NetSurf                    12 February 2009
+  Build Instructions for Framebuffer NetSurf                      24 July 2009
 --------------------------------------------------------------------------------
 
   This document provides instructions for building the Framebuffer version of 
@@ -185,7 +185,7 @@ Index: framebuffer/font_freetype.c
   Debian-like OS:
 
       $ apt-get install libglade2-dev libcurl3-dev libxml2-dev libmng-dev 
-      $ apt-get install librsvg2-dev lemon re2c
+      $ apt-get install librsvg2-dev
 
   Recent OS versions might need libcurl4-dev instead of libcurl3-dev but
   note that when it has not been built with OpenSSL, the SSL_CTX is not
@@ -196,12 +196,12 @@ Index: framebuffer/font_freetype.c
   Fedora:
 
       $ yum install libglade2-devel curl-devel libxml2-devel libmng-devel
-      $ yum install librsvg2-devel lcms-devel re2c
+      $ yum install librsvg2-devel lcms-devel
 
   Other:
 
-  You'll need to install re2c, a tool which builds the CSS lexer, and the
-  development resources for libglade2, libcurl3, libxml2, libmng and librsvg.
+  You'll need to install the development resources for libglade2, libcurl3,
+  libxml2, libmng and librsvg.
 
   Note that if you don't require MNG or JNG image support, NetSurf can be
   configured to use libpng instead of libmng. If you wish to do this, install
@@ -285,19 +285,6 @@ Index: framebuffer/font_freetype.c
   be found at:
 
       svn://svn.netsurf-browser.org/trunk/libharu
-
-  Lemon
--------
-
-  If your distribution does not package 'lemon' (Fedora doesn't) then you'll
-  need to download it and build it yourself. You may find it comes with the
-  SQLite packages (SQLite's parser is built with lemon). If not, try this:
-
-      $ mkdir -p /usr/local/share/lemon
-      $ wget http://www.sqlite.org/cvstrac/getfile/sqlite/tool/lemon.c
-      $ wget -O /usr/local/share/lemon/lempar.c http://www.sqlite.org/cvstrac/getfile/sqlite/tool/lempar.c
-      $ sed -e's!lempar.c!/usr/local/share/lemon/lempar.c!' lemon.c > lem.c
-      $ gcc -o /usr/local/bin/lemon lem.c
 
 
   General requirements
