@@ -1962,7 +1962,7 @@ bool layout_line(struct box *first, int *width, int *y,
 			else if (b->text || b->type == BOX_INLINE_END) {
 				space_after = 0;
 				if (b->space) {
-					font_plot_style_from_css(b->style, 
+					font_plot_style_from_css(b->style,
 							&fstyle);
 					/** \todo handle errors, optimize */
 					font_func->font_width(&fstyle, " ", 1,
@@ -2268,6 +2268,15 @@ bool layout_line(struct box *first, int *width, int *y,
 	first->inline_new_line = true;
 
 	assert(b != first || (move_y && 0 < used_height && (left || right)));
+
+	/* set height of all text boxes to line height */
+	for (d = first; d != b; d = d->next) {
+		if (d->type == BOX_INLINE || d->type == BOX_BR ||
+				d->type == BOX_TEXT ||
+				d->type == BOX_INLINE_END) {
+			d->height = used_height;
+		}
+	}
 
 	/* handle clearance for br */
 	if (br_box && br_box->style->clear != CSS_CLEAR_NONE) {
@@ -3355,7 +3364,7 @@ void layout_lists(struct box *box,
 						marker->height) / 2;
 			} else if (marker->text) {
 				if (marker->width == UNKNOWN_WIDTH) {
-					font_plot_style_from_css(marker->style, 
+					font_plot_style_from_css(marker->style,
 							&fstyle);
 					font_func->font_width(&fstyle,
 							marker->text,
