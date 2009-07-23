@@ -40,8 +40,9 @@ static const char header[] = "<html>\n<head>\n<title>\n";
 static const char footer[] = "</pre>\n</body>\n</html>\n";
 
 
-bool directory_create(struct content *c, const char *params[]) {
-	if (!html_create(c, params))
+bool directory_create(struct content *c, struct content *parent,
+		const char *params[]) {
+	if (!html_create(c, parent, params))
 		/* html_create() must have broadcast MSG_ERROR already, so we
 		* don't need to. */
 		return false;

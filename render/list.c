@@ -57,9 +57,9 @@ static const int list_counter_decimal[] = {    1,   4,   5,   9,
 		/ sizeof(list_counter_decimal[0]))
 
 
-static struct list_counter *render_list_find_counter(char *name);
+static struct list_counter *render_list_find_counter(const char *name);
 static char *render_list_encode_counter(struct list_counter_state *state,
-		css_list_style_type style);
+		enum css_list_style_type style);
 static char *render_list_encode_roman(int value);
 
 /*
@@ -72,7 +72,7 @@ static void render_list_counter_output(char *name);
  * \param name  the name of the counter to find
  * \return the counter, or NULL if it couldn't be found/created.
  */
-static struct list_counter *render_list_find_counter(char *name) {
+static struct list_counter *render_list_find_counter(const char *name) {
 	struct list_counter *counter;
 
 	assert(name);
@@ -131,7 +131,7 @@ void render_list_destroy_counters(void) {
  * \param value  the value to reset the counter to
  * \return true on success, false on failure.
  */
-bool render_list_counter_reset(char *name, int value) {
+bool render_list_counter_reset(const char *name, int value) {
 	struct list_counter *counter;
 	struct list_counter_state *state;
 	struct list_counter_state *link;
@@ -166,7 +166,7 @@ bool render_list_counter_reset(char *name, int value) {
  * \param value  the value to increment the counter by
  * \return true on success, false on failure.
  */
-bool render_list_counter_increment(char *name, int value) {
+bool render_list_counter_increment(const char *name, int value) {
 	struct list_counter *counter;
 
 	assert(name);
@@ -196,7 +196,7 @@ bool render_list_counter_increment(char *name, int value) {
  * \param name	 the name of the counter to end the scope for
  * \return true on success, false on failure.
  */
-bool render_list_counter_end_scope(char *name) {
+bool render_list_counter_end_scope(const char *name) {
 	struct list_counter *counter;
 
 	assert(name);
@@ -216,28 +216,40 @@ bool render_list_counter_end_scope(char *name) {
  * \param css_counter  the counter to convert
  * \return a textual representation of the counter, or NULL on failure
  */
-char *render_list_counter(struct css_counter *css_counter) {
+char *render_list_counter(const css_computed_content_item *css_counter) {
 	struct list_counter *counter;
 	struct list_counter_state *state;
 	char *compound = NULL;
 	char *merge, *extend;
+	lwc_string *name = NULL, *sep = NULL;
+	uint8_t style;
 
 	assert(css_counter);
-	counter = render_list_find_counter(css_counter->name);
+
+	if (css_counter->type == CSS_COMPUTED_CONTENT_COUNTER) {
+		name = css_counter->data.counter.name;
+		style = css_counter->data.counter.style;
+	} else {
+		assert(css_counter->type == CSS_COMPUTED_CONTENT_COUNTERS);
+
+		name = css_counter->data.counters.name;
+		sep = css_counter->data.counters.sep;
+		style = css_counter->data.counters.style;
+	}
+
+	counter = render_list_find_counter(lwc_string_data(name));
 	if (!counter) {
 	  	LOG(("Failed to find/create counter for conversion"));
 	  	return NULL;
 	}
 
 	/* handle counter() first */
-	if (!css_counter->separator)
-		return render_list_encode_counter(counter->state,
-				css_counter->style);
+	if (sep == NULL)
+		return render_list_encode_counter(counter->state, style);
 
 	/* loop through all states for counters() */
 	for (state = counter->first; state; state = state->next) {
-	  	merge = render_list_encode_counter(state,
-	  			css_counter->style);
+	  	merge = render_list_encode_counter(state, style);
 	  	if (!merge) {
 	  	  	free(compound);
 	  	  	return NULL;
@@ -258,14 +270,14 @@ char *render_list_counter(struct css_counter *css_counter) {
 	  	}
 		if (state->next) {
 			merge = realloc(compound, strlen(compound) +
-					strlen(css_counter->separator) + 1);
+					lwc_string_length(sep) + 1);
 			if (!merge) {
 	  		  	LOG(("No memory for realloc()"));
 				free(compound);
 				return NULL;
 			}
 			compound = merge;
-			strcat(compound, css_counter->separator);
+			strcat(compound, lwc_string_data(sep));
 		}
 	}
 	return compound;
@@ -280,7 +292,7 @@ char *render_list_counter(struct css_counter *css_counter) {
  * \return a textual representation of the counter state, or NULL on failure
  */
 static char *render_list_encode_counter(struct list_counter_state *state,
-		css_list_style_type style) {
+		enum css_list_style_type style) {
 	char *result = NULL;
 	int i;
 
@@ -338,10 +350,7 @@ static char *render_list_encode_counter(struct list_counter_state *state,
 				return NULL;
 			result[0] = '\0';
 			break;
-		case CSS_LIST_STYLE_TYPE_INHERIT:
-		case CSS_LIST_STYLE_TYPE_UNKNOWN:
-		case CSS_LIST_STYLE_TYPE_NOT_SET:
-			assert(0);
+		default:
 			break;
 	}
 

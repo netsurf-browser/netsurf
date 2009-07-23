@@ -30,6 +30,7 @@
 #include <iconv.h>
 #include "content/content.h"
 #include "css/css.h"
+#include "css/utils.h"
 #include "desktop/gui.h"
 #include "desktop/plotters.h"
 #include "desktop/selection.h"
@@ -51,7 +52,7 @@
 
 static plot_font_style_t textplain_style = {
 	.family = PLOT_FONT_FAMILY_MONOSPACE,
-	.size = 10,
+	.size = 10 * FONT_SIZE_SCALE,
 	.weight = 400,
 	.flags = FONTF_NONE,
 	.background = 0xffffff,
@@ -69,7 +70,8 @@ static float textplain_line_height(void);
  * Create a CONTENT_TEXTPLAIN.
  */
 
-bool textplain_create(struct content *c, const char *params[])
+bool textplain_create(struct content *c, struct content *parent,
+		const char *params[])
 {
 	unsigned int i;
 	char *utf8_data;
@@ -733,6 +735,7 @@ float textplain_line_height(void)
 	/* Size is in points, so convert to pixels. 
 	 * Then use a constant line height of 1.2 x font size.
 	 */
-	return (textplain_style.size * css_screen_dpi / 72) * 1.2;
+	return FIXTOFLT(FDIVI((FMUL(FLTTOFIX(1.2), 
+			FMULI(nscss_screen_dpi, textplain_style.size))), 72));
 }
 

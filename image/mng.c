@@ -69,7 +69,8 @@ static void nsmng_free(mng_ptr p, mng_size_t n);
 #endif
 
 
-bool nsmng_create(struct content *c, const char *params[])
+bool nsmng_create(struct content *c, struct content *parent,
+		const char *params[])
 {
 	mng_retcode code;
 	union content_msg_data msg_data;

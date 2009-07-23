@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Adam Blokus <adamblokus@gmail.com>
+ * Copyright 2009 John-Mark Bell <jmb@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,20 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
-\file
-General idea - a set of routines working themselves recursively through
-the box tree and trying to change the layout of the document as little
-as possible to acquire the desired width ( - to make it fit in a printed
-page ), where possible - also taking the dividing height into consideration,
-to prevent objects being cut by ends of pages.
-*/
+#ifndef NETSURF_CSS_DUMP_H_
+#define NETSURF_CSS_DUMP_H_
 
-#ifndef NETSURF_RENDER_LOOSEN_H
-#define NETSURF_RENDER_LOOSEN_H
-#include <stdbool.h>
+#include "css/css.h"
 
-bool loosen_document_layout(struct content *content, struct box *layout,
-		int width, int height);
+void nscss_dump_computed_style(FILE *stream, const css_computed_style *style);
 
 #endif

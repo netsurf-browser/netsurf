@@ -183,7 +183,8 @@ static void plugin_fetch_callback(fetch_msg msg, void *p, const void *data,
  * \param params Parameters associated with the content
  * \return true on success, false otherwise
  */
-bool plugin_create(struct content *c, const char *params[])
+bool plugin_create(struct content *c, struct content *parent,
+		const char *params[])
 {
 	LOG(("plugin_create"));
 	c->data.plugin.bw = 0;

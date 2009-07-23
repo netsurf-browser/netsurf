@@ -141,9 +141,9 @@ void save_text_solve_whitespace(struct box *box, bool *first,
 			 (box->type != BOX_INLINE &&
 			 (box->parent && box->parent->list_marker == box)) ||
 			 (box->parent->style &&
-			  (box->parent->style->white_space ==
+			  (css_computed_white_space(box->parent->style) ==
 			   CSS_WHITE_SPACE_PRE ||
-			   box->parent->style->white_space ==
+			   css_computed_white_space(box->parent->style) ==
 			   CSS_WHITE_SPACE_PRE_WRAP) &&
 			  box->type == BOX_INLINE_CONTAINER))) {
 		if (*before == WHITESPACE_ONE_NEW_LINE)

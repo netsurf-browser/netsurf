@@ -41,7 +41,8 @@ struct content_rsvg_data {
 	struct bitmap *bitmap;	/**< Created NetSurf bitmap */
 };
 
-bool rsvg_create(struct content *c, const char *params[]);
+bool rsvg_create(struct content *c, struct content *parent,
+		const char *params[]);
 bool rsvg_process_data(struct content *c, char *data, unsigned int size);
 bool rsvg_convert(struct content *c, int width, int height);
 void rsvg_destroy(struct content *c);

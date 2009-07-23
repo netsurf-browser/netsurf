@@ -24,7 +24,7 @@
 
 #ifdef WITH_PNG
 
-#include "css/css.h"
+#include "desktop/plot_style.h"
 
 #include <stdbool.h>
 #include <png.h>
@@ -42,7 +42,8 @@ struct content_png_data {
         size_t rowbytes; /**< Number of bytes per row */
 };
 
-bool nspng_create(struct content *c, const char *params[]);
+bool nspng_create(struct content *c, struct content *parent,
+		const char *params[]);
 bool nspng_process_data(struct content *c, char *data, unsigned int size);
 bool nspng_convert(struct content *c, int width, int height);
 void nspng_destroy(struct content *c);

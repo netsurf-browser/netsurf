@@ -146,7 +146,7 @@ bool pdf_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *psty
 {
 	DashPattern_e dash;
 #ifdef PDF_DEBUG
-	LOG(("%d %d %d %d %f %X", x0, y0, x1, y1, page_height - y0, style->fill_colour));
+	LOG(("%d %d %d %d %f %X", x0, y0, x1, y1, page_height - y0, pstyle->fill_colour));
 #endif
 
 	if (pstyle->fill_type != PLOT_OP_TYPE_NONE) {
@@ -353,7 +353,7 @@ bool pdf_plot_disc(int x, int y, int radius, const plot_style_t *style)
 bool pdf_plot_arc(int x, int y, int radius, int angle1, int angle2, const plot_style_t *style)
 {
 #ifdef PDF_DEBUG
-	LOG(("%d %d %d %d %d %X", x, y, radius, angle1, angle2, c));
+	LOG(("%d %d %d %d %d %X", x, y, radius, angle1, angle2, style->stroke_colour));
 #endif
 
 	/* FIXME: line width 1 is ok ? */
@@ -381,8 +381,8 @@ bool pdf_plot_bitmap_tile(int x, int y, int width, int height,
 	HPDF_REAL max_width, max_height;
 
 #ifdef PDF_DEBUG
-	LOG(("%d %d %d %d %p 0x%x %p", x, y, width, height,
-	     bitmap, bg, content));
+	LOG(("%d %d %d %d %p 0x%x", x, y, width, height,
+	     bitmap, bg));
 #endif
  	if (width == 0 || height == 0)
  		return true;
@@ -662,10 +662,12 @@ bool pdf_begin(struct print_settings *print_settings)
 
 	settings = print_settings;
 
-	page_width = settings->page_width - settings->margins[MARGINLEFT] -
-			settings->margins[MARGINRIGHT];
+	page_width = settings->page_width - 
+			FIXTOFLT(FSUB(settings->margins[MARGINLEFT],
+			settings->margins[MARGINRIGHT]));
 
-	page_height = settings->page_height - settings->margins[MARGINTOP];
+	page_height = settings->page_height - 
+			FIXTOFLT(settings->margins[MARGINTOP]);
 
 
 #ifndef PDF_DEBUG
@@ -708,7 +710,8 @@ bool pdf_next_page(void)
 	HPDF_Page_SetWidth (pdf_page, settings->page_width);
 	HPDF_Page_SetHeight(pdf_page, settings->page_height);
 
-	HPDF_Page_Concat(pdf_page, 1, 0, 0, 1, settings->margins[MARGINLEFT], 0);
+	HPDF_Page_Concat(pdf_page, 1, 0, 0, 1, 
+			FIXTOFLT(settings->margins[MARGINLEFT]), 0);
 
 	pdfw_gs_save(pdf_page);
 

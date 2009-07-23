@@ -49,7 +49,8 @@
 static inline void rsvg_argb_to_abgr(uint32_t pixels[], int width, int height,
 				size_t rowstride);
 
-bool rsvg_create(struct content *c, const char *params[])
+bool rsvg_create(struct content *c, struct content *parent,
+		const char *params[])
 {
 	struct content_rsvg_data *d = &c->data.rsvg;
 	union content_msg_data msg_data;

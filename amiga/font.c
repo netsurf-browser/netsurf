@@ -237,7 +237,7 @@ struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle)
 {
 	struct OutlineFont *ofont;
 	char *fontname;
-	WORD ysize;
+	ULONG ysize;
 	int tstyle = 0;
 
 	if ((fstyle->flags & FONTF_ITALIC) || (fstyle->flags & FONTF_OBLIQUE))
@@ -268,14 +268,12 @@ struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle)
 		break;
 	}
 
-	ysize = fstyle->size;
-
-	if(ysize < (option_font_min_size / 10) * FONT_SIZE_SCALE)
-		ysize = (option_font_min_size / 10) * FONT_SIZE_SCALE;
+	/* Scale to 16.16 fixed point */
+	ysize = fstyle->size * ((1 << 16) / FONT_SIZE_SCALE);
 
 	if(ESetInfo(&ofont->olf_EEngine,
 			OT_DeviceDPI,(72<<16) | 72,
-			OT_PointHeight,(ysize<<16)/FONT_SIZE_SCALE,
+			OT_PointHeight,ysize,
 			TAG_END) == OTERR_Success)
 	{
 		return ofont;

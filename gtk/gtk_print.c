@@ -449,7 +449,6 @@ static const struct plotter_table nsgtk_print_plotters = {
 	.option_knockout = false,
 };
 
-
 static bool gtk_print_begin(struct print_settings* settings)
 {
 	return true;
@@ -504,8 +503,9 @@ void gtk_print_signal_begin_print (GtkPrintOperation *operation,
 		settings->page_width, settings->page_height, height_to_print));
 	
 	height_on_page = settings->page_height;
-	height_on_page = height_on_page - settings->margins[MARGINTOP]
-			 - settings->margins[MARGINBOTTOM];
+	height_on_page = height_on_page - 
+			FIXTOFLT(FSUB(settings->margins[MARGINTOP],
+			settings->margins[MARGINBOTTOM]));
 	height_to_print *= settings->scale;
 	
 	page_number = height_to_print / height_on_page;

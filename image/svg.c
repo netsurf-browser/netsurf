@@ -40,7 +40,7 @@
  * Create a CONTENT_SVG.
  */
 
-bool svg_create(struct content *c, const char *params[])
+bool svg_create(struct content *c, struct content *parent, const char *params[])
 {
 	union content_msg_data msg_data;
 

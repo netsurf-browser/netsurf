@@ -17,13 +17,15 @@
  */
 
 #include "css/css.h"
+#include "css/utils.h"
+#include "desktop/options.h"
 #include "render/font.h"
 
 static plot_font_generic_family_t plot_font_generic_family(
-		css_font_family css);
-static int plot_font_weight(css_font_weight css);
-static plot_font_flags_t plot_font_flags(css_font_style style,
-		css_font_variant variant);
+		enum css_font_family css);
+static int plot_font_weight(enum css_font_weight css);
+static plot_font_flags_t plot_font_flags(enum css_font_style style,
+		enum css_font_variant variant);
 
 /**
  * Populate a font style using data from a computed CSS style
@@ -31,15 +33,31 @@ static plot_font_flags_t plot_font_flags(css_font_style style,
  * \param css     Computed style to consider
  * \param fstyle  Font style to populate
  */
-void font_plot_style_from_css(const struct css_style *css,
+void font_plot_style_from_css(const css_computed_style *css,
 		plot_font_style_t *fstyle)
 {
-	fstyle->family = plot_font_generic_family(css->font_family);
-	fstyle->size = 
-		css_len2pt(&css->font_size.value.length, css) * FONT_SIZE_SCALE;
-	fstyle->weight = plot_font_weight(css->font_weight);
-	fstyle->flags = plot_font_flags(css->font_style, css->font_variant);
-	fstyle->foreground = css->color;
+	lwc_string **families;
+	css_fixed length = 0;
+	css_unit unit = CSS_UNIT_PX;
+	css_color col;
+
+	fstyle->family = plot_font_generic_family(
+			css_computed_font_family(css, &families));
+
+	css_computed_font_size(css, &length, &unit);
+	fstyle->size = FIXTOINT(FMULI(nscss_len2pt(length, unit), 
+			FONT_SIZE_SCALE));
+
+	/* Clamp font size to configured minimum */
+	if (fstyle->size < (option_font_min_size * FONT_SIZE_SCALE) / 10)
+		fstyle->size = (option_font_min_size * FONT_SIZE_SCALE) / 10;
+
+	fstyle->weight = plot_font_weight(css_computed_font_weight(css));
+	fstyle->flags = plot_font_flags(css_computed_font_style(css), 
+			css_computed_font_variant(css));
+
+	css_computed_color(css, &col);
+	fstyle->foreground = nscss_color_to_ns(col);
 	fstyle->background = 0;
 }
 
@@ -54,7 +72,7 @@ void font_plot_style_from_css(const struct css_style *css,
  * \return Plot font family
  */
 plot_font_generic_family_t plot_font_generic_family(
-		css_font_family css)
+		enum css_font_family css)
 {
 	plot_font_generic_family_t plot;
 
@@ -86,7 +104,7 @@ plot_font_generic_family_t plot_font_generic_family(
  * \param css  CSS font weight
  * \return Plot weight
  */
-int plot_font_weight(css_font_weight css)
+int plot_font_weight(enum css_font_weight css)
 {
 	int weight;
 
@@ -133,8 +151,8 @@ int plot_font_weight(css_font_weight css)
  * \param variant  CSS font variant
  * \return Computed plot flags
  */
-plot_font_flags_t plot_font_flags(css_font_style style,
-		css_font_variant variant)
+plot_font_flags_t plot_font_flags(enum css_font_style style,
+		enum css_font_variant variant)
 {
 	plot_font_flags_t flags = FONTF_NONE;
 

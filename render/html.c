@@ -61,7 +61,8 @@ static void html_convert_css_callback(content_msg msg, struct content *css,
 static bool html_meta_refresh(struct content *c, xmlNode *head);
 static bool html_head(struct content *c, xmlNode *head);
 static bool html_find_stylesheets(struct content *c, xmlNode *html);
-static bool html_process_style_element(struct content *c, xmlNode *style);
+static bool html_process_style_element(struct content *c, unsigned int index,
+		xmlNode *style);
 static void html_object_callback(content_msg msg, struct content *object,
 		intptr_t p1, intptr_t p2, union content_msg_data data);
 static void html_object_done(struct box *box, struct content *object,
@@ -92,6 +93,18 @@ static const char empty_document[] =
 	"</body>"
 	"</html>";
 
+/**
+ * Allocator
+ *
+ * \param ptr   Pointer to reallocate, or NULL for new allocation
+ * \param size  Number of bytes requires
+ * \param pw    Allocation context
+ * \return Pointer to allocated block, or NULL on failure
+ */
+static void *myrealloc(void *ptr, size_t len, void *pw)
+{
+	return realloc(ptr, len);
+}
 
 /**
  * Create a CONTENT_HTML.
@@ -100,15 +113,19 @@ static const char empty_document[] =
  * created.
  */
 
-bool html_create(struct content *c, const char *params[])
+bool html_create(struct content *c, struct content *parent, 
+		const char *params[])
 {
 	unsigned int i;
 	struct content_html_data *html = &c->data.html;
 	union content_msg_data msg_data;
 	binding_error error;
+	lwc_context *dict;
+	lwc_error lerror;
 
 	html->parser_binding = NULL;
 	html->document = 0;
+	html->quirks = BINDING_QUIRKS_MODE_NONE;
 	html->encoding = 0;
 	html->base_url = c->url;
 	html->base_target = NULL;
@@ -116,8 +133,7 @@ bool html_create(struct content *c, const char *params[])
 	html->background_colour = NS_TRANSPARENT;
 	html->stylesheet_count = 0;
 	html->stylesheet_content = 0;
-	html->style = 0;
-	html->working_stylesheet = 0;
+	html->select_ctx = NULL;
 	html->object_count = 0;
 	html->object = 0;
 	html->forms = 0;
@@ -129,6 +145,14 @@ bool html_create(struct content *c, const char *params[])
 	html->index = 0;
 	html->box = 0;
 	html->font_func = &nsfont;
+
+	lerror = lwc_create_context(myrealloc, c, &dict);
+	if (lerror != lwc_error_ok) {
+		error = BINDING_NOMEM;
+		goto error;
+	}
+
+	html->dict = lwc_context_ref(dict);
 
 	for (i = 0; params[i]; i += 2) {
 		if (strcasecmp(params[i], "charset") == 0) {
@@ -343,7 +367,8 @@ bool html_convert(struct content *c, int width, int height)
 	}
 
 	c->data.html.document =
-			binding_get_document(c->data.html.parser_binding);
+			binding_get_document(c->data.html.parser_binding,
+					&c->data.html.quirks);
 	/*xmlDebugDumpDocument(stderr, c->data.html.document);*/
 
 	if (!c->data.html.document) {
@@ -467,7 +492,7 @@ bool html_convert(struct content *c, int width, int height)
 		option_min_reflow_period : time_taken * 1.25));
 	LOG(("Scheduling relayout no sooner than %dcs",
 		c->reformat_time - wallclock()));
-	/*box_dump(c->data.html.layout->children, 0);*/
+	/*box_dump(stderr, c->data.html.layout->children, 0);*/
 
 	/* Destroy the parser binding */
 	binding_destroy_tree(c->data.html.parser_binding);
@@ -778,16 +803,17 @@ bool html_find_stylesheets(struct content *c, xmlNode *html)
 	union content_msg_data msg_data;
 	url_func_result res;
 	struct content **stylesheet_content;
+	css_error error;
 
 	/* stylesheet 0 is the base style sheet,
-	 * stylesheet 1 is the adblocking stylesheet,
-	 * stylesheet 2 is any <style> elements */
+	 * stylesheet 1 is the quirks mode style sheet,
+	 * stylesheet 2 is the adblocking stylesheet */
 	c->data.html.stylesheet_content = talloc_array(c, struct content *,
 			STYLESHEET_START);
 	if (!c->data.html.stylesheet_content)
 		goto no_memory;
-	c->data.html.stylesheet_content[STYLESHEET_ADBLOCK] = 0;
-	c->data.html.stylesheet_content[STYLESHEET_STYLE] = 0;
+	c->data.html.stylesheet_content[STYLESHEET_QUIRKS] = NULL;
+	c->data.html.stylesheet_content[STYLESHEET_ADBLOCK] = NULL;
 	c->data.html.stylesheet_count = STYLESHEET_START;
 
 	c->active = 0;
@@ -804,6 +830,22 @@ bool html_find_stylesheets(struct content *c, xmlNode *html)
 			c->url, html_convert_css_callback, (intptr_t) c,
 			STYLESHEET_BASE, c->width, c->height,
 			0, 0, false, c);
+
+	if (c->data.html.quirks == BINDING_QUIRKS_MODE_FULL) {
+		c->data.html.stylesheet_content[STYLESHEET_QUIRKS] =
+				fetchcache(quirks_stylesheet_url,
+				html_convert_css_callback, (intptr_t) c,
+				STYLESHEET_QUIRKS, c->width, c->height,
+				true, 0, 0, false, false);
+		if (c->data.html.stylesheet_content[STYLESHEET_QUIRKS] == NULL)
+			goto no_memory;
+		c->active++;
+		fetchcache_go(c->data.html.
+				stylesheet_content[STYLESHEET_QUIRKS],
+				c->url, html_convert_css_callback,
+				(intptr_t) c, STYLESHEET_QUIRKS, c->width,
+				c->height, 0, 0, false, c);
+	}
 
 	if (option_block_ads) {
 		c->data.html.stylesheet_content[STYLESHEET_ADBLOCK] =
@@ -931,30 +973,13 @@ bool html_find_stylesheets(struct content *c, xmlNode *html)
 			i++;
 		} else if (strcmp((const char *) node->name, "style") == 0) {
 
-			if (!html_process_style_element(c, node))
+			if (!html_process_style_element(c, i, node))
 				return false;
+			i++;
 		}
 	}
 
 	c->data.html.stylesheet_count = i;
-
-	if (c->data.html.stylesheet_content[STYLESHEET_STYLE] != 0) {
-		if (css_convert(c->data.html.
-				stylesheet_content[STYLESHEET_STYLE], c->width,
-				c->height)) {
-			if (!content_add_user(c->data.html.
-					stylesheet_content[STYLESHEET_STYLE],
-					html_convert_css_callback,
-					(intptr_t) c, STYLESHEET_STYLE)) {
-				/* no memory */
-				c->data.html.stylesheet_content[STYLESHEET_STYLE] = 0;
-				goto no_memory;
-			}
-		} else {
-			/* conversion failed */
-			c->data.html.stylesheet_content[STYLESHEET_STYLE] = 0;
-		}
-	}
 
 	/* complete the fetches */
 	while (c->active != 0) {
@@ -974,28 +999,22 @@ bool html_find_stylesheets(struct content *c, xmlNode *html)
 		return false;
 	}
 
-	assert(c->data.html.stylesheet_content[STYLESHEET_BASE]);
-	css_set_origin(c->data.html.stylesheet_content[STYLESHEET_BASE],
-			CSS_ORIGIN_UA);
-
-	/* any of our other stylesheet pointers could be NULL at this point if
-	 * the CSS file(s) failed to load/fetch */
-	if (c->data.html.stylesheet_content[STYLESHEET_ADBLOCK])
-		css_set_origin(c->data.html.stylesheet_content[
-				STYLESHEET_ADBLOCK], CSS_ORIGIN_UA);
-	if (c->data.html.stylesheet_content[STYLESHEET_STYLE])
-		css_set_origin(c->data.html.stylesheet_content[
-				STYLESHEET_STYLE], CSS_ORIGIN_AUTHOR);
-	for (i = STYLESHEET_START; i != c->data.html.stylesheet_count; i++)
-		if (c->data.html.stylesheet_content[i])
-			css_set_origin(c->data.html.stylesheet_content[i],
-					CSS_ORIGIN_AUTHOR);
-
-	c->data.html.working_stylesheet = css_make_working_stylesheet(
-			c->data.html.stylesheet_content,
-			c->data.html.stylesheet_count);
-	if (!c->data.html.working_stylesheet)
+	/* Create selection context */
+	error = css_select_ctx_create(myrealloc, c, &c->data.html.select_ctx);
+	if (error != CSS_OK)
 		goto no_memory;
+
+	/* Add sheets to it */
+	for (i = STYLESHEET_BASE; i != c->data.html.stylesheet_count; i++) {
+		if (c->data.html.stylesheet_content[i]) {
+			error = css_select_ctx_append_sheet(
+					c->data.html.select_ctx,
+					c->data.html.stylesheet_content[i]->
+							data.css.sheet);
+			if (error != CSS_OK)
+				goto no_memory;
+		}
+	}
 
 	return true;
 
@@ -1010,15 +1029,19 @@ no_memory:
  * Process an inline stylesheet in the document.
  *
  * \param  c      content structure
+ * \param  index  Index of stylesheet in stylesheet_content array
  * \param  style  xml node of style element
  * \return  true on success, false if an error occurred
  */
 
-bool html_process_style_element(struct content *c, xmlNode *style)
+bool html_process_style_element(struct content *c, unsigned int index,
+		xmlNode *style)
 {
 	xmlNode *child;
 	char *type, *media, *data;
 	union content_msg_data msg_data;
+	struct content **stylesheet_content;
+	const char *params[] = { 0 };
 
 	/* type='text/css', or not present (invalid but common) */
 	if ((type = (char *) xmlGetProp(style, (const xmlChar *) "type"))) {
@@ -1039,20 +1062,24 @@ bool html_process_style_element(struct content *c, xmlNode *style)
 		xmlFree(media);
 	}
 
+	/* Extend array */
+	stylesheet_content = talloc_realloc(c, c->data.html.stylesheet_content,
+			struct content *, index + 1);
+	if (stylesheet_content == NULL)
+		goto no_memory;
+
+	c->data.html.stylesheet_content = stylesheet_content;
+
 	/* create stylesheet */
-	if (c->data.html.stylesheet_content[STYLESHEET_STYLE] == 0) {
-		const char *params[] = { 0 };
-		c->data.html.stylesheet_content[STYLESHEET_STYLE] =
-				content_create(c->data.html.base_url);
-		if (!c->data.html.stylesheet_content[STYLESHEET_STYLE])
-			goto no_memory;
-		if (!content_set_type(c->data.html.
-				stylesheet_content[STYLESHEET_STYLE],
-				CONTENT_CSS, "text/css", params))
-			/** \todo  not necessarily caused by
-			 *  memory exhaustion */
-			goto no_memory;
-	}
+	c->data.html.stylesheet_content[index] = 
+			content_create(c->data.html.base_url);
+	if (c->data.html.stylesheet_content[index] == NULL)
+		goto no_memory;
+	if (!content_set_type(c->data.html.stylesheet_content[index],
+			CONTENT_CSS, "text/css", params, c))
+		/** \todo  not necessarily caused by
+		 *  memory exhaustion */
+		goto no_memory;
 
 	/* can't just use xmlNodeGetContent(style), because that won't
 	 * give the content of comments which may be used to 'hide'
@@ -1060,7 +1087,7 @@ bool html_process_style_element(struct content *c, xmlNode *style)
 	for (child = style->children; child != 0; child = child->next) {
 		data = (char *) xmlNodeGetContent(child);
 		if (!content_process_data(c->data.html.
-				stylesheet_content[STYLESHEET_STYLE],
+				stylesheet_content[index],
 				data, strlen(data))) {
 			xmlFree(data);
 			/** \todo  not necessarily caused by
@@ -1068,6 +1095,21 @@ bool html_process_style_element(struct content *c, xmlNode *style)
 			goto no_memory;
 		}
 		xmlFree(data);
+	}
+
+	/* Convert the content */
+	if (nscss_convert(c->data.html.stylesheet_content[index], c->width,
+			c->height)) {
+		if (!content_add_user(c->data.html.stylesheet_content[index],
+				html_convert_css_callback,
+				(intptr_t) c, index)) {
+			/* no memory */
+			c->data.html.stylesheet_content[index] = NULL;
+			goto no_memory;
+		}
+	} else {
+		/* conversion failed */
+		c->data.html.stylesheet_content[index] = NULL;
 	}
 
 	return true;
@@ -1181,7 +1223,7 @@ void html_convert_css_callback(content_msg msg, struct content *css,
  * \return  true on success, false on memory exhaustion
  */
 
-bool html_fetch_object(struct content *c, char *url, struct box *box,
+bool html_fetch_object(struct content *c, const char *url, struct box *box,
 		const content_type *permitted_types,
 		int available_width, int available_height,
 		bool background)
@@ -1693,10 +1735,10 @@ void html_reformat(struct content *c, int width, int height)
 
 	/* width and height are at least margin box of document */
 	c->width = layout->x + layout->padding[LEFT] + layout->width +
-			layout->padding[RIGHT] + layout->border[RIGHT] +
+			layout->padding[RIGHT] + layout->border[RIGHT].width +
 			layout->margin[RIGHT];
 	c->height = layout->y + layout->padding[TOP] + layout->height +
-			layout->padding[BOTTOM] + layout->border[BOTTOM] +
+			layout->padding[BOTTOM] + layout->border[BOTTOM].width +
 			layout->margin[BOTTOM];
 
 	/* if boxes overflow right or bottom edge, expand to contain it */
@@ -1757,6 +1799,12 @@ void html_destroy(struct content *c)
 		c->data.html.iframe = NULL;
 	}
 
+	/* Destroy selection context */
+	if (c->data.html.select_ctx) {
+		css_select_ctx_destroy(c->data.html.select_ctx);
+		c->data.html.select_ctx = NULL;
+	}
+
 	/* Free stylesheets */
 	if (c->data.html.stylesheet_count) {
 		for (i = 0; i != c->data.html.stylesheet_count; i++) {
@@ -1767,11 +1815,6 @@ void html_destroy(struct content *c)
 						(intptr_t) c, i);
 		}
 	}
-
-	talloc_free(c->data.html.working_stylesheet);
-
-	/*if (c->data.html.style)
-		css_free_style(c->data.html.style);*/
 
 	/* Free objects */
 	for (i = 0; i != c->data.html.object_count; i++) {
@@ -1784,6 +1827,8 @@ void html_destroy(struct content *c)
 					c->data.html.object[i].content);
 		}
 	}
+
+	lwc_context_unref(c->data.html.dict);
 }
 
 void html_destroy_frameset(struct content_html_frames *frameset) {

@@ -28,6 +28,7 @@
 #include "oslib/wimpreadsysinfo.h"
 #include "rufl.h"
 #include "css/css.h"
+#include "css/utils.h"
 #include "render/font.h"
 #include "riscos/gui.h"
 #include "riscos/options.h"
@@ -235,6 +236,10 @@ bool nsfont_width(const plot_font_style_t *fstyle,
 	rufl_code code;
 
 	nsfont_read_style(fstyle, &font_family, &font_size, &font_style);
+	if (font_size == 0) {
+		*width = 0;
+		return true;
+	}
 
 	code = rufl_width(font_family, font_style, font_size,
 			string, length,
@@ -277,6 +282,11 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 	rufl_code code;
 
 	nsfont_read_style(fstyle, &font_family, &font_size, &font_style);
+	if (font_size == 0) {
+		*char_offset = 0;
+		*actual_x = 0;
+		return true;
+	}
 
 	code = rufl_x_to_offset(font_family, font_style, font_size,
 			string, length,
@@ -324,6 +334,11 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 	rufl_code code;
 
 	nsfont_read_style(fstyle, &font_family, &font_size, &font_style);
+	if (font_size == 0) {
+		*char_offset = 0;
+		*actual_x = 0;
+		return true;
+	}
 
 	code = rufl_split(font_family, font_style, font_size,
 			string, length,
@@ -383,6 +398,8 @@ bool nsfont_paint(const plot_font_style_t *fstyle, const char *string,
 	rufl_code code;
 
 	nsfont_read_style(fstyle, &font_family, &font_size, &font_style);
+	if (font_size == 0)
+		return true;
 
 	code = rufl_paint(font_family, font_style, font_size * scale,
 			string, length, x, y,
@@ -426,8 +443,6 @@ void nsfont_read_style(const plot_font_style_t *fstyle,
 	};
 
 	*font_size = (fstyle->size * 16) / FONT_SIZE_SCALE;
-	if (*font_size < option_font_min_size * 1.6)
-		*font_size = option_font_min_size * 1.6;
 	if (1600 < *font_size)
 		*font_size = 1600;
 

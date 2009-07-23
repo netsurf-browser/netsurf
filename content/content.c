@@ -247,7 +247,8 @@ const char * const content_status_name[] = {
 
 /** An entry in handler_map. */
 struct handler_entry {
-	bool (*create)(struct content *c, const char *params[]);
+	bool (*create)(struct content *c, struct content *parent,
+			const char *params[]);
 	bool (*process_data)(struct content *c, char *data, unsigned int size);
 	bool (*convert)(struct content *c, int width, int height);
 	void (*reformat)(struct content *c, int width, int height);
@@ -280,7 +281,8 @@ static const struct handler_entry handler_map[] = {
 	{textplain_create, textplain_process_data, textplain_convert,
 		textplain_reformat, textplain_destroy, 0, textplain_redraw, 0,
 		0, 0, true},
-	{0, 0, css_convert, 0, css_destroy, 0, 0, 0, 0, 0, false},
+	{nscss_create, nscss_process_data, nscss_convert, 0, nscss_destroy, 
+		0, 0, 0, 0, 0, true},
 #ifdef WITH_JPEG
 	{0, 0, nsjpeg_convert, 0, nsjpeg_destroy, 0,
 		nsjpeg_redraw, nsjpeg_redraw_tiled, 0, 0, false},
@@ -565,7 +567,8 @@ bool content_can_reformat(struct content *c)
  */
 
 bool content_set_type(struct content *c, content_type type,
-		const char *mime_type, const char *params[])
+		const char *mime_type, const char *params[],
+		struct content *parent)
 {
 	union content_msg_data msg_data;
 	struct content *clone;
@@ -637,7 +640,7 @@ bool content_set_type(struct content *c, content_type type,
 	}
 
 	if (handler_map[type].create) {
-		if (!handler_map[type].create(c, params)) {
+		if (!handler_map[type].create(c, parent, params)) {
 			c->type = CONTENT_UNKNOWN;
 			c->status = CONTENT_STATUS_ERROR;
 			return false;

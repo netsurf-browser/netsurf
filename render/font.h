@@ -53,7 +53,7 @@ struct font_functions
 
 extern const struct font_functions nsfont;
 
-void font_plot_style_from_css(const struct css_style *css, 
+void font_plot_style_from_css(const css_computed_style *css, 
 		plot_font_style_t *fstyle);
 
 #endif

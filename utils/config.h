@@ -34,6 +34,21 @@
 char *strndup(const char *s, size_t n);
 #endif
 
+#define HAVE_STRCASESTR
+#if !(defined(_GNU_SOURCE) || defined(__NetBSD__) || defined(__OpenBSD__)) \
+	|| defined(riscos) || defined(__APPLE__)
+#undef HAVE_STRCASESTR
+char *strcasestr(const char *haystack, const char *needle);
+#endif
+
+#define HAVE_STRCHRNUL
+/* For some reason, UnixLib defines this unconditionally. 
+ * Assume we're using UnixLib if building for RISC OS. */
+#if !(defined(_GNU_SOURCE) || defined(riscos))
+#undef HAVE_STRCHRNUL
+char *strchrnul(const char *s, int c);
+#endif
+
 /* This section toggles build options on and off.
  * Simply undefine a symbol to turn the relevant feature off.
  *

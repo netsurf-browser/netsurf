@@ -37,6 +37,7 @@
 #include <hpdf.h>
 
 #include "css/css.h"
+#include "css/utils.h"
 
 #include "desktop/options.h"
 #include "desktop/save_pdf/font_haru.h"
@@ -216,8 +217,7 @@ bool haru_nsfont_position_in_string(const plot_font_style_t *fstyle,
 /**
  * Find where to split a string to make it fit a width.
  *
- * \param  fstyle	css_style for this text, with style->font_size.size ==
- *			CSS_FONT_SIZE_LENGTH
+ * \param  fstyle	style for this text
  * \param  string	string to measure (no UTF-8 currently)
  * \param  length	length of string
  * \param  x		width available
@@ -268,7 +268,7 @@ bool haru_nsfont_split(const plot_font_style_t *fstyle,
 /**
  * Apply font style to a Haru HPDF_Page
  *
- * \param  style	plot style for this page
+ * \param  fstyle	plot style for this page
  * \param  doc		document owning the page
  * \param  page		the page to apply the style to
  * \param  font		if this is non NULL it is updated to the font based

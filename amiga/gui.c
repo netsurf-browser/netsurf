@@ -27,6 +27,7 @@
 #include "amiga/schedule.h"
 #include <proto/timer.h>
 #include "content/urldb.h"
+#include "css/utils.h"
 #include <libraries/keymap.h>
 #include "desktop/history_core.h"
 #include <proto/locale.h>
@@ -105,6 +106,7 @@
 #include <reaction/reaction_macros.h>
 
 char *default_stylesheet_url;
+char *quirks_stylesheet_url;
 char *adblock_stylesheet_url;
 
 struct MsgPort *appport;
@@ -324,6 +326,7 @@ void gui_init(int argc, char** argv)
 	messages_load(lang);
 
 	default_stylesheet_url = "file:///PROGDIR:Resources/amiga.css";
+	quirks_stylesheet_url = "file:///PROGDIR:Resources/quirks.css";
 	adblock_stylesheet_url = "file:///PROGDIR:Resources/adblock.css";
 
 	if(hubbub_initialise("PROGDIR:Resources/Aliases",myrealloc,NULL) != HUBBUB_OK)
@@ -331,7 +334,7 @@ void gui_init(int argc, char** argv)
 		die(messages_get("NoMemory"));
 	}
 
-	css_screen_dpi = 72;
+	nscss_screen_dpi = INTTOFIX(72);
 	css_scrollbar_fg_colour = 0x00aaaaaa;
 	css_scrollbar_bg_colour = 0x00833c3c;
 	css_scrollbar_arrow_colour = 0x00d6d6d6;
@@ -1303,7 +1306,7 @@ void ami_handle_appmsg(void)
 						box = content->data.html.layout;
 						while ((box = box_at_point(box, x, y, &box_x, &box_y, &content)))
 						{
-							if (box->style && box->style->visibility == CSS_VISIBILITY_HIDDEN)	continue;
+							if (box->style && css_computed_visibility(box->style) == CSS_VISIBILITY_HIDDEN)	continue;
 
 							if (box->gadget)
 							{

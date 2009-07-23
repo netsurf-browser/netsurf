@@ -41,7 +41,7 @@
 
 static plot_font_style_t root_style = {
 	.family = PLOT_FONT_FAMILY_SANS_SERIF,
-	.size = 11,
+	.size = 11 * FONT_SIZE_SCALE,
 	.weight = 400,
 	.flags = FONTF_NONE,
 };	

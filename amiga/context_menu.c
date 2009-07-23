@@ -92,7 +92,7 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 
 	while(curbox = box_at_point(curbox,x,y,&box_x,&box_y,&cc))
 	{
-		if (curbox->style && curbox->style->visibility == CSS_VISIBILITY_HIDDEN)	continue;
+		if (curbox->style && css_computed_visibility(curbox->style) == CSS_VISIBILITY_HIDDEN)	continue;
 
 		if(curbox->href)
 		{

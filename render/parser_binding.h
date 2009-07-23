@@ -39,6 +39,12 @@ typedef enum binding_encoding_source {
 	ENCODING_SOURCE_META 
 } binding_encoding_source;
 
+typedef enum binding_quirks_mode {
+	BINDING_QUIRKS_MODE_NONE,
+	BINDING_QUIRKS_MODE_LIMITED,
+	BINDING_QUIRKS_MODE_FULL
+} binding_quirks_mode;
+
 binding_error binding_create_tree(void *arena, const char *charset, void **ctx);
 binding_error binding_destroy_tree(void *ctx);
 
@@ -46,7 +52,7 @@ binding_error binding_parse_chunk(void *ctx, const uint8_t *data, size_t len);
 binding_error binding_parse_completed(void *ctx);
 
 const char *binding_get_encoding(void *ctx, binding_encoding_source *source);
-xmlDocPtr binding_get_document(void *ctx);
+xmlDocPtr binding_get_document(void *ctx, binding_quirks_mode *quirks);
 
 struct form *binding_get_forms(void *ctx);
 struct form_control *binding_get_control_for_node(void *ctx, xmlNodePtr node);

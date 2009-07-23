@@ -42,12 +42,13 @@ struct plotters;
 
 /* entries in stylesheet_content */
 #define STYLESHEET_BASE		0	/* base style sheet */
-#define STYLESHEET_ADBLOCK	1	/* adblocking stylesheet */
-#define STYLESHEET_STYLE	2	/* <style> elements (not cached) */
+#define STYLESHEET_QUIRKS	1	/* quirks mode stylesheet */
+#define STYLESHEET_ADBLOCK	2	/* adblocking stylesheet */
 #define STYLESHEET_START	3	/* start of document stylesheets */
 
 extern char *default_stylesheet_url;
 extern char *adblock_stylesheet_url;
+extern char *quirks_stylesheet_url;
 
 struct frame_dimension {
   	float value;
@@ -117,6 +118,9 @@ struct content_html_iframe {
 struct content_html_data {
 	void *parser_binding;
 	xmlDoc *document;
+	binding_quirks_mode quirks; /**< Quirkyness of document */
+
+	lwc_context *dict; /**< Internment context for this document */
 
 	char *encoding;	/**< Encoding of source, 0 if unknown. */
 	binding_encoding_source encoding_source;
@@ -133,9 +137,8 @@ struct content_html_data {
 	unsigned int stylesheet_count;
 	/** Stylesheets. Each may be 0. */
 	struct content **stylesheet_content;
-	struct css_style *style;  /**< Base style. */
-	/** Working stylesheet. */
-	struct css_working_stylesheet *working_stylesheet;
+	/**< Style selection context */
+	css_select_ctx *select_ctx;
 
 	/** Number of entries in object. */
 	unsigned int object_count;
@@ -168,12 +171,13 @@ struct content_html_data {
 extern bool html_redraw_debug;
 
 
-bool html_create(struct content *c, const char *params[]);
+bool html_create(struct content *c, struct content *parent, 
+		const char *params[]);
 bool html_process_data(struct content *c, char *data, unsigned int size);
 bool html_convert(struct content *c, int width, int height);
 void html_reformat(struct content *c, int width, int height);
 void html_destroy(struct content *c);
-bool html_fetch_object(struct content *c, char *url, struct box *box,
+bool html_fetch_object(struct content *c, const char *url, struct box *box,
 		const content_type *permitted_types,
 		int available_width, int available_height,
 		bool background);

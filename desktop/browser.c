@@ -1421,10 +1421,12 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 
 	while ((next_box = box_at_point(box, x, y, &box_x, &box_y, &content)) !=
 			NULL) {
+		enum css_overflow overflow = CSS_OVERFLOW_VISIBLE;
+
 		box = next_box;
 
-		if (box->style &&
-				box->style->visibility == CSS_VISIBILITY_HIDDEN)
+		if (box->style && css_computed_visibility(box->style) == 
+				CSS_VISIBILITY_HIDDEN)
 			continue;
 
 		if (box->object)
@@ -1458,14 +1460,16 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 		if (box->title)
 			title = box->title;
 
-		if (box->style && box->style->cursor != CSS_CURSOR_UNKNOWN)
-			pointer = get_pointer_shape(bw, box, false);
+		pointer = get_pointer_shape(bw, box, false);
+
+		if (box->style)
+			overflow = css_computed_overflow(box->style);
 
 		if (box->style && box->type != BOX_BR &&
 				box->type != BOX_INLINE &&
 				box->type != BOX_TEXT &&
-				(box->style->overflow == CSS_OVERFLOW_SCROLL ||
-				 box->style->overflow == CSS_OVERFLOW_AUTO) &&
+				(overflow == CSS_OVERFLOW_SCROLL ||
+				 overflow == CSS_OVERFLOW_AUTO) &&
 				((box_vscrollbar_present(box) &&
 				  box_x + box->scroll_x + box->padding[LEFT] +
 				  box->width < x) ||
@@ -2464,7 +2468,9 @@ gui_pointer_shape get_pointer_shape(struct browser_window *bw, struct box *box,
 		bool imagemap)
 {
 	gui_pointer_shape pointer;
-	struct css_style *style;
+	css_computed_style *style;
+	enum css_cursor cursor;
+	lwc_string **cursor_uris;
 
 	assert(bw);
 
@@ -2481,84 +2487,83 @@ gui_pointer_shape get_pointer_shape(struct browser_window *bw, struct box *box,
 	else
 		style = box->style;
 
-	assert(style);
-	switch (style->cursor) {
-		case CSS_CURSOR_AUTO:
-			if (box->href || (box->gadget &&
-					(box->gadget->type == GADGET_IMAGE ||
-					box->gadget->type == GADGET_SUBMIT)) ||
-					imagemap) {
-				/* link */
-				pointer = GUI_POINTER_POINT;
-			} else if (box->gadget &&
-					(box->gadget->type == GADGET_TEXTBOX ||
-					box->gadget->type == GADGET_PASSWORD ||
-					box->gadget->type == GADGET_TEXTAREA)) {
-				/* text input */
-				pointer = GUI_POINTER_CARET;
-			} else {
-				/* anything else */
-				if (loading)
-					/* loading new content */
-					pointer = GUI_POINTER_PROGRESS;
-				else
-					pointer = GUI_POINTER_DEFAULT;
-			}
-			break;
-		case CSS_CURSOR_CROSSHAIR:
-			pointer = GUI_POINTER_CROSS;
-			break;
-		case CSS_CURSOR_POINTER:
+	if (style == NULL)
+		return GUI_POINTER_DEFAULT;
+
+	cursor = css_computed_cursor(style, &cursor_uris);
+
+	switch (cursor) {
+	case CSS_CURSOR_AUTO:
+		if (box->href || (box->gadget &&
+				(box->gadget->type == GADGET_IMAGE ||
+				box->gadget->type == GADGET_SUBMIT)) ||
+				imagemap) {
+			/* link */
 			pointer = GUI_POINTER_POINT;
-			break;
-		case CSS_CURSOR_MOVE:
-			pointer = GUI_POINTER_MOVE;
-			break;
-		case CSS_CURSOR_E_RESIZE:
-			pointer = GUI_POINTER_RIGHT;
-			break;
-		case CSS_CURSOR_W_RESIZE:
-			pointer = GUI_POINTER_LEFT;
-			break;
-		case CSS_CURSOR_N_RESIZE:
-			pointer = GUI_POINTER_UP;
-			break;
-		case CSS_CURSOR_S_RESIZE:
-			pointer = GUI_POINTER_DOWN;
-			break;
-		case CSS_CURSOR_NE_RESIZE:
-			pointer = GUI_POINTER_RU;
-			break;
-		case CSS_CURSOR_SW_RESIZE:
-			pointer = GUI_POINTER_LD;
-			break;
-		case CSS_CURSOR_SE_RESIZE:
-			pointer = GUI_POINTER_RD;
-			break;
-		case CSS_CURSOR_NW_RESIZE:
-			pointer = GUI_POINTER_LU;
-			break;
-		case CSS_CURSOR_TEXT:
+		} else if (box->gadget &&
+				(box->gadget->type == GADGET_TEXTBOX ||
+				box->gadget->type == GADGET_PASSWORD ||
+				box->gadget->type == GADGET_TEXTAREA)) {
+			/* text input */
 			pointer = GUI_POINTER_CARET;
-			break;
-		case CSS_CURSOR_WAIT:
-			pointer = GUI_POINTER_WAIT;
-			break;
-		case CSS_CURSOR_PROGRESS:
-			pointer = GUI_POINTER_PROGRESS;
-			break;
-		case CSS_CURSOR_NO_DROP:
-			pointer = GUI_POINTER_NO_DROP;
-			break;
-		case CSS_CURSOR_NOT_ALLOWED:
-			pointer = GUI_POINTER_NOT_ALLOWED;
-			break;
-		case CSS_CURSOR_HELP:
-			pointer = GUI_POINTER_HELP;
-			break;
-		default:
-			pointer = GUI_POINTER_DEFAULT;
-			break;
+		} else {
+			/* anything else */
+			if (loading) {
+				/* loading new content */
+				pointer = GUI_POINTER_PROGRESS;
+			} else {
+				pointer = GUI_POINTER_DEFAULT;
+			}
+		}
+		break;
+	case CSS_CURSOR_CROSSHAIR:
+		pointer = GUI_POINTER_CROSS;
+		break;
+	case CSS_CURSOR_POINTER:
+		pointer = GUI_POINTER_POINT;
+		break;
+	case CSS_CURSOR_MOVE:
+		pointer = GUI_POINTER_MOVE;
+		break;
+	case CSS_CURSOR_E_RESIZE:
+		pointer = GUI_POINTER_RIGHT;
+		break;
+	case CSS_CURSOR_W_RESIZE:
+		pointer = GUI_POINTER_LEFT;
+		break;
+	case CSS_CURSOR_N_RESIZE:
+		pointer = GUI_POINTER_UP;
+		break;
+	case CSS_CURSOR_S_RESIZE:
+		pointer = GUI_POINTER_DOWN;
+		break;
+	case CSS_CURSOR_NE_RESIZE:
+		pointer = GUI_POINTER_RU;
+		break;
+	case CSS_CURSOR_SW_RESIZE:
+		pointer = GUI_POINTER_LD;
+		break;
+	case CSS_CURSOR_SE_RESIZE:
+		pointer = GUI_POINTER_RD;
+		break;
+	case CSS_CURSOR_NW_RESIZE:
+		pointer = GUI_POINTER_LU;
+		break;
+	case CSS_CURSOR_TEXT:
+		pointer = GUI_POINTER_CARET;
+		break;
+	case CSS_CURSOR_WAIT:
+		pointer = GUI_POINTER_WAIT;
+		break;
+	case CSS_CURSOR_PROGRESS:
+		pointer = GUI_POINTER_PROGRESS;
+		break;
+	case CSS_CURSOR_HELP:
+		pointer = GUI_POINTER_HELP;
+		break;
+	default:
+		pointer = GUI_POINTER_DEFAULT;
+		break;
 	}
 
 	return pointer;

@@ -37,6 +37,8 @@
 #include "utils/config.h"
 #include "content/content.h"
 #include "css/css.h"
+#include "css/utils.h"
+#include "css/select.h"
 #include "desktop/browser.h"
 #include "desktop/options.h"
 #include "render/box.h"
@@ -82,59 +84,30 @@ static const content_type image_types[] = {
 #endif
 	CONTENT_UNKNOWN };
 
-#define MAX_SPAN (100)
-
-
 /* the strings are not important, since we just compare the pointers */
 const char *TARGET_SELF = "_self";
 const char *TARGET_PARENT = "_parent";
 const char *TARGET_TOP = "_top";
 const char *TARGET_BLANK = "_blank";
 
-/* keeps track of markup presentation */
-struct markup_track {
-	enum {
-		ALIGN_NONE,
-		ALIGN_LEFT,
-		ALIGN_CENTER,
-		ALIGN_RIGHT
-	} align;
-	bool cell_border;
-	colour border_color;
-
-	bool cell_padding;
-	long padding_width;
-
-	bool table;
-};
-
 static bool convert_xml_to_box(xmlNode *n, struct content *content,
-		struct css_style *parent_style,
-		struct box *parent, struct box **inline_container,
-		char *href, const char *target, char *title,
-		struct markup_track markup_track,
-		struct css_importance *author);
-bool box_construct_element(xmlNode *n, struct content *content,
-		struct css_style *parent_style,
-		struct box *parent, struct box **inline_container,
-		char *href, const char *target, char *title,
-		struct markup_track markup_track,
-		struct css_importance *author);
-bool box_construct_text(xmlNode *n, struct content *content,
-		struct css_style *parent_style,
+		const css_computed_style *parent_style,
 		struct box *parent, struct box **inline_container,
 		char *href, const char *target, char *title);
-static struct css_style * box_get_style(struct content *c,
-		struct css_style *parent_style,
-		xmlNode *n, struct markup_track *markup_track,
-		struct css_importance *author);
-static void box_solve_display(struct css_style *style, bool root);
+bool box_construct_element(xmlNode *n, struct content *content,
+		const css_computed_style *parent_style,
+		struct box *parent, struct box **inline_container,
+		char *href, const char *target, char *title);
+bool box_construct_text(xmlNode *n, struct content *content,
+		const css_computed_style *parent_style,
+		struct box *parent, struct box **inline_container,
+		char *href, const char *target, char *title);
+static css_computed_style * box_get_style(struct content *c,
+		const css_computed_style *parent_style, xmlNode *n);
 static void box_text_transform(char *s, unsigned int len,
-		css_text_transform tt);
+		enum css_text_transform tt);
 #define BOX_SPECIAL_PARAMS xmlNode *n, struct content *content, \
-		struct box *box, bool *convert_children, \
-		struct markup_track markup_track, \
-		struct css_importance *author
+		struct box *box, bool *convert_children
 static bool box_a(BOX_SPECIAL_PARAMS);
 static bool box_body(BOX_SPECIAL_PARAMS);
 static bool box_br(BOX_SPECIAL_PARAMS);
@@ -157,8 +130,10 @@ static bool box_get_attribute(xmlNode *n, const char *attribute,
 		void *context, char **value);
 static struct frame_dimension *box_parse_multi_lengths(const char *s,
 		unsigned int *count);
-static void parse_inline_colour(char *text, colour *variable);
-
+static bool fetch_object_interned_url(struct content *c, lwc_string *url, 
+		struct box *box, const content_type *permitted_types,
+		int available_width, int available_height,
+		bool background);
 
 /* element_table must be sorted by name */
 struct element_entry {
@@ -195,12 +170,7 @@ static const struct element_entry element_table[] = {
 bool xml_to_box(xmlNode *n, struct content *c)
 {
 	struct box root;
-	struct box *inline_container = 0;
-	struct css_importance author;
-	struct markup_track markup_track;
-	markup_track.cell_border = false;
-	markup_track.cell_padding = false;
-	markup_track.align = ALIGN_NONE;
+	struct box *inline_container = NULL;
 
 	assert(c->type == CONTENT_HTML);
 
@@ -214,20 +184,12 @@ bool xml_to_box(xmlNode *n, struct content *c)
 	root.float_children = NULL;
 	root.next_float = NULL;
 
-	c->data.html.style = talloc_memdup(c, &css_base_style,
-			sizeof css_base_style);
-	if (!c->data.html.style)
-		return false;
-	c->data.html.style->font_size.value.length.value =
-			option_font_size * 0.1;
-	/* and get the default font family from the options */
-	c->data.html.style->font_family = option_font_default;
-
 	c->data.html.object_count = 0;
 	c->data.html.object = 0;
 
-	if (!convert_xml_to_box(n, c, c->data.html.style, &root,
-			&inline_container, 0, 0, 0, markup_track, &author))
+	/* The root box's style */
+	if (!convert_xml_to_box(n, c, NULL, &root,
+			&inline_container, 0, 0, 0))
 		return false;
 
 	if (!box_normalise_block(&root, c))
@@ -241,7 +203,7 @@ bool xml_to_box(xmlNode *n, struct content *c)
 
 
 /* mapping from CSS display to box type
- * this table must be in sync with css/css_enums */
+ * this table must be in sync with libcss' css_display enum */
 static const box_type box_map[] = {
 	0, /*CSS_DISPLAY_INHERIT,*/
 	BOX_INLINE, /*CSS_DISPLAY_INLINE,*/
@@ -255,10 +217,11 @@ static const box_type box_map[] = {
 	BOX_TABLE_ROW_GROUP, /*CSS_DISPLAY_TABLE_HEADER_GROUP,*/
 	BOX_TABLE_ROW_GROUP, /*CSS_DISPLAY_TABLE_FOOTER_GROUP,*/
 	BOX_TABLE_ROW, /*CSS_DISPLAY_TABLE_ROW,*/
-	BOX_INLINE, /*CSS_DISPLAY_TABLE_COLUMN_GROUP,*/
-	BOX_INLINE, /*CSS_DISPLAY_TABLE_COLUMN,*/
+	BOX_NONE, /*CSS_DISPLAY_TABLE_COLUMN_GROUP,*/
+	BOX_NONE, /*CSS_DISPLAY_TABLE_COLUMN,*/
 	BOX_TABLE_CELL, /*CSS_DISPLAY_TABLE_CELL,*/
-	BOX_INLINE /*CSS_DISPLAY_TABLE_CAPTION,*/
+	BOX_INLINE, /*CSS_DISPLAY_TABLE_CAPTION,*/
+	BOX_NONE /*CSS_DISPLAY_NONE*/
 };
 
 
@@ -267,31 +230,25 @@ static const box_type box_map[] = {
  *
  * \param  n		 fragment of xml tree
  * \param  content	 content of type CONTENT_HTML that is being processed
- * \param  parent_style  style at this point in xml tree
+ * \param  parent_style  style at this point in xml tree, or NULL for root box
  * \param  parent	 parent in box tree
  * \param  inline_container  current inline container box, or 0, updated to
  *			 new current inline container on exit
  * \param  href		 current link URL, or 0 if not in a link
  * \param  target	 current link target, or 0 if none
  * \param  title	 current title, or 0 if none
- * \param  markup_track	 track presentation markup that affects descendents
- * \param  author	 denotes whether current style has author level
- *			 importance for certain properties
  * \return  true on success, false on memory exhaustion
  */
 
 bool convert_xml_to_box(xmlNode *n, struct content *content,
-		struct css_style *parent_style,
+		const css_computed_style *parent_style,
 		struct box *parent, struct box **inline_container,
-		char *href, const char *target, char *title,
-		struct markup_track markup_track,
-		struct css_importance *author)
+		char *href, const char *target, char *title)
 {
 	switch (n->type) {
 	case XML_ELEMENT_NODE:
 		return box_construct_element(n, content, parent_style, parent,
-				inline_container,
-				href, target, title, markup_track, author);
+				inline_container, href, target, title);
 	case XML_TEXT_NODE:
 		return box_construct_text(n, content, parent_style, parent,
 				inline_container, href, target, title);
@@ -307,25 +264,20 @@ bool convert_xml_to_box(xmlNode *n, struct content *content,
  *
  * \param  n		 XML node of type XML_ELEMENT_NODE
  * \param  content	 content of type CONTENT_HTML that is being processed
- * \param  parent_style  style at this point in xml tree
+ * \param  parent_style  style at this point in xml tree, or NULL for root node
  * \param  parent	 parent in box tree
  * \param  inline_container  current inline container box, or 0, updated to
  *			 new current inline container on exit
  * \param  href		 current link URL, or 0 if not in a link
  * \param  target	 current link target, or 0 if none
  * \param  title	 current title, or 0 if none
- * \param  markup_track	 track presentation markup that affects descendents
- * \param  author	 denotes whether current style has author level
- *			 importance for certain properties
  * \return  true on success, false on memory exhaustion
  */
 
 bool box_construct_element(xmlNode *n, struct content *content,
-		struct css_style *parent_style,
+		const css_computed_style *parent_style,
 		struct box *parent, struct box **inline_container,
-		char *href, const char *target, char *title,
-		struct markup_track markup_track,
-		struct css_importance *author)
+		char *href, const char *target, char *title)
 {
 	bool convert_children = true;
 	char *id = 0;
@@ -333,14 +285,14 @@ bool box_construct_element(xmlNode *n, struct content *content,
 	struct box *box = 0;
 	struct box *inline_container_c;
 	struct box *inline_end;
-	struct css_style *style = 0;
+	css_computed_style *style = 0;
 	struct element_entry *element;
 	xmlChar *title0;
 	xmlNode *c;
+	lwc_string *bgimage_uri;
 
 	assert(n);
 	assert(n->type == XML_ELEMENT_NODE);
-	assert(parent_style);
 	assert(parent);
 	assert(inline_container);
 
@@ -352,18 +304,23 @@ bool box_construct_element(xmlNode *n, struct content *content,
 	 */
 	parent->strip_leading_newline = 0;
 
-	style = box_get_style(content, parent_style, n, &markup_track, author);
+	style = box_get_style(content, parent_style, n);
 	if (!style)
 		return false;
 
 	/* extract title attribute, if present */
 	if ((title0 = xmlGetProp(n, (const xmlChar *) "title"))) {
 		char *title1 = squash_whitespace((char *) title0);
+	
 		xmlFree(title0);
+	
 		if (!title1)
 			return false;
+
 		title = talloc_strdup(content, title1);
+
 		free(title1);
+
 		if (!title)
 			return false;
 	}
@@ -376,8 +333,25 @@ bool box_construct_element(xmlNode *n, struct content *content,
 	box = box_create(style, href, target, title, id, content);
 	if (!box)
 		return false;
-	/* set box type from style */
-	box->type = box_map[style->display];
+	/* set box type from computed display */
+	if ((css_computed_position(style) == CSS_POSITION_ABSOLUTE ||
+			css_computed_position(style) == CSS_POSITION_FIXED) &&
+			(css_computed_display_static(style) == 
+					CSS_DISPLAY_INLINE ||
+			 css_computed_display_static(style) == 
+					CSS_DISPLAY_INLINE_BLOCK ||
+			 css_computed_display_static(style) == 
+					CSS_DISPLAY_INLINE_TABLE)) {
+		/* Special case for absolute positioning: make absolute inlines
+		 * into inline block so that the boxes are constructed in an 
+		 * inline container as if they were not absolutely positioned. 
+		 * Layout expects and handles this. */
+		box->type = box_map[CSS_DISPLAY_INLINE_BLOCK];
+	} else {
+		/* Normal mapping */
+		box->type = box_map[css_computed_display(style, 
+				n->parent == NULL)];
+	}
 
 	/* special elements */
 	element = bsearch((const char *) n->name, element_table,
@@ -385,16 +359,17 @@ bool box_construct_element(xmlNode *n, struct content *content,
 			(int (*)(const void *, const void *)) strcmp);
 	if (element) {
 		/* a special convert function exists for this element */
-		if (!element->convert(n, content, box, &convert_children,
-							markup_track, author))
+		if (!element->convert(n, content, box, &convert_children))
 			return false;
+
 		href = box->href;
 		target = box->target;
 	}
 
-	if (style->display == CSS_DISPLAY_NONE) {
+	if (box->type == BOX_NONE || css_computed_display(box->style, 
+			n->parent == NULL) == CSS_DISPLAY_NONE) {
 		/* Free style and invalidate box's style pointer */
-		talloc_free(style);
+		css_computed_style_destroy(style);
 		box->style = NULL;
 
 		/* If this box has an associated gadget, invalidate the
@@ -416,60 +391,71 @@ bool box_construct_element(xmlNode *n, struct content *content,
 			(box->type == BOX_INLINE ||
 			box->type == BOX_BR ||
 			box->type == BOX_INLINE_BLOCK ||
-			style->float_ == CSS_FLOAT_LEFT ||
-			style->float_ == CSS_FLOAT_RIGHT)) {
+			css_computed_float(style) == CSS_FLOAT_LEFT ||
+			css_computed_float(style) == CSS_FLOAT_RIGHT)) {
 		/* this is the first inline in a block: make a container */
 		*inline_container = box_create(0, 0, 0, 0, 0, content);
 		if (!*inline_container)
 			return false;
+
 		(*inline_container)->type = BOX_INLINE_CONTAINER;
+
 		box_add_child(parent, *inline_container);
 	}
 
 	if (box->type == BOX_INLINE || box->type == BOX_BR) {
 		/* inline box: add to tree and recurse */
 		box_add_child(*inline_container, box);
+
 		if (convert_children && n->children) {
 			for (c = n->children; c; c = c->next)
 				if (!convert_xml_to_box(c, content, style,
 						parent, inline_container,
-						href, target, title,
-						markup_track, author))
+						href, target, title))
 					return false;
+
 			inline_end = box_create(style, href, target, title, id,
 					content);
 			if (!inline_end)
 				return false;
+
 			inline_end->type = BOX_INLINE_END;
+
 			if (*inline_container)
 				box_add_child(*inline_container, inline_end);
 			else
 				box_add_child(box->parent, inline_end);
+
 			box->inline_end = inline_end;
 			inline_end->inline_end = box;
 		}
 	} else if (box->type == BOX_INLINE_BLOCK) {
 		/* inline block box: add to tree and recurse */
 		box_add_child(*inline_container, box);
+
 		inline_container_c = 0;
+
 		for (c = n->children; convert_children && c; c = c->next)
 			if (!convert_xml_to_box(c, content, style, box,
 					&inline_container_c,
-					href, target, title, markup_track,
-					author))
+					href, target, title))
 				return false;
 	} else {
 		/* list item: compute marker, then treat as non-inline box */
-		if (style->display == CSS_DISPLAY_LIST_ITEM) {
+		if (css_computed_display(style, n->parent == NULL) == 
+				CSS_DISPLAY_LIST_ITEM) {
+			lwc_string *image_uri;
 			struct box *marker;
+
 			marker = box_create(style, 0, 0, title, 0, content);
 			if (!marker)
 				return false;
+
 			marker->type = BOX_BLOCK;
+
 			/** \todo marker content (list-style-type) */
-			switch (style->list_style_type) {
+			switch (css_computed_list_style_type(style)) {
 			case CSS_LIST_STYLE_TYPE_DISC:
-			default:
 				/* 2022 BULLET */
 				marker->text = (char *) "\342\200\242";
 				marker->length = 3;
@@ -489,6 +475,7 @@ bool box_construct_element(xmlNode *n, struct content *content,
 			case CSS_LIST_STYLE_TYPE_LOWER_ROMAN:
 			case CSS_LIST_STYLE_TYPE_UPPER_ALPHA:
 			case CSS_LIST_STYLE_TYPE_UPPER_ROMAN:
+			default:
 				if (parent->last) {
 					struct box *last = parent->last;
 
@@ -515,9 +502,11 @@ bool box_construct_element(xmlNode *n, struct content *content,
 							list_marker->rows + 1;
 					}
 				}
+
 				marker->text = talloc_array(content, char, 20);
 				if (!marker->text)
 					return false;
+
 				snprintf(marker->text, 20, "%u.", marker->rows);
 				marker->length = strlen(marker->text);
 				break;
@@ -526,43 +515,50 @@ bool box_construct_element(xmlNode *n, struct content *content,
 				marker->length = 0;
 				break;
 			}
-			if (style->list_style_image.type ==
-					CSS_LIST_STYLE_IMAGE_URI) {
-				if (!html_fetch_object(content,
-						style->list_style_image.uri,
+
+			if (css_computed_list_style_image(style, &image_uri) ==
+					CSS_LIST_STYLE_IMAGE_URI && 
+					image_uri != NULL) {
+				if (!fetch_object_interned_url(content,
+						image_uri,
 						marker,
 						0, content->available_width,
 						1000, false))
 					return false;
 			}
+
 			box->list_marker = marker;
 			marker->parent = box;
 		}
 
 		/* float: insert a float box between the parent and
 		 * current node. Note: new parent will be the float */
-		if (style->float_ == CSS_FLOAT_LEFT ||
-				style->float_ == CSS_FLOAT_RIGHT) {
+		if (css_computed_float(style) == CSS_FLOAT_LEFT ||
+				css_computed_float(style) == CSS_FLOAT_RIGHT) {
 			parent = box_create(0, href, target, title, 0, content);
 			if (!parent)
 				return false;
-			if (style->float_ == CSS_FLOAT_LEFT)
+
+			if (css_computed_float(style) == CSS_FLOAT_LEFT)
 				parent->type = BOX_FLOAT_LEFT;
 			else
 				parent->type = BOX_FLOAT_RIGHT;
+
 			box_add_child(*inline_container, parent);
 		}
 
 		/* non-inline box: add to tree and recurse */
 		box_add_child(parent, box);
+
 		inline_container_c = 0;
+
 		for (c = n->children; convert_children && c; c = c->next)
 			if (!convert_xml_to_box(c, content, style, box,
 					&inline_container_c,
-					href, target, title, markup_track,
-					author))
+					href, target, title))
 				return false;
-		if (style->float_ == CSS_FLOAT_NONE)
+
+		if (css_computed_float(style) == CSS_FLOAT_NONE)
 			/* new inline container unless this is a float */
 			*inline_container = 0;
 	}
@@ -571,23 +567,23 @@ bool box_construct_element(xmlNode *n, struct content *content,
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "colspan"))) {
 	  	if (isdigit(s[0])) {
 			box->columns = strtol(s, NULL, 10);
-			if ((MAX_SPAN < box->columns) || (box->columns < 1))
-				box->columns = 1;
 		}
 		xmlFree(s);
 	}
+
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "rowspan"))) {
 	  	if (isdigit(s[0])) {
 			box->rows = strtol(s, NULL, 10);
-			if ((MAX_SPAN < box->rows) || (box->rows < 1))
-				box->rows = 1;
 		}
 		xmlFree(s);
 	}
 
 	/* fetch any background image for this box */
-	if (style->background_image.type == CSS_BACKGROUND_IMAGE_URI) {
-		if (!html_fetch_object(content, style->background_image.uri,
+	if (css_computed_background_image(style, &bgimage_uri) == 
+				CSS_BACKGROUND_IMAGE_IMAGE && 
+				bgimage_uri != NULL) {
+		if (!fetch_object_interned_url(content, 
+				bgimage_uri,
 				box, image_types, content->available_width,
 				1000, true))
 			return false;
@@ -613,7 +609,7 @@ bool box_construct_element(xmlNode *n, struct content *content,
  */
 
 bool box_construct_text(xmlNode *n, struct content *content,
-		struct css_style *parent_style,
+		const css_computed_style *parent_style,
 		struct box *parent, struct box **inline_container,
 		char *href, const char *target, char *title)
 {
@@ -625,8 +621,9 @@ bool box_construct_text(xmlNode *n, struct content *content,
 	assert(parent);
 	assert(inline_container);
 
-	if (parent_style->white_space == CSS_WHITE_SPACE_NORMAL ||
-			 parent_style->white_space == CSS_WHITE_SPACE_NOWRAP) {
+	if (css_computed_white_space(parent_style) == CSS_WHITE_SPACE_NORMAL ||
+			css_computed_white_space(parent_style) == 
+			CSS_WHITE_SPACE_NOWRAP) {
 		char *text = squash_whitespace((char *) n->content);
 		if (!text)
 			return false;
@@ -643,10 +640,14 @@ bool box_construct_text(xmlNode *n, struct content *content,
 						parent = parent->parent;
 					box_dump(stderr, parent, 0);
 				}
+
 				assert((*inline_container)->last != 0);
+
 				(*inline_container)->last->space = 1;
 			}
+
 			free(text);
+
 			return true;
 		}
 
@@ -657,34 +658,48 @@ bool box_construct_text(xmlNode *n, struct content *content,
 				free(text);
 				return false;
 			}
+
 			(*inline_container)->type = BOX_INLINE_CONTAINER;
+
 			box_add_child(parent, *inline_container);
 		}
 
-		box = box_create(parent_style, href, target, title, 0, content);
+		/** \todo Dropping const here is not clever */ 
+		box = box_create((css_computed_style *) parent_style, 
+				href, target, title, 0, content);
 		if (!box) {
 			free(text);
 			return false;
 		}
+
 		box->type = BOX_TEXT;
+
 		box->text = talloc_strdup(content, text);
 		free(text);
 		if (!box->text)
 			return false;
+
 		box->length = strlen(box->text);
+
 		/* strip ending space char off */
 		if (box->length > 1 && box->text[box->length - 1] == ' ') {
 			box->space = 1;
 			box->length--;
 		}
-		if (parent_style->text_transform != CSS_TEXT_TRANSFORM_NONE)
+
+		if (css_computed_text_transform(parent_style) != 
+				CSS_TEXT_TRANSFORM_NONE)
 			box_text_transform(box->text, box->length,
-					parent_style->text_transform);
-		if (parent_style->white_space == CSS_WHITE_SPACE_NOWRAP) {
+				css_computed_text_transform(parent_style));
+
+		if (css_computed_white_space(parent_style) == 
+				CSS_WHITE_SPACE_NOWRAP) {
 			unsigned int i;
+
 			for (i = 0; i != box->length &&
 						box->text[i] != ' '; ++i)
 				; /* no body */
+
 			if (i != box->length) {
 				/* there is a space in text block and we
 				 * want all spaces to be converted to NBSP
@@ -699,9 +714,12 @@ bool box_construct_text(xmlNode *n, struct content *content,
 		}
 
 		box_add_child(*inline_container, box);
+
 		if (box->text[0] == ' ') {
 			box->length--;
+
 			memmove(box->text, &box->text[1], box->length);
+
 			if (box->prev != NULL)
 				box->prev->space = 1;
 		}
@@ -710,17 +728,22 @@ bool box_construct_text(xmlNode *n, struct content *content,
 		/* white-space: pre */
 		char *text = cnv_space2nbsp((char *) n->content);
 		char *current;
+		enum css_white_space white_space =
+				css_computed_white_space(parent_style);
+
 		/* note: pre-wrap/pre-line are unimplemented */
-		assert(parent_style->white_space == CSS_WHITE_SPACE_PRE ||
-			parent_style->white_space ==
-						CSS_WHITE_SPACE_PRE_LINE ||
-			parent_style->white_space ==
-						CSS_WHITE_SPACE_PRE_WRAP);
+		assert(white_space == CSS_WHITE_SPACE_PRE ||
+				white_space == CSS_WHITE_SPACE_PRE_LINE ||
+				white_space == CSS_WHITE_SPACE_PRE_WRAP);
+
 		if (!text)
 			return false;
-		if (parent_style->text_transform != CSS_TEXT_TRANSFORM_NONE)
+
+		if (css_computed_text_transform(parent_style) != 
+				CSS_TEXT_TRANSFORM_NONE)
 			box_text_transform(text, strlen(text),
-					parent_style->text_transform);
+				css_computed_text_transform(parent_style));
+
 		current = text;
 
 		/* swallow a single leading new line */
@@ -739,7 +762,9 @@ bool box_construct_text(xmlNode *n, struct content *content,
 		do {
 			size_t len = strcspn(current, "\r\n");
 			char old = current[len];
+
 			current[len] = 0;
+
 			if (!*inline_container) {
 				*inline_container = box_create(0, 0, 0, 0, 0,
 						content);
@@ -747,26 +772,37 @@ bool box_construct_text(xmlNode *n, struct content *content,
 					free(text);
 					return false;
 				}
+
 				(*inline_container)->type =
 						BOX_INLINE_CONTAINER;
+
 				box_add_child(parent, *inline_container);
 			}
-			box = box_create(parent_style, href, target, title, 0,
-					content);
+
+			/** \todo Dropping const isn't clever */
+			box = box_create((css_computed_style *) parent_style, 
+					href, target, title, 0, content);
 			if (!box) {
 				free(text);
 				return false;
 			}
+
 			box->type = BOX_TEXT;
+
 			box->text = talloc_strdup(content, current);
 			if (!box->text) {
 				free(text);
 				return false;
 			}
+
 			box->length = strlen(box->text);
+
 			box_add_child(*inline_container, box);
+
 			current[len] = old;
+
 			current += len;
+
 			if (current[0] == '\r' && current[1] == '\n') {
 				current += 2;
 				*inline_container = 0;
@@ -775,6 +811,7 @@ bool box_construct_text(xmlNode *n, struct content *content,
 				*inline_container = 0;
 			}
 		} while (*current);
+
 		free(text);
 	}
 
@@ -782,573 +819,72 @@ bool box_construct_text(xmlNode *n, struct content *content,
 }
 
 
+static void *myrealloc(void *ptr, size_t len, void *pw)
+{
+	return talloc_realloc_size(pw, ptr, len);
+}
+
 /**
  * Get the style for an element.
  *
  * \param  c		 content of type CONTENT_HTML that is being processed
- * \param  parent_style  style at this point in xml tree
+ * \param  parent_style  style at this point in xml tree, or NULL for root
  * \param  n		 node in xml tree
- * \param  markup_track	 track presentation markup that affects descendents
- * \param  author	 denotes whether current style has author level
- *			 importance for certain properties
- * \return  the new style, or 0 on memory exhaustion
- *
- * The style is collected from three sources:
- *  1. any styles for this element in the document stylesheet(s)
- *  2. the 'style' attribute
- *  3. non-CSS HTML attributes (subject to importance of CSS style properties)
+ * \return  the new style, or NULL on memory exhaustion
  */
-
-struct css_style * box_get_style(struct content *c,
-		struct css_style *parent_style,
-		xmlNode *n, struct markup_track *markup_track,
-		struct css_importance *author)
+css_computed_style *box_get_style(struct content *c,
+		const css_computed_style *parent_style,
+		xmlNode *n)
 {
 	char *s;
-	struct css_style *style;
-	struct css_style *style_new;
-	char *url;
-	url_func_result res;
-	colour border_color = 0x888888; /* mid-grey default for tables */
+	css_stylesheet *inline_style = NULL;
+	css_computed_style *partial;
+	css_computed_style *style;
 
-	/* if not in a table, switch off cellpadding and cell borders
-	 * and record that we're not in a table */
-	if (strcmp((const char *) n->name, "thead") != 0 &&
-			strcmp((const char *) n->name, "tbody") != 0 &&
-			strcmp((const char *) n->name, "tfoot") != 0 &&
-			strcmp((const char *) n->name, "tr") != 0 &&
-			strcmp((const char *) n->name, "td") != 0 &&
-			strcmp((const char *) n->name, "th") != 0 &&
-			strcmp((const char *) n->name, "col") != 0 &&
-			strcmp((const char *) n->name, "colgroup") != 0) {
-		markup_track->cell_border = false;
-		markup_track->cell_padding = false;
-		markup_track->table = false;
-	}
-
-	style = talloc_memdup(c, parent_style, sizeof *style);
-	if (!style)
-		return 0;
-
-	style_new = talloc_memdup(c, &css_blank_style, sizeof *style_new);
-	if (!style_new)
-		return 0;
-	css_get_style(c->data.html.working_stylesheet, n, style_new, author);
-	css_cascade(style, style_new, NULL);
-
-	/* style_new isn't needed past this point */
-	talloc_free(style_new);
-
-	/* Handle style attribute. (style attribute values have high enough
-	 * specificity to override existing style data.) */
+	/* Firstly, construct inline stylesheet, if any */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "style"))) {
-		struct css_style *astyle;
-		astyle = css_duplicate_style(&css_empty_style);
-		if (!astyle) {
-			xmlFree(s);
-			return 0;
-		}
-		css_parse_property_list(c, astyle, s);
-		css_cascade(style, astyle, author);
-		css_free_style(astyle);
+		inline_style = nscss_create_inline_style(
+				(uint8_t *) s, strlen(s),
+				c->data.html.encoding, c->url, false,
+				c->data.html.dict, myrealloc, c);
+
 		xmlFree(s);
+
+		if (inline_style == NULL)
+			return NULL;
 	}
 
-	/* Apply presentational HTML attributes to style
-	 * (Only apply if style property does not have "author" level
-	 * importance or higher.)
-	 */
+	/* Select partial style for element */
+	partial = nscss_get_style(c, n, CSS_PSEUDO_ELEMENT_NONE, 
+			CSS_MEDIA_SCREEN, inline_style, myrealloc, c);
 
-	/* This property only applies to the body element, if you believe
-	 * the spec. Many browsers seem to allow it on other elements too,
-	 * so let's be generic ;) */
-	if (!author->background_image && (s = (char *) xmlGetProp(n,
-					(const xmlChar *) "background"))) {
-		res = url_join(s, c->data.html.base_url, &url);
-		xmlFree(s);
-		if (res == URL_FUNC_NOMEM) {
-			return 0;
-		} else if (res == URL_FUNC_OK) {
-			/* if url is equivalent to the parent's url,
-			 * we've got infinite inclusion: ignore */
-			if (strcmp(url, c->data.html.base_url) == 0)
-				free(url);
-			else {
-				style->background_image.type =
-						CSS_BACKGROUND_IMAGE_URI;
-				style->background_image.uri = talloc_strdup(
-						c, url);
-				free(url);
-				if (!style->background_image.uri)
-					return 0;
-			}
-		}
-	}
+	/* No longer need inline style */
+	if (inline_style != NULL)
+		css_stylesheet_destroy(inline_style);
 
-	if (!author->background_color && (s = (char *) xmlGetProp(n,
-						(const xmlChar *) "bgcolor"))) {
-		parse_inline_colour(s, &style->background_color);
-		xmlFree(s);
-	}
+	/* Failed selecting partial style -- bail out */
+	if (partial == NULL)
+		return NULL;
 
-	if (!author->color && (s = (char *) xmlGetProp(n,
-						(const xmlChar *) "color"))) {
-		parse_inline_colour(s, &style->color);
-		xmlFree(s);
-	}
+	/* If there's a parent style, compose with partial to obtain 
+	 * complete computed style for element */
+	if (parent_style != NULL) {
+		css_error error;
 
-	if (!author->height && (s = (char *) xmlGetProp(n,
-			(const xmlChar *) "height")) &&
-			((strcmp((const char *) n->name, "iframe") == 0) ||
-			(strcmp((const char *) n->name, "td") == 0) ||
-			(strcmp((const char *) n->name, "th") == 0) ||
-			(strcmp((const char *) n->name, "tr") == 0) ||
-			(strcmp((const char *) n->name, "img") == 0) ||
-			(strcmp((const char *) n->name, "object") == 0) ||
-			(strcmp((const char *) n->name, "applet") == 0))) {
-		float value = isdigit(s[0]) ? atof(s) : -1;
-		if (value <= 0 || strlen(s) == 0) {
-			/* ignore negative values and height="" */
-		} else if (strrchr(s, '%')) {
-			style->height.height = CSS_HEIGHT_PERCENT;
-			style->height.value.percent = value;
-		} else {
-			style->height.height = CSS_HEIGHT_LENGTH;
-			style->height.value.length.unit = CSS_UNIT_PX;
-			style->height.value.length.value = value;
-		}
-		xmlFree(s);
-	}
-
-	if (!author->width && strcmp((const char *) n->name, "input") == 0) {
-		int size = -1;
-		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "size"))) {
-			size = isdigit(s[0]) ? atoi(s): -1;
-			if (0 < size) {
-				char *type = (char *) xmlGetProp(n,
-						(const xmlChar *) "type");
-				style->width.width = CSS_WIDTH_LENGTH;
-				if (!type || strcasecmp(type, "text") == 0 ||
-					strcasecmp(type, "password") == 0)
-					/* in characters for text, password */
-					style->width.value.length.unit =
-							CSS_UNIT_EX;
-				else if (strcasecmp(type, "file") != 0)
-					/* in pixels otherwise; ignore width
-					 * on file, because we do them
-					 * differently to most browsers */
-					style->width.value.length.unit =
-							CSS_UNIT_PX;
-				style->width.value.length.value = size;
-				if (type)
-					xmlFree(type);
-			}
-			xmlFree(s);
-		}
-		/* If valid maxlength value is provided, the size attribute is
-		 * unset and maxlength is small, use it to reduce input width
-		 * to sensible size */
-		if ((s = (char *) xmlGetProp(n, (const xmlChar *)
-								"maxlength"))) {
-			int maxlength = isdigit(s[0]) ? atoi(s): -1;
-			if (0 < maxlength && size == -1 && maxlength < 10) {
-				char *type;
-				/* Bump up really small widths */
-				maxlength = maxlength < 5 ? maxlength + 1 :
-								maxlength;
-				type = (char *) xmlGetProp(n,
-						(const xmlChar *) "type");
-				style->width.width = CSS_WIDTH_LENGTH;
-				if (!type || strcasecmp(type, "text") == 0 ||
-					strcasecmp(type, "password") == 0)
-					/* in characters for text, password */
-					style->width.value.length.unit =
-							CSS_UNIT_EX;
-				style->width.value.length.value = maxlength;
-				if (type)
-					xmlFree(type);
-			}
-			xmlFree(s);
-		}
-	}
-
-	if (!author->color && strcmp((const char *) n->name, "body") == 0) {
-		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "text"))) {
-		  	parse_inline_colour(s, &style->color);
-			xmlFree(s);
-		}
-	}
-
-	if (!author->width && (s = (char *) xmlGetProp(n,
-			(const xmlChar *) "width")) &&
-			((strcmp((const char *) n->name, "hr") == 0) ||
-			(strcmp((const char *) n->name, "iframe") == 0) ||
-			(strcmp((const char *) n->name, "img") == 0) ||
-			(strcmp((const char *) n->name, "object") == 0) ||
-			(strcmp((const char *) n->name, "table") == 0) ||
-			(strcmp((const char *) n->name, "td") == 0) ||
-			(strcmp((const char *) n->name, "th") == 0) ||
-			(strcmp((const char *) n->name, "applet") == 0))) {
-		float value = isdigit(s[0]) ? atof(s) : -1;
-		if (value < 0 || strlen(s) == 0) {
-			/* ignore negative values and width="" */
-		} else if (strrchr(s, '%')) {
-			style->width.width = CSS_WIDTH_PERCENT;
-			style->width.value.percent = value;
-		} else {
-			style->width.width = CSS_WIDTH_LENGTH;
-			style->width.value.length.unit = CSS_UNIT_PX;
-			style->width.value.length.value = value;
-		}
-		xmlFree(s);
-	}
-
-	if (strcmp((const char *) n->name, "textarea") == 0) {
-		if (!author->height && (s = (char *) xmlGetProp(n,
-						(const xmlChar *) "rows"))) {
-			int value = isdigit(s[0]) ? atoi(s): -1;
-			if (0 < value) {
-				style->height.height = CSS_HEIGHT_LENGTH;
-				style->height.value.length.unit = CSS_UNIT_EM;
-				style->height.value.length.value = value;
-			}
-			xmlFree(s);
-		}
-		if (!author->width && (s = (char *) xmlGetProp(n,
-						(const xmlChar *) "cols"))) {
-			int value = isdigit(s[0]) ? atoi(s): -1;
-			if (0 < value) {
-				style->width.width = CSS_WIDTH_LENGTH;
-				style->width.value.length.unit = CSS_UNIT_EX;
-				style->width.value.length.value = value;
-			}
-			xmlFree(s);
-		}
-	}
-
-	if (strcmp((const char *) n->name, "table") == 0) {
-		if (!author->border_spacing && (s = (char *) xmlGetProp(n,
-					(const xmlChar *) "cellspacing"))) {
-			/* percentage cellspacing not implemented */
-			if (!strrchr(s, '%')) {
-				int value = isdigit(s[0]) ? atoi(s): -1;
-				if (0 <= value) {
-					style->border_spacing.border_spacing =
-						CSS_BORDER_SPACING_LENGTH;
-					style->border_spacing.horz.unit =
-					style->border_spacing.vert.unit =
-								CSS_UNIT_PX;
-					style->border_spacing.horz.value =
-					style->border_spacing.vert.value =
-								value;
-				}
-			}
-			xmlFree(s);
+		error = css_computed_style_compose(parent_style, partial, 
+				nscss_compute_font_size, NULL, partial);
+		if (error != CSS_OK) {
+			css_computed_style_destroy(partial);
+			return NULL;
 		}
 
-		if ((s = (char *) xmlGetProp(n,
-					(const xmlChar *) "bordercolor"))) {
-			parse_inline_colour(s, &border_color);
-			xmlFree(s);
-		}
-		if ((s = (char *) xmlGetProp(n,
-				(const xmlChar *) "border"))) {
-			int border_width = atoi(s);
-			/* precentage border width not implemented */
-			if (!strrchr(s, '%') && 0 < border_width) {
-				unsigned int i;
-				for (i = 0; i != 4; i++) {
-					if (!author->border_color[i])
-						style->border[i].color =
-							border_color;
-					if (!author->border_width[i]) {
-						style->border[i].width.width =
-							CSS_BORDER_WIDTH_LENGTH;
-						style->border[i].width.value.
-							value = border_width;
-						style->border[i].width.value.
-							unit = CSS_UNIT_PX;
-					}
-					if (!author->border_style[i])
-						style->border[i].style =
-							CSS_BORDER_STYLE_OUTSET;
-				}
-			}
-			xmlFree(s);
-		}
-	}
-
-	if (strcmp((const char *) n->name, "td") == 0 ||
-			strcmp((const char *) n->name, "th") == 0) {
-		/* set any cellborders stipulated by associated table */
-		if (markup_track->cell_border) {
-			unsigned int i;
-			for (i = 0; i != 4; i++) {
-				if (!author->border_color[i])
-					style->border[i].color = markup_track->
-								border_color;
-				if (!author->border_width[i]) {
-					style->border[i].width.width =
-							CSS_BORDER_WIDTH_LENGTH;
-					style->border[i].width.value.value = 1;
-					style->border[i].width.value.unit =
-							CSS_UNIT_PX;
-				}
-				if (!author->border_style[i])
-					style->border[i].style =
-							CSS_BORDER_STYLE_INSET;
-			}
-		}
-		/* set any cellpadding stipulated by associated table */
-		if (markup_track->cell_padding) {
-			unsigned int i;
-			for (i = 0; i != 4; i++) {
-				if (!author->padding[i]) {
-					style->padding[i].padding =
-						CSS_PADDING_LENGTH;
-					style->padding[i].value.length.value =
-						markup_track->padding_width;
-					style->padding[i].value.length.unit =
-						CSS_UNIT_PX;
-				}
-			}
-		}
-	}
-
-	if ((strcmp((const char *) n->name, "img") == 0) ||
-			(strcmp((const char *) n->name, "image") == 0) ||
-			(strcmp((const char *) n->name, "applet") == 0)) {
-		if ((s = (char *) xmlGetProp(n,
-				(const xmlChar *) "hspace"))) {
-			/* percentage hspace not implemented */
-			if (!strrchr(s, '%')) {
-				int value = isdigit(s[0]) ? atoi(s): -1;
-				if (0 <= value && !author->margin[LEFT]) {
-					style->margin[LEFT].margin =
-							CSS_MARGIN_LENGTH;
-					style->margin[LEFT].value.length.value =
-							value;
-					style->margin[LEFT].value.length.unit =
-							CSS_UNIT_PX;
-				}
-				if (0 <= value && !author->margin[RIGHT]) {
-					style->margin[RIGHT].margin =
-							CSS_MARGIN_LENGTH;
-					style->margin[RIGHT].value.length.
-							value = value;
-					style->margin[RIGHT].value.length.unit =
-							CSS_UNIT_PX;
-				}
-			}
-			xmlFree(s);
-		}
-		if ((s = (char *) xmlGetProp(n,
-				(const xmlChar *) "vspace"))) {
-			/* percentage vspace not implemented */
-			if (!strrchr(s, '%')) {
-				int value = isdigit(s[0]) ? atoi(s): -1;
-				if (0 <= value && !author->margin[TOP]) {
-					style->margin[TOP].margin =
-							CSS_MARGIN_LENGTH;
-					style->margin[TOP].value.length.value =
-							value;
-					style->margin[TOP].value.length.unit =
-							CSS_UNIT_PX;
-				}
-				if (0 <= value && !author->margin[BOTTOM]) {
-					style->margin[BOTTOM].margin =
-							CSS_MARGIN_LENGTH;
-					style->margin[BOTTOM].value.length.
-							value = value;
-					style->margin[BOTTOM].value.length.
-							unit = CSS_UNIT_PX;
-				}
-			}
-			xmlFree(s);
-		}
-	}
-
-	/* Handle markup-originating alignment of block level elements.
-	 * Adjust left and right margins. text-align property is handled in
-	 * the default CSS file.
-	 */
-	if (markup_track->align != ALIGN_NONE &&
-			(style->display == CSS_DISPLAY_BLOCK ||
-			 style->display == CSS_DISPLAY_TABLE) &&
-			(strcmp((const char *) n->name, "blockquote") != 0)) {
-		if (!author->margin[LEFT]) {
-			if (markup_track->align == ALIGN_LEFT) {
-				/* left */
-				style->margin[LEFT].margin = CSS_MARGIN_LENGTH;
-				style->margin[LEFT].value.length.value = 0;
-				style->margin[LEFT].value.length.unit =
-								CSS_UNIT_PX;
-			} else
-				/* center or right */
-				style->margin[LEFT].margin = CSS_MARGIN_AUTO;
-		}
-
-		if (!author->margin[RIGHT]) {
-			if (markup_track->align == ALIGN_RIGHT) {
-				/* right */
-				style->margin[RIGHT].margin = CSS_MARGIN_LENGTH;
-				style->margin[RIGHT].value.length.value= 0;
-				style->margin[RIGHT].value.length.unit =
-								CSS_UNIT_PX;
-			} else
-				/* left or center */
-				style->margin[RIGHT].margin = CSS_MARGIN_AUTO;
-		}
-		if (author->margin[LEFT] || author->margin[RIGHT]) {
-			/* author stylesheet sets a margin so stop markup
-			 * alignment model propagation */
-			markup_track->align = ALIGN_NONE;
-		}
-	}
-	/* Centered tables are a special case. The align attribute only
-	 * affects the current element (table) and overrides any existing
-	 * HTML alignment rule. Tables aligned to left or right are floated
-	 * by the default CSS file. */
-	if (!author->margin[LEFT] && !author->margin[RIGHT] &&
-			strcmp((const char *) n->name, "table") == 0) {
-		if ((s = (char *) xmlGetProp(n,
-				(const xmlChar *) "align"))) {
-			if (strcasecmp(s, "center") == 0) {
-				style->margin[LEFT].margin = CSS_MARGIN_AUTO;
-				style->margin[RIGHT].margin = CSS_MARGIN_AUTO;
-			}
-			xmlFree(s);
-		}
-	}
-
-	box_solve_display(style, !n->parent);
-
-	/* Update markup_track with attributes which affect children of
-	 * current box. */
-
-	/* Handle html block level element alignment model.
-	 * Note that only margins of block level children are considered,
-	 * text-align for the current block can be handled in the default
-	 * CSS file.
-	 */
-	if (strcmp((const char *) n->name, "center") == 0)
-		markup_track->align = ALIGN_CENTER;
-	else if (strcmp((const char *) n->name, "div") == 0 ||
-			strcmp((const char *) n->name, "col") == 0 ||
-			strcmp((const char *) n->name, "colgroup") == 0 ||
-			strcmp((const char *) n->name, "tbody") == 0 ||
-			strcmp((const char *) n->name, "td") == 0 ||
-			strcmp((const char *) n->name, "tfoot") == 0 ||
-			strcmp((const char *) n->name, "th") == 0 ||
-			strcmp((const char *) n->name, "thead") == 0 ||
-			strcmp((const char *) n->name, "tr") == 0) {
-
-		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "align"))) {
-			if (strcasecmp(s, "center") == 0)
-				markup_track->align = ALIGN_CENTER;
-			else if (strcasecmp(s, "right") == 0)
-				markup_track->align = ALIGN_RIGHT;
-			else if (strcasecmp(s, "left") == 0)
-				markup_track->align = ALIGN_LEFT;
-			xmlFree(s);
-			/* Need to remember if we're in a table, so that any
-			 * alignment rules set on the table's elements won't
-			 * get overridden by the default alignment of a cell
-			 * with no align attribute. At this point, we're in a
-			 * table if the element isn't a div */
-			if (strcmp((const char *) n->name, "div") != 0)
-				markup_track->table = true;
-		}
-	}
-	/* Table cells without an align value have a default implied
-	 * alignment. */
-	if (strcmp((const char *) n->name, "td") == 0 && !markup_track->table) {
-		if (!(s = (char *) xmlGetProp(n, (const xmlChar *) "align")))
-			markup_track->align = ALIGN_LEFT;
-		else
-			xmlFree(s);
-	}
-	if (strcmp((const char *) n->name, "th") == 0 && !markup_track->table) {
-		if (!(s = (char *) xmlGetProp(n, (const xmlChar *) "align")))
-			markup_track->align = ALIGN_CENTER;
-		else
-			xmlFree(s);
-	}
-
-	/* Some of TABLE's attributes apply to the table cells contained
-	 * within the table. Those details are stored so they may be applied
-	 * to the cells when we get to them. */
-	if (strcmp((const char *) n->name, "table") == 0) {
-		if ((s = (char *) xmlGetProp(n,
-				(const xmlChar *) "cellpadding"))) {
-			char *endp;
-			long value = strtol(s, &endp, 10);
-			/* precentage padding width not implemented */
-			if (*endp == 0 && 0 <= value && value < 1000) {
-				markup_track->padding_width = value;
-				markup_track->cell_padding = true;
-			}
-			xmlFree(s);
-		}
-		if ((s = (char *) xmlGetProp(n,
-				(const xmlChar *) "border"))) {
-			int border_width = atoi(s);
-			markup_track->border_color = border_color;
-			/* percentage border width not implemented */
-			if (!strrchr(s, '%') && 0 < border_width) {
-				markup_track->cell_border = true;
-			}
-			xmlFree(s);
-		}
+		style = partial;
+	} else {
+		/* No parent style, so partial must be fully computed */
+		style = partial;
 	}
 
 	return style;
-}
-
-
-/**
- * Calculate 'display' based on 'display', 'position', and 'float', as given
- * by CSS 2.1 9.7.
- *
- * \param  style  style to update
- * \param  root	  this is the root element
- */
-
-void box_solve_display(struct css_style *style, bool root)
-{
-	if (style->display == CSS_DISPLAY_NONE)			/* 1. */
-		return;
-	else if (style->position == CSS_POSITION_ABSOLUTE ||
-			style->position == CSS_POSITION_FIXED)	/* 2. */
-		style->float_ = CSS_FLOAT_NONE;
-	else if (style->float_ != CSS_FLOAT_NONE)		/* 3. */
-		;
-	else if (root)						/* 4. */
-		;
-	else							/* 5. */
-		return;
-
-	/* Special case for absolute positioning: make absolute inlines into
-	 * inline block so that the boxes are constructed in an inline container
-	 * as if they were not absolutely positioned. Layout expects and
-	 * handles this. */
-	if ((style->position == CSS_POSITION_ABSOLUTE ||
-			style->position == CSS_POSITION_FIXED) &&
-			(style->display == CSS_DISPLAY_INLINE ||
-			 style->display == CSS_DISPLAY_INLINE_BLOCK ||
-			 style->display == CSS_DISPLAY_INLINE_TABLE)) {
-		style->display = CSS_DISPLAY_INLINE_BLOCK;
-		return;
-	}
-
-	/* map specified value to computed value using table given in 9.7 */
-	if (style->display == CSS_DISPLAY_INLINE_TABLE)
-		style->display = CSS_DISPLAY_TABLE;
-	else if (style->display == CSS_DISPLAY_LIST_ITEM ||
-			style->display == CSS_DISPLAY_TABLE)
-		; /* same as specified */
-	else
-		style->display = CSS_DISPLAY_BLOCK;
 }
 
 
@@ -1360,8 +896,7 @@ void box_solve_display(struct css_style *style, bool root)
  * \param  tt	transform type
  */
 
-void box_text_transform(char *s, unsigned int len,
-		css_text_transform tt)
+void box_text_transform(char *s, unsigned int len, enum css_text_transform tt)
 {
 	unsigned int i;
 	if (len == 0)
@@ -1416,7 +951,15 @@ void box_text_transform(char *s, unsigned int len,
 
 bool box_body(BOX_SPECIAL_PARAMS)
 {
-	content->data.html.background_colour = box->style->background_color;
+	enum css_background_color type;
+	css_color color;
+
+	type = css_computed_background_color(box->style, &color);
+	if (type == CSS_BACKGROUND_COLOR_TRANSPARENT)
+		content->data.html.background_colour = NS_TRANSPARENT;
+	else
+		content->data.html.background_colour = nscss_color_to_ns(color);
+
 	return true;
 }
 
@@ -1507,7 +1050,8 @@ bool box_image(BOX_SPECIAL_PARAMS)
 	char *s, *url;
 	xmlChar *alt, *src;
 
-	if (box->style && box->style->display == CSS_DISPLAY_NONE)
+	if (box->style && css_computed_display(box->style, 
+			n->parent == NULL) == CSS_DISPLAY_NONE)
 		return true;
 
 	/* handle alt text */
@@ -1558,7 +1102,8 @@ bool box_object(BOX_SPECIAL_PARAMS)
 	xmlNode *c;
 	struct box *inline_container = 0;
 
-	if (box->style && box->style->display == CSS_DISPLAY_NONE)
+	if (box->style && css_computed_display(box->style, 
+			n->parent == NULL) == CSS_DISPLAY_NONE)
 		return true;
 
 	if (!box_get_attribute(n, "usemap", content, &box->usemap))
@@ -1685,8 +1230,7 @@ bool box_object(BOX_SPECIAL_PARAMS)
 	/* convert children and place into fallback */
 	for (c = n->children; c; c = c->next) {
 		if (!convert_xml_to_box(c, content, box->style, box,
-				&inline_container, 0, 0, 0, markup_track,
-				author))
+				&inline_container, 0, 0, 0))
 			return false;
 	}
 	box->fallback = box->children;
@@ -1849,7 +1393,7 @@ bool box_frameset(BOX_SPECIAL_PARAMS)
 		if (convert_children)
 			*convert_children = false;
 		/* And ignore this spurious frameset */
-		box->style->display = CSS_DISPLAY_NONE;
+		box->type = BOX_NONE;
 		return true;
 	}
 
@@ -1860,7 +1404,7 @@ bool box_frameset(BOX_SPECIAL_PARAMS)
 
 	ok = box_create_frameset(content->data.html.frameset, n, content);
 	if (ok)
-		box->style->display = CSS_DISPLAY_NONE;
+		box->type = BOX_NONE;
 
 	if (convert_children)
 		*convert_children = false;
@@ -1920,7 +1464,11 @@ bool box_create_frameset(struct content_html_frames *f, xmlNode *n,
 	/* common extension: bordercolor="#RRGGBB|<named colour>" to control
 	 *all children */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "bordercolor"))) {
-	  	parse_inline_colour(s, &default_border_colour);
+		css_color color;
+
+		if (nscss_parse_colour((const char *) s, &color))
+			default_border_colour = nscss_color_to_ns(color);
+
 		xmlFree(s);
 	}
 
@@ -2030,7 +1578,13 @@ bool box_create_frameset(struct content_html_frames *f, xmlNode *n,
 			}
 			if ((s = (char *) xmlGetProp(c, (const xmlChar *)
 							"bordercolor"))) {
-				parse_inline_colour(s, &frame->border_colour);
+				css_color color;
+
+				if (nscss_parse_colour((const char *) s, 
+						&color))
+					frame->border_colour =
+						nscss_color_to_ns(color);
+
 				xmlFree(s);
 			}
 
@@ -2100,7 +1654,11 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 		xmlFree(s);
 	}
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "bordercolor"))) {
-	  	parse_inline_colour(s, &iframe->border_colour);
+		css_color color;
+
+		if (nscss_parse_colour(s, &color))
+			iframe->border_colour = nscss_color_to_ns(color);
+
 		xmlFree(s);
 	}
 	if ((s = (char *) xmlGetProp(n,
@@ -2155,31 +1713,36 @@ bool box_input(BOX_SPECIAL_PARAMS)
 	gadget->box = box;
 
 	if (type && strcasecmp(type, "password") == 0) {
-		if (!box_input_text(n, content, box, 0, markup_track, author,
-									 true))
+		if (!box_input_text(n, content, box, 0, true))
 			goto no_memory;
 	} else if (type && strcasecmp(type, "file") == 0) {
 		box->type = BOX_INLINE_BLOCK;
 	} else if (type && strcasecmp(type, "hidden") == 0) {
 		/* no box for hidden inputs */
-		box->style->display = CSS_DISPLAY_NONE;
+		box->type = BOX_NONE;
 	} else if (type && (strcasecmp(type, "checkbox") == 0 ||
 			strcasecmp(type, "radio") == 0)) {
 	} else if (type && (strcasecmp(type, "submit") == 0 ||
 			strcasecmp(type, "reset") == 0 ||
 			strcasecmp(type, "button") == 0)) {
 		struct box *inline_container, *inline_box;
-		if (!box_button(n, content, box, 0, markup_track, author))
+
+		if (!box_button(n, content, box, 0))
 			goto no_memory;
+
 		inline_container = box_create(0, 0, 0, 0, 0, content);
 		if (!inline_container)
 			goto no_memory;
+
 		inline_container->type = BOX_INLINE_CONTAINER;
+
 		inline_box = box_create(box->style, 0, 0, box->title, 0,
 				content);
 		if (!inline_box)
 			goto no_memory;
+
 		inline_box->type = BOX_TEXT;
+
 		if (box->gadget->value != NULL)
 			inline_box->text = talloc_strdup(content,
 					box->gadget->value);
@@ -2191,15 +1754,20 @@ bool box_input(BOX_SPECIAL_PARAMS)
 					messages_get("Form_Reset"));
 		else
 			inline_box->text = talloc_strdup(content, "Button");
+
 		if (!inline_box->text)
 			goto no_memory;
+
 		inline_box->length = strlen(inline_box->text);
+
 		box_add_child(inline_container, inline_box);
+
 		box_add_child(box, inline_container);
 	} else if (type && strcasecmp(type, "image") == 0) {
 		gadget->type = GADGET_IMAGE;
 
-		if (box->style && box->style->display != CSS_DISPLAY_NONE) {
+		if (box->style && css_computed_display(box->style,
+				n->parent == NULL) != CSS_DISPLAY_NONE) {
 			if ((s = (char *) xmlGetProp(n,
 					(const xmlChar*) "src"))) {
 				res = url_join(s,
@@ -2227,8 +1795,7 @@ bool box_input(BOX_SPECIAL_PARAMS)
 		}
 	} else {
 		/* the default type is "text" */
-		if (!box_input_text(n, content, box, 0, markup_track, author,
-									false))
+		if (!box_input_text(n, content, box, 0, false))
 			goto no_memory;
 	}
 
@@ -2582,7 +2149,8 @@ bool box_embed(BOX_SPECIAL_PARAMS)
 	xmlChar *src;
 	xmlAttr *a;
 
-	if (box->style && box->style->display == CSS_DISPLAY_NONE)
+	if (box->style && css_computed_display(box->style,
+			n->parent == NULL) == CSS_DISPLAY_NONE)
 		return true;
 
 	params = talloc(content, struct object_params);
@@ -2790,18 +2358,39 @@ struct frame_dimension *box_parse_multi_lengths(const char *s,
 	return length;
 }
 
-
 /**
- * Parse an inline colour string
+ * Fetch an object from an interned URL
+ *
+ * \param c                 Current content
+ * \param url               URL to fetch
+ * \param box               Box containing object
+ * \param permitted_types   Array of permitted types terminated by 
+ *                          CONTENT_UNKNOWN, or NULL for all types
+ * \param available_width   Estimate of width of object
+ * \param available_height  Estimate of height of object
+ * \param background        This object forms the box background
+ * \return true on success, false on memory exhaustion
  */
-static void parse_inline_colour(char *s, colour *variable) {
-	colour new_colour = CSS_COLOR_NONE;
-	if (s[0] == '#') {
-	  	if (strlen(s) == 7)
-	  		new_colour = hex_colour(s + 1, 6);
-	} else {
-	  	new_colour = named_colour(s);
-	}
-	if (new_colour != CSS_COLOR_NONE)
-		 *variable = new_colour;
+bool fetch_object_interned_url(struct content *c, lwc_string *url, 
+		struct box *box, const content_type *permitted_types,
+		int available_width, int available_height,
+		bool background)
+{
+	char *url_buf;
+	bool ret = true;
+
+	url_buf = malloc(lwc_string_length(url) + 1);
+	if (url_buf == NULL)
+		return false;
+
+	memcpy(url_buf, lwc_string_data(url), lwc_string_length(url));
+	url_buf[lwc_string_length(url)] = '\0';
+
+	ret = html_fetch_object(c, url_buf, box, permitted_types,
+			available_width, available_height, background);
+
+	free(url_buf);
+
+	return ret;
 }
+

@@ -120,17 +120,20 @@ bool save_complete_html(struct content *c, const char *path, bool index)
 		return true;
 
 	/* save stylesheets, ignoring the base and adblocking sheets */
-	for (i = STYLESHEET_STYLE; i != c->data.html.stylesheet_count; i++) {
+	for (i = STYLESHEET_START; i != c->data.html.stylesheet_count; i++) {
 		struct content *css = c->data.html.stylesheet_content[i];
 		char *source;
 		int source_len;
+		bool is_style;
 
 		if (!css)
 			continue;
 		if (save_complete_list_check(css))
 			continue;
 
-		if (i != STYLESHEET_STYLE) {
+		is_style = (strcmp(css->url, c->data.html.base_url) == 0);
+
+		if (is_style == false) {
 			if (!save_complete_list_add(css)) {
 				warn_user("NoMemory", 0);
 				return false;
@@ -140,7 +143,7 @@ bool save_complete_html(struct content *c, const char *path, bool index)
 		if (!save_imported_sheets(css, path))
 			return false;
 
-		if (i == STYLESHEET_STYLE)
+		if (is_style)
 			continue; /* don't save <style> elements */
 
 		snprintf(spath, sizeof spath, "%s.%x", path,
@@ -262,7 +265,7 @@ bool save_imported_sheets(struct content *c, const char *path)
 	os_error *error;
 
 	for (j = 0; j != c->data.css.import_count; j++) {
-		struct content *css = c->data.css.import_content[j];
+		struct content *css = c->data.css.imports[j];
 
 		if (!css)
 			continue;

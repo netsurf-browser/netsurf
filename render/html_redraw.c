@@ -32,6 +32,7 @@
 #include "utils/config.h"
 #include "content/content.h"
 #include "css/css.h"
+#include "css/utils.h"
 #include "desktop/gui.h"
 #include "desktop/plotters.h"
 #include "desktop/knockout.h"
@@ -67,7 +68,7 @@ static bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 bool html_redraw_inline_borders(struct box *box, int x0, int y0, int x1, int y1,
 		float scale, bool first, bool last);
 static bool html_redraw_border_plot(int i, int *p, colour c,
-		css_border_style style, int thickness);
+		enum css_border_style style, int thickness);
 static bool html_redraw_checkbox(int x, int y, int width, int height,
 		bool selected);
 static bool html_redraw_radio(int x, int y, int width, int height,
@@ -193,6 +194,7 @@ bool html_redraw_box(struct box *box,
 	int x0, y0, x1, y1;
 	int x_scrolled, y_scrolled;
 	struct box *bg_box = NULL;
+	css_color bgcol = 0;
 
 	if (html_redraw_printing && box->printed)
 		return true;
@@ -208,10 +210,10 @@ bool html_redraw_box(struct box *box,
 		padding_width = padding_left + box->width + box->padding[RIGHT];
 		padding_height = padding_top + box->height +
 				box->padding[BOTTOM];
-		border_left = box->border[LEFT];
-		border_top = box->border[TOP];
-		border_right = box->border[RIGHT];
-		border_bottom = box->border[BOTTOM];
+		border_left = box->border[LEFT].width;
+		border_top = box->border[TOP].width;
+		border_right = box->border[RIGHT].width;
+		border_bottom = box->border[BOTTOM].width;
 	} else {
 		x = (x_parent + box->x) * scale;
 		y = (y_parent + box->y) * scale;
@@ -227,14 +229,15 @@ bool html_redraw_box(struct box *box,
 				box->padding[RIGHT]) * scale;
 		padding_height = (box->padding[TOP] + box->height +
 				box->padding[BOTTOM]) * scale;
-		border_left = box->border[LEFT] * scale;
-		border_top = box->border[TOP] * scale;
-		border_right = box->border[RIGHT] * scale;
-		border_bottom = box->border[BOTTOM] * scale;
+		border_left = box->border[LEFT].width * scale;
+		border_top = box->border[TOP].width * scale;
+		border_right = box->border[RIGHT].width * scale;
+		border_bottom = box->border[BOTTOM].width * scale;
 	}
 
 	/* calculate rectangle covering this box and descendants */
-	if (box->style && box->style->overflow != CSS_OVERFLOW_VISIBLE) {
+	if (box->style && css_computed_overflow(box->style) != 
+			CSS_OVERFLOW_VISIBLE) {
 		x0 = x - border_left;
 		y0 = y - border_top;
 		x1 = x + padding_width + border_right;
@@ -296,7 +299,8 @@ bool html_redraw_box(struct box *box,
 	}
 
 	/* if visibility is hidden render children only */
-	if (box->style && box->style->visibility == CSS_VISIBILITY_HIDDEN) {
+	if (box->style && css_computed_visibility(box->style) == 
+			CSS_VISIBILITY_HIDDEN) {
 		if ((plot.group_start) && (!plot.group_start("hidden box")))
 			return false;
 		if (!html_redraw_box_children(box, x_parent, y_parent,
@@ -346,20 +350,21 @@ bool html_redraw_box(struct box *box,
 	 */
 	if (!box->parent) {
 		/* Root box */
-		if (box->style &&
-				(box->style->background_color !=
-						NS_TRANSPARENT ||
+		if (box->style && (css_computed_background_color(box->style,
+				&bgcol) != CSS_BACKGROUND_COLOR_TRANSPARENT ||
 				box->background)) {
 			/* With its own background */
 			bg_box = box;
 		} else if (!box->style ||
-				(box->style->background_color ==
-						NS_TRANSPARENT &&
+				(css_computed_background_color(box->style,
+				&bgcol) == CSS_BACKGROUND_COLOR_TRANSPARENT &&
 				!box->background)) {
 			/* Without its own background */
 			if (box->children && box->children->style &&
-					(box->children->style->
-					background_color != NS_TRANSPARENT ||
+					(css_computed_background_color(
+					box->children->style, 
+					&bgcol) != 
+					CSS_BACKGROUND_COLOR_TRANSPARENT ||
 					box->children->background)) {
 				/* But body has one, so use that */
 				bg_box = box->children;
@@ -367,14 +372,14 @@ bool html_redraw_box(struct box *box,
 		}
 	} else if (box->parent && !box->parent->parent) {
 		/* Body box */
-		if (box->style &&
-				(box->style->background_color !=
-						NS_TRANSPARENT ||
+		if (box->style && (css_computed_background_color(box->style, 
+				&bgcol) != CSS_BACKGROUND_COLOR_TRANSPARENT ||
 				box->background)) {
 			/* With a background */
 			if (box->parent->style &&
-				(box->parent->style->background_color !=
-					NS_TRANSPARENT ||
+				(css_computed_background_color(
+					box->parent->style, &bgcol) !=
+					CSS_BACKGROUND_COLOR_TRANSPARENT ||
 					box->parent->background)) {
 				/* Root has own background; process normally */
 				bg_box = box;
@@ -395,8 +400,9 @@ bool html_redraw_box(struct box *box,
 			bg_box->type != BOX_TEXT &&
 			bg_box->type != BOX_INLINE_END &&
 			(bg_box->type != BOX_INLINE || bg_box->object) &&
-			((bg_box->style->background_color != NS_TRANSPARENT) ||
-			(bg_box->background))) {
+			(css_computed_background_color(bg_box->style, 
+			&bgcol) != CSS_BACKGROUND_COLOR_TRANSPARENT ||
+			bg_box->background)) {
 		/* find intersection of clip box and border edge */
 		int px0, py0, px1, py1;
 		px0 = x - border_left < x0 ? x0 : x - border_left;
@@ -451,7 +457,8 @@ bool html_redraw_box(struct box *box,
 
 	/* backgrounds and borders for non-replaced inlines */
 	if (box->style && box->type == BOX_INLINE && box->inline_end &&
-			(box->style->background_color != NS_TRANSPARENT ||
+			(css_computed_background_color(box->style, &bgcol) != 
+			CSS_BACKGROUND_COLOR_TRANSPARENT ||
 			box->background || border_top || border_right ||
 			border_bottom || border_left)) {
 		/* inline backgrounds and borders span other boxes and may
@@ -482,15 +489,15 @@ bool html_redraw_box(struct box *box,
 				ib_y = y_parent + ib->y;
 				ib_p_width = ib->padding[LEFT] + ib->width +
 						ib->padding[RIGHT];
-				ib_b_left = ib->border[LEFT];
-				ib_b_right = ib->border[RIGHT];
+				ib_b_left = ib->border[LEFT].width;
+				ib_b_right = ib->border[RIGHT].width;
 			} else {
 				ib_x = (x_parent + ib->x) * scale;
 				ib_y = (y_parent + ib->y) * scale;
 				ib_p_width = (ib->padding[LEFT] + ib->width +
 						ib->padding[RIGHT]) * scale;
-				ib_b_left = ib->border[LEFT] * scale;
-				ib_b_right = ib->border[RIGHT] * scale;
+				ib_b_left = ib->border[LEFT].width * scale;
+				ib_b_right = ib->border[RIGHT].width * scale;
 			}
 
 			if (ib->inline_new_line && ib != box) {
@@ -587,7 +594,8 @@ bool html_redraw_box(struct box *box,
 	}
 
 	/* clip to the padding edge for boxes with overflow hidden or scroll */
-	if (box->style && box->style->overflow != CSS_OVERFLOW_VISIBLE) {
+	if (box->style && css_computed_overflow(box->style) != 
+			CSS_OVERFLOW_VISIBLE) {
 		x0 = x;
 		y0 = y;
 		x1 = x + padding_width;
@@ -607,7 +615,7 @@ bool html_redraw_box(struct box *box,
 
 	/* text decoration */
 	if (box->type != BOX_TEXT && box->style &&
-			box->style->text_decoration !=
+			css_computed_text_decoration(box->style) !=
 			CSS_TEXT_DECORATION_NONE)
 		if (!html_redraw_text_decoration(box, x_parent, y_parent,
 				scale, current_background_color))
@@ -665,8 +673,10 @@ bool html_redraw_box(struct box *box,
 	/* scrollbars */
 	if (box->style && box->type != BOX_BR && box->type != BOX_TABLE &&
 			box->type != BOX_INLINE &&
-			(box->style->overflow == CSS_OVERFLOW_SCROLL ||
-			box->style->overflow == CSS_OVERFLOW_AUTO))
+			(css_computed_overflow(box->style) == 
+				CSS_OVERFLOW_SCROLL ||
+			css_computed_overflow(box->style) == 
+				CSS_OVERFLOW_AUTO))
 		if (!html_redraw_scrollbars(box, scale, x, y,
 				padding_width, padding_height,
 				current_background_color))
@@ -984,10 +994,10 @@ bool html_redraw_caret(struct caret *c, colour current_background_color,
 bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 		int p_width, int p_height, float scale)
 {
-	int top = box->border[TOP];
-	int right = box->border[RIGHT];
-	int bottom = box->border[BOTTOM];
-	int left = box->border[LEFT];
+	int top = box->border[TOP].width;
+	int right = box->border[RIGHT].width;
+	int bottom = box->border[BOTTOM].width;
+	int left = box->border[LEFT].width;
 	int x, y;
 	unsigned int i;
 	int p[20];
@@ -1017,12 +1027,19 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 	p[18] = x - left;		p[19] = y - top;
 
 	for (i = 0; i != 4; i++) {
-		if (box->border[i] == 0)
+		colour col = 0;
+
+		if (box->border[i].width == 0)
 			continue;
-		if (!html_redraw_border_plot(i, p,
-				box->style->border[i].color,
-				box->style->border[i].style,
-				box->border[i] * scale))
+
+		if (box->border[i].color == CSS_BORDER_COLOR_TRANSPARENT) {
+			col = NS_TRANSPARENT;
+		} else {
+			col = nscss_color_to_ns(box->border[i].c);
+		}
+
+		if (!html_redraw_border_plot(i, p, col, box->border[i].style,
+				box->border[i].width * scale))
 			return false;
 	}
 
@@ -1047,10 +1064,11 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 bool html_redraw_inline_borders(struct box *box, int x0, int y0, int x1, int y1,
 		float scale, bool first, bool last)
 {
-	int top = box->border[TOP];
-	int right = box->border[RIGHT];
-	int bottom = box->border[BOTTOM];
-	int left = box->border[LEFT];
+	int top = box->border[TOP].width;
+	int right = box->border[RIGHT].width;
+	int bottom = box->border[BOTTOM].width;
+	int left = box->border[LEFT].width;
+	colour col;
 	int p[20];
 
 	if (scale != 1.0) {
@@ -1074,26 +1092,54 @@ bool html_redraw_inline_borders(struct box *box, int x0, int y0, int x1, int y1,
 
 	assert(box->style);
 
-	if (box->border[LEFT] && first)
-		if (!html_redraw_border_plot(LEFT, p,
-				box->style->border[LEFT].color,
-				box->style->border[LEFT].style, left))
+	if (box->border[LEFT].width && first) {
+		if (box->border[LEFT].color == CSS_BORDER_COLOR_TRANSPARENT)
+			col = NS_TRANSPARENT;
+		else
+			col = nscss_color_to_ns(box->border[LEFT].c);
+
+		if (!html_redraw_border_plot(LEFT, p, col,
+				box->border[LEFT].style, 
+				left))
 			return false;
-	if (box->border[TOP])
-		if (!html_redraw_border_plot(TOP, p,
-				box->style->border[TOP].color,
-				box->style->border[TOP].style, top))
+	}
+
+	if (box->border[TOP].width) {
+		if (box->border[TOP].color == CSS_BORDER_COLOR_TRANSPARENT)
+			col = NS_TRANSPARENT;
+		else
+			col = nscss_color_to_ns(box->border[TOP].c);
+
+		if (!html_redraw_border_plot(TOP, p, col,
+				box->border[TOP].style, 
+				top))
 			return false;
-	if (box->border[BOTTOM])
-		if (!html_redraw_border_plot(BOTTOM, p,
-				box->style->border[BOTTOM].color,
-				box->style->border[BOTTOM].style, bottom))
+	}
+
+	if (box->border[BOTTOM].width) {
+		if (box->border[BOTTOM].color == CSS_BORDER_COLOR_TRANSPARENT)
+			col = NS_TRANSPARENT;
+		else
+			col = nscss_color_to_ns(box->border[BOTTOM].c);
+
+		if (!html_redraw_border_plot(BOTTOM, p, col,
+				box->border[BOTTOM].style, 
+				bottom))
 			return false;
-	if (box->border[RIGHT] && last)
-		if (!html_redraw_border_plot(RIGHT, p,
-				box->style->border[RIGHT].color,
-				box->style->border[RIGHT].style, right))
+	}
+
+	if (box->border[RIGHT].width && last) {
+		if (box->border[RIGHT].color == CSS_BORDER_COLOR_TRANSPARENT)
+			col = NS_TRANSPARENT;
+		else
+			col = nscss_color_to_ns(box->border[RIGHT].c);
+
+		if (!html_redraw_border_plot(RIGHT, p, col,
+				box->border[RIGHT].style,
+				right))
 			return false;
+	}
+
 	return true;
 }
 
@@ -1128,7 +1174,7 @@ static plot_style_t plot_style_fillbdr_dlight = {
  */
 
 bool html_redraw_border_plot(int i, int *p, colour c,
-		css_border_style style, int thickness)
+		enum css_border_style style, int thickness)
 {
 	int z[8];
 	unsigned int light = i;
@@ -1449,7 +1495,10 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 	int px0 = clip_x0, py0 = clip_y0, px1 = clip_x1, py1 = clip_y1;
 	int ox = x, oy = y;
 	int width, height;
+	css_fixed hpos = 0, vpos = 0;
+	css_unit hunit = CSS_UNIT_PX, vunit = CSS_UNIT_PX;
 	struct box *parent;
+	css_color bgcol;
 	plot_style_t pstyle_fill_bg = {
 		.fill_type = PLOT_OP_TYPE_SOLID,
 		.fill_colour = *background_colour,
@@ -1479,7 +1528,7 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 					box->padding[BOTTOM];
 		}
 		/* handle background-repeat */
-		switch (background->style->background_repeat) {
+		switch (css_computed_background_repeat(background->style)) {
 			case CSS_BACKGROUND_REPEAT_REPEAT:
 				repeat_x = repeat_y = true;
 				/* optimisation: only plot the colour if
@@ -1501,50 +1550,39 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 		}
 
 		/* handle background-position */
-		switch (background->style->background_position.horz.pos) {
-			case CSS_BACKGROUND_POSITION_PERCENT:
-				x += (width - background->background->width) *
-					scale *
-					background->style->background_position.
-						horz.value.percent / 100;
-				break;
-			case CSS_BACKGROUND_POSITION_LENGTH:
-				x += (int) (css_len2px(&background->style->
-					background_position.horz.value.length,
-					background->style) * scale);
-				break;
-			default:
-				break;
+		css_computed_background_position(background->style,
+				&hpos, &hunit, &vpos, &vunit);
+		if (hunit == CSS_UNIT_PCT) {
+			x += (width - background->background->width) *
+				scale * FIXTOFLT(hpos) / 100.;
+		} else {
+			x += (int) (FIXTOFLT(nscss_len2px(hpos, hunit, 
+					background->style)) * scale);
 		}
 
-		switch (background->style->background_position.vert.pos) {
-			case CSS_BACKGROUND_POSITION_PERCENT:
-				y += (height - background->background->height) *
-					scale *
-					background->style->background_position.
-						vert.value.percent / 100;
-				break;
-			case CSS_BACKGROUND_POSITION_LENGTH:
-				y += (int) (css_len2px(&background->style->
-					background_position.vert.value.length,
-					background->style) * scale);
-				break;
-			default:
-				break;
+		if (vunit == CSS_UNIT_PCT) {
+			y += (height - background->background->height) *
+				scale * FIXTOFLT(vpos) / 100.;
+		} else {
+			y += (int) (FIXTOFLT(nscss_len2px(vpos, vunit,
+					background->style)) * scale);
 		}
 	}
 
 	/* special case for table rows as their background needs
 	 * to be clipped to all the cells */
 	if (box->type == BOX_TABLE_ROW) {
+		css_fixed h = 0, v = 0;
+		css_unit hu = CSS_UNIT_PX, vu = CSS_UNIT_PX;
+
 		for (parent = box->parent;
 			((parent) && (parent->type != BOX_TABLE));
 				parent = parent->parent);
 		assert(parent && (parent->style));
 
-		clip_to_children =
-			(parent->style->border_spacing.horz.value > 0) ||
-			(parent->style->border_spacing.vert.value > 0);
+		css_computed_border_spacing(parent->style, &h, &hu, &v, &vu);
+
+		clip_to_children = (h > 0) || (v > 0);
 
 		if (clip_to_children)
 			clip_box = box->children;
@@ -1572,8 +1610,9 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 
 			/* <td> attributes override <tr> */
 			if ((clip_x0 >= clip_x1) || (clip_y0 >= clip_y1) ||
-					(clip_box->style->background_color !=
-					NS_TRANSPARENT) ||
+					(css_computed_background_color(
+						clip_box->style, &bgcol) !=
+					CSS_BACKGROUND_COLOR_TRANSPARENT) ||
 					(clip_box->background &&
 					 clip_box->background->bitmap &&
 					 bitmap_get_opaque(
@@ -1582,11 +1621,10 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 		}
 
 		/* plot the background colour */
-		if (background->style->background_color != NS_TRANSPARENT) {
-			*background_colour =
-					background->style->background_color;
-			pstyle_fill_bg.fill_colour =
-					background->style->background_color;
+		if (css_computed_background_color(background->style, &bgcol) != 
+				CSS_BACKGROUND_COLOR_TRANSPARENT) {
+			*background_colour = nscss_color_to_ns(bgcol);
+			pstyle_fill_bg.fill_colour = *background_colour;
 			if (plot_colour)
 				if (!plot.rectangle(clip_x0, clip_y0,
 						clip_x1, clip_y1,
@@ -1670,6 +1708,9 @@ bool html_redraw_inline_background(int x, int y, struct box *box, float scale,
 	bool repeat_y = false;
 	bool plot_colour = true;
 	bool plot_content;
+	css_fixed hpos = 0, vpos = 0;
+	css_unit hunit = CSS_UNIT_PX, vunit = CSS_UNIT_PX;
+	css_color bgcol;
 	plot_style_t pstyle_fill_bg = {
 		.fill_type = PLOT_OP_TYPE_SOLID,
 		.fill_colour = *background_colour,
@@ -1682,7 +1723,7 @@ bool html_redraw_inline_background(int x, int y, struct box *box, float scale,
 
 	if (plot_content) {
 		/* handle background-repeat */
-		switch (box->style->background_repeat) {
+		switch (css_computed_background_repeat(box->style)) {
 			case CSS_BACKGROUND_REPEAT_REPEAT:
 				repeat_x = repeat_y = true;
 				/* optimisation: only plot the colour if
@@ -1704,57 +1745,35 @@ bool html_redraw_inline_background(int x, int y, struct box *box, float scale,
 		}
 
 		/* handle background-position */
-		switch (box->style->background_position.horz.pos) {
-			case CSS_BACKGROUND_POSITION_PERCENT:
-				x += (px1 - px0 -
-					box->background->width * scale) *
-					box->style->background_position.
-						horz.value.percent / 100;
+		css_computed_background_position(box->style,
+				&hpos, &hunit, &vpos, &vunit);
+		if (hunit == CSS_UNIT_PCT) {
+			x += (px1 - px0 - box->background->width * scale) *
+					FIXTOFLT(hpos) / 100.;
 
-				if (!repeat_x &&
-						((box->style->
-						background_position.
-						horz.value.percent < 2 &&
-						!first) ||
-						(box->style->
-						background_position.
-						horz.value.percent > 98 &&
-						!last))) {
-					plot_content = false;
-				}
-				break;
-			case CSS_BACKGROUND_POSITION_LENGTH:
-				x += (int) (css_len2px(&box->style->
-					background_position.horz.value.length,
-					box->style) * scale);
-				break;
-			default:
-				break;
+			if (!repeat_x && ((hpos < 2 && !first) || 
+					(hpos > 98 && !last))){
+				plot_content = false;
+			}
+		} else {
+			x += (int) (FIXTOFLT(nscss_len2px(hpos, hunit, 
+					box->style)) * scale);
 		}
 
-		switch (box->style->background_position.vert.pos) {
-			case CSS_BACKGROUND_POSITION_PERCENT:
-				y += (py1 - py0 -
-					box->background->height * scale) *
-					box->style->background_position.
-						vert.value.percent / 100;
-				break;
-			case CSS_BACKGROUND_POSITION_LENGTH:
-				y += (int) (css_len2px(&box->style->
-					background_position.vert.value.length,
-					box->style) * scale);
-				break;
-			default:
-				break;
+		if (vunit == CSS_UNIT_PCT) {
+			y += (py1 - py0 - box->background->height * scale) *
+					FIXTOFLT(vpos) / 100.;
+		} else {
+			y += (int) (FIXTOFLT(nscss_len2px(vpos, vunit, 
+					box->style)) * scale);
 		}
 	}
 
 	/* plot the background colour */
-	if (box->style->background_color != NS_TRANSPARENT) {
-		*background_colour =
-				box->style->background_color;
-		pstyle_fill_bg.fill_colour =
-				box->style->background_color;
+	if (css_computed_background_color(box->style, &bgcol) != 
+			CSS_BACKGROUND_COLOR_TRANSPARENT) {
+		*background_colour = nscss_color_to_ns(bgcol);
+		pstyle_fill_bg.fill_colour = *background_colour;
 
 		if (plot_colour)
 			if (!plot.rectangle(clip_x0, clip_y0,
@@ -1820,36 +1839,40 @@ bool html_redraw_text_decoration(struct box *box,
 		int x_parent, int y_parent, float scale,
 		colour background_colour)
 {
-	static const css_text_decoration decoration[] = {
+	static const enum css_text_decoration decoration[] = {
 		CSS_TEXT_DECORATION_UNDERLINE, CSS_TEXT_DECORATION_OVERLINE,
 		CSS_TEXT_DECORATION_LINE_THROUGH };
 	static const float line_ratio[] = { 0.9, 0.1, 0.5 };
-	int colour;
+	colour fgcol;
 	unsigned int i;
+	css_color col;
+
+	css_computed_color(box->style, &col);
+	fgcol = nscss_color_to_ns(col);
 
 	/* antialias colour for under/overline */
-	if (html_redraw_printing)
-		colour = box->style->color;
-	else
-		colour = blend_colour(background_colour, box->style->color);
+	if (html_redraw_printing == false)
+		fgcol = blend_colour(background_colour, fgcol);
 
 	if (box->type == BOX_INLINE) {
 		if (!box->inline_end)
 			return true;
 		for (i = 0; i != NOF_ELEMENTS(decoration); i++)
-			if (box->style->text_decoration & decoration[i])
+			if (css_computed_text_decoration(box->style) & 
+					decoration[i])
 				if (!html_redraw_text_decoration_inline(box,
 						x_parent, y_parent, scale,
-						colour, line_ratio[i]))
+						fgcol, line_ratio[i]))
 					return false;
 	} else {
 		for (i = 0; i != NOF_ELEMENTS(decoration); i++)
-			if (box->style->text_decoration & decoration[i])
+			if (css_computed_text_decoration(box->style) & 
+					decoration[i])
 				if (!html_redraw_text_decoration_block(box,
 						x_parent + box->x,
 						y_parent + box->y,
 						scale,
-						colour, line_ratio[i]))
+						fgcol, line_ratio[i]))
 					return false;
 	}
 
@@ -2179,9 +2202,9 @@ bool html_redraw_scrollbars(struct box *box, float scale,
 
 bool box_vscrollbar_present(const struct box * const box)
 {
-	return box->descendant_y0 < -box->border[TOP] ||
+	return box->descendant_y0 < -box->border[TOP].width ||
 			box->padding[TOP] + box->height + box->padding[BOTTOM] +
-			box->border[BOTTOM] < box->descendant_y1;
+			box->border[BOTTOM].width < box->descendant_y1;
 }
 
 
@@ -2194,9 +2217,9 @@ bool box_vscrollbar_present(const struct box * const box)
 
 bool box_hscrollbar_present(const struct box * const box)
 {
-	return box->descendant_x0 < -box->border[LEFT] ||
+	return box->descendant_x0 < -box->border[LEFT].width ||
 			box->padding[LEFT] + box->width + box->padding[RIGHT] +
-			box->border[RIGHT] < box->descendant_x1;
+			box->border[RIGHT].width < box->descendant_x1;
 }
 
 

@@ -40,6 +40,7 @@
 #include <string.h>
 #include <math.h>
 #include "css/css.h"
+#include "css/utils.h"
 #include "content/content.h"
 #include "desktop/gui.h"
 #include "desktop/options.h"
@@ -47,6 +48,7 @@
 #include "render/font.h"
 #include "render/form.h"
 #include "render/layout.h"
+#include "render/table.h"
 #define NDEBUG
 #include "utils/log.h"
 #undef NDEBUG
@@ -69,36 +71,36 @@ static bool layout_apply_minmax_height(struct box *box, struct box *container);
 static void layout_block_add_scrollbar(struct box *box, int which);
 static int layout_solve_width(int available_width, int width, int lm, int rm,
 		int max_width, int min_width,
-		int margin[4], int padding[4], int border[4]);
+		int margin[4], int padding[4], struct box_border border[4]);
 static void layout_float_find_dimensions(int available_width,
-		struct css_style *style, struct box *box);
+		const css_computed_style *style, struct box *box);
 static void layout_find_dimensions(int available_width, int viewport_height,
-		struct box *box, struct css_style *style,
+		struct box *box, const css_computed_style *style,
 		int *width, int *height, int *max_width, int *min_width,
-		int margin[4], int padding[4], int border[4]);
+		int margin[4], int padding[4], struct box_border border[4]);
 static void layout_tweak_form_dimensions(struct box *box, bool percentage,
 		int available_width, bool setwidth, int *dimension);
-static int layout_clear(struct box *fl, css_clear clear);
+static int layout_clear(struct box *fl, enum css_clear clear);
 static void find_sides(struct box *fl, int y0, int y1,
 		int *x0, int *x1, struct box **left, struct box **right);
 static void layout_minmax_inline_container(struct box *inline_container,
 		const struct font_functions *font_func);
-static int line_height(struct css_style *style);
+static int line_height(const css_computed_style *style);
 static bool layout_line(struct box *first, int *width, int *y,
 		int cx, int cy, struct box *cont, bool indent,
 		bool has_text_children,
 		struct content *content, struct box **next_box);
 static struct box *layout_minmax_line(struct box *first, int *min, int *max,
 		const struct font_functions *font_func);
-static int layout_text_indent(struct css_style *style, int width);
+static int layout_text_indent(const css_computed_style *style, int width);
 static bool layout_float(struct box *b, int width, struct content *content);
 static void place_float_below(struct box *c, int width, int cx, int y,
 		struct box *cont);
 static bool layout_table(struct box *box, int available_width,
 		struct content *content);
 static void layout_move_children(struct box *box, int x, int y);
-static void calculate_mbp_width(struct css_style *style, unsigned int side,
-		bool margin, bool border, bool padding,
+static void calculate_mbp_width(const css_computed_style *style, 
+		unsigned int side, bool margin, bool border, bool padding,
 		int *fixed, float *frac);
 static void layout_lists(struct box *box,
 		const struct font_functions *font_func);
@@ -137,11 +139,11 @@ bool layout_document(struct content *content, int width, int height)
 	layout_minmax_block(doc, font_func);
 
 	layout_block_find_dimensions(width, height, 0, 0, doc);
-	doc->x = doc->margin[LEFT] + doc->border[LEFT];
-	doc->y = doc->margin[TOP] + doc->border[TOP];
-	width -= doc->margin[LEFT] + doc->border[LEFT] + doc->padding[LEFT] +
-			doc->padding[RIGHT] + doc->border[RIGHT] +
-			doc->margin[RIGHT];
+	doc->x = doc->margin[LEFT] + doc->border[LEFT].width;
+	doc->y = doc->margin[TOP] + doc->border[TOP].width;
+	width -= doc->margin[LEFT] + doc->border[LEFT].width + 
+			doc->padding[LEFT] + doc->padding[RIGHT] + 
+			doc->border[RIGHT].width + doc->margin[RIGHT];
 	if (width < 0)
 		width = 0;
 	doc->width = width;
@@ -150,18 +152,19 @@ bool layout_document(struct content *content, int width, int height)
 
 	/* make <html> and <body> fill available height */
 	if (doc->y + doc->padding[TOP] + doc->height + doc->padding[BOTTOM] +
-			doc->border[BOTTOM] + doc->margin[BOTTOM] <
+			doc->border[BOTTOM].width + doc->margin[BOTTOM] <
 			height) {
 		doc->height = height - (doc->y + doc->padding[TOP] +
-				doc->padding[BOTTOM] + doc->border[BOTTOM] +
+				doc->padding[BOTTOM] + 
+				doc->border[BOTTOM].width +
 				doc->margin[BOTTOM]);
 		if (doc->children)
 			doc->children->height = doc->height -
 					(doc->children->margin[TOP] +
-					 doc->children->border[TOP] +
+					 doc->children->border[TOP].width +
 					 doc->children->padding[TOP] +
 					 doc->children->padding[BOTTOM] +
-					 doc->children->border[BOTTOM] +
+					 doc->children->border[BOTTOM].width +
 					 doc->children->margin[BOTTOM]);
 	}
 
@@ -197,7 +200,8 @@ bool layout_block_context(struct box *block, int viewport_height,
 	int y = 0;
 	int lm, rm;
 	struct box *margin_box;
-	struct css_length gadget_size; /* Checkbox / radio buttons */
+	css_fixed gadget_size;
+	css_unit gadget_unit; /* Checkbox / radio buttons */
 
 	assert(block->type == BOX_BLOCK ||
 			block->type == BOX_INLINE_BLOCK ||
@@ -267,10 +271,11 @@ bool layout_block_context(struct box *block, int viewport_height,
 			block->gadget->type == GADGET_CHECKBOX)) {
 		/* form checkbox or radio button
 		 * if width or height is AUTO, set it to 1em */
-		gadget_size.unit = CSS_UNIT_EM;
-		gadget_size.value = 1;
+		gadget_unit = CSS_UNIT_EM;
+		gadget_size = INTTOFIX(1);
 		if (block->height == AUTO)
-			block->height = css_len2px(&gadget_size, block->style);
+			block->height = FIXTOINT(nscss_len2px(gadget_size, 
+					gadget_unit, block->style));
 	}
 
 	box = margin_box = block->children;
@@ -317,8 +322,10 @@ bool layout_block_context(struct box *block, int viewport_height,
 		 */
 
 		if (box->style &&
-				(box->style->position == CSS_POSITION_ABSOLUTE||
-				 box->style->position == CSS_POSITION_FIXED)) {
+				(css_computed_position(box->style) == 
+					CSS_POSITION_ABSOLUTE ||
+				 css_computed_position(box->style) == 
+					CSS_POSITION_FIXED)) {
 			box->x = box->parent->padding[LEFT];
 			/* absolute positioned; this element will establish
 			 * its own block context when it gets laid out later,
@@ -328,9 +335,10 @@ bool layout_block_context(struct box *block, int viewport_height,
 
 		/* Clearance. */
 		y = 0;
-		if (box->style && box->style->clear != CSS_CLEAR_NONE)
+		if (box->style && css_computed_clear(box->style) != 
+				CSS_CLEAR_NONE)
 			y = layout_clear(block->float_children,
-					box->style->clear);
+					css_computed_clear(box->style));
 
 		/* Get top margin */
 		if (box->style) {
@@ -351,7 +359,7 @@ bool layout_block_context(struct box *block, int viewport_height,
 
                 if (box->type == BOX_BLOCK || box->object) {
                 	if (!box->object && box->style &&
-					box->style->overflow !=
+					css_computed_overflow(box->style) !=
 					CSS_OVERFLOW_VISIBLE) {
 				/* box establishes new block formatting context
 				 * so available width may be diminished due to
@@ -381,7 +389,13 @@ bool layout_block_context(struct box *block, int viewport_height,
 				layout_block_add_scrollbar(box, BOTTOM);
 			}
 		} else if (box->type == BOX_TABLE) {
-			if (box->style->width.width == CSS_WIDTH_AUTO) {
+			enum css_width wtype;
+			css_fixed width = 0;
+			css_unit unit = CSS_UNIT_PX;
+
+			wtype = css_computed_width(box->style, &width, &unit);
+
+			if (wtype == CSS_WIDTH_AUTO) {
 				/* max available width may be diminished due to
 				 * floats. */
 				int x0, x1, top;
@@ -412,18 +426,18 @@ bool layout_block_context(struct box *block, int viewport_height,
 
 		/* Position box: horizontal. */
 		box->x = box->parent->padding[LEFT] + box->margin[LEFT] +
-				box->border[LEFT];
+				box->border[LEFT].width;
 		cx += box->x;
 
 		/* Position box: vertical. */
 		if (box->type != BOX_BLOCK || y ||
-				box->border[TOP] || box->padding[TOP]) {
+				box->border[TOP].width || box->padding[TOP]) {
 			margin_box->y += max_pos_margin - max_neg_margin;
 			cy += max_pos_margin - max_neg_margin;
 			max_pos_margin = max_neg_margin = 0;
 			margin_box = 0;
-			box->y += box->border[TOP];
-			cy += box->border[TOP];
+			box->y += box->border[TOP].width;
+			cy += box->border[TOP].width;
 			if (cy < y) {
 				box->y += y - cy;
 				cy = y;
@@ -433,7 +447,8 @@ bool layout_block_context(struct box *block, int viewport_height,
 		/* Unless the box has an overflow style of visible, the box
 		 * establishes a new block context. */
 		if (box->type == BOX_BLOCK && box->style &&
-				box->style->overflow != CSS_OVERFLOW_VISIBLE) {
+				css_computed_overflow(box->style) != 
+				CSS_OVERFLOW_VISIBLE) {
 			cy += max_pos_margin - max_neg_margin;
 			box->y += max_pos_margin - max_neg_margin;
 
@@ -449,7 +464,7 @@ bool layout_block_context(struct box *block, int viewport_height,
 
 			cx -= box->x;
 			cy += box->height + box->padding[BOTTOM] +
-					box->border[BOTTOM];
+					box->border[BOTTOM].width;
 			max_pos_margin = max_neg_margin = 0;
 			if (max_pos_margin < box->margin[BOTTOM])
 				max_pos_margin = box->margin[BOTTOM];
@@ -457,7 +472,7 @@ bool layout_block_context(struct box *block, int viewport_height,
 				max_neg_margin = -box->margin[BOTTOM];
 			y = box->y + box->padding[TOP] + box->height +
 					box->padding[BOTTOM] +
-					box->border[BOTTOM];
+					box->border[BOTTOM].width;
 			/* Skip children, because they are done in the new
 			 * block context */
 			goto advance_to_next_box;
@@ -480,12 +495,19 @@ bool layout_block_context(struct box *block, int viewport_height,
 			struct box *left, *right;
 			y = cy;
 			while (1) {
+				enum css_width wtype;
+				css_fixed width = 0;
+				css_unit unit = CSS_UNIT_PX;
+
+				wtype = css_computed_width(box->style,
+						&width, &unit);
+
 				x0 = cx;
 				x1 = cx + box->parent->width;
 				find_sides(block->float_children, y,
 						y + box->height,
 						&x0, &x1, &left, &right);
-				if (box->style->width.width == CSS_WIDTH_AUTO)
+				if (wtype == CSS_WIDTH_AUTO)
 					break;
 				if (box->width <= x1 - x0)
 					break;
@@ -527,7 +549,8 @@ bool layout_block_context(struct box *block, int viewport_height,
 			layout_block_add_scrollbar(box, BOTTOM);
 		}
 
-		cy += box->height + box->padding[BOTTOM] + box->border[BOTTOM];
+		cy += box->height + box->padding[BOTTOM] + 
+				box->border[BOTTOM].width;
 		max_pos_margin = max_neg_margin = 0;
 		if (max_pos_margin < box->margin[BOTTOM])
 			max_pos_margin = box->margin[BOTTOM];
@@ -535,7 +558,8 @@ bool layout_block_context(struct box *block, int viewport_height,
 			max_neg_margin = -box->margin[BOTTOM];
 		cx -= box->x;
 		y = box->y + box->padding[TOP] + box->height +
-				box->padding[BOTTOM] + box->border[BOTTOM];
+				box->padding[BOTTOM] + 
+				box->border[BOTTOM].width;
 	advance_to_next_box:
 		if (!box->next) {
 			/* No more siblings:
@@ -556,7 +580,8 @@ bool layout_block_context(struct box *block, int viewport_height,
 
 				/* Apply any min-height and max-height to
 				 * boxes in normal flow */
-				if (box->style && box->style->position !=
+				if (box->style && 
+					css_computed_position(box->style) !=
 						CSS_POSITION_ABSOLUTE &&
 						layout_apply_minmax_height(box,
 								NULL)) {
@@ -567,7 +592,7 @@ bool layout_block_context(struct box *block, int viewport_height,
 				}
 
 				cy += box->padding[BOTTOM] +
-						box->border[BOTTOM];
+						box->border[BOTTOM].width;
 				if (max_pos_margin < box->margin[BOTTOM])
 					max_pos_margin = box->margin[BOTTOM];
 				else if (max_neg_margin < -box->margin[BOTTOM])
@@ -575,7 +600,7 @@ bool layout_block_context(struct box *block, int viewport_height,
 				cx -= box->x;
 				y = box->y + box->padding[TOP] + box->height +
 						box->padding[BOTTOM] +
-						box->border[BOTTOM];
+						box->border[BOTTOM].width;
 			} while (box != block && !box->next);
 			if (box == block)
 				break;
@@ -589,7 +614,7 @@ bool layout_block_context(struct box *block, int viewport_height,
 	/* Increase height to contain any floats inside (CSS 2.1 10.6.7). */
 	for (box = block->float_children; box; box = box->next_float) {
 		y = box->y + box->height + box->padding[BOTTOM] +
-				box->border[BOTTOM] + box->margin[BOTTOM];
+				box->border[BOTTOM].width + box->margin[BOTTOM];
 		if (cy < y)
 			cy = y;
 	}
@@ -600,7 +625,8 @@ bool layout_block_context(struct box *block, int viewport_height,
 			layout_block_add_scrollbar(block, BOTTOM);
 	}
 
-	if (block->style && block->style->position != CSS_POSITION_ABSOLUTE) {
+	if (block->style && css_computed_position(block->style) != 
+			CSS_POSITION_ABSOLUTE) {
 		/* Block is in normal flow */
 		layout_apply_minmax_height(block, NULL);
 	}
@@ -624,12 +650,9 @@ void layout_minmax_block(struct box *block,
 	int min = 0, max = 0;
 	int extra_fixed = 0;
 	float extra_frac = 0;
-	struct css_length size;
-	struct css_length gadget_size; /* Checkbox / radio buttons */
-	size.unit = CSS_UNIT_EM;
-	size.value = 10;
-	gadget_size.unit = CSS_UNIT_EM;
-	gadget_size.value = 1;
+	enum css_width wtype;
+	css_fixed width = 0;
+	css_unit wunit = CSS_UNIT_PX;
 
 	assert(block->type == BOX_BLOCK ||
 			block->type == BOX_INLINE_BLOCK ||
@@ -639,22 +662,28 @@ void layout_minmax_block(struct box *block,
 	if (block->max_width != UNKNOWN_MAX_WIDTH)
 		return;
 
+	wtype = css_computed_width(block->style, &width, &wunit);
+
 	if (block->gadget && (block->gadget->type == GADGET_TEXTBOX ||
 			block->gadget->type == GADGET_PASSWORD ||
 			block->gadget->type == GADGET_FILE ||
 			block->gadget->type == GADGET_TEXTAREA) &&
-			block->style &&
-			block->style->width.width == CSS_WIDTH_AUTO) {
-		min = max = css_len2px(&size, block->style);
+			block->style && wtype == CSS_WIDTH_AUTO) {
+		css_fixed size = INTTOFIX(10);
+		css_unit unit = CSS_UNIT_EM;
+
+		min = max = FIXTOINT(nscss_len2px(size, unit, block->style));
 	}
 
 	if (block->gadget && (block->gadget->type == GADGET_RADIO ||
 			block->gadget->type == GADGET_CHECKBOX) &&
-			block->style &&
-			block->style->width.width == CSS_WIDTH_AUTO) {
+			block->style && wtype == CSS_WIDTH_AUTO) {
+		css_fixed size = INTTOFIX(1);
+		css_unit unit = CSS_UNIT_EM;
+
 		/* form checkbox or radio button
 		 * if width is AUTO, set it to 1em */
-		min = max = css_len2px(&gadget_size, block->style);
+		min = max = FIXTOINT(nscss_len2px(size, unit, block->style));
 	}
 
 	if (block->object) {
@@ -686,9 +715,9 @@ void layout_minmax_block(struct box *block,
 			assert(child->max_width != UNKNOWN_MAX_WIDTH);
 
 			if (child->style &&
-					(child->style->position ==
+					(css_computed_position(child->style) ==
 							CSS_POSITION_ABSOLUTE ||
-					child->style->position ==
+					css_computed_position(child->style) ==
 							CSS_POSITION_FIXED)) {
 				/* This child is positioned out of normal flow,
 				 * so it will have no affect on width */
@@ -708,18 +737,16 @@ void layout_minmax_block(struct box *block,
 	}
 
 	/* fixed width takes priority */
-	if (block->type != BOX_TABLE_CELL &&
-			block->style->width.width == CSS_WIDTH_LENGTH) {
-		min = max = css_len2px(&block->style->width.value.length,
-				block->style);
+	if (block->type != BOX_TABLE_CELL && wtype == CSS_WIDTH_SET &&
+			wunit != CSS_UNIT_PCT) {
+		min = max = FIXTOINT(nscss_len2px(width, wunit, block->style));
 	}
 
 	/* add margins, border, padding to min, max widths */
-	if (block->gadget && (block->style->width.width == CSS_WIDTH_PERCENT ||
-			(block->style->width.width == CSS_WIDTH_LENGTH &&
+	if (block->gadget && wtype == CSS_WIDTH_SET &&
 			(block->gadget->type == GADGET_SUBMIT ||
 			block->gadget->type == GADGET_RESET ||
-			block->gadget->type == GADGET_BUTTON)))) {
+			block->gadget->type == GADGET_BUTTON)) {
 		/* some gadgets with specified width already include border and
 		 * padding, so just get margin */
 		calculate_mbp_width(block->style, LEFT, true, false, false,
@@ -799,8 +826,8 @@ void layout_block_find_dimensions(int available_width, int viewport_height,
 	int height;
 	int *margin = box->margin;
 	int *padding = box->padding;
-	int *border = box->border;
-	struct css_style *style = box->style;
+	struct box_border *border = box->border;
+	const css_computed_style *style = box->style;
 
 	layout_find_dimensions(available_width, viewport_height, box, style,
 			&width, &height, &max_width, &min_width,
@@ -854,13 +881,13 @@ bool layout_apply_minmax_height(struct box *box, struct box *container)
 	bool updated = false;
 
 	/* Find containing block for percentage heights */
-	if (box->style->position == CSS_POSITION_ABSOLUTE) {
+	if (css_computed_position(box->style) == CSS_POSITION_ABSOLUTE) {
 		/* Box is absolutely positioned */
 		assert(container);
 		containing_block = container;
 	} else if (box->float_container &&
-			(box->style->float_ == CSS_FLOAT_LEFT ||
-			 box->style->float_ == CSS_FLOAT_RIGHT)) {
+			(css_computed_float(box->style) == CSS_FLOAT_LEFT ||
+			 css_computed_float(box->style) == CSS_FLOAT_RIGHT)) {
 		/* Box is a float */
 		assert(box->parent && box->parent->parent &&
 				box->parent->parent->parent);
@@ -875,72 +902,73 @@ bool layout_apply_minmax_height(struct box *box, struct box *container)
 	}
 
 	if (box->style) {
+		enum css_height htype = CSS_HEIGHT_AUTO;
+		css_fixed length = 0;
+		css_unit unit = CSS_UNIT_PX;
+
+		if (containing_block) {
+			htype = css_computed_height(containing_block->style, 
+					&length, &unit);
+		}
+
 		/* max-height */
-		switch (box->style->max_height.max_height) {
-		case CSS_MAX_HEIGHT_LENGTH:
-			h = css_len2px(&box->style->max_height.value.length,
-					box->style);
-			if (h < box->height) {
-				box->height = h;
-				updated = true;
-			}
-			break;
-		case CSS_MAX_HEIGHT_PERCENT:
-			if (containing_block &&
+		if (css_computed_max_height(box->style, &length, &unit) ==
+				CSS_MAX_HEIGHT_SET) {
+			if (unit == CSS_UNIT_PCT) {
+				if (containing_block &&
 					containing_block->height != AUTO &&
-					(box->style->position ==
+					(css_computed_position(box->style) ==
 							CSS_POSITION_ABSOLUTE ||
-					(containing_block->style->height.
-					height == CSS_HEIGHT_LENGTH ||
-					containing_block->style->height.
-					height == CSS_HEIGHT_PERCENT))) {
-				/* Box is absolutely positioned or its
-				 * containing block has a valid specified
-				 * height. (CSS 2.1 Section 10.5) */
-				h = box->style->max_height.value.percent *
+						htype == CSS_HEIGHT_SET)) {
+					/* Box is absolutely positioned or its
+					 * containing block has a valid 
+					 * specified height. (CSS 2.1 
+					 * Section 10.5) */
+					h = FIXTOFLT(length) *
 						containing_block->height / 100;
+					if (h < box->height) {
+						box->height = h;
+						updated = true;
+					}
+				}
+			} else {
+				h = FIXTOINT(nscss_len2px(length, unit, 
+						box->style));
 				if (h < box->height) {
 					box->height = h;
 					updated = true;
 				}
 			}
-			break;
-		default:
-			break;
 		}
 
 		/* min-height */
-		switch (box->style->min_height.min_height) {
-		case CSS_MIN_HEIGHT_LENGTH:
-			h = css_len2px(&box->style->min_height.value.length,
-					box->style);
-			if (h > box->height) {
-				box->height = h;
-				updated = true;
-			}
-			break;
-		case CSS_MIN_HEIGHT_PERCENT:
-			if (containing_block &&
+		if (css_computed_min_height(box->style, &length, &unit) ==
+				CSS_MIN_HEIGHT_SET) {
+			if (unit == CSS_UNIT_PCT) {
+				if (containing_block &&
 					containing_block->height != AUTO &&
-					(box->style->position ==
+					(css_computed_position(box->style) ==
 							CSS_POSITION_ABSOLUTE ||
-					(containing_block->style->height.
-					height == CSS_HEIGHT_LENGTH ||
-					containing_block->style->height.
-					height == CSS_HEIGHT_PERCENT))) {
-				/* Box is absolutely positioned or its
-				 * containing block has a valid specified
-				 * height. (CSS 2.1 Section 10.5) */
-				h = box->style->min_height.value.percent *
+						htype == CSS_HEIGHT_SET)) {
+					/* Box is absolutely positioned or its
+					 * containing block has a valid 
+					 * specified height. (CSS 2.1 
+					 * Section 10.5) */
+					h = FIXTOFLT(length) *
 						containing_block->height / 100;
+					if (h > box->height) {
+						box->height = h;
+						updated = true;
+					}
+				}
+			} else {
+				h = FIXTOINT(nscss_len2px(length, unit, 
+						box->style));
 				if (h > box->height) {
 					box->height = h;
 					updated = true;
 				}
 			}
-			break;
-		default:
-			break;
 		}
 	}
 	return updated;
@@ -955,18 +983,24 @@ bool layout_apply_minmax_height(struct box *box, struct box *container)
 
 void layout_block_add_scrollbar(struct box *box, int which)
 {
+	enum css_overflow overflow;
+
 	assert(box->type == BOX_BLOCK && (which == RIGHT || which == BOTTOM));
 
-	if (box->style && (box->style->overflow == CSS_OVERFLOW_SCROLL ||
-			box->style->overflow == CSS_OVERFLOW_AUTO)) {
+	if (box->style == NULL)
+		return;
+
+	overflow = css_computed_overflow(box->style);
+
+	if (overflow == CSS_OVERFLOW_SCROLL || overflow == CSS_OVERFLOW_AUTO) {
 		/* make space for scrollbars, unless height/width are AUTO */
 		if (which == BOTTOM && box->height != AUTO &&
-				(box->style->overflow == CSS_OVERFLOW_SCROLL ||
+				(overflow == CSS_OVERFLOW_SCROLL ||
 				box_hscrollbar_present(box))) {
 			box->padding[BOTTOM] += SCROLLBAR_WIDTH;
 		}
 		if (which == RIGHT && box->width != AUTO &&
-				(box->style->overflow == CSS_OVERFLOW_SCROLL ||
+				(overflow == CSS_OVERFLOW_SCROLL ||
 				box_vscrollbar_present(box))) {
 			box->width -= SCROLLBAR_WIDTH;
 			box->padding[RIGHT] += SCROLLBAR_WIDTH;
@@ -987,16 +1021,14 @@ void layout_block_add_scrollbar(struct box *box, int which)
  * \param  min_width	    Box min-width ( <=0 means no min-width to apply)
  * \param  margin[4]	    Current box margins. Updated with new box
  *				left / right margins
- * \param  padding[4]	    Current box paddings. Updated with new box
- *				left / right paddings
- * \param  border[4]	    Current box border widths. Updated with new
- *				box left / right border widths
+ * \param  padding[4]	    Current box paddings.
+ * \param  border[4]	    Current box border widths.
  * \return		    New box width
  */
 
 int layout_solve_width(int available_width, int width, int lm, int rm,
 		int max_width, int min_width,
-		int margin[4], int padding[4], int border[4])
+		int margin[4], int padding[4], struct box_border border[4])
 {
 	bool auto_width = false;
 
@@ -1013,8 +1045,9 @@ int layout_solve_width(int available_width, int width, int lm, int rm,
 		if (margin[RIGHT] == AUTO) margin[RIGHT] = rm;
 
 		width = available_width -
-				(margin[LEFT] + border[LEFT] + padding[LEFT] +
-				padding[RIGHT] + border[RIGHT] + margin[RIGHT]);
+				(margin[LEFT] + border[LEFT].width + 
+				padding[LEFT] + padding[RIGHT] + 
+				border[RIGHT].width + margin[RIGHT]);
 		width = width < 0 ? 0 : width;
 		auto_width = true;
 	}
@@ -1032,8 +1065,8 @@ int layout_solve_width(int available_width, int width, int lm, int rm,
 	if (!auto_width && margin[LEFT] == AUTO && margin[RIGHT] == AUTO) {
 		/* make the margins equal, centering the element */
 		margin[LEFT] = margin[RIGHT] = (available_width - lm - rm -
-				(border[LEFT] + padding[LEFT] + width +
-				 padding[RIGHT] + border[RIGHT])) / 2;
+				(border[LEFT].width + padding[LEFT] + width +
+				 padding[RIGHT] + border[RIGHT].width)) / 2;
 
 		if (margin[LEFT] < 0) {
 			margin[RIGHT] += margin[LEFT];
@@ -1044,14 +1077,16 @@ int layout_solve_width(int available_width, int width, int lm, int rm,
 
 	} else if (!auto_width && margin[LEFT] == AUTO) {
 		margin[LEFT] = available_width - lm -
-				(border[LEFT] + padding[LEFT] + width +
-				padding[RIGHT] + border[RIGHT] + margin[RIGHT]);
+				(border[LEFT].width + padding[LEFT] + width +
+				padding[RIGHT] + border[RIGHT].width + 
+				margin[RIGHT]);
 		margin[LEFT] = margin[LEFT] < lm ? lm : margin[LEFT];
 	} else if (!auto_width) {
 		/* margin-right auto or "over-constrained" */
 		margin[RIGHT] = available_width - rm -
-				(margin[LEFT] + border[LEFT] + padding[LEFT] +
-				 width + padding[RIGHT] + border[RIGHT]);
+				(margin[LEFT] + border[LEFT].width +
+				 padding[LEFT] + width + padding[RIGHT] + 
+				 border[RIGHT].width);
 	}
 
 	return width;
@@ -1070,14 +1105,15 @@ int layout_solve_width(int available_width, int width, int lm, int rm,
  */
 
 void layout_float_find_dimensions(int available_width,
-		struct css_style *style, struct box *box)
+		const css_computed_style *style, struct box *box)
 {
 	int width, height, max_width, min_width;
 	int *margin = box->margin;
 	int *padding = box->padding;
-	int *border = box->border;
-	int scrollbar_width = (style->overflow == CSS_OVERFLOW_SCROLL ||
-			style->overflow == CSS_OVERFLOW_AUTO) ?
+	struct box_border *border = box->border;
+	int scrollbar_width = 
+			(css_computed_overflow(style) == CSS_OVERFLOW_SCROLL ||
+			 css_computed_overflow(style) == CSS_OVERFLOW_AUTO) ?
 			SCROLLBAR_WIDTH : 0;
 
 	layout_find_dimensions(available_width, -1, box, style, &width, &height,
@@ -1107,44 +1143,49 @@ void layout_float_find_dimensions(int available_width,
 			box->gadget->type == GADGET_PASSWORD ||
 			box->gadget->type == GADGET_FILE ||
 			box->gadget->type == GADGET_TEXTAREA)) {
-		struct css_length size;
+		css_fixed size = 0;
+		css_unit unit = CSS_UNIT_EM;
+
 		/* Give sensible dimensions to gadgets, with auto width/height,
 		 * that don't shrink to fit contained text. */
 		assert(box->style);
 
-		size.unit = CSS_UNIT_EM;
 		if (box->gadget->type == GADGET_TEXTBOX ||
 				box->gadget->type == GADGET_PASSWORD ||
 				box->gadget->type == GADGET_FILE) {
 			if (width == AUTO) {
-				size.value = 10;
-				width = css_len2px(&size, box->style);
+				size = INTTOFIX(10);
+				width = FIXTOINT(nscss_len2px(size, unit, 
+						box->style));
 			}
 			if (box->gadget->type == GADGET_FILE &&
 					height == AUTO) {
-				size.value = 1.5;
-				height = css_len2px(&size, box->style);
+				size = FLTTOFIX(1.5);
+				height = FIXTOINT(nscss_len2px(size, unit, 
+						box->style));
 			}
 		}
 		if (box->gadget->type == GADGET_TEXTAREA) {
 			if (width == AUTO) {
-				size.value = 10;
-				width = css_len2px(&size, box->style);
+				size = INTTOFIX(10);
+				width = FIXTOINT(nscss_len2px(size, unit, 
+						box->style));
 			} else {
 				width -= scrollbar_width;
 			}
 			if (height == AUTO) {
-				size.value = 4;
-				height = css_len2px(&size, box->style);
+				size = INTTOFIX(4);
+				height = FIXTOINT(nscss_len2px(size, unit, 
+						box->style));
 			}
 		}
 	} else if (width == AUTO) {
 		/* CSS 2.1 section 10.3.5 */
 		width = min(max(box->min_width, available_width),
 				box->max_width);
-		width -= box->margin[LEFT] + box->border[LEFT] +
+		width -= box->margin[LEFT] + box->border[LEFT].width +
 				box->padding[LEFT] + box->padding[RIGHT] +
-				box->border[RIGHT] + box->margin[RIGHT];
+				box->border[RIGHT].width + box->margin[RIGHT];
 
 		if (max_width >= 0 && width > max_width) width = max_width;
 		if (min_width >  0 && width < min_width) width = min_width;
@@ -1183,33 +1224,37 @@ void layout_float_find_dimensions(int available_width,
  */
 
 void layout_find_dimensions(int available_width, int viewport_height,
-		struct box *box, struct css_style *style,
+		struct box *box, const css_computed_style *style,
 		int *width, int *height, int *max_width, int *min_width,
-		int margin[4], int padding[4], int border[4])
+		int margin[4], int padding[4], struct box_border border[4])
 {
 	struct box *containing_block = NULL;
 	unsigned int i;
 	bool percentage;
 
 	if (width) {
-		switch (style->width.width) {
-		case CSS_WIDTH_LENGTH:
-			*width = css_len2px(&style->width.value.length, style);
-			break;
-		case CSS_WIDTH_PERCENT:
-			*width = (style->width.value.percent *
-					available_width) / 100;
-			break;
-		case CSS_WIDTH_AUTO:
-		default:
+		enum css_width wtype;
+		css_fixed value = 0;
+		css_unit unit = CSS_UNIT_PX;
+
+		wtype = css_computed_width(style, &value, &unit);
+
+		if (wtype == CSS_WIDTH_SET) {
+			if (unit == CSS_UNIT_PCT) {
+				*width = (FIXTOFLT(value) * available_width) 
+						/ 100;
+			} else {
+				*width = FIXTOINT(nscss_len2px(value, unit, 
+						style));
+			}
+		} else {
 			*width = AUTO;
-			break;
 		}
 
 		/* specified gadget widths include borders and padding in some
 		 * cases */
 		if (box->gadget && *width != AUTO) {
-			percentage = style->width.width == CSS_WIDTH_PERCENT;
+			percentage = unit == CSS_UNIT_PCT;
 
 			layout_tweak_form_dimensions(box, percentage,
 					available_width, true, width);
@@ -1217,72 +1262,91 @@ void layout_find_dimensions(int available_width, int viewport_height,
 	}
 
 	if (height) {
-		switch (style->height.height) {
-		case CSS_HEIGHT_LENGTH:
-			*height = css_len2px(&style->height.value.length,
-					style);
-			break;
-		case CSS_HEIGHT_PERCENT:
-			if (box->style->position == CSS_POSITION_ABSOLUTE) {
-				/* Box is absolutely positioned */
-				assert(box->float_container);
-				containing_block = box->float_container;
-			} else if (box->float_container &&
-					box->style->position !=
-					CSS_POSITION_ABSOLUTE &&
-					(box->style->float_ ==
-					CSS_FLOAT_LEFT ||
-					box->style->float_ ==
-					CSS_FLOAT_RIGHT)) {
-				/* Box is a float */
-				assert(box->parent && box->parent->parent &&
+		enum css_height htype;
+		css_fixed value = 0;
+		css_unit unit = CSS_UNIT_PX;
+
+		htype = css_computed_height(style, &value, &unit);
+
+		if (htype == CSS_HEIGHT_SET) {
+			if (unit == CSS_UNIT_PCT) {
+				enum css_height cbhtype;
+
+				if (css_computed_position(box->style) == 
+						CSS_POSITION_ABSOLUTE) {
+					/* Box is absolutely positioned */
+					assert(box->float_container);
+					containing_block = box->float_container;
+				} else if (box->float_container &&
+					css_computed_position(box->style) !=
+						CSS_POSITION_ABSOLUTE &&
+					(css_computed_float(box->style) ==
+						CSS_FLOAT_LEFT ||
+					 css_computed_float(box->style) ==
+						CSS_FLOAT_RIGHT)) {
+					/* Box is a float */
+					assert(box->parent && 
+						box->parent->parent &&
 						box->parent->parent->parent);
-				containing_block = box->parent->parent->parent;
-			} else if (box->parent && box->parent->type !=
-					BOX_INLINE_CONTAINER) {
-				/* Box is a block level element */
-				containing_block = box->parent;
-			} else if (box->parent && box->parent->type ==
-					BOX_INLINE_CONTAINER) {
-				/* Box is an inline block */
-				assert(box->parent->parent);
-				containing_block = box->parent->parent;
-			}
-			if (containing_block &&
+
+					containing_block = 
+						box->parent->parent->parent;
+				} else if (box->parent && box->parent->type !=
+						BOX_INLINE_CONTAINER) {
+					/* Box is a block level element */
+					containing_block = box->parent;
+				} else if (box->parent && box->parent->type ==
+						BOX_INLINE_CONTAINER) {
+					/* Box is an inline block */
+					assert(box->parent->parent);
+					containing_block = box->parent->parent;
+				}
+
+				if (containing_block) {
+					css_fixed f = 0;
+					css_unit u = CSS_UNIT_PX;
+
+					cbhtype = css_computed_height(
+							containing_block->style,
+							&f, &u);
+				}
+
+				if (containing_block &&
 					containing_block->height != AUTO &&
-					(box->style->position ==
+					(css_computed_position(box->style) ==
 							CSS_POSITION_ABSOLUTE ||
-					(containing_block->style->height.
-					height == CSS_HEIGHT_LENGTH ||
-					containing_block->style->height.
-					height == CSS_HEIGHT_PERCENT))) {
-				/* Box is absolutely positioned or its
-				 * containing block has a valid specified
-				 * height. (CSS 2.1 Section 10.5) */
-				*height = style->height.value.percent *
-						containing_block->height / 100;
-			} else if ((!box->parent || !box->parent->parent) &&
-					viewport_height >= 0) {
-				/* If root element or it's child
-				 * (HTML or BODY) */
-				*height = style->height.value.percent *
-						viewport_height / 100;
+						cbhtype == CSS_HEIGHT_SET)) {
+					/* Box is absolutely positioned or its
+					 * containing block has a valid 
+					 * specified height. 
+					 * (CSS 2.1 Section 10.5) */
+					*height = FIXTOFLT(value) *
+						containing_block->height / 
+						100;
+				} else if ((!box->parent || 
+						!box->parent->parent) &&
+						viewport_height >= 0) {
+					/* If root element or it's child
+					 * (HTML or BODY) */
+					*height = FIXTOFLT(value) *
+							viewport_height / 100;
+				} else {
+					/* precentage height not permissible
+					 * treat height as auto */
+					*height = AUTO;
+				}
 			} else {
-				/* precentage height not permissible
-				 * treat height as auto */
-				*height = AUTO;
+				*height = FIXTOINT(nscss_len2px(value, unit, 
+						style));
 			}
-			break;
-		case CSS_HEIGHT_AUTO:
-		default:
+		} else {
 			*height = AUTO;
-			break;
 		}
 
 		/* specified gadget heights include borders and padding in
 		 * some cases */
 		if (box->gadget && *height != AUTO) {
-			percentage = style->height.height == CSS_HEIGHT_PERCENT;
+			percentage = unit == CSS_UNIT_PCT;
 
 			layout_tweak_form_dimensions(box, percentage,
 					available_width, false, height);
@@ -1290,53 +1354,60 @@ void layout_find_dimensions(int available_width, int viewport_height,
 	}
 
 	if (max_width) {
-		switch (style->max_width.max_width) {
-		case CSS_MAX_WIDTH_LENGTH:
-			*max_width = css_len2px(&style->max_width.value.length,
-					style);
-			break;
-		case CSS_MAX_WIDTH_PERCENT:
-			*max_width = (style->max_width.value.percent *
-					available_width) / 100;
-			break;
-		case CSS_MAX_WIDTH_NONE:
-		default:
+		enum css_max_width type;
+		css_fixed value = 0;
+		css_unit unit = CSS_UNIT_PX;
+
+		type = css_computed_max_width(style, &value, &unit);
+
+		if (type == CSS_MAX_WIDTH_SET) {
+			if (unit == CSS_UNIT_PCT) {
+				*max_width = (FIXTOFLT(value) * 
+						available_width) / 100;
+			} else {
+				*max_width = FIXTOINT(nscss_len2px(value, unit, 
+						style));
+			}
+		} else {
 			/* Inadmissible */
 			*max_width = -1;
-			break;
 		}
 
 		/* specified gadget widths include borders and padding in some
 		 * cases */
 		if (box->gadget && *max_width != -1) {
-			percentage = style->max_width.max_width ==
-							CSS_WIDTH_PERCENT;
+			percentage = unit == CSS_UNIT_PCT;
+
 			layout_tweak_form_dimensions(box, percentage,
 					available_width, true, max_width);
 		}
 	}
 
 	if (min_width) {
-		switch (style->min_width.min_width) {
-		case CSS_MIN_WIDTH_LENGTH:
-			*min_width = css_len2px(&style->min_width.value.
-					length, style);
-			break;
-		case CSS_MIN_WIDTH_PERCENT:
-			*min_width = (style->min_width.value.percent *
+		enum css_min_width type;
+		css_fixed value = 0;
+		css_unit unit = CSS_UNIT_PX;
+
+		type = css_computed_min_width(style, &value, &unit);
+
+		if (type == CSS_MIN_WIDTH_SET) {
+			if (unit == CSS_UNIT_PCT) {
+				*min_width = (FIXTOFLT(value) *
 					available_width) / 100;
-			break;
-		default:
+			} else {
+				*min_width = FIXTOINT(nscss_len2px(value, unit, 
+						style));
+			}
+		} else {
 			/* Inadmissible */
 			*min_width = 0;
-			break;
 		}
 
 		/* specified gadget widths include borders and padding in some
 		 * cases */
 		if (box->gadget && *min_width != 0) {
-			percentage = style->min_width.min_width ==
-							CSS_WIDTH_PERCENT;
+			percentage = unit == CSS_UNIT_PCT;
+
 			layout_tweak_form_dimensions(box, percentage,
 					available_width, true, min_width);
 		}
@@ -1344,46 +1415,137 @@ void layout_find_dimensions(int available_width, int viewport_height,
 
 	for (i = 0; i != 4; i++) {
 		if (margin) {
-			switch (style->margin[i].margin) {
-			case CSS_MARGIN_LENGTH:
-				margin[i] = css_len2px(&style->margin[i].
-						value.length, style);
+			enum css_margin type = CSS_MARGIN_AUTO;;
+			css_fixed value = 0;
+			css_unit unit = CSS_UNIT_PX;
+
+			switch (i) {
+			case TOP:
+				type = css_computed_margin_top(style, 
+						&value, &unit);
 				break;
-			case CSS_MARGIN_PERCENT:
-				margin[i] = available_width *
-					style->margin[i].value.percent / 100;
+			case RIGHT:
+				type = css_computed_margin_right(style,
+						&value, &unit);
 				break;
-			case CSS_MARGIN_AUTO:
-			default:
+			case BOTTOM:
+				type = css_computed_margin_bottom(style,
+						&value, &unit);
+				break;
+			case LEFT:
+				type = css_computed_margin_left(style,
+						&value, &unit);
+				break;
+			}
+
+			if (type == CSS_MARGIN_SET) {
+				if (unit == CSS_UNIT_PCT) {
+					margin[i] = available_width *
+						FIXTOFLT(value) / 100;
+				} else {
+					margin[i] = FIXTOINT(nscss_len2px(value,
+							unit, style));
+				}
+			} else {
 				margin[i] = AUTO;
-				break;
 			}
 		}
 
 		if (padding) {
-			switch (style->padding[i].padding) {
-			case CSS_PADDING_PERCENT:
+			enum css_padding type;
+			css_fixed value = 0;
+			css_unit unit = CSS_UNIT_PX;
+
+			switch (i) {
+			case TOP:
+				type = css_computed_padding_top(style, 
+						&value, &unit);
+				break;
+			case RIGHT:
+				type = css_computed_padding_right(style,
+						&value, &unit);
+				break;
+			case BOTTOM:
+				type = css_computed_padding_bottom(style,
+						&value, &unit);
+				break;
+			case LEFT:
+				type = css_computed_padding_left(style,
+						&value, &unit);
+				break;
+			}
+
+			if (unit == CSS_UNIT_PCT) {
 				padding[i] = available_width *
-						style->padding[i].value.
-						percent / 100;
-				break;
-			case CSS_PADDING_LENGTH:
-			default:
-				padding[i] = css_len2px(&style->padding[i].
-						value.length, style);
-				break;
+					FIXTOFLT(value) / 100;
+			} else {
+				padding[i] = FIXTOINT(nscss_len2px(value, unit, 
+						style));
 			}
 		}
 
-		if (border) {
-			if (style->border[i].style == CSS_BORDER_STYLE_HIDDEN ||
-					style->border[i].style ==
-					CSS_BORDER_STYLE_NONE)
+		/* Table cell borders are populated in table.c */
+		if (border && box->type != BOX_TABLE_CELL) {
+			enum css_border_width wtype;
+			enum css_border_style bstyle = CSS_BORDER_STYLE_NONE;
+			enum css_border_color bcolor = 
+					CSS_BORDER_COLOR_TRANSPARENT;
+			css_color color = 0;
+			css_fixed value = 0;
+			css_unit unit = CSS_UNIT_PX;
+
+			switch (i) {
+			case TOP:
+				wtype = css_computed_border_top_width(style, 
+						&value, &unit);
+				bstyle = css_computed_border_top_style(style);
+				bcolor = css_computed_border_top_color(style, 
+						&color);
+				break;
+			case RIGHT:
+				wtype = css_computed_border_right_width(style,
+						&value, &unit);
+				bstyle = css_computed_border_right_style(style);
+				bcolor = css_computed_border_right_color(style, 
+						&color);
+				break;
+			case BOTTOM:
+				wtype = css_computed_border_bottom_width(style,
+						&value, &unit);
+				bstyle = css_computed_border_bottom_style(
+						style);
+				bcolor = css_computed_border_bottom_color(style,
+						&color);
+				break;
+			case LEFT:
+				wtype = css_computed_border_left_width(style,
+						&value, &unit);
+				bstyle = css_computed_border_left_style(style);
+				bcolor = css_computed_border_left_color(style, 
+						&color);
+				break;
+			}
+
+			border[i].style = bstyle;
+			border[i].color = bcolor;
+			border[i].c = color;
+
+			if (bstyle == CSS_BORDER_STYLE_HIDDEN ||
+					bstyle == CSS_BORDER_STYLE_NONE)
 				/* spec unclear: following Mozilla */
-				border[i] = 0;
+				border[i].width = 0;
 			else
-				border[i] = css_len2px(&style->border[i].
-						width.value, style);
+				border[i].width = FIXTOINT(nscss_len2px(value, 
+						unit, style));
+
+			/* Special case for border-collapse: make all borders 
+			 * on table/table-row-group/table-row zero width. */
+			if (css_computed_border_collapse(style) ==
+					CSS_BORDER_COLLAPSE_COLLAPSE &&
+					(box->type == BOX_TABLE ||
+					 box->type == BOX_TABLE_ROW_GROUP ||
+					 box->type == BOX_TABLE_ROW))
+				border[i].width = 0;
 		}
 	}
 }
@@ -1435,7 +1597,7 @@ void layout_tweak_form_dimensions(struct box *box, bool percentage,
  * \return  y coordinate relative to ancestor box for floats
  */
 
-int layout_clear(struct box *fl, css_clear clear)
+int layout_clear(struct box *fl, enum css_clear clear)
 {
 	int y = 0;
 	for (; fl; fl = fl->next_float) {
@@ -1522,13 +1684,17 @@ bool layout_inline_container(struct box *inline_container, int width,
 	has_text_children = false;
 	for (c = inline_container->children; c; c = c->next) {
 		bool is_pre = false;
-		if (c->style)
-			is_pre = (c->style->white_space ==
-					CSS_WHITE_SPACE_PRE ||
-					c->style->white_space ==
-					CSS_WHITE_SPACE_PRE_LINE ||
-					c->style->white_space ==
-					CSS_WHITE_SPACE_PRE_WRAP);
+
+		if (c->style) {
+			enum css_white_space whitespace;
+
+			whitespace = css_computed_white_space(c->style);
+
+			is_pre = (whitespace == CSS_WHITE_SPACE_PRE ||
+				whitespace == CSS_WHITE_SPACE_PRE_LINE ||
+				whitespace == CSS_WHITE_SPACE_PRE_WRAP);
+		}
+
 		if ((!c->object && c->text && (c->length || is_pre)) ||
 				c->type == BOX_BR)
 			has_text_children = true;
@@ -1600,31 +1766,50 @@ void layout_minmax_inline_container(struct box *inline_container,
  * Calculate line height from a style.
  */
 
-int line_height(struct css_style *style)
+int line_height(const css_computed_style *style)
 {
-	float font_len;
+	enum css_line_height lhtype;
+	css_fixed lhvalue = 0;
+	css_unit lhunit = CSS_UNIT_PX;
+	css_fixed line_height;
 
 	assert(style);
-	assert(style->line_height.size == CSS_LINE_HEIGHT_LENGTH ||
-	       style->line_height.size == CSS_LINE_HEIGHT_ABSOLUTE ||
-	       style->line_height.size == CSS_LINE_HEIGHT_PERCENT);
 
-	/* take account of minimum font size option */
-	if ((font_len = css_len2px(&style->font_size.value.length, 0)) <
-			option_font_min_size * css_screen_dpi / 720.0)
-		font_len = option_font_min_size * css_screen_dpi / 720.0;
-
-	switch (style->line_height.size) {
-	case CSS_LINE_HEIGHT_LENGTH:
-		return css_len2px(&style->line_height.value.length, style);
-
-	case CSS_LINE_HEIGHT_ABSOLUTE:
-		return style->line_height.value.absolute * font_len;
-
-	case CSS_LINE_HEIGHT_PERCENT:
-	default:
-		return style->line_height.value.percent * font_len / 100.0;
+	lhtype = css_computed_line_height(style, &lhvalue, &lhunit);
+	if (lhtype == CSS_LINE_HEIGHT_NORMAL) {
+		/* Normal => use a constant of 1.3 * font-size */
+		lhvalue = FLTTOFIX(1.3);
+		lhtype = CSS_LINE_HEIGHT_NUMBER;
 	}
+
+	if (lhtype == CSS_LINE_HEIGHT_NUMBER ||
+			lhunit == CSS_UNIT_PCT) {
+		css_fixed fs = 0, px_fs;
+		css_unit fs_unit = CSS_UNIT_PX;
+
+		css_computed_font_size(style, &fs, &fs_unit);
+
+		/* Convert to points */
+		fs = nscss_len2pt(fs, fs_unit);
+		fs_unit = CSS_UNIT_PT;
+
+		/* Clamp to configured minimum */
+		if (fs < FDIVI(INTTOFIX(option_font_min_size), 10))
+			fs = FDIVI(INTTOFIX(option_font_min_size), 10);
+
+		px_fs = nscss_len2px(fs, fs_unit, style);
+
+		if (lhtype == CSS_LINE_HEIGHT_NUMBER)
+			line_height = FMUL(lhvalue, px_fs);
+		else
+			line_height = FDIVI(FMUL(lhvalue, px_fs), 100);
+	} else {
+		assert(lhunit != CSS_UNIT_PCT);
+
+		line_height = nscss_len2px(lhvalue, lhunit, style);
+	}
+
+	return FIXTOINT(line_height);
 }
 
 
@@ -1666,12 +1851,8 @@ bool layout_line(struct box *first, int *width, int *y,
 	int space_before = 0, space_after = 0;
 	unsigned int inline_count = 0;
 	unsigned int i;
-	struct css_length gadget_size; /* Checkbox / radio buttons */
 	const struct font_functions *font_func = content->data.html.font_func;
 	plot_font_style_t fstyle;
-
-	gadget_size.unit = CSS_UNIT_EM;
-	gadget_size.value = 1;
 
 	LOG(("first %p, first->text '%.*s', width %i, y %i, cx %i, cy %i",
 			first, (int) first->length, first->text, *width,
@@ -1706,6 +1887,11 @@ bool layout_line(struct box *first, int *width, int *y,
 	 * keep in sync with the loop in layout_minmax_line() */
 	LOG(("x0 %i, x1 %i, x1 - x0 %i", x0, x1, x1 - x0));
 	for (x = 0, b = first; x <= x1 - x0 && b != 0; b = b->next) {
+		enum css_width wtype;
+		enum css_height htype;
+		css_fixed value = 0;
+		css_unit unit = CSS_UNIT_PX;
+
 		assert(b->type == BOX_INLINE || b->type == BOX_INLINE_BLOCK ||
 				b->type == BOX_FLOAT_LEFT ||
 				b->type == BOX_FLOAT_RIGHT ||
@@ -1719,8 +1905,10 @@ bool layout_line(struct box *first, int *width, int *y,
 		if (b->type == BOX_FLOAT_LEFT || b->type == BOX_FLOAT_RIGHT)
 			continue;
 		if (b->type == BOX_INLINE_BLOCK &&
-				(b->style->position == CSS_POSITION_ABSOLUTE ||
-				 b->style->position == CSS_POSITION_FIXED))
+				(css_computed_position(b->style) == 
+						CSS_POSITION_ABSOLUTE ||
+				 css_computed_position(b->style) == 
+						CSS_POSITION_FIXED))
 			continue;
 
 		assert(b->style != NULL);
@@ -1732,13 +1920,15 @@ bool layout_line(struct box *first, int *width, int *y,
 			if (b->max_width != UNKNOWN_WIDTH)
 				if (!layout_float(b, *width, content))
 					return false;
-			h = b->border[TOP] + b->padding[TOP] + b->height +
-					b->padding[BOTTOM] + b->border[BOTTOM];
+			h = b->border[TOP].width + b->padding[TOP] + b->height +
+					b->padding[BOTTOM] + 
+					b->border[BOTTOM].width;
 			if (height < h)
 				height = h;
-			x += b->margin[LEFT] + b->border[LEFT] +
+			x += b->margin[LEFT] + b->border[LEFT].width +
 					b->padding[LEFT] + b->width +
-					b->padding[RIGHT] + b->border[RIGHT] +
+					b->padding[RIGHT] + 
+					b->border[RIGHT].width +
 					b->margin[RIGHT];
 			space_after = 0;
 			continue;
@@ -1751,7 +1941,7 @@ bool layout_line(struct box *first, int *width, int *y,
 			for (i = 0; i != 4; i++)
 				if (b->margin[i] == AUTO)
 					b->margin[i] = 0;
-			x += b->margin[LEFT] + b->border[LEFT] +
+			x += b->margin[LEFT] + b->border[LEFT].width +
 					b->padding[LEFT];
 			if (b->inline_end) {
 				b->inline_end->margin[RIGHT] = b->margin[RIGHT];
@@ -1760,7 +1950,8 @@ bool layout_line(struct box *first, int *width, int *y,
 				b->inline_end->border[RIGHT] =
 						b->border[RIGHT];
 			} else {
-				x += b->padding[RIGHT] + b->border[RIGHT] +
+				x += b->padding[RIGHT] + 
+						b->border[RIGHT].width +
 						b->margin[RIGHT];
 			}
 		} else if (b->type == BOX_INLINE_END) {
@@ -1772,7 +1963,7 @@ bool layout_line(struct box *first, int *width, int *y,
 			} else {
 				space_after = 0;
 			}
-			x += b->padding[RIGHT] + b->border[RIGHT] +
+			x += b->padding[RIGHT] + b->border[RIGHT].width +
 					b->margin[RIGHT];
 			continue;
 		}
@@ -1838,32 +2029,27 @@ bool layout_line(struct box *first, int *width, int *y,
 		assert(b->style);
 
 		/* calculate box width */
-		switch (b->style->width.width) {
-		case CSS_WIDTH_LENGTH:
-			b->width = css_len2px(&b->style->width.value.length,
-					b->style);
-			break;
-		case CSS_WIDTH_PERCENT:
-			b->width = *width * b->style->width.value.percent / 100;
-			break;
-		case CSS_WIDTH_AUTO:
-		default:
+		wtype = css_computed_width(b->style, &value, &unit);
+		if (wtype == CSS_WIDTH_SET) {
+			if (unit == CSS_UNIT_PCT) {
+				b->width = *width * FIXTOFLT(value) / 100;
+			} else {
+				b->width = FIXTOINT(nscss_len2px(value, unit, 
+						b->style));
+			}
+		} else {
 			b->width = AUTO;
-			break;
 		}
 
 		/* height */
-		switch (b->style->height.height) {
-		case CSS_HEIGHT_LENGTH:
-			b->height = css_len2px(&b->style->height.value.length,
-					b->style);
-			break;
-		case CSS_HEIGHT_AUTO:
-		default:
+		htype = css_computed_height(b->style, &value, &unit);
+		if (htype == CSS_HEIGHT_SET) {
+			b->height = FIXTOINT(nscss_len2px(value, unit, 
+					b->style));
+		} else {
 			b->height = AUTO;
-			break;
 		}
-
+				
 		if (b->object) {
 			if (b->width == AUTO && b->height == AUTO) {
 				b->width = b->object->width;
@@ -1886,15 +2072,20 @@ bool layout_line(struct box *first, int *width, int *y,
 		} else {
 			/* form control with no object */
 			if (b->width == AUTO)
-				b->width = css_len2px(&gadget_size, b->style);
+				b->width = FIXTOINT(nscss_len2px(INTTOFIX(1), 
+						CSS_UNIT_EM, b->style));
 			if (b->height == AUTO)
-				b->height = css_len2px(&gadget_size, b->style);
+				b->height = FIXTOINT(nscss_len2px(INTTOFIX(1), 
+						CSS_UNIT_EM, b->style));
 		}
 
 		if (b->object && b->object->type == CONTENT_HTML &&
 				 b->width != b->object->available_width) {
+			htype = css_computed_height(b->style, &value, &unit);
+
 			content_reformat(b->object, b->width, b->height);
-			if (b->style->height.height == CSS_HEIGHT_AUTO)
+
+			if (htype == CSS_HEIGHT_AUTO)
 				b->height = b->object->height;
 		}
 
@@ -1925,8 +2116,10 @@ bool layout_line(struct box *first, int *width, int *y,
 	for (x = x_previous = 0, b = first; x <= x1 - x0 && b; b = b->next) {
 		LOG(("pass 2: b %p, x %i", b, x));
 		if (b->type == BOX_INLINE_BLOCK &&
-				(b->style->position == CSS_POSITION_ABSOLUTE ||
-				 b->style->position == CSS_POSITION_FIXED)) {
+				(css_computed_position(b->style) == 
+						CSS_POSITION_ABSOLUTE ||
+				 css_computed_position(b->style) == 
+						CSS_POSITION_FIXED)) {
 			b->x = x + space_after;
 
 		} else if (b->type == BOX_INLINE ||
@@ -1941,16 +2134,17 @@ bool layout_line(struct box *first, int *width, int *y,
 
 			if ((b->type == BOX_INLINE && !b->inline_end) ||
 					b->type == BOX_INLINE_BLOCK) {
-				b->x += b->margin[LEFT] + b->border[LEFT];
+				b->x += b->margin[LEFT] + b->border[LEFT].width;
 				x = b->x + b->padding[LEFT] + b->width +
 						b->padding[RIGHT] +
-						b->border[RIGHT] +
+						b->border[RIGHT].width +
 						b->margin[RIGHT];
 			} else if (b->type == BOX_INLINE) {
-				b->x += b->margin[LEFT] + b->border[LEFT];
+				b->x += b->margin[LEFT] + b->border[LEFT].width;
 				x = b->x + b->padding[LEFT] + b->width;
 			} else if (b->type == BOX_INLINE_END) {
-				x += b->padding[RIGHT] + b->border[RIGHT] +
+				x += b->padding[RIGHT] + 
+						b->border[RIGHT].width +
 						b->margin[RIGHT];
 			} else {
 				x += b->width;
@@ -1991,27 +2185,33 @@ bool layout_line(struct box *first, int *width, int *y,
 
 			if (!layout_float(d, *width, content))
 				return false;
-			LOG(("%p : %d %d", d, d->margin[TOP], d->border[TOP]));
-			d->x = d->margin[LEFT] + d->border[LEFT];
-			d->y = d->margin[TOP] + d->border[TOP];
-			b->width = d->margin[LEFT] + d->border[LEFT] +
+			LOG(("%p : %d %d", d, d->margin[TOP], 
+					d->border[TOP].width));
+			d->x = d->margin[LEFT] + d->border[LEFT].width;
+			d->y = d->margin[TOP] + d->border[TOP].width;
+			b->width = d->margin[LEFT] + d->border[LEFT].width +
 					d->padding[LEFT] + d->width +
-					d->padding[RIGHT] + d->border[RIGHT] +
+					d->padding[RIGHT] + 
+					d->border[RIGHT].width +
 					d->margin[RIGHT];
-			b->height = d->margin[TOP] + d->border[TOP] +
+			b->height = d->margin[TOP] + d->border[TOP].width +
 					d->padding[TOP] + d->height +
-					d->padding[BOTTOM] + d->border[BOTTOM] +
+					d->padding[BOTTOM] + 
+					d->border[BOTTOM].width +
 					d->margin[BOTTOM];
 
 			if (b->width > (x1 - x0) - x)
 				place_below = true;
-			if (d->style && (d->style->clear == CSS_CLEAR_NONE ||
-					(d->style->clear == CSS_CLEAR_LEFT &&
-					left == 0) ||
-					(d->style->clear == CSS_CLEAR_RIGHT &&
-					right == 0) ||
-					(d->style->clear == CSS_CLEAR_BOTH &&
-					left == 0 && right == 0)) &&
+			if (d->style && (css_computed_clear(d->style) == 
+						CSS_CLEAR_NONE ||
+					(css_computed_clear(d->style) == 
+						CSS_CLEAR_LEFT && left == 0) ||
+					(css_computed_clear(d->style) == 
+						CSS_CLEAR_RIGHT && 
+						right == 0) ||
+					(css_computed_clear(d->style) == 
+						CSS_CLEAR_BOTH &&
+						left == 0 && right == 0)) &&
 					(!place_below ||
 					(left == 0 && right == 0 && x == 0)) &&
 					cy >= cont->clear_level) {
@@ -2044,7 +2244,7 @@ bool layout_line(struct box *first, int *width, int *y,
 
 				place_float_below(b, *width,
 						cx, fy + height, cont);
-				if (d->style && d->style->clear !=
+				if (d->style && css_computed_clear(d->style) !=
 							CSS_CLEAR_NONE) {
 					/* to be cleared below existing
 					 * floats */
@@ -2054,7 +2254,7 @@ bool layout_line(struct box *first, int *width, int *y,
 						b->x = cx + *width - b->width;
 
 					fy = layout_clear(cont->float_children,
-							d->style->clear);
+						css_computed_clear(d->style));
 					if (fy > cont->clear_level)
 						cont->clear_level = fy;
 					if (b->y < fy)
@@ -2221,7 +2421,7 @@ bool layout_line(struct box *first, int *width, int *y,
 	}
 
 	/* set positions */
-	switch (first->parent->parent->style->text_align) {
+	switch (css_computed_text_align(first->parent->parent->style)) {
 	case CSS_TEXT_ALIGN_RIGHT:
 		x0 = x1 - x;
 		break;
@@ -2243,20 +2443,24 @@ bool layout_line(struct box *first, int *width, int *y,
 		}
 		if ((d->type == BOX_INLINE && (d->object || d->gadget)) ||
 				d->type == BOX_INLINE_BLOCK) {
-			d->y = *y + d->border[TOP] + d->margin[TOP];
+			d->y = *y + d->border[TOP].width + d->margin[TOP];
 		}
 		if (d->type == BOX_INLINE_BLOCK) {
 			d->x += x0;
 		}
 		if (d->type == BOX_INLINE_BLOCK &&
-				(d->style->position == CSS_POSITION_ABSOLUTE ||
-				 d->style->position == CSS_POSITION_FIXED))
+				(css_computed_position(d->style) == 
+						CSS_POSITION_ABSOLUTE ||
+				 css_computed_position(d->style) == 
+						CSS_POSITION_FIXED))
 			continue;
 		if ((d->type == BOX_INLINE && (d->object || d->gadget)) ||
 				d->type == BOX_INLINE_BLOCK) {
-			h = d->margin[TOP] + d->border[TOP] + d->padding[TOP] +
-					d->height + d->padding[BOTTOM] +
-					d->border[BOTTOM] + d->margin[BOTTOM];
+			h = d->margin[TOP] + d->border[TOP].width + 
+					d->padding[TOP] + d->height + 
+					d->padding[BOTTOM] + 
+					d->border[BOTTOM].width + 
+					d->margin[BOTTOM];
 			if (used_height < h)
 				used_height = h;
 		}
@@ -2279,9 +2483,9 @@ bool layout_line(struct box *first, int *width, int *y,
 	}
 
 	/* handle clearance for br */
-	if (br_box && br_box->style->clear != CSS_CLEAR_NONE) {
+	if (br_box && css_computed_clear(br_box->style) != CSS_CLEAR_NONE) {
 		int clear_y = layout_clear(cont->float_children,
-				br_box->style->clear);
+				css_computed_clear(br_box->style));
 		if (used_height < clear_y - cy)
 			used_height = clear_y - cy;
 	}
@@ -2312,14 +2516,15 @@ struct box *layout_minmax_line(struct box *first,
 	float frac;
 	size_t i, j;
 	struct box *b;
-	struct css_length gadget_size; /* Checkbox / radio buttons */
 	plot_font_style_t fstyle;
-
-	gadget_size.unit = CSS_UNIT_EM;
-	gadget_size.value = 1;
 
 	/* corresponds to the pass 1 loop in layout_line() */
 	for (b = first; b; b = b->next) {
+		enum css_width wtype;
+		enum css_height htype;
+		css_fixed value = 0;
+		css_unit unit = CSS_UNIT_PX;
+
 		assert(b->type == BOX_INLINE || b->type == BOX_INLINE_BLOCK ||
 				b->type == BOX_FLOAT_LEFT ||
 				b->type == BOX_FLOAT_RIGHT ||
@@ -2444,34 +2649,28 @@ struct box *layout_minmax_line(struct box *first,
 		assert(b->style);
 
 		/* calculate box width */
-		switch (b->style->width.width) {
-		case CSS_WIDTH_LENGTH:
-			width = css_len2px(&b->style->width.value.length,
-					b->style);
-			if (width < 0)
-				width = 0;
-			break;
-		case CSS_WIDTH_PERCENT:
-			/*
-			b->width = width * b->style->width.value.percent / 100;
-			break;
-			*/
-		case CSS_WIDTH_AUTO:
-		default:
+		wtype = css_computed_width(b->style, &value, &unit);
+		if (wtype == CSS_WIDTH_SET) {
+			if (unit == CSS_UNIT_PCT) {
+				/*
+				b->width = width * FIXTOFLT(value) / 100
+				*/
+			} else {
+				width = FIXTOINT(nscss_len2px(value, unit, 
+						b->style));
+				if (width < 0)
+					width = 0;
+			}
+		} else {
 			width = AUTO;
-			break;
 		}
 
 		/* height */
-		switch (b->style->height.height) {
-		case CSS_HEIGHT_LENGTH:
-			height = css_len2px(&b->style->height.value.length,
-					b->style);
-			break;
-		case CSS_HEIGHT_AUTO:
-		default:
+		htype = css_computed_height(b->style, &value, &unit);
+		if (htype == CSS_HEIGHT_SET) {
+			height = FIXTOINT(nscss_len2px(value, unit, b->style));
+		} else {
 			height = AUTO;
-			break;
 		}
 
 		if (b->object) {
@@ -2494,7 +2693,8 @@ struct box *layout_minmax_line(struct box *first,
 		} else {
 			/* form control with no object */
 			if (width == AUTO)
-				width = css_len2px(&gadget_size, b->style);
+				width = FIXTOINT(nscss_len2px(INTTOFIX(1), 
+						CSS_UNIT_EM, b->style));
 		}
 
 		if (min < width)
@@ -2522,15 +2722,17 @@ struct box *layout_minmax_line(struct box *first,
  * \return  length of indent
  */
 
-int layout_text_indent(struct css_style *style, int width)
+int layout_text_indent(const css_computed_style *style, int width)
 {
-	switch (style->text_indent.size) {
-	case CSS_TEXT_INDENT_LENGTH:
-		return css_len2px(&style->text_indent.value.length, style);
-	case CSS_TEXT_INDENT_PERCENT:
-		return width * style->text_indent.value.percent / 100;
-	default:
-		return 0;
+	css_fixed value = 0;
+	css_unit unit = CSS_UNIT_PX;
+
+	css_computed_text_indent(style, &value, &unit);
+
+	if (unit == CSS_UNIT_PCT) {
+		return width * FIXTOFLT(value) / 100;
+	} else {
+		return FIXTOINT(nscss_len2px(value, unit, style));
 	}
 }
 
@@ -2644,7 +2846,11 @@ bool layout_table(struct box *table, int available_width,
 	struct box *row_group;
 	struct box **row_span_cell;
 	struct column *col;
-	struct css_style *style = table->style;
+	const css_computed_style *style = table->style;
+	enum css_width wtype;
+	enum css_height htype;
+	css_fixed value = 0;
+	css_unit unit = CSS_UNIT_PX;
 
 	assert(table->type == BOX_TABLE);
 	assert(style);
@@ -2676,12 +2882,13 @@ bool layout_table(struct box *table, int available_width,
 		for (row = row_group->children; row; row = row->next) {
 			for (c = row->children; c; c = c->next) {
 				assert(c->style);
+				table_used_border_for_cell(c);
 				layout_find_dimensions(available_width, -1,
 						c, c->style, 0, 0, 0, 0, 0,
 						c->padding, c->border);
-				if (c->style->overflow ==
+				if (css_computed_overflow(c->style) ==
 						CSS_OVERFLOW_SCROLL ||
-						c->style->overflow ==
+					css_computed_overflow(c->style) ==
 						CSS_OVERFLOW_AUTO) {
 					c->padding[RIGHT] += SCROLLBAR_WIDTH;
 					c->padding[BOTTOM] += SCROLLBAR_WIDTH;
@@ -2691,92 +2898,104 @@ bool layout_table(struct box *table, int available_width,
 	}
 
 	/* border-spacing is used in the separated borders model */
-	if (style->border_collapse == CSS_BORDER_COLLAPSE_SEPARATE) {
-		border_spacing_h = css_len2px(&style->border_spacing.horz,
-				style);
-		border_spacing_v = css_len2px(&style->border_spacing.vert,
-				style);
+	if (css_computed_border_collapse(style) == 
+			CSS_BORDER_COLLAPSE_SEPARATE) {
+		css_fixed h = 0, v = 0;
+		css_unit hu = CSS_UNIT_PX, vu = CSS_UNIT_PX;
+
+		css_computed_border_spacing(style, &h, &hu, &v, &vu);
+
+		border_spacing_h = FIXTOINT(nscss_len2px(h, hu, style));
+		border_spacing_v = FIXTOINT(nscss_len2px(v, vu, style));
 	}
 
 	/* find specified table width, or available width if auto-width */
-	switch (style->width.width) {
-	case CSS_WIDTH_LENGTH:
-		table_width = css_len2px(&style->width.value.length, style);
+	wtype = css_computed_width(style, &value, &unit);
+	if (wtype == CSS_WIDTH_SET) {
+		if (unit == CSS_UNIT_PCT) {
+			table_width = ceil(available_width *
+					FIXTOFLT(value) / 100);
+		} else {
+			table_width = 
+				FIXTOINT(nscss_len2px(value, unit, style));
+		}
 
 		/* specified width includes border */
-		table_width -= table->border[LEFT] + table->border[RIGHT];
+		table_width -= table->border[LEFT].width + 
+				table->border[RIGHT].width;
 		table_width = table_width < 0 ? 0 : table_width;
 
 		auto_width = table_width;
-		break;
-	case CSS_WIDTH_PERCENT:
-		table_width = ceil(available_width *
-				style->width.value.percent / 100);
-
-		/* specified width includes border */
-		table_width -= table->border[LEFT] + table->border[RIGHT];
-		table_width = table_width < 0 ? 0 : table_width;
-
-		auto_width = table_width;
-		break;
-	case CSS_WIDTH_AUTO:
-	default:
+	} else {
 		table_width = AUTO;
 		auto_width = available_width -
 				((table->margin[LEFT] == AUTO ? 0 :
 						table->margin[LEFT]) +
-				 table->border[LEFT] +
+				 table->border[LEFT].width +
 				 table->padding[LEFT] +
 				 table->padding[RIGHT] +
-				 table->border[RIGHT] +
+				 table->border[RIGHT].width +
 				 (table->margin[RIGHT] == AUTO ? 0 :
 						table->margin[RIGHT]));
-		break;
 	}
 
 	/* Find any table height specified within CSS/HTML */
-	if (style->height.height == CSS_HEIGHT_LENGTH) {
-		/* This is the minimum height for the table (see 17.5.3) */
-		min_height = css_len2px(&style->height.value.length, style);
-	} else if (style->height.height == CSS_HEIGHT_PERCENT) {
-		/* This is the minimum height for the table (see 17.5.3) */
-		if (table->style->position == CSS_POSITION_ABSOLUTE) {
-			/* Table is absolutely positioned */
-			assert(table->float_container);
-			containing_block = table->float_container;
-		} else if (table->float_container &&
-				table->style->position !=
-				CSS_POSITION_ABSOLUTE &&
-				(table->style->float_ ==
-				CSS_FLOAT_LEFT ||
-				table->style->float_ ==
-				CSS_FLOAT_RIGHT)) {
-			/* Table is a float */
-			assert(table->parent && table->parent->parent &&
-					table->parent->parent->parent);
-			containing_block = table->parent->parent->parent;
-		} else if (table->parent && table->parent->type !=
-				BOX_INLINE_CONTAINER) {
-			/* Table is a block level element */
-			containing_block = table->parent;
-		} else if (table->parent && table->parent->type ==
-				BOX_INLINE_CONTAINER) {
-			/* Table is an inline block */
-			assert(table->parent->parent);
-			containing_block = table->parent->parent;
-		}
-		if (containing_block && containing_block->height != AUTO &&
-				(table->style->position ==
-						CSS_POSITION_ABSOLUTE ||
-				(containing_block->style->height.height ==
-						CSS_HEIGHT_LENGTH ||
-				containing_block->style->height.height ==
-						CSS_HEIGHT_PERCENT))) {
-			/* Table is absolutely positioned or its
-			 * containing block has a valid specified
-			 * height. (CSS 2.1 Section 10.5) */
-			min_height = style->height.value.percent *
+	htype = css_computed_height(style, &value, &unit);
+	if (htype == CSS_HEIGHT_SET) {
+		if (unit == CSS_UNIT_PCT) {
+			/* This is the minimum height for the table 
+			 * (see 17.5.3) */
+			if (css_computed_position(table->style) == 
+					CSS_POSITION_ABSOLUTE) {
+				/* Table is absolutely positioned */
+				assert(table->float_container);
+				containing_block = table->float_container;
+			} else if (table->float_container &&
+					css_computed_position(table->style) !=
+						CSS_POSITION_ABSOLUTE &&
+					(css_computed_float(table->style) ==
+						CSS_FLOAT_LEFT ||
+					css_computed_float(table->style) ==
+						CSS_FLOAT_RIGHT)) {
+				/* Table is a float */
+				assert(table->parent && table->parent->parent &&
+						table->parent->parent->parent);
+				containing_block = 
+						table->parent->parent->parent;
+			} else if (table->parent && table->parent->type !=
+					BOX_INLINE_CONTAINER) {
+				/* Table is a block level element */
+				containing_block = table->parent;
+			} else if (table->parent && table->parent->type ==
+					BOX_INLINE_CONTAINER) {
+				/* Table is an inline block */
+				assert(table->parent->parent);
+				containing_block = table->parent->parent;
+			}
+
+			if (containing_block) {
+				css_fixed ignored = 0;
+
+				htype = css_computed_height(
+						containing_block->style,
+						&ignored, &unit);
+			}
+
+			if (containing_block && 
+					containing_block->height != AUTO &&
+					(css_computed_position(table->style) ==
+							CSS_POSITION_ABSOLUTE ||
+					htype == CSS_HEIGHT_SET)) {
+				/* Table is absolutely positioned or its
+				 * containing block has a valid specified
+				 * height. (CSS 2.1 Section 10.5) */
+				min_height = FIXTOFLT(value) *
 					containing_block->height / 100;
+			}
+		} else {
+			/* This is the minimum height for the table 
+			 * (see 17.5.3) */
+			min_height = FIXTOINT(nscss_len2px(value, unit, style));
 		}
 	}
 
@@ -2950,20 +3169,21 @@ bool layout_table(struct box *table, int available_width,
 		int row_group_height = 0;
 		for (row = row_group->children; row; row = row->next) {
 			int row_height = 0;
-			if (row->style->height.height == CSS_HEIGHT_LENGTH) {
-				row_height = (int) css_len2px(&row->style->
-						height.value.length,
-						row->style);
+
+			htype = css_computed_height(row->style, &value, &unit);
+			if (htype == CSS_HEIGHT_SET && unit != CSS_UNIT_PCT) {
+				row_height = FIXTOINT(nscss_len2px(value, unit,
+						row->style));
 			}
 			for (c = row->children; c; c = c->next) {
 				assert(c->style);
 				c->width = xs[c->start_column + c->columns] -
 						xs[c->start_column] -
 						border_spacing_h -
-						c->border[LEFT] -
+						c->border[LEFT].width -
 						c->padding[LEFT] -
 						c->padding[RIGHT] -
-						c->border[RIGHT];
+						c->border[RIGHT].width;
 				c->float_children = 0;
 
 				c->height = AUTO;
@@ -2980,13 +3200,17 @@ bool layout_table(struct box *table, int available_width,
 				 * until after vertical alignment is complete */
 				c->descendant_y0 = c->height;
 				c->descendant_y1 = c->padding[BOTTOM];
-				if (c->style->height.height ==
-						CSS_HEIGHT_LENGTH) {
+
+				htype = css_computed_height(c->style,
+						&value, &unit);
+
+				if (htype == CSS_HEIGHT_SET && 
+						unit != CSS_UNIT_PCT) {
 					/* some sites use height="1" or similar
 					 * to attempt to make cells as small as
 					 * possible, so treat it as a minimum */
-					int h = (int) css_len2px(&c->style->
-						height.value.length, c->style);
+					int h = FIXTOINT(nscss_len2px(value, 
+							unit, c->style));
 					if (c->height < h)
 						c->height = h;
 				}
@@ -2994,24 +3218,25 @@ bool layout_table(struct box *table, int available_width,
 				 */
 				if (c->height < row_height)
 					c->height = row_height;
-				c->x = xs[c->start_column] + c->border[LEFT];
-				c->y = c->border[TOP];
+				c->x = xs[c->start_column] + 
+						c->border[LEFT].width;
+				c->y = c->border[TOP].width;
 				for (i = 0; i != c->columns; i++) {
 					row_span[c->start_column + i] = c->rows;
 					excess_y[c->start_column + i] =
-							c->border[TOP] +
+							c->border[TOP].width +
 							c->padding[TOP] +
 							c->height +
 							c->padding[BOTTOM] +
-							c->border[BOTTOM];
+							c->border[BOTTOM].width;
 					row_span_cell[c->start_column + i] = 0;
 				}
 				row_span_cell[c->start_column] = c;
 				c->padding[BOTTOM] = -border_spacing_v -
-						c->border[TOP] -
+						c->border[TOP].width -
 						c->padding[TOP] -
 						c->height -
-						c->border[BOTTOM];
+						c->border[BOTTOM].width;
 			}
 			for (i = 0; i != columns; i++)
 				if (row_span[i] != 0)
@@ -3064,19 +3289,24 @@ bool layout_table(struct box *table, int available_width,
 			row_group = row_group->next) {
 		for (row = row_group->children; row; row = row->next) {
 			for (c = row->children; c; c = c->next) {
+				enum css_vertical_align vertical_align;
+
 				/* unextended bottom padding is in
 				 * c->descendant_y1, and unextended
 				 * cell height is in c->descendant_y0 */
 				spare_height = (c->padding[BOTTOM] -
 						c->descendant_y1) +
 						(c->height - c->descendant_y0);
-				switch (c->style->vertical_align.type) {
+
+				vertical_align = css_computed_vertical_align(
+						c->style, &value, &unit);
+
+				switch (vertical_align) {
 				case CSS_VERTICAL_ALIGN_SUB:
 				case CSS_VERTICAL_ALIGN_SUPER:
 				case CSS_VERTICAL_ALIGN_TEXT_TOP:
 				case CSS_VERTICAL_ALIGN_TEXT_BOTTOM:
-				case CSS_VERTICAL_ALIGN_LENGTH:
-				case CSS_VERTICAL_ALIGN_PERCENT:
+				case CSS_VERTICAL_ALIGN_SET:
 				case CSS_VERTICAL_ALIGN_BASELINE:
 					/* todo: baseline alignment, for now
 					 * just use ALIGN_TOP */
@@ -3094,7 +3324,6 @@ bool layout_table(struct box *table, int available_width,
 					layout_move_children(c, 0,
 							spare_height);
 					break;
-				case CSS_VERTICAL_ALIGN_NOT_SET:
 				case CSS_VERTICAL_ALIGN_INHERIT:
 					assert(0);
 					break;
@@ -3134,6 +3363,9 @@ void layout_minmax_table(struct box *table,
 	float extra_frac = 0;
 	struct column *col = table->col;
 	struct box *row_group, *row, *cell;
+	enum css_width wtype;
+	css_fixed value = 0;
+	css_unit unit = CSS_UNIT_PX;
 
 	/* check if the widths have already been calculated */
 	if (table->max_width != UNKNOWN_MAX_WIDTH)
@@ -3148,9 +3380,15 @@ void layout_minmax_table(struct box *table,
 	}
 
 	/* border-spacing is used in the separated borders model */
-	if (table->style->border_collapse == CSS_BORDER_COLLAPSE_SEPARATE)
-		border_spacing_h = css_len2px(&table->style->
-				border_spacing.horz, table->style);
+	if (css_computed_border_collapse(table->style) == 
+			CSS_BORDER_COLLAPSE_SEPARATE) {
+		css_fixed h = 0, v = 0;
+		css_unit hu = CSS_UNIT_PX, vu = CSS_UNIT_PX;
+
+		css_computed_border_spacing(table->style, &h, &hu, &v, &vu);
+
+		border_spacing_h = FIXTOINT(nscss_len2px(h, hu, table->style));
+	}
 
 	/* 1st pass: consider cells with colspan 1 only */
 	for (row_group = table->children; row_group; row_group =row_group->next)
@@ -3249,9 +3487,9 @@ void layout_minmax_table(struct box *table,
 	}
 
 	/* fixed width takes priority, unless it is too narrow */
-	if (table->style->width.width == CSS_WIDTH_LENGTH) {
-		int width = css_len2px(&table->style->width.value.length,
-				table->style);
+	wtype = css_computed_width(table->style, &value, &unit);
+	if (wtype == CSS_WIDTH_SET && unit != CSS_UNIT_PCT) {
+		int width = FIXTOINT(nscss_len2px(value, unit, table->style));
 		if (table_min < width)
 			table_min = width;
 		if (table_max < width)
@@ -3309,35 +3547,77 @@ void layout_move_children(struct box *box, int x, int y)
  * \param  frac     increased by sum of fractional margin and padding
  */
 
-void calculate_mbp_width(struct css_style *style, unsigned int side,
+void calculate_mbp_width(const css_computed_style *style, unsigned int side,
 		bool margin, bool border, bool padding,
 		int *fixed, float *frac)
 {
+	typedef uint8_t (*len_func)(const css_computed_style *style,
+			css_fixed *length, css_unit *unit);
+
+	static len_func margin_funcs[4] = {
+		css_computed_margin_top,
+		css_computed_margin_right,
+		css_computed_margin_bottom,
+		css_computed_margin_left
+	};
+	static len_func padding_funcs[4] = {
+		css_computed_padding_top,
+		css_computed_padding_right,
+		css_computed_padding_bottom,
+		css_computed_padding_left
+	};
+	static struct {
+		len_func width;
+		uint8_t (*style)(const css_computed_style *style);
+	} border_funcs[4] = {
+		{ css_computed_border_top_width, 
+				css_computed_border_top_style },
+		{ css_computed_border_right_width,
+				css_computed_border_right_style },
+		{ css_computed_border_bottom_width,
+				css_computed_border_bottom_style },
+		{ css_computed_border_left_width,
+				css_computed_border_left_style }
+	};
+
+	css_fixed value = 0;
+	css_unit unit = CSS_UNIT_PX;
+
 	assert(style);
 
 	/* margin */
 	if (margin) {
-		if (style->margin[side].margin == CSS_MARGIN_LENGTH)
-			*fixed += css_len2px(&style->margin[side].value.length,
-					style);
-		else if (style->margin[side].margin == CSS_MARGIN_PERCENT)
-			*frac += style->margin[side].value.percent * 0.01;
+		enum css_margin type;
+
+		type = margin_funcs[side](style, &value, &unit);
+		if (type == CSS_MARGIN_SET) {
+			if (unit == CSS_UNIT_PCT) {
+				*frac += FIXTOFLT(value) * 0.01;
+			} else {
+				*fixed += FIXTOINT(nscss_len2px(value, unit, 
+						style));
+			}
+		}
 	}
 
 	/* border */
 	if (border) {
-		if (style->border[side].style != CSS_BORDER_STYLE_NONE)
-			*fixed += css_len2px(&style->border[side].width.value,
-					style);
+		if (border_funcs[side].style(style) != 
+				CSS_BORDER_STYLE_NONE) {
+			border_funcs[side].width(style, &value, &unit);
+
+			*fixed += FIXTOINT(nscss_len2px(value, unit, style));
+		}
 	}
 
 	/* padding */
 	if (padding) {
-		if (style->padding[side].padding == CSS_PADDING_LENGTH)
-			*fixed += css_len2px(&style->padding[side].value.length,
-					style);
-		else if (style->padding[side].padding == CSS_PADDING_PERCENT)
-			*frac += style->padding[side].value.percent * 0.01;
+		padding_funcs[side](style, &value, &unit);
+		if (unit == CSS_UNIT_PCT) {
+			*frac += FIXTOFLT(value) * 0.01;
+		} else {
+			*fixed += FIXTOINT(nscss_len2px(value, unit, style));
+		}
 	}
 }
 
@@ -3424,7 +3704,8 @@ void layout_position_relative(struct box *root, struct box *fp, int fx, int fy)
 			continue;
 
 		/* If relatively positioned, get offsets */
-		if (box->style && box->style->position == CSS_POSITION_RELATIVE)
+		if (box->style && css_computed_position(box->style) == 
+				CSS_POSITION_RELATIVE)
 			layout_compute_relative_offset(box, &x, &y);
 		else
 			x = y = 0;
@@ -3432,8 +3713,10 @@ void layout_position_relative(struct box *root, struct box *fp, int fx, int fy)
 		/* Adjust float coordinates.
 		 * (note float x and y are relative to their block formatting
 		 * context box and not their parent) */
-		if (box->style && (box->style->float_ == CSS_FLOAT_LEFT ||
-				box->style->float_ == CSS_FLOAT_RIGHT) &&
+		if (box->style && (css_computed_float(box->style) == 
+					CSS_FLOAT_LEFT ||
+				css_computed_float(box->style) == 
+					CSS_FLOAT_RIGHT) &&
 				(fx != 0 || fy != 0)) {
 			/* box is a float and there is a float offset to
 			 * apply */
@@ -3463,7 +3746,8 @@ void layout_position_relative(struct box *root, struct box *fp, int fx, int fy)
 
 		/* Ignore things we're not interested in. */
 		if (!box->style || (box->style &&
-				box->style->position != CSS_POSITION_RELATIVE))
+				css_computed_position(box->style) != 
+				CSS_POSITION_RELATIVE))
 			continue;
 
 		box->x += x;
@@ -3498,10 +3782,12 @@ void layout_compute_relative_offset(struct box *box, int *x, int *y)
 	struct box *containing_block;
 
 	assert(box && box->parent && box->style &&
-			box->style->position == CSS_POSITION_RELATIVE);
+			css_computed_position(box->style) == 
+			CSS_POSITION_RELATIVE);
 
-	if (box->float_container && (box->style->float_ == CSS_FLOAT_LEFT ||
-			box->style->float_ == CSS_FLOAT_RIGHT)) {
+	if (box->float_container && (css_computed_float(box->style) == 
+				CSS_FLOAT_LEFT ||
+			css_computed_float(box->style) == CSS_FLOAT_RIGHT)) {
 		containing_block = box->float_container;
 	} else {
 		containing_block = box->parent;
@@ -3522,11 +3808,12 @@ void layout_compute_relative_offset(struct box *box, int *x, int *y)
 		/* over constrained => examine direction property
 		 * of containing block */
 		if (containing_block->style) {
-			if (box->parent->style->direction ==
+			if (css_computed_direction(containing_block->style) ==
 					CSS_DIRECTION_LTR)
 				/* left wins */
 				right = -left;
-			else if (box->parent->style->direction ==
+			else if (css_computed_direction(
+					containing_block->style) ==
 					CSS_DIRECTION_RTL)
 				/* right wins */
 				left = -right;
@@ -3576,21 +3863,25 @@ bool layout_position_absolute(struct box *box,
 	for (c = box->children; c; c = c->next) {
 		if ((c->type == BOX_BLOCK || c->type == BOX_TABLE ||
 				c->type == BOX_INLINE_BLOCK) &&
-				(c->style->position == CSS_POSITION_ABSOLUTE ||
-				 c->style->position == CSS_POSITION_FIXED)) {
+				(css_computed_position(c->style) == 
+						CSS_POSITION_ABSOLUTE ||
+				 css_computed_position(c->style) == 
+						CSS_POSITION_FIXED)) {
 			if (!layout_absolute(c, containing_block,
 					cx, cy, content))
 				return false;
 			if (!layout_position_absolute(c, c, 0, 0, content))
 				return false;
-		} else if (c->style &&
-				c->style->position == CSS_POSITION_RELATIVE) {
+		} else if (c->style && css_computed_position(c->style) == 
+				CSS_POSITION_RELATIVE) {
 			if (!layout_position_absolute(c, c, 0, 0, content))
 				return false;
 		} else {
 			int px, py;
-			if (c->style && (c->style->float_ == CSS_FLOAT_LEFT ||
-					c->style->float_ == CSS_FLOAT_RIGHT)) {
+			if (c->style && (css_computed_float(c->style) == 
+						CSS_FLOAT_LEFT ||
+					css_computed_float(c->style) == 
+						CSS_FLOAT_RIGHT)) {
 				/* Float x/y coords are relative to nearest
 				 * ansestor with float_children, rather than
 				 * relative to parent. Need to get x/y relative
@@ -3639,7 +3930,7 @@ bool layout_absolute(struct box *box, struct box *containing_block,
 	int width, height, max_width, min_width;
 	int *margin = box->margin;
 	int *padding = box->padding;
-	int *border = box->border;
+	struct box_border *border = box->border;
 	int available_width = containing_block->width;
 	int space;
 
@@ -3680,8 +3971,9 @@ bool layout_absolute(struct box *box, struct box *containing_block,
 
 	/* 10.3.7 */
 	LOG(("%i + %i + %i + %i + %i + %i + %i + %i + %i = %i",
-			left, margin[LEFT], border[LEFT], padding[LEFT], width,
-			padding[RIGHT], border[RIGHT], margin[RIGHT], right,
+			left, margin[LEFT], border[LEFT].width, 
+			padding[LEFT], width, padding[RIGHT], 
+			border[RIGHT].width, margin[RIGHT], right,
 			containing_block->width));
 	if (left == AUTO && width == AUTO && right == AUTO) {
 		if (margin[LEFT] == AUTO)
@@ -3692,19 +3984,19 @@ bool layout_absolute(struct box *box, struct box *containing_block,
 
 		width = min(max(box->min_width, available_width),
 			box->max_width);
-		width -= box->margin[LEFT] + box->border[LEFT] +
+		width -= box->margin[LEFT] + box->border[LEFT].width +
 			box->padding[LEFT] + box->padding[RIGHT] +
-			box->border[RIGHT] + box->margin[RIGHT];
+			box->border[RIGHT].width + box->margin[RIGHT];
 
 		/* Adjust for {min|max}-width */
 		if (max_width >= 0 && width > max_width) width = max_width;
 		if (min_width >  0 && width < min_width) width = min_width;
 
 		right = containing_block->width -
-				left -
-				margin[LEFT] - border[LEFT] - padding[LEFT] -
-				width -
-				padding[RIGHT] - border[RIGHT] - margin[RIGHT];
+			left -
+			margin[LEFT] - border[LEFT].width - padding[LEFT] -
+			width -
+			padding[RIGHT] - border[RIGHT].width - margin[RIGHT];
 	} else if (left != AUTO && width != AUTO && right != AUTO) {
 
 		/* Adjust for {min|max}-width */
@@ -3713,9 +4005,9 @@ bool layout_absolute(struct box *box, struct box *containing_block,
 
 		if (margin[LEFT] == AUTO && margin[RIGHT] == AUTO) {
 			space = containing_block->width -
-					left - border[LEFT] -
+					left - border[LEFT].width -
 					padding[LEFT] - width - padding[RIGHT] -
-					border[RIGHT] - right;
+					border[RIGHT].width - right;
 			if (space < 0) {
 				margin[LEFT] = 0;
 				margin[RIGHT] = space;
@@ -3724,19 +4016,22 @@ bool layout_absolute(struct box *box, struct box *containing_block,
 			}
 		} else if (margin[LEFT] == AUTO) {
 			margin[LEFT] = containing_block->width -
-					left - border[LEFT] -
+					left - border[LEFT].width -
 					padding[LEFT] - width - padding[RIGHT] -
-					border[RIGHT] - margin[RIGHT] - right;
+					border[RIGHT].width - margin[RIGHT] - 
+					right;
 		} else if (margin[RIGHT] == AUTO) {
 			margin[RIGHT] = containing_block->width -
-					left - margin[LEFT] - border[LEFT] -
+					left - margin[LEFT] - 
+					border[LEFT].width -
 					padding[LEFT] - width - padding[RIGHT] -
-					border[RIGHT] - right;
+					border[RIGHT].width - right;
 		} else {
 			right = containing_block->width -
-					left - margin[LEFT] - border[LEFT] -
+					left - margin[LEFT] - 
+					border[LEFT].width -
 					padding[LEFT] - width - padding[RIGHT] -
-					border[RIGHT] - margin[RIGHT];
+					border[RIGHT].width - margin[RIGHT];
 		}
 	} else {
 		if (margin[LEFT] == AUTO)
@@ -3749,9 +4044,9 @@ bool layout_absolute(struct box *box, struct box *containing_block,
 
 			width = min(max(box->min_width, available_width),
 				box->max_width);
-			width -= box->margin[LEFT] + box->border[LEFT] +
+			width -= box->margin[LEFT] + box->border[LEFT].width +
 				box->padding[LEFT] + box->padding[RIGHT] +
-				box->border[RIGHT] + box->margin[RIGHT];
+				box->border[RIGHT].width + box->margin[RIGHT];
 
 			/* Adjust for {min|max}-width */
 			if (max_width >= 0 && width > max_width)
@@ -3760,9 +4055,10 @@ bool layout_absolute(struct box *box, struct box *containing_block,
 				width = min_width;
 
 			left = containing_block->width -
-					margin[LEFT] - border[LEFT] -
+					margin[LEFT] - border[LEFT].width -
 					padding[LEFT] - width - padding[RIGHT] -
-					border[RIGHT] - margin[RIGHT] - right;
+					border[RIGHT].width - margin[RIGHT] - 
+					right;
 		} else if (left == AUTO && width != AUTO && right == AUTO) {
 
 			/* Adjust for {min|max}-width */
@@ -3773,17 +4069,18 @@ bool layout_absolute(struct box *box, struct box *containing_block,
 
 			left = static_left;
 			right = containing_block->width -
-					left - margin[LEFT] - border[LEFT] -
+					left - margin[LEFT] - 
+					border[LEFT].width -
 					padding[LEFT] - width - padding[RIGHT] -
-					border[RIGHT] - margin[RIGHT];
+					border[RIGHT].width - margin[RIGHT];
 		} else if (left != AUTO && width == AUTO && right == AUTO) {
 			available_width -= left;
 
 			width = min(max(box->min_width, available_width),
 				box->max_width);
-			width -= box->margin[LEFT] + box->border[LEFT] +
+			width -= box->margin[LEFT] + box->border[LEFT].width +
 				box->padding[LEFT] + box->padding[RIGHT] +
-				box->border[RIGHT] + box->margin[RIGHT];
+				box->border[RIGHT].width + box->margin[RIGHT];
 
 			/* Adjust for {min|max}-width */
 			if (max_width >= 0 && width > max_width)
@@ -3792,9 +4089,10 @@ bool layout_absolute(struct box *box, struct box *containing_block,
 				width = min_width;
 
 			right = containing_block->width -
-					left - margin[LEFT] - border[LEFT] -
+					left - margin[LEFT] - 
+					border[LEFT].width -
 					padding[LEFT] - width - padding[RIGHT] -
-					border[RIGHT] - margin[RIGHT];
+					border[RIGHT].width - margin[RIGHT];
 		} else if (left == AUTO && width != AUTO && right != AUTO) {
 
 			/* Adjust for {min|max}-width */
@@ -3804,14 +4102,17 @@ bool layout_absolute(struct box *box, struct box *containing_block,
 				width = min_width;
 
 			left = containing_block->width -
-					margin[LEFT] - border[LEFT] -
+					margin[LEFT] - border[LEFT].width -
 					padding[LEFT] - width - padding[RIGHT] -
-					border[RIGHT] - margin[RIGHT] - right;
+					border[RIGHT].width - margin[RIGHT] - 
+					right;
 		} else if (left != AUTO && width == AUTO && right != AUTO) {
 			width = containing_block->width -
-					left - margin[LEFT] - border[LEFT] -
+					left - margin[LEFT] - 
+					border[LEFT].width -
 					padding[LEFT] - padding[RIGHT] -
-					border[RIGHT] - margin[RIGHT] - right;
+					border[RIGHT].width - margin[RIGHT] - 
+					right;
 
 			/* Adjust for {min|max}-width */
 			if (max_width >= 0 && width > max_width)
@@ -3828,17 +4129,19 @@ bool layout_absolute(struct box *box, struct box *containing_block,
 				width = min_width;
 
 			right = containing_block->width -
-					left - margin[LEFT] - border[LEFT] -
+					left - margin[LEFT] - 
+					border[LEFT].width -
 					padding[LEFT] - width - padding[RIGHT] -
-					border[RIGHT] - margin[RIGHT];
+					border[RIGHT].width - margin[RIGHT];
 		}
 	}
 	LOG(("%i + %i + %i + %i + %i + %i + %i + %i + %i = %i",
-			left, margin[LEFT], border[LEFT], padding[LEFT], width,
-			padding[RIGHT], border[RIGHT], margin[RIGHT], right,
+			left, margin[LEFT], border[LEFT].width, padding[LEFT], 
+			width, padding[RIGHT], border[RIGHT].width, 
+			margin[RIGHT], right,
 			containing_block->width));
 
-	box->x = left + margin[LEFT] + border[LEFT] - cx;
+	box->x = left + margin[LEFT] + border[LEFT].width - cx;
 	if (containing_block->type == BOX_BLOCK ||
 			containing_block->type == BOX_INLINE_BLOCK ||
 			containing_block->type == BOX_TABLE_CELL) {
@@ -3865,8 +4168,9 @@ bool layout_absolute(struct box *box, struct box *containing_block,
 
 	/* 10.6.4 */
 	LOG(("%i + %i + %i + %i + %i + %i + %i + %i + %i = %i",
-			top, margin[TOP], border[TOP], padding[TOP], height,
-			padding[BOTTOM], border[BOTTOM], margin[BOTTOM], bottom,
+			top, margin[TOP], border[TOP].width, padding[TOP], 
+			height, padding[BOTTOM], border[BOTTOM].width, 
+			margin[BOTTOM], bottom,
 			containing_block->height));
 	if (top == AUTO && height == AUTO && bottom == AUTO) {
 		top = static_top;
@@ -3876,33 +4180,33 @@ bool layout_absolute(struct box *box, struct box *containing_block,
 		if (margin[BOTTOM] == AUTO)
 			margin[BOTTOM] = 0;
 		bottom = containing_block->height -
-				top - margin[TOP] - border[TOP] -
+				top - margin[TOP] - border[TOP].width -
 				padding[TOP] - height - padding[BOTTOM] -
-				border[BOTTOM] - margin[BOTTOM];
+				border[BOTTOM].width - margin[BOTTOM];
 	} else if (top != AUTO && height != AUTO && bottom != AUTO) {
 		if (margin[TOP] == AUTO && margin[BOTTOM] == AUTO) {
 			space = containing_block->height -
-					top - border[TOP] - padding[TOP] -
+					top - border[TOP].width - padding[TOP] -
 					height - padding[BOTTOM] -
-					border[BOTTOM] - bottom;
+					border[BOTTOM].width - bottom;
 			margin[TOP] = margin[BOTTOM] = space / 2;
 		} else if (margin[TOP] == AUTO) {
 			margin[TOP] = containing_block->height -
-					top - border[TOP] - padding[TOP] -
+					top - border[TOP].width - padding[TOP] -
 					height - padding[BOTTOM] -
-					border[BOTTOM] - margin[BOTTOM] -
+					border[BOTTOM].width - margin[BOTTOM] -
 					bottom;
 		} else if (margin[BOTTOM] == AUTO) {
 			margin[BOTTOM] = containing_block->height -
-					top - margin[TOP] - border[TOP] -
+					top - margin[TOP] - border[TOP].width -
 					padding[TOP] - height -
-					padding[BOTTOM] - border[BOTTOM] -
+					padding[BOTTOM] - border[BOTTOM].width -
 					bottom;
 		} else {
 			bottom = containing_block->height -
-					top - margin[TOP] - border[TOP] -
+					top - margin[TOP] - border[TOP].width -
 					padding[TOP] - height -
-					padding[BOTTOM] - border[BOTTOM] -
+					padding[BOTTOM] - border[BOTTOM].width -
 					margin[BOTTOM];
 		}
 	} else {
@@ -3913,50 +4217,51 @@ bool layout_absolute(struct box *box, struct box *containing_block,
 		if (top == AUTO && height == AUTO && bottom != AUTO) {
 			height = box->height;
 			top = containing_block->height -
-					margin[TOP] - border[TOP] -
+					margin[TOP] - border[TOP].width -
 					padding[TOP] - height -
-					padding[BOTTOM] - border[BOTTOM] -
+					padding[BOTTOM] - border[BOTTOM].width -
 					margin[BOTTOM] - bottom;
 		} else if (top == AUTO && height != AUTO && bottom == AUTO) {
 			top = static_top;
 			bottom = containing_block->height -
-					top - margin[TOP] - border[TOP] -
+					top - margin[TOP] - border[TOP].width -
 					padding[TOP] - height -
-					padding[BOTTOM] - border[BOTTOM] -
+					padding[BOTTOM] - border[BOTTOM].width -
 					margin[BOTTOM];
 		} else if (top != AUTO && height == AUTO && bottom == AUTO) {
 			height = box->height;
 			bottom = containing_block->height -
-					top - margin[TOP] - border[TOP] -
+					top - margin[TOP] - border[TOP].width -
 					padding[TOP] - height -
-					padding[BOTTOM] - border[BOTTOM] -
+					padding[BOTTOM] - border[BOTTOM].width -
 					margin[BOTTOM];
 		} else if (top == AUTO && height != AUTO && bottom != AUTO) {
 			top = containing_block->height -
-					margin[TOP] - border[TOP] -
+					margin[TOP] - border[TOP].width -
 					padding[TOP] - height -
-					padding[BOTTOM] - border[BOTTOM] -
+					padding[BOTTOM] - border[BOTTOM].width -
 					margin[BOTTOM] - bottom;
 		} else if (top != AUTO && height == AUTO && bottom != AUTO) {
 			height = containing_block->height -
-					top - margin[TOP] - border[TOP] -
+					top - margin[TOP] - border[TOP].width -
 					padding[TOP] - padding[BOTTOM] -
-					border[BOTTOM] - margin[BOTTOM] -
+					border[BOTTOM].width - margin[BOTTOM] -
 					bottom;
 		} else if (top != AUTO && height != AUTO && bottom == AUTO) {
 			bottom = containing_block->height -
-					top - margin[TOP] - border[TOP] -
+					top - margin[TOP] - border[TOP].width -
 					padding[TOP] - height -
-					padding[BOTTOM] - border[BOTTOM] -
+					padding[BOTTOM] - border[BOTTOM].width -
 					margin[BOTTOM];
 		}
 	}
 	LOG(("%i + %i + %i + %i + %i + %i + %i + %i + %i = %i",
-			top, margin[TOP], border[TOP], padding[TOP], height,
-			padding[BOTTOM], border[BOTTOM], margin[BOTTOM], bottom,
+			top, margin[TOP], border[TOP].width, padding[TOP], 
+			height, padding[BOTTOM], border[BOTTOM].width, 
+			margin[BOTTOM], bottom,
 			containing_block->height));
 
-	box->y = top + margin[TOP] + border[TOP] - cy;
+	box->y = top + margin[TOP] + border[TOP].width - cy;
 	if (containing_block->type == BOX_BLOCK ||
 			containing_block->type == BOX_INLINE_BLOCK ||
 			containing_block->type == BOX_TABLE_CELL) {
@@ -3991,49 +4296,67 @@ void layout_compute_offsets(struct box *box,
 		struct box *containing_block,
 		int *top, int *right, int *bottom, int *left)
 {
+	uint32_t type;
+	css_fixed value = 0;
+	css_unit unit = CSS_UNIT_PX;
+
 	assert(containing_block->width != UNKNOWN_WIDTH &&
 			containing_block->width != AUTO &&
 			containing_block->height != AUTO);
 
 	/* left */
-	if (box->style->pos[LEFT].pos == CSS_POS_PERCENT)
-		*left = ((box->style->pos[LEFT].value.percent *
-				containing_block->width) / 100);
-	else if (box->style->pos[LEFT].pos == CSS_POS_LENGTH)
-		*left = css_len2px(&box->style->pos[LEFT].value.length,
-				box->style);
-	else
+	type = css_computed_left(box->style, &value, &unit);
+	if (type == CSS_LEFT_SET) {
+		if (unit == CSS_UNIT_PCT) {
+			*left = (FIXTOFLT(value) * 
+					containing_block->width) / 100;
+		} else {
+			*left = FIXTOINT(nscss_len2px(value, unit, box->style));
+		}
+	} else {
 		*left = AUTO;
+	}
 
 	/* right */
-	if (box->style->pos[RIGHT].pos == CSS_POS_PERCENT)
-		*right = ((box->style->pos[RIGHT].value.percent *
-				containing_block->width) / 100);
-	else if (box->style->pos[RIGHT].pos == CSS_POS_LENGTH)
-		*right = css_len2px(&box->style->pos[RIGHT].value.length,
-				box->style);
-	else
+	type = css_computed_right(box->style, &value, &unit);
+	if (type == CSS_RIGHT_SET) {
+		if (unit == CSS_UNIT_PCT) {
+			*right = (FIXTOFLT(value) * 
+					containing_block->width) / 100;
+		} else {
+			*right = FIXTOINT(nscss_len2px(value, unit, 
+					box->style));
+		}
+	} else {
 		*right = AUTO;
+	}
 
 	/* top */
-	if (box->style->pos[TOP].pos == CSS_POS_PERCENT)
-		*top = ((box->style->pos[TOP].value.percent *
-				containing_block->height) / 100);
-	else if (box->style->pos[TOP].pos == CSS_POS_LENGTH)
-		*top = css_len2px(&box->style->pos[TOP].value.length,
-				box->style);
-	else
+	type = css_computed_top(box->style, &value, &unit);
+	if (type == CSS_TOP_SET) {
+		if (unit == CSS_UNIT_PCT) {
+			*top = (FIXTOFLT(value) * 
+					containing_block->height) / 100;
+		} else {
+			*top = FIXTOINT(nscss_len2px(value, unit, box->style));
+		}
+	} else {
 		*top = AUTO;
+	}
 
 	/* bottom */
-	if (box->style->pos[BOTTOM].pos == CSS_POS_PERCENT)
-		*bottom = ((box->style->pos[BOTTOM].value.percent *
-				containing_block->height) / 100);
-	else if (box->style->pos[BOTTOM].pos == CSS_POS_LENGTH)
-		*bottom = css_len2px(&box->style->pos[BOTTOM].value.length,
-				box->style);
-	else
+	type = css_computed_bottom(box->style, &value, &unit);
+	if (type == CSS_BOTTOM_SET) {
+		if (unit == CSS_UNIT_PCT) {
+			*bottom = (FIXTOFLT(value) * 
+					containing_block->height) / 100;
+		} else {
+			*bottom = FIXTOINT(nscss_len2px(value, unit, 
+					box->style));
+		}
+	} else {
 		*bottom = AUTO;
+	}
 }
 
 
@@ -4056,12 +4379,12 @@ void layout_calculate_descendant_bboxes(struct box *box)
 		assert(0);
 	}
 
-	box->descendant_x0 = -box->border[LEFT];
-	box->descendant_y0 = -box->border[TOP];
+	box->descendant_x0 = -box->border[LEFT].width;
+	box->descendant_y0 = -box->border[TOP].width;
 	box->descendant_x1 = box->padding[LEFT] + box->width +
-			box->padding[RIGHT] + box->border[RIGHT];
+			box->padding[RIGHT] + box->border[RIGHT].width;
 	box->descendant_y1 = box->padding[TOP] + box->height +
-			box->padding[BOTTOM] + box->border[BOTTOM];
+			box->padding[BOTTOM] + box->border[BOTTOM].width;
 
 	if (box->type == BOX_INLINE || box->type == BOX_TEXT)
 		return;
@@ -4103,7 +4426,8 @@ void layout_calculate_descendant_bboxes(struct box *box)
 
 		layout_calculate_descendant_bboxes(child);
 
-		if (box->style && box->style->overflow == CSS_OVERFLOW_HIDDEN)
+		if (box->style && css_computed_overflow(box->style) == 
+				CSS_OVERFLOW_HIDDEN)
 			continue;
 
 		if (child->x + child->descendant_x0 < box->descendant_x0)

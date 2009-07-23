@@ -1,5 +1,5 @@
 /*
- * Copyright 2004 John M Bell <jmb202@ecs.soton.ac.uk>
+ * Copyright 2009 John-Mark Bell <jmb@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,24 +16,29 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _NETSURF_RISCOS_IMAGE_H_
-#define _NETSURF_RISCOS_IMAGE_H_
+#ifndef NETSURF_CSS_UTILS_H_
+#define NETSURF_CSS_UTILS_H_
 
-#include <stdbool.h>
+#include "css/css.h"
 #include "desktop/plot_style.h"
-#include "oslib/osspriteop.h"
 
-struct osspriteop_area;
+/* DPI of the screen, in fixed point units */
+extern css_fixed nscss_screen_dpi;
 
-typedef enum {
-	IMAGE_PLOT_TINCT_ALPHA,
-	IMAGE_PLOT_TINCT_OPAQUE,
-	IMAGE_PLOT_OS
-} image_type;
+/**
+ * Convert a CSS color to a NetSurf colour primitive
+ * 
+ * \param color  The CSS color to convert
+ * \return Corresponding NetSurf colour primitive
+ */
+#define nscss_color_to_ns(color) \
+		(((color) & 0xff000000) >> 24) | \
+		(((color) & 0xff0000) >> 8) | \
+		(((color) & 0xff00) << 8) | \
+		(((color) & 0xff) << 24)
 
-bool image_redraw(osspriteop_area *area, int x, int y, int req_width,
-		int req_height, int width, int height,
-		colour background_colour,
-		bool repeatx, bool repeaty, bool background, image_type type);
+css_fixed nscss_len2pt(css_fixed length, css_unit unit);
+css_fixed nscss_len2px(css_fixed length, css_unit unit, 
+		const css_computed_style *style);
 
 #endif

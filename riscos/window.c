@@ -2824,8 +2824,8 @@ bool ro_gui_window_dataload(struct gui_window *g, wimp_message *message)
 	box_y = box->margin[TOP];
 
 	while ((box = box_at_point(box, pos.x, pos.y, &box_x, &box_y, &content))) {
-		if (box->style &&
-				box->style->visibility == CSS_VISIBILITY_HIDDEN)
+		if (box->style && css_computed_visibility(box->style) ==
+				CSS_VISIBILITY_HIDDEN)
 			continue;
 
 		if (box->gadget) {

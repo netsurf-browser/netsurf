@@ -283,7 +283,8 @@ struct content * content_get(const char *url);
 struct content * content_get_ready(const char *url);
 bool content_can_reformat(struct content *c);
 bool content_set_type(struct content *c, content_type type,
-		const char *mime_type, const char *params[]);
+		const char *mime_type, const char *params[],
+		struct content *parent);
 void content_set_status(struct content *c, const char *status_message, ...);
 bool content_process_data(struct content *c, const char *data,
 		unsigned int size);

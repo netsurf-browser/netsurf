@@ -65,6 +65,7 @@
 bool gui_in_multitask = false;
 
 char *default_stylesheet_url;
+char *quirks_stylesheet_url;
 char *adblock_stylesheet_url;
 char *options_file_location;
 char *glade_file_location;
@@ -307,6 +308,9 @@ void gui_init(int argc, char** argv)
 	default_stylesheet_url = path_to_url(buf);
 	LOG(("Using '%s' as Default CSS URL", default_stylesheet_url));
 
+	find_resource(buf, "quirks.css", "./gtk/res/quirks.css");
+	quirks_stylesheet_url = path_to_url(buf);
+
 	find_resource(buf, "adblock.css", "./gtk/res/adblock.css");
 	adblock_stylesheet_url = path_to_url(buf);
 	LOG(("Using '%s' as AdBlock CSS URL", adblock_stylesheet_url));
@@ -417,6 +421,7 @@ void gui_quit(void)
 	urldb_save_cookies(option_cookie_jar);
 	urldb_save(option_url_file);
 	free(default_stylesheet_url);
+	free(quirks_stylesheet_url);
 	free(adblock_stylesheet_url);
 	free(option_cookie_file);
 	free(option_cookie_jar);

@@ -23,6 +23,8 @@
 #ifndef _NETSURF_DESKTOP_PLOT_STYLE_H_
 #define _NETSURF_DESKTOP_PLOT_STYLE_H_
 
+#include <stdint.h>
+
 /* html widget colours */
 #define WIDGET_BASEC 0xd9d9d9
 #define WIDGET_BLOBC 0x000000
@@ -61,6 +63,15 @@
 	 ((((c0 >> 16) + (c1 >> 16)) >> 1) << 16) |			\
 	(((((c0 >> 8) & 0xff) + ((c1 >> 8) & 0xff)) >> 1) << 8) |	\
 	 ((((c0 & 0xff) + (c1 & 0xff)) >> 1) << 0)
+
+/**
+ * Colour type: XBGR
+ */
+typedef uint32_t colour;
+/**
+ * Magical transparent value
+ */
+#define NS_TRANSPARENT 0x01000000
 
 /**
  * Type of plot operation

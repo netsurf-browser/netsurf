@@ -37,7 +37,8 @@ struct content_gif_data {
 	int current_frame;	   /**< current frame to display [0...(max-1)] */
 };
 
-bool nsgif_create(struct content *c, const char *params[]);
+bool nsgif_create(struct content *c, struct content *parent,
+		const char *params[]);
 bool nsgif_convert(struct content *c, int width, int height);
 void nsgif_destroy(struct content *c);
 bool nsgif_redraw(struct content *c, int x, int y,

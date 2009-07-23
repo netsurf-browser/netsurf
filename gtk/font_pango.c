@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <gtk/gtk.h>
 #include "css/css.h"
+#include "css/utils.h"
 #include "gtk/font_pango.h"
 #include "gtk/gtk_plotters.h"
 #include "render/font.h"
@@ -54,10 +55,6 @@ const struct font_functions nsfont = {
 	nsfont_position_in_string,
 	nsfont_split
 };
-
-
-
-
 
 /**
  * Measure the width of a string.
@@ -302,12 +299,7 @@ PangoFontDescription *nsfont_style_to_description(
 		break;
 	}
 
-	size = fstyle->size;
-
-	if (size < (unsigned)abs(option_font_min_size / 10) * FONT_SIZE_SCALE)
-		size = (option_font_min_size / 10) * FONT_SIZE_SCALE;
-
-	size = (size * PANGO_SCALE) / FONT_SIZE_SCALE;
+	size = (fstyle->size * PANGO_SCALE) / FONT_SIZE_SCALE;
 
 	if (fstyle->flags & FONTF_ITALIC)
 		style = PANGO_STYLE_ITALIC;

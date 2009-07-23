@@ -24,6 +24,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "css/css.h"
+#include "css/utils.h"
 #include "desktop/textarea.h"
 #include "desktop/textinput.h"
 #include "desktop/plotters.h"
@@ -135,14 +136,14 @@ static void textarea_normalise_text(struct text_area *ta,
  * \param width width of the text area
  * \param height width of the text area
  * \param flags text area flags
- * \param style css style (font style properties are used only)
+ * \param style font style
  * \param redraw_start_callback will be called when textarea wants to redraw
  * \param redraw_end_callback will be called when textarea finisjes redrawing
  * \param data user specified data which will be passed to redraw callbacks
  * \return Opaque handle for textarea or 0 on error
  */
 struct text_area *textarea_create(int x, int y, int width, int height, 
-		unsigned int flags, const struct css_style *style,
+		unsigned int flags, const plot_font_style_t *style,
 		textarea_start_redraw_callback redraw_start_callback,
 		textarea_end_redraw_callback redraw_end_callback, void *data)
 {
@@ -183,9 +184,10 @@ struct text_area *textarea_create(int x, int y, int width, int height,
 	ret->text_len = 1;
 	ret->text_utf8_len = 0;
 
-	font_plot_style_from_css(style, &ret->fstyle);	
-	ret->line_height = css_len2px(&(style->line_height.value.length),
-			style);
+	ret->fstyle = *style;
+
+	ret->line_height = FIXTOINT(FDIVI(FMUL(
+		FLTTOFIX(1.2 * style->size), nscss_screen_dpi), 72));
 	
 	ret->caret_pos.line = ret->caret_pos.char_off = 0;
 	ret->selection_start = -1;
@@ -427,7 +429,7 @@ bool textarea_set_caret(struct text_area *ta, int caret)
 	int index;
 	int x, y;
 	int x0, y0, x1, y1;
-	int height;
+	int height = 0;
 	
 		
 	if (ta->flags & TEXTAREA_READONLY)
@@ -440,7 +442,7 @@ bool textarea_set_caret(struct text_area *ta, int caret)
 	if (caret != -1 && (unsigned)caret > c_len)
 		caret = c_len;
 
-	height = ta->fstyle.size * css_screen_dpi / 72;
+	height = ta->fstyle.size * nscss_screen_dpi / 72;
 
 	/* Delete the old caret */
 	if (ta->caret_pos.char_off != -1) {

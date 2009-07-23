@@ -29,6 +29,6 @@
 struct box;
 
 bool table_calculate_column_types(struct box *table);
-void table_collapse_borders(struct box *table);
+void table_used_border_for_cell(struct box *cell);
 
 #endif

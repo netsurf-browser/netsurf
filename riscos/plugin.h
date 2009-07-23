@@ -52,7 +52,8 @@ struct content_plugin_data {
 /* function definitions */
 bool plugin_handleable(const char *mime_type);
 void plugin_msg_parse(wimp_message *message, int ack);
-bool plugin_create(struct content *c, const char *params[]);
+bool plugin_create(struct content *c, struct content *parent,
+		const char *params[]);
 bool plugin_convert(struct content *c, int width, int height);
 void plugin_reformat(struct content *c, int width, int height);
 void plugin_destroy(struct content *c);

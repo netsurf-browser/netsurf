@@ -46,7 +46,8 @@ struct content_textplain_data {
 	int formatted_width;
 };
 
-bool textplain_create(struct content *c, const char *params[]);
+bool textplain_create(struct content *c, struct content *parent,
+		const char *params[]);
 bool textplain_process_data(struct content *c, char *data, unsigned int size);
 bool textplain_convert(struct content *c, int width, int height);
 void textplain_reformat(struct content *c, int width, int height);

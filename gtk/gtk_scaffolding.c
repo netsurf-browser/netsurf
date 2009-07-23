@@ -24,6 +24,7 @@
 #include <gtk/gtk.h>
 #include <libxml/debugXML.h>
 #include "content/content.h"
+#include "css/utils.h"
 #include "desktop/browser.h"
 #include "desktop/history_core.h"
 #include "desktop/gui.h"
@@ -1241,9 +1242,9 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	
 	g->preferences_dialog = NULL;
         
-        css_screen_dpi = gdk_screen_get_resolution(
-			gtk_widget_get_screen(GTK_WIDGET(g->window)));
-        LOG(("Set CSS DPI to %f", css_screen_dpi));
+        nscss_screen_dpi = FLTTOFIX(gdk_screen_get_resolution(
+			gtk_widget_get_screen(GTK_WIDGET(g->window))));
+        LOG(("Set CSS DPI to %f", FIXTOFLT(nscss_screen_dpi)));
         
 	/* set this window's size and position to what's in the options, or
 	 * or some sensible default if they're not set yet.

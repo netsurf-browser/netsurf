@@ -28,6 +28,7 @@
 #include <string.h>
 #include "content/content.h"
 #include "css/css.h"
+#include "css/dump.h"
 #include "desktop/options.h"
 #include "render/box.h"
 #include "render/form.h"
@@ -58,7 +59,7 @@ static struct box_duplicate_llist *box_duplicate_last = NULL;
  * \return  allocated and initialised box, or 0 on memory exhaustion
  */
 
-struct box * box_create(struct css_style *style,
+struct box * box_create(css_computed_style *style,
 		char *href, const char *target, char *title, char *id,
 		void *context)
 {
@@ -78,10 +79,11 @@ struct box * box_create(struct css_style *style,
 	box->descendant_x0 = box->descendant_y0 = 0;
 	box->descendant_x1 = box->descendant_y1 = 0;
 	for (i = 0; i != 4; i++)
-		box->margin[i] = box->padding[i] = box->border[i] = 0;
+		box->margin[i] = box->padding[i] = box->border[i].width = 0;
 	box->scroll_x = box->scroll_y = 0;
 	box->min_width = 0;
 	box->max_width = UNKNOWN_MAX_WIDTH;
+	box->byte_offset = 0;
 	box->text = NULL;
 	box->length = 0;
 	box->space = 0;
@@ -444,34 +446,34 @@ siblings:
 
 bool box_contains_point(struct box *box, int x, int y, bool *physically)
 {
-	if (box->x <= x + box->border[LEFT] &&
+	if (box->x <= x + box->border[LEFT].width &&
 			x < box->x + box->padding[LEFT] + box->width +
-			box->border[RIGHT] + box->padding[RIGHT] &&
-			box->y <= y + box->border[TOP] &&
+			box->border[RIGHT].width + box->padding[RIGHT] &&
+			box->y <= y + box->border[TOP].width &&
 			y < box->y + box->padding[TOP] + box->height +
-			box->border[BOTTOM] + box->padding[BOTTOM]) {
+			box->border[BOTTOM].width + box->padding[BOTTOM]) {
 		*physically = true;
 		return true;
 	}
 	if (box->list_marker && box->list_marker->x <= x +
-			box->list_marker->border[LEFT] &&
+			box->list_marker->border[LEFT].width &&
 			x < box->list_marker->x +
 			box->list_marker->padding[LEFT] +
 			box->list_marker->width +
-			box->list_marker->border[RIGHT] +
+			box->list_marker->border[RIGHT].width +
 			box->list_marker->padding[RIGHT] &&
 			box->list_marker->y <= y +
-			box->list_marker->border[TOP] &&
+			box->list_marker->border[TOP].width &&
 			y < box->list_marker->y +
 			box->list_marker->padding[TOP] +
 			box->list_marker->height +
-			box->list_marker->border[BOTTOM] +
+			box->list_marker->border[BOTTOM].width +
 			box->list_marker->padding[BOTTOM]) {
 		*physically = true;
 		return true;
 	}
-	if ((box->style && box->style->overflow == CSS_OVERFLOW_VISIBLE) ||
-			!box->style) {
+	if ((box->style && css_computed_overflow(box->style) == 
+			CSS_OVERFLOW_VISIBLE) || !box->style) {
 		if (box->x + box->descendant_x0 <= x &&
 				x < box->x + box->descendant_x1 &&
 				box->y + box->descendant_y0 <= y &&
@@ -502,8 +504,8 @@ struct box *box_object_at_point(struct content *c, int x, int y)
 	assert(c->type == CONTENT_HTML);
 
 	while ((box = box_at_point(box, x, y, &box_x, &box_y, &content))) {
-		if (box->style &&
-				box->style->visibility == CSS_VISIBILITY_HIDDEN)
+		if (box->style && css_computed_visibility(box->style) ==
+				CSS_VISIBILITY_HIDDEN)
 			continue;
 
 		if (box->object)
@@ -532,8 +534,8 @@ struct box *box_href_at_point(struct content *c, int x, int y)
 	assert(c->type == CONTENT_HTML);
 
 	while ((box = box_at_point(box, x, y, &box_x, &box_y, &content))) {
-		if (box->style &&
-				box->style->visibility == CSS_VISIBILITY_HIDDEN)
+		if (box->style && css_computed_visibility(box->style) ==
+				CSS_VISIBILITY_HIDDEN)
 			continue;
 
 		if (box->href)
@@ -580,7 +582,8 @@ bool box_visible(struct box *box)
 	struct box *fallback;
 
 	/* visibility: hidden */
-	if (box->style && box->style->visibility == CSS_VISIBILITY_HIDDEN)
+	if (box->style && css_computed_visibility(box->style) == 
+			CSS_VISIBILITY_HIDDEN)
 		return false;
 
 	/* check if a fallback */
@@ -651,7 +654,7 @@ void box_dump(FILE *stream, struct box *box, unsigned int depth)
 	if (box->gadget)
 		fprintf(stream, "(gadget) ");
 	if (box->style)
-		css_dump_style(stream, box->style);
+		nscss_dump_computed_style(stream, box->style);
 	if (box->href)
 		fprintf(stream, " -> '%s'", box->href);
 	if (box->target)

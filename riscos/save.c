@@ -626,8 +626,10 @@ void ro_gui_save_drag_end(wimp_dragged *drag)
 
 				while (!dest_ok && (box = box_at_point(box, pos.x, pos.y,
 									&box_x, &box_y, &content))) {
-					if (box->style &&
-							box->style->visibility == CSS_VISIBILITY_HIDDEN)
+					if (box->style && 
+							css_computed_visibility(
+								box->style) == 
+							CSS_VISIBILITY_HIDDEN)
 						continue;
 
 					if (box->gadget) {

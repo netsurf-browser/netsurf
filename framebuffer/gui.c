@@ -56,6 +56,7 @@
 #include "content/fetch.h"
 
 char *default_stylesheet_url;
+char *quirks_stylesheet_url;
 char *adblock_stylesheet_url;
 char *options_file_location;
 
@@ -366,6 +367,9 @@ void gui_init(int argc, char** argv)
 	fb_find_resource(buf, "default.css", "./framebuffer/res/default.css");
 	default_stylesheet_url = path_to_url(buf);
 	LOG(("Using '%s' as Default CSS URL", default_stylesheet_url));
+
+	fb_find_resource(buf, "quirks.css", "./framebuffer/res/quirks.css");
+	quirks_stylesheet_url = path_to_url(buf);
 
         nsfb = framebuffer_initialise(argc, argv);
         if (nsfb == NULL)

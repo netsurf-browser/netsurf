@@ -91,10 +91,10 @@
 #include <stdio.h>
 #include <libxml/HTMLparser.h>
 
+#include "css/css.h"
 
 struct box;
 struct column;
-struct css_style;
 struct object_params;
 struct object_param;
 
@@ -106,7 +106,7 @@ typedef enum {
 	BOX_TABLE_ROW_GROUP,
 	BOX_FLOAT_LEFT, BOX_FLOAT_RIGHT,
 	BOX_INLINE_BLOCK, BOX_BR, BOX_TEXT,
-	BOX_INLINE_END
+	BOX_INLINE_END, BOX_NONE
 } box_type;
 
 struct rect {
@@ -114,6 +114,18 @@ struct rect {
 	int x1, y1;
 };
 
+/* Sides of a box */
+enum box_side { TOP, RIGHT, BOTTOM, LEFT };
+
+/**
+ * Container for box border details
+ */
+struct box_border {
+	enum css_border_style style;	/**< border-style */
+	enum css_border_color color;	/**< border-color type */
+	css_color c;			/**< border-color value */
+	int width;			/**< border-width (pixels) */
+};
 
 /** Node in box tree. All dimensions are in pixels. */
 struct box {
@@ -121,7 +133,7 @@ struct box {
 	box_type type;
 
 	/** Style for this box. 0 for INLINE_CONTAINER and FLOAT_*. */
-	struct css_style * style;
+	css_computed_style *style;
 
 	/** Coordinate of left padding edge relative to parent box, or relative
 	 * to ancestor that contains this box in float_children for FLOAT_. */
@@ -153,7 +165,7 @@ struct box {
 
 	int margin[4];   /**< Margin: TOP, RIGHT, BOTTOM, LEFT. */
 	int padding[4];  /**< Padding: TOP, RIGHT, BOTTOM, LEFT. */
-	int border[4];   /**< Border width: TOP, RIGHT, BOTTOM, LEFT. */
+	struct box_border border[4];   /**< Border: TOP, RIGHT, BOTTOM, LEFT. */
 
 	int scroll_x;  /**< Horizontal scroll of descendants. */
 	int scroll_y;  /**< Vertical scroll of descendants. */
@@ -282,7 +294,7 @@ extern const char *TARGET_BLANK;
 #define UNKNOWN_MAX_WIDTH INT_MAX
 
 
-struct box * box_create(struct css_style *style,
+struct box * box_create(css_computed_style *style,
 		char *href, const char *target, char *title,
 		char *id, void *context);
 void box_add_child(struct box *parent, struct box *child);

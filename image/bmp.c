@@ -49,7 +49,8 @@ bmp_bitmap_callback_vt bmp_bitmap_callbacks = {
 	.bitmap_get_bpp = bitmap_get_bpp
 };
 
-bool nsbmp_create(struct content *c, const char *params[])
+bool nsbmp_create(struct content *c, struct content *parent,
+		const char *params[])
 {
 	union content_msg_data msg_data;
 

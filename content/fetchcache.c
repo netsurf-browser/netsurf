@@ -409,6 +409,7 @@ void fetchcache_callback(fetch_msg msg, void *p, const void *data,
 	content_type type;
 	char *mime_type;
 	char **params;
+	struct content *parent;
 	unsigned int i;
 	union content_msg_data msg_data;
 
@@ -426,9 +427,11 @@ void fetchcache_callback(fetch_msg msg, void *p, const void *data,
 				return;
 			}
 			type = content_lookup(mime_type);
+			parent = fetch_get_parent(c->fetch);
 			res = content_set_type(c,
 					c->download ? CONTENT_OTHER : type,
-					mime_type, (const char **) params);
+					mime_type, (const char **) params,
+					parent);
 			free(mime_type);
 			for (i = 0; params[i]; i++)
 				free(params[i]);
@@ -734,7 +737,7 @@ void fetchcache_error_page(struct content *c, const char *error)
 	if ((length = snprintf(error_page, sizeof(error_page),
 			messages_get("ErrorPage"), error)) < 0)
 		length = 0;
-	if (!content_set_type(c, CONTENT_HTML, "text/html", params))
+	if (!content_set_type(c, CONTENT_HTML, "text/html", params, NULL))
 		return;
 	if (!content_process_data(c, error_page, length))
 		return;

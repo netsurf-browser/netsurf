@@ -37,7 +37,8 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 
-bool nsico_create(struct content *c, const char *params[])
+bool nsico_create(struct content *c, struct content *parent,
+		const char *params[])
 {
 	union content_msg_data msg_data;
 	c->data.ico.ico = calloc(sizeof(ico_collection), 1);

@@ -556,7 +556,8 @@ void ro_gui_selection_dragging(wimp_message *message)
 
 		while ((box = box_at_point(box, pos.x, pos.y, 
 				&box_x, &box_y, &content))) {
-			if (box->style && box->style->visibility == 
+			if (box->style && 
+					css_computed_visibility(box->style) == 
 					CSS_VISIBILITY_HIDDEN)
 				continue;
 

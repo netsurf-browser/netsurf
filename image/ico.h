@@ -35,7 +35,8 @@ struct content_ico_data {
 	struct ico_collection *ico;	/** ICO collection data */
 };
 
-bool nsico_create(struct content *c, const char *params[]);
+bool nsico_create(struct content *c, struct content *parent,
+		const char *params[]);
 bool nsico_convert(struct content *c, int width, int height);
 void nsico_destroy(struct content *c);
 bool nsico_redraw(struct content *c, int x, int y,

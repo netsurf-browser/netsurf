@@ -26,8 +26,8 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "css/css.h"
 #include "desktop/browser.h"
+#include "desktop/plot_style.h"
 
 /* Text area flags */
 #define TEXTAREA_MULTILINE	0x01	/**< Text area is multiline */
@@ -39,7 +39,7 @@ typedef void(*textarea_start_redraw_callback)(void *data);
 typedef void(*textarea_end_redraw_callback)(void *data);
 
 struct text_area *textarea_create(int x, int y, int width, int height, 
-		unsigned int flags, const struct css_style *style,
+		unsigned int flags, const plot_font_style_t *style,
 		textarea_start_redraw_callback redraw_start_callback,
 		textarea_end_redraw_callback redraw_end_callback, void *data);
 void textarea_set_position(struct text_area *ta, int x, int y);

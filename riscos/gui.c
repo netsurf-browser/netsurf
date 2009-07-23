@@ -154,6 +154,7 @@ extern int __dynamic_num;
 const char * NETSURF_DIR;
 
 char *default_stylesheet_url;
+char *quirks_stylesheet_url;
 char *adblock_stylesheet_url;
 
 static const char *task_name = "NetSurf";
@@ -409,8 +410,10 @@ void gui_init(int argc, char** argv)
 
 	/* Initialise stylesheet URLs */
 	default_stylesheet_url = strdup("file:///NetSurf:/Resources/CSS");
+	quirks_stylesheet_url = strdup("file:///NetSurf:/Resources/Quirks");
 	adblock_stylesheet_url = strdup("file:///NetSurf:/Resources/AdBlock");
-	if (!default_stylesheet_url || !adblock_stylesheet_url)
+	if (!default_stylesheet_url || !quirks_stylesheet_url || 
+			!adblock_stylesheet_url)
 		die("Failed initialising string constants.");
 
 	/* Initialise filename allocator */
@@ -771,6 +774,7 @@ void gui_quit(void)
 	free(gui_sprites);
 	xwimp_close_down(task_handle);
  	free(default_stylesheet_url);
+	free(quirks_stylesheet_url);
 	free(adblock_stylesheet_url);
 	/* We don't care if this fails */
 	hubbub_finalise(myrealloc, NULL);
@@ -2282,9 +2286,6 @@ void ro_gui_dump_content(struct content *content)
 	switch (content->type) {
 	case CONTENT_HTML:
 		box_dump(stream, content->data.html.layout, 0);
-		break;
-	case CONTENT_CSS:
-		css_dump_stylesheet(content->data.css.css);
 		break;
 	default:
 		break;

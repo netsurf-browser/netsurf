@@ -254,9 +254,10 @@ CFLAGS += -DNETSURF_HOMEPAGE=\"$(NETSURF_HOMEPAGE)\"
 ifeq ($(TARGET),riscos)
   ifeq ($(HOST),riscos)
     LDFLAGS += -Xlinker -symbols=$(OBJROOT)/sym -lxml2 -lz -lm -lcurl -lcares
-    LDFLAGS += -lssl -lcrypto -lhubbub -lparserutils
+    LDFLAGS += -lssl -lcrypto -lhubbub -lcss -lparserutils -lwapcaplet
   else
-    LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl libhubbub openssl)
+    LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl openssl)
+    LDFLAGS += $(shell $(PKG_CONFIG) --libs libhubbub libcss)
   endif
 
   $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG rendering))
@@ -289,9 +290,7 @@ ifeq ($(TARGET),riscos)
 
   CFLAGS += -I$(GCCSDK_INSTALL_ENV)/include			\
 		-I$(GCCSDK_INSTALL_ENV)/include/libxml2		\
-		-I$(GCCSDK_INSTALL_ENV)/include/libmng		\
-		-I$(GCCSDK_INSTALL_ENV)/include/hubbub0		\
-		-I$(GCCSDK_INSTALL_ENV)/include/parserutils0
+		-I$(GCCSDK_INSTALL_ENV)/include/libmng
   ifeq ($(HOST),riscos)
     CFLAGS += -I<OSLib$$Dir> -mthrowback
   endif
@@ -322,7 +321,7 @@ ifeq ($(TARGET),beos)
   LDFLAGS += -L/boot/common/lib
   # some people do *not* have libm...
   LDFLAGS += -lxml2 -lcurl -liconv
-  LDFLAGS += -lssl -lcrypto -lhubbub -lparserutils
+  LDFLAGS += -lssl -lcrypto -lhubbub -lcss -lparserutils -lwapcaplet
 
   CFLAGS += -I. -O $(WARNFLAGS) -Dnsbeos		\
 		-D_BSD_SOURCE -D_POSIX_C_SOURCE		\
@@ -345,8 +344,9 @@ ifeq ($(TARGET),beos)
     CFLAGS += -I/boot/home/config/include		\
 		-I/boot/home/config/include/libxml2	\
 		-I/boot/home/config/include/libmng	\
-		-I/boot/home/config/include/hubbub0	\
-		-I/boot/home/config/include/parserutils0
+		-I/boot/home/config/include/hubbub	\
+		-I/boot/home/config/include/libcss	\
+		-I/boot/home/config/include/parserutils
     ifneq ($(wildcard /boot/develop/lib/*/libzeta.so),)
       LDFLAGS += -lzeta
     endif
@@ -355,8 +355,9 @@ ifeq ($(TARGET),beos)
       CFLAGS += -I/boot/common/include		\
 		-I/boot/common/include/libxml2	\
 		-I/boot/common/include/libmng	\
-		-I/boot/common/include/hubbub0	\
-		-I/boot/common/include/parserutils0
+		-I/boot/common/include/hubbub	\
+		-I/boot/common/include/libcss	\
+		-I/boot/common/include/parserutils
       NETLDFLAGS := -lnetwork
     else
       ifneq ($(wildcard /boot/develop/lib/*/libbind.so),)
@@ -377,16 +378,13 @@ ifeq ($(TARGET),beos)
   ifeq ($(HOST),beos)
     CFLAGS += -I$(PREFIX)/include
     LDFLAGS += -L$(PREFIX)/lib
-    $(eval $(call feature_enabled,HUBBUB,-DWITH_HUBBUB,-lhubbub-debug -lparserutils-debug,Hubbub HTML parser))
     $(eval $(call feature_enabled,BMP,-DWITH_BMP,-lnsbmp,NetSurf BMP decoder))
     $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif,NetSurf GIF decoder))
     $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG support))
   else
-    NETSURF_FEATURE_HUBBUB_CFLAGS := -DWITH_HUBBUB
     NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
     NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
     NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
-    $(eval $(call pkg_config_find_and_add,HUBBUB,libhubbub,Hubbub HTML parser))
     $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,NetSurf BMP decoder))
     $(eval $(call pkg_config_find_and_add,GIF,libnsgif,NetSurf GIF decoder))
     $(eval $(call pkg_config_find_and_add,PNG,libpng,PNG support))
@@ -399,6 +397,7 @@ endif
 
 ifeq ($(TARGET),gtk)
   LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl libhubbub openssl)
+  LDFLAGS += $(shell $(PKG_CONFIG) --libs libcss)
 
   # define additional CFLAGS and LDFLAGS requirements for pkg-configed libs here
   NETSURF_FEATURE_RSVG_CFLAGS := -DWITH_RSVG
@@ -460,7 +459,7 @@ ifeq ($(TARGET),amiga)
 
   CFLAGS += -D__USE_INLINE__ -std=c99 -I . -Dnsamiga
   LDFLAGS += -lxml2 -lcurl -lpthread -lregex -lauto
-  LDFLAGS += -lssl -lcrypto -lhubbub -lparserutils
+  LDFLAGS += -lssl -lcrypto -lhubbub -lcss -lparserutils -lwapcaplet
 
   ifeq ($(NETSURF_AMIGA_USE_CAIRO),YES)
     CFLAGS += -DNS_AMIGA_CAIRO -I SDK:local/common/include/cairo
@@ -503,10 +502,12 @@ ifeq ($(TARGET),framebuffer)
 		-D_POSIX_C_SOURCE=200112L  \
 		$(shell $(PKG_CONFIG) --cflags libnsfb) \
 		$(shell $(PKG_CONFIG) --cflags libhubbub libcurl openssl) \
+		$(shell $(PKG_CONFIG) --cflags libcss) \
 		$(shell xml2-config --cflags)
 
   LDFLAGS += -Wl,--whole-archive $(shell $(PKG_CONFIG) --libs libnsfb) -Wl,--no-whole-archive 
   LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl libhubbub openssl)
+  LDFLAGS += $(shell $(PKG_CONFIG) --libs libcss)
 
 endif
 
@@ -634,7 +635,7 @@ DEPFILES :=
 # 3 = obj filename, no prefix
 define dependency_generate_c
 DEPFILES += $(2)
-$$(DEPROOT)/$(2): $$(DEPROOT)/created $(1) css/css_enum.h css/parser.h Makefile.config
+$$(DEPROOT)/$(2): $$(DEPROOT)/created $(1) Makefile.config
 
 endef
 

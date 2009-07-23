@@ -64,7 +64,8 @@ gif_bitmap_callback_vt gif_bitmap_callbacks = {
 };
 
 
-bool nsgif_create(struct content *c, const char *params[])
+bool nsgif_create(struct content *c, struct content *parent,
+		const char *params[])
 {
 	union content_msg_data msg_data;
 	/* Initialise our data structure */

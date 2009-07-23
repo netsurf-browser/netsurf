@@ -51,7 +51,8 @@ static void row_callback(png_structp png, png_bytep new_row,
 static void end_callback(png_structp png, png_infop info);
 
 
-bool nspng_create(struct content *c, const char *params[])
+bool nspng_create(struct content *c, struct content *parent,
+		const char *params[])
 {
 	union content_msg_data msg_data;
 

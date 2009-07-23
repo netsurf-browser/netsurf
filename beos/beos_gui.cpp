@@ -96,6 +96,7 @@ bool gui_in_multitask = false;
 bool replicated = false; /**< if we are running as a replicant */
 
 char *default_stylesheet_url;
+char *quirks_stylesheet_url;
 char *adblock_stylesheet_url;
 char *options_file_location;
 char *glade_file_location;
@@ -266,7 +267,7 @@ static char *generate_default_css()
 		return NULL;
 
 	const char *params[] = { 0 };
-	if (!content_set_type(c, CONTENT_CSS, "text/css", params))
+	if (!content_set_type(c, CONTENT_CSS, "text/css", params, NULL))
 		return NULL;
 
 	if (!content_process_data(c, text.String(), text.Length()))
@@ -567,6 +568,14 @@ void gui_init(int argc, char** argv)
 	LOG(("Using '%s' as Default CSS URL", default_stylesheet_url));
 
 #ifdef USE_RESOURCES
+	quirks_stylesheet_url = strdup("rsrc:/quirks.css,text/css");
+#else
+	find_resource(buf, "quirks.css", "./beos/res/quirks.css");
+	default_stylesheet_url = path_to_url(buf);
+#endif
+
+
+#ifdef USE_RESOURCES
 	adblock_stylesheet_url = strdup("rsrc:/adblock.css,text/css");
 #else
 	find_resource(buf, "adblock.css", "./beos/res/adblock.css");
@@ -740,6 +749,7 @@ void gui_quit(void)
 	//options_save_tree(hotlist,option_hotlist_file,messages_get("TreeHotlist"));
 
 	free(default_stylesheet_url);
+	free(quirks_stylesheet_url);
 	free(adblock_stylesheet_url);
 	free(option_cookie_file);
 	free(option_cookie_jar);

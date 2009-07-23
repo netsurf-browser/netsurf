@@ -26,10 +26,10 @@
 #include <string.h>
 
 #include "content/content.h"
+#include "css/utils.h"
 #include "desktop/options.h"
 #include "desktop/print.h"
 #include "desktop/printer.h"
-#include "render/loosen.h"
 #include "render/box.h"
 #include "utils/log.h"
 #include "utils/talloc.h"
@@ -197,8 +197,7 @@ struct content *print_init(struct content *content,
 }
 
 /**
- * The content is resized to fit page width. In case it is to wide, it is
- * loosened.
+ * The content is resized to fit page width.
  *
  * \param content The content to be printed
  * \param settings The settings for printing to use
@@ -213,24 +212,18 @@ bool print_apply_settings(struct content *content,
 	/*Apply settings - adjust page size etc*/
 
 	page_content_width = (settings->page_width - 
-			settings->margins[MARGINLEFT] - 
-			settings->margins[MARGINRIGHT]) / settings->scale;
+			FIXTOFLT(FSUB(settings->margins[MARGINLEFT],
+			settings->margins[MARGINRIGHT]))) / settings->scale;
 	
 	page_content_height = (settings->page_height - 
-			settings->margins[MARGINTOP] - 
-			settings->margins[MARGINBOTTOM]) / settings->scale;
+			FIXTOFLT(FSUB(settings->margins[MARGINTOP],
+			settings->margins[MARGINBOTTOM]))) / settings->scale;
 	
 	content_reformat(content, page_content_width, 0);
 
 	LOG(("New layout applied.New height = %d ; New width = %d ",
 			content->height, content->width));
 	
-	/*check if loosening is necessary and requested*/
-	if (option_enable_loosening && content->width > page_content_width)
-  		return loosen_document_layout(content, 
-				content->data.html.layout,
-  				page_content_width, page_content_height);
-
 	return true;
 }
 
@@ -275,9 +268,8 @@ struct print_settings *print_make_settings(print_configuration configuration,
 		const char *filename, const struct font_functions *font_func)
 {
 	struct print_settings *settings;
-	struct css_length length;
-	
-	length.unit = CSS_UNIT_MM;
+	css_fixed length = 0;
+	css_unit unit = CSS_UNIT_MM;
 	
 	switch (configuration){
 		case PRINT_DEFAULT:	
@@ -292,14 +284,18 @@ struct print_settings *print_make_settings(print_configuration configuration,
 
 			settings->scale = DEFAULT_EXPORT_SCALE;
 			
-			length.value = DEFAULT_MARGIN_LEFT_MM;
-			settings->margins[MARGINLEFT] = css_len2px(&length, 0);
-			length.value = DEFAULT_MARGIN_RIGHT_MM;
-			settings->margins[MARGINRIGHT] = css_len2px(&length, 0);
-			length.value = DEFAULT_MARGIN_TOP_MM;
-			settings->margins[MARGINTOP] = css_len2px(&length, 0);
-			length.value = DEFAULT_MARGIN_BOTTOM_MM;
-			settings->margins[MARGINBOTTOM] = css_len2px(&length, 0);
+			length = INTTOFIX(DEFAULT_MARGIN_LEFT_MM);
+			settings->margins[MARGINLEFT] = 
+					nscss_len2px(length, unit, NULL);
+			length = INTTOFIX(DEFAULT_MARGIN_RIGHT_MM);
+			settings->margins[MARGINRIGHT] = 
+					nscss_len2px(length, unit, NULL);
+			length = INTTOFIX(DEFAULT_MARGIN_TOP_MM);
+			settings->margins[MARGINTOP] = 
+					nscss_len2px(length, unit, NULL);
+			length = INTTOFIX(DEFAULT_MARGIN_BOTTOM_MM);
+			settings->margins[MARGINBOTTOM] = 
+					nscss_len2px(length, unit, NULL);
 			break;
 		/* use settings from the Export options tab */
 		case PRINT_OPTIONS:
@@ -314,14 +310,18 @@ struct print_settings *print_make_settings(print_configuration configuration,
 			
 			settings->scale = (float)option_export_scale / 100;
 			
-			length.value = option_margin_left;
-			settings->margins[MARGINLEFT] = css_len2px(&length, 0);
-			length.value = option_margin_right;
-			settings->margins[MARGINRIGHT] = css_len2px(&length, 0);
-			length.value = option_margin_top;
-			settings->margins[MARGINTOP] = css_len2px(&length, 0);
-			length.value = option_margin_bottom;
-			settings->margins[MARGINBOTTOM] = css_len2px(&length, 0);
+			length = INTTOFIX(option_margin_left);
+			settings->margins[MARGINLEFT] = 
+					nscss_len2px(length, unit, NULL);
+			length = INTTOFIX(option_margin_right);
+			settings->margins[MARGINRIGHT] = 
+					nscss_len2px(length, unit, NULL);
+			length = INTTOFIX(option_margin_top);
+			settings->margins[MARGINTOP] = 
+					nscss_len2px(length, unit, NULL);
+			length = INTTOFIX(option_margin_bottom);
+			settings->margins[MARGINBOTTOM] = 
+					nscss_len2px(length, unit, NULL);
 			break;
 		default:
 			return NULL;

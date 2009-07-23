@@ -41,6 +41,8 @@ typedef struct hubbub_ctx {
 	htmlDocPtr document;
 	bool owns_doc;
 
+	binding_quirks_mode quirks;
+
 	const char *encoding;
 	binding_encoding_source encoding_source;
 
@@ -147,6 +149,7 @@ binding_error binding_create_tree(void *arena, const char *charset, void **ctx)
 					     : ENCODING_SOURCE_DETECTED;
 	c->document = NULL;
 	c->owns_doc = true;
+	c->quirks = BINDING_QUIRKS_MODE_NONE;
 	c->forms = NULL;
 
 	error = hubbub_parser_create(charset, true, myrealloc, arena, 
@@ -239,12 +242,14 @@ const char *binding_get_encoding(void *ctx, binding_encoding_source *source)
 	return c->encoding != NULL ? c->encoding : "Windows-1252";
 }
 
-xmlDocPtr binding_get_document(void *ctx)
+xmlDocPtr binding_get_document(void *ctx, binding_quirks_mode *quirks)
 {
 	hubbub_ctx *c = (hubbub_ctx *) ctx;
 	xmlDocPtr doc = c->document;
 
 	c->owns_doc = false;
+
+	*quirks = c->quirks;
 
 	return doc;
 }
@@ -744,6 +749,20 @@ hubbub_error add_attributes(void *ctx, void *node,
 
 hubbub_error set_quirks_mode(void *ctx, hubbub_quirks_mode mode)
 {
+	hubbub_ctx *c = (hubbub_ctx *) ctx;
+
+	switch (mode) {
+	case HUBBUB_QUIRKS_MODE_NONE:
+		c->quirks = BINDING_QUIRKS_MODE_NONE;
+		break;
+	case HUBBUB_QUIRKS_MODE_LIMITED:
+		c->quirks = BINDING_QUIRKS_MODE_LIMITED;
+		break;
+	case HUBBUB_QUIRKS_MODE_FULL:
+		c->quirks = BINDING_QUIRKS_MODE_FULL;
+		break;
+	}
+
 	return HUBBUB_OK;
 }
 

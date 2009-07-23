@@ -34,6 +34,8 @@
 
 #include <stdbool.h>
 
+#include "css/css.h"
+
 struct content;
 struct printer;
 
@@ -48,7 +50,7 @@ typedef enum { PRINT_DEFAULT, PRINT_OPTIONS } print_configuration;
 struct print_settings{
 	/*Standard parameters*/
 	float page_width, page_height;
-	int margins[4];
+	css_fixed margins[4];
 	
 	float scale;
 
