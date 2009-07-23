@@ -77,6 +77,9 @@
 #include "amiga/gui_options.h"
 #include "amiga/bitmap.h"
 
+#include "amiga/stringview/stringview.h"
+#include "amiga/stringview/urlhistory.h"
+
 #ifdef NS_AMIGA_CAIRO
 #include <cairo/cairo-amigaos.h>
 #endif
@@ -112,6 +115,8 @@ struct Library  *PopupMenuBase = NULL;
 struct PopupMenuIFace *IPopupMenu = NULL;
 struct Library  *KeymapBase = NULL;
 struct KeymapIFace *IKeymap = NULL;
+
+Class *urlStringClass;
 
 struct BitMap *throbber = NULL;
 ULONG throbber_width,throbber_height,throbber_frames,throbber_update_interval;
@@ -260,6 +265,8 @@ void gui_init(int argc, char** argv)
 	{
 		IKeymap = (struct KeymapIFace *)GetInterface(KeymapBase,"main",1,NULL);
 	}
+
+	urlStringClass = MakeStringClass();
 
 	ami_clipboard_init();
 
@@ -1560,6 +1567,7 @@ void gui_quit(void)
 	FreeAslRequest(savereq);
 
 	ami_openurl_close();
+    FreeStringClass(urlStringClass);
 
     if(IPopupMenu) DropInterface((struct Interface *)IPopupMenu);
     if(PopupMenuBase) CloseLibrary(PopupMenuBase);
@@ -1815,6 +1823,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 				gwin->shared->tabs=1;
 				gwin->shared->next_tab=1;
 
+				gwin->shared->svbuffer = AllocVec(2000, MEMF_CLEAR);
+
 				ami_get_theme_filename(nav_west,"theme_nav_west");
 				ami_get_theme_filename(nav_west_s,"theme_nav_west_s");
 				ami_get_theme_filename(nav_west_g,"theme_nav_west_g");
@@ -1944,10 +1954,22 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 							ButtonEnd,
 							CHILD_WeightedWidth,0,
 							CHILD_WeightedHeight,0,
-							LAYOUT_AddChild, gwin->shared->gadgets[GID_URL] = StringObject,
+							LAYOUT_AddChild, gwin->shared->gadgets[GID_URL] =
+								NewObject(urlStringClass, NULL,
+                    				STRINGA_MaxChars, 2000,
+                    				GA_ID, GID_URL,
+                    				GA_RelVerify, TRUE,
+                    				GA_TabCycle, TRUE,
+                    				STRINGA_Buffer, gwin->shared->svbuffer,
+                    				STRINGVIEW_Header, URLHistory_GetList(),
+//                    				STRINGA_TextVal, NULL,
+                			StringEnd,
+/*
+ StringObject,
 								GA_ID,GID_URL,
 								GA_RelVerify,TRUE,
 							StringEnd,
+*/
 							LAYOUT_AddChild, gwin->shared->gadgets[GID_THROBBER] = SpaceObject,
 								GA_ID,GID_THROBBER,
 								SPACE_MinWidth,throbber_width,
@@ -2152,6 +2174,9 @@ void gui_window_destroy(struct gui_window *g)
 	curbw = NULL;
 
 	DisposeObject(g->shared->objects[OID_MAIN]);
+
+	FreeVec(g->shared->svbuffer);
+
 	DelObject(g->shared->node);
 	if(g->tab_node)
 	{

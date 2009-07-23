@@ -97,6 +97,7 @@ struct gui_window_2 {
 	ULONG oldv;
 	bool redraw_scroll;
 	bool new_content;
+	char *svbuffer;
 };
 
 struct gui_window
