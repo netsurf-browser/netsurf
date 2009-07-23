@@ -2473,12 +2473,13 @@ bool layout_line(struct box *first, int *width, int *y,
 
 	assert(b != first || (move_y && 0 < used_height && (left || right)));
 
-	/* set height of all text boxes to line height */
+	/* align baselines of all text boxes by moving their y so that their
+	 * 0.75 point is aligned */
 	for (d = first; d != b; d = d->next) {
 		if (d->type == BOX_INLINE || d->type == BOX_BR ||
 				d->type == BOX_TEXT ||
 				d->type == BOX_INLINE_END) {
-			d->height = used_height;
+			d->y += 0.75 * used_height - 0.75 * d->height;
 		}
 	}
 
