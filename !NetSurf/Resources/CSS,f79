@@ -84,8 +84,7 @@ col { display: table-column; }
 
 tr { display: table-row; vertical-align: middle; }
 td, th { display: table-cell; vertical-align: inherit; padding: 1px; }
-td { text-align: left; }
-th { font-weight: bold; text-align: center; }
+th { font-weight: bold; }
 
 td[nowrap], th[nowrap] { white-space: nowrap; }
 
