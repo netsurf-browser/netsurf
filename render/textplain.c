@@ -736,6 +736,7 @@ float textplain_line_height(void)
 	 * Then use a constant line height of 1.2 x font size.
 	 */
 	return FIXTOFLT(FDIVI((FMUL(FLTTOFIX(1.2), 
-			FMULI(nscss_screen_dpi, textplain_style.size))), 72));
+			FMULI(nscss_screen_dpi, 
+			(textplain_style.size / FONT_SIZE_SCALE)))), 72));
 }
 
