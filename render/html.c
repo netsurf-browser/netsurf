@@ -61,7 +61,7 @@ static void html_convert_css_callback(content_msg msg, struct content *css,
 static bool html_meta_refresh(struct content *c, xmlNode *head);
 static bool html_head(struct content *c, xmlNode *head);
 static bool html_find_stylesheets(struct content *c, xmlNode *html);
-static bool html_process_style_element(struct content *c, unsigned int index,
+static bool html_process_style_element(struct content *c, unsigned int *index,
 		xmlNode *style);
 static void html_object_callback(content_msg msg, struct content *object,
 		intptr_t p1, intptr_t p2, union content_msg_data data);
@@ -972,10 +972,8 @@ bool html_find_stylesheets(struct content *c, xmlNode *html)
 					0, 0, false, c);
 			i++;
 		} else if (strcmp((const char *) node->name, "style") == 0) {
-
-			if (!html_process_style_element(c, i, node))
+			if (!html_process_style_element(c, &i, node))
 				return false;
-			i++;
 		}
 	}
 
@@ -1029,12 +1027,13 @@ no_memory:
  * Process an inline stylesheet in the document.
  *
  * \param  c      content structure
- * \param  index  Index of stylesheet in stylesheet_content array
+ * \param  index  Index of stylesheet in stylesheet_content array, 
+ *                updated if successful
  * \param  style  xml node of style element
  * \return  true on success, false if an error occurred
  */
 
-bool html_process_style_element(struct content *c, unsigned int index,
+bool html_process_style_element(struct content *c, unsigned int *index,
 		xmlNode *style)
 {
 	xmlNode *child;
@@ -1064,18 +1063,19 @@ bool html_process_style_element(struct content *c, unsigned int index,
 
 	/* Extend array */
 	stylesheet_content = talloc_realloc(c, c->data.html.stylesheet_content,
-			struct content *, index + 1);
+			struct content *, *index + 1);
 	if (stylesheet_content == NULL)
 		goto no_memory;
 
 	c->data.html.stylesheet_content = stylesheet_content;
 
 	/* create stylesheet */
-	c->data.html.stylesheet_content[index] = 
+	c->data.html.stylesheet_content[(*index)] = 
 			content_create(c->data.html.base_url);
-	if (c->data.html.stylesheet_content[index] == NULL)
+	if (c->data.html.stylesheet_content[(*index)] == NULL)
 		goto no_memory;
-	if (!content_set_type(c->data.html.stylesheet_content[index],
+
+	if (!content_set_type(c->data.html.stylesheet_content[(*index)],
 			CONTENT_CSS, "text/css", params, c))
 		/** \todo  not necessarily caused by
 		 *  memory exhaustion */
@@ -1087,7 +1087,7 @@ bool html_process_style_element(struct content *c, unsigned int index,
 	for (child = style->children; child != 0; child = child->next) {
 		data = (char *) xmlNodeGetContent(child);
 		if (!content_process_data(c->data.html.
-				stylesheet_content[index],
+				stylesheet_content[(*index)],
 				data, strlen(data))) {
 			xmlFree(data);
 			/** \todo  not necessarily caused by
@@ -1098,19 +1098,22 @@ bool html_process_style_element(struct content *c, unsigned int index,
 	}
 
 	/* Convert the content */
-	if (nscss_convert(c->data.html.stylesheet_content[index], c->width,
+	if (nscss_convert(c->data.html.stylesheet_content[(*index)], c->width,
 			c->height)) {
-		if (!content_add_user(c->data.html.stylesheet_content[index],
+		if (!content_add_user(c->data.html.stylesheet_content[(*index)],
 				html_convert_css_callback,
-				(intptr_t) c, index)) {
+				(intptr_t) c, (*index))) {
 			/* no memory */
-			c->data.html.stylesheet_content[index] = NULL;
+			c->data.html.stylesheet_content[(*index)] = NULL;
 			goto no_memory;
 		}
 	} else {
 		/* conversion failed */
-		c->data.html.stylesheet_content[index] = NULL;
+		c->data.html.stylesheet_content[(*index)] = NULL;
 	}
+
+	/* Update index */
+	(*index)++;
 
 	return true;
 
