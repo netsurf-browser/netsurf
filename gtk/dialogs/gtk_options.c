@@ -364,7 +364,7 @@ void nsgtk_options_load(void)
 	SET_FONT(fontMonospace, option_font_mono);
 	SET_FONT(fontCursive, option_font_cursive);
 	SET_FONT(fontFantasy, option_font_fantasy);
-	SET_COMBO(comboDefault, option_font_default - 1);
+	SET_COMBO(comboDefault, option_font_default);
 	SET_SPIN(spinDefaultSize, option_font_size / 10);
 	SET_SPIN(spinMinimumSize, option_font_min_size / 10);
 	SET_BUTTON(fontPreview);
@@ -627,7 +627,6 @@ FONT_CHANGED(fontFantasy, option_font_fantasy)
 END_HANDLER
 
 COMBO_CHANGED(comboDefault, option_font_default)
-	option_font_default++;
 END_HANDLER
 
 SPIN_CHANGED(spinDefaultSize, option_font_size)
