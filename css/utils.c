@@ -74,7 +74,7 @@ css_fixed nscss_len2px(css_fixed length, css_unit unit,
 		const css_computed_style *style)
 {
 	/* We assume the screen and any other output has the same dpi */
-	const css_fixed lendpi = FMUL(length, nscss_screen_dpi);
+	css_fixed px_per_unit;
 
 	assert(style != NULL || (unit != CSS_UNIT_EM && unit != CSS_UNIT_EX));
 
@@ -95,30 +95,49 @@ css_fixed nscss_len2px(css_fixed length, css_unit unit,
 			font_size = FDIVI(INTTOFIX(option_font_min_size), 10);
 		}
 
-		/* Expand relative length */
-		length = FMUL(length, 
-				nscss_len2px(font_size, CSS_UNIT_PT, style));
+		/* Convert to pixels (manually, to maximise precision) 
+		 * 1in = 72pt => 1pt = (DPI/72)px */
+		px_per_unit = FDIV(FMUL(font_size, nscss_screen_dpi), 
+				INTTOFIX(72));
 
 		/* Scale ex units: we use a fixed ratio of 1ex = 0.6em */
 		if (unit == CSS_UNIT_EX)
-			length = FMUL(length, FLTTOFIX(0.6));
-			
-		return length;
+			px_per_unit = FMUL(px_per_unit, FLTTOFIX(0.6));
 	}
-	case CSS_UNIT_PX: return length;
+		break;
+	case CSS_UNIT_PX: 
+		px_per_unit = INTTOFIX(1);
+		break;
 	/* 1in = DPIpx */
-	case CSS_UNIT_IN: return lendpi;
+	case CSS_UNIT_IN: 
+		px_per_unit = nscss_screen_dpi;
+		break;
 	/* 1in = 2.54cm => 1cm = (DPI/2.54)px */
-	case CSS_UNIT_CM: return FDIV(lendpi, FLTTOFIX(2.54));
+	case CSS_UNIT_CM: 
+		px_per_unit = FDIV(nscss_screen_dpi, FLTTOFIX(2.54));
+		break;
 	/* 1in = 25.4mm => 1mm = (DPI/25.4)px */
-	case CSS_UNIT_MM: return FDIV(lendpi, FLTTOFIX(25.4));
+	case CSS_UNIT_MM: 
+		px_per_unit = FDIV(nscss_screen_dpi, FLTTOFIX(25.4));
+		break;
 	/* 1in = 72pt => 1pt = (DPI/72)px */
-	case CSS_UNIT_PT: return FDIV(lendpi, INTTOFIX(72));
+	case CSS_UNIT_PT: 
+		px_per_unit = FDIV(nscss_screen_dpi, INTTOFIX(72));
+		break;
 	/* 1pc = 12pt => 1in = 6pc => 1pc = (DPI/6)px */
-	case CSS_UNIT_PC: return FDIV(lendpi, INTTOFIX(6));
-	default: break;
+	case CSS_UNIT_PC: 
+		px_per_unit = FDIV(nscss_screen_dpi, INTTOFIX(6));
+		break;
+	default:
+		px_per_unit = 0;
+		break;
 	}
 
-	return 0;
+	/* Ensure we round px_per_unit to the nearest whole number of pixels:
+	 * the use of FIXTOINT() below will truncate. */
+	px_per_unit += FDIVI(INTTOFIX(1), 2);
+
+	/* Calculate total number of pixels */
+	return FMULI(length, FIXTOINT(px_per_unit));
 }
 
