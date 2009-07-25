@@ -1784,25 +1784,10 @@ int line_height(const css_computed_style *style)
 
 	if (lhtype == CSS_LINE_HEIGHT_NUMBER ||
 			lhunit == CSS_UNIT_PCT) {
-		css_fixed fs = 0, px_fs;
-		css_unit fs_unit = CSS_UNIT_PX;
+		line_height = nscss_len2px(lhvalue, CSS_UNIT_EM, style);
 
-		css_computed_font_size(style, &fs, &fs_unit);
-
-		/* Convert to points */
-		fs = nscss_len2pt(fs, fs_unit);
-		fs_unit = CSS_UNIT_PT;
-
-		/* Clamp to configured minimum */
-		if (fs < FDIVI(INTTOFIX(option_font_min_size), 10))
-			fs = FDIVI(INTTOFIX(option_font_min_size), 10);
-
-		px_fs = nscss_len2px(fs, fs_unit, style);
-
-		if (lhtype == CSS_LINE_HEIGHT_NUMBER)
-			line_height = FMUL(lhvalue, px_fs);
-		else
-			line_height = FDIVI(FMUL(lhvalue, px_fs), 100);
+		if (lhtype != CSS_LINE_HEIGHT_NUMBER)
+			line_height = FDIVI(line_height, 100);
 	} else {
 		assert(lhunit != CSS_UNIT_PCT);
 
