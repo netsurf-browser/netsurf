@@ -27,6 +27,7 @@
 #include "css/internal.h"
 #include "desktop/gui.h"
 #include "render/html.h"
+#include "utils/messages.h"
 
 static void nscss_import(content_msg msg, struct content *c,
 		intptr_t p1, intptr_t p2, union content_msg_data data);
@@ -59,10 +60,12 @@ bool nscss_create(struct content *c, struct content *parent,
 	css_media_type media = CSS_MEDIA_ALL;
 	lwc_context *dict = NULL;
 	bool quirks = true;
+	union content_msg_data msg_data;
 	css_error error;
 
 	/** \todo extract charset from params */
 	/** \todo what happens about the allocator? */
+	/** \todo proper error reporting */
 
 	if (parent != NULL) {
 		assert(parent->type == CONTENT_HTML || 
@@ -91,13 +94,21 @@ bool nscss_create(struct content *c, struct content *parent,
 
 			error = css_stylesheet_get_origin(
 					parent->data.css.sheet, &origin);
-			if (error != CSS_OK)
+			if (error != CSS_OK) {
+				msg_data.error = "?";
+				content_broadcast(c, CONTENT_MSG_ERROR, 
+						msg_data);
 				return false;
+			}
 
 			error = css_stylesheet_quirks_allowed(
 					parent->data.css.sheet, &quirks);
-			if (error != CSS_OK)
+			if (error != CSS_OK) {
+				msg_data.error = "?";
+				content_broadcast(c, CONTENT_MSG_ERROR, 
+						msg_data);
 				return false;
+			}
 
 			/** \todo media types */
 
@@ -108,8 +119,11 @@ bool nscss_create(struct content *c, struct content *parent,
 	if (dict == NULL) {
 		lwc_error lerror = lwc_create_context(myrealloc, NULL, &dict);
 
-		if (lerror != lwc_error_ok)
+		if (lerror != lwc_error_ok) {
+			msg_data.error = messages_get("NoMemory");
+			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 			return false;
+		}
 	}
 
 	c->data.css.dict = lwc_context_ref(dict);
@@ -125,6 +139,8 @@ bool nscss_create(struct content *c, struct content *parent,
 	if (error != CSS_OK) {
 		lwc_context_unref(c->data.css.dict);
 		c->data.css.dict = NULL;
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
 	}
 
@@ -141,10 +157,16 @@ bool nscss_create(struct content *c, struct content *parent,
  */
 bool nscss_process_data(struct content *c, char *data, unsigned int size)
 {
+	union content_msg_data msg_data;
 	css_error error;
 
 	error = css_stylesheet_append_data(c->data.css.sheet, 
 			(const uint8_t *) data, size);
+
+	if (error != CSS_OK && error != CSS_NEEDDATA) {
+		msg_data.error = "?";
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+	}
 
 	return (error == CSS_OK || error == CSS_NEEDDATA);
 }
@@ -159,6 +181,7 @@ bool nscss_process_data(struct content *c, char *data, unsigned int size)
  */
 bool nscss_convert(struct content *c, int w, int h)
 {
+	union content_msg_data msg_data;
 	css_error error;
 
 	error = css_stylesheet_data_done(c->data.css.sheet);
@@ -174,6 +197,8 @@ bool nscss_convert(struct content *c, int w, int h)
 		error = css_stylesheet_next_pending_import(c->data.css.sheet,
 				&uri, &media);
 		if (error != CSS_OK && error != CSS_INVALID) {
+			msg_data.error = "?";
+			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 			c->status = CONTENT_STATUS_ERROR;
 			return false;
 		}
@@ -189,6 +214,8 @@ bool nscss_convert(struct content *c, int w, int h)
 				(c->data.css.import_count + 1) * 
 				sizeof(struct content *));
 		if (imports == NULL) {
+			msg_data.error = "?";
+			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 			c->status = CONTENT_STATUS_ERROR;
 			return false;
 		}
@@ -202,6 +229,8 @@ bool nscss_convert(struct content *c, int w, int h)
 				c->width, c->height, true, NULL, NULL, 
 				false, false);
 		if (c->data.css.imports[i] == NULL) {
+			msg_data.error = "?";
+			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 			c->status = CONTENT_STATUS_ERROR;
 			return false;
 		}
@@ -229,6 +258,9 @@ bool nscss_convert(struct content *c, int w, int h)
 					nscss_resolve_url, NULL,
 					&sheet);
 			if (error != CSS_OK) {
+				msg_data.error = messages_get("NoMemory");
+				content_broadcast(c, CONTENT_MSG_ERROR, 
+						msg_data);
 				c->status = CONTENT_STATUS_ERROR;
 				return false;
 			}
@@ -237,6 +269,8 @@ bool nscss_convert(struct content *c, int w, int h)
 		error = css_stylesheet_register_import(
 				c->data.css.sheet, sheet);
 		if (error != CSS_OK) {
+			msg_data.error = "?";
+			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 			c->status = CONTENT_STATUS_ERROR;
 			return false;
 		}
