@@ -135,7 +135,7 @@ css_fixed nscss_len2px(css_fixed length, css_unit unit,
 
 	/* Ensure we round px_per_unit to the nearest whole number of pixels:
 	 * the use of FIXTOINT() below will truncate. */
-	px_per_unit += FDIVI(INTTOFIX(1), 2);
+	px_per_unit += FLTTOFIX(0.5);
 
 	/* Calculate total number of pixels */
 	return FMULI(length, FIXTOINT(px_per_unit));
