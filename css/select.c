@@ -745,19 +745,9 @@ css_error node_has_attribute(void *pw, void *node,
 {
 	xmlNode *n = node;
 	xmlAttr *attr;
-	char *buf;
-
-	buf = malloc(lwc_string_length(name) + 1);
-	if (buf == NULL)
-		return CSS_NOMEM;
-
-	memcpy(buf, lwc_string_data(name), lwc_string_length(name));
-	buf[lwc_string_length(name)] = '\0';
-
-	attr = xmlHasProp(n, (const xmlChar *) buf);
+	
+	attr = xmlHasProp(n, (const xmlChar *) lwc_string_data(name));
 	*match = attr != NULL;
-
-	free(buf);
 
 	return CSS_OK;
 
@@ -782,18 +772,10 @@ css_error node_has_attribute_equal(void *pw, void *node,
 {
 	xmlNode *n = node;
 	xmlChar *attr;
-	char *buf;
-
-	buf = malloc(lwc_string_length(name) + 1);
-	if (buf == NULL)
-		return CSS_NOMEM;
-
-	memcpy(buf, lwc_string_data(name), lwc_string_length(name));
-	buf[lwc_string_length(name)] = '\0';
 
 	*match = false;
 
-	attr = xmlGetProp(n, (const xmlChar *) buf);
+	attr = xmlGetProp(n, (const xmlChar *) lwc_string_data(name));
 	if (attr != NULL) {
 		*match = strlen((const char *) attr) ==
 					lwc_string_length(value) &&
@@ -802,8 +784,6 @@ css_error node_has_attribute_equal(void *pw, void *node,
 					lwc_string_length(value)) == 0;
 		xmlFree(attr);
 	}
-
-	free(buf);
 
 	return CSS_OK;
 }
@@ -828,19 +808,11 @@ css_error node_has_attribute_dashmatch(void *pw, void *node,
 {
 	xmlNode *n = node;
 	xmlChar *attr;
-	char *buf;
         size_t vlen = lwc_string_length(value);
-
-	buf = malloc(lwc_string_length(name) + 1);
-	if (buf == NULL)
-		return CSS_NOMEM;
-
-	memcpy(buf, lwc_string_data(name), lwc_string_length(name));
-	buf[lwc_string_length(name)] = '\0';
 
         *match = false;
 
-	attr = xmlGetProp(n, (const xmlChar *) buf);
+	attr = xmlGetProp(n, (const xmlChar *) lwc_string_data(name));
 	if (attr != NULL) {
 		const char *p;
 		const char *start = (const char *) attr;
@@ -860,8 +832,6 @@ css_error node_has_attribute_dashmatch(void *pw, void *node,
 			}
 		}
 	}
-
-	free(buf);
 
 	return CSS_OK;
 }
@@ -886,19 +856,11 @@ css_error node_has_attribute_includes(void *pw, void *node,
 {
 	xmlNode *n = node;
 	xmlChar *attr;
-	char *buf;
 	size_t vlen = lwc_string_length(value);
-
-	buf = malloc(lwc_string_length(name) + 1);
-	if (buf == NULL)
-		return CSS_NOMEM;
-
-	memcpy(buf, lwc_string_data(name), lwc_string_length(name));
-	buf[lwc_string_length(name)] = '\0';
 
         *match = false;
 
-	attr = xmlGetProp(n, (const xmlChar *) buf);
+	attr = xmlGetProp(n, (const xmlChar *) lwc_string_data(name));
 	if (attr != NULL) {
 		const char *p;
 		const char *start = (const char *) attr;
@@ -918,8 +880,6 @@ css_error node_has_attribute_includes(void *pw, void *node,
 			}
 		}
 	}
-
-	free(buf);
 
 	return CSS_OK;
 }

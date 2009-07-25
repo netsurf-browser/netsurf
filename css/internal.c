@@ -38,25 +38,14 @@ css_error nscss_resolve_url(void *pw, lwc_context *ctx,
 		const char *base, lwc_string *rel, lwc_string **abs)
 {
 	lwc_error lerror;
-	char *rel_url, *abs_url, *norm_url;
+	char *abs_url, *norm_url;
 	url_func_result res;
 
-	/* Copy relative URL and ensure it's NUL terminated */
-	rel_url = malloc(lwc_string_length(rel) + 1);
-	if (rel_url == NULL)
-		return CSS_NOMEM;
-
-	memcpy(rel_url, lwc_string_data(rel), lwc_string_length(rel));
-	rel_url[lwc_string_length(rel)] = '\0';
-
 	/* Resolve URI */
-	res = url_join(rel_url, base, &abs_url);
+	res = url_join(lwc_string_data(rel), base, &abs_url);
 	if (res != URL_FUNC_OK) {
-		free(rel_url);
 		return res == URL_FUNC_NOMEM ? CSS_NOMEM : CSS_INVALID;
 	}
-
-	free(rel_url);
 
 	/* Normalise it */
 	res = url_normalize(abs_url, &norm_url);

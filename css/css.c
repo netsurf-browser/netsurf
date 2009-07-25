@@ -170,7 +170,6 @@ bool nscss_convert(struct content *c, int w, int h)
 		lwc_string *uri;
 		uint64_t media;
 		css_stylesheet *sheet;
-		char *temp_url;
 		
 		error = css_stylesheet_next_pending_import(c->data.css.sheet,
 				&uri, &media);
@@ -185,15 +184,6 @@ bool nscss_convert(struct content *c, int w, int h)
 			break;
 		}
 
-		/* Copy URI and ensure it's NUL terminated */
-		temp_url = malloc(lwc_string_length(uri) + 1);
-		if (temp_url == NULL) {
-			c->status = CONTENT_STATUS_ERROR;
-			return false;
-		}
-		memcpy(temp_url, lwc_string_data(uri), lwc_string_length(uri));
-		temp_url[lwc_string_length(uri)] = '\0';
-
 		/* Increase space in table */
 		imports = realloc(c->data.css.imports, 
 				(c->data.css.import_count + 1) * 
@@ -207,12 +197,11 @@ bool nscss_convert(struct content *c, int w, int h)
 		/* Create content */
 		i = c->data.css.import_count;
 		c->data.css.imports[c->data.css.import_count++] =
-				fetchcache(temp_url, 
+				fetchcache(lwc_string_data(uri), 
 				nscss_import, (intptr_t) c, i, 
 				c->width, c->height, true, NULL, NULL, 
 				false, false);
 		if (c->data.css.imports[i] == NULL) {
-			free(temp_url);
 			c->status = CONTENT_STATUS_ERROR;
 			return false;
 		}
@@ -222,8 +211,6 @@ bool nscss_convert(struct content *c, int w, int h)
 		fetchcache_go(c->data.css.imports[i], c->url, 
 				nscss_import, (intptr_t) c, i,
 				c->width, c->height, NULL, NULL, false, c);
-
-		free(temp_url);
 
 		/* Wait for import to fetch + convert */
 		while (c->active > 0) {

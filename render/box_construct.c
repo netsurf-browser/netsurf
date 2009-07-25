@@ -130,10 +130,6 @@ static bool box_get_attribute(xmlNode *n, const char *attribute,
 		void *context, char **value);
 static struct frame_dimension *box_parse_multi_lengths(const char *s,
 		unsigned int *count);
-static bool fetch_object_interned_url(struct content *c, lwc_string *url, 
-		struct box *box, const content_type *permitted_types,
-		int available_width, int available_height,
-		bool background);
 
 /* element_table must be sorted by name */
 struct element_entry {
@@ -519,8 +515,8 @@ bool box_construct_element(xmlNode *n, struct content *content,
 			if (css_computed_list_style_image(style, &image_uri) ==
 					CSS_LIST_STYLE_IMAGE_URI && 
 					image_uri != NULL) {
-				if (!fetch_object_interned_url(content,
-						image_uri,
+				if (!html_fetch_object(content,
+						lwc_string_data(image_uri),
 						marker,
 						0, content->available_width,
 						1000, false))
@@ -582,8 +578,8 @@ bool box_construct_element(xmlNode *n, struct content *content,
 	if (css_computed_background_image(style, &bgimage_uri) == 
 				CSS_BACKGROUND_IMAGE_IMAGE && 
 				bgimage_uri != NULL) {
-		if (!fetch_object_interned_url(content, 
-				bgimage_uri,
+		if (!html_fetch_object(content, 
+				lwc_string_data(bgimage_uri),
 				box, image_types, content->available_width,
 				1000, true))
 			return false;
@@ -2356,41 +2352,5 @@ struct frame_dimension *box_parse_multi_lengths(const char *s,
 
 	*count = n;
 	return length;
-}
-
-/**
- * Fetch an object from an interned URL
- *
- * \param c                 Current content
- * \param url               URL to fetch
- * \param box               Box containing object
- * \param permitted_types   Array of permitted types terminated by 
- *                          CONTENT_UNKNOWN, or NULL for all types
- * \param available_width   Estimate of width of object
- * \param available_height  Estimate of height of object
- * \param background        This object forms the box background
- * \return true on success, false on memory exhaustion
- */
-bool fetch_object_interned_url(struct content *c, lwc_string *url, 
-		struct box *box, const content_type *permitted_types,
-		int available_width, int available_height,
-		bool background)
-{
-	char *url_buf;
-	bool ret = true;
-
-	url_buf = malloc(lwc_string_length(url) + 1);
-	if (url_buf == NULL)
-		return false;
-
-	memcpy(url_buf, lwc_string_data(url), lwc_string_length(url));
-	url_buf[lwc_string_length(url)] = '\0';
-
-	ret = html_fetch_object(c, url_buf, box, permitted_types,
-			available_width, available_height, background);
-
-	free(url_buf);
-
-	return ret;
 }
 
