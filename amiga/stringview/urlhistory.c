@@ -30,8 +30,6 @@
 
 struct List PageList;
 
-static int InTag_urlhistory = 0;
-
 void URLHistory_Init( void )
 {
 	// Initialise page list
@@ -72,6 +70,9 @@ static bool URLHistoryFound(const char *url, const struct url_data *data)
 {
 	struct Node *node;
 
+	/* skip this URL if it is already in the list */
+	if(URLHistory_FindPage(url)) return true;
+
 	node = AllocVec( sizeof( struct Node ), MEMF_SHARED|MEMF_CLEAR );
 
 	if ( node )
@@ -93,24 +94,15 @@ static bool URLHistoryFound(const char *url, const struct url_data *data)
 
 struct Node * URLHistory_FindPage( const char *urlString )
 {
-	struct Node *node = PageList.lh_Head;
-	while( node->ln_Succ )
-	{
-		//printf("compare %s to %s\n", node->ln_Name, urlString);
-		if(strcasecmp(node->ln_Name, urlString) == 0) return node;
-		node = node->ln_Succ;
-	}
-
-	return NULL;
+	return FindName(&PageList,urlString);
 }
 
 
 void URLHistory_AddPage( const char * urlString )
 {
-	// Only add if not already in list and length > 0
-	if( !URLHistory_FindPage( urlString ) && strlen( urlString ) > 0 )
+	// Only search if length > 0
+	if( strlen( urlString ) > 0 )
 	{
 		urldb_iterate_partial(urlString, URLHistoryFound);
 	}
 }
-
