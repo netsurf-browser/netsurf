@@ -1,6 +1,6 @@
-# Italian messages for NetSurf 3.0 Development (Revision 8065)
+# Italian messages for NetSurf 3.0 Development (Revision 8768)
 # Translated by Samir Hawamdeh (http://www.betatesting.it/backforthefuture)
-# 29.06.2009
+# 24.07.2009
 # =========================================================================
 #
 # Description
@@ -582,7 +582,7 @@ AWNotSeen:Per favore imposta l'applicazione AWViewer e riprova ancora.
 NoMemory:Memoria insufficiente per l'esecuzione di NetSurf. Per favore liberane un pò e riprova ancora.
 FontBadInst:Si è verificato un errore durante l'inizializzazione dei font a causa della presenza di una copia obsoleta dei font ROM nel disco. NetSurf verrà ora chiuso e si cercherà di lanciare un programma in grado di risolvere questo problema.
 FontError:Impossibile aprire il font "Homerton.Medium" (%s).
-Resolvers:Non è stato configurato nessun nome per i domini dei server, perciò sarà possibile effettuare la navigazione dei file solo in locale. Usa "Configura" per impostare il nome (o i nomi) del/dei server.
+Resolvers:Non è stato configurato nessun nome per i domini dei server, perciò sarà possibile effettuare la navigazione dei file solo in modalità locale. Usa "Configura" per impostare il nome (o i nomi) del/dei server.
 NoDiscSpace:Spazio insufficiente nel disco.
 Template:Una finestra di template risulta mancante. Per favore reinstalla NetSurf.
 HotlistSaveError:Non è stato possibile salvare correttamente l'Hotlist.
@@ -727,7 +727,7 @@ SaveSelection:Selezione
 # Messages used when installing new themes
 #
 
-ThemeInstActive:Il tema è attualmente in fase di scaricamento o di installazione. Attendere il completamente del processo o annullare l'intera operazione prima di installare altri temi.
+ThemeInstActive:Il tema è attualmente in fase di scaricamento o di installazione. Attendere il completamente del processo oppure annullare l'intera operazione prima di installare altri temi.
 ThemeInstDown:Per favore attendere lo scaricamento del tema.
 ThemeInvalid:Il tema scaricato è invalido oppure richiede una versione più recente di NetSurf.
 ThemeInstall:Si desidera installare il tema '%s' di %s?
@@ -741,7 +741,7 @@ ThemeApplyErr:Si è verificato un errore durante il tentativo di applicazione de
 # Some general purpose words and phrases
 #
 
-Bytes: B
+Bytes: Byte
 kBytes: KB
 MBytes: MB
 GBytes: GB
@@ -1261,8 +1261,8 @@ Left:Sinistro
 Right:Destro
 Bottom:Inferiore
 MM:mm
-Scaling:Scalati
-Scale:Scala
+Scaling:Scala
+Scale:Scalati
 Appearance:Aspetto
 SuppressImages:Sopprimi immagini
 RemoveBackground:Rimuovi sfondo
