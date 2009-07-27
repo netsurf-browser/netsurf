@@ -121,7 +121,7 @@ bool save_complete_html(struct content *c, const char *path, bool index)
 
 	/* save stylesheets, ignoring the base and adblocking sheets */
 	for (i = STYLESHEET_START; i != c->data.html.stylesheet_count; i++) {
-		struct content *css = c->data.html.stylesheet_content[i];
+		struct content *css = c->data.html.stylesheets[i].c;
 		char *source;
 		int source_len;
 		bool is_style;
@@ -265,7 +265,7 @@ bool save_imported_sheets(struct content *c, const char *path)
 	os_error *error;
 
 	for (j = 0; j != c->data.css.import_count; j++) {
-		struct content *css = c->data.css.imports[j];
+		struct content *css = c->data.css.imports[j].c;
 
 		if (!css)
 			continue;
