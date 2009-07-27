@@ -136,7 +136,7 @@ struct content_html_data {
 	/** Number of entries in stylesheet_content. */
 	unsigned int stylesheet_count;
 	/** Stylesheets. Each may be 0. */
-	struct content **stylesheet_content;
+	struct nscss_import *stylesheets;
 	/**< Style selection context */
 	css_select_ctx *select_ctx;
 

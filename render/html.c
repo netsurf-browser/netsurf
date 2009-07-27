@@ -132,7 +132,7 @@ bool html_create(struct content *c, struct content *parent,
 	html->layout = 0;
 	html->background_colour = NS_TRANSPARENT;
 	html->stylesheet_count = 0;
-	html->stylesheet_content = 0;
+	html->stylesheets = NULL;
 	html->select_ctx = NULL;
 	html->object_count = 0;
 	html->object = 0;
@@ -802,62 +802,64 @@ bool html_find_stylesheets(struct content *c, xmlNode *html)
 	unsigned int last_active = 0;
 	union content_msg_data msg_data;
 	url_func_result res;
-	struct content **stylesheet_content;
+	struct nscss_import *stylesheets;
 	css_error error;
 
 	/* stylesheet 0 is the base style sheet,
 	 * stylesheet 1 is the quirks mode style sheet,
 	 * stylesheet 2 is the adblocking stylesheet */
-	c->data.html.stylesheet_content = talloc_array(c, struct content *,
+	c->data.html.stylesheets = talloc_array(c, struct nscss_import,
 			STYLESHEET_START);
-	if (!c->data.html.stylesheet_content)
+	if (c->data.html.stylesheets == NULL)
 		goto no_memory;
-	c->data.html.stylesheet_content[STYLESHEET_QUIRKS] = NULL;
-	c->data.html.stylesheet_content[STYLESHEET_ADBLOCK] = NULL;
+	c->data.html.stylesheets[STYLESHEET_BASE].c = NULL;
+	c->data.html.stylesheets[STYLESHEET_BASE].media = CSS_MEDIA_ALL;
+	c->data.html.stylesheets[STYLESHEET_QUIRKS].c = NULL;
+	c->data.html.stylesheets[STYLESHEET_QUIRKS].media = CSS_MEDIA_ALL;
+	c->data.html.stylesheets[STYLESHEET_ADBLOCK].c = NULL;
+	c->data.html.stylesheets[STYLESHEET_ADBLOCK].media = CSS_MEDIA_ALL;
 	c->data.html.stylesheet_count = STYLESHEET_START;
 
 	c->active = 0;
 
-	c->data.html.stylesheet_content[STYLESHEET_BASE] = fetchcache(
+	c->data.html.stylesheets[STYLESHEET_BASE].c = fetchcache(
 			default_stylesheet_url,
 			html_convert_css_callback, (intptr_t) c,
 			STYLESHEET_BASE, c->width, c->height,
 			true, 0, 0, false, false);
-	if (!c->data.html.stylesheet_content[STYLESHEET_BASE])
+	if (c->data.html.stylesheets[STYLESHEET_BASE].c == NULL)
 		goto no_memory;
 	c->active++;
-	fetchcache_go(c->data.html.stylesheet_content[STYLESHEET_BASE],
+	fetchcache_go(c->data.html.stylesheets[STYLESHEET_BASE].c,
 			c->url, html_convert_css_callback, (intptr_t) c,
 			STYLESHEET_BASE, c->width, c->height,
 			0, 0, false, c);
 
 	if (c->data.html.quirks == BINDING_QUIRKS_MODE_FULL) {
-		c->data.html.stylesheet_content[STYLESHEET_QUIRKS] =
+		c->data.html.stylesheets[STYLESHEET_QUIRKS].c =
 				fetchcache(quirks_stylesheet_url,
 				html_convert_css_callback, (intptr_t) c,
 				STYLESHEET_QUIRKS, c->width, c->height,
 				true, 0, 0, false, false);
-		if (c->data.html.stylesheet_content[STYLESHEET_QUIRKS] == NULL)
+		if (c->data.html.stylesheets[STYLESHEET_QUIRKS].c == NULL)
 			goto no_memory;
 		c->active++;
-		fetchcache_go(c->data.html.
-				stylesheet_content[STYLESHEET_QUIRKS],
+		fetchcache_go(c->data.html.stylesheets[STYLESHEET_QUIRKS].c,
 				c->url, html_convert_css_callback,
 				(intptr_t) c, STYLESHEET_QUIRKS, c->width,
 				c->height, 0, 0, false, c);
 	}
 
 	if (option_block_ads) {
-		c->data.html.stylesheet_content[STYLESHEET_ADBLOCK] =
+		c->data.html.stylesheets[STYLESHEET_ADBLOCK].c =
 				fetchcache(adblock_stylesheet_url,
 				html_convert_css_callback, (intptr_t) c,
 				STYLESHEET_ADBLOCK, c->width,
 				c->height, true, 0, 0, false, false);
-		if (!c->data.html.stylesheet_content[STYLESHEET_ADBLOCK])
+		if (c->data.html.stylesheets[STYLESHEET_ADBLOCK].c == NULL)
 			goto no_memory;
 		c->active++;
-		fetchcache_go(c->data.html.
-				stylesheet_content[STYLESHEET_ADBLOCK],
+		fetchcache_go(c->data.html.stylesheets[STYLESHEET_ADBLOCK].c,
 				c->url, html_convert_css_callback,
 				(intptr_t) c, STYLESHEET_ADBLOCK, c->width,
 				c->height, 0, 0, false, c);
@@ -885,7 +887,6 @@ bool html_find_stylesheets(struct content *c, xmlNode *html)
 			continue;
 
 		if (strcmp((const char *) node->name, "link") == 0) {
-
 			/* rel=<space separated list, including 'stylesheet'> */
 			if ((rel = (char *) xmlGetProp(node,
 					(const xmlChar *) "rel")) == NULL)
@@ -913,8 +914,9 @@ bool html_find_stylesheets(struct content *c, xmlNode *html)
 			/* media contains 'screen' or 'all' or not present */
 			if ((media = (char *) xmlGetProp(node,
 					(const xmlChar *) "media")) != NULL) {
-				if (strcasestr(media, "screen") == 0 &&
-						strcasestr(media, "all") == 0) {
+				if (strcasestr(media, "screen") == NULL &&
+						strcasestr(media, "all") == 
+						NULL) {
 					xmlFree(media);
 					continue;
 				}
@@ -947,25 +949,27 @@ bool html_find_stylesheets(struct content *c, xmlNode *html)
 			free(url);
 
 			/* start fetch */
-			stylesheet_content = talloc_realloc(c,
-					c->data.html.stylesheet_content,
-					struct content *, i + 1);
-			if (!stylesheet_content) {
+			stylesheets = talloc_realloc(c,
+					c->data.html.stylesheets,
+					struct nscss_import, i + 1);
+			if (stylesheets == NULL) {
 				free(url2);
 				goto no_memory;
 			}
 
-			c->data.html.stylesheet_content = stylesheet_content;
-			c->data.html.stylesheet_content[i] = fetchcache(url2,
+			c->data.html.stylesheets = stylesheets;
+			/** \todo Reflect actual media specified in link */
+			c->data.html.stylesheets[i].media = CSS_MEDIA_ALL;
+			c->data.html.stylesheets[i].c = fetchcache(url2,
 					html_convert_css_callback,
 					(intptr_t) c, i, c->width, c->height,
 					true, 0, 0, false, false);
 			free(url2);
-			if (!c->data.html.stylesheet_content[i])
+			if (c->data.html.stylesheets[i].c == NULL)
 				goto no_memory;
 
 			c->active++;
-			fetchcache_go(c->data.html.stylesheet_content[i],
+			fetchcache_go(c->data.html.stylesheets[i].c,
 					c->url,
 					html_convert_css_callback,
 					(intptr_t) c, i, c->width, c->height,
@@ -991,7 +995,7 @@ bool html_find_stylesheets(struct content *c, xmlNode *html)
 	}
 
 	/* check that the base stylesheet loaded; layout fails without it */
-	if (!c->data.html.stylesheet_content[STYLESHEET_BASE]) {
+	if (c->data.html.stylesheets[STYLESHEET_BASE].c == NULL) {
 		msg_data.error = "Base stylesheet failed to load";
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
@@ -1004,10 +1008,10 @@ bool html_find_stylesheets(struct content *c, xmlNode *html)
 
 	/* Add sheets to it */
 	for (i = STYLESHEET_BASE; i != c->data.html.stylesheet_count; i++) {
-		if (c->data.html.stylesheet_content[i]) {
+		if (c->data.html.stylesheets[i].c != NULL) {
 			error = css_select_ctx_append_sheet(
 					c->data.html.select_ctx,
-					c->data.html.stylesheet_content[i]->
+					c->data.html.stylesheets[i].c->
 							data.css.sheet);
 			if (error != CSS_OK)
 				goto no_memory;
@@ -1039,7 +1043,7 @@ bool html_process_style_element(struct content *c, unsigned int *index,
 	xmlNode *child;
 	char *type, *media, *data;
 	union content_msg_data msg_data;
-	struct content **stylesheet_content;
+	struct nscss_import *stylesheets;
 	const char *params[] = { 0 };
 
 	/* type='text/css', or not present (invalid but common) */
@@ -1053,8 +1057,8 @@ bool html_process_style_element(struct content *c, unsigned int *index,
 
 	/* media contains 'screen' or 'all' or not present */
 	if ((media = (char *) xmlGetProp(style, (const xmlChar *) "media"))) {
-		if (strcasestr(media, "screen") == 0 &&
-				strcasestr(media, "all") == 0) {
+		if (strcasestr(media, "screen") == NULL &&
+				strcasestr(media, "all") == NULL) {
 			xmlFree(media);
 			return true;
 		}
@@ -1062,21 +1066,23 @@ bool html_process_style_element(struct content *c, unsigned int *index,
 	}
 
 	/* Extend array */
-	stylesheet_content = talloc_realloc(c, c->data.html.stylesheet_content,
-			struct content *, *index + 1);
-	if (stylesheet_content == NULL)
+	stylesheets = talloc_realloc(c, c->data.html.stylesheets,
+			struct nscss_import, *index + 1);
+	if (stylesheets == NULL)
 		goto no_memory;
 
-	c->data.html.stylesheet_content = stylesheet_content;
+	c->data.html.stylesheets = stylesheets;
 
 	/* create stylesheet */
-	c->data.html.stylesheet_content[(*index)] = 
+	/** \todo Reflect specified media */
+	c->data.html.stylesheets[(*index)].media = CSS_MEDIA_ALL;
+	c->data.html.stylesheets[(*index)].c = 
 			content_create(c->data.html.base_url);
-	if (c->data.html.stylesheet_content[(*index)] == NULL)
+	if (c->data.html.stylesheets[(*index)].c == NULL)
 		goto no_memory;
 
-	if (!content_set_type(c->data.html.stylesheet_content[(*index)],
-			CONTENT_CSS, "text/css", params, c))
+	if (content_set_type(c->data.html.stylesheets[(*index)].c,
+			CONTENT_CSS, "text/css", params, c) == false)
 		/** \todo  not necessarily caused by
 		 *  memory exhaustion */
 		goto no_memory;
@@ -1086,9 +1092,8 @@ bool html_process_style_element(struct content *c, unsigned int *index,
 	 * the content */
 	for (child = style->children; child != 0; child = child->next) {
 		data = (char *) xmlNodeGetContent(child);
-		if (!content_process_data(c->data.html.
-				stylesheet_content[(*index)],
-				data, strlen(data))) {
+		if (content_process_data(c->data.html.stylesheets[(*index)].c,
+				data, strlen(data)) == false) {
 			xmlFree(data);
 			/** \todo  not necessarily caused by
 			 *  memory exhaustion */
@@ -1098,18 +1103,18 @@ bool html_process_style_element(struct content *c, unsigned int *index,
 	}
 
 	/* Convert the content */
-	if (nscss_convert(c->data.html.stylesheet_content[(*index)], c->width,
+	if (nscss_convert(c->data.html.stylesheets[(*index)].c, c->width,
 			c->height)) {
-		if (!content_add_user(c->data.html.stylesheet_content[(*index)],
+		if (content_add_user(c->data.html.stylesheets[(*index)].c,
 				html_convert_css_callback,
-				(intptr_t) c, (*index))) {
+				(intptr_t) c, (*index)) == false) {
 			/* no memory */
-			c->data.html.stylesheet_content[(*index)] = NULL;
+			c->data.html.stylesheets[(*index)].c = NULL;
 			goto no_memory;
 		}
 	} else {
 		/* conversion failed */
-		c->data.html.stylesheet_content[(*index)] = NULL;
+		c->data.html.stylesheets[(*index)].c = NULL;
 	}
 
 	/* Update index */
@@ -1135,79 +1140,79 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 	unsigned int i = p2;
 
 	switch (msg) {
-		case CONTENT_MSG_LOADING:
-			/* check that the stylesheet is really CSS */
-			if (css->type != CONTENT_CSS) {
-				c->data.html.stylesheet_content[i] = 0;
-				c->active--;
-				LOG(("%s is not CSS", css->url));
-				content_add_error(c, "NotCSS", 0);
-				html_set_status(c, messages_get("NotCSS"));
-				content_broadcast(c, CONTENT_MSG_STATUS, data);
-				content_remove_user(css,
-						html_convert_css_callback,
-						(intptr_t) c, i);
-				if (!css->user_list->next) {
-					/* we were the only user and we
-					 * don't want this content, so
-					 * stop it fetching and mark it
-					 * as having an error so it gets
-					 * removed from the cache next time
-					 * content_clean() gets called */
-					fetch_abort(css->fetch);
-					css->fetch = 0;
-					css->status = CONTENT_STATUS_ERROR;
-				}
-			}
-			break;
-
-		case CONTENT_MSG_READY:
-			break;
-
-		case CONTENT_MSG_DONE:
-			LOG(("got stylesheet '%s'", css->url));
+	case CONTENT_MSG_LOADING:
+		/* check that the stylesheet is really CSS */
+		if (css->type != CONTENT_CSS) {
+			c->data.html.stylesheets[i].c = NULL;
 			c->active--;
-			break;
-
-		case CONTENT_MSG_LAUNCH:
-			/* Fall through */
-		case CONTENT_MSG_ERROR:
-			LOG(("stylesheet %s failed: %s", css->url, data.error));
-			/* The stylesheet we were fetching may have been
-			 * redirected, in that case, the object pointers
-			 * will differ, so ensure that the object that's
-			 * in error is still in use by us before invalidating
-			 * the pointer */
-			if (c->data.html.stylesheet_content[i] == css) {
-				c->data.html.stylesheet_content[i] = 0;
-				c->active--;
-				content_add_error(c, "?", 0);
-			}
-			break;
-
-		case CONTENT_MSG_STATUS:
-			html_set_status(c, css->status_message);
+			LOG(("%s is not CSS", css->url));
+			content_add_error(c, "NotCSS", 0);
+			html_set_status(c, messages_get("NotCSS"));
 			content_broadcast(c, CONTENT_MSG_STATUS, data);
-			break;
+			content_remove_user(css,
+					html_convert_css_callback,
+					(intptr_t) c, i);
+			if (css->user_list->next == NULL) {
+				/* we were the only user and we
+				 * don't want this content, so
+				 * stop it fetching and mark it
+				 * as having an error so it gets
+				 * removed from the cache next time
+				 * content_clean() gets called */
+				fetch_abort(css->fetch);
+				css->fetch = 0;
+				css->status = CONTENT_STATUS_ERROR;
+			}
+		}
+		break;
 
-		case CONTENT_MSG_NEWPTR:
-			c->data.html.stylesheet_content[i] = css;
-			break;
+	case CONTENT_MSG_READY:
+		break;
 
-		case CONTENT_MSG_AUTH:
-			c->data.html.stylesheet_content[i] = 0;
+	case CONTENT_MSG_DONE:
+		LOG(("got stylesheet '%s'", css->url));
+		c->active--;
+		break;
+
+	case CONTENT_MSG_LAUNCH:
+		/* Fall through */
+	case CONTENT_MSG_ERROR:
+		LOG(("stylesheet %s failed: %s", css->url, data.error));
+		/* The stylesheet we were fetching may have been
+		 * redirected, in that case, the object pointers
+		 * will differ, so ensure that the object that's
+		 * in error is still in use by us before invalidating
+		 * the pointer */
+		if (c->data.html.stylesheets[i].c == css) {
+			c->data.html.stylesheets[i].c = NULL;
 			c->active--;
 			content_add_error(c, "?", 0);
-			break;
+		}
+		break;
 
-		case CONTENT_MSG_SSL:
-			c->data.html.stylesheet_content[i] = 0;
-			c->active--;
-			content_add_error(c, "?", 0);
-			break;
+	case CONTENT_MSG_STATUS:
+		html_set_status(c, css->status_message);
+		content_broadcast(c, CONTENT_MSG_STATUS, data);
+		break;
 
-		default:
-			assert(0);
+	case CONTENT_MSG_NEWPTR:
+		c->data.html.stylesheets[i].c = css;
+		break;
+
+	case CONTENT_MSG_AUTH:
+		c->data.html.stylesheets[i].c = NULL;
+		c->active--;
+		content_add_error(c, "?", 0);
+		break;
+
+	case CONTENT_MSG_SSL:
+		c->data.html.stylesheets[i].c = NULL;
+		c->active--;
+		content_add_error(c, "?", 0);
+		break;
+
+	default:
+		assert(0);
 	}
 }
 
@@ -1811,9 +1816,9 @@ void html_destroy(struct content *c)
 	/* Free stylesheets */
 	if (c->data.html.stylesheet_count) {
 		for (i = 0; i != c->data.html.stylesheet_count; i++) {
-			if (c->data.html.stylesheet_content[i])
+			if (c->data.html.stylesheets[i].c)
 				content_remove_user(c->data.html.
-						stylesheet_content[i],
+						stylesheets[i].c,
 						html_convert_css_callback,
 						(intptr_t) c, i);
 		}

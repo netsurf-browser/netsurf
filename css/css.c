@@ -57,9 +57,10 @@ bool nscss_create(struct content *c, struct content *parent,
 		const char *params[])
 {
 	css_origin origin = CSS_ORIGIN_AUTHOR;
-	css_media_type media = CSS_MEDIA_ALL;
+	uint64_t media = CSS_MEDIA_ALL;
 	lwc_context *dict = NULL;
 	bool quirks = true;
+	uint32_t i;
 	union content_msg_data msg_data;
 	css_error error;
 
@@ -75,17 +76,22 @@ bool nscss_create(struct content *c, struct content *parent,
 			assert(parent->data.html.dict != NULL);
 
 			if (c == parent->data.html.
-					stylesheet_content[STYLESHEET_BASE] ||
+					stylesheets[STYLESHEET_BASE].c ||
 					c == parent->data.html.
-					stylesheet_content[STYLESHEET_QUIRKS] ||
+					stylesheets[STYLESHEET_QUIRKS].c ||
 					c == parent->data.html.
-					stylesheet_content[STYLESHEET_ADBLOCK])
+					stylesheets[STYLESHEET_ADBLOCK].c)
 				origin = CSS_ORIGIN_UA;
-
-			/** \todo media types */
 
 			quirks = (parent->data.html.quirks != 
 					BINDING_QUIRKS_MODE_NONE);
+
+			for (i = 0; i < parent->data.html.stylesheet_count; 
+					i++) {
+				if (parent->data.html.stylesheets[i].c == c)
+					media = parent->data.html.
+							stylesheets[i].media;
+			}
 
 			dict = parent->data.html.dict;
 		} else {
@@ -110,7 +116,11 @@ bool nscss_create(struct content *c, struct content *parent,
 				return false;
 			}
 
-			/** \todo media types */
+			for (i = 0; i < parent->data.css.import_count; i++) {
+				if (parent->data.css.imports[i].c == c)
+					media = parent->data.css.
+							imports[i].media;
+			}
 
 			dict = parent->data.css.dict;
 		}
@@ -188,7 +198,7 @@ bool nscss_convert(struct content *c, int w, int h)
 
 	/* Process pending imports */
 	while (error == CSS_IMPORTS_PENDING) {
-		struct content **imports;
+		struct nscss_import *imports;
 		uint32_t i;
 		lwc_string *uri;
 		uint64_t media;
@@ -212,7 +222,7 @@ bool nscss_convert(struct content *c, int w, int h)
 		/* Increase space in table */
 		imports = realloc(c->data.css.imports, 
 				(c->data.css.import_count + 1) * 
-				sizeof(struct content *));
+				sizeof(struct nscss_import));
 		if (imports == NULL) {
 			msg_data.error = "?";
 			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
@@ -223,12 +233,13 @@ bool nscss_convert(struct content *c, int w, int h)
 
 		/* Create content */
 		i = c->data.css.import_count;
-		c->data.css.imports[c->data.css.import_count++] =
+		c->data.css.imports[c->data.css.import_count].media = media;
+		c->data.css.imports[c->data.css.import_count++].c =
 				fetchcache(lwc_string_data(uri), 
 				nscss_import, (intptr_t) c, i, 
 				c->width, c->height, true, NULL, NULL, 
 				false, false);
-		if (c->data.css.imports[i] == NULL) {
+		if (c->data.css.imports[i].c == NULL) {
 			msg_data.error = "?";
 			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 			c->status = CONTENT_STATUS_ERROR;
@@ -237,7 +248,7 @@ bool nscss_convert(struct content *c, int w, int h)
 
 		/* Fetch content */
 		c->active++;
-		fetchcache_go(c->data.css.imports[i], c->url, 
+		fetchcache_go(c->data.css.imports[i].c, c->url, 
 				nscss_import, (intptr_t) c, i,
 				c->width, c->height, NULL, NULL, false, c);
 
@@ -247,9 +258,9 @@ bool nscss_convert(struct content *c, int w, int h)
 			gui_multitask();
 		}
 
-		if (c->data.css.imports[i] != NULL) {
-			sheet = c->data.css.imports[i]->data.css.sheet;
-			c->data.css.imports[i]->data.css.sheet = NULL;
+		if (c->data.css.imports[i].c != NULL) {
+			sheet = c->data.css.imports[i].c->data.css.sheet;
+			c->data.css.imports[i].c->data.css.sheet = NULL;
 		} else {
 			error = css_stylesheet_create(CSS_LEVEL_DEFAULT,
 					NULL, "", NULL, CSS_ORIGIN_AUTHOR,
@@ -297,11 +308,11 @@ void nscss_destroy(struct content *c)
 	uint32_t i;
 
 	for (i = 0; i < c->data.css.import_count; i++) {
-		if (c->data.css.imports[i] != NULL) {
-			content_remove_user(c->data.css.imports[i],
+		if (c->data.css.imports[i].c != NULL) {
+			content_remove_user(c->data.css.imports[i].c,
 					nscss_import, (uintptr_t) c, i);
 		}
-		c->data.css.imports[i] = NULL;
+		c->data.css.imports[i].c = NULL;
 	}
 
 	free(c->data.css.imports);
@@ -342,7 +353,7 @@ void nscss_import(content_msg msg, struct content *c,
 				c->status = CONTENT_STATUS_ERROR;
 			}
 
-			parent->data.css.imports[i] = NULL;
+			parent->data.css.imports[i].c = NULL;
 			parent->active--;
 			content_add_error(parent, "NotCSS", 0);
 		}
@@ -356,15 +367,15 @@ void nscss_import(content_msg msg, struct content *c,
 	case CONTENT_MSG_SSL:
 	case CONTENT_MSG_LAUNCH:
 	case CONTENT_MSG_ERROR:
-		if (parent->data.css.imports[i] == c) {
-			parent->data.css.imports[i] = NULL;
+		if (parent->data.css.imports[i].c == c) {
+			parent->data.css.imports[i].c = NULL;
 			parent->active--;
 		}
 		break;
 	case CONTENT_MSG_STATUS:
 		break;
 	case CONTENT_MSG_NEWPTR:
-		parent->data.css.imports[i] = c;
+		parent->data.css.imports[i].c = c;
 		break;
 	default:
 		assert(0);

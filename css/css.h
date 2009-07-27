@@ -19,9 +19,12 @@
 #ifndef netsurf_css_css_h_
 #define netsurf_css_css_h_
 
+#include <stdint.h>
+
 #include <libcss/libcss.h>
 
 struct content;
+struct nscss_import;
 
 /**
  * CSS content data
@@ -33,7 +36,15 @@ struct content_css_data
 	css_stylesheet *sheet;		/**< Stylesheet object */
 
 	uint32_t import_count;		/**< Number of sheets imported */
-	struct content **imports;	/**< Array of imported sheets */
+	struct nscss_import *imports;	/**< Array of imported sheets */
+};
+
+/**
+ * Imported stylesheet record
+ */
+struct nscss_import {
+	struct content *c;	/**< Content containing sheet */
+	uint64_t media;		/**< Media types that sheet applies to */
 };
 
 bool nscss_create(struct content *c, struct content *parent, 
