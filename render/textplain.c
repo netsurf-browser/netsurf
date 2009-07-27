@@ -32,6 +32,7 @@
 #include "css/css.h"
 #include "css/utils.h"
 #include "desktop/gui.h"
+#include "desktop/options.h"
 #include "desktop/plotters.h"
 #include "desktop/selection.h"
 #include "render/box.h"
@@ -78,6 +79,8 @@ bool textplain_create(struct content *c, struct content *parent,
 	const char *encoding = "iso-8859-1";
 	iconv_t iconv_cd;
 	union content_msg_data msg_data;
+
+	textplain_style.size = (option_font_size * FONT_SIZE_SCALE) / 10;
 
 	utf8_data = talloc_array(c, char, CHUNK);
 	if (!utf8_data)
