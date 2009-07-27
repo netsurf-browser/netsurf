@@ -71,8 +71,10 @@ bool nscss_create(struct content *c, struct content *parent,
 	/* Find charset specified on HTTP layer, if any */
 	/** \todo What happens if there isn't one and parent content exists? */
 	for (i = 0; params[i] != NULL; i += 2) {
-		if (strcasecmp(params[i], "charset") == 0)
+		if (strcasecmp(params[i], "charset") == 0) {
 			charset = params[i + 1];
+			break;
+		}
 	}
 
 	if (parent != NULL) {
@@ -95,9 +97,11 @@ bool nscss_create(struct content *c, struct content *parent,
 
 			for (i = 0; i < parent->data.html.stylesheet_count; 
 					i++) {
-				if (parent->data.html.stylesheets[i].c == c)
+				if (parent->data.html.stylesheets[i].c == c) {
 					media = parent->data.html.
 							stylesheets[i].media;
+					break;
+				}
 			}
 
 			dict = parent->data.html.dict;
@@ -124,9 +128,11 @@ bool nscss_create(struct content *c, struct content *parent,
 			}
 
 			for (i = 0; i < parent->data.css.import_count; i++) {
-				if (parent->data.css.imports[i].c == c)
+				if (parent->data.css.imports[i].c == c) {
 					media = parent->data.css.
 							imports[i].media;
+					break;
+				}
 			}
 
 			dict = parent->data.css.dict;
