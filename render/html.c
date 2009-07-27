@@ -1044,6 +1044,7 @@ bool html_process_style_element(struct content *c, unsigned int *index,
 	char *type, *media, *data;
 	union content_msg_data msg_data;
 	struct nscss_import *stylesheets;
+	struct nscss_import *sheet;
 	const char *params[] = { 0 };
 
 	/* type='text/css', or not present (invalid but common) */
@@ -1074,47 +1075,61 @@ bool html_process_style_element(struct content *c, unsigned int *index,
 	c->data.html.stylesheets = stylesheets;
 
 	/* create stylesheet */
+	sheet = &c->data.html.stylesheets[(*index)];
+
 	/** \todo Reflect specified media */
-	c->data.html.stylesheets[(*index)].media = CSS_MEDIA_ALL;
-	c->data.html.stylesheets[(*index)].c = 
-			content_create(c->data.html.base_url);
-	if (c->data.html.stylesheets[(*index)].c == NULL)
+	sheet->media = CSS_MEDIA_ALL;
+	sheet->c = content_create(c->data.html.base_url);
+	if (sheet->c == NULL)
 		goto no_memory;
 
-	if (content_set_type(c->data.html.stylesheets[(*index)].c,
-			CONTENT_CSS, "text/css", params, c) == false)
+	if (content_set_type(sheet->c, 
+			CONTENT_CSS, "text/css", params, c) == false) {
 		/** \todo  not necessarily caused by
 		 *  memory exhaustion */
+		sheet->c = NULL;
 		goto no_memory;
+	}
 
 	/* can't just use xmlNodeGetContent(style), because that won't
 	 * give the content of comments which may be used to 'hide'
 	 * the content */
 	for (child = style->children; child != 0; child = child->next) {
 		data = (char *) xmlNodeGetContent(child);
-		if (content_process_data(c->data.html.stylesheets[(*index)].c,
-				data, strlen(data)) == false) {
+		if (content_process_data(sheet->c, data, strlen(data)) == 
+				false) {
 			xmlFree(data);
 			/** \todo  not necessarily caused by
 			 *  memory exhaustion */
+			sheet->c = NULL;
 			goto no_memory;
 		}
 		xmlFree(data);
 	}
 
-	/* Convert the content */
-	if (nscss_convert(c->data.html.stylesheets[(*index)].c, c->width,
-			c->height)) {
-		if (content_add_user(c->data.html.stylesheets[(*index)].c,
+	/* Convert the content -- manually, as we want the result */
+	if (sheet->c->source_allocated != sheet->c->source_size) {
+		/* Minimise source data block */
+		char *data = talloc_realloc(sheet->c, sheet->c->source_data, 
+				char, sheet->c->source_size);
+
+		if (data != NULL) {
+			sheet->c->source_data = data;
+			sheet->c->source_allocated = sheet->c->source_size;
+		}
+	}
+
+	if (nscss_convert(sheet->c, c->width, c->height)) {
+		if (content_add_user(sheet->c,
 				html_convert_css_callback,
 				(intptr_t) c, (*index)) == false) {
 			/* no memory */
-			c->data.html.stylesheets[(*index)].c = NULL;
+			sheet->c = NULL;
 			goto no_memory;
 		}
 	} else {
 		/* conversion failed */
-		c->data.html.stylesheets[(*index)].c = NULL;
+		sheet->c = NULL;
 	}
 
 	/* Update index */
