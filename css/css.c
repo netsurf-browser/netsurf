@@ -56,6 +56,7 @@ static void *myrealloc(void *ptr, size_t size, void *pw)
 bool nscss_create(struct content *c, struct content *parent, 
 		const char *params[])
 {
+	const char *charset = NULL;
 	css_origin origin = CSS_ORIGIN_AUTHOR;
 	uint64_t media = CSS_MEDIA_ALL;
 	lwc_context *dict = NULL;
@@ -64,9 +65,15 @@ bool nscss_create(struct content *c, struct content *parent,
 	union content_msg_data msg_data;
 	css_error error;
 
-	/** \todo extract charset from params */
 	/** \todo what happens about the allocator? */
 	/** \todo proper error reporting */
+
+	/* Find charset specified on HTTP layer, if any */
+	/** \todo What happens if there isn't one and parent content exists? */
+	for (i = 0; params[i] != NULL; i += 2) {
+		if (strcasecmp(params[i], "charset") == 0)
+			charset = params[i + 1];
+	}
 
 	if (parent != NULL) {
 		assert(parent->type == CONTENT_HTML || 
@@ -140,7 +147,7 @@ bool nscss_create(struct content *c, struct content *parent,
 	c->data.css.import_count = 0;
 	c->data.css.imports = NULL;
 
-	error = css_stylesheet_create(CSS_LEVEL_21, NULL,
+	error = css_stylesheet_create(CSS_LEVEL_21, charset,
 			c->url, NULL, origin, media, quirks, false,
 			c->data.css.dict, 
 			myrealloc, NULL, 
