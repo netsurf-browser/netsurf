@@ -2642,6 +2642,8 @@ struct box *layout_minmax_line(struct box *first,
 				/*
 				b->width = width * FIXTOFLT(value) / 100
 				*/
+
+				width = AUTO;
 			} else {
 				width = FIXTOINT(nscss_len2px(value, unit,
 						b->style));
