@@ -205,6 +205,8 @@ bool nscss_process_data(struct content *c, char *data, unsigned int size)
 bool nscss_convert(struct content *c, int w, int h)
 {
 	union content_msg_data msg_data;
+	uint32_t i;
+	size_t size;
 	css_error error;
 
 	error = css_stylesheet_data_done(c->data.css.sheet);
@@ -212,7 +214,6 @@ bool nscss_convert(struct content *c, int w, int h)
 	/* Process pending imports */
 	while (error == CSS_IMPORTS_PENDING) {
 		struct nscss_import *imports;
-		uint32_t i;
 		lwc_string *uri;
 		uint64_t media;
 		css_stylesheet *sheet;
@@ -301,6 +302,35 @@ bool nscss_convert(struct content *c, int w, int h)
 
 		error = CSS_IMPORTS_PENDING;
 	}
+
+	/* Retrieve the size of this sheet */
+	error = css_stylesheet_size(c->data.css.sheet, &size);
+	if (error != CSS_OK) {
+		msg_data.error = "?";
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		c->status = CONTENT_STATUS_ERROR;
+		return false;
+	}
+	c->size += size;
+
+	/* Add on the size of the imported sheets, removing ourselves from 
+	 * their user list as we go (they're of no use to us now, as we've 
+	 * inserted the sheet into ourselves) */
+	for (i = 0; i < c->data.css.import_count; i++) {
+		if (c->data.css.imports[i].c != NULL) {
+			c->size += c->data.css.imports[i].c->size;
+
+			content_remove_user(c->data.css.imports[i].c,
+					nscss_import, (uintptr_t) c, i);
+		}
+
+		c->data.css.imports[i].c = NULL;
+	}
+
+	/* Remove the imports */
+	c->data.css.import_count = 0;
+	free(c->data.css.imports);
+	c->data.css.imports = NULL;
 
 	c->status = CONTENT_STATUS_DONE;
 
