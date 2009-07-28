@@ -498,6 +498,8 @@ bool html_convert(struct content *c, int width, int height)
 	binding_destroy_tree(c->data.html.parser_binding);
 	c->data.html.parser_binding = NULL;
 
+	c->size += lwc_context_size(c->data.html.dict);
+
 	if (c->active == 0)
 		c->status = CONTENT_STATUS_DONE;
 	else
