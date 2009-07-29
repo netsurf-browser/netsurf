@@ -1,102 +1,111 @@
-Creating a cross-compilation environment for RISC OS NetSurf
-============================================================
+--------------------------------------------------------------------------------
+  Creating a cross-compilation environment for RISC OS NetSurf
+--------------------------------------------------------------------------------
 
-These instructions assume that you're starting from ~.
-They also assume that you've got GCCSDK's prerequisites installed.
+  These instructions assume that you're starting from ~.
+  They also assume that you've got GCCSDK's prerequisites installed.
 
-Building the toolchain
-======================
 
-$ svn co svn://svn.riscos.info/gccsdk/trunk/ gccsdk
-
-$ cd gccsdk/gcc4
-
-$ ./build-world
-
-$ export GCCSDK_INSTALL_CROSSBIN=/home/riscos/cross/bin
-
-$ export GCCSDK_INSTALL_ENV=/home/riscos/env
-
-Creating the environment
+  Building the toolchain
 ========================
 
-A. Autobuilder packages
------------------------
+  Run the following commands.
 
-$ cd ../
+      $ svn co svn://svn.riscos.info/gccsdk/trunk/ gccsdk
 
-$ mkdir build-ab
+      $ cd gccsdk/gcc4
 
-$ cat > build-ab/build-setvars
-GCCSDK_INSTALL_CROSSBIN=/home/riscos/cross/bin
-GCCSDK_INSTALL_ENV=/home/riscos/env
-RO_SHAREDLIBS=no
-AB_ELFBUILD=yes
+      $ ./build-world
 
-$ cd build-ab
+      $ export GCCSDK_INSTALL_CROSSBIN=/home/riscos/cross/bin
 
-$ ../autobuilder/build zlib1g
+      $ export GCCSDK_INSTALL_ENV=/home/riscos/env
 
-$ ../autobuilder/build c-ares
+  Creating the environment
+==========================
 
-$ ../autobuilder/build libxml2
+  A. Autobuilder packages
+-------------------------
 
-$ ../autobuilder/build/libssl0.9.8
+      $ cd ../
 
-$ ../autobuilder/build/libcurl3
+      $ mkdir build-ab
 
-$ ../autobuilder/build/libjpeg62
+      $ cat > build-ab/build-setvars
+      GCCSDK_INSTALL_CROSSBIN=/home/riscos/cross/bin
+      GCCSDK_INSTALL_ENV=/home/riscos/env
+      RO_SHAREDLIBS=no
+      AB_ELFBUILD=yes
 
-$ ../autobuilder/build/liblcms1
+      $ cd build-ab
 
-$ ../autobuilder/build/libpng12-0
+      $ ../autobuilder/build zlib1g
 
-$ ../autobuilder/build/libmng1
+      $ ../autobuilder/build c-ares
 
-$ ../autobuilder/build/oslib
+      $ ../autobuilder/build libxml2
 
-B. NetSurf libraries
-====================
+      $ ../autobuilder/build/libssl0.9.8
 
-$ cd ~
+      $ ../autobuilder/build/libcurl3
 
-$ svn co svn://svn.netsurf-browser.org/trunk netsurf
+      $ ../autobuilder/build/libjpeg62
 
-$ (cd netsurf/libnsbmp ; make TARGET=riscos install)
+      $ ../autobuilder/build/liblcms1
 
-$ (cd netsurf/libnsgif ; make TARGET=riscos install)
+      $ ../autobuilder/build/libpng12-0
 
-$ (cd netsurf/libsvgtiny ; make TARGET=riscos install)
+      $ ../autobuilder/build/libmng1
 
-$ (cd netsurf/rufl ; make install)
+      $ ../autobuilder/build/oslib
 
-$ (cd netsurf/pencil ; make install)
+  B. NetSurf libraries
+----------------------
 
-$ (cd netsurf/libharu ; make TARGET=riscos PREFIX=/home/riscos/env)
+  Install the NetSirf project's libraries as follows.
 
-$ cd netsurf/libparserutils
+      $ cd ~
 
-$ cat >Makefile.config.override
-CFLAGS += -DWITH_ICONV_FILTER
+      $ svn co svn://svn.netsurf-browser.org/trunk netsurf
 
-$ make TARGET=riscos install
+      $ (cd netsurf/libnsbmp ; make TARGET=riscos install)
 
-$ cd ~
+      $ (cd netsurf/libnsgif ; make TARGET=riscos install)
 
-$ (cd netsurf/hubbub ; make TARGET=riscos install)
+      $ (cd netsurf/libsvgtiny ; make TARGET=riscos install)
 
-C. Ancilliary tools
+      $ (cd netsurf/rufl ; make install)
+
+      $ (cd netsurf/pencil ; make install)
+
+      $ (cd netsurf/libharu ; make TARGET=riscos PREFIX=/home/riscos/env)
+
+      $ cd netsurf/libparserutils
+
+      $ cat >Makefile.config.override
+      CFLAGS += -DWITH_ICONV_FILTER
+
+      $ make TARGET=riscos install
+
+      $ cd ~
+
+      $ (cd netsurf/hubbub ; make TARGET=riscos install)
+
+  C. Ancilliary tools
+---------------------
+
+      $ svn co svn://svn.riscos.info/ccres/trunk ccres
+
+      $ (cd ccres ; make install)
+
+      $ (cd netsurf/tools/makerun ; make install)
+
+
+  Compiling NetSurf
 ===================
 
-$ svn co svn://svn.riscos.info/ccres/trunk ccres
+  Finally, to cross-compile NetSurf for RISC OS, do the following.
 
-$ (cd ccres ; make install)
+      $ cd netsurf/netsurf
 
-$ (cd netsurf/tools/makerun ; make install)
-
-Compiling NetSurf
-=================
-
-$ cd netsurf/netsurf
-
-$ make TARGET=riscos
+      $ make TARGET=riscos
