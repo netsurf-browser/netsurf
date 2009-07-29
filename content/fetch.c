@@ -493,7 +493,7 @@ void fetch_free(struct fetch *f)
 void fetch_poll(void)
 {
 	scheme_fetcher *fetcher = fetchers;
-	struct fetch *next_fetcher;
+	scheme_fetcher *next_fetcher;
 
 	fetch_dispatch_jobs();
 
