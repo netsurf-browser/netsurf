@@ -493,6 +493,7 @@ void fetch_free(struct fetch *f)
 void fetch_poll(void)
 {
 	scheme_fetcher *fetcher = fetchers;
+	struct fetch *next_fetcher;
 
 	fetch_dispatch_jobs();
 
@@ -500,8 +501,9 @@ void fetch_poll(void)
 		return; /* No point polling, there's no fetch active. */
 	while (fetcher != NULL) {
 		/* LOG(("Polling fetcher for %s", fetcher->scheme_name)); */
+		next_fetcher = fetcher->next_fetcher;
 		fetcher->poll_fetcher(fetcher->scheme_name);
-		fetcher = fetcher->next_fetcher;
+		fetcher = next_fetcher;
 	}
 }
 
