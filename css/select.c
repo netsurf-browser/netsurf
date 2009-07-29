@@ -31,6 +31,10 @@
 
 static css_error node_name(void *pw, void *node,
 		lwc_context *dict, lwc_string **name);
+static css_error node_classes(void *pw, void *node,
+		lwc_context *dict, lwc_string ***classes, uint32_t *n_classes);
+static css_error node_id(void *pw, void *node,
+		lwc_context *dict, lwc_string **id);
 static css_error named_ancestor_node(void *pw, void *node,
 		lwc_string *name, void **ancestor);
 static css_error named_parent_node(void *pw, void *node,
@@ -85,6 +89,8 @@ static uint8_t charToHex(char c);
  */
 static css_select_handler selection_handler = {
 	node_name,
+	node_classes,
+	node_id,
 	named_ancestor_node,
 	named_parent_node,
 	named_sibling_node,
@@ -425,6 +431,175 @@ css_error node_name(void *pw, void *node,
 
 	return CSS_OK;
 
+}
+
+/**
+ * Callback to retrieve a node's classes.
+ *
+ * \param pw         HTML document
+ * \param node       DOM node
+ * \param dict       Dictionary to intern result in
+ * \param classes    Pointer to location to receive class name array
+ * \param n_classes  Pointer to location to receive length of class name array
+ * \return CSS_OK on success,
+ *         CSS_NOMEM on memory exhaustion.
+ *
+ * \note The returned array will be destroyed by libcss. Therefore, it must 
+ *       be allocated using the same allocator as used by libcss during style 
+ *       selection.
+ */
+css_error node_classes(void *pw, void *node,
+		lwc_context *dict, lwc_string ***classes, uint32_t *n_classes)
+{
+	xmlNode *n = node;
+	xmlAttr *class;
+	xmlChar *value = NULL;
+	const char *p;
+	const char *start;
+	lwc_string **result = NULL;
+	uint32_t items = 0;
+	lwc_error lerror;
+	css_error error = CSS_OK;
+
+	*classes = NULL;
+	*n_classes = 0;
+
+	/* See if there is a class attribute on this node */
+	class = xmlHasProp(n, (const xmlChar *) "class");
+	if (class == NULL)
+		return CSS_OK;
+
+	/* We have a class attribute -- extract its value */
+	if (class->children != NULL && class->children->next == NULL &&
+			class->children->children == NULL) {
+		/* Simple case -- no XML entities */
+		start = (const char *) class->children->content;
+	} else {
+		/* Awkward case -- fall back to string copying */
+		value = xmlGetProp(n, (const xmlChar *) "class");
+		if (value == NULL)
+			return CSS_OK;
+
+		start = (const char *) value;
+	}
+
+	/* The class attribute is a space separated list of tokens. */
+	do {
+		lwc_string **temp;
+
+		/* Find next space or end of string */
+		p = strchrnul(start, ' ');
+
+		temp = realloc(result, (items + 1) * sizeof(lwc_string *));
+		if (temp == NULL) {
+			error = CSS_NOMEM;
+			goto cleanup;
+		}
+		result = temp;
+
+		lerror = lwc_context_intern(dict, start, p - start, 
+				&result[items]);
+		switch (lerror) {
+		case lwc_error_oom:
+			error = CSS_NOMEM;
+			goto cleanup;
+		case lwc_error_range:
+			assert(0);
+		default:
+			break;
+		}
+
+		items++;
+
+		/* Move to start of next token in string */
+		start = p + 1;
+	} while (*p != '\0');
+
+	/* Clean up, if necessary */
+	if (value != NULL) {
+		xmlFree(value);
+	}
+
+	*classes = result;
+	*n_classes = items;
+
+	return CSS_OK;
+
+cleanup:
+	if (result != NULL) {
+		uint32_t i;
+
+		for (i = 0; i < items; i++)
+			lwc_context_string_unref(dict, result[i]);
+
+		free(result);
+	}
+
+	if (value != NULL) {
+		xmlFree(value);
+	}
+
+	return error;
+}
+
+/**
+ * Callback to retrieve a node's ID.
+ *
+ * \param pw    HTML document
+ * \param node  DOM node
+ * \param dict  Dictionary to intern result in
+ * \param id    Pointer to location to receive id value
+ * \return CSS_OK on success,
+ *         CSS_NOMEM on memory exhaustion.
+ */
+css_error node_id(void *pw, void *node,
+		lwc_context *dict, lwc_string **id)
+{
+	xmlNode *n = node;
+	xmlAttr *attr;
+	xmlChar *value = NULL;
+	const char *start;
+	lwc_error lerror;
+	css_error error = CSS_OK;
+
+	*id = NULL;
+
+	/* See if there's an id attribute on this node */
+	attr = xmlHasProp(n, (const xmlChar *) "id");
+	if (attr == NULL)
+		return CSS_OK;
+
+	/* We have an id attribute -- extract its value */
+	if (attr->children != NULL && attr->children->next == NULL &&
+			attr->children->children == NULL) {
+		/* Simple case -- no XML entities */
+		start = (const char *) attr->children->content;
+	} else {
+		/* Awkward case -- fall back to string copying */
+		value = xmlGetProp(n, (const xmlChar *) "id");
+		if (value == NULL)
+			return CSS_OK;
+
+		start = (const char *) value;
+	}
+
+	/* Intern value */
+	lerror = lwc_context_intern(dict, start, strlen(start), id);
+	switch (lerror) {
+	case lwc_error_oom:
+		error = CSS_NOMEM;
+	case lwc_error_range:
+		assert(0);
+	default:
+		break;
+	}
+
+	/* Clean up if necessary */
+	if (value != NULL) {
+		xmlFree(value);
+	}
+
+	return error;
 }
 
 /**
