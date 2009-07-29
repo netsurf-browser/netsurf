@@ -438,8 +438,6 @@ bool textarea_set_caret(struct text_area *ta, int caret)
 	if (caret != -1 && (unsigned)caret > c_len)
 		caret = c_len;
 
-	height = ta->line_height;
-
 	/* Delete the old caret */
 	if (ta->caret_pos.char_off != -1) {
 		index = textarea_get_caret(ta);
