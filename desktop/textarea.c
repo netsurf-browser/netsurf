@@ -42,18 +42,18 @@
 #define BORDER_COLOR 0x000000
 #define SELECTION_COL 0xFFDDDD
 
-static plot_style_t pstyle_fill_selection = { 
+static plot_style_t pstyle_fill_selection = {
     .fill_type = PLOT_OP_TYPE_SOLID,
     .fill_colour = SELECTION_COL,
 };
 
-static plot_style_t pstyle_stroke_border = { 
+static plot_style_t pstyle_stroke_border = {
     .stroke_type = PLOT_OP_TYPE_SOLID,
     .stroke_colour = BORDER_COLOR,
     .stroke_width = 1,
 };
 
-static plot_style_t pstyle_stroke_caret = { 
+static plot_style_t pstyle_stroke_caret = {
     .stroke_type = PLOT_OP_TYPE_SOLID,
     .stroke_colour = CARET_COLOR,
     .stroke_width = 1,
@@ -72,11 +72,11 @@ struct text_area {
 					 * it is the canvas which gets
 					 * scrolled)
 					 */
-					
+
 	int scroll_x, scroll_y;		/**< scroll offsets of the textarea
 					 * content
 					 */
-	
+
 	unsigned int flags;		/**< Textarea flags */
 	int vis_width;			/**< Visible width, in pixels */
 	int vis_height;			/**< Visible height, in pixels */
@@ -93,23 +93,25 @@ struct text_area {
 					 * specified line
 					 */
 	} caret_pos;
-	
+
+	int caret_x;			/**< cached X coordinate of the caret */
+	int caret_y;			/**< cached Y coordinate of the caret */
+
 	int selection_start;	/**< Character index of sel start(inclusive) */
 	int selection_end;	/**< Character index of sel end(exclusive) */
 
 	plot_font_style_t fstyle;	/**< Text style */
-	
+
 	int line_count;			/**< Count of lines */
 #define LINE_CHUNK_SIZE 16
 	struct line_info *lines;	/**< Line info array */
 	int line_height;		/**< Line height obtained from style */
-	
-	/** Callback functions for a redraw request */
-	textarea_start_redraw_callback redraw_start_callback;
-	textarea_start_redraw_callback redraw_end_callback;
-	 
+
+	/** Callback function for a redraw request */
+	textarea_redraw_request_callback redraw_request;
+
 	void *data; /** < Callback data for both callback functions */
-	
+
 	int drag_start_char; /**< Character index at which the drag was
 			      * started
 			      */
@@ -142,26 +144,24 @@ static void textarea_normalise_text(struct text_area *ta,
  * \param data user specified data which will be passed to redraw callbacks
  * \return Opaque handle for textarea or 0 on error
  */
-struct text_area *textarea_create(int x, int y, int width, int height, 
+struct text_area *textarea_create(int x, int y, int width, int height,
 		unsigned int flags, const plot_font_style_t *style,
-		textarea_start_redraw_callback redraw_start_callback,
-		textarea_end_redraw_callback redraw_end_callback, void *data)
+		textarea_redraw_request_callback redraw_request, void *data)
 {
 	struct text_area *ret;
 
-	if (redraw_start_callback == NULL || redraw_end_callback == NULL) {
+	if (redraw_request == NULL) {
 		LOG(("no callback provided"));
 		return NULL;
 	}
-	
+
 	ret = malloc(sizeof(struct text_area));
 	if (ret == NULL) {
 		LOG(("malloc failed"));
 		return NULL;
 	}
 
-	ret->redraw_start_callback = redraw_start_callback;
-	ret->redraw_end_callback = redraw_end_callback;
+	ret->redraw_request = redraw_request;
 	ret->data = data;
 	ret->x = x;
 	ret->y = y;
@@ -170,8 +170,8 @@ struct text_area *textarea_create(int x, int y, int width, int height,
 	ret->scroll_x = 0;
 	ret->scroll_y = 0;
 	ret->drag_start_char = 0;
-	
-	
+
+
 	ret->flags = flags;
 	ret->text = malloc(64);
 	if (ret->text == NULL) {
@@ -187,13 +187,15 @@ struct text_area *textarea_create(int x, int y, int width, int height,
 	ret->fstyle = *style;
 
 	ret->line_height = FIXTOINT(FDIVI((FMUL(FLTTOFIX(1.2),
-			FMULI(nscss_screen_dpi, 
+			FMULI(nscss_screen_dpi,
 			(style->size / FONT_SIZE_SCALE)))), 72));
-	
+
 	ret->caret_pos.line = ret->caret_pos.char_off = 0;
+	ret->caret_x = ret->x + MARGIN_LEFT;
+	ret->caret_y = ret->y;
 	ret->selection_start = -1;
 	ret->selection_end = -1;
-	
+
 	ret->line_count = 0;
 	ret->lines = NULL;
 
@@ -211,12 +213,9 @@ struct text_area *textarea_create(int x, int y, int width, int height,
 void textarea_set_position(struct text_area *ta, int x, int y)
 {
 	ta->x = x;
-	ta->y = y;	
-	ta->redraw_start_callback(ta->data);
-	textarea_redraw(ta, ta->x, ta->y, ta->x + ta->vis_width,
+	ta->y = y;
+	ta->redraw_request(ta->data, ta->x, ta->y, ta->x + ta->vis_width,
 			ta->y + ta->vis_height);
-	textarea_set_caret(ta, textarea_get_caret(ta));
-	ta->redraw_start_callback(ta->data);	
 }
 
 
@@ -257,9 +256,9 @@ bool textarea_set_text(struct text_area *ta, const char *text)
 	memcpy(ta->text, text, len);
 	ta->text_len = len;
 	ta->text_utf8_len = utf8_length(ta->text);
-	
+
 	textarea_normalise_text(ta, 0, len);
-	
+
 	return textarea_reflow(ta, 0);
 }
 
@@ -335,12 +334,12 @@ bool textarea_insert_text(struct text_area *ta, unsigned int index,
 	memcpy(ta->text + b_off, text, b_len);
 	ta->text_len += b_len;
 	ta->text_utf8_len += utf8_length(text);
-	
-	textarea_normalise_text(ta, b_off, b_len);	
+
+	textarea_normalise_text(ta, b_off, b_len);
 
 	/** \todo calculate line to reflow from */
 	return textarea_reflow(ta, 0);
-	
+
 }
 
 
@@ -405,7 +404,7 @@ bool textarea_replace_text(struct text_area *ta, unsigned int start,
 	/* Insert new text */
 	memcpy(ta->text + b_start, text, b_len);
 
-	ta->text_len += b_len - (b_end - b_start);	
+	ta->text_len += b_len - (b_end - b_start);
 	ta->text_utf8_len = utf8_length(ta->text);
 	textarea_normalise_text(ta, b_start, b_len);
 
@@ -430,14 +429,10 @@ bool textarea_set_caret(struct text_area *ta, int caret)
 	int index;
 	int x, y;
 	int x0, y0, x1, y1;
-	int height = 0;
-	
-		
+
 	if (ta->flags & TEXTAREA_READONLY)
 		return true;
-	
-	ta->redraw_start_callback(ta->data);
-	
+
 	c_len = ta->text_utf8_len;
 
 	if (caret != -1 && (unsigned)caret > c_len)
@@ -450,44 +445,48 @@ bool textarea_set_caret(struct text_area *ta, int caret)
 		index = textarea_get_caret(ta);
 		if (index == -1)
 			return false;
-		
+
 		/* the redraw might happen in response to a text-change and
 		the caret position might be beyond the current text */
 		if ((unsigned)index > c_len)
 			index = c_len;
-	
+
 		/* find byte offset of caret position */
 		for (b_off = 0; index-- > 0;
 				b_off = utf8_next(ta->text,
 				ta->text_len, b_off))
 			; /* do nothing */
-	
+
 		nsfont.font_width(&ta->fstyle,
 				ta->text +
 				ta->lines[ta->caret_pos.line].b_start,
 				b_off - ta->lines[ta->caret_pos.line].b_start,
     				&x);
-		
+
 		x += ta->x + MARGIN_LEFT - ta->scroll_x;
-		
+
 		y = ta->line_height * ta->caret_pos.line + ta->y - ta->scroll_y;
 
-		textarea_redraw(ta, x - 1, y - 1, x + 1, y + height + 1);
+		/* set the caret coordinate beyond the redraw rectangle */
+		ta->caret_x = x - 2;
+
+		ta->redraw_request(ta->data, x - 1, y - 1, x + 1,
+				y + ta->line_height + 1);
 	}
-	
+
 	/* check if the caret has to be drawn at all */
 	if (caret != -1) {
 		/* Find byte offset of caret position */
 		for (b_off = 0; caret > 0; caret--)
 			b_off = utf8_next(ta->text, ta->text_len, b_off);
-	
+
 		/* Now find line in which byte offset appears */
 		for (i = 0; i < ta->line_count - 1; i++)
 			if (ta->lines[i + 1].b_start > b_off)
 				break;
-			
+
 		ta->caret_pos.line = i;
-	
+
 		/* Now calculate the char. offset of the caret in this line */
 		for (c_len = 0, ta->caret_pos.char_off = 0;
 				c_len < b_off - ta->lines[i].b_start;
@@ -495,42 +494,43 @@ bool textarea_set_caret(struct text_area *ta, int caret)
 						ta->lines[i].b_start,
 						ta->lines[i].b_length, c_len))
 			ta->caret_pos.char_off++;
-	
-		if (textarea_scroll_visible(ta))
-			textarea_redraw(ta, ta->x, ta->y, ta->x + ta->vis_width,
-					ta->y + ta->vis_height);
-		
+
 		/* Finally, redraw the caret */
 		index = textarea_get_caret(ta);
 		if (index == -1)
 			return false;
-	
+
 		/* find byte offset of caret position */
 		for (b_off = 0; index-- > 0;
 				b_off = utf8_next(ta->text,
 						ta->text_len, b_off))
 			; /* do nothing */
-	
+
 		nsfont.font_width(&ta->fstyle,
 				ta->text +
 				ta->lines[ta->caret_pos.line].b_start,
 				b_off - ta->lines[ta->caret_pos.line].b_start,
     				&x);
-		
+
 		x += ta->x + MARGIN_LEFT - ta->scroll_x;
-		
+		ta->caret_x = x;
 		y = ta->line_height * ta->caret_pos.line + ta->y - ta->scroll_y;
-	
-		x0 = max(x - 1, ta->x + MARGIN_LEFT);
-		y0 = max(y - 1, ta->y);
-		x1 = min(x + 1, ta->x + ta->vis_width - MARGIN_RIGHT);
-		y1 = min(y + height + 1, ta->y + ta->vis_height);
-		
-		plot.clip(x0, y0, x1, y1);
-		plot.line(x, y, x, y + height, &pstyle_stroke_caret);
+		ta->caret_y = y;
+
+		if (textarea_scroll_visible(ta))
+			ta->redraw_request(ta->data, ta->x, ta->y,
+					ta->x + ta->vis_width,
+					ta->y + ta->vis_height);
+		else {
+			x0 = max(x - 1, ta->x + MARGIN_LEFT);
+			y0 = max(y - 1, ta->y);
+			x1 = min(x + 1, ta->x + ta->vis_width - MARGIN_RIGHT);
+			y1 = min(y + ta->line_height + 1,
+					ta->y + ta->vis_height);
+			ta->redraw_request(ta->data, x0, y0, x1, y1);
+		}
 	}
-	ta->redraw_end_callback(ta->data);	
-	
+
 	return true;
 }
 
@@ -557,7 +557,7 @@ unsigned int textarea_get_xy_offset(struct text_area *ta, int x, int y)
 
 	if (x < 0)
 		x = 0;
-	
+
 	line = y / ta->line_height;
 
 	if (line < 0)
@@ -566,9 +566,9 @@ unsigned int textarea_get_xy_offset(struct text_area *ta, int x, int y)
 		line = ta->line_count - 1;
 
 	nsfont.font_position_in_string(&ta->fstyle,
-			ta->text + ta->lines[line].b_start, 
+			ta->text + ta->lines[line].b_start,
 	   		ta->lines[line].b_length, x, &b_off, &x);
-	
+
 	/* If the calculated byte offset corresponds with the number of bytes
 	 * in the line, and the line has been soft-wrapped, then ensure the
 	 * caret offset is before the trailing space character, rather than
@@ -599,10 +599,10 @@ unsigned int textarea_get_xy_offset(struct text_area *ta, int x, int y)
 bool textarea_set_caret_xy(struct text_area *ta, int x, int y)
 {
 	unsigned int c_off;
-	
+
 	if (ta->flags & TEXTAREA_READONLY)
 		return true;
-	
+
 	c_off = textarea_get_xy_offset(ta, x, y);
 	return textarea_set_caret(ta, c_off);
 }
@@ -618,11 +618,11 @@ int textarea_get_caret(struct text_area *ta)
 {
 	unsigned int c_off = 0, b_off;
 
-	
+
 	/* if the text is a trailing NUL only */
 	if (ta->text_utf8_len == 0)
 		return 0;
-	
+
 	/* Calculate character offset of this line's start */
 	for (b_off = 0; b_off < ta->lines[ta->caret_pos.line].b_start;
 			b_off = utf8_next(ta->text, ta->text_len, b_off))
@@ -677,7 +677,7 @@ bool textarea_reflow(struct text_area *ta, unsigned int line)
 		nsfont.font_split(&ta->fstyle, text, len,
 				ta->vis_width - MARGIN_LEFT - MARGIN_RIGHT,
 				&b_off, &x);
-		
+
 		if (line_count > 0 && line_count % LINE_CHUNK_SIZE == 0) {
 			struct line_info *temp = realloc(ta->lines,
 					(line_count + LINE_CHUNK_SIZE) *
@@ -728,9 +728,10 @@ bool textarea_reflow(struct text_area *ta, unsigned int line)
 	}
 
 	ta->line_count = line_count;
-	
+
 	return true;
 }
+
 
 /**
  * Handle redraw requests for text areas
@@ -741,29 +742,36 @@ bool textarea_reflow(struct text_area *ta, unsigned int line)
  * \param x1	 right X coordinate of redraw area
  * \param y1	 bottom Y coordinate of redraw area
  */
-void textarea_redraw(struct text_area *ta, int x0, int y0, int x1, int y1)
+void textarea_redraw(struct text_area *ta, int clip_x0, int clip_y0,
+		int clip_x1, int clip_y1)
 {
 	int line0, line1, line;
 	int chars, offset;
 	unsigned int c_pos, c_len, b_start, b_end, line_len;
 	char *line_text;
-        plot_style_t plot_style_fill_bg = { 
+	int x0, x1, y0, y1;
+        plot_style_t plot_style_fill_bg = {
             .fill_type = PLOT_OP_TYPE_SOLID,
             .fill_colour = BACKGROUND_COL,
         };
+
+	x0 = clip_x0;
+	x1 = clip_x1;
+	y0 = clip_y0;
+	y1 = clip_y1;
 
 	if (x1 < ta->x || x0 > ta->x + ta->vis_width || y1 < ta->y ||
 		   y0 > ta->y + ta->vis_height)
 		/* Textarea outside the clipping rectangle */
 		return;
-	
+
 	if (ta->lines == NULL)
 		/* Nothing to redraw */
 		return;
 
         if (ta->flags & TEXTAREA_READONLY)
             plot_style_fill_bg.fill_colour = READONLY_BG;
-	
+
 	line0 = (y0 - ta->y + ta->scroll_y) / ta->line_height - 1;
 	line1 = (y1 - ta->y + ta->scroll_y) / ta->line_height + 1;
 
@@ -786,25 +794,25 @@ void textarea_redraw(struct text_area *ta, int x0, int y0, int x1, int y1)
 		x1 = ta->x + ta->vis_width;
 	if (y1 > ta->y + ta->vis_height)
 		y1 = ta->y + ta->vis_height;
-	
+
 	plot.clip(x0, y0, x1, y1);
 	plot.rectangle(x0, y0, x1, y1, &plot_style_fill_bg);
-	plot.rectangle(ta->x, ta->y, 
-		       ta->x + ta->vis_width - 1, ta->y + ta->vis_height - 1, 
+	plot.rectangle(ta->x, ta->y,
+		       ta->x + ta->vis_width - 1, ta->y + ta->vis_height - 1,
 		       &pstyle_stroke_border);
-	
+
 	if (x0 < ta->x + MARGIN_LEFT)
 		x0 = ta->x + MARGIN_LEFT;
 	if (x1 > ta->x + ta->vis_width - MARGIN_RIGHT)
 		x1 = ta->x + ta->vis_width - MARGIN_RIGHT;
 	plot.clip(x0, y0, x1, y1);
-		
+
 	if (line0 > 0)
 		c_pos = utf8_bounded_length(ta->text,
 				ta->lines[line0].b_start - 1);
 	else
 		c_pos = 0;
-	
+
 	for (line = line0; (line <= line1) &&
 			(ta->y + line * ta->line_height <= y1 + ta->scroll_y);
 			line++) {
@@ -814,29 +822,29 @@ void textarea_redraw(struct text_area *ta, int x0, int y0, int x1, int y1)
 		c_len = utf8_bounded_length(
 				&(ta->text[ta->lines[line].b_start]),
 				ta->lines[line].b_length);
-		
+
 		/* if there is a newline between the lines count it too */
 		if (line < ta->line_count - 1 && ta->lines[line + 1].b_start !=
 				ta->lines[line].b_start +
 				ta->lines[line].b_length)
 			c_len++;
-		
+
 		/* check if a part of the line is selected, won't happen if no
 		  selection (ta->selection_end = -1) */
 		if (ta->selection_end != -1 &&
 				c_pos < (unsigned)ta->selection_end &&
 				c_pos + c_len > (unsigned)ta->selection_start) {
-			
+
 			/* offset from the beginning of the line */
 			offset = ta->selection_start - c_pos;
 			chars = ta->selection_end - c_pos -
 					(offset > 0 ? offset:0);
-									
+
 			line_text = &(ta->text[ta->lines[line].b_start]);
 			line_len = ta->lines[line].b_length;
-			
+
 			if (offset > 0) {
-				
+
 				/* find byte start of the selected part */
 				for (b_start = 0; offset > 0; offset--)
 					b_start = utf8_next(line_text,
@@ -850,10 +858,10 @@ void textarea_redraw(struct text_area *ta, int x0, int y0, int x1, int y1)
 				x0 = ta->x + MARGIN_LEFT;
 				b_start = 0;
 			}
-			
-			
+
+
 			if (chars >= 0) {
-				
+
 				/* find byte end of the selected part */
 				for (b_end = b_start; chars > 0 &&
 						b_end < line_len;
@@ -864,7 +872,7 @@ void textarea_redraw(struct text_area *ta, int x0, int y0, int x1, int y1)
 			}
 			else
 				b_end = ta->lines[line].b_length;
-			
+
 			b_end -= b_start;
 			nsfont.font_width(&ta->fstyle,
 					&(ta->text[ta->lines[line].b_start +
@@ -878,14 +886,14 @@ void textarea_redraw(struct text_area *ta, int x0, int y0, int x1, int y1)
 				       ta->y + (line + 1) * ta->line_height -
 				       1 - ta->scroll_y,
 				       &pstyle_fill_selection);
-			
+
 		}
-		
+
 		c_pos += c_len;
 
 		y0 = ta->y + line * ta->line_height + 0.75 * ta->line_height;
 
-		ta->fstyle.background = 
+		ta->fstyle.background =
 			   	(ta->flags & TEXTAREA_READONLY) ?
 					READONLY_BG : BACKGROUND_COL,
 
@@ -893,6 +901,14 @@ void textarea_redraw(struct text_area *ta, int x0, int y0, int x1, int y1)
 			  	ta->text + ta->lines[line].b_start,
 			   	ta->lines[line].b_length,
 				&ta->fstyle);
+	}
+
+
+	if (ta->caret_x >= clip_x0 && ta->caret_x <= clip_x1) {
+		if (ta->caret_y >= clip_y0 && ta->caret_y <= clip_y1)
+			plot.line(ta->caret_x, ta->caret_y, ta->caret_x,
+					ta->caret_y + ta->line_height,
+					&pstyle_stroke_caret);
 	}
 }
 
@@ -914,13 +930,13 @@ bool textarea_keypress(struct text_area *ta, uint32_t key)
 	caret_init = caret = textarea_get_caret(ta);
 	line = ta->caret_pos.line;
 	readonly = (ta->flags & TEXTAREA_READONLY ? true:false);
-	
-	
+
+
 	if (!(key <= 0x001F || (0x007F <= key && key <= 0x009F))) {
-		/* normal character insertion */		
+		/* normal character insertion */
 		length = utf8_from_ucs4(key, utf8);
 		utf8[length] = '\0';
-		
+
 		if (!textarea_insert_text(ta, caret, utf8))
 			return false;
 		caret++;
@@ -929,7 +945,7 @@ bool textarea_keypress(struct text_area *ta, uint32_t key)
 	} else switch (key) {
 		case KEY_SELECT_ALL:
 			caret = ta->text_utf8_len;
-  			
+
  			ta->selection_start = 0;
 			ta->selection_end = ta->text_utf8_len;
  			redraw = true;
@@ -943,7 +959,7 @@ bool textarea_keypress(struct text_area *ta, uint32_t key)
 				if (!textarea_replace_text(ta,
 				     		ta->selection_start,
 						ta->selection_end, ""))
-					return false;				
+					return false;
 				ta->selection_start = ta->selection_end = -1;
 				redraw = true;
 			} else {
@@ -971,7 +987,7 @@ bool textarea_keypress(struct text_area *ta, uint32_t key)
 		case KEY_PASTE:
 		case KEY_CUT_SELECTION:
 			break;
-		case KEY_ESCAPE:			
+		case KEY_ESCAPE:
 		case KEY_CLEAR_SELECTION:
 			ta->selection_start = -1;
 			ta->selection_end = -1;
@@ -1008,7 +1024,7 @@ bool textarea_keypress(struct text_area *ta, uint32_t key)
 						ta->line_height
 						+ 1;
 			}
-			/* fall through */			
+			/* fall through */
 		case KEY_UP:
 			if (readonly)
 				break;
@@ -1022,28 +1038,28 @@ bool textarea_keypress(struct text_area *ta, uint32_t key)
 					line = 0;
 				if (line == ta->caret_pos.line)
 					break;
-				
+
 				b_off = ta->lines[line].b_start;
 				b_len = ta->lines[line].b_length;
-												
+
 				c_line = ta->caret_pos.line;
 				c_chars = ta->caret_pos.char_off;
-				
+
 				if (ta->text[b_off + b_len - 1] == ' '
 						&& line < ta->line_count - 1)
 					b_len--;
-				
+
 				l_len = utf8_bounded_length(&(ta->text[b_off]),
 						b_len);
-				
-				
+
+
 				ta->caret_pos.line = line;
 				ta->caret_pos.char_off = min(l_len,
 						(unsigned)
 						ta->caret_pos.char_off);
-				
+
 				caret = textarea_get_caret(ta);
-				
+
 				ta->caret_pos.line = c_line;
 				ta->caret_pos.char_off = c_chars;
 			}
@@ -1057,7 +1073,7 @@ bool textarea_keypress(struct text_area *ta, uint32_t key)
 						ta->line_height - 1) /
 						ta->line_height
 						- 1;
-			}			
+			}
 			/* fall through */
 		case KEY_DOWN:
 			if (readonly)
@@ -1072,28 +1088,28 @@ bool textarea_keypress(struct text_area *ta, uint32_t key)
 					line = ta->line_count - 1;
 				if (line == ta->caret_pos.line)
 					break;
-				
+
 				b_off = ta->lines[line].b_start;
 				b_len = ta->lines[line].b_length;
-												
+
 				c_line = ta->caret_pos.line;
 				c_chars = ta->caret_pos.char_off;
-				
+
 				if (ta->text[b_off + b_len - 1] == ' '
 						&& line < ta->line_count - 1)
 					b_len--;
-				
+
 				l_len = utf8_bounded_length(&(ta->text[b_off]),
 						b_len);
-				
-				
+
+
 				ta->caret_pos.line = line;
 				ta->caret_pos.char_off = min(l_len,
 						(unsigned)
 						ta->caret_pos.char_off);
-				
+
 				caret = textarea_get_caret(ta);
-				
+
 				ta->caret_pos.line = c_line;
 				ta->caret_pos.char_off = c_chars;
 			}
@@ -1106,7 +1122,7 @@ bool textarea_keypress(struct text_area *ta, uint32_t key)
 				     		ta->selection_start,
 						ta->selection_end, ""))
 					return false;
-					
+
 				ta->selection_start = ta->selection_end = -1;
 				redraw = true;
 			} else {
@@ -1117,7 +1133,7 @@ bool textarea_keypress(struct text_area *ta, uint32_t key)
 					redraw = true;
 				}
 			}
-			break;			
+			break;
 		case KEY_LINE_START:
 			if (readonly)
 				break;
@@ -1130,7 +1146,7 @@ bool textarea_keypress(struct text_area *ta, uint32_t key)
 		case KEY_LINE_END:
 			if (readonly)
 				break;
-			
+
 			caret = utf8_bounded_length(ta->text,
 					ta->lines[ta->caret_pos.line].b_start +
 					ta->lines[ta->caret_pos.line].b_length);
@@ -1142,7 +1158,7 @@ bool textarea_keypress(struct text_area *ta, uint32_t key)
 				ta->selection_start = ta->selection_end = -1;
 				redraw = true;
 			}
-			break;			
+			break;
 		case KEY_TEXT_START:
 			if (readonly)
 				break;
@@ -1194,30 +1210,28 @@ bool textarea_keypress(struct text_area *ta, uint32_t key)
 					return false;
 				ta->selection_start = ta->selection_end = -1;
 			} else {
-				if (textarea_replace_text(ta,
+				if (!textarea_replace_text(ta,
 						caret - ta->caret_pos.char_off,
       						caret,
 						""))
 					return false;
 				caret -= ta->caret_pos.char_off;
 			}
-			redraw = true;			
+			redraw = true;
 			break;
 		default:
 			return false;
 	}
-	
+
+
+	if (caret != caret_init)
+		textarea_set_caret(ta, caret);
 	//TODO:redraw only the important part
 	if (redraw) {
-		ta->redraw_start_callback(ta->data);
-		textarea_redraw(ta, ta->x, ta->y, ta->x + ta->vis_width,
-				ta->y + ta->vis_height);
-		ta->redraw_end_callback(ta->data);
+		ta->redraw_request(ta->data, ta->x, ta->y,
+				ta->x + ta->vis_width, ta->y + ta->vis_height);
 	}
-	
-	if (caret != caret_init || redraw)
-		return textarea_set_caret(ta, caret);
-		
+
 	return true;
 }
 
@@ -1232,15 +1246,15 @@ bool textarea_scroll_visible(struct text_area *ta)
 	int x0, x1, y0, y1, x, y;
 	int index, b_off;
 	bool scrolled = false;
-	
+
 	if (ta->caret_pos.char_off == -1)
 		return false;
-	
+
 	x0 = ta->x + MARGIN_LEFT;
 	x1 = ta->x + ta->vis_width - MARGIN_RIGHT;
 	y0 = ta->y;
 	y1 = ta->y + ta->vis_height;
-	
+
 	index = textarea_get_caret(ta);
 
 	/* find byte offset of caret position */
@@ -1252,11 +1266,11 @@ bool textarea_scroll_visible(struct text_area *ta)
 			ta->text + ta->lines[ta->caret_pos.line].b_start,
 			b_off - ta->lines[ta->caret_pos.line].b_start,
 			&x);
-	
+
 	/* top-left of caret */
 	x += ta->x + MARGIN_LEFT - ta->scroll_x;
 	y = ta->line_height * ta->caret_pos.line + ta->y - ta->scroll_y;
-	
+
 	/* check and change vertical scroll */
 	if (y < y0) {
 		ta->scroll_y -= y0 - y;
@@ -1266,7 +1280,7 @@ bool textarea_scroll_visible(struct text_area *ta)
 		scrolled = true;
 	}
 
-	
+
 	/* check and change horizontal scroll */
 	if (x < x0) {
 		ta->scroll_x -= x0 - x ;
@@ -1275,7 +1289,7 @@ bool textarea_scroll_visible(struct text_area *ta)
 		ta->scroll_x += x - (x1 - 1);
 		scrolled = true;
 	}
-	
+
 	return scrolled;
 }
 
@@ -1291,20 +1305,19 @@ bool textarea_scroll_visible(struct text_area *ta)
  */
 bool textarea_mouse_action(struct text_area *ta, browser_mouse_state mouse,
 		int x, int y)
-{	
+{
 	int c_start, c_end;
-	
+
 	/* mouse button pressed above the text area, move caret */
 	if (mouse & BROWSER_MOUSE_PRESS_1) {
+		if (!(ta->flags & TEXTAREA_READONLY))
+			textarea_set_caret_xy(ta, x, y);
 		if (ta->selection_start != -1) {
 			ta->selection_start = ta->selection_end = -1;
-			ta->redraw_start_callback(ta->data);
-			textarea_redraw(ta, ta->x, ta->y, ta->x + ta->vis_width,
+			ta->redraw_request(ta->data, ta->x, ta->y,
+					ta->x + ta->vis_width,
 					ta->y + ta->vis_height);
-			ta->redraw_end_callback(ta->data);
 		}
-		if (!(ta->flags & TEXTAREA_READONLY))
-			return textarea_set_caret_xy(ta, x, y);
 	}
 	else if (mouse & BROWSER_MOUSE_DRAG_1) {
 		ta->drag_start_char = textarea_get_xy_offset(ta, x, y);
@@ -1315,9 +1328,9 @@ bool textarea_mouse_action(struct text_area *ta, browser_mouse_state mouse,
 		c_start = ta->drag_start_char;
 		c_end = textarea_get_xy_offset(ta, x, y);
 		return textarea_select(ta, c_start, c_end);
-		
+
 	}
-	
+
 	return true;
 }
 
@@ -1351,7 +1364,7 @@ bool textarea_drag_end(struct text_area *ta, browser_mouse_state mouse,
 bool textarea_select(struct text_area *ta, int c_start, int c_end)
 {
 	int swap = -1;
-	
+
 	/* if start is after end they get swapped, start won't and end will
 	   be selected this way */
 	if (c_start > c_end) {
@@ -1359,14 +1372,9 @@ bool textarea_select(struct text_area *ta, int c_start, int c_end)
 		c_start = c_end;
 		c_end = swap;
 	}
-	
+
 	ta->selection_start = c_start;
 	ta->selection_end = c_end;
-	
-	ta->redraw_start_callback(ta->data);
-	textarea_redraw(ta, ta->x, ta->y, ta->x + ta->vis_width,
-			ta->y + ta->vis_height);
-	ta->redraw_end_callback(ta->data);
 
 	if (!(ta->flags & TEXTAREA_READONLY)) {
 		if (swap == -1)
@@ -1374,7 +1382,10 @@ bool textarea_select(struct text_area *ta, int c_start, int c_end)
 		else
 			return textarea_set_caret(ta, c_start);
 	}
-	
+
+	ta->redraw_request(ta->data, ta->x, ta->y, ta->x + ta->vis_width,
+			ta->y + ta->vis_height);
+
 	return true;
 }
 
@@ -1393,7 +1404,7 @@ void textarea_normalise_text(struct text_area *ta,
 {
 	bool multi = (ta->flags & TEXTAREA_MULTILINE) ? true:false;
 	unsigned int index;
-	
+
 	/* Remove CR characters. If it's a CRLF pair delete it ot replace it
 	 * with LF otherwise.
 	 */
@@ -1416,7 +1427,7 @@ void textarea_normalise_text(struct text_area *ta,
 		if (!multi && (ta->text[b_start + index] == '\n'))
 			ta->text[b_start + index] = ' ';
 	}
-	
+
 }
 
 
