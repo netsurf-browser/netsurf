@@ -33,7 +33,7 @@
 #include <proto/utility.h>
 #include "utils/messages.h"
 
-static struct MinList *ami_file_fetcher_list;
+static struct MinList *ami_file_fetcher_list = NULL;
 static UBYTE *ami_file_fetcher_buffer = NULL;
 
 /** Information for a single fetch. */
@@ -168,7 +168,7 @@ bool ami_fetch_file_start(void *vfetch)
 {
 	struct ami_file_fetch_info *fetch = (struct ami_file_fetch_info*)vfetch;
 
-	LOG(("ami file fetcher start"));
+	/* LOG(("ami file fetcher start")); */
 
 	fetch->cachedata.req_time = time(NULL);
 	fetch->cachedata.res_time = time(NULL);
@@ -187,19 +187,13 @@ void ami_fetch_file_abort(void *vf)
 {
 	struct ami_file_fetch_info *fetch = (struct ami_file_fetch_info*)vf;
 
-	LOG(("ami file fetcher abort"));
+	/* LOG(("ami file fetcher abort")); */
 
 	if (fetch->fh) {
 		FClose(fetch->fh);
 		fetch->fh = 0;
-		fetch->aborted = true;
 	}
-/*
-else {
-		fetch_remove_from_queues(fetch->fetch_handle);
-		fetch_free(fetch->fetch_handle);
-	}
-*/
+	fetch->aborted = true;
 }
 
 
@@ -210,7 +204,7 @@ else {
 void ami_fetch_file_free(void *vf)
 {
 	struct ami_file_fetch_info *fetch = (struct ami_file_fetch_info*)vf;
-	LOG(("ami file fetcher free %lx",fetch));
+	/* LOG(("ami file fetcher free %lx",fetch)); */
 
 	if(fetch->fh) FClose(fetch->fh);
 	if(fetch->mimetype) free(fetch->mimetype);
@@ -224,7 +218,7 @@ static void ami_fetch_file_send_callback(fetch_msg msg,
 		unsigned long size)
 {
 	fetch->locked = true;
-	LOG(("ami file fetcher callback %ld",msg));
+	/* LOG(("ami file fetcher callback %ld",msg)); */
 	fetch_send_callback(msg,fetch->fetch_handle,data,size);
 	fetch->locked = false;
 }
@@ -250,7 +244,6 @@ void ami_fetch_file_poll(const char *scheme_ignored)
 		nnode=(struct nsObject *)GetSucc((struct Node *)node);
 
 		fetch = (struct ami_file_fetch_info *)node->objstruct;
-		LOG(("polling %lx",fetch));
 
 		if(fetch->locked) continue;
 
@@ -261,8 +254,6 @@ void ami_fetch_file_poll(const char *scheme_ignored)
 				ULONG len;
 
 				len = FRead(fetch->fh,ami_file_fetcher_buffer,1,1024);
-
-				LOG(("fetch %lx read %ld",fetch,len));
 
 				ami_fetch_file_send_callback(FETCH_DATA, 
 					fetch,ami_file_fetcher_buffer,len);
@@ -313,6 +304,7 @@ void ami_fetch_file_poll(const char *scheme_ignored)
 		{
 			fetch_remove_from_queues(fetch->fetch_handle);
 			fetch_free(fetch->fetch_handle);
+			return;
 		}
 	}while(node=nnode);
 }
