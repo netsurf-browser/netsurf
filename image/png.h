@@ -37,7 +37,6 @@ struct content_png_data {
 	png_infop info;
 	int interlace;
         struct bitmap *bitmap;	/**< Created NetSurf bitmap */
-        unsigned char *bitbuffer; /**< Bitmap buffer */
         size_t rowstride, bpp; /**< Bitmap rowstride and bpp */
         size_t rowbytes; /**< Number of bytes per row */
 };

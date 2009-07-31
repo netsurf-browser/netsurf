@@ -56,17 +56,19 @@ bool nspng_create(struct content *c, struct content *parent,
 {
 	union content_msg_data msg_data;
 
+        c->data.png.bitmap = NULL;
+
 	c->data.png.png = png_create_read_struct(PNG_LIBPNG_VER_STRING,
                                                  0, 0, 0);
-        c->data.png.bitmap = NULL;
-	if (!c->data.png.png) {
+	if (c->data.png.png == NULL) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		warn_user("NoMemory", 0);
 		return false;
 	}
+
 	c->data.png.info = png_create_info_struct(c->data.png.png);
-	if (!c->data.png.info) {
+	if (c->data.png.info == NULL) {
 		png_destroy_read_struct(&c->data.png.png,
 				&c->data.png.info, 0);
 
@@ -140,7 +142,11 @@ void info_callback(png_structp png, png_infop info)
 
 	/* Claim the required memory for the converted PNG */
         c->data.png.bitmap = bitmap_create(width, height, BITMAP_NEW);
-        c->data.png.bitbuffer = bitmap_get_buffer(c->data.png.bitmap);
+	if (c->data.png.bitmap == NULL) {
+		/* Failed -- bail out */
+		longjmp(png_jmpbuf(png), 1);
+	}
+
         c->data.png.rowstride = bitmap_get_rowstride(c->data.png.bitmap);
         c->data.png.bpp = bitmap_get_bpp(c->data.png.bitmap);
 
@@ -195,23 +201,37 @@ void row_callback(png_structp png, png_bytep new_row,
 	struct content *c = png_get_progressive_ptr(png);
 	unsigned long i, j, rowbytes = c->data.png.rowbytes;
 	unsigned int start, step;
-        unsigned char *row = c->data.png.bitbuffer +
-			(c->data.png.rowstride * row_num);
+	unsigned char *buffer, *row;
+
+	/* Give up if there's no bitmap */
+	if (c->data.png.bitmap == NULL)
+		return;
 
 	/* Abort if we've not got any data */
-	if (new_row == 0)
+	if (new_row == NULL)
 		return;
+
+	/* Get bitmap buffer */
+	buffer = bitmap_get_buffer(c->data.png.bitmap);
+	if (buffer == NULL) {
+		/* No buffer, bail out */
+		longjmp(png_jmpbuf(png), 1);
+	}
+
+	/* Calculate address of row start */
+        row = buffer + (c->data.png.rowstride * row_num);
 
 	/* Handle interlaced sprites using the Adam7 algorithm */
 	if (c->data.png.interlace) {
 		start = interlace_start[pass];
- 		step = interlace_step[pass];
+		step = interlace_step[pass];
 		row_num = interlace_row_start[pass] +
 				interlace_row_step[pass] * row_num;
 
 		/* Copy the data to our current row taking interlacing
 		 * into consideration */
-                row = c->data.png.bitbuffer + (c->data.png.rowstride * row_num);
+		row = buffer + (c->data.png.rowstride * row_num);
+
 		for (j = 0, i = start; i < rowbytes; i += step) {
 			row[i++] = new_row[j++];
 			row[i++] = new_row[j++];
@@ -233,8 +253,8 @@ void end_callback(png_structp png, png_infop info)
 
 bool nspng_convert(struct content *c, int width, int height)
 {
-	assert(c->data.png.png);
-	assert(c->data.png.info);
+	assert(c->data.png.png != NULL);
+	assert(c->data.png.info != NULL);
 
 	png_destroy_read_struct(&c->data.png.png, &c->data.png.info, 0);
 
@@ -246,6 +266,8 @@ bool nspng_convert(struct content *c, int width, int height)
 	}
 
 	c->size += (c->width * c->height * 4) + NSPNG_TITLE_LEN;
+
+	assert(c->data.png.bitmap != NULL);
 
 	c->bitmap = c->data.png.bitmap;
 	bitmap_set_opaque(c->bitmap, bitmap_test_opaque(c->bitmap));
@@ -271,8 +293,7 @@ bool nspng_redraw(struct content *c, int x, int y,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale, colour background_colour)
 {
-	if (c->bitmap == NULL) 
-		return true;
+	assert(c->bitmap != NULL);
 
 	return plot.bitmap(x, y, width, height, c->bitmap, 
                            background_colour, BITMAPF_NONE);
@@ -285,8 +306,7 @@ bool nspng_redraw_tiled(struct content *c, int x, int y, int width, int height,
 {
 	bitmap_flags_t flags = 0;
 
-	if (c->bitmap == NULL) 
-                return true;
+	assert(c->bitmap != NULL);
 
 	if (repeat_x)
 		flags |= BITMAPF_REPEAT_X;
