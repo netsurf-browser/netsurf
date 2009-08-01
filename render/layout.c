@@ -2678,7 +2678,9 @@ struct box *layout_minmax_line(struct box *first,
 					&fixed, &frac);
 			calculate_mbp_width(b->style, RIGHT, true, true, true,
 					&fixed, &frac);
-			width += fixed;
+
+			if (0 < width + fixed)
+				width += fixed;
 		} else {
 			/* form control with no object */
 			if (width == AUTO)
