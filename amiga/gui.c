@@ -1780,14 +1780,14 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			WA_ReportMouse,TRUE,
 			WA_SmartRefresh,TRUE,
            	WA_IDCMP,IDCMP_MENUPICK | IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS |
-				 IDCMP_NEWSIZE | IDCMP_RAWKEY | IDCMP_GADGETUP |
+				IDCMP_NEWSIZE | IDCMP_RAWKEY | IDCMP_GADGETUP | IDCMP_SIZEVERIFY |
 				IDCMP_IDCMPUPDATE | IDCMP_INTUITICKS | IDCMP_EXTENDEDMOUSE,
 //			WINDOW_IconifyGadget, TRUE,
 //			WINDOW_NewMenu,menu,
 			WINDOW_HorizProp,1,
 			WINDOW_VertProp,1,
 			WINDOW_IDCMPHook,&gwin->shared->scrollerhook,
-			WINDOW_IDCMPHookBits,IDCMP_IDCMPUPDATE,
+			WINDOW_IDCMPHookBits,IDCMP_IDCMPUPDATE | IDCMP_SIZEVERIFY,
             WINDOW_AppPort, appport,
 			WINDOW_AppWindow,TRUE,
 			WINDOW_BuiltInScroll,TRUE,
@@ -1864,7 +1864,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 					WA_SmartRefresh,TRUE,
         		   	WA_IDCMP,IDCMP_MENUPICK | IDCMP_MOUSEMOVE |
 								IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
-								IDCMP_RAWKEY |
+								IDCMP_RAWKEY | IDCMP_SIZEVERIFY |
 								IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
 								IDCMP_INTUITICKS | IDCMP_ACTIVEWINDOW |
 								IDCMP_EXTENDEDMOUSE,
@@ -1873,7 +1873,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 					WINDOW_HorizProp,1,
 					WINDOW_VertProp,1,
 					WINDOW_IDCMPHook,&gwin->shared->scrollerhook,
-					WINDOW_IDCMPHookBits,IDCMP_IDCMPUPDATE | IDCMP_EXTENDEDMOUSE,
+					WINDOW_IDCMPHookBits,IDCMP_IDCMPUPDATE |
+								IDCMP_EXTENDEDMOUSE | IDCMP_SIZEVERIFY,
         		    WINDOW_AppPort, appport,
 					WINDOW_AppWindow,TRUE,
 					WINDOW_SharedPort,sport,
@@ -2453,13 +2454,8 @@ void ami_do_redraw(struct gui_window_2 *g)
 		}
 
 		ami_clearclipreg(&browserglob.rp);
-
-		Forbid();
-		GetAttr(SPACE_AreaBox,g->gadgets[GID_BROWSER],(ULONG *)&bbox);
-
 		BltBitMapRastPort(browserglob.bm,0,0,g->win->RPort,bbox->Left,bbox->Top,
 								bbox->Width,bbox->Height,0x0C0);
-		Permit();
 	}
 
 	current_redraw_browser = NULL;
@@ -3052,6 +3048,9 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 					gwin->bw->window->scrollx + (wheel->WheelX * 20),
 					gwin->bw->window->scrolly + (wheel->WheelY * 20));
 			}
+		break;
+
+		case IDCMP_SIZEVERIFY:
 		break;
 	}
 //	ReplyMsg((struct Message *)msg);
