@@ -45,19 +45,19 @@
 
       $ ../autobuilder/build libxml2
 
-      $ ../autobuilder/build/libssl0.9.8
+      $ ../autobuilder/build libssl0.9.8
 
-      $ ../autobuilder/build/libcurl3
+      $ ../autobuilder/build libcurl3
 
-      $ ../autobuilder/build/libjpeg62
+      $ ../autobuilder/build libjpeg62
 
-      $ ../autobuilder/build/liblcms1
+      $ ../autobuilder/build liblcms1
 
-      $ ../autobuilder/build/libpng12-0
+      $ ../autobuilder/build libpng12-0
 
-      $ ../autobuilder/build/libmng1
+      $ ../autobuilder/build libmng1
 
-      $ ../autobuilder/build/oslib
+      $ ../autobuilder/build oslib
 
   B. NetSurf libraries
 ----------------------
@@ -78,7 +78,7 @@
 
       $ (cd netsurf/pencil ; make install)
 
-      $ (cd netsurf/libharu ; make TARGET=riscos PREFIX=/home/riscos/env)
+      $ (cd netsurf/libharu ; make TARGET=riscos PREFIX=$GCCSDK_INSTALL_ENV)
 
       $ cd netsurf/libparserutils
 
@@ -90,6 +90,10 @@
       $ cd ~
 
       $ (cd netsurf/hubbub ; make TARGET=riscos install)
+
+      $ (cd netsurf/libwapcaplet ; make TARGET=riscos install)
+
+      $ (cd netsurf/libcss ; make TARGET=riscos install)
 
   C. Ancilliary tools
 ---------------------
