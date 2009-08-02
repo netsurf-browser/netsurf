@@ -899,7 +899,7 @@ const struct url_data *urldb_get_url_data(const char *url)
 
 	u = &p->urld;
 
-	return (struct url_data *) u;
+	return (const struct url_data *) u;
 }
 
 /**
@@ -4199,7 +4199,7 @@ int main(void)
 
 /*
   gcc -g -o urldbtest -std=c99 -DTEST_URLDB -I. \
-  `pkg-config --cflags --libs libxml-2.0 cairo libcurl` \
+  `pkg-config --cflags --libs libxml-2.0 libcurl` \
   content/urldb.c utils/url.c utils/utils.c utils/messages.c \
   utils/hashtable.c utils/filename.c
  */
