@@ -2471,10 +2471,11 @@ gui_pointer_shape get_pointer_shape(struct browser_window *bw, struct box *box,
 	css_computed_style *style;
 	enum css_cursor_e cursor;
 	lwc_string **cursor_uris;
+	bool loading;
 
 	assert(bw);
 
-	bool loading = (bw->loading_content != NULL || (bw->current_content &&
+	loading = (bw->loading_content != NULL || (bw->current_content &&
 			bw->current_content->status == CONTENT_STATUS_READY));
 
 	if (wallclock() - bw->last_action < 100 && loading)
