@@ -105,7 +105,7 @@ bool box_construct_text(xmlNode *n, struct content *content,
 static css_computed_style * box_get_style(struct content *c,
 		const css_computed_style *parent_style, xmlNode *n);
 static void box_text_transform(char *s, unsigned int len,
-		enum css_text_transform tt);
+		enum css_text_transform_e tt);
 #define BOX_SPECIAL_PARAMS xmlNode *n, struct content *content, \
 		struct box *box, bool *convert_children
 static bool box_a(BOX_SPECIAL_PARAMS);
@@ -724,7 +724,7 @@ bool box_construct_text(xmlNode *n, struct content *content,
 		/* white-space: pre */
 		char *text = cnv_space2nbsp((char *) n->content);
 		char *current;
-		enum css_white_space white_space =
+		enum css_white_space_e white_space =
 				css_computed_white_space(parent_style);
 
 		/* note: pre-wrap/pre-line are unimplemented */
@@ -892,7 +892,7 @@ css_computed_style *box_get_style(struct content *c,
  * \param  tt	transform type
  */
 
-void box_text_transform(char *s, unsigned int len, enum css_text_transform tt)
+void box_text_transform(char *s, unsigned int len, enum css_text_transform_e tt)
 {
 	unsigned int i;
 	if (len == 0)
@@ -947,7 +947,7 @@ void box_text_transform(char *s, unsigned int len, enum css_text_transform tt)
 
 bool box_body(BOX_SPECIAL_PARAMS)
 {
-	enum css_background_color type;
+	enum css_background_color_e type;
 	css_color color;
 
 	type = css_computed_background_color(box->style, &color);

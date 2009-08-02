@@ -59,7 +59,7 @@ static const int list_counter_decimal[] = {    1,   4,   5,   9,
 
 static struct list_counter *render_list_find_counter(const char *name);
 static char *render_list_encode_counter(struct list_counter_state *state,
-		enum css_list_style_type style);
+		enum css_list_style_type_e style);
 static char *render_list_encode_roman(int value);
 
 /*
@@ -292,7 +292,7 @@ char *render_list_counter(const css_computed_content_item *css_counter) {
  * \return a textual representation of the counter state, or NULL on failure
  */
 static char *render_list_encode_counter(struct list_counter_state *state,
-		enum css_list_style_type style) {
+		enum css_list_style_type_e style) {
 	char *result = NULL;
 	int i;
 

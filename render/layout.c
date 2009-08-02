@@ -80,7 +80,7 @@ static void layout_find_dimensions(int available_width, int viewport_height,
 		int margin[4], int padding[4], struct box_border border[4]);
 static void layout_tweak_form_dimensions(struct box *box, bool percentage,
 		int available_width, bool setwidth, int *dimension);
-static int layout_clear(struct box *fl, enum css_clear clear);
+static int layout_clear(struct box *fl, enum css_clear_e clear);
 static void find_sides(struct box *fl, int y0, int y1,
 		int *x0, int *x1, struct box **left, struct box **right);
 static void layout_minmax_inline_container(struct box *inline_container,
@@ -389,7 +389,7 @@ bool layout_block_context(struct box *block, int viewport_height,
 				layout_block_add_scrollbar(box, BOTTOM);
 			}
 		} else if (box->type == BOX_TABLE) {
-			enum css_width wtype;
+			enum css_width_e wtype;
 			css_fixed width = 0;
 			css_unit unit = CSS_UNIT_PX;
 
@@ -495,7 +495,7 @@ bool layout_block_context(struct box *block, int viewport_height,
 			struct box *left, *right;
 			y = cy;
 			while (1) {
-				enum css_width wtype;
+				enum css_width_e wtype;
 				css_fixed width = 0;
 				css_unit unit = CSS_UNIT_PX;
 
@@ -650,7 +650,7 @@ void layout_minmax_block(struct box *block,
 	int min = 0, max = 0;
 	int extra_fixed = 0;
 	float extra_frac = 0;
-	enum css_width wtype;
+	enum css_width_e wtype;
 	css_fixed width = 0;
 	css_unit wunit = CSS_UNIT_PX;
 
@@ -902,7 +902,7 @@ bool layout_apply_minmax_height(struct box *box, struct box *container)
 	}
 
 	if (box->style) {
-		enum css_height htype = CSS_HEIGHT_AUTO;
+		enum css_height_e htype = CSS_HEIGHT_AUTO;
 		css_fixed length = 0;
 		css_unit unit = CSS_UNIT_PX;
 
@@ -983,7 +983,7 @@ bool layout_apply_minmax_height(struct box *box, struct box *container)
 
 void layout_block_add_scrollbar(struct box *box, int which)
 {
-	enum css_overflow overflow;
+	enum css_overflow_e overflow;
 
 	assert(box->type == BOX_BLOCK && (which == RIGHT || which == BOTTOM));
 
@@ -1233,7 +1233,7 @@ void layout_find_dimensions(int available_width, int viewport_height,
 	bool percentage;
 
 	if (width) {
-		enum css_width wtype;
+		enum css_width_e wtype;
 		css_fixed value = 0;
 		css_unit unit = CSS_UNIT_PX;
 
@@ -1262,7 +1262,7 @@ void layout_find_dimensions(int available_width, int viewport_height,
 	}
 
 	if (height) {
-		enum css_height htype;
+		enum css_height_e htype;
 		css_fixed value = 0;
 		css_unit unit = CSS_UNIT_PX;
 
@@ -1270,7 +1270,7 @@ void layout_find_dimensions(int available_width, int viewport_height,
 
 		if (htype == CSS_HEIGHT_SET) {
 			if (unit == CSS_UNIT_PCT) {
-				enum css_height cbhtype;
+				enum css_height_e cbhtype;
 
 				if (css_computed_position(box->style) ==
 						CSS_POSITION_ABSOLUTE) {
@@ -1354,7 +1354,7 @@ void layout_find_dimensions(int available_width, int viewport_height,
 	}
 
 	if (max_width) {
-		enum css_max_width type;
+		enum css_max_width_e type;
 		css_fixed value = 0;
 		css_unit unit = CSS_UNIT_PX;
 
@@ -1384,7 +1384,7 @@ void layout_find_dimensions(int available_width, int viewport_height,
 	}
 
 	if (min_width) {
-		enum css_min_width type;
+		enum css_min_width_e type;
 		css_fixed value = 0;
 		css_unit unit = CSS_UNIT_PX;
 
@@ -1415,7 +1415,7 @@ void layout_find_dimensions(int available_width, int viewport_height,
 
 	for (i = 0; i != 4; i++) {
 		if (margin) {
-			enum css_margin type = CSS_MARGIN_AUTO;;
+			enum css_margin_e type = CSS_MARGIN_AUTO;
 			css_fixed value = 0;
 			css_unit unit = CSS_UNIT_PX;
 
@@ -1452,7 +1452,7 @@ void layout_find_dimensions(int available_width, int viewport_height,
 		}
 
 		if (padding) {
-			enum css_padding type;
+			enum css_padding_e type;
 			css_fixed value = 0;
 			css_unit unit = CSS_UNIT_PX;
 
@@ -1486,9 +1486,9 @@ void layout_find_dimensions(int available_width, int viewport_height,
 
 		/* Table cell borders are populated in table.c */
 		if (border && box->type != BOX_TABLE_CELL) {
-			enum css_border_width wtype;
-			enum css_border_style bstyle = CSS_BORDER_STYLE_NONE;
-			enum css_border_color bcolor =
+			enum css_border_width_e wtype;
+			enum css_border_style_e bstyle = CSS_BORDER_STYLE_NONE;
+			enum css_border_color_e bcolor =
 					CSS_BORDER_COLOR_TRANSPARENT;
 			css_color color = 0;
 			css_fixed value = 0;
@@ -1597,7 +1597,7 @@ void layout_tweak_form_dimensions(struct box *box, bool percentage,
  * \return  y coordinate relative to ancestor box for floats
  */
 
-int layout_clear(struct box *fl, enum css_clear clear)
+int layout_clear(struct box *fl, enum css_clear_e clear)
 {
 	int y = 0;
 	for (; fl; fl = fl->next_float) {
@@ -1686,7 +1686,7 @@ bool layout_inline_container(struct box *inline_container, int width,
 		bool is_pre = false;
 
 		if (c->style) {
-			enum css_white_space whitespace;
+			enum css_white_space_e whitespace;
 
 			whitespace = css_computed_white_space(c->style);
 
@@ -1768,7 +1768,7 @@ void layout_minmax_inline_container(struct box *inline_container,
 
 int line_height(const css_computed_style *style)
 {
-	enum css_line_height lhtype;
+	enum css_line_height_e lhtype;
 	css_fixed lhvalue = 0;
 	css_unit lhunit = CSS_UNIT_PX;
 	css_fixed line_height;
@@ -1872,8 +1872,8 @@ bool layout_line(struct box *first, int *width, int *y,
 	 * keep in sync with the loop in layout_minmax_line() */
 	LOG(("x0 %i, x1 %i, x1 - x0 %i", x0, x1, x1 - x0));
 	for (x = 0, b = first; x <= x1 - x0 && b != 0; b = b->next) {
-		enum css_width wtype;
-		enum css_height htype;
+		enum css_width_e wtype;
+		enum css_height_e htype;
 		css_fixed value = 0;
 		css_unit unit = CSS_UNIT_PX;
 
@@ -2507,8 +2507,8 @@ struct box *layout_minmax_line(struct box *first,
 
 	/* corresponds to the pass 1 loop in layout_line() */
 	for (b = first; b; b = b->next) {
-		enum css_width wtype;
-		enum css_height htype;
+		enum css_width_e wtype;
+		enum css_height_e htype;
 		css_fixed value = 0;
 		css_unit unit = CSS_UNIT_PX;
 
@@ -2838,8 +2838,8 @@ bool layout_table(struct box *table, int available_width,
 	struct box **row_span_cell;
 	struct column *col;
 	const css_computed_style *style = table->style;
-	enum css_width wtype;
-	enum css_height htype;
+	enum css_width_e wtype;
+	enum css_height_e htype;
 	css_fixed value = 0;
 	css_unit unit = CSS_UNIT_PX;
 
@@ -3280,7 +3280,7 @@ bool layout_table(struct box *table, int available_width,
 			row_group = row_group->next) {
 		for (row = row_group->children; row; row = row->next) {
 			for (c = row->children; c; c = c->next) {
-				enum css_vertical_align vertical_align;
+				enum css_vertical_align_e vertical_align;
 
 				/* unextended bottom padding is in
 				 * c->descendant_y1, and unextended
@@ -3354,7 +3354,7 @@ void layout_minmax_table(struct box *table,
 	float extra_frac = 0;
 	struct column *col = table->col;
 	struct box *row_group, *row, *cell;
-	enum css_width wtype;
+	enum css_width_e wtype;
 	css_fixed value = 0;
 	css_unit unit = CSS_UNIT_PX;
 
@@ -3578,7 +3578,7 @@ void calculate_mbp_width(const css_computed_style *style, unsigned int side,
 
 	/* margin */
 	if (margin) {
-		enum css_margin type;
+		enum css_margin_e type;
 
 		type = margin_funcs[side](style, &value, &unit);
 		if (type == CSS_MARGIN_SET) {

@@ -1421,7 +1421,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 
 	while ((next_box = box_at_point(box, x, y, &box_x, &box_y, &content)) !=
 			NULL) {
-		enum css_overflow overflow = CSS_OVERFLOW_VISIBLE;
+		enum css_overflow_e overflow = CSS_OVERFLOW_VISIBLE;
 
 		box = next_box;
 
@@ -2469,7 +2469,7 @@ gui_pointer_shape get_pointer_shape(struct browser_window *bw, struct box *box,
 {
 	gui_pointer_shape pointer;
 	css_computed_style *style;
-	enum css_cursor cursor;
+	enum css_cursor_e cursor;
 	lwc_string **cursor_uris;
 
 	assert(bw);

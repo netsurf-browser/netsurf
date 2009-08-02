@@ -68,7 +68,7 @@ static bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 bool html_redraw_inline_borders(struct box *box, int x0, int y0, int x1, int y1,
 		float scale, bool first, bool last);
 static bool html_redraw_border_plot(int i, int *p, colour c,
-		enum css_border_style style, int thickness);
+		enum css_border_style_e style, int thickness);
 static bool html_redraw_checkbox(int x, int y, int width, int height,
 		bool selected);
 static bool html_redraw_radio(int x, int y, int width, int height,
@@ -1174,7 +1174,7 @@ static plot_style_t plot_style_fillbdr_dlight = {
  */
 
 bool html_redraw_border_plot(int i, int *p, colour c,
-		enum css_border_style style, int thickness)
+		enum css_border_style_e style, int thickness)
 {
 	int z[8];
 	unsigned int light = i;
@@ -1839,7 +1839,7 @@ bool html_redraw_text_decoration(struct box *box,
 		int x_parent, int y_parent, float scale,
 		colour background_colour)
 {
-	static const enum css_text_decoration decoration[] = {
+	static const enum css_text_decoration_e decoration[] = {
 		CSS_TEXT_DECORATION_UNDERLINE, CSS_TEXT_DECORATION_OVERLINE,
 		CSS_TEXT_DECORATION_LINE_THROUGH };
 	static const float line_ratio[] = { 0.9, 0.1, 0.5 };

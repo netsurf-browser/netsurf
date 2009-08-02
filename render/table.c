@@ -35,8 +35,8 @@
  * Container for border values during table border calculations
  */
 struct border {
-	enum css_border_style style;	/**< border-style */
-	enum css_border_color color;	/**< border-color type */
+	enum css_border_style_e style;	/**< border-style */
+	enum css_border_color_e color;	/**< border-color type */
 	css_color c;			/**< border-color value */
 	css_fixed width;		/**< border-width length */
 	css_unit unit;			/**< border-width units */
@@ -90,7 +90,7 @@ bool table_calculate_column_types(struct box *table)
 	for (row_group = table->children; row_group; row_group =row_group->next)
 	for (row = row_group->children; row; row = row->next)
 	for (cell = row->children; cell; cell = cell->next) {
-		enum css_width type;
+		enum css_width_e type;
 		css_fixed value = 0;
 		css_unit unit = CSS_UNIT_PX;
 
@@ -141,7 +141,7 @@ bool table_calculate_column_types(struct box *table)
 		unsigned int fixed_columns = 0, percent_columns = 0,
 				auto_columns = 0, unknown_columns = 0;
 		int fixed_width = 0, percent_width = 0;
-		enum css_width type;
+		enum css_width_e type;
 		css_fixed value = 0;
 		css_unit unit = CSS_UNIT_PX;
 

@@ -22,10 +22,10 @@
 #include "render/font.h"
 
 static plot_font_generic_family_t plot_font_generic_family(
-		enum css_font_family css);
-static int plot_font_weight(enum css_font_weight css);
-static plot_font_flags_t plot_font_flags(enum css_font_style style,
-		enum css_font_variant variant);
+		enum css_font_family_e css);
+static int plot_font_weight(enum css_font_weight_e css);
+static plot_font_flags_t plot_font_flags(enum css_font_style_e style,
+		enum css_font_variant_e variant);
 
 /**
  * Populate a font style using data from a computed CSS style
@@ -72,7 +72,7 @@ void font_plot_style_from_css(const css_computed_style *css,
  * \return Plot font family
  */
 plot_font_generic_family_t plot_font_generic_family(
-		enum css_font_family css)
+		enum css_font_family_e css)
 {
 	plot_font_generic_family_t plot;
 
@@ -104,7 +104,7 @@ plot_font_generic_family_t plot_font_generic_family(
  * \param css  CSS font weight
  * \return Plot weight
  */
-int plot_font_weight(enum css_font_weight css)
+int plot_font_weight(enum css_font_weight_e css)
 {
 	int weight;
 
@@ -151,8 +151,8 @@ int plot_font_weight(enum css_font_weight css)
  * \param variant  CSS font variant
  * \return Computed plot flags
  */
-plot_font_flags_t plot_font_flags(enum css_font_style style,
-		enum css_font_variant variant)
+plot_font_flags_t plot_font_flags(enum css_font_style_e style,
+		enum css_font_variant_e variant)
 {
 	plot_font_flags_t flags = FONTF_NONE;
 
