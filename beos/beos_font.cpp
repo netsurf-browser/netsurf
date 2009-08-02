@@ -288,7 +288,7 @@ bool nsfont_paint(const plot_font_style_t *fstyle,
  * \return  a new Pango font description
  */
 
-void nsbeos_style_to_font(BFont &font, const plot_font_style_t *style)
+void nsbeos_style_to_font(BFont &font, const plot_font_style_t *fstyle)
 {
 	float size;
 	uint16 face = 0;
