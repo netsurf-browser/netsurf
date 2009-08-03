@@ -150,7 +150,7 @@ form { display: block; }
 
 input, button { background-color: #fff; color: #000; text-align: left;
 	font-family: sans-serif; width: auto; height: auto; overflow: hidden;
-	border: 2px solid #333; padding: 1px 2px; }
+	border: 2px solid #333; padding: 1px 2px; line-height: 1.33; }
 input[type=button], input[type=reset], input[type=submit], button {
 	background-color: #d9d9d9; color: #000; text-align: center;
 	border: medium outset #d9d9d9; padding: 1px 0.5em; }
@@ -159,7 +159,7 @@ input[type=image] { background-color: transparent; color: #000;
 input[type=checkbox], input[type=radio] { background-color: transparent;
 	border: none; padding: 0 0.1em; }
 input[type=file] { background-color: #d9d9d9; color: #000; font-style: italic;
-	border: medium inset #d9d9d9; padding: 1px 2px;}
+	border: medium inset #d9d9d9; padding: 1px 2px; }
 input[align=left] { float: left; }
 input[align=right] { float: right; }
 
