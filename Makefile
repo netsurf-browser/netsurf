@@ -256,7 +256,7 @@ ifeq ($(TARGET),riscos)
     LDFLAGS += -Xlinker -symbols=$(OBJROOT)/sym -lxml2 -lz -lm -lcurl -lcares
     LDFLAGS += -lssl -lcrypto -lhubbub -lcss -lparserutils -lwapcaplet
   else
-    LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl openssl)
+    LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcares libcurl openssl)
     LDFLAGS += $(shell $(PKG_CONFIG) --libs libhubbub libcss)
   endif
 
