@@ -259,6 +259,7 @@ struct content {
 
 	bool no_error_pages;		/**< Used by fetchcache(). */
 	bool download;			/**< Used by fetchcache(). */
+	bool tried_with_auth;		/**< Used by fetchcache(). */
 	unsigned int redirect_count;	/**< Used by fetchcache(). */
 
 	/** Array of first n rendering errors or warnings. */

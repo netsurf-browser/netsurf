@@ -1,5 +1,6 @@
 /*
  * Copyright 2006 John M Bell <jmb202@ecs.soton.ac.uk>
+ * Copyright 2009 John Tytgat <joty@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -132,10 +133,22 @@ struct cookie_internal_data {
 	struct cookie_internal_data *next;	/**< Next in list */
 };
 
-struct auth_data {
+/* A protection space is defined as a tuple canonical_root_url and realm.
+ * This structure lives as linked list element in a leaf host_part struct
+ * so we need additional scheme and port to have a canonical_root_url.  */
+struct prot_space_data {
+	char *scheme;		/**< URL scheme of canonical hostname of this
+				 * protection space. */
+	unsigned int port;	/**< Port number of canonical hostname of this
+				 * protection space. When 0, it means the
+				 * default port for given scheme, i.e. 80
+				 * (http), 443 (https). */
 	char *realm;		/**< Protection realm */
-	char *auth;		/**< Authentication details in form
+
+	char *auth;		/**< Authentication details for this
+				 * protection space in form
 				 * username:password */
+	struct prot_space_data *next;	/**< Next sibling */
 };
 
 struct cache_internal_data {
@@ -152,7 +165,9 @@ struct url_internal_data {
 struct path_data {
 	char *url;		/**< Full URL */
 	char *scheme;		/**< URL scheme for data */
-	unsigned int port;	/**< Port number for data */
+	unsigned int port;	/**< Port number for data. When 0, it means
+				 * the default port for given scheme, i.e.
+				 * 80 (http), 443 (https). */
 	char *segment;		/**< Path segment for this node */
 	unsigned int frag_cnt;	/**< Number of entries in ::fragment */
 	char **fragment;	/**< Array of fragments */
@@ -161,7 +176,11 @@ struct path_data {
 	struct bitmap *thumb;	/**< Thumbnail image of resource */
 	struct url_internal_data urld;	/**< URL data for resource */
 	struct cache_internal_data cache;	/**< Cache data for resource */
-	struct auth_data auth;	/**< Authentication data for resource */
+	const struct prot_space_data *prot_space;	/**< Protection space
+				 * to which this resource belongs too. Can be
+				 * NULL when it does not belong to a protection
+				 * space or when it is not known. No
+				 * ownership (is with struct host_part::prot_space). */
 	struct cookie_internal_data *cookies;	/**< Cookies associated with resource */
 	struct cookie_internal_data *cookies_end;	/**< Last cookie in list */
 
@@ -183,6 +202,10 @@ struct host_part {
 
 	char *part;		/**< Part of host string */
 
+	struct prot_space_data *prot_space;	/**< Linked list of all known
+				 * proctection spaces known for his host and
+				 * all its schems and ports. */
+
 	struct host_part *next;	/**< Next sibling */
 	struct host_part *prev;	/**< Previous sibling */
 	struct host_part *parent;	/**< Parent host part */
@@ -203,6 +226,7 @@ static void urldb_destroy_host_tree(struct host_part *root);
 static void urldb_destroy_path_tree(struct path_data *root);
 static void urldb_destroy_path_node_content(struct path_data *node);
 static void urldb_destroy_cookie(struct cookie_internal_data *c);
+static void urldb_destroy_prot_space(struct prot_space_data *space);
 static void urldb_destroy_search_tree(struct search_node *root);
 
 /* Saving */
@@ -925,11 +949,13 @@ const char *urldb_get_url(const char *url)
  * Look up authentication details in database
  *
  * \param url Absolute URL to search for
+ * \param realm When non-NULL, it is realm which can be used to determine
+ * the protection space when that's not been done before for given URL.
  * \return Pointer to authentication details, or NULL if not found
  */
-const char *urldb_get_auth_details(const char *url)
+const char *urldb_get_auth_details(const char *url, const char *realm)
 {
-	struct path_data *p, *q = NULL;
+	struct path_data *p, *p_cur, *p_top;
 
 	assert(url);
 
@@ -940,29 +966,33 @@ const char *urldb_get_auth_details(const char *url)
 	if (!p)
 		return NULL;
 
-	/* Check for any auth details attached to this node */
-	if (p && p->auth.realm && p->auth.auth)
-		return p->auth.auth;
-
-	/* Now consider ancestors */
-	for (; p; p = p->parent) {
-		/* The parent path entry is stored hung off the
-		 * parent entry with an empty (not NULL) segment string.
-		 * We look for this here.
-		 */
-		for (q = p->children; q; q = q->next) {
-			if (q->segment[0] == '\0')
-				break;
+	/* Check for any auth details attached to the path_data node or any of
+	 * its parents. */
+	for (p_cur = p; p_cur != NULL; p_top = p_cur, p_cur = p_cur->parent) {
+		if (p_cur->prot_space) {
+			return p_cur->prot_space->auth;
 		}
-
-		if (q && q->auth.realm && q->auth.auth)
-			break;
 	}
 
-	if (!q)
-		return NULL;
+	/* Only when we have a realm (and canonical root of given URL), we can
+	 * uniquely locate the protection space. */
+	if (realm != NULL) {
+		const struct host_part *h = (const struct host_part *)p_top;
+		const struct prot_space_data *space;
 
-	return q->auth.auth;
+		/* Search for a possible matching protection space. */
+		for (space = h->prot_space; space != NULL;
+				space = space->next) {
+			if (!strcmp(space->realm, realm)
+					&& !strcmp(space->scheme, p->scheme)
+					&& space->port == p->port) {
+				p->prot_space = space;
+				return p->prot_space->auth;
+			}
+		}
+	}
+
+	return NULL;
 }
 
 /**
@@ -975,7 +1005,7 @@ const char *urldb_get_auth_details(const char *url)
 bool urldb_get_cert_permissions(const char *url)
 {
 	struct path_data *p;
-	struct host_part *h;
+	const struct host_part *h;
 
 	assert(url);
 
@@ -985,8 +1015,9 @@ bool urldb_get_cert_permissions(const char *url)
 
 	for (; p && p->parent; p = p->parent)
 		/* do nothing */;
+	assert(p);
 
-	h = (struct host_part *)p;
+	h = (const struct host_part *)p;
 
 	return h->permit_invalid_certs;
 }
@@ -1001,48 +1032,63 @@ bool urldb_get_cert_permissions(const char *url)
 void urldb_set_auth_details(const char *url, const char *realm,
 		const char *auth)
 {
-	struct path_data *p;
-	char *urlt, *t1, *t2;
+	struct path_data *p, *pi;
+	struct host_part *h;
+	struct prot_space_data *space, *space_alloc;
+	char *realm_alloc, *auth_alloc, *scheme_alloc;
 
 	assert(url && realm && auth);
 
-	urlt = strdup(url);
-	if (!urlt)
-		return;
-
-	/* strip leafname from URL */
-	t1 = strrchr(urlt, '/');
-	if (t1) {
-		*(t1 + 1) = '\0';
-	}
-
 	/* add url, in case it's missing */
-	urldb_add_url(urlt);
+	urldb_add_url(url);
 
-	p = urldb_find_url(urlt);
-
-	free(urlt);
+	p = urldb_find_url(url);
 
 	if (!p)
 		return;
 
-	/** \todo search subtree for same realm/auth details
-	 * and remove them (as the lookup routine searches up the tree) */
+	/* Search for host_part */
+	for (pi = p; pi->parent != NULL; pi = pi->parent)
+		;
+	h = (struct host_part *)pi;
 
-	t1 = strdup(realm);
-	t2 = strdup(auth);
-
-	if (!t1 || !t2) {
-		free(t1);
-		free(t2);
-		return;
+	/* Search if given URL belongs to a protection space we already know of. */
+	for (space = h->prot_space; space; space = space->next) {
+		if (!strcmp(space->realm, realm)
+				&& !strcmp(space->scheme, p->scheme)
+				&& space->port == p->port)
+			break;
 	}
 
-	free(p->auth.realm);
-	free(p->auth.auth);
+	if (space != NULL) {
+		/* Overrule existing auth. */
+		free(space->auth);
+		space->auth = strdup(auth);
+	} else {
+		/* Create a new protection space. */
+		space = space_alloc = malloc(sizeof(struct prot_space_data));
+		scheme_alloc = strdup(p->scheme);
+		realm_alloc = strdup(realm);
+		auth_alloc = strdup(auth);
 
-	p->auth.realm = t1;
-	p->auth.auth = t2;
+		if (!space_alloc || !scheme_alloc
+				|| !realm_alloc || !auth_alloc) {
+			free(space_alloc);
+			free(scheme_alloc);
+			free(realm_alloc);
+			free(auth_alloc);
+			return;
+		}
+
+		space->scheme = scheme_alloc;
+		space->port = p->port;
+		space->realm = realm_alloc;
+		space->auth = auth_alloc;
+		space->next = h->prot_space;
+		h->prot_space = space;
+	}
+
+	p->prot_space = space;
 }
 
 /**
@@ -1067,6 +1113,7 @@ void urldb_set_cert_permissions(const char *url, bool permit)
 
 	for (; p && p->parent; p = p->parent)
 		/* do nothing */;
+	assert(p);
 
 	h = (struct host_part *)p;
 
@@ -3878,6 +3925,7 @@ void urldb_destroy_host_tree(struct host_part *root)
 {
 	struct host_part *a, *b;
 	struct path_data *p, *q;
+	struct prot_space_data *s, *t;
 
 	/* Destroy children */
 	for (a = root->children; a; a = b) {
@@ -3893,6 +3941,12 @@ void urldb_destroy_host_tree(struct host_part *root)
 
 	/* Root path */
 	urldb_destroy_path_node_content(&root->paths);
+
+	/* Proctection space data */
+	for (s = root->prot_space; s; s = t) {
+		t = s->next;
+		urldb_destroy_prot_space(s);
+	}
 
 	/* And ourselves */
 	free(root->part);
@@ -3955,8 +4009,6 @@ void urldb_destroy_path_node_content(struct path_data *node)
 		bitmap_destroy(node->thumb);
 
 	free(node->urld.title);
-	free(node->auth.realm);
-	free(node->auth.auth);
 
 	for (a = node->cookies; a; a = b) {
 		b = a->next;
@@ -3979,6 +4031,21 @@ void urldb_destroy_cookie(struct cookie_internal_data *c)
 
 	free(c);
 }
+
+/**
+ * Destroy protection space data
+ *
+ * \param space Protection space to destroy
+ */
+void urldb_destroy_prot_space(struct prot_space_data *space)
+{
+	free(space->scheme);
+	free(space->realm);
+	free(space->auth);
+
+	free(space);
+}
+
 
 /**
  * Destroy a search tree

@@ -98,6 +98,7 @@ void ro_gui_401login_open(struct browser_window *bw, const char *host,
 {
 	struct session_401 *session;
 	wimp_w w;
+	const char *auth;
 
 	session = calloc(1, sizeof(struct session_401));
 	if (!session) {
@@ -111,10 +112,28 @@ void ro_gui_401login_open(struct browser_window *bw, const char *host,
 		warn_user("NoMemory", 0);
 		return;
 	}
-	session->uname[0] = '\0';
-	session->pwd[0] = '\0';
+	if (realm == NULL)
+		realm = "Secure Area";
+        auth = urldb_get_auth_details(session->url, realm);
+	if (auth == NULL) {
+		session->uname[0] = '\0';
+		session->pwd[0] = '\0';
+	} else {
+		const char *pwd;
+		size_t pwd_len;
+
+		pwd = strchr(auth, ':');
+		assert(pwd && pwd < auth + sizeof(session->uname));
+		memcpy(session->uname, auth, pwd - auth);
+		session->uname[pwd - auth] = '\0';
+		++pwd;
+		pwd_len = strlen(pwd);
+		assert(pwd_len < sizeof(session->pwd));
+		memcpy(session->pwd, pwd, pwd_len);
+		session->pwd[pwd_len] = '\0';
+	}
 	session->host = strdup(host);
-	session->realm = strdup(realm ? realm : "Secure Area");
+	session->realm = strdup(realm);
 	session->bwin = bw;
 	if ((!session->host) || (!session->realm)) {
 		free(session->host);

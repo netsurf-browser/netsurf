@@ -85,7 +85,7 @@ const char *urldb_get_url(const char *url);
 /* Authentication modification / lookup */
 void urldb_set_auth_details(const char *url, const char *realm,
 		const char *auth);
-const char *urldb_get_auth_details(const char *url);
+const char *urldb_get_auth_details(const char *url, const char *realm);
 
 /* SSL certificate permissions */
 void urldb_set_cert_permissions(const char *url, bool permit);

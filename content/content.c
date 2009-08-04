@@ -443,6 +443,7 @@ struct content * content_create(const char *url)
 	c->http_code = 0;
 	c->no_error_pages = false;
 	c->download = false;
+	c->tried_with_auth = false;
 	c->redirect_count = 0;
 	c->error_count = 0;
 	c->cache_data.req_time = 0;

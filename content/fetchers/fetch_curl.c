@@ -560,7 +560,7 @@ fetch_curl_set_options(struct curl_fetch_info *f)
 		SETOPT(CURLOPT_COOKIE, NULL);
 	}
 
-	if ((auth = urldb_get_auth_details(f->url)) != NULL) {
+	if ((auth = urldb_get_auth_details(f->url, NULL)) != NULL) {
 		SETOPT(CURLOPT_HTTPAUTH, CURLAUTH_ANY);
 		SETOPT(CURLOPT_USERPWD, auth);
 	} else {

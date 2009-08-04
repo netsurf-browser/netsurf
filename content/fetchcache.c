@@ -1,5 +1,6 @@
 /*
  * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2009 John-Mark Bell <jmb@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -37,6 +38,7 @@
 #include "content/content.h"
 #include "content/fetchcache.h"
 #include "content/fetch.h"
+#include "content/urldb.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/talloc.h"
@@ -58,6 +60,7 @@ static void fetchcache_cache_clone(struct content *c,
 static void fetchcache_notmodified(struct content *c, const void *data);
 static void fetchcache_redirect(struct content *c, const void *data,
 		unsigned long size);
+static void fetchcache_auth(struct content *c, const char *realm);
 
 
 /**
@@ -516,14 +519,7 @@ void fetchcache_callback(fetch_msg msg, void *p, const void *data,
 			break;
 
 		case FETCH_AUTH:
-			/* data -> string containing the Realm */
-			LOG(("FETCH_AUTH, '%s'", (const char *)data));
-			c->fetch = 0;
-			msg_data.auth_realm = data;
-			content_broadcast(c, CONTENT_MSG_AUTH, msg_data);
-			/* set the status to ERROR so that the content is
-			 * destroyed in content_clean() */
-			c->status = CONTENT_STATUS_ERROR;
+			fetchcache_auth(c, data);
 			break;
 
 		case FETCH_CERT_ERR:
@@ -1133,6 +1129,92 @@ void fetchcache_redirect(struct content *c, const void *data,
 
 	/* Clean up */
 	free(url);
+	free(referer);
+}
+
+/**
+ * Authentication callback handler
+ */
+
+void fetchcache_auth(struct content *c, const char *realm)
+{
+	char *referer;
+	const char *ref;
+	const char *auth;
+	struct content *parent;
+	bool parent_was_verifiable;
+	union content_msg_data msg_data;
+	char *headers = NULL;
+
+	/* Preconditions */
+	assert(c && realm);
+	assert(c->status == CONTENT_STATUS_TYPE_UNKNOWN);
+
+	/* Extract fetch details */
+	ref = fetch_get_referer(c->fetch);
+	parent = fetch_get_parent(c->fetch);
+	parent_was_verifiable = fetch_get_verifiable(c->fetch);
+
+	/* Clone referer -- original is destroyed in fetch_abort() */
+	referer = ref ? strdup(ref) : NULL;
+
+	fetch_abort(c->fetch);
+	c->fetch = NULL;
+
+	/* Ensure that referer cloning succeeded 
+	 * _must_ be after content invalidation */
+	if (ref && !referer) {
+		LOG(("Failed cloning referer"));
+
+		c->status = CONTENT_STATUS_ERROR;
+		msg_data.error = messages_get("BadRedirect");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+
+		return;
+	}
+
+	/* Now, see if we've got some auth details */
+	auth = urldb_get_auth_details(c->url, realm);
+
+	if (auth == NULL || c->tried_with_auth) {
+		/* No authentication details or we tried what we had, so ask
+		 * our client for them. */
+		c->tried_with_auth = false; /* Allow rety. */
+
+		c->status = CONTENT_STATUS_ERROR;
+		msg_data.auth_realm = realm;
+		content_broadcast(c, CONTENT_MSG_AUTH, msg_data);
+
+		return;
+	}
+	/* Flag we're retry fetching with auth data. Will be used to detect
+	 * wrong auth data so that we can ask our client for better auth. */
+	c->tried_with_auth = true;
+
+	/* We have authentication details. Fetch with them. */
+	/** \todo all the useful things like headers, POST. */
+	c->fetch = fetch_start(c->url, referer,
+			fetchcache_callback, c,
+			c->no_error_pages,
+			NULL, NULL, parent_was_verifiable,
+			parent, &headers);
+	if (c->fetch == NULL) {
+		char error_message[500];
+
+		LOG(("warning: fetch_start failed"));
+		snprintf(error_message, sizeof error_message,
+				messages_get("InvalidURL"),
+				c->url);
+		if (c->no_error_pages) {
+			c->status = CONTENT_STATUS_ERROR;
+			msg_data.error = error_message;
+			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		} else {
+			fetchcache_error_page(c, error_message);
+		}
+	}
+
+	/* Clean up */
 	free(referer);
 }
 
