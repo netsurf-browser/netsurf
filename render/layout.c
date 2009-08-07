@@ -2128,6 +2128,7 @@ bool layout_line(struct box *first, int *width, int *y,
 				b->x += b->margin[LEFT] + b->border[LEFT].width;
 				x = b->x + b->padding[LEFT] + b->width;
 			} else if (b->type == BOX_INLINE_END) {
+				b->height = b->inline_end->height;
 				x += b->padding[RIGHT] +
 						b->border[RIGHT].width +
 						b->margin[RIGHT];
