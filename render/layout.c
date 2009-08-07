@@ -2458,14 +2458,32 @@ bool layout_line(struct box *first, int *width, int *y,
 
 	assert(b != first || (move_y && 0 < used_height && (left || right)));
 
-	/* align baselines of all text boxes by moving their y so that their
-	 * 0.75 point is aligned */
+	/* handle vertical-align by adjusting box y values */
+	/** \todo  proper vertical alignment handling */
 	for (d = first; d != b; d = d->next) {
 		if ((d->type == BOX_INLINE && d->inline_end) ||
 				d->type == BOX_BR ||
 				d->type == BOX_TEXT ||
 				d->type == BOX_INLINE_END) {
-			d->y += 0.75 * (used_height - d->height);
+			css_fixed value = 0;
+			css_unit unit = CSS_UNIT_PX;
+			switch (css_computed_vertical_align(d->style, &value,
+					&unit)) {
+			case CSS_VERTICAL_ALIGN_SUPER:
+			case CSS_VERTICAL_ALIGN_TOP:
+			case CSS_VERTICAL_ALIGN_TEXT_TOP:
+				/* already at top */
+				break;
+			case CSS_VERTICAL_ALIGN_SUB:
+			case CSS_VERTICAL_ALIGN_BOTTOM:
+			case CSS_VERTICAL_ALIGN_TEXT_BOTTOM:
+				d->y += used_height - d->height;
+				break;
+			default:
+			case CSS_VERTICAL_ALIGN_BASELINE:
+				d->y += 0.75 * (used_height - d->height);
+				break;
+			}
 		}
 	}
 
