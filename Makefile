@@ -286,7 +286,7 @@ ifeq ($(TARGET),riscos)
 
   CFLAGS += -I. $(WARNFLAGS) -Driscos				\
 		-std=c99 -D_BSD_SOURCE -D_POSIX_C_SOURCE	\
-		-mpoke-function-name
+		-mpoke-function-name -fno-strict-aliasing
 
   CFLAGS += -I$(GCCSDK_INSTALL_ENV)/include			\
 		-I$(GCCSDK_INSTALL_ENV)/include/libxml2		\
