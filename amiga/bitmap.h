@@ -21,6 +21,7 @@
 #include <exec/types.h>
 #include <proto/graphics.h>
 #include <intuition/classusr.h>
+#include <libraries/Picasso96.h>
 
 struct bitmap {
 	int width;
@@ -30,6 +31,7 @@ struct bitmap {
 	struct BitMap *nativebm;
 	int nativebmwidth;
 	int nativebmheight;
+	RGBFTYPE format;
 	char *url;   /* temporary storage space */
 	char *title; /* temporary storage space */
 };

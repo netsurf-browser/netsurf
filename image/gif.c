@@ -338,7 +338,7 @@ void nsgif_animate(void *p)
  */
 void *nsgif_bitmap_create(int width, int height)
 {
-	return bitmap_create(width, height, BITMAP_NEW);
+	return bitmap_create(width, height, BITMAP_NEW | BITMAP_ABGR);
 }
 
 #endif

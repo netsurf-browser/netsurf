@@ -1,5 +1,5 @@
 /*
- * Copyright 2008,2009 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008, 2009 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -28,6 +28,7 @@
 #include <proto/dos.h>
 #include <proto/intuition.h>
 #include "utils/messages.h"
+#include <graphics/blitattr.h>
 
 /**
  * Create a bitmap.
@@ -53,6 +54,9 @@ void *bitmap_create(int width, int height, unsigned int state)
 		bitmap->height = height;
 		if(state & BITMAP_OPAQUE) bitmap->opaque = true;
 			else bitmap->opaque = false;
+
+		if(state & BITMAP_ABGR) bitmap->format = RGBFB_A8B8G8R8;
+			else bitmap->format = RGBFB_R8G8B8A8;
 	}
 	return bitmap;
 }
@@ -294,9 +298,45 @@ Object *ami_datatype_object_from_bitmap(struct bitmap *bitmap)
 					PDTA_SourceMode,PMODE_V43,
 					TAG_DONE);
 
-		IDoMethod(dto,PDTM_WRITEPIXELARRAY,bitmap_get_buffer(bitmap),
-				PBPAFMT_RGBA,bitmap_get_rowstride(bitmap),0,0,
-				bitmap_get_width(bitmap),bitmap_get_height(bitmap));
+		if(bitmap->format == RGBFB_A8B8G8R8)
+		{
+			struct RenderInfo ri;
+			struct RastPort trp;
+			UBYTE *argb_pixarray = AllocVec(bmhd->bmh_Width * bmhd->bmh_Height *
+										bitmap_get_bpp(bitmap), MEMF_CLEAR);
+			struct BitMap *tbm = ami_getcachenativebm(bitmap, bmhd->bmh_Width,
+								bmhd->bmh_Height, NULL);
+
+			if(argb_pixarray)
+			{
+				ri.Memory = argb_pixarray;
+				ri.BytesPerRow = bitmap_get_rowstride(bitmap);
+				ri.RGBFormat = RGBFB_A8R8G8B8;
+
+				InitRastPort(&trp);
+				trp.BitMap = tbm;
+
+				p96ReadPixelArray((struct RenderInfo *)&ri, 0, 0, &trp, 0, 0,
+								bmhd->bmh_Width, bmhd->bmh_Height);
+
+				if(tbm != bitmap->nativebm)
+				{
+					p96FreeBitMap(tbm);
+				}
+
+				IDoMethod(dto,PDTM_WRITEPIXELARRAY,argb_pixarray,
+						PBPAFMT_ARGB,bitmap_get_rowstride(bitmap),0,0,
+						bitmap_get_width(bitmap),bitmap_get_height(bitmap));
+
+				FreeVec(argb_pixarray);
+			}
+		}
+		else
+		{
+			IDoMethod(dto,PDTM_WRITEPIXELARRAY,bitmap_get_buffer(bitmap),
+					PBPAFMT_RGBA,bitmap_get_rowstride(bitmap),0,0,
+					bitmap_get_width(bitmap),bitmap_get_height(bitmap));
+		}
 	}
 
 	return dto;
@@ -332,13 +372,15 @@ struct BitMap *ami_getcachenativebm(struct bitmap *bitmap,int width,int height,s
 	{
 		ri.Memory = bitmap->pixdata;
 		ri.BytesPerRow = bitmap->width * 4;
-		ri.RGBFormat = RGBFB_R8G8B8A8;
+		ri.RGBFormat = bitmap->format;
 
-		if(tbm = p96AllocBitMap(bitmap->width,bitmap->height,32,0,friendbm,RGBFB_R8G8B8A8))
+		if(tbm = p96AllocBitMap(bitmap->width, bitmap->height, 32, 0,
+								friendbm, bitmap->format))
 		{
 			InitRastPort(&trp);
 			trp.BitMap = tbm;
-			p96WritePixelArray((struct RenderInfo *)&ri,0,0,&trp,0,0,bitmap->width,bitmap->height);
+			p96WritePixelArray((struct RenderInfo *)&ri, 0, 0, &trp, 0, 0,
+								bitmap->width, bitmap->height);
 		}
 
 		if(option_cache_bitmaps == 2)
@@ -354,7 +396,8 @@ struct BitMap *ami_getcachenativebm(struct bitmap *bitmap,int width,int height,s
 		struct BitMap *scaledbm;
 		struct BitScaleArgs bsa;
 
-		scaledbm = p96AllocBitMap(width,height,32,BMF_DISPLAYABLE,friendbm,RGBFB_R8G8B8A8);
+		scaledbm = p96AllocBitMap(width, height, 32, BMF_DISPLAYABLE,
+									friendbm, bitmap->format);
 
 		if(GfxBase->lib_Version >= 53) // AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)
 		{
