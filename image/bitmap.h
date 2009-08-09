@@ -38,11 +38,6 @@
 #define BITMAP_CLEAR_MEMORY	(1 << 3)	/** memory should be wiped */
 #define BITMAP_SUSPENDED	(1 << 4)	/** currently suspended */
 #define BITMAP_READY		(1 << 5)	/** fully initialised */
-#define BITMAP_ABGR			(1 << 6)	/** This bitmap is in ABGR format on
-											big-endian platforms (if not set,
-											bitmap is RGBA).  This flag has
-											no relevance on LE platforms,
-											where data is always ABGR */
 
 #define BITMAP_SAVE_FULL_ALPHA	(1 << 0)	/** save with full alpha channel (if not opaque) */
 

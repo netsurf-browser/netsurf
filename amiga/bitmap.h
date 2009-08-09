@@ -23,6 +23,8 @@
 #include <intuition/classusr.h>
 #include <libraries/Picasso96.h>
 
+#define AMI_BITMAP_FORMAT RGBFB_R8G8B8A8
+
 struct bitmap {
 	int width;
 	int height;
@@ -31,7 +33,6 @@ struct bitmap {
 	struct BitMap *nativebm;
 	int nativebmwidth;
 	int nativebmheight;
-	RGBFTYPE format;
 	char *url;   /* temporary storage space */
 	char *title; /* temporary storage space */
 };
