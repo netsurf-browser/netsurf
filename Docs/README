@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
-  NetSurf README                                                  28 July 2009
+  NetSurf README                                                09 August 2009
 --------------------------------------------------------------------------------
 
   This document should help point you at various useful bits of information.
@@ -30,7 +30,7 @@
   Building
 ----------
   
-  Look at the appropriate BUILDING-* document in this directory for
+  Look at the appropriate BUILDING-* document in the Docs/ directory for
   instructions.
 
   Note, if you want to do a native RISC OS build, the instructions are on
