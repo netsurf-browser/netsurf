@@ -17,10 +17,10 @@
             + GCC 3.4.6 release 3 or later
             + The latest NSTools
 
-  For instructions on how to do all of the above, consult the following
-  document:
+        For instructions on how to do all of the above, consult the following
+        document:
 
-      http://www.netsurf-browser.org/documentation/robuild
+            http://www.netsurf-browser.org/documentation/robuild
 
   If you want to cross-compile NetSurf for RISC OS, use the BUILDING-ROCross
   document.
