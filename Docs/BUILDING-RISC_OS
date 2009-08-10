@@ -27,7 +27,7 @@
 
 
   Building and executing NetSurf
-=================================
+================================
 
   | Note: The version of make supplied with some RISC OS GCC 3 is old and has
   |       a bug that prevents NetSurf from building.  Either ensure that

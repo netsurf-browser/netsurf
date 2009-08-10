@@ -14,7 +14,7 @@
 
 
   Building and executing NetSurf
-=================================
+================================
 
   To build NetSurf on a BeOS or Haiku, provided you have the relevant
   build dependencies installed, simply run:

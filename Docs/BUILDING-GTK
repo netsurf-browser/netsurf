@@ -10,7 +10,7 @@
 
 
   Building and executing NetSurf
-=================================
+================================
 
   First of all, you should examine the contents of Makefile.defaults
   and enable and disable relevant features as you see fit by creating
