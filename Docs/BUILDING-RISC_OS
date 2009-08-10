@@ -33,6 +33,8 @@
   |       a bug that prevents NetSurf from building.  Either ensure that
   |       NSTools is seen before GCC, or replace the make inside "!GCC.bin"
   |       with the make from "!NSTools.bin".
+  |       The minimal version of make you need is v3.81 and can be checked
+  |       with its '--version' command line option.
 
   | Note: The pre-built libraries currently supplied in NSTools are AOF format,
   |       and will not work with GCC4, which requires them to be in ELF format.
