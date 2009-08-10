@@ -146,7 +146,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	if (bw->parent != NULL)
 		/* Attach ourselves into our parent at the right point */
 		nsgtk_gui_window_attach_child(bw->parent->window, g);
-	else {	
+	else {
 		/* Attach our viewport into the scaffold */
 		bool tempback = true;
 		switch (temp_open_background) {
@@ -749,7 +749,7 @@ static GdkCursor *nsgtk_create_menu_cursor(void)
 	mask = gdk_bitmap_create_from_data (NULL, menu_cursor_mask_bits,
 						16, 16);
 
-	r = gdk_cursor_new_from_pixmap(source, mask, &fg, &bg, 8, 8);
+	r = gdk_cursor_new_from_pixmap(source, mask, &fg, &bg, 0, 3);
 	gdk_pixmap_unref(source);
 	gdk_pixmap_unref(mask);
 
