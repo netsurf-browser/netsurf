@@ -116,9 +116,9 @@
       *svn update
 
   This updates your local copy of the source to the latest version.  To build
-  and install the library into NSTools, run the following commands:
+  and install the library into NSTools, run:
 
       *make install
 
-  | Note: If you are using GCC3, you may get a warning about AR when you run
+  | Note: If you are using GCC3, you may get a warning from AR when you run
   |       make.  This can be ignored.
