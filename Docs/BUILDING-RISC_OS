@@ -8,19 +8,19 @@
 
   RISC OS NetSurf should work on RISC OS 4.02 and above.
 
-  Note: This guide assumes that you have the RISC OS SVN client installed,
-        and that you have used it to fetch the NetSurf source.  It also
-        assumes that you have the following requirements installed:
-
-            + OSLib 6.80 or later
-            + Perl 5.8.8 or later
-            + GCC 3.4.6 release 3 or later
-            + The latest NSTools
-
-        For instructions on how to do all of the above, consult the following
-        document:
-
-            http://www.netsurf-browser.org/documentation/robuild
+  | Note: This guide assumes that you have the RISC OS SVN client installed,
+  |       and that you have used it to fetch the NetSurf source.  It also
+  |       assumes that you have the following requirements installed:
+  |
+  |           + OSLib 6.80 or later
+  |           + Perl 5.8.8 or later
+  |           + GCC 3.4.6 release 3 or later
+  |           + The latest NSTools
+  |
+  |       For instructions on how to do all of the above, consult the following
+  |       document:
+  |
+  |           http://www.netsurf-browser.org/documentation/robuild
 
   If you want to cross-compile NetSurf for RISC OS, use the BUILDING-ROCross
   document.
@@ -29,16 +29,16 @@
   Building and executing NetSurf
 =================================
 
-  Note: The version of make supplied with some RISC OS GCC 3 is old and has a
-        bug that prevents NetSurf from building.  Either ensure that NSTools
-        is seen before GCC, or replace the make inside "!GCC.bin" with the
-        make from "!NSTools.bin".
+  | Note: The version of make supplied with some RISC OS GCC 3 is old and has
+  |       a bug that prevents NetSurf from building.  Either ensure that
+  |       NSTools is seen before GCC, or replace the make inside "!GCC.bin"
+  |       with the make from "!NSTools.bin".
 
-  Note: The pre-built libraries currently supplied in NSTools are AOF format,
-        and will not work with GCC4, which requires them to be in ELF format.
-        If you want to build NetSurf with GCC4, you will need to build the
-        libraries yourself.  See "Obtaining NetSurf's dependencies" below for
-        details.
+  | Note: The pre-built libraries currently supplied in NSTools are AOF format,
+  |       and will not work with GCC4, which requires them to be in ELF format.
+  |       If you want to build NetSurf with GCC4, you will need to build the
+  |       libraries yourself.  See "Obtaining NetSurf's dependencies" below for
+  |       details.
 
   You can examine the contents of Makefile.defaults and enable and disable
   features as you see fit by creating a Makefile.config file.  The default
@@ -105,7 +105,7 @@
   sources.
 
   Updating NSTools' copies of the libraries
-------------------------------------------
+-------------------------------------------
 
   Set the CSD to the directory of the library you want to build, set your next
   slot to at least 6000K and in a TaskWindow, run
