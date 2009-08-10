@@ -124,4 +124,4 @@
   To update your NSTools, copy the latest headers from the include directory
   for the library you built into "!NSTools.include" and copy the built library
   from the build-riscos-riscos-release-lib-static.a directory to the
-  "NSTools.lib.a" directory.
+  "!NSTools.lib.a" directory.
