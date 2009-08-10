@@ -33,11 +33,6 @@
   Look at the appropriate BUILDING-* document in the Docs/ directory for
   instructions.
 
-  Note, if you want to do a native RISC OS build, the instructions are on
-  the web site instead:
-
-      http://www.netsurf-browser.org/documentation/robuild
-
   Porting
 ---------
 
