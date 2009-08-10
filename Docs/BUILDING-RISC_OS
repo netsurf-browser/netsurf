@@ -29,12 +29,12 @@
   Building and executing NetSurf
 ================================
 
-  | Note: The version of make supplied with some RISC OS GCC 3 is old and has
-  |       a bug that prevents NetSurf from building.  Either ensure that
-  |       NSTools is seen before GCC, or replace the make inside "!GCC.bin"
-  |       with the make from "!NSTools.bin".
-  |       The minimal version of make you need is v3.81 and can be checked
-  |       with its '--version' command line option.
+  | Note: The version of make supplied with RISC OS GCC 3 is old and has a bug
+  |       that prevents NetSurf from building.  Either ensure that NSTools is
+  |       seen before GCC, or replace the make inside "!GCC.bin" with the make
+  |       from "!NSTools.bin".
+  |       The minimum version of make that works is v3.81.  You can check what
+  |       version you have by running, '*make --version'.
 
   | Note: The pre-built libraries currently supplied in NSTools are AOF format,
   |       and will not work with GCC4, which requires them to be in ELF format.
@@ -87,7 +87,8 @@
 
   The NSTools on the web site is not auto-built, so it may not always have
   the latest versions of the NetSurf project's own libraries.  In this case
-  you will need to build the libraries yourself and update NSTools.
+  you will need to build the libraries yourself and update your copy of
+  NSTools.
 
   Fetching the sources
 ----------------------
@@ -114,14 +115,11 @@
 
       *svn update
 
-  This updates your local copy of the source to the latest version. To build
-  the library, run
+  This updates your local copy of the source to the latest version.  To build
+  and install the library into NSTools, run the following commands:
 
       *make
+      *make install
 
-  If you are using GCC3, you may get a warning about AR.  This can be ignored.
-
-  To update your NSTools, copy the latest headers from the include directory
-  for the library you built into "!NSTools.include" and copy the built library
-  from the build-riscos-riscos-release-lib-static.a directory to the
-  "!NSTools.lib.a" directory.
+  | Note: If you are using GCC3, you may get a warning about AR when you run
+  |       make.  This can be ignored.
