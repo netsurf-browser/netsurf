@@ -84,7 +84,7 @@
   you use GCC3 for native builds.
 
   The NSTools on the web site is not auto-built, so it may not always have
-  the latest versions of the NetSurf project's own libraries. In this case
+  the latest versions of the NetSurf project's own libraries.  In this case
   you will need to build the libraries yourself and update NSTools.
 
   Fetching the sources
@@ -112,8 +112,7 @@
 
       *make
 
-  At the end of the build there will be a warning about AR, which can be
-  ignored.
+  If you are using GCC3, you may get a warning about AR.  This can be ignored.
 
   To update your NSTools, copy the latest headers from the include directory
   for the library you built into "!NSTools.include" and copy the built library
