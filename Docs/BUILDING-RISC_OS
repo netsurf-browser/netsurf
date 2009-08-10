@@ -110,6 +110,11 @@
   Set the CSD to the directory of the library you want to build, set your next
   slot to at least 6000K and in a TaskWindow, run
 
+      *svn update
+
+  This updates your local copy of the source to the latest version. To build
+  the library, run
+
       *make
 
   If you are using GCC3, you may get a warning about AR.  This can be ignored.
