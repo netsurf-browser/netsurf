@@ -2,6 +2,9 @@
   Creating a cross-compilation environment for RISC OS NetSurf
 --------------------------------------------------------------------------------
 
+  Note: If you want to do a native RISC OS build, on a RISC OS computer,
+        consult the BUILDING-RISC_OS file.
+
   These instructions assume that you're starting from ~.
   They also assume that you've got GCCSDK's prerequisites installed.
 
