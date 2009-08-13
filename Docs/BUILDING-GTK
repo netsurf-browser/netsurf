@@ -89,56 +89,32 @@
   configured to use libpng instead of libmng. If you wish to do this, install
   the libpng development package instead.
 
-  Libnsbmp
-----------
+  The NetSurf project's libraries
+---------------------------------
 
-  NetSurf has its own library for decoding and rendering BMPs, ICOs, etc.
-  You can check it out from svn://svn.netsurf-browser.org/trunk/libnsbmp
-  
-  To build and install it:
+  The NetSurf project has developed several libraries which are required by
+  the browser. These are:
+
+  LibParserUtils  --  Parser building utility functions
+  LibWapcaplet    --  String internment
+  Hubbub          --  HTML5 compliant HTML parser
+  LibCSS          --  CSS parser and selection engine
+  LibNSGIF        --  GIF format image decoder
+  LibNSBMP        --  BMP and ICO format image decoder
+
+  To fetch each of these libraries, run the following commands:
+
+      $ svn co svn://svn.netsurf-browser.org/trunk/libparserutils
+      $ svn co svn://svn.netsurf-browser.org/trunk/libwapcaplet
+      $ svn co svn://svn.netsurf-browser.org/trunk/hubbub
+      $ svn co svn://svn.netsurf-browser.org/trunk/libcss
+      $ svn co svn://svn.netsurf-browser.org/trunk/libnsgif
+      $ svn co svn://svn.netsurf-browser.org/trunk/libnsbmp
+
+  To build and install these libraries, simply enter each of their directories
+  and run:
   
       $ sudo make install
-
-  Libnsgif
-----------
-
-  NetSurf has its own library for decoding and rendering GIFs.  You can check
-  it out from svn://svn.netsurf-browser.org/trunk/libnsgif
-  
-  To build and install it:
-
-      $ sudo make install
-
-  Hubbub
---------
-
-  NetSurf requires Hubbub, the project's HTML parser.  To build this, you will
-  also require libparserutils.  Firstly, check out libparserutils from;
-  
-      svn://svn.netsurf-browser.org/trunk/libparserutils
-  
-  and do "sudo make install".  Once this is built and installed, you can check
-  out and build Hubbub.  Check out hubbub from;
-  
-      svn://svn.netsurf-browser.org/trunk/hubbub
-
-  and again do "sudo make install".
-
-  LibCSS
---------
-
-  NetSurf requires LibCSS, the project's CSS parser and selection engine.  To
-  build this, you will also require libwapcaplet.  Firstly, check out
-  libwapcaplet from;
-  
-      svn://svn.netsurf-browser.org/trunk/libwapcaplet
-  
-  and do "sudo make install".  Once this is built and installed, you can check
-  out and build LibCSS.  Check out LibCSS from;
-  
-      svn://svn.netsurf-browser.org/trunk/libcss
-
-  and again do "sudo make install".
 
   Librosprite
 -------------
@@ -173,7 +149,6 @@
 
       svn://svn.netsurf-browser.org/trunk/libharu
 
-
   General requirements
 ----------------------
 
@@ -184,4 +159,3 @@
   This will pull in loads of things, like all the GTK dev libraries, the PNG
   and JPEG libraries, colour management libraries, zlib, OpenSSL etc that
   NetSurf also depends on.
-
