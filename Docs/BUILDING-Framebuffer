@@ -253,6 +253,22 @@ Index: framebuffer/font_freetype.c
 
   and again do the usual "sudo make install".
 
+  LibCSS
+--------
+
+  NetSurf requires LibCSS, the project's CSS parser and selection engine.  To
+  build this, you will also require libwapcaplet.  Firstly, check out
+  libwapcaplet from;
+  
+      svn://svn.netsurf-browser.org/trunk/libwapcaplet
+  
+  and do "sudo make install".  Once this is built and installed, you can check
+  out and build LibCSS.  Check out LibCSS from;
+  
+      svn://svn.netsurf-browser.org/trunk/libcss
+
+  and again do "sudo make install".
+
   Librosprite
 -------------
 
