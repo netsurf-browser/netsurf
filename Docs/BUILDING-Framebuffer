@@ -222,13 +222,13 @@ Index: framebuffer/font_freetype.c
 
   To fetch each of these libraries, run the following commands:
 
-      $ svn co svn://svn.netsurf-browser.org/trunk/libparserutils
-      $ svn co svn://svn.netsurf-browser.org/trunk/libwapcaplet
-      $ svn co svn://svn.netsurf-browser.org/trunk/hubbub
-      $ svn co svn://svn.netsurf-browser.org/trunk/libcss
-      $ svn co svn://svn.netsurf-browser.org/trunk/libnsgif
-      $ svn co svn://svn.netsurf-browser.org/trunk/libnsbmp
-      $ svn co svn://svn.netsurf-browser.org/trunk/libnsfb
+      $ svn co svn://svn.netsurf-browser.org/trunk/libparserutils
+      $ svn co svn://svn.netsurf-browser.org/trunk/libwapcaplet
+      $ svn co svn://svn.netsurf-browser.org/trunk/hubbub
+      $ svn co svn://svn.netsurf-browser.org/trunk/libcss
+      $ svn co svn://svn.netsurf-browser.org/trunk/libnsgif
+      $ svn co svn://svn.netsurf-browser.org/trunk/libnsbmp
+      $ svn co svn://svn.netsurf-browser.org/trunk/libnsfb
 
   To build and install these libraries, simply enter each of their directories
   and run:
