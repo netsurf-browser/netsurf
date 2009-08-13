@@ -65,14 +65,7 @@ struct line_info {
 };
 
 struct text_area {
-
-	int x, y;			/**< Coordinates of the widget
-					 * (top left corner) with respect to
-					 * canvas origin(these don't change
-					 * it is the canvas which gets
-					 * scrolled)
-					 */
-
+	
 	int scroll_x, scroll_y;		/**< scroll offsets of the textarea
 					 * content
 					 */
@@ -144,7 +137,7 @@ static void textarea_normalise_text(struct text_area *ta,
  * \param data user specified data which will be passed to redraw callbacks
  * \return Opaque handle for textarea or 0 on error
  */
-struct text_area *textarea_create(int x, int y, int width, int height,
+struct text_area *textarea_create(int width, int height,
 		unsigned int flags, const plot_font_style_t *style,
 		textarea_redraw_request_callback redraw_request, void *data)
 {
@@ -163,8 +156,6 @@ struct text_area *textarea_create(int x, int y, int width, int height,
 
 	ret->redraw_request = redraw_request;
 	ret->data = data;
-	ret->x = x;
-	ret->y = y;
 	ret->vis_width = width;
 	ret->vis_height = height;
 	ret->scroll_x = 0;
@@ -191,8 +182,8 @@ struct text_area *textarea_create(int x, int y, int width, int height,
 			(style->size / FONT_SIZE_SCALE)))), 72));
 
 	ret->caret_pos.line = ret->caret_pos.char_off = 0;
-	ret->caret_x = ret->x + MARGIN_LEFT;
-	ret->caret_y = ret->y;
+	ret->caret_x = MARGIN_LEFT;
+	ret->caret_y = 0;
 	ret->selection_start = -1;
 	ret->selection_end = -1;
 
@@ -200,22 +191,6 @@ struct text_area *textarea_create(int x, int y, int width, int height,
 	ret->lines = NULL;
 
 	return ret;
-}
-
-
-/**
- * Change the position of a textarea. The text area is redrawn
- *
- * \param ta  the textarea to change position of
- * \param x   X coordinate of the the new position
- * \param y   Y coordinate of the the new position
- */
-void textarea_set_position(struct text_area *ta, int x, int y)
-{
-	ta->x = x;
-	ta->y = y;
-	ta->redraw_request(ta->data, ta->x, ta->y, ta->x + ta->vis_width,
-			ta->y + ta->vis_height);
 }
 
 
@@ -461,9 +436,9 @@ bool textarea_set_caret(struct text_area *ta, int caret)
 				b_off - ta->lines[ta->caret_pos.line].b_start,
     				&x);
 
-		x += ta->x + MARGIN_LEFT - ta->scroll_x;
+		x += MARGIN_LEFT - ta->scroll_x;
 
-		y = ta->line_height * ta->caret_pos.line + ta->y - ta->scroll_y;
+		y = ta->line_height * ta->caret_pos.line - ta->scroll_y;
 
 		/* set the caret coordinate beyond the redraw rectangle */
 		ta->caret_x = x - 2;
@@ -510,21 +485,20 @@ bool textarea_set_caret(struct text_area *ta, int caret)
 				b_off - ta->lines[ta->caret_pos.line].b_start,
     				&x);
 
-		x += ta->x + MARGIN_LEFT - ta->scroll_x;
+		x += MARGIN_LEFT - ta->scroll_x;
 		ta->caret_x = x;
-		y = ta->line_height * ta->caret_pos.line + ta->y - ta->scroll_y;
+		y = ta->line_height * ta->caret_pos.line - ta->scroll_y;
 		ta->caret_y = y;
 
 		if (textarea_scroll_visible(ta))
-			ta->redraw_request(ta->data, ta->x, ta->y,
-					ta->x + ta->vis_width,
-					ta->y + ta->vis_height);
+			ta->redraw_request(ta->data, 0, 0,
+					ta->vis_width,
+					ta->vis_height);
 		else {
-			x0 = max(x - 1, ta->x + MARGIN_LEFT);
-			y0 = max(y - 1, ta->y);
-			x1 = min(x + 1, ta->x + ta->vis_width - MARGIN_RIGHT);
-			y1 = min(y + ta->line_height + 1,
-					ta->y + ta->vis_height);
+			x0 = max(x - 1, MARGIN_LEFT);
+			y0 = max(y - 1, 0);
+			x1 = min(x + 1, ta->vis_width - MARGIN_RIGHT);
+			y1 = min(y + ta->line_height + 1, ta->vis_height);
 			ta->redraw_request(ta->data, x0, y0, x1, y1);
 		}
 	}
@@ -550,8 +524,8 @@ unsigned int textarea_get_xy_offset(struct text_area *ta, int x, int y)
 	if (!ta->line_count)
 		return 0;
 
-	x = x - ta->x - MARGIN_LEFT + ta->scroll_x;
-	y = y - ta->y + ta->scroll_y;
+	x = x - MARGIN_LEFT + ta->scroll_x;
+	y = y + ta->scroll_y;
 
 	if (x < 0)
 		x = 0;
@@ -740,8 +714,8 @@ bool textarea_reflow(struct text_area *ta, unsigned int line)
  * \param x1	 right X coordinate of redraw area
  * \param y1	 bottom Y coordinate of redraw area
  */
-void textarea_redraw(struct text_area *ta, int clip_x0, int clip_y0,
-		int clip_x1, int clip_y1)
+void textarea_redraw(struct text_area *ta, int x, int y, 
+		int clip_x0, int clip_y0, int clip_x1, int clip_y1)
 {
 	int line0, line1, line;
 	int chars, offset;
@@ -758,8 +732,8 @@ void textarea_redraw(struct text_area *ta, int clip_x0, int clip_y0,
 	y0 = clip_y0;
 	y1 = clip_y1;
 
-	if (x1 < ta->x || x0 > ta->x + ta->vis_width || y1 < ta->y ||
-		   y0 > ta->y + ta->vis_height)
+	if (x1 < x || x0 > x + ta->vis_width || y1 < y ||
+		   y0 > y + ta->vis_height)
 		/* Textarea outside the clipping rectangle */
 		return;
 
@@ -770,8 +744,8 @@ void textarea_redraw(struct text_area *ta, int clip_x0, int clip_y0,
         if (ta->flags & TEXTAREA_READONLY)
             plot_style_fill_bg.fill_colour = READONLY_BG;
 
-	line0 = (y0 - ta->y + ta->scroll_y) / ta->line_height - 1;
-	line1 = (y1 - ta->y + ta->scroll_y) / ta->line_height + 1;
+	line0 = (y0 - y + ta->scroll_y) / ta->line_height - 1;
+	line1 = (y1 - y + ta->scroll_y) / ta->line_height + 1;
 
 	if (line0 < 0)
 		line0 = 0;
@@ -784,25 +758,25 @@ void textarea_redraw(struct text_area *ta, int clip_x0, int clip_y0,
 	if (line1 < line0)
 		line1 = line0;
 
-	if (x0 < ta->x)
-		x0 = ta->x;
-	if (y0 < ta->y)
-		y0 = ta->y;
-	if (x1 > ta->x + ta->vis_width)
-		x1 = ta->x + ta->vis_width;
-	if (y1 > ta->y + ta->vis_height)
-		y1 = ta->y + ta->vis_height;
+	if (x0 < x)
+		x0 = x;
+	if (y0 < y)
+		y0 = y;
+	if (x1 > x + ta->vis_width)
+		x1 = x + ta->vis_width;
+	if (y1 > y + ta->vis_height)
+		y1 = y + ta->vis_height;
 
 	plot.clip(x0, y0, x1, y1);
 	plot.rectangle(x0, y0, x1, y1, &plot_style_fill_bg);
-	plot.rectangle(ta->x, ta->y,
-		       ta->x + ta->vis_width - 1, ta->y + ta->vis_height - 1,
+	plot.rectangle(x, y,
+		       x + ta->vis_width - 1, y + ta->vis_height - 1,
 		       &pstyle_stroke_border);
 
-	if (x0 < ta->x + MARGIN_LEFT)
-		x0 = ta->x + MARGIN_LEFT;
-	if (x1 > ta->x + ta->vis_width - MARGIN_RIGHT)
-		x1 = ta->x + ta->vis_width - MARGIN_RIGHT;
+	if (x0 < x + MARGIN_LEFT)
+		x0 = x + MARGIN_LEFT;
+	if (x1 > x + ta->vis_width - MARGIN_RIGHT)
+		x1 = x + ta->vis_width - MARGIN_RIGHT;
 	plot.clip(x0, y0, x1, y1);
 
 	if (line0 > 0)
@@ -812,7 +786,7 @@ void textarea_redraw(struct text_area *ta, int clip_x0, int clip_y0,
 		c_pos = 0;
 
 	for (line = line0; (line <= line1) &&
-			(ta->y + line * ta->line_height <= y1 + ta->scroll_y);
+			(y + line * ta->line_height <= y1 + ta->scroll_y);
 			line++) {
 		if (ta->lines[line].b_length == 0)
 			continue;
@@ -850,10 +824,10 @@ void textarea_redraw(struct text_area *ta, int clip_x0, int clip_y0,
        							b_start);
 				nsfont.font_width(&ta->fstyle, line_text,
 						b_start, &x0);
-				x0 += ta->x + MARGIN_LEFT;
+				x0 += x + MARGIN_LEFT;
 			}
 			else {
-				x0 = ta->x + MARGIN_LEFT;
+				x0 = x + MARGIN_LEFT;
 				b_start = 0;
 			}
 
@@ -877,11 +851,11 @@ void textarea_redraw(struct text_area *ta, int clip_x0, int clip_y0,
 					b_start]),
 					b_end, &x1);
 			x1 += x0;
-			plot.rectangle(x0 - ta->scroll_x, ta->y +
+			plot.rectangle(x0 - ta->scroll_x, y +
 				       line * ta->line_height
 				       + 1 - ta->scroll_y,
 				       x1 - ta->scroll_x,
-				       ta->y + (line + 1) * ta->line_height -
+				       y + (line + 1) * ta->line_height -
 				       1 - ta->scroll_y,
 				       &pstyle_fill_selection);
 
@@ -889,23 +863,24 @@ void textarea_redraw(struct text_area *ta, int clip_x0, int clip_y0,
 
 		c_pos += c_len;
 
-		y0 = ta->y + line * ta->line_height + 0.75 * ta->line_height;
+		y0 = y + line * ta->line_height + 0.75 * ta->line_height;
 
 		ta->fstyle.background =
 			   	(ta->flags & TEXTAREA_READONLY) ?
 					READONLY_BG : BACKGROUND_COL,
 
-		plot.text(ta->x + MARGIN_LEFT - ta->scroll_x, y0 - ta->scroll_y,
+		plot.text(x + MARGIN_LEFT - ta->scroll_x, y0 - ta->scroll_y,
 			  	ta->text + ta->lines[line].b_start,
 			   	ta->lines[line].b_length,
 				&ta->fstyle);
 	}
 
 
-	if (ta->caret_x >= clip_x0 && ta->caret_x <= clip_x1) {
-		if (ta->caret_y >= clip_y0 && ta->caret_y <= clip_y1)
-			plot.line(ta->caret_x, ta->caret_y, ta->caret_x,
-					ta->caret_y + ta->line_height,
+	if (x + ta->caret_x >= clip_x0 && x + ta->caret_x <= clip_x1) {
+		if (y + ta->caret_y >= clip_y0 && y + ta->caret_y <= clip_y1)
+			plot.line(x + ta->caret_x, y + ta->caret_y,
+				  	x + ta->caret_x,
+					y + ta->caret_y + ta->line_height,
 					&pstyle_stroke_caret);
 	}
 }
@@ -1226,8 +1201,8 @@ bool textarea_keypress(struct text_area *ta, uint32_t key)
 		textarea_set_caret(ta, caret);
 	//TODO:redraw only the important part
 	if (redraw) {
-		ta->redraw_request(ta->data, ta->x, ta->y,
-				ta->x + ta->vis_width, ta->y + ta->vis_height);
+		ta->redraw_request(ta->data, 0, 0,
+				ta->vis_width, ta->vis_height);
 	}
 
 	return true;
@@ -1248,10 +1223,10 @@ bool textarea_scroll_visible(struct text_area *ta)
 	if (ta->caret_pos.char_off == -1)
 		return false;
 
-	x0 = ta->x + MARGIN_LEFT;
-	x1 = ta->x + ta->vis_width - MARGIN_RIGHT;
-	y0 = ta->y;
-	y1 = ta->y + ta->vis_height;
+	x0 = MARGIN_LEFT;
+	x1 = ta->vis_width - MARGIN_RIGHT;
+	y0 = 0;
+	y1 = ta->vis_height;
 
 	index = textarea_get_caret(ta);
 
@@ -1266,8 +1241,8 @@ bool textarea_scroll_visible(struct text_area *ta)
 			&x);
 
 	/* top-left of caret */
-	x += ta->x + MARGIN_LEFT - ta->scroll_x;
-	y = ta->line_height * ta->caret_pos.line + ta->y - ta->scroll_y;
+	x += MARGIN_LEFT - ta->scroll_x;
+	y = ta->line_height * ta->caret_pos.line - ta->scroll_y;
 
 	/* check and change vertical scroll */
 	if (y < y0) {
@@ -1312,9 +1287,9 @@ bool textarea_mouse_action(struct text_area *ta, browser_mouse_state mouse,
 			textarea_set_caret_xy(ta, x, y);
 		if (ta->selection_start != -1) {
 			ta->selection_start = ta->selection_end = -1;
-			ta->redraw_request(ta->data, ta->x, ta->y,
-					ta->x + ta->vis_width,
-					ta->y + ta->vis_height);
+			ta->redraw_request(ta->data, 0, 0,
+					ta->vis_width,
+					ta->vis_height);
 		}
 	}
 	else if (mouse & BROWSER_MOUSE_DRAG_1) {
@@ -1381,8 +1356,7 @@ bool textarea_select(struct text_area *ta, int c_start, int c_end)
 			return textarea_set_caret(ta, c_start);
 	}
 
-	ta->redraw_request(ta->data, ta->x, ta->y, ta->x + ta->vis_width,
-			ta->y + ta->vis_height);
+	ta->redraw_request(ta->data, 0, 0, ta->vis_width, ta->vis_height);
 
 	return true;
 }

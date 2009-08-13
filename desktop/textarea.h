@@ -38,16 +38,16 @@ struct text_area;
 typedef void(*textarea_redraw_request_callback)(void *data, int x, int y,
 		int width, int height);
 
-struct text_area *textarea_create(int x, int y, int width, int height, 
+struct text_area *textarea_create(int width, int height, 
 		unsigned int flags, const plot_font_style_t *style,
 		textarea_redraw_request_callback redraw_request, void *data);
-void textarea_set_position(struct text_area *ta, int x, int y);
 void textarea_destroy(struct text_area *ta);
 bool textarea_set_text(struct text_area *ta, const char *text);
 int textarea_get_text(struct text_area *ta, char *buf, unsigned int len);
 bool textarea_set_caret(struct text_area *ta, int caret);
 int textarea_get_caret(struct text_area *ta);
-void textarea_redraw(struct text_area *ta, int x0, int y0, int x1, int y1);
+void textarea_redraw(struct text_area *ta, int x, int y,
+		int x0, int y0, int x1, int y1);
 bool textarea_keypress(struct text_area *ta, uint32_t key);
 bool textarea_mouse_action(struct text_area *ta, browser_mouse_state mouse,
 		int x, int y);
