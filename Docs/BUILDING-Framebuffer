@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
-  Build Instructions for Framebuffer NetSurf                      24 July 2009
+  Build Instructions for Framebuffer NetSurf                    13 August 2009
 --------------------------------------------------------------------------------
 
   This document provides instructions for building the Framebuffer version of 
@@ -18,8 +18,8 @@
   will either need to install the dependencies, or set them to NO.
   
   You should then obtain NetSurf's dependencies, keeping in mind which options
-  you have enabled in the configuration file.  See the next section for
-  specifics.
+  you have enabled in the configuration file.  See the "Obtaining NetSurf's
+  dependencies" section for specifics.
   
   Once done, to build Framebuffer NetSurf on a UNIX-like platform, simply run:
 
@@ -37,7 +37,6 @@
 
   The NETSURFRES environment variable may require setting to enable
   NetSurf to find its resources.
-
 
 
   Fonts
@@ -138,7 +137,7 @@ Index: framebuffer/font_freetype.c
 +
          return glyph;
  }
- 
+
 
   Selecting a frontend and appropriate options  
 ==============================================  
@@ -169,6 +168,7 @@ Index: framebuffer/font_freetype.c
   The documentation of libnsfb should be consulted for futher
   information about supported frontends and their configuration.
 
+
   Obtaining NetSurf's build dependencies
 ========================================
 
@@ -177,7 +177,6 @@ Index: framebuffer/font_freetype.c
   developed as part of the NetSurf project have not had official releases.
   Hopefully they will soon be released with downloadable tarballs and packaged
   in common distros.  For now, you'll have to make do with svn checkouts.
-
 
   Package installation
 ----------------------
@@ -207,67 +206,34 @@ Index: framebuffer/font_freetype.c
   configured to use libpng instead of libmng. If you wish to do this, install
   the libpng development package instead.
 
-  Libnsfb
----------
+  The NetSurf project's libraries
+---------------------------------
 
-  The NetSurf framebuffer library provides the underlying interface to 
-  the underlying input and output devices.
-  You can check it out from svn://svn.netsurf-browser.org/trunk/libnsfb
+  The NetSurf project has developed several libraries which are required by
+  the browser. These are:
 
-  To build and install it:
+  LibParserUtils  --  Parser building utility functions
+  LibWapcaplet    --  String internment
+  Hubbub          --  HTML5 compliant HTML parser
+  LibCSS          --  CSS parser and selection engine
+  LibNSGIF        --  GIF format image decoder
+  LibNSBMP        --  BMP and ICO format image decoder
+  LibNSFB         --  Framebuffer abstraction
+
+  To fetch each of these libraries, run the following commands:
+
+      $ svn co svn://svn.netsurf-browser.org/trunk/libparserutils
+      $ svn co svn://svn.netsurf-browser.org/trunk/libwapcaplet
+      $ svn co svn://svn.netsurf-browser.org/trunk/hubbub
+      $ svn co svn://svn.netsurf-browser.org/trunk/libcss
+      $ svn co svn://svn.netsurf-browser.org/trunk/libnsgif
+      $ svn co svn://svn.netsurf-browser.org/trunk/libnsbmp
+      $ svn co svn://svn.netsurf-browser.org/trunk/libnsfb
+
+  To build and install these libraries, simply enter each of their directories
+  and run:
   
       $ sudo make install
-
-  Libnsbmp
-----------
-
-  NetSurf has its own library for decoding and rendering BMPs, ICOs, etc.
-  You can check it out from svn://svn.netsurf-browser.org/trunk/libnsbmp
-  
-  To build and install it:
-  
-      $ sudo make install
-
-  Libnsgif
-----------
-
-  NetSurf has its own library for decoding and rendering GIFs.  You can check
-  it out from svn://svn.netsurf-browser.org/trunk/libnsgif
-  
-  To build and install it:
-
-      $ sudo make install
-
-  Hubbub
---------
-
-  NetSurf requires Hubbub, the project's HTML parser.  To build this, you will
-  also require libparserutils.  Firstly, check out libparserutils from;
-  
-      svn://svn.netsurf-browser.org/trunk/libparserutils
-  
-  and do the usual "sudo make install".  Once this is built and installed, you
-  can check out and build Hubbub.  Check out hubbub from;
-  
-      svn://svn.netsurf-browser.org/trunk/hubbub
-
-  and again do the usual "sudo make install".
-
-  LibCSS
---------
-
-  NetSurf requires LibCSS, the project's CSS parser and selection engine.  To
-  build this, you will also require libwapcaplet.  Firstly, check out
-  libwapcaplet from;
-  
-      svn://svn.netsurf-browser.org/trunk/libwapcaplet
-  
-  and do "sudo make install".  Once this is built and installed, you can check
-  out and build LibCSS.  Check out LibCSS from;
-  
-      svn://svn.netsurf-browser.org/trunk/libcss
-
-  and again do "sudo make install".
 
   Librosprite
 -------------
@@ -302,7 +268,6 @@ Index: framebuffer/font_freetype.c
 
       svn://svn.netsurf-browser.org/trunk/libharu
 
-
   General requirements
 ----------------------
 
@@ -312,4 +277,3 @@ Index: framebuffer/font_freetype.c
   Installing these libraries will often will pull in loads of things,
   like the PNG and JPEG libraries, colour management libraries, zlib,
   OpenSSL etc that NetSurf also depends on.
-
