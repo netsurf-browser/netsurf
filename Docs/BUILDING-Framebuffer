@@ -25,18 +25,32 @@
 
       $ make TARGET=framebuffer
 
-  If that produces errors, you probably don't have some of NetSurf's
-  build dependencies installed. See "Obtaining NetSurf's dependencies"
-  below. Or turn off the complaining features in your
-  Makefile.config. You may need to "make clean" before attempting to
-  build after installing the dependencies.
+  If that produces errors, you probably don't have some of NetSurf's build
+  dependencies installed. See "Obtaining NetSurf's dependencies" below.
+  Or turn off the complaining features in your Makefile.config.  You may
+  need to "make clean" before attempting to build after installing the 
+  dependencies.
 
   Run NetSurf by executing the "nsfb" program:
 
       $ ./nsfb
 
-  The NETSURFRES environment variable may require setting to enable
-  NetSurf to find its resources.
+  | Note: NetSurf uses certain resources at run time.  In order to find these
+  |       resources, it searches three locations:
+  |
+  |           1. ~/.netsurf/
+  |           2. $NETSURFRES/
+  |           3. /usr/share/netsurf/
+  |
+  |       In the build tree, the resources are located at
+  |
+  |           framebuffer/res
+  |
+  |       Setting $NETSURFRES to point at the resources in the build tree
+  |       will enable you to run NetSurf from here without installation.
+  |       To do this, run:
+  |
+  |           export NETSURFRES=`pwd`/framebuffer/res
 
 
   Fonts
