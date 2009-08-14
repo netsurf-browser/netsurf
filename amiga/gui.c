@@ -126,9 +126,9 @@ BOOL rmbtrapped;
 BOOL locked_screen = FALSE;
 BOOL screen_closed = FALSE;
 
-extern colour css_scrollbar_fg_colour;
-extern colour css_scrollbar_bg_colour;
-extern colour css_scrollbar_arrow_colour;
+extern colour scroll_widget_fg_colour;
+extern colour scroll_widget_bg_colour;
+extern colour scroll_widget_arrow_colour;
 
 static Object *mouseptrobj[AMI_LASTPOINTER+1];
 static struct BitMap *mouseptrbm[AMI_LASTPOINTER+1];
@@ -335,9 +335,16 @@ void gui_init(int argc, char** argv)
 	}
 
 	nscss_screen_dpi = INTTOFIX(72);
-	css_scrollbar_fg_colour = 0x00aaaaaa;
-	css_scrollbar_bg_colour = 0x00833c3c;
-	css_scrollbar_arrow_colour = 0x00d6d6d6;
+	scroll_widget_fg_colour = 0x00aaaaaa;
+	scroll_widget_bg_colour = 0x00833c3c;
+	scroll_widget_arrow_colour = 0x00d6d6d6;
+
+	/* The following line disables the popupmenu.class select menu
+	** This will become a user option when/if popupmenu.class is
+	** updated to show more items than can fit in one column vertically
+	*/
+
+	option_core_select_menu = true;
 
 	if((!option_accept_language) || (option_accept_language[0] == '\0'))
 	{
@@ -2582,6 +2589,7 @@ void gui_window_set_status(struct gui_window *g, const char *text)
 	ULONG cur_tab = 0;
 
 	if(!g) return;
+	if(!text) return;
 
 	if(g->tab_node) GetAttr(CLICKTAB_Current,g->shared->gadgets[GID_TABS],(ULONG *)&cur_tab);
 
