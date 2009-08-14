@@ -489,23 +489,32 @@ int scroll_get_offset(struct scroll *scroll)
 
 
 /**
- * Set the length of the scroll and the visible part of the scrolled area.
+ * Set the length of the scroll and the visible or scrolled part of the scrolled
+ * area.
  *
  * \param scroll		the scroll to set the values for
- * \param length		the new scroll length to be set
- * \param scrolled_visible	the new value of the visible part of the
+ * \param length		-1 or the new scroll length to be set
+ * \param scrolled_visible	-1 or the new value of the visible part of the
  * 				scrolled area to be set
+ * \param scrolled_dimension	-1 or the new dimension of the scrolled content
  */
-void scroll_set_length_and_visible(struct scroll *scroll, int length,
-		int scrolled_visible)
+void scroll_set_extents(struct scroll *scroll, int length,
+		int scrolled_visible, int scrolled_dimension)
 {
 	int well_length;
 
-	scroll->length = length;
-	scroll->scrolled_vis = scrolled_visible;
+	if (length != -1)
+		scroll->length = length;
+	if (scrolled_visible != -1)
+		scroll->scrolled_vis = scrolled_visible;
+	if (scrolled_dimension != -1)
+		scroll->scrolled_d = scrolled_dimension;
+		
 	well_length = length - 2 * SCROLLBAR_WIDTH;
 
 	scroll->bar_len = (well_length * scrolled_visible) /
+			scroll->scrolled_d;
+	scroll->bar_off = (well_length * scroll->area_scroll) /
 			scroll->scrolled_d;
 }
 

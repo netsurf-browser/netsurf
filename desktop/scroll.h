@@ -71,8 +71,8 @@ bool scroll_redraw(struct scroll *scroll, int x, int y,
 void scroll_set(struct scroll *scroll, int scroll_val, bool bar);
 int scroll_get_offset(struct scroll *scroll);
 
-void scroll_set_length_and_visible(struct scroll *scroll, int length,
-		int scrolled_visible);
+void scroll_set_extents(struct scroll *scroll, int length,
+		int scrolled_visible, int scrolled_dimension);
 
 bool scroll_is_horizontal(struct scroll *scroll);
 

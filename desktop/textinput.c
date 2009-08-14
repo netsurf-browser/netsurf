@@ -2098,6 +2098,9 @@ void textarea_reflow(struct browser_window *bw, struct box *textarea,
 	textarea->width = width;
 	textarea->height = height;
 	layout_calculate_descendant_bboxes(textarea);
+	box_handle_scrollbars(bw, textarea,
+			box_hscrollbar_present(textarea),
+			box_vscrollbar_present(textarea));
 }
 
 

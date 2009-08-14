@@ -997,15 +997,14 @@ void box_duplicate_update(struct box *box,
  * Applies the given scroll setup to a box. This includes scroll
  * creation/deletion as well as scroll dimension updates.
  *
+ * \param bw		browser window in which the box is located
  * \param box		the box to handle the scrolls for
- * \param x		X coordinate of the box
- * \param y		Y coordinate of the box
  * \param bottom	whether the horizontal scrollbar should be present
  * \param right		whether the vertical scrollbar should be present
  * \return		true on success false otherwise
  */
-bool box_handle_scrollbars(struct box *box, int x, int y, bool bottom,
-		bool right)
+bool box_handle_scrollbars(struct browser_window *bw, struct box *box,
+		bool bottom, bool right)
 {
 	struct browser_scroll_data *data;
 	int padding_width, padding_height;
@@ -1021,7 +1020,7 @@ bool box_handle_scrollbars(struct box *box, int x, int y, bool bottom,
 	}
 	
 	if (!right && box->scroll_y != NULL) {
-		data = scroll_get_data(box->scroll_x);
+		data = scroll_get_data(box->scroll_y);
 		scroll_destroy(box->scroll_y);
 		free(data);
 		box->scroll_y = NULL;
@@ -1038,7 +1037,7 @@ bool box_handle_scrollbars(struct box *box, int x, int y, bool bottom,
 				warn_user("NoMemory", 0);
 				return false;
 			}
-			data->bw = current_redraw_browser;
+			data->bw = bw;
 			data->box = box;
 			if (!scroll_create(false,
 					padding_height,
@@ -1049,8 +1048,10 @@ bool box_handle_scrollbars(struct box *box, int x, int y, bool bottom,
 					&(box->scroll_y)))
 				return false;
 		} else 
-			scroll_set_length_and_visible(box->scroll_y,
-					padding_height, box->height);
+			scroll_set_extents(box->scroll_y,
+					padding_height, box->height,
+     					box->descendant_y1 -
+					box->descendant_y0);
 	}
 	if (bottom) {
 		if (box->scroll_x == NULL) {
@@ -1060,7 +1061,7 @@ bool box_handle_scrollbars(struct box *box, int x, int y, bool bottom,
 				warn_user("NoMemory", 0);
 				return false;
 			}
-			data->bw = current_redraw_browser;
+			data->bw = bw;
 			data->box = box;
 			if (!scroll_create(true,
 					padding_width -
@@ -1072,10 +1073,12 @@ bool box_handle_scrollbars(struct box *box, int x, int y, bool bottom,
 					&box->scroll_x))
 				return false;
 		} else
-			scroll_set_length_and_visible(box->scroll_x,
+			scroll_set_extents(box->scroll_x,
 					padding_width -
 					(right ? SCROLLBAR_WIDTH : 0),
-					box->width);
+					box->width,
+     					box->descendant_x1 -
+					box->descendant_x0);
 	}
 	
 	if (right && bottom)

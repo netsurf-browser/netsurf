@@ -91,6 +91,7 @@
 #include <stdio.h>
 #include <libxml/HTMLparser.h>
 
+#include "desktop/browser.h"
 #include "css/css.h"
 
 struct box;
@@ -314,8 +315,8 @@ bool box_visible(struct box *box);
 void box_dump(FILE *stream, struct box *box, unsigned int depth);
 bool box_extract_link(const char *rel, const char *base, char **result);
 
-bool box_handle_scrollbars(struct box *box, int x, int y, bool bottom,
-		bool right);
+bool box_handle_scrollbars(struct browser_window *bw, struct box *box,
+		bool bottom, bool right);
 bool box_vscrollbar_present(const struct box *box);
 bool box_hscrollbar_present(const struct box *box);
 
