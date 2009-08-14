@@ -5,6 +5,7 @@
  * Copyright 2005-2006 Adrian Lees <adrianl@users.sourceforge.net>
  * Copyright 2006 Rob Kendrick <rjek@netsurf-browser.org>
  * Copyright 2008 Michael Drake <tlsa@netsurf-browser.org>
+ * Copyright 2009 Paul Blokus <paul_pl@users.sourceforge.net> 
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -40,6 +41,7 @@
 #include "desktop/textinput.h"
 #include "desktop/options.h"
 #include "desktop/print.h"
+#include "desktop/scroll.h"
 #include "image/bitmap.h"
 #include "render/box.h"
 #include "render/font.h"
@@ -89,22 +91,8 @@ static bool html_redraw_text_decoration_inline(struct box *box, int x, int y,
 		float scale, colour colour, float ratio);
 static bool html_redraw_text_decoration_block(struct box *box, int x, int y,
 		float scale, colour colour, float ratio);
-static bool html_redraw_scrollbars(struct box *box, float scale,
-		int x, int y, int padding_width, int padding_height,
-		colour background_colour);
 
 bool html_redraw_debug = false;
-
-/** Overflow scrollbar colours
- *
- * Overflow scrollbar colours can be set by front end code to try to match
- * scrollbar colours used on the desktop.
- *
- * If a front end doesn't set scrollbar colours, these defaults are used.
- */
-colour css_scrollbar_fg_colour = 0x00d9d9d9; /* light grey */
-colour css_scrollbar_bg_colour = 0x006b6b6b; /* mid grey */
-colour css_scrollbar_arrow_colour = 0x00444444; /* dark grey */
 
 /**
  * Draw a CONTENT_HTML using the current set of plotters (plot).
@@ -131,7 +119,8 @@ bool html_redraw(struct content *c, int x, int y,
 		float scale, colour background_colour)
 {
 	struct box *box;
-	bool result, want_knockout;
+	bool result = true, want_knockout;
+	bool select, select_only;
 	plot_style_t pstyle_fill_bg = {
 		.fill_type = PLOT_OP_TYPE_SOLID,
 		.fill_colour = background_colour,
@@ -144,18 +133,53 @@ bool html_redraw(struct content *c, int x, int y,
 	if (want_knockout)
 		knockout_plot_start(&plot);
 
-	/* clear to background colour */
-	result = plot.clip(clip_x0, clip_y0, clip_x1, clip_y1);
+	/* The select menu needs special treating because, when opened, it
+	 * reaches beyond its layout box.
+	 */
+	select = false;
+	select_only = false;
+	if (current_redraw_browser != NULL &&
+			current_redraw_browser->visible_select_menu != NULL) {
+		struct form_control *control =
+				current_redraw_browser->visible_select_menu;
+		select = true;
+		/* check if the redraw rectangle is completely inside of the
+		   select menu */
+		select_only = form_clip_inside_select_menu(control, scale,
+				clip_x0, clip_y0, clip_x1, clip_y1);
+	}
+	
+	if (!select_only) {
+		/* clear to background colour */
+		result = plot.clip(clip_x0, clip_y0, clip_x1, clip_y1);
+	
+		if (c->data.html.background_colour != NS_TRANSPARENT)
+			pstyle_fill_bg.fill_colour =
+					c->data.html.background_colour;
+	
+		result &= plot.rectangle(clip_x0, clip_y0, clip_x1, clip_y1,
+				&pstyle_fill_bg);
+	
+		result &= html_redraw_box(box, x, y,
+				clip_x0, clip_y0, clip_x1, clip_y1,
+				scale, pstyle_fill_bg.fill_colour);
+	}
 
-	if (c->data.html.background_colour != NS_TRANSPARENT)
-		pstyle_fill_bg.fill_colour = c->data.html.background_colour;
-
-	result &= plot.rectangle(clip_x0, clip_y0, clip_x1, clip_y1, &pstyle_fill_bg);
-
-	result &= html_redraw_box(box, x, y,
-			clip_x0, clip_y0, clip_x1, clip_y1,
-			scale, pstyle_fill_bg.fill_colour);
-
+	if (select) {
+		int menu_x, menu_y;
+		box = current_redraw_browser->visible_select_menu->box;
+		box_coords(box, &menu_x, &menu_y);
+	
+		menu_x -= box->border[LEFT].width;
+		menu_y += box->height + box->border[BOTTOM].width +
+				box->padding[BOTTOM] + box->padding[TOP];
+		result &= form_redraw_select_menu(
+				current_redraw_browser->visible_select_menu,
+				x + menu_x, y + menu_y,
+    				current_redraw_browser->scale,
+				clip_x0, clip_y0, clip_x1, clip_y1);
+	}
+	
 	if (want_knockout)
 		knockout_plot_end();
 
@@ -195,6 +219,7 @@ bool html_redraw_box(struct box *box,
 	int x_scrolled, y_scrolled;
 	struct box *bg_box = NULL;
 	css_color bgcol = 0;
+	bool has_x_scroll, has_y_scroll;
 
 	if (html_redraw_printing && box->printed)
 		return true;
@@ -622,8 +647,8 @@ bool html_redraw_box(struct box *box,
 			return false;
 
 	if (box->object) {
-		x_scrolled = x - box->scroll_x * scale;
-		y_scrolled = y - box->scroll_y * scale;
+		x_scrolled = x - scroll_get_offset(box->scroll_x) * scale;
+		y_scrolled = y - scroll_get_offset(box->scroll_y) * scale;
 		if (!content_redraw(box->object,
 				x_scrolled + padding_left,
 				y_scrolled + padding_top,
@@ -664,23 +689,52 @@ bool html_redraw_box(struct box *box,
 	/* list marker */
 	if (box->list_marker)
 		if (!html_redraw_box(box->list_marker,
-				x_parent + box->x - box->scroll_x,
-				y_parent + box->y - box->scroll_y,
+				x_parent + box->x -
+				scroll_get_offset(box->scroll_x),
+				y_parent + box->y -
+				scroll_get_offset(box->scroll_y),
 				clip_x0, clip_y0, clip_x1, clip_y1,
 				scale, current_background_color))
 			return false;
 
 	/* scrollbars */
-	if (box->style && box->type != BOX_BR && box->type != BOX_TABLE &&
-			box->type != BOX_INLINE &&
+	if (current_redraw_browser && box->style && box->type != BOX_BR &&
+			box->type != BOX_TABLE && box->type != BOX_INLINE &&
 			(css_computed_overflow(box->style) == 
 				CSS_OVERFLOW_SCROLL ||
 			css_computed_overflow(box->style) == 
-				CSS_OVERFLOW_AUTO))
-		if (!html_redraw_scrollbars(box, scale, x, y,
-				padding_width, padding_height,
-				current_background_color))
+				CSS_OVERFLOW_AUTO)) {
+		
+		has_x_scroll = false;
+		has_y_scroll = false;
+		
+		has_x_scroll = box_hscrollbar_present(box);
+		
+		has_y_scroll = box_vscrollbar_present(box);
+		
+		if (!box_handle_scrollbars(box,
+		     		x_parent + box->x, y_parent + box->y,
+				has_x_scroll, has_y_scroll))
 			return false;
+		
+		if (box->scroll_x != NULL)
+			scroll_redraw(box->scroll_x,
+					x_parent + box->x,
+     					y_parent + box->y + box->padding[TOP] +
+					box->height + box->padding[BOTTOM] -
+					SCROLLBAR_WIDTH,				
+					clip_x0, clip_y0, clip_x1, clip_y1,
+     					scale);
+		if (box->scroll_y != NULL)
+			scroll_redraw(box->scroll_y,
+					x_parent + box->x + box->padding[LEFT] +
+					box->width + box->padding[RIGHT] -
+					SCROLLBAR_WIDTH,
+					y_parent + box->y,
+					clip_x0, clip_y0, clip_x1, clip_y1,
+     					scale);
+	}
+
 
 	if (box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
 			box->type == BOX_TABLE_CELL || box->object)
@@ -717,16 +771,20 @@ bool html_redraw_box_children(struct box *box,
 
 		if (c->type != BOX_FLOAT_LEFT && c->type != BOX_FLOAT_RIGHT)
 			if (!html_redraw_box(c,
-					x_parent + box->x - box->scroll_x,
-					y_parent + box->y - box->scroll_y,
+					x_parent + box->x -
+					scroll_get_offset(box->scroll_x),
+					y_parent + box->y -
+					scroll_get_offset(box->scroll_y),
 					clip_x0, clip_y0, clip_x1, clip_y1,
 					scale, current_background_color))
 				return false;
 	}
 	for (c = box->float_children; c; c = c->next_float)
 		if (!html_redraw_box(c,
-				x_parent + box->x - box->scroll_x,
-				y_parent + box->y - box->scroll_y,
+				x_parent + box->x -
+				scroll_get_offset(box->scroll_x),
+				y_parent + box->y -
+				scroll_get_offset(box->scroll_y),
 				clip_x0, clip_y0, clip_x1, clip_y1,
 				scale, current_background_color))
 			return false;
@@ -1956,320 +2014,4 @@ bool html_redraw_text_decoration_block(struct box *box, int x, int y,
 		}
 	}
 	return true;
-}
-
-static inline bool
-html_redraw_scrollbar_rectangle(int x0, int y0, int x1, int y1, colour c,
-		bool inset)
-{
-	static plot_style_t c0 = {
-		.stroke_type = PLOT_OP_TYPE_SOLID,
-		.stroke_width = 1,
-	};
-
-	static plot_style_t c1 = {
-		.stroke_type = PLOT_OP_TYPE_SOLID,
-		.stroke_width = 1,
-	};
-
-	static plot_style_t c2 = {
-		.stroke_type = PLOT_OP_TYPE_SOLID,
-		.stroke_width = 1,
-	};
-
-	if (inset) {
-		c0.stroke_colour = darken_colour(c);
-		c1.stroke_colour = lighten_colour(c);
-	} else {
-		c0.stroke_colour = lighten_colour(c);
-		c1.stroke_colour = darken_colour(c);
-	}
-	c2.stroke_colour = blend_colour(c0.stroke_colour, c1.stroke_colour);
-
-	if (!plot.line(x0, y0, x1, y0, &c0)) return false;
-	if (!plot.line(x1, y0, x1, y1 + 1, &c1)) return false;
-	if (!plot.line(x1, y0, x1, y0 + 1, &c2)) return false;
-	if (!plot.line(x1, y1, x0, y1, &c1)) return false;
-	if (!plot.line(x0, y1, x0, y0, &c0)) return false;
-	if (!plot.line(x0, y1, x0, y1 + 1, &c2)) return false;
-	return true;
-}
-
-/**
- * Plot scrollbars for a scrolling box.
- *
- * \param  box	  scrolling box
- * \param  scale  scale for redraw
- * \param  x	  coordinate of box
- * \param  y	  coordinate of box
- * \param  padding_width   width of padding box
- * \param  padding_height  height of padding box
- * \return true if successful, false otherwise
- */
-
-bool html_redraw_scrollbars(struct box *box, float scale,
-		int x, int y, int padding_width, int padding_height,
-		colour background_colour)
-{
-	const int w = SCROLLBAR_WIDTH * scale;
-	bool vscroll, hscroll;
-	int well_height, bar_top, bar_height;
-	int well_width, bar_left, bar_width;
-	int v[6]; /* array of triangle vertices */
-	plot_style_t pstyle_css_scrollbar_bg_colour = {
-		.fill_type = PLOT_OP_TYPE_SOLID,
-		.fill_colour = css_scrollbar_bg_colour,
-	};
-	plot_style_t pstyle_css_scrollbar_fg_colour = {
-		.fill_type = PLOT_OP_TYPE_SOLID,
-		.fill_colour = css_scrollbar_fg_colour,
-	};
-	plot_style_t pstyle_css_scrollbar_arrow_colour = {
-		.fill_type = PLOT_OP_TYPE_SOLID,
-		.fill_colour = css_scrollbar_arrow_colour,
-	};
-
-	box_scrollbar_dimensions(box, padding_width, padding_height, w,
-			&vscroll, &hscroll,
-			&well_height, &bar_top, &bar_height,
-			&well_width, &bar_left, &bar_width);
-
-
-	/* horizontal scrollbar */
-	if (hscroll) {
-		/* scrollbar outline */
-		if (!html_redraw_scrollbar_rectangle(x,
-				y + padding_height - w,
-				x + padding_width - 1,
-				y + padding_height - 1,
-				css_scrollbar_bg_colour, true))
-			return false;
-		/* left arrow icon border */
-		if (!html_redraw_scrollbar_rectangle(x + 1,
-				y + padding_height - w + 1,
-				x + w - 2,
-				y + padding_height - 2,
-				css_scrollbar_fg_colour, false))
-			return false;
-		/* left arrow icon background */
-		if (!plot.rectangle(x + 2,
-				y + padding_height - w + 2,
-				x + w - 2,
-				y + padding_height - 2,
-				&pstyle_css_scrollbar_fg_colour))
-			return false;
-		/* left arrow */
-		v[0] = x + w / 4;
-		v[1] = y + padding_height - w / 2;
-		v[2] = x + w * 3 / 4;
-		v[3] = y + padding_height - w * 3 / 4;
-		v[4] = x + w * 3 / 4;
-		v[5] = y + padding_height - w / 4;
-		if (!plot.polygon(v, 3, &pstyle_css_scrollbar_arrow_colour))
-			return false;
-		/* scroll well background */
-		if (!plot.rectangle(x + w - 1,
-				y + padding_height - w + 1,
-				x + w + well_width + (vscroll ? 2 : 1),
-				y + padding_height - 1,
-				&pstyle_css_scrollbar_bg_colour))
-			return false;
-		/* scroll position indicator bar */
-		if (!html_redraw_scrollbar_rectangle(x + w + bar_left,
-				y + padding_height - w + 1,
-				x + w + bar_left + bar_width + (vscroll? 1 : 0),
-				y + padding_height - 2,
-				css_scrollbar_fg_colour, false))
-			return false;
-		if (!plot.rectangle(x + w + bar_left + 1,
-				y + padding_height - w + 2,
-				x + w + bar_left + bar_width + (vscroll? 1 : 0),
-				y + padding_height - 2,
-				&pstyle_css_scrollbar_fg_colour))
-			return false;
-		/* right arrow icon border */
-		if (!html_redraw_scrollbar_rectangle(x + w + well_width + 2,
-				y + padding_height - w + 1,
-				x + w + well_width + w - (vscroll ? 1 : 2),
-				y + padding_height - 2,
-				css_scrollbar_fg_colour, false))
-			return false;
-		/* right arrow icon background */
-		if (!plot.rectangle(x + w + well_width + 3,
-				y + padding_height - w + 2,
-				x + w + well_width + w - (vscroll ? 1 : 2),
-				y + padding_height - 2,
-				&pstyle_css_scrollbar_fg_colour))
-			return false;
-		/* right arrow */
-		v[0] = x + w + well_width + w * 3 / 4 + (vscroll ? 1 : 0);
-		v[1] = y + padding_height - w / 2;
-		v[2] = x + w + well_width + w / 4 + (vscroll ? 1 : 0);
-		v[3] = y + padding_height - w * 3 / 4;
-		v[4] = x + w + well_width + w / 4 + (vscroll ? 1 : 0);
-		v[5] = y + padding_height - w / 4;
-		if (!plot.polygon(v, 3, &pstyle_css_scrollbar_arrow_colour))
-			return false;
-	}
-
-	/* vertical scrollbar */
-	if (vscroll) {
-		/* outline */
-		if (!html_redraw_scrollbar_rectangle(x + padding_width - w,
-						     y,
-						     x + padding_width - 1,
-						     y + padding_height - 1,
-						     css_scrollbar_bg_colour,
-						     true))
-			return false;
-		/* top arrow background */
-		if (!html_redraw_scrollbar_rectangle(x + padding_width - w + 1,
-						     y + 1,
-						     x + padding_width - 2,
-						     y + w - 2,
-						     css_scrollbar_fg_colour,
-						     false))
-			return false;
-		if (!plot.rectangle(x + padding_width - w + 2,
-				    y + 2,
-				    x + padding_width - 2,
-				    y + w - 2,
-				    &pstyle_css_scrollbar_fg_colour))
-			return false;
-		/* up arrow */
-		v[0] = x + padding_width - w / 2;
-		v[1] = y + w / 4;
-		v[2] = x + padding_width - w * 3 / 4;
-		v[3] = y + w * 3 / 4;
-		v[4] = x + padding_width - w / 4;
-		v[5] = y + w * 3 / 4;
-		if (!plot.polygon(v, 3, &pstyle_css_scrollbar_arrow_colour))
-			return false;
-		/* scroll well background */
-		if (!plot.rectangle(x + padding_width - w + 1,
-				y + w - 1,
-				x + padding_width - 1,
-				y + padding_height - w + 1,
-				&pstyle_css_scrollbar_bg_colour))
-			return false;
-		/* scroll position indicator bar */
-		if (!html_redraw_scrollbar_rectangle(x + padding_width - w + 1,
-				y + w + bar_top,
-				x + padding_width - 2,
-				y + w + bar_top + bar_height,
-				css_scrollbar_fg_colour, false))
-			return false;
-		if (!plot.rectangle(x + padding_width - w + 2,
-				y + w + bar_top + 1,
-				x + padding_width - 2,
-				y + w + bar_top + bar_height,
-				&pstyle_css_scrollbar_fg_colour))
-			return false;
-		/* bottom arrow background */
-		if (!html_redraw_scrollbar_rectangle(x + padding_width - w + 1,
-				y + padding_height - w + 1,
-				x + padding_width - 2,
-				y + padding_height - 2,
-				css_scrollbar_fg_colour, false))
-			return false;
-		if (!plot.rectangle(x + padding_width - w + 2,
-				y + padding_height - w + 2,
-				x + padding_width - 2,
-				y + padding_height - 2,
-				&pstyle_css_scrollbar_fg_colour))
-			return false;
-		/* down arrow */
-		v[0] = x + padding_width - w / 2;
-		v[1] = y + w + well_height + w * 3 / 4;
-		v[2] = x + padding_width - w * 3 / 4;
-		v[3] = y + w + well_height + w / 4;
-		v[4] = x + padding_width - w / 4;
-		v[5] = y + w + well_height + w / 4;
-		if (!plot.polygon(v, 3, &pstyle_css_scrollbar_arrow_colour))
-			return false;
-	}
-
-	return true;
-}
-
-
-/**
- * Determine if a box has a vertical scrollbar.
- *
- * \param  box  scrolling box
- * \return the box has a vertical scrollbar
- */
-
-bool box_vscrollbar_present(const struct box * const box)
-{
-	return box->descendant_y0 < -box->border[TOP].width ||
-			box->padding[TOP] + box->height + box->padding[BOTTOM] +
-			box->border[BOTTOM].width < box->descendant_y1;
-}
-
-
-/**
- * Determine if a box has a horizontal scrollbar.
- *
- * \param  box  scrolling box
- * \return the box has a horizontal scrollbar
- */
-
-bool box_hscrollbar_present(const struct box * const box)
-{
-	return box->descendant_x0 < -box->border[LEFT].width ||
-			box->padding[LEFT] + box->width + box->padding[RIGHT] +
-			box->border[RIGHT].width < box->descendant_x1;
-}
-
-
-/**
- * Calculate scrollbar dimensions and positions for a box.
- *
- * \param  box		   scrolling box
- * \param  padding_width   scaled width of padding box
- * \param  padding_height  scaled height of padding box
- * \param  w		   scaled scrollbar width
- * \param  vscroll	   updated to vertical scrollbar present
- * \param  hscroll	   updated to horizontal scrollbar present
- * \param  well_height	   updated to vertical well height
- * \param  bar_top	   updated to top position of vertical scrollbar
- * \param  bar_height	   updated to height of vertical scrollbar
- * \param  well_width	   updated to horizontal well width
- * \param  bar_left	   updated to left position of horizontal scrollbar
- * \param  bar_width	   updated to width of horizontal scrollbar
- */
-
-void box_scrollbar_dimensions(const struct box * const box,
-		const int padding_width, const int padding_height, const int w,
-		bool * const vscroll, bool * const hscroll,
-		int * const well_height,
-		int * const bar_top, int * const bar_height,
-		int * const well_width,
-		int * const bar_left, int * const bar_width)
-{
-	*vscroll = box_vscrollbar_present(box);
-	*hscroll = box_hscrollbar_present(box);
-	*well_height = padding_height - w - w;
-	*bar_top = 0;
-	*bar_height = *well_height;
-	if (box->descendant_y1 - box->descendant_y0 != 0) {
-		*bar_top = (float) *well_height * (float) box->scroll_y /
-				(float) (box->descendant_y1 -
-				box->descendant_y0);
-		*bar_height = (float) *well_height * (float) box->height /
-				(float) (box->descendant_y1 -
-				box->descendant_y0);
-	}
-	*well_width = padding_width - w - w - (*vscroll ? w : 0);
-	*bar_left = 0;
-	*bar_width = *well_width;
-	if (box->descendant_x1 - box->descendant_x0 != 0) {
-		*bar_left = (float) *well_width * (float) box->scroll_x /
-				(float) (box->descendant_x1 -
-				box->descendant_x0);
-		*bar_width = (float) *well_width * (float) box->width /
-				(float) (box->descendant_x1 -
-				box->descendant_x0);
-	}
 }

@@ -27,6 +27,7 @@
 #include <inttypes.h>
 #include <stdbool.h>
 #include <time.h>
+
 #include "render/html.h"
 
 struct box;
@@ -40,7 +41,7 @@ struct selection;
 struct browser_window;
 struct url_data;
 struct bitmap;
-
+struct scroll_msg_data;
 
 typedef bool (*browser_caret_callback)(struct browser_window *bw,
 	uint32_t key, void *p);
@@ -88,30 +89,25 @@ struct browser_window {
 	/** Current drag status. */
 	enum {
 		DRAGGING_NONE,
-		DRAGGING_VSCROLL,
-		DRAGGING_HSCROLL,
 		DRAGGING_SELECTION,
 		DRAGGING_PAGE_SCROLL,
-		DRAGGING_2DSCROLL,
 		DRAGGING_FRAME
 	} drag_type;
 
-	/** Box currently being scrolled, or 0. */
-	struct box *scrolling_box;
 	/** Mouse position at start of current scroll drag. */
 	int drag_start_x;
 	int drag_start_y;
 	/** Scroll offsets at start of current scroll draw. */
 	int drag_start_scroll_x;
 	int drag_start_scroll_y;
-	/** Well dimensions for current scroll drag. */
-	int drag_well_width;
-	int drag_well_height;
 	/** Frame resize directions for current frame resize drag. */
 	unsigned int drag_resize_left : 1;
 	unsigned int drag_resize_right : 1;
 	unsigned int drag_resize_up : 1;
 	unsigned int drag_resize_down : 1;
+	
+	/** Scroll capturing all mouse events */
+	struct scroll *scroll;
 
 	/** Referrer for current fetch, or 0. */
 	char *referer;
@@ -174,6 +170,8 @@ struct browser_window {
 
 	/** Last time a link was followed in this window */
 	unsigned int last_action;
+	
+	struct form_control *visible_select_menu;
 };
 
 
@@ -214,6 +212,10 @@ typedef enum {
 					 * (eg. Alt) */
 } browser_mouse_state;
 
+struct browser_scroll_data {
+	struct browser_window *bw;
+	struct box *box;
+};
 
 extern struct browser_window *current_redraw_browser;
 extern bool browser_reformat_pending;
@@ -257,6 +259,11 @@ void browser_redraw_box(struct content *c, struct box *box);
 void browser_form_submit(struct browser_window *bw, struct browser_window *target,
 		struct form *form, struct form_control *submit_button);
 
+void browser_scroll_callback(void *client_data,
+		struct scroll_msg_data *scroll_data);
+void browser_select_menu_callback(void *client_data,
+		int x, int y, int width, int height);
+		
 void browser_window_redraw_rect(struct browser_window *bw, int x, int y,
 		int width, int height);
 

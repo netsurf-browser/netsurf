@@ -1182,6 +1182,7 @@ gboolean nsgtk_history_expose_event(GtkWidget *widget,
 
 	history_redraw(bw->history);
 
+	current_widget = NULL;
 	g_object_unref(current_gc);
 #ifdef CAIRO_VERSION
 	cairo_destroy(current_cr);

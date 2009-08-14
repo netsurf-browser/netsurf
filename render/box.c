@@ -29,11 +29,13 @@
 #include "content/content.h"
 #include "css/css.h"
 #include "css/dump.h"
+#include "desktop/scroll.h"
 #include "desktop/options.h"
 #include "render/box.h"
 #include "render/form.h"
 #include "utils/log.h"
 #include "utils/talloc.h"
+#include "utils/utils.h"
 
 static bool box_contains_point(struct box *box, int x, int y, bool *physically);
 
@@ -80,7 +82,7 @@ struct box * box_create(css_computed_style *style,
 	box->descendant_x1 = box->descendant_y1 = 0;
 	for (i = 0; i != 4; i++)
 		box->margin[i] = box->padding[i] = box->border[i].width = 0;
-	box->scroll_x = box->scroll_y = 0;
+	box->scroll_x = box->scroll_y = NULL;
 	box->min_width = 0;
 	box->max_width = UNKNOWN_MAX_WIDTH;
 	box->byte_offset = 0;
@@ -226,6 +228,10 @@ void box_free_box(struct box *box)
 	if (!box->clone) {
 		if (box->gadget)
 			form_free_control(box->gadget);
+		if (box->scroll_x != NULL)
+			scroll_destroy(box->scroll_x);
+		if (box->scroll_y != NULL)
+			scroll_destroy(box->scroll_y);
 	}
 
 	talloc_free(box);
@@ -251,8 +257,8 @@ void box_coords(struct box *box, int *x, int *y)
 			} while (!box->float_children);
 		} else
 			box = box->parent;
-		*x += box->x - box->scroll_x;
-		*y += box->y - box->scroll_y;
+		*x += box->x - scroll_get_offset(box->scroll_x);
+		*y += box->y - scroll_get_offset(box->scroll_y);
 	}
 }
 
@@ -328,8 +334,10 @@ struct box *box_at_point(struct box *box, const int x, const int y,
 	/* consider floats second, since they will often overlap other boxes */
 	for (child = box->float_children; child; child = child->next_float) {
 		if (box_contains_point(child, x - bx, y - by, &physically)) {
-			*box_x = bx + child->x - child->scroll_x;
-			*box_y = by + child->y - child->scroll_y;
+			*box_x = bx + child->x -
+					scroll_get_offset(child->scroll_x);
+			*box_y = by + child->y -
+					scroll_get_offset(child->scroll_y);
 
 			if (physically)
 				return child;
@@ -345,8 +353,10 @@ non_float_children:
 		if (box_is_float(child))
 			continue;
 		if (box_contains_point(child, x - bx, y - by, &physically)) {
-			*box_x = bx + child->x - child->scroll_x;
-			*box_y = by + child->y - child->scroll_y;
+			*box_x = bx + child->x -
+					scroll_get_offset(child->scroll_x);
+			*box_y = by + child->y -
+					scroll_get_offset(child->scroll_y);
 
 			if (physically)
 				return child;
@@ -370,16 +380,18 @@ siblings:
 	/* siblings and siblings of ancestors */
 	while (box) {
 		if (box_is_float(box)) {
-			bx -= box->x - box->scroll_x;
-			by -= box->y - box->scroll_y;
+			bx -= box->x - scroll_get_offset(box->scroll_x);
+			by -= box->y - scroll_get_offset(box->scroll_y);
 			for (sibling = box->next_float; sibling;
 					sibling = sibling->next_float) {
 				if (box_contains_point(sibling,
 						x - bx, y - by, &physically)) {
 					*box_x = bx + sibling->x -
-							sibling->scroll_x;
+							scroll_get_offset(
+							sibling->scroll_x);
 					*box_y = by + sibling->y -
-							sibling->scroll_y;
+							scroll_get_offset(
+							sibling->scroll_y);
 
 					if (physically)
 						return sibling;
@@ -398,8 +410,8 @@ siblings:
 			goto non_float_children;
 
 		} else {
-			bx -= box->x - box->scroll_x;
-			by -= box->y - box->scroll_y;
+			bx -= box->x - scroll_get_offset(box->scroll_x);
+			by -= box->y - scroll_get_offset(box->scroll_y);
 			for (sibling = box->next; sibling;
 					sibling = sibling->next) {
 				if (box_is_float(sibling))
@@ -407,9 +419,11 @@ siblings:
 				if (box_contains_point(sibling, x - bx, y - by,
 						&physically)) {
 					*box_x = bx + sibling->x -
-							sibling->scroll_x;
+							scroll_get_offset(
+							sibling->scroll_x);
 					*box_y = by + sibling->y -
-							sibling->scroll_y;
+							scroll_get_offset(
+							sibling->scroll_y);
 
 					if (physically)
 						return sibling;
@@ -977,4 +991,124 @@ void box_duplicate_update(struct box *box,
 				(int (*)(const void *, const void *))box_compare_dict_elements);
 		box->next_float = box_dict_element->new;
 	}
+}
+
+/**
+ * Applies the given scroll setup to a box. This includes scroll
+ * creation/deletion as well as scroll dimension updates.
+ *
+ * \param box		the box to handle the scrolls for
+ * \param x		X coordinate of the box
+ * \param y		Y coordinate of the box
+ * \param bottom	whether the horizontal scrollbar should be present
+ * \param right		whether the vertical scrollbar should be present
+ * \return		true on success false otherwise
+ */
+bool box_handle_scrollbars(struct box *box, int x, int y, bool bottom,
+		bool right)
+{
+	struct browser_scroll_data *data;
+	int padding_width, padding_height;
+	
+	padding_width = box->width + box->padding[RIGHT] + box->padding[LEFT];
+	padding_height = box->height + box->padding[TOP] + box->padding[BOTTOM];
+	
+	if (!bottom && box->scroll_x != NULL) {
+		data = scroll_get_data(box->scroll_x);
+		scroll_destroy(box->scroll_x);
+		free(data);
+		box->scroll_x = NULL;
+	}
+	
+	if (!right && box->scroll_y != NULL) {
+		data = scroll_get_data(box->scroll_x);
+		scroll_destroy(box->scroll_y);
+		free(data);
+		box->scroll_y = NULL;
+	}
+	
+	if (!bottom && !right)
+		return true;
+	
+	if (right) {
+		if (box->scroll_y == NULL) {
+			data = malloc(sizeof(struct browser_scroll_data));
+			if (data == NULL) {
+				LOG(("malloc failed"));
+				warn_user("NoMemory", 0);
+				return false;
+			}
+			data->bw = current_redraw_browser;
+			data->box = box;
+			if (!scroll_create(false,
+					padding_height,
+					box->descendant_y1 - box->descendant_y0,
+     					box->height,
+					data,
+     					browser_scroll_callback,
+					&(box->scroll_y)))
+				return false;
+		} else 
+			scroll_set_length_and_visible(box->scroll_y,
+					padding_height, box->height);
+	}
+	if (bottom) {
+		if (box->scroll_x == NULL) {
+			data = malloc(sizeof(struct browser_scroll_data));
+			if (data == NULL) {
+				LOG(("malloc failed"));
+				warn_user("NoMemory", 0);
+				return false;
+			}
+			data->bw = current_redraw_browser;
+			data->box = box;
+			if (!scroll_create(true,
+					padding_width -
+					(right ? SCROLLBAR_WIDTH : 0),
+					box->descendant_x1 - box->descendant_x0,
+     					box->width,
+					data,
+     					browser_scroll_callback,
+					&box->scroll_x))
+				return false;
+		} else
+			scroll_set_length_and_visible(box->scroll_x,
+					padding_width -
+					(right ? SCROLLBAR_WIDTH : 0),
+					box->width);
+	}
+	
+	if (right && bottom)
+		scroll_make_pair(box->scroll_x, box->scroll_y);
+	
+	return true;
+}
+
+/**
+ * Determine if a box has a vertical scrollbar.
+ *
+ * \param  box  scrolling box
+ * \return the box has a vertical scrollbar
+ */
+
+bool box_vscrollbar_present(const struct box * const box)
+{
+	return box->descendant_y0 < -box->border[TOP].width ||
+			box->padding[TOP] + box->height + box->padding[BOTTOM] +
+			box->border[BOTTOM].width < box->descendant_y1;
+}
+
+
+/**
+ * Determine if a box has a horizontal scrollbar.
+ *
+ * \param  box  scrolling box
+ * \return the box has a horizontal scrollbar
+ */
+
+bool box_hscrollbar_present(const struct box * const box)
+{
+	return box->descendant_x0 < -box->border[LEFT].width ||
+			box->padding[LEFT] + box->width + box->padding[RIGHT] +
+			box->border[RIGHT].width < box->descendant_x1;
 }

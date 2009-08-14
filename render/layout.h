@@ -27,8 +27,6 @@
 #ifndef _NETSURF_RENDER_LAYOUT_H_
 #define _NETSURF_RENDER_LAYOUT_H_
 
-#define SCROLLBAR_WIDTH 16
-
 struct box;
 
 bool layout_document(struct content *content, int width, int height);

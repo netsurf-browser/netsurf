@@ -699,7 +699,13 @@ ScrollPLeft:Cliquez pour faire défiler d'une page vers la gauche
 ScrollH:Tirez la barre pour la faire défiler horizontalement
 ScrollPRight:Cliquez pour faire défiler d'une page vers la droite
 ScrollRight:Cliquez sur la flèche pour faire défiler vers la droite
+ScrollBoth:Move your mouse while keeping the button pressed to scroll the content
 
+# Select menu - displayed in status bar
+#
+SelectClick:Click on entry to select it
+SelectMClick:Click on entry to select it, multiple options can be selected
+SelectClose:Click to close the select menu
 
 # Saving
 # ======
@@ -761,7 +767,7 @@ HelpToolbar3:\Tle bouton de recharge.|M\Srecharger cette page.|M\Arecharger cett
 HelpToolbar4:\Tle bouton Accueil.|M\Saller à votre page d'accueil.
 HelpToolbar5:\Tle bouton d'historique.|M\Souvrir la \w d'historique locale.|M\Aopen the global history \w.
 HelpToolbar6:\Tle bouton de sauvegarde.|M\Ssauver le document en cours.
-HelpToolbar7:\Tle bouton d'impression.|M\Simprimer cette page.|MOuvre une bo�te de dialogue pour l'impression.
+HelpToolbar7:\Tle bouton d'impression.|M\Simprimer cette page.|MOuvre une bo�te de dialogue pour l'impression.
 HelpToolbar8:\Tle bouton de favoris.|M\Souvrir la \w de gestion des favoris.|M\Aajouter cette adresse aux favoris.
 HelpToolbar9:\Tle bouton de changement d'échelle.|M\Sredimensionner la page, texte et images comprises.
 HelpToolbar10:\Tle bouton de recherche.|M\Strouver des occurences de fragment de texte dans une page.

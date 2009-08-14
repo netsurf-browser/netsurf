@@ -250,6 +250,8 @@ void gui_init(int argc, char** argv)
 	if (nsgtk_throbber == NULL)
 		die("Unable to load throbber image.\n");
 
+	option_core_select_menu = true;
+	
 	find_resource(buf, "Choices", "~/.netsurf/Choices");
 	LOG(("Using '%s' as Preferences file", buf));
 	options_file_location = strdup(buf);

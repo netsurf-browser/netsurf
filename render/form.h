@@ -1,6 +1,7 @@
 /*
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2009 Paul Blokus <paul_pl@users.sourceforge.net> 
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -25,11 +26,13 @@
 #define _NETSURF_RENDER_FORM_H_
 
 #include <stdbool.h>
+#include "desktop/browser.h"
 #include "utils/config.h"
 
 struct box;
 struct form_control;
 struct form_option;
+struct form_select_menu;
 
 /** Form submit method. */
 typedef enum {
@@ -105,6 +108,7 @@ struct form_control {
 			int num_selected;
 			/** Currently selected item, if num_selected == 1. */
 			struct form_option *current;
+			struct form_select_menu *menu;
 		} select;
 	} data;
 
@@ -129,6 +133,19 @@ struct form_successful_control {
 	struct form_successful_control *next;	/**< Next in linked list. */
 };
 
+/**
+ * Called by the select menu when it wants an area to be redrawn. The
+ * coordinates are menu origin relative.
+ *
+ * \param client_data	data which was passed to form_open_select_menu
+ * \param x		X coordinate of redraw rectangle
+ * \param y		Y coordinate of redraw rectangle
+ * \param width		width of redraw rectangle
+ * \param height	height of redraw rectangle
+ */
+typedef void(*select_menu_redraw_callback)(void *client_data,
+		int x, int y, int width, int height);
+
 struct form *form_new(void *node, const char *action, const char *target, 
 		form_method method, const char *charset, 
 		const char *doc_charset);
@@ -144,5 +161,22 @@ bool form_successful_controls(struct form *form,
 char *form_url_encode(struct form *form,
 		struct form_successful_control *control);
 void form_free_successful(struct form_successful_control *control);
+
+bool form_open_select_menu(void *client_data,
+		struct form_control *control,
+		select_menu_redraw_callback redraw_callback,
+  		struct browser_window *bw);
+void form_free_select_menu(struct form_control *control);
+bool form_redraw_select_menu(struct form_control *control, int x, int y,
+		float scale,
+  		int clip_x0, int clip_y0, int clip_x1, int clip_y1);
+bool form_clip_inside_select_menu(struct form_control *control, float scale,
+		int clip_x0, int clip_y0, int clip_x1, int clip_y1);
+const char *form_select_mouse_action(struct form_control *control,
+		browser_mouse_state mouse, int x, int y);
+void form_select_mouse_drag_end(struct form_control *control,
+		browser_mouse_state mouse, int x, int y);
+void form_select_get_dimensions(struct form_control *control,
+		int *width, int *height);
 
 #endif

@@ -26,6 +26,7 @@
 #include "amiga/bitmap.h"
 #include "amiga/options.h"
 #include "content/urldb.h"
+#include "desktop/plotters.h"
 
 bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 	const char *url)
@@ -39,6 +40,7 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 	bitmap->nativebmwidth = bitmap->width;
 	bitmap->nativebmheight = bitmap->height;
 	ami_clearclipreg(&browserglob.rp);
+	plot = amiplot;
 	content_redraw(content, 0, 0, content->width, content->width,
 	0, 0, content->width, content->width, 1.0, 0xFFFFFF);
 

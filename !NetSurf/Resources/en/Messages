@@ -704,7 +704,13 @@ ScrollPLeft:Click to scroll left one page
 ScrollH:Drag the bar to scroll horizontally
 ScrollPRight:Click to scroll right one page
 ScrollRight:Click the arrow to scroll right
+ScrollBoth:Move your mouse while keeping the button pressed to scroll the content
 
+# Select menu - displayed in status bar
+#
+SelectClick:Click on entry to select it
+SelectMClick:Click on entry to select it, multiple options can be selected
+SelectClose:Click to close the select menu
 
 # Saving
 # ======

@@ -305,8 +305,8 @@ gboolean nsgtk_window_expose_event(GtkWidget *widget,
 	if (c->type == CONTENT_HTML)
 		scale = 1;
 
-        current_widget = widget;
-	current_drawable = widget->window;
+	current_widget = (GtkWidget *)g->drawing_area;
+	current_drawable = current_widget->window;
 	current_gc = gdk_gc_new(current_drawable);
 #ifdef CAIRO_VERSION
 	current_cr = gdk_cairo_create(current_drawable);
@@ -315,6 +315,7 @@ gboolean nsgtk_window_expose_event(GtkWidget *widget,
 	plot = nsgtk_plotters;
 	nsgtk_plot_set_scale(g->bw->scale);
 	current_redraw_browser = g->bw;
+	
 	content_redraw(c, 0, 0,
 			widget->allocation.width * scale,
 			widget->allocation.height * scale,
@@ -328,6 +329,7 @@ gboolean nsgtk_window_expose_event(GtkWidget *widget,
 	if (g->careth != 0)
 		nsgtk_plot_caret(g->caretx, g->carety, g->careth);
 
+	current_widget = NULL;
 	g_object_unref(current_gc);
 #ifdef CAIRO_VERSION
 	cairo_destroy(current_cr);
@@ -442,7 +444,8 @@ gboolean nsgtk_window_button_release_event(GtkWidget *widget,
 		browser_window_mouse_click(g->bw, g->mouse->state, event->x / g->bw->scale,
 			event->y / g->bw->scale);
 	else
-		browser_window_mouse_drag_end(g->bw, 0, event->x, event->y);
+		browser_window_mouse_drag_end(g->bw, 0, event->x / g->bw->scale,
+				event->y / g->bw->scale);
 
 	g->mouse->state = 0;
 	return TRUE;
@@ -654,8 +657,10 @@ void gui_window_update_box(struct gui_window *g,
 		return;
 
 	gtk_widget_queue_draw_area(GTK_WIDGET(g->drawing_area),
-                                   data->redraw.x, data->redraw.y,
-                                   data->redraw.width, data->redraw.height);
+                                   data->redraw.x * g->bw->scale,
+				   data->redraw.y * g->bw->scale,
+                                   data->redraw.width * g->bw->scale,
+				   data->redraw.height * g->bw->scale);
 }
 
 bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)

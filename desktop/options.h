@@ -83,6 +83,7 @@ extern int option_toolbar_status_width;
 extern int option_scale;
 extern bool option_incremental_reflow;
 extern unsigned int option_min_reflow_period;
+extern bool option_core_select_menu;
 
 extern int option_margin_top;
 extern int option_margin_bottom;

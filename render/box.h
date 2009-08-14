@@ -167,8 +167,8 @@ struct box {
 	int padding[4];  /**< Padding: TOP, RIGHT, BOTTOM, LEFT. */
 	struct box_border border[4];   /**< Border: TOP, RIGHT, BOTTOM, LEFT. */
 
-	int scroll_x;  /**< Horizontal scroll of descendants. */
-	int scroll_y;  /**< Vertical scroll of descendants. */
+	struct scroll *scroll_x;  /**< Horizontal scroll. */
+	struct scroll *scroll_y;  /**< Vertical scroll. */
 
 	/** Width of box taking all line breaks (including margins etc). Must
 	 * be non-negative. */
@@ -314,15 +314,10 @@ bool box_visible(struct box *box);
 void box_dump(FILE *stream, struct box *box, unsigned int depth);
 bool box_extract_link(const char *rel, const char *base, char **result);
 
+bool box_handle_scrollbars(struct box *box, int x, int y, bool bottom,
+		bool right);
 bool box_vscrollbar_present(const struct box *box);
 bool box_hscrollbar_present(const struct box *box);
-void box_scrollbar_dimensions(const struct box *box,
-		int padding_width, int padding_height, int w,
-		bool *vscroll, bool *hscroll,
-		int *well_height,
-		int *bar_top, int *bar_height,
-		int *well_width,
-		int *bar_left, int *bar_width);
 
 bool xml_to_box(xmlNode *n, struct content *c);
 

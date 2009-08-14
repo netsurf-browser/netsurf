@@ -2,6 +2,7 @@
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  * Copyright 2005-9 John-Mark Bell <jmb@netsurf-browser.org>
+ * Copyright 2009 Paul Blokus <paul_pl@users.sourceforge.net>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -29,18 +30,60 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include "css/css.h"
+#include "css/utils.h"
+#include "desktop/gui.h"
+#include "desktop/knockout.h"
+#include "desktop/plot_style.h"
+#include "desktop/plotters.h"
+#include "desktop/scroll.h"
 #include "render/box.h"
+#include "render/font.h"
 #include "render/form.h"
+#include "render/layout.h"
 #include "utils/log.h"
+#include "utils/messages.h"
 #include "utils/url.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
 
+#define MAX_SELECT_HEIGHT 210
+#define SELECT_LINE_SPACING 0.2
+#define SELECT_BORDER_WIDTH 1
+#define SELECT_SELECTED_COLOUR 0xDB9370
+
+struct form_select_menu {
+	int line_height;
+	int width, height;
+	struct scroll *scroll;
+	int f_size;
+	bool scroll_capture;
+	select_menu_redraw_callback callback;
+	void *client_data;
+	struct browser_window *bw;
+};
+
+static plot_style_t plot_style_fill_selected = {
+	.fill_type = PLOT_OP_TYPE_SOLID,
+	.fill_colour = SELECT_SELECTED_COLOUR,
+};
+
+static plot_font_style_t plot_fstyle_entry = {
+	.family = PLOT_FONT_FAMILY_SANS_SERIF,
+	.weight = 400,
+	.flags = FONTF_NONE,
+	.background = 0xffffff,
+	.foreground = 0x000000,
+};
 
 static char *form_textarea_value(struct form_control *textarea);
 static char *form_acceptable_charset(struct form *form);
 static char *form_encode_item(const char *item, const char *charset,
 		const char *fallback);
+static void form_select_menu_clicked(struct form_control *control,
+		int x, int y);
+static void form_select_menu_scroll_callback(void *client_data,
+		struct scroll_msg_data *scroll_data);
 
 /**
  * Create a struct form.
@@ -199,6 +242,8 @@ void form_free_control(struct form_control *control)
 			free(option->value);
 			free(option);
 		}
+		if (control->data.select.menu != NULL)
+			form_free_select_menu(control);
 	}
 
 	free(control);
@@ -812,3 +857,450 @@ char *form_encode_item(const char *item, const char *charset,
 	return ret;
 }
 
+/**
+ * Open a select menu for a select form control, creating it if necessary.
+ *
+ * \param client_data	data passed to the redraw callback
+ * \param control	the select form control for which the menu is being
+ * 			opened
+ * \param callback	redraw callback for the select menu
+ * \param bw		the browser window in which the select menu is being
+ * 			opened
+ * \return		false on memory exhaustion, true otherwise
+ */
+bool form_open_select_menu(void *client_data,
+		struct form_control *control,
+		select_menu_redraw_callback callback,
+		struct browser_window *bw)
+{
+	int i, line_height_with_spacing, scroll;
+	struct form_option *option;
+	struct box *box;
+	plot_font_style_t fstyle;
+	int total_height;
+	struct form_select_menu *menu;
+		
+
+	/* if the menu is opened for the first time */
+	if (control->data.select.menu == NULL) {
+		
+		menu = calloc(1, sizeof (struct form_select_menu));
+		if (menu == NULL) {
+			warn_user("NoMemory", 0);
+			return false;
+		}
+		
+		control->data.select.menu = menu;
+				
+		box = control->box;
+
+		menu->width = box->width +
+				box->border[RIGHT].width +
+				box->border[LEFT].width +
+				box->padding[RIGHT] + box->padding[LEFT];
+		
+		font_plot_style_from_css(control->box->style,
+				&fstyle);
+		menu->f_size = fstyle.size;
+		
+		menu->line_height =
+				FIXTOINT(FDIVI((FMUL(FLTTOFIX(1.2),
+				FMULI(nscss_screen_dpi, 
+				(fstyle.size / FONT_SIZE_SCALE)))), 72));
+		
+		line_height_with_spacing = menu->line_height +
+				menu->line_height *
+				SELECT_LINE_SPACING;
+		
+		total_height = control->data.select.num_items *
+				line_height_with_spacing;
+		menu->height = total_height;
+	
+		scroll = 0;
+		if (menu->height > MAX_SELECT_HEIGHT) {
+			
+			menu->height = MAX_SELECT_HEIGHT;
+			
+			if (control->data.select.num_selected > 0) {
+				i = 0;
+				option = control->data.select.items;
+				while (!option->selected) {
+					option = option->next;
+					i++;
+				}
+				
+				if ((i + 1) * line_height_with_spacing >
+						MAX_SELECT_HEIGHT)
+					scroll = (i + 1) *
+							line_height_with_spacing
+							- MAX_SELECT_HEIGHT;
+			}
+		}
+		menu->client_data = client_data;
+		menu->callback = callback;
+		if (!scroll_create(false,
+				menu->height,
+    				total_height,
+				menu->height,
+				control,
+				form_select_menu_scroll_callback,
+				&(menu->scroll))) {
+			free(menu);
+			return false;
+		}
+		menu->bw = bw;
+	}
+	else menu = control->data.select.menu;
+		
+	menu->callback(client_data, 0, 0, menu->width, menu->height);
+	
+	return true;
+}
+
+
+/**
+ * Destroy a select menu and free allocated memory.
+ * 
+ * \param control	the select form control owning the select menu being
+ * 			destroyed
+ */
+void form_free_select_menu(struct form_control *control)
+{
+	if (control->data.select.menu->scroll != NULL)
+		scroll_destroy(control->data.select.menu->scroll);
+	free(control->data.select.menu);
+	control->data.select.menu = NULL;
+}
+
+/**
+ * Redraw an opened select menu.
+ * 
+ * \param control	the select menu being redrawn
+ * \param x		the X coordinate to draw the menu at
+ * \param x		the Y coordinate to draw the menu at
+ * \param scale		current redraw scale
+ * \param clip_x0	minimum x of clipping rectangle
+ * \param clip_y0	minimum y of clipping rectangle
+ * \param clip_x1	maximum x of clipping rectangle
+ * \param clip_y1	maximum y of clipping rectangle
+ * \return		true on success, false otherwise
+ */
+bool form_redraw_select_menu(struct form_control *control, int x, int y,
+		float scale, int clip_x0, int clip_y0, int clip_x1, int clip_y1)
+{
+	struct box *box;
+	struct form_select_menu *menu = control->data.select.menu;
+	struct form_option *option;
+	int line_height, line_height_with_spacing;
+	int width, height;
+	int x0, y0, x1, scrollbar_x, y1, y2, y3;
+	int item_y;
+	int text_pos_offset, text_x;
+	int scrollbar_width = SCROLLBAR_WIDTH;
+	int i;
+	int scroll;
+	int x_cp, y_cp;
+	
+	box = control->box;
+	
+	x_cp = x;
+	y_cp = y;
+	width = menu->width;
+	height = menu->height;
+	line_height = menu->line_height;
+	
+	line_height_with_spacing = line_height +
+			line_height * SELECT_LINE_SPACING;
+	scroll = scroll_get_offset(menu->scroll);
+	
+	if (scale != 1.0) {
+		x *= scale;
+		y *= scale;
+		width *= scale;
+		height *= scale;
+		scrollbar_width *= scale;
+		
+		i = scroll / line_height_with_spacing;
+		scroll -= i * line_height_with_spacing;
+		line_height *= scale;
+		line_height_with_spacing *= scale;
+		scroll *= scale;
+		scroll += i * line_height_with_spacing;
+	}
+	
+	
+	x0 = x;
+	y0 = y;
+	x1 = x + width - 1;
+	y1 = y + height - 1;
+	scrollbar_x = x1 - scrollbar_width;
+	
+	if (!plot.clip(x0, y0, x1 + 1, y1 + 1))
+		return false;
+	if (!plot.rectangle(x0, y0, x1, y1 ,plot_style_stroke_darkwbasec))
+		return false;
+		
+	
+	x0 = x0 + SELECT_BORDER_WIDTH;
+	y0 = y0 + SELECT_BORDER_WIDTH;
+	x1 = x1 - SELECT_BORDER_WIDTH;
+	y1 = y1 - SELECT_BORDER_WIDTH;
+	height = height - 2 * SELECT_BORDER_WIDTH;
+
+	if (!plot.clip(x0, y0, x1 + 1, y1 + 1))
+		return false;
+	if (!plot.rectangle(x0, y0, x1 + 1, y1 + 1,
+			plot_style_fill_lightwbasec))
+		return false;
+	option = control->data.select.items;
+	item_y = line_height_with_spacing;
+	
+	while (item_y < scroll) {
+		option = option->next;
+		item_y += line_height_with_spacing;
+	}
+	item_y -= line_height_with_spacing;
+	text_pos_offset = y - scroll +
+			(int) (line_height * (0.75 + SELECT_LINE_SPACING));
+	text_x = x + (box->border[LEFT].width + box->padding[LEFT]) * scale;
+	
+	plot_fstyle_entry.size = menu->f_size;
+	
+	while (option && item_y - scroll < height) {
+		
+ 		if (option->selected) {
+ 			y2 = y + item_y - scroll;
+ 			y3 = y + item_y + line_height_with_spacing - scroll;
+ 			if (!plot.rectangle(x0, (y0 > y2 ? y0 : y2),
+					scrollbar_x + 1,
+     					(y3 < y1 + 1 ? y3 : y1 + 1),
+					&plot_style_fill_selected))
+				return false;
+ 		}
+		
+		y2 = text_pos_offset + item_y;
+		if (!plot.text(text_x, y2, option->text,
+				strlen(option->text), &plot_fstyle_entry))
+			return false;
+		
+		item_y += line_height_with_spacing;
+		option = option->next;
+	}
+		
+	if (!scroll_redraw(menu->scroll,
+			x_cp + menu->width - SCROLLBAR_WIDTH,
+      			y_cp,
+			clip_x0, clip_y0, clip_x1, clip_y1, scale))
+		return false;
+	
+	return true;
+}
+
+/**
+ * Check whether a clipping rectangle is completely contained in the
+ * select menu.
+ *
+ * \param control	the select menu to check the clipping rectangle for
+ * \param scale		the current browser window scale
+ * \param clip_x0	minimum x of clipping rectangle
+ * \param clip_y0	minimum y of clipping rectangle
+ * \param clip_x1	maximum x of clipping rectangle
+ * \param clip_y1	maximum y of clipping rectangle
+ * \return		true if inside false otherwise
+ */
+bool form_clip_inside_select_menu(struct form_control *control, float scale,
+		int clip_x0, int clip_y0, int clip_x1, int clip_y1)
+{
+	struct form_select_menu *menu = control->data.select.menu;
+	int width, height;
+	
+
+	width = menu->width;
+	height = menu->height;
+	
+	if (scale != 1.0) {
+		width *= scale;
+		height *= scale;
+	}
+	
+	if (clip_x0 >= 0 && clip_x1 <= width &&
+			clip_y0 >= 0 && clip_y1 <= height)
+		return true;
+
+	return false;
+}
+
+/**
+ * Handle a click on the area of the currently opened select menu.
+ * 
+ * \param control	the select menu which received the click
+ * \param x		X coordinate of click
+ * \param y		Y coordinate of click
+ */
+void form_select_menu_clicked(struct form_control *control, int x, int y)
+{	
+	struct form_select_menu *menu = control->data.select.menu;
+	struct form_option *option;	
+	int line_height, line_height_with_spacing;	
+	int item_bottom_y;
+	int scroll, i;
+	
+	scroll = scroll_get_offset(menu->scroll);
+	
+	line_height = menu->line_height;
+	line_height_with_spacing = line_height +
+			line_height * SELECT_LINE_SPACING;
+	
+	option = control->data.select.items;
+	item_bottom_y = line_height_with_spacing;
+	i = 0;
+	while (option && item_bottom_y < scroll + y) {
+		item_bottom_y += line_height_with_spacing;
+		option = option->next;
+		i++;
+	}
+	
+	if (option != NULL)
+		browser_window_form_select(menu->bw, control, i);
+	
+	menu->callback(menu->client_data, 0, 0, menu->width, menu->height);
+}
+
+/**
+ * Handle mouse action for the currently opened select menu.
+ *
+ * \param control	the select menu which received the mouse action
+ * \param mouse		current mouse state
+ * \param x		X coordinate of click
+ * \param y		Y coordinate of click
+ * \return		text for the browser status bar or NULL if the menu has
+ * 			to be closed
+ */
+const char *form_select_mouse_action(struct form_control *control,
+		browser_mouse_state mouse, int x, int y)
+{
+	struct form_select_menu *menu = control->data.select.menu;
+	int x0, y0, x1, y1, scrollbar_x;
+	const char *status = NULL;
+	bool multiple = control->data.select.multiple;
+	
+	x0 = 0;
+	y0 = 0;
+	x1 = menu->width;
+	y1 = menu->height;
+	scrollbar_x = x1 - SCROLLBAR_WIDTH;
+	
+	if (menu->scroll_capture ||
+			(x > scrollbar_x && x < x1 && y > y0 && y < y1)) {
+		/* The scroll is currently capturing all events or the mouse
+		 * event is taking place on the scrollbar widget area
+		 */
+		x -= scrollbar_x;
+		return scroll_mouse_action(menu->scroll,
+				    mouse, x, y);
+	}
+	
+	
+	if (x > x0 && x < scrollbar_x && y > y0 && y < y1) {
+		/* over option area */
+		
+		if (mouse & (BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2))
+			/* button 1 or 2 click */
+			form_select_menu_clicked(control, x, y);
+		
+		if (!(mouse & BROWSER_MOUSE_CLICK_1 && !multiple))
+			/* anything but a button 1 click over a single select
+			   menu */
+			status = messages_get(control->data.select.multiple ?
+					"SelectMClick" : "SelectClick");
+		
+	} else if (!(mouse & (BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2)))
+		/* if not a button 1 or 2 click*/
+		status = messages_get("SelectClose");
+			
+	return status;
+}
+
+/**
+ * Handle mouse drag end for the currently opened select menu.
+ *
+ * \param control	the select menu which received the mouse drag end
+ * \param mouse		current mouse state
+ * \param x		X coordinate of drag end
+ * \param y		Y coordinate of drag end
+ */
+void form_select_mouse_drag_end(struct form_control *control,
+		browser_mouse_state mouse, int x, int y)
+{
+	int x0, y0, x1, y1;
+	struct form_select_menu *menu = control->data.select.menu;
+	
+	if (menu->scroll_capture) {
+		x -= menu->width - SCROLLBAR_WIDTH;
+		scroll_mouse_drag_end(menu->scroll,
+				    mouse, x, y);
+		return;
+	}
+	
+	x0 = 0;
+	y0 = 0;
+	x1 = menu->width;
+	y1 = menu->height;
+		
+	
+	if (x > x0 && x < x1 - SCROLLBAR_WIDTH && y >  y0 && y < y1)
+		/* handle drag end above the option area like a regular click */
+		form_select_menu_clicked(control, x, y);
+}
+
+/**
+ * Callback for the select menus scroll
+ */
+void form_select_menu_scroll_callback(void *client_data,
+		struct scroll_msg_data *scroll_data)
+{
+	struct form_control *control = client_data;
+	struct form_select_menu *menu = control->data.select.menu;
+	
+	switch (scroll_data->msg) {
+		case SCROLL_MSG_REDRAW:
+			menu->callback(menu->client_data,
+				       	menu->width -
+					SCROLLBAR_WIDTH + scroll_data->x0,
+     					scroll_data->y0,
+					scroll_data->x1 - scroll_data->x0,
+					scroll_data->y1 - scroll_data->y0);
+			break;
+		case SCROLL_MSG_MOVED:
+			menu->callback(menu->client_data,
+				    	0, 0,
+					menu->width - SCROLLBAR_WIDTH,
+     					menu->height);
+			break;
+		case SCROLL_MSG_SCROLL_START:
+			menu->scroll_capture = true;
+			gui_window_box_scroll_start(menu->bw->window,
+					scroll_data->x0, scroll_data->y0,
+     					scroll_data->x1, scroll_data->y1);
+			break;
+		case SCROLL_MSG_SCROLL_FINISHED:
+			menu->scroll_capture = false;
+			break;
+		default:
+			break;
+	}
+}
+
+/**
+ * Get the dimensions of a select menu.
+ *
+ * \param control	the select menu to get the dimensions of
+ * \param width		gets updated to menu width
+ * \param height	gets updated to menu height
+ */
+void form_select_get_dimensions(struct form_control *control,
+		int *width, int *height)
+{
+	*width = control->data.select.menu->width;
+	*height = control->data.select.menu->height;
+}

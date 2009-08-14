@@ -41,6 +41,7 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "desktop/textinput.h"
+#include "render/form.h"
 
 #include "framebuffer/gui.h"
 #include "framebuffer/fbtk.h"
@@ -292,13 +293,14 @@ static void fb_redraw(fbtk_widget_t *widget,
         nsfb_claim(fbtk_get_nsfb(widget), &bwidget->redraw_box);
 
         /* redraw bounding box is relative to window */
+	current_redraw_browser = bw;
         content_redraw(c,
                        x - bwidget->scrollx, y - bwidget->scrolly,
                        width, height,
                        bwidget->redraw_box.x0, bwidget->redraw_box.y0,
                        bwidget->redraw_box.x1, bwidget->redraw_box.y1,
                        bw->scale, 0xFFFFFF);
-
+	current_redraw_browser = NULL;
 
         nsfb_release(fbtk_get_nsfb(widget), &bwidget->redraw_box);
 
@@ -357,6 +359,8 @@ void gui_init(int argc, char** argv)
 	LOG(("Using '%s' as Messages file", buf));
 	messages_load(buf);
 
+	option_core_select_menu = true;
+	
         /* load browser options */
 	fb_find_resource(buf, "Choices-fb", "~/.netsurf/Choices-fb");
 	LOG(("Using '%s' as Preferences file", buf));

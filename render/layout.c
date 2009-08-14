@@ -44,6 +44,7 @@
 #include "content/content.h"
 #include "desktop/gui.h"
 #include "desktop/options.h"
+#include "desktop/scroll.h"
 #include "render/box.h"
 #include "render/font.h"
 #include "render/form.h"
@@ -1989,8 +1990,9 @@ bool layout_line(struct box *first, int *width, int *y,
 						if (opt_maxwidth < opt_width)
 							opt_maxwidth =opt_width;
 					}
-
 					b->width = opt_maxwidth;
+					if (option_core_select_menu)
+						b->width += SCROLLBAR_WIDTH;
 				} else {
 					font_func->font_width(&fstyle, b->text,
 						b->length, &b->width);
@@ -2624,6 +2626,9 @@ struct box *layout_minmax_line(struct box *first,
 					}
 
 					b->width = opt_maxwidth;
+					if (option_core_select_menu)
+						b->width += SCROLLBAR_WIDTH;
+					
 				} else {
 					font_func->font_width(&fstyle, b->text,
 						b->length, &b->width);

@@ -30,6 +30,7 @@
 
 #include "desktop/browser.h"
 #include "desktop/gui.h"
+#include "desktop/scroll.h"
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
 #include "render/box.h"
@@ -91,7 +92,8 @@ static void textarea_reflow(struct browser_window *bw, struct box *textarea,
 static bool word_left(const char *text, size_t *poffset, size_t *pchars);
 static bool word_right(const char *text, size_t len, size_t *poffset, 
 		size_t *pchars);
-static bool ensure_caret_visible(struct box *textarea);
+static bool ensure_caret_visible(struct browser_window *bw,
+		struct box *textarea);
 
 /**
  * Remove the given text caret from the window by invalidating it
@@ -279,11 +281,11 @@ void browser_window_textarea_click(struct browser_window *bw,
 	textarea->gadget->caret_box_offset = char_offset;
 	textarea->gadget->caret_pixel_offset = pixel_offset;
 
-	box_x += textarea->scroll_x;
-	box_y += textarea->scroll_y;
-	scrolled = ensure_caret_visible(textarea);
-	box_x -= textarea->scroll_x;
-	box_y -= textarea->scroll_y;
+	box_x += scroll_get_offset(textarea->scroll_x);
+	box_y += scroll_get_offset(textarea->scroll_y);
+	scrolled = ensure_caret_visible(bw, textarea);
+	box_x -= scroll_get_offset(textarea->scroll_x);
+	box_y -= scroll_get_offset(textarea->scroll_y);
 	
 	browser_window_place_caret(bw,
 			box_x + inline_container->x + text_box->x +
@@ -332,8 +334,8 @@ bool browser_window_textarea_callback(struct browser_window *bw,
 			(int) text_box->length, text_box->text));
 
 	box_coords(textarea, &box_x, &box_y);
-	box_x -= textarea->scroll_x;
-	box_y -= textarea->scroll_y;
+	box_x -= scroll_get_offset(textarea->scroll_x);
+	box_y -= scroll_get_offset(textarea->scroll_y);
 
 	if (!(key <= 0x001F || (0x007F <= key && key <= 0x009F))) {
 		/* normal character insertion */		
@@ -756,8 +758,8 @@ bool browser_window_textarea_callback(struct browser_window *bw,
 			assert(text_box);
 			assert(char_offset <= text_box->length);
 			/* Scroll back to the left */
-			box_x += textarea->scroll_x;
-			textarea->scroll_x = 0;
+			box_x += scroll_get_offset(textarea->scroll_x);
+			scroll_set(textarea->scroll_x, 0, false);
 		} else {
 			assert(!text_box->next ||
 					(text_box->next &&
@@ -778,11 +780,11 @@ bool browser_window_textarea_callback(struct browser_window *bw,
 	textarea->gadget->caret_box_offset = char_offset;
 	textarea->gadget->caret_pixel_offset = pixel_offset;
 
-	box_x += textarea->scroll_x;
-	box_y += textarea->scroll_y;
-	scrolled = ensure_caret_visible(textarea);
-	box_x -= textarea->scroll_x;
-	box_y -= textarea->scroll_y;
+	box_x += scroll_get_offset(textarea->scroll_x);
+	box_y += scroll_get_offset(textarea->scroll_y);
+	scrolled = ensure_caret_visible(bw, textarea);
+	box_x -= scroll_get_offset(textarea->scroll_x);
+	box_y -= scroll_get_offset(textarea->scroll_y);
 
 	browser_window_place_caret(bw,
 			box_x + inline_container->x + text_box->x +
@@ -1398,11 +1400,11 @@ bool browser_window_textarea_paste_text(struct browser_window *bw,
 		textarea->gadget->caret_pixel_offset = pixel_offset;
 
 		box_coords(textarea, &box_x, &box_y);
-		box_x += textarea->scroll_x;
-		box_y += textarea->scroll_y;
-		ensure_caret_visible(textarea);
-		box_x -= textarea->scroll_x;
-		box_y -= textarea->scroll_y;
+		box_x += scroll_get_offset(textarea->scroll_x);
+		box_y += scroll_get_offset(textarea->scroll_y);
+		ensure_caret_visible(bw, textarea);
+		box_x -= scroll_get_offset(textarea->scroll_x);
+		box_y -= scroll_get_offset(textarea->scroll_y);
 
 		browser_window_place_caret(bw,
 				box_x + inline_container->x + text_box->x +
@@ -1518,8 +1520,8 @@ void browser_window_textarea_move_caret(struct browser_window *bw, void *p)
 	font_plot_style_from_css(text_box->style, &fstyle);
 
 	box_coords(textarea, &box_x, &box_y);
-	box_x -= textarea->scroll_x;
-	box_y -= textarea->scroll_y;
+	box_x -= scroll_get_offset(textarea->scroll_x);
+	box_y -= scroll_get_offset(textarea->scroll_y);
 
 	nsfont.font_width(&fstyle, text_box->text,
 			char_offset, &pixel_offset);
@@ -2180,19 +2182,21 @@ bool word_right(const char *text, size_t len, size_t *poffset, size_t *pchars)
 
 /**
  * Adjust scroll offsets so that the caret is visible
+ *
+ * \param bw        browser window where click ocurred
  * \param textarea  textarea box
  * \return true if a change in scroll offsets has occurred
 */
 
-bool ensure_caret_visible(struct box *textarea)
+bool ensure_caret_visible(struct browser_window *bw, struct box *textarea)
 {
 	int cx, cy;
 	int scrollx, scrolly;
 
 	assert(textarea->gadget);
 
-	scrollx = textarea->scroll_x;
-	scrolly = textarea->scroll_y;
+	scrollx = scroll_get_offset(textarea->scroll_x);
+	scrolly = scroll_get_offset(textarea->scroll_y);
 
 	/* Calculate the caret coordinates */
 	cx = textarea->gadget->caret_pixel_offset + 
@@ -2200,29 +2204,40 @@ bool ensure_caret_visible(struct box *textarea)
 	cy = textarea->gadget->caret_text_box->y;
 
 	/* Ensure they are visible */
-	if (!box_hscrollbar_present(textarea)) {
+	if (textarea->scroll_x == NULL) {
 		scrollx = 0;
-	} else if (cx-textarea->scroll_x < 0) {
+	} else if (cx - scroll_get_offset(textarea->scroll_x) < 0) {
 		scrollx = cx;
-	} else if (cx > textarea->scroll_x + textarea->width) {
+	} else if (cx > scroll_get_offset(textarea->scroll_x) +
+			textarea->width) {
 		scrollx = cx - textarea->width;
 	}
 
-	if (!box_vscrollbar_present(textarea)) {
+	if (textarea->scroll_y == NULL) {
 		scrolly = 0;
-	} else if (cy - textarea->scroll_y < 0) {
+	} else if (cy - scroll_get_offset(textarea->scroll_y) < 0) {
 		scrolly = cy;
 	} else if (cy + textarea->gadget->caret_text_box->height > 
-			textarea->scroll_y + textarea->height) {
+			scroll_get_offset(textarea->scroll_y) +
+			textarea->height) {
 		scrolly = (cy + textarea->gadget->caret_text_box->height) - 
 				textarea->height;
 	}
 
-	if ((scrollx == textarea->scroll_x) && (scrolly == textarea->scroll_y))
+	if ((scrollx == scroll_get_offset(textarea->scroll_x)) &&
+			(scrolly == scroll_get_offset(textarea->scroll_y)))
 		return false;
 
-	textarea->scroll_x = scrollx;
-	textarea->scroll_y = scrolly;
+	if (textarea->scroll_x != NULL)	{
+		bw->scroll = textarea->scroll_x;
+		scroll_set(textarea->scroll_x, scrollx, false);
+		bw->scroll = NULL;
+	}
+	if (textarea->scroll_y != NULL) {
+		bw->scroll = textarea->scroll_x;
+		scroll_set(textarea->scroll_y, scrolly, false);
+		bw->scroll = NULL;
+	}
 
 	return true;
 }
