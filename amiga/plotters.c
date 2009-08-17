@@ -327,8 +327,6 @@ bool ami_polygon(const int *p, unsigned int n, const plot_style_t *style)
 #ifndef NS_AMIGA_CAIRO
 	ULONG cx,cy;
 
-	//DebugPrintF("poly\n");
-
 	SetRPAttrs(&glob->rp,
 		   RPTAG_APenColor,
 		   p96EncodeColor(RGBFB_A8B8G8R8, style->fill_colour),
@@ -369,17 +367,7 @@ bool ami_clip(int x0, int y0, int x1, int y1)
 
 	if(glob->rp.Layer)
 	{
-
-		reg = InstallClipRegion(glob->rp.Layer,NULL);
-
-		if(!reg)
-		{
-			reg = NewRegion();
-		}
-		else
-		{
-			ClearRectRegion(reg,&glob->rect);
-		}
+		reg = NewRegion();
 
 		glob->rect.MinX = x0;
 		glob->rect.MinY = y0;
@@ -389,6 +377,7 @@ bool ami_clip(int x0, int y0, int x1, int y1)
 		OrRectRegion(reg,&glob->rect);
 
 		reg = InstallClipRegion(glob->rp.Layer,reg);
+
 		if(reg) DisposeRegion(reg);
 	}
 
@@ -397,6 +386,7 @@ bool ami_clip(int x0, int y0, int x1, int y1)
 	cairo_rectangle(glob->cr, x0, y0, x1 - x0, y1 - y0);
 	cairo_clip(glob->cr);
 #endif
+
 	return true;
 }
 
@@ -469,7 +459,6 @@ bool ami_arc(int x, int y, int radius, int angle1, int angle2, const plot_style_
 #else
 /* http://www.crbond.com/primitives.htm
 CommonFuncsPPC.lha */
-	//DebugPrintF("arc\n");
 
 	SetRPAttrs(&glob->rp,
                    RPTAG_APenColor,
@@ -551,6 +540,10 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 
 	if(!(repeat_x || repeat_y))
 		return ami_bitmap(x, y, width, height, bitmap);
+
+	/* If it is a one pixel transparent image, we are wasting our time */
+	if((bitmap->opaque == false) && (bitmap->width == 1) && (bitmap->height == 1))
+		return true;
 
 	tbm = ami_getcachenativebm(bitmap,width,height,glob->rp.BitMap);
 
@@ -684,7 +677,6 @@ bool ami_group_end(void)
 
 bool ami_flush(void)
 {
-	//DebugPrintF("flush\n");
 	return true;
 }
 
