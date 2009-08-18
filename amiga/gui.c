@@ -467,7 +467,7 @@ void gui_init(int argc, char** argv)
 	ami_get_theme_filename(throbberfile,"theme_throbber");
 	throbber_frames=atoi(messages_get("theme_throbber_frames"));
 	throbber_update_interval = atoi(messages_get("theme_throbber_delay"));
-	if(throbber_update_interval == 0) throbber_update_interval = 1000;
+	if(throbber_update_interval == 0) throbber_update_interval = 100;
 
 	if(dto = NewDTObject(throbberfile,
 					DTA_GroupID,GID_PICTURE,
@@ -2352,6 +2352,8 @@ void gui_window_update_box(struct gui_window *g,
 		const union content_msg_data *data)
 {
 	ULONG sx,sy;
+
+	if(!g) return;
 
 	GetAttr(SCROLLER_Top,g->shared->objects[OID_HSCROLL],(ULONG *)&sx);
 	GetAttr(SCROLLER_Top,g->shared->objects[OID_VSCROLL],(ULONG *)&sy);
