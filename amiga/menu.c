@@ -77,7 +77,7 @@ void ami_init_menulabs(void)
 	menulab[2] = ami_utf8_easy((char *)messages_get("NewTab"));
 	menulab[3] = NM_BARLABEL;
 	menulab[4] = ami_utf8_easy((char *)messages_get("OpenFile"));
-	menulab[5] = ami_utf8_easy((char *)messages_get("SaveAs"));
+	menulab[5] = ami_utf8_easy((char *)messages_get("SaveAsNS"));
 	menulab[6] = ami_utf8_easy((char *)messages_get("Source"));
 	menulab[7] = ami_utf8_easy((char *)messages_get("TextNS"));
 	menulab[8] = ami_utf8_easy((char *)messages_get("SaveCompNS"));
