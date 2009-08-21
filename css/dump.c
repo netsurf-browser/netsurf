@@ -1688,6 +1688,28 @@ void nscss_dump_computed_style(FILE *stream, const css_computed_style *style)
 		break;
 	}
 
+	/* -libcss-align */
+	val = css_computed_libcss_align(style);
+	switch (val) {
+	case CSS_LIBCSS_ALIGN_LEFT:
+		fprintf(stream, "-libcss-align: left ");
+		break;
+	case CSS_LIBCSS_ALIGN_RIGHT:
+		fprintf(stream, "-libcss-align: right ");
+		break;
+	case CSS_LIBCSS_ALIGN_CENTER:
+		fprintf(stream, "-libcss-align: center ");
+		break;
+	case CSS_LIBCSS_ALIGN_JUSTIFY:
+		fprintf(stream, "-libcss-align: justify ");
+		break;
+	case CSS_LIBCSS_ALIGN_DEFAULT:
+		fprintf(stream, "-libcss-align: default ");
+		break;
+	default:
+		break;
+	}
+
 	fprintf(stream, "}");
 }
 

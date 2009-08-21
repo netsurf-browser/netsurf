@@ -70,9 +70,8 @@ static void layout_block_find_dimensions(int available_width,
 		struct box *box);
 static bool layout_apply_minmax_height(struct box *box, struct box *container);
 static void layout_block_add_scrollbar(struct box *box, int which);
-static int layout_solve_width(int available_width, int width, int lm, int rm,
-		int max_width, int min_width,
-		int margin[4], int padding[4], struct box_border border[4]);
+static int layout_solve_width(struct box *box, int available_width, int width, 
+		int lm, int rm, int max_width, int min_width);
 static void layout_float_find_dimensions(int available_width,
 		const css_computed_style *style, struct box *box);
 static void layout_find_dimensions(int available_width, int viewport_height,
@@ -420,9 +419,8 @@ bool layout_block_context(struct box *block, int viewport_height,
 			if (!layout_table(box, box->parent->width - lm - rm,
 					content))
 				return false;
-			layout_solve_width(box->parent->width, box->width,
-					lm, rm, -1, -1, box->margin,
-					box->padding, box->border);
+			layout_solve_width(box, box->parent->width, box->width,
+					lm, rm, -1, -1);
 		}
 
 		/* Position box: horizontal. */
@@ -856,8 +854,8 @@ void layout_block_find_dimensions(int available_width, int viewport_height,
 		}
 	}
 
-	box->width = layout_solve_width(available_width, width, lm, rm,
-			max_width, min_width, margin, padding, border);
+	box->width = layout_solve_width(box, available_width, width, lm, rm,
+			max_width, min_width);
 	box->height = height;
 
 	if (margin[TOP] == AUTO)
@@ -1012,6 +1010,7 @@ void layout_block_add_scrollbar(struct box *box, int which)
 /**
  * Solve the width constraint as given in CSS 2.1 section 10.3.3.
  *
+ * \param  box              Box to solve constraint for
  * \param  available_width  Max width available in pixels
  * \param  width	    Current box width
  * \param  lm		    Min left margin required to avoid floats in px.
@@ -1020,74 +1019,111 @@ void layout_block_add_scrollbar(struct box *box, int which)
  *				zero if not applicable
  * \param  max_width	    Box max-width ( -ve means no max-width to apply)
  * \param  min_width	    Box min-width ( <=0 means no min-width to apply)
- * \param  margin[4]	    Current box margins. Updated with new box
- *				left / right margins
- * \param  padding[4]	    Current box paddings.
- * \param  border[4]	    Current box border widths.
  * \return		    New box width
+ *
+ * \post \a box's left/right margins will be updated.
  */
 
-int layout_solve_width(int available_width, int width, int lm, int rm,
-		int max_width, int min_width,
-		int margin[4], int padding[4], struct box_border border[4])
+int layout_solve_width(struct box *box, int available_width, int width, 
+		int lm, int rm, int max_width, int min_width)
 {
 	bool auto_width = false;
 
 	/* Increase specified left/right margins */
-	if (margin[LEFT] != AUTO && margin[LEFT] < lm && margin[LEFT] >= 0)
-		margin[LEFT] = lm;
-	if (margin[RIGHT] != AUTO && margin[RIGHT] < rm && margin[RIGHT] >= 0)
-		margin[RIGHT] = rm;
+	if (box->margin[LEFT] != AUTO && box->margin[LEFT] < lm && 
+			box->margin[LEFT] >= 0)
+		box->margin[LEFT] = lm;
+	if (box->margin[RIGHT] != AUTO && box->margin[RIGHT] < rm && 
+			box->margin[RIGHT] >= 0)
+		box->margin[RIGHT] = rm;
 
 	/* Find width */
 	if (width == AUTO) {
 		/* any other 'auto' become 0 or the minimum required values */
-		if (margin[LEFT] == AUTO)  margin[LEFT] = lm;
-		if (margin[RIGHT] == AUTO) margin[RIGHT] = rm;
+		if (box->margin[LEFT] == AUTO)
+			box->margin[LEFT] = lm;
+		if (box->margin[RIGHT] == AUTO)
+			box->margin[RIGHT] = rm;
 
 		width = available_width -
-				(margin[LEFT] + border[LEFT].width +
-				padding[LEFT] + padding[RIGHT] +
-				border[RIGHT].width + margin[RIGHT]);
+				(box->margin[LEFT] + box->border[LEFT].width +
+				box->padding[LEFT] + box->padding[RIGHT] +
+				box->border[RIGHT].width + box->margin[RIGHT]);
 		width = width < 0 ? 0 : width;
 		auto_width = true;
 	}
+
 	if (max_width >= 0 && width > max_width) {
 		/* max-width is admissable and width exceeds max-width */
 		width = max_width;
 		auto_width = false;
 	}
+
 	if (min_width > 0 && width < min_width) {
 		/* min-width is admissable and width is less than max-width */
 		width = min_width;
 		auto_width = false;
 	}
 
-	if (!auto_width && margin[LEFT] == AUTO && margin[RIGHT] == AUTO) {
-		/* make the margins equal, centering the element */
-		margin[LEFT] = margin[RIGHT] = (available_width - lm - rm -
-				(border[LEFT].width + padding[LEFT] + width +
-				 padding[RIGHT] + border[RIGHT].width)) / 2;
+	/* Width was auto, and unconstrained by min/max width, so we're done */
+	if (auto_width)
+		return width;
 
-		if (margin[LEFT] < 0) {
-			margin[RIGHT] += margin[LEFT];
-			margin[LEFT] = 0;
+	/* Width was not auto, or was constrained by min/max width
+	 * Need to compute left/right margins */
+
+	/* HTML alignment (only applies to over-constrained boxes) 
+	 * Additionally, we ignore HTML alignment for any boxes whose
+	 * parent has non-default text-align. */
+	if (box->margin[LEFT] != AUTO && box->margin[RIGHT] != AUTO &&
+			box->parent != NULL && box->parent->style != NULL &&
+			css_computed_text_align(box->parent->style) == 
+			CSS_TEXT_ALIGN_DEFAULT) {
+		switch (css_computed_libcss_align(box->parent->style)) {
+		case CSS_LIBCSS_ALIGN_RIGHT:
+			box->margin[LEFT] = AUTO;
+			box->margin[RIGHT] = 0;
+			break;
+		case CSS_LIBCSS_ALIGN_CENTER:
+			box->margin[LEFT] = box->margin[RIGHT] = AUTO;
+			break;
+		case CSS_LIBCSS_ALIGN_LEFT:
+		case CSS_LIBCSS_ALIGN_JUSTIFY:
+			box->margin[LEFT] = 0;
+			box->margin[RIGHT] = AUTO;
+			break;
+		}
+	}
+
+	if (box->margin[LEFT] == AUTO && box->margin[RIGHT] == AUTO) {
+		/* make the margins equal, centering the element */
+		box->margin[LEFT] = box->margin[RIGHT] = 
+				(available_width - lm - rm -
+				(box->border[LEFT].width + box->padding[LEFT] + 
+				width + box->padding[RIGHT] + 
+				box->border[RIGHT].width)) / 2;
+
+		if (box->margin[LEFT] < 0) {
+			box->margin[RIGHT] += box->margin[LEFT];
+			box->margin[LEFT] = 0;
 		}
 
-		margin[LEFT] += lm;
+		box->margin[LEFT] += lm;
 
-	} else if (!auto_width && margin[LEFT] == AUTO) {
-		margin[LEFT] = available_width - lm -
-				(border[LEFT].width + padding[LEFT] + width +
-				padding[RIGHT] + border[RIGHT].width +
-				margin[RIGHT]);
-		margin[LEFT] = margin[LEFT] < lm ? lm : margin[LEFT];
-	} else if (!auto_width) {
+	} else if (box->margin[LEFT] == AUTO) {
+		box->margin[LEFT] = available_width - lm -
+				(box->border[LEFT].width + box->padding[LEFT] + 
+				width + box->padding[RIGHT] + 
+				box->border[RIGHT].width + box->margin[RIGHT]);
+		box->margin[LEFT] = box->margin[LEFT] < lm 
+				? lm : box->margin[LEFT];
+	} else {
 		/* margin-right auto or "over-constrained" */
-		margin[RIGHT] = available_width - rm -
-				(margin[LEFT] + border[LEFT].width +
-				 padding[LEFT] + width + padding[RIGHT] +
-				 border[RIGHT].width);
+		box->margin[RIGHT] = available_width - rm -
+				(box->margin[LEFT] + box->border[LEFT].width +
+				 box->padding[LEFT] + width + 
+				 box->padding[RIGHT] + 
+				 box->border[RIGHT].width);
 	}
 
 	return width;
@@ -2416,8 +2452,37 @@ bool layout_line(struct box *first, int *width, int *y,
 	case CSS_TEXT_ALIGN_CENTER:
 		x0 = (x0 + (x1 - x)) / 2;
 		break;
-	default:
+	case CSS_TEXT_ALIGN_LEFT:
+	case CSS_TEXT_ALIGN_JUSTIFY:
 		/* leave on left */
+		break;
+	case CSS_TEXT_ALIGN_DEFAULT:
+		/* No specified text-align; consider html alignment */
+		switch (css_computed_libcss_align(
+				first->parent->parent->style)) {
+		case CSS_LIBCSS_ALIGN_RIGHT:
+			x0 = x1 - x;
+			break;
+		case CSS_LIBCSS_ALIGN_CENTER:
+			x0 = (x0 + (x1 - x)) / 2;
+			break;
+		case CSS_LIBCSS_ALIGN_LEFT:
+		case CSS_LIBCSS_ALIGN_JUSTIFY:
+			/* leave on left */
+			break;
+		case CSS_LIBCSS_ALIGN_DEFAULT:
+			/* None; consider text direction */
+			switch (css_computed_direction(
+					first->parent->parent->style)) {
+			case CSS_DIRECTION_LTR:
+				/* leave on left */
+				break;
+			case CSS_DIRECTION_RTL:
+				x0 = x1 - x;
+				break;
+			}
+			break;
+		}
 		break;
 	}
 
@@ -4177,8 +4242,8 @@ bool layout_absolute(struct box *box, struct box *containing_block,
 		/* \todo  layout_table considers margins etc. again */
 		if (!layout_table(box, width, content))
 			return false;
-		layout_solve_width(box->parent->width, box->width, 0, 0, -1, -1,
-				box->margin, box->padding, box->border);
+		layout_solve_width(box, box->parent->width, box->width, 0, 0, 
+				-1, -1);
 	}
 
 	/* 10.6.4 */

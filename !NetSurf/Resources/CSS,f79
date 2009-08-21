@@ -69,11 +69,8 @@ dir { display: block; padding-left: 1.5em; margin: 1.12em 0; }
 menu { display: block; padding-left: 1.5em; margin: 1.12em 0; }
 
 table { display: table; border-spacing: 2px; }
-table[align=left] { float: left; }
-table[align=center] { margin-left: auto; margin-right: auto; text-align: left; }
-table[align=right] { float: right; text-align: left; }
 
-caption { display: table-caption; text-align: center; }
+caption { display: table-caption; }
 
 thead { display: table-header-group; vertical-align: middle; }
 tfoot { display: table-footer-group; vertical-align: middle; }
@@ -82,34 +79,19 @@ tbody { display: table-row-group; vertical-align: middle; }
 colgroup { display: table-column-group; }
 col { display: table-column; }
 
-tr { display: table-row; vertical-align: middle; }
+table > tr { vertical-align: middle; }
+
+tr { display: table-row; vertical-align: inherit; }
 td, th { display: table-cell; vertical-align: inherit; padding: 1px; }
-td { text-align: left; }
 th { font-weight: bold; text-align: center; }
 
 td[nowrap], th[nowrap] { white-space: nowrap; }
 
-tr[align=left] > td, tr[align=left] > th { text-align: left; }
-tr[align=center] > td, tr[align=center] > th { text-align: center; }
-tr[align=right] > td, tr[align=right] > th { text-align: right; }
-
-col[valign=top], colgroup[valign=top], tbody[valign=top], td[valign=top], tfoot[valign=top], th[valign=top], thead[valign=top], tr[valign=top] { vertical-align: top; }
-col[valign=middle], colgroup[valign=middle], tbody[valign=middle], td[valign=middle], tfoot[valign=middle], th[valign=middle], thead[valign=middle], tr[valign=middle] { vertical-align: middle; }
-col[valign=bottom], colgroup[valign=bottom], tbody[valign=bottom], td[valign=bottom], tfoot[valign=bottom], th[valign=bottom], thead[valign=bottom], tr[valign=bottom] { vertical-align: bottom; }
-
 a:link { color: #00f; text-decoration: underline; }
 
 img { color: #888; }
-img[align=left] { float: left; }
-img[align=right] { float: right; }
 
-object[align=left] { float: left; }
-object[align=right] { float: right; }
-
-applet[align=left] { float: left; }
-applet[align=right] { float: right; }
-
-center { display: block; text-align: center; }
+center { display: block; }
 
 tt { font-family: monospace; }
 i { font-style: italic; }
@@ -136,15 +118,11 @@ font[size="+4"] { font-size: xx-large }
 
 hr {	display: block; background-color: #000; height: 1px;
 	margin: 4px auto; border: 1px #d9d9d9 inset; }
-hr[align=left] { margin-left: 0; }
-hr[align=right] { margin-right: 0; }
 hr[noshade] { background-color: #888; height: 2px; border: none; }
 
 noframes { display: none; }
 
 iframe { width: 19em; height: 10em; }
-iframe[align=left] { float: left; }
-iframe[align=right] { float: right; }
 
 form { display: block; }
 
@@ -174,9 +152,5 @@ textarea { background-color: #fff; color: #000; text-align: left;
 	margin: 1px; border: 2px solid #333; padding: 0 2px; }
 
 fieldset { display: block; border: thin solid #888; margin: 1.12em 0; }
-
-[align=left] { text-align: left; }
-[align=center] { text-align: center; }
-[align=right] { text-align: right; }
 
 noembed, script, style, title { display: none; }

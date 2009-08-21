@@ -1307,6 +1307,25 @@ css_error node_presentational_hint(void *pw, void *node,
 		xmlFree(bgcol);
 
 		return CSS_OK;
+	} else if (property == CSS_PROP_CAPTION_SIDE) {
+		xmlChar *align = NULL;
+
+		if (strcmp((const char *) n->name, "caption") == 0)
+			align = xmlGetProp(n, (const xmlChar *) "align");
+
+		if (align == NULL)
+			return CSS_PROPERTY_NOT_SET;
+
+		if (strcmp((const char *) align, "bottom") == 0) {
+			hint->status = CSS_CAPTION_SIDE_BOTTOM;
+		} else {
+			xmlFree(align);
+			return CSS_PROPERTY_NOT_SET;
+		}
+
+		xmlFree(align);
+
+		return CSS_OK;
 	} else if (property == CSS_PROP_COLOR) {
 		xmlChar *col;
 		css_error error;
@@ -1352,6 +1371,33 @@ css_error node_presentational_hint(void *pw, void *node,
 		}
 
 		xmlFree(col);
+
+		return CSS_OK;
+	} else if (property == CSS_PROP_FLOAT) {
+		xmlChar *align = NULL;
+
+		/** \todo input[type=image][align=*] - $11.3.3 */
+		if (strcmp((const char *) n->name, "table") == 0 ||
+				strcmp((const char *) n->name, "applet") == 0 ||
+				strcmp((const char *) n->name, "embed") == 0 ||
+				strcmp((const char *) n->name, "iframe") == 0 ||
+				strcmp((const char *) n->name, "img") == 0 ||
+				strcmp((const char *) n->name, "object") == 0)
+			align = xmlGetProp(n, (const xmlChar *) "align");
+
+		if (align == NULL)
+			return CSS_PROPERTY_NOT_SET;
+
+		if (strcmp((const char *) align, "left") == 0) {
+			hint->status = CSS_FLOAT_LEFT;
+		} else if (strcmp((const char *) align, "right") == 0) {
+			hint->status = CSS_FLOAT_RIGHT;
+		} else {
+			xmlFree(align);
+			return CSS_PROPERTY_NOT_SET;
+		}
+
+		xmlFree(align);
 
 		return CSS_OK;
 	} else if (property == CSS_PROP_HEIGHT) {
@@ -1592,29 +1638,84 @@ css_error node_presentational_hint(void *pw, void *node,
 		return CSS_OK;
 	} else if (property == CSS_PROP_MARGIN_RIGHT ||
 			property == CSS_PROP_MARGIN_LEFT) {
-		xmlChar *hspace;
+		xmlChar *hspace = NULL;
+		xmlChar *align = NULL;
 
 		if (strcmp((const char *) n->name, "img") == 0 ||
-				strcmp((const char *) n->name, "applet") == 0)
+				strcmp((const char *) n->name, "applet") == 0) {
 			hspace = xmlGetProp(n, (const xmlChar *) "hspace");
-		else
-			hspace = NULL;
 
-		if (hspace == NULL)
-			return CSS_PROPERTY_NOT_SET;
+			if (hspace == NULL)
+				return CSS_PROPERTY_NOT_SET;
 
-		if (parse_dimension((const char *) hspace, false,
-				&hint->data.length.value,
-				&hint->data.length.unit)) {
-			hint->status = CSS_MARGIN_SET;
-		} else {
+			if (parse_dimension((const char *) hspace, false,
+					&hint->data.length.value,
+					&hint->data.length.unit)) {
+				hint->status = CSS_MARGIN_SET;
+			} else {
+				xmlFree(hspace);
+				return CSS_PROPERTY_NOT_SET;
+			}
+
 			xmlFree(hspace);
-			return CSS_PROPERTY_NOT_SET;
+
+			return CSS_OK;
+		} else if (strcmp((const char *) n->name, "table") == 0) {
+			align = xmlGetProp(n, (const xmlChar *) "align");
+
+			if (align == NULL)
+				return CSS_PROPERTY_NOT_SET;
+
+			if (strcmp((const char *) align, "center") == 0 ||
+					strcmp((const char *) align, 
+							"abscenter") == 0 ||
+					strcmp((const char *) align, 
+							"middle") == 0 ||
+					strcmp((const char *) align, 
+							"absmiddle") == 0) {
+				hint->status = CSS_MARGIN_AUTO;
+			} else {
+				xmlFree(align);
+				return CSS_PROPERTY_NOT_SET;
+			}
+
+			xmlFree(align);
+
+			return CSS_OK;
+		} else if (strcmp((const char *) n->name, "hr") == 0) {
+			align = xmlGetProp(n, (const xmlChar *) "align");
+
+			if (align == NULL)
+				return CSS_PROPERTY_NOT_SET;
+
+			if (strcmp((const char *) align, "left") == 0) {
+				if (property == CSS_PROP_MARGIN_LEFT) {
+					hint->data.length.value = 0;
+					hint->data.length.unit = CSS_UNIT_PX;
+					hint->status = CSS_MARGIN_SET;
+				} else {
+					hint->status = CSS_MARGIN_AUTO;
+				}
+			} else if (strcmp((const char *) align, 
+					"center") == 0) {
+				hint->status = CSS_MARGIN_AUTO;
+			} else if (strcmp((const char *) align, "right") == 0) {
+				if (property == CSS_PROP_MARGIN_RIGHT) {
+					hint->data.length.value = 0;
+					hint->data.length.unit = CSS_UNIT_PX;
+					hint->status = CSS_MARGIN_SET;
+				} else {
+					hint->status = CSS_MARGIN_AUTO;
+				}
+			} else {
+				xmlFree(align);
+				return CSS_PROPERTY_NOT_SET;
+			}
+
+			xmlFree(align);
+
+			return CSS_OK;
 		}
-
-		xmlFree(hspace);
-
-		return CSS_OK;
 	} else if (property == CSS_PROP_PADDING_TOP ||
 			property == CSS_PROP_PADDING_RIGHT ||
 			property == CSS_PROP_PADDING_BOTTOM ||
@@ -1652,6 +1753,172 @@ css_error node_presentational_hint(void *pw, void *node,
 		xmlFree(cellpadding);
 
 		return CSS_OK;
+	} else if (property == CSS_PROP_TEXT_ALIGN) {
+		xmlChar *align = NULL;
+
+		if (strcmp((const char *) n->name, "p") == 0 ||
+				strcmp((const char *) n->name, "h1") == 0 ||
+				strcmp((const char *) n->name, "h2") == 0 ||
+				strcmp((const char *) n->name, "h3") == 0 ||
+				strcmp((const char *) n->name, "h4") == 0 ||
+				strcmp((const char *) n->name, "h5") == 0 ||
+				strcmp((const char *) n->name, "h6") == 0)
+			align = xmlGetProp(n, (const xmlChar *) "align");
+
+		if (align == NULL)
+			return CSS_PROPERTY_NOT_SET;
+
+		if (strcmp((const char *) align, "left") == 0) {
+			hint->status = CSS_TEXT_ALIGN_LEFT;
+		} else if (strcmp((const char *) align, "center") == 0) {
+			hint->status = CSS_TEXT_ALIGN_CENTER;
+		} else if (strcmp((const char *) align, "right") == 0) {
+			hint->status = CSS_TEXT_ALIGN_RIGHT;
+		} else if (strcmp((const char *) align, "justify") == 0) {
+			hint->status = CSS_TEXT_ALIGN_JUSTIFY;
+		} else {
+			xmlFree(align);
+			return CSS_PROPERTY_NOT_SET;
+		}
+
+		xmlFree(align);
+
+		return CSS_OK;
+	} else if (property == CSS_PROP_VERTICAL_ALIGN) {
+		xmlChar *valign = NULL;
+
+		if (strcmp((const char *) n->name, "col") == 0 ||
+				strcmp((const char *) n->name, "thead") == 0 ||
+				strcmp((const char *) n->name, "tbody") == 0 ||
+				strcmp((const char *) n->name, "tfoot") == 0 ||
+				strcmp((const char *) n->name, "tr") == 0 ||
+				strcmp((const char *) n->name, "td") == 0 ||
+				strcmp((const char *) n->name, "th") == 0) {
+			valign = xmlGetProp(n, (const xmlChar *) "valign");
+
+			if (valign == NULL)
+				return CSS_PROPERTY_NOT_SET;
+
+			if (strcmp((const char *) valign, "top") == 0) {
+				hint->status = CSS_VERTICAL_ALIGN_TOP;
+			} else if (strcmp((const char *) valign, 
+					"middle") == 0) {
+				hint->status = CSS_VERTICAL_ALIGN_MIDDLE;
+			} else if (strcmp((const char *) valign, 
+					"bottom") == 0) {
+				hint->status = CSS_VERTICAL_ALIGN_BOTTOM;
+			} else if (strcmp((const char *) valign, 
+					"baseline") == 0) {
+				hint->status = CSS_VERTICAL_ALIGN_BASELINE;
+			} else {
+				xmlFree(valign);
+				return CSS_PROPERTY_NOT_SET;
+			}
+
+			xmlFree(valign);
+
+			return CSS_OK;
+		} else if (strcmp((const char *) n->name, "applet") == 0 ||
+				strcmp((const char *) n->name, "embed") == 0 ||
+				strcmp((const char *) n->name, "iframe") == 0 ||
+				strcmp((const char *) n->name, "img") == 0 ||
+				strcmp((const char *) n->name, "object") == 0) {
+			/** \todo input[type=image][align=*] - $11.3.3 */
+			valign = xmlGetProp(n, (const xmlChar *) "align");
+
+			if (valign == NULL)
+				return CSS_PROPERTY_NOT_SET;
+
+			if (strcmp((const char *) valign, "top") == 0) {
+				hint->status = CSS_VERTICAL_ALIGN_TOP;
+			} else if (strcmp((const char *) valign, 
+					"bottom") == 0 || 
+					strcmp((const char *) valign, 
+					"baseline") == 0) {
+				hint->status = CSS_VERTICAL_ALIGN_BASELINE;
+			} else if (strcmp((const char *) valign, 
+					"texttop") == 0) {
+				hint->status = CSS_VERTICAL_ALIGN_TEXT_TOP;
+			} else if (strcmp((const char *) valign,
+					"absmiddle") == 0 ||
+					strcmp((const char *) valign,
+					"abscenter") == 0) {
+				hint->status = CSS_VERTICAL_ALIGN_MIDDLE;
+			} else {
+				xmlFree(valign);
+				return CSS_PROPERTY_NOT_SET;
+			}
+
+			xmlFree(valign);
+
+			return CSS_OK;
+		}
+	} else if (property == CSS_PROP_LIBCSS_ALIGN) {
+		xmlChar *align = NULL;
+
+		if (strcmp((const char *) n->name, "center") == 0) {
+			hint->status = CSS_LIBCSS_ALIGN_CENTER;
+
+			return CSS_OK;
+		} else if (strcmp((const char *) n->name, "caption") == 0) {
+			align = xmlGetProp(n, (const xmlChar *) "align");
+
+			if (align == NULL || strcmp((const char *) align, 
+					"center") == 0) {
+				hint->status = CSS_LIBCSS_ALIGN_CENTER;
+			} else if (strcmp((const char *) align, "left") == 0) {
+				hint->status = CSS_LIBCSS_ALIGN_LEFT;
+			} else if (strcmp((const char *) align, "right") == 0) {
+				hint->status = CSS_LIBCSS_ALIGN_RIGHT;
+			} else if (strcmp((const char *) align, 
+					"justify") == 0) {
+				hint->status = CSS_LIBCSS_ALIGN_JUSTIFY;
+			} else {
+				xmlFree(align);
+				return CSS_PROPERTY_NOT_SET;
+			}
+
+			if (align != NULL)
+				xmlFree(align);
+
+			return CSS_OK;
+		} else if (strcmp((const char *) n->name, "div") == 0 ||
+				strcmp((const char *) n->name, "thead") == 0 ||
+				strcmp((const char *) n->name, "tbody") == 0 ||
+				strcmp((const char *) n->name, "tfoot") == 0 ||
+				strcmp((const char *) n->name, "tr") == 0 ||
+				strcmp((const char *) n->name, "td") == 0 ||
+				strcmp((const char *) n->name, "th") == 0) {
+			align = xmlGetProp(n, (const xmlChar *) "align");
+
+			if (align == NULL)
+				return CSS_PROPERTY_NOT_SET;
+
+			if (strcmp((const char *) align, "center") == 0) {
+				hint->status = CSS_LIBCSS_ALIGN_CENTER;
+			} else if (strcmp((const char *) align, "left") == 0) {
+				hint->status = CSS_LIBCSS_ALIGN_LEFT;
+			} else if (strcmp((const char *) align, "right") == 0) {
+				hint->status = CSS_LIBCSS_ALIGN_RIGHT;
+			} else if (strcmp((const char *) align, 
+					"justify") == 0) {
+				hint->status = CSS_LIBCSS_ALIGN_JUSTIFY;
+			} else {
+				xmlFree(align);
+				return CSS_PROPERTY_NOT_SET;
+			}
+
+			xmlFree(align);
+
+			return CSS_OK;
+		} else if (strcmp((const char *) n->name, "table") == 0) {
+			/* Tables reset HTML alignment */
+			hint->status = CSS_LIBCSS_ALIGN_DEFAULT;
+
+			return CSS_OK;
+		} else {
+			return CSS_PROPERTY_NOT_SET;
+		}
 	}
 
 	return CSS_PROPERTY_NOT_SET;
