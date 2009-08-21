@@ -1092,6 +1092,8 @@ int layout_solve_width(struct box *box, int available_width, int width,
 			box->margin[LEFT] = 0;
 			box->margin[RIGHT] = AUTO;
 			break;
+		case CSS_LIBCSS_ALIGN_DEFAULT:
+			break;
 		}
 	}
 
