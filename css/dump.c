@@ -1472,6 +1472,15 @@ void nscss_dump_computed_style(FILE *stream, const css_computed_style *style)
 	case CSS_TEXT_ALIGN_DEFAULT:
 		fprintf(stream, "text-align: default ");
 		break;
+	case CSS_TEXT_ALIGN_LIBCSS_LEFT:
+		fprintf(stream, "text-align: -libcss-left ");
+		break;
+	case CSS_TEXT_ALIGN_LIBCSS_CENTER:
+		fprintf(stream, "text-align: -libcss-center ");
+		break;
+	case CSS_TEXT_ALIGN_LIBCSS_RIGHT:
+		fprintf(stream, "text-align: -libcss-right ");
+		break;
 	default:
 		break;
 	}
@@ -1683,28 +1692,6 @@ void nscss_dump_computed_style(FILE *stream, const css_computed_style *style)
 		break;
 	case CSS_Z_INDEX_SET:
 		fprintf(stream, "z-index: %d ", zindex);
-		break;
-	default:
-		break;
-	}
-
-	/* -libcss-align */
-	val = css_computed_libcss_align(style);
-	switch (val) {
-	case CSS_LIBCSS_ALIGN_LEFT:
-		fprintf(stream, "-libcss-align: left ");
-		break;
-	case CSS_LIBCSS_ALIGN_RIGHT:
-		fprintf(stream, "-libcss-align: right ");
-		break;
-	case CSS_LIBCSS_ALIGN_CENTER:
-		fprintf(stream, "-libcss-align: center ");
-		break;
-	case CSS_LIBCSS_ALIGN_JUSTIFY:
-		fprintf(stream, "-libcss-align: justify ");
-		break;
-	case CSS_LIBCSS_ALIGN_DEFAULT:
-		fprintf(stream, "-libcss-align: default ");
 		break;
 	default:
 		break;
