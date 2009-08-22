@@ -1762,28 +1762,93 @@ css_error node_presentational_hint(void *pw, void *node,
 				strcmp((const char *) n->name, "h3") == 0 ||
 				strcmp((const char *) n->name, "h4") == 0 ||
 				strcmp((const char *) n->name, "h5") == 0 ||
-				strcmp((const char *) n->name, "h6") == 0)
+				strcmp((const char *) n->name, "h6") == 0) {
 			align = xmlGetProp(n, (const xmlChar *) "align");
 
-		if (align == NULL)
-			return CSS_PROPERTY_NOT_SET;
+			if (align == NULL)
+				return CSS_PROPERTY_NOT_SET;
 
-		if (strcmp((const char *) align, "left") == 0) {
-			hint->status = CSS_TEXT_ALIGN_LEFT;
-		} else if (strcmp((const char *) align, "center") == 0) {
-			hint->status = CSS_TEXT_ALIGN_CENTER;
-		} else if (strcmp((const char *) align, "right") == 0) {
-			hint->status = CSS_TEXT_ALIGN_RIGHT;
-		} else if (strcmp((const char *) align, "justify") == 0) {
-			hint->status = CSS_TEXT_ALIGN_JUSTIFY;
-		} else {
+			if (strcmp((const char *) align, "left") == 0) {
+				hint->status = CSS_TEXT_ALIGN_LEFT;
+			} else if (strcmp((const char *) align, 
+					"center") == 0) {
+				hint->status = CSS_TEXT_ALIGN_CENTER;
+			} else if (strcmp((const char *) align, "right") == 0) {
+				hint->status = CSS_TEXT_ALIGN_RIGHT;
+			} else if (strcmp((const char *) align, 
+					"justify") == 0) {
+				hint->status = CSS_TEXT_ALIGN_JUSTIFY;
+			} else {
+				xmlFree(align);
+				return CSS_PROPERTY_NOT_SET;
+			}
+
 			xmlFree(align);
+
+			return CSS_OK;
+		} else if (strcmp((const char *) n->name, "center") == 0) {
+			hint->status = CSS_TEXT_ALIGN_LIBCSS_CENTER;
+
+			return CSS_OK;
+		} else if (strcmp((const char *) n->name, "caption") == 0) {
+			align = xmlGetProp(n, (const xmlChar *) "align");
+
+			if (align == NULL || strcmp((const char *) align, 
+					"center") == 0) {
+				hint->status = CSS_TEXT_ALIGN_LIBCSS_CENTER;
+			} else if (strcmp((const char *) align, "left") == 0) {
+				hint->status = CSS_TEXT_ALIGN_LIBCSS_LEFT;
+			} else if (strcmp((const char *) align, "right") == 0) {
+				hint->status = CSS_TEXT_ALIGN_LIBCSS_RIGHT;
+			} else if (strcmp((const char *) align, 
+					"justify") == 0) {
+				hint->status = CSS_TEXT_ALIGN_JUSTIFY;
+			} else {
+				xmlFree(align);
+				return CSS_PROPERTY_NOT_SET;
+			}
+
+			if (align != NULL)
+				xmlFree(align);
+
+			return CSS_OK;
+		} else if (strcmp((const char *) n->name, "div") == 0 ||
+				strcmp((const char *) n->name, "thead") == 0 ||
+				strcmp((const char *) n->name, "tbody") == 0 ||
+				strcmp((const char *) n->name, "tfoot") == 0 ||
+				strcmp((const char *) n->name, "tr") == 0 ||
+				strcmp((const char *) n->name, "td") == 0 ||
+				strcmp((const char *) n->name, "th") == 0) {
+			align = xmlGetProp(n, (const xmlChar *) "align");
+
+			if (align == NULL)
+				return CSS_PROPERTY_NOT_SET;
+
+			if (strcmp((const char *) align, "center") == 0) {
+				hint->status = CSS_TEXT_ALIGN_LIBCSS_CENTER;
+			} else if (strcmp((const char *) align, "left") == 0) {
+				hint->status = CSS_TEXT_ALIGN_LIBCSS_LEFT;
+			} else if (strcmp((const char *) align, "right") == 0) {
+				hint->status = CSS_TEXT_ALIGN_LIBCSS_RIGHT;
+			} else if (strcmp((const char *) align, 
+					"justify") == 0) {
+				hint->status = CSS_TEXT_ALIGN_JUSTIFY;
+			} else {
+				xmlFree(align);
+				return CSS_PROPERTY_NOT_SET;
+			}
+
+			xmlFree(align);
+
+			return CSS_OK;
+		} else if (strcmp((const char *) n->name, "table") == 0) {
+			/* Tables reset alignment */
+			hint->status = CSS_TEXT_ALIGN_DEFAULT;
+
+			return CSS_OK;
+		} else {
 			return CSS_PROPERTY_NOT_SET;
 		}
-
-		xmlFree(align);
-
-		return CSS_OK;
 	} else if (property == CSS_PROP_VERTICAL_ALIGN) {
 		xmlChar *valign = NULL;
 
@@ -1852,72 +1917,6 @@ css_error node_presentational_hint(void *pw, void *node,
 			xmlFree(valign);
 
 			return CSS_OK;
-		}
-	} else if (property == CSS_PROP_LIBCSS_ALIGN) {
-		xmlChar *align = NULL;
-
-		if (strcmp((const char *) n->name, "center") == 0) {
-			hint->status = CSS_LIBCSS_ALIGN_CENTER;
-
-			return CSS_OK;
-		} else if (strcmp((const char *) n->name, "caption") == 0) {
-			align = xmlGetProp(n, (const xmlChar *) "align");
-
-			if (align == NULL || strcmp((const char *) align, 
-					"center") == 0) {
-				hint->status = CSS_LIBCSS_ALIGN_CENTER;
-			} else if (strcmp((const char *) align, "left") == 0) {
-				hint->status = CSS_LIBCSS_ALIGN_LEFT;
-			} else if (strcmp((const char *) align, "right") == 0) {
-				hint->status = CSS_LIBCSS_ALIGN_RIGHT;
-			} else if (strcmp((const char *) align, 
-					"justify") == 0) {
-				hint->status = CSS_LIBCSS_ALIGN_JUSTIFY;
-			} else {
-				xmlFree(align);
-				return CSS_PROPERTY_NOT_SET;
-			}
-
-			if (align != NULL)
-				xmlFree(align);
-
-			return CSS_OK;
-		} else if (strcmp((const char *) n->name, "div") == 0 ||
-				strcmp((const char *) n->name, "thead") == 0 ||
-				strcmp((const char *) n->name, "tbody") == 0 ||
-				strcmp((const char *) n->name, "tfoot") == 0 ||
-				strcmp((const char *) n->name, "tr") == 0 ||
-				strcmp((const char *) n->name, "td") == 0 ||
-				strcmp((const char *) n->name, "th") == 0) {
-			align = xmlGetProp(n, (const xmlChar *) "align");
-
-			if (align == NULL)
-				return CSS_PROPERTY_NOT_SET;
-
-			if (strcmp((const char *) align, "center") == 0) {
-				hint->status = CSS_LIBCSS_ALIGN_CENTER;
-			} else if (strcmp((const char *) align, "left") == 0) {
-				hint->status = CSS_LIBCSS_ALIGN_LEFT;
-			} else if (strcmp((const char *) align, "right") == 0) {
-				hint->status = CSS_LIBCSS_ALIGN_RIGHT;
-			} else if (strcmp((const char *) align, 
-					"justify") == 0) {
-				hint->status = CSS_LIBCSS_ALIGN_JUSTIFY;
-			} else {
-				xmlFree(align);
-				return CSS_PROPERTY_NOT_SET;
-			}
-
-			xmlFree(align);
-
-			return CSS_OK;
-		} else if (strcmp((const char *) n->name, "table") == 0) {
-			/* Tables reset HTML alignment */
-			hint->status = CSS_LIBCSS_ALIGN_DEFAULT;
-
-			return CSS_OK;
-		} else {
-			return CSS_PROPERTY_NOT_SET;
 		}
 	}
 

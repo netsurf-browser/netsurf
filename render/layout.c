@@ -1072,27 +1072,23 @@ int layout_solve_width(struct box *box, int available_width, int width,
 	/* Width was not auto, or was constrained by min/max width
 	 * Need to compute left/right margins */
 
-	/* HTML alignment (only applies to over-constrained boxes) 
-	 * Additionally, we ignore HTML alignment for any boxes whose
-	 * parent has non-default text-align. */
+	/* HTML alignment (only applies to over-constrained boxes) */
 	if (box->margin[LEFT] != AUTO && box->margin[RIGHT] != AUTO &&
-			box->parent != NULL && box->parent->style != NULL &&
-			css_computed_text_align(box->parent->style) == 
-			CSS_TEXT_ALIGN_DEFAULT) {
-		switch (css_computed_libcss_align(box->parent->style)) {
-		case CSS_LIBCSS_ALIGN_RIGHT:
+			box->parent != NULL && box->parent->style != NULL) {
+		switch (css_computed_text_align(box->parent->style)) {
+		case CSS_TEXT_ALIGN_LIBCSS_RIGHT:
 			box->margin[LEFT] = AUTO;
 			box->margin[RIGHT] = 0;
 			break;
-		case CSS_LIBCSS_ALIGN_CENTER:
+		case CSS_TEXT_ALIGN_LIBCSS_CENTER:
 			box->margin[LEFT] = box->margin[RIGHT] = AUTO;
 			break;
-		case CSS_LIBCSS_ALIGN_LEFT:
-		case CSS_LIBCSS_ALIGN_JUSTIFY:
+		case CSS_TEXT_ALIGN_LIBCSS_LEFT:
 			box->margin[LEFT] = 0;
 			box->margin[RIGHT] = AUTO;
 			break;
-		case CSS_LIBCSS_ALIGN_DEFAULT:
+		default:
+			/* Leave it alone; no HTML alignment */
 			break;
 		}
 	}
@@ -2449,40 +2445,26 @@ bool layout_line(struct box *first, int *width, int *y,
 	/* set positions */
 	switch (css_computed_text_align(first->parent->parent->style)) {
 	case CSS_TEXT_ALIGN_RIGHT:
+	case CSS_TEXT_ALIGN_LIBCSS_RIGHT:
 		x0 = x1 - x;
 		break;
 	case CSS_TEXT_ALIGN_CENTER:
+	case CSS_TEXT_ALIGN_LIBCSS_CENTER:
 		x0 = (x0 + (x1 - x)) / 2;
 		break;
 	case CSS_TEXT_ALIGN_LEFT:
+	case CSS_TEXT_ALIGN_LIBCSS_LEFT:
 	case CSS_TEXT_ALIGN_JUSTIFY:
 		/* leave on left */
 		break;
 	case CSS_TEXT_ALIGN_DEFAULT:
-		/* No specified text-align; consider html alignment */
-		switch (css_computed_libcss_align(
-				first->parent->parent->style)) {
-		case CSS_LIBCSS_ALIGN_RIGHT:
-			x0 = x1 - x;
-			break;
-		case CSS_LIBCSS_ALIGN_CENTER:
-			x0 = (x0 + (x1 - x)) / 2;
-			break;
-		case CSS_LIBCSS_ALIGN_LEFT:
-		case CSS_LIBCSS_ALIGN_JUSTIFY:
+		/* None; consider text direction */
+		switch (css_computed_direction(first->parent->parent->style)) {
+		case CSS_DIRECTION_LTR:
 			/* leave on left */
 			break;
-		case CSS_LIBCSS_ALIGN_DEFAULT:
-			/* None; consider text direction */
-			switch (css_computed_direction(
-					first->parent->parent->style)) {
-			case CSS_DIRECTION_LTR:
-				/* leave on left */
-				break;
-			case CSS_DIRECTION_RTL:
-				x0 = x1 - x;
-				break;
-			}
+		case CSS_DIRECTION_RTL:
+			x0 = x1 - x;
 			break;
 		}
 		break;
