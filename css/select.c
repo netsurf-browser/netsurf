@@ -1842,8 +1842,8 @@ css_error node_presentational_hint(void *pw, void *node,
 
 			return CSS_OK;
 		} else if (strcmp((const char *) n->name, "table") == 0) {
-			/* Tables reset alignment */
-			hint->status = CSS_TEXT_ALIGN_DEFAULT;
+			/* Tables usually reset alignment */
+			hint->status = CSS_TEXT_ALIGN_INHERIT_IF_NON_MAGIC;
 
 			return CSS_OK;
 		} else {
