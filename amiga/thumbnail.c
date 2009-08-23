@@ -39,7 +39,7 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 
 	bitmap->nativebmwidth = bitmap->width;
 	bitmap->nativebmheight = bitmap->height;
-	ami_clearclipreg(&browserglob.rp);
+	ami_clearclipreg(&browserglob);
 	plot = amiplot;
 	content_redraw(content, 0, 0, content->width, content->width,
 	0, 0, content->width, content->width, 1.0, 0xFFFFFF);

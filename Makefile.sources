@@ -84,7 +84,7 @@ S_AMIGA := compat.c gui.c tree.c history.c hotlist.c schedule.c		\
 	plotters.c object.c menu.c save_pdf.c arexx.c version.c		\
 	cookies.c context_menu.c clipboard.c save_complete.c		\
 	fetch_file.c fetch_mailto.c search.c history_local.c		\
-	download.c iff_dr2d.c sslcert.c gui_options.c			\
+	download.c iff_dr2d.c sslcert.c gui_options.c print.c		\
 	stringview/stringview.c stringview/urlhistory.c
 S_AMIGA := $(addprefix amiga/,$(S_AMIGA))
 

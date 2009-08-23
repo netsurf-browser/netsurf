@@ -41,6 +41,7 @@ extern char *option_download_dir;
 extern bool option_faster_scroll;
 extern bool option_scale_quality;
 extern bool option_ask_overwrite;
+extern int option_printer_unit;
 
 #define EXTRA_OPTION_DEFINE \
 bool option_verbose_log = false; \
@@ -64,6 +65,7 @@ char *option_download_dir = 0; \
 bool option_faster_scroll = true; \
 bool option_scale_quality = false; \
 bool option_ask_overwrite = false; \
+int option_printer_unit = 0; \
 
 #define EXTRA_OPTION_TABLE \
 { "verbose_log",	OPTION_BOOL,	&option_verbose_log}, \
@@ -86,5 +88,7 @@ bool option_ask_overwrite = false; \
 { "download_dir",		OPTION_STRING,	&option_download_dir }, \
 { "faster_scroll",	OPTION_BOOL,	&option_faster_scroll}, \
 { "scale_quality",	OPTION_BOOL,	&option_scale_quality}, \
-{ "ask_overwrite",	OPTION_BOOL,	&option_ask_overwrite},
+{ "ask_overwrite",	OPTION_BOOL,	&option_ask_overwrite}, \
+{ "printer_unit",	OPTION_INTEGER,	&option_printer_unit},
+
 #endif

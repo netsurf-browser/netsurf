@@ -167,7 +167,7 @@ void ami_history_redraw(struct history_window *hw)
 
 //	currp = &glob.rp;
 
-	ami_clearclipreg(&browserglob.rp);
+	ami_clearclipreg(&browserglob);
 	ami_history_update_extent(hw);
 
 	BltBitMapRastPort(browserglob.bm, 0, 0, hw->win->RPort,

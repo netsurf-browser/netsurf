@@ -60,8 +60,9 @@ bool ami_flush(void);
 bool ami_path(const float *p, unsigned int n, colour fill, float width,
 			colour c, const float transform[6]);
 
-void ami_init_layers(struct gui_globals *gg);
+void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height);
 void ami_free_layers(struct gui_globals *gg);
+void ami_clearclipreg(struct gui_globals *gg);
 
 struct gui_globals *glob;
 #endif

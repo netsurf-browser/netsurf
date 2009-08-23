@@ -107,17 +107,20 @@ void ami_cairo_set_dashed(cairo_t *cr)
 }
 #endif
 
-void ami_init_layers(struct gui_globals *gg)
+void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 {
 	/* init shared bitmaps                                               *
 	 * Height is set to screen width to give enough space for thumbnails *
 	 * Also applies to the further gfx/layers functions and memory below */
 
+	if(!width) width = scrn->Width;
+	if(!height) height = scrn->Width;
+
 	gg->layerinfo = NewLayerInfo();
 	gg->areabuf = AllocVec(100,MEMF_PRIVATE | MEMF_CLEAR);
-	gg->tmprasbuf = AllocVec(scrn->Width*scrn->Width,MEMF_PRIVATE | MEMF_CLEAR);
+	gg->tmprasbuf = AllocVec(width*height,MEMF_PRIVATE | MEMF_CLEAR);
 
-	gg->bm = p96AllocBitMap(scrn->Width,scrn->Width,32,
+	gg->bm = p96AllocBitMap(width, height, 32,
 						BMF_INTERLEAVED, NULL, RGBFB_A8R8G8B8);
 
 	if(!gg->bm) warn_user("NoMemory","");
@@ -128,7 +131,7 @@ void ami_init_layers(struct gui_globals *gg)
 	SetDrMd(&gg->rp,BGBACKFILL);
 
 	gg->rp.Layer = CreateUpfrontLayer(gg->layerinfo,gg->rp.BitMap,0,0,
-					scrn->Width-1,scrn->Width-1,LAYERSIMPLE,NULL);
+					width-1, height-1, LAYERSIMPLE, NULL);
 
 	InstallLayerHook(gg->rp.Layer,LAYERS_NOBACKFILL);
 
@@ -141,7 +144,7 @@ void ami_init_layers(struct gui_globals *gg)
 
 	if((!gg->tmprasbuf) || (!gg->rp.TmpRas))	warn_user("NoMemory","");
 
-	InitTmpRas(gg->rp.TmpRas,gg->tmprasbuf,scrn->Width*scrn->Width);
+	InitTmpRas(gg->rp.TmpRas, gg->tmprasbuf, width*height);
 
 #ifdef NS_AMIGA_CAIRO
 	gg->surface = cairo_amigaos_surface_create(gg->rp.BitMap);
@@ -176,6 +179,19 @@ bool ami_clg(colour c)
 	ClearScreen(&glob->rp);
 */
 	return true;
+}
+
+void ami_clearclipreg(struct gui_globals *gg)
+{
+	struct Region *reg = NULL;
+
+	reg = InstallClipRegion(gg->rp.Layer,NULL);
+	if(reg) DisposeRegion(reg);
+
+	gg->rect.MinX = 0;
+	gg->rect.MinY = 0;
+	gg->rect.MaxX = scrn->Width-1;
+	gg->rect.MaxY = scrn->Height-1;
 }
 
 bool ami_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)

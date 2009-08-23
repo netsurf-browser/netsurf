@@ -119,7 +119,6 @@ void ami_update_pointer(struct Window *win, gui_pointer_shape shape);
 void ami_close_all_tabs(struct gui_window_2 *gwin);
 void ami_quit_netsurf(void);
 void ami_get_theme_filename(char *filename,char *themestring);
-void ami_clearclipreg(struct RastPort *rp);
 void ami_do_redraw(struct gui_window_2 *g);
 STRPTR ami_locale_langs(void);
 

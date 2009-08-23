@@ -596,7 +596,7 @@ void gui_init2(int argc, char** argv)
 	if(notalreadyrunning)
 	{
 		ami_openscreen();
-		ami_init_layers(&browserglob);
+		ami_init_layers(&browserglob, 0, 0);
 	}
 
 	if(argc) // argc==0 is started from wb
@@ -2238,19 +2238,6 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 	}
 }
 
-void ami_clearclipreg(struct RastPort *rp)
-{
-	struct Region *reg = NULL;
-
-	reg = InstallClipRegion(rp->Layer,NULL);
-	if(reg) DisposeRegion(reg);
-
-	browserglob.rect.MinX = 0;
-	browserglob.rect.MinY = 0;
-	browserglob.rect.MaxX = scrn->Width-1;
-	browserglob.rect.MaxY = scrn->Height-1;
-}
-
 /**
  * Redraw an area of the browser window - Amiga-specific function
  *
@@ -2318,7 +2305,7 @@ void ami_do_redraw_limits(struct gui_window *g, struct content *c,int x0, int y0
 
 	current_redraw_browser = NULL;
 
-	ami_clearclipreg(&browserglob.rp);
+	ami_clearclipreg(&browserglob);
 
 	BltBitMapRastPort(browserglob.bm,x0-sx,y0-sy,g->shared->win->RPort,
 						xoffset+x0-sx,yoffset+y0-sy,x1-x0,y1-y0,0x0C0);
@@ -2462,7 +2449,7 @@ void ami_do_redraw(struct gui_window_2 *g)
 						g->bw->scale,0xFFFFFF);
 		}
 
-		ami_clearclipreg(&browserglob.rp);
+		ami_clearclipreg(&browserglob);
 		BltBitMapRastPort(browserglob.bm,0,0,g->win->RPort,bbox->Left,bbox->Top,
 								bbox->Width,bbox->Height,0x0C0);
 	}
@@ -2918,7 +2905,7 @@ void gui_window_new_content(struct gui_window *g)
 		c = g->shared->bw->current_content;
 	else return;
 
-	ami_clearclipreg(&browserglob.rp);
+	ami_clearclipreg(&browserglob);
 	g->shared->new_content = true;
 	g->scrollx = 0;
 	g->scrolly = 0;

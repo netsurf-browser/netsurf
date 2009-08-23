@@ -47,6 +47,7 @@
 #include "amiga/clipboard.h"
 #include "content/fetch.h"
 #include "amiga/gui_options.h"
+#include "amiga/print.h"
 
 BOOL menualreadyinit;
 const char * const netsurf_version;
@@ -87,27 +88,29 @@ void ami_init_menulabs(void)
 	menulab[12] = ami_utf8_easy((char *)messages_get("CloseTab"));
 	menulab[13] = ami_utf8_easy((char *)messages_get("CloseWindow"));
 	menulab[14] = NM_BARLABEL;
-	menulab[15] = ami_utf8_easy((char *)messages_get("About"));
-	menulab[16] = ami_utf8_easy((char *)messages_get("Quit"));
-	menulab[17] = ami_utf8_easy((char *)messages_get("Edit"));
-	menulab[18] = ami_utf8_easy((char *)messages_get("CopyNS"));
-	menulab[19] = ami_utf8_easy((char *)messages_get("PasteNS"));
-	menulab[20] = ami_utf8_easy((char *)messages_get("SelectAllNS"));
-	menulab[21] = ami_utf8_easy((char *)messages_get("ClearNS"));
-	menulab[22] = ami_utf8_easy((char *)messages_get("Browser"));
-	menulab[23] = ami_utf8_easy((char *)messages_get("FindTextNS"));
-	menulab[24] = NM_BARLABEL;
-	menulab[25] = ami_utf8_easy((char *)messages_get("normal"));
-	menulab[26] = ami_utf8_easy((char *)messages_get("HistLocalNS"));
-	menulab[27] = ami_utf8_easy((char *)messages_get("HistGlobalNS"));
-	menulab[28] = NM_BARLABEL;
-	menulab[29] = ami_utf8_easy((char *)messages_get("ShowCookies"));
+	menulab[15] = ami_utf8_easy((char *)messages_get("PrintNS"));
+	menulab[16] = NM_BARLABEL;
+	menulab[17] = ami_utf8_easy((char *)messages_get("About"));
+	menulab[18] = ami_utf8_easy((char *)messages_get("Quit"));
+	menulab[19] = ami_utf8_easy((char *)messages_get("Edit"));
+	menulab[20] = ami_utf8_easy((char *)messages_get("CopyNS"));
+	menulab[21] = ami_utf8_easy((char *)messages_get("PasteNS"));
+	menulab[22] = ami_utf8_easy((char *)messages_get("SelectAllNS"));
+	menulab[23] = ami_utf8_easy((char *)messages_get("ClearNS"));
+	menulab[24] = ami_utf8_easy((char *)messages_get("Browser"));
+	menulab[25] = ami_utf8_easy((char *)messages_get("FindTextNS"));
+	menulab[26] = NM_BARLABEL;
+	menulab[27] = ami_utf8_easy((char *)messages_get("normal"));
+	menulab[28] = ami_utf8_easy((char *)messages_get("HistLocalNS"));
+	menulab[29] = ami_utf8_easy((char *)messages_get("HistGlobalNS"));
 	menulab[30] = NM_BARLABEL;
-	menulab[31] = ami_utf8_easy((char *)messages_get("Redraw"));
-	menulab[32] = ami_utf8_easy((char *)messages_get("Hotlist"));
-	menulab[33] = ami_utf8_easy((char *)messages_get("HotlistAdd"));
-	menulab[34] = ami_utf8_easy((char *)messages_get("HotlistShowNS"));
-	menulab[35] = NM_BARLABEL;
+	menulab[31] = ami_utf8_easy((char *)messages_get("ShowCookies"));
+	menulab[32] = NM_BARLABEL;
+	menulab[33] = ami_utf8_easy((char *)messages_get("Redraw"));
+	menulab[34] = ami_utf8_easy((char *)messages_get("Hotlist"));
+	menulab[35] = ami_utf8_easy((char *)messages_get("HotlistAdd"));
+	menulab[36] = ami_utf8_easy((char *)messages_get("HotlistShowNS"));
+	menulab[37] = NM_BARLABEL;
 
 	menulab[AMI_MENU_HOTLIST_MAX] = ami_utf8_easy((char *)messages_get("Settings"));
 	menulab[AMI_MENU_HOTLIST_MAX+1] = ami_utf8_easy((char *)messages_get("SettingsEdit"));
@@ -138,6 +141,8 @@ struct NewMenu *ami_create_menu(ULONG type)
 			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
 			  	{ NM_ITEM,0,"K",0,0,0,}, // close tab
 			  	{ NM_ITEM,0,0,0,0,0,}, // close window
+			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
+			  	{ NM_ITEM,0,"P",0,0,0,}, // print
 			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
 			  	{ NM_ITEM,0,"?",0,0,0,}, // about
 			  	{ NM_ITEM,0,"Q",0,0,0,}, // quit
@@ -563,7 +568,11 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 					ami_close_all_tabs(gwin);
 				break;
 
-				case 9: // about
+				case 9: // print
+					ami_print(gwin->bw->current_content);
+				break;
+
+				case 11: // about
 					ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
 
 					TimedDosRequesterTags(
@@ -585,7 +594,7 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 					ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
 				break;
 
-				case 10: // quit
+				case 12: // quit
 					ami_quit_netsurf();
 				break;
 			}
