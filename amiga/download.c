@@ -60,6 +60,8 @@ struct gui_download_window *gui_download_window_create(const char *url,
 	struct gui_download_window *dw;
 	APTR va[3];
 
+	if(!gui) return NULL;
+
 	dw = AllocVec(sizeof(struct gui_download_window),MEMF_PRIVATE | MEMF_CLEAR);
 
 	if((!IsListEmpty(&gui->dllist)) && (dw->dln = (struct dlnode *)FindName(&gui->dllist,url)))
