@@ -1,6 +1,6 @@
-# Italian messages for NetSurf 3.0 Development (Revision 9317)
+# Italian messages for NetSurf 3.0 Development (Revision 9410)
 # Translated by Samir Hawamdeh (http://www.betatesting.it/backforthefuture)
-# 19.08.2009
+# 23.08.2009
 # =========================================================================
 #
 # Description
@@ -250,7 +250,7 @@ PDFNS:PDF...
 IFF:IFF...
 OpenFile:Apri file locale...
 About:Informazioni...
-PrintNS:Print
+PrintNS:Stampa
 
 # Edit menu
 #
@@ -290,7 +290,7 @@ LinkNewTab:Apri in una nuova scheda
 LinkNewWin:Apri in una nuova finestra
 CopyURL:Copia URL nella clipboard
 CopyClip:Copia nella clipboard
-SaveAs:Salva come
+SaveAs:Salva come...
 SaveIFF:Salva come IFF...
 ObjShow:Mostra oggetto
 SelectFile:Seleziona file...
