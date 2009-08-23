@@ -31,8 +31,6 @@ bool ami_print_begin(struct print_settings *ps);
 bool ami_print_next_page(void);
 void ami_print_end(void);
 bool ami_print_dump(void);
-static VOID ami_print_hook(struct Hook *hook, APTR dummy,
-			struct DRPSourceMsg * drpm);
 
 const struct printer amiprinter = {
 	&amiplot,
@@ -44,18 +42,11 @@ const struct printer amiprinter = {
 struct ami_printer_info
 {
 	struct gui_globals *gg;
-	struct IODRPTagsReq *PReq;
+	struct IODRPReq *PReq;
 	struct PrinterData *PD;
 	struct PrinterExtendedData *PED;
 	struct MsgPort *msgport;
 	int page;
-};
-
-struct Hook phook =
-{
-	{NULL, NULL},
-	(HOOKFUNC)ami_print_hook,
-	NULL, NULL
 };
 
 struct ami_printer_info ami_print_info;
@@ -84,6 +75,7 @@ void ami_print(struct content *c)
 	ps = print_make_settings(PRINT_DEFAULT, c->url, &nsfont);
 	ps->page_width = ami_print_info.PED->ped_MaxXDots;
 	ps->page_height = ami_print_info.PED->ped_MaxYDots;
+	ps->scale = 1.0;
 
 	print_basic_run(c, &amiprinter, ps);
 
@@ -128,17 +120,10 @@ void ami_print_end(void)
 
 bool ami_print_dump(void)
 {
-	static struct TagItem tags[] = {
-		{DRPA_SourceHook, (Tag)&phook},
-		{DRPA_AspectX, 1},
-		{DRPA_AspectY, 1},
-		{TAG_DONE, 0}
-	};
-
-	ami_print_info.PReq->io_Command = PRD_DUMPRPORTTAGS;
+	ami_print_info.PReq->io_Command = PRD_DUMPRPORT;
 	ami_print_info.PReq->io_Flags = 0;
 	ami_print_info.PReq->io_Error = 0;
-	ami_print_info.PReq->io_RastPort = NULL;
+	ami_print_info.PReq->io_RastPort = &ami_print_info.gg->rp;
 	ami_print_info.PReq->io_ColorMap = NULL;
 	ami_print_info.PReq->io_Modes = 0;
 	ami_print_info.PReq->io_SrcX = 0;
@@ -148,22 +133,8 @@ bool ami_print_dump(void)
 	ami_print_info.PReq->io_DestCols = ami_print_info.PED->ped_MaxXDots;
 	ami_print_info.PReq->io_DestRows = ami_print_info.PED->ped_MaxYDots;
 	ami_print_info.PReq->io_Special = 0;
-	ami_print_info.PReq->io_TagList = tags;
 
 	DoIO(ami_print_info.PReq);
 
 	return true;
-}
-
-static VOID ami_print_hook(struct Hook *hook, APTR dummy,
-			struct DRPSourceMsg * drpm)
-{
-	struct RenderInfo ri;
-
-	ri.Memory = drpm->buf;
-	ri.BytesPerRow = drpm->width;
-	ri.RGBFormat = RGBFB_A8R8G8B8;
-
-	p96ReadPixelArray(&ri, 0, 0, &ami_print_info.gg->rp, drpm->x, drpm->y,
-					drpm->width, drpm->height);
 }
