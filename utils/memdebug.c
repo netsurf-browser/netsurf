@@ -39,6 +39,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/socket.h>
+#ifdef riscos
+#include <unixlib/local.h>
+#endif
 
 #include "oslib/os.h"
 #include "oslib/osfile.h"
@@ -50,7 +53,9 @@
 #define MAGIC 0x34343434
 #define GUARD 0x34
 
+#if defined(riscos) && !defined(__ELF__)
 extern int __dynamic_num;
+#endif
 
 struct memdebug {
   size_t size;
@@ -286,6 +291,8 @@ void memdebug_free(void *ptr, int line, const char *source)
     fprintf(logfile, "MEM %s:%d free(%p)\n", source, line, ptr);
     if (mem->magic != MAGIC) {
       fprintf(logfile, "MAGIC match failed!\n");
+#ifdef riscos
+  #ifndef __ELF__
       if (__dynamic_num != -1) {
         int size;
         byte *base_address;
@@ -296,6 +303,10 @@ void memdebug_free(void *ptr, int line, const char *source)
         xosfile_save("core", (bits) base_address, 0, base_address,
             base_address + size);
       }
+  #else
+      __unixlib_write_coredump(NULL);
+  #endif
+#endif
     }
     fflush(logfile);
     for (i = 0; i != 8; i++)
