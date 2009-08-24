@@ -141,7 +141,7 @@ void *memdebug_malloc(size_t wantedsize, int line, const char *source)
   }
 
   if(logfile && source)
-    fprintf(logfile, "MEM %s:%d malloc(%u) = %p\n",
+    fprintf(logfile, "MEM %s:%d malloc(%zu) = %p\n",
             source, line, wantedsize, mem ? mem->mem : 0);
   return (mem ? mem->mem : NULL);
 }
@@ -171,7 +171,7 @@ void *memdebug_calloc(size_t wanted_elements, size_t wanted_size,
   }
 
   if(logfile && source)
-    fprintf(logfile, "MEM %s:%d calloc(%u,%u) = %p\n",
+    fprintf(logfile, "MEM %s:%d calloc(%zu,%zu) = %p\n",
             source, line, wanted_elements, wanted_size, mem ? mem->mem : 0);
   return (mem ? mem->mem : NULL);
 }
@@ -193,7 +193,7 @@ char *memdebug_strdup(const char *str, int line, const char *source)
   memcpy(mem, str, len);
 
   if(logfile)
-    fprintf(logfile, "MEM %s:%d strdup(%p) (%u) = %p\n",
+    fprintf(logfile, "MEM %s:%d strdup(%p) (%zu) = %p\n",
             source, line, str, len, mem);
 
   return mem;
@@ -220,7 +220,7 @@ char *memdebug_strndup(const char *str, size_t size, int line, const char *sourc
   }
 
   if(logfile)
-    fprintf(logfile, "MEM %s:%d strndup(%p, %d) (%u) = %p\n",
+    fprintf(logfile, "MEM %s:%d strndup(%p, %zd) (%zu) = %p\n",
             source, line, str, size, len, mem);
 
   return mem;
@@ -240,7 +240,8 @@ void *memdebug_realloc(void *ptr, size_t wantedsize,
     return NULL;
 
   if(ptr) {
-    mem = (struct memdebug *)((char *)ptr - offsetof(struct memdebug, mem));
+    mem = (struct memdebug *)(void *)
+		((char *)ptr - offsetof(struct memdebug, mem));
   }
 
   if(logfile) {
@@ -249,7 +250,7 @@ void *memdebug_realloc(void *ptr, size_t wantedsize,
     for (i = 0; mem && i != 8; i++)
       if (((char *) mem->mem)[mem->size + i] != GUARD)
         fprintf(logfile, "GUARD %u match failed!\n", i);
-    fprintf(logfile, "MEM %s:%d realloc(%p, %u) = ",
+    fprintf(logfile, "MEM %s:%d realloc(%p, %zu) = ",
             source, line, ptr, wantedsize);
     fflush(logfile);
   }
@@ -279,7 +280,8 @@ void memdebug_free(void *ptr, int line, const char *source)
 
   assert(ptr != NULL);
 
-  mem = (struct memdebug *)((char *)ptr - offsetof(struct memdebug, mem));
+  mem = (struct memdebug *)(void *)
+		((char *)ptr - offsetof(struct memdebug, mem));
   if(logfile) {
     fprintf(logfile, "MEM %s:%d free(%p)\n", source, line, ptr);
     if (mem->magic != MAGIC) {
