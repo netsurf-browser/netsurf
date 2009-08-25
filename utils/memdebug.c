@@ -41,10 +41,10 @@
 #include <sys/socket.h>
 #ifdef riscos
 #include <unixlib/local.h>
-#endif
 
 #include "oslib/os.h"
 #include "oslib/osfile.h"
+#endif
 
 #include "memdebug.h"
 
