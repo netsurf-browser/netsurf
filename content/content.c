@@ -489,6 +489,33 @@ struct content * content_get(const char *url)
 		if (c->status == CONTENT_STATUS_ERROR)
 			/* error state */
 			continue;
+		/** \todo We need to reconsider the entire caching strategy in
+		 * the light of data being shared between specific contents.
+		 *
+		 * For example, string dictionaries are owned by the document, 
+		 * and all stylesheets used by the document share the same 
+		 * dictionary. 
+		 *
+		 * The CSS content handler retrieves the dictionary from its 
+		 * parent content. This relies upon there being a 1:1 mapping 
+		 * between documents and stylesheets.
+		 *
+		 * The type of a content is only known once we've received the
+		 * headers from the fetch layer (and potentially some of the
+		 * content data, too, if we ever sniff for the type). There
+		 * is thus a problem with returning contents of unknown type
+		 * here -- when we subsequently discover that they must only
+		 * have one user, we clone them. By that point, however, we've
+		 * no idea what the parent content is, which means that they
+		 * end up with the wrong parent (and thus wrong dictionary).
+		 *
+		 * Of course, the problem with ignoring unknown content types
+		 * here is that, for all the content types which may be shared,
+		 * we end up duplicating them and wasting memory. Hence the
+		 * need to reconsider everything.
+		 */
+		if (c->type == CONTENT_UNKNOWN)
+			continue;
 		if (c->type != CONTENT_UNKNOWN &&
 				handler_map[c->type].no_share &&
 				c->user_list->next)
