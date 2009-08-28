@@ -133,6 +133,7 @@ extern colour scroll_widget_arrow_colour;
 static Object *mouseptrobj[AMI_LASTPOINTER+1];
 static struct BitMap *mouseptrbm[AMI_LASTPOINTER+1];
 static int mouseptrcurrent=0;
+static struct DrawInfo *dri;
 
 char *ptrs[AMI_LASTPOINTER+1] = {
 	"ptr_default",
@@ -187,6 +188,9 @@ uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved);
 void ami_init_mouse_pointers(void);
 void ami_switch_tab(struct gui_window_2 *gwin,bool redraw);
 static void *myrealloc(void *ptr, size_t len, void *pw);
+void ami_get_hscroll_pos(struct gui_window_2 *gwin, ULONG *xs);
+ULONG ami_set_border_gadget_balance(struct gui_window_2 *gwin);
+ULONG ami_get_border_gadget_balance(struct gui_window_2 *gwin, ULONG *size1, ULONG *size2);
 
 STRPTR ami_locale_langs(void)
 {
@@ -573,6 +577,7 @@ void ami_openscreen(void)
 			scrn = LockPubScreen("Workbench");
 		}
 	}
+	dri = GetScreenDrawInfo(scrn);
 }
 
 void gui_init2(int argc, char** argv)
@@ -805,7 +810,7 @@ void ami_handle_msg(void)
 				case WMHI_MOUSEMOVE:
 					GetAttr(SPACE_AreaBox,gwin->gadgets[GID_BROWSER],(ULONG *)&bbox);
 
-					GetAttr(SCROLLER_Top,gwin->objects[OID_HSCROLL],(ULONG *)&xs);
+					ami_get_hscroll_pos(gwin, (ULONG *)&xs);
 					x = gwin->win->MouseX - bbox->Left +xs; // mousex should be in intuimessage
 
 					GetAttr(SCROLLER_Top,gwin->objects[OID_VSCROLL],(ULONG *)&ys);
@@ -856,7 +861,7 @@ void ami_handle_msg(void)
 
 				case WMHI_MOUSEBUTTONS:
 					GetAttr(SPACE_AreaBox,gwin->gadgets[GID_BROWSER],(ULONG *)&bbox);	
-					GetAttr(SCROLLER_Top,gwin->objects[OID_HSCROLL],(ULONG *)&xs);
+					ami_get_hscroll_pos(gwin, (ULONG *)&xs);
 					x = gwin->win->MouseX - bbox->Left +xs;
 					GetAttr(SCROLLER_Top,gwin->objects[OID_VSCROLL],(ULONG *)&ys);
 					y = gwin->win->MouseY - bbox->Top + ys;
@@ -931,6 +936,12 @@ void ami_handle_msg(void)
 				case WMHI_GADGETUP:
 					switch(result & WMHI_GADGETMASK) //gadaddr->GadgetID) //result & WMHI_GADGETMASK)
 					{
+						case GID_HSCROLL:
+							if(option_faster_scroll)
+								gwin->redraw_scroll = true;
+							gwin->redraw_required = true;
+						break;
+
 						case GID_TABS:
 							ami_switch_tab(gwin,true);
 						break;
@@ -1153,6 +1164,7 @@ ie_qualifier anyway
 					switch(node->Type)
 					{
 						case AMINS_WINDOW:
+							ami_set_border_gadget_balance(gwin);
 							ami_update_throbber(gwin,true);
 							// fall through
 						case AMINS_FRAME:
@@ -1281,7 +1293,7 @@ void ami_handle_appmsg(void)
 		{
 			GetAttr(SPACE_AreaBox,gwin->gadgets[GID_BROWSER],(ULONG *)&bbox);
 
-			GetAttr(SCROLLER_Top,gwin->objects[OID_HSCROLL],(ULONG *)&xs);
+			ami_get_hscroll_pos(gwin, (ULONG *)&xs);
 			x = (appmsg->am_MouseX) - (bbox->Left) +xs;
 
 			GetAttr(SCROLLER_Top,gwin->objects[OID_VSCROLL],(ULONG *)&ys);
@@ -1540,6 +1552,7 @@ void gui_quit(void)
 	ami_arexx_cleanup();
 
 	ami_free_layers(&browserglob);
+	FreeScreenDrawInfo(scrn, dri);	
 
 	ami_close_fonts();
 
@@ -1869,6 +1882,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 					WA_CustomScreen,scrn,
 					WA_ReportMouse,TRUE,
 					WA_SmartRefresh,TRUE,
+					WA_SizeBBottom, TRUE,
         		   	WA_IDCMP,IDCMP_MENUPICK | IDCMP_MOUSEMOVE |
 								IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
 								IDCMP_RAWKEY | IDCMP_SIZEVERIFY |
@@ -1877,7 +1891,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 								IDCMP_EXTENDEDMOUSE,
 //					WINDOW_IconifyGadget, TRUE,
 					WINDOW_NewMenu,menu,
-					WINDOW_HorizProp,1,
+			//		WINDOW_HorizProp,1,
 					WINDOW_VertProp,1,
 					WINDOW_IDCMPHook,&gwin->shared->scrollerhook,
 					WINDOW_IDCMPHookBits,IDCMP_IDCMPUPDATE |
@@ -2021,11 +2035,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 							GA_ID,GID_BROWSER,
 							SPACE_Transparent,TRUE,
 						SpaceEnd,
-						LAYOUT_AddChild, gwin->shared->gadgets[GID_STATUS] = StringObject,
-							GA_ID,GID_STATUS,
-							GA_ReadOnly,TRUE,
-						StringEnd,
-						CHILD_WeightedHeight,0,
 					EndGroup,
 				EndWindow;
 			}
@@ -2087,22 +2096,71 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		return NULL;
 	}
 
+	GetAttr(WINDOW_VertObject, gwin->shared->objects[OID_MAIN],
+			(ULONG *)&gwin->shared->objects[OID_VSCROLL]);
+
+	RefreshSetGadgetAttrs((APTR)gwin->shared->objects[OID_VSCROLL],
+			gwin->shared->win, NULL,
+			GA_ID, OID_VSCROLL,
+			ICA_TARGET, ICTARGET_IDCMP,
+			TAG_DONE);
+
+	if(bw->browser_window_type == BROWSER_WINDOW_NORMAL)
+	{
+		ULONG sz, size1, size2;
+
+		sz = ami_get_border_gadget_balance(gwin->shared,
+				(ULONG *)&size1, (ULONG *)&size2);
+
+		gwin->shared->gadgets[GID_HSCROLL] = (struct Gadget *)NewObject(
+				NULL,
+				"scrollergclass",
+				GA_ID, GID_HSCROLL,
+				PGA_Freedom, FREEHORIZ,
+				ICA_TARGET, ICTARGET_IDCMP,
+		//		GA_Left, size1,
+				GA_RelRight, - size2 - sz,
+				GA_Width, size2,
+				GA_BottomBorder, TRUE,
+				GA_RelVerify, TRUE,
+				GA_DrawInfo, dri,
+				TAG_DONE);
+
+		GetAttr(GA_Height, gwin->shared->gadgets[GID_HSCROLL],
+				(ULONG *)&sz);
+
+		gwin->shared->gadgets[GID_STATUS] = (struct Gadget *)NewObject(
+				NULL,
+				"frbuttonclass",
+				GA_ID, GID_STATUS,
+				GA_Left, scrn->WBorLeft,
+				GA_RelBottom, -((1 + sz - scrn->RastPort.TxHeight)/2),
+				GA_Width, size1,
+				GA_DrawInfo, dri,
+				GA_BottomBorder, TRUE,
+				GA_RelVerify, TRUE,
+				GA_Next, gwin->shared->gadgets[GID_HSCROLL],
+				TAG_DONE);
+
+		AddGList(gwin->shared->win, gwin->shared->gadgets[GID_STATUS],
+				(UWORD)~0, -1, NULL);
+
+		RefreshGadgets((APTR)gwin->shared->gadgets[GID_STATUS],
+				gwin->shared->win, NULL);
+	}
+	else
+	{
+		GetAttr(WINDOW_HorizObject, gwin->shared->objects[OID_MAIN],
+				(ULONG *)&gwin->shared->objects[OID_HSCROLL]);
+
+		RefreshSetGadgetAttrs((APTR)gwin->shared->objects[OID_HSCROLL],
+				gwin->shared->win, NULL,
+				GA_ID, OID_HSCROLL,
+				ICA_TARGET, ICTARGET_IDCMP,
+				TAG_DONE);
+	}
+
 	gwin->shared->bw = bw;
-
-	GetAttr(WINDOW_HorizObject,gwin->shared->objects[OID_MAIN],(ULONG *)&gwin->shared->objects[OID_HSCROLL]);
-	GetAttr(WINDOW_VertObject,gwin->shared->objects[OID_MAIN],(ULONG *)&gwin->shared->objects[OID_VSCROLL]);
-
-
-	RefreshSetGadgetAttrs((APTR)gwin->shared->objects[OID_VSCROLL],gwin->shared->win,NULL,
-		GA_ID,OID_VSCROLL,
-		ICA_TARGET,ICTARGET_IDCMP,
-		TAG_DONE);
-
-	RefreshSetGadgetAttrs((APTR)gwin->shared->objects[OID_HSCROLL],gwin->shared->win,NULL,
-		GA_ID,OID_HSCROLL,
-		ICA_TARGET,ICTARGET_IDCMP,
-		TAG_DONE);
-
 	curbw = bw;
 
 	gwin->shared->node = AddObject(window_list,AMINS_WINDOW);
@@ -2111,6 +2169,49 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	glob = &browserglob;
 
 	return gwin;
+}
+
+ULONG ami_set_border_gadget_balance(struct gui_window_2 *gwin)
+{
+	/* Reset gadget widths according to new calculation */
+	ULONG size1, size2, sz;
+
+	sz = ami_get_border_gadget_balance(gwin, &size1, &size2);
+
+	RefreshSetGadgetAttrs((APTR)gwin->gadgets[GID_HSCROLL],
+			gwin->win, NULL,
+		//	GA_Left, size1,
+			GA_RelRight, - size2 - sz,
+			GA_Width, size2,
+			TAG_DONE);
+
+	RefreshSetGadgetAttrs((APTR)gwin->gadgets[GID_STATUS],
+			gwin->win, NULL,
+			GA_Width, size1,
+			TAG_DONE);
+}
+
+ULONG ami_get_border_gadget_balance(struct gui_window_2 *gwin, ULONG *size1, ULONG *size2)
+{
+	/* Get the sizes that border gadget 1 (status) and 2 (hscroller) need to be.
+	** Returns the width of the vertical scroller (right-hand window border) as
+	** a convenience.
+	*/
+
+	ULONG sz;
+	ULONG available_width;
+	float gad1percent;
+
+	GetAttr(GA_Width, gwin->objects[OID_VSCROLL], (ULONG *)&sz);
+
+	available_width = gwin->win->Width - scrn->WBorLeft - sz;
+
+	gad1percent = option_toolbar_status_width / 10000.0;
+
+	*size1 = (ULONG)available_width * gad1percent;
+	*size2 = (ULONG)available_width * (1 - gad1percent);
+
+	return sz;
 }
 
 void ami_close_all_tabs(struct gui_window_2 *gwin)
@@ -2317,7 +2418,7 @@ void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
 	struct content *c;
 	c = g->shared->bw->current_content;
 
-	GetAttr(SCROLLER_Top,g->shared->objects[OID_HSCROLL],(ULONG *)&sx);
+	ami_get_hscroll_pos(g->shared, (ULONG *)&sx);
 	GetAttr(SCROLLER_Top,g->shared->objects[OID_VSCROLL],(ULONG *)&sy);
 
 	ami_do_redraw_limits(g,c,x0,y0,x1,y1,sx,sy);
@@ -2342,7 +2443,7 @@ void gui_window_update_box(struct gui_window *g,
 
 	if(!g) return;
 
-	GetAttr(SCROLLER_Top,g->shared->objects[OID_HSCROLL],(ULONG *)&sx);
+	ami_get_hscroll_pos(g->shared, (ULONG *)&sx);
 	GetAttr(SCROLLER_Top,g->shared->objects[OID_VSCROLL],(ULONG *)&sy);
 
 	ami_do_redraw_limits(g,g->shared->bw->current_content,
@@ -2363,7 +2464,7 @@ void ami_do_redraw(struct gui_window_2 *g)
 	bool morescroll = false;
 
 	GetAttr(SPACE_AreaBox,g->gadgets[GID_BROWSER],(ULONG *)&bbox);
-	GetAttr(SCROLLER_Top,g->objects[OID_HSCROLL],(ULONG *)&hcurrent);
+	ami_get_hscroll_pos(g, (ULONG *)&hcurrent);
 	GetAttr(SCROLLER_Top,g->objects[OID_VSCROLL],(ULONG *)&vcurrent);
 
 	c = g->bw->current_content;
@@ -2466,9 +2567,21 @@ void ami_do_redraw(struct gui_window_2 *g)
 	g->new_content = false;
 }
 
+void ami_get_hscroll_pos(struct gui_window_2 *gwin, ULONG *xs)
+{
+	if(gwin->gadgets[GID_HSCROLL])
+	{
+		GetAttr(PGA_Top, gwin->gadgets[GID_HSCROLL], xs);
+	}
+	else if(gwin->objects[OID_HSCROLL])
+	{
+		GetAttr(SCROLLER_Top, gwin->objects[OID_HSCROLL], xs);
+	}
+}
+
 bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 {
-	GetAttr(SCROLLER_Top,g->shared->objects[OID_HSCROLL],(ULONG *)sx);
+	ami_get_hscroll_pos(g->shared, (ULONG *)sx);
 	GetAttr(SCROLLER_Top,g->shared->objects[OID_VSCROLL],(ULONG *)sy);
 }
 
@@ -2491,10 +2604,20 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 			SCROLLER_Top,sy,
 			TAG_DONE);
 
-		RefreshSetGadgetAttrs((APTR)g->shared->objects[OID_HSCROLL],g->shared->win,NULL,
-			SCROLLER_Top,sx,
-			TAG_DONE);
-
+		if(g->shared->gadgets[GID_HSCROLL])
+		{
+			RefreshSetGadgetAttrs((APTR)g->shared->gadgets[GID_HSCROLL],
+				g->shared->win, NULL,
+				PGA_Top, sx,
+				TAG_DONE);
+		}
+		else if(g->shared->objects[OID_HSCROLL])
+		{
+			RefreshSetGadgetAttrs((APTR)g->shared->objects[OID_HSCROLL],
+				g->shared->win, NULL,
+				SCROLLER_Top, sx,
+				TAG_DONE);
+		}
 		g->shared->redraw_required = true;
 
 		if(option_faster_scroll) g->shared->redraw_scroll = true;
@@ -2565,10 +2688,23 @@ void gui_window_update_extent(struct gui_window *g)
 			SCROLLER_Visible,bbox->Height,
 			TAG_DONE);
 
-		RefreshSetGadgetAttrs((APTR)g->shared->objects[OID_HSCROLL],g->shared->win,NULL,
-			SCROLLER_Total,g->shared->bw->current_content->width,
-			SCROLLER_Visible,bbox->Width,
-			TAG_DONE);
+		if(g->shared->gadgets[GID_HSCROLL])
+		{
+			RefreshSetGadgetAttrs((APTR)g->shared->gadgets[GID_HSCROLL],
+				g->shared->win, NULL,
+				PGA_Total, g->shared->bw->current_content->width,
+				PGA_Visible, bbox->Width,
+				TAG_DONE);
+		}
+		else if(g->shared->objects[OID_HSCROLL])
+		{
+			RefreshSetGadgetAttrs((APTR)g->shared->objects[OID_HSCROLL],
+				g->shared->win, NULL,
+				SCROLLER_Total, g->shared->bw->current_content->width,
+				SCROLLER_Visible, bbox->Width,
+				TAG_DONE);
+		}
+
 	}
 	g->shared->new_content = true;
 }
@@ -2584,7 +2720,12 @@ void gui_window_set_status(struct gui_window *g, const char *text)
 
 	if((cur_tab == g->tab) || (g->shared->tabs == 0))
 	{
-		RefreshSetGadgetAttrs(g->shared->gadgets[GID_STATUS],g->shared->win,NULL,STRINGA_TextVal,text,TAG_DONE);
+		SetGadgetAttrs(g->shared->gadgets[GID_STATUS],
+				g->shared->win, NULL,
+				GA_Text, text,
+				TAG_DONE);
+
+		RefreshWindowFrame(g->shared->win);
 	}
 }
 
@@ -2861,7 +3002,7 @@ void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
 	gui_window_remove_caret(g);
 
 	GetAttr(SPACE_AreaBox,g->shared->gadgets[GID_BROWSER],(ULONG *)&bbox);
-	GetAttr(SCROLLER_Top,g->shared->objects[OID_HSCROLL],&xs);
+	ami_get_hscroll_pos(g->shared, (ULONG *)&xs);
 	GetAttr(SCROLLER_Top,g->shared->objects[OID_VSCROLL],&ys);
 
 	SetAPen(g->shared->win->RPort,3);
@@ -2889,7 +3030,7 @@ void gui_window_remove_caret(struct gui_window *g)
 	if(!g) return;
 
 	GetAttr(SPACE_AreaBox,g->shared->gadgets[GID_BROWSER],(ULONG *)&bbox);
-	GetAttr(SCROLLER_Top,g->shared->objects[OID_HSCROLL],(ULONG *)&xs);
+	ami_get_hscroll_pos(g->shared, (ULONG *)&xs);
 	GetAttr(SCROLLER_Top,g->shared->objects[OID_VSCROLL],(ULONG *)&ys);
 
 	BltBitMapRastPort(browserglob.bm,g->c_x-xs,g->c_y-ys,g->shared->win->RPort,bbox->Left+g->c_x-xs,bbox->Top+g->c_y-ys,2+1,g->c_h+1,0x0C0);
@@ -3023,7 +3164,7 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 			gid = GetTagData( GA_ID, 0, msg->IAddress ); 
 
 			switch( gid ) 
-			{ 
+			{
  				case OID_HSCROLL: 
  				case OID_VSCROLL:
 //					history_set_current_scroll(gwin->bw->history,
