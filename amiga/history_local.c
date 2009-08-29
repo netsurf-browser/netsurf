@@ -217,7 +217,7 @@ bool ami_history_click(struct history_window *hw,uint16 code)
 
 void ami_history_close(struct history_window *hw)
 {
-	ami_free_layers(&hwindow->gg);
+	ami_free_layers(&hw->gg);
 	hw->bw->window->hw = NULL;
 	DisposeObject(hw->objects[OID_MAIN]);
 	DelObject(hw->node);
