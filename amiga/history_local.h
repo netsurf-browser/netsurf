@@ -31,6 +31,7 @@ struct history_window {
 	struct browser_window *bw;
 	ULONG pad[4];
 	struct Hook scrollerhook;
+	struct gui_globals gg;
 };
 
 void ami_history_open(struct browser_window *bw, struct history *history);

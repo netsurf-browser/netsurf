@@ -17,7 +17,7 @@
  */
 
 /** \file
- * Browser history window (RISC OS implementation).
+ * Browser history window (AmigaOS implementation).
  *
  * There is only one history window, not one per browser window.
  */
@@ -82,6 +82,8 @@ void ami_history_open(struct browser_window *bw, struct history *history)
 	{
 		hwindow = AllocVec(sizeof(struct history_window),MEMF_CLEAR | MEMF_PRIVATE);
 
+		ami_init_layers(&hwindow->gg, 0, 0);
+
 		hwindow->bw = bw;
 		history_size(history, &width, &height);
 
@@ -98,7 +100,7 @@ void ami_history_open(struct browser_window *bw, struct history *history)
 			WA_SizeGadget, TRUE,
 			WA_CustomScreen,scrn,
 			WA_InnerWidth,width,
-			WA_InnerHeight,height,
+			WA_InnerHeight,height + 10,
 			WINDOW_SharedPort,sport,
 			WINDOW_UserData,hwindow,
 			WINDOW_IconifyGadget, FALSE,
@@ -158,19 +160,18 @@ void ami_history_redraw(struct history_window *hw)
 	GetAttr(SCROLLER_Top,hw->objects[OID_HSCROLL],(ULONG *)&xs);
 	GetAttr(SCROLLER_Top,hw->objects[OID_VSCROLL],(ULONG *)&ys);
 
+	glob = &hw->gg;
 	ami_clg(0xffffff);
 
-//	RefreshGadgets(hw->gadgets[GID_MAIN],hw->win,NULL);
-//	currp = hw->win->RPort;
 	history_redraw_rectangle(history_current, xs, ys,
 		bbox->Width + xs, bbox->Height + ys, 0, 0);
 
-//	currp = &glob.rp;
+	glob = &browserglob;
 
-	ami_clearclipreg(&browserglob);
+	ami_clearclipreg(&hw->gg);
 	ami_history_update_extent(hw);
 
-	BltBitMapRastPort(browserglob.bm, 0, 0, hw->win->RPort,
+	BltBitMapRastPort(hw->gg.bm, 0, 0, hw->win->RPort,
 				bbox->Left, bbox->Top, bbox->Width, bbox->Height, 0x0C0);
 }
 
@@ -216,6 +217,7 @@ bool ami_history_click(struct history_window *hw,uint16 code)
 
 void ami_history_close(struct history_window *hw)
 {
+	ami_free_layers(&hwindow->gg);
 	hw->bw->window->hw = NULL;
 	DisposeObject(hw->objects[OID_MAIN]);
 	DelObject(hw->node);
