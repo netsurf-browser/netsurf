@@ -116,6 +116,7 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 	if(!width) width = scrn->Width;
 	if(!height) height = scrn->Width;
 
+	gg->scale = 1.0;
 	gg->layerinfo = NewLayerInfo();
 	gg->areabuf = AllocVec(100,MEMF_PRIVATE | MEMF_CLEAR);
 	gg->tmprasbuf = AllocVec(width*height,MEMF_PRIVATE | MEMF_CLEAR);

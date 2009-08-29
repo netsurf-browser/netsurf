@@ -2403,7 +2403,9 @@ void ami_do_redraw_limits(struct gui_window *g, struct content *c,int x0, int y0
 	if((x1-x0)+(xoffset+x0-sx)>(width)) x1 = (width-(x0-sx)+x0);
 	if((y1-y0)+(yoffset+y0-sy)>(height)) y1 = (height-(y0-sy)+y0);
 
-		content_redraw(c,
+	glob->scale = g->shared->bw->scale;
+
+	content_redraw(c,
 		-sx,-sy,width-sx,height-sy,
 		floorf((x0 *
 		g->shared->bw->scale)-sx),
@@ -2541,6 +2543,7 @@ void ami_do_redraw(struct gui_window_2 *g)
 	else
 	{
 		ami_clg(0xffffff);
+		glob->scale = g->bw->scale;
 
 		if(c->type == CONTENT_HTML)
 		{

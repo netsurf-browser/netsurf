@@ -141,6 +141,7 @@ bool ami_print_begin(struct print_settings *ps)
 				ami_print_info.PED->ped_MaxXDots,
 				ami_print_info.PED->ped_MaxYDots);
 
+	ami_print_info.gg->scale = ps->scale;
 	ami_print_info.page = 0;
 
 	return true;

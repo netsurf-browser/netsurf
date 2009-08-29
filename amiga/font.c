@@ -269,7 +269,7 @@ struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle)
 	}
 
 	/* Scale to 16.16 fixed point */
-	ysize = fstyle->size * ((1 << 16) / FONT_SIZE_SCALE);
+	ysize = fstyle->size * ((1 << 16) / FONT_SIZE_SCALE) * glob->scale;
 
 	if(ESetInfo(&ofont->olf_EEngine,
 			OT_DeviceDPI,(72<<16) | 72,
