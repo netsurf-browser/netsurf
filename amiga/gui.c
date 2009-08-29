@@ -2115,7 +2115,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			ICA_TARGET, ICTARGET_IDCMP,
 			TAG_DONE);
 
-	if(bw->browser_window_type == BROWSER_WINDOW_NORMAL)
+	if((bw->browser_window_type == BROWSER_WINDOW_NORMAL) &&
+				(option_kiosk_mode == false))
 	{
 		ULONG sz, size1, size2;
 
