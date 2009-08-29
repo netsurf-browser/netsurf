@@ -262,6 +262,8 @@ void gui_init(int argc, char** argv)
 							ASO_NoTrack,FALSE,
 							TAG_DONE))) die(messages_get("NoMemory"));
 
+	ami_print_init();
+
 	if(PopupMenuBase = OpenLibrary("popupmenu.class",0))
 	{
 		IPopupMenu = (struct PopupMenuIFace *)GetInterface(PopupMenuBase,"main",1,NULL);
@@ -1406,9 +1408,11 @@ void ami_get_msg(void)
 	ULONG winsignal = 1L << sport->mp_SigBit;
 	ULONG appsig = 1L << appport->mp_SigBit;
 	ULONG schedulesig = 1L << msgport->mp_SigBit;
-    ULONG signalmask = winsignal | appsig | schedulesig | rxsig;
 	ULONG signal;
 	struct Message *timermsg = NULL;
+	struct MsgPort *printmsgport = ami_print_get_msgport();
+	ULONG printsig = 1L << printmsgport->mp_SigBit;
+    ULONG signalmask = winsignal | appsig | schedulesig | rxsig | printsig;
 
     signal = Wait(signalmask);
 
@@ -1423,6 +1427,11 @@ void ami_get_msg(void)
 	else if(signal & rxsig)
 	{
 		ami_arexx_handle();
+	}
+	else if(signal & printsig)
+	{
+		while(GetMsg(printmsgport));  //ReplyMsg
+		ami_print_cont();
 	}
 	else if(signal & schedulesig)
 	{
@@ -1582,6 +1591,7 @@ void gui_quit(void)
 	}
 
 	ami_clipboard_free();
+	ami_print_free();
 
 	FreeSysObject(ASOT_PORT,appport);
 	FreeSysObject(ASOT_PORT,sport);
@@ -2382,6 +2392,7 @@ void ami_do_redraw_limits(struct gui_window *g, struct content *c,int x0, int y0
 	yoffset=bbox->Top;
 
 	plot=amiplot;
+	glob = &browserglob;
 
 	if((y1<sy) || (y0>sy+height)) return;
 	if((x1<sx) || (x0>sx+width)) return;
@@ -2481,6 +2492,7 @@ void ami_do_redraw(struct gui_window_2 *g)
 	xoffset=bbox->Left;
 	yoffset=bbox->Top;
 	plot = amiplot;
+	glob = &browserglob;
 
 	if(g->bw->reformat_pending)
 	{

@@ -18,7 +18,13 @@
 
 #ifndef AMIGA_PRINT_H
 #define AMIGA_PRINT_H
+#include <proto/exec.h>
+
 struct content;
 
 void ami_print(struct content *c);
+bool ami_print_cont(void);
+struct MsgPort *ami_print_init(void);
+void ami_print_free(void);
+struct MsgPort *ami_print_get_msgport(void);
 #endif

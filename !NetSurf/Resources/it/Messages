@@ -598,7 +598,7 @@ AWNotSeen:Per favore imposta l'applicazione AWViewer e riprova ancora.
 EncNotRec:Tipo di codifica sconosciuta.
 
 # Error messages for Amiga version only
-NoMode:Questa modalità non coincide nel database degli schermi
+CompError:Unable to open
 
 # Queries
 # =======

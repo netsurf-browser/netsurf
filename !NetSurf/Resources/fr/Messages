@@ -591,7 +591,7 @@ PrintErrorRO2:Il semble que l'imprimante soit occupée.
 AWNotSeen:Localisez l'application AMViewer SVP puis réessayez.
 
 # Error messages for Amiga version only
-NoMode:No matching mode in screens database
+CompError:Unable to open
 
 # Queries
 # =======

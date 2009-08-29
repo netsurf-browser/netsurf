@@ -596,7 +596,7 @@ AWNotSeen:Please locate the AWViewer application and try again.
 EncNotRec:Encoding type not recognised.
 
 # Error messages for Amiga version only
-NoMode:No matching mode in screens database
+CompError:Unable to open
 
 # Queries
 # =======

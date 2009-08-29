@@ -591,7 +591,7 @@ PrintErrorRO2:De printer lijkt al bezig te zijn.
 AWNotSeen:Please locate the AWViewer application and try again.
 
 # Error messages for Amiga version only
-NoMode:No matching mode in screens database
+CompError:Unable to open
 
 # Queries
 # =======
