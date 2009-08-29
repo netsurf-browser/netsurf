@@ -2187,6 +2187,8 @@ ULONG ami_set_border_gadget_balance(struct gui_window_2 *gwin)
 			gwin->win, NULL,
 			GA_Width, size1,
 			TAG_DONE);
+
+	RefreshWindowFrame(gwin->win);
 }
 
 ULONG ami_get_border_gadget_balance(struct gui_window_2 *gwin, ULONG *size1, ULONG *size2)
@@ -2285,6 +2287,7 @@ void gui_window_destroy(struct gui_window *g)
 
 	DisposeObject(g->shared->objects[OID_MAIN]);
 
+	ami_utf8_free(g->shared->status);
 	FreeVec(g->shared->svbuffer);
 
 	DelObject(g->shared->node);
@@ -2710,6 +2713,7 @@ void gui_window_update_extent(struct gui_window *g)
 void gui_window_set_status(struct gui_window *g, const char *text)
 {
 	ULONG cur_tab = 0;
+	char *utf8text;
 
 	if(!g) return;
 	if(!text) return;
@@ -2718,12 +2722,20 @@ void gui_window_set_status(struct gui_window *g, const char *text)
 
 	if((cur_tab == g->tab) || (g->shared->tabs == 0))
 	{
-		SetGadgetAttrs(g->shared->gadgets[GID_STATUS],
+		utf8text = ami_utf8_easy(text);
+
+		if((g->shared->status == NULL) || (strcmp(utf8text,g->shared->status)))
+		{
+			SetGadgetAttrs(g->shared->gadgets[GID_STATUS],
 				g->shared->win, NULL,
-				GA_Text, text,
+				GA_Text, utf8text,
 				TAG_DONE);
 
-		RefreshWindowFrame(g->shared->win);
+			RefreshWindowFrame(g->shared->win);
+
+			if(g->shared->status) ami_utf8_free(g->shared->status);
+			g->shared->status = utf8text;
+		}
 	}
 }
 

@@ -99,6 +99,7 @@ struct gui_window_2 {
 	bool redraw_scroll;
 	bool new_content;
 	char *svbuffer;
+	char *status;
 };
 
 struct gui_window
