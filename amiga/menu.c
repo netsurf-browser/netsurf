@@ -100,17 +100,20 @@ void ami_init_menulabs(void)
 	menulab[24] = ami_utf8_easy((char *)messages_get("Browser"));
 	menulab[25] = ami_utf8_easy((char *)messages_get("FindTextNS"));
 	menulab[26] = NM_BARLABEL;
-	menulab[27] = ami_utf8_easy((char *)messages_get("normal"));
-	menulab[28] = ami_utf8_easy((char *)messages_get("HistLocalNS"));
-	menulab[29] = ami_utf8_easy((char *)messages_get("HistGlobalNS"));
-	menulab[30] = NM_BARLABEL;
-	menulab[31] = ami_utf8_easy((char *)messages_get("ShowCookies"));
-	menulab[32] = NM_BARLABEL;
-	menulab[33] = ami_utf8_easy((char *)messages_get("Redraw"));
-	menulab[34] = ami_utf8_easy((char *)messages_get("Hotlist"));
-	menulab[35] = ami_utf8_easy((char *)messages_get("HotlistAdd"));
-	menulab[36] = ami_utf8_easy((char *)messages_get("HotlistShowNS"));
-	menulab[37] = NM_BARLABEL;
+	menulab[27] = ami_utf8_easy((char *)messages_get("HistLocalNS"));
+	menulab[28] = ami_utf8_easy((char *)messages_get("HistGlobalNS"));
+	menulab[29] = NM_BARLABEL;
+	menulab[30] = ami_utf8_easy((char *)messages_get("ShowCookies"));
+	menulab[31] = NM_BARLABEL;
+	menulab[32] = ami_utf8_easy((char *)messages_get("Scale"));
+	menulab[33] = ami_utf8_easy((char *)messages_get("ScaleDec"));
+	menulab[34] = ami_utf8_easy((char *)messages_get("ScaleNorm"));
+	menulab[35] = ami_utf8_easy((char *)messages_get("ScaleInc"));
+	menulab[36] = ami_utf8_easy((char *)messages_get("Redraw"));
+	menulab[37] = ami_utf8_easy((char *)messages_get("Hotlist"));
+	menulab[38] = ami_utf8_easy((char *)messages_get("HotlistAdd"));
+	menulab[39] = ami_utf8_easy((char *)messages_get("HotlistShowNS"));
+	menulab[40] = NM_BARLABEL;
 
 	menulab[AMI_MENU_HOTLIST_MAX] = ami_utf8_easy((char *)messages_get("Settings"));
 	menulab[AMI_MENU_HOTLIST_MAX+1] = ami_utf8_easy((char *)messages_get("SettingsEdit"));
@@ -154,12 +157,15 @@ struct NewMenu *ami_create_menu(ULONG type)
 			  	{NM_TITLE,0,0,0,0,0,}, // browser
 			  	{ NM_ITEM,0,"F",0,0,0,}, // find in page
 			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
-			  	{NM_IGNORE,0,0,0,0,0,}, // was test option for scaling
 			  	{ NM_ITEM,0,0,0,0,0,}, // local history
 			  	{ NM_ITEM,0,0,0,0,0,}, // global history
 			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
 			  	{ NM_ITEM,0,0,0,0,0,}, // cookies
 			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
+			  	{ NM_ITEM,0,0,0,0,0,}, // scale
+			  	{  NM_SUB,0,"-",0,0,0,}, // decrease
+			  	{  NM_SUB,0,"=",0,0,0,}, // normal
+			  	{  NM_SUB,0,"+",0,0,0,}, // increase
 			  	{ NM_ITEM,0,0,0,0,0,}, // redraw
 				{NM_TITLE,0,0,0,0,0,}, // hotlist
 				{ NM_ITEM,0,0,0,0,0,}, // add to hotlist
@@ -647,19 +653,6 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 					ami_search_open(gwin->bw->window);
 				break;
 
-				case 1: // size
-					switch(subnum)
-					{
-						case 0: // normal
-							gwin->bw->scale = 1.0;
-						break;
-
-						case 1: // double
-							gwin->bw->scale = 2.0;
-						break;
-					}
-				break;
-
 				case 2: // local history
 					if(gwin->bw && gwin->bw->history)
 						ami_history_open(gwin->bw, gwin->bw->history);
@@ -673,7 +666,27 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 					ami_open_tree(cookies_tree,AMI_TREE_COOKIES);
 				break;
 
-				case 7: // redraw
+				case 7: // size
+					switch(subnum)
+					{
+						case 0: // decrease */
+							if(gwin->bw->scale > 0.1)
+								browser_window_set_scale(gwin->bw,
+									gwin->bw->scale - 0.1, false);
+						break;
+
+						case 1: // normal */
+							browser_window_set_scale(gwin->bw, 1.0, false);
+						break;
+
+						case 2: // increase */
+							browser_window_set_scale(gwin->bw,
+								gwin->bw->scale + 0.1, false);
+						break;
+					}
+				break;
+
+				case 8: // redraw
 					gwin->redraw_required = true;
 					gwin->new_content = true;
 				break;

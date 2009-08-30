@@ -266,6 +266,9 @@ HistGlobalNS:Mostra cronologia globale...
 HistLocalNS:Mostra cronologia locale...
 FindTextNS:Trova testo...
 Redraw:Ridisegna pagina
+ScaleInc:Increase
+ScaleDec:Decrease
+ScaleNorm:Normal
 
 # Hotlist menu
 #

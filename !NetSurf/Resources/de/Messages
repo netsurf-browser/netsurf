@@ -264,6 +264,9 @@ HistGlobalNS:Show global history...
 HistLocalNS:Show local history...
 FindTextNS:Find text...
 Redraw:Redraw page
+ScaleInc:Increase
+ScaleDec:Decrease
+ScaleNorm:Normal
 
 # Hotlist menu
 #
