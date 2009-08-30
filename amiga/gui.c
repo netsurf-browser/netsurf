@@ -2637,21 +2637,21 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 	{
 		RefreshSetGadgetAttrs((APTR)g->shared->objects[OID_VSCROLL],
 			g->shared->win, NULL,
-			SCROLLER_Top, sy * g->shared->bw->scale,
+			SCROLLER_Top, (ULONG)(sy * g->shared->bw->scale),
 			TAG_DONE);
 
 		if(g->shared->gadgets[GID_HSCROLL])
 		{
 			RefreshSetGadgetAttrs((APTR)g->shared->gadgets[GID_HSCROLL],
 				g->shared->win, NULL,
-				PGA_Top, sx * g->shared->bw->scale,
+				PGA_Top, (ULONG)(sx * g->shared->bw->scale),
 				TAG_DONE);
 		}
 		else if(g->shared->objects[OID_HSCROLL])
 		{
 			RefreshSetGadgetAttrs((APTR)g->shared->objects[OID_HSCROLL],
 				g->shared->win, NULL,
-				SCROLLER_Top, sx * g->shared->bw->scale,
+				SCROLLER_Top, (ULONG)(sx * g->shared->bw->scale),
 				TAG_DONE);
 		}
 		g->shared->redraw_required = true;
