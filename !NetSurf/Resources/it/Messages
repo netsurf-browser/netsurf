@@ -448,6 +448,9 @@ gtkUnknownSize:sconosciuto
 
 PrintSheetFilled:Il foglio stampato è pieno
 PrintSheetsFilled:I fogli stampati sono pieni
+Printer:Printer
+Copies:Copies
+Printing:Printing page
 
 
 # Find text user interface tokens

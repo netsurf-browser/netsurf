@@ -2742,7 +2742,7 @@ void gui_window_set_status(struct gui_window *g, const char *text)
 
 		if((g->shared->status == NULL) || (strcmp(utf8text,g->shared->status)))
 		{
-			SetGadgetAttrs(g->shared->gadgets[GID_STATUS],
+			RefreshSetGadgetAttrs(g->shared->gadgets[GID_STATUS],
 				g->shared->win, NULL,
 				GA_Text, utf8text,
 				TAG_DONE);

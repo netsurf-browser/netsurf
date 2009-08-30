@@ -445,6 +445,9 @@ gtkUnknownSize:unknown
 
 PrintSheetFilled:sheet is filled
 PrintSheetsFilled:sheets are filled
+Printer:Printer
+Copies:Copies
+Printing:Printing page
 
 
 # Find text user interface tokens

@@ -22,15 +22,29 @@
 #include "amiga/gui.h"
 #include "amiga/options.h"
 #include "amiga/print.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
 
+#include <proto/intuition.h>
 #include <proto/Picasso96API.h>
 #include <devices/printer.h>
 #include <devices/prtbase.h>
+
+#include <proto/window.h>
+#include <proto/layout.h>
+
+#include <proto/fuelgauge.h>
+#include <classes/window.h>
+#include <gadgets/fuelgauge.h>
+#include <gadgets/layout.h>
+
+#include <reaction/reaction_macros.h>
 
 bool ami_print_begin(struct print_settings *ps);
 bool ami_print_next_page(void);
 void ami_print_end(void);
 bool ami_print_dump(void);
+void ami_print_progress(void);
 
 const struct printer amiprinter = {
 	&amiplot,
@@ -50,6 +64,9 @@ struct ami_printer_info
 	struct print_settings *ps;
 	int page;
 	int pages;
+	struct Gadget *gadgets[GID_LAST];
+	struct Object *objects[OID_LAST];
+	struct Window *win;
 };
 
 struct ami_printer_info ami_print_info;
@@ -87,6 +104,8 @@ void ami_print(struct content *c)
 	height *= ami_print_info.ps->scale;
 	ami_print_info.pages = height / ami_print_info.ps->page_height;
 	ami_print_info.c = c;
+
+	ami_print_progress();
 
 	while(ami_print_cont()); /* remove while() for async printing */
 }
@@ -151,6 +170,10 @@ bool ami_print_next_page(void)
 {
 	ami_print_info.page++;
 
+	RefreshSetGadgetAttrs(ami_print_info.gadgets[GID_STATUS],
+				ami_print_info.win, NULL,
+				FUELGAUGE_Level, ami_print_info.page,
+				TAG_DONE);
 	return true;
 }
 
@@ -158,6 +181,7 @@ void ami_print_end(void)
 {
 	ami_free_layers(ami_print_info.gg);
 	FreeVec(ami_print_info.gg);
+	DisposeObject(ami_print_info.objects[OID_MAIN]);
 	glob = &browserglob;
 
 	CloseDevice(ami_print_info.PReq);
@@ -183,4 +207,48 @@ bool ami_print_dump(void)
 	DoIO(ami_print_info.PReq); /* SendIO for async printing */
 
 	return true;
+}
+
+void ami_print_progress(void)
+{
+	ami_print_info.objects[OID_MAIN] = WindowObject,
+      	    WA_ScreenTitle,nsscreentitle,
+           	WA_Title, messages_get("Printing"),
+           	WA_Activate, TRUE,
+           	WA_DepthGadget, TRUE,
+           	WA_DragBar, TRUE,
+           	WA_CloseGadget, FALSE,
+           	WA_SizeGadget, TRUE,
+			WA_CustomScreen,scrn,
+			//WINDOW_SharedPort,sport,
+			WINDOW_UserData, &ami_print_info,
+			WINDOW_IconifyGadget, FALSE,
+			WINDOW_LockHeight,TRUE,
+         	WINDOW_Position, WPOS_CENTERSCREEN,
+           	WINDOW_ParentGroup, ami_print_info.gadgets[GID_MAIN] = VGroupObject,
+				LAYOUT_AddChild, ami_print_info.gadgets[GID_STATUS] = FuelGaugeObject,
+					GA_ID,GID_STATUS,
+					FUELGAUGE_Min,0,
+					FUELGAUGE_Max,ami_print_info.pages,
+					FUELGAUGE_Level,0,
+					FUELGAUGE_Ticks,11,
+					FUELGAUGE_ShortTicks,TRUE,
+					FUELGAUGE_Percent,TRUE,
+					FUELGAUGE_Justification,FGJ_CENTER,
+				FuelGaugeEnd,
+				CHILD_NominalSize,TRUE,
+				CHILD_WeightedHeight,0,
+/*
+				LAYOUT_AddChild, ami_print_info.gadgets[GID_CANCEL] = ButtonObject,
+					GA_ID,GID_CANCEL,
+					GA_Disabled,TRUE,
+					GA_RelVerify,TRUE,
+					GA_Text,messages_get("Abort"),
+					GA_TabCycle,TRUE,
+				ButtonEnd,
+*/
+			EndGroup,
+		EndWindow;
+
+	ami_print_info.win = (struct Window *)RA_OpenWindow(ami_print_info.objects[OID_MAIN]);
 }
