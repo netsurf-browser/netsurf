@@ -3224,8 +3224,8 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 				wheel = (struct IntuiWheelData *)msg->IAddress;
 
 				gui_window_set_scroll(gwin->bw->window,
-					gwin->bw->window->scrollx + (wheel->WheelX * 20),
-					gwin->bw->window->scrolly + (wheel->WheelY * 20));
+					gwin->bw->window->scrollx + (wheel->WheelX * 50),
+					gwin->bw->window->scrolly + (wheel->WheelY * 50));
 			}
 		break;
 
