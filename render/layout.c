@@ -3849,8 +3849,8 @@ void layout_compute_relative_offset(struct box *box, int *x, int *y)
 			css_computed_position(box->style) ==
 			CSS_POSITION_RELATIVE);
 
-	if (box->float_container && (css_computed_float(box->style) ==
-				CSS_FLOAT_LEFT ||
+	if (box->float_container &&
+			(css_computed_float(box->style) == CSS_FLOAT_LEFT ||
 			css_computed_float(box->style) == CSS_FLOAT_RIGHT)) {
 		containing_block = box->float_container;
 	} else {
