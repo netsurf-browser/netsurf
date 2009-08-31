@@ -70,7 +70,7 @@ static void layout_block_find_dimensions(int available_width,
 		struct box *box);
 static bool layout_apply_minmax_height(struct box *box, struct box *container);
 static void layout_block_add_scrollbar(struct box *box, int which);
-static int layout_solve_width(struct box *box, int available_width, int width, 
+static int layout_solve_width(struct box *box, int available_width, int width,
 		int lm, int rm, int max_width, int min_width);
 static void layout_float_find_dimensions(int available_width,
 		const css_computed_style *style, struct box *box);
@@ -1024,16 +1024,16 @@ void layout_block_add_scrollbar(struct box *box, int which)
  * \post \a box's left/right margins will be updated.
  */
 
-int layout_solve_width(struct box *box, int available_width, int width, 
+int layout_solve_width(struct box *box, int available_width, int width,
 		int lm, int rm, int max_width, int min_width)
 {
 	bool auto_width = false;
 
 	/* Increase specified left/right margins */
-	if (box->margin[LEFT] != AUTO && box->margin[LEFT] < lm && 
+	if (box->margin[LEFT] != AUTO && box->margin[LEFT] < lm &&
 			box->margin[LEFT] >= 0)
 		box->margin[LEFT] = lm;
-	if (box->margin[RIGHT] != AUTO && box->margin[RIGHT] < rm && 
+	if (box->margin[RIGHT] != AUTO && box->margin[RIGHT] < rm &&
 			box->margin[RIGHT] >= 0)
 		box->margin[RIGHT] = rm;
 
@@ -1095,10 +1095,10 @@ int layout_solve_width(struct box *box, int available_width, int width,
 
 	if (box->margin[LEFT] == AUTO && box->margin[RIGHT] == AUTO) {
 		/* make the margins equal, centering the element */
-		box->margin[LEFT] = box->margin[RIGHT] = 
+		box->margin[LEFT] = box->margin[RIGHT] =
 				(available_width - lm - rm -
-				(box->border[LEFT].width + box->padding[LEFT] + 
-				width + box->padding[RIGHT] + 
+				(box->border[LEFT].width + box->padding[LEFT] +
+				width + box->padding[RIGHT] +
 				box->border[RIGHT].width)) / 2;
 
 		if (box->margin[LEFT] < 0) {
@@ -1110,17 +1110,17 @@ int layout_solve_width(struct box *box, int available_width, int width,
 
 	} else if (box->margin[LEFT] == AUTO) {
 		box->margin[LEFT] = available_width - lm -
-				(box->border[LEFT].width + box->padding[LEFT] + 
-				width + box->padding[RIGHT] + 
+				(box->border[LEFT].width + box->padding[LEFT] +
+				width + box->padding[RIGHT] +
 				box->border[RIGHT].width + box->margin[RIGHT]);
-		box->margin[LEFT] = box->margin[LEFT] < lm 
+		box->margin[LEFT] = box->margin[LEFT] < lm
 				? lm : box->margin[LEFT];
 	} else {
 		/* margin-right auto or "over-constrained" */
 		box->margin[RIGHT] = available_width - rm -
 				(box->margin[LEFT] + box->border[LEFT].width +
-				 box->padding[LEFT] + width + 
-				 box->padding[RIGHT] + 
+				 box->padding[LEFT] + width +
+				 box->padding[RIGHT] +
 				 box->border[RIGHT].width);
 	}
 
@@ -2677,7 +2677,7 @@ struct box *layout_minmax_line(struct box *first,
 					b->width = opt_maxwidth;
 					if (option_core_select_menu)
 						b->width += SCROLLBAR_WIDTH;
-					
+
 				} else {
 					font_func->font_width(&fstyle, b->text,
 						b->length, &b->width);
@@ -3871,19 +3871,14 @@ void layout_compute_relative_offset(struct box *box, int *x, int *y)
 	else {
 		/* over constrained => examine direction property
 		 * of containing block */
-		if (containing_block->style) {
-			if (css_computed_direction(containing_block->style) ==
-					CSS_DIRECTION_LTR)
-				/* left wins */
-				right = -left;
-			else if (css_computed_direction(
-					containing_block->style) ==
-					CSS_DIRECTION_RTL)
-				/* right wins */
-				left = -right;
-		}
-		else {
-			/* no parent style, so assume LTR */
+		if (containing_block->style &&
+				css_computed_direction(
+				containing_block->style) ==
+				CSS_DIRECTION_RTL) {
+			/* right wins */
+			left = -right;
+		} else {
+			/* assume LTR in all other cases */
 			right = -left;
 		}
 	}
@@ -4226,7 +4221,7 @@ bool layout_absolute(struct box *box, struct box *containing_block,
 		/* \todo  layout_table considers margins etc. again */
 		if (!layout_table(box, width, content))
 			return false;
-		layout_solve_width(box, box->parent->width, box->width, 0, 0, 
+		layout_solve_width(box, box->parent->width, box->width, 0, 0,
 				-1, -1);
 	}
 
