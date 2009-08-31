@@ -2544,24 +2544,34 @@ void ami_do_redraw(struct gui_window_2 *g)
 
 		if(vcurrent>oldv)
 		{
-			ami_do_redraw_limits(g->bw->window,c,hcurrent,height+oldv,
-					hcurrent+width,vcurrent+height,hcurrent,vcurrent);
+			ami_do_redraw_limits(g->bw->window, c,
+					hcurrent, (height / g->bw->scale) + oldv,
+					hcurrent + (width / g->bw->scale),
+					vcurrent+(height / g->bw->scale),
+					hcurrent, vcurrent);
 		}
 		else if(vcurrent<oldv)
 		{
-			ami_do_redraw_limits(g->bw->window,c,hcurrent,vcurrent,
-							hcurrent+width,oldv,hcurrent,vcurrent);
+			ami_do_redraw_limits(g->bw->window, c,
+					hcurrent, vcurrent,
+					hcurrent + (width / g->bw->scale),
+					oldv, hcurrent, vcurrent);
 		}
 
 		if(hcurrent>oldh)
 		{
-			ami_do_redraw_limits(g->bw->window,c,width+oldh,vcurrent,
-					hcurrent+width,vcurrent+height,hcurrent,vcurrent);
+			ami_do_redraw_limits(g->bw->window, c,
+					(width / g->bw->scale) + oldh, vcurrent,
+					hcurrent + (width / g->bw->scale),
+					vcurrent + (height / g->bw->scale),
+					hcurrent, vcurrent);
 		}
 		else if(hcurrent<oldh)
 		{
-			ami_do_redraw_limits(g->bw->window,c,hcurrent,vcurrent,
-							oldh,vcurrent+height,hcurrent,vcurrent);
+			ami_do_redraw_limits(g->bw->window, c,
+					hcurrent, vcurrent,
+					oldh, vcurrent+(height / g->bw->scale),
+					hcurrent, vcurrent);
 		}
 	}
 	else
