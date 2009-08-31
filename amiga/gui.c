@@ -1776,7 +1776,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 							TAG_DONE);
 		}
 
-		RethinkLayout(gwin->shared->gadgets[GID_TABLAYOUT],gwin->shared->win,NULL,TRUE);
+		if(ClickTabBase->lib_Version < 53)
+			RethinkLayout(gwin->shared->gadgets[GID_TABLAYOUT],gwin->shared->win,NULL,TRUE);
 
 		gwin->shared->tabs++;
 		gwin->shared->next_tab++;
@@ -2301,7 +2302,9 @@ void gui_window_destroy(struct gui_window *g)
 						CLICKTAB_Labels,&g->shared->tab_list,
 						CLICKTAB_Current,ptabnum,
 						TAG_DONE);
-		RethinkLayout(g->shared->gadgets[GID_TABLAYOUT],g->shared->win,NULL,TRUE);
+
+		if(ClickTabBase->lib_Version < 53)
+			RethinkLayout(g->shared->gadgets[GID_TABLAYOUT],g->shared->win,NULL,TRUE);
 
 		g->shared->tabs--;
 		ami_switch_tab(g->shared,true);
@@ -2354,7 +2357,9 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 		RefreshSetGadgetAttrs(g->shared->gadgets[GID_TABS],g->shared->win,NULL,
 						CLICKTAB_Labels,&g->shared->tab_list,
 						TAG_DONE);
-		RethinkLayout(g->shared->gadgets[GID_TABLAYOUT],g->shared->win,NULL,TRUE);
+
+		if(ClickTabBase->lib_Version < 53)
+			RethinkLayout(g->shared->gadgets[GID_TABLAYOUT],g->shared->win,NULL,TRUE);
 
 		GetAttr(CLICKTAB_Current,g->shared->gadgets[GID_TABS],(ULONG *)&cur_tab);
 	}
