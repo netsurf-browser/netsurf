@@ -704,6 +704,11 @@ void ami_update_quals(struct gui_window_2 *gwin)
 	{
 		gwin->key_state |= BROWSER_MOUSE_MOD_2;
 	}
+
+	if((quals & IEQUALIFIER_LALT) || (quals & IEQUALIFIER_RALT)) 
+	{
+		gwin->key_state |= BROWSER_MOUSE_MOD_3;
+	}
 }
 
 void ami_handle_msg(void)
@@ -2547,7 +2552,7 @@ void ami_do_redraw(struct gui_window_2 *g)
 			ami_do_redraw_limits(g->bw->window, c,
 					hcurrent, (height / g->bw->scale) + oldv,
 					hcurrent + (width / g->bw->scale),
-					vcurrent+(height / g->bw->scale),
+					vcurrent + (height / g->bw->scale),
 					hcurrent, vcurrent);
 		}
 		else if(vcurrent<oldv)
