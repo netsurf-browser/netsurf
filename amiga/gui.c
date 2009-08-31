@@ -2397,11 +2397,19 @@ void ami_do_redraw_limits(struct gui_window *g, struct content *c,int x0, int y0
 
 	current_redraw_browser = g->shared->bw;
 
-	width=bbox->Width;
-	height=bbox->Height;
+	width=bbox->Width / g->shared->bw->scale;
+	height=bbox->Height / g->shared->bw->scale;
 	xoffset=bbox->Left;
 	yoffset=bbox->Top;
 
+/*	x0 *= g->shared->bw->scale;
+	x1 *= g->shared->bw->scale;
+	y0 *= g->shared->bw->scale;
+	y1 *= g->shared->bw->scale;
+
+	sx *= g->shared->bw->scale;
+	sy *= g->shared->bw->scale;
+*/
 	plot=amiplot;
 	glob = &browserglob;
 
@@ -2417,15 +2425,13 @@ void ami_do_redraw_limits(struct gui_window *g, struct content *c,int x0, int y0
 	glob->scale = g->shared->bw->scale;
 
 	content_redraw(c,
-		-sx,-sy,width-sx,height-sy,
-		floorf((x0 *
-		g->shared->bw->scale)-sx),
-		ceilf((y0 *
-		g->shared->bw->scale)-sy),
-		(x1 *
-		g->shared->bw->scale)-sx,
-		(y1 *
-		g->shared->bw->scale)-sy,
+		-sx, -sy,
+		width - sx,
+		height - sy,
+		(x0 - sx) * g->shared->bw->scale,
+		(y0 - sy) * g->shared->bw->scale,
+		(x1 - sx) * g->shared->bw->scale,
+		(y1 - sy) * g->shared->bw->scale,
 		g->shared->bw->scale,
 		0xFFFFFF);
 
@@ -2433,8 +2439,15 @@ void ami_do_redraw_limits(struct gui_window *g, struct content *c,int x0, int y0
 
 	ami_clearclipreg(&browserglob);
 
-	BltBitMapRastPort(browserglob.bm,x0-sx,y0-sy,g->shared->win->RPort,
-						xoffset+x0-sx,yoffset+y0-sy,x1-x0,y1-y0,0x0C0);
+	BltBitMapRastPort(browserglob.bm,
+						(x0 - sx) * g->shared->bw->scale,
+						(y0 - sy) * g->shared->bw->scale,
+						g->shared->win->RPort,
+						xoffset + ((x0 - sx) * g->shared->bw->scale),
+						yoffset + ((y0 - sy) * g->shared->bw->scale),
+						(x1 - x0) * g->shared->bw->scale,
+						(y1 - y0) * g->shared->bw->scale,
+						0x0C0);
 }
 
 void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
