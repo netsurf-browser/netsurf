@@ -819,11 +819,8 @@ void ami_handle_msg(void)
 				case WMHI_MOUSEMOVE:
 					GetAttr(SPACE_AreaBox,gwin->gadgets[GID_BROWSER],(ULONG *)&bbox);
 
-					x = gwin->win->MouseX - bbox->Left; // mousex should be in intuimessage
-					y = gwin->win->MouseY - bbox->Top;
-
-					x /= gwin->bw->scale;
-					y /= gwin->bw->scale;
+					x = (ULONG)((gwin->win->MouseX - bbox->Left) / gwin->bw->scale);
+					y = (ULONG)((gwin->win->MouseY - bbox->Top) / gwin->bw->scale);
 
 					ami_get_hscroll_pos(gwin, (ULONG *)&xs);
 					ami_get_vscroll_pos(gwin, (ULONG *)&ys);
@@ -874,11 +871,8 @@ void ami_handle_msg(void)
 				case WMHI_MOUSEBUTTONS:
 					GetAttr(SPACE_AreaBox,gwin->gadgets[GID_BROWSER],(ULONG *)&bbox);
 
-					x = gwin->win->MouseX - bbox->Left;
-					y = gwin->win->MouseY - bbox->Top;
-
-					x /= gwin->bw->scale;
-					y /= gwin->bw->scale;
+					x = (ULONG)((gwin->win->MouseX - bbox->Left) / gwin->bw->scale);
+					y = (ULONG)((gwin->win->MouseY - bbox->Top) / gwin->bw->scale);
 
 					ami_get_hscroll_pos(gwin, (ULONG *)&xs);
 					ami_get_vscroll_pos(gwin, (ULONG *)&ys);
@@ -1655,14 +1649,18 @@ void ami_update_buttons(struct gui_window_2 *gwin)
 	if(!browser_window_reload_available(gwin->bw))
 		reload=TRUE;
 
-	if(gwin->tabs <= 1)
+	if(gwin->bw->browser_window_type == BROWSER_WINDOW_NORMAL &&
+		option_kiosk_mode == false)
 	{
-		tabclose=TRUE;
-		OffMenu(gwin->win,AMI_MENU_CLOSETAB);
-	}
-	else
-	{
-		OnMenu(gwin->win,AMI_MENU_CLOSETAB);
+		if(gwin->tabs <= 1)
+		{
+			tabclose=TRUE;
+			OffMenu(gwin->win,AMI_MENU_CLOSETAB);
+		}
+		else
+		{
+			OnMenu(gwin->win,AMI_MENU_CLOSETAB);
+		}
 	}
 
 	RefreshSetGadgetAttrs(gwin->gadgets[GID_BACK],gwin->win,NULL,
@@ -2131,8 +2129,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			ICA_TARGET, ICTARGET_IDCMP,
 			TAG_DONE);
 
-	if((bw->browser_window_type == BROWSER_WINDOW_NORMAL) &&
-				(option_kiosk_mode == false))
+	if(bw->browser_window_type == BROWSER_WINDOW_NORMAL &&
+				option_kiosk_mode == false)
 	{
 		ULONG sz, size1, size2;
 
@@ -2779,12 +2777,13 @@ void gui_window_set_status(struct gui_window *g, const char *text)
 
 	if(!g) return;
 	if(!text) return;
+	if(!g->shared->gadgets[GID_STATUS]) return;
 
 	if(g->tab_node) GetAttr(CLICKTAB_Current,g->shared->gadgets[GID_TABS],(ULONG *)&cur_tab);
 
 	if((cur_tab == g->tab) || (g->shared->tabs == 0))
 	{
-		utf8text = ami_utf8_easy(text);
+		utf8text = ami_utf8_easy((char *)text);
 
 		if((g->shared->status == NULL) || (strcmp(utf8text,g->shared->status)))
 		{
@@ -3125,8 +3124,8 @@ void gui_window_new_content(struct gui_window *g)
 	g->shared->oldh = 0;
 	g->shared->oldv = 0;
 
-	if(g->shared->bw->browser_window_type != BROWSER_WINDOW_NORMAL)
-		return;
+	if(g->shared->bw->browser_window_type != BROWSER_WINDOW_NORMAL ||
+		option_kiosk_mode == true) return;
 
 	if(c->type <= CONTENT_CSS)
 	{
