@@ -945,14 +945,8 @@ void ami_handle_msg(void)
 				break;
 
 				case WMHI_GADGETUP:
-					switch(result & WMHI_GADGETMASK) //gadaddr->GadgetID) //result & WMHI_GADGETMASK)
+					switch(result & WMHI_GADGETMASK)
 					{
-						case GID_HSCROLL:
-							if(option_faster_scroll)
-								gwin->redraw_scroll = true;
-							gwin->redraw_required = true;
-						break;
-
 						case GID_TABS:
 							ami_switch_tab(gwin,true);
 						break;
@@ -1912,14 +1906,15 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 								IDCMP_RAWKEY | IDCMP_SIZEVERIFY |
 								IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
 								IDCMP_INTUITICKS | IDCMP_ACTIVEWINDOW |
-								IDCMP_EXTENDEDMOUSE,
+								IDCMP_EXTENDEDMOUSE | IDCMP_GADGETDOWN,
 //					WINDOW_IconifyGadget, TRUE,
 					WINDOW_NewMenu,menu,
 			//		WINDOW_HorizProp,1,
 					WINDOW_VertProp,1,
 					WINDOW_IDCMPHook,&gwin->shared->scrollerhook,
 					WINDOW_IDCMPHookBits,IDCMP_IDCMPUPDATE |
-								IDCMP_EXTENDEDMOUSE | IDCMP_SIZEVERIFY,
+								IDCMP_EXTENDEDMOUSE | IDCMP_SIZEVERIFY |
+								 IDCMP_GADGETDOWN,
         		    WINDOW_AppPort, appport,
 					WINDOW_AppWindow,TRUE,
 					WINDOW_SharedPort,sport,
@@ -2146,7 +2141,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 				GA_RelRight, 1 - size2 - sz,
 				GA_Width, size2,
 				GA_BottomBorder, TRUE,
-				GA_RelVerify, TRUE,
+				GA_Immediate, TRUE,
+				ICA_TARGET, ICTARGET_IDCMP,
 				GA_DrawInfo, dri,
 				TAG_DONE);
 
@@ -3238,6 +3234,7 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 
 			switch( gid ) 
 			{
+				case GID_HSCROLL:
  				case OID_HSCROLL: 
  				case OID_VSCROLL:
 //					history_set_current_scroll(gwin->bw->history,
