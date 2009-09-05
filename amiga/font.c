@@ -190,6 +190,7 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 	if(!(ofont = ami_open_outline_font(fstyle))) return false;
 
 	*char_offset = 0;
+	*actual_x = 0;
 
 	for(i=0;i<len;i++)
 	{
@@ -211,7 +212,7 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 					{
 						*actual_x = tx;
 						*char_offset = utf8clen;
-						found = true;
+						//found = true;
 					}
 
 					tx+= glyph->glm_X1;
@@ -234,21 +235,12 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 	}
 
 /*
-	while(((*string != ' ')) && (string > ostr))
-	{
-		* todo: calc size of preceding character *
-		utf8len = 1;
-		string -= utf8len;
-		co -= utf8len;
-	}
-*/
-
 	if(found == false)
 	{
 		*char_offset = utf8clen;
 		*actual_x = tx;
 	}
-
+*/
 	free(outf16);
 
 	return true;
