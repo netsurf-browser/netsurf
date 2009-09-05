@@ -70,8 +70,7 @@ menu { display: block; padding-left: 1.5em; margin: 1.12em 0; }
 
 table { display: table; border-spacing: 2px; }
 
-table[border] { border-style: outset; border-color: grey; }
-table[border] td, table[border] tr { border-style: inset; border-color: grey; }
+table[border], table[border] td, table[border] tr { border-color: grey; }
 
 caption { display: table-caption; }
 

@@ -17,6 +17,7 @@
  */
 
 #include <assert.h>
+#include <stdbool.h>
 #include <string.h>
 #include <strings.h>
 
@@ -444,8 +445,8 @@ css_error node_name(void *pw, void *node,
  * \return CSS_OK on success,
  *         CSS_NOMEM on memory exhaustion.
  *
- * \note The returned array will be destroyed by libcss. Therefore, it must 
- *       be allocated using the same allocator as used by libcss during style 
+ * \note The returned array will be destroyed by libcss. Therefore, it must
+ *       be allocated using the same allocator as used by libcss during style
  *       selection.
  */
 css_error node_classes(void *pw, void *node,
@@ -497,7 +498,7 @@ css_error node_classes(void *pw, void *node,
 		}
 		result = temp;
 
-		lerror = lwc_context_intern(dict, start, p - start, 
+		lerror = lwc_context_intern(dict, start, p - start,
 				&result[items]);
 		switch (lerror) {
 		case lwc_error_oom:
@@ -920,7 +921,7 @@ css_error node_has_attribute(void *pw, void *node,
 {
 	xmlNode *n = node;
 	xmlAttr *attr;
-	
+
 	attr = xmlHasProp(n, (const xmlChar *) lwc_string_data(name));
 	*match = attr != NULL;
 
@@ -1099,7 +1100,7 @@ css_error node_is_link(void *pw, void *node, bool *match)
 }
 
 /**
- * Callback to determine if a node is a linking element whose target has been 
+ * Callback to determine if a node is a linking element whose target has been
  * visited.
  *
  * \param pw     HTML document
@@ -1296,7 +1297,7 @@ css_error node_presentational_hint(void *pw, void *node,
 		if (bgcol == NULL)
 			return CSS_PROPERTY_NOT_SET;
 
-		if (nscss_parse_colour((const char *) bgcol, 
+		if (nscss_parse_colour((const char *) bgcol,
 				&hint->data.color)) {
 			hint->status = CSS_BACKGROUND_COLOR_COLOR;
 		} else {
@@ -1549,8 +1550,11 @@ css_error node_presentational_hint(void *pw, void *node,
 			property == CSS_PROP_BORDER_RIGHT_STYLE ||
 			property == CSS_PROP_BORDER_BOTTOM_STYLE ||
 			property == CSS_PROP_BORDER_LEFT_STYLE) {
+		bool is_table_cell = false;
+
 		if (strcmp((const char *) n->name, "td") == 0 ||
 				strcmp((const char *) n->name, "th") == 0) {
+			is_table_cell = true;
 			/* Find table */
 			for (n = n->parent; n != NULL &&
 					n->type == XML_ELEMENT_NODE;
@@ -1567,7 +1571,10 @@ css_error node_presentational_hint(void *pw, void *node,
 		if (strcmp((const char *) n->name, "table") == 0 &&
 				xmlHasProp(n,
 				(const xmlChar *) "border") != NULL) {
-			hint->status = CSS_BORDER_STYLE_OUTSET;
+			if (is_table_cell)
+				hint->status = CSS_BORDER_STYLE_INSET;
+			else
+				hint->status = CSS_BORDER_STYLE_OUTSET;
 			return CSS_OK;
 		}
 	} else if (property == CSS_PROP_BORDER_TOP_WIDTH ||
@@ -1575,9 +1582,11 @@ css_error node_presentational_hint(void *pw, void *node,
 			property == CSS_PROP_BORDER_BOTTOM_WIDTH ||
 			property == CSS_PROP_BORDER_LEFT_WIDTH) {
 		xmlChar *width;
+		bool is_table_cell = false;
 
 		if (strcmp((const char *) n->name, "td") == 0 ||
 				strcmp((const char *) n->name, "th") == 0) {
+			is_table_cell = true;
 			/* Find table */
 			for (n = n->parent; n != NULL &&
 					n->type == XML_ELEMENT_NODE;
@@ -1599,7 +1608,11 @@ css_error node_presentational_hint(void *pw, void *node,
 		if (width == NULL)
 			return CSS_PROPERTY_NOT_SET;
 
-		if (parse_dimension((const char *) width, false,
+		if (is_table_cell) {
+			hint->data.length.value = INTTOFIX(1);
+			hint->data.length.unit = CSS_UNIT_PX;
+			hint->status = CSS_BORDER_WIDTH_WIDTH;
+		} else if (parse_dimension((const char *) width, false,
 				&hint->data.length.value,
 				&hint->data.length.unit)) {
 			hint->status = CSS_BORDER_WIDTH_WIDTH;
@@ -1667,11 +1680,11 @@ css_error node_presentational_hint(void *pw, void *node,
 				return CSS_PROPERTY_NOT_SET;
 
 			if (strcasecmp((const char *) align, "center") == 0 ||
-					strcasecmp((const char *) align, 
+					strcasecmp((const char *) align,
 							"abscenter") == 0 ||
-					strcasecmp((const char *) align, 
+					strcasecmp((const char *) align,
 							"middle") == 0 ||
-					strcasecmp((const char *) align, 
+					strcasecmp((const char *) align,
 							"absmiddle") == 0) {
 				hint->status = CSS_MARGIN_AUTO;
 			} else {
@@ -1696,10 +1709,10 @@ css_error node_presentational_hint(void *pw, void *node,
 				} else {
 					hint->status = CSS_MARGIN_AUTO;
 				}
-			} else if (strcasecmp((const char *) align, 
+			} else if (strcasecmp((const char *) align,
 					"center") == 0) {
 				hint->status = CSS_MARGIN_AUTO;
-			} else if (strcasecmp((const char *) align, 
+			} else if (strcasecmp((const char *) align,
 					"right") == 0) {
 				if (property == CSS_PROP_MARGIN_RIGHT) {
 					hint->data.length.value = 0;
@@ -1771,13 +1784,13 @@ css_error node_presentational_hint(void *pw, void *node,
 
 			if (strcasecmp((const char *) align, "left") == 0) {
 				hint->status = CSS_TEXT_ALIGN_LEFT;
-			} else if (strcasecmp((const char *) align, 
+			} else if (strcasecmp((const char *) align,
 					"center") == 0) {
 				hint->status = CSS_TEXT_ALIGN_CENTER;
-			} else if (strcasecmp((const char *) align, 
+			} else if (strcasecmp((const char *) align,
 					"right") == 0) {
 				hint->status = CSS_TEXT_ALIGN_RIGHT;
-			} else if (strcasecmp((const char *) align, 
+			} else if (strcasecmp((const char *) align,
 					"justify") == 0) {
 				hint->status = CSS_TEXT_ALIGN_JUSTIFY;
 			} else {
@@ -1795,16 +1808,16 @@ css_error node_presentational_hint(void *pw, void *node,
 		} else if (strcmp((const char *) n->name, "caption") == 0) {
 			align = xmlGetProp(n, (const xmlChar *) "align");
 
-			if (align == NULL || strcasecmp((const char *) align, 
+			if (align == NULL || strcasecmp((const char *) align,
 					"center") == 0) {
 				hint->status = CSS_TEXT_ALIGN_LIBCSS_CENTER;
-			} else if (strcasecmp((const char *) align, 
+			} else if (strcasecmp((const char *) align,
 					"left") == 0) {
 				hint->status = CSS_TEXT_ALIGN_LIBCSS_LEFT;
-			} else if (strcasecmp((const char *) align, 
+			} else if (strcasecmp((const char *) align,
 					"right") == 0) {
 				hint->status = CSS_TEXT_ALIGN_LIBCSS_RIGHT;
-			} else if (strcasecmp((const char *) align, 
+			} else if (strcasecmp((const char *) align,
 					"justify") == 0) {
 				hint->status = CSS_TEXT_ALIGN_JUSTIFY;
 			} else {
@@ -1830,13 +1843,13 @@ css_error node_presentational_hint(void *pw, void *node,
 
 			if (strcasecmp((const char *) align, "center") == 0) {
 				hint->status = CSS_TEXT_ALIGN_LIBCSS_CENTER;
-			} else if (strcasecmp((const char *) align, 
+			} else if (strcasecmp((const char *) align,
 					"left") == 0) {
 				hint->status = CSS_TEXT_ALIGN_LIBCSS_LEFT;
-			} else if (strcasecmp((const char *) align, 
+			} else if (strcasecmp((const char *) align,
 					"right") == 0) {
 				hint->status = CSS_TEXT_ALIGN_LIBCSS_RIGHT;
-			} else if (strcasecmp((const char *) align, 
+			} else if (strcasecmp((const char *) align,
 					"justify") == 0) {
 				hint->status = CSS_TEXT_ALIGN_JUSTIFY;
 			} else {
@@ -1872,13 +1885,13 @@ css_error node_presentational_hint(void *pw, void *node,
 
 			if (strcasecmp((const char *) valign, "top") == 0) {
 				hint->status = CSS_VERTICAL_ALIGN_TOP;
-			} else if (strcasecmp((const char *) valign, 
+			} else if (strcasecmp((const char *) valign,
 					"middle") == 0) {
 				hint->status = CSS_VERTICAL_ALIGN_MIDDLE;
-			} else if (strcasecmp((const char *) valign, 
+			} else if (strcasecmp((const char *) valign,
 					"bottom") == 0) {
 				hint->status = CSS_VERTICAL_ALIGN_BOTTOM;
-			} else if (strcasecmp((const char *) valign, 
+			} else if (strcasecmp((const char *) valign,
 					"baseline") == 0) {
 				hint->status = CSS_VERTICAL_ALIGN_BASELINE;
 			} else {
@@ -1902,12 +1915,12 @@ css_error node_presentational_hint(void *pw, void *node,
 
 			if (strcasecmp((const char *) valign, "top") == 0) {
 				hint->status = CSS_VERTICAL_ALIGN_TOP;
-			} else if (strcasecmp((const char *) valign, 
-					"bottom") == 0 || 
-					strcasecmp((const char *) valign, 
+			} else if (strcasecmp((const char *) valign,
+					"bottom") == 0 ||
+					strcasecmp((const char *) valign,
 					"baseline") == 0) {
 				hint->status = CSS_VERTICAL_ALIGN_BASELINE;
-			} else if (strcasecmp((const char *) valign, 
+			} else if (strcasecmp((const char *) valign,
 					"texttop") == 0) {
 				hint->status = CSS_VERTICAL_ALIGN_TEXT_TOP;
 			} else if (strcasecmp((const char *) valign,
@@ -1990,8 +2003,8 @@ struct colour_map {
  *
  * \param a  Name to match
  * \param b  Colour map entry to consider
- * \return 0   on match, 
- *         < 0 if a < b, 
+ * \return 0   on match,
+ *         < 0 if a < b,
  *         > 0 if b > a.
  */
 int cmp_colour_name(const void *a, const void *b)
@@ -2217,7 +2230,7 @@ bool parse_dimension(const char *data, bool strict, css_fixed *length,
  * \param maybe_negative  Negative numbers permitted
  * \param real            Floating point numbers permitted
  * \param value           Pointer to location to receive numeric value
- * \param consumed        Pointer to location to receive number of input 
+ * \param consumed        Pointer to location to receive number of input
  *                        bytes consumed
  * \return true on success, false on invalid input
  */
