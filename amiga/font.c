@@ -97,6 +97,7 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 	size_t len,utf8len;
 	uint8 *utf8;
 	uint32 co = 0;
+	int utf16charlen;
 
 	len = utf8_bounded_length(string, length);
 	if(utf8_to_enc(string,"UTF-16",length,(char **)&utf16) != UTF8_CONVERT_OK) return false;
@@ -108,6 +109,14 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 
 	for(i=0;i<len;i++)
 	{
+		if (*utf16 < 0xD800 || 0xDFFF < *utf16)
+			utf16charlen = 1;
+		else
+			utf16charlen = 2;
+
+		utf8len = utf8_char_byte_length(string);
+		string+=utf8len;
+
 		if(ESetInfo(&ofont->olf_EEngine,
 			OT_GlyphCode,*utf16,
 			TAG_END) == OTERR_Success)
@@ -116,10 +125,6 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 				OT_GlyphMap8Bit,&glyph,
 				TAG_END) == 0)
 			{
-				if(utf8_from_enc((char *)utf16,"UTF-16",2,(char **)&utf8) != UTF8_CONVERT_OK) return false;
-				utf8len = utf8_char_byte_length(utf8);
-				free(utf8);
-
 				if(x<tx+glyph->glm_X1)
 				{
 					i = len+1;
@@ -137,10 +142,7 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 					TAG_END);
 			}
 		}
-		if (*utf16 < 0xD800 || 0xDFFF < *utf16)
-			utf16++;
-		else
-			utf16 += 2;
+		utf16 += utf16charlen;
 	}
 	*char_offset = co;
 	if(co>=length) *actual_x = tx;
@@ -172,13 +174,15 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 {
 	struct TextExtent extent;
 	ULONG co;
-	char *charp;
+	char *ostr = string;
 	struct TextFont *tfont;
 	uint16 *utf16 = NULL,*outf16 = NULL;
 	struct OutlineFont *ofont;
 	struct GlyphMap *glyph;
 	uint32 tx=0,i=0;
 	size_t len;
+	int utf8len, utf8clen = 0;
+	bool found = false;
 
 	len = utf8_bounded_length(string, length);
 	if(utf8_to_enc((char *)string,"UTF-16",length,(char **)&utf16) != UTF8_CONVERT_OK) return false;
@@ -197,37 +201,54 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 				OT_GlyphMap8Bit,&glyph,
 				TAG_END) == 0)
 			{
-				if(*utf16 == 0x0020)
-				{
-					*actual_x = tx;
-					co = i;
-				}
-
-				if(x<tx+glyph->glm_X1)
+				if(x < (tx + glyph->glm_X1))
 				{
 					i = length+1;
 				}
+				else
+				{
+					if(*string == ' ') //*utf16 == 0x0020)
+					{
+						*actual_x = tx;
+						*char_offset = utf8clen;
+						found = true;
+					}
 
-				tx+= glyph->glm_X1;
+					tx+= glyph->glm_X1;
+				}
 
 				EReleaseInfo(&ofont->olf_EEngine,
 					OT_GlyphMap8Bit,glyph,
 					TAG_END);
 			}
 		}
+
 		if (*utf16 < 0xD800 || 0xDFFF < *utf16)
-			utf16++;
+			utf16 += 1;
 		else
 			utf16 += 2;
+
+		utf8len = utf8_char_byte_length(string);
+		string += utf8len;
+		utf8clen += utf8len;
 	}
 
-	charp = (char *)(string+co);
-	while(((*charp != ' ')) && (charp > string))
+/*
+	while(((*string != ' ')) && (string > ostr))
 	{
-		charp--;
-		co--;
+		* todo: calc size of preceding character *
+		utf8len = 1;
+		string -= utf8len;
+		co -= utf8len;
 	}
-	*char_offset = co;
+*/
+
+	if(found == false)
+	{
+		*char_offset = utf8clen;
+		*actual_x = tx;
+	}
+
 	free(outf16);
 
 	return true;
