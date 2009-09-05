@@ -115,7 +115,7 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 			utf16charlen = 2;
 
 		utf8len = utf8_char_byte_length(string);
-		string+=utf8len;
+		string += utf8len;
 
 		if(ESetInfo(&ofont->olf_EEngine,
 			OT_GlyphCode,*utf16,
@@ -125,8 +125,9 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 				OT_GlyphMap8Bit,&glyph,
 				TAG_END) == 0)
 			{
-				if(x<tx+glyph->glm_X1)
+				if(x < (tx + glyph->glm_X1))
 				{
+					*actual_x = tx;
 					i = len+1;
 				}
 				else
@@ -134,8 +135,7 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 					co += utf8len;
 				}
 
-				*actual_x = tx + (glyph->glm_X1 / 2);
-				tx+= glyph->glm_X1;
+				tx += glyph->glm_X1;
 
 				EReleaseInfo(&ofont->olf_EEngine,
 					OT_GlyphMap8Bit,glyph,
@@ -144,8 +144,15 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 		}
 		utf16 += utf16charlen;
 	}
+
+	if(co == length)
+	{
+		*actual_x = tx;
+		co = length;
+	}
+
 	*char_offset = co;
-	if(co>=length) *actual_x = tx;
+
 	free(outf16);
 
 	return true;
