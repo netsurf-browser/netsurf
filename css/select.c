@@ -1615,7 +1615,6 @@ css_error node_presentational_hint(void *pw, void *node,
 					INTTOFIX(1) <
 					hint->data.length.value)
 				hint->data.length.value = INTTOFIX(1);
-			hint->data.length.unit = CSS_UNIT_PX;
 			hint->status = CSS_BORDER_WIDTH_WIDTH;
 		} else {
 			xmlFree(width);
