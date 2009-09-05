@@ -1608,13 +1608,14 @@ css_error node_presentational_hint(void *pw, void *node,
 		if (width == NULL)
 			return CSS_PROPERTY_NOT_SET;
 
-		if (is_table_cell) {
-			hint->data.length.value = INTTOFIX(1);
-			hint->data.length.unit = CSS_UNIT_PX;
-			hint->status = CSS_BORDER_WIDTH_WIDTH;
-		} else if (parse_dimension((const char *) width, false,
+		if (parse_dimension((const char *) width, false,
 				&hint->data.length.value,
 				&hint->data.length.unit)) {
+			if (is_table_cell &&
+					INTTOFIX(1) <
+					hint->data.length.value)
+				hint->data.length.value = INTTOFIX(1);
+			hint->data.length.unit = CSS_UNIT_PX;
 			hint->status = CSS_BORDER_WIDTH_WIDTH;
 		} else {
 			xmlFree(width);
