@@ -1316,7 +1316,7 @@ css_error node_presentational_hint(void *pw, void *node,
 		if (align == NULL)
 			return CSS_PROPERTY_NOT_SET;
 
-		if (strcmp((const char *) align, "bottom") == 0) {
+		if (strcasecmp((const char *) align, "bottom") == 0) {
 			hint->status = CSS_CAPTION_SIDE_BOTTOM;
 		} else {
 			xmlFree(align);
@@ -1388,9 +1388,9 @@ css_error node_presentational_hint(void *pw, void *node,
 		if (align == NULL)
 			return CSS_PROPERTY_NOT_SET;
 
-		if (strcmp((const char *) align, "left") == 0) {
+		if (strcasecmp((const char *) align, "left") == 0) {
 			hint->status = CSS_FLOAT_LEFT;
-		} else if (strcmp((const char *) align, "right") == 0) {
+		} else if (strcasecmp((const char *) align, "right") == 0) {
 			hint->status = CSS_FLOAT_RIGHT;
 		} else {
 			xmlFree(align);
@@ -1666,12 +1666,12 @@ css_error node_presentational_hint(void *pw, void *node,
 			if (align == NULL)
 				return CSS_PROPERTY_NOT_SET;
 
-			if (strcmp((const char *) align, "center") == 0 ||
-					strcmp((const char *) align, 
+			if (strcasecmp((const char *) align, "center") == 0 ||
+					strcasecmp((const char *) align, 
 							"abscenter") == 0 ||
-					strcmp((const char *) align, 
+					strcasecmp((const char *) align, 
 							"middle") == 0 ||
-					strcmp((const char *) align, 
+					strcasecmp((const char *) align, 
 							"absmiddle") == 0) {
 				hint->status = CSS_MARGIN_AUTO;
 			} else {
@@ -1688,7 +1688,7 @@ css_error node_presentational_hint(void *pw, void *node,
 			if (align == NULL)
 				return CSS_PROPERTY_NOT_SET;
 
-			if (strcmp((const char *) align, "left") == 0) {
+			if (strcasecmp((const char *) align, "left") == 0) {
 				if (property == CSS_PROP_MARGIN_LEFT) {
 					hint->data.length.value = 0;
 					hint->data.length.unit = CSS_UNIT_PX;
@@ -1696,10 +1696,11 @@ css_error node_presentational_hint(void *pw, void *node,
 				} else {
 					hint->status = CSS_MARGIN_AUTO;
 				}
-			} else if (strcmp((const char *) align, 
+			} else if (strcasecmp((const char *) align, 
 					"center") == 0) {
 				hint->status = CSS_MARGIN_AUTO;
-			} else if (strcmp((const char *) align, "right") == 0) {
+			} else if (strcasecmp((const char *) align, 
+					"right") == 0) {
 				if (property == CSS_PROP_MARGIN_RIGHT) {
 					hint->data.length.value = 0;
 					hint->data.length.unit = CSS_UNIT_PX;
@@ -1768,14 +1769,15 @@ css_error node_presentational_hint(void *pw, void *node,
 			if (align == NULL)
 				return CSS_PROPERTY_NOT_SET;
 
-			if (strcmp((const char *) align, "left") == 0) {
+			if (strcasecmp((const char *) align, "left") == 0) {
 				hint->status = CSS_TEXT_ALIGN_LEFT;
-			} else if (strcmp((const char *) align, 
+			} else if (strcasecmp((const char *) align, 
 					"center") == 0) {
 				hint->status = CSS_TEXT_ALIGN_CENTER;
-			} else if (strcmp((const char *) align, "right") == 0) {
+			} else if (strcasecmp((const char *) align, 
+					"right") == 0) {
 				hint->status = CSS_TEXT_ALIGN_RIGHT;
-			} else if (strcmp((const char *) align, 
+			} else if (strcasecmp((const char *) align, 
 					"justify") == 0) {
 				hint->status = CSS_TEXT_ALIGN_JUSTIFY;
 			} else {
@@ -1793,14 +1795,16 @@ css_error node_presentational_hint(void *pw, void *node,
 		} else if (strcmp((const char *) n->name, "caption") == 0) {
 			align = xmlGetProp(n, (const xmlChar *) "align");
 
-			if (align == NULL || strcmp((const char *) align, 
+			if (align == NULL || strcasecmp((const char *) align, 
 					"center") == 0) {
 				hint->status = CSS_TEXT_ALIGN_LIBCSS_CENTER;
-			} else if (strcmp((const char *) align, "left") == 0) {
+			} else if (strcasecmp((const char *) align, 
+					"left") == 0) {
 				hint->status = CSS_TEXT_ALIGN_LIBCSS_LEFT;
-			} else if (strcmp((const char *) align, "right") == 0) {
+			} else if (strcasecmp((const char *) align, 
+					"right") == 0) {
 				hint->status = CSS_TEXT_ALIGN_LIBCSS_RIGHT;
-			} else if (strcmp((const char *) align, 
+			} else if (strcasecmp((const char *) align, 
 					"justify") == 0) {
 				hint->status = CSS_TEXT_ALIGN_JUSTIFY;
 			} else {
@@ -1824,13 +1828,15 @@ css_error node_presentational_hint(void *pw, void *node,
 			if (align == NULL)
 				return CSS_PROPERTY_NOT_SET;
 
-			if (strcmp((const char *) align, "center") == 0) {
+			if (strcasecmp((const char *) align, "center") == 0) {
 				hint->status = CSS_TEXT_ALIGN_LIBCSS_CENTER;
-			} else if (strcmp((const char *) align, "left") == 0) {
+			} else if (strcasecmp((const char *) align, 
+					"left") == 0) {
 				hint->status = CSS_TEXT_ALIGN_LIBCSS_LEFT;
-			} else if (strcmp((const char *) align, "right") == 0) {
+			} else if (strcasecmp((const char *) align, 
+					"right") == 0) {
 				hint->status = CSS_TEXT_ALIGN_LIBCSS_RIGHT;
-			} else if (strcmp((const char *) align, 
+			} else if (strcasecmp((const char *) align, 
 					"justify") == 0) {
 				hint->status = CSS_TEXT_ALIGN_JUSTIFY;
 			} else {
@@ -1864,15 +1870,15 @@ css_error node_presentational_hint(void *pw, void *node,
 			if (valign == NULL)
 				return CSS_PROPERTY_NOT_SET;
 
-			if (strcmp((const char *) valign, "top") == 0) {
+			if (strcasecmp((const char *) valign, "top") == 0) {
 				hint->status = CSS_VERTICAL_ALIGN_TOP;
-			} else if (strcmp((const char *) valign, 
+			} else if (strcasecmp((const char *) valign, 
 					"middle") == 0) {
 				hint->status = CSS_VERTICAL_ALIGN_MIDDLE;
-			} else if (strcmp((const char *) valign, 
+			} else if (strcasecmp((const char *) valign, 
 					"bottom") == 0) {
 				hint->status = CSS_VERTICAL_ALIGN_BOTTOM;
-			} else if (strcmp((const char *) valign, 
+			} else if (strcasecmp((const char *) valign, 
 					"baseline") == 0) {
 				hint->status = CSS_VERTICAL_ALIGN_BASELINE;
 			} else {
@@ -1894,19 +1900,19 @@ css_error node_presentational_hint(void *pw, void *node,
 			if (valign == NULL)
 				return CSS_PROPERTY_NOT_SET;
 
-			if (strcmp((const char *) valign, "top") == 0) {
+			if (strcasecmp((const char *) valign, "top") == 0) {
 				hint->status = CSS_VERTICAL_ALIGN_TOP;
-			} else if (strcmp((const char *) valign, 
+			} else if (strcasecmp((const char *) valign, 
 					"bottom") == 0 || 
-					strcmp((const char *) valign, 
+					strcasecmp((const char *) valign, 
 					"baseline") == 0) {
 				hint->status = CSS_VERTICAL_ALIGN_BASELINE;
-			} else if (strcmp((const char *) valign, 
+			} else if (strcasecmp((const char *) valign, 
 					"texttop") == 0) {
 				hint->status = CSS_VERTICAL_ALIGN_TEXT_TOP;
-			} else if (strcmp((const char *) valign,
+			} else if (strcasecmp((const char *) valign,
 					"absmiddle") == 0 ||
-					strcmp((const char *) valign,
+					strcasecmp((const char *) valign,
 					"abscenter") == 0) {
 				hint->status = CSS_VERTICAL_ALIGN_MIDDLE;
 			} else {
