@@ -182,7 +182,6 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 	uint32 tx=0,i=0;
 	size_t len;
 	int utf8len, utf8clen = 0;
-	bool found = false;
 
 	len = utf8_bounded_length(string, length);
 	if(utf8_to_enc((char *)string,"UTF-16",length,(char **)&utf16) != UTF8_CONVERT_OK) return false;
@@ -194,6 +193,8 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 
 	for(i=0;i<len;i++)
 	{
+		utf8len = utf8_char_byte_length(string+utf8clen);
+
 		if(ESetInfo(&ofont->olf_EEngine,
 			OT_GlyphCode,*utf16,
 			TAG_END) == OTERR_Success)
@@ -202,20 +203,19 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 				OT_GlyphMap8Bit,&glyph,
 				TAG_END) == 0)
 			{
-				if(x < (tx + glyph->glm_X1))
+				tx+= glyph->glm_X1;
+
+				if(x < tx)
 				{
 					i = length+1;
 				}
 				else
 				{
-					if(*string == ' ') //*utf16 == 0x0020)
+					if(string[utf8clen] == ' ') //*utf16 == 0x0020)
 					{
 						*actual_x = tx;
 						*char_offset = utf8clen;
-						//found = true;
 					}
-
-					tx+= glyph->glm_X1;
 				}
 
 				EReleaseInfo(&ofont->olf_EEngine,
@@ -229,18 +229,9 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 		else
 			utf16 += 2;
 
-		utf8len = utf8_char_byte_length(string);
-		string += utf8len;
 		utf8clen += utf8len;
 	}
 
-/*
-	if(found == false)
-	{
-		*char_offset = utf8clen;
-		*actual_x = tx;
-	}
-*/
 	free(outf16);
 
 	return true;
