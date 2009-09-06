@@ -43,6 +43,7 @@ theme_list_sslcert:
 theme_throbber:Throbber
 theme_throbber_frames:9
 theme_throbber_delay:100
+theme_tab_loading:
 ptr_default:*PROGDIR:Resources/Pointers/Default
 ptr_point:*PROGDIR:Resources/Pointers/Point
 ptr_caret:*PROGDIR:Resources/Pointers/Caret

@@ -1705,6 +1705,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	char reload[100],reload_s[100],reload_g[100];
 	char home[100],home_s[100],home_g[100];
 	char closetab[100],closetab_s[100],closetab_g[100];
+	char tabthrobber[100];
 
 	if((bw->browser_window_type == BROWSER_WINDOW_IFRAME) && option_no_iframes) return NULL;
 
@@ -1884,6 +1885,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 				ami_get_theme_filename(closetab,"theme_closetab");
 				ami_get_theme_filename(closetab_s,"theme_closetab_s");
 				ami_get_theme_filename(closetab_g,"theme_closetab_g");
+				ami_get_theme_filename(tabthrobber,"theme_tab_loading");
 
 				gwin->shared->objects[OID_MAIN] = WindowObject,
 		       	    WA_ScreenTitle,nsscreentitle,
@@ -2046,6 +2048,11 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 								GA_Underscore,13, // disable kb shortcuts
 								CLICKTAB_Labels,&gwin->shared->tab_list,
 								CLICKTAB_LabelTruncate,TRUE,
+								CLICKTAB_FlagImage, BitMapObject,
+									BITMAP_SourceFile, tabthrobber,
+									BITMAP_Screen,scrn,
+									BITMAP_Masking,TRUE,
+								BitMapEnd,
 							ClickTabEnd,
 							CHILD_CacheDomain,FALSE,
 						LayoutEnd,
@@ -3003,7 +3010,13 @@ void gui_window_start_throbber(struct gui_window *g)
 
 	if(!g) return;
 
-	if(g->tab_node) GetAttr(CLICKTAB_Current,g->shared->gadgets[GID_TABS],(ULONG *)&cur_tab);
+	if(g->tab_node)
+	{
+		GetAttr(CLICKTAB_Current,g->shared->gadgets[GID_TABS],(ULONG *)&cur_tab);
+		SetClickTabNodeAttrs(g->tab_node, TNA_Flagged, TRUE, TAG_DONE);
+		RefreshGadgets((APTR)g->shared->gadgets[GID_TABS],
+			g->shared->win, NULL);
+	}
 
 	g->throbbing = true;
 
@@ -3024,8 +3037,14 @@ void gui_window_stop_throbber(struct gui_window *g)
 
 	if(!g) return;
 
-	if(g->tab_node) GetAttr(CLICKTAB_Current, g->shared->gadgets[GID_TABS],
-		(ULONG *)&cur_tab);
+	if(g->tab_node)
+	{
+		GetAttr(CLICKTAB_Current, g->shared->gadgets[GID_TABS],
+			(ULONG *)&cur_tab);
+		SetClickTabNodeAttrs(g->tab_node, TNA_Flagged, FALSE, TAG_DONE);
+		RefreshGadgets((APTR)g->shared->gadgets[GID_TABS],
+			g->shared->win, NULL);
+	}
 
 	g->throbbing = false;
 
