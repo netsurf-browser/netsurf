@@ -114,6 +114,7 @@ struct gui_window
 	int scrolly;
 	struct history_window *hw;
 	struct List dllist;
+	bool throbbing;
 };
 
 void ami_get_msg(void);

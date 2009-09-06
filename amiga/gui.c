@@ -1251,7 +1251,7 @@ ie_qualifier anyway
 			if(gwin->redraw_required)
 				ami_do_redraw(gwin);
 
-			if(gwin->throbber_frame)
+			if(gwin->bw->window->throbbing)
 				ami_update_throbber(gwin,false);
 
 			if(gwin->bw->window->c_h)
@@ -2999,43 +2999,76 @@ void gui_window_set_url(struct gui_window *g, const char *url)
 void gui_window_start_throbber(struct gui_window *g)
 {
 	struct IBox *bbox;
-	GetAttr(SPACE_AreaBox,g->shared->gadgets[GID_THROBBER],(ULONG *)&bbox);
+	ULONG cur_tab = 0;
 
-	g->shared->throbber_frame=1;
+	if(!g) return;
 
-	BltBitMapRastPort(throbber,throbber_width,0,g->shared->win->RPort,bbox->Left,bbox->Top,throbber_width,throbber_height,0x0C0);
+	if(g->tab_node) GetAttr(CLICKTAB_Current,g->shared->gadgets[GID_TABS],(ULONG *)&cur_tab);
+
+	g->throbbing = true;
+
+	if((cur_tab == g->tab) || (g->shared->tabs == 0))
+	{
+		GetAttr(SPACE_AreaBox,g->shared->gadgets[GID_THROBBER],(ULONG *)&bbox);
+
+		if(g->shared->throbber_frame == 0) g->shared->throbber_frame=1;
+
+		BltBitMapRastPort(throbber,throbber_width,0,g->shared->win->RPort,bbox->Left,bbox->Top,throbber_width,throbber_height,0x0C0);
+	}
 }
 
 void gui_window_stop_throbber(struct gui_window *g)
 {
 	struct IBox *bbox;
-	GetAttr(SPACE_AreaBox,g->shared->gadgets[GID_THROBBER],(ULONG *)&bbox);
+	ULONG cur_tab = 0;
 
-	BltBitMapRastPort(throbber,0,0,g->shared->win->RPort,bbox->Left,bbox->Top,throbber_width,throbber_height,0x0C0);
+	if(!g) return;
 
-	g->shared->throbber_frame = 0;
+	if(g->tab_node) GetAttr(CLICKTAB_Current, g->shared->gadgets[GID_TABS],
+		(ULONG *)&cur_tab);
+
+	g->throbbing = false;
+
+	if((cur_tab == g->tab) || (g->shared->tabs == 0))
+	{
+		GetAttr(SPACE_AreaBox,g->shared->gadgets[GID_THROBBER],(ULONG *)&bbox);
+
+		BltBitMapRastPort(throbber, 0, 0, g->shared->win->RPort, bbox->Left,
+			bbox->Top, throbber_width, throbber_height, 0x0C0);
+	}
+//	g->shared->throbber_frame = 0;
 }
 
 void ami_update_throbber(struct gui_window_2 *g,bool redraw)
 {
 	struct IBox *bbox;
+	int frame = g->throbber_frame;
 
+	if(!g) return;
 	if(!g->gadgets[GID_THROBBER]) return;
 
-	if(!redraw)
+	if(g->bw->window->throbbing == false)
 	{
-		if(g->throbber_update_count < throbber_update_interval)
+		frame = 0;
+		g->throbber_frame=1;
+	}
+	else
+	{
+		if(!redraw)
 		{
-			g->throbber_update_count++;
-			return;
+			if(g->throbber_update_count < throbber_update_interval)
+			{
+				g->throbber_update_count++;
+				return;
+			}
+
+			g->throbber_update_count = 0;
+
+			g->throbber_frame++;
+			if(g->throbber_frame > (throbber_frames-1))
+				g->throbber_frame=1;
+
 		}
-
-		g->throbber_update_count = 0;
-
-		g->throbber_frame++;
-		if(g->throbber_frame > (throbber_frames-1))
-			g->throbber_frame=1;
-
 	}
 
 	GetAttr(SPACE_AreaBox,g->gadgets[GID_THROBBER],(ULONG *)&bbox);
@@ -3045,7 +3078,7 @@ void ami_update_throbber(struct gui_window_2 *g,bool redraw)
 		bbox->Left+throbber_width,bbox->Top+throbber_height);
 */
 
-	BltBitMapTags(BLITA_SrcX,throbber_width*g->throbber_frame,
+	BltBitMapTags(BLITA_SrcX, throbber_width * frame,
 					BLITA_SrcY,0,
 					BLITA_DestX,bbox->Left,
 					BLITA_DestY,bbox->Top,
