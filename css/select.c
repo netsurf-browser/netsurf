@@ -955,7 +955,7 @@ css_error node_has_attribute_equal(void *pw, void *node,
 	if (attr != NULL) {
 		*match = strlen((const char *) attr) ==
 					lwc_string_length(value) &&
-				strncmp((const char *) attr,
+				strncasecmp((const char *) attr,
 					lwc_string_data(value),
 					lwc_string_length(value)) == 0;
 		xmlFree(attr);
