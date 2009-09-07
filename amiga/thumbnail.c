@@ -40,9 +40,11 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 	bitmap->nativebmwidth = bitmap->width;
 	bitmap->nativebmheight = bitmap->height;
 	ami_clearclipreg(&browserglob);
+	current_redraw_browser = curbw;
 	plot = amiplot;
 	content_redraw(content, 0, 0, content->width, content->width,
 	0, 0, content->width, content->width, 1.0, 0xFFFFFF);
+	current_redraw_browser = NULL;
 
 	if(GfxBase->lib_Version >= 53) // AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)
 	{
