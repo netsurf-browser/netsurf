@@ -30,9 +30,19 @@ High-level cache:
   + Responsible for content objects.
   + Tracks content dependencies (and potential cycles).
   + Returns opaque handles to content objects.
-  + Manages content sharability. 
+  + Manages content sharability & reusability (see below).
   + Contents with unknown types are never shared and thus get unique handles.
   + Content handles <> content objects: they're an indirection mechanism.
+
+Content sharability & reusability
+--------------------------------
+
+  If a content is shareable, then it may have multiple concurrent users.
+  Otherwise, it may have at most one user.
+
+  If a content is reusable, then it may be retained in the cache for later use
+  when it has no users. Otherwise, it will be removed from the cache when
+  it has no users.
 
 Example: retrieving a top-level resource
 ----------------------------------------
