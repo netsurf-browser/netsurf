@@ -37,6 +37,8 @@ There are a couple of Amiga-specific options which can only be changed directly 
 
 @{b}kiosk_mode@{ub} No gadgets
 @{b}no_iframes@{ub} Disable IFrames
+@{b}printer_unit@{ub} Specifies which printer.device unit to print to
+
 @{b}url_file@{ub} Path to URL database file
 @{b}hotlist_file@{ub} Path to Hotlist file
 @{b}arexx_dir@{ub} Path to ARexx scripts dir

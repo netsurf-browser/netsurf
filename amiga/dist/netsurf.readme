@@ -2,16 +2,17 @@ Short:        Fast CSS capable web browser
 Uploader:     chris@unsatisfactorysoftware.co.uk (Chris Young)
 Author:       NetSurf contributors (OS4 port by Chris Young)
 Type:         comm/www
-Version:      2.0 development (SVN 5911)
+Version:      3.0 development (SVN 9560)
 Architecture: ppc-amigaos >= 4.0.0
 
-This is a preview release of the OS4 native port of NetSurf.
+MANUAL INSTALL ONLY - INTENTIONALLY NOT AVAILABLE VIA AMIUPDATE
+
+This is a preview release of NetSurf 3.0 for AmigaOS 4.
 It is beta software, which means it is unstable and missing
 features - use at your own risk!
 
-This is provided for testing purposes only, to gain feedback
-in order to fix bugs for the real release and to prioritise
-features.
+This is provided for testing purposes only.  For the latest
+stable version, visit http://www.netsurf-browser.org
 
 Please report bugs to chris@unsatisfactorysoftware.co.uk,
 on the Amigans.net forums or in the bug tracker at
