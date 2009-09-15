@@ -2172,11 +2172,29 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 				GA_Width, size1,
 				GA_DrawInfo, dri,
 				GA_BottomBorder, TRUE,
+				GA_ReadOnly, TRUE,
+				GA_Image, (struct Image *)NewObject(
+					NULL,
+					"frameiclass",
+					IA_FrameType, FRAME_DISPLAY,
+					IA_Simple, TRUE,
+					IA_Top, -(scrn->RastPort.TxHeight),
+					IA_Left, -1,
+					IA_Height, 1 + scrn->WBorBottom + scrn->RastPort.TxHeight,
+					IA_InBorder, TRUE,
+					TAG_DONE),
 				GA_Next, gwin->shared->gadgets[GID_HSCROLL],
 				TAG_DONE);
 
 		AddGList(gwin->shared->win, gwin->shared->gadgets[GID_STATUS],
 				(UWORD)~0, -1, NULL);
+
+	/* Apparently you can't set GA_Width on creation time for frbuttonclass */
+
+		SetGadgetAttrs(gwin->shared->gadgets[GID_STATUS],
+			gwin->shared->win, NULL,
+			GA_Width, size1,
+			TAG_DONE);
 
 		RefreshGadgets((APTR)gwin->shared->gadgets[GID_STATUS],
 				gwin->shared->win, NULL);
@@ -2223,7 +2241,7 @@ ULONG ami_set_border_gadget_balance(struct gui_window_2 *gwin)
 			GA_Width, size1,
 			TAG_DONE);
 
-	RefreshWindowFrame(gwin->win);
+	RefreshGList(gwin->gadgets[GID_STATUS], gwin->win, NULL, 2);
 }
 
 ULONG ami_get_border_gadget_balance(struct gui_window_2 *gwin, ULONG *size1, ULONG *size2)
@@ -2243,8 +2261,8 @@ ULONG ami_get_border_gadget_balance(struct gui_window_2 *gwin, ULONG *size1, ULO
 
 	gad1percent = option_toolbar_status_width / 10000.0;
 
-	*size1 = (ULONG)available_width * gad1percent;
-	*size2 = (ULONG)available_width * (1 - gad1percent);
+	*size1 = (ULONG)(available_width * gad1percent);
+	*size2 = (ULONG)(available_width * (1 - gad1percent));
 
 	return sz;
 }
@@ -2348,34 +2366,39 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 {
 	struct Node *node;
 	ULONG cur_tab = 0;
-	STRPTR newtitle = NULL;
+	char *utf8title;
 
 	if(!g) return;
+	if(!title) return;
 
 	if(g->tab_node)
 	{
-		node = g->tab_node;
+		utf8title = ami_utf8_easy((char *)title);
 
-		SetGadgetAttrs(g->shared->gadgets[GID_TABS],g->shared->win,NULL,
-						CLICKTAB_Labels,~0,
-						TAG_DONE);
-		newtitle = ami_utf8_easy((char *)title);
-		SetClickTabNodeAttrs(node,TNA_Text,newtitle,TAG_DONE);
-		if(newtitle) ami_utf8_free(newtitle);
-		RefreshSetGadgetAttrs(g->shared->gadgets[GID_TABS],g->shared->win,NULL,
-						CLICKTAB_Labels,&g->shared->tab_list,
-						TAG_DONE);
+		if((g->shared->wintitle == NULL) || (strcmp(utf8title, g->shared->wintitle)))
+		{
+			node = g->tab_node;
 
-		if(ClickTabBase->lib_Version < 53)
-			RethinkLayout(g->shared->gadgets[GID_TABLAYOUT],g->shared->win,NULL,TRUE);
+			SetGadgetAttrs(g->shared->gadgets[GID_TABS],g->shared->win,NULL,
+							CLICKTAB_Labels,~0,
+							TAG_DONE);
+			if(g->shared->wintitle) ami_utf8_free(g->shared->wintitle);
+			g->shared->wintitle = utf8title;
+			SetClickTabNodeAttrs(node,TNA_Text, g->shared->wintitle, TAG_DONE);
+			RefreshSetGadgetAttrs(g->shared->gadgets[GID_TABS],g->shared->win,NULL,
+							CLICKTAB_Labels,&g->shared->tab_list,
+							TAG_DONE);
 
-		GetAttr(CLICKTAB_Current,g->shared->gadgets[GID_TABS],(ULONG *)&cur_tab);
-	}
+			if(ClickTabBase->lib_Version < 53)
+				RethinkLayout(g->shared->gadgets[GID_TABLAYOUT],g->shared->win,NULL,TRUE);
 
-	if((cur_tab == g->tab) || (g->shared->tabs == 0))
-	{
-		if(g->shared->win->Title) ami_utf8_free(g->shared->win->Title);
-		SetWindowTitles(g->shared->win,ami_utf8_easy((char *)title),nsscreentitle);
+			GetAttr(CLICKTAB_Current,g->shared->gadgets[GID_TABS],(ULONG *)&cur_tab);
+
+			if((cur_tab == g->tab) || (g->shared->tabs == 0))
+			{
+				SetWindowTitles(g->shared->win, g->shared->wintitle, nsscreentitle);
+			}
+		}
 	}
 }
 
@@ -2802,7 +2825,7 @@ void gui_window_set_status(struct gui_window *g, const char *text)
 				GA_Text, utf8text,
 				TAG_DONE);
 
-			RefreshWindowFrame(g->shared->win);
+			RefreshGList(g->shared->gadgets[GID_STATUS],g->shared->win,NULL,1);
 
 			if(g->shared->status) ami_utf8_free(g->shared->status);
 			g->shared->status = utf8text;

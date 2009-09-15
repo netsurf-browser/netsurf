@@ -100,6 +100,7 @@ struct gui_window_2 {
 	bool new_content;
 	char *svbuffer;
 	char *status;
+	char *wintitle;
 };
 
 struct gui_window
