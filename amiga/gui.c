@@ -2177,10 +2177,9 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 					NULL,
 					"frameiclass",
 					IA_FrameType, FRAME_DISPLAY,
-					IA_Simple, TRUE,
-					IA_Top, -(scrn->RastPort.TxHeight),
+					IA_Top, 1-(scrn->RastPort.TxHeight),
 					IA_Left, -1,
-					IA_Height, 1 + scrn->WBorBottom + scrn->RastPort.TxHeight,
+					IA_Height, scrn->WBorBottom + scrn->RastPort.TxHeight,
 					IA_InBorder, TRUE,
 					TAG_DONE),
 				GA_Next, gwin->shared->gadgets[GID_HSCROLL],
@@ -2371,33 +2370,34 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 	if(!g) return;
 	if(!title) return;
 
+	utf8title = ami_utf8_easy((char *)title);
+
 	if(g->tab_node)
 	{
-		utf8title = ami_utf8_easy((char *)title);
+		node = g->tab_node;
 
+		SetGadgetAttrs(g->shared->gadgets[GID_TABS],g->shared->win,NULL,
+						CLICKTAB_Labels,~0,
+						TAG_DONE);
+
+		SetClickTabNodeAttrs(node, TNA_Text, utf8title, TAG_DONE);
+		RefreshSetGadgetAttrs(g->shared->gadgets[GID_TABS], g->shared->win, NULL,
+							CLICKTAB_Labels, &g->shared->tab_list,
+							TAG_DONE);
+
+		if(ClickTabBase->lib_Version < 53)
+			RethinkLayout(g->shared->gadgets[GID_TABLAYOUT],g->shared->win,NULL,TRUE);
+	}
+
+	GetAttr(CLICKTAB_Current,g->shared->gadgets[GID_TABS],(ULONG *)&cur_tab);
+
+	if((cur_tab == g->tab) || (g->shared->tabs == 0))
+	{
 		if((g->shared->wintitle == NULL) || (strcmp(utf8title, g->shared->wintitle)))
 		{
-			node = g->tab_node;
-
-			SetGadgetAttrs(g->shared->gadgets[GID_TABS],g->shared->win,NULL,
-							CLICKTAB_Labels,~0,
-							TAG_DONE);
 			if(g->shared->wintitle) ami_utf8_free(g->shared->wintitle);
 			g->shared->wintitle = utf8title;
-			SetClickTabNodeAttrs(node,TNA_Text, g->shared->wintitle, TAG_DONE);
-			RefreshSetGadgetAttrs(g->shared->gadgets[GID_TABS],g->shared->win,NULL,
-							CLICKTAB_Labels,&g->shared->tab_list,
-							TAG_DONE);
-
-			if(ClickTabBase->lib_Version < 53)
-				RethinkLayout(g->shared->gadgets[GID_TABLAYOUT],g->shared->win,NULL,TRUE);
-
-			GetAttr(CLICKTAB_Current,g->shared->gadgets[GID_TABS],(ULONG *)&cur_tab);
-
-			if((cur_tab == g->tab) || (g->shared->tabs == 0))
-			{
-				SetWindowTitles(g->shared->win, g->shared->wintitle, nsscreentitle);
-			}
+			SetWindowTitles(g->shared->win, g->shared->wintitle, nsscreentitle);
 		}
 	}
 }
