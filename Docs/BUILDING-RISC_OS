@@ -103,6 +103,7 @@
       *svn co svn://svn.netsurf-browser.org/trunk/libcss
       *svn co svn://svn.netsurf-browser.org/trunk/libnsgif
       *svn co svn://svn.netsurf-browser.org/trunk/libnsbmp
+      *svn co svn://svn.netsurf-browser.org/trunk/libsvgtiny
 
   The above will create a directory for each of the libraries containing their
   sources.
