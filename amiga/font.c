@@ -94,7 +94,7 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 	struct OutlineFont *ofont;
 	struct GlyphMap *glyph;
 	uint32 tx=0,i=0;
-	size_t len,utf8len;
+	size_t len, utf8len = 0;
 	uint8 *utf8;
 	uint32 co = 0;
 	int utf16charlen;
@@ -113,9 +113,6 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 			utf16charlen = 1;
 		else
 			utf16charlen = 2;
-
-		utf8len = utf8_char_byte_length(string);
-		string += utf8len;
 
 		if(ESetInfo(&ofont->olf_EEngine,
 			OT_GlyphCode,*utf16,
@@ -142,10 +139,13 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 					TAG_END);
 			}
 		}
+
+		utf8len = utf8_char_byte_length(string);
+		string += utf8len;
 		utf16 += utf16charlen;
 	}
 
-	if(co == length)
+	if(co == (length - 1))
 	{
 		*actual_x = tx;
 		co = length;
