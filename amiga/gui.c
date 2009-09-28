@@ -596,6 +596,12 @@ void ami_openscreen(void)
 	dri = GetScreenDrawInfo(scrn);
 }
 
+void ami_openscreenfirst(void)
+{
+	ami_openscreen();
+	ami_init_layers(&browserglob, 0, 0);
+}
+
 void gui_init2(int argc, char** argv)
 {
 	struct browser_window *bw = NULL;
@@ -614,11 +620,8 @@ void gui_init2(int argc, char** argv)
 	ami_fetch_file_register();
 	ami_openurl_open();
 
-	if(notalreadyrunning)
-	{
-		ami_openscreen();
-		ami_init_layers(&browserglob, 0, 0);
-	}
+	if(notalreadyrunning && (option_startup_no_window == false))
+		ami_openscreenfirst();
 
 	if(argc) // argc==0 is started from wb
 	{
@@ -696,22 +699,36 @@ void gui_init2(int argc, char** argv)
 
 	if(IApplication)
 	{
-		ami_appid = RegisterApplication(messages_get("NetSurf"),
-			REGAPP_URLIdentifier, "netsurf-browser.org",
-			REGAPP_WBStartup, (struct WBStartup *)argv,
-//			REGAPP_NoIcon, TRUE,
-//			REGAPP_AppIconInfo,(ULONG)&aii,
-			REGAPP_HasPrefsWindow,TRUE,
-			REGAPP_UniqueApplication,TRUE,
-			TAG_DONE);
+		if(argc == 0)
+		{
+			ami_appid = RegisterApplication(messages_get("NetSurf"),
+				REGAPP_URLIdentifier, "netsurf-browser.org",
+				REGAPP_WBStartup, (struct WBStartup *)argv,
+//				REGAPP_NoIcon, TRUE,
+				REGAPP_HasPrefsWindow, TRUE,
+				REGAPP_CanCreateNewDocs, TRUE,
+				REGAPP_UniqueApplication, TRUE,
+				TAG_DONE);
+		}
+		else
+		{
+/* TODO: Specify icon when run from Shell */
+			ami_appid = RegisterApplication(messages_get("NetSurf"),
+				REGAPP_URLIdentifier, "netsurf-browser.org",
+				REGAPP_FileName, argv[0],
+				REGAPP_NoIcon, TRUE,
+				REGAPP_HasPrefsWindow, TRUE,
+				REGAPP_CanCreateNewDocs, TRUE,
+				REGAPP_UniqueApplication, TRUE,
+				TAG_DONE);
+		}
 
 		GetApplicationAttrs(ami_appid, APPATTR_Port, (ULONG)&applibport, TAG_DONE);
 		applibsig = (1L << applibport->mp_SigBit);
 	}
 
-	if(!bw)	bw = browser_window_create(option_homepage_url, 0, 0, true,false);
-
-	if(locked_screen) UnlockPubScreen(NULL,scrn);
+	if(!bw && (option_startup_no_window == false))
+		bw = browser_window_create(option_homepage_url, 0, 0, true,false);
 }
 
 void ami_update_quals(struct gui_window_2 *gwin)
@@ -1436,15 +1453,38 @@ void ami_handle_appmsg(void)
 void ami_handle_applib(void)
 {
 	struct ApplicationMsg *applibmsg;
+	struct browser_window *bw;
 
 	while((applibmsg=(struct ApplicationMsg *)GetMsg(applibport)))
 	{
 		switch (applibmsg->type)
 		{
+			case APPLIBMT_NewBlankDoc:
+				bw = browser_window_create(option_homepage_url, 0, 0, true, false);
+			break;
+
+			case APPLIBMT_OpenDoc:
+			{
+				struct ApplicationOpenPrintDocMsg *applibopdmsg = applibmsg;
+				char *tempurl;
+
+				tempurl = path_to_url(applibopdmsg->fileName);
+				bw = browser_window_create(tempurl, 0, 0, true, false);
+				free(tempurl);
+			}
+			break;
+
 			case APPLIBMT_ToFront:
-				ScreenToFront(scrn);
-				WindowToFront(curbw->window->shared->win);
-				ActivateWindow(curbw->window->shared->win);
+				if(curbw)
+				{
+					ScreenToFront(scrn);
+					WindowToFront(curbw->window->shared->win);
+					ActivateWindow(curbw->window->shared->win);
+				}
+				else
+				{
+					bw = browser_window_create(option_homepage_url, 0, 0, true, false);
+				}
 			break;
 
 			case APPLIBMT_OpenPrefs:
@@ -1583,26 +1623,29 @@ void ami_quit_netsurf(void)
 	struct nsObject *nnode;
 	struct gui_window_2 *gwin;
 
-	node = (struct nsObject *)GetHead((struct List *)window_list);
-
-	do
+	if(!IsMinListEmpty(window_list))
 	{
-		nnode=(struct nsObject *)GetSucc((struct Node *)node);
-		gwin = node->objstruct;
+		node = (struct nsObject *)GetHead((struct List *)window_list);
 
-		switch(node->Type)
+		do
 		{
-			case AMINS_TVWINDOW:
-				ami_tree_close((struct treeview_window *)gwin);
-			break;
+			nnode=(struct nsObject *)GetSucc((struct Node *)node);
+			gwin = node->objstruct;
 
-			case AMINS_WINDOW:
-				ami_close_all_tabs(gwin);				
-			break;
-		}
+			switch(node->Type)
+			{
+				case AMINS_TVWINDOW:
+					ami_tree_close((struct treeview_window *)gwin);
+				break;
 
-		node = nnode;
-	} while(node = nnode);
+				case AMINS_WINDOW:
+					ami_close_all_tabs(gwin);				
+				break;
+			}
+			node = nnode;
+
+		} while(node = nnode);
+	}
 
 	if(IsMinListEmpty(window_list))
 	{
@@ -1780,6 +1823,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	char tabthrobber[100];
 
 	if((bw->browser_window_type == BROWSER_WINDOW_IFRAME) && option_no_iframes) return NULL;
+
+	if(!scrn) ami_openscreenfirst();
 
 	if(option_kiosk_mode) new_tab = false;
 	bw->scale = 1.0;
@@ -2283,6 +2328,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 	glob = &browserglob;
 
+	if(locked_screen) UnlockPubScreen(NULL,scrn);
 	return gwin;
 }
 

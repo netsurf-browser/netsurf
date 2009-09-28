@@ -134,13 +134,23 @@ STATIC VOID rx_open(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 	}
 	else
 	{
-		browser_window_go(curbw,(char *)cmd->ac_ArgList[0],NULL,true);
+		if(curbw)
+		{
+			browser_window_go(curbw,(char *)cmd->ac_ArgList[0],NULL,true);
+		}
+		else
+		{
+			browser_window_create((char *)cmd->ac_ArgList[0],NULL,NULL,true,false);
+		}
 	}
 }
 
 STATIC VOID rx_save(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
 	BPTR fh = 0;
+
+	if(!curbw) return;
+
 	ami_update_pointer(curbw->window->shared->win,GUI_POINTER_WAIT);
 	if(fh = FOpen(cmd->ac_ArgList[0],MODE_NEWFILE,0))
 	{

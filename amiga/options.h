@@ -42,6 +42,8 @@ extern bool option_faster_scroll;
 extern bool option_scale_quality;
 extern bool option_ask_overwrite;
 extern int option_printer_unit;
+extern bool option_startup_no_window;
+extern bool option_close_no_quit;
 
 #define EXTRA_OPTION_DEFINE \
 bool option_verbose_log = false; \
@@ -66,6 +68,8 @@ bool option_faster_scroll = true; \
 bool option_scale_quality = false; \
 bool option_ask_overwrite = false; \
 int option_printer_unit = 0; \
+bool option_startup_no_window = false; \
+bool option_close_no_quit = false; \
 
 #define EXTRA_OPTION_TABLE \
 { "verbose_log",	OPTION_BOOL,	&option_verbose_log}, \
@@ -89,6 +93,8 @@ int option_printer_unit = 0; \
 { "faster_scroll",	OPTION_BOOL,	&option_faster_scroll}, \
 { "scale_quality",	OPTION_BOOL,	&option_scale_quality}, \
 { "ask_overwrite",	OPTION_BOOL,	&option_ask_overwrite}, \
-{ "printer_unit",	OPTION_INTEGER,	&option_printer_unit},
+{ "printer_unit",	OPTION_INTEGER,	&option_printer_unit}, \
+{ "startup_no_window",	OPTION_BOOL,	&option_startup_no_window}, \
+{ "close_no_quit",	OPTION_BOOL,	&option_close_no_quit}, 
 
 #endif
