@@ -78,6 +78,8 @@
 #include "amiga/gui_options.h"
 #include "amiga/bitmap.h"
 #include "amiga/print.h"
+#include <libraries/application.h>
+#include <proto/application.h>
 
 #include "amiga/stringview/stringview.h"
 #include "amiga/stringview/urlhistory.h"
@@ -118,6 +120,8 @@ struct Library  *PopupMenuBase = NULL;
 struct PopupMenuIFace *IPopupMenu = NULL;
 struct Library  *KeymapBase = NULL;
 struct KeymapIFace *IKeymap = NULL;
+struct Library *ApplicationBase=NULL;
+struct ApplicationIFace *IApplication=NULL;
 
 Class *urlStringClass;
 
@@ -126,6 +130,9 @@ ULONG throbber_width,throbber_height,throbber_frames,throbber_update_interval;
 BOOL rmbtrapped;
 BOOL locked_screen = FALSE;
 BOOL screen_closed = FALSE;
+uint32 ami_appid;
+struct MsgPort *applibport = NULL;
+ULONG applibsig = 0;
 
 extern colour scroll_widget_fg_colour;
 extern colour scroll_widget_bg_colour;
@@ -274,6 +281,11 @@ void gui_init(int argc, char** argv)
 	if(KeymapBase = OpenLibrary("keymap.library",37))
 	{
 		IKeymap = (struct KeymapIFace *)GetInterface(KeymapBase,"main",1,NULL);
+	}
+
+	if(ApplicationBase = OpenLibrary("application.library",50))
+	{
+		IApplication = (struct ApplicationIFace *)GetInterface(ApplicationBase,"application",1,NULL);
 	}
 
 	urlStringClass = MakeStringClass();
@@ -680,6 +692,21 @@ void gui_init2(int argc, char** argv)
 		FreeVec(sendcmd);
 		netsurf_quit=true;
 		return;
+	}
+
+	if(IApplication)
+	{
+		ami_appid = RegisterApplication(messages_get("NetSurf"),
+			REGAPP_URLIdentifier, "netsurf-browser.org",
+			REGAPP_WBStartup, (struct WBStartup *)argv,
+//			REGAPP_NoIcon, TRUE,
+//			REGAPP_AppIconInfo,(ULONG)&aii,
+			REGAPP_HasPrefsWindow,TRUE,
+			REGAPP_UniqueApplication,TRUE,
+			TAG_DONE);
+
+		GetApplicationAttrs(ami_appid, APPATTR_Port, (ULONG)&applibport, TAG_DONE);
+		applibsig = (1L << applibport->mp_SigBit);
 	}
 
 	if(!bw)	bw = browser_window_create(option_homepage_url, 0, 0, true,false);
@@ -1406,6 +1433,34 @@ void ami_handle_appmsg(void)
 	}
 }
 
+void ami_handle_applib(void)
+{
+	struct ApplicationMsg *applibmsg;
+
+	while((applibmsg=(struct ApplicationMsg *)GetMsg(applibport)))
+	{
+		switch (applibmsg->type)
+		{
+			case APPLIBMT_ToFront:
+				ScreenToFront(scrn);
+				WindowToFront(curbw->window->shared->win);
+				ActivateWindow(curbw->window->shared->win);
+			break;
+
+			case APPLIBMT_OpenPrefs:
+				ScreenToFront(scrn);
+				ami_gui_opts_open();
+			break;
+
+			case APPLIBMT_Quit:
+			case APPLIBMT_ForceQuit:
+				ami_quit_netsurf();
+			break;
+		}
+		ReplyMsg((struct Message *)applibmsg);
+	}
+}
+
 void ami_get_msg(void)
 {
 	ULONG winsignal = 1L << sport->mp_SigBit;
@@ -1415,7 +1470,7 @@ void ami_get_msg(void)
 	struct Message *timermsg = NULL;
 	struct MsgPort *printmsgport = ami_print_get_msgport();
 	ULONG printsig = 1L << printmsgport->mp_SigBit;
-    ULONG signalmask = winsignal | appsig | schedulesig | rxsig | printsig;
+    ULONG signalmask = winsignal | appsig | schedulesig | rxsig | printsig | applibsig;
 
     signal = Wait(signalmask);
 
@@ -1430,6 +1485,10 @@ void ami_get_msg(void)
 	else if(signal & rxsig)
 	{
 		ami_arexx_handle();
+	}
+	else if(signal & applibsig)
+	{
+		ami_handle_applib();
 	}
 	else if(signal & printsig)
 	{
@@ -1568,6 +1627,9 @@ void gui_quit(void)
 
 	hubbub_finalise(myrealloc,NULL);
 
+	if(IApplication && ami_appid)
+		UnregisterApplication(ami_appid, NULL);
+
 	ami_arexx_cleanup();
 
 	ami_free_layers(&browserglob);
@@ -1612,11 +1674,14 @@ void gui_quit(void)
 	ami_openurl_close();
     FreeStringClass(urlStringClass);
 
-    if(IPopupMenu) DropInterface((struct Interface *)IPopupMenu);
-    if(PopupMenuBase) CloseLibrary(PopupMenuBase);
+	if(IApplication) DropInterface((struct Interface *)IApplication);
+	if(ApplicationBase) CloseLibrary(ApplicationBase);
 
-    if(IKeymap) DropInterface((struct Interface *)IKeymap);
-    if(KeymapBase) CloseLibrary(KeymapBase);
+	if(IPopupMenu) DropInterface((struct Interface *)IPopupMenu);
+	if(PopupMenuBase) CloseLibrary(PopupMenuBase);
+
+	if(IKeymap) DropInterface((struct Interface *)IKeymap);
+	if(KeymapBase) CloseLibrary(KeymapBase);
 
 	if(ITimer)
 	{
