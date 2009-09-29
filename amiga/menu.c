@@ -105,7 +105,7 @@ void ami_init_menulabs(void)
 	menulab[29] = NM_BARLABEL;
 	menulab[30] = ami_utf8_easy((char *)messages_get("ShowCookies"));
 	menulab[31] = NM_BARLABEL;
-	menulab[32] = ami_utf8_easy((char *)messages_get("Scale"));
+	menulab[32] = ami_utf8_easy((char *)messages_get("ScaleNS"));
 	menulab[33] = ami_utf8_easy((char *)messages_get("ScaleDec"));
 	menulab[34] = ami_utf8_easy((char *)messages_get("ScaleNorm"));
 	menulab[35] = ami_utf8_easy((char *)messages_get("ScaleInc"));

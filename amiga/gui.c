@@ -842,8 +842,9 @@ void ami_handle_msg(void)
 			{
 				if(IsMinListEmpty(window_list))
 				{
-					/* last window closed, so exit */
-					netsurf_quit = true;
+					/* last window closed, so exit with conditions ;) */
+					if(scrn && (option_close_no_quit == false))
+						netsurf_quit = true;
 				}
 				break;
 			}

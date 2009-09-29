@@ -107,6 +107,8 @@ enum
 	GID_OPTS_CLIPBOARD,
 	GID_OPTS_CMENU_ENABLE,
 	GID_OPTS_CMENU_STICKY,
+	GID_OPTS_STARTUP_NO_WIN,
+	GID_OPTS_CLOSE_NO_QUIT,
 	GID_OPTS_MARGIN_TOP,
 	GID_OPTS_MARGIN_LEFT,
 	GID_OPTS_MARGIN_BOTTOM,
@@ -145,6 +147,7 @@ enum
 	GRP_OPTS_TABS,
 	GRP_OPTS_CLIPBOARD,
 	GRP_OPTS_CONTEXTMENU,
+	GRP_OPTS_BEHAVIOUR,
 	GRP_OPTS_MARGINS,
 	GRP_OPTS_SCALING,
 	GRP_OPTS_APPEARANCE,
@@ -253,6 +256,8 @@ void ami_gui_opts_setup(void)
 	gadlab[GID_OPTS_CLIPBOARD] = (char *)ami_utf8_easy((char *)messages_get("ClipboardUTF8"));
 	gadlab[GID_OPTS_CMENU_ENABLE] = (char *)ami_utf8_easy((char *)messages_get("Enable"));
 	gadlab[GID_OPTS_CMENU_STICKY] = (char *)ami_utf8_easy((char *)messages_get("Sticky"));
+	gadlab[GID_OPTS_STARTUP_NO_WIN] = (char *)ami_utf8_easy((char *)messages_get("OptionNoWindow"));
+	gadlab[GID_OPTS_CLOSE_NO_QUIT] = (char *)ami_utf8_easy((char *)messages_get("OptionNoQuit"));
 	gadlab[GID_OPTS_MARGIN_TOP] = (char *)ami_utf8_easy((char *)messages_get("Top"));
 	gadlab[GID_OPTS_MARGIN_LEFT] = (char *)ami_utf8_easy((char *)messages_get("Left"));
 	gadlab[GID_OPTS_MARGIN_RIGHT] = (char *)ami_utf8_easy((char *)messages_get("Right"));
@@ -295,6 +300,7 @@ void ami_gui_opts_setup(void)
 	gadlab[GRP_OPTS_TABS] = (char *)ami_utf8_easy((char *)messages_get("TabbedBrowsing"));
 	gadlab[GRP_OPTS_CLIPBOARD] = (char *)ami_utf8_easy((char *)messages_get("Clipboard"));
 	gadlab[GRP_OPTS_CONTEXTMENU] = (char *)ami_utf8_easy((char *)messages_get("ContextMenu"));
+	gadlab[GRP_OPTS_BEHAVIOUR] = (char *)ami_utf8_easy((char *)messages_get("Behaviour"));
 	gadlab[GRP_OPTS_MARGINS] = (char *)ami_utf8_easy((char *)messages_get("Margins"));
 	gadlab[GRP_OPTS_SCALING] = (char *)ami_utf8_easy((char *)messages_get("Scaling"));
 	gadlab[GRP_OPTS_APPEARANCE] = (char *)ami_utf8_easy((char *)messages_get("Appearance"));
@@ -1002,23 +1008,43 @@ void ami_gui_opts_open(void)
 									LabelEnd,
 								LayoutEnd, // downloads
 								CHILD_WeightedHeight, 0,
-								LAYOUT_AddChild,VGroupObject,
-									LAYOUT_SpaceOuter, TRUE,
-									LAYOUT_BevelStyle, BVS_GROUP, 
-									LAYOUT_Label, gadlab[GRP_OPTS_TABS],
-		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_TAB_ACTIVE] = CheckBoxObject,
-      	              					GA_ID, GID_OPTS_TAB_ACTIVE,
-         	           					GA_RelVerify, TRUE,
-         	           					GA_Text, gadlab[GID_OPTS_TAB_ACTIVE],
-  				      		            GA_Selected, !option_new_tab_active,
-            	    				CheckBoxEnd,
-		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_TAB_2] = CheckBoxObject,
-      	              					GA_ID, GID_OPTS_TAB_2,
-         	           					GA_RelVerify, TRUE,
-         	           					GA_Text, gadlab[GID_OPTS_TAB_2],
-  				      		            GA_Selected, option_button_2_tab,
-            	    				CheckBoxEnd,
-								LayoutEnd, // tabbed browsing
+								LAYOUT_AddChild,HGroupObject,
+									LAYOUT_AddChild,VGroupObject,
+										LAYOUT_SpaceOuter, TRUE,
+										LAYOUT_BevelStyle, BVS_GROUP, 
+										LAYOUT_Label, gadlab[GRP_OPTS_TABS],
+										LAYOUT_AddChild, gow->gadgets[GID_OPTS_TAB_ACTIVE] = CheckBoxObject,
+      	              						GA_ID, GID_OPTS_TAB_ACTIVE,
+         	        	   					GA_RelVerify, TRUE,
+         	     	      					GA_Text, gadlab[GID_OPTS_TAB_ACTIVE],
+  				      		            	GA_Selected, !option_new_tab_active,
+            	    					CheckBoxEnd,
+										LAYOUT_AddChild, gow->gadgets[GID_OPTS_TAB_2] = CheckBoxObject,
+      	              						GA_ID, GID_OPTS_TAB_2,
+         	           						GA_RelVerify, TRUE,
+         	           						GA_Text, gadlab[GID_OPTS_TAB_2],
+  				      			            GA_Selected, option_button_2_tab,
+            	    					CheckBoxEnd,
+									LayoutEnd, // tabbed browsing
+									LAYOUT_AddChild,VGroupObject,
+										LAYOUT_SpaceOuter, TRUE,
+										LAYOUT_BevelStyle, BVS_GROUP, 
+										LAYOUT_Label, gadlab[GRP_OPTS_CONTEXTMENU],
+		        	        			LAYOUT_AddChild, gow->gadgets[GID_OPTS_CMENU_ENABLE] = CheckBoxObject,
+      	    	          					GA_ID, GID_OPTS_CMENU_ENABLE,
+        	 	           					GA_RelVerify, TRUE,
+    	     	           					GA_Text, gadlab[GID_OPTS_CMENU_ENABLE],
+	  				      		            GA_Selected, option_context_menu,
+            	    					CheckBoxEnd,
+		                				LAYOUT_AddChild, gow->gadgets[GID_OPTS_CMENU_STICKY] = CheckBoxObject,
+      	            	  					GA_ID, GID_OPTS_CMENU_STICKY,
+         	    	       					GA_RelVerify, TRUE,
+											GA_Disabled, !option_context_menu,
+        	 	           					GA_Text, gadlab[GID_OPTS_CMENU_STICKY],
+  					      		            GA_Selected, option_sticky_context_menu,
+	            	    				CheckBoxEnd,
+									LayoutEnd, // context menus
+								LayoutEnd, // hgroup
 								CHILD_WeightedHeight, 0,
 								LAYOUT_AddChild,HGroupObject,
 									LAYOUT_SpaceOuter, TRUE,
@@ -1035,21 +1061,21 @@ void ami_gui_opts_open(void)
 								LAYOUT_AddChild,HGroupObject,
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
-									LAYOUT_Label, gadlab[GRP_OPTS_CONTEXTMENU],
-		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_CMENU_ENABLE] = CheckBoxObject,
-      	              					GA_ID, GID_OPTS_CMENU_ENABLE,
+									LAYOUT_Label, gadlab[GRP_OPTS_BEHAVIOUR],
+		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_STARTUP_NO_WIN] = CheckBoxObject,
+      	              					GA_ID, GID_OPTS_STARTUP_NO_WIN,
          	           					GA_RelVerify, TRUE,
-         	           					GA_Text, gadlab[GID_OPTS_CMENU_ENABLE],
-  				      		            GA_Selected, option_context_menu,
+         	           					GA_Text, gadlab[GID_OPTS_STARTUP_NO_WIN],
+  				      		            GA_Selected, option_startup_no_window,
             	    				CheckBoxEnd,
-		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_CMENU_STICKY] = CheckBoxObject,
-      	              					GA_ID, GID_OPTS_CMENU_STICKY,
+		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_CLOSE_NO_QUIT] = CheckBoxObject,
+      	              					GA_ID, GID_OPTS_CLOSE_NO_QUIT,
          	           					GA_RelVerify, TRUE,
-										GA_Disabled, !option_context_menu,
-         	           					GA_Text, gadlab[GID_OPTS_CMENU_STICKY],
-  				      		            GA_Selected, option_sticky_context_menu,
+										GA_Disabled, TRUE,
+         	           					GA_Text, gadlab[GID_OPTS_CLOSE_NO_QUIT],
+  				      		            GA_Selected, option_close_no_quit,
             	    				CheckBoxEnd,
-								LayoutEnd, // context menus
+								LayoutEnd, // behaviour
 								CHILD_WeightedHeight, 0,
 							LayoutEnd, // page vgroup
 							CHILD_WeightedHeight, 0,
@@ -1418,6 +1444,14 @@ void ami_gui_opts_use(void)
 	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_CMENU_STICKY],(ULONG *)&data);
 	if(data) option_sticky_context_menu = true;
 		else option_sticky_context_menu = false;
+
+	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_STARTUP_NO_WIN],(ULONG *)&data);
+	if(data) option_startup_no_window = true;
+		else option_startup_no_window = false;
+
+	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_CLOSE_NO_QUIT],(ULONG *)&data);
+	if(data) option_close_no_quit = true;
+		else option_close_no_quit = false;
 
 	GetAttr(INTEGER_Number,gow->gadgets[GID_OPTS_MARGIN_TOP],(ULONG *)&option_margin_top);
 

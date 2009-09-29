@@ -266,6 +266,7 @@ HistGlobalNS:Mostra cronologia globale...
 HistLocalNS:Mostra cronologia locale...
 FindTextNS:Trova testo...
 Redraw:Ridisegna pagina
+ScaleNS:Scale
 ScaleInc:Incrementa
 ScaleDec:Decrementa
 ScaleNorm:Normale
@@ -1264,6 +1265,8 @@ ClipboardUTF8:Scrivi testo come UTF-8
 ContextMenu:Menu contestuali
 Enable:Attivi
 Sticky:Fissi
+OptionNoWindow:Do not open window on startup
+OptionNoQuit:Do not quit when last window closed
 
 # Export
 #

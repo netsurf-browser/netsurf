@@ -264,6 +264,7 @@ HistGlobalNS:Show global history...
 HistLocalNS:Show local history...
 FindTextNS:Find text...
 Redraw:Redraw page
+ScaleNS:Scale
 ScaleInc:Increase
 ScaleDec:Decrease
 ScaleNorm:Normal
@@ -1255,6 +1256,8 @@ ClipboardUTF8:Write text as UTF-8
 ContextMenu:Context menu
 Enable:Enable
 Sticky:Sticky
+OptionNoWindow:Do not open window on startup
+OptionNoQuit:Do not quit when last window closed
 
 # Export
 #
