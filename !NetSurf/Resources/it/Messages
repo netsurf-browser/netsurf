@@ -1,6 +1,6 @@
-# Italian messages for NetSurf 3.0 Development (Revision 9560)
+# Italian messages for NetSurf 3.0 Development (Revision 9601)
 # Translated by Samir Hawamdeh (http://www.betatesting.it/backforthefuture)
-# 13.09.2009
+# 30.09.2009
 # =========================================================================
 #
 # Description
@@ -130,7 +130,7 @@ RenderAll:Blocca tutto l'interprete
 
 # Main -> Utilities menu
 #
-Hotlist:Hotlist
+Hotlist:Segnalibri
 History:Cronologia locale
 Cookies:Cookie
 FindText:Trova testo  F4
@@ -138,8 +138,8 @@ Window:Finestra
 
 # Main -> Utilities -> Hotlist menu
 #
-HotlistAdd:Aggiungi alla Hotlist
-HotlistShow:Mostra Hotlist...  F6
+HotlistAdd:Aggiungi ai segnalibri
+HotlistShow:Mostra segnalibri...  F6
 
 # Main -> Utilities -> History menu
 #
@@ -250,7 +250,7 @@ PDFNS:PDF...
 IFF:IFF...
 OpenFile:Apri file locale...
 About:Informazioni...
-PrintNS:Stampa
+PrintNS:Stampa...
 
 # Edit menu
 #
@@ -261,26 +261,26 @@ ClearNS:Annulla selezione
 
 # Browser menu
 #
-Browser:Browser
+Browser:Navigazione
 HistGlobalNS:Mostra cronologia globale...
 HistLocalNS:Mostra cronologia locale...
 FindTextNS:Trova testo...
 Redraw:Ridisegna pagina
-ScaleNS:Scale
+ScaleNS:Dimensione font
 ScaleInc:Incrementa
 ScaleDec:Decrementa
 ScaleNorm:Normale
 
 # Hotlist menu
 #
-HotlistShowNS:Mostra Hotlist...
+HotlistShowNS:Mostra segnalibri...
 
 # Settings menu
 #
-SettingsEdit:Modifica impostazioni...
-Settings:Impostazioni
+SettingsEdit:Modifica...
+Settings:Preferenze
 SnapshotWindow:Fissa finestra
-SettingsSave:Salva impostazioni
+SettingsSave:Salva
 
 # ARexx menu
 #
@@ -335,7 +335,7 @@ TreeDelete:Cancella
 
 # Tree export
 #
-TreeHotlist:Hotlist di NetSurf
+TreeHotlist:Segnalibri di NetSurf
 
 
 # Hotlist user interface tokens
@@ -593,8 +593,8 @@ FontError:Impossibile aprire il font "Homerton.Medium" (%s).
 Resolvers:Non è stato configurato nessun nome per i domini dei server, perciò sarà possibile effettuare la navigazione dei file solo in modalità locale. Usa "Configura" per impostare il nome (o i nomi) del/dei server.
 NoDiscSpace:Spazio insufficiente nel disco.
 Template:Una finestra di template risulta mancante. Per favore reinstalla NetSurf.
-HotlistSaveError:Non è stato possibile salvare correttamente l'Hotlist.
-HotlistLoadError:Non è stato possibile caricare correttamente l'Hotlist.
+HotlistSaveError:Non è stato possibile salvare correttamente i segnalibri.
+HotlistLoadError:Non è stato possibile caricare correttamente i segnalibri.
 NoPathError:Per salvare, trascinare l'icona in una directory di visualizzazione.
 NoNameError:Inserisci un nome
 NoURLError:Inserisci un URL
@@ -1178,7 +1178,7 @@ con_advanced:Avanzate
 # General tab
 #
 
-Preferences:Preferenze
+Preferences:Preferenze di NetSurf
 Use:Usa
 
 HomePageURL:URL
@@ -1265,8 +1265,8 @@ ClipboardUTF8:Scrivi testo come UTF-8
 ContextMenu:Menu contestuali
 Enable:Attivi
 Sticky:Fissi
-OptionNoWindow:Do not open window on startup
-OptionNoQuit:Do not quit when last window closed
+OptionNoWindow:Non aprire la finestra di NetSurf all'avvio
+OptionNoQuit:Non chiudere NetSurf alla chiusura dell'ultima scheda aperta
 
 # Export
 #
