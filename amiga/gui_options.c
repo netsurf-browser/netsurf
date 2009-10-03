@@ -1071,7 +1071,6 @@ void ami_gui_opts_open(void)
 		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_CLOSE_NO_QUIT] = CheckBoxObject,
       	              					GA_ID, GID_OPTS_CLOSE_NO_QUIT,
          	           					GA_RelVerify, TRUE,
-										GA_Disabled, TRUE,
          	           					GA_Text, gadlab[GID_OPTS_CLOSE_NO_QUIT],
   				      		            GA_Selected, option_close_no_quit,
             	    				CheckBoxEnd,

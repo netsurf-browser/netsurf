@@ -200,6 +200,7 @@ void ami_get_hscroll_pos(struct gui_window_2 *gwin, ULONG *xs);
 void ami_get_vscroll_pos(struct gui_window_2 *gwin, ULONG *ys);
 ULONG ami_set_border_gadget_balance(struct gui_window_2 *gwin);
 ULONG ami_get_border_gadget_balance(struct gui_window_2 *gwin, ULONG *size1, ULONG *size2);
+void ami_try_quit(void);
 
 STRPTR ami_locale_langs(void)
 {
@@ -599,7 +600,7 @@ void ami_openscreen(void)
 void ami_openscreenfirst(void)
 {
 	ami_openscreen();
-	ami_init_layers(&browserglob, 0, 0);
+	if(!browserglob.bm) ami_init_layers(&browserglob, 0, 0);
 }
 
 void gui_init2(int argc, char** argv)
@@ -773,7 +774,7 @@ void ami_handle_msg(void)
 	if(IsMinListEmpty(window_list))
 	{
 		/* no windows in list, so NetSurf should not be running */
-		netsurf_quit = true;
+		ami_try_quit();
 		return;
 	}
 
@@ -792,7 +793,7 @@ void ami_handle_msg(void)
 				if(IsMinListEmpty(window_list))
 				{
 					/* last window closed, so exit */
-					netsurf_quit = true;
+					ami_try_quit();
 				}
 				break;
 			}
@@ -809,7 +810,7 @@ void ami_handle_msg(void)
 				if(IsMinListEmpty(window_list))
 				{
 					/* last window closed, so exit */
-					netsurf_quit = true;
+					ami_try_quit();
 				}
 				break;
 			}
@@ -826,7 +827,7 @@ void ami_handle_msg(void)
 				if(IsMinListEmpty(window_list))
 				{
 					/* last window closed, so exit */
-					netsurf_quit = true;
+					ami_try_quit();
 				}
 				break;
 			}
@@ -843,8 +844,7 @@ void ami_handle_msg(void)
 				if(IsMinListEmpty(window_list))
 				{
 					/* last window closed, so exit with conditions ;) */
-					if(scrn && (option_close_no_quit == false))
-						netsurf_quit = true;
+					if(scrn) ami_try_quit();
 				}
 				break;
 			}
@@ -1618,6 +1618,19 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 	}
 }
 
+void ami_try_quit(void)
+{
+	if(option_close_no_quit == false)
+	{
+		netsurf_quit = true;
+		return;
+	}
+	else
+	{
+		if(CloseScreen(scrn)) scrn = NULL;
+	}
+}
+
 void ami_quit_netsurf(void)
 {
 	struct nsObject *node;
@@ -1677,7 +1690,7 @@ void gui_quit(void)
 	ami_arexx_cleanup();
 
 	ami_free_layers(&browserglob);
-	FreeScreenDrawInfo(scrn, dri);	
+	FreeScreenDrawInfo(scrn, dri);
 
 	ami_close_fonts();
 
@@ -2467,7 +2480,7 @@ void gui_window_destroy(struct gui_window *g)
 	if(IsMinListEmpty(window_list))
 	{
 		/* last window closed, so exit */
-		netsurf_quit = true;
+		ami_try_quit();
 	}
 
 	win_destroyed = true;
