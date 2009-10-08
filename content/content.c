@@ -346,7 +346,7 @@ static const struct handler_entry handler_map[] = {
 #endif
 #ifdef WITH_NS_SVG
 	{svg_create, 0, svg_convert,
-		0, svg_destroy, 0, svg_redraw, 0, 0, 0, false},
+		0, svg_destroy, 0, svg_redraw, 0, 0, 0, true},
 #endif
 #ifdef WITH_RSVG
 	{rsvg_create, rsvg_process_data, rsvg_convert,
