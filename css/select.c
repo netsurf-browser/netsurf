@@ -27,6 +27,7 @@
 #include "css/select.h"
 #include "css/utils.h"
 #include "desktop/options.h"
+#include "utils/log.h"
 #include "utils/url.h"
 #include "utils/utils.h"
 
@@ -139,17 +140,21 @@ css_stylesheet *nscss_create_inline_style(const uint8_t *data, size_t len,
 	error = css_stylesheet_create(CSS_LEVEL_DEFAULT, charset, url, NULL,
 			CSS_ORIGIN_AUTHOR, CSS_MEDIA_ALL, allow_quirks, true,
 			dict, alloc, pw, nscss_resolve_url, NULL, &sheet);
-	if (error != CSS_OK)
+	if (error != CSS_OK) {
+		LOG(("Failed creating sheet: %d", error));
 		return NULL;
+	}
 
 	error = css_stylesheet_append_data(sheet, data, len);
 	if (error != CSS_OK && error != CSS_NEEDDATA) {
+		LOG(("failed appending data: %d", error));
 		css_stylesheet_destroy(sheet);
 		return NULL;
 	}
 
 	error = css_stylesheet_data_done(sheet);
 	if (error != CSS_OK) {
+		LOG(("failed completing parse: %d", error));
 		css_stylesheet_destroy(sheet);
 		return NULL;
 	}
