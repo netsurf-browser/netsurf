@@ -87,6 +87,7 @@ struct gui_download_window *gui_download_window_create(const char *url,
 	dw->size = total_size;
 	dw->downloaded = 0;
 	dw->bw = gui->shared->bw;
+	dw->url = (char *)strdup((char *)url);
 
 	va[0] = (APTR)dw->downloaded;
 	va[1] = (APTR)dw->size;
@@ -102,7 +103,7 @@ struct gui_download_window *gui_download_window_create(const char *url,
 
 	dw->objects[OID_MAIN] = WindowObject,
       	    WA_ScreenTitle,nsscreentitle,
-           	WA_Title, url,
+           	WA_Title, dw->url,
            	WA_Activate, TRUE,
            	WA_DepthGadget, TRUE,
            	WA_DragBar, TRUE,
@@ -200,6 +201,7 @@ void gui_download_window_done(struct gui_download_window *dw)
 	if(!dw) return;
 
 	bw->download = false;
+	if(dw->url) free(dw->url);
 
 	if(dln = dw->dln)
 	{
