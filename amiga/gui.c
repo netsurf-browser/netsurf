@@ -113,7 +113,6 @@ char *quirks_stylesheet_url;
 char *adblock_stylesheet_url;
 
 struct MsgPort *appport;
-struct MsgPort *msgport;
 struct Device *TimerBase;
 struct TimerIFace *ITimer;
 struct Library  *PopupMenuBase = NULL;
@@ -1508,7 +1507,7 @@ void ami_get_msg(void)
 	ULONG appsig = 1L << appport->mp_SigBit;
 	ULONG schedulesig = 1L << msgport->mp_SigBit;
 	ULONG signal;
-	struct Message *timermsg = NULL;
+	struct TimerRequest *timermsg = NULL;
 	struct MsgPort *printmsgport = ami_print_get_msgport();
 	ULONG printsig = 1L << printmsgport->mp_SigBit;
     ULONG signalmask = winsignal | appsig | schedulesig | rxsig | printsig | applibsig;
@@ -1538,8 +1537,8 @@ void ami_get_msg(void)
 	}
 	else if(signal & schedulesig)
 	{
-		while(GetMsg(msgport))
-			schedule_run();
+		timermsg = (struct TimeRequest *)GetMsg(msgport);
+		//schedule_run();
 	}
 }
 
@@ -1951,7 +1950,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			WA_SmartRefresh,TRUE,
            	WA_IDCMP,IDCMP_MENUPICK | IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS |
 				IDCMP_NEWSIZE | IDCMP_RAWKEY | IDCMP_GADGETUP | IDCMP_SIZEVERIFY |
-				IDCMP_IDCMPUPDATE | IDCMP_INTUITICKS | IDCMP_EXTENDEDMOUSE,
+				IDCMP_IDCMPUPDATE | IDCMP_EXTENDEDMOUSE | IDCMP_INTUITICKS,
 //			WINDOW_IconifyGadget, TRUE,
 //			WINDOW_NewMenu,menu,
 			WINDOW_HorizProp,1,
@@ -2038,7 +2037,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 								IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
 								IDCMP_RAWKEY | IDCMP_SIZEVERIFY |
 								IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
-								IDCMP_INTUITICKS | IDCMP_ACTIVEWINDOW |
+								IDCMP_ACTIVEWINDOW | IDCMP_INTUITICKS |
 								IDCMP_EXTENDEDMOUSE | IDCMP_GADGETDOWN,
 //					WINDOW_IconifyGadget, TRUE,
 					WINDOW_NewMenu,menu,
@@ -2219,9 +2218,9 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 					WA_ReportMouse,TRUE,
         		   	WA_IDCMP,IDCMP_MENUPICK | IDCMP_MOUSEMOVE |
 							IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
-							IDCMP_RAWKEY |
+							IDCMP_RAWKEY | IDCMP_INTUITICKS |
 							IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
-							IDCMP_INTUITICKS | IDCMP_EXTENDEDMOUSE,
+							IDCMP_EXTENDEDMOUSE,
 					WINDOW_HorizProp,1,
 					WINDOW_VertProp,1,
 					WINDOW_IDCMPHook,&gwin->shared->scrollerhook,
@@ -2942,6 +2941,7 @@ void gui_window_set_status(struct gui_window *g, const char *text)
 	if((cur_tab == g->tab) || (g->shared->tabs == 0))
 	{
 		utf8text = ami_utf8_easy((char *)text);
+		if(utf8text == NULL) return;
 
 		if((g->shared->status == NULL) || (strcmp(utf8text,g->shared->status)))
 		{

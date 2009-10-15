@@ -23,6 +23,7 @@
 
 struct MinList *schedule_list;
 struct TimeRequest *tioreq;
+struct MsgPort *msgport;
 
 struct nscallback
 {
