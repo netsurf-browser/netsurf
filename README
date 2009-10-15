@@ -1,44 +1,24 @@
 --------------------------------------------------------------------------------
-  NetSurf README                                                09 August 2009
+  NetSurf README                                               15 October 2009
 --------------------------------------------------------------------------------
 
   This document should help point you at various useful bits of information.
 
 
-  For NetSurf Users
-===================
-
-  Most of the documentation you'll need to use NetSurf is in the documentation
-  section of the web site:
-
-      http://www.netsurf-browser.org/documentation/
-
-  If you need to build NetSurf yourself, read the Building bit of the 'For
-  NetSurf Developers' section below.
-
-
-  For NetSurf Developers
-========================
-
-  If there is already a port of NetSurf to your platform you can build it
-  following the platform specific build instructions.  If not, you will have
-  to port NetSurf.
-
-  Finally, there are various links to NetSurf developer documentation at the
-  bottom.
-
-  Building
-----------
+  Building NetSurf
+==================
   
-  Look at the appropriate BUILDING-* document in the Docs/ directory for
+  Read the appropriate BUILDING-* document in the Docs/ directory for
   instructions.
 
-  Porting
----------
 
-  Look at the existing front ends for example implementations. Also, you can
-  contact the developers for help:
-  
+  Creating a new port
+=====================
+
+  Look at the existing front ends for example implementations.  The framebuffer
+  front end is simplest and most self-contained.  Also, you can contact the
+  developers for help:
+
       http://www.netsurf-browser.org/contact/
 
   Check out the developer documentation sources listed below too.
