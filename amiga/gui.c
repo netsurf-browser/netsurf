@@ -1537,7 +1537,7 @@ void ami_get_msg(void)
 	}
 	else if(signal & schedulesig)
 	{
-		timermsg = (struct TimeRequest *)GetMsg(msgport);
+		while(GetMsg(msgport));
 		//schedule_run();
 	}
 }

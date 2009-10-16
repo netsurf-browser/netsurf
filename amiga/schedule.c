@@ -62,7 +62,7 @@ void schedule(int t, void (*callback)(void *p), void *p)
 
 	GetSysTime(&tv);
 	AddTime(&nscb->tv,&tv); // now contains time when event occurs
-
+#ifdef AMI_SCHEDULER_USES_TIMER
 	if(nscb->treq = AllocVec(sizeof(struct TimeRequest),MEMF_PRIVATE | MEMF_CLEAR))
 	{
 		*nscb->treq = *tioreq;
@@ -71,7 +71,7 @@ void schedule(int t, void (*callback)(void *p), void *p)
     	nscb->treq->Time.Microseconds=nscb->tv.Microseconds; // micro
     	SendIO((struct IORequest *)nscb->treq);
 	}
-
+#endif
 	nscb->callback = callback;
 	nscb->p = p;
 }
