@@ -210,8 +210,6 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 				OT_GlyphMap8Bit,&glyph,
 				TAG_END) == 0)
 			{
-				tx+= glyph->glm_X1;
-
 				if(x < tx)
 				{
 					i = length+1;
@@ -224,6 +222,8 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 						*char_offset = utf8clen;
 					}
 				}
+
+				tx+= glyph->glm_X1;
 
 				EReleaseInfo(&ofont->olf_EEngine,
 					OT_GlyphMap8Bit,glyph,
