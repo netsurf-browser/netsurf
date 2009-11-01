@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008, 2009 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -51,25 +51,22 @@ void die(const char *error)
 
 char *url_to_path(const char *url)
 {
-	char *tmps,*unesc;
+	char *tmps, *unesc;
 	CURL *curl;
 
-	if(tmps = strchr(url,'/'))
-	{
-		if(tmps = strchr(tmps+1,'/'))
-		{
-			if(tmps = strchr(tmps+1,'/'))
-			{
-				if(curl = curl_easy_init())
-				{
-					unesc = curl_easy_unescape(curl,tmps+1,0,NULL);
-					tmps = strdup(unesc);
-					curl_free(unesc);
-					curl_easy_cleanup(curl);
-					return tmps;
+	tmps = strstr(url, "///localhost/") + 13;
 
-				}
-			}
+	if(tmps < url) tmps = strstr(url,"///") + 3;
+
+	if(tmps >= url)
+	{
+		if(curl = curl_easy_init())
+		{
+			unesc = curl_easy_unescape(curl,tmps,0,NULL);
+			tmps = strdup(unesc);
+			curl_free(unesc);
+			curl_easy_cleanup(curl);
+			return tmps;
 		}
 	}
 
