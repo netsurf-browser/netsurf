@@ -576,7 +576,7 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 
 				case 9: // print
 					ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
-					ami_print(gwin->bw->current_content);
+					ami_print_ui(gwin->bw->current_content);
 					ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
 				break;
 

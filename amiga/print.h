@@ -22,7 +22,17 @@
 
 struct content;
 
-void ami_print(struct content *c);
+struct ami_print_window {
+	struct Window *win;
+	Object *objects[OID_LAST];
+	struct Gadget *gadgets[GID_LAST];
+	struct nsObject *node;
+	struct content *c;
+};
+
+void ami_print(struct content *c, int copies);
+void ami_print_ui(struct content *c);
+BOOL ami_print_event(struct ami_print_window *pw);
 bool ami_print_cont(void);
 struct MsgPort *ami_print_init(void);
 void ami_print_free(void);

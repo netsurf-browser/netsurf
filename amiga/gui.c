@@ -836,6 +836,23 @@ void ami_handle_msg(void)
 				continue;
 			}
 		}
+		else if(node->Type == AMINS_PRINTWINDOW)
+		{
+			if(ami_print_event((struct ami_print_window *)gwin))
+			{
+				if(IsMinListEmpty(window_list))
+				{
+					/* last window closed, so exit */
+					ami_try_quit();
+				}
+				break;
+			}
+			else
+			{
+				node = nnode;
+				continue;
+			}
+		}
 		else if(node->Type == AMINS_GUIOPTSWINDOW)
 		{
 			if(ami_gui_opts_event())
@@ -1549,6 +1566,7 @@ void gui_multitask(void)
 
 	ami_handle_msg();
 	ami_handle_appmsg();
+	ami_handle_applib();
 	ami_arexx_handle();
 }
 
@@ -1564,6 +1582,7 @@ void gui_poll(bool active)
 
 	   schedule_run checks every event, really they need to be sorted so only
 	   the first event needs to be run on each signal. */
+
 
 	if(active)
 	{
@@ -2748,8 +2767,8 @@ void ami_do_redraw(struct gui_window_2 *g)
 		{
 			content_redraw(c, -hcurrent,
 						-vcurrent,
-						(width / g->bw->scale) - hcurrent,
-						(height / g->bw->scale) - vcurrent,
+						width - hcurrent,
+						height - vcurrent,
 						0,0,width,
 						height,
 						g->bw->scale,0xFFFFFF);

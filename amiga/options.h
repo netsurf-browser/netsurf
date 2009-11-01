@@ -42,6 +42,7 @@ extern bool option_faster_scroll;
 extern bool option_scale_quality;
 extern bool option_ask_overwrite;
 extern int option_printer_unit;
+extern int option_print_scale;
 extern bool option_startup_no_window;
 extern bool option_close_no_quit;
 
@@ -68,6 +69,7 @@ bool option_faster_scroll = true; \
 bool option_scale_quality = false; \
 bool option_ask_overwrite = false; \
 int option_printer_unit = 0; \
+int option_print_scale = 100; \
 bool option_startup_no_window = false; \
 bool option_close_no_quit = false; \
 
@@ -94,6 +96,7 @@ bool option_close_no_quit = false; \
 { "scale_quality",	OPTION_BOOL,	&option_scale_quality}, \
 { "ask_overwrite",	OPTION_BOOL,	&option_ask_overwrite}, \
 { "printer_unit",	OPTION_INTEGER,	&option_printer_unit}, \
+{ "print_scale",	OPTION_INTEGER,	&option_print_scale}, \
 { "startup_no_window",	OPTION_BOOL,	&option_startup_no_window}, \
 { "close_no_quit",	OPTION_BOOL,	&option_close_no_quit}, 
 
