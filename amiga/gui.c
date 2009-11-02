@@ -1214,10 +1214,13 @@ void ami_handle_msg(void)
  * key presses.  Context menus need to be changed to use MENUVERIFY not RMBTRAP */
 						switch(nskey)
 						{
+							case 'a':
+								browser_window_key_press(gwin->bw, KEY_SELECT_ALL);
+							break;
+
 							case 'c':
 								browser_window_key_press(gwin->bw, KEY_COPY_SELECTION);
-								browser_window_key_press(gwin->bw, KEY_ESCAPE);
-							break;
+								browser_window_key_press(gwin->bw, KEY_CLEAR_SELECTION);
 							case 'v':
 								browser_window_key_press(gwin->bw, KEY_PASTE);
 							break;
@@ -1225,7 +1228,39 @@ void ami_handle_msg(void)
 					}
 					else
 					{
-						browser_window_key_press(gwin->bw, nskey);
+						if(!browser_window_key_press(gwin->bw, nskey))
+						{
+							gui_window_get_scroll(gwin->bw->window,
+								&gwin->bw->window->scrollx,
+								&gwin->bw->window->scrolly);
+
+							switch(nskey)
+							{
+								case KEY_UP:
+									gui_window_set_scroll(gwin->bw->window,
+										gwin->bw->window->scrollx,
+										gwin->bw->window->scrolly - 5);
+								break;
+
+								case KEY_DOWN:
+									gui_window_set_scroll(gwin->bw->window,
+										gwin->bw->window->scrollx,
+										gwin->bw->window->scrolly + 5);
+								break;
+
+								case KEY_LEFT:
+									gui_window_set_scroll(gwin->bw->window,
+										gwin->bw->window->scrollx - 5,
+										gwin->bw->window->scrolly);
+								break;
+
+								case KEY_RIGHT:
+									gui_window_set_scroll(gwin->bw->window,
+										gwin->bw->window->scrollx + 5,
+										gwin->bw->window->scrolly);
+								break;
+							}
+						}
 					}
 				break;
 
