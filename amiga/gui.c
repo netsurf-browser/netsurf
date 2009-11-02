@@ -731,6 +731,105 @@ void gui_init2(int argc, char** argv)
 		bw = browser_window_create(option_homepage_url, 0, 0, true,false);
 }
 
+int ami_key_to_nskey(ULONG keycode, struct InputEvent *ie)
+{
+	int nskey = 0, chars;
+	UBYTE buffer[20];
+
+	if(keycode >= IECODE_UP_PREFIX) return 0;
+
+	switch(keycode)
+	{
+		case RAWKEY_CRSRUP:
+			if(ie->ie_Qualifier & IEQUALIFIER_RSHIFT)
+			{
+				nskey = KEY_PAGE_UP;
+			}
+			else if(ie->ie_Qualifier & IEQUALIFIER_RALT)
+			{
+				nskey = KEY_TEXT_START;
+			}
+			else nskey = KEY_UP;
+		break;
+		case RAWKEY_CRSRDOWN:
+			if(ie->ie_Qualifier & IEQUALIFIER_RSHIFT)
+			{
+				nskey = KEY_PAGE_DOWN;
+			}
+			else if(ie->ie_Qualifier & IEQUALIFIER_RALT)
+			{
+				nskey = KEY_TEXT_END;
+			}
+			else nskey = KEY_DOWN;
+		break;
+		case RAWKEY_CRSRLEFT:
+			if(ie->ie_Qualifier & IEQUALIFIER_RSHIFT)
+			{
+				nskey = KEY_LINE_START;
+			}
+			else if(ie->ie_Qualifier & IEQUALIFIER_RALT)
+			{
+				nskey = KEY_WORD_LEFT;
+			}
+			else nskey = KEY_LEFT;
+		break;
+		case RAWKEY_CRSRRIGHT:
+			if(ie->ie_Qualifier & IEQUALIFIER_RSHIFT)
+			{
+				nskey = KEY_LINE_END;
+			}
+			else if(ie->ie_Qualifier & IEQUALIFIER_RALT)
+			{
+				nskey = KEY_WORD_RIGHT;
+			}
+			else nskey = KEY_RIGHT;
+		break;
+		case RAWKEY_ESC:
+			nskey = KEY_ESCAPE;
+		break;
+		case RAWKEY_PAGEUP:
+			nskey = KEY_PAGE_UP;
+		break;
+		case RAWKEY_PAGEDOWN:
+			nskey = KEY_PAGE_DOWN;
+		break;
+		case RAWKEY_HOME:
+			nskey = KEY_TEXT_START;
+		break;
+		case RAWKEY_END:
+			nskey = KEY_TEXT_END;
+		break;
+		case RAWKEY_BACKSPACE:
+			if(ie->ie_Qualifier & IEQUALIFIER_RSHIFT)
+			{
+				nskey = KEY_DELETE_LINE_START;
+			}
+			else nskey = KEY_DELETE_LEFT;
+		break;
+		case RAWKEY_DEL:
+			if(ie->ie_Qualifier & IEQUALIFIER_RSHIFT)
+			{
+				nskey = KEY_DELETE_LINE_END;
+			}
+			else nskey = KEY_DELETE_RIGHT;
+		break;
+		case RAWKEY_TAB:
+			if(ie->ie_Qualifier & IEQUALIFIER_RSHIFT)
+			{
+				nskey = KEY_SHIFT_TAB;
+			}
+			else nskey = KEY_TAB;
+		break;
+		default:
+			if((chars = MapRawKey(ie,buffer,20,NULL)) > 0)
+			{
+				nskey = buffer[0];
+			}
+		break;
+	}
+	return nskey;
+}
+
 void ami_update_quals(struct gui_window_2 *gwin)
 {
 	uint32 quals = 0;
@@ -767,8 +866,7 @@ void ami_handle_msg(void)
 	struct MenuItem *item;
 	struct InputEvent *ie;
 	struct Node *tabnode;
-	UBYTE buffer[20];
-	int chars,i;
+	int i, nskey;
 
 	if(IsMinListEmpty(window_list))
 	{
@@ -1106,123 +1204,28 @@ void ami_handle_msg(void)
 
 					GetAttr(WINDOW_InputEvent,gwin->objects[OID_MAIN],(ULONG *)&ie);
 
-					switch(storage)
+					nskey = ami_key_to_nskey(storage, ie);
+
+					if(ie->ie_Qualifier & IEQUALIFIER_RCOMMAND)
 					{
-						case RAWKEY_CRSRUP:
-							if(ie->ie_Qualifier & IEQUALIFIER_RSHIFT)
-							{
-								browser_window_key_press(gwin->bw,KEY_PAGE_UP);
-							}
-							else if(ie->ie_Qualifier & IEQUALIFIER_RALT)
-							{
-								browser_window_key_press(gwin->bw,KEY_TEXT_START);
-							}
-							else browser_window_key_press(gwin->bw,KEY_UP);
-						break;
-						case RAWKEY_CRSRDOWN:
-							if(ie->ie_Qualifier & IEQUALIFIER_RSHIFT)
-							{
-								browser_window_key_press(gwin->bw,KEY_PAGE_DOWN);
-							}
-							else if(ie->ie_Qualifier & IEQUALIFIER_RALT)
-							{
-								browser_window_key_press(gwin->bw,KEY_TEXT_END);
-							}
-							else browser_window_key_press(gwin->bw,KEY_DOWN);
-						break;
-						case RAWKEY_CRSRLEFT:
-							if(ie->ie_Qualifier & IEQUALIFIER_RSHIFT)
-							{
-								browser_window_key_press(gwin->bw,KEY_LINE_START);
-							}
-							else if(ie->ie_Qualifier & IEQUALIFIER_RALT)
-							{
-								browser_window_key_press(gwin->bw,KEY_WORD_LEFT);
-							}
-							else browser_window_key_press(gwin->bw,KEY_LEFT);
-						break;
-						case RAWKEY_CRSRRIGHT:
-							if(ie->ie_Qualifier & IEQUALIFIER_RSHIFT)
-							{
-								browser_window_key_press(gwin->bw,KEY_LINE_END);
-							}
-							else if(ie->ie_Qualifier & IEQUALIFIER_RALT)
-							{
-								browser_window_key_press(gwin->bw,KEY_WORD_RIGHT);
-							}
-							else browser_window_key_press(gwin->bw,KEY_RIGHT);
-						break;
-						case RAWKEY_ESC:
-							browser_window_key_press(gwin->bw,KEY_ESCAPE);
-						break;
-						case RAWKEY_PAGEUP:
-							browser_window_key_press(gwin->bw,KEY_PAGE_UP);
-						break;
-						case RAWKEY_PAGEDOWN:
-							browser_window_key_press(gwin->bw,KEY_PAGE_DOWN);
-						break;
-						case RAWKEY_HOME:
-							browser_window_key_press(gwin->bw,KEY_TEXT_START);
-						break;
-						case RAWKEY_END:
-							browser_window_key_press(gwin->bw,KEY_TEXT_END);
-						break;
-						case RAWKEY_BACKSPACE:
-							if(ie->ie_Qualifier & IEQUALIFIER_RSHIFT)
-							{
-								browser_window_key_press(gwin->bw,KEY_DELETE_LINE_START);
-							}
-							else browser_window_key_press(gwin->bw,KEY_DELETE_LEFT);
-						break;
-						case RAWKEY_DEL:
-							if(ie->ie_Qualifier & IEQUALIFIER_RSHIFT)
-							{
-								browser_window_key_press(gwin->bw,KEY_DELETE_LINE_END);
-							}
-							else browser_window_key_press(gwin->bw,KEY_DELETE_RIGHT);
-						break;
-						case RAWKEY_TAB:
-							if(ie->ie_Qualifier & IEQUALIFIER_RSHIFT)
-							{
-								browser_window_key_press(gwin->bw,KEY_SHIFT_TAB);
-							}
-							else browser_window_key_press(gwin->bw,KEY_TAB);
-						break;
-						default:
-   							if((chars = MapRawKey(ie,buffer,20,NULL)) > 0)
-							{
-/* this doesn't work - MapRawKey would take notice of capslock if it was in
-ie_qualifier anyway
-								if(ie->ie_Qualifier & IEQUALIFIER_CAPSLOCK)
-								{
-									for(i=0;i<chars;i++)
-										buffer[i] = ToUpper(buffer[i]);
-								}
-*/
-								if(ie->ie_Qualifier & IEQUALIFIER_RCOMMAND)
-								{
 /* We are duplicating the menu shortcuts here, as if RMBTRAP is active
  * (ie. when context menus are enabled and the mouse is over the browser
  * rendering area), Intuition also does not catch the menu shortcut
  * key presses.  Context menus need to be changed to use MENUVERIFY not RMBTRAP */
-									switch(buffer[0])
-									{
-										case 'c':
-											browser_window_key_press(gwin->bw, KEY_COPY_SELECTION);
-											browser_window_key_press(gwin->bw, KEY_ESCAPE);
-										break;
-
-										case 'v':
-											browser_window_key_press(gwin->bw, KEY_PASTE);
-										break;
-									}
-								}
-								else
-								{
-									browser_window_key_press(gwin->bw,buffer[0]);
-								}
-							}
-						break;
+						switch(nskey)
+						{
+							case 'c':
+								browser_window_key_press(gwin->bw, KEY_COPY_SELECTION);
+								browser_window_key_press(gwin->bw, KEY_ESCAPE);
+							break;
+							case 'v':
+								browser_window_key_press(gwin->bw, KEY_PASTE);
+							break;
+						}
+					}
+					else
+					{
+						browser_window_key_press(gwin->bw, nskey);
 					}
 				break;
 
