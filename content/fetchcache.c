@@ -1147,8 +1147,12 @@ void fetchcache_auth(struct content *c, const char *realm)
 	char *headers = NULL;
 
 	/* Preconditions */
-	assert(c && realm);
+	assert(c);
 	assert(c->status == CONTENT_STATUS_TYPE_UNKNOWN);
+	/* Realm may be NULL iff there was no WWW-Authenticate header 
+	 * Use the content's URL as the realm in this case */
+	if (realm == NULL)
+		realm = c->url;
 
 	/* Extract fetch details */
 	ref = fetch_get_referer(c->fetch);
@@ -1179,7 +1183,7 @@ void fetchcache_auth(struct content *c, const char *realm)
 	if (auth == NULL || c->tried_with_auth) {
 		/* No authentication details or we tried what we had, so ask
 		 * our client for them. */
-		c->tried_with_auth = false; /* Allow rety. */
+		c->tried_with_auth = false; /* Allow retry. */
 
 		c->status = CONTENT_STATUS_ERROR;
 		msg_data.auth_realm = realm;
