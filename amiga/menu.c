@@ -615,7 +615,7 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 					if(gwin->bw->current_content->type <= CONTENT_CSS)
 					{
 						browser_window_key_press(gwin->bw, KEY_COPY_SELECTION);
-						browser_window_key_press(gwin->bw, KEY_ESCAPE);
+						browser_window_key_press(gwin->bw, KEY_CLEAR_SELECTION);
 					}
 					else if(gwin->bw->current_content->bitmap)
 					{

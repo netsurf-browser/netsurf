@@ -1214,6 +1214,32 @@ void ami_handle_msg(void)
  * key presses.  Context menus need to be changed to use MENUVERIFY not RMBTRAP */
 						switch(nskey)
 						{
+							case 'n':
+								if(option_kiosk_mode == false)
+									browser_window_create(gwin->bw->current_content->url,
+										gwin->bw, 0, true, false);
+							break;
+
+							case 't':
+								if(option_kiosk_mode == false)
+									browser_window_create(gwin->bw->current_content->url,
+										gwin->bw, 0, true, true);
+							break;
+
+							case 'k':
+								if(option_kiosk_mode == false)
+									browser_window_destroy(gwin->bw);
+							break;
+
+							case 'p':
+								ami_print_ui(gwin->bw->current_content);
+							break;
+
+							case 'q':
+								if(option_kiosk_mode == false)
+									ami_quit_netsurf();
+							break;
+
 							case 'a':
 								browser_window_key_press(gwin->bw, KEY_SELECT_ALL);
 							break;
@@ -1224,12 +1250,42 @@ void ami_handle_msg(void)
 							case 'v':
 								browser_window_key_press(gwin->bw, KEY_PASTE);
 							break;
+
+							case 'z':
+								browser_window_key_press(gwin->bw, KEY_CLEAR_SELECTION);
+							break;
+
+							case 'f':
+								ami_search_open(gwin->bw->window);
+							break;
+
+							case 'h':
+								if(option_kiosk_mode == false)
+									ami_open_tree(hotlist,AMI_TREE_HOTLIST);
+							break;
+
+/* The following aren't available from the menu at the moment */
+
+							case 'r': // reload
+								if(browser_window_reload_available(gwin->bw))
+									browser_window_reload(gwin->bw,false);
+							break;
+
+							case 'u': // open url
+								if(option_kiosk_mode == false)
+									ActivateGadget(gwin->gadgets[GID_URL],
+										gwin->win, NULL);
+							break;
 						}
 					}
 					else
 					{
 						if(!browser_window_key_press(gwin->bw, nskey))
 						{
+							GetAttr(SPACE_AreaBox,
+								gwin->gadgets[GID_BROWSER],
+								(ULONG *)&bbox);
+
 							gui_window_get_scroll(gwin->bw->window,
 								&gwin->bw->window->scrollx,
 								&gwin->bw->window->scrolly);
@@ -1258,6 +1314,40 @@ void ami_handle_msg(void)
 									gui_window_set_scroll(gwin->bw->window,
 										gwin->bw->window->scrollx + 5,
 										gwin->bw->window->scrolly);
+								break;
+
+								case KEY_PAGE_UP:
+									gui_window_set_scroll(gwin->bw->window,
+										gwin->bw->window->scrollx,
+										gwin->bw->window->scrolly - bbox->Height);
+								break;
+
+								case KEY_PAGE_DOWN:
+									gui_window_set_scroll(gwin->bw->window,
+										gwin->bw->window->scrollx,
+										gwin->bw->window->scrolly + bbox->Height);
+								break;
+
+								case KEY_LINE_START: // page left
+									gui_window_set_scroll(gwin->bw->window,
+										gwin->bw->window->scrollx - bbox->Width,
+										gwin->bw->window->scrolly);
+								break;
+
+								case KEY_LINE_END: // page right
+									gui_window_set_scroll(gwin->bw->window,
+										gwin->bw->window->scrollx + bbox->Width,
+										gwin->bw->window->scrolly);
+								break;
+
+								case KEY_TEXT_START: // home
+									gui_window_set_scroll(gwin->bw->window, 0, 0);
+								break;
+
+								case KEY_TEXT_END: // end
+									gui_window_set_scroll(gwin->bw->window, 
+										gwin->bw->current_content->width,
+										gwin->bw->current_content->height);
 								break;
 							}
 						}
