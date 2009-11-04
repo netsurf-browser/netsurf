@@ -820,6 +820,10 @@ int ami_key_to_nskey(ULONG keycode, struct InputEvent *ie)
 			}
 			else nskey = KEY_TAB;
 		break;
+		case RAWKEY_F5:
+			// don't translate
+			nskey = keycode;
+		break;
 		default:
 			if((chars = MapRawKey(ie,buffer,20,NULL)) > 0)
 			{
@@ -1348,6 +1352,11 @@ void ami_handle_msg(void)
 									gui_window_set_scroll(gwin->bw->window, 
 										gwin->bw->current_content->width,
 										gwin->bw->current_content->height);
+								break;
+
+								case RAWKEY_F5: // reload
+									if(browser_window_reload_available(gwin->bw))
+										browser_window_reload(gwin->bw,false);
 								break;
 							}
 						}
