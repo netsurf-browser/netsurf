@@ -1251,6 +1251,7 @@ void ami_handle_msg(void)
 							case 'c':
 								browser_window_key_press(gwin->bw, KEY_COPY_SELECTION);
 								browser_window_key_press(gwin->bw, KEY_CLEAR_SELECTION);
+							break;
 							case 'v':
 								browser_window_key_press(gwin->bw, KEY_PASTE);
 							break;
