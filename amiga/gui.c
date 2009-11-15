@@ -1812,7 +1812,6 @@ void ami_quit_netsurf(void)
 					ami_close_all_tabs(gwin);				
 				break;
 			}
-			node = nnode;
 
 		} while(node = nnode);
 	}

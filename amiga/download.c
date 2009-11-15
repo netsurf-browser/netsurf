@@ -224,17 +224,19 @@ void ami_free_download_list(struct List *dllist)
 	struct dlnode *node;
 	struct dlnode *nnode;
 
+	if(!dllist) return;
+	if(IsListEmpty(dllist)) return;
+
 	node = (struct dlnode *)GetHead((struct List *)dllist);
 
-	while(nnode=(struct dlnode *)GetSucc((struct Node *)node))
+	do
 	{
+		nnode=(struct dlnode *)GetSucc((struct Node *)node);
 		free(node->node.ln_Name);
 		free(node->filename);
 		Remove((struct Node *)node);
 		FreeVec((struct Node *)node);
-
-		node=nnode;
-	}
+	}while(node=nnode);
 }
 
 void gui_window_save_as_link(struct gui_window *g, struct content *c)
