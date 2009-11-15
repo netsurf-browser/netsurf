@@ -841,7 +841,8 @@ css_computed_style *box_get_style(struct content *c,
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "style"))) {
 		inline_style = nscss_create_inline_style(
 				(uint8_t *) s, strlen(s),
-				c->data.html.encoding, c->url, false,
+				c->data.html.encoding, c->url, 
+				c->data.html.quirks != BINDING_QUIRKS_MODE_NONE,
 				c->data.html.dict, myrealloc, c);
 
 		xmlFree(s);
