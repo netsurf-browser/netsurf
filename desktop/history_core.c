@@ -234,20 +234,21 @@ void history_add(struct history *history, struct content *content,
 
 	/* allocate space */
 	entry = malloc(sizeof *entry);
+	if (entry == NULL)
+		return;
 
 	res = url_normalize(content->url, &url);
 	if (res != URL_FUNC_OK) {
 		warn_user("NoMemory", 0);
+		free(entry);
 		return;
 	}
 
 	title = strdup(content->title ? content->title : url);
-
-	if (!entry || !url || !title) {
+	if (title == NULL) {
 		warn_user("NoMemory", 0);
-		free(entry);
 		free(url);
-		free(title);
+		free(entry);
 		return;
 	}
 
