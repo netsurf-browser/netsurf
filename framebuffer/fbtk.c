@@ -29,6 +29,7 @@
 #include <libnsfb_event.h>
 #include <libnsfb_cursor.h>
 
+#include "utils/utils.h"
 #include "utils/log.h"
 #include "css/css.h"
 #include "desktop/browser.h"
@@ -1351,10 +1352,10 @@ int fbtk_keycode_to_ucs4(int code, uint8_t mods)
         int ucs4 = -1;
 
         if (mods) {
-                if ((code >= 0) && (code < (int) sizeof(sh_keymap)))
+                if ((code >= 0) && (code < (int) NOF_ELEMENTS(sh_keymap)))
                         ucs4 = sh_keymap[code];
         } else {
-                if ((code >= 0) && (code < (int) sizeof(keymap)))
+                if ((code >= 0) && (code < (int) NOF_ELEMENTS(keymap)))
                         ucs4 = keymap[code];
         }
         return ucs4;
