@@ -542,6 +542,7 @@ bool imagemap_addtolist(xmlNode *n, char *base_url, struct mapentry **entry)
 				ycoords = realloc(new_map->bounds.poly.ycoords,
 					num * sizeof(float));
 				if (ycoords == NULL) {
+					free(xcoords);
 					free(new_map->bounds.poly.ycoords);
 					free(new_map->bounds.poly.xcoords);
 					free(new_map->target);
