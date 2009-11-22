@@ -619,9 +619,11 @@ char *fetchcache_parse_type(const char *s, char **params[])
 	return type;
 
 no_memory:
-	for (i = 0; i != MAX_ATTRS * 2 + 2; i++)
-		free((*params)[i]);
-	free(*params);
+	if (*params != NULL) {
+		for (i = 0; i != MAX_ATTRS * 2 + 2; i++)
+			free((*params)[i]);
+		free(*params);
+	}
 	free(type);
 
 	return 0;
