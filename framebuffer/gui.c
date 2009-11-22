@@ -486,8 +486,9 @@ fb_browser_window_click(fbtk_widget_t *widget,
                         break;
 
                 }
-        case NSFB_EVENT_KEY_UP:
 
+		break;
+        case NSFB_EVENT_KEY_UP:
                 switch (event->value.keycode) {
                 case NSFB_KEY_MOUSE_1:
                         browser_window_mouse_click(bw,
@@ -508,6 +509,7 @@ fb_browser_window_click(fbtk_widget_t *widget,
 
                 }
 
+		break;
         default:
                 break;
 
