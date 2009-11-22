@@ -90,6 +90,7 @@ static struct list_counter *render_list_find_counter(const char *name) {
 	counter->name = malloc(strlen(name) + 1);
 	if (!counter->name) {
 		LOG(("No memory for malloc()"));
+		free(counter);
 		return NULL;
 	}
 	strcpy(counter->name, name);
