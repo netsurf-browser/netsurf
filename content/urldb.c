@@ -365,15 +365,20 @@ void urldb_load(const char *filename)
 		return;
 	}
 
-	if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
+	if (!fgets(s, MAXIMUM_URL_LENGTH, fp)) {
+		fclose(fp);
 		return;
+	}
+
 	version = atoi(s);
 	if (version < MIN_URL_FILE_VERSION) {
 		LOG(("Unsupported URL file version."));
+		fclose(fp);
 		return;
 	}
 	if (version > URL_FILE_VERSION) {
 		LOG(("Unknown URL file version."));
+		fclose(fp);
 		return;
 	}
 
