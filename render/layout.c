@@ -389,32 +389,36 @@ bool layout_block_context(struct box *block, int viewport_height,
 				layout_block_add_scrollbar(box, BOTTOM);
 			}
 		} else if (box->type == BOX_TABLE) {
-			enum css_width_e wtype;
-			css_fixed width = 0;
-			css_unit unit = CSS_UNIT_PX;
+			if (box->style != NULL) {
+				enum css_width_e wtype;
+				css_fixed width = 0;
+				css_unit unit = CSS_UNIT_PX;
 
-			wtype = css_computed_width(box->style, &width, &unit);
+				wtype = css_computed_width(box->style, &width, 
+						&unit);
 
-			if (wtype == CSS_WIDTH_AUTO) {
-				/* max available width may be diminished due to
-				 * floats. */
-				int x0, x1, top;
-				struct box *left, *right;
-				top = cy > y ? cy : y;
-				top += max_pos_margin - max_neg_margin;
-				x0 = cx;
-				x1 = cx + box->parent->width -
+				if (wtype == CSS_WIDTH_AUTO) {
+					/* max available width may be 
+					 * diminished due to floats. */
+					int x0, x1, top;
+					struct box *left, *right;
+					top = cy > y ? cy : y;
+					top += max_pos_margin - max_neg_margin;
+					x0 = cx;
+					x1 = cx + box->parent->width -
 						box->parent->padding[LEFT] -
 						box->parent->padding[RIGHT];
-				find_sides(block->float_children, top, top,
-						&x0, &x1, &left, &right);
-				/* calculate min required left & right margins
-				 * needed to avoid floats */
-				lm = x0 - cx;
-				rm = cx + box->parent->width -
+					find_sides(block->float_children, 
+						top, top, &x0, &x1, 
+						&left, &right);
+					/* calculate min required left & right 
+					 * margins needed to avoid floats */
+					lm = x0 - cx;
+					rm = cx + box->parent->width -
 						box->parent->padding[LEFT] -
 						box->parent->padding[RIGHT] -
 						x1;
+				}
 			}
 			if (!layout_table(box, box->parent->width - lm - rm,
 					content))
@@ -661,7 +665,8 @@ void layout_minmax_block(struct box *block,
 	if (block->max_width != UNKNOWN_MAX_WIDTH)
 		return;
 
-	wtype = css_computed_width(block->style, &width, &wunit);
+	if (block->style != NULL)
+		wtype = css_computed_width(block->style, &width, &wunit);
 
 	if (block->gadget && (block->gadget->type == GADGET_TEXTBOX ||
 			block->gadget->type == GADGET_PASSWORD ||
@@ -880,11 +885,12 @@ bool layout_apply_minmax_height(struct box *box, struct box *container)
 	bool updated = false;
 
 	/* Find containing block for percentage heights */
-	if (css_computed_position(box->style) == CSS_POSITION_ABSOLUTE) {
+	if (box->style != NULL && css_computed_position(box->style) == 
+			CSS_POSITION_ABSOLUTE) {
 		/* Box is absolutely positioned */
 		assert(container);
 		containing_block = container;
-	} else if (box->float_container &&
+	} else if (box->float_container && box->style != NULL &&
 			(css_computed_float(box->style) == CSS_FLOAT_LEFT ||
 			 css_computed_float(box->style) == CSS_FLOAT_RIGHT)) {
 		/* Box is a float */
