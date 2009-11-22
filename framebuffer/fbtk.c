@@ -671,10 +671,17 @@ text_input(fbtk_widget_t *widget, nsfb_event_t *event, void *pw)
 
         default:
                 /* allow for new character and null */
-                widget->u.text.text = realloc(widget->u.text.text, widget->u.text.idx + 2);
-                widget->u.text.text[widget->u.text.idx] = value;
-                widget->u.text.text[widget->u.text.idx + 1] = '\0';
-                widget->u.text.idx++;
+		{
+			char *temp = realloc(widget->u.text.text, 
+					widget->u.text.idx + 2);
+			if (temp != NULL) {
+				widget->u.text.text = temp;
+		                widget->u.text.text[widget->u.text.idx] = value;
+                		widget->u.text.text[widget->u.text.idx + 1] = 
+						'\0';
+                		widget->u.text.idx++;
+			}
+		}
                 break;
         }
 
