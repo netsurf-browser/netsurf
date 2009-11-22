@@ -134,13 +134,12 @@ void save_text_solve_whitespace(struct box *box, bool *first,
 			 ((box->parent && box->parent->list_marker == box) &&
 			  *before == WHITESPACE_TAB))) {
 		*before = WHITESPACE_TWO_NEW_LINES;
-	}
-	else if (*before <= WHITESPACE_ONE_NEW_LINE &&
+	} else if (*before <= WHITESPACE_ONE_NEW_LINE &&
 			(box->type == BOX_TABLE_ROW ||
 			 box->type == BOX_BR ||
 			 (box->type != BOX_INLINE &&
 			 (box->parent && box->parent->list_marker == box)) ||
-			 (box->parent->style &&
+			 (box->parent && box->parent->style &&
 			  (css_computed_white_space(box->parent->style) ==
 			   CSS_WHITE_SPACE_PRE ||
 			   css_computed_white_space(box->parent->style) ==
