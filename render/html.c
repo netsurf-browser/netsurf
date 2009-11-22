@@ -942,13 +942,14 @@ bool html_find_stylesheets(struct content *c, xmlNode *html)
 			LOG(("linked stylesheet %i '%s'", i, url));
 
 			res = url_normalize(url, &url2);
+
+			free(url);
+
 			if (res != URL_FUNC_OK) {
 				if (res == URL_FUNC_NOMEM)
 					goto no_memory;
 				continue;
 			}
-
-			free(url);
 
 			/* start fetch */
 			stylesheets = talloc_realloc(c,
