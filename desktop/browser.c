@@ -1265,21 +1265,31 @@ void browser_window_find_target_internal(struct browser_window *bw,
 		return;
 
 	depth++;
-	for (i = 0; i < (bw->cols * bw->rows); i++) {
-		if ((bw->children[i].name) &&
-				(!strcasecmp(bw->children[i].name, target))) {
-			if ((page == &bw->children[i]) || (depth > *rdepth)) {
-				*rdepth = depth;
-				*bw_target = &bw->children[i];
+
+	if (bw->children != NULL) {
+		for (i = 0; i < (bw->cols * bw->rows); i++) {
+			if ((bw->children[i].name) &&
+					(!strcasecmp(bw->children[i].name, 
+					target))) {
+				if ((page == &bw->children[i]) || 
+						(depth > *rdepth)) {
+					*rdepth = depth;
+					*bw_target = &bw->children[i];
+				}
 			}
+			if (bw->children[i].children)
+				browser_window_find_target_internal(
+						&bw->children[i],
+						target, depth, page, 
+						rdepth, bw_target);
 		}
-		if (bw->children[i].children)
-			browser_window_find_target_internal(&bw->children[i],
+	}
+
+	if (bw->iframes != NULL) {
+		for (i = 0; i < bw->iframe_count; i++)
+			browser_window_find_target_internal(&bw->iframes[i], 
 					target, depth, page, rdepth, bw_target);
 	}
-	for (i = 0; i < bw->iframe_count; i++)
-		browser_window_find_target_internal(&bw->iframes[i], target,
-				depth, page, rdepth, bw_target);
 }
 
 
