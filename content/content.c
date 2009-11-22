@@ -1098,7 +1098,7 @@ bool content_redraw_tiled(struct content *c, int x, int y,
 				(height == 0))
 			return true;
 		/* simple optimisation for no repeat (common for backgrounds) */
-		if ((!repeat_x) || (!repeat_y))
+		if ((!repeat_x) && (!repeat_y))
 			return handler_map[c->type].redraw(c, x, y, width,
 				height, clip_x0, clip_y0, clip_x1, clip_y1,
 				scale, background_colour);
