@@ -655,7 +655,8 @@ void urldb_write_paths(const struct path_data *parent, const char *host,
 			*path_alloc = (len > 64) ? len : *path_alloc + 64;
 		}
 
-		memcpy(*path + *path_used - 1, p->segment, seglen);
+		if (p->segment != NULL)
+			memcpy(*path + *path_used - 1, p->segment, seglen);
 
 		if (p->children != NULL) {
 			(*path)[*path_used + seglen - 1] = '/';
