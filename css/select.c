@@ -594,8 +594,10 @@ css_error node_id(void *pw, void *node,
 	switch (lerror) {
 	case lwc_error_oom:
 		error = CSS_NOMEM;
+		break;
 	case lwc_error_range:
 		assert(0);
+		break;
 	default:
 		break;
 	}
