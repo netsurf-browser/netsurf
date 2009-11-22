@@ -91,7 +91,7 @@ static struct box *get_box(struct box *b, unsigned offset, size_t *pidx);
 
 struct selection *selection_create(struct browser_window *bw)
 {
-	struct selection *s = malloc(sizeof(struct selection));
+	struct selection *s = calloc(1, sizeof(struct selection));
 	if (s) {
 		s->bw = bw;
 		s->root = NULL;
