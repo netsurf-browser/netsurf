@@ -1915,6 +1915,9 @@ struct path_data *urldb_find_url(const char *url)
 	/* generate plq */
 	if (components.path)
 		len += strlen(components.path);
+	else
+		len += SLEN("/");
+
 	if (components.query)
 		len += strlen(components.query) + 1;
 
@@ -1931,7 +1934,11 @@ struct path_data *urldb_find_url(const char *url)
 	if (components.path) {
 		strcpy(copy, components.path);
 		copy += strlen(components.path);
+	} else {
+		strcpy(copy, "/");
+		copy += SLEN("/");
 	}
+
 	if (components.query) {
 		*copy++ = '?';
 		strcpy(copy, components.query);
