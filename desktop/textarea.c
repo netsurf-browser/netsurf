@@ -252,6 +252,9 @@ int textarea_get_text(struct text_area *ta, char *buf, unsigned int len)
 	if (buf == NULL && len == 0) {
 		/* want length */
 		return ta->text_len;
+	} else if (buf == NULL) {
+		/* Can't write to NULL */
+		return -1;
 	}
 
 	if (len < ta->text_len) {
