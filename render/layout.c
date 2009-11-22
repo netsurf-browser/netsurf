@@ -653,7 +653,7 @@ void layout_minmax_block(struct box *block,
 	int min = 0, max = 0;
 	int extra_fixed = 0;
 	float extra_frac = 0;
-	enum css_width_e wtype;
+	enum css_width_e wtype = CSS_WIDTH_AUTO;
 	css_fixed width = 0;
 	css_unit wunit = CSS_UNIT_PX;
 
