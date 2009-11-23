@@ -450,7 +450,8 @@ fb_browser_window_click(fbtk_widget_t *widget,
         struct browser_window *bw = pw;
         struct browser_widget_s *bwidget = fbtk_get_userpw(widget);
 
-        if (event->type != NSFB_EVENT_KEY_DOWN)
+        if (event->type != NSFB_EVENT_KEY_DOWN &&
+			event->type != NSFB_EVENT_KEY_UP)
                 return 0;
 
         LOG(("browser window clicked at %d,%d",x,y));
@@ -641,6 +642,9 @@ fb_leftarrow_click(fbtk_widget_t *widget,
         struct gui_window *gw = pw;
         struct browser_window *bw = gw->bw;
 
+        if (event->type != NSFB_EVENT_KEY_DOWN)
+        	return 0;
+
         if (history_back_available(bw->history))
                 history_back(bw, bw->history);
 
@@ -659,6 +663,9 @@ fb_rightarrow_click(fbtk_widget_t *widget,
         struct gui_window *gw =pw;
         struct browser_window *bw = gw->bw;
 
+        if (event->type != NSFB_EVENT_KEY_DOWN)
+        	return 0;
+
         if (history_forward_available(bw->history))
                 history_forward(bw, bw->history);
 
@@ -675,6 +682,10 @@ fb_reload_click(fbtk_widget_t *widget,
                 void *pw)
 {
         struct browser_window *bw = pw;
+
+        if (event->type != NSFB_EVENT_KEY_DOWN)
+        	return 0;
+
         browser_window_reload(bw, true);
         return 0;
 }
@@ -687,6 +698,10 @@ fb_stop_click(fbtk_widget_t *widget,
               void *pw)
 {
         struct browser_window *bw = pw;
+
+        if (event->type != NSFB_EVENT_KEY_DOWN)
+        	return 0;
+
 	browser_window_stop(bw);
         return 0;
 }
@@ -698,6 +713,10 @@ fb_scrolll_click(fbtk_widget_t *widget,
                  int x, int y, void *pw)
 {
         struct gui_window *gw = pw;
+
+        if (event->type != NSFB_EVENT_KEY_DOWN)
+        	return 0;
+
         fb_window_scroll(gw->browser, -100, 0);
         return 0;
 }
@@ -708,6 +727,10 @@ fb_scrollr_click(fbtk_widget_t *widget,
                  int x, int y, void *pw)
 {
         struct gui_window *gw = pw;
+
+        if (event->type != NSFB_EVENT_KEY_DOWN)
+        	return 0;
+
         fb_window_scroll(gw->browser, 100, 0);
 
         return 0;
@@ -719,6 +742,10 @@ fb_scrollu_click(fbtk_widget_t *widget,
                  int x, int y, void *pw)
 {
         struct gui_window *gw = pw;
+
+        if (event->type != NSFB_EVENT_KEY_DOWN)
+        	return 0;
+
         fb_window_scroll(gw->browser, 0, -100);
 
         return 0;
@@ -730,6 +757,10 @@ fb_scrolld_click(fbtk_widget_t *widget,
                  int x, int y, void *pw)
 {
         struct gui_window *gw = pw;
+
+        if (event->type != NSFB_EVENT_KEY_DOWN)
+        	return 0;
+
         fb_window_scroll(gw->browser, 0, 100);
 
         return 0;

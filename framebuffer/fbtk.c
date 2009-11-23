@@ -919,10 +919,6 @@ fbtk_click(fbtk_widget_t *widget, nsfb_event_t *event)
         fbtk_widget_t *window;
         nsfb_bbox_t cloc;
 
-	/* Don't act on press and release, or everything happens twice */
-        if (event->type == NSFB_EVENT_KEY_UP)
-        	return;
-
         /* ensure we have the root widget */
         root = get_root_widget(widget);
 
