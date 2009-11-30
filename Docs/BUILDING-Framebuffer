@@ -211,7 +211,7 @@ Index: framebuffer/font_freetype.c
 
   Other:
 
-  You'll need to install the development resources for, libcurl3, libxml2 and
+  You'll need to install the development resources for libcurl3, libxml2 and
   libmng.
 
   Note that if you don't require MNG or JNG image support, NetSurf can be
