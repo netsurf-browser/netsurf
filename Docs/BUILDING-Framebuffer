@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
-  Build Instructions for Framebuffer NetSurf                    13 August 2009
+  Build Instructions for Framebuffer NetSurf                  30 November 2009
 --------------------------------------------------------------------------------
 
   This document provides instructions for building the Framebuffer version of 
@@ -197,8 +197,7 @@ Index: framebuffer/font_freetype.c
 
   Debian-like OS:
 
-      $ apt-get install libglade2-dev libcurl3-dev libxml2-dev libmng-dev 
-      $ apt-get install librsvg2-dev
+      $ apt-get install libcurl3-dev libxml2-dev libmng-dev 
 
   Recent OS versions might need libcurl4-dev instead of libcurl3-dev but
   note that when it has not been built with OpenSSL, the SSL_CTX is not
@@ -208,13 +207,12 @@ Index: framebuffer/font_freetype.c
 
   Fedora:
 
-      $ yum install libglade2-devel curl-devel libxml2-devel libmng-devel
-      $ yum install librsvg2-devel lcms-devel
+      $ yum install curl-devel libxml2-devel libmng-devel lcms-devel
 
   Other:
 
-  You'll need to install the development resources for libglade2, libcurl3,
-  libxml2, libmng and librsvg.
+  You'll need to install the development resources for, libcurl3, libxml2 and
+  libmng.
 
   Note that if you don't require MNG or JNG image support, NetSurf can be
   configured to use libpng instead of libmng. If you wish to do this, install
