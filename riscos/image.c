@@ -172,7 +172,7 @@ bool image_redraw_os(osspriteop_id header, int x, int y, int req_width,
 
 	error = xcolourtrans_generate_table_for_sprite(
 			(osspriteop_area *)0x100, header,
-			colourtrans_CURRENT_MODE,
+			os_CURRENT_MODE,
 			colourtrans_CURRENT_PALETTE,
 			0, colourtrans_GIVEN_SPRITE, 0, 0, &size);
 	if (error) {
@@ -190,7 +190,7 @@ bool image_redraw_os(osspriteop_id header, int x, int y, int req_width,
 
 	error = xcolourtrans_generate_table_for_sprite(
 			(osspriteop_area *)0x100, header,
-			colourtrans_CURRENT_MODE,
+			os_CURRENT_MODE,
 			colourtrans_CURRENT_PALETTE,
 			table, colourtrans_GIVEN_SPRITE, 0, 0, 0);
 	if (error) {

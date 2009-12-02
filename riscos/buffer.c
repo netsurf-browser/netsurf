@@ -193,7 +193,7 @@ void ro_gui_buffer_open(wimp_draw *redraw)
 	header->mode = mode;
 	if (palette)
 		xcolourtrans_read_palette((osspriteop_area *)mode,
-			(osspriteop_id)colourtrans_CURRENT_MODE,
+			(osspriteop_id)os_CURRENT_MODE,
 			(os_palette *)(header + 1), palette_size,
 			(colourtrans_palette_flags)
 				colourtrans_FLASHING_PALETTE, 0);
