@@ -1191,6 +1191,8 @@ void fetchcache_auth(struct content *c, const char *realm)
 		msg_data.auth_realm = realm;
 		content_broadcast(c, CONTENT_MSG_AUTH, msg_data);
 
+		free(referer);
+
 		return;
 	}
 	/* Flag we're retry fetching with auth data. Will be used to detect
