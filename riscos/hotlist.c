@@ -331,13 +331,13 @@ bool ro_gui_hotlist_dialog_apply(wimp_w w)
 
 	/* check for lack of text */
 	if (title == NULL || title[0] == '\0') {
-	 	free(url);
-	 	free(title);
-		node = NULL;
 		if (title == NULL)
 			warn_user("NoMemory", 0);
 		else if (title[0] == '\0')
 			warn_user("NoNameError", 0);
+	 	free(url);
+	 	free(title);
+		node = NULL;
 		return false;
 	}
 	ro_gui_set_icon_string(w, url ? ICON_ENTRY_NAME : ICON_FOLDER_NAME, 
