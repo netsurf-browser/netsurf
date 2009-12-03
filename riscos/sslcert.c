@@ -398,8 +398,6 @@ void ro_gui_cert_close(wimp_w w)
 	}
 	free(data->certs);
 	free(data->url);
-	free(data);
-
 	if (data->tree) {
 		tree_delete_node(data->tree, data->tree->root, false);
 		ro_gui_dialog_close((wimp_w)data->tree->handle);
@@ -412,6 +410,7 @@ void ro_gui_cert_close(wimp_w w)
 		ro_gui_wimp_event_finalise((wimp_w)data->tree->handle);
 		free(data->tree);
 	}
+	free(data);
 
 	ro_gui_dialog_close(w);
 	error = xwimp_delete_window(w);
