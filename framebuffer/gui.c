@@ -126,7 +126,8 @@ static void fb_pan(fbtk_widget_t *widget,
 	int y;
 	int width;
 	int height;
-	nsfb_bbox_t redraw_box;
+	nsfb_bbox_t srcbox;
+	nsfb_bbox_t dstbox;
 
 	c = bw->current_content;
 
@@ -174,18 +175,17 @@ static void fb_pan(fbtk_widget_t *widget,
 
 	if (bwidget->pany < 0) {
 		/* pan up by less then viewport height */
-		redraw_box.x0 = x;
-		redraw_box.y0 = y - bwidget->pany;
-		redraw_box.x1 = redraw_box.x0 + width;
-		redraw_box.y1 = redraw_box.y0 + height + bwidget->pany;
+
+		srcbox.x0 = x;
+		srcbox.y0 = y;
+
+		dstbox.x0 = x;
+		dstbox.y0 = y - bwidget->pany;
+		dstbox.x1 = dstbox.x0 + width;
+		dstbox.y1 = dstbox.y0 + height + bwidget->pany;
 
 		/* move part that remains visible up */
-		nsfb_claim(nsfb, &redraw_box);
-		nsfb_plot_copy(nsfb,
-				x, y,
-				width, height + bwidget->pany,
-				x, y - bwidget->pany);
-		nsfb_release(nsfb, &redraw_box);
+		nsfb_plot_copy(nsfb, &srcbox, &dstbox);
 
 		/* redraw newly exposed area */
 		bwidget->scrolly += bwidget->pany;
@@ -194,18 +194,17 @@ static void fb_pan(fbtk_widget_t *widget,
 
 	if (bwidget->pany > 0) {
 		/* pan down by less then viewport height */
-		redraw_box.x0 = x;
-		redraw_box.y0 = y;
-		redraw_box.x1 = redraw_box.x0 + width;
-		redraw_box.y1 = redraw_box.y0 + height - bwidget->pany;
+
+		srcbox.x0 = x;
+		srcbox.y0 = y + bwidget->pany;
+
+		dstbox.x0 = x;
+		dstbox.y0 = y;
+		dstbox.x1 = dstbox.x0 + width;
+		dstbox.y1 = dstbox.y0 + height - bwidget->pany;
 
 		/* move part that remains visible down */
-		nsfb_claim(nsfb, &redraw_box);
-		nsfb_plot_copy(nsfb,
-				x, y + bwidget->pany,
-				width, height - bwidget->pany,
-				x, y);
-		nsfb_release(nsfb, &redraw_box);
+		nsfb_plot_copy(nsfb, &srcbox, &dstbox);
 
 		/* redraw newly exposed area */
 		bwidget->scrolly += bwidget->pany;
@@ -215,18 +214,17 @@ static void fb_pan(fbtk_widget_t *widget,
 
 	if (bwidget->panx < 0) {
 		/* pan left by less then viewport width */
-		redraw_box.x0 = x - bwidget->panx;
-		redraw_box.y0 = y;
-		redraw_box.x1 = redraw_box.x0 + width + bwidget->panx;
-		redraw_box.y1 = redraw_box.y0 + height;
+
+		srcbox.x0 = x;
+		srcbox.y0 = y;
+
+		dstbox.x0 = x - bwidget->panx;
+		dstbox.y0 = y;
+		dstbox.x1 = dstbox.x0 + width + bwidget->panx;
+		dstbox.y1 = dstbox.y0 + height;
 
 		/* move part that remains visible left */
-		nsfb_claim(nsfb, &redraw_box);
-		nsfb_plot_copy(nsfb,
-				x, y,
-				width + bwidget->panx, height,
-				x - bwidget->panx, y);
-		nsfb_release(nsfb, &redraw_box);
+		nsfb_plot_copy(nsfb, &srcbox, &dstbox);
 
 		/* redraw newly exposed area */
 		bwidget->scrollx += bwidget->panx;
@@ -235,18 +233,16 @@ static void fb_pan(fbtk_widget_t *widget,
 
 	if (bwidget->panx > 0) {
 		/* pan right by less then viewport width */
-		redraw_box.x0 = x;
-		redraw_box.y0 = y;
-		redraw_box.x1 = redraw_box.x0 + width - bwidget->panx;
-		redraw_box.y1 = redraw_box.y0 + height;
+		srcbox.x0 = x + bwidget->panx;
+		srcbox.y0 = y;
+
+		dstbox.x0 = x;
+		dstbox.y0 = y;
+		dstbox.x1 = dstbox.x0 + width - bwidget->panx;
+		dstbox.y1 = dstbox.y0 + height;
 
 		/* move part that remains visible right */
-		nsfb_claim(nsfb, &redraw_box);
-		nsfb_plot_copy(nsfb,
-				x + bwidget->panx, y,
-				width - bwidget->panx, height,
-				x, y);
-		nsfb_release(nsfb, &redraw_box);
+		nsfb_plot_copy(nsfb, &srcbox, &dstbox);
 
 		/* redraw newly exposed area */
 		bwidget->scrollx += bwidget->panx;
@@ -302,7 +298,7 @@ static void fb_redraw(fbtk_widget_t *widget,
                        bw->scale, 0xFFFFFF);
 	current_redraw_browser = NULL;
 
-        nsfb_release(fbtk_get_nsfb(widget), &bwidget->redraw_box);
+        nsfb_update(fbtk_get_nsfb(widget), &bwidget->redraw_box);
 
         bwidget->redraw_box.y0 = bwidget->redraw_box.x0 = INT_MAX;
         bwidget->redraw_box.y1 = bwidget->redraw_box.x1 = -(INT_MAX);

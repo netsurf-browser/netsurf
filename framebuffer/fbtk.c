@@ -368,7 +368,7 @@ fb_redraw_fill(fbtk_widget_t *root, fbtk_widget_t *widget, void *pw)
                 nsfb_plot_rectangle_fill(root->u.root.fb, &bbox, widget->bg);
         }
 
-        nsfb_release(root->u.root.fb, &bbox);
+        nsfb_update(root->u.root.fb, &bbox);
         return 0;
 }
 
@@ -414,7 +414,7 @@ fb_redraw_hscroll(fbtk_widget_t *root, fbtk_widget_t *widget, void *pw)
 
         nsfb_plot_rectangle_fill(root->u.root.fb, &rect, widget->bg);
 
-        nsfb_release(root->u.root.fb, &bbox);
+        nsfb_update(root->u.root.fb, &bbox);
 
         return 0;
 }
@@ -462,7 +462,7 @@ fb_redraw_vscroll(fbtk_widget_t *root, fbtk_widget_t *widget, void *pw)
 
         nsfb_plot_rectangle_fill(root->u.root.fb, &rect, widget->bg);
 
-        nsfb_release(root->u.root.fb, &bbox);
+        nsfb_update(root->u.root.fb, &bbox);
 
         return 0;
 }
@@ -488,7 +488,7 @@ fb_redraw_bitmap(fbtk_widget_t *root, fbtk_widget_t *widget, void *pw)
         /* plot the image */
         nsfb_plot_bitmap(root->u.root.fb, &rect, (nsfb_colour_t *)widget->u.bitmap.bitmap->pixdata, widget->u.bitmap.bitmap->width, widget->u.bitmap.bitmap->height, widget->u.bitmap.bitmap->width, !widget->u.bitmap.bitmap->opaque);
 
-        nsfb_release(root->u.root.fb, &bbox);
+        nsfb_update(root->u.root.fb, &bbox);
 
         return 0;
 }
@@ -617,7 +617,7 @@ fb_redraw_text(fbtk_widget_t *root, fbtk_widget_t *widget, void *pw)
                           &root_style);
         }
 
-        nsfb_release(root->u.root.fb, &bbox);
+        nsfb_update(root->u.root.fb, &bbox);
 
         return 0;
 }
