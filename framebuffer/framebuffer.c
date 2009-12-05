@@ -191,10 +191,18 @@ framebuffer_plot_bitmap(int x, int y,
                 loc.x1 = loc.x0 + width;
                 loc.y1 = loc.y0 + height;
 
-                return nsfb_plot_bitmap(nsfb, &loc, 
-                                        (nsfb_colour_t *)bitmap->pixdata, 
-                                        bitmap->width, bitmap->height, 
-                                        bitmap->width, !bitmap->opaque);
+		if ((bitmap->width == 1) && (bitmap->height == 1)) {
+			if ((*(nsfb_colour_t *)bitmap->pixdata & 0xff000000) == 0) {
+				return true;
+			}
+			return nsfb_plot_rectangle_fill(nsfb, &loc, *(nsfb_colour_t *)bitmap->pixdata);
+
+		} else {
+			return nsfb_plot_bitmap(nsfb, &loc, 
+						(nsfb_colour_t *)bitmap->pixdata, 
+						bitmap->width, bitmap->height, 
+						bitmap->width, !bitmap->opaque);
+		}
 	}
 
 	/* get left most tile position */
@@ -214,11 +222,16 @@ framebuffer_plot_bitmap(int x, int y,
                         loc.x1 = loc.x0 + width;
                         loc.y1 = loc.y0 + height;
 
+		if ((bitmap->width == 1) && (bitmap->height == 1)) {
+			if ((*(nsfb_colour_t *)bitmap->pixdata & 0xff000000) != 0) {
+				nsfb_plot_rectangle_fill(nsfb, &loc, *(nsfb_colour_t *)bitmap->pixdata);
+			}
+		} else {
                         nsfb_plot_bitmap(nsfb, &loc, 
                                         (nsfb_colour_t *)bitmap->pixdata, 
                                         bitmap->width, bitmap->height, 
                                         bitmap->width, !bitmap->opaque);
-
+		}
 			if (!repeat_y)
 				break;
 		}
