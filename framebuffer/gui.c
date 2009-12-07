@@ -178,6 +178,8 @@ static void fb_pan(fbtk_widget_t *widget,
 
 		srcbox.x0 = x;
 		srcbox.y0 = y;
+		srcbox.x1 = srcbox.x0 + width;
+		srcbox.y1 = srcbox.y0 + height + bwidget->pany;
 
 		dstbox.x0 = x;
 		dstbox.y0 = y - bwidget->pany;
@@ -197,6 +199,8 @@ static void fb_pan(fbtk_widget_t *widget,
 
 		srcbox.x0 = x;
 		srcbox.y0 = y + bwidget->pany;
+		srcbox.x1 = srcbox.x0 + width;
+		srcbox.y1 = srcbox.y0 + height - bwidget->pany;
 
 		dstbox.x0 = x;
 		dstbox.y0 = y;
@@ -217,6 +221,8 @@ static void fb_pan(fbtk_widget_t *widget,
 
 		srcbox.x0 = x;
 		srcbox.y0 = y;
+		srcbox.x1 = srcbox.x0 + width + bwidget->panx;
+		srcbox.y1 = srcbox.y0 + height;
 
 		dstbox.x0 = x - bwidget->panx;
 		dstbox.y0 = y;
@@ -235,6 +241,8 @@ static void fb_pan(fbtk_widget_t *widget,
 		/* pan right by less then viewport width */
 		srcbox.x0 = x + bwidget->panx;
 		srcbox.y0 = y;
+		srcbox.x1 = srcbox.x0 + width - bwidget->panx;
+		srcbox.y1 = srcbox.y0 + height;
 
 		dstbox.x0 = x;
 		dstbox.y0 = y;
