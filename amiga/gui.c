@@ -702,10 +702,13 @@ void gui_init2(int argc, char** argv)
 	{
 		if(argc == 0)
 		{
+			BOOL noicon = TAG_IGNORE;
+			if(option_hide_docky_icon) noicon = REGAPP_NoIcon;
+
 			ami_appid = RegisterApplication(messages_get("NetSurf"),
 				REGAPP_URLIdentifier, "netsurf-browser.org",
 				REGAPP_WBStartup, (struct WBStartup *)argv,
-//				REGAPP_NoIcon, TRUE,
+				noicon, TRUE,
 				REGAPP_HasPrefsWindow, TRUE,
 				REGAPP_CanCreateNewDocs, TRUE,
 				REGAPP_UniqueApplication, TRUE,
