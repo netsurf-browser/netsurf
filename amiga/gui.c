@@ -194,6 +194,7 @@ void ami_scroller_hook(struct Hook *,Object *,struct IntuiMessage *);
 uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved);
 void ami_init_mouse_pointers(void);
 void ami_switch_tab(struct gui_window_2 *gwin,bool redraw);
+void ami_change_tab(struct gui_window_2 *gwin, int direction);
 static void *myrealloc(void *ptr, size_t len, void *pw);
 void ami_get_hscroll_pos(struct gui_window_2 *gwin, ULONG *xs);
 void ami_get_vscroll_pos(struct gui_window_2 *gwin, ULONG *ys);
@@ -1355,6 +1356,14 @@ void ami_handle_msg(void)
 										gwin->bw->current_content->height);
 								break;
 
+								case KEY_WORD_RIGHT: // alt+right
+									ami_change_tab(gwin, 1);
+								break;
+
+								case KEY_WORD_LEFT: // alt+left
+									ami_change_tab(gwin, -1);
+								break;
+
 								case RAWKEY_F5: // reload
 									if(browser_window_reload_available(gwin->bw))
 										browser_window_reload(gwin->bw,false);
@@ -1733,6 +1742,35 @@ void gui_poll(bool active)
 		schedule_run(); // run on intuitick
 	}
 }
+
+void ami_change_tab(struct gui_window_2 *gwin, int direction)
+{
+	struct Node *tab_node = gwin->bw->window->tab_node;
+	struct Node *ptab;
+	ULONG ptabnum = 0;
+
+	if(gwin->tabs <= 1) return;
+
+	if(direction > 0)
+	{
+		ptab = GetSucc(tab_node);
+	}
+	else
+	{
+		ptab = GetPred(tab_node);
+	}
+
+	if(!ptab) return;
+
+	GetClickTabNodeAttrs(ptab, TNA_Number, (ULONG *)&ptabnum, TAG_DONE);
+
+	RefreshSetGadgetAttrs(gwin->gadgets[GID_TABS], gwin->win, NULL,
+						CLICKTAB_Current, ptabnum,
+						TAG_DONE);
+
+	ami_switch_tab(gwin, true);
+}
+
 
 void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 {
