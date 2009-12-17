@@ -432,9 +432,117 @@ gtkFailed:Download failed
 gtkFileError:File error: %s
 gtkInfo:%s from %s is %s in size
 gtkSave:Save file as...
+gtkSourceSave:Save Source
+gtkPlainSave:Save as text
+gtkFullSave:Save webpage complete - select an empty directory
 gtkUnknownHost:an unknown host
 gtkUnknownFile:
 gtkUnknownSize:unknown
+
+# gtk Menu / Button labels
+#
+
+gtkNewTab:New _Tab
+gtkNewTabAccel:<ctrl>t
+gtkNewWindow:_New Window
+gtkNewWindowAccel:<ctrl>n
+gtkOpenFile:_Open File
+gtkOpenFileAccel:<ctrl>o
+gtkCloseWindow:_Close Window
+gtkCloseWindowAccel:<ctrl><shift>w
+gtkSavePage:Save Page..
+gtkSavePageAccel:<ctrl>s
+gtkExport:Export
+gtkPlainText:Plain Text..
+gtkDrawFile:Drawfile..
+gtkPostScript:PostScript..
+gtkPDF:PDF..
+gtkPrintPreview:Print Preview..
+gtkPrintPreviewAccel:<ctrl><shift>p
+gtkPrint:Print..
+gtkPrintAccel:<ctrl>p
+gtkQuit:_Quit
+gtkQuitAccel:<ctrl>q
+
+gtkCut:Cu_t
+gtkCutAccel:<ctrl>x
+gtkCopy:_Copy
+gtkCopyAccel:<ctrl>c
+gtkPaste:_Paste
+gtkPasteAccel:<ctrl>v
+gtkDelete:_Delete
+gtkSelectAll:Select _All
+gtkSelectAllAccel:<ctrl>a
+gtkFind:_Find..
+gtkFindAccel:<ctrl>f
+gtkPreferences:P_references
+
+gtkStop:_Stop
+gtkStopAccel:Escape
+gtkReload:_Reload
+gtkReloadAccel:F5
+gtkScaleView:_Scale View
+gtkZoomPlus:Zoom _in
+gtkZoomPlusAccel:<ctrl>plus
+gtkZoomMinus:Zoom _out
+gtkZoomMinusAccel:<ctrl>minus
+gtkZoomNormal:_Normal size
+gtkZoomNormalAccel:<ctrl>0
+gtkFullScreen:_Fullscreen
+gtkFullScreenAccel:F11
+gtkViewSource:View S_ource
+gtkViewSourceAccel:F8
+gtkImages:_Images
+gtkForegroundImages:_Foreground Images
+gtkBackgroundImages:_Background Images
+gtkToolbars:_Toolbars
+gtkMenuBar:_Menu Bar
+gtkToolBar:_Button Bar
+gtkStatusBar:_Status Bar
+gtkDownloads:_Downloads
+gtkDownloadsAccel:<ctrl>d
+gtkSaveWindowSize:S_ave Window Size
+gtkDebugging:De_bugging
+gtkToggleDebugging:T_oggle debug rendering
+gtkSaveBoxTree:_Save box tree
+gtkSaveDomTree:Save DOM tree
+
+gtkBack:_Back
+gtkBackAccel:<alt>Left
+gtkForward:_Forward
+gtkForwardAccel:<alt>Right
+gtkHome:_Home
+gtkHomeAccel:<alt>Down
+gtkLocalHistory:_Local History
+gtkLocalHistoryAccel:<ctrl>h
+gtkGlobalHistory:_Global History
+gtkGlobalHistoryAccel:<ctrl><shift>h
+gtkAddBookMarks:_Add to Bookmarks..
+gtkShowBookMarks:_Show Bookmarks..
+gtkShowBookMarksAccel:F6
+gtkOpenLocation:_Open Location..
+gtkOpenLocationAccel:<ctrl>l
+
+gtkNextTab:_Next tab
+gtkNextTabAccel:<ctrl>Right
+gtkPrevTab:_Previous tab
+gtkPrevTabAccel:<ctrl>Left
+gtkCloseTab:_Close tab
+gtkCloseTabAccel:<ctrl>w
+
+gtkContents:_Contents
+gtkGuide:User _guide
+gtkUserInformation:User _information
+gtkAbout:_About
+
+
+gtkToolBarTitle:Toolbar custom button store
+gtkAddThemeTitle:Select folder containing theme images
+
+gtkThemeFolderInstructions:To Install a theme, create a directory full of appropriately-named images as a subdirectory of gtk/res/themes/
+gtkThemeFolderSub:Select a subdirectory of the themes folder
+gtkThemeDup:Theme is already included
+gtkThemeAdd:Theme added successfully
 
 # Printing user interface tokens
 # ==============================
@@ -459,6 +567,8 @@ Printing:Printing page
 NotFound:Niet gevonden
 Next:Next
 Prev:Previous
+ShowAll:Show All
+CaseSens:Case Sensitive
 
 
 # 401 login user interface tokens
@@ -578,6 +688,9 @@ MiscError:Er trad een onverwachtte fout op:
 FileError:Bestand bestaat niet:
 PrintError:Fout tijdens printen:
 AWNotSeen:Zoek eerst de AWViewer applicatie en probeer het dan nog eens.
+EncNotRec:Encoding type not recognised.
+FileOpenError:could not open file '%s'
+DirectoryError:directory '%s' already exists
 
 # Specific errors - displayed in a dialog box
 #
@@ -589,10 +702,12 @@ NoDiscSpace:Niet genoeg ruimte beschikbaar op disk.
 Template:Er ontbreekt een venster sjabloon in het Templates bestand. Installeer NetSurf opnieuw.
 HotlistSaveError:The hotlist was unable to be correctly saved.
 HotlistLoadError:The hotlist was unable to be correctly loaded.
+NoDirError:%s is not a directory
 NoPathError:Sleep het icoon naar een bestandsvenster om het op te slaan.
 NoNameError:Geef een naam op
 NoURLError:Geef een URL op
 URIError:NetSurf was unable to parse this URI file due to a syntax error.
+SearchError:Invalid Search.
 EmptyError:bestand is leeg.
 PrintErrorRO2:De printer lijkt al bezig te zijn.
 AWNotSeen:Please locate the AWViewer application and try again.
@@ -636,6 +751,7 @@ Done:klaar
 BadRedirect:foutief doorverwijzen naar URL
 FetchFailed:kan dit document niet ophalen
 NotCSS:melding: stylesheet is geen CSS
+NotFavIco:Favicon not supported
 BadObject:melding: fout object type
 ObjError:fout bij laden object: %s
 ParsingFail:fout bij ontleden van dit document.

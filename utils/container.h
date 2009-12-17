@@ -47,4 +47,7 @@ void container_add(struct container_ctx *ctx, const unsigned char *entryname,
 /* common interface */
 void container_close(struct container_ctx *ctx);
 
+#ifdef WITH_THEME_INSTALL
+char *container_extract_theme(const char *themefile, const char *dirbasename);
+#endif
 #endif /* __CONTAINER_H__ */

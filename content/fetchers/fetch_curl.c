@@ -748,6 +748,7 @@ void fetch_curl_done(CURL *curl_handle, CURLcode result)
 {
 	bool finished = false;
 	bool error = false;
+	fetch_error_code errorcode = FETCH_ERROR_NO_ERROR;
 	bool cert = false;
 	bool abort_fetch;
 	struct curl_fetch_info *f;
@@ -778,8 +779,10 @@ void fetch_curl_done(CURL *curl_handle, CURLcode result)
 		 * Content-Length header. */
 		if (!f->had_headers && fetch_curl_process_headers(f))
 			; /* redirect with partial body, or similar */
-		else
+		else {
 			error = true;
+			errorcode = FETCH_ERROR_PARTIAL_FILE;
+		}
 	} else if (result == CURLE_WRITE_ERROR && f->stopped)
 		/* CURLE_WRITE_ERROR occurs when fetch_curl_data
 		 * returns 0, which we use to abort intentionally */
@@ -790,9 +793,14 @@ void fetch_curl_done(CURL *curl_handle, CURLcode result)
 		memset(f->cert_data, 0, sizeof(f->cert_data));
 		cert = true;
 	}
+	else if (result == CURLE_COULDNT_RESOLVE_HOST) {
+		error = true;
+		errorcode = FETCH_ERROR_COULDNT_RESOLVE_HOST;
+	}
 	else {
 		LOG(("Unknown cURL response code %d", result));
 		error = true;
+		errorcode = FETCH_ERROR_MISC;
 	}
 
 	fetch_curl_stop(f);
@@ -800,7 +808,7 @@ void fetch_curl_done(CURL *curl_handle, CURLcode result)
 	if (abort_fetch)
 		; /* fetch was aborted: no callback */
 	else if (finished)
-		fetch_send_callback(FETCH_FINISHED, f->fetch_handle, 0, 0);
+		fetch_send_callback(FETCH_FINISHED, f->fetch_handle, 0, 0, errorcode);
 	else if (cert) {
 		int i;
 		BIO *mem;
@@ -877,14 +885,14 @@ void fetch_curl_done(CURL *curl_handle, CURLcode result)
 			if (certs[i].cert->references == 0)
 				X509_free(certs[i].cert);
 		}
-
+		errorcode = FETCH_ERROR_CERT;
 		fetch_send_callback(FETCH_CERT_ERR, f->fetch_handle,
-				&ssl_certs, i);
+				&ssl_certs, i, errorcode);
 
 	}
 	else if (error)
 		fetch_send_callback(FETCH_ERROR, f->fetch_handle,
-				fetch_error_buffer, 0);
+				fetch_error_buffer, 0, errorcode);
 
 	fetch_free(f->fetch_handle);
 }
@@ -910,14 +918,16 @@ int fetch_curl_progress(void *clientp, double dltotal, double dlnow,
 				human_friendly_bytesize(dlnow),
 				human_friendly_bytesize(dltotal));
 		fetch_send_callback(FETCH_PROGRESS, f->fetch_handle,
-				    fetch_progress_buffer,
-				    (unsigned long) percent);
+				fetch_progress_buffer,
+				(unsigned long) percent,
+				FETCH_ERROR_NO_ERROR);
 	} else {
 		snprintf(fetch_progress_buffer, 255,
 				messages_get("ProgressU"),
 				human_friendly_bytesize(dlnow));
 		fetch_send_callback(FETCH_PROGRESS, f->fetch_handle,
-				    fetch_progress_buffer, 0);
+				fetch_progress_buffer, 0,
+				FETCH_ERROR_NO_ERROR);
 	}
 
 	return 0;
@@ -977,7 +987,8 @@ size_t fetch_curl_data(char *data, size_t size, size_t nmemb,
 
 	/* send data to the caller */
 	/*LOG(("FETCH_DATA"));*/
-	fetch_send_callback(FETCH_DATA, f->fetch_handle, data, size * nmemb);
+	fetch_send_callback(FETCH_DATA, f->fetch_handle, data, size * nmemb, 
+			FETCH_ERROR_NO_ERROR);
 
 	if (f->abort) {
 		f->stopped = true;
@@ -1006,7 +1017,8 @@ size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
 		return 0;
 	}
 
-	fetch_send_callback(FETCH_HEADER, f->fetch_handle, data, size);
+	fetch_send_callback(FETCH_HEADER, f->fetch_handle, data, size,
+			FETCH_ERROR_NO_ERROR);
 
 #define SKIP_ST(o) for (i = (o); i < (int) size && (data[i] == ' ' || data[i] == '\t'); i++)
 
@@ -1100,20 +1112,23 @@ bool fetch_curl_process_headers(struct curl_fetch_info *f)
 
 	if (http_code == 304 && !f->post_urlenc && !f->post_multipart) {
 		/* Not Modified && GET request */
-		fetch_send_callback(FETCH_NOTMODIFIED, f->fetch_handle, 0, 0);
+		fetch_send_callback(FETCH_NOTMODIFIED, f->fetch_handle, 0, 0, 
+				FETCH_ERROR_NO_ERROR);
 		return true;
 	}
 
 	/* handle HTTP redirects (3xx response codes) */
 	if (300 <= http_code && http_code < 400 && f->location != 0) {
 		LOG(("FETCH_REDIRECT, '%s'", f->location));
-		fetch_send_callback(FETCH_REDIRECT, f->fetch_handle, f->location, 0);
+		fetch_send_callback(FETCH_REDIRECT, f->fetch_handle,
+				f->location, 0,	FETCH_ERROR_NO_ERROR);
 		return true;
 	}
 
 	/* handle HTTP 401 (Authentication errors) */
 	if (http_code == 401) {
-		fetch_send_callback(FETCH_AUTH, f->fetch_handle, f->realm,0);
+		fetch_send_callback(FETCH_AUTH, f->fetch_handle, f->realm,0,
+				FETCH_ERROR_AUTHENTICATION);
 		return true;
 	}
 
@@ -1121,7 +1136,8 @@ bool fetch_curl_process_headers(struct curl_fetch_info *f)
 	if (f->only_2xx && strncmp(f->url, "http", 4) == 0 &&
 			(http_code < 200 || 299 < http_code)) {
 		fetch_send_callback(FETCH_ERROR, f->fetch_handle,
-				    messages_get("Not2xx"), 0);
+				messages_get("Not2xx"), 0, 
+				FETCH_ERROR_HTTP_NOT2);
 		return true;
 	}
 
@@ -1141,7 +1157,7 @@ bool fetch_curl_process_headers(struct curl_fetch_info *f)
 				"ETag: \"%10d\"", (int) s.st_mtime);
 		/* And send it to the header handler */
 		fetch_send_callback(FETCH_HEADER, f->fetch_handle, etag_buf,
-				strlen(etag_buf));
+				strlen(etag_buf), FETCH_ERROR_NO_ERROR);
 
 		/* don't set last modified time so as to ensure that local
 		 * files are revalidated at all times. */
@@ -1151,7 +1167,7 @@ bool fetch_curl_process_headers(struct curl_fetch_info *f)
 				f->last_modified > s.st_mtime &&
 				f->file_etag == s.st_mtime) {
 			fetch_send_callback(FETCH_NOTMODIFIED, f->fetch_handle,
-					    0, 0);
+					    0, 0, FETCH_ERROR_NO_ERROR);
 			curl_free(url_path);
 			return true;
 		}
@@ -1167,7 +1183,7 @@ bool fetch_curl_process_headers(struct curl_fetch_info *f)
 	curl_free(url_path);
 
 	LOG(("FETCH_TYPE, '%s'", type));
-	fetch_send_callback(FETCH_TYPE, f->fetch_handle, type, f->content_length);
+	fetch_send_callback(FETCH_TYPE, f->fetch_handle, type, f->content_length, FETCH_ERROR_NO_ERROR);
 	if (f->abort)
 		return true;
 

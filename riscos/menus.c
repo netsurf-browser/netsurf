@@ -2284,7 +2284,7 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 			ro_gui_menu_set_entry_shaded(current_menu,
 					action, result);
 			if ((!result) && (windows)) {
-				ro_gui_search_prepare(g);
+				ro_gui_search_prepare(g->bw);
 			}
 			if ((t) && (!t->editor) &&
 					(t->type == THEME_BROWSER_TOOLBAR))

@@ -33,13 +33,11 @@
 #include <regex.h>
 #include <libxml/HTMLtree.h>
 #include <libxml/parserInternals.h>
-#include "oslib/osfile.h"
 #include "utils/config.h"
 #include "content/content.h"
 #include "css/css.h"
 #include "render/box.h"
-#include "riscos/gui.h"
-#include "riscos/save_complete.h"
+#include "desktop/save_complete.h"
 #include "utils/log.h"
 #include "utils/url.h"
 #include "utils/utils.h"
@@ -52,22 +50,28 @@ struct save_complete_entry {
 	struct save_complete_entry *next; /**< Next entry in list */
 };
 
-/** List of urls seen and saved so far. */
-static struct save_complete_entry *save_complete_list = 0;
-
 static bool save_complete_html(struct content *c, const char *path,
-		bool index);
-static bool save_imported_sheets(struct content *c, const char *path);
+		bool index, struct save_complete_entry **list);
+static bool save_imported_sheets(struct content *c, const char *path,
+		struct save_complete_entry **list);
 static char * rewrite_stylesheet_urls(const char *source, unsigned int size,
-		int *osize, const char *base);
-static bool rewrite_document_urls(xmlDoc *doc, const char *base);
-static bool rewrite_urls(xmlNode *n, const char *base);
-static bool rewrite_url(xmlNode *n, const char *attr, const char *base);
-static bool save_complete_list_add(struct content *content);
-static struct content * save_complete_list_find(const char *url);
-static bool save_complete_list_check(struct content *content);
+		int *osize, const char *base,
+		struct save_complete_entry *list);
+static bool rewrite_document_urls(xmlDoc *doc, const char *base,
+		struct save_complete_entry *list);
+static bool rewrite_urls(xmlNode *n, const char *base,
+		struct save_complete_entry *list);
+static bool rewrite_url(xmlNode *n, const char *attr, const char *base,
+		struct save_complete_entry *list);
+static bool save_complete_list_add(struct content *content,
+		struct save_complete_entry **list);
+static struct content * save_complete_list_find(const char *url,
+		struct save_complete_entry *list);
+static bool save_complete_list_check(struct content *content,
+		struct save_complete_entry *list);
 /* static void save_complete_list_dump(void); */
-static bool save_complete_inventory(const char *path);
+static bool save_complete_inventory(const char *path,
+		struct save_complete_entry *list);
 
 /**
  * Save an HTML page with all dependencies.
@@ -80,17 +84,18 @@ static bool save_complete_inventory(const char *path);
 bool save_complete(struct content *c, const char *path)
 {
 	bool result;
-
-	result = save_complete_html(c, path, true);
+	struct save_complete_entry *list = NULL;
+	
+	result = save_complete_html(c, path, true, &list);
 
 	if (result)
-		result = save_complete_inventory(path);
+		result = save_complete_inventory(path, list);
 
 	/* free save_complete_list */
-	while (save_complete_list) {
-		struct save_complete_entry *next = save_complete_list->next;
-		free(save_complete_list);
-		save_complete_list = next;
+	while (list) {
+		struct save_complete_entry *next = list->next;
+		free(list);
+		list = next;
 	}
 
 	return result;
@@ -106,19 +111,20 @@ bool save_complete(struct content *c, const char *path)
  * \return  true on success, false on error and error reported
  */
 
-bool save_complete_html(struct content *c, const char *path, bool index)
+bool save_complete_html(struct content *c, const char *path, bool index,
+		struct save_complete_entry **list)
 {
-	char spath[256];
+	char filename[256];
 	unsigned int i;
 	xmlDocPtr doc;
-	os_error *error;
+	bool res;
 
 	if (c->type != CONTENT_HTML)
 		return false;
 
-	if (save_complete_list_check(c))
+	if (save_complete_list_check(c, *list))
 		return true;
-
+		
 	/* save stylesheets, ignoring the base and adblocking sheets */
 	for (i = STYLESHEET_START; i != c->data.html.stylesheet_count; i++) {
 		struct content *css = c->data.html.stylesheets[i].c;
@@ -128,44 +134,39 @@ bool save_complete_html(struct content *c, const char *path, bool index)
 
 		if (!css)
 			continue;
-		if (save_complete_list_check(css))
+		if (save_complete_list_check(css, *list))
 			continue;
 
 		is_style = (strcmp(css->url, c->data.html.base_url) == 0);
 
 		if (is_style == false) {
-			if (!save_complete_list_add(css)) {
+			if (!save_complete_list_add(css, list)) {
 				warn_user("NoMemory", 0);
 				return false;
 			}
 		}
 
-		if (!save_imported_sheets(css, path))
+		if (!save_imported_sheets(css, path, list))
 			return false;
 
 		if (is_style)
 			continue; /* don't save <style> elements */
 
-		snprintf(spath, sizeof spath, "%s.%x", path,
-				(unsigned int) css);
+		snprintf(filename, sizeof filename, "%p", css);
 		source = rewrite_stylesheet_urls(css->source_data,
-				css->source_size, &source_len, css->url);
+				css->source_size, &source_len, css->url,
+				*list);
 		if (!source) {
 			warn_user("NoMemory", 0);
 			return false;
 		}
-
-		error = xosfile_save_stamped(spath, 0xf79, 
-				(byte *) source, (byte *) source + source_len);
+		res = save_complete_gui_save(path, filename, source_len,
+				source, CONTENT_CSS);
 		free(source);
-		if (error) {
-			LOG(("xosfile_save_stamped: 0x%x: %s",
-					error->errnum, error->errmess));
-			warn_user("SaveError", error->errmess);
+		if (res == false)
 			return false;
-		}
 	}
-
+	
 	/* save objects */
 	for (i = 0; i != c->data.html.object_count; i++) {
 		struct content *obj = c->data.html.object[i].content;
@@ -173,32 +174,25 @@ bool save_complete_html(struct content *c, const char *path, bool index)
 		/* skip difficult content types */
 		if (!obj || obj->type >= CONTENT_OTHER || !obj->source_data)
 			continue;
-		if (save_complete_list_check(obj))
+		if (save_complete_list_check(obj, *list))
 			continue;
 
-		if (!save_complete_list_add(obj)) {
+		if (!save_complete_list_add(obj, list)) {
 			warn_user("NoMemory", 0);
 			return false;
 		}
 
 		if (obj->type == CONTENT_HTML) {
-			if (!save_complete_html(obj, path, false))
+			if (!save_complete_html(obj, path, false, list))
 				return false;
 			continue;
 		}
 
-		snprintf(spath, sizeof spath, "%s.%x", path,
-				(unsigned int) obj);
-		error = xosfile_save_stamped(spath,
-				ro_content_filetype(obj),
-				(byte *) obj->source_data,
-				(byte *) obj->source_data + obj->source_size);
-		if (error) {
-			LOG(("xosfile_save_stamped: 0x%x: %s",
-					error->errnum, error->errmess));
-			warn_user("SaveError", error->errmess);
+		snprintf(filename, sizeof filename, "%p", obj);
+		res = save_complete_gui_save(path, filename, 
+				obj->source_size, obj->source_data, obj->type);
+		if(res == false)
 			return false;
-		}
 	}
 
 	/*save_complete_list_dump();*/
@@ -211,7 +205,7 @@ bool save_complete_html(struct content *c, const char *path, bool index)
 	}
 
 	/* rewrite all urls we know about */
-	if (!rewrite_document_urls(doc, c->data.html.base_url)) {
+	if (!rewrite_document_urls(doc, c->data.html.base_url, *list)) {
 		xmlFreeDoc(doc);
 		warn_user("NoMemory", 0);
 		return false;
@@ -219,12 +213,12 @@ bool save_complete_html(struct content *c, const char *path, bool index)
 
 	/* save the html file out last of all */
 	if (index)
-		snprintf(spath, sizeof spath, "%s.index", path);
-	else
-		snprintf(spath, sizeof spath, "%s.%x", path, (unsigned int)c);
+		snprintf(filename, sizeof filename, "index");
+	else 
+		snprintf(filename, sizeof filename, "%p", c);
 
 	errno = 0;
-	if (htmlSaveFileFormat(spath, doc, 0, 0) == -1) {
+	if (save_complete_htmlSaveFileFormat(path, filename, doc, 0, 0) == -1) {
 		if (errno)
 			warn_user("SaveError", strerror(errno));
 		else
@@ -232,17 +226,9 @@ bool save_complete_html(struct content *c, const char *path, bool index)
 
 		xmlFreeDoc(doc);
 		return false;
-	}
+	}	
 
 	xmlFreeDoc(doc);
-
-	error = xosfile_set_type(spath, 0xfaf);
-	if (error) {
-		LOG(("xosfile_set_type: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("SaveError", error->errmess);
-		return false;
-	}
 
 	return true;
 }
@@ -256,48 +242,45 @@ bool save_complete_html(struct content *c, const char *path, bool index)
  * \return  true on success, false on error and error reported
  */
 
-bool save_imported_sheets(struct content *c, const char *path)
+bool save_imported_sheets(struct content *c, const char *path,
+		struct save_complete_entry **list)
 {
-	char spath[256];
+	char filename[256];
 	unsigned int j;
 	char *source;
 	int source_len;
-	os_error *error;
+	bool res;
 
 	for (j = 0; j != c->data.css.import_count; j++) {
 		struct content *css = c->data.css.imports[j].c;
 
 		if (!css)
 			continue;
-		if (save_complete_list_check(css))
+		if (save_complete_list_check(css, *list))
 			continue;
 
-		if (!save_complete_list_add(css)) {
+		if (!save_complete_list_add(css, list)) {
 			warn_user("NoMemory", 0);
 			return false;
 		}
 
-		if (!save_imported_sheets(css, path))
+		if (!save_imported_sheets(css, path, list))
 			return false;
 
-		snprintf(spath, sizeof spath, "%s.%x", path,
-				(unsigned int) css);
+		snprintf(filename, sizeof filename, "%p", css);
 		source = rewrite_stylesheet_urls(css->source_data,
-				css->source_size, &source_len, css->url);
+				css->source_size, &source_len, css->url, 
+				*list);
 		if (!source) {
 			warn_user("NoMemory", 0);
 			return false;
 		}
 
-		error = xosfile_save_stamped(spath, 0xf79, 
-				(byte *) source, (byte *) source + source_len);
+		res = save_complete_gui_save(path, filename, source_len,
+				source, CONTENT_CSS);
 		free(source);
-		if (error) {
-			LOG(("xosfile_save_stamped: 0x%x: %s",
-					error->errnum, error->errmess));
-			warn_user("SaveError", error->errmess);
+		if (res == false)
 			return false;
-		}
 	}
 
 	return true;
@@ -352,7 +335,8 @@ void save_complete_init(void)
  */
 
 char * rewrite_stylesheet_urls(const char *source, unsigned int size,
-		int *osize, const char *base)
+		int *osize, const char *base,
+		struct save_complete_entry *list)
 {
 	char *res;
 	const char *url;
@@ -435,11 +419,11 @@ char * rewrite_stylesheet_urls(const char *source, unsigned int size,
 		*osize += match[0].rm_so;
 
 		if (result == URL_FUNC_OK) {
-			content = save_complete_list_find(url);
+			content = save_complete_list_find(url, list);
 			if (content) {
 				/* replace import */
-				snprintf(buf, sizeof buf, "@import '%x'",
-						(unsigned int) content);
+				snprintf(buf, sizeof buf, "@import '%p'",
+						content);
 				memcpy(res + *osize, buf, strlen(buf));
 				*osize += strlen(buf);
 			} else {
@@ -478,13 +462,14 @@ char * rewrite_stylesheet_urls(const char *source, unsigned int size,
  * \return  true on success, false on out of memory
  */
 
-bool rewrite_document_urls(xmlDoc *doc, const char *base)
+bool rewrite_document_urls(xmlDoc *doc, const char *base,
+		struct save_complete_entry *list)
 {
 	xmlNode *node;
 
 	for (node = doc->children; node; node = node->next)
 		if (node->type == XML_ELEMENT_NODE)
-			if (!rewrite_urls(node, base))
+			if (!rewrite_urls(node, base, list))
 				return false;
 
 	return true;
@@ -501,7 +486,8 @@ bool rewrite_document_urls(xmlDoc *doc, const char *base)
  * URLs in the tree rooted at element n are rewritten.
  */
 
-bool rewrite_urls(xmlNode *n, const char *base)
+bool rewrite_urls(xmlNode *n, const char *base,
+		struct save_complete_entry *list)
 {
 	xmlNode *child;
 
@@ -524,14 +510,14 @@ bool rewrite_urls(xmlNode *n, const char *base)
 	}
 	/* 1 */
 	else if (strcmp((const char *) n->name, "object") == 0) {
-		if (!rewrite_url(n, "data", base))
+		if (!rewrite_url(n, "data", base, list))
 			return false;
 	}
 	/* 2 */
 	else if (strcmp((const char *) n->name, "a") == 0 ||
 			strcmp((const char *) n->name, "area") == 0 ||
 			strcmp((const char *) n->name, "link") == 0) {
-		if (!rewrite_url(n, "href", base))
+		if (!rewrite_url(n, "href", base, list))
 			return false;
 	}
 	/* 3 */
@@ -540,7 +526,7 @@ bool rewrite_urls(xmlNode *n, const char *base)
 			strcmp((const char *) n->name, "input") == 0 ||
 			strcmp((const char *) n->name, "img") == 0 ||
 			strcmp((const char *) n->name, "script") == 0) {
-		if (!rewrite_url(n, "src", base))
+		if (!rewrite_url(n, "src", base, list))
 			return false;
 	}
 	/* 4 */
@@ -561,7 +547,7 @@ bool rewrite_urls(xmlNode *n, const char *base)
 			char *rewritten = rewrite_stylesheet_urls(
 					(const char *) content,
 					strlen((const char *) content),
-					(int *) &len, base);
+					(int *) &len, base, list);
 			xmlFree(content);
 			if (!rewritten)
 				return false;
@@ -586,7 +572,7 @@ bool rewrite_urls(xmlNode *n, const char *base)
 	}
 	/* 6 */
 	else {
-	        if (!rewrite_url(n, "background", base))
+	        if (!rewrite_url(n, "background", base, list))
 	                return false;
 	}
 
@@ -598,7 +584,7 @@ bool rewrite_urls(xmlNode *n, const char *base)
 		 * next child */
 		xmlNode *next = child->next;
 		if (child->type == XML_ELEMENT_NODE) {
-			if (!rewrite_urls(child, base))
+			if (!rewrite_urls(child, base, list))
 				return false;
 		}
 		child = next;
@@ -617,7 +603,8 @@ bool rewrite_urls(xmlNode *n, const char *base)
  * \return  true on success, false on out of memory
  */
 
-bool rewrite_url(xmlNode *n, const char *attr, const char *base)
+bool rewrite_url(xmlNode *n, const char *attr, const char *base,
+		struct save_complete_entry *list)
 {
 	char *url, *data;
 	char rel[20];
@@ -636,12 +623,11 @@ bool rewrite_url(xmlNode *n, const char *attr, const char *base)
 	if (res == URL_FUNC_NOMEM)
 		return false;
 	else if (res == URL_FUNC_OK) {
-		content = save_complete_list_find(url);
+		content = save_complete_list_find(url, list);
 		if (content) {
 			/* found a match */
 			free(url);
-			snprintf(rel, sizeof rel, "%x",
-						(unsigned int) content);
+			snprintf(rel, sizeof rel, "%p", content);
 			if (!xmlSetProp(n, (const xmlChar *) attr,
 							(xmlChar *) rel))
 				return false;
@@ -667,15 +653,16 @@ bool rewrite_url(xmlNode *n, const char *attr, const char *base)
  * \return  true on success, false on out of memory
  */
 
-bool save_complete_list_add(struct content *content)
+bool save_complete_list_add(struct content *content,
+		struct save_complete_entry **list)
 {
 	struct save_complete_entry *entry;
 	entry = malloc(sizeof (*entry));
 	if (!entry)
 		return false;
 	entry->content = content;
-	entry->next = save_complete_list;
-	save_complete_list = entry;
+	entry->next = *list;
+	*list = entry;
 	return true;
 }
 
@@ -687,10 +674,11 @@ bool save_complete_list_add(struct content *content)
  * \return  content if found, 0 otherwise
  */
 
-struct content * save_complete_list_find(const char *url)
+struct content * save_complete_list_find(const char *url,
+		struct save_complete_entry *list)
 {
 	struct save_complete_entry *entry;
-	for (entry = save_complete_list; entry; entry = entry->next)
+	for (entry = list; entry; entry = entry->next)
 		if (strcmp(url, entry->content->url) == 0)
 			return entry->content;
 	return 0;
@@ -704,10 +692,11 @@ struct content * save_complete_list_find(const char *url)
  * \return  true if the content is in the save_complete_list
  */
 
-bool save_complete_list_check(struct content *content)
+bool save_complete_list_check(struct content *content,
+		struct save_complete_entry *list)
 {
 	struct save_complete_entry *entry;
-	for (entry = save_complete_list; entry; entry = entry->next)
+	for (entry = list; entry; entry = entry->next)
 		if (entry->content == content)
 			return true;
 	return false;
@@ -732,14 +721,23 @@ void save_complete_list_dump(void)
  * Create the inventory file listing original URLs.
  */
 
-bool save_complete_inventory(const char *path)
+bool save_complete_inventory(const char *path,
+		struct save_complete_entry *list)
 {
-	char spath[256];
+	char urlpath[256];
 	FILE *fp;
+	char *pathstring, *standardpath = (path[0] == '/') ?
+			(char *)(path + 1) : (char *)path;
 
-	snprintf(spath, sizeof spath, "%s.Inventory", path);
-
-	fp = fopen(spath, "w");
+	snprintf(urlpath, sizeof urlpath, "file:///%s/Inventory", 
+			standardpath);
+	pathstring = url_to_path(urlpath);
+	if (pathstring == NULL) {
+		warn_user("NoMemory", 0);
+		return false;
+	}
+	fp = fopen(pathstring, "w");
+	free(pathstring);
 	if (!fp) {
 		LOG(("fopen(): errno = %i", errno));
 		warn_user("SaveError", strerror(errno));
@@ -747,10 +745,8 @@ bool save_complete_inventory(const char *path)
 	}
 
 	struct save_complete_entry *entry;
-	for (entry = save_complete_list; entry; entry = entry->next)
-		fprintf(fp, "%x %s\n",
-				(unsigned int) entry->content,
-				entry->content->url);
+	for (entry = list; entry; entry = entry->next)
+		fprintf(fp, "%p %s\n", entry->content, entry->content->url);
 
 	fclose(fp);
 

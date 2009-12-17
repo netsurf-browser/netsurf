@@ -214,7 +214,7 @@ URLSuggest:URL Recenti
 Languages:Lingua
 #
 # Network pane
-ProxyType:Tipo di proxy
+ProxyType:Tipo di Proxy
 ProxyNone:Nessun proxy
 ProxyNoAuth:Proxy semplice
 ProxyBasic:Autentificazione di Base
@@ -437,11 +437,118 @@ gtkFileError:Errore File: %s
 gtkInfo:%s da %s è %s come dimensione
 gtkSave:Salva file come...
 gtkSourceSave:Salva sorgente
+gtkPlainSave:Save as text
+gtkFullSave:Save webpage complete - select an empty directory
 gtkSaveConfirm:File salvato
 gtkSaveCancelled:File non salvato
 gtkUnknownHost:un Host sconosciuto
 gtkUnknownFile:
 gtkUnknownSize:sconosciuto
+
+# gtk Menu / Button labels
+#
+
+gtkNewTab:New _Tab
+gtkNewTabAccel:<ctrl>t
+gtkNewWindow:_New Window
+gtkNewWindowAccel:<ctrl>n
+gtkOpenFile:_Open File
+gtkOpenFileAccel:<ctrl>o
+gtkCloseWindow:_Close Window
+gtkCloseWindowAccel:<ctrl><shift>w
+gtkSavePage:Save Page..
+gtkSavePageAccel:<ctrl>s
+gtkExport:Export
+gtkPlainText:Plain Text..
+gtkDrawFile:Drawfile..
+gtkPostScript:PostScript..
+gtkPDF:PDF..
+gtkPrintPreview:Print Preview..
+gtkPrintPreviewAccel:<ctrl><shift>p
+gtkPrint:Print..
+gtkPrintAccel:<ctrl>p
+gtkQuit:_Quit
+gtkQuitAccel:<ctrl>q
+
+gtkCut:Cu_t
+gtkCutAccel:<ctrl>x
+gtkCopy:_Copy
+gtkCopyAccel:<ctrl>c
+gtkPaste:_Paste
+gtkPasteAccel:<ctrl>v
+gtkDelete:_Delete
+gtkSelectAll:Select _All
+gtkSelectAllAccel:<ctrl>a
+gtkFind:_Find..
+gtkFindAccel:<ctrl>f
+gtkPreferences:P_references
+
+gtkStop:_Stop
+gtkStopAccel:Escape
+gtkReload:_Reload
+gtkReloadAccel:F5
+gtkScaleView:_Scale View
+gtkZoomPlus:Zoom _in
+gtkZoomPlusAccel:<ctrl>plus
+gtkZoomMinus:Zoom _out
+gtkZoomMinusAccel:<ctrl>minus
+gtkZoomNormal:_Normal size
+gtkZoomNormalAccel:<ctrl>0
+gtkFullScreen:_Fullscreen
+gtkFullScreenAccel:F11
+gtkViewSource:View S_ource
+gtkViewSourceAccel:F8
+gtkImages:_Images
+gtkForegroundImages:_Foreground Images
+gtkBackgroundImages:_Background Images
+gtkToolbars:_Toolbars
+gtkMenuBar:_Menu Bar
+gtkToolBar:_Button Bar
+gtkStatusBar:_Status Bar
+gtkDownloads:_Downloads
+gtkDownloadsAccel:<ctrl>d
+gtkSaveWindowSize:S_ave Window Size
+gtkDebugging:De_bugging
+gtkToggleDebugging:T_oggle debug rendering
+gtkSaveBoxTree:_Save box tree
+gtkSaveDomTree:Save DOM tree
+
+gtkBack:_Back
+gtkBackAccel:<alt>Left
+gtkForward:_Forward
+gtkForwardAccel:<alt>Right
+gtkHome:_Home
+gtkHomeAccel:<alt>Down
+gtkLocalHistory:_Local History
+gtkLocalHistoryAccel:<ctrl>h
+gtkGlobalHistory:_Global History
+gtkGlobalHistoryAccel:<ctrl><shift>h
+gtkAddBookMarks:_Add to Bookmarks..
+gtkShowBookMarks:_Show Bookmarks..
+gtkShowBookMarksAccel:F6
+gtkOpenLocation:_Open Location..
+gtkOpenLocationAccel:<ctrl>l
+
+gtkNextTab:_Next tab
+gtkNextTabAccel:<ctrl>Right
+gtkPrevTab:_Previous tab
+gtkPrevTabAccel:<ctrl>Left
+gtkCloseTab:_Close tab
+gtkCloseTabAccel:<ctrl>w
+
+gtkContents:_Contents
+gtkGuide:User _guide
+gtkUserInformation:User _information
+gtkAbout:_About
+
+
+gtkToolBarTitle:Toolbar custom button store
+gtkAddThemeTitle:Select folder containing theme images
+
+gtkThemeFolderInstructions:To Install a theme, create a directory full of appropriately-named images as a subdirectory of gtk/res/themes/
+gtkThemeFolderSub:Select a subdirectory of the themes folder
+gtkThemeDup:Theme is already included
+gtkThemeAdd:Theme added successfully
 
 # Printing user interface tokens
 # ==============================
@@ -466,6 +573,8 @@ Printing:Stampa della pagina
 NotFound:Non trovato
 Next:Successivo
 Prev:Precedente
+ShowAll:Show All
+CaseSens:Case Sensitive
 
 # 401 login user interface tokens
 # ===============================
@@ -487,17 +596,17 @@ Cancel:Annulla
 # This section contains tokens which are used in the
 # SSL certificate verification dialog box.
 #
-SSLCerts:Certificati SSL
-SSLError:NetSurf non è stato in grado di verificare l'autenticità del certificato SSL. Per favore verifica i dettagli qui sotto elencati.
-Subject:Oggetto
-Issuer:Depositario
-Version:Versione
-ValidFrom:Valido da
-ValidTo:Valido fino
-Type:Tipo
-Serial:Seriale
-Accept:Accetta
-Reject:Rifiuta
+SSLCerts:SSL certificates
+SSLError:NetSurf failed to verify the authenticity of an SSL certificate. Please verify the details presented below.
+Subject:Subject
+Issuer:Issuer
+Version:Version
+ValidFrom:Valid from
+ValidTo:Valid until
+Type:Type
+Serial:Serial
+Accept:Accept
+Reject:Reject
 
 
 # Content
@@ -584,6 +693,9 @@ MiscError:Si è verificato un errore inatteso:
 FileError:Il file è inesistente:
 PrintError:Si è verificato un errore durante la stampa:
 AWNotSeen:Per favore imposta l'applicazione AWViewer e riprova ancora.
+EncNotRec:Encoding type not recognised.
+FileOpenError:could not open file '%s'
+DirectoryError:directory '%s' already exists
 
 # Specific errors - displayed in a dialog box
 #
@@ -595,10 +707,12 @@ NoDiscSpace:Spazio insufficiente nel disco.
 Template:Una finestra di template risulta mancante. Per favore reinstalla NetSurf.
 HotlistSaveError:Non è stato possibile salvare correttamente i segnalibri.
 HotlistLoadError:Non è stato possibile caricare correttamente i segnalibri.
+NoDirError:%s is not a directory
 NoPathError:Per salvare, trascinare l'icona in una directory di visualizzazione.
 NoNameError:Inserisci un nome
 NoURLError:Inserisci un URL
 URIError:NetSurf non è stato in grado di processare questo file URI a causa di un errore di sintassi.
+SearchError:Invalid Search.
 EmptyError:Il file è vuoto.
 PrintErrorRO2:Sembra che la stampante sia occupata.
 AWNotSeen:Per favore imposta l'applicazione AWViewer e riprova ancora.
@@ -642,7 +756,8 @@ Done:Documento completato
 #
 BadRedirect:Errata redirezione dell'URL
 FetchFailed:Impossibile ottenere il documento
-NotCSS:Attenzione: la dicitura "Foglio di stile" non ha nulla a che vedere con i CSS
+NotCSS:Attenzione: "Foglio di stile" non ha nulla a che spartire con i CSS
+NotFavIco:Favicon not supported
 BadObject:Attenzione: errato tipo di oggetto
 ObjError:Errore di caricamento dell'oggetto: %s
 ParsingFail:Analisi del documento fallita.
@@ -678,7 +793,7 @@ HTTP404:Non trovato
 HTTP405:Metodo non permesso
 HTTP406:Non accettabile
 HTTP407:Autentificazione Proxy necessaria
-HTTP408:Messaggio di TimeOut
+HTTP408:Richiesta TimeOut
 HTTP409:Conflitto
 HTTP410:Irraggiungibile
 HTTP411:Lunghezza richiesta

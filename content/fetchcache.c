@@ -38,6 +38,8 @@
 #include "content/content.h"
 #include "content/fetchcache.h"
 #include "content/fetch.h"
+#include "desktop/options.h"
+#include "desktop/searchweb.h"
 #include "content/urldb.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -49,17 +51,23 @@
 static char error_page[1000];
 static regex_t re_content_type;
 static void fetchcache_callback(fetch_msg msg, void *p, const void *data,
-		unsigned long size);
+		unsigned long size, fetch_error_code errorcode);
 static char *fetchcache_parse_type(const char *s, char **params[]);
 static void fetchcache_parse_header(struct content *c, const char *data,
 		size_t size);
-static void fetchcache_error_page(struct content *c, const char *error);
+static void fetchcache_error_page(struct content *c, const char *error,
+		fetch_error_code errorcode);
+static void fetchcache_search_redirect(struct content *c, const char *error);
 static void fetchcache_cache_update(struct content *c);
 static void fetchcache_cache_clone(struct content *c,
 		const struct cache_data *data);
 static void fetchcache_notmodified(struct content *c, const void *data);
 static void fetchcache_redirect(struct content *c, const void *data,
 		unsigned long size);
+static void fetchcache_redirect_common(struct content *c, bool verifiable,
+		const char *url, const char *referer,
+		struct content *parent);
+		
 static void fetchcache_auth(struct content *c, const char *realm);
 
 
@@ -276,7 +284,8 @@ void fetchcache_go(struct content *content, const char *referer,
 			callback(CONTENT_MSG_ERROR,
 					content, p1, p2, msg_data);
 		} else {
-			fetchcache_error_page(content, error_message);
+			fetchcache_error_page(content, error_message, 
+					FETCH_ERROR_NO_ERROR);
 		}
 
 		return;
@@ -366,7 +375,8 @@ void fetchcache_go(struct content *content, const char *referer,
 				content_broadcast(content, CONTENT_MSG_ERROR,
 						msg_data);
 			} else {
-				fetchcache_error_page(content, error_message);
+				fetchcache_error_page(content, error_message, 
+						FETCH_ERROR_NO_ERROR);
 			}
 		}
 
@@ -405,7 +415,7 @@ void fetchcache_go(struct content *content, const char *referer,
  */
 
 void fetchcache_callback(fetch_msg msg, void *p, const void *data,
-		unsigned long size)
+		unsigned long size, fetch_error_code errorcode)
 {
 	bool res;
 	struct content *c = p;
@@ -506,7 +516,7 @@ void fetchcache_callback(fetch_msg msg, void *p, const void *data,
 						msg_data);
 			} else {
 				content_reset(c);
-				fetchcache_error_page(c, data);
+				fetchcache_error_page(c, data, errorcode);
 			}
 			break;
 
@@ -721,17 +731,29 @@ void fetchcache_parse_header(struct content *c, const char *data,
 
 
 /**
- * Generate an error page.
- *
+ * Generate an error page. Optionally redirect to web search provider
  * \param c empty content to generate the page in
  * \param error message to display
  */
 
-void fetchcache_error_page(struct content *c, const char *error)
+void fetchcache_error_page(struct content *c, const char *error,
+		fetch_error_code errorcode)
 {
 	const char *params[] = { 0 };
 	int length;
+	char *host;
 
+	if (option_search_url_bar) {
+		if (url_host(c->url, &host) != URL_FUNC_OK) {
+			warn_user(messages_get("NoMemory"), 0);
+		} else if ((strcasecmp(host, search_web_provider_host())
+				!= 0) && (errorcode ==
+				FETCH_ERROR_COULDNT_RESOLVE_HOST)) {
+			fetchcache_search_redirect(c, error);
+			free(host);
+			return;
+		}
+	}
 	if ((length = snprintf(error_page, sizeof(error_page),
 			messages_get("ErrorPage"), error)) < 0)
 		length = 0;
@@ -746,6 +768,27 @@ void fetchcache_error_page(struct content *c, const char *error)
 	c->fresh = false;
 }
 
+void fetchcache_search_redirect(struct content *c, const char *error)
+{
+	char *redirurl, *temp;
+
+	/* clear http:// plus trailing / from url, it is already escaped */
+	temp = strdup(c->url + SLEN("http://"));
+	if (temp == NULL) {
+		warn_user(messages_get("NoMemory"), 0);
+		return;
+	}
+	temp[strlen(temp)-1] = '\0';
+	redirurl = search_web_get_url(temp);
+	if (redirurl == NULL) {
+		warn_user(messages_get("NoMemory"), 0);
+		return;
+	}
+
+	fetchcache_redirect_common(c, false, redirurl, NULL, c);
+	free(redirurl);
+	return;
+}
 
 /**
  * Update a content's cache state
@@ -930,7 +973,6 @@ void fetchcache_redirect(struct content *c, const void *data,
 	long http_code;
 	const char *ref;
 	struct content *parent;
-	bool can_fetch;
 	bool parent_was_verifiable;
 	union content_msg_data msg_data;
 	url_func_result result;
@@ -1056,32 +1098,50 @@ void fetchcache_redirect(struct content *c, const void *data,
 	}
 
 	free(scheme); 
-	
-	/* Determine if we've got a fetch handler for this url */
-	can_fetch = fetch_can_fetch(url);
+	fetchcache_redirect_common(c, parent_was_verifiable, url, referer, parent);
+	free(url);
+	free(referer);
+}
 
+/**
+ * common logic from fetchcache_redirect() / fetchcache_search_redirect()
+ * \param c the content param from the original function
+ * \param verifiable parent_was_verifiable [false for search_redirect]
+ * \param url the url being considered; caller retains ownership
+ * \param referer referer [ / NULL particularly for search_redirect]
+ * \param parent parent content [ / c for search_redirect]
+ */
+
+void fetchcache_redirect_common(struct content *c, bool verifiable,
+		const char *url, const char *referer, struct content *parent)
+{
+	union content_msg_data msg_data;
+	bool can_fetch;
+	/* check there's a fetch handler */
+	can_fetch = fetch_can_fetch(url);
+	
 	/* Process users of this content */
 	while (c->user_list->next) {
 		intptr_t p1, p2;
 		void (*callback)(content_msg msg,
-			struct content *c, intptr_t p1,
-			intptr_t p2,
-			union content_msg_data data);
+				  struct content *c, intptr_t p1,
+				  intptr_t p2,
+				  union content_msg_data data);
 		struct content *replacement;
-	
+				  
 		p1 = c->user_list->next->p1;
 		p2 = c->user_list->next->p2;
 		callback = c->user_list->next->callback;
-
+				  
 		/* If we can't fetch this url, attempt to launch it */
 		if (!can_fetch) {
 			msg_data.launch_url = url;
 			callback(CONTENT_MSG_LAUNCH, c, p1, p2, msg_data);
 		}
-
+		
 		/* Remove user */
 		content_remove_user(c, callback, p1, p2);
-
+		
 		if (can_fetch) {
 			/* Get replacement content -- HTTP GET request */
 
@@ -1101,37 +1161,29 @@ void fetchcache_redirect(struct content *c, const void *data,
 			 */
 			replacement = fetchcache(url, callback, p1, p2, 
 					c->width, c->height, c->no_error_pages,
-					NULL, NULL, parent_was_verifiable, 
+					NULL, NULL, verifiable, 
 					c->download);
 			if (!replacement) {
 				msg_data.error = messages_get("BadRedirect");
 				content_broadcast(c, CONTENT_MSG_ERROR, 
 						msg_data);
-
-				free(url);
-				free(referer);
 				return;
-			}
-
+			}			  
 			/* Set replacement's redirect count to 1 greater 
 			 * than ours */
 			replacement->redirect_count = c->redirect_count + 1;
-
+			
 			/* Notify user that content has changed */
 			msg_data.new_url = url;
 			callback(CONTENT_MSG_NEWPTR, replacement, 
-					p1, p2, msg_data);
-
+					  p1, p2, msg_data);
+				  
 			/* Start fetching the replacement content */
 			fetchcache_go(replacement, referer, callback, p1, p2,
-					c->width, c->height, NULL, NULL,
-					parent_was_verifiable, parent);
+					       c->width, c->height, NULL, NULL,
+					       verifiable, parent);
 		}
 	}
-
-	/* Clean up */
-	free(url);
-	free(referer);
 }
 
 /**
@@ -1218,7 +1270,8 @@ void fetchcache_auth(struct content *c, const char *realm)
 			msg_data.error = error_message;
 			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		} else {
-			fetchcache_error_page(c, error_message);
+			fetchcache_error_page(c, error_message,
+					FETCH_ERROR_URL);
 		}
 	}
 

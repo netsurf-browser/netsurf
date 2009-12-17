@@ -33,6 +33,7 @@
 #include "gtk/gtk_scaffolding.h"
 #include "gtk/options.h"
 #include "gtk/gtk_download.h"
+#include "gtk/gtk_window.h"
 
 #define UPDATE_RATE 500 /* In milliseconds */
 #define GLADE_NAME "downloads.glade"
@@ -86,9 +87,9 @@ static gboolean nsgtk_download_handle_error (GError *error);
 
 void nsgtk_download_init()
 {
-	gchar *glade_location = g_strconcat(res_dir_location, GLADE_NAME, NULL);
+	char glade_location[strlen(res_dir_location) + SLEN(GLADE_NAME) + 1];
+	sprintf(glade_location, "%s" GLADE_NAME, res_dir_location);
 	GladeXML *gladeFile = glade_xml_new(glade_location, NULL, NULL);
-	g_free(glade_location);
 	
 	nsgtk_download_buttons = 
 			glade_xml_get_widget_prefix(gladeFile, "button");
@@ -202,11 +203,12 @@ struct gui_download_window *gui_download_window_create(const char *url,
 	gchar *filename;
 	gchar *destination;
 	gboolean unknown_size = total_size == 0;
-	const gchar *size = (total_size == 0 ? 
+	const char *size = (total_size == 0 ? 
 			messages_get("gtkUnknownSize") :
 			human_friendly_bytesize(total_size));
 	
-	nsgtk_download_parent = nsgtk_scaffolding_get_window(gui);
+	nsgtk_download_parent = nsgtk_scaffolding_window(nsgtk_get_scaffold(
+			gui));
 	struct gui_download_window *download = malloc(sizeof *download);
 	
 	if (url_nice(url, &filename, false) != URL_FUNC_OK)
@@ -488,8 +490,9 @@ gboolean nsgtk_download_update(gboolean force_update)
 void nsgtk_download_store_update_item (struct gui_download_window *dl)
 {
 	gchar *info = nsgtk_download_info_to_string(dl);
-	gchar *speed = g_strconcat(human_friendly_bytesize(dl->speed), "/s",
-			NULL);
+	char *human = human_friendly_bytesize(dl->speed);
+	char speed[strlen(human) + SLEN("/s") + 1];
+	sprintf(speed, "%s/s", human);
 	gchar *time = nsgtk_download_time_to_string(dl->time_remaining);
 	gboolean pulse = dl->status == NSGTK_DOWNLOAD_WORKING;
 	
@@ -508,7 +511,6 @@ void nsgtk_download_store_update_item (struct gui_download_window *dl)
 			-1); 
 			
 	g_free(info);
-	g_free(speed);
 	g_free(time);
 }
 
@@ -634,7 +636,7 @@ gchar* nsgtk_download_dialog_show (gchar *filename, gchar *domain,
 {
 	enum { GTK_RESPONSE_DOWNLOAD, GTK_RESPONSE_SAVE_AS };
 	GtkWidget *dialog;
-	gchar *destination = NULL;
+	char *destination = NULL;
 	gchar *message = g_strdup(messages_get("gtkStartDownload"));
 	gchar *info = g_strdup_printf(messages_get("gtkInfo"), filename, 
 			domain, size);
@@ -682,9 +684,15 @@ gchar* nsgtk_download_dialog_show (gchar *filename, gchar *domain,
 			break;
 		}
 		case GTK_RESPONSE_DOWNLOAD: {
-			destination = g_strconcat(option_downloads_directory,
-					"/", filename, NULL);
-			/* Test if file already exists and display overwrite		
+			destination = malloc(strlen(option_downloads_directory)
+					+ strlen(filename) + SLEN("/") + 1);
+			if (destination == NULL) {
+				warn_user(messages_get("NoMemory"), 0);
+				break;
+			}
+			sprintf(destination, "%s/%s", 
+					option_downloads_directory, filename);
+			/* Test if file already exists and display overwrite	
 			 * confirmation if needed */
 			if (g_file_test(destination, G_FILE_TEST_EXISTS)
 					&& option_request_overwrite) {
@@ -711,7 +719,7 @@ gchar* nsgtk_download_dialog_show (gchar *filename, gchar *domain,
 				gtk_button_set_image(GTK_BUTTON(button),
 						gtk_image_new_from_stock(
 						"gtk-save", 
-						GTK_ICON_SIZE_BUTTON));				
+						GTK_ICON_SIZE_BUTTON));	
 	
 				gint result = gtk_dialog_run(GTK_DIALOG(
 						dialog));

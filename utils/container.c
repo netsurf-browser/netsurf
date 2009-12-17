@@ -19,26 +19,34 @@
 /* To build a stand-alone command-line utility to create and dismantal
  * these theme files, build this thusly:
  *
- * gcc -I../../ -DNSTHEME -o themetool container.c
+ * gcc -I../ -DNSTHEME -o themetool container.c
  *
+ * then for instance to create a theme file called mythemefilename
+ * ./themetool --verbose --create -n"My theme name" mythemefilename\
+ * --author "Myname" /path/to/directory/containing/theme/files/
  */
 
 /** \file
  * Container format handling for themes etc. */
 
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <sys/stat.h>
 #include <arpa/inet.h>
-#include "utils/container.h"
 #include "utils/config.h"
+#include "utils/container.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
 #ifdef WITH_MMAP
 #include <sys/mman.h>
 #endif
 
 struct container_dirent {
-	unsigned char	filename[16];
+	unsigned char	filename[64];
 	u_int32_t	startoffset;
 	u_int32_t	len;
 	u_int32_t	flags1;
@@ -85,7 +93,8 @@ static void container_add_to_dir(struct container_ctx *ctx,
 				sizeof(struct container_dirent));
 
 	strncpy((char *)ctx->directory[ctx->entries - 1].filename,
-				(char *)entryname, 16);
+				(char *)entryname, sizeof(ctx->directory[
+				ctx->entries - 1].filename));
 	ctx->directory[ctx->entries - 1].startoffset = offset;
 	ctx->directory[ctx->entries - 1].len = length;
 	ctx->directory[ctx->entries - 1].flags1 = 0;
@@ -94,6 +103,7 @@ static void container_add_to_dir(struct container_ctx *ctx,
 
 struct container_ctx *container_open(const char *filename)
 {
+	size_t val;
 	struct container_ctx *ctx = calloc(sizeof(struct container_ctx), 1);
 
 	ctx->fh = fopen(filename, "rb");
@@ -109,16 +119,26 @@ struct container_ctx *container_open(const char *filename)
 	 */
 	ctx->processed = false;
 
-	fread(&ctx->header.magic, 4, 1, ctx->fh);
+	val = fread(&ctx->header.magic, 4, 1, ctx->fh);
+	if (val == 0)
+		LOG(("empty read magic"));
 	ctx->header.magic = ntohl(ctx->header.magic);
 
-	fread(&ctx->header.parser, 4, 1, ctx->fh);
+	val = fread(&ctx->header.parser, 4, 1, ctx->fh);
+	if (val == 0)
+		LOG(("empty read parser"));	
 	ctx->header.parser = ntohl(ctx->header.parser);
 
-	fread(ctx->header.name, 32, 1, ctx->fh);
-	fread(ctx->header.author, 64, 1, ctx->fh);
+	val = fread(ctx->header.name, 32, 1, ctx->fh);
+	if (val == 0)
+		LOG(("empty read name"));
+	val = fread(ctx->header.author, 64, 1, ctx->fh);
+	if (val == 0)
+		LOG(("empty read author"));
 
-	fread(&ctx->header.diroffset, 4, 1, ctx->fh);
+	val = fread(&ctx->header.diroffset, 4, 1, ctx->fh);
+	if (val == 0)
+		LOG(("empty read diroffset"));
 	ctx->header.diroffset = ntohl(ctx->header.diroffset);
 
 	if (ctx->header.magic != 0x4e53544d || ctx->header.parser != 3) {
@@ -132,7 +152,8 @@ struct container_ctx *container_open(const char *filename)
 
 static void container_process(struct container_ctx *ctx)
 {
-	unsigned char filename[16];
+	size_t val;
+	unsigned char filename[64];
 	u_int32_t start, len, flags1, flags2;
 
 #ifdef WITH_MMAP
@@ -141,14 +162,19 @@ static void container_process(struct container_ctx *ctx)
 #else
 	ctx->data = malloc(ctx->header.diroffset);
 	fseek(ctx->fh, 0, SEEK_SET);
-	fread(ctx->data, ctx->header.diroffset, 1, ctx->fh);
+	val = fread(ctx->data, ctx->header.diroffset, 1, ctx->fh);
+	if (val == 0)
+		LOG(("empty read diroffset"));
 #endif
 	fseek(ctx->fh, ctx->header.diroffset, SEEK_SET);
 	/* now work through the directory structure taking it apart into
 	 * our structure */
-#define BEREAD(x) do { fread(&(x), 4, 1, ctx->fh);(x) = ntohl((x)); } while (0)
+#define BEREAD(x) do { val = fread(&(x), 4, 1, ctx->fh); if (val == 0)\
+		LOG(("empty read"));(x) = ntohl((x)); } while (0)
 	do {
-		fread(filename, 16, 1, ctx->fh);
+		val = fread(filename, 64, 1, ctx->fh);
+		if (val == 0)
+			LOG(("empty read filename"));
 		BEREAD(start);
 		BEREAD(len);
 		BEREAD(flags1);
@@ -164,7 +190,7 @@ static const struct container_dirent *container_lookup(
 					struct container_ctx *ctx,
 					const unsigned char *entryname)
 {
-	int i;
+	unsigned int i;
 
 	for (i = 1; i <= ctx->entries; i++) {
 		struct container_dirent *e = ctx->directory + i - 1;
@@ -227,12 +253,16 @@ const unsigned char *container_get_author(struct container_ctx *ctx)
 
 static void container_write_dir(struct container_ctx *ctx)
 {
-	int i;
+	size_t val;
+	unsigned int i;
 	u_int32_t tmp;
-#define BEWRITE(x) do {tmp = htonl((x)); fwrite(&tmp, 4, 1, ctx->fh);} while(0)
+#define BEWRITE(x) do {tmp = htonl((x)); val = fwrite(&tmp, 4, 1, ctx->fh);\
+		if (val == 0) LOG(("empty write")); } while(0)
 	for (i = 1; i <= ctx->entries; i++) {
 		struct container_dirent *e = ctx->directory + i - 1;
-		fwrite(e->filename, 16, 1, ctx->fh);
+		val = fwrite(e->filename, 64, 1, ctx->fh);
+		if (val == 0)
+			LOG(("empty write filename"));
 		BEWRITE(e->startoffset);
 		BEWRITE(e->len);
 		BEWRITE(e->flags1);
@@ -241,13 +271,16 @@ static void container_write_dir(struct container_ctx *ctx)
 #undef BEWRITE
 	/* empty entry signifies end of directory */
 	tmp = 0;
-	fwrite(&tmp, 4, 8, ctx->fh);
+	val = fwrite(&tmp, 4, 8, ctx->fh);
+	if (val == 0)
+		LOG(("empty write end"));
 }
 
 struct container_ctx *container_create(const char *filename,
 					const unsigned char *name,
 					const unsigned char *author)
 {
+	size_t val;
 	struct container_ctx *ctx = calloc(sizeof(struct container_ctx), 1);
 
 	ctx->fh = fopen(filename, "wb");
@@ -264,10 +297,18 @@ struct container_ctx *container_create(const char *filename,
 	strncpy((char *)ctx->header.name, (char *)name, 32);
 	strncpy((char *)ctx->header.author, (char *)author, 64);
 
-	fwrite("NSTM", 4, 1, ctx->fh);
-	fwrite(&ctx->header.parser, 4, 1, ctx->fh);
-	fwrite(ctx->header.name, 32, 1, ctx->fh);
-	fwrite(ctx->header.author, 64, 1, ctx->fh);
+	val = fwrite("NSTM", 4, 1, ctx->fh);
+	if (val == 0)
+		LOG(("empty write NSTM"));
+	val = fwrite(&ctx->header.parser, 4, 1, ctx->fh);
+	if (val == 0)
+		LOG(("empty write parser"));
+	val = fwrite(ctx->header.name, 32, 1, ctx->fh);
+	if (val == 0)
+		LOG(("empty write name"));
+	val = fwrite(ctx->header.author, 64, 1, ctx->fh);
+	if (val == 0)
+		LOG(("empty write author"));
 
 	ctx->header.diroffset = 108;
 
@@ -284,14 +325,17 @@ void container_add(struct container_ctx *ctx, const unsigned char *entryname,
 					const unsigned char *data,
 					const u_int32_t datalen)
 {
+	size_t val;
 	container_add_to_dir(ctx, entryname, ftell(ctx->fh), datalen);
-	fwrite(data, datalen, 1, ctx->fh);
+	val = fwrite(data, datalen, 1, ctx->fh);
+	if (val == 0)
+		LOG(("empty write add file"));
 }
 
 void container_close(struct container_ctx *ctx)
 {
 	if (ctx->creating == true) {
-		size_t flen, nflen;
+		size_t flen, nflen, val;
 
 		/* discover where the directory's going to go. */
 		flen = container_filelen(ctx->fh);
@@ -300,7 +344,9 @@ void container_close(struct container_ctx *ctx)
 		/* write this location to the header */
 		fseek(ctx->fh, 104, SEEK_SET);
 		nflen = htonl(flen);
-		fwrite(&nflen, 4, 1, ctx->fh);
+		val = fwrite(&nflen, 4, 1, ctx->fh);
+		if (val == 0)
+			LOG(("empty write directory location"));
 
 		/* seek to where the directory will be, and write it */
 		fseek(ctx->fh, flen, SEEK_SET);
@@ -317,6 +363,85 @@ void container_close(struct container_ctx *ctx)
 	fclose(ctx->fh);
 	free(ctx);
 }
+
+#ifdef WITH_THEME_INSTALL
+
+/**
+ * install theme from container
+ * \param themefile a file containing the containerized theme
+ * \param dirbasename a directory basename including trailing path sep; the
+ * full path of the theme is then a subdirectory of that
+ * caller owns reference to returned string, NULL for error
+ */
+
+char *container_extract_theme(const char *themefile, const char *dirbasename)
+{
+	struct stat statbuf;
+	struct container_ctx *cctx;
+	FILE *fh;
+	size_t val;
+	const unsigned char *e, *d;
+	char *themename, *dirname;
+	char path[PATH_MAX];
+	int state = 0;
+	unsigned int i;
+	u_int32_t flen;
+
+	cctx = container_open(themefile);
+	if (cctx == NULL) {
+		warn_user("FileOpenError", themefile);
+		return NULL;
+	}
+	themename = strdup((const char *)container_get_name(cctx));
+	if (themename == NULL) {
+		warn_user("NoMemory", 0);
+		container_close(cctx);
+		return NULL;
+	}
+	LOG(("theme name: %s", themename));
+	LOG(("theme author: %s", container_get_author(cctx)));
+	
+	dirname = malloc(strlen(dirbasename) + strlen(themename) + 2);
+	if (dirname == NULL) {
+		warn_user(messages_get("NoMemory"), 0);
+		free(themename);
+		container_close(cctx);
+		return NULL;
+	}
+	strcpy(dirname, dirbasename);
+	strcat(dirname, themename);
+	if (stat(dirname, &statbuf) != -1) {
+		warn_user("DirectoryError", dirname);
+		container_close(cctx);
+		free(dirname);
+		free(themename);
+		return NULL;
+	}
+	mkdir(dirname, 00777);
+
+	for (e = container_iterate(cctx, &state), i = 0; i < cctx->entries;
+			e = container_iterate(cctx, &state), i++) {
+		LOG(("extracting %s", e));
+		snprintf(path, PATH_MAX, "%s/%s", dirname, e);
+		fh = fopen(path, "wb");
+		if (fh == NULL) {
+			warn_user("FileOpenError", (char *)e);
+		} else {
+			d = container_get(cctx, e, &flen);
+			val = fwrite(d, flen, 1, fh);
+			if (val == 0)
+				LOG(("empty write"));
+			fclose(fh);
+		}
+	}
+	LOG(("theme container unpacked"));
+	container_close(cctx);
+	free(dirname);
+	return themename;
+
+}
+
+#endif
 
 #ifdef TEST_RIG
 int main(int argc, char *argv[])
@@ -355,7 +480,6 @@ int main(int argc, char *argv[])
 #include <getopt.h>
 #include <dirent.h>
 #include <errno.h>
-#include <sys/stat.h>
 #include <unistd.h>
 
 static bool verbose = false;
@@ -403,7 +527,8 @@ static void extract_theme(const char *themefile, const char *dirname)
 		printf("theme author: %s\n", container_get_author(cctx));
 	}
 
-	while ( (e = container_iterate(cctx, &state)) ) {
+	for (e = container_iterate(cctx, &state), i = 0; i < cctx->entries;
+			e = container_iterate(cctx, &state), i++) {
 		if (verbose == true)
 			printf("extracting %s\n", e);
 		snprintf(path, PATH_MAX, "%s/%s", dirname, e);
@@ -450,9 +575,9 @@ static void create_theme(const char *themefile, const char *dirname,
 			/* not the metadirs, so we want to process this. */
 			if (verbose == true)
 				printf("adding %s\n", e->d_name);
-			if (strlen(e->d_name) > 15) {
+			if (strlen(e->d_name) > 63) {
 				fprintf(stderr,
-			"warning: name truncated to 15 characters.\n");
+			"warning: name truncated to length 63.\n");
 			}
 
 			snprintf(path, PATH_MAX, "%s/%s", dirname, e->d_name);

@@ -215,11 +215,11 @@ void ami_fetch_file_free(void *vf)
 
 static void ami_fetch_file_send_callback(fetch_msg msg,
 		struct ami_file_fetch_info *fetch, const void *data,
-		unsigned long size)
+		unsigned long size, fetch_error_code errorcode)
 {
 	fetch->locked = true;
 	/* LOG(("ami file fetcher callback %ld",msg)); */
-	fetch_send_callback(msg,fetch->fetch_handle,data,size);
+	fetch_send_callback(msg,fetch->fetch_handle,data,size,errorcode);
 	fetch->locked = false;
 }
 
@@ -234,6 +234,7 @@ void ami_fetch_file_poll(const char *scheme_ignored)
 	struct nsObject *node;
 	struct nsObject *nnode;
 	struct ami_file_fetch_info *fetch;
+	fetch_error_code errorcode;
 	
 	if(IsMinListEmpty(ami_file_fetcher_list)) return;
 
@@ -241,6 +242,7 @@ void ami_fetch_file_poll(const char *scheme_ignored)
 
 	do
 	{
+		errorcode = FETCH_ERROR_NO_ERROR;
 		nnode=(struct nsObject *)GetSucc((struct Node *)node);
 
 		fetch = (struct ami_file_fetch_info *)node->objstruct;
@@ -255,13 +257,19 @@ void ami_fetch_file_poll(const char *scheme_ignored)
 
 				len = FRead(fetch->fh,ami_file_fetcher_buffer,1,1024);
 
-				ami_fetch_file_send_callback(FETCH_DATA, 
-					fetch,ami_file_fetcher_buffer,len);
+				if (len == (ULONG)-1)
+					errorcode = FETCH_ERROR_MISC;
+				else if (len > 0)
+					ami_fetch_file_send_callback(
+							FETCH_DATA, fetch,
+							ami_file_fetcher_buffer,
+							len, errorcode);
 
 				if((len<1024) && (!fetch->aborted))
 				{
 					ami_fetch_file_send_callback(FETCH_FINISHED,
-						fetch, &fetch->cachedata, 0);
+						fetch, &fetch->cachedata, 0,
+						errorcode);
 
 					fetch->aborted = true;
 				}
@@ -284,7 +292,8 @@ void ami_fetch_file_poll(const char *scheme_ignored)
 					LOG(("mimetype %s len %ld",fetch->mimetype,fetch->len));
 
 					ami_fetch_file_send_callback(FETCH_TYPE,
-						fetch, fetch->mimetype, (ULONG)fetch->len);
+						fetch, fetch->mimetype, (ULONG)fetch->len,
+						errorcode);
 				}
 				else
 				{
@@ -292,8 +301,11 @@ void ami_fetch_file_poll(const char *scheme_ignored)
 
 					errorstring = ASPrintf("%s %s",messages_get("FileError"),fetch->path);
 					fetch_set_http_code(fetch->fetch_handle,404);
+					
+					errorcode = FETCH_ERROR_HTTP_NOT2;
 					ami_fetch_file_send_callback(FETCH_ERROR, fetch,
-						errorstring, 0);
+						errorstring, 0,
+						errorcode);
 					fetch->aborted = true;
 					FreeVec(errorstring);
 				}

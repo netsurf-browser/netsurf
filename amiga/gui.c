@@ -47,6 +47,7 @@
 #include "amiga/menu.h"
 #include "amiga/options.h"
 #include <libraries/keymap.h>
+#include "desktop/save_complete.h"
 #include "desktop/textinput.h"
 #include <intuition/pointerclass.h>
 #include <math.h>
@@ -66,7 +67,6 @@
 #include "amiga/cookies.h"
 #include "amiga/clipboard.h"
 #include <proto/keymap.h>
-#include "amiga/save_complete.h"
 #include "amiga/fetch_file.h"
 #include "amiga/fetch_mailto.h"
 #include "amiga/search.h"
@@ -3408,6 +3408,23 @@ void gui_window_stop_throbber(struct gui_window *g)
 			bbox->Top, throbber_width, throbber_height, 0x0C0);
 	}
 //	g->shared->throbber_frame = 0;
+}
+
+/**
+ * function to add retrieved favicon to gui
+ */
+void gui_window_set_icon(struct gui_window *g, struct content *icon)
+{
+}
+
+/**
+ * set gui display of a retrieved favicon representing the search
+ * provider
+ * \param ico may be NULL for local calls; then access current cache from
+ * search_web_ico()
+ */
+void gui_window_set_search_ico(struct content *ico)
+{
 }
 
 void ami_update_throbber(struct gui_window_2 *g,bool redraw)

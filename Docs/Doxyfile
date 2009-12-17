@@ -896,6 +896,8 @@ INCLUDE_FILE_PATTERNS  =
 
 PREDEFINED             = riscos CSS_INTERNALS WITH_ARTWORKS WITH_BMP WITH_DRAW WITH_DRAW_EXPORT WITH_GIF WITH_JPEG WITH_MMAP WITH_MNG WITH_NSSPRITE WITH_NS_SVG WITH_PLUGIN WITH_RSVG WITH_SAVE_COMPLETE WITH_SPRITE WITH_THEME_INSTALL WITH_PDF_EXPORT
 
+PREDEFINED		= gtk WITH_THEME_INSTALL
+
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then
 # this tag can be used to specify a list of macro names that should be expanded.
 # The macro definition that is found in the sources will be used.

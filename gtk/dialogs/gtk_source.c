@@ -28,8 +28,10 @@
 #include "gtk/gtk_gui.h"
 #include "gtk/gtk_print.h"
 #include "gtk/gtk_selection.h"
+#include "gtk/options.h"
 #include "desktop/netsurf.h"
 #include "desktop/print.h"
+#include "desktop/options.h"
 #include "utils/messages.h"
 #include "utils/url.h"
 #include "utils/utils.h"
@@ -57,10 +59,10 @@ struct menu_events {
 };
 
 static GladeXML *glade_File;
-static gchar *glade_Location;
 static struct nsgtk_source_window *nsgtk_source_list = 0;
 static char source_zoomlevel = 10;
 
+void nsgtk_source_tab_init(GtkWindow *parent, struct browser_window *bw);
 static void nsgtk_attach_source_menu_handlers(GladeXML *xml, gpointer g);
 static gboolean nsgtk_source_delete_event(GtkWindow *window, gpointer g);
 static gboolean nsgtk_source_destroy_event(GtkWindow *window, gpointer g);
@@ -102,111 +104,152 @@ MENUEVENT(source_about),
 };
 
 void nsgtk_source_dialog_init(GtkWindow *parent, struct browser_window *bw)
-{		
-	if (bw->current_content->type == CONTENT_HTML) {
-		glade_Location = g_strconcat(res_dir_location, "source.glade", 
-				NULL);
-		glade_File = glade_xml_new(glade_Location, NULL, NULL);
-		if (glade_File == NULL) {
-			LOG(("error loading glade tree"));
-		}
-
-		char *data = NULL;
-
-		utf8_convert_ret r = utf8_from_enc(
-				bw->current_content->source_data,
-				bw->current_content->data.html.encoding,
-				bw->current_content->source_size,
-				&data);
-		if (r == UTF8_CONVERT_NOMEM) {
-			warn_user("NoMemory",0);
-			return;
-		} else if (r == UTF8_CONVERT_BADENC) {
-			warn_user("EncNotRec",0);
-			return;
-		}
-
-		GtkWindow *wndSource = GTK_WINDOW(glade_xml_get_widget(
-				glade_File, "wndSource"));
-		GtkWidget *cutbutton = glade_xml_get_widget(
-				glade_File, "source_cut");
-		GtkWidget *pastebutton = glade_xml_get_widget(
-				glade_File, "source_paste");
-		GtkWidget *deletebutton = glade_xml_get_widget(
-				glade_File, "source_delete");
-		GtkWidget *printbutton = glade_xml_get_widget(
-				glade_File, "source_print");
-		gtk_widget_set_sensitive(cutbutton, FALSE);
-		gtk_widget_set_sensitive(pastebutton, FALSE);
-		gtk_widget_set_sensitive(deletebutton, FALSE);
-		/* for now */
-		gtk_widget_set_sensitive(printbutton, FALSE);
-							
-		struct nsgtk_source_window *thiswindow = 
-				malloc(sizeof(struct nsgtk_source_window));
-		if (thiswindow == NULL) {
-			free(data);
-			warn_user("NoMemory", 0);
-			return;
-		}
-
-		thiswindow->url = strdup(bw->current_content->url);
-		if (thiswindow->url == NULL) {
-			free(thiswindow);
-			free(data);
-			warn_user("NoMemory", 0);
-			return;
-		}
-
-		thiswindow->data = data;
-		
-		thiswindow->sourcewindow = wndSource;
-		thiswindow->bw = bw;
+{	
+	char glade_Location[strlen(res_dir_location) + SLEN("source.glade")
+			+ 1];
+	if (bw->current_content->type != CONTENT_HTML)
+		return;
 	
-		char *title = malloc(strlen(bw->current_content->url) 
-				+ SLEN("Source of ") + 1);
-		if (title == NULL) {
-			free(thiswindow->url);
-			free(thiswindow);
-			free(data);
-			warn_user("NoMemory", 0);
+	if (option_source_tab) {
+		nsgtk_source_tab_init(parent, bw);
+		return;
+	}
+	
+	sprintf(glade_Location, "%ssource.glade", res_dir_location);
+	glade_File = glade_xml_new(glade_Location, NULL, NULL);
+	if (glade_File == NULL) {
+		LOG(("error loading glade tree"));
+	}
+
+	char *data = NULL;
+
+	utf8_convert_ret r = utf8_from_enc(
+			bw->current_content->source_data,
+			bw->current_content->data.html.encoding,
+			bw->current_content->source_size,
+			&data);
+	if (r == UTF8_CONVERT_NOMEM) {
+		warn_user("NoMemory",0);
+		return;
+	} else if (r == UTF8_CONVERT_BADENC) {
+		warn_user("EncNotRec",0);
+		return;
+	}
+
+	GtkWindow *wndSource = GTK_WINDOW(glade_xml_get_widget(
+			glade_File, "wndSource"));
+	GtkWidget *cutbutton = glade_xml_get_widget(
+			glade_File, "source_cut");
+	GtkWidget *pastebutton = glade_xml_get_widget(
+			glade_File, "source_paste");
+	GtkWidget *deletebutton = glade_xml_get_widget(
+			glade_File, "source_delete");
+	GtkWidget *printbutton = glade_xml_get_widget(
+			glade_File, "source_print");
+	gtk_widget_set_sensitive(cutbutton, FALSE);
+	gtk_widget_set_sensitive(pastebutton, FALSE);
+	gtk_widget_set_sensitive(deletebutton, FALSE);
+	/* for now */
+	gtk_widget_set_sensitive(printbutton, FALSE);
+						
+	struct nsgtk_source_window *thiswindow = 
+			malloc(sizeof(struct nsgtk_source_window));
+	if (thiswindow == NULL) {
+		free(data);
+		warn_user("NoMemory", 0);
+		return;
+	}
+
+	thiswindow->url = strdup(bw->current_content->url);
+	if (thiswindow->url == NULL) {
+		free(thiswindow);
+		free(data);
+		warn_user("NoMemory", 0);
+		return;
+	}
+
+	thiswindow->data = data;
+	
+	thiswindow->sourcewindow = wndSource;
+	thiswindow->bw = bw;
+
+	char title[strlen(bw->current_content->url) + SLEN("Source of ") + 1];
+	sprintf(title, "Source of %s", bw->current_content->url);
+
+	thiswindow->next = nsgtk_source_list;
+	thiswindow->prev = NULL;
+	if (nsgtk_source_list != NULL)
+		nsgtk_source_list->prev = thiswindow;
+	nsgtk_source_list = thiswindow;
+				
+	nsgtk_attach_source_menu_handlers(glade_File, thiswindow);
+			
+	gtk_window_set_title(wndSource, title);
+		
+	g_signal_connect(G_OBJECT(wndSource), "destroy",
+			G_CALLBACK(nsgtk_source_destroy_event),
+			thiswindow);
+	g_signal_connect(G_OBJECT(wndSource), "delete-event", 
+			G_CALLBACK(nsgtk_source_delete_event),
+			thiswindow);
+		
+	GtkTextView *sourceview = GTK_TEXT_VIEW(
+			glade_xml_get_widget(glade_File, 
+			"source_view"));
+	PangoFontDescription *fontdesc =
+		pango_font_description_from_string("Monospace 8");
+
+	thiswindow->gv = sourceview;
+	gtk_widget_modify_font(GTK_WIDGET(sourceview), fontdesc);
+	GtkTextBuffer *tb = gtk_text_view_get_buffer(sourceview);
+	gtk_text_buffer_set_text(tb, thiswindow->data, -1);
+			
+	gtk_widget_show(GTK_WIDGET(wndSource));
+
+}
+void nsgtk_source_tab_init(GtkWindow *parent, struct browser_window *bw)
+{
+	char *ndata = 0;
+	utf8_convert_ret r = utf8_from_enc(
+			bw->current_content->source_data,
+			bw->current_content->data.html.encoding,
+			bw->current_content->source_size,
+			&ndata);
+	if (r == UTF8_CONVERT_NOMEM) {
+		warn_user("NoMemory",0);
+		return;
+	} else if (r == UTF8_CONVERT_BADENC) {
+		warn_user("EncNotRec",0);
+		return;
+	}
+	gchar *filename;
+	char *fileurl;
+	gint handle = g_file_open_tmp("nsgtksourceXXXXXX", &filename, NULL);
+	close (handle); /* in case it was binary mode */
+	FILE *f = fopen(filename, "w");
+	fprintf(f, "%s", ndata);
+	fclose(f);
+	free(ndata);
+	fileurl = path_to_url(filename);
+	g_free(filename);
+	if (fileurl == NULL) {
+		warn_user(messages_get("NoMemory"), 0);
+		return;
+	}
+	struct browser_window *newbw = browser_window_create(fileurl, bw,
+			NULL, false, true);
+	free(fileurl);
+	if (newbw->current_content) {
+		newbw->current_content->title = malloc(
+				strlen(bw->current_content->url) +
+				SLEN("source of ") + 1);
+		if (newbw->current_content->title == NULL)
 			return;
-		}
-		sprintf(title, "Source of %s", bw->current_content->url);
-
-		thiswindow->next = nsgtk_source_list;
-		thiswindow->prev = NULL;
-		if (nsgtk_source_list != NULL)
-			nsgtk_source_list->prev = thiswindow;
-		nsgtk_source_list = thiswindow;
-					
-		nsgtk_attach_source_menu_handlers(glade_File, thiswindow);
-				
-		gtk_window_set_title(wndSource, title);
-			
-		g_signal_connect(G_OBJECT(wndSource), "destroy",
-				G_CALLBACK(nsgtk_source_destroy_event),
-				thiswindow);
-		g_signal_connect(G_OBJECT(wndSource), "delete-event", 
-				G_CALLBACK(nsgtk_source_delete_event),
-				thiswindow);
-			
-		GtkTextView *sourceview = GTK_TEXT_VIEW(
-				glade_xml_get_widget(glade_File, 
-				"source_view"));
-		PangoFontDescription *fontdesc =
-			pango_font_description_from_string("Monospace 8");
-
-		thiswindow->gv = sourceview;
-		gtk_widget_modify_font(GTK_WIDGET(sourceview), fontdesc);
-		GtkTextBuffer *tb = gtk_text_view_get_buffer(sourceview);
-		gtk_text_buffer_set_text(tb, thiswindow->data, -1);
-				
-		gtk_widget_show(GTK_WIDGET(wndSource));
-
-		free(title);
+		sprintf(newbw->current_content->title, "source of %s",
+				bw->current_content->url);
 	}
 }
+
 
 void nsgtk_attach_source_menu_handlers(GladeXML *xml, gpointer g)
 {
@@ -264,7 +307,7 @@ void nsgtk_source_file_save(GtkWindow *parent, const char *filename,
 {
 	FILE *f;
 	bool auth = true;
-	char temp[15];
+	char temp[255];
 	GtkWidget *notif, *label;
 
 	if (!(access(filename, F_OK))) {
@@ -277,21 +320,18 @@ void nsgtk_source_file_save(GtkWindow *parent, const char *filename,
 				GTK_STOCK_CANCEL,
 				GTK_RESPONSE_REJECT,
 				NULL);
-		char *warn;
 		const char *format = messages_get("gtkOverwrite");
-		int len = strlen(filename) + strlen(format);
-
+		int len = strlen(filename) + strlen(format) + SLEN("\n\n") + 1;
+		char warn[len];
 		auth = false;
 
-		warn = malloc(len);
-		if (warn == NULL) {
-			warn_user("NoMemory", 0);
-			return;
-		}
+		warn[0] = '\n';
+		snprintf(warn + 1, len - 2, format, filename);
+		len = strlen(warn);
+		warn[len - 1] = '\n';
+		warn[len] = '\0';
 
-		snprintf(warn, len, format, filename);
-
-		label = gtk_label_new(g_strconcat("\n",warn,"\n", NULL));
+		label = gtk_label_new(warn);
 		gtk_container_add(GTK_CONTAINER(GTK_DIALOG(confd)->vbox), 
 				label);
 		gtk_widget_show(label);
@@ -299,16 +339,19 @@ void nsgtk_source_file_save(GtkWindow *parent, const char *filename,
 			auth = true;
 		}
 		gtk_widget_destroy(confd);
-		free(warn);
 	}
 
 	if (auth) {
 		f = fopen(filename, "w+");
 		fprintf(f, "%s", data);
 		fclose(f);
-		strcpy(temp, messages_get("gtkSaveConfirm"));
+		snprintf(temp, sizeof(temp), "\n                    %s"
+				"                    \n",
+				messages_get("gtkSaveConfirm"));
 	} else {
-		strcpy(temp, messages_get("gtkSaveCancelled"));
+		snprintf(temp, sizeof(temp), "\n                    %s"
+				"                    \n",
+				messages_get("gtkSaveCancelled"));
 	}
 	
 	notif = gtk_dialog_new_with_buttons(temp, 
@@ -316,8 +359,7 @@ void nsgtk_source_file_save(GtkWindow *parent, const char *filename,
 			GTK_RESPONSE_NONE, NULL);
 	g_signal_connect_swapped(notif, "response",
 			G_CALLBACK(gtk_widget_destroy), notif);
-	label = gtk_label_new(g_strconcat("\n                    ", temp, 
-			"                    \n", NULL));
+	label = gtk_label_new(temp);
 	gtk_container_add(GTK_CONTAINER(GTK_DIALOG(notif)->vbox), label);
 	gtk_widget_show_all(notif);
 }

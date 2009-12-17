@@ -23,36 +23,6 @@
 #include "desktop/browser.h"
 #include "gtk/gtk_scaffolding.h"
 
-struct gui_window {
-	/* All gui_window objects have an ultimate scaffold */
-	nsgtk_scaffolding	*scaffold;
-	/* A gui_window is the rendering of a browser_window */
-	struct browser_window	*bw;
-	struct browser_mouse 	*mouse;
-
-	/* These are the storage for the rendering */
-	int			caretx, carety, careth;
-	gui_pointer_shape	current_pointer;
-	int			last_x, last_y;
-
-	/* Within GTK, a gui_window is a scrolled window
-	 * with a viewport inside
-	 * with a gtkfixed in that
-	 * with a drawing area in that
-	 * The scrolled window is optional and only chosen
-	 * for frames which need it. Otherwise we just use
-	 * a viewport.
-	 */
-	GtkWidget		*tab;
-	GtkScrolledWindow	*scrolledwindow;
-	GtkViewport		*viewport;
-	GtkFixed		*fixed;
-	GtkDrawingArea		*drawing_area;
-
-	/* Keep gui_windows in a list for cleanup later */
-	struct gui_window	*next, *prev;
-};
-
 struct browser_mouse {
 	struct gui_window *gui;
 	struct box *box;
@@ -63,19 +33,29 @@ struct browser_mouse {
 	browser_mouse_state state;
 };
 
-extern struct gui_window * window_list;
+typedef enum nsgtk_window_signals {
+	NSGTK_WINDOW_SIGNAL_CLICK,
+	NSGTK_WINDOW_SIGNAL_REDRAW,
+	NSGTK_WINDOW_SIGNAL_COUNT
+} nsgtk_window_signal;
+
+extern struct gui_window *window_list;
 extern int temp_open_background;
 
 void nsgtk_reflow_all_windows(void);
 void nsgtk_window_process_reformats(void);
 
 nsgtk_scaffolding *nsgtk_get_scaffold(struct gui_window *g);
-struct browser_window *nsgtk_get_browser_for_gui(struct gui_window *g);
 
 float nsgtk_get_scale_for_gui(struct gui_window *g);
 int nsgtk_gui_window_update_targets(struct gui_window *g);
 void nsgtk_window_destroy_browser(struct gui_window *g);
+unsigned long nsgtk_window_get_signalhandler(struct gui_window *g, int i);
+GtkDrawingArea *nsgtk_window_get_drawing_area(struct gui_window *g);
+struct gui_window *nsgtk_window_iterate(struct gui_window *g);
+GtkScrolledWindow *nsgtk_window_get_scrolledwindow(struct gui_window *g);
+GtkWidget *nsgtk_window_get_tab(struct gui_window *g);
+void nsgtk_window_set_tab(struct gui_window *g, GtkWidget *w);
 
-struct browser_window *nsgtk_get_browser_window(struct gui_window *g);
 
 #endif /* NETSURF_GTK_WINDOW_H */

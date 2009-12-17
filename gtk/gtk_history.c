@@ -107,9 +107,9 @@ void nsgtk_history_init(void)
 	dateAt = messages_get("DateAt");
 	domainAll = messages_get("DomainAll");
 	
-	gchar *glade_location = g_strconcat(res_dir_location, GLADE_NAME, NULL);
+	char glade_location[strlen(res_dir_location) + SLEN(GLADE_NAME) + 1];
+	sprintf(glade_location, "%s" GLADE_NAME, res_dir_location);
 	gladeFile = glade_xml_new(glade_location, NULL, NULL);
-	g_free(glade_location);
 
 	glade_xml_signal_autoconnect(gladeFile);
 	wndHistory = GTK_WINDOW(glade_xml_get_widget(gladeFile,
@@ -500,23 +500,23 @@ void nsgtk_history_search_clear (GtkEntry *entry)
 			
 gchar *nsgtk_history_date_parse(time_t visit_time)
 {
-	gchar *date_string = malloc(30);
-	gchar format[30];
+	char *date_string = malloc(30);
+	char format[30];
 	time_t current_time = time(NULL);
-	gint current_day = localtime(&current_time)->tm_yday;
+	int current_day = localtime(&current_time)->tm_yday;
 	struct tm *visit_date = localtime(&visit_time);
 
 	if (visit_date->tm_yday == current_day) 
-		g_snprintf(format, 30, "%s %s %%I:%%M %%p",
+		snprintf(format, 30, "%s %s %%I:%%M %%p",
 			dateToday, dateAt);
 	else if (current_day - visit_date->tm_yday == 1)
-		g_snprintf(format, 30, "%s %s %%I:%%M %%p",
+		snprintf(format, 30, "%s %s %%I:%%M %%p",
 			dateYesterday, dateAt);
 	else if (current_day - visit_date->tm_yday < 7)
-		g_snprintf(format, 30, "%%A %s %%I:%%M %%p",
+		snprintf(format, 30, "%%A %s %%I:%%M %%p",
 				dateAt); 
 	else 
-		g_snprintf(format, 30, "%%B %%d, %%Y");
+		snprintf(format, 30, "%%B %%d, %%Y");
 
 	strftime(date_string, 30, format, visit_date);
 

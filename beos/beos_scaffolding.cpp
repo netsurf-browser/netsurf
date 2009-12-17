@@ -2311,6 +2311,22 @@ void gui_window_stop_throbber(struct gui_window* _g)
 	g->top_view->UnlockLooper();
 }
 
+/**
+ * add retrieved favicon to the gui
+ */
+void gui_window_set_icon(struct gui_window *g, struct content *icon)
+{
+}
+
+/**
+* set gui display of a retrieved favicon representing the search provider
+* \param ico may be NULL for local calls; then access current cache from
+* search_web_ico()
+*/
+void gui_window_set_search_ico(struct content *ico)
+{
+}
+
 #warning XXX
 #if 0 /* GTK */
 gboolean nsbeos_scaffolding_is_busy(nsbeos_scaffolding *scaffold)

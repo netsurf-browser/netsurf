@@ -1,5 +1,5 @@
 /*
- * Copyright 2004 John M Bell <jmb202@ecs.soton.ac.uk>
+ * Copyright 2009 Mark Benjamin <netsurf-browser.org.MarkBenjamin@dfgh.net>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,17 +16,3 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Save HTML document with dependencies (interface).
- */
-
-#ifndef _NETSURF_RISCOS_SAVE_COMPLETE_H_
-#define _NETSURF_RISCOS_SAVE_COMPLETE_H_
-
-#include <stdbool.h>
-struct content;
-
-void save_complete_init(void);
-bool save_complete(struct content *c, const char *path);
-
-#endif

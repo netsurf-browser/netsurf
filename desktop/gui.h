@@ -56,8 +56,7 @@ typedef enum { GUI_POINTER_DEFAULT, GUI_POINTER_POINT, GUI_POINTER_CARET,
 #include "utils/config.h"
 #include "content/content.h"
 #include "desktop/browser.h"
-
-extern struct gui_window *search_current_window;
+#include "desktop/search.h"
 
 void gui_init(int argc, char** argv);
 void gui_init2(int argc, char** argv);
@@ -67,6 +66,7 @@ void gui_quit(void);
 
 struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		struct browser_window *clone, bool new_tab);
+struct browser_window *gui_window_get_browser_window(struct gui_window *g);
 void gui_window_destroy(struct gui_window *g);
 void gui_window_set_title(struct gui_window *g, const char *title);
 void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1);
@@ -88,6 +88,8 @@ void gui_window_hide_pointer(struct gui_window *g);
 void gui_window_set_url(struct gui_window *g, const char *url);
 void gui_window_start_throbber(struct gui_window *g);
 void gui_window_stop_throbber(struct gui_window *g);
+void gui_window_set_icon(struct gui_window *g, struct content *icon);
+void gui_window_set_search_ico(struct content *ico);
 void gui_window_place_caret(struct gui_window *g, int x, int y, int height);
 void gui_window_remove_caret(struct gui_window *g);
 void gui_window_new_content(struct gui_window *g);
@@ -125,7 +127,8 @@ void gui_launch_url(const char *url);
 
 bool gui_search_term_highlighted(struct gui_window *g,
 		unsigned start_offset, unsigned end_offset,
-		unsigned *start_idx, unsigned *end_idx);
+		unsigned *start_idx, unsigned *end_idx,
+		struct search_context *context);
 
 struct ssl_cert_info;
 

@@ -23,12 +23,14 @@
 #include "desktop/browser.h"
 #include "content/content.h"
 #include "desktop/options.h"
+#include "desktop/search.h"
 #include "utils/utils.h"
 #include "gtk/options.h"
+#include "gtk/gtk_search.h"
 #include "gtk/gtk_tabs.h"
 
 #define TAB_WIDTH_N_CHARS 15
-#define GET_WIDGET(x) glade_xml_get_widget(gladeWindows, (x))
+#define GET_WIDGET(x) glade_xml_get_widget(gladeNetsurf, (x))
 
 static GtkWidget *nsgtk_tab_label_setup(struct gui_window *window);
 static void nsgtk_tab_visibility_update(GtkNotebook *notebook, GtkWidget *child,
@@ -58,15 +60,19 @@ void nsgtk_tab_init(GtkWidget *tabs)
 
 void nsgtk_tab_add(struct gui_window *window, bool background)
 {
-	GtkWidget *tabs = GTK_WIDGET(nsgtk_scaffolding_get_notebook(window));
+	GtkWidget *tabs = GTK_WIDGET(nsgtk_scaffolding_notebook(
+			nsgtk_get_scaffold(window)));
 	GtkWidget *tabBox = nsgtk_tab_label_setup(window);
 	gint remember = gtk_notebook_get_current_page(GTK_NOTEBOOK(tabs));
 	gtk_notebook_append_page(GTK_NOTEBOOK(tabs), 
-			GTK_WIDGET(window->scrolledwindow), tabBox);
-	/*causes gtk errors can't set a parent
+			GTK_WIDGET(nsgtk_window_get_scrolledwindow(window)),
+			tabBox);
+	/*causes gtk errors can't set a parent */
 	gtk_notebook_set_tab_reorderable(GTK_NOTEBOOK(tabs), 
-			GTK_WIDGET(window->scrolledwindow), true); */
-	gtk_widget_show_all(GTK_WIDGET(window->scrolledwindow));
+			GTK_WIDGET(nsgtk_window_get_scrolledwindow(window)),
+			true);
+	gtk_widget_show_all(GTK_WIDGET(nsgtk_window_get_scrolledwindow(
+			window)));
 	gtk_notebook_set_current_page(GTK_NOTEBOOK(tabs), 
 			gtk_notebook_get_n_pages(GTK_NOTEBOOK(tabs)) - 1);
 	if (option_new_blank) {
@@ -75,13 +81,15 @@ void nsgtk_tab_add(struct gui_window *window, bool background)
 		blankpage = g_strconcat("file:///", res_dir_location, 
 				"blankpage", NULL); */
 		/* segfaults 
-		struct browser_window *bw = nsgtk_get_browser_for_gui(window);
+		struct browser_window *bw =
+				gui_window_get_browser_window(window);
 		browser_window_go(bw, blankpage, 0, true); */
 		/* free(blankpage); */
 	}
 	if (background)
 		gtk_notebook_set_current_page(GTK_NOTEBOOK(tabs), remember);
-	gtk_widget_grab_focus(GTK_WIDGET(window->scaffold->url_bar));
+	gtk_widget_grab_focus(GTK_WIDGET(nsgtk_scaffolding_urlbar(
+			nsgtk_get_scaffold(window))));
 }
 
 void nsgtk_tab_visibility_update(GtkNotebook *notebook, GtkWidget *child,
@@ -97,12 +105,14 @@ void nsgtk_tab_visibility_update(GtkNotebook *notebook, GtkWidget *child,
 void nsgtk_tab_set_title(struct gui_window *g, const char *title)
 {
 	GtkWidget *label;
-	gboolean is_top_level = (g->tab != NULL);
+	GtkWidget *tab;
+	tab = nsgtk_window_get_tab(g);
+	gboolean is_top_level = (tab != NULL);
 
 	if (is_top_level) {
-		label = g_object_get_data(G_OBJECT(g->tab), "label");
+		label = g_object_get_data(G_OBJECT(tab), "label");
 		gtk_label_set_text(GTK_LABEL(label), title);
-		gtk_widget_set_tooltip_text(g->tab, title);
+		gtk_widget_set_tooltip_text(tab, title);
 	}
 }
 
@@ -147,7 +157,7 @@ GtkWidget *nsgtk_tab_label_setup(struct gui_window *window)
 	g_object_set_data(G_OBJECT(hbox), "label", label);
 	g_object_set_data(G_OBJECT(hbox), "close-button", button);
 
-	window->tab = hbox;
+	nsgtk_window_set_tab(window, hbox);
 
 	gtk_widget_show_all(hbox);
 	return hbox;
@@ -183,6 +193,11 @@ void nsgtk_tab_page_changed(GtkNotebook *notebook, GtkNotebookPage *page,
 	GtkWidget *window = gtk_notebook_get_nth_page(notebook, page_num);
 	struct gui_window *gw = g_object_get_data(G_OBJECT(window),
 			"gui_window");
+	struct browser_window *bw = gui_window_get_browser_window(gw);
+	if ((bw != NULL) && (bw->search_context != NULL))
+		search_destroy_context(bw->search_context);
+	nsgtk_search_set_forward_state(true, bw);
+	nsgtk_search_set_back_state(true, bw);
 	if (gw)
 		nsgtk_scaffolding_set_top_level(gw);
 }

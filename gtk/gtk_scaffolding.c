@@ -1,5 +1,6 @@
 /*
  * Copyright 2006 Rob Kendrick <rjek@rjek.com>
+ * Copyright 2009 Mark Benjamin <netsurf-browser.org.MarkBenjamin@dfgh.net>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -17,12 +18,16 @@
  */
 
 #include <assert.h>
+#include <dirent.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <gtk/gtk.h>
+#include <gdk-pixbuf/gdk-pixbuf.h>
 #include <libxml/debugXML.h>
+#include "gtk/gtk_scaffolding.h"
 #include "content/content.h"
 #include "css/utils.h"
 #include "desktop/browser.h"
@@ -32,27 +37,37 @@
 #include "desktop/options.h"
 #include "desktop/plotters.h"
 #include "desktop/print.h"
+#include "desktop/save_complete.h"
 #ifdef WITH_PDF_EXPORT
 #include "desktop/save_pdf/font_haru.h"
 #include "desktop/save_pdf/pdf_plotters.h"
 #endif
+#include "desktop/save_text.h"
+#include "desktop/search.h"
+#include "desktop/searchweb.h"
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
 #include "gtk/gtk_completion.h"
 #include "gtk/dialogs/gtk_options.h"
 #include "gtk/dialogs/gtk_about.h"
 #include "gtk/dialogs/gtk_source.h"
+#include "gtk/gtk_bitmap.h"
 #include "gtk/gtk_download.h"
 #include "gtk/gtk_gui.h"
 #include "gtk/gtk_history.h"
+#include "gtk/gtk_menu.h"
 #include "gtk/gtk_plotters.h"
 #include "gtk/gtk_print.h"
-#include "gtk/gtk_scaffolding.h"
 #include "gtk/gtk_schedule.h"
+#include "gtk/gtk_search.h"
 #include "gtk/gtk_tabs.h"
+#include "gtk/gtk_theme.h"
 #include "gtk/gtk_throbber.h"
+#include "gtk/gtk_toolbar.h"
 #include "gtk/gtk_window.h"
 #include "gtk/options.h"
+#include "gtk/sexy_icon_entry.h"
+#include "image/ico.h"
 #include "render/box.h"
 #include "render/font.h"
 #include "render/form.h"
@@ -63,50 +78,85 @@
 
 #include "utils/log.h"
 
-struct gtk_history_window;
+struct gtk_scaffolding {
+	GtkWindow			*window;
+	GtkNotebook			*notebook;
+	GtkWidget			*url_bar;
+	GtkEntryCompletion		*url_bar_completion;
+	GtkStatusbar			*status_bar;
+	struct nsgtk_file_menu		*file_menu;
+	struct nsgtk_file_menu		*rclick_file_menu;
+	struct nsgtk_edit_menu		*edit_menu;
+	struct nsgtk_edit_menu		*rclick_edit_menu;
+	struct nsgtk_view_menu		*view_menu;
+	struct nsgtk_view_menu		*rclick_view_menu;
+	struct nsgtk_nav_menu		*nav_menu;
+	struct nsgtk_nav_menu		*rclick_nav_menu;
+	struct nsgtk_tabs_menu		*tabs_menu;
+	struct nsgtk_tabs_menu		*rclick_tabs_menu;
+	struct nsgtk_help_menu		*help_menu;
+	struct nsgtk_help_menu		*rclick_help_menu;
+	GtkMenuItem			*edit_menu_item;
+	GtkMenuItem			*tabs_menu_item;
+	GtkToolbar			*tool_bar;
+	struct nsgtk_button_connect	*buttons[PLACEHOLDER_BUTTON];
+	GtkMenuBar			*menu_bar;
+	GtkImage			*throbber;
+	GtkImage			*icoFav;
+	struct gtk_search		*search;
+	GtkImage			*webSearchIco;
+	GtkWidget			*webSearchEntry;
+	GtkPaned			*status_pane;
+	
+	int 				offset;
+	int				toolbarmem;
+	int				toolbarbase;
+	int				historybase;
+	
+	GladeXML			*xml;
 
-struct gtk_history_window {
-	struct gtk_scaffolding 	*g;
-	GtkWindow		*window;
-	GtkScrolledWindow	*scrolled;
-	GtkDrawingArea		*drawing_area;
-};
+	GladeXML			*popup_xml;
+	GtkMenu				*popup_menu;
 
-struct menu_events {
-	const char *widget;
-	GCallback handler;
+	struct gtk_history_window	*history_window;
+	GtkDialog 			*preferences_dialog;
+
+	int				throb_frame;
+	struct gui_window		*top_level;
+	int				being_destroyed;
+
+	bool				fullscreen;
+	
+	/* keep global linked list for gui interface adjustments */
+	struct gtk_scaffolding 		*next, *prev;
 };
 
 static int open_windows = 0;		/**< current number of open browsers */
 static struct gtk_scaffolding *current_model; /**< current window for model
-                                                     dialogue use */
+						dialogue use */
+nsgtk_scaffolding *scaf_list = NULL; /**< global list for interface changes */
 static struct box *current_menu_link_box; /**< pointer to the box containing a
                                           link under the mouse, or 0 if none */
-static gboolean nsgtk_window_delete_event(GtkWidget *, gpointer);
-static void nsgtk_window_destroy_event(GtkWidget *, gpointer);
+static gboolean nsgtk_window_delete_event(GtkWidget *, GdkEvent *, gpointer);
+static void nsgtk_window_close(struct gtk_scaffolding *g);
 
 static void nsgtk_window_update_back_forward(struct gtk_scaffolding *);
 static void nsgtk_throb(void *);
+static gboolean nsgtk_filter_directory(const GtkFileFilterInfo *info,
+		gpointer data);
 static gboolean nsgtk_window_edit_menu_clicked(GtkWidget *widget,
 		struct gtk_scaffolding *g);
 static gboolean nsgtk_window_edit_menu_hidden(GtkWidget *widget,
 		struct gtk_scaffolding *g);
 static gboolean nsgtk_window_popup_menu_hidden(GtkWidget *widget,
 		struct gtk_scaffolding *g);
-static gboolean nsgtk_window_back_button_clicked(GtkWidget *, gpointer);
-static gboolean nsgtk_window_history_button_clicked(GtkWidget *, gpointer);
-static gboolean nsgtk_window_forward_button_clicked(GtkWidget *, gpointer);
-static gboolean nsgtk_window_stop_button_clicked(GtkWidget *, gpointer);
-static gboolean nsgtk_window_reload_button_clicked(GtkWidget *, gpointer);
-static gboolean nsgtk_window_home_button_clicked(GtkWidget *, gpointer);
-static gboolean nsgtk_window_url_activate_event(GtkWidget *, gpointer);
-static gboolean nsgtk_window_url_changed(GtkWidget *, GdkEventKey *, gpointer);
-
+static gboolean nsgtk_window_tool_bar_clicked(GtkToolbar *toolbar, gint x,
+		gint y, gint button, gpointer data);
 static guint nsgtk_scaffolding_update_link_operations_sensitivity(
 		struct gtk_scaffolding *g, GladeXML *xml, gdouble x, gdouble y,
 		gboolean hide);
 static guint nsgtk_scaffolding_update_edit_actions_sensitivity(
-		struct gtk_scaffolding *g, GladeXML *xml, gboolean hide);
+		struct gtk_scaffolding *g, GladeXML *xml, bool hide);
 static void nsgtk_scaffolding_enable_link_operations_sensitivity(
 		struct gtk_scaffolding *g, GladeXML *xml);
 static void nsgtk_scaffolding_enable_edit_actions_sensitivity(
@@ -117,168 +167,69 @@ static gboolean nsgtk_history_expose_event(GtkWidget *, GdkEventExpose *,
 static gboolean nsgtk_history_button_press_event(GtkWidget *, GdkEventButton *,
 		gpointer);
 
-static void nsgtk_attach_menu_handlers(GladeXML *, gpointer);
+static void nsgtk_attach_menu_handlers(struct gtk_scaffolding *);
 static void nsgtk_window_tabs_num_changed(GtkNotebook *notebook,
 		GtkWidget *page, guint page_num, struct gtk_scaffolding *g);
 void nsgtk_openfile_open(const char *filename);
 
-#define MENUEVENT(x) { #x, G_CALLBACK(nsgtk_on_##x##_activate) }
-#define MENUPROTO(x) static gboolean nsgtk_on_##x##_activate( \
-					GtkMenuItem *widget, gpointer g)
-/* prototypes for menu handlers */
-/* file menu */
-MENUPROTO(new_window);
-MENUPROTO(new_tab);
-MENUPROTO(open_location);
-MENUPROTO(open_file);
-#ifdef WITH_PDF_EXPORT
-MENUPROTO(export_pdf);
-#endif
-MENUPROTO(print);
-MENUPROTO(close_window);
-MENUPROTO(quit);
-
-/* edit menu */
-MENUPROTO(cut);
-MENUPROTO(copy);
-MENUPROTO(paste);
-MENUPROTO(select_all);
-MENUPROTO(preferences);
-
-/* view menu */
-MENUPROTO(stop);
-MENUPROTO(reload);
-MENUPROTO(zoom_in);
-MENUPROTO(normal_size);
-MENUPROTO(zoom_out);
-MENUPROTO(full_screen);
-MENUPROTO(view_source);
-MENUPROTO(menu_bar);
-MENUPROTO(tool_bar);
-MENUPROTO(status_bar);
-MENUPROTO(downloads);
-MENUPROTO(save_window_size);
-MENUPROTO(toggle_debug_rendering);
-MENUPROTO(save_box_tree);
-MENUPROTO(save_dom_tree);
-
-/* navigate menu */
-MENUPROTO(back);
-MENUPROTO(forward);
-MENUPROTO(home);
-MENUPROTO(local_history);
-MENUPROTO(global_history);
-
-/* tabs menu */
-MENUPROTO(next_tab);
-MENUPROTO(prev_tab);
-MENUPROTO(close_tab);
-
-/* help menu */
-MENUPROTO(about);
-
-/* Popup context menu (also shares edit menu handlers) */
-MENUPROTO(save_link);
-MENUPROTO(open_link_in_focused_tab);
-MENUPROTO(open_link_in_background_tab);
-
-/* structure used by nsgtk_attach_menu_handlers to connect menu items to
- * their handling functions.
- */
-static struct menu_events menu_events[] = {
-	/* file menu */
-	MENUEVENT(new_window),
-	MENUEVENT(new_tab),
-	MENUEVENT(open_location),
-	MENUEVENT(open_file),
-#ifdef WITH_PDF_EXPORT
-	MENUEVENT(export_pdf),
-#endif
-	MENUEVENT(print),
-	MENUEVENT(close_window),
-	MENUEVENT(quit),
-
-	/* edit menu */
-	MENUEVENT(cut),
-	MENUEVENT(copy),
-	MENUEVENT(paste),
-	MENUEVENT(select_all),
-	MENUEVENT(preferences),
-
-	/* view menu */
-	MENUEVENT(stop),
-	MENUEVENT(reload),
-	MENUEVENT(zoom_in),
-	MENUEVENT(normal_size),
-	MENUEVENT(zoom_out),
-	MENUEVENT(full_screen),
-	MENUEVENT(view_source),
-	MENUEVENT(menu_bar),
-	MENUEVENT(tool_bar),
-	MENUEVENT(status_bar),
-	MENUEVENT(downloads),
-	MENUEVENT(save_window_size),
-	MENUEVENT(toggle_debug_rendering),
-	MENUEVENT(save_box_tree),
-	MENUEVENT(save_dom_tree),
-
-	/* navigate menu */
-	MENUEVENT(back),
-	MENUEVENT(forward),
-	MENUEVENT(home),
-	MENUEVENT(local_history),
-	MENUEVENT(global_history),
-
-	/* tab menu */
-	MENUEVENT(next_tab),
-	MENUEVENT(prev_tab),
-	MENUEVENT(close_tab),
-
-	/* help menu */
-	MENUEVENT(about),
-
-	/* sentinel */
-	{ NULL, NULL }
-};
-
-void nsgtk_attach_menu_handlers(GladeXML *xml, gpointer g)
+void nsgtk_attach_menu_handlers(struct gtk_scaffolding *g)
 {
-	struct menu_events *event = menu_events;
-
-	while (event->widget != NULL)
-	{
-		GtkWidget *w = glade_xml_get_widget(xml, event->widget);
-		g_signal_connect(G_OBJECT(w), "activate", event->handler, g);
-		event++;
+	for (int i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++) {
+		if (g->buttons[i]->main != NULL) {
+			g_signal_connect(g->buttons[i]->main, "activate",
+					G_CALLBACK(g->buttons[i]->mhandler), g);
+		}
+		if (g->buttons[i]->rclick != NULL) {
+			g_signal_connect(g->buttons[i]->rclick, "activate",
+					G_CALLBACK(g->buttons[i]->mhandler), g);
+		}
+		if (g->buttons[i]->popup != NULL) {
+			g_signal_connect(g->buttons[i]->popup, "activate",
+					G_CALLBACK(g->buttons[i]->mhandler), g);
+		}
 	}
-}
+#define CONNECT_CHECK(q)\
+	g_signal_connect(g->view_menu->toolbars_submenu->q##_menuitem,\
+			"toggled", G_CALLBACK(nsgtk_on_##q##_activate), g);\
+	g_signal_connect(g->rclick_view_menu->toolbars_submenu->q##_menuitem,\
+			"toggled", G_CALLBACK(nsgtk_on_##q##_activate), g)
+	CONNECT_CHECK(menubar);
+	CONNECT_CHECK(toolbar);
+	CONNECT_CHECK(statusbar);
+#undef CONNECT_CHECK
 
-GtkWindow *nsgtk_get_window_for_scaffold(struct gtk_scaffolding *g)
-{
-	return g->window;
 }
 
 /* event handlers and support functions for them */
 
-gboolean nsgtk_window_delete_event(GtkWidget *widget, gpointer data)
+gboolean nsgtk_window_delete_event(GtkWidget *widget, GdkEvent *event, gpointer
+		data)
 {
-	struct gtk_scaffolding *g = data;
-	gtk_widget_destroy(GTK_WIDGET(g->window));
-	if (open_windows == 1 && nsgtk_check_for_downloads(GTK_WINDOW(widget)))
-		return TRUE;
-	else
-		return FALSE;
+	struct gtk_scaffolding *g = (struct gtk_scaffolding *)data;
+	if (open_windows != 1 || nsgtk_check_for_downloads(GTK_WINDOW(
+			widget)) == false) {
+		nsgtk_window_close(g);
+		gtk_widget_destroy(GTK_WIDGET(g->window));
+	}
+	return TRUE;
 }
 
-void nsgtk_window_destroy_event(GtkWidget *widget, gpointer data)
+/**
+ * cleanup function
+ */
+void nsgtk_window_close(struct gtk_scaffolding *g)
 {
-	struct gtk_scaffolding *g = data;
+	/* close all tabs first */
+	gint numbertabs = gtk_notebook_get_n_pages(g->notebook);
+	while (numbertabs-- > 1) {
+		nsgtk_tab_close_current(g->notebook);
+	}
 	LOG(("Being Destroyed = %d", g->being_destroyed));
-	if (g->history_window->window) {
+
+	if ((g->history_window) && (g->history_window->window)) {
 		gtk_widget_destroy(GTK_WIDGET(g->history_window->window));
 	}
-	gtk_widget_destroy(GTK_WIDGET(g->window));
-	
+
 	if (--open_windows == 0)
 		netsurf_quit = true;
 
@@ -286,37 +237,37 @@ void nsgtk_window_destroy_event(GtkWidget *widget, gpointer data)
 		g->being_destroyed = 1;
 		nsgtk_window_destroy_browser(g->top_level);
 	}
+	if (g->prev != NULL)
+		g->prev->next = g->next;
+	else
+		scaf_list = g->next;
+
+	if (g->next != NULL)
+		g->next->prev = g->prev;
+			
 }
 
-void nsgtk_scaffolding_destroy(nsgtk_scaffolding *scaffold)
+void nsgtk_scaffolding_destroy(nsgtk_scaffolding *g)
 {
         /* Our top_level has asked us to die */
-        LOG(("Being Destroyed = %d", scaffold->being_destroyed));
-        if (scaffold->being_destroyed) return;
-        scaffold->being_destroyed = 1;
-        nsgtk_window_destroy_event(0, scaffold);
+        LOG(("Being Destroyed = %d", g->being_destroyed));
+        if (g->being_destroyed) return;
+        g->being_destroyed = 1;
+        nsgtk_window_close(g);
 }
 
 
 void nsgtk_window_update_back_forward(struct gtk_scaffolding *g)
 {
 	int width, height;
-        struct browser_window *bw = nsgtk_get_browser_for_gui(g->top_level);
+        struct browser_window *bw = gui_window_get_browser_window(g->top_level);
 
-	gtk_widget_set_sensitive(GTK_WIDGET(g->back_button),
-			history_back_available(bw->history));
-	gtk_widget_set_sensitive(GTK_WIDGET(g->forward_button),
-			history_forward_available(bw->history));
-
-	gtk_widget_set_sensitive(GTK_WIDGET(g->back_menu),
-			history_back_available(bw->history));
-	gtk_widget_set_sensitive(GTK_WIDGET(g->forward_menu),
-			history_forward_available(bw->history));
-	gtk_widget_set_sensitive(GTK_WIDGET(glade_xml_get_widget(g->popup_xml,
-	 		"popupBack")), history_back_available(bw->history));
-	gtk_widget_set_sensitive(GTK_WIDGET(glade_xml_get_widget(g->popup_xml,
-	 		"popupForward")), 
-	 		history_forward_available(bw->history));
+	g->buttons[BACK_BUTTON]->sensitivity = 
+			history_back_available(bw->history);
+	g->buttons[FORWARD_BUTTON]->sensitivity = history_forward_available(
+			bw->history);
+	
+	nsgtk_scaffolding_set_sensitivity(g);
 
 	/* update the url bar, particularly necessary when tabbing */
 	if (bw->current_content != NULL && bw->current_content->url != NULL)
@@ -351,7 +302,7 @@ void nsgtk_throb(void *p)
 static gboolean nsgtk_window_edit_menu_clicked(GtkWidget *widget, 
 		struct gtk_scaffolding *g)
 {
-	nsgtk_scaffolding_update_edit_actions_sensitivity (g, g->xml, FALSE);
+	nsgtk_scaffolding_update_edit_actions_sensitivity(g, g->xml, false);
 	
 	return TRUE;
 }
@@ -371,97 +322,20 @@ static gboolean nsgtk_window_popup_menu_hidden(GtkWidget *widget,
 	return TRUE;
 }
 
-gboolean nsgtk_window_back_button_clicked(GtkWidget *widget, gpointer data)
-{
-	struct gtk_scaffolding *g = data;
-        struct browser_window *bw = nsgtk_get_browser_for_gui(g->top_level);
-
-	if (!history_back_available(bw->history))
-		return TRUE;
-
-	history_back(bw, bw->history);
-	nsgtk_window_update_back_forward(g);
-
-	return TRUE;
-}
-
-/* TODO: add resize handling */
-gboolean nsgtk_window_history_button_clicked(GtkWidget *widget, gpointer data)
-{
-	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)data;
-
-	/* if entries of the same url but different frag_ids have been added
-	 * the history needs redrawing (what is done in the throbber code in
-	 * other cases)
-	 */
-	nsgtk_window_update_back_forward(gw);
-
-	gtk_window_set_default_size(gw->history_window->window, 500, 150); 
-	gtk_window_set_position(gw->history_window->window, GTK_WIN_POS_MOUSE);
-	gtk_window_set_transient_for(gw->history_window->window, gw->window);
-	gtk_window_set_opacity(gw->history_window->window, 0.9);
-	gtk_widget_show(GTK_WIDGET(gw->history_window->window));
-	gdk_window_raise(GTK_WIDGET(gw->history_window->window)->window);
-
-	return TRUE;
-}
-
-gboolean nsgtk_window_forward_button_clicked(GtkWidget *widget, gpointer data)
-{
-	struct gtk_scaffolding *g = data;
-        struct browser_window *bw = nsgtk_get_browser_for_gui(g->top_level);
-
-	if (!history_forward_available(bw->history))
-		return TRUE;
-
-	history_forward(bw, bw->history);
-	nsgtk_window_update_back_forward(g);
-
-	return TRUE;
-}
-
-gboolean nsgtk_window_stop_button_clicked(GtkWidget *widget, gpointer data)
-{
-	struct gtk_scaffolding *g = data;
-        struct browser_window *bw = nsgtk_get_browser_for_gui(g->top_level);
-
-	browser_window_stop(bw);
-
-	return TRUE;
-}
-
-gboolean nsgtk_window_reload_button_clicked(GtkWidget *widget, gpointer data)
-{
-        struct gtk_scaffolding *g = data;
-        struct browser_window *bw = nsgtk_get_browser_for_gui(g->top_level);
-
-        browser_window_reload(bw, true);
-
-        return TRUE;
-}
-
-gboolean nsgtk_window_home_button_clicked(GtkWidget *widget, gpointer data)
-{
-        struct gtk_scaffolding *g = data;
-        static const char *addr = NETSURF_HOMEPAGE;
-        struct browser_window *bw = nsgtk_get_browser_for_gui(g->top_level);
-
-        if (option_homepage_url != NULL && option_homepage_url[0] != '\0')
-                addr = option_homepage_url;
-
-        browser_window_go(bw, addr, 0, true);
-
-        return TRUE;
-}
-
 gboolean nsgtk_window_url_activate_event(GtkWidget *widget, gpointer data)
 {
 	struct gtk_scaffolding *g = data;
-        struct browser_window *bw = nsgtk_get_browser_for_gui(g->top_level);
-
-	browser_window_go(bw, gtk_entry_get_text(GTK_ENTRY(g->url_bar)),
-                          0, true);
-
+        struct browser_window *bw = gui_window_get_browser_window(g->top_level);
+	char *url;
+	if (search_is_url(gtk_entry_get_text(GTK_ENTRY(g->url_bar)))
+			== false)
+		url = search_web_from_term(gtk_entry_get_text(GTK_ENTRY(
+				g->url_bar)));
+	else 
+		url = strdup(gtk_entry_get_text(GTK_ENTRY(g->url_bar)));
+	browser_window_go(bw, url, 0, true);
+	if (url != NULL)
+		free(url);
 	return TRUE;
 }
 
@@ -477,69 +351,107 @@ gboolean nsgtk_window_url_changed(GtkWidget *widget, GdkEventKey *event,
 	return TRUE;
 }
 
+gboolean nsgtk_window_tool_bar_clicked(GtkToolbar *toolbar, gint x, gint y,
+		gint button, gpointer data)
+{
+	struct gtk_scaffolding *g = (struct gtk_scaffolding *)data;
+	/* set visibility for right-click menu */
+	gtk_widget_hide(glade_xml_get_widget(g->popup_xml, "sep2"));
+	gtk_widget_hide(glade_xml_get_widget(g->popup_xml, "save_link_popup"));
+	gtk_widget_hide(glade_xml_get_widget(g->popup_xml,
+			"open_link_in_focused_tab_popup"));
+	gtk_widget_hide(glade_xml_get_widget(g->popup_xml, 
+			"open_link_in_background_tab_popup"));
+	gtk_widget_show(glade_xml_get_widget(g->popup_xml, "customize_popup"));
+	gtk_widget_hide(glade_xml_get_widget(g->popup_xml, "copy_popup"));
+	gtk_widget_hide(glade_xml_get_widget(g->popup_xml, "cut_popup"));
+	gtk_widget_hide(glade_xml_get_widget(g->popup_xml, "paste_popup"));
+	gtk_menu_popup(g->popup_menu, NULL, NULL, NULL, NULL, 0,
+			gtk_get_current_event_time());
+	return TRUE;
+}
 
 void nsgtk_window_tabs_num_changed(GtkNotebook *notebook, GtkWidget *page,
 		guint page_num, struct gtk_scaffolding *g)
 {
 	gboolean visible = gtk_notebook_get_show_tabs(g->notebook);
-	g_object_set(g->tabs_menu, "visible", visible, NULL);
+	g_object_set(g->tabs_menu_item, "visible", visible, NULL);
+	g->buttons[NEXTTAB_BUTTON]->sensitivity = visible;
+	g->buttons[PREVTAB_BUTTON]->sensitivity = visible;
+	g->buttons[CLOSETAB_BUTTON]->sensitivity = visible;
+	nsgtk_scaffolding_set_sensitivity(g);
 }
 
 void nsgtk_openfile_open(const char *filename)
 {
-	struct browser_window *bw = nsgtk_get_browser_for_gui(
+	struct browser_window *bw = gui_window_get_browser_window(
 			current_model->top_level);
-	char *url = malloc(strlen(filename) + sizeof("file://"));
+	char url[strlen(filename) + SLEN("file://") + 1];
 
 	sprintf(url, "file://%s", filename);
 
         browser_window_go(bw, url, 0, true);
 
-	free(url);
 }
 
 /* signal handlers for menu entries */
-#define MENUHANDLER(x) gboolean nsgtk_on_##x##_activate(GtkMenuItem *widget, \
- gpointer g)
+#define MULTIHANDLER(q)\
+gboolean nsgtk_on_##q##_activate_menu(GtkMenuItem *widget, gpointer data)\
+{\
+	struct gtk_scaffolding *g = (struct gtk_scaffolding *)data;\
+	return nsgtk_on_##q##_activate(g);\
+}\
+gboolean nsgtk_on_##q##_activate_button(GtkButton *widget, gpointer data)\
+{\
+	struct gtk_scaffolding *g = (struct gtk_scaffolding *)data;\
+	return nsgtk_on_##q##_activate(g);\
+}\
+gboolean nsgtk_on_##q##_activate(struct gtk_scaffolding *g)
 
-MENUHANDLER(new_window)
+#define MENUHANDLER(q)\
+gboolean nsgtk_on_##q##_activate(GtkMenuItem *widget, gpointer data)
+
+#define BUTTONHANDLER(q)\
+gboolean nsgtk_on_##q##_activate(GtkButton *widget, gpointer data)
+
+MULTIHANDLER(newwindow)
 {
-	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
-	struct browser_window *bw = nsgtk_get_browser_for_gui(gw->top_level);
-	const char *url = gtk_entry_get_text(GTK_ENTRY(gw->url_bar));
+	struct browser_window *bw = gui_window_get_browser_window(g->top_level);
+	const char *url = gtk_entry_get_text(GTK_ENTRY(g->url_bar));
 
 	browser_window_create(url, bw, NULL, false, false);
 
 	return TRUE;
 }
 
-MENUHANDLER(new_tab)
+MULTIHANDLER(newtab)
 {
-	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
-	struct browser_window *bw = nsgtk_get_browser_for_gui(gw->top_level);
-	const char *url = gtk_entry_get_text(GTK_ENTRY(gw->url_bar));
+	struct browser_window *bw = gui_window_get_browser_window(g->top_level);
+	const char *url = gtk_entry_get_text(GTK_ENTRY(g->url_bar));
 	
-	if (option_new_blank)
+	if (option_new_blank) {
 		browser_window_create(0, bw, NULL, false, true);
-
+		GtkWidget *window = gtk_notebook_get_nth_page(g->notebook, -1);
+		gtk_widget_modify_bg(window, GTK_STATE_NORMAL, &((GdkColor)
+				{0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF}));
+	}
+			      
 	else
 		browser_window_create(url, bw, NULL, false, true);
 
 	return TRUE;
 }
 
-MENUHANDLER(open_location)
+MULTIHANDLER(open_location)
 {
-	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
-
-	gtk_widget_grab_focus(GTK_WIDGET(gw->url_bar));
+	gtk_widget_grab_focus(GTK_WIDGET(g->url_bar));
 
 	return TRUE;
 }
 
-MENUHANDLER(open_file)
+MULTIHANDLER(openfile)
 {
-	current_model = (struct gtk_scaffolding *)g;
+	current_model = g;
 	GtkWidget *dlgOpen = gtk_file_chooser_dialog_new("Open File", 
 			current_model->window, GTK_FILE_CHOOSER_ACTION_OPEN, 
 			GTK_STOCK_CANCEL, -6, GTK_STOCK_OPEN, -5, NULL);
@@ -558,12 +470,76 @@ MENUHANDLER(open_file)
 	return TRUE;
 }
 
-#ifdef WITH_PDF_EXPORT
-MENUHANDLER(export_pdf)
+MULTIHANDLER(savepage)
 {
+	if (gui_window_get_browser_window(g->top_level)->current_content
+			== NULL)
+		return FALSE;
+	
+	GtkWidget *fc = gtk_file_chooser_dialog_new(
+			messages_get("gtkcompleteSave"), g->window,
+			GTK_FILE_CHOOSER_ACTION_CREATE_FOLDER, 
+			GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+			GTK_STOCK_APPLY, GTK_RESPONSE_ACCEPT,
+			NULL);
+	DIR *d;
+	char *path;
+	url_func_result res;
+	GtkFileFilter *filter = gtk_file_filter_new();
+	gtk_file_filter_set_name(filter, "directory");
+	gtk_file_filter_add_custom(filter, GTK_FILE_FILTER_FILENAME, 
+			nsgtk_filter_directory, NULL, NULL);
+	gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(fc), filter);
+	gtk_file_chooser_set_filter(GTK_FILE_CHOOSER(fc), filter);
+
+	res = url_nice(gui_window_get_browser_window(
+			g->top_level)->current_content->url, &path, false);
+	if (res != URL_FUNC_OK) {
+		path = strdup(messages_get("SaveText"));
+		if (path == NULL) {
+			warn_user("NoMemory", 0);
+			return FALSE;
+		}
+	}
+
+	if (access(path, F_OK) != 0)
+		gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(fc), path);
+	free(path);
+	
+	gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(fc),
+			TRUE);
+
+	if (gtk_dialog_run(GTK_DIALOG(fc)) != GTK_RESPONSE_ACCEPT)
+		return TRUE;
+	path = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(fc));
+	d = opendir(path);
+	if (d == NULL) {
+		printf("d NULL\n");
+		if (errno == ENOTDIR)
+			warn_user("NoDirError", path);
+		else
+			warn_user("gtkFileError", path);
+		g_free(path);
+		return TRUE;
+	}
+	closedir(d);
+	save_complete_init();
+	save_complete(gui_window_get_browser_window(
+			g->top_level)->current_content, path);
+	g_free(path);
+
+	gtk_widget_destroy(fc);
+
+	return TRUE;
+}
+
+
+MULTIHANDLER(pdf)
+{
+#ifdef WITH_PDF_EXPORT
+	
 	GtkWidget *save_dialog;
-        struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
-        struct browser_window *bw = nsgtk_get_browser_for_gui(gw->top_level);
+        struct browser_window *bw = gui_window_get_browser_window(g->top_level);
 	struct print_settings *settings;
 	char filename[PATH_MAX];
 	char dirname[PATH_MAX];
@@ -593,7 +569,7 @@ MENUHANDLER(export_pdf)
 	used by the all-purpose print interface*/
 	haru_nsfont_set_scale((float)option_export_scale / 100);
 
-	save_dialog = gtk_file_chooser_dialog_new("Export to PDF", gw->window,
+	save_dialog = gtk_file_chooser_dialog_new("Export to PDF", g->window,
 		GTK_FILE_CHOOSER_ACTION_SAVE,
 		GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
 		GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
@@ -625,14 +601,72 @@ MENUHANDLER(export_pdf)
 	
 	gtk_widget_destroy(save_dialog);
 
+#endif /* WITH_PDF_EXPORT */
+	
 	return TRUE;
 }
-#endif /* WITH_PDF_EXPORT */
 
-MENUHANDLER(print)
+MULTIHANDLER(plaintext)
 {
-	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
-	struct browser_window *bw = nsgtk_get_browser_for_gui(gw->top_level);
+	if (gui_window_get_browser_window(g->top_level)->current_content
+			== NULL)
+		return FALSE;
+		
+	GtkWidget *fc = gtk_file_chooser_dialog_new(
+			messages_get("gtkplainSave"), g->window,
+			GTK_FILE_CHOOSER_ACTION_SAVE,
+			GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+			GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+			NULL);
+	char *filename;
+	url_func_result res;
+
+	res = url_nice(gui_window_get_browser_window(
+			g->top_level)->current_content->url, &filename, false);
+	if (res != URL_FUNC_OK) {
+		filename = strdup(messages_get("SaveText"));
+		if (filename == NULL) {
+			warn_user("NoMemory", 0);
+			return FALSE;
+		}
+	}
+
+	gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(fc), filename);
+	gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(fc),
+			TRUE);
+
+	free(filename);
+
+	if (gtk_dialog_run(GTK_DIALOG(fc)) == GTK_RESPONSE_ACCEPT) {
+		filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(fc));
+		save_as_text(gui_window_get_browser_window(
+				g->top_level)->current_content, filename);
+		g_free(filename);
+	}
+
+	gtk_widget_destroy(fc);
+	return TRUE;
+}
+
+MULTIHANDLER(drawfile)
+{
+	return TRUE;
+}
+
+MULTIHANDLER(postscript)
+{
+	return TRUE;
+}
+
+MULTIHANDLER(printpreview)
+{
+	return TRUE;
+}
+
+
+MULTIHANDLER(print)
+{
+	struct browser_window *bw = gui_window_get_browser_window(g->top_level);
 	
 	GtkPrintOperation *print_op;
 	GtkPageSetup *page_setup;
@@ -659,7 +693,7 @@ MENUHANDLER(print)
 
 	content_to_print = bw->current_content;
 	
-	page_setup = gtk_print_run_page_setup_dialog(gw->window, NULL, NULL);
+	page_setup = gtk_print_run_page_setup_dialog(g->window, NULL, NULL);
 	if (page_setup == NULL) {
 		warn_user(messages_get("NoMemory"), 0);
 		g_object_unref(print_op);
@@ -678,7 +712,7 @@ MENUHANDLER(print)
 	if (bw->current_content->type != CONTENT_TEXTPLAIN)
 		res = gtk_print_operation_run(print_op,
 				GTK_PRINT_OPERATION_ACTION_PRINT_DIALOG,
-    				gw->window,
+    				g->window,
 				NULL);
 	
 	/* if the settings were used save them for future use */
@@ -698,50 +732,46 @@ MENUHANDLER(print)
 	return TRUE;
 }
 
-MENUHANDLER(close_window)
+MULTIHANDLER(closewindow)
 {
-	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
-	
 	/* close all tabs first */
-	gint numbertabs = gtk_notebook_get_n_pages(gw->notebook);
+	gint numbertabs = gtk_notebook_get_n_pages(g->notebook);
 	while (numbertabs-- > 1) {
-		nsgtk_tab_close_current(gw->notebook);
+		nsgtk_tab_close_current(g->notebook);
 	}
-	gtk_widget_destroy(GTK_WIDGET(gw->window));
-
+	nsgtk_window_close(g);
+	gtk_widget_destroy(GTK_WIDGET(g->window));
 	return TRUE;
 }
 
-MENUHANDLER(quit)
+MULTIHANDLER(quit)
 {
-	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
-
-	if (nsgtk_check_for_downloads(gw->window) == false)
+	if (nsgtk_check_for_downloads(g->window) == false)
 		netsurf_quit = true;
 	return TRUE;
 }
 
-MENUHANDLER(save_link)
+MENUHANDLER(savelink)
 {
-    struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
-    struct gui_window *gui = gw->top_level;
-    struct browser_window *bw = nsgtk_get_browser_for_gui(gui);
+	struct gtk_scaffolding *g = (struct gtk_scaffolding *) data;
+	struct gui_window *gui = g->top_level;
+	struct browser_window *bw = gui_window_get_browser_window(gui);
+	
+	if (!current_menu_link_box)
+		return FALSE;
+	
+	browser_window_download(bw, current_menu_link_box->href,
+		bw->current_content->url);
 
-    if (!current_menu_link_box)
-        return FALSE;
-
-    browser_window_download(bw, current_menu_link_box->href,
-            bw->current_content->url);
-
-    return TRUE;
+	return TRUE;
 }
 
-MENUHANDLER(open_link_in_focused_tab)
+MENUHANDLER(linkfocused)
 {
+	struct gtk_scaffolding *g = (struct gtk_scaffolding *) data;
 	temp_open_background = 0;
-	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
-	struct gui_window *gui = gw->top_level;
-	struct browser_window *bw = nsgtk_get_browser_for_gui(gui);
+	struct gui_window *gui = g->top_level;
+	struct browser_window *bw = gui_window_get_browser_window(gui);
 
 	if (current_menu_link_box == NULL)
 		return FALSE;
@@ -753,11 +783,11 @@ MENUHANDLER(open_link_in_focused_tab)
 	return TRUE;
 }
 
-MENUHANDLER(open_link_in_background_tab)
+MENUHANDLER(linkbackground)
 {
-	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
-	struct gui_window *gui = gw->top_level;
-	struct browser_window *bw = nsgtk_get_browser_for_gui(gui);
+	struct gtk_scaffolding *g = (struct gtk_scaffolding *) data;
+	struct gui_window *gui = g->top_level;
+	struct browser_window *bw = gui_window_get_browser_window(gui);
 
 	temp_open_background = 1;
 
@@ -772,41 +802,38 @@ MENUHANDLER(open_link_in_background_tab)
 }
 
 
-MENUHANDLER(cut)
+MULTIHANDLER(cut)
 {
-	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
-        struct browser_window *bw = nsgtk_get_browser_for_gui(gw->top_level);
-	GtkWidget *focused = gtk_window_get_focus(gw->window);
+        struct browser_window *bw = gui_window_get_browser_window(g->top_level);
+	GtkWidget *focused = gtk_window_get_focus(g->window);
 	
 	/* If the url bar has focus, let gtk handle it */
 	if (GTK_IS_EDITABLE (focused))
-		gtk_editable_cut_clipboard (GTK_EDITABLE(gw->url_bar));
+		gtk_editable_cut_clipboard (GTK_EDITABLE(g->url_bar));
 	else
 		browser_window_key_press(bw, KEY_CUT_SELECTION);
 		
 	return TRUE;
 }
 
-MENUHANDLER(copy)
+MULTIHANDLER(copy)
 {
-	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
-        struct browser_window *bw = nsgtk_get_browser_for_gui(gw->top_level);
-	GtkWidget *focused = gtk_window_get_focus(gw->window);
+        struct browser_window *bw = gui_window_get_browser_window(g->top_level);
+	GtkWidget *focused = gtk_window_get_focus(g->window);
 	
 	/* If the url bar has focus, let gtk handle it */
 	if (GTK_IS_EDITABLE (focused))
-		gtk_editable_copy_clipboard(GTK_EDITABLE(gw->url_bar));
+		gtk_editable_copy_clipboard(GTK_EDITABLE(g->url_bar));
 	else
 		gui_copy_to_clipboard(bw->sel);
 		
 	return TRUE;
 }
 
-MENUHANDLER(paste)
+MULTIHANDLER(paste)
 {
-	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
-	struct gui_window *gui = gw->top_level;
-	GtkWidget *focused = gtk_window_get_focus(gw->window);
+	struct gui_window *gui = g->top_level;
+	GtkWidget *focused = gtk_window_get_focus(g->window);
 	
 	/* If the url bar has focus, let gtk handle it */
 	if (GTK_IS_EDITABLE (focused))
@@ -817,14 +844,25 @@ MENUHANDLER(paste)
 	return TRUE;
 }
 
-MENUHANDLER(select_all)
+MULTIHANDLER(delete)
 {
-	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
-        struct browser_window *bw = nsgtk_get_browser_for_gui(gw->top_level);
+	return TRUE;
+}
+
+MENUHANDLER(customize)
+{
+	struct gtk_scaffolding *g = (struct gtk_scaffolding *)data;
+	nsgtk_toolbar_customization_init(g);
+	return TRUE;
+}
+
+MULTIHANDLER(selectall)
+{
+        struct browser_window *bw = gui_window_get_browser_window(g->top_level);
 	
-	if (GTK_WIDGET_HAS_FOCUS(gw->url_bar)) {
+	if (GTK_WIDGET_HAS_FOCUS(g->url_bar)) {
 		LOG(("Selecting all URL bar text"));
-		gtk_editable_select_region(GTK_EDITABLE(gw->url_bar), 0, -1);
+		gtk_editable_select_region(GTK_EDITABLE(g->url_bar), 0, -1);
 	} else {
 		LOG(("Selecting all document text"));
 		selection_select_all(bw->sel);
@@ -833,145 +871,213 @@ MENUHANDLER(select_all)
 	return TRUE;
 }
 
-MENUHANDLER(preferences)
+MULTIHANDLER(find)
 {
-	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
-        struct browser_window *bw = nsgtk_get_browser_for_gui(gw->top_level);
-	if (gw->preferences_dialog == NULL)
-		gw->preferences_dialog = nsgtk_options_init(bw, gw->window);
+	nsgtk_scaffolding_toggle_search_bar_visibility(g);	
+	return TRUE;
+}
+
+MULTIHANDLER(preferences)
+{
+        struct browser_window *bw = gui_window_get_browser_window(g->top_level);
+	if (g->preferences_dialog == NULL)
+		g->preferences_dialog = nsgtk_options_init(bw, g->window);
 	else
-		gtk_widget_show (GTK_WIDGET(gw->preferences_dialog));
+		gtk_widget_show(GTK_WIDGET(g->preferences_dialog));
 		
 	return TRUE;
 }
 
-MENUHANDLER(zoom_in)
+MULTIHANDLER(zoomplus)
 {
-	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
-        struct browser_window *bw = nsgtk_get_browser_for_gui(gw->top_level);
-        float old_scale = nsgtk_get_scale_for_gui(gw->top_level);
+        struct browser_window *bw = gui_window_get_browser_window(g->top_level);
+        float old_scale = nsgtk_get_scale_for_gui(g->top_level);
 
 	browser_window_set_scale(bw, old_scale + 0.05, true);
 
 	return TRUE;
 }
 
-MENUHANDLER(normal_size)
+MULTIHANDLER(zoomnormal)
 {
-	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
-        struct browser_window *bw = nsgtk_get_browser_for_gui(gw->top_level);
+        struct browser_window *bw = gui_window_get_browser_window(g->top_level);
 
 	browser_window_set_scale(bw, 1.0, true);
 
 	return TRUE;
 }
 
-MENUHANDLER(zoom_out)
+MULTIHANDLER(zoomminus)
 {
-	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
-        struct browser_window *bw = nsgtk_get_browser_for_gui(gw->top_level);
-        float old_scale = nsgtk_get_scale_for_gui(gw->top_level);
+        struct browser_window *bw = gui_window_get_browser_window(g->top_level);
+        float old_scale = nsgtk_get_scale_for_gui(g->top_level);
 
 	browser_window_set_scale(bw, old_scale - 0.05, true);
 
 	return TRUE;
 }
 
-MENUHANDLER(full_screen)
+MULTIHANDLER(fullscreen)
 {
-	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
-
-	if (gw->fullscreen) {
-		gtk_window_unfullscreen(gw->window);
+	if (g->fullscreen) {
+		gtk_window_unfullscreen(g->window);
 	} else {
-		gtk_window_fullscreen(gw->window);
+		gtk_window_fullscreen(g->window);
 	}
 
-	gw->fullscreen = !gw->fullscreen;
+	g->fullscreen = !g->fullscreen;
 
 	return TRUE;
 }
 
-MENUHANDLER(view_source)
+MULTIHANDLER(viewsource)
 {
-	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
-	nsgtk_source_dialog_init(gw->window,
-			nsgtk_get_browser_for_gui(gw->top_level));
+	nsgtk_source_dialog_init(g->window, 
+			gui_window_get_browser_window(g->top_level));
 	return TRUE;
 }
 
-MENUHANDLER(menu_bar)
+MENUHANDLER(menubar)
 {
-	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
-
+	GtkWidget *w;
+	struct gtk_scaffolding *g = (struct gtk_scaffolding *)data;
 	if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(widget))) {
-		gtk_widget_show(GTK_WIDGET(gw->menu_bar));
+		/* need to synchronise menus as gtk grumbles when one menu
+		 * is attached to both headers */
+		w = GTK_WIDGET(g->rclick_view_menu->
+				toolbars_submenu->menubar_menuitem);
+		if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(w)) 
+				== FALSE)
+			gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(w),
+					TRUE);
+		w = GTK_WIDGET(g->view_menu->
+				toolbars_submenu->menubar_menuitem);
+		if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(w)) 
+				== FALSE)
+			gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(w),
+					TRUE);
 		
-		gtk_widget_show_all(GTK_WIDGET(gw->popup_menu));
-
-		GList *widgets = glade_xml_get_widget_prefix(gw->popup_xml, 
+		gtk_widget_show(GTK_WIDGET(g->menu_bar));
+		
+		gtk_widget_show_all(GTK_WIDGET(g->popup_menu));
+		
+		GList *widgets = glade_xml_get_widget_prefix(g->popup_xml, 
 				"menupopup");
 
 		for (; widgets != NULL; widgets = widgets->next)
 			gtk_widget_hide(GTK_WIDGET(widgets->data));
+	
 	} else {
-		gtk_widget_hide(GTK_WIDGET(gw->menu_bar));
+		w = GTK_WIDGET(g->rclick_view_menu->
+				toolbars_submenu->menubar_menuitem);
+		if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(w)))
+			gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(w),
+					FALSE);
+		w = GTK_WIDGET(g->view_menu->
+				toolbars_submenu->menubar_menuitem);
+		if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(w)))
+			gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(w),
+					FALSE);
 		
-		gtk_widget_hide_all(GTK_WIDGET(gw->popup_menu));
-		gtk_widget_show(GTK_WIDGET(gw->popup_menu));
+		gtk_widget_hide(GTK_WIDGET(g->menu_bar));
 
-		GList *widgets = glade_xml_get_widget_prefix(gw->popup_xml, 
+		GList *widgets = glade_xml_get_widget_prefix(g->popup_xml, 
 				"menupopup");
 
 		for (; widgets != NULL; widgets = widgets->next)
 			gtk_widget_show_all(GTK_WIDGET(widgets->data));
-	}
 
+	}
 	return TRUE;
 }
 
-MENUHANDLER(tool_bar)
+MENUHANDLER(toolbar)
 {
-	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
-
+	GtkWidget *w;
+	struct gtk_scaffolding *g = (struct gtk_scaffolding *)data;
+	
 	if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(widget))) {
-		gtk_widget_show(GTK_WIDGET(gw->tool_bar));
+		w = GTK_WIDGET(g->rclick_view_menu->
+				toolbars_submenu->toolbar_menuitem);
+		if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(w)) 
+				== FALSE)
+			gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(w),
+					TRUE);
+		w = GTK_WIDGET(g->view_menu->
+				toolbars_submenu->toolbar_menuitem);
+		if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(w)) 
+				== FALSE)
+			gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(w),
+					TRUE);
+		gtk_widget_show(GTK_WIDGET(g->tool_bar));
 	} else {
-		gtk_widget_hide(GTK_WIDGET(gw->tool_bar));
+		w = GTK_WIDGET(g->rclick_view_menu->
+				toolbars_submenu->toolbar_menuitem);
+		if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(w)))
+			gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(w),
+					FALSE);
+		w = GTK_WIDGET(g->view_menu->
+				toolbars_submenu->toolbar_menuitem);
+		if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(w)))
+			gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(w),
+					FALSE);
+		gtk_widget_hide(GTK_WIDGET(g->tool_bar));
 	}
 
 	return TRUE;
 }
 
-MENUHANDLER(status_bar)
+MENUHANDLER(statusbar)
 {
-	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
-
+	GtkWidget *w;
+	struct gtk_scaffolding *g = (struct gtk_scaffolding *)data;
+	
 	if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(widget))) {
-		gtk_widget_show(GTK_WIDGET(gw->status_bar));
+		w = GTK_WIDGET(g->rclick_view_menu->
+				toolbars_submenu->statusbar_menuitem);
+		if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(w)) 
+				== FALSE)
+			gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(w),
+					TRUE);
+		w = GTK_WIDGET(g->view_menu->
+				toolbars_submenu->statusbar_menuitem);
+		if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(w)) 
+				== FALSE)
+			gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(w),
+					TRUE);
+		gtk_widget_show(GTK_WIDGET(g->status_bar));
 	} else {
-		gtk_widget_hide(GTK_WIDGET(gw->status_bar));
+		w = GTK_WIDGET(g->rclick_view_menu->
+				toolbars_submenu->statusbar_menuitem);
+		if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(w)))
+			gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(w),
+					FALSE);
+		w = GTK_WIDGET(g->view_menu->
+				toolbars_submenu->statusbar_menuitem);
+		if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(w)))
+			gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(w),
+					FALSE);
+		gtk_widget_hide(GTK_WIDGET(g->status_bar));
 	}
 
 	return TRUE;
 }
 
-MENUHANDLER(downloads)
+MULTIHANDLER(downloads)
 {
-	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
-	nsgtk_download_show(gw->window);
+	nsgtk_download_show(g->window);
 	
 	return TRUE;
 }
 
-MENUHANDLER(save_window_size)
+MULTIHANDLER(savewindowsize)
 {
-	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
-
-	option_toolbar_status_width = gtk_paned_get_position(gw->status_pane);
-	gtk_window_get_position(gw->window, &option_window_x, 
+	if (GTK_IS_PANED(g->status_pane))
+		option_toolbar_status_width = 
+				gtk_paned_get_position(g->status_pane);
+	gtk_window_get_position(g->window, &option_window_x, 
 			&option_window_y);
-	gtk_window_get_size(gw->window, &option_window_width,
+	gtk_window_get_size(g->window, &option_window_width,
 					&option_window_height);
 
 
@@ -980,19 +1086,18 @@ MENUHANDLER(save_window_size)
 	return TRUE;
 }
 
-MENUHANDLER(toggle_debug_rendering)
+MULTIHANDLER(toggledebugging)
 {
 	html_redraw_debug = !html_redraw_debug;
 	nsgtk_reflow_all_windows();
 	return TRUE;
 }
 
-MENUHANDLER(save_box_tree)
+MULTIHANDLER(saveboxtree)
 {
 	GtkWidget *save_dialog;
-	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
 	
-	save_dialog = gtk_file_chooser_dialog_new("Save File", gw->window,
+	save_dialog = gtk_file_chooser_dialog_new("Save File", g->window,
 			GTK_FILE_CHOOSER_ACTION_SAVE,
 			GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
 			GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
@@ -1017,7 +1122,7 @@ MENUHANDLER(save_box_tree)
 				"Unable to open file for writing.");
 		} else {
 			struct browser_window *bw;
-			bw = nsgtk_get_browser_window(gw->top_level);
+			bw = gui_window_get_browser_window(g->top_level);
 
 			if (bw->current_content && 
 					bw->current_content->type == 
@@ -1038,12 +1143,11 @@ MENUHANDLER(save_box_tree)
 	return TRUE;
 }
 
-MENUHANDLER(save_dom_tree)
+MULTIHANDLER(savedomtree)
 {
 	GtkWidget *save_dialog;
-	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
 	
-	save_dialog = gtk_file_chooser_dialog_new("Save File", gw->window,
+	save_dialog = gtk_file_chooser_dialog_new("Save File", g->window,
 			GTK_FILE_CHOOSER_ACTION_SAVE,
 			GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
 			GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
@@ -1067,7 +1171,7 @@ MENUHANDLER(save_dom_tree)
 				"Unable to open file for writing.");
 		} else {
 			struct browser_window *bw;
-			bw = nsgtk_get_browser_window(gw->top_level);
+			bw = gui_window_get_browser_window(g->top_level);
 
 			if (bw->current_content && 
 					bw->current_content->type == 
@@ -1089,37 +1193,119 @@ MENUHANDLER(save_dom_tree)
 }
 
 
-MENUHANDLER(stop)
+MULTIHANDLER(stop)
 {
-	return nsgtk_window_stop_button_clicked(GTK_WIDGET(widget), g);
+        struct browser_window *bw = 
+			gui_window_get_browser_window(g->top_level);
+
+	browser_window_stop(bw);
+
+	return TRUE;
 }
 
-MENUHANDLER(reload)
+MULTIHANDLER(reload)
 {
-	return nsgtk_window_reload_button_clicked(GTK_WIDGET(widget), g);
+        struct browser_window *bw = 
+			gui_window_get_browser_window(g->top_level);
+
+	/* clear potential search effects */
+
+	if ((bw != NULL) && (bw->search_context != NULL))
+		search_destroy_context(bw->search_context);
+	nsgtk_search_set_forward_state(true, bw);
+	nsgtk_search_set_back_state(true, bw);
+
+        browser_window_reload(bw, true);
+
+        return TRUE;
 }
 
-MENUHANDLER(back)
+MULTIHANDLER(back)
 {
-	return nsgtk_window_back_button_clicked(GTK_WIDGET(widget), g);
+        struct browser_window *bw = 
+			gui_window_get_browser_window(g->top_level);
+
+	if (!history_back_available(bw->history))
+		return TRUE;
+
+	/* clear potential search effects */
+	if ((bw != NULL) && (bw->search_context != NULL))
+		search_destroy_context(bw->search_context);
+	nsgtk_search_set_forward_state(true, bw);
+	nsgtk_search_set_back_state(true, bw);
+
+	history_back(bw, bw->history);
+	nsgtk_window_update_back_forward(g);
+
+	return TRUE;
 }
 
-MENUHANDLER(forward)
+MULTIHANDLER(forward)
 {
-	return nsgtk_window_forward_button_clicked(GTK_WIDGET(widget), g);
+        struct browser_window *bw = 
+			gui_window_get_browser_window(g->top_level);
+
+	if (!history_forward_available(bw->history))
+		return TRUE;
+
+	/* clear potential search effects */
+	if ((bw != NULL) && (bw->search_context != NULL))
+		search_destroy_context(bw->search_context);
+	nsgtk_search_set_forward_state(true, bw);
+	nsgtk_search_set_back_state(true, bw);
+	
+	history_forward(bw, bw->history);
+	nsgtk_window_update_back_forward(g);
+
+	return TRUE;
 }
 
-MENUHANDLER(home)
+MULTIHANDLER(home)
 {
-	return nsgtk_window_home_button_clicked(GTK_WIDGET(widget), g);
+        static const char *addr = NETSURF_HOMEPAGE;
+        struct browser_window *bw =
+			gui_window_get_browser_window(g->top_level);
+
+        if (option_homepage_url != NULL && option_homepage_url[0] != '\0')
+                addr = option_homepage_url;
+
+        browser_window_go(bw, addr, 0, true);
+
+        return TRUE;
 }
 
-MENUHANDLER(local_history)
+MULTIHANDLER(localhistory)
 {
-	return nsgtk_window_history_button_clicked(GTK_WIDGET(widget), g);
+	struct browser_window *bw =
+			gui_window_get_browser_window(g->top_level);
+	
+	int x,y, width, height, mainwidth, mainheight, margin = 20;
+	/* if entries of the same url but different frag_ids have been added
+	 * the history needs redrawing (what throbber code normally does)
+	 */
+	history_size(bw->history, &width, &height);
+	nsgtk_window_update_back_forward(g);
+	gtk_window_get_position(g->window, &x, &y);
+	gtk_window_get_size(g->window, &mainwidth, &mainheight);
+	width = (width + g->historybase + margin > mainwidth) ? 
+			mainwidth - g->historybase : width + margin;
+	height = (height + g->toolbarbase + margin > mainheight) ? 
+			mainheight - g->toolbarbase : height + margin;
+	gtk_window_set_default_size(g->history_window->window, width, height);
+	gtk_widget_set_size_request(GTK_WIDGET(g->history_window->window),
+			-1, -1);
+	gtk_window_resize(g->history_window->window, width, height);
+	gtk_window_set_transient_for(g->history_window->window, g->window);
+	gtk_window_set_opacity(g->history_window->window, 0.9);
+	gtk_widget_show(GTK_WIDGET(g->history_window->window));
+	gtk_window_move(g->history_window->window, x + g->historybase, y + 
+			g->toolbarbase);
+	gdk_window_raise(GTK_WIDGET(g->history_window->window)->window);
+
+	return TRUE;
 }
 
-MENUHANDLER(global_history)
+MULTIHANDLER(globalhistory)
 {
 	gtk_widget_show(GTK_WIDGET(wndHistory));
 	gdk_window_raise(GTK_WIDGET(wndHistory)->window);
@@ -1127,39 +1313,79 @@ MENUHANDLER(global_history)
 	return TRUE;
 }
 
-MENUHANDLER(next_tab)
+MULTIHANDLER(addbookmarks)
 {
-	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
+	return TRUE;
+}
 
-	gtk_notebook_next_page(gw->notebook);
+MULTIHANDLER(showbookmarks)
+{
+	return TRUE;
+}
+
+MULTIHANDLER(openlocation)
+{
+	gtk_widget_grab_focus(GTK_WIDGET(g->url_bar));
+	return TRUE;
+}
+
+MULTIHANDLER(nexttab)
+{
+	gtk_notebook_next_page(g->notebook);
 	
 	return TRUE;
 }
 
-MENUHANDLER(prev_tab)
+MULTIHANDLER(prevtab)
 {
-	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
-
-	gtk_notebook_prev_page(gw->notebook);
+	gtk_notebook_prev_page(g->notebook);
 	
 	return TRUE;
 }
 
-MENUHANDLER(close_tab)
+MULTIHANDLER(closetab)
 {
-	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
-	
-	nsgtk_tab_close_current(gw->notebook);
+	nsgtk_tab_close_current(g->notebook);
 
 	return TRUE;
 }
 
-MENUHANDLER(about)
+MULTIHANDLER(contents)
 {
-	struct gtk_scaffolding *gw = (struct gtk_scaffolding *)g;
-	nsgtk_about_dialog_init(gw->window, 
-			nsgtk_get_browser_for_gui(gw->top_level), 
+	return TRUE;
+}
+
+MULTIHANDLER(guide)
+{
+	return TRUE;
+}
+
+MULTIHANDLER(info)
+{
+	return TRUE;
+}
+
+MULTIHANDLER(about)
+{
+	nsgtk_about_dialog_init(g->window, 
+			gui_window_get_browser_window(g->top_level),
 			netsurf_version);
+	return TRUE;
+}
+
+BUTTONHANDLER(history)
+{
+	struct gtk_scaffolding *g = (struct gtk_scaffolding *)data;
+	return nsgtk_on_localhistory_activate(g);
+}
+
+gboolean nsgtk_filter_directory(const GtkFileFilterInfo *info,
+		gpointer data)
+{
+	DIR *d = opendir(info->filename);
+	if (d == NULL)
+		return FALSE;
+	closedir(d);
 	return TRUE;
 }
 
@@ -1169,7 +1395,7 @@ gboolean nsgtk_history_expose_event(GtkWidget *widget,
 {
 	struct gtk_history_window *hw = (struct gtk_history_window *)g;
         struct browser_window *bw = 
-        		nsgtk_get_browser_for_gui(hw->g->top_level);
+        		gui_window_get_browser_window(hw->g->top_level);
 
 	current_widget = widget;
 	current_drawable = widget->window;
@@ -1190,12 +1416,16 @@ gboolean nsgtk_history_expose_event(GtkWidget *widget,
 	return FALSE;
 }
 
+#undef MULTIHANDLER
+#undef CHECKHANDLER
+#undef BUTTONHANDLER
+
 gboolean nsgtk_history_button_press_event(GtkWidget *widget,
 		GdkEventButton *event, gpointer g)
 {
 	struct gtk_history_window *hw = (struct gtk_history_window *)g;
         struct browser_window *bw = 
-        		nsgtk_get_browser_for_gui(hw->g->top_level);
+        		gui_window_get_browser_window(hw->g->top_level);
 
         LOG(("X=%g, Y=%g", event->x, event->y));
 
@@ -1209,8 +1439,10 @@ gboolean nsgtk_history_button_press_event(GtkWidget *widget,
 
 nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 {
-        struct gtk_scaffolding *g = malloc(sizeof(*g));
-
+	struct gtk_scaffolding *g = malloc(sizeof(*g));
+	char *searchname;
+	int i;
+	
         LOG(("Constructing a scaffold of %p for gui_window %p", g, toplevel));
 
         g->top_level = toplevel;
@@ -1220,29 +1452,78 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	/* load the window template from the glade xml file, and extract
 	 * widget references from it for later use.
 	 */
-	g->xml = glade_xml_new(glade_file_location, "wndBrowser", NULL);
+	g->xml = glade_xml_new(glade_netsurf_file_location,
+			"wndBrowser", NULL);
 	glade_xml_signal_autoconnect(g->xml);
 	g->window = GTK_WINDOW(GET_WIDGET("wndBrowser"));
 	g->notebook = GTK_NOTEBOOK(GET_WIDGET("notebook"));
-	g->url_bar = GTK_ENTRY(GET_WIDGET("URLBar"));
 	g->menu_bar = GTK_MENU_BAR(GET_WIDGET("menubar"));
 	g->status_bar = GTK_STATUSBAR(GET_WIDGET("statusbar"));
-	g->edit_menu = GTK_MENU_ITEM(GET_WIDGET("menuitem_edit"));
-	g->tabs_menu = GTK_MENU_ITEM(GET_WIDGET("menuitem_tabs"));
 	g->tool_bar = GTK_TOOLBAR(GET_WIDGET("toolbar"));
-	g->back_button = GTK_TOOL_BUTTON(GET_WIDGET("toolBack"));
-	g->forward_button = GTK_TOOL_BUTTON(GET_WIDGET("toolForward"));
-	g->stop_button = GTK_TOOL_BUTTON(GET_WIDGET("toolStop"));
-	g->reload_button = GTK_TOOL_BUTTON(GET_WIDGET("toolReload"));
-	g->back_menu = GTK_MENU_ITEM(GET_WIDGET("back"));
-	g->history_button = GTK_TOOL_BUTTON(GET_WIDGET("toolHistory"));
-	g->forward_menu = GTK_MENU_ITEM(GET_WIDGET("forward"));
-	g->stop_menu = GTK_MENU_ITEM(GET_WIDGET("stop"));
-	g->reload_menu = GTK_MENU_ITEM(GET_WIDGET("reload"));
-	g->throbber = GTK_IMAGE(GET_WIDGET("throbber"));
+	
+	g->search = malloc(sizeof(struct gtk_search));
+	if (g->search == NULL) {
+		warn_user("NoMemory", 0);
+		return NULL;
+	}
+	
+	g->search->bar = GTK_TOOLBAR(GET_WIDGET("searchbar"));
+	g->search->entry = GTK_ENTRY(GET_WIDGET("searchEntry"));
+
+	g->search->buttons[0] = GTK_TOOL_BUTTON(GET_WIDGET("searchBackButton"));
+	g->search->buttons[1] = GTK_TOOL_BUTTON(GET_WIDGET(
+			"searchForwardButton"));
+	g->search->buttons[2] = GTK_TOOL_BUTTON(GET_WIDGET(
+			"closeSearchButton"));
+	g->search->checkAll = GTK_CHECK_BUTTON(GET_WIDGET("checkAllSearch"));
+	g->search->caseSens = GTK_CHECK_BUTTON(GET_WIDGET("caseSensButton"));
+		
+	GtkAccelGroup *group = gtk_accel_group_new();
+	gtk_window_add_accel_group(g->window, group);
+	
+	
+	for (i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++) {
+		g->buttons[i] = malloc(sizeof(struct nsgtk_button_connect));
+		if (g->buttons[i] == NULL) {
+			warn_user("NoMemory", 0);
+			return NULL;
+		}
+		g->buttons[i]->button = NULL;
+		g->buttons[i]->location = -1;
+		g->buttons[i]->sensitivity = true;
+		g->buttons[i]->main = NULL;
+		g->buttons[i]->rclick = NULL;
+		g->buttons[i]->popup = NULL;
+		g->buttons[i]->mhandler = NULL;
+		g->buttons[i]->bhandler = NULL;
+		g->buttons[i]->dataplus = NULL;
+		g->buttons[i]->dataminus = NULL;
+	}
+	/* here custom toolbutton adding code */
+	g->offset = 0;
+	g->toolbarmem = 0;
+	g->toolbarbase = 0;
+	g->historybase = 0;
+	nsgtk_toolbar_customization_load(g);
+	nsgtk_toolbar_set_physical(g);
+#define MAKE_MENUS(q)\
+	g->q##_menu = nsgtk_menu_##q##_menu(group);\
+	g->rclick_##q##_menu = nsgtk_menu_##q##_menu(group);\
+	gtk_menu_item_set_submenu(GTK_MENU_ITEM(GET_WIDGET("menuitem_" #q)),\
+			GTK_WIDGET(g->q##_menu->q##_menu));\
+	gtk_menu_set_accel_group(g->q##_menu->q##_menu, group)
+	MAKE_MENUS(file);
+	MAKE_MENUS(edit);
+	MAKE_MENUS(view);
+	MAKE_MENUS(nav);
+	MAKE_MENUS(tabs);
+	MAKE_MENUS(help);
+#undef MAKE_MENUS
+	g->edit_menu_item = GTK_MENU_ITEM(GET_WIDGET("menuitem_edit"));
+	g->tabs_menu_item = GTK_MENU_ITEM(GET_WIDGET("menuitem_tabs"));
 	
 	g->preferences_dialog = NULL;
-        
+	        
         nscss_screen_dpi = FLTTOFIX(gdk_screen_get_resolution(
 			gtk_widget_get_screen(GTK_WIDGET(g->window))));
         LOG(("Set CSS DPI to %f", FIXTOFLT(nscss_screen_dpi)));
@@ -1276,16 +1557,18 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 			break;
 		case GTK_TOOLBAR_BOTH:
 		case GTK_TOOLBAR_BOTH_HORIZ:
-			option_button_type = 3;
-			break;
+		/* no labels in default configuration */
 		default:
 			/* No system default, so use large icons */
 			option_button_type = 2;
 			break;
 		}
 	}
-
+	
 	switch (option_button_type) {
+	/* case 0 is 'unset' [from fresh install / clearing options] 
+	 * see above */
+		
 	case 1: /* Small icons */
 		gtk_toolbar_set_style(GTK_TOOLBAR(g->tool_bar),
 				      GTK_TOOLBAR_ICONS);
@@ -1311,26 +1594,19 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 		break;
 	}
 
+	gtk_toolbar_set_show_arrow(g->tool_bar, TRUE);
+	gtk_widget_show_all(GTK_WIDGET(g->tool_bar));
 	nsgtk_tab_init(GTK_WIDGET(g->notebook));
 
-	/* set the URL entry box to expand, as we can't do this from within
-	 * glade because of the way it emulates toolbars.
-	 */
-	gtk_tool_item_set_expand(GTK_TOOL_ITEM(GET_WIDGET("toolURLBar")),
-			TRUE);
-
-	/* disable toolbar buttons that make no sense initially. */
-	gtk_widget_set_sensitive(GTK_WIDGET(g->back_button), FALSE);
-	gtk_widget_set_sensitive(GTK_WIDGET(g->forward_button), FALSE);
-	gtk_widget_set_sensitive(GTK_WIDGET(g->stop_button), FALSE);
-
+	gtk_widget_set_size_request(GTK_WIDGET(
+			g->buttons[HISTORY_BUTTON]->button), 20, -1);
+	
 	/* create the local history window to be associated with this browser */
 	g->history_window = malloc(sizeof(struct gtk_history_window));
 	g->history_window->g = g;
 	g->history_window->window = 
 			GTK_WINDOW(gtk_window_new(GTK_WINDOW_TOPLEVEL));
 	gtk_window_set_transient_for(g->history_window->window, g->window);
-	gtk_window_set_default_size(g->history_window->window, 400, 400);
 	gtk_window_set_title(g->history_window->window, "NetSurf History");
 	gtk_window_set_type_hint(g->history_window->window,
 			GDK_WINDOW_TYPE_HINT_UTILITY);
@@ -1356,7 +1632,6 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 
 	/* set up URL bar completion */
 	g->url_bar_completion = gtk_entry_completion_new();
-	gtk_entry_set_completion(g->url_bar, g->url_bar_completion);
 	gtk_entry_completion_set_match_func(g->url_bar_completion,
 			nsgtk_completion_match, NULL, NULL);
 	gtk_entry_completion_set_model(g->url_bar_completion,
@@ -1370,8 +1645,8 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 			NULL);
 
 	/* set up the throbber. */
-	gtk_image_set_from_pixbuf(g->throbber, nsgtk_throbber->framedata[0]);
 	g->throb_frame = 0;
+	
 
 #define CONNECT(obj, sig, callback, ptr) \
 	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))
@@ -1379,8 +1654,8 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	/* connect history window signals to their handlers */
 	CONNECT(g->history_window->drawing_area, "expose_event",
 			nsgtk_history_expose_event, g->history_window);
-//	CONNECT(g->history_window->drawing_area, "motion_notify_event",
-//			nsgtk_history_motion_notify_event, g->history_window);
+	/*CONNECT(g->history_window->drawing_area, "motion_notify_event",
+			nsgtk_history_motion_notify_event, g->history_window);*/
 	CONNECT(g->history_window->drawing_area, "button_press_event",
 			nsgtk_history_button_press_event, g->history_window);
 	CONNECT(g->history_window->window, "delete_event",
@@ -1393,35 +1668,67 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	
 	/* connect signals to handlers. */
 	CONNECT(g->window, "delete-event", nsgtk_window_delete_event, g);
-	CONNECT(g->window, "destroy", nsgtk_window_destroy_event, g);
 
-	/* toolbar, URL bar, and menu bar signal handlers */
-	CONNECT(g->edit_menu, "show", nsgtk_window_edit_menu_clicked, g);
-	CONNECT(g->edit_menu, "hide", nsgtk_window_edit_menu_hidden, g);
-	CONNECT(g->back_button, "clicked", nsgtk_window_back_button_clicked, 
+	/* toolbar URL bar menu bar search bar signal handlers */
+	CONNECT(g->edit_menu_item, "show", nsgtk_window_edit_menu_clicked, g);
+	CONNECT(g->edit_menu_item, "hide", nsgtk_window_edit_menu_hidden, g);
+	CONNECT(g->search->buttons[1], "clicked", 
+			nsgtk_search_forward_button_clicked, g);
+	CONNECT(g->search->buttons[0], "clicked", 
+			nsgtk_search_back_button_clicked, g);
+	CONNECT(g->search->entry, "changed", nsgtk_search_entry_changed, g);
+	CONNECT(g->search->entry, "activate", nsgtk_search_entry_activate, g);
+	CONNECT(g->search->entry, "key-press-event", nsgtk_search_entry_key, g);
+	CONNECT(g->search->buttons[2], "clicked", 
+			nsgtk_search_close_button_clicked, g);
+	CONNECT(g->search->caseSens, "toggled", nsgtk_search_entry_changed,
 			g);
-	CONNECT(g->forward_button, "clicked",
-			nsgtk_window_forward_button_clicked, g);
-	CONNECT(g->history_button, "clicked", 
-			nsgtk_window_history_button_clicked, g);
-	CONNECT(g->stop_button, "clicked", nsgtk_window_stop_button_clicked, 
-			g);
-	CONNECT(g->reload_button, "clicked",
-			nsgtk_window_reload_button_clicked, g);
-	CONNECT(GET_WIDGET("toolHome"), "clicked",
-			nsgtk_window_home_button_clicked, g);
-	CONNECT(g->url_bar, "activate", nsgtk_window_url_activate_event, g);
-	CONNECT(g->url_bar, "changed", nsgtk_window_url_changed, g);
 
+	
+	CONNECT(g->tool_bar, "popup-context-menu", 
+			nsgtk_window_tool_bar_clicked, g);
+	g->popup_xml = glade_xml_new(glade_netsurf_file_location, "menuPopup", NULL);
 	/* set up the menu signal handlers */
-	nsgtk_attach_menu_handlers(g->xml, g);
+	nsgtk_scaffolding_toolbar_init(g);
+	nsgtk_toolbar_connect_all(g);
+	nsgtk_attach_menu_handlers(g);
+	
+	/* prepare to set the web search ico */
+	
+	/* init web search prefs from file */
+	search_web_provider_details(option_search_provider);
+	
+	/* potentially retrieve ico */
+	if (search_web_ico() == NULL)
+		search_web_retrieve_ico(false);
+	
+	/* set entry */
+	searchname = search_web_provider_name();
+	if (searchname != NULL) {
+		char searchcontent[strlen(searchname) + SLEN("Search ")	+ 1];
+		sprintf(searchcontent, "Search %s", searchname);
+		nsgtk_scaffolding_set_websearch(g, searchcontent);
+		free(searchname);
+	}
 
+#define POPUP_ATTACH(q) gtk_menu_item_set_submenu( \
+		GTK_MENU_ITEM(glade_xml_get_widget(g->popup_xml,\
+		"menupopup_" #q)), GTK_WIDGET(g->rclick_##q##_menu->q##_menu));\
+		
+		POPUP_ATTACH(file);
+		POPUP_ATTACH(edit);
+		POPUP_ATTACH(view);
+		POPUP_ATTACH(nav);
+		POPUP_ATTACH(tabs);
+		POPUP_ATTACH(help);
+#undef POPUP_ATTACH
+	nsgtk_scaffolding_initial_sensitivity(g);
+	
 	g->being_destroyed = 0;
 
 	g->fullscreen = false;
 
 	/* create the popup version of the menu */
-	g->popup_xml = glade_xml_new(glade_file_location, "menuPopup", NULL);
 	g->popup_menu = GTK_MENU(glade_xml_get_widget(g->popup_xml, 
 			"menuPopup"));
 
@@ -1430,54 +1737,50 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	 * gtk_menu_shell_append (GTK_MENU_SHELL(g->popup_menu), 
 	 * GTK_WIDGET(glade_xml_get_widget(g->xml, "back"))); */
 	CONNECT(g->popup_menu, "hide", nsgtk_window_popup_menu_hidden, g);
-	CONNECT(glade_xml_get_widget(g->popup_xml, "popupBack"), "activate",
-			 nsgtk_window_back_button_clicked, g);
-	CONNECT(glade_xml_get_widget(g->popup_xml, "popupForward"),"activate", 
-			 nsgtk_window_forward_button_clicked, g);
-	CONNECT(glade_xml_get_widget(g->popup_xml, "popupReload"), "activate", 
-			 nsgtk_window_reload_button_clicked, g);
+
 	CONNECT(glade_xml_get_widget(g->popup_xml, "save_link_popup"), 
-			"activate", nsgtk_on_save_link_activate, g);
+			"activate", nsgtk_on_savelink_activate, g);
 	CONNECT(glade_xml_get_widget(g->popup_xml, 
-			"open_link_in_focused_tab_popup"),
-			"activate", 
-			nsgtk_on_open_link_in_focused_tab_activate, g); 
+			"open_link_in_focused_tab_popup"), "activate", 
+			nsgtk_on_linkfocused_activate, g); 
 	CONNECT(glade_xml_get_widget(g->popup_xml, 
-			"open_link_in_background_tab_popup"), 
-			"activate", 
-			nsgtk_on_open_link_in_background_tab_activate, g);
+			"open_link_in_background_tab_popup"), "activate", 
+			nsgtk_on_linkbackground_activate, g);
 	CONNECT(glade_xml_get_widget(g->popup_xml, "cut_popup"), "activate", 
 			 nsgtk_on_cut_activate, g);	
 	CONNECT(glade_xml_get_widget(g->popup_xml, "copy_popup"), "activate",
 			 nsgtk_on_copy_activate, g);
-	CONNECT(glade_xml_get_widget(g->popup_xml, "paste_popup"),"activate", 
-			 nsgtk_on_paste_activate, g);		
-	
-#define POPUP_ATTACH(x, y) gtk_menu_item_set_submenu( \
-			GTK_MENU_ITEM(glade_xml_get_widget(g->popup_xml, x)),\
-			GTK_WIDGET(glade_xml_get_widget(g->xml, y)))
-
-	POPUP_ATTACH("menupopup_file", "menumain_file");
-	POPUP_ATTACH("menupopup_edit", "menumain_edit");
-	POPUP_ATTACH("menupopup_view", "menumain_view");
-	POPUP_ATTACH("menupopup_navigate", "menumain_navigate");
-	POPUP_ATTACH("menupopup_help", "menumain_help");
-
-#undef POPUP_ATTACH
+	CONNECT(glade_xml_get_widget(g->popup_xml, "paste_popup"), "activate",
+			nsgtk_on_paste_activate, g);	
+	CONNECT(glade_xml_get_widget(g->popup_xml, "customize_popup"),
+			"activate", nsgtk_on_customize_activate, g);
 	/* hides redundant popup menu items */
 	GList *widgets = glade_xml_get_widget_prefix(g->popup_xml, 
 			"menupopup");
 	for (; widgets != NULL; widgets = widgets->next)
 		gtk_widget_hide(GTK_WIDGET(widgets->data));
+	gtk_widget_hide(glade_xml_get_widget(g->popup_xml, "customize_popup"));
 
-	/* disable PDF-requiring menu items */
-#ifndef WITH_PDF_EXPORT
-	gtk_widget_set_sensitive(GET_WIDGET("export_pdf"), FALSE);
-#endif
+	/* attach to the list */
+	if (scaf_list)
+		scaf_list->prev = g;
+	g->next = scaf_list;
+	g->prev = NULL;
+	scaf_list = g;	
+	
+	/* call functions that need access from the list */
+	nsgtk_theme_init();
+	nsgtk_theme_implement(g);
 
+	/* set web search ico */
+	if (search_web_ico() != NULL)
+		gui_window_set_search_ico(search_web_ico());
+	
 	/* finally, show the window. */
 	gtk_widget_show(GTK_WIDGET(g->window));
 
+	LOG(("creation complete"));
+	
 	return g;
 }
 
@@ -1516,17 +1819,16 @@ void gui_window_set_url(struct gui_window *_g, const char *url)
 {
         struct gtk_scaffolding *g = nsgtk_get_scaffold(_g);
         if (g->top_level != _g) return;
-	gtk_entry_set_text(g->url_bar, url);
-	gtk_editable_set_position(GTK_EDITABLE(g->url_bar),  -1);
+	gtk_entry_set_text(GTK_ENTRY(g->url_bar), url);
+	gtk_editable_set_position(GTK_EDITABLE(g->url_bar), -1);
 }
 
 void gui_window_start_throbber(struct gui_window* _g)
 {
         struct gtk_scaffolding *g = nsgtk_get_scaffold(_g);
-	gtk_widget_set_sensitive(GTK_WIDGET(g->stop_button), TRUE);
-	gtk_widget_set_sensitive(GTK_WIDGET(g->reload_button), FALSE);
-	gtk_widget_set_sensitive(GTK_WIDGET(g->stop_menu), TRUE);
-	gtk_widget_set_sensitive(GTK_WIDGET(g->reload_menu), FALSE);
+        g->buttons[STOP_BUTTON]->sensitivity = true;
+        g->buttons[RELOAD_BUTTON]->sensitivity = false;
+        nsgtk_scaffolding_set_sensitivity(g);
 
 	nsgtk_window_update_back_forward(g);
 
@@ -1536,50 +1838,351 @@ void gui_window_start_throbber(struct gui_window* _g)
 void gui_window_stop_throbber(struct gui_window* _g)
 {
         struct gtk_scaffolding *g = nsgtk_get_scaffold(_g);
-	gtk_widget_set_sensitive(GTK_WIDGET(g->stop_button), FALSE);
-	gtk_widget_set_sensitive(GTK_WIDGET(g->reload_button), TRUE);
-	gtk_widget_set_sensitive(GTK_WIDGET(g->stop_menu), FALSE);
-	gtk_widget_set_sensitive(GTK_WIDGET(g->reload_menu), TRUE);
-
+        g->buttons[STOP_BUTTON]->sensitivity = false;
+        g->buttons[RELOAD_BUTTON]->sensitivity = true;
 	nsgtk_window_update_back_forward(g);
-
 	schedule_remove(nsgtk_throb, g);
 
+	if ((g == NULL) || (g->throbber == NULL) || (nsgtk_throbber == NULL) || 
+			(nsgtk_throbber->framedata == NULL) || 
+			(nsgtk_throbber->framedata[0] == NULL))
+		return;
 	gtk_image_set_from_pixbuf(g->throbber, nsgtk_throbber->framedata[0]);
 }
 
-gboolean nsgtk_scaffolding_is_busy(struct gtk_scaffolding *scaffold)
+/**
+ * set favicon 
+ */
+void gui_window_set_icon(struct gui_window *_g, struct content *icon)
+{
+	struct gtk_scaffolding *g = nsgtk_get_scaffold(_g);
+	GtkImage *iconImage = NULL;
+	if (g->icoFav != NULL)
+		g_object_unref(g->icoFav);
+	if ((icon != NULL) && (icon->type == CONTENT_ICO)) {
+		nsico_set_bitmap_from_size(icon, 16, 16);
+	}
+	if ((icon != NULL) && (icon->bitmap != NULL)) {
+		GdkPixbuf *pb = gtk_bitmap_get_primary(icon->bitmap);
+		if ((pb != NULL) && (gdk_pixbuf_get_width(pb) > 0) && 
+					(gdk_pixbuf_get_height(pb) > 0)) {
+			pb = gdk_pixbuf_scale_simple(pb, 16, 16, 
+					GDK_INTERP_HYPER);
+			iconImage = GTK_IMAGE(
+					gtk_image_new_from_pixbuf(pb));
+		} else {
+			iconImage = NULL;
+		}	
+	}
+	if (iconImage == NULL) {
+		char imagepath[strlen(res_dir_location) + SLEN("html.png")
+				+ 1];
+		sprintf(imagepath, "%shtml.png", res_dir_location);
+		iconImage = GTK_IMAGE(gtk_image_new_from_file(imagepath));
+	}
+	g->icoFav = iconImage;
+	sexy_icon_entry_set_icon(SEXY_ICON_ENTRY(g->url_bar), 
+			SEXY_ICON_ENTRY_PRIMARY, GTK_IMAGE(g->icoFav));
+	gtk_widget_show_all(GTK_WIDGET(g->buttons[URL_BAR_ITEM]->button));
+}
+
+void gui_window_set_search_ico(struct content *ico)
+{
+	GdkPixbuf *pbico = NULL;
+	GtkImage *searchico = NULL;
+	nsgtk_scaffolding *current;
+	if (ico == NULL)
+		ico = search_web_ico();
+
+	if ((ico != NULL) && (ico->type == CONTENT_ICO)) {
+		nsico_set_bitmap_from_size(ico, 20, 20);
+	}
+	if ((ico != NULL) && (ico->bitmap != NULL)) {
+		pbico = gtk_bitmap_get_primary(ico->bitmap);
+		if ((pbico != NULL) && (gdk_pixbuf_get_width(pbico) > 0) && 
+					(gdk_pixbuf_get_height(pbico) > 0)) {
+			pbico = gdk_pixbuf_scale_simple(pbico, 20, 20, 
+					GDK_INTERP_HYPER);
+			current = scaf_list;
+			searchico = GTK_IMAGE(
+					gtk_image_new_from_pixbuf(pbico));
+		} else {
+			searchico = NULL;
+		}	
+	}
+	/* add ico to toolbar */
+	current = scaf_list;
+	while (current) { 
+		if (searchico != NULL) {
+			current->webSearchIco = searchico;
+			sexy_icon_entry_set_icon(SEXY_ICON_ENTRY(
+					current->webSearchEntry),
+					SEXY_ICON_ENTRY_PRIMARY,
+					current->webSearchIco);
+		}
+		searchico = GTK_IMAGE(gtk_image_new_from_pixbuf(pbico));
+		current = current->next;
+	}
+}
+
+bool nsgtk_scaffolding_is_busy(nsgtk_scaffolding *g)
 {
         /* We are considered "busy" if the stop button is sensitive */
-        return GTK_WIDGET_SENSITIVE((GTK_WIDGET(scaffold->stop_button)));
+        return g->buttons[STOP_BUTTON]->sensitivity;
 }
 
-GtkWindow* nsgtk_scaffolding_get_window (struct gui_window *g)
+GtkWindow* nsgtk_scaffolding_window(nsgtk_scaffolding *g)
 {
-	return g->scaffold->window;
+	return g->window;
 }
 
-GtkNotebook* nsgtk_scaffolding_get_notebook (struct gui_window *g)
+GtkNotebook* nsgtk_scaffolding_notebook(nsgtk_scaffolding *g)
 {
-	return g->scaffold->notebook;
+	return g->notebook;
+}
+
+GtkWidget *nsgtk_scaffolding_urlbar(nsgtk_scaffolding *g)
+{
+	return g->url_bar;
+}
+
+GtkWidget *nsgtk_scaffolding_websearch(nsgtk_scaffolding *g)
+{
+	return g->webSearchEntry;
+}
+
+
+GtkToolbar *nsgtk_scaffolding_toolbar(nsgtk_scaffolding *g)
+{
+	return g->tool_bar;
+}
+
+struct nsgtk_button_connect *nsgtk_scaffolding_button(nsgtk_scaffolding *g,
+		int i)
+{
+	return g->buttons[i];
+}
+
+struct gtk_search *nsgtk_scaffolding_search(nsgtk_scaffolding *g)
+{
+	return g->search;
+}
+
+GtkMenuBar *nsgtk_scaffolding_menu_bar(nsgtk_scaffolding *g)
+{
+	return g->menu_bar;
+}
+
+struct gtk_history_window *nsgtk_scaffolding_history_window(nsgtk_scaffolding
+		*g)
+{
+	return g->history_window;
+}
+
+nsgtk_scaffolding *nsgtk_scaffolding_iterate(nsgtk_scaffolding *g)
+{
+	return g->next;
+}
+
+void nsgtk_scaffolding_reset_offset(nsgtk_scaffolding *g)
+{
+	g->offset = 0;
+}
+
+void nsgtk_scaffolding_update_url_bar_ref(nsgtk_scaffolding *g)
+{
+	g->url_bar = GTK_WIDGET(gtk_bin_get_child(GTK_BIN(
+			nsgtk_scaffolding_button(g, URL_BAR_ITEM)->button)));
+	g->icoFav = sexy_icon_entry_get_icon(SEXY_ICON_ENTRY(g->url_bar), 
+			SEXY_ICON_ENTRY_PRIMARY);
+	
+	gtk_entry_set_completion(GTK_ENTRY(g->url_bar),
+			g->url_bar_completion);
+}
+void nsgtk_scaffolding_update_throbber_ref(nsgtk_scaffolding *g)
+{
+	g->throbber = GTK_IMAGE(gtk_bin_get_child(GTK_BIN(gtk_bin_get_child(
+			GTK_BIN(g->buttons[THROBBER_ITEM]->button)))));
+}
+
+void nsgtk_scaffolding_update_websearch_ref(nsgtk_scaffolding *g)
+{
+	g->webSearchEntry = gtk_bin_get_child(GTK_BIN(
+			g->buttons[WEBSEARCH_ITEM]->button));
+	g->webSearchIco = sexy_icon_entry_get_icon(SEXY_ICON_ENTRY(
+			g->webSearchEntry), SEXY_ICON_ENTRY_PRIMARY);
+}
+
+void nsgtk_scaffolding_set_websearch(nsgtk_scaffolding *g, const char *content)
+{
+	/* this code appears technically correct, though currently has no
+	 * effect at all - tinkering encouraged */
+	PangoLayout *lo = gtk_entry_get_layout(GTK_ENTRY(g->webSearchEntry));
+	if (lo != NULL) {
+		pango_layout_set_font_description(lo, NULL);
+		PangoFontDescription *desc = pango_font_description_new();
+		if (desc != NULL) {
+			pango_font_description_set_style(desc, 
+					PANGO_STYLE_ITALIC);
+			pango_font_description_set_family(desc, "Arial");
+			pango_font_description_set_weight(desc, 
+					PANGO_WEIGHT_ULTRALIGHT);
+			pango_font_description_set_size(desc,
+					10 * PANGO_SCALE);
+			pango_layout_set_font_description(lo, desc);
+		}
+
+		PangoAttrList *list = pango_attr_list_new();
+		if (list != NULL) {
+			PangoAttribute *italic = pango_attr_style_new(
+					PANGO_STYLE_ITALIC);
+			if (italic != NULL) {
+				italic->start_index = 0;
+				italic->end_index = strlen(content);
+			}
+			PangoAttribute *grey = pango_attr_foreground_new(
+					0x7777, 0x7777, 0x7777);
+			if (grey != NULL) {
+				grey->start_index = 0;
+				grey->end_index = strlen(content);
+			}
+			pango_attr_list_insert(list, italic);
+			pango_attr_list_insert(list, grey);
+			pango_layout_set_attributes(lo, list);
+			pango_attr_list_unref(list);
+		}
+		pango_layout_set_text(lo, content, -1);
+	}
+/*	an alternative method */
+/*	char *parse = malloc(strlen(content) + 1);
+	PangoAttrList *list = pango_layout_get_attributes(lo);
+	char *markup = g_strconcat("<span foreground='#777777'><i>", content,
+			"</i></span>", NULL);
+	pango_parse_markup(markup, -1, 0, &list, &parse, NULL, NULL);
+	gtk_widget_show_all(g->webSearchEntry);
+*/
+	gtk_entry_set_visibility(GTK_ENTRY(g->webSearchEntry), TRUE);
+	gtk_entry_set_text(GTK_ENTRY(g->webSearchEntry), content);
+}
+
+void nsgtk_scaffolding_toggle_search_bar_visibility(nsgtk_scaffolding *g)
+{
+	gboolean vis;
+	struct browser_window *bw = 
+			gui_window_get_browser_window(g->top_level);
+	g_object_get(G_OBJECT(g->search->bar), "visible", &vis, NULL);
+	if (vis) {
+		if ((bw != NULL) && (bw->search_context != NULL))
+			search_destroy_context(bw->search_context);
+		nsgtk_search_set_forward_state(true, bw);
+		nsgtk_search_set_back_state(true, bw);
+		gtk_widget_hide(GTK_WIDGET(g->search->bar));
+	} else {
+		gtk_widget_show(GTK_WIDGET(g->search->bar));
+		gtk_widget_grab_focus(GTK_WIDGET(g->search->entry));
+	}
+}
+
+
+struct gui_window *nsgtk_scaffolding_top_level(nsgtk_scaffolding *g)
+{
+	return g->top_level;
 }
 
 void nsgtk_scaffolding_set_top_level (struct gui_window *gw)
 {
-	gw->scaffold->top_level = gw;
+	nsgtk_get_scaffold(gw)->top_level = gw;
+	struct browser_window *bw = gui_window_get_browser_window(gw);
 
 	/* Synchronise the history (will also update the URL bar) */
-	nsgtk_window_update_back_forward(gw->scaffold);
-
-	/* Ensure the window's title bar is updated */
-	if (gw->bw != NULL && gw->bw->current_content != NULL) {
-		if (gw->bw->current_content->title != NULL) {
+	nsgtk_window_update_back_forward(nsgtk_get_scaffold(gw));
+	/* clear effects of potential searches */
+	if ((bw != NULL) && (bw->search_context != NULL))
+		search_destroy_context(bw->search_context);
+	nsgtk_search_set_forward_state(true, bw);
+	nsgtk_search_set_back_state(true, bw);
+	
+	/* Ensure the window's title bar as well as favicon are updated */
+	if (gui_window_get_browser_window(gw) != NULL &&
+			gui_window_get_browser_window(gw)->current_content
+			!= NULL) {
+		if (gui_window_get_browser_window(gw)->current_content->title
+				!= NULL) {
 			gui_window_set_title(gw, 
-					gw->bw->current_content->title);
+					gui_window_get_browser_window(gw)->
+					current_content->title);
 		} else {
-			gui_window_set_title(gw, gw->bw->current_content->url);
+			gui_window_set_title(gw,
+					gui_window_get_browser_window(gw)->
+					current_content->url);
 		}
+		if (gui_window_get_browser_window(gw)->current_content->type 
+				== CONTENT_HTML)
+			gui_window_set_icon(gw,
+					gui_window_get_browser_window(gw)->
+					current_content->data.html.favicon);
 	}
+}
+
+void nsgtk_scaffolding_set_sensitivity(struct gtk_scaffolding *g)
+{
+#define SENSITIVITY(q)\
+		i = q##_BUTTON;\
+		if (g->buttons[i]->main != NULL)\
+			gtk_widget_set_sensitive(GTK_WIDGET(\
+					g->buttons[i]->main),\
+					g->buttons[i]->sensitivity);\
+		if (g->buttons[i]->rclick != NULL)\
+			gtk_widget_set_sensitive(GTK_WIDGET(\
+					g->buttons[i]->rclick),\
+					g->buttons[i]->sensitivity);\
+		if ((g->buttons[i]->location != -1) && \
+				(g->buttons[i]->button != NULL))\
+			gtk_widget_set_sensitive(GTK_WIDGET(\
+					g->buttons[i]->button),\
+					g->buttons[i]->sensitivity);\
+		if (g->buttons[i]->popup != NULL)\
+			gtk_widget_set_sensitive(GTK_WIDGET(\
+					g->buttons[i]->popup),\
+					g->buttons[i]->sensitivity);
+
+	int i;
+	SENSITIVITY(STOP)
+	SENSITIVITY(RELOAD)
+	SENSITIVITY(CUT)
+	SENSITIVITY(COPY)
+	SENSITIVITY(PASTE)
+	SENSITIVITY(BACK)
+	SENSITIVITY(FORWARD)
+	SENSITIVITY(NEXTTAB)
+	SENSITIVITY(PREVTAB)
+	SENSITIVITY(CLOSETAB)
+#undef SENSITIVITY
+}
+
+void nsgtk_scaffolding_initial_sensitivity(struct gtk_scaffolding *g)
+{
+	for (int i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++) {
+		if (g->buttons[i]->main != NULL)
+			gtk_widget_set_sensitive(GTK_WIDGET(
+					g->buttons[i]->main),
+					g->buttons[i]->sensitivity);
+		if (g->buttons[i]->rclick != NULL)
+			gtk_widget_set_sensitive(GTK_WIDGET(
+					g->buttons[i]->rclick),
+					g->buttons[i]->sensitivity);
+		if ((g->buttons[i]->location != -1) && 
+				(g->buttons[i]->button != NULL))
+			gtk_widget_set_sensitive(GTK_WIDGET(
+					g->buttons[i]->button),
+					g->buttons[i]->sensitivity);
+		if (g->buttons[i]->popup != NULL)
+			gtk_widget_set_sensitive(GTK_WIDGET(
+					g->buttons[i]->popup),
+					g->buttons[i]->sensitivity);
+	}
+	gtk_widget_set_sensitive(GTK_WIDGET(g->view_menu->images_menuitem),
+			FALSE);
 }
 
 void nsgtk_scaffolding_popup_menu(struct gtk_scaffolding *g,
@@ -1588,21 +2191,59 @@ void nsgtk_scaffolding_popup_menu(struct gtk_scaffolding *g,
 	guint available_menu_options = 0;
 	GtkWidget *widget = NULL;
 
+	
 	available_menu_options |=
         		nsgtk_scaffolding_update_link_operations_sensitivity(g,
-			g->popup_xml, x, y, TRUE);
+			g->popup_xml, x, y, true);
 	available_menu_options |=
 			nsgtk_scaffolding_update_edit_actions_sensitivity(g,
-			g->popup_xml, TRUE);
+			g->popup_xml, true);
 
 	/* Hide the separator as well */
 	if (!available_menu_options) {
-		widget = glade_xml_get_widget(g->popup_xml, "separator1");
+		widget = glade_xml_get_widget(g->popup_xml, "sep2");
 		gtk_widget_hide(widget);
 	}
+	/* hide customize */
+	gtk_widget_hide(glade_xml_get_widget(g->popup_xml, "customize_popup"));
+
 
 	gtk_menu_popup(g->popup_menu, NULL, NULL, NULL, NULL, 0,
 			gtk_get_current_event_time());
+}
+
+/**
+ * reallocate width for history button, reallocate buttons right of history;
+ * memorise base of history button / toolbar
+ */
+void nsgtk_scaffolding_toolbar_size_allocate(GtkWidget *widget,
+		GtkAllocation *alloc, gpointer data)
+{
+	struct gtk_scaffolding *g = (struct gtk_scaffolding *)data;
+	int i = nsgtk_toolbar_get_id_from_widget(widget, g);
+	if ((g->toolbarmem == alloc->x) || 
+			(g->buttons[i]->location <
+			g->buttons[HISTORY_BUTTON]->location))
+	/* no reallocation after first adjustment, no reallocation for buttons
+	 * left of history button */
+		return;
+	if (widget == GTK_WIDGET(g->buttons[HISTORY_BUTTON]->button)) {
+		if (alloc->width == 20)
+			return;
+
+		g->toolbarbase = alloc->y + alloc->height;
+		g->historybase = alloc->x + 20;
+		if (g->offset == 0)
+			g->offset = alloc->width - 20;
+		alloc->width = 20;
+	} else if (g->buttons[i]->location <= 
+			g->buttons[URL_BAR_ITEM]->location) {
+		alloc->x -= g->offset;
+		if (i == URL_BAR_ITEM)
+			alloc->width += g->offset;
+	}
+	g->toolbarmem = alloc->x;
+	gtk_widget_size_allocate(widget, alloc);
 }
 
 static guint nsgtk_scaffolding_update_link_operations_sensitivity(
@@ -1610,14 +2251,15 @@ static guint nsgtk_scaffolding_update_link_operations_sensitivity(
 		gboolean hide)
 {
 	gboolean is_sensitive;
-	GtkWidget *widget1, *widget2, *widget3;
+	GtkWidget *widget[3];
+	int i;
 
-	widget1 = glade_xml_get_widget_prefix(xml, "save_link")->data;
-	widget2 = glade_xml_get_widget_prefix(xml, 
+	widget[0] = glade_xml_get_widget_prefix(xml, "save_link")->data;
+	widget[1] = glade_xml_get_widget_prefix(xml, 
 			"open_link_in_focused_tab")->data;
-	widget3 = glade_xml_get_widget_prefix(xml, 
+	widget[2] = glade_xml_get_widget_prefix(xml, 
 			"open_link_in_background_tab")->data;
-	struct browser_window *bw = nsgtk_get_browser_for_gui(g->top_level);
+	struct browser_window *bw = gui_window_get_browser_window(g->top_level);
 	current_menu_link_box = NULL;
 
 	if (bw->current_content && bw->current_content->type == CONTENT_HTML) {
@@ -1626,107 +2268,228 @@ static guint nsgtk_scaffolding_update_link_operations_sensitivity(
 	}
 
 	is_sensitive = (current_menu_link_box != NULL) ? TRUE : FALSE;
-	gtk_widget_set_sensitive(widget1, is_sensitive);
-	gtk_widget_set_sensitive(widget2, is_sensitive);
-	gtk_widget_set_sensitive(widget3, is_sensitive);
+	for (i = 0; i < 3; i++) {
+		gtk_widget_set_sensitive(widget[i], is_sensitive);
 	
-	if (hide == TRUE && current_menu_link_box == NULL) {
-		gtk_widget_hide(widget1);
-		gtk_widget_hide(widget2);
-		gtk_widget_hide(widget3);
+		if (hide == true && current_menu_link_box == NULL) {
+			gtk_widget_hide(widget[i]);
+		}
 	}
 	return is_sensitive;
 }
 
 static guint nsgtk_scaffolding_update_edit_actions_sensitivity(
-		struct gtk_scaffolding *g, GladeXML *xml, gboolean hide)
+		struct gtk_scaffolding *g, GladeXML *xml, bool hide)
 {
 	GtkWidget *widget = gtk_window_get_focus(g->window);
-	gboolean can_copy, can_cut, can_paste;
 	gboolean has_selection;
 	
-	if (GTK_IS_EDITABLE (widget)) {
-		has_selection = gtk_editable_get_selection_bounds
-			(GTK_EDITABLE (widget), NULL, NULL);
+	if (GTK_IS_EDITABLE(widget)) {
+		has_selection = gtk_editable_get_selection_bounds(
+				GTK_EDITABLE (widget), NULL, NULL);
 
-		can_copy = has_selection;
-		can_cut = has_selection;
-		can_paste = TRUE;
+		g->buttons[COPY_BUTTON]->sensitivity = has_selection;
+		g->buttons[CUT_BUTTON]->sensitivity = has_selection;
+		g->buttons[PASTE_BUTTON]->sensitivity = true;
 	} else {
 		struct browser_window *bw = 
-				nsgtk_get_browser_for_gui(g->top_level);
+				gui_window_get_browser_window(g->top_level);
 		has_selection = bw->sel->defined; 
 		
-		can_copy = has_selection;
-		can_cut = (has_selection && bw->caret_callback != 0);
-		can_paste = (bw->paste_callback != 0);		
+		g->buttons[COPY_BUTTON]->sensitivity = has_selection;
+		g->buttons[CUT_BUTTON]->sensitivity = (has_selection &&
+				bw->caret_callback != 0);
+		g->buttons[PASTE_BUTTON]->sensitivity = 
+				(bw->paste_callback != 0);
 	}
 
 	widget = glade_xml_get_widget_prefix(xml, "copy")->data;
-	gtk_widget_set_sensitive (widget, can_copy);
-	if (hide && !can_copy) 
+	if (hide && !(g->buttons[COPY_BUTTON]->sensitivity)) 
 		gtk_widget_hide(widget);
 
 	widget = glade_xml_get_widget_prefix(xml, "cut")->data;
-	gtk_widget_set_sensitive (widget, can_cut);
-	if (hide && !can_cut) 
+	if (hide && !(g->buttons[CUT_BUTTON]->sensitivity))
 		gtk_widget_hide(widget);
 
 	widget = glade_xml_get_widget_prefix(xml, "paste")->data;
-	gtk_widget_set_sensitive (widget, can_paste);
-	if (hide && !can_paste) 
+	if (hide && !(g->buttons[PASTE_BUTTON]->sensitivity))
 		gtk_widget_hide(widget);
-	
-	return (can_paste | can_cut | can_copy);
+	nsgtk_scaffolding_set_sensitivity(g);	
+	return ((g->buttons[COPY_BUTTON]->sensitivity) |
+			(g->buttons[CUT_BUTTON]->sensitivity) |
+			(g->buttons[PASTE_BUTTON]->sensitivity));
 }
 
 static void nsgtk_scaffolding_enable_link_operations_sensitivity(
 		struct gtk_scaffolding *g, GladeXML *xml)
 {
-	GtkWidget *widget1;
-	GtkWidget *widget2;
-	GtkWidget *widget3;
+	int i;
+	GtkWidget *widget[3];
 
-	widget1 = glade_xml_get_widget_prefix(xml, "save_link")->data;
-	widget2 = glade_xml_get_widget_prefix(xml,
+	widget[0] = glade_xml_get_widget_prefix(xml, "save_link")->data;
+	widget[1] = glade_xml_get_widget_prefix(xml,
 			"open_link_in_focused_tab")->data;
-	widget3 = glade_xml_get_widget_prefix(xml,
+	widget[2] = glade_xml_get_widget_prefix(xml,
 			"open_link_in_background_tab")->data;
 
-	gtk_widget_set_sensitive(widget1, TRUE);
-	gtk_widget_show(widget1);
-	gtk_widget_set_sensitive(widget2, TRUE);
-	gtk_widget_show(widget2);
-	gtk_widget_set_sensitive(widget3, TRUE);
-	gtk_widget_show(widget3);
-
-
+	for (i = 0; i < 3; i++) {
+		gtk_widget_set_sensitive(widget[i], TRUE);
+		gtk_widget_show(widget[i]);
+	}
 }
 
 static void nsgtk_scaffolding_enable_edit_actions_sensitivity(
 		struct gtk_scaffolding *g, GladeXML *xml)
 {
 
-	GtkWidget *widget1;
-	GtkWidget *widget2;
-	GtkWidget *widget3;
-	GtkWidget *widget4;
-	GtkWidget *widget5;
+	int i;
+	GtkWidget *widget[5];
 	
-	widget1 = glade_xml_get_widget(xml, "separator");
-	widget2 = glade_xml_get_widget(xml, "separator1");
-	widget3 = glade_xml_get_widget_prefix(xml, "copy")->data;
-	widget4 = glade_xml_get_widget_prefix(xml, "cut")->data;
-	widget5 = glade_xml_get_widget_prefix(xml, "paste")->data;
- 
-	gtk_widget_set_sensitive(widget3, TRUE);
-	gtk_widget_set_sensitive(widget4, TRUE);
-	gtk_widget_set_sensitive(widget5, TRUE);
-	 
-	gtk_widget_show(widget1);
-	gtk_widget_show(widget2);
-	gtk_widget_show(widget3);
-	gtk_widget_show(widget4);
-	gtk_widget_show(widget5);
+	widget[0] = glade_xml_get_widget(xml, "sep");
+	widget[1] = glade_xml_get_widget(xml, "sep2");
+	widget[2] = glade_xml_get_widget_prefix(xml, "copy")->data;
+	widget[3] = glade_xml_get_widget_prefix(xml, "cut")->data;
+	widget[4] = glade_xml_get_widget_prefix(xml, "paste")->data;
 	
+	g->buttons[PASTE_BUTTON]->sensitivity = true;
+	g->buttons[COPY_BUTTON]->sensitivity = true;
+	g->buttons[CUT_BUTTON]->sensitivity = true;
+	nsgtk_scaffolding_set_sensitivity(g);
+	
+	for (i = 0; i < 5; i++)
+		gtk_widget_show(widget[i]);
+	
+}
+
+/**
+ * init the array g->buttons[]
+ */
+void nsgtk_scaffolding_toolbar_init(struct gtk_scaffolding *g)
+{
+#define ITEM_MAIN(p, q, r)\
+	g->buttons[p##_BUTTON]->main =\
+			g->q##_menu->r##_menuitem;\
+	g->buttons[p##_BUTTON]->rclick =\
+			g->rclick_##q##_menu->r##_menuitem;\
+	g->buttons[p##_BUTTON]->mhandler =\
+			nsgtk_on_##r##_activate_menu;\
+	g->buttons[p##_BUTTON]->bhandler =\
+			nsgtk_on_##r##_activate_button;\
+	g->buttons[p##_BUTTON]->dataplus =\
+			nsgtk_toolbar_##r##_button_data;\
+	g->buttons[p##_BUTTON]->dataminus =\
+			nsgtk_toolbar_##r##_toolbar_button_data
+#define ITEM_SUB(p, q, r, s)\
+	g->buttons[p##_BUTTON]->main =\
+			g->q##_menu->\
+			r##_submenu->s##_menuitem;\
+	g->buttons[p##_BUTTON]->rclick =\
+			g->rclick_##q##_menu->\
+			r##_submenu->s##_menuitem;\
+	g->buttons[p##_BUTTON]->mhandler =\
+			nsgtk_on_##s##_activate_menu;\
+	g->buttons[p##_BUTTON]->bhandler =\
+			nsgtk_on_##s##_activate_button;\
+	g->buttons[p##_BUTTON]->dataplus =\
+			nsgtk_toolbar_##s##_button_data;\
+	g->buttons[p##_BUTTON]->dataminus =\
+			nsgtk_toolbar_##s##_toolbar_button_data
+#define ITEM_BUTTON(p, q)\
+	g->buttons[p##_BUTTON]->bhandler =\
+			nsgtk_on_##q##_activate;\
+	g->buttons[p##_BUTTON]->dataplus =\
+			nsgtk_toolbar_##q##_button_data;\
+	g->buttons[p##_BUTTON]->dataminus =\
+			nsgtk_toolbar_##q##_toolbar_button_data
+#define ITEM_POP(p, q)\
+	g->buttons[p##_BUTTON]->popup = GTK_IMAGE_MENU_ITEM(\
+			glade_xml_get_widget(g->popup_xml, #q "_popup"))
+#define SENSITIVITY(q)\
+	g->buttons[q##_BUTTON]->sensitivity = false
+#define ITEM_ITEM(p, q)\
+	g->buttons[p##_ITEM]->dataplus =\
+			nsgtk_toolbar_##q##_button_data;\
+	g->buttons[p##_ITEM]->dataminus =\
+			nsgtk_toolbar_##q##_toolbar_button_data
+	ITEM_ITEM(WEBSEARCH, websearch);
+	ITEM_ITEM(THROBBER, throbber);
+	ITEM_MAIN(NEWWINDOW, file, newwindow);
+	ITEM_MAIN(NEWTAB, file, newtab);
+	ITEM_MAIN(OPENFILE, file, openfile);
+	ITEM_MAIN(PRINT, file, print);
+	ITEM_MAIN(CLOSEWINDOW, file, closewindow);
+	ITEM_MAIN(SAVEPAGE, file, savepage);
+	ITEM_MAIN(PRINTPREVIEW, file, printpreview);
+	ITEM_MAIN(PRINT, file, print);
+	ITEM_MAIN(QUIT, file, quit);
+	ITEM_MAIN(CUT, edit, cut);
+	ITEM_MAIN(COPY, edit, copy);
+	ITEM_MAIN(PASTE, edit, paste);
+	ITEM_MAIN(DELETE, edit, delete);
+	ITEM_MAIN(SELECTALL, edit, selectall);
+	ITEM_MAIN(FIND, edit, find);
+	ITEM_MAIN(PREFERENCES, edit, preferences);
+	ITEM_MAIN(STOP, view, stop);
+	ITEM_POP(STOP, stop);
+	ITEM_MAIN(RELOAD, view, reload);
+	ITEM_POP(RELOAD, reload);
+	ITEM_MAIN(FULLSCREEN, view, fullscreen);
+	ITEM_MAIN(VIEWSOURCE, view, viewsource);
+	ITEM_MAIN(DOWNLOADS, view, downloads);
+	ITEM_MAIN(SAVEWINDOWSIZE, view, savewindowsize);
+	ITEM_MAIN(BACK, nav, back);
+	ITEM_POP(BACK, back);
+	ITEM_MAIN(FORWARD, nav, forward);
+	ITEM_POP(FORWARD, forward);
+	ITEM_MAIN(HOME, nav, home);
+	ITEM_MAIN(LOCALHISTORY, nav, localhistory);
+	ITEM_MAIN(GLOBALHISTORY, nav, globalhistory);
+	ITEM_MAIN(ADDBOOKMARKS, nav, addbookmarks);
+	ITEM_MAIN(SHOWBOOKMARKS, nav, showbookmarks);
+	ITEM_MAIN(OPENLOCATION, nav, openlocation);
+	ITEM_MAIN(NEXTTAB, tabs, nexttab);
+	ITEM_MAIN(PREVTAB, tabs, prevtab);
+	ITEM_MAIN(CLOSETAB, tabs, closetab);
+	ITEM_MAIN(CONTENTS, help, contents);
+	ITEM_MAIN(INFO, help, info);
+	ITEM_MAIN(GUIDE, help, guide);
+	ITEM_MAIN(ABOUT, help, about);
+	ITEM_SUB(PLAINTEXT, file, export, plaintext);
+	ITEM_SUB(PDF, file, export, pdf);
+	ITEM_SUB(DRAWFILE, file, export, drawfile);
+	ITEM_SUB(POSTSCRIPT, file, export, postscript);
+	ITEM_SUB(ZOOMPLUS, view, scaleview, zoomplus);
+	ITEM_SUB(ZOOMMINUS, view, scaleview, zoomminus);
+	ITEM_SUB(ZOOMNORMAL, view, scaleview, zoomnormal);
+	ITEM_SUB(TOGGLEDEBUGGING, view, debugging, toggledebugging);
+	ITEM_SUB(SAVEBOXTREE, view, debugging, saveboxtree);
+	ITEM_SUB(SAVEDOMTREE, view, debugging, savedomtree);
+	ITEM_BUTTON(HISTORY, history);
+	/* disable items that make no sense initially, as well as 
+	 * as-yet-unimplemented items */	
+	SENSITIVITY(BACK);
+	SENSITIVITY(FORWARD);
+	SENSITIVITY(STOP);
+	SENSITIVITY(PRINTPREVIEW);
+	SENSITIVITY(DELETE);
+	SENSITIVITY(CONTENTS);
+	SENSITIVITY(DRAWFILE);
+	SENSITIVITY(POSTSCRIPT);
+	SENSITIVITY(ADDBOOKMARKS);
+	SENSITIVITY(SHOWBOOKMARKS);
+	SENSITIVITY(NEXTTAB);
+	SENSITIVITY(PREVTAB);
+	SENSITIVITY(CLOSETAB);
+	SENSITIVITY(GUIDE);
+	SENSITIVITY(INFO);
+#ifndef WITH_PDF_EXPORT
+	SENSITIVITY(PDF);
+#endif
+
+#undef ITEM_MAIN
+#undef ITEM_SUB
+#undef ITEM_BUTTON
+#undef ITEM_POP
+#undef SENSITIVITY
+
 }

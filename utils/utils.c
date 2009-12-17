@@ -62,6 +62,29 @@ int whitespace(const char * str)
 }
 
 /**
+ * returns a string without its underscores
+ * \param replacespace true to insert a space where there was an underscore
+ */
+
+char *remove_underscores(const char *s, bool replacespace)
+{
+	size_t i, ii, len;
+	char *ret;
+	len = strlen(s);
+	ret = malloc(len + 1);
+	if (ret == NULL)
+		return NULL;
+	for (i = 0, ii = 0; i < len; i++) {
+		if (s[i] != '_')
+			ret[ii++] = s[i];
+		else if (replacespace)
+			ret[ii++] = ' ';
+	}
+	ret[ii] = '\0';
+	return ret;
+}
+
+/**
  * Replace consecutive whitespace with a single space.
  *
  * \param  s  source string

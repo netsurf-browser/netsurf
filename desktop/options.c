@@ -111,12 +111,16 @@ char *option_ca_bundle = 0;
 char *option_ca_path = 0;
 /** Cookie file location */
 char *option_cookie_file = 0;
-/** Cookie jar loaction */
+/** Cookie jar location */
 char *option_cookie_jar = 0;
 /** Home page location */
 char *option_homepage_url = 0;
+/** search web from url bar */
+bool option_search_url_bar = false;
 /** URL completion in url bar */
 bool option_url_suggestion = true;
+/** default web search provider */
+int option_search_provider = 0;
 /** default x position of new windows */
 int option_window_x = 0;
 /** default y position of new windows */
@@ -231,6 +235,8 @@ struct {
 	{ "cookie_file",	OPTION_STRING,	&option_cookie_file },
 	{ "cookie_jar",		OPTION_STRING,	&option_cookie_jar },
         { "homepage_url",	OPTION_STRING,	&option_homepage_url },
+        { "search_url_bar",	OPTION_BOOL,	&option_search_url_bar},
+        { "search_provider",	OPTION_INTEGER,	&option_search_provider},
 	{ "url_suggestion",	OPTION_BOOL,	&option_url_suggestion },
 	{ "window_x",		OPTION_INTEGER,	&option_window_x },
 	{ "window_y",		OPTION_INTEGER,	&option_window_y },

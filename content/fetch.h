@@ -40,6 +40,19 @@ typedef enum {
               FETCH_CERT_ERR,
 } fetch_msg;
 
+typedef enum {
+	FETCH_ERROR_NO_ERROR,
+	FETCH_ERROR_CERT,
+	FETCH_ERROR_AUTHENTICATION,
+	FETCH_ERROR_HTTP_NOT2,
+	FETCH_ERROR_COULDNT_RESOLVE_HOST,
+	FETCH_ERROR_PARTIAL_FILE,
+	FETCH_ERROR_MEMORY,
+	FETCH_ERROR_URL,
+	FETCH_ERROR_ENCODING,
+	FETCH_ERROR_MISC
+} fetch_error_code;
+
 struct content;
 struct fetch;
 struct form_successful_control;
@@ -58,7 +71,7 @@ struct ssl_cert_info {
 extern bool fetch_active;
 
 typedef void (*fetch_callback)(fetch_msg msg, void *p, const void *data,
-                               unsigned long size);
+                               unsigned long size, fetch_error_code errorcode);
 
 
 void fetch_init(void);
@@ -105,7 +118,8 @@ bool fetch_add_fetcher(const char *scheme,
                        fetcher_finalise finaliser);
 
 void fetch_send_callback(fetch_msg msg, struct fetch *fetch,
-		const void *data, unsigned long size);
+		const void *data, unsigned long size,
+		fetch_error_code errorcode);
 void fetch_remove_from_queues(struct fetch *fetch);
 void fetch_free(struct fetch *f);
 void fetch_set_http_code(struct fetch *fetch, long http_code);

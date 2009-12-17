@@ -2,6 +2,7 @@
  * Copyright 2006 Rob Kendrick <rjek@rjek.com>
  * Copyright 2008 Mike Lester <element3260@gmail.com>
  * Copyright 2009 Daniel Silverstone <dsilvers@netsurf-browser.org>
+ * Copyright 2009 Mark Benjamin <netsurf-browser.org.MarkBenjamin@dfgh.net>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -27,17 +28,20 @@
 #include <glade/glade.h>
 #include "desktop/options.h"
 #include "desktop/print.h"
+#include "desktop/searchweb.h"
 #include "gtk/options.h"
 #include "gtk/gtk_gui.h"
 #include "gtk/gtk_scaffolding.h"
+#include "gtk/gtk_theme.h"
 #include "gtk/dialogs/gtk_options.h"
 #include "gtk/gtk_window.h"
 #include "utils/log.h"
 #include "utils/utils.h"
+#include "utils/messages.h"
 
-GtkDialog *wndPreferences;
+GtkDialog *wndPreferences = NULL;
 static GladeXML *gladeFile;
-static gchar *glade_location;
+
 static struct browser_window *current_browser;
 
 static int proxy_type;
@@ -45,6 +49,7 @@ static float animation_delay;
 
 static void dialog_response_handler (GtkDialog *dlg, gint res_id);
 static gboolean on_dialog_close (GtkDialog *dlg, gboolean stay_alive);
+static void nsgtk_options_theme_combo(void);
 
 /* Declares both widget and callback */
 #define DECLARE(x) \
@@ -97,6 +102,12 @@ DECLARE(checkRequestOverwrite);
 DECLARE(fileChooserDownloads);
 DECLARE(checkFocusNew);
 DECLARE(checkNewBlank);
+DECLARE(checkUrlSearch);
+DECLARE(comboSearch);
+DECLARE(combotheme);
+DECLARE(buttonaddtheme);
+DECLARE(sourceButtonTab);
+static GtkWidget *sourceButtonWindow;
 
 DECLARE(spinMarginTop);
 DECLARE(spinMarginBottom);
@@ -125,7 +136,9 @@ DECLARE(setDefaultExportOptions);
 
 GtkDialog* nsgtk_options_init(struct browser_window *bw, GtkWindow *parent)
 {
-	glade_location = g_strconcat(res_dir_location, "options.glade", NULL);
+	char glade_location[strlen(res_dir_location) + SLEN("options.glade") 
+			+ 1];
+	sprintf(glade_location, "%soptions.glade", res_dir_location);
 	LOG(("Using '%s' as Glade template file", glade_location));
 	gladeFile = glade_xml_new(glade_location, NULL, NULL);
 	
@@ -133,7 +146,13 @@ GtkDialog* nsgtk_options_init(struct browser_window *bw, GtkWindow *parent)
 	wndPreferences = GTK_DIALOG(glade_xml_get_widget(gladeFile,
 				"dlgPreferences"));
 	gtk_window_set_transient_for (GTK_WINDOW(wndPreferences), parent);
-		
+	
+	FIND_WIDGET(sourceButtonTab);
+	FIND_WIDGET(sourceButtonWindow);
+	GSList *group = gtk_radio_button_get_group(GTK_RADIO_BUTTON(
+			sourceButtonWindow));
+	gtk_radio_button_set_group(GTK_RADIO_BUTTON(sourceButtonTab), group);
+	
 	/* set the widgets to reflect the current options */
 	nsgtk_options_load();
 	
@@ -188,6 +207,12 @@ GtkDialog* nsgtk_options_init(struct browser_window *bw, GtkWindow *parent)
 	
 	CONNECT(checkFocusNew, "toggled");
 	CONNECT(checkNewBlank, "toggled");
+	CONNECT(checkUrlSearch, "toggled");
+	CONNECT(comboSearch, "changed");
+	
+	CONNECT(combotheme, "changed");
+	CONNECT(buttonaddtheme, "clicked");
+	CONNECT(sourceButtonTab, "toggled");
 	
 	CONNECT(spinMarginTop, "value-changed");
 	CONNECT(spinMarginBottom, "value-changed");
@@ -247,11 +272,11 @@ GtkDialog* nsgtk_options_init(struct browser_window *bw, GtkWindow *parent)
                                               (value));                 \
         } while (0)
 
-#define SET_FILE_CHOOSER(widgt, value)                                  \
+#define SET_FILE_CHOOSER(widget, value)                                  \
         do {                                                            \
-                (widgt) = glade_xml_get_widget(gladeFile, #widgt);      \
-                gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER((widgt)), \
-                                                    (value));           \
+                (widget) = glade_xml_get_widget(gladeFile, #widget);      \
+                gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(\
+                		(widget)), (value));			\
         } while (0)
 
 #define SET_BUTTON(widget)                                              \
@@ -262,22 +287,21 @@ GtkDialog* nsgtk_options_init(struct browser_window *bw, GtkWindow *parent)
 
 void nsgtk_options_load(void) 
 {
-	GtkVBox *combolanguagevbox;
-	gchar *languagefile;
+	GtkBox *box;
+	char languagefile[strlen(res_dir_location) + SLEN("languages") + 1];
 	const char *default_accept_language = 
 			option_accept_language ? option_accept_language : "en";
 	int combo_row_count = 0;
 	int active_language = 0;
 	int proxytype = 0;
 	FILE *fp;
-	char buf[20];
+	char buf[50];
 
 	/* Create combobox */
-	combolanguagevbox = 
-		GTK_VBOX(glade_xml_get_widget(gladeFile, "combolanguagevbox"));
+	box = GTK_BOX(glade_xml_get_widget(gladeFile, "combolanguagevbox"));
 	comboLanguage = gtk_combo_box_new_text();
 
-	languagefile = g_strconcat(res_dir_location, "languages", NULL);
+	sprintf(languagefile, "%slanguages", res_dir_location);
 
 	/* Populate combobox from languages file */
 	fp = fopen((const char *) languagefile, "r");
@@ -309,10 +333,11 @@ void nsgtk_options_load(void)
 	/** \todo localisation */
 	gtk_widget_set_tooltip_text(GTK_WIDGET(comboLanguage), 
 			"set preferred language for web pages");
-	gtk_box_pack_start(GTK_BOX(combolanguagevbox), 
-			comboLanguage, FALSE, FALSE, 0);
+	gtk_box_pack_start(box, comboLanguage, FALSE, FALSE, 0);
 	gtk_widget_show(comboLanguage);
-
+	
+	nsgtk_options_theme_combo();
+	
 	SET_ENTRY(entryHomePageURL,
 			option_homepage_url ? option_homepage_url : "");
 	SET_BUTTON(setCurrentPage);
@@ -380,7 +405,12 @@ void nsgtk_options_load(void)
 	
 	SET_CHECK(checkFocusNew, option_focus_new);
 	SET_CHECK(checkNewBlank, option_new_blank);
+	SET_CHECK(checkUrlSearch, option_search_url_bar);
+	SET_COMBO(comboSearch, option_search_provider);
 	
+	SET_BUTTON(buttonaddtheme);
+	SET_CHECK(sourceButtonTab, option_source_tab);
+		
 	SET_SPIN(spinMarginTop, option_margin_top);
 	SET_SPIN(spinMarginBottom, option_margin_bottom);
 	SET_SPIN(spinMarginLeft, option_margin_left);
@@ -416,6 +446,48 @@ static gboolean on_dialog_close (GtkDialog *dlg, gboolean stay_alive)
 		stay_alive = FALSE;
 	}
 	return stay_alive;
+}
+
+static void nsgtk_options_theme_combo(void) {
+/* populate theme combo from themelist file */
+	GtkBox *box = GTK_BOX(glade_xml_get_widget(gladeFile, "themehbox"));
+	char buf[50];
+	combotheme = gtk_combo_box_new_text();
+	size_t len = SLEN("themelist") + strlen(res_dir_location) + 1;
+	char themefile[len];
+	if ((combotheme == NULL) || (box == NULL)) {
+		warn_user(messages_get("NoMemory"), 0);
+		return;
+	}
+	snprintf(themefile, len, "%sthemelist", res_dir_location);
+	FILE *fp = fopen((const char *)themefile, "r");
+	if (fp == NULL) {
+		LOG(("Failed opening themes file"));
+		warn_user("FileError", (const char *) themefile);
+		return;
+	}
+	while (fgets(buf, sizeof(buf), fp) != NULL) {
+		/* Ignore blank lines */
+		if (buf[0] == '\0')
+			continue;
+		
+		/* Remove trailing \n */
+		buf[strlen(buf) - 1] = '\0';
+		
+		gtk_combo_box_append_text(GTK_COMBO_BOX(combotheme), buf);
+	}
+	gtk_combo_box_set_active(GTK_COMBO_BOX(combotheme), 
+			option_current_theme);
+	gtk_box_pack_start(box, combotheme, FALSE, TRUE, 0);
+	gtk_widget_show(combotheme);		
+}
+
+bool nsgtk_options_combo_theme_add(const char *themename)
+{
+	if (wndPreferences == NULL)
+		return false;
+	gtk_combo_box_append_text(GTK_COMBO_BOX(combotheme), themename);
+	return true;
 }
 	
 
@@ -642,42 +714,44 @@ BUTTON_CLICKED(fontPreview)
 END_HANDLER
 
 COMBO_CHANGED(comboButtonType, option_button_type)
-	struct gui_window *current = window_list;
-
+	nsgtk_scaffolding *current = scaf_list;
+	option_button_type++;
+	/* value of 0 is reserved for 'unset' */
 	while (current)	{
+		nsgtk_scaffolding_reset_offset(current);
 		switch(option_button_type) {
-		case 0:
-			gtk_toolbar_set_style(
-				GTK_TOOLBAR(current->scaffold->tool_bar),
-				GTK_TOOLBAR_ICONS);
-			gtk_toolbar_set_icon_size(
-				GTK_TOOLBAR(current->scaffold->tool_bar),
-				GTK_ICON_SIZE_SMALL_TOOLBAR);
-			break;
 		case 1:
 			gtk_toolbar_set_style(
-				GTK_TOOLBAR(current->scaffold->tool_bar),
+				GTK_TOOLBAR(nsgtk_scaffolding_toolbar(current)),
 				GTK_TOOLBAR_ICONS);
 			gtk_toolbar_set_icon_size(
-				GTK_TOOLBAR(current->scaffold->tool_bar),
-				GTK_ICON_SIZE_LARGE_TOOLBAR);
+				GTK_TOOLBAR(nsgtk_scaffolding_toolbar(current)),
+				GTK_ICON_SIZE_SMALL_TOOLBAR);
 			break;
 		case 2:
 			gtk_toolbar_set_style(
-				GTK_TOOLBAR(current->scaffold->tool_bar),
-				GTK_TOOLBAR_BOTH);
+				GTK_TOOLBAR(nsgtk_scaffolding_toolbar(current)),
+				GTK_TOOLBAR_ICONS);
 			gtk_toolbar_set_icon_size(
-				GTK_TOOLBAR(current->scaffold->tool_bar),
+				GTK_TOOLBAR(nsgtk_scaffolding_toolbar(current)),
 				GTK_ICON_SIZE_LARGE_TOOLBAR);
 			break;
 		case 3:
 			gtk_toolbar_set_style(
-				GTK_TOOLBAR(current->scaffold->tool_bar),
+				GTK_TOOLBAR(nsgtk_scaffolding_toolbar(current)),
+				GTK_TOOLBAR_BOTH);
+			gtk_toolbar_set_icon_size(
+				GTK_TOOLBAR(nsgtk_scaffolding_toolbar(current)),
+				GTK_ICON_SIZE_LARGE_TOOLBAR);
+			break;
+		case 4:
+			gtk_toolbar_set_style(
+				GTK_TOOLBAR(nsgtk_scaffolding_toolbar(current)),
 				GTK_TOOLBAR_TEXT);
 		default:
 			break;
 		}
-		current = current->next;
+		current = nsgtk_scaffolding_iterate(current);
 	}
 END_HANDLER
 
@@ -701,6 +775,114 @@ CHECK_CHANGED(checkFocusNew, option_focus_new)
 END_HANDLER
 
 CHECK_CHANGED(checkNewBlank, option_new_blank)
+END_HANDLER
+
+CHECK_CHANGED(checkUrlSearch, option_search_url_bar)
+END_HANDLER
+
+COMBO_CHANGED(comboSearch, option_search_provider)	
+	nsgtk_scaffolding *current = scaf_list;
+	char *name;
+	/* refresh web search prefs from file */
+	search_web_provider_details(option_search_provider);
+	/* retrieve ico */
+	search_web_retrieve_ico(false);
+	/* callback may handle changing gui */
+	if (search_web_ico() != NULL)
+		gui_window_set_search_ico(search_web_ico());
+	/* set entry */
+	name = search_web_provider_name();
+	if (name == NULL) {
+		warn_user(messages_get("NoMemory"), 0);
+		continue;
+	}
+	char content[strlen(name) + SLEN("Search ") + 1];
+	sprintf(content, "Search %s", name);
+	free(name);
+	while (current) {
+		nsgtk_scaffolding_set_websearch(current, content);
+		current = nsgtk_scaffolding_iterate(current);
+	}
+END_HANDLER
+
+COMBO_CHANGED(combotheme, option_current_theme)
+	nsgtk_scaffolding *current = scaf_list;
+	char *name;
+	if (option_current_theme != 0) {
+		if (nsgtk_theme_name() != NULL)
+			free(nsgtk_theme_name());
+		name = strdup(gtk_combo_box_get_active_text(
+				GTK_COMBO_BOX(combotheme)));
+		if (name == NULL) {
+			warn_user(messages_get("NoMemory"), 0);
+			continue;
+		}
+		nsgtk_theme_set_name(name);
+		nsgtk_theme_prepare();
+	} else if (nsgtk_theme_name() != NULL) {
+		free(nsgtk_theme_name());
+		nsgtk_theme_set_name(NULL);
+	}
+	while (current)	{
+		nsgtk_theme_implement(current);
+		current = nsgtk_scaffolding_iterate(current);
+	}		
+END_HANDLER
+
+BUTTON_CLICKED(buttonaddtheme)
+	char *filename, *directory;
+	size_t len;
+	GtkWidget *fc = gtk_file_chooser_dialog_new(
+			messages_get("gtkAddThemeTitle"),
+			GTK_WINDOW(wndPreferences),
+			GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER,
+			GTK_STOCK_OK, GTK_RESPONSE_ACCEPT,
+			GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL, NULL);
+	len = SLEN("themes") + strlen(res_dir_location) + 1;
+	char themesfolder[len];
+	snprintf(themesfolder, len, "%sthemes", res_dir_location);
+	gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(fc), 
+			themesfolder);
+	gint res = gtk_dialog_run(GTK_DIALOG(fc));
+	if (res == GTK_RESPONSE_ACCEPT) {
+		filename = gtk_file_chooser_get_current_folder(
+				GTK_FILE_CHOOSER(fc));
+		if (strcmp(filename, themesfolder) != 0) {
+			directory = strrchr(filename, '/');
+			*directory = '\0';
+			if (strcmp(filename, themesfolder) != 0) {
+				warn_user(messages_get(
+						"gtkThemeFolderInstructions"), 
+						0);
+				gtk_widget_destroy(GTK_WIDGET(fc));
+				free(filename);
+				free(themesfolder);
+				return FALSE;
+			} else {
+				directory++;
+			}
+		} else {
+			free(filename);
+			filename = gtk_file_chooser_get_filename(
+					GTK_FILE_CHOOSER(fc));
+			if (strcmp(filename, themesfolder) == 0) {
+				warn_user(messages_get("gtkThemeFolderSub"),
+						0);
+				gtk_widget_destroy(GTK_WIDGET(fc));
+				free(filename);
+				free(themesfolder);
+				return FALSE;
+			}
+			directory = strrchr(filename, '/') + 1;
+		}
+		gtk_widget_destroy(GTK_WIDGET(fc));
+		nsgtk_theme_add(directory);
+		free(filename);
+	}
+
+END_HANDLER
+
+CHECK_CHANGED(sourceButtonTab, option_source_tab)
 END_HANDLER
 
 SPIN_CHANGED(spinMarginTop, option_margin_top)

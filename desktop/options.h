@@ -70,6 +70,8 @@ extern char *option_ca_path;
 extern char *option_cookie_file;
 extern char *option_cookie_jar;
 extern char *option_homepage_url;
+extern bool option_search_url_bar;
+extern int option_search_provider;
 extern bool option_target_blank;
 extern bool option_button_2_tab;
 extern bool option_url_suggestion;

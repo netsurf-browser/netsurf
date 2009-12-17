@@ -87,12 +87,13 @@ static bool browser_window_check_throbber(struct browser_window *bw);
 static void browser_window_convert_to_download(struct browser_window *bw);
 static void browser_window_start_throbber(struct browser_window *bw);
 static void browser_window_stop_throbber(struct browser_window *bw);
+static void browser_window_set_icon(struct browser_window *bw);
 static void browser_window_set_status(struct browser_window *bw,
 		const char *text);
 static void browser_window_set_pointer(struct gui_window *g,
 		gui_pointer_shape shape);
 static void download_window_callback(fetch_msg msg, void *p, const void *data,
-		unsigned long size);
+		unsigned long size, fetch_error_code errorcode);
 static void browser_window_destroy_children(struct browser_window *bw);
 static void browser_window_destroy_internal(struct browser_window *bw);
 static void browser_window_set_scale_internal(struct browser_window *bw,
@@ -167,6 +168,7 @@ struct browser_window *browser_window_create(const char *url,
 	if (url)
 		browser_window_go(bw, url, referer, history_add);
 
+	
 	return bw;
 }
 
@@ -418,8 +420,6 @@ void browser_window_callback(content_msg msg, struct content *c,
 		}
 #endif
 		else {
-			browser_window_refresh_url_bar(bw, c->url, bw->frag_id);
-
 			bw->refresh_interval = -1;
 			browser_window_set_status(bw, c->status_message);
 		}
@@ -491,6 +491,7 @@ void browser_window_callback(content_msg msg, struct content *c,
 		browser_window_update(bw, false);
 		browser_window_set_status(bw, c->status_message);
 		browser_window_stop_throbber(bw);
+		browser_window_set_icon(bw);
 		history_update(bw->history, c);
 		hotlist_visited(c);
 		free(bw->referer);
@@ -764,6 +765,21 @@ bool browser_window_check_throbber(struct browser_window *bw)
 	return false;
 }
 
+/**
+ * when ready, set icon at top level
+ * \param bw browser_window
+ * current implementation ignores lower-levels' link rels completely
+ */
+void browser_window_set_icon(struct browser_window *bw)
+{
+	while (bw->parent)
+		bw = bw->parent;
+	if ((bw->current_content != NULL) && (bw->current_content->type == CONTENT_HTML))
+		gui_window_set_icon(bw->window,
+				bw->current_content->data.html.favicon);
+	else
+		gui_window_set_icon(bw->window, NULL);
+}
 
 /**
  * Redraw browser window, set extent to content, and update title.
@@ -1298,7 +1314,7 @@ void browser_window_find_target_internal(struct browser_window *bw,
  */
 
 void download_window_callback(fetch_msg msg, void *p, const void *data,
-		unsigned long size)
+		unsigned long size, fetch_error_code errorcode)
 {
 	struct gui_download_window *download_window = p;
 

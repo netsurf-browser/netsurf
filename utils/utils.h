@@ -76,6 +76,7 @@ typedef struct
 char * strip(char * const s);
 int whitespace(const char * str);
 char * squash_whitespace(const char * s);
+char *remove_underscores(const char *s, bool replacespace);
 char *cnv_space2nbsp(const char *s);
 bool is_dir(const char *path);
 void regcomp_wrapper(regex_t *preg, const char *regex, int cflags);

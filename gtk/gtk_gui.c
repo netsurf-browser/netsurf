@@ -43,6 +43,7 @@
 #include "desktop/netsurf.h"
 #include "desktop/options.h"
 #include "desktop/save_pdf/pdf_plotters.h"
+#include "desktop/searchweb.h"
 #include "desktop/textinput.h"
 #include "gtk/gtk_gui.h"
 #include "gtk/dialogs/gtk_options.h"
@@ -68,15 +69,23 @@ char *default_stylesheet_url;
 char *quirks_stylesheet_url;
 char *adblock_stylesheet_url;
 char *options_file_location;
-char *glade_file_location;
+char *glade_netsurf_file_location;
+char *glade_password_file_location;
+char *glade_warning_file_location;
+char *glade_login_file_location;
+char *glade_ssl_file_location;
+char *glade_toolbar_file_location;
+char *toolbar_indices_file_location;
 char *res_dir_location;
 char *print_options_file_location;
 
-struct gui_window *search_current_window = 0;
-
 GtkWindow *wndAbout;
 GtkWindow *wndWarning;
-GladeXML *gladeWindows;
+GladeXML *gladeNetsurf;
+GladeXML *gladePassword;
+GladeXML *gladeWarning;
+GladeXML *gladeLogin;
+GladeXML *gladeSsl;
 GtkWindow *wndTooltip;
 GtkLabel *labelTooltip;
 
@@ -195,12 +204,28 @@ void gui_init(int argc, char** argv)
 	check_homedir();
 	
 	find_resource(buf, "netsurf.glade", "./gtk/res/netsurf.glade");
-	LOG(("Using '%s' as Glade template file", buf));
-	glade_file_location = strdup(buf);
+	LOG(("Using '%s' as Netsurf glade template file", buf));
+	glade_netsurf_file_location = strdup(buf);
 	
 	buf[strlen(buf)- 13] = 0;
 	LOG(("Using '%s' as Resources directory", buf));
 	res_dir_location = strdup(buf);
+	
+	find_resource(buf, "password.glade", "./gtk/res/password.glade");
+	LOG(("Using '%s' as password glade template file", buf));
+	glade_password_file_location = strdup(buf);
+	
+	find_resource(buf, "warning.glade", "./gtk/res/warning.glade");
+	LOG(("Using '%s' as warning glade template file", buf));
+	glade_warning_file_location = strdup(buf);
+	
+	find_resource(buf, "login.glade", "./gtk/res/login.glade");
+	LOG(("Using '%s' as login glade template file", buf));
+	glade_login_file_location = strdup(buf);
+	
+	find_resource(buf, "ssl.glade", "./gtk/res/ssl.glade");
+	LOG(("Using '%s' as ssl glade template file", buf));
+	glade_ssl_file_location = strdup(buf);
 
 	find_resource(buf, "Aliases", "./gtk/res/Aliases");
 	LOG(("Using '%s' as Aliases file", buf));
@@ -208,17 +233,42 @@ void gui_init(int argc, char** argv)
 		die("Unable to initialise HTML parsing library.\n");
 
 	glade_init();
-	gladeWindows = glade_xml_new(glade_file_location, NULL, NULL);
-	if (gladeWindows == NULL)
-		die("Unable to load Glade window definitions.\n");
-	glade_xml_signal_autoconnect(gladeWindows);
+	gladeWarning = glade_xml_new(glade_warning_file_location, NULL, NULL);
+	if (gladeWarning == NULL)
+		die("Unable to load glade warning window definitions.\n");
+	glade_xml_signal_autoconnect(gladeWarning);
+	
+	gladeNetsurf = glade_xml_new(glade_netsurf_file_location, NULL, NULL);
+	if (gladeNetsurf == NULL)
+		die("Unable to load glade Netsurf window definitions.\n");
+	glade_xml_signal_autoconnect(gladeNetsurf);
+
+	gladePassword = glade_xml_new(glade_password_file_location, NULL, NULL);
+	if (gladePassword == NULL)
+		die("Unable to load glade password window definitions.\n");
+	glade_xml_signal_autoconnect(gladePassword);
+
+	gladeLogin = glade_xml_new(glade_login_file_location, NULL, NULL);
+	if (gladeLogin == NULL)
+		die("Unable to load glade login window definitions.\n");
+	glade_xml_signal_autoconnect(gladeLogin);
+	
+	gladeSsl = glade_xml_new(glade_ssl_file_location, NULL, NULL);
+	if (gladeSsl == NULL)
+		die("Unable to load glade ssl window definitions.\n");
+	glade_xml_signal_autoconnect(gladeSsl);
+
+	find_resource(buf, "toolbar.glade", "./gtk/res/toolbar.glade");
+	LOG(("Using '%s' as glade toolbar file", buf));
+	glade_toolbar_file_location = strdup(buf);
 
 	find_resource(buf, "netsurf.xpm", "./gtk/res/netsurf.xpm");
 	gtk_window_set_default_icon_from_file(buf, NULL);
 
-	wndTooltip = GTK_WINDOW(glade_xml_get_widget(gladeWindows, "wndTooltip"));
-	labelTooltip = GTK_LABEL(glade_xml_get_widget(gladeWindows, "tooltip"));
-
+	/* superfluous ? */
+	wndTooltip = GTK_WINDOW(glade_xml_get_widget(gladeNetsurf, "wndTooltip"));
+	labelTooltip = GTK_LABEL(glade_xml_get_widget(gladeNetsurf, "tooltip"));
+	
 	nsgtk_completion_init();
 
 	/* This is an ugly hack to just get the new-style throbber going.
@@ -321,12 +371,25 @@ void gui_init(int argc, char** argv)
 	LOG(("Using '%s' as Print Settings file", buf));
 	print_options_file_location = strdup(buf);
 	
+	find_resource(buf, "SearchEngines", "./gtk/res/SearchEngines");
+	LOG(("Using '%s' as Search Engines file", buf));
+	search_engines_file_location = strdup(buf);
+	
+	find_resource(buf, "default.ico", "./gtk/res/default.ico");
+	LOG(("Using '%s' as default search ico", buf));
+	search_default_ico_location = strdup(buf);
+
+	find_resource(buf, "toolbarIndices", "./gtk/res/toolbarIndices");
+	LOG(("Using '%s' as custom toolbar settings file", buf));
+	toolbar_indices_file_location = strdup(buf);
+	
 	urldb_load(option_url_file);
 	urldb_load_cookies(option_cookie_file);
+	
+	/* superfluous ? */
+	wndAbout = GTK_WINDOW(glade_xml_get_widget(gladeNetsurf, "wndAbout"));
 
-	wndAbout = GTK_WINDOW(glade_xml_get_widget(gladeWindows, "wndAbout"));
-
-	wndWarning = GTK_WINDOW(glade_xml_get_widget(gladeWindows, "wndWarning"));
+	wndWarning = GTK_WINDOW(glade_xml_get_widget(gladeWarning, "wndWarning"));
 
 	nsgtk_history_init();
 	nsgtk_download_init();
@@ -428,6 +491,9 @@ void gui_quit(void)
 	free(option_cookie_file);
 	free(option_cookie_jar);
 	free(print_options_file_location);
+	free(search_engines_file_location);
+	free(search_default_ico_location);
+	free(toolbar_indices_file_location);
 	gtk_fetch_filetype_fin();
 	/* We don't care if this fails as we're about to die, anyway */
 	hubbub_finalise(myrealloc, NULL);
@@ -490,15 +556,6 @@ void gui_launch_url(const char *url)
 {
 }
 
-
-bool gui_search_term_highlighted(struct gui_window *g,
-		unsigned start_offset, unsigned end_offset,
-		unsigned *start_idx, unsigned *end_idx)
-{
-	return false;
-}
-
-
 void warn_user(const char *warning, const char *detail)
 {
 	char buf[300];	/* 300 is the size the RISC OS GUI uses */
@@ -510,7 +567,7 @@ void warn_user(const char *warning, const char *detail)
 			detail ? detail : "");
 	buf[sizeof(buf) - 1] = 0;
 
-	gtk_label_set_text(GTK_LABEL(glade_xml_get_widget(gladeWindows, "labelWarning")), buf);
+	gtk_label_set_text(GTK_LABEL(glade_xml_get_widget(gladeWarning, "labelWarning")), buf);
 
 	gtk_widget_show_all(GTK_WIDGET(wndWarning));
 }
@@ -536,7 +593,7 @@ static void nsgtk_create_ssl_verify_window(struct browser_window *bw,
 		struct content *c, const struct ssl_cert_info *certs,
 		unsigned long num)
 {
-	GladeXML *x = glade_xml_new(glade_file_location, NULL, NULL);
+	GladeXML *x = glade_xml_new(glade_ssl_file_location, NULL, NULL);
 	GtkWindow *wnd = GTK_WINDOW(glade_xml_get_widget(x, "wndSSLProblem"));
 	GtkButton *accept, *reject;
 	void **session = calloc(sizeof(void *), 4);
@@ -618,7 +675,7 @@ utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 
 char *path_to_url(const char *path)
 {
-	char *r = malloc(strlen(path) + 7 + 1);
+	char *r = malloc(strlen(path) + SLEN("file://") + 1);
 
 	strcpy(r, "file://");
 	strcat(r, path);
@@ -640,7 +697,7 @@ bool cookies_update(const char *domain, const struct cookie_data *data)
 
 void PDF_Password(char **owner_pass, char **user_pass, char *path)
 {
-	GladeXML *x = glade_xml_new(glade_file_location, NULL, NULL);
+	GladeXML *x = glade_xml_new(glade_password_file_location, NULL, NULL);
 	GtkWindow *wnd = GTK_WINDOW(glade_xml_get_widget(x, "wndPDFPassword"));
 	GtkButton *ok, *no;
 	void **data = malloc(5 * sizeof(void *));

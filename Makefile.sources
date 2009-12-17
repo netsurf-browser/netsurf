@@ -8,13 +8,13 @@
 S_CONTENT := content.c fetch.c fetchcache.c urldb.c			\
 	fetchers/fetch_curl.c fetchers/fetch_data.c
 S_CSS := css.c dump.c internal.c select.c utils.c
-S_RENDER := box.c box_construct.c box_normalise.c directory.c		\
+S_RENDER := box.c box_construct.c box_normalise.c directory.c favicon.c \
 	font.c form.c html.c html_redraw.c hubbub_binding.c imagemap.c	\
 	layout.c list.c table.c textplain.c
-S_UTILS := base64.c filename.c hashtable.c locale.c messages.c talloc.c	\
-	url.c utf8.c utils.c useragent.c
-S_DESKTOP := knockout.c options.c print.c tree.c version.c textarea.c \
-	plot_style.c scroll.c
+S_UTILS := base64.c filename.c hashtable.c locale.c		\
+	 messages.c talloc.c url.c utf8.c utils.c useragent.c
+S_DESKTOP := knockout.c options.c plot_style.c print.c search.c \
+	searchweb.c scroll.c textarea.c tree.c version.c
 
 # S_COMMON are sources common to all builds
 S_COMMON := $(addprefix content/,$(S_CONTENT))				\
@@ -33,8 +33,8 @@ S_PDF := $(addprefix desktop/save_pdf/,$(S_PDF))
 
 # S_BROWSER are sources related to full browsers but are common
 # between RISC OS, GTK, BeOS and AmigaOS builds
-S_BROWSER := browser.c frames.c history_core.c netsurf.c save_text.c	\
-	selection.c textinput.c
+S_BROWSER := browser.c frames.c history_core.c netsurf.c save_complete.c \
+	save_text.c selection.c textinput.c
 S_BROWSER := $(addprefix desktop/,$(S_BROWSER))
 
 # S_RISCOS are sources purely for the RISC OS build
@@ -42,9 +42,9 @@ S_RISCOS := 401login.c artworks.c assert.c awrender.s bitmap.c buffer.c	\
 	cookies.c configure.c debugwin.c dialog.c download.c draw.c	\
 	filetype.c font.c global_history.c gui.c help.c history.c	\
 	hotlist.c image.c menus.c message.c palettes.c plotters.c	\
-	plugin.c print.c query.c save.c save_complete.c save_draw.c	\
-	save_pdf.c schedule.c search.c sprite.c sslcert.c textarea.c	\
-	textselection.c theme.c theme_install.c thumbnail.c		\
+	plugin.c print.c query.c save.c save_draw.c save_pdf.c		\
+	schedule.c search.c searchweb.c sprite.c sslcert.c		\
+	textarea.c textselection.c theme.c theme_install.c thumbnail.c	\
 	treeview.c ucstables.c uri.c url_complete.c url_protocol.c	\
 	wimp.c wimp_event.c window.c gui/progress_bar.c			\
 	gui/status_bar.c						\
@@ -60,16 +60,19 @@ S_GTK := font_pango.c gtk_bitmap.c gtk_gui.c gtk_schedule.c		\
 	gtk_thumbnail.c gtk_plotters.c gtk_treeview.c gtk_scaffolding.c	\
 	gtk_completion.c gtk_login.c gtk_throbber.c gtk_selection.c	\
 	gtk_history.c gtk_window.c gtk_filetype.c gtk_download.c	\
-	gtk_print.c gtk_tabs.c						\
+	gtk_menu.c gtk_print.c gtk_save.c gtk_search.c gtk_tabs.c	\
+	gtk_theme.c gtk_toolbar.c sexy_icon_entry.c \
 	$(addprefix dialogs/,gtk_options.c gtk_about.c gtk_source.c)
-S_GTK := $(addprefix gtk/,$(S_GTK))
+S_GTK := $(addprefix gtk/,$(S_GTK)) $(addprefix utils/,container.c)
+# code in utils/container.ch is non-universal it seems
 
 # S_BEOS are sources purely for the BeOS build
 S_BEOS := beos_about.cpp beos_bitmap.cpp beos_fetch_rsrc.cpp		\
 	beos_filetype.cpp beos_font.cpp beos_gui.cpp beos_history.cpp	\
 	beos_login.cpp beos_options.cpp beos_plotters.cpp		\
-	beos_scaffolding.cpp beos_schedule.cpp beos_thumbnail.cpp	\
-	beos_treeview.cpp beos_throbber.cpp beos_window.cpp
+	beos_scaffolding.cpp beos_search.cpp beos_schedule.cpp		\
+	beos_thumbnail.cpp beos_treeview.cpp beos_throbber.cpp		\
+	beos_window.cpp
 S_BEOS := $(addprefix beos/,$(S_BEOS))
 RDEF_BEOS := beos_res.rdef
 RDEF_BEOS := $(addprefix beos/,$(RDEF_BEOS))

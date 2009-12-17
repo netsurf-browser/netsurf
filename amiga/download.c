@@ -29,13 +29,13 @@
 #include "amiga/download.h"
 #include "amiga/object.h"
 #include "amiga/options.h"
-#include "amiga/save_complete.h"
 #include "amiga/bitmap.h"
 #include "amiga/iff_dr2d.h"
 
 #include "content/fetch.h"
 
 #include "desktop/selection.h"
+#include "desktop/save_complete.h"
 
 #include "utils/messages.h"
 #include "utils/utils.h"

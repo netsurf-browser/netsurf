@@ -22,6 +22,7 @@
 #include "gtk/gtk_window.h"
 #include "desktop/browser.h"
 #include "desktop/options.h"
+#include "desktop/searchweb.h"
 #include "desktop/textinput.h"
 #include "desktop/selection.h"
 #include "gtk/gtk_gui.h"
@@ -35,7 +36,36 @@
 #include <gdk/gdkkeysyms.h>
 #include <assert.h>
 
-struct gui_window *window_list = 0;	/**< first entry in win list*/
+struct gui_window {
+	/* All gui_window objects have an ultimate scaffold */
+	nsgtk_scaffolding	*scaffold; 
+	/**< the gtk object containing menu, buttons, url bar, [tabs], 
+	 * drawing area, etc that may contain 1 -> several gui_windows */
+	struct browser_window	*bw; 
+	/**< the 'content' window that is rendered in the gui_window*/
+	struct browser_mouse 	*mouse; /**< contains mouse state / events */
+
+	int			caretx, carety, careth;
+	/**< storage caret dimension / location for rendering */
+	gui_pointer_shape	current_pointer;
+	/**< storage caret shape for rendering */
+	int			last_x, last_y;
+	/**< storage caret location for rendering */
+
+	GtkScrolledWindow	*scrolledwindow; 
+	/**< optional; for frames that need it; top level of gtk structure of  
+	 * gui_window */
+	GtkViewport		*viewport; 
+	/**< contained in a scrolled window */
+	GtkFixed		*fixed; /**< contained in a viewport */
+	GtkDrawingArea		*drawing_area; /**< contained in a gtkfixed */
+	GtkWidget		*tab; /** the visible tab */
+	gulong			signalhandler[NSGTK_WINDOW_SIGNAL_COUNT];
+	/**< to allow disactivation / resume of normal window behaviour */
+	struct gui_window	*next, *prev; /**< list for eventual cleanup */
+};
+
+struct gui_window *window_list = NULL;	/**< first entry in win list*/
 int temp_open_background = -1;
 
 
@@ -60,19 +90,45 @@ static void nsgtk_redraw_caret(struct gui_window *g);
 
 static GdkCursor *nsgtk_create_menu_cursor(void);
 
-struct browser_window *nsgtk_get_browser_window(struct gui_window *g)
-{
-	return g->bw;
-}
-
 nsgtk_scaffolding *nsgtk_get_scaffold(struct gui_window *g)
 {
         return g->scaffold;
 }
 
-struct browser_window *nsgtk_get_browser_for_gui(struct gui_window *g)
+struct browser_window *gui_window_get_browser_window(struct gui_window *g)
 {
-        return g->bw;
+	return g->bw;
+}
+
+unsigned long nsgtk_window_get_signalhandler(struct gui_window *g, int i)
+{
+	return g->signalhandler[i];
+}
+
+GtkDrawingArea *nsgtk_window_get_drawing_area(struct gui_window *g)
+{
+	return g->drawing_area;
+}
+
+GtkScrolledWindow *nsgtk_window_get_scrolledwindow(struct gui_window *g)
+{
+	return g->scrolledwindow;
+}
+
+GtkWidget *nsgtk_window_get_tab(struct gui_window *g)
+{
+	return g->tab;
+}
+
+void nsgtk_window_set_tab(struct gui_window *g, GtkWidget *w)
+{
+	g->tab = w;
+}
+
+
+struct gui_window *nsgtk_window_iterate(struct gui_window *g)
+{
+	return g->next;
 }
 
 float nsgtk_get_scale_for_gui(struct gui_window *g)
@@ -111,13 +167,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 	g->careth = 0;
 
-        /* Attach ourselves to the list (push_top) */
-	if (window_list)
-		window_list->prev = g;
-		g->next = window_list;
-		g->prev = NULL;
-		window_list = g;
-
 	if (bw->parent != NULL)
 		/* Find our parent's scaffolding */
 		g->scaffold = bw->parent->window->scaffold;
@@ -127,9 +176,20 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	else
 		/* Now construct and attach a scaffold */
 		g->scaffold = nsgtk_new_scaffolding(g);
+	if (g->scaffold == NULL) {
+		free(g);
+		return NULL;
+	}
 
-        /* Construct our primary elements */
-        g->fixed = GTK_FIXED(gtk_fixed_new());
+        /* Attach ourselves to the list (push_top) */
+	if (window_list)
+		window_list->prev = g;
+	g->next = window_list;
+	g->prev = NULL;
+	window_list = g;
+	
+	/* Construct our primary elements */
+	g->fixed = GTK_FIXED(gtk_fixed_new());
         g->drawing_area = GTK_DRAWING_AREA(gtk_drawing_area_new());
         gtk_fixed_put(g->fixed, GTK_WIDGET(g->drawing_area), 0, 0);
         gtk_container_set_border_width(GTK_CONTAINER(g->fixed), 0);
@@ -219,6 +279,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 				GDK_BUTTON_PRESS_MASK |
 				GDK_BUTTON_RELEASE_MASK |
 				GDK_POINTER_MOTION_MASK |
+				GDK_POINTER_MOTION_HINT_MASK |
 				GDK_KEY_PRESS_MASK |
 				GDK_KEY_RELEASE_MASK);
 	GTK_WIDGET_SET_FLAGS(GTK_WIDGET(g->drawing_area), GTK_CAN_FOCUS);
@@ -229,17 +290,20 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 #define CONNECT(obj, sig, callback, ptr) \
 	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))
-	CONNECT(g->drawing_area, "expose_event", nsgtk_window_expose_event, g);
+	g->signalhandler[NSGTK_WINDOW_SIGNAL_REDRAW] = 
+			CONNECT(g->drawing_area, "expose_event",
+			nsgtk_window_expose_event, g);
 	CONNECT(g->drawing_area, "motion_notify_event",
-		nsgtk_window_motion_notify_event, g);
-	CONNECT(g->drawing_area, "button_press_event",
-		nsgtk_window_button_press_event, g);
+			nsgtk_window_motion_notify_event, g);
+	g->signalhandler[NSGTK_WINDOW_SIGNAL_CLICK] = 
+			CONNECT(g->drawing_area, "button_press_event",
+			nsgtk_window_button_press_event, g);
 	CONNECT(g->drawing_area, "button_release_event",
-	    nsgtk_window_button_release_event, g);
+			nsgtk_window_button_release_event, g);
 	CONNECT(g->drawing_area, "key_press_event",
-		nsgtk_window_keypress_event, g);
+			nsgtk_window_keypress_event, g);
 	CONNECT(g->viewport, "size_allocate",
-		nsgtk_window_size_allocate_event, g);
+			nsgtk_window_size_allocate_event, g);
 
         return g;
 }
@@ -344,7 +408,9 @@ gboolean nsgtk_window_motion_notify_event(GtkWidget *widget,
 	struct gui_window *g = data;
 	bool shift = event->state & GDK_SHIFT_MASK;
 	bool ctrl = event->state & GDK_CONTROL_MASK;
-
+	if ((abs(event->x - g->last_x) < 5) && (abs(event->y - g->last_y) < 5))
+		/* necessary for touch screens */
+		return FALSE;
    	if (g->mouse->state & BROWSER_MOUSE_PRESS_1){
 		/* Start button 1 drag */
 		browser_window_mouse_click(g->bw, BROWSER_MOUSE_DRAG_1,
@@ -384,29 +450,24 @@ gboolean nsgtk_window_button_press_event(GtkWidget *widget,
 	struct gui_window *g = data;
 
 	gtk_widget_grab_focus(GTK_WIDGET(g->drawing_area));
+	gtk_widget_hide(GTK_WIDGET(nsgtk_scaffolding_history_window(
+			g->scaffold)->window));
 
 	g->mouse->pressed_x = event->x / g->bw->scale;
 	g->mouse->pressed_y = event->y / g->bw->scale;
 
-	if (event->button == 3) {
-		/** \todo
-		 * Firstly, MOUSE_PRESS_2 on GTK is a middle click, which doesn't
-		 * appear correct to me.  Secondly, right-clicks are not passed to
-		 * browser_window_mouse_click() at all, which also seems incorrect
-		 * since they should result in browser_window_remove_caret().
-		 *
-		 * I would surmise we need a MOUSE_PRESS_3, unless right-clicking is
-		 * supposed to be mapped to MOUSE_PRESS_2, but that doesn't appear
-		 * correct either.
-		 */
-		browser_window_remove_caret(g->bw);
-		nsgtk_scaffolding_popup_menu(g->scaffold, g->mouse->pressed_x, g->mouse->pressed_y);
-		return TRUE;
-	}
-
 	switch (event->button) {
-		case 1: g->mouse->state = BROWSER_MOUSE_PRESS_1; break;
-		case 2: g->mouse->state = BROWSER_MOUSE_PRESS_2; break;
+	case 1:
+		g->mouse->state = BROWSER_MOUSE_PRESS_1;
+		break;
+	case 3: 
+		browser_window_remove_caret(g->bw);
+		nsgtk_scaffolding_popup_menu(g->scaffold, g->mouse->pressed_x,
+				g->mouse->pressed_y);
+		g->mouse->state = BROWSER_MOUSE_PRESS_2;
+		break;
+	default:
+		return FALSE;
 	}
 	/* Handle the modifiers too */
 	if (event->state & GDK_SHIFT_MASK)
@@ -565,7 +626,7 @@ void nsgtk_reflow_all_windows(void)
 {
 	for (struct gui_window *g = window_list; g; g = g->next) {
                 nsgtk_tab_options_changed(GTK_WIDGET(
-							nsgtk_scaffolding_get_notebook(g)));
+                		nsgtk_scaffolding_notebook(g->scaffold)));
 		g->bw->reformat_pending = true;
         }
 
@@ -700,6 +761,12 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 
         gtk_adjustment_set_value(vadj, y);
         gtk_adjustment_set_value(hadj, x);
+}
+
+void gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
+		int x1, int y1)
+{
+	gui_window_set_scroll(g,x0,y0);
 }
 
 

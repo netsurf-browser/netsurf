@@ -70,6 +70,11 @@ char *strchrnul(const char *s, int c);
     #define WITH_MMAP
 #endif
 
+#if defined(gtk)
+	#define WITH_THEME_INSTALL
+#endif
+
+
 /* Configuration sanity checks: */
 #if defined(WITH_NS_SVG) && defined(WITH_RSVG)
     #error Cannot build WITH_NS_SVG and WITH_RSVG both enabled

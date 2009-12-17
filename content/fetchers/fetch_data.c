@@ -129,10 +129,10 @@ static void fetch_data_abort(void *ctx)
 
 static void fetch_data_send_callback(fetch_msg msg, 
 		struct fetch_data_context *c, const void *data, 
-		unsigned long size)
+		unsigned long size, fetch_error_code errorcode)
 {
 	c->locked = true;
-	fetch_send_callback(msg, c->parent_fetch, data, size);
+	fetch_send_callback(msg, c->parent_fetch, data, size, errorcode);
 	c->locked = false;
 }
 
@@ -154,7 +154,7 @@ static bool fetch_data_process(struct fetch_data_context *c)
 	if (strlen(c->url) < 6) {
 		/* 6 is the minimum possible length (data:,) */
 		fetch_data_send_callback(FETCH_ERROR, c, 
-			"Malformed data: URL", 0);
+			"Malformed data: URL", 0, FETCH_ERROR_URL);
 		return false;
 	}
 	
@@ -164,7 +164,7 @@ static bool fetch_data_process(struct fetch_data_context *c)
 	/* find the comma */
 	if ( (comma = strchr(params, ',')) == NULL) {
 		fetch_data_send_callback(FETCH_ERROR, c,
-			"Malformed data: URL", 0);
+			"Malformed data: URL", 0, FETCH_ERROR_URL);
 		return false;
 	}
 	
@@ -179,7 +179,7 @@ static bool fetch_data_process(struct fetch_data_context *c)
 	if (c->mimetype == NULL) {
 		fetch_data_send_callback(FETCH_ERROR, c,
 			"Unable to allocate memory for mimetype in data: URL",
-			0);
+			0, FETCH_ERROR_MEMORY);
 		return false;
 	}
 	
@@ -198,7 +198,8 @@ static bool fetch_data_process(struct fetch_data_context *c)
         c->datalen = templen;
         if (unescaped == NULL) {
 		fetch_data_send_callback(FETCH_ERROR, c,
-			"Unable to URL decode data: URL", 0);
+			"Unable to URL decode data: URL", 0,
+			FETCH_ERROR_ENCODING);
 		return false;
 	}
 	
@@ -207,7 +208,8 @@ static bool fetch_data_process(struct fetch_data_context *c)
 		if (base64_decode(unescaped, c->datalen, c->data,
 				&(c->datalen)) == false) {
 			fetch_data_send_callback(FETCH_ERROR, c,
-				"Unable to Base64 decode data: URL", 0);
+				"Unable to Base64 decode data: URL", 0,
+				FETCH_ERROR_ENCODING);
 			curl_free(unescaped);
 			return false;
 		}
@@ -215,7 +217,8 @@ static bool fetch_data_process(struct fetch_data_context *c)
 		c->data = malloc(c->datalen);
 		if (c->data == NULL) {
 			fetch_data_send_callback(FETCH_ERROR, c,
-				"Unable to allocate memory for data: URL", 0);
+				"Unable to allocate memory for data: URL", 0,
+				FETCH_ERROR_MEMORY);
 			curl_free(unescaped);
 			return false;
 		}
@@ -271,14 +274,17 @@ static void fetch_data_poll(const char *scheme)
 			 * call to fetch_data_send_callback().
 			 */
 			fetch_data_send_callback(FETCH_TYPE,
-				c, c->mimetype, c->datalen);
+				c, c->mimetype, c->datalen,
+				FETCH_ERROR_NO_ERROR);
 			if (!c->aborted) {
 				fetch_data_send_callback(FETCH_DATA, 
-					c, c->data, c->datalen);
+					c, c->data, c->datalen,
+					FETCH_ERROR_NO_ERROR);
 			}
 			if (!c->aborted) {
 				fetch_data_send_callback(FETCH_FINISHED, 
-					c, &cachedata, 0);
+					c, &cachedata, 0,
+					FETCH_ERROR_NO_ERROR);
 			}
 		} else {
 			LOG(("Processing of %s failed!", c->url));

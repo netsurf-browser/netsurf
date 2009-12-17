@@ -30,13 +30,13 @@
 #include "amiga/save_pdf.h"
 #include "desktop/save_text.h"
 #include "desktop/save_pdf/pdf_plotters.h"
+#include "desktop/save_complete.h"
 #include <string.h>
 #include "amiga/tree.h"
 #include "amiga/history.h"
 #include "amiga/cookies.h"
 #include <proto/exec.h>
 #include "amiga/arexx.h"
-#include "amiga/save_complete.h"
 #include "utils/url.h"
 #include <dos/anchorpath.h>
 #include "desktop/textinput.h"

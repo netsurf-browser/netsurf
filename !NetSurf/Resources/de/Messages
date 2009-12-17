@@ -432,9 +432,117 @@ gtkFailed:Download failed
 gtkFileError:File error: %s
 gtkInfo:%s from %s is %s in size
 gtkSave:Save file as...
+gtkSourceSave:Save Source
+gtkPlainSave:Save as text
+gtkFullSave:Save webpage complete - select an empty directory
 gtkUnknownHost:an unknown host
 gtkUnknownFile:
 gtkUnknownSize:unknown
+
+# gtk Menu / Button labels
+#
+
+gtkNewTab:New _Tab
+gtkNewTabAccel:<ctrl>t
+gtkNewWindow:_New Window
+gtkNewWindowAccel:<ctrl>n
+gtkOpenFile:_Open File
+gtkOpenFileAccel:<ctrl>o
+gtkCloseWindow:_Close Window
+gtkCloseWindowAccel:<ctrl><shift>w
+gtkSavePage:Save Page..
+gtkSavePageAccel:<ctrl>s
+gtkExport:Export
+gtkPlainText:Plain Text..
+gtkDrawFile:Drawfile..
+gtkPostScript:PostScript..
+gtkPDF:PDF..
+gtkPrintPreview:Print Preview..
+gtkPrintPreviewAccel:<ctrl><shift>p
+gtkPrint:Print..
+gtkPrintAccel:<ctrl>p
+gtkQuit:_Quit
+gtkQuitAccel:<ctrl>q
+
+gtkCut:Cu_t
+gtkCutAccel:<ctrl>x
+gtkCopy:_Copy
+gtkCopyAccel:<ctrl>c
+gtkPaste:_Paste
+gtkPasteAccel:<ctrl>v
+gtkDelete:_Delete
+gtkSelectAll:Select _All
+gtkSelectAllAccel:<ctrl>a
+gtkFind:_Find..
+gtkFindAccel:<ctrl>f
+gtkPreferences:P_references
+
+gtkStop:_Stop
+gtkStopAccel:Escape
+gtkReload:_Reload
+gtkReloadAccel:F5
+gtkScaleView:_Scale View
+gtkZoomPlus:Zoom _in
+gtkZoomPlusAccel:<ctrl>plus
+gtkZoomMinus:Zoom _out
+gtkZoomMinusAccel:<ctrl>minus
+gtkZoomNormal:_Normal size
+gtkZoomNormalAccel:<ctrl>0
+gtkFullScreen:_Fullscreen
+gtkFullScreenAccel:F11
+gtkViewSource:View S_ource
+gtkViewSourceAccel:F8
+gtkImages:_Images
+gtkForegroundImages:_Foreground Images
+gtkBackgroundImages:_Background Images
+gtkToolbars:_Toolbars
+gtkMenuBar:_Menu Bar
+gtkToolBar:_Button Bar
+gtkStatusBar:_Status Bar
+gtkDownloads:_Downloads
+gtkDownloadsAccel:<ctrl>d
+gtkSaveWindowSize:S_ave Window Size
+gtkDebugging:De_bugging
+gtkToggleDebugging:T_oggle debug rendering
+gtkSaveBoxTree:_Save box tree
+gtkSaveDomTree:Save DOM tree
+
+gtkBack:_Back
+gtkBackAccel:<alt>Left
+gtkForward:_Forward
+gtkForwardAccel:<alt>Right
+gtkHome:_Home
+gtkHomeAccel:<alt>Down
+gtkLocalHistory:_Local History
+gtkLocalHistoryAccel:<ctrl>h
+gtkGlobalHistory:_Global History
+gtkGlobalHistoryAccel:<ctrl><shift>h
+gtkAddBookMarks:_Add to Bookmarks..
+gtkShowBookMarks:_Show Bookmarks..
+gtkShowBookMarksAccel:F6
+gtkOpenLocation:_Open Location..
+gtkOpenLocationAccel:<ctrl>l
+
+gtkNextTab:_Next tab
+gtkNextTabAccel:<ctrl>Right
+gtkPrevTab:_Previous tab
+gtkPrevTabAccel:<ctrl>Left
+gtkCloseTab:_Close tab
+gtkCloseTabAccel:<ctrl>w
+
+gtkContents:_Contents
+gtkGuide:User _guide
+gtkUserInformation:User _information
+gtkAbout:_About
+
+
+gtkToolBarTitle:Toolbar custom button store
+gtkAddThemeTitle:Select folder containing theme images
+
+gtkThemeFolderInstructions:To Install a theme, create a directory full of appropriately-named images as a subdirectory of gtk/res/themes/
+gtkThemeFolderSub:Select a subdirectory of the themes folder
+gtkThemeDup:Theme is already included
+gtkThemeAdd:Theme added successfully
 
 # Printing user interface tokens
 # ==============================
@@ -459,6 +567,8 @@ Printing:Printing page
 NotFound:nichts
 Next:Next
 Prev:Previous
+ShowAll:Show All
+CaseSens:Case Sensitive
 
 
 # 401 login user interface tokens
@@ -578,6 +688,9 @@ MiscError:Unerwarteter Fehler:
 FileError:Datei existiert nicht:
 PrintError:Ein Fehler trat während des Druckens auf:
 AWNotSeen:Das Programm AWViewer wurde nicht gefunden.
+EncNotRec:Encoding type not recognised.
+FileOpenError:could not open file '%s'
+DirectoryError:directory '%s' already exists
 
 # Specific errors - displayed in a dialog box
 #
@@ -589,11 +702,13 @@ NoDiscSpace:Nicht genug Speicherplatz auf dem Medium vorhanden.
 Template:Ein Template für ein Fenster fehlt in der Datei Templates. Bitte NetSurf neu installieren.
 HotlistSaveError:Hotlist konnte nicht korrekt gespeichert werden.
 HotlistLoadError:Hotlist konnte nicht korrekt geladen werden.
+NoDirError:%s is not a directory
 NoPathError:Symbol in ein Verzeichnisfenster ziehen um zu Speichern.
 NoNameError:Bitte einen Namen eingeben.
 NoURLError:Bitte eine URL Adresse eingeben.
 URIError:NetSurf konnte die URI Datei nicht lesen. Syntax Fehler.
 EmptyError:Die Datei ist leer.
+SearchError:Invalid Search.
 PrintErrorRO2:Der Drucker scheint beschäftigt zu sein.
 AWNotSeen:Please locate the AWViewer application and try again.
 
@@ -636,6 +751,7 @@ Done:Dokument fertiggestellt
 BadRedirect:Falsche URL für Redirect
 FetchFailed:Kann Dokument nicht fetchen
 NotCSS:Warnung: Stylesheet ist kein CSS
+NotFavIco:Favicon not supported
 BadObject:Warnung: falscher Objekttyp
 ObjError:Fehler beim Laden des Objektes: %s
 ParsingFail:Dokumentparsing ist fehlgeschlagen.

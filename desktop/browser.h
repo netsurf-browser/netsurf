@@ -170,6 +170,9 @@ struct browser_window {
 
 	/** Last time a link was followed in this window */
 	unsigned int last_action;
+
+	/** search context for free text search */
+	struct search_context *search_context;
 	
 	struct form_control *visible_select_menu;
 };

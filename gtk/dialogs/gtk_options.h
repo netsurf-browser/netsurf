@@ -1,5 +1,6 @@
 /*
  * Copyright 2006 Rob Kendrick <rjek@rjek.com>
+ * Copyright 2009 Mark Benjamin <netsurf-browser.org.MarkBenjamin@dfgh.net>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -23,8 +24,11 @@
 
 extern GtkDialog *wndPreferences;
 
-GtkDialog* nsgtk_options_init(struct browser_window *bw, GtkWindow *parent);		/** Init options and load window */
+GtkDialog* nsgtk_options_init(struct browser_window *bw, GtkWindow *parent);
+		/** Init options and load window */
 void nsgtk_options_load(void);		/** Load current options into window */
 void nsgtk_options_save(void);		/** Save options from window */
+bool nsgtk_options_combo_theme_add(const char *themename);
+		/** add new theme name to combo */
 
 #endif

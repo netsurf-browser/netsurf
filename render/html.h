@@ -133,6 +133,8 @@ struct content_html_data {
 	colour background_colour;  /**< Document background colour. */
 	const struct font_functions *font_func;
 
+	struct content *favicon; /**< the favicon for the page */
+	
 	/** Number of entries in stylesheet_content. */
 	unsigned int stylesheet_count;
 	/** Stylesheets. Each may be 0. */
@@ -189,6 +191,7 @@ void html_open(struct content *c, struct browser_window *bw,
 		struct content *page, unsigned int index, struct box *box,
 		struct object_params *params);
 void html_close(struct content *c);
+void html_set_status(struct content *c, const char *extra);
 
 /* in render/html_redraw.c */
 bool html_redraw(struct content *c, int x, int y,

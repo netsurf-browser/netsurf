@@ -1104,6 +1104,21 @@ void gui_window_stop_throbber(struct gui_window *g)
 	}
 }
 
+/**
+ * set favicon
+ */
+void gui_window_set_icon(struct gui_window *g, struct content *icon)
+{	
+}
+
+/**
+* set gui display of a retrieved favicon representing the search provider
+* \param ico may be NULL for local calls; then access current cache from
+* search_web_ico()
+*/
+void gui_window_set_search_ico(struct content *ico)
+{
+}
 
 /**
  * Place the caret in a browser window.

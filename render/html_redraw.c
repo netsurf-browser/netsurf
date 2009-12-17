@@ -41,6 +41,7 @@
 #include "desktop/textinput.h"
 #include "desktop/options.h"
 #include "desktop/print.h"
+#include "desktop/search.h"
 #include "desktop/scroll.h"
 #include "image/bitmap.h"
 #include "render/box.h"
@@ -880,12 +881,14 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 		}
 
 		/* what about the current search operation, if any? */
-		if (!highlighted && search_current_window ==
-				current_redraw_browser->window &&
+		if (!highlighted && (current_redraw_browser->search_context
+				!= NULL) && 
 				gui_search_term_highlighted(
 						current_redraw_browser->window,
 						offset, offset + len,
-						&start_idx, &end_idx)) {
+						&start_idx, &end_idx,
+						current_redraw_browser->
+						search_context)) {
 			highlighted = true;
 		}
 

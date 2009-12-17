@@ -109,6 +109,11 @@ STRIP=strip
 
 # Override this only if the host compiler is called something different
 HOST_CC := gcc
+ifeq ($(TARGET),amiga)
+  ifneq ($(HOST),amiga)
+    CC := ppc-amigaos-gcc
+  endif
+endif
 
 ifeq ($(TARGET),riscos)
   ifeq ($(HOST),riscos)
@@ -550,6 +555,9 @@ else
 	$(Q)$(ELF2AIF) $(EXETARGET:,ff8=,e1f) $(EXETARGET)
 	$(Q)$(RM) $(EXETARGET:,ff8=,e1f)
 endif
+ifeq ($(TARGET),gtk)
+	$(Q)$(TOUCH) gtk/res/toolbarIndices
+endif
 ifeq ($(NETSURF_STRIP_BINARY),YES)
 	$(VQ)echo "   STRIP: $(EXETARGET)"
 	$(Q)$(STRIP) $(EXETARGET)
@@ -749,10 +757,13 @@ install-gtk: nsgtk
 	@cp -vRL gtk/res/Aliases $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -vrL gtk/res/docs $(DESTDIR)/$(NETSURF_GTK_RESOURCES)
 	gzip -9v < gtk/res/messages > $(DESTDIR)$(NETSURF_GTK_RESOURCES)messages
+	gzip -9v < gtk/res/SearchEngines > $(DESTDIR)$(NETSURF_GTK_RESOURCES)SearchEngines
 	gzip -9v < gtk/res/downloads.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)downloads.glade
 	gzip -9v < gtk/res/netsurf.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)netsurf.glade
 	gzip -9v < gtk/res/options.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)options.glade
 	gzip -9v < gtk/res/history.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)history.glade
+	gzip -9v < gtk/res/toolbar.glade >
+	$(DESTDIR)$(NETSURF_GTK_RESOURCES)toolbar.glade
 	gzip -9v < gtk/res/source.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)source.glade
 
 install-beos: NetSurf

@@ -37,6 +37,7 @@
 #include "desktop/options.h"
 #include "image/bitmap.h"
 #include "render/box.h"
+#include "render/favicon.h"
 #include "render/font.h"
 #include "render/form.h"
 #include "render/html.h"
@@ -74,7 +75,6 @@ static bool html_object_type_permitted(const content_type type,
 static void html_object_refresh(void *p);
 static void html_destroy_frameset(struct content_html_frames *frameset);
 static void html_destroy_iframe(struct content_html_iframe *iframe);
-static void html_set_status(struct content *c, const char *extra);
 #if ALWAYS_DUMP_FRAMESET
 static void html_dump_frameset(struct content_html_frames *frame,
 		unsigned int depth);
@@ -307,6 +307,7 @@ encoding_change:
  *
  *  - parsing to an XML tree is completed
  *  - stylesheets are fetched
+ *  - favicon is retrieved
  *  - the XML tree is converted to a box tree and object fetches are started
  *  - the box tree is laid out
  *
@@ -424,6 +425,9 @@ bool html_convert(struct content *c, int width, int height)
 	if (!html_find_stylesheets(c, html))
 		return false;
 
+	/* get icon */
+	favicon_get_icon(c, html);
+	
 	/* Retrieve forms from parser */
 	c->data.html.forms = binding_get_forms(c->data.html.parser_binding);
 	for (f = c->data.html.forms; f != NULL; f = f->prev) {
@@ -792,7 +796,7 @@ bool html_meta_refresh(struct content *c, xmlNode *head)
  * Uses STYLE and LINK elements inside and outside HEAD
  *
  * \param  c     content structure
- * \param  head  xml node of html element
+ * \param  html  xml node of html element
  * \return  true on success, false if an error occurred
  */
 

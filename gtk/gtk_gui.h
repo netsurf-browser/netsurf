@@ -25,8 +25,18 @@
 #include <glade/glade.h>
 
 extern bool gui_in_multitask;
-extern GladeXML *gladeWindows;
-extern char *glade_file_location;
+extern GladeXML *gladeNetsurf;
+extern GladeXML *gladePassword;
+extern GladeXML *gladeWarning;
+extern GladeXML *gladeLogin;
+extern GladeXML *gladeSsl;
+extern char *glade_netsurf_file_location;
+extern char *glade_password_file_location;
+extern char *glade_warning_file_location;
+extern char *glade_login_file_location;
+extern char *glade_ssl_file_location;
+extern char *glade_toolbar_file_location;
+extern char *toolbar_indices_file_location;
 extern char *options_file_location;
 extern char *res_dir_location;
 extern char *print_options_file_location;

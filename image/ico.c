@@ -115,6 +115,18 @@ bool nsico_redraw(struct content *c, int x, int y,
 			background_colour, BITMAPF_NONE);
 }
 
+/** sets the bitmap for an ico according to the dimensions */
+
+bool nsico_set_bitmap_from_size(struct content *c, int width, int height)
+{
+	struct bmp_image *bmp = ico_find(c->data.ico.ico, width, height);
+	if (bmp == NULL)
+		return false;
+	if ((bmp->decoded == false) && (bmp_decode(bmp) != BMP_OK))
+		return false;
+	c->bitmap = bmp->bitmap;
+	return true;
+}
 
 bool nsico_redraw_tiled(struct content *c, int x, int y,
 		int width, int height,

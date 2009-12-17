@@ -34,6 +34,8 @@ extern int option_history_age;
 extern bool option_hover_urls;
 extern bool option_focus_new;
 extern bool option_new_blank;
+extern bool option_source_tab;
+extern int option_current_theme;
 
 #define EXTRA_OPTION_DEFINE \
 bool option_render_resample = false; \
@@ -48,7 +50,9 @@ bool option_disable_plugins = false; \
 int option_history_age = 0; \
 bool option_hover_urls = false; \
 bool option_focus_new = false; \
-bool option_new_blank = false;
+bool option_new_blank = false; \
+bool option_source_tab = false;\
+int option_current_theme = 0;
 
 #define EXTRA_OPTION_TABLE \
 { "render_resample",	OPTION_BOOL,	&option_render_resample }, \
@@ -63,6 +67,8 @@ bool option_new_blank = false;
 { "history_age",		OPTION_INTEGER,	&option_history_age}, \
 { "hover_urls",			OPTION_BOOL,	&option_hover_urls}, \
 { "focus_new",			OPTION_BOOL,	&option_focus_new}, \
-{ "new_blank",			OPTION_BOOL,	&option_new_blank}
+{ "new_blank",			OPTION_BOOL,	&option_new_blank}, \
+{ "source_tab",			OPTION_BOOL,	&option_source_tab},\
+{ "current_theme",		OPTION_INTEGER,	&option_current_theme}
 
 #endif

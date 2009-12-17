@@ -34,6 +34,7 @@
 #include "desktop/gui.h"
 #include "desktop/options.h"
 #include "desktop/plotters.h"
+#include "desktop/search.h"
 #include "desktop/selection.h"
 #include "render/box.h"
 #include "render/font.h"
@@ -437,11 +438,14 @@ bool textplain_redraw(struct content *c, int x, int y,
 						highlighted = true;
 				}
 
-				if (!highlighted && search_current_window == bw->window) {
+				if (!highlighted && (bw->search_context 
+						!= NULL)) {
 					unsigned start_idx, end_idx;
-					if (gui_search_term_highlighted(bw->window,
-						tab_ofst, tab_ofst + 1,
-						&start_idx, &end_idx))
+					if (gui_search_term_highlighted(
+							bw->window,
+							tab_ofst, tab_ofst + 1,
+							&start_idx, &end_idx,
+							bw->search_context))
 						highlighted = true;
 				}
 

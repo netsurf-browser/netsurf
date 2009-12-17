@@ -30,8 +30,9 @@ static const gchar *authors[] = {
 		"Matthew Hambley", "Rob Jackson", "Jeffrey Lee", "Phil Mellor",
 		"Philip Pemberton", "Darren Salt", "Andrew Timmins",
 		"John Tytgat", "Chris Williams",
-		"\nGoogle Summer of Code Contributors:", "Adam Blokus",
-		"Sean Fox", "Michael Lester", "Andrew Sidwell", NULL
+		"\nGoogle Summer of Code Contributors:", "Mark Benjamin",
+		"Adam Blokus", "Paul Blokus", "Sean Fox",
+		"Michael Lester", "Andrew Sidwell", "Bo Yang", NULL
 };
 
 static const gchar *translators = "Sebastian Barthel\nBruno D'Arcangeli\n"

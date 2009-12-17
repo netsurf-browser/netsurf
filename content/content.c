@@ -155,6 +155,9 @@ static const struct mime_entry mime_map[] = {
 	{"image/svg", CONTENT_SVG},
 	{"image/svg+xml", CONTENT_SVG},
 #endif
+#ifdef WITH_BMP
+	{"image/vnd.microsoft.icon", CONTENT_ICO},
+#endif
 #ifdef WITH_ARTWORKS
 	{"image/x-artworks", CONTENT_ARTWORKS},
 #endif

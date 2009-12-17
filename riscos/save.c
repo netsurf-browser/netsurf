@@ -35,7 +35,9 @@
 #include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
+#include "content/content.h"
 #include "desktop/netsurf.h"
+#include "desktop/save_complete.h"
 #include "desktop/save_text.h"
 #include "desktop/selection.h"
 #include "image/bitmap.h"
@@ -48,7 +50,6 @@
 #include "riscos/options.h"
 #include "riscos/query.h"
 #include "riscos/save.h"
-#include "riscos/save_complete.h"
 #include "riscos/save_draw.h"
 #include "riscos/save_pdf.h"
 #include "riscos/textselection.h"
@@ -988,6 +989,70 @@ void ro_gui_save_done(void)
 		gui_save_content = 0;
 }
 
+/**
+* conducts the filesystem save appropriate to the gui
+* \param path save path
+* \param filename name of file to save
+* \param len data length
+* \param sourcedata pointer to data to save, NULL when all data in c
+* \param type content type
+* \return true for success
+*/
+
+bool save_complete_gui_save(const char *path, const char *filename, size_t len,
+		const char *sourcedata, content_type type)
+{
+	char *fullpath;
+	os_error *error;
+	int namelen = strlen(path) + strlen(filename) + 2;
+	int rotype;
+	fullpath = malloc(namelen);
+	if (fullpath == NULL) {
+		warn_user("NoMemory", 0);
+		return false;
+	}
+	snprintf(fullpath, namelen, "%s.%s", path, filename);
+	rotype = ro_content_filetype_from_type(type);
+	error = xosfile_save_stamped(fullpath, rotype, (byte *) sourcedata, 
+			(byte *) sourcedata + len);
+	free(fullpath);
+	if (error) {
+		LOG(("xosfile_save_stamped: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("SaveError", error->errmess);
+		return false;
+	}
+	return true;
+}
+
+/**
+* wrapper for lib function htmlSaveFileFormat; front sets path from 
+* path + filename in a filesystem-specific way
+*/
+
+int save_complete_htmlSaveFileFormat(const char *path, const char *filename, 
+		xmlDocPtr cur, const char *encoding, int format)
+{
+	os_error *error;
+	int ret;
+	int len = strlen(path) + strlen(filename) + 2;
+	char *fullpath = malloc(len);
+	if (fullpath == NULL){
+		warn_user("NoMemory", 0);
+		return -1;
+	}
+	snprintf(fullpath, len, "%s.%s", path, filename);
+	ret = htmlSaveFileFormat(fullpath, cur, encoding, format);
+	error = xosfile_set_type(fullpath, 0xFAF);
+	if (error) {
+		LOG(("xosfile_save_stamped: 0x%x: %s",
+		      error->errnum, error->errmess));
+		      warn_user("SaveError", error->errmess);
+		      return false;
+	}
+	free(fullpath);
+	return ret;
+}
 
 /**
  * Prepare an application directory and save_complete() to it.

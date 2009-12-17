@@ -4435,7 +4435,7 @@ void layout_calculate_descendant_bboxes(struct box *box)
 {
 	struct box *child;
 
-	if (box->width == UNKNOWN_WIDTH || box->height == AUTO /*||
+	if ((box->width == UNKNOWN_WIDTH) || (box->height == AUTO) /*||
 			box->width < 0 || box->height < 0*/) {
 		LOG(("%p has bad width or height", box));
 		/*while (box->parent)
