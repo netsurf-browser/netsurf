@@ -858,8 +858,6 @@ BUTTON_CLICKED(buttonaddtheme)
 				gtk_widget_destroy(GTK_WIDGET(fc));
 				if (filename != NULL)
 					free(filename);
-				if (themesfolder != NULL)
-					free(themesfolder);
 				return FALSE;
 			} else {
 				directory++;
@@ -874,7 +872,6 @@ BUTTON_CLICKED(buttonaddtheme)
 						0);
 				gtk_widget_destroy(GTK_WIDGET(fc));
 				free(filename);
-				free(themesfolder);
 				return FALSE;
 			}
 			directory = strrchr(filename, '/') + 1;
