@@ -80,6 +80,7 @@
 #include "amiga/print.h"
 #include <libraries/application.h>
 #include <proto/application.h>
+#include <desktop/searchweb.h>
 
 #include "amiga/stringview/stringview.h"
 #include "amiga/stringview/urlhistory.h"
@@ -396,6 +397,14 @@ void gui_init(int argc, char** argv)
 	if((!option_ca_bundle) || (option_ca_bundle[0] == '\0'))
 		option_ca_bundle = (char *)strdup("devs:curl-ca-bundle.crt");
 
+	if((!option_search_engines_file) || (option_search_engines_file[0] == '\0'))
+		option_search_engines_file = (char *)strdup("PROGDIR:Resources/SearchEngines");
+
+/*
+	if((!option_search_ico_file) || (option_search_ico_file[0] == '\0'))
+		option_search_ico_file = (char *)strdup("PROGDIR:Resources/default.ico");
+*/
+
 	if((!option_font_sans) || (option_font_sans[0] == '\0'))
 		option_font_sans = (char *)strdup("DejaVu Sans");
 
@@ -463,6 +472,7 @@ void gui_init(int argc, char** argv)
 	ami_global_history_initialise();
 	ami_cookies_initialise();
 	save_complete_init();
+	search_web_provider_details(option_search_provider);
 
 	strcpy(throbberfile,option_theme);
 	AddPart(throbberfile,"Theme",100);
@@ -1124,8 +1134,12 @@ void ami_handle_msg(void)
 
 						case GID_URL:
 							GetAttr(STRINGA_TextVal,gwin->gadgets[GID_URL],(ULONG *)&storage);
-							browser_window_go(gwin->bw,(char *)storage,NULL,true);
-							//printf("%s\n",(char *)storage);
+							if(search_is_url((char *)storage) == false)
+							{
+								storage = (ULONG *)search_web_from_term((char *)storage);
+							}
+
+							browser_window_go(gwin->bw,(char *)storage, NULL, true);
 						break;
 
 						case GID_HOME:

@@ -36,6 +36,7 @@ extern bool option_use_os_pointers;
 extern bool option_new_tab_active;
 extern bool option_kiosk_mode;
 extern char *option_recent_file;
+extern char *option_search_engines_file;
 extern char *option_arexx_dir;
 extern char *option_download_dir;
 extern bool option_faster_scroll;
@@ -45,6 +46,7 @@ extern int option_printer_unit;
 extern int option_print_scale;
 extern bool option_startup_no_window;
 extern bool option_close_no_quit;
+extern bool option_hide_docky_icon;
 
 #define EXTRA_OPTION_DEFINE \
 bool option_verbose_log = false; \
@@ -63,6 +65,7 @@ bool option_use_os_pointers = true; \
 bool option_new_tab_active = false; \
 bool option_kiosk_mode = false; \
 char *option_recent_file = 0; \
+char *option_search_engines_file = 0; \
 char *option_arexx_dir = 0; \
 char *option_download_dir = 0; \
 bool option_faster_scroll = true; \
@@ -72,6 +75,7 @@ int option_printer_unit = 0; \
 int option_print_scale = 100; \
 bool option_startup_no_window = false; \
 bool option_close_no_quit = false; \
+bool option_hide_docky_icon = false; \
 
 #define EXTRA_OPTION_TABLE \
 { "verbose_log",	OPTION_BOOL,	&option_verbose_log}, \
@@ -90,6 +94,7 @@ bool option_close_no_quit = false; \
 { "new_tab_is_active",	OPTION_BOOL,	&option_new_tab_active}, \
 { "kiosk_mode",	OPTION_BOOL,	&option_kiosk_mode}, \
 { "recent_file",		OPTION_STRING,	&option_recent_file }, \
+{ "search_engines_file",		OPTION_STRING,	&option_search_engines_file }, \
 { "arexx_dir",		OPTION_STRING,	&option_arexx_dir }, \
 { "download_dir",		OPTION_STRING,	&option_download_dir }, \
 { "faster_scroll",	OPTION_BOOL,	&option_faster_scroll}, \
@@ -98,6 +103,6 @@ bool option_close_no_quit = false; \
 { "printer_unit",	OPTION_INTEGER,	&option_printer_unit}, \
 { "print_scale",	OPTION_INTEGER,	&option_print_scale}, \
 { "startup_no_window",	OPTION_BOOL,	&option_startup_no_window}, \
-{ "close_no_quit",	OPTION_BOOL,	&option_close_no_quit}, 
-
+{ "close_no_quit",	OPTION_BOOL,	&option_close_no_quit}, \
+{ "hide_docky_icon",	OPTION_BOOL,	&option_hide_docky_icon},
 #endif
