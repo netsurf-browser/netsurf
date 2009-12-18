@@ -229,9 +229,9 @@ BOOL ami_search_event(void)
 				flags = SEARCH_FLAG_FORWARDS |
 					ami_search_flags();
 				if (search_verify_new(
-						search_data.search_window,
+						fwin->gwin->shared->bw,
 						&ami_search_callbacks, NULL))
-					search_step(fwin->gwin->shared->bw,
+					search_step(fwin->gwin->shared->bw->search_context,
 							flags,
 							ami_search_string());
 			break;
@@ -241,9 +241,9 @@ BOOL ami_search_event(void)
 				flags = ~SEARCH_FLAG_FORWARDS &
 					ami_search_flags();
 				if (search_verify_new(
-						search_data.search_window,
+						fwin->gwin->shared->bw,
 						&ami_search_callbacks, NULL))
-					search_step(fwin->gwin->shared->bw,
+					search_step(fwin->gwin->shared->bw->search_context,
 						flags,
 						ami_search_string());
 				break;
