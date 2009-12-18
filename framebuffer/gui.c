@@ -1261,6 +1261,22 @@ void gui_window_set_scale(struct gui_window *g, float scale)
 	LOG(("set scale\n"));
 }
 
+/**
+ * set favicon
+ */
+void gui_window_set_icon(struct gui_window *g, struct content *icon)
+{	
+}
+
+/**
+* set gui display of a retrieved favicon representing the search provider
+* \param ico may be NULL for local calls; then access current cache from
+* search_web_ico()
+*/
+void gui_window_set_search_ico(struct content *ico)
+{
+}
+
 struct gui_download_window *gui_download_window_create(const char *url,
                                                        const char *mime_type, struct fetch *fetch,
                                                        unsigned int total_size, struct gui_window *gui)
@@ -1327,15 +1343,6 @@ void gui_create_form_select_menu(struct browser_window *bw,
 void gui_launch_url(const char *url)
 {
 }
-
-bool gui_search_term_highlighted(struct gui_window *g,
-                                 unsigned start_offset, unsigned end_offset,
-                                 unsigned *start_idx, unsigned *end_idx)
-{
-        return false;
-}
-
-
 
 void gui_cert_verify(struct browser_window *bw, struct content *c,
                      const struct ssl_cert_info *certs, unsigned long num)
