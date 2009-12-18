@@ -1042,14 +1042,16 @@ int save_complete_htmlSaveFileFormat(const char *path, const char *filename,
 		return -1;
 	}
 	snprintf(fullpath, len, "%s.%s", path, filename);
+
 	ret = htmlSaveFileFormat(fullpath, cur, encoding, format);
+
 	error = xosfile_set_type(fullpath, 0xFAF);
 	if (error) {
 		LOG(("xosfile_save_stamped: 0x%x: %s",
-		      error->errnum, error->errmess));
-		      warn_user("SaveError", error->errmess);
-		      return false;
+				error->errnum, error->errmess));
+		/* Don't warn the user here -- they probably don't care */
 	}
+
 	free(fullpath);
 	return ret;
 }
