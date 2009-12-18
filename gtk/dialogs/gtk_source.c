@@ -225,8 +225,17 @@ void nsgtk_source_tab_init(GtkWindow *parent, struct browser_window *bw)
 	gchar *filename;
 	char *fileurl;
 	gint handle = g_file_open_tmp("nsgtksourceXXXXXX", &filename, NULL);
+	if ((handle == -1) || (filename == NULL)) {
+		warn_user(messages_get("gtkSourceTabError"), 0);
+		return;
+	}
 	close (handle); /* in case it was binary mode */
 	FILE *f = fopen(filename, "w");
+	if (f == NULL) {
+		warn_user(messages_get("gtkSourceTabError"), 0);
+		g_free(filename);
+		return;
+	}
 	fprintf(f, "%s", ndata);
 	fclose(f);
 	free(ndata);

@@ -77,9 +77,11 @@ bool search_is_url(const char *url)
 	if (url_normalize(url, &url2) != URL_FUNC_OK)
 		return false;
 	
-	if (url_host(url2, &host) != URL_FUNC_OK)
+	if (url_host(url2, &host) != URL_FUNC_OK) {
+		free(url2);
 		return false;
-	
+	}
+	free(url2);
 	return true;
 }
 
@@ -106,6 +108,7 @@ void search_web_provider_details(int reference)
 		if (ref++ == (int)reference)
 			break;
 	}
+	fclose(f);
 	if (current_search_provider.name != NULL)
 		free(current_search_provider.name);
 	current_search_provider.name = strdup(strtok(buf, "|"));

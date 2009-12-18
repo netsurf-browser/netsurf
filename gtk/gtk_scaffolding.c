@@ -1205,31 +1205,32 @@ MULTIHANDLER(stop)
 
 MULTIHANDLER(reload)
 {
-        struct browser_window *bw = 
+	struct browser_window *bw = 
 			gui_window_get_browser_window(g->top_level);
+	if (bw == NULL)
+		return TRUE;
 
 	/* clear potential search effects */
-
-	if ((bw != NULL) && (bw->search_context != NULL))
+	if (bw->search_context != NULL)
 		search_destroy_context(bw->search_context);
 	nsgtk_search_set_forward_state(true, bw);
 	nsgtk_search_set_back_state(true, bw);
 
-        browser_window_reload(bw, true);
+	browser_window_reload(bw, true);
 
-        return TRUE;
+	return TRUE;
 }
 
 MULTIHANDLER(back)
 {
-        struct browser_window *bw = 
+	struct browser_window *bw = 
 			gui_window_get_browser_window(g->top_level);
 
-	if (!history_back_available(bw->history))
+	if ((bw == NULL) || (!history_back_available(bw->history)))
 		return TRUE;
 
 	/* clear potential search effects */
-	if ((bw != NULL) && (bw->search_context != NULL))
+	if (bw->search_context != NULL)
 		search_destroy_context(bw->search_context);
 	nsgtk_search_set_forward_state(true, bw);
 	nsgtk_search_set_back_state(true, bw);
@@ -1242,14 +1243,14 @@ MULTIHANDLER(back)
 
 MULTIHANDLER(forward)
 {
-        struct browser_window *bw = 
+	struct browser_window *bw = 
 			gui_window_get_browser_window(g->top_level);
 
-	if (!history_forward_available(bw->history))
+	if ((bw == NULL) || (!history_forward_available(bw->history)))
 		return TRUE;
 
 	/* clear potential search effects */
-	if ((bw != NULL) && (bw->search_context != NULL))
+	if (bw->search_context != NULL)
 		search_destroy_context(bw->search_context);
 	nsgtk_search_set_forward_state(true, bw);
 	nsgtk_search_set_back_state(true, bw);
@@ -1464,6 +1465,7 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	g->search = malloc(sizeof(struct gtk_search));
 	if (g->search == NULL) {
 		warn_user("NoMemory", 0);
+		free(g);
 		return NULL;
 	}
 	
@@ -1837,13 +1839,17 @@ void gui_window_start_throbber(struct gui_window* _g)
 
 void gui_window_stop_throbber(struct gui_window* _g)
 {
-        struct gtk_scaffolding *g = nsgtk_get_scaffold(_g);
-        g->buttons[STOP_BUTTON]->sensitivity = false;
-        g->buttons[RELOAD_BUTTON]->sensitivity = true;
+	struct gtk_scaffolding *g = nsgtk_get_scaffold(_g);
+	if (g == NULL)
+		return;
 	nsgtk_window_update_back_forward(g);
 	schedule_remove(nsgtk_throb, g);
+	if (g->buttons[STOP_BUTTON] != NULL)
+		g->buttons[STOP_BUTTON]->sensitivity = false;
+	if (g->buttons[RELOAD_BUTTON] != NULL)
+		g->buttons[RELOAD_BUTTON]->sensitivity = true;
 
-	if ((g == NULL) || (g->throbber == NULL) || (nsgtk_throbber == NULL) || 
+	if ((g->throbber == NULL) || (nsgtk_throbber == NULL) || 
 			(nsgtk_throbber->framedata == NULL) || 
 			(nsgtk_throbber->framedata[0] == NULL))
 		return;
@@ -2221,6 +2227,8 @@ void nsgtk_scaffolding_toolbar_size_allocate(GtkWidget *widget,
 {
 	struct gtk_scaffolding *g = (struct gtk_scaffolding *)data;
 	int i = nsgtk_toolbar_get_id_from_widget(widget, g);
+	if (i == -1)
+		return;
 	if ((g->toolbarmem == alloc->x) || 
 			(g->buttons[i]->location <
 			g->buttons[HISTORY_BUTTON]->location))

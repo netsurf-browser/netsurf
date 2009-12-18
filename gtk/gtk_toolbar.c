@@ -201,16 +201,20 @@ void nsgtk_toolbar_window_open(nsgtk_scaffolding *g)
 	}
 	glade_xml_signal_autoconnect(window->glade);
 	
-#define GET_TOOLWIDGET(p, q, r, s) r->p = glade_xml_get_widget(r->s, #q);\
-		if (r->p == NULL) {\
-			warn_user(messages_get("NoMemory"), 0);\
-			nsgtk_toolbar_cancel_clicked(NULL, g);\
-			return;\
-		}
-
-	GET_TOOLWIDGET(window, toolbarwindow, window, glade)
-	GET_TOOLWIDGET(widgetvbox, widgetvbox, window, glade)
-#undef GET_TOOLWIDGET
+	window->window = glade_xml_get_widget(window->glade, "toolbarwindow");
+	if (window->window == NULL) {
+		warn_user(messages_get("NoMemory"), 0);
+		nsgtk_toolbar_cancel_clicked(NULL, g);
+		free(theme);
+		return;
+	}
+	window->widgetvbox = glade_xml_get_widget(window->glade, "widgetvbox");
+	if (window->widgetvbox == NULL) {
+		warn_user(messages_get("NoMemory"), 0);
+		nsgtk_toolbar_cancel_clicked(NULL, g);
+		free(theme);
+		return;
+	}
 
 	window->numberh = NSGTK_STORE_WIDTH; /* preset to width [in buttons] of */
 				/*  store to cause creation of a new toolbar */

@@ -97,13 +97,22 @@ static void free_matches(struct search_context *context);
 bool search_create_context(struct browser_window *bw,
 		struct search_callbacks *callbacks, void *p)
 {
-	struct search_context *context = malloc(sizeof(struct search_context));
-	struct list_entry *search_head = malloc(sizeof(struct list_entry));
+	struct search_context *context;
+	struct list_entry *search_head;
 	
-	if ((context == NULL) || (search_head == NULL)) {
+	context = malloc(sizeof(struct search_context));
+	if (context == NULL) {
 		warn_user("NoMemory", 0);
 		return false;
 	}
+	
+	search_head = malloc(sizeof(struct list_entry));
+	if (search_head == NULL) {
+		warn_user("NoMemory", 0);
+		free(context);
+		return false;
+	}
+	
 	if (bw->search_context != NULL)
 		search_destroy_context(bw->search_context);
 
@@ -195,8 +204,10 @@ void search_step(struct search_context *context, search_flags_t flags,
 
 void free_matches(struct search_context *context)
 {
-	struct list_entry *a = context->found->next;
+	struct list_entry *a;
 	struct list_entry *b;
+	
+	a = context->found->next;
 
 	/* empty the list before clearing and deleting the
 	   selections because the the clearing updates the

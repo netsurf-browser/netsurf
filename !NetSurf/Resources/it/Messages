@@ -437,6 +437,7 @@ gtkFileError:Errore File: %s
 gtkInfo:%s da %s è %s come dimensione
 gtkSave:Salva file come...
 gtkSourceSave:Salva sorgente
+gtkSourceTabError:Error handling source data 
 gtkPlainSave:Save as text
 gtkFullSave:Save webpage complete - select an empty directory
 gtkSaveConfirm:File salvato

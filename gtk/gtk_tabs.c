@@ -193,13 +193,16 @@ void nsgtk_tab_page_changed(GtkNotebook *notebook, GtkNotebookPage *page,
 	GtkWidget *window = gtk_notebook_get_nth_page(notebook, page_num);
 	struct gui_window *gw = g_object_get_data(G_OBJECT(window),
 			"gui_window");
+	if (gw == NULL)
+		return;
 	struct browser_window *bw = gui_window_get_browser_window(gw);
-	if ((bw != NULL) && (bw->search_context != NULL))
+	if (bw == NULL)
+		return;
+	if (bw->search_context != NULL)
 		search_destroy_context(bw->search_context);
 	nsgtk_search_set_forward_state(true, bw);
 	nsgtk_search_set_back_state(true, bw);
-	if (gw)
-		nsgtk_scaffolding_set_top_level(gw);
+	nsgtk_scaffolding_set_top_level(gw);
 }
 
 void nsgtk_tab_close_current(GtkNotebook *notebook)

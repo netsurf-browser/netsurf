@@ -752,7 +752,8 @@ void fetchcache_error_page(struct content *c, const char *error,
 			fetchcache_search_redirect(c, error);
 			free(host);
 			return;
-		}
+		} else
+			free(host);
 	}
 	if ((length = snprintf(error_page, sizeof(error_page),
 			messages_get("ErrorPage"), error)) < 0)

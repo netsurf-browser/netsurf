@@ -21,6 +21,8 @@
  *
  * gcc -I../ -DNSTHEME -o themetool container.c
  *
+ * [needs a c99 compiler]
+ *
  * then for instance to create a theme file called mythemefilename
  * ./themetool --verbose --create -n"My theme name" mythemefilename\
  * --author "Myname" /path/to/directory/containing/theme/files/
@@ -41,8 +43,13 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
+
 #ifdef WITH_MMAP
 #include <sys/mman.h>
+#endif
+
+#ifdef NSTHEME
+bool verbose_log = true;
 #endif
 
 struct container_dirent {
@@ -73,14 +80,21 @@ struct container_ctx {
 
 inline static size_t container_filelen(FILE *fd)
 {
-	size_t o = ftell(fd);
-	size_t a;
+	long o = ftell(fd);
+	long a;
 
 	fseek(fd, 0, SEEK_END);
 	a = ftell(fd);
 	fseek(fd, o, SEEK_SET);
-
-	return a;
+	if (a == -1) {
+		LOG(("could not ascertain size of file in theme container; omitting"));
+		return 0;
+	}
+	if (((unsigned long) a) > SIZE_MAX) {
+		LOG(("overlarge file in theme container; possible truncation"));
+		return SIZE_MAX;
+	}
+	return (size_t) a;
 }
 
 static void container_add_to_dir(struct container_ctx *ctx,
@@ -88,9 +102,15 @@ static void container_add_to_dir(struct container_ctx *ctx,
 					const u_int32_t offset,
 					const u_int32_t length)
 {
+	struct container_dirent *temp;
+	temp = realloc(ctx->directory, ctx->entries * 
+			sizeof(struct container_dirent));
+	if (temp == NULL) {
+		printf("error adding entry for %s to theme container\n", entryname);
+		return;
+	}
 	ctx->entries += 1;
-	ctx->directory = realloc(ctx->directory, ctx->entries *
-				sizeof(struct container_dirent));
+	ctx->directory = temp;
 
 	strncpy((char *)ctx->directory[ctx->entries - 1].filename,
 				(char *)entryname, sizeof(ctx->directory[
@@ -503,7 +523,7 @@ static void extract_theme(const char *themefile, const char *dirname)
 	FILE *fh;
 	const unsigned char *e, *d;
 	char path[PATH_MAX];
-	int state = 0;
+	int i, state = 0;
 	u_int32_t flen;
 
 

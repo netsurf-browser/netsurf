@@ -476,6 +476,7 @@ static void nsgtk_options_theme_combo(void) {
 		
 		gtk_combo_box_append_text(GTK_COMBO_BOX(combotheme), buf);
 	}
+	fclose(fp);
 	gtk_combo_box_set_active(GTK_COMBO_BOX(combotheme), 
 			option_current_theme);
 	gtk_box_pack_start(box, combotheme, FALSE, TRUE, 0);
@@ -855,14 +856,17 @@ BUTTON_CLICKED(buttonaddtheme)
 						"gtkThemeFolderInstructions"), 
 						0);
 				gtk_widget_destroy(GTK_WIDGET(fc));
-				free(filename);
-				free(themesfolder);
+				if (filename != NULL)
+					free(filename);
+				if (themesfolder != NULL)
+					free(themesfolder);
 				return FALSE;
 			} else {
 				directory++;
 			}
 		} else {
-			free(filename);
+			if (filename != NULL)
+				free(filename);
 			filename = gtk_file_chooser_get_filename(
 					GTK_FILE_CHOOSER(fc));
 			if (strcmp(filename, themesfolder) == 0) {
@@ -877,7 +881,8 @@ BUTTON_CLICKED(buttonaddtheme)
 		}
 		gtk_widget_destroy(GTK_WIDGET(fc));
 		nsgtk_theme_add(directory);
-		free(filename);
+		if (filename != NULL)
+			free(filename);
 	}
 
 END_HANDLER

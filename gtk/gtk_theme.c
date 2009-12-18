@@ -213,6 +213,7 @@ bool nsgtk_theme_verify(const char *themename)
 				+ 1);
 		if (filecontent == NULL) {
 			warn_user(messages_get("NoMemory"), 0);
+			fclose(fp);
 			return true;
 		}
 		strcpy(filecontent, "gtk default theme\n");
@@ -226,6 +227,7 @@ bool nsgtk_theme_verify(const char *themename)
 			if (testfile == NULL) {
 				warn_user(messages_get("NoMemory"), 0);
 				free(filecontent);
+				fclose(fp);
 				return false;
 			}
 			sprintf(testfile, "%sthemes/%s", res_dir_location,
@@ -381,8 +383,8 @@ struct nsgtk_theme *nsgtk_theme_load(GtkIconSize s)
 		return nsgtk_theme_default(s);
 
 	struct nsgtk_theme *theme = malloc(sizeof(struct nsgtk_theme));
-		if (theme == NULL)
-			return theme;
+	if (theme == NULL)
+		return theme;
 	
 	if ((theme_cache_menu == NULL) || (theme_cache_toolbar == NULL))
 		nsgtk_theme_prepare();
@@ -390,8 +392,10 @@ struct nsgtk_theme *nsgtk_theme_load(GtkIconSize s)
 	/* load theme from cache */
 	struct nsgtk_theme_cache *cachetheme = (s == GTK_ICON_SIZE_MENU) ?
 			theme_cache_menu : theme_cache_toolbar;
-	if (cachetheme == NULL)
+	if (cachetheme == NULL) {
+		free(theme);
 		return NULL;
+	}
 
 #define SET_BUTTON_IMAGE(p, q, r)\
 	if (p->image[q##_BUTTON] != NULL)\
@@ -731,6 +735,7 @@ bool theme_install_read(const char *data, unsigned long len)
 	if (handle == -1) {
 		warn_user(messages_get("gtkFileError"),
 				"temporary theme file");
+		return false;
 	}
 	ssize_t written = write(handle, data, len);
 	close(handle);

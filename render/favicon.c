@@ -92,13 +92,13 @@ char *favicon_get_icon_ref(struct content *c, xmlNode *html)
 				url2 = NULL;
 			}
 			res = url_normalize(url, &url2);
+			free(url);
 			if (res != URL_FUNC_OK) {
 				url2 = NULL;
 				if (res == URL_FUNC_NOMEM)
 					goto no_memory;
 				continue;
 			}
-			free(url);
 
 		}
 	}
