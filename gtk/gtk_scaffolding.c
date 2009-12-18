@@ -1443,7 +1443,12 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	struct gtk_scaffolding *g = malloc(sizeof(*g));
 	char *searchname;
 	int i;
-	
+
+	if (g == NULL) {
+		warn_user("NoMemory", 0);
+		return NULL;
+	}
+
         LOG(("Constructing a scaffold of %p for gui_window %p", g, toplevel));
 
         g->top_level = toplevel;
