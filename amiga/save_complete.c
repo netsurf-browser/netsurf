@@ -68,7 +68,7 @@ bool save_complete_gui_save(const char *path, const char *filename, size_t len,
 			break;
 		default:
 			free(fullpath);
-			return false;
+			return true;
 			break;
 	}
 	
