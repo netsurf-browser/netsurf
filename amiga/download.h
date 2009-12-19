@@ -43,9 +43,10 @@ struct gui_download_window {
 
 int drag_save;
 void *drag_save_data;
+struct gui_window *drag_save_gui;
 
 void ami_download_window_abort(struct gui_download_window *dw);
 void ami_drag_save(struct Window *win);
 void ami_free_download_list(struct List *dllist);
-
+void ami_superimpose_favicon(STRPTR path, struct content *icon, STRPTR type);
 #endif

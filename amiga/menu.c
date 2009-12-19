@@ -48,6 +48,7 @@
 #include "content/fetch.h"
 #include "amiga/gui_options.h"
 #include "amiga/print.h"
+#include "amiga/download.h"
 
 BOOL menualreadyinit;
 const char * const netsurf_version;
@@ -514,6 +515,8 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 									UnLock(lock);
 									save_complete(gwin->bw->current_content,fname);
 									SetComment(fname,gwin->bw->current_content->url);
+									ami_superimpose_favicon(fname,
+										gwin->bw->window->favicon, NULL);
 								}
 								ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
 							}
@@ -532,6 +535,8 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 								ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
 								save_as_pdf(gwin->bw->current_content,fname);
 								SetComment(fname,gwin->bw->current_content->url);
+								ami_superimpose_favicon(fname,
+									gwin->bw->window->favicon, "pdf");
 								ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
 							}
 #endif
