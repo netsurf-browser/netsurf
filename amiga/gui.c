@@ -2341,6 +2341,14 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 							ButtonEnd,
 							CHILD_WeightedWidth,0,
 							CHILD_WeightedHeight,0,
+							LAYOUT_AddChild, gwin->shared->gadgets[GID_ICON] = SpaceObject,
+								GA_ID, GID_ICON,
+								SPACE_MinWidth, 16,
+								SPACE_MinHeight, 16,
+								SPACE_Transparent, TRUE,
+							SpaceEnd,
+							CHILD_WeightedWidth,0,
+							CHILD_WeightedHeight,0,
 							LAYOUT_AddChild, gwin->shared->gadgets[GID_URL] =
 								NewObject(urlStringClass, NULL,
                     				STRINGA_MaxChars, 2000,
@@ -3429,6 +3437,39 @@ void gui_window_stop_throbber(struct gui_window *g)
  */
 void gui_window_set_icon(struct gui_window *g, struct content *icon)
 {
+	struct BitMap *bm = NULL;
+	struct IBox *bbox;
+
+	if ((icon != NULL) && (icon->type == CONTENT_ICO))
+	{
+		nsico_set_bitmap_from_size(icon, 16, 16);
+	}
+
+	if ((icon != NULL) && (icon->bitmap != NULL))
+	{
+		bm = ami_getcachenativebm(icon->bitmap, 16, 16, g->shared->win->RPort->BitMap);
+	}
+
+	GetAttr(SPACE_AreaBox, g->shared->gadgets[GID_ICON], (ULONG *)&bbox);
+
+	EraseRect(g->shared->win->RPort, bbox->Left, bbox->Top,
+		bbox->Left+16, bbox->Top+16);
+
+	if(bm)
+	{
+		BltBitMapTags(BLITA_SrcX, 0,
+					BLITA_SrcY, 0,
+					BLITA_DestX, bbox->Left,
+					BLITA_DestY, bbox->Top,
+					BLITA_Width, 16,
+					BLITA_Height, 16,
+					BLITA_Source, bm,
+					BLITA_Dest, g->shared->win->RPort,
+					BLITA_SrcType, BLITT_BITMAP,
+					BLITA_DestType, BLITT_RASTPORT,
+					BLITA_UseSrcAlpha, TRUE,
+					TAG_DONE);
+	}
 }
 
 /**
