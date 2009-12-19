@@ -1816,6 +1816,8 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 
 	if(redraw)
 	{
+		gui_window_set_icon(gwin->bw->window, gwin->bw->window->favicon);
+
 		p96RectFill(gwin->win->RPort,bbox->Left,bbox->Top,bbox->Width+bbox->Left,bbox->Height+bbox->Top,0xffffffff);
 
 		browser_window_update(gwin->bw,false);
@@ -3439,6 +3441,12 @@ void gui_window_set_icon(struct gui_window *g, struct content *icon)
 {
 	struct BitMap *bm = NULL;
 	struct IBox *bbox;
+	ULONG cur_tab = 0;
+
+	if(!g) return;
+
+	if(g->tab_node) GetAttr(CLICKTAB_Current, g->shared->gadgets[GID_TABS],
+						(ULONG *)&cur_tab);
 
 	if ((icon != NULL) && (icon->type == CONTENT_ICO))
 	{
@@ -3447,29 +3455,35 @@ void gui_window_set_icon(struct gui_window *g, struct content *icon)
 
 	if ((icon != NULL) && (icon->bitmap != NULL))
 	{
-		bm = ami_getcachenativebm(icon->bitmap, 16, 16, g->shared->win->RPort->BitMap);
+		bm = ami_getcachenativebm(icon->bitmap, 16, 16,
+					g->shared->win->RPort->BitMap);
 	}
 
-	GetAttr(SPACE_AreaBox, g->shared->gadgets[GID_ICON], (ULONG *)&bbox);
-
-	EraseRect(g->shared->win->RPort, bbox->Left, bbox->Top,
-		bbox->Left+16, bbox->Top+16);
-
-	if(bm)
+	if((cur_tab == g->tab) || (g->shared->tabs == 0))
 	{
-		BltBitMapTags(BLITA_SrcX, 0,
-					BLITA_SrcY, 0,
-					BLITA_DestX, bbox->Left,
-					BLITA_DestY, bbox->Top,
-					BLITA_Width, 16,
-					BLITA_Height, 16,
-					BLITA_Source, bm,
-					BLITA_Dest, g->shared->win->RPort,
-					BLITA_SrcType, BLITT_BITMAP,
-					BLITA_DestType, BLITT_RASTPORT,
-					BLITA_UseSrcAlpha, TRUE,
-					TAG_DONE);
+		GetAttr(SPACE_AreaBox, g->shared->gadgets[GID_ICON], (ULONG *)&bbox);
+
+		EraseRect(g->shared->win->RPort, bbox->Left, bbox->Top,
+			bbox->Left+16, bbox->Top+16);
+
+		if(bm)
+		{
+			BltBitMapTags(BLITA_SrcX, 0,
+						BLITA_SrcY, 0,
+						BLITA_DestX, bbox->Left,
+						BLITA_DestY, bbox->Top,
+						BLITA_Width, 16,
+						BLITA_Height, 16,
+						BLITA_Source, bm,
+						BLITA_Dest, g->shared->win->RPort,
+						BLITA_SrcType, BLITT_BITMAP,
+						BLITA_DestType, BLITT_RASTPORT,
+						BLITA_UseSrcAlpha, TRUE,
+						TAG_DONE);
+		}
 	}
+
+	g->favicon = icon;
 }
 
 /**
