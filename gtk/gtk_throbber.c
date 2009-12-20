@@ -54,8 +54,15 @@ bool nsgtk_throbber_initialise_from_png(const int frames, ...)
 	}
 	
 	throb = malloc(sizeof(*throb));
+	if (throb == NULL)
+		return false;
+
 	throb->nframes = frames;
 	throb->framedata = malloc(sizeof(GdkPixbuf *) * throb->nframes);
+	if (throb->framedata == NULL) {
+		free(throb);
+		return false;
+	}
 	
 	va_start(filenames, frames);
 	
@@ -78,6 +85,7 @@ bool nsgtk_throbber_initialise_from_png(const int frames, ...)
 				gdk_pixbuf_unref(throb->framedata[i]);
 		}
 
+		free(throb->framedata);
 		free(throb);
 		
 		return false;		
@@ -105,16 +113,21 @@ bool nsgtk_throbber_initialise_from_gif(const char *fn)
 	 * GdkPixbuf for use later.
 	 */
 	gif_animation gif;
-	struct nsgtk_throbber throb;				/**< structure we generate */
+	struct nsgtk_throbber *throb;		/**< structure we generate */
+	FILE *fh;
 	int res;
 	size_t size;
 	unsigned char *data;
 	int i;
 
-	FILE *fh = fopen(fn, "rb");
+	throb = calloc(1, sizeof(struct nsgtk_throbber));
+	if (throb == NULL)
+		return false;
 
+	fh = fopen(fn, "rb");
 	if (fh == NULL) {
 		LOG(("Unable to open throbber image '%s' for reading!", fn));
+		free(throb);
 		return false;
 	}
 
@@ -124,11 +137,18 @@ bool nsgtk_throbber_initialise_from_gif(const char *fn)
 	fseek(fh, 0, SEEK_SET);
 
 	/* allocate a block of sufficient size, and load the data in. */
-	data = (unsigned char *)malloc(size);
+	data = malloc(size);
+	if (data == NULL) {
+		fclose(fh);
+		free(throb);
+		return false;
+	}
+
 	if (fread(data, size, 1, fh) != 1) {
 		/* interesting; we couldn't read it all in. */
-		fclose(fh);
 		free(data);
+		fclose(fh);
+		free(throb);
 		return false;
 	}
 	fclose(fh);
@@ -140,67 +160,90 @@ bool nsgtk_throbber_initialise_from_gif(const char *fn)
 	do {
 		res = gif_initialise(&gif, size, data);
 		if (res != GIF_OK && res != GIF_WORKING) {
-			switch (res)
-			{
-				case GIF_INSUFFICIENT_FRAME_DATA:
-				case GIF_FRAME_DATA_ERROR:
-				case GIF_INSUFFICIENT_DATA:
-				case GIF_DATA_ERROR:
-					LOG(("GIF image '%s' appears invalid!", fn));
-					break;
-				case GIF_INSUFFICIENT_MEMORY:
-					LOG(("Ran out of memory decoding GIF image '%s'!", fn));
-					break;
+			switch (res) {
+			case GIF_INSUFFICIENT_FRAME_DATA:
+			case GIF_FRAME_DATA_ERROR:
+			case GIF_INSUFFICIENT_DATA:
+			case GIF_DATA_ERROR:
+				LOG(("GIF image '%s' appears invalid!", fn));
+				break;
+			case GIF_INSUFFICIENT_MEMORY:
+				LOG(("Ran out of memory decoding GIF image '%s'!", fn));
+				break;
 			}
 			gif_finalise(&gif);
 			free(data);
-			free(&throb);
+			free(throb);
 			return false;
 		}
 	} while (res != GIF_OK);
 
-	throb.nframes = gif.frame_count;
+	throb->nframes = gif.frame_count;
 
-	if (throb.nframes < 2)
-	{
+	if (throb->nframes < 2) {
 		/* we need at least two frames - one for idle, one for active */
 		LOG(("Insufficent number of frames in throbber image '%s'!",
 			fn));
 		LOG(("(GIF contains %d frames, where 2 is a minimum.)",
-			throb.nframes));
+			throb->nframes));
 		gif_finalise(&gif);
 		free(data);
-		free(&throb);
+		free(throb);
 		return false;
 	}
 
-	throb.framedata = (GdkPixbuf **)malloc(sizeof(GdkPixbuf *) * throb.nframes);
+	throb->framedata = malloc(sizeof(GdkPixbuf *) * throb->nframes);
+	if (throb->framedata == NULL) {
+		gif_finalise(&gif);
+		free(data);
+		free(throb);
+		return false;
+	}
 
 	/* decode each frame in turn, extracting the struct bitmap * for each,
 	 * and put that in our array of frames.
 	 */
-	for (i = 0; i < throb.nframes; i++)
-	{
+	for (i = 0; i < throb->nframes; i++) {
 		res = gif_decode_frame(&gif, i);
 		if (res != GIF_OK) {
-			switch (res)
-			{
-				case GIF_INSUFFICIENT_FRAME_DATA:
-				case GIF_FRAME_DATA_ERROR:
-				case GIF_INSUFFICIENT_DATA:
-				case GIF_DATA_ERROR:
-					LOG(("GIF image '%s' appears invalid!", fn));
-					break;
-				case GIF_INSUFFICIENT_MEMORY:
-					LOG(("Ran out of memory decoding GIF image '%s'!", fn));
-					break;
+			switch (res) {
+			case GIF_INSUFFICIENT_FRAME_DATA:
+			case GIF_FRAME_DATA_ERROR:
+			case GIF_INSUFFICIENT_DATA:
+			case GIF_DATA_ERROR:
+				LOG(("GIF image '%s' appears invalid!", fn));
+				break;
+			case GIF_INSUFFICIENT_MEMORY:
+				LOG(("Ran out of memory decoding GIF image '%s'!", fn));
+				break;
 			}
+
 			gif_finalise(&gif);
 			free(data);
-			free(&throb);
+			while (i >= 0) {
+				if (throb->framedata[i] != NULL)
+					gdk_pixbuf_unref(throb->framedata[i]);
+				i--;
+			}
+			free(throb->framedata);	
+			free(throb);
 			return false;
 		}
-		throb.framedata[i] = gdk_pixbuf_copy(gtk_bitmap_get_primary(gif.frame_image));
+
+		throb->framedata[i] = gdk_pixbuf_copy(
+				gtk_bitmap_get_primary(gif.frame_image));
+		if (throb->framedata[i] == NULL) {
+			gif_finalise(&gif);
+			free(data);
+			while (i >= 0) {
+				if (throb->framedata[i] != NULL)
+					gdk_pixbuf_unref(throb->framedata[i]);
+				i--;
+			}
+			free(throb->framedata);
+			free(throb);
+			return false;
+		}
 	}
 
 	gif_finalise(&gif);
@@ -216,7 +259,7 @@ bool nsgtk_throbber_initialise_from_gif(const char *fn)
 	}
   	*/
 
-	nsgtk_throbber = &throb;
+	nsgtk_throbber = throb;
 
 	return true;
 }
