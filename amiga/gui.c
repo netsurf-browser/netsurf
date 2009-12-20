@@ -400,9 +400,13 @@ void gui_init(int argc, char** argv)
 	if((!option_search_engines_file) || (option_search_engines_file[0] == '\0'))
 		option_search_engines_file = (char *)strdup("PROGDIR:Resources/SearchEngines");
 
+	search_engines_file_location = option_search_engines_file;
+
 /*
 	if((!option_search_ico_file) || (option_search_ico_file[0] == '\0'))
 		option_search_ico_file = (char *)strdup("PROGDIR:Resources/default.ico");
+
+	search_default_ico_location = option_search_ico_file;
 */
 
 	if((!option_font_sans) || (option_font_sans[0] == '\0'))
@@ -2271,6 +2275,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 //						LAYOUT_CharSet,106,
 		               	LAYOUT_SpaceOuter, TRUE,
 						LAYOUT_AddChild, HGroupObject,
+							LAYOUT_VertAlignment, LALIGN_CENTER,
 							LAYOUT_AddChild, gwin->shared->gadgets[GID_BACK] = ButtonObject,
 								GA_ID,GID_BACK,
 								GA_RelVerify,TRUE,
