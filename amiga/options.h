@@ -37,6 +37,7 @@ extern bool option_new_tab_active;
 extern bool option_kiosk_mode;
 extern char *option_recent_file;
 extern char *option_search_engines_file;
+extern char *option_search_ico_file;
 extern char *option_arexx_dir;
 extern char *option_download_dir;
 extern bool option_faster_scroll;
@@ -66,6 +67,7 @@ bool option_new_tab_active = false; \
 bool option_kiosk_mode = false; \
 char *option_recent_file = 0; \
 char *option_search_engines_file = 0; \
+char *option_search_ico_file = 0; \
 char *option_arexx_dir = 0; \
 char *option_download_dir = 0; \
 bool option_faster_scroll = true; \
@@ -95,6 +97,7 @@ bool option_hide_docky_icon = false; \
 { "kiosk_mode",	OPTION_BOOL,	&option_kiosk_mode}, \
 { "recent_file",		OPTION_STRING,	&option_recent_file }, \
 { "search_engines_file",		OPTION_STRING,	&option_search_engines_file }, \
+{ "search_ico_file",		OPTION_STRING,	&option_search_ico_file }, \
 { "arexx_dir",		OPTION_STRING,	&option_arexx_dir }, \
 { "download_dir",		OPTION_STRING,	&option_download_dir }, \
 { "faster_scroll",	OPTION_BOOL,	&option_faster_scroll}, \

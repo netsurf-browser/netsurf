@@ -402,12 +402,10 @@ void gui_init(int argc, char** argv)
 
 	search_engines_file_location = option_search_engines_file;
 
-/*
 	if((!option_search_ico_file) || (option_search_ico_file[0] == '\0'))
 		option_search_ico_file = (char *)strdup("PROGDIR:Resources/default.ico");
 
 	search_default_ico_location = option_search_ico_file;
-*/
 
 	if((!option_font_sans) || (option_font_sans[0] == '\0'))
 		option_font_sans = (char *)strdup("DejaVu Sans");
@@ -476,7 +474,6 @@ void gui_init(int argc, char** argv)
 	ami_global_history_initialise();
 	ami_cookies_initialise();
 	save_complete_init();
-	search_web_provider_details(option_search_provider);
 
 	strcpy(throbberfile,option_theme);
 	AddPart(throbberfile,"Theme",100);
@@ -634,6 +631,8 @@ void gui_init2(int argc, char** argv)
 	notalreadyrunning = ami_arexx_init();
 	ami_fetch_file_register();
 	ami_openurl_open();
+
+	search_web_provider_details(option_search_provider);
 
 	if(notalreadyrunning && (option_startup_no_window == false))
 		ami_openscreenfirst();
@@ -2372,6 +2371,24 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 								GA_RelVerify,TRUE,
 							StringEnd,
 */
+							LAYOUT_WeightBar, TRUE,
+							LAYOUT_AddChild, HGroupObject,
+								LAYOUT_VertAlignment, LALIGN_CENTER,
+								LAYOUT_AddChild, gwin->shared->gadgets[GID_SEARCH_ICON] = SpaceObject,
+									GA_ID, GID_SEARCH_ICON,
+									SPACE_MinWidth, 16,
+									SPACE_MinHeight, 16,
+									SPACE_Transparent, TRUE,
+								SpaceEnd,
+								CHILD_WeightedWidth,0,
+								CHILD_WeightedHeight,0,
+								LAYOUT_AddChild, gwin->shared->gadgets[GID_SEARCHSTRING] =StringObject,
+									GA_ID,GID_SEARCHSTRING,
+                   					STRINGA_TextVal, NULL,
+									GA_RelVerify,TRUE,
+								StringEnd,
+							LayoutEnd,
+							CHILD_WeightedWidth, 0,
 							LAYOUT_AddChild, gwin->shared->gadgets[GID_THROBBER] = SpaceObject,
 								GA_ID,GID_THROBBER,
 								SPACE_MinWidth,throbber_width,
@@ -2568,6 +2585,10 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	glob = &browserglob;
 
 	if(locked_screen) UnlockPubScreen(NULL,scrn);
+
+	//if (search_web_ico() == NULL)
+		search_web_retrieve_ico(false);
+
 	return gwin;
 }
 
@@ -3448,10 +3469,15 @@ void gui_window_set_icon(struct gui_window *g, struct content *icon)
 	struct IBox *bbox;
 	ULONG cur_tab = 0;
 
+	if(option_kiosk_mode == true) return;
 	if(!g) return;
 
 	if(g->tab_node) GetAttr(CLICKTAB_Current, g->shared->gadgets[GID_TABS],
 						(ULONG *)&cur_tab);
+
+	if ((icon != NULL) &&
+		(icon->status != CONTENT_STATUS_READY) &&
+		(icon->status != CONTENT_STATUS_DONE)) return;
 
 	if ((icon != NULL) && (icon->type == CONTENT_ICO))
 	{
@@ -3499,6 +3525,57 @@ void gui_window_set_icon(struct gui_window *g, struct content *icon)
  */
 void gui_window_set_search_ico(struct content *ico)
 {
+	struct BitMap *bm = NULL;
+	struct IBox *bbox;
+	ULONG cur_tab = 0;
+	struct nsObject *node;
+	struct nsObject *nnode;
+	struct gui_window_2 *gwin;
+
+	if(IsMinListEmpty(window_list))	return;
+	if(option_kiosk_mode == true) return;
+	if (ico == NULL) ico = search_web_ico();
+
+	if ((ico != NULL) && (ico->type == CONTENT_ICO))
+	{
+		nsico_set_bitmap_from_size(ico, 16, 16);
+	}
+
+	if ((ico != NULL) && (ico->bitmap != NULL))
+	{
+		bm = ami_getcachenativebm(ico->bitmap, 16, 16, NULL);
+	}
+
+	node = (struct nsObject *)GetHead((struct List *)window_list);
+
+	do {
+		nnode=(struct nsObject *)GetSucc((struct Node *)node);
+		gwin = node->objstruct;
+
+		if(node->Type == AMINS_WINDOW)
+		{
+			GetAttr(SPACE_AreaBox, gwin->gadgets[GID_SEARCH_ICON], (ULONG *)&bbox);
+
+			EraseRect(gwin->win->RPort, bbox->Left, bbox->Top,
+				bbox->Left+16, bbox->Top+16);
+
+			if(bm)
+			{
+				BltBitMapTags(BLITA_SrcX, 0,
+							BLITA_SrcY, 0,
+							BLITA_DestX, bbox->Left,
+							BLITA_DestY, bbox->Top,
+							BLITA_Width, 16,
+							BLITA_Height, 16,
+							BLITA_Source, bm,
+							BLITA_Dest, gwin->win->RPort,
+							BLITA_SrcType, BLITT_BITMAP,
+							BLITA_DestType, BLITT_RASTPORT,
+							BLITA_UseSrcAlpha, TRUE,
+							TAG_DONE);
+			}
+		}
+	} while(node = nnode);
 }
 
 void ami_update_throbber(struct gui_window_2 *g,bool redraw)
@@ -3614,6 +3691,7 @@ void gui_window_new_content(struct gui_window *g)
 	g->scrolly = 0;
 	g->shared->oldh = 0;
 	g->shared->oldv = 0;
+	g->favicon = NULL;
 
 	if(g->shared->bw->browser_window_type != BROWSER_WINDOW_NORMAL ||
 		option_kiosk_mode == true) return;
