@@ -1145,6 +1145,18 @@ void ami_handle_msg(void)
 							browser_window_go(gwin->bw,(char *)storage, NULL, true);
 						break;
 
+						case GID_TOOLBARLAYOUT:
+							/* Need fixing: never gets here */
+							search_web_retrieve_ico(false);
+						break;
+
+						case GID_SEARCHSTRING:
+							GetAttr(STRINGA_TextVal,gwin->gadgets[GID_SEARCHSTRING],(ULONG *)&storage);
+							storage = (ULONG *)search_web_from_term((char *)storage);
+
+							browser_window_go(gwin->bw,(char *)storage, NULL, true);
+						break;
+
 						case GID_HOME:
 							browser_window_go(gwin->bw,option_homepage_url,NULL,true);	
 						break;
@@ -2273,7 +2285,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		           	WINDOW_ParentGroup, gwin->shared->gadgets[GID_MAIN] = VGroupObject,
 //						LAYOUT_CharSet,106,
 		               	LAYOUT_SpaceOuter, TRUE,
-						LAYOUT_AddChild, HGroupObject,
+						LAYOUT_AddChild, gwin->shared->gadgets[GID_TOOLBARLAYOUT] = HGroupObject,
 							LAYOUT_VertAlignment, LALIGN_CENTER,
 							LAYOUT_AddChild, gwin->shared->gadgets[GID_BACK] = ButtonObject,
 								GA_ID,GID_BACK,
