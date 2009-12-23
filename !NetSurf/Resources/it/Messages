@@ -1376,6 +1376,11 @@ DownloadDir:Percorso predefinito per i trasferimenti
 TabbedBrowsing:Navigazione a schede
 TabActive:Apri nuove schede in sottofondo
 TabMiddle:Tasto centrale del mouse per l'apertura delle schede (Tab)
+DownloadNotify:Notify on completion
+SearchWeb:Web search
+SearchURL:Search from URL bar
+SearchProvider:Search provider
+OptionDocky:Show in AmiDock
 Clipboard:Clipboard
 ClipboardUTF8:Scrivi testo come UTF-8
 ContextMenu:Menu contestuali

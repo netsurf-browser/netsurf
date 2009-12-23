@@ -31,6 +31,7 @@
 #include "utils/messages.h"
 #include "amiga/options.h"
 #include "amiga/utf8.h"
+#include "desktop/searchweb.h"
 
 #include <proto/window.h>
 #include <proto/layout.h>
@@ -101,14 +102,18 @@ enum
 	GID_OPTS_CACHE_MEM,
 	GID_OPTS_CACHE_DISC,
 	GID_OPTS_OVERWRITE,
+	GID_OPTS_NOTIFY,
 	GID_OPTS_DLDIR,
 	GID_OPTS_TAB_ACTIVE,
 	GID_OPTS_TAB_2,
+	GID_OPTS_SEARCH_URLBAR,
+	GID_OPTS_SEARCH_PROV,
 	GID_OPTS_CLIPBOARD,
 	GID_OPTS_CMENU_ENABLE,
 	GID_OPTS_CMENU_STICKY,
 	GID_OPTS_STARTUP_NO_WIN,
 	GID_OPTS_CLOSE_NO_QUIT,
+	GID_OPTS_DOCKY,
 	GID_OPTS_MARGIN_TOP,
 	GID_OPTS_MARGIN_LEFT,
 	GID_OPTS_MARGIN_BOTTOM,
@@ -145,6 +150,7 @@ enum
 	GRP_OPTS_DISCCACHE,
 	GRP_OPTS_DOWNLOADS,
 	GRP_OPTS_TABS,
+	GRP_OPTS_SEARCH,
 	GRP_OPTS_CLIPBOARD,
 	GRP_OPTS_CONTEXTMENU,
 	GRP_OPTS_BEHAVIOUR,
@@ -189,6 +195,10 @@ CONST_STRPTR proxyopts[OPTS_MAX_PROXY];
 CONST_STRPTR nativebmopts[OPTS_MAX_NATIVEBM];
 CONST_STRPTR fontopts[6];
 CONST_STRPTR gadlab[OPTS_LAST];
+STRPTR *websearch_list;
+
+STRPTR *ami_gui_opts_websearch(void);
+void ami_gui_opts_websearch_free(STRPTR *websearchlist);
 
 void ami_gui_opts_setup(void)
 {
@@ -217,6 +227,8 @@ void ami_gui_opts_setup(void)
 	nativebmopts[1] = (char *)ami_utf8_easy((char *)messages_get("Scaled"));
 	nativebmopts[2] = (char *)ami_utf8_easy((char *)messages_get("All"));
 	nativebmopts[3] = NULL;
+
+	websearch_list = ami_gui_opts_websearch();
 
 	gadlab[GID_OPTS_HOMEPAGE] = (char *)ami_utf8_easy((char *)messages_get("HomePageURL"));
 	gadlab[GID_OPTS_HOMEPAGE_DEFAULT] = (char *)ami_utf8_easy((char *)messages_get("HomePageDefault"));
@@ -250,14 +262,18 @@ void ami_gui_opts_setup(void)
 	gadlab[GID_OPTS_CACHE_MEM] = (char *)ami_utf8_easy((char *)messages_get("Size"));
 	gadlab[GID_OPTS_CACHE_DISC] = (char *)ami_utf8_easy((char *)messages_get("Duration"));
 	gadlab[GID_OPTS_OVERWRITE] = (char *)ami_utf8_easy((char *)messages_get("ConfirmOverwrite"));
+	gadlab[GID_OPTS_NOTIFY] = (char *)ami_utf8_easy((char *)messages_get("DownloadNotify"));
 	gadlab[GID_OPTS_DLDIR] = (char *)ami_utf8_easy((char *)messages_get("DownloadDir"));
 	gadlab[GID_OPTS_TAB_ACTIVE] = (char *)ami_utf8_easy((char *)messages_get("TabActive"));
 	gadlab[GID_OPTS_TAB_2] = (char *)ami_utf8_easy((char *)messages_get("TabMiddle"));
+	gadlab[GID_OPTS_SEARCH_URLBAR] = (char *)ami_utf8_easy((char *)messages_get("SearchURL"));
+	gadlab[GID_OPTS_SEARCH_PROV] = (char *)ami_utf8_easy((char *)messages_get("SearchProvider"));
 	gadlab[GID_OPTS_CLIPBOARD] = (char *)ami_utf8_easy((char *)messages_get("ClipboardUTF8"));
 	gadlab[GID_OPTS_CMENU_ENABLE] = (char *)ami_utf8_easy((char *)messages_get("Enable"));
 	gadlab[GID_OPTS_CMENU_STICKY] = (char *)ami_utf8_easy((char *)messages_get("Sticky"));
 	gadlab[GID_OPTS_STARTUP_NO_WIN] = (char *)ami_utf8_easy((char *)messages_get("OptionNoWindow"));
 	gadlab[GID_OPTS_CLOSE_NO_QUIT] = (char *)ami_utf8_easy((char *)messages_get("OptionNoQuit"));
+	gadlab[GID_OPTS_DOCKY] = (char *)ami_utf8_easy((char *)messages_get("OptionDocky"));
 	gadlab[GID_OPTS_MARGIN_TOP] = (char *)ami_utf8_easy((char *)messages_get("Top"));
 	gadlab[GID_OPTS_MARGIN_LEFT] = (char *)ami_utf8_easy((char *)messages_get("Left"));
 	gadlab[GID_OPTS_MARGIN_RIGHT] = (char *)ami_utf8_easy((char *)messages_get("Right"));
@@ -298,6 +314,7 @@ void ami_gui_opts_setup(void)
 	gadlab[GRP_OPTS_DISCCACHE] = (char *)ami_utf8_easy((char *)messages_get("CacheDisc"));
 	gadlab[GRP_OPTS_DOWNLOADS] = (char *)ami_utf8_easy((char *)messages_get("Downloads"));
 	gadlab[GRP_OPTS_TABS] = (char *)ami_utf8_easy((char *)messages_get("TabbedBrowsing"));
+	gadlab[GRP_OPTS_SEARCH] = (char *)ami_utf8_easy((char *)messages_get("SearchWeb"));
 	gadlab[GRP_OPTS_CLIPBOARD] = (char *)ami_utf8_easy((char *)messages_get("Clipboard"));
 	gadlab[GRP_OPTS_CONTEXTMENU] = (char *)ami_utf8_easy((char *)messages_get("ContextMenu"));
 	gadlab[GRP_OPTS_BEHAVIOUR] = (char *)ami_utf8_easy((char *)messages_get("Behaviour"));
@@ -332,6 +349,8 @@ void ami_gui_opts_free(void)
 
 	for(i = 0; i++; i < OPTS_MAX_NATIVEBM)
 		if(nativebmopts[i]) FreeVec((APTR)nativebmopts[i]);
+
+	ami_gui_opts_websearch_free(websearch_list);
 }
 
 void ami_gui_opts_open(void)
@@ -988,13 +1007,22 @@ void ami_gui_opts_open(void)
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
 									LAYOUT_Label, gadlab[GRP_OPTS_DOWNLOADS],
-		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_OVERWRITE] = CheckBoxObject,
-      	              					GA_ID, GID_OPTS_CLIPBOARD,
-         	           					GA_RelVerify, TRUE,
-										GA_Disabled, TRUE,
-         	           					GA_Text, gadlab[GID_OPTS_OVERWRITE],
-  				      		            GA_Selected, FALSE, //option_ask_overwrite,
-            	    				CheckBoxEnd,
+									LAYOUT_AddChild, HGroupObject,
+		                				LAYOUT_AddChild, gow->gadgets[GID_OPTS_OVERWRITE] = CheckBoxObject,
+      	              						GA_ID, GID_OPTS_CLIPBOARD,
+         	           						GA_RelVerify, TRUE,
+											GA_Disabled, TRUE,
+         	           						GA_Text, gadlab[GID_OPTS_OVERWRITE],
+	  				      		            GA_Selected, FALSE, //option_ask_overwrite,
+    	        	    				CheckBoxEnd,
+			                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_NOTIFY] = CheckBoxObject,
+      	    	          					GA_ID, GID_OPTS_NOTIFY,
+         	    	       					GA_RelVerify, TRUE,
+											GA_Disabled, TRUE,
+         	           						GA_Text, gadlab[GID_OPTS_NOTIFY],
+  					      		            GA_Selected, FALSE, //option_download_notify,
+										CheckBoxEnd,
+									LayoutEnd,
 									LAYOUT_AddChild, gow->gadgets[GID_OPTS_DLDIR] = GetFileObject,
 										GA_ID, GID_OPTS_DLDIR,
 										GA_RelVerify, TRUE,
@@ -1049,6 +1077,29 @@ void ami_gui_opts_open(void)
 								LAYOUT_AddChild,HGroupObject,
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
+									LAYOUT_Label, gadlab[GRP_OPTS_SEARCH],
+		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_SEARCH_URLBAR] = CheckBoxObject,
+      	              					GA_ID, GID_OPTS_SEARCH_URLBAR,
+         	           					GA_RelVerify, TRUE,
+         	           					GA_Text, gadlab[GID_OPTS_SEARCH_URLBAR],
+  				      		            GA_Selected, option_search_url_bar,
+            	    				CheckBoxEnd,
+									LAYOUT_AddChild, gow->gadgets[GID_OPTS_SEARCH_PROV] = ChooserObject,
+										GA_ID, GID_OPTS_SEARCH_PROV,
+										GA_RelVerify, TRUE,
+										CHOOSER_PopUp, TRUE,
+										CHOOSER_LabelArray, websearch_list,
+										CHOOSER_Selected, option_search_provider,
+										CHOOSER_MaxLabels, 40,
+									ChooserEnd,
+									CHILD_Label, LabelObject,
+										LABEL_Text, gadlab[GID_OPTS_SEARCH_PROV],
+									LabelEnd,
+								LayoutEnd, // search
+								CHILD_WeightedHeight, 0,
+								LAYOUT_AddChild,HGroupObject,
+									LAYOUT_SpaceOuter, TRUE,
+									LAYOUT_BevelStyle, BVS_GROUP, 
 									LAYOUT_Label, gadlab[GRP_OPTS_CLIPBOARD],
 		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_CLIPBOARD] = CheckBoxObject,
       	              					GA_ID, GID_OPTS_CLIPBOARD,
@@ -1058,22 +1109,30 @@ void ami_gui_opts_open(void)
             	    				CheckBoxEnd,
 								LayoutEnd, // clipboard
 								CHILD_WeightedHeight, 0,
-								LAYOUT_AddChild,HGroupObject,
+								LAYOUT_AddChild,VGroupObject,
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
 									LAYOUT_Label, gadlab[GRP_OPTS_BEHAVIOUR],
-		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_STARTUP_NO_WIN] = CheckBoxObject,
-      	              					GA_ID, GID_OPTS_STARTUP_NO_WIN,
+									LAYOUT_AddChild, HGroupObject,
+			                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_STARTUP_NO_WIN] = CheckBoxObject,
+    	  	              					GA_ID, GID_OPTS_STARTUP_NO_WIN,
+        	 	           					GA_RelVerify, TRUE,
+											GA_Text, gadlab[GID_OPTS_STARTUP_NO_WIN],
+  						      	            GA_Selected, option_startup_no_window,
+            		    				CheckBoxEnd,
+		        	        			LAYOUT_AddChild, gow->gadgets[GID_OPTS_CLOSE_NO_QUIT] = CheckBoxObject,
+      		              					GA_ID, GID_OPTS_CLOSE_NO_QUIT,
+											GA_RelVerify, TRUE,
+											GA_Text, gadlab[GID_OPTS_CLOSE_NO_QUIT],
+											GA_Selected, option_close_no_quit,
+	        	        				CheckBoxEnd,
+									LayoutEnd,
+	                				LAYOUT_AddChild, gow->gadgets[GID_OPTS_DOCKY] = CheckBoxObject,
+										GA_ID, GID_OPTS_DOCKY,
          	           					GA_RelVerify, TRUE,
-         	           					GA_Text, gadlab[GID_OPTS_STARTUP_NO_WIN],
-  				      		            GA_Selected, option_startup_no_window,
-            	    				CheckBoxEnd,
-		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_CLOSE_NO_QUIT] = CheckBoxObject,
-      	              					GA_ID, GID_OPTS_CLOSE_NO_QUIT,
-         	           					GA_RelVerify, TRUE,
-         	           					GA_Text, gadlab[GID_OPTS_CLOSE_NO_QUIT],
-  				      		            GA_Selected, option_close_no_quit,
-            	    				CheckBoxEnd,
+         	           					GA_Text, gadlab[GID_OPTS_DOCKY],
+  				      		            GA_Selected, !option_hide_docky_icon,
+	            	    			CheckBoxEnd,
 								LayoutEnd, // behaviour
 								CHILD_WeightedHeight, 0,
 							LayoutEnd, // page vgroup
@@ -1420,6 +1479,10 @@ void ami_gui_opts_use(void)
 	if(data) option_ask_overwrite = true;
 		else option_ask_overwrite = false;
 
+	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_NOTIFY],(ULONG *)&data);
+	if(data) option_download_notify = true;
+		else option_download_notify = false;
+
 	GetAttr(GETFILE_Drawer,gow->gadgets[GID_OPTS_DLDIR],(ULONG *)&data);
 	if(option_download_dir) free(option_download_dir);
 	option_download_dir = (char *)strdup((char *)data);
@@ -1431,6 +1494,14 @@ void ami_gui_opts_use(void)
 	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_TAB_2],(ULONG *)&data);
 	if(data) option_button_2_tab = true;
 		else option_button_2_tab = false;
+
+	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_SEARCH_URLBAR],(ULONG *)&data);
+	if(data) option_search_url_bar = true;
+		else option_search_url_bar = false;
+
+	GetAttr(CHOOSER_Selected,gow->gadgets[GID_OPTS_SEARCH_PROV],(ULONG *)&option_search_provider);
+	search_web_provider_details(option_search_provider);
+	search_web_retrieve_ico(false);
 
 	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_CLIPBOARD],(ULONG *)&data);
 	if(data) option_utf8_clipboard = true;
@@ -1451,6 +1522,10 @@ void ami_gui_opts_use(void)
 	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_CLOSE_NO_QUIT],(ULONG *)&data);
 	if(data) option_close_no_quit = true;
 		else option_close_no_quit = false;
+
+	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_DOCKY],(ULONG *)&data);
+	if(data) option_hide_docky_icon = false;
+		else option_hide_docky_icon = true;
 
 	GetAttr(INTEGER_Number,gow->gadgets[GID_OPTS_MARGIN_TOP],(ULONG *)&option_margin_top);
 
@@ -1667,3 +1742,39 @@ BOOL ami_gui_opts_event(void)
 	return FALSE;
 }
 
+STRPTR *ami_gui_opts_websearch(void)
+{
+	char buf[300];
+	ULONG ref = 0;
+	STRPTR *websearchlist;
+
+	if (option_search_engines_file == NULL) return NULL;
+
+	FILE *f = fopen(option_search_engines_file, "r");
+	if (f == NULL) return NULL;
+
+	websearchlist = AllocVec(40, MEMF_CLEAR);
+
+	while (fgets(buf, sizeof(buf), f) != NULL) {
+		if (buf[0] == '\0') continue;
+		buf[strlen(buf)-1] = '\0';
+		websearchlist[ref] = strdup(strtok(buf, "|"));
+		ref++;
+	}
+	fclose(f);
+	websearchlist[ref] = NULL;
+
+	return websearchlist;
+}
+
+void ami_gui_opts_websearch_free(STRPTR *websearchlist)
+{
+	ULONG ref = 0;
+
+	while (websearchlist[ref] != NULL) {
+		free(websearchlist[ref]);
+		ref++;
+	}
+
+	FreeVec(websearchlist);
+}

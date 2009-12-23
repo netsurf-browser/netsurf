@@ -40,6 +40,7 @@ extern char *option_search_engines_file;
 extern char *option_search_ico_file;
 extern char *option_arexx_dir;
 extern char *option_download_dir;
+extern bool option_download_notify;
 extern bool option_faster_scroll;
 extern bool option_scale_quality;
 extern bool option_ask_overwrite;
@@ -70,6 +71,7 @@ char *option_search_engines_file = 0; \
 char *option_search_ico_file = 0; \
 char *option_arexx_dir = 0; \
 char *option_download_dir = 0; \
+bool option_download_notify = false; \
 bool option_faster_scroll = true; \
 bool option_scale_quality = false; \
 bool option_ask_overwrite = false; \
@@ -100,6 +102,7 @@ bool option_hide_docky_icon = false; \
 { "search_ico_file",		OPTION_STRING,	&option_search_ico_file }, \
 { "arexx_dir",		OPTION_STRING,	&option_arexx_dir }, \
 { "download_dir",		OPTION_STRING,	&option_download_dir }, \
+{ "download_notify",	OPTION_BOOL,	&option_download_notify}, \
 { "faster_scroll",	OPTION_BOOL,	&option_faster_scroll}, \
 { "scale_quality",	OPTION_BOOL,	&option_scale_quality}, \
 { "ask_overwrite",	OPTION_BOOL,	&option_ask_overwrite}, \

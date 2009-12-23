@@ -1368,6 +1368,11 @@ DownloadDir:Initial download location
 TabbedBrowsing:Tabbed browsing
 TabActive:Open new tabs in background
 TabMiddle:Middle mouse button opens tabs
+DownloadNotify:Notify on completion
+SearchWeb:Web search
+SearchURL:Search from URL bar
+SearchProvider:Search provider
+OptionDocky:Show in AmiDock
 Clipboard:Clipboard
 ClipboardUTF8:Write text as UTF-8
 ContextMenu:Context menu

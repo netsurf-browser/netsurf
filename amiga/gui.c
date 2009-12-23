@@ -2383,6 +2383,9 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 								GA_RelVerify,TRUE,
 							StringEnd,
 */
+					//		GA_ID, GID_TOOLBARLAYOUT,
+					//		GA_RelVerify, TRUE,
+					//		LAYOUT_RelVerify, TRUE,
 							LAYOUT_WeightBar, TRUE,
 							LAYOUT_AddChild, HGroupObject,
 								LAYOUT_VertAlignment, LALIGN_CENTER,
@@ -3828,7 +3831,7 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 					if(option_faster_scroll)
 						gwin->redraw_scroll = true;
 					gwin->redraw_required = true;
- 				break; 
+ 				break;
 			} 
 		break;
 
