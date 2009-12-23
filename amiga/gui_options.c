@@ -1748,12 +1748,12 @@ STRPTR *ami_gui_opts_websearch(void)
 	ULONG ref = 0;
 	STRPTR *websearchlist;
 
-	if (option_search_engines_file == NULL) return NULL;
+	websearchlist = AllocVec(200, MEMF_CLEAR);
+
+	if (option_search_engines_file == NULL) return websearchlist;
 
 	FILE *f = fopen(option_search_engines_file, "r");
-	if (f == NULL) return NULL;
-
-	websearchlist = AllocVec(40, MEMF_CLEAR);
+	if (f == NULL) return websearchlist;
 
 	while (fgets(buf, sizeof(buf), f) != NULL) {
 		if (buf[0] == '\0') continue;
