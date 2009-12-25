@@ -567,7 +567,8 @@ fetch_curl_set_options(struct curl_fetch_info *f)
 		SETOPT(CURLOPT_USERPWD, NULL);
 	}
 
-	if (option_http_proxy && option_http_proxy_host) {
+	if (option_http_proxy && option_http_proxy_host &&
+			strncmp(f->url, "file:", 5) != 0) {
 		SETOPT(CURLOPT_PROXY, option_http_proxy_host);
 		SETOPT(CURLOPT_PROXYPORT, (long) option_http_proxy_port);
 		if (option_http_proxy_auth != OPTION_HTTP_PROXY_AUTH_NONE) {
@@ -583,6 +584,8 @@ fetch_curl_set_options(struct curl_fetch_info *f)
 					option_http_proxy_auth_pass);
 			SETOPT(CURLOPT_PROXYUSERPWD, fetch_proxy_userpwd);
 		}
+	} else {
+		SETOPT(CURLOPT_PROXY, NULL);
 	}
 
 	if (urldb_get_cert_permissions(f->url)) {
