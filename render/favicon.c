@@ -103,6 +103,23 @@ char *favicon_get_icon_ref(struct content *c, xmlNode *html)
 		}
 	}
 	if (url2 == NULL) {
+		char *scheme;
+
+		/* There was no icon link defined in the HTML source data.
+		 * If the HTML document's base URL uses either the HTTP or 
+		 * HTTPS schemes, then try using "<scheme>://host/favicon.ico"
+		 */
+		if (url_scheme(c->data.html.base_url, &scheme) != URL_FUNC_OK)
+			return NULL;
+
+		if (strcasecmp(scheme, "http") != 0 && 
+				strcasecmp(scheme, "https") != 0) {
+			free(scheme);
+			return NULL;
+		}
+
+		free(scheme);
+
 		if (url_join("/favicon.ico", c->data.html.base_url, &url2)
 				!= URL_FUNC_OK)
 			return NULL;
