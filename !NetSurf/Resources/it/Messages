@@ -1,6 +1,6 @@
-# Italian messages for NetSurf 3.0 Development (Revision 9601)
+# Italian messages for NetSurf 3.0 Development (Revision 9757)
 # Translated by Samir Hawamdeh (http://www.betatesting.it/backforthefuture)
-# 30.09.2009
+# 24.12.2009
 # =========================================================================
 #
 # Description
@@ -319,7 +319,7 @@ TreeDomain:Dominio: %s%s
 TreePath:Percorso: %s%s
 TreeExpires:Scomparsi: %s
 TreeLastUsed:Ultimi usati: %s
-TreeSecure:Solo Host sicuri: %s
+TreeSecure:Solo host sicuri: %s
 TreeVersion:Versione: %s
 TreePersistent:Persistenza: %s
 TreeHeaders: (da intestazioni)
@@ -328,7 +328,7 @@ TreeVersion1:RFC 2109
 TreeVersion2:RFC 2965
 TreeSession:Fine sessione
 TreeUnused:Inutilizzato
-TreeImport:URL Importati
+TreeImport:URL importati
 TreeNewFolder:Nuova cartella
 TreeLaunch:Visita URL
 TreeDelete:Cancella
@@ -433,123 +433,123 @@ gtkOverwrite:Il file "%s" è già esistente.  Si desidera sovrascriverlo?
 gtkOverwriteTitle:Il file è già esistente
 gtkOverwriteInfo:Il file è già esistente in "%s".  Sostituirlo comporterà la sovrascrittura del file.
 gtkFailed:Scaricamento fallito
-gtkFileError:Errore File: %s
+gtkFileError:Errore file: %s
 gtkInfo:%s da %s è %s come dimensione
 gtkSave:Salva file come...
 gtkSourceSave:Salva sorgente
-gtkSourceTabError:Error handling source data 
-gtkPlainSave:Save as text
-gtkFullSave:Save webpage complete - select an empty directory
+gtkSourceTabError:Errore di modifica sul sorgente 
+gtkPlainSave:Salva come testo
+gtkFullSave:Salva pagina web completa - seleziona una directory vuota
 gtkSaveConfirm:File salvato
 gtkSaveCancelled:File non salvato
-gtkUnknownHost:un Host sconosciuto
+gtkUnknownHost:un host sconosciuto
 gtkUnknownFile:
 gtkUnknownSize:sconosciuto
 
 # gtk Menu / Button labels
 #
 
-gtkNewTab:New _Tab
+gtkNewTab:Nuova _scheda
 gtkNewTabAccel:<ctrl>t
-gtkNewWindow:_New Window
+gtkNewWindow:_Nuova finestra
 gtkNewWindowAccel:<ctrl>n
-gtkOpenFile:_Open File
+gtkOpenFile:_Apri file
 gtkOpenFileAccel:<ctrl>o
-gtkCloseWindow:_Close Window
+gtkCloseWindow:_Chiudi finestra
 gtkCloseWindowAccel:<ctrl><shift>w
-gtkSavePage:Save Page..
+gtkSavePage:Salva pagina...
 gtkSavePageAccel:<ctrl>s
-gtkExport:Export
-gtkPlainText:Plain Text..
-gtkDrawFile:Drawfile..
-gtkPostScript:PostScript..
-gtkPDF:PDF..
-gtkPrintPreview:Print Preview..
+gtkExport:Esporta
+gtkPlainText:Testo normale...
+gtkDrawFile:Drawfile...
+gtkPostScript:PostScript...
+gtkPDF:PDF...
+gtkPrintPreview:Stampa Anteprima...
 gtkPrintPreviewAccel:<ctrl><shift>p
-gtkPrint:Print..
+gtkPrint:Stampa...
 gtkPrintAccel:<ctrl>p
-gtkQuit:_Quit
+gtkQuit:_Esci
 gtkQuitAccel:<ctrl>q
 
-gtkCut:Cu_t
+gtkCut:Ta_glia
 gtkCutAccel:<ctrl>x
-gtkCopy:_Copy
+gtkCopy:_Copia
 gtkCopyAccel:<ctrl>c
-gtkPaste:_Paste
+gtkPaste:_Incolla
 gtkPasteAccel:<ctrl>v
-gtkDelete:_Delete
-gtkSelectAll:Select _All
+gtkDelete:_Cancella
+gtkSelectAll:Seleziona _Tutto
 gtkSelectAllAccel:<ctrl>a
-gtkFind:_Find..
+gtkFind:_Trova...
 gtkFindAccel:<ctrl>f
-gtkPreferences:P_references
+gtkPreferences:P_referenze
 
 gtkStop:_Stop
 gtkStopAccel:Escape
-gtkReload:_Reload
+gtkReload:_Ricarica
 gtkReloadAccel:F5
-gtkScaleView:_Scale View
-gtkZoomPlus:Zoom _in
+gtkScaleView:_Scala
+gtkZoomPlus:_Incrementa zoom
 gtkZoomPlusAccel:<ctrl>plus
-gtkZoomMinus:Zoom _out
+gtkZoomMinus:_Decrementa zoom
 gtkZoomMinusAccel:<ctrl>minus
-gtkZoomNormal:_Normal size
+gtkZoomNormal:Dimensione _normale
 gtkZoomNormalAccel:<ctrl>0
-gtkFullScreen:_Fullscreen
+gtkFullScreen:_Tutto schermo
 gtkFullScreenAccel:F11
-gtkViewSource:View S_ource
+gtkViewSource:Mostra s_orgente
 gtkViewSourceAccel:F8
-gtkImages:_Images
-gtkForegroundImages:_Foreground Images
-gtkBackgroundImages:_Background Images
-gtkToolbars:_Toolbars
-gtkMenuBar:_Menu Bar
-gtkToolBar:_Button Bar
-gtkStatusBar:_Status Bar
-gtkDownloads:_Downloads
+gtkImages:_Immagini
+gtkForegroundImages:Immagini in _primo piano
+gtkBackgroundImages:Immagini in _sottofondo
+gtkToolbars:_Barre strumenti
+gtkMenuBar:Barra _menu
+gtkToolBar:Barra p_ulsanti
+gtkStatusBar:Barra di s_tato
+gtkDownloads:_Trasferimenti
 gtkDownloadsAccel:<ctrl>d
-gtkSaveWindowSize:S_ave Window Size
+gtkSaveWindowSize:S_alva dimensione finestra
 gtkDebugging:De_bugging
-gtkToggleDebugging:T_oggle debug rendering
-gtkSaveBoxTree:_Save box tree
-gtkSaveDomTree:Save DOM tree
+gtkToggleDebugging:In_verti debug rendering
+gtkSaveBoxTree:_Salva box tree
+gtkSaveDomTree:Salva DOM tree
 
-gtkBack:_Back
-gtkBackAccel:<alt>Left
-gtkForward:_Forward
-gtkForwardAccel:<alt>Right
+gtkBack:_Indietro
+gtkBackAccel:<alt>Sinistra
+gtkForward:_Avanti
+gtkForwardAccel:<alt>Destra
 gtkHome:_Home
-gtkHomeAccel:<alt>Down
-gtkLocalHistory:_Local History
+gtkHomeAccel:<alt>Giù
+gtkLocalHistory:Cronologia _locale
 gtkLocalHistoryAccel:<ctrl>h
-gtkGlobalHistory:_Global History
+gtkGlobalHistory:Cronologia _globale
 gtkGlobalHistoryAccel:<ctrl><shift>h
-gtkAddBookMarks:_Add to Bookmarks..
-gtkShowBookMarks:_Show Bookmarks..
+gtkAddBookMarks:_Aggiungi ai segnalibri...
+gtkShowBookMarks:_Mostra segnalibri...
 gtkShowBookMarksAccel:F6
-gtkOpenLocation:_Open Location..
+gtkOpenLocation:_Apri indirizzo...
 gtkOpenLocationAccel:<ctrl>l
 
-gtkNextTab:_Next tab
-gtkNextTabAccel:<ctrl>Right
-gtkPrevTab:_Previous tab
-gtkPrevTabAccel:<ctrl>Left
-gtkCloseTab:_Close tab
+gtkNextTab:Scheda _successiva
+gtkNextTabAccel:<ctrl>Destra
+gtkPrevTab:Scheda _precedente
+gtkPrevTabAccel:<ctrl>Sinistra
+gtkCloseTab:_Chiudi scheda
 gtkCloseTabAccel:<ctrl>w
 
-gtkContents:_Contents
-gtkGuide:User _guide
-gtkUserInformation:User _information
-gtkAbout:_About
+gtkContents:_Contenuti
+gtkGuide:_Guida in linea
+gtkUserInformation:Informazioni _utente
+gtkAbout:_Informazioni
 
 
-gtkToolBarTitle:Toolbar custom button store
-gtkAddThemeTitle:Select folder containing theme images
+gtkToolBarTitle:Pulsanti della barra strumenti
+gtkAddThemeTitle:Seleziona una cartella contenente le immagini del tema
 
-gtkThemeFolderInstructions:To Install a theme, create a directory full of appropriately-named images as a subdirectory of gtk/res/themes/
-gtkThemeFolderSub:Select a subdirectory of the themes folder
-gtkThemeDup:Theme is already included
-gtkThemeAdd:Theme added successfully
+gtkThemeFolderInstructions:Per installare un nuovo tema, crea una directory con delle immagini appropriate ed inseriscile come sotto-directory di gtk/res/themes/
+gtkThemeFolderSub:Seleziona una sotto-directory della cartella temi
+gtkThemeDup:Il tema è già incluso
+gtkThemeAdd:Il tema è stato aggiunto con successo
 
 # Printing user interface tokens
 # ==============================
@@ -574,8 +574,8 @@ Printing:Stampa della pagina
 NotFound:Non trovato
 Next:Successivo
 Prev:Precedente
-ShowAll:Show All
-CaseSens:Case Sensitive
+ShowAll:Mostra tutto
+CaseSens:Maiuscole/Minuscole
 
 # 401 login user interface tokens
 # ===============================
@@ -597,17 +597,17 @@ Cancel:Annulla
 # This section contains tokens which are used in the
 # SSL certificate verification dialog box.
 #
-SSLCerts:SSL certificates
-SSLError:NetSurf failed to verify the authenticity of an SSL certificate. Please verify the details presented below.
-Subject:Subject
-Issuer:Issuer
-Version:Version
-ValidFrom:Valid from
-ValidTo:Valid until
-Type:Type
-Serial:Serial
-Accept:Accept
-Reject:Reject
+SSLCerts:Certificati SSL
+SSLError:NetSurf non è stato in grado di verificare l'autenticità di questo certificato SSL. Per favore verifica i dettagli presentati di seguito.
+Subject:Oggetto
+Issuer:Emittente
+Version:Versione
+ValidFrom:Valido da
+ValidTo:Valido fino a
+Type:Tipo
+Serial:Seriale
+Accept:Accetta
+Reject:Rifiuta
 
 
 # Content
@@ -631,7 +631,7 @@ FormBadSubmit:Attenzione: Il form non può essere inviato
 FormButton:Attenzione: il pulsante non può essere attivato
 FormTextarea:Clicca per editare il testo
 FormTextbox:Clicca per editare il campo di testo
-FormReset:Resetta form (non ancora implementato)
+FormReset:Resetta form
 FormFile:Inserisci un file da inviare qui
 SelectMenu:Seleziona
 
@@ -693,14 +693,14 @@ DownloadWarn:Questo trasferimento potrebbe essere incompleto:
 MiscError:Si è verificato un errore inatteso:
 FileError:Il file è inesistente:
 PrintError:Si è verificato un errore durante la stampa:
-AWNotSeen:Per favore imposta l'applicazione AWViewer e riprova ancora.
-EncNotRec:Encoding type not recognised.
-FileOpenError:could not open file '%s'
-DirectoryError:directory '%s' already exists
+AWNotSeen:Per favore imposta l'applicazione AWViewer e riprova nuovamente.
+EncNotRec:Tipo di codifica sconosciuta.
+FileOpenError:impossibile aprire il file '%s'
+DirectoryError:directory '%s' già esistente
 
 # Specific errors - displayed in a dialog box
 #
-NoMemory:Memoria insufficiente per l'esecuzione di NetSurf. Per favore liberane un pò e riprova ancora.
+NoMemory:Memoria insufficiente per l'esecuzione di NetSurf. Per favore liberane un pò e riprova nuovamente.
 FontBadInst:Si è verificato un errore durante l'inizializzazione dei font a causa della presenza di una copia obsoleta dei font ROM nel disco. NetSurf verrà ora chiuso e si cercherà di lanciare un programma in grado di risolvere questo problema.
 FontError:Impossibile aprire il font "Homerton.Medium" (%s).
 Resolvers:Non è stato configurato nessun nome per i domini dei server, perciò sarà possibile effettuare la navigazione dei file solo in modalità locale. Usa "Configura" per impostare il nome (o i nomi) del/dei server.
@@ -708,15 +708,15 @@ NoDiscSpace:Spazio insufficiente nel disco.
 Template:Una finestra di template risulta mancante. Per favore reinstalla NetSurf.
 HotlistSaveError:Non è stato possibile salvare correttamente i segnalibri.
 HotlistLoadError:Non è stato possibile caricare correttamente i segnalibri.
-NoDirError:%s is not a directory
+NoDirError:%s non è una directory
 NoPathError:Per salvare, trascinare l'icona in una directory di visualizzazione.
 NoNameError:Inserisci un nome
 NoURLError:Inserisci un URL
 URIError:NetSurf non è stato in grado di processare questo file URI a causa di un errore di sintassi.
-SearchError:Invalid Search.
+SearchError:Ricerca non valida.
 EmptyError:Il file è vuoto.
 PrintErrorRO2:Sembra che la stampante sia occupata.
-AWNotSeen:Per favore imposta l'applicazione AWViewer e riprova ancora.
+AWNotSeen:Per favore imposta l'applicazione AWViewer e riprova nuovamente.
 EncNotRec:Tipo di codifica sconosciuta.
 
 # Error messages for Amiga version only
@@ -758,7 +758,7 @@ Done:Documento completato
 BadRedirect:Errata redirezione dell'URL
 FetchFailed:Impossibile ottenere il documento
 NotCSS:Attenzione: "Foglio di stile" non ha nulla a che spartire con i CSS
-NotFavIco:Favicon not supported
+NotFavIco:Favicon non supportata
 BadObject:Attenzione: errato tipo di oggetto
 ObjError:Errore di caricamento dell'oggetto: %s
 ParsingFail:Analisi del documento fallita.
@@ -1329,7 +1329,7 @@ NeedRestart:Queste modifiche avranno effetto al prossimo riavvio di NetSurf
 Proxy:Proxy HTTP
 Fetching:Connessioni ottenibili
 FetchesMax:Massime ottenibili
-FetchesHost:Ottenibili per Host
+FetchesHost:Ottenibili per host
 FetchesCached:Connessioni su cache
 
 # Rendering tab
@@ -1351,7 +1351,7 @@ Scaled:Scalate
 FontFamilies:Famiglia Font
 FontSans:Sans-serif
 FontSerif:Serif
-FontMono:Mono-spaziato
+FontMono:Monospaziato
 FontCursive:Corsivo
 FontFantasy:Fantasia
 Default:Predefinito
@@ -1376,11 +1376,11 @@ DownloadDir:Percorso predefinito per i trasferimenti
 TabbedBrowsing:Navigazione a schede
 TabActive:Apri nuove schede in sottofondo
 TabMiddle:Tasto centrale del mouse per l'apertura delle schede (Tab)
-DownloadNotify:Notify on completion
-SearchWeb:Web search
-SearchURL:Search from URL bar
-SearchProvider:Search provider
-OptionDocky:Show in AmiDock
+DownloadNotify:Notifica al completamento
+SearchWeb:Ricerca Web
+SearchURL:Ricerca da barra URL
+SearchProvider:Ricerca provider
+OptionDocky:Mostra su AmiDock
 Clipboard:Clipboard
 ClipboardUTF8:Scrivi testo come UTF-8
 ContextMenu:Menu contestuali
