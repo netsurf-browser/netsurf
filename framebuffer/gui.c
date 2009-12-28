@@ -364,7 +364,7 @@ void gui_init(int argc, char** argv)
 	messages_load(buf);
 
 	option_core_select_menu = true;
-	
+
         /* load browser options */
 	fb_find_resource(buf, "Choices-fb", "~/.netsurf/Choices-fb");
 	LOG(("Using '%s' as Preferences file", buf));
@@ -813,9 +813,12 @@ gui_create_browser_window(struct browser_window *bw,
         struct gui_window *gw;
         struct browser_widget_s *browser_widget;
         fbtk_widget_t *widget;
-        int top = 0;
-        int bot = 0;
-        int right = 0;
+        int toolbar_height = 0;
+        int furniture_width = 0;
+        int spacing_width = 0;
+        int url_bar_height = 0;
+        int statusbar_width = 0;
+        int xpos = 0;
 
         gw = calloc(1, sizeof(struct gui_window));
 
@@ -832,133 +835,143 @@ gui_create_browser_window(struct browser_window *bw,
 	case BROWSER_WINDOW_NORMAL:
                 gw->window = fbtk_create_window(fbtk, 0, 0, 0, 0);
 
-                top = 30;
-                bot = 20;
-                right = 18;
+		/* area and widget dimensions */
+                toolbar_height = 30;
+                furniture_width = 18;
+		spacing_width = 2;
+		url_bar_height = 24;
+
+		statusbar_width = option_toolbar_status_width *
+				fbtk_get_width(gw->window) / 10000;
+
+                xpos = spacing_width;
+
                 LOG(("Normal window"));
 
                 /* fill toolbar background */
                 widget = fbtk_create_fill(gw->window,
-                                          0, 0, 0, 30,
+                                          0, 0, 0, toolbar_height,
                                           FB_FRAME_COLOUR);
                 fbtk_set_handler_move(widget, set_ptr_default_move, bw);
 
                 /* back button */
                 gw->back = fbtk_create_button(gw->window,
-                                              5, 2,
-                                              FB_FRAME_COLOUR,
-                                              &left_arrow_g,
-                                              fb_leftarrow_click,
-                                              gw);
+ 				xpos, (toolbar_height - left_arrow.height) / 2,
+ 				FB_FRAME_COLOUR, &left_arrow,
+ 				fb_leftarrow_click, gw);
                 fbtk_set_handler_move(gw->back, set_ptr_hand_move, bw);
+                xpos += left_arrow.width + spacing_width;
 
                 /* forward button */
                 gw->forward = fbtk_create_button(gw->window,
-                                                 35, 2,
-                                                 FB_FRAME_COLOUR,
-                                                 &right_arrow_g,
-                                                 fb_rightarrow_click,
-                                                 gw);
+				xpos, (toolbar_height - right_arrow.height) / 2,
+				FB_FRAME_COLOUR, &right_arrow,
+				fb_rightarrow_click, gw);
                 fbtk_set_handler_move(gw->forward, set_ptr_hand_move, bw);
+                xpos += right_arrow.width + spacing_width;
 
                 /* reload button */
                 widget = fbtk_create_button(gw->window,
-                                            65, 2,
-                                            FB_FRAME_COLOUR,
-                                            &stop_image,
-                                            fb_stop_click,
-                                            bw);
+				xpos, (toolbar_height - stop_image.height) / 2,
+				FB_FRAME_COLOUR, &stop_image,
+				fb_stop_click, bw);
                 fbtk_set_handler_move(widget, set_ptr_hand_move, bw);
+                xpos += stop_image.width + spacing_width;
 
                 /* reload button */
                 widget = fbtk_create_button(gw->window,
-                                            95, 2,
-                                            FB_FRAME_COLOUR,
-                                            &reload,
-                                            fb_reload_click,
-                                            bw);
+				xpos, (toolbar_height - reload.height) / 2,
+				FB_FRAME_COLOUR, &reload,
+				fb_reload_click, bw);
                 fbtk_set_handler_move(widget, set_ptr_hand_move, bw);
+                xpos += reload.width + spacing_width;
 
                 /* url widget */
+                xpos += 1; /* extra spacing for url bar */
                 gw->url = fbtk_create_writable_text(gw->window,
-                                                    125 , 3,
-                                                    fbtk_get_width(gw->window) - 160, 24,
-                                                    FB_COLOUR_WHITE,
-                                                    FB_COLOUR_BLACK,
-                                                    true,
-                                                    fb_url_enter,
-                                                    bw);
+				xpos, (toolbar_height - url_bar_height) / 2,
+				fbtk_get_width(gw->window) - xpos -
+						spacing_width - spacing_width -
+						throbber0.width,
+				url_bar_height,
+				FB_COLOUR_WHITE, FB_COLOUR_BLACK,
+				true, fb_url_enter, bw);
                 fbtk_set_handler_move(gw->url, fb_url_move, bw);
+                xpos += fbtk_get_width(gw->window) - xpos -
+				spacing_width - throbber0.width;
 
+		/* throbber */
                 gw->throbber = fbtk_create_bitmap(gw->window,
-                                                  130 + fbtk_get_width(gw->url),
-                                                  3,
-                                                  FB_FRAME_COLOUR,
-                                                  &throbber0);
+				xpos, (toolbar_height - throbber0.height) / 2,
+				FB_FRAME_COLOUR, &throbber0);
 
 
 
-                /* add status area widget, width of framebuffer less some for
-                 * scrollbar
-                 */
+                /* status bar */
+                xpos = 0;
                 gw->status = fbtk_create_text(gw->window,
-                                              0 ,
-                                              fbtk_get_height(gw->window) - bot,
-                                              fbtk_get_width(gw->window) - 200 - right,
-                                              bot,
-                                              FB_FRAME_COLOUR, FB_COLOUR_BLACK,
-                                              false);
-
+				xpos,
+				fbtk_get_height(gw->window) - furniture_width,
+				statusbar_width, furniture_width,
+				FB_FRAME_COLOUR, FB_COLOUR_BLACK,
+				false);
                 fbtk_set_handler_move(gw->status, set_ptr_default_move, bw);
+		xpos = statusbar_width;
 
                 /* horizontal scrollbar */
                 fbtk_create_button(gw->window,
-                                   fbtk_get_width(gw->window) - 200 - right,
-                                   fbtk_get_height(gw->window) - bot,
-                                   FB_FRAME_COLOUR,
-                                   &scrolll,
-                                   fb_scrolll_click,
-                                   gw);
-
-                fbtk_create_button(gw->window,
-                                   fbtk_get_width(gw->window) - 20 - right,
-                                   fbtk_get_height(gw->window) - bot,
-                                   FB_FRAME_COLOUR,
-                                   &scrollr,
-                                   fb_scrollr_click,
-                                   gw);
+				xpos,
+				fbtk_get_height(gw->window) - furniture_width +
+						(furniture_width -
+						scrolll.height) / 2,
+				FB_FRAME_COLOUR, &scrolll,
+				fb_scrolll_click, gw);
+		xpos += scrolll.width;
 
                 gw->hscroll = fbtk_create_hscroll(gw->window,
-                                                  fbtk_get_width(gw->window) - 160 - 20 - right,
-                                                  fbtk_get_height(gw->window) - bot,
-                                                  160,
-                                                  bot,
-                                                  FB_SCROLL_COLOUR,
-                                                  FB_FRAME_COLOUR);
+				xpos,
+				fbtk_get_height(gw->window) - furniture_width,
+				fbtk_get_width(gw->window) - xpos -
+						scrollr.width,
+				furniture_width,
+				FB_SCROLL_COLOUR,
+				FB_FRAME_COLOUR);
+
+                fbtk_create_button(gw->window,
+				fbtk_get_width(gw->window) - scrollr.width,
+				fbtk_get_height(gw->window) - furniture_width +
+						(furniture_width -
+						scrollr.height) / 2,
+				FB_FRAME_COLOUR, &scrollr,
+				fb_scrollr_click, gw);
+
                 /* create vertical */
                 fbtk_create_button(gw->window,
-                                   fbtk_get_width(gw->window) - right,
-                                   top,
-                                   FB_FRAME_COLOUR,
-                                   &scrollu,
-                                   fb_scrollu_click,
-                                   gw);
-
-                fbtk_create_button(gw->window,
-                                   fbtk_get_width(gw->window) - right,
-                                   fbtk_get_height(gw->window) - bot - 20,
-                                   FB_FRAME_COLOUR,
-                                   &scrolld,
-                                   fb_scrolld_click,
-                                   gw);
+				fbtk_get_width(gw->window) - furniture_width +
+						(furniture_width -
+						scrollu.width) / 2,
+				toolbar_height,
+				FB_FRAME_COLOUR, &scrollu,
+				fb_scrollu_click, gw);
 
                 gw->vscroll = fbtk_create_vscroll(gw->window,
-                                                  fbtk_get_width(gw->window) - right,
-                                                  top + 20,
-                                                  right,
-                                                  fbtk_get_height(gw->window) - top - bot - 40 ,
-                                                  FB_SCROLL_COLOUR,
-                                                  FB_FRAME_COLOUR);
+				fbtk_get_width(gw->window) - furniture_width,
+				toolbar_height + scrollu.height,
+				furniture_width,
+				fbtk_get_height(gw->window) - toolbar_height -
+						furniture_width -
+						scrollu.height - scrolld.height,
+				FB_SCROLL_COLOUR,
+				FB_FRAME_COLOUR);
+
+                fbtk_create_button(gw->window,
+				fbtk_get_width(gw->window) - furniture_width +
+						(furniture_width -
+						scrolld.width) / 2,
+				fbtk_get_height(gw->window) - furniture_width -
+						scrolld.height,
+				FB_FRAME_COLOUR, &scrolld,
+				fb_scrolld_click, gw);
 
                 break;
 
@@ -975,7 +988,7 @@ gui_create_browser_window(struct browser_window *bw,
 
         browser_widget = calloc(1, sizeof(struct browser_widget_s));
 
-        gw->browser = fbtk_create_user(gw->window, 0, top, -right, - (bot + top), browser_widget);
+        gw->browser = fbtk_create_user(gw->window, 0, toolbar_height, -furniture_width, - (furniture_width + toolbar_height), browser_widget);
 
         fbtk_set_handler_click(gw->browser, fb_browser_window_click, bw);
         fbtk_set_handler_input(gw->browser, fb_browser_window_input, gw);
@@ -1265,7 +1278,7 @@ void gui_window_set_scale(struct gui_window *g, float scale)
  * set favicon
  */
 void gui_window_set_icon(struct gui_window *g, struct content *icon)
-{	
+{
 }
 
 /**
