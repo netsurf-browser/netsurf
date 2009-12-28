@@ -386,21 +386,18 @@ fb_redraw_hscroll(fbtk_widget_t *root, fbtk_widget_t *widget, void *pw)
 
         rect = bbox;
 
+	/* background */
         nsfb_plot_rectangle_fill(root->u.root.fb, &rect, widget->bg);
 
+	/* scroll well */
         rect.x0 = bbox.x0 + 1;
-        rect.y0 = bbox.y0 + 3;
-        rect.x1 = bbox.x1 - 1;
-        rect.y1 = bbox.y1 - 3;
-
+        rect.y0 = bbox.y0 + 2;
+        rect.x1 = bbox.x1 - 2;
+        rect.y1 = bbox.y1 - 2;
         nsfb_plot_rectangle_fill(root->u.root.fb, &rect, widget->fg);
 
-        rect.x0 = bbox.x0;
-        rect.y0 = bbox.y0 + 2;
-        rect.x1 = bbox.x1 - 1;
-        rect.y1 = bbox.y1 - 5;
-
-        nsfb_plot_rectangle(root->u.root.fb, &rect, 1, 0xFF000000, false, false);
+	/* scroll well outline */
+        nsfb_plot_rectangle(root->u.root.fb, &rect, 1, 0xFF707070, false, false);
 
         hscroll = ((widget->width - 4) * widget->u.scroll.pct) / 100 ;
         hpos = ((widget->width - 4) * widget->u.scroll.pos) / 100 ;
@@ -434,31 +431,28 @@ fb_redraw_vscroll(fbtk_widget_t *root, fbtk_widget_t *widget, void *pw)
 
         rect = bbox;
 
+	/* background */
         nsfb_plot_rectangle_fill(root->u.root.fb, &rect, widget->bg);
 
-        rect.x0 = bbox.x0 + 1;
-        rect.y0 = bbox.y0 + 3;
-        rect.x1 = bbox.x1 - 1;
-        rect.y1 = bbox.y1 - 3;
-
+        rect.x0 = bbox.x0 + 2;
+        rect.y0 = bbox.y0 + 1;
+        rect.x1 = bbox.x1 - 2;
+        rect.y1 = bbox.y1 - 2;
         nsfb_plot_rectangle_fill(root->u.root.fb, &rect, widget->fg);
 
-        rect.x0 = bbox.x0;
-        rect.y0 = bbox.y0 + 2;
-        rect.x1 = bbox.x1 - 1;
-        rect.y1 = bbox.y1 - 5;
+	/* scroll well */
+        nsfb_plot_rectangle(root->u.root.fb, &rect, 1, 0xFF707070, false, false);
 
-        nsfb_plot_rectangle(root->u.root.fb, &rect, 1, 0xFF000000, false, false);
-
+	/* scroll well outline */
         vscroll = ((widget->height - 4) * widget->u.scroll.pct) / 100 ;
         vpos = ((widget->height - 4) * widget->u.scroll.pos) / 100 ;
 
         LOG(("scroll %d",vscroll));
 
-        rect.x0 = bbox.x0 + 3 ;
-        rect.y0 = bbox.y0 + 5 + vpos;
-        rect.x1 = bbox.x0 + widget->width - 3;
-        rect.y1 = bbox.y0 + vscroll + vpos - 5;
+        rect.x0 = bbox.x0 + 5;
+        rect.y0 = bbox.y0 + 3 + vpos;
+        rect.x1 = bbox.x0 + widget->width - 5;
+        rect.y1 = bbox.y0 + vscroll + vpos;
 
         nsfb_plot_rectangle_fill(root->u.root.fb, &rect, widget->bg);
 
