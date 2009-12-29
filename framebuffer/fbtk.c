@@ -45,7 +45,7 @@ static plot_font_style_t root_style = {
 	.size = 11 * FONT_SIZE_SCALE,
 	.weight = 400,
 	.flags = FONTF_NONE,
-};	
+};
 
 enum fbtk_widgettype_e {
         FB_WIDGET_TYPE_ROOT = 0,
@@ -393,11 +393,11 @@ fb_redraw_hscroll(fbtk_widget_t *root, fbtk_widget_t *widget, void *pw)
         rect.x0 = bbox.x0 + 1;
         rect.y0 = bbox.y0 + 2;
         rect.x1 = bbox.x1 - 2;
-        rect.y1 = bbox.y1 - 2;
+        rect.y1 = bbox.y1 - 3;
         nsfb_plot_rectangle_fill(root->u.root.fb, &rect, widget->fg);
 
 	/* scroll well outline */
-        nsfb_plot_rectangle(root->u.root.fb, &rect, 1, 0xFF707070, false, false);
+        nsfb_plot_rectangle(root->u.root.fb, &rect, 1, 0xFF999999, false, false);
 
         hscroll = ((widget->width - 4) * widget->u.scroll.pct) / 100 ;
         hpos = ((widget->width - 4) * widget->u.scroll.pos) / 100 ;
@@ -436,12 +436,12 @@ fb_redraw_vscroll(fbtk_widget_t *root, fbtk_widget_t *widget, void *pw)
 
         rect.x0 = bbox.x0 + 2;
         rect.y0 = bbox.y0 + 1;
-        rect.x1 = bbox.x1 - 2;
+        rect.x1 = bbox.x1 - 3;
         rect.y1 = bbox.y1 - 2;
         nsfb_plot_rectangle_fill(root->u.root.fb, &rect, widget->fg);
 
 	/* scroll well */
-        nsfb_plot_rectangle(root->u.root.fb, &rect, 1, 0xFF707070, false, false);
+        nsfb_plot_rectangle(root->u.root.fb, &rect, 1, 0xFF999999, false, false);
 
 	/* scroll well outline */
         vscroll = ((widget->height - 4) * widget->u.scroll.pct) / 100 ;
@@ -666,12 +666,12 @@ text_input(fbtk_widget_t *widget, nsfb_event_t *event, void *pw)
         default:
                 /* allow for new character and null */
 		{
-			char *temp = realloc(widget->u.text.text, 
+			char *temp = realloc(widget->u.text.text,
 					widget->u.text.idx + 2);
 			if (temp != NULL) {
 				widget->u.text.text = temp;
 		                widget->u.text.text[widget->u.text.idx] = value;
-                		widget->u.text.text[widget->u.text.idx + 1] = 
+                		widget->u.text.text[widget->u.text.idx + 1] =
 						'\0';
                 		widget->u.text.idx++;
 			}
