@@ -305,7 +305,7 @@ bool nsbeos_plot_polygon(const int *p, unsigned int n, const plot_style_t *style
 		points[i] = BPoint(p[2 * i], p[2 * i + 1]);
 	}
 
-	if (style->fill_colour == TRANSPARENT)
+	if (style->fill_colour == NS_TRANSPARENT)
 		view->StrokePolygon(points, (int32)n);
 	else
 		view->FillPolygon(points, (int32)n);
@@ -522,7 +522,7 @@ static bool nsbeos_plot_bbitmap(int x, int y, int width, int height,
 	BRect rect(x, y, x + width - 1, y + height - 1);
 	/*
 	rgb_color old = view->LowColor();
-	if (bg != TRANSPARENT) {
+	if (bg != NS_TRANSPARENT) {
 		view->SetLowColor(nsbeos_rgb_colour(bg));
 		view->FillRect(rect, B_SOLID_LOW);
 	}
@@ -763,11 +763,11 @@ bool nsbeos_plot_path(const float *p, unsigned int n, colour fill, float width,
 	float old_pen = view->PenSize();
 	view->SetPenSize(width);
 	view->MovePenTo(0, 0);
-	if (fill != TRANSPARENT) {
+	if (fill != NS_TRANSPARENT) {
 		view->SetHighColor(nsbeos_rgb_colour(fill));
 		view->FillShape(&shape);
 	}
-	if (c != TRANSPARENT) {
+	if (c != NS_TRANSPARENT) {
 		view->SetHighColor(nsbeos_rgb_colour(c));
 		view->StrokeShape(&shape);
 	}
@@ -783,7 +783,7 @@ bool nsbeos_plot_path(const float *p, unsigned int n, colour fill, float width,
 rgb_color nsbeos_rgb_colour(colour c)
 {
 	rgb_color color;
-	if (c == TRANSPARENT)
+	if (c == NS_TRANSPARENT)
 		return B_TRANSPARENT_32_BIT;
 	color.red = c & 0x0000ff;
 	color.green = (c & 0x00ff00) >> 8;
