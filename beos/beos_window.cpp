@@ -26,6 +26,7 @@ extern "C" {
 #include "desktop/options.h"
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
+#include "render/font.h"
 #include "utils/log.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
@@ -1863,7 +1864,9 @@ static bool copy_handler(const char *text, size_t length, struct box *box,
 	if (box && box->style) {
 		text_run *run = new text_run;
 		BFont font;
-		nsbeos_style_to_font(font, box->style);
+		plot_font_style_t style;
+		font_plot_style_from_css(box->style, &style);
+		nsbeos_style_to_font(font, &style);
 		run->offset = current_selection.Length();
 		run->font = font;
 		run->color = nsbeos_rgb_colour(box->style->color);
