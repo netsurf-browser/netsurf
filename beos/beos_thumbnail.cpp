@@ -118,7 +118,7 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 	plot = nsbeos_plotters;
 	nsbeos_plot_set_scale(1.0);
 
-	plot.fill(0, 0, content->width, content->width, 0xffffffff);
+	plot.rectangle(0, 0, content->width, content->width, plot_style_fill_white);
 
 	/* render the content */
 	content_redraw(content, 0, 0, content->width, content->width,
