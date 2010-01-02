@@ -41,11 +41,10 @@ char *favicon_get_icon_ref(struct content *c, xmlNode *html)
 {
 	xmlNode *node;
 	char *rel, *href, *url, *url2;
-	url2 = NULL;
 	url_func_result res;
-
 	union content_msg_data msg_data;
-	
+
+	url2 = NULL;
 	node = html;
 	while (node) {
 		if (node->children) {  /* children */

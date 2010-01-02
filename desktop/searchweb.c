@@ -96,9 +96,10 @@ void search_web_provider_details(int reference)
 {
 	char buf[300];
 	int ref = 0;
+	FILE *f;
 	if (search_engines_file_location == NULL)
 		return;
-	FILE *f = fopen(search_engines_file_location, "r");
+	f = fopen(search_engines_file_location, "r");
 	if (f == NULL)
 		return;
 	while (fgets(buf, sizeof(buf), f) != NULL) {
@@ -204,6 +205,7 @@ char *search_web_get_url(const char *encsearchterm)
 void search_web_retrieve_ico(bool localdefault)
 {
 	char *url;
+	struct content *icocontent;
 	if (localdefault) {
 		if (search_default_ico_location == NULL)
 			return;
@@ -219,7 +221,7 @@ void search_web_retrieve_ico(bool localdefault)
 		url = search_web_ico_name();
 	}
 
-	struct content *icocontent = NULL;
+	icocontent = NULL;
 	if (url == NULL) {
 		warn_user(messages_get("NoMemory"), 0);
 		return;

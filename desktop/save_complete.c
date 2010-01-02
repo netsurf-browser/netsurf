@@ -535,6 +535,7 @@ bool rewrite_urls(xmlNode *n, const char *base,
 		xmlChar *content;
 
 		for (child = n->children; child != 0; child = child->next) {
+			char *rewritten;
 			/* Get current content */
 			content = xmlNodeGetContent(child);
 			if (!content)
@@ -544,7 +545,7 @@ bool rewrite_urls(xmlNode *n, const char *base,
 				continue;
 
 			/* Rewrite @import rules */
-			char *rewritten = rewrite_stylesheet_urls(
+			rewritten = rewrite_stylesheet_urls(
 					(const char *) content,
 					strlen((const char *) content),
 					(int *) &len, base, list);
@@ -728,6 +729,7 @@ bool save_complete_inventory(const char *path,
 	FILE *fp;
 	char *pathstring, *standardpath = (path[0] == '/') ?
 			(char *)(path + 1) : (char *)path;
+	struct save_complete_entry *entry;
 
 	snprintf(urlpath, sizeof urlpath, "file:///%s/Inventory", 
 			standardpath);
@@ -744,7 +746,6 @@ bool save_complete_inventory(const char *path,
 		return false;
 	}
 
-	struct save_complete_entry *entry;
 	for (entry = list; entry; entry = entry->next)
 		fprintf(fp, "%p %s\n", entry->content, entry->content->url);
 
