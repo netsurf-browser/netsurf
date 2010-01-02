@@ -347,8 +347,6 @@ void nsbeos_style_to_font(BFont &font, const plot_font_style_t *fstyle)
 	case CSS_FONT_WEIGHT_800: weight = 800; break;
 	case CSS_FONT_WEIGHT_900: weight = 900; break;
 */
-	default: break;
-	}
 
 	if (!face)
 		face = B_REGULAR_FACE;
