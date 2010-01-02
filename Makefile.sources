@@ -70,6 +70,7 @@ S_GTK := $(addprefix gtk/,$(S_GTK)) $(addprefix utils/,container.c)
 S_BEOS := beos_about.cpp beos_bitmap.cpp beos_fetch_rsrc.cpp		\
 	beos_filetype.cpp beos_font.cpp beos_gui.cpp beos_history.cpp	\
 	beos_login.cpp beos_options.cpp beos_plotters.cpp		\
+	beos_save_complete.cpp \
 	beos_scaffolding.cpp beos_search.cpp beos_schedule.cpp		\
 	beos_thumbnail.cpp beos_treeview.cpp beos_throbber.cpp		\
 	beos_window.cpp
