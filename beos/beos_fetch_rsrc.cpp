@@ -135,10 +135,10 @@ static void fetch_rsrc_abort(void *ctx)
 
 static void fetch_rsrc_send_callback(fetch_msg msg, 
 		struct fetch_rsrc_context *c, const void *data, 
-		unsigned long size)
+		unsigned long size, fetch_error_code errorcode)
 {
 	c->locked = true;
-	fetch_send_callback(msg, c->parent_fetch, data, size);
+	fetch_send_callback(msg, c->parent_fetch, data, size, errorcode);
 	c->locked = false;
 }
 
@@ -161,7 +161,7 @@ static bool fetch_rsrc_process(struct fetch_rsrc_context *c)
 	if (strlen(c->url) < 6) {
 		/* 6 is the minimum possible length (rsrc:/) */
 		fetch_rsrc_send_callback(FETCH_ERROR, c, 
-			"Malformed rsrc: URL", 0);
+			"Malformed rsrc: URL", 0, FETCH_ERROR_URL);
 		return false;
 	}
 	
@@ -171,7 +171,7 @@ static bool fetch_rsrc_process(struct fetch_rsrc_context *c)
 	/* find the slash */
 	if ( (slash = strchr(params, '/')) == NULL) {
 		fetch_rsrc_send_callback(FETCH_ERROR, c,
-			"Malformed rsrc: URL", 0);
+			"Malformed rsrc: URL", 0, FETCH_ERROR_URL);
 		return false;
 	}
 	comma = strchr(slash, ',');
@@ -189,7 +189,7 @@ static bool fetch_rsrc_process(struct fetch_rsrc_context *c)
 	if (c->mimetype == NULL) {
 		fetch_rsrc_send_callback(FETCH_ERROR, c,
 			"Unable to allocate memory for mimetype in rsrc: URL",
-			0);
+			0, FETCH_ERROR_MEMORY);
 		return false;
 	}
 
@@ -211,7 +211,7 @@ static bool fetch_rsrc_process(struct fetch_rsrc_context *c)
 	if (!found) {
 		fetch_rsrc_send_callback(FETCH_ERROR, c,
 			"Cannot locate rsrc: URL",
-			0);
+			0, FETCH_ERROR_MISC);
 		return false;
 	}
 
@@ -225,7 +225,7 @@ static bool fetch_rsrc_process(struct fetch_rsrc_context *c)
 	if (!data) {
 		fetch_rsrc_send_callback(FETCH_ERROR, c,
 			"Cannot load rsrc: URL",
-			0);
+			0, FETCH_ERROR_MISC);
 		return false;
 	}
 
@@ -233,7 +233,7 @@ static bool fetch_rsrc_process(struct fetch_rsrc_context *c)
 	c->data = (char *)malloc(c->datalen);
 	if (c->data == NULL) {
 		fetch_rsrc_send_callback(FETCH_ERROR, c,
-			"Unable to allocate memory for rsrc: URL", 0);
+			"Unable to allocate memory for rsrc: URL", 0, FETCH_ERROR_MEMORY);
 		return false;
 	}
 	memcpy(c->data, data, c->datalen);
@@ -245,7 +245,7 @@ static void fetch_rsrc_poll(const char *scheme)
 {
 	struct fetch_rsrc_context *c, *next;
 	struct cache_data cachedata;
-	
+
 	if (ring == NULL) return;
 	
 	cachedata.req_time = time(NULL);
@@ -285,14 +285,14 @@ static void fetch_rsrc_poll(const char *scheme)
 			 * call to fetch_rsrc_send_callback().
 			 */
 			fetch_rsrc_send_callback(FETCH_TYPE,
-				c, c->mimetype, c->datalen);
+				c, c->mimetype, c->datalen, FETCH_ERROR_NO_ERROR);
 			if (!c->aborted) {
 				fetch_rsrc_send_callback(FETCH_DATA, 
-					c, c->data, c->datalen);
+					c, c->data, c->datalen, FETCH_ERROR_NO_ERROR);
 			}
 			if (!c->aborted) {
 				fetch_rsrc_send_callback(FETCH_FINISHED, 
-					c, &cachedata, 0);
+					c, &cachedata, 0, FETCH_ERROR_NO_ERROR);
 			}
 		} else {
 			LOG(("Processing of %s failed!", c->url));
