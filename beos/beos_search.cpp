@@ -16,7 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdbool.h>
+#define __STDBOOL_H__	1
+//#include <stdbool.h>
 #include <string.h>
 
 extern "C" {
