@@ -582,6 +582,12 @@ static void nsbeos_gui_window_attach_child(struct gui_window *parent,
 #endif
 }
 
+void gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
+		int x1, int y1)
+{
+	gui_window_set_scroll(g, x0, y0);
+}
+
 void gui_window_position_frame(struct gui_window *g, int x0, int y0, int x1, int y1)
 {
 	CALLED();
