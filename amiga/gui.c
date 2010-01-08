@@ -3207,6 +3207,16 @@ void gui_window_set_status(struct gui_window *g, const char *text)
 
 		if((g->shared->status == NULL) || (strcmp(utf8text,g->shared->status)))
 		{
+			ULONG size;
+			UWORD chars;
+			struct TextExtent text;
+
+			GetAttr(GA_Width, g->shared->gadgets[GID_STATUS],(ULONG *)&size);
+			chars = TextFit(&scrn->RastPort, utf8text, strlen(utf8text),
+						&text, NULL, 1, size - 2, scrn->RastPort.TxHeight);
+
+			utf8text[chars] = 0;
+
 			SetGadgetAttrs(g->shared->gadgets[GID_STATUS],
 				g->shared->win, NULL,
 				GA_Text, utf8text,
