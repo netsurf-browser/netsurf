@@ -600,9 +600,10 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 #endif
 						TDR_Arg1,netsurf_version,
 #ifdef NS_AMIGA_CAIRO
-						TDR_Arg2,"Part-Cairo (OS4.1+) SObjs build",
 #ifdef NS_AMIGA_CAIRO_ALL
 						TDR_Arg2,"Cairo (OS4.1+) SObjs build",
+#else
+						TDR_Arg2,"Part-Cairo (OS4.1+) SObjs build",
 #endif
 #else
 						TDR_Arg2,"graphics.library static build",
