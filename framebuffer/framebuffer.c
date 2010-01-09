@@ -25,7 +25,6 @@
 
 #include <libnsfb.h>
 #include <libnsfb_plot.h>
-#include <libnsfb_legacy_plot.h>
 #include <libnsfb_event.h>
 #include <libnsfb_cursor.h>
 
@@ -274,8 +273,7 @@ static bool
 framebuffer_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 {
 	nsfb_bbox_t rect;
-	bool dotted = false; 
-	bool dashed = false;
+	nsfb_plot_pen_t pen;
 
 	rect.x0 = x0;
 	rect.y0 = y0;
@@ -283,13 +281,20 @@ framebuffer_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 	rect.y1 = y1;
     
 	if (style->stroke_type != PLOT_OP_TYPE_NONE) {
-		if (style->stroke_type == PLOT_OP_TYPE_DOT) 
-			dotted = true;
 
-		if (style->stroke_type == PLOT_OP_TYPE_DASH) 
-			dashed = true;
+		if (style->stroke_type == PLOT_OP_TYPE_DOT) {
+			pen.stroke_type = NFSB_PLOT_OPTYPE_PATTERN; 
+			pen.stroke_pattern = 0xAAAAAAAA;
+		} else if (style->stroke_type == PLOT_OP_TYPE_DASH) {
+			pen.stroke_type = NFSB_PLOT_OPTYPE_PATTERN; 
+			pen.stroke_pattern = 0xF0F0F0F0;
+		} else {
+			pen.stroke_type = NFSB_PLOT_OPTYPE_SOLID; 
+		}
 
-		nsfb_plot_line(nsfb, &rect, style->stroke_width, style->stroke_colour, dotted, dashed); 
+		pen.stroke_colour = style->stroke_colour;
+		pen.stroke_width = style->stroke_width;
+		nsfb_plot_line(nsfb, &rect, &pen); 
 	}
 
 	return true;
@@ -308,8 +313,20 @@ framebuffer_plot_path(const float *p,
 	return true;
 }
 
+static bool 
+framebuffer_plot_clip(int x0, int y0, int x1, int y1)
+{
+	nsfb_bbox_t clip;
+	clip.x0 = x0;
+	clip.y0 = y0;
+	clip.x1 = x1;
+	clip.y1 = y1;
+
+	return nsfb_plot_set_clip(nsfb, &clip);
+}
+
 struct plotter_table plot = {
-	.clip = nsfb_lplot_clip,
+	.clip = framebuffer_plot_clip,
 	.arc = framebuffer_plot_arc,
 	.disc = framebuffer_plot_disc,
 	.line = framebuffer_plot_line,
@@ -369,8 +386,6 @@ framebuffer_initialise(int argc, char** argv)
         nsfb_finalise(nsfb);
         return NULL;
     }
-
-    nsfb_lplot_ctx(nsfb);
 
     return nsfb;
 
