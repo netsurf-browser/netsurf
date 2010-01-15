@@ -402,7 +402,33 @@ void ami_init_fonts(void)
 
 	for(i=PLOT_FONT_FAMILY_SANS_SERIF;i<=PLOT_FONT_FAMILY_FANTASY;i++)
 	{
-		if(!of[i]) warn_user("FontError",""); // temporary error message
+		if(!of[i])
+		{
+			char *tmpfontname = NULL;
+			switch(i)
+			{
+				case PLOT_FONT_FAMILY_SANS_SERIF:
+					tmpfontname = option_font_sans;
+				break;
+				case PLOT_FONT_FAMILY_SERIF:
+					tmpfontname = option_font_serif;
+				break;
+				case PLOT_FONT_FAMILY_MONOSPACE:
+					tmpfontname = option_font_mono;
+				break;
+				case PLOT_FONT_FAMILY_CURSIVE:
+					tmpfontname = option_font_cursive;
+				break;
+				case PLOT_FONT_FAMILY_FANTASY:
+					tmpfontname = option_font_fantasy;
+				break;
+				default:
+					/* should never get here, but just in case */
+					tmpfontname = strdup("{unknown font}");
+				break;
+			}
+			warn_user("CompError",tmpfontname);
+		}
 
 		if(bname = (char *)GetTagData(OT_BName,0,of[i]->olf_OTagList))
 		{
