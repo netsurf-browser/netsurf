@@ -589,7 +589,7 @@ void ami_openscreen(void)
 			}
 			else
 			{
-				option_use_pubscreen = "Workbench";
+				option_use_pubscreen = strdup("Workbench");
 			}
 		}
 	}
@@ -2383,9 +2383,9 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 								GA_RelVerify,TRUE,
 							StringEnd,
 */
-					//		GA_ID, GID_TOOLBARLAYOUT,
-					//		GA_RelVerify, TRUE,
-					//		LAYOUT_RelVerify, TRUE,
+						//	GA_ID, GID_TOOLBARLAYOUT,
+						//	GA_RelVerify, TRUE,
+						//	LAYOUT_RelVerify, TRUE,
 							LAYOUT_WeightBar, TRUE,
 							LAYOUT_AddChild, HGroupObject,
 								LAYOUT_VertAlignment, LALIGN_CENTER,
