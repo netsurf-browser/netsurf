@@ -394,11 +394,11 @@ bool layout_block_context(struct box *block, int viewport_height,
 				css_fixed width = 0;
 				css_unit unit = CSS_UNIT_PX;
 
-				wtype = css_computed_width(box->style, &width, 
+				wtype = css_computed_width(box->style, &width,
 						&unit);
 
 				if (wtype == CSS_WIDTH_AUTO) {
-					/* max available width may be 
+					/* max available width may be
 					 * diminished due to floats. */
 					int x0, x1, top;
 					struct box *left, *right;
@@ -408,10 +408,10 @@ bool layout_block_context(struct box *block, int viewport_height,
 					x1 = cx + box->parent->width -
 						box->parent->padding[LEFT] -
 						box->parent->padding[RIGHT];
-					find_sides(block->float_children, 
-						top, top, &x0, &x1, 
+					find_sides(block->float_children,
+						top, top, &x0, &x1,
 						&left, &right);
-					/* calculate min required left & right 
+					/* calculate min required left & right
 					 * margins needed to avoid floats */
 					lm = x0 - cx;
 					rm = cx + box->parent->width -
@@ -885,7 +885,7 @@ bool layout_apply_minmax_height(struct box *box, struct box *container)
 	bool updated = false;
 
 	/* Find containing block for percentage heights */
-	if (box->style != NULL && css_computed_position(box->style) == 
+	if (box->style != NULL && css_computed_position(box->style) ==
 			CSS_POSITION_ABSOLUTE) {
 		/* Box is absolutely positioned */
 		assert(container);
@@ -1865,7 +1865,7 @@ bool layout_line(struct box *first, int *width, int *y,
 	int x0 = 0;
 	int x1 = *width;
 	int x, h, x_previous;
-	int fy;
+	int fy = cy;
 	struct box *left;
 	struct box *right;
 	struct box *b;
@@ -2267,11 +2267,13 @@ bool layout_line(struct box *first, int *width, int *y,
 			} else {
 				/* cleared or doesn't fit on line */
 				/* place below into next available space */
-				fy = (cy > cont->clear_level) ? cy :
+				int fcy = (cy > cont->clear_level) ? cy :
 						cont->clear_level;
+				fy = (fy > fcy) ? fy : fcy;
 
 				place_float_below(b, *width,
 						cx, fy + height, cont);
+				fy = b->y;
 				if (d->style && css_computed_clear(d->style) !=
 							CSS_CLEAR_NONE) {
 					/* to be cleared below existing
@@ -2281,12 +2283,12 @@ bool layout_line(struct box *first, int *width, int *y,
 					else
 						b->x = cx + *width - b->width;
 
-					fy = layout_clear(cont->float_children,
+					fcy = layout_clear(cont->float_children,
 						css_computed_clear(d->style));
-					if (fy > cont->clear_level)
-						cont->clear_level = fy;
-					if (b->y < fy)
-						b->y = fy;
+					if (fcy > cont->clear_level)
+						cont->clear_level = fcy;
+					if (b->y < fcy)
+						b->y = fcy;
 				}
 				if (b->type == BOX_FLOAT_LEFT)
 					left = b;
