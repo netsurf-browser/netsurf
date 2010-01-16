@@ -17,9 +17,10 @@ copy NetSurf ram:NetSurf/NetSurf
 copy NetSurf_Cairo ram:NetSurf/NetSurf_Cairo
 copy amiga/dist/AutoInstall ram:
 copy amiga/dist/~(.svn|AutoInstall) ram:NetSurf/
+copy amiga/pkg/fitr ram:NetSurf/
 makedir ram:NetSurf/Rexx
 copy amiga/dist/Rexx/~(.svn) ram:NetSurf/Rexx/ COM
 makedir ram:NetSurf/SObjs
-copy sobjs:libjpeg.so sobjs:libexpat.so sobjs:libhubbub.so.0 sobjs:libhpdf-2.2.0.so.0.0 sobjs:libmng.so.1 sobjs:liblcms.so sobjs:libxml2.so sobjs:libparserutils.so.0 sobjs:libnsgif.so.0 sobjs:libnsbmp.so.0 sobjs:libcss.so.0 sobjs:libwapcaplet.so.0 sobjs:libcurl.so sobjs:libsvgtiny.so.0 ram:NetSurf/SObjs clone
-;sobjs:libssl-0.9.8.so
+copy sobjs:libjpeg.so sobjs:libhubbub.so.0 sobjs:libhpdf-2.2.0.so.0.0 sobjs:libmng.so.1 sobjs:liblcms.so sobjs:libxml2.so sobjs:libparserutils.so.0 sobjs:libnsgif.so.0 sobjs:libnsbmp.so.0 sobjs:libcss.so.0 sobjs:libwapcaplet.so.0 sobjs:libcurl.so sobjs:libsvgtiny.so.0 ram:NetSurf/SObjs clone
+;sobjs:libssl-0.9.8.so sobjs:libexpat.so
 ;sobjs:libgcc.so sobjs:libc.so sobjs:libpthread.so

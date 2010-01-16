@@ -22,6 +22,8 @@
 
 #include <string.h>
 #include <proto/exec.h>
+#include <proto/dos.h>
+#include <proto/utility.h>
 #include <proto/openurl.h>
 
 struct Library *OpenURLBase;
@@ -51,6 +53,20 @@ void gui_launch_url(const char *url)
 {
 	if(!strncmp("mailto:",url,7))
 	{
-		if(IOpenURL) URL_OpenA(url,NULL);
+ 		APTR procwin = SetProcWindow((APTR)-1L);
+		char *launchurl = NULL;
+		BPTR fptr = 0;
+
+		launchurl = ASPrintf("URL:%s",url);
+
+		if(launchurl && (fptr = Open(launchurl,MODE_OLDFILE)))
+		{
+			Close(fptr);
+		}
+		else if(IOpenURL)
+			URL_OpenA(url,NULL);
+
+		FreeVec(launchurl);
+		SetProcWindow(procwin);		
 	}
 }

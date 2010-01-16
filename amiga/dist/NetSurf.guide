@@ -13,6 +13,7 @@ http://www.netsurf-browser.org
 @{"Options file        " link Options}
 @{"Fonts               " link Fonts}
 @{"ARexx port          " link ARexx}
+@{"OpenURL/URL Prefs   " link OpenURL}
 @{"Hotlist menu        " link Hotlist}
 @{"Local MIME types    " link MIMETypes}
 
@@ -78,9 +79,10 @@ Commands are:
 @{b}VERSION VERSION/N REVISION/N RELEASE/S@{ub} Returns the current version of NetSurf in RESULT.  You can also do version checking by supplying a VERSION and optional REVISION to check against.  If the version of NetSurf is the same or higher 1 will be returned, if it is older 0.  If RELEASE is specified, the command operates on the release version rather than the internal version number.
 
 The ARexx menu will be populated with scripts named #?.nsrx in @{"arexx_dir" link options 9}, up to a maximum of 20 entries.  The titles of these entries will be the comments field of the file (or the filename if comments field is empty).
+@endnode
 
-
-@{u}OpenURL configuration@{uu}
+@node OpenURL
+@{b}OpenURL configuration@{ub}
 
 Click Add on the Browsers page and fill in the details as follows:
 Name: NetSurf
@@ -92,6 +94,12 @@ Open URL: OPEN "%u"
 New window: OPEN "%u" NEW
 
 On the Misc tab, please ensure "Send mailto: URLs to email application" is set.
+
+@{b}URL Prefs (OS4.1)@{ub}
+Under OS4.1 Update 1, launch-handler is used in preference to OpenURL.  The
+Installer script can add the relevant configuration to launch URLs in NetSurf.
+Please ensure your email application is configured in URL Prefs for mailto:
+links clicked within NetSurf.
 @endnode
 
 @node hotlist "Hotlist menu"

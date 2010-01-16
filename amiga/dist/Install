@@ -13,6 +13,36 @@
 	)
 )
 
+; The below procedure is part of "fitr", see
+; http://www.unsatisfactorysoftware.co.uk/fitr
+(procedure p_fitr #filename #text #comment #flags
+	(set #comstring "")
+	(if #comment (set #comstring (cat "COMMENT=\"" #comment "\"")))
+	(set #comment "")
+	(set #switches "")
+	(if #flags (set #switches (cat " " #flags)))
+	(set #flags "")
+
+	(if #text
+		(
+			(transcript "Adding " @app-name " section to " #filename)
+
+			(textfile
+				(dest "t:fitr-installer.tmp")
+				(append #text)
+			)
+
+			(run (cat "fitr \"" #filename "\" \"" @app-name "\" t:fitr-installer.tmp " #comstring #switches))
+			(delete "t:fitr-installer.tmp")
+		)
+;else
+		(
+			(transcript "Removing " @app-name " section from " #filename)
+			(run (cat "fitr \"" #filename "\" \"" @app-name "\" " #comstring #switches))
+		)
+	)
+)
+
 (procedure p_failedsobjs
 	(if #failedsobjs
 		(message "The following shared objects failed to copy.  These will be updated on next reboot.\n\n" #failedsobjs)
@@ -186,6 +216,7 @@
 )
 
 (if (= @app-name "NetSurfAutoInstall") (set #AutoInstall 1))
+(set @app-name "NetSurf")
 
 (if (<> #AutoInstall 1) (welcome))
 
@@ -221,15 +252,6 @@
 			)
 		)
 		(set #cairo-version 1)
-		(set #netsurf-exists (exists (tackon @default-dest "NetSurf")))
-		(if (<> #netsurf-exists 0)
-			(
-				; Guess if the installed version is static, if it
-				; is bigger than 5MB then it probably is!
-				(set #netsurf-size (getsize (tackon @default-dest "NetSurf")))
-				(if (> #netsurf-size 5000000) (set #cairo-version 0))
-			)
-		)
 	)
 	; else
 	(
@@ -287,16 +309,37 @@
 	)
 )
 
+(complete 19)
+
+(if (>= osver 53)
+	(
+		(set #addlaunchhandler
+			(askbool
+				(prompt "Add NetSurf to launch-handler? (recommended)\n\n"
+					"Please select \"No\" if NetSurf is already added to "
+					"launch-handler, as this avoids duplication.")
+				(help "launch-handler is part of OS4.1 which opens URLs "
+					" by launching a web browser.\n\n"
+					"The installation will update the configuration of "
+					"OS4.1 to allow URLs to be opened by NetSurf.")
+			)
+		)
+	)
+	;else
+	(
+		(set #addlaunchhandler 0)
+	)
+)
+
 (complete 20)
 
 (set #netsurf-name (select #cairo-version "NetSurf" "NetSurf_Cairo"))
 
 (if (= #AutoInstall 0)
 	(
-		(copylib
-			(prompt "Please check the version of NetSurf you are copying against "
-					"any which might already be installed.")
-			(help @copylib-help)
+		(copyfiles
+			(prompt "Copying NetSurf...")
+			(help @copyfiles-help)
 			(source #netsurf-name)
 			(dest @default-dest)
 			(newname "NetSurf")
@@ -418,6 +461,21 @@
 (p_setmimetype "sprite" "image/x-riscos-sprite")
 (p_setmimetype "lha" "application/x-lha")
 (p_setmimetype "zip" "application/x-zip")
+
+(complete 98)
+
+(if #addlaunchhandler
+	(
+; We use fitr here so that the sections are only added once.
+; Unfortunately saving URL prefs overwrites the markers making it
+; necessary to ask whether the user wants to add NetSurf to launch-handler.
+		(working "Adding NetSurf to launch-handler config")
+		(p_fitr "ENVARC:launch-handler/URL/FILE.LH" "ClientName=\"NETSURF\"   ClientPath=\"APPDIR:NETSURF\"   CMDFORMAT=\"*\"file:///%s*\"\"")
+		(p_fitr "ENVARC:launch-handler/URL/HTTP.LH" "ClientName=\"NETSURF\"   ClientPath=\"APPDIR:NETSURF\"   CMDFORMAT=\"*\"http://%s*\"\"")
+		(p_fitr "ENVARC:launch-handler/URL/HTTPS.LH" "ClientName=\"NETSURF\"   ClientPath=\"APPDIR:NETSURF\"   CMDFORMAT=\"*\"https://%s*\"\"")
+		(p_fitr "ENVARC:launch-handler/URL/WWW.LH" "ClientName=\"NETSURF\"   ClientPath=\"APPDIR:NETSURF\"   CMDFORMAT=\"*\"http://www.%s*\"\"")
+	)
+)
 
 (complete 100)
 
