@@ -341,25 +341,9 @@ struct plotter_table plot = {
 
 
 nsfb_t *
-framebuffer_initialise(int argc, char** argv)
+framebuffer_initialise(const char *fename, int width, int height, int bpp)
 {
-    const char *fename;
     enum nsfb_frontend_e fetype;
-
-    /* select frontend from commandline */
-    if ((argc > 2) && (argv[1][0] == '-') && 
-        (argv[1][1] == 'f') && 
-        (argv[1][2] == 'e') && 
-        (argv[1][3] == 0)) {
-        int argcmv;
-        fename = (const char *)argv[2];
-        for (argcmv = 3; argcmv < argc; argcmv++) {
-            argv[argcmv - 2] = argv[argcmv];
-        }
-        argc-=2;
-    } else {
-        fename="sdl";
-    }
 
     fetype = nsfb_frontend_from_name(fename);
     if (fetype == NSFB_FRONTEND_NONE) {
@@ -373,7 +357,7 @@ framebuffer_initialise(int argc, char** argv)
         return NULL;
     }
     
-    if (nsfb_set_geometry(nsfb, 0, 0, 32) == -1) {
+    if (nsfb_set_geometry(nsfb, width, height, bpp) == -1) {
         LOG(("Unable to set geometry\n"));
         nsfb_finalise(nsfb);
         return NULL;

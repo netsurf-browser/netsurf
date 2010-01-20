@@ -346,12 +346,77 @@ static void *myrealloc(void *ptr, size_t len, void *pw)
 	return realloc(ptr, len);
 }
 
+
+static const char *fename;
+static int febpp;
+static int fewidth;
+static int feheight;
+static const char *feurl;
+
+static bool process_cmdline(int argc, char** argv)
+{
+	int opt;
+
+        LOG(("argc %d, argv %p", argc, argv));
+
+	fename = "sdl";
+	febpp = 32;
+
+        if ((option_window_width != 0) && (option_window_height != 0)) {
+                fewidth = option_window_width;
+                feheight = option_window_height;
+        } else {
+                fewidth = 800;
+                feheight = 600;
+        }
+
+        if (option_homepage_url != NULL && option_homepage_url[0] != '\0')
+                feurl = option_homepage_url;
+	else
+		feurl = NETSURF_HOMEPAGE;
+
+
+	while((opt = getopt(argc, argv, "f:b:w:h:")) != -1) {
+		switch (opt) {
+		case 'f':
+			fename = optarg;
+			break;
+
+		case 'b':
+			febpp = atoi(optarg);
+			break;
+
+		case 'w':
+			fewidth = atoi(optarg);
+			break;
+
+		case 'h':
+			feheight = atoi(optarg);
+			break;
+
+		default:
+			fprintf(stderr, 
+				"Usage: %s [-f frontend] [-b bpp] url\n",
+                           argv[0]);
+			return false;
+		}
+	}
+
+	if (optind < argc) {
+		feurl = argv[optind];
+	}
+
+	return true;
+}
+
 void gui_init(int argc, char** argv)
 {
 	char buf[PATH_MAX];
         nsfb_t *nsfb;
 
-        LOG(("argc %d, argv %p", argc, argv));
+	if (process_cmdline(argc,argv) != true) 
+		die("unable to process command line.\n");
+	
 
 	fb_find_resource(buf, "Aliases", "./framebuffer/res/Aliases");
 	LOG(("Using '%s' as Aliases file", buf));
@@ -379,7 +444,7 @@ void gui_init(int argc, char** argv)
 	fb_find_resource(buf, "quirks.css", "./framebuffer/res/quirks.css");
 	quirks_stylesheet_url = path_to_url(buf);
 
-        nsfb = framebuffer_initialise(argc, argv);
+        nsfb = framebuffer_initialise(fename, fewidth, feheight, febpp);
         if (nsfb == NULL)
                 die("Unable to initialise framebuffer");
 
@@ -395,17 +460,9 @@ void gui_init(int argc, char** argv)
 void gui_init2(int argc, char** argv)
 {
 	struct browser_window *bw;
-	const char *addr = NETSURF_HOMEPAGE;
-
-        LOG(("argc %d, argv %p", argc, argv));
-
-        if (option_homepage_url != NULL && option_homepage_url[0] != '\0')
-                addr = option_homepage_url;
-
-	if (argc > 1) addr = argv[1];
 
         LOG(("calling browser_window_create"));
-	bw = browser_window_create(addr, 0, 0, true, false);
+	bw = browser_window_create(feurl, 0, 0, true, false);
 }
 
 
