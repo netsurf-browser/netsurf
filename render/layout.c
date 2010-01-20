@@ -1673,7 +1673,7 @@ void find_sides(struct box *fl, int y0, int y1,
 	int fy0, fy1, fx0, fx1;
 	LOG(("y0 %i, y1 %i, x0 %i, x1 %i", y0, y1, *x0, *x1));
 	*left = *right = 0;
-	for (; fl && fl->y + fl->height >= y0; fl = fl->next_float) {
+	for (; fl; fl = fl->next_float) {
 		fy0 = fl->y;
 		fy1 = fl->y + fl->height;
 		if (y0 < fy1 && fy0 <= y1) {
@@ -2300,42 +2300,8 @@ bool layout_line(struct box *first, int *width, int *y,
 				box_dump(stderr, cont, 0);
 				assert(0);
 			}
-			/* Insert float into containing block's list of
-			 * floats. (List sorted by y-position of bottom of
-			 * float, in descending order.) */
-			if (!cont->float_children) {
-				/* First float child */
-				cont->float_children = b;
-				b->next_float = NULL;
-			} else if (b->y + b->height >= cont->float_children->y +
-					cont->float_children->height) {
-				/* Float is positioned lower or at same level
-				 * as first float in list */
-				b->next_float = cont->float_children;
-				cont->float_children = b;
-			} else {
-				/* Find place in list */
-				struct box *t;
-				for (t = cont->float_children;
-						t && t->next_float;
-						t = t->next_float) {
-					if (b->y + b->height >=
-							t->next_float->y +
-							t->next_float->height) {
-						/* Float positioned mid-list */
-						b->next_float = t->next_float;
-						t->next_float = b;
-						break;
-					} else if (!t->next_float->next_float) {
-						/* Float positioned last in
-						 * list */
-						t->next_float->next_float = b;
-						b->next_float = NULL;
-						break;
-					}
-				}
-			}
-
+			b->next_float = cont->float_children;
+			cont->float_children = b;
 			split_box = 0;
 		}
 	}
