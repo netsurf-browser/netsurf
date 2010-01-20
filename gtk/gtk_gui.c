@@ -195,6 +195,13 @@ static void *myrealloc(void *ptr, size_t len, void *pw)
 	return realloc(ptr, len);
 }
 
+/** Normal entry point from OS */
+int main(int argc, char** argv)
+{
+	setbuf(stderr, NULL);
+	return netsurf_main(argc, argv);
+}
+
 void gui_init(int argc, char** argv)
 {
 	char buf[PATH_MAX];

@@ -240,6 +240,13 @@ STRPTR ami_locale_langs(void)
 	return acceptlangs;
 }
 
+/** Normal entry point from OS */
+int main(int argc, char** argv)
+{
+	setbuf(stderr, NULL);
+	return netsurf_main(argc, argv);
+}
+
 void gui_init(int argc, char** argv)
 {
 	struct Locale *locale;

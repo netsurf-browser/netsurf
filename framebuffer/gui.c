@@ -409,6 +409,13 @@ static bool process_cmdline(int argc, char** argv)
 	return true;
 }
 
+/** Normal entry point from OS */
+int main(int argc, char** argv)
+{
+	setbuf(stderr, NULL);
+	return netsurf_main(argc, argv);
+}
+
 void gui_init(int argc, char** argv)
 {
 	char buf[PATH_MAX];

@@ -40,23 +40,10 @@
 #include "utils/utils.h"
 
 bool netsurf_quit = false;
-bool netsurf_embedded = true;
 bool verbose_log = false;
 
 static void netsurf_poll(void);
 static void lib_init(void);
-
-
-/**
- * The regular main(), when not embedded
- */
-
-int main(int argc, char** argv)
-{
-	setbuf(stderr, NULL);
-	netsurf_embedded = false;
-	return netsurf_main(argc, argv);
-}
 
 
 /**

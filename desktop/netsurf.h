@@ -22,7 +22,6 @@
 #include <stdbool.h>
 
 extern bool netsurf_quit;
-extern bool netsurf_embedded;
 extern bool verbose_log;
 extern const char * const netsurf_version;
 extern const int netsurf_version_major;

@@ -420,6 +420,13 @@ static int32 bapp_thread(void *arg)
 	return 0;
 }
 
+/** Normal entry point from OS */
+int main(int argc, char** argv)
+{
+	setbuf(stderr, NULL);
+	return netsurf_main(argc, argv);
+}
+
 void gui_init(int argc, char** argv)
 {
 	char buf[PATH_MAX];
