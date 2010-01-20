@@ -85,12 +85,12 @@ Sprite:Sprite
 ObjDraw:Draw
 
 # Main -> Object -> Link menu
-LinkSave:Save
-LinkDload:Download target
-LinkNew:New window
+LinkSave:Speichern
+LinkDload:Ziel speichern
+LinkNew:Neues Fenster
 
 # Main -> Selection menu
-SelSave:Save
+SelSave:Speichern
 
 # Main -> Navigate menu
 #
@@ -174,8 +174,8 @@ Selection:Auswahl
 SelectAll:Alles auswählen  ^A
 Clear:Auswahl aufheben  ^Z
 Copy:Auswahl kopieren  ^C
-Cut:Cut to clipboard  ^X
-Paste:Paste from clipboard  ^V
+Cut:Ausschneiden  ^X
+Paste:Einfügen  ^V
 
 # Selection Menu
 #
@@ -212,11 +212,11 @@ URLSuggest:Aktuelle URL's
 Languages:Sprachen
 #
 # Network pane
-ProxyType:Proxy Typ
-ProxyNone:No proxy
-ProxyNoAuth:Simple proxy
-ProxyBasic:Basic authentication
-ProxyNTLM:NTLM authentication
+ProxyType:Proxytyp
+ProxyNone:kein Proxy
+ProxyNoAuth:normaler Proxy
+ProxyBasic:mit Authentifizierung
+ProxyNTLM:NTLM Authentifizierung
 #
 # Fonts pane
 Fonts:Schriften
@@ -235,67 +235,67 @@ ImgStyle3:Error-Diffusion
 #
 # Project menu
 #
-Project:Project
-NewWindowNS:New window
-NewTab:New tab
-CloseTab:Close tab
-CloseWindow:Close window
-SaveAsNS:Save as
-Source:Source...
+Project:Projekt
+NewWindowNS:Neues Fenster
+NewTab:Neuer Tab
+CloseTab:Schließe Tab
+CloseWindow:Schließe Fenster
+SaveAsNS:Speichern als
+Source:Quelle...
 TextNS:Text...
-SaveCompNS:Complete...
+SaveCompNS:Komplett...
 PDFNS:PDF...
 IFF:IFF...
-OpenFile:Open local file...
-About:About...
-PrintNS:Print...
+OpenFile:Öffne lokale Datei...
+About:Über...
+PrintNS:Drucken...
 
 # Edit menu
 #
-CopyNS:Copy
-PasteNS:Paste
-SelectAllNS:Select all
-ClearNS:Clear selection
+CopyNS:Kopieren
+PasteNS:Einfügen
+SelectAllNS:Alles auswählen
+ClearNS:Auswahl rückgängig
 
 # Browser menu
 #
 Browser:Browser
-HistGlobalNS:Show global history...
-HistLocalNS:Show local history...
-FindTextNS:Find text...
-Redraw:Redraw page
-ScaleNS:Scale
-ScaleInc:Increase
-ScaleDec:Decrease
+HistGlobalNS:Zeige globale History...
+HistLocalNS:Zeige lokale History...
+FindTextNS:Suchen...
+Redraw:Seite neu aufbauen
+ScaleNS:Skalieren
+ScaleInc:Vergrößern
+ScaleDec:Verkleinern
 ScaleNorm:Normal
 
 # Hotlist menu
 #
-HotlistShowNS:Show hotlist...
+HotlistShowNS:Zeige Hotlist...
 
 # Settings menu
 #
-SettingsEdit:Edit preferences...
-Settings:Settings
-SnapshotWindow:Snapshot window
-SettingsSave:Save settings
+SettingsEdit:Voreinstellungen...
+Settings:Einstellungen
+SnapshotWindow:Schnappschuß
+SettingsSave:Einstellungen speichern
 
 # ARexx menu
 #
 ARexx:ARexx
-ARexxExecute:Execute script...
+ARexxExecute:Script ausführen...
 
 # Context menu
 #
-Link:Link
-LinkNewTab:Open in new tab
-LinkNewWin:Open in new window
-CopyURL:Copy URL to clipboard
-CopyClip:Copy to clipboard
-SaveAs:Save as...
-SaveIFF:Save as IFF...
-ObjShow:Show object
-SelectFile:Select file...
+Link:Verweis
+LinkNewTab:Öffnen in Tab
+LinkNewWin:Öffnen in Fenster
+CopyURL:URL ins Clipboard
+CopyClip:Inhalt ins Clipboard
+SaveAs:Speichern als...
+SaveIFF:Speichern als IFF...
+ObjShow:Zeige Objekt
+SelectFile:Datei auswählen...
 
 # Treeview interface tokens
 # =========================
@@ -328,12 +328,12 @@ TreeSession:Session end
 TreeUnused:Nicht benutzt
 TreeImport:Importierte URL
 TreeNewFolder:Neues Verzeichnis
-TreeLaunch:Visit URL
-TreeDelete:Delete
+TreeLaunch:URL ansehen
+TreeDelete:Löschen
 
 # Tree export
 #
-TreeHotlist:NetSurf hotlist
+TreeHotlist:NetSurf Hotlist
 
 
 # Hotlist user interface tokens
@@ -384,15 +384,15 @@ Download:%s von %s • %s/s • noch %s
 DownloadU:%s von unbekannt • %s/s • bisher %s
 Downloaded:%s komplett • etwa %s/s • gesamt %s
 Unwritten:Schreiben der Datei ist fehlgeschlagen.
-Abort:Abort
+Abort:Abgebrochen
 
 # Amiga download window tokens
 #
 # This section contains tokens which are used in the Amiga
 # download window.
 #
-amiDownload:%ld of %ld bytes downloaded
-amiDownloadU:%ld bytes downloaded
+amiDownload:%ld von %ld Bytes heruntergeladen
+amiDownloadU:%ld Bytes heruntergeladen
 
 # GTK download window tokens
 #
@@ -566,10 +566,10 @@ Printing:Printing page
 # dialog box.
 #
 NotFound:nichts
-Next:Next
-Prev:Previous
-ShowAll:Show All
-CaseSens:Case Sensitive
+Next:Nächster
+Prev:Vorheriger
+ShowAll:Alle zeigen
+CaseSens:GroßKleinschreibung
 
 
 # 401 login user interface tokens
@@ -581,9 +581,9 @@ CaseSens:Case Sensitive
 Host:Host
 Realm:Realm
 Username:Username
-Password:Password
+Password:Passwort
 Login:Login
-Cancel:Cancel
+Cancel:Abbruch
 
 
 # SSL certificate verification
@@ -592,17 +592,17 @@ Cancel:Cancel
 # This section contains tokens which are used in the
 # SSL certificate verification dialog box.
 #
-SSLCerts:SSL certificates
-SSLError:NetSurf failed to verify the authenticity of an SSL certificate. Please verify the details presented below.
-Subject:Subject
-Issuer:Issuer
+SSLCerts:SSL Zertifikat
+SSLError:NetSurf konnte ein SSL Zertifikat nicht prüfen. Bitte die Details unten beachten.
+Subject:Bezug
+Issuer:Geber
 Version:Version
-ValidFrom:Valid from
-ValidTo:Valid until
-Type:Type
+ValidFrom:Gültig von
+ValidTo:Gültig bis
+Type:Typ
 Serial:Serial
-Accept:Accept
-Reject:Reject
+Accept:Akzeptiert
+Reject:Abgelehnt
 
 
 # Content
@@ -623,12 +623,12 @@ FormCheckbox:Anklicken um die Option an/abzuschalten
 FormRadio:Anklicken wählt diese Option
 FormSubmit:Daten übertragen an %s
 FormBadSubmit:Achtung: Daten können nicht gesendet werden
-FormButton:Warning: button can not be activated
+FormButton:Achtung: Schaltknopf kann nicht aktiviert werden
 FormTextarea:Anklicken zum Editieren
 FormTextbox:Anklicken zum Bearbeiten des Feldes
-FormReset:Reset form (not implemented)
+FormReset:Zurücksetzen (nicht implementiert)
 FormFile:Zum Upload Datei hierhin ziehen und fallenlassen
-SelectMenu:Select
+SelectMenu:Auswahl
 
 # Content titles
 #
@@ -645,15 +645,15 @@ ArtWorksTitle:ArtWorks Bild (%lux%lu, %lu bytes)
 
 # HTML page character set
 #
-Encoding0:from HTTP headers
-Encoding1:detected
-Encoding2:from <meta>
-EncodingUnk:Unknown
+Encoding0:aus HTTP Kopfzeilen
+Encoding1:ermittelt
+Encoding2:aus <meta>
+EncodingUnk:Unbekannt
 
 # Misc
 #
-Selecting:Selecting
-FrameDrag:Resizing frames
+Selecting:Auswählen
+FrameDrag:Frames ändern
 
 
 # Errors
@@ -689,32 +689,32 @@ MiscError:Unerwarteter Fehler:
 FileError:Datei existiert nicht:
 PrintError:Ein Fehler trat während des Druckens auf:
 AWNotSeen:Das Programm AWViewer wurde nicht gefunden.
-EncNotRec:Encoding type not recognised.
-FileOpenError:could not open file '%s'
-DirectoryError:directory '%s' already exists
+EncNotRec:Encodierung nicht erkannt.
+FileOpenError:Datei ist nicht zu öffnen: '%s'
+DirectoryError:Verzeichnis '%s' existiert bereits.
 
 # Specific errors - displayed in a dialog box
 #
 NoMemory:Zu wenig Speicher. Bitte mehr Speicher zur Verfügung stellen und erneut versuchen.
-FontBadInst:Fehler bei der Font-Initialisierung wegen obsoleter Kopien von ROM Fonts auf dem lokalem Speichermedium. NetSurf wird beendet und ein Programm zur Fehlerbehebung gestartet.
+FontBadInst:Font-Initialisierung fehlerhaft. Obsolete Kopien von ROM Fonts auf dem lokalem Speichermedium. Fehlerbehebung startet.
 FontError:Fehler beim öffnen des Fonts "Homerton.Medium" (%s).
-Resolvers:Es sind keine Domain Name Servers (DNS) konfiguriert. Nur lokale Dateien können geladen werden. DNS können in Konfiguration (!Boot doppelklicken) eingestellt werden.
+Resolvers:Keine Domain Name Servers (DNS) konfiguriert. Nur lokale Dateien sind ladbar. Bitte DNS unter !Boot eintragen.
 NoDiscSpace:Nicht genug Speicherplatz auf dem Medium vorhanden.
 Template:Ein Template für ein Fenster fehlt in der Datei Templates. Bitte NetSurf neu installieren.
 HotlistSaveError:Hotlist konnte nicht korrekt gespeichert werden.
 HotlistLoadError:Hotlist konnte nicht korrekt geladen werden.
-NoDirError:%s is not a directory
+NoDirError:%s ist kein Verzeichnis.
 NoPathError:Symbol in ein Verzeichnisfenster ziehen um zu Speichern.
 NoNameError:Bitte einen Namen eingeben.
 NoURLError:Bitte eine URL Adresse eingeben.
 URIError:NetSurf konnte die URI Datei nicht lesen. Syntax Fehler.
 EmptyError:Die Datei ist leer.
-SearchError:Invalid Search.
+SearchError:Suche fehlerhaft.
 PrintErrorRO2:Der Drucker scheint beschäftigt zu sein.
-AWNotSeen:Please locate the AWViewer application and try again.
+AWNotSeen:Das Programm AWViewer wurde nicht gefunden.
 
 # Error messages for Amiga version only
-CompError:Unable to open
+CompError:Nicht zu öffnen
 
 # Queries
 # =======
@@ -751,15 +751,15 @@ Done:Dokument fertiggestellt
 #
 BadRedirect:Falsche URL für Redirect
 FetchFailed:Kann Dokument nicht fetchen
-NotCSS:Warnung: Stylesheet ist kein CSS
-NotFavIco:Favicon not supported
+NotCSS:Warnung:Stylesheet ist kein CSS
+NotFavIco:Favicon wird nicht unterstützt
 BadObject:Warnung: falscher Objekttyp
 ObjError:Fehler beim Laden des Objektes: %s
 ParsingFail:Dokumentparsing ist fehlgeschlagen.
 BadGIF:Lesen einer GIF Datei fehlgeschlagen.
 BadBMP:Lesen einer BMP Datei fehlgeschlagen.
 BadICO:Lesen einer ICO Datei fehlgeschlagen.
-PNGError:Error converting PNG.
+PNGError:Fehler beim PNG konvertieren.
 MNGError:MNG Library Fehler: %i
 BadSprite:Ungültiges oder beschädigtes Sprite.
 
@@ -824,13 +824,13 @@ ScrollPLeft:Anklicken scrollt eine Seite nach links
 ScrollH:Ziehen der Leiste scrollt horizontal
 ScrollPRight:Anklicken scrollt eine Seite nach rechts
 ScrollRight:Pfeil anklicken scrollt rechts
-ScrollBoth:Move your mouse while keeping the button pressed to scroll the content
+ScrollBoth:Bewege die Maus bei gedrückten Mausknopf zum Scrollen des Inhalts
 
 # Select menu - displayed in status bar
 #
-SelectClick:Click on entry to select it
-SelectMClick:Click on entry to select it, multiple options can be selected
-SelectClose:Click to close the select menu
+SelectClick:Anklicken um auszuwählen
+SelectMClick:Anklicken um auszuwählen, auch mehrere Optionen sind auswählbar
+SelectClose:Anklicken zum Schließen des Menus
 
 # Saving
 # ======
@@ -896,7 +896,7 @@ HelpToolbar7:Drucken der aktuellen Seite.|MAnklicken öffnet den 'Drucken' Dialo
 HelpToolbar8:Das ist der Hotlist Schaltknopf.|MKlicken mit AUSWAHL öffnet die Hotlist.|MKlicken mit SPEZIAL trägt die aktuelle Seite in die Hotlist ein.
 HelpToolbar9:Anklicken öffnet den Vergrößerungs-Dialog.|MDie Vergrößerung betrifft Text und Bilder.
 HelpToolbar10:Anklicken öffnet das Fenster zur Textsuche.
-HelpToolbar11:\Tup button.|M\Straverse up one level on the current website
+HelpToolbar11:Das ist der Aufwärtsknopf.|MKlicken mit AUSWAHL führt auf die nächsthöhere Ebene der innerhalb Webseite.
 HelpToolbar14:Das ist die Adressleiste.|MHier die Adresse (URL) eingeben und Entertaste drücken, um eine neue Seite zu laden.
 HelpToolbar15:Das ist das URL-Schnellwahl Symbol.|MKlicken mit AUSWAHL öffnet eine Liste der zuletzt eingegebenen Web-Adressen.
 HelpToolbar16:Das ist die Ladeaktivitätsanzeige.|MSie wird animiert, wenn NetSurf aktiv ist.
@@ -934,23 +934,23 @@ HelpBrowserMenu1-0-0:Informationen zum aktuellen Objekt zeigen.
 HelpBrowserMenu1-0-1:Abspeichern des Objektes (Original).
 HelpBrowserMenu1-0-2:Optionen zum Export des aktuellen Objektes zeigen.
 HelpBrowserMenu1-0-2-0:Abspeichern des Bildes als Sprite Datei.
-HelpBrowserMenu1-0-3:Adresse des Objektes speichern.
+HelpBrowserMenu1-0-3:Die Adresse des Objektes speichern.
 HelpBrowserMenu1-0-3-0:Speichert die Adresse des Objektes im Acorn URI Format.
 HelpBrowserMenu1-0-3-1:Speichert die Adresse des Objektes im Ant URL Format.
 HelpBrowserMenu1-0-3-2:Speichert die Adresse des Objektes als Text.
 HelpBrowserMenu1-0-4:Anklicken mit AUSWAHL um alle Objekte der Seite erneut zu laden.
-HelpBrowserMenu1-1:\Rsee the options relating to the current link.
-HelpBrowserMenu1-1-0:\Rsave the current link.
-HelpBrowserMenu1-1-0-0:\Rsave the link in Acorn URI format.
-HelpBrowserMenu1-1-0-1:\Rsave the link in Ant URL format.
-HelpBrowserMenu1-1-0-2:\Rsave the link as plain text.
-HelpBrowserMenu1-1-1:\Sdownload from this link.
-HelpBrowserMenu1-1-2:\Sopen this link in a new window.
-HelpBrowserMenu2:\Rsee the selection options.
-HelpBrowserMenu2-0:\Rsave the current selection.
-HelpBrowserMenu2-1:\Scopy the selected text to the clipboard.
-HelpBrowserMenu2-2:\Scut the selected text to the clipboard.
-HelpBrowserMenu2-3:\Spaste text from the clipboard.
+HelpBrowserMenu1-1:Optionen für den aktuellen Verweis
+HelpBrowserMenu1-1-0:Die Adresse des aktuellen Verweises abspeichern.
+HelpBrowserMenu1-1-0-0:Speichert die Adresse des Verweises im Acorn URI Format.
+HelpBrowserMenu1-1-0-1:Speichert die Adresse des Verweises im Ant URL Format.
+HelpBrowserMenu1-1-0-2:Speichert die Adresse des Verweises als Text.
+HelpBrowserMenu1-1-1:Anklicken mit AUSWAHL startet einen Download von diesem Link.
+HelpBrowserMenu1-1-2:Anklicken mit AUSWAHL öffnet den Link in einem neuen Fenster.
+HelpBrowserMenu2:Optionen für die manuell markierten Webseitenbereiche
+HelpBrowserMenu2-0:Die aktuell markierten Bereiche abspeichern.
+HelpBrowserMenu2-1:Den markierten Text ins Clipboard kopieren.
+HelpBrowserMenu2-2:Den markierten Text ausschneiden und ins Clipboard transferieren.
+HelpBrowserMenu2-3:Text aus dem Clipboard einfügen.
 HelpBrowserMenu3:Untermenü Navigieren.
 HelpBrowserMenu3-0:Öffnet die Homepage im aktuellen Fenster.
 HelpBrowserMenu3-1:Schaltet zurück zur vorher dargestellten Seite.|MDie Seite wird dabei nicht aktualisiert.
@@ -995,7 +995,7 @@ HelpBrowserMenu6-2:Öffnet eine Seite mit allgemeinen Informationen zu NetSurf i
 HelpBrowserMenu6-3:Öffnet eine Seite mit Informationen zu Entwicklerteam und bei der Entwicklung genutzter Software in einem neuen Browserfenster.
 HelpBrowserMenu6-4:Lädt die interaktive Hilfe.
 
-HelpBrowser-1:Das ist ein Browserfenster.|MEinen Link mit AUSWAHL anklicken, um ihm zu folgen.|MEinen Link mit SPEZIAL anklicken, um ihn in einem neuen Fenster zu öffnen.|MShift+\s click on a link to download the link target contents.|MShift+\a click to save the link target address.
+HelpBrowser-1:Das ist ein Browserfenster.|MEinen Link mit AUSWAHL anklicken, um ihm zu folgen.|MEinen Link mit SPEZIAL anklicken, um ihn in einem neuen Fenster zu öffnen.|MShift+AUSWAHL über einem Verweis lädt den verlinkten Inhalt herunter.|MShift+SPEZIAL über einem Link klicken zum Speichern der Adresse des Verweises.
 
 HelpIconbar:Das ist das NetSurf Icon.|MKlicken mit AUSWAHL öffnet ein neues Browserfenster.|MKlicken mit SPEZIAL öffnet die Hotlist.
 HelpHistory:Die History zeigt alle in dieser Sitzung besuchten Seiten.|MKlicken mit AUSWAHL auf eine Symbolgrafik kehrt zurück zur jeweiligen Seite.
@@ -1115,7 +1115,7 @@ HelpCookiesMenu1-0:Klicken mit AUSWAHL löscht alle markierten Cookies.
 HelpCookiesMenu2:Klicken mit AUSWAHL markiert alle Cookies als gewählt.
 HelpCookiesMenu3:Klicken mit AUSWAHL macht alle Markierungen rückgängig.
 
-HelpAppInfo:Das ist das Info-Fenster zu NetSurf.|MGenauere Angaben zu Autoren, Entwicklerteam, genutzten Libraries etc. gibt es bei "Über NetSurf" im Untermenü Hilfe eines Browserfensters.
+HelpAppInfo:Das ist das Info-Fenster zu NetSurf.|MGenauere Angaben zu den Autoren, Grafikern, Übersetzern, genutzten Libraries etc. gibt es bei "Über NetSurf" im Untermenü Hilfe eines Browserfensters.
 
 
 HelpConfigure:Dies ist das Konfigurationsfenster von NetSurf.
@@ -1216,7 +1216,7 @@ HelpImageConfig19:Klicken mit AUSWAHL speichert die Einstellungen und schließt 
 HelpInterfaceConfig:Fenster zur Einstellung des Programmverhaltens in ausgewählten Situationen
 HelpInterfaceConfig2:Beim Abspeichern von Dateien auf einen Datenträger werden die Dateinamenserweiterungen (Extensions) aus dem Dateinamen entfernt.
 HelpInterfaceConfig3:Beim Abspeichern wird vor dem Überschreiben namensgleicher Dateien von NetSurf nachgefragt, ob dies so erfolgen soll.
-HelpInterfaceConfig6:Feature zum automatischen Vorschlagen von URL Adressen bei deren Eingabe.|MDiese Funktion zeigt bei der Eingabe von Webadressen in die Adressleiste mögliche sinnvolle Adressvorschläge während des Eintippens an.
+HelpInterfaceConfig6:Fantastisches Feature zum automatischen Vorschlagen von URL Adressen bei deren Eingabe.|MDiese Funktion zeigt bei der Eingabe von Webadressen in die Adressleiste mögliche sinnvolle Adressvorschläge während des Eintippens an.
 HelpInterfaceConfig7:In der lokalen History werden die Adressen der besuchten Webseiten schwebend über den zugehörigen Bildern eingeblendet.
 HelpInterfaceConfig10:Beim verkleinernden Ablegen eines Browserfensters auf dem Desktophintergrund (Iconisieren) wird von NetSurf ein fensterspezifisches Icon erzeugt, welches den aktuellen Seiteninhalt wiedergibt.
 HelpInterfaceConfig11:Stellt die Standardeinstellungen wieder her.
@@ -1279,41 +1279,41 @@ con_lang:Sprachen
 con_memory:Speicher
 con_secure:Sicherheit
 con_theme:Themen
-con_general:General
-con_rendering:Rendering
-con_advanced:Advanced
+con_general:Allgemeines
+con_rendering:Rendern
+con_advanced:Erweitertes
 
 # General tab
 #
 
-Preferences:Preferences
-Use:Use
+Preferences:Einstellungen
+Use:Benutzen
 
 HomePageURL:URL
-HomePageDefault:Use default page
-HomePageCurrent:Use current page
-ContentBlocking:Content blocking
-BlockAds:Hide advertisements
-ContentLanguage:Content language
-LocaleLang:Get from Locale prefs
-HistoryAge:Keep history for
-Days:days
-Miscellaneous:Miscellaneous
-SendReferer:Send site referral information
-FastScrolling:Fast scrolling
+HomePageDefault:Standardseite
+HomePageCurrent:Aktuelle Seite
+ContentBlocking:Inhalte blockieren
+BlockAds:Werbung unterdrücken
+ContentLanguage:Sprache
+LocaleLang:Rechnervorgabe nutzen
+HistoryAge:History behalten für
+Days:Tage
+Miscellaneous:Verschiedenes
+SendReferer:Seitenreferenzen senden
+FastScrolling:Schnelles Scrollen
 
 # Display tab
 #
 
-Screen:Screen
-ScreenOwn:Own screen
+Screen:Ausgabe
+ScreenOwn:Eigener Screen
 ScreenWB:Workbench
-ScreenPublic:Public screen
-Theme:Theme
-MousePointers:Mouse pointers
-TrueColour:True colour
-OSPointers:Use OS mouse pointers when possible
-NeedRestart:These options will not take effect until the next time NetSurf is started
+ScreenPublic:Public Screen
+Theme:Thema
+MousePointers:Mauszeiger
+TrueColour:TrueColour
+OSPointers:Mauszeiger vom OS nutzen, wenn möglich
+NeedRestart:Diese Optionen werden erst nach einem Neustart von NetSurf aktiviert.
 
 # Connection tab
 #
@@ -1327,77 +1327,77 @@ FetchesCached:Cached connections
 # Rendering tab
 #
 
-CacheNative:Cache native versions
-ScaleQuality:Higher quality scaling
-Animations:Animations
-AnimSpeedLimit:Limit speed to
-AnimSpeedFrames:seconds between frames
-AnimDisable:Disable animations
+CacheNative:Originale zwischenspeichern
+ScaleQuality:Skalieren hoher Qualität
+Animations:Animationen
+AnimSpeedLimit:Geschwindigkeit begrenzen
+AnimSpeedFrames:Bildintervall (Sekunden)
+AnimDisable:Animationen abschalten
 
-None:None
-Scaled:Scaled
+None:Keine
+Scaled:Skaliert
 
 # Fonts tab
 #
 
-FontFamilies:Font families
+FontFamilies:Schriftfamilien
 FontSans:Sans-serif
 FontSerif:Serif
-FontMono:Monospaced
-FontCursive:Cursive
+FontMono:Monospace
+FontCursive:Kursiv
 FontFantasy:Fantasy
-Default:Default
-FontSize:Font size
+Default:Standard
+FontSize:Schriftgröße
 Minimum:Minimum
 Pt:pt
 
 # Cache tab
 #
 
-CacheMemory:Memory cache
-CacheDisc:Disc cache
-Size:Size
-Duration:Duration
+CacheMemory:Arbeitsspeicher Cache
+CacheDisc:Festplatten Cache
+Size:Größe
+Duration:Dauer
 
 # Advanced
 #
 
 Downloads:Downloads
-ConfirmOverwrite:Request confirmation when overwriting
-DownloadDir:Initial download location
-TabbedBrowsing:Tabbed browsing
-TabActive:Open new tabs in background
-TabMiddle:Middle mouse button opens tabs
-DownloadNotify:Notify on completion
-SearchWeb:Web search
-SearchURL:Search from URL bar
-SearchProvider:Search provider
-OptionDocky:Show in AmiDock
+ConfirmOverwrite:vor Überschreiben nachfragen
+DownloadDir:Downloadverzeichnis
+TabbedBrowsing:Registernavigation (Tabs)
+TabActive:Neuen Tab im Hintergrund öffnen
+TabMiddle:Mittlere Maustaste öffnet Tab
+DownloadNotify:Downloadende melden
+SearchWeb:Websuche
+SearchURL:Suche über URL Leiste
+SearchProvider:Suchmaschine
+OptionDocky:In AmiDock zeigen
 Clipboard:Clipboard
-ClipboardUTF8:Write text as UTF-8
-ContextMenu:Context menu
-Enable:Enable
-Sticky:Sticky
-OptionNoWindow:Do not open window on startup
-OptionNoQuit:Do not quit when last window closed
+ClipboardUTF8:Text als UTF-8
+ContextMenu:Kontextmenu
+Enable:Erlauben
+Sticky:Klebrig
+OptionNoWindow:Kein Fenster beim Start öffnen
+OptionNoQuit:Nicht beenden beim Schließen des letzten Fensters
 
 # Export
 #
 
-Margins:Margins
-Top:Top
-Left:Left
-Right:Right
-Bottom:Bottom
+Margins:Ränder
+Top:Oben
+Left:Links
+Right:Rechts
+Bottom:Unten
 MM:mm
-Scaling:Scaling
-Scale:Scale
-Appearance:Appearance
-SuppressImages:Suppress images
-RemoveBackground:Remove background
-FitPage:Fit page
-CompressPDF:Compress PDF
-SetPassword:Set password
+Scaling:Skalierung
+Scale:Skalieren
+Appearance:Aussehen
+SuppressImages:Bilder unterbinden
+RemoveBackground:Hintergrund entfernen
+FitPage:Seite einpassen
+CompressPDF:PDF komprimieren
+SetPassword:Passwort festlegen
 
 
 # Unused tokens
