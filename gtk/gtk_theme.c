@@ -19,6 +19,7 @@
 #include <gtk/gtk.h>
 #include <stdio.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #include "content/content.h"
 #include "content/content_type.h"
 #include "gtk/gtk_gui.h"
