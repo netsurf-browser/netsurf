@@ -30,6 +30,7 @@
 #include <librosprite.h>
 #include "utils/config.h"
 #include "desktop/plotters.h"
+#include "image/bitmap.h"
 #include "content/content.h"
 #include "utils/log.h"
 #include "utils/messages.h"
