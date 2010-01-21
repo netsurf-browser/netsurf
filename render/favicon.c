@@ -190,7 +190,7 @@ void favicon_callback(content_msg msg, struct content *icon,
 			if (icon->type == *type)
 				break;
 
-		if (*type != CONTENT_UNKNOWN) {
+		if (*type == CONTENT_UNKNOWN) {
 			c->data.html.favicon = 0;
 			LOG(("%s is not a favicon", icon->url));
 			content_add_error(c, "NotFavIco", 0);
