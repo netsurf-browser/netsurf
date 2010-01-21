@@ -270,10 +270,13 @@ void search_web_ico_callback(content_msg msg, struct content *ico,
 
 	case CONTENT_MSG_DONE:
 		LOG(("got favicon '%s'", ico->url));
+#ifdef WITH_BMP
 		if (ico->type == CONTENT_ICO) {
 			search_ico = ico; /* cache */
 			gui_window_set_search_ico(search_ico);
-		} else {
+		} else 
+#endif
+		{
 			search_web_retrieve_ico(true);
 		}
 		break;

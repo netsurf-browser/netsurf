@@ -166,14 +166,31 @@ bool favicon_get_icon(struct content *c, xmlNode *html)
 void favicon_callback(content_msg msg, struct content *icon,
 		intptr_t p1, intptr_t p2, union content_msg_data data)
 {
+	static const content_type permitted_types[] = {
+#ifdef WITH_BMP
+		CONTENT_ICO,
+#endif
+#if defined(WITH_MNG) || defined(WITH_PNG)
+		CONTENT_PNG,
+#endif
+#ifdef WITH_GIF
+		CONTENT_GIF,
+#endif
+		CONTENT_UNKNOWN
+	};
 	struct content *c = (struct content *) p1;
 	unsigned int i = p2;
+	const content_type *type;
+
+
 	switch (msg) {
 	case CONTENT_MSG_LOADING:
 		/* check that the favicon is really a correct image type */
-		if (!((icon->type == CONTENT_ICO) ||
-				(icon->type == CONTENT_PNG) ||
-				(icon->type == CONTENT_GIF))) {
+		for (type = permitted_types; *type != CONTENT_UNKNOWN; type++)
+			if (icon->type == *type)
+				break;
+
+		if (*type != CONTENT_UNKNOWN) {
 			c->data.html.favicon = 0;
 			LOG(("%s is not a favicon", icon->url));
 			content_add_error(c, "NotFavIco", 0);

@@ -1870,9 +1870,11 @@ void gui_window_set_icon(struct gui_window *_g, struct content *icon)
 	GtkImage *iconImage = NULL;
 	if (g->icoFav != NULL)
 		g_object_unref(g->icoFav);
+#ifdef WITH_BMP
 	if ((icon != NULL) && (icon->type == CONTENT_ICO)) {
 		nsico_set_bitmap_from_size(icon, 16, 16);
 	}
+#endif
 	if ((icon != NULL) && (icon->bitmap != NULL)) {
 		GdkPixbuf *pb = gtk_bitmap_get_primary(icon->bitmap);
 		if ((pb != NULL) && (gdk_pixbuf_get_width(pb) > 0) && 
@@ -1905,9 +1907,12 @@ void gui_window_set_search_ico(struct content *ico)
 	if (ico == NULL)
 		ico = search_web_ico();
 
+#ifdef WITH_BMP
 	if ((ico != NULL) && (ico->type == CONTENT_ICO)) {
 		nsico_set_bitmap_from_size(ico, 20, 20);
 	}
+#endif
+
 	if ((ico != NULL) && (ico->bitmap != NULL)) {
 		pbico = gtk_bitmap_get_primary(ico->bitmap);
 		if ((pbico != NULL) && (gdk_pixbuf_get_width(pbico) > 0) && 
