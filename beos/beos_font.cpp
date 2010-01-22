@@ -353,9 +353,15 @@ void nsbeos_style_to_font(BFont &font, const plot_font_style_t *fstyle)
 
 //fprintf(stderr, "nsbeos_style_to_font: %d, %d, %d -> '%s' %04x\n", style->font_family, style->font_style, style->font_weight, family, face);
 
-	if (family)
-		font.SetFamilyAndFace((const font_family)family, face);
-	else {
+	if (family) {
+		font_family beos_family;
+
+		strncpy(beos_family, family, B_FONT_FAMILY_NAME_LENGTH);
+		// Ensure it's terminated
+		beos_family[B_FONT_FAMILY_NAME_LENGTH] = '\0';
+
+		font.SetFamilyAndFace(beos_family, face);
+	} else {
 		//XXX not used
 		font = be_plain_font;
 		font.SetFace(face);
