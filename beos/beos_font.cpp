@@ -356,9 +356,9 @@ void nsbeos_style_to_font(BFont &font, const plot_font_style_t *fstyle)
 	if (family) {
 		font_family beos_family;
 
-		strncpy(beos_family, family, B_FONT_FAMILY_NAME_LENGTH);
+		strncpy(beos_family, family, B_FONT_FAMILY_LENGTH);
 		// Ensure it's terminated
-		beos_family[B_FONT_FAMILY_NAME_LENGTH] = '\0';
+		beos_family[B_FONT_FAMILY_LENGTH] = '\0';
 
 		font.SetFamilyAndFace(beos_family, face);
 	} else {
