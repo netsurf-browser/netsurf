@@ -81,11 +81,10 @@ bool ro_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style
 {
 	os_error *error;
 
-        if (style->fill_type != PLOT_OP_TYPE_NONE) { 
-
+	if (style->fill_type != PLOT_OP_TYPE_NONE) { 
 		error = xcolourtrans_set_gcol(style->fill_colour << 8, 
-					      colourtrans_USE_ECFS_GCOL,
-					      os_ACTION_OVERWRITE, 0, 0);
+						colourtrans_USE_ECFS_GCOL,
+						os_ACTION_OVERWRITE, 0, 0);
 		if (error) {
 			LOG(("xcolourtrans_set_gcol: 0x%x: %s",
 			     error->errnum, error->errmess));
@@ -109,26 +108,26 @@ bool ro_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style
 		}
 	}
 
-        if (style->stroke_type != PLOT_OP_TYPE_NONE) {
+	if (style->stroke_type != PLOT_OP_TYPE_NONE) {
 		bool dotted = false; 
 		bool dashed = false;
  
 		const int path[] = { draw_MOVE_TO,
-				     (ro_plot_origin_x + x0 * 2) * 256,
-				     (ro_plot_origin_y - y0 * 2 - 1) * 256,
-				     draw_LINE_TO,
-				     (ro_plot_origin_x + (x1) * 2) * 256,
-				     (ro_plot_origin_y - y0 * 2 - 1) * 256,
-				     draw_LINE_TO,
-				     (ro_plot_origin_x + (x1) * 2) * 256,
-				     (ro_plot_origin_y - (y1) * 2 - 1) * 256,
-				     draw_LINE_TO,
-				     (ro_plot_origin_x + x0 * 2) * 256,
-				     (ro_plot_origin_y - (y1) * 2 - 1) * 256,
-				     draw_CLOSE_LINE,
-				     (ro_plot_origin_x + x0 * 2) * 256,
-				     (ro_plot_origin_y - y0 * 2 - 1) * 256,
-				     draw_END_PATH };
+					(ro_plot_origin_x + x0 * 2) * 256,
+					(ro_plot_origin_y - y0 * 2 - 1) * 256,
+					draw_LINE_TO,
+					(ro_plot_origin_x + (x1) * 2) * 256,
+					(ro_plot_origin_y - y0 * 2 - 1) * 256,
+					draw_LINE_TO,
+					(ro_plot_origin_x + (x1) * 2) * 256,
+					(ro_plot_origin_y - (y1) * 2 - 1) * 256,
+					draw_LINE_TO,
+					(ro_plot_origin_x + x0 * 2) * 256,
+					(ro_plot_origin_y - (y1) * 2 - 1) * 256,
+					draw_CLOSE_LINE,
+					(ro_plot_origin_x + x0 * 2) * 256,
+					(ro_plot_origin_y - y0 * 2 - 1) * 256,
+					draw_END_PATH };
 
 		if (style->stroke_type == PLOT_OP_TYPE_DOT) 
 			dotted = true;

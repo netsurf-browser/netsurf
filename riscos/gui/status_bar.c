@@ -458,8 +458,8 @@ void ro_gui_status_bar_redraw(wimp_draw *redraw)
 	/* initialise the plotters */
 	plot = ro_plotters;
 	ro_plot_set_scale(1.0);
-  	ro_plot_origin_x = 0;
-  	ro_plot_origin_y = 0;
+	ro_plot_origin_x = 0;
+	ro_plot_origin_y = 0;
 
 	/* redraw the window */
 	error = xwimp_redraw_window(redraw, &more);
@@ -469,8 +469,8 @@ void ro_gui_status_bar_redraw(wimp_draw *redraw)
 		return;
 	}
 	while (more) {
-	  	/* redraw the status text */
-	  	if (sb->text) {
+		/* redraw the status text */
+		if (sb->text) {
 			error = xcolourtrans_set_font_colours(font_CURRENT,
 					0xeeeeee00, 0x00000000, 14, 0, 0, 0);
 			if (error) {
@@ -499,7 +499,7 @@ void ro_gui_status_bar_redraw(wimp_draw *redraw)
 				-redraw->box.y0 >> 1,
 				(redraw->box.x0 + sb->width - WIDGET_WIDTH) >> 1,
 				-redraw->box.y1 >> 1,
-				0x00000000);
+				plot_style_fill_black);
 
 		error = xwimp_get_rectangle(redraw, &more);
 		if (error) {
