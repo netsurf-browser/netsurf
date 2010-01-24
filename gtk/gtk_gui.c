@@ -105,10 +105,12 @@ static void nsgtk_PDF_set_pass(GtkButton *w, gpointer data);
 static void nsgtk_PDF_no_pass(GtkButton *w, gpointer data);
 #endif
 
+#define THROBBER_FRAMES 9
+
 /**
  * Locate a shared resource file by searching known places in order.
  *
- * \param  buf      buffer to write to.  must be at least PATH_MAX chars
+ * \param  buf      buffer to write to.  must be at least PATH_MAX chars. May be NULL and routine will allocate string which must be freed by caller.
  * \param  filename file to look for
  * \param  def      default to return if file not found
  * \return buf
@@ -122,6 +124,12 @@ static char *find_resource(char *buf, const char *filename, const char *def)
 {
 	char *cdir = getenv("HOME");
 	char t[PATH_MAX];
+
+	if (buf == NULL) {
+		buf = malloc(PATH_MAX);
+		if (buf == NULL)
+			return NULL;
+	}
 
 	if (cdir != NULL) {
 		strcpy(t, cdir);
@@ -190,6 +198,39 @@ static void check_homedir(void)
 	}
 }
 
+/* This is an ugly hack to just get the new-style throbber going.
+ * It, along with the PNG throbber loader, need making more generic.
+ */
+static bool nsgtk_throbber_init(int framec)
+{
+	char **filenames;
+	char *filename;
+	char targetname[PATH_MAX];
+	char targetdefault[PATH_MAX];
+	int frame_num;
+	bool ret;
+
+	filenames = calloc(framec, sizeof(char *));
+	if (filenames == NULL)
+		return false;
+
+	for (frame_num = 0; frame_num < framec; frame_num++) {
+		snprintf(targetname, PATH_MAX, "throbber/throbber%d.png", frame_num);
+		snprintf(targetdefault, PATH_MAX, "./gtk/res/%s", targetname);
+		filenames[frame_num] = find_resource(NULL, targetname, targetdefault);
+	}
+
+	ret = nsgtk_throbber_initialise_from_png(frame_num, filenames);
+
+	for (frame_num = 0; frame_num < framec; frame_num++) {
+		free(filenames[frame_num]);
+	}	
+	free(filenames);
+
+	return ret;
+
+}
+
 static void *myrealloc(void *ptr, size_t len, void *pw)
 {
 	return realloc(ptr, len);
@@ -198,15 +239,16 @@ static void *myrealloc(void *ptr, size_t len, void *pw)
 /** Normal entry point from OS */
 int main(int argc, char** argv)
 {
+	gtk_init(&argc, &argv);
+
 	setbuf(stderr, NULL);
+
 	return netsurf_main(argc, argv);
 }
 
 void gui_init(int argc, char** argv)
 {
 	char buf[PATH_MAX];
-
-	gtk_init(&argc, &argv);
 
 	check_homedir();
 	
@@ -278,33 +320,7 @@ void gui_init(int argc, char** argv)
 	
 	nsgtk_completion_init();
 
-	/* This is an ugly hack to just get the new-style throbber going.
-	 * It, along with the PNG throbber loader, need making more generic.
-	 */
-	{
-#define STROF(n) #n
-#define FIND_THROB(n) find_resource(filenames[(n)], \
-				"throbber/throbber" STROF(n) ".png", \
-				"./gtk/res/throbber/throbber" STROF(n) ".png")
-		char filenames[9][PATH_MAX];
-		FIND_THROB(0);
-		FIND_THROB(1);
-		FIND_THROB(2);
-		FIND_THROB(3);
-		FIND_THROB(4);
-		FIND_THROB(5);
-		FIND_THROB(6);
-		FIND_THROB(7);
-		FIND_THROB(8);
-		nsgtk_throbber_initialise_from_png(9,
-			filenames[0], filenames[1], filenames[2], filenames[3],
-			filenames[4], filenames[5], filenames[6], filenames[7], 
-			filenames[8]);
-#undef FIND_THROB
-#undef STROF
-	}
-
-	if (nsgtk_throbber == NULL)
+	if (nsgtk_throbber_init(THROBBER_FRAMES) == false)
 		die("Unable to load throbber image.\n");
 
 	option_core_select_menu = true;
