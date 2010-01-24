@@ -204,7 +204,6 @@ static void check_homedir(void)
 static bool nsgtk_throbber_init(int framec)
 {
 	char **filenames;
-	char *filename;
 	char targetname[PATH_MAX];
 	char targetdefault[PATH_MAX];
 	int frame_num;
