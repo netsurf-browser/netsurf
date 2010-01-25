@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2009, 2010 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -21,6 +21,7 @@
 #include <proto/exec.h>
 #include <proto/intuition.h>
 #include <proto/utility.h>
+#include <proto/application.h>
 #include <libraries/gadtools.h>
 #include <exec/types.h>
 #include <intuition/classusr.h>
@@ -362,6 +363,7 @@ void ami_gui_opts_open(void)
 	BOOL proxyhostdisabled = TRUE, proxyauthdisabled = TRUE;
 	BOOL disableanims, animspeeddisabled = FALSE;
 	BOOL scaleselected = option_scale_quality, scaledisabled = FALSE;
+	BOOL download_notify_disabled = FALSE;
 	char animspeed[10];
 	struct TextAttr fontsans, fontserif, fontmono, fontcursive, fontfantasy;
 
@@ -421,6 +423,12 @@ void ami_gui_opts_open(void)
 	{
 		scaledisabled = TRUE;
 		scaleselected = FALSE;
+	}
+
+	if(ApplicationBase->lib_Version < 53)
+	{
+		download_notify_disabled = TRUE;
+		option_download_notify = FALSE;
 	}
 
 	fontsans.ta_Name = ASPrintf("%s.font",option_font_sans);
@@ -1018,9 +1026,9 @@ void ami_gui_opts_open(void)
 			                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_NOTIFY] = CheckBoxObject,
       	    	          					GA_ID, GID_OPTS_NOTIFY,
          	    	       					GA_RelVerify, TRUE,
-											GA_Disabled, TRUE,
+											GA_Disabled, download_notify_disabled,
          	           						GA_Text, gadlab[GID_OPTS_NOTIFY],
-  					      		            GA_Selected, FALSE, //option_download_notify,
+  					      		            GA_Selected, option_download_notify,
 										CheckBoxEnd,
 									LayoutEnd,
 									LAYOUT_AddChild, gow->gadgets[GID_OPTS_DLDIR] = GetFileObject,

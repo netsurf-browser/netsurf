@@ -32,6 +32,7 @@
 #include "amiga/options.h"
 #include "amiga/bitmap.h"
 #include "amiga/iff_dr2d.h"
+#include "amiga/arexx.h" /* temporarily required for notifications */
 
 #include "content/fetch.h"
 
@@ -198,8 +199,19 @@ void gui_download_window_done(struct gui_download_window *dw)
 	struct dlnode *dln,*dln2;
 	struct browser_window *bw = dw->bw;
 	bool queuedl = false;
+	STRPTR sendcmd = NULL;
 
 	if(!dw) return;
+
+	if(option_download_notify)
+	{
+		if(sendcmd = ASPrintf("RINGHIO APP=NetSurf SCREEN=FRONT TITLE=NetSurf \"%s downloaded\"",dw->url))
+		{
+			IDoMethod(arexx_obj, AM_EXECUTE, sendcmd, "RINGHIO",
+				NULL, NULL, NULL, NULL);
+			FreeVec(sendcmd);
+		}
+	}
 
 	bw->download = false;
 	if(dw->url) free(dw->url);
