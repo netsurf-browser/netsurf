@@ -94,7 +94,7 @@ bool nsbmp_convert(struct content *c, int iwidth, int iheight)
 	/* Store our content width and description */
 	c->width = bmp->width;
 	c->height = bmp->height;
-	LOG(("BMP      width %u       height %u\n\n", c->width, c->height));
+	LOG(("BMP      width %u       height %u", c->width, c->height));
 	c->title = malloc(100);
 	if (c->title)
 		snprintf(c->title, 100, messages_get("BMPTitle"), c->width,

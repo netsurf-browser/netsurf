@@ -467,7 +467,7 @@ bool html_convert(struct content *c, int width, int height)
 		return false;
 	}
 #if ALWAYS_DUMP_BOX
-	box_dump(c->data.html.layout->children, 0);
+	box_dump(stderr, c->data.html.layout->children, 0);
 #endif
 #if ALWAYS_DUMP_FRAMESET
 	if (c->data.html.frameset)
