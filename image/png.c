@@ -133,7 +133,7 @@ void info_callback(png_structp png, png_infop info)
 {
 	int bit_depth, color_type, interlace, intent;
 	double gamma;
-	unsigned long width, height;
+	png_uint_32 width, height;
 	struct content *c = png_get_progressive_ptr(png);
 
 	/* Read the PNG details */
@@ -154,7 +154,7 @@ void info_callback(png_structp png, png_infop info)
 	if (color_type == PNG_COLOR_TYPE_PALETTE)
 		png_set_palette_to_rgb(png);
 	if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8)
-		png_set_gray_1_2_4_to_8(png);
+		png_set_expand_gray_1_2_4_to_8(png);
 	if (png_get_valid(png, info, PNG_INFO_tRNS))
 		png_set_tRNS_to_alpha(png);
 	if (bit_depth == 16)
@@ -185,8 +185,8 @@ void info_callback(png_structp png, png_infop info)
 	c->width = width;
 	c->height = height;
 
-	LOG(("size %li * %li, bpp %i, rowbytes %zu", width,
-				height, bit_depth, c->data.png.rowbytes));
+	LOG(("size %li * %li, bpp %i, rowbytes %zu", (unsigned long)width,
+	     (unsigned long)height, bit_depth, c->data.png.rowbytes));
 }
 
 
