@@ -34,14 +34,17 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#define JPEG_INTERNAL_OPTIONS
-#include "jpeglib.h"
+
 #include "desktop/plotters.h"
 #include "image/bitmap.h"
-#include "image/jpeg.h"
+
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
+
+#define JPEG_INTERNAL_OPTIONS
+#include "jpeglib.h"
+#include "image/jpeg.h"
 
 #ifdef riscos
 /* We prefer the library to be configured with these options to save
