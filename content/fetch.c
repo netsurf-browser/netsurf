@@ -33,8 +33,7 @@
 #include <string.h>
 #include <strings.h>
 #include <time.h>
-#include <sys/select.h>
-#include <sys/stat.h>
+
 #include "utils/config.h"
 #include "content/fetch.h"
 #include "content/fetchers/fetch_curl.h"

@@ -34,9 +34,8 @@
 #include <string.h>
 #include <strings.h>
 #include <time.h>
-#include <sys/select.h>
 #include <sys/stat.h>
-#include <sys/utsname.h>
+
 #include "utils/config.h"
 #include <openssl/ssl.h>
 #include "content/fetch.h"

@@ -24,7 +24,6 @@
 #define _NETSURF_DESKTOP_FETCH_H_
 
 #include <stdbool.h>
-#include <sys/select.h>
 #include "utils/config.h"
 
 typedef enum {

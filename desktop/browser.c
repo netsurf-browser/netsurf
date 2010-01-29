@@ -34,7 +34,7 @@
 #include <string.h>
 #include <strings.h>
 #include <math.h>
-#include <sys/select.h>
+
 #include "curl/curl.h"
 #include "utils/config.h"
 #include "content/fetch.h"
