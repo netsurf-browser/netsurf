@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
-  Build Instructions for Windows NetSurf                         17 January 2010
+  Build Instructions for Windows NetSurf                       17 January 2010
 --------------------------------------------------------------------------------
 
   This document provides instructions for building the Windows version
@@ -7,6 +7,7 @@
   dependencies.
 
   Windows NetSurf has been tested on Wine and Vista.
+
 
   Building and executing NetSurf
 ================================
@@ -55,7 +56,6 @@
       $ i586-mingw32msvc-strip NetSurf.exe 
 
 
-
   Obtaining NetSurf's build dependencies
 ========================================
 
@@ -92,37 +92,34 @@
 
   zlib:
   
-    $ apt-get source zlib1g
-    $ cd zlib-1.2.3.3.dfsg
-    $ CC=i586-mingw32msvc-gcc AR=i586-mingw32msvc-ar RANLIB=i586-mingw32msvc-ranlib CFLAGS="-DNO_FSEEKO" ./configure --prefix=/usr/i586-mingw32msvc/
-    $ make
-    $ sudo make install
-
+      $ apt-get source zlib1g
+      $ cd zlib-1.2.3.3.dfsg
+      $ CC=i586-mingw32msvc-gcc AR=i586-mingw32msvc-ar RANLIB=i586-mingw32msvc-ranlib CFLAGS="-DNO_FSEEKO" ./configure --prefix=/usr/i586-mingw32msvc/
+      $ make
+      $ sudo make install
 
   libiconv:
 
-    $ wget http://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.13.1.tar.gz
-    $ tar -zxf libiconv-1.13.1.tar.gz
-    $ cd libiconv-1.13.1
-    $ ./configure --prefix=/usr/i586-mingw32msvc/ --host=i586-mingw32msvc --disable-shared
-    $ make
-    $ sudo make install
-
+      $ wget http://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.13.1.tar.gz
+      $ tar -zxf libiconv-1.13.1.tar.gz
+      $ cd libiconv-1.13.1
+      $ ./configure --prefix=/usr/i586-mingw32msvc/ --host=i586-mingw32msvc --disable-shared
+      $ make
+      $ sudo make install
 
   regex:
 
-    $ wget http://downloads.sourceforge.net/project/mingw/User%20Contributed/regex/mingw-regex-2.5.1/mingw-libgnurx-2.5.1-src.tar.gz?use_mirror=ignum
-    $ tar -zxf mingw-libgnurx-2.5.1-src.tar.gz
-    $ ./configure --prefix=/usr/i586-mingw32msvc/ --host=i586-mingw32msvc
-    $ make
-    $ sudo make install
-
+      $ wget http://downloads.sourceforge.net/project/mingw/User%20Contributed/regex/mingw-regex-2.5.1/mingw-libgnurx-2.5.1-src.tar.gz?use_mirror=ignum
+      $ tar -zxf mingw-libgnurx-2.5.1-src.tar.gz
+      $ ./configure --prefix=/usr/i586-mingw32msvc/ --host=i586-mingw32msvc
+      $ make
+      $ sudo make install
 
   openssl:
 
-    $ wget http://www.openssl.org/source/openssl-0.9.8l.tar.gz
-    $ tar -zxf openssl-0.9.8l.tar.gz
-    $ cd openssl-0.9.8l
+      $ wget http://www.openssl.org/source/openssl-0.9.8l.tar.gz
+      $ tar -zxf openssl-0.9.8l.tar.gz
+      $ cd openssl-0.9.8l
 
 --- openssl-0.9.8l/Configure	2009-11-05 12:07:06.000000000 +0000
 +++ openssl-0.9.8l-work/Configure	2010-01-25 12:35:13.000000000 +0000
@@ -147,42 +144,39 @@
  # define OPENSSL_GLOBAL_REF(name) (*(_shadow_##name()))
  #else
 
-    $ ./Configure no-shared --prefix=/usr/i586-mingw32msvc/ mingw
-    $ make CC=i586-mingw32msvc-gcc RANLIB=i586-mingw32msvc-ranlib
-
+      $ ./Configure no-shared --prefix=/usr/i586-mingw32msvc/ mingw
+      $ make CC=i586-mingw32msvc-gcc RANLIB=i586-mingw32msvc-ranlib
 
   libxml:
 
-    $ apt-get source libxml2
-    $ cd libxml2-2.6.32.dfsg/
-    $ ./configure --prefix=/usr/i586-mingw32msvc/ --disable-shared --host=i586-mingw32msvc
-    $ make
-    $ sudo make install
-
+      $ apt-get source libxml2
+      $ cd libxml2-2.6.32.dfsg/
+      $ ./configure --prefix=/usr/i586-mingw32msvc/ --disable-shared --host=i586-mingw32msvc
+      $ make
+      $ sudo make install
 
   libcurl:
 
-    $ LDFLAGS=-mwindows ./configure --prefix=/usr/i586-mingw32msvc/ --host=i586-mingw32msvc --disable-shared --disable-ldap
-    $ make
-    $ sudo make install
-
+      $ LDFLAGS=-mwindows ./configure --prefix=/usr/i586-mingw32msvc/ --host=i586-mingw32msvc --disable-shared --disable-ldap
+      $ make
+      $ sudo make install
 
   libpng:
-    $ wget "http://downloads.sourceforge.net/project/libpng/01-libpng-master/1.4.0/libpng-1.4.0.tar.gz?use_mirror=garr"
-    $ tar -zxf libpng-1.4.0.tar.gz
-    $ cd libpng-1.4.0
-    $ make
-    $ sudo make install
 
+      $ wget "http://downloads.sourceforge.net/project/libpng/01-libpng-master/1.4.0/libpng-1.4.0.tar.gz?use_mirror=garr"
+      $ tar -zxf libpng-1.4.0.tar.gz
+      $ cd libpng-1.4.0
+      $ make
+      $ sudo make install
 
   libjpeg:
 
-wget http://www.ijg.org/files/jpegsrc.v8.tar.gz
-tar -zxf jpegsrc.v8.tar.gz
-cd jpeg-8
-./configure --prefix=/usr/i586-mingw32msvc/ --host=i586-mingw32msvc --disable-shared
-make
-sudo make install
+      $ wget http://www.ijg.org/files/jpegsrc.v8.tar.gz
+      $ tar -zxf jpegsrc.v8.tar.gz
+      $ cd jpeg-8
+      $ ./configure --prefix=/usr/i586-mingw32msvc/ --host=i586-mingw32msvc --disable-shared
+      $ make
+      $ sudo make install
 
   The NetSurf project's libraries
 ---------------------------------
@@ -224,5 +218,5 @@ sudo make install
   file included in the svn distribution of NetSurf that could be
   manually compiled
 
-  $ cd windows/res
-  $ i586-mingw32msvc-windres resource.rc -O coff -o resource.o
+      $ cd windows/res
+      $ i586-mingw32msvc-windres resource.rc -O coff -o resource.o
