@@ -58,6 +58,7 @@ typedef enum { GUI_POINTER_DEFAULT, GUI_POINTER_POINT, GUI_POINTER_CARET,
 #include "desktop/browser.h"
 #include "desktop/search.h"
 
+void gui_stdout(void);
 void gui_init(int argc, char** argv);
 void gui_init2(int argc, char** argv);
 void gui_multitask(void);

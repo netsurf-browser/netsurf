@@ -72,6 +72,11 @@ typedef struct
 	void (*cancel)(query_id, enum query_response res, void *pw);
 } query_callback;
 
+#ifdef HAVE_MKDIR
+#define nsmkdir(dir, mode) mkdir((dir), (mode))
+#else
+#define nsmkdir(dir, mode) mkdir((dir))
+#endif
 
 char * strip(char * const s);
 int whitespace(const char * str);

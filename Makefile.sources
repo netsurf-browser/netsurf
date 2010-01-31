@@ -66,6 +66,12 @@ S_GTK := font_pango.c gtk_bitmap.c gtk_gui.c gtk_schedule.c		\
 S_GTK := $(addprefix gtk/,$(S_GTK)) $(addprefix utils/,container.c)
 # code in utils/container.ch is non-universal it seems
 
+# S_WINDOWS are sources purely for the windows build
+S_WINDOWS := about.c bitmap.c download.c filetype.c findfile.c font.c 	\
+	gui.c history.c hotlist.c localhistory.c login.c misc.c plot.c	\
+	prefs.c schedule.c thumbnail.c tree.c
+S_WINDOWS := $(addprefix windows/,$(S_WINDOWS)) 
+
 # S_BEOS are sources purely for the BeOS build
 S_BEOS := beos_about.cpp beos_bitmap.cpp beos_fetch_rsrc.cpp		\
 	beos_filetype.cpp beos_font.cpp beos_gui.cpp beos_history.cpp	\
@@ -160,6 +166,11 @@ endif
 ifeq ($(TARGET),framebuffer)
 SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_FRAMEBUFFER) $(S_IMAGES)
 EXETARGET := nsfb$(SUBTARGET)
+endif
+
+ifeq ($(TARGET),windows)
+SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_WINDOWS) $(S_RESOURCES)
+EXETARGET := NetSurf.exe
 endif
 
 ifeq ($(SOURCES),)

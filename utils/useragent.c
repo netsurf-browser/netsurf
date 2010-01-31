@@ -17,10 +17,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <sys/utsname.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "utils/config.h"
+#include "utils/utsname.h"
 #include "desktop/netsurf.h"
 #include "utils/log.h"
 #include "utils/useragent.h"

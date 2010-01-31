@@ -23,11 +23,13 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/utsname.h>
+
 #include <libxml/encoding.h>
 #include <libxml/globals.h>
 #include <libxml/xmlversion.h>
+
 #include "utils/config.h"
+#include "utils/utsname.h"
 #include "content/fetch.h"
 #include "content/fetchcache.h"
 #include "content/urldb.h"
@@ -83,32 +85,38 @@ void netsurf_init(int argc, char** argv)
 {
 	struct utsname utsname;
 
+#ifdef HAVE_SIGPIPE
 	/* Ignore SIGPIPE - this is necessary as OpenSSL can generate these
 	 * and the default action is to terminate the app. There's no easy
 	 * way of determining the cause of the SIGPIPE (other than using
 	 * sigaction() and some mechanism for getting the file descriptor
 	 * out of libcurl). However, we expect nothing else to generate a
 	 * SIGPIPE, anyway, so may as well just ignore them all. */
+	
 	signal(SIGPIPE, SIG_IGN);
+#endif
 
 #if !((defined(__SVR4) && defined(__sun)) || defined(__NetBSD__) || \
-	defined(__OpenBSD__)) 
+	defined(__OpenBSD__) || defined(_WIN32)) 
 	stdout = stderr;
 #endif
 
 	if ((argc > 1) && (argv[1][0] == '-') && (argv[1][1] == 'v') && (argv[1][2] == 0)) {
-	    int argcmv;
-	    verbose_log = true;
-	    for (argcmv = 2; argcmv < argc; argcmv++) {
-		argv[argcmv - 1] = argv[argcmv];
-	    }
-	    argc--;
+		int argcmv;
+		verbose_log = true;
+		for (argcmv = 2; argcmv < argc; argcmv++) {
+			argv[argcmv - 1] = argv[argcmv];
+		}
+		argc--;
+
+#ifndef HAVE_STDOUT
+                gui_stdout();
+#endif
 	}
 
 #ifdef _MEMDEBUG_H_
 	memdebug_memdebug("memdump");
 #endif
-
 	LOG(("version '%s'", netsurf_version));
 	if (uname(&utsname) < 0)
 		LOG(("Failed to extract machine information"));

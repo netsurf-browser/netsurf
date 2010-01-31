@@ -62,7 +62,16 @@ S_IMAGES :=
 
 $(eval $(foreach V,$(filter FB_IMAGE_%,$(.VARIABLES)),$(call convert_image,$($(V)),$(OBJROOT)/$(patsubst FB_IMAGE_%,%,$(V)).c,$(patsubst FB_IMAGE_%,%,$(V)))))
 
-
-
 # End of framebuffer resource definitions
+endif
+
+ifeq ($(TARGET),windows)
+
+$(OBJROOT)/windows_resource.o: windows/res/resource.rc
+	$(VQ)echo " WINDRES: compiling windows resources"
+	${Q}$(MINGW_PREFIX)windres $< -O coff -o $@
+
+S_RESOURCES := windows_resource.o
+
+# End of windows resource definitions
 endif

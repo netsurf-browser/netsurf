@@ -1,0 +1,228 @@
+--------------------------------------------------------------------------------
+  Build Instructions for Windows NetSurf                         17 January 2010
+--------------------------------------------------------------------------------
+
+  This document provides instructions for building the Windows version
+  of NetSurf and provides guidance on obtaining NetSurf's build
+  dependencies.
+
+  Windows NetSurf has been tested on Wine and Vista.
+
+  Building and executing NetSurf
+================================
+
+  The windows netsurf port uses the MinGW (Minimal GNU on Windows)
+  system as its build infrastructure. This allows the normal netsurf
+  build process to be used.
+
+  The method outlined here to create executables cross compiles
+  windows executable from a Linux OS host.
+
+  First of all, you should examine the contents of Makefile.defaults
+  and enable and disable relevant features as you see fit by creating
+  a Makefile.config file.  Some of these options can be automatically
+  detected and used, and where this is the case they are set to such.
+  Others cannot be automatically detected from the Makefile, so you
+  will either need to install the dependencies, or set them to NO.
+  
+  You should then obtain NetSurf's dependencies, keeping in mind which
+  options you have enabled in the configuration file.  See the next
+  section for specifics.
+  
+  Once done, to build windows NetSurf on a UNIX-like platform, simply run:
+
+      $ export MINGW_PREFIX=i586-mingw32msvc-
+      $ export MINGW_INSTALL_ENV=/usr/i586-mingw32msvc/
+      $ make TARGET=windows
+
+  If that produces errors, you probably don't have some of NetSurf's
+  build dependencies installed. See "Obtaining NetSurf's dependencies"
+  below. Or turn off the complaining features in a Makefile.config
+  file. You may need to "make clean" before attempting to build after
+  installing the dependencies.
+
+  You will need the libgnurx-0.dll from /usr/i586-mingw32msvc/bin/
+  copied next to the exe and the windows/res directory available, also
+  next to the executable.
+
+  Run NetSurf by executing it:
+
+      $ wine NetSurf.exe
+
+  The staticaly linked binary which is generated may be several
+  megabytes in size, this can be reduced by stripping the binary.
+
+      $ i586-mingw32msvc-strip NetSurf.exe 
+
+
+
+  Obtaining NetSurf's build dependencies
+========================================
+
+  Package installation
+----------------------
+
+  Debian-based OS:
+
+  The mingw cross compilation tools are required. These can be
+  installed as pakages on Debian/Ubuntu systems:
+
+      $ sudo apt-get install mingw32 mingw32-binutils mingw32-runtime
+
+  These provide a suitable set of compilers and headers including the win32 API.
+
+  The includes and associated libraries are installed in
+  /usr/i586-mingw32msvc/ Which is where the build system will include
+  files from by default. The packages at time of writing only target
+  32bit windows builds.
+
+  Other:
+
+  For other OS the apropriate packages and environment must be installed.
+
+  Base libraries
+----------------
+
+  Unlike other OS the base libraries and their dependancies need to be
+  built and installed.
+
+  The instructions given here assume you will be installing on a
+  Debian derived OS using the mingw32 packages. The libraries should
+  be unpacked and built from a suitable temporary directory.
+
+  zlib:
+  
+    $ apt-get source zlib1g
+    $ cd zlib-1.2.3.3.dfsg
+    $ CC=i586-mingw32msvc-gcc AR=i586-mingw32msvc-ar RANLIB=i586-mingw32msvc-ranlib CFLAGS="-DNO_FSEEKO" ./configure --prefix=/usr/i586-mingw32msvc/
+    $ make
+    $ sudo make install
+
+
+  libiconv:
+
+    $ wget http://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.13.1.tar.gz
+    $ tar -zxf libiconv-1.13.1.tar.gz
+    $ cd libiconv-1.13.1
+    $ ./configure --prefix=/usr/i586-mingw32msvc/ --host=i586-mingw32msvc --disable-shared
+    $ make
+    $ sudo make install
+
+
+  regex:
+
+    $ wget http://downloads.sourceforge.net/project/mingw/User%20Contributed/regex/mingw-regex-2.5.1/mingw-libgnurx-2.5.1-src.tar.gz?use_mirror=ignum
+    $ tar -zxf mingw-libgnurx-2.5.1-src.tar.gz
+    $ ./configure --prefix=/usr/i586-mingw32msvc/ --host=i586-mingw32msvc
+    $ make
+    $ sudo make install
+
+
+  openssl:
+
+    $ wget http://www.openssl.org/source/openssl-0.9.8l.tar.gz
+    $ tar -zxf openssl-0.9.8l.tar.gz
+    $ cd openssl-0.9.8l
+
+--- openssl-0.9.8l/Configure	2009-11-05 12:07:06.000000000 +0000
++++ openssl-0.9.8l-work/Configure	2010-01-25 12:35:13.000000000 +0000
+@@ -1059,7 +1059,7 @@
+ 
+ my $IsMK1MF=scalar grep /^$target$/,@MK1MF_Builds;
+ 
+-$IsMK1MF=1 if ($target eq "mingw" && $^O ne "cygwin" && !is_msys());
++#$IsMK1MF=1 if ($target eq "mingw" && $^O ne "cygwin" && !is_msys());
+ 
+ $no_shared = 0 if ($fipsdso && !$IsMK1MF);
+ 
+--- openssl-0.9.8l/e_os2.h	2005-12-18 18:57:07.000000000 +0000
++++ openssl-0.9.8l-work/e_os2.h	2010-01-25 12:42:48.000000000 +0000
+@@ -264,7 +264,7 @@
+ # define OPENSSL_IMPLEMENT_GLOBAL(type,name)			     \
+ 	extern type _hide_##name;				     \
+ 	type *_shadow_##name(void) { return &_hide_##name; }	     \
+-	static type _hide_##name
++	type _hide_##name
+ # define OPENSSL_DECLARE_GLOBAL(type,name) type *_shadow_##name(void)
+ # define OPENSSL_GLOBAL_REF(name) (*(_shadow_##name()))
+ #else
+
+    $ ./Configure no-shared --prefix=/usr/i586-mingw32msvc/ mingw
+    $ make CC=i586-mingw32msvc-gcc RANLIB=i586-mingw32msvc-ranlib
+
+
+  libxml:
+
+    $ apt-get source libxml2
+    $ cd libxml2-2.6.32.dfsg/
+    $ ./configure --prefix=/usr/i586-mingw32msvc/ --disable-shared --host=i586-mingw32msvc
+    $ make
+    $ sudo make install
+
+
+  libcurl:
+
+    $ LDFLAGS=-mwindows ./configure --prefix=/usr/i586-mingw32msvc/ --host=i586-mingw32msvc --disable-shared --disable-ldap
+    $ make
+    $ sudo make install
+
+
+  libpng:
+    $ wget "http://downloads.sourceforge.net/project/libpng/01-libpng-master/1.4.0/libpng-1.4.0.tar.gz?use_mirror=garr"
+    $ tar -zxf libpng-1.4.0.tar.gz
+    $ cd libpng-1.4.0
+    $ make
+    $ sudo make install
+
+
+  libjpeg:
+
+wget http://www.ijg.org/files/jpegsrc.v8.tar.gz
+tar -zxf jpegsrc.v8.tar.gz
+cd jpeg-8
+./configure --prefix=/usr/i586-mingw32msvc/ --host=i586-mingw32msvc --disable-shared
+make
+sudo make install
+
+  The NetSurf project's libraries
+---------------------------------
+
+  The NetSurf project has developed several libraries which are required by
+  the browser. These are:
+
+  LibParserUtils  --  Parser building utility functions
+  LibWapcaplet    --  String internment
+  Hubbub          --  HTML5 compliant HTML parser
+  LibCSS          --  CSS parser and selection engine
+  LibNSGIF        --  GIF format image decoder
+  LibNSBMP        --  BMP and ICO format image decoder
+
+  To fetch each of these libraries, run the following commands:
+
+      $ svn co svn://svn.netsurf-browser.org/trunk/libparserutils
+      $ svn co svn://svn.netsurf-browser.org/trunk/libwapcaplet
+      $ svn co svn://svn.netsurf-browser.org/trunk/hubbub
+      $ svn co svn://svn.netsurf-browser.org/trunk/libcss
+      $ svn co svn://svn.netsurf-browser.org/trunk/libnsgif
+      $ svn co svn://svn.netsurf-browser.org/trunk/libnsbmp
+
+  To build and install these libraries.
+
+  Ensure the MINGW_INSTALL_ENV variable is correctly set.
+
+      $ export MINGW_INSTALL_ENV=/usr/i586-mingw32msvc/
+
+ Then simply enter each of their directories and run:
+  
+      $ make TARGET=windows PREFIX=/usr/i586-mingw32msvc/
+      $ sudo make TARGET=windows PREFIX=/usr/i586-mingw32msvc/ install
+
+  Resources
+-----------
+
+  The windows resources may be rebuilt. Currently there is 1 object
+  file included in the svn distribution of NetSurf that could be
+  manually compiled
+
+  $ cd windows/res
+  $ i586-mingw32msvc-windres resource.rc -O coff -o resource.o

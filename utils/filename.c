@@ -32,6 +32,8 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
+#include "utils/config.h"
 #include "utils/filename.h"
 #include "utils/log.h"
 #include "utils/url.h"
@@ -181,13 +183,13 @@ bool filename_initialise(void)
 	for (start = directory; *start != '\0'; start++) {
 		if (*start == '/') {
 			*start = '\0';
-			mkdir(directory, S_IRWXU);
+			nsmkdir(directory, S_IRWXU);
 			*start = '/';
 		}
 	}
 
 	LOG(("Temporary directory location: %s", directory));
-	mkdir(directory, S_IRWXU);
+	nsmkdir(directory, S_IRWXU);
 
 	free(directory);
 
@@ -481,7 +483,7 @@ static struct directory *filename_create_directory(const char *prefix)
 		new_dir->prefix[8] = '/';
 
 		if (!is_dir(filename_directory)) {
-			if (!mkdir(filename_directory, S_IRWXU))
+			if (!nsmkdir(filename_directory, S_IRWXU))
 				return new_dir;
 
 			/* the user has probably deleted the parent directory
@@ -508,7 +510,7 @@ static struct directory *filename_create_directory(const char *prefix)
 			last_1[0] = '\0';
 
 			if (!is_dir(filename_directory)) {
-				if (mkdir(filename_directory, S_IRWXU)) {
+				if (nsmkdir(filename_directory, S_IRWXU)) {
 					LOG(("Failed to create directory '%s'",
 							filename_directory));
 					return NULL;

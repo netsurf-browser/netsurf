@@ -93,7 +93,9 @@ ifneq ($(TARGET),riscos)
     ifneq ($(TARGET),beos)
       ifneq ($(TARGET),amiga)
         ifneq ($(TARGET),framebuffer)
-          $(error Unknown TARGET "$(TARGET)", should either be "riscos", "gtk", "beos", "amiga", or "framebuffer")
+          ifneq ($(TARGET),windows)
+            $(error Unknown TARGET "$(TARGET)", should either be "riscos", "gtk", "beos", "amiga", "framebuffer" or "windows")
+          endif
         endif
       endif
     endif
@@ -162,8 +164,20 @@ else
       PKG_CONFIG :=
     #endif
   else
-    # Building for GTK, Amiga, or Framebuffer
-    PKG_CONFIG := pkg-config
+    ifeq ($(TARGET),windows)
+      ifneq ($(HOST),windows)
+        # Set Mingw defaults
+	MINGW_PREFIX ?= i586-mingw32msvc-
+	MINGW_INSTALL_ENV ?= /usr/i586-mingw32msvc/
+
+        # mingw cross-compile
+        CC := $(MINGW_PREFIX)gcc
+        PKG_CONFIG := $(MINGW_INSTALL_ENV)/bin/pkg-config
+      endif
+    else
+      # Building for GTK, Amiga, Framebuffer
+      PKG_CONFIG := pkg-config
+    endif
   endif
 endif
 
@@ -435,13 +449,42 @@ ifeq ($(TARGET),gtk)
   CFLAGS += $(GTKCFLAGS)
   LDFLAGS += $(GTKLDFLAGS)
 
-  # ----------------------------------------------------------------------------
+  # ---------------------------------------------------------------------------
   # Windows flag setup
-  # ----------------------------------------------------------------------------
+  # ---------------------------------------------------------------------------
 
   ifeq ($(HOST),Windows_NT)
     CFLAGS += -U__STRICT_ANSI__
   endif
+endif
+
+# ----------------------------------------------------------------------------
+# Windows target setup
+# ----------------------------------------------------------------------------
+ifeq ($(TARGET),windows)
+  NETSURF_FEATURE_NSSVG_CFLAGS := -DWITH_NSSVG
+  NETSURF_FEATURE_ROSPRITE_CFLAGS := -DWITH_NSSPRITE
+  NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
+  NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
+  NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
+  $(eval $(call feature_enabled,BMP,-DWITH_BMP,-lnsbmp,NetSurf BMP decoder))
+  $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif,NetSurf GIF decoder))
+  $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG support))
+  $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG rendering))
+  $(eval $(call feature_enabled,MNG,,-llcms -ljpeg,MNG additional support))
+
+  LDFLAGS += -L${MINGW_INSTALL_ENV}/lib $(shell $(PKG_CONFIG) --libs zlib \
+	libxml-2.0 libcurl libhubbub libparserutils libcss libwapcaplet) \
+	-lparserutils -lssl -lcrypto -lregex -liconv -lcss -lwapcaplet \
+	-lgdi32 -lcomctl32 -lws2_32 -lmsimg32 -mwindows
+  CFLAGS += -U__STRICT_ANSI__ -mwin32
+  WSCFLAGS := -std=c99 \
+	$(WARNFLAGS) -I. -I/${MINGW_INSTALL_ENV}/include \
+	-DCURL_STATICLIB \
+	$(shell $(PKG_CONFIG) --cflags libcurl libhubbub zlib libparserutils \
+	libxml-2.0) -g
+  CFLAGS += $(WSCFLAGS)
+  LDFLAGS += $(WSCFLAGS)
 endif
 
 # ----------------------------------------------------------------------------
@@ -554,6 +597,9 @@ else
 	$(Q)$(CC) -o $(EXETARGET:,ff8=,e1f) $(OBJECTS) $(LDFLAGS)
 	$(Q)$(ELF2AIF) $(EXETARGET:,ff8=,e1f) $(EXETARGET)
 	$(Q)$(RM) $(EXETARGET:,ff8=,e1f)
+endif
+ifeq ($(TARGET),windows)
+	$(Q)$(TOUCH) windows/res/preferences
 endif
 ifeq ($(TARGET),gtk)
 	$(Q)$(TOUCH) gtk/res/toolbarIndices

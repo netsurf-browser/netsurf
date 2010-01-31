@@ -463,3 +463,17 @@ char *strchrnul (const char *s, int c_in)
 }
 
 #endif
+
+#ifndef HAVE_UTSNAME
+#include "utils/utsname.h"
+
+int uname(struct utsname *buf) {
+	strcpy(buf->sysname,"windows");
+	strcpy(buf->nodename,"nodename");
+	strcpy(buf->release,"release");
+	strcpy(buf->version,"version");
+	strcpy(buf->machine,"pc");
+	
+	return 0;
+}
+#endif
