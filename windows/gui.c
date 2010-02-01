@@ -73,6 +73,9 @@ static char default_page[] = "http://www.netsurf-browser.org/welcome/";
 static HICON hIcon, hIconS;
 static int open_windows = 0;
 
+static const char windowclassname_main[] = "nswsmainwindow";
+static const char windowclassname_drawable[] = "nswsdrawablewindow";
+
 #define NTOOLBUTTONS 5
 #define NSWS_THROBBER_WIDTH 24
 #define NSWS_URL_ENTER (WM_USER)
@@ -99,7 +102,6 @@ struct gui_window {
 	int urlbarwidth; /**< width of url bar */
 	int ntoolbuttons; /**< number of toolbar buttons */
 	int toolbuttondimension; /**< width, height of buttons */
-	int voffset; /**< height of toolbar */
 	bool throbbing; /**< whether currently throbbing */
 	TBBUTTON buttons[NTOOLBUTTONS + 1]; /* 1 = url bar */
 	HBITMAP	hbmp[NTOOLBUTTONS]; /**< tool button images */
@@ -142,6 +144,7 @@ typedef enum {
 LRESULT CALLBACK nsws_window_url_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 LRESULT CALLBACK nsws_window_toolbar_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 LRESULT CALLBACK nsws_window_event_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
+LRESULT CALLBACK nsws_window_drawable_event_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
 HINSTANCE hinstance;
 
@@ -179,9 +182,10 @@ static void redraw(void)
 			w = w->next;
 			continue;
 		}
-		current_hwnd = w->main;
-		PostMessage(w->toolbar, WM_PAINT, 0, 0);
-		PostMessage(w->urlbar, WM_PAINT, 0, 0);
+//		current_hwnd = w->main;
+		current_hwnd = w->drawingarea;
+//		PostMessage(w->toolbar, WM_PAINT, 0, 0);
+//		PostMessage(w->urlbar, WM_PAINT, 0, 0);
 		w->scrolly += w->requestscrolly;
 		w->scrollx += w->requestscrollx;
 		w->scrolly = MAX(w->scrolly, 0);
@@ -204,7 +208,7 @@ static void redraw(void)
 		hdc = GetDC(w->main);
 		if (w->bufferbm == NULL) {
 			w->bufferbm = CreateCompatibleBitmap(hdc, w->width,
-							     w->height + w->voffset);
+							     w->height );
 			SelectObject(w->bufferdc, w->bufferbm);
 		}
 
@@ -224,8 +228,8 @@ static void redraw(void)
 			       bw->scale, 0xFFFFFF);
 		if (doublebuffering)
 			/* blit buffer to screen */
-			BitBlt(hdc, 0, w->voffset, w->width, w->height,
-			       w->bufferdc, 0, w->voffset,
+			BitBlt(hdc, 0, 0, w->width, w->height,
+			       w->bufferdc, 0, 0,
 			       SRCCOPY);
 		ReleaseDC(w->main, hdc);
 		doublebuffering = false;
@@ -308,8 +312,7 @@ LRESULT CALLBACK nsws_window_toolbar_callback(HWND hwnd, UINT msg,
 		x = GET_X_LPARAM(lparam);
 		y = GET_Y_LPARAM(lparam);
 		if ((w != NULL) && 
-		    (x > w->ntoolbuttons * w->toolbuttondimension)
-		    && (y < w->voffset)) {
+		    (x > w->ntoolbuttons * w->toolbuttondimension)) {
 			if (msg == WM_LBUTTONDOWN)
 				SetFocus(w->urlbar);
 			return CallWindowProc((WNDPROC)
@@ -504,8 +507,8 @@ static void nsws_window_urlbar_create(struct gui_window *w)
 	HWND hwnd = CreateWindow("EDIT", 
 				 "", 
 				 WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL | ES_OEMCONVERT,
-				 w->toolbuttondimension * w->ntoolbuttons + 4, 
-				 10,
+				 w->toolbuttondimension * w->ntoolbuttons + 2, 
+				 8,
 				 w->urlbarwidth - 8, 
 				 w->toolbuttondimension - 12,
 				 w->main, 
@@ -562,13 +565,17 @@ nsws_window_toolbar_create(struct gui_window *w)
 	 * the arrangements of url bar / buttons although much has
 	 * changed since then */
 
-	HWND hwnd = CreateWindow(TOOLBARCLASSNAME, NULL, WS_CHILD |
-				 WS_VISIBLE | WS_BORDER | WS_CLIPSIBLINGS,
+	HWND hwnd = CreateWindow(TOOLBARCLASSNAME, 
+				 NULL, 
+				 WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | TBSTYLE_FLAT,
 				 0, 0, w->width,
-				 w->toolbuttondimension + 12, w->main,
+				 w->toolbuttondimension + 8, w->main,
 				 (HMENU) NSWS_ID_TOOLBAR, hinstance, NULL);
 	HIMAGELIST hImageList = ImageList_Create(w->toolbuttondimension - 8,
-						 w->toolbuttondimension - 8, 0, w->ntoolbuttons, 0);
+						 w->toolbuttondimension - 8, 
+						 0, 
+						 w->ntoolbuttons, 
+						 0);
 	SendMessage(hwnd, TB_BUTTONSTRUCTSIZE, (WPARAM) sizeof(TBBUTTON), 0);
 
 	ZeroMemory(w->buttons, sizeof(w->buttons));
@@ -631,6 +638,19 @@ static void nsws_window_drawingarea_create(struct gui_window *w)
 {
 	/* potentially make drawingarea window from frameless window
 	   + scrollbars here */
+	w->drawingarea = CreateWindow(windowclassname_drawable, 
+				      NULL, 
+				      WS_VISIBLE|WS_CHILD,
+				      0, 
+				      w->toolbuttondimension + 8, 
+				      w->width, 
+				      w->height - (w->toolbuttondimension + 8),
+				      w->main, 
+				      NULL, 
+				      hinstance,
+				      NULL);
+	if (w->drawingarea == NULL)
+		die("arse");
 }
 
 /**
@@ -653,43 +673,198 @@ static void nsws_window_hscroll_create(struct gui_window *w)
 				  NULL);
 }
 
-/**
- * callback for window events generally
- */
-LRESULT CALLBACK nsws_window_event_callback(HWND hwnd, UINT msg, WPARAM wparam,
-					    LPARAM lparam)
+static LRESULT nsws_drawable_mousemove(struct gui_window *gw, int x, int y)
 {
-	bool match = false;
-	bool historyactive = false;
-	struct gui_window *w = window_list;
-	while (w != NULL) {
-		if (w->main == hwnd) {
-			match = true;
+	bool shift = ((GetKeyState(VK_SHIFT) & 0x8000) == 0x8000);
+	bool ctrl = ((GetKeyState(VK_CONTROL) & 0x8000) == 0x8000);
+	bool alt = ((GetKeyState(VK_MENU) & 0x8000) == 0x8000);
+
+	if ((gw == NULL) || 
+	    (gw->mouse == NULL) || 
+	    (gw->bw == NULL))
+		return 0;
+
+	if ((gw->mouse->state & BROWSER_MOUSE_PRESS_1) != 0) {
+		browser_window_mouse_click(gw->bw, BROWSER_MOUSE_DRAG_1,
+					   gw->mouse->pressed_x,
+					   gw->mouse->pressed_y);
+		gw->mouse->state &= ~BROWSER_MOUSE_PRESS_1;
+		gw->mouse->state |= BROWSER_MOUSE_HOLDING_1 |
+			BROWSER_MOUSE_DRAG_ON;
+	}
+	else if ((gw->mouse->state & BROWSER_MOUSE_PRESS_2) != 0) {
+		browser_window_mouse_click(gw->bw, BROWSER_MOUSE_DRAG_2,
+					   gw->mouse->pressed_x,
+					   gw->mouse->pressed_y);
+		gw->mouse->state &= ~BROWSER_MOUSE_PRESS_2;
+		gw->mouse->state |= BROWSER_MOUSE_HOLDING_2 |
+			BROWSER_MOUSE_DRAG_ON;
+	}
+	if (((gw->mouse->state & BROWSER_MOUSE_MOD_1) != 0) && !shift)
+		gw->mouse->state &= ~BROWSER_MOUSE_MOD_1;
+	if (((gw->mouse->state & BROWSER_MOUSE_MOD_2) != 0) && !ctrl)
+		gw->mouse->state &= ~BROWSER_MOUSE_MOD_2;
+	if (((gw->mouse->state & BROWSER_MOUSE_MOD_3) != 0) && !alt)
+		gw->mouse->state &= ~BROWSER_MOUSE_MOD_3;
+
+	browser_window_mouse_track(gw->bw, gw->mouse->state,
+				   (x + gw->scrollx) / gw->bw->scale,
+				   (y + gw->scrolly) / gw->bw->scale);
+
+	return 0;
+}
+
+static LRESULT nsws_drawable_mousedown(struct gui_window *gw, int x, int y, browser_mouse_state button)
+{
+	if ((gw == NULL) || 
+	    (gw->mouse == NULL) || 
+	    (gw->bw == NULL)) {
+		nsws_localhistory_close(gw);
+		return 0;
+	}
+
+	gw->mouse->state = button;
+	if ((GetKeyState(VK_SHIFT) & 0x8000) == 0x8000)
+		gw->mouse->state |= BROWSER_MOUSE_MOD_1;
+	if ((GetKeyState(VK_CONTROL) & 0x8000) == 0x8000)
+		gw->mouse->state |= BROWSER_MOUSE_MOD_2;
+	if ((GetKeyState(VK_MENU) & 0x8000) == 0x8000)
+		gw->mouse->state |= BROWSER_MOUSE_MOD_3;
+
+	gw->mouse->pressed_x = (x + gw->scrollx) / gw->bw->scale;
+	gw->mouse->pressed_y = (y + gw->scrolly) / gw->bw->scale;
+
+	browser_window_mouse_click(gw->bw, gw->mouse->state,
+				   (x + gw->scrollx) / gw->bw->scale ,
+				   (y + gw->scrolly) / gw->bw->scale);
+
+	return 0;
+}
+
+static LRESULT 
+nsws_drawable_mouseup(struct gui_window *gw, 
+		      int x, 
+		      int y, 
+		      browser_mouse_state press, 
+		      browser_mouse_state click)
+{
+	bool shift = ((GetKeyState(VK_SHIFT) & 0x8000) == 0x8000);
+	bool ctrl = ((GetKeyState(VK_CONTROL) & 0x8000) == 0x8000);
+	bool alt = ((GetKeyState(VK_MENU) & 0x8000) == 0x8000);
+
+	if ((gw == NULL) || 
+	    (gw->mouse == NULL) || 
+	    (gw->bw == NULL))
+		return 0;
+
+
+	if ((gw->mouse->state & press) != 0) {
+		gw->mouse->state &= ~press;
+		gw->mouse->state |= click;
+	}
+
+	if (((gw->mouse->state & BROWSER_MOUSE_MOD_1) != 0) && !shift)
+		gw->mouse->state &= ~BROWSER_MOUSE_MOD_1;
+	if (((gw->mouse->state & BROWSER_MOUSE_MOD_2) != 0) && !ctrl)
+		gw->mouse->state &= ~BROWSER_MOUSE_MOD_2;
+	if (((gw->mouse->state & BROWSER_MOUSE_MOD_3) != 0) && !alt)
+		gw->mouse->state &= ~BROWSER_MOUSE_MOD_3;
+
+	if ((gw->mouse->state & click) != 0)
+		browser_window_mouse_click(gw->bw, 
+					   gw->mouse->state,
+					   (x + gw->scrollx) / gw->bw->scale,
+					   (y + gw->scrolly) / gw->bw->scale);
+	else
+		browser_window_mouse_drag_end(gw->bw, 
+					      0,
+					      (x + gw->scrollx) / gw->bw->scale,
+					      (y + gw->scrolly) / gw->bw->scale);
+
+	gw->mouse->state = 0;
+	return 0;
+}
+
+static void nsws_drawable_paint(struct gui_window *gw, HWND hwnd)
+{
+	PAINTSTRUCT ps;
+
+	BeginPaint(hwnd, &ps);
+	gw->redraw.left = ps.rcPaint.left;
+	gw->redraw.top = ps.rcPaint.top;
+	gw->redraw.right = ps.rcPaint.right;
+	gw->redraw.bottom = ps.rcPaint.bottom;
+
+	/* set globals for the plotters */
+	current_hwnd = gw->drawingarea;
+	current_gui = gw;
+
+	redraw();
+	EndPaint(hwnd, &ps);
+
+	plot.clip(0, 0, gw->width, gw->height); /* vrs - very suspect */
+}
+
+/* Called when activity occours within the drawable window. */
+LRESULT CALLBACK nsws_window_drawable_event_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
+{
+	struct gui_window *gw = window_list;
+
+	while (gw != NULL) {
+		if (gw->drawingarea == hwnd) {
 			break;
 		}
-		w = w->next;
+		gw = gw->next;
 	}
-	if (!match) { /* during initial window creation */
-		w = window_list;
-		while (w != NULL) {
-			if (w->main == NULL) {
-				w->main = hwnd;
-				break;
-			}
-			w = w->next;
-		}
-	}
-	if ((match) && (current_gui == NULL)) {
-		/* local history window is active */
-		if ((msg == WM_LBUTTONDOWN) || (msg == WM_PAINT))
-			historyactive = true;
-		else if ((msg == WM_NCHITTEST) || (msg == WM_SETCURSOR))
-			return DefWindowProc(hwnd, msg, wparam, lparam);
-		else
-			return 0;
-	}
-	current_gui = w;
+
+	if (gw == NULL)
+		return DefWindowProc(hwnd, msg, wparam, lparam);
+
 	switch(msg) {
+
+	case WM_MOUSEMOVE: 
+		nsws_drawable_mousemove(gw,
+					GET_X_LPARAM(lparam), 
+					GET_Y_LPARAM(lparam));
+		break;
+
+	case WM_LBUTTONDOWN: 
+		nsws_drawable_mousedown(gw,
+					GET_X_LPARAM(lparam), 
+					GET_Y_LPARAM(lparam),
+					BROWSER_MOUSE_PRESS_1);
+		SetFocus(hwnd);
+		nsws_localhistory_close(gw);
+		break;
+
+	case WM_RBUTTONDOWN: 
+		nsws_drawable_mousedown(gw,
+					GET_X_LPARAM(lparam), 
+					GET_Y_LPARAM(lparam),
+					BROWSER_MOUSE_PRESS_2);
+		SetFocus(hwnd);
+		break;
+
+	case WM_LBUTTONUP: 
+		nsws_drawable_mouseup(gw,
+				      GET_X_LPARAM(lparam), 
+				      GET_Y_LPARAM(lparam),
+				      BROWSER_MOUSE_PRESS_1,
+				      BROWSER_MOUSE_CLICK_1);
+		break;
+
+	case WM_RBUTTONUP:
+		nsws_drawable_mouseup(gw,
+				      GET_X_LPARAM(lparam), 
+				      GET_Y_LPARAM(lparam),
+				      BROWSER_MOUSE_PRESS_2,
+				      BROWSER_MOUSE_CLICK_2);
+		break;
+
+	case WM_PAINT:
+		nsws_drawable_paint(gw, hwnd);
+		break;
+
 	case WM_KEYDOWN: {
 		if (GetFocus() != hwnd)
 			break;
@@ -754,192 +929,136 @@ LRESULT CALLBACK nsws_window_event_callback(HWND hwnd, UINT msg, WPARAM wparam,
 		    (((!capslock) && (!shift)) ||
 		     ((capslock) && (shift))))
 			i += 'a' - 'A';
-		if (w != NULL)
-			browser_window_key_press(w->bw, i);
+		if (gw != NULL)
+			browser_window_key_press(gw->bw, i);
 		break;
 	}
-	case WM_MOUSEMOVE: {
-		int x,y;
-		bool shift = ((GetKeyState(VK_SHIFT) & 0x8000) == 0x8000);
-		bool ctrl = ((GetKeyState(VK_CONTROL) & 0x8000) == 0x8000);
-		bool alt = ((GetKeyState(VK_MENU) & 0x8000) == 0x8000);
-		x = GET_X_LPARAM(lparam);
-		y = GET_Y_LPARAM(lparam);
-		if ((w == NULL) || (w->mouse == NULL) || (w->bw == NULL)
-		    || (y < w->voffset))
-			return DefWindowProc(hwnd, msg, wparam, lparam);
 
-		if ((w->mouse->state & BROWSER_MOUSE_PRESS_1) != 0) {
-			browser_window_mouse_click(w->bw, BROWSER_MOUSE_DRAG_1,
-						   w->mouse->pressed_x,
-						   w->mouse->pressed_y);
-			w->mouse->state &= ~BROWSER_MOUSE_PRESS_1;
-			w->mouse->state |= BROWSER_MOUSE_HOLDING_1 |
-				BROWSER_MOUSE_DRAG_ON;
-		}
-		else if ((w->mouse->state & BROWSER_MOUSE_PRESS_2) != 0) {
-			browser_window_mouse_click(w->bw, BROWSER_MOUSE_DRAG_2,
-						   w->mouse->pressed_x,
-						   w->mouse->pressed_y);
-			w->mouse->state &= ~BROWSER_MOUSE_PRESS_2;
-			w->mouse->state |= BROWSER_MOUSE_HOLDING_2 |
-				BROWSER_MOUSE_DRAG_ON;
-		}
-		if (((w->mouse->state & BROWSER_MOUSE_MOD_1) != 0) && !shift)
-			w->mouse->state &= ~BROWSER_MOUSE_MOD_1;
-		if (((w->mouse->state & BROWSER_MOUSE_MOD_2) != 0) && !ctrl)
-			w->mouse->state &= ~BROWSER_MOUSE_MOD_2;
-		if (((w->mouse->state & BROWSER_MOUSE_MOD_3) != 0) && !alt)
-			w->mouse->state &= ~BROWSER_MOUSE_MOD_3;
-
-		browser_window_mouse_track(w->bw, w->mouse->state,
-					   (x + w->scrollx) / w->bw->scale,
-					   (y - w->voffset + w->scrolly) / w->bw->scale);
-		return DefWindowProc(hwnd, msg, wparam, lparam);
+	default:
 		break;
 	}
-	case WM_LBUTTONDOWN: {
-		int x,y;
-		x = GET_X_LPARAM(lparam);
-		y = GET_Y_LPARAM(lparam);
-		if ((w == NULL) || (w->mouse == NULL) || (w->bw == NULL)
-		    || (y < w->voffset)) {
-			nsws_localhistory_close(w);
-			return DefWindowProc(hwnd, msg, wparam, lparam);
-		}
-		w->mouse->state = BROWSER_MOUSE_PRESS_1;
-		if ((GetKeyState(VK_SHIFT) & 0x8000) == 0x8000)
-			w->mouse->state |= BROWSER_MOUSE_MOD_1;
-		if ((GetKeyState(VK_CONTROL) & 0x8000) == 0x8000)
-			w->mouse->state |= BROWSER_MOUSE_MOD_2;
-		if ((GetKeyState(VK_MENU) & 0x8000) == 0x8000)
-			w->mouse->state |= BROWSER_MOUSE_MOD_3;
-		w->mouse->pressed_x = (x + w->scrollx) / w->bw->scale;
-		w->mouse->pressed_y = (y - w->voffset + w->scrolly)
-			/ w->bw->scale;
 
-		SetFocus(hwnd);
-		browser_window_mouse_click(w->bw, w->mouse->state,
-					   (x + w->scrollx) / w->bw->scale ,
-					   (y - w->voffset + w->scrolly) /
-					   w->bw->scale);
-		nsws_localhistory_close(w);
-		return DefWindowProc(hwnd, msg, wparam, lparam);
-		break;
+	return DefWindowProc(hwnd, msg, wparam, lparam);
+}
+
+static void 
+nsws_window_resize(struct gui_window *w, 
+		   HWND hwnd, 
+		   WPARAM wparam, 
+		   LPARAM lparam)
+{
+	if ((w->toolbar == NULL) || (w->urlbar == NULL) ||
+	    (w->statusbar == NULL))
+		return;
+	int x, y;
+	RECT rmain, rstatus, rtool;
+	GetClientRect(hwnd, &rmain);
+	GetClientRect(w->toolbar, &rtool);
+	GetWindowRect(w->statusbar, &rstatus);
+	gui_window_get_scroll(w, &x, &y);
+	w->height = HIWORD(lparam) - 
+		(rtool.bottom - rtool.top) - 
+		(rstatus.bottom - rstatus.top);
+	w->width = LOWORD(lparam);
+
+	if (w->drawingarea != NULL) {
+		MoveWindow(w->drawingarea, 0 ,rtool.bottom, w->width, w->height, true);
 	}
-	case WM_RBUTTONDOWN: {
-		int x,y;
-		x = GET_X_LPARAM(lparam);
-		y = GET_Y_LPARAM(lparam);
-		if ((w == NULL) || (w->mouse == NULL) || (w->bw == NULL) ||
-		    (y < w->voffset))
-			return DefWindowProc(hwnd, msg, wparam, lparam);
 
-		w->mouse->state = BROWSER_MOUSE_PRESS_2;
-		if ((GetKeyState(VK_SHIFT) & 0x8000) == 0x8000)
-			w->mouse->state |= BROWSER_MOUSE_MOD_1;
-		if ((GetKeyState(VK_CONTROL) & 0x8000) == 0x8000)
-			w->mouse->state |= BROWSER_MOUSE_MOD_2;
-		if ((GetKeyState(VK_MENU) & 0x8000) == 0x8000)
-			w->mouse->state |= BROWSER_MOUSE_MOD_3;
-		w->mouse->pressed_x = (x + w->scrollx) / w->bw->scale;
-		w->mouse->pressed_y = (y - w->voffset + w->scrolly)
-			/ w->bw->scale;
-		SetFocus(hwnd);
-		browser_window_mouse_click(w->bw, w->mouse->state,
-					   (x + w->scrollx) / w->bw->scale ,
-					   (y - w->voffset + w->scrolly) /
-					   w->bw->scale);
-		return DefWindowProc(hwnd, msg, wparam, lparam);
-		break;
+	if (w->statusbar != NULL) {
+		MoveWindow(w->statusbar, 0 ,rtool.bottom + w->height, w->width, (rstatus.bottom - rstatus.top+1) , true);
 	}
-	case WM_LBUTTONUP: {
-		int x,y;
-		x = GET_X_LPARAM(lparam);
-		y = GET_Y_LPARAM(lparam);
-		if ((w == NULL) || (w->mouse == NULL) || (w->bw == NULL)
-		    || (y < w->voffset))
-			return DefWindowProc(hwnd, msg, wparam, lparam);
 
-		bool shift = ((GetKeyState(VK_SHIFT) & 0x8000) == 0x8000);
-		bool ctrl = ((GetKeyState(VK_CONTROL) & 0x8000) == 0x8000);
-		bool alt = ((GetKeyState(VK_MENU) & 0x8000) == 0x8000);
 
-		if ((w->mouse->state & BROWSER_MOUSE_PRESS_1) != 0) {
-			w->mouse->state &= ~BROWSER_MOUSE_PRESS_1;
-			w->mouse->state |= BROWSER_MOUSE_CLICK_1;
+	HDC hdc = GetDC(hwnd);
+	if (w->bufferdc == NULL)
+		w->bufferdc = CreateCompatibleDC(hdc);
+	if (w->bufferbm != NULL) {
+		DeleteObject(w->bufferbm);
+		w->bufferbm = CreateCompatibleBitmap(hdc, w->width, w->height);
+		SelectObject(w->bufferdc, w->bufferbm);
+	}
+	ReleaseDC(hwnd, hdc);
+	w->urlbarwidth = w->width - w->ntoolbuttons *
+		w->toolbuttondimension - 8 -
+		NSWS_THROBBER_WIDTH;
+	if (w->bw != NULL) {
+
+		browser_window_reformat(w->bw, w->width, w->height);
+		redraw();
+	}
+	gui_window_set_scroll(w, x, y);
+
+	/* re-create toolbar to adjust width of url bar holder */
+	DestroyWindow(w->toolbar);
+	DestroyWindow(w->throbber);
+	/* memorize url */
+	int len = SendMessage(w->urlbar, WM_GETTEXTLENGTH, 0, 0);
+	char temp[len + 1];
+	SendMessage(w->urlbar, WM_GETTEXT, (WPARAM) (len + 1),
+		    (LPARAM) temp);
+	DestroyWindow(w->urlbar);
+	nsws_window_toolbar_create(w);
+	SendMessage(w->urlbar, WM_SETTEXT, 0, (LPARAM) temp);
+/*		SendMessage(w->toolbar, TB_AUTOSIZE, 0, 0);
+ */
+//	SendMessage(w->statusbar, WM_SIZE, 0, MAKELONG(w->width, 0));
+	nsws_window_update_forward_back(w);
+
+	if (w->toolbar != NULL)
+		SendMessage(w->toolbar, TB_SETSTATE,
+			    (WPARAM) NSWS_ID_NAV_STOP,
+			    MAKELONG(TBSTATE_INDETERMINATE, 0));
+
+}
+
+/**
+ * callback for window events generally
+ */
+LRESULT CALLBACK nsws_window_event_callback(HWND hwnd, UINT msg, WPARAM wparam,
+					    LPARAM lparam)
+{
+	bool match = false;
+	bool historyactive = false;
+	struct gui_window *w = window_list;
+	while (w != NULL) {
+		if (w->main == hwnd) {
+			match = true;
+			break;
 		}
-
-		if (((w->mouse->state & BROWSER_MOUSE_MOD_1) != 0) && !shift)
-			w->mouse->state &= ~BROWSER_MOUSE_MOD_1;
-		if (((w->mouse->state & BROWSER_MOUSE_MOD_2) != 0) && !ctrl)
-			w->mouse->state &= ~BROWSER_MOUSE_MOD_2;
-		if (((w->mouse->state & BROWSER_MOUSE_MOD_3) != 0) && !alt)
-			w->mouse->state &= ~BROWSER_MOUSE_MOD_3;
-
-		if ((w->mouse->state & BROWSER_MOUSE_CLICK_1) != 0)
-			browser_window_mouse_click(w->bw, w->mouse->state,
-						   (x + w->scrollx) / w->bw->scale,
-						   (y - w->voffset + w->scrolly) /
-						   w->bw->scale);
+		w = w->next;
+	}
+	if (!match) { /* during initial window creation */
+		w = window_list;
+		while (w != NULL) {
+			if (w->main == NULL) {
+				w->main = hwnd;
+				break;
+			}
+			w = w->next;
+		}
+	}
+	if ((match) && (current_gui == NULL)) {
+		/* local history window is active */
+		if ((msg == WM_LBUTTONDOWN) || (msg == WM_PAINT))
+			historyactive = true;
+		else if ((msg == WM_NCHITTEST) || (msg == WM_SETCURSOR))
+			return DefWindowProc(hwnd, msg, wparam, lparam);
 		else
-			browser_window_mouse_drag_end(w->bw, 0,
-						      (x + w->scrollx) / w->bw->scale,
-						      (y - w->voffset + w->scrolly) /
-						      w->bw->scale);
-
-		w->mouse->state = 0;
-		return DefWindowProc(hwnd, msg, wparam, lparam);
-		break;
+			return 0;
 	}
-	case WM_RBUTTONUP: {
-		int x,y;
-		x = GET_X_LPARAM(lparam);
-		y = GET_Y_LPARAM(lparam);
-		if ((w == NULL) || (w->mouse == NULL) || (w->bw == NULL) ||
-		    (y < w->voffset))
-			return DefWindowProc(hwnd, msg, wparam, lparam);
-		bool shift = ((GetKeyState(VK_SHIFT) & 0x8000) == 0x8000);
-		bool ctrl = ((GetKeyState(VK_CONTROL) & 0x8000) == 0x8000);
-		bool alt = ((GetKeyState(VK_MENU) & 0x8000) == 0x8000);
+	current_gui = w;
+	switch(msg) {
 
-		if ((w->mouse->state & BROWSER_MOUSE_PRESS_2) != 0) {
-			w->mouse->state &= ~BROWSER_MOUSE_PRESS_2;
-			w->mouse->state |= BROWSER_MOUSE_CLICK_2;
-		}
-
-		if (((w->mouse->state & BROWSER_MOUSE_MOD_1) != 0) && !shift)
-			w->mouse->state &= ~BROWSER_MOUSE_MOD_1;
-		if (((w->mouse->state & BROWSER_MOUSE_MOD_2) != 0) && !ctrl)
-			w->mouse->state &= ~BROWSER_MOUSE_MOD_2;
-		if (((w->mouse->state & BROWSER_MOUSE_MOD_3) != 0) && !alt)
-			w->mouse->state &= ~BROWSER_MOUSE_MOD_3;
-
-		if ((w->mouse->state & BROWSER_MOUSE_CLICK_2) != 0)
-			browser_window_mouse_click(w->bw, w->mouse->state,
-						   (x + w->scrollx) / w->bw->scale,
-						   (y - w->voffset + w->scrolly) /
-						   w->bw->scale);
-		else
-			browser_window_mouse_drag_end(w->bw, 0,
-						      (x + w->scrollx) / w->bw->scale,
-						      (y - w->voffset + w->scrolly) /
-						      w->bw->scale);
-
-		w->mouse->state = 0;
-		return DefWindowProc(hwnd, msg, wparam, lparam);
-		break;
-	}
 	case WM_LBUTTONDBLCLK: {
 		int x,y;
 		x = GET_X_LPARAM(lparam);
 		y = GET_Y_LPARAM(lparam);
-		if ((w != NULL) && (w->bw != NULL) && (y > w->voffset))
+		if ((w != NULL) && (w->bw != NULL) )
 			browser_window_mouse_click(w->bw,
 						   BROWSER_MOUSE_DOUBLE_CLICK,
 						   (x + w->scrollx) / w->bw->scale,
-						   (y - w->voffset + w->scrolly) /
-						   w->bw->scale);
+						   (y + w->scrolly) / w->bw->scale);
 		return DefWindowProc(hwnd, msg, wparam, lparam);
 		break;
 	}
@@ -1331,163 +1450,44 @@ LRESULT CALLBACK nsws_window_event_callback(HWND hwnd, UINT msg, WPARAM wparam,
 		nsws_window_set_ico(w);
 		nsws_window_toolbar_create(w);
 		nsws_window_statusbar_create(w);
-		nsws_window_drawingarea_create(w);
 		nsws_window_vscroll_create(w);
 		nsws_window_hscroll_create(w);
+		nsws_window_drawingarea_create(w);
 		break;
 	}
+
 	case WM_PAINT:
 	{
-		if ((w->toolbar == NULL) || (w->urlbar == NULL) ||
-		    (w->statusbar == NULL) || (w->vscroll == NULL)
-		    || (w->hscroll == NULL))
-			break;
-		HWND focuswnd = GetFocus();
-		SetFocus(w->urlbar);
-		SetFocus(focuswnd);
-		current_hwnd = hwnd;
-		current_gui = w;
-		PAINTSTRUCT ps;
-		BeginPaint(hwnd, &ps);
-/*		printf("repaint dc %p erase %d from %ld,%ld to %ld,%ld\n",
-		ps.hdc, (int)ps.fErase,	ps.rcPaint.left,
-		ps.rcPaint.top, ps.rcPaint.right,
-		ps.rcPaint.bottom);
-*/		PostMessage(w->toolbar, WM_PAINT, 0, 0);
-		PostMessage(w->urlbar, WM_PAINT, 0, 0);
-		PostMessage(w->statusbar, WM_PAINT, 0, 0);
-		PostMessage(w->main, WM_NCPAINT, 0, 0);
-/*		PostMessage(w->vscroll, WM_PAINT, 0, 0);
-		PostMessage(w->hscroll, WM_PAINT, 0, 0);
-*/
-		RECT r, rstatus, rtool;
-		GetClientRect(hwnd, &r);
-		GetWindowRect(w->toolbar, &rtool);
-		GetWindowRect(w->statusbar, &rstatus);
-
-		w->voffset = rtool.bottom  - rtool.top - 1;
-		/* 1 seems necessary */
-
-		w->height = r.bottom - w->voffset - (rstatus.bottom -
-						     rstatus.top) + 1;
-
-		w->width = r.right + 1;
-
-		w->redraw.left = MAX(ps.rcPaint.left, 0);
-		w->redraw.top = MAX(ps.rcPaint.top - w->voffset, 0);
-		w->redraw.right = MIN(ps.rcPaint.right, w->width);
-		w->redraw.bottom = MIN(ps.rcPaint.bottom, w->height);
-		redraw();
-		EndPaint(hwnd, &ps);
-		plot.clip(0, 0, w->width, w->height);
 		DWORD ret = DefWindowProc(hwnd, msg, wparam, lparam);
 		if (historyactive)
 			current_gui = NULL;
 		return ret;
-		break;
 	}
-	case WM_NCPAINT:
-		PostMessage(w->toolbar, WM_PAINT, 0, 0);
-		PostMessage(w->urlbar, WM_PAINT, 0, 0);
-		return DefWindowProc(hwnd, msg, wparam, lparam);
-		break;
-	case WM_MOVE:
-		DefWindowProc(hwnd, msg, wparam, lparam);
-		gui_window_redraw_window(w);
-		break;
+
 	case WM_SIZE:
-	{
-		if ((w->toolbar == NULL) || (w->urlbar == NULL) ||
-		    (w->statusbar == NULL))
-			break;
-		int x, y;
-		RECT rmain, rstatus, rtool;
-		GetClientRect(hwnd, &rmain);
-		GetClientRect(w->toolbar, &rtool);
-		GetWindowRect(w->statusbar, &rstatus);
-		gui_window_get_scroll(w, &x, &y);
-		w->voffset = rtool.bottom - rtool.top;
-		w->height = HIWORD(lparam) - w->voffset - (rstatus.bottom -
-							   rstatus.top);
-		w->width = LOWORD(lparam);
-		HDC hdc = GetDC(hwnd);
-		if (w->bufferdc == NULL)
-			w->bufferdc = CreateCompatibleDC(hdc);
-		if (w->bufferbm != NULL) {
-			DeleteObject(w->bufferbm);
-			w->bufferbm = CreateCompatibleBitmap(hdc, w->width,
-							     w->height + w->voffset);
-			SelectObject(w->bufferdc, w->bufferbm);
-		}
-		ReleaseDC(hwnd, hdc);
-		w->urlbarwidth = w->width - w->ntoolbuttons *
-			w->toolbuttondimension - 8 -
-			NSWS_THROBBER_WIDTH;
-		if (w->bw != NULL) {
-			browser_window_reformat(
-				w->bw, w->width, w->height);
-			redraw();
-		}
-		gui_window_set_scroll(w, x, y);
-
-		/* re-create toolbar to adjust width of url bar holder */
-		DestroyWindow(w->toolbar);
-		DestroyWindow(w->throbber);
-		/* memorize url */
-		int len = SendMessage(w->urlbar, WM_GETTEXTLENGTH, 0, 0);
-		char temp[len + 1];
-		SendMessage(w->urlbar, WM_GETTEXT, (WPARAM) (len + 1),
-			    (LPARAM) temp);
-		DestroyWindow(w->urlbar);
-		nsws_window_toolbar_create(w);
-		SendMessage(w->urlbar, WM_SETTEXT, 0, (LPARAM) temp);
-/*		SendMessage(w->toolbar, TB_AUTOSIZE, 0, 0);
- */
-		SendMessage(w->statusbar, WM_SIZE, 0, MAKELONG(w->width, 0));
-		nsws_window_update_forward_back(w);
-
-		if (w->toolbar != NULL)
-			SendMessage(w->toolbar, TB_SETSTATE,
-				    (WPARAM) NSWS_ID_NAV_STOP,
-				    MAKELONG(TBSTATE_INDETERMINATE, 0));
-
+		nsws_window_resize(w, hwnd, wparam, lparam);
 		return DefWindowProc(hwnd, msg, wparam, lparam);
-		break;
-	}
+
 	case WM_CLOSE:
 		if (--open_windows == 0) {
 			netsurf_quit = true;
 		}
 		DestroyWindow(hwnd);
 		break;
+
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
+
 	default:
 		return DefWindowProc(hwnd, msg, wparam, lparam);
 	}
 	return 0;
 }
 
-/**
- * creation of a new window
- */
-static void nsws_window_create(struct gui_window *gw)
-{
-	if (gw == NULL)
-		return;
-	LOG(("nsws_window_create %p", gw));
-	const char windowclassname[] = "nsws_window";
-	WNDCLASSEX w;
-	HWND hwnd;
-	INITCOMMONCONTROLSEX icc;
 
-	icc.dwSize = sizeof(icc);
-	icc.dwICC = ICC_BAR_CLASSES | ICC_WIN95_CLASSES;
-#if WINVER > 0x0501
-	icc.dwICC |= ICC_STANDARD_CLASSES;
-#endif
-	InitCommonControlsEx(&icc);
+static void create_local_windows_classes(void) {
+	WNDCLASSEX w;
 
 	w.cbSize	= sizeof(WNDCLASSEX);
 	w.style		= 0;
@@ -1499,15 +1499,43 @@ static void nsws_window_create(struct gui_window *gw)
 	w.hCursor	= LoadCursor(NULL, IDC_ARROW);
 	w.hbrBackground	= (HBRUSH)(COLOR_WINDOW + 1);
 	w.lpszMenuName	= NULL;
-	w.lpszClassName = windowclassname;
+	w.lpszClassName = windowclassname_main;
 	w.hIconSm	= LoadIcon(NULL, IDI_APPLICATION); /* -> NetSurf */
 	RegisterClassEx(&w);
+
+	w.lpfnWndProc	= nsws_window_drawable_event_callback;
+	w.hIcon		= NULL;
+	w.lpszMenuName	= NULL;
+	w.lpszClassName = windowclassname_drawable;
+	w.hIconSm	= NULL;
+
+	RegisterClassEx(&w);
+
+}
+
+/**
+ * creation of a new window
+ */
+static void nsws_window_create(struct gui_window *gw)
+{
+	if (gw == NULL)
+		return;
+	LOG(("nsws_window_create %p", gw));
+	HWND hwnd;
+	INITCOMMONCONTROLSEX icc;
+
+	icc.dwSize = sizeof(icc);
+	icc.dwICC = ICC_BAR_CLASSES | ICC_WIN95_CLASSES;
+#if WINVER > 0x0501
+	icc.dwICC |= ICC_STANDARD_CLASSES;
+#endif
+	InitCommonControlsEx(&icc);
 
 	gw->mainmenu = LoadMenu(hinstance, MAKEINTRESOURCE(NSWS_ID_MAINMENU));
 	gw->rclick = LoadMenu(hinstance, MAKEINTRESOURCE(NSWS_ID_CTXMENU));
 
 	LOG(("creating window for hInstance %p", hinstance));
-	hwnd = CreateWindow(windowclassname,
+	hwnd = CreateWindow(windowclassname_main,
 			    "NetSurf Browser",
 			    WS_OVERLAPPEDWINDOW | WS_HSCROLL | WS_VSCROLL |
 			    WS_CLIPCHILDREN | WS_CLIPSIBLINGS | CS_DBLCLKS,
@@ -1698,7 +1726,7 @@ int gui_window_voffset(struct gui_window *w)
 {
 	if (w == NULL)
 		return 0;
-	return w->voffset;
+	return 0;
 }
 
 int gui_window_width(struct gui_window *w)
@@ -1885,25 +1913,25 @@ void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
 
 	/* Set caret position */
 	GetCaretPos(&p);
-	HideCaret(w->main);
+	HideCaret(w->drawingarea);
 	SetCaretPos(p.x - w->requestscrollx, p.y - w->requestscrolly);
-	ShowCaret(w->main);
+	ShowCaret(w->drawingarea);
 
 	RECT r, redraw;
-	r.top = w->voffset - 1;
-	r.bottom = w->voffset + w->height + 1;
+	r.top = 0;
+	r.bottom = w->height + 1;
 	r.left = 0;
 	r.right = w->width + 1;
-	ScrollWindowEx(w->main, - w->requestscrollx, - w->requestscrolly, &r,
+	ScrollWindowEx(w->drawingarea, - w->requestscrollx, - w->requestscrolly, &r,
 		       NULL, NULL, &redraw, SW_INVALIDATE);
 	gui_window_redraw(w, redraw.left + (w->requestscrollx + w->scrollx)
 			  / w->bw->scale - 1,
 			  redraw.top + (w->requestscrolly + w->scrolly)
-			  / w->bw->scale - w->voffset - 1,
+			  / w->bw->scale - 1,
 			  redraw.right + (w->requestscrollx + w->scrollx)
 			  / w->bw->scale + 1,
 			  redraw.bottom + (w->requestscrolly + w->scrolly)
-			  / w->bw->scale - w->voffset + 1);
+			  / w->bw->scale + 1);
 }
 
 void gui_window_scroll_visible(struct gui_window *w, int x0, int y0,
@@ -2088,10 +2116,10 @@ void gui_window_place_caret(struct gui_window *w, int x, int y, int height)
 {
 	if (w == NULL)
 		return;
-	CreateCaret(w->main, (HBITMAP)NULL, 1, height * w->bw->scale);
+	CreateCaret(w->drawingarea, (HBITMAP)NULL, 1, height * w->bw->scale);
 	SetCaretPos(x * w->bw->scale - w->scrollx,
-		    y * w->bw->scale + w->voffset - w->scrolly);
-	ShowCaret(w->main);
+		    y * w->bw->scale - w->scrolly);
+	ShowCaret(w->drawingarea);
 }
 
 /**
@@ -2102,7 +2130,7 @@ gui_window_remove_caret(struct gui_window *w)
 {
 	if (w == NULL)
 		return;
-	HideCaret(w->main);
+	HideCaret(w->drawingarea);
 }
 
 void 
@@ -2366,6 +2394,9 @@ void gui_init(int argc, char** argv)
 	nsws_find_resource(buf, "quirks.css", sbuf);
 	quirks_stylesheet_url = path_to_url(buf);
 	LOG(("Using '%s' as quirks stylesheet url", quirks_stylesheet_url ));
+
+
+	create_local_windows_classes();
 
 	option_target_blank = false;
 
