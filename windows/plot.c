@@ -57,9 +57,6 @@ static RECT localhistory_clip;
 
 static bool clip(int x0, int y0, int x1, int y1)
 {
-	int voffset = (thumbnail ? 0 : gui_window_voffset(current_gui));
-	y0 += voffset;
-	y1 += voffset;
 
 #if NSWS_PLOT_DEBUG
 	LOG(("clip %d,%d to %d,%d thumbnail %d", x0, y0, x1, y1, thumbnail));
@@ -68,10 +65,10 @@ static bool clip(int x0, int y0, int x1, int y1)
 	if (clip == NULL)
 		clip = &localhistory_clip;
 	x0 = MAX(x0, 0);
-	y0 = MAX(y0, voffset);
+	y0 = MAX(y0, 0);
 	if (!((current_gui == NULL) || (thumbnail))) {
 		x1 = MIN(x1, gui_window_width(current_gui));
-		y1 = MIN(y1, gui_window_height(current_gui) + voffset);
+		y1 = MIN(y1, gui_window_height(current_gui));
 	}
 	clip->left = x0;
 	clip->top = y0 ;
@@ -83,8 +80,6 @@ static bool clip(int x0, int y0, int x1, int y1)
 
 static bool line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 {
-	y0 += (thumbnail ? 0 : gui_window_voffset(current_gui));
-	y1 += (thumbnail ? 0 : gui_window_voffset(current_gui));
 #if NSWS_PLOT_DEBUG
 	LOG(("ligne from %d,%d to %d,%d thumbnail %d", x0, y0, x1, y1,
 			thumbnail));
@@ -159,8 +154,6 @@ static bool rectangle(int x0, int y0, int x1, int y1, const plot_style_t
 		y1 = MIN(y1, gui_window_height(current_gui));
 	}
 	
-	y0 += (thumbnail ? 0 : gui_window_voffset(current_gui));
-	y1 += (thumbnail ? 0 : gui_window_voffset(current_gui));
 #if NSWS_PLOT_DEBUG	
 	LOG(("rectangle from %d,%d to %d,%d thumbnail %d", x0, y0, x1, y1,
 			thumbnail));
@@ -306,9 +299,7 @@ static bool polygon(const int *p, unsigned int n, const plot_style_t *style)
 	SetPolyFillMode(hdc, WINDING);
 	for (i = 0; i < n; i++) {
 		points[i].x = (long) p[2 * i];
-		points[i].y = (long) (p[2 * i + 1]
-				+ (thumbnail ? 0 :
-				gui_window_voffset(current_gui)));
+		points[i].y = (long) p[2 * i + 1];
 
 #if NSWS_PLOT_DEBUG
 		printf ("%ld,%ld ", points[i].x, points[i].y);
@@ -370,7 +361,6 @@ static bool text(int x, int y, const char *text, size_t length,
 	fontbak = (HFONT) SelectObject(hdc, font);
 	GetTextExtentPoint(hdc, text, length, &s);
 
-	y += (thumbnail ? 0 : gui_window_voffset(current_gui));
 	r.left = x;
 	r.top = y  - (3 * s.cy) / 4;
 	r.right = x + s.cx;
@@ -407,7 +397,6 @@ static bool text(int x, int y, const char *text, size_t length,
 
 static bool disc(int x, int y, int radius, const plot_style_t *style)
 {
-	y += (thumbnail ? 0 : gui_window_voffset(current_gui));
 #if NSWS_PLOT_DEBUG
 	LOG(("disc at %d,%d radius %d thumbnail %d", x, y, radius, thumbnail));
 #endif
@@ -492,7 +481,6 @@ static bool disc(int x, int y, int radius, const plot_style_t *style)
 static bool arc(int x, int y, int radius, int angle1, int angle2,
 	    		const plot_style_t *style)
 {
-	y += (thumbnail ? 0 : gui_window_voffset(current_gui));
 #if NSWS_PLOT_DEBUG
 	LOG(("arc centre %d,%d radius %d from %d to %d", x, y, radius,
 			angle1, angle2));
@@ -613,8 +601,6 @@ static bool bitmap(int x, int y, int width, int height,
 #endif
 	if (bitmap == NULL)
 		return false;
-	int voffset = (thumbnail ? 0 : gui_window_voffset(current_gui));
-	y += voffset;
 	HDC hdc = doublebuffering ? bufferdc : GetDC(current_hwnd);
 	if (hdc == NULL) {
 		return false;

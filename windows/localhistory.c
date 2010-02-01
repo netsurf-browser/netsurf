@@ -158,15 +158,13 @@ LRESULT CALLBACK nsws_localhistory_event_callback(HWND hwnd, UINT msg,
 		break;
 	case WM_MOVE: {
 		RECT r, rmain;
-		int voffset;
 		if (w != NULL) {
 			current_gui = w;
 			current_hwnd = gui_window_main_window(w);
-			voffset = gui_window_voffset(w);
 			GetWindowRect(hwnd, &r);
 			GetWindowRect(current_hwnd, &rmain);
 			gui_window_redraw(w, 
-					MIN(r.top - rmain.top - voffset, 0),
+					MIN(r.top - rmain.top , 0),
 					MIN(r.left - rmain.left, 0),
 					gui_window_height(w) - 
 					MIN(rmain.bottom - r.bottom, 0),

@@ -1722,13 +1722,6 @@ RECT *gui_window_clip_rect(struct gui_window *w)
 	return &(w->clip);
 }
 
-int gui_window_voffset(struct gui_window *w)
-{
-	if (w == NULL)
-		return 0;
-	return 0;
-}
-
 int gui_window_width(struct gui_window *w)
 {
 	if (w == NULL)
