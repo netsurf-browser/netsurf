@@ -182,29 +182,18 @@ static void redraw(void)
 			w = w->next;
 			continue;
 		}
-//		current_hwnd = w->main;
+
 		current_hwnd = w->drawingarea;
-//		PostMessage(w->toolbar, WM_PAINT, 0, 0);
-//		PostMessage(w->urlbar, WM_PAINT, 0, 0);
 		w->scrolly += w->requestscrolly;
 		w->scrollx += w->requestscrollx;
 		w->scrolly = MAX(w->scrolly, 0);
-		w->scrolly = MIN(w->scrolly, c->height * w->bw->scale
-				 - w->height);
+		w->scrolly = MIN(w->scrolly, c->height * w->bw->scale - w->height);
 		w->scrollx = MAX(w->scrollx, 0);
-		w->scrollx = MIN(w->scrollx, c->width * w->bw->scale
-				 - w->width);
+		w->scrollx = MIN(w->scrollx, c->width * w->bw->scale - w->width);
 		/* redraw */
-/*		w->redraw.left = MIN(w->redraw.left, w->scrollx);
-		w->redraw.top = MIN(w->redraw.top, w->scrolly + w->voffset );
-		w->redraw.right = MAX(w->redraw.right, w->scrollx + w->width);
-		w->redraw.bottom = MAX(w->redraw.bottom, w->scrolly +
-		w->height + w->voffset );
-*/
 		current_redraw_browser = bw;
 		nsws_plot_set_scale(bw->scale);
 
-/*		doublebuffering = true; */
 		hdc = GetDC(w->main);
 		if (w->bufferbm == NULL) {
 			w->bufferbm = CreateCompatibleBitmap(hdc, w->width,
@@ -284,6 +273,7 @@ LRESULT CALLBACK nsws_window_url_callback(HWND hwnd, UINT msg, WPARAM wparam,
 LRESULT CALLBACK nsws_window_toolbar_callback(HWND hwnd, UINT msg,
 					      WPARAM wparam, LPARAM lparam)
 {
+	int x,y;
 	bool match = false;
 	struct gui_window *w = window_list;
 	while (w != NULL) {
@@ -305,23 +295,46 @@ LRESULT CALLBACK nsws_window_toolbar_callback(HWND hwnd, UINT msg,
 		}
 	}
 
-	if ((msg == WM_LBUTTONUP) || 
-	    (msg == WM_LBUTTONDOWN) ||
-	    (msg == WM_MOUSEMOVE)) {
-		int x,y;
+	switch (msg) {
+	case WM_LBUTTONUP:
+	case WM_LBUTTONDOWN:
+	case WM_MOUSEMOVE:
 		x = GET_X_LPARAM(lparam);
 		y = GET_Y_LPARAM(lparam);
-		if ((w != NULL) && 
+		if ((w != NULL) &&
 		    (x > w->ntoolbuttons * w->toolbuttondimension)) {
 			if (msg == WM_LBUTTONDOWN)
 				SetFocus(w->urlbar);
+
 			return CallWindowProc((WNDPROC)
 					      nsws_window_url_callback,
 					      w->urlbar, msg, wparam,
 					      MAKELONG(x - w->ntoolbuttons *
 						       w->toolbuttondimension, y));
 		}
+		break;
+	case WM_SIZE:
+		/* resize url */
+		if (w->urlbar != NULL) {
+			w->urlbarwidth = LOWORD(lparam) - w->ntoolbuttons * w->toolbuttondimension - 8 - NSWS_THROBBER_WIDTH;
+			MoveWindow(w->urlbar,
+				   w->toolbuttondimension * w->ntoolbuttons + 2,
+				   8,
+				   w->urlbarwidth - 8,
+				   w->toolbuttondimension - 12,
+				   true);
+		}
+		/* move throbber */
+		if (w->throbber != NULL) {
+			MoveWindow(w->throbber,
+				   LOWORD(lparam) - NSWS_THROBBER_WIDTH - 4, 8,
+				   NSWS_THROBBER_WIDTH, NSWS_THROBBER_WIDTH,
+				   true);
+		}
+
+		break;
 	}
+
 	return CallWindowProc((WNDPROC) toolproc, hwnd, msg, wparam, lparam);
 }
 
@@ -504,16 +517,16 @@ static void nsws_window_set_ico(struct gui_window *w)
  */
 static void nsws_window_urlbar_create(struct gui_window *w)
 {
-	HWND hwnd = CreateWindow("EDIT", 
-				 "", 
+	HWND hwnd = CreateWindow("EDIT",
+				 "",
 				 WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL | ES_OEMCONVERT,
-				 w->toolbuttondimension * w->ntoolbuttons + 2, 
+				 w->toolbuttondimension * w->ntoolbuttons + 2,
 				 8,
-				 w->urlbarwidth - 8, 
+				 w->urlbarwidth - 8,
 				 w->toolbuttondimension - 12,
-				 w->main, 
-				 (HMENU) NSWS_ID_URLBAR, 
-				 hinstance, 
+				 w->main,
+				 (HMENU) NSWS_ID_URLBAR,
+				 hinstance,
 				 NULL);
 	/*urlproc = (FARPROC) SetWindowLong(hwnd, GWL_WNDPROC, (DWORD)
 	  nsws_window_url_callback);*/
@@ -531,9 +544,14 @@ static void nsws_window_throbber_create(struct gui_window *w)
 	hwnd = CreateWindow(ANIMATE_CLASS,
 			    "",
 			    WS_CHILD | WS_VISIBLE | ACS_TRANSPARENT,
-			    w->width - NSWS_THROBBER_WIDTH - 4, 8,
-			    NSWS_THROBBER_WIDTH, NSWS_THROBBER_WIDTH, w->main,
-			    (HMENU) NSWS_ID_THROBBER, hinstance, NULL);
+			    w->width - NSWS_THROBBER_WIDTH - 4,
+			    8,
+			    NSWS_THROBBER_WIDTH,
+			    NSWS_THROBBER_WIDTH,
+			    w->main,
+			    (HMENU) NSWS_ID_THROBBER,
+			    hinstance,
+			    NULL);
 
 	nsws_find_resource(avi, "throbber.avi", "windows/res/throbber.avi");
 	LOG(("setting throbber avi as %s", avi));
@@ -549,7 +567,7 @@ static void nsws_window_throbber_create(struct gui_window *w)
 /**
  * creation of toolbar
  */
-static void 
+static void
 nsws_window_toolbar_create(struct gui_window *w)
 {
 	unsigned int listid = 0;
@@ -565,16 +583,16 @@ nsws_window_toolbar_create(struct gui_window *w)
 	 * the arrangements of url bar / buttons although much has
 	 * changed since then */
 
-	HWND hwnd = CreateWindow(TOOLBARCLASSNAME, 
-				 NULL, 
+	HWND hwnd = CreateWindow(TOOLBARCLASSNAME,
+				 NULL,
 				 WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | TBSTYLE_FLAT,
 				 0, 0, w->width,
 				 w->toolbuttondimension + 8, w->main,
 				 (HMENU) NSWS_ID_TOOLBAR, hinstance, NULL);
 	HIMAGELIST hImageList = ImageList_Create(w->toolbuttondimension - 8,
-						 w->toolbuttondimension - 8, 
-						 0, 
-						 w->ntoolbuttons, 
+						 w->toolbuttondimension - 8,
+						 0,
+						 w->ntoolbuttons,
 						 0);
 	SendMessage(hwnd, TB_BUTTONSTRUCTSIZE, (WPARAM) sizeof(TBBUTTON), 0);
 
@@ -638,15 +656,15 @@ static void nsws_window_drawingarea_create(struct gui_window *w)
 {
 	/* potentially make drawingarea window from frameless window
 	   + scrollbars here */
-	w->drawingarea = CreateWindow(windowclassname_drawable, 
-				      NULL, 
+	w->drawingarea = CreateWindow(windowclassname_drawable,
+				      NULL,
 				      WS_VISIBLE|WS_CHILD,
-				      0, 
-				      w->toolbuttondimension + 8, 
-				      w->width, 
+				      0,
+				      w->toolbuttondimension + 8,
+				      w->width,
 				      w->height - (w->toolbuttondimension + 8),
-				      w->main, 
-				      NULL, 
+				      w->main,
+				      NULL,
 				      hinstance,
 				      NULL);
 	if (w->drawingarea == NULL)
@@ -679,8 +697,8 @@ static LRESULT nsws_drawable_mousemove(struct gui_window *gw, int x, int y)
 	bool ctrl = ((GetKeyState(VK_CONTROL) & 0x8000) == 0x8000);
 	bool alt = ((GetKeyState(VK_MENU) & 0x8000) == 0x8000);
 
-	if ((gw == NULL) || 
-	    (gw->mouse == NULL) || 
+	if ((gw == NULL) ||
+	    (gw->mouse == NULL) ||
 	    (gw->bw == NULL))
 		return 0;
 
@@ -716,8 +734,8 @@ static LRESULT nsws_drawable_mousemove(struct gui_window *gw, int x, int y)
 
 static LRESULT nsws_drawable_mousedown(struct gui_window *gw, int x, int y, browser_mouse_state button)
 {
-	if ((gw == NULL) || 
-	    (gw->mouse == NULL) || 
+	if ((gw == NULL) ||
+	    (gw->mouse == NULL) ||
 	    (gw->bw == NULL)) {
 		nsws_localhistory_close(gw);
 		return 0;
@@ -741,19 +759,19 @@ static LRESULT nsws_drawable_mousedown(struct gui_window *gw, int x, int y, brow
 	return 0;
 }
 
-static LRESULT 
-nsws_drawable_mouseup(struct gui_window *gw, 
-		      int x, 
-		      int y, 
-		      browser_mouse_state press, 
+static LRESULT
+nsws_drawable_mouseup(struct gui_window *gw,
+		      int x,
+		      int y,
+		      browser_mouse_state press,
 		      browser_mouse_state click)
 {
 	bool shift = ((GetKeyState(VK_SHIFT) & 0x8000) == 0x8000);
 	bool ctrl = ((GetKeyState(VK_CONTROL) & 0x8000) == 0x8000);
 	bool alt = ((GetKeyState(VK_MENU) & 0x8000) == 0x8000);
 
-	if ((gw == NULL) || 
-	    (gw->mouse == NULL) || 
+	if ((gw == NULL) ||
+	    (gw->mouse == NULL) ||
 	    (gw->bw == NULL))
 		return 0;
 
@@ -771,12 +789,12 @@ nsws_drawable_mouseup(struct gui_window *gw,
 		gw->mouse->state &= ~BROWSER_MOUSE_MOD_3;
 
 	if ((gw->mouse->state & click) != 0)
-		browser_window_mouse_click(gw->bw, 
+		browser_window_mouse_click(gw->bw,
 					   gw->mouse->state,
 					   (x + gw->scrollx) / gw->bw->scale,
 					   (y + gw->scrolly) / gw->bw->scale);
 	else
-		browser_window_mouse_drag_end(gw->bw, 
+		browser_window_mouse_drag_end(gw->bw,
 					      0,
 					      (x + gw->scrollx) / gw->bw->scale,
 					      (y + gw->scrolly) / gw->bw->scale);
@@ -805,6 +823,90 @@ static void nsws_drawable_paint(struct gui_window *gw, HWND hwnd)
 	plot.clip(0, 0, gw->width, gw->height); /* vrs - very suspect */
 }
 
+static void nsws_drawable_key(struct gui_window *gw, HWND hwnd, WPARAM wparam)
+{
+	if (GetFocus() != hwnd)
+		return;
+
+	uint32_t i;
+	bool shift = ((GetKeyState(VK_SHIFT) & 0x8000) == 0x8000);
+	bool capslock = ((GetKeyState(VK_CAPITAL) & 1) == 1);
+
+	switch(wparam) {
+	case VK_LEFT:
+		i = KEY_LEFT;
+		if (shift)
+			SendMessage(hwnd, WM_HSCROLL,
+				    MAKELONG(SB_LINELEFT, 0), 0);
+		break;
+
+	case VK_RIGHT:
+		i = KEY_RIGHT;
+		if (shift)
+			SendMessage(hwnd, WM_HSCROLL,
+				    MAKELONG(SB_LINERIGHT, 0), 0);
+		break;
+
+	case VK_UP:
+		i = KEY_UP;
+		if (shift)
+			SendMessage(hwnd, WM_VSCROLL,
+				    MAKELONG(SB_LINEUP, 0), 0);
+		break;
+
+	case VK_DOWN:
+		i = KEY_DOWN;
+		if (shift)
+			SendMessage(hwnd, WM_VSCROLL,
+				    MAKELONG(SB_LINEDOWN, 0), 0);
+		break;
+
+	case VK_HOME:
+		i = KEY_LINE_START;
+		if (shift)
+			SendMessage(hwnd, WM_HSCROLL,
+				    MAKELONG(SB_PAGELEFT, 0), 0);
+		break;
+
+	case VK_END:
+		i = KEY_LINE_END;
+		if (shift)
+			SendMessage(hwnd, WM_HSCROLL,
+				    MAKELONG(SB_PAGERIGHT, 0), 0);
+		break;
+
+	case VK_DELETE:
+		i = KEY_DELETE_RIGHT;
+		break;
+
+	case VK_NEXT:
+		i = wparam;
+		SendMessage(hwnd, WM_VSCROLL, MAKELONG(SB_PAGEDOWN, 0),
+			    0);
+		break;
+
+	case VK_PRIOR:
+		i = wparam;
+		SendMessage(hwnd, WM_VSCROLL, MAKELONG(SB_PAGEUP, 0),
+			    0);
+		break;
+
+	default:
+		i = wparam;
+		break;
+	}
+
+	if ((i >= 'A') && (i <= 'Z') &&
+	    (((!capslock) && (!shift)) ||
+	     ((capslock) && (shift))))
+		i += 'a' - 'A';
+
+	if (gw != NULL)
+		browser_window_key_press(gw->bw, i);
+
+}
+
+
 /* Called when activity occours within the drawable window. */
 LRESULT CALLBACK nsws_window_drawable_event_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
@@ -822,32 +924,32 @@ LRESULT CALLBACK nsws_window_drawable_event_callback(HWND hwnd, UINT msg, WPARAM
 
 	switch(msg) {
 
-	case WM_MOUSEMOVE: 
+	case WM_MOUSEMOVE:
 		nsws_drawable_mousemove(gw,
-					GET_X_LPARAM(lparam), 
+					GET_X_LPARAM(lparam),
 					GET_Y_LPARAM(lparam));
 		break;
 
-	case WM_LBUTTONDOWN: 
+	case WM_LBUTTONDOWN:
 		nsws_drawable_mousedown(gw,
-					GET_X_LPARAM(lparam), 
+					GET_X_LPARAM(lparam),
 					GET_Y_LPARAM(lparam),
 					BROWSER_MOUSE_PRESS_1);
 		SetFocus(hwnd);
 		nsws_localhistory_close(gw);
 		break;
 
-	case WM_RBUTTONDOWN: 
+	case WM_RBUTTONDOWN:
 		nsws_drawable_mousedown(gw,
-					GET_X_LPARAM(lparam), 
+					GET_X_LPARAM(lparam),
 					GET_Y_LPARAM(lparam),
 					BROWSER_MOUSE_PRESS_2);
 		SetFocus(hwnd);
 		break;
 
-	case WM_LBUTTONUP: 
+	case WM_LBUTTONUP:
 		nsws_drawable_mouseup(gw,
-				      GET_X_LPARAM(lparam), 
+				      GET_X_LPARAM(lparam),
 				      GET_Y_LPARAM(lparam),
 				      BROWSER_MOUSE_PRESS_1,
 				      BROWSER_MOUSE_CLICK_1);
@@ -855,7 +957,7 @@ LRESULT CALLBACK nsws_window_drawable_event_callback(HWND hwnd, UINT msg, WPARAM
 
 	case WM_RBUTTONUP:
 		nsws_drawable_mouseup(gw,
-				      GET_X_LPARAM(lparam), 
+				      GET_X_LPARAM(lparam),
 				      GET_Y_LPARAM(lparam),
 				      BROWSER_MOUSE_PRESS_2,
 				      BROWSER_MOUSE_CLICK_2);
@@ -865,75 +967,9 @@ LRESULT CALLBACK nsws_window_drawable_event_callback(HWND hwnd, UINT msg, WPARAM
 		nsws_drawable_paint(gw, hwnd);
 		break;
 
-	case WM_KEYDOWN: {
-		if (GetFocus() != hwnd)
-			break;
-		uint32_t i;
-		bool shift = ((GetKeyState(VK_SHIFT) & 0x8000) == 0x8000);
-		bool capslock = ((GetKeyState(VK_CAPITAL) & 1) == 1);
-		switch(wparam) {
-		case VK_LEFT:
-			i = KEY_LEFT;
-			if (shift)
-				SendMessage(hwnd, WM_HSCROLL,
-					    MAKELONG(SB_LINELEFT, 0), 0);
-			break;
-		case VK_RIGHT:
-			i = KEY_RIGHT;
-			if (shift)
-				SendMessage(hwnd, WM_HSCROLL,
-					    MAKELONG(SB_LINERIGHT, 0), 0);
-			break;
-		case VK_UP:
-			i = KEY_UP;
-			if (shift)
-				SendMessage(hwnd, WM_VSCROLL,
-					    MAKELONG(SB_LINEUP, 0), 0);
-			break;
-		case VK_DOWN:
-			i = KEY_DOWN;
-			if (shift)
-				SendMessage(hwnd, WM_VSCROLL,
-					    MAKELONG(SB_LINEDOWN, 0), 0);
-			break;
-		case VK_HOME:
-			i = KEY_LINE_START;
-			if (shift)
-				SendMessage(hwnd, WM_HSCROLL,
-					    MAKELONG(SB_PAGELEFT, 0), 0);
-			break;
-		case VK_END:
-			i = KEY_LINE_END;
-			if (shift)
-				SendMessage(hwnd, WM_HSCROLL,
-					    MAKELONG(SB_PAGERIGHT, 0), 0);
-			break;
-		case VK_DELETE:
-			i = KEY_DELETE_RIGHT;
-			break;
-		case VK_NEXT:
-			i = wparam;
-			SendMessage(hwnd, WM_VSCROLL, MAKELONG(SB_PAGEDOWN, 0),
-				    0);
-			break;
-		case VK_PRIOR:
-			i = wparam;
-			SendMessage(hwnd, WM_VSCROLL, MAKELONG(SB_PAGEUP, 0),
-				    0);
-			break;
-		default:
-			i = wparam;
-			break;
-		}
-		if ((i >= 'A') && (i <= 'Z') &&
-		    (((!capslock) && (!shift)) ||
-		     ((capslock) && (shift))))
-			i += 'a' - 'A';
-		if (gw != NULL)
-			browser_window_key_press(gw->bw, i);
+	case WM_KEYDOWN:
+		nsws_drawable_key(gw, hwnd, wparam);
 		break;
-	}
-
 	default:
 		break;
 	}
@@ -941,35 +977,58 @@ LRESULT CALLBACK nsws_window_drawable_event_callback(HWND hwnd, UINT msg, WPARAM
 	return DefWindowProc(hwnd, msg, wparam, lparam);
 }
 
-static void 
-nsws_window_resize(struct gui_window *w, 
-		   HWND hwnd, 
-		   WPARAM wparam, 
+static void
+nsws_window_resize(struct gui_window *w,
+		   HWND hwnd,
+		   WPARAM wparam,
 		   LPARAM lparam)
 {
-	if ((w->toolbar == NULL) || (w->urlbar == NULL) ||
+	if ((w->toolbar == NULL) ||
+	    (w->urlbar == NULL) ||
 	    (w->statusbar == NULL))
 		return;
+
 	int x, y;
 	RECT rmain, rstatus, rtool;
 	GetClientRect(hwnd, &rmain);
 	GetClientRect(w->toolbar, &rtool);
 	GetWindowRect(w->statusbar, &rstatus);
 	gui_window_get_scroll(w, &x, &y);
-	w->height = HIWORD(lparam) - 
-		(rtool.bottom - rtool.top) - 
+	w->height = HIWORD(lparam) -
+		(rtool.bottom - rtool.top) -
 		(rstatus.bottom - rstatus.top);
 	w->width = LOWORD(lparam);
 
 	if (w->drawingarea != NULL) {
-		MoveWindow(w->drawingarea, 0 ,rtool.bottom, w->width, w->height, true);
+		MoveWindow(w->drawingarea,
+			   0,
+			   rtool.bottom,
+			   w->width,
+			   w->height,
+			   true);
 	}
 
 	if (w->statusbar != NULL) {
-		MoveWindow(w->statusbar, 0 ,rtool.bottom + w->height, w->width, (rstatus.bottom - rstatus.top+1) , true);
+		MoveWindow(w->statusbar,
+			   0,
+			   rtool.bottom + w->height,
+			   w->width,
+			   (rstatus.bottom - rstatus.top + 1),
+			   true);
 	}
 
+	nsws_window_update_forward_back(w);
 
+	if (w->toolbar != NULL) {
+		MoveWindow(w->toolbar,
+			   0,
+			   0,
+			   w->width,
+			   (rtool.bottom - rtool.top),
+			   true);
+	}
+
+	/* update double buffering context */
 	HDC hdc = GetDC(hwnd);
 	if (w->bufferdc == NULL)
 		w->bufferdc = CreateCompatibleDC(hdc);
@@ -979,31 +1038,13 @@ nsws_window_resize(struct gui_window *w,
 		SelectObject(w->bufferdc, w->bufferbm);
 	}
 	ReleaseDC(hwnd, hdc);
-	w->urlbarwidth = w->width - w->ntoolbuttons *
-		w->toolbuttondimension - 8 -
-		NSWS_THROBBER_WIDTH;
-	if (w->bw != NULL) {
 
+	/* update browser window to new dimensions */
+	if (w->bw != NULL) {
 		browser_window_reformat(w->bw, w->width, w->height);
 		redraw();
 	}
 	gui_window_set_scroll(w, x, y);
-
-	/* re-create toolbar to adjust width of url bar holder */
-	DestroyWindow(w->toolbar);
-	DestroyWindow(w->throbber);
-	/* memorize url */
-	int len = SendMessage(w->urlbar, WM_GETTEXTLENGTH, 0, 0);
-	char temp[len + 1];
-	SendMessage(w->urlbar, WM_GETTEXT, (WPARAM) (len + 1),
-		    (LPARAM) temp);
-	DestroyWindow(w->urlbar);
-	nsws_window_toolbar_create(w);
-	SendMessage(w->urlbar, WM_SETTEXT, 0, (LPARAM) temp);
-/*		SendMessage(w->toolbar, TB_AUTOSIZE, 0, 0);
- */
-//	SendMessage(w->statusbar, WM_SIZE, 0, MAKELONG(w->width, 0));
-	nsws_window_update_forward_back(w);
 
 	if (w->toolbar != NULL)
 		SendMessage(w->toolbar, TB_SETSTATE,
@@ -2118,7 +2159,7 @@ void gui_window_place_caret(struct gui_window *w, int x, int y, int height)
 /**
  * clear window caret
  */
-void 
+void
 gui_window_remove_caret(struct gui_window *w)
 {
 	if (w == NULL)
@@ -2126,31 +2167,31 @@ gui_window_remove_caret(struct gui_window *w)
 	HideCaret(w->drawingarea);
 }
 
-void 
+void
 gui_window_set_icon(struct gui_window *g, struct content *icon)
 {
 }
 
-void 
+void
 gui_window_set_search_ico(struct content *ico)
 {
 }
 
-bool 
-save_complete_gui_save(const char *path, 
+bool
+save_complete_gui_save(const char *path,
 		       const char *filename,
-		       size_t len, 
-		       const char *sourcedata, 
+		       size_t len,
+		       const char *sourcedata,
 		       content_type type)
 {
 	return false;
 }
 
-int 
-save_complete_htmlSaveFileFormat(const char *path, 
+int
+save_complete_htmlSaveFileFormat(const char *path,
 				 const char *filename,
-				 xmlDocPtr cur, 
-				 const char *encoding, 
+				 xmlDocPtr cur,
+				 const char *encoding,
 				 int format)
 {
 	return 0;
@@ -2417,7 +2458,7 @@ void gui_init2(int argc, char** argv)
 
 void gui_stdout(void)
 {
-	/* mwindows compile flag normally invalidates stdout unless 
+	/* mwindows compile flag normally invalidates stdout unless
 	   already redirected */
 	if (_get_osfhandle(fileno(stdout)) == -1) {
 		AllocConsole();
