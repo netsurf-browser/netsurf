@@ -31,9 +31,6 @@
 #include "windows/gui.h"
 #include "windows/plot.h"
 
-#define NSWS_FONT_SCALE_HEIGHT 1.3
-#define NSWS_FONT_SCALE_WIDTH 0.45
-
 utf8_convert_ret utf8_to_font_encoding(const struct font_desc* font,
 				       const char *string, 
 				       size_t len,
@@ -76,28 +73,32 @@ HFONT get_font(const plot_font_style_t *style)
 		family = FF_SWISS | DEFAULT_PITCH;
 		break;
 	}
-	
-	HFONT font = CreateFont((int)((((float)style->size) *
-			NSWS_FONT_SCALE_HEIGHT * nsws_plot_get_scale())
-			/ FONT_SIZE_SCALE), /* height */
-			(int)((((float)style->size) *
-			NSWS_FONT_SCALE_WIDTH * nsws_plot_get_scale())
-			/ FONT_SIZE_SCALE), /* width */
-			0, /* escapement*/
-			0, /* orientation */
-			style->weight,
-			(style->flags & FONTF_ITALIC) ? TRUE : FALSE,
-			FALSE, /* underline */
-			FALSE, /* strike */
-			DEFAULT_CHARSET, /* for locale */
-			OUT_DEFAULT_PRECIS, /* general 'best match' */
-			CLIP_DEFAULT_PRECIS,
-			DEFAULT_QUALITY,
-			family,
-			face /* name of font face */
-			);
+
+	int nHeight = -10;
+
+	HDC hdc = GetDC(current_hwnd);
+	nHeight = -MulDiv(style->size, GetDeviceCaps(hdc, LOGPIXELSY), 72 * FONT_SIZE_SCALE);
+	ReleaseDC(current_hwnd, hdc);
+
+	HFONT font = CreateFont(
+		nHeight, /* height */
+		0, /* width */
+		0, /* escapement*/
+		0, /* orientation */
+		style->weight,
+		(style->flags & FONTF_ITALIC) ? TRUE : FALSE,
+		FALSE, /* underline */
+		FALSE, /* strike */
+		DEFAULT_CHARSET, /* for locale */
+		OUT_DEFAULT_PRECIS, /* general 'best match' */
+		CLIP_DEFAULT_PRECIS,
+		DEFAULT_QUALITY,
+		family,
+		face /* name of font face */
+		);
 	if (face != NULL)
 		free(face);
+
 	if (font == NULL) {
 		if (style->family == PLOT_FONT_FAMILY_MONOSPACE)
 			font = (HFONT) GetStockObject(ANSI_FIXED_FONT);

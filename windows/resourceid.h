@@ -25,6 +25,9 @@
 
 #define NSWS_ID_MAINMENU                        101
 #define NSWS_ID_CTXMENU                         103
+#define NSWS_ID_TOOLBAR_BITMAP                  107
+#define NSWS_ID_TOOLBAR_GREY_BITMAP             108
+#define NSWS_ID_TOOLBAR_HIGHL_BITMAP            109
 #define NSWS_ID_ABOUT_DIALOG                    11111
 #define NSWS_ID_ABOUT_CONTENT                   11112
 #define NSWS_ID_PREFS_DIALOG                    11113

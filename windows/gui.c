@@ -67,7 +67,7 @@ struct gui_window *search_current_window;
 struct gui_window *window_list = NULL;
 
 FARPROC urlproc;
-FARPROC	toolproc;
+WNDPROC	toolproc;
 
 static char default_page[] = "http://www.netsurf-browser.org/welcome/";
 static HICON hIcon, hIconS;
@@ -76,7 +76,6 @@ static int open_windows = 0;
 static const char windowclassname_main[] = "nswsmainwindow";
 static const char windowclassname_drawable[] = "nswsdrawablewindow";
 
-#define NTOOLBUTTONS 5
 #define NSWS_THROBBER_WIDTH 24
 #define NSWS_URL_ENTER (WM_USER)
 
@@ -99,12 +98,10 @@ struct gui_window {
 	struct nsws_localhistory *localhistory;	/**< handle to local history window */
 	int width; /**< width of window */
 	int height; /**< height of drawing area */
-	int urlbarwidth; /**< width of url bar */
-	int ntoolbuttons; /**< number of toolbar buttons */
-	int toolbuttondimension; /**< width, height of buttons */
+
+	int toolbuttonc; /**< number of toolbar buttons */
+	int toolbuttonsize; /**< width, height of buttons */
 	bool throbbing; /**< whether currently throbbing */
-	TBBUTTON buttons[NTOOLBUTTONS + 1]; /* 1 = url bar */
-	HBITMAP	hbmp[NTOOLBUTTONS]; /**< tool button images */
 
 	struct browser_mouse *mouse; /**< mouse state */
 
@@ -267,66 +264,71 @@ LRESULT CALLBACK nsws_window_url_callback(HWND hwnd, UINT msg, WPARAM wparam,
 	return CallWindowProc((WNDPROC) urlproc, hwnd, msg, wparam, lparam);
 }
 
+/* calculate the dimensions of the url bar relative to the parent toolbar */
+static void
+urlbar_dimensions(HWND hWndParent, int toolbuttonsize, int buttonc, int *x, int *y, int *width, int *height)
+{
+	RECT rc;
+	const int cy_edit = 24;
+
+	GetClientRect(hWndParent, &rc);
+	*x = (toolbuttonsize + 2) * (buttonc + 1) + (NSWS_THROBBER_WIDTH>>1);
+	*y = (((rc.bottom - rc.top) + 1) - cy_edit) >> 1;
+	*width = ((rc.right - rc.left) + 1) - *x - (NSWS_THROBBER_WIDTH>>1) - NSWS_THROBBER_WIDTH;
+	*height = cy_edit;
+}
+
+/* obtain gui window structure from windows window handle */
+static struct gui_window *
+nsws_get_gui_window(HWND hwnd)
+{
+	struct gui_window *gw;
+	HWND phwnd;
+
+	gw = GetProp(hwnd, TEXT("GuiWnd"));
+
+	if (gw == NULL) {
+		/* try the parent window instead */
+		phwnd = GetParent(hwnd);
+		gw = GetProp(phwnd, TEXT("GuiWnd"));
+	}
+
+	if (gw == NULL) {
+		/* unable to fetch from property, try seraching the
+		 * gui window list
+		 */
+		gw = window_list;
+		while (gw != NULL) {
+			if ((gw->main == hwnd) || (gw->toolbar == hwnd)) {
+				break;
+			}
+			gw = gw->next;
+		}
+	}
+
+	return gw;
+}
+
 /**
  * callback for toolbar events
  */
-LRESULT CALLBACK nsws_window_toolbar_callback(HWND hwnd, UINT msg,
-					      WPARAM wparam, LPARAM lparam)
+LRESULT CALLBACK
+nsws_window_toolbar_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
-	int x,y;
-	bool match = false;
-	struct gui_window *w = window_list;
-	while (w != NULL) {
-		if (w->toolbar == hwnd) {
-			match = true;
-			break;
-		}
-		w = w->next;
-	}
-
-	if (match == false) { /* during initial window creation */
-		w = window_list;
-		while (w != NULL) {
-			if (w->toolbar == NULL) {
-				w->toolbar = hwnd;
-				break;
-			}
-			w = w->next;
-		}
-	}
+	struct gui_window *gw;
+	int urlx, urly, urlwidth, urlheight;
 
 	switch (msg) {
-	case WM_LBUTTONUP:
-	case WM_LBUTTONDOWN:
-	case WM_MOUSEMOVE:
-		x = GET_X_LPARAM(lparam);
-		y = GET_Y_LPARAM(lparam);
-		if ((w != NULL) &&
-		    (x > w->ntoolbuttons * w->toolbuttondimension)) {
-			if (msg == WM_LBUTTONDOWN)
-				SetFocus(w->urlbar);
-
-			return CallWindowProc((WNDPROC)
-					      nsws_window_url_callback,
-					      w->urlbar, msg, wparam,
-					      MAKELONG(x - w->ntoolbuttons *
-						       w->toolbuttondimension, y));
-		}
-		break;
 	case WM_SIZE:
+		gw = nsws_get_gui_window(hwnd);
+		urlbar_dimensions(hwnd, gw->toolbuttonsize, gw->toolbuttonc, &urlx, &urly, &urlwidth, &urlheight);
 		/* resize url */
-		if (w->urlbar != NULL) {
-			w->urlbarwidth = LOWORD(lparam) - w->ntoolbuttons * w->toolbuttondimension - 8 - NSWS_THROBBER_WIDTH;
-			MoveWindow(w->urlbar,
-				   w->toolbuttondimension * w->ntoolbuttons + 2,
-				   8,
-				   w->urlbarwidth - 8,
-				   w->toolbuttondimension - 12,
-				   true);
+		if (gw->urlbar != NULL) {
+			MoveWindow(gw->urlbar, urlx, urly, urlwidth, urlheight, true);
 		}
 		/* move throbber */
-		if (w->throbber != NULL) {
-			MoveWindow(w->throbber,
+		if (gw->throbber != NULL) {
+			MoveWindow(gw->throbber,
 				   LOWORD(lparam) - NSWS_THROBBER_WIDTH - 4, 8,
 				   NSWS_THROBBER_WIDTH, NSWS_THROBBER_WIDTH,
 				   true);
@@ -335,7 +337,8 @@ LRESULT CALLBACK nsws_window_toolbar_callback(HWND hwnd, UINT msg,
 		break;
 	}
 
-	return CallWindowProc((WNDPROC) toolproc, hwnd, msg, wparam, lparam);
+	/* chain to the next handler */
+	return CallWindowProc(toolproc, hwnd, msg, wparam, lparam);
 }
 
 /**
@@ -512,26 +515,6 @@ static void nsws_window_set_ico(struct gui_window *w)
 		SendMessage(w->main, WM_SETICON, ICON_SMALL, (LPARAM)hIconS);
 }
 
-/**
- * creation of url bar
- */
-static void nsws_window_urlbar_create(struct gui_window *w)
-{
-	HWND hwnd = CreateWindow("EDIT",
-				 "",
-				 WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL | ES_OEMCONVERT,
-				 w->toolbuttondimension * w->ntoolbuttons + 2,
-				 8,
-				 w->urlbarwidth - 8,
-				 w->toolbuttondimension - 12,
-				 w->main,
-				 (HMENU) NSWS_ID_URLBAR,
-				 hinstance,
-				 NULL);
-	/*urlproc = (FARPROC) SetWindowLong(hwnd, GWL_WNDPROC, (DWORD)
-	  nsws_window_url_callback);*/
-	w->urlbar = hwnd;
-}
 
 /**
  * creation of throbber
@@ -564,80 +547,83 @@ static void nsws_window_throbber_create(struct gui_window *w)
 	w->throbber = hwnd;
 }
 
-/**
- * creation of toolbar
- */
-static void
-nsws_window_toolbar_create(struct gui_window *w)
+
+static HWND
+nsws_window_toolbar_create(struct gui_window *gw, HWND hWndParent)
 {
-	unsigned int listid = 0;
-	char imagepath[PATH_MAX];
-	/* NB there is currently an immediate window close at
-	 * netsurf launch in real/virtual - as distinct from
-	 * emulation - windows whose probable cause is the
-	 * location of the url bar to the right of the buttons;
-	 * really the way forward would quite possibly be to
-	 * implement an active bitmap as the button bar, sensitive
-	 * to hover / click events; the immediate window close
-	 * behaviour was observed during development when testing
-	 * the arrangements of url bar / buttons although much has
-	 * changed since then */
+	HWND hWndToolbar;
+	HIMAGELIST hImageList;
+	HIMAGELIST hDisabledImageList;
+	HIMAGELIST hHotImageList;
+	/* Toolbar buttons */
+	TBBUTTON tbButtons[] = {
+		{0, NSWS_ID_NAV_BACK, TBSTATE_ENABLED, BTNS_BUTTON, {0}, 0, 0},
+		{1, NSWS_ID_NAV_FORWARD, TBSTATE_ENABLED, BTNS_BUTTON, {0}, 0, 0},
+		{2, NSWS_ID_NAV_HOME, TBSTATE_ENABLED, BTNS_BUTTON, {0}, 0, 0},
+		{3, NSWS_ID_NAV_RELOAD, TBSTATE_ENABLED, BTNS_BUTTON, {0}, 0, 0},
+		{4, NSWS_ID_NAV_STOP, TBSTATE_ENABLED, BTNS_BUTTON, {0}, 0, 0},
+	};
 
-	HWND hwnd = CreateWindow(TOOLBARCLASSNAME,
-				 NULL,
-				 WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | TBSTYLE_FLAT,
-				 0, 0, w->width,
-				 w->toolbuttondimension + 8, w->main,
-				 (HMENU) NSWS_ID_TOOLBAR, hinstance, NULL);
-	HIMAGELIST hImageList = ImageList_Create(w->toolbuttondimension - 8,
-						 w->toolbuttondimension - 8,
-						 0,
-						 w->ntoolbuttons,
-						 0);
-	SendMessage(hwnd, TB_BUTTONSTRUCTSIZE, (WPARAM) sizeof(TBBUTTON), 0);
+	/* Create the toolbar child window. */
+	hWndToolbar = CreateWindowEx(0, TOOLBARCLASSNAME, "Toolbar",
+				     WS_CHILD | WS_VISIBLE | TBSTYLE_FLAT,
+				     0, 0, 0, 0,
+				     hWndParent, NULL, HINST_COMMCTRL, NULL);
 
-	ZeroMemory(w->buttons, sizeof(w->buttons));
+	if (!hWndToolbar) {
+		return NULL;
+	}
 
-	w->buttons[5].iBitmap = w->urlbarwidth;
-	w->buttons[5].fsStyle = TBSTYLE_SEP;
-	w->buttons[5].iString = -1;
-/*	w->buttons[0].fsState = TBSTATE_ENABLED; */
+	/* remember how many buttons are being created */
+	gw->toolbuttonc = sizeof(tbButtons) / sizeof(TBBUTTON);
 
-/* keep bitmaps in cache memory for re-creation of toolbar */
+	/* Create the standard image list and assign to toolbar. */
+	hImageList = ImageList_LoadImage(hinstance, MAKEINTRESOURCE(NSWS_ID_TOOLBAR_BITMAP), gw->toolbuttonsize, 0, CLR_DEFAULT, IMAGE_BITMAP, 0);
+	SendMessage(hWndToolbar, TB_SETIMAGELIST, (WPARAM)0, (LPARAM)hImageList);
 
-#define MAKE_BUTTON(p, q, r)						\
-	if (w->hbmp[p] == NULL) {					\
-		nsws_find_resource(imagepath, #r ".bmp", "windows/res/"	\
-				   #r ".bmp");				\
-		LOG(("loading toolbutton image %s", imagepath));	\
-		w->hbmp[p] = LoadImage(NULL, imagepath, IMAGE_BITMAP,	\
-				       w->toolbuttondimension - 8,	\
-				       w->toolbuttondimension - 8, LR_SHARED | \
-				       LR_LOADFROMFILE | LR_LOADTRANSPARENT); \
-	}								\
-	ImageList_Add(hImageList, w->hbmp[p], NULL);			\
-	w->buttons[p].iBitmap = MAKELONG(p, 0);				\
-	w->buttons[p].idCommand = NSWS_ID_NAV_##q;			\
-	w->buttons[p].fsState = TBSTATE_ENABLED;			\
-	w->buttons[p].fsStyle = TBSTYLE_BUTTON
-	MAKE_BUTTON(0, BACK, back);
-	MAKE_BUTTON(1, FORWARD, forward);
-	MAKE_BUTTON(2, HOME, home);
-	MAKE_BUTTON(3, STOP, stop);
-	MAKE_BUTTON(4, RELOAD, reload);
-#undef MAKE_BUTTON
-	SendMessage(hwnd, TB_SETIMAGELIST, (WPARAM) listid, (LPARAM)
-		    hImageList);
-	SendMessage(hwnd, TB_ADDBUTTONS, w->ntoolbuttons + 1,
-		    (LPARAM) &(w->buttons));
-	w->toolbar = hwnd;
-	DeleteObject(hImageList);
-	nsws_window_urlbar_create(w);
-	nsws_window_throbber_create(w);
-	SendMessage(hwnd, WM_SIZE, 0,
-		    MAKELONG(w->width, w->toolbuttondimension + 12));
-	toolproc = (FARPROC) SetWindowLong(hwnd, GWL_WNDPROC, (DWORD)
-					   nsws_window_toolbar_callback);
+	/* Create the disabled image list and assign to toolbar. */
+	hDisabledImageList = ImageList_LoadImage(hinstance, MAKEINTRESOURCE(NSWS_ID_TOOLBAR_GREY_BITMAP), gw->toolbuttonsize, 0, CLR_DEFAULT, IMAGE_BITMAP, 0);
+	SendMessage(hWndToolbar, TB_SETDISABLEDIMAGELIST, (WPARAM)1, (LPARAM)hDisabledImageList);
+
+	/* Create the hot image list and assign to toolbar. */
+	hHotImageList = ImageList_LoadImage(hinstance, MAKEINTRESOURCE(NSWS_ID_TOOLBAR_HIGHL_BITMAP), gw->toolbuttonsize, 0, CLR_DEFAULT, IMAGE_BITMAP, 0);
+	SendMessage(hWndToolbar, TB_SETHOTIMAGELIST, (WPARAM)2, (LPARAM)hHotImageList);
+
+	/* Add buttons. */
+	SendMessage(hWndToolbar, TB_BUTTONSTRUCTSIZE, (WPARAM)sizeof(TBBUTTON), 0);
+	SendMessage(hWndToolbar, TB_ADDBUTTONS, (WPARAM)gw->toolbuttonc, (LPARAM)&tbButtons);
+
+
+	int urlx, urly, urlwidth, urlheight;
+	urlbar_dimensions(hWndToolbar, gw->toolbuttonsize, gw->toolbuttonc, &urlx, &urly, &urlwidth, &urlheight);
+
+	// Create the edit control child window.
+	gw->urlbar = CreateWindowEx(0L, "Edit", NULL,
+				    WS_CHILD | WS_BORDER | WS_VISIBLE | ES_LEFT
+				    | ES_AUTOVSCROLL | ES_MULTILINE,
+				    urlx,
+				    urly,
+				    urlwidth,
+				    urlheight,
+				    hWndToolbar,
+				    (HMENU)NSWS_ID_URLBAR,
+				    hinstance, 0 );
+
+	if (!gw->urlbar) {
+		DestroyWindow(hWndToolbar);
+		return NULL;
+	}
+
+	nsws_window_throbber_create(gw);
+
+	/* set the gui window associated with this toolbar */
+	SetProp(hWndToolbar, TEXT("GuiWnd"), (HANDLE)gw);
+
+	/* subclass the message handler */
+	toolproc = (WNDPROC)SetWindowLongPtr(hWndToolbar, GWLP_WNDPROC, (LONG_PTR)nsws_window_toolbar_callback);
+
+	/* Return the completed toolbar */
+	return hWndToolbar;
 }
 
 /**
@@ -654,15 +640,19 @@ static void nsws_window_statusbar_create(struct gui_window *w)
 
 static void nsws_window_drawingarea_create(struct gui_window *w)
 {
-	/* potentially make drawingarea window from frameless window
-	   + scrollbars here */
+	RECT rtoolbar;
+	RECT rstatusbar;
+
+	GetClientRect(w->toolbar, &rtoolbar);
+	GetClientRect(w->statusbar, &rstatusbar);
+
 	w->drawingarea = CreateWindow(windowclassname_drawable,
 				      NULL,
 				      WS_VISIBLE|WS_CHILD,
 				      0,
-				      w->toolbuttondimension + 8,
+				      rtoolbar.bottom + 1,
 				      w->width,
-				      w->height - (w->toolbuttondimension + 8),
+				      rstatusbar.top - rtoolbar.bottom,
 				      w->main,
 				      NULL,
 				      hinstance,
@@ -1490,13 +1480,6 @@ LRESULT CALLBACK nsws_window_event_callback(HWND hwnd, UINT msg, WPARAM wparam,
 			nscss_screen_dpi = INTTOFIX(dpi);
 		ReleaseDC(hwnd, hdc);
 
-		nsws_window_set_accels(w);
-		nsws_window_set_ico(w);
-		nsws_window_toolbar_create(w);
-		nsws_window_statusbar_create(w);
-		nsws_window_vscroll_create(w);
-		nsws_window_hscroll_create(w);
-		nsws_window_drawingarea_create(w);
 		break;
 	}
 
@@ -1600,6 +1583,14 @@ static void nsws_window_create(struct gui_window *gw)
 			     option_window_y, option_window_width,
 			     option_window_height, SWP_SHOWWINDOW);
 
+	nsws_window_set_accels(gw);
+	nsws_window_set_ico(gw);
+	gw->toolbar = nsws_window_toolbar_create(gw, hwnd);
+	nsws_window_statusbar_create(gw);
+	nsws_window_vscroll_create(gw);
+	nsws_window_hscroll_create(gw);
+	nsws_window_drawingarea_create(gw);
+
 	ShowWindow(hwnd, SW_SHOWNORMAL);
 	UpdateWindow(hwnd);
 	gw->main = hwnd;
@@ -1626,10 +1617,7 @@ gui_create_browser_window(struct browser_window *bw,
 
 	w->width = 600;
 	w->height = 600;
-	w->ntoolbuttons = NTOOLBUTTONS;
-	w->toolbuttondimension = 32; /* includes padding of 4 every side */
-	w->urlbarwidth = w->width - w->toolbuttondimension * w->ntoolbuttons
-		- 8 - NSWS_THROBBER_WIDTH;
+	w->toolbuttonsize = 24; /* includes padding of 4 every side */
 	w->requestscrollx = 0;
 	w->requestscrolly = 0;
 	w->localhistory = NULL;
