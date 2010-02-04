@@ -1135,8 +1135,11 @@ LRESULT CALLBACK nsws_window_event_callback(HWND hwnd, UINT msg, WPARAM wparam,
 		case NSWS_ID_FILE_OPEN_LOCATION:
 			SetFocus(w->urlbar);
 			break;
+
 		case NSWS_ID_FILE_OPEN_WINDOW:
+			browser_window_create(NULL, w->bw, NULL, false, false);
 			break;
+
 		case NSWS_ID_FILE_CLOSE_WINDOW:
 			PostMessage(hwnd, WM_CLOSE, 0, 0);
 			break;
