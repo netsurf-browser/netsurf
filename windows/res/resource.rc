@@ -18,7 +18,7 @@ NSWS_ID_TOOLBAR_BITMAP BITMAP         "toolbar.bmp"
 NSWS_ID_TOOLBAR_GREY_BITMAP BITMAP         "toolbarg.bmp"
 
 
-NSWS_ID_TOOLBAR_HIGHL_BITMAP BITMAP         "toolbarh.bmp"
+NSWS_ID_TOOLBAR_HOT_BITMAP BITMAP         "toolbarh.bmp"
 
 
 

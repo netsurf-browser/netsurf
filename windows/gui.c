@@ -248,8 +248,8 @@ void gui_poll(bool active)
 /**
  * callback for url bar events
  */
-LRESULT CALLBACK nsws_window_url_callback(HWND hwnd, UINT msg, WPARAM wparam,
-					  LPARAM lparam)
+LRESULT CALLBACK 
+nsws_window_url_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
 	DWORD i, ii;
 	SendMessage(hwnd, EM_GETSEL, (WPARAM)&i, (LPARAM)&ii);
@@ -547,14 +547,26 @@ static void nsws_window_throbber_create(struct gui_window *w)
 	w->throbber = hwnd;
 }
 
+static HIMAGELIST 
+nsws_set_imagelist(HWND hwnd, UINT msg, int resid, int bsize, int bcnt)
+{
+	HIMAGELIST hImageList;
+	HBITMAP hScrBM;
+
+	hImageList = ImageList_Create(bsize, bsize, ILC_COLOR24 |ILC_MASK, 0, bcnt);
+	hScrBM = LoadImage(hinstance, MAKEINTRESOURCE(resid),
+			   IMAGE_BITMAP, 0, 0, LR_DEFAULTCOLOR);
+	ImageList_AddMasked(hImageList, hScrBM, 0xcccccc);
+	DeleteObject(hScrBM);
+
+	SendMessage(hwnd, msg, (WPARAM)0, (LPARAM)hImageList);
+	return hImageList;
+}
 
 static HWND
 nsws_window_toolbar_create(struct gui_window *gw, HWND hWndParent)
 {
 	HWND hWndToolbar;
-	HIMAGELIST hImageList;
-	HIMAGELIST hDisabledImageList;
-	HIMAGELIST hHotImageList;
 	/* Toolbar buttons */
 	TBBUTTON tbButtons[] = {
 		{0, NSWS_ID_NAV_BACK, TBSTATE_ENABLED, BTNS_BUTTON, {0}, 0, 0},
@@ -578,16 +590,13 @@ nsws_window_toolbar_create(struct gui_window *gw, HWND hWndParent)
 	gw->toolbuttonc = sizeof(tbButtons) / sizeof(TBBUTTON);
 
 	/* Create the standard image list and assign to toolbar. */
-	hImageList = ImageList_LoadImage(hinstance, MAKEINTRESOURCE(NSWS_ID_TOOLBAR_BITMAP), gw->toolbuttonsize, 0, CLR_DEFAULT, IMAGE_BITMAP, 0);
-	SendMessage(hWndToolbar, TB_SETIMAGELIST, (WPARAM)0, (LPARAM)hImageList);
+	nsws_set_imagelist(hWndToolbar, TB_SETIMAGELIST, NSWS_ID_TOOLBAR_BITMAP, gw->toolbuttonsize, gw->toolbuttonc);
 
 	/* Create the disabled image list and assign to toolbar. */
-	hDisabledImageList = ImageList_LoadImage(hinstance, MAKEINTRESOURCE(NSWS_ID_TOOLBAR_GREY_BITMAP), gw->toolbuttonsize, 0, CLR_DEFAULT, IMAGE_BITMAP, 0);
-	SendMessage(hWndToolbar, TB_SETDISABLEDIMAGELIST, (WPARAM)1, (LPARAM)hDisabledImageList);
+	nsws_set_imagelist(hWndToolbar, TB_SETDISABLEDIMAGELIST, NSWS_ID_TOOLBAR_GREY_BITMAP, gw->toolbuttonsize, gw->toolbuttonc);
 
 	/* Create the hot image list and assign to toolbar. */
-	hHotImageList = ImageList_LoadImage(hinstance, MAKEINTRESOURCE(NSWS_ID_TOOLBAR_HIGHL_BITMAP), gw->toolbuttonsize, 0, CLR_DEFAULT, IMAGE_BITMAP, 0);
-	SendMessage(hWndToolbar, TB_SETHOTIMAGELIST, (WPARAM)2, (LPARAM)hHotImageList);
+	nsws_set_imagelist(hWndToolbar, TB_SETHOTIMAGELIST, NSWS_ID_TOOLBAR_HOT_BITMAP, gw->toolbuttonsize, gw->toolbuttonc);
 
 	/* Add buttons. */
 	SendMessage(hWndToolbar, TB_BUTTONSTRUCTSIZE, (WPARAM)sizeof(TBBUTTON), 0);
@@ -1524,7 +1533,7 @@ static void create_local_windows_classes(void) {
 	w.hInstance	= hinstance;
 	w.hIcon		= LoadIcon(NULL, IDI_APPLICATION); /* -> NetSurf */
 	w.hCursor	= LoadCursor(NULL, IDC_ARROW);
-	w.hbrBackground	= (HBRUSH)(COLOR_WINDOW + 1);
+	w.hbrBackground	= (HBRUSH)(COLOR_MENU + 1);
 	w.lpszMenuName	= NULL;
 	w.lpszClassName = windowclassname_main;
 	w.hIconSm	= LoadIcon(NULL, IDI_APPLICATION); /* -> NetSurf */
@@ -1562,7 +1571,8 @@ static void nsws_window_create(struct gui_window *gw)
 	gw->rclick = LoadMenu(hinstance, MAKEINTRESOURCE(NSWS_ID_CTXMENU));
 
 	LOG(("creating window for hInstance %p", hinstance));
-	hwnd = CreateWindow(windowclassname_main,
+	hwnd = CreateWindowEx(0,
+			      windowclassname_main,
 			    "NetSurf Browser",
 			    WS_OVERLAPPEDWINDOW | WS_HSCROLL | WS_VSCROLL |
 			    WS_CLIPCHILDREN | WS_CLIPSIBLINGS | CS_DBLCLKS,
