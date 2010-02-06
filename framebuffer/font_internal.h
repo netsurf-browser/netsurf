@@ -26,12 +26,15 @@ struct fb_font_desc {
     const uint32_t *data;
 };
 
-extern const struct fb_font_desc font_vga_8x16;
+extern const struct fb_font_desc font_regular;
+extern const struct fb_font_desc font_italic;
+extern const struct fb_font_desc font_bold;
+extern const struct fb_font_desc font_italic_bold;
 
 extern const struct fb_font_desc* fb_get_font(const plot_font_style_t *fstyle);
 
 extern utf8_convert_ret utf8_to_font_encoding(const struct fb_font_desc* font,
-				       const char *string, 
+				       const char *string,
 				       size_t len,
 				       char **result);
 

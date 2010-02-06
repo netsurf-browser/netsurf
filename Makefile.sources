@@ -106,7 +106,8 @@ S_FRAMEBUFFER := gui.c framebuffer.c tree.c history.c hotlist.c 	\
 S_FRAMEBUFFER += font_$(NETSURF_FB_FONTLIB).c
 
 ifeq ($(NETSURF_FB_FONTLIB),internal)
-S_FRAMEBUFFER += font_8x16.c
+S_FRAMEBUFFER += nsfont_regular.c nsfont_italic.c nsfont_bold.c		\
+	nsfont_italic_bold.c 
 endif
 
 

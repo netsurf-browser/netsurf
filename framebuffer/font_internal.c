@@ -36,11 +36,25 @@ bool fb_font_init(void)
 const struct fb_font_desc*
 fb_get_font(const plot_font_style_t *fstyle)
 {
-        return &font_vga_8x16;
+	if (fstyle->weight >= 700) {
+		if ((fstyle->flags & FONTF_ITALIC) ||
+				(fstyle->flags & FONTF_OBLIQUE)) {
+			return &font_italic_bold;
+		} else {
+			return &font_bold;
+		}
+	} else {
+		if ((fstyle->flags & FONTF_ITALIC) ||
+				(fstyle->flags & FONTF_OBLIQUE)) {
+			return &font_italic;
+		} else {
+			return &font_regular;
+		}
+	}
 }
 
 utf8_convert_ret utf8_to_font_encoding(const struct fb_font_desc* font,
-				       const char *string, 
+				       const char *string,
 				       size_t len,
 				       char **result)
 {
@@ -48,11 +62,11 @@ utf8_convert_ret utf8_to_font_encoding(const struct fb_font_desc* font,
 
 }
 
-utf8_convert_ret utf8_to_local_encoding(const char *string, 
+utf8_convert_ret utf8_to_local_encoding(const char *string,
 				       size_t len,
 				       char **result)
 {
-	return utf8_to_enc(string, "CP437", len, result);
+	return utf8_to_enc(string, "CP1252", len, result);
 
 }
 
