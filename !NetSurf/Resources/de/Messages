@@ -688,7 +688,6 @@ DownloadWarn:Der Download ist wahrscheinlich unvollständig:
 MiscError:Unerwarteter Fehler:
 FileError:Datei existiert nicht:
 PrintError:Ein Fehler trat während des Druckens auf:
-AWNotSeen:Das Programm AWViewer wurde nicht gefunden.
 EncNotRec:Encodierung nicht erkannt.
 FileOpenError:Datei ist nicht zu öffnen: '%s'
 DirectoryError:Verzeichnis '%s' existiert bereits.

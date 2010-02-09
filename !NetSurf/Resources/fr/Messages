@@ -688,7 +688,6 @@ DownloadWarn:Ce téléchargement ne peut pas se terminer:
 MiscError:Une erreur inattendue s'est produite:
 FileError:Le fichier n'existe pas:
 PrintError:Une erreur s'est produite lors de l'impression:
-AWNotSeen:Localisez l'application AMViewer SVP puis réessayez.
 EncNotRec:Encoding type not recognised.
 FileOpenError:could not open file '%s'
 DirectoryError:directory '%s' already exists
