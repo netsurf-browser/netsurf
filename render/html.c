@@ -1549,8 +1549,6 @@ void html_object_callback(content_msg msg, struct content *object,
 			((time_taken < option_min_reflow_period ?
 			option_min_reflow_period : time_taken * 1.25));
 	}
-	if (c->status == CONTENT_STATUS_READY)
-		html_set_status(c, "");
 }
 
 
