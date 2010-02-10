@@ -419,11 +419,7 @@ int main(int argc, char** argv)
 void gui_init(int argc, char** argv)
 {
 	char buf[PATH_MAX];
-        nsfb_t *nsfb;
-
-	if (process_cmdline(argc,argv) != true) 
-		die("unable to process command line.\n");
-	
+        nsfb_t *nsfb;	
 
 	fb_find_resource(buf, "Aliases", "./framebuffer/res/Aliases");
 	LOG(("Using '%s' as Aliases file", buf));
@@ -450,6 +446,9 @@ void gui_init(int argc, char** argv)
 
 	fb_find_resource(buf, "quirks.css", "./framebuffer/res/quirks.css");
 	quirks_stylesheet_url = path_to_url(buf);
+
+	if (process_cmdline(argc,argv) != true) 
+		die("unable to process command line.\n");
 
         nsfb = framebuffer_initialise(fename, fewidth, feheight, febpp);
         if (nsfb == NULL)
