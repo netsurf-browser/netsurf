@@ -175,6 +175,12 @@ struct browser_window {
 	struct search_context *search_context;
 	
 	struct form_control *visible_select_menu;
+
+        /** cache of the currently displayed status text. */
+	char *status_text;
+	int status_text_len;
+	int status_match;
+	int status_miss;
 };
 
 

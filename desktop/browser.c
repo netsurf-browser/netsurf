@@ -196,6 +196,9 @@ void browser_window_initialise_common(struct browser_window *bw,
 	bw->reformat_pending = false;
 	bw->drag_type = DRAGGING_NONE;
 	bw->scale = (float) option_scale / 100.0;
+
+	bw->status_text = NULL;
+	bw->status_text_len = 0;
 }
 
 
@@ -906,9 +909,34 @@ void browser_window_reload(struct browser_window *bw, bool all)
 
 void browser_window_set_status(struct browser_window *bw, const char *text)
 {
+	int text_len;
+	/* find topmost window */
 	while (bw->parent)
 		bw = bw->parent;
-	gui_window_set_status(bw->window, text);
+
+	if ((bw->status_text != NULL) && 
+	    (strcmp(text, bw->status_text) == 0)) {
+		/* status text is unchanged */
+		bw->status_match++;
+		return;
+	}
+
+	/* status text is changed */
+ 
+	text_len = strlen(text);
+
+	if ((bw->status_text == NULL) || (bw->status_text_len < text_len)) {
+		/* no current string allocation or it is not long enough */
+		free(bw->status_text);
+		bw->status_text = strdup(text);
+		bw->status_text_len = text_len;
+	} else {
+		/* current allocation has enough space */
+		memcpy(bw->status_text, text, text_len + 1);
+	}
+
+	bw->status_miss++;
+	gui_window_set_status(bw->window, text);	
 }
 
 
@@ -1006,6 +1034,10 @@ void browser_window_destroy_internal(struct browser_window *bw)
 
 	free(bw->name);
 	free(bw->frag_id);
+	free(bw->status_text);
+	bw->status_text = NULL;
+	LOG(("Status text cache match:miss %d:%d", 
+	     bw->status_match, bw->status_miss));
 }
 
 
