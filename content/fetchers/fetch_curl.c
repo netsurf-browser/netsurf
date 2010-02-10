@@ -79,6 +79,7 @@ struct curl_fetch_info {
 	time_t file_etag;		/**< ETag for local objects */
 #define MAX_CERTS 10
 	struct cert_info cert_data[MAX_CERTS];	/**< HTTPS certificate data */
+	unsigned int last_progress_update;	/**< Time of last progress update */
 };
 
 struct cache_handle {
@@ -97,7 +98,6 @@ static int curl_fetchers_registered = 0;
 static bool curl_with_openssl;
 
 static char fetch_error_buffer[CURL_ERROR_SIZE]; /**< Error buffer for cURL. */
-static char fetch_progress_buffer[256]; /**< Progress buffer for cURL */
 static char fetch_proxy_userpwd[100];	/**< Proxy authentication details. */
 
 static bool fetch_curl_initialise(const char *scheme);
@@ -346,6 +346,7 @@ void * fetch_curl_setup(struct fetch *parent_fetch, const char *url,
 	fetch->file_etag = 0;
 	fetch->http_code = 0;
 	memset(fetch->cert_data, 0, sizeof(fetch->cert_data));
+	fetch->last_progress_update = 0;
 
 	if (!fetch->url ||
 	    (post_urlenc && !fetch->post_urlenc) ||
@@ -907,11 +908,23 @@ void fetch_curl_done(CURL *curl_handle, CURLcode result)
 int fetch_curl_progress(void *clientp, double dltotal, double dlnow,
 			double ultotal, double ulnow)
 {
+	static char fetch_progress_buffer[256]; /**< Progress buffer for cURL */
 	struct curl_fetch_info *f = (struct curl_fetch_info *) clientp;
+	unsigned int time_now_cs;
 	double percent;
 
 	if (f->abort)
 		return 0;
+
+	/* Rate limit each fetch's progress notifications to 2 a second */
+#define UPDATES_PER_SECOND 2
+#define UPDATE_DELAY_CS (100 / UPDATES_PER_SECOND)
+	time_now_cs = wallclock();
+	if (time_now_cs - f->last_progress_update < UPDATE_DELAY_CS)
+		return 0;
+	f->last_progress_update = time_now_cs;
+#undef UPDATE_DELAY_CS
+#undef UPDATES_PERS_SECOND
 
 	if (dltotal > 0) {
 		percent = dlnow * 100.0f / dltotal;
