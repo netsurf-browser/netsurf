@@ -936,7 +936,7 @@ void browser_window_set_status(struct browser_window *bw, const char *text)
 	}
 
 	bw->status_miss++;
-	gui_window_set_status(bw->window, text);	
+	gui_window_set_status(bw->window, bw->status_text);
 }
 
 

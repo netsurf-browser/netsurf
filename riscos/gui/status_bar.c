@@ -314,31 +314,10 @@ void ro_gui_status_bar_set_text(struct status_bar *sb, const char *text)
 {
 	assert(sb);
 
-	/* check for no change */
-	if (sb->text) {
-	  	/* strings match */
-		if (!strcmp(text, sb->text))
-	  		return;
-	} else {
-		/* still no string */
-		if (!text)
-			return;
-	}
-
-	/* release the old text */
-	if (sb->text)
-		free(sb->text);
-
-	/* copy new text if required. we don't abort on the string duplication
-	 * failing as it would just cause the visible display to be out of
-	 * sync with the (failed) text */
-	if (text)
-		sb->text = strdup(text);
-	else
-	  	sb->text = NULL;
+	sb->text = text;
 
 	/* redraw the window */
-	if (sb->visible)
+	if ((sb->visible) && (text != NULL))
 		xwimp_force_redraw(sb->w, 0, 0, sb->width - WIDGET_WIDTH, 65536);
 }
 
