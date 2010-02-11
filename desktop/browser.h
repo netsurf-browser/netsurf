@@ -44,11 +44,11 @@ struct bitmap;
 struct scroll_msg_data;
 
 typedef bool (*browser_caret_callback)(struct browser_window *bw,
-	uint32_t key, void *p);
+				       uint32_t key, void *p);
 typedef bool (*browser_paste_callback)(struct browser_window *bw,
-	const char *utf8, unsigned utf8_len, bool last, void *p);
+				       const char *utf8, unsigned utf8_len, bool last, void *p);
 typedef void (*browser_move_callback)(struct browser_window *bw,
-	void *p);
+				      void *p);
 
 
 
@@ -105,7 +105,7 @@ struct browser_window {
 	unsigned int drag_resize_right : 1;
 	unsigned int drag_resize_up : 1;
 	unsigned int drag_resize_down : 1;
-	
+
 	/** Scroll capturing all mouse events */
 	struct scroll *scroll;
 
@@ -173,14 +173,14 @@ struct browser_window {
 
 	/** search context for free text search */
 	struct search_context *search_context;
-	
+
 	struct form_control *visible_select_menu;
 
-        /** cache of the currently displayed status text. */
-	char *status_text;
-	int status_text_len;
-	int status_match;
-	int status_miss;
+	/** cache of the currently displayed status text. */
+	char *status_text; /**< Current status bar text. */
+	int status_text_len; /**< Length of the ::status_text buffer. */
+	int status_match; /**< Number of times an idempotent status-set operation was performed. */
+	int status_miss; /**< Number of times status was really updated. */
 };
 
 
@@ -201,7 +201,7 @@ typedef enum {
 					 * a drag. */
 	BROWSER_MOUSE_CLICK_1   = 4,	/* button 1 clicked. */
 	BROWSER_MOUSE_CLICK_2   = 8,	/* button 2 clicked. */
- 	BROWSER_MOUSE_DOUBLE_CLICK = 16, /* button 1 double clicked */
+	BROWSER_MOUSE_DOUBLE_CLICK = 16, /* button 1 double clicked */
 
 	BROWSER_MOUSE_DRAG_1    = 32,	/* start of button 1 drag operation */
 	BROWSER_MOUSE_DRAG_2    = 64,	/* start of button 2 drag operation */
@@ -230,17 +230,17 @@ extern struct browser_window *current_redraw_browser;
 extern bool browser_reformat_pending;
 
 struct browser_window * browser_window_create(const char *url,
-		struct browser_window *clone, const char *referrer,
-		bool history_add, bool new_tab);
+					      struct browser_window *clone, const char *referrer,
+					      bool history_add, bool new_tab);
 void browser_window_initialise_common(struct browser_window *bw,
-		struct browser_window *clone);
+				      struct browser_window *clone);
 void browser_window_go(struct browser_window *bw, const char *url,
-		const char *referrer, bool history_add);
+		       const char *referrer, bool history_add);
 void browser_window_go_unverifiable(struct browser_window *bw,
-		const char *url, const char *referrer, bool history_add,
-		struct content *parent);
+				    const char *url, const char *referrer, bool history_add,
+				    struct content *parent);
 void browser_window_download(struct browser_window *bw,
-		const char *url, const char *referrer);
+			     const char *url, const char *referrer);
 void browser_window_update(struct browser_window *bw, bool scroll_to_top);
 void browser_window_stop(struct browser_window *bw);
 void browser_window_reload(struct browser_window *bw, bool all);
@@ -250,31 +250,31 @@ void browser_window_reformat(struct browser_window *bw, int width, int height);
 void browser_window_set_scale(struct browser_window *bw, float scale, bool all);
 
 void browser_window_refresh_url_bar(struct browser_window *bw, const char *url,
-		const char *frag);
+				    const char *frag);
 
 void browser_window_mouse_click(struct browser_window *bw,
-		browser_mouse_state mouse, int x, int y);
+				browser_mouse_state mouse, int x, int y);
 void browser_window_mouse_track(struct browser_window *bw,
-		browser_mouse_state mouse, int x, int y);
+				browser_mouse_state mouse, int x, int y);
 void browser_window_mouse_drag_end(struct browser_window *bw,
-		browser_mouse_state mouse, int x, int y);
+				   browser_mouse_state mouse, int x, int y);
 
 bool browser_window_key_press(struct browser_window *bw, uint32_t key);
 bool browser_window_paste_text(struct browser_window *bw, const char *utf8,
-		unsigned utf8_len, bool last);
+			       unsigned utf8_len, bool last);
 void browser_window_form_select(struct browser_window *bw,
-		struct form_control *control, int item);
+				struct form_control *control, int item);
 void browser_redraw_box(struct content *c, struct box *box);
 void browser_form_submit(struct browser_window *bw, struct browser_window *target,
-		struct form *form, struct form_control *submit_button);
+			 struct form *form, struct form_control *submit_button);
 
 void browser_scroll_callback(void *client_data,
-		struct scroll_msg_data *scroll_data);
+			     struct scroll_msg_data *scroll_data);
 void browser_select_menu_callback(void *client_data,
-		int x, int y, int width, int height);
-		
+				  int x, int y, int width, int height);
+
 void browser_window_redraw_rect(struct browser_window *bw, int x, int y,
-		int width, int height);
+				int width, int height);
 
 bool browser_window_back_available(struct browser_window *bw);
 bool browser_window_forward_available(struct browser_window *bw);
@@ -291,7 +291,7 @@ char **global_history_get_recent(int *count);
 
 /* In platform specific thumbnail.c. */
 bool thumbnail_create(struct content *content, struct bitmap *bitmap,
-		const char *url);
+		      const char *url);
 
 /* In platform specific schedule.c. */
 void schedule(int t, void (*callback)(void *p), void *p);

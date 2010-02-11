@@ -197,8 +197,11 @@ void browser_window_initialise_common(struct browser_window *bw,
 	bw->drag_type = DRAGGING_NONE;
 	bw->scale = (float) option_scale / 100.0;
 
+	/* initialise status text cache */
 	bw->status_text = NULL;
 	bw->status_text_len = 0;
+	bw->status_match = 0;
+	bw->status_miss = 0;
 }
 
 
