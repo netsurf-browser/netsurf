@@ -3200,6 +3200,9 @@ void gui_window_set_status(struct gui_window *g, const char *text)
 {
 	ULONG cur_tab = 0;
 	char *utf8text;
+	ULONG size;
+	UWORD chars;
+	struct TextExtent textex;
 
 	if(!g) return;
 	if(!text) return;
@@ -3212,28 +3215,21 @@ void gui_window_set_status(struct gui_window *g, const char *text)
 		utf8text = ami_utf8_easy((char *)text);
 		if(utf8text == NULL) return;
 
-		if((g->shared->status == NULL) || (strcmp(utf8text,g->shared->status)))
-		{
-			ULONG size;
-			UWORD chars;
-			struct TextExtent text;
+		GetAttr(GA_Width, g->shared->gadgets[GID_STATUS],(ULONG *)&size);
+		chars = TextFit(&scrn->RastPort, utf8text, strlen(utf8text),
+					&textex, NULL, 1, size - 2, scrn->RastPort.TxHeight);
 
-			GetAttr(GA_Width, g->shared->gadgets[GID_STATUS],(ULONG *)&size);
-			chars = TextFit(&scrn->RastPort, utf8text, strlen(utf8text),
-						&text, NULL, 1, size - 2, scrn->RastPort.TxHeight);
+		utf8text[chars] = 0;
 
-			utf8text[chars] = 0;
+		SetGadgetAttrs(g->shared->gadgets[GID_STATUS],
+			g->shared->win, NULL,
+			GA_Text, utf8text,
+			TAG_DONE);
 
-			SetGadgetAttrs(g->shared->gadgets[GID_STATUS],
-				g->shared->win, NULL,
-				GA_Text, utf8text,
-				TAG_DONE);
+		RefreshGList(g->shared->gadgets[GID_STATUS],g->shared->win,NULL,1);
 
-			RefreshGList(g->shared->gadgets[GID_STATUS],g->shared->win,NULL,1);
-
-			if(g->shared->status) ami_utf8_free(g->shared->status);
-			g->shared->status = utf8text;
-		}
+		if(g->shared->status) ami_utf8_free(g->shared->status);
+		g->shared->status = utf8text;
 	}
 }
 
