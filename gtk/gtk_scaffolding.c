@@ -1544,7 +1544,11 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 		gtk_window_resize(g->window, option_window_width,
 				option_window_height);
 	} else {
-		gtk_window_set_default_size(g->window, 1024, 768);
+		/* Set to 1000x700, so we're very likely to fit even on
+		 * 1024x768 displays, not being able to take into account
+		 * window furniture or panels.
+		 */
+		gtk_window_set_default_size(g->window, 1000, 700);
 	}
 
 	/* Default toolbar button type uses system defaults */	
