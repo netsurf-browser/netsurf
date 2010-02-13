@@ -1,5 +1,5 @@
 /*
- * Copyright 2008,2009 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2010 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -23,6 +23,7 @@
 #include <proto/intuition.h>
 #include <proto/utility.h>
 #include <proto/icon.h>
+#include <proto/application.h>
 
 #include <graphics/blitattr.h>
 #include <workbench/icon.h>
@@ -32,7 +33,6 @@
 #include "amiga/options.h"
 #include "amiga/bitmap.h"
 #include "amiga/iff_dr2d.h"
-#include "amiga/arexx.h" /* temporarily required for notifications */
 
 #include "content/fetch.h"
 
@@ -58,7 +58,6 @@ struct gui_download_window *gui_download_window_create(const char *url,
 		const char *mime_type, struct fetch *fetch,
 		unsigned int total_size, struct gui_window *gui)
 {
-	char fname[1024];
 	struct gui_download_window *dw;
 	APTR va[3];
 
@@ -68,7 +67,7 @@ struct gui_download_window *gui_download_window_create(const char *url,
 
 	if((!IsListEmpty(&gui->dllist)) && (dw->dln = (struct dlnode *)FindName(&gui->dllist,url)))
 	{
-		strcpy(fname,dw->dln->filename);
+		strcpy(dw->fname, dw->dln->filename);
 		free(dw->dln->node.ln_Name);
 		dw->dln->node.ln_Name = NULL;
 	}
@@ -80,8 +79,8 @@ struct gui_download_window *gui_download_window_create(const char *url,
 			ASLFR_InitialFile,FilePart(url),
 			TAG_DONE))
 		{
-			strlcpy(&fname,savereq->fr_Drawer,1024);
-			AddPart((STRPTR)&fname,savereq->fr_File,1024);
+			strlcpy(&dw->fname,savereq->fr_Drawer,1024);
+			AddPart((STRPTR)&dw->fname,savereq->fr_File,1024);
 		}
 		else return NULL;
 	}
@@ -95,13 +94,11 @@ struct gui_download_window *gui_download_window_create(const char *url,
 	va[1] = (APTR)dw->size;
 	va[2] = 0;
 
-	if(!(dw->fh = FOpen((STRPTR)&fname,MODE_NEWFILE,0)))
+	if(!(dw->fh = FOpen((STRPTR)&dw->fname,MODE_NEWFILE,0)))
 	{
 		FreeVec(dw);
 		return NULL;
 	}
-
-	SetComment(fname,url);
 
 	dw->objects[OID_MAIN] = WindowObject,
       	    WA_ScreenTitle,nsscreentitle,
@@ -114,7 +111,7 @@ struct gui_download_window *gui_download_window_create(const char *url,
 			WA_CustomScreen,scrn,
 			WINDOW_SharedPort,sport,
 			WINDOW_UserData,dw,
-			WINDOW_IconifyGadget, TRUE,
+			WINDOW_IconifyGadget, FALSE,
 			WINDOW_LockHeight,TRUE,
          	WINDOW_Position, WPOS_CENTERSCREEN,
            	WINDOW_ParentGroup, dw->gadgets[GID_MAIN] = VGroupObject,
@@ -203,14 +200,16 @@ void gui_download_window_done(struct gui_download_window *dw)
 
 	if(!dw) return;
 
+	SetComment(dw->fname, dw->url);
+
 	if(option_download_notify)
 	{
-		if(sendcmd = ASPrintf("RINGHIO APP=NetSurf SCREEN=FRONT TITLE=NetSurf \"%s downloaded\"",dw->url))
-		{
-			IDoMethod(arexx_obj, AM_EXECUTE, sendcmd, "RINGHIO",
-				NULL, NULL, NULL, NULL);
-			FreeVec(sendcmd);
-		}
+		Notify(ami_appid, APPNOTIFY_Title, messages_get("amiDownloadComplete"),
+				APPNOTIFY_PubScreenName, "FRONT",
+				APPNOTIFY_BackMsg, dw->fname,
+				APPNOTIFY_CloseOnDC, TRUE,
+				APPNOTIFY_Text, dw->fname,
+				TAG_DONE);
 	}
 
 	bw->download = false;

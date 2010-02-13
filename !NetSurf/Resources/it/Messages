@@ -395,6 +395,7 @@ Abort:Annulla
 #
 amiDownload:%ld di %ld byte scaricati
 amiDownloadU:%ld byte scaricati
+amiDownloadComplete:NetSurf: Download completed
 
 # GTK download window tokens
 #

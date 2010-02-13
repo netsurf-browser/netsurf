@@ -393,6 +393,7 @@ Abort:Abgebrochen
 #
 amiDownload:%ld von %ld Bytes heruntergeladen
 amiDownloadU:%ld Bytes heruntergeladen
+amiDownloadComplete:NetSurf: Download completed
 
 # GTK download window tokens
 #

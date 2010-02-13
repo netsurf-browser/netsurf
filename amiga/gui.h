@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-9 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2010 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -142,4 +142,5 @@ struct MsgPort *sport;
 bool win_destroyed;
 struct browser_window *curbw;
 struct gui_globals browserglob;
+uint32 ami_appid;
 #endif

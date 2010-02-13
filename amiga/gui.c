@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-9 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2010 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -81,6 +81,8 @@
 #include <libraries/application.h>
 #include <proto/application.h>
 #include <desktop/searchweb.h>
+#include <proto/wb.h>
+#include <proto/utility.h>
 
 #include "amiga/stringview/stringview.h"
 #include "amiga/stringview/urlhistory.h"
@@ -130,7 +132,6 @@ ULONG throbber_width,throbber_height,throbber_frames,throbber_update_interval;
 BOOL rmbtrapped;
 BOOL locked_screen = FALSE;
 BOOL screen_closed = FALSE;
-uint32 ami_appid;
 struct MsgPort *applibport = NULL;
 ULONG applibsig = 0;
 
@@ -732,6 +733,7 @@ void gui_init2(int argc, char** argv)
 				REGAPP_HasPrefsWindow, TRUE,
 				REGAPP_CanCreateNewDocs, TRUE,
 				REGAPP_UniqueApplication, TRUE,
+				REGAPP_Description, "Small as a mouse, fast as a cheetah and available for free. NetSurf is a multi-platform web browser.",
 				TAG_DONE);
 		}
 		else
@@ -744,6 +746,7 @@ void gui_init2(int argc, char** argv)
 				REGAPP_HasPrefsWindow, TRUE,
 				REGAPP_CanCreateNewDocs, TRUE,
 				REGAPP_UniqueApplication, TRUE,
+				REGAPP_Description, "Small as a mouse, fast as a cheetah and available for free. NetSurf is a multi-platform web browser.",
 				TAG_DONE);
 		}
 
@@ -1698,6 +1701,18 @@ void ami_handle_applib(void)
 			case APPLIBMT_Quit:
 			case APPLIBMT_ForceQuit:
 				ami_quit_netsurf();
+			break;
+
+			case APPLIBMT_CustomMsg:
+			{
+				struct ApplicationCustomMsg *applibcustmsg = applibmsg;
+				STRPTR tempmsg;
+				if(tempmsg = ASPrintf("\"%s\"",applibcustmsg->customMsg))
+				{
+					OpenWorkbenchObjectA(tempmsg, NULL);
+					FreeVec(tempmsg);
+				}
+			}
 			break;
 		}
 		ReplyMsg((struct Message *)applibmsg);

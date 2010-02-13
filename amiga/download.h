@@ -39,6 +39,7 @@ struct gui_download_window {
 	struct browser_window *bw;
 	struct fetch *fetch;
 	char *url;
+	char fname[1024];
 };
 
 int drag_save;
