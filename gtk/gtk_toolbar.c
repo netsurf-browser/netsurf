@@ -82,7 +82,7 @@ static gboolean nsgtk_toolbar_move_complete(GtkWidget *widget, GdkDragContext
 static void nsgtk_toolbar_clear(GtkWidget *widget, GdkDragContext *gdc, guint
 		time, gpointer data);
 static gboolean nsgtk_toolbar_delete(GtkWidget *widget, GdkEvent *event,
-		gpointer data); 
+		gpointer data);
 static gboolean nsgtk_toolbar_cancel_clicked(GtkWidget *widget, gpointer data);
 static gboolean nsgtk_toolbar_reset(GtkWidget *widget, gpointer data);
 static gboolean nsgtk_toolbar_persist(GtkWidget *widget, gpointer data);
@@ -98,7 +98,7 @@ static nsgtk_toolbar_button nsgtk_toolbar_get_id_at_location(
 		nsgtk_scaffolding *g, int i);
 
 /**
- * change behaviour of scaffoldings while editing toolbar; all buttons as 
+ * change behaviour of scaffoldings while editing toolbar; all buttons as
  * well as window clicks are desensitized; then buttons in the front window
  * are changed to movable buttons
  */
@@ -107,7 +107,7 @@ void nsgtk_toolbar_customization_init(nsgtk_scaffolding *g)
 	int i;
 	nsgtk_scaffolding *list = scaf_list;
 	edit_mode = true;
-	
+
 	while (list) {
 		g_signal_handler_block(GTK_WIDGET(
 				nsgtk_window_get_drawing_area(
@@ -122,7 +122,7 @@ void nsgtk_toolbar_customization_init(nsgtk_scaffolding *g)
 				nsgtk_scaffolding_top_level(list),
 				NSGTK_WINDOW_SIGNAL_REDRAW));
 		gtk_widget_modify_bg(GTK_WIDGET(nsgtk_window_get_drawing_area(
-				nsgtk_scaffolding_top_level(list))), 
+				nsgtk_scaffolding_top_level(list))),
 				GTK_STATE_NORMAL, &((GdkColor)
 				{0, 0xEEEE, 0xEEEE, 0xEEEE}));
 
@@ -140,12 +140,12 @@ void nsgtk_toolbar_customization_init(nsgtk_scaffolding *g)
 			FALSE);
 	gtk_widget_set_sensitive(GTK_WIDGET(nsgtk_scaffolding_notebook(g)),
 			FALSE);
-	
+
 	/* set editable aspect for toolbar */
 	gtk_container_foreach(GTK_CONTAINER(nsgtk_scaffolding_toolbar(g)),
 			nsgtk_toolbar_clear_toolbar, g);
 	nsgtk_toolbar_set_physical(g);
-	/* memorize button locations, set editable */	
+	/* memorize button locations, set editable */
 	for (i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++) {
 		window->buttonlocations[i] = nsgtk_scaffolding_button(g, i)
 				->location;
@@ -170,12 +170,12 @@ void nsgtk_toolbar_customization_init(nsgtk_scaffolding *g)
 	g_signal_connect(GTK_WIDGET(nsgtk_scaffolding_toolbar(g)),
 			"drag-leave", G_CALLBACK(
 			nsgtk_toolbar_clear), g);
-	
+
 	/* set data types */
 	gtk_drag_dest_set(GTK_WIDGET(nsgtk_scaffolding_toolbar(g)),
 			GTK_DEST_DEFAULT_MOTION | GTK_DEST_DEFAULT_DROP,
 			&entry, 1, GDK_ACTION_COPY);
-	
+
 	/* open toolbar window */
 	nsgtk_toolbar_window_open(g);
 }
@@ -193,14 +193,14 @@ void nsgtk_toolbar_window_open(nsgtk_scaffolding *g)
 		nsgtk_toolbar_cancel_clicked(NULL, g);
 		return;
 	}
-	window->glade = glade_xml_new(glade_toolbar_file_location, 
+	window->glade = glade_xml_new(glade_toolbar_file_location,
 			"toolbarwindow", NULL);
 	if (window->glade == NULL) {
 		warn_user(messages_get("NoMemory"), 0);
 		nsgtk_toolbar_cancel_clicked(NULL, g);
 	}
 	glade_xml_signal_autoconnect(window->glade);
-	
+
 	window->window = glade_xml_get_widget(window->glade, "toolbarwindow");
 	if (window->window == NULL) {
 		warn_user(messages_get("NoMemory"), 0);
@@ -242,10 +242,10 @@ void nsgtk_toolbar_window_open(nsgtk_scaffolding *g)
 	gtk_window_set_title(GTK_WINDOW(window->window), messages_get(
 			"gtkToolBarTitle"));
 	gtk_window_set_accept_focus(GTK_WINDOW(window->window), FALSE);
-	gtk_drag_dest_set(GTK_WIDGET(window->window), GTK_DEST_DEFAULT_MOTION | 
+	gtk_drag_dest_set(GTK_WIDGET(window->window), GTK_DEST_DEFAULT_MOTION |
 			GTK_DEST_DEFAULT_DROP, &entry, 1, GDK_ACTION_COPY);
 	gtk_widget_show_all(window->window);
-	gtk_window_set_position(GTK_WINDOW(window->window), 
+	gtk_window_set_position(GTK_WINDOW(window->window),
 			GTK_WIN_POS_CENTER_ON_PARENT);
 	gtk_window_get_position(nsgtk_scaffolding_window(g), &x, &y);
 	gtk_window_move(GTK_WINDOW(window->window), x, y + 100);
@@ -294,7 +294,7 @@ gboolean nsgtk_toolbar_cancel_clicked(GtkWidget *widget, gpointer data)
 	nsgtk_scaffolding *g = (nsgtk_scaffolding *)data;
 	/* reset g->buttons->location */
 	for (int i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++) {
-		nsgtk_scaffolding_button(g, i)->location = 
+		nsgtk_scaffolding_button(g, i)->location =
 				window->buttonlocations[i];
 	}
 	nsgtk_toolbar_set_physical(g);
@@ -329,7 +329,7 @@ gboolean nsgtk_toolbar_reset(GtkWidget *widget, gpointer data)
 	nsgtk_scaffolding *g = (nsgtk_scaffolding *)data;
 	int i;
 	for (i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++)
-		nsgtk_scaffolding_button(g, i)->location = 
+		nsgtk_scaffolding_button(g, i)->location =
 				(i <= THROBBER_ITEM) ? i : -1;
 	nsgtk_toolbar_set_physical(g);
 	for (i = BACK_BUTTON; i <= THROBBER_ITEM; i++) {
@@ -360,7 +360,7 @@ void nsgtk_toolbar_set_physical(nsgtk_scaffolding *g)
 		return;
 	}
 	/* simplest is to clear the toolbar then reload it from memory */
-	gtk_container_foreach(GTK_CONTAINER(nsgtk_scaffolding_toolbar(g)), 
+	gtk_container_foreach(GTK_CONTAINER(nsgtk_scaffolding_toolbar(g)),
 			nsgtk_toolbar_clear_toolbar, g);
 	for (i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++)
 		nsgtk_toolbar_add_item_to_toolbar(g, i, theme);
@@ -484,9 +484,9 @@ bool nsgtk_toolbar_add_store_widget(GtkWidget *widget)
 			warn_user("NoMemory", 0);
 			return false;
 		}
-		gtk_toolbar_set_style(GTK_TOOLBAR(window->currentbar), 
+		gtk_toolbar_set_style(GTK_TOOLBAR(window->currentbar),
 				GTK_TOOLBAR_BOTH);
-		gtk_toolbar_set_icon_size(GTK_TOOLBAR(window->currentbar), 
+		gtk_toolbar_set_icon_size(GTK_TOOLBAR(window->currentbar),
 				GTK_ICON_SIZE_LARGE_TOOLBAR);
 		gtk_box_pack_start(GTK_BOX(window->widgetvbox),
 			window->currentbar, FALSE, FALSE, 0);
@@ -497,7 +497,7 @@ bool nsgtk_toolbar_add_store_widget(GtkWidget *widget)
 	gtk_toolbar_insert(GTK_TOOLBAR(window->currentbar), GTK_TOOL_ITEM(
 			widget), window->numberh++);
 	gtk_tool_item_set_use_drag_window(GTK_TOOL_ITEM(widget), TRUE);
-	gtk_drag_source_set(widget, GDK_BUTTON1_MASK, &entry, 1, 
+	gtk_drag_source_set(widget, GDK_BUTTON1_MASK, &entry, 1,
 			GDK_ACTION_COPY);
 	gtk_widget_show_all(window->window);
 	return true;
@@ -560,10 +560,10 @@ gboolean nsgtk_toolbar_data(GtkWidget *widget, GdkDragContext *gdc, gint x,
 		q = nsgtk_toolbar_get_id_at_location(g, i);
 		if (q == -1)
 			continue;
-		nsgtk_scaffolding_button(g, q)->location++;		
+		nsgtk_scaffolding_button(g, q)->location++;
 	}
 	nsgtk_scaffolding_button(g, window->currentbutton)->location = ind;
-	
+
 	/* complete action */
 	gtk_toolbar_insert(nsgtk_scaffolding_toolbar(g),
 			nsgtk_scaffolding_button(g,
@@ -603,14 +603,14 @@ gboolean nsgtk_toolbar_store_return(GtkWidget *widget, GdkDragContext *gdc,
 {
 	nsgtk_scaffolding *g = (nsgtk_scaffolding *)data;
 	int q, i;
-	
+
 	if ((window->fromstore) || (window->currentbutton == -1)) {
 		window->currentbutton = -1;
 		return FALSE;
 	}
 	if (nsgtk_scaffolding_button(g, window->currentbutton)->location
 			!= -1) {
-		/* 'move' all widgets further right, one place to the left 
+		/* 'move' all widgets further right, one place to the left
 		 * in logical schema */
 		for (i = nsgtk_scaffolding_button(g, window->currentbutton)->
 				location + 1; i < PLACEHOLDER_BUTTON; i++) {
@@ -641,7 +641,7 @@ gboolean nsgtk_toolbar_action(GtkWidget *widget, GdkDragContext *gdc, gint x,
 	if (item != NULL)
 		gtk_toolbar_set_drop_highlight_item(
 				nsgtk_scaffolding_toolbar(g),
-				GTK_TOOL_ITEM(item), 
+				GTK_TOOL_ITEM(item),
 				gtk_toolbar_get_drop_index(
 				nsgtk_scaffolding_toolbar(g), x, y));
 	return FALSE;
@@ -670,7 +670,7 @@ void nsgtk_toolbar_clear(GtkWidget *widget, GdkDragContext *gdc, guint time,
  * \param i the id of the widget
  * \param theme the theme to make the widgets from
  */
-GtkWidget *nsgtk_toolbar_make_widget(nsgtk_scaffolding *g, 
+GtkWidget *nsgtk_toolbar_make_widget(nsgtk_scaffolding *g,
 		nsgtk_toolbar_button i,	struct nsgtk_theme *theme)
 {
 	switch(i) {
@@ -690,20 +690,20 @@ GtkWidget *nsgtk_toolbar_make_widget(nsgtk_scaffolding *g,
 		}\
 		return w;\
 	}
-	
+
 	MAKE_STOCKBUTTON(HOME, gtk-home)
 	MAKE_STOCKBUTTON(BACK, gtk-go-back)
 	MAKE_STOCKBUTTON(FORWARD, gtk-go-forward)
 	MAKE_STOCKBUTTON(STOP, gtk-stop)
 	MAKE_STOCKBUTTON(RELOAD, gtk-refresh)
-#undef MAKE_STOCKBUTTON	
+#undef MAKE_STOCKBUTTON
 	case HISTORY_BUTTON:
 		return GTK_WIDGET(gtk_tool_button_new(GTK_WIDGET(
 				theme->image[HISTORY_BUTTON]), NULL));
 	case URL_BAR_ITEM: {
-		char imagefile[strlen(res_dir_location) + SLEN("html.png")
+		char imagefile[strlen(res_dir_location) + SLEN("favicon.png")
 				+ 1];
-		sprintf(imagefile, "%shtml.png", res_dir_location);
+		sprintf(imagefile, "%sfavicon.png", res_dir_location);
 		GtkWidget *image = GTK_WIDGET(gtk_image_new_from_file(
 				imagefile));
 		GtkWidget *entry = GTK_WIDGET(sexy_icon_entry_new());
@@ -715,7 +715,7 @@ GtkWidget *nsgtk_toolbar_make_widget(nsgtk_scaffolding *g,
 
 		if (image != NULL)
 			sexy_icon_entry_set_icon(SEXY_ICON_ENTRY(entry),
-					SEXY_ICON_ENTRY_PRIMARY, 
+					SEXY_ICON_ENTRY_PRIMARY,
 					GTK_IMAGE(image));
 		gtk_container_add(GTK_CONTAINER(w), entry);
 		gtk_tool_item_set_expand(GTK_TOOL_ITEM(w), TRUE);
@@ -725,10 +725,10 @@ GtkWidget *nsgtk_toolbar_make_widget(nsgtk_scaffolding *g,
 		if (edit_mode)
 			return GTK_WIDGET(gtk_tool_button_new(GTK_WIDGET(
 					gtk_image_new_from_pixbuf(
-					nsgtk_throbber->framedata[0])), 
+					nsgtk_throbber->framedata[0])),
 					"[throbber]"));
-		if ((nsgtk_throbber == NULL) || (nsgtk_throbber->framedata == 
-				NULL) || (nsgtk_throbber->framedata[0] == 
+		if ((nsgtk_throbber == NULL) || (nsgtk_throbber->framedata ==
+				NULL) || (nsgtk_throbber->framedata[0] ==
 				NULL))
 			return NULL;
 		GtkWidget *image = GTK_WIDGET(gtk_image_new_from_pixbuf(
@@ -780,7 +780,7 @@ GtkWidget *nsgtk_toolbar_make_widget(nsgtk_scaffolding *g,
 			free(label);\
 		return w;\
 	}
-	
+
 	MAKE_MENUBUTTON(NEWWINDOW, gtkNewWindow)
 	MAKE_MENUBUTTON(NEWTAB, gtkNewTab)
 	MAKE_MENUBUTTON(OPENFILE, gtkOpenFile)
@@ -824,7 +824,7 @@ GtkWidget *nsgtk_toolbar_make_widget(nsgtk_scaffolding *g,
 	MAKE_MENUBUTTON(INFO, gtkUserInformation)
 	default:
 		return NULL;
-#undef MAKE_MENUBUTTON	
+#undef MAKE_MENUBUTTON
 	}
 }
 
@@ -836,7 +836,7 @@ int nsgtk_toolbar_get_id_from_widget(GtkWidget *widget, nsgtk_scaffolding *g)
 {
 	int i;
 	for (i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++) {
-		if ((nsgtk_scaffolding_button(g, i)->location != -1) 
+		if ((nsgtk_scaffolding_button(g, i)->location != -1)
 				&& (widget == GTK_WIDGET(
 				nsgtk_scaffolding_button(g, i)->button))) {
 			return i;
@@ -846,7 +846,7 @@ int nsgtk_toolbar_get_id_from_widget(GtkWidget *widget, nsgtk_scaffolding *g)
 }
 
 /**
- * \return toolbar item id from location when there is an item at that logical 
+ * \return toolbar item id from location when there is an item at that logical
  * location; else -1
  */
 nsgtk_toolbar_button nsgtk_toolbar_get_id_at_location(nsgtk_scaffolding *g,
@@ -872,7 +872,7 @@ void nsgtk_toolbar_connect_all(nsgtk_scaffolding *g)
 			continue;
 		if (nsgtk_scaffolding_button(g, q)->button != NULL)
 			g_signal_connect(
-					nsgtk_scaffolding_button(g, q)->button, 
+					nsgtk_scaffolding_button(g, q)->button,
 					"size-allocate", G_CALLBACK(
 					nsgtk_scaffolding_toolbar_size_allocate
 					), g);
@@ -910,8 +910,8 @@ void nsgtk_toolbar_set_handler(nsgtk_scaffolding *g, nsgtk_toolbar_button i)
 				nsgtk_websearch_clear), g);
 		break;
 	default:
-		if ((nsgtk_scaffolding_button(g, i)->bhandler != NULL) && 
-				(nsgtk_scaffolding_button(g, i)->button 
+		if ((nsgtk_scaffolding_button(g, i)->bhandler != NULL) &&
+				(nsgtk_scaffolding_button(g, i)->button
 				!= NULL))
 			g_signal_connect(nsgtk_scaffolding_button(g, i)->
 					button, "clicked",
@@ -1014,11 +1014,11 @@ DATAHANDLER(websearch, WEBSEARCH, window)
  */
 void nsgtk_toolbar_temp_connect(nsgtk_scaffolding *g, nsgtk_toolbar_button i)
 {
-	if ((i == URL_BAR_ITEM) || 
+	if ((i == URL_BAR_ITEM) ||
 			(nsgtk_scaffolding_button(g, i)->button == NULL) ||
 			(nsgtk_scaffolding_button(g, i)->dataminus == NULL))
 		return;
-	g_signal_connect(nsgtk_scaffolding_button(g, i)->button, 
+	g_signal_connect(nsgtk_scaffolding_button(g, i)->button,
 			"drag-data-get", G_CALLBACK(nsgtk_scaffolding_button(
 			g, i)->dataminus), g);
 }
@@ -1035,11 +1035,11 @@ void nsgtk_toolbar_customization_load(nsgtk_scaffolding *g)
 	buffer[0] = '\0';
 	char *buffer1, *subbuffer, *ptr = NULL, *pter = NULL;
 	for (i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++)
-		nsgtk_scaffolding_button(g, i)->location = 
+		nsgtk_scaffolding_button(g, i)->location =
 		(i <= THROBBER_ITEM) ? i : -1;
 	FILE *f = fopen(toolbar_indices_file_location, "r");
 	if (f == NULL) {
-		warn_user(messages_get("gtkFileError"), 
+		warn_user(messages_get("gtkFileError"),
 				toolbar_indices_file_location);
 		return;
 	}
@@ -1072,16 +1072,16 @@ void nsgtk_toolbar_cast(nsgtk_scaffolding *g)
 	int i;
 	nsgtk_scaffolding *list = scaf_list;
 	for (i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++)
-		window->buttonlocations[i] = 
+		window->buttonlocations[i] =
 				((nsgtk_scaffolding_button(g, i)->location
-				>= -1) && 
-				(nsgtk_scaffolding_button(g, i)->location 
-				< PLACEHOLDER_BUTTON)) ? 
+				>= -1) &&
+				(nsgtk_scaffolding_button(g, i)->location
+				< PLACEHOLDER_BUTTON)) ?
 				nsgtk_scaffolding_button(g, i)->location : -1;
 	while (list) {
 		if (list != g)
 			for (i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++)
-				nsgtk_scaffolding_button(list, i)->location = 
+				nsgtk_scaffolding_button(list, i)->location =
 						window->buttonlocations[i];
 		list = nsgtk_scaffolding_iterate(list);
 	}
