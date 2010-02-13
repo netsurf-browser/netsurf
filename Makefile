@@ -808,8 +808,7 @@ install-gtk: nsgtk
 	gzip -9v < gtk/res/netsurf.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)netsurf.glade
 	gzip -9v < gtk/res/options.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)options.glade
 	gzip -9v < gtk/res/history.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)history.glade
-	gzip -9v < gtk/res/toolbar.glade >
-	$(DESTDIR)$(NETSURF_GTK_RESOURCES)toolbar.glade
+	gzip -9v < gtk/res/toolbar.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)toolbar.glade
 	gzip -9v < gtk/res/source.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)source.glade
 
 install-beos: NetSurf
