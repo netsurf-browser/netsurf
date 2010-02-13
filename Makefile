@@ -794,11 +794,13 @@ install-gtk: nsgtk
 	@cp -vRL gtk/res/blankpage $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -vRL gtk/res/ca-bundle.txt $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -vRL gtk/res/default.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -vRL gtk/res/favicon.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -vRL gtk/res/gtkdefault.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -vRL gtk/res/license $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -vRL gtk/res/languages $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -vRL gtk/res/netsurf.xpm $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -vRL gtk/res/netsurf-16x16.xpm $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -vRL gtk/res/themelist $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -vRL gtk/res/throbber/*.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)/throbber
 	@cp -vRL gtk/res/Aliases $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -vRL gtk/res/docs $(DESTDIR)/$(NETSURF_GTK_RESOURCES)
