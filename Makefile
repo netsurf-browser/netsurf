@@ -801,7 +801,8 @@ install-gtk: nsgtk
 	@cp -vRL gtk/res/netsurf-16x16.xpm $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -vRL gtk/res/throbber/*.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)/throbber
 	@cp -vRL gtk/res/Aliases $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -vrL gtk/res/docs $(DESTDIR)/$(NETSURF_GTK_RESOURCES)
+	@cp -vRL gtk/res/docs $(DESTDIR)/$(NETSURF_GTK_RESOURCES)
+	@cp -vRL gtk/res/SearchEngines $(DESTDIR)$(NETSURF_GTK_RESOURCES)SearchEngines
 	gzip -9v < gtk/res/downloads.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)downloads.glade
 	gzip -9v < gtk/res/history.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)history.glade
 	gzip -9v < gtk/res/login.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)login.glade
@@ -809,7 +810,6 @@ install-gtk: nsgtk
 	gzip -9v < gtk/res/netsurf.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)netsurf.glade
 	gzip -9v < gtk/res/options.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)options.glade
 	gzip -9v < gtk/res/password.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)password.glade
-	gzip -9v < gtk/res/SearchEngines > $(DESTDIR)$(NETSURF_GTK_RESOURCES)SearchEngines
 	gzip -9v < gtk/res/source.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)source.glade
 	gzip -9v < gtk/res/ssl.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)ssl.glade
 	gzip -9v < gtk/res/toolbar.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)toolbar.glade
