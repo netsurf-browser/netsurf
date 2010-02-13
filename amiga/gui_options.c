@@ -64,7 +64,7 @@
 
 enum
 {
-	GID_OPTS_MAIN=0,
+	GID_OPTS_MAIN = GID_MAIN,
 	GID_OPTS_HOMEPAGE,
 	GID_OPTS_HOMEPAGE_DEFAULT,
 	GID_OPTS_HOMEPAGE_CURRENT,
@@ -182,8 +182,7 @@ enum
 
 struct ami_gui_opts_window {
 	struct Window *win;
-	Object *objects[OID_LAST];
-	struct Gadget *gadgets[GID_OPTS_LAST];
+	Object *objects[GID_OPTS_LAST];
 	struct nsObject *node;
 	ULONG pad[6];
 };
@@ -475,7 +474,7 @@ void ami_gui_opts_open(void)
 			WINDOW_IconifyGadget, FALSE,
 			WINDOW_Position, WPOS_CENTERSCREEN,
 			WA_IDCMP,IDCMP_GADGETUP,
-			WINDOW_ParentGroup, gow->gadgets[GID_OPTS_MAIN] = VGroupObject,
+			WINDOW_ParentGroup, gow->objects[GID_OPTS_MAIN] = VGroupObject,
 				LAYOUT_AddChild, ClickTabObject,
 					GA_RelVerify, TRUE,
 					GA_Text, tabs,
@@ -489,7 +488,7 @@ void ami_gui_opts_open(void)
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
 									LAYOUT_Label, gadlab[GRP_OPTS_HOMEPAGE],
-									LAYOUT_AddChild, gow->gadgets[GID_OPTS_HOMEPAGE] = StringObject,
+									LAYOUT_AddChild, gow->objects[GID_OPTS_HOMEPAGE] = StringObject,
 										GA_ID, GID_OPTS_HOMEPAGE,
 										GA_RelVerify, TRUE,
 										STRINGA_TextVal, option_homepage_url,
@@ -499,12 +498,12 @@ void ami_gui_opts_open(void)
 										LABEL_Text, gadlab[GID_OPTS_HOMEPAGE],
 									LabelEnd,
 									LAYOUT_AddChild,HGroupObject,
-										LAYOUT_AddChild, gow->gadgets[GID_OPTS_HOMEPAGE_DEFAULT] = ButtonObject,
+										LAYOUT_AddChild, gow->objects[GID_OPTS_HOMEPAGE_DEFAULT] = ButtonObject,
 											GA_ID,GID_OPTS_HOMEPAGE_DEFAULT,
 											GA_Text,gadlab[GID_OPTS_HOMEPAGE_DEFAULT],
 											GA_RelVerify,TRUE,
 										ButtonEnd,
-										LAYOUT_AddChild, gow->gadgets[GID_OPTS_HOMEPAGE_CURRENT] = ButtonObject,
+										LAYOUT_AddChild, gow->objects[GID_OPTS_HOMEPAGE_CURRENT] = ButtonObject,
 											GA_ID,GID_OPTS_HOMEPAGE_CURRENT,
 											GA_Text,gadlab[GID_OPTS_HOMEPAGE_CURRENT],
 											GA_RelVerify,TRUE,
@@ -517,7 +516,7 @@ void ami_gui_opts_open(void)
 										LAYOUT_SpaceOuter, TRUE,
 										LAYOUT_BevelStyle, BVS_GROUP, 
 										LAYOUT_Label, gadlab[GRP_OPTS_CONTENTBLOCKING],
-		                				LAYOUT_AddChild, gow->gadgets[GID_OPTS_HIDEADS] = CheckBoxObject,
+		                				LAYOUT_AddChild, gow->objects[GID_OPTS_HIDEADS] = CheckBoxObject,
       	              						GA_ID, GID_OPTS_HIDEADS,
          	           						GA_RelVerify, TRUE,
          	           						GA_Text, gadlab[GID_OPTS_HIDEADS],
@@ -528,13 +527,13 @@ void ami_gui_opts_open(void)
 										LAYOUT_SpaceOuter, TRUE,
 										LAYOUT_BevelStyle, BVS_GROUP, 
 										LAYOUT_Label, gadlab[GRP_OPTS_CONTENTLANGUAGE],
-										LAYOUT_AddChild, gow->gadgets[GID_OPTS_CONTENTLANG] = StringObject,
+										LAYOUT_AddChild, gow->objects[GID_OPTS_CONTENTLANG] = StringObject,
 											GA_ID, GID_OPTS_CONTENTLANG,
 											GA_RelVerify, TRUE,
 											STRINGA_TextVal, option_accept_language,
 											STRINGA_BufferPos,0,
 										StringEnd,
-										LAYOUT_AddChild, gow->gadgets[GID_OPTS_FROMLOCALE] = ButtonObject,
+										LAYOUT_AddChild, gow->objects[GID_OPTS_FROMLOCALE] = ButtonObject,
 											GA_ID,GID_OPTS_FROMLOCALE,
 											GA_Text,gadlab[GID_OPTS_FROMLOCALE],
 											GA_RelVerify,TRUE,
@@ -548,7 +547,7 @@ void ami_gui_opts_open(void)
 									LAYOUT_Label, gadlab[GRP_OPTS_HISTORY],
 									LAYOUT_AddChild, HGroupObject,
 										LAYOUT_LabelColumn, PLACETEXT_RIGHT,
-										LAYOUT_AddChild, gow->gadgets[GID_OPTS_HISTORY] = IntegerObject,
+										LAYOUT_AddChild, gow->objects[GID_OPTS_HISTORY] = IntegerObject,
 											GA_ID, GID_OPTS_CACHE_DISC,
 											GA_RelVerify, TRUE,
 											INTEGER_Number, option_expire_url,
@@ -571,13 +570,13 @@ void ami_gui_opts_open(void)
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
 									LAYOUT_Label, gadlab[GRP_OPTS_MISC],
-		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_REFERRAL] = CheckBoxObject,
+		                			LAYOUT_AddChild, gow->objects[GID_OPTS_REFERRAL] = CheckBoxObject,
       	              					GA_ID, GID_OPTS_REFERRAL,
          	           					GA_RelVerify, TRUE,
          	           					GA_Text, gadlab[GID_OPTS_REFERRAL],
   				      		            GA_Selected, option_send_referer,
             	    				CheckBoxEnd,
-		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_FASTSCROLL] = CheckBoxObject,
+		                			LAYOUT_AddChild, gow->objects[GID_OPTS_FASTSCROLL] = CheckBoxObject,
       	              					GA_ID, GID_OPTS_FASTSCROLL,
          	           					GA_RelVerify, TRUE,
          	           					GA_Text, gadlab[GID_OPTS_FASTSCROLL],
@@ -598,7 +597,7 @@ void ami_gui_opts_open(void)
 									LAYOUT_BevelStyle, BVS_GROUP, 
 									LAYOUT_Label, gadlab[GRP_OPTS_SCREEN],
 									LAYOUT_AddChild, HGroupObject,
-			                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_SCREEN] = RadioButtonObject,
+			                			LAYOUT_AddChild, gow->objects[GID_OPTS_SCREEN] = RadioButtonObject,
     	  	              					GA_ID, GID_OPTS_SCREEN,
         	 	           					GA_RelVerify, TRUE,
          		           					GA_Text, screenopts,
@@ -606,7 +605,7 @@ void ami_gui_opts_open(void)
             	    					RadioButtonEnd,
 										CHILD_WeightedWidth,0,
 										LAYOUT_AddChild,VGroupObject,
-			                				LAYOUT_AddChild, gow->gadgets[GID_OPTS_SCREENMODE] = GetScreenModeObject,
+			                				LAYOUT_AddChild, gow->objects[GID_OPTS_SCREENMODE] = GetScreenModeObject,
     	  	              						GA_ID, GID_OPTS_SCREENMODE,
         	 	           						GA_RelVerify, TRUE,
 												GA_Disabled,screenmodedisabled,
@@ -614,7 +613,7 @@ void ami_gui_opts_open(void)
 												GETSCREENMODE_MinDepth, 16,
 												GETSCREENMODE_MaxDepth, 32,
 											GetScreenModeEnd,
-											LAYOUT_AddChild, gow->gadgets[GID_OPTS_SCREENNAME] = StringObject,
+											LAYOUT_AddChild, gow->objects[GID_OPTS_SCREENNAME] = StringObject,
 												GA_ID, GID_OPTS_SCREENNAME,
 												GA_RelVerify, TRUE,
 												GA_Disabled,screennamedisabled,
@@ -630,7 +629,7 @@ void ami_gui_opts_open(void)
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
 									LAYOUT_Label, gadlab[GRP_OPTS_THEME],
-									LAYOUT_AddChild, gow->gadgets[GID_OPTS_THEME] = GetFileObject,
+									LAYOUT_AddChild, gow->objects[GID_OPTS_THEME] = GetFileObject,
 										GA_ID, GID_OPTS_THEME,
 										GA_RelVerify, TRUE,
 										GETFILE_Drawer, option_theme,
@@ -644,13 +643,13 @@ void ami_gui_opts_open(void)
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
 									LAYOUT_Label, gadlab[GRP_OPTS_MOUSE],
-		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_PTRTRUE] = CheckBoxObject,
+		                			LAYOUT_AddChild, gow->objects[GID_OPTS_PTRTRUE] = CheckBoxObject,
       	              					GA_ID, GID_OPTS_PTRTRUE,
          	           					GA_RelVerify, TRUE,
          	           					GA_Text, gadlab[GID_OPTS_PTRTRUE],
   				      		            GA_Selected, option_truecolour_mouse_pointers,
             	    				CheckBoxEnd,
-		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_PTROS] = CheckBoxObject,
+		                			LAYOUT_AddChild, gow->objects[GID_OPTS_PTROS] = CheckBoxObject,
       	              					GA_ID, GID_OPTS_PTROS,
          	           					GA_RelVerify, TRUE,
          	           					GA_Text, gadlab[GID_OPTS_PTROS],
@@ -673,7 +672,7 @@ void ami_gui_opts_open(void)
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
 									LAYOUT_Label, gadlab[GRP_OPTS_PROXY],
-									LAYOUT_AddChild, gow->gadgets[GID_OPTS_PROXY] = ChooserObject,
+									LAYOUT_AddChild, gow->objects[GID_OPTS_PROXY] = ChooserObject,
 										GA_ID, GID_OPTS_PROXY,
 										GA_RelVerify, TRUE,
 										CHOOSER_PopUp, TRUE,
@@ -684,14 +683,14 @@ void ami_gui_opts_open(void)
 										LABEL_Text, gadlab[GID_OPTS_PROXY],
 									LabelEnd,
 									LAYOUT_AddChild,HGroupObject,
-										LAYOUT_AddChild, gow->gadgets[GID_OPTS_PROXY_HOST] = StringObject,
+										LAYOUT_AddChild, gow->objects[GID_OPTS_PROXY_HOST] = StringObject,
 											GA_ID, GID_OPTS_PROXY_HOST,
 											GA_RelVerify, TRUE,
 											GA_Disabled, proxyhostdisabled,
 											STRINGA_TextVal, option_http_proxy_host,
 											STRINGA_BufferPos,0,
 										StringEnd,
-										LAYOUT_AddChild, gow->gadgets[GID_OPTS_PROXY_PORT] = IntegerObject,
+										LAYOUT_AddChild, gow->objects[GID_OPTS_PROXY_PORT] = IntegerObject,
 											GA_ID, GID_OPTS_PROXY_PORT,
 											GA_RelVerify, TRUE,
 											GA_Disabled, proxyhostdisabled,
@@ -709,7 +708,7 @@ void ami_gui_opts_open(void)
 									CHILD_Label, LabelObject,
 										LABEL_Text, gadlab[GID_OPTS_PROXY_HOST],
 									LabelEnd,
-									LAYOUT_AddChild, gow->gadgets[GID_OPTS_PROXY_USER] = StringObject,
+									LAYOUT_AddChild, gow->objects[GID_OPTS_PROXY_USER] = StringObject,
 										GA_ID, GID_OPTS_PROXY_USER,
 										GA_RelVerify, TRUE,
 										GA_Disabled, proxyauthdisabled,
@@ -719,7 +718,7 @@ void ami_gui_opts_open(void)
 									CHILD_Label, LabelObject,
 										LABEL_Text, gadlab[GID_OPTS_PROXY_USER],
 									LabelEnd,
-									LAYOUT_AddChild, gow->gadgets[GID_OPTS_PROXY_PASS] = StringObject,
+									LAYOUT_AddChild, gow->objects[GID_OPTS_PROXY_PASS] = StringObject,
 										GA_ID, GID_OPTS_PROXY_PASS,
 										GA_RelVerify, TRUE,
 										GA_Disabled, proxyauthdisabled,
@@ -735,7 +734,7 @@ void ami_gui_opts_open(void)
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
 									LAYOUT_Label, gadlab[GRP_OPTS_FETCHING],
-									LAYOUT_AddChild, gow->gadgets[GID_OPTS_FETCHMAX] = IntegerObject,
+									LAYOUT_AddChild, gow->objects[GID_OPTS_FETCHMAX] = IntegerObject,
 										GA_ID, GID_OPTS_FETCHMAX,
 										GA_RelVerify, TRUE,
 										INTEGER_Number, option_max_fetchers,
@@ -747,7 +746,7 @@ void ami_gui_opts_open(void)
 									CHILD_Label, LabelObject,
 										LABEL_Text, gadlab[GID_OPTS_FETCHMAX],
 									LabelEnd,
-									LAYOUT_AddChild, gow->gadgets[GID_OPTS_FETCHHOST] = IntegerObject,
+									LAYOUT_AddChild, gow->objects[GID_OPTS_FETCHHOST] = IntegerObject,
 										GA_ID, GID_OPTS_FETCHHOST,
 										GA_RelVerify, TRUE,
 										INTEGER_Number, option_max_fetchers_per_host,
@@ -759,7 +758,7 @@ void ami_gui_opts_open(void)
 									CHILD_Label, LabelObject,
 										LABEL_Text, gadlab[GID_OPTS_FETCHHOST],
 									LabelEnd,
-									LAYOUT_AddChild, gow->gadgets[GID_OPTS_FETCHCACHE] = IntegerObject,
+									LAYOUT_AddChild, gow->objects[GID_OPTS_FETCHCACHE] = IntegerObject,
 										GA_ID, GID_OPTS_FETCHCACHE,
 										GA_RelVerify, TRUE,
 										INTEGER_Number, option_max_cached_fetch_handles,
@@ -785,7 +784,7 @@ void ami_gui_opts_open(void)
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
 									LAYOUT_Label, gadlab[GRP_OPTS_IMAGES],
-									LAYOUT_AddChild, gow->gadgets[GID_OPTS_NATIVEBM] = ChooserObject,
+									LAYOUT_AddChild, gow->objects[GID_OPTS_NATIVEBM] = ChooserObject,
 										GA_ID, GID_OPTS_NATIVEBM,
 										GA_RelVerify, TRUE,
 										CHOOSER_PopUp, TRUE,
@@ -795,7 +794,7 @@ void ami_gui_opts_open(void)
 									CHILD_Label, LabelObject,
 										LABEL_Text, gadlab[GID_OPTS_NATIVEBM],
 									LabelEnd,
-		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_SCALEQ] = CheckBoxObject,
+		                			LAYOUT_AddChild, gow->objects[GID_OPTS_SCALEQ] = CheckBoxObject,
       	              					GA_ID, GID_OPTS_SCALEQ,
 										GA_Disabled, scaledisabled,
          	           					GA_RelVerify, TRUE,
@@ -810,7 +809,7 @@ void ami_gui_opts_open(void)
 									LAYOUT_Label, gadlab[GRP_OPTS_ANIMS],
 									LAYOUT_AddChild, HGroupObject,
 										LAYOUT_LabelColumn, PLACETEXT_RIGHT,
-										LAYOUT_AddChild, gow->gadgets[GID_OPTS_ANIMSPEED] = StringObject,
+										LAYOUT_AddChild, gow->objects[GID_OPTS_ANIMSPEED] = StringObject,
 											GA_ID, GID_OPTS_ANIMSPEED,
 											GA_RelVerify, TRUE,
 											GA_Disabled, animspeeddisabled,
@@ -826,7 +825,7 @@ void ami_gui_opts_open(void)
 									CHILD_Label, LabelObject,
 										LABEL_Text, gadlab[GID_OPTS_ANIMSPEED],
 									LabelEnd,
-		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_ANIMDISABLE] = CheckBoxObject,
+		                			LAYOUT_AddChild, gow->objects[GID_OPTS_ANIMDISABLE] = CheckBoxObject,
       	              					GA_ID, GID_OPTS_ANIMDISABLE,
          	           					GA_RelVerify, TRUE,
          	           					GA_Text, gadlab[GID_OPTS_ANIMDISABLE],
@@ -846,7 +845,7 @@ void ami_gui_opts_open(void)
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP,
 									LAYOUT_Label, gadlab[GRP_OPTS_FONTFACES],
-									LAYOUT_AddChild, gow->gadgets[GID_OPTS_FONT_SANS] = GetFontObject,
+									LAYOUT_AddChild, gow->objects[GID_OPTS_FONT_SANS] = GetFontObject,
 										GA_ID, GID_OPTS_FONT_SANS,
 										GA_RelVerify, TRUE,
 										GETFONT_TextAttr, &fontsans,
@@ -855,7 +854,7 @@ void ami_gui_opts_open(void)
 									CHILD_Label, LabelObject,
 										LABEL_Text, gadlab[GID_OPTS_FONT_SANS],
 									LabelEnd,
-									LAYOUT_AddChild, gow->gadgets[GID_OPTS_FONT_SERIF] = GetFontObject,
+									LAYOUT_AddChild, gow->objects[GID_OPTS_FONT_SERIF] = GetFontObject,
 										GA_ID, GID_OPTS_FONT_SERIF,
 										GA_RelVerify, TRUE,
 										GETFONT_TextAttr, &fontserif,
@@ -864,7 +863,7 @@ void ami_gui_opts_open(void)
 									CHILD_Label, LabelObject,
 										LABEL_Text, gadlab[GID_OPTS_FONT_SERIF],
 									LabelEnd,
-									LAYOUT_AddChild, gow->gadgets[GID_OPTS_FONT_MONO] = GetFontObject,
+									LAYOUT_AddChild, gow->objects[GID_OPTS_FONT_MONO] = GetFontObject,
 										GA_ID, GID_OPTS_FONT_MONO,
 										GA_RelVerify, TRUE,
 										GETFONT_TextAttr, &fontmono,
@@ -874,7 +873,7 @@ void ami_gui_opts_open(void)
 									CHILD_Label, LabelObject,
 										LABEL_Text, gadlab[GID_OPTS_FONT_MONO],
 									LabelEnd,
-									LAYOUT_AddChild, gow->gadgets[GID_OPTS_FONT_CURSIVE] = GetFontObject,
+									LAYOUT_AddChild, gow->objects[GID_OPTS_FONT_CURSIVE] = GetFontObject,
 										GA_ID, GID_OPTS_FONT_CURSIVE,
 										GA_RelVerify, TRUE,
 										GETFONT_TextAttr, &fontcursive,
@@ -883,7 +882,7 @@ void ami_gui_opts_open(void)
 									CHILD_Label, LabelObject,
 										LABEL_Text, gadlab[GID_OPTS_FONT_CURSIVE],
 									LabelEnd,
-									LAYOUT_AddChild, gow->gadgets[GID_OPTS_FONT_FANTASY] = GetFontObject,
+									LAYOUT_AddChild, gow->objects[GID_OPTS_FONT_FANTASY] = GetFontObject,
 										GA_ID, GID_OPTS_FONT_FANTASY,
 										GA_RelVerify, TRUE,
 										GETFONT_TextAttr, &fontfantasy,
@@ -892,7 +891,7 @@ void ami_gui_opts_open(void)
 									CHILD_Label, LabelObject,
 										LABEL_Text, gadlab[GID_OPTS_FONT_FANTASY],
 									LabelEnd,
-									LAYOUT_AddChild, gow->gadgets[GID_OPTS_FONT_DEFAULT] = ChooserObject,
+									LAYOUT_AddChild, gow->objects[GID_OPTS_FONT_DEFAULT] = ChooserObject,
 										GA_ID, GID_OPTS_FONT_DEFAULT,
 										GA_RelVerify, TRUE,
 										CHOOSER_PopUp, TRUE,
@@ -910,7 +909,7 @@ void ami_gui_opts_open(void)
 									LAYOUT_Label, gadlab[GRP_OPTS_FONTSIZE],
 									LAYOUT_AddChild, HGroupObject,
 										LAYOUT_LabelColumn, PLACETEXT_RIGHT,
-										LAYOUT_AddChild, gow->gadgets[GID_OPTS_FONT_SIZE] = IntegerObject,
+										LAYOUT_AddChild, gow->objects[GID_OPTS_FONT_SIZE] = IntegerObject,
 											GA_ID, GID_OPTS_FONT_SIZE,
 											GA_RelVerify, TRUE,
 											INTEGER_Number, option_font_size / 10,
@@ -928,7 +927,7 @@ void ami_gui_opts_open(void)
 									LabelEnd,
 									LAYOUT_AddChild, HGroupObject,
 										LAYOUT_LabelColumn, PLACETEXT_RIGHT,
-										LAYOUT_AddChild, gow->gadgets[GID_OPTS_FONT_MINSIZE] = IntegerObject,
+										LAYOUT_AddChild, gow->objects[GID_OPTS_FONT_MINSIZE] = IntegerObject,
 											GA_ID, GID_OPTS_FONT_MINSIZE,
 											GA_RelVerify, TRUE,
 											INTEGER_Number, option_font_min_size / 10,
@@ -960,7 +959,7 @@ void ami_gui_opts_open(void)
 									LAYOUT_Label, gadlab[GRP_OPTS_MEMCACHE],
 									LAYOUT_AddChild, HGroupObject,
 										LAYOUT_LabelColumn, PLACETEXT_RIGHT,
-										LAYOUT_AddChild, gow->gadgets[GID_OPTS_CACHE_MEM] = IntegerObject,
+										LAYOUT_AddChild, gow->objects[GID_OPTS_CACHE_MEM] = IntegerObject,
 											GA_ID, GID_OPTS_CACHE_MEM,
 											GA_RelVerify, TRUE,
 											INTEGER_Number, option_memory_cache_size / 1048576,
@@ -984,7 +983,7 @@ void ami_gui_opts_open(void)
 									LAYOUT_Label, gadlab[GRP_OPTS_DISCCACHE],
 									LAYOUT_AddChild, HGroupObject,
 										LAYOUT_LabelColumn, PLACETEXT_RIGHT,
-										LAYOUT_AddChild, gow->gadgets[GID_OPTS_CACHE_DISC] = IntegerObject,
+										LAYOUT_AddChild, gow->objects[GID_OPTS_CACHE_DISC] = IntegerObject,
 											GA_ID, GID_OPTS_CACHE_DISC,
 											GA_RelVerify, TRUE,
 											GA_Disabled, TRUE,
@@ -1016,14 +1015,14 @@ void ami_gui_opts_open(void)
 									LAYOUT_BevelStyle, BVS_GROUP, 
 									LAYOUT_Label, gadlab[GRP_OPTS_DOWNLOADS],
 									LAYOUT_AddChild, HGroupObject,
-		                				LAYOUT_AddChild, gow->gadgets[GID_OPTS_OVERWRITE] = CheckBoxObject,
+		                				LAYOUT_AddChild, gow->objects[GID_OPTS_OVERWRITE] = CheckBoxObject,
       	              						GA_ID, GID_OPTS_CLIPBOARD,
          	           						GA_RelVerify, TRUE,
 											GA_Disabled, TRUE,
          	           						GA_Text, gadlab[GID_OPTS_OVERWRITE],
 	  				      		            GA_Selected, FALSE, //option_ask_overwrite,
     	        	    				CheckBoxEnd,
-			                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_NOTIFY] = CheckBoxObject,
+			                			LAYOUT_AddChild, gow->objects[GID_OPTS_NOTIFY] = CheckBoxObject,
       	    	          					GA_ID, GID_OPTS_NOTIFY,
          	    	       					GA_RelVerify, TRUE,
 											GA_Disabled, download_notify_disabled,
@@ -1031,7 +1030,7 @@ void ami_gui_opts_open(void)
   					      		            GA_Selected, option_download_notify,
 										CheckBoxEnd,
 									LayoutEnd,
-									LAYOUT_AddChild, gow->gadgets[GID_OPTS_DLDIR] = GetFileObject,
+									LAYOUT_AddChild, gow->objects[GID_OPTS_DLDIR] = GetFileObject,
 										GA_ID, GID_OPTS_DLDIR,
 										GA_RelVerify, TRUE,
 										GETFILE_Drawer, option_download_dir,
@@ -1049,13 +1048,13 @@ void ami_gui_opts_open(void)
 										LAYOUT_SpaceOuter, TRUE,
 										LAYOUT_BevelStyle, BVS_GROUP, 
 										LAYOUT_Label, gadlab[GRP_OPTS_TABS],
-										LAYOUT_AddChild, gow->gadgets[GID_OPTS_TAB_ACTIVE] = CheckBoxObject,
+										LAYOUT_AddChild, gow->objects[GID_OPTS_TAB_ACTIVE] = CheckBoxObject,
       	              						GA_ID, GID_OPTS_TAB_ACTIVE,
          	        	   					GA_RelVerify, TRUE,
          	     	      					GA_Text, gadlab[GID_OPTS_TAB_ACTIVE],
   				      		            	GA_Selected, !option_new_tab_active,
             	    					CheckBoxEnd,
-										LAYOUT_AddChild, gow->gadgets[GID_OPTS_TAB_2] = CheckBoxObject,
+										LAYOUT_AddChild, gow->objects[GID_OPTS_TAB_2] = CheckBoxObject,
       	              						GA_ID, GID_OPTS_TAB_2,
          	           						GA_RelVerify, TRUE,
          	           						GA_Text, gadlab[GID_OPTS_TAB_2],
@@ -1066,13 +1065,13 @@ void ami_gui_opts_open(void)
 										LAYOUT_SpaceOuter, TRUE,
 										LAYOUT_BevelStyle, BVS_GROUP, 
 										LAYOUT_Label, gadlab[GRP_OPTS_CONTEXTMENU],
-		        	        			LAYOUT_AddChild, gow->gadgets[GID_OPTS_CMENU_ENABLE] = CheckBoxObject,
+		        	        			LAYOUT_AddChild, gow->objects[GID_OPTS_CMENU_ENABLE] = CheckBoxObject,
       	    	          					GA_ID, GID_OPTS_CMENU_ENABLE,
         	 	           					GA_RelVerify, TRUE,
     	     	           					GA_Text, gadlab[GID_OPTS_CMENU_ENABLE],
 	  				      		            GA_Selected, option_context_menu,
             	    					CheckBoxEnd,
-		                				LAYOUT_AddChild, gow->gadgets[GID_OPTS_CMENU_STICKY] = CheckBoxObject,
+		                				LAYOUT_AddChild, gow->objects[GID_OPTS_CMENU_STICKY] = CheckBoxObject,
       	            	  					GA_ID, GID_OPTS_CMENU_STICKY,
          	    	       					GA_RelVerify, TRUE,
 											GA_Disabled, !option_context_menu,
@@ -1086,13 +1085,13 @@ void ami_gui_opts_open(void)
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
 									LAYOUT_Label, gadlab[GRP_OPTS_SEARCH],
-		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_SEARCH_URLBAR] = CheckBoxObject,
+		                			LAYOUT_AddChild, gow->objects[GID_OPTS_SEARCH_URLBAR] = CheckBoxObject,
       	              					GA_ID, GID_OPTS_SEARCH_URLBAR,
          	           					GA_RelVerify, TRUE,
          	           					GA_Text, gadlab[GID_OPTS_SEARCH_URLBAR],
   				      		            GA_Selected, option_search_url_bar,
             	    				CheckBoxEnd,
-									LAYOUT_AddChild, gow->gadgets[GID_OPTS_SEARCH_PROV] = ChooserObject,
+									LAYOUT_AddChild, gow->objects[GID_OPTS_SEARCH_PROV] = ChooserObject,
 										GA_ID, GID_OPTS_SEARCH_PROV,
 										GA_RelVerify, TRUE,
 										CHOOSER_PopUp, TRUE,
@@ -1109,7 +1108,7 @@ void ami_gui_opts_open(void)
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
 									LAYOUT_Label, gadlab[GRP_OPTS_CLIPBOARD],
-		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_CLIPBOARD] = CheckBoxObject,
+		                			LAYOUT_AddChild, gow->objects[GID_OPTS_CLIPBOARD] = CheckBoxObject,
       	              					GA_ID, GID_OPTS_CLIPBOARD,
          	           					GA_RelVerify, TRUE,
          	           					GA_Text, gadlab[GID_OPTS_CLIPBOARD],
@@ -1122,20 +1121,20 @@ void ami_gui_opts_open(void)
 									LAYOUT_BevelStyle, BVS_GROUP, 
 									LAYOUT_Label, gadlab[GRP_OPTS_BEHAVIOUR],
 									LAYOUT_AddChild, HGroupObject,
-			                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_STARTUP_NO_WIN] = CheckBoxObject,
+			                			LAYOUT_AddChild, gow->objects[GID_OPTS_STARTUP_NO_WIN] = CheckBoxObject,
     	  	              					GA_ID, GID_OPTS_STARTUP_NO_WIN,
         	 	           					GA_RelVerify, TRUE,
 											GA_Text, gadlab[GID_OPTS_STARTUP_NO_WIN],
   						      	            GA_Selected, option_startup_no_window,
             		    				CheckBoxEnd,
-		        	        			LAYOUT_AddChild, gow->gadgets[GID_OPTS_CLOSE_NO_QUIT] = CheckBoxObject,
+		        	        			LAYOUT_AddChild, gow->objects[GID_OPTS_CLOSE_NO_QUIT] = CheckBoxObject,
       		              					GA_ID, GID_OPTS_CLOSE_NO_QUIT,
 											GA_RelVerify, TRUE,
 											GA_Text, gadlab[GID_OPTS_CLOSE_NO_QUIT],
 											GA_Selected, option_close_no_quit,
 	        	        				CheckBoxEnd,
 									LayoutEnd,
-	                				LAYOUT_AddChild, gow->gadgets[GID_OPTS_DOCKY] = CheckBoxObject,
+	                				LAYOUT_AddChild, gow->objects[GID_OPTS_DOCKY] = CheckBoxObject,
 										GA_ID, GID_OPTS_DOCKY,
          	           					GA_RelVerify, TRUE,
          	           					GA_Text, gadlab[GID_OPTS_DOCKY],
@@ -1157,7 +1156,7 @@ void ami_gui_opts_open(void)
 									LAYOUT_Label, gadlab[GRP_OPTS_MARGINS],
 									LAYOUT_AddChild, HGroupObject,
 										LAYOUT_LabelColumn, PLACETEXT_RIGHT,
-										LAYOUT_AddChild, gow->gadgets[GID_OPTS_MARGIN_TOP] = IntegerObject,
+										LAYOUT_AddChild, gow->objects[GID_OPTS_MARGIN_TOP] = IntegerObject,
 											GA_ID, GID_OPTS_MARGIN_TOP,
 											GA_RelVerify, TRUE,
 											INTEGER_Number, option_margin_top,
@@ -1175,7 +1174,7 @@ void ami_gui_opts_open(void)
 									LabelEnd,
 									LAYOUT_AddChild, HGroupObject,
 										LAYOUT_LabelColumn, PLACETEXT_RIGHT,
-										LAYOUT_AddChild, gow->gadgets[GID_OPTS_MARGIN_LEFT] = IntegerObject,
+										LAYOUT_AddChild, gow->objects[GID_OPTS_MARGIN_LEFT] = IntegerObject,
 											GA_ID, GID_OPTS_MARGIN_LEFT,
 											GA_RelVerify, TRUE,
 											INTEGER_Number, option_margin_left,
@@ -1193,7 +1192,7 @@ void ami_gui_opts_open(void)
 									LabelEnd,
 									LAYOUT_AddChild, HGroupObject,
 										LAYOUT_LabelColumn, PLACETEXT_RIGHT,
-										LAYOUT_AddChild, gow->gadgets[GID_OPTS_MARGIN_BOTTOM] = IntegerObject,
+										LAYOUT_AddChild, gow->objects[GID_OPTS_MARGIN_BOTTOM] = IntegerObject,
 											GA_ID, GID_OPTS_MARGIN_BOTTOM,
 											GA_RelVerify, TRUE,
 											INTEGER_Number, option_margin_bottom,
@@ -1211,7 +1210,7 @@ void ami_gui_opts_open(void)
 									LabelEnd,
 									LAYOUT_AddChild, HGroupObject,
 										LAYOUT_LabelColumn, PLACETEXT_RIGHT,
-										LAYOUT_AddChild, gow->gadgets[GID_OPTS_MARGIN_RIGHT] = IntegerObject,
+										LAYOUT_AddChild, gow->objects[GID_OPTS_MARGIN_RIGHT] = IntegerObject,
 											GA_ID, GID_OPTS_MARGIN_RIGHT,
 											GA_RelVerify, TRUE,
 											INTEGER_Number, option_margin_right,
@@ -1235,7 +1234,7 @@ void ami_gui_opts_open(void)
 									LAYOUT_Label, gadlab[GRP_OPTS_SCALING],
 									LAYOUT_AddChild, HGroupObject,
 										LAYOUT_LabelColumn, PLACETEXT_RIGHT,
-										LAYOUT_AddChild, gow->gadgets[GID_OPTS_EXPORT_SCALE] = IntegerObject,
+										LAYOUT_AddChild, gow->objects[GID_OPTS_EXPORT_SCALE] = IntegerObject,
 											GA_ID, GID_OPTS_EXPORT_SCALE,
 											GA_RelVerify, TRUE,
 											INTEGER_Number, option_export_scale,
@@ -1257,19 +1256,19 @@ void ami_gui_opts_open(void)
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
 									LAYOUT_Label, gadlab[GRP_OPTS_APPEARANCE],
-		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_EXPORT_NOIMAGES] = CheckBoxObject,
+		                			LAYOUT_AddChild, gow->objects[GID_OPTS_EXPORT_NOIMAGES] = CheckBoxObject,
       	              					GA_ID, GID_OPTS_EXPORT_NOIMAGES,
          	           					GA_RelVerify, TRUE,
          	           					GA_Text, gadlab[GID_OPTS_EXPORT_NOIMAGES],
   				      		            GA_Selected, option_suppress_images,
             	    				CheckBoxEnd,
-		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_EXPORT_NOBKG] = CheckBoxObject,
+		                			LAYOUT_AddChild, gow->objects[GID_OPTS_EXPORT_NOBKG] = CheckBoxObject,
       	              					GA_ID, GID_OPTS_EXPORT_NOBKG,
          	           					GA_RelVerify, TRUE,
          	           					GA_Text, gadlab[GID_OPTS_EXPORT_NOBKG],
   				      		            GA_Selected, option_remove_backgrounds,
             	    				CheckBoxEnd,
-		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_EXPORT_LOOSEN] = CheckBoxObject,
+		                			LAYOUT_AddChild, gow->objects[GID_OPTS_EXPORT_LOOSEN] = CheckBoxObject,
       	              					GA_ID, GID_OPTS_EXPORT_LOOSEN,
          	           					GA_RelVerify, TRUE,
          	           					GA_Text, gadlab[GID_OPTS_EXPORT_LOOSEN],
@@ -1281,13 +1280,13 @@ void ami_gui_opts_open(void)
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
 									LAYOUT_Label, gadlab[GRP_OPTS_ADVANCED],
-		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_EXPORT_COMPRESS] = CheckBoxObject,
+		                			LAYOUT_AddChild, gow->objects[GID_OPTS_EXPORT_COMPRESS] = CheckBoxObject,
       	              					GA_ID, GID_OPTS_EXPORT_COMPRESS,
          	           					GA_RelVerify, TRUE,
          	           					GA_Text, gadlab[GID_OPTS_EXPORT_COMPRESS],
   				      		            GA_Selected, option_enable_PDF_compression,
             	    				CheckBoxEnd,
-		                			LAYOUT_AddChild, gow->gadgets[GID_OPTS_EXPORT_PASSWORD] = CheckBoxObject,
+		                			LAYOUT_AddChild, gow->objects[GID_OPTS_EXPORT_PASSWORD] = CheckBoxObject,
       	              					GA_ID, GID_OPTS_EXPORT_PASSWORD,
          	           					GA_RelVerify, TRUE,
 										GA_Disabled, TRUE,
@@ -1302,17 +1301,17 @@ void ami_gui_opts_open(void)
 					End, // pagegroup
 				ClickTabEnd,
                 LAYOUT_AddChild, HGroupObject,
-					LAYOUT_AddChild, gow->gadgets[GID_OPTS_SAVE] = ButtonObject,
+					LAYOUT_AddChild, gow->objects[GID_OPTS_SAVE] = ButtonObject,
 						GA_ID,GID_OPTS_SAVE,
 						GA_Text,gadlab[GID_OPTS_SAVE],
 						GA_RelVerify,TRUE,
 					ButtonEnd,
-					LAYOUT_AddChild, gow->gadgets[GID_OPTS_USE] = ButtonObject,
+					LAYOUT_AddChild, gow->objects[GID_OPTS_USE] = ButtonObject,
 						GA_ID,GID_OPTS_USE,
 						GA_Text,gadlab[GID_OPTS_USE],
 						GA_RelVerify,TRUE,
 					ButtonEnd,
-					LAYOUT_AddChild, gow->gadgets[GID_OPTS_CANCEL] = ButtonObject,
+					LAYOUT_AddChild, gow->objects[GID_OPTS_CANCEL] = ButtonObject,
 						GA_ID,GID_OPTS_CANCEL,
 						GA_Text,gadlab[GID_OPTS_CANCEL],
 						GA_RelVerify,TRUE,
@@ -1334,29 +1333,29 @@ void ami_gui_opts_use(void)
 	struct TextAttr *tattr;
 	char *dot;
 
-	GetAttr(STRINGA_TextVal,gow->gadgets[GID_OPTS_HOMEPAGE],(ULONG *)&data);
+	GetAttr(STRINGA_TextVal,gow->objects[GID_OPTS_HOMEPAGE],(ULONG *)&data);
 	if(option_homepage_url) free(option_homepage_url);
 	option_homepage_url = (char *)strdup((char *)data);
 
-	GetAttr(STRINGA_TextVal,gow->gadgets[GID_OPTS_CONTENTLANG],(ULONG *)&data);
+	GetAttr(STRINGA_TextVal,gow->objects[GID_OPTS_CONTENTLANG],(ULONG *)&data);
 	if(option_accept_language) free(option_accept_language);
 	option_accept_language = (char *)strdup((char *)data);
 
-	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_HIDEADS],(ULONG *)&data);
+	GetAttr(GA_Selected,gow->objects[GID_OPTS_HIDEADS],(ULONG *)&data);
 	if(data) option_block_ads = true;
 		else option_block_ads = false;
 
-	GetAttr(INTEGER_Number,gow->gadgets[GID_OPTS_HISTORY],(ULONG *)&option_expire_url);
+	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_HISTORY],(ULONG *)&option_expire_url);
 
-	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_REFERRAL],(ULONG *)&data);
+	GetAttr(GA_Selected,gow->objects[GID_OPTS_REFERRAL],(ULONG *)&data);
 	if(data) option_send_referer = true;
 		else option_send_referer = false;
 
-	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_FASTSCROLL],(ULONG *)&data);
+	GetAttr(GA_Selected,gow->objects[GID_OPTS_FASTSCROLL],(ULONG *)&data);
 	if(data) option_faster_scroll = true;
 		else option_faster_scroll = false;
 
-	GetAttr(RADIOBUTTON_Selected,gow->gadgets[GID_OPTS_SCREEN],(ULONG *)&data);
+	GetAttr(RADIOBUTTON_Selected,gow->objects[GID_OPTS_SCREEN],(ULONG *)&data);
 	switch(data)
 	{
 		case 0:
@@ -1370,13 +1369,13 @@ void ami_gui_opts_use(void)
 		break;
 
 		case 2:
-			GetAttr(STRINGA_TextVal,gow->gadgets[GID_OPTS_SCREENNAME],(ULONG *)&data);
+			GetAttr(STRINGA_TextVal,gow->objects[GID_OPTS_SCREENNAME],(ULONG *)&data);
 			if(option_use_pubscreen) free(option_use_pubscreen);
 			option_use_pubscreen = (char *)strdup((char *)data);
 		break;
 	}
 
-	GetAttr(GETSCREENMODE_DisplayID,gow->gadgets[GID_OPTS_SCREENMODE],(ULONG *)&data);
+	GetAttr(GETSCREENMODE_DisplayID,gow->objects[GID_OPTS_SCREENMODE],(ULONG *)&data);
 	if(data)
 	{
 		if(option_modeid) free(option_modeid);
@@ -1384,19 +1383,19 @@ void ami_gui_opts_use(void)
 		sprintf(option_modeid,"0x%lx",data);
 	}
 
-	GetAttr(GETFILE_Drawer,gow->gadgets[GID_OPTS_THEME],(ULONG *)&data);
+	GetAttr(GETFILE_Drawer,gow->objects[GID_OPTS_THEME],(ULONG *)&data);
 	if(option_theme) free(option_theme);
 	option_theme = (char *)strdup((char *)data);
 
-	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_PTRTRUE],(ULONG *)&data);
+	GetAttr(GA_Selected,gow->objects[GID_OPTS_PTRTRUE],(ULONG *)&data);
 	if(data) option_truecolour_mouse_pointers = true;
 		else option_truecolour_mouse_pointers = false;
 
-	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_PTROS],(ULONG *)&data);
+	GetAttr(GA_Selected,gow->objects[GID_OPTS_PTROS],(ULONG *)&data);
 	if(data) option_use_os_pointers = true;
 		else option_use_os_pointers = false;
 
-	GetAttr(CHOOSER_Selected,gow->gadgets[GID_OPTS_PROXY],(ULONG *)&data);
+	GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_PROXY],(ULONG *)&data);
 	if(data)
 	{
 		option_http_proxy = true;
@@ -1407,161 +1406,161 @@ void ami_gui_opts_use(void)
 		option_http_proxy = false;
 	}
 
-	GetAttr(STRINGA_TextVal,gow->gadgets[GID_OPTS_PROXY_HOST],(ULONG *)&data);
+	GetAttr(STRINGA_TextVal,gow->objects[GID_OPTS_PROXY_HOST],(ULONG *)&data);
 	if(option_http_proxy_host) free(option_http_proxy_host);
 	option_http_proxy_host = (char *)strdup((char *)data);
 
-	GetAttr(INTEGER_Number,gow->gadgets[GID_OPTS_PROXY_PORT],(ULONG *)&option_http_proxy_port);
+	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_PROXY_PORT],(ULONG *)&option_http_proxy_port);
 
-	GetAttr(STRINGA_TextVal,gow->gadgets[GID_OPTS_PROXY_USER],(ULONG *)&data);
+	GetAttr(STRINGA_TextVal,gow->objects[GID_OPTS_PROXY_USER],(ULONG *)&data);
 	if(option_http_proxy_auth_user) free(option_http_proxy_auth_user);
 	option_http_proxy_auth_user = (char *)strdup((char *)data);
 
-	GetAttr(STRINGA_TextVal,gow->gadgets[GID_OPTS_PROXY_PASS],(ULONG *)&data);
+	GetAttr(STRINGA_TextVal,gow->objects[GID_OPTS_PROXY_PASS],(ULONG *)&data);
 	if(option_http_proxy_auth_pass) free(option_http_proxy_auth_pass);
 	option_http_proxy_auth_pass = (char *)strdup((char *)data);
 
-	GetAttr(INTEGER_Number,gow->gadgets[GID_OPTS_FETCHMAX],(ULONG *)&option_max_fetchers);
-	GetAttr(INTEGER_Number,gow->gadgets[GID_OPTS_FETCHHOST],(ULONG *)&option_max_fetchers_per_host);
-	GetAttr(INTEGER_Number,gow->gadgets[GID_OPTS_FETCHCACHE],(ULONG *)&option_max_cached_fetch_handles);
+	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_FETCHMAX],(ULONG *)&option_max_fetchers);
+	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_FETCHHOST],(ULONG *)&option_max_fetchers_per_host);
+	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_FETCHCACHE],(ULONG *)&option_max_cached_fetch_handles);
 
-	GetAttr(CHOOSER_Selected,gow->gadgets[GID_OPTS_NATIVEBM],(ULONG *)&option_cache_bitmaps);
+	GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_NATIVEBM],(ULONG *)&option_cache_bitmaps);
 
-	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_SCALEQ],(ULONG *)&data);
+	GetAttr(GA_Selected,gow->objects[GID_OPTS_SCALEQ],(ULONG *)&data);
 	if(data) option_scale_quality = true;
 		else option_scale_quality = false;
 
-	GetAttr(STRINGA_TextVal,gow->gadgets[GID_OPTS_ANIMSPEED],(ULONG *)&data);
+	GetAttr(STRINGA_TextVal,gow->objects[GID_OPTS_ANIMSPEED],(ULONG *)&data);
 	animspeed = strtof((char *)data,NULL);
 	option_minimum_gif_delay = (int)(animspeed * 100);
 
-	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_ANIMDISABLE],(ULONG *)&data);
+	GetAttr(GA_Selected,gow->objects[GID_OPTS_ANIMDISABLE],(ULONG *)&data);
 	if(data) option_animate_images = false;
 		else option_animate_images = true;
 
-	GetAttr(GETFONT_TextAttr,gow->gadgets[GID_OPTS_FONT_SANS],(ULONG *)&data);
+	GetAttr(GETFONT_TextAttr,gow->objects[GID_OPTS_FONT_SANS],(ULONG *)&data);
 	tattr = (struct TextAttr *)data;
 	if(option_font_sans) free(option_font_sans);
 	if(dot = strrchr(tattr->ta_Name,'.')) *dot = '\0';
 	option_font_sans = (char *)strdup((char *)tattr->ta_Name);
 
-	GetAttr(GETFONT_TextAttr,gow->gadgets[GID_OPTS_FONT_SERIF],(ULONG *)&data);
+	GetAttr(GETFONT_TextAttr,gow->objects[GID_OPTS_FONT_SERIF],(ULONG *)&data);
 	tattr = (struct TextAttr *)data;
 	if(option_font_serif) free(option_font_serif);
 	if(dot = strrchr(tattr->ta_Name,'.')) *dot = '\0';
 	option_font_serif = (char *)strdup((char *)tattr->ta_Name);
 
-	GetAttr(GETFONT_TextAttr,gow->gadgets[GID_OPTS_FONT_MONO],(ULONG *)&data);
+	GetAttr(GETFONT_TextAttr,gow->objects[GID_OPTS_FONT_MONO],(ULONG *)&data);
 	tattr = (struct TextAttr *)data;
 	if(option_font_mono) free(option_font_mono);
 	if(dot = strrchr(tattr->ta_Name,'.')) *dot = '\0';
 	option_font_mono = (char *)strdup((char *)tattr->ta_Name);
 
-	GetAttr(GETFONT_TextAttr,gow->gadgets[GID_OPTS_FONT_CURSIVE],(ULONG *)&data);
+	GetAttr(GETFONT_TextAttr,gow->objects[GID_OPTS_FONT_CURSIVE],(ULONG *)&data);
 	tattr = (struct TextAttr *)data;
 	if(option_font_cursive) free(option_font_cursive);
 	if(dot = strrchr(tattr->ta_Name,'.')) *dot = '\0';
 	option_font_cursive = (char *)strdup((char *)tattr->ta_Name);
 
-	GetAttr(GETFONT_TextAttr,gow->gadgets[GID_OPTS_FONT_FANTASY],(ULONG *)&data);
+	GetAttr(GETFONT_TextAttr,gow->objects[GID_OPTS_FONT_FANTASY],(ULONG *)&data);
 	tattr = (struct TextAttr *)data;
 	if(option_font_fantasy) free(option_font_fantasy);
 	if(dot = strrchr(tattr->ta_Name,'.')) *dot = '\0';
 	option_font_fantasy = (char *)strdup((char *)tattr->ta_Name);
 
-	GetAttr(CHOOSER_Selected,gow->gadgets[GID_OPTS_FONT_DEFAULT],(ULONG *)&option_font_default);
+	GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_FONT_DEFAULT],(ULONG *)&option_font_default);
 	option_font_default += PLOT_FONT_FAMILY_SANS_SERIF;
 
-	GetAttr(INTEGER_Number,gow->gadgets[GID_OPTS_FONT_SIZE],(ULONG *)&option_font_size);
+	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_FONT_SIZE],(ULONG *)&option_font_size);
 	option_font_size *= 10;
 
-	GetAttr(INTEGER_Number,gow->gadgets[GID_OPTS_FONT_MINSIZE],(ULONG *)&option_font_min_size);
+	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_FONT_MINSIZE],(ULONG *)&option_font_min_size);
 	option_font_min_size *= 10;
 
-	GetAttr(INTEGER_Number,gow->gadgets[GID_OPTS_CACHE_MEM],(ULONG *)&option_memory_cache_size);
+	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_CACHE_MEM],(ULONG *)&option_memory_cache_size);
 	option_memory_cache_size *= 1048576;
 
-	GetAttr(INTEGER_Number,gow->gadgets[GID_OPTS_CACHE_DISC],(ULONG *)&option_disc_cache_age);
+	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_CACHE_DISC],(ULONG *)&option_disc_cache_age);
 
-	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_OVERWRITE],(ULONG *)&data);
+	GetAttr(GA_Selected,gow->objects[GID_OPTS_OVERWRITE],(ULONG *)&data);
 	if(data) option_ask_overwrite = true;
 		else option_ask_overwrite = false;
 
-	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_NOTIFY],(ULONG *)&data);
+	GetAttr(GA_Selected,gow->objects[GID_OPTS_NOTIFY],(ULONG *)&data);
 	if(data) option_download_notify = true;
 		else option_download_notify = false;
 
-	GetAttr(GETFILE_Drawer,gow->gadgets[GID_OPTS_DLDIR],(ULONG *)&data);
+	GetAttr(GETFILE_Drawer,gow->objects[GID_OPTS_DLDIR],(ULONG *)&data);
 	if(option_download_dir) free(option_download_dir);
 	option_download_dir = (char *)strdup((char *)data);
 
-	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_TAB_ACTIVE],(ULONG *)&data);
+	GetAttr(GA_Selected,gow->objects[GID_OPTS_TAB_ACTIVE],(ULONG *)&data);
 	if(data) option_new_tab_active = false;
 		else option_new_tab_active = true;
 
-	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_TAB_2],(ULONG *)&data);
+	GetAttr(GA_Selected,gow->objects[GID_OPTS_TAB_2],(ULONG *)&data);
 	if(data) option_button_2_tab = true;
 		else option_button_2_tab = false;
 
-	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_SEARCH_URLBAR],(ULONG *)&data);
+	GetAttr(GA_Selected,gow->objects[GID_OPTS_SEARCH_URLBAR],(ULONG *)&data);
 	if(data) option_search_url_bar = true;
 		else option_search_url_bar = false;
 
-	GetAttr(CHOOSER_Selected,gow->gadgets[GID_OPTS_SEARCH_PROV],(ULONG *)&option_search_provider);
+	GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_SEARCH_PROV],(ULONG *)&option_search_provider);
 	search_web_provider_details(option_search_provider);
 	search_web_retrieve_ico(false);
 
-	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_CLIPBOARD],(ULONG *)&data);
+	GetAttr(GA_Selected,gow->objects[GID_OPTS_CLIPBOARD],(ULONG *)&data);
 	if(data) option_utf8_clipboard = true;
 		else option_utf8_clipboard = false;
 
-	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_CMENU_ENABLE],(ULONG *)&data);
+	GetAttr(GA_Selected,gow->objects[GID_OPTS_CMENU_ENABLE],(ULONG *)&data);
 	if(data) option_context_menu = true;
 		else option_context_menu = false;
 
-	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_CMENU_STICKY],(ULONG *)&data);
+	GetAttr(GA_Selected,gow->objects[GID_OPTS_CMENU_STICKY],(ULONG *)&data);
 	if(data) option_sticky_context_menu = true;
 		else option_sticky_context_menu = false;
 
-	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_STARTUP_NO_WIN],(ULONG *)&data);
+	GetAttr(GA_Selected,gow->objects[GID_OPTS_STARTUP_NO_WIN],(ULONG *)&data);
 	if(data) option_startup_no_window = true;
 		else option_startup_no_window = false;
 
-	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_CLOSE_NO_QUIT],(ULONG *)&data);
+	GetAttr(GA_Selected,gow->objects[GID_OPTS_CLOSE_NO_QUIT],(ULONG *)&data);
 	if(data) option_close_no_quit = true;
 		else option_close_no_quit = false;
 
-	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_DOCKY],(ULONG *)&data);
+	GetAttr(GA_Selected,gow->objects[GID_OPTS_DOCKY],(ULONG *)&data);
 	if(data) option_hide_docky_icon = false;
 		else option_hide_docky_icon = true;
 
-	GetAttr(INTEGER_Number,gow->gadgets[GID_OPTS_MARGIN_TOP],(ULONG *)&option_margin_top);
+	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_MARGIN_TOP],(ULONG *)&option_margin_top);
 
-	GetAttr(INTEGER_Number,gow->gadgets[GID_OPTS_MARGIN_LEFT],(ULONG *)&option_margin_left);
+	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_MARGIN_LEFT],(ULONG *)&option_margin_left);
 
-	GetAttr(INTEGER_Number,gow->gadgets[GID_OPTS_MARGIN_BOTTOM],(ULONG *)&option_margin_bottom);
+	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_MARGIN_BOTTOM],(ULONG *)&option_margin_bottom);
 
-	GetAttr(INTEGER_Number,gow->gadgets[GID_OPTS_MARGIN_RIGHT],(ULONG *)&option_margin_right);
+	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_MARGIN_RIGHT],(ULONG *)&option_margin_right);
 
-	GetAttr(INTEGER_Number,gow->gadgets[GID_OPTS_EXPORT_SCALE],(ULONG *)&option_export_scale);
+	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_EXPORT_SCALE],(ULONG *)&option_export_scale);
 
-	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_EXPORT_NOIMAGES],(ULONG *)&data);
+	GetAttr(GA_Selected,gow->objects[GID_OPTS_EXPORT_NOIMAGES],(ULONG *)&data);
 	if(data) option_suppress_images = true;
 		else option_suppress_images = false;
 
-	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_EXPORT_NOBKG],(ULONG *)&data);
+	GetAttr(GA_Selected,gow->objects[GID_OPTS_EXPORT_NOBKG],(ULONG *)&data);
 	if(data) option_remove_backgrounds = true;
 		else option_remove_backgrounds = false;
 
-	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_EXPORT_LOOSEN],(ULONG *)&data);
+	GetAttr(GA_Selected,gow->objects[GID_OPTS_EXPORT_LOOSEN],(ULONG *)&data);
 	if(data) option_enable_loosening = true;
 		else option_enable_loosening = false;
 
-	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_EXPORT_COMPRESS],(ULONG *)&data);
+	GetAttr(GA_Selected,gow->objects[GID_OPTS_EXPORT_COMPRESS],(ULONG *)&data);
 	if(data) option_enable_PDF_compression = true;
 		else option_enable_PDF_compression = false;
 
-	GetAttr(GA_Selected,gow->gadgets[GID_OPTS_EXPORT_PASSWORD],(ULONG *)&data);
+	GetAttr(GA_Selected,gow->objects[GID_OPTS_EXPORT_PASSWORD],(ULONG *)&data);
 	if(data) option_enable_PDF_password = true;
 		else option_enable_PDF_password = false;
 }
@@ -1605,13 +1604,13 @@ BOOL ami_gui_opts_event(void)
 					break;
 
 					case GID_OPTS_HOMEPAGE_DEFAULT:
-						RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_HOMEPAGE],
+						RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_HOMEPAGE],
 							gow->win,NULL,STRINGA_TextVal,NETSURF_HOMEPAGE,
 							TAG_DONE);
 					break;
 
 					case GID_OPTS_HOMEPAGE_CURRENT:
-						if(curbw) RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_HOMEPAGE],
+						if(curbw) RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_HOMEPAGE],
 							gow->win,NULL,STRINGA_TextVal,
 							curbw->current_content->url,TAG_DONE);
 					break;
@@ -1619,129 +1618,129 @@ BOOL ami_gui_opts_event(void)
 					case GID_OPTS_FROMLOCALE:
 						if(text = ami_locale_langs())
 						{
-							RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_CONTENTLANG],
+							RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_CONTENTLANG],
 								gow->win,NULL,STRINGA_TextVal, text, TAG_DONE);
 							FreeVec(text);
 						}
 					break;
 
 					case GID_OPTS_SCREEN:
-						GetAttr(RADIOBUTTON_Selected,gow->gadgets[GID_OPTS_SCREEN],(ULONG *)&data);
+						GetAttr(RADIOBUTTON_Selected,gow->objects[GID_OPTS_SCREEN],(ULONG *)&data);
 						switch(data)
 						{
 							case 0:
-								RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_SCREENMODE],
+								RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_SCREENMODE],
 								gow->win,NULL, GA_Disabled, FALSE, TAG_DONE);
-								RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_SCREENNAME],
+								RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_SCREENNAME],
 								gow->win,NULL, GA_Disabled, TRUE, TAG_DONE);
 							break;
 
 							case 1:
-								RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_SCREENMODE],
+								RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_SCREENMODE],
 								gow->win,NULL, GA_Disabled, TRUE, TAG_DONE);
-								RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_SCREENNAME],
+								RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_SCREENNAME],
 								gow->win,NULL, GA_Disabled, TRUE, TAG_DONE);
 							break;
 
 							case 2:
-								RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_SCREENMODE],
+								RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_SCREENMODE],
 								gow->win,NULL, GA_Disabled, TRUE, TAG_DONE);
-								RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_SCREENNAME],
+								RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_SCREENNAME],
 								gow->win,NULL, GA_Disabled, FALSE, TAG_DONE);
 							break;
 						}
 					break;
 
 					case GID_OPTS_SCREENMODE:
-						IDoMethod((Object *)gow->gadgets[GID_OPTS_SCREENMODE],
+						IDoMethod(gow->objects[GID_OPTS_SCREENMODE],
 						GSM_REQUEST,gow->win);
 					break;
 
 					case GID_OPTS_THEME:
-						IDoMethod((Object *)gow->gadgets[GID_OPTS_THEME],
+						IDoMethod(gow->objects[GID_OPTS_THEME],
 						GFILE_REQUEST,gow->win);
 					break;
 
 					case GID_OPTS_PROXY:
-						GetAttr(CHOOSER_Selected,gow->gadgets[GID_OPTS_PROXY],(ULONG *)&data);
+						GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_PROXY],(ULONG *)&data);
 						switch(data)
 						{
 							case 0:
-								RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_PROXY_HOST],
+								RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_PROXY_HOST],
 								gow->win,NULL, GA_Disabled, TRUE, TAG_DONE);
-								RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_PROXY_PORT],
+								RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_PROXY_PORT],
 								gow->win,NULL, GA_Disabled, TRUE, TAG_DONE);
 
-								RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_PROXY_USER],
+								RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_PROXY_USER],
 								gow->win,NULL, GA_Disabled, TRUE, TAG_DONE);
-								RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_PROXY_PASS],
+								RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_PROXY_PASS],
 								gow->win,NULL, GA_Disabled, TRUE, TAG_DONE);
 							break;
 							case 1:
-								RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_PROXY_HOST],
+								RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_PROXY_HOST],
 								gow->win,NULL, GA_Disabled, FALSE, TAG_DONE);
-								RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_PROXY_PORT],
+								RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_PROXY_PORT],
 								gow->win,NULL, GA_Disabled, FALSE, TAG_DONE);
 
-								RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_PROXY_USER],
+								RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_PROXY_USER],
 								gow->win,NULL, GA_Disabled, TRUE, TAG_DONE);
-								RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_PROXY_PASS],
+								RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_PROXY_PASS],
 								gow->win,NULL, GA_Disabled, TRUE, TAG_DONE);
 							break;
 
 							case 2:
 							case 3:
-								RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_PROXY_HOST],
+								RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_PROXY_HOST],
 								gow->win,NULL, GA_Disabled, FALSE, TAG_DONE);
-								RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_PROXY_PORT],
+								RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_PROXY_PORT],
 								gow->win,NULL, GA_Disabled, FALSE, TAG_DONE);
 
-								RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_PROXY_USER],
+								RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_PROXY_USER],
 								gow->win,NULL, GA_Disabled, FALSE, TAG_DONE);
-								RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_PROXY_PASS],
+								RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_PROXY_PASS],
 								gow->win,NULL, GA_Disabled, FALSE, TAG_DONE);
 							break;
 						}
 					break;
 
 					case GID_OPTS_ANIMDISABLE:
-						RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_ANIMSPEED],
+						RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_ANIMSPEED],
 							gow->win,NULL, GA_Disabled, code, TAG_DONE);
 					break;
 
 					case GID_OPTS_FONT_SANS:
-						IDoMethod((Object *)gow->gadgets[GID_OPTS_FONT_SANS],
+						IDoMethod(gow->objects[GID_OPTS_FONT_SANS],
 						GFONT_REQUEST,gow->win);
 					break;
 
 					case GID_OPTS_FONT_SERIF:
-						IDoMethod((Object *)gow->gadgets[GID_OPTS_FONT_SERIF],
+						IDoMethod(gow->objects[GID_OPTS_FONT_SERIF],
 						GFONT_REQUEST,gow->win);
 					break;
 
 					case GID_OPTS_FONT_MONO:
-						IDoMethod((Object *)gow->gadgets[GID_OPTS_FONT_MONO],
+						IDoMethod(gow->objects[GID_OPTS_FONT_MONO],
 						GFONT_REQUEST,gow->win);
 					break;
 
 					case GID_OPTS_FONT_CURSIVE:
-						IDoMethod((Object *)gow->gadgets[GID_OPTS_FONT_CURSIVE],
+						IDoMethod(gow->objects[GID_OPTS_FONT_CURSIVE],
 						GFONT_REQUEST,gow->win);
 					break;
 
 					case GID_OPTS_FONT_FANTASY:
-						IDoMethod((Object *)gow->gadgets[GID_OPTS_FONT_FANTASY],
+						IDoMethod(gow->objects[GID_OPTS_FONT_FANTASY],
 						GFONT_REQUEST,gow->win);
 					break;
 
 					case GID_OPTS_DLDIR:
-						IDoMethod((Object *)gow->gadgets[GID_OPTS_DLDIR],
+						IDoMethod(gow->objects[GID_OPTS_DLDIR],
 						GFILE_REQUEST,gow->win);
 					break;
 
 					case GID_OPTS_CMENU_ENABLE:
-						RefreshSetGadgetAttrs(gow->gadgets[GID_OPTS_CMENU_STICKY],
-							gow->win,NULL, GA_Disabled, !code, TAG_DONE);
+						RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_CMENU_STICKY],
+							gow->win, NULL, GA_Disabled, !code, TAG_DONE);
 					break;
 				}
 			break;

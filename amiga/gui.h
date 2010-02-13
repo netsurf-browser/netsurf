@@ -28,7 +28,12 @@
 
 enum
 {
-    GID_MAIN=0,
+    OID_MAIN = 0,
+	OID_VSCROLL,
+	OID_HSCROLL,
+	OID_MENU,
+	OID_LAST, /* for compatibility */
+	GID_MAIN,
 	GID_TABLAYOUT,
 	GID_BROWSER,
 	GID_STATUS,
@@ -62,16 +67,7 @@ enum
 	GID_CASE,
 	GID_TOOLBARLAYOUT,
 	GID_HSCROLL,
-    GID_LAST
-};
-
-enum
-{
-    OID_MAIN=0,
-	OID_VSCROLL,
-	OID_HSCROLL,
-	OID_MENU,
-	OID_LAST
+	GID_LAST
 };
 
 #define AMI_GUI_POINTER_BLANK GUI_POINTER_PROGRESS+1
@@ -84,7 +80,6 @@ struct history_window;
 struct gui_window_2 {
 	struct Window *win;
 	Object *objects[OID_LAST];
-	struct Gadget *gadgets[GID_LAST];
 	struct nsObject *node;
 	struct browser_window *bw;
 	bool redraw_required;

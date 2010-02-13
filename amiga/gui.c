@@ -1007,7 +1007,8 @@ void ami_handle_msg(void)
 	        switch(result & WMHI_CLASSMASK) // class
    		   	{
 				case WMHI_MOUSEMOVE:
-					GetAttr(SPACE_AreaBox,gwin->gadgets[GID_BROWSER],(ULONG *)&bbox);
+					GetAttr(SPACE_AreaBox, (Object *)gwin->objects[GID_BROWSER],
+							(ULONG *)&bbox);
 
 					x = (ULONG)((gwin->win->MouseX - bbox->Left) / gwin->bw->scale);
 					y = (ULONG)((gwin->win->MouseY - bbox->Top) / gwin->bw->scale);
@@ -1059,7 +1060,8 @@ void ami_handle_msg(void)
 				break;
 
 				case WMHI_MOUSEBUTTONS:
-					GetAttr(SPACE_AreaBox,gwin->gadgets[GID_BROWSER],(ULONG *)&bbox);
+					GetAttr(SPACE_AreaBox, (Object *)gwin->objects[GID_BROWSER],
+								(ULONG *)&bbox);
 
 					x = (ULONG)((gwin->win->MouseX - bbox->Left) / gwin->bw->scale);
 					y = (ULONG)((gwin->win->MouseY - bbox->Top) / gwin->bw->scale);
@@ -1146,7 +1148,9 @@ void ami_handle_msg(void)
 						break;
 
 						case GID_URL:
-							GetAttr(STRINGA_TextVal,gwin->gadgets[GID_URL],(ULONG *)&storage);
+							GetAttr(STRINGA_TextVal,
+								(Object *)gwin->objects[GID_URL],
+								(ULONG *)&storage);
 							if(search_is_url((char *)storage) == false)
 							{
 								storage = (ULONG *)search_web_from_term((char *)storage);
@@ -1161,7 +1165,9 @@ void ami_handle_msg(void)
 						break;
 
 						case GID_SEARCHSTRING:
-							GetAttr(STRINGA_TextVal,gwin->gadgets[GID_SEARCHSTRING],(ULONG *)&storage);
+							GetAttr(STRINGA_TextVal,
+								(Object *)gwin->objects[GID_SEARCHSTRING],
+								(ULONG *)&storage);
 							storage = (ULONG *)search_web_from_term((char *)storage);
 
 							browser_window_go(gwin->bw,(char *)storage, NULL, true);
@@ -1321,7 +1327,7 @@ void ami_handle_msg(void)
 
 							case 'u': // open url
 								if(option_kiosk_mode == false)
-									ActivateGadget(gwin->gadgets[GID_URL],
+									ActivateGadget((struct Gadget *)gwin->objects[GID_URL],
 										gwin->win, NULL);
 							break;
 						}
@@ -1331,7 +1337,7 @@ void ami_handle_msg(void)
 						if(!browser_window_key_press(gwin->bw, nskey))
 						{
 							GetAttr(SPACE_AreaBox,
-								gwin->gadgets[GID_BROWSER],
+								(Object *)gwin->objects[GID_BROWSER],
 								(ULONG *)&bbox);
 
 							gui_window_get_scroll(gwin->bw->window,
@@ -1423,7 +1429,7 @@ void ami_handle_msg(void)
 							ami_update_throbber(gwin,true);
 							// fall through
 						case AMINS_FRAME:
-							//GetAttr(SPACE_AreaBox,gwin->gadgets[GID_BROWSER],(ULONG *)&bbox);
+							//GetAttr(SPACE_AreaBox,gwin->objects[GID_BROWSER],(ULONG *)&bbox);
 							//browser_reformat_pending = true;
 							gwin->bw->reformat_pending = true;
 							//browser_window_reformat(gwin->bw,bbox->Width,bbox->Height);
@@ -1530,7 +1536,7 @@ void ami_handle_appmsg(void)
 
 	while(appmsg=(struct AppMessage *)GetMsg(appport))
 	{
-		GetAttr(WINDOW_UserData,(struct Window *)appmsg->am_ID,(ULONG *)&gwin);
+		GetAttr(WINDOW_UserData, (Object *)appmsg->am_ID, (ULONG *)&gwin);
 
 		if(appmsg->am_Type == AMTYPE_APPICON)
 		{
@@ -1546,7 +1552,8 @@ void ami_handle_appmsg(void)
 		}
 		else if(appmsg->am_Type == AMTYPE_APPWINDOW)
 		{
-			GetAttr(SPACE_AreaBox,gwin->gadgets[GID_BROWSER],(ULONG *)&bbox);
+			GetAttr(SPACE_AreaBox, (Object *)gwin->objects[GID_BROWSER],
+				(ULONG *)&bbox);
 
 			ami_get_hscroll_pos(gwin, (ULONG *)&xs);
 			x = (appmsg->am_MouseX) - (bbox->Left) +xs;
@@ -1818,7 +1825,7 @@ void ami_change_tab(struct gui_window_2 *gwin, int direction)
 
 	GetClickTabNodeAttrs(ptab, TNA_Number, (ULONG *)&ptabnum, TAG_DONE);
 
-	RefreshSetGadgetAttrs(gwin->gadgets[GID_TABS], gwin->win, NULL,
+	RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_TABS], gwin->win, NULL,
 						CLICKTAB_Current, ptabnum,
 						TAG_DONE);
 
@@ -1835,12 +1842,13 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 
 	gui_window_get_scroll(gwin->bw->window,&gwin->bw->window->scrollx,&gwin->bw->window->scrolly);
 
-	GetAttr(CLICKTAB_CurrentNode,gwin->gadgets[GID_TABS],(ULONG *)&tabnode);
+	GetAttr(CLICKTAB_CurrentNode, (Object *)gwin->objects[GID_TABS],
+				(ULONG *)&tabnode);
 	GetClickTabNodeAttrs(tabnode,
 						TNA_UserData,&gwin->bw,
 						TAG_DONE);
 	curbw = gwin->bw;
-	GetAttr(SPACE_AreaBox,gwin->gadgets[GID_BROWSER],(ULONG *)&bbox);
+	GetAttr(SPACE_AreaBox, (Object *)gwin->objects[GID_BROWSER], (ULONG *)&bbox);
 
 	if(!gwin->bw->current_content)
 	{
@@ -2035,25 +2043,25 @@ void ami_update_buttons(struct gui_window_2 *gwin)
 		}
 	}
 
-	RefreshSetGadgetAttrs(gwin->gadgets[GID_BACK],gwin->win,NULL,
+	RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_BACK],gwin->win,NULL,
 		GA_Disabled,back,
 		TAG_DONE);
 
-	RefreshSetGadgetAttrs(gwin->gadgets[GID_FORWARD],gwin->win,NULL,
+	RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_FORWARD],gwin->win,NULL,
 		GA_Disabled,forward,
 		TAG_DONE);
 
-	RefreshSetGadgetAttrs(gwin->gadgets[GID_RELOAD],gwin->win,NULL,
+	RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_RELOAD],gwin->win,NULL,
 		GA_Disabled,reload,
 		TAG_DONE);
 
-	RefreshSetGadgetAttrs(gwin->gadgets[GID_STOP],gwin->win,NULL,
+	RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_STOP],gwin->win,NULL,
 		GA_Disabled,stop,
 		TAG_DONE);
 
 	if(gwin->tabs)
 	{
-		RefreshSetGadgetAttrs(gwin->gadgets[GID_CLOSETAB],gwin->win,NULL,
+		RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_CLOSETAB],gwin->win,NULL,
 			GA_Disabled,tabclose,
 			TAG_DONE);
 	}
@@ -2127,7 +2135,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		gwin->shared = clone->window->shared;
 		gwin->tab = gwin->shared->next_tab;
 
-		SetGadgetAttrs(gwin->shared->gadgets[GID_TABS],gwin->shared->win,NULL,
+		SetGadgetAttrs((struct Gadget *)gwin->shared->objects[GID_TABS],gwin->shared->win,NULL,
 						CLICKTAB_Labels,~0,
 						TAG_DONE);
 
@@ -2138,19 +2146,19 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 		AddTail(&gwin->shared->tab_list,gwin->tab_node);
 
-		RefreshSetGadgetAttrs(gwin->shared->gadgets[GID_TABS],gwin->shared->win,NULL,
+		RefreshSetGadgetAttrs((struct Gadget *)gwin->shared->objects[GID_TABS],gwin->shared->win,NULL,
 							CLICKTAB_Labels,&gwin->shared->tab_list,
 							TAG_DONE);
 
 		if(option_new_tab_active)
 		{
-			RefreshSetGadgetAttrs(gwin->shared->gadgets[GID_TABS],gwin->shared->win,NULL,
+			RefreshSetGadgetAttrs((struct Gadget *)gwin->shared->objects[GID_TABS],gwin->shared->win,NULL,
 							CLICKTAB_Current,gwin->tab,
 							TAG_DONE);
 		}
 
 		if(ClickTabBase->lib_Version < 53)
-			RethinkLayout(gwin->shared->gadgets[GID_TABLAYOUT],gwin->shared->win,NULL,TRUE);
+			RethinkLayout((struct Gadget *)gwin->shared->objects[GID_TABLAYOUT],gwin->shared->win,NULL,TRUE);
 
 		gwin->shared->tabs++;
 		gwin->shared->next_tab++;
@@ -2214,10 +2222,10 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			WINDOW_UserData,gwin->shared,
 //         	WINDOW_Position, WPOS_CENTERSCREEN,
 //			WINDOW_CharSet,106,
-           	WINDOW_ParentGroup, gwin->shared->gadgets[GID_MAIN] = VGroupObject,
+           	WINDOW_ParentGroup, gwin->shared->objects[GID_MAIN] = VGroupObject,
 //				LAYOUT_CharSet,106,
                	LAYOUT_SpaceOuter, TRUE,
-				LAYOUT_AddChild, gwin->shared->gadgets[GID_BROWSER] = SpaceObject,
+				LAYOUT_AddChild, gwin->shared->objects[GID_BROWSER] = SpaceObject,
 					GA_ID,GID_BROWSER,
 					SPACE_Transparent,TRUE,
 /*
@@ -2304,12 +2312,12 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 					WINDOW_UserData,gwin->shared,
 //      		   	WINDOW_Position, WPOS_CENTERSCREEN,
 //					WINDOW_CharSet,106,
-		           	WINDOW_ParentGroup, gwin->shared->gadgets[GID_MAIN] = VGroupObject,
+		           	WINDOW_ParentGroup, gwin->shared->objects[GID_MAIN] = VGroupObject,
 //						LAYOUT_CharSet,106,
 		               	LAYOUT_SpaceOuter, TRUE,
-						LAYOUT_AddChild, gwin->shared->gadgets[GID_TOOLBARLAYOUT] = HGroupObject,
+						LAYOUT_AddChild, gwin->shared->objects[GID_TOOLBARLAYOUT] = HGroupObject,
 							LAYOUT_VertAlignment, LALIGN_CENTER,
-							LAYOUT_AddChild, gwin->shared->gadgets[GID_BACK] = ButtonObject,
+							LAYOUT_AddChild, gwin->shared->objects[GID_BACK] = ButtonObject,
 								GA_ID,GID_BACK,
 								GA_RelVerify,TRUE,
 								GA_Disabled,TRUE,
@@ -2324,7 +2332,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 							ButtonEnd,
 							CHILD_WeightedWidth,0,
 							CHILD_WeightedHeight,0,
-							LAYOUT_AddChild, gwin->shared->gadgets[GID_FORWARD] = ButtonObject,
+							LAYOUT_AddChild, gwin->shared->objects[GID_FORWARD] = ButtonObject,
 								GA_ID,GID_FORWARD,
 								GA_RelVerify,TRUE,
 								GA_Disabled,TRUE,
@@ -2339,7 +2347,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 							ButtonEnd,
 							CHILD_WeightedWidth,0,
 							CHILD_WeightedHeight,0,
-							LAYOUT_AddChild, gwin->shared->gadgets[GID_STOP] = ButtonObject,
+							LAYOUT_AddChild, gwin->shared->objects[GID_STOP] = ButtonObject,
 								GA_ID,GID_STOP,
 								GA_RelVerify,TRUE,
 								BUTTON_Transparent,TRUE,
@@ -2353,7 +2361,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 							ButtonEnd,
 							CHILD_WeightedWidth,0,
 							CHILD_WeightedHeight,0,
-							LAYOUT_AddChild, gwin->shared->gadgets[GID_RELOAD] = ButtonObject,
+							LAYOUT_AddChild, gwin->shared->objects[GID_RELOAD] = ButtonObject,
 								GA_ID,GID_RELOAD,
 								GA_RelVerify,TRUE,
 								BUTTON_Transparent,TRUE,
@@ -2367,7 +2375,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 							ButtonEnd,
 							CHILD_WeightedWidth,0,
 							CHILD_WeightedHeight,0,
-							LAYOUT_AddChild, gwin->shared->gadgets[GID_HOME] = ButtonObject,
+							LAYOUT_AddChild, gwin->shared->objects[GID_HOME] = ButtonObject,
 								GA_ID,GID_HOME,
 								GA_RelVerify,TRUE,
 								BUTTON_Transparent,TRUE,
@@ -2381,7 +2389,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 							ButtonEnd,
 							CHILD_WeightedWidth,0,
 							CHILD_WeightedHeight,0,
-							LAYOUT_AddChild, gwin->shared->gadgets[GID_ICON] = SpaceObject,
+							LAYOUT_AddChild, gwin->shared->objects[GID_ICON] = SpaceObject,
 								GA_ID, GID_ICON,
 								SPACE_MinWidth, 16,
 								SPACE_MinHeight, 16,
@@ -2389,7 +2397,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 							SpaceEnd,
 							CHILD_WeightedWidth,0,
 							CHILD_WeightedHeight,0,
-							LAYOUT_AddChild, gwin->shared->gadgets[GID_URL] =
+							LAYOUT_AddChild, gwin->shared->objects[GID_URL] =
 								NewObject(urlStringClass, NULL,
                     				STRINGA_MaxChars, 2000,
                     				GA_ID, GID_URL,
@@ -2411,7 +2419,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 							LAYOUT_WeightBar, TRUE,
 							LAYOUT_AddChild, HGroupObject,
 								LAYOUT_VertAlignment, LALIGN_CENTER,
-								LAYOUT_AddChild, gwin->shared->gadgets[GID_SEARCH_ICON] = SpaceObject,
+								LAYOUT_AddChild, gwin->shared->objects[GID_SEARCH_ICON] = SpaceObject,
 									GA_ID, GID_SEARCH_ICON,
 									SPACE_MinWidth, 16,
 									SPACE_MinHeight, 16,
@@ -2419,14 +2427,14 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 								SpaceEnd,
 								CHILD_WeightedWidth,0,
 								CHILD_WeightedHeight,0,
-								LAYOUT_AddChild, gwin->shared->gadgets[GID_SEARCHSTRING] =StringObject,
+								LAYOUT_AddChild, gwin->shared->objects[GID_SEARCHSTRING] =StringObject,
 									GA_ID,GID_SEARCHSTRING,
                    					STRINGA_TextVal, NULL,
 									GA_RelVerify,TRUE,
 								StringEnd,
 							LayoutEnd,
 							CHILD_WeightedWidth, 0,
-							LAYOUT_AddChild, gwin->shared->gadgets[GID_THROBBER] = SpaceObject,
+							LAYOUT_AddChild, gwin->shared->objects[GID_THROBBER] = SpaceObject,
 								GA_ID,GID_THROBBER,
 								SPACE_MinWidth,throbber_width,
 								SPACE_MinHeight,throbber_height,
@@ -2436,9 +2444,9 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 							CHILD_WeightedHeight,0,
 						LayoutEnd,
 						CHILD_WeightedHeight,0,
-						LAYOUT_AddChild, gwin->shared->gadgets[GID_TABLAYOUT] = HGroupObject,
+						LAYOUT_AddChild, gwin->shared->objects[GID_TABLAYOUT] = HGroupObject,
 							LAYOUT_SpaceInner,FALSE,
-							LAYOUT_AddChild, gwin->shared->gadgets[GID_CLOSETAB] = ButtonObject,
+							LAYOUT_AddChild, gwin->shared->objects[GID_CLOSETAB] = ButtonObject,
 								GA_ID,GID_CLOSETAB,
 								GA_RelVerify,TRUE,
 								BUTTON_Transparent,TRUE,
@@ -2452,7 +2460,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 							ButtonEnd,
 							CHILD_WeightedWidth,0,
 							CHILD_WeightedHeight,0,
-							LAYOUT_AddChild, gwin->shared->gadgets[GID_TABS] = ClickTabObject,
+							LAYOUT_AddChild, gwin->shared->objects[GID_TABS] = ClickTabObject,
 								GA_ID,GID_TABS,
 								GA_RelVerify,TRUE,
 								GA_Underscore,13, // disable kb shortcuts
@@ -2467,7 +2475,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 							CHILD_CacheDomain,FALSE,
 						LayoutEnd,
 						CHILD_WeightedHeight,0,
-						LAYOUT_AddChild, gwin->shared->gadgets[GID_BROWSER] = SpaceObject,
+						LAYOUT_AddChild, gwin->shared->objects[GID_BROWSER] = SpaceObject,
 							GA_ID,GID_BROWSER,
 							SPACE_Transparent,TRUE,
 						SpaceEnd,
@@ -2510,9 +2518,9 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 					WINDOW_SharedPort,sport,
 					WINDOW_UserData,gwin->shared,
 					WINDOW_BuiltInScroll,TRUE,
-		           	WINDOW_ParentGroup, gwin->shared->gadgets[GID_MAIN] = VGroupObject,
+		           	WINDOW_ParentGroup, gwin->shared->objects[GID_MAIN] = VGroupObject,
 		               	LAYOUT_SpaceOuter, TRUE,
-						LAYOUT_AddChild, gwin->shared->gadgets[GID_BROWSER] = SpaceObject,
+						LAYOUT_AddChild, gwin->shared->objects[GID_BROWSER] = SpaceObject,
 							GA_ID,GID_BROWSER,
 							SPACE_Transparent,TRUE,
 						SpaceEnd,
@@ -2535,7 +2543,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	GetAttr(WINDOW_VertObject, gwin->shared->objects[OID_MAIN],
 			(ULONG *)&gwin->shared->objects[OID_VSCROLL]);
 
-	RefreshSetGadgetAttrs((APTR)gwin->shared->objects[OID_VSCROLL],
+	RefreshSetGadgetAttrs((struct Gadget *)(APTR)gwin->shared->objects[OID_VSCROLL],
 			gwin->shared->win, NULL,
 			GA_ID, OID_VSCROLL,
 			ICA_TARGET, ICTARGET_IDCMP,
@@ -2549,7 +2557,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		sz = ami_get_border_gadget_balance(gwin->shared,
 				(ULONG *)&size1, (ULONG *)&size2);
 
-		gwin->shared->gadgets[GID_HSCROLL] = (struct Gadget *)NewObject(
+		gwin->shared->objects[GID_HSCROLL] = (struct Gadget *)NewObject(
 				NULL,
 				"scrollergclass",
 				GA_ID, GID_HSCROLL,
@@ -2563,10 +2571,10 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 				GA_DrawInfo, dri,
 				TAG_DONE);
 
-		GetAttr(GA_Height, gwin->shared->gadgets[GID_HSCROLL],
+		GetAttr(GA_Height, (Object *)gwin->shared->objects[GID_HSCROLL],
 				(ULONG *)&sz);
 
-		gwin->shared->gadgets[GID_STATUS] = (struct Gadget *)NewObject(
+		gwin->shared->objects[GID_STATUS] = (struct Gadget *)NewObject(
 				NULL,
 				"frbuttonclass",
 				GA_ID, GID_STATUS,
@@ -2585,20 +2593,20 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 					IA_Height, scrn->WBorBottom + scrn->RastPort.TxHeight,
 					IA_InBorder, TRUE,
 					TAG_DONE),
-				GA_Next, gwin->shared->gadgets[GID_HSCROLL],
+				GA_Next, gwin->shared->objects[GID_HSCROLL],
 				TAG_DONE);
 
-		AddGList(gwin->shared->win, gwin->shared->gadgets[GID_STATUS],
+		AddGList(gwin->shared->win, (struct Gadget *)gwin->shared->objects[GID_STATUS],
 				(UWORD)~0, -1, NULL);
 
 	/* Apparently you can't set GA_Width on creation time for frbuttonclass */
 
-		SetGadgetAttrs(gwin->shared->gadgets[GID_STATUS],
+		SetGadgetAttrs((struct Gadget *)gwin->shared->objects[GID_STATUS],
 			gwin->shared->win, NULL,
 			GA_Width, size1,
 			TAG_DONE);
 
-		RefreshGadgets((APTR)gwin->shared->gadgets[GID_STATUS],
+		RefreshGadgets((APTR)gwin->shared->objects[GID_STATUS],
 				gwin->shared->win, NULL);
 	}
 	else
@@ -2606,7 +2614,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		GetAttr(WINDOW_HorizObject, gwin->shared->objects[OID_MAIN],
 				(ULONG *)&gwin->shared->objects[OID_HSCROLL]);
 
-		RefreshSetGadgetAttrs((APTR)gwin->shared->objects[OID_HSCROLL],
+		RefreshSetGadgetAttrs((struct Gadget *)(APTR)gwin->shared->objects[OID_HSCROLL],
 				gwin->shared->win, NULL,
 				GA_ID, OID_HSCROLL,
 				ICA_TARGET, ICTARGET_IDCMP,
@@ -2636,19 +2644,19 @@ ULONG ami_set_border_gadget_balance(struct gui_window_2 *gwin)
 
 	sz = ami_get_border_gadget_balance(gwin, &size1, &size2);
 
-	RefreshSetGadgetAttrs((APTR)gwin->gadgets[GID_HSCROLL],
+	RefreshSetGadgetAttrs((struct Gadget *)(APTR)gwin->objects[GID_HSCROLL],
 			gwin->win, NULL,
 		//	GA_Left, size1,
 			GA_RelRight, - size2 - sz,
 			GA_Width, size2,
 			TAG_DONE);
 
-	RefreshSetGadgetAttrs((APTR)gwin->gadgets[GID_STATUS],
+	RefreshSetGadgetAttrs((struct Gadget *)(APTR)gwin->objects[GID_STATUS],
 			gwin->win, NULL,
 			GA_Width, size1,
 			TAG_DONE);
 
-	RefreshGList(gwin->gadgets[GID_STATUS], gwin->win, NULL, 2);
+	RefreshGList((struct Gadget *)gwin->objects[GID_STATUS], gwin->win, NULL, 2);
 }
 
 ULONG ami_get_border_gadget_balance(struct gui_window_2 *gwin, ULONG *size1, ULONG *size2)
@@ -2721,7 +2729,7 @@ void gui_window_destroy(struct gui_window *g)
 
 	if(g->shared->tabs > 1)
 	{
-		SetGadgetAttrs(g->shared->gadgets[GID_TABS],g->shared->win,NULL,
+		SetGadgetAttrs((struct Gadget *)g->shared->objects[GID_TABS],g->shared->win,NULL,
 						CLICKTAB_Labels,~0,
 						TAG_DONE);
 
@@ -2731,13 +2739,13 @@ void gui_window_destroy(struct gui_window *g)
 		GetClickTabNodeAttrs(ptab,TNA_Number,(ULONG *)&ptabnum,TAG_DONE);
 		Remove(g->tab_node);
 		FreeClickTabNode(g->tab_node);
-		RefreshSetGadgetAttrs(g->shared->gadgets[GID_TABS],g->shared->win,NULL,
+		RefreshSetGadgetAttrs((struct Gadget *)g->shared->objects[GID_TABS],g->shared->win,NULL,
 						CLICKTAB_Labels,&g->shared->tab_list,
 						CLICKTAB_Current,ptabnum,
 						TAG_DONE);
 
 		if(ClickTabBase->lib_Version < 53)
-			RethinkLayout(g->shared->gadgets[GID_TABLAYOUT],g->shared->win,NULL,TRUE);
+			RethinkLayout((struct Gadget *)g->shared->objects[GID_TABLAYOUT],g->shared->win,NULL,TRUE);
 
 		g->shared->tabs--;
 		ami_switch_tab(g->shared,true);
@@ -2784,20 +2792,23 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 	{
 		node = g->tab_node;
 
-		SetGadgetAttrs(g->shared->gadgets[GID_TABS],g->shared->win,NULL,
+		SetGadgetAttrs((struct Gadget *)g->shared->objects[GID_TABS],g->shared->win,NULL,
 						CLICKTAB_Labels,~0,
 						TAG_DONE);
 
 		SetClickTabNodeAttrs(node, TNA_Text, utf8title, TAG_DONE);
-		RefreshSetGadgetAttrs(g->shared->gadgets[GID_TABS], g->shared->win, NULL,
+		RefreshSetGadgetAttrs((struct Gadget *)g->shared->objects[GID_TABS],
+							g->shared->win, NULL,
 							CLICKTAB_Labels, &g->shared->tab_list,
 							TAG_DONE);
 
 		if(ClickTabBase->lib_Version < 53)
-			RethinkLayout(g->shared->gadgets[GID_TABLAYOUT],g->shared->win,NULL,TRUE);
+			RethinkLayout((struct Gadget *)g->shared->objects[GID_TABLAYOUT],
+				g->shared->win, NULL, TRUE);
 	}
 
-	GetAttr(CLICKTAB_Current,g->shared->gadgets[GID_TABS],(ULONG *)&cur_tab);
+	GetAttr(CLICKTAB_Current, g->shared->objects[GID_TABS],
+				(ULONG *)&cur_tab);
 
 	if((cur_tab == g->tab) || (g->shared->tabs == 0))
 	{
@@ -2832,14 +2843,15 @@ void ami_do_redraw_limits(struct gui_window *g, struct content *c,int x0, int y0
 
 	if(!g) return;
 
-	if(g->tab_node) GetAttr(CLICKTAB_Current,g->shared->gadgets[GID_TABS],(ULONG *)&cur_tab);
+	if(g->tab_node) GetAttr(CLICKTAB_Current,
+				g->shared->objects[GID_TABS], (ULONG *)&cur_tab);
 
 	if(!((cur_tab == g->tab) || (g->shared->tabs == 0)))
 	{
 		return;
 	}
 
-	GetAttr(SPACE_AreaBox,g->shared->gadgets[GID_BROWSER],(ULONG *)&bbox);
+	GetAttr(SPACE_AreaBox, g->shared->objects[GID_BROWSER], (ULONG *)&bbox);
 
 	if(!c) return;
 	if (c->locked) return;
@@ -2917,7 +2929,8 @@ void gui_window_redraw_window(struct gui_window *g)
 
 	if(!g) return;
 
-	if(g->tab_node) GetAttr(CLICKTAB_Current,g->shared->gadgets[GID_TABS],(ULONG *)&cur_tab);
+	if(g->tab_node) GetAttr(CLICKTAB_Current,
+				g->shared->objects[GID_TABS], (ULONG *)&cur_tab);
 
 	if((cur_tab == g->tab) || (g->shared->tabs == 0))
 		g->shared->redraw_required = true;
@@ -2950,7 +2963,7 @@ void ami_do_redraw(struct gui_window_2 *g)
 	ULONG oldh=g->oldh,oldv=g->oldv;
 	bool morescroll = false;
 
-	GetAttr(SPACE_AreaBox,g->gadgets[GID_BROWSER],(ULONG *)&bbox);
+	GetAttr(SPACE_AreaBox, (Object *)g->objects[GID_BROWSER], (ULONG *)&bbox);
 	ami_get_hscroll_pos(g, (ULONG *)&hcurrent);
 	ami_get_vscroll_pos(g, (ULONG *)&vcurrent);
 
@@ -3068,9 +3081,9 @@ void ami_do_redraw(struct gui_window_2 *g)
 
 void ami_get_hscroll_pos(struct gui_window_2 *gwin, ULONG *xs)
 {
-	if(gwin->gadgets[GID_HSCROLL])
+	if(gwin->objects[GID_HSCROLL])
 	{
-		GetAttr(PGA_Top, gwin->gadgets[GID_HSCROLL], xs);
+		GetAttr(PGA_Top, (Object *)gwin->objects[GID_HSCROLL], xs);
 	}
 	else if(gwin->objects[OID_HSCROLL])
 	{
@@ -3103,25 +3116,26 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 	if(sx > g->shared->bw->current_content->width) sx = g->shared->bw->current_content->width;
 	if(sy > g->shared->bw->current_content->height) sy = g->shared->bw->current_content->height;
 
-	if(g->tab_node) GetAttr(CLICKTAB_Current,g->shared->gadgets[GID_TABS],(ULONG *)&cur_tab);
+	if(g->tab_node) GetAttr(CLICKTAB_Current,
+				g->shared->objects[GID_TABS], (ULONG *)&cur_tab);
 
 	if((cur_tab == g->tab) || (g->shared->tabs == 0))
 	{
-		RefreshSetGadgetAttrs((APTR)g->shared->objects[OID_VSCROLL],
+		RefreshSetGadgetAttrs((struct Gadget *)(APTR)g->shared->objects[OID_VSCROLL],
 			g->shared->win, NULL,
 			SCROLLER_Top, (ULONG)(sy * g->shared->bw->scale),
 			TAG_DONE);
 
-		if(g->shared->gadgets[GID_HSCROLL])
+		if(g->shared->objects[GID_HSCROLL])
 		{
-			RefreshSetGadgetAttrs((APTR)g->shared->gadgets[GID_HSCROLL],
+			RefreshSetGadgetAttrs((struct Gadget *)(APTR)g->shared->objects[GID_HSCROLL],
 				g->shared->win, NULL,
 				PGA_Top, (ULONG)(sx * g->shared->bw->scale),
 				TAG_DONE);
 		}
 		else if(g->shared->objects[OID_HSCROLL])
 		{
-			RefreshSetGadgetAttrs((APTR)g->shared->objects[OID_HSCROLL],
+			RefreshSetGadgetAttrs((struct Gadget *)(APTR)g->shared->objects[OID_HSCROLL],
 				g->shared->win, NULL,
 				SCROLLER_Top, (ULONG)(sx * g->shared->bw->scale),
 				TAG_DONE);
@@ -3159,7 +3173,7 @@ void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 	struct IBox *bbox;
 	if(!g) return;
 
-	GetAttr(SPACE_AreaBox,g->shared->gadgets[GID_BROWSER],(ULONG *)&bbox);
+	GetAttr(SPACE_AreaBox, g->shared->objects[GID_BROWSER], (ULONG *)&bbox);
 
 	*width = bbox->Width;
 	*height = bbox->Height;
@@ -3179,20 +3193,22 @@ void gui_window_update_extent(struct gui_window *g)
 	if(!g) return;
 	if(!g->shared->bw->current_content) return;
 
-	if(g->tab_node) GetAttr(CLICKTAB_Current,g->shared->gadgets[GID_TABS],(ULONG *)&cur_tab);
+	if(g->tab_node) GetAttr(CLICKTAB_Current,
+				g->shared->objects[GID_TABS], (ULONG *)&cur_tab);
 
 	if((cur_tab == g->tab) || (g->shared->tabs == 0))
 	{
-		GetAttr(SPACE_AreaBox,g->shared->gadgets[GID_BROWSER],(ULONG *)&bbox);
+		GetAttr(SPACE_AreaBox, g->shared->objects[GID_BROWSER],
+				(ULONG *)&bbox);
 
-		RefreshSetGadgetAttrs((APTR)g->shared->objects[OID_VSCROLL],g->shared->win,NULL,
+		RefreshSetGadgetAttrs((struct Gadget *)(APTR)g->shared->objects[OID_VSCROLL],g->shared->win,NULL,
 			SCROLLER_Total, (ULONG)(g->shared->bw->current_content->height * g->shared->bw->scale),
 			SCROLLER_Visible, bbox->Height,
 			TAG_DONE);
 
-		if(g->shared->gadgets[GID_HSCROLL])
+		if(g->shared->objects[GID_HSCROLL])
 		{
-			RefreshSetGadgetAttrs((APTR)g->shared->gadgets[GID_HSCROLL],
+			RefreshSetGadgetAttrs((struct Gadget *)(APTR)g->shared->objects[GID_HSCROLL],
 				g->shared->win, NULL,
 				PGA_Total, (ULONG)(g->shared->bw->current_content->width * g->shared->bw->scale),
 				PGA_Visible, bbox->Width,
@@ -3200,7 +3216,7 @@ void gui_window_update_extent(struct gui_window *g)
 		}
 		else if(g->shared->objects[OID_HSCROLL])
 		{
-			RefreshSetGadgetAttrs((APTR)g->shared->objects[OID_HSCROLL],
+			RefreshSetGadgetAttrs((struct Gadget *)(APTR)g->shared->objects[OID_HSCROLL],
 				g->shared->win, NULL,
 				SCROLLER_Total, (ULONG)(g->shared->bw->current_content->width * g->shared->bw->scale),
 				SCROLLER_Visible, bbox->Width,
@@ -3221,27 +3237,29 @@ void gui_window_set_status(struct gui_window *g, const char *text)
 
 	if(!g) return;
 	if(!text) return;
-	if(!g->shared->gadgets[GID_STATUS]) return;
+	if(!g->shared->objects[GID_STATUS]) return;
 
-	if(g->tab_node) GetAttr(CLICKTAB_Current,g->shared->gadgets[GID_TABS],(ULONG *)&cur_tab);
+	if(g->tab_node) GetAttr(CLICKTAB_Current,
+			g->shared->objects[GID_TABS], (ULONG *)&cur_tab);
 
 	if((cur_tab == g->tab) || (g->shared->tabs == 0))
 	{
 		utf8text = ami_utf8_easy((char *)text);
 		if(utf8text == NULL) return;
 
-		GetAttr(GA_Width, g->shared->gadgets[GID_STATUS],(ULONG *)&size);
+		GetAttr(GA_Width, g->shared->objects[GID_STATUS], (ULONG *)&size);
 		chars = TextFit(&scrn->RastPort, utf8text, strlen(utf8text),
 					&textex, NULL, 1, size - 2, scrn->RastPort.TxHeight);
 
 		utf8text[chars] = 0;
 
-		SetGadgetAttrs(g->shared->gadgets[GID_STATUS],
+		SetGadgetAttrs((struct Gadget *)g->shared->objects[GID_STATUS],
 			g->shared->win, NULL,
 			GA_Text, utf8text,
 			TAG_DONE);
 
-		RefreshGList(g->shared->gadgets[GID_STATUS],g->shared->win,NULL,1);
+		RefreshGList((struct Gadget *)g->shared->objects[GID_STATUS],
+				g->shared->win, NULL, 1);
 
 		if(g->shared->status) ami_utf8_free(g->shared->status);
 		g->shared->status = utf8text;
@@ -3440,11 +3458,13 @@ void gui_window_set_url(struct gui_window *g, const char *url)
 	if(!g) return;
 	if(!url) return;
 
-	if(g->tab_node) GetAttr(CLICKTAB_Current,g->shared->gadgets[GID_TABS],(ULONG *)&cur_tab);
+	if(g->tab_node) GetAttr(CLICKTAB_Current,
+				g->shared->objects[GID_TABS], (ULONG *)&cur_tab);
 
 	if((cur_tab == g->tab) || (g->shared->tabs == 0))
 	{
-		RefreshSetGadgetAttrs(g->shared->gadgets[GID_URL],g->shared->win,NULL,STRINGA_TextVal,url,TAG_DONE);
+		RefreshSetGadgetAttrs((struct Gadget *)g->shared->objects[GID_URL],
+			g->shared->win, NULL, STRINGA_TextVal, url, TAG_DONE);
 	}
 }
 
@@ -3457,9 +3477,10 @@ void gui_window_start_throbber(struct gui_window *g)
 
 	if(g->tab_node)
 	{
-		GetAttr(CLICKTAB_Current,g->shared->gadgets[GID_TABS],(ULONG *)&cur_tab);
+		GetAttr(CLICKTAB_Current, g->shared->objects[GID_TABS],
+				(ULONG *)&cur_tab);
 		SetClickTabNodeAttrs(g->tab_node, TNA_Flagged, TRUE, TAG_DONE);
-		RefreshGadgets((APTR)g->shared->gadgets[GID_TABS],
+		RefreshGadgets((APTR)g->shared->objects[GID_TABS],
 			g->shared->win, NULL);
 	}
 
@@ -3467,7 +3488,8 @@ void gui_window_start_throbber(struct gui_window *g)
 
 	if((cur_tab == g->tab) || (g->shared->tabs == 0))
 	{
-		GetAttr(SPACE_AreaBox,g->shared->gadgets[GID_THROBBER],(ULONG *)&bbox);
+		GetAttr(SPACE_AreaBox, g->shared->objects[GID_THROBBER],
+				(ULONG *)&bbox);
 
 		if(g->shared->throbber_frame == 0) g->shared->throbber_frame=1;
 
@@ -3484,10 +3506,10 @@ void gui_window_stop_throbber(struct gui_window *g)
 
 	if(g->tab_node)
 	{
-		GetAttr(CLICKTAB_Current, g->shared->gadgets[GID_TABS],
+		GetAttr(CLICKTAB_Current, g->shared->objects[GID_TABS],
 			(ULONG *)&cur_tab);
 		SetClickTabNodeAttrs(g->tab_node, TNA_Flagged, FALSE, TAG_DONE);
-		RefreshGadgets((APTR)g->shared->gadgets[GID_TABS],
+		RefreshGadgets((APTR)g->shared->objects[GID_TABS],
 			g->shared->win, NULL);
 	}
 
@@ -3495,7 +3517,8 @@ void gui_window_stop_throbber(struct gui_window *g)
 
 	if((cur_tab == g->tab) || (g->shared->tabs == 0))
 	{
-		GetAttr(SPACE_AreaBox,g->shared->gadgets[GID_THROBBER],(ULONG *)&bbox);
+		GetAttr(SPACE_AreaBox, g->shared->objects[GID_THROBBER],
+				(ULONG *)&bbox);
 
 		BltBitMapRastPort(throbber, 0, 0, g->shared->win->RPort, bbox->Left,
 			bbox->Top, throbber_width, throbber_height, 0x0C0);
@@ -3515,7 +3538,8 @@ void gui_window_set_icon(struct gui_window *g, struct content *icon)
 	if(option_kiosk_mode == true) return;
 	if(!g) return;
 
-	if(g->tab_node) GetAttr(CLICKTAB_Current, g->shared->gadgets[GID_TABS],
+	if(g->tab_node) GetAttr(CLICKTAB_Current,
+						g->shared->objects[GID_TABS],
 						(ULONG *)&cur_tab);
 
 	if ((icon != NULL) &&
@@ -3535,7 +3559,7 @@ void gui_window_set_icon(struct gui_window *g, struct content *icon)
 
 	if((cur_tab == g->tab) || (g->shared->tabs == 0))
 	{
-		GetAttr(SPACE_AreaBox, g->shared->gadgets[GID_ICON], (ULONG *)&bbox);
+		GetAttr(SPACE_AreaBox, g->shared->objects[GID_ICON], (ULONG *)&bbox);
 
 		EraseRect(g->shared->win->RPort, bbox->Left, bbox->Top,
 			bbox->Left+16, bbox->Top+16);
@@ -3597,7 +3621,7 @@ void gui_window_set_search_ico(struct content *ico)
 
 		if(node->Type == AMINS_WINDOW)
 		{
-			GetAttr(SPACE_AreaBox, gwin->gadgets[GID_SEARCH_ICON], (ULONG *)&bbox);
+			GetAttr(SPACE_AreaBox, (Object *)gwin->objects[GID_SEARCH_ICON], (ULONG *)&bbox);
 
 			EraseRect(gwin->win->RPort, bbox->Left, bbox->Top,
 				bbox->Left+16, bbox->Top+16);
@@ -3627,7 +3651,7 @@ void ami_update_throbber(struct gui_window_2 *g,bool redraw)
 	int frame = g->throbber_frame;
 
 	if(!g) return;
-	if(!g->gadgets[GID_THROBBER]) return;
+	if(!g->objects[GID_THROBBER]) return;
 
 	if(g->bw->window->throbbing == false)
 	{
@@ -3653,7 +3677,7 @@ void ami_update_throbber(struct gui_window_2 *g,bool redraw)
 		}
 	}
 
-	GetAttr(SPACE_AreaBox,g->gadgets[GID_THROBBER],(ULONG *)&bbox);
+	GetAttr(SPACE_AreaBox,(Object *)g->objects[GID_THROBBER],(ULONG *)&bbox);
 
 /*
 	EraseRect(g->win->RPort,bbox->Left,bbox->Top,
@@ -3683,7 +3707,7 @@ void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
 
 	gui_window_remove_caret(g);
 
-	GetAttr(SPACE_AreaBox,g->shared->gadgets[GID_BROWSER],(ULONG *)&bbox);
+	GetAttr(SPACE_AreaBox,g->shared->objects[GID_BROWSER],(ULONG *)&bbox);
 	ami_get_hscroll_pos(g->shared, (ULONG *)&xs);
 	ami_get_vscroll_pos(g->shared, (ULONG *)&ys);
 
@@ -3711,7 +3735,7 @@ void gui_window_remove_caret(struct gui_window *g)
 
 	if(!g) return;
 
-	GetAttr(SPACE_AreaBox,g->shared->gadgets[GID_BROWSER],(ULONG *)&bbox);
+	GetAttr(SPACE_AreaBox, g->shared->objects[GID_BROWSER], (ULONG *)&bbox);
 	ami_get_hscroll_pos(g->shared, (ULONG *)&xs);
 	ami_get_vscroll_pos(g->shared, (ULONG *)&ys);
 
