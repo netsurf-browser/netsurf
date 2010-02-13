@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
-  Build Instructions for Windows NetSurf                       17 January 2010
+  Build Instructions for Windows NetSurf                      13 February 2010
 --------------------------------------------------------------------------------
 
   This document provides instructions for building the Windows version
@@ -190,6 +190,7 @@
   LibCSS          --  CSS parser and selection engine
   LibNSGIF        --  GIF format image decoder
   LibNSBMP        --  BMP and ICO format image decoder
+  LibROSprite     --  RISC OS Sprite format image decoder
 
   To fetch each of these libraries, run the following commands:
 
@@ -199,6 +200,7 @@
       $ svn co svn://svn.netsurf-browser.org/trunk/libcss
       $ svn co svn://svn.netsurf-browser.org/trunk/libnsgif
       $ svn co svn://svn.netsurf-browser.org/trunk/libnsbmp
+      $ svn co svn://svn.netsurf-browser.org/trunk/librosprite
 
   To build and install these libraries.
 

@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
-  Build Instructions for Framebuffer NetSurf                    2 January 2010
+  Build Instructions for Framebuffer NetSurf                  13 February 2010
 --------------------------------------------------------------------------------
 
   This document provides instructions for building the Framebuffer version of 
@@ -230,6 +230,7 @@ Index: framebuffer/font_freetype.c
   LibCSS          --  CSS parser and selection engine
   LibNSGIF        --  GIF format image decoder
   LibNSBMP        --  BMP and ICO format image decoder
+  LibROSprite     --  RISC OS Sprite format image decoder
   LibNSFB         --  Framebuffer abstraction
 
   To fetch each of these libraries, run the following commands:
@@ -240,6 +241,7 @@ Index: framebuffer/font_freetype.c
       $ svn co svn://svn.netsurf-browser.org/trunk/libcss
       $ svn co svn://svn.netsurf-browser.org/trunk/libnsgif
       $ svn co svn://svn.netsurf-browser.org/trunk/libnsbmp
+      $ svn co svn://svn.netsurf-browser.org/trunk/librosprite
       $ svn co svn://svn.netsurf-browser.org/trunk/libnsfb
 
   To build and install these libraries, simply enter each of their directories
@@ -255,23 +257,6 @@ Index: framebuffer/font_freetype.c
   |           CFLAGS += -DWITH_ICONV_FILTER
   |
   |       For more information, consult the libparserutils README file.
-
-  Librosprite
--------------
-
-  NetSurf uses James Shaw's librosprite for rendering RISC OS Sprite
-  files on non-RISC OS platforms.  The Makefile will automatically use
-  librosprite if it is installed.  You can disable it entirely by
-  creating a Makefile.config file.
-
-  To build librosprite, check out from svn://svn.rjek.com/jshaw/libsprite/trunk
-  Build and install it:
-
-      $ sudo make install
-
-  Optionally, specify an install prefix:
-
-      $ PREFIX=/path/to/install make install
 
   Libhpdf
 ---------

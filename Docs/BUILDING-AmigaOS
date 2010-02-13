@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
-  Build Instructions for AmigaOS NetSurf                        2 January 2010
+  Build Instructions for AmigaOS NetSurf                      13 February 2010
 --------------------------------------------------------------------------------
 
   This document provides instructions for building the AmigaOS version of
@@ -61,6 +61,7 @@
       $ svn co svn://svn.netsurf-browser.org/trunk/libcss
       $ svn co svn://svn.netsurf-browser.org/trunk/libnsgif
       $ svn co svn://svn.netsurf-browser.org/trunk/libnsbmp
+      $ svn co svn://svn.netsurf-browser.org/trunk/librosprite
       $ svn co svn://svn.netsurf-browser.org/trunk/libsvgtiny
 
   To build and install these libraries, simply enter each of their directories
@@ -131,18 +132,6 @@
 
       1> makelink sdk:local/newlib/lib/libssl.so sobjs:libssl-0.9.8.so soft
       1> makelink sdk:local/newlib/lib/libcrypto.so sobjs:libssl-0.9.8.so soft
-
-
-  Librosprite
--------------
-
-  NetSurf uses James Shaw's librosprite for rendering RISC OS Sprite files on
-  non-RISC OS platforms.  The Makefile will automatically use librosprite, you
-  can disable it by creating a Makefile.config.
-
-  To build librosprite, check out from svn://svn.rjek.com/jshaw/libsprite/trunk
-
-      1> gmake
 
 
   Libhpdf

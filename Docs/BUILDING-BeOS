@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
-  Build Instructions for BeOS and Haiku NetSurf                 2 January 2010
+  Build Instructions for BeOS and Haiku NetSurf               13 February 2010
 --------------------------------------------------------------------------------
 
   This document provides instructions for building the BeOS and Haiku version 
@@ -46,6 +46,7 @@
       $ svn co svn://svn.netsurf-browser.org/trunk/libcss
       $ svn co svn://svn.netsurf-browser.org/trunk/libnsgif
       $ svn co svn://svn.netsurf-browser.org/trunk/libnsbmp
+      $ svn co svn://svn.netsurf-browser.org/trunk/librosprite
       $ svn co svn://svn.netsurf-browser.org/trunk/libsvgtiny
 
   To build and install these libraries, simply enter each of their directories
