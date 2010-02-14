@@ -694,7 +694,6 @@ DownloadWarn:Questo trasferimento potrebbe essere incompleto:
 MiscError:Si è verificato un errore inatteso:
 FileError:Il file è inesistente:
 PrintError:Si è verificato un errore durante la stampa:
-AWNotSeen:Per favore imposta l'applicazione AWViewer e riprova nuovamente.
 EncNotRec:Tipo di codifica sconosciuta.
 FileOpenError:impossibile aprire il file '%s'
 DirectoryError:directory '%s' già esistente
