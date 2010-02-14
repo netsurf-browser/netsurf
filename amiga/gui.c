@@ -2114,9 +2114,14 @@ void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
 
 	if(show)
 	{
-		SetAttrs(gwin->objects[GID_TABLAYOUT],
-					LAYOUT_Inverted, TRUE,
-					TAG_DONE);
+		struct TagItem attrs[3];
+
+		attrs[0].ti_Tag = CHILD_WeightedWidth;
+		attrs[0].ti_Data = 0;
+		attrs[1].ti_Tag = CHILD_WeightedHeight;
+		attrs[1].ti_Data = 0;
+		attrs[2].ti_Tag = TAG_DONE;
+		attrs[2].ti_Data = 0;
 
 		gwin->objects[GID_TABS] = ClickTabObject,
 					GA_ID, GID_TABS,
@@ -2139,15 +2144,15 @@ void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
 		IDoMethod(gwin->objects[GID_TABLAYOUT], LM_ADDCHILD,
 				gwin->win, gwin->objects[GID_TABS], NULL);
 
-		IDoMethod(gwin->objects[GID_ADDTABLAYOUT], LM_ADDCHILD,
-				gwin->win, gwin->objects[GID_ADDTAB], NULL);
+		IDoMethod(gwin->objects[GID_TABLAYOUT], LM_ADDCHILD,
+				gwin->win, gwin->objects[GID_ADDTAB], attrs);
 	}
 	else
 	{
 		IDoMethod(gwin->objects[GID_TABLAYOUT], LM_REMOVECHILD,
 				gwin->win, gwin->objects[GID_TABS]);
 
-		IDoMethod(gwin->objects[GID_ADDTABLAYOUT], LM_REMOVECHILD,
+		IDoMethod(gwin->objects[GID_TABLAYOUT], LM_REMOVECHILD,
 				gwin->win, gwin->objects[GID_ADDTAB]);
 	}
 
@@ -2604,9 +2609,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 							addtabclosegadget, gwin->shared->objects[GID_TABS],
 							CHILD_CacheDomain,FALSE,
 
-							LAYOUT_AddChild, gwin->shared->objects[GID_ADDTABLAYOUT] = HGroupObject,
-								addtabclosegadget, gwin->shared->objects[GID_ADDTAB],
-							LayoutEnd,
+							addtabclosegadget, gwin->shared->objects[GID_ADDTAB],
 							CHILD_WeightedWidth,0,
 							CHILD_WeightedHeight,0,
 						LayoutEnd,
@@ -2845,7 +2848,7 @@ void ami_close_all_tabs(struct gui_window_2 *gwin)
 void gui_window_destroy(struct gui_window *g)
 {
 	struct Node *ptab;
-	ULONG ptabnum;
+	ULONG ptabnum = 0;
 
 	if(!g) return;
 
@@ -2871,10 +2874,17 @@ void gui_window_destroy(struct gui_window *g)
 						CLICKTAB_Labels,~0,
 						TAG_DONE);
 
-		ptab = GetSucc(g->tab_node);
-		if(!ptab) ptab = GetPred(g->tab_node);
+		GetAttr(CLICKTAB_Current, g->shared->objects[GID_TABS],
+				(ULONG *)&ptabnum);
 
-		GetClickTabNodeAttrs(ptab,TNA_Number,(ULONG *)&ptabnum,TAG_DONE);
+		if(ptabnum == g->tab)
+		{
+			ptab = GetSucc(g->tab_node);
+			if(!ptab) ptab = GetPred(g->tab_node);
+
+			GetClickTabNodeAttrs(ptab,TNA_Number,(ULONG *)&ptabnum,TAG_DONE);
+		}
+
 		Remove(g->tab_node);
 		FreeClickTabNode(g->tab_node);
 		RefreshSetGadgetAttrs((struct Gadget *)g->shared->objects[GID_TABS],g->shared->win,NULL,
