@@ -1,6 +1,6 @@
 # Italian messages for NetSurf 3.0 Development (Revision 9757)
 # Translated by Samir Hawamdeh (http://www.betatesting.it/backforthefuture)
-# 24.12.2009
+# 14.02.2009
 # =========================================================================
 #
 # Description
@@ -395,7 +395,6 @@ Abort:Annulla
 #
 amiDownload:%ld di %ld byte scaricati
 amiDownloadU:%ld byte scaricati
-amiDownloadComplete:NetSurf: Download completed
 
 # GTK download window tokens
 #
@@ -694,6 +693,7 @@ DownloadWarn:Questo trasferimento potrebbe essere incompleto:
 MiscError:Si è verificato un errore inatteso:
 FileError:Il file è inesistente:
 PrintError:Si è verificato un errore durante la stampa:
+AWNotSeen:Per favore imposta l'applicazione AWViewer e riprova nuovamente.
 EncNotRec:Tipo di codifica sconosciuta.
 FileOpenError:impossibile aprire il file '%s'
 DirectoryError:directory '%s' già esistente
@@ -1386,6 +1386,7 @@ ClipboardUTF8:Scrivi testo come UTF-8
 ContextMenu:Menu contestuali
 Enable:Attivi
 Sticky:Fissi
+Behaviour:Comportamento
 OptionNoWindow:Non aprire la finestra di NetSurf all'avvio
 OptionNoQuit:Non chiudere NetSurf alla chiusura dell'ultima scheda aperta
 

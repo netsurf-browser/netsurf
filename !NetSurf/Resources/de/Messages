@@ -1378,6 +1378,7 @@ ClipboardUTF8:Text als UTF-8
 ContextMenu:Kontextmenu
 Enable:Erlauben
 Sticky:Klebrig
+Behaviour:Behaviour
 OptionNoWindow:Kein Fenster beim Start öffnen
 OptionNoQuit:Nicht beenden beim Schließen des letzten Fensters
 
