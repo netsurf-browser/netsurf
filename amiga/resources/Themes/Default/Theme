@@ -17,19 +17,19 @@
 # The first frame must be the inactive image.
 #
 theme_nav_west:back.png
-theme_nav_west_s:back.png
+theme_nav_west_s:back_h.png
 theme_nav_west_g:back_g.png
 theme_nav_east:forward.png
-theme_nav_east_s:forward.png
+theme_nav_east_s:forward_h.png
 theme_nav_east_g:forward_g.png
 theme_stop:stop.png
-theme_stop_s:stop.png
+theme_stop_s:stop_h.png
 theme_stop_g:stop_g.png
 theme_reload:reload.png
-theme_reload_s:reload.png
+theme_reload_s:reload_h.png
 theme_reload_g:reload_g.png
 theme_home:home.png
-theme_home_s:home.png
+theme_home_s:home_h.png
 theme_home_g:home_g.png
 theme_closetab:closetab.png
 theme_closetab_s:closetab.png
