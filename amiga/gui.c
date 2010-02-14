@@ -16,100 +16,113 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "amiga/gui.h"
-#include "desktop/netsurf.h"
-#include "desktop/options.h"
-#include "utils/messages.h"
-#include <proto/exec.h>
-#include <proto/intuition.h>
-#include <proto/asl.h>
-#include "amiga/plotters.h"
-#include "amiga/schedule.h"
-#include <proto/timer.h>
+/* NetSurf core includes */
 #include "content/urldb.h"
 #include "css/utils.h"
-#include <libraries/keymap.h>
 #include "desktop/history_core.h"
-#include <proto/locale.h>
-#include <proto/dos.h>
-#include <intuition/icclass.h>
-#include <proto/utility.h>
-#include <proto/graphics.h>
-#include <proto/Picasso96API.h>
-#include "render/form.h"
-#include <graphics/rpattr.h>
-#include <libraries/gadtools.h>
-#include <datatypes/pictureclass.h>
-#include "desktop/selection.h"
-#include "utils/utf8.h"
-#include "amiga/utf8.h"
-#include "amiga/hotlist.h"
-#include "amiga/menu.h"
-#include "amiga/options.h"
-#include <libraries/keymap.h>
+#include "desktop/netsurf.h"
+#include "desktop/options.h"
 #include "desktop/save_complete.h"
+#include "desktop/searchweb.h"
+#include "desktop/selection.h"
 #include "desktop/textinput.h"
-#include <intuition/pointerclass.h>
-#include <math.h>
-#include <workbench/workbench.h>
-#include <proto/datatypes.h>
-#include <proto/icon.h>
-#include <workbench/icon.h>
-#include "amiga/tree.h"
+#include "render/form.h"
+#include "utils/messages.h"
+#include "utils/utf8.h"
 #include "utils/utils.h"
-#include "amiga/login.h"
 #include "utils/url.h"
-#include <string.h>
+
+/* NetSurf Amiga platform includes */
 #include "amiga/arexx.h"
-#include "amiga/hotlist.h"
-#include "amiga/history.h"
+#include "amiga/bitmap.h"
+#include "amiga/clipboard.h"
 #include "amiga/context_menu.h"
 #include "amiga/cookies.h"
-#include "amiga/clipboard.h"
-#include <proto/keymap.h>
+#include "amiga/download.h"
 #include "amiga/fetch_file.h"
 #include "amiga/fetch_mailto.h"
-#include "amiga/search.h"
-#include <devices/inputevent.h>
-#include "amiga/history_local.h"
 #include "amiga/font.h"
-#include "amiga/download.h"
-#include <graphics/blitattr.h>
+#include "amiga/gui.h"
 #include "amiga/gui_options.h"
-#include "amiga/bitmap.h"
+#include "amiga/history.h"
+#include "amiga/history_local.h"
+#include "amiga/hotlist.h"
+#include "amiga/login.h"
+#include "amiga/menu.h"
+#include "amiga/options.h"
+#include "amiga/plotters.h"
 #include "amiga/print.h"
-#include <libraries/application.h>
-#include <proto/application.h>
-#include <desktop/searchweb.h>
-#include <proto/wb.h>
-#include <proto/utility.h>
+#include "amiga/schedule.h"
+#include "amiga/search.h"
+#include "amiga/tree.h"
+#include "amiga/utf8.h"
 
+/* Custom StringView class */
 #include "amiga/stringview/stringview.h"
 #include "amiga/stringview/urlhistory.h"
 
+/* AmigaOS libraries */
+#include <proto/application.h>
+#include <proto/asl.h>
+#include <proto/datatypes.h>
+#include <proto/dos.h>
+#include <proto/exec.h>
+#include <proto/graphics.h>
+#include <proto/icon.h>
+#include <proto/intuition.h>
+#include <proto/keymap.h>
+#include <proto/locale.h>
+#include <proto/Picasso96API.h>
+#include <proto/timer.h>
+#include <proto/utility.h>
+#include <proto/wb.h>
+
+/* Other OS includes */
+#include <datatypes/pictureclass.h>
+#include <devices/inputevent.h>
+#include <libraries/application.h>
+#include <libraries/gadtools.h>
+#include <libraries/keymap.h>
+#include <intuition/icclass.h>
+#include <intuition/pointerclass.h>
+#include <graphics/blitattr.h>
+#include <graphics/rpattr.h>
+#include <workbench/icon.h>
+#include <workbench/workbench.h>
+
+/* ReAction libraries */
+#include <proto/bevel.h>
+#include <proto/bitmap.h>
+#include <proto/button.h>
+#include <proto/clicktab.h>
+#include <proto/layout.h>
+#include <proto/popupmenu.h>
+#include <proto/space.h>
+#include <proto/string.h>
+#include <proto/window.h>
+
+#include <classes/popupmenu.h>
+#include <classes/window.h>
+#include <gadgets/button.h>
+#include <gadgets/clicktab.h>
+#include <gadgets/layout.h>
+#include <gadgets/scroller.h>
+#include <gadgets/space.h>
+#include <gadgets/string.h>
+#include <images/bevel.h>
+#include <images/bitmap.h>
+
+#include <reaction/reaction_macros.h>
+
+/* newlib includes */
+#include <math.h>
+#include <string.h>
+
+/* C link libraries */
 #ifdef NS_AMIGA_CAIRO
 #include <cairo/cairo-amigaos.h>
 #endif
 #include <hubbub/hubbub.h>
-
-#include <proto/window.h>
-#include <proto/layout.h>
-#include <proto/bitmap.h>
-#include <proto/string.h>
-#include <proto/button.h>
-#include <proto/space.h>
-#include <proto/popupmenu.h>
-#include <proto/clicktab.h>
-#include <classes/window.h>
-#include <gadgets/layout.h>
-#include <gadgets/string.h>
-#include <gadgets/scroller.h>
-#include <gadgets/button.h>
-#include <images/bitmap.h>
-#include <gadgets/space.h>
-#include <gadgets/clicktab.h>
-#include <classes/popupmenu.h>
-#include <reaction/reaction_macros.h>
 
 char *default_stylesheet_url;
 char *quirks_stylesheet_url;
@@ -2538,6 +2551,10 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 							CHILD_WeightedHeight,0,
 						LayoutEnd,
 						CHILD_WeightedHeight,0,
+						LAYOUT_AddImage, BevelObject,
+							BEVEL_Style, BVS_SBAR_VERT,
+						BevelEnd,
+						CHILD_WeightedHeight, 0,
 						LAYOUT_AddChild, gwin->shared->objects[GID_TABLAYOUT] = HGroupObject,
 							LAYOUT_SpaceInner,FALSE,
 							addtabclosegadget, gwin->shared->objects[GID_CLOSETAB],
