@@ -427,11 +427,11 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 			switch(itemnum)
 			{
 				case 0: // new window
-					bw = browser_window_create(gwin->bw->current_content->url,gwin->bw, 0, true, openwin);
+					bw = browser_window_create(NULL, gwin->bw, 0, true, openwin);
 				break;
 
 				case 1: // new tab
-					bw = browser_window_create(gwin->bw->current_content->url,gwin->bw, 0, true, opentab);
+					bw = browser_window_create(NULL, gwin->bw, 0, true, opentab);
 				break;
 
 				case 3: // open local file

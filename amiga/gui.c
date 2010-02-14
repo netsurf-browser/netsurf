@@ -1296,14 +1296,14 @@ void ami_handle_msg(void)
 						{
 							case 'n':
 								if(option_kiosk_mode == false)
-									browser_window_create(gwin->bw->current_content->url,
-										gwin->bw, 0, true, false);
+									browser_window_create(NULL, gwin->bw,
+										0, true, false);
 							break;
 
 							case 't':
 								if(option_kiosk_mode == false)
-									browser_window_create(gwin->bw->current_content->url,
-										gwin->bw, 0, true, true);
+									browser_window_create(NULL, gwin->bw, 
+										0, true, true);
 							break;
 
 							case 'k':
@@ -1877,6 +1877,9 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 
 	if(!gwin->bw->current_content)
 	{
+		RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_URL],
+			gwin->win, NULL, STRINGA_TextVal, "", TAG_DONE);
+
 		p96RectFill(gwin->win->RPort, bbox->Left, bbox->Top,
 			bbox->Width+bbox->Left, bbox->Height+bbox->Top, 0xffffffff);
 		return;
@@ -1895,8 +1898,7 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 		gui_window_set_scroll(gwin->bw->window,gwin->bw->window->scrollx,gwin->bw->window->scrolly);
 		gwin->redraw_scroll = false;
 
-		if(gwin->bw->current_content)
-			browser_window_refresh_url_bar(gwin->bw,gwin->bw->current_content->url,
+		browser_window_refresh_url_bar(gwin->bw,gwin->bw->current_content->url,
 											gwin->bw->frag_id);
 	}
 }
