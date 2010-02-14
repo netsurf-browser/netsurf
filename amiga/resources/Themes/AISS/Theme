@@ -30,7 +30,7 @@ theme_list_sslcert:*TBImages:list_crypt
 theme_throbber:Throbber
 theme_throbber_frames:13
 theme_throbber_delay:100
-theme_tab_loading:*TBImages:list_flagyellow
+theme_tab_loading:*TBImages:list_download
 ptr_default:*PROGDIR:Resources/Pointers/Default
 ptr_point:*PROGDIR:Resources/Pointers/Point
 ptr_caret:*PROGDIR:Resources/Pointers/Caret

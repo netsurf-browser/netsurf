@@ -47,7 +47,9 @@ enum
 	GID_THROBBER,
 	GID_SEARCH_ICON,
 	GID_CLOSETAB,
+	GID_CLOSETAB_BM,
 	GID_TABS,
+	GID_TABS_FLAG,
 	GID_USER,
 	GID_PASS,
 	GID_LOGIN,
@@ -79,7 +81,7 @@ struct history_window;
 
 struct gui_window_2 {
 	struct Window *win;
-	Object *objects[OID_LAST];
+	Object *objects[GID_LAST];
 	struct nsObject *node;
 	struct browser_window *bw;
 	bool redraw_required;

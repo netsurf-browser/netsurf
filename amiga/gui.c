@@ -898,6 +898,7 @@ void ami_handle_msg(void)
 	struct InputEvent *ie;
 	struct Node *tabnode;
 	int i, nskey;
+	struct browser_window *closedbw;
 
 	if(IsMinListEmpty(window_list))
 	{
@@ -1140,7 +1141,20 @@ void ami_handle_msg(void)
 					switch(result & WMHI_GADGETMASK)
 					{
 						case GID_TABS:
-							ami_switch_tab(gwin,true);
+							GetAttrs(gwin->objects[GID_TABS],
+								CLICKTAB_NodeClosed, &tabnode, TAG_DONE);
+							if(tabnode)
+							{
+								GetClickTabNodeAttrs(tabnode,
+									TNA_UserData, &closedbw,
+									TAG_DONE);
+
+								browser_window_destroy(closedbw);
+							}
+							else
+							{
+								ami_switch_tab(gwin, true);
+							}
 						break;
 
 						case GID_CLOSETAB:
@@ -1512,9 +1526,8 @@ void ami_handle_msg(void)
 
 			if(gwin->bw->window->c_h)
 			{
-//			struct gui_window tgw;
-//			tgw.shared = gwin;
-				gui_window_place_caret(gwin->bw->window,gwin->bw->window->c_x,gwin->bw->window->c_y,gwin->bw->window->c_h);
+				gui_window_place_caret(gwin->bw->window, gwin->bw->window->c_x,
+					gwin->bw->window->c_y, gwin->bw->window->c_h);
 			}
 		}
 	} while(node = nnode);
@@ -1832,7 +1845,6 @@ void ami_change_tab(struct gui_window_2 *gwin, int direction)
 	ami_switch_tab(gwin, true);
 }
 
-
 void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 {
 	struct Node *tabnode;
@@ -2059,7 +2071,7 @@ void ami_update_buttons(struct gui_window_2 *gwin)
 		GA_Disabled,stop,
 		TAG_DONE);
 
-	if(gwin->tabs)
+	if((gwin->tabs) && (ClickTabBase->lib_Version < 53))
 	{
 		RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_CLOSETAB],gwin->win,NULL,
 			GA_Disabled,tabclose,
@@ -2075,6 +2087,40 @@ void ami_get_theme_filename(char *filename,char *themestring)
 			strcpy(filename,option_theme);
 			AddPart(filename,messages_get(themestring),100);
 		}
+}
+
+void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
+{
+	if(ClickTabBase->lib_Version < 53) return;
+
+	if(show)
+	{
+		gwin->objects[GID_TABS] = ClickTabObject,
+					GA_ID, GID_TABS,
+					GA_RelVerify, TRUE,
+					GA_Underscore, 13, // disable kb shortcuts
+					CLICKTAB_Labels, &gwin->tab_list,
+					CLICKTAB_LabelTruncate, TRUE,
+					CLICKTAB_CloseImage, gwin->objects[GID_CLOSETAB_BM],
+					CLICKTAB_FlagImage, gwin->objects[GID_TABS_FLAG],
+					ClickTabEnd;
+
+		IDoMethod(gwin->objects[GID_TABLAYOUT], LM_ADDCHILD,
+				gwin->win, gwin->objects[GID_TABS], NULL);
+	}
+	else
+	{
+		IDoMethod(gwin->objects[GID_TABLAYOUT], LM_REMOVECHILD,
+				gwin->win, gwin->objects[GID_TABS]);
+	}
+
+	FlushLayoutDomainCache((struct Gadget *)gwin->objects[GID_MAIN]);
+
+	RethinkLayout((struct Gadget *)gwin->objects[GID_MAIN],
+			gwin->win, NULL, TRUE);
+
+	gwin->redraw_required = true;
+	gwin->bw->reformat_pending = true;
 }
 
 struct gui_window *gui_create_browser_window(struct browser_window *bw,
@@ -2135,19 +2181,25 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		gwin->shared = clone->window->shared;
 		gwin->tab = gwin->shared->next_tab;
 
-		SetGadgetAttrs((struct Gadget *)gwin->shared->objects[GID_TABS],gwin->shared->win,NULL,
-						CLICKTAB_Labels,~0,
+		if(gwin->shared->tabs == 1)
+			ami_toggletabbar(gwin->shared, true);
+
+		SetGadgetAttrs((struct Gadget *)gwin->shared->objects[GID_TABS],
+						gwin->shared->win, NULL,
+						CLICKTAB_Labels, ~0,
 						TAG_DONE);
 
 		gwin->tab_node = AllocClickTabNode(TNA_Text,messages_get("NetSurf"),
 								TNA_Number,gwin->tab,
 								TNA_UserData,bw,
+								TNA_CloseGadget, TRUE,
 								TAG_DONE);
 
 		AddTail(&gwin->shared->tab_list,gwin->tab_node);
 
-		RefreshSetGadgetAttrs((struct Gadget *)gwin->shared->objects[GID_TABS],gwin->shared->win,NULL,
-							CLICKTAB_Labels,&gwin->shared->tab_list,
+		RefreshSetGadgetAttrs((struct Gadget *)gwin->shared->objects[GID_TABS],
+							gwin->shared->win, NULL,
+							CLICKTAB_Labels, &gwin->shared->tab_list,
 							TAG_DONE);
 
 		if(option_new_tab_active)
@@ -2241,12 +2293,15 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
         case BROWSER_WINDOW_NORMAL:
 			if(!option_kiosk_mode)
 			{
+				ULONG addtabclosegadget = TAG_IGNORE;
+
 				menu = ami_create_menu(bw->browser_window_type);
 
 				NewList(&gwin->shared->tab_list);
 				gwin->tab_node = AllocClickTabNode(TNA_Text,messages_get("NetSurf"),
-													TNA_Number,0,
-													TNA_UserData,bw,
+													TNA_Number, 0,
+													TNA_UserData, bw,
+													TNA_CloseGadget, TRUE,
 													TAG_DONE);
 				AddTail(&gwin->shared->tab_list,gwin->tab_node);
 
@@ -2274,6 +2329,45 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 				ami_get_theme_filename(closetab_s,"theme_closetab_s");
 				ami_get_theme_filename(closetab_g,"theme_closetab_g");
 				ami_get_theme_filename(tabthrobber,"theme_tab_loading");
+
+				gwin->shared->objects[GID_CLOSETAB_BM] = BitMapObject,
+							BITMAP_SourceFile, closetab,
+							BITMAP_SelectSourceFile, closetab_s,
+							BITMAP_DisabledSourceFile, closetab_g,
+							BITMAP_Screen, scrn,
+							BITMAP_Masking, TRUE,
+							BitMapEnd;
+
+				gwin->shared->objects[GID_TABS_FLAG] = BitMapObject,
+							BITMAP_SourceFile, tabthrobber,
+							BITMAP_Screen,scrn,
+							BITMAP_Masking,TRUE,
+							BitMapEnd;
+
+				if(ClickTabBase->lib_Version < 53)
+				{
+					addtabclosegadget = LAYOUT_AddChild;
+					gwin->shared->objects[GID_CLOSETAB] = ButtonObject,
+							GA_ID, GID_CLOSETAB,
+							GA_RelVerify, TRUE,
+							BUTTON_Transparent, TRUE,
+							BUTTON_RenderImage, gwin->shared->objects[GID_CLOSETAB_BM],
+							ButtonEnd;
+
+					gwin->shared->objects[GID_TABS] = ClickTabObject,
+							GA_ID,GID_TABS,
+							GA_RelVerify,TRUE,
+							GA_Underscore,13, // disable kb shortcuts
+							CLICKTAB_Labels,&gwin->shared->tab_list,
+							CLICKTAB_LabelTruncate,TRUE,
+							CLICKTAB_CloseImage, gwin->shared->objects[GID_CLOSETAB_BM],
+							CLICKTAB_FlagImage, BitMapObject,
+								BITMAP_SourceFile, tabthrobber,
+								BITMAP_Screen,scrn,
+								BITMAP_Masking,TRUE,
+								BitMapEnd,
+							ClickTabEnd;
+				}
 
 				gwin->shared->objects[OID_MAIN] = WindowObject,
 		       	    WA_ScreenTitle,nsscreentitle,
@@ -2446,32 +2540,11 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 						CHILD_WeightedHeight,0,
 						LAYOUT_AddChild, gwin->shared->objects[GID_TABLAYOUT] = HGroupObject,
 							LAYOUT_SpaceInner,FALSE,
-							LAYOUT_AddChild, gwin->shared->objects[GID_CLOSETAB] = ButtonObject,
-								GA_ID,GID_CLOSETAB,
-								GA_RelVerify,TRUE,
-								BUTTON_Transparent,TRUE,
-								BUTTON_RenderImage,BitMapObject,
-									BITMAP_SourceFile,closetab,
-									BITMAP_SelectSourceFile,closetab_s,
-									BITMAP_DisabledSourceFile,closetab_g,
-									BITMAP_Screen,scrn,
-									BITMAP_Masking,TRUE,
-								BitMapEnd,
-							ButtonEnd,
+							addtabclosegadget, gwin->shared->objects[GID_CLOSETAB],
 							CHILD_WeightedWidth,0,
 							CHILD_WeightedHeight,0,
-							LAYOUT_AddChild, gwin->shared->objects[GID_TABS] = ClickTabObject,
-								GA_ID,GID_TABS,
-								GA_RelVerify,TRUE,
-								GA_Underscore,13, // disable kb shortcuts
-								CLICKTAB_Labels,&gwin->shared->tab_list,
-								CLICKTAB_LabelTruncate,TRUE,
-								CLICKTAB_FlagImage, BitMapObject,
-									BITMAP_SourceFile, tabthrobber,
-									BITMAP_Screen,scrn,
-									BITMAP_Masking,TRUE,
-								BitMapEnd,
-							ClickTabEnd,
+
+							addtabclosegadget, gwin->shared->objects[GID_TABS],
 							CHILD_CacheDomain,FALSE,
 						LayoutEnd,
 						CHILD_WeightedHeight,0,
@@ -2727,6 +2800,8 @@ void gui_window_destroy(struct gui_window *g)
 
 	ami_free_download_list(&g->dllist);
 
+	curbw = NULL;
+
 	if(g->shared->tabs > 1)
 	{
 		SetGadgetAttrs((struct Gadget *)g->shared->objects[GID_TABS],g->shared->win,NULL,
@@ -2749,11 +2824,13 @@ void gui_window_destroy(struct gui_window *g)
 
 		g->shared->tabs--;
 		ami_switch_tab(g->shared,true);
+
+		if(g->shared->tabs == 1)
+			ami_toggletabbar(g->shared, false);
+
 		FreeVec(g);
 		return;
 	}
-
-	curbw = NULL;
 
 	DisposeObject(g->shared->objects[OID_MAIN]);
 
@@ -2788,7 +2865,7 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 
 	utf8title = ami_utf8_easy((char *)title);
 
-	if(g->tab_node)
+	if(g->tab_node && (g->shared->tabs > 1))
 	{
 		node = g->tab_node;
 
@@ -2805,12 +2882,12 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 		if(ClickTabBase->lib_Version < 53)
 			RethinkLayout((struct Gadget *)g->shared->objects[GID_TABLAYOUT],
 				g->shared->win, NULL, TRUE);
+
+		GetAttr(CLICKTAB_Current, g->shared->objects[GID_TABS],
+				(ULONG *)&cur_tab);
 	}
 
-	GetAttr(CLICKTAB_Current, g->shared->objects[GID_TABS],
-				(ULONG *)&cur_tab);
-
-	if((cur_tab == g->tab) || (g->shared->tabs == 0))
+	if((cur_tab == g->tab) || (g->shared->tabs <= 1))
 	{
 		if((g->shared->wintitle == NULL) || (strcmp(utf8title, g->shared->wintitle)))
 		{
@@ -2843,10 +2920,10 @@ void ami_do_redraw_limits(struct gui_window *g, struct content *c,int x0, int y0
 
 	if(!g) return;
 
-	if(g->tab_node) GetAttr(CLICKTAB_Current,
+	if(g->tab_node && (g->shared->tabs > 1)) GetAttr(CLICKTAB_Current,
 				g->shared->objects[GID_TABS], (ULONG *)&cur_tab);
 
-	if(!((cur_tab == g->tab) || (g->shared->tabs == 0)))
+	if(!((cur_tab == g->tab) || (g->shared->tabs <= 1)))
 	{
 		return;
 	}
@@ -2929,10 +3006,10 @@ void gui_window_redraw_window(struct gui_window *g)
 
 	if(!g) return;
 
-	if(g->tab_node) GetAttr(CLICKTAB_Current,
+	if(g->tab_node && (g->shared->tabs > 1)) GetAttr(CLICKTAB_Current,
 				g->shared->objects[GID_TABS], (ULONG *)&cur_tab);
 
-	if((cur_tab == g->tab) || (g->shared->tabs == 0))
+	if((cur_tab == g->tab) || (g->shared->tabs <= 1))
 		g->shared->redraw_required = true;
 }
 
@@ -3116,10 +3193,11 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 	if(sx > g->shared->bw->current_content->width) sx = g->shared->bw->current_content->width;
 	if(sy > g->shared->bw->current_content->height) sy = g->shared->bw->current_content->height;
 
-	if(g->tab_node) GetAttr(CLICKTAB_Current,
-				g->shared->objects[GID_TABS], (ULONG *)&cur_tab);
+	if(g->tab_node && (g->shared->tabs > 1))
+				GetAttr(CLICKTAB_Current,
+					g->shared->objects[GID_TABS], (ULONG *)&cur_tab);
 
-	if((cur_tab == g->tab) || (g->shared->tabs == 0))
+	if((cur_tab == g->tab) || (g->shared->tabs <= 1))
 	{
 		RefreshSetGadgetAttrs((struct Gadget *)(APTR)g->shared->objects[OID_VSCROLL],
 			g->shared->win, NULL,
@@ -3193,10 +3271,10 @@ void gui_window_update_extent(struct gui_window *g)
 	if(!g) return;
 	if(!g->shared->bw->current_content) return;
 
-	if(g->tab_node) GetAttr(CLICKTAB_Current,
+	if(g->tab_node && (g->shared->tabs > 1)) GetAttr(CLICKTAB_Current,
 				g->shared->objects[GID_TABS], (ULONG *)&cur_tab);
 
-	if((cur_tab == g->tab) || (g->shared->tabs == 0))
+	if((cur_tab == g->tab) || (g->shared->tabs <= 1))
 	{
 		GetAttr(SPACE_AreaBox, g->shared->objects[GID_BROWSER],
 				(ULONG *)&bbox);
@@ -3239,10 +3317,10 @@ void gui_window_set_status(struct gui_window *g, const char *text)
 	if(!text) return;
 	if(!g->shared->objects[GID_STATUS]) return;
 
-	if(g->tab_node) GetAttr(CLICKTAB_Current,
+	if(g->tab_node && (g->shared->tabs > 1)) GetAttr(CLICKTAB_Current,
 			g->shared->objects[GID_TABS], (ULONG *)&cur_tab);
 
-	if((cur_tab == g->tab) || (g->shared->tabs == 0))
+	if((cur_tab == g->tab) || (g->shared->tabs <= 1))
 	{
 		utf8text = ami_utf8_easy((char *)text);
 		if(utf8text == NULL) return;
@@ -3458,10 +3536,10 @@ void gui_window_set_url(struct gui_window *g, const char *url)
 	if(!g) return;
 	if(!url) return;
 
-	if(g->tab_node) GetAttr(CLICKTAB_Current,
+	if(g->tab_node && (g->shared->tabs > 1)) GetAttr(CLICKTAB_Current,
 				g->shared->objects[GID_TABS], (ULONG *)&cur_tab);
 
-	if((cur_tab == g->tab) || (g->shared->tabs == 0))
+	if((cur_tab == g->tab) || (g->shared->tabs <= 1))
 	{
 		RefreshSetGadgetAttrs((struct Gadget *)g->shared->objects[GID_URL],
 			g->shared->win, NULL, STRINGA_TextVal, url, TAG_DONE);
@@ -3475,7 +3553,7 @@ void gui_window_start_throbber(struct gui_window *g)
 
 	if(!g) return;
 
-	if(g->tab_node)
+	if(g->tab_node && (g->shared->tabs > 1))
 	{
 		GetAttr(CLICKTAB_Current, g->shared->objects[GID_TABS],
 				(ULONG *)&cur_tab);
@@ -3486,7 +3564,7 @@ void gui_window_start_throbber(struct gui_window *g)
 
 	g->throbbing = true;
 
-	if((cur_tab == g->tab) || (g->shared->tabs == 0))
+	if((cur_tab == g->tab) || (g->shared->tabs <= 1))
 	{
 		GetAttr(SPACE_AreaBox, g->shared->objects[GID_THROBBER],
 				(ULONG *)&bbox);
@@ -3504,7 +3582,7 @@ void gui_window_stop_throbber(struct gui_window *g)
 
 	if(!g) return;
 
-	if(g->tab_node)
+	if(g->tab_node && (g->shared->tabs > 1))
 	{
 		GetAttr(CLICKTAB_Current, g->shared->objects[GID_TABS],
 			(ULONG *)&cur_tab);
@@ -3515,7 +3593,7 @@ void gui_window_stop_throbber(struct gui_window *g)
 
 	g->throbbing = false;
 
-	if((cur_tab == g->tab) || (g->shared->tabs == 0))
+	if((cur_tab == g->tab) || (g->shared->tabs <= 1))
 	{
 		GetAttr(SPACE_AreaBox, g->shared->objects[GID_THROBBER],
 				(ULONG *)&bbox);
@@ -3538,7 +3616,7 @@ void gui_window_set_icon(struct gui_window *g, struct content *icon)
 	if(option_kiosk_mode == true) return;
 	if(!g) return;
 
-	if(g->tab_node) GetAttr(CLICKTAB_Current,
+	if(g->tab_node && (g->shared->tabs > 1)) GetAttr(CLICKTAB_Current,
 						g->shared->objects[GID_TABS],
 						(ULONG *)&cur_tab);
 
@@ -3557,7 +3635,7 @@ void gui_window_set_icon(struct gui_window *g, struct content *icon)
 					g->shared->win->RPort->BitMap);
 	}
 
-	if((cur_tab == g->tab) || (g->shared->tabs == 0))
+	if((cur_tab == g->tab) || (g->shared->tabs <= 1))
 	{
 		GetAttr(SPACE_AreaBox, g->shared->objects[GID_ICON], (ULONG *)&bbox);
 
