@@ -34,6 +34,9 @@ theme_home_g:home_g.png
 theme_closetab:closetab.png
 theme_closetab_s:closetab.png
 theme_closetab_g:closetab_g.png
+theme_addtab:
+theme_addtab_s:
+theme_addtab_g:
 theme_list_folder_closed:
 theme_list_folder_open:
 theme_list_bookmark:

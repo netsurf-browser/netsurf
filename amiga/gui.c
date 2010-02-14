@@ -1174,6 +1174,10 @@ void ami_handle_msg(void)
 							browser_window_destroy(gwin->bw);
 						break;
 
+						case GID_ADDTAB:
+							browser_window_create(NULL, gwin->bw, 0, true, true);
+						break;
+
 						case GID_URL:
 							GetAttr(STRINGA_TextVal,
 								(Object *)gwin->objects[GID_URL],
@@ -2110,6 +2114,10 @@ void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
 
 	if(show)
 	{
+		SetAttrs(gwin->objects[GID_TABLAYOUT],
+					LAYOUT_Inverted, TRUE,
+					TAG_DONE);
+
 		gwin->objects[GID_TABS] = ClickTabObject,
 					GA_ID, GID_TABS,
 					GA_RelVerify, TRUE,
@@ -2120,13 +2128,27 @@ void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
 					CLICKTAB_FlagImage, gwin->objects[GID_TABS_FLAG],
 					ClickTabEnd;
 
+		gwin->objects[GID_ADDTAB] = ButtonObject,
+					GA_ID, GID_ADDTAB,
+					GA_RelVerify, TRUE,
+					GA_Text, "+",
+					BUTTON_Transparent, TRUE,
+					BUTTON_RenderImage, gwin->objects[GID_ADDTAB_BM],
+					ButtonEnd;
+
 		IDoMethod(gwin->objects[GID_TABLAYOUT], LM_ADDCHILD,
 				gwin->win, gwin->objects[GID_TABS], NULL);
+
+		IDoMethod(gwin->objects[GID_ADDTABLAYOUT], LM_ADDCHILD,
+				gwin->win, gwin->objects[GID_ADDTAB], NULL);
 	}
 	else
 	{
 		IDoMethod(gwin->objects[GID_TABLAYOUT], LM_REMOVECHILD,
 				gwin->win, gwin->objects[GID_TABS]);
+
+		IDoMethod(gwin->objects[GID_ADDTABLAYOUT], LM_REMOVECHILD,
+				gwin->win, gwin->objects[GID_ADDTAB]);
 	}
 
 	FlushLayoutDomainCache((struct Gadget *)gwin->objects[GID_MAIN]);
@@ -2152,6 +2174,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	char reload[100],reload_s[100],reload_g[100];
 	char home[100],home_s[100],home_g[100];
 	char closetab[100],closetab_s[100],closetab_g[100];
+	char addtab[100],addtab_s[100],addtab_g[100];
 	char tabthrobber[100];
 
 	if((bw->browser_window_type == BROWSER_WINDOW_IFRAME) && option_no_iframes) return NULL;
@@ -2343,7 +2366,18 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 				ami_get_theme_filename(closetab,"theme_closetab");
 				ami_get_theme_filename(closetab_s,"theme_closetab_s");
 				ami_get_theme_filename(closetab_g,"theme_closetab_g");
+				ami_get_theme_filename(addtab,"theme_addtab");
+				ami_get_theme_filename(addtab_s,"theme_addtab_s");
+				ami_get_theme_filename(addtab_g,"theme_addtab_g");
 				ami_get_theme_filename(tabthrobber,"theme_tab_loading");
+
+				gwin->shared->objects[GID_ADDTAB_BM] = BitMapObject,
+							BITMAP_SourceFile, addtab,
+							BITMAP_SelectSourceFile, addtab_s,
+							BITMAP_DisabledSourceFile, addtab_g,
+							BITMAP_Screen, scrn,
+							BITMAP_Masking, TRUE,
+							BitMapEnd;
 
 				gwin->shared->objects[GID_CLOSETAB_BM] = BitMapObject,
 							BITMAP_SourceFile, closetab,
@@ -2351,12 +2385,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 							BITMAP_DisabledSourceFile, closetab_g,
 							BITMAP_Screen, scrn,
 							BITMAP_Masking, TRUE,
-							BitMapEnd;
-
-				gwin->shared->objects[GID_TABS_FLAG] = BitMapObject,
-							BITMAP_SourceFile, tabthrobber,
-							BITMAP_Screen,scrn,
-							BITMAP_Masking,TRUE,
 							BitMapEnd;
 
 				if(ClickTabBase->lib_Version < 53)
@@ -2375,13 +2403,23 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 							GA_Underscore,13, // disable kb shortcuts
 							CLICKTAB_Labels,&gwin->shared->tab_list,
 							CLICKTAB_LabelTruncate,TRUE,
-							CLICKTAB_CloseImage, gwin->shared->objects[GID_CLOSETAB_BM],
-							CLICKTAB_FlagImage, BitMapObject,
-								BITMAP_SourceFile, tabthrobber,
-								BITMAP_Screen,scrn,
-								BITMAP_Masking,TRUE,
-								BitMapEnd,
 							ClickTabEnd;
+
+					gwin->shared->objects[GID_ADDTAB] = ButtonObject,
+							GA_ID, GID_ADDTAB,
+							GA_RelVerify, TRUE,
+							GA_Text, "+",
+							BUTTON_Transparent, TRUE,
+							BUTTON_RenderImage, gwin->shared->objects[GID_ADDTAB_BM],
+							ButtonEnd;
+				}
+				else
+				{
+					gwin->shared->objects[GID_TABS_FLAG] = BitMapObject,
+							BITMAP_SourceFile, tabthrobber,
+							BITMAP_Screen,scrn,
+							BITMAP_Masking,TRUE,
+							BitMapEnd;
 				}
 
 				gwin->shared->objects[OID_MAIN] = WindowObject,
@@ -2565,6 +2603,12 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 							addtabclosegadget, gwin->shared->objects[GID_TABS],
 							CHILD_CacheDomain,FALSE,
+
+							LAYOUT_AddChild, gwin->shared->objects[GID_ADDTABLAYOUT] = HGroupObject,
+								addtabclosegadget, gwin->shared->objects[GID_ADDTAB],
+							LayoutEnd,
+							CHILD_WeightedWidth,0,
+							CHILD_WeightedHeight,0,
 						LayoutEnd,
 						CHILD_WeightedHeight,0,
 						LAYOUT_AddChild, gwin->shared->objects[GID_BROWSER] = SpaceObject,
