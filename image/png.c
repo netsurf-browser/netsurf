@@ -40,6 +40,17 @@
 
 #ifdef WITH_PNG
 
+/* accomodate for old versions of libpng (beware security holes!) */
+
+#ifndef png_jmpbuf
+#warning you have an antique libpng
+#define png_jmpbuf(png_ptr) ((png_ptr)->jmpbuf) 
+#endif 
+
+#if PNG_LIBPNG_VER < 10209
+#define png_set_expand_gray_1_2_4_to_8(png) png_set_gray_1_2_4_to_8(png)
+#endif
+
 /* I hate doing this, but without g_strdup_printf or similar, we're a tad stuck. */
 #define NSPNG_TITLE_LEN (100)
 
