@@ -736,7 +736,11 @@ void gui_init2(int argc, char** argv)
 	{
 		if(argc == 0)
 		{
-			BOOL noicon = TAG_IGNORE;
+			ULONG noicon = TAG_IGNORE;
+			ULONG desc = REGAPP_Description;
+
+			if(ApplicationBase->lib_Version < 53) desc = TAG_IGNORE;
+
 			if(option_hide_docky_icon) noicon = REGAPP_NoIcon;
 
 			ami_appid = RegisterApplication(messages_get("NetSurf"),
@@ -746,7 +750,7 @@ void gui_init2(int argc, char** argv)
 				REGAPP_HasPrefsWindow, TRUE,
 				REGAPP_CanCreateNewDocs, TRUE,
 				REGAPP_UniqueApplication, TRUE,
-				REGAPP_Description, "Small as a mouse, fast as a cheetah and available for free. NetSurf is a multi-platform web browser.",
+				desc, "Small as a mouse, fast as a cheetah and available for free. NetSurf is a multi-platform web browser.",
 				TAG_DONE);
 		}
 		else
@@ -759,7 +763,7 @@ void gui_init2(int argc, char** argv)
 				REGAPP_HasPrefsWindow, TRUE,
 				REGAPP_CanCreateNewDocs, TRUE,
 				REGAPP_UniqueApplication, TRUE,
-				REGAPP_Description, "Small as a mouse, fast as a cheetah and available for free. NetSurf is a multi-platform web browser.",
+				desc, "Small as a mouse, fast as a cheetah and available for free. NetSurf is a multi-platform web browser.",
 				TAG_DONE);
 		}
 
