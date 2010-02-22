@@ -734,12 +734,12 @@ void gui_init2(int argc, char** argv)
 
 	if(IApplication)
 	{
+		ULONG desc = REGAPP_Description;
+		if(ApplicationBase->lib_Version < 53) desc = TAG_IGNORE;
+
 		if(argc == 0)
 		{
 			ULONG noicon = TAG_IGNORE;
-			ULONG desc = REGAPP_Description;
-
-			if(ApplicationBase->lib_Version < 53) desc = TAG_IGNORE;
 
 			if(option_hide_docky_icon) noicon = REGAPP_NoIcon;
 
