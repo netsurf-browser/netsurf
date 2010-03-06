@@ -200,8 +200,6 @@ void gui_download_window_done(struct gui_download_window *dw)
 
 	if(!dw) return;
 
-	SetComment(dw->fname, dw->url);
-
 	if(option_download_notify)
 	{
 		Notify(ami_appid, APPNOTIFY_Title, messages_get("amiDownloadComplete"),
@@ -213,7 +211,6 @@ void gui_download_window_done(struct gui_download_window *dw)
 	}
 
 	bw->download = false;
-	if(dw->url) free(dw->url);
 
 	if(dln = dw->dln)
 	{
@@ -226,6 +223,9 @@ void gui_download_window_done(struct gui_download_window *dw)
 	}
 
 	FClose(dw->fh);
+	SetComment(dw->fname, dw->url);
+	if(dw->url) free(dw->url);
+
 	DisposeObject(dw->objects[OID_MAIN]);
 	DelObject(dw->node);
 	if(queuedl) browser_window_download(bw,dln2->node.ln_Name,NULL);
