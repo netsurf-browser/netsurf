@@ -45,7 +45,7 @@
 struct status_bar {
 	wimp_w w;			/**< status bar window handle */
 	wimp_w parent;			/**< parent window handle */
-	char *text;			/**< status bar text */
+	const char *text;		/**< status bar text */
 	struct progress_bar *pb;	/**< progress bar */
 	unsigned int scale;		/**< current status bar scale */
 	int width;			/**< current status bar width */
@@ -102,6 +102,7 @@ wimp_WINDOW(1) status_bar_definition = {
 static void ro_gui_status_bar_open(wimp_open *open);
 static bool ro_gui_status_bar_click(wimp_pointer *pointer);
 static void ro_gui_status_bar_redraw(wimp_draw *redraw);
+static void ro_gui_status_bar_redraw_callback(void *handle);
 static void ro_gui_status_position_progress_bar(struct status_bar *sb);
 
 
@@ -168,8 +169,8 @@ void ro_gui_status_bar_destroy(struct status_bar *sb)
 
 	ro_gui_progress_bar_destroy(sb->pb);
 
-	if (sb->text)
-		free(sb->text);
+	/* Remove any scheduled redraw callbacks */
+	schedule_remove(ro_gui_status_bar_redraw_callback, (void *) sb);
 
 	free(sb);
 }
@@ -316,9 +317,21 @@ void ro_gui_status_bar_set_text(struct status_bar *sb, const char *text)
 
 	sb->text = text;
 
-	/* redraw the window */
-	if ((sb->visible) && (text != NULL))
-		xwimp_force_redraw(sb->w, 0, 0, sb->width - WIDGET_WIDTH, 65536);
+	/* Schedule a window redraw for 1cs' time.
+	 * 
+	 * We do this to ensure that redraws as a result of text changes
+	 * do not prevent other applications obtaining CPU time.
+	 *
+	 * The scheduled callback will be run when we receive the first 
+	 * null poll after 1cs has elapsed. It may then issue a redraw
+	 * request to the Wimp.
+	 *
+	 * The scheduler ensures that only one instance of the 
+	 * { callback, handle } pair is registered at once.
+	 */
+	if (sb->visible && text != NULL) {
+		schedule(1, ro_gui_status_bar_redraw_callback, (void *) sb);
+	}
 }
 
 
@@ -487,6 +500,18 @@ void ro_gui_status_bar_redraw(wimp_draw *redraw)
 			return;
 		}
 	}
+}
+
+/**
+ * Callback for scheduled redraw
+ *
+ * \param handle  Callback handle
+ */
+void ro_gui_status_bar_redraw_callback(void *handle)
+{
+	struct status_bar *sb = handle;
+
+	wimp_force_redraw(sb->w, 0, 0, sb->width - WIDGET_WIDTH, 65536);
 }
 
 

@@ -959,10 +959,19 @@ void gui_poll(bool active)
 	} else {
 		event = wimp_poll(wimp_MASK_NULL | mask, &block, 0);
 	}
+
 	xhourglass_on();
 	gui_last_poll = clock();
 	ro_gui_handle_event(event, &block);
-	schedule_run();
+
+	/* Only run scheduled callbacks on a null poll 
+	 * We cannot do this in the null event handler, as that may be called 
+	 * from gui_multitask(). Scheduled callbacks must only be run from the 
+	 * top-level.
+	 */
+	if (event == wimp_NULL_REASON_CODE)
+		schedule_run();
+
 	ro_gui_window_update_boxes();
 
 	if (browser_reformat_pending && event == wimp_NULL_REASON_CODE)
