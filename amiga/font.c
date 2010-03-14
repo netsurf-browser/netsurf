@@ -114,6 +114,8 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 		else
 			utf16charlen = 2;
 
+		utf8len = utf8_char_byte_length(string);
+
 		if(ESetInfo(&ofont->olf_EEngine,
 			OT_GlyphCode,*utf16,
 			TAG_END) == OTERR_Success)
@@ -140,12 +142,11 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 			}
 		}
 
-		utf8len = utf8_char_byte_length(string);
 		string += utf8len;
 		utf16 += utf16charlen;
 	}
 
-	if(co == (length - 1))
+	if(co == (length))
 	{
 		*actual_x = tx;
 		co = length;
