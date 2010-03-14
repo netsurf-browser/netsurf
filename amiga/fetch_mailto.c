@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-9 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-10 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -55,15 +55,19 @@ void gui_launch_url(const char *url)
 	char *launchurl = NULL;
 	BPTR fptr = 0;
 
-	launchurl = ASPrintf("URL:%s",url);
-
-	if(launchurl && (fptr = Open(launchurl,MODE_OLDFILE)))
+	if(strncasecmp(url,"ABOUT:",6))
 	{
-		Close(fptr);
-	}
-	else if(IOpenURL)
-		URL_OpenA(url,NULL);
+		launchurl = ASPrintf("URL:%s",url);
 
-	FreeVec(launchurl);
+		if(launchurl && (fptr = Open(launchurl,MODE_OLDFILE)))
+		{
+			Close(fptr);
+		}
+		else if(IOpenURL)
+			URL_OpenA(url,NULL);
+
+		FreeVec(launchurl);
+	}
+
 	SetProcWindow(procwin);		
 }
