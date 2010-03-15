@@ -1,5 +1,12 @@
 /*
- * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004-2010 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2010 Vincent Sanders <vince@debian.org>
+ * Copyright 2004-2009 John-Mark Bell <jmb@netsurf-browser.org>
+ * Copyright 2009 Paul Blokus <paul_pl@users.sourceforge.net>
+ * Copyright 2006-2009 Daniel Silverstone <dsilvers@netsurf-browser.org>
+ * Copyright 2006-2008 Rob Kendrick <rjek@netsurf-browser.org>
+ * Copyright 2008 John Tytgat <joty@netsurf-browser.org>
+ * Copyright 2008 Adam Blokus <adamblokus@gmail.com>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -63,8 +70,6 @@
 #include "utils/utf8.h"
 #include "utils/utils.h"
 
-bool gui_in_multitask = false;
-
 char *default_stylesheet_url;
 char *quirks_stylesheet_url;
 char *adblock_stylesheet_url;
@@ -79,23 +84,23 @@ char *toolbar_indices_file_location;
 char *res_dir_location;
 char *print_options_file_location;
 
-GtkWindow *wndAbout;
 GtkWindow *wndWarning;
 GladeXML *gladeNetsurf;
 GladeXML *gladePassword;
 GladeXML *gladeWarning;
 GladeXML *gladeLogin;
 GladeXML *gladeSsl;
-GtkWindow *wndTooltip;
-GtkLabel *labelTooltip;
 
 static GtkWidget *select_menu;
 static struct browser_window *select_menu_bw;
 static struct form_control *select_menu_control;
 
-static void nsgtk_create_ssl_verify_window(struct browser_window *bw,
-		struct content *c, const struct ssl_cert_info *certs,
-		unsigned long num);
+static void nsgtk_init_glade(void);
+static char *nsgtk_find_resource(char *buf, const char *filename,
+		const char *def);
+static void nsgtk_check_homedir(void);
+static void *nsgtk_hubbub_realloc(void *ptr, size_t len, void *pw);
+static bool nsgtk_throbber_init(int framec);
 static void nsgtk_ssl_accept(GtkButton *w, gpointer data);
 static void nsgtk_ssl_reject(GtkButton *w, gpointer data);
 static void nsgtk_select_menu_clicked(GtkCheckMenuItem *checkmenuitem,
@@ -107,135 +112,10 @@ static void nsgtk_PDF_no_pass(GtkButton *w, gpointer data);
 
 #define THROBBER_FRAMES 9
 
-/**
- * Locate a shared resource file by searching known places in order.
- *
- * \param  buf      buffer to write to.  must be at least PATH_MAX chars. May be NULL and routine will allocate string which must be freed by caller.
- * \param  filename file to look for
- * \param  def      default to return if file not found
- * \return buf
- *
- * Search order is: ~/.netsurf/, $NETSURFRES/ (where NETSURFRES is an
- * environment variable), and finally the path specified by the #define
- * at the top of this file.
- */
-
-static char *find_resource(char *buf, const char *filename, const char *def)
-{
-	char *cdir = getenv("HOME");
-	char t[PATH_MAX];
-
-	if (buf == NULL) {
-		buf = malloc(PATH_MAX);
-		if (buf == NULL)
-			return NULL;
-	}
-
-	if (cdir != NULL) {
-		strcpy(t, cdir);
-		strcat(t, "/.netsurf/");
-		strcat(t, filename);
-		if (realpath(t, buf) != NULL) {
-                        if (access(buf, R_OK) == 0)
-                                return buf;
-                }
-	}
-
-	cdir = getenv("NETSURFRES");
-
-	if (cdir != NULL) {
-		if (realpath(cdir, buf) != NULL) {
-                        strcat(buf, "/");
-                        strcat(buf, filename);
-                        if (access(buf, R_OK) == 0)
-                                return buf;
-                }
-	}
-
-	strcpy(t, GTK_RESPATH);
-	strcat(t, filename);
-	if (realpath(t, buf) != NULL) {
-                if (access(buf, R_OK) == 0)
-                        return buf;
-        }
-
-	if (def[0] == '~') {
-		snprintf(t, PATH_MAX, "%s%s", getenv("HOME"), def + 1);
-		if (realpath(t, buf) == NULL) {
-                        strcpy(buf, t);
-                }
-	} else {
-		if (realpath(def, buf) == NULL) {
-                        strcpy(buf, def);
-                }
-	}
-
-	return buf;
-}
 
 /**
- * Check that ~/.netsurf/ exists, and if it doesn't, create it.
+ * Main entry point from OS.
  */
-static void check_homedir(void)
-{
-	char *hdir = getenv("HOME");
-	char buf[BUFSIZ];
-
-	if (hdir == NULL) {
-		/* we really can't continue without a home directory. */
-		LOG(("HOME is not set - nowhere to store state!"));
-		die("NetSurf requires HOME to be set in order to run.\n");
-
-	}
-
-	snprintf(buf, BUFSIZ, "%s/.netsurf", hdir);
-	if (access(buf, F_OK) != 0) {
-		LOG(("You don't have a ~/.netsurf - creating one for you."));
-		if (mkdir(buf, 0777) == -1) {
-			LOG(("Unable to create %s", buf));
-			die("NetSurf requires ~/.netsurf to exist, but it cannot be created.\n");
-		}
-	}
-}
-
-/* This is an ugly hack to just get the new-style throbber going.
- * It, along with the PNG throbber loader, need making more generic.
- */
-static bool nsgtk_throbber_init(int framec)
-{
-	char **filenames;
-	char targetname[PATH_MAX];
-	char targetdefault[PATH_MAX];
-	int frame_num;
-	bool ret;
-
-	filenames = calloc(framec, sizeof(char *));
-	if (filenames == NULL)
-		return false;
-
-	for (frame_num = 0; frame_num < framec; frame_num++) {
-		snprintf(targetname, PATH_MAX, "throbber/throbber%d.png", frame_num);
-		snprintf(targetdefault, PATH_MAX, "./gtk/res/%s", targetname);
-		filenames[frame_num] = find_resource(NULL, targetname, targetdefault);
-	}
-
-	ret = nsgtk_throbber_initialise_from_png(frame_num, filenames);
-
-	for (frame_num = 0; frame_num < framec; frame_num++) {
-		free(filenames[frame_num]);
-	}	
-	free(filenames);
-
-	return ret;
-
-}
-
-static void *myrealloc(void *ptr, size_t len, void *pw)
-{
-	return realloc(ptr, len);
-}
-
-/** Normal entry point from OS */
 int main(int argc, char** argv)
 {
 	gtk_init(&argc, &argv);
@@ -245,86 +125,39 @@ int main(int argc, char** argv)
 	return netsurf_main(argc, argv);
 }
 
+
+/**
+ * Initialize GTK interface.
+ */
 void gui_init(int argc, char** argv)
 {
 	char buf[PATH_MAX];
 
-	check_homedir();
-	
-	find_resource(buf, "netsurf.glade", "./gtk/res/netsurf.glade");
-	LOG(("Using '%s' as Netsurf glade template file", buf));
-	glade_netsurf_file_location = strdup(buf);
-	
-	buf[strlen(buf)- 13] = 0;
+	nsgtk_check_homedir();
+
+	nsgtk_find_resource(buf, "netsurf.glade", "./gtk/res/netsurf.glade");
+	buf[strlen(buf) - 13] = 0;
 	LOG(("Using '%s' as Resources directory", buf));
 	res_dir_location = strdup(buf);
-	
-	find_resource(buf, "password.glade", "./gtk/res/password.glade");
-	LOG(("Using '%s' as password glade template file", buf));
-	glade_password_file_location = strdup(buf);
-	
-	find_resource(buf, "warning.glade", "./gtk/res/warning.glade");
-	LOG(("Using '%s' as warning glade template file", buf));
-	glade_warning_file_location = strdup(buf);
-	
-	find_resource(buf, "login.glade", "./gtk/res/login.glade");
-	LOG(("Using '%s' as login glade template file", buf));
-	glade_login_file_location = strdup(buf);
-	
-	find_resource(buf, "ssl.glade", "./gtk/res/ssl.glade");
-	LOG(("Using '%s' as ssl glade template file", buf));
-	glade_ssl_file_location = strdup(buf);
 
-	find_resource(buf, "Aliases", "./gtk/res/Aliases");
+	nsgtk_init_glade();
+
+	nsgtk_find_resource(buf, "Aliases", "./gtk/res/Aliases");
 	LOG(("Using '%s' as Aliases file", buf));
-	if (hubbub_initialise(buf, myrealloc, NULL) != HUBBUB_OK)
+	if (hubbub_initialise(buf, nsgtk_hubbub_realloc, NULL) != HUBBUB_OK)
 		die("Unable to initialise HTML parsing library.\n");
 
-	glade_init();
-	gladeWarning = glade_xml_new(glade_warning_file_location, NULL, NULL);
-	if (gladeWarning == NULL)
-		die("Unable to load glade warning window definitions.\n");
-	glade_xml_signal_autoconnect(gladeWarning);
-	
-	gladeNetsurf = glade_xml_new(glade_netsurf_file_location, NULL, NULL);
-	if (gladeNetsurf == NULL)
-		die("Unable to load glade Netsurf window definitions.\n");
-	glade_xml_signal_autoconnect(gladeNetsurf);
-
-	gladePassword = glade_xml_new(glade_password_file_location, NULL, NULL);
-	if (gladePassword == NULL)
-		die("Unable to load glade password window definitions.\n");
-	glade_xml_signal_autoconnect(gladePassword);
-
-	gladeLogin = glade_xml_new(glade_login_file_location, NULL, NULL);
-	if (gladeLogin == NULL)
-		die("Unable to load glade login window definitions.\n");
-	glade_xml_signal_autoconnect(gladeLogin);
-	
-	gladeSsl = glade_xml_new(glade_ssl_file_location, NULL, NULL);
-	if (gladeSsl == NULL)
-		die("Unable to load glade ssl window definitions.\n");
-	glade_xml_signal_autoconnect(gladeSsl);
-
-	find_resource(buf, "toolbar.glade", "./gtk/res/toolbar.glade");
-	LOG(("Using '%s' as glade toolbar file", buf));
-	glade_toolbar_file_location = strdup(buf);
-
-	find_resource(buf, "netsurf.xpm", "./gtk/res/netsurf.xpm");
+	nsgtk_find_resource(buf, "netsurf.xpm", "./gtk/res/netsurf.xpm");
 	gtk_window_set_default_icon_from_file(buf, NULL);
 
-	/* superfluous ? */
-	wndTooltip = GTK_WINDOW(glade_xml_get_widget(gladeNetsurf, "wndTooltip"));
-	labelTooltip = GTK_LABEL(glade_xml_get_widget(gladeNetsurf, "tooltip"));
-	
 	nsgtk_completion_init();
 
 	if (nsgtk_throbber_init(THROBBER_FRAMES) == false)
 		die("Unable to load throbber image.\n");
 
 	option_core_select_menu = true;
-	
-	find_resource(buf, "Choices", "~/.netsurf/Choices");
+
+	nsgtk_find_resource(buf, "Choices", "~/.netsurf/Choices");
 	LOG(("Using '%s' as Preferences file", buf));
 	options_file_location = strdup(buf);
 	options_read(buf);
@@ -340,12 +173,12 @@ void gui_init(int argc, char** argv)
 	SETFONTDEFAULT(option_font_fantasy, "Serif");
 
 	if (!option_cookie_file) {
-		find_resource(buf, "Cookies", "~/.netsurf/Cookies");
+		nsgtk_find_resource(buf, "Cookies", "~/.netsurf/Cookies");
 		LOG(("Using '%s' as Cookies file", buf));
 		option_cookie_file = strdup(buf);
 	}
 	if (!option_cookie_jar) {
-		find_resource(buf, "Cookies", "~/.netsurf/Cookies");
+		nsgtk_find_resource(buf, "Cookies", "~/.netsurf/Cookies");
 		LOG(("Using '%s' as Cookie Jar file", buf));
 		option_cookie_jar = strdup(buf);
 	}
@@ -353,71 +186,133 @@ void gui_init(int argc, char** argv)
 		die("Failed initialising cookie options");
 
 	if (!option_url_file) {
-		find_resource(buf, "URLs", "~/.netsurf/URLs");
+		nsgtk_find_resource(buf, "URLs", "~/.netsurf/URLs");
 		LOG(("Using '%s' as URL file", buf));
 		option_url_file = strdup(buf);
 	}
 
         if (!option_ca_path) {
-                find_resource(buf, "certs", "/etc/ssl/certs");
+                nsgtk_find_resource(buf, "certs", "/etc/ssl/certs");
                 LOG(("Using '%s' as certificate path", buf));
                 option_ca_path = strdup(buf);
         }
-        
+
         if (!option_downloads_directory) {
         	char *home = getenv("HOME");
         	LOG(("Using '%s' as download directory", home));
         	option_downloads_directory = home;
 	}
-	
-	find_resource(buf, "messages", "./gtk/res/messages");
+
+	nsgtk_find_resource(buf, "messages", "./gtk/res/messages");
 	LOG(("Using '%s' as Messages file", buf));
 	messages_load(buf);
 
-	find_resource(buf, "mime.types", "/etc/mime.types");
+	nsgtk_find_resource(buf, "mime.types", "/etc/mime.types");
 	gtk_fetch_filetype_init(buf);
 
 	/* set up stylesheet urls */
-	find_resource(buf, "gtkdefault.css", "./gtk/res/gtkdefault.css");
+	nsgtk_find_resource(buf, "gtkdefault.css", "./gtk/res/gtkdefault.css");
 	default_stylesheet_url = path_to_url(buf);
 	LOG(("Using '%s' as Default CSS URL", default_stylesheet_url));
 
-	find_resource(buf, "quirks.css", "./gtk/res/quirks.css");
+	nsgtk_find_resource(buf, "quirks.css", "./gtk/res/quirks.css");
 	quirks_stylesheet_url = path_to_url(buf);
 
-	find_resource(buf, "adblock.css", "./gtk/res/adblock.css");
+	nsgtk_find_resource(buf, "adblock.css", "./gtk/res/adblock.css");
 	adblock_stylesheet_url = path_to_url(buf);
 	LOG(("Using '%s' as AdBlock CSS URL", adblock_stylesheet_url));
 
-	find_resource(buf, "Print", "~/.netsurf/Print");
+	nsgtk_find_resource(buf, "Print", "~/.netsurf/Print");
 	LOG(("Using '%s' as Print Settings file", buf));
 	print_options_file_location = strdup(buf);
-	
-	find_resource(buf, "SearchEngines", "./gtk/res/SearchEngines");
+
+	nsgtk_find_resource(buf, "SearchEngines", "./gtk/res/SearchEngines");
 	LOG(("Using '%s' as Search Engines file", buf));
 	search_engines_file_location = strdup(buf);
-	
-	find_resource(buf, "default.ico", "./gtk/res/default.ico");
+
+	nsgtk_find_resource(buf, "default.ico", "./gtk/res/default.ico");
 	LOG(("Using '%s' as default search ico", buf));
 	search_default_ico_location = strdup(buf);
 
-	find_resource(buf, "toolbarIndices", "./gtk/res/toolbarIndices");
+	nsgtk_find_resource(buf, "toolbarIndices", "./gtk/res/toolbarIndices");
 	LOG(("Using '%s' as custom toolbar settings file", buf));
 	toolbar_indices_file_location = strdup(buf);
-	
+
 	urldb_load(option_url_file);
 	urldb_load_cookies(option_cookie_file);
-	
-	/* superfluous ? */
-	wndAbout = GTK_WINDOW(glade_xml_get_widget(gladeNetsurf, "wndAbout"));
-
-	wndWarning = GTK_WINDOW(glade_xml_get_widget(gladeWarning, "wndWarning"));
 
 	nsgtk_history_init();
 	nsgtk_download_init();
 }
 
 
+/**
+ * Load definitions from glade files.
+ */
+void nsgtk_init_glade(void)
+{
+	char buf[PATH_MAX];
+
+	glade_init();
+
+	nsgtk_find_resource(buf, "netsurf.glade", "./gtk/res/netsurf.glade");
+	LOG(("Using '%s' as Netsurf glade template file", buf));
+	glade_netsurf_file_location = strdup(buf);
+
+	nsgtk_find_resource(buf, "password.glade", "./gtk/res/password.glade");
+	LOG(("Using '%s' as password glade template file", buf));
+	glade_password_file_location = strdup(buf);
+
+	nsgtk_find_resource(buf, "warning.glade", "./gtk/res/warning.glade");
+	LOG(("Using '%s' as warning glade template file", buf));
+	glade_warning_file_location = strdup(buf);
+
+	nsgtk_find_resource(buf, "login.glade", "./gtk/res/login.glade");
+	LOG(("Using '%s' as login glade template file", buf));
+	glade_login_file_location = strdup(buf);
+
+	nsgtk_find_resource(buf, "ssl.glade", "./gtk/res/ssl.glade");
+	LOG(("Using '%s' as ssl glade template file", buf));
+	glade_ssl_file_location = strdup(buf);
+
+	gladeWarning = glade_xml_new(glade_warning_file_location, NULL, NULL);
+	if (gladeWarning == NULL)
+		die("Unable to load glade warning window definitions.\n");
+	glade_xml_signal_autoconnect(gladeWarning);
+
+	gladeNetsurf = glade_xml_new(glade_netsurf_file_location, NULL, NULL);
+	if (gladeNetsurf == NULL)
+		die("Unable to load glade Netsurf window definitions.\n");
+	glade_xml_signal_autoconnect(gladeNetsurf);
+
+	gladePassword = glade_xml_new(glade_password_file_location, NULL, NULL);
+	if (gladePassword == NULL)
+		die("Unable to load glade password window definitions.\n");
+	glade_xml_signal_autoconnect(gladePassword);
+
+	gladeLogin = glade_xml_new(glade_login_file_location, NULL, NULL);
+	if (gladeLogin == NULL)
+		die("Unable to load glade login window definitions.\n");
+	glade_xml_signal_autoconnect(gladeLogin);
+
+	gladeSsl = glade_xml_new(glade_ssl_file_location, NULL, NULL);
+	if (gladeSsl == NULL)
+		die("Unable to load glade ssl window definitions.\n");
+	glade_xml_signal_autoconnect(gladeSsl);
+
+	nsgtk_find_resource(buf, "toolbar.glade", "./gtk/res/toolbar.glade");
+	LOG(("Using '%s' as glade toolbar file", buf));
+	glade_toolbar_file_location = strdup(buf);
+
+	wndWarning = GTK_WINDOW(glade_xml_get_widget(gladeWarning, "wndWarning"));
+}
+
+
+/**
+ * Last step of initialization.
+ *
+ * Opens the main browser window.
+ */
 void gui_init2(int argc, char** argv)
 {
 	struct browser_window *bw;
@@ -426,7 +321,9 @@ void gui_init2(int argc, char** argv)
         if (option_homepage_url != NULL && option_homepage_url[0] != '\0')
                 addr = option_homepage_url;
 
-	if (argc > 1) addr = argv[1];
+	if (2 <= argc)
+		addr = argv[1];
+
 	bw = browser_window_create(addr, 0, 0, true, false);
 }
 
@@ -495,10 +392,8 @@ void gui_poll(bool active)
 
 void gui_multitask(void)
 {
-	gui_in_multitask = true;
 	while (gtk_events_pending())
 		gtk_main_iteration();
-	gui_in_multitask = false;
 }
 
 
@@ -518,12 +413,146 @@ void gui_quit(void)
 	free(toolbar_indices_file_location);
 	gtk_fetch_filetype_fin();
 	/* We don't care if this fails as we're about to die, anyway */
-	hubbub_finalise(myrealloc, NULL);
+	hubbub_finalise(nsgtk_hubbub_realloc, NULL);
+}
+
+
+/**
+ * Locate a shared resource file by searching known places in order.
+ *
+ * \param  buf      buffer to write to.  must be at least PATH_MAX chars. May be NULL and routine will allocate string which must be freed by caller.
+ * \param  filename file to look for
+ * \param  def      default to return if file not found
+ * \return buf
+ *
+ * Search order is: ~/.netsurf/, $NETSURFRES/ (where NETSURFRES is an
+ * environment variable), and finally the path specified by the define
+ * GTK_RESPATH.
+ */
+char *nsgtk_find_resource(char *buf, const char *filename, const char *def)
+{
+	char *cdir = getenv("HOME");
+	char t[PATH_MAX];
+
+	if (buf == NULL) {
+		buf = malloc(PATH_MAX);
+		if (buf == NULL)
+			return NULL;
+	}
+
+	if (cdir != NULL) {
+		strcpy(t, cdir);
+		strcat(t, "/.netsurf/");
+		strcat(t, filename);
+		if (realpath(t, buf) != NULL) {
+                        if (access(buf, R_OK) == 0)
+                                return buf;
+                }
+	}
+
+	cdir = getenv("NETSURFRES");
+
+	if (cdir != NULL) {
+		if (realpath(cdir, buf) != NULL) {
+                        strcat(buf, "/");
+                        strcat(buf, filename);
+                        if (access(buf, R_OK) == 0)
+                                return buf;
+                }
+	}
+
+	strcpy(t, GTK_RESPATH);
+	strcat(t, filename);
+	if (realpath(t, buf) != NULL) {
+                if (access(buf, R_OK) == 0)
+                        return buf;
+        }
+
+	if (def[0] == '~') {
+		snprintf(t, PATH_MAX, "%s%s", getenv("HOME"), def + 1);
+		if (realpath(t, buf) == NULL) {
+                        strcpy(buf, t);
+                }
+	} else {
+		if (realpath(def, buf) == NULL) {
+                        strcpy(buf, def);
+                }
+	}
+
+	return buf;
+}
+
+
+/**
+ * Check that ~/.netsurf/ exists, and if it doesn't, create it.
+ */
+void nsgtk_check_homedir(void)
+{
+	char *hdir = getenv("HOME");
+	char buf[BUFSIZ];
+
+	if (hdir == NULL) {
+		/* we really can't continue without a home directory. */
+		LOG(("HOME is not set - nowhere to store state!"));
+		die("NetSurf requires HOME to be set in order to run.\n");
+
+	}
+
+	snprintf(buf, BUFSIZ, "%s/.netsurf", hdir);
+	if (access(buf, F_OK) != 0) {
+		LOG(("You don't have a ~/.netsurf - creating one for you."));
+		if (mkdir(buf, 0777) == -1) {
+			LOG(("Unable to create %s", buf));
+			die("NetSurf requires ~/.netsurf to exist, but it cannot be created.\n");
+		}
+	}
+}
+
+
+/**
+ * Allocator callback function for hubbub.
+ */
+void *nsgtk_hubbub_realloc(void *ptr, size_t len, void *pw)
+{
+	return realloc(ptr, len);
+}
+
+
+/* This is an ugly hack to just get the new-style throbber going.
+ * It, along with the PNG throbber loader, need making more generic.
+ */
+bool nsgtk_throbber_init(int framec)
+{
+	char **filenames;
+	char targetname[PATH_MAX];
+	char targetdefault[PATH_MAX];
+	int frame_num;
+	bool ret;
+
+	filenames = calloc(framec, sizeof(char *));
+	if (filenames == NULL)
+		return false;
+
+	for (frame_num = 0; frame_num < framec; frame_num++) {
+		snprintf(targetname, PATH_MAX, "throbber/throbber%d.png", frame_num);
+		snprintf(targetdefault, PATH_MAX, "./gtk/res/%s", targetname);
+		filenames[frame_num] = nsgtk_find_resource(NULL, targetname, targetdefault);
+	}
+
+	ret = nsgtk_throbber_initialise_from_png(frame_num, filenames);
+
+	for (frame_num = 0; frame_num < framec; frame_num++) {
+		free(filenames[frame_num]);
+	}
+	free(filenames);
+
+	return ret;
+
 }
 
 
 static void nsgtk_select_menu_clicked(GtkCheckMenuItem *checkmenuitem,
-					gpointer user_data) 
+					gpointer user_data)
 {
 	browser_window_form_select(select_menu_bw, select_menu_control,
 					(intptr_t)user_data);
@@ -535,17 +564,17 @@ void gui_create_form_select_menu(struct browser_window *bw,
 
 	intptr_t i;
 	struct form_option *option;
-	
+
 	GtkWidget *menu_item;
 
 	/* control->data.select.multiple is true if multiple selections
 	 * are allowable.  We ignore this, as the core handles it for us.
 	 * Yay. \o/
 	 */
-	
+
 	if (select_menu != NULL)
 		gtk_widget_destroy(select_menu);
-	
+
 	select_menu = gtk_menu_new();
 	select_menu_bw = bw;
 	select_menu_control = control;
@@ -556,15 +585,15 @@ void gui_create_form_select_menu(struct browser_window *bw,
 		if (option->selected)
 			gtk_check_menu_item_set_active(
 				GTK_CHECK_MENU_ITEM(menu_item), TRUE);
-		
+
 		g_signal_connect(menu_item, "toggled",
 			G_CALLBACK(nsgtk_select_menu_clicked), (gpointer)i);
-		
+
 		gtk_menu_shell_append(GTK_MENU_SHELL(select_menu), menu_item);
 	}
-	
+
 	gtk_widget_show_all(select_menu);
-	
+
 	gtk_menu_popup(GTK_MENU(select_menu), NULL, NULL, NULL,
 			NULL /* data */, 0, gtk_get_current_event_time());
 
@@ -605,65 +634,62 @@ void hotlist_visited(struct content *content)
 {
 }
 
+
 void gui_cert_verify(struct browser_window *bw, struct content *c,
 		const struct ssl_cert_info *certs, unsigned long num)
-{
-	nsgtk_create_ssl_verify_window(bw, c, certs, num);
-}
-
-static void nsgtk_create_ssl_verify_window(struct browser_window *bw,
-		struct content *c, const struct ssl_cert_info *certs,
-		unsigned long num)
 {
 	GladeXML *x = glade_xml_new(glade_ssl_file_location, NULL, NULL);
 	GtkWindow *wnd = GTK_WINDOW(glade_xml_get_widget(x, "wndSSLProblem"));
 	GtkButton *accept, *reject;
 	void **session = calloc(sizeof(void *), 4);
-	
+
 	session[0] = bw;
 	session[1] = strdup(c->url);
 	session[2] = x;
 	session[3] = wnd;
-	
+
 	accept = GTK_BUTTON(glade_xml_get_widget(x, "sslaccept"));
 	reject = GTK_BUTTON(glade_xml_get_widget(x, "sslreject"));
-	
+
 	g_signal_connect(G_OBJECT(accept), "clicked",
 			G_CALLBACK(nsgtk_ssl_accept), (gpointer)session);
 	g_signal_connect(G_OBJECT(reject), "clicked",
 			G_CALLBACK(nsgtk_ssl_reject), (gpointer)session);
-	
-	gtk_widget_show(GTK_WIDGET(wnd));	
+
+	gtk_widget_show(GTK_WIDGET(wnd));
 }
 
-static void nsgtk_ssl_accept(GtkButton *w, gpointer data)
+
+void nsgtk_ssl_accept(GtkButton *w, gpointer data)
 {
 	void **session = data;
 	struct browser_window *bw = session[0];
 	char *url = session[1];
 	GladeXML *x = session[2];
 	GtkWindow *wnd = session[3];
-	
+
   	urldb_set_cert_permissions(url, true);
-	browser_window_go(bw, url, 0, true);	
-	
+	browser_window_go(bw, url, 0, true);
+
 	gtk_widget_destroy(GTK_WIDGET(wnd));
 	g_object_unref(G_OBJECT(x));
 	free(url);
 	free(session);
 }
 
-static void nsgtk_ssl_reject(GtkButton *w, gpointer data)
+
+void nsgtk_ssl_reject(GtkButton *w, gpointer data)
 {
 	void **session = data;
 	GladeXML *x = session[2];
 	GtkWindow *wnd = session[3];
-		
+
 	gtk_widget_destroy(GTK_WIDGET(wnd));
 	g_object_unref(G_OBJECT(x));
 	free(session[1]);
 	free(session);
 }
+
 
 utf8_convert_ret utf8_to_local_encoding(const char *string, size_t len,
 		char **result)
@@ -680,6 +706,7 @@ utf8_convert_ret utf8_to_local_encoding(const char *string, size_t len,
 	return UTF8_CONVERT_OK;
 }
 
+
 utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 		char **result)
 {
@@ -695,6 +722,7 @@ utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 	return UTF8_CONVERT_OK;
 }
 
+
 char *path_to_url(const char *path)
 {
 	char *r = malloc(strlen(path) + SLEN("file://") + 1);
@@ -705,10 +733,12 @@ char *path_to_url(const char *path)
 	return r;
 }
 
+
 char *url_to_path(const char *url)
 {
 	return strdup(url + 5);
 }
+
 
 bool cookies_update(const char *domain, const struct cookie_data *data)
 {
@@ -723,24 +753,24 @@ void PDF_Password(char **owner_pass, char **user_pass, char *path)
 	GtkWindow *wnd = GTK_WINDOW(glade_xml_get_widget(x, "wndPDFPassword"));
 	GtkButton *ok, *no;
 	void **data = malloc(5 * sizeof(void *));
-	
+
 	*owner_pass = NULL;
 	*user_pass = NULL;
-	
+
 	data[0] = owner_pass;
 	data[1] = user_pass;
 	data[2] = wnd;
 	data[3] = x;
 	data[4] = path;
-	
+
 	ok = GTK_BUTTON(glade_xml_get_widget(x, "buttonPDFSetPassword"));
 	no = GTK_BUTTON(glade_xml_get_widget(x, "buttonPDFNoPassword"));
-	
+
 	g_signal_connect(G_OBJECT(ok), "clicked",
 			 G_CALLBACK(nsgtk_PDF_set_pass), (gpointer)data);
 	g_signal_connect(G_OBJECT(no), "clicked",
 			 G_CALLBACK(nsgtk_PDF_no_pass), (gpointer)data);
-	
+
 	gtk_widget_show(GTK_WIDGET(wnd));
 }
 
@@ -751,10 +781,10 @@ static void nsgtk_PDF_set_pass(GtkButton *w, gpointer data)
 	GtkWindow *wnd = ((void **)data)[2];
 	GladeXML *x = ((void **)data)[3];
 	char *path = ((void **)data)[4];
-	
+
 	char *op, *op1;
 	char *up, *up1;
-	
+
 	op = strdup(gtk_entry_get_text(GTK_ENTRY(glade_xml_get_widget(x,
 			"entryPDFOwnerPassword"))));
 	op1 = strdup(gtk_entry_get_text(GTK_ENTRY(glade_xml_get_widget(x,
@@ -762,9 +792,9 @@ static void nsgtk_PDF_set_pass(GtkButton *w, gpointer data)
 	up = strdup(gtk_entry_get_text(GTK_ENTRY(glade_xml_get_widget(x,
 		    	"entryPDFUserPassword"))));
 	up1 = strdup(gtk_entry_get_text(GTK_ENTRY(glade_xml_get_widget(x,
-		     	"entryPDFUserPassword1"))));			
-	
-	
+		     	"entryPDFUserPassword1"))));
+
+
 	if (op[0] == '\0') {
 		gtk_label_set_text(GTK_LABEL(glade_xml_get_widget(x,
 				"labelInfo")),
@@ -780,17 +810,17 @@ static void nsgtk_PDF_set_pass(GtkButton *w, gpointer data)
 		free(up);
 	}
 	else if (!strcmp(op, op1) && !strcmp(up, up1)) {
-		
+
 		*owner_pass = op;
 		if (up[0] == '\0')
 			free(up);
 		else
 			*user_pass = up;
-		
+
 		free(data);
 		gtk_widget_destroy(GTK_WIDGET(wnd));
 		g_object_unref(G_OBJECT(x));
-		
+
 		save_pdf(path);
 		free(path);
 	}
@@ -800,7 +830,7 @@ static void nsgtk_PDF_set_pass(GtkButton *w, gpointer data)
 		free(op);
 		free(up);
 	}
-	
+
 	free(op1);
 	free(up1);
 }
@@ -810,12 +840,12 @@ static void nsgtk_PDF_no_pass(GtkButton *w, gpointer data)
 	GtkWindow *wnd = ((void **)data)[2];
 	GladeXML *x = ((void **)data)[3];
 	char *path = ((void **)data)[4];
-		
+
 	free(data);
-	
+
 	gtk_widget_destroy(GTK_WIDGET(wnd));
 	g_object_unref(G_OBJECT(x));
-	
+
 	save_pdf(path);
 	free(path);
 }
@@ -869,7 +899,7 @@ uint32_t gtk_gui_gdkkey_to_nskey(GdkEventKey *key)
 			return gdk_keyval_to_unicode(key->keyval);
 		case GDK_Escape:
 			return KEY_ESCAPE;
-			
+
 		/* Modifiers - do nothing for now */
 		case GDK_Shift_L:
 		case GDK_Shift_R:
@@ -885,7 +915,7 @@ uint32_t gtk_gui_gdkkey_to_nskey(GdkEventKey *key)
 		case GDK_Super_R:
 		case GDK_Hyper_L:
 		case GDK_Hyper_R:	return 0;
-		
+
 		default:		return gdk_keyval_to_unicode(
 							key->keyval);
         }

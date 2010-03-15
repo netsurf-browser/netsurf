@@ -1,5 +1,12 @@
 /*
- * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004-2010 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2010 Vincent Sanders <vince@debian.org>
+ * Copyright 2004-2009 John-Mark Bell <jmb@netsurf-browser.org>
+ * Copyright 2009 Paul Blokus <paul_pl@users.sourceforge.net>
+ * Copyright 2006-2009 Daniel Silverstone <dsilvers@netsurf-browser.org>
+ * Copyright 2006-2008 Rob Kendrick <rjek@netsurf-browser.org>
+ * Copyright 2008 John Tytgat <joty@netsurf-browser.org>
+ * Copyright 2008 Adam Blokus <adamblokus@gmail.com>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -24,7 +31,6 @@
 #include <gtk/gtk.h>
 #include <glade/glade.h>
 
-extern bool gui_in_multitask;
 extern GladeXML *gladeNetsurf;
 extern GladeXML *gladePassword;
 extern GladeXML *gladeWarning;
@@ -40,13 +46,6 @@ extern char *toolbar_indices_file_location;
 extern char *options_file_location;
 extern char *res_dir_location;
 extern char *print_options_file_location;
-
-extern GtkWindow *wndAbout;
-
-extern GtkWindow *wndTooltip;
-extern GtkLabel *labelTooltip;
-
-extern GtkDialog *wndOpenFile;
 
 uint32_t gtk_gui_gdkkey_to_nskey(GdkEventKey *);
 
