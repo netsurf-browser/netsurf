@@ -1513,8 +1513,15 @@ void ami_handle_msg(void)
 				}
 				break;
 
+				case WMHI_INACTIVE:
+					gwin->bw->window->c_h_temp = gwin->bw->window->c_h;
+					gui_window_remove_caret(gwin->bw->window);
+				break;
+
 				case WMHI_ACTIVE:
 					if(gwin->bw) curbw = gwin->bw;
+					if(gwin->bw->window->c_h_temp)
+						gwin->bw->window->c_h = gwin->bw->window->c_h_temp;
 				break;
 
 				case WMHI_INTUITICK:

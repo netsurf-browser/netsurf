@@ -115,6 +115,7 @@ struct gui_window
 	int c_x;
 	int c_y;
 	int c_h;
+	int c_h_temp;
 	int scrollx;
 	int scrolly;
 	struct history_window *hw;
