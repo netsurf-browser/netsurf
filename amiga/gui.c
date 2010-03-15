@@ -3155,8 +3155,16 @@ void ami_do_redraw(struct gui_window_2 *g)
 
 	if(g->redraw_scroll && c->type == CONTENT_HTML)
 	{
+		int c_x = g->bw->window->c_x;
+		int c_y = g->bw->window->c_y;
+		int c_h = g->bw->window->c_h;
+
+		gui_window_remove_caret(g->bw->window);
+
 		ScrollWindowRaster(g->win,hcurrent-oldh,vcurrent-oldv,
 				xoffset,yoffset,xoffset+width,yoffset+height);
+
+		gui_window_place_caret(g->bw->window, c_x, c_y, c_h);
 
 		if(vcurrent>oldv)
 		{
