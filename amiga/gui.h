@@ -105,6 +105,7 @@ struct gui_window_2 {
 	char *svbuffer;
 	char *status;
 	char *wintitle;
+	char *helphints[GID_LAST];
 };
 
 struct gui_window

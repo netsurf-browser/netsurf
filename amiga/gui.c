@@ -49,6 +49,7 @@
 #include "amiga/hotlist.h"
 #include "amiga/login.h"
 #include "amiga/menu.h"
+#include "amiga/misc.h"
 #include "amiga/options.h"
 #include "amiga/plotters.h"
 #include "amiga/print.h"
@@ -2364,6 +2365,13 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 				gwin->shared->svbuffer = AllocVec(2000, MEMF_CLEAR);
 
+				gwin->shared->helphints[GID_BACK] = remove_escape_chars(messages_get("HelpToolbar0"), true);
+				gwin->shared->helphints[GID_FORWARD] = remove_escape_chars(messages_get("HelpToolbar1"), true);
+				gwin->shared->helphints[GID_STOP] = remove_escape_chars(messages_get("HelpToolbar2"), true);
+				gwin->shared->helphints[GID_RELOAD] = remove_escape_chars(messages_get("HelpToolbar3"), true);
+				gwin->shared->helphints[GID_HOME] = remove_escape_chars(messages_get("HelpToolbar4"), true);
+				gwin->shared->helphints[GID_URL] = remove_escape_chars(messages_get("HelpToolbar14"), true);
+
 				ami_get_theme_filename(nav_west,"theme_nav_west");
 				ami_get_theme_filename(nav_west_s,"theme_nav_west_s");
 				ami_get_theme_filename(nav_west_g,"theme_nav_west_g");
@@ -2440,7 +2448,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 				gwin->shared->objects[OID_MAIN] = WindowObject,
 		       	    WA_ScreenTitle,nsscreentitle,
-//           		WA_Title, messages_get("NetSurf"),
         		   	WA_Activate, TRUE,
 		           	WA_DepthGadget, TRUE,
 		           	WA_DragBar, TRUE,
@@ -2460,9 +2467,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 								IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
 								IDCMP_ACTIVEWINDOW | IDCMP_INTUITICKS |
 								IDCMP_EXTENDEDMOUSE | IDCMP_GADGETDOWN,
-//					WINDOW_IconifyGadget, TRUE,
 					WINDOW_NewMenu,menu,
-			//		WINDOW_HorizProp,1,
 					WINDOW_VertProp,1,
 					WINDOW_IDCMPHook,&gwin->shared->scrollerhook,
 					WINDOW_IDCMPHookBits,IDCMP_IDCMPUPDATE |
@@ -2472,11 +2477,9 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 					WINDOW_AppWindow,TRUE,
 					WINDOW_SharedPort,sport,
 					WINDOW_BuiltInScroll,TRUE,
+					WINDOW_GadgetHelp, TRUE,
 					WINDOW_UserData,gwin->shared,
-//      		   	WINDOW_Position, WPOS_CENTERSCREEN,
-//					WINDOW_CharSet,106,
 		           	WINDOW_ParentGroup, gwin->shared->objects[GID_MAIN] = VGroupObject,
-//						LAYOUT_CharSet,106,
 		               	LAYOUT_SpaceOuter, TRUE,
 						LAYOUT_AddChild, gwin->shared->objects[GID_TOOLBARLAYOUT] = HGroupObject,
 							LAYOUT_VertAlignment, LALIGN_CENTER,
@@ -2484,6 +2487,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 								GA_ID,GID_BACK,
 								GA_RelVerify,TRUE,
 								GA_Disabled,TRUE,
+								GA_HintInfo, gwin->shared->helphints[GID_BACK],
 								BUTTON_Transparent,TRUE,
 								BUTTON_RenderImage,BitMapObject,
 									BITMAP_SourceFile,nav_west,
@@ -2499,6 +2503,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 								GA_ID,GID_FORWARD,
 								GA_RelVerify,TRUE,
 								GA_Disabled,TRUE,
+								GA_HintInfo, gwin->shared->helphints[GID_FORWARD],
 								BUTTON_Transparent,TRUE,
 								BUTTON_RenderImage,BitMapObject,
 									BITMAP_SourceFile,nav_east,
@@ -2513,6 +2518,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 							LAYOUT_AddChild, gwin->shared->objects[GID_STOP] = ButtonObject,
 								GA_ID,GID_STOP,
 								GA_RelVerify,TRUE,
+								GA_HintInfo, gwin->shared->helphints[GID_STOP],
 								BUTTON_Transparent,TRUE,
 								BUTTON_RenderImage,BitMapObject,
 									BITMAP_SourceFile,stop,
@@ -2527,6 +2533,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 							LAYOUT_AddChild, gwin->shared->objects[GID_RELOAD] = ButtonObject,
 								GA_ID,GID_RELOAD,
 								GA_RelVerify,TRUE,
+								GA_HintInfo, gwin->shared->helphints[GID_RELOAD],
 								BUTTON_Transparent,TRUE,
 								BUTTON_RenderImage,BitMapObject,
 									BITMAP_SourceFile,reload,
@@ -2541,6 +2548,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 							LAYOUT_AddChild, gwin->shared->objects[GID_HOME] = ButtonObject,
 								GA_ID,GID_HOME,
 								GA_RelVerify,TRUE,
+								GA_HintInfo, gwin->shared->helphints[GID_HOME],
 								BUTTON_Transparent,TRUE,
 								BUTTON_RenderImage,BitMapObject,
 									BITMAP_SourceFile,home,
@@ -2565,17 +2573,12 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
                     				STRINGA_MaxChars, 2000,
                     				GA_ID, GID_URL,
                     				GA_RelVerify, TRUE,
+									GA_HintInfo, gwin->shared->helphints[GID_URL],
                     				GA_TabCycle, TRUE,
                     				STRINGA_Buffer, gwin->shared->svbuffer,
                     				STRINGVIEW_Header, URLHistory_GetList(),
-//                    				STRINGA_TextVal, NULL,
                 			StringEnd,
-/*
- StringObject,
-								GA_ID,GID_URL,
-								GA_RelVerify,TRUE,
-							StringEnd,
-*/
+
 						//	GA_ID, GID_TOOLBARLAYOUT,
 						//	GA_RelVerify, TRUE,
 						//	LAYOUT_RelVerify, TRUE,
@@ -2860,6 +2863,7 @@ void gui_window_destroy(struct gui_window *g)
 {
 	struct Node *ptab;
 	ULONG ptabnum = 0;
+	int gid;
 
 	if(!g) return;
 
@@ -2921,6 +2925,9 @@ void gui_window_destroy(struct gui_window *g)
 	ami_utf8_free(g->shared->status);
 	FreeVec(g->shared->svbuffer);
 
+	for(gid = 0; gid < GID_LAST; gid++)
+		free(g->shared->helphints[gid]);
+
 	DelObject(g->shared->node);
 	if(g->tab_node)
 	{
@@ -2957,7 +2964,10 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 						CLICKTAB_Labels,~0,
 						TAG_DONE);
 
-		SetClickTabNodeAttrs(node, TNA_Text, utf8title, TAG_DONE);
+		SetClickTabNodeAttrs(node, TNA_Text, utf8title,
+								TNA_HintInfo, utf8title,
+								TAG_DONE);
+
 		RefreshSetGadgetAttrs((struct Gadget *)g->shared->objects[GID_TABS],
 							g->shared->win, NULL,
 							CLICKTAB_Labels, &g->shared->tab_list,
@@ -3162,16 +3172,13 @@ void ami_do_redraw(struct gui_window_2 *g)
 
 	if(g->redraw_scroll && c->type == CONTENT_HTML)
 	{
-		int c_x = g->bw->window->c_x;
-		int c_y = g->bw->window->c_y;
-		int c_h = g->bw->window->c_h;
-
+		g->bw->window->c_h_temp = g->bw->window->c_h;
 		gui_window_remove_caret(g->bw->window);
 
 		ScrollWindowRaster(g->win,hcurrent-oldh,vcurrent-oldv,
 				xoffset,yoffset,xoffset+width,yoffset+height);
 
-		gui_window_place_caret(g->bw->window, c_x, c_y, c_h);
+		g->bw->window->c_h = g->bw->window->c_h_temp;
 
 		if(vcurrent>oldv)
 		{
