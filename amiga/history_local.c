@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2009, 2010 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -104,6 +104,7 @@ void ami_history_open(struct browser_window *bw, struct history *history)
 			WINDOW_SharedPort,sport,
 			WINDOW_UserData,hwindow,
 			WINDOW_IconifyGadget, FALSE,
+			WINDOW_GadgetHelp, TRUE,
 			WINDOW_Position, WPOS_CENTERSCREEN,
 			WINDOW_HorizProp,1,
 			WINDOW_VertProp,1,
@@ -230,6 +231,8 @@ BOOL ami_history_event(struct history_window *hw)
 	ULONG class,result,relevent = 0;
 	uint16 code;
 	struct MenuItem *item;
+	char *url;
+	struct IBox *bbox;
 
 	while((result = RA_HandleInput(hw->objects[OID_MAIN],&code)) != WMHI_LASTMSG)
 	{
@@ -246,6 +249,19 @@ BOOL ami_history_event(struct history_window *hw)
 				}
 			break;
 */
+
+			case WMHI_MOUSEMOVE:
+				GetAttr(SPACE_AreaBox,hw->gadgets[GID_BROWSER],(ULONG *)&bbox);
+
+				url = history_position_url(history_current,
+					hw->win->MouseX - bbox->Left,
+					hw->win->MouseY - bbox->Top);
+
+				RefreshSetGadgetAttrs((APTR)hw->gadgets[GID_BROWSER],
+					hw->win, NULL,
+					GA_HintInfo, url,
+					TAG_DONE);
+			break;
 
 			case WMHI_NEWSIZE:
 				ami_history_redraw(hw);
