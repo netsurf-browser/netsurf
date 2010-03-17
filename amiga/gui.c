@@ -2148,6 +2148,7 @@ void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
 		gwin->objects[GID_ADDTAB] = ButtonObject,
 					GA_ID, GID_ADDTAB,
 					GA_RelVerify, TRUE,
+					GA_HintInfo, gwin->helphints[GID_ADDTAB],
 					GA_Text, "+",
 					BUTTON_Transparent, TRUE,
 					BUTTON_RenderImage, gwin->objects[GID_ADDTAB_BM],
@@ -2365,12 +2366,22 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 				gwin->shared->svbuffer = AllocVec(2000, MEMF_CLEAR);
 
-				gwin->shared->helphints[GID_BACK] = remove_escape_chars(messages_get("HelpToolbar0"), true);
-				gwin->shared->helphints[GID_FORWARD] = remove_escape_chars(messages_get("HelpToolbar1"), true);
-				gwin->shared->helphints[GID_STOP] = remove_escape_chars(messages_get("HelpToolbar2"), true);
-				gwin->shared->helphints[GID_RELOAD] = remove_escape_chars(messages_get("HelpToolbar3"), true);
-				gwin->shared->helphints[GID_HOME] = remove_escape_chars(messages_get("HelpToolbar4"), true);
-				gwin->shared->helphints[GID_URL] = remove_escape_chars(messages_get("HelpToolbar14"), true);
+				gwin->shared->helphints[GID_BACK] =
+					remove_escape_chars(messages_get("HelpToolbar0"), true);
+				gwin->shared->helphints[GID_FORWARD] =
+					remove_escape_chars(messages_get("HelpToolbar1"), true);
+				gwin->shared->helphints[GID_STOP] =
+					remove_escape_chars(messages_get("HelpToolbar2"), true);
+				gwin->shared->helphints[GID_RELOAD] =
+					remove_escape_chars(messages_get("HelpToolbar3"), true);
+				gwin->shared->helphints[GID_HOME] =
+					remove_escape_chars(messages_get("HelpToolbar4"), true);
+				gwin->shared->helphints[GID_URL] =
+					remove_escape_chars(messages_get("HelpToolbar14"), true);
+				gwin->shared->helphints[GID_SEARCHSTRING] =
+					remove_escape_chars(messages_get("HelpWebSearch"), true);
+				gwin->shared->helphints[GID_ADDTAB] =
+					remove_escape_chars(messages_get("HelpAddTab"), true);
 
 				ami_get_theme_filename(nav_west,"theme_nav_west");
 				ami_get_theme_filename(nav_west_s,"theme_nav_west_s");
@@ -2597,6 +2608,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 									GA_ID,GID_SEARCHSTRING,
                    					STRINGA_TextVal, NULL,
 									GA_RelVerify,TRUE,
+									GA_HintInfo, gwin->shared->helphints[GID_SEARCHSTRING],
 								StringEnd,
 							LayoutEnd,
 							CHILD_WeightedWidth, 0,
@@ -3799,7 +3811,12 @@ void gui_window_set_search_ico(struct content *ico)
 		if((node->Type == AMINS_WINDOW) &&
 			(gwin->bw->browser_window_type == BROWSER_WINDOW_NORMAL))
 		{
-			GetAttr(SPACE_AreaBox, (Object *)gwin->objects[GID_SEARCH_ICON], (ULONG *)&bbox);
+			GetAttr(SPACE_AreaBox, gwin->objects[GID_SEARCH_ICON], (ULONG *)&bbox);
+
+			RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_SEARCH_ICON],
+				gwin->win, NULL,
+				GA_HintInfo, search_web_provider_name(),
+				TAG_DONE);
 
 			EraseRect(gwin->win->RPort, bbox->Left, bbox->Top,
 				bbox->Left+16, bbox->Top+16);

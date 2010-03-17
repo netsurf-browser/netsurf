@@ -1267,6 +1267,11 @@ HelpThemeConfig4:\Ssauver ces réglages et fermer la fenêtre.|M\Asauver ces ré
 
 HelpThemePConfig:Cette fenêtre indique les thèmes disponibles.|MLe thème de l'icône sélectionnée est utilisée pour les fenêtres de navigation de Netsurf, la liste des favoris et l'historique global.
 
+# HelpHint (tooltip) text
+#
+HelpWebSearch:Web search bar.|MType text and press Return to search using your default search provider.
+HelpAddTab:Tab add button.|MAdds a new blank tab.
+
 
 # Configuration tokens
 # ====================

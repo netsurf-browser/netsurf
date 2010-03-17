@@ -1261,6 +1261,11 @@ HelpThemeConfig4:Klicken mit AUSWAHL speichert die Einstellungen und schließt d
                                                                                                                                                                                
 HelpThemePConfig:Dieser Dialog zeigt die verfügbaren Themen.|MDas ausgewählte Thema wird bei der Anzeige von Browserfenster, Cookieverwaltung, Hotlist und History eingesetzt.
 
+# HelpHint (tooltip) text
+#
+HelpWebSearch:Web search bar.|MType text and press Return to search using your default search provider.
+HelpAddTab:Tab add button.|MAdds a new blank tab.
+
 
 # Configuration tokens
 # ====================

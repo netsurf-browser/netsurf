@@ -1265,6 +1265,11 @@ HelpThemeConfig4:\Ssave these settings and close the \w.|M\Asave these settings 
 
 HelpThemePConfig:This pane shows the available themes.|MThe selected icon theme is used for NetSurf browser \ws, the hotlist, global history and cookie management.
 
+# HelpHint (tooltip) text
+#
+HelpWebSearch:Web search bar.|MType text and press Return to search using your default search provider.
+HelpAddTab:Tab add button.|MAdds a new blank tab.
+
 
 # Configuration tokens
 # ====================
