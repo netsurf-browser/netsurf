@@ -233,6 +233,7 @@ BOOL ami_history_event(struct history_window *hw)
 	struct MenuItem *item;
 	char *url;
 	struct IBox *bbox;
+	ULONG xs, ys;
 
 	while((result = RA_HandleInput(hw->objects[OID_MAIN],&code)) != WMHI_LASTMSG)
 	{
@@ -251,11 +252,13 @@ BOOL ami_history_event(struct history_window *hw)
 */
 
 			case WMHI_MOUSEMOVE:
-				GetAttr(SPACE_AreaBox,hw->gadgets[GID_BROWSER],(ULONG *)&bbox);
+				GetAttr(SPACE_AreaBox, hw->gadgets[GID_BROWSER], (ULONG *)&bbox);
+				GetAttr(SCROLLER_Top, hw->objects[OID_HSCROLL], (ULONG *)&xs);
+				GetAttr(SCROLLER_Top, hw->objects[OID_VSCROLL], (ULONG *)&ys);
 
 				url = history_position_url(history_current,
-					hw->win->MouseX - bbox->Left,
-					hw->win->MouseY - bbox->Top);
+					hw->win->MouseX - bbox->Left + xs,
+					hw->win->MouseY - bbox->Top + ys);
 
 				RefreshSetGadgetAttrs((APTR)hw->gadgets[GID_BROWSER],
 					hw->win, NULL,

@@ -123,6 +123,7 @@ struct gui_window
 	struct List dllist;
 	struct content *favicon;
 	bool throbbing;
+	char *tabtitle;
 };
 
 void ami_get_msg(void);

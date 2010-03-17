@@ -2928,12 +2928,15 @@ void gui_window_destroy(struct gui_window *g)
 		if(g->shared->tabs == 1)
 			ami_toggletabbar(g->shared, false);
 
+		ami_utf8_free(g->tabtitle);
+
 		FreeVec(g);
 		return;
 	}
 
 	DisposeObject(g->shared->objects[OID_MAIN]);
 
+	free(g->shared->wintitle);
 	ami_utf8_free(g->shared->status);
 	FreeVec(g->shared->svbuffer);
 
@@ -2972,8 +2975,9 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 	{
 		node = g->tab_node;
 
-		SetGadgetAttrs((struct Gadget *)g->shared->objects[GID_TABS],g->shared->win,NULL,
-						CLICKTAB_Labels,~0,
+		SetGadgetAttrs((struct Gadget *)g->shared->objects[GID_TABS],
+						g->shared->win, NULL,
+						CLICKTAB_Labels, ~0,
 						TAG_DONE);
 
 		SetClickTabNodeAttrs(node, TNA_Text, utf8title,
@@ -2984,6 +2988,9 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 							g->shared->win, NULL,
 							CLICKTAB_Labels, &g->shared->tab_list,
 							TAG_DONE);
+
+		if(g->tabtitle) ami_utf8_free(g->tabtitle);
+		g->tabtitle = utf8title;
 
 		if(ClickTabBase->lib_Version < 53)
 			RethinkLayout((struct Gadget *)g->shared->objects[GID_TABLAYOUT],
@@ -2997,8 +3004,8 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 	{
 		if((g->shared->wintitle == NULL) || (strcmp(utf8title, g->shared->wintitle)))
 		{
-			if(g->shared->wintitle) ami_utf8_free(g->shared->wintitle);
-			g->shared->wintitle = utf8title;
+			if(g->shared->wintitle) free(g->shared->wintitle);
+			g->shared->wintitle = strdup(utf8title);
 			SetWindowTitles(g->shared->win, g->shared->wintitle, nsscreentitle);
 		}
 	}
