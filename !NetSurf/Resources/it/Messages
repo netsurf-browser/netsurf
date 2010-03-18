@@ -1,6 +1,6 @@
-# Italian messages for NetSurf 3.0 Development (Revision 9757)
+# Italian messages for NetSurf 3.0 Development (Revision 10058)
 # Translated by Samir Hawamdeh (http://www.betatesting.it/backforthefuture)
-# 14.02.2009
+# 16.02.2009
 # =========================================================================
 #
 # Description
@@ -395,7 +395,7 @@ Abort:Annulla
 #
 amiDownload:%ld di %ld byte scaricati
 amiDownloadU:%ld byte scaricati
-amiDownloadComplete:NetSurf: Download completed
+amiDownloadComplete:NetSurf: Download completati
 
 # GTK download window tokens
 #
@@ -511,7 +511,7 @@ gtkDownloads:_Trasferimenti
 gtkDownloadsAccel:<ctrl>d
 gtkSaveWindowSize:S_alva dimensione finestra
 gtkDebugging:De_bugging
-gtkToggleDebugging:In_verti debug rendering
+gtkToggleDebugging:In_verti debug del rendering
 gtkSaveBoxTree:_Salva box tree
 gtkSaveDomTree:Salva DOM tree
 
@@ -716,7 +716,6 @@ URIError:NetSurf non è stato in grado di processare questo file URI a causa di 
 SearchError:Ricerca non valida.
 EmptyError:Il file è vuoto.
 PrintErrorRO2:Sembra che la stampante sia occupata.
-AWNotSeen:Per favore imposta l'applicazione AWViewer e riprova nuovamente.
 EncNotRec:Tipo di codifica sconosciuta.
 
 # Error messages for Amiga version only
