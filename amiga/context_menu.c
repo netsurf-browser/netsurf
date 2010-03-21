@@ -73,12 +73,13 @@ void ami_context_menu_free(void)
 
 void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 {
-	struct box *curbox = gwin->bw->current_content->data.html.layout;
 	struct content *cc = gwin->bw->current_content;
+	struct box *curbox;
 	int box_x=0;
 	int box_y=0;
 	bool menuhascontent = false;
 
+	if(!cc) return;
 	if(cc->type != CONTENT_HTML) return;
 
 	if(gwin->objects[OID_MENU]) DisposeObject(gwin->objects[OID_MENU]);
@@ -89,6 +90,8 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
     gwin->objects[OID_MENU] = NewObject( POPUPMENU_GetClass(), NULL,
                         PMA_MenuHandler, &gwin->popuphook,
 						TAG_DONE);
+
+	curbox = gwin->bw->current_content->data.html.layout;
 
 	while(curbox = box_at_point(curbox,x,y,&box_x,&box_y,&cc))
 	{
