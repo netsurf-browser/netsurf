@@ -2417,3 +2417,39 @@ void PDF_Password(char **owner_pass, char **user_pass, char *path)
 	/*TODO:this waits to be written, until then no PDF encryption*/
 	*owner_pass = NULL;
 }
+
+/**
+ * Return the filename part of a full path
+ *
+ * \param path full path and filename
+ * \return filename (will be freed with free())
+ */
+
+char *filename_from_path(char *path)
+{
+	char *leafname;
+	char *temp;
+	int leaflen;
+
+	temp = strrchr(path, '.');
+	if (!temp)
+		temp = path; /* already leafname */
+	else
+		temp += 1;
+
+	leaflen = strlen(temp);
+
+	leafname = malloc(leaflen + 1);
+	if (!leafname) {
+		LOG(("malloc failed"));
+		continue;
+	}
+	memcpy(leafname, temp, leaflen + 1);
+
+	/* and s/\//\./g */
+	for (temp = leafname; *temp; temp++)
+		if (*temp == '/')
+			*temp = '.';
+
+	return leafname;
+}

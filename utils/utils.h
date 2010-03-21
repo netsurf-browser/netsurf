@@ -108,5 +108,5 @@ query_id query_user(const char *query, const char *detail,
 	const query_callback *cb, void *pw, const char *yes, const char *no);
 void query_close(query_id);
 void PDF_Password(char **owner_pass, char **user_pass, char *path);
-
+char *filename_from_path(char *path);
 #endif

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008, 2009 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2010 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -24,6 +24,7 @@
 #include "utils/messages.h"
 #include <stdlib.h>
 #include <curl/curl.h>
+#include "utils/utils.h"
 
 void warn_user(const char *warning, const char *detail)
 {
@@ -81,6 +82,18 @@ char *path_to_url(const char *path)
 	strcat(r, path);
 
 	return r;
+}
+
+/**
+ * Return the filename part of a full path
+ *
+ * \param path full path and filename
+ * \return filename (will be freed with free())
+ */
+
+char *filename_from_path(char *path)
+{
+	return strdup(FilePart(path));
 }
 
 /**

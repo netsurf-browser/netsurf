@@ -1160,3 +1160,23 @@ static void *myrealloc(void *ptr, size_t len, void *pw)
 {
 	return realloc(ptr, len);
 }
+
+/**
+ * Return the filename part of a full path
+ *
+ * \param path full path and filename
+ * \return filename (will be freed with free())
+ */
+
+char *filename_from_path(char *path)
+{
+	char *leafname;
+
+	leafname = strrchr(path, '/');
+	if (!leafname)
+		leafname = path;
+	else
+		leafname += 1;
+
+	return strdup(leafname);
+}

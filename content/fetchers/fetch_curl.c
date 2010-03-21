@@ -1219,36 +1219,9 @@ fetch_curl_post_convert(struct form_successful_control *control)
 	for (; control; control = control->next) {
 		if (control->file) {
 			char *leafname = 0;
-#ifdef riscos
-			char *temp;
-			int leaflen;
 
-			temp = strrchr(control->value, '.');
-			if (!temp)
-				temp = control->value; /* already leafname */
-			else
-				temp += 1;
+			leafname = filename_from_path(control->value);
 
-			leaflen = strlen(temp);
-
-			leafname = malloc(leaflen + 1);
-			if (!leafname) {
-				LOG(("malloc failed"));
-				continue;
-			}
-			memcpy(leafname, temp, leaflen + 1);
-
-			/* and s/\//\./g */
-			for (temp = leafname; *temp; temp++)
-				if (*temp == '/')
-					*temp = '.';
-#else
-			leafname = strrchr(control->value, '/') ;
-			if (!leafname)
-				leafname = control->value;
-			else
-				leafname += 1;
-#endif
 			/* We have to special case filenames of "", so curl
 			 * a) actually attempts the fetch and
 			 * b) doesn't attempt to open the file ""
@@ -1288,9 +1261,7 @@ fetch_curl_post_convert(struct form_successful_control *control)
 						control->value));
 				free(mimetype);
 			}
-#ifdef riscos
 			free(leafname);
-#endif
 		}
 		else {
 			code = curl_formadd(&post, &last,
