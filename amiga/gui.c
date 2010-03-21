@@ -535,6 +535,7 @@ void gui_init(int argc, char** argv)
 		{
 			throbber_width = throbber_bmh->bmh_Width / throbber_frames;
 			throbber_height = throbber_bmh->bmh_Height;
+			throbber_bmh->bmh_Masking = mskHasAlpha;
 
 			InitRastPort(&throbber_rp);
 
@@ -2821,7 +2822,7 @@ ULONG ami_set_border_gadget_balance(struct gui_window_2 *gwin)
 			GA_Width, size1,
 			TAG_DONE);
 
-	RefreshGList((struct Gadget *)gwin->objects[GID_STATUS], gwin->win, NULL, 2);
+	RefreshWindowFrame(gwin->win);
 }
 
 ULONG ami_get_border_gadget_balance(struct gui_window_2 *gwin, ULONG *size1, ULONG *size2)
