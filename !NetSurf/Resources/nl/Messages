@@ -747,6 +747,7 @@ Redirecting:doorverwijzen...
 Processing:verwerking van document
 Formatting:document opmaken
 Done:klaar
+Stopped:Stopped
 
 # Fetch warning/error messages - displayed in status bar
 #

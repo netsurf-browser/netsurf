@@ -746,6 +746,7 @@ Redirecting:Umleiten...
 Processing:Dokument auswerten
 Formatting:Dokument formatieren
 Done:Dokument fertiggestellt
+Stopped:Stopped
 
 # Fetch warning/error messages - displayed in status bar
 #
