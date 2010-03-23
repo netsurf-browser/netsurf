@@ -74,10 +74,6 @@ enum
 	GID_LAST
 };
 
-#define AMI_GUI_POINTER_BLANK GUI_POINTER_PROGRESS+1
-#define AMI_GUI_POINTER_DRAG  GUI_POINTER_PROGRESS+2
-#define AMI_LASTPOINTER AMI_GUI_POINTER_DRAG
-
 struct find_window;
 struct history_window;
 
@@ -127,10 +123,8 @@ struct gui_window
 };
 
 void ami_get_msg(void);
-void ami_update_pointer(struct Window *win, gui_pointer_shape shape);
 void ami_close_all_tabs(struct gui_window_2 *gwin);
 void ami_quit_netsurf(void);
-void ami_get_theme_filename(char *filename,char *themestring);
 void ami_do_redraw(struct gui_window_2 *g);
 STRPTR ami_locale_langs(void);
 

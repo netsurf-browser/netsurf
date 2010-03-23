@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <string.h>
+
 #include <proto/wb.h>
 #include <proto/asl.h>
 #include <proto/exec.h>
@@ -33,6 +35,7 @@
 #include "amiga/options.h"
 #include "amiga/bitmap.h"
 #include "amiga/iff_dr2d.h"
+#include "amiga/theme.h"
 
 #include "content/fetch.h"
 
@@ -41,8 +44,6 @@
 
 #include "utils/messages.h"
 #include "utils/utils.h"
-
-#include <string.h>
 
 #include <proto/window.h>
 #include <proto/layout.h>
