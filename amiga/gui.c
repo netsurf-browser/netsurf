@@ -202,80 +202,13 @@ STRPTR ami_locale_langs(void)
 	return acceptlangs;
 }
 
-/** Normal entry point from OS */
-int main(int argc, char** argv)
-{
-	setbuf(stderr, NULL);
-	return netsurf_main(argc, argv);
-}
-
-void gui_init(int argc, char** argv)
+void ami_messages_load(void)
 {
 	struct Locale *locale;
 	char lang[100];
-	STRPTR tempacceptlangs;
-	bool found=FALSE;
 	int i;
-	BPTR lock = 0, amiupdatefh = 0;
-
-	msgport = AllocSysObjectTags(ASOT_PORT,
-	ASO_NoTrack,FALSE,
-	TAG_DONE);
-
-	tioreq= (struct TimeRequest *)AllocSysObjectTags(ASOT_IOREQUEST,
-	ASOIOR_Size,sizeof(struct TimeRequest),
-	ASOIOR_ReplyPort,msgport,
-	ASO_NoTrack,FALSE,
-	TAG_DONE);
-
-	OpenDevice("timer.device",UNIT_WAITUNTIL,(struct IORequest *)tioreq,0);
-
-	TimerBase = (struct Device *)tioreq->Request.io_Device;
-	ITimer = (struct TimerIFace *)GetInterface((struct Library *)TimerBase,"main",1,NULL);
-
-    if(!(appport = AllocSysObjectTags(ASOT_PORT,
-							ASO_NoTrack,FALSE,
-							TAG_DONE))) die(messages_get("NoMemory"));
-
-    if(!(sport = AllocSysObjectTags(ASOT_PORT,
-							ASO_NoTrack,FALSE,
-							TAG_DONE))) die(messages_get("NoMemory"));
-
-	ami_print_init();
-
-	if(PopupMenuBase = OpenLibrary("popupmenu.class",0))
-	{
-		IPopupMenu = (struct PopupMenuIFace *)GetInterface(PopupMenuBase,"main",1,NULL);
-	}
-
-	if(KeymapBase = OpenLibrary("keymap.library",37))
-	{
-		IKeymap = (struct KeymapIFace *)GetInterface(KeymapBase,"main",1,NULL);
-	}
-
-	if(ApplicationBase = OpenLibrary("application.library",50))
-	{
-		IApplication = (struct ApplicationIFace *)GetInterface(ApplicationBase,"application",1,NULL);
-	}
-
-	urlStringClass = MakeStringClass();
-
-	ami_clipboard_init();
-
-	win_destroyed = false;
-
-	options_read("PROGDIR:Resources/Options");
-
-	verbose_log = option_verbose_log;
-
-	filereq = (struct FileRequester *)AllocAslRequest(ASL_FileRequest,NULL);
-	savereq = (struct FileRequester *)AllocAslRequestTags(ASL_FileRequest,
-							ASLFR_DoSaveMode,TRUE,
-							ASLFR_RejectIcons,TRUE,
-							ASLFR_InitialDrawer,option_download_dir,
-							TAG_DONE);
-
-	nsscreentitle = ASPrintf("NetSurf %s",netsurf_version);
+	BPTR lock = 0;
+	bool found=FALSE;
 
 	if(lock=Lock("PROGDIR:Resources/LangNames",ACCESS_READ))
 	{
@@ -314,20 +247,63 @@ void gui_init(int argc, char** argv)
 	CloseLocale(locale);
 
 	messages_load(lang);
+}
 
-	default_stylesheet_url = "file:///PROGDIR:Resources/amiga.css";
-	quirks_stylesheet_url = "file:///PROGDIR:Resources/quirks.css";
-	adblock_stylesheet_url = "file:///PROGDIR:Resources/adblock.css";
+void ami_open_resources(void)
+{
+	/* Allocate ports/ASL and open libraries and devices */
 
-	if(hubbub_initialise("PROGDIR:Resources/Aliases",myrealloc,NULL) != HUBBUB_OK)
+	if(PopupMenuBase = OpenLibrary("popupmenu.class",0))
 	{
-		die(messages_get("NoMemory"));
+		IPopupMenu = (struct PopupMenuIFace *)GetInterface(PopupMenuBase,"main",1,NULL);
 	}
 
-	nscss_screen_dpi = INTTOFIX(72);
-	scroll_widget_fg_colour = 0x00aaaaaa;
-	scroll_widget_bg_colour = 0x00833c3c;
-	scroll_widget_arrow_colour = 0x00d6d6d6;
+	if(KeymapBase = OpenLibrary("keymap.library",37))
+	{
+		IKeymap = (struct KeymapIFace *)GetInterface(KeymapBase,"main",1,NULL);
+	}
+
+	if(ApplicationBase = OpenLibrary("application.library",50))
+	{
+		IApplication = (struct ApplicationIFace *)GetInterface(ApplicationBase,"application",1,NULL);
+	}
+
+	urlStringClass = MakeStringClass();
+
+	msgport = AllocSysObjectTags(ASOT_PORT,
+				ASO_NoTrack,FALSE,
+				TAG_DONE);
+
+	tioreq = (struct TimeRequest *)AllocSysObjectTags(ASOT_IOREQUEST,
+				ASOIOR_Size,sizeof(struct TimeRequest),
+				ASOIOR_ReplyPort,msgport,
+				ASO_NoTrack,FALSE,
+				TAG_DONE);
+
+	OpenDevice("timer.device",UNIT_WAITUNTIL,(struct IORequest *)tioreq,0);
+
+	TimerBase = (struct Device *)tioreq->Request.io_Device;
+	ITimer = (struct TimerIFace *)GetInterface((struct Library *)TimerBase,"main",1,NULL);
+
+    if(!(appport = AllocSysObjectTags(ASOT_PORT,
+							ASO_NoTrack,FALSE,
+							TAG_DONE))) die(messages_get("NoMemory"));
+
+    if(!(sport = AllocSysObjectTags(ASOT_PORT,
+							ASO_NoTrack,FALSE,
+							TAG_DONE))) die(messages_get("NoMemory"));
+
+	filereq = (struct FileRequester *)AllocAslRequest(ASL_FileRequest,NULL);
+	savereq = (struct FileRequester *)AllocAslRequestTags(ASL_FileRequest,
+							ASLFR_DoSaveMode,TRUE,
+							ASLFR_RejectIcons,TRUE,
+							ASLFR_InitialDrawer,option_download_dir,
+							TAG_DONE);
+}
+
+void ami_set_options(void)
+{
+	STRPTR tempacceptlangs;
 
 	/* The following line disables the popupmenu.class select menu
 	** This will become a user option when/if popupmenu.class is
@@ -398,11 +374,11 @@ void gui_init(int argc, char** argv)
 
 	if(!option_window_width) option_window_width = 800;
 	if(!option_window_height) option_window_height = 600;
+}
 
-	ami_init_fonts();
-
-	plot=amiplot;
-
+void ami_amiupdate(void)
+{
+	BPTR lock = 0, amiupdatefh = 0;
 	/* AmiUpdate */
 	if(((lock = Lock("ENVARC:AppPaths",SHARED_LOCK)) == 0))
 	{
@@ -422,6 +398,50 @@ void gui_init(int argc, char** argv)
 		FClose(amiupdatefh);
 	}
 	/* end Amiupdate */
+}
+
+/** Normal entry point from OS */
+int main(int argc, char** argv)
+{
+	setbuf(stderr, NULL);
+	return netsurf_main(argc, argv);
+}
+
+void gui_init(int argc, char** argv)
+{
+	BPTR lock = 0;
+
+	ami_open_resources(); /* alloc ports/asl reqs, open libraries/devices */
+	ami_print_init();
+	ami_clipboard_init();
+
+	options_read("PROGDIR:Resources/Options");
+	ami_messages_load();
+	ami_set_options(); /* check options and set defaults where required */
+
+	win_destroyed = false;
+	verbose_log = option_verbose_log;
+
+	nsscreentitle = ASPrintf("NetSurf %s",netsurf_version);
+
+	default_stylesheet_url = "file:///PROGDIR:Resources/amiga.css";
+	quirks_stylesheet_url = "file:///PROGDIR:Resources/quirks.css";
+	adblock_stylesheet_url = "file:///PROGDIR:Resources/adblock.css";
+
+	if(hubbub_initialise("PROGDIR:Resources/Aliases",myrealloc,NULL) != HUBBUB_OK)
+	{
+		die(messages_get("NoMemory"));
+	}
+
+	nscss_screen_dpi = INTTOFIX(72);
+	scroll_widget_fg_colour = 0x00aaaaaa;
+	scroll_widget_bg_colour = 0x00833c3c;
+	scroll_widget_arrow_colour = 0x00d6d6d6;
+
+	ami_amiupdate(); /* set env-vars for AmiUpdate */
+	ami_init_fonts();
+
+	plot=amiplot;
 
 	ami_init_menulabs();
 	if(option_context_menu) ami_context_menu_init();
@@ -462,17 +482,17 @@ void ami_openscreen(void)
 
 			if(screenmodereq = AllocAslRequest(ASL_ScreenModeRequest,NULL))
 			{
-				AslRequestTags(screenmodereq,
+				if(AslRequestTags(screenmodereq,
 						ASLSM_MinDepth,16,
 						ASLSM_MaxDepth,32,
-						TAG_DONE);
-
-				id = screenmodereq->sm_DisplayID;
-				option_modeid = malloc(20);
-				sprintf(option_modeid,"0x%lx",id);
-
+						TAG_DONE))
+				{
+					id = screenmodereq->sm_DisplayID;
+					option_modeid = malloc(20);
+					sprintf(option_modeid,"0x%lx",id);
+					options_write("PROGDIR:Resources/Options");
+				}
 				FreeAslRequest(screenmodereq);
-				options_write("PROGDIR:Resources/Options");
 			}
 		}
 
