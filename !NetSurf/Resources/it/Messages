@@ -1,6 +1,6 @@
-# Italian messages for NetSurf 3.0 Development (Revision 10058)
+# Italian messages for NetSurf 3.0 Development (Revision 10138)
 # Translated by Samir Hawamdeh (http://www.betatesting.it/backforthefuture)
-# 16.02.2009
+# 23.03.2010
 # =========================================================================
 #
 # Description
@@ -36,7 +36,7 @@ Info:Info
 AppHelp:Aiuto...  F1
 Open:Apri
 Choices:Scegli...
-Quit:Chiudi
+Quit:Esci
 
 # Iconbar -> Open menu
 #
@@ -88,7 +88,7 @@ ObjDraw:Disegna
 
 # Main -> Object -> Link menu
 LinkSave:Salva
-LinkDload:Salva in...
+LinkDload:Salva file in...
 LinkNew:Nuova finestra
 
 # Main -> Selection menu
@@ -545,7 +545,7 @@ gtkAbout:_Informazioni
 
 
 gtkToolBarTitle:Pulsanti della barra strumenti
-gtkAddThemeTitle:Seleziona una cartella contenente le immagini del tema
+gtkAddThemeTitle:Seleziona una cartella contenente le immagini del tema in questione
 
 gtkThemeFolderInstructions:Per installare un nuovo tema, crea una directory con delle immagini appropriate ed inseriscile come sotto-directory di gtk/res/themes/
 gtkThemeFolderSub:Seleziona una sotto-directory della cartella temi
@@ -624,15 +624,15 @@ Form_Reset:Resetta
 Form_None:
 Form_Many:(Molti)
 Form_Drop:Inserisci un file qui
-FormSelect:Clicca per scegliere un oggetto del form
-FormCheckbox:Clicca per verificare questa opzione
-FormRadio:Clicca per scegliere questa opzione
-FormSubmit:Invia risultato del form a %s
-FormBadSubmit:Attenzione: Il form non può essere inviato
+FormSelect:Clicca per scegliere un oggetto del modulo
+FormCheckbox:Clicca per scegliere questa opzione
+FormRadio:Clicca per selezionare questa opzione
+FormSubmit:Invia il risultato del modulo a %s
+FormBadSubmit:Attenzione: Il modulo non può essere inviato
 FormButton:Attenzione: il pulsante non può essere attivato
 FormTextarea:Clicca per editare il testo
 FormTextbox:Clicca per editare il campo di testo
-FormReset:Resetta form
+FormReset:Resetta il modulo
 FormFile:Inserisci un file da inviare qui
 SelectMenu:Seleziona
 
@@ -701,7 +701,7 @@ DirectoryError:directory '%s' già esistente
 # Specific errors - displayed in a dialog box
 #
 NoMemory:Memoria insufficiente per l'esecuzione di NetSurf. Per favore liberane un pò e riprova nuovamente.
-FontBadInst:Si è verificato un errore durante l'inizializzazione dei font a causa della presenza di una copia obsoleta dei font ROM nel disco. NetSurf verrà ora chiuso e si cercherà di lanciare un programma in grado di risolvere questo problema.
+FontBadInst:Si è verificato un errore durante l'inizializzazione dei font a causa della presenza di una copia obsoleta dei font "ROM" nel disco. NetSurf verrà ora chiuso e si cercherà di lanciare un programma in grado di risolvere questo problema.
 FontError:Impossibile aprire il font "Homerton.Medium" (%s).
 Resolvers:Non è stato configurato nessun nome per i domini dei server, perciò sarà possibile effettuare la navigazione dei file solo in modalità locale. Usa "Configura" per impostare il nome (o i nomi) del/dei server.
 NoDiscSpace:Spazio insufficiente nel disco.
@@ -715,7 +715,7 @@ NoURLError:Inserisci un URL
 URIError:NetSurf non è stato in grado di processare questo file URI a causa di un errore di sintassi.
 SearchError:Ricerca non valida.
 EmptyError:Il file è vuoto.
-PrintErrorRO2:Sembra che la stampante sia occupata.
+PrintErrorRO2:La stampante sembra essere occupata.
 EncNotRec:Tipo di codifica sconosciuta.
 
 # Error messages for Amiga version only
@@ -742,7 +742,7 @@ OverwriteFile:Un file con questo nome è già esistente, continuare comporterà 
 #
 Progress:%s di %s
 ProgressU:%s
-Loading:Apertura della pagina...
+Loading:Apertura della pagina in corso...
 RecPercent:Ricevuti %s (%u%%)
 Received:Ricevuti %s
 Converting:Convertiti %lu byte
@@ -751,20 +751,20 @@ Redirecting:Redirezione...
 Processing:Elaborazione del documento in corso...
 Formatting:Formattazione del documento in corso...
 Done:Documento completato
-Stopped:Stopped
+Stopped:Interrotto
 
 # Fetch warning/error messages - displayed in status bar
 #
 BadRedirect:Errata redirezione dell'URL
 FetchFailed:Impossibile ottenere il documento
-NotCSS:Attenzione: "Foglio di stile" non ha nulla a che spartire con i CSS
+NotCSS:Attenzione: La dicitura "Foglio di stile" non ha nulla a che spartire con i CSS
 NotFavIco:Favicon non supportata
 BadObject:Attenzione: errato tipo di oggetto
 ObjError:Errore di caricamento dell'oggetto: %s
 ParsingFail:Analisi del documento fallita.
-BadGIF:Lettura GIF fallita.
-BadBMP:Lettura BMP fallita.
-BadICO:Lettura ICO fallita.
+BadGIF:Lettura del file GIF fallita.
+BadBMP:Lettura del file BMP fallita.
+BadICO:Lettura del file ICO fallita.
 PNGError:Errore durante la conversione PNG.
 MNGError:Errore durante la conversione MNG/PNG/JNG: %i
 BadSprite:Dati Sprite invalidi o corrotti.
@@ -787,7 +787,7 @@ HTTP304:Non modificato
 HTTP305:Usa Proxy
 HTTP307:Redirezione temporanea
 HTTP400:Richiesta errata
-HTTP401:Non autorizzato
+HTTP401:Autorizzazione negata
 HTTP402:Richiesto pagamento
 HTTP403:Vietato
 HTTP404:Non trovato
@@ -859,7 +859,7 @@ SaveSelection:Selezione
 
 ThemeInstActive:Il tema è attualmente in fase di scaricamento o di installazione. Attendere il completamente del processo oppure annullare l'intera operazione prima di installare altri temi.
 ThemeInstDown:Per favore attendere lo scaricamento del tema.
-ThemeInvalid:Il tema scaricato è invalido oppure richiede una versione più recente di NetSurf.
+ThemeInvalid:Il tema scaricato non è compatibile oppure richiede una versione più recente di NetSurf.
 ThemeInstall:Si desidera installare il tema '%s' di %s?
 ThemeInstallErr:Si è verificato un errore durante il tentativo di installazione del tema scaricato.
 ThemeApplyErr:Si è verificato un errore durante il tentativo di applicazione del tema scaricato.
@@ -886,81 +886,80 @@ styl:foglio di stile
 styls:fogli di stile
 OK:OK
 
-
 # Interactive help
 # ================
 #
 # This section contains interactive help messages
 #
-HelpToolbar0:\Tback button.|M\Straverse back one page in the history tree.|MDoes not resubmit form information.
-HelpToolbar1:\Tforward button.|M\Straverse forward one page in the history tree.|MDoes not resubmit form information.
-HelpToolbar2:\Tstop button.|M\Sstop loading this page.
-HelpToolbar3:\Treload button.|M\Sreload this page.|M\Areload this page and any objects it contains.
-HelpToolbar4:\Thome button.|M\Sgo to your home page.
-HelpToolbar5:\Thistory button.|M\Sopen the local history \w.|M\Aopen the global history \w.
-HelpToolbar6:\Tsave button.|M\Ssave the current document.
-HelpToolbar7:\Tprint button.|M\Sopen the print dialogue box.
-HelpToolbar8:\Thotlist button.|M\Sopen the hotlist management \w.|M\Aadd this address to the hotlist.
-HelpToolbar9:\Tscale view button.|M\Sscale the page, affecting both text and images.
-HelpToolbar10:\Tsearch button.|M\Sfind instances of a string of text on the page.
-HelpToolbar11:\Tup button.|M\Straverse up one level on the current website
-HelpToolbar14:\TURL bar.|MType in the address of a site to visit and press Return to go there.
-HelpToolbar15:\TURL suggestion icon.|M\Sopen a list of recently typed URLs.
-HelpToolbar16:\Tthrobber.|MIt animates while this \w is active.
+HelpToolbar0:\Ttorna indietro di una pagina
+HelpToolbar1:\Tvai avanti di una pagina
+HelpToolbar2:\Tinterrompi il caricamento della pagina
+HelpToolbar3:\Tricarica la pagina corrente
+HelpToolbar4:\Tvai alla pagina iniziale
+HelpToolbar5:\Tmostra la cronologia locale o globale
+HelpToolbar6:\Tsalva il documento corrente
+HelpToolbar7:\Tapri la finestra di stampa
+HelpToolbar8:\Tapri o aggiungi un link ai segnalibri
+HelpToolbar9:\Tscala dimensione del testo e delle immagini
+HelpToolbar10:\Tcerca un occorrenza di testo all'interno della pagina web
+HelpToolbar11:\Tsale di un livello rispetto al corrente indirizzo
+HelpToolbar14:\Tdigita un indirizzo e premi invio
+HelpToolbar15:\Tapri la lista dei più recenti siti visitati
+HelpToolbar16:\Tthrobber animato durante le attività di rete
 
-HelpStatus0:\Tstatus bar resizer.|MDrag to alter the size of the status bar.
-HelpStatus1:\Tstatus bar.|MIt displays information on what the browser \w is doing.
+HelpStatus0:\Ttrascina per modificare la dimensione della barra di stato
+HelpStatus1:\Tvisualizza informazioni relative alle attività del browser
 
-HelpIconMenu0:\Rview information about this software.
-HelpIconMenu1:\Sview NetSurf's documentation.
-HelpIconMenu2:\Ropen a window.
-HelpIconMenu2-0:\Renter an address to visit.
-HelpIconMenu2-1:\Sopen the hotlist management \w.
-HelpIconMenu2-2:\Sopen the global history \w.
-HelpIconMenu2-3:\Sopen the cookie management \w.
-HelpIconMenu3:\Sopen the Choices dialogue box.
-HelpIconMenu4:\Squit NetSurf.
+HelpIconMenu0:\Rmostra le informazioni di NetSurf
+HelpIconMenu1:\Smostra la documentazione di NetSurf
+HelpIconMenu2:\Rapri una finestra
+HelpIconMenu2-0:\Rdigita un indirizzo da visitare
+HelpIconMenu2-1:\Sapri la finestra dei segnalibri
+HelpIconMenu2-2:\Smostra la cronologia globale
+HelpIconMenu2-3:\Sapri la finestra di gestione dei cookie
+HelpIconMenu3:\Sapri una finestra di dialogo/scelta
+HelpIconMenu4:\Schiudi NetSurf
 
-HelpBrowserMenu0:\Rsee the options relating to the current page.
-HelpBrowserMenu0-0:\Rsee information about the current page.
-HelpBrowserMenu0-1:\Rsave the current page as an HTML file.
-HelpBrowserMenu0-2:\Rsave the current page including all the images and style sheets used.
-HelpBrowserMenu0-3:\Rsee the export options.
-HelpBrowserMenu0-3-0:\Rexport the current page as a Drawfile.
-HelpBrowserMenu0-3-1:\Rexport the current page as a plain text file.
-HelpBrowserMenu0-4:\Rsave the address of the current page.
-HelpBrowserMenu0-4-0:\Rsave the current address in Acorn URI format.
-HelpBrowserMenu0-4-1:\Rsave the current address in Ant URL format.
-HelpBrowserMenu0-4-2:\Rsave the current address as plain text.
-HelpBrowserMenu0-5:\Sopen the print dialogue box.
-HelpBrowserMenu0-6:\Sopen the current page in a new window.
-HelpBrowserMenu0-7:\Rsearch for instances of a string of text on the page.
-HelpBrowserMenu0-8:\Sview the source code of the current page in a text editor.
-HelpBrowserMenu1:\Rsee the options relating to the current item.
-HelpBrowserMenu1-0-0:\Rsee information about the current item.
-HelpBrowserMenu1-0-1:\Rsave the current item.
-HelpBrowserMenu1-0-2:\Rsee the export options.
-HelpBrowserMenu1-0-2-0:\Rsave the image as a Sprite.
-HelpBrowserMenu1-0-2-1:\Rsave the image as a DrawFile
-HelpBrowserMenu1-0-3:\Rsave the address of the current item.
-HelpBrowserMenu1-0-3-0:\Rsave the current item's address in Acorn URI format.
-HelpBrowserMenu1-0-3-1:\Rsave the current item's address in Ant URL format.
-HelpBrowserMenu1-0-3-2:\Rsave the current item's address as plain text.
-HelpBrowserMenu1-0-4:\Sreload all the items on this page.
-HelpBrowserMenu1-1:\Rsee the options relating to the current link.
-HelpBrowserMenu1-1-0:\Rsave the current link.
-HelpBrowserMenu1-1-0-0:\Rsave the link in Acorn URI format.
-HelpBrowserMenu1-1-0-1:\Rsave the link in Ant URL format.
-HelpBrowserMenu1-1-0-2:\Rsave the link as plain text.
-HelpBrowserMenu1-1-1:\Sdownload from this link.
-HelpBrowserMenu1-1-2:\Sopen this link in a new window.
-HelpBrowserMenu2:\Rsee the selection options.
-HelpBrowserMenu2-0:\Rsave the current selection.
-HelpBrowserMenu2-1:\Scopy the selected text to the clipboard.
-HelpBrowserMenu2-2:\Scut the selected text to the clipboard.
-HelpBrowserMenu2-3:\Spaste text from the clipboard.
-HelpBrowserMenu3:\Rsee the navigation options.
-HelpBrowserMenu3-0:\Sreturn to the configured home page.
+HelpBrowserMenu0:\Rmostra le opzioni relative a questa pagina
+HelpBrowserMenu0-0:\Rmostra le informazioni di questa pagina
+HelpBrowserMenu0-1:\Rsalva la pagina corrente come file HTML
+HelpBrowserMenu0-2:\Rsalva la pagina corrente includendo tutte le immagini e i fogli di stile usati
+HelpBrowserMenu0-3:\Rmostra le opzioni di esportazione
+HelpBrowserMenu0-3-0:\Resporta la pagina corrente come file Draw
+HelpBrowserMenu0-3-1:\Resporta la pagina corrente come file di testo
+HelpBrowserMenu0-4:\Rsalva l'indirizzo della pagina corrente
+HelpBrowserMenu0-4-0:\Rsalva l'indirizzo corrente nel formato Acorn URI
+HelpBrowserMenu0-4-1:\Rsalva l'indirizzo corrente nel formato Ant URL
+HelpBrowserMenu0-4-2:\Rsalva l'indirizzo corrente come file di testo
+HelpBrowserMenu0-5:\Sapri la finestra di stampa
+HelpBrowserMenu0-6:\Sapri la pagina corrente in una nuova finestra
+HelpBrowserMenu0-7:\Rcerca una stringa di testo all'interno della pagina web
+HelpBrowserMenu0-8:\Smostra il sorgente della pagina
+HelpBrowserMenu1:\Rmostra le opzioni relative al corrente oggetto
+HelpBrowserMenu1-0-0:\Rmostra le informazioni relative al corrente oggetto
+HelpBrowserMenu1-0-1:\Rsalva l'oggetto corrente
+HelpBrowserMenu1-0-2:\Rmostra le opzioni di esportazione
+HelpBrowserMenu1-0-2-0:\Rsalva l'immagine come file Sprite
+HelpBrowserMenu1-0-2-1:\Rsalva l'immagine come file Draw
+HelpBrowserMenu1-0-3:\Rsalva l'indirizzo del corrente oggetto
+HelpBrowserMenu1-0-3-0:\Rsalva l'indirizzo del corrente oggetto nel formato Acorn URI
+HelpBrowserMenu1-0-3-1:\Rsalva l'indirizzo del corrente oggetto nel formato Ant URL
+HelpBrowserMenu1-0-3-2:\Rsalva l'indirizzo del corrente oggetto come file di testo
+HelpBrowserMenu1-0-4:\Sricarica tutti gli elementi di questa pagina
+HelpBrowserMenu1-1:\Rmostra le opzioni relative al corrente link
+HelpBrowserMenu1-1-0:\Rsalva il link corrente
+HelpBrowserMenu1-1-0-0:\Rsalva il link nel formato Acorn URI
+HelpBrowserMenu1-1-0-1:\Rsalva il link nel formato Ant URL
+HelpBrowserMenu1-1-0-2:\Rsalva il link come file di testo
+HelpBrowserMenu1-1-1:\Sscarica da questo link
+HelpBrowserMenu1-1-2:\Sapri questo link in una nuova finestra
+HelpBrowserMenu2:\Rmostra le opzioni di selezione
+HelpBrowserMenu2-0:\Rsalva la selezione corrente
+HelpBrowserMenu2-1:\Scopia il testo selezionato nella clipboard
+HelpBrowserMenu2-2:\Staglia il testo selezionato nella clipboard
+HelpBrowserMenu2-3:\Sincolla il testo dalla clipboard
+HelpBrowserMenu3:\Rmostra le opzioni di navigazione
+HelpBrowserMenu3-0:\Storna alla preconfigurata pagina iniziale
 HelpBrowserMenu3-1:\Sgo back a page in the local history.|MForm information is not resubmitted.
 HelpBrowserMenu3-2:\Sstep forward a page in the local history.|MForm information is not resubmitted.
 HelpBrowserMenu3-3:\Straverse up one level in the directory tree.
@@ -989,11 +988,11 @@ HelpBrowserMenu4-5-2:\S toggle whether child windows copy the size and position 
 HelpBrowserMenu4-5-3:\S return to the default \w positioning.
 HelpBrowserMenu5:\Raccess NetSurf's built in utilities.|MUtilities are tools such as the hotlist, history tree and various setup options.
 HelpBrowserMenu5-0:\Rmanage the hotlist.
-HelpBrowserMenu5-0-0:\Sadd the current page to the hotlist.
+HelpBrowserMenu5-0-0:\Saggiungi la pagina corrente ai segnalibri
 HelpBrowserMenu5-0-1:\Sopen the hotlist management \w.
 HelpBrowserMenu5-1:\Rview the history options.
-HelpBrowserMenu5-1-0:\Sopen the local history \w.
-HelpBrowserMenu5-1-1:\Sopen the global history \w.
+HelpBrowserMenu5-1-0:\Sapri la cronologia locale
+HelpBrowserMenu5-1-1:\Sapri la cronologia globale
 HelpBrowserMenu5-2:\Rmanage your cookies.
 HelpBrowserMenu5-2-0:\Sopen the cookie management \w.
 HelpBrowserMenu6:\Rsee the help resources available.
@@ -1271,8 +1270,8 @@ HelpThemePConfig:This pane shows the available themes.|MThe selected icon theme 
 
 # HelpHint (tooltip) text
 #
-HelpWebSearch:Web search bar.|MType text and press Return to search using your default search provider.
-HelpAddTab:Tab add button.|MAdds a new blank tab.
+HelpWebSearch:\Tdigita una voce in base al provider scelto e premi invio
+HelpAddTab:Apri una nuova scheda
 
 
 # Configuration tokens
@@ -1322,7 +1321,7 @@ Screen:Schermo
 ScreenOwn:Schermo proprietario
 ScreenWB:Schermo Workbench
 ScreenPublic:Schermo pubblico
-Theme:Tema
+Theme:Tema grafico
 MousePointers:Puntatori del mouse
 TrueColour:True color
 OSPointers:Se possibile usa i puntatori del mouse di sistema
@@ -1381,10 +1380,10 @@ DownloadDir:Percorso predefinito per i trasferimenti
 TabbedBrowsing:Navigazione a schede
 TabActive:Apri nuove schede in sottofondo
 TabMiddle:Tasto centrale del mouse per l'apertura delle schede (Tab)
-DownloadNotify:Notifica al completamento
+DownloadNotify:Notifica al completamento (Ringhio)
 SearchWeb:Ricerca Web
 SearchURL:Ricerca da barra URL
-SearchProvider:Ricerca provider
+SearchProvider:Ricerca su provider
 OptionDocky:Mostra su AmiDock
 Clipboard:Clipboard
 ClipboardUTF8:Scrivi testo come UTF-8
@@ -1426,4 +1425,4 @@ ExportAs:Esporta come...
 AnimImg:Animazioni
 DitherImg:Immagini Dither
 FilterImg:Immagini Smooth
-RenderText:Mischia testo in sottofondo
+RenderText:Sfuma testo di sfondo
