@@ -1557,7 +1557,12 @@ void ami_handle_appmsg(void)
 						}
 
 						if(!file_box && !text_box)
+						{
+							urlfilename = path_to_url(filename);
+							browser_window_go(gwin->bw, urlfilename, NULL, true);
+							free(urlfilename);
 							return;
+						}
 
 						if(file_box)
 						{
