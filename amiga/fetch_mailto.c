@@ -55,7 +55,8 @@ void gui_launch_url(const char *url)
 	char *launchurl = NULL;
 	BPTR fptr = 0;
 
-	if(strncasecmp(url,"ABOUT:",6))
+	if((strncasecmp(url,"ABOUT:",6)) &&
+		(strncasecmp(url,"JAVASCRIPT:",11)))
 	{
 		launchurl = ASPrintf("URL:%s",url);
 
