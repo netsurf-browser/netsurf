@@ -55,7 +55,7 @@ static const gchar *description =
 static const gchar *url = "http://www.netsurf-browser.org/";
 static const gchar *url_label = "NetSurf Website";
 static const gchar *copyright =
-		"Copyright © 2003 - 2009 The NetSurf Developers";
+		"Copyright © 2003 - 2010 The NetSurf Developers";
 
 static void launch_url (GtkAboutDialog *about_dialog, const gchar *url,
 		gpointer data)

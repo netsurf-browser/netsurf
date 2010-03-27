@@ -367,6 +367,7 @@ HotlistFeatureRequest:NetSurf feature requests
 #
 
 GlobalHistory:Global history
+DomainAll:(All domains)
 DateToday:Today
 DateYesterday:Yesterday
 Date1Week:Last week
@@ -433,7 +434,7 @@ gtkOverwriteInfo:The file already exists in "%s".  Replacing it will overwrite i
 gtkFailed:Download failed
 gtkFileError:File error: %s
 gtkInfo:%s from %s is %s in size
-gtkSave:Save file as...
+gtkSave:Save file as…
 gtkSourceSave:Save source
 gtkSourceTabError:Error handling source data 
 gtkplainSave:Save plain text
@@ -455,16 +456,16 @@ gtkOpenFile:_Open File
 gtkOpenFileAccel:<ctrl>o
 gtkCloseWindow:_Close Window
 gtkCloseWindowAccel:<ctrl><shift>w
-gtkSavePage:Save Page..
+gtkSavePage:Save Page…
 gtkSavePageAccel:<ctrl>s
 gtkExport:Export
-gtkPlainText:Plain Text..
-gtkDrawFile:Drawfile..
-gtkPostScript:PostScript..
-gtkPDF:PDF..
-gtkPrintPreview:Print Preview..
+gtkPlainText:Plain Text…
+gtkDrawFile:Drawfile…
+gtkPostScript:PostScript…
+gtkPDF:PDF…
+gtkPrintPreview:Print Preview…
 gtkPrintPreviewAccel:<ctrl><shift>p
-gtkPrint:Print..
+gtkPrint:Print…
 gtkPrintAccel:<ctrl>p
 gtkQuitMenu:_Quit
 gtkQuitMenuAccel:<ctrl>q
@@ -478,7 +479,7 @@ gtkPasteAccel:<ctrl>v
 gtkDelete:_Delete
 gtkSelectAll:Select _All
 gtkSelectAllAccel:<ctrl>a
-gtkFind:_Find..
+gtkFind:_Find…
 gtkFindAccel:<ctrl>f
 gtkPreferences:P_references
 
@@ -518,14 +519,14 @@ gtkForward:_Forward
 gtkForwardAccel:<alt>Right
 gtkHome:_Home
 gtkHomeAccel:<alt>Down
-gtkLocalHistory:_Local History
+gtkLocalHistory:_Local History…
 gtkLocalHistoryAccel:<ctrl>h
-gtkGlobalHistory:_Global History
+gtkGlobalHistory:_Global History…
 gtkGlobalHistoryAccel:<ctrl><shift>h
-gtkAddBookMarks:_Add to Bookmarks..
-gtkShowBookMarks:_Show Bookmarks..
+gtkAddBookMarks:_Add to Bookmarks…
+gtkShowBookMarks:_Show Bookmarks…
 gtkShowBookMarksAccel:F6
-gtkOpenLocation:_Open Location..
+gtkOpenLocation:_Open Location…
 gtkOpenLocationAccel:<ctrl>l
 
 gtkNextTab:_Next tab
@@ -535,10 +536,10 @@ gtkPrevTabAccel:<ctrl>Left
 gtkCloseTab:_Close tab
 gtkCloseTabAccel:<ctrl>w
 
-gtkContents:_Contents
-gtkGuide:User _guide
-gtkUserInformation:User _information
-gtkAbout:_About
+gtkContents:_Contents…
+gtkGuide:User _guide…
+gtkUserInformation:User _information…
+gtkAbout:_About…
 
 
 gtkToolBarTitle:Toolbar custom button store
