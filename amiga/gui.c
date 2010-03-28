@@ -549,15 +549,16 @@ void ami_openscreenfirst(void)
 void gui_init2(int argc, char** argv)
 {
 	struct browser_window *bw = NULL;
-	long rarray[] = {0};
+	long rarray[] = {0,0};
 	struct RDArgs *args;
-	STRPTR template = "URL/A";
+	STRPTR template = "URL,FORCE/S";
 	STRPTR temp_homepage_url = NULL;
 	BOOL notalreadyrunning;
 
 	enum
 	{
-		A_URL
+		A_URL,
+		A_FORCE
 	};
 
 	notalreadyrunning = ami_arexx_init();
@@ -582,6 +583,12 @@ void gui_init2(int argc, char** argv)
 					free(temp_homepage_url);
 				}
 			}
+
+			if(rarray[A_FORCE])
+			{
+				notalreadyrunning = TRUE;
+			}
+
 			FreeArgs(args);
 		}
 	}
@@ -679,7 +686,7 @@ void gui_init2(int argc, char** argv)
 		}
 
 		GetApplicationAttrs(ami_appid, APPATTR_Port, (ULONG)&applibport, TAG_DONE);
-		applibsig = (1L << applibport->mp_SigBit);
+		if(applibport) applibsig = (1L << applibport->mp_SigBit);
 	}
 
 	if(!bw && (option_startup_no_window == false))
@@ -1626,6 +1633,8 @@ void ami_handle_applib(void)
 {
 	struct ApplicationMsg *applibmsg;
 	struct browser_window *bw;
+
+	if(!applibport) return;
 
 	while((applibmsg=(struct ApplicationMsg *)GetMsg(applibport)))
 	{
