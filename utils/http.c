@@ -130,6 +130,8 @@ static nserror http_parse_quoted_string(const char **input, char **value)
 			start--;
 			end = start;
 		}
+	} else {
+		end = start;
 	}
 
 	string_value = malloc(end - start + 1);
