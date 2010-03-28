@@ -349,7 +349,6 @@ void gui_poll(bool active)
 		block = false;
 
 	if (active) {
-		fetch_poll();
 		FD_ZERO(&read_fd_set);
 		FD_ZERO(&write_fd_set);
 		FD_ZERO(&exc_fd_set);
