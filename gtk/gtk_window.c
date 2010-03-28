@@ -474,7 +474,6 @@ gboolean nsgtk_window_button_press_event(GtkWidget *widget,
 		browser_window_remove_caret(g->bw);
 		nsgtk_scaffolding_popup_menu(g->scaffold, g->mouse->pressed_x,
 				g->mouse->pressed_y);
-		g->mouse->state = BROWSER_MOUSE_PRESS_2;
 		return TRUE;
 	default:
 		return FALSE;
