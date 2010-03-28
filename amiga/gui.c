@@ -404,7 +404,12 @@ void ami_amiupdate(void)
 int main(int argc, char** argv)
 {
 	setbuf(stderr, NULL);
-	return netsurf_main(argc, argv);
+
+	netsurf_init(argc, argv);
+	netsurf_main_loop();
+	netsurf_exit();
+
+	return 0;
 }
 
 void gui_init(int argc, char** argv)
@@ -1341,8 +1346,8 @@ void ami_handle_msg(void)
 
 								case KEY_TEXT_END: // end
 									gui_window_set_scroll(gwin->bw->window, 
-										gwin->bw->current_content->width,
-										gwin->bw->current_content->height);
+										content_get_width(gwin->bw->current_content),
+										content_get_height(gwin->bw->current_content));
 								break;
 
 								case KEY_WORD_RIGHT: // alt+right
@@ -1476,7 +1481,7 @@ void ami_handle_appmsg(void)
 	struct WBArg *appwinargs;
 	STRPTR filename;
 	struct box *box,*file_box=0,*text_box=0;
-	struct content *content;
+	hlcache_handle *content;
 	int box_x=0,box_y=0;
 	BPTR fh = 0;
 	char *utf8text,*urlfilename;
@@ -1522,7 +1527,9 @@ void ami_handle_appmsg(void)
 
 					AddPart(filename,appwinargs->wa_Name,1024);
 
-					if((!gwin->bw->current_content || gwin->bw->current_content->type != CONTENT_HTML) || (!((x>=xs) && (y>=ys) && (x<width+xs) && (y<height+ys))))
+					if((!gwin->bw->current_content ||
+						content_get_type(gwin->bw->current_content) != CONTENT_HTML) ||
+						(!((x>=xs) && (y>=ys) && (x<width+xs) && (y<height+ys))))
 					{
 						urlfilename = path_to_url(filename);
 						browser_window_go(gwin->bw,urlfilename,NULL,true);
@@ -1531,7 +1538,7 @@ void ami_handle_appmsg(void)
 					else
 					{
 						content = gwin->bw->current_content;
-						box = content->data.html.layout;
+						box = html_get_box_tree(content);
 						while ((box = box_at_point(box, x, y, &box_x, &box_y, &content)))
 						{
 							if (box->style && css_computed_visibility(box->style) == CSS_VISIBILITY_HIDDEN)	continue;
@@ -1824,8 +1831,8 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 		gui_window_set_scroll(gwin->bw->window,gwin->bw->window->scrollx,gwin->bw->window->scrolly);
 		gwin->redraw_scroll = false;
 
-		browser_window_refresh_url_bar(gwin->bw,gwin->bw->current_content->url,
-											gwin->bw->frag_id);
+		browser_window_refresh_url_bar(gwin->bw,
+			content_get_url(gwin->bw->current_content), gwin->bw->frag_id);
 	}
 }
 
@@ -2915,7 +2922,7 @@ void gui_window_set_title(struct gui_window *g, const char *title)
  * \param  sy  vertical scroller position
  */
 
-void ami_do_redraw_limits(struct gui_window *g, struct content *c,int x0, int y0, int x1, int y1, ULONG sx, ULONG sy)
+void ami_do_redraw_limits(struct gui_window *g, hlcache_handle *c,int x0, int y0, int x1, int y1, ULONG sx, ULONG sy)
 {
 	ULONG xoffset,yoffset,width=800,height=600;
 	ULONG htemp,vtemp;
@@ -2935,7 +2942,7 @@ void ami_do_redraw_limits(struct gui_window *g, struct content *c,int x0, int y0
 	GetAttr(SPACE_AreaBox, g->shared->objects[GID_BROWSER], (ULONG *)&bbox);
 
 	if(!c) return;
-	if (c->locked) return;
+//	if (c->locked) return;
 
 	current_redraw_browser = g->shared->bw;
 
@@ -2995,7 +3002,7 @@ void ami_do_redraw_limits(struct gui_window *g, struct content *c,int x0, int y0
 void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
 {
 	ULONG sx,sy;
-	struct content *c;
+	hlcache_handle *c;
 	c = g->shared->bw->current_content;
 
 	ami_get_hscroll_pos(g->shared, (ULONG *)&sx);
@@ -3038,7 +3045,7 @@ void ami_do_redraw(struct gui_window_2 *g)
 {
 	struct Region *reg = NULL;
 	struct Rectangle rect;
-	struct content *c;
+	hlcache_handle *c;
 	ULONG hcurrent,vcurrent,xoffset,yoffset,width=800,height=600,x0=0,y0=0;
 	struct IBox *bbox;
 	ULONG oldh=g->oldh,oldv=g->oldv;
@@ -3051,7 +3058,7 @@ void ami_do_redraw(struct gui_window_2 *g)
 	c = g->bw->current_content;
 
 	if(!c) return;
-	if (c->locked) return;
+//	if (c->locked) return;
 
 	current_redraw_browser = g->bw;
 //	currp = &browserglob.rp;
@@ -3080,7 +3087,7 @@ void ami_do_redraw(struct gui_window_2 *g)
 
 //	if (c->type == CONTENT_HTML) scale = 1;
 
-	if(g->redraw_scroll && c->type == CONTENT_HTML)
+	if(g->redraw_scroll && content_get_type(c) == CONTENT_HTML)
 	{
 		g->bw->window->c_h_temp = g->bw->window->c_h;
 		gui_window_remove_caret(g->bw->window);
@@ -3127,7 +3134,7 @@ void ami_do_redraw(struct gui_window_2 *g)
 		ami_clg(0xffffff);
 		glob->scale = g->bw->scale;
 
-		if(c->type == CONTENT_HTML)
+		if(content_get_type(c) == CONTENT_HTML)
 		{
 			content_redraw(c, -hcurrent,
 						-vcurrent,
@@ -3143,8 +3150,8 @@ void ami_do_redraw(struct gui_window_2 *g)
 						-vcurrent /* * g->bw->scale */,
 						(width / g->bw->scale) - hcurrent,
 						(height / g->bw->scale) - vcurrent,
-						0,0,c->width /* * g->bw->scale */,
-						c->height /* * g->bw->scale */,
+						0,0, content_get_width(c) /* * g->bw->scale */,
+						content_get_height(c) /* * g->bw->scale */,
 						g->bw->scale,0xFFFFFF);
 		}
 
@@ -3199,8 +3206,8 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 	if(sx<0) sx=0;
 	if(sy<0) sy=0;
 	if(!g->shared->bw || !g->shared->bw->current_content) return;
-	if(sx > g->shared->bw->current_content->width) sx = g->shared->bw->current_content->width;
-	if(sy > g->shared->bw->current_content->height) sy = g->shared->bw->current_content->height;
+	if(sx > content_get_width(g->shared->bw->current_content)) sx = content_get_width(g->shared->bw->current_content);
+	if(sy > content_get_height(g->shared->bw->current_content)) sy = content_get_height(g->shared->bw->current_content);
 
 	if(g->tab_node && (g->shared->tabs > 1))
 				GetAttr(CLICKTAB_Current,
@@ -3289,7 +3296,7 @@ void gui_window_update_extent(struct gui_window *g)
 				(ULONG *)&bbox);
 
 		RefreshSetGadgetAttrs((struct Gadget *)(APTR)g->shared->objects[OID_VSCROLL],g->shared->win,NULL,
-			SCROLLER_Total, (ULONG)(g->shared->bw->current_content->height * g->shared->bw->scale),
+			SCROLLER_Total, (ULONG)(content_get_height(g->shared->bw->current_content) * g->shared->bw->scale),
 			SCROLLER_Visible, bbox->Height,
 			TAG_DONE);
 
@@ -3297,7 +3304,7 @@ void gui_window_update_extent(struct gui_window *g)
 		{
 			RefreshSetGadgetAttrs((struct Gadget *)(APTR)g->shared->objects[GID_HSCROLL],
 				g->shared->win, NULL,
-				PGA_Total, (ULONG)(g->shared->bw->current_content->width * g->shared->bw->scale),
+				PGA_Total, (ULONG)(content_get_width(g->shared->bw->current_content) * g->shared->bw->scale),
 				PGA_Visible, bbox->Width,
 				TAG_DONE);
 		}
@@ -3305,7 +3312,7 @@ void gui_window_update_extent(struct gui_window *g)
 		{
 			RefreshSetGadgetAttrs((struct Gadget *)(APTR)g->shared->objects[OID_HSCROLL],
 				g->shared->win, NULL,
-				SCROLLER_Total, (ULONG)(g->shared->bw->current_content->width * g->shared->bw->scale),
+				SCROLLER_Total, (ULONG)(content_get_width(g->shared->bw->current_content) * g->shared->bw->scale),
 				SCROLLER_Visible, bbox->Width,
 				TAG_DONE);
 		}
@@ -3373,7 +3380,7 @@ void gui_window_set_url(struct gui_window *g, const char *url)
 /**
  * function to add retrieved favicon to gui
  */
-void gui_window_set_icon(struct gui_window *g, struct content *icon)
+void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 {
 	struct BitMap *bm = NULL;
 	struct IBox *bbox;
@@ -3387,17 +3394,17 @@ void gui_window_set_icon(struct gui_window *g, struct content *icon)
 						(ULONG *)&cur_tab);
 
 	if ((icon != NULL) &&
-		(icon->status != CONTENT_STATUS_READY) &&
-		(icon->status != CONTENT_STATUS_DONE)) return;
+		(content_get_status(icon) != CONTENT_STATUS_READY) &&
+		(content_get_status(icon) != CONTENT_STATUS_DONE)) return;
 
-	if ((icon != NULL) && (icon->type == CONTENT_ICO))
+	if ((icon != NULL) && (content_get_type(icon) == CONTENT_ICO))
 	{
 		nsico_set_bitmap_from_size(icon, 16, 16);
 	}
 
-	if ((icon != NULL) && (icon->bitmap != NULL))
+	if ((icon != NULL) && (content_get_bitmap(icon) != NULL))
 	{
-		bm = ami_getcachenativebm(icon->bitmap, 16, 16,
+		bm = ami_getcachenativebm(content_get_bitmap(icon), 16, 16,
 					g->shared->win->RPort->BitMap);
 	}
 
@@ -3434,7 +3441,7 @@ void gui_window_set_icon(struct gui_window *g, struct content *icon)
  * \param ico may be NULL for local calls; then access current cache from
  * search_web_ico()
  */
-void gui_window_set_search_ico(struct content *ico)
+void gui_window_set_search_ico(hlcache_handle *ico)
 {
 	struct BitMap *bm = NULL;
 	struct IBox *bbox;
@@ -3447,14 +3454,14 @@ void gui_window_set_search_ico(struct content *ico)
 	if(option_kiosk_mode == true) return;
 	if (ico == NULL) ico = search_web_ico();
 
-	if ((ico != NULL) && (ico->type == CONTENT_ICO))
+	if ((ico != NULL) && (content_get_type(ico) == CONTENT_ICO))
 	{
 		nsico_set_bitmap_from_size(ico, 16, 16);
 	}
 
-	if ((ico != NULL) && (ico->bitmap != NULL))
+	if ((ico != NULL) && (content_get_bitmap(ico) != NULL))
 	{
-		bm = ami_getcachenativebm(ico->bitmap, 16, 16, NULL);
+		bm = ami_getcachenativebm(content_get_bitmap(ico), 16, 16, NULL);
 	}
 
 	node = (struct nsObject *)GetHead((struct List *)window_list);
@@ -3543,7 +3550,7 @@ void gui_window_remove_caret(struct gui_window *g)
 
 void gui_window_new_content(struct gui_window *g)
 {
-	struct content *c;
+	hlcache_handle *c;
 
 	if(g && g->shared && g->shared->bw && g->shared->bw->current_content)
 		c = g->shared->bw->current_content;
@@ -3560,7 +3567,7 @@ void gui_window_new_content(struct gui_window *g)
 	if(g->shared->bw->browser_window_type != BROWSER_WINDOW_NORMAL ||
 		option_kiosk_mode == true) return;
 
-	if(c->type <= CONTENT_CSS)
+	if(content_get_type(c) <= CONTENT_CSS)
 	{
 		OnMenu(g->shared->win,AMI_MENU_SAVEAS_TEXT);
 		OnMenu(g->shared->win,AMI_MENU_SAVEAS_COMPLETE);
@@ -3583,9 +3590,9 @@ void gui_window_new_content(struct gui_window *g)
 		OffMenu(g->shared->win,AMI_MENU_FIND);
 
 #ifdef WITH_NS_SVG
-		if(c->bitmap || c->type == CONTENT_SVG)
+		if(content_get_bitmap(c) || content_get_type(c) == CONTENT_SVG)
 #else
-		if(c->bitmap)
+		if(content_get_bitmap(c))
 #endif
 		{
 			OnMenu(g->shared->win,AMI_MENU_COPY);

@@ -99,11 +99,11 @@ static struct search_callbacks ami_search_callbacks = {
  */
 void ami_search_open(struct gui_window *gwin)
 {
-	struct content *c = gwin->shared->bw->current_content;
+	struct hlcache_handle *c = gwin->shared->bw->current_content;
 
 	/* only handle html/textplain contents */
-	if ((!c) || (c->type != CONTENT_HTML &&
-			c->type != CONTENT_TEXTPLAIN))
+	if ((!c) || (content_get_type(c) != CONTENT_HTML &&
+			content_get_type(c) != CONTENT_TEXTPLAIN))
 		return;
 
 	if (gwin->shared->bw->search_context == NULL)

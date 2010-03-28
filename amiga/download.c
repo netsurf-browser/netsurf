@@ -296,7 +296,7 @@ gui_window_save_link(struct gui_window *g, const char *url, const char *title)
 	}
 }
 
-void gui_drag_save_object(gui_save_type type, struct content *c,
+void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
 		struct gui_window *g)
 {
 	if(strcmp(option_use_pubscreen,"Workbench")) return;
@@ -320,6 +320,8 @@ void ami_drag_save(struct Window *win)
 {
 	ULONG which,type;
 	char path[1025],dpath[1025];
+	char *source_data;
+	ULONG source_size;
 
 	which = WhichWorkbenchObject(NULL,scrn->MouseX,scrn->MouseY,
 									WBOBJA_Type,&type,
@@ -354,15 +356,17 @@ void ami_drag_save(struct Window *win)
 		case GUI_SAVE_OBJECT_ORIG: // object
 		case GUI_SAVE_SOURCE:
 		{
-			struct content *c = drag_save_data;
+			struct hlcache_handle *c = drag_save_data;
 			BPTR fh = 0;
-			AddPart(path,c->title,1024);
+			AddPart(path, content_get_title(c), 1024);
 
 			if(fh = FOpen(path,MODE_NEWFILE,0))
 			{
-				FWrite(fh,c->source_data,1,c->source_size);
+				if((source_data = content_get_source_data(c, &source_size)))
+					FWrite(fh, source_data, 1, source_size);
+
 				FClose(fh);
-				SetComment(path,c->url);
+				SetComment(path, content_get_url(c));
 			}
 		}
 		break;
@@ -374,15 +378,15 @@ void ami_drag_save(struct Window *win)
 
 		case GUI_SAVE_COMPLETE:
 		{
-			struct content *c = drag_save_data;
+			struct hlcache_handle *c = drag_save_data;
 			BPTR lock = 0;
 
-			AddPart(path,c->title,1024);
+			AddPart(path, content_get_title(c), 1024);
 			if(lock = CreateDir(path))
 			{
 				UnLock(lock);
 				save_complete(c,path);
-				SetComment(path,c->url);
+				SetComment(path, content_get_url(c));
 			}
 			ami_superimpose_favicon(path,
 				drag_save_gui->favicon, NULL);
@@ -391,18 +395,20 @@ void ami_drag_save(struct Window *win)
 
 		case GUI_SAVE_OBJECT_NATIVE:
 		{
-			struct content *c = drag_save_data;
-			AddPart(path,c->title,1024);
-			if(c->bitmap)
+			hlcache_handle *c = drag_save_data;
+			struct bitmap *bm;
+
+			AddPart(path, content_get_title(c), 1024);
+			if(bm = content_get_bitmap(c))
 			{
-				c->bitmap->url = c->url;
-				c->bitmap->title = c->title;
-				bitmap_save(c->bitmap,path,0);
+				bm->url = content_get_url(c);
+				bm->title = content_get_title(c);
+				bitmap_save(bm, path, 0);
 			}
 #ifdef WITH_NS_SVG
-			else if(c->type == CONTENT_SVG)
+			else if(content_get_type(c) == CONTENT_SVG)
 			{
-				ami_save_svg(c,path);
+				ami_save_svg(c, path);
 			}
 #endif
 		}
@@ -414,7 +420,7 @@ void ami_drag_save(struct Window *win)
 	ami_update_pointer(win,GUI_POINTER_DEFAULT);
 }
 
-void ami_superimpose_favicon(STRPTR path, struct content *icon, STRPTR type)
+void ami_superimpose_favicon(STRPTR path, struct hlcache_handle *icon, STRPTR type)
 {
 	struct DiskObject *dobj = NULL;
 	struct BitMap *bm = NULL;
@@ -449,14 +455,14 @@ void ami_superimpose_favicon(STRPTR path, struct content *icon, STRPTR type)
 	 * and OS4 default icons should all be truecolour anyway. */
 	if(format == IDFMT_DIRECTMAPPED)
 	{
-		if ((icon != NULL) && (icon->type == CONTENT_ICO))
+		if ((icon != NULL) && (content_get_type(icon) == CONTENT_ICO))
 		{
 			nsico_set_bitmap_from_size(icon, 16, 16);
 		}
 
-		if ((icon != NULL) && (icon->bitmap != NULL))
+		if ((icon != NULL) && (content_get_bitmap(icon) != NULL))
 		{
-			bm = ami_getcachenativebm(icon->bitmap, 16, 16, NULL);
+			bm = ami_getcachenativebm(content_get_bitmap(icon), 16, 16, NULL);
 		}
 
 		if(bm)

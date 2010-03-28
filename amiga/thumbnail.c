@@ -28,7 +28,7 @@
 #include "content/urldb.h"
 #include "desktop/plotters.h"
 
-bool thumbnail_create(struct content *content, struct bitmap *bitmap,
+bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	const char *url)
 {
 	struct BitScaleArgs bsa;
@@ -42,8 +42,9 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 	ami_clearclipreg(&browserglob);
 	current_redraw_browser = curbw;
 	plot = amiplot;
-	content_redraw(content, 0, 0, content->width, content->width,
-	0, 0, content->width, content->width, 1.0, 0xFFFFFF);
+	content_redraw(content, 0, 0, content_get_width(content),
+		content_get_width(content),	0, 0, content_get_width(content),
+		content_get_width(content), 1.0, 0xFFFFFF);
 	current_redraw_browser = NULL;
 
 	if(GfxBase->lib_Version >= 53) // AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)
@@ -52,8 +53,8 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 		if(option_scale_quality) flags |= COMPFLAG_SrcFilter;
 
 		CompositeTags(COMPOSITE_Src,browserglob.bm,bitmap->nativebm,
-					COMPTAG_ScaleX,COMP_FLOAT_TO_FIX(bitmap->width/content->width),
-					COMPTAG_ScaleY,COMP_FLOAT_TO_FIX(bitmap->height/content->width),
+					COMPTAG_ScaleX,COMP_FLOAT_TO_FIX(bitmap->width/content_get_width(content)),
+					COMPTAG_ScaleY,COMP_FLOAT_TO_FIX(bitmap->height/content_get_width(content)),
 					COMPTAG_Flags,flags,
 					COMPTAG_DestX,0,
 					COMPTAG_DestY,0,
@@ -67,15 +68,15 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 	{
 		bsa.bsa_SrcX = 0;
 		bsa.bsa_SrcY = 0;
-		bsa.bsa_SrcWidth = content->width;
-		bsa.bsa_SrcHeight = content->width;
+		bsa.bsa_SrcWidth = content_get_width(content);
+		bsa.bsa_SrcHeight = content_get_width(content);
 		bsa.bsa_DestX = 0;
 		bsa.bsa_DestY = 0;
 	//	bsa.bsa_DestWidth = width;
 	//	bsa.bsa_DestHeight = height;
-		bsa.bsa_XSrcFactor = content->width;
+		bsa.bsa_XSrcFactor = content_get_width(content);
 		bsa.bsa_XDestFactor = bitmap->width;
-		bsa.bsa_YSrcFactor = content->width;
+		bsa.bsa_YSrcFactor = content_get_width(content);
 		bsa.bsa_YDestFactor = bitmap->height;
 		bsa.bsa_SrcBitMap = browserglob.bm;
 		bsa.bsa_DestBitMap = bitmap->nativebm;

@@ -148,15 +148,18 @@ STATIC VOID rx_open(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 STATIC VOID rx_save(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
 	BPTR fh = 0;
-
+	ULONG source_size;
+	char *source_data;
 	if(!curbw) return;
 
 	ami_update_pointer(curbw->window->shared->win,GUI_POINTER_WAIT);
 	if(fh = FOpen(cmd->ac_ArgList[0],MODE_NEWFILE,0))
 	{
-		FWrite(fh,curbw->current_content->source_data,1,curbw->current_content->source_size);
+		if(source_data = content_get_source_data(curbw->current_content, &source_size))
+			FWrite(fh, source_data, 1, source_size);
+
 		FClose(fh);
-		SetComment(cmd->ac_ArgList[0],curbw->current_content->url);
+		SetComment(cmd->ac_ArgList[0], content_get_url(curbw->current_content));
 	}
 
 	ami_update_pointer(curbw->window->shared->win,GUI_POINTER_DEFAULT);
@@ -176,7 +179,7 @@ STATIC VOID rx_geturl(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((u
 {
 	if(curbw && curbw->current_content)
 	{
-		strcpy(result,curbw->current_content->url);
+		strcpy(result, content_get_url(curbw->current_content));
 	}
 	else
 	{

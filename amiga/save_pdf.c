@@ -40,7 +40,7 @@
  * \param  path  path to save PDF as
  * \return  true on success, false on error and error reported
  */
-bool save_as_pdf(struct content *c, const char *path)
+bool save_as_pdf(struct hlcache_handle *c, const char *path)
 {
 	struct print_settings *psettings;
 	

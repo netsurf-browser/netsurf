@@ -73,14 +73,14 @@ void ami_context_menu_free(void)
 
 void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 {
-	struct content *cc = gwin->bw->current_content;
+	struct hlcache_handle *cc = gwin->bw->current_content;
 	struct box *curbox;
 	int box_x=0;
 	int box_y=0;
 	bool menuhascontent = false;
 
 	if(!cc) return;
-	if(cc->type != CONTENT_HTML) return;
+	if(content_get_type(cc) != CONTENT_HTML) return;
 
 	if(gwin->objects[OID_MENU]) DisposeObject(gwin->objects[OID_MENU]);
 
@@ -91,7 +91,7 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
                         PMA_MenuHandler, &gwin->popuphook,
 						TAG_DONE);
 
-	curbox = gwin->bw->current_content->data.html.layout;
+	curbox = html_get_box_tree(gwin->bw->current_content);
 
 	while(curbox = box_at_point(curbox,x,y,&box_x,&box_y,&cc))
 	{
@@ -139,12 +139,12 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
 							PMIA_Title, (ULONG)ctxmenulab[CMID_SHOWOBJ],
 							PMIA_ID,CMID_SHOWOBJ,
-							PMIA_UserData,curbox->object->url,
+							PMIA_UserData, content_get_url(curbox->object),
 						TAG_DONE),
 						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
 							PMIA_Title, (ULONG)ctxmenulab[CMID_COPYOBJ],
 							PMIA_ID,CMID_COPYOBJ,
-							PMIA_UserData,curbox->object->url,
+							PMIA_UserData, content_get_url(curbox->object),
 						TAG_DONE),
 						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
 							PMIA_Title, (ULONG)ctxmenulab[CMID_CLIPOBJ],
@@ -222,7 +222,10 @@ uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved)
 	struct gui_window_2 *gwin = hook->h_Data;
 	APTR userdata = NULL;
 	struct browser_window *bw;
-	struct content *object;
+	struct hlcache_handle *object;
+	char *source_data;
+	ULONG source_size;
+	struct bitmap *bm;
 
     if(GetAttrs(item,PMIA_ID,&itemid,
 					PMIA_UserData,&userdata,
@@ -267,31 +270,35 @@ uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved)
 			break;
 
 			case CMID_URLOPENWIN:
-				bw = browser_window_create(userdata,gwin->bw, gwin->bw->current_content->url, true, false);
+				bw = browser_window_create(userdata, gwin->bw,
+					content_get_url(gwin->bw->current_content), true, false);
 			break;
 
 			case CMID_URLOPENTAB:
-				bw = browser_window_create(userdata,gwin->bw, gwin->bw->current_content->url, true, true);
+				bw = browser_window_create(userdata, gwin->bw,
+					content_get_url(gwin->bw->current_content), true, true);
 			break;
 
 			case CMID_SAVEURL:
-				browser_window_download(gwin->bw,userdata,gwin->bw->current_content->url);
+				browser_window_download(gwin->bw, userdata,
+					content_get_url(gwin->bw->current_content));
 			break;
 
 			case CMID_SHOWOBJ:
-				browser_window_go(gwin->bw,userdata,gwin->bw->current_content->url,true);
+				browser_window_go(gwin->bw, userdata,
+					content_get_url(gwin->bw->current_content), true);
 			break;
 
 			case CMID_CLIPOBJ:
-				object = (struct content *)userdata;
-				if(object->bitmap)
+				object = (struct hlcache_handle *)userdata;
+				if((bm = content_get_bitmap(object)))
 				{
-					object->bitmap->url = object->url;
-					object->bitmap->title = object->title;
-					ami_easy_clipboard_bitmap(object->bitmap);
+					bm->url = content_get_url(object);
+					bm->title = content_get_title(object);
+					ami_easy_clipboard_bitmap(bm);
 				}
 #ifdef WITH_NS_SVG
-				else if(object->type == CONTENT_SVG)
+				else if(content_get_type(object) == CONTENT_SVG)
 				{
 					ami_easy_clipboard_svg(object);
 				}
@@ -299,12 +306,12 @@ uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved)
 			break;
 
 			case CMID_SAVEOBJ:
-				object = (struct content *)userdata;
+				object = (struct hlcache_handle *)userdata;
 
 				if(AslRequestTags(savereq,
 							ASLFR_TitleText,messages_get("NetSurf"),
 							ASLFR_Screen,scrn,
-							ASLFR_InitialFile,FilePart(object->url),
+							ASLFR_InitialFile,FilePart(content_get_url(object)),
 							TAG_DONE))
 				{
 					BPTR fh = 0;
@@ -314,40 +321,43 @@ uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved)
 					ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
 					if(fh = FOpen(fname,MODE_NEWFILE,0))
 					{
-						FWrite(fh,object->source_data,1,object->source_size);
+						if((source_data = content_get_source_data(object, &source_size)))
+							FWrite(fh, source_data, 1, source_size);
+
 						FClose(fh);
-						SetComment(fname,object->url);
+						SetComment(fname, content_get_url(object));
 					}
 					ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
 				}
 			break;
 
 			case CMID_SAVEIFFOBJ:
-				object = (struct content *)userdata;
+				object = (struct hlcache_handle *)userdata;
 
 				if(AslRequestTags(savereq,
 							ASLFR_TitleText,messages_get("NetSurf"),
 							ASLFR_Screen,scrn,
-							ASLFR_InitialFile,FilePart(object->url),
+							ASLFR_InitialFile,FilePart(content_get_url(object)),
 							TAG_DONE))
 				{
 					BPTR fh = 0;
 					char fname[1024];
+
 					strlcpy(&fname,savereq->fr_Drawer,1024);
 					AddPart(fname,savereq->fr_File,1024);
-					if(object->bitmap)
+					if((bm = content_get_bitmap(object)))
 					{
-						object->bitmap->url = object->url;
-						object->bitmap->title = object->title;
-						bitmap_save(object->bitmap,fname,0);
+						bm->url = content_get_url(object);
+						bm->title = content_get_title(object);
+						bitmap_save(bm, fname, 0);
 					}
 #ifdef WITH_NS_SVG
-					else if(object->type == CONTENT_SVG)
+					else if(content_get_type(object) == CONTENT_SVG)
 					{
 						ami_save_svg(object,fname);
 					}
 #endif
-					SetComment(fname,object->url);
+					SetComment(fname, content_get_url(object));
 					ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
 				}
 			break;

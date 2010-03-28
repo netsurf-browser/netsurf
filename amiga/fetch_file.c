@@ -49,7 +49,6 @@ struct ami_file_fetch_info {
 	int httpcode;
 	int64 len;
 	char *mimetype;
-	struct cache_data cachedata;
 };
 
 static bool ami_fetch_file_initialise(const char *scheme);
@@ -170,16 +169,6 @@ bool ami_fetch_file_start(void *vfetch)
 
 	/* LOG(("ami file fetcher start")); */
 
-	fetch->cachedata.req_time = time(NULL);
-	fetch->cachedata.res_time = time(NULL);
-	fetch->cachedata.date = 0;
-	fetch->cachedata.expires = 0;
-	fetch->cachedata.age = INVALID_AGE;
-	fetch->cachedata.max_age = 0;
-	fetch->cachedata.no_cache = true;
-	fetch->cachedata.etag = NULL;
-	fetch->cachedata.last_modified = 0;
-
 	return true;
 }
 
@@ -268,7 +257,7 @@ void ami_fetch_file_poll(const char *scheme_ignored)
 				if((len<1024) && (!fetch->aborted))
 				{
 					ami_fetch_file_send_callback(FETCH_FINISHED,
-						fetch, &fetch->cachedata, 0,
+						fetch, NULL, 0,
 						errorcode);
 
 					fetch->aborted = true;

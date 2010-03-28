@@ -47,7 +47,7 @@ struct session_cert {
 void ami_gui_cert_close(struct session_data *data);
 bool ami_gui_cert_apply(struct session_data *session);
 
-void gui_cert_verify(struct browser_window *bw, struct content *c,
+void gui_cert_verify(struct browser_window *bw, hlcache_handle *c,
 		const struct ssl_cert_info *certs, unsigned long num)
 {
 	const struct ssl_cert_info *from;
@@ -68,7 +68,7 @@ void gui_cert_verify(struct browser_window *bw, struct content *c,
 		warn_user("NoMemory", 0);
 		return;
 	}
-	data->url = strdup(c->url);
+	data->url = strdup(content_get_url(c));
 	if (!data->url) {
 		free(data);
 		warn_user("NoMemory", 0);

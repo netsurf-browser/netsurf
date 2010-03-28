@@ -117,7 +117,7 @@ struct gui_window
 	int scrolly;
 	struct history_window *hw;
 	struct List dllist;
-	struct content *favicon;
+	hlcache_handle *favicon;
 	bool throbbing;
 	char *tabtitle;
 };

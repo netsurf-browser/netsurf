@@ -248,13 +248,17 @@ bool ami_easy_clipboard_bitmap(struct bitmap *bitmap)
 }
 
 #ifdef WITH_NS_SVG
-bool ami_easy_clipboard_svg(struct content *c)
+bool ami_easy_clipboard_svg(struct hlcache_handle *c)
 {
-	if(c->type != CONTENT_SVG) return false;
+	char *source_data;
+	ULONG source_size;
+
+	if(content_get_type(c) != CONTENT_SVG) return false;
+	if((source_data = content_get_source_data(c, &source_size)) == NULL) return false;
 
 	if(!(OpenIFF(iffh,IFFF_WRITE)))
 	{
-		ami_svg_to_dr2d(iffh,c->source_data,c->source_size,c->url);
+		ami_svg_to_dr2d(iffh, source_data, source_size, content_get_url(c));
 		CloseIFF(iffh);
 	}
 

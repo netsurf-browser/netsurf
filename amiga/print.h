@@ -27,11 +27,11 @@ struct ami_print_window {
 	Object *objects[OID_LAST];
 	struct Gadget *gadgets[GID_LAST];
 	struct nsObject *node;
-	struct content *c;
+	struct hlcache_handle *c;
 };
 
-void ami_print(struct content *c, int copies);
-void ami_print_ui(struct content *c);
+void ami_print(struct hlcache_handle *c, int copies);
+void ami_print_ui(struct hlcache_handle *c);
 BOOL ami_print_event(struct ami_print_window *pw);
 bool ami_print_cont(void);
 struct MsgPort *ami_print_init(void);

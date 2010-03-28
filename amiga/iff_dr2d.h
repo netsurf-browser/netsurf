@@ -97,9 +97,9 @@ struct dash_struct {
 //	    IEEE	Dashes[NumDashes];  	/* On-off pattern */
 };
 
-bool ami_svg_to_dr2d(struct IFFHandle *iffh,char *buffer, uint32 size, char *url);
+bool ami_svg_to_dr2d(struct IFFHandle *iffh, char *buffer, uint32 size, char *url);
 #ifndef AMIGA_DR2D_STANDALONE
-bool ami_save_svg(struct content *c,char *filename);
+bool ami_save_svg(struct hlcache_handle *c, char *filename);
 #endif
 #endif // AMIGA_IFF_DR2D_H
 #endif // WITH_NS_SVG

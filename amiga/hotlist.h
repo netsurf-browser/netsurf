@@ -21,7 +21,7 @@
 #include "desktop/tree.h"
 
 void ami_hotlist_init(struct tree **hotlist);
-void ami_hotlist_add(struct node *node,struct content *c);
+void ami_hotlist_add(struct node *node, struct hlcache_handle *c);
 
 struct tree *hotlist;
 #endif

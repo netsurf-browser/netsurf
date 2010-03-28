@@ -16,15 +16,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _NETSURF_RISCOS_SAVE_PDF_H_
-#define _NETSURF_RISCOS_SAVE_PDF_H_
+#ifndef _NETSURF_AMIGA_SAVE_PDF_H_
+#define _NETSURF_AMIGA_SAVE_PDF_H_
 
 #include "utils/config.h"
 #ifdef WITH_PDF_EXPORT
 
 struct content;
 
-bool save_as_pdf(struct content *c, const char *path);
+bool save_as_pdf(struct hlcache_handle *c, const char *path);
 
 #endif /* WITH_PDF_EXPORT */
 

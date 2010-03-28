@@ -24,7 +24,7 @@
 #include "amiga/hotlist.h"
 #include "amiga/tree.h"
 
-void ami_gui_hotlist_visited(struct content *content, struct tree *tree,
+void ami_gui_hotlist_visited(hlcache_handle *content, struct tree *tree,
 		struct node *node);
 
 static const struct {
@@ -43,9 +43,9 @@ static const struct {
 };
 #define ENTRIES_COUNT (sizeof(default_entries) / sizeof(default_entries[0]))
 
-void hotlist_visited(struct content *content)
+void hotlist_visited(hlcache_handle *content)
 {
-	if ((!content) || (!content->url) || (!hotlist))
+	if ((!content) || (!content_get_url(content)) || (!hotlist))
 		return;
 	ami_gui_hotlist_visited(content, hotlist, hotlist->root);
 }
@@ -57,7 +57,7 @@ void hotlist_visited(struct content *content)
  * \param tree	   the tree to find the URL data from
  * \param node	   the node to update siblings and children of
  */
-void ami_gui_hotlist_visited(struct content *content, struct tree *tree,
+void ami_gui_hotlist_visited(hlcache_handle *content, struct tree *tree,
 		struct node *node)
 {
 	struct node_element *element;
@@ -66,8 +66,8 @@ void ami_gui_hotlist_visited(struct content *content, struct tree *tree,
 		if (!node->folder) {
 			element = tree_find_element(node, TREE_ELEMENT_URL);
 			if ((element) && (!strcmp(element->text,
-					content->url))) {
-				tree_update_URL_node(node, content->url, NULL);
+					content_get_url(content)))) {
+				tree_update_URL_node(node, content_get_url(content), NULL);
 				tree_handle_node_changed(tree, node, true,
 						false);
 			}
@@ -129,21 +129,21 @@ void ami_hotlist_init(struct tree **hotlist)
 		tree_initialise(hotlist_tree);
 }
 
-void ami_hotlist_add(struct node *node,struct content *c)
+void ami_hotlist_add(struct node *node, struct hlcache_handle *c)
 {
 	const struct url_data *data;
 
-	data = urldb_get_url_data(c->url);
+	data = urldb_get_url_data(content_get_url(c));
 	if (!data)
 	{
-		urldb_add_url(c->url);
-		urldb_set_url_persistence(c->url,true);
-		data = urldb_get_url_data(c->url);
+		urldb_add_url(content_get_url(c));
+		urldb_set_url_persistence(content_get_url(c),true);
+		data = urldb_get_url_data(content_get_url(c));
 	}
 
 	if (data)
 	{
-		tree_create_URL_node(node,c->url,data,c->title);
+		tree_create_URL_node(node,content_get_url(c),data,content_get_title(c));
 	}
 
 	tree_handle_node_changed(hotlist,node,false,true);

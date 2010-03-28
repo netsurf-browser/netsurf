@@ -416,6 +416,9 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 	bool opentab=true;
 	char *temp;
 	BPTR lock = 0;
+	char *source_data;
+	ULONG source_size;
+	struct bitmap *bm;
 
 	tgw.tab_node = NULL;
 	tgw.tab = 0;
@@ -427,7 +430,7 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 			switch(itemnum)
 			{
 				case 0: // new window
-					bw = browser_window_create(NULL, gwin->bw, 0, true, openwin);
+					bw = browser_window_create(option_homepage_url, gwin->bw, 0, true, openwin);
 				break;
 
 				case 1: // new tab
@@ -468,7 +471,7 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 							if(AslRequestTags(savereq,
 								ASLFR_TitleText,messages_get("NetSurf"),
 								ASLFR_Screen,scrn,
-								ASLFR_InitialFile,FilePart(gwin->bw->current_content->url),
+								ASLFR_InitialFile,FilePart(content_get_url(gwin->bw->current_content)),
 								TAG_DONE))
 							{
 								strlcpy(&fname,savereq->fr_Drawer,1024);
@@ -476,9 +479,10 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 								ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
 								if(fh = FOpen(fname,MODE_NEWFILE,0))
 								{
-									FWrite(fh,gwin->bw->current_content->source_data,1,gwin->bw->current_content->source_size);
+									if((source_data = content_get_source_data(gwin->bw->current_content, &source_size)))
+										FWrite(fh,source_data, 1, source_size);
 									FClose(fh);
-									SetComment(fname,gwin->bw->current_content->url);
+									SetComment(fname, content_get_url(gwin->bw->current_content));
 								}
 								ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
 							}
@@ -488,14 +492,14 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 							if(AslRequestTags(savereq,
 								ASLFR_TitleText,messages_get("NetSurf"),
 								ASLFR_Screen,scrn,
-								ASLFR_InitialFile,FilePart(gwin->bw->current_content->url),
+								ASLFR_InitialFile,FilePart(content_get_url(gwin->bw->current_content)),
 								TAG_DONE))
 							{
 								strlcpy(&fname,savereq->fr_Drawer,1024);
 								AddPart(fname,savereq->fr_File,1024);
 								ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
 								save_as_text(gwin->bw->current_content,fname);
-								SetComment(fname,gwin->bw->current_content->url);
+								SetComment(fname,content_get_url(gwin->bw->current_content));
 								ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
 							}
 						break;
@@ -504,7 +508,7 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 							if(AslRequestTags(savereq,
 								ASLFR_TitleText,messages_get("NetSurf"),
 								ASLFR_Screen,scrn,
-								ASLFR_InitialFile,FilePart(gwin->bw->current_content->url),
+								ASLFR_InitialFile,FilePart(content_get_url(gwin->bw->current_content)),
 								TAG_DONE))
 							{
 								strlcpy(&fname,savereq->fr_Drawer,1024);
@@ -514,7 +518,7 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 								{
 									UnLock(lock);
 									save_complete(gwin->bw->current_content,fname);
-									SetComment(fname,gwin->bw->current_content->url);
+									SetComment(fname,content_get_url(gwin->bw->current_content));
 									ami_superimpose_favicon(fname,
 										gwin->bw->window->favicon, NULL);
 								}
@@ -527,14 +531,14 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 							if(AslRequestTags(savereq,
 								ASLFR_TitleText,messages_get("NetSurf"),
 								ASLFR_Screen,scrn,
-								ASLFR_InitialFile,FilePart(gwin->bw->current_content->url),
+								ASLFR_InitialFile,FilePart(content_get_url(gwin->bw->current_content)),
 								TAG_DONE))
 							{
 								strlcpy(&fname,savereq->fr_Drawer,1024);
 								AddPart(fname,savereq->fr_File,1024);
 								ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
 								save_as_pdf(gwin->bw->current_content,fname);
-								SetComment(fname,gwin->bw->current_content->url);
+								SetComment(fname, content_get_url(gwin->bw->current_content));
 								ami_superimpose_favicon(fname,
 									gwin->bw->window->favicon, "pdf");
 								ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
@@ -546,25 +550,25 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 							if(AslRequestTags(savereq,
 								ASLFR_TitleText,messages_get("NetSurf"),
 								ASLFR_Screen,scrn,
-								ASLFR_InitialFile,FilePart(gwin->bw->current_content->url),
+								ASLFR_InitialFile,FilePart(content_get_url(gwin->bw->current_content)),
 								TAG_DONE))
 							{
 								strlcpy(&fname,savereq->fr_Drawer,1024);
 								AddPart(fname,savereq->fr_File,1024);
 								ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
-								if(gwin->bw->current_content->bitmap)
+								if((bm = content_get_bitmap(gwin->bw->current_content)))
 								{
-									gwin->bw->current_content->bitmap->url = gwin->bw->current_content->url;
-									gwin->bw->current_content->bitmap->title = gwin->bw->current_content->title;
-									bitmap_save(gwin->bw->current_content->bitmap,fname,0);
+									bm->url = content_get_url(gwin->bw->current_content);
+									bm->title = content_get_title(gwin->bw->current_content);
+									bitmap_save(bm, fname, 0);
 								}
 #ifdef WITH_NS_SVG
-								else if(gwin->bw->current_content->type == CONTENT_SVG)
+								else if(content_get_type(gwin->bw->current_content) == CONTENT_SVG)
 								{
 									ami_save_svg(gwin->bw->current_content,fname);
 								}
 #endif
-								SetComment(fname,gwin->bw->current_content->url);
+								SetComment(fname, content_get_url(gwin->bw->current_content));
 								ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
 							}
 						break;
@@ -625,19 +629,19 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 			switch(itemnum)
 			{
 				case 0: // copy
-					if(gwin->bw->current_content->type <= CONTENT_CSS)
+					if(content_get_type(gwin->bw->current_content) <= CONTENT_CSS)
 					{
 						browser_window_key_press(gwin->bw, KEY_COPY_SELECTION);
 						browser_window_key_press(gwin->bw, KEY_CLEAR_SELECTION);
 					}
-					else if(gwin->bw->current_content->bitmap)
+					else if(bm = content_get_bitmap(gwin->bw->current_content))
 					{
-						gwin->bw->current_content->bitmap->url = gwin->bw->current_content->url;
-						gwin->bw->current_content->bitmap->title = gwin->bw->current_content->title;
-						ami_easy_clipboard_bitmap(gwin->bw->current_content->bitmap);
+						bm->url = content_get_url(gwin->bw->current_content);
+						bm->title = content_get_title(gwin->bw->current_content);
+						ami_easy_clipboard_bitmap(bm);
 					}
 #ifdef WITH_NS_SVG
-					else if(gwin->bw->current_content->type == CONTENT_SVG)
+					else if(content_get_type(gwin->bw->current_content) == CONTENT_SVG)
 					{
 						ami_easy_clipboard_svg(gwin->bw->current_content);
 					}

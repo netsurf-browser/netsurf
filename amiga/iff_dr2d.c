@@ -301,9 +301,11 @@ bool ami_svg_to_dr2d(struct IFFHandle *iffh,char *buffer, uint32 size, char *url
 }
 
 #ifndef AMIGA_DR2D_STANDALONE
-bool ami_save_svg(struct content *c,char *filename)
+bool ami_save_svg(struct hlcache_handle *c,char *filename)
 {
 	struct IFFHandle *iffh;
+	char *source_data;
+	ULONG source_size;
 
 	if(iffh = AllocIFF())
 	{
@@ -316,7 +318,8 @@ bool ami_save_svg(struct content *c,char *filename)
 
 	if((OpenIFF(iffh,IFFF_WRITE))) return false;
 
-	ami_svg_to_dr2d(iffh,c->source_data,c->source_size,c->url);
+	if((source_data = content_get_source_data(c, &source_size)))
+		ami_svg_to_dr2d(iffh, source_data, source_size, content_get_url(c));
 
 	if(iffh) CloseIFF(iffh);
 	if(iffh->iff_Stream) Close((BPTR)iffh->iff_Stream);

@@ -27,6 +27,6 @@
 #include "content/content.h"
 
 void save_complete_init(void);
-bool save_complete(struct content *c, const char *path);
+bool save_complete(hlcache_handle *c, const char *path);
 
 #endif
