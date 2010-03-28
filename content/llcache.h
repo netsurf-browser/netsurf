@@ -81,10 +81,16 @@ typedef nserror (*llcache_handle_callback)(llcache_handle *handle,
 		const llcache_event *event, void *pw);
 
 /** Flags for low-level cache object retrieval */
-#define LLCACHE_RETRIEVE_FORCE_FETCH (1 << 0) /* Force a new fetch */
-#define LLCACHE_RETRIEVE_VERIFIABLE  (1 << 1) /* Requested URL was verified */
-#define LLCACHE_RETRIEVE_SNIFF_TYPE  (1 << 2) /* Permit content-type sniffing */
-#define LLCACHE_RETRIEVE_NO_ERROR_PAGES (1 << 3) /* No error pages */
+enum llcache_retrieve_flag {
+	/** Force a new fetch */
+	LLCACHE_RETRIEVE_FORCE_FETCH    = (1 << 0), 
+	/** Requested URL was verified */
+	LLCACHE_RETRIEVE_VERIFIABLE     = (1 << 1), 
+	/** Permit content-type sniffing */
+	LLCACHE_RETRIEVE_SNIFF_TYPE     = (1 << 2), 
+	/**< No error pages */
+	LLCACHE_RETRIEVE_NO_ERROR_PAGES = (1 << 3)
+};
 
 /** Low-level cache query types */
 typedef enum {
@@ -150,7 +156,9 @@ typedef nserror (*llcache_query_callback)(const llcache_query *query, void *pw,
 nserror llcache_initialise(llcache_query_callback cb, void *pw);
 
 /**
- * Poll the low-level cache
+ * Cause the low-level cache to emit any pending notifications 
+ * and attempt to clean the cache. No guarantee is made about
+ * what, if any, cache cleaning will occur.
  *
  * \return NSERROR_OK on success, appropriate error otherwise.
  */
@@ -221,6 +229,7 @@ const uint8_t *llcache_handle_get_source_data(const llcache_handle *handle,
  * \todo Forcing the client to parse the header value seems wrong. 
  *       Better would be to return the actual value part and an array of 
  *       key-value pairs for any additional parameters.
+ * \todo Deal with multiple headers of the same key (e.g. Set-Cookie)
  */
 const char *llcache_handle_get_header(const llcache_handle *handle, 
 		const char *key);

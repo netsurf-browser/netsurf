@@ -199,13 +199,7 @@ static nserror llcache_fetch_cert_error(llcache_object *object,
  * Public API								      *
  ******************************************************************************/
 
-/**
- * Initialise the low-level cache
- *
- * \param cb  Query handler
- * \param pw  Pointer to query handler data
- * \return NSERROR_OK on success, appropriate error otherwise.
- */
+/* See llcache.h for documentation */
 nserror llcache_initialise(llcache_query_callback cb, void *pw)
 {
 	query_cb = cb;
@@ -214,11 +208,7 @@ nserror llcache_initialise(llcache_query_callback cb, void *pw)
 	return NSERROR_OK;
 }
 
-/**
- * Poll the low-level cache
- *
- * \return NSERROR_OK on success, appropriate error otherwise.
- */
+/* See llcache.h for documentation */
 nserror llcache_poll(void)
 {
 	llcache_object *object;
@@ -242,18 +232,7 @@ nserror llcache_poll(void)
 	return NSERROR_OK;
 }
 
-/**
- * Retrieve a handle for a low-level cache object
- *
- * \param url	   URL of the object to fetch
- * \param flags	   Object retrieval flags
- * \param referer  Referring URL, or NULL if none
- * \param post	   POST data, or NULL for a GET request
- * \param cb	   Client callback for events
- * \param pw	   Pointer to client-specific data
- * \param result   Pointer to location to recieve cache handle
- * \return NSERROR_OK on success, appropriate error otherwise
- */
+/* See llcache.h for documentation */
 nserror llcache_handle_retrieve(const char *url, uint32_t flags,
 		const char *referer, const llcache_post_data *post,
 		llcache_handle_callback cb, void *pw,
@@ -288,14 +267,7 @@ nserror llcache_handle_retrieve(const char *url, uint32_t flags,
 	return NSERROR_OK;
 }
 
-/**
- * Change the callback associated with a low-level cache handle
- *
- * \param handle  Handle to change callback of
- * \param cb	  New callback
- * \param pw	  Client data for new callback
- * \return NSERROR_OK on success, appropriate error otherwise
- */
+/* See llcache.h for documentation */
 nserror llcache_handle_change_callback(llcache_handle *handle,
 		llcache_handle_callback cb, void *pw)
 {
@@ -305,12 +277,7 @@ nserror llcache_handle_change_callback(llcache_handle *handle,
 	return NSERROR_OK;
 }
 
-/**
- * Release a low-level cache handle
- *
- * \param handle  Handle to release
- * \return NSERROR_OK on success, appropriate error otherwise
- */
+/* See llcache.h for documentation */
 nserror llcache_handle_release(llcache_handle *handle)
 {
 	nserror error = NSERROR_OK;
@@ -330,24 +297,13 @@ nserror llcache_handle_release(llcache_handle *handle)
 	return error; 
 }
 
-/**
- * Retrieve the post-redirect URL of a low-level cache object
- *
- * \param handle  Handle to retrieve URL from
- * \return Post-redirect URL of cache object
- */
+/* See llcache.h for documentation */
 const char *llcache_handle_get_url(const llcache_handle *handle)
 {
 	return handle->object != NULL ? handle->object->url : NULL;
 }
 
-/**
- * Retrieve source data of a low-level cache object
- *
- * \param handle  Handle to retrieve source data from
- * \param size	  Pointer to location to receive byte length of data
- * \return Pointer to source data
- */
+/* See llcache.h for documentation */
 const uint8_t *llcache_handle_get_source_data(const llcache_handle *handle,
 		size_t *size)
 {
@@ -356,18 +312,7 @@ const uint8_t *llcache_handle_get_source_data(const llcache_handle *handle,
 	return handle->object != NULL ? handle->object->source_data : NULL;
 }
 
-/**
- * Retrieve a header value associated with a low-level cache object
- *
- * \param handle  Handle to retrieve header from
- * \param key	  Header name
- * \return Header value, or NULL if header does not exist
- *
- * \todo Make the key an enumeration, to avoid needless string comparisons
- * \todo Forcing the client to parse the header value seems wrong. 
- *	 Better would be to return the actual value part and an array of 
- *	 key-value pairs for any additional parameters.
- */
+/* See llcache.h for documentation */
 const char *llcache_handle_get_header(const llcache_handle *handle, 
 		const char *key)
 {
@@ -386,13 +331,7 @@ const char *llcache_handle_get_header(const llcache_handle *handle,
 	return NULL;
 }
 
-/**
- * Determine if the same underlying object is referenced by the given handles
- *
- * \param a  First handle
- * \param b  Second handle
- * \return True if handles reference the same object, false otherwise
- */
+/* See llcache.h for documentation */
 bool llcache_handle_references_same_object(const llcache_handle *a, 
 		const llcache_handle *b)
 {
