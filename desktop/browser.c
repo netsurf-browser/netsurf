@@ -1931,12 +1931,13 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 		}
 	}
 
-	assert(status);
 
 	if (action == ACTION_SUBMIT || action == ACTION_GO)
 		bw->last_action = wallclock();
 
-	browser_window_set_status(bw, status);
+	if (status != NULL)
+		browser_window_set_status(bw, status);
+
 	browser_window_set_pointer(bw->window, pointer);
 
 	/* deferred actions that can cause this browser_window to be destroyed
