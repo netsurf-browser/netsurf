@@ -1272,25 +1272,24 @@ bool html_fetch_object(struct content *c, const char *url, struct box *box,
 	/* No longer need normalized url */
 	free(url2);
 
-	if (error != NSERROR_OK)
-		return false;
-
-	/* add to object list */
-	object = talloc_realloc(c, c->data.html.object,
-			struct content_html_object, i + 1);
-	if (object == NULL) {
-		hlcache_handle_release(c_fetch);
-		return false;
-	}
-	c->data.html.object = object;
-	c->data.html.object[i].box = box;
-	c->data.html.object[i].permitted_types = permitted_types;
-       	c->data.html.object[i].background = background;
-	c->data.html.object[i].content = c_fetch;
-	c->data.html.object_count++;
-	c->active++;
-
-	return true;
+        if (error == NSERROR_OK) {
+                /* add to object list */
+                object = talloc_realloc(c, c->data.html.object,
+                                        struct content_html_object, i + 1);
+                if (object == NULL) {
+                        hlcache_handle_release(c_fetch);
+                        return false;
+                }
+                c->data.html.object = object;
+                c->data.html.object[i].box = box;
+                c->data.html.object[i].permitted_types = permitted_types;
+                c->data.html.object[i].background = background;
+                c->data.html.object[i].content = c_fetch;
+                c->data.html.object_count++;
+                c->active++;
+        }
+        
+	return error != NSERROR_NOMEM;
 }
 
 
