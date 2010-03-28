@@ -118,7 +118,6 @@ int netsurf_main_loop(void)
 {
 	while (!netsurf_quit) {
 		gui_poll(fetch_active);
-		fetch_poll();
 		llcache_poll();
 	}
 

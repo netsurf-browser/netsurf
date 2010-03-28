@@ -266,7 +266,7 @@ css_error nscss_convert_css_data(struct content_css_data *c, int w, int h)
 		while (c->imports[i].c != NULL && 
 				content_get_status(c->imports[i].c) != 
 				CONTENT_STATUS_DONE) {
-			fetch_poll();
+			llcache_poll();
 			gui_multitask();
 		}
 

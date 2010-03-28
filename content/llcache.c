@@ -9,7 +9,7 @@
  *
  * NetSurf is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
@@ -195,7 +195,7 @@ static nserror llcache_fetch_cert_error(llcache_object *object,
 
 
 /******************************************************************************
- * Public API                                                                 *
+ * Public API								      *
  ******************************************************************************/
 
 /**
@@ -222,6 +222,8 @@ nserror llcache_poll(void)
 {
 	llcache_object *object;
 	
+	fetch_poll();
+	
 	/* Catch new users up with state of objects */
 	for (object = llcache_cached_objects; object != NULL; 
 			object = object->next) {
@@ -242,12 +244,12 @@ nserror llcache_poll(void)
 /**
  * Retrieve a handle for a low-level cache object
  *
- * \param url      URL of the object to fetch
- * \param flags    Object retrieval flags
+ * \param url	   URL of the object to fetch
+ * \param flags	   Object retrieval flags
  * \param referer  Referring URL, or NULL if none
- * \param post     POST data, or NULL for a GET request
- * \param cb       Client callback for events
- * \param pw       Pointer to client-specific data
+ * \param post	   POST data, or NULL for a GET request
+ * \param cb	   Client callback for events
+ * \param pw	   Pointer to client-specific data
  * \param result   Pointer to location to recieve cache handle
  * \return NSERROR_OK on success, appropriate error otherwise
  */
@@ -289,8 +291,8 @@ nserror llcache_handle_retrieve(const char *url, uint32_t flags,
  * Change the callback associated with a low-level cache handle
  *
  * \param handle  Handle to change callback of
- * \param cb      New callback
- * \param pw      Client data for new callback
+ * \param cb	  New callback
+ * \param pw	  Client data for new callback
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 nserror llcache_handle_change_callback(llcache_handle *handle,
@@ -342,7 +344,7 @@ const char *llcache_handle_get_url(const llcache_handle *handle)
  * Retrieve source data of a low-level cache object
  *
  * \param handle  Handle to retrieve source data from
- * \param size    Pointer to location to receive byte length of data
+ * \param size	  Pointer to location to receive byte length of data
  * \return Pointer to source data
  */
 const uint8_t *llcache_handle_get_source_data(const llcache_handle *handle,
@@ -357,13 +359,13 @@ const uint8_t *llcache_handle_get_source_data(const llcache_handle *handle,
  * Retrieve a header value associated with a low-level cache object
  *
  * \param handle  Handle to retrieve header from
- * \param key     Header name
+ * \param key	  Header name
  * \return Header value, or NULL if header does not exist
  *
  * \todo Make the key an enumeration, to avoid needless string comparisons
  * \todo Forcing the client to parse the header value seems wrong. 
- *       Better would be to return the actual value part and an array of 
- *       key-value pairs for any additional parameters.
+ *	 Better would be to return the actual value part and an array of 
+ *	 key-value pairs for any additional parameters.
  */
 const char *llcache_handle_get_header(const llcache_handle *handle, 
 		const char *key)
@@ -397,15 +399,15 @@ bool llcache_handle_references_same_object(const llcache_handle *a,
 }
 
 /******************************************************************************
- * Low-level cache internals                                                  *
+ * Low-level cache internals						      *
  ******************************************************************************/
 
 /**
  * Create a new object user
  *
- * \param cb    Callback routine
- * \param pw    Private data for callback
- * \param user  Pointer to location to receive result
+ * \param cb	Callback routine
+ * \param pw	Private data for callback
+ * \param user	Pointer to location to receive result
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 nserror llcache_object_user_new(llcache_handle_callback cb, void *pw,
@@ -426,7 +428,7 @@ nserror llcache_object_user_new(llcache_handle_callback cb, void *pw,
 /**
  * Destroy an object user
  *
- * \param user  User to destroy
+ * \param user	User to destroy
  * \return NSERROR_OK on success, appropriate error otherwise
  *
  * \pre User is not attached to an object
@@ -441,10 +443,10 @@ nserror llcache_object_user_destroy(llcache_object_user *user)
 /**
  * Retrieve an object from the cache, fetching it if necessary.
  *
- * \param url      URL of object to retrieve
- * \param flags    Fetch flags
+ * \param url	   URL of object to retrieve
+ * \param flags	   Fetch flags
  * \param referer  Referring URL, or NULL if none
- * \param post     POST data, or NULL for a GET request
+ * \param post	   POST data, or NULL for a GET request
  * \param result   Pointer to location to recieve retrieved object
  * \return NSERROR_OK on success, appropriate error otherwise
  */
@@ -509,10 +511,10 @@ nserror llcache_object_retrieve(const char *url, uint32_t flags,
 /**
  * Retrieve a potentially cached object
  *
- * \param url      URL of object to retrieve
- * \param flags    Fetch flags
+ * \param url	   URL of object to retrieve
+ * \param flags	   Fetch flags
  * \param referer  Referring URL, or NULL if none
- * \param post     POST data, or NULL for a GET request
+ * \param post	   POST data, or NULL for a GET request
  * \param result   Pointer to location to recieve retrieved object
  * \return NSERROR_OK on success, appropriate error otherwise
  */
@@ -642,7 +644,7 @@ nserror llcache_object_cache_update(llcache_object *object)
  *
  * \param source       Source object containing cache data to clone
  * \param destination  Destination object to clone cache data into
- * \param deep         Whether to deep-copy the data or not
+ * \param deep	       Whether to deep-copy the data or not
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 nserror llcache_object_clone_cache_data(const llcache_object *source,
@@ -693,14 +695,14 @@ nserror llcache_object_clone_cache_data(const llcache_object *source,
  * Kick-off a fetch for an object
  *
  * \param object   Object to fetch
- * \param flags    Fetch flags
+ * \param flags	   Fetch flags
  * \param referer  Referring URL, or NULL for none
- * \param post     POST data, or NULL for GET
+ * \param post	   POST data, or NULL for GET
  * \return NSERROR_OK on success, appropriate error otherwise
  *
  * \pre object::url must contain the URL to fetch
  * \pre If there is a freshness validation candidate, 
- *      object::candidate and object::cache must be filled in
+ *	object::candidate and object::cache must be filled in
  * \pre There must not be a fetch in progress for \a object
  */
 nserror llcache_object_fetch(llcache_object *object, uint32_t flags,
@@ -830,7 +832,7 @@ nserror llcache_object_refetch(llcache_object *object)
 /**
  * Create a new low-level cache object
  *
- * \param url     URL of object to create
+ * \param url	  URL of object to create
  * \param result  Pointer to location to receive result
  * \return NSERROR_OK on success, appropriate error otherwise
  */
@@ -903,7 +905,7 @@ nserror llcache_object_destroy(llcache_object *object)
  * Add a user to a low-level cache object
  *
  * \param object  Object to add user to
- * \param user    User to add
+ * \param user	  User to add
  * \return NSERROR_OK.
  */
 nserror llcache_object_add_user(llcache_object *object,
@@ -925,7 +927,7 @@ nserror llcache_object_add_user(llcache_object *object,
  * Remove a user from a low-level cache object
  *
  * \param object  Object to remove user from
- * \param user    User to remove
+ * \param user	  User to remove
  * \return NSERROR_OK.
  */
 nserror llcache_object_remove_user(llcache_object *object, 
@@ -946,7 +948,7 @@ nserror llcache_object_remove_user(llcache_object *object,
  * Add a low-level cache object to a cache list
  *
  * \param object  Object to add
- * \param list    List to add to
+ * \param list	  List to add to
  * \return NSERROR_OK
  */
 nserror llcache_object_add_to_list(llcache_object *object,
@@ -966,7 +968,7 @@ nserror llcache_object_add_to_list(llcache_object *object,
  * Remove a low-level cache object from a cache list
  *
  * \param object  Object to remove
- * \param list    List to remove from
+ * \param list	  List to remove from
  * \return NSERROR_OK
  */
 nserror llcache_object_remove_from_list(llcache_object *object,
@@ -1015,7 +1017,7 @@ nserror llcache_object_notify_users(llcache_object *object)
 	 *
 	 * HAD_HEADERS: on transition from HEADERS -> DATA state
 	 * HAD_DATA   : in DATA state, whenever there's new source data
-	 * DONE       : on transition from DATA -> COMPLETE state
+	 * DONE	      : on transition from DATA -> COMPLETE state
 	 */
 
 	for (user = object->users; user != NULL; user = next_user) {
@@ -1160,8 +1162,8 @@ nserror llcache_clean(void)
 /**
  * Clone a POST data object
  *
- * \param orig   Object to clone
- * \param clone  Pointer to location to receive clone
+ * \param orig	 Object to clone
+ * \param clone	 Pointer to location to receive clone
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 nserror llcache_post_data_clone(const llcache_post_data *orig, 
@@ -1202,7 +1204,7 @@ nserror llcache_post_data_clone(const llcache_post_data *orig,
  * Handle a query response
  *
  * \param proceed  Whether to proceed with fetch
- * \param cbpw     Our context for query
+ * \param cbpw	   Our context for query
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 nserror llcache_query_handle_response(bool proceed, void *cbpw)
@@ -1233,10 +1235,10 @@ nserror llcache_query_handle_response(bool proceed, void *cbpw)
 /**
  * Handler for fetch events
  *
- * \param msg        Type of fetch event
- * \param p          Our private data
- * \param data       Event data
- * \param size       Length of data in bytes
+ * \param msg	     Type of fetch event
+ * \param p	     Our private data
+ * \param data	     Event data
+ * \param size	     Length of data in bytes
  * \param errorcode  Reason for fetch error
  */
 void llcache_fetch_callback(fetch_msg msg, void *p, const void *data, 
@@ -1473,10 +1475,10 @@ nserror llcache_fetch_notmodified(llcache_object *object,
 /**
  * Split a fetch header into name and value
  *
- * \param data   Header string
- * \param len    Byte length of header
- * \param name   Pointer to location to receive header name
- * \param value  Pointer to location to receive header value
+ * \param data	 Header string
+ * \param len	 Byte length of header
+ * \param name	 Pointer to location to receive header name
+ * \param value	 Pointer to location to receive header value
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 nserror llcache_fetch_split_header(const char *data, size_t len, char **name,
@@ -1553,10 +1555,10 @@ nserror llcache_fetch_split_header(const char *data, size_t len, char **name,
  * Parse a fetch header
  *
  * \param object  Object to parse header for
- * \param data    Header string
- * \param len     Byte length of header
- * \param name    Pointer to location to receive header name
- * \param value   Pointer to location to receive header value
+ * \param data	  Header string
+ * \param len	  Byte length of header
+ * \param name	  Pointer to location to receive header name
+ * \param value	  Pointer to location to receive header value
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 nserror llcache_fetch_parse_header(llcache_object *object, const char *data, 
@@ -1647,8 +1649,8 @@ nserror llcache_fetch_parse_header(llcache_object *object, const char *data,
  * Process a fetch header
  *
  * \param object  Object being fetched
- * \param data    Header string
- * \param len     Byte length of header
+ * \param data	  Header string
+ * \param len	  Byte length of header
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 nserror llcache_fetch_process_header(llcache_object *object, const char *data,
@@ -1685,8 +1687,8 @@ nserror llcache_fetch_process_header(llcache_object *object, const char *data,
  * Process a chunk of fetched data
  *
  * \param object  Object being fetched
- * \param data    Data to process
- * \param len     Byte length of data
+ * \param data	  Data to process
+ * \param len	  Byte length of data
  * \return NSERROR_OK on success, appropriate error otherwise.
  */
 nserror llcache_fetch_process_data(llcache_object *object, const uint8_t *data, 
@@ -1714,7 +1716,7 @@ nserror llcache_fetch_process_data(llcache_object *object, const uint8_t *data,
  * Handle an authentication request
  *
  * \param object  Object being fetched
- * \param realm   Authentication realm
+ * \param realm	  Authentication realm
  * \return NSERROR_OK on success, appropriate error otherwise.
  */
 nserror llcache_fetch_auth(llcache_object *object, const char *realm)
@@ -1769,8 +1771,8 @@ nserror llcache_fetch_auth(llcache_object *object, const char *realm)
  * Handle a TLS certificate verification failure
  *
  * \param object  Object being fetched
- * \param certs   Certificate chain
- * \param num     Number of certificates in chain
+ * \param certs	  Certificate chain
+ * \param num	  Number of certificates in chain
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 nserror llcache_fetch_cert_error(llcache_object *object,

@@ -995,7 +995,7 @@ bool html_find_stylesheets(struct content *c, xmlNode *html)
 			content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
 			last_active = c->active;
 		}
-		fetch_poll();
+		llcache_poll();
 		gui_multitask();
 	}
 

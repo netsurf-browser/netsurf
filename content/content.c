@@ -9,7 +9,7 @@
  *
  * NetSurf is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
@@ -299,12 +299,12 @@ static const struct handler_entry handler_map[] = {
 #ifdef WITH_PNG
 	{nspng_create, nspng_process_data, nspng_convert,
 		0, nspng_destroy, 0, nspng_redraw, nspng_redraw_tiled,
-                0, 0, false},
+		0, 0, false},
 #else
 #ifdef WITH_MNG
 	{nsmng_create, nsmng_process_data, nsmng_convert,
 		0, nsmng_destroy, 0, nsmng_redraw, nsmng_redraw_tiled,
-                0, 0, false},
+		0, 0, false},
 #endif
 #endif
 #ifdef WITH_MNG
@@ -385,7 +385,7 @@ content_type content_lookup(const char *mime_type)
 /**
  * Create a new content structure.
  *
- * \param  url  URL of content, copied
+ * \param  url	URL of content, copied
  * \return  the new content structure, or 0 on memory exhaustion
  *
  * The type is initialised to CONTENT_UNKNOWN, and the status to
@@ -414,11 +414,6 @@ struct content * content_create(llcache_handle *llcache,
 		return NULL;
 
 	type = content_lookup(mime_type);
-	if (type == CONTENT_OTHER) {
-		http_parameter_list_destroy(params);
-		free(mime_type);
-		return NULL;
-	}
 
 	c = talloc_zero(0, struct content);
 	if (c == NULL) {
@@ -506,8 +501,8 @@ struct content * content_create(llcache_handle *llcache,
  * Handler for low-level cache events
  *
  * \param llcache  Low-level cache handle
- * \param event    Event details
- * \param pw       Pointer to our context
+ * \param event	   Event details
+ * \param pw	   Pointer to our context
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 nserror content_llcache_callback(llcache_handle *llcache,
@@ -647,7 +642,10 @@ void content_convert(struct content *c, int width, int height)
 	assert(c);
 	assert(c->type < HANDLER_MAP_COUNT);
 	assert(c->status == CONTENT_STATUS_LOADING);
-	assert(!c->locked);
+	
+	if (c->locked == true)
+		return;
+	
 	LOG(("content %s (%p)", llcache_handle_get_url(c->llcache), c));
 
 	c->locked = true;
@@ -735,10 +733,10 @@ void content_destroy(struct content *c)
 /**
  * Request a redraw of an area of a content
  *
- * \param h       Content handle
- * \param x       x co-ord of left edge
- * \param y       y co-ord of top edge
- * \param width   Width of rectangle
+ * \param h	  Content handle
+ * \param x	  x co-ord of left edge
+ * \param y	  y co-ord of top edge
+ * \param width	  Width of rectangle
  * \param height  Height of rectangle
  */
 void content_request_redraw(struct hlcache_handle *h,
@@ -838,7 +836,7 @@ bool content_redraw_tiled(hlcache_handle *h, int x, int y,
 				clip_x0, clip_y0, clip_x1, clip_y1, scale,
 				background_colour, repeat_x, repeat_y);
 	} else {
-	  	/* ensure we have a redrawable content */
+		/* ensure we have a redrawable content */
 		if ((!handler_map[c->type].redraw) || (width == 0) ||
 				(height == 0))
 			return true;
@@ -850,15 +848,15 @@ bool content_redraw_tiled(hlcache_handle *h, int x, int y,
 		/* find the redraw boundaries to loop within*/
 		x0 = x;
 		if (repeat_x) {
-		  	for (; x0 > clip_x0; x0 -= width);
-		  	x1 = clip_x1;
+			for (; x0 > clip_x0; x0 -= width);
+			x1 = clip_x1;
 		} else {
 			x1 = x + 1;
 		}
 		y0 = y;
 		if (repeat_y) {
-		  	for (; y0 > clip_y0; y0 -= height);
-		  	y1 = clip_y1;
+			for (; y0 > clip_y0; y0 -= height);
+			y1 = clip_y1;
 		} else {
 			y1 = y + 1;
 		}
@@ -881,7 +879,7 @@ bool content_redraw_tiled(hlcache_handle *h, int x, int y,
  *
  * \param  c	     the content to register
  * \param  callback  the callback function
- * \param  pw        callback private data
+ * \param  pw	     callback private data
  * \return true on success, false otherwise on memory exhaustion
  *
  * The callback will be called when content_broadcast() is
@@ -1197,8 +1195,8 @@ int content__get_available_width(struct content *c)
 /**
  * Retrieve source of content
  *
- * \param c     Content to retrieve source of
- * \param size  Pointer to location to receive byte size of source
+ * \param c	Content to retrieve source of
+ * \param size	Pointer to location to receive byte size of source
  * \return Pointer to source data
  */
 const char *content_get_source_data(hlcache_handle *h, unsigned long *size)
