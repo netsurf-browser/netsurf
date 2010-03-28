@@ -31,7 +31,6 @@
 #include "utils/config.h"
 #include "content/content_protected.h"
 #include "content/fetch.h"
-#include "content/fetchcache.h"
 #include "content/hlcache.h"
 #include "desktop/browser.h"
 #include "desktop/gui.h"

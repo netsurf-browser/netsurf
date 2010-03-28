@@ -33,7 +33,6 @@
 #include "utils/config.h"
 #include "utils/utsname.h"
 #include "content/fetch.h"
-#include "content/fetchcache.h"
 #include "content/llcache.h"
 #include "content/urldb.h"
 #include "desktop/netsurf.h"

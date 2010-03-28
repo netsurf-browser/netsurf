@@ -33,7 +33,6 @@
 #include <time.h>
 #include "utils/config.h"
 #include "content/content_protected.h"
-#include "content/fetchcache.h"
 #include "content/hlcache.h"
 #include "css/css.h"
 #include "image/bitmap.h"
