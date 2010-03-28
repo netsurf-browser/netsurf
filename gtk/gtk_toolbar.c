@@ -709,6 +709,7 @@ GtkWidget *nsgtk_toolbar_make_widget(nsgtk_scaffolding *g,
 				imagefile));
 		GtkWidget *entry = GTK_WIDGET(sexy_icon_entry_new());
 		GtkWidget *w = GTK_WIDGET(gtk_tool_item_new());
+
 		if ((entry == NULL) || (w == NULL)) {
 			warn_user(messages_get("NoMemory"), 0);
 			return NULL;
@@ -718,6 +719,7 @@ GtkWidget *nsgtk_toolbar_make_widget(nsgtk_scaffolding *g,
 			sexy_icon_entry_set_icon(SEXY_ICON_ENTRY(entry),
 					SEXY_ICON_ENTRY_PRIMARY,
 					GTK_IMAGE(image));
+
 		gtk_container_add(GTK_CONTAINER(w), entry);
 		gtk_tool_item_set_expand(GTK_TOOL_ITEM(w), TRUE);
 		return w;
@@ -735,12 +737,12 @@ GtkWidget *nsgtk_toolbar_make_widget(nsgtk_scaffolding *g,
 		GtkWidget *image = GTK_WIDGET(gtk_image_new_from_pixbuf(
 				nsgtk_throbber->framedata[0]));
 		GtkWidget *w = GTK_WIDGET(gtk_tool_item_new());
-		GtkWidget *al = GTK_WIDGET(gtk_alignment_new(0.1,0.1,0.8,0.8));
+		GtkWidget *al = GTK_WIDGET(gtk_alignment_new(0.5, 0.5, 1, 1));
 		if ((w == NULL) || (al == NULL)) {
 			warn_user(messages_get("NoMemory"), 0);
 			return NULL;
 		}
-		gtk_alignment_set_padding(GTK_ALIGNMENT(al), 0, 0, 6, 0);
+		gtk_alignment_set_padding(GTK_ALIGNMENT(al), 0, 0, 3, 3);
 		if (image != NULL)
 			gtk_container_add(GTK_CONTAINER(al), image);
 		gtk_container_add(GTK_CONTAINER(w), al);
@@ -756,6 +758,7 @@ GtkWidget *nsgtk_toolbar_make_widget(nsgtk_scaffolding *g,
 				"gtk-info", GTK_ICON_SIZE_LARGE_TOOLBAR));
 		GtkWidget *entry = GTK_WIDGET(sexy_icon_entry_new());
 		GtkWidget *w = GTK_WIDGET(gtk_tool_item_new());
+
 		if ((entry == NULL) || (w == NULL)) {
 			warn_user(messages_get("NoMemory"), 0);
 			return NULL;
@@ -767,6 +770,7 @@ GtkWidget *nsgtk_toolbar_make_widget(nsgtk_scaffolding *g,
 			sexy_icon_entry_set_icon(SEXY_ICON_ENTRY(entry),
 					SEXY_ICON_ENTRY_PRIMARY,
 					GTK_IMAGE(image));
+
 		gtk_container_add(GTK_CONTAINER(w), entry);
 		return w;
 	}
