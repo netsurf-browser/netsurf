@@ -39,10 +39,10 @@
 
 struct gui_window {
 	/* All gui_window objects have an ultimate scaffold */
-	nsgtk_scaffolding	*scaffold; 
-	/**< the gtk object containing menu, buttons, url bar, [tabs], 
+	nsgtk_scaffolding	*scaffold;
+	/**< the gtk object containing menu, buttons, url bar, [tabs],
 	 * drawing area, etc that may contain 1 -> several gui_windows */
-	struct browser_window	*bw; 
+	struct browser_window	*bw;
 	/**< the 'content' window that is rendered in the gui_window*/
 	struct browser_mouse 	*mouse; /**< contains mouse state / events */
 
@@ -53,10 +53,10 @@ struct gui_window {
 	int			last_x, last_y;
 	/**< storage caret location for rendering */
 
-	GtkScrolledWindow	*scrolledwindow; 
-	/**< optional; for frames that need it; top level of gtk structure of  
+	GtkScrolledWindow	*scrolledwindow;
+	/**< optional; for frames that need it; top level of gtk structure of
 	 * gui_window */
-	GtkViewport		*viewport; 
+	GtkViewport		*viewport;
 	/**< contained in a scrolled window */
 	GtkFixed		*fixed; /**< contained in a viewport */
 	GtkDrawingArea		*drawing_area; /**< contained in a gtkfixed */
@@ -188,7 +188,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	g->next = window_list;
 	g->prev = NULL;
 	window_list = g;
-	
+
 	/* Construct our primary elements */
 	g->fixed = GTK_FIXED(gtk_fixed_new());
         g->drawing_area = GTK_DRAWING_AREA(gtk_drawing_area_new());
@@ -291,12 +291,12 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 #define CONNECT(obj, sig, callback, ptr) \
 	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))
-	g->signalhandler[NSGTK_WINDOW_SIGNAL_REDRAW] = 
+	g->signalhandler[NSGTK_WINDOW_SIGNAL_REDRAW] =
 			CONNECT(g->drawing_area, "expose_event",
 			nsgtk_window_expose_event, g);
 	CONNECT(g->drawing_area, "motion_notify_event",
 			nsgtk_window_motion_notify_event, g);
-	g->signalhandler[NSGTK_WINDOW_SIGNAL_CLICK] = 
+	g->signalhandler[NSGTK_WINDOW_SIGNAL_CLICK] =
 			CONNECT(g->drawing_area, "button_press_event",
 			nsgtk_window_button_press_event, g);
 	CONNECT(g->drawing_area, "button_release_event",
@@ -380,7 +380,7 @@ gboolean nsgtk_window_expose_event(GtkWidget *widget,
 	plot = nsgtk_plotters;
 	nsgtk_plot_set_scale(g->bw->scale);
 	current_redraw_browser = g->bw;
-	
+
 	content_redraw(c, 0, 0,
 			widget->allocation.width * scale,
 			widget->allocation.height * scale,
@@ -459,14 +459,23 @@ gboolean nsgtk_window_button_press_event(GtkWidget *widget,
 
 	switch (event->button) {
 	case 1:
+		/* Left button, usually.
+		 * Pass to core as BUTTON 1. */
 		g->mouse->state = BROWSER_MOUSE_PRESS_1;
 		break;
-	case 3: 
+	case 2:
+		/* Middle button, usually.
+		 * Pass to core as BUTTON 2 */
+		g->mouse->state = BROWSER_MOUSE_PRESS_2;
+		break;
+	case 3:
+		/* Right button, usually.
+		 * Front end action button -- context menu. */
 		browser_window_remove_caret(g->bw);
 		nsgtk_scaffolding_popup_menu(g->scaffold, g->mouse->pressed_x,
 				g->mouse->pressed_y);
 		g->mouse->state = BROWSER_MOUSE_PRESS_2;
-		break;
+		return TRUE;
 	default:
 		return FALSE;
 	}
