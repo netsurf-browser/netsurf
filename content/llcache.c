@@ -105,7 +105,8 @@ struct llcache_object {
 	llcache_object *next;		/**< Next in list */
 
 	char *url;			/**< Post-redirect URL for object */
-
+	bool has_query;			/**< URL has a query segment */
+  
 	/** \todo We need a generic dynamic buffer object */
 	uint8_t *source_data;		/**< Source data for object */
 	size_t source_len;		/**< Byte length of source data */
@@ -464,10 +465,7 @@ nserror llcache_object_retrieve(const char *url, uint32_t flags,
 	 * Caching Rules:
 	 *
 	 * 1) Forced fetches are never cached
-	 * 2) GET requests with query segments are never cached
-	 * 3) POST requests are never cached
-	 *
-	 * \todo Find out if restriction (2) can be removed
+	 * 2) POST requests are never cached
 	 */
 
 	/* Look for a query segment */
@@ -479,7 +477,7 @@ nserror llcache_object_retrieve(const char *url, uint32_t flags,
 
 	url_destroy_components(&components);
 
-	if (flags & LLCACHE_RETRIEVE_FORCE_FETCH || has_query || post != NULL) {
+	if (flags & LLCACHE_RETRIEVE_FORCE_FETCH || post != NULL) {
 		/* Create new object */
 		error = llcache_object_new(url, &obj);
 		if (error != NSERROR_OK)
@@ -502,7 +500,9 @@ nserror llcache_object_retrieve(const char *url, uint32_t flags,
 
 		/* Returned object is already in the cached list */
 	}
-
+	
+	obj->has_query = has_query;
+	
 	*result = obj;
 
 	return NSERROR_OK;
@@ -1272,7 +1272,14 @@ void llcache_fetch_callback(fetch_msg msg, void *p, const void *data,
 	case FETCH_DATA:
 		/* Received some data */
 		object->fetch.state = LLCACHE_FETCH_DATA;
-
+		if (object->has_query && 
+		    (object->cache.expires == 0 && object->cache.max_age == INVALID_AGE)) {
+			/* URI had query string and did not provide an explicit expiration
+			 * time, thus by rfc2616 13.9 we must invalidate the cache data
+			 * to force the cache to not retain the object.
+			 */
+			memset(&(object->cache), 0, sizeof(llcache_cache_control));
+		}
 		error = llcache_fetch_process_data(object, data, size);
 		break;
 	case FETCH_FINISHED:
