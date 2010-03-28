@@ -28,7 +28,7 @@
 
 #include <svgtiny.h>
 
-#include "content/content.h"
+#include "content/content_protected.h"
 #include "css/css.h"
 #include "desktop/plotters.h"
 #include "image/svg.h"
@@ -63,10 +63,15 @@ no_memory:
 
 bool svg_convert(struct content *c, int w, int h)
 {
+	const char *source_data;
+	unsigned long source_size;
+
 	assert(c->data.svg.diagram);
 
-	svgtiny_parse(c->data.svg.diagram, c->source_data, c->source_size,
-			c->url, w, h);
+	source_data = content__get_source_data(c, &source_size);
+
+	svgtiny_parse(c->data.svg.diagram, source_data, source_size,
+			content__get_url(c), w, h);
 
 	c->width = c->data.svg.diagram->width;
 	c->height = c->data.svg.diagram->height;
