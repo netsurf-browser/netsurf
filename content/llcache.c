@@ -1370,7 +1370,12 @@ nserror llcache_fetch_redirect(llcache_object *object, const char *target,
 	/* Abort fetch for this object */
 	fetch_abort(object->fetch.fetch);
 	object->fetch.fetch = NULL;
-
+	
+	/* Invalidate the cache control data */
+	memset(&(object->cache), 0, sizeof(llcache_cache_control));
+	/* And mark it complete */
+	object->fetch.state = LLCACHE_FETCH_COMPLETE;
+	
 	/** \todo Limit redirect depth, or detect cycles */
 
 	/* Make target absolute */
