@@ -1859,6 +1859,8 @@ void gui_window_stop_throbber(struct gui_window* _g)
 	if (g->buttons[RELOAD_BUTTON] != NULL)
 		g->buttons[RELOAD_BUTTON]->sensitivity = true;
 
+	nsgtk_scaffolding_set_sensitivity(g);
+
 	if ((g->throbber == NULL) || (nsgtk_throbber == NULL) ||
 			(nsgtk_throbber->framedata == NULL) ||
 			(nsgtk_throbber->framedata[0] == NULL))
