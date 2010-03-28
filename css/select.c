@@ -1474,6 +1474,10 @@ css_error node_presentational_hint(void *pw, void *node,
 					strcasecmp((const char *) type,
 					"password") == 0)
 				hint->data.length.unit = CSS_UNIT_EX;
+			else {
+				xmlFree(type);
+				return CSS_PROPERTY_NOT_SET;
+			}
 
 			if (type != NULL)
 				xmlFree(type);
