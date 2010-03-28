@@ -62,11 +62,9 @@ struct gui_download_window *gui_download_window_create(const char *url,
 	struct gui_download_window *dw;
 	APTR va[3];
 
-	if(!gui) return NULL;
-
 	dw = AllocVec(sizeof(struct gui_download_window),MEMF_PRIVATE | MEMF_CLEAR);
 
-	if((!IsListEmpty(&gui->dllist)) && (dw->dln = (struct dlnode *)FindName(&gui->dllist,url)))
+	if(gui && (!IsListEmpty(&gui->dllist)) && (dw->dln = (struct dlnode *)FindName(&gui->dllist,url)))
 	{
 		strcpy(dw->fname, dw->dln->filename);
 		free(dw->dln->node.ln_Name);
@@ -77,6 +75,7 @@ struct gui_download_window *gui_download_window_create(const char *url,
 		if(AslRequestTags(savereq,
 			ASLFR_TitleText,messages_get("NetSurf"),
 			ASLFR_Screen,scrn,
+			ASLFR_InitialDrawer, option_download_dir,
 			ASLFR_InitialFile,FilePart(url),
 			TAG_DONE))
 		{
@@ -88,7 +87,7 @@ struct gui_download_window *gui_download_window_create(const char *url,
 
 	dw->size = total_size;
 	dw->downloaded = 0;
-	dw->bw = gui->shared->bw;
+	if(gui) dw->bw = gui->shared->bw;
 	dw->url = (char *)strdup((char *)url);
 
 	va[0] = (APTR)dw->downloaded;
