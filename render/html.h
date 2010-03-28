@@ -31,11 +31,13 @@
 #include "desktop/plot_style.h"
 #include "render/parser_binding.h"
 
+struct fetch_multipart_data;
 struct box;
 struct rect;
 struct browser_window;
 struct content;
-struct form_successful_control;
+struct hlcache_handle;
+struct http_parameter;
 struct imagemap;
 struct object_params;
 struct plotters;
@@ -49,6 +51,18 @@ struct plotters;
 extern char *default_stylesheet_url;
 extern char *adblock_stylesheet_url;
 extern char *quirks_stylesheet_url;
+
+/**
+ * Container for stylesheets used by an HTML document
+ */
+struct html_stylesheet {
+	/** Type of sheet */
+	enum { HTML_STYLESHEET_EXTERNAL, HTML_STYLESHEET_INTERNAL } type;
+	union {
+		struct hlcache_handle *external;
+		struct content_css_data *internal;
+	} data;	/**< Sheet data */
+};
 
 struct frame_dimension {
   	float value;
@@ -68,7 +82,7 @@ typedef enum {
 
 /** An object (<img>, <object>, etc.) in a CONTENT_HTML document. */
 struct content_html_object {
-	struct content *content;  /**< Content, or 0. */
+	struct hlcache_handle *content;  /**< Content, or 0. */
 	struct box *box;  /**< Node in box tree containing it. */
 	/** Pointer to array of permitted content_type, terminated by
 	 *  CONTENT_UNKNOWN, or 0 if any type is acceptable. */
@@ -120,8 +134,6 @@ struct content_html_data {
 	xmlDoc *document;
 	binding_quirks_mode quirks; /**< Quirkyness of document */
 
-	lwc_context *dict; /**< Internment context for this document */
-
 	char *encoding;	/**< Encoding of source, 0 if unknown. */
 	binding_encoding_source encoding_source;
 				/**< Source of encoding information. */
@@ -133,12 +145,12 @@ struct content_html_data {
 	colour background_colour;  /**< Document background colour. */
 	const struct font_functions *font_func;
 
-	struct content *favicon; /**< the favicon for the page */
+	struct hlcache_handle *favicon; /**< the favicon for the page */
 	
 	/** Number of entries in stylesheet_content. */
 	unsigned int stylesheet_count;
 	/** Stylesheets. Each may be 0. */
-	struct nscss_import *stylesheets;
+	struct html_stylesheet *stylesheets;
 	/**< Style selection context */
 	css_select_ctx *select_ctx;
 
@@ -173,8 +185,7 @@ struct content_html_data {
 extern bool html_redraw_debug;
 
 
-bool html_create(struct content *c, struct content *parent, 
-		const char *params[]);
+bool html_create(struct content *c, const struct http_parameter *params);
 bool html_process_data(struct content *c, char *data, unsigned int size);
 bool html_convert(struct content *c, int width, int height);
 void html_reformat(struct content *c, int width, int height);
@@ -183,9 +194,6 @@ bool html_fetch_object(struct content *c, const char *url, struct box *box,
 		const content_type *permitted_types,
 		int available_width, int available_height,
 		bool background);
-bool html_replace_object(struct content *c, unsigned int i, char *url,
-		char *post_urlenc,
-		struct form_successful_control *post_multipart);
 void html_stop(struct content *c);
 void html_open(struct content *c, struct browser_window *bw,
 		struct content *page, unsigned int index, struct box *box,
@@ -211,5 +219,18 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 		int height,
 		float scale,
 		bool excluded);
+
+xmlDoc *html_get_document(struct hlcache_handle *h);
+struct box *html_get_box_tree(struct hlcache_handle *h);
+const char *html_get_encoding(struct hlcache_handle *h);
+struct content_html_frames *html_get_frameset(struct hlcache_handle *h);
+struct content_html_iframe *html_get_iframe(struct hlcache_handle *h);
+const char *html_get_base_url(struct hlcache_handle *h);
+const char *html_get_base_target(struct hlcache_handle *h);
+struct html_stylesheet *html_get_stylesheets(struct hlcache_handle *h, 
+		unsigned int *n);
+struct content_html_object *html_get_objects(struct hlcache_handle *h, 
+			unsigned int *n);
+struct hlcache_handle *html_get_favicon(struct hlcache_handle *h);
 
 #endif

@@ -38,7 +38,6 @@ extern "C" {
 #include "content/urldb.h"
 #include "desktop/netsurf.h"
 #include "desktop/options.h"
-#include "render/form.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/url.h"
@@ -83,7 +82,7 @@ static void fetch_rsrc_finalise(const char *scheme)
 
 static void *fetch_rsrc_setup(struct fetch *parent_fetch, const char *url,
 		 bool only_2xx, const char *post_urlenc,
-		 struct form_successful_control *post_multipart,
+		 struct fetch_multipart_data *post_multipart,
 		 const char **headers)
 {
 	struct fetch_rsrc_context *ctx;
@@ -277,6 +276,8 @@ static void fetch_rsrc_poll(const char *scheme)
 
 		/* Only process non-aborted fetches */
 		if (!c->aborted && fetch_rsrc_process(c) == true) {
+			char header[64];
+
 			fetch_set_http_code(c->parent_fetch, 200);
 			LOG(("setting rsrc: MIME type to %s, length to %zd",
 					c->mimetype, c->datalen));
@@ -284,8 +285,16 @@ static void fetch_rsrc_poll(const char *scheme)
 			 * Therefore, we _must_ check for this after _every_
 			 * call to fetch_rsrc_send_callback().
 			 */
-			fetch_rsrc_send_callback(FETCH_TYPE,
-				c, c->mimetype, c->datalen, FETCH_ERROR_NO_ERROR);
+			snprintf(header, sizeof header, "Content-Type: %s",
+					c->mimetype);
+			fetch_rsrc_send_callback(FETCH_HEADER, c, header,
+					strlen(header), FETCH_ERROR_NO_ERROR);
+
+			snprintf(header, sizeof header, "Content-Length: %zd",
+					c->datalen);
+			fetch_rsrc_send_callback(FETCH_HEADER, c, header,
+					strlen(header), FETCH_ERROR_NO_ERROR);
+
 			if (!c->aborted) {
 				fetch_rsrc_send_callback(FETCH_DATA, 
 					c, c->data, c->datalen, FETCH_ERROR_NO_ERROR);

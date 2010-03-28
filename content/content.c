@@ -32,9 +32,9 @@
 #include <strings.h>
 #include <time.h>
 #include "utils/config.h"
-#include "content/content.h"
-#include "content/fetch.h"
+#include "content/content_protected.h"
 #include "content/fetchcache.h"
+#include "content/hlcache.h"
 #include "css/css.h"
 #include "image/bitmap.h"
 #include "desktop/options.h"
@@ -78,15 +78,12 @@
 #ifdef WITH_PNG
 #include "image/png.h"
 #endif
+#include "utils/http.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/talloc.h"
 #include "utils/utils.h"
 
-
-/** Linked list of all content structures. May include more than one content
- *  per URL. Doubly-linked. */
-struct content *content_list = 0;
 
 /** An entry in mime_map. */
 struct mime_entry {
@@ -250,8 +247,7 @@ const char * const content_status_name[] = {
 
 /** An entry in handler_map. */
 struct handler_entry {
-	bool (*create)(struct content *c, struct content *parent,
-			const char *params[]);
+	bool (*create)(struct content *c, const http_parameter *params);
 	bool (*process_data)(struct content *c, char *data, unsigned int size);
 	bool (*convert)(struct content *c, int width, int height);
 	void (*reformat)(struct content *c, int width, int height);
@@ -359,16 +355,16 @@ static const struct handler_entry handler_map[] = {
 };
 #define HANDLER_MAP_COUNT (sizeof(handler_map) / sizeof(handler_map[0]))
 
-
+static nserror content_llcache_callback(llcache_handle *llcache,
+		const llcache_event *event, void *pw);
+static void content_convert(struct content *c, int width, int height);
 static void content_update_status(struct content *c);
-static void content_destroy(struct content *c);
-static void content_stop_check(struct content *c);
 
 
 /**
  * Convert a MIME type to a content_type.
  *
- * The returned ::content_type will always be suitable for content_set_type().
+ * The returned ::content_type will always be suitable for content_create().
  */
 
 content_type content_lookup(const char *mime_type)
@@ -397,289 +393,188 @@ content_type content_lookup(const char *mime_type)
  * CONTENT_STATUS_TYPE_UNKNOWN.
  */
 
-struct content * content_create(const char *url)
+struct content * content_create(llcache_handle *llcache,
+		const char *fallback_charset, bool quirks)
 {
 	struct content *c;
 	struct content_user *user_sentinel;
+	const char *content_type_header;
+	content_type type;
+	char *mime_type;
+	http_parameter *params;
+	nserror error;
+	
+	content_type_header = 
+			llcache_handle_get_header(llcache, "Content-Type");
+	if (content_type_header == NULL)
+		content_type_header = "text/plain";
+
+	error = http_parse_content_type(content_type_header, &mime_type,
+			&params);
+	if (error != NSERROR_OK)
+		return NULL;
+
+	type = content_lookup(mime_type);
+	if (type == CONTENT_OTHER) {
+		http_parameter_list_destroy(params);
+		free(mime_type);
+		return NULL;
+	}
 
 	c = talloc_zero(0, struct content);
-	if (!c)
-		return 0;
+	if (c == NULL) {
+		http_parameter_list_destroy(params);
+		free(mime_type);
+		return NULL;
+	}
 
-	LOG(("url %s -> %p", url, c));
+	LOG(("url %s -> %p", llcache_handle_get_url(llcache), c));
 
 	user_sentinel = talloc(c, struct content_user);
-	if (!user_sentinel) {
+	if (user_sentinel == NULL) {
 		talloc_free(c);
-		return 0;
+		http_parameter_list_destroy(params);
+		free(mime_type);
+		return NULL;
 	}
-	c->url = talloc_strdup(c, url);
-	if (!c->url) {
+
+	c->fallback_charset = talloc_strdup(c, fallback_charset);
+	if (fallback_charset != NULL && c->fallback_charset == NULL) {
 		talloc_free(c);
-		return 0;
+		http_parameter_list_destroy(params);
+		free(mime_type);
+		return NULL;
 	}
-	talloc_set_name_const(c, c->url);
-	c->type = CONTENT_UNKNOWN;
-	c->mime_type = 0;
-	c->status = CONTENT_STATUS_TYPE_UNKNOWN;
+
+	c->mime_type = talloc_strdup(c, mime_type);
+	if (c->mime_type == NULL) {
+		talloc_free(c);
+		http_parameter_list_destroy(params);
+		free(mime_type);
+		return NULL;
+	}
+
+	/* No longer require mime_type */
+	free(mime_type);
+
+	c->llcache = llcache;
+	c->type = type;
+	c->status = CONTENT_STATUS_LOADING;
 	c->width = 0;
 	c->height = 0;
 	c->available_width = 0;
+	c->quirks = quirks;
 	c->refresh = 0;
-	c->bitmap = 0;
+	c->bitmap = NULL;
 	c->fresh = false;
 	c->time = wallclock();
 	c->size = 0;
-	c->title = 0;
+	c->title = NULL;
 	c->active = 0;
-	user_sentinel->callback = 0;
-	user_sentinel->p1 = user_sentinel->p2 = 0;
-	user_sentinel->next = 0;
+	user_sentinel->callback = NULL;
+	user_sentinel->pw = NULL;
+	user_sentinel->next = NULL;
 	c->user_list = user_sentinel;
 	c->sub_status[0] = 0;
 	c->locked = false;
-	c->fetch = 0;
-	c->source_data = 0;
-	c->source_size = 0;
-	c->source_allocated = 0;
 	c->total_size = 0;
 	c->http_code = 0;
-	c->no_error_pages = false;
-	c->download = false;
-	c->tried_with_auth = false;
-	c->redirect_count = 0;
 	c->error_count = 0;
-	c->cache_data.req_time = 0;
-	c->cache_data.res_time = 0;
-	c->cache_data.date = 0;
-	c->cache_data.expires = 0;
-	c->cache_data.age = INVALID_AGE;
-	c->cache_data.max_age = INVALID_AGE;
-	c->cache_data.no_cache = false;
-	c->cache_data.etag = 0;
-	c->cache_data.last_modified = 0;
 
 	content_set_status(c, messages_get("Loading"));
 
-	c->prev = 0;
-	c->next = content_list;
-	if (content_list)
-		content_list->prev = c;
-	content_list = c;
+	if (handler_map[type].create) {
+		if (handler_map[type].create(c, params) == false) {
+			talloc_free(c);
+			http_parameter_list_destroy(params);
+			return NULL;
+		}
+	}
+
+	http_parameter_list_destroy(params);
+
+	/* Finally, claim low-level cache events */
+	if (llcache_handle_change_callback(llcache, 
+			content_llcache_callback, c) != NSERROR_OK) {
+		talloc_free(c);
+		return NULL;
+	}
 
 	return c;
 }
 
-
 /**
- * Get a content from the memory cache.
+ * Handler for low-level cache events
  *
- * \param  url  URL of content
- * \return  content if found, or 0
- *
- * Searches the list of contents for one corresponding to the given url, and
- * which is fresh and shareable.
+ * \param llcache  Low-level cache handle
+ * \param event    Event details
+ * \param pw       Pointer to our context
+ * \return NSERROR_OK on success, appropriate error otherwise
  */
-
-struct content * content_get(const char *url)
+nserror content_llcache_callback(llcache_handle *llcache,
+		const llcache_event *event, void *pw)
 {
-	struct content *c;
+	struct content *c = pw;
+	union content_msg_data msg_data;
+	nserror error = NSERROR_OK;
 
-	for (c = content_list; c; c = c->next) {
-		if (!c->fresh)
-			/* not fresh */
-			continue;
-		if (c->status == CONTENT_STATUS_ERROR)
-			/* error state */
-			continue;
-		/** \todo We need to reconsider the entire caching strategy in
-		 * the light of data being shared between specific contents.
-		 *
-		 * For example, string dictionaries are owned by the document, 
-		 * and all stylesheets used by the document share the same 
-		 * dictionary. 
-		 *
-		 * The CSS content handler retrieves the dictionary from its 
-		 * parent content. This relies upon there being a 1:1 mapping 
-		 * between documents and stylesheets.
-		 *
-		 * The type of a content is only known once we've received the
-		 * headers from the fetch layer (and potentially some of the
-		 * content data, too, if we ever sniff for the type). There
-		 * is thus a problem with returning contents of unknown type
-		 * here -- when we subsequently discover that they must only
-		 * have one user, we clone them. By that point, however, we've
-		 * no idea what the parent content is, which means that they
-		 * end up with the wrong parent (and thus wrong dictionary).
-		 *
-		 * Of course, the problem with ignoring unknown content types
-		 * here is that, for all the content types which may be shared,
-		 * we end up duplicating them and wasting memory. Hence the
-		 * need to reconsider everything.
-		 */
-		if (c->type == CONTENT_UNKNOWN)
-			continue;
-		if (c->type != CONTENT_UNKNOWN &&
-				handler_map[c->type].no_share &&
-				c->user_list->next)
-			/* not shareable, and has a user already */
-			continue;
-		if (strcmp(c->url, url))
-			continue;
-		return c;
+	switch (event->type) {
+	case LLCACHE_EVENT_HAD_HEADERS:
+		/* Will never happen: handled in hlcache */
+		break;
+	case LLCACHE_EVENT_HAD_DATA:
+		if (handler_map[c->type].process_data) {
+			if (handler_map[c->type].process_data(c, 
+					(char *) event->data.data.buf, 
+					event->data.data.len) == false) {
+				c->status = CONTENT_STATUS_ERROR;
+				/** \todo It's not clear what error this is */
+				error = NSERROR_NOMEM;
+			}
+		}
+		break;
+	case LLCACHE_EVENT_DONE:
+	{
+		const uint8_t *source;
+		size_t source_size;
+
+		source = llcache_handle_get_source_data(llcache, &source_size);
+
+		content_set_status(c, messages_get("Converting"), source_size);
+		content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
+
+		content_convert(c, c->width, c->height);
+	}
+		break;
+	case LLCACHE_EVENT_ERROR:
+		/** \todo Error page? */
+		c->status = CONTENT_STATUS_ERROR;
+		msg_data.error = event->data.msg;
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		break;
+	case LLCACHE_EVENT_PROGRESS:
+		content_set_status(c, "%s", event->data.msg);
+		content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
+		break;
 	}
 
-	return 0;
+	return error;
 }
-
-
-/**
- * Get a READY or DONE content from the memory cache.
- *
- * \param url URL of content
- * \return content if found, or 0
- *
- * Searches the list of contents for one corresponding to the given url, and
- * which is fresh, shareable and either READY or DONE.
- */
-
-struct content * content_get_ready(const char *url)
-{
-	struct content *c;
-
-	for (c = content_list; c; c = c->next) {
-		if (!c->fresh)
-			/* not fresh */
-			continue;
-		if (c->status != CONTENT_STATUS_READY &&
-				c->status != CONTENT_STATUS_DONE)
-			/* not ready or done */
-			continue;
-		if (c->type != CONTENT_UNKNOWN &&
-				handler_map[c->type].no_share &&
-				c->user_list->next)
-			/* not shareable, and has a user already */
-			continue;
-		if (strcmp(c->url, url))
-			continue;
-		return c;
-	}
-
-	return 0;
-}
-
 
 /**
  * Get whether a content can reformat
  *
- * \param c  content to check
+ * \param h  content to check
  * \return whether the content can reformat
  */
-bool content_can_reformat(struct content *c)
+bool content_can_reformat(hlcache_handle *h)
 {
-	return (handler_map[c->type].reformat != NULL);
-}
+	struct content *c = hlcache_handle_get_content(h);
 
-
-/**
- * Initialise the content for the specified type.
- *
- * \param c	   content structure
- * \param type	   content_type to initialise to
- * \param mime_type  MIME-type string for this content
- * \param params   array of strings, ordered attribute, value, attribute, ..., 0
- * \return  true on success, false on error and error broadcast to users and
- *		possibly reported
- *
- * The type is updated to the given type, and a copy of mime_type is taken. The
- * status is changed to CONTENT_STATUS_LOADING. CONTENT_MSG_LOADING is sent to
- * all users. The create function for the type is called to initialise the type
- * specific parts of the content structure.
- */
-
-bool content_set_type(struct content *c, content_type type,
-		const char *mime_type, const char *params[],
-		struct content *parent)
-{
-	union content_msg_data msg_data;
-	struct content *clone;
-	void (*callback)(content_msg msg, struct content *c, intptr_t p1,
-			intptr_t p2, union content_msg_data data);
-	intptr_t p1, p2;
-
-	assert(c != 0);
-	assert(c->status == CONTENT_STATUS_TYPE_UNKNOWN);
-	assert(type < CONTENT_UNKNOWN);
-
-	LOG(("content %s (%p), type %i", c->url, c, type));
-
-	c->mime_type = talloc_strdup(c, mime_type);
-	if (!c->mime_type) {
-		c->status = CONTENT_STATUS_ERROR;
-		msg_data.error = messages_get("NoMemory");
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+	if (c == NULL)
 		return false;
-	}
 
-	c->type = type;
-	c->status = CONTENT_STATUS_LOADING;
-
-	if (handler_map[type].no_share && c->user_list->next &&
-			c->user_list->next->next) {
-		/* type not shareable, and more than one user: split into
-		 * a content per user */
-		const char *referer =
-			c->fetch ? fetch_get_referer(c->fetch) : NULL;
-		struct content *parent =
-			c->fetch ? fetch_get_parent(c->fetch) : NULL;
-
-		while (c->user_list->next->next) {
-			clone = content_create(c->url);
-			if (!clone) {
-				c->type = CONTENT_UNKNOWN;
-				c->status = CONTENT_STATUS_ERROR;
-				msg_data.error = messages_get("NoMemory");
-				content_broadcast(c, CONTENT_MSG_ERROR,
-						msg_data);
-				return false;
-			}
-
-			clone->width = c->width;
-			clone->height = c->height;
-			clone->fresh = c->fresh;
-
-			callback = c->user_list->next->next->callback;
-			p1 = c->user_list->next->next->p1;
-			p2 = c->user_list->next->next->p2;
-			if (!content_add_user(clone, callback, p1, p2)) {
-				c->type = CONTENT_UNKNOWN;
-				c->status = CONTENT_STATUS_ERROR;
-				content_destroy(clone);
-				msg_data.error = messages_get("NoMemory");
-				content_broadcast(c, CONTENT_MSG_ERROR,
-						msg_data);
-				return false;
-			}
-			content_remove_user(c, callback, p1, p2);
-			msg_data.new_url = NULL;
-			content_broadcast(clone, CONTENT_MSG_NEWPTR, msg_data);
-			fetchcache_go(clone, referer,
-					callback, p1, p2,
-					clone->width, clone->height,
-					0, 0, false, parent);
-		}
-	}
-
-	if (handler_map[type].create) {
-		if (!handler_map[type].create(c, parent, params)) {
-			c->type = CONTENT_UNKNOWN;
-			c->status = CONTENT_STATUS_ERROR;
-			return false;
-		}
-	}
-
-	content_broadcast(c, CONTENT_MSG_LOADING, msg_data);
-	return true;
+	return (handler_map[c->type].reformat != NULL);
 }
 
 
@@ -733,58 +628,6 @@ void content_update_status(struct content *c)
 
 
 /**
- * Process a block of source data.
- *
- * Calls the process_data function for the content.
- *
- * \param   c	  content structure
- * \param   data  new data to process
- * \param   size  size of data
- * \return  true on success, false on error and error broadcast to users and
- *		possibly reported
- */
-
-bool content_process_data(struct content *c, const char *data,
-		unsigned int size)
-{
-	char *source_data;
-	union content_msg_data msg_data;
-	unsigned int extra_space;
-
-	assert(c);
-	assert(c->type < HANDLER_MAP_COUNT);
-	assert(c->status == CONTENT_STATUS_LOADING);
-
-	if ((c->source_size + size) > c->source_allocated) {
-		extra_space = (c->source_size + size) / 4;
-		if (extra_space < 65536)
-			extra_space = 65536;
-		source_data = talloc_realloc(c, c->source_data, char,
-				c->source_size + size + extra_space);
-		if (!source_data) {
-			c->status = CONTENT_STATUS_ERROR;
-			msg_data.error = messages_get("NoMemory");
-			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-			return false;
-		}
-		c->source_data = source_data;
-		c->source_allocated = c->source_size + size + extra_space;
-	}
-	memcpy(c->source_data + c->source_size, data, size);
-	c->source_size += size;
-
-	if (handler_map[c->type].process_data) {
-		if (!handler_map[c->type].process_data(c,
-				c->source_data + c->source_size - size, size)) {
-			c->status = CONTENT_STATUS_ERROR;
-			return false;
-		}
-	}
-	return true;
-}
-
-
-/**
  * All data has arrived, convert for display.
  *
  * Calls the convert function for the content.
@@ -801,22 +644,12 @@ bool content_process_data(struct content *c, const char *data,
 void content_convert(struct content *c, int width, int height)
 {
 	union content_msg_data msg_data;
-	char *source_data;
 
 	assert(c);
 	assert(c->type < HANDLER_MAP_COUNT);
 	assert(c->status == CONTENT_STATUS_LOADING);
 	assert(!c->locked);
-	LOG(("content %s (%p)", c->url, c));
-
-	if (c->source_allocated != c->source_size) {
-		source_data = talloc_realloc(c, c->source_data, char,
-				c->source_size);
-		if (source_data) {
-			c->source_data = source_data;
-			c->source_allocated = c->source_size;
-		}
-	}
+	LOG(("content %s (%p)", llcache_handle_get_url(c->llcache), c));
 
 	c->locked = true;
 	c->available_width = width;
@@ -860,14 +693,19 @@ void content_set_done(struct content *c)
  * Calls the reformat function for the content.
  */
 
-void content_reformat(struct content *c, int width, int height)
+void content_reformat(hlcache_handle *h, int width, int height)
+{
+	content__reformat(hlcache_handle_get_content(h), width, height);
+}
+
+void content__reformat(struct content *c, int width, int height)
 {
 	union content_msg_data data;
 	assert(c != 0);
 	assert(c->status == CONTENT_STATUS_READY ||
 			c->status == CONTENT_STATUS_DONE);
 	assert(!c->locked);
-	LOG(("%p %s", c, c->url));
+	LOG(("%p %s", c, llcache_handle_get_url(c->llcache)));
 	c->locked = true;
 	c->available_width = width;
 	if (handler_map[c->type].reformat) {
@@ -875,65 +713,6 @@ void content_reformat(struct content *c, int width, int height)
 		content_broadcast(c, CONTENT_MSG_REFORMAT, data);
 	}
 	c->locked = false;
-}
-
-
-/**
- * Clean unused contents from the content_list.
- *
- * Destroys any contents in the content_list with no users or in
- * CONTENT_STATUS_ERROR. Fresh contents in CONTENT_STATUS_DONE may be kept even
- * with no users.
- *
- * Each content is also checked for stop requests.
- */
-
-void content_clean(void)
-{
-	unsigned int size;
-	struct content *c, *next, *prev;
-
-	/* destroy unused stale contents and contents with errors */
-	for (c = content_list; c; c = next) {
-		next = c->next;
-
-		/* this function must not be called from a content function */
-		assert(!c->locked);
-
-		if (c->user_list->next && c->status != CONTENT_STATUS_ERROR)
-			/* content has users */
-			continue;
-
-		if (c->fresh && c->status == CONTENT_STATUS_DONE)
-			/* content is fresh */
-			continue;
-
-		/* content can be destroyed */
-		content_destroy(c);
-	}
-
-	/* check for pending stops */
-	for (c = content_list; c; c = c->next) {
-		if (c->status == CONTENT_STATUS_READY)
-			content_stop_check(c);
-	}
-
-	/* attempt to shrink the memory cache (unused fresh contents) */
-	size = 0;
-	next = 0;
-	for (c = content_list; c; c = c->next) {
-		next = c;
-		c->talloc_size = talloc_total_size(c);
-		size += c->size + c->talloc_size;
-	}
-	for (c = next; c && (unsigned int) option_memory_cache_size < size;
-			c = prev) {
-		prev = c->prev;
-		if (c->user_list->next)
-			continue;
-		size -= c->size + c->talloc_size;
-		content_destroy(c);
-	}
 }
 
 
@@ -946,92 +725,54 @@ void content_clean(void)
 void content_destroy(struct content *c)
 {
 	assert(c);
-	LOG(("content %p %s", c, c->url));
+	LOG(("content %p %s", c, llcache_handle_get_url(c->llcache)));
 	assert(!c->locked);
-
-	if (c->fetch)
-		fetch_abort(c->fetch);
-
-	if (c->next)
-		c->next->prev = c->prev;
-	if (c->prev)
-		c->prev->next = c->next;
-	else
-		content_list = c->next;
 
 	if (c->type < HANDLER_MAP_COUNT && handler_map[c->type].destroy)
 		handler_map[c->type].destroy(c);
 	talloc_free(c);
 }
 
-
 /**
- * Reset a content.
+ * Request a redraw of an area of a content
  *
- * Calls the destroy function for the content, but does not free
- * the structure.
+ * \param h       Content handle
+ * \param x       x co-ord of left edge
+ * \param y       y co-ord of top edge
+ * \param width   Width of rectangle
+ * \param height  Height of rectangle
  */
-
-void content_reset(struct content *c)
+void content_request_redraw(struct hlcache_handle *h,
+		int x, int y, int width, int height)
 {
-	assert(c != 0);
-	LOG(("content %p %s", c, c->url));
-	assert(!c->locked);
-	if (c->type < HANDLER_MAP_COUNT && handler_map[c->type].destroy)
-		handler_map[c->type].destroy(c);
-	c->type = CONTENT_UNKNOWN;
-	c->status = CONTENT_STATUS_TYPE_UNKNOWN;
-	c->size = 0;
-	talloc_free(c->mime_type);
-	c->mime_type = 0;
-	talloc_free(c->refresh);
-	c->refresh = 0;
-	talloc_free(c->title);
-	c->title = 0;
-	talloc_free(c->source_data);
-	c->source_data = 0;
-	c->source_size = c->source_allocated = 0;
+	struct content *c = hlcache_handle_get_content(h);
+	union content_msg_data data;
+
+	if (c == NULL)
+		return;
+
+	data.redraw.x = x;
+	data.redraw.y = y;
+	data.redraw.width = width;
+	data.redraw.height = height;
+
+	data.redraw.full_redraw = true;
+
+	data.redraw.object = c;
+	data.redraw.object_x = 0;
+	data.redraw.object_y = 0;
+	data.redraw.object_width = c->width;
+	data.redraw.object_height = c->height;
+
+	content_broadcast(c, CONTENT_MSG_REDRAW, data);
 }
-
-
-/**
- * Free all contents in the content_list.
- */
-
-void content_quit(void)
-{
-	bool progress = true;
-	struct content *c, *next;
-
-	while (content_list && progress) {
-		progress = false;
-		for (c = content_list; c; c = next) {
-		  	assert(c->next != c);
-			next = c->next;
-
-			if (c->user_list->next &&
-					c->status != CONTENT_STATUS_ERROR)
-				/* content has users */
-				continue;
-
-			/* content can be destroyed */
-			content_destroy(c);
-			progress = true;
-		}
-	}
-
-	if (content_list) {
-		LOG(("bug: some contents could not be destroyed"));
-	}
-}
-
 
 /**
  * Display content on screen.
  *
  * Calls the redraw function for the content, if it exists.
  *
- * \param  c		     content
+ * \param  h		     content
  * \param  x		     coordinate for top-left of redraw
  * \param  y		     coordinate for top-left of redraw
  * \param  width	     available width (not used for HTML redraw)
@@ -1051,11 +792,12 @@ void content_quit(void)
  * Units for x, y and clip_* are pixels.
  */
 
-bool content_redraw(struct content *c, int x, int y,
+bool content_redraw(hlcache_handle *h, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale, colour background_colour)
 {
+	struct content *c = hlcache_handle_get_content(h);
 	assert(c != 0);
 //	LOG(("%p %s", c, c->url));
 	if (c->locked)
@@ -1076,12 +818,13 @@ bool content_redraw(struct content *c, int x, int y,
  * redraw function if it doesn't exist.
  */
 
-bool content_redraw_tiled(struct content *c, int x, int y,
+bool content_redraw_tiled(hlcache_handle *h, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale, colour background_colour,
 		bool repeat_x, bool repeat_y)
 {
+	struct content *c = hlcache_handle_get_content(h);
 	int x0, y0, x1, y1;
 
 	assert(c != 0);
@@ -1139,29 +882,27 @@ bool content_redraw_tiled(struct content *c, int x, int y,
  *
  * \param  c	     the content to register
  * \param  callback  the callback function
- * \param  p1, p2    callback private data
+ * \param  pw        callback private data
  * \return true on success, false otherwise on memory exhaustion
  *
- * The callback will be called with p1 and p2 when content_broadcast() is
+ * The callback will be called when content_broadcast() is
  * called with the content.
  */
 
 bool content_add_user(struct content *c,
-		void (*callback)(content_msg msg, struct content *c,
-			intptr_t p1, intptr_t p2, union content_msg_data data),
-		intptr_t p1, intptr_t p2)
+		void (*callback)(struct content *c, content_msg msg,
+			union content_msg_data data, void *pw),
+		void *pw)
 {
 	struct content_user *user;
 
-	LOG(("content %s (%p), user %p 0x%" PRIxPTR " 0x%" PRIxPTR,
-			c->url, c, callback, p1, p2));
+	LOG(("content %s (%p), user %p %p",
+			llcache_handle_get_url(c->llcache), c, callback, pw));
 	user = talloc(c, struct content_user);
 	if (!user)
 		return false;
 	user->callback = callback;
-	user->p1 = p1;
-	user->p2 = p2;
-	user->stop = false;
+	user->pw = pw;
 	user->next = c->user_list->next;
 	c->user_list->next = user;
 
@@ -1170,49 +911,25 @@ bool content_add_user(struct content *c,
 
 
 /**
- * Search the users of a content for the specified user.
- *
- * \return  a content_user struct for the user, or 0 if not found
- */
-
-struct content_user * content_find_user(struct content *c,
-		void (*callback)(content_msg msg, struct content *c,
-			intptr_t p1, intptr_t p2, union content_msg_data data),
-		intptr_t p1, intptr_t p2)
-{
-	struct content_user *user;
-
-	/* user_list starts with a sentinel */
-	for (user = c->user_list; user->next &&
-			!(user->next->callback == callback &&
-				user->next->p1 == p1 &&
-				user->next->p2 == p2); user = user->next)
-		;
-	return user->next;
-}
-
-
-/**
  * Remove a callback user.
  *
- * The callback function, p1, and p2 must be identical to those passed to
+ * The callback function and pw must be identical to those passed to
  * content_add_user().
  */
 
 void content_remove_user(struct content *c,
-		void (*callback)(content_msg msg, struct content *c,
-			intptr_t p1, intptr_t p2, union content_msg_data data),
-		intptr_t p1, intptr_t p2)
+		void (*callback)(struct content *c, content_msg msg,
+			union content_msg_data data, void *pw),
+		void *pw)
 {
 	struct content_user *user, *next;
-	LOG(("content %s (%p), user %p 0x%" PRIxPTR " 0x%" PRIxPTR,
-			c->url, c, callback, p1, p2));
+	LOG(("content %s (%p), user %p %p",
+			llcache_handle_get_url(c->llcache), c, callback, pw));
 
 	/* user_list starts with a sentinel */
 	for (user = c->user_list; user->next != 0 &&
 			!(user->next->callback == callback &&
-				user->next->p1 == p1 &&
-				user->next->p2 == p2); user = user->next)
+				user->next->pw == pw); user = user->next)
 		;
 	if (user->next == 0) {
 		LOG(("user not found in list"));
@@ -1238,7 +955,7 @@ void content_broadcast(struct content *c, content_msg msg,
 	for (user = c->user_list->next; user != 0; user = next) {
 		next = user->next;  /* user may be destroyed during callback */
 		if (user->callback != 0)
-			user->callback(msg, c, user->p1, user->p2, data);
+			user->callback(c, msg, data, user->pw);
 	}
 }
 
@@ -1250,11 +967,13 @@ void content_broadcast(struct content *c, content_msg msg,
  * stop, the loading is stopped and the content placed in CONTENT_STATUS_DONE.
  */
 
-void content_stop(struct content *c,
-		void (*callback)(content_msg msg, struct content *c,
-			intptr_t p1, intptr_t p2, union content_msg_data data),
-		intptr_t p1, intptr_t p2)
+void content_stop(hlcache_handle *h,
+		void (*callback)(struct content *c, content_msg msg,
+			union content_msg_data data, void *pw),
+		void *pw)
 {
+//newcache
+#if 0
 	struct content_user *user;
 
 	assert(c->status == CONTENT_STATUS_READY);
@@ -1267,36 +986,10 @@ void content_stop(struct content *c,
 	}
 
 	LOG(("%p %s: stop user %p 0x%" PRIxPTR " 0x%" PRIxPTR,
-			c, c->url, callback, p1, p2));
+			c, llcache_handle_get_url(c->llcache), 
+			callback, p1, p2));
 	user->stop = true;
-}
-
-
-/**
- * Check if all users have requested a stop, and do it if so.
- */
-
-void content_stop_check(struct content *c)
-{
-	struct content_user *user;
-	union content_msg_data data;
-
-	assert(c->status == CONTENT_STATUS_READY);
-
-	/* user_list starts with a sentinel */
-	for (user = c->user_list->next; user; user = user->next)
-		if (!user->stop)
-			return;
-
-	LOG(("%p %s", c, c->url));
-
-	/* all users have requested stop */
-	assert(handler_map[c->type].stop);
-	handler_map[c->type].stop(c);
-	assert(c->status == CONTENT_STATUS_DONE);
-
-	content_set_status(c, messages_get("Stopped"));
-	content_broadcast(c, CONTENT_MSG_DONE, data);
+#endif
 }
 
 
@@ -1314,13 +1007,14 @@ void content_stop_check(struct content *c)
  * Calls the open function for the content.
  */
 
-void content_open(struct content *c, struct browser_window *bw,
+void content_open(hlcache_handle *h, struct browser_window *bw,
 		struct content *page, unsigned int index, struct box *box,
 		struct object_params *params)
 {
+	struct content *c = hlcache_handle_get_content(h);
 	assert(c != 0);
 	assert(c->type < CONTENT_UNKNOWN);
-	LOG(("content %p %s", c, c->url));
+	LOG(("content %p %s", c, llcache_handle_get_url(c->llcache)));
 	if (handler_map[c->type].open)
 		handler_map[c->type].open(c, bw, page, index, box, params);
 }
@@ -1332,11 +1026,12 @@ void content_open(struct content *c, struct browser_window *bw,
  * Calls the close function for the content.
  */
 
-void content_close(struct content *c)
+void content_close(hlcache_handle *h)
 {
+	struct content *c = hlcache_handle_get_content(h);
 	assert(c != 0);
 	assert(c->type < CONTENT_UNKNOWN);
-	LOG(("content %p %s", c, c->url));
+	LOG(("content %p %s", c, llcache_handle_get_url(c->llcache)));
 	if (handler_map[c->type].close)
 		handler_map[c->type].close(c);
 }
@@ -1346,3 +1041,285 @@ void content_add_error(struct content *c, const char *token,
 		unsigned int line)
 {
 }
+
+/**
+ * Retrieve type of content
+ *
+ * \param c  Content to retrieve type of
+ * \return Content type
+ */
+content_type content_get_type(hlcache_handle *h)
+{
+	return content__get_type(hlcache_handle_get_content(h));
+}
+
+content_type content__get_type(struct content *c)
+{
+	if (c == NULL)
+		return CONTENT_UNKNOWN;
+
+	return c->type;
+}
+
+/**
+ * Retrieve URL associated with content
+ *
+ * \param c  Content to retrieve URL from
+ * \return Pointer to URL, or NULL if not found.
+ */
+const char *content_get_url(hlcache_handle *h)
+{
+	return content__get_url(hlcache_handle_get_content(h));
+}
+
+const char *content__get_url(struct content *c)
+{
+	if (c == NULL)
+		return NULL;
+
+	return llcache_handle_get_url(c->llcache);
+}
+
+/**
+ * Retrieve title associated with content
+ *
+ * \param c  Content to retrieve title from
+ * \return Pointer to title, or NULL if not found.
+ */
+const char *content_get_title(hlcache_handle *h)
+{
+	return content__get_title(hlcache_handle_get_content(h));
+}
+
+const char *content__get_title(struct content *c)
+{
+	if (c == NULL)
+		return NULL;
+
+	return c->title != NULL ? c->title : llcache_handle_get_url(c->llcache);
+}
+
+/**
+ * Retrieve status of content
+ *
+ * \param c  Content to retrieve status of
+ * \return Content status
+ */
+content_status content_get_status(hlcache_handle *h)
+{
+	return content__get_status(hlcache_handle_get_content(h));
+}
+
+content_status content__get_status(struct content *c)
+{
+	if (c == NULL)
+		return CONTENT_STATUS_TYPE_UNKNOWN;
+
+	return c->status;
+}
+
+/**
+ * Retrieve status message associated with content
+ *
+ * \param c  Content to retrieve status message from
+ * \return Pointer to status message, or NULL if not found.
+ */
+const char *content_get_status_message(hlcache_handle *h)
+{
+	return content__get_status_message(hlcache_handle_get_content(h));
+}
+
+const char *content__get_status_message(struct content *c)
+{
+	if (c == NULL)
+		return NULL;
+
+	return c->status_message;
+}
+
+/**
+ * Retrieve width of content
+ *
+ * \param c  Content to retrieve width of
+ * \return Content width
+ */
+int content_get_width(hlcache_handle *h)
+{
+	return content__get_width(hlcache_handle_get_content(h));
+}
+
+int content__get_width(struct content *c)
+{
+	if (c == NULL)
+		return 0;
+
+	return c->width;
+}
+
+/**
+ * Retrieve height of content
+ *
+ * \param c  Content to retrieve height of
+ * \return Content height
+ */
+int content_get_height(hlcache_handle *h)
+{
+	return content__get_height(hlcache_handle_get_content(h));
+}
+
+int content__get_height(struct content *c)
+{
+	if (c == NULL)
+		return 0;
+
+	return c->height;
+}
+
+/**
+ * Retrieve available width of content
+ *
+ * \param c  Content to retrieve available width of
+ * \return Available width of content
+ */
+int content_get_available_width(hlcache_handle *h)
+{
+	return content__get_available_width(hlcache_handle_get_content(h));
+}
+
+int content__get_available_width(struct content *c)
+{
+	if (c == NULL)
+		return 0;
+
+	return c->available_width;
+}
+
+
+/**
+ * Retrieve source of content
+ *
+ * \param c     Content to retrieve source of
+ * \param size  Pointer to location to receive byte size of source
+ * \return Pointer to source data
+ */
+const char *content_get_source_data(hlcache_handle *h, unsigned long *size)
+{
+	return content__get_source_data(hlcache_handle_get_content(h), size);
+}
+
+const char *content__get_source_data(struct content *c, unsigned long *size)
+{
+	const uint8_t *data;
+	size_t len;
+
+	assert(size != NULL);
+
+	if (c == NULL)
+		return NULL;
+
+	data = llcache_handle_get_source_data(c->llcache, &len);
+
+	*size = (unsigned long) len;
+
+	return (const char *) data;
+}
+
+/**
+ * Invalidate content reuse data: causes subsequent requests for content URL 
+ * to query server to determine if content can be reused. This is required 
+ * behaviour for forced reloads etc.
+ *
+ * \param c  Content to invalidate
+ */
+void content_invalidate_reuse_data(hlcache_handle *h)
+{
+	content__invalidate_reuse_data(hlcache_handle_get_content(h));
+}
+
+void content__invalidate_reuse_data(struct content *c)
+{
+	if (c == NULL)
+		return;
+
+	/* For now, just cause the content to be completely ignored */
+	c->fresh = false;
+}
+
+/**
+ * Retrieve the refresh URL for a content
+ *
+ * \param c  Content to retrieve refresh URL from
+ * \return Pointer to URL, or NULL if none
+ */
+const char *content_get_refresh_url(hlcache_handle *h)
+{
+	return content__get_refresh_url(hlcache_handle_get_content(h));
+}
+
+const char *content__get_refresh_url(struct content *c)
+{
+	if (c == NULL)
+		return NULL;
+
+	return c->refresh;
+}
+
+/**
+ * Retrieve the bitmap contained in an image content
+ *
+ * \param c  Content to retrieve bitmap from
+ * \return Pointer to bitmap, or NULL if none.
+ */
+struct bitmap *content_get_bitmap(hlcache_handle *h)
+{
+	return content__get_bitmap(hlcache_handle_get_content(h));
+}
+
+struct bitmap *content__get_bitmap(struct content *c)
+{
+	if (c == NULL)
+		return NULL;
+
+	return c->bitmap;
+}
+
+/**
+ * Retrieve the low-level cache handle for a content
+ *
+ * \param h  Content to retrieve from
+ * \return Low-level cache handle
+ */
+const llcache_handle *content_get_llcache_handle(struct content *c)
+{
+	if (c == NULL)
+		return NULL;
+
+	return c->llcache;
+}
+
+
+/**
+ * Convert a content into a download
+ *
+ * \param h  Content to convert
+ * \return Pointer to low-level cache handle
+ */
+llcache_handle *content_convert_to_download(hlcache_handle *h)
+{
+	struct content *c = hlcache_handle_get_content(h);
+	llcache_handle *stream = c->llcache;
+
+	assert(c != NULL);
+	assert(c->status == CONTENT_STATUS_LOADING);
+
+	/** \todo Is this safe? */
+	c->llcache = NULL;
+
+	/** \todo Tell the llcache to stream the data without caching it */
+
+	/** \todo Invalidate the content object so it's flushed from the 
+	 * cache at the earliest opportunity */
+
+	return stream;
+}
+

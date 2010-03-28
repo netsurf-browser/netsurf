@@ -29,9 +29,10 @@
 #include <strings.h>
 #include <stdlib.h>
 #include "utils/config.h"
-#include "content/content.h"
+#include "content/content_protected.h"
 #include "content/fetch.h"
 #include "content/fetchcache.h"
+#include "content/hlcache.h"
 #include "desktop/browser.h"
 #include "desktop/gui.h"
 #include "desktop/options.h"
@@ -43,6 +44,7 @@
 #include "render/html.h"
 #include "render/imagemap.h"
 #include "render/layout.h"
+#include "utils/http.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/talloc.h"
@@ -57,16 +59,18 @@
 #define ALWAYS_DUMP_FRAMESET 0
 #define ALWAYS_DUMP_BOX 0
 
-static void html_convert_css_callback(content_msg msg, struct content *css,
-		intptr_t p1, intptr_t p2, union content_msg_data data);
+static nserror html_convert_css_callback(hlcache_handle *css,
+		const hlcache_event *event, void *pw);
 static bool html_meta_refresh(struct content *c, xmlNode *head);
 static bool html_head(struct content *c, xmlNode *head);
 static bool html_find_stylesheets(struct content *c, xmlNode *html);
 static bool html_process_style_element(struct content *c, unsigned int *index,
 		xmlNode *style);
-static void html_object_callback(content_msg msg, struct content *object,
-		intptr_t p1, intptr_t p2, union content_msg_data data);
-static void html_object_done(struct box *box, struct content *object,
+static bool html_replace_object(struct content *c, unsigned int i, 
+		const char *url);
+static nserror html_object_callback(hlcache_handle *object,
+		const hlcache_event *event, void *pw);
+static void html_object_done(struct box *box, hlcache_handle *object,
 			     bool background);
 static void html_object_failed(struct box *box, struct content *content,
 		bool background);
@@ -113,57 +117,45 @@ static void *myrealloc(void *ptr, size_t len, void *pw)
  * created.
  */
 
-bool html_create(struct content *c, struct content *parent, 
-		const char *params[])
+bool html_create(struct content *c, const http_parameter *params)
 {
-	unsigned int i;
 	struct content_html_data *html = &c->data.html;
+	const char *charset;
 	union content_msg_data msg_data;
 	binding_error error;
-	lwc_context *dict;
-	lwc_error lerror;
+	nserror nerror;
 
 	html->parser_binding = NULL;
-	html->document = 0;
+	html->document = NULL;
 	html->quirks = BINDING_QUIRKS_MODE_NONE;
-	html->encoding = 0;
-	html->base_url = c->url;
+	html->encoding = NULL;
+	html->base_url = (char *) content__get_url(c);
 	html->base_target = NULL;
-	html->layout = 0;
+	html->layout = NULL;
 	html->background_colour = NS_TRANSPARENT;
 	html->stylesheet_count = 0;
 	html->stylesheets = NULL;
 	html->select_ctx = NULL;
 	html->object_count = 0;
-	html->object = 0;
-	html->forms = 0;
-	html->imagemaps = 0;
-	html->bw = 0;
-	html->frameset = 0;
-	html->iframe = 0;
-	html->page = 0;
+	html->object = NULL;
+	html->forms = NULL;
+	html->imagemaps = NULL;
+	html->bw = NULL;
+	html->frameset = NULL;
+	html->iframe = NULL;
+	html->page = NULL;
 	html->index = 0;
-	html->box = 0;
+	html->box = NULL;
 	html->font_func = &nsfont;
 
-	lerror = lwc_create_context(myrealloc, c, &dict);
-	if (lerror != lwc_error_ok) {
-		error = BINDING_NOMEM;
-		goto error;
-	}
-
-	html->dict = lwc_context_ref(dict);
-
-	for (i = 0; params[i]; i += 2) {
-		if (strcasecmp(params[i], "charset") == 0) {
-			html->encoding = talloc_strdup(c, params[i + 1]);
-			if (!html->encoding) {
-				error = BINDING_NOMEM;
-				goto error;
-			}
-			html->encoding_source = ENCODING_SOURCE_HEADER;
-			break;
+	nerror = http_parameter_list_find_item(params, "charset", &charset);
+	if (nerror == NSERROR_OK) {
+		html->encoding = talloc_strdup(c, charset);
+		if (!html->encoding) {
+			error = BINDING_NOMEM;
+			goto error;
 		}
+		html->encoding_source = ENCODING_SOURCE_HEADER;
 	}
 
 	/* Create the parser binding */
@@ -294,10 +286,17 @@ encoding_change:
 		return false;
 	}
 
-	/* Recurse to reprocess all that data.  This is safe because
-	 * the encoding is now specified at parser-start which means
-	 * it cannot be changed again. */
-	return html_process_data(c, c->source_data, c->source_size);
+	{
+		const char *source_data;
+		unsigned long source_size;
+
+		source_data = content__get_source_data(c, &source_size);
+
+		/* Recurse to reprocess all that data.  This is safe because
+		 * the encoding is now specified at parser-start which means
+		 * it cannot be changed again. */
+		return html_process_data(c, (char *) source_data, source_size);
+	}
 }
 
 /**
@@ -321,11 +320,13 @@ bool html_convert(struct content *c, int width, int height)
 	binding_error err;
 	xmlNode *html, *head;
 	union content_msg_data msg_data;
+	unsigned long size;
 	unsigned int time_before, time_taken;
 	struct form *f;
 
 	/* finish parsing */
-	if (c->source_size == 0) {
+	content__get_source_data(c, &size);
+	if (size == 0) {
 		/* Destroy current binding */
 		binding_destroy_tree(c->data.html.parser_binding);
 
@@ -501,8 +502,6 @@ bool html_convert(struct content *c, int width, int height)
 	/* Destroy the parser binding */
 	binding_destroy_tree(c->data.html.parser_binding);
 	c->data.html.parser_binding = NULL;
-
-	c->size += lwc_context_size(c->data.html.dict);
 
 	if (c->active == 0)
 		c->status = CONTENT_STATUS_DONE;
@@ -689,7 +688,7 @@ bool html_meta_refresh(struct content *c, xmlNode *head)
 			/* Just delay specified, so refresh current page */
 			xmlFree(content);
 
-			c->refresh = talloc_strdup(c, c->url);
+			c->refresh = talloc_strdup(c, content__get_url(c));
 			if (!c->refresh) {
 				msg_data.error = messages_get("NoMemory");
 				content_broadcast(c,
@@ -808,67 +807,66 @@ bool html_find_stylesheets(struct content *c, xmlNode *html)
 	unsigned int last_active = 0;
 	union content_msg_data msg_data;
 	url_func_result res;
-	struct nscss_import *stylesheets;
+	struct html_stylesheet *stylesheets;
+	hlcache_child_context child;
 	css_error error;
+	nserror ns_error;
+
+	child.charset = c->data.html.encoding;
+	child.quirks = c->quirks;
 
 	/* stylesheet 0 is the base style sheet,
 	 * stylesheet 1 is the quirks mode style sheet,
 	 * stylesheet 2 is the adblocking stylesheet */
-	c->data.html.stylesheets = talloc_array(c, struct nscss_import,
+	c->data.html.stylesheets = talloc_array(c, struct html_stylesheet,
 			STYLESHEET_START);
 	if (c->data.html.stylesheets == NULL)
 		goto no_memory;
-	c->data.html.stylesheets[STYLESHEET_BASE].c = NULL;
-	c->data.html.stylesheets[STYLESHEET_BASE].media = CSS_MEDIA_ALL;
-	c->data.html.stylesheets[STYLESHEET_QUIRKS].c = NULL;
-	c->data.html.stylesheets[STYLESHEET_QUIRKS].media = CSS_MEDIA_ALL;
-	c->data.html.stylesheets[STYLESHEET_ADBLOCK].c = NULL;
-	c->data.html.stylesheets[STYLESHEET_ADBLOCK].media = CSS_MEDIA_ALL;
+	c->data.html.stylesheets[STYLESHEET_BASE].type = 
+			HTML_STYLESHEET_EXTERNAL;
+	c->data.html.stylesheets[STYLESHEET_BASE].data.external = NULL;
+	c->data.html.stylesheets[STYLESHEET_QUIRKS].type = 
+			HTML_STYLESHEET_EXTERNAL;
+	c->data.html.stylesheets[STYLESHEET_QUIRKS].data.external = NULL;
+	c->data.html.stylesheets[STYLESHEET_ADBLOCK].type = 
+			HTML_STYLESHEET_EXTERNAL;
+	c->data.html.stylesheets[STYLESHEET_ADBLOCK].data.external = NULL;
 	c->data.html.stylesheet_count = STYLESHEET_START;
 
 	c->active = 0;
 
-	c->data.html.stylesheets[STYLESHEET_BASE].c = fetchcache(
-			default_stylesheet_url,
-			html_convert_css_callback, (intptr_t) c,
-			STYLESHEET_BASE, c->width, c->height,
-			true, 0, 0, false, false);
-	if (c->data.html.stylesheets[STYLESHEET_BASE].c == NULL)
+	ns_error = hlcache_handle_retrieve(default_stylesheet_url, 0,
+			content__get_url(c), NULL, c->width, c->height, 
+			html_convert_css_callback, c, &child, 
+			&c->data.html.stylesheets[
+					STYLESHEET_BASE].data.external);
+	if (ns_error != NSERROR_OK)
 		goto no_memory;
+
 	c->active++;
-	fetchcache_go(c->data.html.stylesheets[STYLESHEET_BASE].c,
-			c->url, html_convert_css_callback, (intptr_t) c,
-			STYLESHEET_BASE, c->width, c->height,
-			0, 0, false, c);
 
 	if (c->data.html.quirks == BINDING_QUIRKS_MODE_FULL) {
-		c->data.html.stylesheets[STYLESHEET_QUIRKS].c =
-				fetchcache(quirks_stylesheet_url,
-				html_convert_css_callback, (intptr_t) c,
-				STYLESHEET_QUIRKS, c->width, c->height,
-				true, 0, 0, false, false);
-		if (c->data.html.stylesheets[STYLESHEET_QUIRKS].c == NULL)
+		ns_error = hlcache_handle_retrieve(quirks_stylesheet_url, 0,
+				content__get_url(c), NULL, c->width, c->height,
+				html_convert_css_callback, c, &child,
+				&c->data.html.stylesheets[
+					STYLESHEET_QUIRKS].data.external);
+		if (ns_error != NSERROR_OK)
 			goto no_memory;
+
 		c->active++;
-		fetchcache_go(c->data.html.stylesheets[STYLESHEET_QUIRKS].c,
-				c->url, html_convert_css_callback,
-				(intptr_t) c, STYLESHEET_QUIRKS, c->width,
-				c->height, 0, 0, false, c);
 	}
 
 	if (option_block_ads) {
-		c->data.html.stylesheets[STYLESHEET_ADBLOCK].c =
-				fetchcache(adblock_stylesheet_url,
-				html_convert_css_callback, (intptr_t) c,
-				STYLESHEET_ADBLOCK, c->width,
-				c->height, true, 0, 0, false, false);
-		if (c->data.html.stylesheets[STYLESHEET_ADBLOCK].c == NULL)
+		ns_error = hlcache_handle_retrieve(adblock_stylesheet_url, 0,
+				content__get_url(c), NULL, c->width, c->height,
+				html_convert_css_callback, c, &child,
+				&c->data.html.stylesheets[
+					STYLESHEET_ADBLOCK].data.external);
+		if (ns_error != NSERROR_OK)
 			goto no_memory;
+
 		c->active++;
-		fetchcache_go(c->data.html.stylesheets[STYLESHEET_ADBLOCK].c,
-				c->url, html_convert_css_callback,
-				(intptr_t) c, STYLESHEET_ADBLOCK, c->width,
-				c->height, 0, 0, false, c);
 	}
 
 	node = html;
@@ -958,29 +956,30 @@ bool html_find_stylesheets(struct content *c, xmlNode *html)
 			/* start fetch */
 			stylesheets = talloc_realloc(c,
 					c->data.html.stylesheets,
-					struct nscss_import, i + 1);
+					struct html_stylesheet, i + 1);
 			if (stylesheets == NULL) {
 				free(url2);
 				goto no_memory;
 			}
 
 			c->data.html.stylesheets = stylesheets;
-			/** \todo Reflect actual media specified in link */
-			c->data.html.stylesheets[i].media = CSS_MEDIA_ALL;
-			c->data.html.stylesheets[i].c = fetchcache(url2,
-					html_convert_css_callback,
-					(intptr_t) c, i, c->width, c->height,
-					true, 0, 0, false, false);
+			c->data.html.stylesheet_count++;
+			c->data.html.stylesheets[i].type =
+					HTML_STYLESHEET_EXTERNAL;
+			ns_error = hlcache_handle_retrieve(url2, 0,
+					content__get_url(c), NULL,
+					c->width, c->height,
+					html_convert_css_callback, c, &child,
+					&c->data.html.stylesheets[i].
+							data.external);
+
 			free(url2);
-			if (c->data.html.stylesheets[i].c == NULL)
+
+			if (ns_error != NSERROR_OK)
 				goto no_memory;
 
 			c->active++;
-			fetchcache_go(c->data.html.stylesheets[i].c,
-					c->url,
-					html_convert_css_callback,
-					(intptr_t) c, i, c->width, c->height,
-					0, 0, false, c);
+
 			i++;
 		} else if (strcmp((const char *) node->name, "style") == 0) {
 			if (!html_process_style_element(c, &i, node))
@@ -988,7 +987,7 @@ bool html_find_stylesheets(struct content *c, xmlNode *html)
 		}
 	}
 
-	c->data.html.stylesheet_count = i;
+	assert(c->data.html.stylesheet_count == i);
 
 	/* complete the fetches */
 	while (c->active != 0) {
@@ -1002,7 +1001,7 @@ bool html_find_stylesheets(struct content *c, xmlNode *html)
 	}
 
 	/* check that the base stylesheet loaded; layout fails without it */
-	if (c->data.html.stylesheets[STYLESHEET_BASE].c == NULL) {
+	if (c->data.html.stylesheets[STYLESHEET_BASE].data.external == NULL) {
 		msg_data.error = "Base stylesheet failed to load";
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
@@ -1015,11 +1014,30 @@ bool html_find_stylesheets(struct content *c, xmlNode *html)
 
 	/* Add sheets to it */
 	for (i = STYLESHEET_BASE; i != c->data.html.stylesheet_count; i++) {
-		if (c->data.html.stylesheets[i].c != NULL) {
+		const struct html_stylesheet *hsheet = 
+				&c->data.html.stylesheets[i];
+		css_stylesheet *sheet;
+		css_origin origin = CSS_ORIGIN_AUTHOR;
+
+		if (i < STYLESHEET_START)
+			origin = CSS_ORIGIN_UA;
+
+		if (hsheet->type == HTML_STYLESHEET_EXTERNAL &&
+				hsheet->data.external != NULL) {
+			struct content *s = hlcache_handle_get_content(
+					hsheet->data.external);
+
+			sheet = s-> data.css.sheet;
+		} else if (hsheet->type == HTML_STYLESHEET_INTERNAL) {
+			sheet = hsheet->data.internal->sheet;
+		} else {
+			sheet = NULL;
+		}
+
+		if (sheet != NULL) {
 			error = css_select_ctx_append_sheet(
-					c->data.html.select_ctx,
-					c->data.html.stylesheets[i].c->
-							data.css.sheet);
+					c->data.html.select_ctx, sheet,
+					origin, CSS_MEDIA_SCREEN);
 			if (error != CSS_OK)
 				goto no_memory;
 		}
@@ -1050,9 +1068,9 @@ bool html_process_style_element(struct content *c, unsigned int *index,
 	xmlNode *child;
 	char *type, *media, *data;
 	union content_msg_data msg_data;
-	struct nscss_import *stylesheets;
-	struct nscss_import *sheet;
-	const char *params[] = { 0 };
+	struct html_stylesheet *stylesheets;
+	struct content_css_data *sheet;
+	nserror error;
 
 	/* type='text/css', or not present (invalid but common) */
 	if ((type = (char *) xmlGetProp(style, (const xmlChar *) "type"))) {
@@ -1075,26 +1093,27 @@ bool html_process_style_element(struct content *c, unsigned int *index,
 
 	/* Extend array */
 	stylesheets = talloc_realloc(c, c->data.html.stylesheets,
-			struct nscss_import, *index + 1);
+			struct html_stylesheet, *index + 1);
 	if (stylesheets == NULL)
 		goto no_memory;
 
 	c->data.html.stylesheets = stylesheets;
+	c->data.html.stylesheet_count++;
+
+	c->data.html.stylesheets[(*index)].type = HTML_STYLESHEET_INTERNAL;
+	c->data.html.stylesheets[(*index)].data.internal = NULL;
 
 	/* create stylesheet */
-	sheet = &c->data.html.stylesheets[(*index)];
-
-	/** \todo Reflect specified media */
-	sheet->media = CSS_MEDIA_ALL;
-	sheet->c = content_create(c->data.html.base_url);
-	if (sheet->c == NULL)
+	sheet = talloc(c, struct content_css_data);
+	if (sheet == NULL) {
+		c->data.html.stylesheet_count--;
 		goto no_memory;
+	}
 
-	if (content_set_type(sheet->c, 
-			CONTENT_CSS, "text/css", params, c) == false) {
-		/** \todo  not necessarily caused by
-		 *  memory exhaustion */
-		sheet->c = NULL;
+	error = nscss_create_css_data(sheet,
+		c->data.html.base_url, NULL, c->data.html.quirks);
+	if (error != NSERROR_OK) {
+		c->data.html.stylesheet_count--;
 		goto no_memory;
 	}
 
@@ -1103,43 +1122,29 @@ bool html_process_style_element(struct content *c, unsigned int *index,
 	 * the content */
 	for (child = style->children; child != 0; child = child->next) {
 		data = (char *) xmlNodeGetContent(child);
-		if (content_process_data(sheet->c, data, strlen(data)) == 
+		if (nscss_process_css_data(sheet, data, strlen(data)) == 
 				false) {
 			xmlFree(data);
+			nscss_destroy_css_data(sheet);
+			talloc_free(sheet);
+			c->data.html.stylesheet_count--;
 			/** \todo  not necessarily caused by
 			 *  memory exhaustion */
-			sheet->c = NULL;
 			goto no_memory;
 		}
 		xmlFree(data);
 	}
 
 	/* Convert the content -- manually, as we want the result */
-	if (sheet->c->source_allocated != sheet->c->source_size) {
-		/* Minimise source data block */
-		char *data = talloc_realloc(sheet->c, sheet->c->source_data, 
-				char, sheet->c->source_size);
-
-		if (data != NULL) {
-			sheet->c->source_data = data;
-			sheet->c->source_allocated = sheet->c->source_size;
-		}
-	}
-
-	if (nscss_convert(sheet->c, c->width, c->height)) {
-		if (content_add_user(sheet->c,
-				html_convert_css_callback,
-				(intptr_t) c, (*index)) == false) {
-			/* no memory */
-			sheet->c = NULL;
-			goto no_memory;
-		}
-	} else {
+	if (nscss_convert_css_data(sheet, c->width, c->height) != CSS_OK) {
 		/* conversion failed */
-		sheet->c = NULL;
+		nscss_destroy_css_data(sheet);
+		talloc_free(sheet);
+		sheet = NULL;
 	}
 
 	/* Update index */
+	c->data.html.stylesheets[(*index)].data.internal = sheet;
 	(*index)++;
 
 	return true;
@@ -1155,36 +1160,40 @@ no_memory:
  * Callback for fetchcache() for linked stylesheets.
  */
 
-void html_convert_css_callback(content_msg msg, struct content *css,
-		intptr_t p1, intptr_t p2, union content_msg_data data)
+nserror html_convert_css_callback(hlcache_handle *css,
+		const hlcache_event *event, void *pw)
 {
-	struct content *c = (struct content *) p1;
-	unsigned int i = p2;
+	struct content *parent = pw;
+	unsigned int i;
+	struct html_stylesheet *s;
 
-	switch (msg) {
+	/* Find sheet */
+	for (i = 0, s = parent->data.html.stylesheets; 
+			i != parent->data.html.stylesheet_count; i++, s++) {
+		if (s->type == HTML_STYLESHEET_EXTERNAL && 
+				s->data.external == css)
+			break;
+	}
+
+	assert(i != parent->data.html.stylesheet_count);
+
+	switch (event->type) {
 	case CONTENT_MSG_LOADING:
 		/* check that the stylesheet is really CSS */
-		if (css->type != CONTENT_CSS) {
-			c->data.html.stylesheets[i].c = NULL;
-			c->active--;
-			LOG(("%s is not CSS", css->url));
-			content_add_error(c, "NotCSS", 0);
-			html_set_status(c, messages_get("NotCSS"));
-			content_broadcast(c, CONTENT_MSG_STATUS, data);
-			content_remove_user(css,
-					html_convert_css_callback,
-					(intptr_t) c, i);
-			if (css->user_list->next == NULL) {
-				/* we were the only user and we
-				 * don't want this content, so
-				 * stop it fetching and mark it
-				 * as having an error so it gets
-				 * removed from the cache next time
-				 * content_clean() gets called */
-				fetch_abort(css->fetch);
-				css->fetch = 0;
-				css->status = CONTENT_STATUS_ERROR;
-			}
+		if (content_get_type(css) != CONTENT_CSS) {
+			hlcache_handle_release(css);
+			s->data.external = NULL;
+
+			parent->active--;
+
+			LOG(("%s is not CSS", content_get_url(css)));
+
+			content_add_error(parent, "NotCSS", 0);
+
+			html_set_status(parent, messages_get("NotCSS"));
+
+			content_broadcast(parent, CONTENT_MSG_STATUS, 
+					event->data);
 		}
 		break;
 
@@ -1192,50 +1201,29 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 		break;
 
 	case CONTENT_MSG_DONE:
-		LOG(("got stylesheet '%s'", css->url));
-		c->active--;
+		LOG(("got stylesheet '%s'", content_get_url(css)));
+		parent->active--;
 		break;
 
-	case CONTENT_MSG_LAUNCH:
-		/* Fall through */
 	case CONTENT_MSG_ERROR:
-		LOG(("stylesheet %s failed: %s", css->url, data.error));
-		/* The stylesheet we were fetching may have been
-		 * redirected, in that case, the object pointers
-		 * will differ, so ensure that the object that's
-		 * in error is still in use by us before invalidating
-		 * the pointer */
-		if (c->data.html.stylesheets[i].c == css) {
-			c->data.html.stylesheets[i].c = NULL;
-			c->active--;
-			content_add_error(c, "?", 0);
-		}
+		LOG(("stylesheet %s failed: %s", 
+				content_get_url(css), event->data.error));
+		hlcache_handle_release(css);
+		s->data.external = NULL;
+		parent->active--;
+		content_add_error(parent, "?", 0);
 		break;
 
 	case CONTENT_MSG_STATUS:
-		html_set_status(c, css->status_message);
-		content_broadcast(c, CONTENT_MSG_STATUS, data);
-		break;
-
-	case CONTENT_MSG_NEWPTR:
-		c->data.html.stylesheets[i].c = css;
-		break;
-
-	case CONTENT_MSG_AUTH:
-		c->data.html.stylesheets[i].c = NULL;
-		c->active--;
-		content_add_error(c, "?", 0);
-		break;
-
-	case CONTENT_MSG_SSL:
-		c->data.html.stylesheets[i].c = NULL;
-		c->active--;
-		content_add_error(c, "?", 0);
+		html_set_status(parent, content_get_status_message(css));
+		content_broadcast(parent, CONTENT_MSG_STATUS, event->data);
 		break;
 
 	default:
 		assert(0);
 	}
+
+	return NSERROR_OK;
 }
 
 
@@ -1260,9 +1248,14 @@ bool html_fetch_object(struct content *c, const char *url, struct box *box,
 {
 	unsigned int i = c->data.html.object_count;
 	struct content_html_object *object;
-	struct content *c_fetch;
+	hlcache_handle *c_fetch;
+	hlcache_child_context child;
 	char *url2;
 	url_func_result res;
+	nserror error;
+
+	child.charset = c->data.html.encoding;
+	child.quirks = c->quirks;
 
 	/* Normalize the URL */
 	res = url_normalize(url, &url2);
@@ -1271,23 +1264,22 @@ bool html_fetch_object(struct content *c, const char *url, struct box *box,
 		return res != URL_FUNC_NOMEM;
 	}
 
-	/* initialise fetch */
-	c_fetch = fetchcache(url2, html_object_callback,
-			(intptr_t) c, i, available_width, available_height,
-			true, 0, 0, false, false);
+	error = hlcache_handle_retrieve(url2, 0, content__get_url(c), NULL,
+			available_width, available_height,
+			html_object_callback, c, &child,
+			&c_fetch);
 
 	/* No longer need normalized url */
 	free(url2);
 
-	if (!c_fetch)
+	if (error != NSERROR_OK)
 		return false;
 
 	/* add to object list */
 	object = talloc_realloc(c, c->data.html.object,
 			struct content_html_object, i + 1);
-	if (!object) {
-		content_remove_user(c_fetch, html_object_callback,
-				(intptr_t) c, i);
+	if (object == NULL) {
+		hlcache_handle_release(c_fetch);
 		return false;
 	}
 	c->data.html.object = object;
@@ -1297,12 +1289,6 @@ bool html_fetch_object(struct content *c, const char *url, struct box *box,
 	c->data.html.object[i].content = c_fetch;
 	c->data.html.object_count++;
 	c->active++;
-
-	/* start fetch */
-	fetchcache_go(c_fetch, c->url,
-			html_object_callback, (intptr_t) c, i,
-			available_width, available_height,
-			0, 0, false, c);
 
 	return true;
 }
@@ -1314,31 +1300,31 @@ bool html_fetch_object(struct content *c, const char *url, struct box *box,
  * \param  c               content of type CONTENT_HTML
  * \param  i               index of object to replace in c->data.html.object
  * \param  url             URL of object to fetch (copied)
- * \param  post_urlenc     url encoded post data, or 0 if none
- * \param  post_multipart  multipart post data, or 0 if none
  * \return  true on success, false on memory exhaustion
  */
 
-bool html_replace_object(struct content *c, unsigned int i, char *url,
-		char *post_urlenc,
-		struct form_successful_control *post_multipart)
+bool html_replace_object(struct content *c, unsigned int i, const char *url)
 {
-	struct content *c_fetch;
+	hlcache_handle *c_fetch;
+	hlcache_child_context child;
 	struct content *page;
 	char *url2;
 	url_func_result res;
+	nserror error;
 
 	assert(c->type == CONTENT_HTML);
 
+	child.charset = c->data.html.encoding;
+	child.quirks = c->quirks;
+
 	if (c->data.html.object[i].content) {
 		/* remove existing object */
-		if (c->data.html.object[i].content->status !=
+		if (content_get_status(c->data.html.object[i].content) !=
 				CONTENT_STATUS_DONE)
 			c->active--;
-		content_remove_user(c->data.html.object[i].content,
-				html_object_callback, (intptr_t) c, i);
-		c->data.html.object[i].content = 0;
-		c->data.html.object[i].box->object = 0;
+		hlcache_handle_release(c->data.html.object[i].content);
+		c->data.html.object[i].content = NULL;
+		c->data.html.object[i].box->object = NULL;
 	}
 
 	res = url_normalize(url, &url2);
@@ -1346,15 +1332,15 @@ bool html_replace_object(struct content *c, unsigned int i, char *url,
 		return res != URL_FUNC_NOMEM;
 
 	/* initialise fetch */
-	c_fetch = fetchcache(url2, html_object_callback,
-			(intptr_t) c, i,
+	error = hlcache_handle_retrieve(url2, 0, content__get_url(c), NULL,
 			c->data.html.object[i].box->width,
 			c->data.html.object[i].box->height,
-			false, post_urlenc, post_multipart, false, false);
+			html_object_callback, c, &child,
+			&c_fetch);
 
 	free(url2);
 
-	if (!c_fetch)
+	if (error != NSERROR_OK)
 		return false;
 
 	c->data.html.object[i].content = c_fetch;
@@ -1365,13 +1351,6 @@ bool html_replace_object(struct content *c, unsigned int i, char *url,
 		page->status = CONTENT_STATUS_READY;
 	}
 
-	/* start fetch */
-	fetchcache_go(c_fetch, c->url,
-			html_object_callback, (intptr_t) c, i,
-			c->data.html.object[i].box->width,
-			c->data.html.object[i].box->height,
-			post_urlenc, post_multipart, false, c);
-
 	return true;
 }
 
@@ -1380,157 +1359,146 @@ bool html_replace_object(struct content *c, unsigned int i, char *url,
  * Callback for fetchcache() for objects.
  */
 
-void html_object_callback(content_msg msg, struct content *object,
-		intptr_t p1, intptr_t p2, union content_msg_data data)
+nserror html_object_callback(hlcache_handle *object,
+		const hlcache_event *event, void *pw)
 {
-	struct content *c = (struct content *) p1;
-	unsigned int i = p2;
+	struct content *c = pw;
+	unsigned int i;
+	struct content_html_object *o;
 	int x, y;
-	struct box *box = c->data.html.object[i].box;
+	struct box *box;
 
-	switch (msg) {
-		case CONTENT_MSG_LOADING:
-			/* check if the type is acceptable for this object */
-			if (html_object_type_permitted(object->type,
-				c->data.html.object[i].permitted_types)) {
-				if (c->data.html.bw)
-					content_open(object,
-							c->data.html.bw, c,
-							i, box,
-							box->object_params);
-				break;
-			}
+	/* Find object record in parent */
+	for (i = 0, o = c->data.html.object; i != c->data.html.object_count;
+			i++, o++) {
+		if (o->content == object)
+			break;
+	}
 
-			/* not acceptable */
-			c->data.html.object[i].content = 0;
-			c->active--;
-			content_add_error(c, "?", 0);
-			html_set_status(c, messages_get("BadObject"));
-			content_broadcast(c, CONTENT_MSG_STATUS, data);
-			content_remove_user(object, html_object_callback,
-					(intptr_t) c, i);
-			if (!object->user_list->next) {
-				/* we were the only user and we
-				 * don't want this content, so
-				 * stop it fetching and mark it
-				 * as having an error so it gets
-				 * removed from the cache next time
-				 * content_clean() gets called */
-				fetch_abort(object->fetch);
-				object->fetch = 0;
-				object->status = CONTENT_STATUS_ERROR;
-			}
-			html_object_failed(box, c,
-					c->data.html.object[i].background);
+	assert(i != c->data.html.object_count);
+
+	box = o->box;
+
+	switch (event->type) {
+	case CONTENT_MSG_LOADING:
+		/* check if the type is acceptable for this object */
+		if (html_object_type_permitted(content_get_type(object),
+				o->permitted_types)) {
+			if (c->data.html.bw != NULL)
+				content_open(object,
+						c->data.html.bw, c,
+						i, box,
+						box->object_params);
+			break;
+		}
+
+		/* not acceptable */
+		hlcache_handle_release(object);
+
+		o->content = NULL;
+
+		c->active--;
+
+		content_add_error(c, "?", 0);
+		html_set_status(c, messages_get("BadObject"));
+		content_broadcast(c, CONTENT_MSG_STATUS, event->data);
+
+		html_object_failed(box, c,
+				c->data.html.object[i].background);
+		break;
+
+	case CONTENT_MSG_READY:
+		if (content_get_type(object) == CONTENT_HTML) {
+			html_object_done(box, object, o->background);
+			if (c->status == CONTENT_STATUS_READY ||
+					c->status == CONTENT_STATUS_DONE)
+				content__reformat(c,
+						c->available_width,
+						c->height);
+		}
+		break;
+
+	case CONTENT_MSG_DONE:
+		html_object_done(box, object, o->background);
+		c->active--;
+		break;
+
+	case CONTENT_MSG_ERROR:
+		hlcache_handle_release(object);
+
+		o->content = NULL;
+
+		c->active--;
+
+		content_add_error(c, "?", 0);
+		html_set_status(c, event->data.error);
+		content_broadcast(c, CONTENT_MSG_STATUS, event->data);
+		html_object_failed(box, c, o->background);
+		break;
+
+	case CONTENT_MSG_STATUS:
+		html_set_status(c, content_get_status_message(object));
+		/* content_broadcast(c, CONTENT_MSG_STATUS, 0); */
+		break;
+
+	case CONTENT_MSG_REFORMAT:
+		break;
+
+	case CONTENT_MSG_REDRAW:
+	{
+		union content_msg_data data = event->data;
+
+		if (!box_visible(box))
 			break;
 
-		case CONTENT_MSG_READY:
-			if (object->type == CONTENT_HTML) {
-				html_object_done(box, object,
-					c->data.html.object[i].background);
-				if (c->status == CONTENT_STATUS_READY ||
-						c->status ==
-						CONTENT_STATUS_DONE)
-					content_reformat(c,
-							c->available_width,
-							c->height);
-			}
-			break;
+		box_coords(box, &x, &y);
 
-		case CONTENT_MSG_DONE:
-			html_object_done(box, object,
-					c->data.html.object[i].background);
-			c->active--;
-			break;
+		if (hlcache_handle_get_content(object) == 
+				event->data.redraw.object) {
+			data.redraw.x = data.redraw.x *
+					box->width / content_get_width(object);
+			data.redraw.y = data.redraw.y *
+					box->height / 
+					content_get_height(object);
+			data.redraw.width = data.redraw.width *
+					box->width / content_get_width(object);
+			data.redraw.height = data.redraw.height *
+					box->height / 
+					content_get_height(object);
+			data.redraw.object_width = box->width;
+			data.redraw.object_height = box->height;
+		}
 
-		case CONTENT_MSG_LAUNCH:
-			/* Fall through */
-		case CONTENT_MSG_ERROR:
-			/* The object we were fetching may have been
-			 * redirected, in that case, the object pointers
-			 * will differ, so ensure that the object that's
-			 * in error is still in use by us before invalidating
-			 * the pointer */
-			if (c->data.html.object[i].content == object) {
-				c->data.html.object[i].content = 0;
-				c->active--;
-				content_add_error(c, "?", 0);
-				html_set_status(c, data.error);
-				content_broadcast(c, CONTENT_MSG_STATUS,
-						data);
-				html_object_failed(box, c,
-					c->data.html.object[i].background);
-			}
-			break;
+		data.redraw.x += x + box->padding[LEFT];
+		data.redraw.y += y + box->padding[TOP];
+		data.redraw.object_x += x + box->padding[LEFT];
+		data.redraw.object_y += y + box->padding[TOP];
 
-		case CONTENT_MSG_STATUS:
-			html_set_status(c, object->status_message);
-			/* content_broadcast(c, CONTENT_MSG_STATUS, 0); */
-			break;
+		content_broadcast(c, CONTENT_MSG_REDRAW, data);
+	}
+		break;
 
-		case CONTENT_MSG_REFORMAT:
-			break;
+	case CONTENT_MSG_REFRESH:
+		if (content_get_type(object) == CONTENT_HTML)
+			/* only for HTML objects */
+			schedule(event->data.delay * 100,
+					html_object_refresh, object);
+		break;
 
-		case CONTENT_MSG_REDRAW:
-			if (!box_visible(box))
-				break;
-			box_coords(box, &x, &y);
-			if (object == data.redraw.object) {
-				data.redraw.x = data.redraw.x *
-						box->width / object->width;
-				data.redraw.y = data.redraw.y *
-						box->height / object->height;
-				data.redraw.width = data.redraw.width *
-						box->width / object->width;
-				data.redraw.height = data.redraw.height *
-						box->height / object->height;
-				data.redraw.object_width = box->width;
-				data.redraw.object_height = box->height;
-			}
-			data.redraw.x += x + box->padding[LEFT];
-			data.redraw.y += y + box->padding[TOP];
-			data.redraw.object_x += x + box->padding[LEFT];
-			data.redraw.object_y += y + box->padding[TOP];
-			content_broadcast(c, CONTENT_MSG_REDRAW, data);
-			break;
-
-		case CONTENT_MSG_NEWPTR:
-			c->data.html.object[i].content = object;
-			break;
-
-		case CONTENT_MSG_AUTH:
-			c->data.html.object[i].content = 0;
-			c->active--;
-			content_add_error(c, "?", 0);
-			break;
-
-		case CONTENT_MSG_SSL:
-			c->data.html.object[i].content = 0;
-			c->active--;
-			content_add_error(c, "?", 0);
-			break;
-
-		case CONTENT_MSG_REFRESH:
-			if (object->type == CONTENT_HTML)
-				/* only for HTML objects */
-				schedule(data.delay * 100,
-						html_object_refresh, object);
-			break;
-
-		default:
-			assert(0);
+	default:
+		assert(0);
 	}
 
 	if (c->status == CONTENT_STATUS_READY && c->active == 0 &&
-			(msg == CONTENT_MSG_LOADING ||
-			msg == CONTENT_MSG_DONE ||
-			msg == CONTENT_MSG_ERROR ||
-			msg == CONTENT_MSG_AUTH)) {
+			(event->type == CONTENT_MSG_LOADING ||
+			event->type == CONTENT_MSG_DONE ||
+			event->type == CONTENT_MSG_ERROR)) {
 		/* all objects have arrived */
-		content_reformat(c, c->available_width, c->height);
+		content__reformat(c, c->available_width, c->height);
 		html_set_status(c, "");
 		content_set_done(c);
 	}
+
 	/* If  1) the configuration option to reflow pages while objects are
 	 *        fetched is set
 	 *     2) an object is newly fetched & converted,
@@ -1538,17 +1506,20 @@ void html_object_callback(content_msg msg, struct content *object,
 	 *     4) the time since the previous reformat is more than the
 	 *        configured minimum time between reformats
 	 * then reformat the page to display newly fetched objects */
-	else if (option_incremental_reflow && msg == CONTENT_MSG_DONE &&
+	else if (option_incremental_reflow &&
+			event->type == CONTENT_MSG_DONE &&
 			(c->status == CONTENT_STATUS_READY ||
 			 c->status == CONTENT_STATUS_DONE) &&
 			(wallclock() > c->reformat_time)) {
 		unsigned int time_before = wallclock(), time_taken;
-		content_reformat(c, c->available_width, c->height);
+		content__reformat(c, c->available_width, c->height);
 		time_taken = wallclock() - time_before;
 		c->reformat_time = wallclock() +
 			((time_taken < option_min_reflow_period ?
 			option_min_reflow_period : time_taken * 1.25));
 	}
+
+	return NSERROR_OK;
 }
 
 
@@ -1556,7 +1527,7 @@ void html_object_callback(content_msg msg, struct content *object,
  * Update a box whose content has completed rendering.
  */
 
-void html_object_done(struct box *box, struct content *object,
+void html_object_done(struct box *box, hlcache_handle *object,
 		      bool background)
 {
 	struct box *b;
@@ -1714,7 +1685,7 @@ void html_object_refresh(void *p)
 	c->fresh = false;
 
 	if (!html_replace_object(c->data.html.page, c->data.html.index,
-			c->refresh, 0, 0)) {
+			c->refresh)) {
 		/** \todo handle memory exhaustion */
 	}
 }
@@ -1726,24 +1697,22 @@ void html_object_refresh(void *p)
 void html_stop(struct content *c)
 {
 	unsigned int i;
-	struct content *object;
+	hlcache_handle *object;
 
 	assert(c->status == CONTENT_STATUS_READY);
 
 	for (i = 0; i != c->data.html.object_count; i++) {
 		object = c->data.html.object[i].content;
-		if (!object)
+		if (object == NULL)
 			continue;
 
-		if (object->status == CONTENT_STATUS_DONE)
+		if (content_get_status(object) == CONTENT_STATUS_DONE)
 			; /* already loaded: do nothing */
-		else if (object->status == CONTENT_STATUS_READY)
-			content_stop(object, html_object_callback,
-					(intptr_t) c, i);
+		else if (content_get_status(object) == CONTENT_STATUS_READY)
+			content_stop(object, html_object_callback, NULL);
 		else {
-			content_remove_user(c->data.html.object[i].content,
-					 html_object_callback, (intptr_t) c, i);
-			c->data.html.object[i].content = 0;
+			hlcache_handle_release(object);
+			c->data.html.object[i].content = NULL;
 		}
 	}
 	c->status = CONTENT_STATUS_DONE;
@@ -1836,11 +1805,14 @@ void html_destroy(struct content *c)
 	/* Free stylesheets */
 	if (c->data.html.stylesheet_count) {
 		for (i = 0; i != c->data.html.stylesheet_count; i++) {
-			if (c->data.html.stylesheets[i].c)
-				content_remove_user(c->data.html.
-						stylesheets[i].c,
-						html_convert_css_callback,
-						(intptr_t) c, i);
+			if (c->data.html.stylesheets[i].type ==
+					HTML_STYLESHEET_EXTERNAL) {
+				hlcache_handle_release(c->data.html.
+						stylesheets[i].data.external);
+			} else {
+				nscss_destroy_css_data(c->data.html.
+						stylesheets[i].data.internal);
+			}
 		}
 	}
 
@@ -1848,15 +1820,14 @@ void html_destroy(struct content *c)
 	for (i = 0; i != c->data.html.object_count; i++) {
 		LOG(("object %i %p", i, c->data.html.object[i].content));
 		if (c->data.html.object[i].content) {
-			content_remove_user(c->data.html.object[i].content,
-					 html_object_callback, (intptr_t) c, i);
-			if (c->data.html.object[i].content->type == CONTENT_HTML)
+			if (content_get_type(c->data.html.object[i].content) ==
+					CONTENT_HTML)
 				schedule_remove(html_object_refresh,
 					c->data.html.object[i].content);
+
+			hlcache_handle_release(c->data.html.object[i].content);
 		}
 	}
-
-	lwc_context_unref(c->data.html.dict);
 }
 
 void html_destroy_frameset(struct content_html_frames *frameset) {
@@ -1942,7 +1913,8 @@ void html_open(struct content *c, struct browser_window *bw,
 	for (i = 0; i != c->data.html.object_count; i++) {
 		if (c->data.html.object[i].content == 0)
 			continue;
-		if (c->data.html.object[i].content->type == CONTENT_UNKNOWN)
+		if (content_get_type(c->data.html.object[i].content) == 
+				CONTENT_UNKNOWN)
 			continue;
                	content_open(c->data.html.object[i].content,
 				bw, c, i,
@@ -1964,7 +1936,8 @@ void html_close(struct content *c)
 	for (i = 0; i != c->data.html.object_count; i++) {
 		if (c->data.html.object[i].content == 0)
 			continue;
-		if (c->data.html.object[i].content->type == CONTENT_UNKNOWN)
+		if (content_get_type(c->data.html.object[i].content) == 
+				CONTENT_UNKNOWN)
 			continue;
                	content_close(c->data.html.object[i].content);
 	}
@@ -2023,3 +1996,173 @@ void html_dump_frameset(struct content_html_frames *frame,
 }
 
 #endif
+
+/**
+ * Retrieve HTML document tree
+ *
+ * \param h  HTML content to retrieve document tree from
+ * \return Pointer to document tree
+ */
+xmlDoc *html_get_document(hlcache_handle *h)
+{
+	struct content *c = hlcache_handle_get_content(h);
+
+	assert(c != NULL);
+	assert(c->type == CONTENT_HTML);
+
+	return c->data.html.document;
+}
+
+/**
+ * Retrieve box tree
+ *
+ * \param h  HTML content to retrieve tree from
+ * \return Pointer to box tree
+ *
+ * \todo This API must die, as must all use of the box tree outside render/
+ */
+struct box *html_get_box_tree(hlcache_handle *h)
+{
+	struct content *c = hlcache_handle_get_content(h);
+
+	assert(c != NULL);
+	assert(c->type == CONTENT_HTML);
+
+	return c->data.html.layout;
+}
+
+/**
+ * Retrieve the charset of an HTML document
+ *
+ * \param h  Content to retrieve charset from
+ * \return Pointer to charset, or NULL
+ */
+const char *html_get_encoding(hlcache_handle *h)
+{
+	struct content *c = hlcache_handle_get_content(h);
+
+	assert(c != NULL);
+	assert(c->type == CONTENT_HTML);
+
+	return c->data.html.encoding;
+}
+
+/**
+ * Retrieve framesets used in an HTML document
+ *
+ * \param h  Content to inspect
+ * \return Pointer to framesets, or NULL if none
+ */
+struct content_html_frames *html_get_frameset(hlcache_handle *h)
+{
+	struct content *c = hlcache_handle_get_content(h);
+
+	assert(c != NULL);
+	assert(c->type == CONTENT_HTML);
+
+	return c->data.html.frameset;
+}
+
+/**
+ * Retrieve iframes used in an HTML document
+ *
+ * \param h  Content to inspect
+ * \return Pointer to iframes, or NULL if none
+ */
+struct content_html_iframe *html_get_iframe(hlcache_handle *h)
+{
+	struct content *c = hlcache_handle_get_content(h);
+
+	assert(c != NULL);
+	assert(c->type == CONTENT_HTML);
+
+	return c->data.html.iframe;
+}
+
+/**
+ * Retrieve an HTML content's base URL
+ *
+ * \param h  Content to retrieve base target from
+ * \return Pointer to URL
+ */
+const char *html_get_base_url(hlcache_handle *h)
+{
+	struct content *c = hlcache_handle_get_content(h);
+
+	assert(c != NULL);
+	assert(c->type == CONTENT_HTML);
+
+	return c->data.html.base_url;
+}
+
+/**
+ * Retrieve an HTML content's base target
+ *
+ * \param h  Content to retrieve base target from
+ * \return Pointer to target, or NULL if none
+ */
+const char *html_get_base_target(hlcache_handle *h)
+{
+	struct content *c = hlcache_handle_get_content(h);
+
+	assert(c != NULL);
+	assert(c->type == CONTENT_HTML);
+
+	return c->data.html.base_target;
+}
+
+/**
+ * Retrieve stylesheets used by HTML document
+ *
+ * \param h  Content to retrieve stylesheets from
+ * \param n  Pointer to location to receive number of sheets
+ * \return Pointer to array of stylesheets
+ */
+struct html_stylesheet *html_get_stylesheets(hlcache_handle *h, unsigned int *n)
+{
+	struct content *c = hlcache_handle_get_content(h);
+
+	assert(c != NULL);
+	assert(c->type == CONTENT_HTML);
+	assert(n != NULL);
+
+	*n = c->data.html.stylesheet_count;
+
+	return c->data.html.stylesheets;
+}
+
+/**
+ * Retrieve objects used by HTML document
+ *
+ * \param h  Content to retrieve objects from
+ * \param n  Pointer to location to receive number of objects
+ * \return Pointer to array of objects
+ */
+struct content_html_object *html_get_objects(hlcache_handle *h, unsigned int *n)
+{
+	struct content *c = hlcache_handle_get_content(h);
+
+	assert(c != NULL);
+	assert(c->type == CONTENT_HTML);
+	assert(n != NULL);
+
+	*n = c->data.html.object_count;
+
+	return c->data.html.object;
+}
+
+/**
+ * Retrieve favicon associated with an HTML document
+ *
+ * \param h  HTML document to retrieve favicon from
+ * \return Pointer to favicon, or NULL if none
+ */
+hlcache_handle *html_get_favicon(hlcache_handle *h)
+{
+	struct content *c = hlcache_handle_get_content(h);
+
+	assert(c != NULL);
+	assert(c->type == CONTENT_HTML);
+
+	return c->data.html.favicon;
+}

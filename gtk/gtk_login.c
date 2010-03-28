@@ -25,6 +25,7 @@
 #include "utils/log.h"
 #include "gtk/gtk_gui.h"
 #include "content/content.h"
+#include "content/hlcache.h"
 #include "content/urldb.h"
 #include "desktop/browser.h"
 #include "desktop/401login.h"
@@ -51,16 +52,16 @@ static void nsgtk_login_next(GtkWidget *w, gpointer data);
 static void nsgtk_login_ok_clicked(GtkButton *w, gpointer data);
 static void nsgtk_login_cancel_clicked(GtkButton *w, gpointer data);
 
-void gui_401login_open(struct browser_window *bw, struct content *c,
+void gui_401login_open(struct browser_window *bw, hlcache_handle *c,
 		const char *realm)
 {
 	char *host;
 	url_func_result res;
 
-	res = url_host(c->url, &host);
+	res = url_host(content_get_url(c), &host);
 	assert(res == URL_FUNC_OK);
 
-	create_login_window(bw, host, realm, c->url);
+	create_login_window(bw, host, realm, content_get_url(c));
 
 	free(host);
 }

@@ -252,14 +252,15 @@ void ami_free_download_list(struct List *dllist)
 	}while(node=nnode);
 }
 
-void gui_window_save_as_link(struct gui_window *g, struct content *c)
+void 
+gui_window_save_link(struct gui_window *g, const char *url, const char *title)
 {
 	BPTR fh = 0;
 	char fname[1024];
 	STRPTR openurlstring,linkname;
 	struct DiskObject *dobj = NULL;
 
-	linkname = ASPrintf("Link_to_%s",FilePart(c->url));
+	linkname = ASPrintf("Link_to_%s",FilePart(url));
 
 	if(AslRequestTags(savereq,
 		ASLFR_TitleText,messages_get("NetSurf"),
@@ -272,11 +273,11 @@ void gui_window_save_as_link(struct gui_window *g, struct content *c)
 		ami_update_pointer(g->shared->win,GUI_POINTER_WAIT);
 		if(fh = FOpen(fname,MODE_NEWFILE,0))
 		{
-			openurlstring = ASPrintf("openurl \"%s\"\n",c->url);
+			openurlstring = ASPrintf("openurl \"%s\"\n",url);
 			FWrite(fh,openurlstring,1,strlen(openurlstring));
 			FClose(fh);
 			FreeVec(openurlstring);
-			SetComment(fname,c->url);
+			SetComment(fname,url);
 
 			dobj = GetIconTags(NULL,ICONGETA_GetDefaultName,"url",
 								ICONGETA_GetDefaultType,WBPROJECT,

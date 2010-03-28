@@ -31,7 +31,7 @@
 #include <string.h>
 #include <math.h>
 #include "utils/config.h"
-#include "content/content.h"
+#include "content/content_protected.h"
 #include "css/css.h"
 #include "css/utils.h"
 #include "desktop/gui.h"
@@ -1589,31 +1589,35 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 		}
 		/* handle background-repeat */
 		switch (css_computed_background_repeat(background->style)) {
-			case CSS_BACKGROUND_REPEAT_REPEAT:
-				repeat_x = repeat_y = true;
-				/* optimisation: only plot the colour if
-				 * bitmap is not opaque */
-				if (background->background->bitmap)
-					plot_colour = !bitmap_get_opaque(
-						background->background->bitmap);
-				break;
-			case CSS_BACKGROUND_REPEAT_REPEAT_X:
-				repeat_x = true;
-				break;
-			case CSS_BACKGROUND_REPEAT_REPEAT_Y:
-				repeat_y = true;
-				break;
-			case CSS_BACKGROUND_REPEAT_NO_REPEAT:
-				break;
-			default:
-				break;
+		case CSS_BACKGROUND_REPEAT_REPEAT:
+		{
+			struct bitmap *bmp = content_get_bitmap(
+					background->background);
+			repeat_x = repeat_y = true;
+			/* optimisation: only plot the colour if
+			 * bitmap is not opaque */
+			if (bmp != NULL)
+				plot_colour = !bitmap_get_opaque(bmp);
+		}
+			break;
+		case CSS_BACKGROUND_REPEAT_REPEAT_X:
+			repeat_x = true;
+			break;
+		case CSS_BACKGROUND_REPEAT_REPEAT_Y:
+			repeat_y = true;
+			break;
+		case CSS_BACKGROUND_REPEAT_NO_REPEAT:
+			break;
+		default:
+			break;
 		}
 
 		/* handle background-position */
 		css_computed_background_position(background->style,
 				&hpos, &hunit, &vpos, &vunit);
 		if (hunit == CSS_UNIT_PCT) {
-			x += (width - background->background->width) *
+			x += (width - 
+				content_get_width(background->background)) *
 				scale * FIXTOFLT(hpos) / 100.;
 		} else {
 			x += (int) (FIXTOFLT(nscss_len2px(hpos, hunit, 
@@ -1621,7 +1625,8 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 		}
 
 		if (vunit == CSS_UNIT_PCT) {
-			y += (height - background->background->height) *
+			y += (height - 
+				content_get_height(background->background)) *
 				scale * FIXTOFLT(vpos) / 100.;
 		} else {
 			y += (int) (FIXTOFLT(nscss_len2px(vpos, vunit,
@@ -1651,6 +1656,8 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 	for (; clip_box; clip_box = clip_box->next) {
 		/* clip to child boxes if needed */
 		if (clip_to_children) {
+			struct bitmap *bmp = NULL;
+
 			assert(clip_box->type == BOX_TABLE_CELL);
 
 			/* update clip_* to the child cell */
@@ -1668,15 +1675,15 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 			if (clip_x1 > px1) clip_x1 = px1;
 			if (clip_y1 > py1) clip_y1 = py1;
 
+			if (clip_box->background != NULL)
+				bmp = content_get_bitmap(clip_box->background);
+
 			/* <td> attributes override <tr> */
 			if ((clip_x0 >= clip_x1) || (clip_y0 >= clip_y1) ||
 					(css_computed_background_color(
 						clip_box->style, &bgcol) !=
 					CSS_BACKGROUND_COLOR_TRANSPARENT) ||
-					(clip_box->background &&
-					 clip_box->background->bitmap &&
-					 bitmap_get_opaque(
-						 clip_box->background->bitmap)))
+					(bmp != NULL && bitmap_get_opaque(bmp)))
 				continue;
 		}
 
@@ -1693,35 +1700,30 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 		}
 		/* and plot the image */
 		if (plot_content) {
+			width = content_get_width(background->background);
+			height = content_get_height(background->background);
+
 			if (!repeat_x) {
 				if (clip_x0 < x)
 					clip_x0 = x;
-				if (clip_x1 > x +
-						background->background->width *
-						scale)
-					clip_x1 = x + background->background->
-							width * scale;
+				if (clip_x1 > x + width * scale)
+					clip_x1 = x + width * scale;
 			}
 			if (!repeat_y) {
 				if (clip_y0 < y)
 					clip_y0 = y;
-				if (clip_y1 > y +
-						background->background->height *
-						scale)
-					clip_y1 = y + background->background->
-							height * scale;
+				if (clip_y1 > y + height * scale)
+					clip_y1 = y + height * scale;
 			}
 			/* valid clipping rectangles only */
 			if ((clip_x0 < clip_x1) && (clip_y0 < clip_y1)) {
 				if (!plot.clip(clip_x0, clip_y0,
 						clip_x1, clip_y1))
 					return false;
-				if (!content_redraw_tiled(background->
-						background, x, y,
-						ceilf(background->background->
-						width * scale),
-						ceilf(background->background->
-						height * scale),
+				if (!content_redraw_tiled(
+						background->background, x, y,
+						ceilf(width * scale),
+						ceilf(height * scale),
 						clip_x0, clip_y0,
 						clip_x1, clip_y1,
 						scale, *background_colour,
@@ -1784,32 +1786,35 @@ bool html_redraw_inline_background(int x, int y, struct box *box, float scale,
 	if (plot_content) {
 		/* handle background-repeat */
 		switch (css_computed_background_repeat(box->style)) {
-			case CSS_BACKGROUND_REPEAT_REPEAT:
-				repeat_x = repeat_y = true;
-				/* optimisation: only plot the colour if
-				 * bitmap is not opaque */
-				if (box->background->bitmap)
-					plot_colour = !bitmap_get_opaque(
-						box->background->bitmap);
-				break;
-			case CSS_BACKGROUND_REPEAT_REPEAT_X:
-				repeat_x = true;
-				break;
-			case CSS_BACKGROUND_REPEAT_REPEAT_Y:
-				repeat_y = true;
-				break;
-			case CSS_BACKGROUND_REPEAT_NO_REPEAT:
-				break;
-			default:
-				break;
+		case CSS_BACKGROUND_REPEAT_REPEAT:
+		{
+			struct bitmap *bmp = 
+					content_get_bitmap(box->background);
+			repeat_x = repeat_y = true;
+			/* optimisation: only plot the colour if
+			 * bitmap is not opaque */
+			if (bmp != NULL)
+				plot_colour = !bitmap_get_opaque(bmp);
+		}
+			break;
+		case CSS_BACKGROUND_REPEAT_REPEAT_X:
+			repeat_x = true;
+			break;
+		case CSS_BACKGROUND_REPEAT_REPEAT_Y:
+			repeat_y = true;
+			break;
+		case CSS_BACKGROUND_REPEAT_NO_REPEAT:
+			break;
+		default:
+			break;
 		}
 
 		/* handle background-position */
 		css_computed_background_position(box->style,
 				&hpos, &hunit, &vpos, &vunit);
 		if (hunit == CSS_UNIT_PCT) {
-			x += (px1 - px0 - box->background->width * scale) *
-					FIXTOFLT(hpos) / 100.;
+			x += (px1 - px0 - content_get_width(box->background) * 
+					scale) * FIXTOFLT(hpos) / 100.;
 
 			if (!repeat_x && ((hpos < 2 && !first) || 
 					(hpos > 98 && !last))){
@@ -1821,8 +1826,8 @@ bool html_redraw_inline_background(int x, int y, struct box *box, float scale,
 		}
 
 		if (vunit == CSS_UNIT_PCT) {
-			y += (py1 - py0 - box->background->height * scale) *
-					FIXTOFLT(vpos) / 100.;
+			y += (py1 - py0 - content_get_height(box->background) *
+					scale) * FIXTOFLT(vpos) / 100.;
 		} else {
 			y += (int) (FIXTOFLT(nscss_len2px(vpos, vunit, 
 					box->style)) * scale);
@@ -1843,35 +1848,29 @@ bool html_redraw_inline_background(int x, int y, struct box *box, float scale,
 	}
 	/* and plot the image */
 	if (plot_content) {
+		int width = content_get_width(box->background);
+		int height = content_get_height(box->background);
+
 		if (!repeat_x) {
 			if (clip_x0 < x)
 				clip_x0 = x;
-			if (clip_x1 > x +
-					box->background->width *
-					scale)
-				clip_x1 = x + box->background->
-						width * scale;
+			if (clip_x1 > x + width * scale)
+				clip_x1 = x + width * scale;
 		}
 		if (!repeat_y) {
 			if (clip_y0 < y)
 				clip_y0 = y;
-			if (clip_y1 > y +
-					box->background->height *
-					scale)
-				clip_y1 = y + box->background->
-						height * scale;
+			if (clip_y1 > y + height * scale)
+				clip_y1 = y + height * scale;
 		}
 		/* valid clipping rectangles only */
 		if ((clip_x0 < clip_x1) && (clip_y0 < clip_y1)) {
 			if (!plot.clip(clip_x0, clip_y0,
 					clip_x1, clip_y1))
 				return false;
-			if (!content_redraw_tiled(box->
-					background, x, y,
-					ceilf(box->background->
-					width * scale),
-					ceilf(box->background->
-					height * scale),
+			if (!content_redraw_tiled(box->background, x, y,
+					ceilf(width * scale),
+					ceilf(height * scale),
 					clip_x0, clip_y0,
 					clip_x1, clip_y1,
 					scale, *background_colour,

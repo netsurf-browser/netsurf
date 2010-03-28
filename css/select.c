@@ -21,7 +21,7 @@
 #include <string.h>
 #include <strings.h>
 
-#include "content/content.h"
+#include "content/content_protected.h"
 #include "content/urldb.h"
 #include "css/internal.h"
 #include "css/select.h"
@@ -31,12 +31,10 @@
 #include "utils/url.h"
 #include "utils/utils.h"
 
-static css_error node_name(void *pw, void *node,
-		lwc_context *dict, lwc_string **name);
+static css_error node_name(void *pw, void *node, lwc_string **name);
 static css_error node_classes(void *pw, void *node,
-		lwc_context *dict, lwc_string ***classes, uint32_t *n_classes);
-static css_error node_id(void *pw, void *node,
-		lwc_context *dict, lwc_string **id);
+		lwc_string ***classes, uint32_t *n_classes);
+static css_error node_id(void *pw, void *node, lwc_string **id);
 static css_error named_ancestor_node(void *pw, void *node,
 		lwc_string *name, void **ancestor);
 static css_error named_parent_node(void *pw, void *node,
@@ -125,21 +123,20 @@ static css_select_handler selection_handler = {
  * \param charset       Charset of data, or NULL if unknown
  * \param url           URL of document containing data
  * \param allow_quirks  True to permit CSS parsing quirks
- * \param dict          String internment context
  * \param alloc         Memory allocation function
  * \param pw            Private word for allocator
  * \return Pointer to stylesheet, or NULL on failure.
  */
 css_stylesheet *nscss_create_inline_style(const uint8_t *data, size_t len,
 		const char *charset, const char *url, bool allow_quirks,
-		lwc_context *dict, css_allocator_fn alloc, void *pw)
+		css_allocator_fn alloc, void *pw)
 {
 	css_stylesheet *sheet;
 	css_error error;
 
 	error = css_stylesheet_create(CSS_LEVEL_DEFAULT, charset, url, NULL,
-			CSS_ORIGIN_AUTHOR, CSS_MEDIA_ALL, allow_quirks, true,
-			dict, alloc, pw, nscss_resolve_url, NULL, &sheet);
+			allow_quirks, true, alloc, pw, nscss_resolve_url, 
+			NULL, &sheet);
 	if (error != CSS_OK) {
 		LOG(("Failed creating sheet: %d", error));
 		return NULL;
@@ -413,18 +410,16 @@ bool nscss_parse_colour(const char *data, css_color *result)
  *
  * \param pw    HTML document
  * \param node  DOM node
- * \param dict  Dictionary to intern result in
  * \param name  Pointer to location to receive node name
  * \return CSS_OK on success,
  *         CSS_NOMEM on memory exhaustion.
  */
-css_error node_name(void *pw, void *node,
-		lwc_context *dict, lwc_string **name)
+css_error node_name(void *pw, void *node, lwc_string **name)
 {
 	xmlNode *n = node;
 	lwc_error lerror;
 
-	lerror = lwc_context_intern(dict, (const char *) n->name,
+	lerror = lwc_intern_string((const char *) n->name,
 			strlen((const char *) n->name), name);
 	switch (lerror) {
 	case lwc_error_oom:
@@ -444,7 +439,6 @@ css_error node_name(void *pw, void *node,
  *
  * \param pw         HTML document
  * \param node       DOM node
- * \param dict       Dictionary to intern result in
  * \param classes    Pointer to location to receive class name array
  * \param n_classes  Pointer to location to receive length of class name array
  * \return CSS_OK on success,
@@ -454,8 +448,8 @@ css_error node_name(void *pw, void *node,
  *       be allocated using the same allocator as used by libcss during style
  *       selection.
  */
-css_error node_classes(void *pw, void *node,
-		lwc_context *dict, lwc_string ***classes, uint32_t *n_classes)
+css_error node_classes(void *pw, void *node, 
+		lwc_string ***classes, uint32_t *n_classes)
 {
 	xmlNode *n = node;
 	xmlAttr *class;
@@ -503,8 +497,7 @@ css_error node_classes(void *pw, void *node,
 		}
 		result = temp;
 
-		lerror = lwc_context_intern(dict, start, p - start,
-				&result[items]);
+		lerror = lwc_intern_string(start, p - start, &result[items]);
 		switch (lerror) {
 		case lwc_error_oom:
 			error = CSS_NOMEM;
@@ -536,7 +529,7 @@ cleanup:
 		uint32_t i;
 
 		for (i = 0; i < items; i++)
-			lwc_context_string_unref(dict, result[i]);
+			lwc_string_unref(result[i]);
 
 		free(result);
 	}
@@ -553,13 +546,11 @@ cleanup:
  *
  * \param pw    HTML document
  * \param node  DOM node
- * \param dict  Dictionary to intern result in
  * \param id    Pointer to location to receive id value
  * \return CSS_OK on success,
  *         CSS_NOMEM on memory exhaustion.
  */
-css_error node_id(void *pw, void *node,
-		lwc_context *dict, lwc_string **id)
+css_error node_id(void *pw, void *node, lwc_string **id)
 {
 	xmlNode *n = node;
 	xmlAttr *attr;
@@ -590,7 +581,7 @@ css_error node_id(void *pw, void *node,
 	}
 
 	/* Intern value */
-	lerror = lwc_context_intern(dict, start, strlen(start), id);
+	lerror = lwc_intern_string(start, strlen(start), id);
 	switch (lerror) {
 	case lwc_error_oom:
 		error = CSS_NOMEM;
@@ -1285,9 +1276,7 @@ css_error node_presentational_hint(void *pw, void *node,
 			lwc_string *iurl;
 			lwc_error lerror;
 
-			lerror = lwc_context_intern(
-					html->data.html.dict, url,
-					strlen(url), &iurl);
+			lerror = lwc_intern_string(url, strlen(url), &iurl);
 
 			free(url);
 

@@ -26,14 +26,14 @@
 #include <stdbool.h>
 
 struct content;
+struct http_parameter;
 struct svgtiny_diagram;
 
 struct content_svg_data {
 	struct svgtiny_diagram *diagram;
 };
 
-bool svg_create(struct content *c, struct content *parent,
-		const char *params[]);
+bool svg_create(struct content *c, const struct http_parameter *params);
 bool svg_convert(struct content *c, int width, int height);
 void svg_destroy(struct content *c);
 bool svg_redraw(struct content *c, int x, int y,

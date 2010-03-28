@@ -30,6 +30,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <inttypes.h>
 #include <stdbool.h>
 #include <string.h>
 #include <strings.h>
@@ -43,7 +44,6 @@
 #include "content/urldb.h"
 #include "desktop/netsurf.h"
 #include "desktop/options.h"
-#include "render/form.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/url.h"
@@ -104,7 +104,7 @@ static bool fetch_curl_initialise(const char *scheme);
 static void fetch_curl_finalise(const char *scheme);
 static void * fetch_curl_setup(struct fetch *parent_fetch, const char *url,
 		 bool only_2xx, const char *post_urlenc,
-		 struct form_successful_control *post_multipart,
+		 struct fetch_multipart_data *post_multipart,
 		 const char **headers);
 static bool fetch_curl_start(void *vfetch);
 static bool fetch_curl_initiate_fetch(struct curl_fetch_info *fetch,
@@ -132,7 +132,7 @@ static size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
 				void *_f);
 static bool fetch_curl_process_headers(struct curl_fetch_info *f);
 static struct curl_httppost *fetch_curl_post_convert(
-		struct form_successful_control *control);
+		struct fetch_multipart_data *control);
 static int fetch_curl_verify_callback(int preverify_ok,
 		X509_STORE_CTX *x509_ctx);
 static int fetch_curl_cert_verify_callback(X509_STORE_CTX *x509_ctx,
@@ -294,7 +294,7 @@ void fetch_curl_finalise(const char *scheme)
 
 void * fetch_curl_setup(struct fetch *parent_fetch, const char *url,
 		 bool only_2xx, const char *post_urlenc,
-		 struct form_successful_control *post_multipart,
+		 struct fetch_multipart_data *post_multipart,
 		 const char **headers)
 {
 	char *host;
@@ -1108,10 +1108,7 @@ size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
 bool fetch_curl_process_headers(struct curl_fetch_info *f)
 {
 	long http_code;
-	const char *type;
 	CURLcode code;
-	struct stat s;
-	char *url_path = 0;
 
 	f->had_headers = true;
 
@@ -1142,7 +1139,7 @@ bool fetch_curl_process_headers(struct curl_fetch_info *f)
 
 	/* handle HTTP 401 (Authentication errors) */
 	if (http_code == 401) {
-		fetch_send_callback(FETCH_AUTH, f->fetch_handle, f->realm,0,
+		fetch_send_callback(FETCH_AUTH, f->fetch_handle, f->realm, 0,
 				FETCH_ERROR_AUTHENTICATION);
 		return true;
 	}
@@ -1156,49 +1153,64 @@ bool fetch_curl_process_headers(struct curl_fetch_info *f)
 		return true;
 	}
 
-	/* find MIME type from headers or filetype for local files */
-	code = curl_easy_getinfo(f->curl_handle, CURLINFO_CONTENT_TYPE, &type);
-	assert(code == CURLE_OK);
+	/* find MIME type from filetype for local files */
+	if (strncmp(f->url, "file:///", 8) == 0) {
+		struct stat s;
+		char *url_path = curl_unescape(f->url + 7, 
+				(int) strlen(f->url + 7));
 
-	if (strncmp(f->url, "file:///", 8) == 0)
-		url_path = curl_unescape(f->url + 7,
-				(int) strlen(f->url) - 7);
+		if (url_path != NULL && stat(url_path, &s) == 0) {
+			/* file: URL and file exists */
+			char header[64];
+			const char *type;
 
-	if (url_path && stat(url_path, &s) == 0) {
-		/* file: URL and file exists */
-		/* create etag */
-		char etag_buf[20];
-		snprintf(etag_buf, sizeof etag_buf,
-				"ETag: \"%10d\"", (int) s.st_mtime);
-		/* And send it to the header handler */
-		fetch_send_callback(FETCH_HEADER, f->fetch_handle, etag_buf,
-				strlen(etag_buf), FETCH_ERROR_NO_ERROR);
+			/* create etag */
+			snprintf(header, sizeof header,
+					"ETag: \"%10" PRId64 "\"", 
+					(int64_t) s.st_mtime);
+			/* And send it to the header handler */
+			fetch_send_callback(FETCH_HEADER, f->fetch_handle, 
+					header, strlen(header),
+					FETCH_ERROR_NO_ERROR);
 
-		/* don't set last modified time so as to ensure that local
-		 * files are revalidated at all times. */
-
-		/* If performed a conditional request and unmodified ... */
-		if (f->last_modified && f->file_etag &&
-				f->last_modified > s.st_mtime &&
-				f->file_etag == s.st_mtime) {
-			fetch_send_callback(FETCH_NOTMODIFIED, f->fetch_handle,
-					    0, 0, FETCH_ERROR_NO_ERROR);
-			curl_free(url_path);
-			return true;
-		}
-	}
-
-	if (type == 0) {
-		type = "text/plain";
-		if (url_path) {
+			/* create Content-Type */
 			type = fetch_filetype(url_path);
+			snprintf(header, sizeof header,	
+					"Content-Type: %s", type);
+			/* Send it to the header handler */
+			fetch_send_callback(FETCH_HEADER, f->fetch_handle,
+					header, strlen(header),
+					FETCH_ERROR_NO_ERROR);
+
+			/* create Content-Length */
+			type = fetch_filetype(url_path);
+			snprintf(header, sizeof header,	
+					"Content-Length: %" PRId64, 
+					(int64_t) s.st_size);
+			/* Send it to the header handler */
+			fetch_send_callback(FETCH_HEADER, f->fetch_handle,
+					header, strlen(header),
+					FETCH_ERROR_NO_ERROR);
+
+			/* don't set last modified time so as to ensure that 
+			 * local files are revalidated at all times. */
+
+			/* Report not modified, if appropriate */
+			if (f->last_modified && f->file_etag &&
+					f->last_modified > s.st_mtime &&
+					f->file_etag == s.st_mtime) {
+				fetch_send_callback(FETCH_NOTMODIFIED, 
+						f->fetch_handle, 0, 0,
+						FETCH_ERROR_NO_ERROR);
+				curl_free(url_path);
+				return true;
+			}
 		}
+
+		if (url_path != NULL)
+			curl_free(url_path);
 	}
 
-	curl_free(url_path);
-
-	LOG(("FETCH_TYPE, '%s'", type));
-	fetch_send_callback(FETCH_TYPE, f->fetch_handle, type, f->content_length, FETCH_ERROR_NO_ERROR);
 	if (f->abort)
 		return true;
 
@@ -1207,11 +1219,11 @@ bool fetch_curl_process_headers(struct curl_fetch_info *f)
 
 
 /**
- * Convert a list of struct ::form_successful_control to a list of
+ * Convert a list of struct ::fetch_multipart_data to a list of
  * struct curl_httppost for libcurl.
  */
 struct curl_httppost *
-fetch_curl_post_convert(struct form_successful_control *control)
+fetch_curl_post_convert(struct fetch_multipart_data *control)
 {
 	struct curl_httppost *post = 0, *last = 0;
 	CURLFORMcode code;

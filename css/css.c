@@ -20,17 +20,18 @@
 
 #include <libwapcaplet/libwapcaplet.h>
 
-#include "content/content.h"
+#include "content/content_protected.h"
 #include "content/fetch.h"
-#include "content/fetchcache.h"
+#include "content/hlcache.h"
 #include "css/css.h"
 #include "css/internal.h"
 #include "desktop/gui.h"
 #include "render/html.h"
+#include "utils/http.h"
 #include "utils/messages.h"
 
-static void nscss_import(content_msg msg, struct content *c,
-		intptr_t p1, intptr_t p2, union content_msg_data data);
+static nserror nscss_import(hlcache_handle *handle,
+		const hlcache_event *event, void *pw);
 
 /**
  * Allocation callback for libcss
@@ -49,125 +50,63 @@ static void *myrealloc(void *ptr, size_t size, void *pw)
  * Initialise a CSS content
  *
  * \param c       Content to initialise
- * \param parent  Parent content, or NULL if top-level
  * \param params  Content-Type parameters
  * \return true on success, false on failure
  */
-bool nscss_create(struct content *c, struct content *parent, 
-		const char *params[])
+bool nscss_create(struct content *c, const http_parameter *params)
 {
 	const char *charset = NULL;
-	css_origin origin = CSS_ORIGIN_AUTHOR;
-	uint64_t media = CSS_MEDIA_ALL;
-	lwc_context *dict = NULL;
-	bool quirks = true;
-	uint32_t i;
 	union content_msg_data msg_data;
-	css_error error;
+	nserror error;
 
 	/** \todo what happens about the allocator? */
 	/** \todo proper error reporting */
 
 	/* Find charset specified on HTTP layer, if any */
-	/** \todo What happens if there isn't one and parent content exists? */
-	for (i = 0; params[i] != NULL; i += 2) {
-		if (strcasecmp(params[i], "charset") == 0) {
-			charset = params[i + 1];
-			break;
-		}
+	error = http_parameter_list_find_item(params, "charset", &charset);
+	if (error != NSERROR_OK) {
+		/* No charset specified, use fallback, if any */
+		/** \todo libcss will take this as gospel, which is wrong */
+		charset = c->fallback_charset;
 	}
 
-	if (parent != NULL) {
-		assert(parent->type == CONTENT_HTML || 
-				parent->type == CONTENT_CSS);
-
-		if (parent->type == CONTENT_HTML) {
-			assert(parent->data.html.dict != NULL);
-
-			if (c == parent->data.html.
-					stylesheets[STYLESHEET_BASE].c ||
-					c == parent->data.html.
-					stylesheets[STYLESHEET_QUIRKS].c ||
-					c == parent->data.html.
-					stylesheets[STYLESHEET_ADBLOCK].c)
-				origin = CSS_ORIGIN_UA;
-
-			quirks = (parent->data.html.quirks != 
-					BINDING_QUIRKS_MODE_NONE);
-
-			for (i = 0; i < parent->data.html.stylesheet_count; 
-					i++) {
-				if (parent->data.html.stylesheets[i].c == c) {
-					media = parent->data.html.
-							stylesheets[i].media;
-					break;
-				}
-			}
-
-			dict = parent->data.html.dict;
-		} else {
-			assert(parent->data.css.sheet != NULL);
-			assert(parent->data.css.dict != NULL);
-
-			error = css_stylesheet_get_origin(
-					parent->data.css.sheet, &origin);
-			if (error != CSS_OK) {
-				msg_data.error = "?";
-				content_broadcast(c, CONTENT_MSG_ERROR, 
-						msg_data);
-				return false;
-			}
-
-			error = css_stylesheet_quirks_allowed(
-					parent->data.css.sheet, &quirks);
-			if (error != CSS_OK) {
-				msg_data.error = "?";
-				content_broadcast(c, CONTENT_MSG_ERROR, 
-						msg_data);
-				return false;
-			}
-
-			for (i = 0; i < parent->data.css.import_count; i++) {
-				if (parent->data.css.imports[i].c == c) {
-					media = parent->data.css.
-							imports[i].media;
-					break;
-				}
-			}
-
-			dict = parent->data.css.dict;
-		}
-	}
-
-	if (dict == NULL) {
-		lwc_error lerror = lwc_create_context(myrealloc, NULL, &dict);
-
-		if (lerror != lwc_error_ok) {
-			msg_data.error = messages_get("NoMemory");
-			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-			return false;
-		}
-	}
-
-	c->data.css.dict = lwc_context_ref(dict);
-	c->data.css.import_count = 0;
-	c->data.css.imports = NULL;
-
-	error = css_stylesheet_create(CSS_LEVEL_21, charset,
-			c->url, NULL, origin, media, quirks, false,
-			c->data.css.dict, 
-			myrealloc, NULL, 
-			nscss_resolve_url, NULL,
-			&c->data.css.sheet);
-	if (error != CSS_OK) {
-		lwc_context_unref(c->data.css.dict);
-		c->data.css.dict = NULL;
+	if (nscss_create_css_data(&c->data.css, content__get_url(c),
+			charset, c->quirks) != NSERROR_OK) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
 	}
 
 	return true;
+}
+
+/**
+ * Create a struct content_css_data, creating a stylesheet object
+ *
+ * \param c        Struct to populate
+ * \param url      URL of stylesheet
+ * \param charset  Stylesheet charset
+ * \param quirks   Stylesheet quirks mode
+ * \return NSERROR_OK on success, NSERROR_NOMEM on memory exhaustion
+ */
+nserror nscss_create_css_data(struct content_css_data *c,
+		const char *url, const char *charset, bool quirks)
+{
+	css_error error;
+
+	c->import_count = 0;
+	c->imports = NULL;
+
+	error = css_stylesheet_create(CSS_LEVEL_21, charset,
+			url, NULL, quirks, false,
+			myrealloc, NULL, 
+			nscss_resolve_url, NULL,
+			&c->sheet);
+	if (error != CSS_OK) {
+		return NSERROR_NOMEM;
+	}
+
+	return NSERROR_OK;
 }
 
 /**
@@ -183,15 +122,28 @@ bool nscss_process_data(struct content *c, char *data, unsigned int size)
 	union content_msg_data msg_data;
 	css_error error;
 
-	error = css_stylesheet_append_data(c->data.css.sheet, 
-			(const uint8_t *) data, size);
-
+	error = nscss_process_css_data(&c->data.css, data, size);
 	if (error != CSS_OK && error != CSS_NEEDDATA) {
 		msg_data.error = "?";
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 	}
 
 	return (error == CSS_OK || error == CSS_NEEDDATA);
+}
+
+/**
+ * Process CSS data
+ *
+ * \param c     CSS content object
+ * \param data  Data to process
+ * \param size  Number of bytes to process
+ * \return CSS_OK on success, appropriate error otherwise
+ */
+css_error nscss_process_css_data(struct content_css_data *c, char *data, 
+		unsigned int size)
+{
+	return css_stylesheet_append_data(c->sheet, 
+			(const uint8_t *) data, size);
 }
 
 /**
@@ -209,98 +161,12 @@ bool nscss_convert(struct content *c, int w, int h)
 	size_t size;
 	css_error error;
 
-	error = css_stylesheet_data_done(c->data.css.sheet);
-
-	/* Process pending imports */
-	while (error == CSS_IMPORTS_PENDING) {
-		struct nscss_import *imports;
-		lwc_string *uri;
-		uint64_t media;
-		css_stylesheet *sheet;
-		
-		error = css_stylesheet_next_pending_import(c->data.css.sheet,
-				&uri, &media);
-		if (error != CSS_OK && error != CSS_INVALID) {
-			msg_data.error = "?";
-			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-			c->status = CONTENT_STATUS_ERROR;
-			return false;
-		}
-
-		/* Give up if there are no more imports */
-		if (error == CSS_INVALID) {
-			error = CSS_OK;
-			break;
-		}
-
-		/* Increase space in table */
-		imports = realloc(c->data.css.imports, 
-				(c->data.css.import_count + 1) * 
-				sizeof(struct nscss_import));
-		if (imports == NULL) {
-			msg_data.error = "?";
-			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-			c->status = CONTENT_STATUS_ERROR;
-			return false;
-		}
-		c->data.css.imports = imports;
-
-		/* Create content */
-		i = c->data.css.import_count;
-		c->data.css.imports[c->data.css.import_count].media = media;
-		c->data.css.imports[c->data.css.import_count++].c =
-				fetchcache(lwc_string_data(uri), 
-				nscss_import, (intptr_t) c, i, 
-				c->width, c->height, true, NULL, NULL, 
-				false, false);
-		if (c->data.css.imports[i].c == NULL) {
-			msg_data.error = "?";
-			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-			c->status = CONTENT_STATUS_ERROR;
-			return false;
-		}
-
-		/* Fetch content */
-		c->active++;
-		fetchcache_go(c->data.css.imports[i].c, c->url, 
-				nscss_import, (intptr_t) c, i,
-				c->width, c->height, NULL, NULL, false, c);
-
-		/* Wait for import to fetch + convert */
-		while (c->active > 0) {
-			fetch_poll();
-			gui_multitask();
-		}
-
-		if (c->data.css.imports[i].c != NULL) {
-			sheet = c->data.css.imports[i].c->data.css.sheet;
-			c->data.css.imports[i].c->data.css.sheet = NULL;
-		} else {
-			error = css_stylesheet_create(CSS_LEVEL_DEFAULT,
-					NULL, "", NULL, CSS_ORIGIN_AUTHOR,
-					media, false, false, c->data.css.dict, 
-					myrealloc, NULL, 
-					nscss_resolve_url, NULL,
-					&sheet);
-			if (error != CSS_OK) {
-				msg_data.error = messages_get("NoMemory");
-				content_broadcast(c, CONTENT_MSG_ERROR, 
-						msg_data);
-				c->status = CONTENT_STATUS_ERROR;
-				return false;
-			}
-		}
-
-		error = css_stylesheet_register_import(
-				c->data.css.sheet, sheet);
-		if (error != CSS_OK) {
-			msg_data.error = "?";
-			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-			c->status = CONTENT_STATUS_ERROR;
-			return false;
-		}
-
-		error = CSS_IMPORTS_PENDING;
+	error = nscss_convert_css_data(&c->data.css, w, h);
+	if (error != CSS_OK) {
+		msg_data.error = "?";
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		c->status = CONTENT_STATUS_ERROR;
+		return false;
 	}
 
 	/* Retrieve the size of this sheet */
@@ -313,32 +179,121 @@ bool nscss_convert(struct content *c, int w, int h)
 	}
 	c->size += size;
 
-	/* Add on the size of the imported sheets, removing ourselves from 
-	 * their user list as we go (they're of no use to us now, as we've 
-	 * inserted the sheet into ourselves) */
+	/* Add on the size of the imported sheets */
 	for (i = 0; i < c->data.css.import_count; i++) {
-		if (c->data.css.imports[i].c != NULL) {
-			c->size += c->data.css.imports[i].c->size;
+		struct content *import = hlcache_handle_get_content(
+				c->data.css.imports[i].c);
 
-			content_remove_user(c->data.css.imports[i].c,
-					nscss_import, (uintptr_t) c, i);
+		if (import != NULL) {
+			c->size += import->size;
 		}
-
-		c->data.css.imports[i].c = NULL;
 	}
-
-	/* Remove the imports */
-	c->data.css.import_count = 0;
-	free(c->data.css.imports);
-	c->data.css.imports = NULL;
 
 	c->status = CONTENT_STATUS_DONE;
 
-	/* Filthy hack to stop this content being reused 
-	 * when whatever is using it has finished with it. */
-	c->fresh = false;
-
 	return error == CSS_OK;
+}
+
+/**
+ * Convert CSS data ready for use
+ *
+ * \param c     CSS data to convert
+ * \param w     Width of area content will be displayed in
+ * \param h     Height of area content will be displayed in
+ * \return CSS error
+ */
+css_error nscss_convert_css_data(struct content_css_data *c, int w, int h)
+{
+	const char *referer;
+	uint32_t i = 0;
+	css_error error;
+	nserror nerror;
+
+	error = css_stylesheet_get_url(c->sheet, &referer);
+	if (error != CSS_OK) {
+		return error;
+	}
+
+	error = css_stylesheet_data_done(c->sheet);
+
+	/* Process pending imports */
+	while (error == CSS_IMPORTS_PENDING) {
+		hlcache_child_context child;
+		struct nscss_import *imports;
+		lwc_string *uri;
+		uint64_t media;
+		css_stylesheet *sheet;
+		
+		error = css_stylesheet_next_pending_import(c->sheet,
+				&uri, &media);
+		if (error != CSS_OK && error != CSS_INVALID) {
+			return error;
+		}
+
+		/* Give up if there are no more imports */
+		if (error == CSS_INVALID) {
+			error = CSS_OK;
+			break;
+		}
+
+		/* Increase space in table */
+		imports = realloc(c->imports, (c->import_count + 1) * 
+				sizeof(struct nscss_import));
+		if (imports == NULL) {
+			return CSS_NOMEM;
+		}
+		c->imports = imports;
+
+		/** \todo fallback charset */
+		child.charset = NULL;
+		error = css_stylesheet_quirks_allowed(c->sheet, &child.quirks);
+		if (error != CSS_OK) {
+			return error;
+		}
+
+		/* Create content */
+		i = c->import_count;
+		c->imports[c->import_count].media = media;
+		nerror = hlcache_handle_retrieve(lwc_string_data(uri),
+				0, referer, NULL, w, h, nscss_import, c,
+				&child, &c->imports[c->import_count++].c);
+		if (error != NSERROR_OK) {
+			return CSS_NOMEM;
+		}
+
+		/* Wait for import to fetch + convert */
+		/** \todo This blocking approach needs to die */
+		while (c->imports[i].c != NULL && 
+				content_get_status(c->imports[i].c) != 
+				CONTENT_STATUS_DONE) {
+			fetch_poll();
+			gui_multitask();
+		}
+
+		if (c->imports[i].c != NULL) {
+			struct content *s = hlcache_handle_get_content(
+					c->imports[i].c);
+			sheet = s->data.css.sheet;
+		} else {
+			error = css_stylesheet_create(CSS_LEVEL_DEFAULT,
+					NULL, "", NULL, false, false,
+					myrealloc, NULL, 
+					nscss_resolve_url, NULL,
+					&sheet);
+			if (error != CSS_OK) {
+				return error;
+			}
+		}
+
+		error = css_stylesheet_register_import(c->sheet, sheet);
+		if (error != CSS_OK) {
+			return error;
+		}
+
+		error = CSS_IMPORTS_PENDING;
+	}
+
+	return error;
 }
 
 /**
@@ -348,80 +303,99 @@ bool nscss_convert(struct content *c, int w, int h)
  */
 void nscss_destroy(struct content *c)
 {
+	nscss_destroy_css_data(&c->data.css);
+}
+
+/**
+ * Clean up CSS data
+ *
+ * \param c  CSS data to clean up
+ */
+void nscss_destroy_css_data(struct content_css_data *c)
+{
 	uint32_t i;
 
-	for (i = 0; i < c->data.css.import_count; i++) {
-		if (c->data.css.imports[i].c != NULL) {
-			content_remove_user(c->data.css.imports[i].c,
-					nscss_import, (uintptr_t) c, i);
+	for (i = 0; i < c->import_count; i++) {
+		if (c->imports[i].c != NULL) {
+			hlcache_handle_release(c->imports[i].c);
 		}
-		c->data.css.imports[i].c = NULL;
+		c->imports[i].c = NULL;
 	}
 
-	free(c->data.css.imports);
+	free(c->imports);
 
-	if (c->data.css.sheet != NULL) {
-		css_stylesheet_destroy(c->data.css.sheet);
-		c->data.css.sheet = NULL;
-	}
-
-	if (c->data.css.dict != NULL) {
-		lwc_context_unref(c->data.css.dict);
-		c->data.css.dict = NULL;
+	if (c->sheet != NULL) {
+		css_stylesheet_destroy(c->sheet);
+		c->sheet = NULL;
 	}
 }
 
 /**
- * Fetchcache handler for imported stylesheets
+ * Retrieve imported stylesheets
  *
- * \param msg   Message type
- * \param c     Content being fetched
- * \param p1    Parent content
- * \param p2    Index into parent's imported stylesheet array
- * \param data  Message data
+ * \param h  Stylesheet containing imports
+ * \param n  Pointer to location to receive number of imports
+ * \return Pointer to array of imported stylesheets
  */
-void nscss_import(content_msg msg, struct content *c,
-		intptr_t p1, intptr_t p2, union content_msg_data data)
+struct nscss_import *nscss_get_imports(hlcache_handle *h, uint32_t *n)
 {
-	struct content *parent = (struct content *) p1;
-	uint32_t i = (uint32_t) p2;
+	struct content *c = hlcache_handle_get_content(h);
 
-	switch (msg) {
+	assert(c != NULL);
+	assert(c->type == CONTENT_CSS);
+	assert(n != NULL);
+
+	*n = c->data.css.import_count;
+
+	return c->data.css.imports;
+}
+
+/**
+ * Handler for imported stylesheet events
+ *
+ * \param handle  Handle for stylesheet
+ * \param event   Event object
+ * \param pw    Callback context
+ * \return NSERROR_OK on success, appropriate error otherwise
+ */
+nserror nscss_import(hlcache_handle *handle,
+		const hlcache_event *event, void *pw)
+{
+	struct content_css_data *parent = pw;
+	uint32_t i = 0;
+
+	switch (event->type) {
 	case CONTENT_MSG_LOADING:
-		if (c->type != CONTENT_CSS) {
-			content_remove_user(c, nscss_import, p1, p2);
-			if (c->user_list->next == NULL) {
-				fetch_abort(c->fetch);
-				c->fetch = NULL;
-				c->status = CONTENT_STATUS_ERROR;
-			}
+		if (content_get_type(handle) != CONTENT_CSS) {
+			hlcache_handle_release(handle);
 
-			parent->data.css.imports[i].c = NULL;
-			parent->active--;
-			content_add_error(parent, "NotCSS", 0);
+			for (i = 0; i < parent->import_count; i++) {
+				if (parent->imports[i].c == handle) {
+					parent->imports[i].c = NULL;
+					break;
+				}
+			}
 		}
 		break;
 	case CONTENT_MSG_READY:
 		break;
 	case CONTENT_MSG_DONE:
-		parent->active--;
 		break;
-	case CONTENT_MSG_AUTH:
-	case CONTENT_MSG_SSL:
-	case CONTENT_MSG_LAUNCH:
 	case CONTENT_MSG_ERROR:
-		if (parent->data.css.imports[i].c == c) {
-			parent->data.css.imports[i].c = NULL;
-			parent->active--;
+		hlcache_handle_release(handle);
+		for (i = 0; i < parent->import_count; i++) {
+			if (parent->imports[i].c == handle) {
+				parent->imports[i].c = NULL;
+				break;
+			}
 		}
 		break;
 	case CONTENT_MSG_STATUS:
 		break;
-	case CONTENT_MSG_NEWPTR:
-		parent->data.css.imports[i].c = c;
-		break;
 	default:
 		assert(0);
 	}
+
+	return NSERROR_OK;
 }
 

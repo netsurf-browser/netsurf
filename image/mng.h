@@ -29,6 +29,7 @@
 #include <stdbool.h>
 
 struct content;
+struct http_parameter;
 
 struct content_mng_data {
 	bool opaque_test_pending;
@@ -40,8 +41,7 @@ struct content_mng_data {
 	void *handle;
 };
 
-bool nsmng_create(struct content *c, struct content *parent,
-		const char *params[]);
+bool nsmng_create(struct content *c, const struct http_parameter *params);
 bool nsmng_process_data(struct content *c, char *data, unsigned int size);
 bool nsmng_convert(struct content *c, int width, int height);
 void nsmng_destroy(struct content *c);

@@ -18,6 +18,6 @@
 
 #include "desktop/browser.h"
 
-void hotlist_visited(struct content *content)
+void hotlist_visited(struct hlcache_handle *content)
 {
 }

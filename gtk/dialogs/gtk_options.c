@@ -570,7 +570,7 @@ ENTRY_CHANGED(entryHomePageURL, option_homepage_url)
 END_HANDLER
 
 BUTTON_CLICKED(setCurrentPage)
-	const gchar *url = current_browser->current_content->url;
+	const gchar *url = content_get_url(current_browser->current_content);
 	gtk_entry_set_text(GTK_ENTRY(entryHomePageURL), url);
 	option_homepage_url = 
 		strdup(gtk_entry_get_text(GTK_ENTRY(entryHomePageURL)));

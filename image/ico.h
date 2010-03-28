@@ -30,13 +30,14 @@
 #include <libnsbmp.h>
 
 struct content;
+struct hlcache_handle;
+struct http_parameter;
 
 struct content_ico_data {
 	struct ico_collection *ico;	/** ICO collection data */
 };
 
-bool nsico_create(struct content *c, struct content *parent,
-		const char *params[]);
+bool nsico_create(struct content *c, const struct http_parameter *params);
 bool nsico_convert(struct content *c, int width, int height);
 void nsico_destroy(struct content *c);
 bool nsico_redraw(struct content *c, int x, int y,
@@ -48,7 +49,8 @@ bool nsico_redraw_tiled(struct content *c, int x, int y,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale, colour background_colour,
 		bool repeat_x, bool repeat_y);
-bool nsico_set_bitmap_from_size(struct content *c, int width, int height);
+bool nsico_set_bitmap_from_size(struct hlcache_handle *h, 
+		int width, int height);
 
 #endif /* WITH_BMP */
 

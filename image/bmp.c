@@ -30,7 +30,7 @@
 #include <stdlib.h>
 #include <libnsbmp.h>
 #include "utils/config.h"
-#include "content/content.h"
+#include "content/content_protected.h"
 #include "desktop/plotters.h"
 #include "image/bitmap.h"
 #include "image/bmp.h"
@@ -49,8 +49,7 @@ bmp_bitmap_callback_vt bmp_bitmap_callbacks = {
 	.bitmap_get_bpp = bitmap_get_bpp
 };
 
-bool nsbmp_create(struct content *c, struct content *parent,
-		const char *params[])
+bool nsbmp_create(struct content *c, const struct http_parameter *params)
 {
 	union content_msg_data msg_data;
 
@@ -71,12 +70,16 @@ bool nsbmp_convert(struct content *c, int iwidth, int iheight)
 	bmp_image *bmp;
 	union content_msg_data msg_data;
 	uint32_t swidth;
+	const char *data;
+	unsigned long size;
 
 	/* set the bmp data */
 	bmp = c->data.bmp.bmp;
 
+	data = content__get_source_data(c, &size);
+
 	/* analyse the BMP */
-	res = bmp_analyse(bmp, c->source_size, (unsigned char *)c->source_data);
+	res = bmp_analyse(bmp, size, (unsigned char *) data);
 	switch (res) {
 		case BMP_OK:
 			break;
@@ -98,7 +101,7 @@ bool nsbmp_convert(struct content *c, int iwidth, int iheight)
 	c->title = malloc(100);
 	if (c->title)
 		snprintf(c->title, 100, messages_get("BMPTitle"), c->width,
-				c->height, c->source_size);
+				c->height, size);
 	swidth = bmp->bitmap_callbacks.bitmap_get_bpp(bmp->bitmap) * bmp->width;
 	c->size += (swidth * bmp->height) + 16 + 44 + 100;
 

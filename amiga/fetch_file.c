@@ -56,7 +56,7 @@ static bool ami_fetch_file_initialise(const char *scheme);
 static void ami_fetch_file_finalise(const char *scheme);
 static void * ami_fetch_file_setup(struct fetch *parent_fetch, const char *url,
 		 bool only_2xx, const char *post_urlenc,
-		 struct form_successful_control *post_multipart,
+		 struct fetch_multipart_data *post_multipart,
 		 const char **headers);
 static bool ami_fetch_file_start(void *vfetch);
 static void ami_fetch_file_abort(void *vf);
@@ -135,7 +135,7 @@ void ami_fetch_file_finalise(const char *scheme)
 
 void * ami_fetch_file_setup(struct fetch *parent_fetch, const char *url,
 		 bool only_2xx, const char *post_urlenc,
-		 struct form_successful_control *post_multipart,
+		 struct fetch_multipart_data *post_multipart,
 		 const char **headers)
 {
 	struct ami_file_fetch_info *fetch;
@@ -280,6 +280,7 @@ void ami_fetch_file_poll(const char *scheme_ignored)
 
 				if(fetch->fh)
 				{
+					char header[64];
 					struct ExamineData *fib;
 					if(fib = ExamineObjectTags(EX_FileHandleInput,fetch->fh,TAG_DONE))
 					{
@@ -291,9 +292,18 @@ void ami_fetch_file_poll(const char *scheme_ignored)
 					fetch->mimetype = fetch_mimetype(fetch->path);
 					LOG(("mimetype %s len %ld",fetch->mimetype,fetch->len));
 
-					ami_fetch_file_send_callback(FETCH_TYPE,
-						fetch, fetch->mimetype, (ULONG)fetch->len,
-						errorcode);
+					snprintf(header, sizeof header,
+							"Content-Type: %s",
+							fetch->mimetype);
+					ami_fetch_file_send_callback(FETCH_HEADER,
+						fetch, header, strlen(header), errorcode);
+
+					snprintf(header, sizeof header,
+							"Content-Length: %ld",
+							fetch->len);
+					ami_fetch_file_send_callback(FETCH_HEADER,
+						fetch, header, strlen(header), errorcode);
+
 				}
 				else
 				{

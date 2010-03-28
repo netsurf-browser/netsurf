@@ -2091,11 +2091,14 @@ bool textarea_cut(struct browser_window *bw,
 void textarea_reflow(struct browser_window *bw, struct box *textarea,
 		struct box *inline_container)
 {
+	struct content *c = hlcache_handle_get_content(bw->current_content);
 	int width = textarea->width;
 	int height = textarea->height;
+
+	assert(c != NULL);
+
 	if (!layout_inline_container(inline_container, width,
-			textarea, 0, 0,
-			bw->current_content))
+			textarea, 0, 0, c))
 		warn_user("NoMemory", 0);
 	textarea->width = width;
 	textarea->height = height;

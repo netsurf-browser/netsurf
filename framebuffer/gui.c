@@ -70,15 +70,6 @@ struct gui_window *window_list = NULL;
 
 bool redraws_pending = false;
 
-
-#ifndef MIN
-#define MIN(a,b) (((a) < (b)) ? (a) : (b))
-#endif
-
-#ifndef MAX
-#define MAX(a,b) (((a) > (b)) ? (a) : (b))
-#endif
-
 /* private data for browser user widget */
 struct browser_widget_s {
 	struct browser_window *bw; /**< The browser window connected to this gui window */
@@ -102,10 +93,10 @@ fb_queue_redraw(struct fbtk_widget_s *widget, int x0, int y0, int x1, int y1)
 {
         struct browser_widget_s *bwidget = fbtk_get_userpw(widget);
 
-        bwidget->redraw_box.x0 = MIN(bwidget->redraw_box.x0, x0);
-        bwidget->redraw_box.y0 = MIN(bwidget->redraw_box.y0, y0);
-        bwidget->redraw_box.x1 = MAX(bwidget->redraw_box.x1, x1);
-        bwidget->redraw_box.y1 = MAX(bwidget->redraw_box.y1, y1);
+        bwidget->redraw_box.x0 = min(bwidget->redraw_box.x0, x0);
+        bwidget->redraw_box.y0 = min(bwidget->redraw_box.y0, y0);
+        bwidget->redraw_box.x1 = max(bwidget->redraw_box.x1, x1);
+        bwidget->redraw_box.y1 = max(bwidget->redraw_box.y1, y1);
 
         if (fbtk_clip_to_widget(widget, &bwidget->redraw_box)) {
                 bwidget->redraw_required = true;
@@ -121,7 +112,6 @@ static void fb_pan(fbtk_widget_t *widget,
                    struct browser_widget_s *bwidget,
                    struct browser_window *bw)
 {
-	struct content *c;
 	int x;
 	int y;
 	int width;
@@ -129,12 +119,10 @@ static void fb_pan(fbtk_widget_t *widget,
 	nsfb_bbox_t srcbox;
 	nsfb_bbox_t dstbox;
 
-	c = bw->current_content;
-
-	if ((!c) || (c->locked))
-		return;
-
 	nsfb_t *nsfb = fbtk_get_nsfb(widget);
+
+	int content_height = content_get_height(bw->current_content);
+	int content_width = content_get_width(bw->current_content);
 
 	height = fbtk_get_height(widget);
 	width = fbtk_get_width(widget);
@@ -146,16 +134,16 @@ static void fb_pan(fbtk_widget_t *widget,
 		bwidget->pany = - bwidget->scrolly;
 
         /* do not pan off the bottom of the content */
-	if ((bwidget->scrolly + bwidget->pany) > (c->height - height))
-		bwidget->pany = (c->height - height) - bwidget->scrolly;
+	if ((bwidget->scrolly + bwidget->pany) > (content_height - height))
+		bwidget->pany = (content_height - height) - bwidget->scrolly;
 
 	/* dont pan off the left */
 	if ((bwidget->scrollx + bwidget->panx) < 0)
 		bwidget->panx = - bwidget->scrollx;
 
         /* do not pan off the right of the content */
-	if ((bwidget->scrollx + bwidget->panx) > (c->width - width))
-		bwidget->panx = (c->width - width) - bwidget->scrollx;
+	if ((bwidget->scrollx + bwidget->panx) > (content_width - width))
+		bwidget->panx = (content_width - width) - bwidget->scrollx;
 
 	LOG(("panning %d, %d",bwidget->panx, bwidget->pany));
 
@@ -268,16 +256,11 @@ static void fb_redraw(fbtk_widget_t *widget,
                       struct browser_widget_s *bwidget,
                       struct browser_window *bw)
 {
-	struct content *c;
         int x;
         int y;
         int width;
         int height;
 
-	c = bw->current_content;
-
-	if ((!c) || (c->locked))
-                return;
 
         LOG(("redraw box %d,%d to %d,%d",bwidget->redraw_box.x0,bwidget->redraw_box.y0, bwidget->redraw_box.x1, bwidget->redraw_box.y1));
 
@@ -292,13 +275,11 @@ static void fb_redraw(fbtk_widget_t *widget,
         bwidget->redraw_box.x0 += x;
         bwidget->redraw_box.x1 += x;
 
-
-
         nsfb_claim(fbtk_get_nsfb(widget), &bwidget->redraw_box);
 
         /* redraw bounding box is relative to window */
 	current_redraw_browser = bw;
-        content_redraw(c,
+        content_redraw(bw->current_content,
                        x - bwidget->scrollx, y - bwidget->scrolly,
                        width, height,
                        bwidget->redraw_box.x0, bwidget->redraw_box.y0,
@@ -328,9 +309,9 @@ fb_browser_window_redraw(fbtk_widget_t *root, fbtk_widget_t *widget, void *pw)
         if (bwidget->pan_required) {
                 int pos;
                 fb_pan(widget, bwidget, gw->bw);
-                pos = (bwidget->scrollx * 100) / gw->bw->current_content->width;
+                pos = (bwidget->scrollx * 100) / content_get_width(gw->bw->current_content);
                 fbtk_set_scroll_pos(gw->hscroll, pos);
-                pos = (bwidget->scrolly * 100) / gw->bw->current_content->height;
+                pos = (bwidget->scrolly * 100) / content_get_height(gw->bw->current_content);
                 fbtk_set_scroll_pos(gw->vscroll, pos);
 
         }
@@ -409,11 +390,23 @@ static bool process_cmdline(int argc, char** argv)
 	return true;
 }
 
-/** Normal entry point from OS */
+/** Entry point from OS.
+ *
+ * /param argc The number of arguments in the string vector. 
+ * /param argv The argument string vector.
+ * /return The return code to the OS
+ */
 int main(int argc, char** argv)
 {
 	setbuf(stderr, NULL);
-	return netsurf_main(argc, argv);
+
+	netsurf_init(argc, argv);
+
+	netsurf_main_loop();
+
+	netsurf_exit();
+
+	return 0;
 }
 
 void gui_init(int argc, char** argv)
@@ -1176,15 +1169,17 @@ void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
         *height = fbtk_get_height(g->browser);
 }
 
-void gui_window_update_extent(struct gui_window *g)
+void gui_window_update_extent(struct gui_window *gw)
 {
         int pct;
 
-        pct = (fbtk_get_width(g->browser) * 100) / g->bw->current_content->width;
-        fbtk_set_scroll(g->hscroll, pct);
+        pct = (fbtk_get_width(gw->browser) * 100) / 
+		content_get_width(gw->bw->current_content);
+        fbtk_set_scroll(gw->hscroll, pct);
 
-        pct = (fbtk_get_height(g->browser) * 100) / g->bw->current_content->height;
-        fbtk_set_scroll(g->vscroll, pct);
+        pct = (fbtk_get_height(gw->browser) * 100) / 
+		content_get_height(gw->bw->current_content);
+        fbtk_set_scroll(gw->vscroll, pct);
 
 }
 
@@ -1328,7 +1323,8 @@ bool gui_window_frame_resize_start(struct gui_window *g)
 	return true;
 }
 
-void gui_window_save_as_link(struct gui_window *g, struct content *c)
+void 
+gui_window_save_link(struct gui_window *g, const char *url, const char *title)
 {
 }
 
@@ -1340,7 +1336,8 @@ void gui_window_set_scale(struct gui_window *g, float scale)
 /**
  * set favicon
  */
-void gui_window_set_icon(struct gui_window *g, struct content *icon)
+void
+gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 {
 }
 
@@ -1349,7 +1346,8 @@ void gui_window_set_icon(struct gui_window *g, struct content *icon)
 * \param ico may be NULL for local calls; then access current cache from
 * search_web_ico()
 */
-void gui_window_set_search_ico(struct content *ico)
+void
+gui_window_set_search_ico(hlcache_handle *ico)
 {
 }
 
@@ -1374,8 +1372,8 @@ void gui_download_window_done(struct gui_download_window *dw)
 {
 }
 
-void gui_drag_save_object(gui_save_type type, struct content *c,
-                          struct gui_window *g)
+void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
+			  struct gui_window *w)
 {
 }
 
@@ -1420,7 +1418,7 @@ void gui_launch_url(const char *url)
 {
 }
 
-void gui_cert_verify(struct browser_window *bw, struct content *c,
+void gui_cert_verify(struct browser_window *bw, struct hlcache_handle *c,
                      const struct ssl_cert_info *certs, unsigned long num)
 {
 }

@@ -28,6 +28,7 @@
 #include "gtk/gtk_window.h"
 #include "utils/config.h"
 #include "content/content.h"
+#include "content/hlcache.h"
 #include "desktop/browser.h"
 #include "desktop/gui.h"
 #include "desktop/search.h"
@@ -99,7 +100,7 @@ gboolean nsgtk_search_back_button_clicked(GtkWidget *widget, gpointer data)
 
 void nsgtk_search_init(struct gtk_scaffolding *g)
 {
-	struct content *c;
+	hlcache_handle *c;
 
 	assert(gui_window_get_browser_window(nsgtk_scaffolding_top_level(g))
 			!= NULL);
@@ -107,7 +108,8 @@ void nsgtk_search_init(struct gtk_scaffolding *g)
 	c = gui_window_get_browser_window(nsgtk_scaffolding_top_level(g))->
 			current_content;
 
-	if ((!c) || (c->type != CONTENT_HTML && c->type != CONTENT_TEXTPLAIN))
+	if ((!c) || (content_get_type(c) != CONTENT_HTML && 
+			content_get_type(c) != CONTENT_TEXTPLAIN))
 		return;
 	
 }

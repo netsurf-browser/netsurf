@@ -35,6 +35,7 @@
 #include <libxml/parserInternals.h>
 #include "utils/config.h"
 #include "content/content.h"
+#include "content/hlcache.h"
 #include "css/css.h"
 #include "render/box.h"
 #include "desktop/save_complete.h"
@@ -46,14 +47,14 @@ regex_t save_complete_import_re;
 
 /** An entry in save_complete_list. */
 struct save_complete_entry {
-	struct content *content;
+	hlcache_handle *content;
 	struct save_complete_entry *next; /**< Next entry in list */
 };
 
-static bool save_complete_html(struct content *c, const char *path,
+static bool save_complete_html(hlcache_handle *c, const char *path,
 		bool index, struct save_complete_entry **list);
-static bool save_imported_sheets(struct content *c, const char *path,
-		struct save_complete_entry **list);
+static bool save_imported_sheets(struct nscss_import *imports, uint32_t count, 
+		const char *path, struct save_complete_entry **list);
 static char * rewrite_stylesheet_urls(const char *source, unsigned int size,
 		int *osize, const char *base,
 		struct save_complete_entry *list);
@@ -63,11 +64,11 @@ static bool rewrite_urls(xmlNode *n, const char *base,
 		struct save_complete_entry *list);
 static bool rewrite_url(xmlNode *n, const char *attr, const char *base,
 		struct save_complete_entry *list);
-static bool save_complete_list_add(struct content *content,
+static bool save_complete_list_add(hlcache_handle *content,
 		struct save_complete_entry **list);
-static struct content * save_complete_list_find(const char *url,
+static hlcache_handle * save_complete_list_find(const char *url,
 		struct save_complete_entry *list);
-static bool save_complete_list_check(struct content *content,
+static bool save_complete_list_check(hlcache_handle *content,
 		struct save_complete_entry *list);
 /* static void save_complete_list_dump(void); */
 static bool save_complete_inventory(const char *path,
@@ -81,7 +82,7 @@ static bool save_complete_inventory(const char *path,
  * \return  true on success, false on error and error reported
  */
 
-bool save_complete(struct content *c, const char *path)
+bool save_complete(hlcache_handle *c, const char *path)
 {
 	bool result;
 	struct save_complete_entry *list = NULL;
@@ -111,50 +112,69 @@ bool save_complete(struct content *c, const char *path)
  * \return  true on success, false on error and error reported
  */
 
-bool save_complete_html(struct content *c, const char *path, bool index,
+bool save_complete_html(hlcache_handle *c, const char *path, bool index,
 		struct save_complete_entry **list)
 {
+	struct html_stylesheet *sheets;
+	struct content_html_object *objects;
+	const char *base_url;
 	char filename[256];
-	unsigned int i;
+	unsigned int i, count;
 	xmlDocPtr doc;
 	bool res;
 
-	if (c->type != CONTENT_HTML)
+	if (content_get_type(c) != CONTENT_HTML)
 		return false;
 
 	if (save_complete_list_check(c, *list))
 		return true;
-		
+
+	base_url = html_get_base_url(c);
+
 	/* save stylesheets, ignoring the base and adblocking sheets */
-	for (i = STYLESHEET_START; i != c->data.html.stylesheet_count; i++) {
-		struct content *css = c->data.html.stylesheets[i].c;
+	sheets = html_get_stylesheets(c, &count);
+
+	for (i = STYLESHEET_START; i != count; i++) {
+		hlcache_handle *css;
+		const char *css_data;
+		unsigned long css_size;
 		char *source;
 		int source_len;
-		bool is_style;
+		struct nscss_import *imports;
+		uint32_t import_count;
+
+		if (sheets[i].type == HTML_STYLESHEET_INTERNAL) {
+			if (save_imported_sheets(
+					sheets[i].data.internal->imports, 
+					sheets[i].data.internal->import_count, 
+					path, list) == false)
+				return false;
+
+			continue;
+		}
+
+		css = sheets[i].data.external;
 
 		if (!css)
 			continue;
 		if (save_complete_list_check(css, *list))
 			continue;
 
-		is_style = (strcmp(css->url, c->data.html.base_url) == 0);
-
-		if (is_style == false) {
-			if (!save_complete_list_add(css, list)) {
-				warn_user("NoMemory", 0);
-				return false;
-			}
+		if (!save_complete_list_add(css, list)) {
+			warn_user("NoMemory", 0);
+			return false;
 		}
 
-		if (!save_imported_sheets(css, path, list))
+		imports = nscss_get_imports(css, &import_count);
+		if (!save_imported_sheets(imports, import_count, path, list))
 			return false;
 
-		if (is_style)
-			continue; /* don't save <style> elements */
-
 		snprintf(filename, sizeof filename, "%p", css);
-		source = rewrite_stylesheet_urls(css->source_data,
-				css->source_size, &source_len, css->url,
+
+		css_data = content_get_source_data(css, &css_size);
+
+		source = rewrite_stylesheet_urls(css_data, css_size, 
+				&source_len, content_get_url(css),
 				*list);
 		if (!source) {
 			warn_user("NoMemory", 0);
@@ -168,12 +188,21 @@ bool save_complete_html(struct content *c, const char *path, bool index,
 	}
 	
 	/* save objects */
-	for (i = 0; i != c->data.html.object_count; i++) {
-		struct content *obj = c->data.html.object[i].content;
+	objects = html_get_objects(c, &count);
 
-		/* skip difficult content types */
-		if (!obj || obj->type >= CONTENT_OTHER || !obj->source_data)
+	for (i = 0; i != count; i++) {
+		hlcache_handle *obj = objects[i].content;
+		const char *obj_data;
+		unsigned long obj_size;
+
+		if (obj == NULL || content_get_type(obj) >= CONTENT_OTHER)
 			continue;
+
+		obj_data = content_get_source_data(obj, &obj_size);
+
+		if (obj_data == NULL)
+			continue;
+
 		if (save_complete_list_check(obj, *list))
 			continue;
 
@@ -182,7 +211,7 @@ bool save_complete_html(struct content *c, const char *path, bool index,
 			return false;
 		}
 
-		if (obj->type == CONTENT_HTML) {
+		if (content_get_type(obj) == CONTENT_HTML) {
 			if (!save_complete_html(obj, path, false, list))
 				return false;
 			continue;
@@ -190,7 +219,7 @@ bool save_complete_html(struct content *c, const char *path, bool index,
 
 		snprintf(filename, sizeof filename, "%p", obj);
 		res = save_complete_gui_save(path, filename, 
-				obj->source_size, obj->source_data, obj->type);
+				obj_size, obj_data, content_get_type(obj));
 		if(res == false)
 			return false;
 	}
@@ -198,14 +227,14 @@ bool save_complete_html(struct content *c, const char *path, bool index,
 	/*save_complete_list_dump();*/
 
 	/* copy document */
-	doc = xmlCopyDoc(c->data.html.document, 1);
+	doc = xmlCopyDoc(html_get_document(c), 1);
 	if (doc == NULL) {
 		warn_user("NoMemory", 0);
 		return false;
 	}
 
 	/* rewrite all urls we know about */
-	if (!rewrite_document_urls(doc, c->data.html.base_url, *list)) {
+	if (!rewrite_document_urls(doc, html_get_base_url(c), *list)) {
 		xmlFreeDoc(doc);
 		warn_user("NoMemory", 0);
 		return false;
@@ -237,13 +266,13 @@ bool save_complete_html(struct content *c, const char *path, bool index,
 /**
  * Save stylesheets imported by a CONTENT_CSS.
  *
- * \param  c     a CONTENT_CSS
- * \param  path  path to save to
+ * \param imports  Array of imports
+ * \param count    Number of imports in list
+ * \param path     Path to save to
  * \return  true on success, false on error and error reported
  */
-
-bool save_imported_sheets(struct content *c, const char *path,
-		struct save_complete_entry **list)
+bool save_imported_sheets(struct nscss_import *imports, uint32_t count, 
+		const char *path, struct save_complete_entry **list)
 {
 	char filename[256];
 	unsigned int j;
@@ -251,10 +280,14 @@ bool save_imported_sheets(struct content *c, const char *path,
 	int source_len;
 	bool res;
 
-	for (j = 0; j != c->data.css.import_count; j++) {
-		struct content *css = c->data.css.imports[j].c;
+	for (j = 0; j != count; j++) {
+		hlcache_handle *css = imports[j].c;
+		const char *css_data;
+		unsigned long css_size;
+		struct nscss_import *child_imports;
+		uint32_t child_import_count;
 
-		if (!css)
+		if (css == NULL)
 			continue;
 		if (save_complete_list_check(css, *list))
 			continue;
@@ -264,12 +297,17 @@ bool save_imported_sheets(struct content *c, const char *path,
 			return false;
 		}
 
-		if (!save_imported_sheets(css, path, list))
+		child_imports = nscss_get_imports(css, &child_import_count);
+		if (!save_imported_sheets(child_imports, child_import_count, 
+				path, list))
 			return false;
 
 		snprintf(filename, sizeof filename, "%p", css);
-		source = rewrite_stylesheet_urls(css->source_data,
-				css->source_size, &source_len, css->url, 
+
+		css_data = content_get_source_data(css, &css_size);
+
+		source = rewrite_stylesheet_urls(css_data, css_size, 
+				&source_len, content_get_url(css), 
 				*list);
 		if (!source) {
 			warn_user("NoMemory", 0);
@@ -344,7 +382,7 @@ char * rewrite_stylesheet_urls(const char *source, unsigned int size,
 	char buf[20];
 	unsigned int offset = 0;
 	int url_len = 0;
-	struct content *content;
+	hlcache_handle *content;
 	int m;
 	unsigned int i;
 	unsigned int imports = 0;
@@ -609,7 +647,7 @@ bool rewrite_url(xmlNode *n, const char *attr, const char *base,
 {
 	char *url, *data;
 	char rel[20];
-	struct content *content;
+	hlcache_handle *content;
 	url_func_result res;
 
 	if (!xmlHasProp(n, (const xmlChar *) attr))
@@ -654,7 +692,7 @@ bool rewrite_url(xmlNode *n, const char *attr, const char *base,
  * \return  true on success, false on out of memory
  */
 
-bool save_complete_list_add(struct content *content,
+bool save_complete_list_add(hlcache_handle *content,
 		struct save_complete_entry **list)
 {
 	struct save_complete_entry *entry;
@@ -675,12 +713,12 @@ bool save_complete_list_add(struct content *content,
  * \return  content if found, 0 otherwise
  */
 
-struct content * save_complete_list_find(const char *url,
+hlcache_handle * save_complete_list_find(const char *url,
 		struct save_complete_entry *list)
 {
 	struct save_complete_entry *entry;
 	for (entry = list; entry; entry = entry->next)
-		if (strcmp(url, entry->content->url) == 0)
+		if (strcmp(url, content_get_url(entry->content)) == 0)
 			return entry->content;
 	return 0;
 }
@@ -693,7 +731,7 @@ struct content * save_complete_list_find(const char *url,
  * \return  true if the content is in the save_complete_list
  */
 
-bool save_complete_list_check(struct content *content,
+bool save_complete_list_check(hlcache_handle *content,
 		struct save_complete_entry *list)
 {
 	struct save_complete_entry *entry;
@@ -746,8 +784,10 @@ bool save_complete_inventory(const char *path,
 		return false;
 	}
 
-	for (entry = list; entry; entry = entry->next)
-		fprintf(fp, "%p %s\n", entry->content, entry->content->url);
+	for (entry = list; entry; entry = entry->next) {
+		fprintf(fp, "%p %s\n", entry->content, 
+				content_get_url(entry->content));
+	}
 
 	fclose(fp);
 

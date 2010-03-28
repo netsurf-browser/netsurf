@@ -24,7 +24,8 @@
 #include <stdbool.h>
 #include <string.h>
 #include <strings.h>
-#include "content/content.h"
+#include "content/content_protected.h"
+#include "content/hlcache.h"
 #include "render/box.h"
 #include "render/imagemap.h"
 #include "utils/log.h"
@@ -626,20 +627,21 @@ void imagemap_freelist(struct mapentry *list)
 /**
  * Retrieve url associated with imagemap entry
  *
- * \param c The containing content
- * \param key The map name to search for
- * \param x The left edge of the containing box
- * \param y The top edge of the containing box
- * \param click_x The horizontal location of the click
- * \param click_y The vertical location of the click
- * \param target Pointer to location to receive target pointer (if any)
+ * \param h        The containing content
+ * \param key      The map name to search for
+ * \param x        The left edge of the containing box
+ * \param y        The top edge of the containing box
+ * \param click_x  The horizontal location of the click
+ * \param click_y  The vertical location of the click
+ * \param target   Pointer to location to receive target pointer (if any)
  * \return The url associated with this area, or NULL if not found
  */
-const char *imagemap_get(struct content *c, const char *key,
+const char *imagemap_get(hlcache_handle *h, const char *key,
 		unsigned long x, unsigned long y,
 		unsigned long click_x, unsigned long click_y,
 		const char **target)
 {
+	struct content *c = hlcache_handle_get_content(h);
 	unsigned int slot = 0;
 	struct imagemap *map;
 	struct mapentry *entry;

@@ -22,6 +22,7 @@
 #include <unistd.h>
 #include "content/content.h"
 #include "content/content_type.h"
+#include "content/hlcache.h"
 #include "gtk/gtk_gui.h"
 #include "gtk/gtk_scaffolding.h"
 #include "gtk/gtk_menu.h"
@@ -62,10 +63,10 @@ static void nsgtk_theme_cache_searchimage(nsgtk_search_buttons i,
 		const char *filename, const char *path);
 							   
 #ifdef WITH_THEME_INSTALL
-static struct content *theme_install_content = NULL;
+static hlcache_handle *theme_install_content = NULL;
 
-static void theme_install_callback(content_msg msg, struct content *c,
-		intptr_t p1, intptr_t p2, union content_msg_data data);
+static void theme_install_callback(hlcache_handle *c, content_msg msg,
+		union content_msg_data data, void *pw);
 static bool theme_install_read(const char *data, unsigned long len);
 #endif
 
@@ -674,14 +675,14 @@ GtkImage *nsgtk_theme_image_default(nsgtk_toolbar_button i, GtkIconSize s)
 /**
  * when CONTENT_THEME needs handling call this function
  */
-void theme_install_start(struct content *c)
+void theme_install_start(hlcache_handle *c)
 {
 	assert(c);
-	assert(c->type == CONTENT_THEME);
+	assert(content_get_type(c) == CONTENT_THEME);
 
 	/* stop theme sitting in memory cache */
-	c->fresh = false;
-	if (!content_add_user(c, theme_install_callback, 0, 0)) {
+	content_invalidate_reuse_data(c);
+	if (!content_add_user(c, theme_install_callback, NULL)) {
 		warn_user("NoMemory", 0);
 		return;
 	}
@@ -692,17 +693,25 @@ void theme_install_start(struct content *c)
  * Callback for fetchcache() for theme install fetches.
  */
 
-void theme_install_callback(content_msg msg, struct content *c,
-		intptr_t p1, intptr_t p2, union content_msg_data data)
+void theme_install_callback(hlcache_handle *c, content_msg msg,
+		union content_msg_data data, void *pw)
 {
 	switch (msg) {
 	case CONTENT_MSG_READY:
 		break;
 
 	case CONTENT_MSG_DONE:
+	{
+		const char *source_data;
+		unsigned long source_size;
+
 		theme_install_content = c;
-		if (!theme_install_read(c->source_data, c->source_size))
+
+		source_data = content_get_source_data(c, &source_size);
+		
+		if (!theme_install_read(source_data, source_size))
 			warn_user("ThemeInvalid", 0);
+	}
 		break;
 
 	case CONTENT_MSG_ERROR:

@@ -107,7 +107,7 @@ void nsgtk_source_dialog_init(GtkWindow *parent, struct browser_window *bw)
 {	
 	char glade_Location[strlen(res_dir_location) + SLEN("source.glade")
 			+ 1];
-	if (bw->current_content->type != CONTENT_HTML)
+	if (content_get_type(bw->current_content) != CONTENT_HTML)
 		return;
 	
 	if (option_source_tab) {
@@ -121,12 +121,17 @@ void nsgtk_source_dialog_init(GtkWindow *parent, struct browser_window *bw)
 		LOG(("error loading glade tree"));
 	}
 
+	const char *source_data;
+	unsigned long source_size;
 	char *data = NULL;
 
+	source_data = content_get_source_data(bw->current_content, 
+			&source_size);
+
 	utf8_convert_ret r = utf8_from_enc(
-			bw->current_content->source_data,
-			bw->current_content->data.html.encoding,
-			bw->current_content->source_size,
+			source_data,
+			html_get_encoding(bw->current_content),
+			source_size,
 			&data);
 	if (r == UTF8_CONVERT_NOMEM) {
 		warn_user("NoMemory",0);
@@ -160,7 +165,7 @@ void nsgtk_source_dialog_init(GtkWindow *parent, struct browser_window *bw)
 		return;
 	}
 
-	thiswindow->url = strdup(bw->current_content->url);
+	thiswindow->url = strdup(content_get_url(bw->current_content));
 	if (thiswindow->url == NULL) {
 		free(thiswindow);
 		free(data);
@@ -173,8 +178,8 @@ void nsgtk_source_dialog_init(GtkWindow *parent, struct browser_window *bw)
 	thiswindow->sourcewindow = wndSource;
 	thiswindow->bw = bw;
 
-	char title[strlen(bw->current_content->url) + SLEN("Source of ") + 1];
-	sprintf(title, "Source of %s", bw->current_content->url);
+	char title[strlen(thiswindow->url) + SLEN("Source of ") + 1];
+	sprintf(title, "Source of %s", thiswindow->url);
 
 	thiswindow->next = nsgtk_source_list;
 	thiswindow->prev = NULL;
@@ -209,11 +214,17 @@ void nsgtk_source_dialog_init(GtkWindow *parent, struct browser_window *bw)
 }
 void nsgtk_source_tab_init(GtkWindow *parent, struct browser_window *bw)
 {
+	const char *source_data;
+	unsigned long source_size;
 	char *ndata = 0;
+
+	source_data = content_get_source_data(bw->current_content, 
+			&source_size);
+
 	utf8_convert_ret r = utf8_from_enc(
-			bw->current_content->source_data,
-			bw->current_content->data.html.encoding,
-			bw->current_content->source_size,
+			source_data,
+			html_get_encoding(bw->current_content),
+			source_size,
 			&ndata);
 	if (r == UTF8_CONVERT_NOMEM) {
 		warn_user("NoMemory",0);
@@ -245,18 +256,9 @@ void nsgtk_source_tab_init(GtkWindow *parent, struct browser_window *bw)
 		warn_user(messages_get("NoMemory"), 0);
 		return;
 	}
-	struct browser_window *newbw = browser_window_create(fileurl, bw,
-			NULL, false, true);
+	/* Open tab */
+	browser_window_create(fileurl, bw, NULL, false, true);
 	free(fileurl);
-	if (newbw->current_content) {
-		newbw->current_content->title = malloc(
-				strlen(bw->current_content->url) +
-				SLEN("source of ") + 1);
-		if (newbw->current_content->title == NULL)
-			return;
-		sprintf(newbw->current_content->title, "source of %s",
-				bw->current_content->url);
-	}
 }
 
 

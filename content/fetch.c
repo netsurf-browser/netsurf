@@ -41,7 +41,6 @@
 #include "content/urldb.h"
 #include "desktop/netsurf.h"
 #include "desktop/options.h"
-#include "render/form.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/url.h"
@@ -213,7 +212,7 @@ void fetch_unref_fetcher(scheme_fetcher *fetcher)
 struct fetch * fetch_start(const char *url, const char *referer,
 			   fetch_callback callback,
 			   void *p, bool only_2xx, const char *post_urlenc,
-			   struct form_successful_control *post_multipart,
+			   struct fetch_multipart_data *post_multipart,
 			   bool verifiable, struct content *parent,
 			   char *headers[])
 {
@@ -598,6 +597,78 @@ bool fetch_get_verifiable(struct fetch *fetch)
 	return fetch->verifiable;
 }
 
+/**
+ * Clone a linked list of fetch_multipart_data.
+ *
+ * \param list  List to clone
+ * \return Pointer to head of cloned list, or NULL on failure
+ */
+struct fetch_multipart_data *fetch_multipart_data_clone(
+		const struct fetch_multipart_data *list)
+{
+	struct fetch_multipart_data *clone, *last = NULL;
+	struct fetch_multipart_data *result = NULL;
+
+	for (; list != NULL; list = list->next) {
+		clone = malloc(sizeof(struct fetch_multipart_data));
+		if (clone == NULL) {
+			if (result != NULL)
+				fetch_multipart_data_destroy(result);
+
+			return NULL;
+		}
+
+		clone->file = list->file;
+
+		clone->name = strdup(list->name);
+		if (clone->name == NULL) {
+			free(clone);
+			if (result != NULL)
+				fetch_multipart_data_destroy(result);
+
+			return NULL;
+		}
+
+		clone->value = strdup(list->value);
+		if (clone->value == NULL) {
+			free(clone->name);
+			free(clone);
+			if (result != NULL)
+				fetch_multipart_data_destroy(result);
+
+			return NULL;
+		}
+
+		clone->next = NULL;
+
+		if (result == NULL)
+			result = clone;
+		else
+			last->next = clone;
+
+		last = clone;
+	}
+
+	return result;
+}
+
+/**
+ * Free a linked list of fetch_multipart_data.
+ *
+ * \param list Pointer to head of list to free
+ */
+void fetch_multipart_data_destroy(struct fetch_multipart_data *list)
+{
+	struct fetch_multipart_data *next;
+
+	for (; list != NULL; list = next) {
+		next = list->next;
+		free(list->name);
+		free(list->value);
+		free(list);
+	}
+}
+
 void
 fetch_send_callback(fetch_msg msg, struct fetch *fetch, const void *data,
 		unsigned long size, fetch_error_code errorcode)
@@ -665,8 +736,8 @@ fetch_set_cookie(struct fetch *fetch, const char *data)
 		 * that the request uri and the parent domain match,
 		 * so don't pass in the parent in this case. */
 		urldb_set_cookie(data, fetch->url, 
-				fetch->verifiable ? NULL
-						  : fetch->parent->url);
+			fetch->verifiable ? NULL
+					  : content_get_url(fetch->parent));
 	}
 }
 

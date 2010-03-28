@@ -279,7 +279,15 @@ static void *myrealloc(void *ptr, size_t len, void *pw)
 int main(int argc, char** argv)
 {
 	setbuf(stderr, NULL);
-	return netsurf_main(argc, argv);
+
+	/* initialise netsurf */
+	netsurf_init(argc, argv);
+
+	netsurf_main_loop();
+
+	netsurf_exit();
+
+	return 0;
 }
 
 /**

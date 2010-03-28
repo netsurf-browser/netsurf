@@ -26,7 +26,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include "content/content.h"
+#include "content/content_protected.h"
+#include "content/hlcache.h"
 #include "css/css.h"
 #include "css/dump.h"
 #include "desktop/scroll.h"
@@ -312,7 +313,7 @@ void box_bounds(struct box *box, struct rect *r)
 
 struct box *box_at_point(struct box *box, const int x, const int y,
 		int *box_x, int *box_y,
-		struct content **content)
+		hlcache_handle **content)
 {
 	int bx = *box_x, by = *box_y;
 	struct box *child, *sibling;
@@ -321,11 +322,14 @@ struct box *box_at_point(struct box *box, const int x, const int y,
 	assert(box);
 
 	/* drill into HTML objects */
-	if (box->object) {
-		if (box->object->type == CONTENT_HTML &&
-				box->object->data.html.layout) {
+	if (box->object != NULL) {
+		struct box *layout;
+
+		if (content_get_type(box->object) == CONTENT_HTML &&
+				(layout = html_get_box_tree(box->object)) != 
+				NULL) {
 			*content = box->object;
-			box = box->object->data.html.layout;
+			box = layout;
 		} else {
 			goto siblings;
 		}
@@ -503,19 +507,23 @@ bool box_contains_point(struct box *box, int x, int y, bool *physically)
 /**
  * Find the box containing an object at the given coordinates, if any.
  *
- * \param  c  content to search, must have type CONTENT_HTML
+ * \param  h  content to search, must have type CONTENT_HTML
  * \param  x  coordinates in document units
  * \param  y  coordinates in document units
  */
 
-struct box *box_object_at_point(struct content *c, int x, int y)
+struct box *box_object_at_point(hlcache_handle *h, int x, int y)
 {
-	struct box *box = c->data.html.layout;
+	struct content *c = hlcache_handle_get_content(h);
+	struct box *box;
 	int box_x = 0, box_y = 0;
-	struct content *content = c;
+	hlcache_handle *content = h;
 	struct box *object_box = 0;
 
+	assert(c != NULL);
 	assert(c->type == CONTENT_HTML);
+
+	box = c->data.html.layout;
 
 	while ((box = box_at_point(box, x, y, &box_x, &box_y, &content))) {
 		if (box->style && css_computed_visibility(box->style) ==
@@ -533,19 +541,23 @@ struct box *box_object_at_point(struct content *c, int x, int y)
 /**
  * Find the box containing an href at the given coordinates, if any.
  *
- * \param  c  content to search, must have type CONTENT_HTML
+ * \param  h  content to search, must have type CONTENT_HTML
  * \param  x  coordinates in document units
  * \param  y  coordinates in document units
  */
 
-struct box *box_href_at_point(struct content *c, int x, int y)
+struct box *box_href_at_point(hlcache_handle *h, int x, int y)
 {
-	struct box *box = c->data.html.layout;
+	struct content *c = hlcache_handle_get_content(h);
+	struct box *box;
 	int box_x = 0, box_y = 0;
-	struct content *content = c;
+	hlcache_handle *content = h;
 	struct box *href_box = 0;
 
+	assert(c != NULL);
 	assert(c->type == CONTENT_HTML);
+
+	box = c->data.html.layout;
 
 	while ((box = box_at_point(box, x, y, &box_x, &box_y, &content))) {
 		if (box->style && css_computed_visibility(box->style) ==
@@ -663,8 +675,10 @@ void box_dump(FILE *stream, struct box *box, unsigned int depth)
 				(int) box->length, box->text);
 	if (box->space)
 		fprintf(stream, "space ");
-	if (box->object)
-		fprintf(stream, "(object '%s') ", box->object->url);
+	if (box->object) {
+		fprintf(stream, "(object '%s') ", 
+				content_get_url(box->object));
+	}
 	if (box->gadget)
 		fprintf(stream, "(gadget) ");
 	if (box->style)
@@ -860,42 +874,42 @@ bool box_duplicate_main_tree(struct box *box, struct content *c, int *count)
 
 	box->last = prev;
 
-	if (box->object && option_suppress_images && (
+	if (box->object != NULL && option_suppress_images && (
 #ifdef WITH_JPEG
-			box->object->type == CONTENT_JPEG ||
+			content_get_type(box->object) == CONTENT_JPEG ||
 #endif
 #ifdef WITH_GIF
-			box->object->type == CONTENT_GIF ||
+			content_get_type(box->object) == CONTENT_GIF ||
 #endif
 #ifdef WITH_BMP
-			box->object->type ==  CONTENT_BMP ||
-			box->object->type == CONTENT_ICO ||
+			content_get_type(box->object) ==  CONTENT_BMP ||
+			content_get_type(box->object) == CONTENT_ICO ||
 #endif
 #if defined(WITH_MNG) || defined(WITH_PNG)
-			box->object->type == CONTENT_PNG ||
+			content_get_type(box->object) == CONTENT_PNG ||
 #endif
 #ifdef WITH_MNG
-			box->object->type == CONTENT_JNG ||
-			box->object->type == CONTENT_MNG ||
+			content_get_type(box->object) == CONTENT_JNG ||
+			content_get_type(box->object) == CONTENT_MNG ||
 #endif
 #if defined(WITH_SPRITE) || defined(WITH_NSSPRITE)
-			box->object->type == CONTENT_SPRITE ||
+			content_get_type(box->object) == CONTENT_SPRITE ||
 #endif
 #ifdef WITH_DRAW
-			box->object->type == CONTENT_DRAW ||
+			content_get_type(box->object) == CONTENT_DRAW ||
 #endif
 #ifdef WITH_PLUGIN
-			box->object->type == CONTENT_PLUGIN ||
+			content_get_type(box->object) == CONTENT_PLUGIN ||
 #endif
-			box->object->type == CONTENT_DIRECTORY ||
+			content_get_type(box->object) == CONTENT_DIRECTORY ||
 #ifdef WITH_THEME_INSTALL
-			box->object->type == CONTENT_THEME ||
+			content_get_type(box->object) == CONTENT_THEME ||
 #endif
 #ifdef WITH_ARTWORKS
-			box->object->type == CONTENT_ARTWORKS ||
+			content_get_type(box->object) == CONTENT_ARTWORKS ||
 #endif
 #if defined(WITH_NS_SVG) || defined(WITH_RSVG)
-			box->object->type == CONTENT_SVG ||
+			content_get_type(box->object) == CONTENT_SVG ||
 #endif
 			false))
 		box->object = NULL;

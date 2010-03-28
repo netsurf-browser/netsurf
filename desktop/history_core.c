@@ -27,6 +27,7 @@
 #include <string.h>
 #include <time.h>
 #include "content/content.h"
+#include "content/hlcache.h"
 #include "content/urldb.h"
 #include "css/css.h"
 #include "desktop/gui.h"
@@ -220,7 +221,7 @@ struct history_entry *history_clone_entry(struct history *history,
  * The page is added after the current entry and becomes current.
  */
 
-void history_add(struct history *history, struct content *content,
+void history_add(struct history *history, hlcache_handle *content,
 		char *frag_id)
 {
 	url_func_result res;
@@ -237,14 +238,14 @@ void history_add(struct history *history, struct content *content,
 	if (entry == NULL)
 		return;
 
-	res = url_normalize(content->url, &url);
+	res = url_normalize(content_get_url(content), &url);
 	if (res != URL_FUNC_OK) {
 		warn_user("NoMemory", 0);
 		free(entry);
 		return;
 	}
 
-	title = strdup(content->title ? content->title : url);
+	title = strdup(content_get_title(content));
 	if (title == NULL) {
 		warn_user("NoMemory", 0);
 		free(url);
@@ -303,11 +304,9 @@ void history_add(struct history *history, struct content *content,
  * \param  content  content for current entry
  */
 
-void history_update(struct history *history, struct content *content)
+void history_update(struct history *history, hlcache_handle *content)
 {
 	char *title;
-	char *url;
-	url_func_result res;
 
 	if (!history || !history->current || !history->current->bitmap)
 		return;
@@ -315,19 +314,10 @@ void history_update(struct history *history, struct content *content)
 	assert(history->current->page.url);
 	assert(history->current->page.title);
 
-	if (content->title) {
-		title = strdup(content->title);
-		if (!title) {
-			warn_user("NoMemory", 0);
-			return;
-		}
-	} else {
-		res = url_normalize(content->url, &url);
-		if (res != URL_FUNC_OK) {
-			warn_user("NoMemory", 0);
-			return;
-		}
-		title = url;
+	title = strdup(content_get_title(content));
+	if (!title) {
+		warn_user("NoMemory", 0);
+		return;
 	}
 
 	assert(title);

@@ -157,7 +157,6 @@ static void redraw(void)
 {
 	struct gui_window *w = window_list;
 	struct browser_window *bw;
-	struct content *c;
 	HDC hdc;
 
 	while (w != NULL) {
@@ -173,20 +172,13 @@ static void redraw(void)
 			continue;
 		}
 
-		c = bw->current_content;
-
-		if ((c == NULL) || (c->locked)) {
-			w = w->next;
-			continue;
-		}
-
 		current_hwnd = w->drawingarea;
 		w->scrolly += w->requestscrolly;
 		w->scrollx += w->requestscrollx;
 		w->scrolly = MAX(w->scrolly, 0);
-		w->scrolly = MIN(w->scrolly, c->height * w->bw->scale - w->height);
+		w->scrolly = MIN(w->scrolly, content_get_height(bw->current_content) * w->bw->scale - w->height);
 		w->scrollx = MAX(w->scrollx, 0);
-		w->scrollx = MIN(w->scrollx, c->width * w->bw->scale - w->width);
+		w->scrollx = MIN(w->scrollx, content_get_width(bw->current_content) * w->bw->scale - w->width);
 		/* redraw */
 		current_redraw_browser = bw;
 		nsws_plot_set_scale(bw->scale);
@@ -204,9 +196,11 @@ static void redraw(void)
 			doublebuffering = false;
 		if (doublebuffering)
 			bufferdc = w->bufferdc;
-		content_redraw(c, -w->scrollx / w->bw->scale,
+		content_redraw(bw->current_content, 
+			       -w->scrollx / w->bw->scale,
 			       -w->scrolly / w->bw->scale,
-			       w->width, w->height,
+			       w->width, 
+			       w->height,
 			       w->redraw.left - w->scrollx / w->bw->scale,
 			       w->redraw.top - w->scrolly / w->bw->scale,
 			       w->redraw.right - w->scrollx / w->bw->scale,
@@ -809,13 +803,14 @@ nsws_drawable_hscroll(struct gui_window *gw, HWND hwnd, WPARAM wparam)
 	si.fMask = SIF_POS;
 	if ((gw->bw != NULL) && (gw->bw->current_content != NULL))
 		si.nPos = MIN(si.nPos,
-			      gw->bw->current_content->width *
+			      content_get_width(gw->bw->current_content) *
 			      gw->bw->scale - gw->width);
 	si.nPos = MAX(si.nPos, 0);
 	SetScrollInfo(hwnd, SB_HORZ, &si, TRUE);
 	GetScrollInfo(hwnd, SB_HORZ, &si);
-	if (si.nPos != mem)
+	if (si.nPos != mem) {
 		gui_window_set_scroll(gw, gw->scrollx + gw->requestscrollx + si.nPos - mem, gw->scrolly);
+	}
 }
 
 static void
@@ -866,7 +861,7 @@ nsws_drawable_vscroll(struct gui_window *gw, HWND hwnd, WPARAM wparam)
 	if ((gw->bw != NULL) && 
 	    (gw->bw->current_content != NULL)) {
 		si.nPos = MIN(si.nPos,
-			      gw->bw->current_content->height *
+			      content_get_height(gw->bw->current_content) *
 			      gw->bw->scale - gw->height);
 	}
 	si.nPos = MAX(si.nPos, 0);
@@ -1942,11 +1937,10 @@ void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
 	si.cbSize = sizeof(si);
 	si.fMask = SIF_ALL;
 	si.nMin = 0;
-	si.nMax = (w->bw->current_content->height * w->bw->scale) -1;
+	si.nMax = (content_get_height(w->bw->current_content) * w->bw->scale) - 1;
 	si.nPage = w->height;
 	si.nPos = MAX(w->scrolly + w->requestscrolly, 0);
-	si.nPos = MIN(si.nPos, w->bw->current_content->height * w->bw->scale
-		      - w->height);
+	si.nPos = MIN(si.nPos, content_get_height(w->bw->current_content) * w->bw->scale - w->height);
 	SetScrollInfo(w->drawingarea, SB_VERT, &si, TRUE);
 	LOG(("SetScrollInfo VERT min:%d max:%d page:%d pos:%d", si.nMin, si.nMax, si.nPage, si.nPos));
 
@@ -1954,11 +1948,10 @@ void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
 	si.cbSize = sizeof(si);
 	si.fMask = SIF_ALL;
 	si.nMin = 0;
-	si.nMax = (w->bw->current_content->width * w->bw->scale) -1;
+	si.nMax = (content_get_width(w->bw->current_content) * w->bw->scale) -1;
 	si.nPage = w->width;
 	si.nPos = MAX(w->scrollx + w->requestscrollx, 0);
-	si.nPos = MIN(si.nPos, w->bw->current_content->width * w->bw->scale
-		      - w->width);
+	si.nPos = MIN(si.nPos, content_get_width(w->bw->current_content) * w->bw->scale - w->width);
 	SetScrollInfo(w->drawingarea, SB_HORZ, &si, TRUE);
 	LOG(("SetScrollInfo HORZ min:%d max:%d page:%d pos:%d", si.nMin, si.nMax, si.nPage, si.nPos));
 
@@ -2184,12 +2177,12 @@ gui_window_remove_caret(struct gui_window *w)
 }
 
 void
-gui_window_set_icon(struct gui_window *g, struct content *icon)
+gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 {
 }
 
 void
-gui_window_set_search_ico(struct content *ico)
+gui_window_set_search_ico(hlcache_handle *ico)
 {
 }
 
@@ -2235,7 +2228,8 @@ bool gui_window_frame_resize_start(struct gui_window *w)
 	return true;
 }
 
-void gui_window_save_as_link(struct gui_window *w, struct content *c)
+void gui_window_save_link(struct gui_window *g, const char *url, 
+		const char *title)
 {
 }
 
@@ -2247,7 +2241,7 @@ void gui_window_set_scale(struct gui_window *w, float scale)
 	LOG(("%.2f\n", scale));
 }
 
-void gui_drag_save_object(gui_save_type type, struct content *c,
+void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
 			  struct gui_window *w)
 {
 }
@@ -2352,7 +2346,7 @@ void gui_launch_url(const char *url)
 {
 }
 
-void gui_cert_verify(struct browser_window *bw, struct content *c,
+void gui_cert_verify(struct browser_window *bw, hlcache_handle *c,
 		     const struct ssl_cert_info *certs, unsigned long num)
 {
 }
@@ -2469,17 +2463,27 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 	argv = malloc(sizeof(char *) * argc);
 	while (argctemp < argc) {
 		len = wcstombs(NULL, argvw[argctemp], 0) + 1;
-		if (len > 0)
+		if (len > 0) {
 			argv[argctemp] = malloc(len);
+		}
+
 		if (argv[argctemp] != NULL) {
 			wcstombs(argv[argctemp], argvw[argctemp], len);
 			/* alter windows-style forward slash flags to
-			 * hypen flags.
+			 * hyphen flags.
 			 */
 			if (argv[argctemp][0] == '/')
 				argv[argctemp][0] = '-';
 		}
 		argctemp++;
 	}
-	return netsurf_main(argc, argv);
+
+	/* initialise netsurf */
+	netsurf_init(argc, argv);
+
+	netsurf_main_loop();
+
+	netsurf_exit();
+
+	return 0;
 }

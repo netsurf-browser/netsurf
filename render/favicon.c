@@ -18,8 +18,8 @@
  */
 
 #include <string.h>
-#include "content/fetch.h"
-#include "content/fetchcache.h"
+#include "content/content_protected.h"
+#include "content/hlcache.h"
 #include "render/favicon.h"
 #include "render/html.h"
 #include "utils/log.h"
@@ -29,8 +29,8 @@
 #include "utils/utils.h"
 
 static char *favicon_get_icon_ref(struct content *c, xmlNode *html);
-static void favicon_callback(content_msg msg, struct content *icon,
-		intptr_t p1, intptr_t p2, union content_msg_data data);
+static nserror favicon_callback(hlcache_handle *icon,
+		const hlcache_event *event, void *pw);
 
 /**
  * retrieve 1 url reference to 1 favicon
@@ -39,68 +39,80 @@ static void favicon_callback(content_msg msg, struct content *icon,
  */
 char *favicon_get_icon_ref(struct content *c, xmlNode *html)
 {
-	xmlNode *node;
-	char *rel, *href, *url, *url2;
+	xmlNode *node = html;
+	char *rel, *href, *url, *url2 = NULL;
 	url_func_result res;
-	union content_msg_data msg_data;
 
-	url2 = NULL;
-	node = html;
 	while (node) {
-		if (node->children) {  /* children */
+		if (node->children != NULL) {  /* children */
 			node = node->children;
-		} else if (node->next) {  /* siblings */
+		} else if (node->next != NULL) {  /* siblings */
 			node = node->next;
 		} else {  /* ancestor siblings */
-			while (node && !node->next)
+			while (node != NULL && node->next == NULL)
 				node = node->parent;
-			if (!node)
+
+			if (node == NULL)
 				break;
+
 			node = node->next;
 		}
-		assert(node);
+
+		assert(node != NULL);
 
 		if (node->type != XML_ELEMENT_NODE)
 			continue;
+
 		if (strcmp((const char *) node->name, "link") == 0) {
 			/* rel=<space separated list, including 'icon'> */
 			if ((rel = (char *) xmlGetProp(node,
 					(const xmlChar *) "rel")) == NULL)
 				continue;
+
 			if (strcasestr(rel, "icon") == 0) {
 				xmlFree(rel);
 				continue;
 			}
-			LOG(("icon node found"));
+
 			if (strcasecmp(rel, "apple-touch-icon") == 0) {
 				xmlFree(rel);
 				continue;
 			}
+
 			xmlFree(rel);
-			if (( href = (char *) xmlGetProp(node,
+
+			if ((href = (char *) xmlGetProp(node,
 					(const xmlChar *) "href")) == NULL)
 				continue;
-			res = url_join(href, c->data.html.base_url, 
-					&url);
+
+			res = url_join(href, c->data.html.base_url, &url);
+
 			xmlFree(href);
+
 			if (res != URL_FUNC_OK)
 				continue;
-			LOG(("most recent favicon '%s'", url));
+
 			if (url2 != NULL) {
 				free(url2);
 				url2 = NULL;
 			}
+
 			res = url_normalize(url, &url2);
+
 			free(url);
+
 			if (res != URL_FUNC_OK) {
 				url2 = NULL;
+
 				if (res == URL_FUNC_NOMEM)
-					goto no_memory;
+					return NULL;
+
 				continue;
 			}
 
 		}
 	}
+
 	if (url2 == NULL) {
 		char *scheme;
 
@@ -123,12 +135,8 @@ char *favicon_get_icon_ref(struct content *c, xmlNode *html)
 				!= URL_FUNC_OK)
 			return NULL;
 	}
-	LOG(("favicon %s", url2));
+
 	return url2;
-no_memory:
-	msg_data.error = messages_get("NoMemory");
-	/* content_broadcast(c, CONTENT_MSG_ERROR, msg_data); */
-	return false;
 }
 
 /**
@@ -140,31 +148,27 @@ no_memory:
 
 bool favicon_get_icon(struct content *c, xmlNode *html)
 {
-	char *url = favicon_get_icon_ref(c, html);
-	struct content *favcontent = NULL;
+	char *url;
+	nserror error;
+
+	url = favicon_get_icon_ref(c, html);
 	if (url == NULL)
 		return false;
-	
-	favcontent = fetchcache(url, favicon_callback, (intptr_t) c, 0,
-			c->width, c->height, true, 0, 0, false, false);
+
+	error = hlcache_handle_retrieve(url, 0, NULL, NULL, c->width, c->height,
+			favicon_callback, c, NULL, &c->data.html.favicon);	
+
 	free(url);
-	if (favcontent == NULL)
-		return false;
 
-	c->data.html.favicon = favcontent;
-	
-	fetchcache_go(favcontent, c->url, favicon_callback, (intptr_t) c, 0,
-		       c->width, c->height, 0, 0, false, c);
-
-	return true;
+	return error == NSERROR_OK;
 }
 
 /**
  * Callback for fetchcache() for linked favicon
  */
 
-void favicon_callback(content_msg msg, struct content *icon,
-		intptr_t p1, intptr_t p2, union content_msg_data data)
+nserror favicon_callback(hlcache_handle *icon,
+		const hlcache_event *event, void *pw)
 {
 	static const content_type permitted_types[] = {
 #ifdef WITH_BMP
@@ -178,88 +182,57 @@ void favicon_callback(content_msg msg, struct content *icon,
 #endif
 		CONTENT_UNKNOWN
 	};
-	struct content *c = (struct content *) p1;
-	unsigned int i = p2;
+	struct content *c = pw;
 	const content_type *type;
 
-
-	switch (msg) {
+	switch (event->type) {
 	case CONTENT_MSG_LOADING:
 		/* check that the favicon is really a correct image type */
 		for (type = permitted_types; *type != CONTENT_UNKNOWN; type++)
-			if (icon->type == *type)
+			if (content_get_type(icon) == *type)
 				break;
 
 		if (*type == CONTENT_UNKNOWN) {
-			c->data.html.favicon = 0;
-			LOG(("%s is not a favicon", icon->url));
+			union content_msg_data msg_data;
+
+			hlcache_handle_release(c->data.html.favicon);
+			c->data.html.favicon = NULL;
+			LOG(("%s is not a favicon", content_get_url(icon)));
 			content_add_error(c, "NotFavIco", 0);
-			html_set_status(c, messages_get("NotFavIco"));
-			content_broadcast(c, CONTENT_MSG_STATUS, data);
-			content_remove_user(icon,
-					favicon_callback,
-					(intptr_t) c, i);
-			if (!icon->user_list->next) {
-				/* we were the only user and we don't want this
-				 * content, so stop it fetching and mark it as
-				 * having an error so it gets removed from the
-				 * cache next time content_clean() gets called
-				 */
-				fetch_abort(icon->fetch);
-				icon->fetch = 0;
-				icon->status = CONTENT_STATUS_ERROR; 
-			}
+
+			msg_data.error = messages_get("NotFavIco");
+			content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
 		}
 		break;
 
 	case CONTENT_MSG_READY:
-		break;
-
-	case CONTENT_MSG_DONE:
-		LOG(("got favicon '%s'", icon->url));
-		break;
-
-	case CONTENT_MSG_LAUNCH:
 		/* Fall through */
+	case CONTENT_MSG_DONE:
+		break;
+
 	case CONTENT_MSG_ERROR:
-		LOG(("favicon %s failed: %s", icon->url, data.error));
-		/* The favicon we were fetching may have been
-		* redirected, in that case, the object pointers
-		* will differ, so ensure that the object that's
-		* in error is still in use by us before invalidating
-		* the pointer */
-		if (c->data.html.favicon == icon) {
-			c->data.html.favicon = 0;
-			content_add_error(c, "?", 0);
-		}
+		LOG(("favicon %s failed: %s", 
+				content_get_url(icon), event->data.error));
+		hlcache_handle_release(c->data.html.favicon);
+		c->data.html.favicon = NULL;
+
+		content_add_error(c, "?", 0);
 		break;
 
 	case CONTENT_MSG_STATUS:
-		html_set_status(c, icon->status_message);
-		content_broadcast(c, CONTENT_MSG_STATUS, data);
+		content_broadcast(c, CONTENT_MSG_STATUS, event->data);
 		break;
 
-	case CONTENT_MSG_NEWPTR:
-		c->data.html.favicon = icon;
-		break;
-
-	case CONTENT_MSG_AUTH:
-		c->data.html.favicon = 0;
-		content_add_error(c, "?", 0);
-		break;
-
-	case CONTENT_MSG_SSL:
-		c->data.html.favicon = 0;
-		content_add_error(c, "?", 0);
-		break;
 	case CONTENT_MSG_REDRAW:
-		/* currently no support for favicon animations */
+		/* Fall through */
 	case CONTENT_MSG_REFRESH:
-		break;
+		/* Fall through */
 	case CONTENT_MSG_REFORMAT:
-		/* would be unusual :) */
 		break;
+
 	default:
 		assert(0);
 	}
+
+	return NSERROR_OK;
 }

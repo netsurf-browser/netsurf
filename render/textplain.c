@@ -28,7 +28,8 @@
 #include <strings.h>
 #include <math.h>
 #include <iconv.h>
-#include "content/content.h"
+#include "content/content_protected.h"
+#include "content/hlcache.h"
 #include "css/css.h"
 #include "css/utils.h"
 #include "desktop/gui.h"
@@ -39,6 +40,7 @@
 #include "render/box.h"
 #include "render/font.h"
 #include "render/textplain.h"
+#include "utils/http.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/talloc.h"
@@ -72,14 +74,13 @@ static float textplain_line_height(void);
  * Create a CONTENT_TEXTPLAIN.
  */
 
-bool textplain_create(struct content *c, struct content *parent,
-		const char *params[])
+bool textplain_create(struct content *c, const http_parameter *params)
 {
-	unsigned int i;
 	char *utf8_data;
-	const char *encoding = "iso-8859-1";
+	const char *encoding;
 	iconv_t iconv_cd;
 	union content_msg_data msg_data;
+	nserror error;
 
 	textplain_style.size = (option_font_size * FONT_SIZE_SCALE) / 10;
 
@@ -87,13 +88,9 @@ bool textplain_create(struct content *c, struct content *parent,
 	if (!utf8_data)
 		goto no_memory;
 
-	for (i = 0; params[i]; i += 2) {
-		if (strcasecmp(params[i], "charset") == 0) {
-			encoding = talloc_strdup(c, params[i + 1]);
-			if (!encoding)
-				goto no_memory;
-			break;
-		}
+	error = http_parameter_list_find_item(params, "charset", &encoding);
+	if (error != NSERROR_OK) {
+		encoding = "Windows-1252";
 	}
 
 	iconv_cd = iconv_open("utf-8", encoding);
@@ -141,18 +138,22 @@ bool textplain_process_data(struct content *c, char *data, unsigned int size)
 	iconv_t iconv_cd = c->data.textplain.iconv_cd;
 	size_t count;
 	union content_msg_data msg_data;
+	const char *source_data;
+	unsigned long source_size;
+
+	source_data = content__get_source_data(c, &source_size);
 
 	do {
-		char *inbuf = c->source_data + c->data.textplain.converted;
-		size_t inbytesleft = c->source_size -
+		char *inbuf = (char *) source_data + 
 				c->data.textplain.converted;
+		size_t inbytesleft = source_size - c->data.textplain.converted;
 		char *outbuf = c->data.textplain.utf8_data +
 				c->data.textplain.utf8_data_size;
 		size_t outbytesleft = c->data.textplain.utf8_data_allocated -
 				c->data.textplain.utf8_data_size;
 		count = iconv(iconv_cd, &inbuf, &inbytesleft,
 				&outbuf, &outbytesleft);
-		c->data.textplain.converted = inbuf - c->source_data;
+		c->data.textplain.converted = inbuf - source_data;
 		c->data.textplain.utf8_data_size = c->data.textplain.
 				utf8_data_allocated - outbytesleft;
 
@@ -180,7 +181,7 @@ bool textplain_process_data(struct content *c, char *data, unsigned int size)
 		}
 
 		gui_multitask();
-	} while (!(c->data.textplain.converted == c->source_size ||
+	} while (!(c->data.textplain.converted == source_size ||
 			(count == (size_t)(-1) && errno == EINVAL)));
 
 	return true;
@@ -466,6 +467,35 @@ bool textplain_redraw(struct content *c, int x, int y,
 	return true;
 }
 
+/**
+ * Retrieve number of lines in content
+ *
+ * \param h  Content to retrieve line count from
+ * \return Number of lines
+ */
+unsigned long textplain_line_count(hlcache_handle *h)
+{
+	struct content *c = hlcache_handle_get_content(h);
+
+	assert(c != NULL);
+
+	return c->data.textplain.physical_line_count;
+}
+
+/**
+ * Retrieve the size (in bytes) of text data
+ *
+ * \param h  Content to retrieve size of
+ * \return Size, in bytes, of data
+ */
+size_t textplain_size(hlcache_handle *h)
+{
+	struct content *c = hlcache_handle_get_content(h);
+
+	assert(c != NULL);
+
+	return c->data.textplain.utf8_data_size;
+}
 
 /**
  * Return byte offset within UTF8 textplain content, given the co-ordinates
@@ -473,15 +503,16 @@ bool textplain_redraw(struct content *c, int x, int y,
  * which to search (-1 = above-left, +1 = below-right) if the co-ordinates are not
  * contained within a line.
  *
- * \param  c     content of type CONTENT_TEXTPLAIN
+ * \param  h     content of type CONTENT_TEXTPLAIN
  * \param  x     x ordinate of point
  * \param  y     y ordinate of point
  * \param  dir   direction of search if not within line
  * \return byte offset of character containing (or nearest to) point
  */
 
-size_t textplain_offset_from_coords(struct content *c, int x, int y, int dir)
+size_t textplain_offset_from_coords(hlcache_handle *h, int x, int y, int dir)
 {
+	struct content *c = hlcache_handle_get_content(h);
 	float line_height = textplain_line_height();
 	struct textplain_line *line;
 	const char *text;
@@ -489,6 +520,7 @@ size_t textplain_offset_from_coords(struct content *c, int x, int y, int dir)
 	size_t length;
 	int idx;
 
+	assert(c != NULL);
 	assert(c->type == CONTENT_TEXTPLAIN);
 
 	y = (int)((float)(y - MARGIN) / line_height);
@@ -552,18 +584,23 @@ size_t textplain_offset_from_coords(struct content *c, int x, int y, int dir)
  * Given a byte offset within the text, return the line number
  * of the line containing that offset (or -1 if offset invalid)
  *
- * \param  c       content of type CONTENT_TEXTPLAIN
+ * \param  h       content of type CONTENT_TEXTPLAIN
  * \param  offset  byte offset within textual representation
  * \return line number, or -1 if offset invalid (larger than size)
  */
 
-int textplain_find_line(struct content *c, unsigned offset)
+int textplain_find_line(hlcache_handle *h, unsigned offset)
 {
-	struct textplain_line *line = c->data.textplain.physical_line;
-	int nlines = c->data.textplain.physical_line_count;
+	struct content *c = hlcache_handle_get_content(h);
+	struct textplain_line *line;
+	int nlines;
 	int lineno = 0;
 
+	assert(c != NULL);
 	assert(c->type == CONTENT_TEXTPLAIN);
+
+	line = c->data.textplain.physical_line;
+	nlines = c->data.textplain.physical_line_count;
 
 	if (offset > c->data.textplain.utf8_data_size)
 		return -1;
@@ -622,30 +659,33 @@ int textplain_coord_from_offset(const char *text, size_t offset, size_t length)
  * Given a range of byte offsets within a UTF8 textplain content,
  * return a box that fully encloses the text
  *
- * \param  c      content of type CONTENT_TEXTPLAIN
+ * \param  h      content of type CONTENT_TEXTPLAIN
  * \param  start  byte offset of start of text range
  * \param  end    byte offset of end
  * \param  r      rectangle to be completed
  */
 
-void textplain_coords_from_range(struct content *c, unsigned start, unsigned end,
-		struct rect *r)
+void textplain_coords_from_range(hlcache_handle *h, unsigned start, 
+		unsigned end, struct rect *r)
 {
+	struct content *c = hlcache_handle_get_content(h);
 	float line_height = textplain_line_height();
-	char *utf8_data = c->data.textplain.utf8_data;
+	char *utf8_data;
 	struct textplain_line *line;
 	unsigned lineno = 0;
 	unsigned nlines;
 
+	assert(c != NULL);
 	assert(c->type == CONTENT_TEXTPLAIN);
 	assert(start <= end);
 	assert(end <= c->data.textplain.utf8_data_size);
 
+	utf8_data = c->data.textplain.utf8_data;
 	nlines = c->data.textplain.physical_line_count;
 	line = c->data.textplain.physical_line;
 
 	/* find start */
-	lineno = textplain_find_line(c, start);
+	lineno = textplain_find_line(h, start);
 
 	r->y0 = (int)(MARGIN + lineno * line_height);
 
@@ -654,7 +694,7 @@ void textplain_coords_from_range(struct content *c, unsigned start, unsigned end
 			forwards most of the time */
 
 		/* find end */
-		lineno = textplain_find_line(c, end);
+		lineno = textplain_find_line(h, end);
 
 		r->x0 = 0;
 		r->x1 = c->data.textplain.formatted_width;
@@ -677,18 +717,20 @@ void textplain_coords_from_range(struct content *c, unsigned start, unsigned end
 /**
  * Return a pointer to the requested line of text.
  *
- * \param  c		    content of type CONTENT_TEXTPLAIN
+ * \param  h		    content of type CONTENT_TEXTPLAIN
  * \param  lineno	    line number
  * \param  poffset	    receives byte offset of line start within text
  * \param  plen		    receives length of returned line
  * \return pointer to text, or NULL if invalid line number
  */
 
-char *textplain_get_line(struct content *c, unsigned lineno,
+char *textplain_get_line(hlcache_handle *h, unsigned lineno,
 		size_t *poffset, size_t *plen)
 {
+	struct content *c = hlcache_handle_get_content(h);
 	struct textplain_line *line;
 
+	assert(c != NULL);
 	assert(c->type == CONTENT_TEXTPLAIN);
 
 	if (lineno >= c->data.textplain.physical_line_count)
@@ -706,19 +748,23 @@ char *textplain_get_line(struct content *c, unsigned lineno,
  * text to fit the window width. Thus only hard newlines are preserved
  * in the saved/copied text of a selection.
  *
- * \param  c		    content of type CONTENT_TEXTPLAIN
+ * \param  h		    content of type CONTENT_TEXTPLAIN
  * \param  start	    starting byte offset within UTF-8 text
  * \param  end		    ending byte offset
  * \param  plen		    receives validated length
  * \return pointer to text, or NULL if no text
  */
 
-char *textplain_get_raw_data(struct content *c, unsigned start, unsigned end,
+char *textplain_get_raw_data(hlcache_handle *h, unsigned start, unsigned end,
 		size_t *plen)
 {
-	size_t utf8_size = c->data.textplain.utf8_data_size;
+	struct content *c = hlcache_handle_get_content(h);
+	size_t utf8_size;
 
+	assert(c != NULL);
 	assert(c->type == CONTENT_TEXTPLAIN);
+
+	utf8_size = c->data.textplain.utf8_data_size;
 
 	/* any text at all? */
 	if (!utf8_size) return NULL;

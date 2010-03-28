@@ -18,7 +18,7 @@
 
 #include "desktop/browser.h"
 
-bool thumbnail_create(struct content *content, struct bitmap *bitmap,
+bool thumbnail_create(struct hlcache_handle *content, struct bitmap *bitmap,
 	const char *url)
 {
     return false;

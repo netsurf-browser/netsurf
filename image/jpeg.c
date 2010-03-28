@@ -27,7 +27,7 @@
 #ifdef WITH_JPEG
 
 /* This must come first due to libpng issues */
-#include "content/content.h"
+#include "content/content_protected.h"
 
 #include <assert.h>
 #include <setjmp.h>
@@ -89,6 +89,10 @@ bool nsjpeg_convert(struct content *c, int w, int h)
 	uint8_t * volatile pixels = NULL;
 	size_t rowstride;
 	union content_msg_data msg_data;
+	const char *data;
+	unsigned long size;
+
+	data = content__get_source_data(c, &size);
 
 	cinfo.err = jpeg_std_error(&jerr.pub);
 	jerr.pub.error_exit = nsjpeg_error_exit;
@@ -102,8 +106,8 @@ bool nsjpeg_convert(struct content *c, int w, int h)
 		return false;
 	}
 	jpeg_create_decompress(&cinfo);
-	source_mgr.next_input_byte = (unsigned char *) c->source_data;
-	source_mgr.bytes_in_buffer = c->source_size;
+	source_mgr.next_input_byte = (unsigned char *) data;
+	source_mgr.bytes_in_buffer = size;
 	cinfo.src = &source_mgr;
 	jpeg_read_header(&cinfo, TRUE);
 	cinfo.out_color_space = JCS_RGB;
@@ -161,7 +165,7 @@ bool nsjpeg_convert(struct content *c, int w, int h)
 	c->title = malloc(100);
 	if (c->title)
 		snprintf(c->title, 100, messages_get("JPEGTitle"),
-				width, height, c->source_size);
+				width, height, size);
 	c->size += height * rowstride + 100;
 	c->status = CONTENT_STATUS_DONE;
 	/* Done: update status bar */

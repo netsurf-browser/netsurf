@@ -36,7 +36,7 @@
 
 #include "css/css.h"
 
-struct content;
+struct hlcache_handle;
 struct printer;
 
 enum { MARGINLEFT = 0, MARGINRIGHT = 1, MARGINTOP = 2, MARGINBOTTOM = 3};
@@ -64,13 +64,13 @@ struct print_settings{
 };
 
 
-bool print_basic_run(struct content *, const struct printer *, 
+bool print_basic_run(struct hlcache_handle *, const struct printer *, 
 		struct print_settings *);
-bool print_set_up(struct content *content, const struct printer *printer, 
+bool print_set_up(struct hlcache_handle *content, const struct printer *printer,
 		struct print_settings *settings, double *height);
 bool print_draw_next_page(const struct printer *printer,
 		struct print_settings *settings);
-bool print_cleanup(struct content *, const struct printer *,
+bool print_cleanup(struct hlcache_handle *, const struct printer *,
 		struct print_settings *settings);
 
 struct print_settings *print_make_settings(print_configuration configuration,

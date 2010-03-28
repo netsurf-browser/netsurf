@@ -30,6 +30,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include "content/fetch.h"
 #include "css/css.h"
 #include "css/utils.h"
 #include "desktop/gui.h"
@@ -308,18 +309,18 @@ bool form_add_option(struct form_control *control, char *value, char *text,
  * \param  form           form to search for successful controls
  * \param  submit_button  control used to submit the form, if any
  * \param  successful_controls  updated to point to linked list of
- *                        form_successful_control, 0 if no controls
+ *                        fetch_multipart_data, 0 if no controls
  * \return  true on success, false on memory exhaustion
  *
  * See HTML 4.01 section 17.13.2.
  */
 bool form_successful_controls(struct form *form,
 		struct form_control *submit_button,
-		struct form_successful_control **successful_controls)
+		struct fetch_multipart_data **successful_controls)
 {
 	struct form_control *control;
 	struct form_option *option;
-	struct form_successful_control sentinel, *last_success, *success_new;
+	struct fetch_multipart_data sentinel, *last_success, *success_new;
 	char *value = NULL;
 	bool had_submit = false;
 	char *charset;
@@ -603,7 +604,7 @@ bool form_successful_controls(struct form *form,
 
 no_memory:
 	warn_user("NoMemory", 0);
-	form_free_successful(sentinel.next);
+	fetch_multipart_data_destroy(sentinel.next);
 	return false;
 
 #undef ENCODE_ITEM
@@ -659,12 +660,12 @@ char *form_textarea_value(struct form_control *textarea)
  * Encode controls using application/x-www-form-urlencoded.
  *
  * \param  form  form to which successful controls relate
- * \param  control  linked list of form_successful_control
+ * \param  control  linked list of fetch_multipart_data
  * \return  URL-encoded form, or 0 on memory exhaustion
  */
 
 char *form_url_encode(struct form *form,
-		struct form_successful_control *control)
+		struct fetch_multipart_data *control)
 {
 	char *name, *value;
 	char *s = malloc(1), *s2;
@@ -711,24 +712,6 @@ char *form_url_encode(struct form *form,
 	if (len)
 		s[len - 1] = 0;
 	return s;
-}
-
-
-/**
- * Free a linked list of form_successful_control.
- *
- * \param control Pointer to head of list to free
- */
-
-void form_free_successful(struct form_successful_control *control)
-{
-	struct form_successful_control *next;
-	for (; control; control = next) {
-		next = control->next;
-		free(control->name);
-		free(control->value);
-		free(control);
-	}
 }
 
 /**

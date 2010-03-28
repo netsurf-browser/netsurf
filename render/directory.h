@@ -28,9 +28,9 @@
 #include <stdbool.h>
 #include "content/content_type.h"
 
+struct http_parameter;
 
-bool directory_create(struct content *c, struct content *parent,
-		const char *params[]);
+bool directory_create(struct content *c, const struct http_parameter *params);
 bool directory_convert(struct content *c, int width, int height);
 void directory_destroy(struct content *c);
 

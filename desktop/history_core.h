@@ -25,15 +25,15 @@
 
 #include <stdbool.h>
 
-struct content;
+struct hlcache_handle;
 struct history;
 struct browser_window;
 
 struct history *history_create(void);
 struct history *history_clone(struct history *history);
-void history_add(struct history *history, struct content *content,
+void history_add(struct history *history, struct hlcache_handle *content,
 		char *frag_id);
-void history_update(struct history *history, struct content *content);
+void history_update(struct history *history, struct hlcache_handle *content);
 void history_destroy(struct history *history);
 void history_back(struct browser_window *bw, struct history *history);
 void history_forward(struct browser_window *bw, struct history *history);

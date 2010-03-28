@@ -26,7 +26,6 @@
  * URL resolution callback for libcss
  *
  * \param pw    Resolution context
- * \param ctx   Dictionary to intern result in
  * \param base  Base URI
  * \param rel   Relative URL
  * \param abs   Pointer to location to receive resolved URL
@@ -34,8 +33,8 @@
  *         CSS_NOMEM    on memory exhaustion,
  *         CSS_INVALID  if resolution failed.
  */
-css_error nscss_resolve_url(void *pw, lwc_context *ctx,
-		const char *base, lwc_string *rel, lwc_string **abs)
+css_error nscss_resolve_url(void *pw, const char *base, 
+		lwc_string *rel, lwc_string **abs)
 {
 	lwc_error lerror;
 	char *abs_url, *norm_url;
@@ -57,7 +56,7 @@ css_error nscss_resolve_url(void *pw, lwc_context *ctx,
 	free(abs_url);
 
 	/* Intern it */
-	lerror = lwc_context_intern(ctx, norm_url, strlen(norm_url), abs);
+	lerror = lwc_intern_string(norm_url, strlen(norm_url), abs);
 	if (lerror != lwc_error_ok) {
 		*abs = NULL;
 		free(norm_url);

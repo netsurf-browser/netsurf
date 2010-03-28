@@ -27,6 +27,7 @@
 
 #include "utils/config.h"
 #include "content/content.h"
+#include "content/hlcache.h"
 #include "desktop/save_text.h"
 #include "render/box.h"
 #include "utils/log.h"
@@ -48,7 +49,7 @@ static bool save_text_add_to_buffer(const char *text, size_t length,
  * \param  path		Path to save text file too.
  */
 
-void save_as_text(struct content *c, char *path)
+void save_as_text(hlcache_handle *c, char *path)
 {
 	FILE *out;
 	struct save_text_state save = { NULL, 0, 0 };
@@ -57,11 +58,11 @@ void save_as_text(struct content *c, char *path)
 	utf8_convert_ret ret;
 	char *result;
 
-	if (!c || c->type != CONTENT_HTML) {
+	if (!c || content_get_type(c) != CONTENT_HTML) {
 		return;
 	}
 
-	extract_text(c->data.html.layout, &first, &before, &save);
+	extract_text(html_get_box_tree(c), &first, &before, &save);
 	if (!save.block)
 		return;
 

@@ -1396,12 +1396,10 @@ bool gui_window_frame_resize_start(struct gui_window *g)
  * \param  g  gui_window containing the content
  * \param  c  the content to save
  */
-
-void gui_window_save_as_link(struct gui_window *g, struct content *c)
+void gui_window_save_link(struct gui_window *g, const char *url, 
+		const char *title)
 {
-	if (!c)
-		return;
-	ro_gui_save_prepare(GUI_SAVE_LINK_URL, NULL, NULL, c->url, c->title);
+	ro_gui_save_prepare(GUI_SAVE_LINK_URL, NULL, NULL, url, title);
 	ro_gui_dialog_open_persistent(g->window, dialog_saveas, true);
 }
 

@@ -30,7 +30,7 @@
 #include <stdint.h>
 #include "content/content.h"
 
-struct form_successful_control;
+struct fetch_multipart_data;
 
 void fetchcache_init(void);
 struct content * fetchcache(const char *url,
@@ -40,7 +40,7 @@ struct content * fetchcache(const char *url,
 		int width, int height,
 		bool no_error_pages,
 		char *post_urlenc,
-		struct form_successful_control *post_multipart,
+		struct fetch_multipart_data *post_multipart,
 		bool verifiable,
 		bool download);
 void fetchcache_go(struct content *content, const char *referer,
@@ -49,7 +49,7 @@ void fetchcache_go(struct content *content, const char *referer,
 		intptr_t p1, intptr_t p2,
 		int width, int height,
 		char *post_urlenc,
-		struct form_successful_control *post_multipart,
+		struct fetch_multipart_data *post_multipart,
 		bool verifiable, struct content *parent);
 
 #endif

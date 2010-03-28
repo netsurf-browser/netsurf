@@ -28,10 +28,10 @@
 #include <libxml/HTMLtree.h>
 #include "content/content.h"
 
-struct content;
+struct hlcache_handle;
 
 void save_complete_init(void);
-bool save_complete(struct content *c, const char *path);
+bool save_complete(struct hlcache_handle *c, const char *path);
 
 bool save_complete_gui_save(const char *path, const char *filename,
 		size_t len, const char *sourcedata, content_type type);

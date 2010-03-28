@@ -32,6 +32,7 @@
 #include <gtk/gtk.h>
 
 #include "content/content.h"
+#include "content/hlcache.h"
 #include "desktop/options.h"
 #include "desktop/plotters.h"
 #include "desktop/print.h"
@@ -48,7 +49,7 @@
 /* Globals */
 cairo_t *gtk_print_current_cr;
 static struct print_settings* settings;
-struct content *content_to_print;
+hlcache_handle *content_to_print;
 static GdkRectangle cliprect;
 
 static inline void nsgtk_print_set_colour(colour c)

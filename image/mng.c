@@ -24,7 +24,7 @@
 #ifdef WITH_MNG
 
 /* This must come first due to libpng issues */
-#include "content/content.h"
+#include "content/content_protected.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -69,8 +69,7 @@ static void nsmng_free(mng_ptr p, mng_size_t n);
 #endif
 
 
-bool nsmng_create(struct content *c, struct content *parent,
-		const char *params[])
+bool nsmng_create(struct content *c, const struct http_parameter *params)
 {
 	mng_retcode code;
 	union content_msg_data msg_data;
@@ -179,6 +178,8 @@ mng_bool nsmng_readdata(mng_handle mng, mng_ptr buffer, mng_uint32 size,
 		mng_uint32 *bytesread)
 {
 	struct content *c;
+	const char *data;
+	unsigned long data_size;
 
 	assert(mng != NULL);
 	assert(buffer != NULL);
@@ -186,17 +187,18 @@ mng_bool nsmng_readdata(mng_handle mng, mng_ptr buffer, mng_uint32 size,
 
 	/*	Get our content back
 	*/
-	c = (struct content *)mng_get_userdata(mng);
+	c = (struct content *) mng_get_userdata(mng);
 	assert(c != NULL);
 
 	/*	Copy any data we have (maximum of 'size')
 	*/
-	*bytesread = ((c->source_size - c->data.mng.read_size) < size) ?
-			(c->source_size - c->data.mng.read_size) : size;
+	data = content__get_source_data(c, &data_size);
+
+	*bytesread = ((data_size - c->data.mng.read_size) < size) ?
+			(data_size - c->data.mng.read_size) : size;
 
 	if ((*bytesread) > 0) {
-		memcpy(buffer, c->source_data + c->data.mng.read_size, 
-				*bytesread);
+		memcpy(buffer, data + c->data.mng.read_size, *bytesread);
 		c->data.mng.read_size += *bytesread;
 	}
 
@@ -302,8 +304,12 @@ bool nsmng_convert(struct content *c, int width, int height)
 	mng_retcode status;
 
 	union content_msg_data msg_data;
+	const char *data;
+	unsigned long size;
 
 	assert(c != NULL);
+
+	data = content__get_source_data(c, &size);
 
 	/* by this point, the png should have been parsed
 	 * and the bitmap created, so ensure that's the case
@@ -322,13 +328,13 @@ bool nsmng_convert(struct content *c, int width, int height)
 
 	if (c->type == CONTENT_MNG) {
 		snprintf(c->title, 100, messages_get("MNGTitle"),
-				c->width, c->height, c->source_size);
+				c->width, c->height, size);
 	} else if (c->type == CONTENT_PNG) {
 		snprintf(c->title, 100, messages_get("PNGTitle"),
-				c->width, c->height, c->source_size);
+				c->width, c->height, size);
 	} else {
 		snprintf(c->title, 100, messages_get("JNGTitle"),
-				c->width, c->height, c->source_size);
+				c->width, c->height, size);
 	}
 
 	c->size += c->width * c->height * 4 + 100;
@@ -658,7 +664,8 @@ mng_bool nsmng_errorproc(mng_handle mng, mng_int32 code,
 	chunk[3] = (char)((chunktype      ) & 0xFF);
 	chunk[4] = '\0';
 
-	LOG(("error playing '%s' chunk %s (%d):", c->url, chunk, chunkseq));
+	LOG(("error playing '%s' chunk %s (%d):", 
+			content__get_url(c), chunk, chunkseq));
 	LOG(("code %d severity %d extra1 %d extra2 %d text:'%s'", code,
 					severity, extra1, extra2, text));
 

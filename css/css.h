@@ -23,7 +23,11 @@
 
 #include <libcss/libcss.h>
 
+#include "utils/errors.h"
+
 struct content;
+struct hlcache_handle;
+struct http_parameter;
 struct nscss_import;
 
 /**
@@ -31,8 +35,6 @@ struct nscss_import;
  */
 struct content_css_data
 {
-	lwc_context *dict;		/**< Dictionary to intern strings in */
-
 	css_stylesheet *sheet;		/**< Stylesheet object */
 
 	uint32_t import_count;		/**< Number of sheets imported */
@@ -43,18 +45,26 @@ struct content_css_data
  * Imported stylesheet record
  */
 struct nscss_import {
-	struct content *c;	/**< Content containing sheet */
+	struct hlcache_handle *c;	/**< Content containing sheet */
 	uint64_t media;		/**< Media types that sheet applies to */
 };
 
-bool nscss_create(struct content *c, struct content *parent, 
-		const char *params[]);
+bool nscss_create(struct content *c, const struct http_parameter *params);
 
 bool nscss_process_data(struct content *c, char *data, unsigned int size);
 
 bool nscss_convert(struct content *c, int w, int h);
 
 void nscss_destroy(struct content *c);
+
+nserror nscss_create_css_data(struct content_css_data *c,
+		const char *url, const char *charset, bool quirks);
+css_error nscss_process_css_data(struct content_css_data *c, char *data, 
+		unsigned int size);
+css_error nscss_convert_css_data(struct content_css_data *c, int w, int h);
+void nscss_destroy_css_data(struct content_css_data *c);
+
+struct nscss_import *nscss_get_imports(struct hlcache_handle *h, uint32_t *n);
 
 #endif
 

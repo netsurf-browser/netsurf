@@ -27,6 +27,7 @@
 #include <assert.h>
 #include <gtk/gtk.h>
 #include "content/content.h"
+#include "content/hlcache.h"
 #include "content/urldb.h"
 #include "desktop/plotters.h"
 #include "desktop/browser.h"
@@ -45,7 +46,7 @@
  * \param  bitmap   the bitmap to draw to
  * \param  url      the URL the thumnail belongs to, or NULL
  */
-bool thumbnail_create(struct content *content, struct bitmap *bitmap,
+bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 		const char *url)
 {
         GdkPixbuf *pixbuf;
@@ -59,8 +60,8 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 	assert(content);
 	assert(bitmap);
 
-	cwidth = min(content->width, 1024);
-	cheight = min(content->height, 768);
+	cwidth = min(content_get_width(content), 1024);
+	cheight = min(content_get_height(content), 768);
 
 	pixbuf = gtk_bitmap_get_primary(bitmap);
 	width = gdk_pixbuf_get_width(pixbuf);
@@ -68,7 +69,8 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 	depth = (gdk_screen_get_system_visual(gdk_screen_get_default()))->depth;
 
 	LOG(("Trying to create a thumbnail pixmap for a content of %dx%d@%d",
-		content->width, content->width, depth));
+		content_get_width(content), content_get_height(content), 
+		depth));
 
 	pixmap = gdk_pixmap_new(NULL, cwidth, cwidth, depth);
 	
@@ -87,7 +89,8 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 	/* set the plotting functions up */
 	plot = nsgtk_plotters;
 
-	nsgtk_plot_set_scale((double) cwidth / (double) content->width);
+	nsgtk_plot_set_scale((double) cwidth / 
+			(double) content_get_width(content));
 
 	/* set to plot to pixmap */
 	current_drawable = pixmap;
@@ -98,8 +101,10 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 	plot.rectangle(0, 0, cwidth, cwidth, plot_style_fill_white);
 
 	/* render the content */
-	content_redraw(content, 0, 0, content->width, content->width,
-			0, 0, content->width, content->width, 1.0, 0xFFFFFF);
+	content_redraw(content, 0, 0, content_get_width(content), 
+			content_get_width(content),
+			0, 0, content_get_width(content), 
+			content_get_width(content), 1.0, 0xFFFFFF);
 
 	/* resample the large plot down to the size of our thumbnail */
 	big = gdk_pixbuf_get_from_drawable(NULL, pixmap, NULL, 0, 0, 0, 0,

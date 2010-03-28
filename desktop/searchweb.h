@@ -20,9 +20,11 @@
 #define _NETSURF_DESKTOP_SEARCH_WEB_H_
 
 #include <ctype.h>
+#include <stdbool.h>
 #include <string.h>
-#include "content/content.h"
-#include "desktop/browser.h"
+
+struct browser_window;
+struct hlcache_handle;
 
 extern char *search_engines_file_location;
 extern char *search_default_ico_location;
@@ -71,9 +73,6 @@ bool search_is_url(const char *url);
 
 void search_web_retrieve_ico(bool localdefault);
 
-struct content *search_web_ico(void);
-
-void search_web_ico_callback(content_msg msg, struct content *ico,
-		intptr_t p1, intptr_t p2, union content_msg_data data);
+struct hlcache_handle *search_web_ico(void);
 
 #endif

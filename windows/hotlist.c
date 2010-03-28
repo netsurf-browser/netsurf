@@ -17,7 +17,8 @@
  */
 
 #include "desktop/browser.h"
+#include "content/hlcache.h"
 
-void hotlist_visited(struct content *content)
+void hotlist_visited(hlcache_handle *content)
 {
 }

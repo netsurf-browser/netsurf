@@ -30,6 +30,7 @@
 #include <libxml/debugXML.h>
 #include "gtk/gtk_scaffolding.h"
 #include "content/content.h"
+#include "content/hlcache.h"
 #include "css/utils.h"
 #include "desktop/browser.h"
 #include "desktop/history_core.h"
@@ -271,8 +272,10 @@ void nsgtk_window_update_back_forward(struct gtk_scaffolding *g)
 	nsgtk_scaffolding_set_sensitivity(g);
 
 	/* update the url bar, particularly necessary when tabbing */
-	if (bw->current_content != NULL && bw->current_content->url != NULL)
-		browser_window_refresh_url_bar(bw, bw->current_content->url,
+	if (bw->current_content != NULL && 
+			content_get_url(bw->current_content) != NULL)
+		browser_window_refresh_url_bar(bw, 
+				content_get_url(bw->current_content),
 				bw->frag_id);
 
 	/* update the local history window, as well as queuing a redraw
@@ -493,8 +496,8 @@ MULTIHANDLER(savepage)
 	gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(fc), filter);
 	gtk_file_chooser_set_filter(GTK_FILE_CHOOSER(fc), filter);
 
-	res = url_nice(gui_window_get_browser_window(
-			g->top_level)->current_content->url, &path, false);
+	res = url_nice(content_get_url(gui_window_get_browser_window(
+			g->top_level)->current_content), &path, false);
 	if (res != URL_FUNC_OK) {
 		path = strdup(messages_get("SaveText"));
 		if (path == NULL) {
@@ -549,7 +552,7 @@ MULTIHANDLER(pdf)
 
 	LOG(("Print preview (generating PDF)  started."));
 
-	res = url_nice(bw->current_content->url, &url_name, true);
+	res = url_nice(content_get_url(bw->current_content), &url_name, true);
 	if (res != URL_FUNC_OK) {
 		warn_user(messages_get(res == URL_FUNC_NOMEM ? "NoMemory"
 							     : "URIError"), 0);
@@ -622,8 +625,8 @@ MULTIHANDLER(plaintext)
 	char *filename;
 	url_func_result res;
 
-	res = url_nice(gui_window_get_browser_window(
-			g->top_level)->current_content->url, &filename, false);
+	res = url_nice(content_get_url(gui_window_get_browser_window(
+			g->top_level)->current_content), &filename, false);
 	if (res != URL_FUNC_OK) {
 		filename = strdup(messages_get("SaveText"));
 		if (filename == NULL) {
@@ -710,7 +713,7 @@ MULTIHANDLER(print)
 			G_CALLBACK(gtk_print_signal_draw_page), NULL);
 	g_signal_connect(print_op, "end_print",
 			G_CALLBACK(gtk_print_signal_end_print), settings);
-	if (bw->current_content->type != CONTENT_TEXTPLAIN)
+	if (content_get_type(bw->current_content) != CONTENT_TEXTPLAIN)
 		res = gtk_print_operation_run(print_op,
 				GTK_PRINT_OPERATION_ACTION_PRINT_DIALOG,
     				g->window,
@@ -762,7 +765,7 @@ MENUHANDLER(savelink)
 		return FALSE;
 
 	browser_window_download(bw, current_menu_link_box->href,
-		bw->current_content->url);
+		content_get_url(bw->current_content));
 
 	return TRUE;
 }
@@ -1125,11 +1128,11 @@ MULTIHANDLER(saveboxtree)
 			struct browser_window *bw;
 			bw = gui_window_get_browser_window(g->top_level);
 
-			if (bw->current_content &&
-					bw->current_content->type ==
+			if (bw->current_content && 
+					content_get_type(bw->current_content) ==
 					CONTENT_HTML) {
 				box_dump(fh,
-					bw->current_content->data.html.layout,
+					html_get_box_tree(bw->current_content),
 					0);
 			}
 
@@ -1174,12 +1177,11 @@ MULTIHANDLER(savedomtree)
 			struct browser_window *bw;
 			bw = gui_window_get_browser_window(g->top_level);
 
-			if (bw->current_content &&
-					bw->current_content->type ==
+			if (bw->current_content && 
+					content_get_type(bw->current_content) ==
 					CONTENT_HTML) {
 				xmlDebugDumpDocument(fh,
-					bw->current_content->
-						data.html.document);
+					html_get_document(bw->current_content));
 			}
 
 			fclose(fh);
@@ -1871,80 +1873,93 @@ void gui_window_stop_throbber(struct gui_window* _g)
 /**
  * set favicon
  */
-void gui_window_set_icon(struct gui_window *_g, struct content *icon)
+void gui_window_set_icon(struct gui_window *_g, hlcache_handle *icon)
 {
 	struct gtk_scaffolding *g = nsgtk_get_scaffold(_g);
-	GtkImage *iconImage = NULL;
-	if (g->icoFav != NULL)
-		g_object_unref(g->icoFav);
+	struct bitmap *icon_bitmap;
+	GtkImage *iconImage;
+
+	if (icon == NULL)
+		return;
+
 #ifdef WITH_BMP
-	if ((icon != NULL) && (icon->type == CONTENT_ICO)) {
+	if (content_get_type(icon) == CONTENT_ICO)
 		nsico_set_bitmap_from_size(icon, 16, 16);
-	}
 #endif
-	if ((icon != NULL) && (icon->bitmap != NULL)) {
-		GdkPixbuf *pb = gtk_bitmap_get_primary(icon->bitmap);
-		if ((pb != NULL) && (gdk_pixbuf_get_width(pb) > 0) &&
-					(gdk_pixbuf_get_height(pb) > 0)) {
-			pb = gdk_pixbuf_scale_simple(pb, 16, 16,
-					GDK_INTERP_HYPER);
-			iconImage = GTK_IMAGE(
-					gtk_image_new_from_pixbuf(pb));
-		} else {
-			iconImage = NULL;
-		}
-	}
-	if (iconImage == NULL) {
-		char imagepath[strlen(res_dir_location) + SLEN("favicon.png")
-				+ 1];
+
+	icon_bitmap = content_get_bitmap(icon);
+	if (icon_bitmap == NULL)
+		return;
+
+	GdkPixbuf *pb = gtk_bitmap_get_primary(icon_bitmap);
+	if (pb != NULL && gdk_pixbuf_get_width(pb) > 0 && 
+			gdk_pixbuf_get_height(pb) > 0) {
+		pb = gdk_pixbuf_scale_simple(pb, 16, 16, GDK_INTERP_HYPER);
+		iconImage = GTK_IMAGE(gtk_image_new_from_pixbuf(pb));
+	} else {
+		/** \todo Does pb need cleaning up? */
+		char imagepath[strlen(res_dir_location) + 
+				SLEN("favicon.png") + 1];
 		sprintf(imagepath, "%sfavicon.png", res_dir_location);
 		iconImage = GTK_IMAGE(gtk_image_new_from_file(imagepath));
 	}
+
+	if (iconImage == NULL)
+		return;
+
+	if (g->icoFav != NULL)
+		g_object_unref(g->icoFav);
 	g->icoFav = iconImage;
-	sexy_icon_entry_set_icon(SEXY_ICON_ENTRY(g->url_bar),
+
+	sexy_icon_entry_set_icon(SEXY_ICON_ENTRY(g->url_bar), 
 			SEXY_ICON_ENTRY_PRIMARY, GTK_IMAGE(g->icoFav));
 	gtk_widget_show_all(GTK_WIDGET(g->buttons[URL_BAR_ITEM]->button));
 }
 
-void gui_window_set_search_ico(struct content *ico)
+void gui_window_set_search_ico(hlcache_handle *ico)
 {
-	GdkPixbuf *pbico = NULL;
-	GtkImage *searchico = NULL;
+	GdkPixbuf *pbico;
+	GtkImage *searchico;
+	struct bitmap *ico_bitmap;
 	nsgtk_scaffolding *current;
-	if (ico == NULL)
-		ico = search_web_ico();
+
+	if (ico == NULL && (ico = search_web_ico()) == NULL)
+		return;
 
 #ifdef WITH_BMP
-	if ((ico != NULL) && (ico->type == CONTENT_ICO)) {
+	if (content_get_type(ico) == CONTENT_ICO)
 		nsico_set_bitmap_from_size(ico, 20, 20);
-	}
 #endif
 
-	if ((ico != NULL) && (ico->bitmap != NULL)) {
-		pbico = gtk_bitmap_get_primary(ico->bitmap);
-		if ((pbico != NULL) && (gdk_pixbuf_get_width(pbico) > 0) &&
-					(gdk_pixbuf_get_height(pbico) > 0)) {
-			pbico = gdk_pixbuf_scale_simple(pbico, 20, 20,
-					GDK_INTERP_HYPER);
-			current = scaf_list;
-			searchico = GTK_IMAGE(
-					gtk_image_new_from_pixbuf(pbico));
-		} else {
-			searchico = NULL;
-		}
+	ico_bitmap = content_get_bitmap(ico);
+	if (ico_bitmap == NULL)
+		return;
+
+	pbico = gtk_bitmap_get_primary(ico_bitmap);
+	if (pbico != NULL && gdk_pixbuf_get_width(pbico) > 0 && 
+			gdk_pixbuf_get_height(pbico) > 0) {
+		pbico = gdk_pixbuf_scale_simple(pbico, 20, 20, 
+				GDK_INTERP_HYPER);
+		searchico = GTK_IMAGE(gtk_image_new_from_pixbuf(pbico));
+	} else {
+		/** \todo Does pbico need cleaning up? */
+		return;
 	}
-	/* add ico to toolbar */
-	current = scaf_list;
-	while (current) {
+
+	/* add ico to each window's toolbar */
+	for (current = scaf_list; current != NULL; current = current->next) {
 		if (searchico != NULL) {
+			/** \todo Are we leaking webSearchIco here? */
 			current->webSearchIco = searchico;
 			sexy_icon_entry_set_icon(SEXY_ICON_ENTRY(
 					current->webSearchEntry),
 					SEXY_ICON_ENTRY_PRIMARY,
 					current->webSearchIco);
 		}
-		searchico = GTK_IMAGE(gtk_image_new_from_pixbuf(pbico));
-		current = current->next;
+		if (pbico != NULL)
+			searchico = GTK_IMAGE(gtk_image_new_from_pixbuf(pbico));
+		else
+			searchico = NULL;
 	}
 }
 
@@ -2117,33 +2132,26 @@ void nsgtk_scaffolding_set_top_level (struct gui_window *gw)
 	nsgtk_get_scaffold(gw)->top_level = gw;
 	struct browser_window *bw = gui_window_get_browser_window(gw);
 
+	assert(bw != NULL);
+
 	/* Synchronise the history (will also update the URL bar) */
 	nsgtk_window_update_back_forward(nsgtk_get_scaffold(gw));
+
 	/* clear effects of potential searches */
-	if ((bw != NULL) && (bw->search_context != NULL))
+	if (bw->search_context != NULL)
 		search_destroy_context(bw->search_context);
+
 	nsgtk_search_set_forward_state(true, bw);
 	nsgtk_search_set_back_state(true, bw);
 
 	/* Ensure the window's title bar as well as favicon are updated */
-	if (gui_window_get_browser_window(gw) != NULL &&
-			gui_window_get_browser_window(gw)->current_content
-			!= NULL) {
-		if (gui_window_get_browser_window(gw)->current_content->title
-				!= NULL) {
-			gui_window_set_title(gw,
-					gui_window_get_browser_window(gw)->
-					current_content->title);
-		} else {
-			gui_window_set_title(gw,
-					gui_window_get_browser_window(gw)->
-					current_content->url);
-		}
-		if (gui_window_get_browser_window(gw)->current_content->type
-				== CONTENT_HTML)
+	if (bw->current_content != NULL) {
+		gui_window_set_title(gw, 
+				content_get_title(bw->current_content));
+
+		if (content_get_type(bw->current_content) == CONTENT_HTML)
 			gui_window_set_icon(gw,
-					gui_window_get_browser_window(gw)->
-					current_content->data.html.favicon);
+					html_get_favicon(bw->current_content));
 	}
 }
 
@@ -2287,7 +2295,8 @@ static guint nsgtk_scaffolding_update_link_operations_sensitivity(
 	struct browser_window *bw = gui_window_get_browser_window(g->top_level);
 	current_menu_link_box = NULL;
 
-	if (bw->current_content && bw->current_content->type == CONTENT_HTML) {
+	if (bw->current_content && 
+			content_get_type(bw->current_content) == CONTENT_HTML) {
 		current_menu_link_box = box_href_at_point(bw->current_content,
 				x, y);
 	}

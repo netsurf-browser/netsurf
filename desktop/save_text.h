@@ -25,7 +25,7 @@
 #define _NETSURF_DESKTOP_SAVE_TEXT_H_
 
 struct box;
-struct content;
+struct hlcache_handle;
 
 /* text currently being saved */
 struct save_text_state {
@@ -41,7 +41,7 @@ typedef enum {
 	WHITESPACE_TWO_NEW_LINES
 } save_text_whitespace;
 
-void save_as_text(struct content *c, char *path);
+void save_as_text(struct hlcache_handle *c, char *path);
 void save_text_solve_whitespace(struct box *box, bool *first,
 		save_text_whitespace *before, const char **whitespace_text,
 		size_t *whitespace_length);

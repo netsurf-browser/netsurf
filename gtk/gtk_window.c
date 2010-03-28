@@ -19,6 +19,7 @@
 
 #include <inttypes.h>
 #include <string.h>
+#include "content/hlcache.h"
 #include "gtk/gtk_window.h"
 #include "desktop/browser.h"
 #include "desktop/options.h"
@@ -144,7 +145,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	struct gui_window *g;		/**< what we're creating to return */
         GtkPolicyType scrollpolicy;
 
-	g = malloc(sizeof(*g));
+	g = calloc(1, sizeof(*g));
        	if (!g) {
 		warn_user("NoMemory", 0);
 		return 0;
@@ -349,7 +350,7 @@ gboolean nsgtk_window_expose_event(GtkWidget *widget,
                                    GdkEventExpose *event, gpointer data)
 {
 	struct gui_window *g = data;
-	struct content *c;
+	hlcache_handle *c;
 	float scale = g->bw->scale;
 
 	assert(g);
@@ -366,7 +367,7 @@ gboolean nsgtk_window_expose_event(GtkWidget *widget,
 		return FALSE;
 
 	/* HTML rendering handles scale itself */
-	if (c->type == CONTENT_HTML)
+	if (content_get_type(c) == CONTENT_HTML)
 		scale = 1;
 
 	current_widget = (GtkWidget *)g->drawing_area;
@@ -712,7 +713,7 @@ void gui_window_redraw_window(struct gui_window *g)
 void gui_window_update_box(struct gui_window *g,
                            const union content_msg_data *data)
 {
-	struct content *c = g->bw->current_content;
+	hlcache_handle *c = g->bw->current_content;
 
 	if (c == NULL)
 		return;
@@ -788,8 +789,8 @@ void gui_window_update_extent(struct gui_window *g)
 		return;
 
 	gtk_widget_set_size_request(GTK_WIDGET(g->drawing_area),
-			g->bw->current_content->width * g->bw->scale,
-			g->bw->current_content->height * g->bw->scale);
+		content_get_width(g->bw->current_content) * g->bw->scale,
+		content_get_height(g->bw->current_content) * g->bw->scale);
 
 	gtk_widget_set_size_request(GTK_WIDGET(g->viewport), 0, 0);
 
@@ -958,7 +959,7 @@ bool gui_window_box_scroll_start(struct gui_window *g,
 	return true;
 }
 
-void gui_drag_save_object(gui_save_type type, struct content *c,
+void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
                           struct gui_window *g)
 {
 

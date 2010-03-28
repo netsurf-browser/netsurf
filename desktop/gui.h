@@ -41,6 +41,7 @@ typedef enum {
 	GUI_SAVE_CLIPBOARD_CONTENTS
 } gui_save_type;
 
+struct fetch;
 struct gui_window;
 struct gui_download_window;
 
@@ -55,6 +56,7 @@ typedef enum { GUI_POINTER_DEFAULT, GUI_POINTER_POINT, GUI_POINTER_CARET,
 #include <stdbool.h>
 #include "utils/config.h"
 #include "content/content.h"
+#include "content/hlcache.h"
 #include "desktop/browser.h"
 #include "desktop/search.h"
 
@@ -89,8 +91,8 @@ void gui_window_hide_pointer(struct gui_window *g);
 void gui_window_set_url(struct gui_window *g, const char *url);
 void gui_window_start_throbber(struct gui_window *g);
 void gui_window_stop_throbber(struct gui_window *g);
-void gui_window_set_icon(struct gui_window *g, struct content *icon);
-void gui_window_set_search_ico(struct content *ico);
+void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon);
+void gui_window_set_search_ico(hlcache_handle *ico);
 void gui_window_place_caret(struct gui_window *g, int x, int y, int height);
 void gui_window_remove_caret(struct gui_window *g);
 void gui_window_new_content(struct gui_window *g);
@@ -98,7 +100,8 @@ bool gui_window_scroll_start(struct gui_window *g);
 bool gui_window_box_scroll_start(struct gui_window *g,
 		int x0, int y0, int x1, int y1);
 bool gui_window_frame_resize_start(struct gui_window *g);
-void gui_window_save_as_link(struct gui_window *g, struct content *c);
+void gui_window_save_link(struct gui_window *g, const char *url, 
+		const char *title);
 void gui_window_set_scale(struct gui_window *g, float scale);
 
 struct gui_download_window *gui_download_window_create(const char *url,
@@ -110,7 +113,7 @@ void gui_download_window_error(struct gui_download_window *dw,
 		const char *error_msg);
 void gui_download_window_done(struct gui_download_window *dw);
 
-void gui_drag_save_object(gui_save_type type, struct content *c,
+void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
 		struct gui_window *g);
 void gui_drag_save_selection(struct selection *s, struct gui_window *g);
 void gui_start_selection(struct gui_window *g);
@@ -133,7 +136,7 @@ bool gui_search_term_highlighted(struct gui_window *g,
 
 struct ssl_cert_info;
 
-void gui_cert_verify(struct browser_window *bw, struct content *c,
+void gui_cert_verify(struct browser_window *bw, hlcache_handle *c,
 		const struct ssl_cert_info *certs, unsigned long num);
 
 #endif

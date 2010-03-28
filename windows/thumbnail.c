@@ -23,29 +23,30 @@
 #include "windows/bitmap.h"
 #include "windows/gui.h"
 #include "windows/plot.h"
+#include "content/hlcache.h"
 
-#ifndef MIN
-#define MIN(a,b) (((a) < (b)) ? (a) : (b))
-#endif
 
-#ifndef MAX
-#define MAX(a,b) (((a) > (b)) ? (a) : (b))
-#endif
-
-bool thumbnail_create(struct content *content, struct bitmap *bitmap,
-		const char *url)
+bool 
+thumbnail_create(hlcache_handle *content, 
+		 struct bitmap *bitmap,
+		 const char *url)
 {
-	LOG(("creating thumbnail %p for url %s content %p", bitmap, url, 
-			content));
-	int width = MIN(content->width, 1024);
-	int height = MIN(content->height, 768);
+	int width = content_get_width(content);
+	int height = content_get_height(content);
 	int i;
 	uint8_t *pixdata;
 	HDC hdc, minidc;
 	HBITMAP bufferbm, minibm, minibm2;
-	BITMAPINFO *bmi = (BITMAPINFO *) malloc(sizeof(BITMAPINFOHEADER) + 
-			(bitmap->width * bitmap->height * 4));
+	BITMAPINFO *bmi; 
 	BITMAPINFOHEADER bmih;
+
+	LOG(("creating thumbnail %p for url %s content %p", bitmap, url, content));
+
+	bmi = malloc(sizeof(BITMAPINFOHEADER) + (bitmap->width * bitmap->height * 4));
+	if (bmi == NULL) {
+		return false;
+	}
+
 	bmih.biSize = sizeof(bmih);
 	bmih.biWidth = bitmap->width;
 	bmih.biHeight = - bitmap->height;
@@ -81,7 +82,7 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 	}
 	SelectObject(bufferdc, bufferbm);
 	thumbnail = true;
-	content_redraw(content, 0, 0, content->width, content->height, 0, 0,
+	content_redraw(content, 0, 0, width, height, 0, 0,
 			width, height, 1.0, 0xFFFFFF);
 	thumbnail = false;
 	

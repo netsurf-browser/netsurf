@@ -42,6 +42,7 @@
 #include "content/content.h"
 #include "content/fetch.h"
 #include "content/fetchers/fetch_curl.h"
+#include "content/hlcache.h"
 #include "content/urldb.h"
 #include "desktop/401login.h"
 #include "desktop/browser.h"
@@ -122,7 +123,14 @@ int main(int argc, char** argv)
 
 	setbuf(stderr, NULL);
 
-	return netsurf_main(argc, argv);
+	/* initialise netsurf */
+	netsurf_init(argc, argv);
+
+	netsurf_main_loop();
+
+	netsurf_exit();
+
+	return 0;
 }
 
 
@@ -599,7 +607,8 @@ void gui_create_form_select_menu(struct browser_window *bw,
 
 }
 
-void gui_window_save_as_link(struct gui_window *g, struct content *c)
+void gui_window_save_link(struct gui_window *g, const char *url, 
+		const char *title)
 {
 }
 
@@ -630,12 +639,11 @@ void die(const char * const error)
 }
 
 
-void hotlist_visited(struct content *content)
+void hotlist_visited(hlcache_handle *content)
 {
 }
 
-
-void gui_cert_verify(struct browser_window *bw, struct content *c,
+void gui_cert_verify(struct browser_window *bw, hlcache_handle *c,
 		const struct ssl_cert_info *certs, unsigned long num)
 {
 	GladeXML *x = glade_xml_new(glade_ssl_file_location, NULL, NULL);
@@ -644,7 +652,7 @@ void gui_cert_verify(struct browser_window *bw, struct content *c,
 	void **session = calloc(sizeof(void *), 4);
 
 	session[0] = bw;
-	session[1] = strdup(c->url);
+	session[1] = strdup(content_get_url(c));
 	session[2] = x;
 	session[3] = wnd;
 

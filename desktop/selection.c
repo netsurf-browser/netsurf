@@ -27,6 +27,7 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "content/hlcache.h"
 #include "desktop/gui.h"
 #include "desktop/plotters.h"
 #include "desktop/save_text.h"
@@ -155,8 +156,8 @@ void selection_reinit(struct selection *s, struct box *root)
 		s->max_idx = selection_label_subtree(root, root_idx);
 	}
 	else {
-		struct content *c = s->bw->current_content;
-		if (c && c->type == CONTENT_TEXTPLAIN)
+		hlcache_handle *c = s->bw->current_content;
+		if (c && content_get_type(c) == CONTENT_TEXTPLAIN)
 			s->max_idx = textplain_size(c);
 		else
 			s->max_idx = 0;
@@ -560,7 +561,7 @@ bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 bool selection_traverse(struct selection *s, seln_traverse_handler handler,
 		void *handle)
 {
-	struct content *c;
+	hlcache_handle *c;
 	save_text_whitespace before = WHITESPACE_NONE;
 	bool first = true;
 	const char *text;
@@ -664,8 +665,9 @@ void selection_redraw(struct selection *s, unsigned start_idx, unsigned end_idx)
 			return;
 	}
 	else {
-		struct content *c = s->bw->current_content;
-		if (c && c->type == CONTENT_TEXTPLAIN && end_idx > start_idx) {
+		hlcache_handle *c = s->bw->current_content;
+		if (c && content_get_type(c) == CONTENT_TEXTPLAIN && 
+				end_idx > start_idx) {
 			textplain_coords_from_range(c, start_idx,
 							end_idx, &rdw.r);
 			rdw.inited = true;
@@ -952,7 +954,7 @@ bool save_handler(const char *text, size_t length, struct box *box,
 
 bool selection_save_text(struct selection *s, const char *path)
 {
-	struct content *c = s->bw->current_content;
+	hlcache_handle *c = s->bw->current_content;
 	struct save_text_state sv = { NULL, 0, 0 };
 	utf8_convert_ret ret;
 	char *result;

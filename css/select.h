@@ -29,7 +29,7 @@ struct content;
 
 css_stylesheet *nscss_create_inline_style(const uint8_t *data, size_t len,
 		const char *charset, const char *url, bool allow_quirks, 
-		lwc_context *dict, css_allocator_fn alloc, void *pw);
+		css_allocator_fn alloc, void *pw);
 
 css_computed_style *nscss_get_style(struct content *html, xmlNode *n,
 		uint32_t pseudo_element, uint64_t media,

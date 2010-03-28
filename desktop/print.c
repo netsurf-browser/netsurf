@@ -26,6 +26,7 @@
 #include <string.h>
 
 #include "content/content.h"
+#include "content/hlcache.h"
 #include "css/utils.h"
 #include "desktop/options.h"
 #include "desktop/print.h"
@@ -39,11 +40,11 @@
 #define DEFAULT_PAGE_HEIGHT 840
 #define DEFAULT_COPIES 1
 
-static struct content *print_init(struct content *, struct print_settings *);
-static bool print_apply_settings(struct content *, struct print_settings *);
+static hlcache_handle *print_init(hlcache_handle *, struct print_settings *);
+static bool print_apply_settings(hlcache_handle *, struct print_settings *);
 
 static float page_content_width, page_content_height;
-static struct content *printed_content;
+static hlcache_handle *printed_content;
 static float done_height;
 
 bool html_redraw_printing = false;
@@ -59,7 +60,7 @@ int html_redraw_printing_top_cropped = 0;
  * \param settings The settings for printing to use
  * \return true if successful, false otherwise
  */
-bool print_basic_run(struct content *content,
+bool print_basic_run(hlcache_handle *content,
 		const struct printer *printer,
 		struct print_settings *settings)
 {
@@ -69,8 +70,8 @@ bool print_basic_run(struct content *content,
 	
 	if (!print_set_up(content, printer, settings, NULL))
 		ret = false;
-	
-	while (ret && (done_height < printed_content->height) )
+
+	while (ret && (done_height < content_get_height(printed_content)) )
 		ret = print_draw_next_page(printer, settings);
 
 	print_cleanup(content, printer, settings);
@@ -88,7 +89,7 @@ bool print_basic_run(struct content *content,
  * \param height updated to the height of the printed content
  * \return true if successful, false otherwise
  */
-bool print_set_up(struct content *content,
+bool print_set_up(hlcache_handle *content,
 		const struct printer *printer, struct print_settings *settings,
 		double *height)
 {
@@ -100,7 +101,7 @@ bool print_set_up(struct content *content,
 	print_apply_settings(printed_content, settings);
 
 	if (height)
-		*height = printed_content->height;
+		*height = content_get_height(printed_content);
 	
 	printer->print_begin(settings);
 
@@ -158,11 +159,13 @@ bool print_draw_next_page(const struct printer *printer,
  * \param settings The settings for printing to use
  * \return true if successful, false otherwise
  */
-struct content *print_init(struct content *content,
+hlcache_handle *print_init(hlcache_handle *content,
 		struct print_settings *settings)
 {
-	struct content* printed_content;
-	struct content_user *user_sentinel;
+// newcache
+#if 0
+	hlcache_handle* printed_content;
+	hlcache_handle_user *user_sentinel;
 	
 	content_add_user(content, NULL, (intptr_t) print_init, 0);
 	
@@ -173,7 +176,7 @@ struct content *print_init(struct content *content,
 	
 	printed_content->data.html.bw = 0;
 	
-	user_sentinel = talloc(printed_content, struct content_user);
+	user_sentinel = talloc(printed_content, hlcache_handle_user);
 	user_sentinel->callback = 0;
 	user_sentinel->p1 = user_sentinel->p2 = 0;
 	user_sentinel->next = 0;
@@ -194,6 +197,9 @@ struct content *print_init(struct content *content,
 	printed_content->data.html.font_func = settings->font_func;
 	
 	return printed_content;
+#else
+	return NULL;
+#endif
 }
 
 /**
@@ -203,7 +209,7 @@ struct content *print_init(struct content *content,
  * \param settings The settings for printing to use
  * \return true if successful, false otherwise
  */
-bool print_apply_settings(struct content *content,
+bool print_apply_settings(hlcache_handle *content,
 			  struct print_settings *settings)
 {
 	if (settings == NULL)
@@ -222,7 +228,8 @@ bool print_apply_settings(struct content *content,
 	content_reformat(content, page_content_width, 0);
 
 	LOG(("New layout applied.New height = %d ; New width = %d ",
-			content->height, content->width));
+			content_get_height(content), 
+			content_get_width(content)));
 	
 	return true;
 }
@@ -234,7 +241,7 @@ bool print_apply_settings(struct content *content,
  * \param printer The printer interface for the printer to be used
  * \return true if successful, false otherwise
  */
-bool print_cleanup(struct content *content, const struct printer *printer,
+bool print_cleanup(hlcache_handle *content, const struct printer *printer,
 		struct print_settings *settings)
 {
 	printer->print_end();
@@ -242,12 +249,11 @@ bool print_cleanup(struct content *content, const struct printer *printer,
 	html_redraw_printing = false;
 	
 	if (printed_content) {
-		content_remove_user(printed_content, NULL, 
-				(intptr_t) print_init, 0);
+		content_remove_user(printed_content, NULL, print_init);
 		talloc_free(printed_content);
 	}
 	
-	content_remove_user(content, NULL, (intptr_t)print_init, 0);
+	content_remove_user(content, NULL, print_init);
 	
 	free((void *)settings->output);
 	free(settings);

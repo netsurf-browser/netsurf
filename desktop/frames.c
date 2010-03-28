@@ -29,6 +29,7 @@
 #include <time.h>
 #include <math.h>
 #include "utils/config.h"
+#include "content/hlcache.h"
 #include "desktop/browser.h"
 #include "desktop/frames.h"
 #include "desktop/history_core.h"
@@ -105,8 +106,8 @@ void browser_window_create_iframes(struct browser_window *bw,
 		window = &(bw->iframes[index++]);
 		if (cur->url)
 			browser_window_go_unverifiable(window, cur->url,
-					bw->current_content->url, false,
-					bw->current_content);
+					content_get_url(bw->current_content),
+					false, bw->current_content);
 	}
 }
 
@@ -155,7 +156,7 @@ void browser_window_create_frameset(struct browser_window *bw,
 	int row, col, index;
 	struct content_html_frames *frame;
 	struct browser_window *window;
-	struct content *parent;
+	hlcache_handle *parent;
 
 	assert(bw && frameset);
 
@@ -230,8 +231,9 @@ void browser_window_create_frameset(struct browser_window *bw,
 	/* Use the URL of the first ancestor window containing html content
 	 * as the referer */
 	for (window = bw; window->parent; window = window->parent) {
-		if (window->current_content &&
-				window->current_content->type == CONTENT_HTML)
+		if (window->current_content && 
+				content_get_type(window->current_content) == 
+				CONTENT_HTML)
 			break;
 	}
 
@@ -247,8 +249,7 @@ void browser_window_create_frameset(struct browser_window *bw,
 			if (frame->url) {
 				browser_window_go_unverifiable(window,
 						frame->url,
-						parent != NULL 
-							? parent->url : NULL,
+						content_get_url(parent),
 						true,
 						parent);
 			}

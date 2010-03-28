@@ -28,6 +28,8 @@
 #include <iconv.h>
 
 struct content;
+struct hlcache_handle;
+struct http_parameter;
 
 struct textplain_line {
 	size_t	start;
@@ -46,8 +48,7 @@ struct content_textplain_data {
 	int formatted_width;
 };
 
-bool textplain_create(struct content *c, struct content *parent,
-		const char *params[]);
+bool textplain_create(struct content *c, const struct http_parameter *params);
 bool textplain_process_data(struct content *c, char *data, unsigned int size);
 bool textplain_convert(struct content *c, int width, int height);
 void textplain_reformat(struct content *c, int width, int height);
@@ -58,16 +59,17 @@ bool textplain_redraw(struct content *c, int x, int y,
 		float scale, colour background_colour);
 
 /* access to lines for text selection and searching */
-#define textplain_line_count(c) ((c)->data.textplain.physical_line_count)
-#define textplain_size(c) ((c)->data.textplain.utf8_data_size)
+unsigned long textplain_line_count(struct hlcache_handle *h);
+size_t textplain_size(struct hlcache_handle *h);
 
-size_t textplain_offset_from_coords(struct content *c, int x, int y, int dir);
-void textplain_coords_from_range(struct content *c,
+size_t textplain_offset_from_coords(struct hlcache_handle *h, int x, int y, 
+		int dir);
+void textplain_coords_from_range(struct hlcache_handle *h,
 		unsigned start, unsigned end, struct rect *r);
-char *textplain_get_line(struct content *c, unsigned lineno,
+char *textplain_get_line(struct hlcache_handle *h, unsigned lineno,
 		size_t *poffset, size_t *plen);
-int textplain_find_line(struct content *c, unsigned offset);
-char *textplain_get_raw_data(struct content *c,
+int textplain_find_line(struct hlcache_handle *h, unsigned offset);
+char *textplain_get_raw_data(struct hlcache_handle *h,
 		unsigned start, unsigned end, size_t *plen);
 
 #endif

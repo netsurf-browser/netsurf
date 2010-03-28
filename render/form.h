@@ -125,14 +125,6 @@ struct form_option {
 	struct form_option* next;
 };
 
-/** Successful control, as defined by HTML 4.01 17.13. */
-struct form_successful_control {
-        bool file;                              /**< It's a file */
-	char *name;				/**< Control name. */
-	char *value;				/**< Current value. */
-	struct form_successful_control *next;	/**< Next in linked list. */
-};
-
 /**
  * Called by the select menu when it wants an area to be redrawn. The
  * coordinates are menu origin relative.
@@ -157,10 +149,9 @@ bool form_add_option(struct form_control *control, char *value, char *text,
 		bool selected);
 bool form_successful_controls(struct form *form,
 		struct form_control *submit_button,
-		struct form_successful_control **successful_controls);
+		struct fetch_multipart_data **successful_controls);
 char *form_url_encode(struct form *form,
-		struct form_successful_control *control);
-void form_free_successful(struct form_successful_control *control);
+		struct fetch_multipart_data *control);
 
 bool form_open_select_menu(void *client_data,
 		struct form_control *control,

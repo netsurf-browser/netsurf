@@ -30,7 +30,7 @@
 
 #include "desktop/plotters.h"
 
-#include "content/content.h"
+#include "content/content_protected.h"
 
 #include "image/bitmap.h"
 
@@ -62,8 +62,7 @@ static void row_callback(png_structp png, png_bytep new_row,
 static void end_callback(png_structp png, png_infop info);
 
 
-bool nspng_create(struct content *c, struct content *parent,
-		const char *params[])
+bool nspng_create(struct content *c, const struct http_parameter *params)
 {
 	union content_msg_data msg_data;
 
@@ -264,8 +263,13 @@ void end_callback(png_structp png, png_infop info)
 
 bool nspng_convert(struct content *c, int width, int height)
 {
+	const char *data;
+	unsigned long size;
+
 	assert(c->data.png.png != NULL);
 	assert(c->data.png.info != NULL);
+
+	data = content__get_source_data(c, &size);
 
 	png_destroy_read_struct(&c->data.png.png, &c->data.png.info, 0);
 
@@ -273,7 +277,7 @@ bool nspng_convert(struct content *c, int width, int height)
 
         if (c->title != NULL) {
 		snprintf(c->title, NSPNG_TITLE_LEN, messages_get("PNGTitle"),
-                         c->width, c->height, c->source_size);
+                         c->width, c->height, size);
 	}
 
 	c->size += (c->width * c->height * 4) + NSPNG_TITLE_LEN;

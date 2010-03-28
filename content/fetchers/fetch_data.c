@@ -35,7 +35,6 @@
 #include "content/urldb.h"
 #include "desktop/netsurf.h"
 #include "desktop/options.h"
-#include "render/form.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/url.h"
@@ -78,7 +77,7 @@ static void fetch_data_finalise(const char *scheme)
 
 static void *fetch_data_setup(struct fetch *parent_fetch, const char *url,
 		 bool only_2xx, const char *post_urlenc,
-		 struct form_successful_control *post_multipart,
+		 struct fetch_multipart_data *post_multipart,
 		 const char **headers)
 {
 	struct fetch_data_context *ctx = calloc(1, sizeof(*ctx));
@@ -232,20 +231,9 @@ static bool fetch_data_process(struct fetch_data_context *c)
 static void fetch_data_poll(const char *scheme)
 {
 	struct fetch_data_context *c, *next;
-	struct cache_data cachedata;
 	
 	if (ring == NULL) return;
 	
-	cachedata.req_time = time(NULL);
-	cachedata.res_time = time(NULL);
-	cachedata.date = 0;
-	cachedata.expires = 0;
-	cachedata.age = INVALID_AGE;
-	cachedata.max_age = 0;
-	cachedata.no_cache = true;
-	cachedata.etag = NULL;
-	cachedata.last_modified = 0;
-
 	/* Iterate over ring, processing each pending fetch */
 	c = ring;
 	do {
@@ -265,6 +253,8 @@ static void fetch_data_poll(const char *scheme)
 
 		/* Only process non-aborted fetches */
 		if (!c->aborted && fetch_data_process(c) == true) {
+			char header[64];
+
 			fetch_set_http_code(c->parent_fetch, 200);
 			LOG(("setting data: MIME type to %s, length to %zd",
 					c->mimetype, c->datalen));
@@ -272,9 +262,16 @@ static void fetch_data_poll(const char *scheme)
 			 * Therefore, we _must_ check for this after _every_
 			 * call to fetch_data_send_callback().
 			 */
-			fetch_data_send_callback(FETCH_TYPE,
-				c, c->mimetype, c->datalen,
-				FETCH_ERROR_NO_ERROR);
+			snprintf(header, sizeof header, "Content-Type: %s",
+					c->mimetype);
+			fetch_data_send_callback(FETCH_HEADER, c, header, 
+					strlen(header), FETCH_ERROR_NO_ERROR);
+
+			snprintf(header, sizeof header, "Content-Length: %zd",
+					c->datalen);
+			fetch_data_send_callback(FETCH_HEADER, c, header, 
+					strlen(header), FETCH_ERROR_NO_ERROR);
+
 			if (!c->aborted) {
 				fetch_data_send_callback(FETCH_DATA, 
 					c, c->data, c->datalen,
@@ -282,8 +279,7 @@ static void fetch_data_poll(const char *scheme)
 			}
 			if (!c->aborted) {
 				fetch_data_send_callback(FETCH_FINISHED, 
-					c, &cachedata, 0,
-					FETCH_ERROR_NO_ERROR);
+					c, 0, 0, FETCH_ERROR_NO_ERROR);
 			}
 		} else {
 			LOG(("Processing of %s failed!", c->url));

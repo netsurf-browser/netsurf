@@ -30,6 +30,7 @@
 
 #include <hpdf.h>
 
+#include "content/hlcache.h"
 #include "desktop/options.h"
 #include "desktop/plotters.h"
 #include "desktop/print.h"
@@ -410,32 +411,37 @@ bool pdf_plot_bitmap_tile(int x, int y, int width, int height,
 HPDF_Image pdf_extract_image(struct bitmap *bitmap)
 {
 	HPDF_Image image = NULL;
-        struct content *content = NULL;
+        hlcache_handle *content = NULL;
 
         /* TODO - get content from bitmap pointer */
 
 	if (content) {
+		const char *source_data;
+		unsigned long source_size;
+
 		/*Not sure if I don't have to check if downloading has been
 		finished.
 		Other way - lock pdf plotting while fetching a website
 		*/
-		switch(content->type){
-			/*Handle "embeddable" types of images*/
-			case CONTENT_JPEG:
- 				image = HPDF_LoadJpegImageFromMem(pdf_doc,
- 						(const HPDF_BYTE *)content->source_data,
- 						content->source_size);
- 				break;
+		source_data = content_get_source_data(content, &source_size);
 
-			/*Disabled until HARU PNG support will be more stable.
+		switch(content_get_type(content)){
+		/*Handle "embeddable" types of images*/
+		case CONTENT_JPEG:
+ 			image = HPDF_LoadJpegImageFromMem(pdf_doc,
+ 					(const HPDF_BYTE *) source_data,
+ 					source_size);
+ 			break;
 
-			case CONTENT_PNG:
-				image = HPDF_LoadPngImageFromMem(pdf_doc,
-						(const HPDF_BYTE *)content->source_data,
-						content->total_size);
-				break;*/
-			default:
-				break;
+		/*Disabled until HARU PNG support will be more stable.
+
+		case CONTENT_PNG:
+			image = HPDF_LoadPngImageFromMem(pdf_doc,
+					(const HPDF_BYTE *)content->source_data,
+					content->total_size);
+			break;*/
+		default:
+			break;
 		}
 	}
 

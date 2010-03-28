@@ -24,8 +24,7 @@
 #include <ctype.h>
 #include <string.h>
 #include "content/content.h"
-#include "content/fetchcache.h"
-#include "content/fetch.h"
+#include "content/hlcache.h"
 #include "desktop/browser.h"
 #include "desktop/gui.h"
 #include "desktop/options.h"
@@ -43,9 +42,12 @@ static struct search_provider {
 	char *ico; /** < location of domain's favicon */
 } current_search_provider;
 
-static struct content *search_ico = NULL;
+static hlcache_handle *search_ico = NULL;
 char *search_engines_file_location;
 char *search_default_ico_location;
+
+static nserror search_web_ico_callback(hlcache_handle *ico,
+		const hlcache_event *event, void *pw);
 
 /** 
  * creates a new browser window according to the search term
@@ -205,7 +207,8 @@ char *search_web_get_url(const char *encsearchterm)
 void search_web_retrieve_ico(bool localdefault)
 {
 	char *url;
-	struct content *icocontent;
+	nserror error;
+
 	if (localdefault) {
 		if (search_default_ico_location == NULL)
 			return;
@@ -221,26 +224,17 @@ void search_web_retrieve_ico(bool localdefault)
 		url = search_web_ico_name();
 	}
 
-	icocontent = NULL;
 	if (url == NULL) {
 		warn_user(messages_get("NoMemory"), 0);
 		return;
 	}
-	icocontent = fetchcache(url, search_web_ico_callback,
-				0, 0, 20, 20, true, 0,
-				0, false, false);
-	free(url);
-	if (icocontent == NULL)
-		return;
-	
-	fetchcache_go(icocontent, 0, search_web_ico_callback,
-			0, 0, 20, 20,
-			0, 0, false, 0);
 
-	if (icocontent == NULL) 
-		LOG(("web search ico loading delayed"));
-	else
-		search_ico = icocontent;
+	error = hlcache_handle_retrieve(url, 0, NULL, NULL, 20, 20,
+			search_web_ico_callback, NULL, NULL, &search_ico);
+	if (error != NSERROR_OK)
+		search_ico = NULL;
+
+	free(url);
 }
 
 /**
@@ -249,7 +243,7 @@ void search_web_retrieve_ico(bool localdefault)
  * responsibility
  */
 
-struct content *search_web_ico(void)
+hlcache_handle *search_web_ico(void)
 {
 	return search_ico;
 }
@@ -259,20 +253,18 @@ struct content *search_web_ico(void)
  * else retry default from local file system
  */
 
-void search_web_ico_callback(content_msg msg, struct content *ico,
-		intptr_t p1, intptr_t p2, union content_msg_data data)
+nserror search_web_ico_callback(hlcache_handle *ico,
+		const hlcache_event *event, void *pw)
 {
-
-	switch (msg) {
+	switch (event->type) {
 	case CONTENT_MSG_LOADING:
 	case CONTENT_MSG_READY:
 		break;
 
 	case CONTENT_MSG_DONE:
-		LOG(("got favicon '%s'", ico->url));
+		LOG(("got favicon '%s'", content_get_url(ico)));
 #ifdef WITH_BMP
-		if (ico->type == CONTENT_ICO) {
-			search_ico = ico; /* cache */
+		if (content_get_type(ico) == CONTENT_ICO) {
 			gui_window_set_search_ico(search_ico);
 		} else 
 #endif
@@ -281,20 +273,20 @@ void search_web_ico_callback(content_msg msg, struct content *ico,
 		}
 		break;
 
-	case CONTENT_MSG_LAUNCH:
 	case CONTENT_MSG_ERROR:
-		LOG(("favicon %s error: %s", ico->url, data.error));
-		ico = 0;
+		LOG(("favicon %s error: %s",
+				content_get_url(ico), event->data.error));
+		hlcache_handle_release(search_ico);
+		search_ico = NULL;
 		search_web_retrieve_ico(true);
 		break;
 
 	case CONTENT_MSG_STATUS:
-	case CONTENT_MSG_NEWPTR:
-	case CONTENT_MSG_AUTH:
-	case CONTENT_MSG_SSL:
 		break;
 
 	default:
 		assert(0);
 	}
+
+	return NSERROR_OK;
 }

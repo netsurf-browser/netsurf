@@ -21,10 +21,10 @@
 
 #include "utils/config.h"
 
-#include "content/content.h"
-#include "desktop/browser.h"
+struct hlcache_handle;
+struct browser_window;
 
-void gui_401login_open(struct browser_window *bw, struct content *c,
+void gui_401login_open(struct browser_window *bw, struct hlcache_handle *c,
 		const char *realm);
 
 #endif

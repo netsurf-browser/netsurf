@@ -28,7 +28,7 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <time.h>
-#include "content/content.h"
+#include "content/content_protected.h"
 #include "render/directory.h"
 #include "render/html.h"
 #include "utils/messages.h"
@@ -40,9 +40,8 @@ static const char header[] = "<html>\n<head>\n<title>\n";
 static const char footer[] = "</pre>\n</body>\n</html>\n";
 
 
-bool directory_create(struct content *c, struct content *parent,
-		const char *params[]) {
-	if (!html_create(c, parent, params))
+bool directory_create(struct content *c, const struct http_parameter *params) {
+	if (!html_create(c, params))
 		/* html_create() must have broadcast MSG_ERROR already, so we
 		* don't need to. */
 		return false;
@@ -64,7 +63,7 @@ bool directory_convert(struct content *c, int width, int height) {
 	bool compare;
 	char *up;
 
-	path = url_to_path(c->url);
+	path = url_to_path(content__get_url(c));
 	if (!path) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
@@ -100,9 +99,9 @@ bool directory_convert(struct content *c, int width, int height) {
 	binding_parse_chunk(c->data.html.parser_binding,
 			(uint8_t *) buffer, strlen(buffer));
 
-	res = url_parent(c->url, &up);
+	res = url_parent(content__get_url(c), &up);
 	if (res == URL_FUNC_OK) {
-		res = url_compare(c->url, up, false, &compare);
+		res = url_compare(content__get_url(c), up, false, &compare);
 		if ((res == URL_FUNC_OK) && !compare) {
 			snprintf(buffer, sizeof(buffer),
 				"<a href=\"..\">[..]</a>\n");
@@ -124,7 +123,8 @@ bool directory_convert(struct content *c, int width, int height) {
 			continue;
 
 		snprintf(buffer, sizeof(buffer), "<a href=\"%s/%s\">%s</a>\n",
-				c->url, entry->d_name, entry->d_name);
+				content__get_url(c), entry->d_name, 
+				entry->d_name);
 
 		binding_parse_chunk(c->data.html.parser_binding,
 				(uint8_t *) buffer, strlen(buffer));

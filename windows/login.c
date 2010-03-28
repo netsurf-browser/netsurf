@@ -17,8 +17,9 @@
  */
 
 #include "desktop/401login.h"
+#include "content/hlcache.h"
 
-void gui_401login_open(struct browser_window *bw, struct content *c,
+void gui_401login_open(struct browser_window *bw, hlcache_handle *c,
 	const char *realm)
 {
 }

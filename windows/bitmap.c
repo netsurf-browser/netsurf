@@ -19,20 +19,12 @@
 
 #include <inttypes.h>
 #include <sys/types.h>
+#include <string.h>
 
-#include "assert.h"
 #include "image/bitmap.h"
 #include "windows/bitmap.h"
 
 #include "utils/log.h"
-
-#ifndef MIN
-#define MIN(a,b) (((a) < (b)) ? (a) : (b))
-#endif
-
-#ifndef MAX
-#define MAX(a,b) (((a) > (b)) ? (a) : (b))
-#endif
 
 /**
  * Create a bitmap.

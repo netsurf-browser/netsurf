@@ -38,7 +38,7 @@
 #include "curl/curl.h"
 #include "utils/config.h"
 #include "content/fetch.h"
-#include "content/fetchcache.h"
+#include "content/hlcache.h"
 #include "content/urldb.h"
 #include "css/css.h"
 #include "desktop/401login.h"
@@ -66,9 +66,6 @@
 /** browser window which is being redrawn. Valid only during redraw. */
 struct browser_window *current_redraw_browser;
 
-/** fake content for <a> being saved as a link */
-struct content browser_window_href_content;
-
 /** one or more windows require a reformat */
 bool browser_reformat_pending;
 
@@ -77,11 +74,11 @@ bool browser_reformat_pending;
 
 static void browser_window_go_post(struct browser_window *bw,
 		const char *url, char *post_urlenc,
-		struct form_successful_control *post_multipart,
+		struct fetch_multipart_data *post_multipart,
 		bool add_to_history, const char *referer, bool download,
-		bool verifiable, struct content *parent);
-static void browser_window_callback(content_msg msg, struct content *c,
-		intptr_t p1, intptr_t p2, union content_msg_data data);
+		bool verifiable, hlcache_handle *parent);
+static nserror browser_window_callback(hlcache_handle *c,
+		const hlcache_event *event, void *pw);
 static void browser_window_refresh(void *p);
 static bool browser_window_check_throbber(struct browser_window *bw);
 static void browser_window_convert_to_download(struct browser_window *bw);
@@ -92,8 +89,8 @@ static void browser_window_set_status(struct browser_window *bw,
 		const char *text);
 static void browser_window_set_pointer(struct gui_window *g,
 		gui_pointer_shape shape);
-static void download_window_callback(fetch_msg msg, void *p, const void *data,
-		unsigned long size, fetch_error_code errorcode);
+static nserror download_window_callback(llcache_handle *handle,
+		const llcache_event *event, void *pw);
 static void browser_window_destroy_children(struct browser_window *bw);
 static void browser_window_destroy_internal(struct browser_window *bw);
 static void browser_window_set_scale_internal(struct browser_window *bw,
@@ -112,7 +109,7 @@ static void browser_window_mouse_track_html(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y);
 static void browser_window_mouse_track_text(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y);
-static void browser_radio_set(struct content *content,
+static void browser_radio_set(hlcache_handle *content,
 		struct form_control *radio);
 static gui_pointer_shape get_pointer_shape(struct browser_window *bw,
 		struct box *box, bool imagemap);
@@ -253,7 +250,7 @@ void browser_window_download(struct browser_window *bw, const char *url,
 
 void browser_window_go_unverifiable(struct browser_window *bw,
 		const char *url, const char *referer, bool history_add,
-		struct content *parent)
+		hlcache_handle *parent)
 {
 	/* All fetches passing through here are unverifiable
 	 * (i.e are not the result of user action) */
@@ -284,17 +281,22 @@ void browser_window_go_unverifiable(struct browser_window *bw,
 
 void browser_window_go_post(struct browser_window *bw, const char *url,
 		char *post_urlenc,
-		struct form_successful_control *post_multipart,
+		struct fetch_multipart_data *post_multipart,
 		bool add_to_history, const char *referer, bool download,
-		bool verifiable, struct content *parent)
+		bool verifiable, hlcache_handle *parent)
 {
-	struct content *c;
+	hlcache_handle *c;
 	char *url2;
 	char *fragment;
 	url_func_result res;
 	int depth = 0;
 	struct browser_window *cur;
 	int width, height;
+	uint32_t fetch_flags = 0;
+	bool fetch_is_post = (post_urlenc != NULL || post_multipart != NULL);
+	llcache_post_data post;
+	hlcache_child_context child;
+	nserror error;
 
 	LOG(("bw %p, url %s", bw, url));
 	assert(bw);
@@ -308,16 +310,44 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 		return;
 	}
 
+	/* Set up retrieval parameters */
+	if (verifiable)
+		fetch_flags |= LLCACHE_RETRIEVE_VERIFIABLE;
+
+	if (post_multipart != NULL) {
+		post.type = LLCACHE_POST_MULTIPART;
+		post.data.multipart = post_multipart;
+	} else if (post_urlenc != NULL) {
+		post.type = LLCACHE_POST_URL_ENCODED;
+		post.data.urlenc = post_urlenc;
+	}
+
+	if (parent != NULL) {
+//newcache extract charset and quirks from parent content
+		child.charset = NULL;
+		child.quirks = false;
+	}
+
+	/* Normalize the request URL */
 	res = url_normalize(url, &url2);
 	if (res != URL_FUNC_OK) {
 		LOG(("failed to normalize url %s", url));
 		return;
 	}
 
-	/* check we can actually handle this URL */
-	if (!fetch_can_fetch(url2)) {
-		gui_launch_url(url2);
+	/* Get download out of the way */
+	if (download) {
+		llcache_handle *l;
+
+		error = llcache_handle_retrieve(url2, 
+				fetch_flags | LLCACHE_RETRIEVE_FORCE_FETCH,
+				referer, fetch_is_post ? &post : NULL,
+				download_window_callback, NULL, &l);
+		if (error != NSERROR_OK)
+			LOG(("Failed to fetch download: %d", error));
+
 		free(url2);
+
 		return;
 	}
 
@@ -336,9 +366,10 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 		bw->frag_id = fragment;
 
 		/* Compare new URL with existing one (ignoring fragments) */
-		if (bw->current_content && bw->current_content->url) {
-			res = url_compare(bw->current_content->url, url2,
-					true, &same_url);
+		if (bw->current_content != NULL && 
+				content_get_url(bw->current_content) != NULL) {
+			res = url_compare(content_get_url(bw->current_content),
+					url2, true, &same_url);
 			if (res == URL_FUNC_NOMEM) {
 				free(url2);
 				warn_user("NoMemory", 0);
@@ -351,17 +382,17 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 		/* if we're simply moving to another ID on the same page,
 		 * don't bother to fetch, just update the window.
 		 */
-		if (same_url && !post_urlenc && !post_multipart &&
-				!strchr(url2, '?')) {
+		if (same_url && fetch_is_post == false && 
+				strchr(url2, '?') == 0) {
 			free(url2);
 			if (add_to_history)
 				history_add(bw->history, bw->current_content,
 						bw->frag_id);
 			browser_window_update(bw, false);
-			if (bw->current_content) {
+			if (bw->current_content != NULL) {
 				browser_window_refresh_url_bar(bw,
-						bw->current_content->url,
-						bw->frag_id);
+					content_get_url(bw->current_content),
+					bw->frag_id);
 			}
 			return;
 		}
@@ -376,28 +407,26 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 
 	browser_window_set_status(bw, messages_get("Loading"));
 	bw->history_add = add_to_history;
-	c = fetchcache(url2, browser_window_callback, (intptr_t) bw, 0,
-			width, height, false,
-			post_urlenc, post_multipart, verifiable, download);
-	free(url2);
-	if (!c) {
+
+	error = hlcache_handle_retrieve(url2, 0, referer,
+			fetch_is_post ? &post : NULL, width, height, 
+			browser_window_callback, bw,
+			parent != NULL ? &child : NULL, &c);
+	if (error == NSERROR_NO_FETCH_HANDLER) {
+		gui_launch_url(url2);
+		free(url2);
+		return;
+	} else if (error != NSERROR_OK) {
+		free(url2);
 		browser_window_set_status(bw, messages_get("NoMemory"));
 		warn_user("NoMemory", 0);
 		return;
 	}
 
+	free(url2);
+
 	bw->loading_content = c;
 	browser_window_start_throbber(bw);
-
-	if (referer && referer != bw->referer) {
-		free(bw->referer);
-		bw->referer = strdup(referer);
-	}
-
-	bw->download = download;
-	fetchcache_go(c, referer, browser_window_callback,
-			(intptr_t) bw, 0, width, height,
-			post_urlenc, post_multipart, verifiable, parent);
 }
 
 
@@ -405,89 +434,95 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
  * Callback for fetchcache() for browser window fetches.
  */
 
-void browser_window_callback(content_msg msg, struct content *c,
-		intptr_t p1, intptr_t p2, union content_msg_data data)
+nserror browser_window_callback(hlcache_handle *c,
+		const hlcache_event *event, void *pw)
 {
-	struct browser_window *bw = (struct browser_window *) p1;
+	struct browser_window *bw = pw;
 
-	switch (msg) {
+	switch (event->type) {
 	case CONTENT_MSG_LOADING:
 		assert(bw->loading_content == c);
 
-		if (c->type == CONTENT_OTHER)
+		if (content_get_type(c) == CONTENT_OTHER)
 			browser_window_convert_to_download(bw);
 #ifdef WITH_THEME_INSTALL
-		else if (c->type == CONTENT_THEME) {
+		else if (content_get_type(c) == CONTENT_THEME) {
 			theme_install_start(c);
-			bw->loading_content = 0;
-			content_remove_user(c, browser_window_callback,
-					(intptr_t) bw, 0);
+			bw->loading_content = NULL;
+//newcache do we not just pass ownership to the theme installation stuff?
+			hlcache_handle_release(c);
 			browser_window_stop_throbber(bw);
 		}
 #endif
 		else {
 			bw->refresh_interval = -1;
-			browser_window_set_status(bw, c->status_message);
+			browser_window_set_status(bw, 
+					content_get_status_message(c));
 		}
 		break;
 
 	case CONTENT_MSG_READY:
 		assert(bw->loading_content == c);
 
-		if (bw->current_content) {
-			if (bw->current_content->status ==
-					CONTENT_STATUS_READY ||
-					bw->current_content->status ==
-					CONTENT_STATUS_DONE)
+		if (bw->current_content != NULL) {
+			content_status status = 
+					content_get_status(bw->current_content);
+
+			if (status == CONTENT_STATUS_READY ||
+					status == CONTENT_STATUS_DONE)
 				content_close(bw->current_content);
-			content_remove_user(bw->current_content,
-					browser_window_callback,
-					(intptr_t) bw, 0);
+
+			hlcache_handle_release(bw->current_content);
 		}
+
 		bw->current_content = c;
 		bw->loading_content = NULL;
+
 		browser_window_remove_caret(bw);
+
 		bw->scroll = NULL;
+
 		gui_window_new_content(bw->window);
-		if (bw->current_content) {
-			browser_window_refresh_url_bar(bw,
-					bw->current_content->url,
-					bw->frag_id);
-		}
+
+		browser_window_refresh_url_bar(bw,
+				content_get_url(bw->current_content),
+				bw->frag_id);
+
 		/* new content; set scroll_to_top */
 		browser_window_update(bw, true);
 		content_open(c, bw, 0, 0, 0, 0);
-		browser_window_set_status(bw, c->status_message);
+		browser_window_set_status(bw, content_get_status_message(c));
 
 		/* history */
 		if (bw->history_add && bw->history) {
+			const char *url = content_get_url(c);
+
 			history_add(bw->history, c, bw->frag_id);
-			if (urldb_add_url(c->url)) {
-				urldb_set_url_title(c->url,
-					c->title ? c->title : c->url);
-				urldb_update_url_visit_data(c->url);
-				urldb_set_url_content_type(c->url,
-						c->type);
-				/* This is safe as we've just
-				 * added the URL */
-				global_history_add(
-					urldb_get_url(c->url));
+			if (urldb_add_url(url)) {
+				urldb_set_url_title(url, content_get_title(c));
+				urldb_update_url_visit_data(url);
+				urldb_set_url_content_type(url, 
+						content_get_type(c));
+				/* This is safe as we've just added the URL */
+				global_history_add(urldb_get_url(url));
 			}
 		}
 
 		/* text selection */
-		if (c->type == CONTENT_HTML)
+		if (content_get_type(c) == CONTENT_HTML)
 			selection_init(bw->sel,
-					bw->current_content->data.html.layout);
-		if (c->type == CONTENT_TEXTPLAIN)
+					html_get_box_tree(bw->current_content));
+		if (content_get_type(c) == CONTENT_TEXTPLAIN)
 			selection_init(bw->sel, NULL);
 
 		/* frames */
-		if (c->type == CONTENT_HTML && c->data.html.frameset)
-			browser_window_create_frameset(bw,
-					c->data.html.frameset);
-		if (c->type == CONTENT_HTML && c->data.html.iframe)
-			browser_window_create_iframes(bw, c->data.html.iframe);
+		if (content_get_type(c) == CONTENT_HTML && 
+				html_get_frameset(c) != NULL)
+			browser_window_create_frameset(bw, 
+					html_get_frameset(c));
+		if (content_get_type(c) == CONTENT_HTML && 
+				html_get_iframe(c) != NULL)
+			browser_window_create_iframes(bw, html_get_iframe(c));
 
 		break;
 
@@ -495,137 +530,75 @@ void browser_window_callback(content_msg msg, struct content *c,
 		assert(bw->current_content == c);
 
 		browser_window_update(bw, false);
-		browser_window_set_status(bw, c->status_message);
+		browser_window_set_status(bw, content_get_status_message(c));
 		browser_window_stop_throbber(bw);
 		browser_window_set_icon(bw);
+
 		history_update(bw->history, c);
 		hotlist_visited(c);
-		free(bw->referer);
-		bw->referer = 0;
+
 		if (bw->refresh_interval != -1)
 			schedule(bw->refresh_interval,
 					browser_window_refresh, bw);
 		break;
 
 	case CONTENT_MSG_ERROR:
-		browser_window_set_status(bw, data.error);
+		browser_window_set_status(bw, event->data.error);
 
 		/* Only warn the user about errors in top-level windows */
 		if (bw->browser_window_type == BROWSER_WINDOW_NORMAL)
-			warn_user(data.error, 0);
+			warn_user(event->data.error, 0);
 
 		if (c == bw->loading_content)
-			bw->loading_content = 0;
+			bw->loading_content = NULL;
 		else if (c == bw->current_content) {
-			bw->current_content = 0;
+			bw->current_content = NULL;
 			browser_window_remove_caret(bw);
 			bw->scroll = NULL;
 			selection_init(bw->sel, NULL);
 		}
+
+		hlcache_handle_release(c);
+
 		browser_window_stop_throbber(bw);
-		free(bw->referer);
-		bw->referer = 0;
 		break;
 
 	case CONTENT_MSG_STATUS:
-		browser_window_set_status(bw, c->status_message);
+		browser_window_set_status(bw, content_get_status_message(c));
 		break;
 
 	case CONTENT_MSG_REFORMAT:
 		if (c == bw->current_content &&
-			c->type == CONTENT_HTML) {
+			content_get_type(c) == CONTENT_HTML) {
 			/* reposition frames */
-			if (c->data.html.frameset)
+			if (html_get_frameset(c) != NULL)
 				browser_window_recalculate_frameset(bw);
 			/* reflow iframe positions */
-			if (c->data.html.iframe)
+			if (html_get_iframe(c) != NULL)
 				browser_window_recalculate_iframes(bw);
 			/* box tree may have changed, need to relabel */
-			selection_reinit(bw->sel, c->data.html.layout);
+			selection_reinit(bw->sel, html_get_box_tree(c));
 		}
+
 		if (bw->move_callback)
 			bw->move_callback(bw, bw->caret_p);
+
 		browser_window_update(bw, false);
 		break;
 
 	case CONTENT_MSG_REDRAW:
-		gui_window_update_box(bw->window, &data);
-		break;
-
-	case CONTENT_MSG_NEWPTR:
-		bw->loading_content = c;
-		if (data.new_url) {
-			/* Replacement URL too, so check for new fragment */
-			char *fragment;
-			url_func_result res;
-
-			/* Remove any existing fragment */
-			free(bw->frag_id);
-			bw->frag_id = NULL;
-
-			/* Extract new one, if any */
-			res = url_fragment(data.new_url, &fragment);
-			if (res == URL_FUNC_OK) {
-				/* Save for later use */
-				bw->frag_id = fragment;
-			}
-			/* Ignore memory exhaustion here -- it'll simply result
-			 * in the window being scrolled to the top rather than
-			 * to the fragment. That's acceptable, given that it's
-			 * likely that more important things will complain
-			 * about memory shortage. */
-		}
-		break;
-
-	case CONTENT_MSG_LAUNCH:
-		assert(data.launch_url != NULL);
-
-		bw->loading_content = NULL;
-
-		gui_launch_url(data.launch_url);
-
-		browser_window_stop_throbber(bw);
-		free(bw->referer);
-		bw->referer = 0;
-		break;
-
-	case CONTENT_MSG_AUTH:
-		gui_401login_open(bw, c, data.auth_realm);
-		if (c == bw->loading_content)
-			bw->loading_content = 0;
-		else if (c == bw->current_content) {
-			bw->current_content = 0;
-			browser_window_remove_caret(bw);
-			bw->scroll = NULL;
-			selection_init(bw->sel, NULL);
-		}
-		browser_window_stop_throbber(bw);
-		free(bw->referer);
-		bw->referer = 0;
-		break;
-
-	case CONTENT_MSG_SSL:
-		gui_cert_verify(bw, c, data.ssl.certs, data.ssl.num);
-		if (c == bw->loading_content)
-			bw->loading_content = 0;
-		else if (c == bw->current_content) {
-			bw->current_content = 0;
-			browser_window_remove_caret(bw);
-			bw->scroll = NULL;
-			selection_init(bw->sel, NULL);
-		}
-		browser_window_stop_throbber(bw);
-		free(bw->referer);
-		bw->referer = 0;
+		gui_window_update_box(bw->window, &event->data);
 		break;
 
 	case CONTENT_MSG_REFRESH:
-		bw->refresh_interval = data.delay * 100;
+		bw->refresh_interval = event->data.delay * 100;
 		break;
 
 	default:
 		assert(0);
 	}
+
+	return NSERROR_OK;
 }
 
 
@@ -636,34 +609,26 @@ void browser_window_callback(content_msg msg, struct content *c,
 void browser_window_convert_to_download(struct browser_window *bw)
 {
 	struct gui_download_window *download_window;
-	struct content *c = bw->loading_content;
-	struct fetch *fetch;
+	hlcache_handle *c = bw->loading_content;
+	llcache_handle *stream;
 
 	assert(c);
 
-	fetch = c->fetch;
+	stream = content_convert_to_download(c);
 
-	if (fetch) {
-		/* create download window */
-		download_window = gui_download_window_create(c->url,
-				c->mime_type, fetch, c->total_size,
-				bw->window);
+	/** \todo Sort parameters out here */
+	download_window = gui_download_window_create(
+			llcache_handle_get_url(stream),
+			llcache_handle_get_header(stream, "Content-Type"),
+			NULL, 0, NULL);
 
-		if (download_window) {
-			/* extract fetch from content */
-			c->fetch = 0;
-			c->fresh = false;
-			fetch_change_callback(fetch, download_window_callback,
-					download_window);
-		}
-	} else {
-		/* must already be a download window for this fetch */
-		/** \todo  open it at top of stack */
-	}
+	llcache_handle_change_callback(stream, 
+			download_window_callback, download_window);
 
 	/* remove content from browser window */
-	bw->loading_content = 0;
-	content_remove_user(c, browser_window_callback, (intptr_t) bw, 0);
+	hlcache_handle_release(bw->loading_content);
+	bw->loading_content = NULL;
+
 	browser_window_stop_throbber(bw);
 }
 
@@ -678,23 +643,26 @@ void browser_window_refresh(void *p)
 {
 	struct browser_window *bw = p;
 	bool history_add = true;
+	const char *url;
+	const char *refresh;
 
-	assert(bw->current_content &&
-			(bw->current_content->status == CONTENT_STATUS_READY ||
-			bw->current_content->status == CONTENT_STATUS_DONE));
+	assert(bw->current_content != NULL &&
+		(content_get_status(bw->current_content) == 
+				CONTENT_STATUS_READY ||
+		content_get_status(bw->current_content) == 
+				CONTENT_STATUS_DONE));
 
 	/* Ignore if the refresh URL has gone
 	 * (may happen if a fetch error occurred) */
-	if (!bw->current_content->refresh)
+	refresh = content_get_refresh_url(bw->current_content);
+	if (refresh == NULL)
 		return;
 
 	/* mark this content as invalid so it gets flushed from the cache */
-	bw->current_content->fresh = false;
+	content_invalidate_reuse_data(bw->current_content);
 
-	if ((bw->current_content->url) &&
-			(bw->current_content->refresh) &&
-			(!strcmp(bw->current_content->url,
-				 bw->current_content->refresh)))
+	url = content_get_url(bw->current_content);
+	if (url != NULL && strcmp(url, refresh) == 0)
 		history_add = false;
 
 	/* Treat an (almost) immediate refresh in a top-level browser window as
@@ -705,11 +673,9 @@ void browser_window_refresh(void *p)
 	 * all.
 	 */
 	if (bw->refresh_interval <= 100 && bw->parent == NULL) {
-		browser_window_go(bw, bw->current_content->refresh,
-				bw->current_content->url, history_add);
+		browser_window_go(bw, refresh, url, history_add);
 	} else {
-		browser_window_go_unverifiable(bw, bw->current_content->refresh,
-				bw->current_content->url, history_add,
+		browser_window_go_unverifiable(bw, refresh, url, history_add, 
 				bw->current_content);
 	}
 }
@@ -727,6 +693,7 @@ void browser_window_start_throbber(struct browser_window *bw)
 
 	while (bw->parent)
 		bw = bw->parent;
+
 	gui_window_start_throbber(bw->window);
 }
 
@@ -780,9 +747,11 @@ void browser_window_set_icon(struct browser_window *bw)
 {
 	while (bw->parent)
 		bw = bw->parent;
-	if ((bw->current_content != NULL) && (bw->current_content->type == CONTENT_HTML))
+
+	if (bw->current_content != NULL && 
+			content_get_type(bw->current_content) == CONTENT_HTML)
 		gui_window_set_icon(bw->window,
-				bw->current_content->data.html.favicon);
+				html_get_favicon(bw->current_content));
 	else
 		gui_window_set_icon(bw->window, NULL);
 }
@@ -794,19 +763,16 @@ void browser_window_set_icon(struct browser_window *bw)
  * \param  scroll_to_top  move view to top of page
  */
 
-void browser_window_update(struct browser_window *bw,
-		bool scroll_to_top)
+void browser_window_update(struct browser_window *bw, bool scroll_to_top)
 {
 	struct box *pos;
 	int x, y;
 
-	if (!bw->current_content)
+	if (bw->current_content == NULL)
 		return;
 
-	if (bw->current_content->title != NULL) {
-		gui_window_set_title(bw->window, bw->current_content->title);
-	} else
-		gui_window_set_title(bw->window, bw->current_content->url);
+	gui_window_set_title(bw->window, 
+			content_get_title(bw->current_content));
 
 	gui_window_update_extent(bw->window);
 
@@ -815,9 +781,11 @@ void browser_window_update(struct browser_window *bw,
 
 	/** \todo don't do this if the user has scrolled */
 	/* if frag_id exists, then try to scroll to it */
-	if (bw->frag_id && bw->current_content->type == CONTENT_HTML) {
-		if ((pos = box_find_by_id(bw->current_content->data.html.layout,
-				bw->frag_id)) != 0) {
+	if (bw->frag_id && 
+			content_get_type(bw->current_content) == CONTENT_HTML) {
+		struct box *layout = html_get_box_tree(bw->current_content);
+
+		if ((pos = box_find_by_id(layout, bw->frag_id)) != 0) {
 			box_coords(pos, &x, &y);
 			gui_window_set_scroll(bw->window, x, y);
 		}
@@ -837,17 +805,17 @@ void browser_window_stop(struct browser_window *bw)
 {
 	int children, index;
 
-	if (bw->loading_content) {
-		content_remove_user(bw->loading_content,
-				browser_window_callback, (intptr_t) bw, 0);
-		bw->loading_content = 0;
+	if (bw->loading_content != NULL) {
+		hlcache_handle_release(bw->loading_content);
+		bw->loading_content = NULL;
 	}
 
-	if (bw->current_content &&
-			bw->current_content->status != CONTENT_STATUS_DONE) {
-		assert(bw->current_content->status == CONTENT_STATUS_READY);
+	if (bw->current_content != NULL && content_get_status(
+			bw->current_content) != CONTENT_STATUS_DONE) {
+		assert(content_get_status(bw->current_content) == 
+				CONTENT_STATUS_READY);
 		content_stop(bw->current_content,
-				browser_window_callback, (intptr_t) bw, 0);
+				browser_window_callback, bw);
 	}
 
 	schedule_remove(browser_window_refresh, bw);
@@ -876,29 +844,43 @@ void browser_window_stop(struct browser_window *bw)
 
 void browser_window_reload(struct browser_window *bw, bool all)
 {
-	struct content *c;
+	hlcache_handle *c;
 	unsigned int i;
 
-	if (!bw->current_content || bw->loading_content)
+	if (bw->current_content == NULL || bw->loading_content != NULL)
 		return;
 
-	if (all && bw->current_content->type == CONTENT_HTML) {
+	if (all && content_get_type(bw->current_content) == CONTENT_HTML) {
+		struct html_stylesheet *sheets;
+		struct content_html_object *objects;
+		unsigned int count;
+
 		c = bw->current_content;
+
 		/* invalidate objects */
-		for (i = 0; i != c->data.html.object_count; i++) {
-			if (c->data.html.object[i].content)
-				c->data.html.object[i].content->fresh = false;
+		objects = html_get_objects(c, &count);
+
+		for (i = 0; i != count; i++) {
+			if (objects[i].content != NULL)
+				content_invalidate_reuse_data(
+						objects[i].content);
 		}
+
 		/* invalidate stylesheets */
-		for (i = STYLESHEET_START; i != c->data.html.stylesheet_count;
-				i++) {
-			if (c->data.html.stylesheets[i].c)
-				c->data.html.stylesheets[i].c->fresh =
-						false;
+		sheets = html_get_stylesheets(c, &count);
+
+		for (i = STYLESHEET_START; i != count; i++) {
+			if (sheets[i].type == HTML_STYLESHEET_EXTERNAL &&
+					sheets[i].data.external != NULL) {
+				content_invalidate_reuse_data(
+						sheets[i].data.external);
+			}
 		}
 	}
-	bw->current_content->fresh = false;
-	browser_window_go_post(bw, bw->current_content->url, 0, 0,
+
+	content_invalidate_reuse_data(bw->current_content);
+
+	browser_window_go_post(bw, content_get_url(bw->current_content), 0, 0,
 			false, 0, false, true, 0);
 }
 
@@ -1012,21 +994,22 @@ void browser_window_destroy_internal(struct browser_window *bw)
 
 	LOG(("Destroying window"));
 
-	if ((bw->children) || (bw->iframes))
+	if (bw->children != NULL || bw->iframes != NULL)
 		browser_window_destroy_children(bw);
-	if (bw->loading_content) {
-		content_remove_user(bw->loading_content,
-				browser_window_callback, (intptr_t) bw, 0);
-		bw->loading_content = 0;
+
+	if (bw->loading_content != NULL) {
+		hlcache_handle_release(bw->loading_content);
+		bw->loading_content = NULL;
 	}
-	if (bw->current_content) {
-		if (bw->current_content->status == CONTENT_STATUS_READY ||
-				bw->current_content->status ==
-				CONTENT_STATUS_DONE)
+
+	if (bw->current_content != NULL) {
+		content_status status = content_get_status(bw->current_content);
+		if (status == CONTENT_STATUS_READY || 
+				status == CONTENT_STATUS_DONE)
 			content_close(bw->current_content);
-		content_remove_user(bw->current_content,
-				browser_window_callback, (intptr_t) bw, 0);
-		bw->current_content = 0;
+
+		hlcache_handle_release(bw->current_content);
+		bw->current_content = NULL;
 	}
 
 	schedule_remove(browser_window_refresh, bw);
@@ -1058,15 +1041,15 @@ struct browser_window *browser_window_owner(struct browser_window *bw)
   		return bw->parent;
 
   	/* the parent of a frameset is either a NORMAL window or an IFRAME */
-	while (bw->parent) {
+	while (bw->parent != NULL) {
 		switch (bw->browser_window_type) {
-	  		case BROWSER_WINDOW_NORMAL:
-  			case BROWSER_WINDOW_IFRAME:
-	  			return bw;
-  			case BROWSER_WINDOW_FRAME:
-  			case BROWSER_WINDOW_FRAMESET:
-  				bw = bw->parent;
-				break;
+ 		case BROWSER_WINDOW_NORMAL:
+  		case BROWSER_WINDOW_IFRAME:
+  			return bw;
+		case BROWSER_WINDOW_FRAME:
+ 		case BROWSER_WINDOW_FRAMESET:
+  			bw = bw->parent;
+			break;
 		}
 	}
 	return bw;
@@ -1083,9 +1066,9 @@ struct browser_window *browser_window_owner(struct browser_window *bw)
 
 void browser_window_reformat(struct browser_window *bw, int width, int height)
 {
-	struct content *c = bw->current_content;
+	hlcache_handle *c = bw->current_content;
 
-	if (!c)
+	if (c == NULL)
 		return;
 
 	content_reformat(c, width / bw->scale, height / bw->scale);
@@ -1104,23 +1087,28 @@ void browser_window_set_scale(struct browser_window *bw, float scale, bool all)
 {
 	while (bw->parent && all)
 		bw = bw->parent;
+
 	browser_window_set_scale_internal(bw, scale);
+
 	if (bw->parent)
 		bw = bw->parent;
+
 	browser_window_recalculate_frameset(bw);
 }
 
 void browser_window_set_scale_internal(struct browser_window *bw, float scale)
 {
 	int i;
-	struct content *c;
+	hlcache_handle *c;
 
 	if (fabs(bw->scale-scale) < 0.0001)
 		return;
+
 	bw->scale = scale;
 	c = bw->current_content;
-	if (c) {
-	  	if (!content_can_reformat(c)) {
+
+	if (c != NULL) {
+	  	if (content_can_reformat(c) == false) {
 			browser_window_update(bw, false);
 	  	} else {
 			bw->reformat_pending = true;
@@ -1189,14 +1177,14 @@ struct browser_window *browser_window_find_target(struct browser_window *bw,
 {
 	struct browser_window *bw_target;
 	struct browser_window *top;
-	struct content *c;
+	hlcache_handle *c;
 	int rdepth;
 
 	/* use the base target if we don't have one */
 	c = bw->current_content;
-	if (!target && c && c->data.html.base_target)
-		target = c->data.html.base_target;
-	if (!target)
+	if (target == NULL && c != NULL && content_get_type(c) == CONTENT_HTML)
+		target = html_get_base_target(c);
+	if (target == NULL)
 		target = TARGET_SELF;
 
 	/* allow the simple case of target="_blank" to be ignored if requested
@@ -1348,35 +1336,57 @@ void browser_window_find_target_internal(struct browser_window *bw,
  * Callback for fetch for download window fetches.
  */
 
-void download_window_callback(fetch_msg msg, void *p, const void *data,
-		unsigned long size, fetch_error_code errorcode)
+nserror download_window_callback(llcache_handle *handle,
+		const llcache_event *event, void *pw)
 {
-	struct gui_download_window *download_window = p;
+	struct gui_download_window *download_window = pw;
 
-	switch (msg) {
-		case FETCH_PROGRESS:
-			break;
-		case FETCH_DATA:
-			gui_download_window_data(download_window, data, size);
-			break;
+	switch (event->type) {
+	case LLCACHE_EVENT_HAD_HEADERS:
+		assert(download_window == NULL);
 
-		case FETCH_FINISHED:
-			gui_download_window_done(download_window);
-			break;
+		/** \todo Ensure parameters are correct here */
+		download_window = gui_download_window_create(
+				llcache_handle_get_url(handle),
+				llcache_handle_get_header(handle, 
+						"Content-Type"),
+				NULL, 0, NULL);
+		if (download_window == NULL)
+			return NSERROR_NOMEM;
 
-		case FETCH_ERROR:
-			gui_download_window_error(download_window, data);
-			break;
+		llcache_handle_change_callback(handle, 
+				download_window_callback, download_window);
+		break;
 
-		case FETCH_TYPE:
-		case FETCH_NOTMODIFIED:
-		case FETCH_AUTH:
-		case FETCH_CERT_ERR:
-		default:
-			/* not possible */
-			assert(0);
-			break;
+	case LLCACHE_EVENT_HAD_DATA:
+		assert(download_window != NULL);
+
+		/** \todo Lose ugly cast */
+		gui_download_window_data(download_window,
+				(char *) event->data.data.buf,
+				event->data.data.len);
+
+		break;
+
+	case LLCACHE_EVENT_DONE:
+		assert(download_window != NULL);
+
+		gui_download_window_done(download_window);
+
+		break;
+
+	case LLCACHE_EVENT_ERROR:
+		if (download_window != NULL)
+			gui_download_window_error(download_window,
+					event->data.msg);
+
+		break;
+
+	case LLCACHE_EVENT_PROGRESS:
+		break;
 	}
+
+	return NSERROR_OK;
 }
 
 
@@ -1392,12 +1402,12 @@ void download_window_callback(fetch_msg msg, void *p, const void *data,
 void browser_window_mouse_click(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y)
 {
-	struct content *c = bw->current_content;
+	hlcache_handle *c = bw->current_content;
 
 	if (!c)
 		return;
 
-	switch (c->type) {
+	switch (content_get_type(c)) {
 	case CONTENT_HTML:
 		browser_window_mouse_action_html(bw, mouse, x, y);
 		break;
@@ -1457,12 +1467,12 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 	struct box *url_box = 0;
 	struct box *gadget_box = 0;
 	struct box *text_box = 0;
-	struct content *c = bw->current_content;
+	hlcache_handle *c = bw->current_content;
 	struct box *box;
-	struct content *content = c;
-	struct content *gadget_content = c;
+	hlcache_handle *content = c;
+	hlcache_handle *gadget_content = c;
 	struct form_control *gadget = 0;
-	struct content *object = NULL;
+	hlcache_handle *object = NULL;
 	struct box *next_box;
 	struct box *drag_candidate = NULL;
 	struct scroll *scroll = NULL;
@@ -1522,7 +1532,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 	/* search the box tree for a link, imagemap, form control, or
 	 * box with scrollbars */
 
-	box = c->data.html.layout;
+	box = html_get_box_tree(c);
 
 	/* Consider the margins of the html page now */
 	box_x = box->margin[LEFT];
@@ -1715,7 +1725,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 					bw->drag_type = DRAGGING_SELECTION;
 					status = messages_get("Selecting");
 				} else
-					status = c->status_message;
+					status = content_get_status_message(c);
 			}
 			else if (mouse & BROWSER_MOUSE_PRESS_1)
 				selection_clear(bw->sel, true);
@@ -1787,7 +1797,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 					bw->window);
 
 		/* \todo should have a drag-saving object msg */
-		status = c->status_message;
+		status = content_get_status_message(c);
 
 	} else if (url) {
 		if (title) {
@@ -1803,17 +1813,10 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 				mouse & BROWSER_MOUSE_MOD_1) {
 			/* force download of link */
 			browser_window_go_post(bw, url, 0, 0, false,
-					c->url, true, true, 0);
+					content_get_url(c), true, true, 0);
 		} else if (mouse & BROWSER_MOUSE_CLICK_2 &&
 				mouse & BROWSER_MOUSE_MOD_1) {
-			free(browser_window_href_content.url);
-			browser_window_href_content.url = strdup(url);
-			if (!browser_window_href_content.url)
-				warn_user("NoMemory", 0);
-			else
-				gui_window_save_as_link(bw->window,
-					&browser_window_href_content);
-
+				gui_window_save_link(bw->window, url, title);
 		} else if (mouse & (BROWSER_MOUSE_CLICK_1 |
 				BROWSER_MOUSE_CLICK_2))
 			action = ACTION_GO;
@@ -1834,11 +1837,13 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 		/* if clicking in the main page, remove the selection from any
 		 * text areas */
 		if (!done) {
+			struct box *layout = html_get_box_tree(c);
+
 			if (text_box &&
 				(mouse & (BROWSER_MOUSE_CLICK_1 |
 						BROWSER_MOUSE_CLICK_2)) &&
-				selection_root(bw->sel) != c->data.html.layout)
-				selection_init(bw->sel, c->data.html.layout);
+					selection_root(bw->sel) != layout)
+				selection_init(bw->sel, layout);
 
 			if (text_box) {
 				int pixel_offset;
@@ -1866,7 +1871,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 						status =
 							messages_get("Selecting");
 					} else
-						status = c->status_message;
+						status = content_get_status_message(c);
 
 					done = true;
 				}
@@ -1879,9 +1884,10 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 			if (title)
 				status = title;
 			else if (bw->loading_content)
-				status = bw->loading_content->status_message;
+				status = content_get_status_message(
+						bw->loading_content);
 			else
-				status = c->status_message;
+				status = content_get_status_message(c);
 
 			if (mouse & BROWSER_MOUSE_DRAG_1) {
 				if (mouse & BROWSER_MOUSE_MOD_2) {
@@ -1944,7 +1950,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 		break;
 	case ACTION_GO:
 		browser_window_go(browser_window_find_target(bw, target, mouse),
-				url, c->url, true);
+				url, content_get_url(c), true);
 		break;
 	case ACTION_NONE:
 		break;
@@ -1970,7 +1976,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 void browser_window_mouse_action_text(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y)
 {
-	struct content *c = bw->current_content;
+	hlcache_handle *c = bw->current_content;
 	gui_pointer_shape pointer = GUI_POINTER_DEFAULT;
 	const char *status = 0;
 	size_t idx;
@@ -1988,13 +1994,14 @@ void browser_window_mouse_action_text(struct browser_window *bw,
 			status = messages_get("Selecting");
 		}
 		else
-			status = c->status_message;
+			status = content_get_status_message(c);
 	}
 	else {
 		if (bw->loading_content)
-			status = bw->loading_content->status_message;
+			status = content_get_status_message(
+					bw->loading_content);
 		else
-			status = c->status_message;
+			status = content_get_status_message(c);
 
 		if (mouse & (BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_2)) {
 			browser_window_page_drag_start(bw, x, y);
@@ -2021,7 +2028,7 @@ void browser_window_mouse_action_text(struct browser_window *bw,
 void browser_window_mouse_track(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y)
 {
-	struct content *c = bw->current_content;
+	hlcache_handle *c = bw->current_content;
 
 	if (c == NULL && bw->drag_type != DRAGGING_FRAME)
 		return;
@@ -2051,7 +2058,7 @@ void browser_window_mouse_track(struct browser_window *bw,
 	} else {
 		assert(c != NULL);
 
-		switch (c->type) {
+		switch (content_get_type(c)) {
 		case CONTENT_HTML:
 			browser_window_mouse_track_html(bw, mouse, x, y);
 			break;
@@ -2129,7 +2136,7 @@ void browser_window_mouse_track_text(struct browser_window *bw,
 	switch (bw->drag_type) {
 
 		case DRAGGING_SELECTION: {
-			struct content *c = bw->current_content;
+			hlcache_handle *c = bw->current_content;
 			int dir = -1;
 			size_t idx;
 
@@ -2198,7 +2205,7 @@ void browser_window_mouse_drag_end(struct browser_window *bw,
 	
 	switch (bw->drag_type) {
 		case DRAGGING_SELECTION: {
-			struct content *c = bw->current_content;
+			hlcache_handle *c = bw->current_content;
 			if (c) {
 				bool found = true;
 				int dir = -1;
@@ -2206,7 +2213,7 @@ void browser_window_mouse_drag_end(struct browser_window *bw,
 
 				if (selection_dragging_start(bw->sel)) dir = 1;
 
-				if (c->type == CONTENT_HTML) {
+				if (content_get_type(c) == CONTENT_HTML) {
 					int pixel_offset;
 					struct box *box;
 					int dx, dy;
@@ -2236,7 +2243,8 @@ void browser_window_mouse_drag_end(struct browser_window *bw,
 						found = false;
 				}
 				else {
-					assert(c->type == CONTENT_TEXTPLAIN);
+					assert(content_get_type(c) == 
+							CONTENT_TEXTPLAIN);
 					idx = textplain_offset_from_coords(c, x,
 							y, dir);
 				}
@@ -2263,7 +2271,7 @@ void browser_window_mouse_drag_end(struct browser_window *bw,
  * \param  radio    form control of type GADGET_RADIO
  */
 
-void browser_radio_set(struct content *content,
+void browser_radio_set(hlcache_handle *content,
 		struct form_control *radio)
 {
 	struct form_control *control;
@@ -2309,26 +2317,7 @@ void browser_radio_set(struct content *content,
 void browser_window_redraw_rect(struct browser_window *bw, int x, int y,
 		int width, int height)
 {
-	struct content *c = bw->current_content;
-
-	if (c) {
-		union content_msg_data data;
-
-		data.redraw.x = x;
-		data.redraw.y = y;
-		data.redraw.width = width;
-		data.redraw.height = height;
-
-		data.redraw.full_redraw = true;
-
-		data.redraw.object = c;
-		data.redraw.object_x = 0;
-		data.redraw.object_y = 0;
-		data.redraw.object_width = c->width;
-		data.redraw.object_height = c->height;
-
-		content_broadcast(c, CONTENT_MSG_REDRAW, data);
-	}
+	content_request_redraw(bw->current_content, x, y, width, height);
 }
 
 
@@ -2339,29 +2328,15 @@ void browser_window_redraw_rect(struct browser_window *bw, int x, int y,
  * \param  box  box to redraw
  */
 
-void browser_redraw_box(struct content *c, struct box *box)
+void browser_redraw_box(hlcache_handle *c, struct box *box)
 {
 	int x, y;
-	union content_msg_data data;
 
 	box_coords(box, &x, &y);
 
-	data.redraw.x = x;
-	data.redraw.y = y;
-	data.redraw.width = box->padding[LEFT] + box->width +
-			box->padding[RIGHT];
-	data.redraw.height = box->padding[TOP] + box->height +
-			box->padding[BOTTOM];
-
-	data.redraw.full_redraw = true;
-
-	data.redraw.object = c;
-	data.redraw.object_x = 0;
-	data.redraw.object_y = 0;
-	data.redraw.object_width = c->width;
-	data.redraw.object_height = c->height;
-
-	content_broadcast(c, CONTENT_MSG_REDRAW, data);
+	content_request_redraw(c, x, y,
+			box->padding[LEFT] + box->width + box->padding[RIGHT],
+			box->padding[TOP] + box->height + box->padding[BOTTOM]);
 }
 
 
@@ -2441,7 +2416,8 @@ gui_pointer_shape get_pointer_shape(struct browser_window *bw, struct box *box,
 	assert(bw);
 
 	loading = (bw->loading_content != NULL || (bw->current_content &&
-			bw->current_content->status == CONTENT_STATUS_READY));
+			content_get_status(bw->current_content) == 
+			CONTENT_STATUS_READY));
 
 	if (wallclock() - bw->last_action < 100 && loading)
 		/* If less than 1 second since last link followed, show
@@ -2540,14 +2516,15 @@ gui_pointer_shape get_pointer_shape(struct browser_window *bw, struct box *box,
  * Collect controls and submit a form.
  */
 
-void browser_form_submit(struct browser_window *bw, struct browser_window *target,
+void browser_form_submit(struct browser_window *bw, 
+		struct browser_window *target,
 		struct form *form, struct form_control *submit_button)
 {
 	char *data = 0, *url = 0;
-	struct form_successful_control *success;
+	struct fetch_multipart_data *success;
 
 	assert(form);
-	assert(bw->current_content->type == CONTENT_HTML);
+	assert(content_get_type(bw->current_content) == CONTENT_HTML);
 
 	if (!form_successful_controls(form, submit_button, &success)) {
 		warn_user("NoMemory", 0);
@@ -2558,14 +2535,14 @@ void browser_form_submit(struct browser_window *bw, struct browser_window *targe
 		case method_GET:
 			data = form_url_encode(form, success);
 			if (!data) {
-				form_free_successful(success);
+				fetch_multipart_data_destroy(success);
 				warn_user("NoMemory", 0);
 				return;
 			}
 			url = calloc(1, strlen(form->action) +
 					strlen(data) + 2);
 			if (!url) {
-				form_free_successful(success);
+				fetch_multipart_data_destroy(success);
 				free(data);
 				warn_user("NoMemory", 0);
 				return;
@@ -2577,25 +2554,27 @@ void browser_form_submit(struct browser_window *bw, struct browser_window *targe
 				sprintf(url, "%s?%s", form->action, data);
 			}
 			browser_window_go(target, url,
-					bw->current_content->url, true);
+					content_get_url(bw->current_content),
+					true);
 			break;
 
 		case method_POST_URLENC:
 			data = form_url_encode(form, success);
 			if (!data) {
-				form_free_successful(success);
+				fetch_multipart_data_destroy(success);
 				warn_user("NoMemory", 0);
 				return;
 			}
 			browser_window_go_post(target, form->action, data, 0,
-					true, bw->current_content->url,
+					true, 
+					content_get_url(bw->current_content),
 					false, true, 0);
 			break;
 
 		case method_POST_MULTIPART:
 			browser_window_go_post(target, form->action, 0,
 					success, true,
-					bw->current_content->url,
+					content_get_url(bw->current_content),
 					false, true, 0);
 			break;
 
@@ -2603,7 +2582,7 @@ void browser_form_submit(struct browser_window *bw, struct browser_window *targe
 			assert(0);
 	}
 
-	form_free_successful(success);
+	fetch_multipart_data_destroy(success);
 	free(data);
 	free(url);
 }
@@ -2864,11 +2843,11 @@ bool browser_window_nearest_text_box(struct box *box, int bx, int by,
 struct box *browser_window_pick_text_box(struct browser_window *bw,
 		int x, int y, int dir, int *dx, int *dy)
 {
-	struct content *c = bw->current_content;
+	hlcache_handle *c = bw->current_content;
 	struct box *text_box = NULL;
 
-	if (c && c->type == CONTENT_HTML) {
-		struct box *box = c->data.html.layout;
+	if (c && content_get_type(c) == CONTENT_HTML) {
+		struct box *box = html_get_box_tree(c);
 		int nr_xd, nr_yd;
 		int bx = box->margin[LEFT];
 		int by = box->margin[TOP];
@@ -3013,5 +2992,6 @@ bool browser_window_stop_available(struct browser_window *bw)
 {
 	return (bw && (bw->loading_content ||
 			(bw->current_content &&
-			(bw->current_content->status != CONTENT_STATUS_DONE))));
+			(content_get_status(bw->current_content) != 
+			CONTENT_STATUS_DONE))));
 }

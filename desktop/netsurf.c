@@ -28,10 +28,13 @@
 #include <libxml/globals.h>
 #include <libxml/xmlversion.h>
 
+#include <libwapcaplet/libwapcaplet.h>
+
 #include "utils/config.h"
 #include "utils/utsname.h"
 #include "content/fetch.h"
 #include "content/fetchcache.h"
+#include "content/llcache.h"
 #include "content/urldb.h"
 #include "desktop/netsurf.h"
 #include "desktop/browser.h"
@@ -44,38 +47,10 @@
 bool netsurf_quit = false;
 bool verbose_log = false;
 
-static void netsurf_poll(void);
-static void lib_init(void);
-
-
-/**
- * Gui NetSurf main().
- */
-
-int netsurf_main(int argc, char** argv)
+static void *netsurf_lwc_alloc(void *ptr, size_t len, void *pw)
 {
-	netsurf_init(argc, argv);
-
-	netsurf_main_loop();
-
-	netsurf_exit();
-
-	return EXIT_SUCCESS;
+	return realloc(ptr, len);
 }
-
-
-/**
- * Gui NetSurf main loop.
- */
-
-int netsurf_main_loop(void)
-{
-	while (!netsurf_quit)
-		netsurf_poll();
-
-	return 0;
-}
-
 
 /**
  * Initialise components used by gui NetSurf.
@@ -126,35 +101,30 @@ void netsurf_init(int argc, char** argv)
 				utsname.nodename, utsname.release,
 				utsname.version, utsname.machine));
 
-	lib_init();
+	lwc_initialise(netsurf_lwc_alloc, NULL, 0);
 	url_init();
 	gui_init(argc, argv);
 	setlocale(LC_ALL, "C");
 	fetch_init();
-	fetchcache_init();
+	/** \todo The frontend needs to provide the llcache_query_handler */
+	llcache_initialise(NULL, NULL);
 	gui_init2(argc, argv);
 }
 
+
 /**
- * Poll components which require it.
+ * Gui NetSurf main loop.
  */
-
-void netsurf_poll(void)
+int netsurf_main_loop(void)
 {
-	static unsigned int last_clean = 0;
-	unsigned int current_time = wallclock();
-
-	/* avoid calling content_clean() more often than once every 5
-	 * seconds.
-	 */
-	if (last_clean + 500 < current_time) {
-		last_clean = current_time;
-		content_clean();
+	while (!netsurf_quit) {
+		gui_poll(fetch_active);
+		fetch_poll();
+		llcache_poll();
 	}
-	gui_poll(fetch_active);
-	fetch_poll();
-}
 
+	return 0;
+}
 
 /**
  * Clean up components used by gui NetSurf.
@@ -164,8 +134,6 @@ void netsurf_exit(void)
 {
 	LOG(("Closing GUI"));
 	gui_quit();
-	LOG(("Closing content"));
-	content_quit();
 	LOG(("Closing fetches"));
 	fetch_quit();
 	LOG(("Closing utf8"));
@@ -176,18 +144,3 @@ void netsurf_exit(void)
 }
 
 
-/**
- * Initialises the libraries used in NetSurf.
- */
-void lib_init(void)
-{
-	LOG(("xmlParserVersion %s, LIBXML_VERSION_STRING %s",
-			xmlParserVersion, LIBXML_VERSION_STRING));
-
-	/* Using encoding "X-SJIS" (unknown to libxmp2/iconv) instead as
-	 * "Shift-JIS" is rather popular.
-	 */
-	if (xmlAddEncodingAlias(xmlGetCharEncodingName(
-			XML_CHAR_ENCODING_SHIFT_JIS), "X-SJIS") != 0)
-		die("Failed to add encoding alias");
-}

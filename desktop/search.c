@@ -26,6 +26,7 @@
 #include <ctype.h>
 #include <string.h>
 #include "content/content.h"
+#include "content/hlcache.h"
 #include "desktop/browser.h"
 #include "desktop/gui.h"
 #include "desktop/options.h"
@@ -33,6 +34,7 @@
 #include "desktop/selection.h"
 #include "render/box.h"
 #include "render/html.h"
+#include "render/textplain.h"
 #include "utils/config.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -60,7 +62,7 @@ struct list_entry {
 
 struct search_context {
 	struct browser_window 		*bw;
-	struct content 			*content;
+	hlcache_handle 			*content;
 	char 				*string;
 	bool 				prev_case_sens;
 	bool 				newsearch;
@@ -80,7 +82,7 @@ static bool find_occurrences_html(const char *pattern, int p_len,
 		struct box *cur, bool case_sens,
 		struct search_context *context);
 static bool find_occurrences_text(const char *pattern, int p_len,
-		struct content *c, bool case_sens,
+		hlcache_handle *c, bool case_sens,
 		struct search_context *context);
 static struct list_entry *add_entry(unsigned start_idx, unsigned end_idx,
 		struct search_context *context);
@@ -236,7 +238,7 @@ void search_text(const char *string, int string_len,
 		struct search_context *context, search_flags_t flags)
 {
 	struct rect bounds;
-	struct content *c;
+	hlcache_handle *c;
 	struct box *box;
 	bool case_sensitive, forwards, showall;
 	
@@ -250,11 +252,11 @@ void search_text(const char *string, int string_len,
 	c = context->bw->current_content;
 
 	/* only handle html contents */
-	if ((!c) || (c->type != CONTENT_HTML &&
-			c->type != CONTENT_TEXTPLAIN))
+	if ((!c) || (content_get_type(c) != CONTENT_HTML &&
+			content_get_type(c) != CONTENT_TEXTPLAIN))
 		return;
 
-	box = c->data.html.layout;
+	box = html_get_box_tree(c);
 
 	if (!box)
 		return;
@@ -282,11 +284,11 @@ void search_text(const char *string, int string_len,
 				(context->callbacks->hourglass != NULL))
 			context->callbacks->hourglass(true, context->p);
 
-		if (c->type == CONTENT_HTML)
+		if (content_get_type(c) == CONTENT_HTML)
 			res = find_occurrences_html(string, string_len,
 					box, case_sensitive, context);
 		else {
-			assert(c->type == CONTENT_TEXTPLAIN);
+			assert(content_get_type(c) == CONTENT_TEXTPLAIN);
 			res = find_occurrences_text(string, string_len,
 					c, case_sensitive, context);
 		}
@@ -342,7 +344,7 @@ void search_text(const char *string, int string_len,
 	if (context->current == NULL)
 		return;
 
-	switch (c->type) {
+	switch (content_get_type(c)) {
 		case CONTENT_HTML:
 			/* get box position and jump to it */
 			box_coords(context->current->start_box,
@@ -356,7 +358,7 @@ void search_text(const char *string, int string_len,
 			break;
 
 		default:
-			assert(c->type == CONTENT_TEXTPLAIN);
+			assert(content_get_type(c) == CONTENT_TEXTPLAIN);
 			textplain_coords_from_range(c,
 					context->current->start_idx,
 					context->current->end_idx, &bounds);
@@ -551,7 +553,7 @@ bool find_occurrences_html(const char *pattern, int p_len, struct box *cur,
  */
 
 bool find_occurrences_text(const char *pattern, int p_len,
-		struct content *c, bool case_sens,
+		hlcache_handle *c, bool case_sens,
 		struct search_context *context)
 {
 	int nlines = textplain_line_count(c);
@@ -642,15 +644,15 @@ void search_show_all(bool all, struct search_context *context)
 		if (add && !a->sel) {
 			a->sel = selection_create(context->bw);
 			if (a->sel) {
-				struct content *c = context->bw->
+				hlcache_handle *c = context->bw->
 						current_content;
-				switch (c->type) {
+				switch (content_get_type(c)) {
 					case CONTENT_HTML:
 						selection_init(a->sel,
-							c->data.html.layout);
+							html_get_box_tree(c));
 						break;
 					default:
-						assert(c->type ==
+						assert(content_get_type(c) ==
 							CONTENT_TEXTPLAIN);
 						selection_init(a->sel, NULL);
 						break;

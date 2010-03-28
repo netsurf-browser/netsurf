@@ -41,7 +41,7 @@
 #include <math.h>
 #include "css/css.h"
 #include "css/utils.h"
-#include "content/content.h"
+#include "content/content_protected.h"
 #include "desktop/gui.h"
 #include "desktop/options.h"
 #include "desktop/scroll.h"
@@ -256,12 +256,14 @@ bool layout_block_context(struct box *block, int viewport_height,
 		if (!layout_block_object(block))
 			return false;
 		if (block->height == AUTO) {
-			if (block->object->width)
-				block->height = block->object->height *
-						(float) block->width /
-						block->object->width;
+			if (content_get_width(block->object))
+				block->height = 
+					content_get_height(block->object) *
+					(float) block->width /
+					content_get_width(block->object);
 			else
-				block->height = block->object->height;
+				block->height = 
+					content_get_height(block->object);
 		}
 		return true;
 	}
@@ -691,13 +693,13 @@ void layout_minmax_block(struct box *block,
 	}
 
 	if (block->object) {
-		if (block->object->type == CONTENT_HTML) {
-			layout_minmax_block(block->object->data.html.layout,
+		if (content_get_type(block->object) == CONTENT_HTML) {
+			layout_minmax_block(html_get_box_tree(block->object),
 					font_func);
-			min = block->object->data.html.layout->min_width;
-			max = block->object->data.html.layout->max_width;
+			min = html_get_box_tree(block->object)->min_width;
+			max = html_get_box_tree(block->object)->max_width;
 		} else {
-			min = max = block->object->width;
+			min = max = content_get_width(block->object);
 		}
 	} else {
 		/* recurse through children */
@@ -795,9 +797,9 @@ bool layout_block_object(struct box *block)
 	LOG(("block %p, object %s, width %i", block, block->object->url,
 			block->width));
 
-	if (block->object->type == CONTENT_HTML) {
+	if (content_get_type(block->object) == CONTENT_HTML) {
 		content_reformat(block->object, block->width, 1);
-		block->height = block->object->height;
+		block->height = content_get_height(block->object);
 	} else {
 		/* this case handled already in
 		 * layout_block_find_dimensions() */
@@ -837,25 +839,25 @@ void layout_block_find_dimensions(int available_width, int viewport_height,
 			&width, &height, &max_width, &min_width,
 			margin, padding, border);
 
-	if (box->object && box->object->type != CONTENT_HTML) {
+	if (box->object && content_get_type(box->object) != CONTENT_HTML) {
 		/* block-level replaced element, see 10.3.4 and 10.6.2 */
 		if (width == AUTO && height == AUTO) {
-			width = box->object->width;
-			height = box->object->height;
+			width = content_get_width(box->object);
+			height = content_get_height(box->object);
 		} else if (width == AUTO) {
-			if (box->object->height)
-				width = box->object->width *
+			if (content_get_height(box->object))
+				width = content_get_width(box->object) *
 						(float) height /
-						box->object->height;
+						content_get_height(box->object);
 			else
-				width = box->object->width;
+				width = content_get_width(box->object);
 		} else if (height == AUTO) {
-			if (box->object->width)
-				height = box->object->height *
+			if (content_get_width(box->object))
+				height = content_get_height(box->object) *
 						(float) width /
-						box->object->width;
+						content_get_width(box->object);
 			else
-				height = box->object->height;
+				height = content_get_height(box->object);
 		}
 	}
 
@@ -1168,18 +1170,20 @@ void layout_float_find_dimensions(int available_width,
 	padding[RIGHT] += scrollbar_width;
 	padding[BOTTOM] += scrollbar_width;
 
-	if (box->object && box->object->type != CONTENT_HTML) {
+	if (box->object && content_get_type(box->object) != CONTENT_HTML) {
 		/* Floating replaced element, with intrinsic width or height.
 		 * See 10.3.6 and 10.6.2 */
 		if (width == AUTO && height == AUTO) {
-			width = box->object->width;
-			height = box->object->height;
+			width = content_get_width(box->object);
+			height = content_get_height(box->object);
 		} else if (width == AUTO)
-			width = box->object->width * (float) height /
-					box->object->height;
+			width = content_get_width(box->object) * 
+					(float) height /
+					content_get_height(box->object);
 		else if (height == AUTO)
-			height = box->object->height * (float) width /
-					box->object->width;
+			height = content_get_height(box->object) * 
+					(float) width /
+					content_get_width(box->object);
 	} else if (box->gadget && (box->gadget->type == GADGET_TEXTBOX ||
 			box->gadget->type == GADGET_PASSWORD ||
 			box->gadget->type == GADGET_FILE ||
@@ -2079,22 +2083,25 @@ bool layout_line(struct box *first, int *width, int *y,
 
 		if (b->object) {
 			if (b->width == AUTO && b->height == AUTO) {
-				b->width = b->object->width;
-				b->height = b->object->height;
+				b->width = content_get_width(b->object);
+				b->height = content_get_height(b->object);
 			} else if (b->width == AUTO) {
-				if (b->object->height)
-					b->width = b->object->width *
-							(float) b->height /
-							b->object->height;
+				if (content_get_height(b->object))
+					b->width = 
+						content_get_width(b->object) *
+						(float) b->height /
+						content_get_height(b->object);
 				else
-					b->width = b->object->width;
+					b->width = content_get_width(b->object);
 			} else if (b->height == AUTO) {
-				if (b->object->width)
-					b->height = b->object->height *
-							(float) b->width /
-							b->object->width;
+				if (content_get_width(b->object))
+					b->height = 
+						content_get_height(b->object) *
+						(float) b->width /
+						content_get_width(b->object);
 				else
-					b->height = b->object->height;
+					b->height = 
+						content_get_height(b->object);
 			}
 		} else {
 			/* form control with no object */
@@ -2106,14 +2113,15 @@ bool layout_line(struct box *first, int *width, int *y,
 						CSS_UNIT_EM, b->style));
 		}
 
-		if (b->object && b->object->type == CONTENT_HTML &&
-				 b->width != b->object->available_width) {
+		if (b->object && content_get_type(b->object) == CONTENT_HTML &&
+				b->width != 
+				content_get_available_width(b->object)) {
 			htype = css_computed_height(b->style, &value, &unit);
 
 			content_reformat(b->object, b->width, b->height);
 
 			if (htype == CSS_HEIGHT_AUTO)
-				b->height = b->object->height;
+				b->height = content_get_height(b->object);
 		}
 
 		if (height < b->height)
@@ -2745,14 +2753,14 @@ struct box *layout_minmax_line(struct box *first,
 
 		if (b->object) {
 			if (width == AUTO && height == AUTO) {
-				width = b->object->width;
+				width = content_get_width(b->object);
 			} else if (width == AUTO) {
-				if (b->object->height)
-					width = b->object->width *
-							(float) height /
-							b->object->height;
+				if (content_get_height(b->object))
+					width = content_get_width(b->object) *
+						(float) height /
+						content_get_height(b->object);
 				else
-					width = b->object->width;
+					width = content_get_width(b->object);
 			}
 			fixed = frac = 0;
 			calculate_mbp_width(b->style, LEFT, true, true, true,
@@ -3709,9 +3717,11 @@ void layout_lists(struct box *box,
 		if (child->list_marker) {
 			marker = child->list_marker;
 			if (marker->object) {
-				marker->width = marker->object->width;
+				marker->width = 
+					content_get_width(marker->object);
 				marker->x = -marker->width;
-				marker->height = marker->object->height;
+				marker->height = 
+					content_get_height(marker->object);
 				marker->y = (line_height(marker->style) -
 						marker->height) / 2;
 			} else if (marker->text) {

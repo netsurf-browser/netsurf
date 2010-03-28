@@ -37,7 +37,7 @@
 #include <stdlib.h>
 #include <libnsgif.h>
 #include "utils/config.h"
-#include "content/content.h"
+#include "content/content_protected.h"
 #include "desktop/browser.h"
 #include "desktop/options.h"
 #include "desktop/plotters.h"
@@ -64,8 +64,7 @@ gif_bitmap_callback_vt gif_bitmap_callbacks = {
 };
 
 
-bool nsgif_create(struct content *c, struct content *parent,
-		const char *params[])
+bool nsgif_create(struct content *c, const struct http_parameter *params)
 {
 	union content_msg_data msg_data;
 	/* Initialise our data structure */
@@ -85,26 +84,28 @@ bool nsgif_convert(struct content *c, int iwidth, int iheight)
 	int res;
 	struct gif_animation *gif;
 	union content_msg_data msg_data;
+	const char *data;
+	unsigned long size;
 
 	/* Get the animation */
 	gif = c->data.gif.gif;
 
+	data = content__get_source_data(c, &size);
+
 	/* Initialise the GIF */
 	do {
-		res = gif_initialise(gif, c->source_size,
-				(unsigned char *)c->source_data);
-		if (res != GIF_OK && res != GIF_WORKING && res != GIF_INSUFFICIENT_FRAME_DATA) {
-			switch (res)
-			{
-				case GIF_FRAME_DATA_ERROR:
-				case GIF_INSUFFICIENT_DATA:
-				case GIF_DATA_ERROR:
-					msg_data.error = messages_get("BadGIF");
-					break;
-				case GIF_INSUFFICIENT_MEMORY:
-					msg_data.error = messages_get(
-							"NoMemory");
-					break;
+		res = gif_initialise(gif, size, (unsigned char *) data);
+		if (res != GIF_OK && res != GIF_WORKING && 
+				res != GIF_INSUFFICIENT_FRAME_DATA) {
+			switch (res) {
+			case GIF_FRAME_DATA_ERROR:
+			case GIF_INSUFFICIENT_DATA:
+			case GIF_DATA_ERROR:
+				msg_data.error = messages_get("BadGIF");
+				break;
+			case GIF_INSUFFICIENT_MEMORY:
+				msg_data.error = messages_get("NoMemory");
+				break;
 			}
 			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 			return false;
@@ -125,7 +126,7 @@ bool nsgif_convert(struct content *c, int iwidth, int iheight)
 	c->title = malloc(100);
 	if (c->title) {
 		snprintf(c->title, 100, messages_get("GIFTitle"), c->width,
-				c->height, c->source_size);
+				c->height, size);
 	}
 	c->size += (gif->width * gif->height * 4) + 16 + 44 + 100;
 

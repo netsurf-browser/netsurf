@@ -21,7 +21,7 @@
 
 #include "css/css.h"
 
-css_error nscss_resolve_url(void *pw, lwc_context *ctx,
-		const char *base, lwc_string *rel, lwc_string **abs);
+css_error nscss_resolve_url(void *pw, const char *base, 
+		lwc_string *rel, lwc_string **abs);
 
 #endif

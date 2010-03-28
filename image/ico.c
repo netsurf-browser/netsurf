@@ -29,7 +29,8 @@
 #include <stdlib.h>
 #include <libnsbmp.h>
 #include "utils/config.h"
-#include "content/content.h"
+#include "content/content_protected.h"
+#include "content/hlcache.h"
 #include "desktop/plotters.h"
 #include "image/bitmap.h"
 #include "image/ico.h"
@@ -37,8 +38,7 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 
-bool nsico_create(struct content *c, struct content *parent,
-		const char *params[])
+bool nsico_create(struct content *c, const struct http_parameter *params)
 {
 	union content_msg_data msg_data;
 	c->data.ico.ico = calloc(sizeof(ico_collection), 1);
@@ -58,26 +58,29 @@ bool nsico_convert(struct content *c, int iwidth, int iheight)
 	bmp_result res;
 	ico_collection *ico;
 	union content_msg_data msg_data;
+	const char *data;
+	unsigned long size;
 
 	/* set the ico data */
 	ico = c->data.ico.ico;
 
+	data = content__get_source_data(c, &size);
+
 	/* analyse the ico */
-	res = ico_analyse(ico, c->source_size, (unsigned char *)
-			c->source_data);
+	res = ico_analyse(ico, size, (unsigned char *) data);
 
 	switch (res) {
-		case BMP_OK:
-			break;
-		case BMP_INSUFFICIENT_MEMORY:
-			msg_data.error = messages_get("NoMemory");
-			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-			return false;
-		case BMP_INSUFFICIENT_DATA:
-		case BMP_DATA_ERROR:
-			msg_data.error = messages_get("BadICO");
-			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-			return false;
+	case BMP_OK:
+		break;
+	case BMP_INSUFFICIENT_MEMORY:
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		return false;
+	case BMP_INSUFFICIENT_DATA:
+	case BMP_DATA_ERROR:
+		msg_data.error = messages_get("BadICO");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		return false;
 	}
 
 	/* Store our content width and description */
@@ -86,7 +89,7 @@ bool nsico_convert(struct content *c, int iwidth, int iheight)
 	c->title = malloc(100);
 	if (c->title)
 		snprintf(c->title, 100, messages_get("ICOTitle"), c->width,
-				c->height, c->source_size);
+				c->height, size);
 	c->size += (ico->width * ico->height * 4) + 16 + 44 + 100;
 
 	/* exit as a success */
@@ -117,14 +120,22 @@ bool nsico_redraw(struct content *c, int x, int y,
 
 /** sets the bitmap for an ico according to the dimensions */
 
-bool nsico_set_bitmap_from_size(struct content *c, int width, int height)
+bool nsico_set_bitmap_from_size(hlcache_handle *h, int width, int height)
 {
-	struct bmp_image *bmp = ico_find(c->data.ico.ico, width, height);
+	struct content *c = hlcache_handle_get_content(h);
+	struct bmp_image *bmp;
+
+	assert(c != NULL);
+
+	bmp = ico_find(c->data.ico.ico, width, height);
 	if (bmp == NULL)
 		return false;
+
 	if ((bmp->decoded == false) && (bmp_decode(bmp) != BMP_OK))
 		return false;
+
 	c->bitmap = bmp->bitmap;
+
 	return true;
 }
 

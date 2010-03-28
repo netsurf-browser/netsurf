@@ -54,7 +54,15 @@ typedef enum {
 
 struct content;
 struct fetch;
-struct form_successful_control;
+
+/** Fetch POST multipart data */
+struct fetch_multipart_data {
+	bool file;			/**< Item is a file */
+	char *name;			/**< Name of item */
+	char *value;			/**< Item value */
+
+	struct fetch_multipart_data *next;	/**< Next in linked list */
+};
 
 struct ssl_cert_info {
 	long version;		/**< Certificate version */
@@ -77,7 +85,7 @@ void fetch_init(void);
 struct fetch * fetch_start(const char *url, const char *referer,
 		fetch_callback callback,
 		void *p, bool only_2xx, const char *post_urlenc,
-		struct form_successful_control *post_multipart,
+		struct fetch_multipart_data *post_multipart,
 		bool verifiable, struct content *parent, 
 		char *headers[]);
 void fetch_abort(struct fetch *f);
@@ -94,12 +102,16 @@ const char *fetch_get_referer(struct fetch *fetch);
 struct content *fetch_get_parent(struct fetch *fetch);
 bool fetch_get_verifiable(struct fetch *fetch);
 
+void fetch_multipart_data_destroy(struct fetch_multipart_data *list);
+struct fetch_multipart_data *fetch_multipart_data_clone(
+		const struct fetch_multipart_data *list);
+
 /* API for fetchers themselves */
 
 typedef bool (*fetcher_initialise)(const char *);
 typedef void* (*fetcher_setup_fetch)(struct fetch *, const char *,
                                      bool, const char *,
-                                     struct form_successful_control *,
+                                     struct fetch_multipart_data *,
                                      const char **);
 typedef bool (*fetcher_start_fetch)(void *);
 typedef void (*fetcher_abort_fetch)(void *);

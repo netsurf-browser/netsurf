@@ -31,7 +31,7 @@
 #include "utils/config.h"
 #include "desktop/plotters.h"
 #include "image/bitmap.h"
-#include "content/content.h"
+#include "content/content_protected.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
@@ -61,8 +61,13 @@ bool nssprite_convert(struct content *c, int width, int height)
 	union content_msg_data msg_data;
 
 	struct rosprite_mem_context* ctx;
-	ERRCHK(rosprite_create_mem_context((uint8_t *) c->source_data,
-			c->source_size, &ctx));
+
+	const char *data;
+	unsigned long size;
+
+	data = content__get_source_data(c, &size);
+
+	ERRCHK(rosprite_create_mem_context((uint8_t *) data, size, &ctx));
 
 	struct rosprite_area* sprite_area;
 	ERRCHK(rosprite_load(rosprite_mem_reader, ctx, &sprite_area));

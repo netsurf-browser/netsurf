@@ -424,7 +424,15 @@ static int32 bapp_thread(void *arg)
 int main(int argc, char** argv)
 {
 	setbuf(stderr, NULL);
-	return netsurf_main(argc, argv);
+
+	/* initialise netsurf */
+	netsurf_init(argc, argv);
+
+	netsurf_main_loop();
+
+	netsurf_exit();
+
+	return 0;
 }
 
 void gui_init(int argc, char** argv)
@@ -843,7 +851,8 @@ void gui_create_form_select_menu(struct browser_window *bw,
 #endif
 }
 
-void gui_window_save_as_link(struct gui_window *g, struct content *c)
+void 
+gui_window_save_link(struct gui_window *g, const char *url, const char *title)
 {
 }
 

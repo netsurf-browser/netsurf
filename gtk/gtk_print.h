@@ -26,9 +26,11 @@
 
 #include <gtk/gtk.h>
 
+struct hlcache_handle;
+
 extern cairo_t *gtk_print_current_cr;
 
-extern struct content *content_to_print;
+extern struct hlcache_handle *content_to_print;
 
 
 /*handlers for signals from the GTK print operation*/

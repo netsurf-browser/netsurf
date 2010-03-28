@@ -35,7 +35,7 @@
 #include <libxml/HTMLparser.h>
 #include <libxml/parserInternals.h>
 #include "utils/config.h"
-#include "content/content.h"
+#include "content/content_protected.h"
 #include "css/css.h"
 #include "css/utils.h"
 #include "css/select.h"
@@ -841,9 +841,9 @@ css_computed_style *box_get_style(struct content *c,
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "style"))) {
 		inline_style = nscss_create_inline_style(
 				(uint8_t *) s, strlen(s),
-				c->data.html.encoding, c->url, 
+				c->data.html.encoding, content__get_url(c), 
 				c->data.html.quirks != BINDING_QUIRKS_MODE_NONE,
-				c->data.html.dict, myrealloc, c);
+				myrealloc, c);
 
 		xmlFree(s);
 

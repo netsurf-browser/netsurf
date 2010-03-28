@@ -20,7 +20,8 @@
 #define _NETSURF_RENDER_FAVICON_H_
 
 #include <libxml/tree.h>
-#include "content/content.h"
+
+struct content;
 
 bool favicon_get_icon(struct content *c, xmlNode *html);
 
