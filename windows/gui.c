@@ -172,6 +172,10 @@ static void redraw(void)
 			continue;
 		}
 
+		if (bw->current_content == NULL) {
+			w = w->next;
+			continue;
+		}
 		current_hwnd = w->drawingarea;
 		w->scrolly += w->requestscrolly;
 		w->scrollx += w->requestscrollx;
