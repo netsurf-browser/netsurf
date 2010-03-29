@@ -986,7 +986,7 @@ nserror llcache_object_remove_from_list(llcache_object *object,
 		object->prev->next = object->next;
 
 	if (object->next != NULL)
-		object->next->prev = object->next;
+		object->next->prev = object->prev;
 
 	return NSERROR_OK;
 }
