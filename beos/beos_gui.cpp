@@ -420,6 +420,25 @@ static int32 bapp_thread(void *arg)
 	return 0;
 }
 
+static void gui_init2(int argc, char** argv)
+{
+	CALLED();
+	const char *addr = NETSURF_HOMEPAGE;
+
+	if (option_homepage_url != NULL && option_homepage_url[0] != '\0')
+		addr = option_homepage_url;
+
+	if (argc > 1) addr = argv[1];
+	if (gFirstRefsReceived) addr = NULL;
+	browser_window_create(addr, 0, 0, true, false);
+	if (gFirstRefsReceived) {
+		// resend the refs we got before having a window to send them to
+		be_app_messenger.SendMessage(gFirstRefsReceived);
+		delete gFirstRefsReceived;
+		gFirstRefsReceived = NULL;
+	}
+}
+
 /** Normal entry point from OS */
 int main(int argc, char** argv)
 {
@@ -428,12 +447,15 @@ int main(int argc, char** argv)
 	/* initialise netsurf */
 	netsurf_init(argc, argv);
 
+        gui_init2(argc, argv);
+
 	netsurf_main_loop();
 
 	netsurf_exit();
 
 	return 0;
 }
+
 
 void gui_init(int argc, char** argv)
 {
@@ -632,24 +654,6 @@ void gui_init(int argc, char** argv)
 }
 
 
-void gui_init2(int argc, char** argv)
-{
-	CALLED();
-	const char *addr = NETSURF_HOMEPAGE;
-
-	if (option_homepage_url != NULL && option_homepage_url[0] != '\0')
-		addr = option_homepage_url;
-
-	if (argc > 1) addr = argv[1];
-	if (gFirstRefsReceived) addr = NULL;
-	browser_window_create(addr, 0, 0, true, false);
-	if (gFirstRefsReceived) {
-		// resend the refs we got before having a window to send them to
-		be_app_messenger.SendMessage(gFirstRefsReceived);
-		delete gFirstRefsReceived;
-		gFirstRefsReceived = NULL;
-	}
-}
 
 
 void nsbeos_pipe_message(BMessage *message, BView *_this, struct gui_window *gui)

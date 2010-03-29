@@ -2413,7 +2413,7 @@ void gui_init(int argc, char** argv)
 
 }
 
-void gui_init2(int argc, char** argv)
+static void gui_init2(int argc, char** argv)
 {
 	struct browser_window *bw;
 	const char *addr = NETSURF_HOMEPAGE;
@@ -2480,6 +2480,8 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 
 	/* initialise netsurf */
 	netsurf_init(argc, argv);
+
+	gui_init2(argc, argv);
 
 	netsurf_main_loop();
 

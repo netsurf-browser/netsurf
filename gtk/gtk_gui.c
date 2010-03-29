@@ -114,24 +114,6 @@ static void nsgtk_PDF_no_pass(GtkButton *w, gpointer data);
 #define THROBBER_FRAMES 9
 
 
-/**
- * Main entry point from OS.
- */
-int main(int argc, char** argv)
-{
-	gtk_init(&argc, &argv);
-
-	setbuf(stderr, NULL);
-
-	/* initialise netsurf */
-	netsurf_init(argc, argv);
-
-	netsurf_main_loop();
-
-	netsurf_exit();
-
-	return 0;
-}
 
 
 /**
@@ -321,7 +303,7 @@ void nsgtk_init_glade(void)
  *
  * Opens the main browser window.
  */
-void gui_init2(int argc, char** argv)
+static void gui_init2(int argc, char** argv)
 {
 	struct browser_window *bw;
 	const char *addr = NETSURF_HOMEPAGE;
@@ -333,6 +315,27 @@ void gui_init2(int argc, char** argv)
 		addr = argv[1];
 
 	bw = browser_window_create(addr, 0, 0, true, false);
+}
+
+/**
+ * Main entry point from OS.
+ */
+int main(int argc, char** argv)
+{
+	gtk_init(&argc, &argv);
+
+	setbuf(stderr, NULL);
+
+	/* initialise netsurf */
+	netsurf_init(argc, argv);
+
+	gui_init2(argc, argv);
+
+	netsurf_main_loop();
+
+	netsurf_exit();
+
+	return 0;
 }
 
 

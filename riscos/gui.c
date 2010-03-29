@@ -275,20 +275,6 @@ static void *myrealloc(void *ptr, size_t len, void *pw)
 	return realloc(ptr, len);
 }
 
-/** Normal entry point from OS */
-int main(int argc, char** argv)
-{
-	setbuf(stderr, NULL);
-
-	/* initialise netsurf */
-	netsurf_init(argc, argv);
-
-	netsurf_main_loop();
-
-	netsurf_exit();
-
-	return 0;
-}
 
 /**
  * Initialise the gui (RISC OS specific part).
@@ -698,7 +684,7 @@ void ro_gui_check_resolvers(void)
  * Last-minute gui init, after all other modules have initialised.
  */
 
-void gui_init2(int argc, char** argv)
+static void gui_init2(int argc, char** argv)
 {
 	char *url = 0;
 	bool open_window = option_open_browser_at_startup;
@@ -769,6 +755,23 @@ void gui_init2(int argc, char** argv)
 			browser_window_create(url, NULL, 0, true, false);
 
 	free(url);
+}
+
+/** Normal entry point from OS */
+int main(int argc, char** argv)
+{
+	setbuf(stderr, NULL);
+
+	/* initialise netsurf */
+	netsurf_init(argc, argv);
+
+	gui_init2(argc, argv);
+
+	netsurf_main_loop();
+
+	netsurf_exit();
+
+	return 0;
 }
 
 

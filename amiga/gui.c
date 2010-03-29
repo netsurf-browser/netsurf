@@ -400,18 +400,6 @@ void ami_amiupdate(void)
 	/* end Amiupdate */
 }
 
-/** Normal entry point from OS */
-int main(int argc, char** argv)
-{
-	setbuf(stderr, NULL);
-
-	netsurf_init(argc, argv);
-	netsurf_main_loop();
-	netsurf_exit();
-
-	return 0;
-}
-
 void gui_init(int argc, char** argv)
 {
 	BPTR lock = 0;
@@ -546,7 +534,7 @@ void ami_openscreenfirst(void)
 	if(!browserglob.bm) ami_init_layers(&browserglob, 0, 0);
 }
 
-void gui_init2(int argc, char** argv)
+static void gui_init2(int argc, char** argv)
 {
 	struct browser_window *bw = NULL;
 	long rarray[] = {0,0};
@@ -691,6 +679,22 @@ void gui_init2(int argc, char** argv)
 
 	if(!bw && (option_startup_no_window == false))
 		bw = browser_window_create(option_homepage_url, 0, 0, true,false);
+}
+
+/** Normal entry point from OS */
+int main(int argc, char** argv)
+{
+	setbuf(stderr, NULL);
+
+	netsurf_init(argc, argv);
+
+	gui_init2(argc, argv);
+
+	netsurf_main_loop();
+
+	netsurf_exit();
+
+	return 0;
 }
 
 int ami_key_to_nskey(ULONG keycode, struct InputEvent *ie)

@@ -390,24 +390,6 @@ static bool process_cmdline(int argc, char** argv)
 	return true;
 }
 
-/** Entry point from OS.
- *
- * /param argc The number of arguments in the string vector. 
- * /param argv The argument string vector.
- * /return The return code to the OS
- */
-int main(int argc, char** argv)
-{
-	setbuf(stderr, NULL);
-
-	netsurf_init(argc, argv);
-
-	netsurf_main_loop();
-
-	netsurf_exit();
-
-	return 0;
-}
 
 void gui_init(int argc, char** argv)
 {
@@ -456,12 +438,33 @@ void gui_init(int argc, char** argv)
 
 }
 
-void gui_init2(int argc, char** argv)
+static void gui_init2(int argc, char** argv)
 {
 	struct browser_window *bw;
 
         LOG(("calling browser_window_create"));
 	bw = browser_window_create(feurl, 0, 0, true, false);
+}
+
+/** Entry point from OS.
+ *
+ * /param argc The number of arguments in the string vector. 
+ * /param argv The argument string vector.
+ * /return The return code to the OS
+ */
+int main(int argc, char** argv)
+{
+	setbuf(stderr, NULL);
+
+	netsurf_init(argc, argv);
+
+	gui_init2(argc, argv);
+
+	netsurf_main_loop();
+
+	netsurf_exit();
+
+	return 0;
 }
 
 

@@ -107,7 +107,6 @@ void netsurf_init(int argc, char** argv)
 	fetch_init();
 	/** \todo The frontend needs to provide the llcache_query_handler */
 	llcache_initialise(NULL, NULL);
-	gui_init2(argc, argv);
 }
 
 
