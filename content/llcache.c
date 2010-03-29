@@ -29,9 +29,13 @@
 
 #include "content/fetch.h"
 #include "content/llcache.h"
+#include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/url.h"
 #include "utils/utils.h"
+
+/** Define to enable tracing of llcache operations. */
+#define LLCACHE_TRACE 1
 
 /** State of a low-level cache object fetch */
 typedef enum {
@@ -360,6 +364,10 @@ nserror llcache_object_user_new(llcache_handle_callback cb, void *pw,
 	u->handle.cb = cb;
 	u->handle.pw = pw;
 
+#ifdef LLCACHE_TRACE
+	LOG(("Created user %p (%p, %p)", u, (void *) cb, pw));
+#endif
+
 	*user = u;
 
 	return NSERROR_OK;
@@ -375,6 +383,10 @@ nserror llcache_object_user_new(llcache_handle_callback cb, void *pw,
  */
 nserror llcache_object_user_destroy(llcache_object_user *user)
 {
+#ifdef LLCACHE_TRACE
+	LOG(("Destroyed user %p", user));
+#endif
+
 	free(user);
 
 	return NSERROR_OK;
@@ -399,6 +411,10 @@ nserror llcache_object_retrieve(const char *url, uint32_t flags,
 	bool has_query;
 	url_func_result res;
 	struct url_components components;
+
+#ifdef LLCACHE_TRACE
+	LOG(("Retrieve %s (%x, %s, %p)", url, flags, referer, post));
+#endif
 
 	/**
 	 * Caching Rules:
@@ -441,6 +457,10 @@ nserror llcache_object_retrieve(const char *url, uint32_t flags,
 	}
 	
 	obj->has_query = has_query;
+
+#ifdef LLCACHE_TRACE
+	LOG(("Retrieved %p", obj));
+#endif
 	
 	*result = obj;
 
@@ -464,6 +484,10 @@ nserror llcache_object_retrieve_from_cache(const char *url, uint32_t flags,
 	nserror error;
 	llcache_object *obj, *newest = NULL;
 
+#ifdef LLCACHE_TRACE
+	LOG(("Searching cache for %s (%x %s %p)", url, flags, referer, post));
+#endif
+
 	/* Search for the most recently fetched matching object */
 	for (obj = llcache_cached_objects; obj != NULL; obj = obj->next) {
 		if (strcasecmp(obj->url, url) == 0 && (newest == NULL ||
@@ -475,15 +499,24 @@ nserror llcache_object_retrieve_from_cache(const char *url, uint32_t flags,
 		/* Found a suitable object, and it's still fresh, so use it */
 		obj = newest;
 
+#ifdef LLCACHE_TRACE
+		LOG(("Found fresh %p", obj));
+#endif
+
 		/* The client needs to catch up with the object's state.
 		 * This will occur the next time that llcache_poll is called.
 		 */
 	} else if (newest != NULL) {
 		/* Found a candidate object but it needs freshness validation */
+
 		/* Create a new object */
 		error = llcache_object_new(url, &obj);
 		if (error != NSERROR_OK)
 			return error;
+
+#ifdef LLCACHE_TRACE
+		LOG(("Found candidate %p (%p)", obj, newest));
+#endif
 
 		/* Clone candidate's cache data */
 		error = llcache_object_clone_cache_data(newest, obj, true);
@@ -512,6 +545,10 @@ nserror llcache_object_retrieve_from_cache(const char *url, uint32_t flags,
 		error = llcache_object_new(url, &obj);
 		if (error != NSERROR_OK)
 			return error;
+
+#ifdef LLCACHE_TRACE
+		LOG(("Not found %p", obj));
+#endif
 
 		/* Attempt to kick-off fetch */
 		error = llcache_object_fetch(obj, flags, referer, post);
@@ -555,6 +592,12 @@ bool llcache_object_is_fresh(const llcache_object *object)
 		freshness_lifetime = (now - cd->last_modified) / 10;
 	else
 		freshness_lifetime = 0;
+
+#ifdef LLCACHE_TRACE
+	LOG(("%p: (%d > %d || %d != %d)", object, 
+			freshness_lifetime, current_age,
+			object->fetch.state, LLCACHE_FETCH_COMPLETE));
+#endif
 
 	/* The object is fresh if its current age is within the freshness 
 	 * lifetime or if we're still fetching the object */
@@ -650,6 +693,10 @@ nserror llcache_object_fetch(llcache_object *object, uint32_t flags,
 	nserror error;
 	char *referer_clone = NULL;
 	llcache_post_data *post_clone = NULL;
+
+#ifdef LLCACHE_TRACE
+	LOG(("Starting fetch for %p", object));
+#endif
 
 	if (referer != NULL) {
 		referer_clone = strdup(referer);
@@ -747,6 +794,10 @@ nserror llcache_object_refetch(llcache_object *object)
 	object->cache.etag = NULL;
 	object->cache.last_modified = 0;
 
+#ifdef LLCACHE_TRACE
+	LOG(("Refetching %p", object));
+#endif
+
 	/* Kick off fetch */
 	object->fetch.fetch = fetch_start(object->url, object->fetch.referer,
 			llcache_fetch_callback, object,
@@ -781,6 +832,10 @@ nserror llcache_object_new(const char *url, llcache_object **result)
 	if (obj == NULL)
 		return NSERROR_NOMEM;
 
+#ifdef LLCACHE_TRACE
+	LOG(("Created object %p (%s)", obj, url));
+#endif
+
 	obj->url = strdup(url);
 	if (obj->url == NULL) {
 		free(obj);
@@ -805,6 +860,10 @@ nserror llcache_object_new(const char *url, llcache_object **result)
 nserror llcache_object_destroy(llcache_object *object)
 {
 	size_t i;
+
+#ifdef LLCACHE_TRACE
+	LOG(("Destroying object %p", object));
+#endif
 
 	free(object->url);
 	free(object->source_data);
@@ -859,6 +918,10 @@ nserror llcache_object_add_user(llcache_object *object,
 		object->users->prev = user;
 	object->users = user;
 
+#ifdef LLCACHE_TRACE
+	LOG(("Adding user %p to %p", user, object));
+#endif
+
 	return NSERROR_OK;
 }
 
@@ -879,6 +942,10 @@ nserror llcache_object_remove_user(llcache_object *object,
 
 	if (user->next != NULL)
 		user->next->prev = user->prev;
+
+#ifdef LLCACHE_TRACE
+	LOG(("Removing user %p from %p", user, object));
+#endif
 
 	return NSERROR_OK;
 }
@@ -936,6 +1003,10 @@ nserror llcache_object_notify_users(llcache_object *object)
 	llcache_object_user *user, *next_user;
 	llcache_event event;
 
+#ifdef LLCACHE_TRACE
+	LOG(("Notifying users of %p", object));
+#endif
+
 	/**
 	 * State transitions and event emission for users. 
 	 * Rows: user state. Cols: object state.
@@ -969,6 +1040,12 @@ nserror llcache_object_notify_users(llcache_object *object)
 		 * the user underneath us */
 		user->iterator_target = true;
 		next_user = user->next;
+
+#ifdef LLCACHE_TRACE
+		if (hstate != objstate)
+			LOG(("User %p state: %d Object state: %d", 
+					user, hstate, objstate));
+#endif
 
 		/* User: INIT, Obj: HEADERS, DATA, COMPLETE => User->HEADERS */
 		if (hstate == LLCACHE_FETCH_INIT && 
@@ -1061,6 +1138,10 @@ nserror llcache_clean(void)
 {
 	llcache_object *object, *next;
 
+#ifdef LLCACHE_TRACE
+	LOG(("Attempting cache clean"));
+#endif
+
 	/* Candidates for cleaning are (in order of priority):
 	 * 
 	 * 1) Uncacheable objects with no users
@@ -1074,6 +1155,9 @@ nserror llcache_clean(void)
 
 		/* The candidate count of uncacheable objects is always 0 */
 		if (object->users == NULL && object->candidate_count == 0) {
+#ifdef LLCACHE_TRACE
+			LOG(("Found victim %p", object));
+#endif
 			llcache_object_remove_from_list(object, 
 					&llcache_uncached_objects);
 			llcache_object_destroy(object);
@@ -1086,6 +1170,9 @@ nserror llcache_clean(void)
 
 		if (object->users == NULL && object->candidate_count == 0 &&
 				llcache_object_is_fresh(object) == false) {
+#ifdef LLCACHE_TRACE
+			LOG(("Found victim %p", object));
+#endif
 			llcache_object_remove_from_list(object,
 					&llcache_cached_objects);
 			llcache_object_destroy(object);
@@ -1188,6 +1275,10 @@ void llcache_fetch_callback(fetch_msg msg, void *p, const void *data,
 	llcache_object_user *user;
 	llcache_event event;
 
+#ifdef LLCACHE_TRACE
+	LOG(("Fetch event %d for %p", msg, object));
+#endif
+
 	switch (msg) {
 	/* 3xx responses */
 	case FETCH_REDIRECT:
@@ -1211,13 +1302,15 @@ void llcache_fetch_callback(fetch_msg msg, void *p, const void *data,
 	case FETCH_DATA:
 		/* Received some data */
 		object->fetch.state = LLCACHE_FETCH_DATA;
-		if (object->has_query && 
-		    (object->cache.expires == 0 && object->cache.max_age == INVALID_AGE)) {
-			/* URI had query string and did not provide an explicit expiration
-			 * time, thus by rfc2616 13.9 we must invalidate the cache data
-			 * to force the cache to not retain the object.
+		if (object->has_query && (object->cache.expires == 0 && 
+				object->cache.max_age == INVALID_AGE)) {
+			/* URI had query string and did not provide an explicit
+			 * expiration time, thus by rfc2616 13.9 we must 
+			 * invalidate the cache data to force the cache to not 
+			 * retain the object.
 			 */
-			memset(&(object->cache), 0, sizeof(llcache_cache_control));
+			memset(&(object->cache), 0, 
+					sizeof(llcache_cache_control));
 		}
 		error = llcache_fetch_process_data(object, data, size);
 		break;
