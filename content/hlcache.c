@@ -37,10 +37,8 @@ struct hlcache_retrieval_ctx {
 	llcache_handle *llcache;	/**< Low-level cache handle */
 
 	hlcache_handle *handle;		/**< High-level handle for object */
-	
-	/* The following are only used if a child content is requested */
-	const char *charset;		/**< Fallback charset, or NULL */
-	bool quirks;			/**< Whether object should be quirky */
+
+	hlcache_child_context child;	/**< Child context */	
 };
 
 /** High-level cache handle */
@@ -72,23 +70,7 @@ static void hlcache_content_callback(struct content *c,
  * Public API                                                                 *
  ******************************************************************************/
 
-/**
- * Retrieve a high-level cache handle for an object
- *
- * \param url      URL of the object to retrieve handle for
- * \param flags    Object retrieval flags
- * \param referer  Referring URL, or NULL if none
- * \param post     POST data, or NULL for a GET request
- * \param width    Available width for content
- * \param height   Available height for content
- * \param cb       Callback to handle object events
- * \param pw       Pointer to client-specific data for callback
- * \param child    Child retrieval context, or NULL for top-level content
- * \param result   Pointer to location to recieve cache handle
- * \return NSERROR_OK on success, appropriate error otherwise
- *
- * \todo Is there any way to sensibly reduce the number of parameters here?
- */
+/* See hlcache.h for documentation */
 nserror hlcache_handle_retrieve(const char *url, uint32_t flags,
 		const char *referer, llcache_post_data *post,
 		uint32_t width, uint32_t height,
@@ -112,8 +94,8 @@ nserror hlcache_handle_retrieve(const char *url, uint32_t flags,
 
 	if (child != NULL) {
 		/** \todo Is the charset guaranteed to exist during fetch? */
-		ctx->charset = child->charset;
-		ctx->quirks = child->quirks;
+		ctx->child.charset = child->charset;
+		ctx->child.quirks = child->quirks;
 	}
 
 	/** \todo What happens with width/height? */
@@ -135,16 +117,9 @@ nserror hlcache_handle_retrieve(const char *url, uint32_t flags,
 	return NSERROR_OK;
 }
 
-/**
- * Release a high-level cache handle
- *
- * \param handle  Handle to release
- * \return NSERROR_OK on success, appropriate error otherwise
- */
+/* See hlcache.h for documentation */
 nserror hlcache_handle_release(hlcache_handle *handle)
 {
-	/** \todo What if this is called during fetch? */
-
 	if (handle->entry != NULL) {
 		content_remove_user(handle->entry->content, 
 				hlcache_content_callback, handle);
@@ -158,21 +133,7 @@ nserror hlcache_handle_release(hlcache_handle *handle)
 	return NSERROR_OK;
 }
 
-/**
- * Retrieve a content object from a cache handle
- *
- * \param handle  Cache handle to dereference
- * \return Pointer to content object, or NULL if there is none
- *
- * \todo This may not be correct. Ideally, the client should never need to 
- * directly access a content object. It may, therefore, be better to provide a 
- * bunch of veneers here that take a hlcache_handle and invoke the 
- * corresponding content_ API. If there's no content object associated with the
- * hlcache_handle (e.g. because the source data is still being fetched, so it 
- * doesn't exist yet), then these veneers would behave as a NOP. The important 
- * thing being that the client need not care about this possibility and can 
- * just call the functions with impugnity.
- */
+/* See hlcache.h for documentation */
 struct content *hlcache_handle_get_content(const hlcache_handle *handle)
 {
 	assert(handle != NULL);
@@ -269,7 +230,7 @@ nserror hlcache_find_content(hlcache_retrieval_ctx *ctx)
 
 		/* Create content using llhandle */
 		entry->content = content_create(ctx->llcache, 
-				ctx->charset, ctx->quirks);
+				ctx->child.charset, ctx->child.quirks);
 		if (entry->content == NULL) {
 			free(entry);
 			return NSERROR_NOMEM;
