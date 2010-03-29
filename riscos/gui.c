@@ -280,7 +280,7 @@ static void *myrealloc(void *ptr, size_t len, void *pw)
  * Initialise the gui (RISC OS specific part).
  */
 
-void gui_init(int argc, char** argv)
+static void gui_init(int argc, char** argv)
 {
 	char path[40];
 	os_error *error;
@@ -318,20 +318,6 @@ void gui_init(int argc, char** argv)
 	if (hubbub_initialise("NetSurf:Resources.Aliases", myrealloc, NULL) !=
 			HUBBUB_OK)
 		die("Failed to initialise HTML parsing library.");
-
-	/* Read in the options */
-	options_read("NetSurf:Choices");
-
-	/* Choose the interface language to use */
-	ro_gui_choose_language();
-
-	/* Load in our language-specific Messages */
-	if ((length = snprintf(path, sizeof(path),
-			"NetSurf:Resources.%s.Messages",
-			option_language)) < 0 || length >= (int)sizeof(path))
-		die("Failed to locate Messages resource.");
-	messages_load(path);
-	messages_load("NetSurf:Resources.LangNames");
 
 	/* Set defaults for absent option strings */
 	if (!option_theme)
@@ -762,8 +748,22 @@ int main(int argc, char** argv)
 {
 	setbuf(stderr, NULL);
 
-	/* initialise netsurf */
-	netsurf_init(argc, argv);
+#if RISCOS_MESSAGES_CHOICE
+	/* Choose the interface language to use */
+	ro_gui_choose_language();
+
+	/* Load in our language-specific Messages */
+	if ((length = snprintf(path, sizeof(path),
+			"NetSurf:Resources.%s.Messages",
+			option_language)) < 0 || length >= (int)sizeof(path))
+		die("Failed to locate Messages resource.");
+	messages_load(path);
+	messages_load("NetSurf:Resources.LangNames");
+#endif
+
+	netsurf_init(&argc, &argv, "NetSurf:Choices", messages);
+
+	gui_init(argc, argv);
 
 	gui_init2(argc, argv);
 

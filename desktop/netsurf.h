@@ -20,6 +20,7 @@
 #define _NETSURF_DESKTOP_NETSURF_H_
 
 #include <stdbool.h>
+#include "utils/errors.h"
 
 extern bool netsurf_quit;
 extern bool verbose_log;
@@ -27,7 +28,7 @@ extern const char * const netsurf_version;
 extern const int netsurf_version_major;
 extern const int netsurf_version_minor;
 
-extern void netsurf_init(int argc, char** argv);
+nserror netsurf_init(int *argc, char ***argv, const char *options, const char *messages);
 extern void netsurf_exit(void);
 extern int netsurf_main_loop(void);
 

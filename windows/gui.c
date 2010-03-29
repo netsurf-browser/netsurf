@@ -2365,7 +2365,7 @@ void gui_quit(void)
 	hubbub_finalise(myrealloc, NULL);
 }
 
-void gui_init(int argc, char** argv)
+static void gui_init(int argc, char** argv)
 {
 	char buf[PATH_MAX], sbuf[PATH_MAX];
 	int len;
@@ -2379,17 +2379,6 @@ void gui_init(int argc, char** argv)
 	LOG(("hubbub init %d", he));
 	if (he != HUBBUB_OK)
 		die("Unable to initialise HTML parsing library.\n");
-
-	/* load browser messages */
-	nsws_find_resource(buf, "messages", "./windows/res/messages");
-	LOG(("Using '%s' as Messages file", buf));
-	messages_load(buf);
-
-	/* load browser options */
-	nsws_find_resource(buf, "preferences", "~/.netsurf/preferences");
-	LOG(("Using '%s' as Preferences file", buf));
-	options_file_location = strdup(buf);
-	options_read(buf);
 
 	/* set up stylesheet urls */
 	getcwd(sbuf, PATH_MAX);
@@ -2451,6 +2440,8 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 	int argc = 0, argctemp = 0;
 	size_t len;
 	LPWSTR * argvw;
+	char options[PATH_MAX];
+	char messages[PATH_MAX];
 
 	if (SLEN(lpcli) > 0) {
 		argvw = CommandLineToArgvW(GetCommandLineW(), &argc);
@@ -2478,8 +2469,17 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 		argctemp++;
 	}
 
+	/* load browser messages */
+	nsws_find_resource(messages, "messages", "./windows/res/messages");
+
+	/* load browser options */
+	nsws_find_resource(options, "preferences", "~/.netsurf/preferences");
+	options_file_location = strdup(options);
+
 	/* initialise netsurf */
-	netsurf_init(argc, argv);
+	netsurf_init(&argc, &argv, options, messages);
+
+	gui_init(argc, argv);
 
 	gui_init2(argc, argv);
 

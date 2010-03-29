@@ -119,9 +119,11 @@ static void nsgtk_PDF_no_pass(GtkButton *w, gpointer data);
 /**
  * Initialize GTK interface.
  */
-void gui_init(int argc, char** argv)
+static void gui_init(int argc, char** argv)
 {
 	char buf[PATH_MAX];
+	struct browser_window *bw;
+	const char *addr = NETSURF_HOMEPAGE;
 
 	nsgtk_check_homedir();
 
@@ -146,11 +148,6 @@ void gui_init(int argc, char** argv)
 		die("Unable to load throbber image.\n");
 
 	option_core_select_menu = true;
-
-	nsgtk_find_resource(buf, "Choices", "~/.netsurf/Choices");
-	LOG(("Using '%s' as Preferences file", buf));
-	options_file_location = strdup(buf);
-	options_read(buf);
 
 	/* check what the font settings are, setting them to a default font
 	 * if they're not set - stops Pango whinging
@@ -193,9 +190,6 @@ void gui_init(int argc, char** argv)
         	option_downloads_directory = home;
 	}
 
-	nsgtk_find_resource(buf, "messages", "./gtk/res/messages");
-	LOG(("Using '%s' as Messages file", buf));
-	messages_load(buf);
 
 	nsgtk_find_resource(buf, "mime.types", "/etc/mime.types");
 	gtk_fetch_filetype_init(buf);
@@ -233,6 +227,18 @@ void gui_init(int argc, char** argv)
 
 	nsgtk_history_init();
 	nsgtk_download_init();
+
+
+        if (option_homepage_url != NULL && option_homepage_url[0] != '\0')
+                addr = option_homepage_url;
+
+	if (2 <= argc)
+		addr = argv[1];
+
+        /* Last step of initialization. Opens the main browser window. */
+
+	bw = browser_window_create(addr, 0, 0, true, false);
+
 }
 
 
@@ -297,39 +303,27 @@ void nsgtk_init_glade(void)
 	wndWarning = GTK_WINDOW(glade_xml_get_widget(gladeWarning, "wndWarning"));
 }
 
-
-/**
- * Last step of initialization.
- *
- * Opens the main browser window.
- */
-static void gui_init2(int argc, char** argv)
-{
-	struct browser_window *bw;
-	const char *addr = NETSURF_HOMEPAGE;
-
-        if (option_homepage_url != NULL && option_homepage_url[0] != '\0')
-                addr = option_homepage_url;
-
-	if (2 <= argc)
-		addr = argv[1];
-
-	bw = browser_window_create(addr, 0, 0, true, false);
-}
-
 /**
  * Main entry point from OS.
  */
 int main(int argc, char** argv)
 {
-	gtk_init(&argc, &argv);
+	char options[PATH_MAX];
+	char messages[PATH_MAX];
 
+	gtk_init(&argc, &argv);
+	
+        /* set standard error to be non-buffering */
 	setbuf(stderr, NULL);
 
-	/* initialise netsurf */
-	netsurf_init(argc, argv);
+	nsgtk_find_resource(messages, "messages", "./gtk/res/messages");
+	nsgtk_find_resource(options, "Choices", "~/.netsurf/Choices");
+	options_file_location = strdup(options);
 
-	gui_init2(argc, argv);
+	/* initialise netsurf */
+	netsurf_init(&argc, &argv, options, messages);
+
+	gui_init(argc, argv);
 
 	netsurf_main_loop();
 

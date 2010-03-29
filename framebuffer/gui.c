@@ -391,7 +391,7 @@ static bool process_cmdline(int argc, char** argv)
 }
 
 
-void gui_init(int argc, char** argv)
+static void gui_init(int argc, char** argv)
 {
 	char buf[PATH_MAX];
         nsfb_t *nsfb;	
@@ -401,18 +401,7 @@ void gui_init(int argc, char** argv)
 	if (hubbub_initialise(buf, myrealloc, NULL) != HUBBUB_OK)
 		die("Unable to initialise HTML parsing library.\n");
 
-        /* load browser messages */
-	fb_find_resource(buf, "messages", "./framebuffer/res/messages");
-	LOG(("Using '%s' as Messages file", buf));
-	messages_load(buf);
-
 	option_core_select_menu = true;
-
-        /* load browser options */
-	fb_find_resource(buf, "Choices-fb", "~/.netsurf/Choices-fb");
-	LOG(("Using '%s' as Preferences file", buf));
-	options_file_location = strdup(buf);
-	options_read(buf);
 
 	/* set up stylesheet urls */
 	fb_find_resource(buf, "default.css", "./framebuffer/res/default.css");
@@ -454,9 +443,18 @@ static void gui_init2(int argc, char** argv)
  */
 int main(int argc, char** argv)
 {
+	char options[PATH_MAX];
+	char messages[PATH_MAX];
+
 	setbuf(stderr, NULL);
 
-	netsurf_init(argc, argv);
+	fb_find_resource(messages, "messages", "./framebuffer/res/messages");
+	fb_find_resource(options, "Choices-fb", "~/.netsurf/Choices-fb");
+	options_file_location = strdup(options);
+
+	netsurf_init(&argc, &argv, options, messages);
+
+	gui_init(argc, argv);
 
 	gui_init2(argc, argv);
 

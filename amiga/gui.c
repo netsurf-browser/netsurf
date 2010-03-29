@@ -202,10 +202,9 @@ STRPTR ami_locale_langs(void)
 	return acceptlangs;
 }
 
-void ami_messages_load(void)
+void ami_messages_load(char *lang)
 {
 	struct Locale *locale;
-	char lang[100];
 	int i;
 	BPTR lock = 0;
 	bool found=FALSE;
@@ -245,8 +244,6 @@ void ami_messages_load(void)
 	}
 
 	CloseLocale(locale);
-
-	messages_load(lang);
 }
 
 void ami_open_resources(void)
@@ -408,8 +405,6 @@ void gui_init(int argc, char** argv)
 	ami_print_init();
 	ami_clipboard_init();
 
-	options_read("PROGDIR:Resources/Options");
-	ami_messages_load();
 	ami_set_options(); /* check options and set defaults where required */
 
 	win_destroyed = false;
@@ -685,8 +680,13 @@ static void gui_init2(int argc, char** argv)
 int main(int argc, char** argv)
 {
 	setbuf(stderr, NULL);
+	char messages[100];
 
-	netsurf_init(argc, argv);
+	ami_messages_load(messages);
+
+	netsurf_init(argc, argv, "PROGDIR:Resources/Options", messages);
+
+	gui_init(argc, argv);
 
 	gui_init2(argc, argv);
 

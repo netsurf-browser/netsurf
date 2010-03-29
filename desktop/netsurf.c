@@ -38,10 +38,12 @@
 #include "desktop/netsurf.h"
 #include "desktop/browser.h"
 #include "desktop/gui.h"
+#include "desktop/options.h"
 #include "utils/log.h"
 #include "utils/url.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
+#include "utils/messages.h"
 
 bool netsurf_quit = false;
 bool verbose_log = false;
@@ -55,7 +57,10 @@ static void *netsurf_lwc_alloc(void *ptr, size_t len, void *pw)
  * Initialise components used by gui NetSurf.
  */
 
-void netsurf_init(int argc, char** argv)
+nserror netsurf_init(int *pargc, 
+		     char ***pargv, 
+		     const char *options, 
+		     const char *messages)
 {
 	struct utsname utsname;
 
@@ -75,13 +80,16 @@ void netsurf_init(int argc, char** argv)
 	stdout = stderr;
 #endif
 
-	if ((argc > 1) && (argv[1][0] == '-') && (argv[1][1] == 'v') && (argv[1][2] == 0)) {
+	if (((*pargc) > 1) && 
+	    ((*pargv)[1][0] == '-') && 
+	    ((*pargv)[1][1] == 'v') && 
+	    ((*pargv)[1][2] == 0)) {
 		int argcmv;
 		verbose_log = true;
-		for (argcmv = 2; argcmv < argc; argcmv++) {
-			argv[argcmv - 1] = argv[argcmv];
+		for (argcmv = 2; argcmv < (*pargc); argcmv++) {
+			(*pargv)[argcmv - 1] = (*pargv)[argcmv];
 		}
-		argc--;
+		(*pargc)--;
 
 #ifndef HAVE_STDOUT
                 gui_stdout();
@@ -100,13 +108,24 @@ void netsurf_init(int argc, char** argv)
 				utsname.nodename, utsname.release,
 				utsname.version, utsname.machine));
 
+	LOG(("Using '%s' for Options file", options));
+	options_read(options);
+
+	LOG(("Using '%s' as Messages file", messages));
+	messages_load(messages);
+
 	lwc_initialise(netsurf_lwc_alloc, NULL, 0);
+
 	url_init();
-	gui_init(argc, argv);
+
 	setlocale(LC_ALL, "C");
+
 	fetch_init();
+
 	/** \todo The frontend needs to provide the llcache_query_handler */
 	llcache_initialise(NULL, NULL);
+
+	return NSERROR_OK;
 }
 
 
