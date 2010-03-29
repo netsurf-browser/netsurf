@@ -1149,12 +1149,13 @@ nserror llcache_clean(void)
 	 * 3) Fresh cacheable objects with no users or pending fetches
 	 */
 
-	/* 1) Uncacheable objects with no users */
+	/* 1) Uncacheable objects with no users or fetches */
 	for (object = llcache_uncached_objects; object != NULL; object = next) {
 		next = object->next;
 
 		/* The candidate count of uncacheable objects is always 0 */
-		if (object->users == NULL && object->candidate_count == 0) {
+		if (object->users == NULL && object->candidate_count == 0 &&
+				object->fetch.fetch == NULL) {
 #ifdef LLCACHE_TRACE
 			LOG(("Found victim %p", object));
 #endif
@@ -1169,7 +1170,8 @@ nserror llcache_clean(void)
 		next = object->next;
 
 		if (object->users == NULL && object->candidate_count == 0 &&
-				llcache_object_is_fresh(object) == false) {
+				llcache_object_is_fresh(object) == false &&
+				object->fetch.fetch == NULL) {
 #ifdef LLCACHE_TRACE
 			LOG(("Found victim %p", object));
 #endif
