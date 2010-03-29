@@ -155,7 +155,7 @@ bool favicon_get_icon(struct content *c, xmlNode *html)
 	if (url == NULL)
 		return false;
 
-	error = hlcache_handle_retrieve(url, 0, NULL, NULL, c->width, c->height,
+	error = hlcache_handle_retrieve(url, 0, NULL, NULL,
 			favicon_callback, c, NULL, &c->data.html.favicon);	
 
 	free(url);

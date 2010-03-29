@@ -261,7 +261,7 @@ void end_callback(png_structp png, png_infop info)
 
 
 
-bool nspng_convert(struct content *c, int width, int height)
+bool nspng_convert(struct content *c)
 {
 	const char *data;
 	unsigned long size;

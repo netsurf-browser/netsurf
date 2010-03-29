@@ -60,8 +60,6 @@ typedef nserror (*hlcache_handle_callback)(hlcache_handle *handle,
  * \param flags    Object retrieval flags
  * \param referer  Referring URL, or NULL if none
  * \param post     POST data, or NULL for a GET request
- * \param width    Available width for content
- * \param height   Available height for content
  * \param cb       Callback to handle object events
  * \param pw       Pointer to client-specific data for callback
  * \param child    Child retrieval context, or NULL for top-level content
@@ -78,7 +76,6 @@ typedef nserror (*hlcache_handle_callback)(hlcache_handle *handle,
  */
 nserror hlcache_handle_retrieve(const char *url, uint32_t flags,
 		const char *referer, llcache_post_data *post,
-		uint32_t width, uint32_t height,
 		hlcache_handle_callback cb, void *pw,
 		hlcache_child_context *child, hlcache_handle **result);
 

@@ -35,7 +35,7 @@ struct content_jpeg_data {
 	int dummy; /* NOT USED but to satisfy Norcroft */
 };
 
-bool nsjpeg_convert(struct content *c, int width, int height);
+bool nsjpeg_convert(struct content *c);
 void nsjpeg_destroy(struct content *c);
 bool nsjpeg_redraw(struct content *c, int x, int y,
 		int width, int height,

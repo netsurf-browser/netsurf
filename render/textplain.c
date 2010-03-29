@@ -197,12 +197,11 @@ no_memory:
  * Convert a CONTENT_TEXTPLAIN for display.
  */
 
-bool textplain_convert(struct content *c, int width, int height)
+bool textplain_convert(struct content *c)
 {
 	iconv_close(c->data.textplain.iconv_cd);
 	c->data.textplain.iconv_cd = 0;
 
-	textplain_reformat(c, width, height);
 	c->status = CONTENT_STATUS_DONE;
 	content_set_status(c, messages_get("Done"));
 

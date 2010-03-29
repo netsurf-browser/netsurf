@@ -48,6 +48,8 @@ bool svg_create(struct content *c, const struct http_parameter *params)
 	if (!c->data.svg.diagram)
 		goto no_memory;
 
+	c->data.svg.done_parse = false;
+
 	return true;
 
 no_memory:
@@ -61,21 +63,8 @@ no_memory:
  * Convert a CONTENT_SVG for display.
  */
 
-bool svg_convert(struct content *c, int w, int h)
+bool svg_convert(struct content *c)
 {
-	const char *source_data;
-	unsigned long source_size;
-
-	assert(c->data.svg.diagram);
-
-	source_data = content__get_source_data(c, &source_size);
-
-	svgtiny_parse(c->data.svg.diagram, source_data, source_size,
-			content__get_url(c), w, h);
-
-	c->width = c->data.svg.diagram->width;
-	c->height = c->data.svg.diagram->height;
-
 	/*c->title = malloc(100);
 	if (c->title)
 		snprintf(c->title, 100, messages_get("svgTitle"),
@@ -86,6 +75,28 @@ bool svg_convert(struct content *c, int w, int h)
 	content_set_status(c, "");
 
 	return true;
+}
+
+/**
+ * Reformat a CONTENT_SVG.
+ */
+
+void svg_reformat(struct content *c, int width, int height)
+{
+	const char *source_data;
+	unsigned long source_size;
+
+	assert(c->data.svg.diagram);
+
+	if (c->data.svg.done_parse == false) {
+		source_data = content__get_source_data(c, &source_size);
+
+		svgtiny_parse(c->data.svg.diagram, source_data, source_size,
+				content__get_url(c), w, h);
+	}
+
+	c->width = c->data.svg.diagram->width;
+	c->height = c->data.svg.diagram->height;
 }
 
 

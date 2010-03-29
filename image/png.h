@@ -44,7 +44,7 @@ struct content_png_data {
 
 bool nspng_create(struct content *c, const struct http_parameter *params);
 bool nspng_process_data(struct content *c, char *data, unsigned int size);
-bool nspng_convert(struct content *c, int width, int height);
+bool nspng_convert(struct content *c);
 void nspng_destroy(struct content *c);
 bool nspng_redraw(struct content *c, int x, int y,
 		int width, int height,

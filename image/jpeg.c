@@ -75,7 +75,7 @@ static void nsjpeg_term_source(j_decompress_ptr cinfo);
  * Convert a CONTENT_JPEG for display.
  */
 
-bool nsjpeg_convert(struct content *c, int w, int h)
+bool nsjpeg_convert(struct content *c)
 {
 	struct jpeg_decompress_struct cinfo;
 	struct nsjpeg_error_mgr jerr;

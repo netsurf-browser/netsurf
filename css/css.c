@@ -150,18 +150,16 @@ css_error nscss_process_css_data(struct content_css_data *c, char *data,
  * Convert a CSS content ready for use
  *
  * \param c  Content to convert
- * \param w  Width of area content will be displayed in
- * \param h  Height of area content will be displayed in
  * \return true on success, false on failure
  */
-bool nscss_convert(struct content *c, int w, int h)
+bool nscss_convert(struct content *c)
 {
 	union content_msg_data msg_data;
 	uint32_t i;
 	size_t size;
 	css_error error;
 
-	error = nscss_convert_css_data(&c->data.css, w, h);
+	error = nscss_convert_css_data(&c->data.css);
 	if (error != CSS_OK) {
 		msg_data.error = "?";
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
@@ -198,11 +196,9 @@ bool nscss_convert(struct content *c, int w, int h)
  * Convert CSS data ready for use
  *
  * \param c     CSS data to convert
- * \param w     Width of area content will be displayed in
- * \param h     Height of area content will be displayed in
  * \return CSS error
  */
-css_error nscss_convert_css_data(struct content_css_data *c, int w, int h)
+css_error nscss_convert_css_data(struct content_css_data *c)
 {
 	const char *referer;
 	uint32_t i = 0;
@@ -255,7 +251,7 @@ css_error nscss_convert_css_data(struct content_css_data *c, int w, int h)
 		i = c->import_count;
 		c->imports[c->import_count].media = media;
 		nerror = hlcache_handle_retrieve(lwc_string_data(uri),
-				0, referer, NULL, w, h, nscss_import, c,
+				0, referer, NULL, nscss_import, c,
 				&child, &c->imports[c->import_count++].c);
 		if (error != NSERROR_OK) {
 			return CSS_NOMEM;

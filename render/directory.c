@@ -52,7 +52,7 @@ bool directory_create(struct content *c, const struct http_parameter *params) {
 	return true;
 }
 
-bool directory_convert(struct content *c, int width, int height) {
+bool directory_convert(struct content *c) {
 	char *path;
 	DIR *parent;
 	struct dirent *entry;
@@ -135,7 +135,7 @@ bool directory_convert(struct content *c, int width, int height) {
 			(uint8_t *) footer, sizeof(footer) - 1);
 
 	c->type = CONTENT_HTML;
-	return html_convert(c, width, height);
+	return html_convert(c);
 }
 
 void directory_destroy(struct content *c)

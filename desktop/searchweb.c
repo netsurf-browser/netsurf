@@ -229,7 +229,7 @@ void search_web_retrieve_ico(bool localdefault)
 		return;
 	}
 
-	error = hlcache_handle_retrieve(url, 0, NULL, NULL, 20, 20,
+	error = hlcache_handle_retrieve(url, 0, NULL, NULL,
 			search_web_ico_callback, NULL, NULL, &search_ico);
 	if (error != NSERROR_OK)
 		search_ico = NULL;

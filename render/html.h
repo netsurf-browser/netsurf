@@ -187,7 +187,7 @@ extern bool html_redraw_debug;
 
 bool html_create(struct content *c, const struct http_parameter *params);
 bool html_process_data(struct content *c, char *data, unsigned int size);
-bool html_convert(struct content *c, int width, int height);
+bool html_convert(struct content *c);
 void html_reformat(struct content *c, int width, int height);
 void html_destroy(struct content *c);
 bool html_fetch_object(struct content *c, const char *url, struct box *box,

@@ -31,11 +31,13 @@ struct svgtiny_diagram;
 
 struct content_svg_data {
 	struct svgtiny_diagram *diagram;
+	bool done_parse;
 };
 
 bool svg_create(struct content *c, const struct http_parameter *params);
-bool svg_convert(struct content *c, int width, int height);
+bool svg_convert(struct content *c);
 void svg_destroy(struct content *c);
+void svg_reformat(struct content *c, int width, int height);
 bool svg_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,

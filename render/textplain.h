@@ -50,7 +50,7 @@ struct content_textplain_data {
 
 bool textplain_create(struct content *c, const struct http_parameter *params);
 bool textplain_process_data(struct content *c, char *data, unsigned int size);
-bool textplain_convert(struct content *c, int width, int height);
+bool textplain_convert(struct content *c);
 void textplain_reformat(struct content *c, int width, int height);
 void textplain_destroy(struct content *c);
 bool textplain_redraw(struct content *c, int x, int y,

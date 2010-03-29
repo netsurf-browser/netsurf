@@ -115,7 +115,7 @@ static inline void rsvg_argb_to_abgr(uint32_t pixels[], int width, int height,
 	}
 }
 
-bool rsvg_convert(struct content *c, int iwidth, int iheight)
+bool rsvg_convert(struct content *c)
 {
 	struct content_rsvg_data *d = &c->data.rsvg;
 	union content_msg_data msg_data;

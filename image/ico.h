@@ -38,7 +38,7 @@ struct content_ico_data {
 };
 
 bool nsico_create(struct content *c, const struct http_parameter *params);
-bool nsico_convert(struct content *c, int width, int height);
+bool nsico_convert(struct content *c);
 void nsico_destroy(struct content *c);
 bool nsico_redraw(struct content *c, int x, int y,
 		int width, int height,

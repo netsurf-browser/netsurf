@@ -248,7 +248,7 @@ const char * const content_status_name[] = {
 struct handler_entry {
 	bool (*create)(struct content *c, const http_parameter *params);
 	bool (*process_data)(struct content *c, char *data, unsigned int size);
-	bool (*convert)(struct content *c, int width, int height);
+	bool (*convert)(struct content *c);
 	void (*reformat)(struct content *c, int width, int height);
 	void (*destroy)(struct content *c);
 	void (*stop)(struct content *c);
@@ -344,7 +344,7 @@ static const struct handler_entry handler_map[] = {
 #endif
 #ifdef WITH_NS_SVG
 	{svg_create, 0, svg_convert,
-		0, svg_destroy, 0, svg_redraw, 0, 0, 0, true},
+		svn_reformat, svg_destroy, 0, svg_redraw, 0, 0, 0, true},
 #endif
 #ifdef WITH_RSVG
 	{rsvg_create, rsvg_process_data, rsvg_convert,
@@ -356,7 +356,7 @@ static const struct handler_entry handler_map[] = {
 
 static nserror content_llcache_callback(llcache_handle *llcache,
 		const llcache_event *event, void *pw);
-static void content_convert(struct content *c, int width, int height);
+static void content_convert(struct content *c);
 static void content_update_status(struct content *c);
 
 
@@ -537,7 +537,7 @@ nserror content_llcache_callback(llcache_handle *llcache,
 		content_set_status(c, messages_get("Converting"), source_size);
 		content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
 
-		content_convert(c, c->width, c->height);
+		content_convert(c);
 	}
 		break;
 	case LLCACHE_EVENT_ERROR:
@@ -635,7 +635,7 @@ void content_update_status(struct content *c)
  *   be destroyed and must no longer be used.
  */
 
-void content_convert(struct content *c, int width, int height)
+void content_convert(struct content *c)
 {
 	union content_msg_data msg_data;
 
@@ -649,9 +649,8 @@ void content_convert(struct content *c, int width, int height)
 	LOG(("content %s (%p)", llcache_handle_get_url(c->llcache), c));
 
 	c->locked = true;
-	c->available_width = width;
 	if (handler_map[c->type].convert) {
-		if (!handler_map[c->type].convert(c, width, height)) {
+		if (!handler_map[c->type].convert(c)) {
 			c->status = CONTENT_STATUS_ERROR;
 			c->locked = false;
 			return;

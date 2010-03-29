@@ -64,7 +64,7 @@ bool nsbmp_create(struct content *c, const struct http_parameter *params)
 }
 
 
-bool nsbmp_convert(struct content *c, int iwidth, int iheight)
+bool nsbmp_convert(struct content *c)
 {
 	bmp_result res;
 	bmp_image *bmp;

@@ -79,7 +79,7 @@ bool nsgif_create(struct content *c, const struct http_parameter *params)
 }
 
 
-bool nsgif_convert(struct content *c, int iwidth, int iheight)
+bool nsgif_convert(struct content *c)
 {
 	int res;
 	struct gif_animation *gif;

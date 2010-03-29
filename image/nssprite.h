@@ -34,7 +34,7 @@ struct content_nssprite_data {
 	struct rosprite_area* sprite_area;
 };
 
-bool nssprite_convert(struct content *c, int width, int height);
+bool nssprite_convert(struct content *c);
 void nssprite_destroy(struct content *c);
 bool nssprite_redraw(struct content *c, int x, int y,
 		int width, int height,

@@ -307,20 +307,18 @@ encoding_change:
  *  - stylesheets are fetched
  *  - favicon is retrieved
  *  - the XML tree is converted to a box tree and object fetches are started
- *  - the box tree is laid out
  *
  * On exit, the content status will be either CONTENT_STATUS_DONE if the
  * document is completely loaded or CONTENT_STATUS_READY if objects are still
  * being fetched.
  */
 
-bool html_convert(struct content *c, int width, int height)
+bool html_convert(struct content *c)
 {
 	binding_error err;
 	xmlNode *html, *head;
 	union content_msg_data msg_data;
 	unsigned long size;
-	unsigned int time_before, time_taken;
 	struct form *f;
 
 	/* finish parsing */
@@ -482,21 +480,6 @@ bool html_convert(struct content *c, int width, int height)
 		return false;
 	}
 	/*imagemap_dump(c);*/
-
-	/* layout the box tree */
-	html_set_status(c, messages_get("Formatting"));
-	content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
-	LOG(("Layout document"));
-	time_before = wallclock();
-	html_reformat(c, width, height);
-	time_taken = wallclock() - time_before;
-	LOG(("Layout took %dcs", time_taken));
-	c->reformat_time = wallclock() +
-		((time_taken < option_min_reflow_period ?
-		option_min_reflow_period : time_taken * 1.25));
-	LOG(("Scheduling relayout no sooner than %dcs",
-		c->reformat_time - wallclock()));
-	/*box_dump(stderr, c->data.html.layout->children, 0);*/
 
 	/* Destroy the parser binding */
 	binding_destroy_tree(c->data.html.parser_binding);
@@ -835,7 +818,7 @@ bool html_find_stylesheets(struct content *c, xmlNode *html)
 	c->active = 0;
 
 	ns_error = hlcache_handle_retrieve(default_stylesheet_url, 0,
-			content__get_url(c), NULL, c->width, c->height, 
+			content__get_url(c), NULL,
 			html_convert_css_callback, c, &child, 
 			&c->data.html.stylesheets[
 					STYLESHEET_BASE].data.external);
@@ -846,7 +829,7 @@ bool html_find_stylesheets(struct content *c, xmlNode *html)
 
 	if (c->data.html.quirks == BINDING_QUIRKS_MODE_FULL) {
 		ns_error = hlcache_handle_retrieve(quirks_stylesheet_url, 0,
-				content__get_url(c), NULL, c->width, c->height,
+				content__get_url(c), NULL,
 				html_convert_css_callback, c, &child,
 				&c->data.html.stylesheets[
 					STYLESHEET_QUIRKS].data.external);
@@ -858,7 +841,7 @@ bool html_find_stylesheets(struct content *c, xmlNode *html)
 
 	if (option_block_ads) {
 		ns_error = hlcache_handle_retrieve(adblock_stylesheet_url, 0,
-				content__get_url(c), NULL, c->width, c->height,
+				content__get_url(c), NULL,
 				html_convert_css_callback, c, &child,
 				&c->data.html.stylesheets[
 					STYLESHEET_ADBLOCK].data.external);
@@ -967,7 +950,6 @@ bool html_find_stylesheets(struct content *c, xmlNode *html)
 					HTML_STYLESHEET_EXTERNAL;
 			ns_error = hlcache_handle_retrieve(url2, 0,
 					content__get_url(c), NULL,
-					c->width, c->height,
 					html_convert_css_callback, c, &child,
 					&c->data.html.stylesheets[i].
 							data.external);
@@ -1135,7 +1117,7 @@ bool html_process_style_element(struct content *c, unsigned int *index,
 	}
 
 	/* Convert the content -- manually, as we want the result */
-	if (nscss_convert_css_data(sheet, c->width, c->height) != CSS_OK) {
+	if (nscss_convert_css_data(sheet) != CSS_OK) {
 		/* conversion failed */
 		nscss_destroy_css_data(sheet);
 		talloc_free(sheet);
@@ -1264,7 +1246,6 @@ bool html_fetch_object(struct content *c, const char *url, struct box *box,
 	}
 
 	error = hlcache_handle_retrieve(url2, 0, content__get_url(c), NULL,
-			available_width, available_height,
 			html_object_callback, c, &child,
 			&c_fetch);
 
@@ -1331,8 +1312,6 @@ bool html_replace_object(struct content *c, unsigned int i, const char *url)
 
 	/* initialise fetch */
 	error = hlcache_handle_retrieve(url2, 0, content__get_url(c), NULL,
-			c->data.html.object[i].box->width,
-			c->data.html.object[i].box->height,
 			html_object_callback, c, &child,
 			&c_fetch);
 
@@ -1509,12 +1488,7 @@ nserror html_object_callback(hlcache_handle *object,
 			(c->status == CONTENT_STATUS_READY ||
 			 c->status == CONTENT_STATUS_DONE) &&
 			(wallclock() > c->reformat_time)) {
-		unsigned int time_before = wallclock(), time_taken;
 		content__reformat(c, c->available_width, c->height);
-		time_taken = wallclock() - time_before;
-		c->reformat_time = wallclock() +
-			((time_taken < option_min_reflow_period ?
-			option_min_reflow_period : time_taken * 1.25));
 	}
 
 	return NSERROR_OK;
@@ -1724,6 +1698,9 @@ void html_stop(struct content *c)
 void html_reformat(struct content *c, int width, int height)
 {
 	struct box *layout;
+	unsigned int time_before, time_taken;
+
+	time_before = wallclock();
 
 	layout_document(c, width, height);
 	layout = c->data.html.layout;
@@ -1741,6 +1718,11 @@ void html_reformat(struct content *c, int width, int height)
 		c->width = layout->x + layout->descendant_x1;
 	if (c->height < layout->y + layout->descendant_y1)
 		c->height = layout->y + layout->descendant_y1;
+
+	time_taken = wallclock() - time_before;
+	c->reformat_time = wallclock() +
+			((time_taken < option_min_reflow_period ?
+			option_min_reflow_period : time_taken * 1.25));
 }
 
 

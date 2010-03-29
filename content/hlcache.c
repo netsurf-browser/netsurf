@@ -73,7 +73,6 @@ static void hlcache_content_callback(struct content *c,
 /* See hlcache.h for documentation */
 nserror hlcache_handle_retrieve(const char *url, uint32_t flags,
 		const char *referer, llcache_post_data *post,
-		uint32_t width, uint32_t height,
 		hlcache_handle_callback cb, void *pw,
 		hlcache_child_context *child, hlcache_handle **result)
 {
@@ -97,8 +96,6 @@ nserror hlcache_handle_retrieve(const char *url, uint32_t flags,
 		ctx->child.charset = child->charset;
 		ctx->child.quirks = child->quirks;
 	}
-
-	/** \todo What happens with width/height? */
 
 	ctx->handle->cb = cb;
 	ctx->handle->pw = pw;
@@ -274,11 +271,6 @@ nserror hlcache_find_content(hlcache_retrieval_ctx *ctx)
 		} else if (status == CONTENT_STATUS_DONE) {
 			event.type = CONTENT_MSG_LOADING;
 			ctx->handle->cb(ctx->handle, &event, ctx->handle->pw);
-
-			/** \todo Reflow content to new width
-			if (content_get_available_width(ctx->handle) != width)
-				content_reformat(ctx->handle, width, height);
-			*/
 
 			if (ctx->handle->cb != NULL) {
 				event.type = CONTENT_MSG_READY;

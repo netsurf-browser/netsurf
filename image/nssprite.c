@@ -56,7 +56,7 @@
  * No conversion is necessary. We merely read the sprite dimensions.
  */
 
-bool nssprite_convert(struct content *c, int width, int height)
+bool nssprite_convert(struct content *c)
 {
 	union content_msg_data msg_data;
 

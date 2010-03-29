@@ -52,7 +52,7 @@ bool nsico_create(struct content *c, const struct http_parameter *params)
 }
 
 
-bool nsico_convert(struct content *c, int iwidth, int iheight)
+bool nsico_convert(struct content *c)
 {
 	struct bmp_image *bmp;
 	bmp_result res;

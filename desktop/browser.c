@@ -291,7 +291,6 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	url_func_result res;
 	int depth = 0;
 	struct browser_window *cur;
-	int width, height;
 	uint32_t fetch_flags = 0;
 	bool fetch_is_post = (post_urlenc != NULL || post_multipart != NULL);
 	llcache_post_data post;
@@ -402,14 +401,13 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	browser_window_remove_caret(bw);
 	browser_window_destroy_children(bw);
 
-	gui_window_get_dimensions(bw->window, &width, &height, true);
-	LOG(("Loading '%s' width %i, height %i", url2, width, height));
+	LOG(("Loading '%s'", url2));
 
 	browser_window_set_status(bw, messages_get("Loading"));
 	bw->history_add = add_to_history;
 
 	error = hlcache_handle_retrieve(url2, 0, referer,
-			fetch_is_post ? &post : NULL, width, height, 
+			fetch_is_post ? &post : NULL,
 			browser_window_callback, bw,
 			parent != NULL ? &child : NULL, &c);
 	if (error == NSERROR_NO_FETCH_HANDLER) {
@@ -462,6 +460,9 @@ nserror browser_window_callback(hlcache_handle *c,
 		break;
 
 	case CONTENT_MSG_READY:
+	{
+		int width, height;
+
 		assert(bw->loading_content == c);
 
 		if (bw->current_content != NULL) {
@@ -474,6 +475,10 @@ nserror browser_window_callback(hlcache_handle *c,
 
 			hlcache_handle_release(bw->current_content);
 		}
+
+		/* Format the new content to the correct dimensions */
+		gui_window_get_dimensions(bw->window, &width, &height, true);
+		content_reformat(c, width, height);
 
 		bw->current_content = c;
 		bw->loading_content = NULL;
@@ -523,7 +528,7 @@ nserror browser_window_callback(hlcache_handle *c,
 		if (content_get_type(c) == CONTENT_HTML && 
 				html_get_iframe(c) != NULL)
 			browser_window_create_iframes(bw, html_get_iframe(c));
-
+	}
 		break;
 
 	case CONTENT_MSG_DONE:

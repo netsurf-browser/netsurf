@@ -39,7 +39,7 @@ struct content_gif_data {
 };
 
 bool nsgif_create(struct content *c, const struct http_parameter *params);
-bool nsgif_convert(struct content *c, int width, int height);
+bool nsgif_convert(struct content *c);
 void nsgif_destroy(struct content *c);
 bool nsgif_redraw(struct content *c, int x, int y,
 		int width, int height,

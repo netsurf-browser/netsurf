@@ -299,7 +299,7 @@ bool nsmng_process_data(struct content *c, char *data, unsigned int size)
 }
 
 
-bool nsmng_convert(struct content *c, int width, int height)
+bool nsmng_convert(struct content *c)
 {
 	mng_retcode status;
 
