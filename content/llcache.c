@@ -1327,7 +1327,7 @@ void llcache_fetch_callback(fetch_msg msg, void *p, const void *data,
 	/* Out-of-band information */
 	case FETCH_ERROR:
 		/* An error occurred while fetching */
-		fetch_abort(object->fetch.fetch);
+		/* The fetch has has already been cleaned up by the fetcher */
 		object->fetch.fetch = NULL;
 		/** \todo Ensure this object becomes stale */
 

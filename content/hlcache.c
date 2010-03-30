@@ -175,7 +175,14 @@ nserror hlcache_llcache_callback(llcache_handle *handle,
 		/* should never happen: the handler must be changed */
 		break;
 	case LLCACHE_EVENT_ERROR:
-		/** \todo handle errors */
+		if (ctx->handle->cb != NULL) {
+			hlcache_event hlevent;
+
+			hlevent.type = CONTENT_MSG_ERROR;
+			hlevent.data.error = event->data.msg;
+
+			ctx->handle->cb(ctx->handle, &hlevent, ctx->handle->pw);
+		}	
 		break;
 	case LLCACHE_EVENT_PROGRESS:
 		break;
