@@ -93,6 +93,8 @@ void svg_reformat(struct content *c, int width, int height)
 
 		svgtiny_parse(c->data.svg.diagram, source_data, source_size,
 				content__get_url(c), w, h);
+
+		c->data.svg.done_parse = true;
 	}
 
 	c->width = c->data.svg.diagram->width;
