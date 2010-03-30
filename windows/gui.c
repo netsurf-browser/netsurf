@@ -93,8 +93,6 @@ struct gui_window {
 	HWND hscroll; /**< horizontal scrollbar handle */
 	HMENU mainmenu; /**< the main menu */
 	HMENU rclick; /**< the right-click menu */
-	HDC bufferdc; /**< the screen buffer */
-	HBITMAP bufferbm; /**< the buffer bitmap */
 	struct nsws_localhistory *localhistory;	/**< handle to local history window */
 	int width; /**< width of window */
 	int height; /**< height of drawing area */
@@ -148,82 +146,6 @@ HINSTANCE hinstance;
 void gui_multitask(void)
 {
 /*	LOG(("gui_multitask")); */
-}
-
-/**
- * called synchronously to handle all redraw events
- */
-static void redraw(void)
-{
-	struct gui_window *w = window_list;
-	struct browser_window *bw;
-	HDC hdc;
-
-	while (w != NULL) {
-		if ((w->redraw.right - w->redraw.left <= 0) ||
-		    (w->redraw.bottom - w->redraw.top <= 0)) {
-			w = w->next;
-			continue;
-		}
-
-		bw = w->bw;
-		if (bw == NULL) {
-			w = w->next;
-			continue;
-		}
-
-		if (bw->current_content == NULL) {
-			w = w->next;
-			continue;
-		}
-		current_hwnd = w->drawingarea;
-		w->scrolly += w->requestscrolly;
-		w->scrollx += w->requestscrollx;
-		w->scrolly = MAX(w->scrolly, 0);
-		w->scrolly = MIN(w->scrolly, content_get_height(bw->current_content) * w->bw->scale - w->height);
-		w->scrollx = MAX(w->scrollx, 0);
-		w->scrollx = MIN(w->scrollx, content_get_width(bw->current_content) * w->bw->scale - w->width);
-		/* redraw */
-		current_redraw_browser = bw;
-		nsws_plot_set_scale(bw->scale);
-
-		hdc = GetDC(w->main);
-		if (w->bufferbm == NULL) {
-			w->bufferbm = CreateCompatibleBitmap(hdc, w->width,
-							     w->height );
-			SelectObject(w->bufferdc, w->bufferbm);
-		}
-
-
-		if ((w->bufferbm == NULL) || (w->bufferdc == NULL) ||
-		    (hdc == NULL))
-			doublebuffering = false;
-		if (doublebuffering)
-			bufferdc = w->bufferdc;
-		content_redraw(bw->current_content, 
-			       -w->scrollx / w->bw->scale,
-			       -w->scrolly / w->bw->scale,
-			       w->width, 
-			       w->height,
-			       w->redraw.left - w->scrollx / w->bw->scale,
-			       w->redraw.top - w->scrolly / w->bw->scale,
-			       w->redraw.right - w->scrollx / w->bw->scale,
-			       w->redraw.bottom - w->scrolly / w->bw->scale,
-			       bw->scale, 0xFFFFFF);
-		if (doublebuffering)
-			/* blit buffer to screen */
-			BitBlt(hdc, 0, 0, w->width, w->height,
-			       w->bufferdc, 0, 0,
-			       SRCCOPY);
-		ReleaseDC(w->main, hdc);
-		doublebuffering = false;
-
-		w->requestscrolly = 0;
-		w->requestscrollx = 0;
-		w->redraw.left = w->redraw.top = INT_MAX;
-		w->redraw.right = w->redraw.bottom = -(INT_MAX);
-		w = w->next;
-	}
 }
 
 void gui_poll(bool active)
@@ -753,19 +675,26 @@ static void nsws_drawable_paint(struct gui_window *gw, HWND hwnd)
 	PAINTSTRUCT ps;
 
 	BeginPaint(hwnd, &ps);
-	gw->redraw.left = ps.rcPaint.left;
-	gw->redraw.top = ps.rcPaint.top;
-	gw->redraw.right = ps.rcPaint.right;
-	gw->redraw.bottom = ps.rcPaint.bottom;
 
-	/* set globals for the plotters */
-	current_hwnd = gw->drawingarea;
-	current_gui = gw;
+	if ((gw->bw != NULL) && (gw->bw->current_content != NULL)) {
+		/* set globals for the plotters */
+		current_hwnd = gw->drawingarea;
+		current_gui = gw;
 
-	redraw();
+		content_redraw(gw->bw->current_content, 
+			       -gw->scrollx / gw->bw->scale,
+			       -gw->scrolly / gw->bw->scale,
+			       gw->width, 
+			       gw->height,
+			       ps.rcPaint.left,
+			       ps.rcPaint.top,
+			       ps.rcPaint.right,
+			       ps.rcPaint.bottom,
+			       gw->bw->scale, 
+			       0xFFFFFF);
+	}
+
 	EndPaint(hwnd, &ps);
-
-	plot.clip(0, 0, gw->width, gw->height); /* vrs - very suspect */
 }
 
 static void 
@@ -979,6 +908,13 @@ nsws_drawable_wheel(struct gui_window *gw, HWND hwnd, WPARAM wparam)
 	return 0;
 }
 
+static DWORD
+nsws_drawable_resize(struct gui_window *gw)
+{
+	browser_window_reformat(gw->bw, gw->width, gw->height);
+	return 0;
+}
+
 /* Called when activity occours within the drawable window. */
 LRESULT CALLBACK nsws_window_drawable_event_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
@@ -1035,6 +971,9 @@ LRESULT CALLBACK nsws_window_drawable_event_callback(HWND hwnd, UINT msg, WPARAM
 				      BROWSER_MOUSE_CLICK_2);
 		break;
 
+	case WM_ERASEBKGND:
+		return 0;
+
 	case WM_PAINT:
 		nsws_drawable_paint(gw, hwnd);
 		break;
@@ -1043,8 +982,8 @@ LRESULT CALLBACK nsws_window_drawable_event_callback(HWND hwnd, UINT msg, WPARAM
 		nsws_drawable_key(gw, hwnd, wparam);
 		break;
 
-	case WM_CREATE:
-		nsws_drawable_paint(gw, hwnd);
+	case WM_SIZE:
+		nsws_drawable_resize(gw);
 		break;
 
 	case WM_HSCROLL:
@@ -1095,23 +1034,6 @@ nsws_window_resize(struct gui_window *w,
 	}
 	nsws_window_update_forward_back(w);
 
-	/* update double buffering context */
-	HDC hdc = GetDC(hwnd);
-	if (w->bufferdc == NULL)
-		w->bufferdc = CreateCompatibleDC(hdc);
-
-	if (w->bufferbm != NULL) {
-		DeleteObject(w->bufferbm);
-		w->bufferbm = CreateCompatibleBitmap(hdc, w->width, w->height);
-		SelectObject(w->bufferdc, w->bufferbm);
-	}
-	ReleaseDC(hwnd, hdc);
-
-	/* update browser window to new dimensions */
-	if (w->bw != NULL) {
-		browser_window_reformat(w->bw, w->width, w->height);
-		redraw();
-	}
 	gui_window_set_scroll(w, x, y);
 
 	if (w->toolbar != NULL)
@@ -1400,9 +1322,7 @@ LRESULT CALLBACK nsws_window_event_callback(HWND hwnd, UINT msg, WPARAM wparam,
 		case NSWS_ID_VIEW_TOGGLE_DEBUG_RENDERING:
 			html_redraw_debug = !html_redraw_debug;
 			if (w->bw != NULL) {
-				browser_window_reformat(
-					w->bw, w->width, w->height);
-				redraw();
+				browser_window_reformat(w->bw, w->width, w->height);
 			}
 			break;
 		case NSWS_ID_VIEW_DEBUGGING_SAVE_BOXTREE:
@@ -1446,7 +1366,7 @@ LRESULT CALLBACK nsws_window_event_callback(HWND hwnd, UINT msg, WPARAM wparam,
 		if (dpi > 10)
 			nscss_screen_dpi = INTTOFIX(dpi);
 		ReleaseDC(hwnd, hdc);
-return DefWindowProc(hwnd, msg, wparam, lparam);
+		return DefWindowProc(hwnd, msg, wparam, lparam);
 		break;
 	}
 
@@ -1867,41 +1787,47 @@ void gui_window_set_title(struct gui_window *w, const char *title)
  */
 void gui_window_redraw(struct gui_window *w, int x0, int y0, int x1, int y1)
 {
+	RECT redrawrect;
+
 	LOG(("redraw %p %d,%d %d,%d", w, x0, y0, x1, y1));
 	if (w == NULL)
 		return;
-	w->redraw.left = x0;
-	w->redraw.top = y0;
-	w->redraw.right = x1;
-	w->redraw.bottom = y1;
-	redraw();
+	
+	redrawrect.left = x0;
+	redrawrect.top = y0;
+	redrawrect.right = x1;
+	redrawrect.bottom = y1;
+
+	RedrawWindow(w->drawingarea, &redrawrect, NULL, RDW_INVALIDATE | RDW_NOERASE);
 }
 
 /**
  * redraw the whole window
  */
-void gui_window_redraw_window(struct gui_window *w)
+void gui_window_redraw_window(struct gui_window *gw)
 {
-	LOG(("redraw window %p w=%d,h=%d", w, w->width, w->height));
-	if (w == NULL)
+	LOG(("redraw window %p", gw));
+	if (gw == NULL)
 		return;
-	w->redraw.left = 0;
-	w->redraw.top = 0;
-	w->redraw.right = w->width;
-	w->redraw.bottom = w->height;
-	redraw();
+
+	RedrawWindow(gw->drawingarea, NULL, NULL, RDW_INVALIDATE | RDW_NOERASE);
 }
 
-void gui_window_update_box(struct gui_window *w,
+void gui_window_update_box(struct gui_window *gw,
 			   const union content_msg_data *data)
 {
-	if (w == NULL)
+	if (gw == NULL)
 		return;
-	w->redraw.left = (long)data->redraw.x;
-	w->redraw.top = (long)data->redraw.y;
-	w->redraw.right =(long)(data->redraw.x + data->redraw.width);
-	w->redraw.bottom = (long)(data->redraw.y + data->redraw.height);
-	redraw();
+
+	RECT redrawrect;
+	
+	redrawrect.left = (long)data->redraw.x;
+	redrawrect.top = (long)data->redraw.y;
+	redrawrect.right =(long)(data->redraw.x + data->redraw.width);
+	redrawrect.bottom = (long)(data->redraw.y + data->redraw.height);
+
+	RedrawWindow(gw->drawingarea, &redrawrect, NULL, RDW_INVALIDATE | RDW_NOERASE);
+
 }
 
 bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy)
@@ -1971,14 +1897,11 @@ void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
 	r.left = 0;
 	r.right = w->width + 1;
 	ScrollWindowEx(w->drawingarea, - w->requestscrollx, - w->requestscrolly, &r, NULL, NULL, &redraw, SW_INVALIDATE);
-	gui_window_redraw(w, redraw.left + (w->requestscrollx + w->scrollx)
-			  / w->bw->scale - 1,
-			  redraw.top + (w->requestscrolly + w->scrolly)
-			  / w->bw->scale - 1,
-			  redraw.right + (w->requestscrollx + w->scrollx)
-			  / w->bw->scale + 1,
-			  redraw.bottom + (w->requestscrolly + w->scrolly)
-			  / w->bw->scale + 1);
+	w->scrolly += w->requestscrolly;
+	w->scrollx += w->requestscrollx;
+	w->requestscrollx = 0;
+	w->requestscrolly = 0;
+
 }
 
 void gui_window_scroll_visible(struct gui_window *w, int x0, int y0,
