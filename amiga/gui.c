@@ -684,7 +684,7 @@ int main(int argc, char** argv)
 
 	ami_messages_load(messages);
 
-	netsurf_init(argc, argv, "PROGDIR:Resources/Options", messages);
+	netsurf_init(&argc, argv, "PROGDIR:Resources/Options", messages);
 
 	gui_init(argc, argv);
 
