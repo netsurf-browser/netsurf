@@ -80,8 +80,7 @@ nserror netsurf_init(int *pargc,
 	stdout = stderr;
 #endif
 
-	if ((pargc) &&
-	    ((*pargc) > 1) && 
+	if (((*pargc) > 1) && 
 	    ((*pargv)[1][0] == '-') && 
 	    ((*pargv)[1][1] == 'v') && 
 	    ((*pargv)[1][2] == 0)) {
