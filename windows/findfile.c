@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "utils/url.h"
 #include "utils/log.h"
 #include "utils/utils.h"
 
@@ -37,12 +38,19 @@ static char *realpath(const char *path, char *resolved_path)
 
 char *path_to_url(const char *path)
 {
-	char *r = malloc(strlen(path) + 7 + 1);
+	char *url = malloc(strlen(path) + FILE_SCHEME_PREFIX_LEN + 1);
+	char *sidx;
 
-	strcpy(r, "file://");
-	strcat(r, path);
+	strcpy(url, FILE_SCHEME_PREFIX);
+	strcat(url, path);
 
-	return r;
+	sidx = strrchr(url, '\\');
+	while (sidx != NULL) {
+		*sidx = '/';
+		sidx = strrchr(url, '\\');
+	}
+
+	return url;
 }
 
 /**

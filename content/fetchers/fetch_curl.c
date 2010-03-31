@@ -1098,7 +1098,6 @@ size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
 #undef SKIP_ST
 }
 
-
 /**
  * Find the status code and content type and inform the caller.
  *
@@ -1154,10 +1153,12 @@ bool fetch_curl_process_headers(struct curl_fetch_info *f)
 	}
 
 	/* find MIME type from filetype for local files */
-	if (strncmp(f->url, "file:///", 8) == 0) {
+	if (strncmp(f->url, FILE_SCHEME_PREFIX, FILE_SCHEME_PREFIX_LEN) == 0) {
 		struct stat s;
-		char *url_path = curl_unescape(f->url + 7, 
-				(int) strlen(f->url + 7));
+		char *url_path = curl_unescape(f->url + FILE_SCHEME_PREFIX_LEN, 
+				(int) strlen(f->url + FILE_SCHEME_PREFIX_LEN));
+
+		LOG(("Obtaining mime type for file %s", url_path));
 
 		if (url_path != NULL && stat(url_path, &s) == 0) {
 			/* file: URL and file exists */

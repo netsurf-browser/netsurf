@@ -76,9 +76,9 @@ char *url_to_path(const char *url)
 
 char *path_to_url(const char *path)
 {
-	char *r = malloc(strlen(path) + 8 + 1);
+	char *r = malloc(strlen(path) + FILE_SCHEME_PREFIX_LEN + 1);
 
-	strcpy(r, "file:///");
+	strcpy(r, FILE_SCHEME_PREFIX);
 	strcat(r, path);
 
 	return r;

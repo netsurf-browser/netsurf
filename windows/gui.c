@@ -44,6 +44,7 @@
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
 #include "render/html.h"
+#include "utils/url.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"

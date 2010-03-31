@@ -24,6 +24,10 @@
 #ifndef _NETSURF_UTILS_URL_H_
 #define _NETSURF_UTILS_URL_H_
 
+/* file url prefix */
+#define FILE_SCHEME_PREFIX "file:///"
+#define FILE_SCHEME_PREFIX_LEN 8
+
 typedef enum {
 	URL_FUNC_OK,     /**< No error */
 	URL_FUNC_NOMEM,  /**< Insufficient memory */

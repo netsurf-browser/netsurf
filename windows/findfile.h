@@ -21,8 +21,6 @@
 
 #define NETSURF_WINDOWS_RESPATH "C:"
 
-char *path_to_url(const char *path);
-
 extern char *nsws_find_resource(char *buf, const char *filename,
 		const char *def);
 

@@ -24,14 +24,15 @@
 #include <string.h>
 
 #include "utils/log.h"
+#include "utils/url.h"
 
 #include "framebuffer/findfile.h"
 
 char *path_to_url(const char *path)
 {
-	char *r = malloc(strlen(path) + 7 + 1);
+	char *r = malloc(strlen(path) + FILE_SCHEME_PREFIX_LEN + 1);
 
-	strcpy(r, "file://");
+	strcpy(r, FILE_SCHEME_PREFIX);
 	strcat(r, path);
 
 	return r;

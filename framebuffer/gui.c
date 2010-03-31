@@ -38,6 +38,7 @@
 #include "desktop/netsurf.h"
 #include "desktop/options.h"
 #include "utils/log.h"
+#include "utils/url.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "desktop/textinput.h"

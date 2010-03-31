@@ -1151,9 +1151,9 @@ utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 
 char *path_to_url(const char *path)
 {
-	char *r = (char *)malloc(strlen(path) + 7 + 1);
+	char *r = (char *)malloc(strlen(path) + FILE_SCHEME_PREFIX_LEN + 1);
 
-	strcpy(r, "file://");
+	strcpy(r, FILE_SCHEME_PREFIX);
 	strcat(r, path);
 
 	return r;
@@ -1161,7 +1161,7 @@ char *path_to_url(const char *path)
 
 char *url_to_path(const char *url)
 {
-	return strdup(url + 5);
+	return strdup(url + FILE_SCHEME_PREFIX_LEN);
 }
 
 bool cookies_update(const char *domain, const struct cookie_data *data)

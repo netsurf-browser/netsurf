@@ -390,9 +390,9 @@ void nsgtk_openfile_open(const char *filename)
 {
 	struct browser_window *bw = gui_window_get_browser_window(
 			current_model->top_level);
-	char url[strlen(filename) + SLEN("file://") + 1];
+	char url[strlen(filename) + FILE_SCHEME_PREFIX_LEN + 1];
 
-	sprintf(url, "file://%s", filename);
+	sprintf(url, FILE_SCHEME_PREFIX"%s", filename);
 
         browser_window_go(bw, url, 0, true);
 

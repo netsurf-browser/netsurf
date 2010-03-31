@@ -97,8 +97,6 @@ static struct browser_window *select_menu_bw;
 static struct form_control *select_menu_control;
 
 static void nsgtk_init_glade(void);
-static char *nsgtk_find_resource(char *buf, const char *filename,
-		const char *def);
 static void nsgtk_check_homedir(void);
 static void *nsgtk_hubbub_realloc(void *ptr, size_t len, void *pw);
 static bool nsgtk_throbber_init(int framec);
@@ -114,6 +112,71 @@ static void nsgtk_PDF_no_pass(GtkButton *w, gpointer data);
 #define THROBBER_FRAMES 9
 
 
+/**
+ * Locate a shared resource file by searching known places in order.
+ *
+ * \param  buf      buffer to write to.  must be at least PATH_MAX chars. May be NULL and routine will allocate string which must be freed by caller.
+ * \param  filename file to look for
+ * \param  def      default to return if file not found
+ * \return buf
+ *
+ * Search order is: ~/.netsurf/, $NETSURFRES/ (where NETSURFRES is an
+ * environment variable), and finally the path specified by the define
+ * GTK_RESPATH.
+ */
+static char *
+nsgtk_find_resource(char *buf, const char *filename, const char *def)
+{
+	char *cdir = getenv("HOME");
+	char t[PATH_MAX];
+
+	if (buf == NULL) {
+		buf = malloc(PATH_MAX);
+		if (buf == NULL)
+			return NULL;
+	}
+
+	if (cdir != NULL) {
+		strcpy(t, cdir);
+		strcat(t, "/.netsurf/");
+		strcat(t, filename);
+		if (realpath(t, buf) != NULL) {
+                        if (access(buf, R_OK) == 0)
+                                return buf;
+                }
+	}
+
+	cdir = getenv("NETSURFRES");
+
+	if (cdir != NULL) {
+		if (realpath(cdir, buf) != NULL) {
+                        strcat(buf, "/");
+                        strcat(buf, filename);
+                        if (access(buf, R_OK) == 0)
+                                return buf;
+                }
+	}
+
+	strcpy(t, GTK_RESPATH);
+	strcat(t, filename);
+	if (realpath(t, buf) != NULL) {
+                if (access(buf, R_OK) == 0)
+                        return buf;
+        }
+
+	if (def[0] == '~') {
+		snprintf(t, PATH_MAX, "%s%s", getenv("HOME"), def + 1);
+		if (realpath(t, buf) == NULL) {
+                        strcpy(buf, t);
+                }
+	} else {
+		if (realpath(def, buf) == NULL) {
+                        strcpy(buf, def);
+                }
+	}
+
+	return buf;
+}
 
 
 /**
@@ -421,70 +484,6 @@ void gui_quit(void)
 }
 
 
-/**
- * Locate a shared resource file by searching known places in order.
- *
- * \param  buf      buffer to write to.  must be at least PATH_MAX chars. May be NULL and routine will allocate string which must be freed by caller.
- * \param  filename file to look for
- * \param  def      default to return if file not found
- * \return buf
- *
- * Search order is: ~/.netsurf/, $NETSURFRES/ (where NETSURFRES is an
- * environment variable), and finally the path specified by the define
- * GTK_RESPATH.
- */
-char *nsgtk_find_resource(char *buf, const char *filename, const char *def)
-{
-	char *cdir = getenv("HOME");
-	char t[PATH_MAX];
-
-	if (buf == NULL) {
-		buf = malloc(PATH_MAX);
-		if (buf == NULL)
-			return NULL;
-	}
-
-	if (cdir != NULL) {
-		strcpy(t, cdir);
-		strcat(t, "/.netsurf/");
-		strcat(t, filename);
-		if (realpath(t, buf) != NULL) {
-                        if (access(buf, R_OK) == 0)
-                                return buf;
-                }
-	}
-
-	cdir = getenv("NETSURFRES");
-
-	if (cdir != NULL) {
-		if (realpath(cdir, buf) != NULL) {
-                        strcat(buf, "/");
-                        strcat(buf, filename);
-                        if (access(buf, R_OK) == 0)
-                                return buf;
-                }
-	}
-
-	strcpy(t, GTK_RESPATH);
-	strcat(t, filename);
-	if (realpath(t, buf) != NULL) {
-                if (access(buf, R_OK) == 0)
-                        return buf;
-        }
-
-	if (def[0] == '~') {
-		snprintf(t, PATH_MAX, "%s%s", getenv("HOME"), def + 1);
-		if (realpath(t, buf) == NULL) {
-                        strcpy(buf, t);
-                }
-	} else {
-		if (realpath(def, buf) == NULL) {
-                        strcpy(buf, def);
-                }
-	}
-
-	return buf;
-}
 
 
 /**
@@ -729,9 +728,9 @@ utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 
 char *path_to_url(const char *path)
 {
-	char *r = malloc(strlen(path) + SLEN("file://") + 1);
+	char *r = malloc(strlen(path) + FILE_SCHEME_PREFIX_LEN + 1);
 
-	strcpy(r, "file://");
+	strcpy(r, FILE_SCHEME_PREFIX);
 	strcat(r, path);
 
 	return r;
@@ -740,7 +739,7 @@ char *path_to_url(const char *path)
 
 char *url_to_path(const char *url)
 {
-	return strdup(url + 5);
+	return strdup(url + FILE_SCHEME_PREFIX_LEN);
 }
 
 
