@@ -210,7 +210,7 @@ void gui_download_window_done(struct gui_download_window *dw)
 				TAG_DONE);
 	}
 
-	bw->download = false;
+	if(bw) bw->download = false;
 
 	if(dln = dw->dln)
 	{
