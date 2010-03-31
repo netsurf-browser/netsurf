@@ -1174,15 +1174,20 @@ void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 void gui_window_update_extent(struct gui_window *gw)
 {
         int pct;
+	int width;
+	int height;
 
-        pct = (fbtk_get_width(gw->browser) * 100) / 
-		content_get_width(gw->bw->current_content);
-        fbtk_set_scroll(gw->hscroll, pct);
+	width = content_get_width(gw->bw->current_content);
+	if (width != 0) {
+		pct = (fbtk_get_width(gw->browser) * 100) / width;
+		fbtk_set_scroll(gw->hscroll, pct);
+	}
 
-        pct = (fbtk_get_height(gw->browser) * 100) / 
-		content_get_height(gw->bw->current_content);
-        fbtk_set_scroll(gw->vscroll, pct);
-
+	height = content_get_height(gw->bw->current_content);
+	if (height != 0) {
+		pct = (fbtk_get_height(gw->browser) * 100) / height;
+		fbtk_set_scroll(gw->vscroll, pct);
+	}
 }
 
 void gui_window_set_status(struct gui_window *g, const char *text)
