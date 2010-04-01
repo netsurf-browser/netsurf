@@ -88,7 +88,7 @@ The ARexx menu will be populated with scripts named #?.nsrx in @{"arexx_dir" lin
 
 Click Add on the Browsers page and fill in the details as follows:
 Name: NetSurf
-Path: NetSurf %u
+Path: NetSurf URL="%u"
 ARexx port: NETSURF
 Show:
 To front: TOFRONT
