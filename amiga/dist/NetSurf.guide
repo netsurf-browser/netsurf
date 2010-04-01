@@ -23,12 +23,14 @@ http://www.netsurf-browser.org
 @endnode
 
 @node cli "Command line options"
-NetSurf URL
+NetSurf URL/K,FORCE/S
 
 Where:
 
-URL = address of page to open on startup.
+URL   = Address of page to open on startup
+FORCE = Force new instance of NetSurf to open
 
+Note that there may be other generic options which can also be specified.
 @endnode
 
 @node options "Options file"

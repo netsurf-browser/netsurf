@@ -532,12 +532,11 @@ void ami_openscreenfirst(void)
 static void gui_init2(int argc, char** argv)
 {
 	struct browser_window *bw = NULL;
-	long rarray[] = {0,0};
 	struct RDArgs *args;
-	STRPTR template = "URL,FORCE/S";
 	STRPTR temp_homepage_url = NULL;
 	BOOL notalreadyrunning;
-
+	STRPTR template = "URL/K,FORCE/S";
+	long rarray[] = {0,0};
 	enum
 	{
 		A_URL,
@@ -550,16 +549,17 @@ static void gui_init2(int argc, char** argv)
 
 	search_web_provider_details(option_search_provider);
 
-	if(notalreadyrunning && (option_startup_no_window == false))
-		ami_openscreenfirst();
-
 	if(argc) // argc==0 is started from wb
 	{
 		if(args = ReadArgs(template,rarray,NULL))
 		{
+			if(notalreadyrunning && (option_startup_no_window == false))
+				ami_openscreenfirst();
+
 			if(rarray[A_URL])
 			{
 				temp_homepage_url = (char *)strdup(rarray[A_URL]);
+
 				if(notalreadyrunning)
 				{
 					bw = browser_window_create(temp_homepage_url, 0, 0, true,false);
@@ -581,6 +581,9 @@ static void gui_init2(int argc, char** argv)
 		struct WBArg *wbarg;
 		int first=0,i=0;
 		char fullpath[1024];
+
+		if(notalreadyrunning && (option_startup_no_window == false))
+			ami_openscreenfirst();
 
 		for(i=0,wbarg=WBenchMsg->sm_ArgList;i<WBenchMsg->sm_NumArgs;i++,wbarg++)
 		{
@@ -684,7 +687,7 @@ int main(int argc, char** argv)
 
 	ami_messages_load(messages);
 
-	netsurf_init(&argc, argv, "PROGDIR:Resources/Options", messages);
+	netsurf_init(&argc, &argv, "PROGDIR:Resources/Options", messages);
 
 	gui_init(argc, argv);
 

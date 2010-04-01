@@ -470,10 +470,10 @@
 ; Unfortunately saving URL prefs overwrites the markers making it
 ; necessary to ask whether the user wants to add NetSurf to launch-handler.
 		(working "Adding NetSurf to launch-handler config")
-		(p_fitr "ENVARC:launch-handler/URL/FILE.LH" "ClientName=\"NETSURF\"   ClientPath=\"APPDIR:NETSURF\"   CMDFORMAT=\"*\"file:///%s*\"\"")
-		(p_fitr "ENVARC:launch-handler/URL/HTTP.LH" "ClientName=\"NETSURF\"   ClientPath=\"APPDIR:NETSURF\"   CMDFORMAT=\"*\"http://%s*\"\"")
-		(p_fitr "ENVARC:launch-handler/URL/HTTPS.LH" "ClientName=\"NETSURF\"   ClientPath=\"APPDIR:NETSURF\"   CMDFORMAT=\"*\"https://%s*\"\"")
-		(p_fitr "ENVARC:launch-handler/URL/WWW.LH" "ClientName=\"NETSURF\"   ClientPath=\"APPDIR:NETSURF\"   CMDFORMAT=\"*\"http://www.%s*\"\"")
+		(p_fitr "ENVARC:launch-handler/URL/FILE.LH" "ClientName=\"NETSURF\"   ClientPath=\"APPDIR:NETSURF\"   CMDFORMAT=\"URL=*\"file:///%s*\"\"")
+		(p_fitr "ENVARC:launch-handler/URL/HTTP.LH" "ClientName=\"NETSURF\"   ClientPath=\"APPDIR:NETSURF\"   CMDFORMAT=\"URL=*\"http://%s*\"\"")
+		(p_fitr "ENVARC:launch-handler/URL/HTTPS.LH" "ClientName=\"NETSURF\"   ClientPath=\"APPDIR:NETSURF\"   CMDFORMAT=\"URL=*\"https://%s*\"\"")
+		(p_fitr "ENVARC:launch-handler/URL/WWW.LH" "ClientName=\"NETSURF\"   ClientPath=\"APPDIR:NETSURF\"   CMDFORMAT=\"URL=*\"http://www.%s*\"\"")
 	)
 )
 
