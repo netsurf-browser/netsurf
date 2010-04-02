@@ -2657,7 +2657,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 				NULL,
 				"frbuttonclass",
 				GA_ID, GID_STATUS,
-				GA_Left, scrn->WBorLeft,
+				GA_Left, scrn->WBorLeft + 1,
 				GA_RelBottom, -((2 + sz + scrn->WBorBottom - scrn->RastPort.TxHeight)/2),
 				GA_Width, size1,
 				GA_DrawInfo, dri,
@@ -2668,7 +2668,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 					"frameiclass",
 					IA_FrameType, FRAME_DISPLAY,
 					IA_Top, 2-(scrn->RastPort.TxHeight),
-					IA_Left, -1,
+					IA_Left, -2,
 					IA_Height, scrn->WBorBottom + scrn->RastPort.TxHeight,
 					IA_InBorder, TRUE,
 					TAG_DONE),
@@ -2725,7 +2725,6 @@ ULONG ami_set_border_gadget_balance(struct gui_window_2 *gwin)
 
 	RefreshSetGadgetAttrs((struct Gadget *)(APTR)gwin->objects[GID_HSCROLL],
 			gwin->win, NULL,
-		//	GA_Left, size1,
 			GA_RelRight, - size2 - sz,
 			GA_Width, size2,
 			TAG_DONE);
@@ -3359,7 +3358,7 @@ void gui_window_set_status(struct gui_window *g, const char *text)
 
 		GetAttr(GA_Width, g->shared->objects[GID_STATUS], (ULONG *)&size);
 		chars = TextFit(&scrn->RastPort, utf8text, strlen(utf8text),
-					&textex, NULL, 1, size - 2, scrn->RastPort.TxHeight);
+					&textex, NULL, 1, size - 4, scrn->RastPort.TxHeight);
 
 		utf8text[chars] = 0;
 
