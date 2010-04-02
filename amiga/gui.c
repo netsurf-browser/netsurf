@@ -79,7 +79,7 @@
 #include <proto/wb.h>
 
 /* Other OS includes */
-#include <datatypes/pictureclass.h>
+#include <datatypes/textclass.h>
 #include <devices/inputevent.h>
 #include <graphics/blitattr.h>
 #include <libraries/application.h>
@@ -87,7 +87,6 @@
 #include <libraries/keymap.h>
 #include <intuition/icclass.h>
 #include <graphics/rpattr.h>
-#include <workbench/icon.h>
 #include <workbench/workbench.h>
 
 /* ReAction libraries */
@@ -1606,24 +1605,45 @@ void ami_handle_appmsg(void)
 						}
 						else
 						{
-							browser_window_mouse_click(gwin->bw, BROWSER_MOUSE_PRESS_1, x,y);
-	/* This bit pastes a plain text file into a form.  Really we should be using
-	   Datatypes for this to support more formats */
+							Object *dto;
+							STRPTR buffer;
+							uint32 bufferlen;
 
-							if(fh = FOpen(filename,MODE_OLDFILE,0))
+							browser_window_mouse_click(gwin->bw, BROWSER_MOUSE_PRESS_1, x, y);
+
+							if(dto = NewDTObject(filename,
+								DTA_GroupID, GID_TEXT, TAG_DONE))
 							{
-								while(len = FRead(fh,filename,1,1024))
+								if(GetDTAttrs(dto,
+									TDTA_Buffer, &buffer,
+									TDTA_BufferLen, &bufferlen,
+									TAG_DONE))
 								{
-									if(utf8_from_local_encoding(filename,len,&utf8text) == UTF8_CONVERT_OK)
+									uint32 bufferlen2 = 256;
+									int32 blen;
+
+									blen = bufferlen;
+
+									do
 									{
-										browser_window_paste_text(gwin->bw,utf8text,strlen(utf8text),true);
-										free(utf8text);
-									}
+										if(blen < 256) bufferlen2 = blen;
+
+										if(utf8_from_local_encoding(buffer,
+													bufferlen2,
+													&utf8text) == UTF8_CONVERT_OK)
+										{
+											browser_window_paste_text(gwin->bw,
+												utf8text, strlen(utf8text),
+												(blen <= 256) ? true : false);
+											free(utf8text);
+										}
+										buffer += 256;
+										blen -= 256;
+									}while(blen > 0);
 								}
-								FClose(fh);
+								DisposeDTObject(dto);
 							}
 						}
-
 					}
 					FreeVec(filename);
 				}
