@@ -510,14 +510,12 @@ bool html_head(struct content *c, xmlNode *head)
 	xmlNode *node;
 	xmlChar *s;
 
-	c->title = 0;
-
 	for (node = head->children; node != 0; node = node->next) {
 		if (node->type != XML_ELEMENT_NODE)
 			continue;
 
 		LOG(("Node: %s", node->name));
-		if (!c->title && strcmp((const char *) node->name,
+		if (c->title == NULL && strcmp((const char *) node->name,
 				"title") == 0) {
 			xmlChar *title = xmlNodeGetContent(node);
 			char *title2;
@@ -527,10 +525,12 @@ bool html_head(struct content *c, xmlNode *head)
 			xmlFree(title);
 			if (!title2)
 				return false;
-			c->title = talloc_strdup(c, title2);
-			free(title2);
-			if (!c->title)
+			if (content__set_title(c, title2) == false) {
+				free(title2);
 				return false;
+			}
+
+			free(title2);
 
 		} else if (strcmp((const char *) node->name, "base") == 0) {
 			char *href = (char *) xmlGetProp(node,
@@ -1747,8 +1747,8 @@ void html_destroy(struct content *c)
 	imagemap_destroy(c);
 
 	if (c->bitmap) {
-	  	bitmap_destroy(c->bitmap);
-	  	c->bitmap = NULL;
+		bitmap_destroy(c->bitmap);
+		c->bitmap = NULL;
 	}
 
 	if (c->data.html.parser_binding)

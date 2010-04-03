@@ -302,10 +302,9 @@ bool nsmng_process_data(struct content *c, char *data, unsigned int size)
 bool nsmng_convert(struct content *c)
 {
 	mng_retcode status;
-
-	union content_msg_data msg_data;
 	const char *data;
 	unsigned long size;
+	char title[100];
 
 	assert(c != NULL);
 
@@ -319,25 +318,19 @@ bool nsmng_convert(struct content *c)
 
 	/*	Set the title
 	*/
-	c->title = malloc(100);
-	if (!c->title) {
-		msg_data.error = messages_get("NoMemory");
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-		return false;
-	}
-
 	if (c->type == CONTENT_MNG) {
-		snprintf(c->title, 100, messages_get("MNGTitle"),
+		snprintf(title, sizeof(title), messages_get("MNGTitle"),
 				c->width, c->height, size);
 	} else if (c->type == CONTENT_PNG) {
-		snprintf(c->title, 100, messages_get("PNGTitle"),
+		snprintf(title, sizeof(title), messages_get("PNGTitle"),
 				c->width, c->height, size);
 	} else {
-		snprintf(c->title, 100, messages_get("JNGTitle"),
+		snprintf(title, sizeof(title), messages_get("JNGTitle"),
 				c->width, c->height, size);
 	}
+	content__set_title(c, title);
 
-	c->size += c->width * c->height * 4 + 100;
+	c->size += c->width * c->height * 4;
 	c->status = CONTENT_STATUS_DONE;
 	/* Done: update status bar */
 	content_set_status(c, "");
@@ -528,8 +521,6 @@ void nsmng_destroy(struct content *c)
 
 	if (c->bitmap)
 		bitmap_destroy(c->bitmap);
-
-	free(c->title);
 }
 
 

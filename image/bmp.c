@@ -72,6 +72,7 @@ bool nsbmp_convert(struct content *c)
 	uint32_t swidth;
 	const char *data;
 	unsigned long size;
+	char title[100];
 
 	/* set the bmp data */
 	bmp = c->data.bmp.bmp;
@@ -98,12 +99,11 @@ bool nsbmp_convert(struct content *c)
 	c->width = bmp->width;
 	c->height = bmp->height;
 	LOG(("BMP      width %u       height %u", c->width, c->height));
-	c->title = malloc(100);
-	if (c->title)
-		snprintf(c->title, 100, messages_get("BMPTitle"), c->width,
-				c->height, size);
+	snprintf(title, sizeof(title), messages_get("BMPTitle"),
+			c->width, c->height, size);
+	content__set_title(c, title);
 	swidth = bmp->bitmap_callbacks.bitmap_get_bpp(bmp->bitmap) * bmp->width;
-	c->size += (swidth * bmp->height) + 16 + 44 + 100;
+	c->size += (swidth * bmp->height) + 16 + 44;
 
 	/* exit as a success */
 	c->bitmap = bmp->bitmap;
@@ -159,7 +159,6 @@ void nsbmp_destroy(struct content *c)
 {
 	bmp_finalise(c->data.bmp.bmp);
 	free(c->data.bmp.bmp);
-	free(c->title);
 }
 
 

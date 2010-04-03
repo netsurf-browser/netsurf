@@ -91,6 +91,7 @@ bool nsjpeg_convert(struct content *c)
 	union content_msg_data msg_data;
 	const char *data;
 	unsigned long size;
+	char title[100];
 
 	data = content__get_source_data(c, &size);
 
@@ -162,11 +163,10 @@ bool nsjpeg_convert(struct content *c)
 	c->width = width;
 	c->height = height;
 	c->bitmap = bitmap;
-	c->title = malloc(100);
-	if (c->title)
-		snprintf(c->title, 100, messages_get("JPEGTitle"),
-				width, height, size);
-	c->size += height * rowstride + 100;
+	snprintf(title, sizeof(title), messages_get("JPEGTitle"),
+			width, height, size);
+	content__set_title(c, title);
+	c->size += height * rowstride;
 	c->status = CONTENT_STATUS_DONE;
 	/* Done: update status bar */
 	content_set_status(c, "");
@@ -284,7 +284,6 @@ void nsjpeg_destroy(struct content *c)
 {
 	if (c->bitmap)
 		bitmap_destroy(c->bitmap);
-	free(c->title);
 }
 
 #endif /* WITH_JPEG */

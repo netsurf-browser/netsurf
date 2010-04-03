@@ -204,6 +204,7 @@ void content_add_error(struct content *c, const char *token,
 
 void content__reformat(struct content *c, int width, int height);
 
+bool content__set_title(struct content *c, const char *title);
 
 content_type content__get_type(struct content *c);
 const char *content__get_url(struct content *c);

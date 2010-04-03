@@ -51,9 +51,6 @@
 #define png_set_expand_gray_1_2_4_to_8(png) png_set_gray_1_2_4_to_8(png)
 #endif
 
-/* I hate doing this, but without g_strdup_printf or similar, we're a tad stuck. */
-#define NSPNG_TITLE_LEN (100)
-
 /* libpng uses names starting png_, so use nspng_ here to avoid clashes */
 
 static void info_callback(png_structp png, png_infop info);
@@ -265,6 +262,7 @@ bool nspng_convert(struct content *c)
 {
 	const char *data;
 	unsigned long size;
+	char title[100];
 
 	assert(c->data.png.png != NULL);
 	assert(c->data.png.info != NULL);
@@ -273,14 +271,11 @@ bool nspng_convert(struct content *c)
 
 	png_destroy_read_struct(&c->data.png.png, &c->data.png.info, 0);
 
-	c->title = malloc(NSPNG_TITLE_LEN);
-
-        if (c->title != NULL) {
-		snprintf(c->title, NSPNG_TITLE_LEN, messages_get("PNGTitle"),
+	snprintf(title, sizeof(title), messages_get("PNGTitle"),
                          c->width, c->height, size);
-	}
+	content__set_title(c, title);
 
-	c->size += (c->width * c->height * 4) + NSPNG_TITLE_LEN;
+	c->size += (c->width * c->height * 4);
 
 	assert(c->data.png.bitmap != NULL);
 
@@ -296,7 +291,6 @@ bool nspng_convert(struct content *c)
 
 void nspng_destroy(struct content *c)
 {
-	free(c->title);
         if (c->data.png.bitmap != NULL) {
                 bitmap_destroy(c->data.png.bitmap);
         }

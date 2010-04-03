@@ -1038,6 +1038,20 @@ void content_add_error(struct content *c, const char *token,
 {
 }
 
+bool content__set_title(struct content *c, const char *title)
+{
+	char *new_title = talloc_strdup(c, title);
+	if (new_title == NULL)
+		return false;
+
+	if (c->title != NULL)
+		talloc_free(c->title);
+
+	c->title = new_title;
+
+	return true;
+}
+
 /**
  * Retrieve type of content
  *

@@ -60,6 +60,7 @@ bool nsico_convert(struct content *c)
 	union content_msg_data msg_data;
 	const char *data;
 	unsigned long size;
+	char title[100];
 
 	/* set the ico data */
 	ico = c->data.ico.ico;
@@ -86,11 +87,10 @@ bool nsico_convert(struct content *c)
 	/* Store our content width and description */
 	c->width = ico->width;
 	c->height = ico->height;
-	c->title = malloc(100);
-	if (c->title)
-		snprintf(c->title, 100, messages_get("ICOTitle"), c->width,
-				c->height, size);
-	c->size += (ico->width * ico->height * 4) + 16 + 44 + 100;
+	snprintf(title, sizeof(title), messages_get("ICOTitle"), 
+			c->width, c->height, size);
+	content__set_title(c, title);
+	c->size += (ico->width * ico->height * 4) + 16 + 44;
 
 	/* exit as a success */
 	bmp = ico_find(c->data.ico.ico, 255, 255);
@@ -167,7 +167,6 @@ void nsico_destroy(struct content *c)
 {
 	ico_finalise(c->data.ico.ico);
 	free(c->data.ico.ico);
-	free(c->title);
 }
 
 #endif

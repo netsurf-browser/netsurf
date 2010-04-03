@@ -86,6 +86,7 @@ bool nsgif_convert(struct content *c)
 	union content_msg_data msg_data;
 	const char *data;
 	unsigned long size;
+	char title[100];
 
 	/* Get the animation */
 	gif = c->data.gif.gif;
@@ -123,12 +124,10 @@ bool nsgif_convert(struct content *c)
 	/* Store our content width and description */
 	c->width = gif->width;
 	c->height = gif->height;
-	c->title = malloc(100);
-	if (c->title) {
-		snprintf(c->title, 100, messages_get("GIFTitle"), c->width,
-				c->height, size);
-	}
-	c->size += (gif->width * gif->height * 4) + 16 + 44 + 100;
+	snprintf(title, sizeof(title), messages_get("GIFTitle"),
+			c->width, c->height, size);
+	content__set_title(c, title);
+	c->size += (gif->width * gif->height * 4) + 16 + 44;
 
 	/* Schedule the animation if we have one */
 	c->data.gif.current_frame = 0;
@@ -195,7 +194,6 @@ void nsgif_destroy(struct content *c)
 	schedule_remove(nsgif_animate, c);
 	gif_finalise(c->data.gif.gif);
 	free(c->data.gif.gif);
-	free(c->title);
 }
 
 
