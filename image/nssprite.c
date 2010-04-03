@@ -126,6 +126,8 @@ void nssprite_destroy(struct content *c)
 {
 	if (c->data.nssprite.sprite_area != NULL)
 		rosprite_destroy_sprite_area(c->data.nssprite.sprite_area);
+	if (c->bitmap != NULL)
+		bitmap_destroy(c->bitmap);
 }
 
 
