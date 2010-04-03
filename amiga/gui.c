@@ -403,12 +403,11 @@ void gui_init(int argc, char** argv)
 	ami_open_resources(); /* alloc ports/asl reqs, open libraries/devices */
 	ami_print_init();
 	ami_clipboard_init();
+	ami_openurl_open();
 
 	ami_set_options(); /* check options and set defaults where required */
 
 	win_destroyed = false;
-	verbose_log = option_verbose_log;
-
 	nsscreentitle = ASPrintf("NetSurf %s",netsurf_version);
 
 	default_stylesheet_url = "file:///PROGDIR:Resources/amiga.css";
@@ -544,7 +543,6 @@ static void gui_init2(int argc, char** argv)
 
 	notalreadyrunning = ami_arexx_init();
 	ami_fetch_file_register();
-	ami_openurl_open();
 
 	search_web_provider_details(option_search_provider);
 

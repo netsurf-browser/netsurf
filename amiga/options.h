@@ -20,7 +20,6 @@
 #define AMIGA_OPTIONS_H
 #include "desktop/options.h"
 
-extern bool option_verbose_log;
 extern char *option_url_file;
 extern char *option_hotlist_file;
 extern char *option_use_pubscreen;
@@ -51,7 +50,6 @@ extern bool option_close_no_quit;
 extern bool option_hide_docky_icon;
 
 #define EXTRA_OPTION_DEFINE \
-bool option_verbose_log = false; \
 char *option_url_file = 0; \
 char *option_hotlist_file = 0; \
 char *option_use_pubscreen = 0; \
@@ -82,7 +80,6 @@ bool option_close_no_quit = false; \
 bool option_hide_docky_icon = false; \
 
 #define EXTRA_OPTION_TABLE \
-{ "verbose_log",	OPTION_BOOL,	&option_verbose_log}, \
 { "url_file",		OPTION_STRING,	&option_url_file }, \
 { "hotlist_file",		OPTION_STRING,	&option_hotlist_file }, \
 { "use_pubscreen",	OPTION_STRING,	&option_use_pubscreen}, \
