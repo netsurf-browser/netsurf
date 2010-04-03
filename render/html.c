@@ -192,7 +192,7 @@ error:
  * The data is parsed in chunks of size CHUNK, multitasking in between.
  */
 
-bool html_process_data(struct content *c, char *data, unsigned int size)
+bool html_process_data(struct content *c, const char *data, unsigned int size)
 {
 	unsigned long x;
 	binding_error err;
@@ -200,7 +200,7 @@ bool html_process_data(struct content *c, char *data, unsigned int size)
 
 	for (x = 0; x + CHUNK <= size; x += CHUNK) {
 		err = binding_parse_chunk(c->data.html.parser_binding,
-				(uint8_t *) data + x, CHUNK);
+				(const uint8_t *) data + x, CHUNK);
 		if (err == BINDING_ENCODINGCHANGE) {
 			goto encoding_change;
 		} else if (err != BINDING_OK) {
@@ -216,7 +216,7 @@ bool html_process_data(struct content *c, char *data, unsigned int size)
 	}
 
 	err = binding_parse_chunk(c->data.html.parser_binding,
-			(uint8_t *) data + x, (size - x));
+			(const uint8_t *) data + x, (size - x));
 	if (err == BINDING_ENCODINGCHANGE) {
 		goto encoding_change;
 	} else if (err != BINDING_OK) {
@@ -294,7 +294,7 @@ encoding_change:
 		/* Recurse to reprocess all that data.  This is safe because
 		 * the encoding is now specified at parser-start which means
 		 * it cannot be changed again. */
-		return html_process_data(c, (char *) source_data, source_size);
+		return html_process_data(c, source_data, source_size);
 	}
 }
 

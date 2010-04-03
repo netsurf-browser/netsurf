@@ -117,7 +117,7 @@ nserror nscss_create_css_data(struct content_css_data *c,
  * \param size  Number of bytes to process
  * \return true on success, false on failure
  */
-bool nscss_process_data(struct content *c, char *data, unsigned int size)
+bool nscss_process_data(struct content *c, const char *data, unsigned int size)
 {
 	union content_msg_data msg_data;
 	css_error error;
@@ -139,7 +139,7 @@ bool nscss_process_data(struct content *c, char *data, unsigned int size)
  * \param size  Number of bytes to process
  * \return CSS_OK on success, appropriate error otherwise
  */
-css_error nscss_process_css_data(struct content_css_data *c, char *data, 
+css_error nscss_process_css_data(struct content_css_data *c, const char *data, 
 		unsigned int size)
 {
 	return css_stylesheet_append_data(c->sheet, 

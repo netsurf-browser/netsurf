@@ -247,7 +247,8 @@ const char * const content_status_name[] = {
 /** An entry in handler_map. */
 struct handler_entry {
 	bool (*create)(struct content *c, const http_parameter *params);
-	bool (*process_data)(struct content *c, char *data, unsigned int size);
+	bool (*process_data)(struct content *c, 
+			const char *data, unsigned int size);
 	bool (*convert)(struct content *c);
 	void (*reformat)(struct content *c, int width, int height);
 	void (*destroy)(struct content *c);
@@ -519,7 +520,7 @@ nserror content_llcache_callback(llcache_handle *llcache,
 	case LLCACHE_EVENT_HAD_DATA:
 		if (handler_map[c->type].process_data) {
 			if (handler_map[c->type].process_data(c, 
-					(char *) event->data.data.buf, 
+					(const char *) event->data.data.buf, 
 					event->data.data.len) == false) {
 				c->status = CONTENT_STATUS_ERROR;
 				/** \todo It's not clear what error this is */

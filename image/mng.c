@@ -267,7 +267,7 @@ mng_bool nsmng_processheader(mng_handle mng, mng_uint32 width,
 */
 
 
-bool nsmng_process_data(struct content *c, char *data, unsigned int size)
+bool nsmng_process_data(struct content *c, const char *data, unsigned int size)
 {
 	mng_retcode status;
 

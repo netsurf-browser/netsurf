@@ -104,7 +104,7 @@ bool nspng_create(struct content *c, const struct http_parameter *params)
 }
 
 
-bool nspng_process_data(struct content *c, char *data, unsigned int size)
+bool nspng_process_data(struct content *c, const char *data, unsigned int size)
 {
 	union content_msg_data msg_data;
 

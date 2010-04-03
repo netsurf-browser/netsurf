@@ -43,7 +43,7 @@ struct content_rsvg_data {
 };
 
 bool rsvg_create(struct content *c, const struct http_parameter *params);
-bool rsvg_process_data(struct content *c, char *data, unsigned int size);
+bool rsvg_process_data(struct content *c, const char *data, unsigned int size);
 bool rsvg_convert(struct content *c);
 void rsvg_destroy(struct content *c);
 bool rsvg_redraw(struct content *c, int x, int y,

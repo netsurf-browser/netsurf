@@ -133,7 +133,8 @@ no_memory:
  * Process data for CONTENT_TEXTPLAIN.
  */
 
-bool textplain_process_data(struct content *c, char *data, unsigned int size)
+bool textplain_process_data(struct content *c, 
+		const char *data, unsigned int size)
 {
 	iconv_t iconv_cd = c->data.textplain.iconv_cd;
 	size_t count;

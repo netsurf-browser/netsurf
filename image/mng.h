@@ -42,7 +42,7 @@ struct content_mng_data {
 };
 
 bool nsmng_create(struct content *c, const struct http_parameter *params);
-bool nsmng_process_data(struct content *c, char *data, unsigned int size);
+bool nsmng_process_data(struct content *c, const char *data, unsigned int size);
 bool nsmng_convert(struct content *c);
 void nsmng_destroy(struct content *c);
 bool nsmng_redraw(struct content *c, int x, int y,
