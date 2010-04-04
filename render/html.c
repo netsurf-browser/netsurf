@@ -1747,6 +1747,11 @@ void html_destroy(struct content *c)
 		form_free(f);
 	}
 
+	if (c->data.html.favicon != NULL) {
+		hlcache_handle_release(c->data.html.favicon);
+		c->data.html.favicon = NULL;
+	}
+
 	imagemap_destroy(c);
 
 	if (c->data.html.parser_binding)
