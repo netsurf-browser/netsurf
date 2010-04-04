@@ -57,6 +57,8 @@ bool nscss_convert(struct content *c);
 
 void nscss_destroy(struct content *c);
 
+bool nscss_clone(const struct content *old, struct content *new_content);
+
 nserror nscss_create_css_data(struct content_css_data *c,
 		const char *url, const char *charset, bool quirks);
 css_error nscss_process_css_data(struct content_css_data *c, const char *data, 

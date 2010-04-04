@@ -1681,7 +1681,7 @@ void html_stop(struct content *c)
 		if (content_get_status(object) == CONTENT_STATUS_DONE)
 			; /* already loaded: do nothing */
 		else if (content_get_status(object) == CONTENT_STATUS_READY)
-			content_stop(object, html_object_callback, NULL);
+			hlcache_handle_abort(object);
 		else {
 			hlcache_handle_release(object);
 			c->data.html.object[i].content = NULL;
@@ -1847,6 +1847,11 @@ void html_destroy_iframe(struct content_html_iframe *iframe) {
 	}
 }
 
+bool html_clone(const struct content *old, struct content *new_content)
+{
+	/** \todo Clone HTML specifics */
+	return true;
+}
 
 /**
  * Set the content status.

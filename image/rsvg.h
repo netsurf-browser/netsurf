@@ -55,6 +55,7 @@ bool rsvg_redraw_tiled(struct content *c, int x, int y,
                 int clip_x0, int clip_y0, int clip_x1, int clip_y1,
                 float scale, colour background_colour,
                 bool repeat_x, bool repeat_y);
+bool rsvg_clone(const struct content *old, struct content *new_content);
 
 #endif /* WITH_RSVG */
 

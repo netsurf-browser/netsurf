@@ -150,3 +150,14 @@ void directory_destroy(struct content *c)
 
 	return;
 }
+
+bool directory_clone(const struct content *old, struct content *new_content)
+{
+	/* This will only get called if the content is cloned before
+	 * content_convert() is called. Simply replay creation. */
+	if (directory_create(new_content, NULL) == false)
+		return false;
+
+	return true;
+}
+

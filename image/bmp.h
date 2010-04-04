@@ -53,6 +53,7 @@ bool nsbmp_redraw_tiled(struct content *c, int x, int y,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale, colour background_colour,
 		bool repeat_x, bool repeat_y);
+bool nsbmp_clone(const struct content *old, struct content *new_content);
 void *nsbmp_bitmap_create(int width, int height, unsigned int bmp_state);
 
 #endif /* WITH_BMP */

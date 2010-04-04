@@ -201,6 +201,24 @@ nserror llcache_handle_change_callback(llcache_handle *handle,
 nserror llcache_handle_release(llcache_handle *handle);
 
 /**
+ * Clone a low-level cache handle, producing a new handle to
+ * the same fetch/content.
+ *
+ * \param handle  Handle to clone
+ * \param result  Pointer to location to receive cloned handle
+ * \return NSERROR_OK on success, appropriate error otherwise
+ */
+nserror llcache_handle_clone(llcache_handle *handle, llcache_handle **result);
+
+/**
+ * Abort a low-level fetch, informing all users of this action.
+ *
+ * \param handle  Handle to abort
+ * \return NSERROR_OK on success, appropriate error otherwise
+ */
+nserror llcache_handle_abort(llcache_handle *handle);
+
+/**
  * Retrieve the post-redirect URL of a low-level cache object
  *
  * \param handle  Handle to retrieve URL from

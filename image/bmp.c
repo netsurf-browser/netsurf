@@ -162,6 +162,23 @@ void nsbmp_destroy(struct content *c)
 }
 
 
+
+bool nsbmp_clone(const struct content *old, struct content *new_content)
+{
+	/* We "clone" the old content by replaying creation and conversion */
+	if (nsbmp_create(new_content, NULL) == false)
+		return false;
+
+	if (old->status == CONTENT_STATUS_READY || 
+			old->status == CONTENT_STATUS_DONE) {
+		if (nsbmp_convert(new_content) == false)
+			return false;
+	}
+
+	return true;
+}
+
+
 /**
  * Callback for libnsbmp; forwards the call to bitmap_create()
  *

@@ -40,6 +40,7 @@ bool nssprite_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale, colour background_colour);
+bool nssprite_clone(const struct content *old, struct content *new_content);
 
 #endif /* WITH_NSSPRITE */
 

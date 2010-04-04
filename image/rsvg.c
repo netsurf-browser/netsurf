@@ -207,4 +207,28 @@ void rsvg_destroy(struct content *c)
 	return;
 }
 
+bool rsvg_clone(const struct content *old, struct content *new_content)
+{
+	const char *data;
+	unsigned long size;
+
+	/* Simply replay create/process/convert */
+	if (rsvg_create(new_content, NULL) == false)
+		return false;
+
+	data = content__get_source_data(new_content, &size);
+	if (size > 0) {
+		if (rsvg_process_data(new_content, data, size) == false)
+			return false;
+	}
+
+	if (old->status == CONTENT_STATUS_READY ||
+			old->status == CONTENT_STATUS_DONE) {
+		if (rsvg_convert(new_content) == false)
+			return false;
+	}
+
+	return true;
+}
+
 #endif /* WITH_RSVG */

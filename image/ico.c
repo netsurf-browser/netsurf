@@ -169,4 +169,19 @@ void nsico_destroy(struct content *c)
 	free(c->data.ico.ico);
 }
 
+bool nsico_clone(const struct content *old, struct content *new_content)
+{
+	/* Simply replay creation and conversion */
+	if (nsico_create(new_content, NULL) == false)
+		return false;
+
+	if (old->status == CONTENT_STATUS_READY ||
+			old->status == CONTENT_STATUS_DONE) {
+		if (nsico_convert(new_content) == false)
+			return false;
+	}
+
+	return true;
+}
+
 #endif

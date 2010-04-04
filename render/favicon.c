@@ -195,9 +195,12 @@ nserror favicon_callback(hlcache_handle *icon,
 		if (*type == CONTENT_UNKNOWN) {
 			union content_msg_data msg_data;
 
-			hlcache_handle_release(c->data.html.favicon);
-			c->data.html.favicon = NULL;
 			LOG(("%s is not a favicon", content_get_url(icon)));
+
+			hlcache_handle_abort(icon);
+			hlcache_handle_release(icon);
+			c->data.html.favicon = NULL;
+
 			content_add_error(c, "NotFavIco", 0);
 
 			msg_data.error = messages_get("NotFavIco");

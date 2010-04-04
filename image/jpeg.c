@@ -286,4 +286,17 @@ void nsjpeg_destroy(struct content *c)
 		bitmap_destroy(c->bitmap);
 }
 
+
+bool nsjpeg_clone(const struct content *old, struct content *new_content)
+{
+	/* Simply replay conversion */
+	if (old->status == CONTENT_STATUS_READY ||
+			old->status == CONTENT_STATUS_DONE) {
+		if (nsjpeg_convert(new_content) == false)
+			return false;
+	}
+
+	return true;
+}
+
 #endif /* WITH_JPEG */

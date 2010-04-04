@@ -177,4 +177,20 @@ void svg_destroy(struct content *c)
 }
 
 
+bool svg_clone(const struct content *old, struct content *new_content)
+{
+	/* Simply replay create/convert */
+	if (svg_create(new_content, NULL) == false)
+		return false;
+
+	if (old->status == CONTENT_STATUS_READY ||
+			old->status == CONTENT_STATUS_DONE) {
+		if (svg_convert(new_content) == false)
+			return false;
+	}
+
+	return true;
+}
+
+
 #endif /* WITH_NS_SVG */

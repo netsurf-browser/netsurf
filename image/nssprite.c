@@ -144,4 +144,17 @@ bool nssprite_redraw(struct content *c, int x, int y,
 			c->bitmap, background_colour, BITMAPF_NONE);
 }
 
+
+bool nssprite_clone(const struct content *old, struct content *new_content)
+{
+	/* Simply replay convert */
+	if (old->status == CONTENT_STATUS_READY ||
+			old->status == CONTENT_STATUS_DONE) {
+		if (nssprite_convert(new_content) == false)
+			return false;
+	}
+
+	return true;
+}
+
 #endif

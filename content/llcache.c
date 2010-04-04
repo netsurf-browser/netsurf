@@ -172,6 +172,9 @@ static nserror llcache_object_remove_from_list(llcache_object *object,
 
 static nserror llcache_object_notify_users(llcache_object *object);
 
+static nserror llcache_object_snapshot(llcache_object *object,
+		llcache_object **snapshot);
+
 static nserror llcache_clean(void);
 
 static nserror llcache_post_data_clone(const llcache_post_data *orig, 
@@ -299,6 +302,66 @@ nserror llcache_handle_release(llcache_handle *handle)
 	}
 
 	return error; 
+}
+
+/* See llcache.h for documentation */
+nserror llcache_handle_clone(llcache_handle *handle, llcache_handle **result)
+{
+	nserror error;
+	llcache_object_user *newuser;
+		
+	error = llcache_object_user_new(handle->cb, handle->pw, &newuser);
+	if (error == NSERROR_OK) {
+		llcache_object_add_user(handle->object, newuser);
+		newuser->handle.state = handle->state;
+		*result = &newuser->handle;
+	}
+	
+	return error;
+}
+
+/* See llcache.h for documentation */
+nserror llcache_handle_abort(llcache_handle *handle)
+{
+	llcache_object_user *user = (llcache_object_user *) handle;
+	llcache_object *object = handle->object, *newobject;
+	nserror error = NSERROR_OK;
+	bool all_alone = true;
+	
+	/* Determine if we are the only user */
+	if (user->prev != NULL)
+		all_alone = false;
+	if (user->next != NULL)
+		all_alone = false;
+	
+	if (all_alone == false) {
+		/* We must snapshot this object */
+		error = llcache_object_snapshot(object, &newobject);
+		if (error != NSERROR_OK)
+			return error;
+		/* Move across to the new object */
+		llcache_object_remove_user(object, user);
+		llcache_object_add_user(newobject, user);
+		
+		/* Add new object to uncached list */
+		llcache_object_add_to_list(object, &llcache_uncached_objects);
+		
+		/* And use it from now on. */
+		object = newobject;
+	} else {
+		/* We're the only user, so abort any fetch in progress */
+		if (object->fetch.fetch != NULL) {
+			fetch_abort(object->fetch.fetch);
+			object->fetch.fetch = NULL;
+		}
+		
+		object->fetch.state = LLCACHE_FETCH_COMPLETE;
+		
+		/* Invalidate cache control data */
+		memset(&(object->cache), 0, sizeof(llcache_cache_control));
+	}
+	
+	return error;
 }
 
 /* See llcache.h for documentation */
@@ -1033,8 +1096,7 @@ nserror llcache_object_notify_users(llcache_object *object)
 	for (user = object->users; user != NULL; user = next_user) {
 		/* Emit necessary events to bring the user up-to-date */
 		llcache_handle *handle = &user->handle;
-		llcache_fetch_state hstate = handle->state;
-		llcache_fetch_state objstate = object->fetch.state;
+		const llcache_fetch_state objstate = object->fetch.state;
 
 		/* Save identity of next user in case client destroys 
 		 * the user underneath us */
@@ -1042,20 +1104,22 @@ nserror llcache_object_notify_users(llcache_object *object)
 		next_user = user->next;
 
 #ifdef LLCACHE_TRACE
-		if (hstate != objstate)
+		if (handle->state != objstate)
 			LOG(("User %p state: %d Object state: %d", 
-					user, hstate, objstate));
+					user, handle->state, objstate));
 #endif
 
 		/* User: INIT, Obj: HEADERS, DATA, COMPLETE => User->HEADERS */
-		if (hstate == LLCACHE_FETCH_INIT && 
+		if (handle->state == LLCACHE_FETCH_INIT && 
 				objstate > LLCACHE_FETCH_INIT) {
-			hstate = LLCACHE_FETCH_HEADERS;
+			handle->state = LLCACHE_FETCH_HEADERS;
 		}
 
 		/* User: HEADERS, Obj: DATA, COMPLETE => User->DATA */
-		if (hstate == LLCACHE_FETCH_HEADERS &&
+		if (handle->state == LLCACHE_FETCH_HEADERS &&
 				objstate > LLCACHE_FETCH_HEADERS) {
+			handle->state = LLCACHE_FETCH_DATA;
+
 			/* Emit HAD_HEADERS event */
 			event.type = LLCACHE_EVENT_HAD_HEADERS;
 
@@ -1069,20 +1133,21 @@ nserror llcache_object_notify_users(llcache_object *object)
 				llcache_object_user_destroy(user);
 				continue;
 			}
-
-			hstate = LLCACHE_FETCH_DATA;
 		}
 
 		/* User: DATA, Obj: DATA, COMPLETE, more source available */
-		if (hstate == LLCACHE_FETCH_DATA &&
+		if (handle->state == LLCACHE_FETCH_DATA &&
 				objstate >= LLCACHE_FETCH_DATA &&
 				object->source_len > handle->bytes) {
+			size_t oldbytes = handle->bytes;
+
+			/* Update record of last byte emitted */
+			handle->bytes = object->source_len;
+
 			/* Emit HAD_DATA event */
 			event.type = LLCACHE_EVENT_HAD_DATA;
-			event.data.data.buf = 
-					object->source_data + handle->bytes;
-			event.data.data.len = 
-					object->source_len - handle->bytes;
+			event.data.data.buf = object->source_data + oldbytes;
+			event.data.data.len = object->source_len - oldbytes;
 
 			error = handle->cb(handle, &event, handle->pw);
 			if (error != NSERROR_OK) {
@@ -1094,14 +1159,13 @@ nserror llcache_object_notify_users(llcache_object *object)
 				llcache_object_user_destroy(user);
 				continue;
 			}
-
-			/* Update record of last byte emitted */
-			handle->bytes = object->source_len;
 		}
 
 		/* User: DATA, Obj: COMPLETE => User->COMPLETE */
-		if (hstate == LLCACHE_FETCH_DATA &&
+		if (handle->state == LLCACHE_FETCH_DATA &&
 				objstate > LLCACHE_FETCH_DATA) {
+			handle->state = LLCACHE_FETCH_COMPLETE;
+
 			/* Emit DONE event */
 			event.type = LLCACHE_EVENT_DONE;
 
@@ -1115,17 +1179,76 @@ nserror llcache_object_notify_users(llcache_object *object)
 				llcache_object_user_destroy(user);
 				continue;
 			}
-
-			hstate = LLCACHE_FETCH_COMPLETE;
 		}
 
 		/* No longer the target of an iterator */
 		user->iterator_target = false;
-
-		/* Sync handle's state with reality */
-		handle->state = hstate;
 	}
 
+	return NSERROR_OK;
+}
+
+/**
+ * Make a snapshot of the current state of an llcache_object.
+ *
+ * This has the side-effect of the new object being non-cacheable,
+ * also not-fetching and not a candidate for any other object.
+ *
+ * Also note that this new object has no users and at least one
+ * should be assigned to it before llcache_clean is entered or it
+ * will be immediately cleaned up.
+ *
+ * \param object  The object to take a snapshot of
+ * \param snapshot  Pointer to receive snapshot of \a object
+ * \return NSERROR_OK on success, appropriate error otherwise
+ */
+nserror llcache_object_snapshot(llcache_object *object,
+		llcache_object **snapshot)
+{
+	llcache_object *newobj;
+	nserror error;
+	
+	error = llcache_object_new(object->url, &newobj);
+	
+	if (error != NSERROR_OK)
+		return error;
+	
+	newobj->has_query = object->has_query;
+
+	newobj->source_alloc = newobj->source_len = object->source_len;
+	
+	if (object->source_len > 0) {
+		newobj->source_data = malloc(newobj->source_alloc);
+		if (newobj->source_data == NULL) {
+			llcache_object_destroy(newobj);
+			return NSERROR_NOMEM;
+		}
+		memcpy(newobj->source_data, object->source_data, newobj->source_len);
+	}
+	
+	if (object->num_headers > 0) {
+		newobj->headers = calloc(sizeof(llcache_header), object->num_headers);
+		if (newobj->headers == NULL) {
+			llcache_object_destroy(newobj);
+			return NSERROR_NOMEM;
+		}
+		while (newobj->num_headers < object->num_headers) {
+			llcache_header *nh = &(newobj->headers[newobj->num_headers]);
+			llcache_header *oh = &(object->headers[newobj->num_headers]);
+			newobj->num_headers += 1;
+			nh->name = strdup(oh->name);
+			nh->value = strdup(oh->value);
+			if (nh->name == NULL || nh->value == NULL) {
+				llcache_object_destroy(newobj);
+				return NSERROR_NOMEM;
+			}
+		}
+	}
+	
+	newobj->fetch.state = LLCACHE_FETCH_COMPLETE;
+	
+	*snapshot = newobj;
+	
 	return NSERROR_OK;
 }
 
@@ -1375,16 +1498,6 @@ void llcache_fetch_callback(fetch_msg msg, void *p, const void *data,
 			object->fetch.fetch = NULL;
 		}
 		return;
-	}
-
-	/* Keep users in sync with reality */
-	error = llcache_object_notify_users(object);
-	if (error != NSERROR_OK) {
-		/** \todo Error handling */
-		if (object->fetch.fetch != NULL) {
-			fetch_abort(object->fetch.fetch);
-			object->fetch.fetch = NULL;
-		}
 	}
 }
 

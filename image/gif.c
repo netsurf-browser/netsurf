@@ -197,6 +197,22 @@ void nsgif_destroy(struct content *c)
 }
 
 
+bool nsgif_clone(const struct content *old, struct content *new_content)
+{
+	/* Simply replay creation and conversion of content */
+	if (nsgif_create(new_content, NULL) == false)
+		return false;
+
+	if (old->status == CONTENT_STATUS_READY ||
+			old->status == CONTENT_STATUS_DONE) {
+		if (nsgif_convert(new_content) == false)
+			return false;
+	}
+
+	return true;
+}
+
+
 /**
  * Updates the GIF bitmap to display the current frame
  *

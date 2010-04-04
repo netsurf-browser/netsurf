@@ -29,6 +29,7 @@
 #include <stdbool.h>
 
 #include "utils/config.h"
+#include "utils/errors.h"
 #include "content/content_type.h"
 #include "desktop/plot_style.h"
 
@@ -112,8 +113,13 @@ void content_remove_user(struct content *c,
 			union content_msg_data data, void *pw),
 		void *pw);
 
+uint32_t content_count_users(struct content *c);
+
 const struct llcache_handle *content_get_llcache_handle(struct content *c);
 
+struct content *content_clone(struct content *c);
+
+nserror content_abort(struct content *c);
 
 /* Client functions */
 bool content_can_reformat(struct hlcache_handle *h);
@@ -129,10 +135,6 @@ bool content_redraw_tiled(struct hlcache_handle *h, int x, int y,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale, colour background_colour,
 		bool repeat_x, bool repeat_y);
-void content_stop(struct hlcache_handle *h,
-		void (*callback)(struct content *c, content_msg msg,
-			union content_msg_data data, void *pw),
-		void *pw);
 void content_open(struct hlcache_handle *h, struct browser_window *bw,
 		struct content *page, unsigned int index, struct box *box,
 		struct object_params *params);

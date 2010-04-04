@@ -141,6 +141,61 @@ struct content *hlcache_handle_get_content(const hlcache_handle *handle)
 	return NULL;
 }
 
+/* See hlcache.h for documentation */
+nserror hlcache_handle_abort(hlcache_handle *handle)
+{
+	struct hlcache_entry *entry = handle->entry;
+	struct content *c;
+
+	if (entry == NULL) {
+		/* This handle is not yet associated with a cache entry.
+		 * The implication is that the fetch for the handle has
+		 * not progressed to the point where the entry can be
+		 * created. */
+		/** \todo Find retrieval context and abort llcache handle */
+
+		return NSERROR_OK;
+	}
+
+	c = entry->content;
+	
+	if (content_count_users(c) > 1) {
+		/* We are not the only user of 'c' so clone it. */
+		struct content *clone = content_clone(c);
+		
+		if (clone == NULL)
+			return NSERROR_NOMEM;
+		
+		entry = calloc(sizeof(struct hlcache_entry), 1);
+		
+		if (entry == NULL) {
+			content_destroy(clone);
+			return NSERROR_NOMEM;
+		}
+		
+		if (content_add_user(clone, 
+				hlcache_content_callback, handle) == false) {
+			content_destroy(clone);
+			free(entry);
+			return NSERROR_NOMEM;
+		}
+		
+		content_remove_user(c, hlcache_content_callback, handle);
+		
+		entry->content = clone;
+		handle->entry = entry;
+		entry->prev = NULL;
+		entry->next = hlcache_content_list;
+		if (hlcache_content_list != NULL)
+			hlcache_content_list->prev = entry;
+		hlcache_content_list = entry;
+		
+		c = clone;
+	}
+	
+	return content_abort(c);
+}
+
 /******************************************************************************
  * High-level cache internals                                                 *
  ******************************************************************************/
@@ -309,13 +364,14 @@ void hlcache_content_callback(struct content *c, content_msg msg,
 {
 	hlcache_handle *handle = pw;
 	hlcache_event event;
-	nserror error;
+	nserror error = NSERROR_OK;
 
 	event.type = msg;
 	event.data = data;
 
-	
-	error = handle->cb(handle, &event, handle->pw);
+	if (handle->cb != NULL)
+		error = handle->cb(handle, &event, handle->pw);
+
 	if (error != NSERROR_OK)
 		LOG(("Error in callback: %d", error));
 }

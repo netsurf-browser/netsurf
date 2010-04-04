@@ -190,6 +190,7 @@ bool html_process_data(struct content *c, const char *data, unsigned int size);
 bool html_convert(struct content *c);
 void html_reformat(struct content *c, int width, int height);
 void html_destroy(struct content *c);
+bool html_clone(const struct content *old, struct content *new_content);
 bool html_fetch_object(struct content *c, const char *url, struct box *box,
 		const content_type *permitted_types,
 		int available_width, int available_height,

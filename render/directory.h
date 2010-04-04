@@ -33,5 +33,6 @@ struct http_parameter;
 bool directory_create(struct content *c, const struct http_parameter *params);
 bool directory_convert(struct content *c);
 void directory_destroy(struct content *c);
+bool directory_clone(const struct content *old, struct content *new_content);
 
 #endif

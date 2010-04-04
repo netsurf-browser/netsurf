@@ -88,6 +88,14 @@ nserror hlcache_handle_retrieve(const char *url, uint32_t flags,
 nserror hlcache_handle_release(hlcache_handle *handle);
 
 /**
+ * Abort a high-level cache fetch
+ *
+ * \param handle  Handle to abort
+ * \return NSERROR_OK on success, appropriate error otherwise
+ */
+nserror hlcache_handle_abort(hlcache_handle *handle);
+
+/**
  * Retrieve a content object from a cache handle
  *
  * \param handle  Cache handle to dereference

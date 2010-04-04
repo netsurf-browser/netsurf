@@ -267,6 +267,7 @@ struct handler_entry {
 			struct box *box,
 			struct object_params *params);
 	void (*close)(struct content *c);
+	bool (*clone)(const struct content *old, struct content *new_content);
 	/** There must be one content per user for this type. */
 	bool no_share;
 };
@@ -275,83 +276,87 @@ struct handler_entry {
 static const struct handler_entry handler_map[] = {
 	{html_create, html_process_data, html_convert,
 		html_reformat, html_destroy, html_stop, html_redraw, 0,
-		html_open, html_close,
+		html_open, html_close, html_clone,
 		true},
 	{textplain_create, textplain_process_data, textplain_convert,
 		textplain_reformat, textplain_destroy, 0, textplain_redraw, 0,
-		0, 0, true},
+		0, 0, textplain_clone, true},
 	{nscss_create, nscss_process_data, nscss_convert, 0, nscss_destroy, 
-		0, 0, 0, 0, 0, true},
+		0, 0, 0, 0, 0, nscss_clone, true},
 #ifdef WITH_JPEG
 	{0, 0, nsjpeg_convert, 0, nsjpeg_destroy, 0,
-		nsjpeg_redraw, nsjpeg_redraw_tiled, 0, 0, false},
+		nsjpeg_redraw, nsjpeg_redraw_tiled, 0, 0, nsjpeg_clone, false},
 #endif
 #ifdef WITH_GIF
 	{nsgif_create, 0, nsgif_convert, 0, nsgif_destroy, 0,
-			nsgif_redraw, nsgif_redraw_tiled, 0, 0, false},
+		nsgif_redraw, nsgif_redraw_tiled, 0, 0, nsgif_clone, false},
 #endif
 #ifdef WITH_BMP
 	{nsbmp_create, 0, nsbmp_convert, 0, nsbmp_destroy, 0,
-			nsbmp_redraw, nsbmp_redraw_tiled, 0, 0, false},
+		nsbmp_redraw, nsbmp_redraw_tiled, 0, 0, nsbmp_clone, false},
 	{nsico_create, 0, nsico_convert, 0, nsico_destroy, 0,
-			nsico_redraw, nsico_redraw_tiled, 0, 0, false},
+		nsico_redraw, nsico_redraw_tiled, 0, 0, nsico_clone, false},
 #endif
 
 #ifdef WITH_PNG
 	{nspng_create, nspng_process_data, nspng_convert,
 		0, nspng_destroy, 0, nspng_redraw, nspng_redraw_tiled,
-		0, 0, false},
+		0, 0, nspng_clone, false},
 #else
 #ifdef WITH_MNG
 	{nsmng_create, nsmng_process_data, nsmng_convert,
 		0, nsmng_destroy, 0, nsmng_redraw, nsmng_redraw_tiled,
-		0, 0, false},
+		0, 0, nsmng_clone, false},
 #endif
 #endif
 #ifdef WITH_MNG
 	{nsmng_create, nsmng_process_data, nsmng_convert,
 		0, nsmng_destroy, 0, nsmng_redraw, nsmng_redraw_tiled,
-		0, 0, false},
+		0, 0, nsmng_clone, false},
 	{nsmng_create, nsmng_process_data, nsmng_convert,
 		0, nsmng_destroy, 0, nsmng_redraw, nsmng_redraw_tiled,
-		0, 0, false},
+		0, 0, nsmng_clone, false},
 #endif
 #ifdef WITH_SPRITE
 	{0, 0, sprite_convert,
-		0, sprite_destroy, 0, sprite_redraw, 0, 0, 0, false},
+		0, sprite_destroy, 0, sprite_redraw, 0, 
+		0, 0, sprite_clone, false},
 #endif
 #ifdef WITH_NSSPRITE
 	{0, 0, nssprite_convert,
-		0, nssprite_destroy, 0, nssprite_redraw, 0, 0, 0, false},
+		0, nssprite_destroy, 0, nssprite_redraw, 0, 
+		0, 0, nssprite_clone, false},
 #endif
 #ifdef WITH_DRAW
 	{0, 0, draw_convert,
-		0, draw_destroy, 0, draw_redraw, 0, 0, 0, false},
+		0, draw_destroy, 0, draw_redraw, 0, 0, 0, draw_clone, false},
 #endif
 #ifdef WITH_PLUGIN
 	{plugin_create, 0, plugin_convert,
 		plugin_reformat, plugin_destroy, 0, plugin_redraw, 0,
-		plugin_open, plugin_close,
+		plugin_open, plugin_close, plugin_clone,
 		true},
 #endif
 	{directory_create, 0, directory_convert,
-		0, directory_destroy, 0, 0, 0, 0, 0, true},
+		0, directory_destroy, 0, 0, 0, 0, 0, directory_clone, true},
 #ifdef WITH_THEME_INSTALL
-	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false},
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false},
 #endif
 #ifdef WITH_ARTWORKS
 	{0, 0, artworks_convert,
-		0, artworks_destroy, 0, artworks_redraw, 0, 0, 0, false},
+		0, artworks_destroy, 0, artworks_redraw, 0, 
+		0, 0, artworks_clone, false},
 #endif
 #ifdef WITH_NS_SVG
 	{svg_create, 0, svg_convert,
-		svg_reformat, svg_destroy, 0, svg_redraw, 0, 0, 0, true},
+		svg_reformat, svg_destroy, 0, svg_redraw, 0, 
+		0, 0, svg_clone, true},
 #endif
 #ifdef WITH_RSVG
 	{rsvg_create, rsvg_process_data, rsvg_convert,
-		0, rsvg_destroy, 0, rsvg_redraw, 0, 0, 0, false},
+		0, rsvg_destroy, 0, rsvg_redraw, 0, 0, 0, rsvg_clone, false},
 #endif
-	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false}
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false}
 };
 #define HANDLER_MAP_COUNT (sizeof(handler_map) / sizeof(handler_map[0]))
 
@@ -938,6 +943,22 @@ void content_remove_user(struct content *c,
 	talloc_free(next);
 }
 
+/**
+ * Count users for the content.
+ */
+
+uint32_t content_count_users(struct content *c)
+{
+	struct content_user *user;
+	uint32_t counter = 0;
+
+	assert(c != NULL);
+	
+	for (user = c->user_list; user != NULL; user = user->next)
+		counter += 1;
+	
+	return counter - 1; /* Subtract 1 for the sentinel */
+}
 
 /**
  * Send a message to all users.
@@ -954,39 +975,6 @@ void content_broadcast(struct content *c, content_msg msg,
 		if (user->callback != 0)
 			user->callback(c, msg, data, user->pw);
 	}
-}
-
-
-/**
- * Stop a content loading.
- *
- * May only be called in CONTENT_STATUS_READY only. If all users have requested
- * stop, the loading is stopped and the content placed in CONTENT_STATUS_DONE.
- */
-
-void content_stop(hlcache_handle *h,
-		void (*callback)(struct content *c, content_msg msg,
-			union content_msg_data data, void *pw),
-		void *pw)
-{
-//newcache
-#if 0
-	struct content_user *user;
-
-	assert(c->status == CONTENT_STATUS_READY);
-
-	user = content_find_user(c, callback, p1, p2);
-	if (!user) {
-		LOG(("user not found in list"));
-		assert(0);
-		return;
-	}
-
-	LOG(("%p %s: stop user %p 0x%" PRIxPTR " 0x%" PRIxPTR,
-			c, llcache_handle_get_url(c->llcache), 
-			callback, p1, p2));
-	user->stop = true;
-#endif
 }
 
 
@@ -1308,6 +1296,118 @@ const llcache_handle *content_get_llcache_handle(struct content *c)
 	return c->llcache;
 }
 
+/**
+ * Clone a content object in its current state.
+ *
+ * \param c  Content to clone
+ * \return Clone of \a c
+ */
+struct content *content_clone(struct content *c)
+{
+	struct content *nc = talloc_zero(0, struct content);
+
+	if (nc == NULL) {
+		return NULL;
+	}
+	
+	if (llcache_handle_clone(c->llcache, &(nc->llcache)) != NSERROR_OK) {
+		content_destroy(nc);
+		return NULL;
+	}
+	
+	llcache_handle_change_callback(nc->llcache, 
+			content_llcache_callback, nc);
+	
+	nc->type = c->type;
+
+	if (c->mime_type != NULL) {
+		nc->mime_type = talloc_strdup(nc, c->mime_type);	
+		if (nc->mime_type == NULL) {
+			content_destroy(nc);
+			return NULL;
+		}
+	}
+
+	nc->status = c->status;
+	
+	nc->width = c->width;
+	nc->height = c->height;
+	nc->available_width = c->available_width;
+	nc->quirks = c->quirks;
+	
+	if (c->fallback_charset != NULL) {
+		nc->fallback_charset = talloc_strdup(nc, c->fallback_charset);
+		if (nc->fallback_charset == NULL) {
+			content_destroy(nc);
+			return NULL;
+		}
+	}
+	
+	if (c->refresh != NULL) {
+		nc->refresh = talloc_strdup(nc, c->refresh);
+		if (nc->refresh == NULL) {
+			content_destroy(nc);
+			return NULL;
+		}
+	}
+
+	nc->fresh = c->fresh;
+	nc->time = c->time;
+	nc->reformat_time = c->reformat_time;
+	nc->size = c->size;
+	nc->talloc_size = c->talloc_size;
+	
+	if (c->title != NULL) {
+		nc->title = talloc_strdup(nc, c->title);
+		if (nc->title == NULL) {
+			content_destroy(nc);
+			return NULL;
+		}
+	}
+	
+	nc->active = c->active;
+	
+	memcpy(&(nc->status_message), &(c->status_message), 120);
+	memcpy(&(nc->sub_status), &(c->sub_status), 80);
+	
+	nc->locked = c->locked;
+	nc->total_size = c->total_size;
+	nc->http_code = c->http_code;
+	
+	/* Duplicate the data member (and bitmap, if appropriate) */
+	if (handler_map[nc->type].clone != NULL) {
+		if (handler_map[nc->type].clone(c, nc) == false) {
+			content_destroy(nc);
+			return NULL;
+		}
+	}
+	
+	return nc;
+}
+
+/**
+ * Abort a content object
+ *
+ * \param c The content object to abort
+ * \return NSERROR_OK on success, otherwise appropriate error
+ */
+nserror content_abort(struct content *c)
+{
+	LOG(("Aborting %p", c));
+	
+	if (c->status == CONTENT_STATUS_READY) {
+		switch (c->type) {
+		case CONTENT_HTML:
+			html_stop(c);
+			break;
+		default:
+			LOG(("Unable to abort sub-parts for type %d", c->type));
+		}
+	}
+	
+	/* And for now, abort our llcache object */
+	return llcache_handle_abort(c->llcache);
+}
 
 /**
  * Convert a content into a download

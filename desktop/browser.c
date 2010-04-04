@@ -811,16 +811,18 @@ void browser_window_stop(struct browser_window *bw)
 	int children, index;
 
 	if (bw->loading_content != NULL) {
+		hlcache_handle_abort(bw->loading_content);
 		hlcache_handle_release(bw->loading_content);
 		bw->loading_content = NULL;
 	}
 
 	if (bw->current_content != NULL && content_get_status(
 			bw->current_content) != CONTENT_STATUS_DONE) {
+		nserror error;
 		assert(content_get_status(bw->current_content) == 
 				CONTENT_STATUS_READY);
-		content_stop(bw->current_content,
-				browser_window_callback, bw);
+		error = hlcache_handle_abort(bw->current_content);
+		assert(error == NSERROR_OK);
 	}
 
 	schedule_remove(browser_window_refresh, bw);

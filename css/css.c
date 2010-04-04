@@ -326,6 +326,33 @@ void nscss_destroy_css_data(struct content_css_data *c)
 	}
 }
 
+bool nscss_clone(const struct content *old, struct content *new_content)
+{
+	const char *data;
+	unsigned long size;
+
+	/* Simply replay create/process/convert */
+	/** \todo We need the charset of the old sheet */
+	if (nscss_create_css_data(&new_content->data.css,
+			content__get_url(new_content),
+			NULL, new_content->quirks) != NSERROR_OK)
+		return false;
+
+	data = content__get_source_data(new_content, &size);
+	if (size > 0) {
+		if (nscss_process_data(new_content, data, size) == false)
+			return false;
+	}
+
+	if (old->status == CONTENT_STATUS_READY ||
+			old->status == CONTENT_STATUS_DONE) {
+		if (nscss_convert(new_content) == false)
+			return false;
+	}
+
+	return true;
+}
+
 /**
  * Retrieve imported stylesheets
  *

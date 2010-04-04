@@ -37,7 +37,7 @@ struct textplain_line {
 };
 
 struct content_textplain_data {
-	const char *encoding;
+	char *encoding;
 	iconv_t iconv_cd;
 	size_t converted;
 	char *utf8_data;
@@ -58,6 +58,7 @@ bool textplain_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale, colour background_colour);
+bool textplain_clone(const struct content *old, struct content *new_content);
 
 /* access to lines for text selection and searching */
 unsigned long textplain_line_count(struct hlcache_handle *h);

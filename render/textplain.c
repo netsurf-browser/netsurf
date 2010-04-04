@@ -65,6 +65,7 @@ static plot_font_style_t textplain_style = {
 
 static int textplain_tab_width = 256;  /* try for a sensible default */
 
+static bool textplain_create_internal(struct content *c, const char *encoding);
 static int textplain_coord_from_offset(const char *text, size_t offset,
 	size_t length);
 static float textplain_line_height(void);
@@ -76,22 +77,28 @@ static float textplain_line_height(void);
 
 bool textplain_create(struct content *c, const http_parameter *params)
 {
-	char *utf8_data;
 	const char *encoding;
-	iconv_t iconv_cd;
-	union content_msg_data msg_data;
 	nserror error;
 
 	textplain_style.size = (option_font_size * FONT_SIZE_SCALE) / 10;
-
-	utf8_data = talloc_array(c, char, CHUNK);
-	if (!utf8_data)
-		goto no_memory;
 
 	error = http_parameter_list_find_item(params, "charset", &encoding);
 	if (error != NSERROR_OK) {
 		encoding = "Windows-1252";
 	}
+
+	return textplain_create_internal(c, encoding);
+}
+
+bool textplain_create_internal(struct content *c, const char *encoding)
+{
+	char *utf8_data;
+	iconv_t iconv_cd;
+	union content_msg_data msg_data;
+
+	utf8_data = talloc_array(c, char, CHUNK);
+	if (!utf8_data)
+		goto no_memory;
 
 	iconv_cd = iconv_open("utf-8", encoding);
 	if (iconv_cd == (iconv_t)(-1) && errno == EINVAL) {
@@ -110,7 +117,10 @@ bool textplain_create(struct content *c, const http_parameter *params)
 		return false;
 	}
 
-	c->data.textplain.encoding = encoding;
+	c->data.textplain.encoding = strdup(encoding);
+	if (c->data.textplain.encoding == NULL)
+		goto no_memory;
+		
 	c->data.textplain.iconv_cd = iconv_cd;
 	c->data.textplain.converted = 0;
 	c->data.textplain.utf8_data = utf8_data;
@@ -310,8 +320,37 @@ no_memory:
 
 void textplain_destroy(struct content *c)
 {
+	if (c->data.textplain.encoding != NULL)
+		free(c->data.textplain.encoding);
+
 	if (c->data.textplain.iconv_cd)
 		iconv_close(c->data.textplain.iconv_cd);
+}
+
+
+bool textplain_clone(const struct content *old, struct content *new_content)
+{
+	const char *data;
+	unsigned long size;
+
+	/* Simply replay create/process/convert */
+	if (textplain_create_internal(new_content, 
+			old->data.textplain.encoding) == false)
+		return false;
+
+	data = content__get_source_data(new_content, &size);
+	if (size > 0) {
+		if (textplain_process_data(new_content, data, size) == false)
+			return false;
+	}
+
+	if (old->status == CONTENT_STATUS_READY ||
+			old->status == CONTENT_STATUS_DONE) {
+		if (textplain_convert(new_content) == false)
+			return false;
+	}
+
+	return true;
 }
 
 
