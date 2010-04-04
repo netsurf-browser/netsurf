@@ -28,8 +28,7 @@ struct dlnode
 
 struct gui_download_window {
 	struct Window *win;
-	Object *objects[OID_LAST];
-	struct Gadget *gadgets[GID_LAST];
+	Object *objects[GID_LAST];
 	struct nsObject *node;
 	ULONG pad[5];
 	BPTR fh;

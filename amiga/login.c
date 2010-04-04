@@ -65,7 +65,7 @@ void gui_401login_open(struct browser_window *bw, hlcache_handle *c,
 			WINDOW_IconifyGadget, FALSE,
 			WINDOW_LockHeight,TRUE,
          	WINDOW_Position, WPOS_CENTERSCREEN,
-           	WINDOW_ParentGroup, lw->gadgets[GID_MAIN] = VGroupObject,
+           	WINDOW_ParentGroup, lw->objects[GID_MAIN] = VGroupObject,
 				LAYOUT_AddChild, StringObject,
 					STRINGA_TextVal,lw->host,
 					GA_ReadOnly,TRUE,
@@ -82,7 +82,7 @@ void gui_401login_open(struct browser_window *bw, hlcache_handle *c,
 					LABEL_Text,messages_get("Realm"),
 				LabelEnd,
 				CHILD_WeightedHeight,0,
-				LAYOUT_AddChild, lw->gadgets[GID_USER] = StringObject,
+				LAYOUT_AddChild, lw->objects[GID_USER] = StringObject,
 					GA_ID,GID_USER,
 					GA_TabCycle,TRUE,
 				StringEnd,
@@ -90,7 +90,7 @@ void gui_401login_open(struct browser_window *bw, hlcache_handle *c,
 					LABEL_Text,messages_get("Username"),
 				LabelEnd,
 				CHILD_WeightedHeight,0,
-				LAYOUT_AddChild, lw->gadgets[GID_PASS] = StringObject,
+				LAYOUT_AddChild, lw->objects[GID_PASS] = StringObject,
 					GA_ID,GID_PASS,
 					STRINGA_HookType,SHK_PASSWORD,
 					GA_TabCycle,TRUE,
@@ -100,14 +100,14 @@ void gui_401login_open(struct browser_window *bw, hlcache_handle *c,
 				LabelEnd,
 				CHILD_WeightedHeight,0,
 				LAYOUT_AddChild, HGroupObject,
-					LAYOUT_AddChild, lw->gadgets[GID_LOGIN] = ButtonObject,
+					LAYOUT_AddChild, lw->objects[GID_LOGIN] = ButtonObject,
 						GA_ID,GID_LOGIN,
 						GA_RelVerify,TRUE,
 						GA_Text,messages_get("Login"),
 						GA_TabCycle,TRUE,
 					ButtonEnd,
 					CHILD_WeightedHeight,0,
-					LAYOUT_AddChild, lw->gadgets[GID_CANCEL] = ButtonObject,
+					LAYOUT_AddChild, lw->objects[GID_CANCEL] = ButtonObject,
 						GA_ID,GID_CANCEL,
 						GA_RelVerify,TRUE,
 						GA_Text,messages_get("Cancel"),
@@ -136,8 +136,8 @@ void ami_401login_login(struct gui_login_window *lw)
 	ULONG *user,*pass;
 	STRPTR userpass;
 
-	GetAttr(STRINGA_TextVal,lw->gadgets[GID_USER],(ULONG *)&user);
-	GetAttr(STRINGA_TextVal,lw->gadgets[GID_PASS],(ULONG *)&pass);
+	GetAttr(STRINGA_TextVal,lw->objects[GID_USER],(ULONG *)&user);
+	GetAttr(STRINGA_TextVal,lw->objects[GID_PASS],(ULONG *)&pass);
 
 	userpass = ASPrintf("%s:%s",user,pass);
 	urldb_set_auth_details(lw->url,lw->realm,userpass);

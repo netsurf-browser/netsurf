@@ -20,8 +20,7 @@
 #define AMIGA_LOGIN_H
 struct gui_login_window {
 	struct Window *win;
-	Object *objects[OID_LAST];
-	struct Gadget *gadgets[GID_LAST];
+	Object *objects[GID_LAST];
 	struct nsObject *node;
 	struct browser_window *bw;
 	ULONG pad[3];
