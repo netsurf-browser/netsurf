@@ -206,6 +206,12 @@ char *search_web_get_url(const char *encsearchterm)
 
 void search_web_retrieve_ico(bool localdefault)
 {
+	static const content_type accept[] = {
+#ifdef WITH_BMP
+		CONTENT_ICO,
+#endif
+		CONTENT_UNKNOWN
+	};
 	char *url;
 	nserror error;
 
@@ -230,7 +236,8 @@ void search_web_retrieve_ico(bool localdefault)
 	}
 
 	error = hlcache_handle_retrieve(url, 0, NULL, NULL,
-			search_web_ico_callback, NULL, NULL, &search_ico);
+			search_web_ico_callback, NULL, NULL, accept,
+			&search_ico);
 	if (error != NSERROR_OK)
 		search_ico = NULL;
 
@@ -269,6 +276,8 @@ nserror search_web_ico_callback(hlcache_handle *ico,
 		} else 
 #endif
 		{
+			hlcache_handle_release(ico);
+			search_ico = NULL;
 			search_web_retrieve_ico(true);
 		}
 		break;

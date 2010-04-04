@@ -56,19 +56,22 @@ typedef nserror (*hlcache_handle_callback)(hlcache_handle *handle,
 /**
  * Retrieve a high-level cache handle for an object
  *
- * \param url      URL of the object to retrieve handle for
- * \param flags    Object retrieval flags
- * \param referer  Referring URL, or NULL if none
- * \param post     POST data, or NULL for a GET request
- * \param cb       Callback to handle object events
- * \param pw       Pointer to client-specific data for callback
- * \param child    Child retrieval context, or NULL for top-level content
- * \param result   Pointer to location to recieve cache handle
+ * \param url             URL of the object to retrieve handle for
+ * \param flags           Object retrieval flags
+ * \param referer         Referring URL, or NULL if none
+ * \param post            POST data, or NULL for a GET request
+ * \param cb              Callback to handle object events
+ * \param pw              Pointer to client-specific data for callback
+ * \param child           Child retrieval context, or NULL for top-level content
+ * \param accepted_types  Array of acceptable content types, or NULL for any
+ * \param result          Pointer to location to recieve cache handle
  * \return NSERROR_OK on success, appropriate error otherwise
  *
  * Child contents are keyed on the tuple < URL, quirks >.
  * The quirks field is ignored for child contents whose behaviour is not
  * affected by quirks mode.
+ *
+ * The \a accepted_types array must be terminated with CONTENT_UNKNOWN
  *
  * \todo The above rules should be encoded in the handler_map.
  *
@@ -77,7 +80,8 @@ typedef nserror (*hlcache_handle_callback)(hlcache_handle *handle,
 nserror hlcache_handle_retrieve(const char *url, uint32_t flags,
 		const char *referer, llcache_post_data *post,
 		hlcache_handle_callback cb, void *pw,
-		hlcache_child_context *child, hlcache_handle **result);
+		hlcache_child_context *child, 
+		const content_type *accepted_types, hlcache_handle **result);
 
 /**
  * Release a high-level cache handle

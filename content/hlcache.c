@@ -26,7 +26,9 @@
 
 #include "content/content.h"
 #include "content/hlcache.h"
+#include "utils/http.h"
 #include "utils/log.h"
+#include "utils/messages.h"
 #include "utils/url.h"
 
 typedef struct hlcache_entry hlcache_entry;
@@ -37,6 +39,8 @@ struct hlcache_retrieval_ctx {
 	llcache_handle *llcache;	/**< Low-level cache handle */
 
 	hlcache_handle *handle;		/**< High-level handle for object */
+
+	const content_type *accepted_types;	/**< Accepted types, or NULL */
 
 	hlcache_child_context child;	/**< Child context */	
 };
@@ -62,6 +66,8 @@ static hlcache_entry *hlcache_content_list;
 
 static nserror hlcache_llcache_callback(llcache_handle *handle,
 		const llcache_event *event, void *pw);
+static bool hlcache_type_is_acceptable(llcache_handle *llcache, 
+		const content_type *accepted_types);
 static nserror hlcache_find_content(hlcache_retrieval_ctx *ctx);
 static void hlcache_content_callback(struct content *c,
 		content_msg msg, union content_msg_data data, void *pw);
@@ -74,7 +80,8 @@ static void hlcache_content_callback(struct content *c,
 nserror hlcache_handle_retrieve(const char *url, uint32_t flags,
 		const char *referer, llcache_post_data *post,
 		hlcache_handle_callback cb, void *pw,
-		hlcache_child_context *child, hlcache_handle **result)
+		hlcache_child_context *child, 
+		const content_type *accepted_types, hlcache_handle **result)
 {
 	hlcache_retrieval_ctx *ctx;
 	nserror error;
@@ -96,6 +103,8 @@ nserror hlcache_handle_retrieve(const char *url, uint32_t flags,
 		ctx->child.charset = child->charset;
 		ctx->child.quirks = child->quirks;
 	}
+
+	ctx->accepted_types = accepted_types;
 
 	ctx->handle->cb = cb;
 	ctx->handle->pw = pw;
@@ -218,9 +227,26 @@ nserror hlcache_llcache_callback(llcache_handle *handle,
 
 	switch (event->type) {
 	case LLCACHE_EVENT_HAD_HEADERS:
-		error = hlcache_find_content(ctx);
-		if (error != NSERROR_OK)
-			return error;
+		if (hlcache_type_is_acceptable(handle, ctx->accepted_types)) {
+			error = hlcache_find_content(ctx);
+			if (error != NSERROR_OK)
+				return error;
+		} else {
+			/* Unacceptable type: abort fetch and report error */
+			llcache_handle_abort(handle);
+			llcache_handle_release(handle);
+
+			if (ctx->handle->cb != NULL) {
+				hlcache_event hlevent;
+
+				hlevent.type = CONTENT_MSG_ERROR;
+				hlevent.data.error = messages_get("BadType");
+
+				ctx->handle->cb(ctx->handle, &hlevent, 
+						ctx->handle->pw);
+			}
+		}
+
 		/* No longer require retrieval context */
 		free(ctx);
 		break;
@@ -244,6 +270,50 @@ nserror hlcache_llcache_callback(llcache_handle *handle,
 	}
 
 	return NSERROR_OK;
+}
+
+/**
+ * Determine if the type of a low-level cache object is acceptable
+ *
+ * \param llcache         Low-level cache object to consider
+ * \param accepted_types  Array of acceptable types, or NULL for any
+ * \return True if the type is acceptable, false otherwise
+ */
+bool hlcache_type_is_acceptable(llcache_handle *llcache, 
+		const content_type *accepted_types)
+{
+	const char *content_type_header;
+	char *mime_type;
+	http_parameter *params;
+	content_type type;
+	nserror error;
+
+	if (accepted_types == NULL)
+		return true;
+
+	content_type_header = 
+			llcache_handle_get_header(llcache, "Content-Type");
+	if (content_type_header == NULL)
+		content_type_header = "text/plain";
+
+	error = http_parse_content_type(content_type_header, &mime_type, 
+			&params);
+	if (error != NSERROR_OK)
+		return false;
+
+	type = content_lookup(mime_type);
+
+	free(mime_type);
+	http_parameter_list_destroy(params);
+
+	while (*accepted_types != CONTENT_UNKNOWN) {
+		if (*accepted_types == type)
+			break;
+
+		accepted_types++;
+	}
+
+	return *accepted_types == type;
 }
 
 /**

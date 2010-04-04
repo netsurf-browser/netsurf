@@ -409,7 +409,8 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	error = hlcache_handle_retrieve(url2, 0, referer,
 			fetch_is_post ? &post : NULL,
 			browser_window_callback, bw,
-			parent != NULL ? &child : NULL, &c);
+			parent != NULL ? &child : NULL,
+			NULL, &c);
 	if (error == NSERROR_NO_FETCH_HANDLER) {
 		gui_launch_url(url2);
 		free(url2);

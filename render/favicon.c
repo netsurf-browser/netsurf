@@ -148,6 +148,18 @@ char *favicon_get_icon_ref(struct content *c, xmlNode *html)
 
 bool favicon_get_icon(struct content *c, xmlNode *html)
 {
+	static const content_type permitted_types[] = {
+#ifdef WITH_BMP
+		CONTENT_ICO,
+#endif
+#if defined(WITH_MNG) || defined(WITH_PNG)
+		CONTENT_PNG,
+#endif
+#ifdef WITH_GIF
+		CONTENT_GIF,
+#endif
+		CONTENT_UNKNOWN
+	};
 	char *url;
 	nserror error;
 
@@ -157,7 +169,7 @@ bool favicon_get_icon(struct content *c, xmlNode *html)
 
 	error = hlcache_handle_retrieve(url, LLCACHE_RETRIEVE_NO_ERROR_PAGES, 
 			content__get_url(c), NULL, favicon_callback, c, NULL, 
-			&c->data.html.favicon);	
+			permitted_types, &c->data.html.favicon);	
 
 	free(url);
 
@@ -171,29 +183,12 @@ bool favicon_get_icon(struct content *c, xmlNode *html)
 nserror favicon_callback(hlcache_handle *icon,
 		const hlcache_event *event, void *pw)
 {
-	static const content_type permitted_types[] = {
-#ifdef WITH_BMP
-		CONTENT_ICO,
-#endif
-#if defined(WITH_MNG) || defined(WITH_PNG)
-		CONTENT_PNG,
-#endif
-#ifdef WITH_GIF
-		CONTENT_GIF,
-#endif
-		CONTENT_UNKNOWN
-	};
 	struct content *c = pw;
-	const content_type *type;
 
 	switch (event->type) {
 	case CONTENT_MSG_LOADING:
 		/* check that the favicon is really a correct image type */
-		for (type = permitted_types; *type != CONTENT_UNKNOWN; type++)
-			if (content_get_type(icon) == *type)
-				break;
-
-		if (*type == CONTENT_UNKNOWN) {
+		if (content_get_type(icon) == CONTENT_UNKNOWN) {
 			union content_msg_data msg_data;
 
 			LOG(("%s is not a favicon", content_get_url(icon)));

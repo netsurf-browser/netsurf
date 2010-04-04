@@ -783,6 +783,7 @@ bool html_meta_refresh(struct content *c, xmlNode *head)
 
 bool html_find_stylesheets(struct content *c, xmlNode *html)
 {
+	static const content_type accept[] = { CONTENT_CSS, CONTENT_UNKNOWN };
 	xmlNode *node;
 	char *rel, *type, *media, *href, *url, *url2;
 	unsigned int i = STYLESHEET_START;
@@ -819,7 +820,7 @@ bool html_find_stylesheets(struct content *c, xmlNode *html)
 
 	ns_error = hlcache_handle_retrieve(default_stylesheet_url, 0,
 			content__get_url(c), NULL,
-			html_convert_css_callback, c, &child, 
+			html_convert_css_callback, c, &child, accept,
 			&c->data.html.stylesheets[
 					STYLESHEET_BASE].data.external);
 	if (ns_error != NSERROR_OK)
@@ -830,7 +831,7 @@ bool html_find_stylesheets(struct content *c, xmlNode *html)
 	if (c->data.html.quirks == BINDING_QUIRKS_MODE_FULL) {
 		ns_error = hlcache_handle_retrieve(quirks_stylesheet_url, 0,
 				content__get_url(c), NULL,
-				html_convert_css_callback, c, &child,
+				html_convert_css_callback, c, &child, accept,
 				&c->data.html.stylesheets[
 					STYLESHEET_QUIRKS].data.external);
 		if (ns_error != NSERROR_OK)
@@ -842,7 +843,7 @@ bool html_find_stylesheets(struct content *c, xmlNode *html)
 	if (option_block_ads) {
 		ns_error = hlcache_handle_retrieve(adblock_stylesheet_url, 0,
 				content__get_url(c), NULL,
-				html_convert_css_callback, c, &child,
+				html_convert_css_callback, c, &child, accept,
 				&c->data.html.stylesheets[
 					STYLESHEET_ADBLOCK].data.external);
 		if (ns_error != NSERROR_OK)
@@ -951,6 +952,7 @@ bool html_find_stylesheets(struct content *c, xmlNode *html)
 			ns_error = hlcache_handle_retrieve(url2, 0,
 					content__get_url(c), NULL,
 					html_convert_css_callback, c, &child,
+					accept,
 					&c->data.html.stylesheets[i].
 							data.external);
 
@@ -1246,7 +1248,7 @@ bool html_fetch_object(struct content *c, const char *url, struct box *box,
 	}
 
 	error = hlcache_handle_retrieve(url2, 0, content__get_url(c), NULL,
-			html_object_callback, c, &child,
+			html_object_callback, c, &child, permitted_types,
 			&c_fetch);
 
 	/* No longer need normalized url */
@@ -1313,6 +1315,7 @@ bool html_replace_object(struct content *c, unsigned int i, const char *url)
 	/* initialise fetch */
 	error = hlcache_handle_retrieve(url2, 0, content__get_url(c), NULL,
 			html_object_callback, c, &child,
+			c->data.html.object[i].permitted_types,
 			&c_fetch);
 
 	free(url2);

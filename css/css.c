@@ -200,6 +200,7 @@ bool nscss_convert(struct content *c)
  */
 css_error nscss_convert_css_data(struct content_css_data *c)
 {
+	static const content_type accept[] = { CONTENT_CSS, CONTENT_UNKNOWN };
 	const char *referer;
 	uint32_t i = 0;
 	css_error error;
@@ -252,7 +253,8 @@ css_error nscss_convert_css_data(struct content_css_data *c)
 		c->imports[c->import_count].media = media;
 		nerror = hlcache_handle_retrieve(lwc_string_data(uri),
 				0, referer, NULL, nscss_import, c,
-				&child, &c->imports[c->import_count++].c);
+				&child, accept,
+				&c->imports[c->import_count++].c);
 		if (error != NSERROR_OK) {
 			return CSS_NOMEM;
 		}
