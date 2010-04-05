@@ -24,6 +24,7 @@
 #include <oslib/wimp.h>
 #include "utils/config.h"
 #include "content/content.h"
+#include "content/hlcache.h"
 #include "content/urldb.h"
 #include "desktop/browser.h"
 #include "desktop/401login.h"
@@ -73,13 +74,14 @@ void ro_gui_401login_init(void)
 /**
  * Open the login dialog
  */
-void gui_401login_open(struct browser_window *bw, struct content *c,
+void gui_401login_open(struct browser_window *bw, hlcache_handle *c,
 		const char *realm)
 {
-	char *murl, *host;
+	const char *murl;
+	char *host;
 	url_func_result res;
 
-	murl = c->url;
+	murl = content_get_url(c);
 	res = url_host(murl, &host);
 	assert(res == URL_FUNC_OK);
 
