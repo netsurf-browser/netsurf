@@ -62,18 +62,12 @@ typedef enum {
 	CONTENT_MSG_STATUS,    /**< new status string */
 	CONTENT_MSG_REFORMAT,  /**< content_reformat done */
 	CONTENT_MSG_REDRAW,    /**< needs redraw (eg. new animation frame) */
-	CONTENT_MSG_NEWPTR,    /**< structure has been replaced */
 	CONTENT_MSG_REFRESH,   /**< wants refresh */
-	CONTENT_MSG_LAUNCH,    /**< needs url launching in external program */
-	CONTENT_MSG_AUTH,      /**< authentication required */
-	CONTENT_MSG_SSL        /**< SSL cert verify failed */
 } content_msg;
 
 /** Extra data for some content_msg messages. */
 union content_msg_data {
 	const char *error;	/**< Error message, for CONTENT_MSG_ERROR. */
-	const char *new_url;	/**< Replacement URL (or NULL if the same
-				 * as previous), for CONTENT_MSG_NEWPTR. */
 	/** Area of content which needs redrawing, for CONTENT_MSG_REDRAW. */
 	struct {
 		float x, y, width, height;
@@ -87,14 +81,7 @@ union content_msg_data {
 		/** Dimensions to plot object with. */
 		float object_width, object_height;
 	} redraw;
-	const char *auth_realm;	/**< Realm, for CONTENT_MSG_AUTH. */
 	int delay;	/**< Minimum delay, for CONTENT_MSG_REFRESH */
-	const char *launch_url; /**< URL to launch, for CONTENT_MSG_LAUNCH */
-	struct {
-		/** Certificate chain (certs[0] == server) */
-		const struct ssl_cert_info *certs;
-		unsigned long num;	/**< Number of certs in chain */
-	} ssl;
 };
 
 
