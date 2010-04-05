@@ -38,11 +38,12 @@ struct content_artworks_data {
 	size_t size;
 };
 
-bool artworks_convert(struct content *c, int width, int height);
+bool artworks_convert(struct content *c);
 void artworks_destroy(struct content *c);
 bool artworks_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale, colour background_colour);
+bool artworks_clone(const struct content *old, struct content *new_content);
 
 #endif

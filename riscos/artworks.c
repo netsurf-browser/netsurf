@@ -33,7 +33,7 @@
 #include "oslib/wimp.h"
 #include "utils/config.h"
 #include "desktop/plotters.h"
-#include "content/content.h"
+#include "content/content_protected.h"
 #include "riscos/artworks.h"
 #include "riscos/gui.h"
 #include "riscos/wimputils.h"
@@ -72,7 +72,7 @@ struct awinfo_block {
 
 /* Assembler routines for interfacing with the ArtworksRenderer module */
 
-os_error *awrender_init(char **doc,
+os_error *awrender_init(const char **doc,
 		unsigned long *doc_size,
 		void *routine,
 		void *workspace);
@@ -98,13 +98,16 @@ os_error *awrender_render(const char *doc,
  * bounding box bottom-left.
  */
 
-bool artworks_convert(struct content *c, int width, int height)
+bool artworks_convert(struct content *c)
 {
 	union content_msg_data msg_data;
+	const char *source_data;
+	unsigned long source_size;
 	void *init_workspace;
 	void *init_routine;
 	os_error *error;
 	int used = -1;  /* slightly better with older OSLib versions */
+	char title[100];
 
 	/* check whether AWViewer has been seen and we can therefore
 		locate the ArtWorks rendering modules */
@@ -149,8 +152,10 @@ bool artworks_convert(struct content *c, int width, int height)
 		return false;
 	}
 
+	source_data = content__get_source_data(c, &source_size);
+
 	/* initialise (convert file to new format if required) */
-	error = awrender_init(&c->source_data, &c->source_size,
+	error = awrender_init(&source_data, &source_size,
 			init_routine, init_workspace);
 	if (error) {
 		LOG(("awrender_init: 0x%x : %s",
@@ -161,7 +166,7 @@ bool artworks_convert(struct content *c, int width, int height)
 	}
 
 	error = (os_error*)_swix(AWRender_DocBounds, _IN(0) | _OUT(2) | _OUT(3) | _OUT(4) | _OUT(5),
-			c->source_data,
+			source_data,
 			&c->data.artworks.x0,
 			&c->data.artworks.y0,
 			&c->data.artworks.x1,
@@ -194,10 +199,9 @@ bool artworks_convert(struct content *c, int width, int height)
 	c->width  = (c->data.artworks.x1 - c->data.artworks.x0) / 512;
 	c->height = (c->data.artworks.y1 - c->data.artworks.y0) / 512;
 
-	c->title = malloc(100);
-	if (c->title)
-		snprintf(c->title, 100, messages_get("ArtWorksTitle"), c->width,
-				c->height, c->source_size);
+	snprintf(title, sizeof(title), messages_get("ArtWorksTitle"), 
+			c->width, c->height, source_size);
+	content__set_title(c, title);
 	c->status = CONTENT_STATUS_DONE;
 	/* Done: update status bar */
 	content_set_status(c, "");
@@ -234,6 +238,8 @@ bool artworks_redraw(struct content *c, int x, int y,
 		}
 	};
 	struct awinfo_block info;
+	const char *source_data;
+	unsigned long source_size;
 	os_error *error;
 	os_trfm matrix;
 	int vals[24];
@@ -298,7 +304,9 @@ bool artworks_redraw(struct content *c, int x, int y,
 		return false;
 	}
 
-	error = awrender_render(c->source_data,
+	source_data = content__get_source_data(c, &source_size);
+
+	error = awrender_render(source_data,
 			&info,
 			&matrix,
 			vals,
@@ -306,7 +314,7 @@ bool artworks_redraw(struct content *c, int x, int y,
 			&c->data.artworks.size,
 			110,	/* fully anti-aliased */
 			0,
-			c->source_size,
+			source_size,
 			c->data.artworks.render_routine,
 			c->data.artworks.render_workspace);
 
@@ -314,6 +322,18 @@ bool artworks_redraw(struct content *c, int x, int y,
 		LOG(("awrender_render: 0x%x: %s",
 				error->errnum, error->errmess));
 		return false;
+	}
+
+	return true;
+}
+
+bool artworks_clone(const struct content *old, struct content *new_content)
+{
+	/* Simply re-run convert */
+	if (old->status == CONTENT_STATUS_READY || 
+			old->status == CONTENT_STATUS_DONE) {
+		if (artworks_convert(new_content) == false)
+			return false;
 	}
 
 	return true;
