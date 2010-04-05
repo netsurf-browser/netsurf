@@ -41,7 +41,6 @@
 #include "oslib/osgbpb.h"
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
-#include "content/fetch.h"
 #include "desktop/gui.h"
 #include "desktop/netsurf.h"
 #include "riscos/dialog.h"
@@ -73,8 +72,8 @@ typedef enum
 
 /** Data for a download window. */
 struct gui_download_window {
-	/** Associated fetch, or 0 if the fetch has completed or aborted. */
-	struct fetch *fetch;
+	/** Associated context, or 0 if the fetch has completed or aborted. */
+	download_context *ctx;
 	unsigned int received;	/**< Amount of data received so far. */
 	unsigned int total_size; /**< Size of resource, or 0 if unknown. */
 
@@ -205,18 +204,16 @@ const char *ro_gui_download_temp_name(struct gui_download_window *dw)
 /**
  * Create and open a download progress window.
  *
- * \param  url         URL of download
- * \param  mime_type   MIME type sent by server
- * \param  fetch       fetch structure
- * \param  total_size  size of resource, or 0 if unknown
+ * \param  ctx         Download context
  * \return  a new gui_download_window structure, or 0 on error and error
  *          reported
  */
 
-struct gui_download_window *gui_download_window_create(const char *url,
-		const char *mime_type, struct fetch *fetch,
-		unsigned int total_size, struct gui_window *gui)
+struct gui_download_window *gui_download_window_create(download_context *ctx,
+		struct gui_window *gui)
 {
+	const char *url = download_context_get_url(ctx);
+	const char *mime_type = download_context_get_mime_type(ctx);
 	const char *temp_name;
 	char *nice, *scheme = NULL;
 	struct gui_download_window *dw;
@@ -234,13 +231,13 @@ struct gui_download_window *gui_download_window_create(const char *url,
 		return 0;
 	}
 
-	dw->fetch = fetch;
+	dw->ctx = ctx;
 	dw->saved = false;
 	dw->close_confirmed = false;
 	dw->error = false;
 	dw->query = QUERY_INVALID;
 	dw->received = 0;
-	dw->total_size = total_size;
+	dw->total_size = download_context_get_total_length(ctx);
 	strncpy(dw->url, url, sizeof dw->url);
 	dw->url[sizeof dw->url - 1] = 0;
 	dw->status[0] = 0;
@@ -429,10 +426,11 @@ struct gui_download_window *gui_download_window_create(const char *url,
  * \param  dw    download window
  * \param  data  pointer to block of data received
  * \param  size  size of data
+ * \return NSERROR_OK on success, appropriate error otherwise
  */
 
-void gui_download_window_data(struct gui_download_window *dw, const char *data,
-		unsigned int size)
+nserror gui_download_window_data(struct gui_download_window *dw, 
+		const char *data, unsigned int size)
 {
 	while (true) {
 		const char *msg;
@@ -452,7 +450,7 @@ void gui_download_window_data(struct gui_download_window *dw, const char *data,
 		}
 		else {
 			dw->received += size;
-			return;
+			return NSERROR_OK;
 		}
 
 		warn_user("SaveError", msg);
@@ -495,11 +493,11 @@ void gui_download_window_data(struct gui_download_window *dw, const char *data,
 		}
 
 		/* give up then */
-		assert(dw->fetch);
-		fetch_abort(dw->fetch);
+		assert(dw->ctx);
+		download_context_abort(dw->ctx);
 		gui_download_window_error(dw, msg);
 
-		return;
+		return NSERROR_SAVE_FAILED;
 	}
 }
 
@@ -533,7 +531,7 @@ void ro_gui_download_update_status(struct gui_download_window *dw)
 
 	total_size = human_friendly_bytesize(max(dw->received, dw->total_size));
 
-	if (dw->fetch) {
+	if (dw->ctx) {
 		rate = (dw->received - dw->last_received) / dt;
 		received = human_friendly_bytesize(dw->received);
 		speed = human_friendly_bytesize(rate);
@@ -638,7 +636,7 @@ void ro_gui_download_update_status(struct gui_download_window *dw)
 		warn_user("WimpError", error->errmess);
 	}
 
-	if (dw->fetch)
+	if (dw->ctx)
 		schedule(100, ro_gui_download_update_status_wrapper, dw);
 	else
 		schedule_remove(ro_gui_download_update_status_wrapper, dw);
@@ -696,7 +694,9 @@ void gui_download_window_error(struct gui_download_window *dw,
 {
 	os_error *error;
 
-	dw->fetch = 0;
+	if (dw->ctx != NULL)
+		download_context_destroy(dw->ctx);
+	dw->ctx = NULL;
 	dw->error = true;
 
 	schedule_remove(ro_gui_download_update_status_wrapper, dw);
@@ -745,7 +745,9 @@ void gui_download_window_done(struct gui_download_window *dw)
 {
 	os_error *error;
 
-	dw->fetch = 0;
+	if (dw->ctx != NULL)
+		download_context_destroy(dw->ctx);
+	dw->ctx = NULL;
 	ro_gui_download_update_status(dw);
 
 	error = xosfind_closew(dw->file);
@@ -855,7 +857,7 @@ bool ro_gui_download_keypress(wimp_key *key)
 
 			dw->send_dataload = false;
 			if (ro_gui_download_save(dw, dw->path,
-					!option_confirm_overwrite) && !dw->fetch)
+					!option_confirm_overwrite) && !dw->ctx)
 			{
 				/* finished already */
 				schedule(200, ro_gui_download_window_destroy_wrapper, dw);
@@ -944,7 +946,7 @@ void ro_gui_download_datasave_ack(wimp_message *message)
 			!option_confirm_overwrite))
 		return;
 
-	if (!dw->fetch) {
+	if (!dw->ctx) {
 		/* Ack successful completed save with message_DATA_LOAD immediately
 		   to reduce the chance of the target app getting confused by it
 		   being delayed */
@@ -1141,7 +1143,7 @@ os_error *ro_gui_download_move(struct gui_download_window *dw,
 		return error;
 	}
 
-	if (dw->fetch) {
+	if (dw->ctx) {
 		/* open new destination file if still fetching */
 		error = xosfile_write(dest_file, 0xdeaddead, 0xdeaddead,
 				fileswitch_ATTR_OWNER_READ |
@@ -1293,7 +1295,8 @@ bool ro_gui_download_save(struct gui_download_window *dw,
 		}
 
 		if (error) {
-			if (dw->fetch) fetch_abort(dw->fetch);
+			if (dw->ctx) 
+				download_context_abort(dw->ctx);
 			gui_download_window_error(dw, error->errmess);
 		}
 		return false;
@@ -1408,7 +1411,7 @@ void ro_gui_download_close(wimp_w w)
 
 bool ro_gui_download_window_destroy(struct gui_download_window *dw, bool quit)
 {
-	bool safe = dw->saved && !dw->fetch;
+	bool safe = dw->saved && !dw->ctx;
 	os_error *error;
 
 	if (!safe && !dw->close_confirmed)
@@ -1487,8 +1490,10 @@ bool ro_gui_download_window_destroy(struct gui_download_window *dw, bool quit)
 		}
 	}
 
-	if (dw->fetch)
-		fetch_abort(dw->fetch);
+	if (dw->ctx) {
+		download_context_abort(dw->ctx);
+		download_context_destroy(dw->ctx);
+	}
 
 	free(dw);
 
@@ -1569,7 +1574,7 @@ void ro_gui_download_overwrite_confirmed(query_id id, enum query_response res, v
 	if (!ro_gui_download_save(dw, dw->save_message.data.data_xfer.file_name, true))
 		return;
 
-	if (!dw->fetch) {
+	if (!dw->ctx) {
 		/* Ack successful completed save with message_DATA_LOAD immediately
 		   to reduce the chance of the target app getting confused by it
 		   being delayed */
