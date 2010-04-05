@@ -30,7 +30,7 @@
 #include "oslib/drawfile.h"
 #include "utils/config.h"
 #include "desktop/plotters.h"
-#include "content/content.h"
+#include "content/content_protected.h"
 #include "riscos/draw.h"
 #include "riscos/gui.h"
 #include "utils/utils.h"
@@ -44,16 +44,22 @@
  * bounding box bottom-left.
  */
 
-bool draw_convert(struct content *c, int width, int height)
+bool draw_convert(struct content *c)
 {
 	union content_msg_data msg_data;
+	const char *source_data;
+	unsigned long source_size;
+	const void *data;
 	os_box bbox;
-	void *data = c->source_data;
 	os_error *error;
+	char title[100];
+
+	source_data = content__get_source_data(c, &source_size);
+	data = source_data;
 
 	/* BBox contents in Draw units (256*OS unit) */
 	error = xdrawfile_bbox(0, (drawfile_diagram *) data,
-			(int) c->source_size, 0, &bbox);
+			(int) source_size, 0, &bbox);
 	if (error) {
 		LOG(("xdrawfile_bbox: 0x%x: %s",
 				error->errnum, error->errmess));
@@ -74,10 +80,10 @@ bool draw_convert(struct content *c, int width, int height)
 
 	c->data.draw.x0 = bbox.x0;
 	c->data.draw.y0 = bbox.y0;
-	c->title = malloc(100);
-	if (c->title)
-		snprintf(c->title, 100, messages_get("DrawTitle"), c->width,
-				c->height, c->source_size);
+	snprintf(title, sizeof(title), messages_get("DrawTitle"), c->width,
+			c->height, source_size);
+	content__set_title(c, title);
+
 	c->status = CONTENT_STATUS_DONE;
 	/* Done: update status bar */
 	content_set_status(c, "");
@@ -105,7 +111,9 @@ bool draw_redraw(struct content *c, int x, int y,
 		float scale, colour background_colour)
 {
 	os_trfm matrix;
-	void *data = c->source_data;
+	const char *source_data;
+	unsigned long source_size;
+	const void *data;
 	os_error *error;
 
 	if (plot.flush && !plot.flush())
@@ -113,6 +121,9 @@ bool draw_redraw(struct content *c, int x, int y,
 
 	if (!c->width || !c->height)
 		return false;
+
+	source_data = content__get_source_data(c, &source_size);
+	data = source_data;
 
 	/* Scaled image. Transform units (65536*OS units) */
 	matrix.entries[0][0] = width * 65536 / c->width;
@@ -126,7 +137,7 @@ bool draw_redraw(struct content *c, int x, int y,
 			c->data.draw.y0 * height / c->height;
 
 	error = xdrawfile_render(0, (drawfile_diagram *) data,
-			(int) c->source_size, &matrix, 0, 0);
+			(int) source_size, &matrix, 0, 0);
 	if (error) {
 		LOG(("xdrawfile_render: 0x%x: %s",
 				error->errnum, error->errmess));
