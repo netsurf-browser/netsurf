@@ -724,9 +724,6 @@ void theme_install_callback(hlcache_handle *c, content_msg msg,
 	case CONTENT_MSG_LOADING:
 	case CONTENT_MSG_REFORMAT:
 	case CONTENT_MSG_REDRAW:
-	case CONTENT_MSG_NEWPTR:
-	case CONTENT_MSG_LAUNCH:
-	case CONTENT_MSG_AUTH:
 	default:
 		assert(0);
 		break;
