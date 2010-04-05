@@ -30,17 +30,23 @@
 #include "utils/talloc.h"
 #include "utils/utils.h"
 
+/* Define to enable debug window */
+#undef ENABLE_DEBUGWIN
+
 /** Update interval / cs. */
 #define DEBUGWIN_UPDATE 500
 
+#ifdef ENABLE_DEBUGWIN
 static void ro_gui_debugwin_resize(void);
 static void ro_gui_debugwin_update(void *p);
 static void ro_gui_debugwin_close(wimp_w w);
 static void ro_gui_debugwin_redraw_plot(wimp_draw *redraw);
 static void ro_gui_debugwin_redraw(wimp_draw *redraw);
+#endif
 
 void ro_gui_debugwin_open(void)
 {
+#ifdef ENABLE_DEBUGWIN
 	ro_gui_wimp_event_register_close_window(dialog_debug,
 			ro_gui_debugwin_close);
 	ro_gui_wimp_event_register_redraw_window(dialog_debug,
@@ -49,9 +55,10 @@ void ro_gui_debugwin_open(void)
 	ro_gui_dialog_open(dialog_debug);
 	schedule_remove(ro_gui_debugwin_update, 0);
 	schedule(DEBUGWIN_UPDATE, ro_gui_debugwin_update, 0);
+#endif
 }
 
-
+#ifdef ENABLE_DEBUGWIN
 void ro_gui_debugwin_resize(void)
 {
 	unsigned int count = 2;
@@ -178,3 +185,4 @@ void ro_gui_debugwin_redraw_plot(wimp_draw *redraw)
 	snprintf(s, sizeof s, "%u", size);
 	xwimptextop_paint(wimptextop_RJUSTIFY, s, x0 + 1390, y0 - i * 28 - 20);
 }
+#endif
