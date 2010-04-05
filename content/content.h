@@ -33,11 +33,10 @@
 #include "content/content_type.h"
 #include "desktop/plot_style.h"
 
-struct llcache_handle;
-
 struct box;
 struct browser_window;
 struct content;
+struct llcache_handle;
 struct hlcache_handle;
 struct object_params;
 
@@ -63,6 +62,7 @@ typedef enum {
 	CONTENT_MSG_REFORMAT,  /**< content_reformat done */
 	CONTENT_MSG_REDRAW,    /**< needs redraw (eg. new animation frame) */
 	CONTENT_MSG_REFRESH,   /**< wants refresh */
+	CONTENT_MSG_DOWNLOAD   /**< download, not for display */
 } content_msg;
 
 /** Extra data for some content_msg messages. */
@@ -82,6 +82,8 @@ union content_msg_data {
 		float object_width, object_height;
 	} redraw;
 	int delay;	/**< Minimum delay, for CONTENT_MSG_REFRESH */
+	/** Low-level cache handle, for CONTENT_MSG_DOWNLOAD */
+	struct llcache_handle *download;
 };
 
 
@@ -141,8 +143,5 @@ const char *content_get_source_data(struct hlcache_handle *c,
 void content_invalidate_reuse_data(struct hlcache_handle *c);
 const char *content_get_refresh_url(struct hlcache_handle *c);
 struct bitmap *content_get_bitmap(struct hlcache_handle *c);
-
-/* Download support */
-struct llcache_handle *content_convert_to_download(struct hlcache_handle *c);
 
 #endif

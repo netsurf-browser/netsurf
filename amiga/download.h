@@ -20,6 +20,8 @@
 #define AMIGA_DOWNLOAD_H
 #include "amiga/gui.h"
 
+struct download_context;
+
 struct dlnode
 {
 	struct Node node;
@@ -36,7 +38,7 @@ struct gui_download_window {
 	uint32 downloaded;
 	struct dlnode *dln;
 	struct browser_window *bw;
-	struct fetch *fetch;
+	struct download_context *ctx;
 	char *url;
 	char fname[1024];
 };

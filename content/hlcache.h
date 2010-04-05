@@ -53,6 +53,16 @@ typedef struct {
 typedef nserror (*hlcache_handle_callback)(hlcache_handle *handle,
 		const hlcache_event *event, void *pw); 
 
+/** Flags for high-level cache object retrieval */
+enum hlcache_retrieve_flag {
+	/* Note: low-level cache retrieval flags occupy the bottom 16 bits of 
+	 * the flags word. High-level cache flags occupy the top 16 bits. 
+	 * To avoid confusion, high-level flags are allocated from bit 31 down. 
+	 */
+	/** It's permitted to convert this request into a download */
+	HLCACHE_RETRIEVE_MAY_DOWNLOAD = (1 << 31)
+};
+
 /**
  * Retrieve a high-level cache handle for an object
  *

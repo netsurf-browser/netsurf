@@ -1409,28 +1409,3 @@ nserror content_abort(struct content *c)
 	return llcache_handle_abort(c->llcache);
 }
 
-/**
- * Convert a content into a download
- *
- * \param h  Content to convert
- * \return Pointer to low-level cache handle
- */
-llcache_handle *content_convert_to_download(hlcache_handle *h)
-{
-	struct content *c = hlcache_handle_get_content(h);
-	llcache_handle *stream = c->llcache;
-
-	assert(c != NULL);
-	assert(c->status == CONTENT_STATUS_LOADING);
-
-	/** \todo Is this safe? */
-	c->llcache = NULL;
-
-	/** \todo Tell the llcache to stream the data without caching it */
-
-	/** \todo Invalidate the content object so it's flushed from the 
-	 * cache at the earliest opportunity */
-
-	return stream;
-}
-

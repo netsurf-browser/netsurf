@@ -41,7 +41,6 @@ typedef enum {
 	GUI_SAVE_CLIPBOARD_CONTENTS
 } gui_save_type;
 
-struct fetch;
 struct gui_window;
 struct gui_download_window;
 
@@ -58,7 +57,9 @@ typedef enum { GUI_POINTER_DEFAULT, GUI_POINTER_POINT, GUI_POINTER_CARET,
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "desktop/browser.h"
+#include "desktop/download.h"
 #include "desktop/search.h"
+#include "utils/errors.h"
 
 void gui_stdout(void);
 void gui_multitask(void);
@@ -102,11 +103,10 @@ void gui_window_save_link(struct gui_window *g, const char *url,
 		const char *title);
 void gui_window_set_scale(struct gui_window *g, float scale);
 
-struct gui_download_window *gui_download_window_create(const char *url,
-		const char *mime_type, struct fetch *fetch,
-		unsigned int total_size, struct gui_window *gui);
-void gui_download_window_data(struct gui_download_window *dw, const char *data,
-		unsigned int size);
+struct gui_download_window *gui_download_window_create(download_context *ctx,
+		struct gui_window *parent);
+nserror gui_download_window_data(struct gui_download_window *dw, 
+		const char *data, unsigned int size);
 void gui_download_window_error(struct gui_download_window *dw,
 		const char *error_msg);
 void gui_download_window_done(struct gui_download_window *dw);

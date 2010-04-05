@@ -82,6 +82,9 @@ typedef nserror (*llcache_handle_callback)(llcache_handle *handle,
 
 /** Flags for low-level cache object retrieval */
 enum llcache_retrieve_flag {
+	/* Note: We're permitted a maximum of 16 flags which must reside in the
+	 * bottom 16 bits of the flags word. See hlcache.h for further details. 
+	 */
 	/** Force a new fetch */
 	LLCACHE_RETRIEVE_FORCE_FETCH    = (1 << 0), 
 	/** Requested URL was verified */
@@ -89,7 +92,9 @@ enum llcache_retrieve_flag {
 	/** Permit content-type sniffing */
 	LLCACHE_RETRIEVE_SNIFF_TYPE     = (1 << 2), 
 	/**< No error pages */
-	LLCACHE_RETRIEVE_NO_ERROR_PAGES = (1 << 3)
+	LLCACHE_RETRIEVE_NO_ERROR_PAGES = (1 << 3),
+	/**< Stream data (implies that object is not cacheable) */
+	LLCACHE_RETRIEVE_STREAM_DATA    = (1 << 4)
 };
 
 /** Low-level cache query types */
@@ -217,6 +222,14 @@ nserror llcache_handle_clone(llcache_handle *handle, llcache_handle **result);
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 nserror llcache_handle_abort(llcache_handle *handle);
+
+/**
+ * Force a low-level cache handle into streaming mode
+ *
+ * \param handle  Handle to stream
+ * \return NSERROR_OK on success, appropriate error otherwise
+ */
+nserror llcache_handle_force_stream(llcache_handle *handle);
 
 /**
  * Retrieve the post-redirect URL of a low-level cache object

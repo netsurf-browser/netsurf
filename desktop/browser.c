@@ -43,6 +43,7 @@
 #include "css/css.h"
 #include "desktop/401login.h"
 #include "desktop/browser.h"
+#include "desktop/download.h"
 #include "desktop/frames.h"
 #include "desktop/history_core.h"
 #include "desktop/gui.h"
@@ -81,7 +82,8 @@ static nserror browser_window_callback(hlcache_handle *c,
 		const hlcache_event *event, void *pw);
 static void browser_window_refresh(void *p);
 static bool browser_window_check_throbber(struct browser_window *bw);
-static void browser_window_convert_to_download(struct browser_window *bw);
+static void browser_window_convert_to_download(struct browser_window *bw, 
+		llcache_handle *stream);
 static void browser_window_start_throbber(struct browser_window *bw);
 static void browser_window_stop_throbber(struct browser_window *bw);
 static void browser_window_set_icon(struct browser_window *bw);
@@ -89,8 +91,6 @@ static void browser_window_set_status(struct browser_window *bw,
 		const char *text);
 static void browser_window_set_pointer(struct gui_window *g,
 		gui_pointer_shape shape);
-static nserror download_window_callback(llcache_handle *handle,
-		const llcache_event *event, void *pw);
 static void browser_window_destroy_children(struct browser_window *bw);
 static void browser_window_destroy_internal(struct browser_window *bw);
 static void browser_window_set_scale_internal(struct browser_window *bw,
@@ -338,14 +338,23 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	if (download) {
 		llcache_handle *l;
 
-		error = llcache_handle_retrieve(url2, 
-				fetch_flags | LLCACHE_RETRIEVE_FORCE_FETCH,
-				referer, fetch_is_post ? &post : NULL,
-				download_window_callback, NULL, &l);
+		fetch_flags |= LLCACHE_RETRIEVE_FORCE_FETCH;
+		fetch_flags |= LLCACHE_RETRIEVE_STREAM_DATA;
+
+		error = llcache_handle_retrieve(url2, fetch_flags, referer, 
+				fetch_is_post ? &post : NULL,
+				NULL, NULL, &l);
 		if (error != NSERROR_OK)
 			LOG(("Failed to fetch download: %d", error));
 
 		free(url2);
+
+		error = download_context_create(l, bw->window);
+		if (error != NSERROR_OK) {
+			LOG(("Failed creating download context: %d", error));
+			llcache_handle_abort(l);
+			llcache_handle_release(l);
+		}
 
 		return;
 	}
@@ -406,7 +415,9 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	browser_window_set_status(bw, messages_get("Loading"));
 	bw->history_add = add_to_history;
 
-	error = hlcache_handle_retrieve(url2, 0, referer,
+	error = hlcache_handle_retrieve(url2,
+			fetch_flags | HLCACHE_RETRIEVE_MAY_DOWNLOAD, 
+			referer,
 			fetch_is_post ? &post : NULL,
 			browser_window_callback, bw,
 			parent != NULL ? &child : NULL,
@@ -439,21 +450,26 @@ nserror browser_window_callback(hlcache_handle *c,
 	struct browser_window *bw = pw;
 
 	switch (event->type) {
+	case CONTENT_MSG_DOWNLOAD:
+		assert(bw->loading_content == c);
+
+		browser_window_convert_to_download(bw, event->data.download);
+
+		break;
+
 	case CONTENT_MSG_LOADING:
 		assert(bw->loading_content == c);
 
-		if (content_get_type(c) == CONTENT_OTHER)
-			browser_window_convert_to_download(bw);
 #ifdef WITH_THEME_INSTALL
-		else if (content_get_type(c) == CONTENT_THEME) {
+		if (content_get_type(c) == CONTENT_THEME) {
 			theme_install_start(c);
 			bw->loading_content = NULL;
 //newcache do we not just pass ownership to the theme installation stuff?
 			hlcache_handle_release(c);
 			browser_window_stop_throbber(bw);
-		}
+		} else
 #endif
-		else {
+		{
 			bw->refresh_interval = -1;
 			browser_window_set_status(bw, 
 					content_get_status_message(c));
@@ -612,24 +628,18 @@ nserror browser_window_callback(hlcache_handle *c,
  * Transfer the loading_content to a new download window.
  */
 
-void browser_window_convert_to_download(struct browser_window *bw)
+void browser_window_convert_to_download(struct browser_window *bw,
+		llcache_handle *stream)
 {
-	struct gui_download_window *download_window;
-	hlcache_handle *c = bw->loading_content;
-	llcache_handle *stream;
+	nserror error;
 
-	assert(c);
+	error = download_context_create(stream, bw->window);
+	if (error != NSERROR_OK) {
+		llcache_handle_abort(stream);
+		llcache_handle_release(stream);
 
-	stream = content_convert_to_download(c);
-
-	/** \todo Sort parameters out here */
-	download_window = gui_download_window_create(
-			llcache_handle_get_url(stream),
-			llcache_handle_get_header(stream, "Content-Type"),
-			NULL, 0, NULL);
-
-	llcache_handle_change_callback(stream, 
-			download_window_callback, download_window);
+		return;
+	}
 
 	/* remove content from browser window */
 	hlcache_handle_release(bw->loading_content);
@@ -1337,64 +1347,6 @@ void browser_window_find_target_internal(struct browser_window *bw,
 			browser_window_find_target_internal(&bw->iframes[i], 
 					target, depth, page, rdepth, bw_target);
 	}
-}
-
-
-/**
- * Callback for fetch for download window fetches.
- */
-
-nserror download_window_callback(llcache_handle *handle,
-		const llcache_event *event, void *pw)
-{
-	struct gui_download_window *download_window = pw;
-
-	switch (event->type) {
-	case LLCACHE_EVENT_HAD_HEADERS:
-		assert(download_window == NULL);
-
-		/** \todo Ensure parameters are correct here */
-		download_window = gui_download_window_create(
-				llcache_handle_get_url(handle),
-				llcache_handle_get_header(handle, 
-						"Content-Type"),
-				NULL, 0, NULL);
-		if (download_window == NULL)
-			return NSERROR_NOMEM;
-
-		llcache_handle_change_callback(handle, 
-				download_window_callback, download_window);
-		break;
-
-	case LLCACHE_EVENT_HAD_DATA:
-		assert(download_window != NULL);
-
-		/** \todo Lose ugly cast */
-		gui_download_window_data(download_window,
-				(char *) event->data.data.buf,
-				event->data.data.len);
-
-		break;
-
-	case LLCACHE_EVENT_DONE:
-		assert(download_window != NULL);
-
-		gui_download_window_done(download_window);
-
-		break;
-
-	case LLCACHE_EVENT_ERROR:
-		if (download_window != NULL)
-			gui_download_window_error(download_window,
-					event->data.msg);
-
-		break;
-
-	case LLCACHE_EVENT_PROGRESS:
-		break;
-	}
-
-	return NSERROR_OK;
 }
 
 

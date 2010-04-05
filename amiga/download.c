@@ -37,11 +37,11 @@
 #include "amiga/iff_dr2d.h"
 #include "amiga/theme.h"
 
-#include "content/fetch.h"
-
+#include "desktop/download.h"
 #include "desktop/selection.h"
 #include "desktop/save_complete.h"
 
+#include "utils/errors.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
 
@@ -55,10 +55,12 @@
 
 #include <reaction/reaction_macros.h>
 
-struct gui_download_window *gui_download_window_create(const char *url,
-		const char *mime_type, struct fetch *fetch,
-		unsigned int total_size, struct gui_window *gui)
+struct gui_download_window *gui_download_window_create(download_context *ctx,
+		struct gui_window *gui)
 {
+	const char *url = download_context_get_url(ctx);
+	const char *mime_type = download_context_get_mime_type(ctx);
+	unsigned long total_size = download_context_get_total_length(ctx);
 	struct gui_download_window *dw;
 	APTR va[3];
 
@@ -139,18 +141,18 @@ struct gui_download_window *gui_download_window_create(const char *url,
 		EndWindow;
 
 	dw->win = (struct Window *)RA_OpenWindow(dw->objects[OID_MAIN]);
-	dw->fetch = fetch;
+	dw->ctx = ctx;
 
 	dw->node = AddObject(window_list,AMINS_DLWINDOW);
 	dw->node->objstruct = dw;
 	return dw;
 }
 
-void gui_download_window_data(struct gui_download_window *dw, const char *data,
-		unsigned int size)
+nserror gui_download_window_data(struct gui_download_window *dw, 
+		const char *data, unsigned int size)
 {
 	APTR va[3];
-	if(!dw) return;
+	if(!dw) return NSERROR_SAVE_FAILED;
 
 	FWrite(dw->fh,data,1,size);
 
@@ -176,6 +178,8 @@ void gui_download_window_data(struct gui_download_window *dw, const char *data,
 						FUELGAUGE_VarArgs,va,
 						TAG_DONE);
 	}
+
+	return NSERROR_OK;
 }
 
 void gui_download_window_error(struct gui_download_window *dw,
@@ -187,7 +191,7 @@ void gui_download_window_error(struct gui_download_window *dw,
 
 void ami_download_window_abort(struct gui_download_window *dw)
 {
-	fetch_abort(dw->fetch);
+	download_context_abort(dw->ctx);
 	gui_download_window_done(dw);
 }
 

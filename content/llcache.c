@@ -169,6 +169,8 @@ static nserror llcache_object_add_to_list(llcache_object *object,
 		llcache_object **list);
 static nserror llcache_object_remove_from_list(llcache_object *object,
 		llcache_object **list);
+static bool llcache_object_in_list(const llcache_object *object, 
+		const llcache_object *list);
 
 static nserror llcache_object_notify_users(llcache_object *object);
 
@@ -362,6 +364,28 @@ nserror llcache_handle_abort(llcache_handle *handle)
 	}
 	
 	return error;
+}
+
+/* See llcache.h for documentation */
+nserror llcache_handle_force_stream(llcache_handle *handle)
+{
+	llcache_object_user *user = (llcache_object_user *) handle;
+	llcache_object *object = handle->object;
+
+	/* Cannot stream if there are multiple users */
+	if (user->prev != NULL || user->next != NULL)
+		return NSERROR_OK;
+
+	/* Forcibly uncache this object */
+	if (llcache_object_in_list(object, llcache_cached_objects)) {
+		llcache_object_remove_from_list(object, 
+				&llcache_cached_objects);
+		llcache_object_add_to_list(object, &llcache_uncached_objects);
+	}
+
+	object->fetch.flags |= LLCACHE_RETRIEVE_STREAM_DATA;
+
+	return NSERROR_OK;
 }
 
 /* See llcache.h for documentation */
@@ -1055,6 +1079,26 @@ nserror llcache_object_remove_from_list(llcache_object *object,
 }
 
 /**
+ * Determine if a low-level cache object resides in a given list
+ *
+ * \param object  Object to search for
+ * \param list    List to search in
+ * \return True if object resides in list, false otherwise
+ */
+bool llcache_object_in_list(const llcache_object *object,
+		const llcache_object *list)
+{
+	while (list != NULL) {
+		if (list == object)
+			break;
+
+		list = list->next;
+	}
+
+	return list != NULL;
+}
+
+/**
  * Notify users of an object's current state
  *
  * \param object  Object to notify users about
@@ -1139,16 +1183,24 @@ nserror llcache_object_notify_users(llcache_object *object)
 		if (handle->state == LLCACHE_FETCH_DATA &&
 				objstate >= LLCACHE_FETCH_DATA &&
 				object->source_len > handle->bytes) {
-			size_t oldbytes = handle->bytes;
+			/* Construct HAD_DATA event */
+			event.type = LLCACHE_EVENT_HAD_DATA;
+			event.data.data.buf = 
+					object->source_data + handle->bytes;
+			event.data.data.len = 
+					object->source_len - handle->bytes;
 
 			/* Update record of last byte emitted */
-			handle->bytes = object->source_len;
+			if (object->fetch.flags & 
+					LLCACHE_RETRIEVE_STREAM_DATA) {
+				/* Streaming, so reset to zero to 
+				 * minimise amount of cached source data */
+				handle->bytes = object->source_len = 0;
+			} else {
+				handle->bytes = object->source_len;
+			}
 
-			/* Emit HAD_DATA event */
-			event.type = LLCACHE_EVENT_HAD_DATA;
-			event.data.data.buf = object->source_data + oldbytes;
-			event.data.data.len = object->source_len - oldbytes;
-
+			/* Emit event */
 			error = handle->cb(handle, &event, handle->pw);
 			if (error != NSERROR_OK) {
 				user->iterator_target = false;

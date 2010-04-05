@@ -40,6 +40,8 @@ struct hlcache_retrieval_ctx {
 
 	hlcache_handle *handle;		/**< High-level handle for object */
 
+	uint32_t flags;			/**< Retrieval flags */
+
 	const content_type *accepted_types;	/**< Accepted types, or NULL */
 
 	hlcache_child_context child;	/**< Child context */	
@@ -67,7 +69,8 @@ static hlcache_entry *hlcache_content_list;
 static nserror hlcache_llcache_callback(llcache_handle *handle,
 		const llcache_event *event, void *pw);
 static bool hlcache_type_is_acceptable(llcache_handle *llcache, 
-		const content_type *accepted_types);
+		const content_type *accepted_types, 
+		content_type *computed_type);
 static nserror hlcache_find_content(hlcache_retrieval_ctx *ctx);
 static void hlcache_content_callback(struct content *c,
 		content_msg msg, union content_msg_data data, void *pw);
@@ -104,6 +107,7 @@ nserror hlcache_handle_retrieve(const char *url, uint32_t flags,
 		ctx->child.quirks = child->quirks;
 	}
 
+	ctx->flags = flags;
 	ctx->accepted_types = accepted_types;
 
 	ctx->handle->cb = cb;
@@ -227,10 +231,28 @@ nserror hlcache_llcache_callback(llcache_handle *handle,
 
 	switch (event->type) {
 	case LLCACHE_EVENT_HAD_HEADERS:
-		if (hlcache_type_is_acceptable(handle, ctx->accepted_types)) {
+	{
+		content_type type;
+
+		if (hlcache_type_is_acceptable(handle, 
+				ctx->accepted_types, &type)) {
 			error = hlcache_find_content(ctx);
 			if (error != NSERROR_OK)
 				return error;
+		} else if (type == CONTENT_OTHER && 
+				ctx->flags & HLCACHE_RETRIEVE_MAY_DOWNLOAD) {
+			/* Unknown type, and we can download, so convert */
+			llcache_handle_force_stream(handle);
+
+			if (ctx->handle->cb != NULL) {
+				hlcache_event hlevent;
+
+				hlevent.type = CONTENT_MSG_DOWNLOAD;
+				hlevent.data.download = handle;
+
+				ctx->handle->cb(ctx->handle, &hlevent,
+						ctx->handle->pw);
+			}
 		} else {
 			/* Unacceptable type: abort fetch and report error */
 			llcache_handle_abort(handle);
@@ -249,6 +271,7 @@ nserror hlcache_llcache_callback(llcache_handle *handle,
 
 		/* No longer require retrieval context */
 		free(ctx);
+	}
 		break;
 	case LLCACHE_EVENT_HAD_DATA:
 		/* fall through */
@@ -277,19 +300,18 @@ nserror hlcache_llcache_callback(llcache_handle *handle,
  *
  * \param llcache         Low-level cache object to consider
  * \param accepted_types  Array of acceptable types, or NULL for any
+ * \param computed_type   Pointer to location to receive computed type of object
  * \return True if the type is acceptable, false otherwise
  */
 bool hlcache_type_is_acceptable(llcache_handle *llcache, 
-		const content_type *accepted_types)
+		const content_type *accepted_types, content_type *computed_type)
 {
 	const char *content_type_header;
 	char *mime_type;
 	http_parameter *params;
 	content_type type;
 	nserror error;
-
-	if (accepted_types == NULL)
-		return true;
+	bool acceptable;
 
 	content_type_header = 
 			llcache_handle_get_header(llcache, "Content-Type");
@@ -306,14 +328,22 @@ bool hlcache_type_is_acceptable(llcache_handle *llcache,
 	free(mime_type);
 	http_parameter_list_destroy(params);
 
-	while (*accepted_types != CONTENT_UNKNOWN) {
-		if (*accepted_types == type)
-			break;
+	if (accepted_types == NULL) {
+		acceptable = type != CONTENT_OTHER;
+	} else {
+		while (*accepted_types != CONTENT_UNKNOWN) {
+			if (*accepted_types == type)
+				break;
 
-		accepted_types++;
+			accepted_types++;
+		}
+
+		acceptable = *accepted_types == type;
 	}
 
-	return *accepted_types == type;
+	*computed_type = type;
+
+	return acceptable;
 }
 
 /**

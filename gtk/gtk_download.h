@@ -21,6 +21,8 @@
 
 #include <gtk/gtk.h>
 
+struct download_context;
+
 enum {
 	NSGTK_DOWNLOAD_PROGRESS,
 	NSGTK_DOWNLOAD_INFO,
@@ -49,7 +51,7 @@ typedef enum {
 } nsgtk_download_actions;
 
 struct gui_download_window {
-	struct fetch *fetch;
+	struct download_context *ctx;
 	nsgtk_download_actions sensitivity;
 	nsgtk_download_status status;
 	

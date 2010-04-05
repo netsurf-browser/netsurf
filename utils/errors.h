@@ -34,6 +34,8 @@ typedef enum {
 	NSERROR_NO_FETCH_HANDLER,	/**< No fetch handler for URL scheme */
 
 	NSERROR_NOT_FOUND,		/**< Requested item not found */
+
+	NSERROR_SAVE_FAILED		/**< Failed to save data */
 } nserror;
 
 #endif

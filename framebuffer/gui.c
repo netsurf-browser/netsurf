@@ -1358,16 +1358,16 @@ gui_window_set_search_ico(hlcache_handle *ico)
 {
 }
 
-struct gui_download_window *gui_download_window_create(const char *url,
-                                                       const char *mime_type, struct fetch *fetch,
-                                                       unsigned int total_size, struct gui_window *gui)
+struct gui_download_window *gui_download_window_create(download_context *ctx,
+		struct gui_window *parent)
 {
         return NULL;
 }
 
-void gui_download_window_data(struct gui_download_window *dw, const char *data,
-                              unsigned int size)
+nserror gui_download_window_data(struct gui_download_window *dw, 
+		const char *data, unsigned int size)
 {
+	return NSERROR_OK;
 }
 
 void gui_download_window_error(struct gui_download_window *dw,
