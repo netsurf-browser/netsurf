@@ -31,7 +31,7 @@
 #include "oslib/osspriteop.h"
 #include "utils/config.h"
 #include "desktop/plotters.h"
-#include "content/content.h"
+#include "content/content_protected.h"
 #include "riscos/gui.h"
 #include "riscos/image.h"
 #include "riscos/sprite.h"
@@ -49,19 +49,24 @@
  * No conversion is necessary. We merely read the sprite dimensions.
  */
 
-bool sprite_convert(struct content *c, int width, int height)
+bool sprite_convert(struct content *c)
 {
 	os_error *error;
 	int w, h;
 	union content_msg_data msg_data;
-	void *source_data;
+	const char *source_data;
+	unsigned long source_size;
+	const void *sprite_data;
+	char title[100];
 
-	source_data = ((char *)c->source_data) - 4;
-	osspriteop_area *area = (osspriteop_area*)source_data;
+	source_data = content__get_source_data(c, &source_size);
+
+	sprite_data = source_data - 4;
+	osspriteop_area *area = (osspriteop_area*) sprite_data;
 	c->data.sprite.data = area;
 
 	/* check for bad data */
-	if ((int)c->source_size + 4 != area->used) {
+	if ((int)source_size + 4 != area->used) {
 		msg_data.error = messages_get("BadSprite");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
@@ -81,10 +86,9 @@ bool sprite_convert(struct content *c, int width, int height)
 
 	c->width = w;
 	c->height = h;
-	c->title = malloc(100);
-	if (c->title)
-		snprintf(c->title, 100, messages_get("SpriteTitle"), c->width,
-				c->height, c->source_size);
+	snprintf(title, sizeof(title), messages_get("SpriteTitle"), c->width,
+				c->height, source_size);
+	content__set_title(c, title);
 	c->status = CONTENT_STATUS_DONE;
 	/* Done: update status bar */
 	content_set_status(c, "");
@@ -125,6 +129,18 @@ bool sprite_redraw(struct content *c, int x, int y,
 			background_colour,
 			false, false, false,
 			IMAGE_PLOT_OS);
+}
+
+bool sprite_clone(const struct content *old, struct content *new_content)
+{
+	/* Simply rerun convert */
+	if (old->status == CONTENT_STATUS_READY ||
+			old->status == CONTENT_STATUS_DONE) {
+		if (sprite_convert(new_content) == false)
+			return false;
+	}
+
+	return true;
 }
 
 #endif
