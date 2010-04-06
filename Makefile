@@ -208,14 +208,14 @@ define feature_enabled
     CFLAGS += $(2)
     LDFLAGS += $(3)
     ifneq ($(MAKECMDGOALS),clean)
-      $$(info M.CONFIG: $(4)	enabled (NETSURF_USE_$(1) := YES))
+      $$(info M.CONFIG: $(4)	enabled       (NETSURF_USE_$(1) := YES))
     endif
   else ifeq ($$(NETSURF_USE_$(1)),NO)
     ifneq ($(MAKECMDGOALS),clean)
-      $$(info M.CONFIG: $(4)	disabled (NETSURF_USE_$(1) := NO))
+      $$(info M.CONFIG: $(4)	disabled      (NETSURF_USE_$(1) := NO))
     endif
   else
-    $$(info M.CONFIG: $(4)	error (NETSURF_USE_$(1) := $$(NETSURF_USE_$(1))))
+    $$(info M.CONFIG: $(4)	error         (NETSURF_USE_$(1) := $$(NETSURF_USE_$(1))))
     $$(error NETSURF_USE_$(1) must be YES or NO)
   endif
 endef
@@ -235,10 +235,10 @@ define pkg_config_find_and_add
       CFLAGS += $$(shell $$(PKG_CONFIG) --cflags $(2)) $$(NETSURF_FEATURE_$(1)_CFLAGS)
       LDFLAGS += $$(shell $$(PKG_CONFIG) --libs $(2)) $$(NETSURF_FEATURE_$(1)_LDFLAGS)
       ifneq ($(MAKECMDGOALS),clean)
-        $$(info M.CONFIG: $(3) ($(2))	enabled (NETSURF_USE_$(1) := YES))
+        $$(info M.CONFIG: $(3) ($(2))	enabled       (NETSURF_USE_$(1) := YES))
       endif
     else
-      $$(info M.CONFIG: $(3) ($(2))	failed (NETSURF_USE_$(1) := YES))
+      $$(info M.CONFIG: $(3) ($(2))	failed        (NETSURF_USE_$(1) := YES))
       $$(error Unable to find library for: $(3) ($(2)))
     endif
   else ifeq ($$(NETSURF_USE_$(1)),AUTO)
@@ -246,7 +246,7 @@ define pkg_config_find_and_add
       CFLAGS += $$(shell $$(PKG_CONFIG) --cflags $(2)) $$(NETSURF_FEATURE_$(1)_CFLAGS)
       LDFLAGS += $$(shell $$(PKG_CONFIG) --libs $(2)) $$(NETSURF_FEATURE_$(1)_LDFLAGS)
       ifneq ($(MAKECMDGOALS),clean)
-        $$(info M.CONFIG: $(3) ($(2))	auto-enabled (NETSURF_USE_$(1) := AUTO))
+        $$(info M.CONFIG: $(3) ($(2))	auto-enabled  (NETSURF_USE_$(1) := AUTO))
       endif
     else
       ifneq ($(MAKECMDGOALS),clean)
@@ -255,16 +255,16 @@ define pkg_config_find_and_add
     endif
   else ifeq ($$(NETSURF_USE_$(1)),NO)
     ifneq ($(MAKECMDGOALS),clean)
-      $$(info M.CONFIG: $(3) ($(2))	disabled (NETSURF_USE_$(1) := NO))
+      $$(info M.CONFIG: $(3) ($(2))	disabled      (NETSURF_USE_$(1) := NO))
     endif
   else
-    $$(info M.CONFIG: $(3) ($(2))	error (NETSURF_USE_$(1) := $$(NETSURF_USE_$(1))))
+    $$(info M.CONFIG: $(3) ($(2))	error         (NETSURF_USE_$(1) := $$(NETSURF_USE_$(1))))
     $$(error NETSURF_USE_$(1) must be YES, NO, or AUTO)
   endif
 endef
 
-$(eval $(call feature_enabled,JPEG,-DWITH_JPEG,-ljpeg,JPEG support (libjpeg)))
-$(eval $(call feature_enabled,MNG,-DWITH_MNG,-lmng,JNG/MNG/PNG support (libmng)))
+$(eval $(call feature_enabled,JPEG,-DWITH_JPEG,-ljpeg,JPEG (libjpeg)))
+$(eval $(call feature_enabled,MNG,-DWITH_MNG,-lmng,JNG/MNG/PNG (libmng)))
 
 $(eval $(call feature_enabled,HARU_PDF,-DWITH_PDF_EXPORT,-lhpdf -lpng,PDF export (haru)))
 $(eval $(call feature_enabled,LIBICONV_PLUG,-DLIBICONV_PLUG,,glibc internal iconv))
@@ -288,23 +288,23 @@ ifeq ($(TARGET),riscos)
     LDFLAGS += $(shell $(PKG_CONFIG) --libs libhubbub libcss)
   endif
 
-  $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG rendering))
-  $(eval $(call feature_enabled,DRAW,-DWITH_DRAW,,RISC OS Draw rendering))
-  $(eval $(call feature_enabled,SPRITE,-DWITH_SPRITE,,RISC OS sprite rendering))
+  $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG (libsvgtiny)))
+  $(eval $(call feature_enabled,DRAW,-DWITH_DRAW,,Drawfile rendering))
+  $(eval $(call feature_enabled,SPRITE,-DWITH_SPRITE,,Sprite rendering))
   $(eval $(call feature_enabled,ARTWORKS,-DWITH_ARTWORKS,,ArtWorks rendering))
-  $(eval $(call feature_enabled,PLUGINS,-DWITH_PLUGIN,,Plugin protocol support))
+  $(eval $(call feature_enabled,PLUGINS,-DWITH_PLUGIN,,Plugin protocol))
   $(eval $(call feature_enabled,DRAW_EXPORT,-DWITH_DRAW_EXPORT,-lpencil,Drawfile export))
   ifeq ($(HOST),riscos)
-    $(eval $(call feature_enabled,BMP,-DWITH_BMP,-lnsbmp,NetSurf BMP decoder))
-    $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif,NetSurf GIF decoder))
-    $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG support))
+    $(eval $(call feature_enabled,BMP,-DWITH_BMP,-lnsbmp,BMP (libnsbmp)))
+    $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif,GIF (libnsgif)))
+    $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG (libpng)  ))
   else
     NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
     NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
     NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
-    $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,NetSurf BMP decoder))
-    $(eval $(call pkg_config_find_and_add,GIF,libnsgif,NetSurf GIF decoder))
-    $(eval $(call pkg_config_find_and_add,PNG,libpng,PNG support))
+    $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,BMP))
+    $(eval $(call pkg_config_find_and_add,GIF,libnsgif,GIF))
+    $(eval $(call pkg_config_find_and_add,PNG,libpng,PNG  ))
   endif
 
   TPD_RISCOS = $(foreach TPL,$(notdir $(TPL_RISCOS)), \
@@ -342,7 +342,7 @@ endif
 # ----------------------------------------------------------------------------
 
 ifeq ($(TARGET),beos)
-  $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG support))
+  $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG (libpng)  ))
 
   LDFLAGS += -L/boot/home/config/lib
   # for Haiku
@@ -402,20 +402,20 @@ ifeq ($(TARGET),beos)
   endif
   LDFLAGS += -lbe -ltranslation $(NETLDFLAGS)
 
-  $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG rendering))
+  $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG (libsvgtiny)))
   ifeq ($(HOST),beos)
     CFLAGS += -I$(PREFIX)/include
     LDFLAGS += -L$(PREFIX)/lib
-    $(eval $(call feature_enabled,BMP,-DWITH_BMP,-lnsbmp,NetSurf BMP decoder))
-    $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif,NetSurf GIF decoder))
-    $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG support))
+    $(eval $(call feature_enabled,BMP,-DWITH_BMP,-lnsbmp,BMP (libnsbmp)))
+    $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif,GIF (libnsgif)))
+    $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG (libpng)  ))
   else
     NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
     NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
     NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
-    $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,NetSurf BMP decoder))
-    $(eval $(call pkg_config_find_and_add,GIF,libnsgif,NetSurf GIF decoder))
-    $(eval $(call pkg_config_find_and_add,PNG,libpng,PNG support))
+    $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,BMP))
+    $(eval $(call pkg_config_find_and_add,GIF,libnsgif,GIF))
+    $(eval $(call pkg_config_find_and_add,PNG,libpng,PNG  ))
   endif
 endif
 
@@ -436,12 +436,12 @@ ifeq ($(TARGET),gtk)
   NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
 
   # add a line similar to below for each optional pkg-configed lib here
-  $(eval $(call pkg_config_find_and_add,RSVG,librsvg-2.0,SVG rendering))
-  $(eval $(call pkg_config_find_and_add,NSSVG,libsvgtiny,SVG rendering))
-  $(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,RISC OS sprite support))
-  $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,NetSurf BMP decoder))
-  $(eval $(call pkg_config_find_and_add,GIF,libnsgif,NetSurf GIF decoder))
-  $(eval $(call pkg_config_find_and_add,PNG,libpng,PNG support))
+  $(eval $(call pkg_config_find_and_add,RSVG,librsvg-2.0,SVG))
+  $(eval $(call pkg_config_find_and_add,NSSVG,libsvgtiny,SVG))
+  $(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,Sprite))
+  $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,BMP))
+  $(eval $(call pkg_config_find_and_add,GIF,libnsgif,GIF))
+  $(eval $(call pkg_config_find_and_add,PNG,libpng,PNG  ))
 
   GTKCFLAGS := -std=c99 -Dgtk -Dnsgtk \
 		-DGTK_DISABLE_DEPRECATED \
@@ -478,11 +478,11 @@ ifeq ($(TARGET),windows)
   NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
   NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
   NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
-  $(eval $(call feature_enabled,BMP,-DWITH_BMP,-lnsbmp,NetSurf BMP decoder))
-  $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif,NetSurf GIF decoder))
-  $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG support))
-  $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG rendering))
-  $(eval $(call feature_enabled,MNG,,-llcms -ljpeg,MNG additional support))
+  $(eval $(call feature_enabled,BMP,-DWITH_BMP,-lnsbmp,BMP (libnsbmp)))
+  $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif,GIF (libnsgif)))
+  $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG (libpng)  ))
+  $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG (libsvgtiny)))
+  $(eval $(call feature_enabled,MNG,,-llcms -ljpeg,PNG/JNG/MNG (libmng)))
 
   LDFLAGS += -L${MINGW_INSTALL_ENV}/lib $(shell $(PKG_CONFIG) --libs zlib \
 	libxml-2.0 libcurl libhubbub libparserutils libcss libwapcaplet) \
@@ -509,12 +509,12 @@ ifeq ($(TARGET),amiga)
   NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
   NETSURF_FEATURE_NSSVG_CFLAGS := -DWITH_NS_SVG
 
-    $(eval $(call feature_enabled,ROSPRITE,-DWITH_NSSPRITE,-lrosprite,RISC OS Sprite decoder))
-    $(eval $(call feature_enabled,BMP,-DWITH_BMP,-lnsbmp,NetSurf BMP decoder))
-    $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif,NetSurf GIF decoder))
-    $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG support))
-    $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG rendering))
-    $(eval $(call feature_enabled,MNG,,-llcms -ljpeg,libmng extras))
+    $(eval $(call feature_enabled,ROSPRITE,-DWITH_NSSPRITE,-lrosprite,Sprite (librosprite)))
+    $(eval $(call feature_enabled,BMP,-DWITH_BMP,-lnsbmp,BMP (libnsbmp)))
+    $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif,GIF (libnsgif)))
+    $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG (libpng)  ))
+    $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG (libsvgtiny)))
+    $(eval $(call feature_enabled,MNG,,-llcms -ljpeg,PNG/JNG/MNG (libmng)))
 
   CFLAGS += -D__USE_INLINE__ -std=c99 -I . -Dnsamiga
   LDFLAGS += -lxml2 -lcurl -lpthread -lregex -lauto
@@ -532,8 +532,8 @@ endif
 
 ifeq ($(TARGET),framebuffer)
 
-  $(eval $(call feature_enabled,MNG,-DWITH_MNG,-lmng,PNG support))
-  $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG support))
+  $(eval $(call feature_enabled,MNG,-DWITH_MNG,-lmng,PNG/MNG/JNG (libmng)))
+  $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG (libpng)  ))
 
 
   ifeq ($(NETSURF_FB_FONTLIB),freetype)
@@ -550,9 +550,9 @@ ifeq ($(TARGET),framebuffer)
 
   CFLAGS += -Dnsframebuffer '-DNETSURF_FB_RESPATH="$(NETSURF_FB_RESPATH_$(NETSURF_FB_FRONTEND))"'
 
-  $(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,RISC OS sprite rendering))
-  $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,NetSurf BMP decoder))
-  $(eval $(call pkg_config_find_and_add,GIF,libnsgif,NetSurf GIF decoder))
+  $(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,Sprite))
+  $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,BMP))
+  $(eval $(call pkg_config_find_and_add,GIF,libnsgif,GIF))
 
 
   CFLAGS += -std=c99 -g -I. -Dsmall $(WARNFLAGS) \
