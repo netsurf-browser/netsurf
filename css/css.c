@@ -179,11 +179,13 @@ bool nscss_convert(struct content *c)
 
 	/* Add on the size of the imported sheets */
 	for (i = 0; i < c->data.css.import_count; i++) {
-		struct content *import = hlcache_handle_get_content(
-				c->data.css.imports[i].c);
+		if (c->data.css.imports[i].c != NULL) {
+			struct content *import = hlcache_handle_get_content(
+					c->data.css.imports[i].c);
 
-		if (import != NULL) {
-			c->size += import->size;
+			if (import != NULL) {
+				c->size += import->size;
+			}
 		}
 	}
 
