@@ -126,6 +126,10 @@ ifeq ($(TARGET),gtk)
   # Valid options: YES, NO, AUTO
   NETSURF_USE_RSVG := AUTO
 
+  # Enable NetSurf's use of libsvgtiny for displaying SVGs
+  # Valid options: YES, NO, AUTO
+  NETSURF_USE_NSSVG := AUTO
+
   # Enable NetSurf's use of librosprite for displaying RISC OS Sprites
   # Valid options: YES, NO, AUTO
   NETSURF_USE_ROSPRITE := AUTO

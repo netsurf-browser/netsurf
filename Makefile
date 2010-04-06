@@ -208,12 +208,15 @@ define feature_enabled
     CFLAGS += $(2)
     LDFLAGS += $(3)
     ifneq ($(MAKECMDGOALS),clean)
-      $$(info M.CONFIG: building with $(4))
+      $$(info M.CONFIG: $(4)	enabled (NETSURF_USE_$(1) := YES))
+    endif
+  else ifeq ($$(NETSURF_USE_$(1)),NO)
+    ifneq ($(MAKECMDGOALS),clean)
+      $$(info M.CONFIG: $(4)	disabled (NETSURF_USE_$(1) := NO))
     endif
   else
-    ifneq ($(MAKECMDGOALS),clean)
-      $$(info M.CONFIG: building without $(4))
-    endif
+    $$(info M.CONFIG: $(4)	error (NETSURF_USE_$(1) := $$(NETSURF_USE_$(1))))
+    $$(error NETSURF_USE_$(1) must be YES or NO)
   endif
 endef
 
@@ -225,39 +228,45 @@ define pkg_config_find_and_add
     $$(error pkg-config is required to auto-detect feature availability)
   endif
 
-  ifneq ($$(NETSURF_USE_$(1)),NO)
-    NETSURF_FEATURE_$(1)_AVAILABLE := $$(shell $$(PKG_CONFIG) --exists $(2) && echo yes)
-    ifeq ($$(NETSURF_USE_$(1)),AUTO)
-      ifeq ($$(NETSURF_FEATURE_$(1)_AVAILABLE),yes)
-        NETSURF_USE_$(1) := YES
+  NETSURF_FEATURE_$(1)_AVAILABLE := $$(shell $$(PKG_CONFIG) --exists $(2) && echo yes)
+
+  ifeq ($$(NETSURF_USE_$(1)),YES)
+    ifeq ($$(NETSURF_FEATURE_$(1)_AVAILABLE),yes)
+      CFLAGS += $$(shell $$(PKG_CONFIG) --cflags $(2)) $$(NETSURF_FEATURE_$(1)_CFLAGS)
+      LDFLAGS += $$(shell $$(PKG_CONFIG) --libs $(2)) $$(NETSURF_FEATURE_$(1)_LDFLAGS)
+      ifneq ($(MAKECMDGOALS),clean)
+        $$(info M.CONFIG: $(3) ($(2))	enabled (NETSURF_USE_$(1) := YES))
+      endif
+    else
+      $$(info M.CONFIG: $(3) ($(2))	failed (NETSURF_USE_$(1) := YES))
+      $$(error Unable to find library for: $(3) ($(2)))
+    endif
+  else ifeq ($$(NETSURF_USE_$(1)),AUTO)
+    ifeq ($$(NETSURF_FEATURE_$(1)_AVAILABLE),yes)
+      CFLAGS += $$(shell $$(PKG_CONFIG) --cflags $(2)) $$(NETSURF_FEATURE_$(1)_CFLAGS)
+      LDFLAGS += $$(shell $$(PKG_CONFIG) --libs $(2)) $$(NETSURF_FEATURE_$(1)_LDFLAGS)
+      ifneq ($(MAKECMDGOALS),clean)
+        $$(info M.CONFIG: $(3) ($(2))	auto-enabled (NETSURF_USE_$(1) := AUTO))
       endif
     else
       ifneq ($(MAKECMDGOALS),clean)
-        $$(info M.CONFIG: building with $(3))
+        $$(info M.CONFIG: $(3) ($(2))	auto-disabled (NETSURF_USE_$(1) := AUTO))
       endif
     endif
-    ifeq ($$(NETSURF_USE_$(1)),YES)
-      ifeq ($$(NETSURF_FEATURE_$(1)_AVAILABLE),yes)
-        CFLAGS += $$(shell $$(PKG_CONFIG) --cflags $(2)) $$(NETSURF_FEATURE_$(1)_CFLAGS)
-        LDFLAGS += $$(shell $$(PKG_CONFIG) --libs $(2)) $$(NETSURF_FEATURE_$(1)_LDFLAGS)
-        ifneq ($(MAKECMDGOALS),clean)
-          $$(info M.CONFIG: auto-enabled $(3) ($(2)).)
-        endif
-      else
-        $$(error Unable to find library for: $(3) ($(2)))
-      endif
+  else ifeq ($$(NETSURF_USE_$(1)),NO)
+    ifneq ($(MAKECMDGOALS),clean)
+      $$(info M.CONFIG: $(3) ($(2))	disabled (NETSURF_USE_$(1) := NO))
     endif
   else
-    ifneq ($(MAKECMDGOALS),clean)
-      $$(info M.CONFIG: building without $(3) (disabled in build configuration))
-    endif
+    $$(info M.CONFIG: $(3) ($(2))	error (NETSURF_USE_$(1) := $$(NETSURF_USE_$(1))))
+    $$(error NETSURF_USE_$(1) must be YES, NO, or AUTO)
   endif
 endef
 
-$(eval $(call feature_enabled,JPEG,-DWITH_JPEG,-ljpeg,JPEG support))
-$(eval $(call feature_enabled,MNG,-DWITH_MNG,-lmng,JNG/MNG/PNG support))
+$(eval $(call feature_enabled,JPEG,-DWITH_JPEG,-ljpeg,JPEG support (libjpeg)))
+$(eval $(call feature_enabled,MNG,-DWITH_MNG,-lmng,JNG/MNG/PNG support (libmng)))
 
-$(eval $(call feature_enabled,HARU_PDF,-DWITH_PDF_EXPORT,-lhpdf -lpng,PDF export))
+$(eval $(call feature_enabled,HARU_PDF,-DWITH_PDF_EXPORT,-lhpdf -lpng,PDF export (haru)))
 $(eval $(call feature_enabled,LIBICONV_PLUG,-DLIBICONV_PLUG,,glibc internal iconv))
 
 # common libraries without pkg-config support
@@ -420,6 +429,7 @@ ifeq ($(TARGET),gtk)
 
   # define additional CFLAGS and LDFLAGS requirements for pkg-configed libs here
   NETSURF_FEATURE_RSVG_CFLAGS := -DWITH_RSVG
+  NETSURF_FEATURE_NSSVG_CFLAGS := -DWITH_NSSVG
   NETSURF_FEATURE_ROSPRITE_CFLAGS := -DWITH_NSSPRITE
   NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
   NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
@@ -427,7 +437,8 @@ ifeq ($(TARGET),gtk)
 
   # add a line similar to below for each optional pkg-configed lib here
   $(eval $(call pkg_config_find_and_add,RSVG,librsvg-2.0,SVG rendering))
-  $(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,RISC OS sprite rendering))
+  $(eval $(call pkg_config_find_and_add,NSSVG,libsvgtiny,SVG rendering))
+  $(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,RISC OS sprite support))
   $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,NetSurf BMP decoder))
   $(eval $(call pkg_config_find_and_add,GIF,libnsgif,NetSurf GIF decoder))
   $(eval $(call pkg_config_find_and_add,PNG,libpng,PNG support))
