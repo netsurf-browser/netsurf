@@ -1,13 +1,13 @@
 #
-# NetSurf default build configuration
+# NetSurf default build setup
 #
-# Some of these options support an 'AUTO' option, as well as YES and NO.
-# When an option is set to AUTO, the Makefile will attempt to detect if that
-# feature is available, enabling it if possible.
 #
-# Options marked "highly recommended" have a severe impact on NetSurf's
-# use as a web browser and should be set to YES unless there is a particularly
-# good reason not to.
+# | WARNING: You should NOT be editing this file.
+# |
+# |          If you want to configure your build, create a 'Makefile.config'
+# |          file with 'override' statements to override the settings here.
+# |          Follow the example in 'Makefile.config.example'.
+#
 #
 # This file should be treated as INVIOLATE and only altered to alter
 # the defaults by a core developer. If you wish to configure the build
@@ -17,6 +17,14 @@
 # the commandline. i.e. 'make TARGET=framebuffer' However
 # Makefile.config can use the TARGET variable to control what to set
 # the configuration options to.
+#
+# Some of these options support an 'AUTO' option, as well as YES and NO.
+# When an option is set to AUTO, the Makefile will attempt to detect if that
+# feature is available, enabling it if possible.
+#
+# Options marked "highly recommended" have a severe impact on NetSurf's
+# use as a web browser and should be set to YES unless there is a particularly
+# good reason not to.
 #
 
 # ----------------------------------------------------------------------------

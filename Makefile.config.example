@@ -1,6 +1,7 @@
 #
 # NetSurf build configuration example
 #
+#
 # To configure NetSurf's build options create a Makefile.config file. This is
 # an example Makefile.config.
 #
