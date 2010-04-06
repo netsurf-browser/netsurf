@@ -216,6 +216,10 @@ ifeq ($(TARGET),framebuffer)
   # Valid options: YES, NO
   NETSURF_USE_HARU_PDF := NO
 
+  # Enable NetSurf's use of librosprite for displaying RISC OS Sprites
+  # Valid options: YES, NO, AUTO
+  NETSURF_USE_ROSPRITE := AUTO
+
   # Library to use for font plotting 
   # Valid options: internal, freetype
   NETSURF_FB_FONTLIB := internal
