@@ -1061,6 +1061,25 @@ content_type content__get_type(struct content *c)
 }
 
 /**
+ * Retrieve mime-type of content
+ *
+ * \param c  Content to retrieve mime-type of
+ * \return Pointer to mime-type, or NULL if not found.
+ */
+const char *content_get_mime_type(hlcache_handle *h)
+{
+	return content__get_mime_type(hlcache_handle_get_content(h));
+}
+
+const char *content__get_mime_type(struct content *c)
+{
+	if (c == NULL)
+		return NULL;
+
+	return c->mime_type;
+}
+
+/**
  * Retrieve URL associated with content
  *
  * \param c  Content to retrieve URL from

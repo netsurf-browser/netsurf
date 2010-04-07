@@ -131,6 +131,7 @@ void content_close(struct hlcache_handle *h);
 
 /* Member accessors */
 content_type content_get_type(struct hlcache_handle *c);
+const char *content_get_mime_type(struct hlcache_handle *c);
 const char *content_get_url(struct hlcache_handle *c);
 const char *content_get_title(struct hlcache_handle *c);
 content_status content_get_status(struct hlcache_handle *c);
