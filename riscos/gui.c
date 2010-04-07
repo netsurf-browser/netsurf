@@ -53,6 +53,7 @@
 #include "rufl.h"
 #include "utils/config.h"
 #include "content/content.h"
+#include "content/hlcache.h"
 #include "content/urldb.h"
 #include "desktop/gui.h"
 #include "desktop/netsurf.h"
@@ -806,7 +807,6 @@ void gui_quit(void)
 
 void ro_gui_signal(int sig)
 {
-	struct content *c;
 	void (*prev_handler)(int);
 	static const os_error error = { 1, "NetSurf has detected a serious "
 			"error and must exit. Please submit a bug report, "
@@ -862,11 +862,6 @@ void ro_gui_signal(int sig)
 		xhourglass_on();
 		xhourglass_colours(0x0000ffff, 0x000000ff,
 				&old_sand, &old_glass);
-		for (c = content_list; c; c = c->next)
-			if (c->type == CONTENT_HTML && c->data.html.layout) {
-				LOG(("Dumping: '%s'", c->url));
-				box_dump(stderr, c->data.html.layout, 0);
-			}
 		options_dump();
 		/*rufl_dump_state();*/
 
@@ -2199,7 +2194,7 @@ void ro_gui_open_help_page(const char *page)
  * Send the source of a content to a text editor.
  */
 
-void ro_gui_view_source(struct content *content)
+void ro_gui_view_source(hlcache_handle *c)
 {
 	os_error *error;
 	char full_name[256];
@@ -2208,13 +2203,23 @@ void ro_gui_view_source(struct content *content)
 	int objtype;
 	bool done = false;
 
-	if (!content || !content->source_data) {
+	const char *source_data;
+	unsigned long source_size;
+
+	if (!c) {
+		warn_user("MiscError", "No document source");
+		return;
+	}
+
+	source_data = content_get_source_data(c, &source_size);
+
+	if (!source_data) {
 		warn_user("MiscError", "No document source");
 		return;
 	}
 
 	/* try to load local files directly. */
-	temp_name = url_to_path(content->url);
+	temp_name = url_to_path(content_get_url(c));
 	if (temp_name) {
 		error = xosfile_read_no_path(temp_name, &objtype, 0, 0, 0, 0);
 		if ((!error) && (objtype == osfile_IS_FILE)) {
@@ -2247,10 +2252,9 @@ void ro_gui_view_source(struct content *content)
 		}
 		message.file_name[211] = '\0';
 		error = xosfile_save_stamped(message.file_name,
-				ro_content_filetype(content),
-				(byte *) content->source_data,
-				(byte *) content->source_data + 
-						content->source_size);
+				ro_content_filetype(c),
+				(byte *) source_data,
+				(byte *) source_data + source_size);
 		if (error) {
 			LOG(("xosfile_save_stamped failed: 0x%x: %s",
 					error->errnum, error->errmess));
