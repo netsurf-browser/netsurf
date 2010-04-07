@@ -29,6 +29,7 @@
 #include "oslib/osfile.h"
 #include "oslib/wimp.h"
 #include "content/content.h"
+#include "content/hlcache.h"
 #include "content/urldb.h"
 #include "desktop/tree.h"
 #include "riscos/dialog.h"
@@ -44,7 +45,7 @@
 #include "utils/url.h"
 
 
-static void ro_gui_hotlist_visited(struct content *content, struct tree *tree,
+static void ro_gui_hotlist_visited(hlcache_handle *c, struct tree *tree,
 		struct node *node);
 static bool ro_gui_hotlist_click(wimp_pointer *pointer);
 
@@ -196,11 +197,11 @@ bool ro_gui_hotlist_click(wimp_pointer *pointer)
  *
  * \param content  the content visited
  */
-void hotlist_visited(struct content *content)
+void hotlist_visited(hlcache_handle *c)
 {
-	if ((!content) || (!content->url) || (!hotlist_tree))
+	if ((!c) || (!content_get_url(c)) || (!hotlist_tree))
 		return;
-	ro_gui_hotlist_visited(content, hotlist_tree, hotlist_tree->root);
+	ro_gui_hotlist_visited(c, hotlist_tree, hotlist_tree->root);
 }
 
 
@@ -211,7 +212,7 @@ void hotlist_visited(struct content *content)
  * \param tree	   the tree to find the URL data from
  * \param node	   the node to update siblings and children of
  */
-void ro_gui_hotlist_visited(struct content *content, struct tree *tree,
+void ro_gui_hotlist_visited(hlcache_handle *c, struct tree *tree,
 		struct node *node)
 {
 	struct node_element *element;
@@ -220,14 +221,15 @@ void ro_gui_hotlist_visited(struct content *content, struct tree *tree,
 		if (!node->folder) {
 			element = tree_find_element(node, TREE_ELEMENT_URL);
 			if ((element) && (!strcmp(element->text,
-					content->url))) {
-				tree_update_URL_node(node, content->url, NULL);
+					content_get_url(c)))) {
+				tree_update_URL_node(node, content_get_url(c),
+						NULL);
 				tree_handle_node_changed(tree, node, true,
 						false);
 			}
 		}
 		if (node->child)
-			ro_gui_hotlist_visited(content, tree, node->child);
+			ro_gui_hotlist_visited(c, tree, node->child);
 	}
 }
 
