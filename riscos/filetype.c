@@ -250,17 +250,17 @@ int cmp_type(const void *x, const void *y)
  * \param content The content to examine.
  * \return The RISC OS filetype corresponding to the content
  */
-int ro_content_filetype(struct content *content)
+int ro_content_filetype(struct hlcache_handle *c)
 {
 	int file_type;
 	os_error *error;
 
-	file_type = ro_content_filetype_from_type(content->type);
+	file_type = ro_content_filetype_from_type(content_get_type(c));
 	if (file_type != 0)
 		return file_type;
 
-	error = xmimemaptranslate_mime_type_to_filetype(content->mime_type,
-			(bits *) &file_type);
+	error = xmimemaptranslate_mime_type_to_filetype(
+			content_get_mime_type(c), (bits *) &file_type);
 	if (error)
 		return 0xffd;
 

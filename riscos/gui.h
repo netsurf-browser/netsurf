@@ -186,7 +186,7 @@ void ro_gui_hotlist_prepare_entry_dialog(struct node *node);
 bool ro_gui_hotlist_dialog_apply(wimp_w w);
 
 /* in filetype.c */
-int ro_content_filetype(struct content *content);
+int ro_content_filetype(struct hlcache_handle *c);
 int ro_content_filetype_from_type(content_type type);
 bits ro_filetype_from_unix_path(const char *unix_path);
 
