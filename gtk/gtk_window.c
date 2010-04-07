@@ -697,11 +697,15 @@ void gui_window_destroy(struct gui_window *g)
 	LOG(("     Scaffolding: %p", g->scaffold));
 	LOG(("     Window name: %s", g->bw->name));
 
-	/* If we're a top-level gui_window, destroy our scaffold */
 	if (g->scrolledwindow == NULL) {
-		gtk_widget_destroy(GTK_WIDGET(g->layout));
-		nsgtk_scaffolding_destroy(g->scaffold);
+		/* tab => remove tab */
+		gtk_widget_destroy(gtk_widget_get_parent(GTK_WIDGET(g->layout)));
+		/* if it was the last tab, destroy scaffold too */
+		gint numbertabs = gtk_notebook_get_n_pages(nsgtk_scaffolding_notebook(g->scaffold));
+		if (numbertabs == 0)
+			nsgtk_scaffolding_destroy(g->scaffold);
 	} else {
+		/* frame within a document => destroy frame only */
 		gtk_widget_destroy(GTK_WIDGET(g->scrolledwindow));
 	}
 
