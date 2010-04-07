@@ -25,6 +25,7 @@
 #include <string.h>
 #include "oslib/osfile.h"
 #include "oslib/wimp.h"
+#include "content/hlcache.h"
 #include "desktop/gui.h"
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
@@ -522,7 +523,7 @@ void ro_gui_selection_dragging(wimp_message *message)
 	wimp_full_message_dragging *drag = (wimp_full_message_dragging*)message;
 	struct box *textarea = NULL;
 	struct browser_window *bw;
-	struct content *content;
+	hlcache_handle *h;
 	int gadget_box_x = 0;
 	int gadget_box_y = 0;
 	struct gui_window *g;
@@ -549,13 +550,13 @@ void ro_gui_selection_dragging(wimp_message *message)
 		return;
 
 	bw = g->bw;
-	content = bw->current_content;
-	if (content && content->type == CONTENT_HTML && 
-			content->data.html.layout) {
-		struct box *box = content->data.html.layout;
+	h = bw->current_content;
+	if (h && content_get_type(h) == CONTENT_HTML && 
+			html_get_box_tree(h)) {
+		struct box *box = html_get_box_tree(h);
 
 		while ((box = box_at_point(box, pos.x, pos.y, 
-				&box_x, &box_y, &content))) {
+				&box_x, &box_y, &h))) {
 			if (box->style && 
 					css_computed_visibility(box->style) == 
 					CSS_VISIBILITY_HIDDEN)
