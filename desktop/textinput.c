@@ -1664,7 +1664,15 @@ bool textbox_insert(struct browser_window *bw, struct box *text_box,
 {
 	char *text;
 	struct box *input = text_box->parent->parent;
+	struct content *current_content;
 	bool hide;
+
+	assert(bw != NULL);
+	assert(bw->current_content != NULL);
+
+	/** \todo Stop poking around inside contents.
+	 * Why is this code in desktop/, anyway? (It's HTML-specific) */
+	current_content = hlcache_handle_get_content(bw->current_content);
 
 	if (bw->sel->defined)
 		delete_selection(bw->sel);
@@ -1702,7 +1710,7 @@ bool textbox_insert(struct browser_window *bw, struct box *text_box,
 	}
 
 	/* insert in text box */
-	text = talloc_realloc(bw->current_content, text_box->text,
+	text = talloc_realloc(current_content, text_box->text,
 			char,
 			text_box->length + text_box->space + utf8_len + 1);
 	if (!text) {
@@ -1961,16 +1969,24 @@ struct box *textarea_insert_break(struct browser_window *bw,
 		struct box *text_box, size_t char_offset)
 {
 	struct box *new_br, *new_text;
-	char *text = talloc_array(bw->current_content, char,
-			text_box->length + 1);
+	struct content *current_content;
+	char *text;
+
+	assert(bw != NULL);
+	assert(bw->current_content != NULL);
+
+	/** \todo Stop poking around inside content objects */
+	current_content = hlcache_handle_get_content(bw->current_content);
+
+	text = talloc_array(current_content, char, text_box->length + 1);
 	if (!text) {
 		warn_user("NoMemory", 0);
 		return NULL;
 	}
 
 	new_br = box_create(text_box->style, 0, 0, text_box->title, 0,
-			bw->current_content);
-	new_text = talloc(bw->current_content, struct box);
+			current_content);
+	new_text = talloc(current_content, struct box);
 	if (!new_text) {
 		warn_user("NoMemory", 0);
 		return NULL;

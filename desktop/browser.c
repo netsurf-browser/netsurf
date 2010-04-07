@@ -2315,9 +2315,15 @@ void browser_window_form_select(struct browser_window *bw,
 	struct box *inline_box;
 	struct form_option *o;
 	int count;
+	struct content *current_content;
 
-	assert(bw);
-	assert(control);
+	assert(bw != NULL);
+	assert(control != NULL);
+	assert(bw->current_content != NULL);
+
+	/** \todo This must die. Browser windows have no business poking 
+	 * around inside contents */
+	current_content = hlcache_handle_get_content(bw->current_content);
 
 	inline_box = control->box->children->children;
 
@@ -2346,13 +2352,13 @@ void browser_window_form_select(struct browser_window *bw,
 	talloc_free(inline_box->text);
 	inline_box->text = 0;
 	if (control->data.select.num_selected == 0)
-		inline_box->text = talloc_strdup(bw->current_content,
+		inline_box->text = talloc_strdup(current_content,
 				messages_get("Form_None"));
 	else if (control->data.select.num_selected == 1)
-		inline_box->text = talloc_strdup(bw->current_content,
+		inline_box->text = talloc_strdup(current_content,
 				control->data.select.current->text);
 	else
-		inline_box->text = talloc_strdup(bw->current_content,
+		inline_box->text = talloc_strdup(current_content,
 				messages_get("Form_Many"));
 	if (!inline_box->text) {
 		warn_user("NoMemory", 0);
