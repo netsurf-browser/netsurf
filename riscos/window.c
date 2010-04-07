@@ -580,12 +580,12 @@ void gui_window_redraw_window(struct gui_window *g)
 void gui_window_update_box(struct gui_window *g,
 		const union content_msg_data *data)
 {
-	struct content *c = g->bw->current_content;
+	hlcache_handle *h = g->bw->current_content;
 	bool use_buffer;
 	int x0, y0, x1, y1;
 	struct update_box *cur;
 
-	if (!c)
+	if (!h)
 		return;
 
 	x0 = floorf(data->redraw.x * 2 * g->bw->scale);
@@ -1438,12 +1438,12 @@ void ro_gui_window_redraw(wimp_draw *redraw)
 	osbool more;
 	struct gui_window *g = (struct gui_window *)ro_gui_wimp_event_get_user_data(redraw->w);
 	float scale = g->bw->scale;
-	struct content *c = g->bw->current_content;
+	hlcache_handle *h = g->bw->current_content;
 	os_error *error;
 
 	/*	Handle no content quickly
 	*/
-	if (!c) {
+	if (!h) {
 		ro_gui_user_redraw(redraw, true, os_COLOUR_WHITE);
 		return;
 	}
@@ -1452,7 +1452,7 @@ void ro_gui_window_redraw(wimp_draw *redraw)
 	   being transformed.  We won't update anything (i.e. leaving
 	   window area as is) instead of showing random data in case of
 	   buffered redraw.  */
-	if (c->locked)
+	if (content_is_locked(h))
 		return;
 
 	plot = ro_plotters;
@@ -1461,7 +1461,7 @@ void ro_gui_window_redraw(wimp_draw *redraw)
 	current_redraw_browser = g->bw;
 
 	/* HTML rendering handles scale itself */
-	if (c->type == CONTENT_HTML)
+	if (content_get_type(h) == CONTENT_HTML)
 		scale = 1;
 
 	error = xwimp_redraw_window(redraw, &more);
@@ -1496,12 +1496,14 @@ void ro_gui_window_redraw(wimp_draw *redraw)
 		/* Set up NetSurf's plotters with current clip rectangle */
 		plot.clip(clip_x0, clip_y0, clip_x1, clip_y1);
 
-		if (c->type != CONTENT_HTML)
-                    plot.rectangle(clip_x0, clip_y0, clip_x1, clip_y1, plot_style_fill_white);
+		if (content_get_type(h) != CONTENT_HTML)
+                    plot.rectangle(clip_x0, clip_y0, clip_x1, clip_y1,
+                    		plot_style_fill_white);
 
 		/* Redraw the clip rectangle area of the content */
-		content_redraw(c, 0, 0,
-				c->width * scale, c->height * scale,
+		content_redraw(h, 0, 0,
+				content_get_width(h) * scale,
+				content_get_height(h) * scale,
 				clip_x0, clip_y0, clip_x1, clip_y1,
 				g->bw->scale,
 				0xFFFFFF);
