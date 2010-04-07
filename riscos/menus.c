@@ -31,6 +31,8 @@
 #include "oslib/osgbpb.h"
 #include "oslib/territory.h"
 #include "oslib/wimp.h"
+#include "content/content.h"
+#include "content/hlcache.h"
 #include "content/urldb.h"
 #include "desktop/gui.h"
 #include "desktop/history_core.h"
@@ -124,7 +126,7 @@ wimp_menu *current_menu;
 /** Whether a menu is currently open */
 bool current_menu_open = false;
 /** Object under menu, or 0 if no object. */
-static struct content *current_menu_object = 0;
+static struct hlcache_handle *current_menu_object = 0;
 /** URL of link under menu, or 0 if no link. */
 static const char *current_menu_url = 0;
 /** Menu of options for form select controls. */
@@ -495,19 +497,21 @@ void ro_gui_menu_create(wimp_menu *menu, int x, int y, wimp_w w)
 
 	/* read the object under the pointer for a new gui_window menu */
 	if ((!current_menu) && (menu == browser_menu)) {
+		hlcache_handle *c = g->bw->current_content;
+
 		g = ro_gui_window_lookup(w);
 
 		if (!ro_gui_window_to_window_pos(g, x, y, &pos))
 			return;
 		current_menu_object = NULL;
 		current_menu_url = NULL;
-		if (g->bw->current_content) {
-			switch (g->bw->current_content->type) {
+		if (c) {
+			switch (content_get_type(c)) {
 				case CONTENT_HTML: {
 					struct box *box;
-					box = box_object_at_point(g->bw->current_content, pos.x, pos.y);
+					box = box_object_at_point(c, pos.x, pos.y);
 					current_menu_object = box ? box->object : NULL;
-					box = box_href_at_point(g->bw->current_content, pos.x, pos.y);
+					box = box_href_at_point(c, pos.x, pos.y);
 					current_menu_url = box ? box->href : NULL;
 				}
 				break;
@@ -515,7 +519,7 @@ void ro_gui_menu_create(wimp_menu *menu, int x, int y, wimp_w w)
 					/* no object, no url */
 					break;
 				default:
-					current_menu_object = g->bw->current_content;
+					current_menu_object = c;
 					break;
 			}
 		}
@@ -904,30 +908,31 @@ void ro_gui_prepare_navigate(struct gui_window *gui)
  */
 void ro_gui_menu_prepare_pageinfo(struct gui_window *g)
 {
-	struct content *c = g->bw->current_content;
+	struct hlcache_handle *h = g->bw->current_content;
 	char icon_buf[20] = "file_xxx";
 	char enc_buf[40];
 	char enc_token[10] = "Encoding0";
 	const char *icon = icon_buf;
-	const char *title = "-";
-	const char *url = "-";
+	const char *title, *url, *mime;
 	const char *enc = "-";
-	const char *mime = "-";
 
-	assert(c);
+	assert(h);
 
-	if (c->title)
-		title = c->title;
-	if (c->url)
-		url = c->url;
-	if (c->mime_type)
-		mime = c->mime_type;
+	title = content_get_title(h);
+	if (title == NULL)
+		title = "-";
+	url = content_get_url(h);
+	if (url == NULL)
+		url = "-";
+	mime = content_get_mime_type(h);
+	if (mime == NULL)
+		mime = "-";
 
-	sprintf(icon_buf, "file_%x", ro_content_filetype(c));
+	sprintf(icon_buf, "file_%x", ro_content_filetype(h));
 	if (!ro_gui_wimp_sprite_exists(icon_buf))
 		sprintf(icon_buf, "file_xxx");
 
-	if (c->type == CONTENT_HTML) {
+	if (content_get_type(h) == CONTENT_HTML) {
 		if (c->data.html.encoding) {
 			enc_token[8] = '0' + c->data.html.encoding_source;
 			snprintf(enc_buf, sizeof enc_buf, "%s (%s)",
