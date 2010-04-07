@@ -1590,8 +1590,7 @@ void ro_gui_window_update_boxes(void) {
 			continue;
 		}
 
-		/*	Set the current redraw gui_window to get options from
-		*/
+		/* Set the current redraw gui_window to get options from */
 		ro_gui_current_redraw_gui = g;
 		current_redraw_browser = g->bw;
 
@@ -1600,8 +1599,7 @@ void ro_gui_window_update_boxes(void) {
 		ro_plot_origin_y = update.box.y1 - update.yscroll;
 		ro_plot_set_scale(g->bw->scale);
 
-		/*	We should clear the background, except for HTML.
-		*/
+		/* We should clear the background, except for HTML. */
 		if (content_get_type(h) != CONTENT_HTML)
 			clear_background = true;
 
@@ -1615,14 +1613,18 @@ void ro_gui_window_update_boxes(void) {
 				ro_gui_buffer_open(&update);
 			if (data->redraw.full_redraw) {
 				if (clear_background) {
-					error = xcolourtrans_set_gcol(os_COLOUR_WHITE,
+					error = xcolourtrans_set_gcol(
+							os_COLOUR_WHITE,
 							colourtrans_SET_BG_GCOL,
-							os_ACTION_OVERWRITE, 0, 0);
+							os_ACTION_OVERWRITE, 0,
+							0);
 					if (error) {
-						LOG(("xcolourtrans_set_gcol: 0x%x: %s",
+						LOG(("xcolourtrans_set_gcol: "
+								"0x%x: %s",
 								error->errnum,
 								error->errmess));
-						warn_user("MiscError", error->errmess);
+						warn_user("MiscError",
+								error->errmess);
 					}
 					os_clg();
 				}
@@ -2850,13 +2852,15 @@ bool ro_gui_window_dataload(struct gui_window *g, wimp_message *message)
 	struct box *file_box = 0;
 	struct box *text_box = 0;
 	struct browser_window *bw = g->bw;
-	struct content *content;
+	hlcache_handle *h;
 	int box_x, box_y;
 	os_error *error;
 	os_coord pos;
 
+	h = bw->current_content;
+
 	/* HTML content only. */
-	if (!bw->current_content || bw->current_content->type != CONTENT_HTML)
+	if (!bw->current_content || content_get_type(h) != CONTENT_HTML)
 		return false;
 
 	/* Ignore directories etc. */
@@ -2867,14 +2871,13 @@ bool ro_gui_window_dataload(struct gui_window *g, wimp_message *message)
 			message->data.data_xfer.pos.y, &pos))
 		return false;
 
-	content = bw->current_content;
-	box = content->data.html.layout;
+	box = html_get_box_tree(h);
 
 	/* Consider the margins of the html page now */
 	box_x = box->margin[LEFT];
 	box_y = box->margin[TOP];
 
-	while ((box = box_at_point(box, pos.x, pos.y, &box_x, &box_y, &content))) {
+	while ((box = box_at_point(box, pos.x, pos.y, &box_x, &box_y, &h))) {
 		if (box->style && css_computed_visibility(box->style) ==
 				CSS_VISIBILITY_HIDDEN)
 			continue;
@@ -3333,32 +3336,34 @@ bool ro_gui_window_import_text(struct gui_window *g, const char *filename,
  * \param  wi  the WindowInfo message from the iconiser
  */
 
-void ro_gui_window_iconise(struct gui_window *g, wimp_full_message_window_info *wi)
+void ro_gui_window_iconise(struct gui_window *g,
+		wimp_full_message_window_info *wi)
 {
 	/* sadly there is no 'legal' way to get the sprite into
-	   the Wimp sprite pool other than via a filing system */
+	 * the Wimp sprite pool other than via a filing system */
 	const char *temp_fname = "Pipe:$._tmpfile";
 	struct browser_window *bw = g->bw;
 	osspriteop_header *overlay = NULL;
 	osspriteop_header *sprite_header;
 	struct bitmap *bitmap;
 	osspriteop_area *area;
-	int w = 34, h = 34;
-	struct content *c;
+	int width = 34, height = 34;
+	hlcache_handle *h;
 	os_error *error;
 	int len, id;
 
 	assert(bw);
 
-	c = bw->current_content;
-	if (!c) return;
+	h = bw->current_content;
+	if (!h) return;
 
 	/* if an overlay sprite is defined, locate it and gets its dimensions
-	   so that we can produce a thumbnail with the same dimensions */
+	 * so that we can produce a thumbnail with the same dimensions */
 	if (!ro_gui_wimp_get_sprite("ic_netsfxx", &overlay)) {
 		error = xosspriteop_read_sprite_info(osspriteop_PTR,
 				(osspriteop_area *)0x100,
-				(osspriteop_id)overlay, &w, &h, NULL, NULL);
+				(osspriteop_id)overlay, &width, &height, NULL,
+				NULL);
 		if (error) {
 			LOG(("xosspriteop_read_sprite_info: 0x%x: %s",
 				error->errnum, error->errmess));
@@ -3372,12 +3377,13 @@ void ro_gui_window_iconise(struct gui_window *g, wimp_full_message_window_info *
 	}
 
 	/* create the thumbnail sprite */
-	bitmap = bitmap_create(w, h, BITMAP_NEW | BITMAP_OPAQUE | BITMAP_CLEAR_MEMORY);
+	bitmap = bitmap_create(width, height, BITMAP_NEW | BITMAP_OPAQUE |
+			BITMAP_CLEAR_MEMORY);
 	if (!bitmap) {
 		LOG(("Thumbnail initialisation failed."));
 		return;
 	}
-	thumbnail_create(c, bitmap, NULL);
+	thumbnail_create(h, bitmap, NULL);
 	if (overlay)
 		bitmap_overlay_sprite(bitmap, overlay);
 	area = thumbnail_convert_8bpp(bitmap);
@@ -3421,7 +3427,7 @@ void ro_gui_window_iconise(struct gui_window *g, wimp_full_message_window_info *
 		return;
 	}
 
-	memcpy(wi->sprite_name, sprite_header->name + 3, len - 2);	/* inc NUL */
+	memcpy(wi->sprite_name, sprite_header->name + 3, len - 2); /* inc NUL */
 	strncpy(wi->title, g->title, sizeof(wi->title));
 	wi->title[sizeof(wi->title) - 1] = '\0';
 
@@ -3436,7 +3442,8 @@ void ro_gui_window_iconise(struct gui_window *g, wimp_full_message_window_info *
 
 	wi->size = sizeof(wimp_full_message_window_info);
 	wi->your_ref = wi->my_ref;
-	error = xwimp_send_message(wimp_USER_MESSAGE, (wimp_message*)wi, wi->sender);
+	error = xwimp_send_message(wimp_USER_MESSAGE, (wimp_message*)wi,
+			wi->sender);
 	if (error) {
 		LOG(("xwimp_send_message: 0x%x:%s",
 			error->errnum, error->errmess));
