@@ -127,7 +127,7 @@ wimp_menu *current_menu;
 /** Whether a menu is currently open */
 bool current_menu_open = false;
 /** Object under menu, or 0 if no object. */
-static struct hlcache_handle *current_menu_object = 0;
+static hlcache_handle *current_menu_object = 0;
 /** URL of link under menu, or 0 if no link. */
 static const char *current_menu_url = 0;
 /** Menu of options for form select controls. */
