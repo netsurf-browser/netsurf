@@ -23,15 +23,6 @@
 #include "desktop/browser.h"
 #include "gtk/gtk_scaffolding.h"
 
-struct browser_mouse {
-	struct gui_window *gui;
-	struct box *box;
-	
-	gdouble pressed_x;
-	gdouble pressed_y;
-	gboolean waiting;
-	browser_mouse_state state;
-};
 
 typedef enum nsgtk_window_signals {
 	NSGTK_WINDOW_SIGNAL_CLICK,

@@ -44,7 +44,16 @@ struct gui_window {
 	 * drawing area, etc that may contain 1 -> several gui_windows */
 	struct browser_window	*bw;
 	/**< the 'content' window that is rendered in the gui_window*/
-	struct browser_mouse 	*mouse; /**< contains mouse state / events */
+
+	struct {
+		struct gui_window *gui;
+		struct box *box;
+
+		gdouble pressed_x;
+		gdouble pressed_y;
+		gboolean waiting;
+		browser_mouse_state state;
+	} mouse;  /**< contains mouse state / events */
 
 	int			caretx, carety, careth;
 	/**< storage caret dimension / location for rendering */
@@ -154,12 +163,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
         LOG(("Creating gui window %p for browser window %p", g, bw));
 
 	g->bw = bw;
-	g->mouse = malloc(sizeof(*g->mouse));
-       	if (!g->mouse) {
-		warn_user("NoMemory", 0);
-		return 0;
-	}
-	g->mouse->state = 0;
+	g->mouse.state = 0;
 	g->current_pointer = GUI_POINTER_DEFAULT;
 	if (clone != NULL)
 		bw->scale = clone->scale;
@@ -226,10 +230,9 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 	gtk_container_set_border_width(GTK_CONTAINER(g->viewport), 0);
 	gtk_viewport_set_shadow_type(g->viewport, GTK_SHADOW_NONE);
-	if (g->scrolledwindow)
-		gtk_widget_show(GTK_WIDGET(g->scrolledwindow));
-		/* And enable visibility from our viewport down */
-		gtk_widget_show_all(GTK_WIDGET(g->viewport));
+	gtk_widget_show(GTK_WIDGET(g->scrolledwindow));
+	/* And enable visibility from our viewport down */
+	gtk_widget_show_all(GTK_WIDGET(g->viewport));
 
         switch(bw->scrolling) {
         case SCROLLING_NO:
@@ -412,31 +415,31 @@ gboolean nsgtk_window_motion_notify_event(GtkWidget *widget,
 	if ((abs(event->x - g->last_x) < 5) && (abs(event->y - g->last_y) < 5))
 		/* necessary for touch screens */
 		return FALSE;
-   	if (g->mouse->state & BROWSER_MOUSE_PRESS_1){
+   	if (g->mouse.state & BROWSER_MOUSE_PRESS_1){
 		/* Start button 1 drag */
 		browser_window_mouse_click(g->bw, BROWSER_MOUSE_DRAG_1,
-				g->mouse->pressed_x, g->mouse->pressed_y);
+				g->mouse.pressed_x, g->mouse.pressed_y);
 		/* Replace PRESS with HOLDING and declare drag in progress */
-		g->mouse->state ^= (BROWSER_MOUSE_PRESS_1 |
+		g->mouse.state ^= (BROWSER_MOUSE_PRESS_1 |
 				BROWSER_MOUSE_HOLDING_1);
-		g->mouse->state |= BROWSER_MOUSE_DRAG_ON;
+		g->mouse.state |= BROWSER_MOUSE_DRAG_ON;
 	}
-	else if (g->mouse->state & BROWSER_MOUSE_PRESS_2){
+	else if (g->mouse.state & BROWSER_MOUSE_PRESS_2){
 		/* Start button 2 drag */
 		browser_window_mouse_click(g->bw, BROWSER_MOUSE_DRAG_2,
-				g->mouse->pressed_x, g->mouse->pressed_y);
+				g->mouse.pressed_x, g->mouse.pressed_y);
 		/* Replace PRESS with HOLDING and declare drag in progress */
-		g->mouse->state ^= (BROWSER_MOUSE_PRESS_2 |
+		g->mouse.state ^= (BROWSER_MOUSE_PRESS_2 |
 				BROWSER_MOUSE_HOLDING_2);
-		g->mouse->state |= BROWSER_MOUSE_DRAG_ON;
+		g->mouse.state |= BROWSER_MOUSE_DRAG_ON;
 	}
 	/* Handle modifiers being removed */
-  	if (g->mouse->state & BROWSER_MOUSE_MOD_1 && !shift)
-  		g->mouse->state ^= BROWSER_MOUSE_MOD_1;
- 	if (g->mouse->state & BROWSER_MOUSE_MOD_2 && !ctrl)
-  		g->mouse->state ^= BROWSER_MOUSE_MOD_2;
+  	if (g->mouse.state & BROWSER_MOUSE_MOD_1 && !shift)
+  		g->mouse.state ^= BROWSER_MOUSE_MOD_1;
+ 	if (g->mouse.state & BROWSER_MOUSE_MOD_2 && !ctrl)
+  		g->mouse.state ^= BROWSER_MOUSE_MOD_2;
 
-	browser_window_mouse_track(g->bw, g->mouse->state,
+	browser_window_mouse_track(g->bw, g->mouse.state,
 			event->x / g->bw->scale, event->y / g->bw->scale);
 
 	g->last_x = event->x;
@@ -454,38 +457,38 @@ gboolean nsgtk_window_button_press_event(GtkWidget *widget,
 	gtk_widget_hide(GTK_WIDGET(nsgtk_scaffolding_history_window(
 			g->scaffold)->window));
 
-	g->mouse->pressed_x = event->x / g->bw->scale;
-	g->mouse->pressed_y = event->y / g->bw->scale;
+	g->mouse.pressed_x = event->x / g->bw->scale;
+	g->mouse.pressed_y = event->y / g->bw->scale;
 
 	switch (event->button) {
 	case 1:
 		/* Left button, usually.
 		 * Pass to core as BUTTON 1. */
-		g->mouse->state = BROWSER_MOUSE_PRESS_1;
+		g->mouse.state = BROWSER_MOUSE_PRESS_1;
 		break;
 	case 2:
 		/* Middle button, usually.
 		 * Pass to core as BUTTON 2 */
-		g->mouse->state = BROWSER_MOUSE_PRESS_2;
+		g->mouse.state = BROWSER_MOUSE_PRESS_2;
 		break;
 	case 3:
 		/* Right button, usually.
 		 * Front end action button -- context menu. */
 		browser_window_remove_caret(g->bw);
-		nsgtk_scaffolding_popup_menu(g->scaffold, g->mouse->pressed_x,
-				g->mouse->pressed_y);
+		nsgtk_scaffolding_popup_menu(g->scaffold, g->mouse.pressed_x,
+				g->mouse.pressed_y);
 		return TRUE;
 	default:
 		return FALSE;
 	}
 	/* Handle the modifiers too */
 	if (event->state & GDK_SHIFT_MASK)
-		g->mouse->state |= BROWSER_MOUSE_MOD_1;
+		g->mouse.state |= BROWSER_MOUSE_MOD_1;
 	if (event->state & GDK_CONTROL_MASK)
-		g->mouse->state |= BROWSER_MOUSE_MOD_2;
+		g->mouse.state |= BROWSER_MOUSE_MOD_2;
 
-	browser_window_mouse_click(g->bw, g->mouse->state, g->mouse->pressed_x,
-			g->mouse->pressed_y);
+	browser_window_mouse_click(g->bw, g->mouse.state, g->mouse.pressed_x,
+			g->mouse.pressed_y);
 
 	return TRUE;
 }
@@ -499,25 +502,25 @@ gboolean nsgtk_window_button_release_event(GtkWidget *widget,
 
 	/* If the mouse state is PRESS then we are waiting for a release to emit
 	 * a click event, otherwise just reset the state to nothing*/
-	if (g->mouse->state & BROWSER_MOUSE_PRESS_1)
-		g->mouse->state ^= (BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_CLICK_1);
-	else if (g->mouse->state & BROWSER_MOUSE_PRESS_2)
-		g->mouse->state ^= (BROWSER_MOUSE_PRESS_2 | BROWSER_MOUSE_CLICK_2);
+	if (g->mouse.state & BROWSER_MOUSE_PRESS_1)
+		g->mouse.state ^= (BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_CLICK_1);
+	else if (g->mouse.state & BROWSER_MOUSE_PRESS_2)
+		g->mouse.state ^= (BROWSER_MOUSE_PRESS_2 | BROWSER_MOUSE_CLICK_2);
 
 	/* Handle modifiers being removed */
-  	if (g->mouse->state & BROWSER_MOUSE_MOD_1 && !shift)
-  		g->mouse->state ^= BROWSER_MOUSE_MOD_1;
- 	if (g->mouse->state & BROWSER_MOUSE_MOD_2 && !ctrl)
-  		g->mouse->state ^= BROWSER_MOUSE_MOD_2;
+  	if (g->mouse.state & BROWSER_MOUSE_MOD_1 && !shift)
+  		g->mouse.state ^= BROWSER_MOUSE_MOD_1;
+ 	if (g->mouse.state & BROWSER_MOUSE_MOD_2 && !ctrl)
+  		g->mouse.state ^= BROWSER_MOUSE_MOD_2;
 
-	if (g->mouse->state & (BROWSER_MOUSE_CLICK_1|BROWSER_MOUSE_CLICK_2))
-		browser_window_mouse_click(g->bw, g->mouse->state, event->x / g->bw->scale,
+	if (g->mouse.state & (BROWSER_MOUSE_CLICK_1|BROWSER_MOUSE_CLICK_2))
+		browser_window_mouse_click(g->bw, g->mouse.state, event->x / g->bw->scale,
 			event->y / g->bw->scale);
 	else
 		browser_window_mouse_drag_end(g->bw, 0, event->x / g->bw->scale,
 				event->y / g->bw->scale);
 
-	g->mouse->state = 0;
+	g->mouse.state = 0;
 	return TRUE;
 }
 
