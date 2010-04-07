@@ -1302,6 +1302,23 @@ struct bitmap *content__get_bitmap(struct content *c)
 }
 
 /**
+ * Return whether a content is currently locked
+ *
+ * \param c  Content to test
+ * \return true iff locked, else false
+ */
+
+bool content_is_locked(hlcache_handle *h)
+{
+	return content__is_locked(hlcache_handle_get_content(h));
+}
+
+bool content__is_locked(struct content *c)
+{
+	return c->locked;
+}
+
+/**
  * Retrieve the low-level cache handle for a content
  *
  * \param h  Content to retrieve from

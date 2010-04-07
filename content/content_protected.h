@@ -220,4 +220,6 @@ void content__invalidate_reuse_data(struct content *c);
 const char *content__get_refresh_url(struct content *c);
 struct bitmap *content__get_bitmap(struct content *c);
 
+bool content__is_locked(struct content *c);
+
 #endif
