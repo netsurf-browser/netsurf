@@ -498,29 +498,34 @@ void ro_gui_menu_create(wimp_menu *menu, int x, int y, wimp_w w)
 
 	/* read the object under the pointer for a new gui_window menu */
 	if ((!current_menu) && (menu == browser_menu)) {
-		hlcache_handle *c = g->bw->current_content;
+		hlcache_handle *h;
 
 		g = ro_gui_window_lookup(w);
+		h = g->bw->current_content;
 
 		if (!ro_gui_window_to_window_pos(g, x, y, &pos))
 			return;
 		current_menu_object = NULL;
 		current_menu_url = NULL;
-		if (c) {
-			switch (content_get_type(c)) {
+		if (h) {
+			switch (content_get_type(h)) {
 				case CONTENT_HTML: {
 					struct box *box;
-					box = box_object_at_point(c, pos.x, pos.y);
-					current_menu_object = box ? box->object : NULL;
-					box = box_href_at_point(c, pos.x, pos.y);
-					current_menu_url = box ? box->href : NULL;
+					box = box_object_at_point(h, pos.x,
+							pos.y);
+					current_menu_object = box ?
+							box->object : NULL;
+					box = box_href_at_point(h, pos.x,
+							pos.y);
+					current_menu_url = box ?
+							box->href : NULL;
 				}
 				break;
 				case CONTENT_TEXTPLAIN:
 					/* no object, no url */
 					break;
 				default:
-					current_menu_object = c;
+					current_menu_object = h;
 					break;
 			}
 		}
@@ -1584,7 +1589,7 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 		case BROWSER_OBJECT_RELOAD:
 			if (!current_menu_object)
 				return false;
-			current_menu_object->fresh = false;
+			content_invalidate_reuse_data(current_menu_object);
 			browser_window_reload(bw, false);
 			return true;
 
