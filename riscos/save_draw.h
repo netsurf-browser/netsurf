@@ -22,9 +22,9 @@
 #ifdef WITH_DRAW_EXPORT
 
 #include <stdbool.h>
-struct content;
+struct hlcache_handle;
 
-bool save_as_draw(struct content *c, const char *path);
+bool save_as_draw(struct hlcache_handle *h, const char *path);
 
 #endif
 

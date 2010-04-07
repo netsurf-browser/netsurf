@@ -22,9 +22,9 @@
 #include "utils/config.h"
 #ifdef WITH_PDF_EXPORT
 
-struct content;
+struct hlcache_handle;
 
-bool save_as_pdf(struct content *c, const char *path);
+bool save_as_pdf(struct hlcache_handle *h, const char *path);
 
 #endif /* WITH_PDF_EXPORT */
 
