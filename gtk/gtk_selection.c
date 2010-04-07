@@ -79,7 +79,7 @@ void gui_start_selection(struct gui_window *g)
 	else
 		g_string_set_size(current_selection, 0);
 		
-	gtk_widget_grab_focus(GTK_WIDGET(nsgtk_window_get_drawing_area(g)));
+	gtk_widget_grab_focus(GTK_WIDGET(nsgtk_window_get_layout(g)));
 }
 
 void gui_paste_from_clipboard(struct gui_window *g, int x, int y)

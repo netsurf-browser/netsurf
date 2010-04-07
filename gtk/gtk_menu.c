@@ -383,9 +383,6 @@ struct nsgtk_toolbars_submenu *nsgtk_menu_toolbars_submenu(
 	CHECK_ITEM(toolbars, toolbar, gtkToolBar, ret)
 	if (ret->toolbar_menuitem != NULL)	
 		gtk_check_menu_item_set_active(ret->toolbar_menuitem, TRUE);
-	CHECK_ITEM(toolbars, statusbar, gtkStatusBar, ret)
-	if (ret->statusbar_menuitem != NULL)
-		gtk_check_menu_item_set_active(ret->statusbar_menuitem, TRUE);
 	return ret;
 }
 

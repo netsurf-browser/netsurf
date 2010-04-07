@@ -85,7 +85,6 @@ struct gtk_scaffolding {
 	GtkNotebook			*notebook;
 	GtkWidget			*url_bar;
 	GtkEntryCompletion		*url_bar_completion;
-	GtkStatusbar			*status_bar;
 	struct nsgtk_file_menu		*file_menu;
 	struct nsgtk_file_menu		*rclick_file_menu;
 	struct nsgtk_edit_menu		*edit_menu;
@@ -197,7 +196,6 @@ void nsgtk_attach_menu_handlers(struct gtk_scaffolding *g)
 			"toggled", G_CALLBACK(nsgtk_on_##q##_activate), g)
 	CONNECT_CHECK(menubar);
 	CONNECT_CHECK(toolbar);
-	CONNECT_CHECK(statusbar);
 #undef CONNECT_CHECK
 
 }
@@ -1031,42 +1029,6 @@ MENUHANDLER(toolbar)
 	return TRUE;
 }
 
-MENUHANDLER(statusbar)
-{
-	GtkWidget *w;
-	struct gtk_scaffolding *g = (struct gtk_scaffolding *)data;
-
-	if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(widget))) {
-		w = GTK_WIDGET(g->rclick_view_menu->
-				toolbars_submenu->statusbar_menuitem);
-		if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(w))
-				== FALSE)
-			gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(w),
-					TRUE);
-		w = GTK_WIDGET(g->view_menu->
-				toolbars_submenu->statusbar_menuitem);
-		if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(w))
-				== FALSE)
-			gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(w),
-					TRUE);
-		gtk_widget_show(GTK_WIDGET(g->status_bar));
-	} else {
-		w = GTK_WIDGET(g->rclick_view_menu->
-				toolbars_submenu->statusbar_menuitem);
-		if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(w)))
-			gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(w),
-					FALSE);
-		w = GTK_WIDGET(g->view_menu->
-				toolbars_submenu->statusbar_menuitem);
-		if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(w)))
-			gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(w),
-					FALSE);
-		gtk_widget_hide(GTK_WIDGET(g->status_bar));
-	}
-
-	return TRUE;
-}
-
 MULTIHANDLER(downloads)
 {
 	nsgtk_download_show(g->window);
@@ -1467,7 +1429,6 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	g->window = GTK_WINDOW(GET_WIDGET("wndBrowser"));
 	g->notebook = GTK_NOTEBOOK(GET_WIDGET("notebook"));
 	g->menu_bar = GTK_MENU_BAR(GET_WIDGET("menubar"));
-	g->status_bar = GTK_STATUSBAR(GET_WIDGET("statusbar"));
 	g->tool_bar = GTK_TOOLBAR(GET_WIDGET("toolbar"));
 
 	g->search = malloc(sizeof(struct gtk_search));
@@ -1819,14 +1780,6 @@ void gui_window_set_title(struct gui_window *_g, const char *title)
 			gtk_window_set_title(g->window, nt);
 		}
 	}
-}
-
-void gui_window_set_status(struct gui_window *_g, const char *text)
-{
-        struct gtk_scaffolding *g = nsgtk_get_scaffold(_g);
-	assert(g);
-	assert(g->status_bar);
-	gtk_statusbar_push(g->status_bar, 0, text);
 }
 
 void gui_window_set_url(struct gui_window *_g, const char *url)

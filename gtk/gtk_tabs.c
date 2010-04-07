@@ -58,21 +58,18 @@ void nsgtk_tab_init(GtkWidget *tabs)
         nsgtk_tab_options_changed(tabs);
 }
 
-void nsgtk_tab_add(struct gui_window *window, bool background)
+void nsgtk_tab_add(struct gui_window *window, GtkWidget *tab_contents, bool background)
 {
 	GtkWidget *tabs = GTK_WIDGET(nsgtk_scaffolding_notebook(
 			nsgtk_get_scaffold(window)));
 	GtkWidget *tabBox = nsgtk_tab_label_setup(window);
 	gint remember = gtk_notebook_get_current_page(GTK_NOTEBOOK(tabs));
-	gtk_notebook_append_page(GTK_NOTEBOOK(tabs), 
-			GTK_WIDGET(nsgtk_window_get_scrolledwindow(window)),
-			tabBox);
+	gtk_notebook_append_page(GTK_NOTEBOOK(tabs), tab_contents, tabBox);
 	/*causes gtk errors can't set a parent */
 	gtk_notebook_set_tab_reorderable(GTK_NOTEBOOK(tabs), 
-			GTK_WIDGET(nsgtk_window_get_scrolledwindow(window)),
+			tab_contents,
 			true);
-	gtk_widget_show_all(GTK_WIDGET(nsgtk_window_get_scrolledwindow(
-			window)));
+	gtk_widget_show_all(tab_contents);
 	gtk_notebook_set_current_page(GTK_NOTEBOOK(tabs), 
 			gtk_notebook_get_n_pages(GTK_NOTEBOOK(tabs)) - 1);
 	if (option_new_blank) {

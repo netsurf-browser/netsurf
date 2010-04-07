@@ -62,14 +62,11 @@ struct gui_window {
 	int			last_x, last_y;
 	/**< storage caret location for rendering */
 
+	GtkLayout		*layout;  /**< display widget for this page or frame */
 	GtkScrolledWindow	*scrolledwindow;
-	/**< optional; for frames that need it; top level of gtk structure of
-	 * gui_window */
-	GtkViewport		*viewport;
-	/**< contained in a scrolled window */
-	GtkFixed		*fixed; /**< contained in a viewport */
-	GtkDrawingArea		*drawing_area; /**< contained in a gtkfixed */
-	GtkWidget		*tab; /** the visible tab */
+	                 /**< frames only; top level of gtk structure of gui_window */
+	GtkWidget		*tab; /**< the visible tab */
+	GtkLabel		*status_bar;
 	gulong			signalhandler[NSGTK_WINDOW_SIGNAL_COUNT];
 	/**< to allow disactivation / resume of normal window behaviour */
 	struct gui_window	*next, *prev; /**< list for eventual cleanup */
@@ -115,14 +112,9 @@ unsigned long nsgtk_window_get_signalhandler(struct gui_window *g, int i)
 	return g->signalhandler[i];
 }
 
-GtkDrawingArea *nsgtk_window_get_drawing_area(struct gui_window *g)
+GtkLayout *nsgtk_window_get_layout(struct gui_window *g)
 {
-	return g->drawing_area;
-}
-
-GtkScrolledWindow *nsgtk_window_get_scrolledwindow(struct gui_window *g)
-{
-	return g->scrolledwindow;
+	return g->layout;
 }
 
 GtkWidget *nsgtk_window_get_tab(struct gui_window *g)
@@ -175,44 +167,40 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	if (bw->parent != NULL)
 		/* Find our parent's scaffolding */
 		g->scaffold = bw->parent->window->scaffold;
-	else if (new_tab) {
+	else if (new_tab)
 		g->scaffold = clone->window->scaffold;
-	}
 	else
 		/* Now construct and attach a scaffold */
 		g->scaffold = nsgtk_new_scaffolding(g);
 	if (g->scaffold == NULL) {
+		warn_user("NoMemory", 0);
 		free(g);
 		return NULL;
 	}
 
-        /* Attach ourselves to the list (push_top) */
-	if (window_list)
-		window_list->prev = g;
-	g->next = window_list;
-	g->prev = NULL;
-	window_list = g;
-
 	/* Construct our primary elements */
-	g->fixed = GTK_FIXED(gtk_fixed_new());
-        g->drawing_area = GTK_DRAWING_AREA(gtk_drawing_area_new());
-        gtk_fixed_put(g->fixed, GTK_WIDGET(g->drawing_area), 0, 0);
-        gtk_container_set_border_width(GTK_CONTAINER(g->fixed), 0);
+	if (bw->parent == NULL) {
+		/* top-level document (not a frame) => create a new tab */
+		GladeXML *xml = glade_xml_new(glade_netsurf_file_location, "tabContents", NULL);
+		if (!xml) {
+			warn_user("MiscError", "Failed to create tab contents");
+			free(g);
+			return 0;
+		}
 
-	g->scrolledwindow = GTK_SCROLLED_WINDOW(gtk_scrolled_window_new(NULL, NULL));
-	g_object_set_data(G_OBJECT(g->scrolledwindow), "gui_window", g);
-	gtk_scrolled_window_add_with_viewport(g->scrolledwindow,
-					      GTK_WIDGET(g->fixed));
-	gtk_scrolled_window_set_shadow_type(g->scrolledwindow,
-					    GTK_SHADOW_NONE);
-	g->viewport = GTK_VIEWPORT(gtk_bin_get_child(GTK_BIN(g->scrolledwindow)));
-	g->tab = NULL;
+		GtkWidget *tab_contents = glade_xml_get_widget(xml, "tabContents");
+		g->layout = GTK_LAYOUT(glade_xml_get_widget(xml, "layout"));
+		g->status_bar = GTK_LABEL(glade_xml_get_widget(xml, "status_bar"));
 
-	if (bw->parent != NULL)
-		/* Attach ourselves into our parent at the right point */
-		nsgtk_gui_window_attach_child(bw->parent->window, g);
-	else {
-		/* Attach our viewport into the scaffold */
+		/* connect the scrollbars to the layout widget */
+		gtk_layout_set_hadjustment(g->layout,
+				gtk_range_get_adjustment(GTK_RANGE(
+				glade_xml_get_widget(xml, "hscrollbar"))));
+		gtk_layout_set_vadjustment(g->layout,
+				gtk_range_get_adjustment(GTK_RANGE(
+				glade_xml_get_widget(xml, "vscrollbar"))));
+
+		/* add the tab to the scaffold */
 		bool tempback = true;
 		switch (temp_open_background) {
 		case -1:
@@ -225,14 +213,27 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			tempback = true;
 			break;
 		}
-		nsgtk_tab_add(g, tempback);
-	}
+		nsgtk_tab_add(g, tab_contents, tempback);
 
-	gtk_container_set_border_width(GTK_CONTAINER(g->viewport), 0);
-	gtk_viewport_set_shadow_type(g->viewport, GTK_SHADOW_NONE);
-	gtk_widget_show(GTK_WIDGET(g->scrolledwindow));
-	/* And enable visibility from our viewport down */
-	gtk_widget_show_all(GTK_WIDGET(g->viewport));
+		g_object_unref(xml);
+
+	} else {
+		/* frame or iframe => create a child layout */
+		g->layout = GTK_LAYOUT(gtk_layout_new(NULL, NULL));
+		gtk_container_set_border_width(GTK_CONTAINER(g->layout), 0);
+
+		g->scrolledwindow = GTK_SCROLLED_WINDOW(gtk_scrolled_window_new(NULL, NULL));
+		g_object_set_data(G_OBJECT(g->scrolledwindow), "gui_window", g);
+		gtk_container_add(GTK_CONTAINER(g->scrolledwindow), GTK_WIDGET(g->layout));
+		gtk_scrolled_window_set_shadow_type(g->scrolledwindow,
+						    GTK_SHADOW_NONE);
+		g->tab = NULL;
+
+		/* Attach ourselves into our parent at the right point */
+		nsgtk_gui_window_attach_child(bw->parent->window, g);
+	
+		gtk_widget_show(GTK_WIDGET(g->scrolledwindow));
+	}
 
         switch(bw->scrolling) {
         case SCROLLING_NO:
@@ -245,9 +246,9 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	default:
                 scrollpolicy = GTK_POLICY_AUTOMATIC;
                 break;
-        };
+        }
 
-        switch(bw->browser_window_type) {
+        switch (bw->browser_window_type) {
         case BROWSER_WINDOW_FRAMESET:
                 if (g->scrolledwindow)
                         gtk_scrolled_window_set_policy(g->scrolledwindow,
@@ -274,10 +275,17 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
                 break;
         }
 
+        /* Attach ourselves to the list (push_top) */
+	if (window_list)
+		window_list->prev = g;
+	g->next = window_list;
+	g->prev = NULL;
+	window_list = g;
+
 	/* set the events we're interested in receiving from the browser's
 	 * drawing area.
 	 */
-	gtk_widget_add_events(GTK_WIDGET(g->drawing_area),
+	gtk_widget_add_events(GTK_WIDGET(g->layout),
 				GDK_EXPOSURE_MASK |
 				GDK_LEAVE_NOTIFY_MASK |
 				GDK_BUTTON_PRESS_MASK |
@@ -286,27 +294,27 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 				GDK_POINTER_MOTION_HINT_MASK |
 				GDK_KEY_PRESS_MASK |
 				GDK_KEY_RELEASE_MASK);
-	GTK_WIDGET_SET_FLAGS(GTK_WIDGET(g->drawing_area), GTK_CAN_FOCUS);
+	GTK_WIDGET_SET_FLAGS(GTK_WIDGET(g->layout), GTK_CAN_FOCUS);
 
 	/* set the default background colour of the drawing area to white. */
-	gtk_widget_modify_bg(GTK_WIDGET(g->drawing_area), GTK_STATE_NORMAL,
+	gtk_widget_modify_bg(GTK_WIDGET(g->layout), GTK_STATE_NORMAL,
 				&((GdkColor) { 0, 0xffff, 0xffff, 0xffff } ));
 
 #define CONNECT(obj, sig, callback, ptr) \
 	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))
 	g->signalhandler[NSGTK_WINDOW_SIGNAL_REDRAW] =
-			CONNECT(g->drawing_area, "expose_event",
+			CONNECT(g->layout, "expose_event",
 			nsgtk_window_expose_event, g);
-	CONNECT(g->drawing_area, "motion_notify_event",
+	CONNECT(g->layout, "motion_notify_event",
 			nsgtk_window_motion_notify_event, g);
 	g->signalhandler[NSGTK_WINDOW_SIGNAL_CLICK] =
-			CONNECT(g->drawing_area, "button_press_event",
+			CONNECT(g->layout, "button_press_event",
 			nsgtk_window_button_press_event, g);
-	CONNECT(g->drawing_area, "button_release_event",
+	CONNECT(g->layout, "button_release_event",
 			nsgtk_window_button_release_event, g);
-	CONNECT(g->drawing_area, "key_press_event",
+	CONNECT(g->layout, "key_press_event",
 			nsgtk_window_keypress_event, g);
-	CONNECT(g->viewport, "size_allocate",
+	CONNECT(g->layout, "size_allocate",
 			nsgtk_window_size_allocate_event, g);
 
         return g;
@@ -318,16 +326,16 @@ static void nsgtk_gui_window_attach_child(struct gui_window *parent,
         /* Attach the child gui_window (frame) into the parent.
          * It will be resized later on.
          */
-        GtkFixed *parent_fixed = parent->fixed;
+        GtkLayout *parent_layout = parent->layout;
         GtkWidget *child_widget = GTK_WIDGET(child->scrolledwindow);
-        gtk_fixed_put(parent_fixed, child_widget, 0, 0);
+        gtk_layout_put(parent_layout, child_widget, 0, 0);
 }
 
 void gui_window_position_frame(struct gui_window *g, int x0, int y0, int x1, int y1)
 {
         /* g is a child frame, we need to place it relative to its parent */
         GtkWidget *w = GTK_WIDGET(g->scrolledwindow);
-        GtkFixed *f = g->bw->parent->window->fixed;
+        GtkLayout *f = g->bw->parent->window->layout;
         assert(w);
         assert(f);
         LOG(("%s: %d,%d  %dx%d", g->bw->name, x0, y0, x1-x0+2, y1-y0+2));
@@ -344,7 +352,7 @@ void gui_window_position_frame(struct gui_window *g, int x0, int y0, int x1, int
 		w->allocation.width != x1 - x0 + 2 ||
 		w->allocation.height != y1 - y0 + 2) {
 	  	LOG(("  frame has moved/resized."));
-		gtk_fixed_move(f, w, x0, y0);
+		gtk_layout_move(f, w, x0, y0);
 	        gtk_widget_set_size_request(w, x1 - x0 + 2, y1 - y0 + 2);
 	}
 }
@@ -363,7 +371,7 @@ gboolean nsgtk_window_expose_event(GtkWidget *widget,
 	for (z = window_list; z && z != g; z = z->next)
 		continue;
 	assert(z);
-	assert(GTK_WIDGET(g->drawing_area) == widget);
+	assert(GTK_WIDGET(g->layout) == widget);
 
 	c = g->bw->current_content;
 	if (c == NULL)
@@ -373,8 +381,8 @@ gboolean nsgtk_window_expose_event(GtkWidget *widget,
 	if (content_get_type(c) == CONTENT_HTML)
 		scale = 1;
 
-	current_widget = (GtkWidget *)g->drawing_area;
-	current_drawable = current_widget->window;
+	current_widget = (GtkWidget *)g->layout;
+	current_drawable = g->layout->bin_window;
 	current_gc = gdk_gc_new(current_drawable);
 #ifdef CAIRO_VERSION
 	current_cr = gdk_cairo_create(current_drawable);
@@ -453,7 +461,7 @@ gboolean nsgtk_window_button_press_event(GtkWidget *widget,
 {
 	struct gui_window *g = data;
 
-	gtk_widget_grab_focus(GTK_WIDGET(g->drawing_area));
+	gtk_widget_grab_focus(GTK_WIDGET(g->layout));
 	gtk_widget_hide(GTK_WIDGET(nsgtk_scaffolding_history_window(
 			g->scaffold)->window));
 
@@ -534,14 +542,14 @@ gboolean nsgtk_window_keypress_event(GtkWidget *widget, GdkEventKey *event,
 
 	if (event->state == 0) {
 		double value;
-		GtkAdjustment *vscroll = gtk_viewport_get_vadjustment(g->viewport);
+		GtkAdjustment *vscroll = gtk_layout_get_vadjustment(g->layout);
 
-		GtkAdjustment *hscroll = gtk_viewport_get_hadjustment(g->viewport);
+		GtkAdjustment *hscroll = gtk_layout_get_hadjustment(g->layout);
 
 		GtkAdjustment *scroll;
 
 		const GtkAllocation *const alloc =
-			&GTK_WIDGET(g->viewport)->allocation;
+			&GTK_WIDGET(g->layout)->allocation;
 
 		switch (event->keyval) {
 		default:
@@ -656,7 +664,7 @@ void nsgtk_window_process_reformats(void)
 
 	browser_reformat_pending = false;
 	for (g = window_list; g; g = g->next) {
-		GtkWidget *widget = GTK_WIDGET(g->viewport);
+		GtkWidget *widget = GTK_WIDGET(g->layout);
 		if (!g->bw->reformat_pending)
 			continue;
 		g->bw->reformat_pending = false;
@@ -691,7 +699,7 @@ void gui_window_destroy(struct gui_window *g)
 
 	/* If we're a top-level gui_window, destroy our scaffold */
 	if (g->scrolledwindow == NULL) {
-		gtk_widget_destroy(GTK_WIDGET(g->viewport));
+		gtk_widget_destroy(GTK_WIDGET(g->layout));
 		nsgtk_scaffolding_destroy(g->scaffold);
 	} else {
 		gtk_widget_destroy(GTK_WIDGET(g->scrolledwindow));
@@ -712,13 +720,13 @@ void nsgtk_redraw_caret(struct gui_window *g)
 
 void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
 {
-	gtk_widget_queue_draw_area(GTK_WIDGET(g->drawing_area),
+	gtk_widget_queue_draw_area(GTK_WIDGET(g->layout),
                                    x0, y0, x1-x0+1, y1-y0+1);
 }
 
 void gui_window_redraw_window(struct gui_window *g)
 {
-	gtk_widget_queue_draw(GTK_WIDGET(g->drawing_area));
+	gtk_widget_queue_draw(GTK_WIDGET(g->layout));
 }
 
 void gui_window_update_box(struct gui_window *g,
@@ -729,17 +737,24 @@ void gui_window_update_box(struct gui_window *g,
 	if (c == NULL)
 		return;
 
-	gtk_widget_queue_draw_area(GTK_WIDGET(g->drawing_area),
+	gtk_widget_queue_draw_area(GTK_WIDGET(g->layout),
                                    data->redraw.x * g->bw->scale,
 				   data->redraw.y * g->bw->scale,
                                    data->redraw.width * g->bw->scale,
 				   data->redraw.height * g->bw->scale);
 }
 
+void gui_window_set_status(struct gui_window *g, const char *text)
+{
+	assert(g);
+	assert(g->status_bar);
+	gtk_label_set_text(g->status_bar, text);
+}
+
 bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 {
-        GtkAdjustment *vadj = gtk_viewport_get_vadjustment(g->viewport);
-        GtkAdjustment *hadj = gtk_viewport_get_hadjustment(g->viewport);
+        GtkAdjustment *vadj = gtk_layout_get_vadjustment(g->layout);
+        GtkAdjustment *hadj = gtk_layout_get_hadjustment(g->layout);
 
         assert(vadj);
         assert(hadj);
@@ -752,8 +767,8 @@ bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 
 void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 {
-        GtkAdjustment *vadj = gtk_viewport_get_vadjustment(g->viewport);
-        GtkAdjustment *hadj = gtk_viewport_get_hadjustment(g->viewport);
+        GtkAdjustment *vadj = gtk_layout_get_vadjustment(g->layout);
+        GtkAdjustment *hadj = gtk_layout_get_hadjustment(g->layout);
         gdouble vlower, vpage, vupper, hlower, hpage, hupper, x = (double)sx, y = (double)sy;
 
         assert(vadj);
@@ -799,12 +814,9 @@ void gui_window_update_extent(struct gui_window *g)
 	if (!g->bw->current_content)
 		return;
 
-	gtk_widget_set_size_request(GTK_WIDGET(g->drawing_area),
+	gtk_layout_set_size(g->layout,
 		content_get_width(g->bw->current_content) * g->bw->scale,
 		content_get_height(g->bw->current_content) * g->bw->scale);
-
-	gtk_widget_set_size_request(GTK_WIDGET(g->viewport), 0, 0);
-
 }
 
 static GdkCursor *nsgtk_create_menu_cursor(void)
@@ -915,9 +927,9 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
         if (!nullcursor)
                 cursor = gdk_cursor_new_for_display(
 				gtk_widget_get_display(
-					GTK_WIDGET(g->drawing_area)),
+					GTK_WIDGET(g->layout)),
 					cursortype);
-        gdk_window_set_cursor(GTK_WIDGET(g->drawing_area)->window, cursor);
+        gdk_window_set_cursor(GTK_WIDGET(g->layout)->window, cursor);
 
 	if (!nullcursor)
                 gdk_cursor_unref(cursor);
@@ -938,7 +950,7 @@ void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
 
 	nsgtk_redraw_caret(g);
 
-	gtk_widget_grab_focus(GTK_WIDGET(g->drawing_area));
+	gtk_widget_grab_focus(GTK_WIDGET(g->layout));
 }
 
 void gui_window_remove_caret(struct gui_window *g)
@@ -984,8 +996,8 @@ void gui_drag_save_selection(struct selection *s, struct gui_window *g)
 void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
                                bool scaled)
 {
-	*width = GTK_WIDGET(g->viewport)->allocation.width;
-	*height = GTK_WIDGET(g->viewport)->allocation.height;
+	*width = GTK_WIDGET(g->layout)->allocation.width;
+	*height = GTK_WIDGET(g->layout)->allocation.height;
 
 	if (scaled) {
 		*width /= g->bw->scale;

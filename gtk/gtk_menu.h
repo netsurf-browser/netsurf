@@ -115,7 +115,6 @@ struct nsgtk_toolbars_submenu {
 	GtkMenu			*toolbars_menu;
 	GtkCheckMenuItem	*menubar_menuitem;
 	GtkCheckMenuItem	*toolbar_menuitem;
-	GtkCheckMenuItem	*statusbar_menuitem;
 };
 
 struct nsgtk_debugging_submenu {

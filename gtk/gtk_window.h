@@ -42,9 +42,8 @@ float nsgtk_get_scale_for_gui(struct gui_window *g);
 int nsgtk_gui_window_update_targets(struct gui_window *g);
 void nsgtk_window_destroy_browser(struct gui_window *g);
 unsigned long nsgtk_window_get_signalhandler(struct gui_window *g, int i);
-GtkDrawingArea *nsgtk_window_get_drawing_area(struct gui_window *g);
+GtkLayout *nsgtk_window_get_layout(struct gui_window *g);
 struct gui_window *nsgtk_window_iterate(struct gui_window *g);
-GtkScrolledWindow *nsgtk_window_get_scrolledwindow(struct gui_window *g);
 GtkWidget *nsgtk_window_get_tab(struct gui_window *g);
 void nsgtk_window_set_tab(struct gui_window *g, GtkWidget *w);
 

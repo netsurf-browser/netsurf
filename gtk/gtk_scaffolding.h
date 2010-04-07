@@ -195,7 +195,6 @@ MULTIPROTO(fullscreen);
 MULTIPROTO(viewsource);
 MENUPROTO(menubar);
 MENUPROTO(toolbar);
-MENUPROTO(statusbar);
 MULTIPROTO(downloads);
 MULTIPROTO(savewindowsize);
 MULTIPROTO(toggledebugging);

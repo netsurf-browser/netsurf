@@ -1,10 +1,10 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
+<!--Generated with glade3 3.4.5 on Wed Apr  7 17:10:28 2010 -->
 <glade-interface>
-  <!-- interface-requires gtk+ 2.16 -->
-  <!-- interface-naming-policy toplevel-contextual -->
   <widget class="GtkWindow" id="wndBrowser">
     <property name="title" translatable="yes">NetSurf</property>
-    <property name="window_position">center</property>
+    <property name="window_position">GTK_WIN_POS_CENTER</property>
     <child>
       <widget class="GtkVBox" id="vbox14">
         <property name="visible">True</property>
@@ -57,13 +57,12 @@
           <packing>
             <property name="expand">False</property>
             <property name="fill">False</property>
-            <property name="position">0</property>
           </packing>
         </child>
         <child>
           <widget class="GtkToolbar" id="toolbar">
             <property name="visible">True</property>
-            <property name="toolbar_style">both-horiz</property>
+            <property name="toolbar_style">GTK_TOOLBAR_BOTH_HORIZ</property>
           </widget>
           <packing>
             <property name="expand">False</property>
@@ -73,7 +72,7 @@
         </child>
         <child>
           <widget class="GtkToolbar" id="searchbar">
-            <property name="toolbar_style">both</property>
+            <property name="toolbar_style">GTK_TOOLBAR_BOTH</property>
             <child>
               <widget class="GtkToolButton" id="closeSearchButton">
                 <property name="visible">True</property>
@@ -96,6 +95,7 @@
               </widget>
               <packing>
                 <property name="expand">False</property>
+                <property name="homogeneous">False</property>
               </packing>
             </child>
             <child>
@@ -105,12 +105,12 @@
                   <widget class="GtkEntry" id="searchEntry">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
-                    <property name="invisible_char">&#x25CF;</property>
                   </widget>
                 </child>
               </widget>
               <packing>
                 <property name="expand">False</property>
+                <property name="homogeneous">False</property>
               </packing>
             </child>
             <child>
@@ -140,18 +140,19 @@
                 <property name="visible">True</property>
                 <child>
                   <widget class="GtkCheckButton" id="checkAllSearch">
-                    <property name="label" translatable="yes">All      </property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
-                    <property name="receives_default">False</property>
                     <property name="tooltip" translatable="yes">show all matches</property>
+                    <property name="label" translatable="yes">All      </property>
                     <property name="use_underline">True</property>
+                    <property name="response_id">0</property>
                     <property name="draw_indicator">True</property>
                   </widget>
                 </child>
               </widget>
               <packing>
                 <property name="expand">False</property>
+                <property name="homogeneous">False</property>
               </packing>
             </child>
             <child>
@@ -159,19 +160,20 @@
                 <property name="visible">True</property>
                 <child>
                   <widget class="GtkCheckButton" id="caseSensButton">
-                    <property name="label" translatable="yes">Case</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
-                    <property name="receives_default">False</property>
                     <property name="tooltip" translatable="yes">Match case when searching</property>
-                    <property name="relief">none</property>
+                    <property name="label" translatable="yes">Case</property>
+                    <property name="relief">GTK_RELIEF_NONE</property>
                     <property name="use_underline">True</property>
+                    <property name="response_id">0</property>
                     <property name="draw_indicator">True</property>
                   </widget>
                 </child>
               </widget>
               <packing>
                 <property name="expand">False</property>
+                <property name="homogeneous">False</property>
               </packing>
             </child>
           </widget>
@@ -246,16 +248,6 @@
             <property name="position">3</property>
           </packing>
         </child>
-        <child>
-          <widget class="GtkStatusbar" id="statusbar">
-            <property name="visible">True</property>
-          </widget>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">False</property>
-            <property name="position">4</property>
-          </packing>
-        </child>
       </widget>
     </child>
   </widget>
@@ -328,16 +320,16 @@
     </child>
     <child>
       <widget class="GtkImageMenuItem" id="back_popup">
-        <property name="label">gtk-go-back</property>
         <property name="visible">True</property>
+        <property name="label">gtk-go-back</property>
         <property name="use_underline">True</property>
         <property name="use_stock">True</property>
       </widget>
     </child>
     <child>
       <widget class="GtkImageMenuItem" id="forward_popup">
-        <property name="label">gtk-go-forward</property>
         <property name="visible">True</property>
+        <property name="label">gtk-go-forward</property>
         <property name="use_underline">True</property>
         <property name="use_stock">True</property>
       </widget>
@@ -349,40 +341,40 @@
     </child>
     <child>
       <widget class="GtkImageMenuItem" id="reload_popup">
-        <property name="label">gtk-refresh</property>
         <property name="visible">True</property>
+        <property name="label">gtk-refresh</property>
         <property name="use_underline">True</property>
         <property name="use_stock">True</property>
       </widget>
     </child>
     <child>
       <widget class="GtkImageMenuItem" id="save_link_popup">
-        <property name="label">gtk-save-as</property>
         <property name="visible">True</property>
+        <property name="label">gtk-save-as</property>
         <property name="use_underline">True</property>
         <property name="use_stock">True</property>
       </widget>
     </child>
     <child>
       <widget class="GtkImageMenuItem" id="cut_popup">
-        <property name="label">gtk-cut</property>
         <property name="visible">True</property>
+        <property name="label">gtk-cut</property>
         <property name="use_underline">True</property>
         <property name="use_stock">True</property>
       </widget>
     </child>
     <child>
       <widget class="GtkImageMenuItem" id="copy_popup">
-        <property name="label">gtk-copy</property>
         <property name="visible">True</property>
+        <property name="label">gtk-copy</property>
         <property name="use_underline">True</property>
         <property name="use_stock">True</property>
       </widget>
     </child>
     <child>
       <widget class="GtkImageMenuItem" id="paste_popup">
-        <property name="label">gtk-paste</property>
         <property name="visible">True</property>
+        <property name="label">gtk-paste</property>
         <property name="use_underline">True</property>
         <property name="use_stock">True</property>
       </widget>
@@ -390,8 +382,83 @@
     <child>
       <widget class="GtkMenuItem" id="customize_popup">
         <property name="visible">True</property>
-        <property name="label" translatable="yes">Customise&#x2026;</property>
+        <property name="label" translatable="yes">Customise…</property>
         <property name="use_underline">True</property>
+      </widget>
+    </child>
+  </widget>
+  <widget class="GtkWindow" id="tabContentsWindow">
+    <child>
+      <widget class="GtkTable" id="tabContents">
+        <property name="visible">True</property>
+        <property name="n_rows">2</property>
+        <property name="n_columns">2</property>
+        <child>
+          <widget class="GtkLayout" id="layout">
+            <property name="visible">True</property>
+            <property name="app_paintable">True</property>
+          </widget>
+        </child>
+        <child>
+          <widget class="GtkStatusbar" id="resizer">
+            <property name="height_request">1</property>
+            <property name="visible">True</property>
+            <property name="spacing">2</property>
+          </widget>
+          <packing>
+            <property name="left_attach">1</property>
+            <property name="right_attach">2</property>
+            <property name="top_attach">1</property>
+            <property name="bottom_attach">2</property>
+            <property name="x_options">GTK_FILL</property>
+            <property name="y_options">GTK_FILL</property>
+          </packing>
+        </child>
+        <child>
+          <widget class="GtkHPaned" id="hpaned1">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <child>
+              <widget class="GtkLabel" id="status_bar">
+                <property name="width_request">400</property>
+                <property name="visible">True</property>
+                <property name="xalign">0</property>
+                <property name="xpad">4</property>
+                <property name="label" translatable="yes">Status</property>
+              </widget>
+              <packing>
+                <property name="resize">False</property>
+                <property name="shrink">False</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="GtkHScrollbar" id="hscrollbar">
+                <property name="visible">True</property>
+                <property name="adjustment">0.5357142857142857 0 100 1 10 10</property>
+              </widget>
+              <packing>
+                <property name="resize">True</property>
+                <property name="shrink">True</property>
+              </packing>
+            </child>
+          </widget>
+          <packing>
+            <property name="top_attach">1</property>
+            <property name="bottom_attach">2</property>
+            <property name="y_options">GTK_FILL</property>
+          </packing>
+        </child>
+        <child>
+          <widget class="GtkVScrollbar" id="vscrollbar">
+            <property name="visible">True</property>
+            <property name="adjustment">0 0 100 1 10 10</property>
+          </widget>
+          <packing>
+            <property name="left_attach">1</property>
+            <property name="right_attach">2</property>
+            <property name="x_options"></property>
+          </packing>
+        </child>
       </widget>
     </child>
   </widget>

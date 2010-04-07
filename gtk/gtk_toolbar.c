@@ -110,18 +110,18 @@ void nsgtk_toolbar_customization_init(nsgtk_scaffolding *g)
 
 	while (list) {
 		g_signal_handler_block(GTK_WIDGET(
-				nsgtk_window_get_drawing_area(
+				nsgtk_window_get_layout(
 				nsgtk_scaffolding_top_level(list))),
 				nsgtk_window_get_signalhandler(
 				nsgtk_scaffolding_top_level(list),
 				NSGTK_WINDOW_SIGNAL_CLICK));
 		g_signal_handler_block(GTK_WIDGET(
-				nsgtk_window_get_drawing_area(
+				nsgtk_window_get_layout(
 				nsgtk_scaffolding_top_level(list))),
 				nsgtk_window_get_signalhandler(
 				nsgtk_scaffolding_top_level(list),
 				NSGTK_WINDOW_SIGNAL_REDRAW));
-		gtk_widget_modify_bg(GTK_WIDGET(nsgtk_window_get_drawing_area(
+		gtk_widget_modify_bg(GTK_WIDGET(nsgtk_window_get_layout(
 				nsgtk_scaffolding_top_level(list))),
 				GTK_STATE_NORMAL, &((GdkColor)
 				{0, 0xEEEE, 0xEEEE, 0xEEEE}));
@@ -394,18 +394,18 @@ void nsgtk_toolbar_close(nsgtk_scaffolding *g)
 		gtk_widget_show_all(GTK_WIDGET(nsgtk_scaffolding_toolbar(
 				list)));
 		nsgtk_scaffolding_set_sensitivity(list);
-		gtk_widget_modify_bg(GTK_WIDGET(nsgtk_window_get_drawing_area(
+		gtk_widget_modify_bg(GTK_WIDGET(nsgtk_window_get_layout(
 				nsgtk_scaffolding_top_level(list))),
 				GTK_STATE_NORMAL, &((GdkColor)
 				{0, 0xFFFF, 0xFFFF, 0xFFFF}));
 		g_signal_handler_unblock(GTK_WIDGET(
-				nsgtk_window_get_drawing_area(
+				nsgtk_window_get_layout(
 				nsgtk_scaffolding_top_level(list))),
 				nsgtk_window_get_signalhandler(
 				nsgtk_scaffolding_top_level(list),
 				NSGTK_WINDOW_SIGNAL_CLICK));
 		g_signal_handler_unblock(GTK_WIDGET(
-				nsgtk_window_get_drawing_area(
+				nsgtk_window_get_layout(
 				nsgtk_scaffolding_top_level(list))),
 				nsgtk_window_get_signalhandler(
 				nsgtk_scaffolding_top_level(list),
