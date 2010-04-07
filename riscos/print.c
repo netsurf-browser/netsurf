@@ -30,6 +30,7 @@
 #include "rufl.h"
 #include "utils/config.h"
 #include "content/content.h"
+#include "content/hlcache.h"
 #include "desktop/plotters.h"
 #include "render/box.h"
 #include "render/font.h"
@@ -93,10 +94,10 @@ static const char *print_fonts_error;
 static bool ro_gui_print_click(wimp_pointer *pointer);
 static bool ro_gui_print_apply(wimp_w w);
 static void print_update_sheets_shaded_state(bool on);
-static void print_send_printsave(struct content *c);
+static void print_send_printsave(hlcache_handle *h);
 static bool print_send_printtypeknown(wimp_message *m);
 static bool print_document(struct gui_window *g, const char *filename);
-static const char *print_declare_fonts(struct content *content);
+static const char *print_declare_fonts(hlcache_handle *h);
 static bool print_fonts_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style);
 static bool print_fonts_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *style);
 static bool print_fonts_plot_polygon(const int *p, unsigned int n, const plot_style_t *style);
@@ -305,13 +306,13 @@ void print_update_sheets_shaded_state(bool on)
  * \param c content to print
  */
 
-void print_send_printsave(struct content *c)
+void print_send_printsave(hlcache_handle *h)
 {
 	wimp_full_message_data_xfer m;
 	os_error *e;
 	int len;
 
-	len = strlen(c->title) + 1;
+	len = strlen(content_get_title(h)) + 1;
 	if (212 < len)
 		len = 212;
 
@@ -321,8 +322,8 @@ void print_send_printsave(struct content *c)
 	m.w = (wimp_w)0;
 	m.i = m.pos.x = m.pos.y = 0;
 	m.est_size = 1024; /* arbitrary value - it really doesn't matter */
-	m.file_type = ro_content_filetype(c);
-	strncpy(m.file_name, c->title, 211);
+	m.file_type = ro_content_filetype(h);
+	strncpy(m.file_name, content_get_title(h), 211);
 	m.file_name[211] = 0;
 	e = xwimp_send_message(wimp_USER_MESSAGE_RECORDED,
 			(wimp_message *)&m, 0);
@@ -546,14 +547,14 @@ bool print_document(struct gui_window *g, const char *filename)
 	int left, right, top, bottom, width, height;
 	int saved_width, saved_height;
 	int yscroll = 0, sheets = print_max_sheets;
-	struct content *c = g->bw->current_content;
+	hlcache_handle *h = g->bw->current_content;
 	const char *error_message;
 	pdriver_features features;
 	os_fw fhandle, old_job = 0;
 	os_error *error;
 
 	/* no point printing a blank page */
-	if (!c) {
+	if (!h) {
 		warn_user("PrintError", "nothing to print");
 		return false;
 	}
@@ -580,10 +581,12 @@ bool print_document(struct gui_window *g, const char *filename)
 	height = (top - bottom) / 800;
 
 	/* layout the document to the correct width */
-	saved_width = c->width;
-	saved_height = c->height;
-	if (c->type == CONTENT_HTML)
-		layout_document(c, width, height);
+	saved_width = content_get_width(h);
+	saved_height = content_get_height(h);
+	if (content_get_type(h) == CONTENT_HTML)
+		/* TODO: Front end code shouldn't see contents */
+		layout_document(hlcache_handle_get_content(h),
+				saved_width, saved_height);
 
 	/* open printer file */
 	error = xosfind_openoutw(osfind_NO_PATH | osfind_ERROR_IF_DIR |
@@ -609,7 +612,7 @@ bool print_document(struct gui_window *g, const char *filename)
 
 	/* declare fonts, if necessary */
 	if (features & pdriver_FEATURE_DECLARE_FONT) {
-		if ((error_message = print_declare_fonts(c)))
+		if ((error_message = print_declare_fonts(h)))
 			goto error;
 	}
 
@@ -631,7 +634,8 @@ bool print_document(struct gui_window *g, const char *filename)
 		os_coord p = {left, bottom};
 		osbool more;
 
-		xhourglass_percentage((int) (yscroll * 100 / c->height));
+		xhourglass_percentage((int) (yscroll * 100 /
+				content_get_height(h)));
 
 		/* give page rectangle */
 		error = xpdriver_give_rectangle(0, &b, &t, &p, os_COLOUR_WHITE);
@@ -665,8 +669,9 @@ bool print_document(struct gui_window *g, const char *filename)
 			clip_y0 = (ro_plot_origin_y - b.y1) / 2;
 			clip_x1 = (b.x1 - ro_plot_origin_x) / 2;
 			clip_y1 = (ro_plot_origin_y - b.y0) / 2;
-			if (!content_redraw(c, 0, 0,
-					c->width, c->height,
+			if (!content_redraw(h, 0, 0,
+					content_get_width(h),
+					content_get_height(h),
 					clip_x0, clip_y0, clip_x1, clip_y1,
 					print_scale,
 					0xFFFFFF)) {
@@ -684,7 +689,7 @@ bool print_document(struct gui_window *g, const char *filename)
 		}
 
 		yscroll += height;
-	} while (yscroll <= c->height && --sheets != 0);
+	} while (yscroll <= content_get_height(h) && --sheets != 0);
 
 	/* make print inactive */
 	print_active = false;
@@ -721,8 +726,10 @@ bool print_document(struct gui_window *g, const char *filename)
 	rufl_invalidate_cache();
 
 	/* restore document layout */
-	if (c->type == CONTENT_HTML)
-		layout_document(c, saved_width, saved_height);
+	if (content_get_type(h) == CONTENT_HTML)
+		/* TODO: Front end code shouldn't see contents */
+		layout_document(hlcache_handle_get_content(h),
+				saved_width, saved_height);
 
 	return true;
 
@@ -739,8 +746,10 @@ error:
 	rufl_invalidate_cache();
 
 	/* restore document layout */
-	if (c->type == CONTENT_HTML)
-		layout_document(c, saved_width, saved_height);
+	if (content_get_type(h)  == CONTENT_HTML)
+		/* TODO: Front end code shouldn't see contents */
+		layout_document(hlcache_handle_get_content(h),
+				saved_width, saved_height);
 
 	return false;
 }
@@ -753,7 +762,7 @@ error:
  * \return 0 on success, error message on error
  */
 
-const char *print_declare_fonts(struct content *content)
+const char *print_declare_fonts(hlcache_handle *h)
 {
 	unsigned int i;
 	const char *error_message = 0;
@@ -765,7 +774,8 @@ const char *print_declare_fonts(struct content *content)
 	print_fonts_error = 0;
 
 	plot = print_fonts_plotters;
-	if (!content_redraw(content, 0, 0, content->width, content->height,
+	if (!content_redraw(h, 0, 0, content_get_width(h),
+			content_get_height(h),
 			INT_MIN, INT_MIN, INT_MAX, INT_MAX, 1, 0xffffff)) {
 		if (print_fonts_error)
 			return print_fonts_error;
