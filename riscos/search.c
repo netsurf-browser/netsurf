@@ -29,6 +29,7 @@
 #include "oslib/wimp.h"
 #include "utils/config.h"
 #include "content/content.h"
+#include "content/hlcache.h"
 #include "desktop/browser.h"
 #include "desktop/gui.h"
 #include "desktop/search.h"
@@ -249,15 +250,15 @@ bool ro_gui_search_prepare_menu(void)
  */
 void ro_gui_search_prepare(struct browser_window *bw)
 {
-	struct content *c;
+	hlcache_handle *h;
 
 	assert(bw != NULL);
 
-	c = bw->current_content;
+	h = bw->current_content;
 
 	/* only handle html/textplain contents */
-	if ((!c) || (c->type != CONTENT_HTML &&
-			c->type != CONTENT_TEXTPLAIN))
+	if ((!h) || (content_get_type(h) != CONTENT_HTML &&
+			content_get_type(h) != CONTENT_TEXTPLAIN))
 		return;
 
 	/* if the search dialogue is reopened over a new window, we may
