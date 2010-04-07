@@ -1235,6 +1235,9 @@ fetch_curl_post_convert(struct fetch_multipart_data *control)
 
 			leafname = filename_from_path(control->value);
 
+			if (leafname == NULL)
+				continue;
+
 			/* We have to special case filenames of "", so curl
 			 * a) actually attempts the fetch and
 			 * b) doesn't attempt to open the file ""
