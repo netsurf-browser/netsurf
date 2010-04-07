@@ -41,6 +41,7 @@
 #include "oslib/wimpspriteop.h"
 #include "utils/config.h"
 #include "content/content.h"
+#include "content/hlcache.h"
 #include "content/urldb.h"
 #include "css/css.h"
 #include "desktop/browser.h"
@@ -1107,7 +1108,7 @@ void gui_window_stop_throbber(struct gui_window *g)
 /**
  * set favicon
  */
-void gui_window_set_icon(struct gui_window *g, struct content *icon)
+void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 {	
 }
 
@@ -1116,7 +1117,7 @@ void gui_window_set_icon(struct gui_window *g, struct content *icon)
 * \param ico may be NULL for local calls; then access current cache from
 * search_web_ico()
 */
-void gui_window_set_search_ico(struct content *ico)
+void gui_window_set_search_ico(hlcache_handle *ico)
 {
 }
 
