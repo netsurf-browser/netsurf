@@ -1555,7 +1555,7 @@ void ro_gui_window_remove_update_boxes(struct gui_window *g) {
  * Redraw any pending update boxes.
  */
 void ro_gui_window_update_boxes(void) {
-	struct content *c;
+	hlcache_handle *h;
 	osbool more;
 	bool clear_background = false;
 	bool use_buffer;
@@ -1570,10 +1570,10 @@ void ro_gui_window_update_boxes(void) {
 		g = cur->g;
 		if (!g)
 			continue;
-		c = g->bw->current_content;
+		h = g->bw->current_content;
 		data = &cur->data;
 		use_buffer = cur->use_buffer;
-		if (!c)
+		if (!h)
 			continue;
 
 		update.w = g->window;
@@ -1602,7 +1602,7 @@ void ro_gui_window_update_boxes(void) {
 
 		/*	We should clear the background, except for HTML.
 		*/
-		if (c->type != CONTENT_HTML)
+		if (content_get_type(h) != CONTENT_HTML)
 			clear_background = true;
 
 		while (more) {
@@ -1627,9 +1627,11 @@ void ro_gui_window_update_boxes(void) {
 					os_clg();
 				}
 
-				content_redraw(c, 0, 0,
-						c->width, c->height,
-						clip_x0, clip_y0, clip_x1, clip_y1,
+				content_redraw(h, 0, 0,
+						content_get_width(h),
+						content_get_height(h),
+						clip_x0, clip_y0,
+						clip_x1, clip_y1,
 						g->bw->scale,
 						0xFFFFFF);
 			} else {
@@ -1643,7 +1645,8 @@ void ro_gui_window_update_boxes(void) {
 							g->bw->scale,
 						data->redraw.object_height *
 							g->bw->scale,
-						clip_x0, clip_y0, clip_x1, clip_y1,
+						clip_x0, clip_y0,
+						clip_x1, clip_y1,
 						g->bw->scale,
 						0xFFFFFF);
 			}
@@ -1651,11 +1654,11 @@ void ro_gui_window_update_boxes(void) {
 			if (use_buffer)
 				ro_gui_buffer_close();
 			error = xwimp_get_rectangle(&update, &more);
-			/* RISC OS 3.7 returns an error here if enough buffer was
-			   claimed to cause a new dynamic area to be created. It
-			   doesn't actually stop anything working, so we mask it out
-			   for now until a better fix is found. This appears to be a
-			   bug in RISC OS. */
+			/* RISC OS 3.7 returns an error here if enough buffer
+			 * was claimed to cause a new dynamic area to be
+			 * created. It doesn't actually stop anything working,
+			 * so we mask it out for now until a better fix is
+			 * found. This appears to be a bug in RISC OS. */
 			if (error && !(use_buffer &&
 					error->errnum == error_WIMP_GET_RECT)) {
 				LOG(("xwimp_get_rectangle: 0x%x: %s",
@@ -1667,9 +1670,8 @@ void ro_gui_window_update_boxes(void) {
 			}
 		}
 
-		/*	Reset the current redraw gui_window to prevent thumbnails from
-			retaining options
-		*/
+		/* Reset the current redraw gui_window to prevent
+		 * thumbnails from retaining options */
 		ro_gui_current_redraw_gui = NULL;
 		current_redraw_browser = NULL;
 	}
