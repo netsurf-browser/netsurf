@@ -2301,7 +2301,7 @@ void ro_gui_view_source_bounce(wimp_message *message)
  * Send the debug dump of a content to a text editor.
  */
 
-void ro_gui_dump_content(struct content *content)
+void ro_gui_dump_content(hlcache_handle *c)
 {
 	os_error *error;
 
@@ -2314,9 +2314,9 @@ void ro_gui_dump_content(struct content *content)
 	}
 
 	/* output debug information to file */
-	switch (content->type) {
+	switch (content_get_type(c)) {
 	case CONTENT_HTML:
-		box_dump(stream, content->data.html.layout, 0);
+		box_dump(stream, html_get_box_tree(c), 0);
 		break;
 	default:
 		break;
