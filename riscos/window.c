@@ -2158,29 +2158,27 @@ bool ro_gui_toolbar_click(wimp_pointer *pointer)
 	/* try to close url-completion */
 	ro_gui_url_complete_close(g, pointer->i);
 
-	/*	Handle Menu clicks
-	*/
+	/*	Handle Menu clicks */
 	if (pointer->buttons == wimp_CLICK_MENU) {
 		ro_gui_menu_create(browser_toolbar_menu, pointer->pos.x,
 				pointer->pos.y, g->window);
 		return true;
 	}
 
-	/*	Handle toolbar edits
-	*/
+	/*	Handle toolbar edits */
 	if ((g->toolbar->editor) && (pointer->i < ICON_TOOLBAR_URL)) {
 		ro_gui_theme_toolbar_editor_click(g->toolbar, pointer);
 		return true;
 	}
 
-	/*	Handle the buttons appropriately
-	*/
+	/*	Handle the buttons appropriately */
 	switch (pointer->i) {
 		case ICON_TOOLBAR_BACK:
 			if (pointer->buttons == wimp_CLICK_ADJUST) {
 				new_bw = browser_window_create(NULL,
 						g->bw, NULL, false, false);
-				ro_gui_menu_handle_action(new_bw->window->window,
+				ro_gui_menu_handle_action(
+						new_bw->window->window,
 						BROWSER_NAVIGATE_BACK, true);
 			} else {
 				ro_gui_menu_handle_action(g->window,
@@ -2192,7 +2190,8 @@ bool ro_gui_toolbar_click(wimp_pointer *pointer)
 			if (pointer->buttons == wimp_CLICK_ADJUST) {
 				new_bw = browser_window_create(NULL,
 						g->bw, NULL, false, false);
-				ro_gui_menu_handle_action(new_bw->window->window,
+				ro_gui_menu_handle_action(
+						new_bw->window->window,
 						BROWSER_NAVIGATE_FORWARD, true);
 			} else {
 				ro_gui_menu_handle_action(g->window,
@@ -2211,7 +2210,8 @@ bool ro_gui_toolbar_click(wimp_pointer *pointer)
 						BROWSER_NAVIGATE_RELOAD, true);
 			else if (pointer->buttons == wimp_CLICK_ADJUST)
 				ro_gui_menu_handle_action(g->window,
-						BROWSER_NAVIGATE_RELOAD_ALL, true);
+						BROWSER_NAVIGATE_RELOAD_ALL,
+						true);
 			break;
 
 		case ICON_TOOLBAR_HISTORY:
@@ -2259,12 +2259,16 @@ bool ro_gui_toolbar_click(wimp_pointer *pointer)
 		case ICON_TOOLBAR_UP:
 			if (pointer->buttons == wimp_CLICK_ADJUST) {
 				if (g->bw && g->bw->current_content) {
+					hlcache_handle *h =
+							g->bw->current_content;
 					new_bw = browser_window_create(NULL,
 							g->bw, NULL, false,
 							false);
-					/* do it without loading the content into the new window */
-					ro_gui_window_navigate_up(new_bw->window,
-							g->bw->current_content->url);
+					/* do it without loading the content
+					 * into the new window */
+					ro_gui_window_navigate_up(
+							new_bw->window,
+							content_get_url(h));
 				}
 			} else {
 				ro_gui_menu_handle_action(g->window,
@@ -2272,9 +2276,11 @@ bool ro_gui_toolbar_click(wimp_pointer *pointer)
 			}
 			break;
 		case ICON_TOOLBAR_URL:
-			if (pointer->buttons & (wimp_DRAG_SELECT | wimp_DRAG_ADJUST)) {
+			if (pointer->buttons &
+					(wimp_DRAG_SELECT | wimp_DRAG_ADJUST)) {
 				if (g->bw->current_content) {
-					struct content *c = g->bw->current_content;
+					hlcache_handle *h =
+							g->bw->current_content;
 					gui_save_type save_type;
 
 					if (ro_gui_shift_pressed())
@@ -2282,7 +2288,10 @@ bool ro_gui_toolbar_click(wimp_pointer *pointer)
 					else
 						save_type = GUI_SAVE_LINK_TEXT;
 
-					ro_gui_drag_save_link(save_type, c->url, c->title, g);
+					ro_gui_drag_save_link(save_type,
+							content_get_url(h),
+							content_get_title(h),
+							g);
 				}
 			}
 			else
@@ -2340,7 +2349,7 @@ bool ro_gui_window_keypress(wimp_key *key)
 {
 	struct gui_window *g;
 	bool toolbar;
-	struct content *content;
+	hlcache_handle *h;
 	wimp_window_state state;
 	int y;
 	const char *toolbar_url;
@@ -2359,7 +2368,7 @@ bool ro_gui_window_keypress(wimp_key *key)
 		return false;
 	}
 
-	content = g->bw->current_content;
+	h = g->bw->current_content;
 
 	error = xwimp_get_pointer_info(&pointer);
 	if (error) {
@@ -2469,7 +2478,8 @@ bool ro_gui_window_keypress(wimp_key *key)
 			return ro_gui_menu_handle_action(g->window,
 					BROWSER_SAVE_COMPLETE, false);
 
-		case IS_WIMP_KEY + wimp_KEY_CONTROL + wimp_KEY_SHIFT + wimp_KEY_F3:
+		case IS_WIMP_KEY + wimp_KEY_CONTROL + wimp_KEY_SHIFT +
+				wimp_KEY_F3:
 			return ro_gui_menu_handle_action(g->window,
 					BROWSER_EXPORT_DRAW, false);
 
@@ -2483,7 +2493,8 @@ bool ro_gui_window_keypress(wimp_key *key)
 					BROWSER_NAVIGATE_RELOAD, false);
 
 		case 18:		/* Ctrl+R (Full reload) */
-		case IS_WIMP_KEY + wimp_KEY_CONTROL + wimp_KEY_F5:	/* Full reload */
+		case IS_WIMP_KEY + wimp_KEY_CONTROL + wimp_KEY_F5:
+			/* Full reload */
 			return ro_gui_menu_handle_action(g->window,
 					BROWSER_NAVIGATE_RELOAD_ALL, false);
 
@@ -2501,19 +2512,20 @@ bool ro_gui_window_keypress(wimp_key *key)
 					HISTORY_SHOW_GLOBAL, false);
 
 		case IS_WIMP_KEY + wimp_KEY_F8:	/* View source */
-			ro_gui_view_source(content);
+			ro_gui_view_source(h);
 			return true;
 
 		case IS_WIMP_KEY + wimp_KEY_F9:
 			/* Dump content for debugging. */
-			ro_gui_dump_content(content);
+			ro_gui_dump_content(h);
 			return true;
 
 		case IS_WIMP_KEY + wimp_KEY_CONTROL + wimp_KEY_F9:
 			urldb_dump();
 			return true;
 
-		case IS_WIMP_KEY + wimp_KEY_CONTROL + wimp_KEY_SHIFT + wimp_KEY_F9:
+		case IS_WIMP_KEY + wimp_KEY_CONTROL + wimp_KEY_SHIFT +
+				wimp_KEY_F9:
 			talloc_report_full(0, stderr);
 			return true;
 
@@ -2530,7 +2542,8 @@ bool ro_gui_window_keypress(wimp_key *key)
 		case wimp_KEY_RETURN:
 			if (!toolbar)
 				break;
-			toolbar_url = ro_gui_get_icon_string(g->toolbar->toolbar_handle,
+			toolbar_url = ro_gui_get_icon_string(
+					g->toolbar->toolbar_handle,
 					ICON_TOOLBAR_URL);
 			ro_gui_window_launch_url(g, toolbar_url);
 			return true;
@@ -2554,7 +2567,7 @@ bool ro_gui_window_keypress(wimp_key *key)
 
 		case 17:       /* CTRL+Q (Zoom out) */
 		case 23:       /* CTRL+W (Zoom in) */
-			if (!content)
+			if (!h)
 				break;
 			scale = g->bw->scale;
 			if (ro_gui_shift_pressed() && c == 17)
@@ -2585,7 +2598,7 @@ bool ro_gui_window_keypress(wimp_key *key)
 			if (g->bw->scale != scale) {
 				browser_window_set_scale(g->bw, scale, true);
 //				g->reformat_pending = true;
-//				if ((content) && (content->type != CONTENT_HTML))
+//				if ((h) && (content_get_type(h) != CONTENT_HTML))
 //					browser_window_update(g->bw, false);
 //				browser_reformat_pending = true;
 			}
@@ -2688,7 +2701,8 @@ void ro_gui_scroll_request(wimp_scroll *scroll)
 		float scale, inc;
 
 		if (scroll->ymin & 3)
-			inc = 0.02;  /* RO5 sends the msg 5 times; don't ask my why */
+			inc = 0.02;  /* RO5 sends the msg 5 times;
+				      * don't ask me why */
 		else
 			inc = (1 << (ABS(scroll->ymin)>>2)) / 20.0F;
 
@@ -2766,7 +2780,8 @@ void ro_gui_scroll_request(wimp_scroll *scroll)
  * \return true iff conversion successful
  */
 
-bool ro_gui_window_to_window_pos(struct gui_window *g, int x, int y, os_coord *pos)
+bool ro_gui_window_to_window_pos(struct gui_window *g, int x, int y,
+		os_coord *pos)
 {
 	wimp_window_state state;
 	os_error *error;
@@ -2797,7 +2812,8 @@ bool ro_gui_window_to_window_pos(struct gui_window *g, int x, int y, os_coord *p
  * \return true iff conversion successful
  */
 
-bool ro_gui_window_to_screen_pos(struct gui_window *g, int x, int y, os_coord *pos)
+bool ro_gui_window_to_screen_pos(struct gui_window *g, int x, int y,
+		os_coord *pos)
 {
 	wimp_window_state state;
 	os_error *error;
