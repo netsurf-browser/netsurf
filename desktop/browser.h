@@ -279,7 +279,7 @@ bool browser_window_reload_available(struct browser_window *bw);
 bool browser_window_stop_available(struct browser_window *bw);
 
 /* In platform specific hotlist.c. */
-void hotlist_visited(struct hlcache_handle *content);
+void hotlist_visited(struct hlcache_handle *c);
 
 /* In platform specific global_history.c. */
 void global_history_add(const char *url);

@@ -43,11 +43,11 @@ static const struct {
 };
 #define ENTRIES_COUNT (sizeof(default_entries) / sizeof(default_entries[0]))
 
-void hotlist_visited(hlcache_handle *content)
+void hotlist_visited(hlcache_handle *c)
 {
-	if ((!content) || (!content_get_url(content)) || (!hotlist))
+	if ((!c) || (!content_get_url(c)) || (!hotlist))
 		return;
-	ami_gui_hotlist_visited(content, hotlist, hotlist->root);
+	ami_gui_hotlist_visited(c, hotlist, hotlist->root);
 }
 
 /**
