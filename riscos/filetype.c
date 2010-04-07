@@ -23,6 +23,7 @@
 #include "oslib/osfile.h"
 #include "content/content.h"
 #include "content/fetch.h"
+#include "content/hlcache.h"
 #include "riscos/gui.h"
 #include "utils/config.h"
 #include "utils/log.h"
@@ -250,7 +251,7 @@ int cmp_type(const void *x, const void *y)
  * \param content The content to examine.
  * \return The RISC OS filetype corresponding to the content
  */
-int ro_content_filetype(struct hlcache_handle *c)
+int ro_content_filetype(hlcache_handle *c)
 {
 	int file_type;
 	os_error *error;
