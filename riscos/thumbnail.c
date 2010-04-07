@@ -32,6 +32,7 @@
 #include "oslib/osfile.h"
 #include "oslib/osspriteop.h"
 #include "content/content.h"
+#include "content/hlcache.h"
 #include "content/urldb.h"
 #include "desktop/plotters.h"
 #include "image/bitmap.h"
@@ -77,7 +78,7 @@ static void thumbnail_restore_output(struct thumbnail_save_area *save_area);
  * \param  bitmap   the bitmap to draw to
  * \param  url      the URL the thumbnail belongs to, or NULL
  */
-bool thumbnail_create(struct content *content, struct bitmap *bitmap,
+bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 		const char *url)
 {
 	float scale = 1.0;
@@ -112,8 +113,9 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 	plot = ro_plotters;
 	ro_plot_origin_x = 0;
 	ro_plot_origin_y = bitmap->height * 2;
-	if (content->width)
-		scale = (float)bitmap->width / (float)content->width;
+	if (content_get_width(content))
+		scale = (float)bitmap->width /
+				(float)content_get_width(content);
 	ro_plot_set_scale(scale);
 	current_redraw_browser = NULL;  /* no selection */
 
