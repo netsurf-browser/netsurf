@@ -36,6 +36,7 @@
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
 #include "content/content.h"
+#include "content/hlcache.h"
 #include "desktop/netsurf.h"
 #include "desktop/save_complete.h"
 #include "desktop/save_text.h"
@@ -75,7 +76,7 @@
           now since we could have multiple saves outstanding */
 
 static gui_save_type gui_save_current_type;
-static struct content *gui_save_content = NULL;
+static hlcache_handle *gui_save_content = NULL;
 static struct selection *gui_save_selection = NULL;
 static const char *gui_save_url = NULL;
 static const char *gui_save_title = NULL;
@@ -99,15 +100,15 @@ static size_t save_dir_len;
 
 typedef enum { LINK_ACORN, LINK_ANT, LINK_TEXT } link_format;
 
-static bool ro_gui_save_complete(struct content *c, char *path);
-static bool ro_gui_save_content(struct content *c, char *path, bool force_overwrite);
+static bool ro_gui_save_complete(hlcache_handle *h, char *path);
+static bool ro_gui_save_content(hlcache_handle *h, char *path, bool force_overwrite);
 static void ro_gui_save_done(void);
 static void ro_gui_save_bounced(wimp_message *message);
-static bool ro_gui_save_object_native(struct content *c, char *path);
+static bool ro_gui_save_object_native(hlcache_handle *h, char *path);
 static bool ro_gui_save_link(const char *url, const char *title, link_format format, char *path);
-static void ro_gui_save_set_state(struct content *c, gui_save_type save_type,
+static void ro_gui_save_set_state(hlcache_handle *h, gui_save_type save_type,
 		const char *url, char *leaf_buf, char *icon_buf);
-static bool ro_gui_save_create_thumbnail(struct content *c, const char *name);
+static bool ro_gui_save_create_thumbnail(hlcache_handle *h, const char *name);
 static void ro_gui_save_overwrite_confirmed(query_id, enum query_response res, void *p);
 static void ro_gui_save_overwrite_cancelled(query_id, enum query_response res, void *p);
 
@@ -235,14 +236,14 @@ void ro_gui_saveas_quit(void)
  * opens it.
  *
  * \param  save_type  type of save
- * \param  c          content to save
+ * \param  h          content to save
  * \param  s          selection to save
  * \param  url        url to be saved (link types)
  * \param  title      title (if any), when saving links
  */
 
-void ro_gui_save_prepare(gui_save_type save_type, struct content *c,
-	struct selection *s, const char *url, const char *title)
+void ro_gui_save_prepare(gui_save_type save_type, hlcache_handle *h,
+		struct selection *s, const char *url, const char *title)
 {
 	char name_buf[FILENAME_MAX];
 	size_t leaf_offset = 0;
@@ -253,7 +254,7 @@ void ro_gui_save_prepare(gui_save_type save_type, struct content *c,
 			(save_type == GUI_SAVE_LINK_TEXT) ||
 			(save_type == GUI_SAVE_HOTLIST_EXPORT_HTML) ||
 			(save_type == GUI_SAVE_HISTORY_EXPORT_HTML) ||
-			(save_type == GUI_SAVE_TEXT_SELECTION) || c);
+			(save_type == GUI_SAVE_TEXT_SELECTION) || h);
 
 	gui_save_selection = s;
 	gui_save_url = url;
@@ -265,7 +266,7 @@ void ro_gui_save_prepare(gui_save_type save_type, struct content *c,
 		name_buf[leaf_offset++] = '.';
 	}
 
-	ro_gui_save_set_state(c, save_type, c ? c->url : url,
+	ro_gui_save_set_state(h, save_type, h ? content_get_url(h) : url,
 			name_buf + leaf_offset, icon_buf);
 
 	ro_gui_set_icon_sprite(dialog_saveas, ICON_SAVE_ICON, saveas_area,
@@ -346,7 +347,7 @@ bool ro_gui_save_ok(wimp_w w)
  * \param  g          gui window
  */
 
-void gui_drag_save_object(gui_save_type save_type, struct content *c,
+void gui_drag_save_object(gui_save_type save_type, hlcache_handle *c,
 		struct gui_window *g)
 {
 	wimp_pointer pointer;
@@ -369,7 +370,8 @@ void gui_drag_save_object(gui_save_type save_type, struct content *c,
 		return;
 	}
 
-	ro_gui_save_set_state(c, save_type, c->url, save_leafname, icon_buf);
+	ro_gui_save_set_state(c, save_type, content_get_url(c), save_leafname,
+			icon_buf);
 
 	gui_current_drag_type = GUI_DRAG_SAVE;
 
@@ -615,18 +617,19 @@ void ro_gui_save_drag_end(wimp_dragged *drag)
 		g = ro_gui_window_lookup(gui_save_sourcew);
 
 		if (g && ro_gui_window_to_window_pos(g, dx, dy, &pos)) {
-			struct content *content = g->bw->current_content;
+			hlcache_handle *h = g->bw->current_content;
 
-			if (content && content->type == CONTENT_HTML) {
-				struct box *box = content->data.html.layout;
+			if (h && content_get_type(h) == CONTENT_HTML) {
+				struct box *box = html_get_box_tree(h);
 				int box_x, box_y;
 
 				/* Consider the margins of the html page now */
 				box_x = box->margin[LEFT];
 				box_y = box->margin[TOP];
 
-				while (!dest_ok && (box = box_at_point(box, pos.x, pos.y,
-									&box_x, &box_y, &content))) {
+				while (!dest_ok && (box = box_at_point(box,
+						pos.x, pos.y, &box_x, &box_y,
+						&h))) {
 					if (box->style && 
 							css_computed_visibility(
 								box->style) == 
@@ -749,7 +752,7 @@ void ro_gui_save_bounced(wimp_message *message)
 void ro_gui_save_datasave_ack(wimp_message *message)
 {
 	char *path = message->data.data_xfer.file_name;
-	struct content *c = gui_save_content;
+	hlcache_handle *h = gui_save_content;
 	bool force_overwrite;
 
 	switch (gui_save_current_type) {
@@ -784,7 +787,7 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 	else
 		force_overwrite = !option_confirm_overwrite;
 
-	if (ro_gui_save_content(c, path, force_overwrite))
+	if (ro_gui_save_content(h, path, force_overwrite))
 		ro_gui_save_done();
 }
 
@@ -801,9 +804,11 @@ void ro_gui_save_datasave_ack(wimp_message *message)
  *               or (ii) deferred awaiting user confirmation
  */
 
-bool ro_gui_save_content(struct content *c, char *path, bool force_overwrite)
+bool ro_gui_save_content(hlcache_handle *h, char *path, bool force_overwrite)
 {
 	os_error *error;
+	const char *source_data;
+	unsigned long source_size;
 
 	/* does the user want to check for collisions when saving? */
 	if (!force_overwrite) {
@@ -838,24 +843,24 @@ bool ro_gui_save_content(struct content *c, char *path, bool force_overwrite)
 	switch (gui_save_current_type) {
 #ifdef WITH_DRAW_EXPORT
 		case GUI_SAVE_DRAW:
-			return save_as_draw(c, path);
+			return save_as_draw(h, path);
 #endif
 #ifdef WITH_PDF_EXPORT
 		case GUI_SAVE_PDF:
-			return save_as_pdf(c, path);
+			return save_as_pdf(h, path);
 #endif
 		case GUI_SAVE_TEXT:
-			save_as_text(c, path);
+			save_as_text(h, path);
 			xosfile_set_type(path, 0xfff);
 			break;
 		case GUI_SAVE_COMPLETE:
-			assert(c);
-			if (c->type == CONTENT_HTML) {
+			assert(h);
+			if (content_get_type(h) == CONTENT_HTML) {
 				if (strcmp(path, "<Wimp$Scrap>"))
-					return ro_gui_save_complete(c, path);
+					return ro_gui_save_complete(h, path);
 
-				/* we can't send a whole directory to another application,
-				 * so just send the HTML source */
+				/* we can't send a whole directory to another
+				 * application, so just send the HTML source */
 				gui_save_current_type = GUI_SAVE_SOURCE;
 			}
 			else
@@ -863,10 +868,11 @@ bool ro_gui_save_content(struct content *c, char *path, bool force_overwrite)
 			/* no break */
 		case GUI_SAVE_SOURCE:
 		case GUI_SAVE_OBJECT_ORIG:
+			source_data = content_get_source_data(h, &source_size);
 			error = xosfile_save_stamped(path,
-					ro_content_filetype(c),
-					(byte *) c->source_data,
-					(byte *) c->source_data + c->source_size);
+					ro_content_filetype(h),
+					(byte *) source_data,
+					(byte *) source_data + source_size);
 			if (error) {
 				LOG(("xosfile_save_stamped: 0x%x: %s",
 						error->errnum, error->errmess));
@@ -876,19 +882,23 @@ bool ro_gui_save_content(struct content *c, char *path, bool force_overwrite)
 			break;
 
 		case GUI_SAVE_OBJECT_NATIVE:
-			return ro_gui_save_object_native(c, path);
+			return ro_gui_save_object_native(h, path);
 
 		case GUI_SAVE_LINK_URI:
-			return ro_gui_save_link(gui_save_url, gui_save_title, LINK_ACORN, path);
+			return ro_gui_save_link(gui_save_url, gui_save_title,
+					LINK_ACORN, path);
 
 		case GUI_SAVE_LINK_URL:
-			return ro_gui_save_link(gui_save_url, gui_save_title, LINK_ANT, path);
+			return ro_gui_save_link(gui_save_url, gui_save_title,
+					LINK_ANT, path);
 
 		case GUI_SAVE_LINK_TEXT:
-			return ro_gui_save_link(gui_save_url, gui_save_title, LINK_TEXT, path);
+			return ro_gui_save_link(gui_save_url, gui_save_title,
+					LINK_TEXT, path);
 
 		case GUI_SAVE_HOTLIST_EXPORT_HTML:
-			if (!options_save_tree(hotlist_tree, path, "NetSurf hotlist"))
+			if (!options_save_tree(hotlist_tree, path,
+					"NetSurf hotlist"))
 				return false;
 			error = xosfile_set_type(path, 0xfaf);
 			if (error)
@@ -896,7 +906,8 @@ bool ro_gui_save_content(struct content *c, char *path, bool force_overwrite)
 						error->errnum, error->errmess));
 			break;
 		case GUI_SAVE_HISTORY_EXPORT_HTML:
-			if (!options_save_tree(global_history_tree, path, "NetSurf history"))
+			if (!options_save_tree(global_history_tree, path,
+					"NetSurf history"))
 				return false;
 			error = xosfile_set_type(path, 0xfaf);
 			if (error)
@@ -914,7 +925,8 @@ bool ro_gui_save_content(struct content *c, char *path, bool force_overwrite)
 			return ro_gui_save_clipboard(path);
 
 		default:
-			LOG(("Unexpected content type: %d, path %s", gui_save_current_type, path));
+			LOG(("Unexpected content type: %d, path %s",
+					gui_save_current_type, path));
 			return false;
 	}
 	return true;
@@ -1059,7 +1071,7 @@ int save_complete_htmlSaveFileFormat(const char *path, const char *filename,
 /**
  * Prepare an application directory and save_complete() to it.
  *
- * \param  c     content of type CONTENT_HTML to save
+ * \param  h     content of type CONTENT_HTML to save
  * \param  path  path to save as
  * \return  true on success, false on error and error reported
  */
@@ -1068,7 +1080,7 @@ int save_complete_htmlSaveFileFormat(const char *path, const char *filename,
 #define HEIGHT 64
 #define SPRITE_SIZE (16 + 44 + ((WIDTH / 2 + 3) & ~3) * HEIGHT / 2)
 
-bool ro_gui_save_complete(struct content *c, char *path)
+bool ro_gui_save_complete(hlcache_handle *h, char *path)
 {
 	void *spr = ((byte *) saveas_area) + saveas_area->first;
 	osspriteop_header *sprite = (osspriteop_header *) spr;
@@ -1140,15 +1152,19 @@ bool ro_gui_save_complete(struct content *c, char *path)
 
 	/* save URL file with original URL */
 	snprintf(buf, sizeof buf, "%s.URL", path);
-	if (!ro_gui_save_link(c->url, c->title, LINK_ANT, buf))
+	if (!ro_gui_save_link(content_get_url(h), content_get_title(h),
+			LINK_ANT, buf))
 		return false;
 
-	return save_complete(c, path);
+	return save_complete(h, path);
 }
 
-bool ro_gui_save_object_native(struct content *c, char *path)
+bool ro_gui_save_object_native(hlcache_handle *h, char *path)
 {
-	switch (c->type) {
+	const char *source_data;
+	unsigned long source_size;
+
+	switch (content_get_type(h)) {
 #ifdef WITH_JPEG
 		case CONTENT_JPEG:
 #endif
@@ -1167,8 +1183,9 @@ bool ro_gui_save_object_native(struct content *c, char *path)
 		case CONTENT_ICO:
 #endif
 		{
-			unsigned flags = (os_version == 0xA9) ? BITMAP_SAVE_FULL_ALPHA : 0;
-			bitmap_save(c->bitmap, path, flags);
+			unsigned flags = (os_version == 0xA9) ?
+					BITMAP_SAVE_FULL_ALPHA : 0;
+			bitmap_save(content_get_bitmap(h), path, flags);
 			return true;
 		}
 		break;
@@ -1180,10 +1197,11 @@ bool ro_gui_save_object_native(struct content *c, char *path)
 #endif
 		{
 			os_error *error;
+			source_data = content_get_source_data(h, &source_size);
 			error = xosfile_save_stamped(path,
-					ro_content_filetype(c),
-					(byte *) c->source_data,
-					(byte *) c->source_data + c->source_size);
+					ro_content_filetype(h),
+					(byte *) source_data,
+					(byte *) source_data + source_size);
 			if (error) {
 				LOG(("xosfile_save_stamped: 0x%x: %s",
 						error->errnum, error->errmess));
@@ -1195,7 +1213,7 @@ bool ro_gui_save_object_native(struct content *c, char *path)
 		break;
 #if defined(WITH_NS_SVG) || defined(WITH_RSVG)
 		case CONTENT_SVG:
-			return save_as_draw(c, path);
+			return save_as_draw(h, path);
 #endif
 		default:
 			return false;
@@ -1213,7 +1231,8 @@ bool ro_gui_save_object_native(struct content *c, char *path)
  * \return  true on success, false on failure and reports the error
  */
 
-bool ro_gui_save_link(const char *url, const char *title, link_format format, char *path)
+bool ro_gui_save_link(const char *url, const char *title, link_format format,
+		char *path)
 {
 	FILE *fp = fopen(path, "w");
 
@@ -1259,7 +1278,7 @@ bool ro_gui_save_link(const char *url, const char *title, link_format format, ch
 /**
  * Suggest a leafname and sprite name for the given content.
  *
- * \param  c          content being saved
+ * \param  h          content being saved
  * \param  save_type  type of save operation being performed
  * \param  url        used to determine leafname
  * \param  leaf_buf   buffer to receive suggested leafname, length at least
@@ -1267,7 +1286,7 @@ bool ro_gui_save_link(const char *url, const char *title, link_format format, ch
  * \param  icon_buf   buffer to receive sprite name, length at least 13
  */
 
-void ro_gui_save_set_state(struct content *c, gui_save_type save_type,
+void ro_gui_save_set_state(hlcache_handle *h, gui_save_type save_type,
 		const char *url, char *leaf_buf, char *icon_buf)
 {
 	/* filename */
@@ -1280,13 +1299,13 @@ void ro_gui_save_set_state(struct content *c, gui_save_type save_type,
 
 	/* parameters that we need to remember */
 	gui_save_current_type = save_type;
-	gui_save_content = c;
+	gui_save_content = h;
 
 	/* suggest a filetype based upon the content */
 	gui_save_filetype = gui_save_table[save_type].filetype;
-	if (!gui_save_filetype && c) {
+	if (!gui_save_filetype && h) {
 		if (save_type == GUI_SAVE_OBJECT_NATIVE) {
-			switch (c->type) {
+			switch (content_get_type(h)) {
 				/* bitmap images */
 #ifdef WITH_JPEG
 				case CONTENT_JPEG:
@@ -1323,7 +1342,7 @@ void ro_gui_save_set_state(struct content *c, gui_save_type save_type,
 			}
 		}
 		if (!gui_save_filetype)
-			gui_save_filetype = ro_content_filetype(c);
+			gui_save_filetype = ro_content_filetype(h);
 	}
 
 	/* leafname */
@@ -1371,7 +1390,7 @@ void ro_gui_save_set_state(struct content *c, gui_save_type save_type,
 		memset(&icon_buf[index + 1], 0, 11 - index);
 		icon_buf[12] = '\0';
 
-		if (ro_gui_save_create_thumbnail(c, icon_buf))
+		if (ro_gui_save_create_thumbnail(h, icon_buf))
 			done = true;
 	}
 
@@ -1416,12 +1435,12 @@ void ro_gui_save_set_state(struct content *c, gui_save_type save_type,
 /**
  * Create a thumbnail sprite for the page being saved.
  *
- * \param  c     content to be converted
+ * \param  h     content to be converted
  * \param  name  sprite name to use
  * \return true iff successful
  */
 
-bool ro_gui_save_create_thumbnail(struct content *c, const char *name)
+bool ro_gui_save_create_thumbnail(hlcache_handle *h, const char *name)
 {
 	osspriteop_header *sprite_header;
 	struct bitmap *bitmap;
@@ -1432,7 +1451,7 @@ bool ro_gui_save_create_thumbnail(struct content *c, const char *name)
 		LOG(("Thumbnail initialisation failed."));
 		return false;
 	}
-	thumbnail_create(c, bitmap, NULL);
+	thumbnail_create(h, bitmap, NULL);
 	area = thumbnail_convert_8bpp(bitmap);
 	bitmap_destroy(bitmap);
 	if (!area) {
