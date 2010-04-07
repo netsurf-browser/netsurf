@@ -30,6 +30,7 @@
 #include "oslib/osfile.h"
 #include "pencil.h"
 #include "content/content.h"
+#include "content/hlcache.h"
 #include "desktop/plotters.h"
 #include "riscos/bitmap.h"
 #include "riscos/gui.h"
@@ -79,12 +80,12 @@ static int ro_save_draw_height;
 /**
  * Export a content as a DrawFile.
  *
- * \param  c     content to export
+ * \param  h     content to export
  * \param  path  path to save DrawFile as
  * \return  true on success, false on error and error reported
  */
 
-bool save_as_draw(struct content *c, const char *path)
+bool save_as_draw(hlcache_handle *h, const char *path)
 {
 	pencil_code code;
 	char *drawfile_buffer;
@@ -97,12 +98,12 @@ bool save_as_draw(struct content *c, const char *path)
 		return false;
 	}
 
-	ro_save_draw_width = c->width;
-	ro_save_draw_height = c->height;
+	ro_save_draw_width = content_get_width(h);
+	ro_save_draw_height = content_get_height(h);
 
 	plot = ro_save_draw_plotters;
-	if (!content_redraw(c, 0, -c->height,
-			c->width, c->height,
+	if (!content_redraw(h, 0, -ro_save_draw_height,
+			ro_save_draw_width, ro_save_draw_height,
 			INT_MIN, INT_MIN, INT_MAX, INT_MAX,
 			1,
 			0xFFFFFF))

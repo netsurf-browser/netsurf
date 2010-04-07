@@ -26,6 +26,7 @@
 #include <stdbool.h>
 #include "oslib/osfile.h"
 #include "content/content.h"
+#include "content/hlcache.h"
 #include "desktop/print.h"
 #include "desktop/save_pdf/font_haru.h"
 #include "desktop/save_pdf/pdf_plotters.h"
@@ -36,11 +37,11 @@
 /**
  * Export a content as a PDF file.
  *
- * \param  c     content to export
+ * \param  h     content to export
  * \param  path  path to save PDF as
  * \return  true on success, false on error and error reported
  */
-bool save_as_pdf(struct content *c, const char *path)
+bool save_as_pdf(hlcache_handle *h, const char *path)
 {
 	struct print_settings *psettings;
 	
@@ -48,7 +49,7 @@ bool save_as_pdf(struct content *c, const char *path)
 	if (psettings == NULL)
 		return false;
 
-	if (!print_basic_run(c, &pdf_printer, psettings))
+	if (!print_basic_run(h, &pdf_printer, psettings))
 		return false;
 
 	xosfile_set_type(path, 0xadf);
