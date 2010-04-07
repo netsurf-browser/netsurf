@@ -933,10 +933,10 @@ void ro_gui_menu_prepare_pageinfo(struct gui_window *g)
 		sprintf(icon_buf, "file_xxx");
 
 	if (content_get_type(h) == CONTENT_HTML) {
-		if (c->data.html.encoding) {
-			enc_token[8] = '0' + c->data.html.encoding_source;
+		if (html_get_encoding(h)) {
+			enc_token[8] = '0' + html_get_encoding_source(h);
 			snprintf(enc_buf, sizeof enc_buf, "%s (%s)",
-					c->data.html.encoding,
+					html_get_encoding(h),
 					messages_get(enc_token));
 			enc = enc_buf;
 		} else {
