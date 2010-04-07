@@ -28,6 +28,7 @@
 #include <string.h>
 #include "oslib/wimp.h"
 #include "content/content.h"
+#include "content/hlcache.h"
 #include "content/fetch.h"
 #include "content/urldb.h"
 #include "desktop/browser.h"
@@ -99,7 +100,7 @@ void ro_gui_cert_init(void)
  * Open the certificate verification dialog
  */
 
-void gui_cert_verify(struct browser_window *bw, struct content *c,
+void gui_cert_verify(struct browser_window *bw, hlcache_handle *c,
 		const struct ssl_cert_info *certs, unsigned long num)
 {
 	wimp_w w;
@@ -122,7 +123,7 @@ void gui_cert_verify(struct browser_window *bw, struct content *c,
 		warn_user("NoMemory", 0);
 		return;
 	}
-	data->url = strdup(c->url);
+	data->url = strdup(content_get_url(c));
 	if (!data->url) {
 		free(data);
 		warn_user("NoMemory", 0);
