@@ -2457,7 +2457,7 @@ char *filename_from_path(char *path)
 	leafname = malloc(leaflen + 1);
 	if (!leafname) {
 		LOG(("malloc failed"));
-		continue;
+		return NULL;
 	}
 	memcpy(leafname, temp, leaflen + 1);
 
