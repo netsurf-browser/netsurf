@@ -36,6 +36,7 @@
 #include "oslib/wimp.h"
 #include "oslib/wimpextend.h"
 #include "oslib/wimpspriteop.h"
+#include "content/content.h"
 #include "desktop/gui.h"
 #include "riscos/dialog.h"
 #include "riscos/gui.h"
@@ -658,7 +659,7 @@ void ro_gui_theme_redraw(wimp_draw *redraw)
 		if (g->bw->current_content) {
 			sprintf(theme_favicon_sprite, "Ssmall_%.3x",
 					ro_content_filetype_from_type(
-					g->bw->current_content->type));
+					content_get_type(g->bw->current_content)));
 			if (!ro_gui_wimp_sprite_exists(theme_favicon_sprite + 1))
 				sprintf(theme_favicon_sprite, "Ssmall_xxx");
 		}
