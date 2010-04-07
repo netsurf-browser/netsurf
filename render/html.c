@@ -2036,6 +2036,22 @@ const char *html_get_encoding(hlcache_handle *h)
 }
 
 /**
+ * Retrieve the charset of an HTML document
+ *
+ * \param h  Content to retrieve charset from
+ * \return Pointer to charset, or NULL
+ */
+binding_encoding_source html_get_encoding_source(hlcache_handle *h)
+{
+	struct content *c = hlcache_handle_get_content(h);
+
+	assert(c != NULL);
+	assert(c->type == CONTENT_HTML);
+
+	return c->data.html.encoding_source;
+}
+
+/**
  * Retrieve framesets used in an HTML document
  *
  * \param h  Content to inspect

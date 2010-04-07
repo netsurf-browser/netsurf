@@ -224,6 +224,7 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 xmlDoc *html_get_document(struct hlcache_handle *h);
 struct box *html_get_box_tree(struct hlcache_handle *h);
 const char *html_get_encoding(struct hlcache_handle *h);
+binding_encoding_source html_get_encoding_source(struct hlcache_handle *h);
 struct content_html_frames *html_get_frameset(struct hlcache_handle *h);
 struct content_html_iframe *html_get_iframe(struct hlcache_handle *h);
 const char *html_get_base_url(struct hlcache_handle *h);
