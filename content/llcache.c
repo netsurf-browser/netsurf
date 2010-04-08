@@ -892,7 +892,6 @@ nserror llcache_object_refetch(llcache_object *object)
 			object->fetch.flags & LLCACHE_RETRIEVE_NO_ERROR_PAGES,
 			urlenc, multipart,
 			object->fetch.flags & LLCACHE_RETRIEVE_VERIFIABLE,
-			NULL, /** \todo Remove parent from this API */
 			headers);
 
 	/* Clean up cache-control headers */

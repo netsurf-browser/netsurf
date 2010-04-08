@@ -86,7 +86,7 @@ struct fetch * fetch_start(const char *url, const char *referer,
 		fetch_callback callback,
 		void *p, bool only_2xx, const char *post_urlenc,
 		struct fetch_multipart_data *post_multipart,
-		bool verifiable, struct content *parent, 
+		bool verifiable,
 		char *headers[]);
 void fetch_abort(struct fetch *f);
 void fetch_poll(void);
@@ -99,7 +99,6 @@ void fetch_change_callback(struct fetch *fetch,
                            void *p);
 long fetch_http_code(struct fetch *fetch);
 const char *fetch_get_referer(struct fetch *fetch);
-struct content *fetch_get_parent(struct fetch *fetch);
 bool fetch_get_verifiable(struct fetch *fetch);
 
 void fetch_multipart_data_destroy(struct fetch_multipart_data *list);

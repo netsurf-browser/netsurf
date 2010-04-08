@@ -75,7 +75,6 @@ struct fetch {
 	char *referer;		/**< Referer URL. */
 	bool send_referer;	/**< Valid to send the referer */
 	bool verifiable;	/**< Transaction is verifiable */
-	struct content *parent;	/**< Parent content, or NULL */
 	void *p;		/**< Private data for callback. */
 	char *host;		/**< Host part of URL. */
 	long http_code;		/**< HTTP response code, or 0. */
@@ -213,8 +212,7 @@ struct fetch * fetch_start(const char *url, const char *referer,
 			   fetch_callback callback,
 			   void *p, bool only_2xx, const char *post_urlenc,
 			   struct fetch_multipart_data *post_multipart,
-			   bool verifiable, struct content *parent,
-			   char *headers[])
+			   bool verifiable, char *headers[])
 {
 	char *host;
 	struct fetch *fetch;
@@ -261,7 +259,6 @@ struct fetch * fetch_start(const char *url, const char *referer,
 	fetch->callback = callback;
 	fetch->url = strdup(url);
 	fetch->verifiable = verifiable;
-	fetch->parent = parent;
 	fetch->p = p;
 	fetch->host = host;
 	fetch->http_code = 0;
@@ -572,19 +569,6 @@ const char *fetch_get_referer(struct fetch *fetch)
 }
 
 /**
- * Get the parent URL for this fetch
- *
- * \param fetch  fetch to retrieve parent url from
- * \return Pointer to parent content, or NULL if none.
- */
-struct content *fetch_get_parent(struct fetch *fetch)
-{
-	assert(fetch);
-
-	return fetch->parent;
-}
-
-/**
  * Determine if a fetch was verifiable
  *
  * \param fetch  Fetch to consider
@@ -728,16 +712,14 @@ fetch_set_cookie(struct fetch *fetch, const char *data)
 {
 	assert(fetch && data);
 
-	/* If the fetch is unverifiable and there's no parent content,
-	 * err on the side of caution and do not set the cookie */
+	/* If the fetch is unverifiable err on the side of caution and
+	 * do not set the cookie */
 
-	if (fetch->verifiable || fetch->parent) {
+	if (fetch->verifiable) {
 		/* If the transaction's verifiable, we don't require
 		 * that the request uri and the parent domain match,
-		 * so don't pass in the parent in this case. */
-		urldb_set_cookie(data, fetch->url, 
-			fetch->verifiable ? NULL
-					  : content_get_url(fetch->parent));
+		 * so don't pass in any referer/parent in this case. */
+		urldb_set_cookie(data, fetch->url, NULL);
 	}
 }
 
