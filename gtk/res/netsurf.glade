@@ -434,7 +434,7 @@
             <child>
               <widget class="GtkHScrollbar" id="hscrollbar">
                 <property name="visible">True</property>
-                <property name="adjustment">0.5357142857142857 0 100 16 10 10</property>
+                <property name="adjustment">0.5357142857142857 0 100 26 10 10</property>
               </widget>
               <packing>
                 <property name="resize">True</property>
@@ -451,7 +451,7 @@
         <child>
           <widget class="GtkVScrollbar" id="vscrollbar">
             <property name="visible">True</property>
-            <property name="adjustment">0 0 100 16 10 10</property>
+            <property name="adjustment">0 0 100 26 10 10</property>
           </widget>
           <packing>
             <property name="left_attach">1</property>
