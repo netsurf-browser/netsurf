@@ -46,8 +46,10 @@ static hlcache_handle *search_ico = NULL;
 char *search_engines_file_location;
 char *search_default_ico_location;
 
+#ifdef WITH_BMP
 static nserror search_web_ico_callback(hlcache_handle *ico,
 		const hlcache_event *event, void *pw);
+#endif
 
 /** 
  * creates a new browser window according to the search term
@@ -206,10 +208,16 @@ char *search_web_get_url(const char *encsearchterm)
 
 void search_web_retrieve_ico(bool localdefault)
 {
+#if !defined(WITH_BMP)
+	/* This function is of limited use when no BMP support
+	 * is enabled, given the icons it is fetching are BMPs
+	 * more often than not.  This also avoids an issue where
+	 * all this code goes mad if BMP support is not enabled.
+	 */
+	return;
+#else
 	static const content_type accept[] = {
-#ifdef WITH_BMP
 		CONTENT_ICO,
-#endif
 		CONTENT_UNKNOWN
 	};
 	char *url;
@@ -242,6 +250,7 @@ void search_web_retrieve_ico(bool localdefault)
 		search_ico = NULL;
 
 	free(url);
+#endif /* WITH_BMP */
 }
 
 /**
@@ -260,6 +269,7 @@ hlcache_handle *search_web_ico(void)
  * else retry default from local file system
  */
 
+#ifdef WITH_BMP
 nserror search_web_ico_callback(hlcache_handle *ico,
 		const hlcache_event *event, void *pw)
 {
@@ -270,12 +280,9 @@ nserror search_web_ico_callback(hlcache_handle *ico,
 
 	case CONTENT_MSG_DONE:
 		LOG(("got favicon '%s'", content_get_url(ico)));
-#ifdef WITH_BMP
 		if (content_get_type(ico) == CONTENT_ICO) {
 			gui_window_set_search_ico(search_ico);
-		} else 
-#endif
-		{
+		} else {
 			hlcache_handle_release(ico);
 			search_ico = NULL;
 			search_web_retrieve_ico(true);
@@ -299,3 +306,4 @@ nserror search_web_ico_callback(hlcache_handle *ico,
 
 	return NSERROR_OK;
 }
+#endif /* WITH_BMP */
