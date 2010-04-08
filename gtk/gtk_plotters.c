@@ -320,8 +320,7 @@ static bool nsgtk_plot_pixbuf(int x, int y, int width, int height,
 	 */
 
 	int x0, y0, x1, y1;
-	int src_x = 0;
-	int src_y = 0;
+	int dx, dy, dwidth, dheight;
 
 	/* Bail early if we can */
 	if (width == 0 || height == 0)
@@ -341,41 +340,48 @@ static bool nsgtk_plot_pixbuf(int x, int y, int width, int height,
 	x1 = (x + width)  - (cliprect.x + cliprect.width);
 	y1 = (y + height) - (cliprect.y + cliprect.height);
 
+	/* Set initial draw geometry */
+	dx = dy = 0;
+	dwidth = width;
+	dheight = height;
+
+	/* Manually clip draw coordinates to area of image to be rendered */
+	if (x0 > 0) {
+		/* Clip left */
+		dx = x0;
+		x += x0;
+		dwidth -= x0;
+	}
+	if (y0 > 0) {
+		/* Clip top */
+		dy = y0;
+		y += y0;
+		dheight -= y0;
+	}
+	if (x1 > 0) {
+		/* Clip right */
+		dwidth -= x1;
+	}
+	if (y1 > 0) {
+		/* Clip bottom */
+		dheight -= y1;
+	}
+
 	/* Render the bitmap */
 	if (gdk_pixbuf_get_width(pixbuf) == width &&
 	    gdk_pixbuf_get_height(pixbuf) == height) {
 		/* Bitmap is not scaled */
-
-		/* Manually clip to area of image to be rendered */
-		if (x0 > 0) {
-			/* Clip left */
-			src_x = x0;
-			x += x0;
-			width -= x0;
-		}
-		if (y0 > 0) {
-			/* Clip top */
-			src_y = y0;
-			y += y0;
-			height -= y0;
-		}
-		if (x1 > 0) {
-			/* Clip right */
-			width -= x1;
-		}
-		if (y1 > 0) {
-			/* Clip bottom */
-			height -= y1;
-		}
-
 		/* Plot the bitmap */
 		gdk_draw_pixbuf(current_drawable, current_gc, pixbuf,
-				src_x, src_y, x, y, width, height,
+				dx, dy, x, y, dwidth, dheight,
 				GDK_RGB_DITHER_MAX, 0, 0);
 
 	} else {
 		/* Bitmap is scaled */
 		GdkPixbuf *scaled;
+
+		/* Create scaled bitmap
+		 * VERY SLOW */
 		scaled = gdk_pixbuf_scale_simple(pixbuf,
 						width, height,
 						option_render_resample ?
@@ -384,11 +390,9 @@ static bool nsgtk_plot_pixbuf(int x, int y, int width, int height,
 		if (!scaled)
 			return false;
 
-		gdk_draw_pixbuf(current_drawable, current_gc,
-				scaled,
-				0, 0,
-				x, y,
-				width, height,
+		/* Plot the scaled bitmap */
+		gdk_draw_pixbuf(current_drawable, current_gc, scaled,
+				dx, dy, x, y, dwidth, dheight,
 				GDK_RGB_DITHER_MAX, 0, 0);
 
 		g_object_unref(scaled);
