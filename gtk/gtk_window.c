@@ -67,6 +67,7 @@ struct gui_window {
 			 /**< frames only; top level of gtk structure of gui_window */
 	GtkWidget		*tab; /**< the visible tab */
 	GtkLabel		*status_bar;
+	GtkPaned		*paned;  /**< statusbar/scrollbar paned */
 	gulong			signalhandler[NSGTK_WINDOW_SIGNAL_COUNT];
 	/**< to allow disactivation / resume of normal window behaviour */
 	struct gui_window	*next, *prev; /**< list for eventual cleanup */
@@ -157,6 +158,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	LOG(("Creating gui window %p for browser window %p", g, bw));
 
 	g->bw = bw;
+	g->paned = NULL;
 	g->mouse.state = 0;
 	g->current_pointer = GUI_POINTER_DEFAULT;
 	if (clone != NULL)
@@ -193,18 +195,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		GtkWidget *tab_contents = glade_xml_get_widget(xml, "tabContents");
 		g->layout = GTK_LAYOUT(glade_xml_get_widget(xml, "layout"));
 		g->status_bar = GTK_LABEL(glade_xml_get_widget(xml, "status_bar"));
-
-		/* Set statusbar / scrollbar proportion according to the
-                 * percentage given by "option_toolbar_status_width / 10000" */
-		/* TODO: Is this the best place to do this? */
-		/* TODO: Should set it to a proportion of real window width,
-		 *       not some arbitrary guess at window width. */
-		/* TODO: Needs to be reset to proportion of window width as
-		 *       window is resized too */
-		const int window_width_guess = 1024;
-		GtkPaned *paned = GTK_PANED(glade_xml_get_widget(xml, "hpaned1"));
-		gtk_paned_set_position (paned, (option_toolbar_status_width *
-				window_width_guess) / 10000);
+		g->paned = GTK_PANED(glade_xml_get_widget(xml, "hpaned1"));
 
 		/* connect the scrollbars to the layout widget */
 		gtk_layout_set_hadjustment(g->layout,
@@ -699,12 +690,22 @@ gboolean nsgtk_window_keypress_event(GtkWidget *widget, GdkEventKey *event,
 }
 
 gboolean nsgtk_window_size_allocate_event(GtkWidget *widget,
-					  GtkAllocation *allocation, gpointer data)
+		GtkAllocation *allocation, gpointer data)
 {
 	struct gui_window *g = data;
 
 	g->bw->reformat_pending = true;
 	browser_reformat_pending = true;
+
+	if (g->paned != NULL) {
+		/* Set status bar / scroll bar proportion according to
+		 * option_toolbar_status_width */
+		/* TODO: Probably want to detect when the user adjusts the
+		 *       status bar width, remember that proportion for the
+		 *       window, and use that here. */
+		gtk_paned_set_position(g->paned, (option_toolbar_status_width *
+				allocation->width) / 10000);
+	}
 
 	return TRUE;
 }
