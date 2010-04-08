@@ -36,8 +36,8 @@ struct nscss_import;
 struct content_css_data
 {
 	css_stylesheet *sheet;		/**< Stylesheet object */
-
-	uint32_t import_count;		/**< Number of sheets imported */
+	char *charset;			/**< Character set of stylesheet */
+        uint32_t import_count;		/**< Number of sheets imported */
 	struct nscss_import *imports;	/**< Array of imported sheets */
 };
 

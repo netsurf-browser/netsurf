@@ -96,6 +96,8 @@ nserror nscss_create_css_data(struct content_css_data *c,
 
 	c->import_count = 0;
 	c->imports = NULL;
+	if (charset != NULL)
+		c->charset = strdup(charset);
 
 	error = css_stylesheet_create(CSS_LEVEL_21, charset,
 			url, NULL, quirks, false,
@@ -328,6 +330,8 @@ void nscss_destroy_css_data(struct content_css_data *c)
 		css_stylesheet_destroy(c->sheet);
 		c->sheet = NULL;
 	}
+
+	free(c->charset);
 }
 
 bool nscss_clone(const struct content *old, struct content *new_content)
@@ -336,10 +340,9 @@ bool nscss_clone(const struct content *old, struct content *new_content)
 	unsigned long size;
 
 	/* Simply replay create/process/convert */
-	/** \todo We need the charset of the old sheet */
 	if (nscss_create_css_data(&new_content->data.css,
 			content__get_url(new_content),
-			NULL, new_content->quirks) != NSERROR_OK)
+			old->data.css.charset, new_content->quirks) != NSERROR_OK)
 		return false;
 
 	data = content__get_source_data(new_content, &size);
