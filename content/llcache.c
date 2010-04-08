@@ -1022,6 +1022,8 @@ nserror llcache_object_add_user(llcache_object *object,
 nserror llcache_object_remove_user(llcache_object *object, 
 		llcache_object_user *user)
 {
+	assert(object->users);
+	
 	if (user == object->users)
 		object->users = user->next;
 	else
