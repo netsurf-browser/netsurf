@@ -9,7 +9,7 @@
  *
  * NetSurf is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
@@ -30,12 +30,16 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/url.h"
+#include "utils/ring.h"
 
 typedef struct hlcache_entry hlcache_entry;
 typedef struct hlcache_retrieval_ctx hlcache_retrieval_ctx;
 
 /** High-level cache retrieval context */
 struct hlcache_retrieval_ctx {
+	struct hlcache_retrieval_ctx *r_prev; /**< Previous retrieval context in the ring */
+	struct hlcache_retrieval_ctx *r_next; /**< Next retrieval context in the ring */
+	
 	llcache_handle *llcache;	/**< Low-level cache handle */
 
 	hlcache_handle *handle;		/**< High-level handle for object */
@@ -66,6 +70,9 @@ struct hlcache_entry {
 /** List of cached content objects */
 static hlcache_entry *hlcache_content_list;
 
+/** Ring of retrieval contexts */
+static hlcache_retrieval_ctx *hlcache_retrieval_ctx_ring;
+
 static nserror hlcache_llcache_callback(llcache_handle *handle,
 		const llcache_event *event, void *pw);
 static bool hlcache_type_is_acceptable(llcache_handle *llcache, 
@@ -76,7 +83,7 @@ static void hlcache_content_callback(struct content *c,
 		content_msg msg, union content_msg_data data, void *pw);
 
 /******************************************************************************
- * Public API                                                                 *
+ * Public API								      *
  ******************************************************************************/
 
 /* See hlcache.h for documentation */
@@ -121,7 +128,9 @@ nserror hlcache_handle_retrieve(const char *url, uint32_t flags,
 		free(ctx);
 		return error;
 	}
-
+	
+	RING_INSERT(hlcache_retrieval_ctx_ring, ctx);
+	
 	*result = ctx->handle;
 
 	return NSERROR_OK;
@@ -133,6 +142,22 @@ nserror hlcache_handle_release(hlcache_handle *handle)
 	if (handle->entry != NULL) {
 		content_remove_user(handle->entry->content, 
 				hlcache_content_callback, handle);
+	} else {
+		RING_ITERATE_START(struct hlcache_retrieval_ctx,
+				   hlcache_retrieval_ctx_ring,
+				   ictx) {
+			if (ictx->handle == handle) {
+				/* This is the nascent context for us, so abort the fetch */
+				llcache_handle_abort(ictx->llcache);
+				llcache_handle_release(ictx->llcache);
+				/* Remove us from the ring */
+				RING_REMOVE(hlcache_retrieval_ctx_ring, ictx);
+				/* Throw us away */
+				free(ictx);
+				/* And stop */
+				RING_ITERATE_STOP(hlcache_retrieval_ctx_ring, ictx);
+			}
+		} RING_ITERATE_END(hlcache_retrieval_ctx_ring, ictx);
 	}
 
 	handle->cb = NULL;
@@ -159,14 +184,29 @@ nserror hlcache_handle_abort(hlcache_handle *handle)
 {
 	struct hlcache_entry *entry = handle->entry;
 	struct content *c;
-
+	
 	if (entry == NULL) {
 		/* This handle is not yet associated with a cache entry.
 		 * The implication is that the fetch for the handle has
 		 * not progressed to the point where the entry can be
 		 * created. */
-		/** \todo Find retrieval context and abort llcache handle */
-
+		
+		RING_ITERATE_START(struct hlcache_retrieval_ctx,
+				   hlcache_retrieval_ctx_ring,
+				   ictx) {
+			if (ictx->handle == handle) {
+				/* This is the nascent context for us, so abort the fetch */
+				llcache_handle_abort(ictx->llcache);
+				llcache_handle_release(ictx->llcache);
+				/* Remove us from the ring */
+				RING_REMOVE(hlcache_retrieval_ctx_ring, ictx);
+				/* Throw us away */
+				free(ictx);
+				/* And stop */
+				RING_ITERATE_STOP(hlcache_retrieval_ctx_ring, ictx);
+			}
+		} RING_ITERATE_END(hlcache_retrieval_ctx_ring, ictx);
+		
 		return NSERROR_OK;
 	}
 
@@ -210,15 +250,15 @@ nserror hlcache_handle_abort(hlcache_handle *handle)
 }
 
 /******************************************************************************
- * High-level cache internals                                                 *
+ * High-level cache internals						      *
  ******************************************************************************/
 
 /**
  * Handler for low-level cache events
  *
  * \param handle  Handle for which event is issued
- * \param event   Event data
- * \param pw      Pointer to client-specific data
+ * \param event	  Event data
+ * \param pw	  Pointer to client-specific data
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 nserror hlcache_llcache_callback(llcache_handle *handle,
@@ -270,6 +310,7 @@ nserror hlcache_llcache_callback(llcache_handle *handle,
 		}
 
 		/* No longer require retrieval context */
+		RING_REMOVE(hlcache_retrieval_ctx_ring, ctx);
 		free(ctx);
 	}
 		break;
@@ -298,9 +339,9 @@ nserror hlcache_llcache_callback(llcache_handle *handle,
 /**
  * Determine if the type of a low-level cache object is acceptable
  *
- * \param llcache         Low-level cache object to consider
+ * \param llcache	  Low-level cache object to consider
  * \param accepted_types  Array of acceptable types, or NULL for any
- * \param computed_type   Pointer to location to receive computed type of object
+ * \param computed_type	  Pointer to location to receive computed type of object
  * \return True if the type is acceptable, false otherwise
  */
 bool hlcache_type_is_acceptable(llcache_handle *llcache, 
@@ -349,7 +390,7 @@ bool hlcache_type_is_acceptable(llcache_handle *llcache,
 /**
  * Find a content for the high-level cache handle
  *
- * \param ctx   High-level cache retrieval context
+ * \param ctx	High-level cache retrieval context
  * \return NSERROR_OK on success, appropriate error otherwise
  *
  * \pre handle::state == HLCACHE_HANDLE_NEW
@@ -459,10 +500,10 @@ nserror hlcache_find_content(hlcache_retrieval_ctx *ctx)
 /**
  * Veneer between content callback API and hlcache callback API
  *
- * \param c     Content to emit message for
- * \param msg   Message to emit
- * \param data  Data for message
- * \param pw    Pointer to private data (hlcache_handle)
+ * \param c	Content to emit message for
+ * \param msg	Message to emit
+ * \param data	Data for message
+ * \param pw	Pointer to private data (hlcache_handle)
  */
 void hlcache_content_callback(struct content *c, content_msg msg, 
 		union content_msg_data data, void *pw)

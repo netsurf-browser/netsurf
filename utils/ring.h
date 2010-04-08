@@ -106,4 +106,32 @@
 		} while (p != ring); \
 	} else sizevar = 0
 
+/*
+ * Ring iteration works as follows:
+ *
+ * RING_ITERATE_START(ringtype, ring, iteratorptr) {
+ *    code_using(iteratorptr);
+ * } RING_ITERATE_END(ring, iteratorptr);
+ *
+ * If you want to stop iterating (e.g. you found your answer)
+ * RING_ITERATE_STOP(ring, iteratorptr);
+ * You *MUST* abort the iteration if you do something to modify
+ * the ring such as deleting or adding an element.
+ */
+
+#define RING_ITERATE_START(ringtype, ring, iteratorptr) \
+	if (ring != NULL) {				\
+		ringtype *iteratorptr = ring;		\
+		do {					\
+			do {				\
+			
+#define RING_ITERATE_STOP(ring, iteratorptr)	\
+	goto iteration_end_##ring##_##iteratorptr
+
+#define RING_ITERATE_END(ring, iteratorptr)		\
+			} while (false);		\
+		} while (iteratorptr != ring);		\
+		}					\
+	iteration_end_##ring##_##iteratorptr:
+
 #endif
