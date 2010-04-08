@@ -212,6 +212,16 @@ static void gui_init(int argc, char** argv)
 
 	option_core_select_menu = true;
 
+	/* Attempt to handle nonsense status bar widths.  These may exist
+	 * in people's Choices as the GTK front end used to abuse the
+	 * status bar width option by using it for an absolute value in px.
+	 * The GTK front end now correctly uses it as a proportion of window
+	 * width.  Here we assume that a value of less than 15% is wrong
+	 * and set to the default two thirds. */
+	if (option_toolbar_status_width < 1500) {
+		option_toolbar_status_width = 6667;
+	}
+
 	/* check what the font settings are, setting them to a default font
 	 * if they're not set - stops Pango whinging
 	 */
