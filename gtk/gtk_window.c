@@ -194,6 +194,18 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		g->layout = GTK_LAYOUT(glade_xml_get_widget(xml, "layout"));
 		g->status_bar = GTK_LABEL(glade_xml_get_widget(xml, "status_bar"));
 
+		/* Set statusbar / scrollbar proportion according to the
+                 * percentage given by "option_toolbar_status_width / 10000" */
+		/* TODO: Is this the best place to do this? */
+		/* TODO: Should set it to a proportion of real window width,
+		 *       not some arbitrary guess at window width. */
+		/* TODO: Needs to be reset to proportion of window width as
+		 *       window is resized too */
+		const int window_width_guess = 1024;
+		GtkPaned *paned = GTK_PANED(glade_xml_get_widget(xml, "hpaned1"));
+		gtk_paned_set_position (paned, (option_toolbar_status_width *
+				window_width_guess) / 10000);
+
 		/* connect the scrollbars to the layout widget */
 		gtk_layout_set_hadjustment(g->layout,
 				gtk_range_get_adjustment(GTK_RANGE(
