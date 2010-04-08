@@ -541,7 +541,7 @@ gboolean nsgtk_window_keypress_event(GtkWidget *widget, GdkEventKey *event,
 	if (browser_window_key_press(g->bw, nskey))
 		return TRUE;
 
-	if (event->state == 0) {
+	if ((event->state & 0x7) == 0) {
 		double value;
 		GtkAdjustment *vscroll = gtk_layout_get_vadjustment(g->layout);
 
