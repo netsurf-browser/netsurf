@@ -320,7 +320,7 @@ static bool nsgtk_plot_pixbuf(int x, int y, int width, int height,
 	 */
 
 	int x0, y0, x1, y1;
-	int dx, dy, dwidth, dheight;
+	int dsrcx, dsrcy, dwidth, dheight;
 
 	/* Bail early if we can */
 	if (width == 0 || height == 0)
@@ -341,20 +341,20 @@ static bool nsgtk_plot_pixbuf(int x, int y, int width, int height,
 	y1 = (y + height) - (cliprect.y + cliprect.height);
 
 	/* Set initial draw geometry */
-	dx = dy = 0;
+	dsrcx = dsrcy = 0;
 	dwidth = width;
 	dheight = height;
 
 	/* Manually clip draw coordinates to area of image to be rendered */
 	if (x0 > 0) {
 		/* Clip left */
-		dx = x0;
+		dsrcx = x0;
 		x += x0;
 		dwidth -= x0;
 	}
 	if (y0 > 0) {
 		/* Clip top */
-		dy = y0;
+		dsrcy = y0;
 		y += y0;
 		dheight -= y0;
 	}
@@ -367,32 +367,41 @@ static bool nsgtk_plot_pixbuf(int x, int y, int width, int height,
 		dheight -= y1;
 	}
 
+	if (dwidth == 0 || dheight == 0)
+		/* Nothing to plot */
+		return true;
+
 	/* Render the bitmap */
 	if (gdk_pixbuf_get_width(pixbuf) == width &&
 	    gdk_pixbuf_get_height(pixbuf) == height) {
 		/* Bitmap is not scaled */
 		/* Plot the bitmap */
 		gdk_draw_pixbuf(current_drawable, current_gc, pixbuf,
-				dx, dy, x, y, dwidth, dheight,
+				dsrcx, dsrcy, x, y, dwidth, dheight,
 				GDK_RGB_DITHER_MAX, 0, 0);
 
 	} else {
 		/* Bitmap is scaled */
-		GdkPixbuf *scaled;
+		/* Get scale factors */
+		double sx = (double)width / gdk_pixbuf_get_width(pixbuf);
+		double sy = (double)height / gdk_pixbuf_get_height(pixbuf);
 
-		/* Create scaled bitmap
-		 * VERY SLOW */
-		scaled = gdk_pixbuf_scale_simple(pixbuf,
-						width, height,
-						option_render_resample ?
-						GDK_INTERP_BILINEAR :
-						GDK_INTERP_NEAREST);
+		/* Create bitmap for scaled image */
+		GdkPixbuf *scaled = gdk_pixbuf_new(GDK_COLORSPACE_RGB, true, 8,
+				dwidth, dheight);
+		/* Only scale up the portion of the bitmap that we are
+		 * interested in rendering */
+		gdk_pixbuf_scale(pixbuf, scaled,
+				0, 0, dwidth, dheight,
+				-dsrcx, -dsrcy, sx, sy,
+				option_render_resample ? GDK_INTERP_BILINEAR :
+				GDK_INTERP_NEAREST);
 		if (!scaled)
 			return false;
 
 		/* Plot the scaled bitmap */
 		gdk_draw_pixbuf(current_drawable, current_gc, scaled,
-				dx, dy, x, y, dwidth, dheight,
+				0, 0, x, y, dwidth, dheight,
 				GDK_RGB_DITHER_MAX, 0, 0);
 
 		g_object_unref(scaled);
