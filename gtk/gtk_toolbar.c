@@ -700,7 +700,7 @@ GtkWidget *nsgtk_toolbar_make_widget(nsgtk_scaffolding *g,
 #undef MAKE_STOCKBUTTON
 	case HISTORY_BUTTON:
 		return GTK_WIDGET(gtk_tool_button_new(GTK_WIDGET(
-				theme->image[HISTORY_BUTTON]), NULL));
+				theme->image[HISTORY_BUTTON]), ""));
 	case URL_BAR_ITEM: {
 		char imagefile[strlen(res_dir_location) + SLEN("favicon.png")
 				+ 1];
