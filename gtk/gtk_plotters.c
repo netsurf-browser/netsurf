@@ -319,24 +319,68 @@ static bool nsgtk_plot_pixbuf(int x, int y, int width, int height,
 	 * Does this matter?
 	 */
 
-	if (width == 0 || height == 0)
-		return true;
+	int x0, y0, x1, y1;
+	int src_x = 0;
+	int src_y = 0;
 
+	/* Bail early if we can */
+	if (width == 0 || height == 0)
+		/* Nothing to plot */
+		return true;
+	if ((x > (cliprect.x + cliprect.width)) ||
+			((x + width) < cliprect.x) ||
+			(y > (cliprect.y + cliprect.height)) ||
+			((y + height) < cliprect.y)) {
+		/* Image completely outside clip region */
+		return true;	
+	}
+
+	/* Get clip rectangle / image rectangle edge differences */
+	x0 = cliprect.x - x;
+	y0 = cliprect.y - y;
+	x1 = (x + width)  - (cliprect.x + cliprect.width);
+	y1 = (y + height) - (cliprect.y + cliprect.height);
+
+	/* Render the bitmap */
 	if (gdk_pixbuf_get_width(pixbuf) == width &&
 	    gdk_pixbuf_get_height(pixbuf) == height) {
-		gdk_draw_pixbuf(current_drawable, current_gc,
-				pixbuf,
-				0, 0,
-				x, y,
-				width, height,
+		/* Bitmap is not scaled */
+
+		/* Manually clip to area of image to be rendered */
+		if (x0 > 0) {
+			/* Clip left */
+			src_x = x0;
+			x += x0;
+			width -= x0;
+		}
+		if (y0 > 0) {
+			/* Clip top */
+			src_y = y0;
+			y += y0;
+			height -= y0;
+		}
+		if (x1 > 0) {
+			/* Clip right */
+			width -= x1;
+		}
+		if (y1 > 0) {
+			/* Clip bottom */
+			height -= y1;
+		}
+
+		/* Plot the bitmap */
+		gdk_draw_pixbuf(current_drawable, current_gc, pixbuf,
+				src_x, src_y, x, y, width, height,
 				GDK_RGB_DITHER_MAX, 0, 0);
 
 	} else {
+		/* Bitmap is scaled */
 		GdkPixbuf *scaled;
 		scaled = gdk_pixbuf_scale_simple(pixbuf,
-						 width, height,
-						 option_render_resample ? GDK_INTERP_BILINEAR
-						 : GDK_INTERP_NEAREST);
+						width, height,
+						option_render_resample ?
+						GDK_INTERP_BILINEAR :
+						GDK_INTERP_NEAREST);
 		if (!scaled)
 			return false;
 
