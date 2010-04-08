@@ -346,7 +346,8 @@ nserror llcache_handle_abort(llcache_handle *handle)
 		llcache_object_add_user(newobject, user);
 		
 		/* Add new object to uncached list */
-		llcache_object_add_to_list(object, &llcache_uncached_objects);
+		llcache_object_add_to_list(newobject, 
+				&llcache_uncached_objects);
 		
 		/* And use it from now on. */
 		object = newobject;
