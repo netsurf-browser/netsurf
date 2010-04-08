@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
-  Build Instructions for GTK NetSurf                          13 February 2010
+  Build Instructions for GTK NetSurf                              8 April 2010
 --------------------------------------------------------------------------------
 
   This document provides instructions for building the GTK version of NetSurf
@@ -33,9 +33,9 @@
   file. You may need to "make clean" before attempting to build after
   installing the dependencies.
 
-  Run NetSurf by executing the "netsurf" shell script:
+  Run NetSurf by executing the "test-nsgtk" shell script:
 
-      $ ./netsurf
+      $ ./test-nsgtk
 
   This script makes it easy to run the nsgtk binary from the build tree. It
   sets up some environment variables which enable NetSurf to find its
