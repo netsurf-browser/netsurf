@@ -282,10 +282,10 @@ void fetch_curl_finalise(const char *scheme)
  *
  * The caller must supply a callback function which is called when anything
  * interesting happens. The callback function is first called with msg
- * FETCH_TYPE, with the Content-Type header in data, then one or more times
+ * FETCH_HEADER, with the header in data, then one or more times
  * with FETCH_DATA with some data for the url, and finally with
  * FETCH_FINISHED. Alternatively, FETCH_ERROR indicates an error occurred:
- * data contains an error message. FETCH_REDIRECT may replace the FETCH_TYPE,
+ * data contains an error message. FETCH_REDIRECT may replace the FETCH_HEADER,
  * FETCH_DATA, FETCH_FINISHED sequence if the server sends a replacement URL.
  *
  * Some private data can be passed as the last parameter to fetch_start, and

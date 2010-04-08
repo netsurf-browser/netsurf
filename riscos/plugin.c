@@ -1766,7 +1766,6 @@ void plugin_fetch_callback(fetch_msg msg, void *p, const void *data,
 			content_broadcast(s->c, CONTENT_MSG_ERROR, msg_data);
 			break;
 
-		case FETCH_TYPE:
 		case FETCH_NOTMODIFIED:
 		case FETCH_AUTH:
 		case FETCH_CERT_ERR:

@@ -27,7 +27,6 @@
 #include "utils/config.h"
 
 typedef enum {
-              FETCH_TYPE,
               FETCH_PROGRESS,
               FETCH_HEADER,
               FETCH_DATA,
