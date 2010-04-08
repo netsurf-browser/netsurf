@@ -1475,6 +1475,7 @@ void llcache_fetch_callback(fetch_msg msg, void *p, const void *data,
 		object->fetch.state = LLCACHE_FETCH_HEADERS;
 
 		error = llcache_fetch_process_header(object, data, size);
+		break;
 	case FETCH_DATA:
 		/* Received some data */
 		object->fetch.state = LLCACHE_FETCH_DATA;
