@@ -1677,7 +1677,7 @@ nserror llcache_fetch_notmodified(llcache_object *object,
 	/* Candidate is now our object */
 	*replacement = object->candidate;
 
-	/** \todo Ensure that old object gets flushed from the cache */
+	/* Old object will be flushed from the cache on the next poll */
 
 	return NSERROR_OK;
 }
