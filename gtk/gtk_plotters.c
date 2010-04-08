@@ -386,7 +386,7 @@ static bool nsgtk_plot_pixbuf(int x, int y, int width, int height,
 		double sx = (double)width / gdk_pixbuf_get_width(pixbuf);
 		double sy = (double)height / gdk_pixbuf_get_height(pixbuf);
 
-		/* Create bitmap for scaled image */
+		/* Create bitmap for scaled image portion */
 		GdkPixbuf *scaled = gdk_pixbuf_new(GDK_COLORSPACE_RGB, true, 8,
 				dwidth, dheight);
 		/* Only scale up the portion of the bitmap that we are
