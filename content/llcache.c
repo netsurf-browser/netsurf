@@ -1501,7 +1501,9 @@ void llcache_fetch_callback(fetch_msg msg, void *p, const void *data,
 		/* An error occurred while fetching */
 		/* The fetch has has already been cleaned up by the fetcher */
 		object->fetch.fetch = NULL;
-		/** \todo Ensure this object becomes stale */
+
+		/* Invalidate cache control data */
+		memset(&(object->cache), 0, sizeof(llcache_cache_control));
 
 		/** \todo Consider using errorcode for something */
 
