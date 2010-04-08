@@ -273,12 +273,17 @@ nserror hlcache_llcache_callback(llcache_handle *handle,
 	case LLCACHE_EVENT_HAD_HEADERS:
 	{
 		content_type type;
-
+		
+		/* Unlink the context to prevent recursion */
+		RING_REMOVE(hlcache_retrieval_ctx_ring, ctx);
+		
 		if (hlcache_type_is_acceptable(handle, 
 				ctx->accepted_types, &type)) {
 			error = hlcache_find_content(ctx);
-			if (error != NSERROR_OK)
+			if (error != NSERROR_OK) {
+				free(ctx);
 				return error;
+			}
 		} else if (type == CONTENT_OTHER && 
 				ctx->flags & HLCACHE_RETRIEVE_MAY_DOWNLOAD) {
 			/* Unknown type, and we can download, so convert */
@@ -310,7 +315,6 @@ nserror hlcache_llcache_callback(llcache_handle *handle,
 		}
 
 		/* No longer require retrieval context */
-		RING_REMOVE(hlcache_retrieval_ctx_ring, ctx);
 		free(ctx);
 	}
 		break;
