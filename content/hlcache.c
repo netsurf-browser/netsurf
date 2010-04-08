@@ -364,12 +364,17 @@ nserror hlcache_find_content(hlcache_retrieval_ctx *ctx)
 
 	/* Search list of cached contents for a suitable one */
 	for (entry = hlcache_content_list; entry != NULL; entry = entry->next) {
+		hlcache_handle entry_handle = { entry, NULL, NULL };
 		const llcache_handle *entry_llcache;
 
 		/** \todo Need to ensure that quirks mode matches */
 		/** \todo Need to ensure that content is shareable */
 		/** \todo Need to ensure that content can be reused */
 		if (entry->content == NULL)
+			continue;
+
+		/* Ignore contents in the error state */
+		if (content_get_status(&entry_handle) == CONTENT_STATUS_ERROR)
 			continue;
 
 		/* Ensure that content uses same low-level object as 
