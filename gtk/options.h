@@ -38,7 +38,7 @@ extern bool option_source_tab;
 extern int option_current_theme;
 
 #define EXTRA_OPTION_DEFINE \
-bool option_render_resample = false; \
+bool option_render_resample = true; \
 bool option_downloads_clear = false; \
 bool option_request_overwrite = true; \
 char *option_downloads_directory = 0; \
@@ -61,14 +61,14 @@ int option_current_theme = 0;
 { "downloads_directory",OPTION_STRING,	&option_downloads_directory }, \
 { "url_file",		OPTION_STRING,	&option_url_file }, \
 { "show_single_tab",    OPTION_BOOL,    &option_show_single_tab }, \
-{ "button_type",		OPTION_INTEGER, &option_button_type}, \
-{ "disable_popups",		OPTION_BOOL,	&option_disable_popups}, \
+{ "button_type",	OPTION_INTEGER, &option_button_type}, \
+{ "disable_popups",	OPTION_BOOL,	&option_disable_popups}, \
 { "disable_plugins",	OPTION_BOOL,	&option_disable_plugins}, \
-{ "history_age",		OPTION_INTEGER,	&option_history_age}, \
-{ "hover_urls",			OPTION_BOOL,	&option_hover_urls}, \
-{ "focus_new",			OPTION_BOOL,	&option_focus_new}, \
-{ "new_blank",			OPTION_BOOL,	&option_new_blank}, \
-{ "source_tab",			OPTION_BOOL,	&option_source_tab},\
-{ "current_theme",		OPTION_INTEGER,	&option_current_theme}
+{ "history_age",	OPTION_INTEGER,	&option_history_age}, \
+{ "hover_urls",		OPTION_BOOL,	&option_hover_urls}, \
+{ "focus_new",		OPTION_BOOL,	&option_focus_new}, \
+{ "new_blank",		OPTION_BOOL,	&option_new_blank}, \
+{ "source_tab",		OPTION_BOOL,	&option_source_tab},\
+{ "current_theme",	OPTION_INTEGER,	&option_current_theme}
 
 #endif
