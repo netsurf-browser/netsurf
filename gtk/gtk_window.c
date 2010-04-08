@@ -213,6 +213,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			tempback = true;
 			break;
 		}
+		g_object_set_data(G_OBJECT(tab_contents), "gui_window", g);
 		nsgtk_tab_add(g, tab_contents, tempback);
 
 		g_object_unref(xml);
