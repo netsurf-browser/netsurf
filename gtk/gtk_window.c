@@ -552,7 +552,7 @@ gboolean nsgtk_window_scroll_event(GtkWidget *widget,
 	case GDK_SCROLL_LEFT:
 		scroll = hscroll;
 		value = gtk_adjustment_get_value(scroll) -
-			scroll->step_increment;
+			(scroll->step_increment * 2);
 		if (value < scroll->lower)
 			value = scroll->lower;
 		break;
@@ -560,7 +560,7 @@ gboolean nsgtk_window_scroll_event(GtkWidget *widget,
 	case GDK_SCROLL_UP:
 		scroll = vscroll;
 		value = gtk_adjustment_get_value(scroll) -
-			scroll->step_increment;
+			(scroll->step_increment * 2);
 		if (value < scroll->lower)
 			value = scroll->lower;
 		break;
@@ -568,7 +568,7 @@ gboolean nsgtk_window_scroll_event(GtkWidget *widget,
 	case GDK_SCROLL_RIGHT:
 		scroll = hscroll;
 		value = gtk_adjustment_get_value(scroll) +
-			scroll->step_increment;
+			(scroll->step_increment * 2);
 		if (value > scroll->upper - alloc->width)
 			value = scroll->upper - alloc->width;
 		break;
@@ -576,7 +576,7 @@ gboolean nsgtk_window_scroll_event(GtkWidget *widget,
 	case GDK_SCROLL_DOWN:
 		scroll = vscroll;
 		value = gtk_adjustment_get_value(scroll) +
-			scroll->step_increment;
+			(scroll->step_increment * 2);
 		if (value > scroll->upper - alloc->height)
 			value = scroll->upper - alloc->height;
 		break;
