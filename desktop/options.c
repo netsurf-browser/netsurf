@@ -134,11 +134,7 @@ int option_window_screen_width = 0;
 /** height of screen when above options were saved */
 int option_window_screen_height = 0;
 /** default size of status bar vs. h scroll bar */
-#ifdef nsgtk
-int option_toolbar_status_width = 400;
-#else
 int option_toolbar_status_width = 6667;
-#endif
 /** default window scale */
 int option_scale = 100;
 /* Whether to reflow web pages while objects are fetching */
