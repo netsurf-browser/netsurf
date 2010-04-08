@@ -98,6 +98,8 @@ nserror nscss_create_css_data(struct content_css_data *c,
 	c->imports = NULL;
 	if (charset != NULL)
 		c->charset = strdup(charset);
+	else
+		c->charset = NULL;
 
 	error = css_stylesheet_create(CSS_LEVEL_21, charset,
 			url, NULL, quirks, false,
