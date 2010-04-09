@@ -583,7 +583,8 @@ gboolean nsgtk_window_scroll_event(GtkWidget *widget,
 		if (value > scroll->upper - alloc->height)
 			value = scroll->upper - alloc->height;
 		break;
-		
+	default:
+		return TRUE;		
 	}
 	
 	gtk_adjustment_set_value(scroll, value);
