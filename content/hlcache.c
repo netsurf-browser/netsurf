@@ -272,7 +272,7 @@ nserror hlcache_llcache_callback(llcache_handle *handle,
 	switch (event->type) {
 	case LLCACHE_EVENT_HAD_HEADERS:
 	{
-		content_type type;
+		content_type type = CONTENT_UNKNOWN;
 		
 		/* Unlink the context to prevent recursion */
 		RING_REMOVE(hlcache_retrieval_ctx_ring, ctx);
