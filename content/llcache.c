@@ -474,7 +474,10 @@ nserror llcache_object_user_destroy(llcache_object_user *user)
 #ifdef LLCACHE_TRACE
 	LOG(("Destroyed user %p", user));
 #endif
-
+	
+	assert(user->next == NULL);
+	assert(user->prev == NULL);
+	
 	free(user);
 
 	return NSERROR_OK;
@@ -996,6 +999,9 @@ nserror llcache_object_destroy(llcache_object *object)
 nserror llcache_object_add_user(llcache_object *object,
 		llcache_object_user *user)
 {
+	assert(user->next == NULL);
+	assert(user->prev == NULL);
+
 	user->handle.object = object;
 
 	user->prev = NULL;
@@ -1022,7 +1028,9 @@ nserror llcache_object_add_user(llcache_object *object,
 nserror llcache_object_remove_user(llcache_object *object, 
 		llcache_object_user *user)
 {
-	assert(object->users);
+	assert(object->users != NULL);
+	assert(user->handle.object = object);
+	assert((user->next != NULL) || (user->prev != NULL) || (object->users == user));
 	
 	if (user == object->users)
 		object->users = user->next;
@@ -1031,7 +1039,11 @@ nserror llcache_object_remove_user(llcache_object *object,
 
 	if (user->next != NULL)
 		user->next->prev = user->prev;
-
+	
+#ifndef NDEBUG
+	user->next = user->prev = NULL;
+#endif
+	
 #ifdef LLCACHE_TRACE
 	LOG(("Removing user %p from %p", user, object));
 #endif
@@ -1084,7 +1096,7 @@ nserror llcache_object_remove_from_list(llcache_object *object,
  * Determine if a low-level cache object resides in a given list
  *
  * \param object  Object to search for
- * \param list    List to search in
+ * \param list	  List to search in
  * \return True if object resides in list, false otherwise
  */
 bool llcache_object_in_list(const llcache_object *object,
