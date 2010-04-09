@@ -214,7 +214,7 @@ void gui_download_window_done(struct gui_download_window *dw)
 				TAG_DONE);
 	}
 
-	if(bw) bw->download = false;
+	download_context_destroy(dw->ctx);
 
 	if(dln = dw->dln)
 	{
@@ -233,6 +233,30 @@ void gui_download_window_done(struct gui_download_window *dw)
 	DisposeObject(dw->objects[OID_MAIN]);
 	DelObject(dw->node);
 	if(queuedl) browser_window_download(bw,dln2->node.ln_Name,NULL);
+}
+
+BOOL ami_download_window_event(struct gui_download_window *dw)
+{
+	/* return TRUE if window destroyed */
+	ULONG class,result,relevent = 0;
+	uint16 code;
+
+	while((result = RA_HandleInput(dw->objects[OID_MAIN], &code)) != WMHI_LASTMSG)
+	{
+       	switch(result & WMHI_CLASSMASK) // class
+		{
+			case WMHI_GADGETUP:
+				switch(result & WMHI_GADGETMASK)
+				{
+					case GID_CANCEL:
+						ami_download_window_abort(dw);
+						return TRUE;
+					break;
+				}
+			break;
+		}
+	}
+	return FALSE;
 }
 
 void ami_free_download_list(struct List *dllist)

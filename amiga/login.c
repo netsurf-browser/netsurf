@@ -147,3 +147,32 @@ void ami_401login_login(struct gui_login_window *lw)
 
 	ami_401login_close(lw);
 }
+
+BOOL ami_401login_event(struct gui_login_window *lw)
+{
+	/* return TRUE if window destroyed */
+	ULONG class,result,relevent = 0;
+	uint16 code;
+
+	while((result = RA_HandleInput(lw->objects[OID_MAIN], &code)) != WMHI_LASTMSG)
+	{
+       	switch(result & WMHI_CLASSMASK) // class
+		{
+			case WMHI_GADGETUP:
+				switch(result & WMHI_GADGETMASK)
+				{
+					case GID_LOGIN:
+						ami_401login_login(lw);
+						return TRUE;
+					break;
+
+					case GID_CANCEL:
+						ami_401login_close(lw);
+						return TRUE;
+					break;
+				}
+			break;
+		}
+	}
+	return FALSE;
+}

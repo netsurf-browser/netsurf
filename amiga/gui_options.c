@@ -181,10 +181,9 @@ enum
 #define OPTS_MAX_NATIVEBM 3
 
 struct ami_gui_opts_window {
+	struct nsObject *node;
 	struct Window *win;
 	Object *objects[GID_OPTS_LAST];
-	struct nsObject *node;
-	ULONG pad[6];
 };
 
 static struct ami_gui_opts_window *gow = NULL;

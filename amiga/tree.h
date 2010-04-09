@@ -24,11 +24,10 @@
 #include "amiga/gui.h"
 
 struct treeview_window {
+	struct nsObject *node;
 	struct Window *win;
 	Object *objects[OID_LAST];
 	struct Gadget *gadgets[GID_LAST];
-	struct nsObject *node;
-	ULONG pad[5];
 	struct tree *tree;
 	struct List *listbrowser_list;
 };

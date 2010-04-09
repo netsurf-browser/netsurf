@@ -78,9 +78,9 @@ struct find_window;
 struct history_window;
 
 struct gui_window_2 {
+	struct nsObject *node;
 	struct Window *win;
 	Object *objects[GID_LAST];
-	struct nsObject *node;
 	struct browser_window *bw;
 	bool redraw_required;
 	int throbber_frame;

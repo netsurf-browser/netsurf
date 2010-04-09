@@ -24,12 +24,10 @@
 #include "amiga/gui.h"
 
 struct history_window {
-	struct Window *win;
-	Object *objects[OID_LAST];
-	struct Gadget *gadgets[GID_LAST]; // not used
 	struct nsObject *node;
+	struct Window *win;
+	Object *objects[GID_LAST];
 	struct browser_window *bw;
-	ULONG pad[4];
 	struct Hook scrollerhook;
 	struct gui_globals gg;
 };

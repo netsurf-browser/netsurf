@@ -112,8 +112,8 @@ void ami_history_open(struct browser_window *bw, struct history *history)
 			WINDOW_IDCMPHookBits,IDCMP_IDCMPUPDATE,
 //			WA_ReportMouse,TRUE,
 			WA_IDCMP,IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE, // | IDCMP_MOUSEMOVE,
-			WINDOW_ParentGroup, hwindow->gadgets[GID_MAIN] = VGroupObject,
-				LAYOUT_AddChild, hwindow->gadgets[GID_BROWSER] = SpaceObject,
+			WINDOW_ParentGroup, hwindow->objects[GID_MAIN] = VGroupObject,
+				LAYOUT_AddChild, hwindow->objects[GID_BROWSER] = SpaceObject,
 					GA_ID,GID_BROWSER,
 //					SPACE_MinWidth,width,
 //					SPACE_MinHeight,height,
@@ -157,7 +157,7 @@ void ami_history_redraw(struct history_window *hw)
 	struct IBox *bbox;
 	ULONG xs,ys;
 
-	GetAttr(SPACE_AreaBox,hw->gadgets[GID_BROWSER],(ULONG *)&bbox);
+	GetAttr(SPACE_AreaBox,hw->objects[GID_BROWSER],(ULONG *)&bbox);
 	GetAttr(SCROLLER_Top,hw->objects[OID_HSCROLL],(ULONG *)&xs);
 	GetAttr(SCROLLER_Top,hw->objects[OID_VSCROLL],(ULONG *)&ys);
 
@@ -188,7 +188,7 @@ bool ami_history_click(struct history_window *hw,uint16 code)
 	struct IBox *bbox;
 	ULONG width,height,xs,ys;
 
-	GetAttr(SPACE_AreaBox,hw->gadgets[GID_BROWSER],(ULONG *)&bbox);	
+	GetAttr(SPACE_AreaBox,hw->objects[GID_BROWSER],(ULONG *)&bbox);	
 
 	GetAttr(SCROLLER_Top,hw->objects[OID_HSCROLL],(ULONG *)&xs);
 	x = hw->win->MouseX - bbox->Left +xs;
@@ -252,7 +252,7 @@ BOOL ami_history_event(struct history_window *hw)
 */
 
 			case WMHI_MOUSEMOVE:
-				GetAttr(SPACE_AreaBox, hw->gadgets[GID_BROWSER], (ULONG *)&bbox);
+				GetAttr(SPACE_AreaBox, hw->objects[GID_BROWSER], (ULONG *)&bbox);
 				GetAttr(SCROLLER_Top, hw->objects[OID_HSCROLL], (ULONG *)&xs);
 				GetAttr(SCROLLER_Top, hw->objects[OID_VSCROLL], (ULONG *)&ys);
 
@@ -260,7 +260,7 @@ BOOL ami_history_event(struct history_window *hw)
 					hw->win->MouseX - bbox->Left + xs,
 					hw->win->MouseY - bbox->Top + ys);
 
-				RefreshSetGadgetAttrs((APTR)hw->gadgets[GID_BROWSER],
+				RefreshSetGadgetAttrs((APTR)hw->objects[GID_BROWSER],
 					hw->win, NULL,
 					GA_HintInfo, url,
 					TAG_DONE);
@@ -289,7 +289,7 @@ void ami_history_update_extent(struct history_window *hw)
 	int width, height;
 
 	history_size(hw->bw->history, &width, &height);
-	GetAttr(SPACE_AreaBox,hw->gadgets[GID_BROWSER],(ULONG *)&bbox);
+	GetAttr(SPACE_AreaBox,hw->objects[GID_BROWSER],(ULONG *)&bbox);
 
 	RefreshSetGadgetAttrs((APTR)hw->objects[OID_VSCROLL],hw->win,NULL,
 		GA_ID,OID_VSCROLL,

@@ -19,11 +19,10 @@
 #ifndef AMIGA_LOGIN_H
 #define AMIGA_LOGIN_H
 struct gui_login_window {
+	struct nsObject *node;
 	struct Window *win;
 	Object *objects[GID_LAST];
-	struct nsObject *node;
 	struct browser_window *bw;
-	ULONG pad[3];
 	char *url;
 	char *realm;
 	char *host;
@@ -31,4 +30,5 @@ struct gui_login_window {
 
 void ami_401login_close(struct gui_login_window *lw);
 void ami_401login_login(struct gui_login_window *lw);
+BOOL ami_401login_event(struct gui_login_window *lw);
 #endif

@@ -939,6 +939,40 @@ void ami_handle_msg(void)
 				continue;
 			}
 		}
+		else if(node->Type == AMINS_DLWINDOW)
+		{
+			if(ami_download_window_event((struct gui_download_window *)gwin))
+			{
+				if(IsMinListEmpty(window_list))
+				{
+					/* last window closed, so exit */
+					ami_try_quit();
+				}
+				break;
+			}
+			else
+			{
+				node = nnode;
+				continue;
+			}
+		}
+		else if(node->Type == AMINS_LOGINWINDOW)
+		{
+			if(ami_401login_event((struct gui_login_window *)gwin))
+			{
+				if(IsMinListEmpty(window_list))
+				{
+					/* last window closed, so exit */
+					ami_try_quit();
+				}
+				break;
+			}
+			else
+			{
+				node = nnode;
+				continue;
+			}
+		}
 
 		while((result = RA_HandleInput(gwin->objects[OID_MAIN],&code)) != WMHI_LASTMSG)
 		{
@@ -1171,24 +1205,6 @@ void ami_handle_msg(void)
 							}
 
 							ami_update_buttons(gwin);
-						break;
-
-						case GID_LOGIN:
-							ami_401login_login((struct gui_login_window *)gwin);
-							win_destroyed = true;
-						break;
-
-						case GID_CANCEL:
-							if(gwin->node->Type == AMINS_LOGINWINDOW)
-							{
-								ami_401login_close((struct gui_login_window *)gwin);
-								win_destroyed = true;
-							}
-							else if(gwin->node->Type == AMINS_DLWINDOW)
-							{
-								ami_download_window_abort((struct gui_download_window *)gwin);
-								win_destroyed = true;
-							}
 						break;
 
 						default:
@@ -2975,7 +2991,7 @@ void ami_do_redraw_limits(struct gui_window *g, hlcache_handle *c,int x0, int y0
 	GetAttr(SPACE_AreaBox, g->shared->objects[GID_BROWSER], (ULONG *)&bbox);
 
 	if(!c) return;
-//	if (c->locked) return;
+	if(content_is_locked(c)) return;
 
 	current_redraw_browser = g->shared->bw;
 
@@ -3091,7 +3107,7 @@ void ami_do_redraw(struct gui_window_2 *g)
 	c = g->bw->current_content;
 
 	if(!c) return;
-//	if (c->locked) return;
+	if(content_is_locked(c)) return;
 
 	current_redraw_browser = g->bw;
 //	currp = &browserglob.rp;

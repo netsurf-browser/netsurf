@@ -22,12 +22,11 @@
 #include "amiga/gui.h"
 
 struct find_window {
+	struct nsObject *node;
 	struct Window *win;
 	Object *objects[OID_LAST];
 	struct Gadget *gadgets[GID_LAST];
-	struct nsObject *node;
 	struct gui_window *gwin;
-	ULONG pad[3];
 };
 
 void ami_search_open(struct gui_window *gwin);
