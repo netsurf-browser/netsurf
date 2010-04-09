@@ -646,8 +646,6 @@ void content_update_status(struct content *c)
 
 void content_convert(struct content *c)
 {
-	union content_msg_data msg_data;
-
 	assert(c);
 	assert(c->type < HANDLER_MAP_COUNT);
 	assert(c->status == CONTENT_STATUS_LOADING);
@@ -661,21 +659,30 @@ void content_convert(struct content *c)
 	if (handler_map[c->type].convert) {
 		if (!handler_map[c->type].convert(c)) {
 			c->status = CONTENT_STATUS_ERROR;
-			c->locked = false;
-			return;
 		}
 	} else {
 		c->status = CONTENT_STATUS_DONE;
 	}
 	c->locked = false;
 
-	assert(c->status == CONTENT_STATUS_READY ||
-			c->status == CONTENT_STATUS_DONE);
-	content_broadcast(c, CONTENT_MSG_READY, msg_data);
+	if (c->status == CONTENT_STATUS_READY)
+		content_set_ready(c);
 	if (c->status == CONTENT_STATUS_DONE)
 		content_set_done(c);
 }
 
+/**
+ * Put a content in status CONTENT_STATUS_READY.
+ */
+
+void content_set_ready(struct content *c)
+{
+	union content_msg_data msg_data;
+
+	c->status = CONTENT_STATUS_READY;
+	content_update_status(c);
+	content_broadcast(c, CONTENT_MSG_READY, msg_data);
+}
 
 /**
  * Put a content in status CONTENT_STATUS_DONE.

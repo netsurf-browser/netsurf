@@ -195,6 +195,7 @@ struct content {
 extern const char * const content_type_name[];
 extern const char * const content_status_name[];
 
+void content_set_ready(struct content *c);
 void content_set_done(struct content *c);
 void content_set_status(struct content *c, const char *status_message, ...);
 void content_broadcast(struct content *c, content_msg msg,
