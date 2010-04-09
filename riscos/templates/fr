@@ -1234,8 +1234,8 @@ wimp_window {
   window_flags:wimp_WINDOW_MOVEABLE | wimp_WINDOW_BACK_ICON | wimp_WINDOW_CLOSE_ICON | wimp_WINDOW_TITLE_ICON | wimp_WINDOW_TOGGLE_ICON | wimp_WINDOW_VSCROLL | wimp_WINDOW_SIZE_ICON | wimp_WINDOW_HSCROLL | wimp_WINDOW_NEW_FORMAT
   title_fg:wimp_COLOUR_BLACK
   title_bg:wimp_COLOUR_LIGHT_GREY
-  work_fg:wimp_COLOUR_WHITE
-  work_bg:wimp_COLOUR_BLACK
+  work_fg:wimp_COLOUR_BLACK
+  work_bg:wimp_COLOUR_WHITE
   scroll_outer:wimp_COLOUR_MID_LIGHT_GREY
   scroll_inner:wimp_COLOUR_VERY_LIGHT_GREY
   highlight_bg:wimp_COLOUR_CREAM
