@@ -58,6 +58,7 @@ bool ami_print_next_page(void);
 void ami_print_end(void);
 bool ami_print_dump(void);
 void ami_print_progress(void);
+void ami_print_close_device(void);
 
 const struct printer amiprinter = {
 	&amiplot,
@@ -397,7 +398,12 @@ void ami_print(struct hlcache_handle *c, int copies)
 	ami_print_info.ps->page_height = ami_print_info.PED->ped_MaxYDots;
 	ami_print_info.ps->scale = scale;
 
-	print_set_up(c, &amiprinter, ami_print_info.ps, &height);
+	if(!print_set_up(c, &amiprinter, ami_print_info.ps, &height))
+	{
+		warn_user("PrintError","print_set_up() returned false");
+		ami_print_close_device();
+		return;
+	}
 
 	height *= ami_print_info.ps->scale;
 	ami_print_info.pages = height / ami_print_info.ps->page_height;
@@ -482,6 +488,11 @@ void ami_print_end(void)
 	DisposeObject(ami_print_info.objects[OID_MAIN]);
 	glob = &browserglob;
 
+	ami_print_close_device();
+}
+
+void ami_print_close_device(void)
+{
 	CloseDevice(ami_print_info.PReq);
 	FreeSysObject(ASOT_IOREQUEST,ami_print_info.PReq);
 }
