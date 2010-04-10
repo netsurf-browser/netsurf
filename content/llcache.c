@@ -1630,8 +1630,7 @@ nserror llcache_fetch_redirect(llcache_object *object, const char *target,
 
 	/* Attempt to fetch target URL */
 	error = llcache_object_retrieve(url, object->fetch.flags,
-			object->fetch.referer, object->fetch.post,
-			&dest);
+			object->fetch.referer, post, &dest);
 
 	/* No longer require url */
 	free(url);
