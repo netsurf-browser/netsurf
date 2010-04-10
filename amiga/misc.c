@@ -29,12 +29,16 @@
 
 void warn_user(const char *warning, const char *detail)
 {
+	char *utf8warning = ami_utf8_easy(messages_get(warning));
+
+	if(!utf8warning) utf8warning = warning;
+
 	TimedDosRequesterTags(TDR_ImageType,TDRIMAGE_WARNING,
 							TDR_TitleString,messages_get("NetSurf"),
 							TDR_GadgetString,messages_get("OK"),
 //							TDR_CharSet,106,
 							TDR_FormatString,"%s\n%s",
-							TDR_Arg1,messages_get(warning),
+							TDR_Arg1,utf8warning,
 							TDR_Arg2,detail,
 							TAG_DONE);
 }
