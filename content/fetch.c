@@ -720,6 +720,15 @@ fetch_set_cookie(struct fetch *fetch, const char *data)
 		 * that the request uri and the parent domain match,
 		 * so don't pass in any referer/parent in this case. */
 		urldb_set_cookie(data, fetch->url, NULL);
+	} else if (fetch->referer != NULL) {
+		/* Permit the cookie to be set if the fetch is unverifiable
+		 * and the fetch URI domain matches the referer. */
+		/** \todo Long-term, this needs to be replaced with a
+		 * comparison against the origin fetch URI. In the case
+		 * where a nested object requests a fetch, the origin URI
+		 * is the nested object's parent URI, whereas the referer
+		 * for the fetch will be the nested object's URI. */
+		urldb_set_cookie(data, fetch->url, fetch->referer);
 	}
 }
 
