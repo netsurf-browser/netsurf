@@ -1858,6 +1858,12 @@ void html_destroy_iframe(struct content_html_iframe *iframe) {
 bool html_clone(const struct content *old, struct content *new_content)
 {
 	/** \todo Clone HTML specifics */
+
+	/* In the meantime, we should never be called, as HTML contents 
+	 * cannot be shared and we're not intending to fix printing's 
+	 * cloning of documents. */
+	assert(0 && "html_clone should never be called");
+
 	return true;
 }
 
