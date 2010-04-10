@@ -41,6 +41,8 @@ void warn_user(const char *warning, const char *detail)
 							TDR_Arg1,utf8warning,
 							TDR_Arg2,detail,
 							TAG_DONE);
+
+	if(utf8warning) free(utf8warning);
 }
 
 void die(const char *error)
