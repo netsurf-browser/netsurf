@@ -84,9 +84,9 @@ void fetch_init(void);
 struct fetch * fetch_start(const char *url, const char *referer,
 		fetch_callback callback,
 		void *p, bool only_2xx, const char *post_urlenc,
-		struct fetch_multipart_data *post_multipart,
+		const struct fetch_multipart_data *post_multipart,
 		bool verifiable,
-		char *headers[]);
+		const char *headers[]);
 void fetch_abort(struct fetch *f);
 void fetch_poll(void);
 void fetch_quit(void);
@@ -109,7 +109,7 @@ struct fetch_multipart_data *fetch_multipart_data_clone(
 typedef bool (*fetcher_initialise)(const char *);
 typedef void* (*fetcher_setup_fetch)(struct fetch *, const char *,
                                      bool, const char *,
-                                     struct fetch_multipart_data *,
+                                     const struct fetch_multipart_data *,
                                      const char **);
 typedef bool (*fetcher_start_fetch)(void *);
 typedef void (*fetcher_abort_fetch)(void *);

@@ -821,9 +821,7 @@ nserror llcache_object_fetch(llcache_object *object, uint32_t flags,
 nserror llcache_object_refetch(llcache_object *object)
 {
 	const char *urlenc = NULL;
-	/** \todo Why is fetch_start's post_multipart parameter not const? */
 	struct fetch_multipart_data *multipart = NULL;
-	/** \todo Why is the headers parameter of fetch_start not const? */
 	char **headers = NULL;
 	int header_idx = 0;
 
@@ -895,7 +893,7 @@ nserror llcache_object_refetch(llcache_object *object)
 			object->fetch.flags & LLCACHE_RETRIEVE_NO_ERROR_PAGES,
 			urlenc, multipart,
 			object->fetch.flags & LLCACHE_RETRIEVE_VERIFIABLE,
-			headers);
+			(const char **) headers);
 
 	/* Clean up cache-control headers */
 	while (--header_idx >= 0)

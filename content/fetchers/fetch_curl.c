@@ -104,7 +104,7 @@ static bool fetch_curl_initialise(const char *scheme);
 static void fetch_curl_finalise(const char *scheme);
 static void * fetch_curl_setup(struct fetch *parent_fetch, const char *url,
 		 bool only_2xx, const char *post_urlenc,
-		 struct fetch_multipart_data *post_multipart,
+		 const struct fetch_multipart_data *post_multipart,
 		 const char **headers);
 static bool fetch_curl_start(void *vfetch);
 static bool fetch_curl_initiate_fetch(struct curl_fetch_info *fetch,
@@ -132,7 +132,7 @@ static size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
 				void *_f);
 static bool fetch_curl_process_headers(struct curl_fetch_info *f);
 static struct curl_httppost *fetch_curl_post_convert(
-		struct fetch_multipart_data *control);
+		const struct fetch_multipart_data *control);
 static int fetch_curl_verify_callback(int preverify_ok,
 		X509_STORE_CTX *x509_ctx);
 static int fetch_curl_cert_verify_callback(X509_STORE_CTX *x509_ctx,
@@ -294,7 +294,7 @@ void fetch_curl_finalise(const char *scheme)
 
 void * fetch_curl_setup(struct fetch *parent_fetch, const char *url,
 		 bool only_2xx, const char *post_urlenc,
-		 struct fetch_multipart_data *post_multipart,
+		 const struct fetch_multipart_data *post_multipart,
 		 const char **headers)
 {
 	char *host;
@@ -1224,7 +1224,7 @@ bool fetch_curl_process_headers(struct curl_fetch_info *f)
  * struct curl_httppost for libcurl.
  */
 struct curl_httppost *
-fetch_curl_post_convert(struct fetch_multipart_data *control)
+fetch_curl_post_convert(const struct fetch_multipart_data *control)
 {
 	struct curl_httppost *post = 0, *last = 0;
 	CURLFORMcode code;

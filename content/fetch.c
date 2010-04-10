@@ -211,8 +211,8 @@ void fetch_unref_fetcher(scheme_fetcher *fetcher)
 struct fetch * fetch_start(const char *url, const char *referer,
 			   fetch_callback callback,
 			   void *p, bool only_2xx, const char *post_urlenc,
-			   struct fetch_multipart_data *post_multipart,
-			   bool verifiable, char *headers[])
+			   const struct fetch_multipart_data *post_multipart,
+			   bool verifiable, const char *headers[])
 {
 	char *host;
 	struct fetch *fetch;
@@ -312,7 +312,7 @@ struct fetch * fetch_start(const char *url, const char *referer,
 	/* Got a scheme fetcher, try and set up the fetch */
 	fetch->fetcher_handle =
 		fetch->ops->setup_fetch(fetch, url, only_2xx, post_urlenc,
-					post_multipart, (const char **)headers);
+					post_multipart, headers);
 
 	if (fetch->fetcher_handle == NULL)
 		goto failed;

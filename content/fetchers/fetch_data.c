@@ -77,7 +77,7 @@ static void fetch_data_finalise(const char *scheme)
 
 static void *fetch_data_setup(struct fetch *parent_fetch, const char *url,
 		 bool only_2xx, const char *post_urlenc,
-		 struct fetch_multipart_data *post_multipart,
+		 const struct fetch_multipart_data *post_multipart,
 		 const char **headers)
 {
 	struct fetch_data_context *ctx = calloc(1, sizeof(*ctx));
