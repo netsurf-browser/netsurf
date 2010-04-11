@@ -53,7 +53,6 @@ struct gui_download_window {
 	struct timeval		start_time;
 	int			speed;
 	int			error;
-	struct fetch 		*fetch;
 	struct gui_window 	*window;
 	FILE			*file;
 	download_status 	status;

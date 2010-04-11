@@ -42,9 +42,8 @@ static void nsws_download_update_label(void *p);
 static void nsws_download_update_progress(void *p);
 static void nsws_download_clear_data(struct gui_download_window *w);
 
-struct gui_download_window *gui_download_window_create(const char *url,
-		const char *mime_type, struct fetch *fetch,
-		unsigned int total_size, struct gui_window *gui)
+struct gui_download_window *
+gui_download_window_create(download_context *ctx, struct gui_window *gui)
 {
 	if (downloading) {
 		/* initial implementation */
@@ -58,7 +57,9 @@ struct gui_download_window *gui_download_window_create(const char *url,
 		warn_user(messages_get("NoMemory"), 0);
 		return NULL;
 	}
+	int total_size = download_context_get_total_length(ctx);
 	char *domain, *filename, *destination;
+	const char *url=download_context_get_url(ctx);
 	bool unknown_size = (total_size == 0);
 	const char *size = (unknown_size) ? 
 			messages_get("UnknownSize") :
@@ -95,7 +96,6 @@ struct gui_download_window *gui_download_window_create(const char *url,
 		strcat(destination, filename);
 	LOG(("download %s [%s] from %s to %s", filename, size, domain,
 			destination));
-	w->fetch = fetch;
 	w->title = filename;
 	w->domain = domain;
 	w->size = total_size;
@@ -257,11 +257,11 @@ void nsws_download_clear_data(struct gui_download_window *w)
 }
 
 
-void gui_download_window_data(struct gui_download_window *w, const char *data,
+nserror gui_download_window_data(struct gui_download_window *w, const char *data,
 		unsigned int size)
 {
 	if ((w == NULL) || (w->file == NULL))
-		return;
+		return NSERROR_SAVE_FAILED;
 	size_t res;
 	struct timeval val;
 	res = fwrite((void *)data, 1, size, w->file);
@@ -274,6 +274,7 @@ void gui_download_window_data(struct gui_download_window *w, const char *data,
 	w->time_remaining = (w->progress == 0) ? -1 : 
 			(int)((val.tv_sec - w->start_time.tv_sec) * 
 			(10000 - w->progress) / w->progress);
+	return NSERROR_OK;
 }
 
 void gui_download_window_error(struct gui_download_window *w,
