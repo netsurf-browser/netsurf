@@ -325,7 +325,8 @@ bool nscss_clone(const struct content *old, struct content *new_content)
 	/* Simply replay create/process/convert */
 	if (nscss_create_css_data(&new_content->data.css,
 			content__get_url(new_content),
-			old->data.css.charset, new_content->quirks) != NSERROR_OK)
+			old->data.css.charset, 
+			new_content->quirks) != NSERROR_OK)
 		return false;
 
 	data = content__get_source_data(new_content, &size);
