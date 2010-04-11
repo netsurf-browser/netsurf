@@ -794,8 +794,12 @@ void nsgtk_redraw_caret(struct gui_window *g)
 
 void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
 {
+	int sx, sy;
+
+	gui_window_get_scroll(g, &sx, &sy);
+
 	gtk_widget_queue_draw_area(GTK_WIDGET(g->layout),
-				   x0, y0, x1-x0+1, y1-y0+1);
+				   x0 - sx, y0 - sy, x1-x0+1, y1-y0+1);
 }
 
 void gui_window_redraw_window(struct gui_window *g)
@@ -806,14 +810,17 @@ void gui_window_redraw_window(struct gui_window *g)
 void gui_window_update_box(struct gui_window *g,
 			   const union content_msg_data *data)
 {
+	int sx, sy;
 	hlcache_handle *c = g->bw->current_content;
 
 	if (c == NULL)
 		return;
 
+	gui_window_get_scroll(g, &sx, &sy);
+
 	gtk_widget_queue_draw_area(GTK_WIDGET(g->layout),
-				   data->redraw.x * g->bw->scale,
-				   data->redraw.y * g->bw->scale,
+				   data->redraw.x * g->bw->scale - sx,
+				   data->redraw.y * g->bw->scale - sy,
 				   data->redraw.width * g->bw->scale,
 				   data->redraw.height * g->bw->scale);
 }
