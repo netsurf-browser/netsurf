@@ -744,6 +744,10 @@ void content_destroy(struct content *c)
 
 	if (c->type < HANDLER_MAP_COUNT && handler_map[c->type].destroy)
 		handler_map[c->type].destroy(c);
+
+	llcache_handle_release(c->llcache);
+	c->llcache = NULL;
+
 	talloc_free(c);
 }
 
