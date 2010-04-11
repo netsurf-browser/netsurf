@@ -1039,7 +1039,8 @@ nserror llcache_object_remove_user(llcache_object *object,
 {
 	assert(object->users != NULL);
 	assert(user->handle.object = object);
-	assert((user->next != NULL) || (user->prev != NULL) || (object->users == user));
+	assert((user->next != NULL) || (user->prev != NULL) || 
+			(object->users == user));
 	
 	if (user == object->users)
 		object->users = user->next;
@@ -1298,18 +1299,22 @@ nserror llcache_object_snapshot(llcache_object *object,
 			llcache_object_destroy(newobj);
 			return NSERROR_NOMEM;
 		}
-		memcpy(newobj->source_data, object->source_data, newobj->source_len);
+		memcpy(newobj->source_data, object->source_data, 
+				newobj->source_len);
 	}
 	
 	if (object->num_headers > 0) {
-		newobj->headers = calloc(sizeof(llcache_header), object->num_headers);
+		newobj->headers = calloc(sizeof(llcache_header), 
+				object->num_headers);
 		if (newobj->headers == NULL) {
 			llcache_object_destroy(newobj);
 			return NSERROR_NOMEM;
 		}
 		while (newobj->num_headers < object->num_headers) {
-			llcache_header *nh = &(newobj->headers[newobj->num_headers]);
-			llcache_header *oh = &(object->headers[newobj->num_headers]);
+			llcache_header *nh = 
+					&(newobj->headers[newobj->num_headers]);
+			llcache_header *oh = 
+					&(object->headers[newobj->num_headers]);
 			newobj->num_headers += 1;
 			nh->name = strdup(oh->name);
 			nh->value = strdup(oh->value);
