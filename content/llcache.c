@@ -1548,10 +1548,22 @@ void llcache_fetch_callback(fetch_msg msg, void *p, const void *data,
 		break;
 	case FETCH_FINISHED:
 		/* Finished fetching */
+	{
+		uint8_t *temp;
+
 		object->fetch.state = LLCACHE_FETCH_COMPLETE;
 		object->fetch.fetch = NULL;
 
+		/* Shrink source buffer to required size */
+		temp = realloc(object->source_data, 
+				object->source_len);
+		if (temp != NULL) {
+			object->source_data = temp;
+			object->source_alloc = object->source_len;
+		}
+
 		llcache_object_cache_update(object);
+	}
 		break;
 
 	/* Out-of-band information */
