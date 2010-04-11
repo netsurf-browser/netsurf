@@ -707,8 +707,6 @@ nserror llcache_object_cache_update(llcache_object *object)
 	if (object->cache.date == 0)
 		object->cache.date = time(NULL);
 
-	/** \todo Any magic we need to do for no_cache? */
-
 	return NSERROR_OK;
 }
 
@@ -1556,7 +1554,6 @@ void llcache_fetch_callback(fetch_msg msg, void *p, const void *data,
 
 	/* Deal with any errors reported by event handlers */
 	if (error != NSERROR_OK) {
-		/** \todo Error handling */
 		if (object->fetch.fetch != NULL) {
 			fetch_abort(object->fetch.fetch);
 			object->fetch.fetch = NULL;
@@ -1682,7 +1679,6 @@ nserror llcache_fetch_notmodified(llcache_object *object,
 	memset(&object->cache, 0, sizeof(llcache_cache_control));
 
 	/* Ensure fetch has stopped */
-	/** \todo Are there any other fields that need invalidating? */
 	fetch_abort(object->fetch.fetch);
 	object->fetch.fetch = NULL;
 
