@@ -434,14 +434,21 @@ css_error nscss_import_complete(struct content_css_data *c,
 		struct content *s = hlcache_handle_get_content(import);
 		sheet = s->data.css.sheet;
 	} else {
-		error = css_stylesheet_create(CSS_LEVEL_DEFAULT,
-				NULL, "", NULL, false, false,
-				myrealloc, NULL, 
-				nscss_resolve_url, NULL,
-				&sheet);
-		if (error != CSS_OK) {
-			return error;
+		static css_stylesheet *blank_import;
+
+		/* Create a blank sheet if needed. */
+		if (blank_import == NULL) {
+			error = css_stylesheet_create(CSS_LEVEL_DEFAULT,
+					NULL, "", NULL, false, false,
+					myrealloc, NULL, 
+					nscss_resolve_url, NULL,
+					&blank_import);
+			if (error != CSS_OK) {
+				return error;
+			}
 		}
+
+		sheet = blank_import;
 	}
 
 	error = css_stylesheet_register_import(c->sheet, sheet);
