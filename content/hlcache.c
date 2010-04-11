@@ -427,7 +427,6 @@ nserror hlcache_find_content(hlcache_retrieval_ctx *ctx)
 		hlcache_handle entry_handle = { entry, NULL, NULL };
 		const llcache_handle *entry_llcache;
 
-		/** \todo Need to ensure that content can be reused */
 		if (entry->content == NULL)
 			continue;
 
