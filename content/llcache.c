@@ -80,6 +80,8 @@ typedef struct {
 	struct fetch *fetch;		/**< Fetch handle for this object */
 
 	llcache_fetch_state state;	/**< Current state of object fetch */
+
+	uint32_t redirect_count;	/** Count of redirects followed */
 } llcache_fetch_ctx;
 
 /** Cache control data */
@@ -146,16 +148,18 @@ static nserror llcache_object_user_destroy(llcache_object_user *user);
 
 static nserror llcache_object_retrieve(const char *url, uint32_t flags,
 		const char *referer, const llcache_post_data *post,
-		llcache_object **result);
+		uint32_t redirect_count, llcache_object **result);
 static nserror llcache_object_retrieve_from_cache(const char *url, 
 		uint32_t flags, const char *referer, 
-		const llcache_post_data *post, llcache_object **result);
+		const llcache_post_data *post, uint32_t redirect_count,
+		llcache_object **result);
 static bool llcache_object_is_fresh(const llcache_object *object);
 static nserror llcache_object_cache_update(llcache_object *object);
 static nserror llcache_object_clone_cache_data(const llcache_object *source,
 		llcache_object *destination, bool deep);
 static nserror llcache_object_fetch(llcache_object *object, uint32_t flags,
-		const char *referer, const llcache_post_data *post);
+		const char *referer, const llcache_post_data *post,
+		uint32_t redirect_count);
 static nserror llcache_object_refetch(llcache_object *object);
 
 static nserror llcache_object_new(const char *url, llcache_object **result);
@@ -262,7 +266,7 @@ nserror llcache_handle_retrieve(const char *url, uint32_t flags,
 
 	/* Retrieve a suitable object from the cache,
 	 * creating a new one if needed. */
-	error = llcache_object_retrieve(url, flags, referer, post, &object);
+	error = llcache_object_retrieve(url, flags, referer, post, 0, &object);
 	if (error != NSERROR_OK) {
 		llcache_object_user_destroy(user);
 		return error;
@@ -486,16 +490,17 @@ nserror llcache_object_user_destroy(llcache_object_user *user)
 /**
  * Retrieve an object from the cache, fetching it if necessary.
  *
- * \param url	   URL of object to retrieve
- * \param flags	   Fetch flags
- * \param referer  Referring URL, or NULL if none
- * \param post	   POST data, or NULL for a GET request
- * \param result   Pointer to location to recieve retrieved object
+ * \param url	          URL of object to retrieve
+ * \param flags	          Fetch flags
+ * \param referer         Referring URL, or NULL if none
+ * \param post	          POST data, or NULL for a GET request
+ * \param redirect_count  Number of redirects followed so far
+ * \param result          Pointer to location to recieve retrieved object
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 nserror llcache_object_retrieve(const char *url, uint32_t flags,
 		const char *referer, const llcache_post_data *post,
-		llcache_object **result)
+		uint32_t redirect_count, llcache_object **result)
 {
 	nserror error;
 	llcache_object *obj;
@@ -530,7 +535,8 @@ nserror llcache_object_retrieve(const char *url, uint32_t flags,
 			return error;
 
 		/* Attempt to kick-off fetch */
-		error = llcache_object_fetch(obj, flags, referer, post);
+		error = llcache_object_fetch(obj, flags, referer, post, 
+				redirect_count);
 		if (error != NSERROR_OK) {
 			llcache_object_destroy(obj);
 			return error;
@@ -540,7 +546,7 @@ nserror llcache_object_retrieve(const char *url, uint32_t flags,
 		llcache_object_add_to_list(obj, &llcache_uncached_objects);
 	} else {
 		error = llcache_object_retrieve_from_cache(url, flags, referer,
-				post, &obj);
+				post, redirect_count, &obj);
 		if (error != NSERROR_OK)
 			return error;
 
@@ -561,16 +567,17 @@ nserror llcache_object_retrieve(const char *url, uint32_t flags,
 /**
  * Retrieve a potentially cached object
  *
- * \param url	   URL of object to retrieve
- * \param flags	   Fetch flags
- * \param referer  Referring URL, or NULL if none
- * \param post	   POST data, or NULL for a GET request
- * \param result   Pointer to location to recieve retrieved object
+ * \param url	          URL of object to retrieve
+ * \param flags	          Fetch flags
+ * \param referer         Referring URL, or NULL if none
+ * \param post	          POST data, or NULL for a GET request
+ * \param redirect_count  Number of redirects followed so far
+ * \param result          Pointer to location to recieve retrieved object
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 nserror llcache_object_retrieve_from_cache(const char *url, uint32_t flags,
 		const char *referer, const llcache_post_data *post,
-		llcache_object **result)
+		uint32_t redirect_count, llcache_object **result)
 {
 	nserror error;
 	llcache_object *obj, *newest = NULL;
@@ -621,7 +628,8 @@ nserror llcache_object_retrieve_from_cache(const char *url, uint32_t flags,
 		obj->candidate = newest;
 
 		/* Attempt to kick-off fetch */
-		error = llcache_object_fetch(obj, flags, referer, post);
+		error = llcache_object_fetch(obj, flags, referer, post,
+				redirect_count);
 		if (error != NSERROR_OK) {
 			newest->candidate_count--;
 			llcache_object_destroy(obj);
@@ -642,7 +650,8 @@ nserror llcache_object_retrieve_from_cache(const char *url, uint32_t flags,
 #endif
 
 		/* Attempt to kick-off fetch */
-		error = llcache_object_fetch(obj, flags, referer, post);
+		error = llcache_object_fetch(obj, flags, referer, post,
+				redirect_count);
 		if (error != NSERROR_OK) {
 			llcache_object_destroy(obj);
 			return error;
@@ -765,10 +774,11 @@ nserror llcache_object_clone_cache_data(const llcache_object *source,
 /**
  * Kick-off a fetch for an object
  *
- * \param object   Object to fetch
- * \param flags	   Fetch flags
- * \param referer  Referring URL, or NULL for none
- * \param post	   POST data, or NULL for GET
+ * \param object          Object to fetch
+ * \param flags	          Fetch flags
+ * \param referer         Referring URL, or NULL for none
+ * \param post	          POST data, or NULL for GET
+ * \param redirect_count  Number of redirects followed so far
  * \return NSERROR_OK on success, appropriate error otherwise
  *
  * \pre object::url must contain the URL to fetch
@@ -777,7 +787,8 @@ nserror llcache_object_clone_cache_data(const llcache_object *source,
  * \pre There must not be a fetch in progress for \a object
  */
 nserror llcache_object_fetch(llcache_object *object, uint32_t flags,
-		const char *referer, const llcache_post_data *post)
+		const char *referer, const llcache_post_data *post,
+		uint32_t redirect_count)
 {
 	nserror error;
 	char *referer_clone = NULL;
@@ -804,6 +815,7 @@ nserror llcache_object_fetch(llcache_object *object, uint32_t flags,
 	object->fetch.flags = flags;
 	object->fetch.referer = referer_clone;
 	object->fetch.post = post_clone;
+	object->fetch.redirect_count = redirect_count;
 
 	return llcache_object_refetch(object);
 }
@@ -1591,7 +1603,26 @@ nserror llcache_fetch_redirect(llcache_object *object, const char *target,
 	/* And mark it complete */
 	object->fetch.state = LLCACHE_FETCH_COMPLETE;
 	
-	/** \todo Limit redirect depth, or detect cycles */
+	/* Forcibly stop redirecting if we've followed too many redirects */
+#define REDIRECT_LIMIT 10
+	if (object->fetch.redirect_count > REDIRECT_LIMIT) {
+		llcache_event event;
+
+		LOG(("Too many nested redirects"));
+
+		event.type = LLCACHE_EVENT_ERROR;
+		event.data.msg = messages_get("BadRedirect");
+
+		for (user = object->users; user != NULL; user = user->next) {
+			error = user->handle.cb(&user->handle, &event,
+					user->handle.pw);
+			if (error != NSERROR_OK)
+				break;
+		}
+
+		return NSERROR_OK;
+	}
+#undef REDIRECT_LIMIT
 
 	/* Make target absolute */
 	result = url_join(target, object->url, &absurl);
@@ -1625,7 +1656,8 @@ nserror llcache_fetch_redirect(llcache_object *object, const char *target,
 
 	/* Attempt to fetch target URL */
 	error = llcache_object_retrieve(url, object->fetch.flags,
-			object->fetch.referer, post, &dest);
+			object->fetch.referer, post, 
+			object->fetch.redirect_count + 1, &dest);
 
 	/* No longer require url */
 	free(url);
