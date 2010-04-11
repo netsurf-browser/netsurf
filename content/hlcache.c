@@ -274,6 +274,16 @@ nserror hlcache_handle_abort(hlcache_handle *handle)
 	return content_abort(c);
 }
 
+/* See hlcache.h for documentation */
+nserror hlcache_handle_replace_callback(hlcache_handle *handle,
+		hlcache_handle_callback cb, void *pw)
+{
+	handle->cb = cb;
+	handle->pw = pw;
+
+	return NSERROR_OK;
+}
+
 /******************************************************************************
  * High-level cache internals						      *
  ******************************************************************************/

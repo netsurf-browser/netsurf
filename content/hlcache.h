@@ -118,6 +118,17 @@ nserror hlcache_handle_release(hlcache_handle *handle);
 nserror hlcache_handle_abort(hlcache_handle *handle);
 
 /**
+ * Replace a high-level cache handle's callback
+ *
+ * \param handle  Handle to replace callback of
+ * \param cb      New callback routine
+ * \param pw      Private data for callback
+ * \return NSERROR_OK on success, appropriate error otherwise
+ */
+nserror hlcache_handle_replace_callback(hlcache_handle *handle,
+		hlcache_handle_callback cb, void *pw);
+
+/**
  * Retrieve a content object from a cache handle
  *
  * \param handle  Cache handle to dereference
