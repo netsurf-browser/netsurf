@@ -989,6 +989,17 @@ bool content_matches_quirks(struct content *c, bool quirks)
 }
 
 /**
+ * Determine if a content is shareable
+ *
+ * \param c  Content to consider
+ * \return True if content is shareable, false otherwise
+ */
+bool content_is_shareable(struct content *c)
+{
+	return handler_map[c->type].no_share == false;
+}
+
+/**
  * Send a message to all users.
  */
 

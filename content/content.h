@@ -104,6 +104,7 @@ void content_remove_user(struct content *c,
 
 uint32_t content_count_users(struct content *c);
 bool content_matches_quirks(struct content *c, bool quirks);
+bool content_is_shareable(struct content *c);
 
 const struct llcache_handle *content_get_llcache_handle(struct content *c);
 
