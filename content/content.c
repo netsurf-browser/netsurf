@@ -282,7 +282,7 @@ static const struct handler_entry handler_map[] = {
 		textplain_reformat, textplain_destroy, 0, textplain_redraw, 0,
 		0, 0, textplain_clone, true},
 	{nscss_create, nscss_process_data, nscss_convert, 0, nscss_destroy, 
-		0, 0, 0, 0, 0, nscss_clone, true},
+		0, 0, 0, 0, 0, nscss_clone, false},
 #ifdef WITH_JPEG
 	{0, 0, nsjpeg_convert, 0, nsjpeg_destroy, 0,
 		nsjpeg_redraw, nsjpeg_redraw_tiled, 0, 0, nsjpeg_clone, false},
