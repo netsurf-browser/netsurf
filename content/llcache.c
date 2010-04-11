@@ -1590,6 +1590,7 @@ nserror llcache_fetch_redirect(llcache_object *object, const char *target,
 	llcache_object_user *user, *next;
 	const llcache_post_data *post = object->fetch.post;
 	char *url, *absurl;
+	char *scheme;
 	url_func_result result;
 	/* Extract HTTP response code from the fetch object */
 	long http_code = fetch_http_code(object->fetch.fetch);
@@ -1640,7 +1641,20 @@ nserror llcache_fetch_redirect(llcache_object *object, const char *target,
 		return NSERROR_NOMEM;
 	}
 
-	/** \todo Ensure that redirects to file:/// don't happen? */
+	/* Ensure that redirects to file:/// don't happen */
+	result = url_scheme(url, &scheme);
+	if (result != URL_FUNC_OK) {
+		free(url);
+		return NSERROR_NOMEM;
+	}
+
+	if (strcasecmp(scheme, "file") == 0) {
+		free(scheme);
+		free(url);
+		return NSERROR_OK;
+	}
+
+	free(scheme);
 
 	/* Bail out if we've no way of handling this URL */
 	if (fetch_can_fetch(url) == false) {
