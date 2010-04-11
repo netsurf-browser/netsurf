@@ -24,6 +24,7 @@
 #include <stdbool.h>
 #include "oslib/osfile.h"
 #include "content/content.h"
+#include "content/hlcache.h"
 #include "desktop/browser.h"
 #include "riscos/dialog.h"
 #include "riscos/gui.h"
@@ -37,25 +38,26 @@
 #include "utils/utils.h"
 
 
-static struct content *theme_install_content = NULL;
+static hlcache_handle *theme_install_content = NULL;
 static struct theme_descriptor theme_install_descriptor;
 wimp_w dialog_theme_install;
 
 
 static void theme_install_close(wimp_w w);
-static void theme_install_callback(content_msg msg, struct content *c,
-		intptr_t p1, intptr_t p2, union content_msg_data data);
-static bool theme_install_read(char *source_data, unsigned long source_size);
+static nserror theme_install_callback(hlcache_handle *handle,
+		const hlcache_event *event, void *pw);
+static bool theme_install_read(const char *source_data, 
+		unsigned long source_size);
 
 
 /**
  * Handle a CONTENT_THEME that has started loading.
  */
 
-void theme_install_start(struct content *c)
+void theme_install_start(hlcache_handle *c)
 {
-	assert(c);
-	assert(c->type == CONTENT_THEME);
+	assert(c != NULL);
+	assert(content_get_type(c) == CONTENT_THEME);
 
 	if (ro_gui_dialog_open_top(dialog_theme_install, NULL, 0, 0)) {
 		warn_user("ThemeInstActive", 0);
@@ -63,11 +65,9 @@ void theme_install_start(struct content *c)
 	}
 
 	/* stop theme sitting in memory cache */
-	c->fresh = false;
-	if (!content_add_user(c, theme_install_callback, 0, 0)) {
-		warn_user("NoMemory", 0);
-		return;
-	}
+	content_invalidate_reuse_data(c);
+
+	hlcache_handle_replace_callback(c, theme_install_callback, NULL);
 
 	ro_gui_set_icon_string(dialog_theme_install, ICON_THEME_INSTALL_MESSAGE,
 			messages_get("ThemeInstDown"), true);
@@ -82,19 +82,26 @@ void theme_install_start(struct content *c)
  * Callback for fetchcache() for theme install fetches.
  */
 
-void theme_install_callback(content_msg msg, struct content *c,
-		intptr_t p1, intptr_t p2, union content_msg_data data)
+nserror theme_install_callback(hlcache_handle *handle,
+		const hlcache_event *event, void *pw)
 {
 	char buffer[256];
 	int author_indent = 0;
 
-	switch (msg) {
+	switch (event->type) {
 	case CONTENT_MSG_READY:
 		break;
 
 	case CONTENT_MSG_DONE:
-		theme_install_content = c;
-		if (!theme_install_read(c->source_data, c->source_size)) {
+	{
+		const char *source_data;
+		unsigned long source_size;
+
+		theme_install_content = handle;
+
+		source_data = content_get_source_data(handle, &source_size);
+
+		if (!theme_install_read(source_data, source_size)) {
 			warn_user("ThemeInvalid", 0);
 			theme_install_close(dialog_theme_install);
 			break;
@@ -114,26 +121,23 @@ void theme_install_callback(content_msg msg, struct content *c,
 				buffer, true);
 		ro_gui_set_icon_shaded_state(dialog_theme_install,
 				ICON_THEME_INSTALL_INSTALL, false);
+	}
 		break;
 
 	case CONTENT_MSG_ERROR:
 		theme_install_close(dialog_theme_install);
-		warn_user(data.error, 0);
+		warn_user(event->data.error, 0);
 		break;
 
 	case CONTENT_MSG_STATUS:
 		break;
 
-	case CONTENT_MSG_LOADING:
-	case CONTENT_MSG_REFORMAT:
-	case CONTENT_MSG_REDRAW:
-	case CONTENT_MSG_NEWPTR:
-	case CONTENT_MSG_LAUNCH:
-	case CONTENT_MSG_AUTH:
 	default:
 		assert(0);
 		break;
 	}
+
+	return NSERROR_OK;
 }
 
 
@@ -147,9 +151,9 @@ void theme_install_callback(content_msg msg, struct content *c,
  * If the data is a correct theme, theme_install_descriptor is filled in.
  */
 
-bool theme_install_read(char *source_data, unsigned long source_size)
+bool theme_install_read(const char *source_data, unsigned long source_size)
 {
-	void *data = source_data;
+	const void *data = source_data;
 
 	if (source_size < sizeof(struct theme_file_header))
 		return false;
@@ -176,6 +180,8 @@ bool ro_gui_theme_install_apply(wimp_w w)
 	struct theme_descriptor *theme_install;
 	os_error *error;
 	char *fix;
+	const char *source_data;
+	unsigned long source_size;
 
 	assert(theme_install_content);
 
@@ -195,10 +201,13 @@ bool ro_gui_theme_install_apply(wimp_w w)
 			option_theme_save, theme_file);
 
 	theme_save[sizeof theme_save - 1] = '\0';
+
+	source_data = content_get_source_data(theme_install_content, 
+			&source_size);
+
 	error = xosfile_save_stamped(theme_save, 0xffd,
-			(byte *) theme_install_content->source_data,
-			(byte *) theme_install_content->source_data +
-			theme_install_content->source_size);
+			(byte *) source_data,
+			(byte *) source_data + source_size);
 	if (error) {
 		LOG(("xosfile_save_stamped: 0x%x: %s",
 				error->errnum, error->errmess));
@@ -229,7 +238,7 @@ bool ro_gui_theme_install_apply(wimp_w w)
 void theme_install_close(wimp_w w)
 {
 	if (theme_install_content)
-		content_remove_user(theme_install_content,
-				theme_install_callback, 0, 0);
+		hlcache_handle_release(theme_install_content);
+
 	theme_install_content = NULL;
 }
