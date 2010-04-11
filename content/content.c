@@ -973,6 +973,22 @@ uint32_t content_count_users(struct content *c)
 }
 
 /**
+ * Determine if quirks mode matches
+ *
+ * \param c       Content to consider
+ * \param quirks  Quirks mode to match
+ * \return True if quirks match, false otherwise
+ */
+bool content_matches_quirks(struct content *c, bool quirks)
+{
+	/* If the content isn't CSS, we don't care about quirks */
+	if (c->type != CONTENT_CSS)
+		return true;
+
+	return c->quirks == quirks;
+}
+
+/**
  * Send a message to all users.
  */
 

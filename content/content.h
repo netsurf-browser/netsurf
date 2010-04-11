@@ -103,6 +103,7 @@ void content_remove_user(struct content *c,
 		void *pw);
 
 uint32_t content_count_users(struct content *c);
+bool content_matches_quirks(struct content *c, bool quirks);
 
 const struct llcache_handle *content_get_llcache_handle(struct content *c);
 

@@ -427,7 +427,6 @@ nserror hlcache_find_content(hlcache_retrieval_ctx *ctx)
 		hlcache_handle entry_handle = { entry, NULL, NULL };
 		const llcache_handle *entry_llcache;
 
-		/** \todo Need to ensure that quirks mode matches */
 		/** \todo Need to ensure that content is shareable */
 		/** \todo Need to ensure that content can be reused */
 		if (entry->content == NULL)
@@ -435,6 +434,11 @@ nserror hlcache_find_content(hlcache_retrieval_ctx *ctx)
 
 		/* Ignore contents in the error state */
 		if (content_get_status(&entry_handle) == CONTENT_STATUS_ERROR)
+			continue;
+
+		/* Ensure that quirks mode is acceptable */
+		if (content_matches_quirks(entry->content, 
+				ctx->child.quirks) == false)
 			continue;
 
 		/* Ensure that content uses same low-level object as 
