@@ -29,6 +29,7 @@
 
 #include "content/fetch.h"
 #include "content/llcache.h"
+#include "desktop/options.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/url.h"
@@ -1334,6 +1335,7 @@ nserror llcache_object_snapshot(llcache_object *object,
 nserror llcache_clean(void)
 {
 	llcache_object *object, *next;
+	uint32_t llcache_size = 0;
 
 #ifdef LLCACHE_TRACE
 	LOG(("Attempting cache clean"));
@@ -1359,6 +1361,8 @@ nserror llcache_clean(void)
 			llcache_object_remove_from_list(object, 
 					&llcache_uncached_objects);
 			llcache_object_destroy(object);
+		} else {
+			llcache_size += object->source_len + sizeof(*object);
 		}
 	}
 
@@ -1375,11 +1379,37 @@ nserror llcache_clean(void)
 			llcache_object_remove_from_list(object,
 					&llcache_cached_objects);
 			llcache_object_destroy(object);
+		} else {
+			llcache_size += object->source_len + sizeof(*object);
 		}
 	}
 
-	/* 3) Fresh cacheable objects with no users or pending fetches */
-	/** \todo This one only happens if the cache is too large */
+	if ((uint32_t) option_memory_cache_size < llcache_size) {
+		/* 3) Fresh cacheable objects with 
+		 *    no users or pending fetches */
+		for (object = llcache_cached_objects; object != NULL; 
+				object = next) {
+			next = object->next;
+
+			if (object->users == NULL && 
+					object->candidate_count == 0 &&
+					object->fetch.fetch == NULL) {
+#ifdef LLCACHE_TRACE
+				LOG(("Found victim %p", object));
+#endif
+				llcache_size -= 
+					object->source_len + sizeof(*object);
+
+				llcache_object_remove_from_list(object,
+						&llcache_cached_objects);
+				llcache_object_destroy(object);
+			}
+		}
+	}
+
+#ifdef LLCACHE_TRACE
+	LOG(("Size: %u", llcache_size));
+#endif
 
 	return NSERROR_OK;
 }
