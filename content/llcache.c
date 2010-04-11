@@ -1662,7 +1662,6 @@ nserror llcache_fetch_redirect(llcache_object *object, const char *target,
 		return NSERROR_OK;
 	}
 
-	/** \todo All the magical processing for the various redirect types */
 	if (http_code == 301 || http_code == 302 || http_code == 303) {
 		/* 301, 302, 303 redirects are all unconditional GET requests */
 		post = NULL;
