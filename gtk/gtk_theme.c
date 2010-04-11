@@ -63,10 +63,8 @@ static void nsgtk_theme_cache_searchimage(nsgtk_search_buttons i,
 		const char *filename, const char *path);
 							   
 #ifdef WITH_THEME_INSTALL
-static hlcache_handle *theme_install_content = NULL;
-
-static void theme_install_callback(hlcache_handle *c, content_msg msg,
-		union content_msg_data data, void *pw);
+static nserror theme_install_callback(hlcache_handle *c, 
+		const hlcache_event *event, void *pw);
 static bool theme_install_read(const char *data, unsigned long len);
 #endif
 
@@ -682,10 +680,8 @@ void theme_install_start(hlcache_handle *c)
 
 	/* stop theme sitting in memory cache */
 	content_invalidate_reuse_data(c);
-	if (!content_add_user(c, theme_install_callback, NULL)) {
-		warn_user("NoMemory", 0);
-		return;
-	}
+
+	hlcache_handle_replace_callback(c, theme_install_callback, NULL);
 }
 
 
@@ -693,10 +689,10 @@ void theme_install_start(hlcache_handle *c)
  * Callback for fetchcache() for theme install fetches.
  */
 
-void theme_install_callback(hlcache_handle *c, content_msg msg,
-		union content_msg_data data, void *pw)
+nserror theme_install_callback(hlcache_handle *c,
+		const hlcache_event *event, void *pw)
 {
-	switch (msg) {
+	switch (event->type) {
 	case CONTENT_MSG_READY:
 		break;
 
@@ -705,17 +701,17 @@ void theme_install_callback(hlcache_handle *c, content_msg msg,
 		const char *source_data;
 		unsigned long source_size;
 
-		theme_install_content = c;
-
 		source_data = content_get_source_data(c, &source_size);
 		
 		if (!theme_install_read(source_data, source_size))
 			warn_user("ThemeInvalid", 0);
+
+		hlcache_handle_release(c);
 	}
 		break;
 
 	case CONTENT_MSG_ERROR:
-		warn_user(data.error, 0);
+		warn_user(event->data.error, 0);
 		break;
 
 	case CONTENT_MSG_STATUS:
@@ -728,6 +724,8 @@ void theme_install_callback(hlcache_handle *c, content_msg msg,
 		assert(0);
 		break;
 	}
+
+	return NSERROR_OK;
 }
 
 /**
