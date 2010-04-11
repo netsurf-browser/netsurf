@@ -1666,8 +1666,8 @@ nserror llcache_fetch_redirect(llcache_object *object, const char *target,
 	if (http_code == 301 || http_code == 302 || http_code == 303) {
 		/* 301, 302, 303 redirects are all unconditional GET requests */
 		post = NULL;
-	} else {
-		/** \todo 300, 305, 307 */
+	} else if (http_code != 307 || post != NULL) {
+		/** \todo 300, 305, 307 with POST */
 		free(url);
 		return NSERROR_OK;
 	}
