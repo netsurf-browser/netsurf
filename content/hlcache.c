@@ -109,8 +109,14 @@ nserror hlcache_handle_retrieve(const char *url, uint32_t flags,
 	}
 
 	if (child != NULL) {
-		/** \todo Is the charset guaranteed to exist during fetch? */
-		ctx->child.charset = child->charset;
+		if (child->charset != NULL) {
+			ctx->child.charset = strdup(child->charset);
+			if (ctx->child.charset == NULL) {
+				free(ctx->handle);
+				free(ctx);
+				return NSERROR_NOMEM;
+			}
+		}
 		ctx->child.quirks = child->quirks;
 	}
 
@@ -124,6 +130,7 @@ nserror hlcache_handle_retrieve(const char *url, uint32_t flags,
 			hlcache_llcache_callback, ctx, 
 			&ctx->llcache);
 	if (error != NSERROR_OK) {
+		free((char *) ctx->child.charset);
 		free(ctx->handle);
 		free(ctx);
 		return error;
@@ -147,15 +154,18 @@ nserror hlcache_handle_release(hlcache_handle *handle)
 				   hlcache_retrieval_ctx_ring,
 				   ictx) {
 			if (ictx->handle == handle) {
-				/* This is the nascent context for us, so abort the fetch */
+				/* This is the nascent context for us, 
+				 * so abort the fetch */
 				llcache_handle_abort(ictx->llcache);
 				llcache_handle_release(ictx->llcache);
 				/* Remove us from the ring */
 				RING_REMOVE(hlcache_retrieval_ctx_ring, ictx);
 				/* Throw us away */
+				free((char *) ictx->child.charset);
 				free(ictx);
 				/* And stop */
-				RING_ITERATE_STOP(hlcache_retrieval_ctx_ring, ictx);
+				RING_ITERATE_STOP(hlcache_retrieval_ctx_ring, 
+						ictx);
 			}
 		} RING_ITERATE_END(hlcache_retrieval_ctx_ring, ictx);
 	}
@@ -195,15 +205,18 @@ nserror hlcache_handle_abort(hlcache_handle *handle)
 				   hlcache_retrieval_ctx_ring,
 				   ictx) {
 			if (ictx->handle == handle) {
-				/* This is the nascent context for us, so abort the fetch */
+				/* This is the nascent context for us, 
+				 * so abort the fetch */
 				llcache_handle_abort(ictx->llcache);
 				llcache_handle_release(ictx->llcache);
 				/* Remove us from the ring */
 				RING_REMOVE(hlcache_retrieval_ctx_ring, ictx);
 				/* Throw us away */
+				free((char *) ictx->child.charset);
 				free(ictx);
 				/* And stop */
-				RING_ITERATE_STOP(hlcache_retrieval_ctx_ring, ictx);
+				RING_ITERATE_STOP(hlcache_retrieval_ctx_ring, 
+						ictx);
 			}
 		} RING_ITERATE_END(hlcache_retrieval_ctx_ring, ictx);
 		
@@ -281,6 +294,7 @@ nserror hlcache_llcache_callback(llcache_handle *handle,
 				ctx->accepted_types, &type)) {
 			error = hlcache_find_content(ctx);
 			if (error != NSERROR_OK) {
+				free((char *) ctx->child.charset);
 				free(ctx);
 				return error;
 			}
@@ -315,6 +329,7 @@ nserror hlcache_llcache_callback(llcache_handle *handle,
 		}
 
 		/* No longer require retrieval context */
+		free((char *) ctx->child.charset);
 		free(ctx);
 	}
 		break;
