@@ -667,8 +667,10 @@ void content_convert(struct content *c)
 
 	if (c->status == CONTENT_STATUS_READY)
 		content_set_ready(c);
-	if (c->status == CONTENT_STATUS_DONE)
+	if (c->status == CONTENT_STATUS_DONE) {
+		content_set_ready(c);
 		content_set_done(c);
+	}
 }
 
 /**

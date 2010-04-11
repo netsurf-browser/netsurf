@@ -58,6 +58,7 @@
 #define ALWAYS_DUMP_FRAMESET 0
 #define ALWAYS_DUMP_BOX 0
 
+static void html_finish_conversion(struct content *c);
 static nserror html_convert_css_callback(hlcache_handle *css,
 		const hlcache_event *event, void *pw);
 static bool html_meta_refresh(struct content *c, xmlNode *head);
@@ -65,6 +66,7 @@ static bool html_head(struct content *c, xmlNode *head);
 static bool html_find_stylesheets(struct content *c, xmlNode *html);
 static bool html_process_style_element(struct content *c, unsigned int *index,
 		xmlNode *style);
+static void html_inline_style_done(struct content_css_data *css, void *pw);
 static bool html_replace_object(struct content *c, unsigned int i, 
 		const char *url);
 static nserror html_object_callback(hlcache_handle *object,
@@ -419,13 +421,6 @@ bool html_convert(struct content *c)
 			return false;
 	}
 
-	/* get stylesheets */
-	if (!html_find_stylesheets(c, html))
-		return false;
-
-	/* get icon */
-	favicon_get_icon(c, html);
-	
 	/* Retrieve forms from parser */
 	c->data.html.forms = binding_get_forms(c->data.html.parser_binding);
 	for (f = c->data.html.forms; f != NULL; f = f->prev) {
@@ -455,6 +450,84 @@ bool html_convert(struct content *c)
 		}
 	}
 
+	/* get stylesheets */
+	if (!html_find_stylesheets(c, html))
+		return false;
+
+	return true;
+}
+
+/**
+ * Complete conversion of an HTML document
+ * 
+ * \param c  Content to convert
+ */
+void html_finish_conversion(struct content *c)
+{
+	union content_msg_data msg_data;
+	xmlNode *html;
+	uint32_t i;
+	css_error error;
+
+	html = xmlDocGetRootElement(c->data.html.document);
+	assert(html != NULL);
+
+	/* check that the base stylesheet loaded; layout fails without it */
+	if (c->data.html.stylesheets[STYLESHEET_BASE].data.external == NULL) {
+		msg_data.error = "Base stylesheet failed to load";
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		c->status = CONTENT_STATUS_ERROR;
+		return;
+	}
+
+	/* Create selection context */
+	error = css_select_ctx_create(myrealloc, c, &c->data.html.select_ctx);
+	if (error != CSS_OK) {
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		c->status = CONTENT_MSG_ERROR;
+		return;
+	}
+
+	/* Add sheets to it */
+	for (i = STYLESHEET_BASE; i != c->data.html.stylesheet_count; i++) {
+		const struct html_stylesheet *hsheet = 
+				&c->data.html.stylesheets[i];
+		css_stylesheet *sheet;
+		css_origin origin = CSS_ORIGIN_AUTHOR;
+
+		if (i < STYLESHEET_START)
+			origin = CSS_ORIGIN_UA;
+
+		if (hsheet->type == HTML_STYLESHEET_EXTERNAL &&
+				hsheet->data.external != NULL) {
+			struct content *s = hlcache_handle_get_content(
+					hsheet->data.external);
+
+			sheet = s-> data.css.sheet;
+		} else if (hsheet->type == HTML_STYLESHEET_INTERNAL) {
+			sheet = hsheet->data.internal->sheet;
+		} else {
+			sheet = NULL;
+		}
+
+		if (sheet != NULL) {
+			error = css_select_ctx_append_sheet(
+					c->data.html.select_ctx, sheet,
+					origin, CSS_MEDIA_SCREEN);
+			if (error != CSS_OK) {
+				msg_data.error = messages_get("NoMemory");
+				content_broadcast(c, CONTENT_MSG_ERROR, 
+						msg_data);
+				c->status = CONTENT_STATUS_ERROR;
+				return;
+			}
+		}
+	}
+
+	/* get icon */
+	favicon_get_icon(c, html);	
+
 	/* convert xml tree to box tree */
 	LOG(("XML to box"));
 	content_set_status(c, messages_get("Processing"));
@@ -462,7 +535,8 @@ bool html_convert(struct content *c)
 	if (!xml_to_box(html, c)) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-		return false;
+		c->status = CONTENT_STATUS_ERROR;
+		return;
 	}
 #if ALWAYS_DUMP_BOX
 	box_dump(stderr, c->data.html.layout->children, 0);
@@ -477,7 +551,8 @@ bool html_convert(struct content *c)
 		LOG(("imagemap extraction failed"));
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-		return false;
+		c->status = CONTENT_STATUS_ERROR;
+		return;
 	}
 	/*imagemap_dump(c);*/
 
@@ -485,13 +560,12 @@ bool html_convert(struct content *c)
 	binding_destroy_tree(c->data.html.parser_binding);
 	c->data.html.parser_binding = NULL;
 
-	if (c->active == 0)
-		c->status = CONTENT_STATUS_DONE;
-	else
-		c->status = CONTENT_STATUS_READY;
-	html_set_status(c, "");
+	content_set_ready(c);
 
-	return true;
+	if (c->active == 0)
+		content_set_done(c);
+
+	html_set_status(c, "");
 }
 
 
@@ -787,12 +861,10 @@ bool html_find_stylesheets(struct content *c, xmlNode *html)
 	xmlNode *node;
 	char *rel, *type, *media, *href, *url, *url2;
 	unsigned int i = STYLESHEET_START;
-	unsigned int last_active = 0;
 	union content_msg_data msg_data;
 	url_func_result res;
 	struct html_stylesheet *stylesheets;
 	hlcache_child_context child;
-	css_error error;
 	nserror ns_error;
 
 	child.charset = c->data.html.encoding;
@@ -972,60 +1044,6 @@ bool html_find_stylesheets(struct content *c, xmlNode *html)
 
 	assert(c->data.html.stylesheet_count == i);
 
-	/* complete the fetches */
-	while (c->active != 0) {
-		if (c->active != last_active) {
-			html_set_status(c, "");
-			content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
-			last_active = c->active;
-		}
-		llcache_poll();
-		gui_multitask();
-	}
-
-	/* check that the base stylesheet loaded; layout fails without it */
-	if (c->data.html.stylesheets[STYLESHEET_BASE].data.external == NULL) {
-		msg_data.error = "Base stylesheet failed to load";
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-		return false;
-	}
-
-	/* Create selection context */
-	error = css_select_ctx_create(myrealloc, c, &c->data.html.select_ctx);
-	if (error != CSS_OK)
-		goto no_memory;
-
-	/* Add sheets to it */
-	for (i = STYLESHEET_BASE; i != c->data.html.stylesheet_count; i++) {
-		const struct html_stylesheet *hsheet = 
-				&c->data.html.stylesheets[i];
-		css_stylesheet *sheet;
-		css_origin origin = CSS_ORIGIN_AUTHOR;
-
-		if (i < STYLESHEET_START)
-			origin = CSS_ORIGIN_UA;
-
-		if (hsheet->type == HTML_STYLESHEET_EXTERNAL &&
-				hsheet->data.external != NULL) {
-			struct content *s = hlcache_handle_get_content(
-					hsheet->data.external);
-
-			sheet = s-> data.css.sheet;
-		} else if (hsheet->type == HTML_STYLESHEET_INTERNAL) {
-			sheet = hsheet->data.internal->sheet;
-		} else {
-			sheet = NULL;
-		}
-
-		if (sheet != NULL) {
-			error = css_select_ctx_append_sheet(
-					c->data.html.select_ctx, sheet,
-					origin, CSS_MEDIA_SCREEN);
-			if (error != CSS_OK)
-				goto no_memory;
-		}
-	}
-
 	return true;
 
 no_memory:
@@ -1118,9 +1136,13 @@ bool html_process_style_element(struct content *c, unsigned int *index,
 		xmlFree(data);
 	}
 
+	c->active++;
+
 	/* Convert the content -- manually, as we want the result */
-	if (nscss_convert_css_data(sheet) != CSS_OK) {
+	if (nscss_convert_css_data(sheet, 
+			html_inline_style_done, c) != CSS_OK) {
 		/* conversion failed */
+		c->active--;
 		nscss_destroy_css_data(sheet);
 		talloc_free(sheet);
 		sheet = NULL;
@@ -1138,6 +1160,19 @@ no_memory:
 	return false;
 }
 
+/**
+ * Handle notification of inline style completion
+ *
+ * \param css  Inline style object
+ * \param pw   Private data
+ */
+void html_inline_style_done(struct content_css_data *css, void *pw)
+{
+	struct content *html = pw;
+
+	if (--html->active == 0)
+		html_finish_conversion(html);
+}
 
 /**
  * Callback for fetchcache() for linked stylesheets.
@@ -1164,19 +1199,7 @@ nserror html_convert_css_callback(hlcache_handle *css,
 	case CONTENT_MSG_LOADING:
 		/* check that the stylesheet is really CSS */
 		if (content_get_type(css) != CONTENT_CSS) {
-			hlcache_handle_release(css);
-			s->data.external = NULL;
-
-			parent->active--;
-
-			LOG(("%s is not CSS", content_get_url(css)));
-
-			content_add_error(parent, "NotCSS", 0);
-
-			html_set_status(parent, messages_get("NotCSS"));
-
-			content_broadcast(parent, CONTENT_MSG_STATUS, 
-					event->data);
+			assert(0 && "Non-CSS type unexpected");
 		}
 		break;
 
@@ -1205,6 +1228,9 @@ nserror html_convert_css_callback(hlcache_handle *css,
 	default:
 		assert(0);
 	}
+
+	if (parent->active == 0)
+		html_finish_conversion(parent);
 
 	return NSERROR_OK;
 }
