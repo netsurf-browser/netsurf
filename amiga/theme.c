@@ -389,6 +389,7 @@ void gui_window_start_throbber(struct gui_window *g)
 	ULONG cur_tab = 0;
 
 	if(!g) return;
+	if(option_kiosk_mode) return;
 
 	if(g->tab_node && (g->shared->tabs > 1))
 	{
@@ -418,6 +419,7 @@ void gui_window_stop_throbber(struct gui_window *g)
 	ULONG cur_tab = 0;
 
 	if(!g) return;
+	if(option_kiosk_mode) return;
 
 	if(g->tab_node && (g->shared->tabs > 1))
 	{
