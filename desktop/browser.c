@@ -464,8 +464,6 @@ nserror browser_window_callback(hlcache_handle *c,
 		if (content_get_type(c) == CONTENT_THEME) {
 			theme_install_start(c);
 			bw->loading_content = NULL;
-//newcache do we not just pass ownership to the theme installation stuff?
-			hlcache_handle_release(c);
 			browser_window_stop_throbber(bw);
 		} else
 #endif
