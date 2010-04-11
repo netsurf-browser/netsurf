@@ -147,4 +147,20 @@ bool draw_redraw(struct content *c, int x, int y,
 	return true;
 }
 
+/**
+ * Clone a CONTENT_DRAW
+ */
+
+bool draw_clone(const struct content *old, struct content *new_content)
+{
+	/* Simply rerun convert */
+	if (old->status == CONTENT_STATUS_READY ||
+			old->status == CONTENT_STATUS_DONE) {
+		if (draw_convert(new_content) == false)
+			return false;
+	}
+
+	return true;
+}
+
 #endif
