@@ -33,7 +33,7 @@
 #include "utils/config.h"
 #include "utils/utsname.h"
 #include "content/fetch.h"
-#include "content/llcache.h"
+#include "content/hlcache.h"
 #include "content/urldb.h"
 #include "desktop/netsurf.h"
 #include "desktop/browser.h"
@@ -136,7 +136,7 @@ int netsurf_main_loop(void)
 {
 	while (!netsurf_quit) {
 		gui_poll(fetch_active);
-		llcache_poll();
+		hlcache_poll();
 	}
 
 	return 0;

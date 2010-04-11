@@ -73,6 +73,7 @@ static hlcache_entry *hlcache_content_list;
 /** Ring of retrieval contexts */
 static hlcache_retrieval_ctx *hlcache_retrieval_ctx_ring;
 
+static void hlcache_clean(void);
 static nserror hlcache_llcache_callback(llcache_handle *handle,
 		const llcache_event *event, void *pw);
 static bool hlcache_type_is_acceptable(llcache_handle *llcache, 
@@ -85,6 +86,17 @@ static void hlcache_content_callback(struct content *c,
 /******************************************************************************
  * Public API								      *
  ******************************************************************************/
+
+/* See hlcache.h for documentation */
+nserror hlcache_poll(void)
+{
+	llcache_poll();
+
+	/* Give the cache a clean */
+	hlcache_clean();
+
+	return NSERROR_OK;
+}
 
 /* See hlcache.h for documentation */
 nserror hlcache_handle_retrieve(const char *url, uint32_t flags,
@@ -265,6 +277,46 @@ nserror hlcache_handle_abort(hlcache_handle *handle)
 /******************************************************************************
  * High-level cache internals						      *
  ******************************************************************************/
+
+/**
+ * Attempt to clean the cache
+ */
+void hlcache_clean(void)
+{
+	hlcache_entry *entry, *next;
+
+	for (entry = hlcache_content_list; entry != NULL; entry = next) {
+		next = entry->next;
+
+		if (entry->content == NULL)
+			continue;
+
+		if (content_count_users(entry->content) != 0)
+			continue;
+
+		/** \todo This is over-zealous: all unused contents will be 
+		 * immediately destroyed. Ideally, we want to purge all 
+		 * unused contents that are using stale source data, and 
+		 * enough fresh contents such that the cache fits in the 
+		 * configured cache size limit.
+		 */
+
+		/* Remove entry from cache */
+		if (entry->prev == NULL)
+			hlcache_content_list = entry->next;
+		else
+			entry->prev->next = entry->next;
+
+		if (entry->next != NULL)
+			entry->next->prev = entry->prev;
+
+		/* Destroy content */
+		content_destroy(entry->content);
+
+		/* Destroy entry */
+		free(entry);
+	}
+}
 
 /**
  * Handler for low-level cache events
