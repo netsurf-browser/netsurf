@@ -592,7 +592,7 @@ void gui_window_update_box(struct gui_window *g,
 	y0 = -ceilf((data->redraw.y + data->redraw.height) * 2 * g->bw->scale);
 	x1 = ceilf((data->redraw.x + data->redraw.width) * 2 * g->bw->scale) + 1;
 	y1 = -floorf(data->redraw.y * 2 * g->bw->scale) + 1;
-	use_buffer = (data->redraw.full_redraw) &&
+	use_buffer = 
 		(g->option.buffer_everything || g->option.buffer_animations);
 
 	/* try to optimise buffered redraws */
@@ -1611,47 +1611,31 @@ void ro_gui_window_update_boxes(void) {
 
 			if (use_buffer)
 				ro_gui_buffer_open(&update);
-			if (data->redraw.full_redraw) {
-				if (clear_background) {
-					error = xcolourtrans_set_gcol(
-							os_COLOUR_WHITE,
-							colourtrans_SET_BG_GCOL,
-							os_ACTION_OVERWRITE, 0,
-							0);
-					if (error) {
-						LOG(("xcolourtrans_set_gcol: "
-								"0x%x: %s",
-								error->errnum,
-								error->errmess));
-						warn_user("MiscError",
-								error->errmess);
-					}
-					os_clg();
-				}
 
-				content_redraw(h, 0, 0,
-						content_get_width(h),
-						content_get_height(h),
-						clip_x0, clip_y0,
-						clip_x1, clip_y1,
-						g->bw->scale,
-						0xFFFFFF);
-			} else {
-				assert(data->redraw.object);
-				content_redraw(data->redraw.object,
-						floorf(data->redraw.object_x *
-							g->bw->scale),
-						ceilf(data->redraw.object_y *
-							g->bw->scale),
-						data->redraw.object_width *
-							g->bw->scale,
-						data->redraw.object_height *
-							g->bw->scale,
-						clip_x0, clip_y0,
-						clip_x1, clip_y1,
-						g->bw->scale,
-						0xFFFFFF);
+			if (clear_background) {
+				error = xcolourtrans_set_gcol(
+						os_COLOUR_WHITE,
+						colourtrans_SET_BG_GCOL,
+						os_ACTION_OVERWRITE, 0,
+						0);
+				if (error) {
+					LOG(("xcolourtrans_set_gcol: "
+							"0x%x: %s",
+							error->errnum,
+							error->errmess));
+					warn_user("MiscError",
+							error->errmess);
+				}
+				os_clg();
 			}
+
+			content_redraw(h, 0, 0,
+					content_get_width(h),
+					content_get_height(h),
+					clip_x0, clip_y0,
+					clip_x1, clip_y1,
+					g->bw->scale,
+					0xFFFFFF);
 
 			if (use_buffer)
 				ro_gui_buffer_close();
