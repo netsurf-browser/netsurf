@@ -1763,78 +1763,81 @@ void html_destroy(struct content *c)
 {
 	unsigned int i;
 	struct form *f, *g;
+	struct content_html_data *html;
 
 	LOG(("content %p", c));
 
+	html = &c->data.html;
+
 	/* Destroy forms */
-	for (f = c->data.html.forms; f != NULL; f = g) {
+	for (f = html->forms; f != NULL; f = g) {
 		g = f->prev;
 
 		form_free(f);
 	}
 
-	if (c->data.html.favicon != NULL) {
-		hlcache_handle_release(c->data.html.favicon);
-		c->data.html.favicon = NULL;
+	if (html->favicon != NULL) {
+		hlcache_handle_release(html->favicon);
+		html->favicon = NULL;
 	}
 
 	imagemap_destroy(c);
 
-	if (c->data.html.parser_binding)
-		binding_destroy_tree(c->data.html.parser_binding);
+	if (html->parser_binding != NULL)
+		binding_destroy_tree(html->parser_binding);
 
-	if (c->data.html.document)
-		xmlFreeDoc(c->data.html.document);
+	if (html->document != NULL)
+		xmlFreeDoc(html->document);
 
 	/* Free base target */
-	if (c->data.html.base_target) {
-	 	talloc_free(c->data.html.base_target);
-	 	c->data.html.base_target = NULL;
+	if (html->base_target != NULL) {
+	 	talloc_free(html->base_target);
+	 	html->base_target = NULL;
 	}
 
 	/* Free frameset */
-	if (c->data.html.frameset) {
-		html_destroy_frameset(c->data.html.frameset);
-		talloc_free(c->data.html.frameset);
-		c->data.html.frameset = NULL;
+	if (html->frameset != NULL) {
+		html_destroy_frameset(html->frameset);
+		talloc_free(html->frameset);
+		html->frameset = NULL;
 	}
 
 	/* Free iframes */
-	if (c->data.html.iframe) {
-		html_destroy_iframe(c->data.html.iframe);
-		c->data.html.iframe = NULL;
+	if (html->iframe != NULL) {
+		html_destroy_iframe(html->iframe);
+		html->iframe = NULL;
 	}
 
 	/* Destroy selection context */
-	if (c->data.html.select_ctx) {
-		css_select_ctx_destroy(c->data.html.select_ctx);
-		c->data.html.select_ctx = NULL;
+	if (html->select_ctx != NULL) {
+		css_select_ctx_destroy(html->select_ctx);
+		html->select_ctx = NULL;
 	}
 
 	/* Free stylesheets */
-	if (c->data.html.stylesheet_count) {
-		for (i = 0; i != c->data.html.stylesheet_count; i++) {
-			if (c->data.html.stylesheets[i].type ==
-					HTML_STYLESHEET_EXTERNAL) {
-				hlcache_handle_release(c->data.html.
-						stylesheets[i].data.external);
-			} else {
-				nscss_destroy_css_data(c->data.html.
-						stylesheets[i].data.internal);
-			}
+	for (i = 0; i != html->stylesheet_count; i++) {
+		if (html->stylesheets[i].type == HTML_STYLESHEET_EXTERNAL &&
+				html->stylesheets[i].data.external != NULL) {
+			hlcache_handle_release(
+					html->stylesheets[i].data.external);
+		} else if (html->stylesheets[i].type == 
+				HTML_STYLESHEET_INTERNAL &&
+				html->stylesheets[i].data.internal != NULL) {
+			nscss_destroy_css_data(
+					html->stylesheets[i].data.internal);
 		}
 	}
 
 	/* Free objects */
-	for (i = 0; i != c->data.html.object_count; i++) {
-		LOG(("object %i %p", i, c->data.html.object[i].content));
-		if (c->data.html.object[i].content) {
-			if (content_get_type(c->data.html.object[i].content) ==
+	for (i = 0; i != html->object_count; i++) {
+		LOG(("object %i %p", i, html->object[i].content));
+		if (html->object[i].content != NULL) {
+			if (content_get_type(html->object[i].content) ==
 					CONTENT_HTML)
 				schedule_remove(html_object_refresh,
-					c->data.html.object[i].content);
+						html->object[i].content);
 
-			hlcache_handle_release(c->data.html.object[i].content);
+			hlcache_handle_release(html->object[i].content);
 		}
 	}
 }
