@@ -1642,7 +1642,11 @@ nserror llcache_fetch_redirect(llcache_object *object, const char *target,
 
 	/** \todo Ensure that redirects to file:/// don't happen? */
 
-	/** \todo What happens if we've no way of handling this URL? */
+	/* Bail out if we've no way of handling this URL */
+	if (fetch_can_fetch(url) == false) {
+		free(url);
+		return NSERROR_OK;
+	}
 
 	/** \todo All the magical processing for the various redirect types */
 	if (http_code == 301 || http_code == 302 || http_code == 303) {
