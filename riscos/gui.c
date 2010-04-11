@@ -747,9 +747,13 @@ static void gui_init2(int argc, char** argv)
 /** Normal entry point from OS */
 int main(int argc, char** argv)
 {
+	char path[40];
+	int length;
+
 	setbuf(stderr, NULL);
 
-#if RISCOS_MESSAGES_CHOICE
+	netsurf_init(&argc, &argv, "NetSurf:Choices", NULL);
+
 	/* Choose the interface language to use */
 	ro_gui_choose_language();
 
@@ -760,9 +764,6 @@ int main(int argc, char** argv)
 		die("Failed to locate Messages resource.");
 	messages_load(path);
 	messages_load("NetSurf:Resources.LangNames");
-#endif
-
-	netsurf_init(&argc, &argv, "NetSurf:Choices", messages);
 
 	gui_init(argc, argv);
 
