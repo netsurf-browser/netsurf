@@ -437,6 +437,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 
 	bw->loading_content = c;
 	browser_window_start_throbber(bw);
+	browser_window_refresh_url_bar(bw, url, NULL);
 }
 
 
@@ -455,6 +456,11 @@ nserror browser_window_callback(hlcache_handle *c,
 
 		browser_window_convert_to_download(bw, event->data.download);
 
+		if (bw->current_content != NULL) {
+			browser_window_refresh_url_bar(bw,
+				content_get_url(bw->current_content),
+				bw->frag_id);
+		}
 		break;
 
 	case CONTENT_MSG_LOADING:
@@ -845,6 +851,11 @@ void browser_window_stop(struct browser_window *bw)
 		children = bw->iframe_count;
 		for (index = 0; index < children; index++)
 			browser_window_stop(&bw->iframes[index]);
+	}
+
+	if (bw->current_content != NULL) {
+		browser_window_refresh_url_bar(bw, 
+				content_get_url(bw->current_content), bw->frag_id);
 	}
 
 	browser_window_stop_throbber(bw);
