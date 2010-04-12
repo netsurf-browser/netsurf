@@ -344,9 +344,16 @@ void gui_window_position_frame(struct gui_window *g, int x0, int y0, int x1, int
 	/* g is a child frame, we need to place it relative to its parent */
 	GtkWidget *w = GTK_WIDGET(g->scrolledwindow);
 	GtkLayout *f = g->bw->parent->window->layout;
+	int width = x1 - x0 + 2, height = y1 - y0 + 2;
 	assert(w);
 	assert(f);
-	LOG(("%s: %d,%d	 %dx%d", g->bw->name, x0, y0, x1-x0+2, y1-y0+2));
+	
+	if (width < 1)
+		width = 1;
+	if (height < 1)
+		height = 1;
+	
+	LOG(("%s: %d,%d	 %dx%d", g->bw->name, x0, y0, width, height));
 
 	/* if the window has not changed position or size, do not bother
 	 * moving/resising it.
@@ -357,11 +364,11 @@ void gui_window_position_frame(struct gui_window *g, int x0, int y0, int x1, int
 		w->allocation.width, w->allocation.height));
 
 	if (w->allocation.x != x0 || w->allocation.y != y0 ||
-		w->allocation.width != x1 - x0 + 2 ||
-		w->allocation.height != y1 - y0 + 2) {
+		w->allocation.width != width ||
+		w->allocation.height != height) {
 		LOG(("	frame has moved/resized."));
 		gtk_layout_move(f, w, x0, y0);
-		gtk_widget_set_size_request(w, x1 - x0 + 2, y1 - y0 + 2);
+		gtk_widget_set_size_request(w, width, height);
 	}
 }
 
