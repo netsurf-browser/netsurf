@@ -107,6 +107,7 @@ nserror hlcache_handle_retrieve(const char *url, uint32_t flags,
 {
 	hlcache_retrieval_ctx *ctx;
 	nserror error;
+	char *hash;
 
 	assert(cb != NULL);
 
@@ -137,6 +138,10 @@ nserror hlcache_handle_retrieve(const char *url, uint32_t flags,
 
 	ctx->handle->cb = cb;
 	ctx->handle->pw = pw;
+
+	/* strip fragment identifier */
+	if ((hash = strchr(url, '#')) != NULL)
+		*hash = 0;
 
 	error = llcache_handle_retrieve(url, flags, referer, post, 
 			hlcache_llcache_callback, ctx, 
