@@ -171,6 +171,10 @@ bool favicon_get_icon(struct content *c, xmlNode *html)
 			content__get_url(c), NULL, favicon_callback, c, NULL, 
 			permitted_types, &c->data.html.favicon);	
 
+	if (error == NSERROR_OK) {
+		c->active += 1;
+	}
+	
 	free(url);
 
 	return error == NSERROR_OK;
@@ -196,6 +200,7 @@ nserror favicon_callback(hlcache_handle *icon,
 			hlcache_handle_abort(icon);
 			hlcache_handle_release(icon);
 			c->data.html.favicon = NULL;
+			c->active -= 1;
 
 			content_add_error(c, "NotFavIco", 0);
 
@@ -205,8 +210,9 @@ nserror favicon_callback(hlcache_handle *icon,
 		break;
 
 	case CONTENT_MSG_READY:
-		/* Fall through */
+		break;
 	case CONTENT_MSG_DONE:
+		c->active -= 1;
 		break;
 
 	case CONTENT_MSG_ERROR:
@@ -216,6 +222,8 @@ nserror favicon_callback(hlcache_handle *icon,
 		c->data.html.favicon = NULL;
 
 		content_add_error(c, "?", 0);
+		
+		c->active -= 1;
 		break;
 
 	case CONTENT_MSG_STATUS:
@@ -233,5 +241,12 @@ nserror favicon_callback(hlcache_handle *icon,
 		assert(0);
 	}
 
+	if (c->active == 0) {
+		/* all objects have arrived */
+		content__reformat(c, c->available_width, c->height);
+		html_set_status(c, "");
+		content_set_done(c);
+	}
+	
 	return NSERROR_OK;
 }
