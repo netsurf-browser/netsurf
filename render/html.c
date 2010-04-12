@@ -1683,7 +1683,7 @@ void html_object_refresh(void *p)
 	if (!c->refresh)
 		return;
 
-	c->fresh = false;
+	content__invalidate_reuse_data(c);
 
 	if (!html_replace_object(c->data.html.page, c->data.html.index,
 			c->refresh)) {
