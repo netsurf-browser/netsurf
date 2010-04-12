@@ -97,7 +97,6 @@ bool draw_convert(struct content *c)
 
 void draw_destroy(struct content *c)
 {
-	free(c->title);
 }
 
 

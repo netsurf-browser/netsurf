@@ -215,7 +215,6 @@ bool artworks_convert(struct content *c)
 
 void artworks_destroy(struct content *c)
 {
-	free(c->title);
 	free(c->data.artworks.block);
 }
 

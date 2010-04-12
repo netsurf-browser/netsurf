@@ -104,7 +104,6 @@ void sprite_destroy(struct content *c)
 {
 	/* do not free c->data.sprite.data at it is simply a pointer to
 	 * 4 bytes beforec->source_data. */
-	free(c->title);
 }
 
 
