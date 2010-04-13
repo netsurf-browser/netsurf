@@ -862,7 +862,7 @@ MULTIHANDLER(selectall)
 {
         struct browser_window *bw = gui_window_get_browser_window(g->top_level);
 
-	if (gtk_widget_has_focus(g->url_bar)) {
+	if (GTK_WIDGET_HAS_FOCUS(g->url_bar)) {
 		LOG(("Selecting all URL bar text"));
 		gtk_editable_select_region(GTK_EDITABLE(g->url_bar), 0, -1);
 	} else {

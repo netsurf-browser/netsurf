@@ -438,7 +438,7 @@ void nsgtk_download_do(nsgtk_download_selection_action action)
 gboolean nsgtk_download_update(gboolean force_update)
 {
 	/* Be sure we need to update */
-	if (!gtk_widget_get_visible(GTK_WIDGET(nsgtk_download_window)))
+	if (!GTK_WIDGET_VISIBLE(nsgtk_download_window))
 		return TRUE;
 	
 	GList *list;
