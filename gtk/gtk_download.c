@@ -33,6 +33,7 @@
 #include "gtk/options.h"
 #include "gtk/gtk_download.h"
 #include "gtk/gtk_window.h"
+#include "gtk/gtk_compat.h"
 
 #define UPDATE_RATE 500 /* In milliseconds */
 #define GLADE_NAME "downloads.glade"
@@ -438,7 +439,7 @@ void nsgtk_download_do(nsgtk_download_selection_action action)
 gboolean nsgtk_download_update(gboolean force_update)
 {
 	/* Be sure we need to update */
-	if (!GTK_WIDGET_VISIBLE(nsgtk_download_window))
+	if (!nsgtk_widget_get_visible(GTK_WIDGET(nsgtk_download_window)))
 		return TRUE;
 	
 	GList *list;

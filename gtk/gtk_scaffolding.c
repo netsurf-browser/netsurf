@@ -69,6 +69,7 @@
 #include "gtk/gtk_window.h"
 #include "gtk/options.h"
 #include "gtk/sexy_icon_entry.h"
+#include "gtk/gtk_compat.h"
 #include "image/ico.h"
 #include "render/box.h"
 #include "render/font.h"
@@ -862,7 +863,7 @@ MULTIHANDLER(selectall)
 {
         struct browser_window *bw = gui_window_get_browser_window(g->top_level);
 
-	if (GTK_WIDGET_HAS_FOCUS(g->url_bar)) {
+	if (nsgtk_widget_has_focus(GTK_WIDGET(g->url_bar))) {
 		LOG(("Selecting all URL bar text"));
 		gtk_editable_select_region(GTK_EDITABLE(g->url_bar), 0, -1);
 	} else {

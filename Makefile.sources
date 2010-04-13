@@ -61,7 +61,7 @@ S_GTK := font_pango.c gtk_bitmap.c gtk_gui.c gtk_schedule.c		\
 	gtk_completion.c gtk_login.c gtk_throbber.c gtk_selection.c	\
 	gtk_history.c gtk_window.c gtk_filetype.c gtk_download.c	\
 	gtk_menu.c gtk_print.c gtk_save.c gtk_search.c gtk_tabs.c	\
-	gtk_theme.c gtk_toolbar.c sexy_icon_entry.c \
+	gtk_theme.c gtk_toolbar.c sexy_icon_entry.c gtk_compat.c        \
 	$(addprefix dialogs/,gtk_options.c gtk_about.c gtk_source.c)
 S_GTK := $(addprefix gtk/,$(S_GTK)) $(addprefix utils/,container.c)
 # code in utils/container.ch is non-universal it seems
