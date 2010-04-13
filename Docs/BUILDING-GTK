@@ -146,9 +146,9 @@
   General requirements
 ----------------------
 
-  NetSurf requires at minimum GTK 2.12. Earlier versions will not work. It also
+  NetSurf requires at minimum GTK 2.18. Earlier versions will not work. It also
   depends on Cairo for rendering, but you should have this already with
-  versions of GTK 2.12 or later.
+  versions of GTK 2.18 or later.
 
   This will pull in loads of things, like all the GTK dev libraries, the PNG
   and JPEG libraries, colour management libraries, zlib, OpenSSL etc that
