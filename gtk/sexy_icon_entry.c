@@ -209,7 +209,7 @@ sexy_icon_entry_destroy(GtkObject *obj)
 static void
 sexy_icon_entry_map(GtkWidget *widget)
 {
-	if (GTK_WIDGET_REALIZED(widget) && !GTK_WIDGET_MAPPED(widget))
+	if (gtk_widget_get_realized(widget) && !gtk_widget_get_mapped(widget))
 	{
 		SexyIconEntry *entry = SEXY_ICON_ENTRY(widget);
 		int i;
@@ -227,7 +227,7 @@ sexy_icon_entry_map(GtkWidget *widget)
 static void
 sexy_icon_entry_unmap(GtkWidget *widget)
 {
-	if (GTK_WIDGET_MAPPED(widget))
+	if (gtk_widget_get_mapped(widget))
 	{
 		SexyIconEntry *entry = SEXY_ICON_ENTRY(widget);
 		int i;
@@ -374,7 +374,7 @@ sexy_icon_entry_realize(GtkWidget *widget)
 		gdk_window_set_user_data(icon_info->window, widget);
 
 		gdk_window_set_background(icon_info->window,
-			&widget->style->base[GTK_WIDGET_STATE(widget)]);
+			&widget->style->base[gtk_widget_get_state(widget)]);
 	}
 
 	gtk_widget_queue_resize(widget);
@@ -471,7 +471,7 @@ sexy_icon_entry_size_allocate(GtkWidget *widget, GtkAllocation *allocation)
 
 	GTK_WIDGET_CLASS(parent_class)->size_allocate(widget, allocation);
 
-	if (GTK_WIDGET_REALIZED(widget))
+	if (gtk_widget_get_realized(widget))
 		place_windows(SEXY_ICON_ENTRY(widget), allocation);
 }
 
@@ -558,7 +558,7 @@ draw_icon(GtkWidget *widget, SexyIconEntryPosition icon_pos)
 	GdkPixbuf *pixbuf;
 	gint x, y, width, height;
 
-	if (icon_info->icon == NULL || !GTK_WIDGET_REALIZED(widget))
+	if (icon_info->icon == NULL || !gtk_widget_get_realized(widget))
 		return;
 
 	if ((pixbuf = get_pixbuf_from_icon(entry, icon_pos)) == NULL)
@@ -622,7 +622,7 @@ sexy_icon_entry_expose(GtkWidget *widget, GdkEventExpose *event)
 
 	entry = SEXY_ICON_ENTRY(widget);
 
-	if (GTK_WIDGET_DRAWABLE(widget))
+	if (gtk_widget_is_drawable(widget))
 	{
 		gboolean found = FALSE;
 		int i;
@@ -640,7 +640,7 @@ sexy_icon_entry_expose(GtkWidget *widget, GdkEventExpose *event)
 				gdk_drawable_get_size(icon_info->window, &width, NULL);
 
 				gtk_paint_flat_box(widget->style, icon_info->window,
-								   GTK_WIDGET_STATE(widget), GTK_SHADOW_NONE,
+								   gtk_widget_get_state(widget), GTK_SHADOW_NONE,
 								   NULL, widget, "entry_bg",
 								   0, 0, width, text_area_alloc.height);
 
