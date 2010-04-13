@@ -384,6 +384,17 @@ int main(int argc, char** argv)
 	char options[PATH_MAX];
 	char messages[PATH_MAX];
 
+	/* Some modern distributions can set ALL_PROXY/all_proxy if configured
+	 * to by the user.  Due to a bug in many versions of libcurl
+	 * (including the one shipped in Ubuntu 10.04 LTS), this also takes
+	 * effect on file:// URLs, meaning that NetSurf cannot load its
+	 * default CSS file.  Given all examples of distributions I've checked
+	 * also set http_proxy and friends, we can safely unset these.
+	 */
+
+	unsetenv("ALL_PROXY");
+	unsetenv("all_proxy");
+
 	gtk_init(&argc, &argv);
 	
         /* set standard error to be non-buffering */
