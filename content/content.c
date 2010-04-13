@@ -528,8 +528,6 @@ nserror content_llcache_callback(llcache_handle *llcache,
 					(const char *) event->data.data.buf, 
 					event->data.data.len) == false) {
 				llcache_handle_abort(c->llcache);
-				llcache_handle_release(c->llcache);
-				c->llcache = NULL;
 				c->status = CONTENT_STATUS_ERROR;
 				/** \todo It's not clear what error this is */
 				error = NSERROR_NOMEM;
