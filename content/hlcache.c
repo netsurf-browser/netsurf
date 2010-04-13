@@ -185,7 +185,7 @@ nserror hlcache_handle_release(hlcache_handle *handle)
 	handle->cb = NULL;
 	handle->pw = NULL;
 
-	/** \todo Provide hlcache_poll() to perform cache maintenance */
+	free(handle);
 
 	return NSERROR_OK;
 }
