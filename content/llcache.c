@@ -533,6 +533,7 @@ nserror llcache_object_retrieve(const char *url, uint32_t flags,
 	bool has_query;
 	url_func_result res;
 	struct url_components components;
+	char *defragmented_url;
 
 #ifdef LLCACHE_TRACE
 	LOG(("Retrieve %s (%x, %s, %p)", url, flags, referer, post));
@@ -551,30 +552,42 @@ nserror llcache_object_retrieve(const char *url, uint32_t flags,
 		return NSERROR_NOMEM;
 
 	has_query = (components.query != NULL);
+	
+	components.fragment = NULL;
+
+	defragmented_url = url_reform_components(&components);
 
 	url_destroy_components(&components);
 
+	if (defragmented_url == NULL)
+		return NSERROR_NOMEM;
+
 	if (flags & LLCACHE_RETRIEVE_FORCE_FETCH || post != NULL) {
 		/* Create new object */
-		error = llcache_object_new(url, &obj);
-		if (error != NSERROR_OK)
+		error = llcache_object_new(defragmented_url, &obj);
+		if (error != NSERROR_OK) {
+			free(defragmented_url);
 			return error;
+		}
 
 		/* Attempt to kick-off fetch */
 		error = llcache_object_fetch(obj, flags, referer, post, 
 				redirect_count);
 		if (error != NSERROR_OK) {
 			llcache_object_destroy(obj);
+			free(defragmented_url);
 			return error;
 		}
 
 		/* Add new object to uncached list */
 		llcache_object_add_to_list(obj, &llcache_uncached_objects);
 	} else {
-		error = llcache_object_retrieve_from_cache(url, flags, referer,
+		error = llcache_object_retrieve_from_cache(defragmented_url, flags, referer,
 				post, redirect_count, &obj);
-		if (error != NSERROR_OK)
+		if (error != NSERROR_OK) {
+			free(defragmented_url);
 			return error;
+		}
 
 		/* Returned object is already in the cached list */
 	}
@@ -586,7 +599,9 @@ nserror llcache_object_retrieve(const char *url, uint32_t flags,
 #endif
 	
 	*result = obj;
-
+	
+	free(defragmented_url);
+	
 	return NSERROR_OK;
 }
 
