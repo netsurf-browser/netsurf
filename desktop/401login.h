@@ -19,12 +19,12 @@
 #ifndef NETSURF_DESKTOP_401LOGIN_H
 #define NETSURF_DESKTOP_401LOGIN_H
 
+#include <stdbool.h>
+
 #include "utils/config.h"
+#include "utils/errors.h"
 
-struct hlcache_handle;
-struct browser_window;
-
-void gui_401login_open(struct browser_window *bw, struct hlcache_handle *c,
-		const char *realm);
+void gui_401login_open(const char *url, const char *realm,
+			nserror (*cb)(bool proceed, void *pw), void *cbpw);
 
 #endif

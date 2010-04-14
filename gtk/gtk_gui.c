@@ -659,18 +659,20 @@ void hotlist_visited(hlcache_handle *content)
 {
 }
 
-void gui_cert_verify(struct browser_window *bw, hlcache_handle *c,
-		const struct ssl_cert_info *certs, unsigned long num)
+void gui_cert_verify(const char *url, const struct ssl_cert_info *certs, 
+		unsigned long num, nserror (*cb)(bool proceed, void *pw),
+		void *cbpw)
 {
 	GladeXML *x = glade_xml_new(glade_ssl_file_location, NULL, NULL);
 	GtkWindow *wnd = GTK_WINDOW(glade_xml_get_widget(x, "wndSSLProblem"));
 	GtkButton *accept, *reject;
-	void **session = calloc(sizeof(void *), 4);
+	void **session = calloc(sizeof(void *), 5);
 
-	session[0] = bw;
-	session[1] = strdup(content_get_url(c));
-	session[2] = x;
-	session[3] = wnd;
+	session[0] = strdup(url);
+	session[1] = cb;
+	session[2] = cbpw;
+	session[3] = x;
+	session[4] = wnd;
 
 	accept = GTK_BUTTON(glade_xml_get_widget(x, "sslaccept"));
 	reject = GTK_BUTTON(glade_xml_get_widget(x, "sslreject"));
@@ -687,13 +689,15 @@ void gui_cert_verify(struct browser_window *bw, hlcache_handle *c,
 void nsgtk_ssl_accept(GtkButton *w, gpointer data)
 {
 	void **session = data;
-	struct browser_window *bw = session[0];
-	char *url = session[1];
-	GladeXML *x = session[2];
-	GtkWindow *wnd = session[3];
+	char *url = session[0];
+	nserror (*cb)(bool proceed, void *pw) = session[1];
+	void *cbpw = session[2];
+	GladeXML *x = session[3];
+	GtkWindow *wnd = session[4];
 
   	urldb_set_cert_permissions(url, true);
-	browser_window_go(bw, url, 0, true);
+
+	cb(true, cbpw);
 
 	gtk_widget_destroy(GTK_WIDGET(wnd));
 	g_object_unref(G_OBJECT(x));
@@ -705,12 +709,16 @@ void nsgtk_ssl_accept(GtkButton *w, gpointer data)
 void nsgtk_ssl_reject(GtkButton *w, gpointer data)
 {
 	void **session = data;
-	GladeXML *x = session[2];
-	GtkWindow *wnd = session[3];
+	nserror (*cb)(bool proceed, void *pw) = session[1];
+	void *cbpw = session[2];
+	GladeXML *x = session[3];
+	GtkWindow *wnd = session[4];
+
+	cb(false, cbpw);
 
 	gtk_widget_destroy(GTK_WIDGET(wnd));
 	g_object_unref(G_OBJECT(x));
-	free(session[1]);
+	free(session[0]);
 	free(session);
 }
 

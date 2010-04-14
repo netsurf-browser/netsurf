@@ -36,6 +36,7 @@
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "desktop/netsurf.h"
+#include "desktop/401login.h"
 #include "desktop/browser.h"
 #include "desktop/gui.h"
 #include "desktop/options.h"
@@ -51,6 +52,35 @@ bool verbose_log = false;
 static void *netsurf_lwc_alloc(void *ptr, size_t len, void *pw)
 {
 	return realloc(ptr, len);
+}
+
+/**
+ * Dispatch a low-level cache query to the frontend
+ *
+ * \param query  Query descriptor
+ * \param pw     Private data
+ * \param cb     Continuation callback
+ * \param cbpw   Private data for continuation
+ * \return NSERROR_OK
+ */
+static nserror netsurf_llcache_query_handler(const llcache_query *query,
+		void *pw, llcache_query_response cb, void *cbpw)
+{
+	switch (query->type) {
+	case LLCACHE_QUERY_AUTH:
+		gui_401login_open(query->url, query->data.auth.realm, cb, cbpw);
+		break;
+	case LLCACHE_QUERY_REDIRECT:
+		/** \todo Need redirect query dialog */
+		/* For now, do nothing, as this query type isn't emitted yet */
+		break;
+	case LLCACHE_QUERY_SSL:
+		gui_cert_verify(query->url, query->data.ssl.certs, 
+				query->data.ssl.num, cb, cbpw);
+		break;
+	}
+
+	return NSERROR_OK;
 }
 
 /**
@@ -124,8 +154,7 @@ nserror netsurf_init(int *pargc,
 
 	fetch_init();
 
-	/** \todo The frontend needs to provide the llcache_query_handler */
-	llcache_initialise(NULL, NULL);
+	llcache_initialise(netsurf_llcache_query_handler, NULL);
 
 	return NSERROR_OK;
 }

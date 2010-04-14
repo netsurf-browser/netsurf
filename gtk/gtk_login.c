@@ -38,36 +38,38 @@ struct session_401 {
 	char *url;				/**< URL being fetched */
 	char *host;				/**< Host for user display */
 	char *realm;				/**< Authentication realm */
-	struct browser_window *bw;		/**< Browser window handle */
+	nserror (*cb)(bool proceed, void *pw);	/**< Continuation callback */
+	void *cbpw;				/**< Continuation data */
 	GladeXML *x;				/**< Our glade windows */
 	GtkWindow *wnd;				/**< The login window itself */
 	GtkEntry *user;				/**< Widget with username */
 	GtkEntry *pass;				/**< Widget with password */
 };
 
-static void create_login_window(struct browser_window *bw, const char *host,
-                const char *realm, const char *fetchurl);
+static void create_login_window(const char *url, const char *host,
+                const char *realm, nserror (*cb)(bool proceed, void *pw),
+		void *cbpw);
 static void destroy_login_window(struct session_401 *session);
 static void nsgtk_login_next(GtkWidget *w, gpointer data);
 static void nsgtk_login_ok_clicked(GtkButton *w, gpointer data);
 static void nsgtk_login_cancel_clicked(GtkButton *w, gpointer data);
 
-void gui_401login_open(struct browser_window *bw, hlcache_handle *c,
-		const char *realm)
+void gui_401login_open(const char *url, const char *realm,
+		nserror (*cb)(bool proceed, void *pw), void *cbpw)
 {
 	char *host;
 	url_func_result res;
 
-	res = url_host(content_get_url(c), &host);
+	res = url_host(url, &host);
 	assert(res == URL_FUNC_OK);
 
-	create_login_window(bw, host, realm, content_get_url(c));
+	create_login_window(url, host, realm, cb, cbpw);
 
 	free(host);
 }
 
-void create_login_window(struct browser_window *bw, const char *host,
-		const char *realm, const char *fetchurl)
+void create_login_window(const char *url, const char *host, const char *realm, 
+		nserror (*cb)(bool proceed, void *pw), void *cbpw)
 {
 	struct session_401 *session;
 
@@ -91,10 +93,11 @@ void create_login_window(struct browser_window *bw, const char *host,
 	/* create and fill in our session structure */
 
 	session = calloc(1, sizeof(struct session_401));
-	session->url = strdup(fetchurl);
+	session->url = strdup(url);
 	session->host = strdup(host);
 	session->realm = strdup(realm ? realm : "Secure Area");
-	session->bw = bw;
+	session->cb = cb;
+	session->cbpw = cbpw;
 	session->x = x;
 	session->wnd = wnd;
 	session->user = euser;
@@ -163,13 +166,17 @@ void nsgtk_login_ok_clicked(GtkButton *w, gpointer data)
 	urldb_set_auth_details(session->url, session->realm, auth);
 	free(auth);
 
-	browser_window_go(session->bw, session->url, 0, true);
+	session->cb(true, session->cbpw);
 
 	destroy_login_window(session);
 }
 
 void nsgtk_login_cancel_clicked(GtkButton *w, gpointer data)
 {
-	/* just close and destroy the window */
-	destroy_login_window((struct session_401 *)data);
+	struct session_401 *session = (struct session_401 *) data;
+
+	session->cb(false, session->cbpw);
+
+	/* close and destroy the window */
+	destroy_login_window(session);
 }
