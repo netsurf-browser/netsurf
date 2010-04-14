@@ -33,7 +33,6 @@ typedef struct {
         void (*callback)(void *);	/**< The callback function. */
         void *context;			/**< The context for the callback. */
         bool callback_killed;		/**< Whether or not this was killed. */
-        bool callback_fired;		/**< Whether or not this has fired yet. */
 } _nsgtk_callback_t;
 
 /** List of callbacks which have occurred and are pending running. */
@@ -50,12 +49,7 @@ nsgtk_schedule_generic_callback(gpointer data)
         if (cb->callback_killed) {
                 /* This callback instance has been killed. */
                 LOG(("CB at %p already dead.", cb));
-                free(cb);
-                return FALSE;
         }
-        LOG(("CB for %p(%p) set pending.", cb->callback, cb->context));
-        /* The callback is alive, so move it to pending. */
-        cb->callback_fired = true;
         queued_callbacks = g_list_remove(queued_callbacks, cb);
         pending_callbacks = g_list_append(pending_callbacks, cb);
         return FALSE;
@@ -101,7 +95,7 @@ schedule(int t, void (*callback)(void *p), void *p)
         schedule_remove(callback, p);
         cb->callback = callback;
         cb->context = p;
-        cb->callback_killed = cb->callback_fired = false;
+        cb->callback_killed = false;
         /* Prepend is faster right now. */
         queued_callbacks = g_list_prepend(queued_callbacks, cb);
         g_timeout_add(msec_timeout, nsgtk_schedule_generic_callback, cb);
