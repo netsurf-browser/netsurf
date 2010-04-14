@@ -488,15 +488,40 @@ nserror llcache_object_user_destroy(llcache_object_user *user)
 	return NSERROR_OK;
 }
 
+/** Iterate the users of an object, calling their callbacks.
+ *
+ * \param object	The object to iterate
+ * \param event		The event to pass to the callback.
+ * \return NSERROR_OK on success, appropriate error otherwise.
+ */
+static nserror llcache_send_event_to_users(llcache_object *object,
+					   llcache_event *event)
+{
+	nserror error = NSERROR_OK;
+	llcache_object_user *user, *next_user;
+	
+	user = object->users;
+	while (user != NULL) {
+		next_user = user->next;
+		error = user->handle.cb(&user->handle, event,
+					user->handle.pw);
+		if (error != NSERROR_OK)
+			break;
+		user = next_user;
+	}
+	
+	return error;
+}
+
 /**
  * Retrieve an object from the cache, fetching it if necessary.
  *
- * \param url	          URL of object to retrieve
- * \param flags	          Fetch flags
- * \param referer         Referring URL, or NULL if none
- * \param post	          POST data, or NULL for a GET request
+ * \param url		  URL of object to retrieve
+ * \param flags		  Fetch flags
+ * \param referer	  Referring URL, or NULL if none
+ * \param post		  POST data, or NULL for a GET request
  * \param redirect_count  Number of redirects followed so far
- * \param result          Pointer to location to recieve retrieved object
+ * \param result	  Pointer to location to recieve retrieved object
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 nserror llcache_object_retrieve(const char *url, uint32_t flags,
@@ -568,12 +593,12 @@ nserror llcache_object_retrieve(const char *url, uint32_t flags,
 /**
  * Retrieve a potentially cached object
  *
- * \param url	          URL of object to retrieve
- * \param flags	          Fetch flags
- * \param referer         Referring URL, or NULL if none
- * \param post	          POST data, or NULL for a GET request
+ * \param url		  URL of object to retrieve
+ * \param flags		  Fetch flags
+ * \param referer	  Referring URL, or NULL if none
+ * \param post		  POST data, or NULL for a GET request
  * \param redirect_count  Number of redirects followed so far
- * \param result          Pointer to location to recieve retrieved object
+ * \param result	  Pointer to location to recieve retrieved object
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 nserror llcache_object_retrieve_from_cache(const char *url, uint32_t flags,
@@ -775,10 +800,10 @@ nserror llcache_object_clone_cache_data(const llcache_object *source,
 /**
  * Kick-off a fetch for an object
  *
- * \param object          Object to fetch
- * \param flags	          Fetch flags
- * \param referer         Referring URL, or NULL for none
- * \param post	          POST data, or NULL for GET
+ * \param object	  Object to fetch
+ * \param flags		  Fetch flags
+ * \param referer	  Referring URL, or NULL for none
+ * \param post		  POST data, or NULL for GET
  * \param redirect_count  Number of redirects followed so far
  * \return NSERROR_OK on success, appropriate error otherwise
  *
@@ -1469,9 +1494,7 @@ nserror llcache_post_data_clone(const llcache_post_data *orig,
  */
 nserror llcache_query_handle_response(bool proceed, void *cbpw)
 {
-	nserror error;
 	llcache_event event;
-	llcache_object_user *user;
 	llcache_object *object = cbpw;
 
 	/* Refetch, using existing fetch parameters, if client allows us to */
@@ -1482,14 +1505,8 @@ nserror llcache_query_handle_response(bool proceed, void *cbpw)
 	event.type = LLCACHE_EVENT_ERROR;
 	/** \todo More appropriate error message */
 	event.data.msg = messages_get("FetchFailed");
-
-	for (user = object->users; user != NULL; user = user->next) {
-		error = user->handle.cb(&user->handle, &event, user->handle.pw);
-		if (error != NSERROR_OK)
-			return error;
-	}
-
-	return NSERROR_OK;
+	
+	return llcache_send_event_to_users(object, &event);
 }
 
 /**
@@ -1506,7 +1523,6 @@ void llcache_fetch_callback(fetch_msg msg, void *p, const void *data,
 {
 	nserror error = NSERROR_OK;
 	llcache_object *object = p;
-	llcache_object_user *user;
 	llcache_event event;
 
 #ifdef LLCACHE_TRACE
@@ -1579,25 +1595,17 @@ void llcache_fetch_callback(fetch_msg msg, void *p, const void *data,
 
 		event.type = LLCACHE_EVENT_ERROR;
 		event.data.msg = data;
-
-		for (user = object->users; user != NULL; user = user->next) {
-			error = user->handle.cb(&user->handle, &event,
-					user->handle.pw);
-			if (error != NSERROR_OK)
-				break;
-		}
+		
+		error = llcache_send_event_to_users(object, &event);
+		
 		break;
 	case FETCH_PROGRESS:
 		/* Progress update */
 		event.type = LLCACHE_EVENT_PROGRESS;
 		event.data.msg = data;
-
-		for (user = object->users; user != NULL; user = user->next) {
-			error = user->handle.cb(&user->handle, &event, 
-					user->handle.pw);
-			if (error != NSERROR_OK)
-				break;
-		}
+		
+		error = llcache_send_event_to_users(object, &event);
+		
 		break;
 
 	/* Events requiring action */
@@ -1660,14 +1668,10 @@ nserror llcache_fetch_redirect(llcache_object *object, const char *target,
 
 		event.type = LLCACHE_EVENT_ERROR;
 		event.data.msg = messages_get("BadRedirect");
-
-		for (user = object->users; user != NULL; user = user->next) {
-			error = user->handle.cb(&user->handle, &event,
-					user->handle.pw);
-			if (error != NSERROR_OK)
-				break;
-		}
-
+		
+		error = llcache_send_event_to_users(object, &event);
+		
+		/** \todo Should this be 'return error' ? */
 		return NSERROR_OK;
 	}
 #undef REDIRECT_LIMIT
@@ -2062,20 +2066,14 @@ nserror llcache_fetch_auth(llcache_object *object, const char *realm)
 		error = query_cb(&query, query_cb_pw, 
 				llcache_query_handle_response, object);
 	} else {
-		llcache_object_user *user;
 		llcache_event event;
 
 		/* Inform client(s) that object fetch failed */
 		event.type = LLCACHE_EVENT_ERROR;
 		/** \todo More appropriate error message */
 		event.data.msg = messages_get("FetchFailed");
-
-		for (user = object->users; user != NULL; user = user->next) {
-			error = user->handle.cb(&user->handle, &event, 
-					user->handle.pw);
-			if (error != NSERROR_OK)
-				break;
-		}
+		
+		error = llcache_send_event_to_users(object, &event);
 	}
 
 	return error;
@@ -2110,20 +2108,14 @@ nserror llcache_fetch_cert_error(llcache_object *object,
 		error = query_cb(&query, query_cb_pw,
 				llcache_query_handle_response, object);
 	} else {
-		llcache_object_user *user;
 		llcache_event event;
 
 		/* Inform client(s) that object fetch failed */
 		event.type = LLCACHE_EVENT_ERROR;
 		/** \todo More appropriate error message */
 		event.data.msg = messages_get("FetchFailed");
-
-		for (user = object->users; user != NULL; user = user->next) {
-			error = user->handle.cb(&user->handle, &event, 
-					user->handle.pw);
-			if (error != NSERROR_OK)
-				break;
-		}
+		
+		error = llcache_send_event_to_users(object, &event);
 	}
 
 	return error;
