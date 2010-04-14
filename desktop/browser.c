@@ -497,12 +497,12 @@ nserror browser_window_callback(hlcache_handle *c,
 			hlcache_handle_release(bw->current_content);
 		}
 
+		bw->current_content = c;
+		bw->loading_content = NULL;
+
 		/* Format the new content to the correct dimensions */
 		gui_window_get_dimensions(bw->window, &width, &height, true);
 		content_reformat(c, width, height);
-
-		bw->current_content = c;
-		bw->loading_content = NULL;
 
 		browser_window_remove_caret(bw);
 
