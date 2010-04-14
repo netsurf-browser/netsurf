@@ -1516,6 +1516,11 @@ nserror llcache_query_handle_response(bool proceed, void *cbpw)
 	if (proceed)
 		return llcache_object_refetch(object);
 
+	/* Invalidate cache-control data */
+	memset(&object->cache, 0, sizeof(llcache_cache_control));
+	/* Mark it complete */
+	object->fetch.state = LLCACHE_FETCH_COMPLETE;
+
 	/* Inform client(s) that object fetch failed */
 	event.type = LLCACHE_EVENT_ERROR;
 	/** \todo More appropriate error message */
@@ -1601,6 +1606,7 @@ void llcache_fetch_callback(fetch_msg msg, void *p, const void *data,
 	case FETCH_ERROR:
 		/* An error occurred while fetching */
 		/* The fetch has has already been cleaned up by the fetcher */
+		object->fetch.state = LLCACHE_FETCH_COMPLETE;
 		object->fetch.fetch = NULL;
 
 		/* Invalidate cache control data */
@@ -1639,6 +1645,11 @@ void llcache_fetch_callback(fetch_msg msg, void *p, const void *data,
 		if (object->fetch.fetch != NULL) {
 			fetch_abort(object->fetch.fetch);
 			object->fetch.fetch = NULL;
+
+			/* Invalidate cache control data */
+			memset(&(object->cache), 0, 
+					sizeof(llcache_cache_control));
+			object->fetch.state = LLCACHE_FETCH_COMPLETE;
 		}
 		return;
 	}
@@ -1790,12 +1801,14 @@ nserror llcache_fetch_notmodified(llcache_object *object,
 	/* Bring candidate's cache data up to date */
 	llcache_object_cache_update(object->candidate);
 
-	/* Invalidate our cache-control data */
-	memset(&object->cache, 0, sizeof(llcache_cache_control));
-
 	/* Ensure fetch has stopped */
 	fetch_abort(object->fetch.fetch);
 	object->fetch.fetch = NULL;
+
+	/* Invalidate our cache-control data */
+	memset(&object->cache, 0, sizeof(llcache_cache_control));
+	/* Mark it complete */
+	object->fetch.state = LLCACHE_FETCH_COMPLETE;
 
 	/* Candidate is now our object */
 	*replacement = object->candidate;
@@ -2083,6 +2096,11 @@ nserror llcache_fetch_auth(llcache_object *object, const char *realm)
 	} else {
 		llcache_event event;
 
+		/* Invalidate cache-control data */
+		memset(&object->cache, 0, sizeof(llcache_cache_control));
+		/* Mark it complete */
+		object->fetch.state = LLCACHE_FETCH_COMPLETE;
+
 		/* Inform client(s) that object fetch failed */
 		event.type = LLCACHE_EVENT_ERROR;
 		/** \todo More appropriate error message */
@@ -2124,6 +2142,11 @@ nserror llcache_fetch_cert_error(llcache_object *object,
 				llcache_query_handle_response, object);
 	} else {
 		llcache_event event;
+
+		/* Invalidate cache-control data */
+		memset(&object->cache, 0, sizeof(llcache_cache_control));
+		/* Mark it complete */
+		object->fetch.state = LLCACHE_FETCH_COMPLETE;
 
 		/* Inform client(s) that object fetch failed */
 		event.type = LLCACHE_EVENT_ERROR;
