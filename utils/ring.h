@@ -130,8 +130,9 @@
 
 #define RING_ITERATE_END(ring, iteratorptr)		\
 			} while (false);		\
+			iteratorptr = iteratorptr->r_next;	\
 		} while (iteratorptr != ring);		\
-		}					\
+	}						\
 	iteration_end_##ring##_##iteratorptr:
 
 #endif
