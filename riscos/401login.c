@@ -45,9 +45,9 @@
 
 static void ro_gui_401login_close(wimp_w w);
 static bool ro_gui_401login_apply(wimp_w w);
-static void ro_gui_401login_open(struct browser_window *bw, const char *host,
-		const char *realm, const char *fetchurl);
-
+static void ro_gui_401login_open(const char *url, const char *host, 
+		const char *realm,
+		nserror (*cb)(bool proceed, void *pw), void *cbpw);
 
 static wimp_window *dialog_401_template;
 
@@ -57,7 +57,8 @@ struct session_401 {
 	char uname[256];		/**< Buffer for username */
 	char *url;			/**< URL being fetched */
 	char pwd[256];			/**< Buffer for password */
-	struct browser_window *bwin;	/**< Browser window handle */
+	nserror (*cb)(bool proceed, void *pw);	/**< Continuation callback */
+	void *cbpw;			/**< Continuation callback data */
 };
 
 
@@ -74,18 +75,16 @@ void ro_gui_401login_init(void)
 /**
  * Open the login dialog
  */
-void gui_401login_open(struct browser_window *bw, hlcache_handle *c,
-		const char *realm)
+void gui_401login_open(const char *url, const char *realm,
+		nserror (*cb)(bool proceed, void *pw), void *cbpw)
 {
-	const char *murl;
 	char *host;
 	url_func_result res;
 
-	murl = content_get_url(c);
-	res = url_host(murl, &host);
+	res = url_host(url, &host);
 	assert(res == URL_FUNC_OK);
 
-	ro_gui_401login_open(bw, host, realm, murl);
+	ro_gui_401login_open(url, host, realm, cb, cbpw);
 
 	free(host);
 }
@@ -95,8 +94,8 @@ void gui_401login_open(struct browser_window *bw, hlcache_handle *c,
  * Open a 401 login window.
  */
 
-void ro_gui_401login_open(struct browser_window *bw, const char *host,
-		const char *realm, const char *fetchurl)
+void ro_gui_401login_open(const char *url, const char *host, const char *realm,
+		nserror (*cb)(bool proceed, void *pw), void *cbpw)
 {
 	struct session_401 *session;
 	wimp_w w;
@@ -108,7 +107,7 @@ void ro_gui_401login_open(struct browser_window *bw, const char *host,
 		return;
 	}
 
-	session->url = strdup(fetchurl);
+	session->url = strdup(url);
 	if (!session->url) {
 		free(session);
 		warn_user("NoMemory", 0);
@@ -136,7 +135,9 @@ void ro_gui_401login_open(struct browser_window *bw, const char *host,
 	}
 	session->host = strdup(host);
 	session->realm = strdup(realm);
-	session->bwin = bw;
+	session->cb = cb;
+	session->cbpw = cbpw;
+
 	if ((!session->host) || (!session->realm)) {
 		free(session->host);
 		free(session->realm);
@@ -174,7 +175,7 @@ void ro_gui_401login_open(struct browser_window *bw, const char *host,
 	ro_gui_wimp_event_register_close_window(w, ro_gui_401login_close);
 	ro_gui_wimp_event_set_user_data(w, session);
 
-	ro_gui_dialog_open_persistent(bw->window->window, w, false);
+	ro_gui_dialog_open_persistent(NULL, w, false);
 }
 
 /**
@@ -188,6 +189,10 @@ void ro_gui_401login_close(wimp_w w)
 	session = (struct session_401 *)ro_gui_wimp_event_get_user_data(w);
 
 	assert(session);
+
+	/* If ok didn't happen, send failure response */
+	if (session->cb != NULL)
+		session->cb(false, session->cbpw);
 
 	free(session->host);
 	free(session->realm);
@@ -229,7 +234,12 @@ bool ro_gui_401login_apply(wimp_w w)
 
 	free(auth);
 
-	browser_window_go(session->bwin, session->url, 0, true);
+	session->cb(true, session->cbpw);
+
+	/* Flag that we sent response by invalidating callback details */
+	session->cb = NULL;
+	session->cbpw = NULL;
+
 	return true;
 }
 

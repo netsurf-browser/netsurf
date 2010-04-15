@@ -62,9 +62,11 @@ static wimp_window *dialog_display_template;
 struct session_data {
 	struct session_cert *certs;
 	unsigned long num;
-	struct browser_window *bw;
 	char *url;
 	struct tree *tree;
+
+	nserror (*cb)(bool proceed, void *pw);
+	void *cbpw;
 };
 struct session_cert {
 	char version[16], valid_from[32], valid_to[32], type[8], serial[32];
@@ -100,8 +102,9 @@ void ro_gui_cert_init(void)
  * Open the certificate verification dialog
  */
 
-void gui_cert_verify(struct browser_window *bw, hlcache_handle *c,
-		const struct ssl_cert_info *certs, unsigned long num)
+void gui_cert_verify(const char *url,
+		const struct ssl_cert_info *certs, unsigned long num,
+		nserror (*cb)(bool proceed, void *pw), void *cbpw)
 {
 	wimp_w w;
 	wimp_w ssl_w;
@@ -115,7 +118,7 @@ void gui_cert_verify(struct browser_window *bw, hlcache_handle *c,
 	os_error *error;
 	long i;
 
-	assert(bw && c && certs);
+	assert(certs);
 
 	/* copy the certificate information */
 	data = calloc(1, sizeof(struct session_data));
@@ -123,13 +126,14 @@ void gui_cert_verify(struct browser_window *bw, hlcache_handle *c,
 		warn_user("NoMemory", 0);
 		return;
 	}
-	data->url = strdup(content_get_url(c));
+	data->url = strdup(url);
 	if (!data->url) {
 		free(data);
 		warn_user("NoMemory", 0);
 		return;
 	}
-	data->bw = bw;
+	data->cb = cb;
+	data->cbpw = cbpw;
 	data->num = num;
 	data->certs = calloc(num, sizeof(struct session_cert));
 	if (!data->certs) {
@@ -182,7 +186,7 @@ void gui_cert_verify(struct browser_window *bw, hlcache_handle *c,
 	ro_gui_wimp_event_set_user_data(ssl_w, data);
 	ro_gui_wimp_event_register_cancel(ssl_w, ICON_SSL_REJECT);
 	ro_gui_wimp_event_register_ok(ssl_w, ICON_SSL_ACCEPT, ro_gui_cert_apply);
-	ro_gui_dialog_open_persistent(bw->window->window, ssl_w, false);
+	ro_gui_dialog_open_persistent(NULL, ssl_w, false);
 
 	/* create a tree window (styled as a list) */
 	error = xwimp_create_window(dialog_tree_template, &w);
@@ -391,6 +395,10 @@ void ro_gui_cert_close(wimp_w w)
 	data = (struct session_data *)ro_gui_wimp_event_get_user_data(w);
 	assert(data);
 
+	/* If we didn't accept the certificate, send failure response */
+	if (data->cb != NULL)
+		data->cb(false, data->cbpw);
+
 	for (i = 0; i < data->num; i++) {
 		if (data->certs[i].subject)
 			ro_textarea_destroy(data->certs[i].subject);
@@ -434,7 +442,12 @@ bool ro_gui_cert_apply(wimp_w w)
 	assert(session);
 
 	urldb_set_cert_permissions(session->url, true);
-	browser_window_go(session->bw, session->url, 0, true);
+	session->cb(true, session->cbpw);
+
+	/* Flag that we sent response by invalidating callback details */
+	session->cb = NULL;
+	session->cbpw = NULL;
+
 	return true;
 }
 
