@@ -18,7 +18,8 @@
 
 #include "desktop/401login.h"
 
-void gui_401login_open(struct browser_window *bw, struct hlcache_handle *c,
-	const char *realm)
+void gui_401login_open(const char *url,	const char *realm,
+		nserror (*cb)(bool proceed, void *pw), void *cbpw)
 {
+	cb(false, cbpw);
 }
