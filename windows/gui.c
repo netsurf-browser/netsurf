@@ -2274,11 +2274,12 @@ void gui_launch_url(const char *url)
 {
 }
 
-void gui_cert_verify(struct browser_window *bw, hlcache_handle *c,
-		     const struct ssl_cert_info *certs, unsigned long num)
+void gui_cert_verify(const char *url, const struct ssl_cert_info *certs, 
+		unsigned long num, 
+		nserror (*cb)(bool proceed, void *pw), void *cbpw)
 {
+	cb(false, cbpw);
 }
-
 
 
 static void *myrealloc(void *ptr, size_t len, void *pw)
