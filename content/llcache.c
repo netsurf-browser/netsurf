@@ -398,6 +398,17 @@ nserror llcache_handle_force_stream(llcache_handle *handle)
 }
 
 /* See llcache.h for documentation */
+nserror llcache_handle_invalidate_cache_data(llcache_handle *handle)
+{
+	if (handle->object != NULL && handle->object->fetch.fetch == NULL) {
+		memset(&handle->object->cache, 0, 
+				sizeof(llcache_cache_control));
+	}
+
+	return NSERROR_OK;
+}
+
+/* See llcache.h for documentation */
 const char *llcache_handle_get_url(const llcache_handle *handle)
 {
 	return handle->object != NULL ? handle->object->url : NULL;

@@ -232,6 +232,14 @@ nserror llcache_handle_abort(llcache_handle *handle);
 nserror llcache_handle_force_stream(llcache_handle *handle);
 
 /**
+ * Invalidate cache data for a low-level cache object
+ *
+ * \param handle  Handle to invalidate
+ * \return NSERROR_OK on success, appropriate error otherwise
+ */
+nserror llcache_handle_invalidate_cache_data(llcache_handle *handle);
+
+/**
  * Retrieve the post-redirect URL of a low-level cache object
  *
  * \param handle  Handle to retrieve URL from
