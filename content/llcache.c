@@ -2161,8 +2161,7 @@ nserror llcache_fetch_cert_error(llcache_object *object,
 {
 	nserror error = NSERROR_OK;
 
-	/* Abort fetch for this object */
-	fetch_abort(object->fetch.fetch);
+	/* Fetch has been stopped, and destroyed. Invalidate object's pointer */
 	object->fetch.fetch = NULL;
 
 	/* Invalidate cache-control data */
