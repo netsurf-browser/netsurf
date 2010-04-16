@@ -1297,11 +1297,11 @@ void content_invalidate_reuse_data(hlcache_handle *h)
 
 void content__invalidate_reuse_data(struct content *c)
 {
-	if (c == NULL)
+	if (c == NULL || c->llcache == NULL)
 		return;
 
-	/* For now, just cause the content to be completely ignored */
-	c->fresh = false;
+	/* Invalidate low-level cache data */
+	llcache_handle_invalidate_cache_data(c->llcache);
 }
 
 /**
