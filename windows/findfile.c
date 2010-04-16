@@ -38,10 +38,14 @@ static char *realpath(const char *path, char *resolved_path)
 
 char *path_to_url(const char *path)
 {
-	char *url = malloc(strlen(path) + FILE_SCHEME_PREFIX_LEN + 1);
+	char *url = malloc(strlen(path) + FILE_SCHEME_PREFIX_LEN + 3);
 	char *sidx;
 
 	strcpy(url, FILE_SCHEME_PREFIX);
+	if (*path == '/') {
+		/* unix style path start, so try wine Z: */
+		strcat(url, "Z:");
+	}
 	strcat(url, path);
 
 	sidx = strrchr(url, '\\');

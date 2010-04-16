@@ -2037,10 +2037,15 @@ void ro_msg_window_info(wimp_message *message)
 char *path_to_url(const char *path)
 {
 	int spare;
-	char *buffer, *url, *escurl;
+	char *canonical_path; /* canonicalised RISC OS path */
+	char *unix_path; /* unix path */
+	char *escurl;
 	os_error *error;
 	url_func_result url_err;
+	int urllen;
+	char *url; /* resulting url */
 
+        /* calculate the canonical risc os path */
 	error = xosfscontrol_canonicalise_path(path, 0, 0, 0, 0, &spare);
 	if (error) {
 		LOG(("xosfscontrol_canonicalise_path failed: 0x%x: %s",
@@ -2049,38 +2054,48 @@ char *path_to_url(const char *path)
 		return NULL;
 	}
 
-	buffer = malloc(1 - spare);
-	url = malloc(1 - spare + 10);
-	if (!buffer || !url) {
+	canonical_path = malloc(1 - spare);
+	if (canonical_path == NULL) {
 		LOG(("malloc failed"));
 		warn_user("NoMemory", 0);
-		free(buffer);
-		free(url);
+		free(canonical_path);
 		return NULL;
 	}
 
-	error = xosfscontrol_canonicalise_path(path, buffer, 0, 0, 1 - spare,
-			0);
+	error = xosfscontrol_canonicalise_path(path, canonical_path, 0, 0, 1 - spare, 0);
 	if (error) {
 		LOG(("xosfscontrol_canonicalise_path failed: 0x%x: %s",
 				error->errnum, error->errmess));
 		warn_user("PathToURL", error->errmess);
-		free(buffer);
-		free(url);
+		free(canonical_path);
 		return NULL;
 	}
 
-	memcpy(url, FILE_SCHEME_PREFIX, FILE_SCHEME_PREFIX_LEN);
-	if (__unixify(buffer, __RISCOSIFY_NO_REVERSE_SUFFIX,
-			url + FILE_SCHEME_PREFIX_LEN,
-			1 - spare + 10 - FILE_SCHEME_PREFIX_LEN,
-			0) == NULL) {
-		LOG(("__unixify failed: %s", buffer));
-		free(buffer);
-		free(url);
+	/* create a unix path from teh cananocal risc os one */
+	unix_path = __unixify(canonical_path, __RISCOSIFY_NO_REVERSE_SUFFIX, NULL, 0, 0);
+	
+	if (unix_path == NULL)
+		LOG(("__unixify failed: %s", canonical_path));
+		free(canonical_path);
 		return NULL;
 	}
-	free(buffer); buffer = NULL;
+	free(canonical_path);
+
+        /* convert the unix path into a url */
+	urllen = strlen(unix_path) + FILE_SCHEME_PREFIX_LEN + 1;
+	url = malloc(urllen);
+	if (url == NULL) {
+		LOG(("Unable to allocate url"));
+		free(unix_path);
+		return NULL;
+	}
+
+	if (*unix_path == '/') {
+		snprintf(url, urllen, "%s%s", FILE_SCHEME_PREFIX, unix_path + 1);
+	} else {
+		snprintf(url, urllen, "%s%s", FILE_SCHEME_PREFIX, unix_path);
+	}
+	free(unix_path); 
 
 	/* We don't want '/' to be escaped.  */
 	url_err = url_escape(url, FILE_SCHEME_PREFIX_LEN, false, "/", &escurl);

@@ -23,6 +23,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <curl/curl.h>
+
 #include "utils/log.h"
 #include "utils/url.h"
 
@@ -30,12 +32,29 @@
 
 char *path_to_url(const char *path)
 {
-	char *r = malloc(strlen(path) + FILE_SCHEME_PREFIX_LEN + 1);
+	int urllen = strlen(path) + FILE_SCHEME_PREFIX_LEN + 1;
+	char *url = malloc(urllen);
 
-	strcpy(r, FILE_SCHEME_PREFIX);
-	strcat(r, path);
+	if (*path == '/') {
+		path++; /* file: paths are already absolute */
+	} 
 
-	return r;
+	snprintf(url, urllen, "%s%s", FILE_SCHEME_PREFIX, path);
+
+	return url;
+}
+
+
+char *url_to_path(const char *url)
+{
+	char *url_path = curl_unescape(url, 0);
+	char *path;
+
+	/* return the absolute path including leading / */
+	path = strdup(url_path + (FILE_SCHEME_PREFIX_LEN - 1));
+	curl_free(url_path);
+
+	return path;
 }
 
 /**

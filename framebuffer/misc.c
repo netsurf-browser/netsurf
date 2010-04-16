@@ -40,10 +40,6 @@ bool cookies_update(const char *domain, const struct cookie_data *data)
     return true; 
 }
 
-char *url_to_path(const char *url)
-{
-	return strdup(url + 5);
-}
 
 /**
  * Return the filename part of a full path
@@ -51,7 +47,6 @@ char *url_to_path(const char *url)
  * \param path full path and filename
  * \return filename (will be freed with free())
  */
-
 char *filename_from_path(char *path)
 {
 	char *leafname;

@@ -1155,8 +1155,7 @@ bool fetch_curl_process_headers(struct curl_fetch_info *f)
 	/* find MIME type from filetype for local files */
 	if (strncmp(f->url, FILE_SCHEME_PREFIX, FILE_SCHEME_PREFIX_LEN) == 0) {
 		struct stat s;
-		char *url_path = curl_unescape(f->url + FILE_SCHEME_PREFIX_LEN, 
-				(int) strlen(f->url + FILE_SCHEME_PREFIX_LEN));
+		char *url_path = url_to_path(f->url);
 
 		LOG(("Obtaining mime type for file %s", url_path));
 
@@ -1209,7 +1208,7 @@ bool fetch_curl_process_headers(struct curl_fetch_info *f)
 		}
 
 		if (url_path != NULL)
-			curl_free(url_path);
+			free(url_path);
 	}
 
 	if (f->abort)
