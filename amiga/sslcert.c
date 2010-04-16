@@ -21,6 +21,7 @@
 #include <proto/dos.h>
 #include <proto/exec.h>
 #include <proto/utility.h>
+#include "utils/errors.h"
 #include "utils/utils.h"
 #include "utils/messages.h"
 #include "content/urldb.h"
@@ -32,7 +33,8 @@
 struct session_data {
 	struct session_cert *certs;
 	unsigned long num;
-	struct browser_window *bw;
+	nserror (*cb)(bool proceed, void *pw);
+	void *cbpw;
 	char *url;
 	struct tree *tree;
 };
@@ -47,8 +49,9 @@ struct session_cert {
 void ami_gui_cert_close(struct session_data *data);
 bool ami_gui_cert_apply(struct session_data *session);
 
-void gui_cert_verify(struct browser_window *bw, hlcache_handle *c,
-		const struct ssl_cert_info *certs, unsigned long num)
+void gui_cert_verify(const char *url, 
+		const struct ssl_cert_info *certs, unsigned long num,
+		nserror (*cb)(bool proceed, void *pw), void *cbpw)
 {
 	const struct ssl_cert_info *from;
 	struct session_cert *to;
@@ -60,7 +63,7 @@ void gui_cert_verify(struct browser_window *bw, hlcache_handle *c,
 	int res = 0;
 	struct treeview_window *twin;
 
-	assert(bw && c && certs);
+	assert(certs);
 
 	/* copy the certificate information */
 	data = calloc(1, sizeof(struct session_data));
@@ -68,13 +71,14 @@ void gui_cert_verify(struct browser_window *bw, hlcache_handle *c,
 		warn_user("NoMemory", 0);
 		return;
 	}
-	data->url = strdup(content_get_url(c));
+	data->url = strdup(url);
 	if (!data->url) {
 		free(data);
 		warn_user("NoMemory", 0);
 		return;
 	}
-	data->bw = bw;
+	data->cb = cb;
+	data->cbpw = cbpw;
 	data->num = num;
 	data->certs = calloc(num, sizeof(struct session_cert));
 	if (!data->certs) {
@@ -205,6 +209,10 @@ void ami_gui_cert_close(struct session_data *data)
 	}
 */
 
+	/* Send failure if callback exists */
+	if (data->cb != NULL)
+		data->cb(false, data->cbpw);
+
 	if (data->tree) {
 		tree_delete_node(data->tree, data->tree->root, false);
 		free(data->tree);
@@ -220,6 +228,12 @@ bool ami_gui_cert_apply(struct session_data *session)
 	assert(session);
 
 	urldb_set_cert_permissions(session->url, true);
-	browser_window_go(session->bw, session->url, 0, true);
+
+	session->cb(true, session->cbpw);
+
+	/* Invalidate callback */
+	session->cb = NULL;
+	session->cbpw = NULL;
+
 	return true;
 }

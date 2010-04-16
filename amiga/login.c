@@ -39,17 +39,18 @@
 #include <images/label.h>
 #include <reaction/reaction_macros.h>
 
-void gui_401login_open(struct browser_window *bw, hlcache_handle *c,
-	const char *realm)
+void gui_401login_open(const char *url, const char *realm,
+		nserror (*cb)(bool proceed, void *pw), void *cbpw)
 {
 	struct gui_login_window *lw = AllocVec(sizeof(struct gui_login_window),MEMF_PRIVATE | MEMF_CLEAR);
 	char *host;
 
-	url_host(content_get_url(c), &host);
+	url_host(url, &host);
 	lw->host = host;
-	lw->url = content_get_url(c);
+	lw->url = url;
 	lw->realm = (char *)realm;
-	lw->bw = bw;
+	lw->cb = cb;
+	lw->cbpw = cbpw;
 
 	lw->objects[OID_MAIN] = WindowObject,
       	    WA_ScreenTitle,nsscreentitle,
@@ -126,6 +127,10 @@ void gui_401login_open(struct browser_window *bw, hlcache_handle *c,
 
 void ami_401login_close(struct gui_login_window *lw)
 {
+	/* If continuation exists, then forbid refetch */
+	if (lw->cb != NULL)
+		lw->cb(false, lw->cbpw);
+
 	DisposeObject(lw->objects[OID_MAIN]);
 	free(lw->host);
 	DelObject(lw->node);
@@ -143,7 +148,11 @@ void ami_401login_login(struct gui_login_window *lw)
 	urldb_set_auth_details(lw->url,lw->realm,userpass);
 	FreeVec(userpass);
 
-	browser_window_go(lw->bw,lw->url,0,true);
+	lw->cb(true, lw->cbpw);
+
+	/* Invalidate continuation */
+	lw->cb = NULL;
+	lw->cbpw = NULL;
 
 	ami_401login_close(lw);
 }

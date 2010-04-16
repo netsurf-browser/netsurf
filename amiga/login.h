@@ -18,11 +18,17 @@
 
 #ifndef AMIGA_LOGIN_H
 #define AMIGA_LOGIN_H
+
+#include <stdbool.h>
+
+#include "utils/errors.h"
+
 struct gui_login_window {
 	struct nsObject *node;
 	struct Window *win;
 	Object *objects[GID_LAST];
-	struct browser_window *bw;
+	nserror (*cb)(bool proceed, void *pw);
+	void *cbpw;
 	char *url;
 	char *realm;
 	char *host;
