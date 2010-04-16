@@ -29,6 +29,7 @@
 
 #include "content/fetch.h"
 #include "content/llcache.h"
+#include "content/urldb.h"
 #include "desktop/options.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -82,7 +83,9 @@ typedef struct {
 
 	llcache_fetch_state state;	/**< Current state of object fetch */
 
-	uint32_t redirect_count;	/** Count of redirects followed */
+	uint32_t redirect_count;	/**< Count of redirects followed */
+
+	bool tried_with_auth;		/**< Whether we've tried with auth */
 } llcache_fetch_ctx;
 
 /** Cache control data */
@@ -2067,46 +2070,65 @@ nserror llcache_fetch_process_data(llcache_object *object, const uint8_t *data,
  */
 nserror llcache_fetch_auth(llcache_object *object, const char *realm)
 {
+	const char *auth;
 	nserror error = NSERROR_OK;
 
 	/* Abort fetch for this object */
 	fetch_abort(object->fetch.fetch);
 	object->fetch.fetch = NULL;
 
-	if (query_cb != NULL) {
-		llcache_query query;
+	/* Destroy headers */
+	while (object->num_headers > 0) {
+		object->num_headers--;
 
-		/* Destroy headers */
-		while (object->num_headers > 0) {
-			object->num_headers--;
+		free(object->headers[object->num_headers].name);
+		free(object->headers[object->num_headers].value);
+	}
+	free(object->headers);
+	object->headers = NULL;
 
-			free(object->headers[object->num_headers].name);
-			free(object->headers[object->num_headers].value);
-		}
-		free(object->headers);
-		object->headers = NULL;
+	/* If there was no realm, then default to the URL */
+	/** \todo If there was no WWW-Authenticate header, use response body */
+	if (realm == NULL)
+		realm = object->url;
 
-		/* Emit query for authentication details */
-		query.type = LLCACHE_QUERY_AUTH;
-		query.url = object->url;
-		query.data.auth.realm = realm;
+	auth = urldb_get_auth_details(object->url, realm);
 
-		error = query_cb(&query, query_cb_pw, 
-				llcache_query_handle_response, object);
-	} else {
-		llcache_event event;
+	if (auth == NULL || object->fetch.tried_with_auth == true) {
+		/* No authentication details, or tried what we had, so ask */
+		object->fetch.tried_with_auth = false;
 
-		/* Invalidate cache-control data */
-		memset(&object->cache, 0, sizeof(llcache_cache_control));
-		/* Mark it complete */
-		object->fetch.state = LLCACHE_FETCH_COMPLETE;
+		if (query_cb != NULL) {
+			llcache_query query;
 
-		/* Inform client(s) that object fetch failed */
-		event.type = LLCACHE_EVENT_ERROR;
-		/** \todo More appropriate error message */
-		event.data.msg = messages_get("FetchFailed");
+			/* Emit query for authentication details */
+			query.type = LLCACHE_QUERY_AUTH;
+			query.url = object->url;
+			query.data.auth.realm = realm;
+
+			error = query_cb(&query, query_cb_pw, 
+					llcache_query_handle_response, object);
+		} else {
+			llcache_event event;
+
+			/* Invalidate cache-control data */
+			memset(&object->cache, 0, 
+					sizeof(llcache_cache_control));
+			/* Mark it complete */
+			object->fetch.state = LLCACHE_FETCH_COMPLETE;
+
+			/* Inform client(s) that object fetch failed */
+			event.type = LLCACHE_EVENT_ERROR;
+			/** \todo More appropriate error message */
+			event.data.msg = messages_get("FetchFailed");
 		
-		error = llcache_send_event_to_users(object, &event);
+			error = llcache_send_event_to_users(object, &event);
+		}
+	} else {
+		/* Flag that we've tried to refetch with credentials, so
+		 * that if the fetch fails again, we ask the user again */
+		object->fetch.tried_with_auth = true;
+		error = llcache_object_refetch(object);
 	}
 
 	return error;
