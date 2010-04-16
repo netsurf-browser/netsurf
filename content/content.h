@@ -146,6 +146,7 @@ const char *content_get_source_data(struct hlcache_handle *c,
 void content_invalidate_reuse_data(struct hlcache_handle *c);
 const char *content_get_refresh_url(struct hlcache_handle *c);
 struct bitmap *content_get_bitmap(struct hlcache_handle *c);
+bool content_get_quirks(struct hlcache_handle *c);
 
 bool content_is_locked(struct hlcache_handle *h);
 

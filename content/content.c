@@ -1341,6 +1341,24 @@ struct bitmap *content__get_bitmap(struct content *c)
 	return c->bitmap;
 }
 
+
+/**
+ * Retrieve quirkiness of a content
+ *
+ * \param h  Content to examine
+ * \return True if content is quirky, false otherwise
+ */
+bool content_get_quirks(hlcache_handle *h)
+{
+	struct content *c = hlcache_handle_get_content(h);
+
+	if (c == NULL)
+		return false;
+
+	return c->quirks;
+}
+
+
 /**
  * Return whether a content is currently locked
  *
