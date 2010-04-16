@@ -155,10 +155,6 @@ struct content {
 	/** Bitmap, for various image contents. */
 	struct bitmap *bitmap;
 
-	/** This content may be given to new users. Indicates that the content
-	 *  was fetched using a simple GET, has not expired, and may be
-	 *  shared between users. */
-	bool fresh;
 	unsigned int time;		/**< Creation time, if TYPE_UNKNOWN,
 					  LOADING or READY,
 					  otherwise total time. */

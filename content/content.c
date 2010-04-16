@@ -466,7 +466,6 @@ struct content * content_create(llcache_handle *llcache,
 	c->quirks = quirks;
 	c->refresh = 0;
 	c->bitmap = NULL;
-	c->fresh = false;
 	c->time = wallclock();
 	c->size = 0;
 	c->title = NULL;
@@ -1428,7 +1427,6 @@ struct content *content_clone(struct content *c)
 		}
 	}
 
-	nc->fresh = c->fresh;
 	nc->time = c->time;
 	nc->reformat_time = c->reformat_time;
 	nc->size = c->size;
