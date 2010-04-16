@@ -399,6 +399,7 @@ nserror hlcache_llcache_callback(llcache_handle *handle,
 		/* fall through */
 	case LLCACHE_EVENT_DONE:
 		/* should never happen: the handler must be changed */
+		assert(0 && "Unexpected llcache event");
 		break;
 	case LLCACHE_EVENT_ERROR:
 		if (ctx->handle->cb != NULL) {
