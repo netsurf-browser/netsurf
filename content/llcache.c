@@ -937,6 +937,9 @@ nserror llcache_object_refetch(llcache_object *object)
 	object->cache.etag = NULL;
 	object->cache.last_modified = 0;
 
+	/* Reset fetch state */
+	object->fetch.state = LLCACHE_FETCH_INIT;
+
 #ifdef LLCACHE_TRACE
 	LOG(("Refetching %p", object));
 #endif
@@ -2077,6 +2080,9 @@ nserror llcache_fetch_auth(llcache_object *object, const char *realm)
 	fetch_abort(object->fetch.fetch);
 	object->fetch.fetch = NULL;
 
+	/* Invalidate cache-control data */
+	memset(&object->cache, 0, sizeof(llcache_cache_control));
+
 	/* Destroy headers */
 	while (object->num_headers > 0) {
 		object->num_headers--;
@@ -2111,10 +2117,7 @@ nserror llcache_fetch_auth(llcache_object *object, const char *realm)
 		} else {
 			llcache_event event;
 
-			/* Invalidate cache-control data */
-			memset(&object->cache, 0, 
-					sizeof(llcache_cache_control));
-			/* Mark it complete */
+			/* Mark object complete */
 			object->fetch.state = LLCACHE_FETCH_COMPLETE;
 
 			/* Inform client(s) that object fetch failed */
@@ -2151,6 +2154,9 @@ nserror llcache_fetch_cert_error(llcache_object *object,
 	fetch_abort(object->fetch.fetch);
 	object->fetch.fetch = NULL;
 
+	/* Invalidate cache-control data */
+	memset(&object->cache, 0, sizeof(llcache_cache_control));
+
 	if (query_cb != NULL) {
 		llcache_query query;
 
@@ -2165,9 +2171,7 @@ nserror llcache_fetch_cert_error(llcache_object *object,
 	} else {
 		llcache_event event;
 
-		/* Invalidate cache-control data */
-		memset(&object->cache, 0, sizeof(llcache_cache_control));
-		/* Mark it complete */
+		/* Mark object complete */
 		object->fetch.state = LLCACHE_FETCH_COMPLETE;
 
 		/* Inform client(s) that object fetch failed */
