@@ -321,10 +321,9 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 		post.data.urlenc = post_urlenc;
 	}
 
-	if (parent != NULL) {
-//newcache extract charset and quirks from parent content
-		child.charset = NULL;
-		child.quirks = false;
+	if (parent != NULL && content_get_type(parent) == CONTENT_HTML) {
+		child.charset = html_get_encoding(parent);
+		child.quirks = content_get_quirks(parent);
 	}
 
 	/* Normalize the request URL */
