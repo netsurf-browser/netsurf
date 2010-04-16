@@ -162,8 +162,7 @@ bool print_draw_next_page(const struct printer *printer,
 hlcache_handle *print_init(hlcache_handle *content,
 		struct print_settings *settings)
 {
-// newcache
-#if 0
+#ifdef FIX_CORE_PRINTING
 	hlcache_handle* printed_content;
 	hlcache_handle_user *user_sentinel;
 	
@@ -244,6 +243,7 @@ bool print_apply_settings(hlcache_handle *content,
 bool print_cleanup(hlcache_handle *content, const struct printer *printer,
 		struct print_settings *settings)
 {
+#ifdef FIX_CORE_PRINTING
 	printer->print_end();
 	
 	html_redraw_printing = false;
@@ -257,6 +257,7 @@ bool print_cleanup(hlcache_handle *content, const struct printer *printer,
 	
 	free((void *)settings->output);
 	free(settings);
+#endif
 	
 	return true;
 }
