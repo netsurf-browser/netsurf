@@ -62,20 +62,23 @@ char *url_to_path(const char *url)
 	char *tmps, *unesc;
 	CURL *curl;
 
-	tmps = strstr(url, "///localhost/") + 13;
+	if (strncmp(url, "file://", SLEN("file://")) != 0)
+		return NULL;
 
-	if(tmps < url) tmps = strstr(url,"///") + 3;
+	url += SLEN("file://");
 
-	if(tmps >= url)
+	if (strncmp(url, "localhost", SLEN("localhost")) == 0)
+		url += SLEN("localhost");
+
+	url += SLEN("/");
+
+	if(curl = curl_easy_init())
 	{
-		if(curl = curl_easy_init())
-		{
-			unesc = curl_easy_unescape(curl,tmps,0,NULL);
-			tmps = strdup(unesc);
-			curl_free(unesc);
-			curl_easy_cleanup(curl);
-			return tmps;
-		}
+		unesc = curl_easy_unescape(curl,url,0,NULL);
+		tmps = strdup(unesc);
+		curl_free(unesc);
+		curl_easy_cleanup(curl);
+		return tmps;
 	}
 
 	return strdup((char *)url);
@@ -83,9 +86,9 @@ char *url_to_path(const char *url)
 
 char *path_to_url(const char *path)
 {
-	char *r = malloc(strlen(path) + FILE_SCHEME_PREFIX_LEN + 1);
+	char *r = malloc(strlen(path) + SLEN("file:///") + 1);
 
-	strcpy(r, FILE_SCHEME_PREFIX);
+	strcpy(r, "file:///");
 	strcat(r, path);
 
 	return r;
