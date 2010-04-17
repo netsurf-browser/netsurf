@@ -2074,7 +2074,7 @@ char *path_to_url(const char *path)
 	/* create a unix path from teh cananocal risc os one */
 	unix_path = __unixify(canonical_path, __RISCOSIFY_NO_REVERSE_SUFFIX, NULL, 0, 0);
 	
-	if (unix_path == NULL)
+	if (unix_path == NULL) {
 		LOG(("__unixify failed: %s", canonical_path));
 		free(canonical_path);
 		return NULL;
