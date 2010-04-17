@@ -1610,7 +1610,8 @@ void llcache_fetch_callback(fetch_msg msg, void *p, const void *data,
 		/* Shrink source buffer to required size */
 		temp = realloc(object->source_data, 
 				object->source_len);
-		if (temp != NULL) {
+		/* If source_len is 0, then temp may be NULL */
+		if (temp != NULL || object->source_len == 0) {
 			object->source_data = temp;
 			object->source_alloc = object->source_len;
 		}
