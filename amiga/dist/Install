@@ -446,6 +446,19 @@
 
 (complete 95)
 
+(if (= (exists "ENVARC:Sys/def_css.info") 0)
+	(copyfiles
+		(prompt "Copying default CSS icon")
+		(source "Resources/default.css.info")
+		(newname "def_css.info")
+		(help @copyfiles-help)
+		(dest "ENVARC:Sys")
+		(optional "nofail")
+	)
+)
+
+(complete 96)
+
 (working "Setting MIME types")
 (p_setmimetype "css" "text/css")
 (p_setmimetype "html" "text/html")
