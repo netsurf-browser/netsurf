@@ -1202,7 +1202,7 @@ bool fetch_curl_process_headers(struct curl_fetch_info *f)
 				fetch_send_callback(FETCH_NOTMODIFIED, 
 						f->fetch_handle, 0, 0,
 						FETCH_ERROR_NO_ERROR);
-				curl_free(url_path);
+				free(url_path);
 				return true;
 			}
 		}
