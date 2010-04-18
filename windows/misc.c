@@ -46,11 +46,6 @@ bool cookies_update(const char *domain, const struct cookie_data *data)
     return true; 
 }
 
-char *url_to_path(const char *url)
-{
-	return strdup(url + 5);
-}
-
 /**
  * Return the filename part of a full path
  *

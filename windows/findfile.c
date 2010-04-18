@@ -57,6 +57,33 @@ char *path_to_url(const char *path)
 	return url;
 }
 
+
+char *url_to_path(const char *url)
+{
+	char *url_path = curl_unescape(url, 0);
+	char *path;
+	char *sidx;
+
+	if ((url_path[FILE_SCHEME_PREFIX_LEN + 1] == ':') || 
+	    (url_path[FILE_SCHEME_PREFIX_LEN + 1] == '|')) {
+		/* url_path contains a drive: prefix */
+		path = strdup(url_path + FILE_SCHEME_PREFIX_LEN);
+
+		/* swap / for \ */
+		sidx = strrchr(path, '/');
+		while (sidx != NULL) {
+			*sidx = '\\';
+			sidx = strrchr(path, '/');
+		}	
+	} else {
+		/* return the absolute path including leading / */
+		path = strdup(url_path + (FILE_SCHEME_PREFIX_LEN - 1));
+	}
+	curl_free(url_path);
+
+	return path;
+}
+
 /**
  * Locate a shared resource file by searching known places in order.
  *
