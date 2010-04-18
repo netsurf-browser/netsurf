@@ -117,7 +117,6 @@ bool save_complete_html(hlcache_handle *c, const char *path, bool index,
 {
 	struct html_stylesheet *sheets;
 	struct content_html_object *objects;
-	const char *base_url;
 	char filename[256];
 	unsigned int i, count;
 	xmlDocPtr doc;
@@ -128,8 +127,6 @@ bool save_complete_html(hlcache_handle *c, const char *path, bool index,
 
 	if (save_complete_list_check(c, *list))
 		return true;
-
-	base_url = html_get_base_url(c);
 
 	/* save stylesheets, ignoring the base and adblocking sheets */
 	sheets = html_get_stylesheets(c, &count);
