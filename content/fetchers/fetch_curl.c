@@ -1183,7 +1183,6 @@ bool fetch_curl_process_headers(struct curl_fetch_info *f)
 					FETCH_ERROR_NO_ERROR);
 
 			/* create Content-Length */
-			type = fetch_filetype(url_path);
 			snprintf(header, sizeof header,	
 					"Content-Length: %" PRId64, 
 					(int64_t) s.st_size);
