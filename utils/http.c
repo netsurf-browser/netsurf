@@ -312,11 +312,6 @@ nserror http_parse_content_type(const char *header_value, char **media_type,
 			pos++;
 
 		if (*pos == ';') {
-			pos++;
-
-			while (*pos == ' ' || *pos == '\t')
-				pos++;
-
 			error = http_parse_parameter_list(&pos, &params);
 			if (error != NSERROR_OK) {
 				free(subtype);
