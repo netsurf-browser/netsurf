@@ -85,7 +85,10 @@ bool search_is_url(const char *url)
 		free(url2);
 		return false;
 	}
+
+	free(host);
 	free(url2);
+
 	return true;
 }
 
