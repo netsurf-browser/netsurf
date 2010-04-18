@@ -410,7 +410,7 @@ css_error nscss_request_import(struct content_css_data *c,
 			0, ctx->referer, NULL, nscss_import, ctx,
 			&child, accept,
 			&c->imports[c->import_count++].c);
-	if (error != NSERROR_OK) {
+	if (nerror != NSERROR_OK) {
 		return CSS_NOMEM;
 	}
 
