@@ -645,8 +645,12 @@ void content_convert(struct content *c)
 {
 	assert(c);
 	assert(c->type < HANDLER_MAP_COUNT);
-	assert(c->status == CONTENT_STATUS_LOADING);
-	
+	assert(c->status == CONTENT_STATUS_LOADING ||
+			c->status == CONTENT_STATUS_ERROR);
+
+	if (c->status != CONTENT_STATUS_LOADING)
+		return;
+
 	if (c->locked == true)
 		return;
 	
