@@ -81,7 +81,7 @@ bool nscss_create(struct content *c, const http_parameter *params)
 
 	/* Find charset specified on HTTP layer, if any */
 	error = http_parameter_list_find_item(params, "charset", &charset);
-	if (error != NSERROR_OK) {
+	if (error != NSERROR_OK || *charset == '\0') {
 		/* No charset specified, use fallback, if any */
 		/** \todo libcss will take this as gospel, which is wrong */
 		charset = c->fallback_charset;
