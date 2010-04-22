@@ -239,7 +239,7 @@ void search_text(const char *string, int string_len,
 {
 	struct rect bounds;
 	hlcache_handle *c;
-	struct box *box;
+	struct box *box = NULL;
 	bool case_sensitive, forwards, showall;
 	
 	case_sensitive = ((flags & SEARCH_FLAG_CASE_SENSITIVE) != 0) ?
@@ -255,11 +255,13 @@ void search_text(const char *string, int string_len,
 	if ((!c) || (content_get_type(c) != CONTENT_HTML &&
 			content_get_type(c) != CONTENT_TEXTPLAIN))
 		return;
+        
+	if (content_get_type(c) == CONTENT_HTML) {
+		box = html_get_box_tree(c);
 
-	box = html_get_box_tree(c);
-
-	if (!box)
-		return;
+		if (!box)
+			return;
+	}
 
 	/* LOG(("do_search '%s' - '%s' (%p, %p) %p (%d, %d) %d",
 		search_data.string, string, search_data.content, c, search_data.found->next,
