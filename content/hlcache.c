@@ -356,7 +356,17 @@ nserror hlcache_llcache_callback(llcache_handle *handle,
 				ctx->accepted_types, &type)) {
 			error = hlcache_find_content(ctx);
 			if (error != NSERROR_OK) {
-				free((char *) ctx->child.charset);
+				hlcache_event hlevent;
+
+				hlevent.type = CONTENT_MSG_ERROR;
+				hlevent.data.error = messages_get("MiscError");
+
+				ctx->handle->cb(ctx->handle, &hlevent, 
+						ctx->handle->pw);
+				
+				llcache_handle_abort(handle);
+				llcache_handle_release(handle);
+                                free((char *) ctx->child.charset);
 				free(ctx);
 				return error;
 			}
