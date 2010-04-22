@@ -768,64 +768,25 @@ fb_stop_click(fbtk_widget_t *widget,
         return 0;
 }
 
-/* left scroll icon click routine */
-static int
-fb_scrolll_click(fbtk_widget_t *widget,
-                 nsfb_event_t *event,
-                 int x, int y, void *pw)
-{
-        struct gui_window *gw = pw;
-
-        if (event->type != NSFB_EVENT_KEY_DOWN)
-        	return 0;
-
-        fb_window_scroll(gw->browser, -100, 0);
-        return 0;
-}
 
 static int
-fb_scrollr_click(fbtk_widget_t *widget,
-                 nsfb_event_t *event,
-                 int x, int y, void *pw)
+fb_scroll_callback(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 {
-        struct gui_window *gw = pw;
+        struct gui_window *gw = cbi->context;
 
-        if (event->type != NSFB_EVENT_KEY_DOWN)
-        	return 0;
+	switch (cbi->type) {
+	case FBTK_CBIT_SCROLLY:
+		fb_window_scroll(gw->browser, 0, 100 * cbi->y);
+		break;
+		
+	case FBTK_CBIT_SCROLLX:
+		fb_window_scroll(gw->browser, 100 * cbi->x, 0);
+		break;
 
-        fb_window_scroll(gw->browser, 100, 0);
-
-        return 0;
-}
-
-static int
-fb_scrollu_click(fbtk_widget_t *widget,
-                 nsfb_event_t *event,
-                 int x, int y, void *pw)
-{
-        struct gui_window *gw = pw;
-
-        if (event->type != NSFB_EVENT_KEY_DOWN)
-        	return 0;
-
-        fb_window_scroll(gw->browser, 0, -100);
-
-        return 0;
-}
-
-static int
-fb_scrolld_click(fbtk_widget_t *widget,
-                 nsfb_event_t *event,
-                 int x, int y, void *pw)
-{
-        struct gui_window *gw = pw;
-
-        if (event->type != NSFB_EVENT_KEY_DOWN)
-        	return 0;
-
-        fb_window_scroll(gw->browser, 0, 100);
-
-        return 0;
+	default:
+		break;
+	}
+	return 0;
 }
 
 static int
@@ -974,62 +935,29 @@ gui_create_browser_window(struct browser_window *bw,
 				FB_FRAME_COLOUR, FB_COLOUR_BLACK,
 				false);
                 fbtk_set_handler_move(gw->status, set_ptr_default_move, bw);
-		xpos = statusbar_width;
 
-                /* horizontal scrollbar */
-                fbtk_create_button(gw->window,
-				xpos,
-				fbtk_get_height(gw->window) - furniture_width +
-						(furniture_width -
-						scrolll.height) / 2,
-				FB_FRAME_COLOUR, &scrolll,
-				fb_scrolll_click, gw);
-		xpos += scrolll.width;
-
+                /* create horizontal scrollbar */
                 gw->hscroll = fbtk_create_hscroll(gw->window,
-				xpos,
-				fbtk_get_height(gw->window) - furniture_width,
-				fbtk_get_width(gw->window) - xpos -
-						scrollr.width,
-				furniture_width,
-				FB_SCROLL_COLOUR,
-				FB_FRAME_COLOUR);
+		  statusbar_width,
+		  fbtk_get_height(gw->window) - furniture_width,
+		  fbtk_get_width(gw->window) - statusbar_width - furniture_width,
+		  furniture_width,
+		  FB_SCROLL_COLOUR,
+		  FB_FRAME_COLOUR, 
+		  fb_scroll_callback,
+		  gw);
 
-                fbtk_create_button(gw->window,
-				fbtk_get_width(gw->window) - scrollr.width,
-				fbtk_get_height(gw->window) - furniture_width +
-						(furniture_width -
-						scrollr.height) / 2,
-				FB_FRAME_COLOUR, &scrollr,
-				fb_scrollr_click, gw);
-
-                /* create vertical */
-                fbtk_create_button(gw->window,
-				fbtk_get_width(gw->window) - furniture_width +
-						(furniture_width -
-						scrollu.width) / 2,
-				toolbar_height,
-				FB_FRAME_COLOUR, &scrollu,
-				fb_scrollu_click, gw);
-
+                /* create vertical scrollbar */
                 gw->vscroll = fbtk_create_vscroll(gw->window,
-				fbtk_get_width(gw->window) - furniture_width,
-				toolbar_height + scrollu.height,
-				furniture_width,
-				fbtk_get_height(gw->window) - toolbar_height -
-						furniture_width -
-						scrollu.height - scrolld.height,
-				FB_SCROLL_COLOUR,
-				FB_FRAME_COLOUR);
+		  fbtk_get_width(gw->window) - furniture_width,
+		  toolbar_height,
+		  furniture_width,
+		  fbtk_get_height(gw->window) - toolbar_height - furniture_width,
+		  FB_SCROLL_COLOUR,
+		  FB_FRAME_COLOUR, 
+		  fb_scroll_callback,
+		  gw);
 
-                fbtk_create_button(gw->window,
-				fbtk_get_width(gw->window) - furniture_width +
-						(furniture_width -
-						scrolld.width) / 2,
-				fbtk_get_height(gw->window) - furniture_width -
-						scrolld.height,
-				FB_FRAME_COLOUR, &scrolld,
-				fb_scrolld_click, gw);
 
                 break;
 

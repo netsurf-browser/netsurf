@@ -37,6 +37,7 @@
 
 #include "framebuffer/gui.h"
 #include "framebuffer/fbtk.h"
+#include "framebuffer/fbtk_widget.h"
 #include "framebuffer/bitmap.h"
 #include "framebuffer/image_data.h"
 
@@ -47,90 +48,6 @@ static plot_font_style_t root_style = {
 	.flags = FONTF_NONE,
 };
 
-enum fbtk_widgettype_e {
-        FB_WIDGET_TYPE_ROOT = 0,
-        FB_WIDGET_TYPE_WINDOW,
-        FB_WIDGET_TYPE_BITMAP,
-        FB_WIDGET_TYPE_FILL,
-        FB_WIDGET_TYPE_TEXT,
-        FB_WIDGET_TYPE_HSCROLL,
-        FB_WIDGET_TYPE_VSCROLL,
-        FB_WIDGET_TYPE_USER,
-};
-
-typedef struct fbtk_widget_list_s fbtk_widget_list_t;
-
-/* wrapper struct for all widget types */
-struct fbtk_widget_s {
-        /* Generic properties */
-        int x;
-        int y;
-        int width;
-        int height;
-        colour bg;
-        colour fg;
-
-        /* handlers */
-        fbtk_mouseclick_t click;
-        void *clickpw; /* private data for callback */
-
-        fbtk_input_t input;
-        void *inputpw; /* private data for callback */
-
-        fbtk_move_t move;
-        void *movepw; /* private data for callback */
-
-        fbtk_redraw_t redraw;
-        void *redrawpw; /* private data for callback */
-
-        bool redraw_required;
-
-        fbtk_widget_t *parent; /* parent widget */
-
-        /* Widget specific */
-        enum fbtk_widgettype_e type;
-
-        union {
-                /* toolkit base handle */
-                struct {
-                        nsfb_t *fb;
-                        fbtk_widget_t *rootw;
-                        fbtk_widget_t *input;
-                } root;
-
-                /* window */
-                struct {
-                        /* widgets associated with this window */
-                        fbtk_widget_list_t *widgets; /* begining of list */
-                        fbtk_widget_list_t *widgets_end; /* end of list */
-                } window;
-
-                /* bitmap */
-                struct {
-                        struct bitmap *bitmap;
-                } bitmap;
-
-                /* text */
-                struct {
-                        char* text;
-                        bool outline;
-                        fbtk_enter_t enter;
-                        void *pw;
-                        int idx;
-                } text;
-
-                /* application driven widget */
-                struct {
-                        void *pw; /* private data for user widget */
-                } user;
-
-                struct {
-                        int pos;
-                        int pct;
-                } scroll;
-
-        } u;
-};
 
 /* widget list */
 struct fbtk_widget_list_s {
@@ -206,7 +123,7 @@ bool fbtk_clip_to_widget(fbtk_widget_t *widget, bbox_t * restrict box)
 
 
 /* creates a new widget of a given type */
-static fbtk_widget_t *
+fbtk_widget_t *
 new_widget(enum fbtk_widgettype_e type)
 {
         fbtk_widget_t *neww;
@@ -254,7 +171,7 @@ fbtk_request_redraw(fbtk_widget_t *widget)
         }
 }
 
-static fbtk_widget_t *
+fbtk_widget_t *
 add_widget_to_window(fbtk_widget_t *window, fbtk_widget_t *widget)
 {
         fbtk_widget_list_t *newent;
@@ -372,94 +289,7 @@ fb_redraw_fill(fbtk_widget_t *root, fbtk_widget_t *widget, void *pw)
         return 0;
 }
 
-static int
-fb_redraw_hscroll(fbtk_widget_t *root, fbtk_widget_t *widget, void *pw)
-{
-        int hscroll;
-        int hpos;
-        nsfb_bbox_t bbox;
-        nsfb_bbox_t rect;
 
-        fbtk_get_bbox(widget, &bbox);
-
-        nsfb_claim(root->u.root.fb, &bbox);
-
-        rect = bbox;
-
-	/* background */
-        nsfb_plot_rectangle_fill(root->u.root.fb, &rect, widget->bg);
-
-	/* scroll well */
-        rect.x0 = bbox.x0 + 1;
-        rect.y0 = bbox.y0 + 2;
-        rect.x1 = bbox.x1 - 2;
-        rect.y1 = bbox.y1 - 3;
-        nsfb_plot_rectangle_fill(root->u.root.fb, &rect, widget->fg);
-
-	/* scroll well outline */
-        nsfb_plot_rectangle(root->u.root.fb, &rect, 1, 0xFF999999, false, false);
-
-        hscroll = ((widget->width - 4) * widget->u.scroll.pct) / 100 ;
-        hpos = ((widget->width - 4) * widget->u.scroll.pos) / 100 ;
-
-        LOG(("hscroll %d",hscroll));
-
-        rect.x0 = bbox.x0 + 3 + hpos;
-        rect.y0 = bbox.y0 + 5;
-        rect.x1 = bbox.x0 + hscroll + hpos;
-        rect.y1 = bbox.y0 + widget->height - 5;
-
-        nsfb_plot_rectangle_fill(root->u.root.fb, &rect, widget->bg);
-
-        nsfb_update(root->u.root.fb, &bbox);
-
-        return 0;
-}
-
-static int
-fb_redraw_vscroll(fbtk_widget_t *root, fbtk_widget_t *widget, void *pw)
-{
-        int vscroll;
-        int vpos;
-
-        nsfb_bbox_t bbox;
-        nsfb_bbox_t rect;
-
-        fbtk_get_bbox(widget, &bbox);
-
-        nsfb_claim(root->u.root.fb, &bbox);
-
-        rect = bbox;
-
-	/* background */
-        nsfb_plot_rectangle_fill(root->u.root.fb, &rect, widget->bg);
-
-        rect.x0 = bbox.x0 + 2;
-        rect.y0 = bbox.y0 + 1;
-        rect.x1 = bbox.x1 - 3;
-        rect.y1 = bbox.y1 - 2;
-        nsfb_plot_rectangle_fill(root->u.root.fb, &rect, widget->fg);
-
-	/* scroll well */
-        nsfb_plot_rectangle(root->u.root.fb, &rect, 1, 0xFF999999, false, false);
-
-	/* scroll well outline */
-        vscroll = ((widget->height - 4) * widget->u.scroll.pct) / 100 ;
-        vpos = ((widget->height - 4) * widget->u.scroll.pos) / 100 ;
-
-        LOG(("scroll %d",vscroll));
-
-        rect.x0 = bbox.x0 + 5;
-        rect.y0 = bbox.y0 + 3 + vpos;
-        rect.x1 = bbox.x0 + widget->width - 5;
-        rect.y1 = bbox.y0 + vscroll + vpos;
-
-        nsfb_plot_rectangle_fill(root->u.root.fb, &rect, widget->bg);
-
-        nsfb_update(root->u.root.fb, &bbox);
-
-        return 0;
-}
 
 static int
 fb_redraw_bitmap(fbtk_widget_t *root, fbtk_widget_t *widget, void *pw)
@@ -808,34 +638,6 @@ fbtk_set_text(fbtk_widget_t *widget, const char *text)
         fbtk_request_redraw(widget);
 }
 
-void
-fbtk_set_scroll(fbtk_widget_t *widget, int pct)
-{
-        if (widget == NULL)
-                return;
-
-        if ((widget->type == FB_WIDGET_TYPE_HSCROLL) ||
-            (widget->type == FB_WIDGET_TYPE_VSCROLL)) {
-
-                widget->u.scroll.pct = pct;
-                fbtk_request_redraw(widget);
-        }
-}
-
-void
-fbtk_set_scroll_pos(fbtk_widget_t *widget, int pos)
-{
-        if (widget == NULL)
-                return;
-
-        if ((widget->type == FB_WIDGET_TYPE_HSCROLL) ||
-            (widget->type == FB_WIDGET_TYPE_VSCROLL)) {
-
-        widget->u.scroll.pos = pos;
-
-        fbtk_request_redraw(widget);
-        }
-}
 
 void
 fbtk_set_bitmap(fbtk_widget_t *widget, struct bitmap *image)
@@ -1072,39 +874,7 @@ fbtk_create_fill(fbtk_widget_t *window, int x, int y, int width, int height, col
         return add_widget_to_window(window, neww);
 }
 
-fbtk_widget_t *
-fbtk_create_hscroll(fbtk_widget_t *window, int x, int y, int width, int height, colour fg, colour bg)
-{
-        fbtk_widget_t *neww = new_widget(FB_WIDGET_TYPE_HSCROLL);
 
-        neww->x = x;
-        neww->y = y;
-        neww->width = width;
-        neww->height = height;
-        neww->fg = fg;
-        neww->bg = bg;
-
-        neww->redraw = fb_redraw_hscroll;
-
-        return add_widget_to_window(window, neww);
-}
-
-fbtk_widget_t *
-fbtk_create_vscroll(fbtk_widget_t *window, int x, int y, int width, int height, colour fg, colour bg)
-{
-        fbtk_widget_t *neww = new_widget(FB_WIDGET_TYPE_VSCROLL);
-
-        neww->x = x;
-        neww->y = y;
-        neww->width = width;
-        neww->height = height;
-        neww->fg = fg;
-        neww->bg = bg;
-
-        neww->redraw = fb_redraw_vscroll;
-
-        return add_widget_to_window(window, neww);
-}
 
 fbtk_widget_t *
 fbtk_create_button(fbtk_widget_t *window,
