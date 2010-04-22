@@ -255,11 +255,11 @@ struct NewMenu *ami_create_menu(ULONG type)
 
 	menu[1].nm_Flags = menuflags;
 	menu[2].nm_Flags = menuflags;
-	menu[9].nm_Flags = menuflags;
-	menu[10].nm_Flags = menuflags;
+	menu[12].nm_Flags = menuflags;
+	menu[13].nm_Flags = menuflags;
 
 #ifndef WITH_PDF_EXPORT
-	menu[7].nm_Flags = NM_ITEMDISABLED;
+	menu[9].nm_Flags = NM_ITEMDISABLED;
 #endif
 
 	if(!menualreadyinit)
