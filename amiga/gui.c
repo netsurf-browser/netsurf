@@ -334,8 +334,11 @@ void ami_set_options(void)
 		option_cookie_jar = (char *)strdup("PROGDIR:Resources/CookieJar");
 */
 
+/* devs:curl-ca-bundle.crt is the default place for the ca bundle on OS4,
+ * but we can't rely on it existing, so default to our local one in resources */
+
 	if((!option_ca_bundle) || (option_ca_bundle[0] == '\0'))
-		option_ca_bundle = (char *)strdup("devs:curl-ca-bundle.crt");
+		option_ca_bundle = (char *)strdup("PROGDIR:Resources/ca-bundle");
 
 	if((!option_search_engines_file) || (option_search_engines_file[0] == '\0'))
 		option_search_engines_file = (char *)strdup("PROGDIR:Resources/SearchEngines");
