@@ -17,7 +17,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define _GNU_SOURCE  /* for strndup */
 #define __STDBOOL_H__	1
 #include <assert.h>
 #include <ctype.h>

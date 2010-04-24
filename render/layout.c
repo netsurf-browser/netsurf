@@ -31,7 +31,6 @@
  * layout_minmax_X() and layout_X().
  */
 
-#define _GNU_SOURCE  /* for strndup */
 #include <assert.h>
 #include <limits.h>
 #include <stdbool.h>

@@ -20,7 +20,6 @@
  * Low-level resource cache (implementation)
  */
 
-#define _GNU_SOURCE /* For strndup. Ugh. */
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>

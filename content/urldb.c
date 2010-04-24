@@ -86,7 +86,6 @@
  * potential crashes.
  */
 
-#define _GNU_SOURCE /* For strndup */
 #include <assert.h>
 #include <ctype.h>
 #include <stdbool.h>

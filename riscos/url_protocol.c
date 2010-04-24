@@ -26,7 +26,6 @@
 
 #include "utils/config.h"
 
-#define _GNU_SOURCE  /* for strndup */
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>

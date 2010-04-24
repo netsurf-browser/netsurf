@@ -23,19 +23,10 @@
 
 /* Try to detect which features the target OS supports */
 
-#define HAVE_STRNDUP
-#if defined(__FreeBSD__) || (defined(__SRV4) && defined(__sun)) || \
-	defined(__APPLE__) || defined(__HAIKU__) || defined(__BEOS__) \
-	|| defined(__OpenBSD__) || defined(_WIN32)
-	/* FreeBSD and Solaris do not have this function, so
-	 * we implement it ourselves in util.c
-	 */
-#undef HAVE_STRNDUP
 char *strndup(const char *s, size_t n);
-#endif
 
 #define HAVE_STRCASESTR
-#if (!(defined(_GNU_SOURCE) || defined(__NetBSD__) || defined(__OpenBSD__)) \
+#if (!(defined(__NetBSD__) || defined(__OpenBSD__)) \
 	|| defined(riscos) || defined(__APPLE__) || defined(_WIN32))
 #undef HAVE_STRCASESTR
 char *strcasestr(const char *haystack, const char *needle);
@@ -64,7 +55,7 @@ char *strcasestr(const char *haystack, const char *needle);
 #define HAVE_STRCHRNUL
 /* For some reason, UnixLib defines this unconditionally. 
  * Assume we're using UnixLib if building for RISC OS. */
-#if !(defined(_GNU_SOURCE) || defined(riscos))
+#if !(defined(riscos))
 #undef HAVE_STRCHRNUL
 char *strchrnul(const char *s, int c);
 #endif

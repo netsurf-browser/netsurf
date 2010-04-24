@@ -19,8 +19,6 @@
 
 /* rsrc: URL handling. */
 
-#define _GNU_SOURCE
-
 #define __STDBOOL_H__	1
 #include <assert.h>
 #include <errno.h>

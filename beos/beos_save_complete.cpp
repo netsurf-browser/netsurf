@@ -17,8 +17,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define _GNU_SOURCE
-
 #define __STDBOOL_H__	1
 #include <ctype.h>
 #include <stdio.h>

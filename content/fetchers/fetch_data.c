@@ -18,8 +18,6 @@
 
 /* data: URL handling.  See http://tools.ietf.org/html/rfc2397 */
 
-#define _GNU_SOURCE
-
 #include <assert.h>
 #include <errno.h>
 #include <stdbool.h>

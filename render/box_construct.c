@@ -24,7 +24,6 @@
  * Conversion of XML tree to box tree (implementation).
  */
 
-#define _GNU_SOURCE  /* for strndup */
 #include <assert.h>
 #include <ctype.h>
 #include <stdio.h>

@@ -157,11 +157,14 @@ struct browser_window *browser_window_create(const char *url,
 	bw->no_resize = true;
 	bw->last_action = wallclock();
 
+	bw->window = gui_create_browser_window(bw, clone, new_tab);
+
 	/* gui window */
-	if ((bw->window = gui_create_browser_window(bw, clone, new_tab)) == NULL) {
+	if (bw->window == NULL) {
 		browser_window_destroy(bw);
 		return NULL;
 	}
+
 	if (url)
 		browser_window_go(bw, url, referer, history_add);
 

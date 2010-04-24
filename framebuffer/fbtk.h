@@ -28,9 +28,13 @@
 typedef struct fbtk_widget_s fbtk_widget_t;
 
 enum fbtk_callback_info_type {
-	FBTK_CBIT_NONE,
-	FBTK_CBIT_SCROLLX,
+	FBTK_CBIT_SCROLLX = 0,
 	FBTK_CBIT_SCROLLY,
+	FBTK_CBIT_CLICK,
+	FBTK_CBIT_INPUT,
+	FBTK_CBIT_MOVE,
+	FBTK_CBIT_REDRAW,
+	FBTK_CBIT_END,
 };
 
 typedef struct fbtk_callback_info {
