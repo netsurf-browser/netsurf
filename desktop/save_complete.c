@@ -1,4 +1,4 @@
-#/*
+/*
  * Copyright 2004 John M Bell <jmb202@ecs.soton.ac.uk>
  * Copyright 2004-2007 James Bursa <bursa@users.sourceforge.net>
  *
