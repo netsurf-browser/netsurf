@@ -66,4 +66,5 @@ struct NewMenu *ami_create_menu(ULONG type);
 void ami_init_menulabs(void);
 void ami_free_menulabs(void);
 void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item);
+void ami_menu_update_disabled(struct Window *win, hlcache_handle *c);
 #endif

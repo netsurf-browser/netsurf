@@ -1872,6 +1872,7 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 	}
 
 	ami_update_buttons(gwin);
+	ami_menu_update_disabled(gwin->win, gwin->bw->current_content);
 
 	if(redraw)
 	{
@@ -3619,43 +3620,7 @@ void gui_window_new_content(struct gui_window *g)
 	if(g->shared->bw->browser_window_type != BROWSER_WINDOW_NORMAL ||
 		option_kiosk_mode == true) return;
 
-	if(content_get_type(c) <= CONTENT_CSS)
-	{
-		OnMenu(g->shared->win,AMI_MENU_SAVEAS_TEXT);
-		OnMenu(g->shared->win,AMI_MENU_SAVEAS_COMPLETE);
-		OnMenu(g->shared->win,AMI_MENU_SAVEAS_PDF);
-		OnMenu(g->shared->win,AMI_MENU_COPY);
-		OnMenu(g->shared->win,AMI_MENU_PASTE);
-		OnMenu(g->shared->win,AMI_MENU_SELECTALL);
-		OnMenu(g->shared->win,AMI_MENU_CLEAR);
-		OnMenu(g->shared->win,AMI_MENU_FIND);
-		OffMenu(g->shared->win,AMI_MENU_SAVEAS_IFF);
-	}
-	else
-	{
-		OffMenu(g->shared->win,AMI_MENU_SAVEAS_TEXT);
-		OffMenu(g->shared->win,AMI_MENU_SAVEAS_COMPLETE);
-		OffMenu(g->shared->win,AMI_MENU_SAVEAS_PDF);
-		OffMenu(g->shared->win,AMI_MENU_PASTE);
-		OffMenu(g->shared->win,AMI_MENU_SELECTALL);
-		OffMenu(g->shared->win,AMI_MENU_CLEAR);
-		OffMenu(g->shared->win,AMI_MENU_FIND);
-
-#ifdef WITH_NS_SVG
-		if(content_get_bitmap(c) || content_get_type(c) == CONTENT_SVG)
-#else
-		if(content_get_bitmap(c))
-#endif
-		{
-			OnMenu(g->shared->win,AMI_MENU_COPY);
-			OnMenu(g->shared->win,AMI_MENU_SAVEAS_IFF);
-		}
-		else
-		{
-			OffMenu(g->shared->win,AMI_MENU_COPY);
-			OffMenu(g->shared->win,AMI_MENU_SAVEAS_IFF);
-		}
-	}
+	ami_menu_update_disabled(g->shared->win, c);
 }
 
 bool gui_window_scroll_start(struct gui_window *g)

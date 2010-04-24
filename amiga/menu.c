@@ -49,6 +49,7 @@
 #include "amiga/gui_options.h"
 #include "amiga/print.h"
 #include "amiga/download.h"
+#include <proto/intuition.h>
 
 BOOL menualreadyinit;
 const char * const netsurf_version;
@@ -819,4 +820,49 @@ static const ULONG ami_asl_mime_hook(struct Hook *mh,struct FileRequester *fr,st
 
 	free(mt);
 	return ret;
-} 
+}
+
+void ami_menu_update_disabled(struct Window *win, hlcache_handle *c)
+{
+	if(content_get_type(c) <= CONTENT_CSS)
+	{
+		OnMenu(win,AMI_MENU_SAVEAS_TEXT);
+		OnMenu(win,AMI_MENU_SAVEAS_COMPLETE);
+#ifdef WITH_PDF_EXPORT
+		OnMenu(win,AMI_MENU_SAVEAS_PDF);
+#endif
+		OnMenu(win,AMI_MENU_COPY);
+		OnMenu(win,AMI_MENU_PASTE);
+		OnMenu(win,AMI_MENU_SELECTALL);
+		OnMenu(win,AMI_MENU_CLEAR);
+		OnMenu(win,AMI_MENU_FIND);
+		OffMenu(win,AMI_MENU_SAVEAS_IFF);
+	}
+	else
+	{
+		OffMenu(win,AMI_MENU_SAVEAS_TEXT);
+		OffMenu(win,AMI_MENU_SAVEAS_COMPLETE);
+#ifdef WITH_PDF_EXPORT
+		OffMenu(win,AMI_MENU_SAVEAS_PDF);
+#endif
+		OffMenu(win,AMI_MENU_PASTE);
+		OffMenu(win,AMI_MENU_SELECTALL);
+		OffMenu(win,AMI_MENU_CLEAR);
+		OffMenu(win,AMI_MENU_FIND);
+
+#ifdef WITH_NS_SVG
+		if(content_get_bitmap(c) || content_get_type(c) == CONTENT_SVG)
+#else
+		if(content_get_bitmap(c))
+#endif
+		{
+			OnMenu(win,AMI_MENU_COPY);
+			OnMenu(win,AMI_MENU_SAVEAS_IFF);
+		}
+		else
+		{
+			OffMenu(win,AMI_MENU_COPY);
+			OffMenu(win,AMI_MENU_SAVEAS_IFF);
+		}
+	}
+}
