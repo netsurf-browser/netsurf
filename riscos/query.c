@@ -20,6 +20,7 @@
 #include <string.h>
 
 #include <stdbool.h>
+
 #include "riscos/dialog.h"
 #include "riscos/query.h"
 #include "riscos/wimp.h"
@@ -177,8 +178,8 @@ query_id query_user_xy(const char *query, const char *detail,
 	}
 
 	icn = &query_template->icons[ICON_QUERY_YES];
-	len = strnlen(local_text ? local_text : yes,
-			icn->data.indirected_text.size - 1);
+	len = strlen(local_text ? local_text : yes);
+	len = max(len, icn->data.indirected_text.size - 1);
 	memcpy(icn->data.indirected_text.text,
 			local_text ? local_text: yes, len);
 	icn->data.indirected_text.text[len] = '\0';
@@ -207,8 +208,8 @@ query_id query_user_xy(const char *query, const char *detail,
 	}
 
 	icn = &query_template->icons[ICON_QUERY_NO];
-	len = strnlen(local_text ? local_text : no,
-			icn->data.indirected_text.size - 1);
+	len = strlen(local_text ? local_text : no);
+	len = max(len, icn->data.indirected_text.size - 1);
 	memcpy(icn->data.indirected_text.text,
 			local_text ? local_text : no, len);
 	icn->data.indirected_text.text[len] = '\0';

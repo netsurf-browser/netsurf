@@ -23,8 +23,10 @@
 #include <assert.h>
 #include <limits.h>
 #include <string.h>
-#include "oslib/osbyte.h"
-#include "oslib/territory.h"
+#include <oslib/osbyte.h>
+#include <oslib/territory.h>
+
+#include "utils/config.h"
 #include "riscos/ucstables.h"
 #include "utils/log.h"
 #include "utils/utf8.h"
