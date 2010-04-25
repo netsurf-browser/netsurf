@@ -1147,6 +1147,7 @@ void ami_gui_opts_open(void)
 						/*
 						** Export
 						*/
+#ifdef WITH_PDF_EXPORT
 						PAGE_Add, LayoutObject,
 							LAYOUT_AddChild,VGroupObject,
 								LAYOUT_AddChild, HGroupObject,
@@ -1292,11 +1293,12 @@ void ami_gui_opts_open(void)
          	           					GA_Text, gadlab[GID_OPTS_EXPORT_PASSWORD],
   				      		            GA_Selected, option_enable_PDF_password,
             	    				CheckBoxEnd,
-								LayoutEnd, // advanced
+								LayoutEnd, // export
 								CHILD_WeightedHeight, 0,
 							LayoutEnd, // page vgroup
 							CHILD_WeightedHeight, 0,
 						PageEnd, // page object
+#endif
 					End, // pagegroup
 				ClickTabEnd,
                 LAYOUT_AddChild, HGroupObject,

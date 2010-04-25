@@ -43,8 +43,8 @@
 bool save_as_pdf(struct hlcache_handle *c, const char *path)
 {
 	struct print_settings *psettings;
-	
-	psettings = print_make_settings(PRINT_DEFAULT, path, &haru_nsfont);
+
+	psettings = print_make_settings(PRINT_OPTIONS, path, &haru_nsfont);
 	if (psettings == NULL)
 		return false;
 
