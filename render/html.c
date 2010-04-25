@@ -1360,7 +1360,7 @@ bool html_replace_object(struct content *c, unsigned int i, const char *url)
 
 
 /**
- * Callback for fetchcache() for objects.
+ * Callback for hlcache_handle_retrieve() for objects.
  */
 
 nserror html_object_callback(hlcache_handle *object,
