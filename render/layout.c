@@ -2277,9 +2277,10 @@ bool layout_line(struct box *first, int *width, int *y,
 				int fcy = (cy > cont->clear_level) ? cy :
 						cont->clear_level;
 				fy = (fy > fcy) ? fy : fcy;
+				fy = (fy == cy) ? fy + height : fy;
 
 				place_float_below(b, *width,
-						cx, fy + height, cont);
+						cx, fy, cont);
 				fy = b->y;
 				if (d->style && css_computed_clear(d->style) !=
 							CSS_CLEAR_NONE) {
