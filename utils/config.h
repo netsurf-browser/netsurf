@@ -23,14 +23,29 @@
 
 /* Try to detect which features the target OS supports */
 
+#if (defined(_GNU_SOURCE))
+#define HAVE_STRNDUP
+#else
+#undef HAVE_STRNDUP
 char *strndup(const char *s, size_t n);
+#endif
 
+#if (defined(_GNU_SOURCE))
 #define HAVE_STRCASESTR
-#if (!(defined(__NetBSD__) || defined(__OpenBSD__)) \
-	|| defined(riscos) || defined(__APPLE__) || defined(_WIN32))
+#else
 #undef HAVE_STRCASESTR
 char *strcasestr(const char *haystack, const char *needle);
 #endif
+
+/* For some reason, UnixLib defines this unconditionally. 
+ * Assume we're using UnixLib if building for RISC OS. */
+#if (defined(_GNU_SOURCE) || defined(riscos))
+#define HAVE_STRCHRNUL
+#else
+#undef HAVE_STRCHRNUL
+char *strchrnul(const char *s, int c);
+#endif
+
 
 #define HAVE_UTSNAME
 #if (defined(_WIN32))
@@ -52,13 +67,6 @@ char *strcasestr(const char *haystack, const char *needle);
 #undef HAVE_STDOUT
 #endif
 
-#define HAVE_STRCHRNUL
-/* For some reason, UnixLib defines this unconditionally. 
- * Assume we're using UnixLib if building for RISC OS. */
-#if !(defined(riscos))
-#undef HAVE_STRCHRNUL
-char *strchrnul(const char *s, int c);
-#endif
 
 /* This section toggles build options on and off.
  * Simply undefine a symbol to turn the relevant feature off.

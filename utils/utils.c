@@ -295,6 +295,7 @@ char *strcasestr(const char *haystack, const char *needle)
 
 #endif
 
+#ifndef HAVE_STRNDUP
 
 /**
  * Duplicate up to n characters of a string.
@@ -317,6 +318,7 @@ char *strndup(const char *s, size_t n)
 	return s2;
 }
 
+#endif
 
 #ifndef HAVE_STRCHRNUL
 
