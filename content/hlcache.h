@@ -64,6 +64,11 @@ enum hlcache_retrieve_flag {
 };
 
 /**
+ * Finalise the high-level cache, destroying any remaining contents
+ */
+void hlcache_finalise(void);
+
+/**
  * Drive the low-level cache poll loop, and attempt to clean the cache.
  * No guarantee is made about what, if any, cache cleaning will occur.
  *

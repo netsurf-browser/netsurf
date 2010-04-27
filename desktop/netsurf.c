@@ -187,6 +187,10 @@ void netsurf_exit(void)
 	utf8_finalise();
 	LOG(("Destroying URLdb"));
 	urldb_destroy();
+	LOG(("Finalising high-level cache"));
+	hlcache_finalise();
+	LOG(("Finalising low-level cache"));
+	llcache_finalise();
 	LOG(("Exited successfully"));
 }
 

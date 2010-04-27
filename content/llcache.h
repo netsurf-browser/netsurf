@@ -161,6 +161,11 @@ typedef nserror (*llcache_query_callback)(const llcache_query *query, void *pw,
 nserror llcache_initialise(llcache_query_callback cb, void *pw);
 
 /**
+ * Finalise the low-level cache
+ */
+void llcache_finalise(void);
+
+/**
  * Cause the low-level cache to emit any pending notifications 
  * and attempt to clean the cache. No guarantee is made about
  * what, if any, cache cleaning will occur.

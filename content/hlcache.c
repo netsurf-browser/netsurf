@@ -88,6 +88,67 @@ static void hlcache_content_callback(struct content *c,
  ******************************************************************************/
 
 /* See hlcache.h for documentation */
+void hlcache_finalise(void)
+{
+	uint32_t num_contents, prev_contents;
+	hlcache_entry *entry;
+	hlcache_retrieval_ctx *ctx, *next;
+
+	/* Obtain initial count of contents remaining */
+	for (num_contents = 0, entry = hlcache_content_list; 
+			entry != NULL; entry = entry->next) {
+		num_contents++;
+	}
+
+	/* Drain cache */
+	do {
+		prev_contents = num_contents;
+
+		hlcache_clean();
+
+		for (num_contents = 0, entry = hlcache_content_list; 
+				entry != NULL; entry = entry->next) {
+			num_contents++;
+		}
+	} while (num_contents > 0 && num_contents != prev_contents);
+
+	LOG(("%d contents remaining:", num_contents));
+	for (entry = hlcache_content_list; entry != NULL; entry = entry->next) {
+		hlcache_handle entry_handle = { entry, NULL, NULL };
+
+		if (entry->content != NULL) {
+			LOG(("  %p : %s", entry, 
+					content_get_url(&entry_handle)));
+		} else {
+			LOG(("  %p", entry));
+		}
+	}
+
+	/* Clean up retrieval contexts */
+	if (hlcache_retrieval_ctx_ring != NULL) {
+		do {
+			ctx = hlcache_retrieval_ctx_ring;
+			next = ctx->r_next;
+
+			if (ctx->llcache != NULL)
+				llcache_handle_release(ctx->llcache);
+
+			if (ctx->handle != NULL)
+				free(ctx->handle);
+
+			if (ctx->child.charset != NULL)
+				free((char *) ctx->child.charset);
+
+			free(ctx);
+
+			ctx = next;
+		} while (ctx != hlcache_retrieval_ctx_ring);
+
+		hlcache_retrieval_ctx_ring = NULL;
+	}
+}
+
+/* See hlcache.h for documentation */
 nserror hlcache_poll(void)
 {
 	llcache_poll();
@@ -304,11 +365,11 @@ void hlcache_clean(void)
 		if (content_count_users(entry->content) != 0)
 			continue;
 
-		/** \todo This is over-zealous: all unused contents will be 
-		 * immediately destroyed. Ideally, we want to purge all 
-		 * unused contents that are using stale source data, and 
-		 * enough fresh contents such that the cache fits in the 
-		 * configured cache size limit.
+		/** \todo This is over-zealous: all unused contents 
+		 * will be immediately destroyed. Ideally, we want to 
+		 * purge all unused contents that are using stale 
+		 * source data, and enough fresh contents such that 
+		 * the cache fits in the configured cache size limit.
 		 */
 
 		/* Remove entry from cache */

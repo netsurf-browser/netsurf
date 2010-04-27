@@ -225,6 +225,48 @@ nserror llcache_initialise(llcache_query_callback cb, void *pw)
 }
 
 /* See llcache.h for documentation */
+void llcache_finalise(void)
+{
+	llcache_object *object, *next;
+
+	/* Clean uncached objects */
+	for (object = llcache_uncached_objects; object != NULL; object = next) {
+		llcache_object_user *user, *next_user;
+
+		next = object->next;
+
+		for (user = object->users; user != NULL; user = next_user) {
+			next_user = user->next;
+
+			free(user);
+		}
+
+		/* Fetch system has already been destroyed */
+		object->fetch.fetch = NULL;
+
+		llcache_object_destroy(object);
+	}
+
+	/* Clean cached objects */
+	for (object = llcache_cached_objects; object != NULL; object = next) {
+		llcache_object_user *user, *next_user;
+
+		next = object->next;
+
+		for (user = object->users; user != NULL; user = next_user) {
+			next_user = user->next;
+
+			free(user);
+		}
+
+		/* Fetch system has already been destroyed */
+		object->fetch.fetch = NULL;		
+
+		llcache_object_destroy(object);
+	}
+}
+
+/* See llcache.h for documentation */
 nserror llcache_poll(void)
 {
 	llcache_object *object;
