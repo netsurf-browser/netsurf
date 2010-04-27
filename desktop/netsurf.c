@@ -54,6 +54,11 @@ static void *netsurf_lwc_alloc(void *ptr, size_t len, void *pw)
 	return realloc(ptr, len);
 }
 
+static void netsurf_lwc_iterator(lwc_string *str, void *pw)
+{
+	LOG(("%.*s", (int) lwc_string_length(str), lwc_string_data(str)));
+}
+
 /**
  * Dispatch a low-level cache query to the frontend
  *
@@ -191,6 +196,8 @@ void netsurf_exit(void)
 	hlcache_finalise();
 	LOG(("Finalising low-level cache"));
 	llcache_finalise();
+	LOG(("Remaining lwc strings:"));
+	lwc_iterate_strings(netsurf_lwc_iterator, NULL);
 	LOG(("Exited successfully"));
 }
 
