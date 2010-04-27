@@ -479,11 +479,11 @@ void gui_poll(bool active)
         if (!active)
                 timeout = -1;
 
-        fbtk_event(fbtk, &event, timeout);
-
-        if ((event.type == NSFB_EVENT_CONTROL) &&
-            (event.value.controlcode ==  NSFB_CONTROL_QUIT))
-                netsurf_quit = true;
+        if (fbtk_event(fbtk, &event, timeout)) {
+                if ((event.type == NSFB_EVENT_CONTROL) &&
+                    (event.value.controlcode ==  NSFB_CONTROL_QUIT))
+                        netsurf_quit = true;
+        }
 
         fbtk_redraw(fbtk);
 
