@@ -295,7 +295,7 @@ extern const char *TARGET_BLANK;
 #define UNKNOWN_MAX_WIDTH INT_MAX
 
 
-struct box * box_create(css_computed_style *style,
+struct box * box_create(css_computed_style *style, bool style_owned,
 		char *href, const char *target, char *title,
 		char *id, void *context);
 void box_add_child(struct box *parent, struct box *child);

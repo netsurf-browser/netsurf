@@ -1600,7 +1600,7 @@ void html_object_failed(struct box *box, struct content *content,
 			if (box->next) {
 				/* split this inline container into two inline
 				 * containers */
-				ic = box_create(0, 0, 0, 0, 0, content);
+				ic = box_create(0, false, 0, 0, 0, 0, content);
 				if (!ic) {
 					union content_msg_data msg_data;
 

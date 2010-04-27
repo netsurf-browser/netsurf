@@ -51,6 +51,22 @@ struct box_duplicate_llist {
 static struct box_duplicate_llist *box_duplicate_last = NULL;
 
 /**
+ * Destructor for box nodes which own styles
+ *
+ * @param b The box being destroyed.
+ * @return 0 to allow talloc to continue destroying the tree.
+ */
+static int
+free_box_style(struct box *b)
+{
+	if (b->style != NULL) {
+		css_computed_style_destroy(b->style);
+	}
+	
+	return 0;
+}
+
+/**
  * Create a box tree node.
  *
  * \param  style     style for the box (not copied)
@@ -62,7 +78,7 @@ static struct box_duplicate_llist *box_duplicate_last = NULL;
  * \return  allocated and initialised box, or 0 on memory exhaustion
  */
 
-struct box * box_create(css_computed_style *style,
+struct box * box_create(css_computed_style *style, bool style_owned,
 		char *href, const char *target, char *title, char *id,
 		void *context)
 {
@@ -73,7 +89,10 @@ struct box * box_create(css_computed_style *style,
 	if (!box) {
 		return 0;
 	}
-
+	
+	if (style_owned == true)
+		talloc_set_destructor(box, free_box_style);
+	
 	box->type = BOX_INLINE;
 	box->style = style;
 	box->x = box->y = 0;

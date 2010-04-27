@@ -325,7 +325,7 @@ bool box_construct_element(xmlNode *n, struct content *content,
 		return false;
 
 	/* create box for this element */
-	box = box_create(style, href, target, title, id, content);
+	box = box_create(style, true, href, target, title, id, content);
 	if (!box)
 		return false;
 	/* set box type from computed display */
@@ -389,7 +389,7 @@ bool box_construct_element(xmlNode *n, struct content *content,
 			css_computed_float(style) == CSS_FLOAT_LEFT ||
 			css_computed_float(style) == CSS_FLOAT_RIGHT)) {
 		/* this is the first inline in a block: make a container */
-		*inline_container = box_create(0, 0, 0, 0, 0, content);
+		*inline_container = box_create(0, false, 0, 0, 0, 0, content);
 		if (!*inline_container)
 			return false;
 
@@ -409,7 +409,7 @@ bool box_construct_element(xmlNode *n, struct content *content,
 						href, target, title))
 					return false;
 
-			inline_end = box_create(style, href, target, title, id,
+			inline_end = box_create(style, false, href, target, title, id,
 					content);
 			if (!inline_end)
 				return false;
@@ -442,7 +442,7 @@ bool box_construct_element(xmlNode *n, struct content *content,
 			lwc_string *image_uri;
 			struct box *marker;
 
-			marker = box_create(style, 0, 0, title, 0, content);
+			marker = box_create(style, false, 0, 0, title, 0, content);
 			if (!marker)
 				return false;
 
@@ -530,7 +530,7 @@ bool box_construct_element(xmlNode *n, struct content *content,
 		 * current node. Note: new parent will be the float */
 		if (css_computed_float(style) == CSS_FLOAT_LEFT ||
 				css_computed_float(style) == CSS_FLOAT_RIGHT) {
-			parent = box_create(0, href, target, title, 0, content);
+			parent = box_create(0, false, href, target, title, 0, content);
 			if (!parent)
 				return false;
 
@@ -648,7 +648,7 @@ bool box_construct_text(xmlNode *n, struct content *content,
 
 		if (!*inline_container) {
 			/* this is the first inline node: make a container */
-			*inline_container = box_create(0, 0, 0, 0, 0, content);
+			*inline_container = box_create(0, false, 0, 0, 0, 0, content);
 			if (!*inline_container) {
 				free(text);
 				return false;
@@ -660,7 +660,7 @@ bool box_construct_text(xmlNode *n, struct content *content,
 		}
 
 		/** \todo Dropping const here is not clever */ 
-		box = box_create((css_computed_style *) parent_style, 
+		box = box_create((css_computed_style *) parent_style, false,
 				href, target, title, 0, content);
 		if (!box) {
 			free(text);
@@ -761,7 +761,7 @@ bool box_construct_text(xmlNode *n, struct content *content,
 			current[len] = 0;
 
 			if (!*inline_container) {
-				*inline_container = box_create(0, 0, 0, 0, 0,
+				*inline_container = box_create(0, false, 0, 0, 0, 0,
 						content);
 				if (!*inline_container) {
 					free(text);
@@ -775,7 +775,7 @@ bool box_construct_text(xmlNode *n, struct content *content,
 			}
 
 			/** \todo Dropping const isn't clever */
-			box = box_create((css_computed_style *) parent_style, 
+			box = box_create((css_computed_style *) parent_style, false,
 					href, target, title, 0, content);
 			if (!box) {
 				free(text);
@@ -814,9 +814,9 @@ bool box_construct_text(xmlNode *n, struct content *content,
 }
 
 
-static void *myrealloc(void *ptr, size_t len, void *pw)
+static void *ns_css_computed_style_alloc(void *ptr, size_t len, void *pw)
 {
-	return talloc_realloc_size(pw, ptr, len);
+	return realloc(ptr, len);
 }
 
 /**
@@ -842,7 +842,7 @@ css_computed_style *box_get_style(struct content *c,
 				(uint8_t *) s, strlen(s),
 				c->data.html.encoding, content__get_url(c), 
 				c->data.html.quirks != BINDING_QUIRKS_MODE_NONE,
-				myrealloc, c);
+				ns_css_computed_style_alloc, c);
 
 		xmlFree(s);
 
@@ -852,7 +852,8 @@ css_computed_style *box_get_style(struct content *c,
 
 	/* Select partial style for element */
 	partial = nscss_get_style(c, n, CSS_PSEUDO_ELEMENT_NONE, 
-			CSS_MEDIA_SCREEN, inline_style, myrealloc, c);
+				  CSS_MEDIA_SCREEN, inline_style,
+				  ns_css_computed_style_alloc, c);
 
 	/* No longer need inline style */
 	if (inline_style != NULL)
@@ -1257,7 +1258,7 @@ struct box_result box_applet(xmlNode *n, struct box_status *status,
 	if (!po)
 		return (struct box_result) {0, false, true};
 
-	box = box_create(style, status->href, 0, status->id,
+	box = box_create(style, false, status->href, 0, status->id,
 			status->content->data.html.box_pool);
 	if (!box) {
 		free(po);
@@ -1726,13 +1727,13 @@ bool box_input(BOX_SPECIAL_PARAMS)
 		if (!box_button(n, content, box, 0))
 			goto no_memory;
 
-		inline_container = box_create(0, 0, 0, 0, 0, content);
+		inline_container = box_create(0, false, 0, 0, 0, 0, content);
 		if (!inline_container)
 			goto no_memory;
 
 		inline_container->type = BOX_INLINE_CONTAINER;
 
-		inline_box = box_create(box->style, 0, 0, box->title, 0,
+		inline_box = box_create(box->style, false, 0, 0, box->title, 0,
 				content);
 		if (!inline_box)
 			goto no_memory;
@@ -1818,11 +1819,11 @@ bool box_input_text(BOX_SPECIAL_PARAMS, bool password)
 
 	box->type = BOX_INLINE_BLOCK;
 
-	inline_container = box_create(0, 0, 0, 0, 0, content);
+	inline_container = box_create(0, false, 0, 0, 0, 0, content);
 	if (!inline_container)
 		return false;
 	inline_container->type = BOX_INLINE_CONTAINER;
-	inline_box = box_create(box->style, 0, 0, box->title, 0, content);
+	inline_box = box_create(box->style, false, 0, 0, box->title, 0, content);
 	if (!inline_box)
 		return false;
 	inline_box->type = BOX_TEXT;
@@ -1917,11 +1918,11 @@ bool box_select(BOX_SPECIAL_PARAMS)
 	box->gadget = gadget;
 	gadget->box = box;
 
-	inline_container = box_create(0, 0, 0, 0, 0, content);
+	inline_container = box_create(0, false, 0, 0, 0, 0, content);
 	if (!inline_container)
 		goto no_memory;
 	inline_container->type = BOX_INLINE_CONTAINER;
-	inline_box = box_create(box->style, 0, 0, box->title, 0, content);
+	inline_box = box_create(box->style, false, 0, 0, box->title, 0, content);
 	if (!inline_box)
 		goto no_memory;
 	inline_box->type = BOX_TEXT;
@@ -2040,7 +2041,7 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 		return false;
 	box->gadget->box = box;
 
-	inline_container = box_create(0, 0, 0, box->title, 0, content);
+	inline_container = box_create(0, false, 0, 0, box->title, 0, content);
 	if (!inline_container)
 		return false;
 	inline_container->type = BOX_INLINE_CONTAINER;
@@ -2092,7 +2093,7 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 			return false;
 		}
 
-		inline_box = box_create(box->style, 0, 0, box->title, 0,
+		inline_box = box_create(box->style, false, 0, 0, box->title, 0,
 				content);
 		if (!inline_box) {
 			xmlFree(string);
@@ -2110,7 +2111,7 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 			break;
 
 		/* BOX_BR */
-		br_box = box_create(box->style, 0, 0, box->title, 0, content);
+		br_box = box_create(box->style, false, 0, 0, box->title, 0, content);
 		if (!br_box) {
 			xmlFree(string);
 			xmlBufferFree(buf);
