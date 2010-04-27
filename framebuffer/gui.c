@@ -428,14 +428,6 @@ static void gui_init(int argc, char** argv)
 
 }
 
-static void gui_init2(int argc, char** argv)
-{
-	struct browser_window *bw;
-
-        LOG(("calling browser_window_create"));
-	bw = browser_window_create(feurl, 0, 0, true, false);
-}
-
 /** Entry point from OS.
  *
  * /param argc The number of arguments in the string vector. 
@@ -444,6 +436,7 @@ static void gui_init2(int argc, char** argv)
  */
 int main(int argc, char** argv)
 {
+	struct browser_window *bw;
 	char options[PATH_MAX];
 	char messages[PATH_MAX];
 
@@ -457,9 +450,12 @@ int main(int argc, char** argv)
 
 	gui_init(argc, argv);
 
-	gui_init2(argc, argv);
+        LOG(("calling browser_window_create"));
+	bw = browser_window_create(feurl, 0, 0, true, false);
 
 	netsurf_main_loop();
+
+	browser_window_destroy(bw);
 
 	netsurf_exit();
 
