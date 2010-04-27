@@ -748,6 +748,8 @@ void layout_minmax_block(struct box *block,
 	}
 
 	/* add margins, border, padding to min, max widths */
+	/* Note: we don't know available width here so percentage margin
+	 * and paddings are wrong. */
 	if (block->gadget && wtype == CSS_WIDTH_SET &&
 			(block->gadget->type == GADGET_SUBMIT ||
 			block->gadget->type == GADGET_RESET ||
@@ -770,8 +772,17 @@ void layout_minmax_block(struct box *block,
 		extra_frac = 0;
 	if (1.0 <= extra_frac)
 		extra_frac = 0.9;
-	block->min_width = (min + extra_fixed) / (1.0 - extra_frac);
-	block->max_width = (max + extra_fixed) / (1.0 - extra_frac);
+	if (block->style != NULL &&
+			(css_computed_float(block->style) == CSS_FLOAT_LEFT ||
+			css_computed_float(block->style) == CSS_FLOAT_RIGHT)) {
+		/* floated boxs */
+		block->min_width = min + extra_fixed;
+		block->max_width = max + extra_fixed;
+	} else {
+		/* not floated */
+		block->min_width = (min + extra_fixed) / (1.0 - extra_frac);
+		block->max_width = (max + extra_fixed) / (1.0 - extra_frac);
+	}
 
 	assert(0 <= block->min_width && block->min_width <= block->max_width);
 }
@@ -1227,9 +1238,29 @@ void layout_float_find_dimensions(int available_width,
 		/* CSS 2.1 section 10.3.5 */
 		width = min(max(box->min_width, available_width),
 				box->max_width);
-		width -= box->margin[LEFT] + box->border[LEFT].width +
-				box->padding[LEFT] + box->padding[RIGHT] +
-				box->border[RIGHT].width + box->margin[RIGHT];
+
+		/* width includes margin, borders and padding */
+		if (width == available_width) {
+			width -= box->margin[LEFT] + box->border[LEFT].width +
+					box->padding[LEFT] +
+					box->padding[RIGHT] +
+					box->border[RIGHT].width +
+					box->margin[RIGHT];
+		} else {
+			/* width was obtained from a min_width or max_width
+			 * value, so need to use the same method for calculating
+			 * mbp as was used in layout_minmax_block() */
+			int fixed = 0;
+			float frac = 0;
+			calculate_mbp_width(box->style, LEFT, true, true, true,
+					&fixed, &frac);
+			calculate_mbp_width(box->style, RIGHT, true, true, true,
+					&fixed, &frac);
+			if (fixed < 0)
+				fixed = 0;
+
+			width -= fixed;
+		}
 
 		if (max_width >= 0 && width > max_width) width = max_width;
 		if (min_width >  0 && width < min_width) width = min_width;
@@ -2500,13 +2531,12 @@ bool layout_line(struct box *first, int *width, int *y,
 			d->x += x0;
 			d->y = *y;
 			continue;
-		}
-		else if ((d->type == BOX_INLINE &&
+		} else if ((d->type == BOX_INLINE &&
 				((d->object || d->gadget) == false)) ||
 				d->type == BOX_BR ||
 				d->type == BOX_TEXT ||
 				d->type == BOX_INLINE_END) {
-			/* regular inlines */
+			/* regular (non-replaced) inlines */
 			d->x += x0;
 			d->y = *y - d->padding[TOP];
 
@@ -2514,8 +2544,7 @@ bool layout_line(struct box *first, int *width, int *y,
 				/* text */
 				used_height = d->height;
 			}
-		}
-		else if ((d->type == BOX_INLINE && (d->object || d->gadget)) ||
+		} else if ((d->type == BOX_INLINE) ||
 				d->type == BOX_INLINE_BLOCK) {
 			/* replaced inlines and inline-blocks */
 			d->x += x0;
