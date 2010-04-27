@@ -2488,27 +2488,38 @@ bool layout_line(struct box *first, int *width, int *y,
 
 	for (d = first; d != b; d = d->next) {
 		d->inline_new_line = false;
-		if (d->type == BOX_INLINE || d->type == BOX_BR ||
-				d->type == BOX_TEXT ||
-				d->type == BOX_INLINE_END) {
-			d->x += x0;
-			d->y = *y - d->padding[TOP];
-		}
-		if ((d->type == BOX_INLINE && (d->object || d->gadget)) ||
-				d->type == BOX_INLINE_BLOCK) {
-			d->y = *y + d->border[TOP].width + d->margin[TOP];
-		}
-		if (d->type == BOX_INLINE_BLOCK) {
-			d->x += x0;
-		}
+
 		if (d->type == BOX_INLINE_BLOCK &&
 				(css_computed_position(d->style) ==
 						CSS_POSITION_ABSOLUTE ||
 				 css_computed_position(d->style) ==
-						CSS_POSITION_FIXED))
+						CSS_POSITION_FIXED)) {
+			/* positioned inline-blocks:
+			 * set static position (x,y) only, rest of positioning
+			 * is handled later */
+			d->x += x0;
+			d->y = *y;
 			continue;
-		if ((d->type == BOX_INLINE && (d->object || d->gadget)) ||
+		}
+		else if ((d->type == BOX_INLINE &&
+				((d->object || d->gadget) == false)) ||
+				d->type == BOX_BR ||
+				d->type == BOX_TEXT ||
+				d->type == BOX_INLINE_END) {
+			/* regular inlines */
+			d->x += x0;
+			d->y = *y - d->padding[TOP];
+
+			if (d->type == BOX_TEXT && d->height > used_height) {
+				/* text */
+				used_height = d->height;
+			}
+		}
+		else if ((d->type == BOX_INLINE && (d->object || d->gadget)) ||
 				d->type == BOX_INLINE_BLOCK) {
+			/* replaced inlines and inline-blocks */
+			d->x += x0;
+			d->y = *y + d->border[TOP].width + d->margin[TOP];
 			h = d->margin[TOP] + d->border[TOP].width +
 					d->padding[TOP] + d->height +
 					d->padding[BOTTOM] +
@@ -2517,9 +2528,6 @@ bool layout_line(struct box *first, int *width, int *y,
 			if (used_height < h)
 				used_height = h;
 		}
-		if (d->type == BOX_TEXT && d->height > used_height)
-			used_height = d->height;
-
 	}
 
 	first->inline_new_line = true;
