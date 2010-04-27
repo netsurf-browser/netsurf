@@ -1400,15 +1400,29 @@ void ami_handle_msg(void)
 				case WMHI_NEWSIZE:
 					switch(node->Type)
 					{
+						struct Node *tab = NULL, *ntab = NULL;
+						struct browser_window *bw = NULL;
+
 						case AMINS_WINDOW:
 							ami_set_border_gadget_balance(gwin);
 							ami_update_throbber(gwin,true);
+
+							if(gwin->tabs)
+							{
+								tab = GetHead(&gwin->tab_list);
+
+								do
+								{
+									ntab=GetSucc(tab);
+									GetClickTabNodeAttrs(tab,
+										TNA_UserData, &bw,
+										TAG_DONE);
+									bw->reformat_pending = true;
+								} while(tab=ntab);
+							}
 							// fall through
 						case AMINS_FRAME:
-							//GetAttr(SPACE_AreaBox,gwin->objects[GID_BROWSER],(ULONG *)&bbox);
-							//browser_reformat_pending = true;
 							gwin->bw->reformat_pending = true;
-							//browser_window_reformat(gwin->bw,bbox->Width,bbox->Height);
 							gwin->redraw_required = true;
 						break;
 					}
@@ -1487,7 +1501,7 @@ void ami_handle_msg(void)
 
 		if((node->Type == AMINS_WINDOW) || (node->Type == AMINS_FRAME))
 		{
-			if(gwin->redraw_required)
+			if(gwin->redraw_required || gwin->bw->reformat_pending)
 				ami_do_redraw(gwin);
 
 			if(gwin->bw->window->throbbing)
