@@ -154,6 +154,7 @@ bool schedule_run(void)
 
 void ami_remove_timer_event(struct nscallback *nscb)
 {
+#ifdef AMI_SCHEDULER_USES_TIMER
 	if(!nscb) return;
 
 	if(nscb->treq)
@@ -164,4 +165,5 @@ void ami_remove_timer_event(struct nscallback *nscb)
 		WaitIO((struct IORequest *)nscb->treq);
 		FreeVec(nscb->treq);
 	}
+#endif
 }
