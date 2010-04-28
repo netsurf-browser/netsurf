@@ -134,7 +134,7 @@ new_widget(enum fbtk_widgettype_e type)
 
 
 /* find the root widget from any widget in the toolkits hierarchy */
-static fbtk_widget_t *
+fbtk_widget_t *
 get_root_widget(fbtk_widget_t *widget)
 {
         while (widget->parent != NULL)

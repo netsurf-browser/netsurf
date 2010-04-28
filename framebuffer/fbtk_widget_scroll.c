@@ -23,6 +23,7 @@
 #include <libnsfb.h>
 #include <libnsfb_plot.h>
 #include <libnsfb_event.h>
+#include <libnsfb_cursor.h>
 
 #include "utils/log.h"
 #include "desktop/browser.h"
@@ -146,6 +147,21 @@ vscrollarea_click(fbtk_widget_t *widget,
 	return 0;
 }
 
+static int
+set_ptr_hand_move(fbtk_widget_t *widget,
+                  int x, int y,
+                  void *pw)
+{
+	fbtk_widget_t *root = get_root_widget(widget);
+        nsfb_cursor_set(root->u.root.fb, 
+			(nsfb_colour_t *)hand_image.pixdata, 
+			hand_image.width, 
+			hand_image.height, 
+			hand_image.width);
+
+        return 0;
+}
+
 fbtk_widget_t *
 fbtk_create_vscroll(fbtk_widget_t *window, 
 		    int x, int y, 
@@ -173,8 +189,11 @@ fbtk_create_vscroll(fbtk_widget_t *window,
 	neww->callback_context = context;
 
 	neww->u.scroll.btnul = fbtk_create_button(window, x + (width - scrollu.width) / 2, y, fg, &scrollu, vscrollu_click, neww);
+	fbtk_set_handler_move(neww->u.scroll.btnul, set_ptr_hand_move, NULL);
 
 	neww->u.scroll.btndr = fbtk_create_button(window, x + (width - scrolld.width) / 2, y + height - scrolld.height, fg, &scrolld, vscrolld_click, neww);
+	fbtk_set_handler_move(neww->u.scroll.btndr, set_ptr_hand_move, NULL);
+
 
         return add_widget_to_window(window, neww);
 }

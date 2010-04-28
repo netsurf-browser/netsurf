@@ -943,6 +943,15 @@ gui_create_browser_window(struct browser_window *bw,
 		  fb_scroll_callback,
 		  gw);
 
+                /* fill bottom right area */
+                widget = fbtk_create_fill(gw->window,
+                                          fbtk_get_width(gw->window) - furniture_width, 
+					  fbtk_get_height(gw->window) - furniture_width, 
+					  furniture_width,
+					  furniture_width,
+                                          FB_FRAME_COLOUR);
+                fbtk_set_handler_move(widget, set_ptr_default_move, bw);
+
                 /* create vertical scrollbar */
                 gw->vscroll = fbtk_create_vscroll(gw->window,
 		  fbtk_get_width(gw->window) - furniture_width,

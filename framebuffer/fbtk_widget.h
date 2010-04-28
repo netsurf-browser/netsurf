@@ -112,6 +112,8 @@ struct fbtk_widget_s {
 
 /* widget manipulation functions */
 
+fbtk_widget_t *get_root_widget(fbtk_widget_t *widget);
+
 fbtk_widget_t *new_widget(enum fbtk_widgettype_e type);
 
 fbtk_widget_t *add_widget_to_window(fbtk_widget_t *window, fbtk_widget_t *widget);
