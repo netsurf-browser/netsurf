@@ -191,9 +191,9 @@ schedule_run(void)
 	/* make rettime relative to now */
 	timersub(&nexttime, &tv, &rettime);
 
-	LOG(("returning time to next event as %ldcs",(rettime.tv_sec * 100) + (rettime.tv_usec / 10000)));
-	/* return next event time in cs */
-        return (rettime.tv_sec * 100) + (rettime.tv_usec / 10000);
+	/*LOG(("returning time to next event as %ldms",(rettime.tv_sec * 1000) + (rettime.tv_usec / 1000))); */
+	/* return next event time in milliseconds (24days max wait) */
+        return (rettime.tv_sec * 1000) + (rettime.tv_usec / 1000);
 }
 
 void list_schedule(void)

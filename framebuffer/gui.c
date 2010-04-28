@@ -69,8 +69,6 @@ struct gui_window *input_window = NULL;
 struct gui_window *search_current_window;
 struct gui_window *window_list = NULL;
 
-bool redraws_pending = false;
-
 /* private data for browser user widget */
 struct browser_widget_s {
 	struct browser_window *bw; /**< The browser window connected to this gui window */
@@ -472,7 +470,7 @@ void gui_multitask(void)
 void gui_poll(bool active)
 {
         nsfb_event_t event;
-        int timeout;
+        int timeout; /* timeout in miliseconds */
 
 	/* run the scheduler and discover how long to wait for the next event */
 	timeout = schedule_run();
@@ -482,7 +480,7 @@ void gui_poll(bool active)
 		timeout = 0; 
 
         /* if redraws are pending do not wait for event, return immediately */
-	if (redraws_pending)
+	if (fbtk_redraw_pending(fbtk))
 		timeout = 0; 
 
         if (fbtk_event(fbtk, &event, timeout)) {

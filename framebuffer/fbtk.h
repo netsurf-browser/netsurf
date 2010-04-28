@@ -241,6 +241,8 @@ void fbtk_request_redraw(fbtk_widget_t *widget);
  */
 int fbtk_redraw(fbtk_widget_t *widget);
 
+bool fbtk_redraw_pending(fbtk_widget_t *widget);
+
 int fbtk_count_children(fbtk_widget_t *widget);
 
 bool fbtk_get_bbox(fbtk_widget_t *widget, struct nsfb_bbox_s *bbox);

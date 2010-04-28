@@ -154,20 +154,20 @@ get_root_widget(fbtk_widget_t *widget)
 void
 fbtk_request_redraw(fbtk_widget_t *widget)
 {
-        widget->redraw_required = 1;
+        widget->redraw_required = true;
 
         if (widget->type == FB_WIDGET_TYPE_WINDOW) {
                 fbtk_widget_list_t *lent = widget->u.window.widgets;
 
                 while (lent != NULL) {
-                        lent->widget->redraw_required = 1;
+                        lent->widget->redraw_required = true;
                         lent = lent->next;
         }
         }
 
         while (widget->parent != NULL) {
                 widget = widget->parent;
-                widget->redraw_required = 1;
+                widget->redraw_required = true;
         }
 }
 
@@ -758,6 +758,17 @@ fbtk_move_pointer(fbtk_widget_t *widget, int x, int y, bool relative)
         if (window->move != NULL)
                 window->move(window, cloc.x0, cloc.y0, window->movepw);
 
+}
+
+bool
+fbtk_redraw_pending(fbtk_widget_t *widget)
+{
+        fbtk_widget_t *root;
+
+        /* ensure we have the root widget */
+        root = get_root_widget(widget);
+
+        return root->redraw_required;
 }
 
 int
