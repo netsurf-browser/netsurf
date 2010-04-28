@@ -1564,6 +1564,9 @@ void ami_gui_opts_use(void)
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_EXPORT_PASSWORD],(ULONG *)&data);
 	if(data) option_enable_PDF_password = true;
 		else option_enable_PDF_password = false;
+
+	ami_close_fonts();
+	ami_init_fonts();
 }
 
 void ami_gui_opts_close(void)
