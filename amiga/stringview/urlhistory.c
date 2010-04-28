@@ -71,6 +71,9 @@ static bool URLHistoryFound(const char *url, const struct url_data *data)
 {
 	struct Node *node;
 
+	/* skip non-visted pages */
+	if(data->visits <= 0) return true;
+
 	/* skip this URL if it is already in the list */
 	if(URLHistory_FindPage(url)) return true;
 
