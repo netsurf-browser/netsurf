@@ -49,7 +49,7 @@ bool ro_gui_options_cache_initialise(wimp_w w)
 
 	/* initialise all functions for a newly created window */
 	ro_gui_wimp_event_register_numeric_field(w, CACHE_MEMORY_SIZE,
-			CACHE_MEMORY_INC, CACHE_MEMORY_DEC, 0, 64, 1, 1);
+			CACHE_MEMORY_INC, CACHE_MEMORY_DEC, 0, 640, 1, 1);
 	ro_gui_wimp_event_register_mouse_click(w, ro_gui_options_cache_click);
 	ro_gui_wimp_event_register_cancel(w, CACHE_CANCEL_BUTTON);
 	ro_gui_wimp_event_register_ok(w, CACHE_OK_BUTTON,
