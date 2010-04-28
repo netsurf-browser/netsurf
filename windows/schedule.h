@@ -21,5 +21,6 @@
 #define _NETSURF_WINDOWS_SCHEDULE_H_
 
 void list_schedule(void);
+bool schedule_run(void);
 
 #endif

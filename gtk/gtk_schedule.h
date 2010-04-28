@@ -20,5 +20,6 @@
 #define NETSURF_GTK_CALLBACK_H 1
 
 typedef void (*gtk_callback)(void *p);
+bool schedule_run(void);
 
 #endif /* NETSURF_GTK_CALLBACK_H */

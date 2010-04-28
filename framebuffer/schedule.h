@@ -19,6 +19,7 @@
 #ifndef FRAMEBUFFER_SCHEDULE_H
 #define FRAMEBUFFER_SCHEDULE_H
 
+int schedule_run(void);
 void list_schedule(void);
 
 #endif

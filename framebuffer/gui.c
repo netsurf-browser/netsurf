@@ -472,12 +472,18 @@ void gui_multitask(void)
 void gui_poll(bool active)
 {
         nsfb_event_t event;
-        int timeout = 0;
+        int timeout;
 
-        active |= schedule_run() | redraws_pending;
+	/* run the scheduler and discover how long to wait for the next event */
+	timeout = schedule_run();
 
-        if (!active)
-                timeout = -1;
+        /* if active do not wait for event, return immediately */
+	if (active)
+		timeout = 0; 
+
+        /* if redraws are pending do not wait for event, return immediately */
+	if (redraws_pending)
+		timeout = 0; 
 
         if (fbtk_event(fbtk, &event, timeout)) {
                 if ((event.type == NSFB_EVENT_CONTROL) &&

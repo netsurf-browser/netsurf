@@ -123,21 +123,27 @@ void schedule_remove(void (*callback)(void *p), void *p)
 }
 
 /**
- * Process events up to current time.
+ * Process scheduled callbacks up to current time.
+ *
+ * @return The number of centiseconds untill the next callback or -1 for never.
  */
-
-bool schedule_run(void)
+int 
+schedule_run(void)
 {
 	struct timeval tv;
+	struct timeval nexttime;
+	struct timeval rettime;
         struct nscallback *cur_nscb;
         struct nscallback *prev_nscb;
         struct nscallback *unlnk_nscb;
 
         if (schedule_list == NULL)
-                return false;
+                return -1;
 
+	/* reset enumeration to the start of the list */
         cur_nscb = schedule_list;
         prev_nscb = NULL;
+	nexttime = cur_nscb->tv;
 
 	gettimeofday(&tv, NULL);
 
@@ -159,21 +165,35 @@ bool schedule_run(void)
                         /* call callback */
                         unlnk_nscb->callback(unlnk_nscb->p);
 
-                        free (unlnk_nscb);
+                        free(unlnk_nscb);
 
-                        /* the callback might have modded the list, so start
-                         * again
-                         */
+                        /* need to deal with callback modifying the list. */
+			if (schedule_list == NULL)
+				return -1; /* no more callbacks scheduled */
+			
+                        /* reset enumeration to the start of the list */
                         cur_nscb = schedule_list;
                         prev_nscb = NULL;
-
+			nexttime = cur_nscb->tv;
                 } else {
+			/* if the time to the event is sooner than the
+			 * currently recorded soonest event record it 
+			 */
+			if (timercmp(&nexttime, &cur_nscb->tv, >)) {
+				nexttime = cur_nscb->tv;
+			}
                         /* move to next element */
                         prev_nscb = cur_nscb;
                         cur_nscb = prev_nscb->next;
                 }
         }
-        return true;
+
+	/* make rettime relative to now */
+	timersub(&nexttime, &tv, &rettime);
+
+	LOG(("returning time to next event as %ldcs",(rettime.tv_sec * 100) + (rettime.tv_usec / 10000)));
+	/* return next event time in cs */
+        return (rettime.tv_sec * 100) + (rettime.tv_usec / 10000);
 }
 
 void list_schedule(void)

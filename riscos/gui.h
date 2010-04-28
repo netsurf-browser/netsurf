@@ -193,6 +193,7 @@ bits ro_filetype_from_unix_path(const char *unix_path);
 /* in schedule.c */
 extern bool sched_active;
 extern os_t sched_time;
+bool schedule_run(void);
 
 /* in debugwin.c */
 void ro_gui_debugwin_open(void);

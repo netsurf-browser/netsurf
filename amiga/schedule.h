@@ -34,4 +34,7 @@ struct nscallback
 };
 
 void ami_remove_timer_event(struct nscallback *nscb);
+
+bool schedule_run(void);
+
 #endif
