@@ -98,6 +98,8 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 	uint8 *utf8;
 	uint32 co = 0;
 	int utf16charlen;
+	ULONG emwidth = (ULONG)((fstyle->size / FONT_SIZE_SCALE) * glob->scale);
+	ULONG charwidth;
 
 	len = utf8_bounded_length(string, length);
 	if(utf8_to_enc(string,"UTF-16",length,(char **)&utf16) != UTF8_CONVERT_OK) return false;
@@ -124,7 +126,9 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 				OT_GlyphMap8Bit,&glyph,
 				TAG_END) == 0)
 			{
-				if(x < (tx + glyph->glm_X1))
+				charwidth = (ULONG)((glyph->glm_Width * emwidth) / 65536);
+
+				if(x < (tx + charwidth))
 				{
 					*actual_x = tx;
 					i = len+1;
@@ -134,7 +138,7 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 					co += utf8len;
 				}
 
-				tx += glyph->glm_X1;
+				tx += charwidth;
 
 				EReleaseInfo(&ofont->olf_EEngine,
 					OT_GlyphMap8Bit,glyph,
@@ -190,6 +194,7 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 	uint32 tx=0,i=0;
 	size_t len;
 	int utf8len, utf8clen = 0;
+	ULONG emwidth = (ULONG)((fstyle->size / FONT_SIZE_SCALE) * glob->scale);
 
 	len = utf8_bounded_length(string, length);
 	if(utf8_to_enc((char *)string,"UTF-16",length,(char **)&utf16) != UTF8_CONVERT_OK) return false;
@@ -224,7 +229,7 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 					}
 				}
 
-				tx+= glyph->glm_X1;
+				tx += (ULONG)((glyph->glm_Width * emwidth) / 65536);
 
 				EReleaseInfo(&ofont->olf_EEngine,
 					OT_GlyphMap8Bit,glyph,
@@ -308,6 +313,7 @@ ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const
 	uint32 x=0,y=0;
 	size_t len;
 	uint8 co = 0;
+	ULONG emwidth = (ULONG)((fstyle->size / FONT_SIZE_SCALE) * glob->scale);
 
 	if(!string || string[0]=='\0') return 0;
 	if(!length) return 0;
@@ -350,7 +356,7 @@ ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const
 						TAG_DONE);
 				}
 
-				x+= glyph->glm_X1;
+				x += (ULONG)((glyph->glm_Width * emwidth) / 65536);
 
 				EReleaseInfo(&ofont->olf_EEngine,
 					OT_GlyphMap8Bit,glyph,
