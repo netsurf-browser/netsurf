@@ -115,7 +115,7 @@ void schedule_remove(void (*callback)(void *p), void *p)
  * Process events up to current time.
  */
 
-bool schedule_run(void)
+BOOL schedule_run(void)
 {
 	struct nsObject *node;
 	struct nsObject *nnode;
