@@ -338,9 +338,9 @@ ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const
 				{
 					BltBitMapTags(BLITA_SrcX,glyph->glm_BlackLeft,
 						BLITA_SrcY,glyph->glm_BlackTop,
-						BLITA_DestX,dx+x,
-						BLITA_DestY,dy-glyph->glm_Y1,
-						BLITA_Width,glyph->glm_X1,
+						BLITA_DestX,dx + x - glyph->glm_X0 + glyph->glm_BlackLeft,
+						BLITA_DestY,dy - glyph->glm_Y0 + glyph->glm_BlackTop,
+						BLITA_Width,glyph->glm_BlackWidth,
 						BLITA_Height,glyph->glm_BlackHeight,
 						BLITA_Source,glyphbm,
 						BLITA_SrcType,BLITT_ALPHATEMPLATE,
