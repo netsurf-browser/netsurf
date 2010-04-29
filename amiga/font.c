@@ -1,5 +1,5 @@
 /*
- * Copyright 2008,2009 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008 - 2010 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -91,6 +91,8 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 	struct TextExtent extent;
 	struct TextFont *tfont;
 	uint16 *utf16 = NULL, *outf16 = NULL;
+	uint16 utf16next = NULL;
+	FIXED kern = 0;
 	struct OutlineFont *ofont;
 	struct GlyphMap *glyph;
 	uint32 tx=0,i=0;
@@ -118,15 +120,27 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 
 		utf8len = utf8_char_byte_length(string);
 
+		if((i + 1) < len)
+			utf16next = utf16[utf16charlen];
+		else
+			utf16next = 0;
+
 		if(ESetInfo(&ofont->olf_EEngine,
-			OT_GlyphCode,*utf16,
+			OT_GlyphCode, *utf16,
+			OT_GlyphCode2, utf16next,
 			TAG_END) == OTERR_Success)
 		{
 			if(EObtainInfo(&ofont->olf_EEngine,
 				OT_GlyphMap8Bit,&glyph,
 				TAG_END) == 0)
 			{
-				charwidth = (ULONG)((glyph->glm_Width * emwidth) / 65536);
+				kern = 0;
+
+				if(utf16next) EObtainInfo(&ofont->olf_EEngine,
+									OT_TextKernPair, &kern,
+									TAG_END);
+
+				charwidth = (ULONG)(((glyph->glm_Width - kern) * emwidth) / 65536);
 
 				if(x < (tx + charwidth))
 				{
@@ -189,6 +203,9 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 	char *ostr = string;
 	struct TextFont *tfont;
 	uint16 *utf16 = NULL,*outf16 = NULL;
+	uint16 utf16next = 0;
+	FIXED kern = 0;
+	int utf16charlen = 0;
 	struct OutlineFont *ofont;
 	struct GlyphMap *glyph;
 	uint32 tx=0,i=0;
@@ -208,8 +225,19 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 	{
 		utf8len = utf8_char_byte_length(string+utf8clen);
 
+		if (*utf16 < 0xD800 || 0xDFFF < *utf16)
+			utf16charlen = 1;
+		else
+			utf16charlen = 2;
+
+		if((i + 1) < len)
+			utf16next = utf16[utf16charlen];
+		else
+			utf16next = 0;
+
 		if(ESetInfo(&ofont->olf_EEngine,
-			OT_GlyphCode,*utf16,
+			OT_GlyphCode, *utf16,
+			OT_GlyphCode2, utf16next,
 			TAG_END) == OTERR_Success)
 		{
 			if(EObtainInfo(&ofont->olf_EEngine,
@@ -229,7 +257,7 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 					}
 				}
 
-				tx += (ULONG)((glyph->glm_Width * emwidth) / 65536);
+				tx += (ULONG)(((glyph->glm_Width - kern) * emwidth) / 65536);
 
 				EReleaseInfo(&ofont->olf_EEngine,
 					OT_GlyphMap8Bit,glyph,
@@ -237,11 +265,7 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 			}
 		}
 
-		if (*utf16 < 0xD800 || 0xDFFF < *utf16)
-			utf16 += 1;
-		else
-			utf16 += 2;
-
+		utf16 += utf16charlen;
 		utf8clen += utf8len;
 	}
 
@@ -302,6 +326,9 @@ struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle)
 ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const plot_font_style_t *fstyle,ULONG dx, ULONG dy)
 {
 	uint16 *utf16 = NULL, *outf16 = NULL;
+	uint16 utf16next = 0;
+	int utf16charlen;
+	FIXED kern = 0;
 	struct OutlineFont *ofont;
 	struct GlyphMap *glyph;
 	ULONG i,gx,gy;
@@ -327,10 +354,21 @@ ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const
 
 	dy++;
 
-	for(i=0;i<=len;i++)
+	for(i=0;i<len;i++)
 	{
+		if (*utf16 < 0xD800 || 0xDFFF < *utf16)
+			utf16charlen = 1;
+		else
+			utf16charlen = 2;
+
+		if((i + 1) < len)
+			utf16next = utf16[utf16charlen];
+		else
+			utf16next = 0;
+
 		if(ESetInfo(&ofont->olf_EEngine,
-			OT_GlyphCode,*utf16,
+			OT_GlyphCode, *utf16,
+			OT_GlyphCode2, utf16next,
 			TAG_END) == OTERR_Success)
 		{
 			if(EObtainInfo(&ofont->olf_EEngine,
@@ -356,17 +394,20 @@ ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const
 						TAG_DONE);
 				}
 
-				x += (ULONG)((glyph->glm_Width * emwidth) / 65536);
+				kern = 0;
+
+				if(utf16next) EObtainInfo(&ofont->olf_EEngine,
+									OT_TextKernPair, &kern,
+									TAG_END);
+
+				x += (ULONG)(((glyph->glm_Width - kern) * emwidth) / 65536);
 
 				EReleaseInfo(&ofont->olf_EEngine,
 					OT_GlyphMap8Bit,glyph,
 					TAG_END);
 			}
 		}
-		if (*utf16 < 0xD800 || 0xDFFF < *utf16)
-			utf16++;
-		else
-			utf16 += 2;
+		utf16 += utf16charlen;
 	}
 
 	free(outf16);
