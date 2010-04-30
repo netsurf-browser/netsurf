@@ -294,7 +294,7 @@ extern const char *TARGET_BLANK;
 #define UNKNOWN_WIDTH INT_MAX
 #define UNKNOWN_MAX_WIDTH INT_MAX
 
-
+void *box_style_alloc(void *ptr, size_t len, void *pw);
 struct box * box_create(css_computed_style *style, bool style_owned,
 		char *href, const char *target, char *title,
 		char *id, void *context);

@@ -537,6 +537,11 @@ void nsgtk_check_homedir(void)
  */
 void *nsgtk_hubbub_realloc(void *ptr, size_t len, void *pw)
 {
+	if (len == 0) {
+		free(ptr);
+		return NULL;
+	}
+
 	return realloc(ptr, len);
 }
 

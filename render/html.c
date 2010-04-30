@@ -106,6 +106,11 @@ static const char empty_document[] =
  */
 static void *myrealloc(void *ptr, size_t len, void *pw)
 {
+	if (len == 0) {
+		free(ptr);
+		return NULL;
+	}
+
 	return realloc(ptr, len);
 }
 

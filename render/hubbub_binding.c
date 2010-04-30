@@ -128,6 +128,7 @@ static hubbub_tree_handler tree_handler = {
 
 static void *myrealloc(void *ptr, size_t len, void *pw)
 {
+	/* talloc_realloc_size(pw, ptr, 0) == talloc_free(ptr) */
 	return talloc_realloc_size(pw, ptr, len);
 }
 

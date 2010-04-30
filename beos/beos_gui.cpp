@@ -1170,6 +1170,11 @@ bool cookies_update(const char *domain, const struct cookie_data *data)
 
 static void *myrealloc(void *ptr, size_t len, void *pw)
 {
+	if (len == 0) {
+		free(ptr);
+		return NULL;
+	}
+
 	return realloc(ptr, len);
 }
 

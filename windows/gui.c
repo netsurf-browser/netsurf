@@ -2284,6 +2284,11 @@ void gui_cert_verify(const char *url, const struct ssl_cert_info *certs,
 
 static void *myrealloc(void *ptr, size_t len, void *pw)
 {
+	if (len == 0) {
+		free(ptr);
+		return NULL;
+	}
+
 	return realloc(ptr, len);
 }
 

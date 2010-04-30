@@ -3754,5 +3754,10 @@ uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved)
 
 static void *myrealloc(void *ptr, size_t len, void *pw)
 {
+	if (len == 0) {
+		free(ptr);
+		return NULL;
+	}
+
 	return realloc(ptr, len);
 }

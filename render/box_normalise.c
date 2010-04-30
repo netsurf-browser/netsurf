@@ -76,19 +76,6 @@ static bool calculate_table_row(struct columns *col_info,
 static bool box_normalise_inline_container(struct box *cont, struct content *c);
 
 /**
- * Allocator
- *
- * \param ptr   Pointer to reallocate, or NULL for new allocation
- * \param size  Number of bytes requires
- * \param pw    Allocation context
- * \return Pointer to allocated block, or NULL on failure
- */
-static void *myrealloc(void *ptr, size_t len, void *pw)
-{
-	return talloc_realloc_size(pw, ptr, len);
-}
-
-/**
  * Ensure the box tree is correctly nested by adding and removing nodes.
  *
  * \param  block     box of type BLOCK, INLINE_BLOCK, or TABLE_CELL
@@ -162,7 +149,7 @@ bool box_normalise_block(struct box *block, struct content *c)
 			assert(block->style != NULL);
 
 			style = nscss_get_blank_style(c, block->style,
-					myrealloc, c);
+					box_style_alloc, NULL);
 			if (style == NULL)
 				return false;
 
@@ -256,7 +243,7 @@ bool box_normalise_table(struct box *table, struct content * c)
 			assert(table->style != NULL);
 
 			style = nscss_get_blank_style(c, table->style,
-					myrealloc, c);
+					box_style_alloc, NULL);
 			if (style == NULL) {
 				free(col_info.spans);
 				return false;
@@ -335,7 +322,8 @@ bool box_normalise_table(struct box *table, struct content * c)
 
 		assert(table->style != NULL);
 
-		style = nscss_get_blank_style(c, table->style, myrealloc, c);
+		style = nscss_get_blank_style(c, table->style, 
+				box_style_alloc, NULL);
 		if (style == NULL) {
 			free(col_info.spans);
 			return false;
@@ -351,7 +339,7 @@ bool box_normalise_table(struct box *table, struct content * c)
 		row_group->type = BOX_TABLE_ROW_GROUP;
 
 		style = nscss_get_blank_style(c, row_group->style, 
-				myrealloc, c);
+				box_style_alloc, NULL);
 		if (style == NULL) {
 			box_free(row_group);
 			free(col_info.spans);
@@ -463,7 +451,7 @@ bool box_normalise_table_spans(struct box *table, struct span_info *spans,
 
 					style = nscss_get_blank_style(c, 
 							table_row->style,
-							myrealloc, c);
+							box_style_alloc, NULL);
 					if (style == NULL)
 						return false;
 
@@ -564,7 +552,7 @@ bool box_normalise_table_row_group(struct box *row_group,
 			assert(row_group->style != NULL);
 
 			style = nscss_get_blank_style(c, row_group->style,
-					myrealloc, c);
+					box_style_alloc, NULL);
 			if (style == NULL)
 				return false;
 
@@ -632,7 +620,7 @@ bool box_normalise_table_row_group(struct box *row_group,
 		assert(row_group->style != NULL);
 
 		style = nscss_get_blank_style(c, row_group->style, 
-				myrealloc, c);
+				box_style_alloc, NULL);
 		if (style == NULL) {
 			return false;
 		}
@@ -691,7 +679,7 @@ bool box_normalise_table_row(struct box *row,
 			assert(row->style != NULL);
 
 			style = nscss_get_blank_style(c, row->style, 
-					myrealloc, c);
+					box_style_alloc, NULL);
 			if (style == NULL)
 				return false;
 

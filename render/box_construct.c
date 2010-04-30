@@ -813,12 +813,6 @@ bool box_construct_text(xmlNode *n, struct content *content,
 	return true;
 }
 
-
-static void *ns_css_computed_style_alloc(void *ptr, size_t len, void *pw)
-{
-	return realloc(ptr, len);
-}
-
 /**
  * Get the style for an element.
  *
@@ -842,7 +836,7 @@ css_computed_style *box_get_style(struct content *c,
 				(uint8_t *) s, strlen(s),
 				c->data.html.encoding, content__get_url(c), 
 				c->data.html.quirks != BINDING_QUIRKS_MODE_NONE,
-				ns_css_computed_style_alloc, c);
+				box_style_alloc, NULL);
 
 		xmlFree(s);
 
@@ -853,7 +847,7 @@ css_computed_style *box_get_style(struct content *c,
 	/* Select partial style for element */
 	partial = nscss_get_style(c, n, CSS_PSEUDO_ELEMENT_NONE, 
 				  CSS_MEDIA_SCREEN, inline_style,
-				  ns_css_computed_style_alloc, c);
+				  box_style_alloc, NULL);
 
 	/* No longer need inline style */
 	if (inline_style != NULL)

@@ -323,6 +323,11 @@ fb_browser_window_redraw(fbtk_widget_t *root, fbtk_widget_t *widget, void *pw)
 
 static void *myrealloc(void *ptr, size_t len, void *pw)
 {
+	if (len == 0) {
+		free(ptr);
+		return NULL;
+	}
+
 	return realloc(ptr, len);
 }
 

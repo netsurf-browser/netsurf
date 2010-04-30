@@ -60,6 +60,11 @@ static nserror nscss_import(hlcache_handle *handle,
  */
 static void *myrealloc(void *ptr, size_t size, void *pw)
 {
+	if (size == 0) {
+		free(ptr);
+		return NULL;
+	}
+
 	return realloc(ptr, size);
 }
 

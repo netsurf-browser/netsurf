@@ -51,6 +51,11 @@ bool verbose_log = false;
 
 static void *netsurf_lwc_alloc(void *ptr, size_t len, void *pw)
 {
+	if (len == 0) {
+		free(ptr);
+		return NULL;
+	}
+
 	return realloc(ptr, len);
 }
 
