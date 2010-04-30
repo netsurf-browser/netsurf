@@ -5,6 +5,13 @@
 <title>NetSurf | About NetSurf</title>
 <link rel="stylesheet" title="Standard" type="text/css" href="../netsurf">
 <link rel="alternate stylesheet" title="Unrestricted width" type="text/css" href="/netsurfur.css">
+<style>
+div#DevList { display: table; width: 100%; }
+div#DevList > div { display: table-cell; }
+div#DevList > div + div { border-left: 2px solid #94adff; padding-left: 1em; }
+div#DevList > div > h2 { font-size: 100%; font-weight: bold; border: none; padding: 0; margin: 0 0 1em 0; }
+div#DevList > div > ul { list-style-type: none; padding: 0; margin: 0; }
+</style>
 </head>
 
 <body>
@@ -21,62 +28,76 @@ multi-platform web browser for RISC OS, UNIX-like platforms (including Linux)
 and more.</p>
 
 <p>The NetSurf Developers are:</p>
-<div style="background: #ddd; white-space: pre; font-family: monospace; border: solid 1px black; margin: 10mm; padding: 1em 0.5em">Code:
-	Kevin Bagust
-	John-Mark Bell
-	Mark Benjamin
-	Adam Blokus
-	Pawe&#x0142 Blokus
-	James Bursa
-	Stefaan Claes
-	Calin Dobos
-	Michael Drake
-	Sean Fox
-	Stephen Fryatt
-	Rik Griffin
-	Matthew Hambley
-	Rob Jackson
-	Rob Kendrick
-	Jeffrey Lee
-	Adrian Lees
-	Michael Lester
-	Phil Mellor
-	Philip Pemberton
-	François Revol
-	Darren Salt
-	Vincent Sanders
-	James Shaw
-	Andrew Sidwell
-	Daniel Silverstone
-	Andrew Timmins
-	John Tytgat
-	Chris Williams
-	Richard Wilson
-	Bo Yang
-	Chris Young
-
-Documentation:
-	John-Mark Bell
-	James Bursa
-	Michael Drake
-	Rob Kendrick
-	James Shaw
-	Richard Wilson
-
-Graphics:
-	Michael Drake
-	Andrew Duffell
-	John Duffell
-	Richard Hallas
-	Phil Mellor
-
-Translations:
-	Sebastian Barthel
-	Bruno D'Arcangeli
-	Samir Hawamdeh
-	Gerard van Katwijk
-	Jérôme Mathevet
-	Simon Voortman
+<div id="DevList">
+<div>
+<h2>Code</h2>
+<ul>
+<li>Kevin Bagust</li>
+<li>John-Mark Bell</li>
+<li>Mark Benjamin</li>
+<li>Adam Blokus</li>
+<li>Pawe&#x0142 Blokus</li>
+<li>James Bursa</li>
+<li>Stefaan Claes</li>
+<li>Calin Dobos</li>
+<li>Michael Drake</li>
+<li>Sean Fox</li>
+<li>Stephen Fryatt</li>
+<li>Rik Griffin</li>
+<li>Matthew Hambley</li>
+<li>Rob Jackson</li>
+<li>Rob Kendrick</li>
+<li>Jeffrey Lee</li>
+<li>Adrian Lees</li>
+<li>Michael Lester</li>
+<li>Phil Mellor</li>
+<li>Philip Pemberton</li>
+<li>François Revol</li>
+<li>Darren Salt</li>
+<li>Vincent Sanders</li>
+<li>James Shaw</li>
+<li>Andrew Sidwell</li>
+<li>Daniel Silverstone</li>
+<li>Andrew Timmins</li>
+<li>John Tytgat</li>
+<li>Chris Williams</li>
+<li>Richard Wilson</li>
+<li>Bo Yang</li>
+<li>Chris Young</li>
+</ul>
+</div>
+<div>
+<h2>Documentation</h2>
+<ul>
+<li>John-Mark Bell</li>
+<li>James Bursa</li>
+<li>Michael Drake</li>
+<li>Rob Kendrick</li>
+<li>James Shaw</li>
+<li>Richard Wilson</li>
+</ul>
+</div>
+<div>
+<h2>Graphics</h2>
+<ul>
+<li>Michael Drake</li>
+<li>Andrew Duffell</li>
+<li>John Duffell</li>
+<li>Richard Hallas</li>
+<li>Phil Mellor</li>
+</ul>
+</div>
+<div>
+<h2>Translations</h2>
+<ul>
+<li>Sebastian Barthel</li>
+<li>Bruno D'Arcangeli</li>
+<li>Samir Hawamdeh</li>
+<li>Gerard van Katwijk</li>
+<li>Jérôme Mathevet</li>
+<li>Simon Voortman</li>
+</ul>
+</div>
 </div>
 
 <h2>Licence information</h2>
