@@ -271,17 +271,6 @@ static void ro_msg_save_desktop(wimp_message *message);
 static void ro_msg_window_info(wimp_message *message);
 static void ro_gui_view_source_bounce(wimp_message *message);
 
-static void *myrealloc(void *ptr, size_t len, void *pw)
-{
-	if (len == 0) {
-		free(ptr);
-		return NULL;
-	}
-
-	return realloc(ptr, len);
-}
-
-
 /**
  * Initialise the gui (RISC OS specific part).
  */
@@ -321,7 +310,7 @@ static void gui_init(int argc, char** argv)
 			ro_plot_patterned_lines = false;
 	}
 
-	if (hubbub_initialise("NetSurf:Resources.Aliases", myrealloc, NULL) !=
+	if (hubbub_initialise("NetSurf:Resources.Aliases", ns_realloc, NULL) !=
 			HUBBUB_OK)
 		die("Failed to initialise HTML parsing library.");
 
@@ -802,7 +791,7 @@ void gui_quit(void)
 	free(quirks_stylesheet_url);
 	free(adblock_stylesheet_url);
 	/* We don't care if this fails */
-	hubbub_finalise(myrealloc, NULL);
+	hubbub_finalise(ns_realloc, NULL);
 	xhourglass_off();
 }
 

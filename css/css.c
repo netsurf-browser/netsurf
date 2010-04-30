@@ -27,6 +27,7 @@
 #include "css/internal.h"
 #include "desktop/gui.h"
 #include "render/html.h"
+#include "utils/utils.h"
 #include "utils/http.h"
 #include "utils/messages.h"
 
@@ -49,24 +50,6 @@ static css_error nscss_import_complete(struct content_css_data *c,
 		const hlcache_handle *import);
 static nserror nscss_import(hlcache_handle *handle,
 		const hlcache_event *event, void *pw);
-
-/**
- * Allocation callback for libcss
- *
- * \param ptr   Pointer to reallocate, or NULL for new allocation
- * \param size  Number of bytes requires
- * \param pw    Allocation context
- * \return Pointer to allocated block, or NULL on failure
- */
-static void *myrealloc(void *ptr, size_t size, void *pw)
-{
-	if (size == 0) {
-		free(ptr);
-		return NULL;
-	}
-
-	return realloc(ptr, size);
-}
 
 /**
  * Initialise a CSS content
@@ -125,7 +108,7 @@ nserror nscss_create_css_data(struct content_css_data *c,
 
 	error = css_stylesheet_create(CSS_LEVEL_21, charset,
 			url, NULL, quirks, false,
-			myrealloc, NULL, 
+			ns_realloc, NULL, 
 			nscss_resolve_url, NULL,
 			&c->sheet);
 	if (error != CSS_OK) {
@@ -448,7 +431,7 @@ css_error nscss_import_complete(struct content_css_data *c,
 		if (blank_import == NULL) {
 			error = css_stylesheet_create(CSS_LEVEL_DEFAULT,
 					NULL, "", NULL, false, false,
-					myrealloc, NULL, 
+					ns_realloc, NULL, 
 					nscss_resolve_url, NULL,
 					&blank_import);
 			if (error != CSS_OK) {

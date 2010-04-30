@@ -126,7 +126,7 @@ static hubbub_tree_handler tree_handler = {
 	NULL
 };
 
-static void *myrealloc(void *ptr, size_t len, void *pw)
+static void *ns_talloc_based_realloc(void *ptr, size_t len, void *pw)
 {
 	/* talloc_realloc_size(pw, ptr, 0) == talloc_free(ptr) */
 	return talloc_realloc_size(pw, ptr, len);
@@ -152,8 +152,8 @@ binding_error binding_create_tree(void *arena, const char *charset, void **ctx)
 	c->quirks = BINDING_QUIRKS_MODE_NONE;
 	c->forms = NULL;
 
-	error = hubbub_parser_create(charset, true, myrealloc, arena, 
-			&c->parser);
+	error = hubbub_parser_create(charset, true, ns_talloc_based_realloc,
+			arena, &c->parser);
 	if (error != HUBBUB_OK) {
 		free(c);
 		if (error == HUBBUB_BADENCODING)

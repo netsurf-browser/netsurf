@@ -2282,21 +2282,11 @@ void gui_cert_verify(const char *url, const struct ssl_cert_info *certs,
 }
 
 
-static void *myrealloc(void *ptr, size_t len, void *pw)
-{
-	if (len == 0) {
-		free(ptr);
-		return NULL;
-	}
-
-	return realloc(ptr, len);
-}
-
 void gui_quit(void)
 {
 	LOG(("gui_quit"));
 
-	hubbub_finalise(myrealloc, NULL);
+	hubbub_finalise(ns_realloc, NULL);
 }
 
 static void gui_init(int argc, char** argv)
@@ -2309,7 +2299,7 @@ static void gui_init(int argc, char** argv)
 	nsws_find_resource(buf, "Aliases", "./windows/res/Aliases");
 	LOG(("Using '%s' as Aliases file", buf));
 
-	hubbub_error he = hubbub_initialise(buf, myrealloc, NULL);
+	hubbub_error he = hubbub_initialise(buf, ns_realloc, NULL);
 	LOG(("hubbub init %d", he));
 	if (he != HUBBUB_OK)
 		die("Unable to initialise HTML parsing library.\n");

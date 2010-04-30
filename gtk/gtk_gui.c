@@ -98,7 +98,6 @@ static struct form_control *select_menu_control;
 
 static void nsgtk_init_glade(void);
 static void nsgtk_check_homedir(void);
-static void *nsgtk_hubbub_realloc(void *ptr, size_t len, void *pw);
 static bool nsgtk_throbber_init(int framec);
 static void nsgtk_ssl_accept(GtkButton *w, gpointer data);
 static void nsgtk_ssl_reject(GtkButton *w, gpointer data);
@@ -199,7 +198,7 @@ static void gui_init(int argc, char** argv)
 
 	nsgtk_find_resource(buf, "Aliases", "./gtk/res/Aliases");
 	LOG(("Using '%s' as Aliases file", buf));
-	if (hubbub_initialise(buf, nsgtk_hubbub_realloc, NULL) != HUBBUB_OK)
+	if (hubbub_initialise(buf, ns_realloc, NULL) != HUBBUB_OK)
 		die("Unable to initialise HTML parsing library.\n");
 
 	nsgtk_find_resource(buf, "netsurf.xpm", "./gtk/res/netsurf.xpm");
@@ -501,7 +500,7 @@ void gui_quit(void)
 	free(toolbar_indices_file_location);
 	gtk_fetch_filetype_fin();
 	/* We don't care if this fails as we're about to die, anyway */
-	hubbub_finalise(nsgtk_hubbub_realloc, NULL);
+	hubbub_finalise(ns_realloc, NULL);
 }
 
 
@@ -532,19 +531,6 @@ void nsgtk_check_homedir(void)
 	}
 }
 
-
-/**
- * Allocator callback function for hubbub.
- */
-void *nsgtk_hubbub_realloc(void *ptr, size_t len, void *pw)
-{
-	if (len == 0) {
-		free(ptr);
-		return NULL;
-	}
-
-	return realloc(ptr, len);
-}
 
 
 /* This is an ugly hack to just get the new-style throbber going.

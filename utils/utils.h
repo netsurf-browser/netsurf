@@ -78,6 +78,18 @@ typedef struct
 #define nsmkdir(dir, mode) mkdir((dir))
 #endif
 
+/**
+ * Private-word-capable realloc() implementation which
+ * behaves as most NS libraries expect in the face of
+ * realloc(ptr, 0) and realloc(NULL, size).
+ *
+ * \param ptr The pointer for reallocation
+ * \param size The number of bytes for the allocation
+ * \param pw A "private word" which we ignore.
+ * \return The new pointer (NULL on frees or errors)
+ */
+void *ns_realloc(void *ptr, size_t size, void *pw);
+
 char * strip(char * const s);
 int whitespace(const char * str);
 char * squash_whitespace(const char * s);

@@ -97,24 +97,6 @@ static const char empty_document[] =
 	"</html>";
 
 /**
- * Allocator
- *
- * \param ptr   Pointer to reallocate, or NULL for new allocation
- * \param size  Number of bytes requires
- * \param pw    Allocation context
- * \return Pointer to allocated block, or NULL on failure
- */
-static void *myrealloc(void *ptr, size_t len, void *pw)
-{
-	if (len == 0) {
-		free(ptr);
-		return NULL;
-	}
-
-	return realloc(ptr, len);
-}
-
-/**
  * Create a CONTENT_HTML.
  *
  * The content_html_data structure is initialized and the HTML parser is
@@ -484,7 +466,7 @@ void html_finish_conversion(struct content *c)
 	}
 
 	/* Create selection context */
-	error = css_select_ctx_create(myrealloc, c, &c->data.html.select_ctx);
+	error = css_select_ctx_create(ns_realloc, c, &c->data.html.select_ctx);
 	if (error != CSS_OK) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);

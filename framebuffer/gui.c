@@ -321,17 +321,6 @@ fb_browser_window_redraw(fbtk_widget_t *root, fbtk_widget_t *widget, void *pw)
         return 0;
 }
 
-static void *myrealloc(void *ptr, size_t len, void *pw)
-{
-	if (len == 0) {
-		free(ptr);
-		return NULL;
-	}
-
-	return realloc(ptr, len);
-}
-
-
 static const char *fename;
 static int febpp;
 static int fewidth;
@@ -402,7 +391,7 @@ static void gui_init(int argc, char** argv)
 
 	fb_find_resource(buf, "Aliases", "./framebuffer/res/Aliases");
 	LOG(("Using '%s' as Aliases file", buf));
-	if (hubbub_initialise(buf, myrealloc, NULL) != HUBBUB_OK)
+	if (hubbub_initialise(buf, ns_realloc, NULL) != HUBBUB_OK)
 		die("Unable to initialise HTML parsing library.\n");
 
 	option_core_select_menu = true;
@@ -504,7 +493,7 @@ void gui_quit(void)
         framebuffer_finalise();
 
 	/* We don't care if this fails as we're about to exit, anyway */
-	hubbub_finalise(myrealloc, NULL);
+	hubbub_finalise(ns_realloc, NULL);
 }
 
 /* called back when click in browser window */

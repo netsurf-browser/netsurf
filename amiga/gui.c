@@ -157,7 +157,6 @@ void ami_scroller_hook(struct Hook *,Object *,struct IntuiMessage *);
 uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved);
 void ami_switch_tab(struct gui_window_2 *gwin,bool redraw);
 void ami_change_tab(struct gui_window_2 *gwin, int direction);
-static void *myrealloc(void *ptr, size_t len, void *pw);
 void ami_get_hscroll_pos(struct gui_window_2 *gwin, ULONG *xs);
 void ami_get_vscroll_pos(struct gui_window_2 *gwin, ULONG *ys);
 ULONG ami_set_border_gadget_balance(struct gui_window_2 *gwin);
@@ -417,7 +416,7 @@ void gui_init(int argc, char** argv)
 	quirks_stylesheet_url = "file:///PROGDIR:Resources/quirks.css";
 	adblock_stylesheet_url = "file:///PROGDIR:Resources/adblock.css";
 
-	if(hubbub_initialise("PROGDIR:Resources/Aliases",myrealloc,NULL) != HUBBUB_OK)
+	if(hubbub_initialise("PROGDIR:Resources/Aliases", ns_realloc, NULL) != HUBBUB_OK)
 	{
 		die(messages_get("NoMemory"));
 	}
@@ -1967,7 +1966,7 @@ void gui_quit(void)
 	ami_cookies_free();
 	ami_global_history_free();
 
-	hubbub_finalise(myrealloc,NULL);
+	hubbub_finalise(ns_realloc,NULL);
 
 	if(IApplication && ami_appid)
 		UnregisterApplication(ami_appid, NULL);
@@ -3752,12 +3751,3 @@ uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved)
     return itemid;
 }
 
-static void *myrealloc(void *ptr, size_t len, void *pw)
-{
-	if (len == 0) {
-		free(ptr);
-		return NULL;
-	}
-
-	return realloc(ptr, len);
-}
