@@ -20,19 +20,69 @@
 multi-platform web browser for RISC OS, UNIX-like platforms (including Linux)
 and more.</p>
 
-<p>The NetSurf Developers are:
-<em>(code)</em> Kevin Bagust, John M Bell, James Bursa, Michael Drake,
-Matthew Hambley, Rob Jackson, Rob Kendrick, Jeffrey Lee, Adrian Lees,
-Phil Mellor, Philip Pemberton, Daniel Silverstone, Andrew Timmins,
-John Tytgat, Vincent Sanders, Richard Wilson;
-<em>(graphics, documentation &amp; translations)</em> Sebastian Barthel,
-Bruno D'Arcangeli, Michael Drake, Andrew Duffell, Richard Hallas, Gerard van
-Katwijk, Jérôme Mathevet, Simon Voortman.</p>
+<p>The NetSurf Developers are:</p>
+<div style="background: #ddd; white-space: pre; font-family: monospace; border: solid 1px black; margin: 10mm; padding: 1em 0.5em">Code:
+	Kevin Bagust
+	John-Mark Bell
+	Mark Benjamin
+	Adam Blokus
+	Pawe&#x0142 Blokus
+	James Bursa
+	Stefaan Claes
+	Calin Dobos
+	Michael Drake
+	Sean Fox
+	Steven Fryatt
+	Rik Griffin
+	Matthew Hambley
+	Rob Jackson
+	Rob Kendrick
+	Jeffrey Lee
+	Adrian Lees
+	Michael Lester
+	Phil Mellor
+	Philip Pemberton
+	François Revol
+	Darren Salt
+	Vincent Sanders
+	James Shaw
+	Andrew Sidwell
+	Daniel Silverstone
+	Andrew Timmins
+	John Tytgat
+	Chris Williams
+	Richard Wilson
+	Bo Yang
+	Chris Young
+
+Documentation:
+	John-Mark Bell
+	James Bursa
+	Michael Drake
+	Rob Kendrick
+	James Shaw
+	Richard Wilson
+
+Graphics:
+	Michael Drake
+	Andrew Duffell
+	John Duffell
+	Richard Hallas
+	Phil Mellor
+
+Translations:
+	Sebastian Barthel
+	Bruno D'Arcangeli
+	Samir Hawamdeh
+	Gerard van Katwijk
+	Jérôme Mathevet
+	Simon Voortman
+</div>
 
 <h2>Licence information</h2>
 
 <p>NetSurf, the source code, documentation, translatable messages files and
-UI definitions are licenced under the GNU General Public Licence, version 2.0.
+UI definitions are licensed under the GNU General Public Licence, version 2.0.
 In addition, as a special exception, permission is granted to link the code
 of this release of NetSurf with the OpenSSL project's "OpenSSL" library (or
 with modified versions of it that use the same licence as the "OpenSSL"
@@ -42,7 +92,7 @@ other than "OpenSSL". If you modify the code, you may extend this exception
 to your version of the code, but you are not obligated to do so. If you do
 not wish to do so, delete this exception statement from your version.</p>
 
-<p>NetSurf's artwork resources are licenced under the MIT licence.</p>
+<p>NetSurf's artwork resources are licensed under the MIT licence.</p>
 
 <p>NetSurf may also incorporate the following other components.</p>
 
