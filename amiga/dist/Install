@@ -71,16 +71,17 @@
 	)
 )
 
-(procedure p_comparesobj #sobj
+(procedure p_comparesobj2 #sobj1_full #sobj2_full
 	(set #same 0)
-	(set #sobj-version (getversion (tackon "SObjs/" #sobj)))
+
+	(set #sobj-version (getversion (#sobj1_full)))
 	(if (= #sobj-version 0)
 		(
-			(if (exists (tackon "SObjs:" #sobj))
+			(if (exists (#sobj2_full))
 				(
-					(set #file-newer (earlier (tackon "SObjs:" #sobj) (tackon "SObjs/" #sobj)))
-					(set #old-size (getsize (tackon "SObjs:" #sobj)))
-					(set #new-size (getsize (tackon "SObjs/" #sobj)))
+					(set #file-newer (earlier (#sobj2_full) (#sobj1_full)))
+					(set #old-size (getsize (#sobj2_full)))
+					(set #new-size (getsize (#sobj1_full)))
 
 					(if (AND (= #old-size #new-size) (= #file-newer 0)) (set #same 1))
 				)
@@ -88,9 +89,29 @@
 		)
 		; else if version info is available
 		(
-			(set #sobj-oldversion (getversion (tackon "SObjs:" #sobj)))
+			(set #sobj-oldversion (getversion (#sobj2_full)))
 
 			(if (<= #sobj-version #sobj-oldversion) (set #same 1))
+		)
+	)
+)
+
+(procedure p_comparesobj #sobj
+	(set #sobj1 (tackon "SObjs/" #sobj))
+	(set #sobj2 (tackon "SObjs:" #sobj))
+
+	(p_comparesobj2 #sobj1 #sobj2)
+)
+
+(procedure p_linksobj #sobj #sobj_link
+	(set #sobj2 (tackon "SObjs:" #sobj_link))
+
+	(p_comparesobj2 (tackon "SObjs/" #sobj) #sobj2)
+
+	(if (= #same 0) ;if #sobj is newer than that pointed to by #sobj_link
+		(
+			(set #linkcmd (cat "makelink " #sobj2 " SObjs:" #sobj " soft"))
+			(run #linkcmd)
 		)
 	)
 )
@@ -402,6 +423,13 @@
 			(p_copysobj @each-name)
 			(set #complete (+ #complete 3))
 		)
+
+		(working "Creating Shared Objects Links")
+
+		(p_linksobj "libz.so.1.2.5" "libz.so")
+		(p_linksobj "libz.so.1.2.5" "libz.so.1")
+		(p_linksobj "libz.so.1.2.5" "libz.so.1.2")
+		(p_linksobj "libpng14.so.14" "libpng.so")
 	)
 )
 
