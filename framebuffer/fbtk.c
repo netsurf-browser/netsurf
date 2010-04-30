@@ -784,6 +784,8 @@ fbtk_redraw(fbtk_widget_t *widget)
 
         fbtk_redraw_widget(root, root->u.root.rootw);
 
+        widget->redraw_required = false;
+
         return 1;
 }
 
