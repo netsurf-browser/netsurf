@@ -61,6 +61,7 @@
 #include "gtk/gtk_history.h"
 #include "gtk/gtk_filetype.h"
 #include "gtk/gtk_download.h"
+#include "gtk/gtk_schedule.h"
 #include "render/box.h"
 #include "render/form.h"
 #include "render/html.h"

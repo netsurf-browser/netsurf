@@ -21,6 +21,7 @@
 #include <stdbool.h>
 
 #include "desktop/browser.h"
+#include "gtk/gtk_schedule.h"
 
 #ifdef DEBUG_GTK_SCHEDULE
 #include "utils/log.h"
