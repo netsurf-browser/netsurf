@@ -161,7 +161,7 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 		utf16 += utf16charlen;
 	}
 
-	if(co == (length))
+	if(co >= (length))
 	{
 		*actual_x = tx;
 		co = length;
