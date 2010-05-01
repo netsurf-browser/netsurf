@@ -267,6 +267,15 @@ bool nspng_convert(struct content *c)
 	assert(c->data.png.png != NULL);
 	assert(c->data.png.info != NULL);
 
+	if (c->data.png.bitmap == NULL) {
+		union content_msg_data msg_data;
+
+		msg_data.error = messages_get("PNGError");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		c->status = CONTENT_STATUS_ERROR;
+		return false;
+	}
+
 	data = content__get_source_data(c, &size);
 
 	png_destroy_read_struct(&c->data.png.png, &c->data.png.info, 0);
