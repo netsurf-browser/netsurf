@@ -585,8 +585,7 @@ bool print_document(struct gui_window *g, const char *filename)
 	saved_height = content_get_height(h);
 	if (content_get_type(h) == CONTENT_HTML)
 		/* TODO: Front end code shouldn't see contents */
-		layout_document(hlcache_handle_get_content(h),
-				saved_width, saved_height);
+		layout_document(hlcache_handle_get_content(h), width, height);
 
 	/* open printer file */
 	error = xosfind_openoutw(osfind_NO_PATH | osfind_ERROR_IF_DIR |
@@ -862,7 +861,7 @@ bool print_fonts_plot_path(const float *p, unsigned int n, colour fill, float wi
  * Plotter for text plotting during font listing.
  */
 
-bool print_fonts_plot_text(int x, int y, const char *text, size_t length, 
+bool print_fonts_plot_text(int x, int y, const char *text, size_t length,
 		const plot_font_style_t *fstyle)
 {
 	const char *font_family;
