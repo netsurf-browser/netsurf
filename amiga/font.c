@@ -111,7 +111,7 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 
 	*char_offset = length;
 
-	for(i=0;i<=len;i++)
+	for(i=0;i<len;i++)
 	{
 		if (*utf16 < 0xD800 || 0xDFFF < *utf16)
 			utf16charlen = 1;
@@ -218,7 +218,7 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 	*char_offset = 0;
 	*actual_x = 0;
 
-	for(i=0;i<=len;i++)
+	for(i=0;i<len;i++)
 	{
 		utf8len = utf8_char_byte_length(string+utf8clen);
 
@@ -348,7 +348,7 @@ ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const
 
 	dy++;
 
-	for(i=0;i<=len;i++)
+	for(i=0;i<len;i++)
 	{
 		if (*utf16 < 0xD800 || 0xDFFF < *utf16)
 			utf16charlen = 1;
