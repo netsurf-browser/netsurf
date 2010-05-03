@@ -348,7 +348,7 @@ ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const
 
 	dy++;
 
-	for(i=0;i<len;i++)
+	for(i=0;i<=len;i++)
 	{
 		if (*utf16 < 0xD800 || 0xDFFF < *utf16)
 			utf16charlen = 1;
