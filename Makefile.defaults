@@ -189,6 +189,10 @@ endif
 # ----------------------------------------------------------------------------
 ifeq ($(TARGET),amiga)
 
+  # Force using glibc internal iconv implementation instead of external libiconv
+  # Valid options: YES, NO
+  NETSURF_USE_LIBICONV_PLUG := NO
+
   # Enable NetSurf's use of librosprite for displaying RISC OS Sprites
   # Valid options: YES, NO, AUTO
   NETSURF_USE_ROSPRITE := YES
