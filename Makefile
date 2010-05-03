@@ -516,7 +516,7 @@ ifeq ($(TARGET),amiga)
     $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG (libsvgtiny)))
     $(eval $(call feature_enabled,MNG,,-llcms -ljpeg,PNG/JNG/MNG (libmng)))
 
-  CFLAGS += -D__USE_INLINE__ -std=c99 -I . -Dnsamiga
+  CFLAGS += -D__USE_INLINE__ -std=c99 -I . -I SDK:local/common/include/libpng12 -Dnsamiga
   LDFLAGS += -lxml2 -ldl -lcurl -lpthread -lregex -lauto
   LDFLAGS += -lssl -lcrypto -lhubbub -lcss -lparserutils -lwapcaplet
 
