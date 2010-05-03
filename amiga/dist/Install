@@ -354,7 +354,7 @@
 
 (complete 20)
 
-(set #netsurf-name (select #cairo-version "NetSurf" "NetSurf_Cairo"))
+(set #netsurf-name (select #cairo-version "NetSurf" "NetSurf-Cairo"))
 
 (if (= #AutoInstall 0)
 	(

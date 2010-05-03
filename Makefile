@@ -516,13 +516,15 @@ ifeq ($(TARGET),amiga)
     $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG (libsvgtiny)))
     $(eval $(call feature_enabled,MNG,,-llcms -ljpeg,PNG/JNG/MNG (libmng)))
 
-  CFLAGS += -D__USE_INLINE__ -std=c99 -I . -I SDK:local/common/include/libpng12 -Dnsamiga
+  CFLAGS += -D__USE_INLINE__ -std=c99 -I . -I /SDK/local/common/include/libpng12 -Dnsamiga
   LDFLAGS += -lxml2 -ldl -lcurl -lpthread -lregex -lauto
   LDFLAGS += -lssl -lcrypto -lhubbub -lcss -lparserutils -lwapcaplet
 
   ifeq ($(NETSURF_AMIGA_USE_CAIRO),YES)
-    CFLAGS += -DNS_AMIGA_CAIRO -I SDK:local/common/include/cairo
+    CFLAGS += -DNS_AMIGA_CAIRO -I /SDK/local/common/include/cairo
     LDFLAGS += -use-dynld -lcairo -lpixman-1 -lfreetype -lfontconfig -lpng -lexpat
+    SUBTARGET := -cairo
+    EXETARGET := NetSurf_Cairo
   endif
 endif
 

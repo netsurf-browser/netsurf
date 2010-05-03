@@ -162,7 +162,7 @@ endif
 
 ifeq ($(TARGET),amiga)
 SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_AMIGA) $(S_PDF)
-EXETARGET := NetSurf
+EXETARGET := NetSurf$(SUBTARGET)
 endif
 
 ifeq ($(TARGET),framebuffer)
