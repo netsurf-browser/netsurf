@@ -208,8 +208,12 @@ void ami_gui_opts_setup(void)
 	tabs[4] = (char *)ami_utf8_easy((char *)messages_get("con_fonts"));
 	tabs[5] = (char *)ami_utf8_easy((char *)messages_get("con_cache"));
 	tabs[6] = (char *)ami_utf8_easy((char *)messages_get("con_advanced"));
+#ifdef WITH_PDF_EXPORT
 	tabs[7] = (char *)ami_utf8_easy((char *)messages_get("Export"));
 	tabs[8] = NULL;
+#else
+	tabs[7] = NULL;
+#endif
 
 	screenopts[0] = (char *)ami_utf8_easy((char *)messages_get("ScreenOwn"));
 	screenopts[1] = (char *)ami_utf8_easy((char *)messages_get("ScreenWB"));
