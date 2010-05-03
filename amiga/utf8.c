@@ -19,7 +19,6 @@
 #include <sys/types.h>
 #include "utils/utf8.h"
 #include <proto/exec.h>
-#include <parserutils/charset/mibenum.h>
 #include <proto/diskfont.h>
 #include <diskfont/diskfonttag.h>
 
@@ -30,7 +29,7 @@ utf8_convert_ret utf8_to_local_encoding(const char *string, size_t len,
 	char *encname;
 
 	charset = GetDiskFontCtrl(DFCTRL_CHARSET);
-	encname = parserutils_charset_mibenum_to_name(charset);
+	encname = ObtainCharsetInfo(DFCS_NUMBER, charset, DFCS_MIMENAME);
 	
 	return utf8_to_enc(string,encname,len,result);
 }
@@ -75,7 +74,7 @@ utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 	char *encname;
 
 	charset = GetDiskFontCtrl(DFCTRL_CHARSET);
-	encname = parserutils_charset_mibenum_to_name(charset);
+	encname = ObtainCharsetInfo(DFCS_NUMBER, charset, DFCS_MIMENAME);
 	
 	return utf8_from_enc(string,encname,len,result);
 }

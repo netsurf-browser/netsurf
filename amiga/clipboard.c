@@ -17,7 +17,6 @@
  */
 
 #include "desktop/gui.h"
-#include <parserutils/charset/mibenum.h>
 #include "amiga/iff_cset.h"
 #include <proto/iffparse.h>
 #include <datatypes/textclass.h>
@@ -31,6 +30,8 @@
 #include <proto/datatypes.h>
 #include "amiga/bitmap.h"
 #include "amiga/iff_dr2d.h"
+#include <proto/diskfont.h>
+#include <diskfont/diskfonttag.h>
 
 struct IFFHandle *iffh = NULL;
 
@@ -93,7 +94,9 @@ void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
 				}
 				else
 				{
-					utf8_from_enc(readbuf,parserutils_charset_mibenum_to_name(cset.CodeSet),rlen,&clip);
+					utf8_from_enc(readbuf,
+						ObtainCharsetInfo(DFCS_NUMBER, cset.CodeSet, DFCS_MIMENAME),
+						rlen, &clip);
 				}
 
 				browser_window_paste_text(g->shared->bw,clip,rlen,true);
