@@ -230,10 +230,11 @@ remove_widget_from_window(fbtk_widget_t *window, fbtk_widget_t *widget)
 }
 
 static void
-fbtk_redraw_widget(fbtk_widget_t *root, fbtk_widget_t *widget)
+fbtk_redraw_widget(fbtk_widget_t *widget)
 {
         nsfb_bbox_t saved_plot_ctx;
         nsfb_bbox_t plot_ctx;
+	fbtk_widget_t *root = get_root_widget(widget);
 
         //LOG(("widget %p type %d", widget, widget->type));
         if (widget->redraw_required == false)
@@ -242,7 +243,7 @@ fbtk_redraw_widget(fbtk_widget_t *root, fbtk_widget_t *widget)
         widget->redraw_required = false;
 
         /* ensure there is a redraw handler */
-        if (widget->redraw == NULL)
+        if (fbtk_get_handler(widget, FBTK_CBT_REDRAW) == NULL)
                 return;
 
         /* get the current clipping rectangle */
@@ -258,8 +259,7 @@ fbtk_redraw_widget(fbtk_widget_t *root, fbtk_widget_t *widget)
 
                 nsfb_plot_set_clip(root->u.root.fb, &plot_ctx);
 
-                /* do our drawing according to type */
-                widget->redraw(root, widget, widget->redrawpw);
+		fbtk_post_callback(widget, FBTK_CBT_REDRAW);
 
                 /* restore clipping rectangle */
                 nsfb_plot_set_clip(root->u.root.fb, &saved_plot_ctx);
@@ -272,9 +272,11 @@ fbtk_redraw_widget(fbtk_widget_t *root, fbtk_widget_t *widget)
 /*************** redraw widgets **************/
 
 static int
-fb_redraw_fill(fbtk_widget_t *root, fbtk_widget_t *widget, void *pw)
+fb_redraw_fill(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 {
         nsfb_bbox_t bbox;
+	fbtk_widget_t *root = get_root_widget(widget);
+
         fbtk_get_bbox(widget, &bbox);
 
         nsfb_claim(root->u.root.fb, &bbox);
@@ -292,10 +294,11 @@ fb_redraw_fill(fbtk_widget_t *root, fbtk_widget_t *widget, void *pw)
 
 
 static int
-fb_redraw_bitmap(fbtk_widget_t *root, fbtk_widget_t *widget, void *pw)
+fb_redraw_bitmap(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 {
         nsfb_bbox_t bbox;
         nsfb_bbox_t rect;
+	fbtk_widget_t *root = get_root_widget(widget);
 
         fbtk_get_bbox(widget, &bbox);
 
@@ -310,7 +313,13 @@ fb_redraw_bitmap(fbtk_widget_t *root, fbtk_widget_t *widget, void *pw)
         }
 
         /* plot the image */
-        nsfb_plot_bitmap(root->u.root.fb, &rect, (nsfb_colour_t *)widget->u.bitmap.bitmap->pixdata, widget->u.bitmap.bitmap->width, widget->u.bitmap.bitmap->height, widget->u.bitmap.bitmap->width, !widget->u.bitmap.bitmap->opaque);
+        nsfb_plot_bitmap(root->u.root.fb, 
+			 &rect, 
+			 (nsfb_colour_t *)widget->u.bitmap.bitmap->pixdata, 
+			 widget->u.bitmap.bitmap->width, 
+			 widget->u.bitmap.bitmap->height, 
+			 widget->u.bitmap.bitmap->width, 
+			 !widget->u.bitmap.bitmap->opaque);
 
         nsfb_update(root->u.root.fb, &bbox);
 
@@ -318,26 +327,23 @@ fb_redraw_bitmap(fbtk_widget_t *root, fbtk_widget_t *widget, void *pw)
 }
 
 static int
-fbtk_window_default_redraw(fbtk_widget_t *root, fbtk_widget_t *window, void *pw)
+fbtk_window_default_redraw(fbtk_widget_t *window, fbtk_callback_info *cbi)
 {
         fbtk_widget_list_t *lent;
         int res = 0;
-
-        if (!window->redraw)
-                return res;
 
         /* get the list of widgets */
         lent = window->u.window.widgets;
 
         while (lent != NULL) {
-                fbtk_redraw_widget(root, lent->widget);
+                fbtk_redraw_widget(lent->widget);
                 lent = lent->next;
         }
         return res;
 }
 
 static int
-fbtk_window_default_move(fbtk_widget_t *window, int x, int y, void *pw)
+fbtk_window_default_move(fbtk_widget_t *window, fbtk_callback_info *cbi)
 {
         fbtk_widget_list_t *lent;
         fbtk_widget_t *widget;
@@ -349,16 +355,14 @@ fbtk_window_default_move(fbtk_widget_t *window, int x, int y, void *pw)
         while (lent != NULL) {
                 widget = lent->widget;
 
-                if ((x > widget->x) &&
-                    (y > widget->y) &&
-                    (x < widget->x + widget->width) &&
-                    (y < widget->y + widget->height)) {
-                        if (widget->move != NULL) {
-                                res = widget->move(widget,
-                                             x - widget->x,
-                                             y - widget->y,
-                                             widget->movepw);
-                        }
+                if ((cbi->x > widget->x) &&
+                    (cbi->y > widget->y) &&
+                    (cbi->x < widget->x + widget->width) &&
+                    (cbi->y < widget->y + widget->height)) {
+			res = fbtk_post_callback(widget, 
+						 FBTK_CBT_POINTERMOVE, 
+						 cbi->x - widget->x, 
+						 cbi->y - widget->y);
                         break;
                 }
                 lent = lent->prev;
@@ -367,7 +371,7 @@ fbtk_window_default_move(fbtk_widget_t *window, int x, int y, void *pw)
 }
 
 static int
-fbtk_window_default_click(fbtk_widget_t *window, nsfb_event_t *event, int x, int y, void *pw)
+fbtk_window_default_click(fbtk_widget_t *window, fbtk_callback_info *cbi)
 {
         fbtk_widget_list_t *lent;
         fbtk_widget_t *widget;
@@ -379,25 +383,22 @@ fbtk_window_default_click(fbtk_widget_t *window, nsfb_event_t *event, int x, int
         while (lent != NULL) {
                 widget = lent->widget;
 
-                if ((x > widget->x) &&
-                    (y > widget->y) &&
-                    (x < widget->x + widget->width) &&
-                    (y < widget->y + widget->height)) {
-                        if (widget->input != NULL) {
+                if ((cbi->x > widget->x) &&
+                    (cbi->y > widget->y) &&
+                    (cbi->x < widget->x + widget->width) &&
+                    (cbi->y < widget->y + widget->height)) {
+			if (fbtk_get_handler(widget, FBTK_CBT_INPUT) != NULL) {
                                 fbtk_widget_t *root = get_root_widget(widget);
                                 root->u.root.input = widget;
                         }
 
-                        if (widget->click != NULL) {
-                                res = widget->click(widget,
-                                                    event,
-                                                    x - widget->x,
-                                                    y - widget->y,
-                                                    widget->clickpw);
-                                break;
-                        }
-
-
+			res = fbtk_post_callback(widget, 
+						 FBTK_CBT_CLICK,
+						 cbi->event,
+						 cbi->x - widget->x, 
+						 cbi->y - widget->y);
+			if (res != 0)
+				break;
 
                 }
                 lent = lent->next;
@@ -406,10 +407,11 @@ fbtk_window_default_click(fbtk_widget_t *window, nsfb_event_t *event, int x, int
 }
 
 static int
-fb_redraw_text(fbtk_widget_t *root, fbtk_widget_t *widget, void *pw)
+fb_redraw_text(fbtk_widget_t *widget, fbtk_callback_info *cbi )
 {
         nsfb_bbox_t bbox;
         nsfb_bbox_t rect;
+	fbtk_widget_t *root = get_root_widget(widget);
 
         fbtk_get_bbox(widget, &bbox);
 
@@ -450,10 +452,10 @@ fb_redraw_text(fbtk_widget_t *root, fbtk_widget_t *widget, void *pw)
 
 
 static int
-text_input(fbtk_widget_t *widget, nsfb_event_t *event, void *pw)
+text_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 {
         int value;
-        if (event == NULL) {
+        if (cbi->event == NULL) {
                 /* gain focus */
                 if (widget->u.text.text == NULL)
                         widget->u.text.text = calloc(1,1);
@@ -462,13 +464,12 @@ text_input(fbtk_widget_t *widget, nsfb_event_t *event, void *pw)
                 fbtk_request_redraw(widget);
 
                 return 0;
-
         }
 
-        if (event->type != NSFB_EVENT_KEY_DOWN)
+        if (cbi->event->type != NSFB_EVENT_KEY_DOWN)
                 return 0;
 
-        value = event->value.keycode;
+        value = cbi->event->value.keycode;
         switch (value) {
         case NSFB_KEY_BACKSPACE:
                 if (widget->u.text.idx <= 0)
@@ -501,8 +502,7 @@ text_input(fbtk_widget_t *widget, nsfb_event_t *event, void *pw)
 			if (temp != NULL) {
 				widget->u.text.text = temp;
 		                widget->u.text.text[widget->u.text.idx] = value;
-                		widget->u.text.text[widget->u.text.idx + 1] =
-						'\0';
+                		widget->u.text.text[widget->u.text.idx + 1] = '\0';
                 		widget->u.text.idx++;
 			}
 		}
@@ -521,8 +521,7 @@ fbtk_writable_text(fbtk_widget_t *widget, fbtk_enter_t enter, void *pw)
         widget->u.text.enter = enter;
         widget->u.text.pw = pw;
 
-        widget->input = text_input;
-        widget->inputpw = widget;
+	fbtk_set_handler(widget, FBTK_CBT_INPUT, text_input, widget);
 }
 
 
@@ -585,33 +584,38 @@ fbtk_get_bbox(fbtk_widget_t *widget, nsfb_bbox_t *bbox)
         return true;
 }
 
-void
-fbtk_set_handler_click(fbtk_widget_t *widget, fbtk_mouseclick_t click, void *pw)
+fbtk_callback
+fbtk_get_handler(fbtk_widget_t *widget, fbtk_callback_type cbt)
 {
-        widget->click = click;
-        widget->clickpw = pw;
+	if ((cbt <= FBTK_CBT_START) || (cbt >= FBTK_CBT_END)) {
+		/* type out of range, no way to report error so return NULL */
+		return NULL;
+	} 
+
+	return widget->callback[cbt];
 }
 
-void
-fbtk_set_handler_input(fbtk_widget_t *widget, fbtk_input_t input, void *pw)
+fbtk_callback
+fbtk_set_handler(fbtk_widget_t *widget, 
+		 fbtk_callback_type cbt, 
+		 fbtk_callback cb, 
+		 void *context)
 {
-        widget->input = input;
-        widget->inputpw = pw;
+	fbtk_callback prevcb;
+
+	if ((cbt <= FBTK_CBT_START) || (cbt >= FBTK_CBT_END)) {
+		/* type out of range, no way to report error so return NULL */
+		return NULL;
+	} 
+
+	prevcb = widget->callback[cbt];
+
+	widget->callback[cbt] = cb;
+	widget->callback_context[cbt] = context;
+
+	return prevcb;
 }
 
-void
-fbtk_set_handler_redraw(fbtk_widget_t *widget, fbtk_redraw_t redraw, void *pw)
-{
-        widget->redraw = redraw;
-        widget->redrawpw = pw;
-}
-
-void
-fbtk_set_handler_move(fbtk_widget_t *widget, fbtk_move_t move, void *pw)
-{
-        widget->move = move;
-        widget->movepw = pw;
-}
 
 void *
 fbtk_get_userpw(fbtk_widget_t *widget)
@@ -701,18 +705,13 @@ fbtk_input(fbtk_widget_t *root, nsfb_event_t *event)
         if (input == NULL)
                 return; /* no widget with input */
 
-        if (input->input == NULL)
-                return;
-
-        /* call the widgets input method */
-        input->input(input, event, input->inputpw);
+	fbtk_post_callback(input, FBTK_CBT_INPUT, event);
 }
 
 void
 fbtk_click(fbtk_widget_t *widget, nsfb_event_t *event)
 {
         fbtk_widget_t *root;
-        fbtk_widget_t *window;
         nsfb_bbox_t cloc;
 
         /* ensure we have the root widget */
@@ -720,11 +719,9 @@ fbtk_click(fbtk_widget_t *widget, nsfb_event_t *event)
 
         nsfb_cursor_loc_get(root->u.root.fb, &cloc);
 
-        /* get the root window */
-        window = root->u.root.rootw;
-        LOG(("click %d, %d",cloc.x0,cloc.y0));
-        if (window->click != NULL)
-                window->click(window, event, cloc.x0, cloc.y0, window->clickpw);
+
+        /* post the click */
+	fbtk_post_callback(root->u.root.rootw, FBTK_CBT_CLICK, event, cloc.x0, cloc.y0);
 }
 
 
@@ -733,7 +730,6 @@ void
 fbtk_move_pointer(fbtk_widget_t *widget, int x, int y, bool relative)
 {
         fbtk_widget_t *root;
-        fbtk_widget_t *window;
         nsfb_bbox_t cloc;
 
         /* ensure we have the root widget */
@@ -750,13 +746,11 @@ fbtk_move_pointer(fbtk_widget_t *widget, int x, int y, bool relative)
 
         root->redraw_required = true;
 
+        /* update the pointer cursor */
         nsfb_cursor_loc_set(root->u.root.fb, &cloc);
 
-        /* get the root window */
-        window = root->u.root.rootw;
-
-        if (window->move != NULL)
-                window->move(window, cloc.x0, cloc.y0, window->movepw);
+        /* post the movement */
+	fbtk_post_callback(root->u.root.rootw, FBTK_CBT_POINTERMOVE, cloc.x0, cloc.y0);
 
 }
 
@@ -782,7 +776,7 @@ fbtk_redraw(fbtk_widget_t *widget)
         if (!root->redraw_required)
                 return 0;
 
-        fbtk_redraw_widget(root, root->u.root.rootw);
+	fbtk_post_callback(root->u.root.rootw, FBTK_CBT_REDRAW);
 
         widget->redraw_required = false;
 
@@ -822,7 +816,7 @@ fbtk_create_text(fbtk_widget_t *window,
         newt->fg = fg;
         newt->bg = bg;
 
-        newt->redraw = fb_redraw_text;
+	fbtk_set_handler(newt, FBTK_CBT_REDRAW, fb_redraw_text, NULL);
 
         return add_widget_to_window(window, newt);
 }
@@ -840,7 +834,7 @@ fbtk_create_bitmap(fbtk_widget_t *window, int x, int y, colour c, struct bitmap 
 
         newb->u.bitmap.bitmap = image;
 
-        newb->redraw = fb_redraw_bitmap;
+	fbtk_set_handler(newb, FBTK_CBT_REDRAW, fb_redraw_bitmap, NULL);
 
         return add_widget_to_window(window, newb);
 }
@@ -882,25 +876,39 @@ fbtk_create_fill(fbtk_widget_t *window, int x, int y, int width, int height, col
 
         neww->bg = c;
 
-        neww->redraw = fb_redraw_fill;
+	fbtk_set_handler(neww, FBTK_CBT_REDRAW, fb_redraw_fill, NULL);
 
         return add_widget_to_window(window, neww);
 }
 
+/* set pointer to bitmap in context on cursor move */
+static int
+fbtk_set_ptr_move(fbtk_widget_t *widget, fbtk_callback_info *cbi)
+{
+	fbtk_widget_t *root = get_root_widget(widget);
+	struct bitmap *bm = cbi->context;
 
+        nsfb_cursor_set(root->u.root.fb, 
+			(nsfb_colour_t *)bm->pixdata, 
+			bm->width, 
+			bm->height, 
+			bm->width);
+
+        return 0;
+}
 
 fbtk_widget_t *
 fbtk_create_button(fbtk_widget_t *window,
                    int x, int y,
                    colour c,
                    struct bitmap *image,
-                   fbtk_mouseclick_t click,
+                   fbtk_callback click,
                    void *pw)
 {
         fbtk_widget_t *newb = fbtk_create_bitmap(window, x, y, c, image);
 
-        newb->click = click;
-        newb->clickpw = pw;
+	fbtk_set_handler(newb, FBTK_CBT_CLICK, click, pw);
+	fbtk_set_handler(newb, FBTK_CBT_POINTERMOVE, fbtk_set_ptr_move, &hand_image);
 
         return newb;
 }
@@ -917,8 +925,8 @@ fbtk_create_writable_text(fbtk_widget_t *window,
         newt->u.text.enter = enter;
         newt->u.text.pw = pw;
 
-        newt->input = text_input;
-        newt->inputpw = newt;
+	fbtk_set_handler(newt, FBTK_CBT_INPUT, text_input, newt);
+
         return newt;
 }
 
@@ -1011,13 +1019,66 @@ fbtk_create_window(fbtk_widget_t *parent,
         newwin->width = width;
         newwin->height = height;
 
-        newwin->redraw = fbtk_window_default_redraw;
-        newwin->move = fbtk_window_default_move;
-        newwin->click = fbtk_window_default_click;
-
+	fbtk_set_handler(newwin, FBTK_CBT_REDRAW, fbtk_window_default_redraw, NULL);
+	fbtk_set_handler(newwin, FBTK_CBT_POINTERMOVE, fbtk_window_default_move, NULL);
+	fbtk_set_handler(newwin, FBTK_CBT_CLICK, fbtk_window_default_click, NULL);
         LOG(("Created window %p %d,%d %d,%d",newwin,x,y,width,height));
 
         return add_widget_to_window(parent, newwin);
+}
+
+int
+fbtk_post_callback(fbtk_widget_t *widget, fbtk_callback_type cbt, ...)
+{
+	fbtk_callback_info cbi;
+	int ret = 0;
+	va_list ap;
+
+	if (widget->callback[cbt] != NULL) {
+		cbi.type = cbt;
+		cbi.context = widget->callback_context[cbt];
+
+		va_start(ap, cbt);
+
+		switch (cbt) {
+		case FBTK_CBT_SCROLLX:
+			cbi.x = va_arg(ap,int);
+			break;
+
+		case FBTK_CBT_SCROLLY:
+			cbi.y = va_arg(ap,int);
+			break;
+
+		case FBTK_CBT_CLICK:
+			cbi.event = va_arg(ap, void *);
+			cbi.x = va_arg(ap, int);
+			cbi.y = va_arg(ap, int);
+			break;
+
+		case FBTK_CBT_INPUT:
+			cbi.event = va_arg(ap, void *);
+			break;
+
+		case FBTK_CBT_POINTERMOVE:
+			cbi.x = va_arg(ap, int);
+			cbi.y = va_arg(ap, int);
+			break;
+
+		case FBTK_CBT_REDRAW:
+			break;
+
+		case FBTK_CBT_USER:
+			break;
+
+		default:
+			break;
+		}
+		va_end(ap);
+
+		ret = (widget->callback[cbt])(widget, &cbi);
+	}
+
+	return ret;	
 }
 
 bool fbtk_event(fbtk_widget_t *root, nsfb_event_t *event, int timeout)

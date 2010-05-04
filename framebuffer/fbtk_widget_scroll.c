@@ -37,13 +37,14 @@
 /** Vertical scroll widget */
 
 static int
-vscroll_redraw(fbtk_widget_t *root, fbtk_widget_t *widget, void *pw)
+vscroll_redraw(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 {
         int vscroll;
         int vpos;
 
         nsfb_bbox_t bbox;
         nsfb_bbox_t rect;
+	fbtk_widget_t *root = get_root_widget(widget);
 
         fbtk_get_bbox(widget, &bbox);
 
@@ -82,85 +83,46 @@ vscroll_redraw(fbtk_widget_t *root, fbtk_widget_t *widget, void *pw)
 }
 
 static int
-vscrollu_click(fbtk_widget_t *widget,
-                 nsfb_event_t *event,
-                 int x, int y, void *pw)
+vscrollu_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 {
-	fbtk_widget_t *scrollw = pw;
-	fbtk_callback_info cbi;
-
-        if (event->type != NSFB_EVENT_KEY_DOWN)
-        	return 0;
-
-	cbi.type = FBTK_CBIT_SCROLLY;
-	cbi.context = scrollw->callback_context;
-	cbi.y = -1;
-
-	return (scrollw->callback)(scrollw, &cbi);
+	int ret = 0;
+        if (cbi->event->type == NSFB_EVENT_KEY_DOWN)
+		ret = fbtk_post_callback(cbi->context, FBTK_CBT_SCROLLY, -1);
+	return ret;
 }
 
 static int
-vscrolld_click(fbtk_widget_t *widget,
-                 nsfb_event_t *event,
-                 int x, int y, void *pw)
+vscrolld_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 {
-	fbtk_widget_t *scrollw = pw;
-	fbtk_callback_info cbi;
-
-        if (event->type != NSFB_EVENT_KEY_DOWN)
-        	return 0;
-
-	cbi.type = FBTK_CBIT_SCROLLY;
-	cbi.context = scrollw->callback_context;
-	cbi.y = 1;
-
-	return (scrollw->callback)(scrollw, &cbi);
+	int ret = 0;
+        if (cbi->event->type == NSFB_EVENT_KEY_DOWN)
+		ret = fbtk_post_callback(cbi->context, FBTK_CBT_SCROLLY, 1);
+	return ret;
 }
 
 static int
-vscrollarea_click(fbtk_widget_t *widget,
-                 nsfb_event_t *event,
-                 int x, int y, void *pw)
+vscrollarea_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 {
-	fbtk_widget_t *scrollw = pw;
-	fbtk_callback_info cbi;
         int vscroll;
         int vpos;
+	int ret = 0;
 
-        if (event->type != NSFB_EVENT_KEY_DOWN)
+        if (cbi->event->type != NSFB_EVENT_KEY_DOWN)
         	return 0;
 
         vscroll = ((widget->height - 4) * widget->u.scroll.pct) / 100 ;
         vpos = ((widget->height - 4) * widget->u.scroll.pos) / 100 ;
 
-	cbi.type = FBTK_CBIT_SCROLLY;
-	cbi.context = scrollw->callback_context;
-	if (y < vpos) {
+	if (cbi->y < vpos) {
                 /* above bar */
-		cbi.y = -1;
-		return (scrollw->callback)(scrollw, &cbi);
-	} else if (y > (vpos+vscroll)) {
+		ret = fbtk_post_callback(cbi->context, FBTK_CBT_SCROLLY, -1);
+	} else if (cbi->y > (vpos + vscroll)) {
                 /* below bar */
-		cbi.y = 1;
-		return (scrollw->callback)(scrollw, &cbi);
+		ret = fbtk_post_callback(cbi->context, FBTK_CBT_SCROLLY, 1);
 	}
-	return 0;
+	return ret;
 }
 
-static int
-set_ptr_hand_move(fbtk_widget_t *widget,
-                  int x, int y,
-                  void *pw)
-{
-	fbtk_widget_t *root = get_root_widget(widget);
-        nsfb_cursor_set(root->u.root.fb, 
-			(nsfb_colour_t *)hand_image.pixdata, 
-			hand_image.width, 
-			hand_image.height, 
-			hand_image.width);
-
-        return 0;
-}
 
 fbtk_widget_t *
 fbtk_create_vscroll(fbtk_widget_t *window, 
@@ -180,19 +142,15 @@ fbtk_create_vscroll(fbtk_widget_t *window,
         neww->fg = fg;
         neww->bg = bg;
 
-        neww->redraw = vscroll_redraw;
+	fbtk_set_handler(neww, FBTK_CBT_REDRAW, vscroll_redraw, NULL);
 
-	neww->click = vscrollarea_click;
-	neww->clickpw = neww;
+	fbtk_set_handler(neww, FBTK_CBT_CLICK, vscrollarea_click, neww);
 
-	neww->callback = callback;
-	neww->callback_context = context;
+	fbtk_set_handler(neww, FBTK_CBT_SCROLLY, callback, context);
 
 	neww->u.scroll.btnul = fbtk_create_button(window, x + (width - scrollu.width) / 2, y, fg, &scrollu, vscrollu_click, neww);
-	fbtk_set_handler_move(neww->u.scroll.btnul, set_ptr_hand_move, NULL);
 
 	neww->u.scroll.btndr = fbtk_create_button(window, x + (width - scrolld.width) / 2, y + height - scrolld.height, fg, &scrolld, vscrolld_click, neww);
-	fbtk_set_handler_move(neww->u.scroll.btndr, set_ptr_hand_move, NULL);
 
 
         return add_widget_to_window(window, neww);
@@ -201,12 +159,13 @@ fbtk_create_vscroll(fbtk_widget_t *window,
 /* Horizontal scroll widget */
 
 static int
-hscroll_redraw(fbtk_widget_t *root, fbtk_widget_t *widget, void *pw)
+hscroll_redraw(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 {
         int hscroll;
         int hpos;
         nsfb_bbox_t bbox;
         nsfb_bbox_t rect;
+	fbtk_widget_t *root = get_root_widget(widget);
 
         fbtk_get_bbox(widget, &bbox);
 
@@ -245,69 +204,44 @@ hscroll_redraw(fbtk_widget_t *root, fbtk_widget_t *widget, void *pw)
 }
 
 static int
-hscrolll_click(fbtk_widget_t *widget,
-                 nsfb_event_t *event,
-                 int x, int y, void *pw)
+hscrolll_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 {
-	fbtk_widget_t *scrollw = pw;
-	fbtk_callback_info cbi;
-
-        if (event->type != NSFB_EVENT_KEY_DOWN)
-        	return 0;
-
-	cbi.type = FBTK_CBIT_SCROLLX;
-	cbi.context = scrollw->callback_context;
-	cbi.x = -1;
-
-	return (scrollw->callback)(scrollw, &cbi);
+	int ret = 0;
+        if (cbi->event->type == NSFB_EVENT_KEY_DOWN)
+		ret = fbtk_post_callback(cbi->context, FBTK_CBT_SCROLLX, -1);
+	return ret;
 }
 
 static int
-hscrollr_click(fbtk_widget_t *widget,
-                 nsfb_event_t *event,
-                 int x, int y, void *pw)
+hscrollr_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 {
-	fbtk_widget_t *scrollw = pw;
-	fbtk_callback_info cbi;
-
-        if (event->type != NSFB_EVENT_KEY_DOWN)
-        	return 0;
-
-	cbi.type = FBTK_CBIT_SCROLLX;
-	cbi.context = scrollw->callback_context;
-	cbi.x = 1;
-
-	return (scrollw->callback)(scrollw, &cbi);
+	int ret = 0;
+        if (cbi->event->type == NSFB_EVENT_KEY_DOWN)
+		ret = fbtk_post_callback(cbi->context, FBTK_CBT_SCROLLX, 1);
+	return ret;
 }
 
 static int
-hscrollarea_click(fbtk_widget_t *widget,
-                 nsfb_event_t *event,
-                 int x, int y, void *pw)
+hscrollarea_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 {
-	fbtk_widget_t *scrollw = pw;
-	fbtk_callback_info cbi;
         int hscroll;
         int hpos;
+	int ret;
 
-        if (event->type != NSFB_EVENT_KEY_DOWN)
+        if (cbi->event->type != NSFB_EVENT_KEY_DOWN)
         	return 0;
 
         hscroll = ((widget->width - 4) * widget->u.scroll.pct) / 100 ;
         hpos = ((widget->width - 4) * widget->u.scroll.pos) / 100 ;
 
-	cbi.type = FBTK_CBIT_SCROLLX;
-	cbi.context = scrollw->callback_context;
-	if (x < hpos) {
+	if (cbi->x < hpos) {
                 /* above bar */
-		cbi.x = -1;
-		return (scrollw->callback)(scrollw, &cbi);
-	} else if (x > (hpos + hscroll)) {
+		ret = fbtk_post_callback(cbi->context, FBTK_CBT_SCROLLX, -1);
+	} else if (cbi->x > (hpos + hscroll)) {
                 /* below bar */
-		cbi.x = 1;
-		return (scrollw->callback)(scrollw, &cbi);
+		ret = fbtk_post_callback(cbi->context, FBTK_CBT_SCROLLX, 1);
 	}
-	return 0;
+	return ret;
 }
 
 fbtk_widget_t *
@@ -328,13 +262,9 @@ fbtk_create_hscroll(fbtk_widget_t *window,
         neww->fg = fg;
         neww->bg = bg;
 
-        neww->redraw = hscroll_redraw;
-
-	neww->click = hscrollarea_click;
-	neww->clickpw = neww;
-
-	neww->callback = callback;
-	neww->callback_context = context;
+	fbtk_set_handler(neww, FBTK_CBT_REDRAW, hscroll_redraw, NULL);
+	fbtk_set_handler(neww, FBTK_CBT_CLICK, hscrollarea_click, neww);
+	fbtk_set_handler(neww, FBTK_CBT_SCROLLX, callback, context);
 
 	neww->u.scroll.btnul = fbtk_create_button(window, x, y + ((height - scrolll.height) / 2), fg, &scrolll, hscrolll_click, neww);
 

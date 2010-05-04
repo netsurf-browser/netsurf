@@ -27,23 +27,26 @@
 
 typedef struct fbtk_widget_s fbtk_widget_t;
 
-enum fbtk_callback_info_type {
-	FBTK_CBIT_SCROLLX = 0,
-	FBTK_CBIT_SCROLLY,
-	FBTK_CBIT_CLICK,
-	FBTK_CBIT_INPUT,
-	FBTK_CBIT_MOVE,
-	FBTK_CBIT_REDRAW,
-	FBTK_CBIT_END,
-};
+typedef enum fbtk_callback_type {
+	FBTK_CBT_START = 0,
+	FBTK_CBT_SCROLLX,
+	FBTK_CBT_SCROLLY,
+	FBTK_CBT_CLICK,
+	FBTK_CBT_INPUT,
+	FBTK_CBT_POINTERMOVE,
+	FBTK_CBT_REDRAW,
+	FBTK_CBT_USER,
+	FBTK_CBT_END,
+} fbtk_callback_type;
 
 typedef struct fbtk_callback_info {
-	enum fbtk_callback_info_type type;
+	enum fbtk_callback_type type;
 	void *context;
 	nsfb_event_t *event;
 	int x;
 	int y;
 	char *text;
+	fbtk_widget_t *widget;
 } fbtk_callback_info;
 
 typedef int (*fbtk_callback)(fbtk_widget_t *widget, fbtk_callback_info *cbi);
@@ -52,21 +55,13 @@ typedef int (*fbtk_callback)(fbtk_widget_t *widget, fbtk_callback_info *cbi);
 /* user widget callback */
 typedef int (*fbtk_user_t)(fbtk_widget_t *widget, void *pw);
 
-/* input callback */
-typedef int (*fbtk_input_t)(fbtk_widget_t *widget, nsfb_event_t *event, void *pw);
-
-/* mouse click callback */
-typedef int (*fbtk_mouseclick_t)(fbtk_widget_t *widget, nsfb_event_t *event, int x, int y, void *pw);
-
-/* mouse move callback */
-typedef int (*fbtk_move_t)(fbtk_widget_t *widget, int x, int y, void *pw);
-
-/* redraw function */
-typedef int (*fbtk_redraw_t)(fbtk_widget_t *root, fbtk_widget_t *widget, void *pw);
 
 /* enter pressed on writable icon */
 typedef int (*fbtk_enter_t)(void *pw, char *text);
 
+
+/* helper function to allow simple method to call callbacks */
+int fbtk_post_callback(fbtk_widget_t *widget, fbtk_callback_type cbt, ...);
 
 /* Widget creation */
 
@@ -160,7 +155,7 @@ fbtk_widget_t *fbtk_create_user(fbtk_widget_t *window, int x, int y, int width, 
  * @param window The window to add the button widget to.
  * @return new widget handle or NULL on error.
  */
-fbtk_widget_t *fbtk_create_button(fbtk_widget_t *window, int x, int y, colour c, struct bitmap *image, fbtk_mouseclick_t click, void *pw);
+fbtk_widget_t *fbtk_create_button(fbtk_widget_t *window, int x, int y, colour c, struct bitmap *image, fbtk_callback click, void *pw);
 
 /** Create a writable text widget.
  *
@@ -199,10 +194,13 @@ void fbtk_set_bitmap(fbtk_widget_t *widget, struct bitmap *image);
 void fbtk_set_scroll(fbtk_widget_t *widget, int pct);
 void fbtk_set_scroll_pos(fbtk_widget_t *widget, int pos);
 void fbtk_set_pos_and_size(fbtk_widget_t *widget, int x, int y, int width, int height);
-void fbtk_set_handler_redraw(fbtk_widget_t *widget, fbtk_redraw_t input, void *pw);
-void fbtk_set_handler_input(fbtk_widget_t *widget, fbtk_input_t input, void *pw);
-void fbtk_set_handler_click(fbtk_widget_t *widget, fbtk_mouseclick_t click, void *pw);
-void fbtk_set_handler_move(fbtk_widget_t *widget, fbtk_move_t move, void *pw);
+;
+
+/** Set a callback handler */
+fbtk_callback fbtk_set_handler(fbtk_widget_t *widget, fbtk_callback_type cbt, fbtk_callback cb, void *pw);
+
+/** Get a callback handler */
+fbtk_callback fbtk_get_handler(fbtk_widget_t *widget, fbtk_callback_type cbt);
 
 /** Alter a text widget to be writable.
  */

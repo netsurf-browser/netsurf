@@ -42,25 +42,13 @@ struct fbtk_widget_s {
 	colour bg;
 	colour fg;
 
-	/* handlers */
-	fbtk_mouseclick_t click;
-	void *clickpw; /* private data for callback */
+        /* event callback handlers */
+	fbtk_callback callback[FBTK_CBT_END];
+	void *callback_context[FBTK_CBT_END];
 
-	fbtk_input_t input;
-	void *inputpw; /* private data for callback */
-
-	fbtk_move_t move;
-	void *movepw; /* private data for callback */
-
-	fbtk_redraw_t redraw;
-	void *redrawpw; /* private data for callback */
-
-	bool redraw_required;
+	bool redraw_required; /* the widget requires redrawing */
 
 	fbtk_widget_t *parent; /* parent widget */
-
-	fbtk_callback callback; /* event callback */
-	void *callback_context;
 
 	/* Widget specific */
 	enum fbtk_widgettype_e type;
