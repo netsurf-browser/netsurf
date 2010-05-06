@@ -299,6 +299,7 @@ void ami_open_resources(void)
 void ami_set_options(void)
 {
 	STRPTR tempacceptlangs;
+	BPTR lock = 0;
 
 	/* The following line disables the popupmenu.class select menu
 	** This will become a user option when/if popupmenu.class is
@@ -363,6 +364,23 @@ void ami_set_options(void)
 
 	if((!option_font_fantasy) || (option_font_fantasy[0] == '\0'))
 		option_font_fantasy = (char *)strdup("DejaVu Serif");
+
+	if((!option_font_unicode) || (option_font_unicode[0] == '\0'))
+	{
+		/* Search for some likely candidates */
+
+		if(lock=Lock("FONTS:Code2000.font",ACCESS_READ))
+		{
+			UnLock(lock);
+			option_font_unicode = (char *)strdup("Code2000");
+		}
+		else if(lock=Lock("FONTS:Bitstream Cyberbit.font",ACCESS_READ))
+		{
+			UnLock(lock);
+			option_font_unicode = (char *)strdup("Bitstream Cyberbit");
+		}
+		else option_font_unicode = (char *)strdup("Deja Vu Sans");
+	}
 
 	if((!option_theme) || (option_theme[0] == '\0'))
 		option_theme = (char *)strdup("PROGDIR:Resources/Themes/Default");

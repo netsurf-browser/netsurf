@@ -1352,6 +1352,7 @@ FontSerif:Serif
 FontMono:Monospace
 FontCursive:Kursiv
 FontFantasy:Fantasy
+FontFallback:Fallback (Unicode)
 Default:Standard
 FontSize:Schriftgröße
 Minimum:Minimum

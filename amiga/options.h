@@ -48,6 +48,7 @@ extern int option_print_scale;
 extern bool option_startup_no_window;
 extern bool option_close_no_quit;
 extern bool option_hide_docky_icon;
+extern char *option_font_unicode;
 
 #define EXTRA_OPTION_DEFINE \
 char *option_url_file = 0; \
@@ -78,6 +79,7 @@ int option_print_scale = 100; \
 bool option_startup_no_window = false; \
 bool option_close_no_quit = false; \
 bool option_hide_docky_icon = false; \
+char *option_font_unicode = 0; \
 
 #define EXTRA_OPTION_TABLE \
 { "url_file",		OPTION_STRING,	&option_url_file }, \
@@ -107,5 +109,6 @@ bool option_hide_docky_icon = false; \
 { "print_scale",	OPTION_INTEGER,	&option_print_scale}, \
 { "startup_no_window",	OPTION_BOOL,	&option_startup_no_window}, \
 { "close_no_quit",	OPTION_BOOL,	&option_close_no_quit}, \
-{ "hide_docky_icon",	OPTION_BOOL,	&option_hide_docky_icon},
+{ "hide_docky_icon",	OPTION_BOOL,	&option_hide_docky_icon}, \
+{ "font_unicode",		OPTION_STRING,	&option_font_unicode },
 #endif

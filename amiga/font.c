@@ -36,12 +36,16 @@
 #include <proto/utility.h>
 #include "utils/utils.h"
 
-static struct OutlineFont *of[PLOT_FONT_FAMILY_COUNT];
-static struct OutlineFont *ofb[PLOT_FONT_FAMILY_COUNT];
-static struct OutlineFont *ofi[PLOT_FONT_FAMILY_COUNT];
-static struct OutlineFont *ofbi[PLOT_FONT_FAMILY_COUNT];
+#define NSA_UNICODE_FONT PLOT_FONT_FAMILY_COUNT
 
-struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle);
+static struct OutlineFont *of[PLOT_FONT_FAMILY_COUNT+1];
+static struct OutlineFont *ofb[PLOT_FONT_FAMILY_COUNT+1];
+static struct OutlineFont *ofi[PLOT_FONT_FAMILY_COUNT+1];
+static struct OutlineFont *ofbi[PLOT_FONT_FAMILY_COUNT+1];
+
+int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
+		uint16 char1, uint16 char2, uint32 x, uint32 y, uint32 emwidth);
+struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle, BOOL fallback);
 
 static bool nsfont_width(const plot_font_style_t *fstyle,
 	  const char *string, size_t length,
@@ -65,9 +69,9 @@ bool nsfont_width(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int *width)
 {
-	struct TextFont *tfont;
-
 	*width = ami_unicode_text(NULL,string,length,fstyle,0,0);
+
+	if(*width <= 0) *width == length; // fudge
 
 	return true;
 }
@@ -93,7 +97,7 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 	uint16 *utf16 = NULL, *outf16 = NULL;
 	uint16 utf16next = NULL;
 	FIXED kern = 0;
-	struct OutlineFont *ofont;
+	struct OutlineFont *ofont, *ufont = NULL;
 	struct GlyphMap *glyph;
 	uint32 tx=0,i=0;
 	size_t len, utf8len = 0;
@@ -101,13 +105,13 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 	uint32 co = 0;
 	int utf16charlen;
 	ULONG emwidth = (ULONG)((fstyle->size / FONT_SIZE_SCALE) * glob->scale);
-	ULONG charwidth;
+	int32 tempx;
 
 	len = utf8_bounded_length(string, length);
 	if(utf8_to_enc(string,"UTF-16",length,(char **)&utf16) != UTF8_CONVERT_OK) return false;
 	outf16 = utf16;
 
-	if(!(ofont = ami_open_outline_font(fstyle))) return false;
+	if(!(ofont = ami_open_outline_font(fstyle, FALSE))) return false;
 
 	*char_offset = length;
 
@@ -122,41 +126,41 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 
 		utf16next = utf16[utf16charlen];
 
-		if(ESetInfo(&ofont->olf_EEngine,
-			OT_GlyphCode, *utf16,
-			OT_GlyphCode2, utf16next,
-			TAG_END) == OTERR_Success)
+		tempx = ami_font_plot_glyph(ofont, NULL, *utf16, utf16next,
+					0, 0, emwidth);
+
+		if(tempx == 0)
 		{
-			if(EObtainInfo(&ofont->olf_EEngine,
-				OT_GlyphMap8Bit,&glyph,
-				TAG_END) == 0)
+			if(ufont == NULL)
 			{
-				kern = 0;
-
-				if(utf16next) EObtainInfo(&ofont->olf_EEngine,
-									OT_TextKernPair, &kern,
-									TAG_END);
-
-				charwidth = (ULONG)(((glyph->glm_Width - kern) * emwidth) / 65536);
-
-				if(x < (tx + charwidth))
-				{
-					*actual_x = tx;
-					i = len+1;
-				}
-				else
-				{
-					co += utf8len;
-				}
-
-				tx += charwidth;
-
-				EReleaseInfo(&ofont->olf_EEngine,
-					OT_GlyphMap8Bit,glyph,
-					TAG_END);
+				ufont = ami_open_outline_font(fstyle, TRUE);
 			}
+
+			if(ufont)
+			{
+				tempx = ami_font_plot_glyph(ufont, NULL, *utf16, utf16next,
+							0, 0, emwidth);
+			}
+/*
+			if(tempx == 0)
+			{
+				tempx = ami_font_plot_glyph(ofont, NULL, 0xfffd, utf16next,
+							0, 0, emwidth);
+			}
+*/
 		}
 
+		if(x < (tx + tempx))
+		{
+			*actual_x = tx;
+			i = len+1;
+		}
+		else
+		{
+			co += utf8len;
+		}
+
+		tx += tempx;
 		string += utf8len;
 		utf16 += utf16charlen;
 	}
@@ -203,17 +207,18 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 	uint16 utf16next = 0;
 	FIXED kern = 0;
 	int utf16charlen = 0;
-	struct OutlineFont *ofont;
+	struct OutlineFont *ofont, *ufont = NULL;
 	struct GlyphMap *glyph;
 	uint32 tx=0,i=0;
 	size_t len;
 	int utf8len, utf8clen = 0;
+	int32 tempx = 0;
 	ULONG emwidth = (ULONG)((fstyle->size / FONT_SIZE_SCALE) * glob->scale);
 
 	len = utf8_bounded_length(string, length);
 	if(utf8_to_enc((char *)string,"UTF-16",length,(char **)&utf16) != UTF8_CONVERT_OK) return false;
 	outf16 = utf16;
-	if(!(ofont = ami_open_outline_font(fstyle))) return false;
+	if(!(ofont = ami_open_outline_font(fstyle, FALSE))) return false;
 
 	*char_offset = 0;
 	*actual_x = 0;
@@ -229,36 +234,43 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 
 		utf16next = utf16[utf16charlen];
 
-		if(ESetInfo(&ofont->olf_EEngine,
-			OT_GlyphCode, *utf16,
-			OT_GlyphCode2, utf16next,
-			TAG_END) == OTERR_Success)
+		if(x < tx)
 		{
-			if(EObtainInfo(&ofont->olf_EEngine,
-				OT_GlyphMap8Bit,&glyph,
-				TAG_END) == 0)
+			i = length+1;
+		}
+		else
+		{
+			if(string[utf8clen] == ' ') //*utf16 == 0x0020)
 			{
-				if(x < tx)
-				{
-					i = length+1;
-				}
-				else
-				{
-					if(string[utf8clen] == ' ') //*utf16 == 0x0020)
-					{
-						*actual_x = tx;
-						*char_offset = utf8clen;
-					}
-				}
-
-				tx += (ULONG)(((glyph->glm_Width - kern) * emwidth) / 65536);
-
-				EReleaseInfo(&ofont->olf_EEngine,
-					OT_GlyphMap8Bit,glyph,
-					TAG_END);
+				*actual_x = tx;
+				*char_offset = utf8clen;
 			}
 		}
 
+		tempx = ami_font_plot_glyph(ofont, NULL, *utf16, utf16next, 0, 0, emwidth);
+
+		if(tempx == 0)
+		{
+			if(ufont == NULL)
+			{
+				ufont = ami_open_outline_font(fstyle, TRUE);
+			}
+
+			if(ufont)
+			{
+				tempx = ami_font_plot_glyph(ufont, NULL, *utf16, utf16next,
+							0, 0, emwidth);
+			}
+/*
+			if(tempx == 0)
+			{
+				tempx = ami_font_plot_glyph(ofont, NULL, 0xfffd, utf16next,
+							0, 0, emwidth);
+			}
+*/
+		}
+
+		tx += tempx;
 		utf16 += utf16charlen;
 		utf8clen += utf8len;
 	}
@@ -268,12 +280,23 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 	return true;
 }
 
-struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle)
+/**
+ * Open an outline font in the specified size and style
+ *
+ * \param fstyle font style structure
+ * \param default open a default font instead of the one specified by fstyle
+ * \return outline font or NULL on error
+ */
+struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle, BOOL fallback)
 {
 	struct OutlineFont *ofont;
 	char *fontname;
 	ULONG ysize;
 	int tstyle = 0;
+	plot_font_generic_family_t fontfamily;
+
+	if(fallback) fontfamily = NSA_UNICODE_FONT;
+		else fontfamily = fstyle->family;
 
 	if ((fstyle->flags & FONTF_ITALIC) || (fstyle->flags & FONTF_OBLIQUE))
 		tstyle += NSA_ITALIC;
@@ -284,22 +307,22 @@ struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle)
 	switch(tstyle)
 	{
 		case NSA_ITALIC:
-			if(ofi[fstyle->family]) ofont = ofi[fstyle->family];
-				else ofont = of[fstyle->family];
+			if(ofi[fontfamily]) ofont = ofi[fontfamily];
+				else ofont = of[fontfamily];
 		break;
 
 		case NSA_BOLD:
-			if(ofb[fstyle->family]) ofont = ofb[fstyle->family];
-				else ofont = of[fstyle->family];
+			if(ofb[fontfamily]) ofont = ofb[fontfamily];
+				else ofont = of[fontfamily];
 		break;
 
 		case NSA_BOLDITALIC:
-			if(ofbi[fstyle->family]) ofont = ofbi[fstyle->family];
-				else ofont = of[fstyle->family];
+			if(ofbi[fontfamily]) ofont = ofbi[fontfamily];
+				else ofont = of[fontfamily];
 		break;
 
 		default:
-			ofont = of[fstyle->family];
+			ofont = of[fontfamily];
 		break;
 	}
 
@@ -317,38 +340,82 @@ struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle)
 	return NULL;
 }
 
+int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
+		uint16 char1, uint16 char2, uint32 x, uint32 y, uint32 emwidth)
+{
+	struct GlyphMap *glyph;
+	UBYTE *glyphbm;
+	int32 char_advance = 0;
+	FIXED kern = 0;
+
+	if(ESetInfo(&ofont->olf_EEngine,
+			OT_GlyphCode, char1,
+			OT_GlyphCode2, char2,
+			TAG_END) == OTERR_Success)
+	{
+		if(EObtainInfo(&ofont->olf_EEngine,
+			OT_GlyphMap8Bit,&glyph,
+			TAG_END) == 0)
+		{
+			glyphbm = glyph->glm_BitMap;
+			if(!glyphbm) return 0;
+
+			if(rp)
+			{
+				BltBitMapTags(BLITA_SrcX, glyph->glm_BlackLeft,
+					BLITA_SrcY, glyph->glm_BlackTop,
+					BLITA_DestX, x - glyph->glm_X0 + glyph->glm_BlackLeft,
+					BLITA_DestY, y - glyph->glm_Y0 + glyph->glm_BlackTop,
+					BLITA_Width, glyph->glm_BlackWidth,
+					BLITA_Height, glyph->glm_BlackHeight,
+					BLITA_Source, glyphbm,
+					BLITA_SrcType, BLITT_ALPHATEMPLATE,
+					BLITA_Dest, rp,
+					BLITA_DestType, BLITT_RASTPORT,
+					BLITA_SrcBytesPerRow, glyph->glm_BMModulo,
+					TAG_DONE);
+			}
+
+			kern = 0;
+
+			if(char2) EObtainInfo(&ofont->olf_EEngine,
+								OT_TextKernPair, &kern,
+								TAG_END);
+
+			char_advance = (ULONG)(((glyph->glm_Width - kern) * emwidth) / 65536);
+
+			EReleaseInfo(&ofont->olf_EEngine,
+				OT_GlyphMap8Bit,glyph,
+				TAG_END);
+		}
+	}
+
+	return char_advance;
+}
+
 ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const plot_font_style_t *fstyle,ULONG dx, ULONG dy)
 {
 	uint16 *utf16 = NULL, *outf16 = NULL;
 	uint16 utf16next = 0;
 	int utf16charlen;
-	FIXED kern = 0;
-	struct OutlineFont *ofont;
-	struct GlyphMap *glyph;
+	struct OutlineFont *ofont, *ufont = NULL;
 	ULONG i,gx,gy;
-	UBYTE *glyphbm;
 	UWORD posn;
-	struct BitMap *tbm;
-	struct RastPort trp;
-	uint32 width,height;
-	uint32 x=0,y=0;
-	size_t len;
+	uint32 x=0;
 	uint8 co = 0;
+	int32 tempx = 0;
 	ULONG emwidth = (ULONG)((fstyle->size / FONT_SIZE_SCALE) * glob->scale);
 
 	if(!string || string[0]=='\0') return 0;
 	if(!length) return 0;
 
-	len = utf8_bounded_length(string, length);
 	if(utf8_to_enc(string,"UTF-16",length,(char **)&utf16) != UTF8_CONVERT_OK) return 0;
 	outf16 = utf16;
-	if(!(ofont = ami_open_outline_font(fstyle))) return 0;
+	if(!(ofont = ami_open_outline_font(fstyle, FALSE))) return 0;
 
 	if(rp) SetRPAttrs(rp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,fstyle->foreground),TAG_DONE);
 
-	dy++;
-
-	for(i=0;i<=len;i++)
+	while(*utf16 != 0)
 	{
 		if (*utf16 < 0xD800 || 0xDFFF < *utf16)
 			utf16charlen = 1;
@@ -357,47 +424,31 @@ ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const
 
 		utf16next = utf16[utf16charlen];
 
-		if(ESetInfo(&ofont->olf_EEngine,
-			OT_GlyphCode, *utf16,
-			OT_GlyphCode2, utf16next,
-			TAG_END) == OTERR_Success)
+		tempx = ami_font_plot_glyph(ofont, rp, *utf16, utf16next, dx + x, dy, emwidth);
+
+		if(tempx == 0)
 		{
-			if(EObtainInfo(&ofont->olf_EEngine,
-				OT_GlyphMap8Bit,&glyph,
-				TAG_END) == 0)
+			if(ufont == NULL)
 			{
-				glyphbm = glyph->glm_BitMap;
-				if(!glyphbm) continue;
-
-				if(rp)
-				{
-					BltBitMapTags(BLITA_SrcX,glyph->glm_BlackLeft,
-						BLITA_SrcY,glyph->glm_BlackTop,
-						BLITA_DestX,dx + x - glyph->glm_X0 + glyph->glm_BlackLeft,
-						BLITA_DestY,dy - glyph->glm_Y0 + glyph->glm_BlackTop,
-						BLITA_Width,glyph->glm_BlackWidth,
-						BLITA_Height,glyph->glm_BlackHeight,
-						BLITA_Source,glyphbm,
-						BLITA_SrcType,BLITT_ALPHATEMPLATE,
-						BLITA_Dest,rp,
-						BLITA_DestType,BLITT_RASTPORT,
-						BLITA_SrcBytesPerRow,glyph->glm_BMModulo,
-						TAG_DONE);
-				}
-
-				kern = 0;
-
-				if(utf16next) EObtainInfo(&ofont->olf_EEngine,
-									OT_TextKernPair, &kern,
-									TAG_END);
-
-				x += (ULONG)(((glyph->glm_Width - kern) * emwidth) / 65536);
-
-				EReleaseInfo(&ofont->olf_EEngine,
-					OT_GlyphMap8Bit,glyph,
-					TAG_END);
+				ufont = ami_open_outline_font(fstyle, TRUE);
 			}
+
+			if(ufont)
+			{
+				tempx = ami_font_plot_glyph(ufont, rp, *utf16, utf16next,
+							dx + x, dy, emwidth);
+			}
+/*
+			if(tempx == 0)
+			{
+				tempx = ami_font_plot_glyph(ofont, rp, 0xfffd, utf16next,
+							dx + x, dy, emwidth);
+			}
+*/
 		}
+
+		x += tempx;
+
 		utf16 += utf16charlen;
 	}
 
@@ -438,8 +489,9 @@ void ami_init_fonts(void)
 	of[PLOT_FONT_FAMILY_MONOSPACE] = OpenOutlineFont(option_font_mono,NULL,OFF_OPEN);
 	of[PLOT_FONT_FAMILY_CURSIVE] = OpenOutlineFont(option_font_cursive,NULL,OFF_OPEN);
 	of[PLOT_FONT_FAMILY_FANTASY] = OpenOutlineFont(option_font_fantasy,NULL,OFF_OPEN);
+	of[NSA_UNICODE_FONT] = OpenOutlineFont(option_font_unicode,NULL,OFF_OPEN);
 
-	for(i=PLOT_FONT_FAMILY_SANS_SERIF;i<=PLOT_FONT_FAMILY_FANTASY;i++)
+	for(i=PLOT_FONT_FAMILY_SANS_SERIF;i<=NSA_UNICODE_FONT;i++)
 	{
 		if(!of[i])
 		{
@@ -460,6 +512,9 @@ void ami_init_fonts(void)
 				break;
 				case PLOT_FONT_FAMILY_FANTASY:
 					tmpfontname = option_font_fantasy;
+				break;
+				case NSA_UNICODE_FONT:
+					tmpfontname = option_font_unicode;
 				break;
 				default:
 					/* should never get here, but just in case */
@@ -503,7 +558,7 @@ void ami_close_fonts(void)
 {
 	int i=0;
 
-	for(i=PLOT_FONT_FAMILY_SANS_SERIF;i<=PLOT_FONT_FAMILY_FANTASY;i++)
+	for(i=PLOT_FONT_FAMILY_SANS_SERIF;i<=NSA_UNICODE_FONT;i++)
 	{
 		if(of[i]) CloseOutlineFont(of[i],NULL);
 		if(ofb[i]) CloseOutlineFont(ofb[i],NULL);
