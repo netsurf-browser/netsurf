@@ -234,6 +234,7 @@ BOOL ami_search_event(void)
 					search_step(fwin->gwin->shared->bw->search_context,
 							flags,
 							ami_search_string());
+				ActivateWindow(fwin->gwin->shared->win);
 			break;
 
 			case GID_PREV:
@@ -246,6 +247,7 @@ BOOL ami_search_event(void)
 					search_step(fwin->gwin->shared->bw->search_context,
 						flags,
 						ami_search_string());
+				ActivateWindow(fwin->gwin->shared->win);
 				break;
 
 			case GID_SEARCHSTRING:
