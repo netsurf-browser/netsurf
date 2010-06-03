@@ -1678,6 +1678,7 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 	box->type = BOX_INLINE_BLOCK;
 	assert(box->style);
 
+	/* Showing iframe, so don't show alternate content */
 	if (convert_children)
 		*convert_children = false;
 	return true;
