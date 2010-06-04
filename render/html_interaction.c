@@ -831,7 +831,7 @@ size_t html_selection_drag_end(hlcache_handle *h, browser_mouse_state mouse,
 	int pixel_offset;
 	struct box *box;
 	int dx, dy;
-	int idx = 0;
+	size_t idx = 0;
 
 	box = box_pick_text_box(h, x, y, dir, &dx, &dy);
 	if (box) {
