@@ -20,6 +20,7 @@
 #include "content/urldb.h"
 #include "css/utils.h"
 #include "desktop/history_core.h"
+#include "desktop/mouse.h"
 #include "desktop/netsurf.h"
 #include "desktop/options.h"
 #include "desktop/save_complete.h"
@@ -3758,14 +3759,14 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 
 uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved)
 {
-    int32 itemid = 0;
+	int32 itemid = 0;
 	struct gui_window *gwin = hook->h_Data;
 
-    if(GetAttr(PMIA_ID, item, &itemid))
-    {
-		browser_window_form_select(gwin->shared->bw,gwin->shared->control,itemid);
-    }
+	if(GetAttr(PMIA_ID, item, &itemid))
+	{
+		form_select_process_selection(gwin->shared->bw->current_content,gwin->shared->control,itemid);
+	}
 
-    return itemid;
+	return itemid;
 }
 

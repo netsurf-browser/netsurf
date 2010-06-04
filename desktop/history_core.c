@@ -30,6 +30,7 @@
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "css/css.h"
+#include "desktop/browser.h"
 #include "desktop/gui.h"
 #include "desktop/history_core.h"
 #include "desktop/plotters.h"

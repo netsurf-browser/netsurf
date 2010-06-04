@@ -30,6 +30,7 @@
 
 #include "desktop/browser.h"
 #include "desktop/gui.h"
+#include "desktop/mouse.h"
 #include "desktop/scroll.h"
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
@@ -298,7 +299,7 @@ void browser_window_textarea_click(struct browser_window *bw,
 			textarea);
 
 	if (scrolled)
-		browser_redraw_box(bw->current_content, textarea);
+		html_redraw_a_box(bw->current_content, textarea);
 }
 
 
@@ -799,7 +800,7 @@ bool browser_window_textarea_callback(struct browser_window *bw,
 			textarea);
 
 	if (scrolled || reflow)
-		browser_redraw_box(bw->current_content, textarea);
+		html_redraw_a_box(bw->current_content, textarea);
 
 	return true;
 }
@@ -862,7 +863,7 @@ void browser_window_input_click(struct browser_window* bw,
 			input);
 
 	if (dx)
-		browser_redraw_box(bw->current_content, input);
+		html_redraw_a_box(bw->current_content, input);
 }
 
 /**
@@ -992,7 +993,7 @@ bool browser_window_input_callback(struct browser_window *bw,
 		selection_clear(bw->sel, true);
 
 		if (form)
-			browser_form_submit(bw, bw, form, 0);
+			form_submit(bw->current_content, bw, form, 0);
 		return true;
 
 	case KEY_SHIFT_TAB:
@@ -1418,7 +1419,7 @@ bool browser_window_textarea_paste_text(struct browser_window *bw,
 				browser_window_textarea_move_caret,
 				textarea);
 
-		browser_redraw_box(bw->current_content, textarea);
+		html_redraw_a_box(bw->current_content, textarea);
 	}
 
 	return success;
@@ -1644,7 +1645,7 @@ void input_update_display(struct browser_window *bw, struct box *input,
 			input);
 
 	if (dx || redraw)
-		browser_redraw_box(bw->current_content, input);
+		html_redraw_a_box(bw->current_content, input);
 }
 
 

@@ -310,6 +310,8 @@ struct box *box_at_point(struct box *box, const int x, const int y,
 		int *box_x, int *box_y, struct hlcache_handle **content);
 struct box *box_object_at_point(struct hlcache_handle *h, int x, int y);
 struct box *box_href_at_point(struct hlcache_handle *h, int x, int y);
+struct box *box_pick_text_box(struct hlcache_handle *h,
+		int x, int y, int dir, int *dx, int *dy);
 struct box *box_find_by_id(struct box *box, const char *id);
 bool box_visible(struct box *box);
 void box_dump(FILE *stream, struct box *box, unsigned int depth);

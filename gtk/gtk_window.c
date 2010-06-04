@@ -22,6 +22,7 @@
 #include "content/hlcache.h"
 #include "gtk/gtk_window.h"
 #include "desktop/browser.h"
+#include "desktop/mouse.h"
 #include "desktop/options.h"
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"

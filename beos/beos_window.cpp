@@ -23,6 +23,7 @@
 extern "C" {
 #include "content/urldb.h"
 #include "desktop/browser.h"
+#include "desktop/mouse.h"
 #include "desktop/options.h"
 #include "desktop/selection.h"
 #include "desktop/textinput.h"

@@ -31,6 +31,7 @@
 #include "utils/config.h"
 #include "utils/errors.h"
 #include "content/content_type.h"
+#include "desktop/mouse.h"
 #include "desktop/plot_style.h"
 
 struct box;
@@ -117,6 +118,10 @@ bool content_can_reformat(struct hlcache_handle *h);
 void content_reformat(struct hlcache_handle *h, int width, int height);
 void content_request_redraw(struct hlcache_handle *h,
 		int x, int y, int width, int height);
+void content_mouse_track(struct hlcache_handle *h, struct browser_window *bw,
+		browser_mouse_state mouse, int x, int y);
+void content_mouse_action(struct hlcache_handle *h, struct browser_window *bw,
+		browser_mouse_state mouse, int x, int y);
 bool content_redraw(struct hlcache_handle *h, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,

@@ -1,5 +1,6 @@
 /*
  * Copyright 2007 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2010 Michael Drake <tlsa@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -1741,6 +1742,25 @@ void html_reformat(struct content *c, int width, int height)
 
 
 /**
+ * Redraw a box.
+ *
+ * \param  c	content containing the box, of type CONTENT_HTML
+ * \param  box  box to redraw
+ */
+
+void html_redraw_a_box(hlcache_handle *h, struct box *box)
+{
+	int x, y;
+
+	box_coords(box, &x, &y);
+
+	content_request_redraw(h, x, y,
+			box->padding[LEFT] + box->width + box->padding[RIGHT],
+			box->padding[TOP] + box->height + box->padding[BOTTOM]);
+}
+
+
+/**
  * Destroy a CONTENT_HTML and free all resources it owns.
  */
 
@@ -2189,4 +2209,29 @@ hlcache_handle *html_get_favicon(hlcache_handle *h)
 	assert(c->type == CONTENT_HTML);
 
 	return c->data.html.favicon;
+}
+
+
+/**
+ * Retrieve layout coordinates of box with given id
+ *
+ * \param h        HTML document to search
+ * \param frag_id  String containing an element id
+ * \param x        Updated to global x coord iff id found
+ * \param y        Updated to global y coord iff id found
+ * \return  true iff id found
+ */
+bool html_get_id_offset(hlcache_handle *h, char *frag_id, int *x, int *y)
+{
+	struct box *pos;
+	struct box *layout = html_get_box_tree(h);
+
+	if (content_get_type(h) != CONTENT_HTML)
+		return false;
+
+	if ((pos = box_find_by_id(layout, frag_id)) != 0) {
+		box_coords(pos, x, y);
+		return true;
+	}
+	return false;
 }

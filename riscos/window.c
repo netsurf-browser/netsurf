@@ -46,6 +46,7 @@
 #include "css/css.h"
 #include "desktop/browser.h"
 #include "desktop/frames.h"
+#include "desktop/mouse.h"
 #include "desktop/plotters.h"
 #include "desktop/textinput.h"
 #include "desktop/tree.h"

@@ -29,6 +29,7 @@
 
 #include "content/hlcache.h"
 #include "desktop/gui.h"
+#include "desktop/mouse.h"
 #include "desktop/plotters.h"
 #include "desktop/save_text.h"
 #include "desktop/selection.h"

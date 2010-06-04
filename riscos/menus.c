@@ -34,12 +34,14 @@
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
+#include "desktop/browser.h"
 #include "desktop/gui.h"
 #include "desktop/history_core.h"
 #include "desktop/netsurf.h"
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
 #include "render/box.h"
+#include "render/form.h"
 #include "riscos/dialog.h"
 #include "render/form.h"
 #include "riscos/configure.h"
@@ -710,7 +712,7 @@ void ro_gui_menu_selection(wimp_selection *selection)
 		assert(g);
 
 		if (selection->items[0] >= 0) {
-			browser_window_form_select(g->bw,
+			form_select_process_selection(g->bw->current_content,
 					gui_form_select_control,
 					selection->items[0]);
 		}

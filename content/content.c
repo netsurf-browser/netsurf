@@ -36,6 +36,7 @@
 #include "content/hlcache.h"
 #include "css/css.h"
 #include "image/bitmap.h"
+#include "desktop/browser.h"
 #include "desktop/options.h"
 #include "render/directory.h"
 #include "render/html.h"
@@ -253,6 +254,10 @@ struct handler_entry {
 	void (*reformat)(struct content *c, int width, int height);
 	void (*destroy)(struct content *c);
 	void (*stop)(struct content *c);
+	void (*mouse_track)(struct content *c, struct browser_window *bw,
+			browser_mouse_state mouse, int x, int y);
+	void (*mouse_action)(struct content *c, struct browser_window *bw,
+			browser_mouse_state mouse, int x, int y);
 	bool (*redraw)(struct content *c, int x, int y,
 			int width, int height,
 			int clip_x0, int clip_y0, int clip_x1, int clip_y1,
@@ -275,88 +280,92 @@ struct handler_entry {
  * Must be ordered as enum ::content_type. */
 static const struct handler_entry handler_map[] = {
 	{html_create, html_process_data, html_convert,
-		html_reformat, html_destroy, html_stop, html_redraw, 0,
-		html_open, html_close, html_clone,
-		true},
+		html_reformat, html_destroy, html_stop, html_mouse_track,
+		html_mouse_action, html_redraw, 0, html_open, html_close,
+		html_clone, true},
 	{textplain_create, textplain_process_data, textplain_convert,
-		textplain_reformat, textplain_destroy, 0, textplain_redraw, 0,
-		0, 0, textplain_clone, true},
+		textplain_reformat, textplain_destroy, 0, textplain_mouse_track,
+		textplain_mouse_action, textplain_redraw, 0, 0, 0,
+		textplain_clone, true},
 	{nscss_create, nscss_process_data, nscss_convert, 0, nscss_destroy, 
-		0, 0, 0, 0, 0, nscss_clone, false},
+		0, 0, 0, 0, 0, 0, 0, nscss_clone, false},
 #ifdef WITH_JPEG
-	{0, 0, nsjpeg_convert, 0, nsjpeg_destroy, 0,
+	{0, 0, nsjpeg_convert, 0, nsjpeg_destroy, 0, 0, 0,
 		nsjpeg_redraw, nsjpeg_redraw_tiled, 0, 0, nsjpeg_clone, false},
 #endif
 #ifdef WITH_GIF
-	{nsgif_create, 0, nsgif_convert, 0, nsgif_destroy, 0,
+	{nsgif_create, 0, nsgif_convert, 0, nsgif_destroy, 0, 0, 0,
 		nsgif_redraw, nsgif_redraw_tiled, 0, 0, nsgif_clone, false},
 #endif
 #ifdef WITH_BMP
-	{nsbmp_create, 0, nsbmp_convert, 0, nsbmp_destroy, 0,
+	{nsbmp_create, 0, nsbmp_convert, 0, nsbmp_destroy, 0, 0, 0,
 		nsbmp_redraw, nsbmp_redraw_tiled, 0, 0, nsbmp_clone, false},
-	{nsico_create, 0, nsico_convert, 0, nsico_destroy, 0,
+	{nsico_create, 0, nsico_convert, 0, nsico_destroy, 0, 0, 0,
 		nsico_redraw, nsico_redraw_tiled, 0, 0, nsico_clone, false},
 #endif
 
 #ifdef WITH_PNG
 	{nspng_create, nspng_process_data, nspng_convert,
-		0, nspng_destroy, 0, nspng_redraw, nspng_redraw_tiled,
+		0, nspng_destroy, 0, 0, 0, nspng_redraw, nspng_redraw_tiled,
 		0, 0, nspng_clone, false},
 #else
 #ifdef WITH_MNG
 	{nsmng_create, nsmng_process_data, nsmng_convert,
-		0, nsmng_destroy, 0, nsmng_redraw, nsmng_redraw_tiled,
+		0, nsmng_destroy, 0, 0, 0, nsmng_redraw, nsmng_redraw_tiled,
 		0, 0, nsmng_clone, false},
 #endif
 #endif
 #ifdef WITH_MNG
 	{nsmng_create, nsmng_process_data, nsmng_convert,
-		0, nsmng_destroy, 0, nsmng_redraw, nsmng_redraw_tiled,
+		0, nsmng_destroy, 0, 0, 0, nsmng_redraw, nsmng_redraw_tiled,
 		0, 0, nsmng_clone, false},
 	{nsmng_create, nsmng_process_data, nsmng_convert,
-		0, nsmng_destroy, 0, nsmng_redraw, nsmng_redraw_tiled,
+		0, nsmng_destroy, 0, 0, 0, nsmng_redraw, nsmng_redraw_tiled,
 		0, 0, nsmng_clone, false},
 #endif
 #ifdef WITH_SPRITE
 	{0, 0, sprite_convert,
-		0, sprite_destroy, 0, sprite_redraw, 0, 
+		0, sprite_destroy, 0, 0, 0, sprite_redraw, 0, 
 		0, 0, sprite_clone, false},
 #endif
 #ifdef WITH_NSSPRITE
 	{0, 0, nssprite_convert,
-		0, nssprite_destroy, 0, nssprite_redraw, 0, 
+		0, nssprite_destroy, 0, 0, 0, nssprite_redraw, 0, 
 		0, 0, nssprite_clone, false},
 #endif
 #ifdef WITH_DRAW
 	{0, 0, draw_convert,
-		0, draw_destroy, 0, draw_redraw, 0, 0, 0, draw_clone, false},
+		0, draw_destroy, 0, 0, 0, draw_redraw, 0, 0, 0, draw_clone,
+		false},
 #endif
 #ifdef WITH_PLUGIN
 	{plugin_create, 0, plugin_convert,
-		plugin_reformat, plugin_destroy, 0, plugin_redraw, 0,
+		plugin_reformat, plugin_destroy, 0, plugin_redraw, 0, 0, 0,
 		plugin_open, plugin_close, plugin_clone,
 		true},
 #endif
 	{directory_create, 0, directory_convert,
-		0, directory_destroy, 0, 0, 0, 0, 0, directory_clone, true},
+		0, directory_destroy, 0, 0, 0, 0, 0, 0, 0, directory_clone,
+		true},
 #ifdef WITH_THEME_INSTALL
-	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false},
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false},
 #endif
 #ifdef WITH_ARTWORKS
 	{0, 0, artworks_convert,
-		0, artworks_destroy, 0, artworks_redraw, 0, 
+		0, artworks_destroy, 0, 0, 0, artworks_redraw, 0, 
 		0, 0, artworks_clone, false},
 #endif
 #ifdef WITH_NS_SVG
 	{svg_create, 0, svg_convert,
-		svg_reformat, svg_destroy, 0, svg_redraw, 0, 
+		svg_reformat, svg_destroy, 0, 0, 0, svg_redraw, 0, 
 		0, 0, svg_clone, true},
 #endif
 #ifdef WITH_RSVG
 	{rsvg_create, rsvg_process_data, rsvg_convert,
-		0, rsvg_destroy, 0, rsvg_redraw, 0, 0, 0, rsvg_clone, false},
+		0, rsvg_destroy, 0, 0, 0, rsvg_redraw, 0, 0, 0, rsvg_clone,
+		false},
 #endif
-	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false}
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false}
 };
 #define HANDLER_MAP_COUNT (sizeof(handler_map) / sizeof(handler_map[0]))
 
@@ -751,6 +760,57 @@ void content_destroy(struct content *c)
 
 	talloc_free(c);
 }
+
+
+/**
+ * Handle mouse movements in a content window.
+ *
+ * \param  h	  Content handle
+ * \param  bw	  browser window
+ * \param  mouse  state of mouse buttons and modifier keys
+ * \param  x	  coordinate of mouse
+ * \param  y	  coordinate of mouse
+ */
+
+void content_mouse_track(hlcache_handle *h, struct browser_window *bw,
+		browser_mouse_state mouse, int x, int y)
+{
+	struct content *c = hlcache_handle_get_content(h);
+	assert(c != NULL);
+
+	if (handler_map[c->type].mouse_track)
+		handler_map[c->type].mouse_track(c, bw, mouse, x, y);
+	return;
+}
+
+
+/**
+ * Handle mouse clicks and movements in a content window.
+ *
+ * \param  h	  Content handle
+ * \param  bw	  browser window
+ * \param  mouse  state of mouse buttons and modifier keys
+ * \param  x	  coordinate of mouse
+ * \param  y	  coordinate of mouse
+ *
+ * This function handles both hovering and clicking. It is important that the
+ * code path is identical (except that hovering doesn't carry out the action),
+ * so that the status bar reflects exactly what will happen. Having separate
+ * code paths opens the possibility that an attacker will make the status bar
+ * show some harmless action where clicking will be harmful.
+ */
+
+void content_mouse_action(hlcache_handle *h, struct browser_window *bw,
+		browser_mouse_state mouse, int x, int y)
+{
+	struct content *c = hlcache_handle_get_content(h);
+	assert(c != NULL);
+
+	if (handler_map[c->type].mouse_action)
+		handler_map[c->type].mouse_action(c, bw, mouse, x, y);
+	return;
+}
+
 
 /**
  * Request a redraw of an area of a content

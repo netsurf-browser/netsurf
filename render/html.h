@@ -28,6 +28,7 @@
 #include <stdbool.h>
 #include "content/content_type.h"
 #include "css/css.h"
+#include "desktop/mouse.h"
 #include "desktop/plot_style.h"
 #include "render/parser_binding.h"
 
@@ -41,6 +42,8 @@ struct http_parameter;
 struct imagemap;
 struct object_params;
 struct plotters;
+struct scroll;
+struct scroll_msg_data;
 
 /* entries in stylesheet_content */
 #define STYLESHEET_BASE		0	/* base style sheet */
@@ -202,15 +205,25 @@ void html_open(struct content *c, struct browser_window *bw,
 void html_close(struct content *c);
 void html_set_status(struct content *c, const char *extra);
 
+void html_redraw_a_box(struct hlcache_handle *h, struct box *box);
+
 /* in render/html_redraw.c */
 bool html_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale, colour background_colour);
 
-
-/* redraw a short text string, complete with highlighting
-   (for selection/search) and ghost caret */
+/* in render/html_interaction.c */
+void html_mouse_track(struct content *c, struct browser_window *bw,
+			browser_mouse_state mouse, int x, int y);
+void html_mouse_action(struct content *c, struct browser_window *bw,
+			browser_mouse_state mouse, int x, int y);
+void html_overflow_scroll_callback(void *client_data,
+		struct scroll_msg_data *scroll_data);
+void html_overflow_scroll_drag_end(struct scroll *scroll,
+		browser_mouse_state mouse, int x, int y);
+size_t html_selection_drag_end(struct hlcache_handle *h,
+		browser_mouse_state mouse, int x, int y, int dir);
 
 bool text_redraw(const char *utf8_text, size_t utf8_len,
 		size_t offset, bool space,
@@ -232,7 +245,9 @@ const char *html_get_base_target(struct hlcache_handle *h);
 struct html_stylesheet *html_get_stylesheets(struct hlcache_handle *h, 
 		unsigned int *n);
 struct content_html_object *html_get_objects(struct hlcache_handle *h, 
-			unsigned int *n);
+		unsigned int *n);
 struct hlcache_handle *html_get_favicon(struct hlcache_handle *h);
+bool html_get_id_offset(struct hlcache_handle *h, char *frag_id,
+		int *x, int *y);
 
 #endif

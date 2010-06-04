@@ -1,8 +1,10 @@
 /*
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
+ * Copyright 2004 John Tytgat <joty@netsurf-browser.org>
  * Copyright 2005-9 John-Mark Bell <jmb@netsurf-browser.org>
  * Copyright 2009 Paul Blokus <paul_pl@users.sourceforge.net>
+ * Copyright 2010 Michael Drake <tlsa@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -30,9 +32,12 @@
 #include <stdio.h>
 #include <string.h>
 #include "content/fetch.h"
+#include "content/hlcache.h"
 #include "css/css.h"
 #include "css/utils.h"
+#include "desktop/browser.h"
 #include "desktop/gui.h"
+#include "desktop/mouse.h"
 #include "desktop/knockout.h"
 #include "desktop/plot_style.h"
 #include "desktop/plotters.h"
@@ -40,9 +45,11 @@
 #include "render/box.h"
 #include "render/font.h"
 #include "render/form.h"
+#include "render/html.h"
 #include "render/layout.h"
 #include "utils/log.h"
 #include "utils/messages.h"
+#include "utils/talloc.h"
 #include "utils/url.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
@@ -1143,7 +1150,8 @@ void form_select_menu_clicked(struct form_control *control, int x, int y)
 	}
 	
 	if (option != NULL)
-		browser_window_form_select(menu->bw, control, i);
+		form_select_process_selection(menu->bw->current_content,
+				control, i);
 	
 	menu->callback(menu->client_data, 0, 0, menu->width, menu->height);
 }
@@ -1215,12 +1223,25 @@ void form_select_mouse_drag_end(struct form_control *control,
 		browser_mouse_state mouse, int x, int y)
 {
 	int x0, y0, x1, y1;
+	int box_x, box_y;
+	struct box *box;
 	struct form_select_menu *menu = control->data.select.menu;
-	
+
+	box = control->box;
+
+	/* Get global coords of scrollbar */
+	box_coords(box, &box_x, &box_y);
+	box_x -= box->border[LEFT].width;
+	box_y += box->height + box->border[BOTTOM].width +
+			box->padding[BOTTOM] + box->padding[TOP];
+
+	/* Get drag end coords relative to scrollbar */
+	x = x - box_x;
+	y = y - box_y;
+
 	if (menu->scroll_capture) {
 		x -= menu->width - SCROLLBAR_WIDTH;
-		scroll_mouse_drag_end(menu->scroll,
-				    mouse, x, y);
+		scroll_mouse_drag_end(menu->scroll, mouse, x, y);
 		return;
 	}
 	
@@ -1285,4 +1306,206 @@ void form_select_get_dimensions(struct form_control *control,
 {
 	*width = control->data.select.menu->width;
 	*height = control->data.select.menu->height;
+}
+
+
+/**
+ * Process a selection from a form select menu.
+ *
+ * \param  bw	    browser window with menu
+ * \param  control  form control with menu
+ * \param  item	    index of item selected from the menu
+ */
+
+void form_select_process_selection(hlcache_handle *h,
+		struct form_control *control, int item)
+{
+	struct box *inline_box;
+	struct form_option *o;
+	int count;
+	struct content *current_content;
+
+	assert(control != NULL);
+	assert(h != NULL);
+
+	/** \todo Even though the form code is effectively part of the html
+	 *        content handler, poking around inside contents is not good */
+	current_content = hlcache_handle_get_content(h);
+
+	inline_box = control->box->children->children;
+
+	for (count = 0, o = control->data.select.items;
+			o != NULL;
+			count++, o = o->next) {
+		if (!control->data.select.multiple)
+			o->selected = false;
+		if (count == item) {
+			if (control->data.select.multiple) {
+				if (o->selected) {
+					o->selected = false;
+					control->data.select.num_selected--;
+				} else {
+					o->selected = true;
+					control->data.select.num_selected++;
+				}
+			} else {
+				o->selected = true;
+			}
+		}
+		if (o->selected)
+			control->data.select.current = o;
+	}
+
+	talloc_free(inline_box->text);
+	inline_box->text = 0;
+	if (control->data.select.num_selected == 0)
+		inline_box->text = talloc_strdup(current_content,
+				messages_get("Form_None"));
+	else if (control->data.select.num_selected == 1)
+		inline_box->text = talloc_strdup(current_content,
+				control->data.select.current->text);
+	else
+		inline_box->text = talloc_strdup(current_content,
+				messages_get("Form_Many"));
+	if (!inline_box->text) {
+		warn_user("NoMemory", 0);
+		inline_box->length = 0;
+	} else
+		inline_box->length = strlen(inline_box->text);
+	inline_box->width = control->box->width;
+
+	html_redraw_a_box(h, control->box);
+}
+
+/**
+ * Callback for the core select menu.
+ */
+void form_select_menu_callback(void *client_data,
+		int x, int y, int width, int height)
+{
+	struct browser_window *bw = client_data;
+	int menu_x, menu_y;
+	struct box *box;
+	
+	box = bw->visible_select_menu->box;
+	box_coords(box, &menu_x, &menu_y);
+		
+	menu_x -= box->border[LEFT].width;
+	menu_y += box->height + box->border[BOTTOM].width +
+			box->padding[BOTTOM] +
+			box->padding[TOP];
+	browser_window_redraw_rect(bw, menu_x + x, menu_y + y,
+			width, height);
+}
+
+
+/**
+ * Set a radio form control and clear the others in the group.
+ *
+ * \param  content  content containing the form, of type CONTENT_TYPE
+ * \param  radio    form control of type GADGET_RADIO
+ */
+
+void form_radio_set(hlcache_handle *content,
+		struct form_control *radio)
+{
+	struct form_control *control;
+
+	assert(content);
+	assert(radio);
+	if (!radio->form)
+		return;
+
+	if (radio->selected)
+		return;
+
+	for (control = radio->form->controls; control;
+			control = control->next) {
+		if (control->type != GADGET_RADIO)
+			continue;
+		if (control == radio)
+			continue;
+		if (strcmp(control->name, radio->name) != 0)
+			continue;
+
+		if (control->selected) {
+			control->selected = false;
+			html_redraw_a_box(content, control->box);
+		}
+	}
+
+	radio->selected = true;
+	html_redraw_a_box(content, radio->box);
+}
+
+
+/**
+ * Collect controls and submit a form.
+ */
+
+void form_submit(hlcache_handle *h, struct browser_window *target,
+		struct form *form, struct form_control *submit_button)
+{
+	char *data = 0, *url = 0;
+	struct fetch_multipart_data *success;
+
+	assert(form);
+	assert(content_get_type(h) == CONTENT_HTML);
+
+	if (!form_successful_controls(form, submit_button, &success)) {
+		warn_user("NoMemory", 0);
+		return;
+	}
+
+	switch (form->method) {
+		case method_GET:
+			data = form_url_encode(form, success);
+			if (!data) {
+				fetch_multipart_data_destroy(success);
+				warn_user("NoMemory", 0);
+				return;
+			}
+			url = calloc(1, strlen(form->action) +
+					strlen(data) + 2);
+			if (!url) {
+				fetch_multipart_data_destroy(success);
+				free(data);
+				warn_user("NoMemory", 0);
+				return;
+			}
+			if (form->action[strlen(form->action)-1] == '?') {
+				sprintf(url, "%s%s", form->action, data);
+			}
+			else {
+				sprintf(url, "%s?%s", form->action, data);
+			}
+			browser_window_go(target, url, content_get_url(h),
+					true);
+			break;
+
+		case method_POST_URLENC:
+			data = form_url_encode(form, success);
+			if (!data) {
+				fetch_multipart_data_destroy(success);
+				warn_user("NoMemory", 0);
+				return;
+			}
+			browser_window_go_post(target, form->action, data, 0,
+					true,  content_get_url(h),
+					false, true, 0);
+			break;
+
+		case method_POST_MULTIPART:
+			browser_window_go_post(target, form->action, 0,
+					success, true, content_get_url(h),
+					false, true, 0);
+			break;
+
+		default:
+			assert(0);
+	}
+
+	fetch_multipart_data_destroy(success);
+	free(data);
+	free(url);
 }

@@ -28,6 +28,8 @@
 #include <stdbool.h>
 #include <time.h>
 
+#include "desktop/gui.h"
+#include "desktop/mouse.h"
 #include "render/html.h"
 
 struct box;
@@ -41,6 +43,7 @@ struct browser_window;
 struct url_data;
 struct bitmap;
 struct scroll_msg_data;
+struct fetch_multipart_data;
 
 typedef bool (*browser_caret_callback)(struct browser_window *bw,
 		uint32_t key, void *p);
@@ -179,44 +182,6 @@ struct browser_window {
 	int status_miss; /**< Number of times status was really updated. */
 };
 
-
-/* Mouse state.	1 is    primary mouse button (e.g. Select on RISC OS).
- *		2 is  secondary mouse button (e.g. Adjust on RISC OS). */
-typedef enum {
-	BROWSER_MOUSE_PRESS_1   = 1,	/* button 1 pressed */
-	BROWSER_MOUSE_PRESS_2   = 2,	/* button 2 pressed */
-
-					/* note: click meaning is different for
-					 * different front ends. On RISC OS, it
-					 * is standard to act on press, so a
-					 * click is fired at the same time as a
-					 * mouse button is pressed. With GTK, it
-					 * is standard to act on release, so a
-					 * click is fired when the mouse button
-					 * is released, if the operation wasn't
-					 * a drag. */
-	BROWSER_MOUSE_CLICK_1   = 4,	/* button 1 clicked. */
-	BROWSER_MOUSE_CLICK_2   = 8,	/* button 2 clicked. */
-	BROWSER_MOUSE_DOUBLE_CLICK = 16, /* button 1 double clicked */
-
-	BROWSER_MOUSE_DRAG_1    = 32,	/* start of button 1 drag operation */
-	BROWSER_MOUSE_DRAG_2    = 64,	/* start of button 2 drag operation */
-
-	BROWSER_MOUSE_DRAG_ON   = 128,	/* a drag operation was started and
-					 * a mouse button is still pressed */
-
-	BROWSER_MOUSE_HOLDING_1 = 256,	/* while button 1 drag is in progress */
-	BROWSER_MOUSE_HOLDING_2 = 512,	/* while button 2 drag is in progress */
-
-
-	BROWSER_MOUSE_MOD_1     = 1024,	/* primary modifier key pressed
-					 * (eg. Shift) */
-	BROWSER_MOUSE_MOD_2     = 2048,	/* secondary modifier key pressed
-					 * (eg. Ctrl) */
-	BROWSER_MOUSE_MOD_3     = 4096	/* secondary modifier key pressed
-					 * (eg. Alt) */
-} browser_mouse_state;
-
 struct browser_scroll_data {
 	struct browser_window *bw;
 	struct box *box;
@@ -232,6 +197,11 @@ void browser_window_initialise_common(struct browser_window *bw,
 		struct browser_window *clone);
 void browser_window_go(struct browser_window *bw, const char *url,
 		const char *referrer, bool history_add);
+void browser_window_go_post(struct browser_window *bw,
+		const char *url, char *post_urlenc,
+		struct fetch_multipart_data *post_multipart,
+		bool add_to_history, const char *referer, bool download,
+		bool verifiable, struct hlcache_handle *parent);
 void browser_window_go_unverifiable(struct browser_window *bw,
 		const char *url, const char *referrer, bool history_add,
 		struct hlcache_handle *parent);
@@ -254,16 +224,14 @@ void browser_window_mouse_track(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y);
 void browser_window_mouse_drag_end(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y);
+struct browser_window *browser_window_find_target(
+		struct browser_window *bw, const char *target,
+		browser_mouse_state mouse);
 
 bool browser_window_key_press(struct browser_window *bw, uint32_t key);
 bool browser_window_paste_text(struct browser_window *bw, const char *utf8,
 		unsigned utf8_len, bool last);
-void browser_window_form_select(struct browser_window *bw,
-		struct form_control *control, int item);
 void browser_redraw_box(struct hlcache_handle *c, struct box *box);
-void browser_form_submit(struct browser_window *bw, 
-		struct browser_window *target, struct form *form, 
-		struct form_control *submit_button);
 
 void browser_scroll_callback(void *client_data,
 		struct scroll_msg_data *scroll_data);
@@ -272,6 +240,10 @@ void browser_select_menu_callback(void *client_data,
 
 void browser_window_redraw_rect(struct browser_window *bw, int x, int y,
 		int width, int height);
+
+void browser_window_set_status(struct browser_window *bw, const char *text);
+void browser_window_set_pointer(struct gui_window *g, gui_pointer_shape shape);
+void browser_window_page_drag_start(struct browser_window *bw, int x, int y);
 
 bool browser_window_back_available(struct browser_window *bw);
 bool browser_window_forward_available(struct browser_window *bw);

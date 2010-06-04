@@ -25,6 +25,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#include "desktop/mouse.h"
 #include "desktop/scroll.h"
 #include "desktop/plotters.h"
 #include "desktop/plot_style.h"

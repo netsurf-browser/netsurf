@@ -34,6 +34,7 @@
 #include <libnsfb_event.h>
 
 #include "desktop/gui.h"
+#include "desktop/mouse.h"
 #include "desktop/plotters.h"
 #include "desktop/netsurf.h"
 #include "desktop/options.h"

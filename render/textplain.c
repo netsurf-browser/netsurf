@@ -32,6 +32,7 @@
 #include "content/hlcache.h"
 #include "css/css.h"
 #include "css/utils.h"
+#include "desktop/browser.h"
 #include "desktop/gui.h"
 #include "desktop/options.h"
 #include "desktop/plotters.h"
@@ -351,6 +352,93 @@ bool textplain_clone(const struct content *old, struct content *new_content)
 	}
 
 	return true;
+}
+
+
+/**
+ * Handle mouse tracking (including drags) in a TEXTPLAIN content window.
+ *
+ * \param  c	  content of type textplain
+ * \param  bw	  browser window
+ * \param  mouse  state of mouse buttons and modifier keys
+ * \param  x	  coordinate of mouse
+ * \param  y	  coordinate of mouse
+ */
+
+void textplain_mouse_track(struct content *c, struct browser_window *bw,
+		browser_mouse_state mouse, int x, int y)
+{
+	switch (bw->drag_type) {
+
+		case DRAGGING_SELECTION: {
+			hlcache_handle *h = bw->current_content;
+			int dir = -1;
+			size_t idx;
+
+			if (selection_dragging_start(bw->sel)) dir = 1;
+
+			idx = textplain_offset_from_coords(h, x, y, dir);
+			selection_track(bw->sel, mouse, idx);
+		}
+		break;
+
+		default:
+			textplain_mouse_action(c, bw, mouse, x, y);
+			break;
+	}
+}
+
+
+/**
+ * Handle mouse clicks and movements in a TEXTPLAIN content window.
+ *
+ * \param  c	  content of type textplain
+ * \param  bw	  browser window
+ * \param  click  type of mouse click
+ * \param  x	  coordinate of mouse
+ * \param  y	  coordinate of mouse
+ */
+
+void textplain_mouse_action(struct content *c, struct browser_window *bw,
+		browser_mouse_state mouse, int x, int y)
+{
+	hlcache_handle *h = bw->current_content;
+	gui_pointer_shape pointer = GUI_POINTER_DEFAULT;
+	const char *status = 0;
+	size_t idx;
+	int dir = 0;
+
+	bw->drag_type = DRAGGING_NONE;
+
+	if (!bw->sel) return;
+
+	idx = textplain_offset_from_coords(h, x, y, dir);
+	if (selection_click(bw->sel, mouse, idx)) {
+
+		if (selection_dragging(bw->sel)) {
+			bw->drag_type = DRAGGING_SELECTION;
+			status = messages_get("Selecting");
+		}
+		else
+			status = content_get_status_message(h);
+	}
+	else {
+		if (bw->loading_content)
+			status = content_get_status_message(
+					bw->loading_content);
+		else
+			status = content_get_status_message(h);
+
+		if (mouse & (BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_2)) {
+			browser_window_page_drag_start(bw, x, y);
+			pointer = GUI_POINTER_MOVE;
+		}
+	}
+
+	assert(status);
+
+	browser_window_set_status(bw, status);
+	browser_window_set_pointer(bw->window, pointer);
 }
 
 

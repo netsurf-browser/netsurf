@@ -25,6 +25,7 @@
 #include <string.h>
 #include "css/css.h"
 #include "css/utils.h"
+#include "desktop/mouse.h"
 #include "desktop/textarea.h"
 #include "desktop/textinput.h"
 #include "desktop/plotters.h"

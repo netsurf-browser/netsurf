@@ -26,6 +26,7 @@
 
 #include <stddef.h>
 #include <iconv.h>
+#include "desktop/mouse.h"
 
 struct content;
 struct hlcache_handle;
@@ -52,6 +53,10 @@ bool textplain_create(struct content *c, const struct http_parameter *params);
 bool textplain_process_data(struct content *c, 
 		const char *data, unsigned int size);
 bool textplain_convert(struct content *c);
+void textplain_mouse_track(struct content *c, struct browser_window *bw,
+			browser_mouse_state mouse, int x, int y);
+void textplain_mouse_action(struct content *c, struct browser_window *bw,
+			browser_mouse_state mouse, int x, int y);
 void textplain_reformat(struct content *c, int width, int height);
 void textplain_destroy(struct content *c);
 bool textplain_redraw(struct content *c, int x, int y,

@@ -43,6 +43,9 @@ typedef enum {
 
 struct gui_window;
 struct gui_download_window;
+struct browser_window;
+struct selection;
+struct form_control;
 
 typedef enum { GUI_POINTER_DEFAULT, GUI_POINTER_POINT, GUI_POINTER_CARET,
 	       GUI_POINTER_MENU, GUI_POINTER_UP, GUI_POINTER_DOWN,
@@ -56,7 +59,6 @@ typedef enum { GUI_POINTER_DEFAULT, GUI_POINTER_POINT, GUI_POINTER_CARET,
 #include "utils/config.h"
 #include "content/content.h"
 #include "content/hlcache.h"
-#include "desktop/browser.h"
 #include "desktop/download.h"
 #include "desktop/search.h"
 #include "utils/errors.h"

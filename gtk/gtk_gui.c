@@ -569,8 +569,8 @@ bool nsgtk_throbber_init(int framec)
 static void nsgtk_select_menu_clicked(GtkCheckMenuItem *checkmenuitem,
 					gpointer user_data)
 {
-	browser_window_form_select(select_menu_bw, select_menu_control,
-					(intptr_t)user_data);
+	form_select_process_selection(select_menu_bw->current_content,
+			select_menu_control, (intptr_t)user_data);
 }
 
 void gui_create_form_select_menu(struct browser_window *bw,

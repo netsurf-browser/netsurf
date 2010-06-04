@@ -157,6 +157,8 @@ bool form_open_select_menu(void *client_data,
 		struct form_control *control,
 		select_menu_redraw_callback redraw_callback,
   		struct browser_window *bw);
+void form_select_menu_callback(void *client_data,
+		int x, int y, int width, int height);
 void form_free_select_menu(struct form_control *control);
 bool form_redraw_select_menu(struct form_control *control, int x, int y,
 		float scale,
@@ -169,5 +171,10 @@ void form_select_mouse_drag_end(struct form_control *control,
 		browser_mouse_state mouse, int x, int y);
 void form_select_get_dimensions(struct form_control *control,
 		int *width, int *height);
+void form_select_process_selection(hlcache_handle *h,
+		struct form_control *control, int item);
+void form_submit(struct hlcache_handle *h, struct browser_window *target,
+		struct form *form, struct form_control *submit_button);
+void form_radio_set(struct hlcache_handle *content, struct form_control *radio);
 
 #endif

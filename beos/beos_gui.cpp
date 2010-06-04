@@ -805,8 +805,8 @@ void gui_download_window_done(struct gui_download_window *dw)
 static void nsbeos_select_menu_clicked(BCheckMenuItem *checkmenuitem,
 					gpointer user_data) 
 {
-	browser_window_form_select(select_menu_bw, select_menu_control,
-					(intptr_t)user_data);
+	form_select_process_selection(select_menu_bw->current_content,
+			select_menu_control, (intptr_t)user_data);
 }
 #endif
 
