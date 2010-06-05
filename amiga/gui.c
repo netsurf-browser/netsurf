@@ -3003,16 +3003,15 @@ void gui_window_set_title(struct gui_window *g, const char *title)
  * \param  y0  top-left co-ordinate (in document co-ordinates)
  * \param  x1  bottom-right co-ordinate (in document co-ordinates)
  * \param  y1  bottom-right co-ordinate (in document co-ordinates)
- * \param  sx  horizontal scroller position (currently ignored/overridden)
- * \param  sy  vertical scroller position (currently ignored/overridden)
  */
 
-void ami_do_redraw_limits(struct gui_window *g, hlcache_handle *c,int x0, int y0, int x1, int y1, ULONG sx, ULONG sy)
+void ami_do_redraw_limits(struct gui_window *g, hlcache_handle *c,int x0, int y0, int x1, int y1)
 {
 	ULONG xoffset,yoffset,width=800,height=600;
 	ULONG htemp,vtemp;
 	struct IBox *bbox;
 	ULONG cur_tab = 0;
+	ULONG sx, sy;
 
 	if(!g) return;
 
@@ -3096,10 +3095,7 @@ void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
 
 	c = g->shared->bw->current_content;
 
-	ami_get_hscroll_pos(g->shared, (ULONG *)&sx);
-	ami_get_vscroll_pos(g->shared, (ULONG *)&sy);
-
-	ami_do_redraw_limits(g,c,x0,y0,x1,y1,sx,sy);
+	ami_do_redraw_limits(g,c,x0,y0,x1,y1);
 }
 
 void gui_window_redraw_window(struct gui_window *g)
@@ -3122,14 +3118,10 @@ void gui_window_update_box(struct gui_window *g,
 
 	if(!g) return;
 
-	ami_get_hscroll_pos(g->shared, (ULONG *)&sx);
-	ami_get_vscroll_pos(g->shared, (ULONG *)&sy);
-
 	ami_do_redraw_limits(g,g->shared->bw->current_content,
 			data->redraw.x,data->redraw.y,
 			data->redraw.width+data->redraw.x,
-			data->redraw.height+data->redraw.y,
-			sx,sy);
+			data->redraw.height+data->redraw.y);
 }
 
 void ami_do_redraw(struct gui_window_2 *g)
@@ -3193,15 +3185,14 @@ void ami_do_redraw(struct gui_window_2 *g)
 			ami_do_redraw_limits(g->bw->window, c,
 					hcurrent, (height / g->bw->scale) + oldv,
 					hcurrent + (width / g->bw->scale),
-					vcurrent + (height / g->bw->scale),
-					hcurrent, vcurrent);
+					vcurrent + (height / g->bw->scale));
 		}
 		else if(vcurrent<oldv)
 		{
 			ami_do_redraw_limits(g->bw->window, c,
 					hcurrent, vcurrent,
 					hcurrent + (width / g->bw->scale),
-					oldv, hcurrent, vcurrent);
+					oldv);
 		}
 
 		if(hcurrent>oldh)
@@ -3209,15 +3200,13 @@ void ami_do_redraw(struct gui_window_2 *g)
 			ami_do_redraw_limits(g->bw->window, c,
 					(width / g->bw->scale) + oldh, vcurrent,
 					hcurrent + (width / g->bw->scale),
-					vcurrent + (height / g->bw->scale),
-					hcurrent, vcurrent);
+					vcurrent + (height / g->bw->scale));
 		}
 		else if(hcurrent<oldh)
 		{
 			ami_do_redraw_limits(g->bw->window, c,
 					hcurrent, vcurrent,
-					oldh, vcurrent+(height / g->bw->scale),
-					hcurrent, vcurrent);
+					oldh, vcurrent+(height / g->bw->scale));
 		}
 	}
 	else
@@ -3291,14 +3280,24 @@ bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 
 void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 {
+	struct IBox *bbox;
 	ULONG cur_tab = 0;
 
 	if(!g) return;
-	if(sx<0) sx=0;
-	if(sy<0) sy=0;
 	if(!g->shared->bw || !g->shared->bw->current_content) return;
-	if(sx > content_get_width(g->shared->bw->current_content)) sx = content_get_width(g->shared->bw->current_content);
-	if(sy > content_get_height(g->shared->bw->current_content)) sy = content_get_height(g->shared->bw->current_content);
+
+	GetAttr(SPACE_AreaBox, g->shared->objects[GID_BROWSER], (ULONG *)&bbox);
+
+	if(sx < 0) sx=0;
+	if(sy < 0) sy=0;
+
+	if(sx >= content_get_width(g->shared->bw->current_content))
+		sx = content_get_width(g->shared->bw->current_content);
+	if(sy >= content_get_height(g->shared->bw->current_content))
+		sy = content_get_height(g->shared->bw->current_content);
+
+	if(content_get_width(g->shared->bw->current_content) <= bbox->Width) sx = 0;
+	if(content_get_height(g->shared->bw->current_content) <= bbox->Height) sy = 0;
 
 	if(g->tab_node && (g->shared->tabs > 1))
 				GetAttr(CLICKTAB_Current,
