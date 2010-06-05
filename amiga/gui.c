@@ -3003,8 +3003,8 @@ void gui_window_set_title(struct gui_window *g, const char *title)
  * \param  y0  top-left co-ordinate (in document co-ordinates)
  * \param  x1  bottom-right co-ordinate (in document co-ordinates)
  * \param  y1  bottom-right co-ordinate (in document co-ordinates)
- * \param  sx  horizontal scroller position
- * \param  sy  vertical scroller position
+ * \param  sx  horizontal scroller position (currently ignored/overridden)
+ * \param  sy  vertical scroller position (currently ignored/overridden)
  */
 
 void ami_do_redraw_limits(struct gui_window *g, hlcache_handle *c,int x0, int y0, int x1, int y1, ULONG sx, ULONG sy)
@@ -3015,6 +3015,9 @@ void ami_do_redraw_limits(struct gui_window *g, hlcache_handle *c,int x0, int y0
 	ULONG cur_tab = 0;
 
 	if(!g) return;
+
+	sx = g->scrollx;
+	sy = g->scrolly;
 
 	if(g->tab_node && (g->shared->tabs > 1)) GetAttr(CLICKTAB_Current,
 				g->shared->objects[GID_TABS], (ULONG *)&cur_tab);
@@ -3088,6 +3091,9 @@ void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
 {
 	ULONG sx,sy;
 	hlcache_handle *c;
+
+	if(!g) return;
+
 	c = g->shared->bw->current_content;
 
 	ami_get_hscroll_pos(g->shared, (ULONG *)&sx);
@@ -3735,6 +3741,8 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 
 					if(option_faster_scroll)
 						gwin->redraw_scroll = true;
+					else gwin->redraw_scroll = false;
+
 					gwin->redraw_required = true;
  				break;
 			} 
