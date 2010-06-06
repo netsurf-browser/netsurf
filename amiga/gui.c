@@ -2134,7 +2134,6 @@ void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
 					GA_RelVerify, TRUE,
 					GA_HintInfo, gwin->helphints[GID_ADDTAB],
 					GA_Text, "+",
-					BUTTON_Transparent, TRUE,
 					BUTTON_RenderImage, gwin->objects[GID_ADDTAB_BM],
 					ButtonEnd;
 
@@ -2412,7 +2411,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 					gwin->shared->objects[GID_CLOSETAB] = ButtonObject,
 							GA_ID, GID_CLOSETAB,
 							GA_RelVerify, TRUE,
-							BUTTON_Transparent, TRUE,
 							BUTTON_RenderImage, gwin->shared->objects[GID_CLOSETAB_BM],
 							ButtonEnd;
 
@@ -2428,7 +2426,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 							GA_ID, GID_ADDTAB,
 							GA_RelVerify, TRUE,
 							GA_Text, "+",
-							BUTTON_Transparent, TRUE,
 							BUTTON_RenderImage, gwin->shared->objects[GID_ADDTAB_BM],
 							ButtonEnd;
 				}
@@ -2483,7 +2480,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 								GA_RelVerify,TRUE,
 								GA_Disabled,TRUE,
 								GA_HintInfo, gwin->shared->helphints[GID_BACK],
-								BUTTON_Transparent,TRUE,
 								BUTTON_RenderImage,BitMapObject,
 									BITMAP_SourceFile,nav_west,
 									BITMAP_SelectSourceFile,nav_west_s,
@@ -2499,7 +2495,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 								GA_RelVerify,TRUE,
 								GA_Disabled,TRUE,
 								GA_HintInfo, gwin->shared->helphints[GID_FORWARD],
-								BUTTON_Transparent,TRUE,
 								BUTTON_RenderImage,BitMapObject,
 									BITMAP_SourceFile,nav_east,
 									BITMAP_SelectSourceFile,nav_east_s,
@@ -2514,7 +2509,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 								GA_ID,GID_STOP,
 								GA_RelVerify,TRUE,
 								GA_HintInfo, gwin->shared->helphints[GID_STOP],
-								BUTTON_Transparent,TRUE,
 								BUTTON_RenderImage,BitMapObject,
 									BITMAP_SourceFile,stop,
 									BITMAP_SelectSourceFile,stop_s,
@@ -2529,7 +2523,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 								GA_ID,GID_RELOAD,
 								GA_RelVerify,TRUE,
 								GA_HintInfo, gwin->shared->helphints[GID_RELOAD],
-								BUTTON_Transparent,TRUE,
 								BUTTON_RenderImage,BitMapObject,
 									BITMAP_SourceFile,reload,
 									BITMAP_SelectSourceFile,reload_s,
@@ -2544,7 +2537,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 								GA_ID,GID_HOME,
 								GA_RelVerify,TRUE,
 								GA_HintInfo, gwin->shared->helphints[GID_HOME],
-								BUTTON_Transparent,TRUE,
 								BUTTON_RenderImage,BitMapObject,
 									BITMAP_SourceFile,home,
 									BITMAP_SelectSourceFile,home_s,
@@ -3291,10 +3283,10 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 	if(sx < 0) sx=0;
 	if(sy < 0) sy=0;
 
-	if(sx >= content_get_width(g->shared->bw->current_content))
-		sx = content_get_width(g->shared->bw->current_content);
-	if(sy >= content_get_height(g->shared->bw->current_content))
-		sy = content_get_height(g->shared->bw->current_content);
+	if(sx >= content_get_width(g->shared->bw->current_content) - bbox->Width)
+		sx = content_get_width(g->shared->bw->current_content) - bbox->Width;
+	if(sy >= (content_get_height(g->shared->bw->current_content) - bbox->Height))
+		sy = content_get_height(g->shared->bw->current_content) - bbox->Height;
 
 	if(content_get_width(g->shared->bw->current_content) <= bbox->Width) sx = 0;
 	if(content_get_height(g->shared->bw->current_content) <= bbox->Height) sy = 0;
