@@ -1629,6 +1629,8 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 	iframe->url = talloc_strdup(content, url);
 	iframe->scrolling = SCROLLING_AUTO;
 	iframe->border = true;
+
+	/* Add this iframe to the linked list of iframes */
 	iframe->next = content->data.html.iframe;
 	content->data.html.iframe = iframe;
 

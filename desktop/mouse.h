@@ -19,7 +19,7 @@
  */
 
 /** \file
- * Browser window creation and manipulation (interface).
+ * Core mouse state.
  */
 
 #ifndef _NETSURF_DESKTOP_MOUSE_H_
