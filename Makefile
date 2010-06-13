@@ -424,8 +424,8 @@ endif
 # ----------------------------------------------------------------------------
 
 ifeq ($(TARGET),gtk)
-  LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl libhubbub openssl)
-  LDFLAGS += $(shell $(PKG_CONFIG) --libs libcss)
+  LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl libhubbub libcss)
+  LDFLAGS += $(shell $(PKG_CONFIG) --libs openssl)
 
   # define additional CFLAGS and LDFLAGS requirements for pkg-configed libs here
   NETSURF_FEATURE_RSVG_CFLAGS := -DWITH_RSVG
@@ -452,7 +452,8 @@ ifeq ($(TARGET),gtk)
 		-DGTK_RESPATH=\"$(NETSURF_GTK_RESOURCES)\" \
 		$(WARNFLAGS) -I. -g \
 		$(shell $(PKG_CONFIG) --cflags libglade-2.0 gtk+-2.0) \
-		$(shell $(PKG_CONFIG) --cflags libhubbub libcurl openssl) \
+		$(shell $(PKG_CONFIG) --cflags libhubbub libcurl) \
+		$(shell $(PKG_CONFIG) --cflags openssl) \
 		$(shell xml2-config --cflags)
 
   GTKLDFLAGS := $(shell $(PKG_CONFIG) --cflags --libs libglade-2.0 gtk+-2.0 gthread-2.0 gmodule-2.0 lcms)
@@ -800,26 +801,26 @@ clean: $(CLEANS)
 install-gtk: nsgtk
 	mkdir -p $(DESTDIR)$(NETSURF_GTK_RESOURCES)throbber
 	mkdir -p $(DESTDIR)$(NETSURF_GTK_BIN)
-	@cp -v nsgtk $(DESTDIR)$(NETSURF_GTK_BIN)netsurf
-	@cp -vRL gtk/res/adblock.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -vRL gtk/res/arrow_down_8x32.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -vRL gtk/res/blankpage $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -vRL gtk/res/ca-bundle.txt $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -vRL gtk/res/default.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -vRL gtk/res/default.ico $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -vRL gtk/res/favicon.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -vRL gtk/res/gtkdefault.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -vRL gtk/res/license $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -vRL gtk/res/languages $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -vRL gtk/res/netsurf.xpm $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -vRL gtk/res/netsurf-16x16.xpm $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -vRL gtk/res/quirks.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -vRL gtk/res/themelist $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -vRL gtk/res/throbber/*.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)/throbber
-	@cp -vRL gtk/res/toolbarIndices $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -vRL gtk/res/Aliases $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -vRL gtk/res/docs $(DESTDIR)/$(NETSURF_GTK_RESOURCES)
-	@cp -vRL gtk/res/SearchEngines $(DESTDIR)$(NETSURF_GTK_RESOURCES)SearchEngines
+	@cp nsgtk $(DESTDIR)$(NETSURF_GTK_BIN)netsurf
+	@cp -RL gtk/res/adblock.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -RL gtk/res/arrow_down_8x32.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -RL gtk/res/blankpage $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -RL gtk/res/ca-bundle.txt $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -RL gtk/res/default.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -RL gtk/res/default.ico $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -RL gtk/res/favicon.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -RL gtk/res/gtkdefault.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -RL gtk/res/license $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -RL gtk/res/languages $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -RL gtk/res/netsurf.xpm $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -RL gtk/res/netsurf-16x16.xpm $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -RL gtk/res/quirks.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -RL gtk/res/themelist $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -RL gtk/res/throbber/*.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)/throbber
+	@cp -RL gtk/res/toolbarIndices $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -RL gtk/res/Aliases $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -RL gtk/res/docs $(DESTDIR)/$(NETSURF_GTK_RESOURCES)
+	@cp -RL gtk/res/SearchEngines $(DESTDIR)$(NETSURF_GTK_RESOURCES)SearchEngines
 	gzip -9v < gtk/res/downloads.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)downloads.glade
 	gzip -9v < gtk/res/history.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)history.glade
 	gzip -9v < gtk/res/login.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)login.glade
