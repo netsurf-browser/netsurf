@@ -170,8 +170,10 @@ Deselect @{b}Higher quality scaling@{ub}, this will be very slow if not done in 
 NetSurf was ported to AmigaOS 4 by Chris Young
 chris@unsatisfactorysoftware.co.uk
 
-The pointer images and AISS theme Throbber were drawn by Martin 'Mason' Merz.
+The pointer images, AISS theme icon and Throbber were drawn by Martin 'Mason' Merz.
 http://www.masonicons.de
+
+The default theme icon was adapted from the NetSurf logo by Marko K. Seppänen.
 
 All other code and files are the same for all platforms and credited in the files and/or on the NetSurf website.
 http://www.netsurf-browser.org
