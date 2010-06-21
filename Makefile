@@ -76,8 +76,16 @@ else
     else
       ifeq ($(HOST),Darwin)
         HOST := macosx
+      endif  
+      ifeq ($(HOST),FreeMiNT)
+        HOST := mint
       endif
-
+      ifeq ($(HOST),mint)
+        ifeq ($(TARGET),)
+          TARGET := framebuffer
+        endif
+      endif
+      
       # Default target is GTK backend
       ifeq ($(TARGET),)
         TARGET := gtk
@@ -537,7 +545,6 @@ ifeq ($(TARGET),framebuffer)
   $(eval $(call feature_enabled,MNG,-DWITH_MNG,-lmng,PNG/MNG/JNG (libmng)))
   $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG (libpng)  ))
 
-
   ifeq ($(NETSURF_FB_FONTLIB),freetype)
     CFLAGS += -DFB_USE_FREETYPE $(shell freetype-config --cflags)
     LDFLAGS += $(shell freetype-config --libs)
@@ -556,20 +563,34 @@ ifeq ($(TARGET),framebuffer)
   $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,BMP))
   $(eval $(call pkg_config_find_and_add,GIF,libnsgif,GIF))
 
-
   CFLAGS += -std=c99 -g -I. -Dsmall $(WARNFLAGS) \
 		-D_BSD_SOURCE \
 		-D_XOPEN_SOURCE=600 \
-		-D_POSIX_C_SOURCE=200112L  \
-		$(shell $(PKG_CONFIG) --cflags libnsfb) \
-		$(shell $(PKG_CONFIG) --cflags libhubbub libcurl openssl) \
-		$(shell $(PKG_CONFIG) --cflags libcss) \
+		-D_POSIX_C_SOURCE=200112L \
+		$(shell $(PKG_CONFIG) --cflags libnsfb libhubbub libcss openssl) \
 		$(shell xml2-config --cflags)
 
-  LDFLAGS += -Wl,--whole-archive $(shell $(PKG_CONFIG) --libs libnsfb) -Wl,--no-whole-archive 
-  LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl libhubbub openssl)
-  LDFLAGS += $(shell $(PKG_CONFIG) --libs libcss)
+  ifeq ($(HOST),mint)
+    # freemint does not support pkg-config for libcurl
+    CFLAGS += $(shell curl-config --cflags)
+  else
+    CFLAGS += $(shell $(PKG_CONFIG) --cflags libcurl)
+  endif
 
+  LDFLAGS += -Wl,--whole-archive $(shell $(PKG_CONFIG) --libs libnsfb) -Wl,--no-whole-archive 
+
+  ifeq ($(HOST),mint)
+    LDFLAGS += $(shell curl-config --libs)
+    LDFLAGS += $(shell $(PKG_CONFIG) --libs libhubbub openssl libcss)
+    # xml-config returns -lsocket which is not needed and does not exist on all systems. 
+    # because of that - hardcoded reference to libxml-2.0 here.
+    LDFLAGS += -L/usr/lib/ -lxml2 -lz -liconv 
+    LDFLAGS += -lm
+  else
+    LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl libhubbub openssl)
+    LDFLAGS += $(shell $(PKG_CONFIG) --libs libcss)
+  endif
+  
 endif
 
 # ----------------------------------------------------------------------------
