@@ -2950,26 +2950,29 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 	{
 		node = g->tab_node;
 
-		SetGadgetAttrs((struct Gadget *)g->shared->objects[GID_TABS],
-						g->shared->win, NULL,
-						CLICKTAB_Labels, ~0,
-						TAG_DONE);
-
-		SetClickTabNodeAttrs(node, TNA_Text, utf8title,
-								TNA_HintInfo, utf8title,
-								TAG_DONE);
-
-		RefreshSetGadgetAttrs((struct Gadget *)g->shared->objects[GID_TABS],
+		if((g->tabtitle == NULL) || (strcmp(utf8title, g->tabtitle)))
+		{
+			SetGadgetAttrs((struct Gadget *)g->shared->objects[GID_TABS],
 							g->shared->win, NULL,
-							CLICKTAB_Labels, &g->shared->tab_list,
+							CLICKTAB_Labels, ~0,
 							TAG_DONE);
 
-		if(g->tabtitle) ami_utf8_free(g->tabtitle);
-		g->tabtitle = utf8title;
+			SetClickTabNodeAttrs(node, TNA_Text, utf8title,
+									TNA_HintInfo, utf8title,
+									TAG_DONE);
 
-		if(ClickTabBase->lib_Version < 53)
-			RethinkLayout((struct Gadget *)g->shared->objects[GID_TABLAYOUT],
-				g->shared->win, NULL, TRUE);
+			RefreshSetGadgetAttrs((struct Gadget *)g->shared->objects[GID_TABS],
+								g->shared->win, NULL,
+								CLICKTAB_Labels, &g->shared->tab_list,
+								TAG_DONE);
+
+			if(g->tabtitle) ami_utf8_free(g->tabtitle);
+			g->tabtitle = utf8title;
+
+			if(ClickTabBase->lib_Version < 53)
+				RethinkLayout((struct Gadget *)g->shared->objects[GID_TABLAYOUT],
+					g->shared->win, NULL, TRUE);
+		}
 
 		GetAttr(CLICKTAB_Current, g->shared->objects[GID_TABS],
 				(ULONG *)&cur_tab);

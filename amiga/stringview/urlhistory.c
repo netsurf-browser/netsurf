@@ -29,7 +29,7 @@
 #include "content/urldb.h"
 #include "desktop/options.h"
 
-struct List PageList;
+static struct List PageList;
 
 void URLHistory_Init( void )
 {

@@ -25,12 +25,12 @@
 utf8_convert_ret utf8_to_local_encoding(const char *string, size_t len,
 	char **result)
 {
-	ULONG *charset;
+	LONG charset;
 	char *encname;
 
 	charset = GetDiskFontCtrl(DFCTRL_CHARSET);
 	encname = ObtainCharsetInfo(DFCS_NUMBER, charset, DFCS_MIMENAME);
-	
+
 	return utf8_to_enc(string,encname,len,result);
 }
 
@@ -49,7 +49,7 @@ char *ami_utf8_easy(char *string)
 	}
 	else
 	{
-		return NULL;
+		return strdup(string);
 	}
 }
 
@@ -63,14 +63,14 @@ char *ami_to_utf8_easy(char *string)
 	}
 	else
 	{
-		return NULL;
+		return strdup(string);
 	}
 }
 
 utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 	char **result)
 {
-	ULONG *charset;
+	LONG charset;
 	char *encname;
 
 	charset = GetDiskFontCtrl(DFCTRL_CHARSET);
