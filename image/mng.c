@@ -75,7 +75,6 @@ bool nsmng_create(struct content *c, const struct http_parameter *params)
 	union content_msg_data msg_data;
 
 	assert(c != NULL);
-	assert(params != NULL);
 
 	/*	Initialise the library
 	*/
