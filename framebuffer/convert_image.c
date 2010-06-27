@@ -22,6 +22,10 @@
 #include <png.h>
 #include <stdlib.h>
 
+#if PNG_LIBPNG_VER < 10209
+#define png_set_expand_gray_1_2_4_to_8(png) png_set_gray_1_2_4_to_8(png)
+#endif
+
 static png_structp png;
 static png_infop info;
 static int interlace;
@@ -221,7 +225,7 @@ info_callback(png_structp png, png_infop info)
 	if (color_type == PNG_COLOR_TYPE_PALETTE)
 		png_set_palette_to_rgb(png);
 	if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8)
-		png_set_gray_1_2_4_to_8(png);
+		png_set_expand_gray_1_2_4_to_8(png);
 	if (png_get_valid(png, info, PNG_INFO_tRNS))
 		png_set_tRNS_to_alpha(png);
 	if (bit_depth == 16)
