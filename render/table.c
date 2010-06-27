@@ -324,6 +324,8 @@ void table_used_left_border_for_cell(struct box *cell)
 	a.style = css_computed_border_left_style(cell->style);
 	a.color = css_computed_border_left_color(cell->style, &a.c);
 	css_computed_border_left_width(cell->style, &a.width, &a.unit);
+	a.width = nscss_len2px(a.width, a.unit, cell->style);
+	a.unit = CSS_UNIT_PX;
 	a_src = BOX_TABLE_CELL;
 
 	if (cell->prev != NULL || cell->start_column != 0) {
@@ -355,6 +357,8 @@ void table_used_left_border_for_cell(struct box *cell)
 		b.style = css_computed_border_right_style(prev->style);
 		b.color = css_computed_border_right_color(prev->style, &b.c);
 		css_computed_border_right_width(prev->style, &b.width, &b.unit);
+		b.width = nscss_len2px(b.width, b.unit, prev->style);
+		b.unit = CSS_UNIT_PX;
 		b_src = BOX_TABLE_CELL;
 
 		if (table_border_is_more_eyecatching(&a, a_src, &b, b_src)) {
@@ -375,6 +379,8 @@ void table_used_left_border_for_cell(struct box *cell)
 					row->style, &b.c);
 			css_computed_border_left_width(
 					row->style, &b.width, &b.unit);
+			b.width = nscss_len2px(b.width, b.unit, row->style);
+			b.unit = CSS_UNIT_PX;
 			b_src = BOX_TABLE_ROW;
 		
 			if (table_border_is_more_eyecatching(&a, a_src, 
@@ -392,6 +398,8 @@ void table_used_left_border_for_cell(struct box *cell)
 		b.style = css_computed_border_left_style(group->style);
 		b.color = css_computed_border_left_color(group->style, &b.c);
 		css_computed_border_left_width(group->style, &b.width, &b.unit);
+		b.width = nscss_len2px(b.width, b.unit, group->style);
+		b.unit = CSS_UNIT_PX;
 		b_src = BOX_TABLE_ROW_GROUP;
 		
 		if (table_border_is_more_eyecatching(&a, a_src, &b, b_src)) {
@@ -403,6 +411,8 @@ void table_used_left_border_for_cell(struct box *cell)
 		b.style = css_computed_border_left_style(table->style);
 		b.color = css_computed_border_left_color(table->style, &b.c);
 		css_computed_border_left_width(table->style, &b.width, &b.unit);
+		b.width = nscss_len2px(b.width, b.unit, table->style);
+		b.unit = CSS_UNIT_PX;
 		b_src = BOX_TABLE;
 		
 		if (table_border_is_more_eyecatching(&a, a_src, &b, b_src)) {
@@ -435,12 +445,16 @@ void table_used_top_border_for_cell(struct box *cell)
 	a.style = css_computed_border_top_style(cell->style);
 	a.color = css_computed_border_top_color(cell->style, &a.c);
 	css_computed_border_top_width(cell->style, &a.width, &a.unit);
+	a.width = nscss_len2px(a.width, a.unit, cell->style);
+	a.unit = CSS_UNIT_PX;
 	a_src = BOX_TABLE_CELL;
 
 	/* Top border of row */
 	b.style = css_computed_border_top_style(row->style);
 	b.color = css_computed_border_top_color(row->style, &b.c);
 	css_computed_border_top_width(row->style, &b.width, &b.unit);
+	b.width = nscss_len2px(b.width, b.unit, row->style);
+	b.unit = CSS_UNIT_PX;
 	b_src = BOX_TABLE_ROW;
 
 	if (table_border_is_more_eyecatching(&a, a_src, &b, b_src)) {
@@ -471,6 +485,8 @@ void table_used_top_border_for_cell(struct box *cell)
 		b.style = css_computed_border_top_style(group->style);
 		b.color = css_computed_border_top_color(group->style, &b.c);
 		css_computed_border_top_width(group->style, &b.width, &b.unit);
+		b.width = nscss_len2px(b.width, b.unit, group->style);
+		b.unit = CSS_UNIT_PX;
 		b_src = BOX_TABLE_ROW_GROUP;
 
 		if (table_border_is_more_eyecatching(&a, a_src, &b, b_src)) {
@@ -522,6 +538,8 @@ void table_used_right_border_for_cell(struct box *cell)
 	a.style = css_computed_border_right_style(cell->style);
 	a.color = css_computed_border_right_color(cell->style, &a.c);
 	css_computed_border_right_width(cell->style, &a.width, &a.unit);
+	a.width = nscss_len2px(a.width, a.unit, cell->style);
+	a.unit = CSS_UNIT_PX;
 	a_src = BOX_TABLE_CELL;
 
 	if (cell->next != NULL || cell->start_column + cell->columns != 
@@ -544,6 +562,8 @@ void table_used_right_border_for_cell(struct box *cell)
 					row->style, &b.c);
 			css_computed_border_right_width(
 					row->style, &b.width, &b.unit);
+			b.width = nscss_len2px(b.width, b.unit, row->style);
+			b.unit = CSS_UNIT_PX;
 			b_src = BOX_TABLE_ROW;
 		
 			if (table_border_is_more_eyecatching(&a, a_src, 
@@ -562,6 +582,8 @@ void table_used_right_border_for_cell(struct box *cell)
 		b.color = css_computed_border_right_color(group->style, &b.c);
 		css_computed_border_right_width(group->style, 
 				&b.width, &b.unit);
+		b.width = nscss_len2px(b.width, b.unit, group->style);
+		b.unit = CSS_UNIT_PX;
 		b_src = BOX_TABLE_ROW_GROUP;
 		
 		if (table_border_is_more_eyecatching(&a, a_src, &b, b_src)) {
@@ -574,6 +596,8 @@ void table_used_right_border_for_cell(struct box *cell)
 		b.color = css_computed_border_right_color(table->style, &b.c);
 		css_computed_border_right_width(table->style, 
 				&b.width, &b.unit);
+		b.width = nscss_len2px(b.width, b.unit, table->style);
+		b.unit = CSS_UNIT_PX;
 		b_src = BOX_TABLE;
 		
 		if (table_border_is_more_eyecatching(&a, a_src, &b, b_src)) {
@@ -606,6 +630,8 @@ void table_used_bottom_border_for_cell(struct box *cell)
 	a.style = css_computed_border_bottom_style(cell->style);
 	a.color = css_computed_border_bottom_color(cell->style, &a.c);
 	css_computed_border_bottom_width(cell->style, &a.width, &a.unit);
+	a.width = nscss_len2px(a.width, a.unit, cell->style);
+	a.unit = CSS_UNIT_PX;
 	a_src = BOX_TABLE_CELL;
 
 	while (rows-- > 0 && row != NULL)
@@ -628,6 +654,8 @@ void table_used_bottom_border_for_cell(struct box *cell)
 		b.style = css_computed_border_bottom_style(row->style);
 		b.color = css_computed_border_bottom_color(row->style, &b.c);
 		css_computed_border_bottom_width(row->style, &b.width, &b.unit);
+		b.width = nscss_len2px(b.width, b.unit, row->style);
+		b.unit = CSS_UNIT_PX;
 		b_src = BOX_TABLE_ROW;
 		
 		if (table_border_is_more_eyecatching(&a, a_src, &b, b_src)) {
@@ -640,6 +668,8 @@ void table_used_bottom_border_for_cell(struct box *cell)
 		b.color = css_computed_border_bottom_color(group->style, &b.c);
 		css_computed_border_bottom_width(group->style, 
 				&b.width, &b.unit);
+		b.width = nscss_len2px(b.width, b.unit, group->style);
+		b.unit = CSS_UNIT_PX;
 		b_src = BOX_TABLE_ROW_GROUP;
 		
 		if (table_border_is_more_eyecatching(&a, a_src, &b, b_src)) {
@@ -652,6 +682,8 @@ void table_used_bottom_border_for_cell(struct box *cell)
 		b.color = css_computed_border_bottom_color(table->style, &b.c);
 		css_computed_border_bottom_width(table->style, 
 				&b.width, &b.unit);
+		b.width = nscss_len2px(b.width, b.unit, table->style);
+		b.unit = CSS_UNIT_PX;
 		b_src = BOX_TABLE;
 		
 		if (table_border_is_more_eyecatching(&a, a_src, &b, b_src)) {
@@ -796,6 +828,8 @@ void table_cell_top_process_table(struct box *table, struct border *a,
 	b.style = css_computed_border_top_style(table->style);
 	b.color = css_computed_border_top_color(table->style, &b.c);
 	css_computed_border_top_width(table->style, &b.width, &b.unit);
+	b.width = nscss_len2px(b.width, b.unit, table->style);
+	b.unit = CSS_UNIT_PX;
 	b_src = BOX_TABLE;
 
 	if (table_border_is_more_eyecatching(a, *a_src, &b, b_src)) {
@@ -826,6 +860,8 @@ bool table_cell_top_process_group(struct box *cell, struct box *group,
 	b.style = css_computed_border_bottom_style(group->style);
 	b.color = css_computed_border_bottom_color(group->style, &b.c);
 	css_computed_border_bottom_width(group->style, &b.width, &b.unit);
+	b.width = nscss_len2px(b.width, b.unit, group->style);
+	b.unit = CSS_UNIT_PX;
 	b_src = BOX_TABLE_ROW_GROUP;
 
 	if (table_border_is_more_eyecatching(a, *a_src, &b, b_src)) {
@@ -850,6 +886,8 @@ bool table_cell_top_process_group(struct box *cell, struct box *group,
 		b.style = css_computed_border_top_style(group->style);
 		b.color = css_computed_border_top_color(group->style, &b.c);
 		css_computed_border_top_width(group->style, &b.width, &b.unit);
+		b.width = nscss_len2px(b.width, b.unit, group->style);
+		b.unit = CSS_UNIT_PX;
 		b_src = BOX_TABLE_ROW_GROUP;
 
 		if (table_border_is_more_eyecatching(a, *a_src, &b, b_src)) {
@@ -885,6 +923,8 @@ bool table_cell_top_process_row(struct box *cell, struct box *row,
 	b.style = css_computed_border_bottom_style(row->style);
 	b.color = css_computed_border_bottom_color(row->style, &b.c);
 	css_computed_border_bottom_width(row->style, &b.width, &b.unit);
+	b.width = nscss_len2px(b.width, b.unit, row->style);
+	b.unit = CSS_UNIT_PX;
 	b_src = BOX_TABLE_ROW;
 
 	if (table_border_is_more_eyecatching(a, *a_src, &b, b_src)) {
@@ -897,6 +937,8 @@ bool table_cell_top_process_row(struct box *cell, struct box *row,
 		b.style = css_computed_border_top_style(row->style);
 		b.color = css_computed_border_top_color(row->style, &b.c);
 		css_computed_border_top_width(row->style, &b.width, &b.unit);
+		b.width = nscss_len2px(b.width, b.unit, row->style);
+		b.unit = CSS_UNIT_PX;
 		b_src = BOX_TABLE_ROW;
 
 		if (table_border_is_more_eyecatching(a, *a_src, &b, b_src)) {
@@ -933,6 +975,9 @@ bool table_cell_top_process_row(struct box *cell, struct box *row,
 						c->style, &b.c);
 				css_computed_border_bottom_width(c->style,
 						&b.width, &b.unit);
+				b.width = nscss_len2px(b.width, b.unit, 
+						c->style);
+				b.unit = CSS_UNIT_PX;
 				b_src = BOX_TABLE_CELL;
 
 				if (table_border_is_more_eyecatching(a, *a_src,
