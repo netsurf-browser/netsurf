@@ -606,11 +606,11 @@ void tree_handle_selection_area(struct tree *tree, int x, int y, int width, int 
 
 	if (width < 0) {
 		x += width;
-		width =- width;
+		width = -width;
 	}
 	if (height < 0) {
 		y += height;
-		height =- height;
+		height = -height;
 	}
 
 	tree_handle_selection_area_node(tree, tree->root->child, x, y, width, height, invert);
