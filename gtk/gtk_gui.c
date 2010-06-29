@@ -751,6 +751,10 @@ char *path_to_url(const char *path)
 	int urllen = strlen(path) + FILE_SCHEME_PREFIX_LEN + 1;
 	char *url = malloc(urllen);
 
+	if (url == NULL) {
+		return NULL;
+	}
+
 	if (*path == '/') {
 		path++; /* file: paths are already absolute */
 	} 
