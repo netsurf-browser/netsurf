@@ -1,5 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+#include <curl/curl.h>
 
 #include "content/fetch.h"
 #include "content/llcache.h"
@@ -27,6 +30,20 @@ void warn_user(const char *warning, const char *detail)
 	fprintf(stderr, "%s %s\n", warning, detail);
 }
 
+/* utils/utils.h */
+char *filename_from_path(char *path)
+{
+	char *leafname;
+
+	leafname = strrchr(path, '/');
+	if (!leafname)
+		leafname = path;
+	else
+		leafname += 1;
+
+	return strdup(leafname);
+}
+
 /* content/fetch.h */
 const char *fetch_filetype(const char *unix_path)
 {
@@ -37,6 +54,38 @@ const char *fetch_filetype(const char *unix_path)
 char *fetch_mimetype(const char *ro_path)
 {
 	return NULL;
+}
+
+/* utils/url.h */
+char *path_to_url(const char *path)
+{
+	int urllen = strlen(path) + FILE_SCHEME_PREFIX_LEN + 1;
+	char *url = malloc(urllen);
+
+	if (url == NULL) {
+		return NULL;
+	}
+
+	if (*path == '/') {
+		path++; /* file: paths are already absolute */
+	} 
+
+	snprintf(url, urllen, "%s%s", FILE_SCHEME_PREFIX, path);
+
+	return url;
+}
+
+/* utils/url.h */
+char *url_to_path(const char *url)
+{
+	char *url_path = curl_unescape(url, 0);
+	char *path;
+
+	/* return the absolute path including leading / */
+	path = strdup(url_path + (FILE_SCHEME_PREFIX_LEN - 1));
+	curl_free(url_path);
+
+	return path;
 }
 
 /******************************************************************************
@@ -120,7 +169,7 @@ void test_finalise(const char *scheme)
 
 void *test_setup_fetch(struct fetch *parent, const char *url, bool only_2xx, 
 		const char *post_urlenc, 
-		struct fetch_multipart_data *post_multipart, 
+		const struct fetch_multipart_data *post_multipart, 
 		const char **headers)
 {
 	test_context *ctx = calloc(1, sizeof(test_context));
@@ -198,7 +247,7 @@ nserror query_handler(const llcache_query *query, void *pw,
 	return NSERROR_OK;
 }
 
-nserror event_handler(const llcache_handle *handle, 
+nserror event_handler(llcache_handle *handle, 
 		const llcache_event *event, void *pw)
 {
 	static char *event_names[] = {
@@ -266,10 +315,8 @@ int main(int argc, char **argv)
 		llcache_poll();
 	}
 
-	fprintf(stdout, "%p -> %p\n", handle, 
-			llcache_object_from_handle(handle));
-	fprintf(stdout, "%p -> %p\n", handle2, 
-			llcache_object_from_handle(handle2));
+	fprintf(stdout, "%p, %p -> %d\n", handle, handle2,
+			llcache_handle_references_same_object(handle, handle2));
 
 	/* Cleanup */
 	llcache_handle_release(handle2);
