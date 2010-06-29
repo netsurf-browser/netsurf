@@ -73,6 +73,11 @@ void urldb_set_url_persistence(const char *url, bool persist);
 
 /* URL insertion */
 bool urldb_add_url(const char *url);
+struct host_part *urldb_add_host(const char *host);
+struct path_data *urldb_add_path(const char *scheme,
+		unsigned int port, const struct host_part *host,
+		const char *path, const char *query, const char *fragment,
+		const char *url);
 
 /* URL data modification / lookup */
 void urldb_set_url_title(const char *url, const char *title);
