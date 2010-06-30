@@ -20,7 +20,8 @@
 #include <inttypes.h>
 #include <assert.h>
 
-#include <freetype/ftcache.h>
+#include <ft2build.h>
+#include FT_CACHE_H
 
 #include "css/css.h"
 #include "render/font.h"

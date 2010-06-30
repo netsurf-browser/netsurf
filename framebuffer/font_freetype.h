@@ -21,7 +21,7 @@
 
 #include <ft2build.h>  
 #include FT_FREETYPE_H 
-#include <freetype/ftglyph.h>
+#include FT_GLYPH_H
 
 extern int ft_load_type;
 
