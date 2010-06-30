@@ -490,7 +490,7 @@ void html_finish_conversion(struct content *c)
 			struct content *s = hlcache_handle_get_content(
 					hsheet->data.external);
 
-			sheet = s-> data.css.sheet;
+			sheet = s->data.css.sheet;
 		} else if (hsheet->type == HTML_STYLESHEET_INTERNAL) {
 			sheet = hsheet->data.internal->sheet;
 		} else {
