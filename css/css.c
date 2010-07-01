@@ -29,6 +29,7 @@
 #include "render/html.h"
 #include "utils/utils.h"
 #include "utils/http.h"
+#include "utils/log.h"
 #include "utils/messages.h"
 
 /**
@@ -261,9 +262,17 @@ css_error nscss_convert_css_data(struct content_css_data *c,
 		error = nscss_request_import(c, ctx);
 		if (error != CSS_OK)
 			free(ctx);
-	} else {
-		/* No imports, so complete conversion */
+	} else if (error == CSS_OK) {
+		/* No imports, and no errors, so complete conversion */
 		callback(c, pw);
+	} else {
+		const char *url;
+
+		if (css_stylesheet_get_url(c->sheet, &url) == CSS_OK) {
+			LOG(("Failed converting %p %s (%d)", c, url, error));
+		} else {
+			LOG(("Failed converting %p (%d)", c, error));
+		}
 	}
 
 	return error;
