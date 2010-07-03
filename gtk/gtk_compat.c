@@ -24,18 +24,20 @@
 
 gboolean nsgtk_widget_has_focus(GtkWidget *widget)
 {
-	GValue v;
-	g_object_get_property(G_OBJECT(widget), "is-focus", &v);
-
-	return g_value_get_boolean(&v);
+  #if GTK_CHECK_VERSION(2,20,0)
+	return gtk_widget_has_focus(widget);
+  #else
+	return GTK_WIDGET_HAS_FOCUS(widget);
+  #endif
 }
 
 gboolean nsgtk_widget_get_visible(GtkWidget *widget)
 {
-	GValue v;
-	g_object_get_property(G_OBJECT(widget), "visible", &v);
-
-	return g_value_get_boolean(&v);
+  #if GTK_CHECK_VERSION(2,20,0)
+	return gtk_widget_get_visible(widget);
+  #else
+	return GTK_WIDGET_VISIBLE(widget);
+  #endif
 }
 
 gboolean nsgtk_widget_get_realized(GtkWidget *widget)
