@@ -705,14 +705,10 @@ bool html_redraw_box(struct box *box,
 				CSS_OVERFLOW_SCROLL ||
 			css_computed_overflow(box->style) == 
 				CSS_OVERFLOW_AUTO)) {
-		
-		has_x_scroll = false;
-		has_y_scroll = false;
-		
+
 		has_x_scroll = box_hscrollbar_present(box);
-		
 		has_y_scroll = box_vscrollbar_present(box);
-		
+
 		if (!box_handle_scrollbars(current_redraw_browser,box,
 				has_x_scroll, has_y_scroll))
 			return false;
