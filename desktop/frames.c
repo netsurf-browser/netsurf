@@ -300,23 +300,33 @@ void browser_window_recalculate_frameset(struct browser_window *bw) {
 			window = &bw->children[index];
 
 			switch (window->frame_width.unit) {
-				case FRAME_DIMENSION_PIXELS:
-					widths[col][row] = window->frame_width.value *
-							window->scale;
-					if (window->border) {
-						if (col != 0)
-							widths[col][row] += 1;
-						if (col != bw->cols - 1)
-							widths[col][row] += 1;
-					}
-					break;
-				case FRAME_DIMENSION_PERCENT:
-					widths[col][row] = bw_width * window->frame_width.value / 100;
-					break;
-				case FRAME_DIMENSION_RELATIVE:
-					widths[col][row] = 0;
-					relative += window->frame_width.value;
-					break;
+			case FRAME_DIMENSION_PIXELS:
+				widths[col][row] = window->frame_width.value *
+						window->scale;
+				if (window->border) {
+					if (col != 0)
+						widths[col][row] += 1;
+					if (col != bw->cols - 1)
+						widths[col][row] += 1;
+				}
+				break;
+			case FRAME_DIMENSION_PERCENT:
+				widths[col][row] = bw_width *
+						window->frame_width.value / 100;
+				break;
+			case FRAME_DIMENSION_RELATIVE:
+				widths[col][row] = 0;
+				relative += window->frame_width.value;
+				break;
+			default:
+				/* unknown frame dimension unit */
+				assert(window->frame_width.unit ==
+						FRAME_DIMENSION_PIXELS ||
+						window->frame_width.unit ==
+						FRAME_DIMENSION_PERCENT ||
+						window->frame_width.unit ==
+						FRAME_DIMENSION_RELATIVE);
+				break;
 			}
 			avail_width -= widths[col][row];
 		}
@@ -359,24 +369,33 @@ void browser_window_recalculate_frameset(struct browser_window *bw) {
 			window = &bw->children[index];
 
 			switch (window->frame_height.unit) {
-				case FRAME_DIMENSION_PIXELS:
-					heights[col][row] = window->frame_height.value *
-							window->scale;
-					if (window->border) {
-						if (row != 0)
-							heights[col][row] += 1;
-						if (row != bw->rows - 1)
-							heights[col][row] += 1;
-					}
-					break;
-				case FRAME_DIMENSION_PERCENT:
-					heights[col][row] = bw_height *
-							window->frame_height.value / 100;
-					break;
-				case FRAME_DIMENSION_RELATIVE:
-					heights[col][row] = 0;
-					relative += window->frame_height.value;
-					break;
+			case FRAME_DIMENSION_PIXELS:
+				heights[col][row] = window->frame_height.value *
+						window->scale;
+				if (window->border) {
+					if (row != 0)
+						heights[col][row] += 1;
+					if (row != bw->rows - 1)
+						heights[col][row] += 1;
+				}
+				break;
+			case FRAME_DIMENSION_PERCENT:
+				heights[col][row] = bw_height *
+						window->frame_height.value / 100;
+				break;
+			case FRAME_DIMENSION_RELATIVE:
+				heights[col][row] = 0;
+				relative += window->frame_height.value;
+				break;
+			default:
+				/* unknown frame dimension unit */
+				assert(window->frame_height.unit ==
+						FRAME_DIMENSION_PIXELS ||
+						window->frame_height.unit ==
+						FRAME_DIMENSION_PERCENT ||
+						window->frame_height.unit ==
+						FRAME_DIMENSION_RELATIVE);
+				break;
 			}
 			avail_height -= heights[col][row];
 		}
