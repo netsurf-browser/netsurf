@@ -1527,26 +1527,23 @@ void layout_find_dimensions(int available_width, int viewport_height,
 		}
 
 		if (padding) {
-			enum css_padding_e type;
 			css_fixed value = 0;
 			css_unit unit = CSS_UNIT_PX;
 
 			switch (i) {
 			case TOP:
-				type = css_computed_padding_top(style,
-						&value, &unit);
+				css_computed_padding_top(style, &value, &unit);
 				break;
 			case RIGHT:
-				type = css_computed_padding_right(style,
-						&value, &unit);
+				css_computed_padding_right(style, &value,
+						&unit);
 				break;
 			case BOTTOM:
-				type = css_computed_padding_bottom(style,
-						&value, &unit);
+				css_computed_padding_bottom(style, &value,
+						&unit);
 				break;
 			case LEFT:
-				type = css_computed_padding_left(style,
-						&value, &unit);
+				css_computed_padding_left(style, &value, &unit);
 				break;
 			}
 
@@ -1561,7 +1558,6 @@ void layout_find_dimensions(int available_width, int viewport_height,
 
 		/* Table cell borders are populated in table.c */
 		if (border && box->type != BOX_TABLE_CELL) {
-			enum css_border_width_e wtype;
 			enum css_border_style_e bstyle = CSS_BORDER_STYLE_NONE;
 			enum css_border_color_e bcolor =
 					CSS_BORDER_COLOR_TRANSPARENT;
@@ -1571,30 +1567,30 @@ void layout_find_dimensions(int available_width, int viewport_height,
 
 			switch (i) {
 			case TOP:
-				wtype = css_computed_border_top_width(style,
-						&value, &unit);
+				css_computed_border_top_width(style, &value,
+						&unit);
 				bstyle = css_computed_border_top_style(style);
 				bcolor = css_computed_border_top_color(style,
 						&color);
 				break;
 			case RIGHT:
-				wtype = css_computed_border_right_width(style,
-						&value, &unit);
+				css_computed_border_right_width(style, &value,
+						&unit);
 				bstyle = css_computed_border_right_style(style);
 				bcolor = css_computed_border_right_color(style,
 						&color);
 				break;
 			case BOTTOM:
-				wtype = css_computed_border_bottom_width(style,
-						&value, &unit);
+				css_computed_border_bottom_width(style, &value,
+						&unit);
 				bstyle = css_computed_border_bottom_style(
 						style);
 				bcolor = css_computed_border_bottom_color(style,
 						&color);
 				break;
 			case LEFT:
-				wtype = css_computed_border_left_width(style,
-						&value, &unit);
+				css_computed_border_left_width(style, &value,
+						&unit);
 				bstyle = css_computed_border_left_style(style);
 				bcolor = css_computed_border_left_color(style,
 						&color);
@@ -3513,6 +3509,9 @@ void layout_minmax_table(struct box *table,
 	for (cell = row->children; cell; cell = cell->next) {
 		assert(cell->type == BOX_TABLE_CELL);
 		assert(cell->style);
+		/** TODO: Handle colspan="0" correctly.
+		 *        It's currently converted to 1 in box normaisation */
+		assert(cell->columns != 0);
 
 		if (cell->columns != 1)
 			continue;
