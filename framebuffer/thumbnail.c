@@ -17,9 +17,16 @@
  */
 
 #include "desktop/browser.h"
+#include "content/urldb.h"
 
-bool thumbnail_create(struct hlcache_handle *content, struct bitmap *bitmap,
-	const char *url)
+bool 
+thumbnail_create(struct hlcache_handle *content, 
+		 struct bitmap *bitmap,
+		 const char *url)
 {
-    return false;
+	/* register the thumbnail with the URL */
+	if (url != NULL)
+		urldb_set_thumbnail(url, bitmap);
+
+	return true;
 }

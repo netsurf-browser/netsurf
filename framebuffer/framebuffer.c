@@ -67,14 +67,16 @@ framebuffer_plot_arc(int x, int y, int radius, int angle1, int angle2, const plo
     return nsfb_plot_arc(nsfb, x, y, radius, angle1, angle2, style->fill_colour);
 }
 
-static bool framebuffer_plot_polygon(const int *p, unsigned int n, const plot_style_t *style)
+static bool 
+framebuffer_plot_polygon(const int *p, unsigned int n, const plot_style_t *style)
 {
     return nsfb_plot_polygon(nsfb, p, n, style->fill_colour);
 }
 
 
 #ifdef FB_USE_FREETYPE
-static bool framebuffer_plot_text(int x, int y, const char *text, size_t length,
+static bool 
+framebuffer_plot_text(int x, int y, const char *text, size_t length,
 		const plot_font_style_t *fstyle)
 {
         uint32_t ucs4;

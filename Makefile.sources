@@ -99,10 +99,14 @@ S_AMIGA := compat.c gui.c tree.c history.c hotlist.c schedule.c		\
 	stringview/stringview.c stringview/urlhistory.c
 S_AMIGA := $(addprefix amiga/,$(S_AMIGA))
 
+
 # S_FRAMEBUFFER are sources purely for the framebuffer build
 S_FRAMEBUFFER := gui.c framebuffer.c tree.c history.c hotlist.c 	\
         save.c schedule.c thumbnail.c misc.c bitmap.c filetype.c	\
-	login.c	findfile.c fbtk.c fbtk_widget_scroll.c
+	login.c	findfile.c localhistory.c
+
+S_FRAMEBUFFER_FBTK := fbtk.c event.c fill.c bitmap.c user.c window.c 	\
+	text.c scroll.c osk.c 
 
 S_FRAMEBUFFER += font_$(NETSURF_FB_FONTLIB).c
 
@@ -111,8 +115,8 @@ S_FRAMEBUFFER += nsfont_regular.c nsfont_italic.c nsfont_bold.c		\
 	nsfont_italic_bold.c 
 endif
 
+S_FRAMEBUFFER := $(addprefix framebuffer/,$(S_FRAMEBUFFER)) $(addprefix framebuffer/fbtk/,$(S_FRAMEBUFFER_FBTK))
 
-S_FRAMEBUFFER := $(addprefix framebuffer/,$(S_FRAMEBUFFER))
 
 # Some extra rules for building the transliteration table.
 ifeq ($(HOST),riscos)
@@ -162,7 +166,7 @@ endif
 
 ifeq ($(TARGET),amiga)
 SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_AMIGA) $(S_PDF)
-EXETARGET := NetSurf$(SUBTARGET)
+EXETARGET := NetSurf
 endif
 
 ifeq ($(TARGET),framebuffer)

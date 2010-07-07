@@ -24,26 +24,41 @@ typedef struct fb_cursor_s fb_cursor_t;
 /* bounding box */
 typedef struct nsfb_bbox_s bbox_t;
 
-struct gui_window {
-        struct browser_window *bw;
+struct gui_localhistory {
+	struct browser_window *bw;
 
-        struct fbtk_widget_s *window;
-        struct fbtk_widget_s *back;
-        struct fbtk_widget_s *forward;
-        struct fbtk_widget_s *url;
-        struct fbtk_widget_s *status;
-        struct fbtk_widget_s *throbber;
-        struct fbtk_widget_s *hscroll;
-        struct fbtk_widget_s *vscroll;
-        struct fbtk_widget_s *browser;
-        int throbber_index;
+	struct fbtk_widget_s *window;
+	struct fbtk_widget_s *hscroll;
+	struct fbtk_widget_s *vscroll;
+	struct fbtk_widget_s *history;
+
+	int scrollx, scrolly; /**< scroll offsets. */
+};
+
+struct gui_window {
+	struct browser_window *bw;
+
+	struct fbtk_widget_s *window;
+	struct fbtk_widget_s *back;
+	struct fbtk_widget_s *forward;
+	struct fbtk_widget_s *url;
+	struct fbtk_widget_s *status;
+	struct fbtk_widget_s *throbber;
+	struct fbtk_widget_s *hscroll;
+	struct fbtk_widget_s *vscroll;
+	struct fbtk_widget_s *browser;
+
+	int throbber_index;
+
+	struct gui_localhistory *localhistory;
 };
 
 
 extern struct gui_window *window_list;
 
-/* scroll a window */
-void fb_window_scroll(struct fbtk_widget_s *browser, int x, int y);
+struct gui_localhistory *fb_create_localhistory(struct browser_window *bw, struct fbtk_widget_s *parent, int furniture_width);
+void fb_localhistory_map(struct gui_localhistory * glh);
+
 
 #endif /* NETSURF_FB_GUI_H */
 
@@ -52,5 +67,3 @@ void fb_window_scroll(struct fbtk_widget_s *browser, int x, int y);
  * c-basic-offset:8
  * End:
  */
-
-
