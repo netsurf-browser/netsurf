@@ -206,6 +206,15 @@ framebuffer_plot_bitmap(int x, int y,
 		}
 	}
 
+	/* Optimise tiled plots of 1x1 bitmaps by replacing with a flat fill
+	 * of the area.  Can only be done when image is fully opaque. */
+	if ((bitmap->width == 1) && (bitmap->height == 1)) {
+		if ((*(nsfb_colour_t *)bitmap->pixdata & 0xff000000) != 0) {
+			return nsfb_plot_rectangle_fill(nsfb, &clipbox,
+					*(nsfb_colour_t *)bitmap->pixdata);
+		}
+	}
+
 	/* get left most tile position */
 	if (repeat_x)
 		for (; x > clipbox.x0; x -= width);
@@ -223,16 +232,10 @@ framebuffer_plot_bitmap(int x, int y,
                         loc.x1 = loc.x0 + width;
                         loc.y1 = loc.y0 + height;
 
-		if ((bitmap->width == 1) && (bitmap->height == 1)) {
-			if ((*(nsfb_colour_t *)bitmap->pixdata & 0xff000000) != 0) {
-				nsfb_plot_rectangle_fill(nsfb, &loc, *(nsfb_colour_t *)bitmap->pixdata);
-			}
-		} else {
                         nsfb_plot_bitmap(nsfb, &loc, 
                                         (nsfb_colour_t *)bitmap->pixdata, 
                                         bitmap->width, bitmap->height, 
                                         bitmap->width, !bitmap->opaque);
-		}
 			if (!repeat_y)
 				break;
 		}
