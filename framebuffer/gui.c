@@ -950,7 +950,7 @@ create_toolbar(struct gui_window *gw, int toolbar_height)
 	gw->url = fbtk_create_writable_text(toolbar,
 					    xpos,
 					    spacing_width,
-					    -(spacing_width + throbber0.width),
+					    -(2 * spacing_width + throbber0.width),
 					    -spacing_width,
 					    FB_COLOUR_WHITE,
 					    FB_COLOUR_BLACK,
