@@ -215,6 +215,18 @@ framebuffer_plot_bitmap(int x, int y,
 		}
 	}
 
+	/* Optimise tiled plots of bitmaps scaled to 1x1 by replacing with
+	 * a flat fill of the area.  Can only be done when image is fully
+	 * opaque. */
+	if ((width == 1) && (height == 1)) {
+		if (bitmap->opaque) {
+			/** TODO: Currently using top left pixel. Maybe centre
+			 *        pixel or average value would be better. */
+			return nsfb_plot_rectangle_fill(nsfb, &clipbox,
+					*(nsfb_colour_t *)bitmap->pixdata);
+		}
+	}
+
 	/* get left most tile position */
 	if (repeat_x)
 		for (; x > clipbox.x0; x -= width);
