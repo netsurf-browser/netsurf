@@ -647,7 +647,7 @@ bool html_redraw_box(struct box *box,
 				scale, current_background_color))
 			return false;
 
-	if (box->object) {
+	if (box->object && width != 0 && height != 0) {
 		x_scrolled = x - scroll_get_offset(box->scroll_x) * scale;
 		y_scrolled = y - scroll_get_offset(box->scroll_y) * scale;
 		if (!content_redraw(box->object,
