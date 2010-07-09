@@ -65,3 +65,22 @@ char *filename_from_path(char *path)
 
 	return strdup(leafname);
 }
+
+/**
+ * Add a path component/filename to an existing path
+ *
+ * \param path buffer containing path + free space
+ * \param length length of buffer "path"
+ * \param newpart string containing path component to add to path
+ * \return true on success
+ */
+
+bool path_add_part(char *path, int length, char *newpart)
+{
+	if(path[strlen(path)] != '\\')
+		strncat(path, "\\", length);
+
+	strncat(path, newpart, length);
+
+	return true;
+}

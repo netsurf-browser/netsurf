@@ -759,21 +759,19 @@ void save_complete_list_dump(void)
 bool save_complete_inventory(const char *path,
 		struct save_complete_entry *list)
 {
-	char urlpath[256];
+	char fullpath[256];
 	FILE *fp;
-	char *pathstring, *standardpath = (path[0] == '/') ?
-			(char *)(path + 1) : (char *)path;
 	struct save_complete_entry *entry;
+	bool error;
 
-	snprintf(urlpath, sizeof urlpath, "file:///%s/Inventory", 
-			standardpath);
-	pathstring = url_to_path(urlpath);
-	if (pathstring == NULL) {
+	strncpy(fullpath, path, sizeof fullpath);
+	error = path_add_part(fullpath, sizeof fullpath, path);
+
+	if (error == false) {
 		warn_user("NoMemory", 0);
 		return false;
 	}
-	fp = fopen(pathstring, "w");
-	free(pathstring);
+	fp = fopen(fullpath, "w");
 	if (!fp) {
 		LOG(("fopen(): errno = %i", errno));
 		warn_user("SaveError", strerror(errno));

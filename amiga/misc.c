@@ -107,6 +107,21 @@ char *filename_from_path(char *path)
 }
 
 /**
+ * Add a path component/filename to an existing path
+ *
+ * \param path buffer containing path + free space
+ * \param length length of buffer "path"
+ * \param newpart string containing path component to add to path
+ * \return true on success
+ */
+
+bool path_add_part(char *path, int length, char *newpart)
+{
+	if(AddPart(path, newpart, length)) return true;
+		else return false;
+}
+
+/**
  * returns a string without escape chars or |M chars.
  * (based on remove_underscores from utils.c)
  * \param translate true to insert a linebreak where there was |M,
