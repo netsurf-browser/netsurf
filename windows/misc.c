@@ -77,7 +77,7 @@ char *filename_from_path(char *path)
 
 bool path_add_part(char *path, int length, char *newpart)
 {
-	if(path[strlen(path)] != '\\')
+	if(path[strlen(path) - 1] != '\\')
 		strncat(path, "\\", length);
 
 	strncat(path, newpart, length);
