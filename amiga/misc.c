@@ -115,7 +115,7 @@ char *filename_from_path(char *path)
  * \return true on success
  */
 
-bool path_add_part(char *path, int length, char *newpart)
+bool path_add_part(char *path, int length, const char *newpart)
 {
 	if(AddPart(path, newpart, length)) return true;
 		else return false;

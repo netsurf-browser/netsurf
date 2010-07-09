@@ -765,7 +765,7 @@ bool save_complete_inventory(const char *path,
 	bool error;
 
 	strncpy(fullpath, path, sizeof fullpath);
-	error = path_add_part(fullpath, sizeof fullpath, path);
+	error = path_add_part(fullpath, sizeof fullpath, "Inventory");
 
 	if (error == false) {
 		warn_user("NoMemory", 0);
