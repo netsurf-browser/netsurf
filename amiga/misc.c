@@ -70,7 +70,8 @@ char *url_to_path(const char *url)
 	if (strncmp(url, "localhost", SLEN("localhost")) == 0)
 		url += SLEN("localhost");
 
-	url += SLEN("/");
+	if (strncmp(url, "/", SLEN("/")) == 0)
+		url += SLEN("/");
 
 	url2 = malloc(strlen(url) + 2);
 	strcpy(url2, url);
@@ -122,7 +123,7 @@ char *path_to_url(const char *path)
 
 	strcpy(r, "file:///");
 	strcat(r, newpath);
-printf("ptu %s => %s\n",path, r);
+
 	return r;
 }
 
