@@ -43,7 +43,11 @@ enum
 	RX_GETTITLE,
 	RX_VERSION,
 	RX_SAVE,
-	RX_PUBSCREEN
+	RX_PUBSCREEN,
+	RX_BACK,
+	RX_FORWARD,
+	RX_HOME,
+	RX_RELOAD
 };
 
 STATIC char result[100];
@@ -56,6 +60,10 @@ STATIC VOID rx_gettitle(struct ARexxCmd *, struct RexxMsg *);
 STATIC VOID rx_version(struct ARexxCmd *, struct RexxMsg *);
 STATIC VOID rx_save(struct ARexxCmd *, struct RexxMsg *);
 STATIC VOID rx_pubscreen(struct ARexxCmd *, struct RexxMsg *);
+STATIC VOID rx_back(struct ARexxCmd *, struct RexxMsg *);
+STATIC VOID rx_forward(struct ARexxCmd *, struct RexxMsg *);
+STATIC VOID rx_home(struct ARexxCmd *, struct RexxMsg *);
+STATIC VOID rx_reload(struct ARexxCmd *, struct RexxMsg *);
 
 STATIC struct ARexxCmd Commands[] =
 {
@@ -67,6 +75,10 @@ STATIC struct ARexxCmd Commands[] =
 	{"VERSION",RX_VERSION,rx_version,"VERSION/N,SVN=REVISION/N,RELEASE/S", 		0, 	NULL, 	0, 	0, 	NULL },
 	{"SAVE",RX_SAVE,rx_save,"FILENAME/A", 		0, 	NULL, 	0, 	0, 	NULL },
 	{"GETSCREENNAME",RX_PUBSCREEN,rx_pubscreen,NULL, 		0, 	NULL, 	0, 	0, 	NULL },
+	{"BACK",	RX_BACK,	rx_back,	"WINDOW/K/N, TAB/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
+	{"FORWARD",	RX_FORWARD,	rx_forward,	"WINDOW/K/N, TAB/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
+	{"HOME",	RX_HOME,	rx_home,	"WINDOW/K/N, TAB/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
+	{"RELOAD",	RX_RELOAD,	rx_reload,	"FORCE/S, WINDOW/K/N, TAB/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
 	{ NULL, 		0, 				NULL, 		NULL, 		0, 	NULL, 	0, 	0, 	NULL }
 };
 
@@ -279,4 +291,49 @@ STATIC VOID rx_pubscreen(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__
 	}
 
 	cmd->ac_Result = result;
+}
+
+STATIC VOID rx_back(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
+{
+	if(curbw)
+	{
+		if(browser_window_back_available(curbw))
+		{
+			history_back(curbw, curbw->history);
+		}
+	}
+}
+
+STATIC VOID rx_forward(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
+{
+	if(curbw)
+	{
+		if(browser_window_forward_available(curbw))
+		{
+			history_forward(curbw, curbw->history);
+		}
+	}
+}
+
+STATIC VOID rx_home(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
+{
+	if(curbw)
+	{
+		browser_window_go(curbw, option_homepage_url, NULL, true);
+	}
+}
+
+STATIC VOID rx_reload(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
+{
+	if(curbw)
+	{
+		if(cmd->ac_ArgList[0]) /* FORCE */
+		{
+			browser_window_reload(curbw, true);
+		}
+		else
+		{
+			browser_window_reload(curbw, false);
+		}
+	}
 }

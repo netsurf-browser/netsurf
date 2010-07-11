@@ -77,7 +77,11 @@ Commands are:
 @{b}TOFRONT@{ub} Brings NetSurf's screen to the front
 @{b}GETURL@{ub} Puts the URL displayed in the current window/tab into RESULT
 @{b}GETTITLE@{ub} Puts the title of the page displayed in the current window/tab into RESULT
-@{b}GETSCREENNAME@{ub} (3.8303) Puts the name of the screen NetSurf is running on into RESULT.
+@{b}GETSCREENNAME@{ub} (2.8303) Puts the name of the screen NetSurf is running on into RESULT.
+@{b}BACK@{ub} (2.10626) Move back one page in history.
+@{b}FORWARD@{ub} (2.10626) Move forward one page in history.
+@{b}HOME@{ub} (2.10626) Move back to the home page.
+@{b}RELOAD FORCE/S@{ub} (2.10626) Reload the current page, FORCE will do a full reload.
 @{b}VERSION VERSION/N REVISION/N RELEASE/S@{ub} Returns the current version of NetSurf in RESULT.  You can also do version checking by supplying a VERSION and optional REVISION to check against.  If the version of NetSurf is the same or higher 1 will be returned, if it is older 0.  If RELEASE is specified, the command operates on the release version rather than the internal version number.
 
 The ARexx menu will be populated with scripts named #?.nsrx in @{"arexx_dir" link options 9}, up to a maximum of 20 entries.  The titles of these entries will be the comments field of the file (or the filename if comments field is empty).
