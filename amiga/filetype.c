@@ -36,8 +36,8 @@ const char *fetch_filetype(const char *unix_path)
 	STRPTR ttype = NULL;
 	struct DiskObject *dobj = NULL;
 	BPTR lock = 0;
-    struct DataTypeHeader *dth = NULL;
-    struct DataType *dtn;
+	struct DataTypeHeader *dth = NULL;
+	struct DataType *dtn;
 	BOOL found = FALSE;
 
 	/* First try getting a tooltype "MIMETYPE" and use that as the MIME type.  Will fail over
@@ -71,17 +71,25 @@ const char *fetch_filetype(const char *unix_path)
 				switch(dth->dth_GroupID)
 				{
 					case GID_SYSTEM:
-						sprintf(mimetype,"application/%s",dth->dth_BaseName);
+						if(strcmp("directory",dth->dth_BaseName)==0)
+						{
+							strcpy(mimetype,"application/x-netsurf-directory");
+						}
+						else if(strcmp("binary",dth->dth_BaseName)==0)
+						{
+							strcpy(mimetype,"application/octet-stream");
+						}
+						else sprintf(mimetype,"application/%s",dth->dth_BaseName);
 					break;
 					case GID_TEXT:
 					case GID_DOCUMENT:
 						if(strcmp("ascii",dth->dth_BaseName)==0)
 						{
-							sprintf(mimetype,"text/plain",dth->dth_BaseName);
+							strcpy(mimetype,"text/plain");
 						}
 						else if(strcmp("simplehtml",dth->dth_BaseName)==0)
 						{
-							sprintf(mimetype,"text/html",dth->dth_BaseName);
+							strcpy(mimetype,"text/html");
 						}
 						else
 						{
@@ -109,8 +117,6 @@ const char *fetch_filetype(const char *unix_path)
 	}
 
 	if(!found) strcpy(mimetype,"text/html"); /* If all else fails */
-
-	//printf("%s: %s\n",unix_path,mimetype);
 
 	return mimetype;
 }
