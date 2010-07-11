@@ -100,11 +100,13 @@ bool directory_convert(struct content *c) {
 			(uint8_t *) buffer, strlen(buffer));
 
 	res = url_parent(content__get_url(c), &up);
+
 	if (res == URL_FUNC_OK) {
 		res = url_compare(content__get_url(c), up, false, &compare);
 		if ((res == URL_FUNC_OK) && !compare) {
+			if(up[strlen(up) - 1] == '/') up[strlen(up) - 1] = '\0';
 			snprintf(buffer, sizeof(buffer),
-				"<a href=\"..\">[..]</a>\n");
+				"<a href=\"%s\">[..]</a>\n", up);
 
 			binding_parse_chunk(c->data.html.parser_binding,
 					(uint8_t *) buffer, strlen(buffer));

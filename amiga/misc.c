@@ -59,7 +59,7 @@ void die(const char *error)
 
 char *url_to_path(const char *url)
 {
-	char *tmps, *unesc;
+	char *tmps, *unesc, *slash, *colon, *url2;
 	CURL *curl;
 
 	if (strncmp(url, "file://", SLEN("file://")) != 0)
@@ -72,25 +72,57 @@ char *url_to_path(const char *url)
 
 	url += SLEN("/");
 
+	url2 = malloc(strlen(url) + 2);
+	strcpy(url2, url);
+
+	colon = strchr(url2, ':');
+	if(colon == NULL)
+	{
+		if(slash = strchr(url2, '/'))
+		{
+			*slash = ':';
+		}
+		else
+		{
+			int len = strlen(url2);
+			url2[len] = ':';
+			url2[len + 1] = '\0';
+		}
+	}
+
 	if(curl = curl_easy_init())
 	{
-		unesc = curl_easy_unescape(curl,url,0,NULL);
+		unesc = curl_easy_unescape(curl,url2,0,NULL);
 		tmps = strdup(unesc);
+		free(url2);
 		curl_free(unesc);
 		curl_easy_cleanup(curl);
 		return tmps;
 	}
 
-	return strdup((char *)url);
+	return (char *)url2;
 }
 
 char *path_to_url(const char *path)
 {
-	char *r = malloc(strlen(path) + SLEN("file:///") + 1);
+	char *colon = NULL;
+	char *r = NULL;
+	char newpath[1024 + strlen(path)];
+	BPTR lock = 0;
+
+	if(lock = Lock(path, MODE_OLDFILE))
+	{
+		DevNameFromLock(lock, newpath, sizeof newpath, DN_FULLPATH);
+		UnLock(lock);
+	}
+
+	r = malloc(strlen(newpath) + SLEN("file:///") + 1);
+
+	if(colon = strchr(newpath, ':')) *colon = '/';
 
 	strcpy(r, "file:///");
-	strcat(r, path);
-
+	strcat(r, newpath);
+printf("ptu %s => %s\n",path, r);
 	return r;
 }
 
