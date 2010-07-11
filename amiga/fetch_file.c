@@ -45,6 +45,7 @@ struct ami_file_fetch_info {
 	char *url;		/**< URL of this fetch. */
 	bool aborted;
 	bool locked;
+	bool is_dir;
 	struct nsObject *obj;
 	int httpcode;
 	int64 len;
@@ -296,17 +297,49 @@ void ami_fetch_file_poll(const char *scheme_ignored)
 				}
 				else
 				{
+					char header[64];
 					STRPTR errorstring;
+					struct ExamineData *fib;
+					if(fib = ExamineObjectTags(EX_StringNameInput,fetch->path,TAG_DONE))
+					{
+						if(EXD_IS_DIRECTORY(fib)) fetch->is_dir = true;
+						FreeDosObject(DOS_EXAMINEDATA,fib);
+					}
 
-					errorstring = ASPrintf("%s %s",messages_get("FileError"),fetch->path);
-					fetch_set_http_code(fetch->fetch_handle,404);
+					if(fetch->is_dir == true)
+					{
+						fetch_set_http_code(fetch->fetch_handle, 200);
+						fetch->mimetype = fetch_mimetype(fetch->path);
+						LOG(("mimetype %s", fetch->mimetype));
+
+						snprintf(header, sizeof header,
+								"Content-Type: %s",
+								fetch->mimetype);
+						ami_fetch_file_send_callback(FETCH_HEADER,
+							fetch, header, strlen(header), errorcode);
+
+						ami_fetch_file_send_callback(
+							FETCH_DATA, fetch,
+							fetch->path,
+							strlen(fetch->path), errorcode);
+
+						ami_fetch_file_send_callback(FETCH_FINISHED,
+							fetch, NULL, 0,
+							errorcode);
+
+						fetch->aborted = true;
+					}
+					else
+					{
+						errorstring = ASPrintf("%s %s",messages_get("FileError"),fetch->path);
+						fetch_set_http_code(fetch->fetch_handle,404);
 					
-					errorcode = FETCH_ERROR_HTTP_NOT2;
-					ami_fetch_file_send_callback(FETCH_ERROR, fetch,
-						errorstring, 0,
-						errorcode);
-					fetch->aborted = true;
-					FreeVec(errorstring);
+						errorcode = FETCH_ERROR_HTTP_NOT2;
+						ami_fetch_file_send_callback(FETCH_ERROR, fetch,
+							errorstring, 0, errorcode);
+						fetch->aborted = true;
+						FreeVec(errorstring);
+					}
 				}
 			}
 		}
