@@ -124,7 +124,7 @@ bool directory_convert(struct content *c) {
 			if(up[strlen(up) - 1] == '/') up[strlen(up) - 1] = '\0';
 			snprintf(buffer, sizeof(buffer),
 				"<tr bgcolor=\"#CCCCFF\"><td><b><a href=\"%s\">%s</a></td>" \
-				"<td>%s</td><td>&nbsp;</td><td>&nbsp;</td></tr>\n",
+				"<td>&nbsp;</td><td>&nbsp;</td><td>%s</td></tr>\n",
 				up, messages_get("FileParent"), messages_get("FileDirectory"));
 
 			binding_parse_chunk(c->data.html.parser_binding,
@@ -190,12 +190,12 @@ bool directory_convert(struct content *c) {
 
 			if(S_ISDIR(filestat.st_mode)) {
 				snprintf(buffer, sizeof(buffer),
-						"<td>%s</td><td>%s</td><td>&nbsp;</td>\n",
-						messages_get("FileDirectory"), modtime);
+						"<td>&nbsp;</td><td>%s</td><td>%s</td>\n",
+						modtime, messages_get("FileDirectory"));
 			}
 			else {
 				snprintf(buffer, sizeof(buffer),
-						"<td>%d</td><td>%s</td><td>%s</td>\n",
+						"<td>%ld</td><td>%s</td><td>%s</td>\n",
 						filestat.st_size, modtime, mimetype);
 			}
 		}
