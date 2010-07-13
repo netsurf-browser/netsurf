@@ -245,6 +245,22 @@
 
 (set @default-dest (getenv "AppPaths/NetSurf"))
 
+; If env-var did not exist, this is a first time install.
+; For novice users we must take care to put the files somewhere sensible.
+(if (= @default-dest "")
+	(
+		; Workaround for Installer bug picking TEXTCLIP: as a sensible location
+		(if (= @default-dest "TextClip:") (set @default-dest "SYS:Utilities"))
+
+		(if (= @user-level 0)
+			(
+				(makedir (tackon @default-dest "NetSurf") (infos))
+				(set @default-dest (tackon @default-dest "NetSurf"))
+			)
+		)
+	)
+)
+
 (set @default-dest
 	(askdir
 		(prompt "Where would you like to install NetSurf?\n"
