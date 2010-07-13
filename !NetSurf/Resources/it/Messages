@@ -656,6 +656,15 @@ Encoding1:rilevato
 Encoding2:da <meta>
 EncodingUnk:Sconosciuto
 
+# Directory browser
+#
+FileParent:^ Up one level
+FileDirectory:Directory
+FileName:Name
+FileSize:Size
+FileDate:Date
+FileType:Type
+
 # Misc
 #
 Selecting:Selezione

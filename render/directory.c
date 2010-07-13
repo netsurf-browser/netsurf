@@ -1,5 +1,6 @@
 /*
  * Copyright 2006 Richard Wilson <info@tinct.net>
+ * Copyright 2010 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -29,15 +30,17 @@
 #include <sys/stat.h>
 #include <time.h>
 #include "content/content_protected.h"
+#include "content/fetch.h"
 #include "render/directory.h"
 #include "render/html.h"
 #include "utils/messages.h"
 #include "utils/url.h"
+#include "utils/utils.h"
 
 #define MAX_LENGTH 2048
 
 static const char header[] = "<html>\n<head>\n<title>\n";
-static const char footer[] = "</pre>\n</body>\n</html>\n";
+static const char footer[] = "</table>\n</tt>\n</body>\n</html>\n";
 
 
 bool directory_create(struct content *c, const struct http_parameter *params) {
@@ -62,6 +65,11 @@ bool directory_convert(struct content *c) {
 	url_func_result res;
 	bool compare;
 	char *up;
+	struct stat filestat;
+	char *filepath, *mimetype;
+	char modtime[100];
+	bool extendedinfo, evenrow = false;
+	char *bgcolour, *specialtag, *specialendtag;
 
 	path = url_to_path(content__get_url(c));
 	if (!path) {
@@ -92,9 +100,18 @@ bool directory_convert(struct content *c) {
 	}
 	*cnv = '\0';
 	snprintf(buffer, sizeof(buffer), "Index of %s</title>\n</head>\n"
-			"<body>\n<h1>\nIndex of %s</h1>\n<hr><pre>",
+			"<body>\n<h1>\nIndex of %s</h1>\n<hr><tt><table>",
 			nice_path, nice_path);
 	free(nice_path);
+
+	binding_parse_chunk(c->data.html.parser_binding,
+			(uint8_t *) buffer, strlen(buffer));
+
+	snprintf(buffer, sizeof(buffer),
+		"<tr><td><b>%s</b></td><td><b>%s</b></td>" \
+		"<td><b>%s</b></td><td><b>%s</b></td></tr>\n",
+		messages_get("FileName"), messages_get("FileSize"),
+		messages_get("FileDate"), messages_get("FileType"));
 
 	binding_parse_chunk(c->data.html.parser_binding,
 			(uint8_t *) buffer, strlen(buffer));
@@ -106,10 +123,14 @@ bool directory_convert(struct content *c) {
 		if ((res == URL_FUNC_OK) && !compare) {
 			if(up[strlen(up) - 1] == '/') up[strlen(up) - 1] = '\0';
 			snprintf(buffer, sizeof(buffer),
-				"<a href=\"%s\">[..]</a>\n", up);
+				"<tr bgcolor=\"#CCCCFF\"><td><b><a href=\"%s\">%s</a></td>" \
+				"<td>%s</td><td>&nbsp;</td><td>&nbsp;</td></tr>\n",
+				up, messages_get("FileParent"), messages_get("FileDirectory"));
 
 			binding_parse_chunk(c->data.html.parser_binding,
 					(uint8_t *) buffer, strlen(buffer));
+
+			evenrow = true;
 		}
 		free(up);
 	}
@@ -124,12 +145,73 @@ bool directory_convert(struct content *c) {
 				!strcmp(entry->d_name, ".."))
 			continue;
 
-		snprintf(buffer, sizeof(buffer), "<a href=\"%s/%s\">%s</a>\n",
-				content__get_url(c), entry->d_name, 
-				entry->d_name);
+		extendedinfo = false;
+
+		if(filepath = malloc(strlen(path) + strlen(entry->d_name) + 2)) {
+			strcpy(filepath, path);
+			if(path_add_part(filepath,
+				(strlen(path) + strlen(entry->d_name) + 2),
+				entry->d_name)) {
+				if(stat(filepath, &filestat) == 0) {
+					mimetype = fetch_mimetype(filepath);
+					extendedinfo = true;
+				}
+			}
+			free(filepath);
+		}
+
+		if((extendedinfo == true) && (S_ISDIR(filestat.st_mode))) {
+			specialtag = "<b>";
+			specialendtag = "</b>";
+		}
+		else {
+			specialtag = "";
+			specialendtag = "";
+		}
+
+		if(evenrow == false) bgcolour = "CCCCFF";
+			else bgcolour = "BBBBFF";
+		if(evenrow == false) evenrow = true;
+			else evenrow = false;
+
+		snprintf(buffer, sizeof(buffer),
+				"<tr bgcolor=\"#%s\"><td>%s<a href=\"%s/%s\">%s</a>%s</td>\n",
+				bgcolour, specialtag,
+				content__get_url(c), entry->d_name, entry->d_name,
+				specialendtag);
 
 		binding_parse_chunk(c->data.html.parser_binding,
 				(uint8_t *) buffer, strlen(buffer));
+
+		if(extendedinfo == true) {
+			if(strftime((char *)&modtime, sizeof modtime,
+				"%c", localtime(&filestat.st_mtime)) == 0)
+				strncpy(modtime, "%nbsp;", sizeof modtime);
+
+			if(S_ISDIR(filestat.st_mode)) {
+				snprintf(buffer, sizeof(buffer),
+						"<td>%s</td><td>%s</td><td>&nbsp;</td>\n",
+						messages_get("FileDirectory"), modtime);
+			}
+			else {
+				snprintf(buffer, sizeof(buffer),
+						"<td>%d</td><td>%s</td><td>%s</td>\n",
+						filestat.st_size, modtime, mimetype);
+			}
+		}
+		else {
+			snprintf(buffer, sizeof(buffer),
+					"<td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>\n");
+		}
+
+		binding_parse_chunk(c->data.html.parser_binding,
+				(uint8_t *) buffer, strlen(buffer));
+
+		strncpy(buffer, "</tr>\n", sizeof(buffer));
+		binding_parse_chunk(c->data.html.parser_binding,
+				(uint8_t *) buffer, strlen(buffer));
+
+		if(mimetype) free(mimetype);
 	}
 	closedir(parent);
 
