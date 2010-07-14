@@ -145,6 +145,8 @@ bool directory_convert(struct content *c) {
 	struct stat filestat;
 	char *filepath, *mimetype = NULL;
 	int filepath_size;
+	char *urlpath;
+	int urlpath_size;
 	char moddate[100];
 	char modtime[100];
 	bool extendedinfo, evenrow = false;
@@ -196,8 +198,6 @@ bool directory_convert(struct content *c) {
 	if (res == URL_FUNC_OK) {
 		res = url_compare(content__get_url(c), up, false, &compare);
 		if ((res == URL_FUNC_OK) && !compare) {
-			if (up[strlen(up) - 1] == '/')
-				up[strlen(up) - 1] = '\0';
 			snprintf(buffer, sizeof(buffer),
 				"<p><a href=\"%s\">%s</a></p>",
 				up, messages_get("FileParent"));
@@ -257,68 +257,79 @@ bool directory_convert(struct content *c) {
 			return false;
 		}
 
-		/* Start row and print item name */
-		snprintf(buffer, sizeof(buffer),
-				"<a href=\"%s/%s\" class=\"%s %s\">"
+		urlpath_size = strlen(content__get_url(c)) + strlen(entry->d_name) + 2;
+		urlpath = malloc(urlpath_size);
+		if (urlpath != NULL) {
+			strcpy(urlpath, content__get_url(c));
+			if(urlpath[strlen(urlpath) - 1] != '/')
+				strncat(urlpath, "/", urlpath_size);
+			strncat(urlpath, entry->d_name, urlpath_size);
+
+			/* Start row and print item name */
+			snprintf(buffer, sizeof(buffer),
+				"<a href=\"%s\" class=\"%s %s\">"
 				"<span class=\"name\">%s</span> ",
-				content__get_url(c), entry->d_name,
+				urlpath,
 				evenrow ? "even" : "odd",
 				S_ISDIR(filestat.st_mode) ? "dir" : "file",
 				entry->d_name);
 
-		binding_parse_chunk(c->data.html.parser_binding,
-				(uint8_t *) buffer, strlen(buffer));
+			binding_parse_chunk(c->data.html.parser_binding,
+					(uint8_t *) buffer, strlen(buffer));
 
-		if (extendedinfo == true) {
-			/* Get date in output format */
-			if (strftime((char *)&moddate, sizeof moddate,
-					"%a %d %b %Y",
-					localtime(&filestat.st_mtime)) == 0)
-				strncpy(moddate, "-", sizeof moddate);
-			/* Get time in output format */
-			if (strftime((char *)&modtime, sizeof modtime,
-					"%H:%M",
-					localtime(&filestat.st_mtime)) == 0)
-				strncpy(modtime, "-", sizeof modtime);
+			if (extendedinfo == true) {
+				/* Get date in output format */
+				if (strftime((char *)&moddate, sizeof moddate,
+						"%a %d %b %Y",
+						localtime(&filestat.st_mtime)) == 0)
+					strncpy(moddate, "-", sizeof moddate);
+				/* Get time in output format */
+				if (strftime((char *)&modtime, sizeof modtime,
+						"%H:%M",
+						localtime(&filestat.st_mtime)) == 0)
+					strncpy(modtime, "-", sizeof modtime);
 
-			if (S_ISDIR(filestat.st_mode)) {
-				/* Directory: Print type and date/time */
-				snprintf(buffer, sizeof(buffer),
-					"<span class=\"type\">%s</span> "
-					"<span class=\"size\"></span>"
-					"<span class=\"size\"></span> "
-					"<span class=\"date\">%s</span> "
-					"<span class=\"time\">%s</span></a>\n",
-					messages_get("FileDirectory"),
-					moddate, modtime);
+				if (S_ISDIR(filestat.st_mode)) {
+					/* Directory: Print type and date/time */
+					snprintf(buffer, sizeof(buffer),
+						"<span class=\"type\">%s</span> "
+						"<span class=\"size\"></span>"
+						"<span class=\"size\"></span> "
+						"<span class=\"date\">%s</span> "
+						"<span class=\"time\">%s</span></a>\n",
+						messages_get("FileDirectory"),
+						moddate, modtime);
+				} else {
+					/* File: Print type, size, and date/time */
+					mimetype = fetch_mimetype(filepath);
+					snprintf(buffer, sizeof(buffer),
+						"<span class=\"type\">%s</span> "
+						"<span class=\"size\">%d</span>"
+						"<span class=\"size\">%s</span> "
+						"<span class=\"date\">%s</span> "
+						"<span class=\"time\">%s</span></a>\n",
+						mimetype,
+						filesize_value(
+						(unsigned long)filestat.st_size),
+						messages_get(filesize_unit(
+						(unsigned long)filestat.st_size)),
+						moddate, modtime);
+				}
 			} else {
-				/* File: Print type, size, and date/time */
-				mimetype = fetch_mimetype(filepath);
+				/* Not got info, print empty cells */
 				snprintf(buffer, sizeof(buffer),
-					"<span class=\"type\">%s</span> "
-					"<span class=\"size\">%d</span>"
-					"<span class=\"size\">%s</span> "
-					"<span class=\"date\">%s</span> "
-					"<span class=\"time\">%s</span></a>\n",
-					mimetype,
-					filesize_value(
-					(unsigned long)filestat.st_size),
-					messages_get(filesize_unit(
-					(unsigned long)filestat.st_size)),
-					moddate, modtime);
+						"<span class=\"type\"></span> "
+						"<span class=\"size\"></span>"
+						"<span class=\"size\"></span> "
+						"<span class=\"date\"></span> "
+						"<span class=\"time\"></span></a>\n");
 			}
-		} else {
-			/* Not got info, print empty cells */
-			snprintf(buffer, sizeof(buffer),
-					"<span class=\"type\"></span> "
-					"<span class=\"size\"></span>"
-					"<span class=\"size\"></span> "
-					"<span class=\"date\"></span> "
-					"<span class=\"time\"></span></a>\n");
-		}
 
-		binding_parse_chunk(c->data.html.parser_binding,
-				(uint8_t *) buffer, strlen(buffer));
+			binding_parse_chunk(c->data.html.parser_binding,
+					(uint8_t *) buffer, strlen(buffer));
+
+			free(urlpath);
+		}
 
 		if (evenrow == false)
 			evenrow = true;

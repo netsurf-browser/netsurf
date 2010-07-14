@@ -73,6 +73,9 @@ char *url_to_path(const char *url)
 	if (strncmp(url, "/", SLEN("/")) == 0)
 		url += SLEN("/");
 
+	if(*url == '\0')
+		return NULL; /* file:/// is not a valid path */
+
 	url2 = malloc(strlen(url) + 2);
 	strcpy(url2, url);
 
