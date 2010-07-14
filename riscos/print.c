@@ -21,6 +21,7 @@
 
 #include <assert.h>
 #include <string.h>
+#include "swis.h"
 #include "oslib/font.h"
 #include "oslib/hourglass.h"
 #include "oslib/osfile.h"
@@ -694,8 +695,14 @@ bool print_document(struct gui_window *g, const char *filename)
 	print_active = false;
 	ro_gui_current_redraw_gui = 0;
 
-	/* clean up */
-	error = xpdriver_end_jobw(fhandle);
+	/* clean up
+	 *
+	 * Call PDriver_EndJob via _swix() so that r9 is preserved.  This
+	 * prevents a crash if the SWI corrupts it on exit (as seems to
+	 * happen on some versions of RISC OS 6).
+	 */
+
+	error = (os_error *) _swix(PDriver_EndJob, _IN(0), (int) fhandle);
 	if (error) {
 		LOG(("xpdriver_end_jobw: 0x%x: %s",
 				error->errnum, error->errmess));
