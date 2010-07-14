@@ -195,8 +195,10 @@ bool directory_convert(struct content *c) {
 			}
 			else {
 				snprintf(buffer, sizeof(buffer),
-						"<td>%ld</td><td>%s</td><td>%s</td>\n",
-						filestat.st_size, modtime, mimetype);
+						"<td align=\"right\">%s</td><td>%s</td><td>%s</td>\n",
+						human_friendly_bytesize(
+						(unsigned long)filestat.st_size),
+						modtime, mimetype);
 			}
 		}
 		else {
