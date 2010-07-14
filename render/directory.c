@@ -143,7 +143,8 @@ bool directory_convert(struct content *c) {
 	bool compare;
 	char *up;
 	struct stat filestat;
-	char *filepath, *mimetype;
+	char *filepath, *mimetype = NULL;
+	int filepath_size;
 	char moddate[100];
 	char modtime[100];
 	bool extendedinfo, evenrow = false;
@@ -235,21 +236,25 @@ bool directory_convert(struct content *c) {
 			/* Skip . and .. entries */
 			continue;
 
-		extendedinfo = false;
-
-		filepath = malloc(strlen(path) + strlen(entry->d_name) + 2);
+		filepath_size = strlen(path) + strlen(entry->d_name) + 2;
+		filepath = malloc(filepath_size);
 		if (filepath != NULL) {
 			strcpy(filepath, path);
-			if (path_add_part(filepath,
-					(strlen(path) +
-					strlen(entry->d_name) + 2),
-					entry->d_name)) {
-				if (stat(filepath, &filestat) == 0) {
-					mimetype = fetch_mimetype(filepath);
-					extendedinfo = true;
-				}
+			if (path_add_part(filepath, filepath_size,
+					entry->d_name) == false) {
+				msg_data.error = messages_get("MiscErr");
+				content_broadcast(c, CONTENT_MSG_ERROR,
+						msg_data);
+				return false;
 			}
-			free(filepath);
+			if (stat(filepath, &filestat) == 0)
+				extendedinfo = true;
+			else
+				extendedinfo = false;
+		} else {
+			msg_data.error = messages_get("MiscErr");
+			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+			return false;
 		}
 
 		/* Start row and print item name */
@@ -288,6 +293,7 @@ bool directory_convert(struct content *c) {
 					moddate, modtime);
 			} else {
 				/* File: Print type, size, and date/time */
+				mimetype = fetch_mimetype(filepath);
 				snprintf(buffer, sizeof(buffer),
 					"<span class=\"type\">%s</span> "
 					"<span class=\"size\">%d</span>"
@@ -319,8 +325,11 @@ bool directory_convert(struct content *c) {
 		else
 			evenrow = false;
 
-		if (mimetype)
+		if (mimetype != NULL) {
 			free(mimetype);
+			mimetype = NULL;
+		}
+		free(filepath);
 	}
 	closedir(parent);
 
