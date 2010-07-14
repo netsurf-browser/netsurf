@@ -39,8 +39,37 @@
 
 #define MAX_LENGTH 2048
 
-static const char header[] = "<html>\n<head>\n<title>\n";
-static const char footer[] = "</table>\n</tt>\n</body>\n</html>\n";
+static const char header[] =
+		"<html>\n"
+		"<head>\n"
+		"<style>\n"
+		"html, body { margin: 0; padding: 0; }\n"
+		"body { background-color: #abf; }\n"
+		"h1 { padding: 5mm; margin: 0; "
+				"border-bottom: 2px solid #bcf; }\n"
+		"p { padding: 2px 5mm; margin: 0 0 1em 0; }\n"
+		"div { display: table; width: 94%; margin: 0 auto; "
+				"padding: 0; }\n"
+		"a, strong { display: table-row; margin: 0; padding: 0; }\n"
+		"a.odd { background-color: #bcf; }\n"
+		"a.even { background-color: #b2c3ff; }\n"
+		"span { display: table-cell; }\n"
+		"em > span { padding-bottom: 1px; }\n"
+		"a + a>span { border-top: 1px solid #9af; }\n"
+		"span.name { padding-left: 22px; min-height: 19px;}\n"
+		"a.dir > span.name { font-weight: bold; }\n"
+		"a.dir > span.type { font-weight: bold; }\n"
+		"span.size { text-align: right; padding-right: 0.3em; }\n"
+		"span.size + span.size { text-align: left; "
+				"padding-right: 0; }\n"
+		"</style>\n"
+		"<title>\n";
+static const char footer[] = "</div>\n</body>\n</html>\n";
+
+static char sizeunits[][7] = {"Bytes", "kBytes", "MBytes", "GBytes"};
+
+static int filesize_value(unsigned long bytesize);
+static char* filesize_unit(unsigned long bytesize);
 
 
 bool directory_create(struct content *c, const struct http_parameter *params) {
@@ -55,6 +84,30 @@ bool directory_create(struct content *c, const struct http_parameter *params) {
 	return true;
 }
 
+int filesize_value(unsigned long bytesize) {
+	int i = 0;
+	while (bytesize > 1024 * 4) {
+		bytesize /= 1024;
+		i++;
+		if (i == 3)
+			break;
+	}
+
+	return bytesize;
+}
+
+char* filesize_unit(unsigned long bytesize) {
+	int i = 0;
+	while (bytesize > 1024 * 4) {
+		bytesize /= 1024;
+		i++;
+		if (i == 3)
+			break;
+	}
+
+	return sizeunits[i];
+}
+
 bool directory_convert(struct content *c) {
 	char *path;
 	DIR *parent;
@@ -67,9 +120,9 @@ bool directory_convert(struct content *c) {
 	char *up;
 	struct stat filestat;
 	char *filepath, *mimetype;
+	char moddate[100];
 	char modtime[100];
 	bool extendedinfo, evenrow = false;
-	char *bgcolour, *specialtag, *specialendtag;
 
 	path = url_to_path(content__get_url(c));
 	if (!path) {
@@ -100,18 +153,9 @@ bool directory_convert(struct content *c) {
 	}
 	*cnv = '\0';
 	snprintf(buffer, sizeof(buffer), "Index of %s</title>\n</head>\n"
-			"<body>\n<h1>\nIndex of %s</h1>\n<hr><tt><table>",
+			"<body>\n<h1>Index of %s</h1>\n",
 			nice_path, nice_path);
 	free(nice_path);
-
-	binding_parse_chunk(c->data.html.parser_binding,
-			(uint8_t *) buffer, strlen(buffer));
-
-	snprintf(buffer, sizeof(buffer),
-		"<tr><td><b>%s</b></td><td><b>%s</b></td>" \
-		"<td><b>%s</b></td><td><b>%s</b></td></tr>\n",
-		messages_get("FileName"), messages_get("FileSize"),
-		messages_get("FileDate"), messages_get("FileType"));
 
 	binding_parse_chunk(c->data.html.parser_binding,
 			(uint8_t *) buffer, strlen(buffer));
@@ -121,19 +165,31 @@ bool directory_convert(struct content *c) {
 	if (res == URL_FUNC_OK) {
 		res = url_compare(content__get_url(c), up, false, &compare);
 		if ((res == URL_FUNC_OK) && !compare) {
-			if(up[strlen(up) - 1] == '/') up[strlen(up) - 1] = '\0';
+			if (up[strlen(up) - 1] == '/')
+				up[strlen(up) - 1] = '\0';
 			snprintf(buffer, sizeof(buffer),
-				"<tr bgcolor=\"#CCCCFF\"><td><b><a href=\"%s\">%s</a></td>" \
-				"<td>&nbsp;</td><td>&nbsp;</td><td>%s</td></tr>\n",
-				up, messages_get("FileParent"), messages_get("FileDirectory"));
+				"<p><a href=\"%s\">%s</a></p>",
+				up, messages_get("FileParent"));
 
 			binding_parse_chunk(c->data.html.parser_binding,
 					(uint8_t *) buffer, strlen(buffer));
-
-			evenrow = true;
 		}
 		free(up);
 	}
+
+	snprintf(buffer, sizeof(buffer),
+		"<div>\n<strong>"
+		"<span class=\"name\">%s</span> "
+		"<span class=\"type\">%s</span> "
+		"<span class=\"size\">%s</span><span class=\"size\"></span> "
+		"<span class=\"date\">%s</span> "
+		"<span class=\"time\">%s</span></strong>\n",
+		messages_get("FileName"), messages_get("FileType"),
+		messages_get("FileSize"), messages_get("FileDate"),
+		messages_get("FileTime"));
+
+	binding_parse_chunk(c->data.html.parser_binding,
+			(uint8_t *) buffer, strlen(buffer));
 
 	if ((parent = opendir(path)) == NULL) {
 		msg_data.error = messages_get("EmptyErr");
@@ -147,12 +203,14 @@ bool directory_convert(struct content *c) {
 
 		extendedinfo = false;
 
-		if(filepath = malloc(strlen(path) + strlen(entry->d_name) + 2)) {
+		filepath = malloc(strlen(path) + strlen(entry->d_name) + 2);
+		if (filepath != NULL) {
 			strcpy(filepath, path);
-			if(path_add_part(filepath,
-				(strlen(path) + strlen(entry->d_name) + 2),
-				entry->d_name)) {
-				if(stat(filepath, &filestat) == 0) {
+			if (path_add_part(filepath,
+					(strlen(path) +
+					strlen(entry->d_name) + 2),
+					entry->d_name)) {
+				if (stat(filepath, &filestat) == 0) {
 					mimetype = fetch_mimetype(filepath);
 					extendedinfo = true;
 				}
@@ -160,60 +218,69 @@ bool directory_convert(struct content *c) {
 			free(filepath);
 		}
 
-		if((extendedinfo == true) && (S_ISDIR(filestat.st_mode))) {
-			specialtag = "<b>";
-			specialendtag = "</b>";
-		}
-		else {
-			specialtag = "";
-			specialendtag = "";
-		}
-
-		if(evenrow == false) bgcolour = "CCCCFF";
-			else bgcolour = "BBBBFF";
-		if(evenrow == false) evenrow = true;
-			else evenrow = false;
-
 		snprintf(buffer, sizeof(buffer),
-				"<tr bgcolor=\"#%s\"><td>%s<a href=\"%s/%s\">%s</a>%s</td>\n",
-				bgcolour, specialtag,
-				content__get_url(c), entry->d_name, entry->d_name,
-				specialendtag);
+				"<a href=\"%s/%s\" class=\"%s %s\">"
+				"<span class=\"name\">%s</span> ",
+				content__get_url(c), entry->d_name,
+				evenrow ? "even" : "odd",
+				S_ISDIR(filestat.st_mode) ? "dir" : "file",
+				entry->d_name);
 
 		binding_parse_chunk(c->data.html.parser_binding,
 				(uint8_t *) buffer, strlen(buffer));
 
-		if(extendedinfo == true) {
-			if(strftime((char *)&modtime, sizeof modtime,
-				"%c", localtime(&filestat.st_mtime)) == 0)
-				strncpy(modtime, "%nbsp;", sizeof modtime);
+		if (extendedinfo == true) {
+			if (strftime((char *)&moddate, sizeof moddate,
+					"%a %d %b %Y",
+					localtime(&filestat.st_mtime)) == 0)
+				strncpy(moddate, "-", sizeof moddate);
+			if (strftime((char *)&modtime, sizeof modtime,
+					"%H:%M",
+					localtime(&filestat.st_mtime)) == 0)
+				strncpy(modtime, "-", sizeof modtime);
 
-			if(S_ISDIR(filestat.st_mode)) {
+			if (S_ISDIR(filestat.st_mode)) {
 				snprintf(buffer, sizeof(buffer),
-						"<td>&nbsp;</td><td>%s</td><td>%s</td>\n",
-						modtime, messages_get("FileDirectory"));
-			}
-			else {
+					"<span class=\"type\">%s</span> "
+					"<span class=\"size\"></span>"
+					"<span class=\"size\"></span> "
+					"<span class=\"date\">%s</span> "
+					"<span class=\"time\">%s</span></a>\n",
+					messages_get("FileDirectory"),
+					moddate, modtime);
+			} else {
 				snprintf(buffer, sizeof(buffer),
-						"<td align=\"right\">%s</td><td>%s</td><td>%s</td>\n",
-						human_friendly_bytesize(
-						(unsigned long)filestat.st_size),
-						modtime, mimetype);
+					"<span class=\"type\">%s</span> "
+					"<span class=\"size\">%d</span>"
+					"<span class=\"size\">%s</span> "
+					"<span class=\"date\">%s</span> "
+					"<span class=\"time\">%s</span></a>\n",
+					mimetype,
+					filesize_value(
+					(unsigned long)filestat.st_size),
+					messages_get(filesize_unit(
+					(unsigned long)filestat.st_size)),
+					moddate, modtime);
 			}
-		}
-		else {
+		} else {
 			snprintf(buffer, sizeof(buffer),
-					"<td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>\n");
+					"<span class=\"type\"></span> "
+					"<span class=\"size\"></span>"
+					"<span class=\"size\"></span> "
+					"<span class=\"date\"></span> "
+					"<span class=\"time\"></span></a>\n");
 		}
 
 		binding_parse_chunk(c->data.html.parser_binding,
 				(uint8_t *) buffer, strlen(buffer));
 
-		strncpy(buffer, "</tr>\n", sizeof(buffer));
-		binding_parse_chunk(c->data.html.parser_binding,
-				(uint8_t *) buffer, strlen(buffer));
+		if (evenrow == false)
+			evenrow = true;
+		else
+			evenrow = false;
 
-		if(mimetype) free(mimetype);
+		if (mimetype)
+			free(mimetype);
 	}
 	closedir(parent);
 
