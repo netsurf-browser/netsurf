@@ -68,6 +68,7 @@ static const char footer[] = "</div>\n</body>\n</html>\n";
 
 static char sizeunits[][7] = {"Bytes", "kBytes", "MBytes", "GBytes"};
 
+static int filesize_calculate(unsigned long *bytesize);
 static int filesize_value(unsigned long bytesize);
 static char* filesize_unit(unsigned long bytesize);
 
@@ -84,28 +85,51 @@ bool directory_create(struct content *c, const struct http_parameter *params) {
 	return true;
 }
 
-int filesize_value(unsigned long bytesize) {
+/**
+ * Obtain display value and units for filesize after conversion to B/kB/MB/GB,
+ * as appropriate.  
+ *
+ * \param  bytesize  file size in bytes, updated to filesize in output units
+ * \return  number of times bytesize has been divided by 1024
+ */
+
+int filesize_calculate(unsigned long *bytesize)
+{
 	int i = 0;
-	while (bytesize > 1024 * 4) {
-		bytesize /= 1024;
+	while (*bytesize > 1024 * 4) {
+		*bytesize /= 1024;
 		i++;
 		if (i == 3)
 			break;
 	}
-
-	return bytesize;
+	return i;
 }
 
-char* filesize_unit(unsigned long bytesize) {
-	int i = 0;
-	while (bytesize > 1024 * 4) {
-		bytesize /= 1024;
-		i++;
-		if (i == 3)
-			break;
-	}
+/**
+ * Obtain display value for filesize after conversion to B/kB/MB/GB,
+ * as appropriate
+ *
+ * \param  bytesize  file size in bytes
+ * \return  Value to display for file size, in units given by filesize_unit()
+ */
 
-	return sizeunits[i];
+int filesize_value(unsigned long bytesize)
+{
+	filesize_calculate(&bytesize);
+	return (int)bytesize;
+}
+
+/**
+ * Obtain display units for filesize after conversion to B/kB/MB/GB,
+ * as appropriate
+ *
+ * \param  bytesize  file size in bytes
+ * \return  Units to display for file size, for value given by filesize_value()
+ */
+
+char* filesize_unit(unsigned long bytesize)
+{
+	return sizeunits[filesize_calculate(&bytesize)];
 }
 
 bool directory_convert(struct content *c) {
@@ -124,18 +148,22 @@ bool directory_convert(struct content *c) {
 	char modtime[100];
 	bool extendedinfo, evenrow = false;
 
+	/* Get directory path from URL */
 	path = url_to_path(content__get_url(c));
 	if (!path) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
 	}
+
+	/* Convert path for display */
 	nice_path = malloc(strlen(path) * 4 + 1);
 	if (!nice_path) {
 		msg_data.error = messages_get("MiscErr");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
 	}
+	/* Escape special HTML characters */
 	for (cnv = nice_path, tmp = path; *tmp != '\0'; tmp++) {
 		if (*tmp == '<') {
 			*cnv++ = '&';
@@ -152,6 +180,8 @@ bool directory_convert(struct content *c) {
 		}
 	}
 	*cnv = '\0';
+
+	/* Print document title and heading */
 	snprintf(buffer, sizeof(buffer), "Index of %s</title>\n</head>\n"
 			"<body>\n<h1>Index of %s</h1>\n",
 			nice_path, nice_path);
@@ -160,8 +190,8 @@ bool directory_convert(struct content *c) {
 	binding_parse_chunk(c->data.html.parser_binding,
 			(uint8_t *) buffer, strlen(buffer));
 
+	/* Print parent directory link */
 	res = url_parent(content__get_url(c), &up);
-
 	if (res == URL_FUNC_OK) {
 		res = url_compare(content__get_url(c), up, false, &compare);
 		if ((res == URL_FUNC_OK) && !compare) {
@@ -177,6 +207,7 @@ bool directory_convert(struct content *c) {
 		free(up);
 	}
 
+	/* Print directory contents table column headings */
 	snprintf(buffer, sizeof(buffer),
 		"<div>\n<strong>"
 		"<span class=\"name\">%s</span> "
@@ -196,9 +227,12 @@ bool directory_convert(struct content *c) {
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
 	}
+
+	/* Print a row for each item in the directory */
 	while ((entry = readdir(parent)) != NULL) {
 		if (!strcmp(entry->d_name, ".") ||
 				!strcmp(entry->d_name, ".."))
+			/* Skip . and .. entries */
 			continue;
 
 		extendedinfo = false;
@@ -218,6 +252,7 @@ bool directory_convert(struct content *c) {
 			free(filepath);
 		}
 
+		/* Start row and print item name */
 		snprintf(buffer, sizeof(buffer),
 				"<a href=\"%s/%s\" class=\"%s %s\">"
 				"<span class=\"name\">%s</span> ",
@@ -230,16 +265,19 @@ bool directory_convert(struct content *c) {
 				(uint8_t *) buffer, strlen(buffer));
 
 		if (extendedinfo == true) {
+			/* Get date in output format */
 			if (strftime((char *)&moddate, sizeof moddate,
 					"%a %d %b %Y",
 					localtime(&filestat.st_mtime)) == 0)
 				strncpy(moddate, "-", sizeof moddate);
+			/* Get time in output format */
 			if (strftime((char *)&modtime, sizeof modtime,
 					"%H:%M",
 					localtime(&filestat.st_mtime)) == 0)
 				strncpy(modtime, "-", sizeof modtime);
 
 			if (S_ISDIR(filestat.st_mode)) {
+				/* Directory: Print type and date/time */
 				snprintf(buffer, sizeof(buffer),
 					"<span class=\"type\">%s</span> "
 					"<span class=\"size\"></span>"
@@ -249,6 +287,7 @@ bool directory_convert(struct content *c) {
 					messages_get("FileDirectory"),
 					moddate, modtime);
 			} else {
+				/* File: Print type, size, and date/time */
 				snprintf(buffer, sizeof(buffer),
 					"<span class=\"type\">%s</span> "
 					"<span class=\"size\">%d</span>"
@@ -263,6 +302,7 @@ bool directory_convert(struct content *c) {
 					moddate, modtime);
 			}
 		} else {
+			/* Not got info, print empty cells */
 			snprintf(buffer, sizeof(buffer),
 					"<span class=\"type\"></span> "
 					"<span class=\"size\"></span>"
