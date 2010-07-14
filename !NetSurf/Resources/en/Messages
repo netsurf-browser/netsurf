@@ -657,11 +657,12 @@ EncodingUnk:Unknown
 
 # Directory browser
 #
-FileParent:^ Up one level
+FileParent:^ Up to parent directory
 FileDirectory:Directory
 FileName:Name
 FileSize:Size
 FileDate:Date
+FileTime:Time
 FileType:Type
 
 # Misc
