@@ -731,11 +731,13 @@ bool print_document(struct gui_window *g, const char *filename)
 
 	rufl_invalidate_cache();
 
-	/* restore document layout */
+	/* restore document layout and redraw browser window */
 	if (content_get_type(h) == CONTENT_HTML)
 		/* TODO: Front end code shouldn't see contents */
 		layout_document(hlcache_handle_get_content(h),
 				saved_width, saved_height);
+
+	gui_window_redraw_window(g);
 
 	return true;
 
