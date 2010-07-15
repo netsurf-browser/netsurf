@@ -39,16 +39,60 @@
 
 #define MAX_LENGTH 2048
 
-static const char header[] =
-		"<html>\n"
+#define NO_NAME_COLUMN 1
+#define NO_TYPE_COLUMN 1 << 1
+#define NO_SIZE_COLUMN 1 << 2
+#define NO_DATE_COLUMN 1 << 3
+#define NO_TIME_COLUMN 1 << 4
+
+static const char footer[] = "</div>\n</body>\n</html>\n";
+
+static const char* dirlist_generate_top(void);
+static bool dirlist_generate_hide_columns(int flags, char *buffer,
+		int buffer_length);
+static bool dirlist_generate_title(char *title, char *buffer,
+		int buffer_length);
+static bool dirlist_generate_parent_link(char *parent, char *buffer,
+		int buffer_length);
+static bool dirlist_generate_headings(char *buffer, int buffer_length);
+static bool dirlist_generate_row(bool even, bool directory, char *url,
+		char *name, char *type, long long size, char *date,
+		char *time, char *buffer, int buffer_length);
+static const char* dirlist_generate_bottom(void);
+
+static int dirlist_filesize_calculate(unsigned long *bytesize);
+static int dirlist_filesize_value(unsigned long bytesize);
+static char* dirlist_filesize_unit(unsigned long bytesize);
+
+
+/**
+ * Generates the top part of an HTML directroy listing page
+ *
+ * \return  Top of directory listing HTML
+ *
+ * This is part of a series of functions.  To generate a complete page,
+ * call the following functions in order:
+ *
+ *     dirlist_generate_top()
+ *     dirlist_generate_hide_columns()  -- optional
+ *     dirlist_generate_title()
+ *     dirlist_generate_parent_link()   -- optional
+ *     dirlist_generate_headings()
+ *     dirlist_generate_row()           -- call 'n' times for 'n' rows
+ *     dirlist_generate_bottom()
+ */
+
+const char* dirlist_generate_top(void)
+{
+	return	"<html>\n"
 		"<head>\n"
 		"<style>\n"
 		"html, body { margin: 0; padding: 0; }\n"
 		"body { background-color: #abf; }\n"
 		"h1 { padding: 5mm; margin: 0; "
 				"border-bottom: 2px solid #bcf; }\n"
-		"p { padding: 2px 5mm; margin: 0 0 1em 0; }\n"
-		"div { display: table; width: 94%; margin: 0 auto; "
+		"p { padding: 2px 5mm; margin: 0; }\n"
+		"div { display: table; width: 94%; margin: 5mm auto 0 auto; "
 				"padding: 0; }\n"
 		"a, strong { display: table-row; margin: 0; padding: 0; }\n"
 		"a.odd { background-color: #bcf; }\n"
@@ -61,29 +105,257 @@ static const char header[] =
 		"a.dir > span.type { font-weight: bold; }\n"
 		"span.size { text-align: right; padding-right: 0.3em; }\n"
 		"span.size + span.size { text-align: left; "
-				"padding-right: 0; }\n"
-		"</style>\n"
-		"<title>\n";
-static const char footer[] = "</div>\n</body>\n</html>\n";
-
-static char sizeunits[][7] = {"Bytes", "kBytes", "MBytes", "GBytes"};
-
-static int filesize_calculate(unsigned long *bytesize);
-static int filesize_value(unsigned long bytesize);
-static char* filesize_unit(unsigned long bytesize);
-
-
-bool directory_create(struct content *c, const struct http_parameter *params) {
-	if (!html_create(c, params))
-		/* html_create() must have broadcast MSG_ERROR already, so we
-		* don't need to. */
-		return false;
-
-	binding_parse_chunk(c->data.html.parser_binding,
-			(uint8_t *) header, sizeof(header) - 1);
-
-	return true;
+				"padding-right: 0; }\n";
 }
+
+
+/**
+ * Generates the part of an HTML directory listing page that can suppress
+ * particular columns
+ *
+ * \param  flags	  flags for which cols to suppress. 0 to suppress none
+ * \param  buffer	  buffer to fill with generated HTML
+ * \param  buffer_length  maximum size of buffer
+ * \return  true iff buffer filled without error
+ *
+ * This is part of a series of functions.  To generate a complete page,
+ * call the following functions in order:
+ *
+ *     dirlist_generate_top()
+ *     dirlist_generate_hide_columns()  -- optional
+ *     dirlist_generate_title()
+ *     dirlist_generate_parent_link()   -- optional
+ *     dirlist_generate_headings()
+ *     dirlist_generate_row()           -- call 'n' times for 'n' rows
+ *     dirlist_generate_bottom()
+ */
+
+bool dirlist_generate_hide_columns(int flags, char *buffer, int buffer_length)
+{
+	int error = snprintf(buffer, buffer_length,
+			"%s\n%s\n%s\n%s\n%s\n",
+			(flags & NO_NAME_COLUMN) ?
+					"span.name { display: none; }\n" : "",
+			(flags & NO_TYPE_COLUMN) ?
+					"span.type { display: none; }\n" : "",
+			(flags & NO_SIZE_COLUMN) ?
+					"span.size { display: none; }\n" : "",
+			(flags & NO_DATE_COLUMN) ?
+					"span.date { display: none; }\n" : "",
+			(flags & NO_TIME_COLUMN) ?
+					"span.time { display: none; }\n" : "");
+	if (error < 0 || error >= buffer_length)
+		/* Error or buffer too small */
+		return false;
+	else
+		/* OK */
+		return true;
+}
+
+
+/**
+ * Generates the part of an HTML directory listing page that contains the title
+ *
+ * \param  title	  title to use, gets prefixed by "Index of "
+ * \param  buffer	  buffer to fill with generated HTML
+ * \param  buffer_length  maximum size of buffer
+ * \return  true iff buffer filled without error
+ *
+ * This is part of a series of functions.  To generate a complete page,
+ * call the following functions in order:
+ *
+ *     dirlist_generate_top()
+ *     dirlist_generate_hide_columns()  -- optional
+ *     dirlist_generate_title()
+ *     dirlist_generate_parent_link()   -- optional
+ *     dirlist_generate_headings()
+ *     dirlist_generate_row()           -- call 'n' times for 'n' rows
+ *     dirlist_generate_bottom()
+ */
+
+bool dirlist_generate_title(char *title, char *buffer, int buffer_length)
+{
+	int error = snprintf(buffer, buffer_length,
+			"</style>\n"
+			"<title>Index of %s</title>\n"
+			"</head>\n"
+			"<body>\n"
+			"<h1>Index of %s</h1>\n",
+			title, title);
+	if (error < 0 || error >= buffer_length)
+		/* Error or buffer too small */
+		return false;
+	else
+		/* OK */
+		return true;
+}
+
+
+/**
+ * Generates the part of an HTML directory listing page that links to the parent
+ * directory
+ *
+ * \param  parent	  url of parent directory
+ * \param  buffer	  buffer to fill with generated HTML
+ * \param  buffer_length  maximum size of buffer
+ * \return  true iff buffer filled without error
+ *
+ * This is part of a series of functions.  To generate a complete page,
+ * call the following functions in order:
+ *
+ *     dirlist_generate_top()
+ *     dirlist_generate_hide_columns()  -- optional
+ *     dirlist_generate_title()
+ *     dirlist_generate_parent_link()   -- optional
+ *     dirlist_generate_headings()
+ *     dirlist_generate_row()           -- call 'n' times for 'n' rows
+ *     dirlist_generate_bottom()
+ */
+
+bool dirlist_generate_parent_link(char *parent, char *buffer, int buffer_length)
+{
+	int error = snprintf(buffer, buffer_length,
+			"<p><a href=\"%s\">%s</a></p>",
+			parent, messages_get("FileParent"));
+	if (error < 0 || error >= buffer_length)
+		/* Error or buffer too small */
+		return false;
+	else
+		/* OK */
+		return true;
+}
+
+
+/**
+ * Generates the part of an HTML directory listing page that displays the column
+ * headings
+ *
+ * \param  buffer	  buffer to fill with generated HTML
+ * \param  buffer_length  maximum size of buffer
+ * \return  true iff buffer filled without error
+ *
+ * This is part of a series of functions.  To generate a complete page,
+ * call the following functions in order:
+ *
+ *     dirlist_generate_top()
+ *     dirlist_generate_hide_columns()  -- optional
+ *     dirlist_generate_title()
+ *     dirlist_generate_parent_link()   -- optional
+ *     dirlist_generate_headings()
+ *     dirlist_generate_row()           -- call 'n' times for 'n' rows
+ *     dirlist_generate_bottom()
+ */
+
+bool dirlist_generate_headings(char *buffer, int buffer_length)
+{
+	int error = snprintf(buffer, buffer_length,
+			"<div>\n<strong>"
+			"<span class=\"name\">%s</span> "
+			"<span class=\"type\">%s</span> "
+			"<span class=\"size\">%s</span>"
+			"<span class=\"size\"></span> "
+			"<span class=\"date\">%s</span> "
+			"<span class=\"time\">%s</span></strong>\n",
+			messages_get("FileName"), messages_get("FileType"),
+			messages_get("FileSize"), messages_get("FileDate"),
+			messages_get("FileTime"));
+	if (error < 0 || error >= buffer_length)
+		/* Error or buffer too small */
+		return false;
+	else
+		/* OK */
+		return true;
+}
+
+
+/**
+ * Generates the part of an HTML directory listing page that displays a row
+ * in the directory contents table
+ *
+ * \param  even		  evenness of row number, for alternate row colouring
+ * \param  directory	  whether this row is for a directory (or a file)
+ * \param  url		  url for row entry
+ * \param  name		  name of row entry
+ * \param  type		  MIME type of row entry
+ * \param  size		  size of row entry.  If negative, size is left blank
+ * \param  date		  date row entry was last modified
+ * \param  time		  time row entry was last modified
+ * \param  buffer	  buffer to fill with generated HTML
+ * \param  buffer_length  maximum size of buffer
+ * \return  true iff buffer filled without error
+ *
+ * This is part of a series of functions.  To generate a complete page,
+ * call the following functions in order:
+ *
+ *     dirlist_generate_top()
+ *     dirlist_generate_hide_columns()  -- optional
+ *     dirlist_generate_title()
+ *     dirlist_generate_parent_link()   -- optional
+ *     dirlist_generate_headings()
+ *     dirlist_generate_row()           -- call 'n' times for 'n' rows
+ *     dirlist_generate_bottom()
+ */
+
+bool dirlist_generate_row(bool even, bool directory, char *url, char *name,
+		char *type, long long size, char *date, char *time,
+		char *buffer, int buffer_length)
+{
+	const char *unit;
+	char size_string[100];
+
+	if (size < 0) {
+		unit = "";
+		strncpy(size_string, "", sizeof size_string);
+	} else {
+		unit = messages_get(dirlist_filesize_unit((unsigned long)size));
+		snprintf(size_string, sizeof size_string, "%d",
+				dirlist_filesize_value((unsigned long)size));
+	}
+
+	int error = snprintf(buffer, buffer_length,
+			"<a href=\"%s\" class=\"%s %s\">"
+			"<span class=\"name\">%s</span> "
+			"<span class=\"type\">%s</span> "
+			"<span class=\"size\">%s</span>"
+			"<span class=\"size\">%s</span> "
+			"<span class=\"date\">%s</span> "
+			"<span class=\"time\">%s</span></a>\n",
+			url, even ? "even" : "odd",
+			directory ? "dir" : "file",
+			name, type, size_string, unit, date, time);
+	if (error < 0 || error >= buffer_length)
+		/* Error or buffer too small */
+		return false;
+	else
+		/* OK */
+		return true;
+}
+
+
+/**
+ * Generates the bottom part of an HTML directroy listing page
+ *
+ * \return  Bottom of directory listing HTML
+ *
+ * This is part of a series of functions.  To generate a complete page,
+ * call the following functions in order:
+ *
+ *     dirlist_generate_top()
+ *     dirlist_generate_hide_columns()  -- optional
+ *     dirlist_generate_title()
+ *     dirlist_generate_parent_link()   -- optional
+ *     dirlist_generate_headings()
+ *     dirlist_generate_row()           -- call 'n' times for 'n' rows
+ *     dirlist_generate_bottom()
+ */
+
+const char* dirlist_generate_bottom(void)
+{
+	return	"</div>\n"
+		"</body>\n"
+		"</html>\n";
+}
+
 
 /**
  * Obtain display value and units for filesize after conversion to B/kB/MB/GB,
@@ -93,7 +365,7 @@ bool directory_create(struct content *c, const struct http_parameter *params) {
  * \return  number of times bytesize has been divided by 1024
  */
 
-int filesize_calculate(unsigned long *bytesize)
+int dirlist_filesize_calculate(unsigned long *bytesize)
 {
 	int i = 0;
 	while (*bytesize > 1024 * 4) {
@@ -105,6 +377,7 @@ int filesize_calculate(unsigned long *bytesize)
 	return i;
 }
 
+
 /**
  * Obtain display value for filesize after conversion to B/kB/MB/GB,
  * as appropriate
@@ -113,11 +386,12 @@ int filesize_calculate(unsigned long *bytesize)
  * \return  Value to display for file size, in units given by filesize_unit()
  */
 
-int filesize_value(unsigned long bytesize)
+int dirlist_filesize_value(unsigned long bytesize)
 {
-	filesize_calculate(&bytesize);
+	dirlist_filesize_calculate(&bytesize);
 	return (int)bytesize;
 }
+
 
 /**
  * Obtain display units for filesize after conversion to B/kB/MB/GB,
@@ -127,9 +401,24 @@ int filesize_value(unsigned long bytesize)
  * \return  Units to display for file size, for value given by filesize_value()
  */
 
-char* filesize_unit(unsigned long bytesize)
+char* dirlist_filesize_unit(unsigned long bytesize)
 {
-	return sizeunits[filesize_calculate(&bytesize)];
+	const char* units[] = { "Bytes", "kBytes", "MBytes", "GBytes" };
+	return (char*)units[dirlist_filesize_calculate(&bytesize)];
+}
+
+
+bool directory_create(struct content *c, const struct http_parameter *params) {
+	if (!html_create(c, params))
+		/* html_create() must have broadcast MSG_ERROR already, so we
+		* don't need to. */
+		return false;
+
+	binding_parse_chunk(c->data.html.parser_binding,
+			(uint8_t *) dirlist_generate_top(),
+			strlen(dirlist_generate_top()));
+
+	return true;
 }
 
 bool directory_convert(struct content *c) {
@@ -140,7 +429,7 @@ bool directory_convert(struct content *c) {
 	char buffer[MAX_LENGTH];
 	char *nice_path, *cnv, *tmp;
 	url_func_result res;
-	bool compare;
+	bool compare, directory;
 	char *up;
 	struct stat filestat;
 	char *filepath, *mimetype = NULL;
@@ -149,6 +438,7 @@ bool directory_convert(struct content *c) {
 	int urlpath_size;
 	char moddate[100];
 	char modtime[100];
+	long long filesize;
 	bool extendedinfo, evenrow = false;
 
 	/* Get directory path from URL */
@@ -184,10 +474,11 @@ bool directory_convert(struct content *c) {
 	}
 	*cnv = '\0';
 
+	/* Set which columns to suppress */
+	dirlist_generate_hide_columns(0, buffer, MAX_LENGTH);
+
 	/* Print document title and heading */
-	snprintf(buffer, sizeof(buffer), "Index of %s</title>\n</head>\n"
-			"<body>\n<h1>Index of %s</h1>\n",
-			nice_path, nice_path);
+	dirlist_generate_title(nice_path, buffer, MAX_LENGTH);
 	free(nice_path);
 
 	binding_parse_chunk(c->data.html.parser_binding,
@@ -198,9 +489,7 @@ bool directory_convert(struct content *c) {
 	if (res == URL_FUNC_OK) {
 		res = url_compare(content__get_url(c), up, false, &compare);
 		if ((res == URL_FUNC_OK) && !compare) {
-			snprintf(buffer, sizeof(buffer),
-				"<p><a href=\"%s\">%s</a></p>",
-				up, messages_get("FileParent"));
+			dirlist_generate_parent_link(up, buffer, MAX_LENGTH);
 
 			binding_parse_chunk(c->data.html.parser_binding,
 					(uint8_t *) buffer, strlen(buffer));
@@ -209,16 +498,7 @@ bool directory_convert(struct content *c) {
 	}
 
 	/* Print directory contents table column headings */
-	snprintf(buffer, sizeof(buffer),
-		"<div>\n<strong>"
-		"<span class=\"name\">%s</span> "
-		"<span class=\"type\">%s</span> "
-		"<span class=\"size\">%s</span><span class=\"size\"></span> "
-		"<span class=\"date\">%s</span> "
-		"<span class=\"time\">%s</span></strong>\n",
-		messages_get("FileName"), messages_get("FileType"),
-		messages_get("FileSize"), messages_get("FileDate"),
-		messages_get("FileTime"));
+	dirlist_generate_headings(buffer, MAX_LENGTH);
 
 	binding_parse_chunk(c->data.html.parser_binding,
 			(uint8_t *) buffer, strlen(buffer));
@@ -257,7 +537,13 @@ bool directory_convert(struct content *c) {
 			return false;
 		}
 
-		urlpath_size = strlen(content__get_url(c)) + strlen(entry->d_name) + 2;
+		if (S_ISDIR(filestat.st_mode))
+			directory = true;
+		else
+			directory = false;
+
+		urlpath_size = strlen(content__get_url(c)) +
+				strlen(entry->d_name) + 2;
 		urlpath = malloc(urlpath_size);
 		if (urlpath != NULL) {
 			strcpy(urlpath, content__get_url(c));
@@ -265,65 +551,41 @@ bool directory_convert(struct content *c) {
 				strncat(urlpath, "/", urlpath_size);
 			strncat(urlpath, entry->d_name, urlpath_size);
 
-			/* Start row and print item name */
-			snprintf(buffer, sizeof(buffer),
-				"<a href=\"%s\" class=\"%s %s\">"
-				"<span class=\"name\">%s</span> ",
-				urlpath,
-				evenrow ? "even" : "odd",
-				S_ISDIR(filestat.st_mode) ? "dir" : "file",
-				entry->d_name);
-
-			binding_parse_chunk(c->data.html.parser_binding,
-					(uint8_t *) buffer, strlen(buffer));
-
 			if (extendedinfo == true) {
 				/* Get date in output format */
 				if (strftime((char *)&moddate, sizeof moddate,
 						"%a %d %b %Y",
-						localtime(&filestat.st_mtime)) == 0)
+						localtime(
+						&filestat.st_mtime)) == 0)
 					strncpy(moddate, "-", sizeof moddate);
 				/* Get time in output format */
 				if (strftime((char *)&modtime, sizeof modtime,
 						"%H:%M",
-						localtime(&filestat.st_mtime)) == 0)
+						localtime(
+						&filestat.st_mtime)) == 0)
 					strncpy(modtime, "-", sizeof modtime);
 
-				if (S_ISDIR(filestat.st_mode)) {
-					/* Directory: Print type and date/time */
-					snprintf(buffer, sizeof(buffer),
-						"<span class=\"type\">%s</span> "
-						"<span class=\"size\"></span>"
-						"<span class=\"size\"></span> "
-						"<span class=\"date\">%s</span> "
-						"<span class=\"time\">%s</span></a>\n",
-						messages_get("FileDirectory"),
-						moddate, modtime);
+				if (directory) {
+					mimetype = (char*)messages_get(
+							"FileDirectory");
+					filesize = -1;
 				} else {
-					/* File: Print type, size, and date/time */
 					mimetype = fetch_mimetype(filepath);
-					snprintf(buffer, sizeof(buffer),
-						"<span class=\"type\">%s</span> "
-						"<span class=\"size\">%d</span>"
-						"<span class=\"size\">%s</span> "
-						"<span class=\"date\">%s</span> "
-						"<span class=\"time\">%s</span></a>\n",
-						mimetype,
-						filesize_value(
-						(unsigned long)filestat.st_size),
-						messages_get(filesize_unit(
-						(unsigned long)filestat.st_size)),
-						moddate, modtime);
+					filesize = (long long)
+							filestat.st_size;
 				}
 			} else {
-				/* Not got info, print empty cells */
-				snprintf(buffer, sizeof(buffer),
-						"<span class=\"type\"></span> "
-						"<span class=\"size\"></span>"
-						"<span class=\"size\"></span> "
-						"<span class=\"date\"></span> "
-						"<span class=\"time\"></span></a>\n");
+				strncpy(moddate, "", sizeof moddate);
+				strncpy(modtime, "", sizeof modtime);
+				filesize = -1;
 			}
+			/* Print row */
+			dirlist_generate_row(evenrow, directory,
+					urlpath, entry->d_name,
+					mimetype ? mimetype : (char*)"",
+					filesize,
+					moddate, modtime,
+					buffer, MAX_LENGTH);
 
 			binding_parse_chunk(c->data.html.parser_binding,
 					(uint8_t *) buffer, strlen(buffer));
@@ -345,7 +607,8 @@ bool directory_convert(struct content *c) {
 	closedir(parent);
 
 	binding_parse_chunk(c->data.html.parser_binding,
-			(uint8_t *) footer, sizeof(footer) - 1);
+			(uint8_t *) dirlist_generate_bottom(),
+			strlen(dirlist_generate_bottom()));
 
 	c->type = CONTENT_HTML;
 	return html_convert(c);
