@@ -570,8 +570,8 @@ bool directory_convert(struct content *c) {
 					strncpy(modtime, "-", sizeof modtime);
 
 				if (directory) {
-					mimetype = (char*)messages_get(
-							"FileDirectory");
+					mimetype = strdup((char*)messages_get(
+							"FileDirectory"));
 					filesize = -1;
 				} else {
 					mimetype = fetch_mimetype(filepath);
