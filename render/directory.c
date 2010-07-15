@@ -1,6 +1,7 @@
 /*
  * Copyright 2006 Richard Wilson <info@tinct.net>
  * Copyright 2010 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2010 Michael Drake <tlsa@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -476,6 +477,9 @@ bool directory_convert(struct content *c) {
 
 	/* Set which columns to suppress */
 	dirlist_generate_hide_columns(0, buffer, MAX_LENGTH);
+
+	binding_parse_chunk(c->data.html.parser_binding,
+			(uint8_t *) buffer, strlen(buffer));
 
 	/* Print document title and heading */
 	dirlist_generate_title(nice_path, buffer, MAX_LENGTH);
