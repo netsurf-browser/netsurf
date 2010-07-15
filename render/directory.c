@@ -176,29 +176,13 @@ bool dirlist_generate_hide_columns(int flags, char *buffer, int buffer_length)
 
 bool dirlist_generate_title(char *title, char *buffer, int buffer_length)
 {
-	int error = 0;
-	int index_title_length = strlen(title) +
-			strlen(messages_get("FileIndex"));
-	char *index_title = malloc(index_title_length);
-
-	if(index_title == NULL)
-		/* Title buffer allocation error */
-		return false;
-
-	error = snprintf(index_title, index_title_length,
-			messages_get("FileIndex"),
-			title);
-	if (error < 0 || error >= index_title_length)
-		/* Error or buffer too small */
-		return false;
-
-	error = snprintf(buffer, buffer_length,
+	int error = snprintf(buffer, buffer_length,
 			"</style>\n"
 			"<title>%s</title>\n"
 			"</head>\n"
 			"<body>\n"
 			"<h1>%s</h1>\n",
-			index_title, index_title);
+			title, title);
 	if (error < 0 || error >= buffer_length)
 		/* Error or buffer too small */
 		return false;
@@ -439,6 +423,7 @@ bool directory_create(struct content *c, const struct http_parameter *params) {
 }
 
 bool directory_convert(struct content *c) {
+	int error = 0;
 	char *path;
 	DIR *parent;
 	struct dirent *entry;
@@ -457,6 +442,8 @@ bool directory_convert(struct content *c) {
 	char modtime[100];
 	long long filesize;
 	bool extendedinfo, evenrow = false;
+	char *index_title;
+	int index_title_length;
 
 	/* Get directory path from URL */
 	path = url_to_path(content__get_url(c));
@@ -497,9 +484,32 @@ bool directory_convert(struct content *c) {
 	binding_parse_chunk(c->data.html.parser_binding,
 			(uint8_t *) buffer, strlen(buffer));
 
+	/* Construct a localised title string */
+	index_title_length = strlen(nice_path) +
+			strlen(messages_get("FileIndex"));
+	index_title = malloc(index_title_length);
+
+	if(index_title == NULL) {
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		return false;
+	}
+
+	snprintf(index_title, index_title_length,
+				messages_get("FileIndex"),
+				nice_path);
+	if (error < 0 || error >= index_title_length) {
+		/* Error or buffer too small */
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		free(index_title);
+		return false;
+	}
+
 	/* Print document title and heading */
-	dirlist_generate_title(nice_path, buffer, MAX_LENGTH);
+	dirlist_generate_title(index_title, buffer, MAX_LENGTH);
 	free(nice_path);
+	free(index_title);
 
 	binding_parse_chunk(c->data.html.parser_binding,
 			(uint8_t *) buffer, strlen(buffer));
