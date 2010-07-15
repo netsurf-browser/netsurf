@@ -653,6 +653,7 @@ EncodingUnk:Unknown
 
 # Directory browser
 #
+FileIndex:Index of %s
 FileParent:^ Up to parent directory
 FileDirectory:Directory
 FileName:Name

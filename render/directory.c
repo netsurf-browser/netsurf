@@ -176,13 +176,29 @@ bool dirlist_generate_hide_columns(int flags, char *buffer, int buffer_length)
 
 bool dirlist_generate_title(char *title, char *buffer, int buffer_length)
 {
-	int error = snprintf(buffer, buffer_length,
+	int error = 0;
+	int index_title_length = strlen(title) +
+			strlen(messages_get("FileIndex"));
+	char *index_title = malloc(index_title_length);
+
+	if(index_title == NULL)
+		/* Title buffer allocation error */
+		return false;
+
+	error = snprintf(index_title, index_title_length,
+			messages_get("FileIndex"),
+			title);
+	if (error < 0 || error >= index_title_length)
+		/* Error or buffer too small */
+		return false;
+
+	error = snprintf(buffer, buffer_length,
 			"</style>\n"
-			"<title>Index of %s</title>\n"
+			"<title>%s</title>\n"
 			"</head>\n"
 			"<body>\n"
-			"<h1>Index of %s</h1>\n",
-			title, title);
+			"<h1>%s</h1>\n",
+			index_title, index_title);
 	if (error < 0 || error >= buffer_length)
 		/* Error or buffer too small */
 		return false;
