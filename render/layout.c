@@ -2286,16 +2286,14 @@ bool layout_line(struct box *first, int *width, int *y,
 				 * Float affects current line */
 				if (b->type == BOX_FLOAT_LEFT) {
 					b->x = cx + x0;
-					if (b->width > 0) {
+					if (b->width > 0)
 						x0 += b->width;
-						left = b;
-					}
+					left = b;
 				} else {
 					b->x = cx + x1 - b->width;
-					if (b->width > 0) {
+					if (b->width > 0)
 						x1 -= b->width;
-						right = b;
-					}
+					right = b;
 				}
 				b->y = cy;
 			} else {
@@ -2306,8 +2304,7 @@ bool layout_line(struct box *first, int *width, int *y,
 				fy = (fy > fcy) ? fy : fcy;
 				fy = (fy == cy) ? fy + height : fy;
 
-				place_float_below(b, *width,
-						cx, fy, cont);
+				place_float_below(b, *width, cx, fy, cont);
 				fy = b->y;
 				if (d->style && css_computed_clear(d->style) !=
 							CSS_CLEAR_NONE) {
