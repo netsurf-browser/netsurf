@@ -157,7 +157,7 @@ bool dirlist_generate_hide_columns(int flags, char *buffer, int buffer_length)
 /**
  * Generates the part of an HTML directory listing page that contains the title
  *
- * \param  title	  title to use, gets prefixed by "Index of "
+ * \param  title	  title to use
  * \param  buffer	  buffer to fill with generated HTML
  * \param  buffer_length  maximum size of buffer
  * \return  true iff buffer filled without error
@@ -423,7 +423,6 @@ bool directory_create(struct content *c, const struct http_parameter *params) {
 }
 
 bool directory_convert(struct content *c) {
-	int error = 0;
 	char *path;
 	DIR *parent;
 	struct dirent *entry;
@@ -442,8 +441,8 @@ bool directory_convert(struct content *c) {
 	char modtime[100];
 	long long filesize;
 	bool extendedinfo, evenrow = false;
-	char *index_title;
-	int index_title_length;
+	char *title;
+	int title_length;
 
 	/* Get directory path from URL */
 	path = url_to_path(content__get_url(c));
@@ -485,31 +484,22 @@ bool directory_convert(struct content *c) {
 			(uint8_t *) buffer, strlen(buffer));
 
 	/* Construct a localised title string */
-	index_title_length = strlen(nice_path) +
-			strlen(messages_get("FileIndex"));
-	index_title = malloc(index_title_length);
+	title_length = strlen(nice_path) + strlen(messages_get("FileIndex"));
+	title = malloc(title_length);
 
-	if(index_title == NULL) {
+	if(title == NULL) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
 	}
 
-	snprintf(index_title, index_title_length,
-				messages_get("FileIndex"),
-				nice_path);
-	if (error < 0 || error >= index_title_length) {
-		/* Error or buffer too small */
-		msg_data.error = messages_get("NoMemory");
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-		free(index_title);
-		return false;
-	}
+	/* Set title to localised "Index of <nice_path>" */
+	snprintf(title, title_length, messages_get("FileIndex"), nice_path);
 
 	/* Print document title and heading */
-	dirlist_generate_title(index_title, buffer, MAX_LENGTH);
+	dirlist_generate_title(title, buffer, MAX_LENGTH);
 	free(nice_path);
-	free(index_title);
+	free(title);
 
 	binding_parse_chunk(c->data.html.parser_binding,
 			(uint8_t *) buffer, strlen(buffer));
