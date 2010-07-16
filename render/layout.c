@@ -804,8 +804,8 @@ bool layout_block_object(struct box *block)
 			block->type == BOX_TABLE_CELL);
 	assert(block->object);
 
-	LOG(("block %p, object %s, width %i", block, block->object->url,
-			block->width));
+	LOG(("block %p, object %s, width %i", block,
+			content_get_url(block->object), block->width));
 
 	if (content_get_type(block->object) == CONTENT_HTML) {
 		content_reformat(block->object, block->width, 1);
