@@ -36,7 +36,7 @@
 #include "utils/utils.h"
 
 /** Define to enable tracing of llcache operations. */
-#undef LLCACHE_TRACE
+#define LLCACHE_TRACE
 
 /** State of a low-level cache object fetch */
 typedef enum {
