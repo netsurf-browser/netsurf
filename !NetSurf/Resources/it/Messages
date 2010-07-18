@@ -1,6 +1,6 @@
-# Italian messages for NetSurf 3.0 Development (Revision 10138)
+# Italian messages for NetSurf 2.6 Development (Revision 10646)
 # Translated by Samir Hawamdeh (http://www.betatesting.it/backforthefuture)
-# 13.04.2010
+# 16.07.2010
 # =========================================================================
 #
 # Description
@@ -658,14 +658,14 @@ EncodingUnk:Sconosciuto
 
 # Directory browser
 #
-FileIndex:Index of %s
-FileParent:^ Up to parent directory
+FileIndex:Indice di %s
+FileParent:^ Su di un livello
 FileDirectory:Directory
-FileName:Name
-FileSize:Size
-FileDate:Date
-FileTime:Time
-FileType:Type
+FileName:Nome
+FileSize:Dimensione
+FileDate:Data
+FileTime:Ora
+FileType:Tipo
 
 # Misc
 #
