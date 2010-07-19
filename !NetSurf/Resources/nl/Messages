@@ -463,7 +463,7 @@ gtkPrintPreview:Print Preview..
 gtkPrintPreviewAccel:<ctrl><shift>p
 gtkPrint:Print..
 gtkPrintAccel:<ctrl>p
-gtkQuit:_Quit
+gtkQuitMenu:_Quit
 gtkQuitAccel:<ctrl>q
 
 gtkCut:Cu_t

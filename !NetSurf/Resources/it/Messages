@@ -469,7 +469,7 @@ gtkPrintPreview:Anteprima di stampa...
 gtkPrintPreviewAccel:<ctrl><shift>p
 gtkPrint:Stampa...
 gtkPrintAccel:<ctrl>p
-gtkQuit:_Esci
+gtkQuitMenu:_Esci
 gtkQuitAccel:<ctrl>q
 
 gtkCut:Ta_glia
