@@ -71,18 +71,46 @@ NetSurf's ARexx port is called NETSURF.
 
 Commands are:
 
-@{b}OPEN URL/A,NEW=NEWWINDOW/S,SAVEAS/K@{ub} Opens URL in current window or a new window if NEWWINDOW is specified.  Saves the location without displaying if SAVEAS and a filename is specified (SAVEAS available in 2.6325)
-@{b}SAVE FILENAME/A@{ub} (2.6027) Saves current page source to FILENAME
-@{b}QUIT@{ub} Quits NetSurf
-@{b}TOFRONT@{ub} Brings NetSurf's screen to the front
-@{b}GETURL@{ub} Puts the URL displayed in the current window/tab into RESULT
-@{b}GETTITLE@{ub} Puts the title of the page displayed in the current window/tab into RESULT
-@{b}GETSCREENNAME@{ub} (2.8303) Puts the name of the screen NetSurf is running on into RESULT.
-@{b}BACK@{ub} (2.10626) Move back one page in history.
-@{b}FORWARD@{ub} (2.10626) Move forward one page in history.
-@{b}HOME@{ub} (2.10626) Move back to the home page.
-@{b}RELOAD FORCE/S@{ub} (2.10626) Reload the current page, FORCE will do a full reload.
-@{b}VERSION VERSION/N REVISION/N RELEASE/S@{ub} Returns the current version of NetSurf in RESULT.  You can also do version checking by supplying a VERSION and optional REVISION to check against.  If the version of NetSurf is the same or higher 1 will be returned, if it is older 0.  If RELEASE is specified, the command operates on the release version rather than the internal version number.
+@{b}OPEN URL/A,NEW=NEWWINDOW/S,NEWTAB/S,SAVEAS/K,WINDOW/K/N,TAB/K/N@{ub}
+Opens URL in current window or a new window/tab if NEWWINDOW/NEWTAB is specified.  Saves the location without displaying if SAVEAS and a filename is specified (SAVEAS available in 2.6325)
+
+@{b}SAVE FILENAME/A,WINDOW/K/N,TAB/K/N@{ub} (2.6027)
+Saves current page source to FILENAME
+
+@{b}QUIT@{ub}
+Quits NetSurf
+
+@{b}TOFRONT@{ub}
+Brings NetSurf's screen to the front
+
+@{b}GETURL WINDOW/K/N,TAB/K/N@{ub}
+Puts the URL displayed in the current window/tab into RESULT
+
+@{b}GETTITLE WINDOW/K/N,TAB/K/N@{ub}
+Puts the title of the page displayed in the current window/tab into RESULT
+
+@{b}GETSCREENNAME@{ub} (2.8303)
+Puts the name of the screen NetSurf is running on into RESULT.
+
+@{b}BACK WINDOW/K/N,TAB/K/N@{ub} (2.10626)
+Move back one page in history.
+
+@{b}FORWARD WINDOW/K/N,TAB/K/N@{ub} (2.10626)
+Move forward one page in history.
+
+@{b}HOME WINDOW/K/N,TAB/K/N@{ub} (2.10626)
+Move back to the home page.
+
+@{b}RELOAD FORCE/S,WINDOW/K/N,TAB/K/N@{ub} (2.10626)
+Reload the current page, FORCE will do a full reload.
+
+@{b}VERSION VERSION/N REVISION/N RELEASE/S@{ub}
+Returns the current version of NetSurf in RESULT.  You can also do version checking by supplying a VERSION and optional REVISION to check against.  If the version of NetSurf is the same or higher 1 will be returned, if it is older 0.  If RELEASE is specified, the command operates on the release version rather than the internal version number.
+
+@{b}WINDOWS WINDOW/K/N@{ub} (2.10656)
+Puts the number of windows into RESULT.  If the WINDOW keyword is specified, will put the number of tabs in that window into RESULT.
+
+The WINDOW/K/N,TAB/K/N parameters were added in 2.10656 and allow targetting a window other than the current one.  Both WINDOW and TAB must be specified (TAB=1 for tabless window)
 
 The ARexx menu will be populated with scripts named #?.nsrx in @{"arexx_dir" link options 9}, up to a maximum of 20 entries.  The titles of these entries will be the comments field of the file (or the filename if comments field is empty).
 @endnode

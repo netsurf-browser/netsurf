@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-9 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2010 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -21,11 +21,15 @@
 #include <string.h>
 #include <proto/intuition.h>
 #include "desktop/browser.h"
+#include "desktop/history_core.h"
 #include "amiga/gui.h"
 #include <proto/dos.h>
 #include <proto/exec.h>
 #include "amiga/download.h"
 #include "amiga/options.h"
+
+#include <proto/clicktab.h>
+#include <gadgets/clicktab.h>
 
 const char * const verarexx;
 const int verver;
@@ -47,7 +51,8 @@ enum
 	RX_BACK,
 	RX_FORWARD,
 	RX_HOME,
-	RX_RELOAD
+	RX_RELOAD,
+	RX_WINDOWS
 };
 
 STATIC char result[100];
@@ -64,21 +69,23 @@ STATIC VOID rx_back(struct ARexxCmd *, struct RexxMsg *);
 STATIC VOID rx_forward(struct ARexxCmd *, struct RexxMsg *);
 STATIC VOID rx_home(struct ARexxCmd *, struct RexxMsg *);
 STATIC VOID rx_reload(struct ARexxCmd *, struct RexxMsg *);
+STATIC VOID rx_windows(struct ARexxCmd *, struct RexxMsg *);
 
 STATIC struct ARexxCmd Commands[] =
 {
-	{"OPEN",RX_OPEN,rx_open,"URL/A,NEW=NEWWINDOW/S,SAVEAS/K", 		0, 	NULL, 	0, 	0, 	NULL },
+	{"OPEN",RX_OPEN,rx_open,"URL/A,NEW=NEWWINDOW/S,NEWTAB/S,SAVEAS/K,WINDOW/K/N,TAB/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
 	{"QUIT",RX_QUIT,rx_quit,NULL, 		0, 	NULL, 	0, 	0, 	NULL },
 	{"TOFRONT",RX_TOFRONT,rx_tofront,NULL, 		0, 	NULL, 	0, 	0, 	NULL },
-	{"GETURL",RX_GETURL,rx_geturl,NULL, 		0, 	NULL, 	0, 	0, 	NULL },
-	{"GETTITLE",RX_GETTITLE,rx_gettitle,NULL, 		0, 	NULL, 	0, 	0, 	NULL },
+	{"GETURL",RX_GETURL,rx_geturl,	"WINDOW/K/N,TAB/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
+	{"GETTITLE",RX_GETTITLE,rx_gettitle,	"WINDOW/K/N,TAB/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
 	{"VERSION",RX_VERSION,rx_version,"VERSION/N,SVN=REVISION/N,RELEASE/S", 		0, 	NULL, 	0, 	0, 	NULL },
-	{"SAVE",RX_SAVE,rx_save,"FILENAME/A", 		0, 	NULL, 	0, 	0, 	NULL },
+	{"SAVE",RX_SAVE,rx_save,"FILENAME/A,WINDOW/K/N,TAB/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
 	{"GETSCREENNAME",RX_PUBSCREEN,rx_pubscreen,NULL, 		0, 	NULL, 	0, 	0, 	NULL },
-	{"BACK",	RX_BACK,	rx_back,	"WINDOW/K/N, TAB/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
-	{"FORWARD",	RX_FORWARD,	rx_forward,	"WINDOW/K/N, TAB/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
-	{"HOME",	RX_HOME,	rx_home,	"WINDOW/K/N, TAB/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
-	{"RELOAD",	RX_RELOAD,	rx_reload,	"FORCE/S, WINDOW/K/N, TAB/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
+	{"BACK",	RX_BACK,	rx_back,	"WINDOW/K/N,TAB/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
+	{"FORWARD",	RX_FORWARD,	rx_forward,	"WINDOW/K/N,TAB/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
+	{"HOME",	RX_HOME,	rx_home,	"WINDOW/K/N,TAB/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
+	{"RELOAD",	RX_RELOAD,	rx_reload,	"FORCE/S,WINDOW/K/N,TAB/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
+	{"WINDOWS",	RX_WINDOWS,	rx_windows,	"WINDOW/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
 	{ NULL, 		0, 				NULL, 		NULL, 		0, 	NULL, 	0, 	0, 	NULL }
 };
 
@@ -125,20 +132,77 @@ void ami_arexx_cleanup(void)
 	if(arexx_obj) DisposeObject(arexx_obj);
 }
 
+struct browser_window *ami_find_tab_gwin(struct gui_window_2 *gwin, int tab)
+{
+	int tabs = 0;
+	struct Node *ctab;
+	struct Node *ntab;
+	struct browser_window *bw;
+
+	if((tab == 0) || (gwin->tabs == 0)) return gwin->bw;
+
+	ctab = GetHead(&gwin->tab_list);
+
+	do
+	{
+		tabs++;
+		ntab=GetSucc(ctab);
+		GetClickTabNodeAttrs(ctab,
+							TNA_UserData, &bw,
+							TAG_DONE);
+		if(tabs == tab) return bw;
+	} while(ctab=ntab);
+
+	return NULL;
+}
+
+struct browser_window *ami_find_tab(int window, int tab)
+{
+	int windows = 0, tabs = 0;
+	struct nsObject *node, *nnode;
+	struct gui_window_2 *gwin;
+
+	if(!IsMinListEmpty(window_list))
+	{
+		node = (struct nsObject *)GetHead((struct List *)window_list);
+
+		do
+		{
+			nnode=(struct nsObject *)GetSucc((struct Node *)node);
+
+			if(node->Type == AMINS_WINDOW)
+			{
+				windows++;
+				if(windows == window)
+					return ami_find_tab_gwin(node->objstruct, tab);
+			}
+		} while(node = nnode);
+	}
+	return NULL;
+}
+
 STATIC VOID rx_open(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
 	struct dlnode *dln;
+	struct browser_window *bw = curbw;
 
-	if(cmd->ac_ArgList[2])
+	if((cmd->ac_ArgList[4]) && (cmd->ac_ArgList[5]))
+		bw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[4], *(ULONG *)cmd->ac_ArgList[5]);
+
+	if(cmd->ac_ArgList[3])
 	{
-		if(!curbw) return;
+		if(!bw) return;
 
 		dln = AllocVec(sizeof(struct dlnode),MEMF_PRIVATE | MEMF_CLEAR);
-		dln->filename = strdup((char *)cmd->ac_ArgList[2]);
+		dln->filename = strdup((char *)cmd->ac_ArgList[3]);
 		dln->node.ln_Name = strdup((char *)cmd->ac_ArgList[0]);
 		dln->node.ln_Type = NT_USER;
-		AddTail(&curbw->window->dllist,dln);
-		if(!curbw->download) browser_window_download(curbw,(char *)cmd->ac_ArgList[0],NULL);
+		AddTail(&bw->window->dllist,dln);
+		if(!bw->download) browser_window_download(curbw,(char *)cmd->ac_ArgList[0],NULL);
+	}
+	else if(cmd->ac_ArgList[2])
+	{
+		browser_window_create((char *)cmd->ac_ArgList[0],NULL,NULL,true,true);
 	}
 	else if(cmd->ac_ArgList[1])
 	{
@@ -146,9 +210,9 @@ STATIC VOID rx_open(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 	}
 	else
 	{
-		if(curbw)
+		if(bw)
 		{
-			browser_window_go(curbw,(char *)cmd->ac_ArgList[0],NULL,true);
+			browser_window_go(bw,(char *)cmd->ac_ArgList[0],NULL,true);
 		}
 		else
 		{
@@ -162,19 +226,24 @@ STATIC VOID rx_save(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 	BPTR fh = 0;
 	ULONG source_size;
 	char *source_data;
-	if(!curbw) return;
+	struct browser_window *bw = curbw;
 
-	ami_update_pointer(curbw->window->shared->win,GUI_POINTER_WAIT);
+	if((cmd->ac_ArgList[1]) && (cmd->ac_ArgList[2]))
+		bw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[1], *(ULONG *)cmd->ac_ArgList[2]);
+
+	if(!bw) return;
+
+	ami_update_pointer(bw->window->shared->win,GUI_POINTER_WAIT);
 	if(fh = FOpen(cmd->ac_ArgList[0],MODE_NEWFILE,0))
 	{
-		if(source_data = content_get_source_data(curbw->current_content, &source_size))
+		if(source_data = content_get_source_data(bw->current_content, &source_size))
 			FWrite(fh, source_data, 1, source_size);
 
 		FClose(fh);
-		SetComment(cmd->ac_ArgList[0], content_get_url(curbw->current_content));
+		SetComment(cmd->ac_ArgList[0], content_get_url(bw->current_content));
 	}
 
-	ami_update_pointer(curbw->window->shared->win,GUI_POINTER_DEFAULT);
+	ami_update_pointer(bw->window->shared->win,GUI_POINTER_DEFAULT);
 }
 
 STATIC VOID rx_quit(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
@@ -189,9 +258,14 @@ STATIC VOID rx_tofront(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((
 
 STATIC VOID rx_geturl(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
-	if(curbw && curbw->current_content)
+	struct browser_window *bw = curbw;
+
+	if((cmd->ac_ArgList[0]) && (cmd->ac_ArgList[1]))
+		bw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[0], *(ULONG *)cmd->ac_ArgList[1]);
+
+	if(bw && bw->current_content)
 	{
-		strcpy(result, content_get_url(curbw->current_content));
+		strcpy(result, content_get_url(bw->current_content));
 	}
 	else
 	{
@@ -203,9 +277,17 @@ STATIC VOID rx_geturl(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((u
 
 STATIC VOID rx_gettitle(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
-	if(curbw)
+	struct browser_window *bw = curbw;
+
+	if((cmd->ac_ArgList[0]) && (cmd->ac_ArgList[1]))
+		bw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[0], *(ULONG *)cmd->ac_ArgList[1]);
+
+	if(bw)
 	{
-		strcpy(result,curbw->window->shared->win->Title);
+		if(bw->window->tabtitle)
+			strcpy(result,bw->window->tabtitle);
+		else
+			strcpy(result,bw->window->shared->win->Title);
 	}
 	else
 	{
@@ -295,45 +377,92 @@ STATIC VOID rx_pubscreen(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__
 
 STATIC VOID rx_back(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
-	if(curbw)
+	struct browser_window *bw = curbw;
+
+	if((cmd->ac_ArgList[0]) && (cmd->ac_ArgList[1]))
+		bw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[0], *(ULONG *)cmd->ac_ArgList[1]);
+
+	if(bw)
 	{
-		if(browser_window_back_available(curbw))
+		if(browser_window_back_available(bw))
 		{
-			history_back(curbw, curbw->history);
+			history_back(bw, bw->history);
 		}
 	}
 }
 
 STATIC VOID rx_forward(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
-	if(curbw)
+	struct browser_window *bw = curbw;
+
+	if((cmd->ac_ArgList[0]) && (cmd->ac_ArgList[1]))
+		bw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[0], *(ULONG *)cmd->ac_ArgList[1]);
+
+	if(bw)
 	{
-		if(browser_window_forward_available(curbw))
+		if(browser_window_forward_available(bw))
 		{
-			history_forward(curbw, curbw->history);
+			history_forward(bw, bw->history);
 		}
 	}
 }
 
 STATIC VOID rx_home(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
-	if(curbw)
-	{
-		browser_window_go(curbw, option_homepage_url, NULL, true);
-	}
+	struct browser_window *bw = curbw;
+
+	if((cmd->ac_ArgList[0]) && (cmd->ac_ArgList[1]))
+		bw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[0], *(ULONG *)cmd->ac_ArgList[1]);
+
+	if(bw) browser_window_go(bw, option_homepage_url, NULL, true);
 }
 
 STATIC VOID rx_reload(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
-	if(curbw)
+	struct browser_window *bw = curbw;
+
+	if((cmd->ac_ArgList[1]) && (cmd->ac_ArgList[2]))
+		bw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[1], *(ULONG *)cmd->ac_ArgList[2]);
+
+	if(bw)
 	{
 		if(cmd->ac_ArgList[0]) /* FORCE */
 		{
-			browser_window_reload(curbw, true);
+			browser_window_reload(bw, true);
 		}
 		else
 		{
-			browser_window_reload(curbw, false);
+			browser_window_reload(bw, false);
 		}
 	}
+}
+
+STATIC VOID rx_windows(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
+{
+	int windows = 0, tabs = 0;
+	struct nsObject *node, *nnode;
+	struct gui_window_2 *gwin;
+
+	if(!IsMinListEmpty(window_list))
+	{
+		node = (struct nsObject *)GetHead((struct List *)window_list);
+
+		do
+		{
+			nnode=(struct nsObject *)GetSucc((struct Node *)node);
+
+			gwin = node->objstruct;
+
+			if(node->Type == AMINS_WINDOW)
+			{
+				windows++;
+				if((cmd->ac_ArgList[0]) && (*(ULONG *)cmd->ac_ArgList[0] == windows))
+					tabs = gwin->tabs;
+			}
+		} while(node = nnode);
+	}
+
+	if(cmd->ac_ArgList[0]) sprintf(result, "%ld", tabs);
+		else sprintf(result, "%ld", windows);
+	cmd->ac_Result = result;
 }
