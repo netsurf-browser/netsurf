@@ -38,6 +38,9 @@
 #include <gtk/gtk.h>
 #include <glade/glade.h>
 #include <hubbub/hubbub.h>
+#include <glib.h>
+#include <glib/gi18n.h>
+
 #include "content/content.h"
 #include "content/fetch.h"
 #include "content/fetchers/fetch_curl.h"
@@ -110,6 +113,112 @@ static void nsgtk_PDF_no_pass(GtkButton *w, gpointer data);
 
 #define THROBBER_FRAMES 9
 
+static char *
+nsgtk_vsfindfile(char *str, const char *format, va_list ap)
+{
+	char *realpathname;
+	char *pathname;
+	int len;
+
+	pathname = malloc(PATH_MAX);
+	if (pathname == NULL)
+		return NULL; /* unable to allocate memory */
+
+	len = vsnprintf(pathname, PATH_MAX, format, ap);
+
+	if ((len < 0) || (len >= PATH_MAX)) {
+		/* error or output exceeded PATH_MAX length so
+		 * operation is doomed to fail.
+		 */
+		free(pathname);
+		return NULL;
+	}
+
+	realpathname = realpath(pathname, str);
+	
+	free(pathname);
+	
+	if (realpathname != NULL) {
+		/* sucessfully expanded pathname */
+		if (access(realpathname, R_OK) != 0) {
+			/* unable to read the file */
+			return NULL;
+		}	
+	}
+
+	return realpathname;
+}
+
+static char *
+nsgtk_sfindfile(char *str, const char *format, ...)
+{
+	va_list ap;
+	char *ret;
+
+	va_start(ap, format);
+	ret = nsgtk_vsfindfile(str, format, ap);
+	va_end(ap);
+
+	return ret;
+}
+
+/* create a normalised path 
+ *
+ * if the file described by the format exists and is accessible the
+ * normalised path is returned or NULL if not.
+ */
+static char *
+nsgtk_findfile(const char *format, ...)
+{
+	char *str;
+	char *ret;
+	va_list ap;
+
+	str = malloc(PATH_MAX);
+	if (str == NULL)
+		return NULL; /* unable to allocate memory */
+
+	va_start(ap, format);
+	ret = nsgtk_vsfindfile(str, format, ap);
+	va_end(ap);
+
+	if (ret == NULL)
+		free(str);
+
+	return ret;
+}
+
+
+static char *
+nsgtk_find_messages(void)
+{
+	int lang_loop = 0;
+	char *buf;
+	const gchar * const *lang_list;
+
+	lang_list = g_get_language_names();
+
+	while (lang_list[lang_loop] != NULL) {
+		buf = nsgtk_findfile("%s/%s/Messages", getenv("NETSURFRES"), lang_list[lang_loop]);
+
+		if (buf != NULL)
+			return buf;
+
+		buf = nsgtk_findfile("%s/%s/Messages", GTK_RESPATH, lang_list[lang_loop]);
+		if (buf != NULL)
+			return buf;
+
+		lang_loop++;
+	}
+
+	buf = nsgtk_findfile("./gtk/res/en/Messages");
+	if (buf != NULL)
+		return buf;
+
+	buf = strdup("./gtk/res/messages");
+
+	return buf;
+}
 
 /**
  * Locate a shared resource file by searching known places in order.
@@ -126,44 +235,24 @@ static void nsgtk_PDF_no_pass(GtkButton *w, gpointer data);
 static char *
 nsgtk_find_resource(char *buf, const char *filename, const char *def)
 {
-	char *cdir = getenv("HOME");
-	char t[PATH_MAX];
-
 	if (buf == NULL) {
 		buf = malloc(PATH_MAX);
 		if (buf == NULL)
 			return NULL;
 	}
 
-	if (cdir != NULL) {
-		strcpy(t, cdir);
-		strcat(t, "/.netsurf/");
-		strcat(t, filename);
-		if (realpath(t, buf) != NULL) {
-                        if (access(buf, R_OK) == 0)
-                                return buf;
-                }
-	}
+	if (nsgtk_sfindfile(buf, "%s/.netsurf/%s", getenv("HOME"), filename) != NULL)
+		return buf;
 
-	cdir = getenv("NETSURFRES");
+	if (nsgtk_sfindfile(buf, "%s/%s", getenv("NETSURFRES"), filename) != NULL)
+		return buf;
 
-	if (cdir != NULL) {
-		if (realpath(cdir, buf) != NULL) {
-                        strcat(buf, "/");
-                        strcat(buf, filename);
-                        if (access(buf, R_OK) == 0)
-                                return buf;
-                }
-	}
+	if (nsgtk_sfindfile(buf, "%s/%s", GTK_RESPATH, filename) != NULL)
+		return buf;
 
-	strcpy(t, GTK_RESPATH);
-	strcat(t, filename);
-	if (realpath(t, buf) != NULL) {
-                if (access(buf, R_OK) == 0)
-                        return buf;
-        }
 
 	if (def[0] == '~') {
+		char t[PATH_MAX];
 		snprintf(t, PATH_MAX, "%s%s", getenv("HOME"), def + 1);
 		if (realpath(t, buf) == NULL) {
                         strcpy(buf, t);
@@ -381,7 +470,7 @@ void nsgtk_init_glade(void)
 int main(int argc, char** argv)
 {
 	char options[PATH_MAX];
-	char messages[PATH_MAX];
+	char *messages;
 
 	/* Some modern distributions can set ALL_PROXY/all_proxy if configured
 	 * to by the user.  Due to a bug in many versions of libcurl
@@ -399,9 +488,10 @@ int main(int argc, char** argv)
         /* set standard error to be non-buffering */
 	setbuf(stderr, NULL);
 
-	nsgtk_find_resource(messages, "messages", "./gtk/res/messages");
 	nsgtk_find_resource(options, "Choices", "~/.netsurf/Choices");
 	options_file_location = strdup(options);
+
+	messages = nsgtk_find_messages();
 
 	/* initialise netsurf */
 	netsurf_init(&argc, &argv, options, messages);
@@ -411,6 +501,8 @@ int main(int argc, char** argv)
 	netsurf_main_loop();
 
 	netsurf_exit();
+
+	free(messages);
 
 	return 0;
 }
