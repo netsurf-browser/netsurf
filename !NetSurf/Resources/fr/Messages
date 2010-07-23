@@ -401,150 +401,150 @@ amiDownloadComplete:NetSurf: Download completed
 # download window.
 #
 
-gtkSizeInfo:%s of %s
-gtkProgressBar:%.0f%% of %u files
-gtkProgressBarPulse:Downloading %u files
-gtkProgressBarPulseSingle:Downloading %u file
+gtkSizeInfo:%s de %s
+gtkProgressBar:%.0f%% de %u fichiers
+gtkProgressBarPulse:Tèlèchargement %u fichiers
+gtkProgressBarPulseSingle:Téléchargement %u fichier
 
 # Column Headers
 #
-gtkProgress:Progress
-gtkDetails:Details
-gtkSpeed:Speed
-gtkRemaining:Remaining
+gtkProgress:Progression
+gtkDetails:Détails
+gtkSpeed:Vitesse
+gtkRemaining:Reste
 
 # Status Messages
 # spaces necessary
 #
 
-gtkError: Error 
-gtkComplete: Complete 
-gtkCanceled: Canceled 
-gtkWorking: Working 
+gtkError: Erreur 
+gtkComplete: Terniné 
+gtkCanceled: Annulé 
+gtkWorking: en cours 
 
 # Dialogs
 #
-gtkQuit:Quit NetSurf?
-gtkDownloadsRunning:There are still downloads running, if you quit now these will be canceled and the files deleted.
-gtkStartDownload:Download file?
-gtkOverwrite:A file named "%s" already exists.  Do you want to replace it?
-gtkOverwriteInfo:The file already exists in "%s".  Replacing it will overwrite its contents.
-gtkFailed:Download failed
-gtkFileError:File error: %s
-gtkInfo:%s from %s is %s in size
-gtkSave:Save file as...
-gtkSourceSave:Save Source
-gtkSourceTabError:Error handling source data 
-gtkPlainSave:Save as text
-gtkFullSave:Save webpage complete - select an empty directory
-gtkUnknownHost:an unknown host
+gtkQuit:Quitter NetSurf?
+gtkDownloadsRunning:Il ya encore des téléchargements en cours, si vous quittez maintenant ceux-ci seront annulés et les fichiers supprimés.
+gtkStartDownload:Téléchargement du fichier?
+gtkOverwrite:Un fichier nommé "%s" existe déja. Voulez-vous le remplacer ?
+gtkOverwriteInfo:Le fichier existe déja dans "%s". Son remplacement réécrira son contenu.
+gtkFailed:Echec du téléchargement
+gtkFileError:Erreur de fichier: %s
+gtkInfo:La taille de %s de %s est de %s
+gtkSave:Enregistrer le fichier sous...
+gtkSourceSave:Enregistrer la Source
+gtkSourceTabError:Erreur de manipulation des données source 
+gtkPlainSave:Enregistrer comme texte
+gtkFullSave:Enregistrer page web complète - sélectioner un dossier vide 
+gtkUnknownHost:un hôte inconnu
 gtkUnknownFile:
-gtkUnknownSize:unknown
+gtkUnknownSize:inconnu
 
 # gtk Menu / Button labels
 #
 
-gtkNewTab:New _Tab
+gtkNewTab:Nouvel _Onglet
 gtkNewTabAccel:<ctrl>t
-gtkNewWindow:_New Window
+gtkNewWindow:_Nouvelle Fenêtre
 gtkNewWindowAccel:<ctrl>n
-gtkOpenFile:_Open File
+gtkOpenFile:_Ouvrir un fichier
 gtkOpenFileAccel:<ctrl>o
-gtkCloseWindow:_Close Window
+gtkCloseWindow:_Fermer la fenêtre
 gtkCloseWindowAccel:<ctrl><shift>w
-gtkSavePage:Save Page..
+gtkSavePage:Enregistrer la Page..
 gtkSavePageAccel:<ctrl>s
-gtkExport:Export
-gtkPlainText:Plain Text..
-gtkDrawFile:Drawfile..
+gtkExport:Exporter
+gtkPlainText:Texte..
+gtkDrawFile:Dessin..
 gtkPostScript:PostScript..
 gtkPDF:PDF..
-gtkPrintPreview:Print Preview..
+gtkPrintPreview:Aperçu avant impression..
 gtkPrintPreviewAccel:<ctrl><shift>p
-gtkPrint:Print..
+gtkPrint:Imprimer..
 gtkPrintAccel:<ctrl>p
-gtkQuitMenu:_Quit
+gtkQuitMenu:_Quitter
 gtkQuitAccel:<ctrl>q
 
-gtkCut:Cu_t
+gtkCut:Cou_per
 gtkCutAccel:<ctrl>x
-gtkCopy:_Copy
+gtkCopy:_Copier
 gtkCopyAccel:<ctrl>c
-gtkPaste:_Paste
+gtkPaste:_Coller
 gtkPasteAccel:<ctrl>v
-gtkDelete:_Delete
-gtkSelectAll:Select _All
+gtkDelete:_Supprimer
+gtkSelectAll:_Tout sélectionner
 gtkSelectAllAccel:<ctrl>a
-gtkFind:_Find..
+gtkFind:_Rechercher..
 gtkFindAccel:<ctrl>f
-gtkPreferences:P_references
+gtkPreferences:P_références
 
 gtkStop:_Stop
 gtkStopAccel:Escape
-gtkReload:_Reload
+gtkReload:_Recharger
 gtkReloadAccel:F5
-gtkScaleView:_Scale View
-gtkZoomPlus:Zoom _in
+gtkScaleView:_Zoom
+gtkZoomPlus:Zoom _+
 gtkZoomPlusAccel:<ctrl>plus
-gtkZoomMinus:Zoom _out
+gtkZoomMinus:Zoom _-
 gtkZoomMinusAccel:<ctrl>minus
-gtkZoomNormal:_Normal size
+gtkZoomNormal:_Taille Normale
 gtkZoomNormalAccel:<ctrl>0
-gtkFullScreen:_Fullscreen
+gtkFullScreen:_Plein écran
 gtkFullScreenAccel:F11
-gtkViewSource:View S_ource
+gtkViewSource:Voir la S_ource
 gtkViewSourceAccel:F8
 gtkImages:_Images
-gtkForegroundImages:_Foreground Images
-gtkBackgroundImages:_Background Images
-gtkToolbars:_Toolbars
-gtkMenuBar:_Menu Bar
-gtkToolBar:_Button Bar
-gtkStatusBar:_Status Bar
-gtkDownloads:_Downloads
+gtkForegroundImages:_Images de premier plan
+gtkBackgroundImages:_Images d'arrière plan
+gtkToolbars:_Barre d'outils
+gtkMenuBar:_Barre de menu
+gtkToolBar:_Barre de boutons
+gtkStatusBar:_Bar de statut
+gtkDownloads:_Téléchargements
 gtkDownloadsAccel:<ctrl>d
-gtkSaveWindowSize:S_ave Window Size
-gtkDebugging:De_bugging
-gtkToggleDebugging:T_oggle debug rendering
+gtkSaveWindowSize:E_nregistrer la taille de la fenêtre
+gtkDebugging:D_ébogage
+gtkToggleDebugging:Activer le débogage
 gtkSaveBoxTree:_Save box tree
 gtkSaveDomTree:Save DOM tree
 
-gtkBack:_Back
+gtkBack:_Précédent
 gtkBackAccel:<alt>Left
-gtkForward:_Forward
+gtkForward:_Suivant
 gtkForwardAccel:<alt>Right
-gtkHome:_Home
+gtkHome:_Accueil
 gtkHomeAccel:<alt>Down
-gtkLocalHistory:_Local History
+gtkLocalHistory:_Historique local
 gtkLocalHistoryAccel:<ctrl>h
-gtkGlobalHistory:_Global History
+gtkGlobalHistory:_Historique global
 gtkGlobalHistoryAccel:<ctrl><shift>h
-gtkAddBookMarks:_Add to Bookmarks..
-gtkShowBookMarks:_Show Bookmarks..
+gtkAddBookMarks:_Ajouter un marque-page..
+gtkShowBookMarks:_Montrer les marques-pages..
 gtkShowBookMarksAccel:F6
-gtkOpenLocation:_Open Location..
+gtkOpenLocation:_Ouvrir un site..
 gtkOpenLocationAccel:<ctrl>l
 
-gtkNextTab:_Next tab
+gtkNextTab:_Onglet précédent
 gtkNextTabAccel:<ctrl>Right
-gtkPrevTab:_Previous tab
+gtkPrevTab:_Onglet suvant
 gtkPrevTabAccel:<ctrl>Left
-gtkCloseTab:_Close tab
+gtkCloseTab:_Fermer l'onglet
 gtkCloseTabAccel:<ctrl>w
 
-gtkContents:_Contents
-gtkGuide:User _guide
-gtkUserInformation:User _information
-gtkAbout:_About
+gtkContents:_Contenus
+gtkGuide:Guide _Utilisateur
+gtkUserInformation:_Information Utilisateur
+gtkAbout:_A propos...
 
 
-gtkToolBarTitle:Toolbar custom button store
-gtkAddThemeTitle:Select folder containing theme images
+gtkToolBarTitle:Personaliser la barre d'outils
+gtkAddThemeTitle:Sélectionner le dossier contenant des images de thèmes
 
-gtkThemeFolderInstructions:To Install a theme, create a directory full of appropriately-named images as a subdirectory of gtk/res/themes/
-gtkThemeFolderSub:Select a subdirectory of the themes folder
-gtkThemeDup:Theme is already included
-gtkThemeAdd:Theme added successfully
+gtkThemeFolderInstructions:Pour installer un thème, créer un dossier d'images avec un nom approprié comme sous-dossier de gtk/res/themes/
+gtkThemeFolderSub:Sélectionner un sous-dossier de thème
+gtkThemeDup:Le thème est déjà inclus
+gtkThemeAdd:Le thème a été ajouté avec succes
 
 # Printing user interface tokens
 # ==============================
@@ -1303,8 +1303,8 @@ con_memory:Mémoire
 con_secure:Sécurité
 con_theme:Thèmes
 con_general:General
-con_rendering:Rendering
-con_advanced:Advanced
+con_rendering:Rendu
+con_advanced:Avancé
 
 # General tab
 #
@@ -1315,7 +1315,7 @@ Use:Use
 HomePageURL:URL
 HomePageDefault:Use default page
 HomePageCurrent:Use current page
-ContentBlocking:Content blocking
+ContentBlocking:blocage de contenu
 BlockAds:Hide advertisements
 ContentLanguage:Content language
 LocaleLang:Get from Locale prefs
