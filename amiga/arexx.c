@@ -186,6 +186,8 @@ STATIC VOID rx_open(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 	struct dlnode *dln;
 	struct browser_window *bw = curbw;
 
+	cmd->ac_RC = 0;
+
 	if((cmd->ac_ArgList[4]) && (cmd->ac_ArgList[5]))
 		bw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[4], *(ULONG *)cmd->ac_ArgList[5]);
 
@@ -228,6 +230,8 @@ STATIC VOID rx_save(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 	char *source_data;
 	struct browser_window *bw = curbw;
 
+	cmd->ac_RC = 0;
+
 	if((cmd->ac_ArgList[1]) && (cmd->ac_ArgList[2]))
 		bw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[1], *(ULONG *)cmd->ac_ArgList[2]);
 
@@ -248,17 +252,21 @@ STATIC VOID rx_save(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 
 STATIC VOID rx_quit(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
+	cmd->ac_RC = 0;
 	ami_quit_netsurf();
 }
 
 STATIC VOID rx_tofront(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
+	cmd->ac_RC = 0;
 	ScreenToFront(scrn);
 }
 
 STATIC VOID rx_geturl(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
 	struct browser_window *bw = curbw;
+
+	cmd->ac_RC = 0;
 
 	if((cmd->ac_ArgList[0]) && (cmd->ac_ArgList[1]))
 		bw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[0], *(ULONG *)cmd->ac_ArgList[1]);
@@ -278,6 +286,8 @@ STATIC VOID rx_geturl(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((u
 STATIC VOID rx_gettitle(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
 	struct browser_window *bw = curbw;
+
+	cmd->ac_RC = 0;
 
 	if((cmd->ac_ArgList[0]) && (cmd->ac_ArgList[1]))
 		bw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[0], *(ULONG *)cmd->ac_ArgList[1]);
@@ -299,6 +309,8 @@ STATIC VOID rx_gettitle(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__(
 
 STATIC VOID rx_version(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
+	cmd->ac_RC = 0;
+
 	if(cmd->ac_ArgList[2])
 	{
 		if(cmd->ac_ArgList[1])
@@ -363,6 +375,8 @@ STATIC VOID rx_version(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((
 
 STATIC VOID rx_pubscreen(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
+	cmd->ac_RC = 0;
+
 	if(!option_use_pubscreen || option_use_pubscreen[0] == '\0')
 	{
 		strcpy(result,"NetSurf");
@@ -378,6 +392,8 @@ STATIC VOID rx_pubscreen(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__
 STATIC VOID rx_back(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
 	struct browser_window *bw = curbw;
+
+	cmd->ac_RC = 0;
 
 	if((cmd->ac_ArgList[0]) && (cmd->ac_ArgList[1]))
 		bw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[0], *(ULONG *)cmd->ac_ArgList[1]);
@@ -395,6 +411,8 @@ STATIC VOID rx_forward(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((
 {
 	struct browser_window *bw = curbw;
 
+	cmd->ac_RC = 0;
+
 	if((cmd->ac_ArgList[0]) && (cmd->ac_ArgList[1]))
 		bw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[0], *(ULONG *)cmd->ac_ArgList[1]);
 
@@ -411,6 +429,8 @@ STATIC VOID rx_home(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 {
 	struct browser_window *bw = curbw;
 
+	cmd->ac_RC = 0;
+
 	if((cmd->ac_ArgList[0]) && (cmd->ac_ArgList[1]))
 		bw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[0], *(ULONG *)cmd->ac_ArgList[1]);
 
@@ -420,6 +440,8 @@ STATIC VOID rx_home(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 STATIC VOID rx_reload(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
 	struct browser_window *bw = curbw;
+
+	cmd->ac_RC = 0;
 
 	if((cmd->ac_ArgList[1]) && (cmd->ac_ArgList[2]))
 		bw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[1], *(ULONG *)cmd->ac_ArgList[2]);
@@ -442,6 +464,8 @@ STATIC VOID rx_windows(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((
 	int windows = 0, tabs = 0;
 	struct nsObject *node, *nnode;
 	struct gui_window_2 *gwin;
+
+	cmd->ac_RC = 0;
 
 	if(!IsMinListEmpty(window_list))
 	{
