@@ -75,6 +75,11 @@ void ami_free_menulabs(void)
 	{
 		if(menulab[i] && (menulab[i] != NM_BARLABEL)) ami_utf8_free(menulab[i]);
 	}
+
+	for(i=AMI_MENU_MAX+1;i<=AMI_MENU_AREXX_MAX;i++)
+	{
+		if(menulab[i] && (menulab[i] != NM_BARLABEL)) free(menulab[i]);
+	}
 }
 
 void ami_init_menulabs(void)

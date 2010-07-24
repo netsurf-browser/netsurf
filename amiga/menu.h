@@ -61,7 +61,7 @@
 #define AMI_MENU_CLEAR FULLMENUNUM(1,5,0)
 #define AMI_MENU_FIND FULLMENUNUM(2,0,0)
 
-char *menulab[AMI_MENU_MAX+1];
+char *menulab[AMI_MENU_AREXX_MAX+1];
 
 struct NewMenu *ami_create_menu(ULONG type);
 void ami_init_menulabs(void);

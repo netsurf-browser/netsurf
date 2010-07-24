@@ -1,5 +1,5 @@
 /*
- * Copyright 2008,2009 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2010 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -156,10 +156,11 @@ bool gui_empty_clipboard(void)
 		else
 		{
 			PopChunk(iffh);
+			return false;
 		}
-//		CloseIFF(iffh);
+		return true;
 	}
-	return true;
+	return false;
 }
 
 bool gui_add_to_clipboard(const char *text, size_t length, bool space)
@@ -242,33 +243,12 @@ bool ami_clipboard_copy(const char *text, size_t length, struct box *box,
 
 bool gui_copy_to_clipboard(struct selection *s)
 {
-	struct CSet cset = {0};
+	if(!gui_empty_clipboard()) return false;
 
-	if(!(OpenIFF(iffh,IFFF_WRITE)))
+	if (s->defined && selection_traverse(s, ami_clipboard_copy, NULL))
 	{
-		if(!(PushChunk(iffh,ID_FTXT,ID_FORM,IFFSIZE_UNKNOWN)))
-		{
-			if(option_utf8_clipboard)
-			{
-				if(!(PushChunk(iffh,0,ID_CSET,24)))
-				{
-					cset.CodeSet = 106; // UTF-8
-					WriteChunkBytes(iffh,&cset,24);
-					PopChunk(iffh);
-				}
-			}
-
-			if (s->defined && selection_traverse(s, ami_clipboard_copy, NULL))
-			{
-				gui_commit_clipboard();
-				return true;
-			}
-		}
-		else
-		{
-			PopChunk(iffh);
-		}
-		CloseIFF(iffh);
+		gui_commit_clipboard();
+		return true;
 	}
 
 	return false;
@@ -292,44 +272,11 @@ void ami_drag_selection(struct selection *s)
 
 bool ami_easy_clipboard(char *text)
 {
-	struct CSet cset = {0};
+	if(!gui_empty_clipboard()) return false;
+	if(!gui_add_to_clipboard(text,strlen(text),false)) return false;
+	if(!gui_commit_clipboard()) return false;
 
-	if(!(OpenIFF(iffh,IFFF_WRITE)))
-	{
-		if(!(PushChunk(iffh,ID_FTXT,ID_FORM,IFFSIZE_UNKNOWN)))
-		{
-			if(option_utf8_clipboard)
-			{
-				if(!(PushChunk(iffh,0,ID_CSET,24)))
-				{
-					cset.CodeSet = 106; // UTF-8
-					WriteChunkBytes(iffh,&cset,24);
-					PopChunk(iffh);
-				}
-			}
-
-			if(!(PushChunk(iffh,0,ID_CHRS,IFFSIZE_UNKNOWN)))
-			{
-				if(ami_add_to_clipboard(text,strlen(text),false))
-				{
-					PopChunk(iffh);
-					gui_commit_clipboard();
-					return true;
-				}
-			}
-			else
-			{
-				PopChunk(iffh);
-			}
-		}
-		else
-		{
-			PopChunk(iffh);
-		}
-		CloseIFF(iffh);
-	}
-
-	return false;
+	return true;
 }
 
 bool ami_easy_clipboard_bitmap(struct bitmap *bitmap)
