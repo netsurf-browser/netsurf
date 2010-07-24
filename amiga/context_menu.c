@@ -385,7 +385,6 @@ uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved)
 			break;
 
 			case CMID_SELCUT:
-				browser_window_key_press(gwin->bw, KEY_COPY_SELECTION);
 				browser_window_key_press(gwin->bw, KEY_CUT_SELECTION);
 			break;
 

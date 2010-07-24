@@ -19,6 +19,7 @@
 #include "desktop/gui.h"
 #include "utils/utf8.h"
 #include "desktop/selection.h"
+#include "desktop/textinput.h"
 
 #include "amiga/iff_cset.h"
 #include "amiga/options.h"
@@ -39,6 +40,8 @@
 #include <datatypes/pictureclass.h>
 
 struct IFFHandle *iffh = NULL;
+
+bool ami_add_to_clipboard(const char *text, size_t length, bool space);
 
 void ami_clipboard_init(void)
 {
@@ -132,12 +135,62 @@ void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
 
 bool gui_empty_clipboard(void)
 {
+	/* Put a half-completed FTXT on the clipboard and leave it open for more additions */
+
+	struct CSet cset = {0};
+
+	if(!(OpenIFF(iffh,IFFF_WRITE)))
+	{
+		if(!(PushChunk(iffh,ID_FTXT,ID_FORM,IFFSIZE_UNKNOWN)))
+		{
+			if(option_utf8_clipboard)
+			{
+				if(!(PushChunk(iffh,0,ID_CSET,24)))
+				{
+					cset.CodeSet = 106; // UTF-8
+					WriteChunkBytes(iffh,&cset,24);
+					PopChunk(iffh);
+				}
+			}
+		}
+		else
+		{
+			PopChunk(iffh);
+		}
+//		CloseIFF(iffh);
+	}
 	return true;
 }
 
 bool gui_add_to_clipboard(const char *text, size_t length, bool space)
 {
+	/* This might crash or at least not work if gui_empty_clipboard isn't called first,
+	   and gui_commit_clipboard after.
+	   These only seem to be called from desktop/textinput.c in this specific order, if they
+	   are added elsewhere this might need a rewrite. */
+
+	if(!(PushChunk(iffh,0,ID_CHRS,IFFSIZE_UNKNOWN)))
+	{
+		if(text)
+		{
+			if(!ami_add_to_clipboard(text, length, false)) return false;
+		}
+
+		PopChunk(iffh);
+	}
+	else
+	{
+		PopChunk(iffh);
+		return false;
+	}
+
+	return true;
+}
+
+bool ami_add_to_clipboard(const char *text, size_t length, bool space)
+{
 	char *buffer;
+
 	if(option_utf8_clipboard)
 	{
 		WriteChunkBytes(iffh,text,length);
@@ -168,12 +221,12 @@ bool ami_clipboard_copy(const char *text, size_t length, struct box *box,
 	{
 		if (whitespace_text)
 		{
-			if(!gui_add_to_clipboard(whitespace_text,whitespace_length, false)) return false;
+			if(!ami_add_to_clipboard(whitespace_text,whitespace_length, false)) return false;
 		}
 
 		if(text)
 		{
-			if (!gui_add_to_clipboard(text, length, box->space)) return false;
+			if (!ami_add_to_clipboard(text, length, box->space)) return false;
 		}
 
 		PopChunk(iffh);
@@ -221,6 +274,22 @@ bool gui_copy_to_clipboard(struct selection *s)
 	return false;
 }
 
+void ami_drag_selection(struct selection *s)
+{
+	struct box *text_box;
+	ULONG x = s->bw->window->shared->win->MouseX;
+	ULONG y = s->bw->window->shared->win->MouseY;
+
+	if(text_box = ami_text_box_at_point(s->bw->window, &x, &y))
+	{
+		if(gui_copy_to_clipboard(s))
+		{
+			browser_window_mouse_click(s->bw, BROWSER_MOUSE_PRESS_1, x, y);
+			browser_window_key_press(s->bw, KEY_PASTE);
+		}
+	}
+}
+
 bool ami_easy_clipboard(char *text)
 {
 	struct CSet cset = {0};
@@ -241,7 +310,7 @@ bool ami_easy_clipboard(char *text)
 
 			if(!(PushChunk(iffh,0,ID_CHRS,IFFSIZE_UNKNOWN)))
 			{
-				if(gui_add_to_clipboard(text,strlen(text),false))
+				if(ami_add_to_clipboard(text,strlen(text),false))
 				{
 					PopChunk(iffh);
 					gui_commit_clipboard();

@@ -16,40 +16,44 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "desktop/browser.h"
-#include "amiga/menu.h"
-#include "utils/messages.h"
-#include "amiga/utf8.h"
-#include <libraries/gadtools.h>
-#include <proto/asl.h>
-#include "amiga/options.h"
-#include "desktop/gui.h"
-#include "amiga/hotlist.h"
+#include <string.h>
+
 #include <proto/dos.h>
+#include <proto/asl.h>
+#include <proto/exec.h>
+#include <proto/intuition.h>
+#include <dos/anchorpath.h>
+#include <libraries/gadtools.h>
+
+#include "amiga/menu.h"
+#include "amiga/utf8.h"
+#include "amiga/options.h"
+#include "amiga/hotlist.h"
 #include "amiga/gui.h"
 #include "amiga/save_pdf.h"
-#include "desktop/save_text.h"
-#include "desktop/save_pdf/pdf_plotters.h"
-#include "desktop/save_complete.h"
-#include <string.h>
 #include "amiga/tree.h"
 #include "amiga/history.h"
 #include "amiga/cookies.h"
-#include <proto/exec.h>
 #include "amiga/arexx.h"
-#include "utils/url.h"
-#include <dos/anchorpath.h>
-#include "desktop/textinput.h"
 #include "amiga/search.h"
 #include "amiga/history_local.h"
 #include "amiga/bitmap.h"
 #include "amiga/iff_dr2d.h"
 #include "amiga/clipboard.h"
-#include "content/fetch.h"
 #include "amiga/gui_options.h"
 #include "amiga/print.h"
 #include "amiga/download.h"
-#include <proto/intuition.h>
+
+#include "content/fetch.h"
+#include "desktop/browser.h"
+#include "desktop/gui.h"
+#include "desktop/save_text.h"
+#include "desktop/save_pdf/pdf_plotters.h"
+#include "desktop/save_complete.h"
+#include "desktop/selection.h"
+#include "desktop/textinput.h"
+#include "utils/messages.h"
+#include "utils/url.h"
 
 BOOL menualreadyinit;
 const char * const netsurf_version;
@@ -634,7 +638,6 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 			switch(itemnum)
 			{
 				case 0: // cut
-					browser_window_key_press(gwin->bw, KEY_COPY_SELECTION);
 					browser_window_key_press(gwin->bw, KEY_CUT_SELECTION);
 				break;
 
@@ -831,11 +834,14 @@ static const ULONG ami_asl_mime_hook(struct Hook *mh,struct FileRequester *fr,st
 	return ret;
 }
 
-void ami_menu_update_disabled(struct Window *win, hlcache_handle *c)
+void ami_menu_update_disabled(struct gui_window *g, hlcache_handle *c)
 {
+	struct Window *win = g->shared->win;
+
 	OffMenu(win,AMI_MENU_CUT);
+	OffMenu(win,AMI_MENU_COPY);
+	OffMenu(win,AMI_MENU_PASTE);
 	OffMenu(win,AMI_MENU_CLEAR);
-	OffMenu(win,AMI_MENU_PASTE); // c_h
 
 	if(content_get_type(c) <= CONTENT_CSS)
 	{
@@ -844,7 +850,15 @@ void ami_menu_update_disabled(struct Window *win, hlcache_handle *c)
 #ifdef WITH_PDF_EXPORT
 		OnMenu(win,AMI_MENU_SAVEAS_PDF);
 #endif
-		OffMenu(win,AMI_MENU_COPY);
+		if(selection_defined(g->shared->bw->sel))
+		{
+			OnMenu(win,AMI_MENU_COPY);
+			OnMenu(win,AMI_MENU_CLEAR);
+
+			if(selection_read_only(g->shared->bw->sel) == false)
+				OnMenu(win,AMI_MENU_CUT);
+		}
+		if(g->c_h) OnMenu(win,AMI_MENU_PASTE);
 		OnMenu(win,AMI_MENU_SELECTALL);
 		OnMenu(win,AMI_MENU_FIND);
 		OffMenu(win,AMI_MENU_SAVEAS_IFF);

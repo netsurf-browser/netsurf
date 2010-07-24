@@ -21,6 +21,7 @@
 
 void ami_clipboard_init(void);
 void ami_clipboard_free(void);
+void ami_drag_selection(struct selection *s);
 bool ami_easy_clipboard(char *text);
 bool ami_easy_clipboard_bitmap(struct bitmap *bitmap);
 #ifdef WITH_NS_SVG
