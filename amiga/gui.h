@@ -128,6 +128,8 @@ void ami_quit_netsurf(void);
 void ami_do_redraw(struct gui_window_2 *g);
 STRPTR ami_locale_langs(void);
 
+void ami_drag_selection(struct selection *s);
+
 struct TextFont *origrpfont;
 struct MinList *window_list;
 struct Screen *scrn;

@@ -252,6 +252,7 @@ PrintNS:Drucken...
 
 # Edit menu
 #
+CutNS:Ausschneiden
 CopyNS:Kopieren
 PasteNS:Einfügen
 SelectAllNS:Alles auswählen

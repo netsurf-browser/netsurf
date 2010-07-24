@@ -103,6 +103,10 @@ const char *fetch_filetype(const char *unix_path)
 					break;
 					case GID_PICTURE:
 						sprintf(mimetype,"image/%s",dth->dth_BaseName);
+						if(strcmp("sprite",dth->dth_BaseName)==0)
+						{
+							strcpy(mimetype,"image/x-riscos-sprite");
+						}
 					break;
 					case GID_ANIMATION:
 					case GID_MOVIE:

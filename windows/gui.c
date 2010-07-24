@@ -2183,6 +2183,10 @@ void gui_start_selection(struct gui_window *w)
 {
 }
 
+void gui_clear_selection(struct gui_window *w)
+{
+}
+
 void gui_paste_from_clipboard(struct gui_window *w, int x, int y)
 {
 	HANDLE clipboard_handle;

@@ -82,6 +82,10 @@ void gui_start_selection(struct gui_window *g)
 	gtk_widget_grab_focus(GTK_WIDGET(nsgtk_window_get_layout(g)));
 }
 
+void gui_clear_selection(struct gui_window *g)
+{
+}
+
 void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
 {
 	gchar *text;

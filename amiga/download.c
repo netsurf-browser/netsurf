@@ -336,7 +336,7 @@ void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
 
 void gui_drag_save_selection(struct selection *s, struct gui_window *g)
 {
-	if(strcmp(option_use_pubscreen,"Workbench")) return;
+//	if(strcmp(option_use_pubscreen,"Workbench")) return;
 
 	gui_window_set_pointer(g,AMI_GUI_POINTER_DRAG);
 	drag_save_data = s;
@@ -364,6 +364,9 @@ void ami_drag_save(struct Window *win)
 	}
 	else if(which == WBO_NONE)
 	{
+		if(drag_save == GUI_SAVE_TEXT_SELECTION)
+			ami_drag_selection((struct selection *)drag_save_data);
+
 		drag_save = 0;
 		drag_save_data = NULL;
 		return;

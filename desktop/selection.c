@@ -703,6 +703,8 @@ void selection_clear(struct selection *s, bool redraw)
 	s->start_idx = 0;
 	s->end_idx = 0;
 
+	gui_clear_selection(s->bw->window);
+
 	if (redraw && was_defined)
 		selection_redraw(s, old_start, old_end);
 }

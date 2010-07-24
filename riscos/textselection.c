@@ -249,6 +249,17 @@ bool gui_empty_clipboard(void)
 
 
 /**
+ * Perform tasks after a selection has been cleared.
+ *
+ * \param g  gui window
+ */
+
+void gui_clear_selection(struct gui_window *g)
+{
+}
+
+
+/**
  * Add some text to the clipboard, optionally appending a trailing space.
  *
  * \param  text    text to be added

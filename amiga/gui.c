@@ -1291,10 +1291,16 @@ void ami_handle_msg(void)
 								browser_window_key_press(gwin->bw, KEY_SELECT_ALL);
 							break;
 
+							case 'x':
+								browser_window_key_press(gwin->bw, KEY_CUT_SELECTION);
+								browser_window_key_press(gwin->bw, KEY_CLEAR_SELECTION);
+							break;
+
 							case 'c':
 								browser_window_key_press(gwin->bw, KEY_COPY_SELECTION);
 								browser_window_key_press(gwin->bw, KEY_CLEAR_SELECTION);
 							break;
+
 							case 'v':
 								browser_window_key_press(gwin->bw, KEY_PASTE);
 							break;
@@ -3615,6 +3621,8 @@ void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
 	g->c_x = x;
 	g->c_y = y;
 	g->c_h = height;
+
+	OnMenu(g->shared->win, AMI_MENU_PASTE);
 }
 
 void gui_window_remove_caret(struct gui_window *g)
@@ -3623,6 +3631,8 @@ void gui_window_remove_caret(struct gui_window *g)
 	int xs,ys;
 
 	if(!g) return;
+
+	OffMenu(g->shared->win, AMI_MENU_PASTE);
 
 	GetAttr(SPACE_AreaBox, g->shared->objects[GID_BROWSER], (ULONG *)&bbox);
 	ami_get_hscroll_pos(g->shared, (ULONG *)&xs);
@@ -3772,3 +3782,78 @@ uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved)
 	return itemid;
 }
 
+/* Below two are more suited to clipboard.c but use some functions internal to gui.c,
+   so we put them here. */
+
+bool ami_drag_selection_paste(const char *text, size_t length, struct box *box,
+	void *handle, const char *whitespace_text,size_t whitespace_length)
+{
+	struct browser_window *bw = handle;
+
+printf("dspaste\n");
+
+	if(whitespace_text)
+	{
+		browser_window_paste_text(bw, whitespace_text, whitespace_length, true);
+	}
+
+	if(text)
+	{
+		browser_window_paste_text(bw, text, length, true);
+	}
+
+	return true;
+}
+
+void ami_drag_selection(struct selection *s)
+{
+	struct gui_window *g = s->bw->window;
+	struct IBox *bbox;
+	ULONG x,y,xs,ys,width,height;
+	struct box *box,*text_box=0;
+	hlcache_handle *content;
+	int box_x=0,box_y=0;
+
+	GetAttr(SPACE_AreaBox, (Object *)g->shared->objects[GID_BROWSER],
+				(ULONG *)&bbox);
+
+	ami_get_hscroll_pos(g->shared, (ULONG *)&xs);
+	x = (s->bw->window->shared->win->MouseX) - (bbox->Left) +xs;
+
+	ami_get_vscroll_pos(g->shared, (ULONG *)&ys);
+	y = (s->bw->window->shared->win->MouseY) - bbox->Top + ys;
+
+	width=bbox->Width;
+	height=bbox->Height;
+
+	content = s->bw->current_content;
+	box = html_get_box_tree(content);
+	while ((box = box_at_point(box, x, y, &box_x, &box_y, &content)))
+	{
+		if (box->style && css_computed_visibility(box->style) == CSS_VISIBILITY_HIDDEN)	continue;
+
+		if (box->gadget)
+		{
+			switch (box->gadget->type)
+			{
+				case GADGET_TEXTBOX:
+				case GADGET_TEXTAREA:
+				case GADGET_PASSWORD:
+					text_box = box;
+				break;
+
+				default:
+				break;
+			}
+		}
+	}
+
+	if(text_box)
+	{
+		if(gui_copy_to_clipboard(s))
+		{
+			browser_window_mouse_click(s->bw, BROWSER_MOUSE_PRESS_1, x, y);
+			browser_window_key_press(s->bw, KEY_PASTE);
+		}
+	}
+}

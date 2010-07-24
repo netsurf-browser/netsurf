@@ -17,21 +17,26 @@
  */
 
 #include "desktop/gui.h"
-#include "amiga/iff_cset.h"
-#include <proto/iffparse.h>
-#include <datatypes/textclass.h>
-#include "amiga/options.h"
-#include "amiga/gui.h"
-#include <proto/exec.h>
-#include "amiga/utf8.h"
 #include "utils/utf8.h"
 #include "desktop/selection.h"
-#include <datatypes/pictureclass.h>
-#include <proto/datatypes.h>
+
+#include "amiga/iff_cset.h"
+#include "amiga/options.h"
+#include "amiga/gui.h"
+#include "amiga/utf8.h"
 #include "amiga/bitmap.h"
 #include "amiga/iff_dr2d.h"
+#include "amiga/menu.h"
+
+#include <proto/iffparse.h>
+#include <proto/intuition.h>
+#include <proto/exec.h>
+#include <proto/datatypes.h>
 #include <proto/diskfont.h>
+
 #include <diskfont/diskfonttag.h>
+#include <datatypes/textclass.h>
+#include <datatypes/pictureclass.h>
 
 struct IFFHandle *iffh = NULL;
 
@@ -54,6 +59,24 @@ void ami_clipboard_free(void)
 
 void gui_start_selection(struct gui_window *g)
 {
+	if(!g) return;
+	if(!g->shared->win) return;
+
+	OnMenu(g->shared->win, AMI_MENU_CLEAR);
+	OnMenu(g->shared->win, AMI_MENU_COPY);
+
+	if(selection_read_only(g->shared->bw->sel) == false)
+		OnMenu(g->shared->win, AMI_MENU_CUT);
+}
+
+void gui_clear_selection(struct gui_window *g)
+{
+	if(!g) return;
+	if(!g->shared->win) return;
+
+	OffMenu(g->shared->win, AMI_MENU_CLEAR);
+	OffMenu(g->shared->win, AMI_MENU_CUT);
+	OffMenu(g->shared->win, AMI_MENU_COPY);
 }
 
 void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
@@ -109,6 +132,7 @@ void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
 
 bool gui_empty_clipboard(void)
 {
+	return true;
 }
 
 bool gui_add_to_clipboard(const char *text, size_t length, bool space)

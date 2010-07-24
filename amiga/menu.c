@@ -95,27 +95,29 @@ void ami_init_menulabs(void)
 	menulab[17] = ami_utf8_easy((char *)messages_get("About"));
 	menulab[18] = ami_utf8_easy((char *)messages_get("Quit"));
 	menulab[19] = ami_utf8_easy((char *)messages_get("Edit"));
-	menulab[20] = ami_utf8_easy((char *)messages_get("CopyNS"));
-	menulab[21] = ami_utf8_easy((char *)messages_get("PasteNS"));
-	menulab[22] = ami_utf8_easy((char *)messages_get("SelectAllNS"));
-	menulab[23] = ami_utf8_easy((char *)messages_get("ClearNS"));
-	menulab[24] = ami_utf8_easy((char *)messages_get("Browser"));
-	menulab[25] = ami_utf8_easy((char *)messages_get("FindTextNS"));
-	menulab[26] = NM_BARLABEL;
-	menulab[27] = ami_utf8_easy((char *)messages_get("HistLocalNS"));
-	menulab[28] = ami_utf8_easy((char *)messages_get("HistGlobalNS"));
-	menulab[29] = NM_BARLABEL;
-	menulab[30] = ami_utf8_easy((char *)messages_get("ShowCookies"));
+	menulab[20] = ami_utf8_easy((char *)messages_get("CutNS"));
+	menulab[21] = ami_utf8_easy((char *)messages_get("CopyNS"));
+	menulab[22] = ami_utf8_easy((char *)messages_get("PasteNS"));
+	menulab[23] = NM_BARLABEL;
+	menulab[24] = ami_utf8_easy((char *)messages_get("SelectAllNS"));
+	menulab[25] = ami_utf8_easy((char *)messages_get("ClearNS"));
+	menulab[26] = ami_utf8_easy((char *)messages_get("Browser"));
+	menulab[27] = ami_utf8_easy((char *)messages_get("FindTextNS"));
+	menulab[28] = NM_BARLABEL;
+	menulab[29] = ami_utf8_easy((char *)messages_get("HistLocalNS"));
+	menulab[30] = ami_utf8_easy((char *)messages_get("HistGlobalNS"));
 	menulab[31] = NM_BARLABEL;
-	menulab[32] = ami_utf8_easy((char *)messages_get("ScaleNS"));
-	menulab[33] = ami_utf8_easy((char *)messages_get("ScaleDec"));
-	menulab[34] = ami_utf8_easy((char *)messages_get("ScaleNorm"));
-	menulab[35] = ami_utf8_easy((char *)messages_get("ScaleInc"));
-	menulab[36] = ami_utf8_easy((char *)messages_get("Redraw"));
-	menulab[37] = ami_utf8_easy((char *)messages_get("Hotlist"));
-	menulab[38] = ami_utf8_easy((char *)messages_get("HotlistAdd"));
-	menulab[39] = ami_utf8_easy((char *)messages_get("HotlistShowNS"));
-	menulab[40] = NM_BARLABEL;
+	menulab[32] = ami_utf8_easy((char *)messages_get("ShowCookies"));
+	menulab[33] = NM_BARLABEL;
+	menulab[34] = ami_utf8_easy((char *)messages_get("ScaleNS"));
+	menulab[35] = ami_utf8_easy((char *)messages_get("ScaleDec"));
+	menulab[36] = ami_utf8_easy((char *)messages_get("ScaleNorm"));
+	menulab[37] = ami_utf8_easy((char *)messages_get("ScaleInc"));
+	menulab[38] = ami_utf8_easy((char *)messages_get("Redraw"));
+	menulab[39] = ami_utf8_easy((char *)messages_get("Hotlist"));
+	menulab[40] = ami_utf8_easy((char *)messages_get("HotlistAdd"));
+	menulab[41] = ami_utf8_easy((char *)messages_get("HotlistShowNS"));
+	menulab[42] = NM_BARLABEL;
 
 	menulab[AMI_MENU_HOTLIST_MAX] = ami_utf8_easy((char *)messages_get("Settings"));
 	menulab[AMI_MENU_HOTLIST_MAX+1] = ami_utf8_easy((char *)messages_get("SettingsEdit"));
@@ -152,8 +154,10 @@ struct NewMenu *ami_create_menu(ULONG type)
 			  	{ NM_ITEM,0,"?",0,0,0,}, // about
 			  	{ NM_ITEM,0,"Q",0,0,0,}, // quit
 			  	{NM_TITLE,0,0,0,0,0,}, // edit
+			  	{ NM_ITEM,0,"X",0,0,0,}, // cut
 			  	{ NM_ITEM,0,"C",0,0,0,}, // copy
 			  	{ NM_ITEM,0,"V",0,0,0,}, // paste
+			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
 			  	{ NM_ITEM,0,"A",0,0,0,}, // select all
 			  	{ NM_ITEM,0,"Z",0,0,0,}, // clear selection
 			  	{NM_TITLE,0,0,0,0,0,}, // browser
@@ -629,7 +633,12 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 		case 1:  // edit
 			switch(itemnum)
 			{
-				case 0: // copy
+				case 0: // cut
+					browser_window_key_press(gwin->bw, KEY_COPY_SELECTION);
+					browser_window_key_press(gwin->bw, KEY_CUT_SELECTION);
+				break;
+
+				case 1: // copy
 					if(content_get_type(gwin->bw->current_content) <= CONTENT_CSS)
 					{
 						browser_window_key_press(gwin->bw, KEY_COPY_SELECTION);
@@ -649,16 +658,16 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 #endif
 				break;
 
-				case 1: // paste
+				case 2: // paste
 					browser_window_key_press(gwin->bw, KEY_PASTE);
 					//gui_paste_from_clipboard(&tgw,0,0);
 				break;
 
-				case 2: // select all
+				case 4: // select all
 					browser_window_key_press(gwin->bw, KEY_SELECT_ALL);
 				break;
 
-				case 3: // clear selection
+				case 5: // clear selection
 					browser_window_key_press(gwin->bw, KEY_CLEAR_SELECTION);
 				break;
 			}
@@ -824,6 +833,10 @@ static const ULONG ami_asl_mime_hook(struct Hook *mh,struct FileRequester *fr,st
 
 void ami_menu_update_disabled(struct Window *win, hlcache_handle *c)
 {
+	OffMenu(win,AMI_MENU_CUT);
+	OffMenu(win,AMI_MENU_CLEAR);
+	OffMenu(win,AMI_MENU_PASTE); // c_h
+
 	if(content_get_type(c) <= CONTENT_CSS)
 	{
 		OnMenu(win,AMI_MENU_SAVEAS_TEXT);
@@ -831,10 +844,8 @@ void ami_menu_update_disabled(struct Window *win, hlcache_handle *c)
 #ifdef WITH_PDF_EXPORT
 		OnMenu(win,AMI_MENU_SAVEAS_PDF);
 #endif
-		OnMenu(win,AMI_MENU_COPY);
-		OnMenu(win,AMI_MENU_PASTE);
+		OffMenu(win,AMI_MENU_COPY);
 		OnMenu(win,AMI_MENU_SELECTALL);
-		OnMenu(win,AMI_MENU_CLEAR);
 		OnMenu(win,AMI_MENU_FIND);
 		OffMenu(win,AMI_MENU_SAVEAS_IFF);
 	}

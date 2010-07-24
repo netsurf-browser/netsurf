@@ -117,6 +117,7 @@ void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
 		struct gui_window *g);
 void gui_drag_save_selection(struct selection *s, struct gui_window *g);
 void gui_start_selection(struct gui_window *g);
+void gui_clear_selection(struct gui_window *g);
 
 void gui_paste_from_clipboard(struct gui_window *g, int x, int y);
 bool gui_empty_clipboard(void);

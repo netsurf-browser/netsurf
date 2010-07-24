@@ -1783,6 +1783,10 @@ void gui_start_selection(struct gui_window *g)
 	g->view->UnlockLooper();
 }
 
+void gui_clear_selection(struct gui_window *g)
+{
+}
+
 void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
 {
 	BMessage *clip;

@@ -254,6 +254,7 @@ PrintNS:Stampa...
 
 # Edit menu
 #
+CutNS:Cut
 CopyNS:Copia
 PasteNS:Incolla
 SelectAllNS:Seleziona tutto
