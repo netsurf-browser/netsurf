@@ -1,6 +1,6 @@
-# Italian messages for NetSurf 2.6 Development (Revision 10646)
+# Italian messages for NetSurf 2.6 Development (Revision 10662)
 # Translated by Samir Hawamdeh (http://www.betatesting.it/backforthefuture)
-# 16.07.2010
+# 25.07.2010
 # =========================================================================
 #
 # Description
@@ -99,7 +99,7 @@ SelSave:Salva
 Home:Home Page
 Back:Indietro di una pagina
 Forward:Avanti di una pagina
-UpLevel:Su di un livello
+UpLevel:Livello superiore
 Reload:Ricarica questa pagina  ^F5
 Stop:Stoppa caricamento della pagina
 
@@ -245,7 +245,7 @@ CloseWindow:Chiudi finestra
 SaveAsNS:Salva come
 Source:Sorgente...
 TextNS:Testo...
-SaveCompNS:Completo...
+SaveCompNS:HTML...
 PDFNS:PDF...
 IFF:IFF...
 OpenFile:Apri file locale...
@@ -254,7 +254,7 @@ PrintNS:Stampa...
 
 # Edit menu
 #
-CutNS:Cut
+CutNS:Taglia
 CopyNS:Copia
 PasteNS:Incolla
 SelectAllNS:Seleziona tutto
@@ -660,7 +660,7 @@ EncodingUnk:Sconosciuto
 # Directory browser
 #
 FileIndex:Indice di %s
-FileParent:^ Su di un livello
+FileParent:^ Livello superiore
 FileDirectory:Directory
 FileName:Nome
 FileSize:Dimensione
