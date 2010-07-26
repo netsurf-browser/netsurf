@@ -3062,8 +3062,8 @@ void ami_do_redraw_limits(struct gui_window *g, hlcache_handle *c,int x0, int y0
 
 	content_redraw(c,
 		-sx, -sy,
-		width - sx,
-		height - sy,
+		width, // - sx,
+		height, // - sy,
 		(x0 - sx) * g->shared->bw->scale,
 		(y0 - sy) * g->shared->bw->scale,
 		(x1 - sx) * g->shared->bw->scale,
@@ -3218,8 +3218,8 @@ void ami_do_redraw(struct gui_window_2 *g)
 		{
 			content_redraw(c, -hcurrent,
 						-vcurrent,
-						width - hcurrent,
-						height - vcurrent,
+						width,
+						height,
 						0,0,width,
 						height,
 						g->bw->scale,0xFFFFFF);
@@ -3228,10 +3228,10 @@ void ami_do_redraw(struct gui_window_2 *g)
 		{
 			content_redraw(c, -hcurrent /* * g->bw->scale */,
 						-vcurrent /* * g->bw->scale */,
-						(width / g->bw->scale) - hcurrent,
-						(height / g->bw->scale) - vcurrent,
-						0,0, content_get_width(c) /* * g->bw->scale */,
-						content_get_height(c) /* * g->bw->scale */,
+						(width / g->bw->scale), //- hcurrent,
+						(height / g->bw->scale), // - vcurrent,
+						hcurrent, vcurrent, width + hcurrent /* * g->bw->scale */,
+						height + vcurrent /* * g->bw->scale */,
 						g->bw->scale,0xFFFFFF);
 		}
 
