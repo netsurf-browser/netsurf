@@ -73,6 +73,7 @@
 #include <proto/graphics.h>
 #include <proto/intuition.h>
 #include <proto/keymap.h>
+#include <proto/layers.h>
 #include <proto/locale.h>
 #include <proto/Picasso96API.h>
 #include <proto/timer.h>
@@ -3784,7 +3785,7 @@ uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved)
 /* return the text box at posn x,y in window coordinates
    x,y are updated to be document co-ordinates */
 
-struct box *ami_text_box_at_point(struct gui_window *g, ULONG *x, ULONG *y)
+struct box *ami_text_box_at_point(struct gui_window_2 *gwin, ULONG *x, ULONG *y)
 {
 	struct IBox *bbox;
 	ULONG xs,ys,width,height;
@@ -3792,19 +3793,19 @@ struct box *ami_text_box_at_point(struct gui_window *g, ULONG *x, ULONG *y)
 	hlcache_handle *content;
 	int box_x=0,box_y=0;
 
-	GetAttr(SPACE_AreaBox, (Object *)g->shared->objects[GID_BROWSER],
+	GetAttr(SPACE_AreaBox, (Object *)gwin->objects[GID_BROWSER],
 				(ULONG *)&bbox);
 
-	ami_get_hscroll_pos(g->shared, (ULONG *)&xs);
+	ami_get_hscroll_pos(gwin, (ULONG *)&xs);
 	*x = *x - (bbox->Left) +xs;
 
-	ami_get_vscroll_pos(g->shared, (ULONG *)&ys);
+	ami_get_vscroll_pos(gwin, (ULONG *)&ys);
 	*y = *y - (bbox->Top) + ys;
 
 	width=bbox->Width;
 	height=bbox->Height;
 
-	content = g->shared->bw->current_content;
+	content = gwin->bw->current_content;
 	box = html_get_box_tree(content);
 	while ((box = box_at_point(box, *x, *y, &box_x, &box_y, &content)))
 	{
@@ -3826,4 +3827,41 @@ struct box *ami_text_box_at_point(struct gui_window *g, ULONG *x, ULONG *y)
 		}
 	}
 	return text_box;
+}
+
+struct gui_window_2 *ami_find_gwin_by_id(struct Window *win)
+{
+	struct nsObject *node, *nnode;
+	struct gui_window_2 *gwin;
+
+	if(!IsMinListEmpty(window_list))
+	{
+		node = (struct nsObject *)GetHead((struct List *)window_list);
+
+		do
+		{
+			nnode=(struct nsObject *)GetSucc((struct Node *)node);
+
+			if(node->Type == AMINS_WINDOW) // or frame?
+			{
+				gwin = node->objstruct;
+				if(win == gwin->win) return gwin;
+			}
+		} while(node = nnode);
+	}
+	return NULL;
+}
+
+struct gui_window_2 *ami_window_at_pointer(void)
+{
+	struct Layer *layer;
+
+	LockLayerInfo(&scrn->LayerInfo);
+
+	layer = WhichLayer(&scrn->LayerInfo, scrn->MouseX, scrn->MouseY);
+
+	UnlockLayerInfo(&scrn->LayerInfo);
+
+	if(layer) return ami_find_gwin_by_id(layer->Window);
+	else return NULL;
 }

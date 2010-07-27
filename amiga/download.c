@@ -345,18 +345,21 @@ void gui_drag_save_selection(struct selection *s, struct gui_window *g)
 
 void ami_drag_save(struct Window *win)
 {
-	ULONG which,type;
+	ULONG which = WBO_NONE,type;
 	char path[1025],dpath[1025];
 	char *source_data;
 	ULONG source_size;
 
-	which = WhichWorkbenchObject(NULL,scrn->MouseX,scrn->MouseY,
+	if(strcmp(option_use_pubscreen,"Workbench") == 0)
+	{
+		which = WhichWorkbenchObject(NULL,scrn->MouseX,scrn->MouseY,
 									WBOBJA_Type,&type,
 									WBOBJA_FullPath,&path,
 									WBOBJA_FullPathSize,1024,
 									WBOBJA_DrawerPath,&dpath,
 									WBOBJA_DrawerPathSize,1024,
 									TAG_DONE);
+	}
 
 	if((which == WBO_DRAWER) || ((which == WBO_ICON) && (type > WBDRAWER)))
 	{
@@ -366,6 +369,7 @@ void ami_drag_save(struct Window *win)
 	{
 		if(drag_save == GUI_SAVE_TEXT_SELECTION)
 			ami_drag_selection((struct selection *)drag_save_data);
+		else DisplayBeep(scrn);
 
 		drag_save = 0;
 		drag_save_data = NULL;
@@ -374,6 +378,7 @@ void ami_drag_save(struct Window *win)
 
 	if(path[0] == '\0')
 	{
+		DisplayBeep(scrn);
 		drag_save = 0;
 		drag_save_data = NULL;
 		return;

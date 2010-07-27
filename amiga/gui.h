@@ -127,7 +127,8 @@ void ami_close_all_tabs(struct gui_window_2 *gwin);
 void ami_quit_netsurf(void);
 void ami_do_redraw(struct gui_window_2 *g);
 STRPTR ami_locale_langs(void);
-struct box *ami_text_box_at_point(struct gui_window *g, ULONG *x, ULONG *y);
+struct box *ami_text_box_at_point(struct gui_window_2 *gwin, ULONG *x, ULONG *y);
+struct gui_window_2 *ami_window_at_pointer(void);
 
 struct TextFont *origrpfont;
 struct MinList *window_list;

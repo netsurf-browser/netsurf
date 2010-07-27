@@ -257,16 +257,30 @@ bool gui_copy_to_clipboard(struct selection *s)
 void ami_drag_selection(struct selection *s)
 {
 	struct box *text_box;
-	ULONG x = s->bw->window->shared->win->MouseX;
-	ULONG y = s->bw->window->shared->win->MouseY;
+	ULONG x;
+	ULONG y;
+	struct gui_window_2 *gwin = ami_window_at_pointer();
 
-	if(text_box = ami_text_box_at_point(s->bw->window, &x, &y))
+	if(!gwin)
+	{
+		DisplayBeep(scrn);
+		return;
+	}
+
+	x = gwin->win->MouseX;
+	y = gwin->win->MouseY;
+
+	if(text_box = ami_text_box_at_point(gwin, &x, &y))
 	{
 		if(gui_copy_to_clipboard(s))
 		{
-			browser_window_mouse_click(s->bw, BROWSER_MOUSE_PRESS_1, x, y);
-			browser_window_key_press(s->bw, KEY_PASTE);
+			browser_window_mouse_click(gwin->bw, BROWSER_MOUSE_PRESS_1, x, y);
+			browser_window_key_press(gwin->bw, KEY_PASTE);
 		}
+	}
+	else
+	{
+		DisplayBeep(scrn);
 	}
 }
 
