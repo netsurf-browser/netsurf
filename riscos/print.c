@@ -84,6 +84,7 @@ static float print_scale = 1.0;
 static int print_num_copies = 1;
 static bool print_bg_images = false;
 static int print_max_sheets = -1;
+static bool print_sideways = false;
 /** List of fonts in current print. */
 static char **print_fonts_list = 0;
 /** Number of entries in print_fonts_list. */
@@ -270,6 +271,8 @@ bool ro_gui_print_apply(wimp_w w)
 			ICON_PRINT_IN_BACKGROUND);
 	print_text_black = ro_gui_get_icon_selected_state(dialog_print,
 			ICON_PRINT_TEXT_BLACK);
+	print_sideways = ro_gui_get_icon_selected_state(dialog_print,
+			ICON_PRINT_SIDEWAYS);
 	print_num_copies = copies;
 	if (ro_gui_get_icon_selected_state(dialog_print, ICON_PRINT_SHEETS))
 		print_max_sheets = sheets;
@@ -578,8 +581,13 @@ bool print_document(struct gui_window *g, const char *filename)
 		return false;
 	}
 
-	width = (right - left) / 800;
-	height = (top - bottom) / 800;
+	if (print_sideways) {
+		width = (top - bottom) / 800;
+		height = (right - left) / 800;
+	} else {
+		width = (right - left) / 800;
+		height = (top - bottom) / 800;
+	}
 
 	/* layout the document to the correct width */
 	saved_width = content_get_width(h);
@@ -628,11 +636,38 @@ bool print_document(struct gui_window *g, const char *filename)
 
 	do {
 		int clip_x0, clip_y0, clip_x1, clip_y1;
-		os_box b = {left / 400 - 2, bottom / 400 - 2,
-				right / 400 + 2, top / 400 + 2};
-		os_hom_trfm t = { { {65536, 0}, {0, 65536} } };
-		os_coord p = {left, bottom};
+		os_box b;
+		os_hom_trfm t;
+		os_coord p;
 		osbool more;
+
+		if (print_sideways) {
+			b.x0 = bottom / 400 -2;
+			b.y0 = left / 400 - 2;
+			b.x1 = top / 400 + 2;
+			b.y1 = right / 400 + 2;
+			t.entries[0][0] = 0;
+			t.entries[0][1] = 65536;
+			t.entries[1][0] = -65536;
+			t.entries[1][1] = 0;
+			p.x = right;
+			p.y = bottom;
+			ro_plot_origin_x = bottom / 400;
+			ro_plot_origin_y = right / 400 + yscroll * 2;
+		} else {
+			b.x0 = left / 400 -2;
+			b.y0 = bottom / 400 - 2;
+			b.x1 = right / 400 + 2;
+			b.y1 = top / 400 + 2;
+			t.entries[0][0] = 65536;
+			t.entries[0][1] = 0;
+			t.entries[1][0] = 0;
+			t.entries[1][1] = 65536;
+			p.x = left;
+			p.y = bottom;
+			ro_plot_origin_x = left / 400;
+			ro_plot_origin_y = top / 400 + yscroll * 2;
+		}
 
 		xhourglass_percentage((int) (yscroll * 100 /
 				content_get_height(h)));
@@ -658,9 +693,6 @@ bool print_document(struct gui_window *g, const char *filename)
 			error_message = error->errmess;
 			goto error;
 		}
-
-		ro_plot_origin_x = left / 400;
-		ro_plot_origin_y = top / 400 + yscroll * 2;
 
 		while (more) {
 			LOG(("redrawing area: [(%d, %d), (%d, %d)]",
