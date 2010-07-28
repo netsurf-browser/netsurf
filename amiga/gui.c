@@ -1003,6 +1003,9 @@ void ami_handle_msg(void)
 	        switch(result & WMHI_CLASSMASK) // class
    		   	{
 				case WMHI_MOUSEMOVE:
+					if(drag_icon)
+						ami_drag_icon_move(drag_icon);
+
 					GetAttr(SPACE_AreaBox, (Object *)gwin->objects[GID_BROWSER],
 							(ULONG *)&bbox);
 
@@ -1128,7 +1131,7 @@ void ami_handle_msg(void)
 						break;
 					}
 
-					if(drag_save && !gwin->mouse_state)
+					if(drag_save_data && !gwin->mouse_state)
 						ami_drag_save(gwin->win);
 				break;
 
