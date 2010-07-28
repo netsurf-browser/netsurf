@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "content/fetch.h"
+#include "content/content_type.h"
 #include "utils/log.h"
 #include "utils/utils.h"
 #include <proto/icon.h>
@@ -129,4 +130,74 @@ const char *fetch_filetype(const char *unix_path)
 char *fetch_mimetype(const char *ro_path)
 {
 	return strdup(fetch_filetype(ro_path));
+}
+
+const char *ami_content_type_to_file_type(content_type type)
+{
+	switch(type)
+	{
+		case CONTENT_HTML:
+			return "html";
+		break;
+
+		case CONTENT_TEXTPLAIN:
+			return "ascii";
+		break;
+
+		case CONTENT_CSS:
+			return "css";
+		break;
+
+#ifdef WITH_JPEG
+		case CONTENT_JPEG:
+			return "jpeg";
+		break;
+#endif
+#ifdef WITH_GIF
+		case CONTENT_GIF:
+			return "gif";
+		break;
+#endif
+#ifdef WITH_BMP
+		case CONTENT_BMP:
+			return "bmp";
+		break;
+
+		case CONTENT_ICO:
+			return "ico";
+		break;
+#endif
+#if defined(WITH_MNG) || defined(WITH_PNG)
+		case CONTENT_PNG:
+			return "png";
+		break;
+#endif
+#ifdef WITH_MNG
+		case CONTENT_JNG:
+			return "jng";
+		break;
+
+		case CONTENT_MNG:
+			return "mng";
+		break;
+#endif
+#if defined(WITH_SPRITE) || defined(WITH_NSSPRITE)
+		case CONTENT_SPRITE:
+			return "rosprite";
+		break;
+#endif
+
+		case CONTENT_DIRECTORY:
+			return "drawer";
+		break;
+
+#if defined(WITH_NS_SVG) || defined(WITH_RSVG)
+		case CONTENT_SVG:
+			return "svg";
+		break;
+#endif
+		default:
+			return "project";	
+		break;
+	}
 }

@@ -42,6 +42,7 @@
 #include "desktop/save_complete.h"
 
 #include "utils/errors.h"
+#include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
 
@@ -54,6 +55,12 @@
 #include <gadgets/layout.h>
 
 #include <reaction/reaction_macros.h>
+
+ULONG drag_icon_width;
+ULONG drag_icon_height;
+
+struct Window *ami_drag_icon_show(char *type, ULONG *x, ULONG *y);
+void ami_drag_icon_close(struct Window *win);
 
 struct gui_download_window *gui_download_window_create(download_context *ctx,
 		struct gui_window *gui)
@@ -326,21 +333,46 @@ gui_window_save_link(struct gui_window *g, const char *url, const char *title)
 void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
 		struct gui_window *g)
 {
+	char *filetype;
+
 	if(strcmp(option_use_pubscreen,"Workbench")) return;
 
 	gui_window_set_pointer(g,AMI_GUI_POINTER_DRAG);
 	drag_save_data = c;
 	drag_save_gui = g;
 	drag_save = type;
+
+	switch(type)
+	{
+		case GUI_SAVE_OBJECT_ORIG: // object
+		case GUI_SAVE_SOURCE:
+			filetype = ami_content_type_to_file_type(content_get_type(c));
+		break;
+		case GUI_SAVE_COMPLETE:
+			filetype = "drawer";
+		break;
+		case GUI_SAVE_OBJECT_NATIVE:
+			if(content_get_type(c) == CONTENT_SVG)
+			{
+				filetype = "dr2d";
+			}
+			else
+			{
+				filetype = "ilbm";
+			}
+		break;
+	}
+
+	drag_icon = ami_drag_icon_show(filetype, &drag_icon_width, &drag_icon_height);
 }
 
 void gui_drag_save_selection(struct selection *s, struct gui_window *g)
 {
-//	if(strcmp(option_use_pubscreen,"Workbench")) return;
-
 	gui_window_set_pointer(g,AMI_GUI_POINTER_DRAG);
 	drag_save_data = s;
 	drag_save = GUI_SAVE_TEXT_SELECTION;
+
+	drag_icon = ami_drag_icon_show("ascii", &drag_icon_width, &drag_icon_height);
 }
 
 void ami_drag_save(struct Window *win)
@@ -349,6 +381,8 @@ void ami_drag_save(struct Window *win)
 	char path[1025],dpath[1025];
 	char *source_data;
 	ULONG source_size;
+
+	if(drag_icon) ami_drag_icon_close(drag_icon);
 
 	if(strcmp(option_use_pubscreen,"Workbench") == 0)
 	{
@@ -448,11 +482,76 @@ void ami_drag_save(struct Window *win)
 #endif
 		}
 		break;
+
+		default:
+			LOG(("Unsupported drag save operation %ld",drag_save));
+		break;
 	}
 
 	drag_save = 0;
 	drag_save_data = NULL;
 	ami_update_pointer(win,GUI_POINTER_DEFAULT);
+}
+
+struct Window *ami_drag_icon_show(char *type, ULONG *x, ULONG *y)
+{
+	struct Window *win;
+	struct DiskObject *dobj = NULL;
+	ULONG *icondata1;
+	ULONG width, height;
+	long format = 0;
+	int err = 0;
+	int deftype = WBPROJECT;
+
+	if(type == "drawer") deftype = WBDRAWER;
+
+	dobj = GetIconTags(NULL, ICONGETA_GetDefaultName, type,
+					    ICONGETA_GetDefaultType, deftype,
+					    TAG_DONE);
+
+	err = IconControl(dobj,
+                  ICONCTRLA_GetWidth,&width,
+                  ICONCTRLA_GetHeight,&height,
+                  TAG_DONE);
+
+	*x = width;
+	*y = height;
+
+	win = OpenWindowTags(NULL,
+				WA_Left, scrn->MouseX - (width/2),
+				WA_Top, scrn->MouseY - (height/2),
+				WA_Width, width,
+				WA_Height, height,
+				WA_PubScreen, scrn,
+				WA_Borderless, TRUE,
+				WA_ToolBox, TRUE,
+				WA_StayTop, TRUE,
+				WA_Opaqueness, 128,
+				WA_OverrideOpaqueness, TRUE,
+				TAG_DONE);
+
+/* probably need layouticon and drawinfo stuff too */
+
+	DrawIconState(win->RPort, dobj, NULL, 0, 0, IDS_NORMAL,
+		ICONDRAWA_Frameless, TRUE,
+		ICONDRAWA_Borderless, TRUE,
+//		ICONDRAWA_Transparency, 128,
+		TAG_DONE);
+
+	return win;
+}
+
+void ami_drag_icon_move(struct Window *win)
+{
+	ChangeWindowBox(win, scrn->MouseX - (drag_icon_width / 2),
+		scrn->MouseY - (drag_icon_height / 2),
+		drag_icon_width, drag_icon_height);
+}
+
+void ami_drag_icon_close(struct Window *win)
+{
+	CloseWindow(win);
+	drag_icon = NULL;
 }
 
 void ami_superimpose_favicon(STRPTR path, struct hlcache_handle *icon, STRPTR type)
