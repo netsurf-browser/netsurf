@@ -31,8 +31,6 @@
 #include "gtk/gtk_window.h"
 #include "gtk/gtk_bitmap.h"
 
-#define GLADE_NAME "history.glade"
-
 enum
 {
 	SITE_TITLE = 0,
@@ -100,20 +98,19 @@ static void nsgtk_history_update_info(GtkTreeSelection *treesel,
 		gboolean domain);
 static void nsgtk_history_scroll_top (GtkScrolledWindow *scrolled_window);
 
-void nsgtk_history_init(void)
+bool nsgtk_history_init(void)
 {
 	dateToday = messages_get("DateToday");
 	dateYesterday = messages_get("DateYesterday");
 	dateAt = messages_get("DateAt");
 	domainAll = messages_get("DomainAll");
-	
-	char glade_location[strlen(res_dir_location) + SLEN(GLADE_NAME) + 1];
-	sprintf(glade_location, "%s" GLADE_NAME, res_dir_location);
-	gladeFile = glade_xml_new(glade_location, NULL, NULL);
+
+	gladeFile = glade_xml_new(glade_history_file_location, NULL, NULL);
+	if (gladeFile == NULL)
+		return false;
 
 	glade_xml_signal_autoconnect(gladeFile);
-	wndHistory = GTK_WINDOW(glade_xml_get_widget(gladeFile,
-							"wndHistory"));
+	wndHistory = GTK_WINDOW(glade_xml_get_widget(gladeFile,	"wndHistory"));
 					
 	nsgtk_history_init_model();
 	nsgtk_history_init_list();	
@@ -122,6 +119,8 @@ void nsgtk_history_init(void)
 	nsgtk_history_init_treeviews();
 
 	nsgtk_history_show_all();
+
+	return true;	
 }
 
 void nsgtk_history_init_model(void)

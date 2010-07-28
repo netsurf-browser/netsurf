@@ -136,11 +136,9 @@ DECLARE(setDefaultExportOptions);
 
 GtkDialog* nsgtk_options_init(struct browser_window *bw, GtkWindow *parent)
 {
-	char glade_location[strlen(res_dir_location) + SLEN("options.glade") 
-			+ 1];
-	sprintf(glade_location, "%soptions.glade", res_dir_location);
-	LOG(("Using '%s' as Glade template file", glade_location));
-	gladeFile = glade_xml_new(glade_location, NULL, NULL);
+	gladeFile = glade_xml_new(glade_options_file_location, NULL, NULL);
+	if (gladeFile == NULL)
+		return NULL;
 	
 	current_browser = bw;
 	wndPreferences = GTK_DIALOG(glade_xml_get_widget(gladeFile,
@@ -288,7 +286,6 @@ GtkDialog* nsgtk_options_init(struct browser_window *bw, GtkWindow *parent)
 void nsgtk_options_load(void) 
 {
 	GtkBox *box;
-	char languagefile[strlen(res_dir_location) + SLEN("languages") + 1];
 	const char *default_accept_language = 
 			option_accept_language ? option_accept_language : "en";
 	int combo_row_count = 0;
@@ -301,33 +298,33 @@ void nsgtk_options_load(void)
 	box = GTK_BOX(glade_xml_get_widget(gladeFile, "combolanguagevbox"));
 	comboLanguage = gtk_combo_box_new_text();
 
-	sprintf(languagefile, "%slanguages", res_dir_location);
-
 	/* Populate combobox from languages file */
-	fp = fopen((const char *) languagefile, "r");
-	if (fp == NULL) {
+	if ((languages_file_location != NULL) && 
+	    ((fp = fopen(languages_file_location, "r")) != NULL)) {
+		LOG(("Used %s for languages", languages_file_location));
+		while (fgets(buf, sizeof(buf), fp)) {
+			/* Ignore blank lines */
+			if (buf[0] == '\0')
+				continue;
+
+			/* Remove trailing \n */
+			buf[strlen(buf) - 1] = '\0';
+
+			gtk_combo_box_append_text(GTK_COMBO_BOX(comboLanguage), buf);
+
+			if (strcmp(buf, default_accept_language) == 0)
+				active_language = combo_row_count;
+
+			combo_row_count++;
+		}
+
+		fclose(fp);
+	} else {
 		LOG(("Failed opening languages file"));
-		warn_user("FileError", (const char *) languagefile);
-		return;
+		warn_user("FileError", languages_file_location);
+		gtk_combo_box_append_text(GTK_COMBO_BOX(comboLanguage), "en");
 	}
 
-	while (fgets(buf, sizeof(buf), fp)) {
-		/* Ignore blank lines */
-		if (buf[0] == '\0')
-			continue;
-
-		/* Remove trailing \n */
-		buf[strlen(buf) - 1] = '\0';
-
-		gtk_combo_box_append_text(GTK_COMBO_BOX(comboLanguage), buf);
-
-		if (strcmp(buf, default_accept_language) == 0)
-			active_language = combo_row_count;
-
-		combo_row_count++;
-	}
-
-	fclose(fp);
 
 	gtk_combo_box_set_active(GTK_COMBO_BOX(comboLanguage), active_language);
 	/** \todo localisation */

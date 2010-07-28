@@ -39,6 +39,6 @@ struct history_model {
 			GtkTreeSelection *domain_selection;
 };
 
-void nsgtk_history_init(void);
+bool nsgtk_history_init(void);
 
 #endif /* __NSGTK_HISTORY_H__ */

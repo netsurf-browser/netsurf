@@ -30,7 +30,6 @@
 #include "gtk/gtk_tabs.h"
 
 #define TAB_WIDTH_N_CHARS 15
-#define GET_WIDGET(x) glade_xml_get_widget(gladeNetsurf, (x))
 
 static GtkWidget *nsgtk_tab_label_setup(struct gui_window *window);
 static void nsgtk_tab_visibility_update(GtkNotebook *notebook, GtkWidget *child,

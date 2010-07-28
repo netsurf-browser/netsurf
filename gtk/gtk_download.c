@@ -36,7 +36,6 @@
 #include "gtk/gtk_compat.h"
 
 #define UPDATE_RATE 500 /* In milliseconds */
-#define GLADE_NAME "downloads.glade"
 
 static GtkWindow *nsgtk_download_window, *nsgtk_download_parent;
 static GtkProgressBar *nsgtk_download_progress_bar;
@@ -85,12 +84,14 @@ static gboolean nsgtk_download_handle_error (GError *error);
 
 	
 
-void nsgtk_download_init()
+bool nsgtk_download_init()
 {
-	char glade_location[strlen(res_dir_location) + SLEN(GLADE_NAME) + 1];
-	sprintf(glade_location, "%s" GLADE_NAME, res_dir_location);
-	GladeXML *gladeFile = glade_xml_new(glade_location, NULL, NULL);
-	
+	GladeXML *gladeFile;
+
+	gladeFile = glade_xml_new(glade_downloads_file_location, NULL, NULL);
+	if (gladeFile == NULL)
+		return false;
+
 	nsgtk_download_buttons = 
 			glade_xml_get_widget_prefix(gladeFile, "button");
 	nsgtk_download_progress_bar = GTK_PROGRESS_BAR(glade_xml_get_widget(
@@ -150,7 +151,8 @@ void nsgtk_download_init()
 			 nsgtk_download_store_cancel_item);
 	g_signal_connect(G_OBJECT(nsgtk_download_window), "delete-event", 
 			G_CALLBACK(nsgtk_download_hide), NULL);
-	
+
+	return true;	
 }
 
 void nsgtk_download_destroy ()

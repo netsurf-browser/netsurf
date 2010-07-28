@@ -116,8 +116,11 @@ void messages_load(const char *path)
 	struct hash_table *m;
 	char s[400];
 
-	assert(path != NULL);
-
+	if (path == NULL) 
+		return;
+			
+	LOG(("Loading Messages from '%s'", path));
+	
 	m = messages_load_ctx(path, messages_hash);
 	if (m == NULL) {
 		LOG(("Unable to open Messages file '%s'.  Possible reason: %s",
