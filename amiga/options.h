@@ -49,6 +49,7 @@ extern bool option_startup_no_window;
 extern bool option_close_no_quit;
 extern bool option_hide_docky_icon;
 extern char *option_font_unicode;
+extern bool option_drag_save_icons;
 
 #define EXTRA_OPTION_DEFINE \
 char *option_url_file = 0; \
@@ -80,6 +81,7 @@ bool option_startup_no_window = false; \
 bool option_close_no_quit = false; \
 bool option_hide_docky_icon = false; \
 char *option_font_unicode = 0; \
+bool option_drag_save_icons = true; \
 
 #define EXTRA_OPTION_TABLE \
 { "url_file",		OPTION_STRING,	&option_url_file }, \
@@ -110,5 +112,6 @@ char *option_font_unicode = 0; \
 { "startup_no_window",	OPTION_BOOL,	&option_startup_no_window}, \
 { "close_no_quit",	OPTION_BOOL,	&option_close_no_quit}, \
 { "hide_docky_icon",	OPTION_BOOL,	&option_hide_docky_icon}, \
-{ "font_unicode",		OPTION_STRING,	&option_font_unicode },
+{ "font_unicode",		OPTION_STRING,	&option_font_unicode }, \
+{ "drag_save_icons",	OPTION_BOOL,	&option_drag_save_icons},
 #endif

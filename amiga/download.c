@@ -59,7 +59,7 @@
 ULONG drag_icon_width;
 ULONG drag_icon_height;
 
-struct Window *ami_drag_icon_show(char *type, ULONG *x, ULONG *y);
+struct Window *ami_drag_icon_show(struct gui_window *g, char *type, ULONG *x, ULONG *y);
 void ami_drag_icon_close(struct Window *win);
 
 struct gui_download_window *gui_download_window_create(download_context *ctx,
@@ -337,11 +337,6 @@ void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
 
 	if(strcmp(option_use_pubscreen,"Workbench")) return;
 
-	gui_window_set_pointer(g,AMI_GUI_POINTER_DRAG);
-	drag_save_data = c;
-	drag_save_gui = g;
-	drag_save = type;
-
 	switch(type)
 	{
 		case GUI_SAVE_OBJECT_ORIG: // object
@@ -363,16 +358,19 @@ void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
 		break;
 	}
 
-	drag_icon = ami_drag_icon_show(filetype, &drag_icon_width, &drag_icon_height);
+	drag_icon = ami_drag_icon_show(g, filetype, &drag_icon_width, &drag_icon_height);
+
+	drag_save_data = c;
+	drag_save_gui = g;
+	drag_save = type;
 }
 
 void gui_drag_save_selection(struct selection *s, struct gui_window *g)
 {
-	gui_window_set_pointer(g,AMI_GUI_POINTER_DRAG);
+	drag_icon = ami_drag_icon_show(g, "ascii", &drag_icon_width, &drag_icon_height);
+
 	drag_save_data = s;
 	drag_save = GUI_SAVE_TEXT_SELECTION;
-
-	drag_icon = ami_drag_icon_show("ascii", &drag_icon_width, &drag_icon_height);
 }
 
 void ami_drag_save(struct Window *win)
@@ -493,7 +491,7 @@ void ami_drag_save(struct Window *win)
 	ami_update_pointer(win,GUI_POINTER_DEFAULT);
 }
 
-struct Window *ami_drag_icon_show(char *type, ULONG *x, ULONG *y)
+struct Window *ami_drag_icon_show(struct gui_window *g, char *type, ULONG *x, ULONG *y)
 {
 	struct Window *win;
 	struct DiskObject *dobj = NULL;
@@ -502,6 +500,16 @@ struct Window *ami_drag_icon_show(char *type, ULONG *x, ULONG *y)
 	long format = 0;
 	int err = 0;
 	int deftype = WBPROJECT;
+
+	if(option_drag_save_icons == false)
+	{
+		gui_window_set_pointer(g, AMI_GUI_POINTER_DRAG);
+		return NULL;
+	}
+	else
+	{
+		gui_window_set_pointer(g, GUI_POINTER_DEFAULT);
+	}
 
 	if(type == "drawer") deftype = WBDRAWER;
 
@@ -543,6 +551,8 @@ struct Window *ami_drag_icon_show(char *type, ULONG *x, ULONG *y)
 
 void ami_drag_icon_move(struct Window *win)
 {
+	if(win == NULL) return;
+
 	ChangeWindowBox(win, scrn->MouseX - (drag_icon_width / 2),
 		scrn->MouseY - (drag_icon_height / 2),
 		drag_icon_width, drag_icon_height);
@@ -550,7 +560,7 @@ void ami_drag_icon_move(struct Window *win)
 
 void ami_drag_icon_close(struct Window *win)
 {
-	CloseWindow(win);
+	if(win) CloseWindow(win);
 	drag_icon = NULL;
 }
 

@@ -191,7 +191,7 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 void ami_update_pointer(struct Window *win, gui_pointer_shape shape)
 {
 	if(mouseptrcurrent == shape) return;
-	if(drag_save) return;
+	if(drag_save_data) return;
 
 	if(option_use_os_pointers)
 	{
