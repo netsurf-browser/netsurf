@@ -3180,7 +3180,7 @@ void ami_do_redraw(struct gui_window_2 *g)
 		gui_window_remove_caret(g->bw->window);
 
 		ScrollWindowRaster(g->win,hcurrent-oldh,vcurrent-oldv,
-				xoffset,yoffset,xoffset+width,yoffset+height);
+				xoffset,yoffset,xoffset+width-1,yoffset+height-1);
 
 		g->bw->window->c_h = g->bw->window->c_h_temp;
 
