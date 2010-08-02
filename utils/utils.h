@@ -20,6 +20,7 @@
 #ifndef _NETSURF_UTILS_UTILS_H_
 #define _NETSURF_UTILS_UTILS_H_
 
+#include <inttypes.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -41,6 +42,9 @@
 #endif
 #ifndef PRIxPTR
 #define PRIxPTR "x"
+#endif
+#ifndef PRId64
+#define PRId64 "lld"
 #endif
 
 #if defined(__HAIKU__) || defined(__BEOS__)
