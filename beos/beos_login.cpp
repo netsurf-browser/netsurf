@@ -43,10 +43,11 @@ extern "C" {
 
 class LoginAlert : public BAlert {
 public:
-			LoginAlert(struct browser_window *bw,
-				const char *url, 
-				const char *host, 
-				const char *realm, 
+			LoginAlert(nserror (*callback)(bool proceed, void *pw),
+				void *callbaclpw,
+				const char *url,
+				const char *host,
+				const char *realm,
 				const char *text);
 	virtual	~LoginAlert();
 	void	MessageReceived(BMessage *message);
@@ -55,20 +56,23 @@ private:
 	BString 	fUrl;				/**< URL being fetched */
 	BString		fHost;				/**< Host for user display */
 	BString		fRealm;				/**< Authentication realm */
-	struct gui_window *fW;			/**< GUI window handle */
+	nserror		(*fCallback)(bool proceed, void *pw);
+	void		*fCallbackPw;
 
 	BTextControl	*fUserControl;
 	BTextControl	*fPassControl;
 };
 
-static void create_login_window(struct browser_window *bw, const char *host,
-                const char *realm, const char *fetchurl);
+static void create_login_window(const char *host,
+                const char *realm, const char *fetchurl,
+                nserror (*cb)(bool proceed, void *pw), void *cbpw);
 
 
 #define TC_H 25
 #define TC_MARGIN 10
 
-LoginAlert::LoginAlert(struct browser_window *bw,
+LoginAlert::LoginAlert(nserror (*callback)(bool proceed, void *pw),
+				void *callbackpw,
 				const char *url, 
 				const char *host, 
 				const char *realm, 
@@ -76,20 +80,21 @@ LoginAlert::LoginAlert(struct browser_window *bw,
 	: BAlert("Login", text, "Cancel", "Ok", NULL, 
 		B_WIDTH_AS_USUAL, B_WARNING_ALERT)
 {
+	fCallback = callback;
+	fCallbackPw = callbackpw;
 	fUrl = url;
 	fHost = host;
 	fRealm = realm;
-	// dereference now as we can't be sure 
-	// the main thread won't delete from under our feet
-	fW = bw->window;
 
 	SetFeel(B_MODAL_SUBSET_WINDOW_FEEL);
+	/*
+	// XXX: can't do that anymore
 	nsbeos_scaffolding *s = nsbeos_get_scaffold(bw->window);
 	if (s) {
 		NSBrowserWindow *w = nsbeos_get_bwindow_for_scaffolding(s);
 		if (w)
 			AddToSubset(w);
-	}
+	}*/
 
 	// make space for controls
 	ResizeBy(0, 2 * TC_H);
@@ -138,7 +143,8 @@ LoginAlert::MessageReceived(BMessage *message)
 		m->AddString("URL", fUrl.String());
 		m->AddString("Host", fHost.String());
 		m->AddString("Realm", fRealm.String());
-		m->AddPointer("gui_window", fW);
+		m->AddPointer("callback", (void *)fCallback);
+		m->AddPointer("callback_pw", (void *)fCallbackPw);
 		m->AddString("User", fUserControl->Text());
 		m->AddString("Pass", fPassControl->Text());
 		BString auth(fUserControl->Text());
@@ -147,7 +153,7 @@ LoginAlert::MessageReceived(BMessage *message)
 		
 		// notify the main thread
 		// the event dispatcher will handle it
-		nsbeos_pipe_message(m, NULL, fW);
+		nsbeos_pipe_message(m, NULL, NULL);
 	}
 		break;
 	default:
@@ -157,22 +163,25 @@ LoginAlert::MessageReceived(BMessage *message)
 }
 
 
-void gui_401login_open(struct browser_window *bw, struct content *c,
-		const char *realm)
+void gui_401login_open(const char *url, const char *realm,
+		nserror (*cb)(bool proceed, void *pw), void *cbpw)
 {
 	char *host;
 	url_func_result res;
 
-	res = url_host(c->url, &host);
+	res = url_host(url, &host);
 	assert(res == URL_FUNC_OK);
 
-	create_login_window(bw, host, realm, c->url);
+	create_login_window(url, host, realm, cb, cbpw);
 
 	free(host);
 }
 
-void create_login_window(struct browser_window *bw, const char *host,
-		const char *realm, const char *fetchurl)
+//void create_login_window(struct browser_window *bw, const char *host,
+//		const char *realm, const char *fetchurl)
+static void create_login_window(const char *url, const char *host,
+                const char *realm, nserror (*cb)(bool proceed, void *pw),
+                void *cbpw)
 {
 	BString r("Secure Area");
 	if (realm)
@@ -182,7 +191,7 @@ void create_login_window(struct browser_window *bw, const char *host,
 	text << "Host:	" << host << "\n";
 	//text << "\n";
 
-	LoginAlert *a = new LoginAlert(bw, fetchurl, host, r.String(), 
+	LoginAlert *a = new LoginAlert(cb, cbpw, url, host, r.String(), 
 		text.String());
 	// asynchronously
 	a->Go(NULL);

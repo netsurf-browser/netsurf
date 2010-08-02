@@ -45,6 +45,7 @@ extern "C" {
 #include <hubbub/hubbub.h>
 
 #include "content/content.h"
+#include "content/content_protected.h"
 #include "content/fetch.h"
 #include "content/fetchers/fetch_curl.h"
 #include "content/urldb.h"
@@ -82,6 +83,7 @@ extern "C" {
 
 
 static void *myrealloc(void *ptr, size_t len, void *pw);
+void gui_init(int argc, char** argv);
 
 
 /* Where to search for shared resources.  Must have trailing / */
@@ -121,7 +123,7 @@ static int sEventPipe[2];
 
 #if 0 /* GTK */
 static void nsbeos_create_ssl_verify_window(struct browser_window *bw,
-		struct content *c, const struct ssl_cert_info *certs,
+		hlcache_handle *c, const struct ssl_cert_info *certs,
 		unsigned long num);
 static void nsbeos_ssl_accept(BButton *w, gpointer data);
 static void nsbeos_ssl_reject(BButton *w, gpointer data);
@@ -226,6 +228,7 @@ NSBrowserApplication::QuitRequested()
 
 
 // XXX doesn't work
+#if 0
 static char *generate_default_css()
 {
 	BString text;
@@ -276,9 +279,11 @@ static char *generate_default_css()
 
 	return strdup(url);
 }
+#endif
 
 /* realpath fallback on R5 */
 #if !defined(__HAIKU__) && !defined(B_BEOS_VERSION_DANO)
+extern "C" char *realpath(const char *f, char *buf);
 char *realpath(const char *f, char *buf)
 {
 	BPath path(f, NULL, true);
@@ -441,12 +446,23 @@ static void gui_init2(int argc, char** argv)
 /** Normal entry point from OS */
 int main(int argc, char** argv)
 {
+	char buf[PATH_MAX];
 	setbuf(stderr, NULL);
 
-	/* initialise netsurf */
-	netsurf_init(argc, argv);
+	BPath options;
+	if (find_directory(B_USER_SETTINGS_DIRECTORY, &options, true) == B_OK) {
+		options.Append("x-vnd.NetSurf");
+	}
 
-        gui_init2(argc, argv);
+	find_resource(buf, "messages", "./beos/res/messages");
+	LOG(("Using '%s' as Messages file", buf));
+	//messages_load(buf);
+
+	/* initialise netsurf */
+	netsurf_init(&argc, &argv, options.Path(), buf);
+
+    gui_init(argc, argv);
+    gui_init2(argc, argv);
 
 	netsurf_main_loop();
 
@@ -584,10 +600,6 @@ void gui_init(int argc, char** argv)
                 LOG(("Using '%s' as certificate path", buf));
                 option_ca_path = strdup(buf);
         }
-
-	find_resource(buf, "messages", "./beos/res/messages");
-	LOG(("Using '%s' as Messages file", buf));
-	messages_load(buf);
 
 	//find_resource(buf, "mime.types", "/etc/mime.types");
 	beos_fetch_filetype_init();
@@ -863,20 +875,22 @@ gui_window_save_link(struct gui_window *g, const char *url, const char *title)
  * Send the source of a content to a text editor.
  */
 
-void nsbeos_gui_view_source(struct content *content, struct selection *selection)
+void nsbeos_gui_view_source(struct hlcache_handle *content, struct selection *selection)
 {
 	char *temp_name;
 	bool done = false;
 	BPath path;
 	status_t err;
+	size_t size;
+	const char *source = content_get_source_data(content, &size);
 
-	if (!content || !content->source_data) {
+	if (!content || !source) {
 		warn_user("MiscError", "No document source");
 		return;
 	}
 
 	/* try to load local files directly. */
-	temp_name = url_to_path(content->url);
+	temp_name = url_to_path(content_get_url(content));
 	if (temp_name) {
 		path.SetTo(temp_name);
 		BEntry entry;
@@ -904,12 +918,12 @@ void nsbeos_gui_view_source(struct content *content, struct selection *selection
 			warn_user("IOError", strerror(err));
 			return;
 		}
-		err = file.Write(content->source_data, content->source_size);
+		err = file.Write(source, size);
 		if (err < B_OK) {
 			warn_user("IOError", strerror(err));
 			return;
 		}
-		const char *mime = content->mime_type;
+		const char *mime = content_get_mime_type(content);
 		if (mime)
 			file.WriteAttr("BEOS:TYPE", B_MIME_STRING_TYPE, 0LL, 
 				mime, strlen(mime) + 1);
@@ -926,10 +940,10 @@ void nsbeos_gui_view_source(struct content *content, struct selection *selection
 #if 0
 	if (selection && selection->defined) {
 		int32 line = -1;
-		if (content->type == CONTENT_HTML) {
+		if (content_get_type(content) == CONTENT_HTML) {
 			// XXX: use selection, find line in source code
 		}
-		if (content->type == CONTENT_TEXTPLAIN) {
+		if (content_get_type(content) == CONTENT_TEXTPLAIN) {
 				line = MAKELINE_FROM_IDX(start_idx);
 		}
 		// not CSS!
@@ -1046,12 +1060,13 @@ void die(const char * const error)
 }
 
 
-void hotlist_visited(struct content *content)
+void hotlist_visited(hlcache_handle *content)
 {
 }
 
-void gui_cert_verify(struct browser_window *bw, struct content *c,
-		const struct ssl_cert_info *certs, unsigned long num)
+void gui_cert_verify(const char *url, const struct ssl_cert_info *certs, 
+		unsigned long num, nserror (*cb)(bool proceed, void *pw),
+		void *cbpw)
 {
 	CALLED();
 #if 0 /* GTK */
@@ -1060,7 +1075,7 @@ void gui_cert_verify(struct browser_window *bw, struct content *c,
 }
 
 static void nsbeos_create_ssl_verify_window(struct browser_window *bw,
-		struct content *c, const struct ssl_cert_info *certs,
+		hlcache_handle *c, const struct ssl_cert_info *certs,
 		unsigned long num)
 {
 	CALLED();

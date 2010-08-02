@@ -80,7 +80,7 @@ static void fetch_rsrc_finalise(const char *scheme)
 
 static void *fetch_rsrc_setup(struct fetch *parent_fetch, const char *url,
 		 bool only_2xx, const char *post_urlenc,
-		 struct fetch_multipart_data *post_multipart,
+		 const struct fetch_multipart_data *post_multipart,
 		 const char **headers)
 {
 	struct fetch_rsrc_context *ctx;
@@ -241,20 +241,9 @@ static bool fetch_rsrc_process(struct fetch_rsrc_context *c)
 static void fetch_rsrc_poll(const char *scheme)
 {
 	struct fetch_rsrc_context *c, *next;
-	struct cache_data cachedata;
 
 	if (ring == NULL) return;
 	
-	cachedata.req_time = time(NULL);
-	cachedata.res_time = time(NULL);
-	cachedata.date = 0;
-	cachedata.expires = 0;
-	cachedata.age = INVALID_AGE;
-	cachedata.max_age = 0;
-	cachedata.no_cache = true;
-	cachedata.etag = NULL;
-	cachedata.last_modified = 0;
-
 	/* Iterate over ring, processing each pending fetch */
 	c = ring;
 	do {
@@ -299,7 +288,7 @@ static void fetch_rsrc_poll(const char *scheme)
 			}
 			if (!c->aborted) {
 				fetch_rsrc_send_callback(FETCH_FINISHED, 
-					c, &cachedata, 0, FETCH_ERROR_NO_ERROR);
+					c, 0, 0, FETCH_ERROR_NO_ERROR);
 			}
 		} else {
 			LOG(("Processing of %s failed!", c->url));

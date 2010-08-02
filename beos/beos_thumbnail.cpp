@@ -54,7 +54,7 @@ extern status_t ScaleBitmap(const BBitmap& inBitmap, BBitmap& outBitmap);
  * \param  bitmap   the bitmap to draw to
  * \param  url      the URL the thumnail belongs to, or NULL
  */
-bool thumbnail_create(struct content *content, struct bitmap *bitmap,
+bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 		const char *url)
 {
 	BBitmap *thumbnail;
@@ -78,9 +78,11 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 
 	LOG(("Trying to create a thumbnail bitmap %d x %d for a content of %d x %d @ %d",
 		width, height,
-		content->width, content->width, depth));
+		content_get_width(content), content_get_width(content), depth));
 
-	BRect contentRect(0, 0, content->width - 1, content->width - 1);
+	BRect contentRect(0, 0,
+		content_get_width(content) - 1,
+		content_get_width(content) - 1);
 	big = new BBitmap(contentRect,
 		B_BITMAP_ACCEPTS_VIEWS, B_RGB32);
 
@@ -118,12 +120,18 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 	plot = nsbeos_plotters;
 	nsbeos_plot_set_scale(1.0);
 
-	plot.rectangle(0, 0, content->width, content->width, plot_style_fill_white);
+	plot.rectangle(0, 0,
+		content_get_width(content),
+		content_get_width(content),
+		plot_style_fill_white);
 
 	/* render the content */
-	content_redraw(content, 0, 0, content->width, content->width,
-			0, 0, content->width, content->width, 1.0, 0xFFFFFF);
-	
+	content_redraw(content, 0, 0,
+			content_get_width(content), content_get_width(content),
+			0, 0,
+			content_get_width(content), content_get_width(content),
+			1.0, 0xFFFFFF);
+
 	view->Sync();
 	view->UnlockLooper();
 

@@ -911,7 +911,7 @@ void nsbeos_dispatch_event(BMessage *message)
 void nsbeos_window_expose_event(BView *view, gui_window *g, BMessage *message)
 {
 	BRect updateRect;
-	struct content *c;
+	hlcache_handle *c;
 	float scale = g->bw->scale;
 
 	assert(g);
@@ -935,7 +935,7 @@ void nsbeos_window_expose_event(BView *view, gui_window *g, BMessage *message)
 		return;
 
 	/* HTML rendering handles scale itself */
-	if (c->type == CONTENT_HTML)
+	if (content_get_type(c) == CONTENT_HTML)
 		scale = 1;
 
 	if (!view->LockLooper())
@@ -1196,7 +1196,7 @@ void nsbeos_window_resize_event(BView *view, gui_window *g, BMessage *event)
 
 
 #if 0
-	struct content *content;
+	hlcache_handle *content;
 
 	content = g->bw->current_content;
 
@@ -1393,7 +1393,7 @@ void gui_window_redraw_window(struct gui_window *g)
 void gui_window_update_box(struct gui_window *g,
 			   const union content_msg_data *data)
 {
-	struct content *c = g->bw->current_content;
+	hlcache_handle *c = g->bw->current_content;
 
 	if (c == NULL)
 		return;
@@ -1509,8 +1509,8 @@ void gui_window_update_extent(struct gui_window *g)
 	if (!g->view->LockLooper())
 		return;
 
-	float x_max = g->bw->current_content->width * g->bw->scale /* - 1*/;
-	float y_max = g->bw->current_content->height * g->bw->scale /* - 1*/;
+	float x_max = content_get_width(g->bw->current_content) * g->bw->scale /* - 1*/;
+	float y_max = content_get_height(g->bw->current_content) * g->bw->scale /* - 1*/;
 	float x_prop = g->view->Bounds().Width() / x_max;
 	float y_prop = g->view->Bounds().Height() / y_max;
 	x_max -= g->view->Bounds().Width() + 1;
@@ -1756,7 +1756,7 @@ bool gui_window_box_scroll_start(struct gui_window *g,
 	return true;
 }
 
-void gui_drag_save_object(gui_save_type type, struct content *c,
+void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
 			  struct gui_window *g)
 {
 

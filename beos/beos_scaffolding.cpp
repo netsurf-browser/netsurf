@@ -498,7 +498,10 @@ NSBaseView::Instantiate(BMessage *archive)
 	replicant_view = view;
 	replicated = true;
 
-	netsurf_init(2, info->args);
+	//TODO:FIXME: fix replicants
+	// netsurf_init() needs different args now...
+	//netsurf_init(2, info->args);
+	return NULL;
 
 	replicant_done_sem = create_sem(0, "NS Replicant created");
 	thread_id nsMainThread = spawn_thread(nsbeos_replicant_main_thread,
@@ -2314,7 +2317,7 @@ void gui_window_stop_throbber(struct gui_window* _g)
 /**
  * add retrieved favicon to the gui
  */
-void gui_window_set_icon(struct gui_window *g, struct content *icon)
+void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 {
 }
 
@@ -2323,7 +2326,7 @@ void gui_window_set_icon(struct gui_window *g, struct content *icon)
 * \param ico may be NULL for local calls; then access current cache from
 * search_web_ico()
 */
-void gui_window_set_search_ico(struct content *ico)
+void gui_window_set_search_ico(hlcache_handle *ico)
 {
 }
 
