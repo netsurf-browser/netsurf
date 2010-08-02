@@ -167,6 +167,10 @@ ifeq ($(TARGET),beos)
   # $NETSURFRES.  It must have a trailing /
   NETSURF_BEOS_RESOURCES := /boot/apps/netsurf/res/
 
+  # Enable NetSurf's use of libsvgtiny for displaying SVGs
+  # Valid options: YES, NO, AUTO
+  NETSURF_USE_NSSVG := YES
+
   # Enable NetSurf's use of librosprite for displaying RISC OS Sprites
   # Valid options: YES, NO, AUTO
   NETSURF_USE_ROSPRITE := AUTO
