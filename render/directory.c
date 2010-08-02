@@ -303,6 +303,7 @@ bool dirlist_generate_row(bool even, bool directory, char *url, char *name,
 {
 	const char *unit;
 	char size_string[100];
+	int error;
 
 	if (size < 0) {
 		unit = "";
@@ -313,7 +314,7 @@ bool dirlist_generate_row(bool even, bool directory, char *url, char *name,
 				dirlist_filesize_value((unsigned long)size));
 	}
 
-	int error = snprintf(buffer, buffer_length,
+	error = snprintf(buffer, buffer_length,
 			"<a href=\"%s\" class=\"%s %s\">"
 			"<span class=\"name\">%s</span> "
 			"<span class=\"type\">%s</span> "
