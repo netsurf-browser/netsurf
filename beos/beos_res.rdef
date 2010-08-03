@@ -16,18 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-enum {
-	R_ResBackNavActive = 1042,
-	R_ResBackNavInactive = 1043,
-	R_ResForwNavActive = 1044,
-	R_ResForwNavInactive = 1045,
-	R_ResUpNavActive = 1046,
-	R_ResUpNavInactive = 1047,
-	R_ResBackNavActiveSel = 1048,
-	R_ResForwNavActiveSel = 1049,
-	R_ResUpNavActiveSel = 1050
-};
-
+#include "beos_res.h"
 
 resource(200, "default.css") #'data' import "res/default.css";
 resource(201, "beosdefault.css") #'data' import "res/beosdefault.css";
@@ -51,7 +40,7 @@ resource(408, "throbber8.png") #'data' import "res/throbber/throbber8.png";
 
 resource(1, "BEOS:APP_FLAGS") (#'APPF') $"01000000";
 
-resource(1, "BEOS:L:STD_ICON") #'ICON' array {
+resource(101, "BEOS:L:STD_ICON") #'ICON' array {
 	$"FFFFFFFFFFFFFFFFFFFFFF0E0A00D600D6000AAF0EFFFFFFFFFFFFFFFFFFFFFF"
 	$"FFFFFFFFFFFFFFFF0E0A000001DED5D5D5DE020000090EFFFFFFFFFFFFFFFFFF"
 	$"FFFFFFFFFFFFFF0B0001B58D6666666C6C6C6C93B50200090EFFFFFFFFFFFFFF"
@@ -118,6 +107,22 @@ resource(1, "BEOS:FILE_TYPES") message {
 	"types" = "application/x-vnd.Be.URL.ftp",
 	"types" = "application/x-vnd.Be.URL.http",
 	"types" = "application/x-vnd.Be.URL.https"
+};
+
+resource(R_ResizeHandle) archive(, 0x00000000) BBitmap {
+	"_frame" = rect { 0.0, 0.0, 13.0, 13.0 },
+	"_cspace" = 4,
+	"_bmflags" = 1,
+	"_rowbytes" = 16,
+	"_data" =  array {
+		$"1B1B1B1B1B1B1B1B1B1B1B1B133F3F3F1B1B1B1B1B1B1B1B1B1B1B1B133F3F3F"
+		$"1B1B1B1B1B1B1B1B1B1B1B1B133F3F3F1B1B1B1B1B1B1B1B1B0C1B1B133F3F3F"
+		$"1B1B1B1B1B1B1B1B1B1B3F1B133F3F3F1B1B1B1B1B1B1B1B1B1B1B1B133F3F3F"
+		$"1B1B1B1B1B1B0C1B1B0D1B1B133F3F3F1B1B1B1B1B1B1B3F1B1B3F1B133F3F3F"
+		$"1B1B1B1B1B1B1B1B1B1B1B1B133F3F3F1B1B1B0C1B1B0D1B1B0C1B1B133F3F3F"
+		$"1B1B1B1B3F1B1B3F1B1B3F1B133F3F3F1B1B1B1B1B1B1B1B1B1B1B1B133F3F3F"
+		$"131313131313131313131313133F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F"
+	}
 };
 
 resource(R_ResBackNavActive) archive(, 0x00000000) BBitmap {
