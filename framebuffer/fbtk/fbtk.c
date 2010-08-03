@@ -22,6 +22,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdarg.h>
 
 #include <libnsfb.h>
 #include <libnsfb_plot.h>
