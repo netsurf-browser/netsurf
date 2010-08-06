@@ -381,7 +381,7 @@ void ami_set_options(void)
 			UnLock(lock);
 			option_font_unicode = (char *)strdup("Bitstream Cyberbit");
 		}
-		else option_font_unicode = (char *)strdup("Deja Vu Sans");
+		else option_font_unicode = (char *)strdup("DejaVu Sans");
 	}
 
 	if((!option_theme) || (option_theme[0] == '\0'))
