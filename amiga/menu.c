@@ -673,6 +673,7 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 
 				case 4: // select all
 					browser_window_key_press(gwin->bw, KEY_SELECT_ALL);
+					gui_start_selection(gwin->bw->window);
 				break;
 
 				case 5: // clear selection

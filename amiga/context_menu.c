@@ -203,7 +203,7 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 						TAG_DONE),
 						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
 							PMIA_Title, (ULONG)ctxmenulab[CMID_SELCLEAR],
-							PMIA_ID,CMID_SELALL,
+							PMIA_ID,CMID_SELCLEAR,
 							PMIA_Disabled, disabled_noselection,
 						TAG_DONE),
 					TAG_DONE),
@@ -399,6 +399,7 @@ uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved)
 
 			case CMID_SELALL:
 				browser_window_key_press(gwin->bw, KEY_SELECT_ALL);
+				gui_start_selection(gwin->bw->window);
 			break;
 
 			case CMID_SELCLEAR:
