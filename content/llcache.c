@@ -1244,7 +1244,7 @@ nserror llcache_object_notify_users(llcache_object *object)
 	llcache_event event;
 
 #ifdef LLCACHE_TRACE
-	LOG(("Notifying users of %p", object));
+	bool emitted_notify = false;
 #endif
 
 	/**
@@ -1281,9 +1281,15 @@ nserror llcache_object_notify_users(llcache_object *object)
 		next_user = user->next;
 
 #ifdef LLCACHE_TRACE
-		if (handle->state != objstate)
+		if (handle->state != objstate) {
+			if (emitted_notify == false) {
+				LOG(("Notifying users of %p", object));
+				emitted_notify = true;
+			}
+
 			LOG(("User %p state: %d Object state: %d", 
 					user, handle->state, objstate));
+		}
 #endif
 
 		/* User: INIT, Obj: HEADERS, DATA, COMPLETE => User->HEADERS */
