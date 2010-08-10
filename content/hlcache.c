@@ -29,8 +29,9 @@
 #include "utils/http.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/url.h"
 #include "utils/ring.h"
+#include "utils/url.h"
+#include "utils/utils.h"
 
 typedef struct hlcache_entry hlcache_entry;
 typedef struct hlcache_retrieval_ctx hlcache_retrieval_ctx;
@@ -151,10 +152,22 @@ void hlcache_finalise(void)
 /* See hlcache.h for documentation */
 nserror hlcache_poll(void)
 {
+	static uint32_t last_clean_time;
+	uint32_t now;
+
 	llcache_poll();
 
-	/* Give the cache a clean */
-	hlcache_clean();
+	/* Only attempt to clean the cache every 5 seconds */
+#define HLCACHE_CLEAN_INTERVAL_CS (500)
+	now = wallclock();
+
+	if (now > last_clean_time + HLCACHE_CLEAN_INTERVAL_CS) {
+		/* Give the cache a clean */
+		hlcache_clean();
+
+		last_clean_time = now;
+	}
+#undef HLCACHE_CLEAN_INTERVAL_CS
 
 	return NSERROR_OK;
 }

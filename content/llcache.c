@@ -269,6 +269,8 @@ void llcache_finalise(void)
 /* See llcache.h for documentation */
 nserror llcache_poll(void)
 {
+	static uint32_t last_clean_time;
+	uint32_t now;
 	llcache_object *object;
 	
 	fetch_poll();
@@ -284,8 +286,17 @@ nserror llcache_poll(void)
 		llcache_object_notify_users(object);
 	}
 
-	/* Attempt to clean the cache */
-	llcache_clean();
+	/* Only attempt to clean the cache every 5 seconds */
+#define LLCACHE_CLEAN_INTERVAL_CS (500)
+	now = wallclock();
+
+	if (now > last_clean_time + LLCACHE_CLEAN_INTERVAL_CS) {
+		/* Attempt to clean the cache */
+		llcache_clean();
+
+		last_clean_time = now;
+	}
+#undef LLCACHE_CLEAN_INTERVAL_CS
 
 	return NSERROR_OK;
 }
