@@ -458,6 +458,21 @@ gui_init(int argc, char** argv)
 	fb_find_resource(buf, "quirks.css", "./framebuffer/res/quirks.css");
 	quirks_stylesheet_url = path_to_url(buf);
 
+	if (option_cookie_file == NULL) {
+		fb_find_resource(buf, "Cookies", "~/.netsurf/Cookies");
+		LOG(("Using '%s' as Cookies file", buf));
+		option_cookie_file = strdup(buf);
+	}
+
+	if (option_cookie_jar == NULL) {
+		fb_find_resource(buf, "Cookies", "~/.netsurf/Cookies");
+		LOG(("Using '%s' as Cookie Jar file", buf));
+		option_cookie_jar = strdup(buf);
+	}
+
+	if (option_cookie_file == NULL || option_cookie_jar == NULL)
+		die("Failed initialising cookie options");
+
 	if (process_cmdline(argc,argv) != true)
 		die("unable to process command line.\n");
 
@@ -474,6 +489,7 @@ gui_init(int argc, char** argv)
 
 	fbtk_enable_oskb(fbtk);
 
+	urldb_load_cookies(option_cookie_file);
 }
 
 /** Entry point from OS.
@@ -550,6 +566,9 @@ void
 gui_quit(void)
 {
 	LOG(("gui_quit"));
+
+	urldb_save_cookies(option_cookie_jar);
+
 	framebuffer_finalise();
 
 	/* We don't care if this fails as we're about to exit, anyway */
