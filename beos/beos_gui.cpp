@@ -1165,17 +1165,32 @@ utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 
 char *path_to_url(const char *path)
 {
-	char *r = (char *)malloc(strlen(path) + FILE_SCHEME_PREFIX_LEN + 1);
+	int urllen = strlen(path) + FILE_SCHEME_PREFIX_LEN + 1;
+	char *url = (char *)malloc(urllen);
 
-	strcpy(r, FILE_SCHEME_PREFIX);
-	strcat(r, path);
+	if (url == NULL) {
+		return NULL;
+	}
 
-	return r;
+	if (*path == '/') {
+		path++; /* file: paths are already absolute */
+	} 
+
+	snprintf(url, urllen, "%s%s", FILE_SCHEME_PREFIX, path);
+
+	return url;
 }
 
 char *url_to_path(const char *url)
 {
-	return strdup(url + FILE_SCHEME_PREFIX_LEN);
+	char *url_path = curl_unescape(url, 0);
+	char *path;
+
+	/* return the absolute path including leading / */
+	path = strdup(url_path + (FILE_SCHEME_PREFIX_LEN - 1));
+	curl_free(url_path);
+
+	return path;
 }
 
 bool cookies_update(const char *domain, const struct cookie_data *data)
