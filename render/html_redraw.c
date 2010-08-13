@@ -1085,8 +1085,8 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 	p[14] = x;			p[15] = y + p_height;
 
 	for (i = 0; i != 4; i++) {
-		side = sides[i]; /* plot order */
 		colour col = 0;
+		side = sides[i]; /* plot order */
 
 		if (box->border[side].width == 0 || box->border[side].color ==
 				CSS_BORDER_COLOR_TRANSPARENT)
