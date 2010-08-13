@@ -1135,16 +1135,16 @@ bool html_redraw_inline_borders(struct box *box, int x0, int y0, int x1, int y1,
 	}
 
 	/* calculate border vertices */
-	p[0]  = x0 + left;	p[1]  = y0 + top;
-	p[2]  = x0;		p[3]  = y0;
-	p[4]  = x1;		p[5]  = y0;
-	p[6]  = x1 - right;	p[7]  = y0 + top;
-	p[8]  = x1 - right;	p[9]  = y1 - bottom;
-	p[10] = x1;		p[11] = y1;
-	p[12] = x0;		p[13] = y1;
-	p[14] = x0 + left;	p[15] = y1 - bottom;
-	p[16] = x0 + left;	p[17] = y0 + top;
-	p[18] = x0;		p[19] = y0;
+	p[0]  = (first) ? x0 + left : x0;	p[1]  = y0 + top;
+	p[2]  = x0;				p[3]  = y0;
+	p[4]  = x1;				p[5]  = y0;
+	p[6]  = (last) ? x1 - right : x1;	p[7]  = y0 + top;
+	p[8]  = (last) ? x1 - right : x1;	p[9]  = y1 - bottom;
+	p[10] = x1;				p[11] = y1;
+	p[12] = x0;				p[13] = y1;
+	p[14] = (first) ? x0 + left : x0;	p[15] = y1 - bottom;
+	p[16] = (first) ? x0 + left : x0;	p[17] = y0 + top;
+	p[18] = x0;				p[19] = y0;
 
 	assert(box->style);
 
