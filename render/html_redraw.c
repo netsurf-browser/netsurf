@@ -1050,12 +1050,13 @@ bool html_redraw_caret(struct caret *c, colour current_background_color,
 bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 		int p_width, int p_height, float scale)
 {
+	unsigned int sides[] = { TOP, BOTTOM, LEFT, RIGHT };
 	int top = box->border[TOP].width;
 	int right = box->border[RIGHT].width;
 	int bottom = box->border[BOTTOM].width;
 	int left = box->border[LEFT].width;
 	int x, y;
-	unsigned int i;
+	unsigned int i, side;
 	int p[20];
 
 	if (scale != 1.0) {
@@ -1079,23 +1080,22 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 	p[10] = x + p_width + right;	p[11] = y + p_height + bottom;
 	p[12] = x - left;		p[13] = y + p_height + bottom;
 	p[14] = x;			p[15] = y + p_height;
-	p[16] = x;			p[17] = y;
-	p[18] = x - left;		p[19] = y - top;
+	p[16] = p[0];			p[17] = p[1];
+	p[18] = p[2];			p[19] = p[3];
 
 	for (i = 0; i != 4; i++) {
+		side = sides[i]; /* plot order */
 		colour col = 0;
 
-		if (box->border[i].width == 0)
+		if (box->border[side].width == 0 || box->border[side].color ==
+				CSS_BORDER_COLOR_TRANSPARENT)
 			continue;
 
-		if (box->border[i].color == CSS_BORDER_COLOR_TRANSPARENT) {
-			col = NS_TRANSPARENT;
-		} else {
-			col = nscss_color_to_ns(box->border[i].c);
-		}
+		col = nscss_color_to_ns(box->border[side].c);
 
-		if (!html_redraw_border_plot(i, p, col, box->border[i].style,
-				box->border[i].width * scale))
+		if (!html_redraw_border_plot(side, p, col,
+				box->border[side].style,
+				box->border[side].width * scale))
 			return false;
 	}
 
