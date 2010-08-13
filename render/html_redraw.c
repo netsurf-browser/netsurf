@@ -68,10 +68,12 @@ static bool html_redraw_caret(struct caret *caret,
 		colour current_background_color, float scale);
 static bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 		int p_width, int p_height, float scale);
-bool html_redraw_inline_borders(struct box *box, int x0, int y0, int x1, int y1,
-		float scale, bool first, bool last);
+static bool html_redraw_inline_borders(struct box *box, int x0, int y0,
+		int x1, int y1, float scale, bool first, bool last);
 static bool html_redraw_border_plot(const int i, const int *p, colour c,
 		enum css_border_style_e style, int thickness);
+static bool html_redraw_plot_border_part(const int *p, unsigned int n,
+		const plot_style_t *pstyle);
 static bool html_redraw_checkbox(int x, int y, int width, int height,
 		bool selected);
 static bool html_redraw_radio(int x, int y, int width, int height,
@@ -1442,7 +1444,7 @@ bool html_redraw_border_plot(const int i, const int *p, colour c,
 	case CSS_BORDER_STYLE_SOLID:
 		/* fall through to default */
 	default:
-		if (!plot.polygon(p, 4, &plot_style_fillbdr))
+		if (!html_redraw_plot_border_part(p, 4, &plot_style_fillbdr))
 			return false;
 		break;
 
@@ -1455,7 +1457,7 @@ bool html_redraw_border_plot(const int i, const int *p, colour c,
 		z[5] = (p[7] * 2 + p[5]) / 3;
 		z[6] = p[6];
 		z[7] = p[7];
-		if (!plot.polygon(z, 4, &plot_style_fillbdr))
+		if (!html_redraw_plot_border_part(z, 4, &plot_style_fillbdr))
 			return false;
 		z[0] = p[2];
 		z[1] = p[3];
@@ -1465,7 +1467,7 @@ bool html_redraw_border_plot(const int i, const int *p, colour c,
 		z[5] = (p[5] * 2 + p[7]) / 3;
 		z[6] = p[4];
 		z[7] = p[5];
-		if (!plot.polygon(z, 4, &plot_style_fillbdr))
+		if (!html_redraw_plot_border_part(z, 4, &plot_style_fillbdr))
 			return false;
 		break;
 
@@ -1489,13 +1491,13 @@ bool html_redraw_border_plot(const int i, const int *p, colour c,
 		z[5] = (p[7] + p[5]) / 2;
 		z[6] = p[6];
 		z[7] = p[7];
-		if (!plot.polygon(z, 4, plot_style_bdr_in))
+		if (!html_redraw_plot_border_part(z, 4, plot_style_bdr_in))
 			return false;
 		z[0] = p[2];
 		z[1] = p[3];
 		z[6] = p[4];
 		z[7] = p[5];
-		if (!plot.polygon(z, 4, plot_style_bdr_out))
+		if (!html_redraw_plot_border_part(z, 4, plot_style_bdr_out))
 			return false;
 		break;
 
@@ -1535,17 +1537,80 @@ bool html_redraw_border_plot(const int i, const int *p, colour c,
 		z[5] = (p[7] + p[5]) / 2;
 		z[6] = p[6];
 		z[7] = p[7];
-		if (!plot.polygon(z, 4, plot_style_bdr_in))
+		if (!html_redraw_plot_border_part(z, 4, plot_style_bdr_in))
 			return false;
 		z[0] = p[2];
 		z[1] = p[3];
 		z[6] = p[4];
 		z[7] = p[5];
-		if (!plot.polygon(z, 4, plot_style_bdr_out))
+		if (!html_redraw_plot_border_part(z, 4, plot_style_bdr_out))
 			return false;
 		break;
 	}
 
+
+	return true;
+}
+
+
+/**
+ * Plot a border part, using the most optimal plotter.
+ *
+ * \param  p          array of precomputed border vertices
+ * \param  n          number of vertices
+ * \param  pstyle     plot_style to plot with
+ * \return true if successful, false otherwise
+ */
+
+bool html_redraw_plot_border_part(const int *p, unsigned int n,
+		const plot_style_t *pstyle)
+{
+	bool is_v = false; /* vertical border */
+	bool is_h = false; /* horizontal border */
+	
+	assert(n == 4);
+
+	if ((p[1] == p[3] && p[5] == p[7])) {
+		is_v = true;
+	}
+
+	if ((p[1] == p[7] && p[3] == p[5])) {
+		is_v = true;
+	}
+
+	if ((p[0] == p[2] && p[4] == p[6])) {
+		is_h = true;
+	}
+
+	if ((p[0] == p[6] && p[2] == p[4])) {
+		is_h = true;
+	}
+
+	/* TODO: handle 1px wide border parts specially */
+	if (is_v && is_h) {
+		/* border is rectangular */
+		int x0, y0, x1, y1;
+		if (p[0] < p[4]) {
+			x0 = p[0];
+			x1 = p[4];
+		} else {
+			x0 = p[4];
+			x1 = p[0];
+		}
+		if (p[1] < p[5]) {
+			y0 = p[1];
+			y1 = p[5];
+		} else {
+			y0 = p[5];
+			y1 = p[1];
+		}
+		if (!plot.rectangle(x0, y0, x1, y1, pstyle))
+			return false;
+	} else {
+		/* have to plot as polygon */
+		if (!plot.polygon(p, 4, pstyle))
+			return false;
+	}
 
 	return true;
 }
