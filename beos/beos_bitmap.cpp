@@ -122,8 +122,7 @@ void *bitmap_create(int width, int height, unsigned int state)
 
 	bmp->pretile_x = bmp->pretile_y = bmp->pretile_xy = NULL;
 
-	bmp->opaque = false;
-	bmp->opaque = (state & BITMAP_OPAQUE) != 0; // XXX store state instead
+	bmp->opaque = (state & BITMAP_OPAQUE) != 0;
 
 	return bmp;
 }
@@ -139,8 +138,7 @@ void bitmap_set_opaque(void *vbitmap, bool opaque)
 {
 	struct bitmap *bitmap = (struct bitmap *)vbitmap;
 	assert(bitmap);
-/* todo: set bitmap as opaque */
-	bitmap->opaque = true;
+	bitmap->opaque = opaque;
 }
 
 
@@ -155,7 +153,6 @@ bool bitmap_test_opaque(void *vbitmap)
 	struct bitmap *bitmap = (struct bitmap *)vbitmap;
 	assert(bitmap);
 /* todo: test if bitmap as opaque */
-	//return bitmap->opaque;
 	return true;
 }
 
