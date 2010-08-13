@@ -103,7 +103,7 @@ const struct plotter_table nsbeos_plotters = {
 	NULL, // Group Start
 	NULL, // Group End
 	NULL, // Flush
-	false // option_knockout
+	true // option_knockout
 };
 
 
