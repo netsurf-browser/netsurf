@@ -70,7 +70,7 @@ static bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 		int p_width, int p_height, float scale);
 bool html_redraw_inline_borders(struct box *box, int x0, int y0, int x1, int y1,
 		float scale, bool first, bool last);
-static bool html_redraw_border_plot(int i, int *p, colour c,
+static bool html_redraw_border_plot(const int i, const int *p, colour c,
 		enum css_border_style_e style, int thickness);
 static bool html_redraw_checkbox(int x, int y, int width, int height,
 		bool selected);
@@ -1221,7 +1221,7 @@ static plot_style_t plot_style_fillbdr_dlight = {
 /**
  * Draw one border.
  *
- * \param  i          index of border (TOP, RIGHT, BOTTOM, LEFT)
+ * \param  i          index of border side (TOP, RIGHT, BOTTOM, LEFT)
  * \param  p          array of precomputed border vertices
  * \param  c          colour for border
  * \param  style      border line style
@@ -1229,11 +1229,12 @@ static plot_style_t plot_style_fillbdr_dlight = {
  * \return true if successful, false otherwise
  */
 
-bool html_redraw_border_plot(int i, int *p, colour c,
+bool html_redraw_border_plot(const int i, const int *p, colour c,
 		enum css_border_style_e style, int thickness)
 {
 	int z[8];
 	unsigned int light = i;
+	const int SIDE = i * 4; /* offset to the side's data */
 	plot_style_t *plot_style_bdr_in;
 	plot_style_t *plot_style_bdr_out;
 
@@ -1254,10 +1255,10 @@ bool html_redraw_border_plot(int i, int *p, colour c,
 		plot_style_bdr.stroke_type = PLOT_OP_TYPE_DOT;
 		/* fall through */
 	case CSS_BORDER_STYLE_DASHED:
-		if (!plot.line((p[i * 4 + 0] + p[i * 4 + 2]) / 2,
-				(p[i * 4 + 1] + p[i * 4 + 3]) / 2,
-				(p[i * 4 + 4] + p[i * 4 + 6]) / 2,
-				(p[i * 4 + 5] + p[i * 4 + 7]) / 2,
+		if (!plot.line((p[SIDE + 0] + p[SIDE + 2]) / 2,
+				(p[SIDE + 1] + p[SIDE + 3]) / 2,
+				(p[SIDE + 4] + p[SIDE + 6]) / 2,
+				(p[SIDE + 5] + p[SIDE + 7]) / 2,
 				&plot_style_bdr))
 			return false;
 		break;
@@ -1265,29 +1266,29 @@ bool html_redraw_border_plot(int i, int *p, colour c,
 	case CSS_BORDER_STYLE_SOLID:
 		/* fall through to default */
 	default:
-		if (!plot.polygon(p + i * 4, 4, &plot_style_fillbdr))
+		if (!plot.polygon(p + SIDE, 4, &plot_style_fillbdr))
 			return false;
 		break;
 
 	case CSS_BORDER_STYLE_DOUBLE:
-		z[0] = p[i * 4 + 0];
-		z[1] = p[i * 4 + 1];
-		z[2] = (p[i * 4 + 0] * 2 + p[i * 4 + 2]) / 3;
-		z[3] = (p[i * 4 + 1] * 2 + p[i * 4 + 3]) / 3;
-		z[4] = (p[i * 4 + 6] * 2 + p[i * 4 + 4]) / 3;
-		z[5] = (p[i * 4 + 7] * 2 + p[i * 4 + 5]) / 3;
-		z[6] = p[i * 4 + 6];
-		z[7] = p[i * 4 + 7];
+		z[0] = p[SIDE + 0];
+		z[1] = p[SIDE + 1];
+		z[2] = (p[SIDE + 0] * 2 + p[SIDE + 2]) / 3;
+		z[3] = (p[SIDE + 1] * 2 + p[SIDE + 3]) / 3;
+		z[4] = (p[SIDE + 6] * 2 + p[SIDE + 4]) / 3;
+		z[5] = (p[SIDE + 7] * 2 + p[SIDE + 5]) / 3;
+		z[6] = p[SIDE + 6];
+		z[7] = p[SIDE + 7];
 		if (!plot.polygon(z, 4, &plot_style_fillbdr))
 			return false;
-		z[0] = p[i * 4 + 2];
-		z[1] = p[i * 4 + 3];
-		z[2] = (p[i * 4 + 2] * 2 + p[i * 4 + 0]) / 3;
-		z[3] = (p[i * 4 + 3] * 2 + p[i * 4 + 1]) / 3;
-		z[4] = (p[i * 4 + 4] * 2 + p[i * 4 + 6]) / 3;
-		z[5] = (p[i * 4 + 5] * 2 + p[i * 4 + 7]) / 3;
-		z[6] = p[i * 4 + 4];
-		z[7] = p[i * 4 + 5];
+		z[0] = p[SIDE + 2];
+		z[1] = p[SIDE + 3];
+		z[2] = (p[SIDE + 2] * 2 + p[SIDE + 0]) / 3;
+		z[3] = (p[SIDE + 3] * 2 + p[SIDE + 1]) / 3;
+		z[4] = (p[SIDE + 4] * 2 + p[SIDE + 6]) / 3;
+		z[5] = (p[SIDE + 5] * 2 + p[SIDE + 7]) / 3;
+		z[6] = p[SIDE + 4];
+		z[7] = p[SIDE + 5];
 		if (!plot.polygon(z, 4, &plot_style_fillbdr))
 			return false;
 		break;
@@ -1304,20 +1305,20 @@ bool html_redraw_border_plot(int i, int *p, colour c,
 			plot_style_bdr_in = &plot_style_fillbdr_light;
 			plot_style_bdr_out = &plot_style_fillbdr_dark;
 		}
-		z[0] = p[i * 4 + 0];
-		z[1] = p[i * 4 + 1];
-		z[2] = (p[i * 4 + 0] + p[i * 4 + 2]) / 2;
-		z[3] = (p[i * 4 + 1] + p[i * 4 + 3]) / 2;
-		z[4] = (p[i * 4 + 6] + p[i * 4 + 4]) / 2;
-		z[5] = (p[i * 4 + 7] + p[i * 4 + 5]) / 2;
-		z[6] = p[i * 4 + 6];
-		z[7] = p[i * 4 + 7];
+		z[0] = p[SIDE + 0];
+		z[1] = p[SIDE + 1];
+		z[2] = (p[SIDE + 0] + p[SIDE + 2]) / 2;
+		z[3] = (p[SIDE + 1] + p[SIDE + 3]) / 2;
+		z[4] = (p[SIDE + 6] + p[SIDE + 4]) / 2;
+		z[5] = (p[SIDE + 7] + p[SIDE + 5]) / 2;
+		z[6] = p[SIDE + 6];
+		z[7] = p[SIDE + 7];
 		if (!plot.polygon(z, 4, plot_style_bdr_in))
 			return false;
-		z[0] = p[i * 4 + 2];
-		z[1] = p[i * 4 + 3];
-		z[6] = p[i * 4 + 4];
-		z[7] = p[i * 4 + 5];
+		z[0] = p[SIDE + 2];
+		z[1] = p[SIDE + 3];
+		z[6] = p[SIDE + 4];
+		z[7] = p[SIDE + 5];
 		if (!plot.polygon(z, 4, plot_style_bdr_out))
 			return false;
 		break;
@@ -1350,20 +1351,20 @@ bool html_redraw_border_plot(int i, int *p, colour c,
 			break;
 		}
 
-		z[0] = p[i * 4 + 0];
-		z[1] = p[i * 4 + 1];
-		z[2] = (p[i * 4 + 0] + p[i * 4 + 2]) / 2;
-		z[3] = (p[i * 4 + 1] + p[i * 4 + 3]) / 2;
-		z[4] = (p[i * 4 + 6] + p[i * 4 + 4]) / 2;
-		z[5] = (p[i * 4 + 7] + p[i * 4 + 5]) / 2;
-		z[6] = p[i * 4 + 6];
-		z[7] = p[i * 4 + 7];
+		z[0] = p[SIDE + 0];
+		z[1] = p[SIDE + 1];
+		z[2] = (p[SIDE + 0] + p[SIDE + 2]) / 2;
+		z[3] = (p[SIDE + 1] + p[SIDE + 3]) / 2;
+		z[4] = (p[SIDE + 6] + p[SIDE + 4]) / 2;
+		z[5] = (p[SIDE + 7] + p[SIDE + 5]) / 2;
+		z[6] = p[SIDE + 6];
+		z[7] = p[SIDE + 7];
 		if (!plot.polygon(z, 4, plot_style_bdr_in))
 			return false;
-		z[0] = p[i * 4 + 2];
-		z[1] = p[i * 4 + 3];
-		z[6] = p[i * 4 + 4];
-		z[7] = p[i * 4 + 5];
+		z[0] = p[SIDE + 2];
+		z[1] = p[SIDE + 3];
+		z[6] = p[SIDE + 4];
+		z[7] = p[SIDE + 5];
 		if (!plot.polygon(z, 4, plot_style_bdr_out))
 			return false;
 		break;
