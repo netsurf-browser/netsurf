@@ -152,8 +152,8 @@ bool bitmap_test_opaque(void *vbitmap)
 {
 	struct bitmap *bitmap = (struct bitmap *)vbitmap;
 	assert(bitmap);
-/* todo: test if bitmap as opaque */
-	return true;
+/* todo: test if bitmap is opaque */
+	return false;
 }
 
 
