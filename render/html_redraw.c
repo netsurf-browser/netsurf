@@ -1057,7 +1057,8 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 	int left = box->border[LEFT].width;
 	int x, y;
 	unsigned int i, side;
-	int p[20];
+	int p[16];
+	int z[8];
 
 	if (scale != 1.0) {
 		top *= scale;
@@ -1080,8 +1081,6 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 	p[10] = x + p_width + right;	p[11] = y + p_height + bottom;
 	p[12] = x - left;		p[13] = y + p_height + bottom;
 	p[14] = x;			p[15] = y + p_height;
-	p[16] = p[0];			p[17] = p[1];
-	p[18] = p[2];			p[19] = p[3];
 
 	for (i = 0; i != 4; i++) {
 		side = sides[i]; /* plot order */
@@ -1091,9 +1090,108 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 				CSS_BORDER_COLOR_TRANSPARENT)
 			continue;
 
+		switch (side) {
+		case TOP:
+			z[0] = p[0];
+			z[1] = p[1];
+			z[2] = p[2];
+			z[3] = p[3];
+			z[4] = p[4];
+			z[5] = p[5];
+			z[6] = p[6];
+			z[7] = p[7];
+			if (box->border[LEFT].color !=
+					CSS_BORDER_COLOR_TRANSPARENT) {
+				/* make border overhang left corner fully,
+				 * if left border is transparent */
+				z[0] -= left;
+			}
+			if (box->border[RIGHT].color !=
+					CSS_BORDER_COLOR_TRANSPARENT) {
+				/* make border overhang right corner fully,
+				 * if right border is transparent */
+				z[6] += right;
+			}
+			break;
+		case BOTTOM:
+			z[0] = p[8];
+			z[1] = p[9];
+			z[2] = p[10];
+			z[3] = p[11];
+			z[4] = p[12];
+			z[5] = p[13];
+			z[6] = p[14];
+			z[7] = p[15];
+			if (box->border[LEFT].color !=
+					CSS_BORDER_COLOR_TRANSPARENT) {
+				/* make border overhang left corner fully,
+				 * if left border is transparent */
+				z[6] -= left;
+			}
+			if (box->border[RIGHT].color !=
+					CSS_BORDER_COLOR_TRANSPARENT) {
+				/* make border overhang right corner fully,
+				 * if right border is transparent */
+				z[0] += right;
+			}
+			break;
+		case LEFT:
+			z[0] = p[12];
+			z[1] = p[13];
+			z[2] = p[14];
+			z[3] = p[15];
+			z[4] = p[0];
+			z[5] = p[1];
+			z[6] = p[2];
+			z[7] = p[3];
+			if (box->border[side].style == CSS_BORDER_STYLE_SOLID &&
+					box->border[LEFT].color ==
+					box->border[TOP].color) {
+				/* don't bother overlapping top corner if
+				 * it's the same colour anyway */
+				z[7] += top;
+			}
+			if (box->border[side].style == CSS_BORDER_STYLE_SOLID &&
+					box->border[LEFT].color ==
+					box->border[BOTTOM].color) {
+				/* don't bother overlapping bottom corner if
+				 * it's the same colour anyway */
+				z[1] -= bottom;
+			}
+			break;
+		case RIGHT:
+			z[0] = p[4];
+			z[1] = p[5];
+			z[2] = p[6];
+			z[3] = p[7];
+			z[4] = p[8];
+			z[5] = p[9];
+			z[6] = p[10];
+			z[7] = p[11];
+			if (box->border[side].style == CSS_BORDER_STYLE_SOLID &&
+					box->border[RIGHT].color ==
+					box->border[TOP].color) {
+				/* don't bother overlapping top corner if
+				 * it's the same colour anyway */
+				z[1] += top;
+			}
+			if (box->border[side].style == CSS_BORDER_STYLE_SOLID &&
+					box->border[RIGHT].color ==
+					box->border[BOTTOM].color) {
+				/* don't bother overlapping bottom corner if
+				 * it's the same colour anyway */
+				z[7] -= bottom;
+			}
+			break;
+		default:
+			assert(side == TOP || side == BOTTOM ||
+					side == LEFT || side == RIGHT);
+			break;
+		}
+
 		col = nscss_color_to_ns(box->border[side].c);
 
-		if (!html_redraw_border_plot(side, p, col,
+		if (!html_redraw_border_plot(side, z, col,
 				box->border[side].style,
 				box->border[side].width * scale))
 			return false;
@@ -1125,7 +1223,8 @@ bool html_redraw_inline_borders(struct box *box, int x0, int y0, int x1, int y1,
 	int bottom = box->border[BOTTOM].width;
 	int left = box->border[LEFT].width;
 	colour col;
-	int p[20];
+	int p[16];
+	int z[8];
 
 	if (scale != 1.0) {
 		top *= scale;
@@ -1143,54 +1242,132 @@ bool html_redraw_inline_borders(struct box *box, int x0, int y0, int x1, int y1,
 	p[10] = x1;				p[11] = y1;
 	p[12] = x0;				p[13] = y1;
 	p[14] = (first) ? x0 + left : x0;	p[15] = y1 - bottom;
-	p[16] = (first) ? x0 + left : x0;	p[17] = y0 + top;
-	p[18] = x0;				p[19] = y0;
 
 	assert(box->style);
 
-	if (box->border[LEFT].width && first) {
-		if (box->border[LEFT].color == CSS_BORDER_COLOR_TRANSPARENT)
-			col = NS_TRANSPARENT;
-		else
-			col = nscss_color_to_ns(box->border[LEFT].c);
+	if (top != 0 && box->border[TOP].color !=
+			CSS_BORDER_COLOR_TRANSPARENT) {
+		col = nscss_color_to_ns(box->border[TOP].c);
 
-		if (!html_redraw_border_plot(LEFT, p, col,
-				box->border[LEFT].style, 
-				left))
-			return false;
-	}
+		z[0] = p[0];
+		z[1] = p[1];
+		z[2] = p[2];
+		z[3] = p[3];
+		z[4] = p[4];
+		z[5] = p[5];
+		z[6] = p[6];
+		z[7] = p[7];
+		if (first && box->border[LEFT].color !=
+				CSS_BORDER_COLOR_TRANSPARENT) {
+			/* make border overhang left corner fully,
+			 * if left border is transparent */
+			z[0] -= left;
+		}
+		if (last && box->border[RIGHT].color !=
+				CSS_BORDER_COLOR_TRANSPARENT) {
+			/* make border overhang right corner fully,
+			 * if right border is transparent */
+			z[6] += right;
+		}
 
-	if (box->border[TOP].width) {
-		if (box->border[TOP].color == CSS_BORDER_COLOR_TRANSPARENT)
-			col = NS_TRANSPARENT;
-		else
-			col = nscss_color_to_ns(box->border[TOP].c);
-
-		if (!html_redraw_border_plot(TOP, p, col,
+		if (!html_redraw_border_plot(TOP, z, col,
 				box->border[TOP].style, 
 				top))
 			return false;
 	}
 
-	if (box->border[BOTTOM].width) {
-		if (box->border[BOTTOM].color == CSS_BORDER_COLOR_TRANSPARENT)
-			col = NS_TRANSPARENT;
-		else
-			col = nscss_color_to_ns(box->border[BOTTOM].c);
+	if (bottom != 0 && box->border[BOTTOM].color !=
+			CSS_BORDER_COLOR_TRANSPARENT) {
+		col = nscss_color_to_ns(box->border[BOTTOM].c);
 
-		if (!html_redraw_border_plot(BOTTOM, p, col,
+		z[0] = p[8];
+		z[1] = p[9];
+		z[2] = p[10];
+		z[3] = p[11];
+		z[4] = p[12];
+		z[5] = p[13];
+		z[6] = p[14];
+		z[7] = p[15];
+		if (first && box->border[LEFT].color !=
+				CSS_BORDER_COLOR_TRANSPARENT) {
+			/* make border overhang left corner fully,
+			 * if left border is transparent */
+			z[6] -= left;
+		}
+		if (last && box->border[RIGHT].color !=
+				CSS_BORDER_COLOR_TRANSPARENT) {
+			/* make border overhang right corner fully,
+			 * if right border is transparent */
+			z[0] += right;
+		}
+
+		if (!html_redraw_border_plot(BOTTOM, z, col,
 				box->border[BOTTOM].style, 
 				bottom))
 			return false;
 	}
 
-	if (box->border[RIGHT].width && last) {
-		if (box->border[RIGHT].color == CSS_BORDER_COLOR_TRANSPARENT)
-			col = NS_TRANSPARENT;
-		else
-			col = nscss_color_to_ns(box->border[RIGHT].c);
+	if (left != 0 && first && box->border[LEFT].color !=
+			CSS_BORDER_COLOR_TRANSPARENT) {
+		col = nscss_color_to_ns(box->border[LEFT].c);
 
-		if (!html_redraw_border_plot(RIGHT, p, col,
+		z[0] = p[12];
+		z[1] = p[13];
+		z[2] = p[14];
+		z[3] = p[15];
+		z[4] = p[0];
+		z[5] = p[1];
+		z[6] = p[2];
+		z[7] = p[3];
+		if (box->border[LEFT].style == CSS_BORDER_STYLE_SOLID &&
+				box->border[LEFT].color ==
+				box->border[TOP].color) {
+			/* don't bother overlapping top corner if
+			 * it's the same colour anyway */
+			z[7] += top;
+		}
+		if (box->border[LEFT].style == CSS_BORDER_STYLE_SOLID &&
+				box->border[LEFT].color ==
+				box->border[BOTTOM].color) {
+			/* don't bother overlapping bottom corner if
+			 * it's the same colour anyway */
+			z[1] -= bottom;
+		}
+
+		if (!html_redraw_border_plot(LEFT, z, col,
+				box->border[LEFT].style, 
+				left))
+			return false;
+	}
+
+	if (right != 0 && last && box->border[RIGHT].color !=
+			CSS_BORDER_COLOR_TRANSPARENT) {
+		col = nscss_color_to_ns(box->border[RIGHT].c);
+
+		z[0] = p[4];
+		z[1] = p[5];
+		z[2] = p[6];
+		z[3] = p[7];
+		z[4] = p[8];
+		z[5] = p[9];
+		z[6] = p[10];
+		z[7] = p[11];
+		if (box->border[RIGHT].style == CSS_BORDER_STYLE_SOLID &&
+				box->border[RIGHT].color ==
+				box->border[TOP].color) {
+			/* don't bother overlapping top corner if
+			 * it's the same colour anyway */
+			z[1] += top;
+		}
+		if (box->border[RIGHT].style == CSS_BORDER_STYLE_SOLID &&
+				box->border[RIGHT].color ==
+				box->border[BOTTOM].color) {
+			/* don't bother overlapping bottom corner if
+			 * it's the same colour anyway */
+			z[7] -= bottom;
+		}
+
+		if (!html_redraw_border_plot(RIGHT, z, col,
 				box->border[RIGHT].style,
 				right))
 			return false;
@@ -1234,7 +1411,6 @@ bool html_redraw_border_plot(const int i, const int *p, colour c,
 {
 	int z[8];
 	unsigned int light = i;
-	const int SIDE = i * 4; /* offset to the side's data */
 	plot_style_t *plot_style_bdr_in;
 	plot_style_t *plot_style_bdr_out;
 
@@ -1255,10 +1431,10 @@ bool html_redraw_border_plot(const int i, const int *p, colour c,
 		plot_style_bdr.stroke_type = PLOT_OP_TYPE_DOT;
 		/* fall through */
 	case CSS_BORDER_STYLE_DASHED:
-		if (!plot.line((p[SIDE + 0] + p[SIDE + 2]) / 2,
-				(p[SIDE + 1] + p[SIDE + 3]) / 2,
-				(p[SIDE + 4] + p[SIDE + 6]) / 2,
-				(p[SIDE + 5] + p[SIDE + 7]) / 2,
+		if (!plot.line((p[0] + p[2]) / 2,
+				(p[1] + p[3]) / 2,
+				(p[4] + p[6]) / 2,
+				(p[5] + p[7]) / 2,
 				&plot_style_bdr))
 			return false;
 		break;
@@ -1266,29 +1442,29 @@ bool html_redraw_border_plot(const int i, const int *p, colour c,
 	case CSS_BORDER_STYLE_SOLID:
 		/* fall through to default */
 	default:
-		if (!plot.polygon(p + SIDE, 4, &plot_style_fillbdr))
+		if (!plot.polygon(p, 4, &plot_style_fillbdr))
 			return false;
 		break;
 
 	case CSS_BORDER_STYLE_DOUBLE:
-		z[0] = p[SIDE + 0];
-		z[1] = p[SIDE + 1];
-		z[2] = (p[SIDE + 0] * 2 + p[SIDE + 2]) / 3;
-		z[3] = (p[SIDE + 1] * 2 + p[SIDE + 3]) / 3;
-		z[4] = (p[SIDE + 6] * 2 + p[SIDE + 4]) / 3;
-		z[5] = (p[SIDE + 7] * 2 + p[SIDE + 5]) / 3;
-		z[6] = p[SIDE + 6];
-		z[7] = p[SIDE + 7];
+		z[0] = p[0];
+		z[1] = p[1];
+		z[2] = (p[0] * 2 + p[2]) / 3;
+		z[3] = (p[1] * 2 + p[3]) / 3;
+		z[4] = (p[6] * 2 + p[4]) / 3;
+		z[5] = (p[7] * 2 + p[5]) / 3;
+		z[6] = p[6];
+		z[7] = p[7];
 		if (!plot.polygon(z, 4, &plot_style_fillbdr))
 			return false;
-		z[0] = p[SIDE + 2];
-		z[1] = p[SIDE + 3];
-		z[2] = (p[SIDE + 2] * 2 + p[SIDE + 0]) / 3;
-		z[3] = (p[SIDE + 3] * 2 + p[SIDE + 1]) / 3;
-		z[4] = (p[SIDE + 4] * 2 + p[SIDE + 6]) / 3;
-		z[5] = (p[SIDE + 5] * 2 + p[SIDE + 7]) / 3;
-		z[6] = p[SIDE + 4];
-		z[7] = p[SIDE + 5];
+		z[0] = p[2];
+		z[1] = p[3];
+		z[2] = (p[2] * 2 + p[0]) / 3;
+		z[3] = (p[3] * 2 + p[1]) / 3;
+		z[4] = (p[4] * 2 + p[6]) / 3;
+		z[5] = (p[5] * 2 + p[7]) / 3;
+		z[6] = p[4];
+		z[7] = p[5];
 		if (!plot.polygon(z, 4, &plot_style_fillbdr))
 			return false;
 		break;
@@ -1305,20 +1481,20 @@ bool html_redraw_border_plot(const int i, const int *p, colour c,
 			plot_style_bdr_in = &plot_style_fillbdr_light;
 			plot_style_bdr_out = &plot_style_fillbdr_dark;
 		}
-		z[0] = p[SIDE + 0];
-		z[1] = p[SIDE + 1];
-		z[2] = (p[SIDE + 0] + p[SIDE + 2]) / 2;
-		z[3] = (p[SIDE + 1] + p[SIDE + 3]) / 2;
-		z[4] = (p[SIDE + 6] + p[SIDE + 4]) / 2;
-		z[5] = (p[SIDE + 7] + p[SIDE + 5]) / 2;
-		z[6] = p[SIDE + 6];
-		z[7] = p[SIDE + 7];
+		z[0] = p[0];
+		z[1] = p[1];
+		z[2] = (p[0] + p[2]) / 2;
+		z[3] = (p[1] + p[3]) / 2;
+		z[4] = (p[6] + p[4]) / 2;
+		z[5] = (p[7] + p[5]) / 2;
+		z[6] = p[6];
+		z[7] = p[7];
 		if (!plot.polygon(z, 4, plot_style_bdr_in))
 			return false;
-		z[0] = p[SIDE + 2];
-		z[1] = p[SIDE + 3];
-		z[6] = p[SIDE + 4];
-		z[7] = p[SIDE + 5];
+		z[0] = p[2];
+		z[1] = p[3];
+		z[6] = p[4];
+		z[7] = p[5];
 		if (!plot.polygon(z, 4, plot_style_bdr_out))
 			return false;
 		break;
@@ -1351,20 +1527,20 @@ bool html_redraw_border_plot(const int i, const int *p, colour c,
 			break;
 		}
 
-		z[0] = p[SIDE + 0];
-		z[1] = p[SIDE + 1];
-		z[2] = (p[SIDE + 0] + p[SIDE + 2]) / 2;
-		z[3] = (p[SIDE + 1] + p[SIDE + 3]) / 2;
-		z[4] = (p[SIDE + 6] + p[SIDE + 4]) / 2;
-		z[5] = (p[SIDE + 7] + p[SIDE + 5]) / 2;
-		z[6] = p[SIDE + 6];
-		z[7] = p[SIDE + 7];
+		z[0] = p[0];
+		z[1] = p[1];
+		z[2] = (p[0] + p[2]) / 2;
+		z[3] = (p[1] + p[3]) / 2;
+		z[4] = (p[6] + p[4]) / 2;
+		z[5] = (p[7] + p[5]) / 2;
+		z[6] = p[6];
+		z[7] = p[7];
 		if (!plot.polygon(z, 4, plot_style_bdr_in))
 			return false;
-		z[0] = p[SIDE + 2];
-		z[1] = p[SIDE + 3];
-		z[6] = p[SIDE + 4];
-		z[7] = p[SIDE + 5];
+		z[0] = p[2];
+		z[1] = p[3];
+		z[6] = p[4];
+		z[7] = p[5];
 		if (!plot.polygon(z, 4, plot_style_bdr_out))
 			return false;
 		break;
