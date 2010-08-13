@@ -302,7 +302,7 @@ bool nsbeos_plot_polygon(const int *p, unsigned int n, const plot_style_t *style
 	BPoint points[n];
 	
 	for (i = 0; i < n; i++) {
-		points[i] = BPoint(p[2 * i], p[2 * i + 1]);
+		points[i] = BPoint(p[2 * i] - 0.5, p[2 * i + 1] - 0.5);
 	}
 
 	if (style->fill_colour == NS_TRANSPARENT)
@@ -310,44 +310,6 @@ bool nsbeos_plot_polygon(const int *p, unsigned int n, const plot_style_t *style
 	else
 		view->FillPolygon(points, (int32)n);
 
-#if 0
-	view->BeginLineArray(n);
-
-	for (i = 0; i < n; i++) {
-		BPoint start(p[2 * i], p[2 * i + 1]);
-		BPoint end(p[(2 * i + 2) % n], p[(2 * i + 3) % n]);
-		view->AddLine(start, end, color);
-	}
-
-	view->EndLineArray();
-#endif
-
-	//nsbeos_current_gc_unlock();
-
-#if 0 /* GTK */
-	nsbeos_set_colour(fill);
-	nsbeos_set_solid();
-#ifdef CAIRO_VERSION
-	if (option_render_cairo) {
-		cairo_set_line_width(current_cr, 0);
-		cairo_move_to(current_cr, p[0], p[1]);
-		for (i = 1; i != n; i++) {
-			cairo_line_to(current_cr, p[i * 2], p[i * 2 + 1]);
-		}
-		cairo_fill(current_cr);
-		cairo_stroke(current_cr);
-	} else
-#endif
-	{
-		GdkPoint q[n];
-		for (i = 0; i != n; i++) {
-			q[i].x = p[i * 2];
-			q[i].y = p[i * 2 + 1];
-		}
-		gdk_draw_polygon(current_drawable, current_gc,
-				TRUE, q, n);
-	}
-#endif
 	return true;
 }
 
