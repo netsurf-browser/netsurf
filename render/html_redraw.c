@@ -1053,7 +1053,7 @@ bool html_redraw_caret(struct caret *c, colour current_background_color,
 bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 		int p_width, int p_height, float scale)
 {
-	unsigned int sides[] = { TOP, BOTTOM, LEFT, RIGHT };
+	unsigned int sides[] = { LEFT, RIGHT, TOP, BOTTOM };
 	int top = box->border[TOP].width;
 	int right = box->border[RIGHT].width;
 	int bottom = box->border[BOTTOM].width;
@@ -1101,63 +1101,23 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 			continue;
 
 		switch (side) {
-		case TOP:
-			z[0] = p[2];	z[1] = p[3];
-			z[2] = p[0];	z[3] = p[1];
-			z[4] = p[6];	z[5] = p[1];
-			z[6] = p[4];	z[7] = p[3];
-
-			if (box->border[LEFT].color !=
-					CSS_BORDER_COLOR_TRANSPARENT) {
-				/* make border overhang left corner fully,
-				 * if left border is transparent */
-				z[0] -= left;
-			}
-			if (box->border[RIGHT].color !=
-					CSS_BORDER_COLOR_TRANSPARENT) {
-				/* make border overhang right corner fully,
-				 * if right border is transparent */
-				z[6] += right;
-			}
-			break;
-		case BOTTOM:
-			z[0] = p[4];	z[1] = p[5];
-			z[2] = p[6];	z[3] = p[7];
-			z[4] = p[0];	z[5] = p[7];
-			z[6] = p[2];	z[7] = p[5];
-
-			if (box->border[LEFT].color !=
-					CSS_BORDER_COLOR_TRANSPARENT) {
-				/* make border overhang left corner fully,
-				 * if left border is transparent */
-				z[6] -= left;
-			}
-			if (box->border[RIGHT].color !=
-					CSS_BORDER_COLOR_TRANSPARENT) {
-				/* make border overhang right corner fully,
-				 * if right border is transparent */
-				z[0] += right;
-			}
-			break;
 		case LEFT:
 			z[0] = p[0];	z[1] = p[7];
 			z[2] = p[2];	z[3] = p[5];
 			z[4] = p[2];	z[5] = p[3];
 			z[6] = p[0];	z[7] = p[1];
 
-			if (box->border[side].style == CSS_BORDER_STYLE_SOLID &&
-					box->border[LEFT].color ==
-					box->border[TOP].color) {
-				/* don't bother overlapping top corner if
-				 * it's the same colour anyway */
-				z[7] += top;
+			if (box->border[TOP].color !=
+					CSS_BORDER_COLOR_TRANSPARENT) {
+				/* make border overhang top corner fully,
+				 * if top border is transparent */
+				z[5] -= top;
 			}
-			if (box->border[side].style == CSS_BORDER_STYLE_SOLID &&
-					box->border[LEFT].color ==
-					box->border[BOTTOM].color) {
-				/* don't bother overlapping bottom corner if
-				 * it's the same colour anyway */
-				z[1] -= bottom;
+			if (box->border[BOTTOM].color !=
+					CSS_BORDER_COLOR_TRANSPARENT) {
+				/* make border overhang bottom corner fully,
+				 * if bottom border is transparent */
+				z[3] += bottom;
 			}
 			break;
 		case RIGHT:
@@ -1166,19 +1126,59 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 			z[4] = p[4];	z[5] = p[5];
 			z[6] = p[6];	z[7] = p[7];
 
+			if (box->border[TOP].color !=
+					CSS_BORDER_COLOR_TRANSPARENT) {
+				/* make border overhang top corner fully,
+				 * if top border is transparent */
+				z[3] -= top;
+			}
+			if (box->border[BOTTOM].color !=
+					CSS_BORDER_COLOR_TRANSPARENT) {
+				/* make border overhang bottom corner fully,
+				 * if bottom border is transparent */
+				z[5] += bottom;
+			}
+			break;
+		case TOP:
+			z[0] = p[2];	z[1] = p[3];
+			z[2] = p[0];	z[3] = p[1];
+			z[4] = p[6];	z[5] = p[1];
+			z[6] = p[4];	z[7] = p[3];
+
 			if (box->border[side].style == CSS_BORDER_STYLE_SOLID &&
-					box->border[RIGHT].color ==
-					box->border[TOP].color) {
-				/* don't bother overlapping top corner if
+					box->border[TOP].c ==
+					box->border[LEFT].c) {
+				/* don't bother overlapping left corner if
 				 * it's the same colour anyway */
-				z[1] += top;
+				z[2] += left;
 			}
 			if (box->border[side].style == CSS_BORDER_STYLE_SOLID &&
-					box->border[RIGHT].color ==
-					box->border[BOTTOM].color) {
-				/* don't bother overlapping bottom corner if
+					box->border[TOP].c ==
+					box->border[RIGHT].c) {
+				/* don't bother overlapping right corner if
 				 * it's the same colour anyway */
-				z[7] -= bottom;
+				z[4] -= right;
+			}
+			break;
+		case BOTTOM:
+			z[0] = p[4];	z[1] = p[5];
+			z[2] = p[6];	z[3] = p[7];
+			z[4] = p[0];	z[5] = p[7];
+			z[6] = p[2];	z[7] = p[5];
+
+			if (box->border[side].style == CSS_BORDER_STYLE_SOLID &&
+					box->border[BOTTOM].c ==
+					box->border[LEFT].c) {
+				/* don't bother overlapping left corner if
+				 * it's the same colour anyway */
+				z[4] += left;
+			}
+			if (box->border[side].style == CSS_BORDER_STYLE_SOLID &&
+					box->border[BOTTOM].c ==
+					box->border[RIGHT].c) {
+				/* don't bother overlapping right corner if
+				 * it's the same colour anyway */
+				z[2] -= right;
 			}
 			break;
 		default:
@@ -1248,64 +1248,6 @@ bool html_redraw_inline_borders(struct box *box, int x0, int y0, int x1, int y1,
 
 	assert(box->style);
 
-	/* Top */
-	if (top != 0 && box->border[TOP].color !=
-			CSS_BORDER_COLOR_TRANSPARENT) {
-		col = nscss_color_to_ns(box->border[TOP].c);
-
-		z[0] = p[2];	z[1] = p[3];
-		z[2] = p[0];	z[3] = p[1];
-		z[4] = p[6];	z[5] = p[1];
-		z[6] = p[4];	z[7] = p[3];
-
-		if (first && box->border[LEFT].color !=
-				CSS_BORDER_COLOR_TRANSPARENT) {
-			/* make border overhang left corner fully,
-			 * if left border is transparent */
-			z[0] -= left;
-		}
-		if (last && box->border[RIGHT].color !=
-				CSS_BORDER_COLOR_TRANSPARENT) {
-			/* make border overhang right corner fully,
-			 * if right border is transparent */
-			z[6] += right;
-		}
-
-		if (!html_redraw_border_plot(TOP, z, col,
-				box->border[TOP].style, 
-				top))
-			return false;
-	}
-
-	/* Bottom */
-	if (bottom != 0 && box->border[BOTTOM].color !=
-			CSS_BORDER_COLOR_TRANSPARENT) {
-		col = nscss_color_to_ns(box->border[BOTTOM].c);
-
-		z[0] = p[4];	z[1] = p[5];
-		z[2] = p[6];	z[3] = p[7];
-		z[4] = p[0];	z[5] = p[7];
-		z[6] = p[2];	z[7] = p[5];
-
-		if (first && box->border[LEFT].color !=
-				CSS_BORDER_COLOR_TRANSPARENT) {
-			/* make border overhang left corner fully,
-			 * if left border is transparent */
-			z[6] -= left;
-		}
-		if (last && box->border[RIGHT].color !=
-				CSS_BORDER_COLOR_TRANSPARENT) {
-			/* make border overhang right corner fully,
-			 * if right border is transparent */
-			z[0] += right;
-		}
-
-		if (!html_redraw_border_plot(BOTTOM, z, col,
-				box->border[BOTTOM].style, 
-				bottom))
-			return false;
-	}
-
 	/* Left */
 	if (left != 0 && first && box->border[LEFT].color !=
 			CSS_BORDER_COLOR_TRANSPARENT) {
@@ -1316,19 +1258,17 @@ bool html_redraw_inline_borders(struct box *box, int x0, int y0, int x1, int y1,
 		z[4] = p[2];	z[5] = p[3];
 		z[6] = p[0];	z[7] = p[1];
 
-		if (box->border[LEFT].style == CSS_BORDER_STYLE_SOLID &&
-				box->border[LEFT].color ==
-				box->border[TOP].color) {
-			/* don't bother overlapping top corner if
-			 * it's the same colour anyway */
-			z[7] += top;
+		if (box->border[TOP].color !=
+				CSS_BORDER_COLOR_TRANSPARENT) {
+			/* make border overhang top corner fully,
+			 * if top border is transparent */
+			z[5] -= top;
 		}
-		if (box->border[LEFT].style == CSS_BORDER_STYLE_SOLID &&
-				box->border[LEFT].color ==
-				box->border[BOTTOM].color) {
-			/* don't bother overlapping bottom corner if
-			 * it's the same colour anyway */
-			z[1] -= bottom;
+		if (box->border[BOTTOM].color !=
+				CSS_BORDER_COLOR_TRANSPARENT) {
+			/* make border overhang bottom corner fully,
+			 * if bottom border is transparent */
+			z[3] += bottom;
 		}
 
 		if (!html_redraw_border_plot(LEFT, z, col,
@@ -1347,24 +1287,88 @@ bool html_redraw_inline_borders(struct box *box, int x0, int y0, int x1, int y1,
 		z[4] = p[4];	z[5] = p[5];
 		z[6] = p[6];	z[7] = p[7];
 
-		if (box->border[RIGHT].style == CSS_BORDER_STYLE_SOLID &&
-				box->border[RIGHT].color ==
-				box->border[TOP].color) {
-			/* don't bother overlapping top corner if
-			 * it's the same colour anyway */
-			z[1] += top;
+		if (box->border[TOP].color !=
+				CSS_BORDER_COLOR_TRANSPARENT) {
+			/* make border overhang top corner fully,
+			 * if top border is transparent */
+			z[3] -= top;
 		}
-		if (box->border[RIGHT].style == CSS_BORDER_STYLE_SOLID &&
-				box->border[RIGHT].color ==
-				box->border[BOTTOM].color) {
-			/* don't bother overlapping bottom corner if
-			 * it's the same colour anyway */
-			z[7] -= bottom;
+		if (box->border[BOTTOM].color !=
+				CSS_BORDER_COLOR_TRANSPARENT) {
+			/* make border overhang bottom corner fully,
+			 * if bottom border is transparent */
+			z[5] += bottom;
 		}
 
 		if (!html_redraw_border_plot(RIGHT, z, col,
 				box->border[RIGHT].style,
 				right))
+			return false;
+	}
+
+	/* Top */
+	if (top != 0 && box->border[TOP].color !=
+			CSS_BORDER_COLOR_TRANSPARENT) {
+		col = nscss_color_to_ns(box->border[TOP].c);
+
+		z[0] = p[2];	z[1] = p[3];
+		z[2] = p[0];	z[3] = p[1];
+		z[4] = p[6];	z[5] = p[1];
+		z[6] = p[4];	z[7] = p[3];
+
+		if (first && box->border[TOP].style ==
+				CSS_BORDER_STYLE_SOLID &&
+				box->border[TOP].c ==
+				box->border[LEFT].c) {
+			/* don't bother overlapping left corner if
+			 * it's the same colour anyway */
+			z[2] += left;
+		}
+		if (last && box->border[TOP].style ==
+				CSS_BORDER_STYLE_SOLID &&
+				box->border[TOP].c ==
+				box->border[RIGHT].c) {
+			/* don't bother overlapping right corner if
+			 * it's the same colour anyway */
+			z[4] -= right;
+		}
+
+		if (!html_redraw_border_plot(TOP, z, col,
+				box->border[TOP].style, 
+				top))
+			return false;
+	}
+
+	/* Bottom */
+	if (bottom != 0 && box->border[BOTTOM].color !=
+			CSS_BORDER_COLOR_TRANSPARENT) {
+		col = nscss_color_to_ns(box->border[BOTTOM].c);
+
+		z[0] = p[4];	z[1] = p[5];
+		z[2] = p[6];	z[3] = p[7];
+		z[4] = p[0];	z[5] = p[7];
+		z[6] = p[2];	z[7] = p[5];
+
+		if (first && box->border[BOTTOM].style ==
+				CSS_BORDER_STYLE_SOLID &&
+				box->border[BOTTOM].c ==
+				box->border[LEFT].c) {
+			/* don't bother overlapping left corner if
+			 * it's the same colour anyway */
+			z[4] += left;
+		}
+		if (last && box->border[BOTTOM].style ==
+				CSS_BORDER_STYLE_SOLID &&
+				box->border[BOTTOM].c ==
+				box->border[RIGHT].c) {
+			/* don't bother overlapping right corner if
+			 * it's the same colour anyway */
+			z[2] -= right;
+		}
+
+		if (!html_redraw_border_plot(BOTTOM, z, col,
+				box->border[BOTTOM].style, 
+				bottom))
 			return false;
 	}
 
