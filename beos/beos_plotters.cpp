@@ -561,13 +561,12 @@ bool nsbeos_plot_bitmap(int x, int y, int width, int height,
 	if (!repeat_x && repeat_y)
 		pretiled = nsbeos_bitmap_get_pretile_y(bitmap);
 	primary = nsbeos_bitmap_get_primary(bitmap);
+
 	/* use the primary and pretiled widths to scale the w/h provided */
-printf("plot_tile: -> %dx%d\n", width, height);
 	width *= pretiled->Bounds().Width() + 1;
 	width /= primary->Bounds().Width() + 1;
 	height *= pretiled->Bounds().Height() + 1;
 	height /= primary->Bounds().Height() + 1;
-printf("plot_tile: -> %dx%d\n", width, height);
 
 	BView *view;
 
