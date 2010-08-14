@@ -22,6 +22,7 @@
 #include <assert.h>
 extern "C" {
 #include "content/urldb.h"
+#include "css/utils.h"
 #include "desktop/browser.h"
 #include "desktop/mouse.h"
 #include "desktop/options.h"
@@ -1880,7 +1881,7 @@ static bool copy_handler(const char *text, size_t length, struct box *box,
 		nsbeos_style_to_font(font, &style);
 		run->offset = current_selection.Length();
 		run->font = font;
-		run->color = nsbeos_rgb_colour(box->style->color);
+		run->color = nsbeos_rgb_colour(nscss_color_to_ns(box->style->color));
 		current_selection_textruns.AddItem(run);
 		space = box->space;
 	}
