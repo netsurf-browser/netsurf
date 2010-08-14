@@ -28,6 +28,7 @@
 
 #include <assert.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include "utils/config.h"
@@ -1540,7 +1541,6 @@ bool html_redraw_border_plot(const int i, const int *p, colour c,
 		break;
 	}
 
-
 	return true;
 }
 
@@ -1559,26 +1559,32 @@ bool html_redraw_plot_border_part(const int *p, unsigned int n,
 {
 	bool is_v = false; /* vertical border */
 	bool is_h = false; /* horizontal border */
+	bool v_odd = false;
+	bool h_odd = false;
+	int i;
 	
 	assert(n == 4);
 
 	if ((p[1] == p[3] && p[5] == p[7])) {
+		/* 1st and 3rd (odd) lines are vertical */
 		is_v = true;
-	}
-
-	if ((p[1] == p[7] && p[3] == p[5])) {
+		v_odd = true;
+	} else if ((p[1] == p[7] && p[3] == p[5])) {
+		/* 4th and 2nd (even) lines are vertical */
 		is_v = true;
+		v_odd = false;
 	}
 
 	if ((p[0] == p[2] && p[4] == p[6])) {
+		/* 1st and 3rd (odd) lines are horizontal */
 		is_h = true;
+		h_odd = true;
+	} else if ((p[0] == p[6] && p[2] == p[4])) {
+		/* 4th and 2nd (even) lines are horizontal */
+		is_h = true;
+		h_odd = false;
 	}
 
-	if ((p[0] == p[6] && p[2] == p[4])) {
-		is_h = true;
-	}
-
-	/* TODO: handle 1px wide border parts specially */
 	if (is_v && is_h) {
 		/* border is rectangular */
 		int x0, y0, x1, y1;
@@ -1596,6 +1602,46 @@ bool html_redraw_plot_border_part(const int *p, unsigned int n,
 			y0 = p[5];
 			y1 = p[1];
 		}
+		if (!plot.rectangle(x0, y0, x1, y1, pstyle))
+			return false;
+	} else if (is_v && ((v_odd == true && abs(p[1] - p[5])) ||
+			(v_odd == false && abs(p[1] - p[3]) == 1))) {
+		/* 1px wide vertical border */
+		int x0, y0, x1, y1;
+		if (p[0] < p[4]) {
+			x0 = p[0];
+			x1 = p[4];
+		} else {
+			x0 = p[4];
+			x1 = p[0];
+		}
+		y0 = p[1];
+		y1 = p[3];
+		for (i = 1; i < 8; i += 2) {
+			y0 = y0 > p[i] ? p[i] : y0;
+			y1 = y1 < p[i] ? p[i] : y1;
+		}
+		/* TODO: Use line plotter? */
+		if (!plot.rectangle(x0, y0, x1, y1, pstyle))
+			return false;
+	} else if (is_h && ((h_odd == true && abs(p[0] - p[4])) ||
+			(h_odd == false && abs(p[0] - p[2]) == 1))) {
+		/* 1px wide horizontal border */
+		int x0, y0, x1, y1;
+		if (p[1] < p[5]) {
+			y0 = p[1];
+			y1 = p[5];
+		} else {
+			y0 = p[5];
+			y1 = p[1];
+		}
+		x0 = p[0];
+		x1 = p[2];
+		for (i = 0; i < 7; i += 2) {
+			x0 = x0 > p[i] ? p[i] : x0;
+			x1 = x1 < p[i] ? p[i] : x1;
+		}
+		/* TODO: Use line plotter? */
 		if (!plot.rectangle(x0, y0, x1, y1, pstyle))
 			return false;
 	} else {
