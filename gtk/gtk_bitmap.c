@@ -39,6 +39,7 @@ struct bitmap {
   GdkPixbuf *pretile_x;
   GdkPixbuf *pretile_y;
   GdkPixbuf *pretile_xy;
+  bool opaque;
 };
 
 #define MIN_PRETILE_WIDTH 256
@@ -66,6 +67,7 @@ void *bitmap_create(int width, int height, unsigned int state)
 	 */
 	gdk_pixbuf_fill(bmp->primary, 0);
         bmp->pretile_x = bmp->pretile_y = bmp->pretile_xy = NULL;
+        bmp->opaque = (state & BITMAP_OPAQUE) != 0;
 	return bmp;
 }
 
@@ -80,7 +82,7 @@ void bitmap_set_opaque(void *vbitmap, bool opaque)
 {
 	struct bitmap *bitmap = (struct bitmap *)vbitmap;
 	assert(bitmap);
-/* todo: set bitmap as opaque */
+	bitmap->opaque = opaque;
 }
 
 
@@ -94,7 +96,7 @@ bool bitmap_test_opaque(void *vbitmap)
 {
 	struct bitmap *bitmap = (struct bitmap *)vbitmap;
 	assert(bitmap);
-/* todo: test if bitmap as opaque */
+/* todo: test if bitmap is opaque */
 	return false;
 }
 
@@ -108,8 +110,7 @@ bool bitmap_get_opaque(void *vbitmap)
 {
 	struct bitmap *bitmap = (struct bitmap *)vbitmap;
 	assert(bitmap);
-/* todo: get whether bitmap is opaque */
-	return false;
+	return bitmap->opaque;
 }
 
 
