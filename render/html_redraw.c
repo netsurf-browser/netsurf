@@ -1059,30 +1059,37 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 	int left = box->border[LEFT].width;
 	int x, y;
 	unsigned int i, side;
-	int p[16];
-	int z[8];
+	int p[8]; /* Box border vertices */
+	int z[8]; /* Border vertices */
+
+	x = x_parent + box->x;
+	y = y_parent + box->y;
 
 	if (scale != 1.0) {
 		top *= scale;
 		right *= scale;
 		bottom *= scale;
 		left *= scale;
+		x *= scale;
+		y *= scale;
 	}
 
 	assert(box->style);
 
-	x = (x_parent + box->x) * scale;
-	y = (y_parent + box->y) * scale;
-
-	/* calculate border vertices */
-	p[0]  = x;			p[1]  = y;
-	p[2]  = x - left;		p[3]  = y - top;
-	p[4]  = x + p_width + right;	p[5]  = y - top;
-	p[6]  = x + p_width;		p[7]  = y;
-	p[8]  = x + p_width;		p[9]  = y + p_height;
-	p[10] = x + p_width + right;	p[11] = y + p_height + bottom;
-	p[12] = x - left;		p[13] = y + p_height + bottom;
-	p[14] = x;			p[15] = y + p_height;
+	/* Calculate border vertices
+	 *
+	 *    A----------------------+
+	 *    | \                  / |
+	 *    |   B--------------+   |
+	 *    |   |              |   |
+	 *    |   +--------------C   |
+	 *    | /                  \ |
+	 *    +----------------------D
+	 */
+	p[0] = x - left;		p[1] = y - top;			/* A */
+	p[2] = x;			p[3] = y;			/* B */
+	p[4] = x + p_width;		p[5] = y + p_height;		/* C */
+	p[6] = x + p_width + right;	p[7] = y + p_height + bottom;	/* D */
 
 	for (i = 0; i != 4; i++) {
 		colour col = 0;
@@ -1094,14 +1101,11 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 
 		switch (side) {
 		case TOP:
-			z[0] = p[0];
-			z[1] = p[1];
-			z[2] = p[2];
-			z[3] = p[3];
-			z[4] = p[4];
-			z[5] = p[5];
-			z[6] = p[6];
-			z[7] = p[7];
+			z[0] = p[2];	z[1] = p[3];
+			z[2] = p[0];	z[3] = p[1];
+			z[4] = p[6];	z[5] = p[1];
+			z[6] = p[4];	z[7] = p[3];
+
 			if (box->border[LEFT].color !=
 					CSS_BORDER_COLOR_TRANSPARENT) {
 				/* make border overhang left corner fully,
@@ -1116,14 +1120,11 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 			}
 			break;
 		case BOTTOM:
-			z[0] = p[8];
-			z[1] = p[9];
-			z[2] = p[10];
-			z[3] = p[11];
-			z[4] = p[12];
-			z[5] = p[13];
-			z[6] = p[14];
-			z[7] = p[15];
+			z[0] = p[4];	z[1] = p[5];
+			z[2] = p[6];	z[3] = p[7];
+			z[4] = p[0];	z[5] = p[7];
+			z[6] = p[2];	z[7] = p[5];
+
 			if (box->border[LEFT].color !=
 					CSS_BORDER_COLOR_TRANSPARENT) {
 				/* make border overhang left corner fully,
@@ -1138,14 +1139,11 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 			}
 			break;
 		case LEFT:
-			z[0] = p[12];
-			z[1] = p[13];
-			z[2] = p[14];
-			z[3] = p[15];
-			z[4] = p[0];
-			z[5] = p[1];
-			z[6] = p[2];
-			z[7] = p[3];
+			z[0] = p[0];	z[1] = p[7];
+			z[2] = p[2];	z[3] = p[5];
+			z[4] = p[2];	z[5] = p[3];
+			z[6] = p[0];	z[7] = p[1];
+
 			if (box->border[side].style == CSS_BORDER_STYLE_SOLID &&
 					box->border[LEFT].color ==
 					box->border[TOP].color) {
@@ -1162,14 +1160,11 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 			}
 			break;
 		case RIGHT:
-			z[0] = p[4];
-			z[1] = p[5];
-			z[2] = p[6];
-			z[3] = p[7];
-			z[4] = p[8];
-			z[5] = p[9];
-			z[6] = p[10];
-			z[7] = p[11];
+			z[0] = p[6];	z[1] = p[1];
+			z[2] = p[4];	z[3] = p[3];
+			z[4] = p[4];	z[5] = p[5];
+			z[6] = p[6];	z[7] = p[7];
+
 			if (box->border[side].style == CSS_BORDER_STYLE_SOLID &&
 					box->border[RIGHT].color ==
 					box->border[TOP].color) {
@@ -1225,8 +1220,8 @@ bool html_redraw_inline_borders(struct box *box, int x0, int y0, int x1, int y1,
 	int bottom = box->border[BOTTOM].width;
 	int left = box->border[LEFT].width;
 	colour col;
-	int p[16];
-	int z[8];
+	int p[8]; /* Box border vertices */
+	int z[8]; /* Border vertices */
 
 	if (scale != 1.0) {
 		top *= scale;
@@ -1235,30 +1230,33 @@ bool html_redraw_inline_borders(struct box *box, int x0, int y0, int x1, int y1,
 		left *= scale;
 	}
 
-	/* calculate border vertices */
-	p[0]  = (first) ? x0 + left : x0;	p[1]  = y0 + top;
-	p[2]  = x0;				p[3]  = y0;
-	p[4]  = x1;				p[5]  = y0;
-	p[6]  = (last) ? x1 - right : x1;	p[7]  = y0 + top;
-	p[8]  = (last) ? x1 - right : x1;	p[9]  = y1 - bottom;
-	p[10] = x1;				p[11] = y1;
-	p[12] = x0;				p[13] = y1;
-	p[14] = (first) ? x0 + left : x0;	p[15] = y1 - bottom;
+	/* Calculate border vertices
+	 *
+	 *    A----------------------+
+	 *    | \                  / |
+	 *    |   B--------------+   |
+	 *    |   |              |   |
+	 *    |   +--------------C   |
+	 *    | /                  \ |
+	 *    +----------------------D
+	 */
+	p[0] = x0;			p[1] = y0;		/* A */
+	p[2] = first ? x0 + left : x0;	p[3] = y0 + top;	/* B */
+	p[4] = last ? x1 - right : x1;	p[5] = y1 - bottom;	/* C */
+	p[6] = x1;			p[7] = y1;		/* D */
 
 	assert(box->style);
 
+	/* Top */
 	if (top != 0 && box->border[TOP].color !=
 			CSS_BORDER_COLOR_TRANSPARENT) {
 		col = nscss_color_to_ns(box->border[TOP].c);
 
-		z[0] = p[0];
-		z[1] = p[1];
-		z[2] = p[2];
-		z[3] = p[3];
-		z[4] = p[4];
-		z[5] = p[5];
-		z[6] = p[6];
-		z[7] = p[7];
+		z[0] = p[2];	z[1] = p[3];
+		z[2] = p[0];	z[3] = p[1];
+		z[4] = p[6];	z[5] = p[1];
+		z[6] = p[4];	z[7] = p[3];
+
 		if (first && box->border[LEFT].color !=
 				CSS_BORDER_COLOR_TRANSPARENT) {
 			/* make border overhang left corner fully,
@@ -1278,18 +1276,16 @@ bool html_redraw_inline_borders(struct box *box, int x0, int y0, int x1, int y1,
 			return false;
 	}
 
+	/* Bottom */
 	if (bottom != 0 && box->border[BOTTOM].color !=
 			CSS_BORDER_COLOR_TRANSPARENT) {
 		col = nscss_color_to_ns(box->border[BOTTOM].c);
 
-		z[0] = p[8];
-		z[1] = p[9];
-		z[2] = p[10];
-		z[3] = p[11];
-		z[4] = p[12];
-		z[5] = p[13];
-		z[6] = p[14];
-		z[7] = p[15];
+		z[0] = p[4];	z[1] = p[5];
+		z[2] = p[6];	z[3] = p[7];
+		z[4] = p[0];	z[5] = p[7];
+		z[6] = p[2];	z[7] = p[5];
+
 		if (first && box->border[LEFT].color !=
 				CSS_BORDER_COLOR_TRANSPARENT) {
 			/* make border overhang left corner fully,
@@ -1309,18 +1305,16 @@ bool html_redraw_inline_borders(struct box *box, int x0, int y0, int x1, int y1,
 			return false;
 	}
 
+	/* Left */
 	if (left != 0 && first && box->border[LEFT].color !=
 			CSS_BORDER_COLOR_TRANSPARENT) {
 		col = nscss_color_to_ns(box->border[LEFT].c);
 
-		z[0] = p[12];
-		z[1] = p[13];
-		z[2] = p[14];
-		z[3] = p[15];
-		z[4] = p[0];
-		z[5] = p[1];
-		z[6] = p[2];
-		z[7] = p[3];
+		z[0] = p[0];	z[1] = p[7];
+		z[2] = p[2];	z[3] = p[5];
+		z[4] = p[2];	z[5] = p[3];
+		z[6] = p[0];	z[7] = p[1];
+
 		if (box->border[LEFT].style == CSS_BORDER_STYLE_SOLID &&
 				box->border[LEFT].color ==
 				box->border[TOP].color) {
@@ -1342,18 +1336,16 @@ bool html_redraw_inline_borders(struct box *box, int x0, int y0, int x1, int y1,
 			return false;
 	}
 
+	/* Right */
 	if (right != 0 && last && box->border[RIGHT].color !=
 			CSS_BORDER_COLOR_TRANSPARENT) {
 		col = nscss_color_to_ns(box->border[RIGHT].c);
 
-		z[0] = p[4];
-		z[1] = p[5];
-		z[2] = p[6];
-		z[3] = p[7];
-		z[4] = p[8];
-		z[5] = p[9];
-		z[6] = p[10];
-		z[7] = p[11];
+		z[0] = p[6];	z[1] = p[1];
+		z[2] = p[4];	z[3] = p[3];
+		z[4] = p[4];	z[5] = p[5];
+		z[6] = p[6];	z[7] = p[7];
+
 		if (box->border[RIGHT].style == CSS_BORDER_STYLE_SOLID &&
 				box->border[RIGHT].color ==
 				box->border[TOP].color) {
@@ -1411,7 +1403,7 @@ static plot_style_t plot_style_fillbdr_dlight = {
 bool html_redraw_border_plot(const int i, const int *p, colour c,
 		enum css_border_style_e style, int thickness)
 {
-	int z[8];
+	int z[8]; /* Vertices of border part */
 	unsigned int light = i;
 	plot_style_t *plot_style_bdr_in;
 	plot_style_t *plot_style_bdr_out;
