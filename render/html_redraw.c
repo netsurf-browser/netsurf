@@ -1616,8 +1616,8 @@ bool html_redraw_plot_border_part(const int *p, unsigned int n,
 			x1 = p[0];
 		}
 		y0 = p[1];
-		y1 = p[3];
-		for (i = 1; i < 8; i += 2) {
+		y1 = p[1];
+		for (i = 3; i < 8; i += 2) {
 			y0 = y0 > p[i] ? p[i] : y0;
 			y1 = y1 < p[i] ? p[i] : y1;
 		}
@@ -1636,8 +1636,8 @@ bool html_redraw_plot_border_part(const int *p, unsigned int n,
 			y1 = p[1];
 		}
 		x0 = p[0];
-		x1 = p[2];
-		for (i = 0; i < 7; i += 2) {
+		x1 = p[0];
+		for (i = 2; i < 7; i += 2) {
 			x0 = x0 > p[i] ? p[i] : x0;
 			x1 = x1 < p[i] ? p[i] : x1;
 		}
