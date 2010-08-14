@@ -220,7 +220,6 @@ bool bitmap_get_opaque(void *bitmap)
 {
 	struct bitmap *bm = bitmap;
 	assert(bitmap);
-/* todo: get whether bitmap is opaque */
 	return bm->opaque;
 }
 
