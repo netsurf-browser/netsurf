@@ -46,7 +46,7 @@ void *bitmap_create(int width, int height, unsigned int state)
                 if (bitmap->pixdata != NULL) {
                         bitmap->width = width;
                         bitmap->height = height;
-                        bitmap->opaque = false;
+                        bitmap->opaque = (state & BITMAP_OPAQUE) != 0;
                 } else {
                         free(bitmap);
                         bitmap=NULL;
