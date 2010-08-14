@@ -166,7 +166,6 @@ bool bitmap_get_opaque(void *vbitmap)
 {
 	struct bitmap *bitmap = (struct bitmap *)vbitmap;
 	assert(bitmap);
-/* todo: get whether bitmap is opaque */
 	return bitmap->opaque;
 }
 
