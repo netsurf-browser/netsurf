@@ -1108,13 +1108,17 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 			z[6] = p[0];	z[7] = p[1];
 
 			if (box->border[TOP].color !=
-					CSS_BORDER_COLOR_TRANSPARENT) {
+					CSS_BORDER_COLOR_TRANSPARENT &&
+					box->border[TOP].style !=
+					CSS_BORDER_STYLE_DOUBLE) {
 				/* make border overhang top corner fully,
 				 * if top border is transparent */
 				z[5] -= top;
 			}
 			if (box->border[BOTTOM].color !=
-					CSS_BORDER_COLOR_TRANSPARENT) {
+					CSS_BORDER_COLOR_TRANSPARENT &&
+					box->border[BOTTOM].style !=
+					CSS_BORDER_STYLE_DOUBLE) {
 				/* make border overhang bottom corner fully,
 				 * if bottom border is transparent */
 				z[3] += bottom;
@@ -1127,13 +1131,17 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 			z[6] = p[6];	z[7] = p[7];
 
 			if (box->border[TOP].color !=
-					CSS_BORDER_COLOR_TRANSPARENT) {
+					CSS_BORDER_COLOR_TRANSPARENT &&
+					box->border[TOP].style !=
+					CSS_BORDER_STYLE_DOUBLE) {
 				/* make border overhang top corner fully,
 				 * if top border is transparent */
 				z[3] -= top;
 			}
 			if (box->border[BOTTOM].color !=
-					CSS_BORDER_COLOR_TRANSPARENT) {
+					CSS_BORDER_COLOR_TRANSPARENT &&
+					box->border[BOTTOM].style !=
+					CSS_BORDER_STYLE_DOUBLE) {
 				/* make border overhang bottom corner fully,
 				 * if bottom border is transparent */
 				z[5] += bottom;
@@ -1145,14 +1153,16 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 			z[4] = p[6];	z[5] = p[1];
 			z[6] = p[4];	z[7] = p[3];
 
-			if (box->border[side].style == CSS_BORDER_STYLE_SOLID &&
+			if (box->border[TOP].style ==
+					CSS_BORDER_STYLE_SOLID &&
 					box->border[TOP].c ==
 					box->border[LEFT].c) {
 				/* don't bother overlapping left corner if
 				 * it's the same colour anyway */
 				z[2] += left;
 			}
-			if (box->border[side].style == CSS_BORDER_STYLE_SOLID &&
+			if (box->border[TOP].style ==
+					CSS_BORDER_STYLE_SOLID &&
 					box->border[TOP].c ==
 					box->border[RIGHT].c) {
 				/* don't bother overlapping right corner if
@@ -1166,14 +1176,16 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 			z[4] = p[0];	z[5] = p[7];
 			z[6] = p[2];	z[7] = p[5];
 
-			if (box->border[side].style == CSS_BORDER_STYLE_SOLID &&
+			if (box->border[BOTTOM].style ==
+					CSS_BORDER_STYLE_SOLID &&
 					box->border[BOTTOM].c ==
 					box->border[LEFT].c) {
 				/* don't bother overlapping left corner if
 				 * it's the same colour anyway */
 				z[4] += left;
 			}
-			if (box->border[side].style == CSS_BORDER_STYLE_SOLID &&
+			if (box->border[BOTTOM].style ==
+					CSS_BORDER_STYLE_SOLID &&
 					box->border[BOTTOM].c ==
 					box->border[RIGHT].c) {
 				/* don't bother overlapping right corner if
@@ -1259,13 +1271,17 @@ bool html_redraw_inline_borders(struct box *box, int x0, int y0, int x1, int y1,
 		z[6] = p[0];	z[7] = p[1];
 
 		if (box->border[TOP].color !=
-				CSS_BORDER_COLOR_TRANSPARENT) {
+				CSS_BORDER_COLOR_TRANSPARENT &&
+				box->border[TOP].style !=
+				CSS_BORDER_STYLE_DOUBLE) {
 			/* make border overhang top corner fully,
 			 * if top border is transparent */
 			z[5] -= top;
 		}
 		if (box->border[BOTTOM].color !=
-				CSS_BORDER_COLOR_TRANSPARENT) {
+				CSS_BORDER_COLOR_TRANSPARENT &&
+				box->border[BOTTOM].style !=
+				CSS_BORDER_STYLE_DOUBLE) {
 			/* make border overhang bottom corner fully,
 			 * if bottom border is transparent */
 			z[3] += bottom;
@@ -1288,13 +1304,17 @@ bool html_redraw_inline_borders(struct box *box, int x0, int y0, int x1, int y1,
 		z[6] = p[6];	z[7] = p[7];
 
 		if (box->border[TOP].color !=
-				CSS_BORDER_COLOR_TRANSPARENT) {
+				CSS_BORDER_COLOR_TRANSPARENT &&
+				box->border[TOP].style !=
+				CSS_BORDER_STYLE_DOUBLE) {
 			/* make border overhang top corner fully,
 			 * if top border is transparent */
 			z[3] -= top;
 		}
 		if (box->border[BOTTOM].color !=
-				CSS_BORDER_COLOR_TRANSPARENT) {
+				CSS_BORDER_COLOR_TRANSPARENT &&
+				box->border[BOTTOM].style !=
+				CSS_BORDER_STYLE_DOUBLE) {
 			/* make border overhang bottom corner fully,
 			 * if bottom border is transparent */
 			z[5] += bottom;
@@ -1563,31 +1583,15 @@ bool html_redraw_plot_border_part(const int *p, unsigned int n,
 {
 	bool is_v = false; /* vertical border */
 	bool is_h = false; /* horizontal border */
-	bool v_odd = false;
-	bool h_odd = false;
 	int i;
 	
 	assert(n == 4);
 
-	if ((p[1] == p[3] && p[5] == p[7])) {
-		/* 1st and 3rd (odd) lines are vertical */
+	if ((p[1] == p[7] && p[3] == p[5]) || (p[1] == p[3] && p[5] == p[7]))
 		is_v = true;
-		v_odd = true;
-	} else if ((p[1] == p[7] && p[3] == p[5])) {
-		/* 4th and 2nd (even) lines are vertical */
-		is_v = true;
-		v_odd = false;
-	}
 
-	if ((p[0] == p[2] && p[4] == p[6])) {
-		/* 1st and 3rd (odd) lines are horizontal */
+	if ((p[0] == p[6] && p[2] == p[4]) || (p[0] == p[2] && p[4] == p[6]))
 		is_h = true;
-		h_odd = true;
-	} else if ((p[0] == p[6] && p[2] == p[4])) {
-		/* 4th and 2nd (even) lines are horizontal */
-		is_h = true;
-		h_odd = false;
-	}
 
 	if (is_v && is_h) {
 		/* border is rectangular */
@@ -1608,8 +1612,7 @@ bool html_redraw_plot_border_part(const int *p, unsigned int n,
 		}
 		if (!plot.rectangle(x0, y0, x1, y1, pstyle))
 			return false;
-	} else if (is_v && ((v_odd == true && abs(p[1] - p[5])) ||
-			(v_odd == false && abs(p[1] - p[3]) == 1))) {
+	} else if (is_v && abs(p[1] - p[3]) == 1) {
 		/* 1px wide vertical border */
 		int x0, y0, x1, y1;
 		if (p[0] < p[4]) {
@@ -1628,8 +1631,7 @@ bool html_redraw_plot_border_part(const int *p, unsigned int n,
 		/* TODO: Use line plotter? */
 		if (!plot.rectangle(x0, y0, x1, y1, pstyle))
 			return false;
-	} else if (is_h && ((h_odd == true && abs(p[0] - p[4])) ||
-			(h_odd == false && abs(p[0] - p[2]) == 1))) {
+	} else if (is_h && abs(p[0] - p[2]) == 1) {
 		/* 1px wide horizontal border */
 		int x0, y0, x1, y1;
 		if (p[1] < p[5]) {
