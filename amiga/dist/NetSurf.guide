@@ -28,7 +28,7 @@ NetSurf URL/K,FORCE/S
 Where:
 
 URL   = Address of page to open on startup
-FORCE = Force new instance of NetSurf to open
+FORCE = Force new instance of NetSurf to open (has some limitations, use for debugging only)
 
 Note that there may be other generic options which can also be specified.
 @endnode
@@ -49,11 +49,20 @@ There are a couple of Amiga-specific options which can only be changed directly 
 @endnode
 
 @node Fonts
-The font to use for each font type can be defined in NetSurf's options.  OS4 NetSurf does not currently support soft styles for bold and italic, so a designed font for these will need to be specified as follows.
+The font to use for each font type can be defined in NetSurf's options.  OS4 NetSurf does not currently support soft styles for bold and italic, so a designed font for these will need to be specified as follows:
 
 Within @{"TypeManager" system "SYS:System/TypeManager"} select a font being used by NetSurf and click on Modify.
 On the Files tab, Font family section, choose the @{b}bold@{ub}, @{i}italic@{ui} and @{b}@{i}bold-italic@{ui}@{ub} version of the font.
 Click Save.
+
+@{b}Unicode fallback font@{ub}
+
+If the font NetSurf is trying to use does not contain a specific character used on a web page, it will try the Unicode/fallback font.  It is recommended to use a font which either:
+(a) Contains as complete a Unicode character set as possible or
+(b) Is complete for the pages you are likely to visit (eg. if you visit a lot of Japanese pages, set the Unicode fallback font to one with a complete Japanese character set)
+
+For most users, installing and selecting @{"Code2000" rxs "address netsurf 'open http://www.code2000.net'"} or @{"Bitstream Cyberbit" rxs "address netsurf 'open http://ftp.netscape.com/pub/communicator/extras/fonts/windows/'"} is the best option.
+
 @endnode
 
 @node Themes

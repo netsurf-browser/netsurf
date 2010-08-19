@@ -340,8 +340,8 @@
 		)
 
 		(select #themename
-			(set #theme "Resources/Themes/Default")
-			(set #theme "Resources/Themes/AISS")
+			(set #theme "PROGDIR:Resources/Themes/Default")
+			(set #theme "PROGDIR:Resources/Themes/AISS")
 		)
 	)
 )
