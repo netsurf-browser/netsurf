@@ -54,27 +54,22 @@
 #include "utils/utils.h"
 
 
-static bool html_redraw_box(struct box *box,
-		int x, int y,
-		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
+static bool html_redraw_box(struct box *box, int x, int y, struct rect clip,
 		float scale, colour current_background_color);
 static bool html_redraw_box_children(struct box *box,
-		int x_parent, int y_parent,
-		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
+		int x_parent, int y_parent, struct rect clip,
 		float scale, colour current_background_color);
 static bool html_redraw_text_box(struct box *box, int x, int y,
-		int x0, int y0, int x1, int y1,
-		float scale, colour current_background_color);
+		struct rect clip, float scale,
+		colour current_background_color);
 static bool html_redraw_caret(struct caret *caret,
 		colour current_background_color, float scale);
 static bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 		int p_width, int p_height, float scale);
 static bool html_redraw_inline_borders(struct box *box, int x0, int y0,
 		int x1, int y1, float scale, bool first, bool last);
-static bool html_redraw_border_plot(const int i, const int *p, colour c,
-		enum css_border_style_e style, int thickness);
-static bool html_redraw_plot_border_part(const int *p, unsigned int n,
-		const plot_style_t *pstyle);
+static bool html_redraw_border_plot(const int side, const int *p, colour c,
+		enum css_border_style_e style, int thickness, bool rectangular);
 static bool html_redraw_checkbox(int x, int y, int width, int height,
 		bool selected);
 static bool html_redraw_radio(int x, int y, int width, int height,
@@ -82,11 +77,11 @@ static bool html_redraw_radio(int x, int y, int width, int height,
 static bool html_redraw_file(int x, int y, int width, int height,
 		struct box *box, float scale, colour background_colour);
 static bool html_redraw_background(int x, int y, struct box *box, float scale,
-		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-		colour *background_colour, struct box *background);
+		struct rect clip, colour *background_colour,
+		struct box *background);
 static bool html_redraw_inline_background(int x, int y, struct box *box,
-		float scale, int clip_x0, int clip_y0,
-		int clip_x1, int clip_y1, int px0, int py0, int px1, int py1,
+		float scale, struct rect clip,
+		int px0, int py0, int px1, int py1,
 		bool first, bool last, colour *background_colour);
 static bool html_redraw_text_decoration(struct box *box,
 		int x_parent, int y_parent, float scale,
@@ -154,6 +149,11 @@ bool html_redraw(struct content *c, int x, int y,
 	}
 	
 	if (!select_only) {
+		struct rect clip;
+		clip.x0 = clip_x0;
+		clip.y0 = clip_y0;
+		clip.x1 = clip_x1;
+		clip.y1 = clip_y1;
 		/* clear to background colour */
 		result = plot.clip(clip_x0, clip_y0, clip_x1, clip_y1);
 	
@@ -164,8 +164,7 @@ bool html_redraw(struct content *c, int x, int y,
 		result &= plot.rectangle(clip_x0, clip_y0, clip_x1, clip_y1,
 				&pstyle_fill_bg);
 	
-		result &= html_redraw_box(box, x, y,
-				clip_x0, clip_y0, clip_x1, clip_y1,
+		result &= html_redraw_box(box, x, y, clip,
 				scale, pstyle_fill_bg.fill_colour);
 	}
 
@@ -195,14 +194,11 @@ bool html_redraw(struct content *c, int x, int y,
 /**
  * Recursively draw a box.
  *
- * \param  box	    box to draw
- * \param  x_parent coordinate of parent box
- * \param  y_parent coordinate of parent box
- * \param  clip_x0  clip rectangle
- * \param  clip_y0  clip rectangle
- * \param  clip_x1  clip rectangle
- * \param  clip_y1  clip rectangle
- * \param  scale    scale for redraw
+ * \param  box	     box to draw
+ * \param  x_parent  coordinate of parent box
+ * \param  y_parent  coordinate of parent box
+ * \param  clip      clip rectangle
+ * \param  scale     scale for redraw
  * \param  current_background_color  background colour under this box
  * \param  inline_depth  depth of nested inlines inside an inline container
  * \return true if successful, false otherwise
@@ -210,16 +206,14 @@ bool html_redraw(struct content *c, int x, int y,
  * x, y, clip_[xy][01] are in target coordinates.
  */
 
-bool html_redraw_box(struct box *box,
-		int x_parent, int y_parent,
-		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-		float scale, colour current_background_color)
+bool html_redraw_box(struct box *box, int x_parent, int y_parent,
+		struct rect clip, float scale, colour current_background_color)
 {
 	int x, y;
 	int width, height;
 	int padding_left, padding_top, padding_width, padding_height;
 	int border_left, border_top, border_right, border_bottom;
-	int x0, y0, x1, y1;
+	struct rect r;
 	int x_scrolled, y_scrolled;
 	struct box *bg_box = NULL;
 	css_color bgcol = 0;
@@ -267,16 +261,26 @@ bool html_redraw_box(struct box *box,
 	/* calculate rectangle covering this box and descendants */
 	if (box->style && css_computed_overflow(box->style) != 
 			CSS_OVERFLOW_VISIBLE) {
-		x0 = x - border_left;
-		y0 = y - border_top;
-		x1 = x + padding_width + border_right;
-		y1 = y + padding_height + border_bottom;
+		/* box contents clipped to box size */
+		r.x0 = x - border_left;
+		r.y0 = y - border_top;
+		r.x1 = x + padding_width + border_right;
+		r.y1 = y + padding_height + border_bottom;
 	} else {
-		x0 = x + box->descendant_x0 * scale;
-		y0 = y + box->descendant_y0 * scale;
-		x1 = x + box->descendant_x1 * scale + 1;
-		y1 = y + box->descendant_y1 * scale + 1;
+		/* box contents can hang out of the box; use descendant box */
+		if (scale == 1.0) {
+			r.x0 = x + box->descendant_x0;
+			r.y0 = y + box->descendant_y0;
+			r.x1 = x + box->descendant_x1 + 1;
+			r.y1 = y + box->descendant_y1 + 1;
+		} else {
+			r.x0 = x + box->descendant_x0 * scale;
+			r.y0 = y + box->descendant_y0 * scale;
+			r.x1 = x + box->descendant_x1 * scale + 1;
+			r.y1 = y + box->descendant_y1 * scale + 1;
+		}
 		if (!box->parent) {
+			/* root element */
 			int margin_left, margin_right;
 			int margin_top, margin_bottom;
 			if (scale == 1.0) {
@@ -290,37 +294,38 @@ bool html_redraw_box(struct box *box,
 				margin_right = box->margin[RIGHT] * scale;
 				margin_bottom = box->margin[BOTTOM] * scale;
 			}
-			x0 = x - border_left - margin_left < x0 ?
-					x - border_left - margin_left : x0;
-			y0 = y - border_top - margin_top < y0 ?
-					y - border_top - margin_top : y0;
-			x1 = x + padding_width + border_right +
-					margin_right > x1 ?
+			r.x0 = x - border_left - margin_left < r.x0 ?
+					x - border_left - margin_left : r.x0;
+			r.y0 = y - border_top - margin_top < r.y0 ?
+					y - border_top - margin_top : r.y0;
+			r.x1 = x + padding_width + border_right +
+					margin_right > r.x1 ?
 					x + padding_width + border_right +
-					margin_right : x1;
-			y1 = y + padding_height + border_bottom +
-					margin_bottom > y1 ?
+					margin_right : r.x1;
+			r.y1 = y + padding_height + border_bottom +
+					margin_bottom > r.y1 ?
 					y + padding_height + border_bottom +
-					margin_bottom : y1;
+					margin_bottom : r.y1;
 		}
 	}
 
 	/* return if the rectangle is completely outside the clip rectangle */
-	if (clip_y1 < y0 || y1 < clip_y0 || clip_x1 < x0 || x1 < clip_x0)
+	if (clip.y1 < r.y0 || r.y1 < clip.y0 ||
+			clip.x1 < r.x0 || r.x1 < clip.x0)
 		return true;
 
 	/*if the rectangle is under the page bottom but it can fit in a page,
 	don't print it now*/
 	if (html_redraw_printing) {
-		if (y1 > html_redraw_printing_border) {
-			if (y1 - y0 <= html_redraw_printing_border &&
+		if (r.y1 > html_redraw_printing_border) {
+			if (r.y1 - r.y0 <= html_redraw_printing_border &&
 					(box->type == BOX_TEXT ||
 					box->type == BOX_TABLE_CELL
 					|| box->object || box->gadget)) {
 				/*remember the highest of all points from the
 				not printed elements*/
-				if (y0 < html_redraw_printing_top_cropped)
-					html_redraw_printing_top_cropped = y0;
+				if (r.y0 < html_redraw_printing_top_cropped)
+					html_redraw_printing_top_cropped = r.y0;
 				return true;
 			}
 		}
@@ -333,8 +338,7 @@ bool html_redraw_box(struct box *box,
 		if ((plot.group_start) && (!plot.group_start("hidden box")))
 			return false;
 		if (!html_redraw_box_children(box, x_parent, y_parent,
-				x0, y0, x1, y1, scale,
-				current_background_color))
+				r, scale, current_background_color))
 			return false;
 		return ((!plot.group_end) || (plot.group_end()));
 	}
@@ -345,23 +349,23 @@ bool html_redraw_box(struct box *box,
 	if (box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
 			box->type == BOX_TABLE_CELL || box->object) {
 		/* find intersection of clip rectangle and box */
-		if (x0 < clip_x0) x0 = clip_x0;
-		if (y0 < clip_y0) y0 = clip_y0;
-		if (clip_x1 < x1) x1 = clip_x1;
-		if (clip_y1 < y1) y1 = clip_y1;
+		if (r.x0 < clip.x0) r.x0 = clip.x0;
+		if (r.y0 < clip.y0) r.y0 = clip.y0;
+		if (clip.x1 < r.x1) r.x1 = clip.x1;
+		if (clip.y1 < r.y1) r.y1 = clip.y1;
 		/* no point trying to draw 0-width/height boxes */
-		if (x0 == x1 || y0 == y1)
+		if (r.x0 == r.x1 || r.y0 == r.y1)
 			/* not an error */
 			return ((!plot.group_end) || (plot.group_end()));
 		/* clip to it */
-		if (!plot.clip(x0, y0, x1, y1))
+		if (!plot.clip(r.x0, r.y0, r.x1, r.y1))
 			return false;
 	} else {
 		/* clip box unchanged */
-		x0 = clip_x0;
-		y0 = clip_y0;
-		x1 = clip_x1;
-		y1 = clip_y1;
+		r.x0 = clip.x0;
+		r.y0 = clip.y0;
+		r.x1 = clip.x1;
+		r.y1 = clip.y1;
 	}
 
 	/* background colour and image for block level content and replaced
@@ -433,13 +437,13 @@ bool html_redraw_box(struct box *box,
 			&bgcol) != CSS_BACKGROUND_COLOR_TRANSPARENT ||
 			bg_box->background)) {
 		/* find intersection of clip box and border edge */
-		int px0, py0, px1, py1;
-		px0 = x - border_left < x0 ? x0 : x - border_left;
-		py0 = y - border_top < y0 ? y0 : y - border_top;
-		px1 = x + padding_width + border_right < x1 ?
-				x + padding_width + border_right : x1;
-		py1 = y + padding_height + border_bottom < y1 ?
-				y + padding_height + border_bottom : y1;
+		struct rect p;
+		p.x0 = x - border_left < r.x0 ? r.x0 : x - border_left;
+		p.y0 = y - border_top < r.y0 ? r.y0 : y - border_top;
+		p.x1 = x + padding_width + border_right < r.x1 ?
+				x + padding_width + border_right : r.x1;
+		p.y1 = y + padding_height + border_bottom < r.y1 ?
+				y + padding_height + border_bottom : r.y1;
 		if (!box->parent) {
 			/* Root element, special case:
 			 * background covers margins too */
@@ -455,20 +459,19 @@ bool html_redraw_box(struct box *box,
 				m_right = box->margin[RIGHT] * scale;
 				m_bottom = box->margin[BOTTOM] * scale;
 			}
-			px0 = px0 - m_left < x0 ? x0 : px0 - m_left;
-			py0 = py0 - m_top < y0 ? y0 : py0 - m_top;
-			px1 = px1 + m_right < x1 ? px1 + m_right : x1;
-			py1 = py1 + m_bottom < y1 ? py1 + m_bottom : y1;
+			p.x0 = p.x0 - m_left < r.x0 ? r.x0 : p.x0 - m_left;
+			p.y0 = p.y0 - m_top < r.y0 ? r.y0 : p.y0 - m_top;
+			p.x1 = p.x1 + m_right < r.x1 ? p.x1 + m_right : r.x1;
+			p.y1 = p.y1 + m_bottom < r.y1 ? p.y1 + m_bottom : r.y1;
 		}
 		/* valid clipping rectangles only */
-		if ((px0 < px1) && (py0 < py1)) {
+		if ((p.x0 < p.x1) && (p.y0 < p.y1)) {
 			/* plot background */
-			if (!html_redraw_background(x, y, box, scale,
-					px0, py0, px1, py1,
+			if (!html_redraw_background(x, y, box, scale, p,
 					&current_background_color, bg_box))
 				return false;
 			/* restore previous graphics window */
-			if (!plot.clip(x0, y0, x1, y1))
+			if (!plot.clip(r.x0, r.y0, r.x1, r.y1))
 				return false;
 		}
 	}
@@ -493,6 +496,7 @@ bool html_redraw_box(struct box *box,
 		/* inline backgrounds and borders span other boxes and may
 		 * wrap onto separate lines */
 		struct box *ib;
+		struct rect p;
 		bool first = true;
 		int ib_x;
 		int ib_y = y;
@@ -502,10 +506,10 @@ bool html_redraw_box(struct box *box,
 		int xmax = x + padding_width + border_right;
 		int ymin = y - border_top;
 		int ymax = y + padding_height + border_bottom;
-		int px0 = xmin < x0 ? x0 : xmin;
-		int px1 = xmax < x1 ? xmax : x1;
-		int py0 = ymin < y0 ? y0 : ymin;
-		int py1 = ymax < y1 ? ymax : y1;
+		p.x0 = xmin < r.x0 ? r.x0 : xmin;
+		p.x1 = xmax < r.x1 ? xmax : r.x1;
+		p.y0 = ymin < r.y0 ? r.y0 : ymin;
+		p.y1 = ymax < r.y1 ? ymax : r.y1;
 		for (ib = box; ib; ib = ib->next) {
 			/* to get extents of rectangle(s) associated with
 			 * inline, cycle though all boxes in inline, skipping
@@ -533,14 +537,13 @@ bool html_redraw_box(struct box *box,
 				/* inline element has wrapped, plot background
 				 * and borders */
 				if (!html_redraw_inline_background(
-						x, y, box, scale,
-						px0, py0, px1, py1,
+						x, y, box, scale, p,
 						xmin, ymin, xmax, ymax,
 						first, false,
 						&current_background_color))
 					return false;
 				/* restore previous graphics window */
-				if (!plot.clip(x0, y0, x1, y1))
+				if (!plot.clip(r.x0, r.y0, r.x1, r.y1))
 					return false;
 				if (!html_redraw_inline_borders(box,
 						xmin, ymin, xmax, ymax,
@@ -552,16 +555,16 @@ bool html_redraw_box(struct box *box,
 				ymax = ib_y + padding_height - padding_top +
 						border_bottom;
 
-				px0 = xmin < x0 ? x0 : xmin;
-				py0 = ymin < y0 ? y0 : ymin;
-				py1 = ymax < y1 ? ymax : y1;
+				p.x0 = xmin < r.x0 ? r.x0 : xmin;
+				p.y0 = ymin < r.y0 ? r.y0 : ymin;
+				p.y1 = ymax < r.y1 ? ymax : r.y1;
 
 				first = false;
 			}
 
 			/* increase width for current box */
 			xmax = ib_x + ib_p_width + ib_b_right;
-			px1 = xmax < x1 ? xmax : x1;
+			p.x1 = xmax < r.x1 ? xmax : r.x1;
 
 			if (ib == box->inline_end)
 				/* reached end of BOX_INLINE span */
@@ -569,12 +572,12 @@ bool html_redraw_box(struct box *box,
 		}
 		/* plot background and borders for last rectangle of
 		 * the inline */
-		if (!html_redraw_inline_background(x, ib_y, box, scale,
-				px0, py0, px1, py1, xmin, ymin, xmax, ymax,
-				first, true, &current_background_color))
+		if (!html_redraw_inline_background(x, ib_y, box, scale, p,
+				xmin, ymin, xmax, ymax, first, true,
+				&current_background_color))
 			return false;
 		/* restore previous graphics window */
-		if (!plot.clip(x0, y0, x1, y1))
+		if (!plot.clip(r.x0, r.y0, r.x1, r.y1))
 			return false;
 		if (!html_redraw_inline_borders(box, xmin, ymin, xmax, ymax,
 				scale, first, true))
@@ -625,19 +628,19 @@ bool html_redraw_box(struct box *box,
 	/* clip to the padding edge for boxes with overflow hidden or scroll */
 	if (box->style && css_computed_overflow(box->style) != 
 			CSS_OVERFLOW_VISIBLE) {
-		x0 = x;
-		y0 = y;
-		x1 = x + padding_width;
-		y1 = y + padding_height;
-		if (x0 < clip_x0) x0 = clip_x0;
-		if (y0 < clip_y0) y0 = clip_y0;
-		if (clip_x1 < x1) x1 = clip_x1;
-		if (clip_y1 < y1) y1 = clip_y1;
-		if (x1 <= x0 || y1 <= y0)
+		r.x0 = x;
+		r.y0 = y;
+		r.x1 = x + padding_width;
+		r.y1 = y + padding_height;
+		if (r.x0 < clip.x0) r.x0 = clip.x0;
+		if (r.y0 < clip.y0) r.y0 = clip.y0;
+		if (clip.x1 < r.x1) r.x1 = clip.x1;
+		if (clip.y1 < r.y1) r.y1 = clip.y1;
+		if (r.x1 <= r.x0 || r.y1 <= r.y0)
 			return ((!plot.group_end) || (plot.group_end()));
 		if (box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
 				box->type == BOX_TABLE_CELL || box->object) {
-			if (!plot.clip(x0, y0, x1, y1))
+			if (!plot.clip(r.x0, r.y0, r.x1, r.y1))
 				return false;
 		}
 	}
@@ -656,7 +659,7 @@ bool html_redraw_box(struct box *box,
 		if (!content_redraw(box->object,
 				x_scrolled + padding_left,
 				y_scrolled + padding_top,
-				width, height, x0, y0, x1, y1, scale,
+				width, height, r.x0, r.y0, r.x1, r.y1, scale,
 				current_background_color))
 			return false;
 
@@ -679,14 +682,13 @@ bool html_redraw_box(struct box *box,
 			return false;
 
 	} else if (box->text) {
-		if (!html_redraw_text_box(box, x, y, x0, y0, x1, y1,
-				scale, current_background_color))
+		if (!html_redraw_text_box(box, x, y, r, scale,
+				current_background_color))
 			return false;
 
 	} else {
-		if (!html_redraw_box_children(box, x_parent, y_parent,
-				x0, y0, x1, y1, scale,
-				current_background_color))
+		if (!html_redraw_box_children(box, x_parent, y_parent, r,
+				scale, current_background_color))
 			return false;
 	}
 
@@ -697,8 +699,7 @@ bool html_redraw_box(struct box *box,
 				scroll_get_offset(box->scroll_x),
 				y_parent + box->y -
 				scroll_get_offset(box->scroll_y),
-				clip_x0, clip_y0, clip_x1, clip_y1,
-				scale, current_background_color))
+				clip, scale, current_background_color))
 			return false;
 
 	/* scrollbars */
@@ -721,8 +722,8 @@ bool html_redraw_box(struct box *box,
 					x_parent + box->x,
      					y_parent + box->y + box->padding[TOP] +
 					box->height + box->padding[BOTTOM] -
-					SCROLLBAR_WIDTH,				
-					clip_x0, clip_y0, clip_x1, clip_y1,
+					SCROLLBAR_WIDTH,
+					clip.x0, clip.y0, clip.x1, clip.y1,
      					scale);
 		if (box->scroll_y != NULL)
 			scroll_redraw(box->scroll_y,
@@ -730,14 +731,14 @@ bool html_redraw_box(struct box *box,
 					box->width + box->padding[RIGHT] -
 					SCROLLBAR_WIDTH,
 					y_parent + box->y,
-					clip_x0, clip_y0, clip_x1, clip_y1,
+					clip.x0, clip.y0, clip.x1, clip.y1,
      					scale);
 	}
 
 
 	if (box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
 			box->type == BOX_TABLE_CELL || box->object)
-		if (!plot.clip(clip_x0, clip_y0, clip_x1, clip_y1))
+		if (!plot.clip(clip.x0, clip.y0, clip.x1, clip.y1))
 			return false;
 
 	return ((!plot.group_end) || (plot.group_end()));
@@ -747,22 +748,18 @@ bool html_redraw_box(struct box *box,
 /**
  * Draw the various children of a box.
  *
- * \param  box	    box to draw children of
- * \param  x_parent coordinate of parent box
- * \param  y_parent coordinate of parent box
- * \param  clip_x0  clip rectangle
- * \param  clip_y0  clip rectangle
- * \param  clip_x1  clip rectangle
- * \param  clip_y1  clip rectangle
- * \param  scale    scale for redraw
+ * \param  box	     box to draw children of
+ * \param  x_parent  coordinate of parent box
+ * \param  y_parent  coordinate of parent box
+ * \param  clip      clip rectangle
+ * \param  scale     scale for redraw
  * \param  current_background_color  background colour under this box
  * \return true if successful, false otherwise
  */
 
-bool html_redraw_box_children(struct box *box,
-		int x_parent, int y_parent,
-		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-		float scale, colour current_background_color)
+bool html_redraw_box_children(struct box *box, int x_parent, int y_parent,
+		struct rect clip, float scale,
+		colour current_background_color)
 {
 	struct box *c;
 
@@ -774,8 +771,7 @@ bool html_redraw_box_children(struct box *box,
 					scroll_get_offset(box->scroll_x),
 					y_parent + box->y -
 					scroll_get_offset(box->scroll_y),
-					clip_x0, clip_y0, clip_x1, clip_y1,
-					scale, current_background_color))
+					clip, scale, current_background_color))
 				return false;
 	}
 	for (c = box->float_children; c; c = c->next_float)
@@ -784,8 +780,7 @@ bool html_redraw_box_children(struct box *box,
 				scroll_get_offset(box->scroll_x),
 				y_parent + box->y -
 				scroll_get_offset(box->scroll_y),
-				clip_x0, clip_y0, clip_x1, clip_y1,
-				scale, current_background_color))
+				clip, scale, current_background_color))
 			return false;
 
 	return true;
@@ -799,30 +794,21 @@ bool html_redraw_box_children(struct box *box,
  * \param  box      box with text content
  * \param  x        x co-ord of box
  * \param  y        y co-ord of box
- * \param  x0       current clip rectangle
- * \param  y0
- * \param  x1
- * \param  y1
+ * \param  clip     current clip rectangle
  * \param  scale    current scale setting (1.0 = 100%)
  * \param  current_background_color
  * \return true iff successful and redraw should proceed
  */
 
 bool html_redraw_text_box(struct box *box, int x, int y,
-		int x0, int y0, int x1, int y1,
-		float scale, colour current_background_color)
+		struct rect clip, float scale,
+		colour current_background_color)
 {
 	bool excluded = (box->object != NULL);
-	struct rect clip;
 	plot_font_style_t fstyle;
 
 	font_plot_style_from_css(box->style, &fstyle);
 	fstyle.background = current_background_color;
-
-	clip.x0 = x0;
-	clip.y0 = y0;
-	clip.x1 = x1;
-	clip.y1 = y1;
 
 	if (!text_redraw(box->text, box->length, box->byte_offset,
 			box->space, &fstyle, x, y,
@@ -1062,6 +1048,8 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 	unsigned int i, side;
 	int p[8]; /* Box border vertices */
 	int z[8]; /* Border vertices */
+	bool square_end_1 = false;
+	bool square_end_2 = false;
 
 	x = x_parent + box->x;
 	y = y_parent + box->y;
@@ -1102,6 +1090,9 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 
 		switch (side) {
 		case LEFT:
+			square_end_1 = (top == 0);
+			square_end_2 = (bottom == 0);
+
 			z[0] = p[0];	z[1] = p[7];
 			z[2] = p[2];	z[3] = p[5];
 			z[4] = p[2];	z[5] = p[3];
@@ -1112,19 +1103,24 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 					box->border[TOP].style !=
 					CSS_BORDER_STYLE_DOUBLE) {
 				/* make border overhang top corner fully,
-				 * if top border is transparent */
+				 * if top border is opaque */
 				z[5] -= top;
+				square_end_1 = true;
 			}
 			if (box->border[BOTTOM].color !=
 					CSS_BORDER_COLOR_TRANSPARENT &&
 					box->border[BOTTOM].style !=
 					CSS_BORDER_STYLE_DOUBLE) {
 				/* make border overhang bottom corner fully,
-				 * if bottom border is transparent */
+				 * if bottom border is opaque */
 				z[3] += bottom;
+				square_end_2 = true;
 			}
 			break;
 		case RIGHT:
+			square_end_1 = (top == 0);
+			square_end_2 = (bottom == 0);
+
 			z[0] = p[6];	z[1] = p[1];
 			z[2] = p[4];	z[3] = p[3];
 			z[4] = p[4];	z[5] = p[5];
@@ -1135,19 +1131,24 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 					box->border[TOP].style !=
 					CSS_BORDER_STYLE_DOUBLE) {
 				/* make border overhang top corner fully,
-				 * if top border is transparent */
+				 * if top border is opaque */
 				z[3] -= top;
+				square_end_1 = true;
 			}
 			if (box->border[BOTTOM].color !=
 					CSS_BORDER_COLOR_TRANSPARENT &&
 					box->border[BOTTOM].style !=
 					CSS_BORDER_STYLE_DOUBLE) {
 				/* make border overhang bottom corner fully,
-				 * if bottom border is transparent */
+				 * if bottom border is opaque */
 				z[5] += bottom;
+				square_end_2 = true;
 			}
 			break;
 		case TOP:
+			square_end_1 = (left == 0);
+			square_end_2 = (right == 0);
+
 			z[0] = p[2];	z[1] = p[3];
 			z[2] = p[0];	z[3] = p[1];
 			z[4] = p[6];	z[5] = p[1];
@@ -1160,6 +1161,7 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 				/* don't bother overlapping left corner if
 				 * it's the same colour anyway */
 				z[2] += left;
+				square_end_1 = true;
 			}
 			if (box->border[TOP].style ==
 					CSS_BORDER_STYLE_SOLID &&
@@ -1168,9 +1170,13 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 				/* don't bother overlapping right corner if
 				 * it's the same colour anyway */
 				z[4] -= right;
+				square_end_2 = true;
 			}
 			break;
 		case BOTTOM:
+			square_end_1 = (left == 0);
+			square_end_2 = (right == 0);
+
 			z[0] = p[4];	z[1] = p[5];
 			z[2] = p[6];	z[3] = p[7];
 			z[4] = p[0];	z[5] = p[7];
@@ -1183,6 +1189,7 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 				/* don't bother overlapping left corner if
 				 * it's the same colour anyway */
 				z[4] += left;
+				square_end_1 = true;
 			}
 			if (box->border[BOTTOM].style ==
 					CSS_BORDER_STYLE_SOLID &&
@@ -1191,6 +1198,7 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 				/* don't bother overlapping right corner if
 				 * it's the same colour anyway */
 				z[2] -= right;
+				square_end_2 = true;
 			}
 			break;
 		default:
@@ -1203,7 +1211,8 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 
 		if (!html_redraw_border_plot(side, z, col,
 				box->border[side].style,
-				box->border[side].width * scale))
+				box->border[side].width * scale,
+				square_end_1 && square_end_2))
 			return false;
 	}
 
@@ -1235,6 +1244,8 @@ bool html_redraw_inline_borders(struct box *box, int x0, int y0, int x1, int y1,
 	colour col;
 	int p[8]; /* Box border vertices */
 	int z[8]; /* Border vertices */
+	bool square_end_1;
+	bool square_end_2;
 
 	if (scale != 1.0) {
 		top *= scale;
@@ -1261,6 +1272,8 @@ bool html_redraw_inline_borders(struct box *box, int x0, int y0, int x1, int y1,
 	assert(box->style);
 
 	/* Left */
+	square_end_1 = (top == 0);
+	square_end_2 = (bottom == 0);
 	if (left != 0 && first && box->border[LEFT].color !=
 			CSS_BORDER_COLOR_TRANSPARENT) {
 		col = nscss_color_to_ns(box->border[LEFT].c);
@@ -1275,25 +1288,29 @@ bool html_redraw_inline_borders(struct box *box, int x0, int y0, int x1, int y1,
 				box->border[TOP].style !=
 				CSS_BORDER_STYLE_DOUBLE) {
 			/* make border overhang top corner fully,
-			 * if top border is transparent */
+			 * if top border is opaque */
 			z[5] -= top;
+			square_end_1 = true;
 		}
 		if (box->border[BOTTOM].color !=
 				CSS_BORDER_COLOR_TRANSPARENT &&
 				box->border[BOTTOM].style !=
 				CSS_BORDER_STYLE_DOUBLE) {
 			/* make border overhang bottom corner fully,
-			 * if bottom border is transparent */
+			 * if bottom border is opaque */
 			z[3] += bottom;
+			square_end_2 = true;
 		}
 
 		if (!html_redraw_border_plot(LEFT, z, col,
 				box->border[LEFT].style, 
-				left))
+				left, square_end_1 && square_end_2))
 			return false;
 	}
 
 	/* Right */
+	square_end_1 = (top == 0);
+	square_end_2 = (bottom == 0);
 	if (right != 0 && last && box->border[RIGHT].color !=
 			CSS_BORDER_COLOR_TRANSPARENT) {
 		col = nscss_color_to_ns(box->border[RIGHT].c);
@@ -1308,25 +1325,29 @@ bool html_redraw_inline_borders(struct box *box, int x0, int y0, int x1, int y1,
 				box->border[TOP].style !=
 				CSS_BORDER_STYLE_DOUBLE) {
 			/* make border overhang top corner fully,
-			 * if top border is transparent */
+			 * if top border is opaque */
 			z[3] -= top;
+			square_end_1 = true;
 		}
 		if (box->border[BOTTOM].color !=
 				CSS_BORDER_COLOR_TRANSPARENT &&
 				box->border[BOTTOM].style !=
 				CSS_BORDER_STYLE_DOUBLE) {
 			/* make border overhang bottom corner fully,
-			 * if bottom border is transparent */
+			 * if bottom border is opaque */
 			z[5] += bottom;
+			square_end_2 = true;
 		}
 
 		if (!html_redraw_border_plot(RIGHT, z, col,
 				box->border[RIGHT].style,
-				right))
+				right, square_end_1 && square_end_2))
 			return false;
 	}
 
 	/* Top */
+	square_end_1 = (left == 0);
+	square_end_2 = (right == 0);
 	if (top != 0 && box->border[TOP].color !=
 			CSS_BORDER_COLOR_TRANSPARENT) {
 		col = nscss_color_to_ns(box->border[TOP].c);
@@ -1343,6 +1364,7 @@ bool html_redraw_inline_borders(struct box *box, int x0, int y0, int x1, int y1,
 			/* don't bother overlapping left corner if
 			 * it's the same colour anyway */
 			z[2] += left;
+			square_end_1 = true;
 		}
 		if (last && box->border[TOP].style ==
 				CSS_BORDER_STYLE_SOLID &&
@@ -1351,15 +1373,18 @@ bool html_redraw_inline_borders(struct box *box, int x0, int y0, int x1, int y1,
 			/* don't bother overlapping right corner if
 			 * it's the same colour anyway */
 			z[4] -= right;
+			square_end_2 = true;
 		}
 
 		if (!html_redraw_border_plot(TOP, z, col,
 				box->border[TOP].style, 
-				top))
+				top, square_end_1 && square_end_2))
 			return false;
 	}
 
 	/* Bottom */
+	square_end_1 = (left == 0);
+	square_end_2 = (right == 0);
 	if (bottom != 0 && box->border[BOTTOM].color !=
 			CSS_BORDER_COLOR_TRANSPARENT) {
 		col = nscss_color_to_ns(box->border[BOTTOM].c);
@@ -1376,6 +1401,7 @@ bool html_redraw_inline_borders(struct box *box, int x0, int y0, int x1, int y1,
 			/* don't bother overlapping left corner if
 			 * it's the same colour anyway */
 			z[4] += left;
+			square_end_1 = true;
 		}
 		if (last && box->border[BOTTOM].style ==
 				CSS_BORDER_STYLE_SOLID &&
@@ -1384,11 +1410,12 @@ bool html_redraw_inline_borders(struct box *box, int x0, int y0, int x1, int y1,
 			/* don't bother overlapping right corner if
 			 * it's the same colour anyway */
 			z[2] -= right;
+			square_end_2 = true;
 		}
 
 		if (!html_redraw_border_plot(BOTTOM, z, col,
 				box->border[BOTTOM].style, 
-				bottom))
+				bottom, square_end_1 && square_end_2))
 			return false;
 	}
 
@@ -1417,19 +1444,20 @@ static plot_style_t plot_style_fillbdr_dlight = {
 /**
  * Draw one border.
  *
- * \param  i          index of border side (TOP, RIGHT, BOTTOM, LEFT)
- * \param  p          array of precomputed border vertices
- * \param  c          colour for border
- * \param  style      border line style
- * \param  thickness  border thickness
+ * \param  side         index of border side (TOP, RIGHT, BOTTOM, LEFT)
+ * \param  p            array of precomputed border vertices
+ * \param  c            colour for border
+ * \param  style        border line style
+ * \param  thickness    border thickness
+ * \param  rectangular  whether border is rectangular
  * \return true if successful, false otherwise
  */
 
-bool html_redraw_border_plot(const int i, const int *p, colour c,
-		enum css_border_style_e style, int thickness)
+bool html_redraw_border_plot(const int side, const int *p, colour c,
+		enum css_border_style_e style, int thickness, bool rectangular)
 {
 	int z[8]; /* Vertices of border part */
-	unsigned int light = i;
+	unsigned int light = side;
 	plot_style_t *plot_style_bdr_in;
 	plot_style_t *plot_style_bdr_out;
 
@@ -1461,8 +1489,26 @@ bool html_redraw_border_plot(const int i, const int *p, colour c,
 	case CSS_BORDER_STYLE_SOLID:
 		/* fall through to default */
 	default:
-		if (!html_redraw_plot_border_part(p, 4, &plot_style_fillbdr))
-			return false;
+		if (rectangular || thickness == 1) {
+			int x0, y0, x1, y1;
+			if (side == TOP || side == RIGHT) {
+				x0 = p[2];	y0 = p[3];
+				x1 = p[6];	y1 = p[7];
+				x1 = ((side == TOP) && (p[4] - p[6] != 0)) ?
+					x1 + p[4] - p[6] : x1;
+			} else {
+				x0 = p[6];	y0 = p[7];
+				x1 = p[2];	y1 = p[3];
+				y1 = ((side == LEFT) && (p[1] - p[3] != 0)) ?
+					y1 + p[1] - p[3] : y1;
+			}
+			if (!plot.rectangle(x0, y0, x1, y1,
+					&plot_style_fillbdr))
+				return false;
+		} else {
+			if (!plot.polygon(p, 4, &plot_style_fillbdr))
+				return false;
+		}
 		break;
 
 	case CSS_BORDER_STYLE_DOUBLE:
@@ -1474,7 +1520,7 @@ bool html_redraw_border_plot(const int i, const int *p, colour c,
 		z[5] = (p[7] * 2 + p[5]) / 3;
 		z[6] = p[6];
 		z[7] = p[7];
-		if (!html_redraw_plot_border_part(z, 4, &plot_style_fillbdr))
+		if (!plot.polygon(z, 4, &plot_style_fillbdr))
 			return false;
 		z[0] = p[2];
 		z[1] = p[3];
@@ -1484,7 +1530,7 @@ bool html_redraw_border_plot(const int i, const int *p, colour c,
 		z[5] = (p[5] * 2 + p[7]) / 3;
 		z[6] = p[4];
 		z[7] = p[5];
-		if (!html_redraw_plot_border_part(z, 4, &plot_style_fillbdr))
+		if (!plot.polygon(z, 4, &plot_style_fillbdr))
 			return false;
 		break;
 
@@ -1500,22 +1546,77 @@ bool html_redraw_border_plot(const int i, const int *p, colour c,
 			plot_style_bdr_in = &plot_style_fillbdr_light;
 			plot_style_bdr_out = &plot_style_fillbdr_dark;
 		}
-		z[0] = p[0];
-		z[1] = p[1];
-		z[2] = (p[0] + p[2]) / 2;
-		z[3] = (p[1] + p[3]) / 2;
-		z[4] = (p[6] + p[4]) / 2;
-		z[5] = (p[7] + p[5]) / 2;
-		z[6] = p[6];
-		z[7] = p[7];
-		if (!html_redraw_plot_border_part(z, 4, plot_style_bdr_in))
-			return false;
-		z[0] = p[2];
-		z[1] = p[3];
-		z[6] = p[4];
-		z[7] = p[5];
-		if (!html_redraw_plot_border_part(z, 4, plot_style_bdr_out))
-			return false;
+
+		/* Render border */
+		if ((rectangular || thickness == 2) && thickness != 1) {
+			/* Border made up from two parts and can be plotted
+			 * with rectangles */
+			int x0, y0, x1, y1;
+
+			/* First part */
+			if (side == TOP || side == RIGHT) {
+				x0 = (p[0] + p[2]) / 2;	y0 = (p[1] + p[3]) / 2;
+				x1 = p[6];		y1 = p[7];
+			} else {
+				x0 = p[6];		y0 = p[7];
+				x1 = (p[0] + p[2]) / 2;	y1 = (p[1] + p[3]) / 2;
+			}
+			if (!plot.rectangle(x0, y0, x1, y1,
+					plot_style_bdr_in))
+				return false;
+
+			/* Second part */
+			if (side == TOP || side == RIGHT) {
+				x0 = p[2];		y0 = p[3];
+				x1 = (p[6] + p[4]) / 2;	y1 = (p[7] + p[5]) / 2;
+			} else {
+				x0 = (p[6] + p[4]) / 2;	y0 = (p[7] + p[5]) / 2;
+				x1 = p[2];		y1 = p[3];
+			}
+			if (!plot.rectangle(x0, y0, x1, y1,
+					plot_style_bdr_out))
+				return false;
+		} else if (thickness == 1) {
+			/* Border made up from one part which can be plotted
+			 * as a rectangle */
+			int x0, y0, x1, y1;
+			if (side == TOP || side == RIGHT) {
+				x0 = p[2];	y0 = p[3];
+				x1 = p[6];	y1 = p[7];
+				x1 = ((side == TOP) && (p[4] - p[6] != 0)) ?
+					x1 + p[4] - p[6] : x1;
+				if (!plot.rectangle(x0, y0, x1, y1,
+						plot_style_bdr_in))
+					return false;
+			} else {
+				x0 = p[6];	y0 = p[7];
+				x1 = p[2];	y1 = p[3];
+				y1 = ((side == LEFT) && (p[1] - p[3] != 0)) ?
+					y1 + p[1] - p[3] : y1;
+				if (!plot.rectangle(x0, y0, x1, y1,
+						plot_style_bdr_out))
+					return false;
+			}
+		} else {
+			/* Border made up from two parts and can't be plotted
+			 * with rectangles */
+			z[0] = p[0];
+			z[1] = p[1];
+			z[2] = (p[0] + p[2]) / 2;
+			z[3] = (p[1] + p[3]) / 2;
+			z[4] = (p[6] + p[4]) / 2;
+			z[5] = (p[7] + p[5]) / 2;
+			z[6] = p[6];
+			z[7] = p[7];
+			if (!plot.polygon(z, 4, plot_style_bdr_in))
+				return false;
+			z[0] = p[2];
+			z[1] = p[3];
+			z[6] = p[4];
+			z[7] = p[5];
+			if (!plot.polygon(z, 4, plot_style_bdr_out))
+				return false;
+		}
 		break;
 
 	case CSS_BORDER_STYLE_INSET:
@@ -1546,114 +1647,77 @@ bool html_redraw_border_plot(const int i, const int *p, colour c,
 			break;
 		}
 
-		z[0] = p[0];
-		z[1] = p[1];
-		z[2] = (p[0] + p[2]) / 2;
-		z[3] = (p[1] + p[3]) / 2;
-		z[4] = (p[6] + p[4]) / 2;
-		z[5] = (p[7] + p[5]) / 2;
-		z[6] = p[6];
-		z[7] = p[7];
-		if (!html_redraw_plot_border_part(z, 4, plot_style_bdr_in))
-			return false;
-		z[0] = p[2];
-		z[1] = p[3];
-		z[6] = p[4];
-		z[7] = p[5];
-		if (!html_redraw_plot_border_part(z, 4, plot_style_bdr_out))
-			return false;
+		/* Render border */
+		if ((rectangular || thickness == 2) && thickness != 1) {
+			/* Border made up from two parts and can be plotted
+			 * with rectangles */
+			int x0, y0, x1, y1;
+
+			/* First part */
+			if (side == TOP || side == RIGHT) {
+				x0 = (p[0] + p[2]) / 2;	y0 = (p[1] + p[3]) / 2;
+				x1 = p[6];		y1 = p[7];
+			} else {
+				x0 = p[6];		y0 = p[7];
+				x1 = (p[0] + p[2]) / 2;	y1 = (p[1] + p[3]) / 2;
+			}
+			if (!plot.rectangle(x0, y0, x1, y1,
+					plot_style_bdr_in))
+				return false;
+
+			/* Second part */
+			if (side == TOP || side == RIGHT) {
+				x0 = p[2];		y0 = p[3];
+				x1 = (p[6] + p[4]) / 2;	y1 = (p[7] + p[5]) / 2;
+			} else {
+				x0 = (p[6] + p[4]) / 2;	y0 = (p[7] + p[5]) / 2;
+				x1 = p[2];		y1 = p[3];
+			}
+			if (!plot.rectangle(x0, y0, x1, y1,
+					plot_style_bdr_out))
+				return false;
+		} else if (thickness == 1) {
+			/* Border made up from one part which can be plotted
+			 * as a rectangle */
+			int x0, y0, x1, y1;
+			if (side == TOP || side == RIGHT) {
+				x0 = p[2];	y0 = p[3];
+				x1 = p[6];	y1 = p[7];
+				x1 = ((side == TOP) && (p[4] - p[6] != 0)) ?
+					x1 + p[4] - p[6] : x1;
+				if (!plot.rectangle(x0, y0, x1, y1,
+						plot_style_bdr_in))
+					return false;
+			} else {
+				x0 = p[6];	y0 = p[7];
+				x1 = p[2];	y1 = p[3];
+				y1 = ((side == LEFT) && (p[1] - p[3] != 0)) ?
+					y1 + p[1] - p[3] : y1;
+				if (!plot.rectangle(x0, y0, x1, y1,
+						plot_style_bdr_out))
+					return false;
+			}
+		} else {
+			/* Border made up from two parts and can't be plotted
+			 * with rectangles */
+			z[0] = p[0];
+			z[1] = p[1];
+			z[2] = (p[0] + p[2]) / 2;
+			z[3] = (p[1] + p[3]) / 2;
+			z[4] = (p[6] + p[4]) / 2;
+			z[5] = (p[7] + p[5]) / 2;
+			z[6] = p[6];
+			z[7] = p[7];
+			if (!plot.polygon(z, 4, plot_style_bdr_in))
+				return false;
+			z[0] = p[2];
+			z[1] = p[3];
+			z[6] = p[4];
+			z[7] = p[5];
+			if (!plot.polygon(z, 4, plot_style_bdr_out))
+				return false;
+		}
 		break;
-	}
-
-	return true;
-}
-
-
-/**
- * Plot a border part, using the most optimal plotter.
- *
- * \param  p          array of precomputed border vertices
- * \param  n          number of vertices
- * \param  pstyle     plot_style to plot with
- * \return true if successful, false otherwise
- */
-
-bool html_redraw_plot_border_part(const int *p, unsigned int n,
-		const plot_style_t *pstyle)
-{
-	bool is_v = false; /* vertical border */
-	bool is_h = false; /* horizontal border */
-	int i;
-	
-	assert(n == 4);
-
-	if ((p[1] == p[7] && p[3] == p[5]) || (p[1] == p[3] && p[5] == p[7]))
-		is_v = true;
-
-	if ((p[0] == p[6] && p[2] == p[4]) || (p[0] == p[2] && p[4] == p[6]))
-		is_h = true;
-
-	if (is_v && is_h) {
-		/* border is rectangular */
-		int x0, y0, x1, y1;
-		if (p[0] < p[4]) {
-			x0 = p[0];
-			x1 = p[4];
-		} else {
-			x0 = p[4];
-			x1 = p[0];
-		}
-		if (p[1] < p[5]) {
-			y0 = p[1];
-			y1 = p[5];
-		} else {
-			y0 = p[5];
-			y1 = p[1];
-		}
-		if (!plot.rectangle(x0, y0, x1, y1, pstyle))
-			return false;
-	} else if (is_v && abs(p[1] - p[3]) == 1) {
-		/* 1px wide vertical border */
-		int x0, y0, x1, y1;
-		if (p[0] < p[4]) {
-			x0 = p[0];
-			x1 = p[4];
-		} else {
-			x0 = p[4];
-			x1 = p[0];
-		}
-		y0 = p[1];
-		y1 = p[1];
-		for (i = 3; i < 8; i += 2) {
-			y0 = y0 > p[i] ? p[i] : y0;
-			y1 = y1 < p[i] ? p[i] : y1;
-		}
-		/* TODO: Use line plotter? */
-		if (!plot.rectangle(x0, y0, x1, y1, pstyle))
-			return false;
-	} else if (is_h && abs(p[0] - p[2]) == 1) {
-		/* 1px wide horizontal border */
-		int x0, y0, x1, y1;
-		if (p[1] < p[5]) {
-			y0 = p[1];
-			y1 = p[5];
-		} else {
-			y0 = p[5];
-			y1 = p[1];
-		}
-		x0 = p[0];
-		x1 = p[0];
-		for (i = 2; i < 7; i += 2) {
-			x0 = x0 > p[i] ? p[i] : x0;
-			x1 = x1 < p[i] ? p[i] : x1;
-		}
-		/* TODO: Use line plotter? */
-		if (!plot.rectangle(x0, y0, x1, y1, pstyle))
-			return false;
-	} else {
-		/* have to plot as polygon */
-		if (!plot.polygon(p, 4, pstyle))
-			return false;
 	}
 
 	return true;
@@ -1815,6 +1879,7 @@ bool html_redraw_file(int x, int y, int width, int height,
  * \param  y	  coordinate of box
  * \param  box	  box to draw background image of
  * \param  scale  scale for redraw
+ * \param  clip   current clip rectangle
  * \param  background_colour  current background colour
  * \param  background  box containing background details (usually ::box)
  * \return true if successful, false otherwise
@@ -1825,8 +1890,8 @@ bool html_redraw_file(int x, int y, int width, int height,
  */
 
 bool html_redraw_background(int x, int y, struct box *box, float scale,
-		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-		colour *background_colour, struct box *background)
+		struct rect clip, colour *background_colour,
+		struct box *background)
 {
 	bool repeat_x = false;
 	bool repeat_y = false;
@@ -1834,7 +1899,7 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 	bool plot_content;
 	bool clip_to_children = false;
 	struct box *clip_box = box;
-	int px0 = clip_x0, py0 = clip_y0, px1 = clip_x1, py1 = clip_y1;
+	int px0 = clip.x0, py0 = clip.y0, px1 = clip.x1, py1 = clip.y1;
 	int ox = x, oy = y;
 	int width, height;
 	css_fixed hpos = 0, vpos = 0;
@@ -1942,26 +2007,26 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 
 			assert(clip_box->type == BOX_TABLE_CELL);
 
-			/* update clip_* to the child cell */
-			clip_x0 = ox + (clip_box->x * scale);
-			clip_y0 = oy + (clip_box->y * scale);
-			clip_x1 = clip_x0 + (clip_box->padding[LEFT] +
+			/* update clip.* to the child cell */
+			clip.x0 = ox + (clip_box->x * scale);
+			clip.y0 = oy + (clip_box->y * scale);
+			clip.x1 = clip.x0 + (clip_box->padding[LEFT] +
 					clip_box->width +
 					clip_box->padding[RIGHT]) * scale;
-			clip_y1 = clip_y0 + (clip_box->padding[TOP] +
+			clip.y1 = clip.y0 + (clip_box->padding[TOP] +
 					clip_box->height +
 					clip_box->padding[BOTTOM]) * scale;
 
-			if (clip_x0 < px0) clip_x0 = px0;
-			if (clip_y0 < py0) clip_y0 = py0;
-			if (clip_x1 > px1) clip_x1 = px1;
-			if (clip_y1 > py1) clip_y1 = py1;
+			if (clip.x0 < px0) clip.x0 = px0;
+			if (clip.y0 < py0) clip.y0 = py0;
+			if (clip.x1 > px1) clip.x1 = px1;
+			if (clip.y1 > py1) clip.y1 = py1;
 
 			if (clip_box->background != NULL)
 				bmp = content_get_bitmap(clip_box->background);
 
 			/* <td> attributes override <tr> */
-			if ((clip_x0 >= clip_x1) || (clip_y0 >= clip_y1) ||
+			if ((clip.x0 >= clip.x1) || (clip.y0 >= clip.y1) ||
 					(css_computed_background_color(
 						clip_box->style, &bgcol) !=
 					CSS_BACKGROUND_COLOR_TRANSPARENT) ||
@@ -1975,8 +2040,8 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 			*background_colour = nscss_color_to_ns(bgcol);
 			pstyle_fill_bg.fill_colour = *background_colour;
 			if (plot_colour)
-				if (!plot.rectangle(clip_x0, clip_y0,
-						clip_x1, clip_y1,
+				if (!plot.rectangle(clip.x0, clip.y0,
+						clip.x1, clip.y1,
 						&pstyle_fill_bg))
 					return false;
 		}
@@ -1986,28 +2051,28 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 			height = content_get_height(background->background);
 
 			if (!repeat_x) {
-				if (clip_x0 < x)
-					clip_x0 = x;
-				if (clip_x1 > x + width * scale)
-					clip_x1 = x + width * scale;
+				if (clip.x0 < x)
+					clip.x0 = x;
+				if (clip.x1 > x + width * scale)
+					clip.x1 = x + width * scale;
 			}
 			if (!repeat_y) {
-				if (clip_y0 < y)
-					clip_y0 = y;
-				if (clip_y1 > y + height * scale)
-					clip_y1 = y + height * scale;
+				if (clip.y0 < y)
+					clip.y0 = y;
+				if (clip.y1 > y + height * scale)
+					clip.y1 = y + height * scale;
 			}
 			/* valid clipping rectangles only */
-			if ((clip_x0 < clip_x1) && (clip_y0 < clip_y1)) {
-				if (!plot.clip(clip_x0, clip_y0,
-						clip_x1, clip_y1))
+			if ((clip.x0 < clip.x1) && (clip.y0 < clip.y1)) {
+				if (!plot.clip(clip.x0, clip.y0,
+						clip.x1, clip.y1))
 					return false;
 				if (!content_redraw_tiled(
 						background->background, x, y,
 						ceilf(width * scale),
 						ceilf(height * scale),
-						clip_x0, clip_y0,
-						clip_x1, clip_y1,
+						clip.x0, clip.y0,
+						clip.x1, clip.y1,
 						scale, *background_colour,
 						repeat_x, repeat_y))
 					return false;
@@ -2029,10 +2094,7 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
  * \param  y	  coordinate of box
  * \param  box	  BOX_INLINE which created the background
  * \param  scale  scale for redraw
- * \param  clip_x0	coordinate of clip rectangle
- * \param  clip_y0	coordinate of clip rectangle
- * \param  clip_x1	coordinate of clip rectangle
- * \param  clip_y1	coordinate of clip rectangle
+ * \param  clip	  coordinates of clip rectangle
  * \param  px0	  coordinate of border edge rectangle
  * \param  py0	  coordinate of border edge rectangle
  * \param  px1	  coordinate of border edge rectangle
@@ -2044,8 +2106,7 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
  */
 
 bool html_redraw_inline_background(int x, int y, struct box *box, float scale,
-		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-		int px0, int py0, int px1, int py1,
+		struct rect clip, int px0, int py0, int px1, int py1,
 		bool first, bool last, colour *background_colour)
 {
 	bool repeat_x = false;
@@ -2123,8 +2184,8 @@ bool html_redraw_inline_background(int x, int y, struct box *box, float scale,
 		pstyle_fill_bg.fill_colour = *background_colour;
 
 		if (plot_colour)
-			if (!plot.rectangle(clip_x0, clip_y0,
-					clip_x1, clip_y1,
+			if (!plot.rectangle(clip.x0, clip.y0,
+					clip.x1, clip.y1,
 					&pstyle_fill_bg))
 				return false;
 	}
@@ -2134,27 +2195,27 @@ bool html_redraw_inline_background(int x, int y, struct box *box, float scale,
 		int height = content_get_height(box->background);
 
 		if (!repeat_x) {
-			if (clip_x0 < x)
-				clip_x0 = x;
-			if (clip_x1 > x + width * scale)
-				clip_x1 = x + width * scale;
+			if (clip.x0 < x)
+				clip.x0 = x;
+			if (clip.x1 > x + width * scale)
+				clip.x1 = x + width * scale;
 		}
 		if (!repeat_y) {
-			if (clip_y0 < y)
-				clip_y0 = y;
-			if (clip_y1 > y + height * scale)
-				clip_y1 = y + height * scale;
+			if (clip.y0 < y)
+				clip.y0 = y;
+			if (clip.y1 > y + height * scale)
+				clip.y1 = y + height * scale;
 		}
 		/* valid clipping rectangles only */
-		if ((clip_x0 < clip_x1) && (clip_y0 < clip_y1)) {
-			if (!plot.clip(clip_x0, clip_y0,
-					clip_x1, clip_y1))
+		if ((clip.x0 < clip.x1) && (clip.y0 < clip.y1)) {
+			if (!plot.clip(clip.x0, clip.y0,
+					clip.x1, clip.y1))
 				return false;
 			if (!content_redraw_tiled(box->background, x, y,
 					ceilf(width * scale),
 					ceilf(height * scale),
-					clip_x0, clip_y0,
-					clip_x1, clip_y1,
+					clip.x0, clip.y0,
+					clip.x1, clip.y1,
 					scale, *background_colour,
 					repeat_x, repeat_y))
 				return false;
