@@ -820,6 +820,7 @@ $(eval $(foreach SOURCE,$(filter %.s,$(SOURCES)), \
 clean: $(CLEANS)
 
 install-gtk: nsgtk
+	@# TODO: filter out .svn directories from install location
 	mkdir -p $(DESTDIR)$(NETSURF_GTK_RESOURCES)throbber
 	mkdir -p $(DESTDIR)$(NETSURF_GTK_BIN)
 	@cp nsgtk $(DESTDIR)$(NETSURF_GTK_BIN)netsurf
@@ -837,15 +838,23 @@ install-gtk: nsgtk
 	@cp -RL gtk/res/netsurf-16x16.xpm $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -RL gtk/res/quirks.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -RL gtk/res/themelist $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RL gtk/res/throbber/*.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)/throbber
+	@cp -RL gtk/res/throbber/*.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)throbber
 	@cp -RL gtk/res/toolbarIndices $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -RL gtk/res/Aliases $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RL gtk/res/docs $(DESTDIR)/$(NETSURF_GTK_RESOURCES)
-	@cp -RL gtk/res/SearchEngines $(DESTDIR)$(NETSURF_GTK_RESOURCES)SearchEngines
+	@cp -RL gtk/res/SearchEngines $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -RL gtk/res/docs $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -RL gtk/res/themes $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@# Install translations
+	@cp -RL gtk/res/C $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -RL gtk/res/de $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -RL gtk/res/en $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -RL gtk/res/fr $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -RL gtk/res/it $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -RL gtk/res/nl $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@# Install glade templates
 	gzip -9v < gtk/res/downloads.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)downloads.glade
 	gzip -9v < gtk/res/history.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)history.glade
 	gzip -9v < gtk/res/login.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)login.glade
-	gzip -9v < gtk/res/messages > $(DESTDIR)$(NETSURF_GTK_RESOURCES)messages
 	gzip -9v < gtk/res/netsurf.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)netsurf.glade
 	gzip -9v < gtk/res/options.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)options.glade
 	gzip -9v < gtk/res/password.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)password.glade
