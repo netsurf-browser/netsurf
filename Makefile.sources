@@ -5,7 +5,7 @@
 # for each build.
 #
 
-S_CONTENT := content.c fetch.c hlcache.c llcache.c urldb.c		\
+S_CONTENT := content.c dirlist.c fetch.c hlcache.c llcache.c urldb.c	\
 	fetchers/fetch_curl.c fetchers/fetch_data.c
 S_CSS := css.c dump.c internal.c select.c utils.c
 S_RENDER := box.c box_construct.c box_normalise.c directory.c favicon.c \
