@@ -77,21 +77,21 @@ STATIC VOID rx_close(struct ARexxCmd *, struct RexxMsg *);
 
 STATIC struct ARexxCmd Commands[] =
 {
-	{"OPEN",RX_OPEN,rx_open,"URL/A,NEW=NEWWINDOW/S,NEWTAB/S,SAVEAS/K,WINDOW/K/N,TAB/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
+	{"OPEN",RX_OPEN,rx_open,"URL/A,NEW=NEWWINDOW/S,NEWTAB/S,SAVEAS/K,W=WINDOW/K/N,T=TAB/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
 	{"QUIT",RX_QUIT,rx_quit,NULL, 		0, 	NULL, 	0, 	0, 	NULL },
 	{"TOFRONT",RX_TOFRONT,rx_tofront,NULL, 		0, 	NULL, 	0, 	0, 	NULL },
-	{"GETURL",RX_GETURL,rx_geturl,	"WINDOW/K/N,TAB/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
-	{"GETTITLE",RX_GETTITLE,rx_gettitle,	"WINDOW/K/N,TAB/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
+	{"GETURL",RX_GETURL,rx_geturl,	"W=WINDOW/K/N,T=TAB/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
+	{"GETTITLE",RX_GETTITLE,rx_gettitle,	"W=WINDOW/K/N,T=TAB/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
 	{"VERSION",RX_VERSION,rx_version,"VERSION/N,SVN=REVISION/N,RELEASE/S", 		0, 	NULL, 	0, 	0, 	NULL },
-	{"SAVE",RX_SAVE,rx_save,"FILENAME/A,WINDOW/K/N,TAB/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
+	{"SAVE",RX_SAVE,rx_save,"FILENAME/A,W=WINDOW/K/N,T=TAB/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
 	{"GETSCREENNAME",RX_PUBSCREEN,rx_pubscreen,NULL, 		0, 	NULL, 	0, 	0, 	NULL },
-	{"BACK",	RX_BACK,	rx_back,	"WINDOW/K/N,TAB/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
-	{"FORWARD",	RX_FORWARD,	rx_forward,	"WINDOW/K/N,TAB/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
-	{"HOME",	RX_HOME,	rx_home,	"WINDOW/K/N,TAB/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
-	{"RELOAD",	RX_RELOAD,	rx_reload,	"FORCE/S,WINDOW/K/N,TAB/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
-	{"WINDOWS",	RX_WINDOWS,	rx_windows,	"WINDOW/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
-	{"ACTIVE",	RX_ACTIVE,	rx_active,	"TAB/S", 		0, 	NULL, 	0, 	0, 	NULL },
-	{"CLOSE",	RX_CLOSE,	rx_close,	"WINDOW/K/N,TAB/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
+	{"BACK",	RX_BACK,	rx_back,	"W=WINDOW/K/N,T=TAB/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
+	{"FORWARD",	RX_FORWARD,	rx_forward,	"W=WINDOW/K/N,T=TAB/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
+	{"HOME",	RX_HOME,	rx_home,	"W=WINDOW/K/N,T=TAB/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
+	{"RELOAD",	RX_RELOAD,	rx_reload,	"FORCE/S,W=WINDOW/K/N,T=TAB/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
+	{"WINDOWS",	RX_WINDOWS,	rx_windows,	"W=WINDOW/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
+	{"ACTIVE",	RX_ACTIVE,	rx_active,	"T=TAB/S", 		0, 	NULL, 	0, 	0, 	NULL },
+	{"CLOSE",	RX_CLOSE,	rx_close,	"W=WINDOW/K/N,T=TAB/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
 	{ NULL, 		0, 				NULL, 		NULL, 		0, 	NULL, 	0, 	0, 	NULL }
 };
 
