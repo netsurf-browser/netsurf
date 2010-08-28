@@ -114,13 +114,19 @@ Move back to the home page.
 @{b}RELOAD FORCE/S,WINDOW/K/N,TAB/K/N@{ub} (2.10626)
 Reload the current page, FORCE will do a full reload.
 
+@{b}CLOSE WINDOW/K/N,TAB/K/N@{ub} (2.10718)
+Close the current page.  A window or window and tab can be specified.  Note that when a tab is closed, the tab number of tabs to the right of it will change, and the currently active tab may also change.  If the last tab or window is closed, NetSurf will usually exit.  Make sure you account for these situations in your code.
+
 @{b}VERSION VERSION/N REVISION/N RELEASE/S@{ub}
 Returns the current version of NetSurf in RESULT.  You can also do version checking by supplying a VERSION and optional REVISION to check against.  If the version of NetSurf is the same or higher 1 will be returned, if it is older 0.  If RELEASE is specified, the command operates on the release version rather than the internal version number.
+
+@{b}ACTIVE TAB/S@{ub} (2.10718)
+Returns the active window (or tab if TAB is specified).  Commands automatically operate on the active window/tab so you do not normally need to use this.
 
 @{b}WINDOWS WINDOW/K/N@{ub} (2.10656)
 Puts the number of windows into RESULT.  If the WINDOW keyword is specified, will put the number of tabs in that window into RESULT.
 
-The WINDOW/K/N,TAB/K/N parameters were added in 2.10656 and allow targetting a window other than the current one.  Both WINDOW and TAB must be specified (TAB=1 for tabless window)
+The WINDOW/K/N,TAB/K/N parameters were added in 2.10656 and allow targetting a window other than the current one.  Both WINDOW and TAB must be specified (TAB=1 for tabless window) except in the special case of the CLOSE command.
 
 The ARexx menu will be populated with scripts named #?.nsrx in @{"arexx_dir" link options 9}, up to a maximum of 20 entries.  The titles of these entries will be the comments field of the file (or the filename if comments field is empty).
 @endnode
