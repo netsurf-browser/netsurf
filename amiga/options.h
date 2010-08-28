@@ -38,6 +38,8 @@ extern char *option_recent_file;
 extern char *option_search_engines_file;
 extern char *option_search_ico_file;
 extern char *option_arexx_dir;
+extern char *option_arexx_startup;
+extern char *option_arexx_shutdown;
 extern char *option_download_dir;
 extern bool option_download_notify;
 extern bool option_faster_scroll;
@@ -70,6 +72,8 @@ char *option_recent_file = 0; \
 char *option_search_engines_file = 0; \
 char *option_search_ico_file = 0; \
 char *option_arexx_dir = 0; \
+char *option_arexx_startup = 0; \
+char *option_arexx_shutdown = 0; \
 char *option_download_dir = 0; \
 bool option_download_notify = false; \
 bool option_faster_scroll = true; \
@@ -102,6 +106,8 @@ bool option_drag_save_icons = true; \
 { "search_engines_file",		OPTION_STRING,	&option_search_engines_file }, \
 { "search_ico_file",		OPTION_STRING,	&option_search_ico_file }, \
 { "arexx_dir",		OPTION_STRING,	&option_arexx_dir }, \
+{ "arexx_startup",		OPTION_STRING,	&option_arexx_startup }, \
+{ "arexx_shutdown",		OPTION_STRING,	&option_arexx_shutdown }, \
 { "download_dir",		OPTION_STRING,	&option_download_dir }, \
 { "download_notify",	OPTION_BOOL,	&option_download_notify}, \
 { "faster_scroll",	OPTION_BOOL,	&option_faster_scroll}, \

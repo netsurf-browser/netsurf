@@ -323,6 +323,9 @@ void ami_menu_arexx_scan(struct NewMenu *menu)
 					for(ead = (struct ExAllData *)buffer; ead; ead = ead->ed_Next)
 					{
 						if(item >= AMI_MENU_AREXX_MAX) continue;
+						if(!strcasecmp(ead->ed_Name, option_arexx_startup)) continue;
+						if(!strcasecmp(ead->ed_Name, option_arexx_shutdown)) continue;
+
 						if(EAD_IS_FILE(ead))
 						{
 							menu[item].nm_Type = NM_ITEM;

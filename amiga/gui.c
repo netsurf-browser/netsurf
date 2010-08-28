@@ -388,7 +388,13 @@ void ami_set_options(void)
 		option_theme = (char *)strdup("PROGDIR:Resources/Themes/Default");
 
 	if((!option_arexx_dir) || (option_arexx_dir[0] == '\0'))
-		option_arexx_dir = (char *)strdup("PROGDIR:Rexx");
+		option_arexx_dir = (char *)strdup("Rexx");
+
+	if((!option_arexx_startup) || (option_arexx_startup[0] == '\0'))
+		option_arexx_startup = (char *)strdup("Startup.nsrx");
+
+	if((!option_arexx_shutdown) || (option_arexx_shutdown[0] == '\0'))
+		option_arexx_shutdown = (char *)strdup("Shutdown.nsrx");
 
 	if(!option_window_width) option_window_width = 800;
 	if(!option_window_height) option_window_height = 600;
@@ -703,16 +709,23 @@ int main(int argc, char** argv)
 {
 	setbuf(stderr, NULL);
 	char messages[100];
+	char script[1024];
 
 	ami_messages_load(messages);
-
 	netsurf_init(&argc, &argv, "PROGDIR:Resources/Options", messages);
 
 	gui_init(argc, argv);
-
 	gui_init2(argc, argv);
 
+	strncpy(script, option_arexx_dir, 1024);
+	AddPart(script, option_arexx_startup, 1024);
+	ami_arexx_execute(script);
+
 	netsurf_main_loop();
+
+	strncpy(script, option_arexx_dir, 1024);
+	AddPart(script, option_arexx_shutdown, 1024);
+	ami_arexx_execute(script);
 
 	netsurf_exit();
 
