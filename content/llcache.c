@@ -695,9 +695,13 @@ nserror llcache_object_retrieve_from_cache(const char *url, uint32_t flags,
 
 	/* Search for the most recently fetched matching object */
 	for (obj = llcache_cached_objects; obj != NULL; obj = obj->next) {
-		if (strcasecmp(obj->url, url) == 0 && (newest == NULL ||
-				obj->cache.req_time > newest->cache.req_time))
+		bool match;
+
+		if (url_compare(obj->url, url, true, &match) == URL_FUNC_OK &&
+				match == true && (newest == NULL ||
+				obj->cache.req_time > newest->cache.req_time)) {
 			newest = obj;
+		}
 	}
 
 	if (newest != NULL && llcache_object_is_fresh(newest)) {
