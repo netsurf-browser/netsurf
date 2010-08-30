@@ -58,6 +58,9 @@ struct bfbitmap {
 #define PATT_DASH 0xCCCC
 #define PATT_LINE 0xFFFF
 
+/* Define the below to get additional debug */
+#undef AMI_PLOTTER_DEBUG
+
 struct plotter_table plot;
 const struct plotter_table amiplot = {
 	.rectangle = ami_rectangle,
@@ -197,6 +200,10 @@ void ami_clearclipreg(struct gui_globals *gg)
 
 bool ami_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
 {
+	#ifdef AMI_PLOTTER_DEBUG
+	LOG(("[ami_plotter] Entered ami_rectangle()"));
+	#endif
+
         if (style->fill_type != PLOT_OP_TYPE_NONE) { 
 
 #ifndef NS_AMIGA_CAIRO_ALL
@@ -279,6 +286,10 @@ bool ami_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
 
 bool ami_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 {
+	#ifdef AMI_PLOTTER_DEBUG
+	LOG(("[ami_plotter] Entered ami_line()"));
+	#endif
+
 #ifndef NS_AMIGA_CAIRO_ALL
 	glob->rp.PenWidth = style->stroke_width;
 	glob->rp.PenHeight = style->stroke_width;
@@ -340,6 +351,10 @@ bool ami_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 
 bool ami_polygon(const int *p, unsigned int n, const plot_style_t *style)
 {
+	#ifdef AMI_PLOTTER_DEBUG
+	LOG(("[ami_plotter] Entered ami_polygon()"));
+	#endif
+
 	int k;
 #ifndef NS_AMIGA_CAIRO
 	ULONG cx,cy;
@@ -380,6 +395,10 @@ bool ami_polygon(const int *p, unsigned int n, const plot_style_t *style)
 
 bool ami_clip(int x0, int y0, int x1, int y1)
 {
+	#ifdef AMI_PLOTTER_DEBUG
+	LOG(("[ami_plotter] Entered ami_clip()"));
+	#endif
+
 	struct Region *reg = NULL;
 
 	if(glob->rp.Layer)
@@ -410,12 +429,20 @@ bool ami_clip(int x0, int y0, int x1, int y1)
 bool ami_text(int x, int y, const char *text, size_t length, 
 		const plot_font_style_t *fstyle)
 {
+	#ifdef AMI_PLOTTER_DEBUG
+	LOG(("[ami_plotter] Entered ami_text()"));
+	#endif
+
 	ami_unicode_text(&glob->rp,text,length,fstyle,x,y);
 	return true;
 }
 
 bool ami_disc(int x, int y, int radius, const plot_style_t *style)
 {
+	#ifdef AMI_PLOTTER_DEBUG
+	LOG(("[ami_plotter] Entered ami_disc()"));
+	#endif
+
 #ifndef NS_AMIGA_CAIRO_ALL
 	if (style->fill_type != PLOT_OP_TYPE_NONE) {
 		SetRPAttrs(&glob->rp,
@@ -464,6 +491,10 @@ bool ami_disc(int x, int y, int radius, const plot_style_t *style)
 
 bool ami_arc(int x, int y, int radius, int angle1, int angle2, const plot_style_t *style)
 {
+	#ifdef AMI_PLOTTER_DEBUG
+	LOG(("[ami_plotter] Entered ami_arc()"));
+	#endif
+
 #ifdef NS_AMIGA_CAIRO
 	ami_cairo_set_colour(glob->cr, style->fill_colour);
 	ami_cairo_set_solid(glob->cr);
@@ -490,6 +521,10 @@ CommonFuncsPPC.lha */
 
 static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitmap)
 {
+	#ifdef AMI_PLOTTER_DEBUG
+	LOG(("[ami_plotter] Entered ami_bitmap()"));
+	#endif
+
 	struct BitMap *tbm;
 
 	if(!width || !height) return true;
@@ -504,10 +539,15 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 
 	if(!tbm) return true;
 
+	#ifdef AMI_PLOTTER_DEBUG
+	LOG(("[ami_plotter] ami_bitmap() got native bitmap"));
+	#endif
+
 	if(GfxBase->lib_Version >= 53) // AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)
 	{
 		uint32 comptype = COMPOSITE_Src;
-		if(!bitmap->opaque) comptype = COMPOSITE_Src_Over_Dest;
+		if(!bitmap->opaque) 
+			comptype = COMPOSITE_Src_Over_Dest;
 
 		CompositeTags(comptype,tbm,glob->rp.BitMap,
 					COMPTAG_Flags,COMPFLAG_IgnoreDestAlpha,
@@ -515,8 +555,8 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 					COMPTAG_DestY,glob->rect.MinY,
 					COMPTAG_DestWidth,glob->rect.MaxX - glob->rect.MinX + 1,
 					COMPTAG_DestHeight,glob->rect.MaxY - glob->rect.MinY + 1,
-					COMPTAG_SrcWidth,width,
-					COMPTAG_SrcHeight,height,
+				//	COMPTAG_SrcWidth,width,
+				//	COMPTAG_SrcHeight,height,
 					COMPTAG_OffsetX,x,
 					COMPTAG_OffsetY,y,
 					TAG_DONE);
@@ -548,12 +588,16 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 			struct bitmap *bitmap, colour bg,
 			bitmap_flags_t flags)
 {
+	#ifdef AMI_PLOTTER_DEBUG
+	LOG(("[ami_plotter] Entered ami_bitmap_tile()"));
+	#endif
+
 	int xf,yf,xm,ym,oy,ox;
 	struct BitMap *tbm = NULL;
 	struct Hook *bfh = NULL;
 	struct bfbitmap bfbm;
-        bool repeat_x = (flags & BITMAPF_REPEAT_X);
-        bool repeat_y = (flags & BITMAPF_REPEAT_Y);
+	bool repeat_x = (flags & BITMAPF_REPEAT_X);
+	bool repeat_y = (flags & BITMAPF_REPEAT_Y);
 
 	if(!(repeat_x || repeat_y))
 		return ami_bitmap(x, y, width, height, bitmap);
@@ -683,23 +727,37 @@ static void ami_bitmap_tile_hook(struct Hook *hook,struct RastPort *rp,struct Ba
 bool ami_group_start(const char *name)
 {
 	/** optional */
+	#ifdef AMI_PLOTTER_DEBUG
+	LOG(("[ami_plotter] Entered ami_group_start()"));
+	#endif
+
 	return false;
 }
 
 bool ami_group_end(void)
 {
 	/** optional */
+	#ifdef AMI_PLOTTER_DEBUG
+	LOG(("[ami_plotter] Entered ami_group_end()"));
+	#endif
 	return false;
 }
 
 bool ami_flush(void)
 {
+	#ifdef AMI_PLOTTER_DEBUG
+	LOG(("[ami_plotter] Entered ami_flush()"));
+	#endif
 	return true;
 }
 
 bool ami_path(const float *p, unsigned int n, colour fill, float width,
 			colour c, const float transform[6])
 {
+	#ifdef AMI_PLOTTER_DEBUG
+	LOG(("[ami_plotter] Entered ami_path()"));
+	#endif
+
 /* For SVG only, because it needs Bezier curves we are going to cheat
    and insist on Cairo */
 #ifdef NS_AMIGA_CAIRO
