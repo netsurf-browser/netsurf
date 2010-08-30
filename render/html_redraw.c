@@ -625,9 +625,10 @@ bool html_redraw_box(struct box *box, int x_parent, int y_parent,
 			return false;
 	}
 
-	/* clip to the padding edge for boxes with overflow hidden or scroll */
-	if (box->style && css_computed_overflow(box->style) != 
-			CSS_OVERFLOW_VISIBLE) {
+	/* clip to the padding edge for objects, or boxes with overflow hidden
+	 * or scroll */
+	if (box->object || (box->style && css_computed_overflow(box->style) != 
+			CSS_OVERFLOW_VISIBLE)) {
 		r.x0 = x;
 		r.y0 = y;
 		r.x1 = x + padding_width;
