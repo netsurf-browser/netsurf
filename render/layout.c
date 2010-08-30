@@ -1009,7 +1009,9 @@ void layout_block_add_scrollbar(struct box *box, int which)
 
 	overflow = css_computed_overflow(box->style);
 
-	if (overflow == CSS_OVERFLOW_SCROLL || overflow == CSS_OVERFLOW_AUTO) {
+	if (overflow == CSS_OVERFLOW_SCROLL || overflow == CSS_OVERFLOW_AUTO ||
+			(box->object &&
+			content_get_type(box->object) == CONTENT_HTML)) {
 		/* make space for scrollbars, unless height/width are AUTO */
 		if (which == BOTTOM && box->height != AUTO &&
 				(overflow == CSS_OVERFLOW_SCROLL ||
@@ -4495,6 +4497,13 @@ void layout_calculate_descendant_bboxes(struct box *box)
 			box->padding[RIGHT] + box->border[RIGHT].width;
 	box->descendant_y1 = box->padding[TOP] + box->height +
 			box->padding[BOTTOM] + box->border[BOTTOM].width;
+
+	if (box->object && content_get_type(box->object) == CONTENT_HTML) {
+		if (box->descendant_x1 < content_get_width(box->object))
+			box->descendant_x1 = content_get_width(box->object);
+		if (box->descendant_y1 < content_get_height(box->object))
+			box->descendant_y1 = content_get_height(box->object);
+	}
 
 	if (box->type == BOX_INLINE || box->type == BOX_TEXT)
 		return;
