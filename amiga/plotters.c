@@ -555,8 +555,8 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 					COMPTAG_DestY,glob->rect.MinY,
 					COMPTAG_DestWidth,glob->rect.MaxX - glob->rect.MinX + 1,
 					COMPTAG_DestHeight,glob->rect.MaxY - glob->rect.MinY + 1,
-				//	COMPTAG_SrcWidth,width,
-				//	COMPTAG_SrcHeight,height,
+					COMPTAG_SrcWidth,width,
+					COMPTAG_SrcHeight,height,
 					COMPTAG_OffsetX,x,
 					COMPTAG_OffsetY,y,
 					TAG_DONE);
