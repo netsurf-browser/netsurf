@@ -809,8 +809,8 @@ bool layout_block_object(struct box *block)
 
 	if (content_get_type(block->object) == CONTENT_HTML) {
 		content_reformat(block->object, block->width, 1);
-		block->height = content_get_height(block->object);
 	} else {
+		/* Non-HTML objects */
 		/* this case handled already in
 		 * layout_block_find_dimensions() */
 	}
