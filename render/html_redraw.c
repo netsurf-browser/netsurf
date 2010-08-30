@@ -704,17 +704,18 @@ bool html_redraw_box(struct box *box, int x_parent, int y_parent,
 			return false;
 
 	/* scrollbars */
-	if (current_redraw_browser && box->style && box->type != BOX_BR &&
+	if (current_redraw_browser && ((box->style && box->type != BOX_BR &&
 			box->type != BOX_TABLE && box->type != BOX_INLINE &&
 			(css_computed_overflow(box->style) == 
 				CSS_OVERFLOW_SCROLL ||
 			css_computed_overflow(box->style) == 
-				CSS_OVERFLOW_AUTO)) {
+				CSS_OVERFLOW_AUTO)) || (box->object &&
+			content_get_type(box->object) == CONTENT_HTML))) {
 
 		has_x_scroll = box_hscrollbar_present(box);
 		has_y_scroll = box_vscrollbar_present(box);
 
-		if (!box_handle_scrollbars(current_redraw_browser,box,
+		if (!box_handle_scrollbars(current_redraw_browser, box,
 				has_x_scroll, has_y_scroll))
 			return false;
 		
