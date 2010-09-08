@@ -1350,7 +1350,8 @@ void layout_find_dimensions(int available_width, int viewport_height,
 				enum css_height_e cbhtype;
 
 				if (css_computed_position(box->style) ==
-						CSS_POSITION_ABSOLUTE) {
+						CSS_POSITION_ABSOLUTE &&
+						box->parent) {
 					/* Box is absolutely positioned */
 					assert(box->float_container);
 					containing_block = box->float_container;
