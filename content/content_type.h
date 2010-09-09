@@ -59,7 +59,6 @@ typedef enum {
 #ifdef WITH_PLUGIN
 	CONTENT_PLUGIN,
 #endif
-	CONTENT_DIRECTORY,
 #ifdef WITH_THEME_INSTALL
 	CONTENT_THEME,
 #endif

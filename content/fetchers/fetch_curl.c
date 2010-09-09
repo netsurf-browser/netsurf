@@ -217,7 +217,10 @@ void fetch_curl_register(void)
 
 	data = curl_version_info(CURLVERSION_NOW);
 
-	for (i = 0; data->protocols[i]; i++)
+	for (i = 0; data->protocols[i]; i++) {
+		if (strcmp(data->protocols[i], "file") == 0)
+			continue; /* do not use curl for file: */
+
 		if (!fetch_add_fetcher(data->protocols[i],
 				       fetch_curl_initialise,
 				       fetch_curl_setup,
@@ -229,6 +232,7 @@ void fetch_curl_register(void)
 			LOG(("Unable to register cURL fetcher for %s",
 					data->protocols[i]));
 		}
+	}
 	return;
 
 curl_easy_setopt_failed:
@@ -1153,64 +1157,6 @@ bool fetch_curl_process_headers(struct curl_fetch_info *f)
 				messages_get("Not2xx"), 0, 
 				FETCH_ERROR_HTTP_NOT2);
 		return true;
-	}
-
-	/* find MIME type from filetype for local files */
-	if (strncmp(f->url, FILE_SCHEME_PREFIX, FILE_SCHEME_PREFIX_LEN) == 0) {
-		struct stat s;
-		char *url_path = url_to_path(f->url);
-
-		LOG(("Obtaining mime type for file %s", url_path));
-
-		if (url_path != NULL && stat(url_path, &s) == 0) {
-			/* file: URL and file exists */
-			char header[64];
-			const char *type;
-
-			/* create etag */
-			snprintf(header, sizeof header,
-					"ETag: \"%10" PRId64 "\"", 
-					(int64_t) s.st_mtime);
-			/* And send it to the header handler */
-			fetch_send_callback(FETCH_HEADER, f->fetch_handle, 
-					header, strlen(header),
-					FETCH_ERROR_NO_ERROR);
-
-			/* create Content-Type */
-			type = fetch_filetype(url_path);
-			snprintf(header, sizeof header,	
-					"Content-Type: %s", type);
-			/* Send it to the header handler */
-			fetch_send_callback(FETCH_HEADER, f->fetch_handle,
-					header, strlen(header),
-					FETCH_ERROR_NO_ERROR);
-
-			/* create Content-Length */
-			snprintf(header, sizeof header,	
-					"Content-Length: %" PRId64, 
-					(int64_t) s.st_size);
-			/* Send it to the header handler */
-			fetch_send_callback(FETCH_HEADER, f->fetch_handle,
-					header, strlen(header),
-					FETCH_ERROR_NO_ERROR);
-
-			/* don't set last modified time so as to ensure that 
-			 * local files are revalidated at all times. */
-
-			/* Report not modified, if appropriate */
-			if (f->last_modified && f->file_etag &&
-					f->last_modified > s.st_mtime &&
-					f->file_etag == s.st_mtime) {
-				fetch_send_callback(FETCH_NOTMODIFIED, 
-						f->fetch_handle, 0, 0,
-						FETCH_ERROR_NO_ERROR);
-				free(url_path);
-				return true;
-			}
-		}
-
-		if (url_path != NULL)
-			free(url_path);
 	}
 
 	if (f->abort)

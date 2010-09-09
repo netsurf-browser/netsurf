@@ -1169,7 +1169,6 @@ bool box_duplicate_main_tree(struct box *box, struct content *c, int *count)
 #ifdef WITH_PLUGIN
 			content_get_type(box->object) == CONTENT_PLUGIN ||
 #endif
-			content_get_type(box->object) == CONTENT_DIRECTORY ||
 #ifdef WITH_THEME_INSTALL
 			content_get_type(box->object) == CONTENT_THEME ||
 #endif

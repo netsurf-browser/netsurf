@@ -38,7 +38,6 @@
 #include "image/bitmap.h"
 #include "desktop/browser.h"
 #include "desktop/options.h"
-#include "render/directory.h"
 #include "render/html.h"
 #include "render/textplain.h"
 #ifdef WITH_JPEG
@@ -109,7 +108,6 @@ static const struct mime_entry mime_map[] = {
 #ifdef WITH_BMP
 	{"application/x-ico", CONTENT_ICO},
 #endif
-	{"application/x-netsurf-directory", CONTENT_DIRECTORY},
 #ifdef WITH_THEME_INSTALL
 	{"application/x-netsurf-theme", CONTENT_THEME},
 #endif
@@ -344,9 +342,6 @@ static const struct handler_entry handler_map[] = {
 		plugin_open, plugin_close, plugin_clone,
 		true},
 #endif
-	{directory_create, 0, directory_convert,
-		0, directory_destroy, 0, 0, 0, 0, 0, 0, 0, directory_clone,
-		true},
 #ifdef WITH_THEME_INSTALL
 	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false},
 #endif

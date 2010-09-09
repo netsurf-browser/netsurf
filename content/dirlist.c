@@ -51,9 +51,10 @@ static char* dirlist_filesize_unit(unsigned long bytesize);
  *     dirlist_generate_bottom()
  */
 
-const char* dirlist_generate_top(void)
+bool dirlist_generate_top(char *buffer, int buffer_length)
 {
-	return	"<html>\n"
+	int error = snprintf(buffer, buffer_length,
+			     "<html>\n"
 		"<head>\n"
 		"<style>\n"
 		"html, body { margin: 0; padding: 0; }\n"
@@ -61,7 +62,7 @@ const char* dirlist_generate_top(void)
 		"h1 { padding: 5mm; margin: 0; "
 				"border-bottom: 2px solid #bcf; }\n"
 		"p { padding: 2px 5mm; margin: 0; }\n"
-		"div { display: table; width: 94%; margin: 5mm auto 0 auto; "
+		"div { display: table; width: 94%%; margin: 5mm auto 0 auto; "
 				"padding: 0; }\n"
 		"a, strong { display: table-row; margin: 0; padding: 0; }\n"
 		"a.odd { background-color: #bcf; }\n"
@@ -74,7 +75,14 @@ const char* dirlist_generate_top(void)
 		"a.dir > span.type { font-weight: bold; }\n"
 		"span.size { text-align: right; padding-right: 0.3em; }\n"
 		"span.size + span.size { text-align: left; "
-				"padding-right: 0; }\n";
+			     "padding-right: 0; }\n");
+	if (error < 0 || error >= buffer_length)
+		/* Error or buffer too small */
+		return false;
+	else
+		/* OK */
+		return true;
+
 }
 
 
@@ -142,9 +150,14 @@ bool dirlist_generate_hide_columns(int flags, char *buffer, int buffer_length)
  *     dirlist_generate_bottom()
  */
 
-bool dirlist_generate_title(char *title, char *buffer, int buffer_length)
+bool dirlist_generate_title(const char *title, char *buffer, int buffer_length)
 {
-	int error = snprintf(buffer, buffer_length,
+	int error;
+
+	if (title == NULL)
+		title = "";
+
+	error = snprintf(buffer, buffer_length,
 			"</style>\n"
 			"<title>%s</title>\n"
 			"</head>\n"
@@ -245,7 +258,7 @@ bool dirlist_generate_headings(char *buffer, int buffer_length)
  * \param  directory	  whether this row is for a directory (or a file)
  * \param  url		  url for row entry
  * \param  name		  name of row entry
- * \param  type		  MIME type of row entry
+ * \param  mimetype	  MIME type of row entry
  * \param  size		  size of row entry.  If negative, size is left blank
  * \param  date		  date row entry was last modified
  * \param  time		  time row entry was last modified
@@ -266,7 +279,7 @@ bool dirlist_generate_headings(char *buffer, int buffer_length)
  */
 
 bool dirlist_generate_row(bool even, bool directory, char *url, char *name,
-		char *type, long long size, char *date, char *time,
+		const char *mimetype, long long size, char *date, char *time,
 		char *buffer, int buffer_length)
 {
 	const char *unit;
@@ -292,7 +305,7 @@ bool dirlist_generate_row(bool even, bool directory, char *url, char *name,
 			"<span class=\"time\">%s</span></a>\n",
 			url, even ? "even" : "odd",
 			directory ? "dir" : "file",
-			name, type, size_string, unit, date, time);
+			name, mimetype, size_string, unit, date, time);
 	if (error < 0 || error >= buffer_length)
 		/* Error or buffer too small */
 		return false;
@@ -319,11 +332,18 @@ bool dirlist_generate_row(bool even, bool directory, char *url, char *name,
  *     dirlist_generate_bottom()
  */
 
-const char* dirlist_generate_bottom(void)
+bool dirlist_generate_bottom(char *buffer, int buffer_length)
 {
-	return	"</div>\n"
-		"</body>\n"
-		"</html>\n";
+	int error = snprintf(buffer, buffer_length,
+			     "</div>\n"
+			     "</body>\n"
+			     "</html>\n");
+	if (error < 0 || error >= buffer_length)
+		/* Error or buffer too small */
+		return false;
+	else
+		/* OK */
+		return true;
 }
 
 

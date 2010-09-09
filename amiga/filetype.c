@@ -186,11 +186,6 @@ const char *ami_content_type_to_file_type(content_type type)
 			return "rosprite";
 		break;
 #endif
-
-		case CONTENT_DIRECTORY:
-			return "drawer";
-		break;
-
 #if defined(WITH_NS_SVG) || defined(WITH_RSVG)
 		case CONTENT_SVG:
 			return "svg";

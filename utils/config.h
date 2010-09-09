@@ -20,6 +20,7 @@
 #define _NETSURF_UTILS_CONFIG_H_
 
 #include <stddef.h>
+#include <dirent.h>
 
 /* Try to detect which features the target OS supports */
 
@@ -35,6 +36,21 @@ char *strndup(const char *s, size_t n);
 #else
 #undef HAVE_STRCASESTR
 char *strcasestr(const char *haystack, const char *needle);
+#endif
+
+/* fdopendir is actually present on most unix systems but unless
+ * _POSIX_C_SOURCE is set to 2008 it is not declared in the system
+ * headers. It is unavailable on RISC OS which requires fallback code
+ */
+#if (_POSIX_C_SOURCE - 0) >= 200809L
+#define HAVE_FDOPENDIR
+#else
+#if defined(riscos)
+#undef HAVE_FDOPENDIR
+#else
+#define HAVE_FDOPENDIR
+DIR *fdopendir(int fd);
+#endif
 #endif
 
 /* For some reason, UnixLib defines this unconditionally. 

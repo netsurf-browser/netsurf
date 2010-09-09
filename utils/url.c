@@ -902,6 +902,31 @@ no_path:
 	return URL_FUNC_FAILED;
 }
 
+/**
+ * Convert an escaped string to plain.
+ * \param result unescaped string owned by caller must be freed with free()
+ * \return  URL_FUNC_OK on success
+ */
+url_func_result url_unescape(const char *str, char **result)
+{
+	char *curlstr;
+	char *retstr;
+
+	curlstr = curl_unescape(str, 0);
+	if (curlstr == NULL) {
+		return URL_FUNC_NOMEM;
+	}
+
+	retstr = strdup(curlstr);
+	curl_free(curlstr);
+
+	if (retstr == NULL) {
+		return URL_FUNC_NOMEM;
+	}
+
+	*result = retstr;
+	return URL_FUNC_OK;
+}
 
 /**
  * Escape a string suitable for inclusion in an URL.
