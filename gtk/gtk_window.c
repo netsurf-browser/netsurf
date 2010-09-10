@@ -408,6 +408,11 @@ gboolean nsgtk_window_expose_event(GtkWidget *widget,
 	nsgtk_plot_set_scale(g->bw->scale);
 	current_redraw_browser = g->bw;
 
+	plot.clip(event->area.x, 
+		  event->area.y,	
+		  event->area.x + event->area.width, 
+		  event->area.y + event->area.height);
+
 	content_redraw(c, 0, 0,
 			widget->allocation.width * scale,
 			widget->allocation.height * scale,

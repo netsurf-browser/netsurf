@@ -1373,6 +1373,11 @@ gboolean nsgtk_history_expose_event(GtkWidget *widget,
 	plot = nsgtk_plotters;
 	nsgtk_plot_set_scale(1.0);
 
+	plot.clip(event->area.x, 
+		  event->area.y,	
+		  event->area.x + event->area.width, 
+		  event->area.y + event->area.height);
+
 	history_redraw(bw->history);
 
 	current_widget = NULL;
