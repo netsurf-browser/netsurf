@@ -414,13 +414,13 @@ gboolean nsgtk_window_expose_event(GtkWidget *widget,
 		  event->area.y + event->area.height);
 
 	content_redraw(c, 0, 0,
-			widget->allocation.width * scale,
-			widget->allocation.height * scale,
-			event->area.x,
-			event->area.y,
-			event->area.x + event->area.width,
-			event->area.y + event->area.height,
-			g->bw->scale, 0xFFFFFF);
+		       content_get_width(c) * scale,
+		       content_get_height(c) * scale,
+		       event->area.x,
+		       event->area.y,
+		       event->area.x + event->area.width,
+		       event->area.y + event->area.height,
+		       g->bw->scale, 0xFFFFFF);
 	current_redraw_browser = NULL;
 
 	if (g->careth != 0)
