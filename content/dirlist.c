@@ -54,15 +54,15 @@ static char* dirlist_filesize_unit(unsigned long bytesize);
 bool dirlist_generate_top(char *buffer, int buffer_length)
 {
 	int error = snprintf(buffer, buffer_length,
-			     "<html>\n"
+		"<html>\n"
 		"<head>\n"
 		"<style>\n"
 		"html, body { margin: 0; padding: 0; }\n"
-		"body { background-color: #abf; }\n"
+		"body { background-color: #abf; padding-bottom: 2em; }\n"
 		"h1 { padding: 5mm; margin: 0; "
 				"border-bottom: 2px solid #bcf; }\n"
 		"p { padding: 2px 5mm; margin: 0; }\n"
-		"div { display: table; width: 94%%; margin: 5mm auto 0 auto; "
+		"div { display: table; width: 94%%; margin: 5mm auto 2em auto; "
 				"padding: 0; }\n"
 		"a, strong { display: table-row; margin: 0; padding: 0; }\n"
 		"a.odd { background-color: #bcf; }\n"
@@ -75,7 +75,7 @@ bool dirlist_generate_top(char *buffer, int buffer_length)
 		"a.dir > span.type { font-weight: bold; }\n"
 		"span.size { text-align: right; padding-right: 0.3em; }\n"
 		"span.size + span.size { text-align: left; "
-			     "padding-right: 0; }\n");
+				"padding-right: 0; }\n");
 	if (error < 0 || error >= buffer_length)
 		/* Error or buffer too small */
 		return false;
@@ -335,9 +335,9 @@ bool dirlist_generate_row(bool even, bool directory, char *url, char *name,
 bool dirlist_generate_bottom(char *buffer, int buffer_length)
 {
 	int error = snprintf(buffer, buffer_length,
-			     "</div>\n"
-			     "</body>\n"
-			     "</html>\n");
+			"</div>\n"
+			"</body>\n"
+			"</html>\n");
 	if (error < 0 || error >= buffer_length)
 		/* Error or buffer too small */
 		return false;
