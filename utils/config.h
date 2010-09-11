@@ -45,7 +45,7 @@ char *strcasestr(const char *haystack, const char *needle);
 #if (_POSIX_C_SOURCE - 0) >= 200809L
 #define HAVE_FDOPENDIR
 #else
-#if defined(riscos)
+#if defined(riscos) || defined(__amigaos4__)
 #undef HAVE_FDOPENDIR
 #else
 #define HAVE_FDOPENDIR
