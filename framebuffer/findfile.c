@@ -47,14 +47,22 @@ char *path_to_url(const char *path)
 
 char *url_to_path(const char *url)
 {
-	char *url_path = curl_unescape(url, 0);
 	char *path;
+	char *respath;
+	url_func_result res; /* result from url routines */
 
-	/* return the absolute path including leading / */
-	path = strdup(url_path + (FILE_SCHEME_PREFIX_LEN - 1));
-	curl_free(url_path);
+	res = url_path(url, &path);
+	if (res != URL_FUNC_OK) {
+		return NULL;
+	}
 
-	return path;
+	res = url_unescape(path, &respath);
+	free(path);
+	if (res != URL_FUNC_OK) {
+		return NULL;
+	}
+
+	return respath;
 }
 
 /**

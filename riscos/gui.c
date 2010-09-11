@@ -2112,32 +2112,41 @@ char *path_to_url(const char *path)
 
 char *url_to_path(const char *url)
 {
-	char *temp_name, *r;
-	char *filename;
+	char *path;
+	char *respath;
+	url_func_result res; /* result from url routines */
+	char *r;
 
-	if (strncmp(url, FILE_SCHEME_PREFIX, FILE_SCHEME_PREFIX_LEN))
-		return NULL;
-
-	temp_name = curl_unescape(url + 7, strlen(url) - 7);
-
-	if (!temp_name) {
+	res = url_path(url, &path);
+	if (res != URL_FUNC_OK) {
 		warn_user("NoMemory", 0);
 		return NULL;
 	}
 
-	filename = malloc(strlen(temp_name) + 100);
+	res = url_unescape(path, &respath);
+	free(path);
+	if (res != URL_FUNC_OK) {
+		return NULL;
+	}
+
+	/* RISC OS path should not be more than 100 characters longer */
+	filename = malloc(strlen(respath) + 100);
 	if (!filename) {
-		curl_free(temp_name);
+		free(respath);
 		warn_user("NoMemory", 0);
 		return NULL;
 	}
-	r = __riscosify(temp_name, 0, __RISCOSIFY_NO_SUFFIX,
-			filename, strlen(temp_name) + 100, 0);
+
+	r = __riscosify(respath, 0, __RISCOSIFY_NO_SUFFIX,
+			filename, strlen(respath) + 100, 0);
+
+	free(respath);
 	if (r == 0) {
+		free(filename);
 		LOG(("__riscosify failed"));
 		return NULL;
 	}
-	curl_free(temp_name);
+
 	return filename;
 }
 

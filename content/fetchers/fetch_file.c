@@ -128,22 +128,13 @@ fetch_file_setup(struct fetch *fetchh,
 		 const char **headers)
 {
 	struct fetch_file_context *ctx;
-	char *path;
-	url_func_result res; /* result from url routines */
 
 	ctx = calloc(1, sizeof(*ctx));
 	if (ctx == NULL)
 		return NULL;
 
-	res = url_path(url, &path);
-	if (res != URL_FUNC_OK) {
-		free(ctx);
-		return NULL;
-	}
-
-	res = url_unescape(path, &ctx->path);
-	free(path);
-	if (res != URL_FUNC_OK) {
+	ctx->path = url_to_path(url);
+	if (ctx->path == NULL) {
 		free(ctx);
 		return NULL;
 	}
@@ -220,13 +211,33 @@ fetch_file_process_error_aborted:
 
 /** Process object as a regular file */
 static void fetch_file_process_plain(struct fetch_file_context *ctx,
-				     int fd, struct stat *fdstat)
+				     struct stat *fdstat)
 {
 	char *buf;
 	size_t buf_size;
 
 	ssize_t tot_read = 0;
 	ssize_t res;
+
+	int fd; /**< The file descriptor of the object */
+	fd = open(ctx->path, O_RDONLY);
+	if (fd < 0) {
+		/* process errors as appropriate */
+		switch (errno) {
+		case EACCES:
+			fetch_file_process_error(ctx, 403);
+			break;
+
+		case ENOENT:
+			fetch_file_process_error(ctx, 404);
+			break;
+
+		default:
+			fetch_file_process_error(ctx, 500);
+			break;
+		}
+		return;
+	}
 
 	/* set buffer size */
 	buf_size = fdstat->st_size;
@@ -351,7 +362,7 @@ static char *gen_nice_title(char *path)
 
 
 static void fetch_file_process_dir(struct fetch_file_context *ctx,
-				   int fd, struct stat *fdstat)
+				   struct stat *fdstat)
 {
 	char buffer[1024]; /* Output buffer */
 	bool even = false; /* formatting flag */
@@ -367,18 +378,7 @@ static void fetch_file_process_dir(struct fetch_file_context *ctx,
 	char timebuf[64]; /* buffer for time text */
 	char urlpath[PATH_MAX]; /* buffer for leaf entry path */
 
-#if defined(HAVE_FDOPENDIR)
-	scandir = fdopendir(fd);
-#else
-	/* this poses the possibility of a race where the directory
-	 * has been removed from the namespace or resources for more
-	 * fd are now unavailable between the previous open() and this
-	 * call.
-	 */
-	close(fd);
 	scandir = opendir(ctx->path);
-#endif
-
 	if (scandir == NULL) {
 		fetch_file_process_error(ctx, 500);
 		return;
@@ -518,46 +518,24 @@ fetch_file_process_dir_aborted:
 /* process a file fetch */
 static void fetch_file_process(struct fetch_file_context *ctx)
 {
-	int fd; /**< The file descriptor of the object */
 	struct stat fdstat; /**< The objects stat */
 
-	fd = open(ctx->path, O_RDONLY);
-	if (fd < 0) {
+	if (stat(ctx->path, &fdstat) != 0) {
 		/* process errors as appropriate */
-		switch (errno) {
-		case EACCES:
-			fetch_file_process_error(ctx, 403);
-			break;
-
-		case ENOENT:
-			fetch_file_process_error(ctx, 404);
-			break;
-
-		default:
-			fetch_file_process_error(ctx, 500);
-			break;
-		}
-		return;
-	}
-
-	if (fstat(fd, &fdstat) != 0) {
-		/* process errors as appropriate */
-		close(fd);
 		fetch_file_process_error(ctx, 500);
 		return;
 	}
 
 	if (S_ISDIR(fdstat.st_mode)) {
 		/* directory listing */
-		fetch_file_process_dir(ctx, fd, &fdstat);
+		fetch_file_process_dir(ctx, &fdstat);
 		return;
 	} else if (S_ISREG(fdstat.st_mode)) {
 		/* regular file */
-		fetch_file_process_plain(ctx, fd, &fdstat);
+		fetch_file_process_plain(ctx, &fdstat);
 		return;
 	} else {
 		/* unhandled type of file */
-		close(fd);
 		fetch_file_process_error(ctx, 501);
 	}
 

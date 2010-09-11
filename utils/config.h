@@ -38,21 +38,6 @@ char *strndup(const char *s, size_t n);
 char *strcasestr(const char *haystack, const char *needle);
 #endif
 
-/* fdopendir is actually present on most unix systems but unless
- * _POSIX_C_SOURCE is set to 2008 it is not declared in the system
- * headers. It is unavailable on RISC OS which requires fallback code
- */
-#if (_POSIX_C_SOURCE - 0) >= 200809L
-#define HAVE_FDOPENDIR
-#else
-#if defined(riscos) || defined(__amigaos4__)
-#undef HAVE_FDOPENDIR
-#else
-#define HAVE_FDOPENDIR
-DIR *fdopendir(int fd);
-#endif
-#endif
-
 /* For some reason, UnixLib defines this unconditionally. 
  * Assume we're using UnixLib if building for RISC OS. */
 #if (defined(_GNU_SOURCE) || defined(riscos))
