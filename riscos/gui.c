@@ -2113,6 +2113,7 @@ char *path_to_url(const char *path)
 char *url_to_path(const char *url)
 {
 	char *path;
+	char *filename;
 	char *respath;
 	url_func_result res; /* result from url routines */
 	char *r;
