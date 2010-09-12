@@ -46,7 +46,6 @@
 #include "content/fetchers/fetch_curl.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
-#include "desktop/401login.h"
 #include "desktop/browser.h"
 #include "desktop/cookies.h"
 #include "desktop/gui.h"
@@ -68,7 +67,6 @@
 
 #include "render/box.h"
 #include "render/form.h"
-#include "render/html.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/url.h"
@@ -95,7 +93,7 @@ char *glade_downloads_file_location;
 char *glade_history_file_location;
 char *glade_options_file_location;
 
-GtkWindow *wndWarning;
+static GtkWindow *nsgtk_warning_window;
 GtkWidget *widWarning;
 
 static GtkWidget *select_menu;
@@ -321,7 +319,7 @@ nsgtk_init_glade(char **respath)
 	glade_options_file_location = nsgtk_new_glade(respath, "options", NULL);
 
 	glade_warning_file_location = nsgtk_new_glade(respath, "warning", &gladeWarning);
-	wndWarning = GTK_WINDOW(glade_xml_get_widget(gladeWarning, "wndWarning"));
+	nsgtk_warning_window = GTK_WINDOW(glade_xml_get_widget(gladeWarning, "wndWarning"));
 	widWarning = glade_xml_get_widget(gladeWarning, "labelWarning");
 }
 
@@ -736,7 +734,7 @@ void warn_user(const char *warning, const char *detail)
 
 	gtk_label_set_text(GTK_LABEL(widWarning), buf);
 
-	gtk_widget_show_all(GTK_WIDGET(wndWarning));
+	gtk_widget_show_all(GTK_WIDGET(nsgtk_warning_window));
 }
 
 void die(const char * const error)
