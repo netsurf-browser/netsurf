@@ -23,7 +23,6 @@
 #include <proto/dos.h>
 #include "utils/messages.h"
 #include <stdlib.h>
-#include <curl/curl.h>
 #include "utils/utils.h"
 #include "utils/url.h"
 
@@ -60,7 +59,6 @@ void die(const char *error)
 char *url_to_path(const char *url)
 {
 	char *tmps, *unesc, *slash, *colon, *url2;
-	CURL *curl;
 
 	if (strncmp(url, "file://", SLEN("file://")) != 0)
 		return NULL;
@@ -94,15 +92,8 @@ char *url_to_path(const char *url)
 		}
 	}
 
-	if(curl = curl_easy_init())
-	{
-		unesc = curl_easy_unescape(curl,url2,0,NULL);
-		tmps = strdup(unesc);
-		free(url2);
-		curl_free(unesc);
-		curl_easy_cleanup(curl);
-		return tmps;
-	}
+	if(url_unescape(url2,&unesc) == URL_FUNC_OK)
+		return unesc;
 
 	return (char *)url2;
 }

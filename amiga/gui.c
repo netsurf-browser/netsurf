@@ -40,7 +40,6 @@
 #include "amiga/context_menu.h"
 #include "amiga/cookies.h"
 #include "amiga/download.h"
-#include "amiga/fetch_file.h"
 #include "amiga/fetch_mailto.h"
 #include "amiga/font.h"
 #include "amiga/gui.h"
@@ -570,7 +569,6 @@ static void gui_init2(int argc, char** argv)
 	};
 
 	notalreadyrunning = ami_arexx_init();
-	ami_fetch_file_register();
 
 	search_web_provider_details(option_search_provider);
 
