@@ -369,6 +369,7 @@ static void fetch_file_process_dir(struct fetch_file_context *ctx,
 	char *title; /* pretty printed title */
 	url_func_result res; /* result from url routines */
 	char *up; /* url of parent */
+	char *path; /* url for list entries */
 	bool compare; /* result of url compare */
 
 	DIR *scandir; /* handle for enumerating the directory */
@@ -433,12 +434,9 @@ static void fetch_file_process_dir(struct fetch_file_context *ctx,
 		if (ent->d_name[0] == '.')
 			continue;
 
-		snprintf(urlpath,
-			 sizeof urlpath,
-			 "%s%s%s",
-			 ctx->path,
-			 (ctx->path[strlen(ctx->path) - 1] == '/')?"":"/" ,
-			 ent->d_name);
+		strncpy(urlpath, ctx->path, sizeof urlpath);
+		if (path_add_part(urlpath, sizeof urlpath, ent->d_name) == false)
+			continue;
 
 		if (stat(urlpath, &ent_stat) != 0) {
 			ent_stat.st_mode = 0;
@@ -460,11 +458,14 @@ static void fetch_file_process_dir(struct fetch_file_context *ctx,
 			}
 		}
 
+		if((path = path_to_url(urlpath)) == NULL)
+			continue;
+
 		if (S_ISREG(ent_stat.st_mode)) {
 			/* regular file */
 			dirlist_generate_row(even,
 					     false,
-					     urlpath,
+					     path,
 					     ent->d_name,
 					     fetch_filetype(urlpath),
 					     ent_stat.st_size,
@@ -474,7 +475,7 @@ static void fetch_file_process_dir(struct fetch_file_context *ctx,
 			/* directory */
 			dirlist_generate_row(even,
 					     true,
-					     urlpath,
+					     path,
 					     ent->d_name,
 					     messages_get("FileDirectory"),
 					     -1,
@@ -484,13 +485,15 @@ static void fetch_file_process_dir(struct fetch_file_context *ctx,
 			/* something else */
 			dirlist_generate_row(even,
 					     false,
-					     urlpath,
+					     path,
 					     ent->d_name,
 					     "",
 					     -1,
 					     datebuf, timebuf,
 					     buffer, sizeof(buffer));
 		}
+
+		free(path);
 
 		if (fetch_file_send_callback(FETCH_DATA, ctx,
 					     buffer,
