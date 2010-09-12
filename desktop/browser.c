@@ -862,8 +862,7 @@ void browser_window_reload(struct browser_window *bw, bool all)
 
 	content_invalidate_reuse_data(bw->current_content);
 
-	browser_window_go_post(bw, content_get_url(bw->current_content), 0, 0,
-			false, 0, false, true, 0);
+	browser_window_go(bw, content_get_url(bw->current_content), 0, false);
 }
 
 
