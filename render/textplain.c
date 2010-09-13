@@ -27,7 +27,9 @@
 #include <string.h>
 #include <strings.h>
 #include <math.h>
-#include <iconv.h>
+
+#include <parserutils/input/inputstream.h>
+
 #include "content/content_protected.h"
 #include "content/hlcache.h"
 #include "css/css.h"
@@ -67,6 +69,10 @@ static plot_font_style_t textplain_style = {
 static int textplain_tab_width = 256;  /* try for a sensible default */
 
 static bool textplain_create_internal(struct content *c, const char *encoding);
+static parserutils_error textplain_charset_hack(const uint8_t *data, size_t len,
+		uint16_t *mibenum, uint32_t *source);
+static bool textplain_drain_input(struct content *c, 
+		parserutils_inputstream *stream, parserutils_error terminator);
 static int textplain_coord_from_offset(const char *text, size_t offset,
 	size_t length);
 static float textplain_line_height(void);
@@ -91,39 +97,54 @@ bool textplain_create(struct content *c, const http_parameter *params)
 	return textplain_create_internal(c, encoding);
 }
 
+/*
+ * Hack around bug in libparserutils: if the client provides an
+ * encoding up front, but does not provide a charset detection
+ * callback, then libparserutils will replace the provided encoding
+ * with UTF-8. This breaks our input handling.
+ *
+ * We avoid this by providing a callback that does precisely nothing,
+ * thus preserving whatever charset information we decided on in
+ * textplain_create.
+ */
+parserutils_error textplain_charset_hack(const uint8_t *data, size_t len,
+		uint16_t *mibenum, uint32_t *source)
+{
+	return PARSERUTILS_OK;
+} 
+
 bool textplain_create_internal(struct content *c, const char *encoding)
 {
 	char *utf8_data;
-	iconv_t iconv_cd;
+	parserutils_inputstream *stream;
+	parserutils_error error;
 	union content_msg_data msg_data;
 
 	utf8_data = talloc_array(c, char, CHUNK);
-	if (!utf8_data)
+	if (utf8_data == NULL)
 		goto no_memory;
 
-	iconv_cd = iconv_open("utf-8", encoding);
-	if (iconv_cd == (iconv_t)(-1) && errno == EINVAL) {
-		LOG(("unsupported encoding \"%s\"", encoding));
-		iconv_cd = iconv_open("utf-8", "iso-8859-1");
+	error = parserutils_inputstream_create(encoding, 0, 
+			textplain_charset_hack, ns_realloc, NULL, &stream);
+	if (error == PARSERUTILS_BADENCODING) {
+		/* Fall back to Windows-1252 */
+		error = parserutils_inputstream_create("Windows-1252", 0,
+				textplain_charset_hack, ns_realloc, NULL,
+				&stream);
 	}
-	if (iconv_cd == (iconv_t)(-1)) {
-		char buf[300];
-
-		snprintf(buf, sizeof buf, "IconvFailed %s", strerror(errno));
-		buf[sizeof buf - 1] = 0;
-
-		msg_data.error = buf;
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-
-		return false;
+	if (error != PARSERUTILS_OK) {
+		talloc_free(utf8_data);
+		goto no_memory;
 	}
-
+	
 	c->data.textplain.encoding = strdup(encoding);
-	if (c->data.textplain.encoding == NULL)
+	if (c->data.textplain.encoding == NULL) {
+		talloc_free(utf8_data);
+		parserutils_inputstream_destroy(stream);
 		goto no_memory;
+	}
 		
-	c->data.textplain.iconv_cd = iconv_cd;
-	c->data.textplain.converted = 0;
+	c->data.textplain.inputstream = stream;
 	c->data.textplain.utf8_data = utf8_data;
 	c->data.textplain.utf8_data_size = 0;
 	c->data.textplain.utf8_data_allocated = CHUNK;
@@ -139,6 +160,39 @@ no_memory:
 	return false;
 }
 
+bool textplain_drain_input(struct content *c, parserutils_inputstream *stream,
+		parserutils_error terminator)
+{
+	const uint8_t *ch;
+	size_t chlen;
+
+	/** \todo Optimise: stop invoking memcpy for each character */
+	while (parserutils_inputstream_peek(stream, 0, &ch, &chlen) != 
+			terminator) {
+		if (c->data.textplain.utf8_data_size + chlen >= 
+				c->data.textplain.utf8_data_allocated) {
+			size_t allocated = CHUNK +
+					c->data.textplain.utf8_data_allocated;
+			char *utf8_data = talloc_realloc(c,
+					c->data.textplain.utf8_data,
+					char, allocated);
+			if (utf8_data == NULL)
+				return false;
+
+			c->data.textplain.utf8_data = utf8_data;
+			c->data.textplain.utf8_data_allocated = allocated;
+		}
+
+		memcpy(c->data.textplain.utf8_data + 
+				c->data.textplain.utf8_data_size, ch, chlen);
+		c->data.textplain.utf8_data_size += chlen;
+
+		parserutils_inputstream_advance(stream, chlen);
+	}
+
+	return true;
+}
+
 
 /**
  * Process data for CONTENT_TEXTPLAIN.
@@ -147,54 +201,18 @@ no_memory:
 bool textplain_process_data(struct content *c, 
 		const char *data, unsigned int size)
 {
-	iconv_t iconv_cd = c->data.textplain.iconv_cd;
-	size_t count;
+	parserutils_inputstream *stream = c->data.textplain.inputstream;
 	union content_msg_data msg_data;
-	const char *source_data;
-	unsigned long source_size;
+	parserutils_error error;
 
-	source_data = content__get_source_data(c, &source_size);
+	error = parserutils_inputstream_append(stream, 
+			(const uint8_t *) data, size);
+	if (error != PARSERUTILS_OK) {
+		goto no_memory;
+	}
 
-	do {
-		char *inbuf = (char *) source_data + 
-				c->data.textplain.converted;
-		size_t inbytesleft = source_size - c->data.textplain.converted;
-		char *outbuf = c->data.textplain.utf8_data +
-				c->data.textplain.utf8_data_size;
-		size_t outbytesleft = c->data.textplain.utf8_data_allocated -
-				c->data.textplain.utf8_data_size;
-		count = iconv(iconv_cd, &inbuf, &inbytesleft,
-				&outbuf, &outbytesleft);
-		c->data.textplain.converted = inbuf - source_data;
-		c->data.textplain.utf8_data_size = c->data.textplain.
-				utf8_data_allocated - outbytesleft;
-
-		if (count == (size_t)(-1) && errno == E2BIG) {
-			size_t allocated = CHUNK +
-					c->data.textplain.utf8_data_allocated;
-			char *utf8_data = talloc_realloc(c,
-					c->data.textplain.utf8_data,
-					char, allocated);
-			if (!utf8_data)
-				goto no_memory;
-			c->data.textplain.utf8_data = utf8_data;
-			c->data.textplain.utf8_data_allocated = allocated;
-		} else if (count == (size_t)(-1) && errno != EINVAL) {
-			char buf[300];
-
-			snprintf(buf, sizeof buf, "IconvFailed %s",
-					strerror(errno));
-			buf[sizeof buf - 1] = 0;
-
-			msg_data.error = buf;
-			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-
-			return false;
-		}
-
-		gui_multitask();
-	} while (!(c->data.textplain.converted == source_size ||
-			(count == (size_t)(-1) && errno == EINVAL)));
+	if (textplain_drain_input(c, stream, PARSERUTILS_NEEDDATA) == false)
+		goto no_memory;
 
 	return true;
 
@@ -211,8 +229,19 @@ no_memory:
 
 bool textplain_convert(struct content *c)
 {
-	iconv_close(c->data.textplain.iconv_cd);
-	c->data.textplain.iconv_cd = 0;
+	parserutils_inputstream *stream = c->data.textplain.inputstream;
+	parserutils_error error;
+
+	error = parserutils_inputstream_append(stream, NULL, 0);
+	if (error != PARSERUTILS_OK) {
+		return false;
+	}
+
+	if (textplain_drain_input(c, stream, PARSERUTILS_EOF) == false)
+		return false;
+
+	parserutils_inputstream_destroy(stream);
+	c->data.textplain.inputstream = NULL;
 
 	c->status = CONTENT_STATUS_DONE;
 	content_set_status(c, messages_get("Done"));
@@ -324,8 +353,8 @@ void textplain_destroy(struct content *c)
 	if (c->data.textplain.encoding != NULL)
 		free(c->data.textplain.encoding);
 
-	if (c->data.textplain.iconv_cd)
-		iconv_close(c->data.textplain.iconv_cd);
+	if (c->data.textplain.inputstream != NULL)
+		parserutils_inputstream_destroy(c->data.textplain.inputstream);
 }
 
 

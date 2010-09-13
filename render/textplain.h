@@ -25,7 +25,6 @@
 #define _NETSURF_RENDER_TEXTPLAIN_H_
 
 #include <stddef.h>
-#include <iconv.h>
 #include "desktop/mouse.h"
 
 struct content;
@@ -39,8 +38,7 @@ struct textplain_line {
 
 struct content_textplain_data {
 	char *encoding;
-	iconv_t iconv_cd;
-	size_t converted;
+	void *inputstream;
 	char *utf8_data;
 	size_t utf8_data_size;
 	size_t utf8_data_allocated;
