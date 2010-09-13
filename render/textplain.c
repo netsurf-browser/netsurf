@@ -163,13 +163,23 @@ no_memory:
 bool textplain_drain_input(struct content *c, parserutils_inputstream *stream,
 		parserutils_error terminator)
 {
+	static const uint8_t *u_fffd = (const uint8_t *) "\xef\xbf\xfd";
 	const uint8_t *ch;
-	size_t chlen;
+	size_t chlen, outlen;
 
 	/** \todo Optimise: stop invoking memcpy for each character */
 	while (parserutils_inputstream_peek(stream, 0, &ch, &chlen) != 
 			terminator) {
-		if (c->data.textplain.utf8_data_size + chlen >= 
+
+		/* Replace all instances of NUL with U+FFFD */
+		if (chlen == 1 && *ch == 0) {
+			ch = u_fffd;
+			outlen = 3;
+		} else {
+			outlen = chlen;
+		}
+
+		if (c->data.textplain.utf8_data_size + outlen >= 
 				c->data.textplain.utf8_data_allocated) {
 			size_t allocated = CHUNK +
 					c->data.textplain.utf8_data_allocated;
@@ -184,8 +194,8 @@ bool textplain_drain_input(struct content *c, parserutils_inputstream *stream,
 		}
 
 		memcpy(c->data.textplain.utf8_data + 
-				c->data.textplain.utf8_data_size, ch, chlen);
-		c->data.textplain.utf8_data_size += chlen;
+				c->data.textplain.utf8_data_size, ch, outlen);
+		c->data.textplain.utf8_data_size += outlen;
 
 		parserutils_inputstream_advance(stream, chlen);
 	}
