@@ -342,7 +342,7 @@ void ro_gui_options_theme_load(void)
 		new_icon.icon.data.indirected_text.text =
 			(char *)&link->descriptor->author;
 		new_icon.icon.data.indirected_text.size =
-			strlen(link->descriptor->filename) + 1;
+			strlen(link->descriptor->author) + 1;
 		new_icon.icon.data.indirected_text.validation =
 				theme_null_validation;
 		new_icon.icon.flags &= ~(wimp_BUTTON_RADIO <<
