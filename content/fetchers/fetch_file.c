@@ -77,7 +77,8 @@ static inline bool fetch_file_send_callback(fetch_msg msg,
 	return ctx->aborted;
 }
 
-static bool fetch_file_send_header(struct fetch_file_context *ctx, const char *fmt, ...)
+static bool fetch_file_send_header(struct fetch_file_context *ctx,
+		const char *fmt, ...)
 {
 	char header[64];
 	va_list ap;
@@ -88,12 +89,14 @@ static bool fetch_file_send_header(struct fetch_file_context *ctx, const char *f
 
 	va_end(ap);
 
-	fetch_file_send_callback(FETCH_HEADER, ctx, header, strlen(header), FETCH_ERROR_NO_ERROR);
+	fetch_file_send_callback(FETCH_HEADER, ctx, header, strlen(header), 
+			FETCH_ERROR_NO_ERROR);
 
 	return ctx->aborted;
 }
 
-static bool fetch_file_send_time(struct fetch_file_context *ctx, const char *fmt, const time_t *val)
+static bool fetch_file_send_time(struct fetch_file_context *ctx, 
+		const char *fmt, const time_t *val)
 {
 	char header[64];
 	struct tm btm;
@@ -102,7 +105,8 @@ static bool fetch_file_send_time(struct fetch_file_context *ctx, const char *fmt
 
 	strftime(header, sizeof header, fmt, &btm);
 
-	fetch_file_send_callback(FETCH_HEADER, ctx, header, strlen(header), FETCH_ERROR_NO_ERROR);
+	fetch_file_send_callback(FETCH_HEADER, ctx, header, strlen(header), 
+			FETCH_ERROR_NO_ERROR);
 
 	return ctx->aborted;
 }
@@ -181,6 +185,22 @@ static void fetch_file_abort(void *ctx)
 	c->aborted = true;
 }
 
+static int fetch_file_errno_to_http_code(int error_no)
+{
+	switch (error_no) {
+	case ENAMETOOLONG:
+		return 400;
+	case EACCES:
+		return 403;
+	case ENOENT:
+		return 404;
+	default:
+		break;
+	}
+
+	return 500;
+}
+
 static void fetch_file_process_error(struct fetch_file_context *ctx, int code)
 {
 	char buffer[1024];
@@ -197,12 +217,17 @@ static void fetch_file_process_error(struct fetch_file_context *ctx, int code)
 	snprintf(key, sizeof key, "HTTP%03d", code);
 	title = messages_get(key);
 
-	snprintf(buffer, sizeof buffer, "<html><head><title>%s</title></head><body><h1>%s</h1><p>Error %d while fetching file %s</p></body></html>", title, title, code,ctx->url);
+	snprintf(buffer, sizeof buffer, "<html><head><title>%s</title></head>"
+			"<body><h1>%s</h1>"
+			"<p>Error %d while fetching file %s</p></body></html>",
+			title, title, code, ctx->url);
 
-	if (fetch_file_send_callback(FETCH_DATA, ctx, buffer, strlen(buffer), FETCH_ERROR_NO_ERROR))
+	if (fetch_file_send_callback(FETCH_DATA, ctx, buffer, strlen(buffer), 
+			FETCH_ERROR_NO_ERROR))
 		goto fetch_file_process_error_aborted;
 
-	fetch_file_send_callback(FETCH_FINISHED, ctx, 0, 0, FETCH_ERROR_NO_ERROR);
+	fetch_file_send_callback(FETCH_FINISHED, ctx, 0, 0, 
+			FETCH_ERROR_NO_ERROR);
 
 fetch_file_process_error_aborted:
 	return;
@@ -223,19 +248,8 @@ static void fetch_file_process_plain(struct fetch_file_context *ctx,
 	fd = open(ctx->path, O_RDONLY);
 	if (fd < 0) {
 		/* process errors as appropriate */
-		switch (errno) {
-		case EACCES:
-			fetch_file_process_error(ctx, 403);
-			break;
-
-		case ENOENT:
-			fetch_file_process_error(ctx, 404);
-			break;
-
-		default:
-			fetch_file_process_error(ctx, 500);
-			break;
-		}
+		fetch_file_process_error(ctx,
+				fetch_file_errno_to_http_code(errno));
 		return;
 	}
 
@@ -262,7 +276,8 @@ static void fetch_file_process_plain(struct fetch_file_context *ctx,
 	 */
 
 	/* content type */
-	if (fetch_file_send_header(ctx, "Content-Type: %s", fetch_filetype(ctx->path)))
+	if (fetch_file_send_header(ctx, "Content-Type: %s", 
+			fetch_filetype(ctx->path)))
 		goto fetch_file_process_aborted;
 
 	/* content length */
@@ -270,35 +285,44 @@ static void fetch_file_process_plain(struct fetch_file_context *ctx,
 		goto fetch_file_process_aborted;
 
 	/* Set Last modified header */
-	if (fetch_file_send_time(ctx, "Last-Modified: %a, %d %b %Y %H:%M:%S GMT", &fdstat->st_mtime))
+	if (fetch_file_send_time(ctx, 
+			"Last-Modified: %a, %d %b %Y %H:%M:%S GMT", 
+			&fdstat->st_mtime))
 		goto fetch_file_process_aborted;
 
 	/* create etag */
-	if (fetch_file_send_header(ctx, "ETag: \"%10" PRId64 "\"", (int64_t) fdstat->st_mtime))
+	if (fetch_file_send_header(ctx, "ETag: \"%10" PRId64 "\"", 
+			(int64_t) fdstat->st_mtime))
 		goto fetch_file_process_aborted;
 
 	/* main data loop */
 	do {
 		res = read(fd, buf, buf_size);
 		if (res == -1) {
-			fetch_file_send_callback(FETCH_ERROR, ctx, "Error reading file", 0, FETCH_ERROR_PARTIAL_FILE);
+			fetch_file_send_callback(FETCH_ERROR, ctx, 
+					"Error reading file", 0, 
+					FETCH_ERROR_PARTIAL_FILE);
 			goto fetch_file_process_aborted;
 		}
 
 		if (res == 0) {
-			fetch_file_send_callback(FETCH_ERROR, ctx, "Unexpected EOF reading file", 0, FETCH_ERROR_PARTIAL_FILE);
+			fetch_file_send_callback(FETCH_ERROR, ctx, 
+					"Unexpected EOF reading file", 0, 
+					FETCH_ERROR_PARTIAL_FILE);
 			goto fetch_file_process_aborted;
 		}
 
 		tot_read += res;
 
-		if (fetch_file_send_callback(FETCH_DATA, ctx, buf, res, FETCH_ERROR_NO_ERROR))
+		if (fetch_file_send_callback(FETCH_DATA, ctx, buf, res, 
+				FETCH_ERROR_NO_ERROR))
 			break;
 
 	} while (tot_read < fdstat->st_size);
 
 	if (!ctx->aborted)
-		fetch_file_send_callback(FETCH_FINISHED, ctx, 0, 0, FETCH_ERROR_NO_ERROR);
+		fetch_file_send_callback(FETCH_FINISHED, ctx, 0, 0, 
+				FETCH_ERROR_NO_ERROR);
 
 fetch_file_process_aborted:
 
@@ -381,7 +405,8 @@ static void fetch_file_process_dir(struct fetch_file_context *ctx,
 
 	scandir = opendir(ctx->path);
 	if (scandir == NULL) {
-		fetch_file_process_error(ctx, 500);
+		fetch_file_process_error(ctx,
+			fetch_file_errno_to_http_code(errno));
 		return;
 	}
 
@@ -394,14 +419,16 @@ static void fetch_file_process_dir(struct fetch_file_context *ctx,
 
 	/* directory listing top */
 	dirlist_generate_top(buffer, sizeof buffer);
-	if (fetch_file_send_callback(FETCH_DATA, ctx, buffer, strlen(buffer), FETCH_ERROR_NO_ERROR))
+	if (fetch_file_send_callback(FETCH_DATA, ctx, buffer, strlen(buffer), 
+			FETCH_ERROR_NO_ERROR))
 		goto fetch_file_process_dir_aborted;
 
 	/* directory listing title */
 	title = gen_nice_title(ctx->path);
 	dirlist_generate_title(title, buffer, sizeof buffer);
 	free(title);
-	if (fetch_file_send_callback(FETCH_DATA, ctx, buffer, strlen(buffer), FETCH_ERROR_NO_ERROR))
+	if (fetch_file_send_callback(FETCH_DATA, ctx, buffer, strlen(buffer), 
+			FETCH_ERROR_NO_ERROR))
 		goto fetch_file_process_dir_aborted;
 
 	/* Print parent directory link */
@@ -426,7 +453,8 @@ static void fetch_file_process_dir(struct fetch_file_context *ctx,
 
 	/* directory list headings */
 	dirlist_generate_headings(buffer, sizeof buffer);
-	if (fetch_file_send_callback(FETCH_DATA, ctx, buffer, strlen(buffer), FETCH_ERROR_NO_ERROR))
+	if (fetch_file_send_callback(FETCH_DATA, ctx, buffer, strlen(buffer), 
+			FETCH_ERROR_NO_ERROR))
 		goto fetch_file_process_dir_aborted;
 
 	while ((ent = readdir(scandir)) != NULL) {
@@ -435,7 +463,8 @@ static void fetch_file_process_dir(struct fetch_file_context *ctx,
 			continue;
 
 		strncpy(urlpath, ctx->path, sizeof urlpath);
-		if (path_add_part(urlpath, sizeof urlpath, ent->d_name) == false)
+		if (path_add_part(urlpath, sizeof urlpath, 
+				ent->d_name) == false)
 			continue;
 
 		if (stat(urlpath, &ent_stat) != 0) {
@@ -506,11 +535,13 @@ static void fetch_file_process_dir(struct fetch_file_context *ctx,
 
 	/* directory listing bottom */
 	dirlist_generate_bottom(buffer, sizeof buffer);
-	if (fetch_file_send_callback(FETCH_DATA, ctx, buffer, strlen(buffer), FETCH_ERROR_NO_ERROR))
+	if (fetch_file_send_callback(FETCH_DATA, ctx, buffer, strlen(buffer), 
+			FETCH_ERROR_NO_ERROR))
 		goto fetch_file_process_dir_aborted;
 
 
-	fetch_file_send_callback(FETCH_FINISHED, ctx, 0, 0, FETCH_ERROR_NO_ERROR);
+	fetch_file_send_callback(FETCH_FINISHED, ctx, 0, 0, 
+			FETCH_ERROR_NO_ERROR);
 
 fetch_file_process_dir_aborted:
 
@@ -525,7 +556,8 @@ static void fetch_file_process(struct fetch_file_context *ctx)
 
 	if (stat(ctx->path, &fdstat) != 0) {
 		/* process errors as appropriate */
-		fetch_file_process_error(ctx, 500);
+		fetch_file_process_error(ctx,
+				fetch_file_errno_to_http_code(errno));
 		return;
 	}
 
