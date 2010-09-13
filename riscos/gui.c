@@ -2492,18 +2492,30 @@ char *filename_from_path(char *path)
 /**
  * Add a path component/filename to an existing path
  *
- * \param path buffer containing path + free space
+ * \param path buffer containing platform-native format path + free space
  * \param length length of buffer "path"
- * \param newpart string containing path component to add to path
+ * \param newpart string containing unix-format path component to add to path
  * \return true on success
  */
 
 bool path_add_part(char *path, int length, const char *newpart)
 {
-	if(path[strlen(path) - 1] != '.')
+	size_t path_len = strlen(path);
+
+	/* Append directory separator, if there isn't one */
+	if (path[path_len - 1] != '.') {
 		strncat(path, ".", length);
+		path_len += 1;
+	}
 
 	strncat(path, newpart, length);
+
+	/* Newpart is either a directory name, or a file leafname
+ 	 * Either way, we must replace all dots with forward slashes */
+	for (path = path + path_len; *path; path++) {
+		if (*path == '.')
+			*path = '/';
+	}
 
 	return true;
 }
