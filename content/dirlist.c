@@ -231,13 +231,15 @@ bool dirlist_generate_parent_link(char *parent, char *buffer, int buffer_length)
 bool dirlist_generate_headings(char *buffer, int buffer_length)
 {
 	int error = snprintf(buffer, buffer_length,
-			"<div>\n<strong>"
-			"<span class=\"name\">%s</span> "
-			"<span class=\"type\">%s</span> "
-			"<span class=\"size\">%s</span>"
-			"<span class=\"size\"></span> "
-			"<span class=\"date\">%s</span> "
-			"<span class=\"time\">%s</span></strong>\n",
+			"<div>\n"
+			"<strong>\n"
+			"\t<span class=\"name\">%s</span>\n"
+			"\t<span class=\"type\">%s</span>\n"
+			"\t<span class=\"size\">%s</span>"
+			"<span class=\"size\"></span>\n"
+			"\t<span class=\"date\">%s</span>\n"
+			"\t<span class=\"time\">%s</span>\n"
+			"</strong>\n",
 			messages_get("FileName"), messages_get("FileType"),
 			messages_get("FileSize"), messages_get("FileDate"),
 			messages_get("FileTime"));
@@ -296,13 +298,14 @@ bool dirlist_generate_row(bool even, bool directory, char *url, char *name,
 	}
 
 	error = snprintf(buffer, buffer_length,
-			"<a href=\"%s\" class=\"%s %s\">"
-			"<span class=\"name\">%s</span> "
-			"<span class=\"type\">%s</span> "
-			"<span class=\"size\">%s</span>"
-			"<span class=\"size\">%s</span> "
-			"<span class=\"date\">%s</span> "
-			"<span class=\"time\">%s</span></a>\n",
+			"<a href=\"%s\" class=\"%s %s\">\n"
+			"\t<span class=\"name\">%s</span>\n"
+			"\t<span class=\"type\">%s</span>\n"
+			"\t<span class=\"size\">%s</span>"
+			"<span class=\"size\">%s</span>\n"
+			"\t<span class=\"date\">%s</span>\n"
+			"\t<span class=\"time\">%s</span>\n"
+			"</a>\n",
 			url, even ? "even" : "odd",
 			directory ? "dir" : "file",
 			name, mimetype, size_string, unit, date, time);
