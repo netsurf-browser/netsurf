@@ -75,8 +75,6 @@ struct curl_fetch_info {
 	char *post_urlenc;	/**< Url encoded POST string, or 0. */
 	long http_code; /**< HTTP result code from cURL. */
 	struct curl_httppost *post_multipart;	/**< Multipart post data, or 0. */
-	time_t last_modified;		/**< If-Modified-Since time */
-	time_t file_etag;		/**< ETag for local objects */
 #define MAX_CERTS 10
 	struct cert_info cert_data[MAX_CERTS];	/**< HTTPS certificate data */
 	unsigned int last_progress_update;	/**< Time of last progress update */
@@ -349,8 +347,6 @@ void * fetch_curl_setup(struct fetch *parent_fetch, const char *url,
 		fetch->post_urlenc = strdup(post_urlenc);
 	else if (post_multipart)
 		fetch->post_multipart = fetch_curl_post_convert(post_multipart);
-	fetch->last_modified = 0;
-	fetch->file_etag = 0;
 	fetch->http_code = 0;
 	memset(fetch->cert_data, 0, sizeof(fetch->cert_data));
 	fetch->last_progress_update = 0;
@@ -391,19 +387,6 @@ void * fetch_curl_setup(struct fetch *parent_fetch, const char *url,
 
 	/* And add any headers specified by the caller */
 	for (i = 0; headers[i]; i++) {
-		if (strncasecmp(headers[i], "If-Modified-Since:", 18) == 0) {
-			const char *d = headers[i] + 18;
-			for (; *d && (*d == ' ' || *d == '\t'); d++)
-				/* do nothing */;
-			fetch->last_modified = curl_getdate(d, NULL);
-		}
-		else if (strncasecmp(headers[i], "If-None-Match:", 14) == 0) {
-			const char *d = headers[i] + 14;
-			for (; *d && (*d == ' ' || *d == '\t' || *d == '"');
-					d++)
-				/* do nothing */;
-			fetch->file_etag = atoi(d);
-		}
 		APPEND(fetch->headers, headers[i]);
 	}
 
