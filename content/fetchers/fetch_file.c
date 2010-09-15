@@ -61,6 +61,8 @@ struct fetch_file_context {
 
 	char *url; /**< The full url the fetch refers to */
 	char *path; /**< The actual path to be used with open() */
+
+	time_t file_etag; /**< Request etag for file (previous st.m_time) */
 };
 
 static struct fetch_file_context *ring = NULL;
@@ -95,22 +97,6 @@ static bool fetch_file_send_header(struct fetch_file_context *ctx,
 	return ctx->aborted;
 }
 
-static bool fetch_file_send_time(struct fetch_file_context *ctx, 
-		const char *fmt, const time_t *val)
-{
-	char header[64];
-	struct tm btm;
-
-	gmtime_r(val, &btm);
-
-	strftime(header, sizeof header, fmt, &btm);
-
-	fetch_file_send_callback(FETCH_HEADER, ctx, header, strlen(header), 
-			FETCH_ERROR_NO_ERROR);
-
-	return ctx->aborted;
-}
-
 /** callback to initialise the file fetcher. */
 static bool fetch_file_initialise(const char *scheme)
 {
@@ -132,6 +118,7 @@ fetch_file_setup(struct fetch *fetchh,
 		 const char **headers)
 {
 	struct fetch_file_context *ctx;
+	int i;
 
 	ctx = calloc(1, sizeof(*ctx));
 	if (ctx == NULL)
@@ -148,6 +135,23 @@ fetch_file_setup(struct fetch *fetchh,
 		free(ctx->path);
 		free(ctx);
 		return NULL;
+	}
+
+	/* Scan request headers looking for If-None-Match */
+	for (i = 0; headers[i] != NULL; i++) {
+		if (strncasecmp(headers[i], "If-None-Match:", 
+				SLEN("If-None-Match:")) == 0) {
+			/* If-None-Match: "12345678" */
+			const char *d = headers[i] + SLEN("If-None-Match:");
+
+			/* Scan to first digit, if any */
+			while (*d != '\0' && (*d < '0' || '9' < *d))
+				d++;
+
+			/* Convert to time_t */
+			if (*d != '\0')
+				ctx->file_etag = atoi(d);
+		}
 	}
 
 	ctx->fetchh = fetchh;
@@ -245,6 +249,15 @@ static void fetch_file_process_plain(struct fetch_file_context *ctx,
 	ssize_t res;
 
 	int fd; /**< The file descriptor of the object */
+
+	/* Check if we can just return not modified */
+	if (ctx->file_etag != 0 && ctx->file_etag == fdstat->st_mtime) {
+		fetch_set_http_code(ctx->fetchh, 304);
+		fetch_file_send_callback(FETCH_NOTMODIFIED, ctx, 0, 0,
+				FETCH_ERROR_NO_ERROR);
+		return;
+	}
+
 	fd = open(ctx->path, O_RDONLY);
 	if (fd < 0) {
 		/* process errors as appropriate */
@@ -264,6 +277,7 @@ static void fetch_file_process_plain(struct fetch_file_context *ctx,
 		fetch_file_send_callback(FETCH_ERROR, ctx,
 			"Unable to allocate memory for file data buffer",
 			0, FETCH_ERROR_MEMORY);
+		close(fd);
 		return;
 	}
 
@@ -282,12 +296,6 @@ static void fetch_file_process_plain(struct fetch_file_context *ctx,
 
 	/* content length */
 	if (fetch_file_send_header(ctx, "Content-Length: %zd", fdstat->st_size))
-		goto fetch_file_process_aborted;
-
-	/* Set Last modified header */
-	if (fetch_file_send_time(ctx, 
-			"Last-Modified: %a, %d %b %Y %H:%M:%S GMT", 
-			&fdstat->st_mtime))
 		goto fetch_file_process_aborted;
 
 	/* create etag */
@@ -320,7 +328,7 @@ static void fetch_file_process_plain(struct fetch_file_context *ctx,
 
 	} while (tot_read < fdstat->st_size);
 
-	if (!ctx->aborted)
+	if (ctx->aborted == false)
 		fetch_file_send_callback(FETCH_FINISHED, ctx, 0, 0, 
 				FETCH_ERROR_NO_ERROR);
 
@@ -413,6 +421,10 @@ static void fetch_file_process_dir(struct fetch_file_context *ctx,
 	/* fetch is going to be successful */
 	fetch_set_http_code(ctx->fetchh, 200);
 
+	/* force no-cache */
+	if (fetch_file_send_header(ctx, "Cache-Control: no-cache"))
+		goto fetch_file_process_dir_aborted;
+
 	/* content type */
 	if (fetch_file_send_header(ctx, "Content-Type: text/html"))
 		goto fetch_file_process_dir_aborted;
@@ -435,7 +447,7 @@ static void fetch_file_process_dir(struct fetch_file_context *ctx,
 	res = url_parent(ctx->url, &up);
 	if (res == URL_FUNC_OK) {
 		res = url_compare(ctx->url, up, false, &compare);
-		if ((res == URL_FUNC_OK) && !compare) {
+		if ((res == URL_FUNC_OK) && compare == false) {
 			dirlist_generate_parent_link(up, buffer, sizeof buffer);
 
 			fetch_file_send_callback(FETCH_DATA, ctx,
@@ -602,7 +614,7 @@ static void fetch_file_poll(const char *scheme)
 		}
 
 		/* Only process non-aborted fetches */
-		if (!c->aborted) {
+		if (c->aborted == false) {
 			/* file fetches can be processed in one go */
 			fetch_file_process(c);
 		}
