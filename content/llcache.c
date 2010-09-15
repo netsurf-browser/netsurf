@@ -1648,17 +1648,33 @@ void llcache_fetch_callback(fetch_msg msg, void *p, const void *data,
 		break;
 	case FETCH_DATA:
 		/* Received some data */
-		object->fetch.state = LLCACHE_FETCH_DATA;
-		if (object->has_query && (object->cache.expires == 0 && 
-				object->cache.max_age == INVALID_AGE)) {
-			/* URI had query string and did not provide an explicit
-			 * expiration time, thus by rfc2616 13.9 we must 
-			 * invalidate the cache data to force the cache to not 
-			 * retain the object.
+		if (object->fetch.state != LLCACHE_FETCH_DATA) {
+			/* On entry into this state, check if we need to 
+			 * invalidate the cache control data. We are guaranteed
+			 * to have received all response headers.
+			 *
+			 * There are two cases in which we want to suppress
+			 * cacheing of an object:
+			 *
+			 * 1) The HTTP response code is not 200 or 203
+			 * 2) The request URI had a query string and the
+			 *    response headers did not provide an explicit
+			 *    object expiration time.
 			 */
-			memset(&(object->cache), 0, 
-					sizeof(llcache_cache_control));
+			long http_code = fetch_http_code(object->fetch.fetch);
+
+			if ((http_code != 200 && http_code != 203) &&
+				(object->has_query && 
+				(object->cache.max_age == INVALID_AGE &&
+					object->cache.expires == 0))) {
+				/* Invalidate cache control data */
+				memset(&(object->cache), 0, 
+						sizeof(llcache_cache_control));
+			}
 		}
+
+		object->fetch.state = LLCACHE_FETCH_DATA;
+
 		error = llcache_fetch_process_data(object, data, size);
 		break;
 	case FETCH_FINISHED:
