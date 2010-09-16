@@ -454,9 +454,7 @@ nserror llcache_handle_force_stream(llcache_handle *handle)
 nserror llcache_handle_invalidate_cache_data(llcache_handle *handle)
 {
 	if (handle->object != NULL && handle->object->fetch.fetch == NULL) {
-		free(handle->object->cache.etag);
-		memset(&handle->object->cache, 0, 
-				sizeof(llcache_cache_control));
+		handle->object->cache.no_cache = true;
 	}
 
 	return NSERROR_OK;
@@ -812,10 +810,18 @@ bool llcache_object_is_fresh(const llcache_object *object)
 			object->fetch.state, LLCACHE_FETCH_COMPLETE));
 #endif
 
-	/* The object is fresh if its current age is within the freshness 
-	 * lifetime or if we're still fetching the object */
-	return (freshness_lifetime > current_age || 
-			object->fetch.state != LLCACHE_FETCH_COMPLETE);
+	/* The object is fresh if:
+	 *
+	 * it was not forbidden from being returned from the cache 
+	 * unvalidated (i.e. the response contained a no-cache directive)
+	 *
+	 * and:
+	 *
+	 *    its current age is within the freshness lifetime
+	 * or if we're still fetching the object
+	 */
+	return (cd->no_cache == false && (freshness_lifetime > current_age || 
+			object->fetch.state != LLCACHE_FETCH_COMPLETE));
 }
 
 /**
