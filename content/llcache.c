@@ -1650,6 +1650,13 @@ void llcache_fetch_callback(fetch_msg msg, void *p, const void *data,
 #endif
 
 	switch (msg) {
+	case FETCH_HEADER:
+		/* Received a fetch header */
+		object->fetch.state = LLCACHE_FETCH_HEADERS;
+
+		error = llcache_fetch_process_header(object, data, size);
+		break;
+
 	/* 3xx responses */
 	case FETCH_REDIRECT:
 		/* Request resulted in a redirect */
@@ -1668,18 +1675,6 @@ void llcache_fetch_callback(fetch_msg msg, void *p, const void *data,
 		break;
 
 	/* Normal 2xx state machine */
-	case FETCH_HEADER:
-		/* Received a fetch header */
-		object->fetch.state = LLCACHE_FETCH_HEADERS;
-
-		/* Release candidate, if any */
-		if (object->candidate != NULL) {
-			object->candidate->candidate_count--;
-			object->candidate = NULL;
-		}
-
-		error = llcache_fetch_process_header(object, data, size);
-		break;
 	case FETCH_DATA:
 		/* Received some data */
 		if (object->fetch.state != LLCACHE_FETCH_DATA) {
@@ -1703,6 +1698,12 @@ void llcache_fetch_callback(fetch_msg msg, void *p, const void *data,
 					object->cache.expires == 0))) {
 				/* Invalidate cache control data */
 				llcache_invalidate_cache_control_data(object);
+			}
+
+			/* Release candidate, if any */
+			if (object->candidate != NULL) {
+				object->candidate->candidate_count--;
+				object->candidate = NULL;
 			}
 		}
 
