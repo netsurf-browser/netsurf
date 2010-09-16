@@ -570,8 +570,10 @@ bool html_head(struct content *c, xmlNode *head)
 	xmlNode *node;
 	xmlChar *s;
 
-	for (node = xmlFirstElementChild(head); node != 0;
-			node = xmlNextElementSibling(node)) {
+	for (node = head->children; node != 0; node = node->next) {
+		if (node->type != XML_ELEMENT_NODE)
+			continue;
+
 		if (c->title == NULL && strcmp((const char *) node->name,
 				"title") == 0) {
 			xmlChar *title = xmlNodeGetContent(node);
