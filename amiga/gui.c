@@ -3807,6 +3807,10 @@ struct box *ami_text_box_at_point(struct gui_window_2 *gwin, ULONG *x, ULONG *y)
 	hlcache_handle *content;
 	int box_x=0,box_y=0;
 
+	content = gwin->bw->current_content;
+
+	if(content_get_type(content) != CONTENT_HTML) return NULL;
+
 	GetAttr(SPACE_AreaBox, (Object *)gwin->objects[GID_BROWSER],
 				(ULONG *)&bbox);
 
@@ -3819,7 +3823,6 @@ struct box *ami_text_box_at_point(struct gui_window_2 *gwin, ULONG *x, ULONG *y)
 	width=bbox->Width;
 	height=bbox->Height;
 
-	content = gwin->bw->current_content;
 	box = html_get_box_tree(content);
 	while ((box = box_at_point(box, *x, *y, &box_x, &box_y, &content)))
 	{
