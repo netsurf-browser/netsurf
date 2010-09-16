@@ -158,7 +158,7 @@ static nserror llcache_object_retrieve_from_cache(const char *url,
 		llcache_object **result);
 static bool llcache_object_is_fresh(const llcache_object *object);
 static nserror llcache_object_cache_update(llcache_object *object);
-static nserror llcache_object_clone_cache_data(const llcache_object *source,
+static nserror llcache_object_clone_cache_data(llcache_object *source,
 		llcache_object *destination, bool deep);
 static nserror llcache_object_fetch(llcache_object *object, uint32_t flags,
 		const char *referer, const llcache_post_data *post,
@@ -845,8 +845,10 @@ nserror llcache_object_cache_update(llcache_object *object)
  * \param destination  Destination object to clone cache data into
  * \param deep	       Whether to deep-copy the data or not
  * \return NSERROR_OK on success, appropriate error otherwise
+ *
+ * \post If \a deep is false, then any pointers in \a source will be set to NULL
  */
-nserror llcache_object_clone_cache_data(const llcache_object *source,
+nserror llcache_object_clone_cache_data(llcache_object *source,
 		llcache_object *destination, bool deep)
 {
 	/* ETag must be first, as it can fail when deep cloning */
@@ -858,6 +860,9 @@ nserror llcache_object_clone_cache_data(const llcache_object *source,
 			etag = strdup(source->cache.etag);
 			if (etag == NULL)
 				return NSERROR_NOMEM;
+		} else {
+			/* Destination takes ownership */
+			source->cache.etag = NULL;
 		}
 
 		if (destination->cache.etag != NULL)
