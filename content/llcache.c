@@ -1653,6 +1653,13 @@ void llcache_fetch_callback(fetch_msg msg, void *p, const void *data,
 	/* 3xx responses */
 	case FETCH_REDIRECT:
 		/* Request resulted in a redirect */
+
+		/* Release candidate, if any */
+		if (object->candidate != NULL) {
+			object->candidate->candidate_count--;
+			object->candidate = NULL;
+		}
+
 		error = llcache_fetch_redirect(object, data, &object);
 		break;
 	case FETCH_NOTMODIFIED:
@@ -1664,6 +1671,12 @@ void llcache_fetch_callback(fetch_msg msg, void *p, const void *data,
 	case FETCH_HEADER:
 		/* Received a fetch header */
 		object->fetch.state = LLCACHE_FETCH_HEADERS;
+
+		/* Release candidate, if any */
+		if (object->candidate != NULL) {
+			object->candidate->candidate_count--;
+			object->candidate = NULL;
+		}
 
 		error = llcache_fetch_process_header(object, data, size);
 		break;
@@ -1725,6 +1738,12 @@ void llcache_fetch_callback(fetch_msg msg, void *p, const void *data,
 		object->fetch.state = LLCACHE_FETCH_COMPLETE;
 		object->fetch.fetch = NULL;
 
+		/* Release candidate, if any */
+		if (object->candidate != NULL) {
+			object->candidate->candidate_count--;
+			object->candidate = NULL;
+		}
+
 		/* Invalidate cache control data */
 		llcache_invalidate_cache_control_data(object);
 
@@ -1748,10 +1767,24 @@ void llcache_fetch_callback(fetch_msg msg, void *p, const void *data,
 	/* Events requiring action */
 	case FETCH_AUTH:
 		/* Need Authentication */
+
+		/* Release candidate, if any */
+		if (object->candidate != NULL) {
+			object->candidate->candidate_count--;
+			object->candidate = NULL;
+		}
+
 		error = llcache_fetch_auth(object, data);
 		break;
 	case FETCH_CERT_ERR:
 		/* Something went wrong when validating TLS certificates */
+
+		/* Release candidate, if any */
+		if (object->candidate != NULL) {
+			object->candidate->candidate_count--;
+			object->candidate = NULL;
+		}
+
 		error = llcache_fetch_cert_error(object, data, size);
 		break;
 	}
@@ -1930,6 +1963,7 @@ nserror llcache_fetch_notmodified(llcache_object *object,
 
 	/* Candidate is now our object */
 	*replacement = object->candidate;
+	object->candidate = NULL;
 
 	/* Old object will be flushed from the cache on the next poll */
 
