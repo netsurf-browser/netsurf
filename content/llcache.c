@@ -421,6 +421,7 @@ nserror llcache_handle_abort(llcache_handle *handle)
 		object->fetch.state = LLCACHE_FETCH_COMPLETE;
 		
 		/* Invalidate cache control data */
+		free(object->cache.etag);
 		memset(&(object->cache), 0, sizeof(llcache_cache_control));
 	}
 	
@@ -453,6 +454,7 @@ nserror llcache_handle_force_stream(llcache_handle *handle)
 nserror llcache_handle_invalidate_cache_data(llcache_handle *handle)
 {
 	if (handle->object != NULL && handle->object->fetch.fetch == NULL) {
+		free(handle->object->cache.etag);
 		memset(&handle->object->cache, 0, 
 				sizeof(llcache_cache_control));
 	}
@@ -1596,6 +1598,7 @@ nserror llcache_query_handle_response(bool proceed, void *cbpw)
 		return llcache_object_refetch(object);
 
 	/* Invalidate cache-control data */
+	free(object->cache.etag);
 	memset(&object->cache, 0, sizeof(llcache_cache_control));
 	/* Mark it complete */
 	object->fetch.state = LLCACHE_FETCH_COMPLETE;
@@ -1668,6 +1671,7 @@ void llcache_fetch_callback(fetch_msg msg, void *p, const void *data,
 				(object->cache.max_age == INVALID_AGE &&
 					object->cache.expires == 0))) {
 				/* Invalidate cache control data */
+				free(object->cache.etag);
 				memset(&(object->cache), 0, 
 						sizeof(llcache_cache_control));
 			}
@@ -1706,6 +1710,7 @@ void llcache_fetch_callback(fetch_msg msg, void *p, const void *data,
 		object->fetch.fetch = NULL;
 
 		/* Invalidate cache control data */
+		free(object->cache.etag);
 		memset(&(object->cache), 0, sizeof(llcache_cache_control));
 
 		/** \todo Consider using errorcode for something */
@@ -1743,6 +1748,7 @@ void llcache_fetch_callback(fetch_msg msg, void *p, const void *data,
 			object->fetch.fetch = NULL;
 
 			/* Invalidate cache control data */
+			free(object->cache.etag);
 			memset(&(object->cache), 0, 
 					sizeof(llcache_cache_control));
 			object->fetch.state = LLCACHE_FETCH_COMPLETE;
@@ -1777,6 +1783,7 @@ nserror llcache_fetch_redirect(llcache_object *object, const char *target,
 	object->fetch.fetch = NULL;
 	
 	/* Invalidate the cache control data */
+	free(object->cache.etag);
 	memset(&(object->cache), 0, sizeof(llcache_cache_control));
 	/* And mark it complete */
 	object->fetch.state = LLCACHE_FETCH_COMPLETE;
@@ -1902,6 +1909,7 @@ nserror llcache_fetch_notmodified(llcache_object *object,
 	object->fetch.fetch = NULL;
 
 	/* Invalidate our cache-control data */
+	free(object->cache.etag);
 	memset(&object->cache, 0, sizeof(llcache_cache_control));
 	/* Mark it complete */
 	object->fetch.state = LLCACHE_FETCH_COMPLETE;
@@ -2171,6 +2179,7 @@ nserror llcache_fetch_auth(llcache_object *object, const char *realm)
 	object->fetch.fetch = NULL;
 
 	/* Invalidate cache-control data */
+	free(object->cache.etag);
 	memset(&object->cache, 0, sizeof(llcache_cache_control));
 
 	/* Destroy headers */
@@ -2244,6 +2253,7 @@ nserror llcache_fetch_cert_error(llcache_object *object,
 	object->fetch.fetch = NULL;
 
 	/* Invalidate cache-control data */
+	free(object->cache.etag);
 	memset(&object->cache, 0, sizeof(llcache_cache_control));
 
 	if (query_cb != NULL) {
