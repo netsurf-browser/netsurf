@@ -119,9 +119,6 @@
 #include <string.h>
 
 /* C link libraries */
-#ifdef NS_AMIGA_CAIRO
-#include <cairo/cairo-amigaos.h>
-#endif
 #include <hubbub/hubbub.h>
 
 char *default_stylesheet_url;
