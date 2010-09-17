@@ -124,11 +124,24 @@ struct nsgtk_debugging_submenu {
 	GtkImageMenuItem	*savedomtree_menuitem;
 };
 
-struct nsgtk_file_menu *nsgtk_menu_file_menu(GtkAccelGroup *group);
-struct nsgtk_edit_menu *nsgtk_menu_edit_menu(GtkAccelGroup *group);
-struct nsgtk_view_menu *nsgtk_menu_view_menu(GtkAccelGroup *group);
-struct nsgtk_nav_menu *nsgtk_menu_nav_menu(GtkAccelGroup *group);
-struct nsgtk_tabs_menu *nsgtk_menu_tabs_menu(GtkAccelGroup *group);
-struct nsgtk_help_menu *nsgtk_menu_help_menu(GtkAccelGroup *group);
+
+struct nsgtk_menu {
+	struct nsgtk_file_menu	*file_menu;
+	struct nsgtk_file_menu	*rclick_file_menu;
+	struct nsgtk_edit_menu	*edit_menu;
+	struct nsgtk_edit_menu	*rclick_edit_menu;
+	struct nsgtk_view_menu	*view_menu;
+	struct nsgtk_view_menu	*rclick_view_menu;
+	struct nsgtk_nav_menu	*nav_menu;
+	struct nsgtk_nav_menu	*rclick_nav_menu;
+	struct nsgtk_tabs_menu	*tabs_menu;
+	struct nsgtk_tabs_menu	*rclick_tabs_menu;
+	struct nsgtk_help_menu	*help_menu;
+	struct nsgtk_help_menu	*rclick_help_menu;
+	GtkMenuItem		*edit_menu_item;
+	GtkMenuItem		*tabs_menu_item;
+};
+
+struct nsgtk_menu *nsgtk_menu_create(GladeXML *xml, GtkWindow *window);
 
 #endif

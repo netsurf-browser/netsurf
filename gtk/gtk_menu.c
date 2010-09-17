@@ -16,24 +16,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdlib.h>
+
 #include <gdk/gdkkeysyms.h>
 #include <gtk/gtk.h>
-#include <stdlib.h>
+#include <glade/glade-xml.h>
+
 #include "gtk/gtk_menu.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
-
-static struct nsgtk_export_submenu *nsgtk_menu_export_submenu(GtkAccelGroup *);
-static struct nsgtk_scaleview_submenu *nsgtk_menu_scaleview_submenu(
-		GtkAccelGroup *);
-static struct nsgtk_images_submenu *nsgtk_menu_images_submenu(GtkAccelGroup *);
-static struct nsgtk_toolbars_submenu *nsgtk_menu_toolbars_submenu(
-		GtkAccelGroup *);
-static struct nsgtk_debugging_submenu *nsgtk_menu_debugging_submenu(
-		GtkAccelGroup *);
-static bool nsgtk_menu_add_image_item(GtkMenu *menu,
-		GtkImageMenuItem **item, const char *message,
-		const char *messageAccel, GtkAccelGroup *group);
 
 /**
  * adds image menu item to specified menu
@@ -44,7 +35,7 @@ static bool nsgtk_menu_add_image_item(GtkMenu *menu,
  * \param group the 'global' in a gtk sense accelerator group
  */
 
-bool nsgtk_menu_add_image_item(GtkMenu *menu,
+static bool nsgtk_menu_add_image_item(GtkMenu *menu,
 		GtkImageMenuItem **item, const char *message,
 		const char *messageAccel, GtkAccelGroup *group)
 {
@@ -91,12 +82,143 @@ bool nsgtk_menu_add_image_item(GtkMenu *menu,
 		gtk_menu_shell_append(GTK_MENU_SHELL(r->q##_menu), w);\
 		gtk_widget_show(w);\
 	}
+
+/** 
+* creates an export submenu
+* \param group the 'global' in a gtk sense accelerator reference
+*/
+
+static struct nsgtk_export_submenu *nsgtk_menu_export_submenu(GtkAccelGroup *group)
+{
+	struct nsgtk_export_submenu *ret = malloc(sizeof(struct
+			nsgtk_export_submenu));
+	if (ret == NULL) {
+		warn_user(messages_get("NoMemory"), 0);
+		return NULL;
+	}
+	ret->export_menu = GTK_MENU(gtk_menu_new());
+	if (ret->export_menu == NULL) {
+		warn_user(messages_get("NoMemory"), 0);
+		free(ret);
+		return NULL;
+	}
+	IMAGE_ITEM(export, plaintext, gtkPlainText, ret, group)
+	IMAGE_ITEM(export, drawfile, gtkDrawFile, ret, group)
+	IMAGE_ITEM(export, postscript, gtkPostScript, ret, group)
+	IMAGE_ITEM(export, pdf, gtkPDF, ret, group)
+	return ret;
+}
+
+/** 
+* creates a scaleview submenu
+* \param group the 'global' in a gtk sense accelerator reference
+*/
+
+static struct nsgtk_scaleview_submenu *nsgtk_menu_scaleview_submenu(
+		GtkAccelGroup *group)
+{
+	struct nsgtk_scaleview_submenu *ret = 
+			malloc(sizeof(struct nsgtk_scaleview_submenu));
+	if (ret == NULL) {
+		warn_user(messages_get("NoMemory"), 0);
+		return NULL;
+	}
+	ret->scaleview_menu = GTK_MENU(gtk_menu_new());
+	if (ret->scaleview_menu == NULL) {
+		warn_user(messages_get("NoMemory"), 0);
+		free(ret);
+		return NULL;
+	}
+	IMAGE_ITEM(scaleview, zoomplus, gtkZoomPlus, ret, group)
+	IMAGE_ITEM(scaleview, zoomnormal, gtkZoomNormal, ret, group)
+	IMAGE_ITEM(scaleview, zoomminus, gtkZoomMinus, ret, group)
+	return ret;
+}
+
+/** 
+* creates an images submenu
+* \param group the 'global' in a gtk sense accelerator reference
+*/
+
+static struct nsgtk_images_submenu *nsgtk_menu_images_submenu(GtkAccelGroup *group)
+{
+	struct nsgtk_images_submenu *ret =
+			malloc(sizeof(struct nsgtk_images_submenu));
+	if (ret == NULL) {
+		warn_user(messages_get("NoMemory"), 0);
+		return NULL;
+	}
+	ret->images_menu = GTK_MENU(gtk_menu_new());
+	if (ret->images_menu == NULL) {
+		warn_user(messages_get("NoMemory"), 0);
+		free(ret);
+		return NULL;
+	}
+	CHECK_ITEM(images, foregroundimages, gtkForegroundImages, ret)
+	CHECK_ITEM(images, backgroundimages, gtkBackgroundImages, ret)
+	return ret;
+}
+
+/** 
+* creates a toolbars submenu
+* \param group the 'global' in a gtk sense accelerator reference
+*/
+
+static struct nsgtk_toolbars_submenu *nsgtk_menu_toolbars_submenu(
+		GtkAccelGroup *group)
+{
+	struct nsgtk_toolbars_submenu *ret =
+			malloc(sizeof(struct nsgtk_toolbars_submenu));
+	if (ret == NULL) {
+		warn_user(messages_get("NoMemory"), 0);
+		return NULL;
+	}
+	ret->toolbars_menu = GTK_MENU(gtk_menu_new());
+	if (ret->toolbars_menu == NULL) {
+		warn_user(messages_get("NoMemory"), 0);
+		free(ret);
+		return NULL;
+	}
+	CHECK_ITEM(toolbars, menubar, gtkMenuBar, ret)
+	if (ret->menubar_menuitem != NULL)
+		gtk_check_menu_item_set_active(ret->menubar_menuitem, TRUE);
+	CHECK_ITEM(toolbars, toolbar, gtkToolBar, ret)
+	if (ret->toolbar_menuitem != NULL)	
+		gtk_check_menu_item_set_active(ret->toolbar_menuitem, TRUE);
+	return ret;
+}
+
+/** 
+* creates a debugging submenu
+* \param group the 'global' in a gtk sense accelerator reference
+*/
+
+static struct nsgtk_debugging_submenu *nsgtk_menu_debugging_submenu(
+		GtkAccelGroup *group)
+{
+	struct nsgtk_debugging_submenu *ret =
+			malloc(sizeof(struct nsgtk_debugging_submenu));
+	if (ret == NULL) {
+		warn_user(messages_get("NoMemory"), 0);
+		return NULL;
+	}
+	ret->debugging_menu = GTK_MENU(gtk_menu_new());
+	if (ret->debugging_menu == NULL) {
+		warn_user(messages_get("NoMemory"), 0);
+		free(ret);
+		return NULL;
+	}
+	IMAGE_ITEM(debugging, toggledebugging, gtkToggleDebugging, ret, group)
+	IMAGE_ITEM(debugging, saveboxtree, gtkSaveBoxTree, ret, group)
+	IMAGE_ITEM(debugging, savedomtree, gtkSaveDomTree, ret, group)
+	return ret;
+}
 	
 /** 
  * creates the a file menu
  * \param group the 'global' in a gtk sense accelerator reference
  */
-struct nsgtk_file_menu *nsgtk_menu_file_menu(GtkAccelGroup *group)
+static struct nsgtk_file_menu *nsgtk_menu_file_menu(GtkAccelGroup *group)
 {
 	GtkWidget *w;
 	struct nsgtk_file_menu *ret = malloc(sizeof(struct nsgtk_file_menu));
@@ -131,7 +253,7 @@ struct nsgtk_file_menu *nsgtk_menu_file_menu(GtkAccelGroup *group)
 * \param group the 'global' in a gtk sense accelerator reference
 */
 
-struct nsgtk_edit_menu *nsgtk_menu_edit_menu(GtkAccelGroup *group)
+static struct nsgtk_edit_menu *nsgtk_menu_edit_menu(GtkAccelGroup *group)
 {
 	GtkWidget *w;
 	struct nsgtk_edit_menu *ret = malloc(sizeof(struct nsgtk_edit_menu));
@@ -163,7 +285,7 @@ struct nsgtk_edit_menu *nsgtk_menu_edit_menu(GtkAccelGroup *group)
 * \param group the 'global' in a gtk sense accelerator reference
 */
 
-struct nsgtk_view_menu *nsgtk_menu_view_menu(GtkAccelGroup *group)
+static struct nsgtk_view_menu *nsgtk_menu_view_menu(GtkAccelGroup *group)
 {
 	GtkWidget *w;
 	struct nsgtk_view_menu *ret = malloc(sizeof(struct nsgtk_view_menu));
@@ -202,7 +324,7 @@ struct nsgtk_view_menu *nsgtk_menu_view_menu(GtkAccelGroup *group)
 * \param group the 'global' in a gtk sense accelerator reference
 */
 
-struct nsgtk_nav_menu *nsgtk_menu_nav_menu(GtkAccelGroup *group)
+static struct nsgtk_nav_menu *nsgtk_menu_nav_menu(GtkAccelGroup *group)
 {
 	GtkWidget *w;
 	struct nsgtk_nav_menu *ret = malloc(sizeof(struct nsgtk_nav_menu));
@@ -235,7 +357,7 @@ struct nsgtk_nav_menu *nsgtk_menu_nav_menu(GtkAccelGroup *group)
 * \param group the 'global' in a gtk sense accelerator reference
 */
 
-struct nsgtk_tabs_menu *nsgtk_menu_tabs_menu(GtkAccelGroup *group)
+static struct nsgtk_tabs_menu *nsgtk_menu_tabs_menu(GtkAccelGroup *group)
 {
 	struct nsgtk_tabs_menu *ret = malloc(sizeof(struct nsgtk_tabs_menu));
 	if (ret == NULL) {
@@ -259,7 +381,7 @@ struct nsgtk_tabs_menu *nsgtk_menu_tabs_menu(GtkAccelGroup *group)
 * \param group the 'global' in a gtk sense accelerator reference
 */
 
-struct nsgtk_help_menu *nsgtk_menu_help_menu(GtkAccelGroup *group)
+static struct nsgtk_help_menu *nsgtk_menu_help_menu(GtkAccelGroup *group)
 {
 	GtkWidget *w;
 	struct nsgtk_help_menu *ret = malloc(sizeof(struct nsgtk_help_menu));
@@ -281,136 +403,42 @@ struct nsgtk_help_menu *nsgtk_menu_help_menu(GtkAccelGroup *group)
 	return ret;
 }
 
-/** 
-* creates an export submenu
-* \param group the 'global' in a gtk sense accelerator reference
-*/
 
-struct nsgtk_export_submenu *nsgtk_menu_export_submenu(GtkAccelGroup *group)
+
+struct nsgtk_menu *nsgtk_menu_create(GladeXML *xml, GtkWindow *window)
 {
-	struct nsgtk_export_submenu *ret = malloc(sizeof(struct
-			nsgtk_export_submenu));
-	if (ret == NULL) {
+	GtkAccelGroup *group;
+	struct nsgtk_menu *g;
+
+	g = malloc(sizeof(struct nsgtk_menu));
+	if (g == NULL) {
 		warn_user(messages_get("NoMemory"), 0);
 		return NULL;
 	}
-	ret->export_menu = GTK_MENU(gtk_menu_new());
-	if (ret->export_menu == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
-		free(ret);
-		return NULL;
-	}
-	IMAGE_ITEM(export, plaintext, gtkPlainText, ret, group)
-	IMAGE_ITEM(export, drawfile, gtkDrawFile, ret, group)
-	IMAGE_ITEM(export, postscript, gtkPostScript, ret, group)
-	IMAGE_ITEM(export, pdf, gtkPDF, ret, group)
-	return ret;
+
+	group = gtk_accel_group_new();
+	gtk_window_add_accel_group(window, group);
+
+#define MAKE_MENUS(q)\
+	g->q##_menu = nsgtk_menu_##q##_menu(group);\
+	g->rclick_##q##_menu = nsgtk_menu_##q##_menu(group);\
+	gtk_menu_item_set_submenu(GTK_MENU_ITEM(\
+				  glade_xml_get_widget(xml, "menuitem_" #q)), \
+			GTK_WIDGET(g->q##_menu->q##_menu));\
+	gtk_menu_set_accel_group(g->q##_menu->q##_menu, group)
+	MAKE_MENUS(file);
+	MAKE_MENUS(edit);
+	MAKE_MENUS(view);
+	MAKE_MENUS(nav);
+	MAKE_MENUS(tabs);
+	MAKE_MENUS(help);
+#undef MAKE_MENUS
+	g->edit_menu_item = GTK_MENU_ITEM(glade_xml_get_widget(xml, "menuitem_edit"));
+	g->tabs_menu_item = GTK_MENU_ITEM(glade_xml_get_widget(xml, "menuitem_tabs"));
+
+	return g;
 }
 
-/** 
-* creates a scaleview submenu
-* \param group the 'global' in a gtk sense accelerator reference
-*/
-
-struct nsgtk_scaleview_submenu *nsgtk_menu_scaleview_submenu(
-		GtkAccelGroup *group)
-{
-	struct nsgtk_scaleview_submenu *ret = 
-			malloc(sizeof(struct nsgtk_scaleview_submenu));
-	if (ret == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
-		return NULL;
-	}
-	ret->scaleview_menu = GTK_MENU(gtk_menu_new());
-	if (ret->scaleview_menu == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
-		free(ret);
-		return NULL;
-	}
-	IMAGE_ITEM(scaleview, zoomplus, gtkZoomPlus, ret, group)
-	IMAGE_ITEM(scaleview, zoomnormal, gtkZoomNormal, ret, group)
-	IMAGE_ITEM(scaleview, zoomminus, gtkZoomMinus, ret, group)
-	return ret;
-}
-
-/** 
-* creates an images submenu
-* \param group the 'global' in a gtk sense accelerator reference
-*/
-
-struct nsgtk_images_submenu *nsgtk_menu_images_submenu(GtkAccelGroup *group)
-{
-	struct nsgtk_images_submenu *ret =
-			malloc(sizeof(struct nsgtk_images_submenu));
-	if (ret == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
-		return NULL;
-	}
-	ret->images_menu = GTK_MENU(gtk_menu_new());
-	if (ret->images_menu == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
-		free(ret);
-		return NULL;
-	}
-	CHECK_ITEM(images, foregroundimages, gtkForegroundImages, ret)
-	CHECK_ITEM(images, backgroundimages, gtkBackgroundImages, ret)
-	return ret;
-}
-
-/** 
-* creates a toolbars submenu
-* \param group the 'global' in a gtk sense accelerator reference
-*/
-
-struct nsgtk_toolbars_submenu *nsgtk_menu_toolbars_submenu(
-		GtkAccelGroup *group)
-{
-	struct nsgtk_toolbars_submenu *ret =
-			malloc(sizeof(struct nsgtk_toolbars_submenu));
-	if (ret == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
-		return NULL;
-	}
-	ret->toolbars_menu = GTK_MENU(gtk_menu_new());
-	if (ret->toolbars_menu == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
-		free(ret);
-		return NULL;
-	}
-	CHECK_ITEM(toolbars, menubar, gtkMenuBar, ret)
-	if (ret->menubar_menuitem != NULL)
-		gtk_check_menu_item_set_active(ret->menubar_menuitem, TRUE);
-	CHECK_ITEM(toolbars, toolbar, gtkToolBar, ret)
-	if (ret->toolbar_menuitem != NULL)	
-		gtk_check_menu_item_set_active(ret->toolbar_menuitem, TRUE);
-	return ret;
-}
-
-/** 
-* creates a debugging submenu
-* \param group the 'global' in a gtk sense accelerator reference
-*/
-
-struct nsgtk_debugging_submenu *nsgtk_menu_debugging_submenu(
-		GtkAccelGroup *group)
-{
-	struct nsgtk_debugging_submenu *ret =
-			malloc(sizeof(struct nsgtk_debugging_submenu));
-	if (ret == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
-		return NULL;
-	}
-	ret->debugging_menu = GTK_MENU(gtk_menu_new());
-	if (ret->debugging_menu == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
-		free(ret);
-		return NULL;
-	}
-	IMAGE_ITEM(debugging, toggledebugging, gtkToggleDebugging, ret, group)
-	IMAGE_ITEM(debugging, saveboxtree, gtkSaveBoxTree, ret, group)
-	IMAGE_ITEM(debugging, savedomtree, gtkSaveDomTree, ret, group)
-	return ret;
-}
 
 #undef CHECK_ITEM
 #undef IMAGE_ITEM
