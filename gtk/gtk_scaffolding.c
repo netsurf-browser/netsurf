@@ -365,7 +365,8 @@ void nsgtk_window_tabs_num_changed(GtkNotebook *notebook, GtkWidget *page,
 		guint page_num, struct gtk_scaffolding *g)
 {
 	gboolean visible = gtk_notebook_get_show_tabs(g->notebook);
-	g_object_set(g->menus->tabs->tabs, "visible", visible, NULL);
+	g_object_set(g->menus->view->tabs_menuitem, "visible", visible, NULL);
+	g_object_set(g->menus->rclick_view->tabs_menuitem, "visible", visible, NULL);
 	g->buttons[NEXTTAB_BUTTON]->sensitivity = visible;
 	g->buttons[PREVTAB_BUTTON]->sensitivity = visible;
 	g->buttons[CLOSETAB_BUTTON]->sensitivity = visible;
@@ -1671,7 +1672,6 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 		POPUP_ATTACH(edit);
 		POPUP_ATTACH(view);
 		POPUP_ATTACH(nav);
-		POPUP_ATTACH(tabs);
 		POPUP_ATTACH(help);
 #undef POPUP_ATTACH
 	nsgtk_scaffolding_initial_sensitivity(g);
@@ -2409,9 +2409,6 @@ void nsgtk_scaffolding_toolbar_init(struct gtk_scaffolding *g)
 	ITEM_MAIN(ADDBOOKMARKS, nav, addbookmarks);
 	ITEM_MAIN(SHOWBOOKMARKS, nav, showbookmarks);
 	ITEM_MAIN(OPENLOCATION, nav, openlocation);
-	ITEM_MAIN(NEXTTAB, tabs, nexttab);
-	ITEM_MAIN(PREVTAB, tabs, prevtab);
-	ITEM_MAIN(CLOSETAB, tabs, closetab);
 	ITEM_MAIN(CONTENTS, help, contents);
 	ITEM_MAIN(INFO, help, info);
 	ITEM_MAIN(GUIDE, help, guide);
@@ -2423,6 +2420,9 @@ void nsgtk_scaffolding_toolbar_init(struct gtk_scaffolding *g)
 	ITEM_SUB(ZOOMPLUS, view, scaleview, zoomplus);
 	ITEM_SUB(ZOOMMINUS, view, scaleview, zoomminus);
 	ITEM_SUB(ZOOMNORMAL, view, scaleview, zoomnormal);
+	ITEM_SUB(NEXTTAB, view, tabs, nexttab);
+	ITEM_SUB(PREVTAB, view, tabs, prevtab);
+	ITEM_SUB(CLOSETAB, view, tabs, closetab);
 	ITEM_SUB(TOGGLEDEBUGGING, view, debugging, toggledebugging);
 	ITEM_SUB(SAVEBOXTREE, view, debugging, saveboxtree);
 	ITEM_SUB(SAVEDOMTREE, view, debugging, savedomtree);

@@ -154,6 +154,31 @@ static struct nsgtk_scaleview_submenu *nsgtk_menu_scaleview_submenu(
 }
 
 /** 
+* creates a tab navigation submenu
+* \param group the 'global' in a gtk sense accelerator reference
+*/
+
+static struct nsgtk_tabs_submenu *nsgtk_menu_tabs_submenu(GtkAccelGroup *group)
+{
+	struct nsgtk_tabs_submenu *ret = malloc(sizeof(struct nsgtk_tabs_submenu));
+	if (ret == NULL) {
+		warn_user(messages_get("NoMemory"), 0);
+		return NULL;
+	}
+	ret->tabs_menu = GTK_MENU(gtk_menu_new());
+	if (ret->tabs_menu == NULL) {
+		warn_user(messages_get("NoMemory"), 0);
+		free(ret);
+		return NULL;
+	}
+	IMAGE_ITEM(tabs, nexttab, gtkNextTab, ret, group);
+	IMAGE_ITEM(tabs, prevtab, gtkPrevTab, ret, group);
+	IMAGE_ITEM(tabs, closetab, gtkCloseTab, ret, group);
+
+	return ret;
+}
+
+/** 
 * creates an images submenu
 * \param group the 'global' in a gtk sense accelerator reference
 */
@@ -337,6 +362,7 @@ static struct nsgtk_view_menu *nsgtk_menu_view_menu(GtkAccelGroup *group,
 	ADD_SEP(view, ret);
 	IMAGE_ITEM(view, images, gtkImages, ret, group);
 	IMAGE_ITEM(view, toolbars, gtkToolbars, ret, group);
+	IMAGE_ITEM(view, tabs, gtkTabs, ret, group);
 	ADD_SEP(view, ret);
 	IMAGE_ITEM(view, downloads, gtkDownloads, ret, group);
 	IMAGE_ITEM(view, savewindowsize, gtkSaveWindowSize, ret, group);
@@ -344,6 +370,7 @@ static struct nsgtk_view_menu *nsgtk_menu_view_menu(GtkAccelGroup *group,
 	SET_SUBMENU(scaleview, ret);
 	SET_SUBMENU(images, ret);
 	SET_SUBMENU(toolbars, ret);
+	SET_SUBMENU(tabs, ret);
 	SET_SUBMENU(debugging, ret);
 
 	ATTACH_PARENT(parent, gtkView, ret->view, group);
@@ -383,34 +410,6 @@ static struct nsgtk_nav_menu *nsgtk_menu_nav_menu(GtkAccelGroup *group,
 	IMAGE_ITEM(nav, openlocation, gtkOpenLocation, ret, group);
 
 	ATTACH_PARENT(parent, gtkNavigate, ret->nav, group);
-
-	return ret;
-}
-
-/** 
-* creates a tabs menu
-* \param group the 'global' in a gtk sense accelerator reference
-*/
-
-static struct nsgtk_tabs_menu *nsgtk_menu_tabs_menu(GtkAccelGroup *group, 
-						  GtkMenuShell *parent)
-{
-	struct nsgtk_tabs_menu *ret = malloc(sizeof(struct nsgtk_tabs_menu));
-	if (ret == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
-		return NULL;
-	}
-	ret->tabs_menu = GTK_MENU(gtk_menu_new());
-	if (ret->tabs_menu == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
-		free(ret);
-		return NULL;
-	}
-	IMAGE_ITEM(tabs, nexttab, gtkNextTab, ret, group);
-	IMAGE_ITEM(tabs, prevtab, gtkPrevTab, ret, group);
-	IMAGE_ITEM(tabs, closetab, gtkCloseTab, ret, group);
-
-		ATTACH_PARENT(parent, gtkTabs, ret->tabs, group);
 
 	return ret;
 }
@@ -470,7 +469,6 @@ struct nsgtk_menu *nsgtk_menu_create(GladeXML *xml, GtkWindow *window)
 	MENUBAR_MENU(nmenu, edit, menubar);
 	MENUBAR_MENU(nmenu, view, menubar);
 	MENUBAR_MENU(nmenu, nav, menubar);
-	MENUBAR_MENU(nmenu, tabs, menubar);
 	MENUBAR_MENU(nmenu, help, menubar);
 
 	return nmenu;

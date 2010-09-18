@@ -60,6 +60,8 @@ struct nsgtk_view_menu {
 	struct nsgtk_images_submenu	*images_submenu;
 	GtkImageMenuItem		*toolbars_menuitem;
 	struct nsgtk_toolbars_submenu	*toolbars_submenu;
+	GtkImageMenuItem		*tabs_menuitem;
+	struct nsgtk_tabs_submenu	*tabs_submenu;
 	GtkImageMenuItem		*downloads_menuitem;
 	GtkImageMenuItem		*savewindowsize_menuitem;
 	GtkImageMenuItem		*debugging_menuitem;
@@ -77,14 +79,6 @@ struct nsgtk_nav_menu {
 	GtkImageMenuItem	*addbookmarks_menuitem;
 	GtkImageMenuItem	*showbookmarks_menuitem;
 	GtkImageMenuItem	*openlocation_menuitem;
-};
-
-struct nsgtk_tabs_menu {
-	GtkMenuItem             *tabs; /* Tabs menu item on menubar */
-	GtkMenu			*tabs_menu;
-	GtkImageMenuItem	*nexttab_menuitem;
-	GtkImageMenuItem	*prevtab_menuitem;
-	GtkImageMenuItem	*closetab_menuitem;
 };
 
 struct nsgtk_help_menu {
@@ -109,6 +103,13 @@ struct nsgtk_scaleview_submenu {
 	GtkImageMenuItem	*zoomplus_menuitem;
 	GtkImageMenuItem	*zoomminus_menuitem;
 	GtkImageMenuItem	*zoomnormal_menuitem;
+};
+
+struct nsgtk_tabs_submenu {
+	GtkMenu			*tabs_menu;
+	GtkImageMenuItem	*nexttab_menuitem;
+	GtkImageMenuItem	*prevtab_menuitem;
+	GtkImageMenuItem	*closetab_menuitem;
 };
 
 struct nsgtk_images_submenu {
