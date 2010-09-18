@@ -11,48 +11,6 @@
         <child>
           <widget class="GtkMenuBar" id="menubar">
             <property name="visible">True</property>
-            <child>
-              <widget class="GtkMenuItem" id="menuitem_file">
-                <property name="visible">True</property>
-                <property name="label" translatable="yes">_File</property>
-                <property name="use_underline">True</property>
-              </widget>
-            </child>
-            <child>
-              <widget class="GtkMenuItem" id="menuitem_edit">
-                <property name="visible">True</property>
-                <property name="label" translatable="yes">_Edit</property>
-                <property name="use_underline">True</property>
-              </widget>
-            </child>
-            <child>
-              <widget class="GtkMenuItem" id="menuitem_view">
-                <property name="visible">True</property>
-                <property name="label" translatable="yes">_View</property>
-                <property name="use_underline">True</property>
-              </widget>
-            </child>
-            <child>
-              <widget class="GtkMenuItem" id="menuitem_nav">
-                <property name="visible">True</property>
-                <property name="label" translatable="yes">_Navigate</property>
-                <property name="use_underline">True</property>
-              </widget>
-            </child>
-            <child>
-              <widget class="GtkMenuItem" id="menuitem_tabs">
-                <property name="visible">True</property>
-                <property name="label" translatable="yes">_Tabs</property>
-                <property name="use_underline">True</property>
-              </widget>
-            </child>
-            <child>
-              <widget class="GtkMenuItem" id="menuitem_help">
-                <property name="visible">True</property>
-                <property name="label" translatable="yes">_Help</property>
-                <property name="use_underline">True</property>
-              </widget>
-            </child>
           </widget>
           <packing>
             <property name="expand">False</property>

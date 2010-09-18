@@ -449,6 +449,13 @@ gtkUnknownSize:unknown
 # gtk Menu / Button labels
 #
 
+gtkFile:_File
+gtkEdit:_Edit
+gtkView:_View
+gtkNavigate:_Navigate
+gtkTabs:_Tabs
+gtkHelp:_Help
+
 gtkNewTab:New _Tab
 gtkNewTabAccel:<ctrl>t
 gtkNewWindow:_New Window

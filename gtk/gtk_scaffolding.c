@@ -178,9 +178,9 @@ void nsgtk_attach_menu_handlers(struct gtk_scaffolding *g)
 		}
 	}
 #define CONNECT_CHECK(q)\
-	g_signal_connect(g->menus->view_menu->toolbars_submenu->q##_menuitem,\
+	g_signal_connect(g->menus->view->toolbars_submenu->q##_menuitem,\
 			"toggled", G_CALLBACK(nsgtk_on_##q##_activate), g);\
-	g_signal_connect(g->menus->rclick_view_menu->toolbars_submenu->q##_menuitem,\
+	g_signal_connect(g->menus->rclick_view->toolbars_submenu->q##_menuitem,\
 			"toggled", G_CALLBACK(nsgtk_on_##q##_activate), g)
 	CONNECT_CHECK(menubar);
 	CONNECT_CHECK(toolbar);
@@ -365,7 +365,7 @@ void nsgtk_window_tabs_num_changed(GtkNotebook *notebook, GtkWidget *page,
 		guint page_num, struct gtk_scaffolding *g)
 {
 	gboolean visible = gtk_notebook_get_show_tabs(g->notebook);
-	g_object_set(g->menus->tabs_menu_item, "visible", visible, NULL);
+	g_object_set(g->menus->tabs->tabs, "visible", visible, NULL);
 	g->buttons[NEXTTAB_BUTTON]->sensitivity = visible;
 	g->buttons[PREVTAB_BUTTON]->sensitivity = visible;
 	g->buttons[CLOSETAB_BUTTON]->sensitivity = visible;
@@ -934,13 +934,13 @@ MENUHANDLER(menubar)
 	if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(widget))) {
 		/* need to synchronise menus as gtk grumbles when one menu
 		 * is attached to both headers */
-		w = GTK_WIDGET(g->menus->rclick_view_menu->
+		w = GTK_WIDGET(g->menus->rclick_view->
 				toolbars_submenu->menubar_menuitem);
 		if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(w))
 				== FALSE)
 			gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(w),
 					TRUE);
-		w = GTK_WIDGET(g->menus->view_menu->
+		w = GTK_WIDGET(g->menus->view->
 				toolbars_submenu->menubar_menuitem);
 		if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(w))
 				== FALSE)
@@ -958,13 +958,12 @@ MENUHANDLER(menubar)
 			gtk_widget_hide(GTK_WIDGET(widgets->data));
 
 	} else {
-		w = GTK_WIDGET(g->menus->rclick_view_menu->
+		w = GTK_WIDGET(g->menus->rclick_view->
 				toolbars_submenu->menubar_menuitem);
 		if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(w)))
 			gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(w),
 					FALSE);
-		w = GTK_WIDGET(g->menus->view_menu->
-				toolbars_submenu->menubar_menuitem);
+		w = GTK_WIDGET(g->menus->view->toolbars_submenu->menubar_menuitem);
 		if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(w)))
 			gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(w),
 					FALSE);
@@ -987,13 +986,13 @@ MENUHANDLER(toolbar)
 	struct gtk_scaffolding *g = (struct gtk_scaffolding *)data;
 
 	if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(widget))) {
-		w = GTK_WIDGET(g->menus->rclick_view_menu->
+		w = GTK_WIDGET(g->menus->rclick_view->
 				toolbars_submenu->toolbar_menuitem);
 		if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(w))
 				== FALSE)
 			gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(w),
 					TRUE);
-		w = GTK_WIDGET(g->menus->view_menu->
+		w = GTK_WIDGET(g->menus->view->
 				toolbars_submenu->toolbar_menuitem);
 		if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(w))
 				== FALSE)
@@ -1001,12 +1000,12 @@ MENUHANDLER(toolbar)
 					TRUE);
 		gtk_widget_show(GTK_WIDGET(g->tool_bar));
 	} else {
-		w = GTK_WIDGET(g->menus->rclick_view_menu->
+		w = GTK_WIDGET(g->menus->rclick_view->
 				toolbars_submenu->toolbar_menuitem);
 		if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(w)))
 			gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(w),
 					FALSE);
-		w = GTK_WIDGET(g->menus->view_menu->
+		w = GTK_WIDGET(g->menus->view->
 				toolbars_submenu->toolbar_menuitem);
 		if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(w)))
 			gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(w),
@@ -1623,8 +1622,8 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	CONNECT(g->window, "delete-event", nsgtk_window_delete_event, g);
 
 	/* toolbar URL bar menu bar search bar signal handlers */
-	CONNECT(g->menus->edit_menu_item, "show", nsgtk_window_edit_menu_clicked, g);
-	CONNECT(g->menus->edit_menu_item, "hide", nsgtk_window_edit_menu_hidden, g);
+	CONNECT(g->menus->edit->edit, "show", nsgtk_window_edit_menu_clicked, g);
+	CONNECT(g->menus->edit->edit, "hide", nsgtk_window_edit_menu_hidden, g);
 	CONNECT(g->search->buttons[1], "clicked",
 			nsgtk_search_forward_button_clicked, g);
 	CONNECT(g->search->buttons[0], "clicked",
@@ -1666,7 +1665,7 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 
 #define POPUP_ATTACH(q) gtk_menu_item_set_submenu( \
 		GTK_MENU_ITEM(glade_xml_get_widget(g->popup_xml,\
-		"menupopup_" #q)), GTK_WIDGET(g->menus->rclick_##q##_menu->q##_menu));\
+		"menupopup_" #q)), GTK_WIDGET(g->menus->rclick_##q->q##_menu));\
 
 		POPUP_ATTACH(file);
 		POPUP_ATTACH(edit);
@@ -2143,7 +2142,7 @@ void nsgtk_scaffolding_initial_sensitivity(struct gtk_scaffolding *g)
 					g->buttons[i]->popup),
 					g->buttons[i]->sensitivity);
 	}
-	gtk_widget_set_sensitive(GTK_WIDGET(g->menus->view_menu->images_menuitem),
+	gtk_widget_set_sensitive(GTK_WIDGET(g->menus->view->images_menuitem),
 			FALSE);
 }
 
@@ -2333,9 +2332,9 @@ void nsgtk_scaffolding_toolbar_init(struct gtk_scaffolding *g)
 {
 #define ITEM_MAIN(p, q, r)\
 	g->buttons[p##_BUTTON]->main =\
-			g->menus->q##_menu->r##_menuitem;\
+			g->menus->q->r##_menuitem;\
 	g->buttons[p##_BUTTON]->rclick =\
-			g->menus->rclick_##q##_menu->r##_menuitem;\
+			g->menus->rclick_##q->r##_menuitem;\
 	g->buttons[p##_BUTTON]->mhandler =\
 			nsgtk_on_##r##_activate_menu;\
 	g->buttons[p##_BUTTON]->bhandler =\
@@ -2346,11 +2345,9 @@ void nsgtk_scaffolding_toolbar_init(struct gtk_scaffolding *g)
 			nsgtk_toolbar_##r##_toolbar_button_data
 #define ITEM_SUB(p, q, r, s)\
 	g->buttons[p##_BUTTON]->main =\
-			g->menus->q##_menu->\
-			r##_submenu->s##_menuitem;\
+			g->menus->q->r##_submenu->s##_menuitem;\
 	g->buttons[p##_BUTTON]->rclick =\
-			g->menus->rclick_##q##_menu->\
-			r##_submenu->s##_menuitem;\
+			g->menus->rclick_##q->r##_submenu->s##_menuitem;\
 	g->buttons[p##_BUTTON]->mhandler =\
 			nsgtk_on_##s##_activate_menu;\
 	g->buttons[p##_BUTTON]->bhandler =\

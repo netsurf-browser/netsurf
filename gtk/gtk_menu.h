@@ -21,6 +21,7 @@
 #include <gtk/gtk.h>
 
 struct nsgtk_file_menu {
+	GtkMenuItem                     *file; /* File menu item on menubar */
 	GtkMenu				*file_menu;
 	GtkImageMenuItem		*newwindow_menuitem;
 	GtkImageMenuItem		*newtab_menuitem;
@@ -35,6 +36,7 @@ struct nsgtk_file_menu {
 };
 
 struct nsgtk_edit_menu {
+	GtkMenuItem             *edit; /* Edit menu item on menubar */
 	GtkMenu			*edit_menu;
 	GtkImageMenuItem	*cut_menuitem;
 	GtkImageMenuItem	*copy_menuitem;
@@ -46,7 +48,8 @@ struct nsgtk_edit_menu {
 };
 
 struct nsgtk_view_menu {
-	GtkMenu				*view_menu;
+	GtkMenuItem             *view; /* View menu item on menubar */
+	GtkMenu			*view_menu; /* gtk menu attached to menu item */
 	GtkImageMenuItem		*stop_menuitem;
 	GtkImageMenuItem		*reload_menuitem;
 	GtkImageMenuItem		*scaleview_menuitem;
@@ -64,6 +67,7 @@ struct nsgtk_view_menu {
 };
 
 struct nsgtk_nav_menu {
+	GtkMenuItem             *nav; /* Nav menu item on menubar */
 	GtkMenu			*nav_menu;
 	GtkImageMenuItem	*back_menuitem;
 	GtkImageMenuItem	*forward_menuitem;
@@ -76,6 +80,7 @@ struct nsgtk_nav_menu {
 };
 
 struct nsgtk_tabs_menu {
+	GtkMenuItem             *tabs; /* Tabs menu item on menubar */
 	GtkMenu			*tabs_menu;
 	GtkImageMenuItem	*nexttab_menuitem;
 	GtkImageMenuItem	*prevtab_menuitem;
@@ -83,6 +88,7 @@ struct nsgtk_tabs_menu {
 };
 
 struct nsgtk_help_menu {
+	GtkMenuItem             *help; /* Help menu item on menubar */
 	GtkMenu			*help_menu;
 	GtkImageMenuItem	*contents_menuitem;
 	GtkImageMenuItem	*guide_menuitem;
@@ -126,20 +132,18 @@ struct nsgtk_debugging_submenu {
 
 
 struct nsgtk_menu {
-	struct nsgtk_file_menu	*file_menu;
-	struct nsgtk_file_menu	*rclick_file_menu;
-	struct nsgtk_edit_menu	*edit_menu;
-	struct nsgtk_edit_menu	*rclick_edit_menu;
-	struct nsgtk_view_menu	*view_menu;
-	struct nsgtk_view_menu	*rclick_view_menu;
-	struct nsgtk_nav_menu	*nav_menu;
-	struct nsgtk_nav_menu	*rclick_nav_menu;
-	struct nsgtk_tabs_menu	*tabs_menu;
-	struct nsgtk_tabs_menu	*rclick_tabs_menu;
-	struct nsgtk_help_menu	*help_menu;
-	struct nsgtk_help_menu	*rclick_help_menu;
-	GtkMenuItem		*edit_menu_item;
-	GtkMenuItem		*tabs_menu_item;
+	struct nsgtk_file_menu	*file;
+	struct nsgtk_file_menu	*rclick_file;
+	struct nsgtk_edit_menu	*edit;
+	struct nsgtk_edit_menu	*rclick_edit;
+	struct nsgtk_view_menu	*view;
+	struct nsgtk_view_menu	*rclick_view;
+	struct nsgtk_nav_menu	*nav;
+	struct nsgtk_nav_menu	*rclick_nav;
+	struct nsgtk_tabs_menu	*tabs;
+	struct nsgtk_tabs_menu	*rclick_tabs;
+	struct nsgtk_help_menu	*help;
+	struct nsgtk_help_menu	*rclick_help;
 };
 
 struct nsgtk_menu *nsgtk_menu_create(GladeXML *xml, GtkWindow *window);
