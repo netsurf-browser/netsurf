@@ -3623,7 +3623,10 @@ void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
 
 	if(((x-xs) <= 0) || ((x-xs+2) >= (bbox->Width)) || ((y-ys) <= 0) || ((y-ys) >= (bbox->Height))) return;
 
-	BltBitMap(g->shared->win->RPort->BitMap,bbox->Left+x-xs,bbox->Top+y-ys,browserglob.bm,x-xs,y-ys,2+1,height+1,0x0C0);
+/* Backup the area under the cursor - args need checking
+	BltBitMap(g->shared->win->RPort->BitMap, bbox->Left+x-xs, bbox->Top+y-ys,
+		browserglob.bm, x-xs, y-ys,2+1, height+1, 0x0C0, 0xff, NULL);
+*/
 
 	SetDrMd(g->shared->win->RPort,COMPLEMENT);
 
@@ -3645,6 +3648,7 @@ void gui_window_remove_caret(struct gui_window *g)
 	int xs,ys;
 
 	if(!g) return;
+	if(g->c_h == 0) return;
 
 	if(option_kiosk_mode == false)
 		OffMenu(g->shared->win, AMI_MENU_PASTE);
