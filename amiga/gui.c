@@ -3623,6 +3623,8 @@ void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
 
 	if(((x-xs) <= 0) || ((x-xs+2) >= (bbox->Width)) || ((y-ys) <= 0) || ((y-ys) >= (bbox->Height))) return;
 
+	BltBitMap(g->shared->win->RPort->BitMap,bbox->Left+x-xs,bbox->Top+y-ys,browserglob.bm,x-xs,y-ys,2+1,height+1,0x0C0);
+
 	SetDrMd(g->shared->win->RPort,COMPLEMENT);
 
 	RectFill(g->shared->win->RPort,x+bbox->Left-xs,y+bbox->Top-ys,x+bbox->Left+2-xs,y+bbox->Top+height-ys);
@@ -3633,7 +3635,8 @@ void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
 	g->c_y = y;
 	g->c_h = height;
 
-	OnMenu(g->shared->win, AMI_MENU_PASTE);
+	if(option_kiosk_mode == false)
+		OnMenu(g->shared->win, AMI_MENU_PASTE);
 }
 
 void gui_window_remove_caret(struct gui_window *g)
@@ -3643,7 +3646,8 @@ void gui_window_remove_caret(struct gui_window *g)
 
 	if(!g) return;
 
-	OffMenu(g->shared->win, AMI_MENU_PASTE);
+	if(option_kiosk_mode == false)
+		OffMenu(g->shared->win, AMI_MENU_PASTE);
 
 	GetAttr(SPACE_AreaBox, g->shared->objects[GID_BROWSER], (ULONG *)&bbox);
 	ami_get_hscroll_pos(g->shared, (ULONG *)&xs);
