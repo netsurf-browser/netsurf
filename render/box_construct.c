@@ -517,7 +517,8 @@ bool box_construct_element(xmlNode *n, struct content *content,
 				if (!html_fetch_object(content,
 						lwc_string_data(image_uri),
 						marker,
-						0, content->available_width,
+						image_types,
+						content->available_width,
 						1000, false))
 					return false;
 			}
