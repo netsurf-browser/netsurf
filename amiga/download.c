@@ -347,11 +347,13 @@ void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
 			filetype = "drawer";
 		break;
 		case GUI_SAVE_OBJECT_NATIVE:
+#ifdef WITH_NS_SVG
 			if(content_get_type(c) == CONTENT_SVG)
 			{
 				filetype = "dr2d";
 			}
 			else
+#endif
 			{
 				filetype = "ilbm";
 			}

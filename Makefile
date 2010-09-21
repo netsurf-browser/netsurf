@@ -526,8 +526,8 @@ ifeq ($(TARGET),amiga)
     $(eval $(call feature_enabled,MNG,,-llcms -ljpeg,PNG/JNG/MNG (libmng)))
 
   CFLAGS += -D__USE_INLINE__ -std=c99 -I . -I /SDK/local/common/include/libpng12 -Dnsamiga
-  LDFLAGS += -lxml2 -lcurl -lpthread -lregex -liconv -lauto
-  LDFLAGS += -lssl -lcrypto -lhubbub -lcss -lparserutils -lwapcaplet
+  LDFLAGS += -lxml2 -lcurl -lpthread -lregex -lauto
+  LDFLAGS += -lssl -lcrypto -lhubbub -lcss -lparserutils -lwapcaplet -liconv
 
   ifeq ($(NETSURF_AMIGA_USE_CAIRO),YES)
     CFLAGS += -DNS_AMIGA_CAIRO -I /SDK/local/common/include/cairo
