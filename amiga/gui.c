@@ -1274,19 +1274,22 @@ void ami_handle_msg(void)
 						switch(nskey)
 						{
 							case 'n':
-								if(option_kiosk_mode == false)
+								if((option_kiosk_mode == false) &&
+									(gwin->bw->browser_window_type == BROWSER_WINDOW_NORMAL))
 									browser_window_create(NULL, gwin->bw,
 										0, true, false);
 							break;
 
 							case 't':
-								if(option_kiosk_mode == false)
+								if((option_kiosk_mode == false) &&
+									(gwin->bw->browser_window_type == BROWSER_WINDOW_NORMAL))
 									browser_window_create(NULL, gwin->bw, 
 										0, true, true);
 							break;
 
 							case 'k':
-								if(option_kiosk_mode == false)
+								if((option_kiosk_mode == false) &&
+									(gwin->bw->browser_window_type == BROWSER_WINDOW_NORMAL))
 									browser_window_destroy(gwin->bw);
 							break;
 
@@ -1295,7 +1298,8 @@ void ami_handle_msg(void)
 							break;
 
 							case 'q':
-								if(option_kiosk_mode == false)
+								if((option_kiosk_mode == false) &&
+									(gwin->bw->browser_window_type == BROWSER_WINDOW_NORMAL))
 									ami_quit_netsurf();
 							break;
 
@@ -1325,7 +1329,8 @@ void ami_handle_msg(void)
 							break;
 
 							case 'h':
-								if(option_kiosk_mode == false)
+								if((option_kiosk_mode == false) &&
+									(gwin->bw->browser_window_type == BROWSER_WINDOW_NORMAL))
 									ami_open_tree(hotlist,AMI_TREE_HOTLIST);
 							break;
 
@@ -1337,7 +1342,8 @@ void ami_handle_msg(void)
 							break;
 
 							case 'u': // open url
-								if(option_kiosk_mode == false)
+								if((option_kiosk_mode == false) &&
+									(gwin->bw->browser_window_type == BROWSER_WINDOW_NORMAL))
 									ActivateGadget((struct Gadget *)gwin->objects[GID_URL],
 										gwin->win, NULL);
 							break;
@@ -3490,6 +3496,7 @@ void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 
 	if(option_kiosk_mode == true) return;
 	if(!g) return;
+	if(g->shared->bw->browser_window_type != BROWSER_WINDOW_NORMAL) return;
 
 	if(g->tab_node && (g->shared->tabs > 1)) GetAttr(CLICKTAB_Current,
 						g->shared->objects[GID_TABS],
@@ -3638,7 +3645,8 @@ void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
 	g->c_y = y;
 	g->c_h = height;
 
-	if(option_kiosk_mode == false)
+	if((option_kiosk_mode == false) &&
+		(g->shared->bw->browser_window_type == BROWSER_WINDOW_NORMAL))
 		OnMenu(g->shared->win, AMI_MENU_PASTE);
 }
 
@@ -3650,7 +3658,8 @@ void gui_window_remove_caret(struct gui_window *g)
 	if(!g) return;
 	if(g->c_h == 0) return;
 
-	if(option_kiosk_mode == false)
+	if((option_kiosk_mode == false) &&
+		(g->shared->bw->browser_window_type == BROWSER_WINDOW_NORMAL))
 		OffMenu(g->shared->win, AMI_MENU_PASTE);
 
 	GetAttr(SPACE_AreaBox, g->shared->objects[GID_BROWSER], (ULONG *)&bbox);
@@ -3677,9 +3686,6 @@ void gui_window_new_content(struct gui_window *g)
 	g->shared->oldh = 0;
 	g->shared->oldv = 0;
 	g->favicon = NULL;
-
-	if(g->shared->bw->browser_window_type != BROWSER_WINDOW_NORMAL ||
-		option_kiosk_mode == true) return;
 
 	ami_menu_update_disabled(g, c);
 }
