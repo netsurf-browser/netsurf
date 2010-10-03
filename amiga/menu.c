@@ -825,20 +825,7 @@ static const ULONG ami_asl_mime_hook(struct Hook *mh,struct FileRequester *fr,st
 
   	mt = fetch_mimetype(fname);
 
-	if(!strcmp(mt,"text/html")) ret = TRUE;
-	else if(!strcmp(mt,"text/plain")) ret = TRUE;
-	else if(!strcmp(mt,"image/jpeg")) ret = TRUE;
-	else if(!strcmp(mt,"image/gif")) ret = TRUE;
-	else if(!strcmp(mt,"image/png")) ret = TRUE;
-	else if(!strcmp(mt,"image/jng")) ret = TRUE;
-	else if(!strcmp(mt,"image/mng")) ret = TRUE;
-	else if(!strcmp(mt,"image/bmp")) ret = TRUE;
-	else if(!strcmp(mt,"image/ico")) ret = TRUE;
-	else if(!strcmp(mt,"image/x-riscos-sprite")) ret = TRUE;
-#ifdef WITH_NS_SVG
-	else if(!strcmp(mt,"image/svg")) ret = TRUE;
-#endif
-
+	if(content_lookup(mt) != CONTENT_OTHER) ret = TRUE;
 	free(mt);
 	return ret;
 }
