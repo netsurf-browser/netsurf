@@ -68,6 +68,9 @@ typedef enum {
 #if defined(WITH_NS_SVG) || defined(WITH_RSVG)
 	CONTENT_SVG,
 #endif
+#ifdef WITH_WEBP
+	CONTENT_WEBP,
+#endif
 	/* these must be the last two */
 	CONTENT_OTHER,
 	CONTENT_UNKNOWN  /**< content-type not received yet */

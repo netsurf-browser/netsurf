@@ -53,6 +53,10 @@ NETSURF_USE_PNG := YES
 # Valid options: YES, NO	  (at least one of PNG/MNG highly recommended)
 NETSURF_USE_MNG := YES
 
+# Enable NetSurf's use of libwebp/libvpx for displaying WebPs
+# Valid options: YES, NO
+NETSURF_USE_WEBP := NO
+
 # Enable NetSurf's use of libharu for PDF export and GTK printing support.
 # There is no auto-detection available for this, as it does not have a
 # pkg-config file.
@@ -200,6 +204,10 @@ ifeq ($(TARGET),amiga)
   # Enable NetSurf's use of librosprite for displaying RISC OS Sprites
   # Valid options: YES, NO, AUTO
   NETSURF_USE_ROSPRITE := YES
+
+  # Enable NetSurf's use of libwebp/libvpx for displaying WebPs
+  # Valid options: YES, NO
+  NETSURF_USE_WEBP := YES
 
   # Enable NetSurf's use of libsvgtiny for displaying SVGs
   # (NB: Requires NETSURF_AMIGA_USE_CAIRO)

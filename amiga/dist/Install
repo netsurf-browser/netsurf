@@ -110,7 +110,11 @@
 
 	(if (= #same 0) ;if #sobj is newer than that pointed to by #sobj_link
 		(
+			(if (exists (#sobj2))
+				(delete #sobj2 (optional "force")) ;prevent dodgy recursive links
+			)
 			(set #linkcmd (cat "makelink " #sobj2 " SObjs:" #sobj " soft"))
+			(transcript "Running " #linkcmd)
 			(run #linkcmd)
 		)
 	)
@@ -445,6 +449,7 @@
 		(p_linksobj "libz.so.1.2.5" "libz.so")
 		(p_linksobj "libz.so.1.2.5" "libz.so.1")
 		(p_linksobj "libz.so.1.2.5" "libz.so.1.2")
+		(p_linksobj "libvpx.so.0.9.2" "libvpx.so.0")
 ;		(p_linksobj "libpng14.so.14" "libpng.so")
 	)
 )
@@ -505,6 +510,7 @@
 (p_setmimetype "bmp" "image/bmp")
 (p_setmimetype "ico" "image/ico")
 (p_setmimetype "sprite" "image/x-riscos-sprite")
+(p_setmimetype "webp" "image/webp")
 (p_setmimetype "lha" "application/x-lha")
 (p_setmimetype "zip" "application/x-zip")
 

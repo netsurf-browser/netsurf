@@ -647,6 +647,7 @@ JPEGTitle:Immagine JPEG (%ux%u, %lu byte)
 PNGTitle:Immagine PNG (%lux%lu, %lu byte)
 JNGTitle:Immagine JNG (%lux%lu, %lu byte)
 MNGTitle:Immagine MNG (%lux%lu, %lu byte)
+WebPTitle:Immagine WebP (%lux%lu, %lu byte)
 SpriteTitle:Immagine Sprite (%lux%lu, %lu byte)
 ArtWorksTitle:Immagine ArtWorks (%lux%lu, %lu byte)
 

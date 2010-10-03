@@ -516,6 +516,7 @@ ifeq ($(TARGET),amiga)
   NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
   NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
   NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
+  NETSURF_FEATURE_WEBP_CFLAGS := -DWITH_WEBP
   NETSURF_FEATURE_NSSVG_CFLAGS := -DWITH_NS_SVG
 
     $(eval $(call feature_enabled,ROSPRITE,-DWITH_NSSPRITE,-lrosprite,Sprite (librosprite)))
@@ -524,6 +525,7 @@ ifeq ($(TARGET),amiga)
     $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG (libpng)  ))
     $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG (libsvgtiny)))
     $(eval $(call feature_enabled,MNG,,-llcms -ljpeg,PNG/JNG/MNG (libmng)))
+    $(eval $(call feature_enabled,WEBP,-DWITH_WEBP,-lwebp -lvpx,WebP (libwebp)))
 
   CFLAGS += -D__USE_INLINE__ -std=c99 -I . -I /SDK/local/common/include/libpng12 -Dnsamiga
   LDFLAGS += -lxml2 -lcurl -lpthread -lregex -lauto

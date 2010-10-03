@@ -75,6 +75,9 @@
 #ifdef WITH_RSVG
 #include "image/rsvg.h"
 #endif
+#ifdef WITH_WEBP
+#include "image/webp.h"
+#endif
 
 
 struct bitmap;
@@ -146,6 +149,9 @@ struct content {
 #endif
 #ifdef WITH_PNG
                 struct content_png_data png;
+#endif
+#ifdef WITH_WEBP
+                struct content_webp_data webp;
 #endif
 	} data;
 

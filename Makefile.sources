@@ -24,7 +24,8 @@ S_COMMON := $(addprefix content/,$(S_CONTENT))				\
 	$(addprefix desktop/,$(S_DESKTOP))
 
 # S_IMAGE are sources related to image management
-S_IMAGE := bmp.c gif.c ico.c jpeg.c mng.c nssprite.c png.c svg.c rsvg.c
+S_IMAGE := bmp.c gif.c ico.c jpeg.c mng.c nssprite.c png.c svg.c rsvg.c \
+	webp.c
 S_IMAGE := $(addprefix image/,$(S_IMAGE))
 
 # S_PDF are sources of the pdf plotter + the ones for paged-printing
