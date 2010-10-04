@@ -28,6 +28,7 @@ extern char *option_fb_input_devpath;
 extern char *option_fb_input_glob;
 extern int option_fb_furniture_size; /* toolkit furniture size */
 extern int option_fb_toolbar_size; /* toolbar furniture size */
+extern char *option_fb_toolbar_layout; /* toolbar layout */
 extern bool option_fb_osk; /* enable on screen keyboard */
 
 extern bool option_fb_font_monochrome; /* render font monochrome */
@@ -47,6 +48,7 @@ extern char *option_fb_face_serif_bold; /* bold serif face */
 	char *option_fb_input_glob = 0;			\
 	int option_fb_furniture_size = 18;		\
 	int option_fb_toolbar_size = 30;		\
+	char *option_fb_toolbar_layout;			\
 	bool option_fb_osk = false;			\
 	bool option_fb_font_monochrome = false;		\
 	char *option_fb_face_sans_serif;		\
@@ -65,7 +67,8 @@ extern char *option_fb_face_serif_bold; /* bold serif face */
     { "fb_input_glob", OPTION_STRING, &option_fb_input_glob },          \
     { "fb_furniture_size", OPTION_INTEGER, &option_fb_furniture_size }, \
     { "fb_toolbar_size", OPTION_INTEGER, &option_fb_toolbar_size },     \
-    { "fb_font_osk", OPTION_BOOL, &option_fb_osk },			\
+    { "fb_toolbar_layout", OPTION_STRING, &option_fb_toolbar_layout },	\
+    { "fb_osk", OPTION_BOOL, &option_fb_osk },				\
     { "fb_font_monochrome", OPTION_BOOL, &option_fb_font_monochrome },  \
     { "fb_face_sans_serif", OPTION_STRING, &option_fb_face_sans_serif }, \
     { "fb_face_sans_serif_bold", OPTION_STRING, &option_fb_face_sans_serif_bold }, \

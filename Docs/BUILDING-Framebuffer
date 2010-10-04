@@ -88,8 +88,9 @@
 
   The font system is configured at runtime by several options. The
   fb_font_monochrome option causes the renderer to use monochrome
-  glyph rendering which is faster but less visually appealing. The
-  remaining seven options control the files to be used for font faces.
+  glyph rendering which is faster to plot but slower to render and
+  much less visually appealing. The remaining seven options control
+  the files to be used for font faces.
 
   fb_face_sans_serif - The sans serif face
   fb_face_sans_serif_bold - The bold sans serif face
@@ -160,17 +161,17 @@ Index: framebuffer/font_freetype.c
   using the NetSurf Framebuffer library (libnsfb). This library
   provides an abstraction layer to input and output devices.
 
-  The frontend used by libnsfb is selected by using the -fe switch to
-  netsurf when executed. A frontend in this context is simply the
-  combination of input and output devices. 
+  The surface used by libnsfb is selected by using the -f switch to
+  NetSurf when executed. A surface in this context is simply the
+  combination of input and output devices.
 
-  A frontend output device may be any linearly mapped area of
+  A surface output device may be any linearly mapped area of
   memory. The framebuffer may be treated as values at 32, 16 or 8 bits
   per pixel. The input device is typically selected to complement the
-  output device and is completely specific to the frontend.
+  output device and is completely specific to the surface.
 
   There are several configuration options which may influence the
-  framebuffer frontends. These are:
+  framebuffer surfaces. These are:
 
     fb_refresh - The refresh rate (for physical displays)
     fb_depth - The depth (in bits per pixel) of the framebuffer

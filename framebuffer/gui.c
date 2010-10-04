@@ -59,6 +59,8 @@
 #include "desktop/history_core.h"
 #include "content/fetch.h"
 
+#define NSFB_TOOLBAR_DEFAULT_LAYOUT "blfsrut"
+
 char *default_stylesheet_url;
 char *quirks_stylesheet_url;
 char *adblock_stylesheet_url;
@@ -836,6 +838,16 @@ fb_osk_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	return 0;
 }
 
+/* close browser window icon click routine */
+static int
+fb_close_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
+{
+	if (cbi->event->type != NSFB_EVENT_KEY_DOWN)
+		return 0;
+
+	netsurf_quit = true;
+	return 0;
+}
 
 static int
 fb_scroll_callback(fbtk_widget_t *widget, fbtk_callback_info *cbi)
@@ -893,121 +905,283 @@ fb_localhistory_btn_clik(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 }
 
 
-
-static void
-create_toolbar(struct gui_window *gw, int toolbar_height)
+/** Create a toolbar window and populate it with buttons. 
+ *
+ * The toolbar layout uses a character to define buttons type and position:
+ * b - back
+ * l - local history
+ * f - forward
+ * s - stop 
+ * r - refresh
+ * u - url bar expands to fit remaining space
+ * t - throbber/activity indicator
+ * c - close the current window
+ *
+ * The default layout is "blfsrut" there should be no more than a
+ * single url bar entry or behaviour will be undefined.
+ *
+ * @param gw Parent window 
+ * @param toolbar_height The height in pixels of the toolbar
+ * @param padding The padding in pixels round each element of the toolbar
+ * @param frame_col Frame colour.
+ * @param toolbar_layout A string defining which buttons and controls
+ *                       should be added to the toolbar. May be empty
+ *                       string to disable the bar..
+ * 
+ */
+static fbtk_widget_t *
+create_toolbar(struct gui_window *gw, 
+	       int toolbar_height, 
+	       int padding, 
+	       colour frame_col,
+	       const char *toolbar_layout)
 {
 	fbtk_widget_t *toolbar;
 	fbtk_widget_t *widget;
-	int url_bar_height = 0;
-	int xpos = 0;
-	int spacing_width = 0;
 
-	spacing_width = 2;
+	int xpos; /* The position of the next widget. */
+	int xlhs; /* extent of the left hand side widgets */
+	int xdir = 1; /* the direction of movement + or - 1 */
+	const char *itmtype; /* type of the next item */
 
-	xpos = spacing_width;
+	if (toolbar_layout == NULL) {
+		toolbar_layout = NSFB_TOOLBAR_DEFAULT_LAYOUT;
+	}
 
-	url_bar_height = toolbar_height - 6;
+	LOG(("Using toolbar layout %s", toolbar_layout));
 
-	toolbar = fbtk_create_window(gw->window, 0, 0, 0, toolbar_height, FB_FRAME_COLOUR);
-	fbtk_set_handler(toolbar, FBTK_CBT_POINTERENTER, set_ptr_default_move, NULL);
+	itmtype = toolbar_layout;
 
-	/* back button */
-	gw->back = fbtk_create_button(toolbar, xpos, spacing_width, left_arrow.width, -spacing_width, FB_FRAME_COLOUR, &left_arrow, fb_leftarrow_click, gw);
-	xpos += left_arrow.width + spacing_width;
+	if (*itmtype == 0) {
+		return NULL;
+	}
 
-	/* history window */
-	widget = fbtk_create_button(toolbar,
-				    xpos,
-				    spacing_width,
-				    history_image.width,
-				    -spacing_width,
-				    FB_FRAME_COLOUR,
-				    &history_image,
-				    fb_localhistory_btn_clik,
-				    gw);
-	xpos += fbtk_get_width(widget) + spacing_width;
+	toolbar = fbtk_create_window(gw->window, 0, 0, 0, 
+				     toolbar_height, 
+				     frame_col);
 
-	/* forward button */
-	gw->forward = fbtk_create_button(toolbar,
-					 xpos,
-					 spacing_width,
-					 right_arrow.width,
-					 -spacing_width,
-					 FB_FRAME_COLOUR,
-					 &right_arrow,
-					 fb_rightarrow_click,
-					 gw);
-	xpos += right_arrow.width + spacing_width;
+	if (toolbar == NULL) {
+		return NULL;
+	}
 
-	/* stop button */
-	widget = fbtk_create_button(toolbar,
-				    xpos,
-				    spacing_width,
-				    stop_image.width,
-				    -spacing_width,
-				    FB_FRAME_COLOUR,
-				    &stop_image,
-				    fb_stop_click,
-				    gw->bw);
-	xpos += stop_image.width + spacing_width;
+	fbtk_set_handler(toolbar, 
+			 FBTK_CBT_POINTERENTER, 
+			 set_ptr_default_move, 
+			 NULL);
 
-	/* reload button */
-	widget = fbtk_create_button(toolbar,
-				    xpos,
-				    spacing_width,
-				    reload.width,
-				    -spacing_width,
-				    FB_FRAME_COLOUR,
-				    &reload,
-				    fb_reload_click,
-				    gw->bw);
-	xpos += reload.width + spacing_width;
 
-	/* url widget */
-	xpos += spacing_width; /* extra spacing for url bar */
-	gw->url = fbtk_create_writable_text(toolbar,
-					    xpos,
-					    spacing_width,
-					    -(2 * spacing_width + throbber0.width),
-					    -spacing_width,
-					    FB_COLOUR_WHITE,
-					    FB_COLOUR_BLACK,
-					    true,
-					    fb_url_enter,
-					    gw->bw);
-	fbtk_set_handler(gw->url, FBTK_CBT_POINTERENTER, fb_url_move, gw->bw);
-	xpos += fbtk_get_width(gw->url) + spacing_width;
+	xpos = padding;
 
-	/* throbber */
-	gw->throbber = fbtk_create_bitmap(toolbar,
-					  xpos,
-					  spacing_width,
-					  throbber0.width,
-					  -spacing_width,
-					  FB_FRAME_COLOUR, &throbber0);
+	/* loop proceeds creating widget on the left hand side until
+	 * it runs out of layout or encounters a url bar declaration
+	 * wherupon it works backwards from the end of the layout
+	 * untill the space left is for the url bar
+	 */
+	while ((itmtype >= toolbar_layout) && 
+	       (*itmtype != 0) && 
+	       (xdir !=0)) {
+
+		LOG(("toolbar adding %c", *itmtype));
+
+
+		switch (*itmtype) {
+
+		case 'b': /* back */
+			widget = fbtk_create_button(toolbar, 
+						    (xdir == 1) ? xpos : 
+						     xpos - left_arrow.width, 
+						    padding, 
+						    left_arrow.width, 
+						    -padding, 
+						    frame_col, 
+						    &left_arrow, 
+						    fb_leftarrow_click, 
+						    gw);
+			gw->back = widget; /* keep reference */
+			break;
+
+		case 'l': /* local history */
+			widget = fbtk_create_button(toolbar,
+						    (xdir == 1) ? xpos : 
+						     xpos - history_image.width,
+						    padding,
+						    history_image.width,
+						    -padding,
+						    frame_col,
+						    &history_image,
+						    fb_localhistory_btn_clik,
+						    gw);
+			break;
+
+		case 'f': /* forward */
+			widget = fbtk_create_button(toolbar,
+						    (xdir == 1)?xpos : 
+						     xpos - right_arrow.width,
+						    padding,
+						    right_arrow.width,
+						    -padding,
+						    frame_col,
+						    &right_arrow,
+						    fb_rightarrow_click,
+						    gw);
+			gw->forward = widget;
+			break;
+
+		case 'c': /* close the current window */
+			widget = fbtk_create_button(toolbar,
+						    (xdir == 1)?xpos : 
+						     xpos - stop_image_g.width,
+						    padding,
+						    stop_image_g.width,
+						    -padding,
+						    frame_col,
+						    &stop_image_g,
+						    fb_close_click,
+						    gw->bw);
+			break;
+
+		case 's': /* stop  */
+			widget = fbtk_create_button(toolbar,
+						    (xdir == 1)?xpos : 
+						     xpos - stop_image.width,
+						    padding,
+						    stop_image.width,
+						    -padding,
+						    frame_col,
+						    &stop_image,
+						    fb_stop_click,
+						    gw->bw);
+			break;
+
+		case 'r': /* reload */
+			widget = fbtk_create_button(toolbar,
+						    (xdir == 1)?xpos : 
+						     xpos - reload.width,
+						    padding,
+						    reload.width,
+						    -padding,
+						    frame_col,
+						    &reload,
+						    fb_reload_click,
+						    gw->bw);
+			break;
+
+		case 't': /* throbber/activity indicator */
+			widget = fbtk_create_bitmap(toolbar,
+						    (xdir == 1)?xpos : 
+						     xpos - throbber0.width,
+						    padding,
+						    throbber0.width,
+						    -padding,
+						    frame_col, 
+						    &throbber0);
+			gw->throbber = widget;
+			break;
+
+
+		case 'u': /* url bar*/
+			if (xdir == -1) {
+				/* met the u going backwards add url
+				 * now we know available extent 
+				 */ 
+
+				widget = fbtk_create_writable_text(toolbar,
+						   xlhs,
+						   padding,
+						   xpos - xlhs,
+						   -padding,
+						   FB_COLOUR_WHITE,
+						   FB_COLOUR_BLACK,
+						   true,
+						   fb_url_enter,
+						   gw->bw);
+
+				fbtk_set_handler(widget, 
+						 FBTK_CBT_POINTERENTER, 
+						 fb_url_move, gw->bw);
+
+				gw->url = widget; /* keep reference */
+
+				/* toolbar is complete */
+				xdir = 0;
+				break;
+			}
+			/* met url going forwards, note position and
+			 * reverse direction 
+			 */
+			itmtype = toolbar_layout + strlen(toolbar_layout);
+			xdir = -1;
+			xlhs = xpos;
+			xpos = (2 * fbtk_get_width(toolbar));
+			widget = toolbar;
+			break;
+
+		default:
+			xdir = 0;
+			LOG(("Unknown element %c in toolbar layout", *itmtype));
+		        break;
+
+		}
+
+		xpos += (xdir * (fbtk_get_width(widget) + padding));
+
+		LOG(("xpos is %d",xpos));
+
+		itmtype += xdir;
+	}
 
 	fbtk_set_mapping(toolbar, true);
 
+	return toolbar;
 }
 
 static void
-create_normal_browser_window(struct gui_window *gw,
-			     int furniture_width,
-			     int toolbar_height)
+create_browser_widget(struct gui_window *gw, int toolbar_height, int furniture_width)
+{
+	struct browser_widget_s *browser_widget;
+	browser_widget = calloc(1, sizeof(struct browser_widget_s));
+
+	gw->browser = fbtk_create_user(gw->window,
+				       0,
+				       toolbar_height,
+				       -furniture_width,
+				       -furniture_width,
+				       browser_widget);
+
+	fbtk_set_handler(gw->browser, FBTK_CBT_REDRAW, fb_browser_window_redraw, gw);
+	fbtk_set_handler(gw->browser, FBTK_CBT_INPUT, fb_browser_window_input, gw);
+	fbtk_set_handler(gw->browser, FBTK_CBT_CLICK, fb_browser_window_click, gw);
+	fbtk_set_handler(gw->browser, FBTK_CBT_POINTERMOVE, fb_browser_window_move, gw);
+}
+
+static void
+create_normal_browser_window(struct gui_window *gw, int furniture_width)
 {
 	fbtk_widget_t *widget;
+	fbtk_widget_t *toolbar;
 	int statusbar_width = 0;
+	int toolbar_height = option_fb_toolbar_size;
+
+	LOG(("Normal window"));
 
 	gw->window = fbtk_create_window(fbtk, 0, 0, 0, 0, 0);
 
 	statusbar_width = option_toolbar_status_width *
 		fbtk_get_width(gw->window) / 10000;
 
+	/* toolbar */
+	toolbar = create_toolbar(gw, 
+				 toolbar_height, 
+				 2, 
+				 FB_FRAME_COLOUR, 
+				 option_fb_toolbar_layout);
 
-	LOG(("Normal window"));
-
-	create_toolbar(gw, toolbar_height);
+	/* set the actually created toolbar height */
+	if (toolbar != NULL) {
+		toolbar_height = fbtk_get_height(toolbar);
+	} else {
+		toolbar_height = 0;
+	}
 
 	/* status bar */
 	gw->status = fbtk_create_text(gw->window,
@@ -1065,27 +1239,11 @@ create_normal_browser_window(struct gui_window *gw,
 					  fb_scroll_callback,
 					  gw);
 
+	/* browser widget */
+	create_browser_widget(gw, toolbar_height, option_fb_furniture_size);
 
 }
 
-static void
-create_browser_widget(struct gui_window *gw, int toolbar_height, int furniture_width)
-{
-	struct browser_widget_s *browser_widget;
-	browser_widget = calloc(1, sizeof(struct browser_widget_s));
-
-	gw->browser = fbtk_create_user(gw->window,
-				       0,
-				       toolbar_height,
-				       -furniture_width,
-				       -furniture_width,
-				       browser_widget);
-
-	fbtk_set_handler(gw->browser, FBTK_CBT_REDRAW, fb_browser_window_redraw, gw);
-	fbtk_set_handler(gw->browser, FBTK_CBT_INPUT, fb_browser_window_input, gw);
-	fbtk_set_handler(gw->browser, FBTK_CBT_CLICK, fb_browser_window_click, gw);
-	fbtk_set_handler(gw->browser, FBTK_CBT_POINTERMOVE, fb_browser_window_move, gw);
-}
 
 struct gui_window *
 gui_create_browser_window(struct browser_window *bw,
@@ -1107,9 +1265,8 @@ gui_create_browser_window(struct browser_window *bw,
 
 	switch(bw->browser_window_type) {
 	case BROWSER_WINDOW_NORMAL:
-		create_normal_browser_window(gw, option_fb_furniture_size, option_fb_toolbar_size);
+		create_normal_browser_window(gw, option_fb_furniture_size);
 		gw->localhistory = fb_create_localhistory(bw, fbtk, option_fb_furniture_size);
-		create_browser_widget(gw, option_fb_toolbar_size, option_fb_furniture_size);
 
 		/* map and request redraw of gui window */
 		fbtk_set_mapping(gw->window, true);
